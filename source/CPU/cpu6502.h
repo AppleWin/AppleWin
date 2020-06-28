@@ -328,7 +328,7 @@ static DWORD Cpu6502(DWORD uTotalCycles, const bool bVideoUpdate)
 		if (bVideoUpdate)
 		{
 			ULONG uElapsedCycles = uExecutedCycles - uPreviousCycles;
-			NTSC_VideoUpdateCycles( uElapsedCycles );
+			g_pVideo->NTSC_VideoUpdateCycles( uElapsedCycles );
 		}
 // NTSC_END
 

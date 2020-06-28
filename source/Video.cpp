@@ -126,15 +126,18 @@ Video* g_pVideo = NULL;
 		, "White Monitor"
 	};
 
-// Prototypes (Private) _____________________________________________
+	int Video::g_nLastScreenShot = 0;
 
-	bool g_bDisplayPrintScreenFileName = false;
-	bool g_bShowPrintScreenWarningDialog = true;
-	void Util_MakeScreenShotFileName( TCHAR *pFinalFileName_, DWORD chars );
-	bool Util_TestScreenShotFileName( const TCHAR *pFileName );
-	void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const TCHAR *pScreenShotFileName );
-	void Video_MakeScreenShot( FILE *pFile, const VideoScreenShot_e ScreenShotType );
-	void static videoCreateDIBSection(LPBITMAPINFO pFramebufferinfo, uint8_t** pFramebufferbits);
+	Video::Video()
+	{
+		pNTSC = new NTSC();
+
+		g_videoRomSize = 0;
+		g_videoRomRockerSwitch = false;
+
+		g_bDisplayPrintScreenFileName = false;
+		g_bShowPrintScreenWarningDialog = true;
+	}
 
 //===========================================================================
 void Video::VideoInitialize ()
@@ -161,10 +164,10 @@ void Video::VideoInitialize ()
 	g_pFramebufferinfo->bmiHeader.biCompression = BI_RGB;
 	g_pFramebufferinfo->bmiHeader.biClrUsed     = 0;
 
-	videoCreateDIBSection(g_pFramebufferinfo, &g_pFramebufferbits);
+	Video::CreateDIBBuffer(g_pFramebufferinfo, &g_hDeviceBitmap, &g_pFramebufferbits);
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
-	NTSC_VideoInit(g_pFramebufferbits);
+	pNTSC->NTSC_VideoInit(g_pFramebufferbits);
 }
 
 //===========================================================================
@@ -391,7 +394,7 @@ Video::~Video () {
 
 //===========================================================================
 
-static void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale)
+void Video::VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale)
 {
 	HDC hSrcDC = CreateCompatibleDC( hDstDC );
 	SelectObject( hSrcDC, g_hLogoBitmap );
@@ -433,7 +436,7 @@ void Video::VideoDisplayLogo ()
 				nLogoY += GetFullScreenOffsetY();
 			}
 
-			VideoDrawLogoBitmap(hFrameDC, nLogoX, nLogoY, bm.bmWidth, bm.bmHeight, scale);
+			Video::VideoDrawLogoBitmap(hFrameDC, nLogoX, nLogoY, bm.bmWidth, bm.bmHeight, scale);
 		}
 	}
 
@@ -550,7 +553,7 @@ void Video::VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit
 
 void Video::VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
-	NTSC_VideoClockResync(dwCyclesThisFrame);
+	pNTSC->NTSC_VideoClockResync(dwCyclesThisFrame);
 	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
 }
 
@@ -573,13 +576,13 @@ void Video::VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, b
 		// . MODE_DEBUG   : always
 		// . MODE_RUNNING : called from VideoRedrawScreen(), eg. during full-speed
 		if (bRedrawWholeScreen)
-			NTSC_SetVideoMode( uRedrawWholeScreenVideoMode );
-		NTSC_VideoRedrawWholeScreen();
+			pNTSC->NTSC_SetVideoMode( uRedrawWholeScreenVideoMode );
+		pNTSC->NTSC_VideoRedrawWholeScreen();
 
 		// MODE_DEBUG|PAUSED: Need to refresh a 2nd time if changing video-type, otherwise could have residue from prev image!
 		// . eg. Amber -> B&W TV
 		if (g_nAppMode == MODE_DEBUG || g_nAppMode == MODE_PAUSED)
-			NTSC_VideoRedrawWholeScreen();
+			pNTSC->NTSC_VideoRedrawWholeScreen();
 	}
 
 	HDC hFrameDC = FrameGetDC();
@@ -621,11 +624,11 @@ void Video::VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, b
 //===========================================================================
 void Video::VideoReinitialize (bool bInitVideoScannerAddress /*= true*/)
 {
-	NTSC_VideoReinitialize( g_dwCyclesThisFrame, bInitVideoScannerAddress );
-	NTSC_VideoInitAppleType();
-	NTSC_SetVideoStyle();
-	NTSC_SetVideoTextMode( g_uVideoMode &  VF_80COL ? 80 : 40 );
-	NTSC_SetVideoMode( g_uVideoMode );	// Pre-condition: g_nVideoClockHorz (derived from g_dwCyclesThisFrame)
+	pNTSC->NTSC_VideoReinitialize( g_dwCyclesThisFrame, bInitVideoScannerAddress );
+	pNTSC->NTSC_VideoInitAppleType();
+	pNTSC->NTSC_SetVideoStyle();
+	pNTSC->NTSC_SetVideoTextMode( g_uVideoMode &  VF_80COL ? 80 : 40 );
+	pNTSC->NTSC_SetVideoMode( g_uVideoMode );	// Pre-condition: g_nVideoClockHorz (derived from g_dwCyclesThisFrame)
 }
 
 //===========================================================================
@@ -634,8 +637,8 @@ void Video::VideoResetState ()
 	g_nAltCharSetOffset    = 0;
 	g_uVideoMode           = VF_TEXT;
 
-	NTSC_SetVideoTextMode( 40 );
-	NTSC_SetVideoMode( g_uVideoMode );
+	pNTSC->NTSC_SetVideoTextMode( 40 );
+	pNTSC->NTSC_SetVideoMode( g_uVideoMode );
 
 	RGB_ResetState();
 }
@@ -652,8 +655,8 @@ BYTE Video::VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCy
 	{
 		case 0x00:                 g_uVideoMode &= ~VF_80STORE;                            break;
 		case 0x01:                 g_uVideoMode |=  VF_80STORE;                            break;
-		case 0x0C: if (!IS_APPLE2){g_uVideoMode &= ~VF_80COL; NTSC_SetVideoTextMode(40);}; break;
-		case 0x0D: if (!IS_APPLE2){g_uVideoMode |=  VF_80COL; NTSC_SetVideoTextMode(80);}; break;
+		case 0x0C: if (!IS_APPLE2){g_uVideoMode &= ~VF_80COL; pNTSC->NTSC_SetVideoTextMode(40);}; break;
+		case 0x0D: if (!IS_APPLE2){g_uVideoMode |=  VF_80COL; pNTSC->NTSC_SetVideoTextMode(80);}; break;
 		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
 		case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
 		case 0x50: g_uVideoMode &= ~VF_TEXT;    break;
@@ -676,7 +679,7 @@ BYTE Video::VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCy
 	if ((oldVideoMode ^ g_uVideoMode) & (VF_TEXT|VF_MIXED))
 		delay = true;
 
-	NTSC_SetVideoMode( g_uVideoMode, delay );
+	pNTSC->NTSC_SetVideoMode( g_uVideoMode, delay );
 
 	return MemReadFloatingBus(uExecutedCycles);
 }
@@ -891,7 +894,7 @@ bool Video::VideoGetVblBarEx(const DWORD dwCyclesThisFrame)
 	if (g_bFullSpeed)
 	{
 		// Ensure that NTSC video-scanner gets updated during full-speed, so video screen can be redrawn during Apple II VBL
-		NTSC_VideoClockResync(dwCyclesThisFrame);
+		pNTSC->NTSC_VideoClockResync(dwCyclesThisFrame);
 	}
 
 	return g_nVideoClockVert < kVDisplayableScanLines;
@@ -903,7 +906,7 @@ bool Video::VideoGetVblBar(const DWORD uExecutedCycles)
 	if (g_bFullSpeed)
 	{
 		// Ensure that NTSC video-scanner gets updated during full-speed, so video-dependent Apple II code doesn't hang
-		NTSC_VideoClockResync(CpuGetCyclesThisVideoFrame(uExecutedCycles));
+		pNTSC->NTSC_VideoClockResync(CpuGetCyclesThisVideoFrame(uExecutedCycles));
 	}
 
 	return g_nVideoClockVert < kVDisplayableScanLines;
@@ -932,7 +935,7 @@ static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrv
 	return TRUE;
 }
 
-bool DDInit(void)
+bool Video::DDInit(void)
 {
 #ifdef NO_DIRECT_X
 
@@ -975,7 +978,7 @@ bool DDInit(void)
 // From SoundCore.h
 #define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
 
-void DDUninit(void)
+void Video::DDUninit(void)
 {
 	SAFE_RELEASE(g_lpDD);
 }
@@ -987,9 +990,6 @@ void DDUninit(void)
 #define SCREENSHOT_BMP 1
 #define SCREENSHOT_TGA 0
 	
-static int  g_nLastScreenShot = 0;
-const  int nMaxScreenShot = 999999999;
-static std::string g_pLastDiskImageName;
 
 //===========================================================================
 void Video::Video_ResetScreenshotCounter( const std::string & pImageName )
@@ -999,7 +999,7 @@ void Video::Video_ResetScreenshotCounter( const std::string & pImageName )
 }
 
 //===========================================================================
-void Util_MakeScreenShotFileName( TCHAR *pFinalFileName_, DWORD chars )
+void Video::Util_MakeScreenShotFileName( TCHAR *pFinalFileName_, DWORD chars )
 {
 	const std::string sPrefixScreenShotFileName = "AppleWin_ScreenShot";
 	// TODO: g_sScreenshotDir
@@ -1014,7 +1014,7 @@ void Util_MakeScreenShotFileName( TCHAR *pFinalFileName_, DWORD chars )
 
 // Returns TRUE if file exists, else FALSE
 //===========================================================================
-bool Util_TestScreenShotFileName( const TCHAR *pFileName )
+bool Video::Util_TestScreenShotFileName( const TCHAR *pFileName )
 {
 	bool bFileExists = false;
 	FILE *pFile = fopen( pFileName, "rt" );
@@ -1134,11 +1134,11 @@ void Video::Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight
 }
 
 //===========================================================================
-static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShotType)
+void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShotType)
 {
 	WinBmpHeader_t *pBmp = &g_tBmpHeader;
 
-	g_pVideo->Video_SetBitmapHeader(
+	Video_SetBitmapHeader(
 		pBmp,
 		ScreenShotType == SCREENSHOT_280x192 ? GetFrameBufferBorderlessWidth()/2 : GetFrameBufferBorderlessWidth(),
 		ScreenShotType == SCREENSHOT_280x192 ? GetFrameBufferBorderlessHeight()/2 : GetFrameBufferBorderlessHeight(),
@@ -1223,7 +1223,7 @@ static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 }
 
 //===========================================================================
-static void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const TCHAR *pScreenShotFileName )
+void Video::Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const TCHAR *pScreenShotFileName )
 {
 	FILE *pFile = fopen( pScreenShotFileName, "wb" );
 	if( pFile )
@@ -1232,7 +1232,7 @@ static void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const 
 		fclose( pFile );
 	}
 
-	if( g_bDisplayPrintScreenFileName )
+	if(g_bDisplayPrintScreenFileName )
 	{
 		MessageBox( g_hFrameWindow, pScreenShotFileName, "Screen Captured", MB_OK );
 	}
@@ -1242,9 +1242,7 @@ static void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const 
 //===========================================================================
 
 
-static BYTE g_videoRom[kVideoRomSizeMax];
-static UINT g_videoRomSize = 0;
-static bool g_videoRomRockerSwitch = false;
+
 
 bool Video::ReadVideoRomFile(const char* pRomFile)
 {
@@ -1413,11 +1411,21 @@ void Video::SetVideoRefreshRate(VideoRefreshRate_e rate)
 		rate = VR_60HZ;
 
 	g_bVideoScannerNTSC = (rate == VR_60HZ);
-	NTSC_SetRefreshRate(rate);
+	pNTSC->NTSC_SetRefreshRate(rate);
+}
+
+void Video::NTSC_VideoUpdateCycles(UINT cycles6502)
+{
+	pNTSC->NTSC_VideoUpdateCycles(cycles6502);
+}
+
+NTSC* Video::getNTSC()
+{
+	return pNTSC;
 }
 
 //===========================================================================
-static void videoCreateDIBSection(LPBITMAPINFO pFramebufferinfo, uint8_t **pFramebufferbits)
+void Video::CreateDIBBuffer(LPBITMAPINFO pFramebufferinfo, HBITMAP *hBitmap, uint8_t **pFramebufferbits)
 {
 	// CREATE THE DEVICE CONTEXT
 	HWND window  = GetDesktopWindow();
@@ -1430,17 +1438,16 @@ static void videoCreateDIBSection(LPBITMAPINFO pFramebufferinfo, uint8_t **pFram
 	g_hDeviceDC = CreateCompatibleDC(dc);
 
 	// CREATE THE FRAME BUFFER DIB SECTION
-	if (!g_hDeviceBitmap)
-		DeleteObject(g_hDeviceBitmap);
-		g_hDeviceBitmap = CreateDIBSection(
+	if (!*hBitmap)
+		DeleteObject(*hBitmap);
+		*hBitmap = CreateDIBSection(
 			dc,
 			pFramebufferinfo,
 			DIB_RGB_COLORS,
 			(LPVOID *)pFramebufferbits,0,0
 		);
-	SelectObject(g_hDeviceDC,g_hDeviceBitmap);
+	SelectObject(g_hDeviceDC, *hBitmap);
 
-	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory( *pFramebufferbits, GetFrameBufferWidth()*GetFrameBufferHeight()*sizeof(bgra_t) );
-
+	// Clear the new buffer
+	ZeroMemory( *pFramebufferbits, pFramebufferinfo->bmiHeader.biWidth * pFramebufferinfo->bmiHeader.biHeight * pFramebufferinfo->bmiHeader.biPlanes * (pFramebufferinfo->bmiHeader.biBitCount/8));
 }

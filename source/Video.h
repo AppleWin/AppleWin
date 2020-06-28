@@ -1,5 +1,9 @@
 #pragma once
 
+#include "VideoTypes.h"
+
+class NTSC;
+
 // Types ____________________________________________________________
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
@@ -77,15 +81,6 @@
 #else
 	#define PACKED // TODO: FIXME: gcc/clang __attribute__
 #endif
-
-// TODO: Replace with WinGDI.h / RGBQUAD
-struct bgra_t
-{
-	uint8_t b;
-	uint8_t g;
-	uint8_t r;
-	uint8_t a; // reserved on Win32
-};
 
 struct WinBmpHeader_t
 {
@@ -185,16 +180,33 @@ class Video {
 
 	// Globals __________________________________________________________
 
+private:
+	static BYTE g_videoRom[kVideoRomSizeMax];
+	static UINT g_videoRomSize;
+	static bool g_videoRomRockerSwitch;
+
+	static int g_nLastScreenShot;
+	const  int nMaxScreenShot = 999999999;
+	static std::string g_pLastDiskImageName;
+
+	void Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars);
+	bool Util_TestScreenShotFileName(const TCHAR* pFileName);
+	void Video_SaveScreenShot(const VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName);
+	void Video_MakeScreenShot(FILE* pFile, const VideoScreenShot_e ScreenShotType);
+
+	NTSC* pNTSC;
+
 public:
 	COLORREF   g_nMonochromeRGB;	// saved to Registry
 	uint32_t   g_uVideoMode;
 	DWORD      g_eVideoType;		// saved to Registry
 	uint8_t* g_pFramebufferbits;
 
-	bool g_bDisplayPrintScreenFileName;
 	bool g_bShowPrintScreenWarningDialog;
+	bool g_bDisplayPrintScreenFileName;
 
 	// Prototypes _______________________________________________________
+	Video::Video();
 	~Video();
 
 	void    VideoBenchmark();
@@ -250,9 +262,17 @@ public:
 	VideoRefreshRate_e GetVideoRefreshRate(void);
 	void SetVideoRefreshRate(VideoRefreshRate_e rate);
 
+	void NTSC_VideoUpdateCycles(UINT cycles6502);
+	NTSC* getNTSC();
+
+	bool DDInit(void);
+	void DDUninit(void);
+
+	static void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
+	static void CreateDIBBuffer(LPBITMAPINFO pFramebufferinfo, HBITMAP* hDeviceBitmap, uint8_t** pFramebufferbits);
+
 };
 
-bool DDInit(void);
-void DDUninit(void);
+
 
 extern Video *g_pVideo;

@@ -461,7 +461,7 @@
 //		, CMD_MEMORY_SEARCH_APPLE   // Flashing Chars, Hi-Bit Set
 		, CMD_MEMORY_SEARCH_HEX
 		, CMD_MEMORY_FILL
-		, CMD_NTSC
+//		, CMD_NTSC
 		, CMD_TEXT_SAVE
 // Output
 		, CMD_OUTPUT_CALC

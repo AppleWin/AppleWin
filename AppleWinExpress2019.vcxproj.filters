@@ -492,6 +492,9 @@
     <ClInclude Include="source\Debugger\Debugger_Heatmap.h">
       <Filter>Source Files\Debugger</Filter>
     </ClInclude>
+    <ClInclude Include="source\VideoTypes.h">
+      <Filter>Source Files\Video</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\Applewin.bmp">

@@ -40,75 +40,70 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define ALT_TABLE 0
 #if ALT_TABLE
-	#include "ntsc_rgb.h"
+#include "ntsc_rgb.h"
 #endif
 
 // Defines
-	#define HGR_TEST_PATTERN 0
+#define HGR_TEST_PATTERN 0
 
 #ifdef _MSC_VER
-	#define INLINE __forceinline
+#define INLINE __forceinline
 #else
-	#define INLINE inline
+#define INLINE inline
 #endif
 
-	#define PI 3.1415926535898f
-	#define DEG_TO_RAD(x) (PI*(x)/180.f) // 2PI=360, PI=180,PI/2=90,PI/4=45
-	#define RAD_45  PI*0.25f
-	#define RAD_90  PI*0.5f
-	#define RAD_360 PI*2.f
+#define PI 3.1415926535898f
+#define DEG_TO_RAD(x) (PI*(x)/180.f) // 2PI=360, PI=180,PI/2=90,PI/4=45
+#define RAD_45  PI*0.25f
+#define RAD_90  PI*0.5f
+#define RAD_360 PI*2.f
 
-	// sadly float64 precision is needed
-	#define real double
 
-	//#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees
-	#define CYCLESTART (DEG_TO_RAD(45))
+
+//#define CYCLESTART (PI/4.f) // PI/4 = 45 degrees
+#define CYCLESTART (DEG_TO_RAD(45))
 
 // Types
 
-	struct ColorSpace_PAL_t // Phase Amplitute Luma
+struct ColorSpace_PAL_t // Phase Amplitute Luma
+{
+	float phase;
+	float amp;
+	float luma;
+};
+
+struct ColorSpace_YIQ_t
+{
+	float y, i, q;
+};
+
+struct rgba_t
+{
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t a;
+};
+
+struct abgr_t
+{
+	uint8_t a;
+	uint8_t b;
+	uint8_t g;
+	uint8_t r;
+};
+
+struct ColorSpace_BGRA_t
+{
+	union
 	{
-		float phase;
-		float amp;
-		float luma;
+		uint32_t n;
+		bgra_t   bgra;
+		rgba_t   rgba;
+		abgr_t   abgr;
 	};
+};
 
-	struct ColorSpace_YIQ_t
-	{
-		float y, i, q;
-	};
-
-	struct rgba_t
-	{
-		uint8_t r;
-		uint8_t g;
-		uint8_t b;
-		uint8_t a;
-	};
-
-	struct abgr_t
-	{
-		uint8_t a;
-		uint8_t b;
-		uint8_t g;
-		uint8_t r;
-	};
-
-	struct ColorSpace_BGRA_t
-	{
-		union
-		{
-			uint32_t n;
-			bgra_t   bgra;
-			rgba_t   rgba;
-			abgr_t   abgr;
-		};
-	};
-
-
-// Globals (Public) ___________________________________________________
-	uint16_t g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
-	uint16_t g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible (NB. final hpos is 2 cycles long, so a line is 65 cycles)
 
 // Globals (Private) __________________________________________________
 	static int g_nVideoCharSet = 0;
@@ -403,66 +398,37 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		,{ 255, 255, 255 } // 15
 	};
 
-	static csbits_t csbits;		// charset, optionally followed by alt charset
 
-// Prototypes
-	INLINE void      updateFramebufferTVSingleScanline( uint16_t signal, bgra_t *pTable );
-	INLINE void      updateFramebufferTVDoubleScanline( uint16_t signal, bgra_t *pTable );
-	INLINE void      updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable );
-	INLINE void      updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable );
-	INLINE void      updatePixels( uint16_t bits );
-	INLINE void      updateVideoScannerHorzEOL();
-	INLINE void      updateVideoScannerAddress();
-	INLINE uint16_t  getVideoScannerAddressTXT();
-	INLINE uint16_t  getVideoScannerAddressHGR();
 
-	static void initChromaPhaseTables();
-	static real initFilterChroma   (real z);
-	static real initFilterLuma0    (real z);
-	static real initFilterLuma1    (real z);
-	static real initFilterSignal(real z);
-	static void initPixelDoubleMasks(void);
-	static void updateMonochromeTables( uint16_t r, uint16_t g, uint16_t b );
+	NTSC::NTSC()
+	{
+		// Globals (Public) ___________________________________________________
+		g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
+		g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible (NB. final hpos is 2 cycles long, so a line is 65 cycles)
+	}
 
-	static void updatePixelBnWColorTVSingleScanline( uint16_t compositeSignal );
-	static void updatePixelBnWColorTVDoubleScanline( uint16_t compositeSignal );
-	static void updatePixelBnWMonitorSingleScanline( uint16_t compositeSignal );
-	static void updatePixelBnWMonitorDoubleScanline( uint16_t compositeSignal );
-	static void updatePixelHueColorTVSingleScanline( uint16_t compositeSignal );
-	static void updatePixelHueColorTVDoubleScanline( uint16_t compositeSignal );
-	static void updatePixelHueMonitorSingleScanline( uint16_t compositeSignal );
-	static void updatePixelHueMonitorDoubleScanline( uint16_t compositeSignal );
-
-	static void updateScreenDoubleHires40( long cycles6502 );
-	static void updateScreenDoubleHires80( long cycles6502 );
-	static void updateScreenDoubleLores40( long cycles6502 );
-	static void updateScreenDoubleLores80( long cycles6502 );
-	static void updateScreenSingleHires40( long cycles6502 );
-	static void updateScreenSingleLores40( long cycles6502 );
-	static void updateScreenText40       ( long cycles6502 );
-	static void updateScreenText80       ( long cycles6502 );
 
 //===========================================================================
-static void set_csbits()
+void NTSC::set_csbits()
 {
 	// NB. For models that don't have an alt charset then set /g_nVideoCharSet/ to zero
 	switch ( GetApple2Type() )
 	{
-	case A2TYPE_APPLE2:			csbits = &csbits_a2[0];         g_nVideoCharSet = 0; break;
-	case A2TYPE_APPLE2PLUS:		csbits = &csbits_a2[0];         g_nVideoCharSet = 0; break;
-	case A2TYPE_APPLE2JPLUS:	csbits = &csbits_a2j[MemGetAnnunciator(2) ? 1 : 0]; g_nVideoCharSet = 0; break;
-	case A2TYPE_APPLE2E:		csbits = Get2e_csbits();		break;
-	case A2TYPE_APPLE2EENHANCED:csbits = Get2e_csbits();		break;
-	case A2TYPE_PRAVETS82:	    csbits = &csbits_pravets82[0];  g_nVideoCharSet = 0; break;	// Apple ][ clone
-	case A2TYPE_PRAVETS8M:	    csbits = &csbits_pravets8M[0];  g_nVideoCharSet = 0; break;	// Apple ][ clone
-	case A2TYPE_PRAVETS8A:	    csbits = &csbits_pravets8C[0];  break;	// Apple //e clone
-	case A2TYPE_TK30002E:		csbits = &csbits_enhanced2e[0]; break;	// Enhanced Apple //e clone
-	default: _ASSERT(0);		csbits = &csbits_enhanced2e[0]; break;
+	case A2TYPE_APPLE2:			NTSC::csbits = &csbits_a2[0];         g_nVideoCharSet = 0; break;
+	case A2TYPE_APPLE2PLUS:		NTSC::csbits = &csbits_a2[0];         g_nVideoCharSet = 0; break;
+	case A2TYPE_APPLE2JPLUS:	NTSC::csbits = &csbits_a2j[MemGetAnnunciator(2) ? 1 : 0]; g_nVideoCharSet = 0; break;
+	case A2TYPE_APPLE2E:		NTSC::csbits = Get2e_csbits();		break;
+	case A2TYPE_APPLE2EENHANCED:NTSC::csbits = Get2e_csbits();		break;
+	case A2TYPE_PRAVETS82:	    NTSC::csbits = &csbits_pravets82[0];  g_nVideoCharSet = 0; break;	// Apple ][ clone
+	case A2TYPE_PRAVETS8M:	    NTSC::csbits = &csbits_pravets8M[0];  g_nVideoCharSet = 0; break;	// Apple ][ clone
+	case A2TYPE_PRAVETS8A:	    NTSC::csbits = &csbits_pravets8C[0];  break;	// Apple //e clone
+	case A2TYPE_TK30002E:		NTSC::csbits = &csbits_enhanced2e[0]; break;	// Enhanced Apple //e clone
+	default: _ASSERT(0);		NTSC::csbits = &csbits_enhanced2e[0]; break;
 	}
 }
 
 //===========================================================================
-inline float clampZeroOne( const float & x )
+float NTSC::clampZeroOne( const float & x )
 {
 	if (x < 0.f) return 0.f;
 	if (x > 1.f) return 1.f;
@@ -470,61 +436,61 @@ inline float clampZeroOne( const float & x )
 }
 
 //===========================================================================
-inline uint8_t getCharSetBits(int iChar)
+uint8_t NTSC::getCharSetBits(int iChar)
 {
 	return csbits[g_nVideoCharSet][iChar][g_nVideoClockVert & 7];
 }
 
 //===========================================================================
-inline uint16_t getLoResBits( uint8_t iByte )
+uint16_t NTSC::getLoResBits( uint8_t iByte )
 {
 	return g_aPixelMaskGR[ (iByte >> (g_nVideoClockVert & 4)) & 0xF ]; 
 }
 
 //===========================================================================
-inline uint32_t getScanlineColor( const uint16_t signal, const bgra_t *pTable )
+uint32_t NTSC::getScanlineColor( const uint16_t signal, const bgra_t *pTable )
 {
 	g_nSignalBitsNTSC = ((g_nSignalBitsNTSC << 1) | signal) & 0xFFF; // 12-bit
 	return *(uint32_t*) &pTable[ g_nSignalBitsNTSC ];
 }
 
 //===========================================================================
-inline uint32_t* getScanlineNextInbetween()
+uint32_t* NTSC::getScanlineNextInbetween()
 {
 	return (uint32_t*) (g_pVideoAddress - 1*g_kFrameBufferWidth);
 }
 
 #if 0	// don't use this pixel, as it's from the previous video-frame!
-inline uint32_t* getScanlineNext()
+uint32_t* NTSC::getScanlineNext()
 {
 	return (uint32_t*) (g_pVideoAddress - 2*g_kFrameBufferWidth);
 }
 #endif
 //===========================================================================
-inline uint32_t* getScanlinePreviousInbetween()
+uint32_t* NTSC::getScanlinePreviousInbetween()
 {
 	return (uint32_t*) (g_pVideoAddress + 1*g_kFrameBufferWidth);
 }
 
-inline uint32_t* getScanlinePrevious()
+uint32_t* NTSC::getScanlinePrevious()
 {
 	return (uint32_t*) (g_pVideoAddress + 2*g_kFrameBufferWidth);
 }
 //===========================================================================
-inline uint32_t* getScanlineCurrent()
+uint32_t* NTSC::getScanlineCurrent()
 {
 	return (uint32_t*) g_pVideoAddress;
 }
 
 //===========================================================================
-inline void updateColorPhase()
+void NTSC::updateColorPhase()
 {
 	g_nColorPhaseNTSC++;
 	g_nColorPhaseNTSC &= 3;
 }
 
 //===========================================================================
-inline void updateFlashRate() // TODO: Flash rate should be constant (regardless of CPU speed)
+void NTSC::updateFlashRate() // TODO: Flash rate should be constant (regardless of CPU speed)
 {
 	// BUG: In unthrottled CPU mode, flash rate should not be affected
 
@@ -598,7 +564,7 @@ inline void updateFlashRate() // TODO: Flash rate should be constant (regardless
 
 // Original: Prev1(inbetween) = current - 25% of previous AppleII scanline
 // GH#650:   Prev1(inbetween) = 50% of (50% current + 50% of previous AppleII scanline)
-inline void updateFramebufferTVSingleScanline( uint16_t signal, bgra_t *pTable )
+void NTSC::updateFramebufferTVSingleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
 	uint32_t *pLine1Prev = getScanlinePreviousInbetween();
@@ -621,7 +587,7 @@ inline void updateFramebufferTVSingleScanline( uint16_t signal, bgra_t *pTable )
 //===========================================================================
 
 // Original: Prev1(inbetween) = 50% current + 50% of previous AppleII scanline
-inline void updateFramebufferTVDoubleScanline( uint16_t signal, bgra_t *pTable )
+void NTSC::updateFramebufferTVDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
 	uint32_t *pLine1Prev = getScanlinePreviousInbetween();
@@ -641,7 +607,7 @@ inline void updateFramebufferTVDoubleScanline( uint16_t signal, bgra_t *pTable )
 }
 
 //===========================================================================
-inline void updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable )
+void NTSC::updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
 	uint32_t *pLine1Next = getScanlineNextInbetween();
@@ -655,7 +621,7 @@ inline void updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTa
 }
 
 //===========================================================================
-inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable )
+void NTSC::updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable )
 {
 	uint32_t *pLine0Curr = getScanlineCurrent();
 	uint32_t *pLine1Next = getScanlineNextInbetween();
@@ -668,14 +634,14 @@ inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTa
 #endif
 
 //===========================================================================
-inline bool GetColorBurst( void )
+bool NTSC::GetColorBurst( void )
 {
 	return g_nColorBurstPixels >= 2;
 }
 
 //===========================================================================
 
-void update7MonoPixels( uint16_t bits )
+void NTSC::update7MonoPixels(uint16_t bits)
 {
 	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
 	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
@@ -690,7 +656,7 @@ void update7MonoPixels( uint16_t bits )
 
 // NB. g_nLastColumnPixelNTSC = bits.b13 will be superseded by these parent funcs which use bits.b14:
 // . updateScreenDoubleHires80(), updateScreenDoubleLores80(), updateScreenText80()
-inline void updatePixels( uint16_t bits )
+void NTSC::updatePixels( uint16_t bits )
 {
 	if (!GetColorBurst())
 	{ 
@@ -746,7 +712,7 @@ inline void updatePixels( uint16_t bits )
 
 //===========================================================================
 
-inline void updateVideoScannerHorzEOLSimple()
+void NTSC::updateVideoScannerHorzEOLSimple()
 {
 	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 	{
@@ -767,7 +733,7 @@ inline void updateVideoScannerHorzEOLSimple()
 }
 
 // NOTE: This writes out-of-bounds for a 560x384 framebuffer
-inline void updateVideoScannerHorzEOL()
+void NTSC::updateVideoScannerHorzEOL()
 {
 	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 	{
@@ -805,7 +771,7 @@ inline void updateVideoScannerHorzEOL()
 }
 
 //===========================================================================
-inline void updateVideoScannerAddress()
+void NTSC::updateVideoScannerAddress()
 {
 	g_pVideoAddress = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2*g_nVideoClockVert] : g_pScanLines[0];
 
@@ -834,14 +800,14 @@ inline void updateVideoScannerAddress()
 }
 
 //===========================================================================
-INLINE uint16_t getVideoScannerAddressTXT()
+uint16_t NTSC::getVideoScannerAddressTXT()
 {
 	return (g_aClockVertOffsetsTXT[g_nVideoClockVert/8] + 
 		g_pHorzClockOffset         [g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nTextPage  *  0x400));
 }
 
 //===========================================================================
-INLINE uint16_t getVideoScannerAddressHGR()
+uint16_t NTSC::getVideoScannerAddressHGR()
 {
 	// NB. For both A2 and //e use APPLE_IIE_HORZ_CLOCK_OFFSET - see VideoGetScannerAddress() where only TEXT mode adds $1000
 	return (g_aClockVertOffsetsHGR[g_nVideoClockVert  ] + 
@@ -854,7 +820,7 @@ INLINE uint16_t getVideoScannerAddressHGR()
 // Build the 4 phase chroma lookup table
 // The YI'Q' colors are hard-coded
 //===========================================================================
-static void initChromaPhaseTables (void)
+void NTSC::initChromaPhaseTables (void)
 {
 	int phase,s,t,n;
 	real z,y0,y1,c,i,q;
@@ -879,10 +845,10 @@ static void initChromaPhaseTables (void)
 				for(int k = 0; k < 2; k++ )
 				{
 					//z = z * 1.25;
-					zz = initFilterSignal(z);
-					c  = initFilterChroma(zz); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
-					y0 = initFilterLuma0 (zz);
-					y1 = initFilterLuma1 (zz - c);
+					zz = NTSC::initFilterSignal(z);
+					c  = NTSC::initFilterChroma(zz); // "Mostly" correct _if_ CYCLESTART = PI/4 = 45 degrees
+					y0 = NTSC::initFilterLuma0 (zz);
+					y1 = NTSC::initFilterLuma1 (zz - c);
 
 					c = c * 2.f;
 					i = i + (c * cos(phi) - i) / 8.f;
@@ -1046,7 +1012,7 @@ double ButterworthLowPass2( double a, double b, double g, double z )
 // What filter is this ??
 // Filter Order: 2 -> poles for low pass
 //===========================================================================
-static real initFilterChroma (real z)
+real NTSC::initFilterChroma (real z)
 {
 	static real x[CHROMA_ZEROS + 1] = {0,0,0};
 	static real y[CHROMA_POLES + 1] = {0,0,0};
@@ -1060,7 +1026,7 @@ static real initFilterChroma (real z)
 // Butterworth Lowpass digital filter
 // Filter Order: 2 -> poles for low pass
 //===========================================================================
-static real initFilterLuma0 (real z)
+real NTSC::initFilterLuma0 (real z)
 {
 	static real x[LUMA_ZEROS + 1] = { 0,0,0 };
 	static real y[LUMA_POLES + 1] = { 0,0,0 };
@@ -1074,7 +1040,7 @@ static real initFilterLuma0 (real z)
 // Butterworth Lowpass digital filter
 // Filter Order: 2 -> poles for low pass
 //===========================================================================
-static real initFilterLuma1 (real z)
+real NTSC::initFilterLuma1 (real z)
 {
 	static real x[LUMA_ZEROS + 1] = { 0,0,0};
 	static real y[LUMA_POLES + 1] = { 0,0,0};
@@ -1088,7 +1054,7 @@ static real initFilterLuma1 (real z)
 // Butterworth Lowpass digital filter
 // Filter Order: 2 -> poles for low pass
 //===========================================================================
-static real initFilterSignal (real z)
+real NTSC::initFilterSignal (real z)
 {
 	static real x[SIGNAL_ZEROS + 1] = { 0,0,0 };
 	static real y[SIGNAL_POLES + 1] = { 0,0,0 };
@@ -1100,7 +1066,7 @@ static real initFilterSignal (real z)
 }
 
 //===========================================================================
-static void initPixelDoubleMasks (void)
+void NTSC::initPixelDoubleMasks (void)
 {
 	/*
 		Convert 7-bit monochrome luminance to 14-bit double pixel luminance
@@ -1122,7 +1088,7 @@ static void initPixelDoubleMasks (void)
 }
 
 //===========================================================================
-void updateMonochromeTables( uint16_t r, uint16_t g, uint16_t b )
+void NTSC::updateMonochromeTables( uint16_t r, uint16_t g, uint16_t b )
 {
 	for( int iSample = 0; iSample < NTSC_NUM_SEQUENCES; iSample++ )
 	{
@@ -1139,59 +1105,59 @@ void updateMonochromeTables( uint16_t r, uint16_t g, uint16_t b )
 }
 
 //===========================================================================
-static void updatePixelBnWMonitorSingleScanline (uint16_t compositeSignal)
+void NTSC::updatePixelBnWMonitorSingleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorSingleScanline(compositeSignal, g_aBnWMonitorCustom);
 }
 
 //===========================================================================
-static void updatePixelBnWMonitorDoubleScanline (uint16_t compositeSignal)
+void NTSC::updatePixelBnWMonitorDoubleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorDoubleScanline(compositeSignal, g_aBnWMonitorCustom);
 }
 
 //===========================================================================
-static void updatePixelBnWColorTVSingleScanline (uint16_t compositeSignal)
+void NTSC::updatePixelBnWColorTVSingleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferTVSingleScanline(compositeSignal, g_aBnWColorTVCustom);
 }
 
 //===========================================================================
-static void updatePixelBnWColorTVDoubleScanline (uint16_t compositeSignal)
+void NTSC::updatePixelBnWColorTVDoubleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferTVDoubleScanline(compositeSignal, g_aBnWColorTVCustom);
 }
 
 //===========================================================================
-static void updatePixelHueColorTVSingleScanline (uint16_t compositeSignal)
+void NTSC::updatePixelHueColorTVSingleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferTVSingleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
-static void updatePixelHueColorTVDoubleScanline (uint16_t compositeSignal)
+void NTSC::updatePixelHueColorTVDoubleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferTVDoubleScanline(compositeSignal, g_aHueColorTV[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
-static void updatePixelHueMonitorSingleScanline (uint16_t compositeSignal)
+void NTSC::updatePixelHueMonitorSingleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorSingleScanline(compositeSignal, g_aHueMonitor[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
-static void updatePixelHueMonitorDoubleScanline (uint16_t compositeSignal)
+void NTSC::updatePixelHueMonitorDoubleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorDoubleScanline(compositeSignal, g_aHueMonitor[g_nColorPhaseNTSC]);
 	updateColorPhase();
 }
 
 //===========================================================================
-void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
+void NTSC::updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1224,7 +1190,7 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 
 //===========================================================================
 
-void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblHires
+void NTSC::updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblHires
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1290,7 +1256,7 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 	}
 }
 
-void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
+void NTSC::updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1327,7 +1293,7 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 }
 
 //===========================================================================
-void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
+void NTSC::updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1361,7 +1327,7 @@ void updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 
 //===========================================================================
 
-static void updateScreenDoubleLores80Simplified (long cycles6502) // wsUpdateVideoDblLores
+void NTSC::updateScreenDoubleLores80Simplified (long cycles6502) // wsUpdateVideoDblLores
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1390,7 +1356,7 @@ static void updateScreenDoubleLores80Simplified (long cycles6502) // wsUpdateVid
 	}
 }
 
-void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
+void NTSC::updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1431,7 +1397,7 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 }
 
 //===========================================================================
-static void updateScreenSingleHires40Simplified (long cycles6502)
+void NTSC::updateScreenSingleHires40Simplified (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1474,7 +1440,7 @@ static void updateScreenSingleHires40Simplified (long cycles6502)
 	}
 }
 
-void updateScreenSingleHires40 (long cycles6502)
+void NTSC::updateScreenSingleHires40 (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1515,7 +1481,7 @@ void updateScreenSingleHires40 (long cycles6502)
 }
 
 //===========================================================================
-static void updateScreenSingleLores40Simplified (long cycles6502)
+void NTSC::updateScreenSingleLores40Simplified (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1544,7 +1510,7 @@ static void updateScreenSingleLores40Simplified (long cycles6502)
 	}
 }
 
-void updateScreenSingleLores40 (long cycles6502)
+void NTSC::updateScreenSingleLores40 (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1576,7 +1542,7 @@ void updateScreenSingleLores40 (long cycles6502)
 }
 
 //===========================================================================
-void updateScreenText40 (long cycles6502)
+void NTSC::updateScreenText40 (long cycles6502)
 {
 	for (; cycles6502 > 0; --cycles6502)
 	{
@@ -1608,7 +1574,7 @@ void updateScreenText40 (long cycles6502)
 }
 
 //===========================================================================
-void updateScreenText80 (long cycles6502)
+void NTSC::updateScreenText80 (long cycles6502)
 {
 	for (; cycles6502 > 0; --cycles6502)
 	{
@@ -1652,7 +1618,7 @@ void updateScreenText80 (long cycles6502)
 // Functions (Public) _____________________________________________________________________________
 
 //===========================================================================
-uint32_t*NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeColorTV )
+uint32_t*	NTSC::NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeColorTV )
 {
 	if( bHueTypeMonochrome )
 	{
@@ -1677,14 +1643,14 @@ uint32_t*NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeCol
 }
 
 //===========================================================================
-void NTSC_VideoClockResync(const DWORD dwCyclesThisFrame)
+void NTSC::NTSC_VideoClockResync(const DWORD dwCyclesThisFrame)
 {
 	g_nVideoClockVert = (uint16_t)(dwCyclesThisFrame / VIDEO_SCANNER_MAX_HORZ) % g_videoScannerMaxVert;
 	g_nVideoClockHorz = (uint16_t)(dwCyclesThisFrame % VIDEO_SCANNER_MAX_HORZ);
 }
 
 //===========================================================================
-uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
+uint16_t NTSC::NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 {
 	if (g_bFullSpeed)
 	{
@@ -1718,14 +1684,14 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 	return addr;
 }
 
-uint16_t NTSC_VideoGetScannerAddressForDebugger(void)
+uint16_t NTSC::NTSC_VideoGetScannerAddressForDebugger(void)
 {
 	ResetCyclesExecutedForDebugger();		// if in full-speed, then reset cycles so that CpuCalcCycles() doesn't ASSERT
 	return NTSC_VideoGetScannerAddress(0);
 }
 
 //===========================================================================
-void NTSC_SetVideoTextMode( int cols )
+void NTSC::NTSC_SetVideoTextMode( int cols )
 {
 	if( cols == 40 )
 		g_pFuncUpdateTextScreen = updateScreenText40;
@@ -1734,7 +1700,7 @@ void NTSC_SetVideoTextMode( int cols )
 }
 
 //===========================================================================
-void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
+void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 {
 	if (bDelay && !g_bFullSpeed)
 	{
@@ -1820,7 +1786,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 //===========================================================================
 
-void NTSC_SetVideoStyle() // (int v, int s)
+void NTSC::NTSC_SetVideoStyle() // (int v, int s)
 {
     int half = g_pVideo->IsVideoStyle(VS_HALF_SCANLINES);
 	uint8_t r, g, b;
@@ -1917,10 +1883,9 @@ _mono:
 }
 
 //===========================================================================
-void GenerateVideoTables( void );
-void GenerateBaseColors(baseColors_t pBaseNtscColors);
 
-void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
+
+void NTSC::NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 {
 	make_csbits();
 	GenerateVideoTables();
@@ -2002,7 +1967,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 }
 
 //===========================================================================
-void NTSC_VideoReinitialize( DWORD cyclesThisFrame, bool bInitVideoScannerAddress )
+void NTSC::NTSC_VideoReinitialize( DWORD cyclesThisFrame, bool bInitVideoScannerAddress )
 {
 	if (cyclesThisFrame >= g_videoScanner6502Cycles)
 	{
@@ -2018,7 +1983,7 @@ void NTSC_VideoReinitialize( DWORD cyclesThisFrame, bool bInitVideoScannerAddres
 }
 
 //===========================================================================
-void NTSC_VideoInitAppleType ()
+void NTSC::NTSC_VideoInitAppleType ()
 {
 	int model = GetApple2Type();
 
@@ -2028,13 +1993,13 @@ void NTSC_VideoInitAppleType ()
 	else
 		g_pHorzClockOffset = APPLE_IIP_HORZ_CLOCK_OFFSET;
 
-	set_csbits();
+	NTSC::set_csbits();
 }
 
 //===========================================================================
-void NTSC_VideoInitChroma()
+void NTSC::NTSC_VideoInitChroma()
 {
-	initChromaPhaseTables();
+	NTSC::initChromaPhaseTables();
 }
 
 //===========================================================================
@@ -2051,7 +2016,7 @@ void NTSC_VideoInitChroma()
 // .  2-14: After one emulated 6502/65C02 opcode (optionally with IRQ)
 // . ~1000: After 1ms of Z80 emulation
 // . 17030: From NTSC_VideoRedrawWholeScreen()
-static void VideoUpdateCycles( int cyclesLeftToUpdate )
+void NTSC::VideoUpdateCycles( int cyclesLeftToUpdate )
 {
 	const int cyclesToEndOfLine = VIDEO_SCANNER_MAX_HORZ - g_nVideoClockHorz;
 
@@ -2089,7 +2054,7 @@ static void VideoUpdateCycles( int cyclesLeftToUpdate )
 }
 
 //===========================================================================
-void NTSC_VideoUpdateCycles( UINT cycles6502 )
+void NTSC::NTSC_VideoUpdateCycles( UINT cycles6502 )
 {
 #ifdef LOG_PERF_TIMINGS
 	extern UINT64 g_timeVideo;
@@ -2114,7 +2079,7 @@ void NTSC_VideoUpdateCycles( UINT cycles6502 )
 }
 
 //===========================================================================
-void NTSC_VideoRedrawWholeScreen( void )
+void NTSC::NTSC_VideoRedrawWholeScreen( void )
 {
 #ifdef _DEBUG
 	const uint16_t currVideoClockVert = g_nVideoClockVert;
@@ -2140,7 +2105,7 @@ void NTSC_VideoRedrawWholeScreen( void )
 
 //===========================================================================
 
-static bool CheckVideoTables2( eApple2Type type, uint32_t mode )
+bool NTSC::CheckVideoTables2( eApple2Type type, uint32_t mode )
 {
 	SetApple2Type(type);
 	NTSC_VideoInitAppleType();
@@ -2175,7 +2140,7 @@ static bool CheckVideoTables2( eApple2Type type, uint32_t mode )
 	return true;
 }
 
-static void CheckVideoTables( void )
+void NTSC::CheckVideoTables( void )
 {
 	CheckVideoTables2(A2TYPE_APPLE2PLUS, VF_HIRES);
 	CheckVideoTables2(A2TYPE_APPLE2PLUS, VF_TEXT);
@@ -2183,12 +2148,12 @@ static void CheckVideoTables( void )
 	CheckVideoTables2(A2TYPE_APPLE2E,    VF_TEXT);
 }
 
-static bool IsNTSC(void)
+bool NTSC::IsNTSC(void)
 {
 	return g_videoScannerMaxVert == VIDEO_SCANNER_MAX_VERT;
 }
 
-static void GenerateVideoTables( void )
+void NTSC::GenerateVideoTables( void )
 {
 	eApple2Type currentApple2Type = GetApple2Type();
 	uint32_t currentVideoMode = g_pVideo->g_uVideoMode;
@@ -2277,7 +2242,7 @@ static void GenerateVideoTables( void )
 	g_nTextPage = currentTextPage;
 }
 
-static void GenerateBaseColors(baseColors_t pBaseNtscColors)
+void NTSC::GenerateBaseColors(baseColors_t pBaseNtscColors)
 {
 	for (UINT i=0; i<16; i++)
 	{
@@ -2307,7 +2272,7 @@ static void GenerateBaseColors(baseColors_t pBaseNtscColors)
 
 //===========================================================================
 
-void NTSC_SetRefreshRate(VideoRefreshRate_e rate)
+void NTSC::NTSC_SetRefreshRate(VideoRefreshRate_e rate)
 {
 	if (rate == VR_50HZ)
 	{
@@ -2323,22 +2288,22 @@ void NTSC_SetRefreshRate(VideoRefreshRate_e rate)
 	GenerateVideoTables();
 }
 
-UINT NTSC_GetCyclesPerFrame(void)
+UINT NTSC::NTSC_GetCyclesPerFrame(void)
 {
 	return g_videoScanner6502Cycles;
 }
 
-UINT NTSC_GetCyclesPerLine(void)
+UINT NTSC::NTSC_GetCyclesPerLine(void)
 {
 	return VIDEO_SCANNER_MAX_HORZ;
 }
 
-UINT NTSC_GetVideoLines(void)
+UINT NTSC::NTSC_GetVideoLines(void)
 {
 	return (g_pVideo->GetVideoRefreshRate() == VR_50HZ) ? VIDEO_SCANNER_MAX_VERT_PAL : VIDEO_SCANNER_MAX_VERT;
 }
 
-bool NTSC_IsVisible(void)
+bool NTSC::NTSC_IsVisible(void)
 {
 	return (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START);
 }

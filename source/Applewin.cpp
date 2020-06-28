@@ -395,7 +395,7 @@ static void ContinueExecution(void)
 
 	//
 
-	const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
+	const UINT dwClksPerFrame = NTSC::NTSC_GetCyclesPerFrame();
 	if ((g_dwCyclesThisFrame >= dwClksPerFrame && !g_pVideo->VideoGetVblBarEx(g_dwCyclesThisFrame)) || IsDebugSteppingCycleAccurate())
 	{
 #ifdef LOG_PERF_TIMINGS
@@ -2182,7 +2182,7 @@ static void Shutdown(void)
 		ChangeDisplaySettings(NULL, 0);	// restore default
 
 	// Release COM
-	DDUninit();
+	g_pVideo->DDUninit();
 	SysClk_UninitTimer();
 	LogFileOutput("Exit: SysClk_UninitTimer()\n");
 

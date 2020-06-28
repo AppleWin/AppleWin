@@ -650,7 +650,7 @@ static DWORD Cpu65D02(DWORD uTotalCycles, const bool bVideoUpdate, bool is65C02)
 		if (bVideoUpdate)
 		{
 			ULONG uElapsedCycles = uExecutedCycles - uPreviousCycles;
-			NTSC_VideoUpdateCycles(uElapsedCycles);
+			g_pVideo->NTSC_VideoUpdateCycles(uElapsedCycles);
 		}
 		// NTSC_END
 

@@ -210,7 +210,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("SH")          , CmdMemorySearchHex   , CMD_MEMORY_SEARCH_HEX    , "Search memory for hex values" },
 		{TEXT("F")           , CmdMemoryFill        , CMD_MEMORY_FILL          , "Memory fill"                  },
 
-		{TEXT("NTSC")        , CmdNTSC              , CMD_NTSC                 , "Save/Load the NTSC palette"   },
+	//	{TEXT("NTSC")        , CmdNTSC              , CMD_NTSC                 , "Save/Load the NTSC palette"   },
 		{TEXT("TSAVE")       , CmdTextSave          , CMD_TEXT_SAVE            , "Save text screen"             },
 	// Output / Scripts
 		{TEXT("CALC")        , CmdOutputCalc        , CMD_OUTPUT_CALC          , "Display mini calc result"               },
