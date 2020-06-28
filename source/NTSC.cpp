@@ -811,7 +811,7 @@ inline void updateVideoScannerAddress()
 
 	// Adjust, as these video styles have 2x 14M pixels of pre-render
 	// NB. For VT_COLOR_MONITOR_NTSC, also check color-burst so that TEXT and MIXED(HGR+TEXT) render the TEXT at the same offset (GH#341)
-	if (g_eVideoType == VT_MONO_TV || g_eVideoType == VT_COLOR_TV || (g_eVideoType == VT_COLOR_MONITOR_NTSC && GetColorBurst()))
+	if (g_pVideo->g_eVideoType == VT_MONO_TV || g_pVideo->g_eVideoType == VT_COLOR_TV || (g_pVideo->g_eVideoType == VT_COLOR_MONITOR_NTSC && GetColorBurst()))
 		g_pVideoAddress -= 2;
 
 	// GH#555: For the 14M video modes (DHGR,DGR,80COL), start rendering 1x 14M pixel early to account for these video modes being shifted right by 1 pixel
@@ -823,7 +823,7 @@ inline void updateVideoScannerAddress()
 		(g_pFuncUpdateGraphicsScreen == updateScreenDoubleLores80) ||
 		(g_pFuncUpdateGraphicsScreen == updateScreenText80) ||
 		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && g_pFuncUpdateTextScreen == updateScreenText80))
-		&& (g_eVideoType != VT_COLOR_MONITOR_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
+		&& (g_pVideo->g_eVideoType != VT_COLOR_MONITOR_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
 	{
 		g_pVideoAddress -= 1;
 	}
@@ -1639,7 +1639,7 @@ void updateScreenText80 (long cycles6502)
 					aux ^= g_nTextFlashMask;
 
 				uint16_t bits = (main << 7) | (aux & 0x7f);
-				if (g_eVideoType != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
+				if (g_pVideo->g_eVideoType != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
 					bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
 				updatePixels( bits );
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
@@ -1706,7 +1706,7 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 	}
 
 	uint16_t addr;
-	bool bHires = (g_uVideoMode & VF_HIRES) && !(g_uVideoMode & VF_TEXT); // SW_HIRES && !SW_TEXT
+	bool bHires = (g_pVideo->g_uVideoMode & VF_HIRES) && !(g_pVideo->g_uVideoMode & VF_TEXT); // SW_HIRES && !SW_TEXT
 	if( bHires )
 		addr = getVideoScannerAddressHGR();
 	else
@@ -1746,7 +1746,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	}
 
 	g_nVideoMixed   = uVideoModeFlags & VF_MIXED;
-	g_nVideoCharSet = VideoGetSWAltCharSet() ? 1 : 0;
+	g_nVideoCharSet = g_pVideo->VideoGetSWAltCharSet() ? 1 : 0;
 
 	g_nTextPage  = 1;
 	g_nHiresPage = 1;
@@ -1774,7 +1774,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+				if (g_pVideo->g_eVideoType == VT_COLOR_MONITOR_RGB)
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80Simplified;
 				else
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
@@ -1786,7 +1786,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 		else
 		{
-			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+			if (g_pVideo->g_eVideoType == VT_COLOR_MONITOR_RGB)
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Simplified;
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
@@ -1798,7 +1798,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+				if (g_pVideo->g_eVideoType == VT_COLOR_MONITOR_RGB)
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simplified;
 				else
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
@@ -1810,7 +1810,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 		else
 		{
-			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+			if (g_pVideo->g_eVideoType == VT_COLOR_MONITOR_RGB)
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simplified;
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
@@ -1822,10 +1822,10 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 void NTSC_SetVideoStyle() // (int v, int s)
 {
-    int half = IsVideoStyle(VS_HALF_SCANLINES);
+    int half = g_pVideo->IsVideoStyle(VS_HALF_SCANLINES);
 	uint8_t r, g, b;
 
-	switch ( g_eVideoType )
+	switch (g_pVideo->g_eVideoType )
 	{
 		case VT_COLOR_TV:
 			r = 0xFF;
@@ -1899,9 +1899,9 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			//#define GetRValue(rgb)      (LOBYTE(rgb))
 			//#define GetGValue(rgb)      (LOBYTE(((WORD)(rgb)) >> 8))
 			//#define GetBValue(rgb)      (LOBYTE((rgb)>>16))
-			r = (g_nMonochromeRGB >>  0) & 0xFF;
-			g = (g_nMonochromeRGB >>  8) & 0xFF;
-			b = (g_nMonochromeRGB >> 16) & 0xFF;
+			r = (g_pVideo->g_nMonochromeRGB >>  0) & 0xFF;
+			g = (g_pVideo->g_nMonochromeRGB >>  8) & 0xFF;
+			b = (g_pVideo->g_nMonochromeRGB >> 16) & 0xFF;
 _mono:
 			updateMonochromeTables( r, g, b ); // Custom Monochrome color
 			if (half)
@@ -1931,7 +1931,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
 	{
 		uint32_t offset = sizeof(bgra_t) * GetFrameBufferWidth() * ((GetFrameBufferHeight() - 1) - y - GetFrameBufferBorderHeight()) + (sizeof(bgra_t) * GetFrameBufferBorderWidth());
-		g_pScanLines[y] = (bgra_t*) (g_pFramebufferbits + offset);
+		g_pScanLines[y] = (bgra_t*) (g_pVideo->g_pFramebufferbits + offset);
 	}
 
 	g_pVideoAddress = g_pScanLines[0];
@@ -1939,7 +1939,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	g_pFuncUpdateTextScreen     = updateScreenText40;
 	g_pFuncUpdateGraphicsScreen = updateScreenText40;
 
-	VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
+	g_pVideo->VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
 
 	bgra_t baseColors[kNumBaseColors];
 	GenerateBaseColors(&baseColors);
@@ -2145,15 +2145,15 @@ static bool CheckVideoTables2( eApple2Type type, uint32_t mode )
 	SetApple2Type(type);
 	NTSC_VideoInitAppleType();
 
-	g_uVideoMode = mode;
+	g_pVideo->g_uVideoMode = mode;
 
 	g_dwCyclesThisFrame = 0;
 	g_nVideoClockHorz = g_nVideoClockVert = 0;
 
 	for (DWORD cycles=0; cycles<VIDEO_SCANNER_MAX_VERT*VIDEO_SCANNER_MAX_HORZ; cycles++)
 	{
-		WORD addr1 = VideoGetScannerAddress(cycles);
-		WORD addr2 = g_uVideoMode & VF_TEXT ? getVideoScannerAddressTXT()
+		WORD addr1 = g_pVideo->VideoGetScannerAddress(cycles);
+		WORD addr2 = g_pVideo->g_uVideoMode & VF_TEXT ? getVideoScannerAddressTXT()
 											: getVideoScannerAddressHGR();
 		_ASSERT(addr1 == addr2);
 		if (addr1 != addr2)
@@ -2191,7 +2191,7 @@ static bool IsNTSC(void)
 static void GenerateVideoTables( void )
 {
 	eApple2Type currentApple2Type = GetApple2Type();
-	uint32_t currentVideoMode = g_uVideoMode;
+	uint32_t currentVideoMode = g_pVideo->g_uVideoMode;
 	int currentHiresPage = g_nHiresPage;
 	int currentTextPage = g_nTextPage;
 
@@ -2201,18 +2201,18 @@ static void GenerateVideoTables( void )
 	// g_aClockVertOffsetsHGR[]
 	//
 
-	g_uVideoMode = VF_HIRES;
+	g_pVideo->g_uVideoMode = VF_HIRES;
 	{
 		UINT i = 0, cycle = VIDEO_SCANNER_HORZ_START;
 		for (; i < VIDEO_SCANNER_MAX_VERT; i++, cycle += VIDEO_SCANNER_MAX_HORZ)
 		{
-			g_aClockVertOffsetsHGR[i] = VideoGetScannerAddress(cycle, VS_PartialAddrV);
+			g_aClockVertOffsetsHGR[i] = g_pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrV);
 			if (IsNTSC()) _ASSERT(g_aClockVertOffsetsHGR[i] == g_kClockVertOffsetsHGR[i]);
 		}
 		if (!IsNTSC())
 		{
 			for (; i < VIDEO_SCANNER_MAX_VERT_PAL; i++, cycle += VIDEO_SCANNER_MAX_HORZ)
-				g_aClockVertOffsetsHGR[i] = VideoGetScannerAddress(cycle, VS_PartialAddrV);
+				g_aClockVertOffsetsHGR[i] = g_pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrV);
 		}
 	}
 
@@ -2220,18 +2220,18 @@ static void GenerateVideoTables( void )
 	// g_aClockVertOffsetsTXT[]
 	//
 
-	g_uVideoMode = VF_TEXT;
+	g_pVideo->g_uVideoMode = VF_TEXT;
 	{
 		UINT i = 0, cycle = VIDEO_SCANNER_HORZ_START;
 		for (; i < (256 + 8) / 8; i++, cycle += VIDEO_SCANNER_MAX_HORZ * 8)
 		{
-			g_aClockVertOffsetsTXT[i] = VideoGetScannerAddress(cycle, VS_PartialAddrV);
+			g_aClockVertOffsetsTXT[i] = g_pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrV);
 			if (IsNTSC()) _ASSERT(g_aClockVertOffsetsTXT[i] == g_kClockVertOffsetsTXT[i]);
 		}
 		if (!IsNTSC())
 		{
 			for (; i < VIDEO_SCANNER_MAX_VERT_PAL / 8; i++, cycle += VIDEO_SCANNER_MAX_HORZ * 8)
-				g_aClockVertOffsetsTXT[i] = VideoGetScannerAddress(cycle, VS_PartialAddrV);
+				g_aClockVertOffsetsTXT[i] = g_pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrV);
 		}
 	}
 
@@ -2239,13 +2239,13 @@ static void GenerateVideoTables( void )
 	// APPLE_IIP_HORZ_CLOCK_OFFSET[]
 	//
 
-	g_uVideoMode = VF_TEXT;
+	g_pVideo->g_uVideoMode = VF_TEXT;
 	SetApple2Type(A2TYPE_APPLE2PLUS);
 	for (UINT j=0; j<5; j++)
 	{
 		for (UINT i=0, cycle=j*64*VIDEO_SCANNER_MAX_HORZ; i<VIDEO_SCANNER_MAX_HORZ; i++, cycle++)
 		{
-			APPLE_IIP_HORZ_CLOCK_OFFSET[j][i] = VideoGetScannerAddress(cycle, VS_PartialAddrH);
+			APPLE_IIP_HORZ_CLOCK_OFFSET[j][i] = g_pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrH);
 			if (IsNTSC()) _ASSERT(APPLE_IIP_HORZ_CLOCK_OFFSET[j][i] == kAPPLE_IIP_HORZ_CLOCK_OFFSET[j][i]);
 		}
 	}
@@ -2254,13 +2254,13 @@ static void GenerateVideoTables( void )
 	// APPLE_IIE_HORZ_CLOCK_OFFSET[]
 	//
 
-	g_uVideoMode = VF_TEXT;
+	g_pVideo->g_uVideoMode = VF_TEXT;
 	SetApple2Type(A2TYPE_APPLE2E);
 	for (UINT j=0; j<5; j++)
 	{
 		for (UINT i=0, cycle=j*64*VIDEO_SCANNER_MAX_HORZ; i<VIDEO_SCANNER_MAX_HORZ; i++, cycle++)
 		{
-			APPLE_IIE_HORZ_CLOCK_OFFSET[j][i] = VideoGetScannerAddress(cycle, VS_PartialAddrH);
+			APPLE_IIE_HORZ_CLOCK_OFFSET[j][i] = g_pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrH);
 			if (IsNTSC()) _ASSERT(APPLE_IIE_HORZ_CLOCK_OFFSET[j][i] == kAPPLE_IIE_HORZ_CLOCK_OFFSET[j][i]);
 		}
 	}
@@ -2272,7 +2272,7 @@ static void GenerateVideoTables( void )
 //	VideoResetState();
 
 	SetApple2Type(currentApple2Type);
-	g_uVideoMode = currentVideoMode;
+	g_pVideo->g_uVideoMode = currentVideoMode;
 	g_nHiresPage = currentHiresPage;
 	g_nTextPage = currentTextPage;
 }
@@ -2335,7 +2335,7 @@ UINT NTSC_GetCyclesPerLine(void)
 
 UINT NTSC_GetVideoLines(void)
 {
-	return (GetVideoRefreshRate() == VR_50HZ) ? VIDEO_SCANNER_MAX_VERT_PAL : VIDEO_SCANNER_MAX_VERT;
+	return (g_pVideo->GetVideoRefreshRate() == VR_50HZ) ? VIDEO_SCANNER_MAX_VERT_PAL : VIDEO_SCANNER_MAX_VERT;
 }
 
 bool NTSC_IsVisible(void)

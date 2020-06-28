@@ -301,7 +301,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 			{
 				g_bTK3KModeKey = (GetKeyState(VK_SCROLL) & 1) ? true : false;	// Sync with the Scroll Lock status
 				FrameRefreshStatus(DRAW_LEDS);	// TODO: Implement |Mode| LED in the UI; make it appear only when in TK3000 mode
-				VideoRedrawScreen();	// TODO: Still need to implement page mode switching and 'whatnot'
+				g_pVideo->VideoRedrawScreen();	// TODO: Still need to implement page mode switching and 'whatnot'
 			}
 			return;
 		}

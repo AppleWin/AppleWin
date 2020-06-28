@@ -7,6 +7,7 @@
 #include "Video.h"
 #include "RGBMonitor.h"
 #include "YamlHelper.h"
+#include "AppleWin.h"
 
 const int HIRES_COLUMN_SUBUNIT_SIZE = 16;
 const int HIRES_COLUMN_UNIT_SIZE = (HIRES_COLUMN_SUBUNIT_SIZE)*2;
@@ -464,7 +465,7 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 
 	const int matx = x*14;
 	const int maty = HGR_MATRIX_YOFFSET + y;
-	const bool isSWMIXED = VideoGetSWMIXED();
+	const bool isSWMIXED = g_pVideo->VideoGetSWMIXED();
 
 	// transfer 14 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
 	for (int nBytes=13; nBytes>=0; nBytes--)
@@ -472,7 +473,7 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 		hgrpixelmatrix[matx+nBytes][maty] = *(pSrc+nBytes);
 	}
 
-	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const bool bIsHalfScanLines = g_pVideo->IsVideoStyle(VS_HALF_SCANLINES);
 	const UINT frameBufferWidth = GetFrameBufferWidth();
 
 	for (int nBytes=13; nBytes>=0; nBytes--)
@@ -509,7 +510,7 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 	UINT32* pDst = (UINT32*) pVideoAddress;
 	const BYTE* const pSrc = g_aSourceStartofLine[ sy ] + sx;
 
-	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const bool bIsHalfScanLines = g_pVideo->IsVideoStyle(VS_HALF_SCANLINES);
 	const UINT frameBufferWidth = GetFrameBufferWidth();
 
 	while (h--)
@@ -544,7 +545,7 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	BYTE byteval2 =            *(pMain);
 	BYTE byteval3 = (x < 39) ? *(pMain+1) : 0;
 
-	if (IsVideoStyle(VS_COLOR_VERTICAL_BLEND))
+	if (g_pVideo->IsVideoStyle(VS_COLOR_VERTICAL_BLEND))
 	{
 		CopyMixedSource(x, y, SRCOFFS_HIRES+HIRES_COLUMN_OFFSET+((x & 1)*HIRES_COLUMN_SUBUNIT_SIZE), (int)byteval2, pVideoAddress);
 	}
@@ -759,7 +760,7 @@ void RGB_SetVideoMode(WORD address)
 	// . Apple II desktop sets DHGR B&W mode with HIRES off! (GH#631)
 	// Maybe there is no video-mode precondition?
 	// . After setting 80COL on/off then need a 0x5E->0x5F toggle. So if we see a 0x5F then reset (GH#633)
-	if ((g_uVideoMode & VF_MIXED) || (g_rgbSet80COL && address == 0x5F))
+	if ((g_pVideo->g_uVideoMode & VF_MIXED) || (g_rgbSet80COL && address == 0x5F))
 	{
 		g_rgbMode = 0;
 		g_rgbPrevAN3Addr = 0;
@@ -770,7 +771,7 @@ void RGB_SetVideoMode(WORD address)
 	if (address == 0x5F && g_rgbPrevAN3Addr == 0x5E)	// Check for AN3 clock transition
 	{
 		g_rgbFlags = (g_rgbFlags<<1) & 3;
-		g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
+		g_rgbFlags |= ((g_pVideo->g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
 		g_rgbMode = g_rgbFlags;								// latch F2,F1
 	}
 

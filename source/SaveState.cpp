@@ -235,11 +235,11 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	JoyLoadSnapshot(yamlLoadHelper);
 	KeybLoadSnapshot(yamlLoadHelper, version);
 	SpkrLoadSnapshot(yamlLoadHelper);
-	VideoLoadSnapshot(yamlLoadHelper, version);
+	g_pVideo->VideoLoadSnapshot(yamlLoadHelper, version);
 	MemLoadSnapshot(yamlLoadHelper, version);
 
 	// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)
-	VideoReinitialize();	// g_CharsetType changed
+	g_pVideo->VideoReinitialize();	// g_CharsetType changed
 	FrameUpdateApple2Type();	// Calls VideoRedrawScreen() before the aux mem has been loaded (so if DHGR is enabled, then aux mem will be zeros at this stage)
 }
 
@@ -442,8 +442,8 @@ static void Snapshot_LoadState_v2(void)
 		HD_SetEnabled(false);
 
 		KeybReset();
-		VideoResetState();
-		SetVideoRefreshRate(VR_60HZ);		// Default to 60Hz as older save-states won't contain refresh rate
+		g_pVideo->VideoResetState();
+		g_pVideo->SetVideoRefreshRate(VR_60HZ);		// Default to 60Hz as older save-states won't contain refresh rate
 		MB_InitializeForLoadingSnapshot();	// GH#609
 #ifdef USE_SPEECH_API
 		g_Speech.Reset();
@@ -536,7 +536,7 @@ void Snapshot_SaveState(void)
 			JoySaveSnapshot(yamlSaveHelper);
 			KeybSaveSnapshot(yamlSaveHelper);
 			SpkrSaveSnapshot(yamlSaveHelper);
-			VideoSaveSnapshot(yamlSaveHelper);
+			g_pVideo->VideoSaveSnapshot(yamlSaveHelper);
 			MemSaveSnapshot(yamlSaveHelper);
 		}
 

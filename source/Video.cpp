@@ -135,7 +135,7 @@ static LPDIRECTDRAW g_lpDD = NULL;
 	void videoCreateDIBSection();
 
 //===========================================================================
-void VideoInitialize ()
+void Video::VideoInitialize ()
 {
 	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
 	VideoResetState();
@@ -169,7 +169,7 @@ void VideoInitialize ()
 //
 
 //===========================================================================
-void VideoBenchmark () {
+void Video::VideoBenchmark () {
   Sleep(500);
 
   // PREPARE TWO DIFFERENT FRAME BUFFERS, EACH OF WHICH HAVE HALF OF THE
@@ -343,7 +343,7 @@ void VideoBenchmark () {
             
 // This is called from PageConfig
 //===========================================================================
-void VideoChooseMonochromeColor ()
+void Video::VideoChooseMonochromeColor ()
 {
 	CHOOSECOLOR cc;
 	ZeroMemory(&cc,sizeof(CHOOSECOLOR));
@@ -365,7 +365,7 @@ void VideoChooseMonochromeColor ()
 }
 
 //===========================================================================
-void VideoDestroy () {
+Video::~Video () {
 
   // DESTROY BUFFERS
   VirtualFree(g_pFramebufferinfo,0,MEM_RELEASE);
@@ -404,7 +404,7 @@ static void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int sr
 }
 
 //===========================================================================
-void VideoDisplayLogo () 
+void Video::VideoDisplayLogo () 
 {
 	int nLogoX = 0, nLogoY = 0;
 	int scale = GetViewportScale();
@@ -477,7 +477,7 @@ void VideoDisplayLogo ()
 
 //===========================================================================
 
-void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=false*/)
+void Video::VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=false*/)
 {
 	static DWORD dwFullSpeedStartTime = 0;
 //	static bool bValid = false;
@@ -543,7 +543,7 @@ void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=fal
 
 //===========================================================================
 
-void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
+void Video::VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
 	NTSC_VideoClockResync(dwCyclesThisFrame);
 	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
@@ -551,7 +551,7 @@ void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 
 //===========================================================================
 
-void VideoRedrawScreen (void)
+void Video::VideoRedrawScreen (void)
 {
 	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
 	VideoRefreshScreen( g_uVideoMode, true);
@@ -559,7 +559,7 @@ void VideoRedrawScreen (void)
 
 //===========================================================================
 
-void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/)
+void Video::VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/)
 {
 
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
@@ -614,7 +614,7 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 }
 
 //===========================================================================
-void VideoReinitialize (bool bInitVideoScannerAddress /*= true*/)
+void Video::VideoReinitialize (bool bInitVideoScannerAddress /*= true*/)
 {
 	NTSC_VideoReinitialize( g_dwCyclesThisFrame, bInitVideoScannerAddress );
 	NTSC_VideoInitAppleType();
@@ -624,7 +624,7 @@ void VideoReinitialize (bool bInitVideoScannerAddress /*= true*/)
 }
 
 //===========================================================================
-void VideoResetState ()
+void Video::VideoResetState ()
 {
 	g_nAltCharSetOffset    = 0;
 	g_uVideoMode           = VF_TEXT;
@@ -637,7 +637,7 @@ void VideoResetState ()
 
 //===========================================================================
 
-BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
+BYTE Video::VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 {
 	address &= 0xFF;
 
@@ -678,42 +678,42 @@ BYTE VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
 
 //===========================================================================
 
-bool VideoGetSW80COL(void)
+bool Video::VideoGetSW80COL(void)
 {
 	return SW_80COL ? true : false;
 }
 
-bool VideoGetSWDHIRES(void)
+bool Video::VideoGetSWDHIRES(void)
 {
 	return SW_DHIRES ? true : false;
 }
 
-bool VideoGetSWHIRES(void)
+bool Video::VideoGetSWHIRES(void)
 {
 	return SW_HIRES ? true : false;
 }
 
-bool VideoGetSW80STORE(void)
+bool Video::VideoGetSW80STORE(void)
 {
 	return SW_80STORE ? true : false;
 }
 
-bool VideoGetSWMIXED(void)
+bool Video::VideoGetSWMIXED(void)
 {
 	return SW_MIXED ? true : false;
 }
 
-bool VideoGetSWPAGE2(void)
+bool Video::VideoGetSWPAGE2(void)
 {
 	return SW_PAGE2 ? true : false;
 }
 
-bool VideoGetSWTEXT(void)
+bool Video::VideoGetSWTEXT(void)
 {
 	return SW_TEXT ? true : false;
 }
 
-bool VideoGetSWAltCharSet(void)
+bool Video::VideoGetSWAltCharSet(void)
 {
 	return g_nAltCharSetOffset != 0;
 }
@@ -731,7 +731,7 @@ static std::string VideoGetSnapshotStructName(void)
 	return name;
 }
 
-void VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+void Video::VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", VideoGetSnapshotStructName().c_str());
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALT_CHARSET, g_nAltCharSetOffset ? true : false);
@@ -740,7 +740,7 @@ void VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_VIDEO_REFRESH_RATE, (UINT)GetVideoRefreshRate());
 }
 
-void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
+void Video::VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (!yamlLoadHelper.GetSubMap(VideoGetSnapshotStructName()))
 		return;
@@ -764,7 +764,7 @@ void VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 // References to Jim Sather's books are given as eg:
 // UTAIIe:5-7,P3 (Understanding the Apple IIe, chapter 5, page 7, Paragraph 3)
 //
-WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= VS_FullAddr*/)
+WORD Video::VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= VS_FullAddr*/)
 {
     // machine state switches
     //
@@ -881,7 +881,7 @@ WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= V
 //===========================================================================
 
 // Called when *outside* of CpuExecute()
-bool VideoGetVblBarEx(const DWORD dwCyclesThisFrame)
+bool Video::VideoGetVblBarEx(const DWORD dwCyclesThisFrame)
 {
 	if (g_bFullSpeed)
 	{
@@ -893,7 +893,7 @@ bool VideoGetVblBarEx(const DWORD dwCyclesThisFrame)
 }
 
 // Called when *inside* CpuExecute()
-bool VideoGetVblBar(const DWORD uExecutedCycles)
+bool Video::VideoGetVblBar(const DWORD uExecutedCycles)
 {
 	if (g_bFullSpeed)
 	{
@@ -987,7 +987,7 @@ const  int nMaxScreenShot = 999999999;
 static std::string g_pLastDiskImageName;
 
 //===========================================================================
-void Video_ResetScreenshotCounter( const std::string & pImageName )
+void Video::Video_ResetScreenshotCounter( const std::string & pImageName )
 {
 	g_nLastScreenShot = 0;
 	g_pLastDiskImageName = pImageName;
@@ -1022,7 +1022,7 @@ bool Util_TestScreenShotFileName( const TCHAR *pFileName )
 }
 
 //===========================================================================
-void Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
+void Video::Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 {
 	TCHAR sScreenShotFileName[ MAX_PATH ];
 
@@ -1052,7 +1052,7 @@ void Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 	g_nLastScreenShot++;
 }
 
-void Video_RedrawAndTakeScreenShot( const TCHAR* pScreenshotFilename )
+void Video::Video_RedrawAndTakeScreenShot( const char* pScreenshotFilename )
 {
 	_ASSERT(pScreenshotFilename);
 	if (!pScreenshotFilename)
@@ -1094,7 +1094,7 @@ WinBmpHeader_t g_tBmpHeader;
 	TargaHeader_t g_tTargaHeader;
 #endif // SCREENSHOT_TGA
 
-void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel )
+void Video::Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel )
 {
 #if SCREENSHOT_BMP
 	pBmp->nCookie[ 0 ]     = 'B'; // 0x42
@@ -1133,7 +1133,7 @@ static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 {
 	WinBmpHeader_t *pBmp = &g_tBmpHeader;
 
-	Video_SetBitmapHeader(
+	g_pVideo->Video_SetBitmapHeader(
 		pBmp,
 		ScreenShotType == SCREENSHOT_280x192 ? GetFrameBufferBorderlessWidth()/2 : GetFrameBufferBorderlessWidth(),
 		ScreenShotType == SCREENSHOT_280x192 ? GetFrameBufferBorderlessHeight()/2 : GetFrameBufferBorderlessHeight(),
@@ -1236,14 +1236,12 @@ static void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const 
 
 //===========================================================================
 
-static const UINT kVideoRomSize8K = kVideoRomSize4K*2;
-static const UINT kVideoRomSize16K = kVideoRomSize8K*2;
-static const UINT kVideoRomSizeMax = kVideoRomSize16K;
+
 static BYTE g_videoRom[kVideoRomSizeMax];
 static UINT g_videoRomSize = 0;
 static bool g_videoRomRockerSwitch = false;
 
-bool ReadVideoRomFile(const TCHAR* pRomFile)
+bool Video::ReadVideoRomFile(const char* pRomFile)
 {
 	g_videoRomSize = 0;
 
@@ -1271,23 +1269,23 @@ bool ReadVideoRomFile(const TCHAR* pRomFile)
 	return g_videoRomSize != 0;
 }
 
-UINT GetVideoRom(const BYTE*& pVideoRom)
+UINT Video::GetVideoRom(const BYTE*& pVideoRom)
 {
 	pVideoRom = &g_videoRom[0];
 	return g_videoRomSize;
 }
 
-bool GetVideoRomRockerSwitch(void)
+bool Video::GetVideoRomRockerSwitch(void)
 {
 	return g_videoRomRockerSwitch;
 }
 
-void SetVideoRomRockerSwitch(bool state)
+void Video::SetVideoRomRockerSwitch(bool state)
 {
 	g_videoRomRockerSwitch = state;
 }
 
-bool IsVideoRom4K(void)
+bool Video::IsVideoRom4K(void)
 {
 	return g_videoRomSize <= kVideoRomSize4K;
 }
@@ -1306,7 +1304,7 @@ enum VideoType127_e
 	, VT127_NUM_VIDEO_MODES
 };
 
-void Config_Load_Video()
+void Video::Config_Load_Video()
 {
 	DWORD dwTmp;
 
@@ -1361,7 +1359,7 @@ void Config_Load_Video()
 		g_eVideoType = VT_DEFAULT;
 }
 
-void Config_Save_Video()
+void Video::Config_Save_Video()
 {
 	REGSAVE(TEXT(REGVALUE_VIDEO_MODE)      ,g_eVideoType);
 	REGSAVE(TEXT(REGVALUE_VIDEO_STYLE)     ,g_eVideoStyle);
@@ -1371,40 +1369,40 @@ void Config_Save_Video()
 
 //===========================================================================
 
-VideoType_e GetVideoType(void)
+VideoType_e Video::GetVideoType(void)
 {
 	return (VideoType_e) g_eVideoType;
 }
 
 // TODO: Can only do this at start-up (mid-emulation requires a more heavy-weight video reinit)
-void SetVideoType(VideoType_e newVideoType)
+void Video::SetVideoType(VideoType_e newVideoType)
 {
 	g_eVideoType = newVideoType;
 }
 
-VideoStyle_e GetVideoStyle(void)
+VideoStyle_e Video::GetVideoStyle(void)
 {
 	return g_eVideoStyle;
 }
 
-void SetVideoStyle(VideoStyle_e newVideoStyle)
+void Video::SetVideoStyle(VideoStyle_e newVideoStyle)
 {
 	g_eVideoStyle = newVideoStyle;
 }
 
-bool IsVideoStyle(VideoStyle_e mask)
+bool Video::IsVideoStyle(VideoStyle_e mask)
 {
 	return (g_eVideoStyle & mask) != 0;
 }
 
 //===========================================================================
 
-VideoRefreshRate_e GetVideoRefreshRate(void)
+VideoRefreshRate_e Video::GetVideoRefreshRate(void)
 {
 	return (g_bVideoScannerNTSC == false) ? VR_50HZ : VR_60HZ;
 }
 
-void SetVideoRefreshRate(VideoRefreshRate_e rate)
+void Video::SetVideoRefreshRate(VideoRefreshRate_e rate)
 {
 	if (rate != VR_50HZ)
 		rate = VR_60HZ;

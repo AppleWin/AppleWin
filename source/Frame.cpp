@@ -279,9 +279,9 @@ static void GetAppleWindowTitle()
 
 	g_pAppTitle += " - ";
 
-	if( IsVideoStyle(VS_HALF_SCANLINES) )
+	if(g_pVideo->IsVideoStyle(VS_HALF_SCANLINES) )
 		g_pAppTitle += " 50% ";
-	g_pAppTitle += g_apVideoModeDesc[ g_eVideoType ];
+	g_pAppTitle += g_apVideoModeDesc[g_pVideo->g_eVideoType ];
 
 	if (g_CardMgr.GetDisk2CardMgr().IsAnyFirmware13Sector())
 		g_pAppTitle += " (S6-13) ";
@@ -678,11 +678,11 @@ static void DrawFrameWindow (bool bPaintingWindow/*=false*/)
 
 	// DRAW THE CONTENTS OF THE EMULATED SCREEN
 	if (g_nAppMode == MODE_LOGO && !bDebugMode)
-		VideoDisplayLogo();
+		g_pVideo->VideoDisplayLogo();
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay();
 	else
-		VideoRedrawScreen();
+		g_pVideo->VideoRedrawScreen();
 
 	if (bPaintingWindow)
 		EndPaint(g_hFrameWindow,&ps);
@@ -1140,7 +1140,7 @@ LRESULT CALLBACK FrameWndProc (
       CpuDestroy();
       MemDestroy();
       SpkrDestroy();
-      VideoDestroy();
+	  delete g_pVideo;
       MB_Destroy();
       DeleteGdiObjects();
       DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
@@ -1211,7 +1211,7 @@ LRESULT CALLBACK FrameWndProc (
 	}
 
     case WM_DISPLAYCHANGE:
-      VideoReinitialize();
+		g_pVideo->VideoReinitialize();
       break;
 
     case WM_DROPFILES:
@@ -1265,7 +1265,7 @@ LRESULT CALLBACK FrameWndProc (
 #if _DEBUG
 //			MessageBox( g_hFrameWindow, "Double 580x384 size!", "PrintScreen", MB_OK );
 #endif
-			Video_TakeScreenShot( SCREENSHOT_560x384 );
+			g_pVideo->Video_TakeScreenShot( SCREENSHOT_560x384 );
 		}
 		else
 		if (wparam == VK_SNAPSHOT_280) // ( lparam & MOD_SHIFT )
@@ -1273,7 +1273,7 @@ LRESULT CALLBACK FrameWndProc (
 #if _DEBUG
 //			MessageBox( g_hFrameWindow, "Normal 280x192 size!", "PrintScreen", MB_OK );
 #endif
-			Video_TakeScreenShot( SCREENSHOT_280x192 );
+			g_pVideo->Video_TakeScreenShot( SCREENSHOT_280x192 );
 		}
 		else
 		if (wparam == VK_SNAPSHOT_TEXT) // ( lparam & MOD_CONTROL )
@@ -1314,25 +1314,25 @@ LRESULT CALLBACK FrameWndProc (
 
 			if ( !KeybGetCtrlStatus() && !KeybGetShiftStatus() )		// F9
 			{
-				g_eVideoType++;
-				if (g_eVideoType >= NUM_VIDEO_MODES)
-					g_eVideoType = 0;
+				g_pVideo->g_eVideoType++;
+				if (g_pVideo->g_eVideoType >= NUM_VIDEO_MODES)
+					g_pVideo->g_eVideoType = 0;
 			}
 			else if ( !KeybGetCtrlStatus() && KeybGetShiftStatus() )	// SHIFT+F9
 			{
-				if (g_eVideoType <= 0)
-					g_eVideoType = NUM_VIDEO_MODES;
-				g_eVideoType--;
+				if (g_pVideo->g_eVideoType <= 0)
+					g_pVideo->g_eVideoType = NUM_VIDEO_MODES;
+				g_pVideo->g_eVideoType--;
 			}
 			else if ( KeybGetCtrlStatus() && KeybGetShiftStatus() )		// CTRL+SHIFT+F9
 			{
-				SetVideoStyle( (VideoStyle_e) (GetVideoStyle() ^ VS_HALF_SCANLINES) );
+				g_pVideo->SetVideoStyle( (VideoStyle_e) (g_pVideo->GetVideoStyle() ^ VS_HALF_SCANLINES) );
 			}
 
 			// TODO: Clean up code:FrameRefreshStatus(DRAW_TITLE) DrawStatusArea((HDC)0,DRAW_TITLE)
 			DrawStatusArea( (HDC)0, DRAW_TITLE );
 
-			VideoReinitialize(false);
+			g_pVideo->VideoReinitialize(false);
 
 			if (g_nAppMode != MODE_LOGO)
 			{
@@ -1340,23 +1340,23 @@ LRESULT CALLBACK FrameWndProc (
 				{
 					UINT debugVideoMode;
 					if ( DebugGetVideoMode(&debugVideoMode) )
-						VideoRefreshScreen(debugVideoMode, true);
+						g_pVideo->VideoRefreshScreen(debugVideoMode, true);
 					else
-						VideoRefreshScreen();
+						g_pVideo->VideoRefreshScreen();
 				}
 				else
 				{
-					VideoRefreshScreen();
+					g_pVideo->VideoRefreshScreen();
 				}
 			}
 
-			Config_Save_Video();
+			g_pVideo->Config_Save_Video();
 		}
 		else if (wparam == VK_F10)
 		{
 			if (g_Apple2Type == A2TYPE_APPLE2E || g_Apple2Type == A2TYPE_APPLE2EENHANCED)
 			{
-				SetVideoRomRockerSwitch( !GetVideoRomRockerSwitch() );	// F10: toggle rocker switch
+				g_pVideo->SetVideoRomRockerSwitch( !g_pVideo->GetVideoRomRockerSwitch() );	// F10: toggle rocker switch
 				NTSC_VideoInitAppleType();
 			}
 			else if (g_Apple2Type == A2TYPE_PRAVETS8A)
@@ -1408,7 +1408,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 			DrawStatusArea((HDC)0,DRAW_TITLE);
 			if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
-				VideoRedrawScreen();
+				g_pVideo->VideoRedrawScreen();
 		}
 		else if ((wparam == VK_SCROLL) && sg_PropertySheet.GetScrollLockToggle())
 		{
@@ -1890,7 +1890,7 @@ LRESULT CALLBACK FrameWndProc (
       g_nAppMode = MODE_LOGO;
       DrawStatusArea((HDC)0,DRAW_TITLE);
       HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
-      VideoBenchmark();
+	  g_pVideo->VideoBenchmark();
       ResetMachineState();
       SetCursor(oldcursor);
       break;
@@ -2085,7 +2085,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		}
 
       DrawStatusArea((HDC)0,DRAW_TITLE);
-      VideoRedrawScreen();
+	  g_pVideo->VideoRedrawScreen();
       break;
 
     case BTN_DRIVE1:
@@ -2312,7 +2312,7 @@ void ResetMachineState ()
   PravetsReset();
   if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
 	dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6)).Boot();
-  VideoResetState();
+  g_pVideo->VideoResetState();
   KeybReset();
   if (g_CardMgr.IsSSCInstalled())
 	g_CardMgr.GetSSC()->CommReset();
@@ -2348,7 +2348,7 @@ void CtrlReset()
 		MemResetPaging();
 
 		// For A][ & A][+, reset doesn't reset the video mode (UTAII:4-4)
-		VideoResetState();	// Switch Alternate char set off
+		g_pVideo->VideoResetState();	// Switch Alternate char set off
 	}
 
 	PravetsReset();

@@ -641,7 +641,7 @@ HDC GetDebuggerExtraDC(void)
 		SelectObject(g_hDebuggerExtraDC, g_hDebuggerExtraBM);
 
 		// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-		ZeroMemory(g_pFramebufferbits, FRAMEBUFFER_W * FRAMEBUFFER_H * sizeof(bgra_t));
+		ZeroMemory(g_pVideo->g_pFramebufferbits, FRAMEBUFFER_W * FRAMEBUFFER_H * sizeof(bgra_t));
 
 	}
 
@@ -3229,25 +3229,25 @@ void DrawSoftSwitches( int iSoftSwitch )
 		bool bSet;
 
 		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
-		bSet = !VideoGetSWTEXT();
+		bSet = !g_pVideo->VideoGetSWTEXT();
 		_DrawSoftSwitch( rect, 0xC050, bSet, NULL, "GR.", "TEXT" );
 
 		// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
 		// FULL/MIXED
 		// MIX OFF/ON
-		bSet = !VideoGetSWMIXED();
+		bSet = !g_pVideo->VideoGetSWMIXED();
 		_DrawSoftSwitch( rect, 0xC052, bSet, NULL, "FULL", "MIX" );
 
 		// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
 		// PAGE 1 / 2
-		bSet = !VideoGetSWPAGE2();
+		bSet = !g_pVideo->VideoGetSWPAGE2();
 		_DrawSoftSwitch( rect, 0xC054, bSet, "PAGE ", "1", "2" );
 		
 		// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
 		// LO / HIRES
 		// LO / -----
 		// -- / HIRES
-		bSet = !VideoGetSWHIRES();
+		bSet = !g_pVideo->VideoGetSWHIRES();
 		_DrawSoftSwitch( rect, 0xC056, bSet, NULL, "LO", "HI", "RES" );
 
 		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
@@ -3255,7 +3255,7 @@ void DrawSoftSwitches( int iSoftSwitch )
 
 		// 280/560 HGR
 		// C05E = ON, C05F = OFF
-		bSet = VideoGetSWDHIRES();
+		bSet = g_pVideo->VideoGetSWDHIRES();
 		_DrawSoftSwitch( rect, 0xC05E, bSet, NULL, "DHGR", "HGR" );
 
 
@@ -3263,18 +3263,18 @@ void DrawSoftSwitches( int iSoftSwitch )
 		int bgMemory = BG_DATA_2;
 
 		// C000 = 80STOREOFF, C001 = 80STOREON
-		bSet = !VideoGetSW80STORE();
+		bSet = !g_pVideo->VideoGetSW80STORE();
 		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1", NULL, bgMemory );
 
 		// C002 .. C005
 		_DrawSoftSwitchMainAuxBanks( rect, bgMemory );
 
 		// C00C = off, C00D = on
-		bSet = !VideoGetSW80COL();
+		bSet = !g_pVideo->VideoGetSW80COL();
 		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80", NULL, bgMemory );
 
 		// C00E = off, C00F = on
-		bSet = !VideoGetSWAltCharSet();
+		bSet = !g_pVideo->VideoGetSWAltCharSet();
 		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS", NULL, bgMemory ); // ASCII/MouseText
 
 #if SOFTSWITCH_LANGCARD
