@@ -224,7 +224,7 @@ void DSReleaseSoundBuffer(VOICE* pVoice)
 
 //-----------------------------------------------------------------------------
 
-bool DSZeroVoiceBuffer(PVOICE Voice, char* pszDevName, DWORD dwBufferSize)
+bool DSZeroVoiceBuffer(PVOICE Voice, const char* pszDevName, DWORD dwBufferSize)
 {
 #ifdef NO_DIRECT_X
 
@@ -273,7 +273,7 @@ bool DSZeroVoiceBuffer(PVOICE Voice, char* pszDevName, DWORD dwBufferSize)
 
 //-----------------------------------------------------------------------------
 
-bool DSZeroVoiceWritableBuffer(PVOICE Voice, char* pszDevName, DWORD dwBufferSize)
+bool DSZeroVoiceWritableBuffer(PVOICE Voice, const char* pszDevName, DWORD dwBufferSize)
 {
 	DWORD dwDSLockedBufferSize0=0, dwDSLockedBufferSize1=0;
 	SHORT *pDSLockedBuffer0, *pDSLockedBuffer1;

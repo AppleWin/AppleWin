@@ -18,13 +18,17 @@
 		CONSOLE_FONT_WIDTH  = 7,
 		CONSOLE_FONT_HEIGHT = 8,
 
+		CONSOLE_FONT_NUM_CHARS_PER_ROW = 16,
+		CONSOLE_FONT_NUM_ROWS = 16,
+
+		CONSOLE_FONT_BITMAP_WIDTH = CONSOLE_FONT_WIDTH * CONSOLE_FONT_NUM_CHARS_PER_ROW,	// 112 pixels
+		CONSOLE_FONT_BITMAP_HEIGHT = CONSOLE_FONT_HEIGHT * CONSOLE_FONT_NUM_ROWS,			// 128 pixels
 	};
 
 	extern HBRUSH g_hConsoleBrushFG;
 	extern HBRUSH g_hConsoleBrushBG;
 
 	extern HDC     g_hConsoleFontDC;
-	extern HBRUSH  g_hConsoleFontBrush;
 	extern HBITMAP g_hConsoleFontBitmap;
 
 	enum
@@ -42,7 +46,6 @@
 
 	void FillBackground(long left, long top, long right, long bottom, void *framebuffer);
 
-	void PrintGlyph      ( const int x, const int y, const int iChar );
 	int  PrintText       ( const char * pText, RECT & rRect );
 	int  PrintTextCursorX( const char * pText, RECT & rRect );
 	int  PrintTextCursorY( const char * pText, RECT & rRect );

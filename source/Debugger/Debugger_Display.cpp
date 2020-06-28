@@ -90,10 +90,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static bgra_t* pDebuggerExtraFramebits = NULL;
 
 	HDC     g_hConsoleFontDC     = NULL;
-	HBRUSH  g_hConsoleFontBrush  = NULL;
 	HBITMAP g_hConsoleFontBitmap = NULL;
-	LPBITMAPINFO  g_hConsoleFontFramebufferinfo;
-	bgra_t* g_hConsoleFontFramebits = NULL;
+	static LPBITMAPINFO  g_hConsoleFontFramebufferinfo = NULL;
+	static bgra_t* g_hConsoleFontFramebits;
 
 	char g_cConsoleBrushFG_r;
 	char g_cConsoleBrushFG_g;
@@ -679,8 +678,8 @@ HDC GetConsoleFontDC(void)
 
 		ZeroMemory(g_hConsoleFontFramebufferinfo, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 		g_hConsoleFontFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		g_hConsoleFontFramebufferinfo->bmiHeader.biWidth = 112;
-		g_hConsoleFontFramebufferinfo->bmiHeader.biHeight = 128;
+		g_hConsoleFontFramebufferinfo->bmiHeader.biWidth = CONSOLE_FONT_BITMAP_WIDTH;
+		g_hConsoleFontFramebufferinfo->bmiHeader.biHeight = CONSOLE_FONT_BITMAP_HEIGHT;
 		g_hConsoleFontFramebufferinfo->bmiHeader.biPlanes = 1;
 		g_hConsoleFontFramebufferinfo->bmiHeader.biBitCount = 32;
 		g_hConsoleFontFramebufferinfo->bmiHeader.biCompression = BI_RGB;
@@ -701,7 +700,7 @@ HDC GetConsoleFontDC(void)
 		// Pre-scaled bitmap
 		HBITMAP tmpFont = LoadBitmap(g_hInstance, TEXT("IDB_DEBUG_FONT_7x8"));  // Bitmap must be 112x128 as defined above
 		SelectObject(tmpDC, tmpFont);
-		BitBlt(g_hConsoleFontDC, 0, 0, 112, 128,
+		BitBlt(g_hConsoleFontDC, 0, 0, CONSOLE_FONT_BITMAP_WIDTH, CONSOLE_FONT_BITMAP_HEIGHT,
 			tmpDC, 0, 0,
 			SRCCOPY);
 		DeleteDC(tmpDC);
@@ -819,31 +818,28 @@ void DebuggerSetColorBG( COLORREF nRGB, bool bTransparent )
 
 // @param glyph Specifies a native glyph from the 16x16 chars Apple Font Texture.
 //===========================================================================
-void PrintGlyph( const int x, const int y, const int glyph )
+static void PrintGlyph( const int xDst, const int yDst, const int glyph )
 {	
 	HDC hDstDC = GetDebuggerMemDC();
 
-	int xDst = x;
-	int yDst = y;
-
-	// 16x8 chars in bitmap
-	int xSrc = (glyph & 0x0F) *CONSOLE_FONT_GRID_X;
-	int ySrc = (glyph >> 4) *CONSOLE_FONT_GRID_Y;
+	int xSrc = (glyph % CONSOLE_FONT_NUM_CHARS_PER_ROW) * CONSOLE_FONT_GRID_X;
+	int ySrc = (glyph / CONSOLE_FONT_NUM_CHARS_PER_ROW) * CONSOLE_FONT_GRID_Y;
+	_ASSERT(ySrc < CONSOLE_FONT_BITMAP_HEIGHT);
 
 	// BUG #239 - (Debugger) Save debugger "text screen" to clipboard / file
 	//	if( g_bDebuggerVirtualTextCapture )
 	// 
 	{
 #if _DEBUG
-		if ((x < 0) || (y < 0))
+		if ((xDst < 0) || (yDst < 0))
 			MessageBox( g_hFrameWindow, "X or Y out of bounds!", "PrintGlyph()", MB_OK );
 #endif
-		int col = x / CONSOLE_FONT_WIDTH ;
-		int row = y / CONSOLE_FONT_HEIGHT;
+		int col = xDst / CONSOLE_FONT_WIDTH ;
+		int row = yDst / CONSOLE_FONT_HEIGHT;
 		
 		// if( !g_bDebuggerCopyInfoPane )
 		//    if( col < 50
-		if (x > DISPLAY_DISASM_RIGHT) // INFO_COL_2 // DISPLAY_CPU_INFO_LEFT_COLUMN
+		if (xDst > DISPLAY_DISASM_RIGHT) // INFO_COL_2 // DISPLAY_CPU_INFO_LEFT_COLUMN
 			col++;
 
 		if ((col < DEBUG_VIRTUAL_TEXT_WIDTH)
@@ -852,8 +848,8 @@ void PrintGlyph( const int x, const int y, const int glyph )
 	}
 
 	// Manual print of character. A lot faster than BitBlt, which must be avoided.
-	int index_src = (127-ySrc) * 16 * CONSOLE_FONT_GRID_X + xSrc;   // font bitmap
-	int index_dst = (383-yDst) * 80 * CONSOLE_FONT_GRID_X + xDst;   // debugger bitmap
+	int index_src = (CONSOLE_FONT_BITMAP_HEIGHT - 1 - ySrc) * CONSOLE_FONT_NUM_CHARS_PER_ROW * CONSOLE_FONT_GRID_X + xSrc;   // font bitmap
+	int index_dst = (DISPLAY_HEIGHT - 1 - yDst) * DEBUG_VIRTUAL_TEXT_WIDTH * CONSOLE_FONT_GRID_X + xDst;   // debugger bitmap
 	for (int yy = 0; yy < CONSOLE_FONT_GRID_Y; yy++)
 	{
 		for (int xx = 0; xx < CONSOLE_FONT_GRID_X; xx++)
@@ -863,8 +859,8 @@ void PrintGlyph( const int x, const int y, const int glyph )
 			g_pDebuggerMemFramebits[index_dst + xx].g = (g_cConsoleBrushBG_g & ~fontpx) | (g_cConsoleBrushFG_g & fontpx);
 			g_pDebuggerMemFramebits[index_dst + xx].b = (g_cConsoleBrushBG_b & ~fontpx) | (g_cConsoleBrushFG_b & fontpx);
 		}
-		index_src -= 16 * CONSOLE_FONT_GRID_X;
-		index_dst -= 80 * CONSOLE_FONT_GRID_X;
+		index_src -= CONSOLE_FONT_NUM_CHARS_PER_ROW * CONSOLE_FONT_GRID_X;
+		index_dst -= DEBUG_VIRTUAL_TEXT_WIDTH * CONSOLE_FONT_GRID_X;
 	}
 }
 
