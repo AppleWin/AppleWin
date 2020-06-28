@@ -555,7 +555,7 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 
 //---------------------------------------------------------------------------
 
-void SSI263_Play(unsigned int nPhoneme);
+static void SSI263_Play(unsigned int nPhoneme);
 
 #if 0
 typedef struct
@@ -1510,7 +1510,7 @@ void MB_Initialize()
 	g_bCritSectionValid = true;
 }
 
-void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType);
+static void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType);
 
 // NB. Mockingboard voice is *already* muted because showing 'Select Load State file' dialog
 // . and voice will be demuted when dialog is closed
