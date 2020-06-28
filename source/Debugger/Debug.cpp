@@ -8843,11 +8843,7 @@ void DebugDestroy ()
 	}
 	// TODO: DataDisassembly_Clear()
 
-	DeleteObject( g_hConsoleBrushFG );
-	DeleteObject( g_hConsoleBrushBG );
-
-	DeleteDC( g_hConsoleFontDC );
-	DeleteObject( g_hConsoleFontBitmap );
+	ReleaseConsoleFontDC();
 }
 
 
