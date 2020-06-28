@@ -1934,6 +1934,9 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 // DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
 static void RepeatInitialization(void)
 {
+		if (g_pVideo == NULL)
+			g_pVideo = new Video();
+
 		ResetToLogoMode();
 
 		// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
@@ -1996,7 +1999,6 @@ static void RepeatInitialization(void)
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
-		g_pVideo = new Video();
 		g_pVideo->VideoInitialize(); // g_pFramebufferinfo been created now
 		LogFileOutput("Main: VideoInitialize()\n");
 

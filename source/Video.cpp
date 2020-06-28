@@ -96,6 +96,8 @@ static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 static LPDIRECTDRAW g_lpDD = NULL;
 
+Video* g_pVideo = NULL;
+
 //-------------------------------------
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
@@ -132,7 +134,7 @@ static LPDIRECTDRAW g_lpDD = NULL;
 	bool Util_TestScreenShotFileName( const TCHAR *pFileName );
 	void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const TCHAR *pScreenShotFileName );
 	void Video_MakeScreenShot( FILE *pFile, const VideoScreenShot_e ScreenShotType );
-	void videoCreateDIBSection();
+	void static videoCreateDIBSection(LPBITMAPINFO pFramebufferinfo, uint8_t** pFramebufferbits);
 
 //===========================================================================
 void Video::VideoInitialize ()
@@ -159,7 +161,10 @@ void Video::VideoInitialize ()
 	g_pFramebufferinfo->bmiHeader.biCompression = BI_RGB;
 	g_pFramebufferinfo->bmiHeader.biClrUsed     = 0;
 
-	videoCreateDIBSection();
+	videoCreateDIBSection(g_pFramebufferinfo, &g_pFramebufferbits);
+
+	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
+	NTSC_VideoInit(g_pFramebufferbits);
 }
 
 //===========================================================================
@@ -1412,7 +1417,7 @@ void Video::SetVideoRefreshRate(VideoRefreshRate_e rate)
 }
 
 //===========================================================================
-static void videoCreateDIBSection()
+static void videoCreateDIBSection(LPBITMAPINFO pFramebufferinfo, uint8_t **pFramebufferbits)
 {
 	// CREATE THE DEVICE CONTEXT
 	HWND window  = GetDesktopWindow();
@@ -1429,15 +1434,13 @@ static void videoCreateDIBSection()
 		DeleteObject(g_hDeviceBitmap);
 		g_hDeviceBitmap = CreateDIBSection(
 			dc,
-			g_pFramebufferinfo,
+			pFramebufferinfo,
 			DIB_RGB_COLORS,
-			(LPVOID *)&g_pFramebufferbits,0,0
+			(LPVOID *)pFramebufferbits,0,0
 		);
 	SelectObject(g_hDeviceDC,g_hDeviceBitmap);
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory( g_pFramebufferbits, GetFrameBufferWidth()*GetFrameBufferHeight()*sizeof(bgra_t) );
+	ZeroMemory( *pFramebufferbits, GetFrameBufferWidth()*GetFrameBufferHeight()*sizeof(bgra_t) );
 
-	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
-	NTSC_VideoInit( g_pFramebufferbits );
 }
