@@ -83,8 +83,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static LPBITMAPINFO  g_pDebuggerMemFramebufferinfo = NULL;
 	static bgra_t* g_pDebuggerMemFramebits = NULL;
 
-	HDC     g_hConsoleFontDC     = NULL;
-	HBITMAP g_hConsoleFontBitmap = NULL;
+	static HDC g_hConsoleFontDC = NULL;
+	static HBITMAP g_hConsoleFontBitmap = NULL;
 	static LPBITMAPINFO  g_hConsoleFontFramebufferinfo = NULL;
 	static bgra_t* g_hConsoleFontFramebits;
 
