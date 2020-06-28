@@ -25,12 +25,6 @@
 		CONSOLE_FONT_BITMAP_HEIGHT = CONSOLE_FONT_HEIGHT * CONSOLE_FONT_NUM_ROWS,			// 128 pixels
 	};
 
-	extern HBRUSH g_hConsoleBrushFG;
-	extern HBRUSH g_hConsoleBrushBG;
-
-	extern HDC     g_hConsoleFontDC;
-	extern HBITMAP g_hConsoleFontBitmap;
-
 	enum
 	{
 		DISPLAY_HEIGHT = 384,
