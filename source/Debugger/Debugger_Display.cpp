@@ -3895,10 +3895,11 @@ void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 
 void DrawVideoScannerInfo (int line)
 {
-	NTSC_VideoGetScannerAddressForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
+	NTSC* n = g_pVideo->getNTSC();
+	n->NTSC_VideoGetScannerAddressForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
 
-	int v = g_nVideoClockVert;
-	int h = g_nVideoClockHorz;
+	int v = n->g_nVideoClockVert;
+	int h = n->g_nVideoClockHorz;
 
 	if (g_videoScannerDisplayInfo.isHorzReal)
 	{
@@ -3906,10 +3907,10 @@ void DrawVideoScannerInfo (int line)
 
 		if (h < 0)
 		{
-			h = h + NTSC_GetCyclesPerLine();
+			h = h + n->NTSC_GetCyclesPerLine();
 			v = v - 1;
 			if (v < 0)
-				v = v + NTSC_GetVideoLines();
+				v = v + n->NTSC_GetVideoLines();
 		}
 	}
 
@@ -3919,7 +3920,7 @@ void DrawVideoScannerInfo (int line)
 		g_videoScannerDisplayInfo.lastCumulativeCycles = g_nCumulativeCycles;
 	}
 
-	DrawVideoScannerValue(line, v, h, NTSC_IsVisible());
+	DrawVideoScannerValue(line, v, h, n->NTSC_IsVisible());
 	line++;
 
 	//

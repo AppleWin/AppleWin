@@ -114,16 +114,7 @@ struct ColorSpace_BGRA_t
 	static bool g_bDelayVideoMode = false;	// NB. No need to save to save-state, as it will be done immediately after opcode completes in NTSC_VideoUpdateCycles()
 	static uint32_t g_uNewVideoModeFlags = 0;
 
-	// Understanding the Apple II, Timing Generation and the Video Scanner, Pg 3-11
-	// Vertical Scanning
-	// Horizontal Scanning
-	// "There are exactly 17030 (65 x 262) 6502 cycles in every television scan of an American Apple."
-	#define VIDEO_SCANNER_MAX_HORZ   65 // TODO: use Video.cpp: kHClocks
-	#define VIDEO_SCANNER_MAX_VERT  262 // TODO: use Video.cpp: kNTSCScanLines
-	static const UINT VIDEO_SCANNER_6502_CYCLES = VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_MAX_VERT;
 
-	#define VIDEO_SCANNER_MAX_VERT_PAL 312
-	static const UINT VIDEO_SCANNER_6502_CYCLES_PAL = VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_MAX_VERT_PAL;
 
 	static UINT g_videoScannerMaxVert = VIDEO_SCANNER_MAX_VERT;			// default to NTSC
 	static UINT g_videoScanner6502Cycles = VIDEO_SCANNER_6502_CYCLES;	// default to NTSC
@@ -140,7 +131,7 @@ struct ColorSpace_BGRA_t
 
 	static const UINT g_kFrameBufferWidth = GetFrameBufferWidth();
 
-	static unsigned short (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
+	
 
 	typedef void (*UpdateScreenFunc_t)(long);
 	static UpdateScreenFunc_t g_apFuncVideoUpdateScanline[VIDEO_SCANNER_Y_DISPLAY];
@@ -402,6 +393,8 @@ struct ColorSpace_BGRA_t
 
 	NTSC::NTSC()
 	{
+		g_pHorzClockOffset = 0;
+
 		// Globals (Public) ___________________________________________________
 		g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
 		g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible (NB. final hpos is 2 cycles long, so a line is 65 cycles)
@@ -409,10 +402,10 @@ struct ColorSpace_BGRA_t
 
 
 //===========================================================================
-void NTSC::set_csbits()
+void NTSC::set_csbits(eApple2Type type)
 {
 	// NB. For models that don't have an alt charset then set /g_nVideoCharSet/ to zero
-	switch ( GetApple2Type() )
+	switch ( type )
 	{
 	case A2TYPE_APPLE2:			NTSC::csbits = &csbits_a2[0];         g_nVideoCharSet = 0; break;
 	case A2TYPE_APPLE2PLUS:		NTSC::csbits = &csbits_a2[0];         g_nVideoCharSet = 0; break;
@@ -1983,17 +1976,15 @@ void NTSC::NTSC_VideoReinitialize( DWORD cyclesThisFrame, bool bInitVideoScanner
 }
 
 //===========================================================================
-void NTSC::NTSC_VideoInitAppleType ()
+void NTSC::NTSC_VideoInitAppleType (eApple2Type type)
 {
-	int model = GetApple2Type();
-
 	// anything other than low bit set means not II/II+ (TC: include Pravets machines too?)
-	if (model & 0xFFFE)
+	if (type & 0xFFFE)
 		g_pHorzClockOffset = APPLE_IIE_HORZ_CLOCK_OFFSET;
 	else
 		g_pHorzClockOffset = APPLE_IIP_HORZ_CLOCK_OFFSET;
 
-	NTSC::set_csbits();
+	NTSC::set_csbits(type);
 }
 
 //===========================================================================
@@ -2108,7 +2099,7 @@ void NTSC::NTSC_VideoRedrawWholeScreen( void )
 bool NTSC::CheckVideoTables2( eApple2Type type, uint32_t mode )
 {
 	SetApple2Type(type);
-	NTSC_VideoInitAppleType();
+	NTSC::NTSC_VideoInitAppleType(GetApple2Type());
 
 	g_pVideo->g_uVideoMode = mode;
 

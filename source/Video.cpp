@@ -625,7 +625,7 @@ void Video::VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, b
 void Video::VideoReinitialize (bool bInitVideoScannerAddress /*= true*/)
 {
 	pNTSC->NTSC_VideoReinitialize( g_dwCyclesThisFrame, bInitVideoScannerAddress );
-	pNTSC->NTSC_VideoInitAppleType();
+	pNTSC->NTSC_VideoInitAppleType(GetApple2Type());
 	pNTSC->NTSC_SetVideoStyle();
 	pNTSC->NTSC_SetVideoTextMode( g_uVideoMode &  VF_80COL ? 80 : 40 );
 	pNTSC->NTSC_SetVideoMode( g_uVideoMode );	// Pre-condition: g_nVideoClockHorz (derived from g_dwCyclesThisFrame)
@@ -897,7 +897,7 @@ bool Video::VideoGetVblBarEx(const DWORD dwCyclesThisFrame)
 		pNTSC->NTSC_VideoClockResync(dwCyclesThisFrame);
 	}
 
-	return g_nVideoClockVert < kVDisplayableScanLines;
+	return pNTSC->g_nVideoClockVert < kVDisplayableScanLines;
 }
 
 // Called when *inside* CpuExecute()
@@ -909,7 +909,7 @@ bool Video::VideoGetVblBar(const DWORD uExecutedCycles)
 		pNTSC->NTSC_VideoClockResync(CpuGetCyclesThisVideoFrame(uExecutedCycles));
 	}
 
-	return g_nVideoClockVert < kVDisplayableScanLines;
+	return pNTSC->g_nVideoClockVert < kVDisplayableScanLines;
 }
 
 //===========================================================================

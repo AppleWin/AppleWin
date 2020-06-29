@@ -262,6 +262,7 @@ public:
 	VideoRefreshRate_e GetVideoRefreshRate(void);
 	void SetVideoRefreshRate(VideoRefreshRate_e rate);
 
+	void VideoInitAppleType();
 	void NTSC_VideoUpdateCycles(UINT cycles6502);
 	NTSC* getNTSC();
 

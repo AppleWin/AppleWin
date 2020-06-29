@@ -1360,7 +1360,7 @@ LRESULT CALLBACK FrameWndProc (
 			if (g_Apple2Type == A2TYPE_APPLE2E || g_Apple2Type == A2TYPE_APPLE2EENHANCED)
 			{
 				g_pVideo->SetVideoRomRockerSwitch( !g_pVideo->GetVideoRomRockerSwitch() );	// F10: toggle rocker switch
-				NTSC_VideoInitAppleType();
+				NTSC::NTSC_VideoInitAppleType(GetApple2Type());
 			}
 			else if (g_Apple2Type == A2TYPE_PRAVETS8A)
 			{
