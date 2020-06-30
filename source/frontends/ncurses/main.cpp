@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 
 #include <chrono>
+#include <thread>
 #include <iostream>
 #include <ncurses.h>
 
@@ -208,7 +209,8 @@ namespace
       {
 	if (us < nExecutionPeriodUsec)
 	{
-	  usleep(nExecutionPeriodUsec - us);
+	  const auto duration = std::chrono::microseconds(nExecutionPeriodUsec - us);
+	  std::this_thread::sleep_for(duration);
 	}
       }
     }
