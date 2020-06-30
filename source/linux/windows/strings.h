@@ -22,6 +22,7 @@ void strcpy_s(char * dest, size_t size, const char * source);
 #define _tcscpy     strcpy
 #define _snprintf snprintf
 #define wsprintf sprintf
+#define sscanf_s sscanf
 
 inline bool IsCharLower(char ch) {
 	return isascii(ch) && islower(ch);

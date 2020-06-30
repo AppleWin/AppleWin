@@ -1,6 +1,9 @@
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
+#include "StdAfx.h"
+#include "Card.h"
+#include "Common.h"
 #include "preferences.h"
 
 class GlobalOptions
@@ -29,9 +32,9 @@ struct PreferenceData
 {
     GlobalOptions options;
 
-    int apple2Type;
-    bool mouseInSlot4;
-    bool cpmInSlot5;
+    eApple2Type apple2Type;
+    SS_CARDTYPE cardInSlot4;
+    SS_CARDTYPE cardInSlot5;
     bool hdInSlot7;
     bool hz50;
 

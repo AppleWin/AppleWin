@@ -85,7 +85,7 @@ HANDLE CreateFile(LPCTSTR               lpFileName,
 		  HANDLE                hTemplateFile)
 {
   FILE * f = nullptr;
-  if (dwCreationDisposition == CREATE_NEW)
+  if (dwCreationDisposition == CREATE_NEW || dwCreationDisposition == CREATE_ALWAYS)
   {
     if (dwDesiredAccess & GENERIC_READ)
       f = fopen(lpFileName, "w+");

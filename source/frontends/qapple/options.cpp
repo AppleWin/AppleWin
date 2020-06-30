@@ -96,25 +96,6 @@ namespace
         REGSAVE(slotText.c_str(), (DWORD)newCardType);
     }
 
-    const std::vector<eApple2Type> computerTypes = {A2TYPE_APPLE2, A2TYPE_APPLE2PLUS, A2TYPE_APPLE2JPLUS, A2TYPE_APPLE2E,
-                                                    A2TYPE_APPLE2EENHANCED, A2TYPE_PRAVETS82, A2TYPE_PRAVETS8M, A2TYPE_PRAVETS8A,
-                                                    A2TYPE_TK30002E};
-
-    int getApple2ComputerType()
-    {
-        const eApple2Type type = GetApple2Type();
-        const auto it = std::find(computerTypes.begin(), computerTypes.end(), type);
-        if (it != computerTypes.end())
-        {
-            return std::distance(computerTypes.begin(), it);
-        }
-        else
-        {
-            // default to A2E
-            return 2;
-        }
-    }
-
 }
 
 GlobalOptions::GlobalOptions()
@@ -222,11 +203,11 @@ void getAppleWinPreferences(PreferenceData & data)
     }
 
     data.enhancedSpeed = pDisk2Card->GetEnhanceDisk();
-    data.mouseInSlot4 = g_CardMgr.QuerySlot(SLOT4) == CT_MouseInterface;
-    data.cpmInSlot5 = g_CardMgr.QuerySlot(SLOT5) == CT_Z80;
+    data.cardInSlot4 = g_CardMgr.QuerySlot(SLOT4);
+    data.cardInSlot5 = g_CardMgr.QuerySlot(SLOT5);
     data.hdInSlot7 = HD_CardIsEnabled();
 
-    data.apple2Type = getApple2ComputerType();
+    data.apple2Type = GetApple2Type();
 
     const std::string & saveState = Snapshot_GetFilename();
     if (!saveState.empty())
@@ -247,22 +228,19 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
 
     if (currentData.apple2Type != newData.apple2Type)
     {
-        const eApple2Type type = computerTypes[newData.apple2Type];
-        SetApple2Type(type);
-        REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), type);
-        const eCpuType cpu = ProbeMainCpuDefault(type);
+        SetApple2Type(newData.apple2Type);
+        REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), newData.apple2Type);
+        const eCpuType cpu = ProbeMainCpuDefault(newData.apple2Type);
         SetMainCpu(cpu);
         REGSAVE(TEXT(REGVALUE_CPU_TYPE), cpu);
     }
-    if (currentData.mouseInSlot4 != newData.mouseInSlot4)
+    if (currentData.cardInSlot4 != newData.cardInSlot4)
     {
-        const SS_CARDTYPE card = newData.mouseInSlot4 ? CT_MouseInterface : CT_Empty;
-        SetSlot(SLOT4, card);
+        SetSlot(SLOT4, newData.cardInSlot4);
     }
-    if (currentData.cpmInSlot5 != newData.cpmInSlot5)
+    if (currentData.cardInSlot5 != newData.cardInSlot5)
     {
-        const SS_CARDTYPE card = newData.cpmInSlot5 ? CT_Z80 : CT_Empty;
-        SetSlot(SLOT5, card);
+        SetSlot(SLOT5, newData.cardInSlot5);
     }
     if (currentData.hdInSlot7 != newData.hdInSlot7)
     {

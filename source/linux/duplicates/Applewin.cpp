@@ -61,6 +61,9 @@ static IPropertySheet * sg = NULL;
 IPropertySheet&	sg_PropertySheet = *sg;
 static double g_fMHz		= 1.0;			// Affected by Config dialog's speed slider bar
 
+bool g_bDisableDirectSound = false;
+bool g_bDisableDirectSoundMockingboard = false;
+
 void LogFileTimeUntilFirstKeyReadReset(void)
 {
 	if (!g_fh)
@@ -370,4 +373,9 @@ void LoadConfiguration(void)
   if (REGLOAD(TEXT(REGVALUE_CONFIRM_REBOOT), &dwTmp))
     g_bConfirmReboot = dwTmp;
 #endif
+}
+
+double Get6502BaseClock(void)
+{
+	return (GetVideoRefreshRate() == VR_50HZ) ? CLK_6502_PAL : CLK_6502_NTSC;
 }

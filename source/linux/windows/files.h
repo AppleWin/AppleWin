@@ -32,6 +32,7 @@ typedef struct tagOFN {
 #define OFN_FILEMUSTEXIST            0x00001000
 #define OPEN_EXISTING           3
 #define CREATE_NEW              1
+#define CREATE_ALWAYS           2
 
 #define GENERIC_READ 0x80000000
 #define GENERIC_WRITE 0x40000000

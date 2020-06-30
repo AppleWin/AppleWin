@@ -42,6 +42,10 @@ private slots:
 
     void on_colorButton_clicked();
 
+    void on_slot4_combo_activated(int index);
+
+    void on_slot5_combo_activated(int index);
+
 private:
     std::vector<QComboBox *> myDisks;
     std::vector<QComboBox *> myHDs;

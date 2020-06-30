@@ -12,11 +12,14 @@
 #include "Frame.h"
 #include "Memory.h"
 #include "LanguageCard.h"
+#include "Mockingboard.h"
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
 #include "Video.h"
+#include "SoundCore.h"
 #include "NTSC.h"
 #include "SaveState.h"
+#include "Riff.h"
 
 #include "linux/data.h"
 #include "linux/benchmark.h"
@@ -44,6 +47,10 @@ namespace
 
     void initialiseEmulator()
     {
+#ifdef RIFF_MB
+        RiffInitWriteFile("/tmp/Mockingboard.wav", 44100, 2);
+#endif
+
         g_fh = fopen("/tmp/applewin.txt", "w");
         setbuf(g_fh, nullptr);
 
@@ -94,6 +101,8 @@ namespace
             break;
         }
 
+        DSInit();
+        MB_Initialize();
         MemInitialize();
         VideoInitialize();
 
@@ -111,6 +120,8 @@ namespace
             pMouseCard->Reset();
         }
         MemDestroy();
+        MB_Destroy();
+        DSUninit();
     }
 
     void uninitialiseEmulator()
@@ -121,8 +132,8 @@ namespace
 
         g_CardMgr.GetDisk2CardMgr().Destroy();
         ImageDestroy();
-        fclose(g_fh);
-        g_fh = nullptr;
+        LogDone();
+        RiffFinishWriteFile();
     }
 
     qint64 emulatorTimeInMS()
@@ -315,6 +326,8 @@ void QApple::on_timer()
         const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
         g_dwCyclesThisFrame += uActualCyclesExecuted;
         g_CardMgr.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
+        MB_PeriodicUpdate(uActualCyclesExecuted);
+
         // in case we run more than 1 frame
         g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
         ++count;

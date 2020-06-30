@@ -14,3 +14,5 @@
 #include "linux/windows/gdi.h"
 #include "linux/windows/winbase.h"
 #include "linux/windows/winuser.h"
+#include "linux/windows/dsound.h"
+#include "linux/windows/winerror.h"
