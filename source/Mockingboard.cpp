@@ -87,6 +87,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Mockingboard.h"
 #include "SoundCore.h"
 #include "YamlHelper.h"
+#include "Riff.h"
 
 #include "AY8910.h"
 #include "SSI263Phonemes.h"
