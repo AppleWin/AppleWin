@@ -1282,13 +1282,13 @@ static bool MB_DSInit()
 									FALSE,	// bManualReset (FALSE = auto-reset)
 									FALSE,	// bInitialState (FALSE = non-signaled)
 									NULL);	// lpName
-	LogFileOutput("MB_DSInit: CreateEvent(), g_hSSI263Event[0]=0x%08X\n", (UINT32)g_hSSI263Event[0]);
+	LogFileOutput("MB_DSInit: CreateEvent(), g_hSSI263Event[0]=0x%08X\n", g_hSSI263Event[0]);
 
 	g_hSSI263Event[1] = CreateEvent(NULL,	// lpEventAttributes
 									FALSE,	// bManualReset (FALSE = auto-reset)
 									FALSE,	// bInitialState (FALSE = non-signaled)
 									NULL);	// lpName
-	LogFileOutput("MB_DSInit: CreateEvent(), g_hSSI263Event[1]=0x%08X\n", (UINT32)g_hSSI263Event[1]);
+	LogFileOutput("MB_DSInit: CreateEvent(), g_hSSI263Event[1]=0x%08X\n", g_hSSI263Event[1]);
 
 	if((g_hSSI263Event[0] == NULL) || (g_hSSI263Event[1] == NULL))
 	{
@@ -1390,7 +1390,7 @@ static bool MB_DSInit()
 								NULL,			// lpParameter
 								0,				// dwCreationFlags : 0 = Run immediately
 								&dwThreadId);	// lpThreadId
-	LogFileOutput("MB_DSInit: CreateThread(), g_hThread=0x%08X\n", (UINT32)g_hThread);
+	LogFileOutput("MB_DSInit: CreateThread(), g_hThread=0x%08X\n", g_hThread);
 
 	BOOL bRes2 = SetThreadPriority(g_hThread, THREAD_PRIORITY_TIME_CRITICAL);
 	LogFileOutput("MB_DSInit: SetThreadPriority(), bRes=%d\n", bRes2 ? 1 : 0);
