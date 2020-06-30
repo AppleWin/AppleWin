@@ -83,8 +83,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static LPBITMAPINFO  g_pDebuggerMemFramebufferinfo = NULL;
 	static bgra_t* g_pDebuggerMemFramebits = NULL;
 
-	HDC     g_hConsoleFontDC     = NULL;
-	HBITMAP g_hConsoleFontBitmap = NULL;
+	static HDC g_hConsoleFontDC = NULL;
+	static HBITMAP g_hConsoleFontBitmap = NULL;
 	static LPBITMAPINFO  g_hConsoleFontFramebufferinfo = NULL;
 	static bgra_t* g_hConsoleFontFramebits;
 
@@ -95,8 +95,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	char g_cConsoleBrushBG_g;
 	char g_cConsoleBrushBG_b;
 
-	HBRUSH g_hConsoleBrushFG = NULL;
-	HBRUSH g_hConsoleBrushBG = NULL;
+	static HBRUSH g_hConsoleBrushFG = NULL;
+	static HBRUSH g_hConsoleBrushBG = NULL;
 
 	// NOTE: Keep in sync ConsoleColors_e g_anConsoleColor !
 	COLORREF g_anConsoleColor[ NUM_CONSOLE_COLORS ] =
@@ -593,8 +593,11 @@ void ReleaseDebuggerMemDC(void)
 		g_hDebuggerMemBM = NULL;
 		DeleteDC(g_hDebuggerMemDC);
 		g_hDebuggerMemDC = NULL;
+
 		FrameReleaseDC();
-		DeleteObject(g_pDebuggerMemFramebufferinfo);
+
+		VirtualFree(g_pDebuggerMemFramebufferinfo, 0, MEM_RELEASE);
+		g_pDebuggerMemFramebufferinfo = NULL;
 		g_pDebuggerMemFramebits = NULL;
 	}
 }
@@ -648,6 +651,26 @@ HDC GetConsoleFontDC(void)
 
 	_ASSERT(g_hConsoleFontDC);
 	return g_hConsoleFontDC;
+}
+
+void ReleaseConsoleFontDC(void)
+{
+	if (g_hConsoleFontDC)
+	{
+		DeleteDC( g_hConsoleFontDC );
+		g_hConsoleFontDC = NULL;
+		DeleteObject( g_hConsoleFontBitmap );
+		g_hConsoleFontBitmap = NULL;
+
+		VirtualFree(g_hConsoleFontFramebufferinfo, 0, MEM_RELEASE);
+		g_hConsoleFontFramebufferinfo = NULL;
+		g_hConsoleFontFramebits = NULL;
+	}
+
+	DeleteObject( g_hConsoleBrushFG );
+	g_hConsoleBrushFG = NULL;
+	DeleteObject( g_hConsoleBrushBG );
+	g_hConsoleBrushBG = NULL;
 }
 
 
