@@ -14,3 +14,13 @@ HWND GetDesktopWindow()
 {
   return NULL;
 }
+
+UINT_PTR SetTimer(HWND,UINT_PTR,UINT,TIMERPROC)
+{
+  return NULL;
+}
+
+BOOL KillTimer(HWND hWnd, UINT uIDEvent)
+{
+  return TRUE;
+}

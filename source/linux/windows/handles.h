@@ -23,5 +23,7 @@ typedef void * LPDIRECTDRAW;
 typedef void * LPOVERLAPPED;
 typedef void * OVERLAPPED;
 typedef void * LPSECURITY_ATTRIBUTES;
+typedef void * HSEMAPHORE;
+
 
 BOOL CloseHandle(HANDLE hObject);

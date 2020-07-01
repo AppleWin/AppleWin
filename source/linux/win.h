@@ -1,6 +1,7 @@
 #pragma once
 
 #include "linux/windows/wincompat.h"
+#include "linux/windows/guiddef.h"
 #include "linux/windows/memory.h"
 #include "linux/windows/handles.h"
 #include "linux/windows/bitmap.h"
@@ -16,3 +17,6 @@
 #include "linux/windows/winuser.h"
 #include "linux/windows/dsound.h"
 #include "linux/windows/winerror.h"
+#include "linux/windows/mmreg.h"
+#include "linux/windows/mmsystem.h"
+#include "linux/windows/dmusicc.h"

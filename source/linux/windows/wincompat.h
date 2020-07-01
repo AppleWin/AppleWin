@@ -37,6 +37,7 @@ typedef signed short INT16;		// why there was char instead of short? --bb ??????
 typedef unsigned short UINT16;		// why there was char instead of short? --bb ??????????????????? 0_0
 #define __int64 long long
 
+typedef unsigned __int64 UINT_PTR, *PUINT_PTR;
 typedef long long LONGLONG;
 
 typedef unsigned int UINT32;

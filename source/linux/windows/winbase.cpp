@@ -41,6 +41,11 @@ DWORD       WINAPI WaitForMultipleObjects(DWORD,const HANDLE*,BOOL,DWORD)
   return WAIT_FAILED;
 }
 
+DWORD       WINAPI WaitForSingleObject(const HANDLE,DWORD)
+{
+  return WAIT_FAILED;
+}
+
 BOOL        WINAPI GetExitCodeThread(HANDLE,LPDWORD code)
 {
   *code = 0;
@@ -78,4 +83,14 @@ BOOL WINAPI QueryPerformanceCounter(LARGE_INTEGER*counter)
   const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
   counter->QuadPart = ms.count();
   return TRUE;
+}
+
+HANDLE CreateSemaphore(
+  LPSECURITY_ATTRIBUTES lpSemaphoreAttributes,
+  LONG                  lInitialCount,
+  LONG                  lMaximumCount,
+  LPCSTR                lpName
+)
+{
+  return INVALID_HANDLE_VALUE;
 }

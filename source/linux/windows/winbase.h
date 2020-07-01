@@ -26,6 +26,7 @@ typedef DWORD (CALLBACK *LPTHREAD_START_ROUTINE)(LPVOID);
 typedef size_t SIZE_T;
 
 BOOL        WINAPI SetThreadPriority(HANDLE,INT);
+DWORD       WINAPI WaitForSingleObject(const HANDLE,DWORD);
 DWORD       WINAPI WaitForMultipleObjects(DWORD,const HANDLE*,BOOL,DWORD);
 BOOL        WINAPI GetExitCodeThread(HANDLE,LPDWORD);
 BOOL        WINAPI SetEvent(HANDLE);
@@ -46,3 +47,10 @@ typedef union _LARGE_INTEGER {
 } LARGE_INTEGER;
 
 BOOL WINAPI QueryPerformanceCounter(LARGE_INTEGER*);
+
+HANDLE CreateSemaphore(
+  LPSECURITY_ATTRIBUTES lpSemaphoreAttributes,
+  LONG                  lInitialCount,
+  LONG                  lMaximumCount,
+  LPCSTR                lpName
+);

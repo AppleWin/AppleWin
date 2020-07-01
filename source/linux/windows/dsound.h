@@ -2,6 +2,8 @@
 
 #include "linux/windows/winbase.h"
 #include "linux/windows/winerror.h"
+#include "linux/windows/mmreg.h"
+#include "linux/windows/guiddef.h"
 
 #include <vector>
 #include <memory>
@@ -11,8 +13,10 @@
 #define DSBPN_OFFSETSTOP		-1
 
 #define DSBCAPS_CTRLVOLUME          0x00000080
-#define DSBCAPS_CTRLPOSITIONNOTIFY  0x00000100
 #define DSBCAPS_LOCSOFTWARE         0x00000008
+#define DSBCAPS_CTRLPOSITIONNOTIFY  0x00000100
+#define DSBCAPS_STICKYFOCUS         0x00004000
+#define DSBCAPS_GETCURRENTPOSITION2 0x00010000
 
 #define DSBVOLUME_MIN               -10000
 #define DSBVOLUME_MAX               0
@@ -30,10 +34,36 @@
 #define	_FACDS		0x878
 #define	MAKE_DSHRESULT(code)		MAKE_HRESULT(1,_FACDS,code)
 
+#define	DSSCL_NORMAL		1
+
+typedef BOOL (CALLBACK *LPDSENUMCALLBACK)(LPGUID,LPCSTR,LPCSTR,LPVOID);
+
+HRESULT DirectSoundEnumerate(LPDSENUMCALLBACK lpDSEnumCallback, LPVOID lpContext);
+
+typedef struct {
+  DWORD  dwSize;
+  DWORD  dwFlags;
+  DWORD  dwFormats;
+  DWORD  dwChannels;
+} DSCCAPS, DSCAPS, *LPDSCCAPS;
+
+typedef const DSCCAPS *LPCDSCCAPS;
+
+typedef struct _DSBUFFERDESC
+{
+  DWORD		dwSize;
+  DWORD		dwFlags;
+  DWORD		dwBufferBytes;
+  DWORD		dwReserved;
+  LPWAVEFORMATEX	lpwfxFormat;
+  GUID		guid3DAlgorithm;
+} DSBUFFERDESC,*LPDSBUFFERDESC;
+typedef const DSBUFFERDESC *LPCDSBUFFERDESC;
+
 typedef struct _DSBPOSITIONNOTIFY
 {
-    DWORD	dwOffset;
-    HANDLE	hEventNotify;
+  DWORD	dwOffset;
+  HANDLE	hEventNotify;
 } DSBPOSITIONNOTIFY,*LPDSBPOSITIONNOTIFY;
 typedef const DSBPOSITIONNOTIFY *LPCDSBPOSITIONNOTIFY;
 
@@ -43,22 +73,24 @@ struct IDirectSoundNotify
 };
 typedef struct IDirectSoundNotify *LPDIRECTSOUNDNOTIFY,**LPLPDIRECTSOUNDNOTIFY;
 
-struct IDirectSoundBuffer
+class IDirectSoundBuffer : public IUnknown
 {
-  std::unique_ptr<IDirectSoundNotify> soundNotify;
-  std::vector<SHORT> soundBuffer;
+  const size_t myBufferSize;
+  const size_t mySampleRate;
+  const size_t myChannels;
+  const size_t myBitsPerSample;
+  const size_t myFlags;
 
-  size_t playPosition = 0;
-  size_t writePosition = 0;
+  std::unique_ptr<IDirectSoundNotify> mySoundNotify;
+  std::vector<SHORT> mySoundBuffer;
 
-  LONG volume = DSBVOLUME_MIN;
-  DWORD flags = 0;
-  DWORD bufferSize = 0;
-  DWORD sampleRate = 0;
-  WORD status = 0;
-  int channels = 0;
+  size_t myPlayPosition = 0;
+  size_t myWritePosition = 0;
+  WORD myStatus = 0;
+  LONG myVolume = DSBVOLUME_MIN;
 
-  IDirectSoundBuffer();
+ public:
+  IDirectSoundBuffer(const size_t bufferSize, const size_t channels, const size_t sampleRate, const size_t bitsPerSample, const size_t flags);
 
   HRESULT QueryInterface(int riid, void **ppvObject);
 
@@ -72,8 +104,19 @@ struct IDirectSoundBuffer
   HRESULT Play( DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags );
 
   HRESULT SetVolume( LONG lVolume );
+  HRESULT GetVolume( LONG * lplVolume );
 
   HRESULT GetStatus( LPDWORD lpdwStatus );
   HRESULT Restore();
 };
 typedef struct IDirectSoundBuffer *LPDIRECTSOUNDBUFFER,**LPLPDIRECTSOUNDBUFFER;
+
+struct IDirectSound : public IUnknown
+{
+  HRESULT CreateSoundBuffer( LPCDSBUFFERDESC lpcDSBufferDesc, IDirectSoundBuffer **lplpDirectSoundBuffer, IUnknown FAR* pUnkOuter );
+  HRESULT SetCooperativeLevel( HWND hwnd, DWORD dwLevel );
+  HRESULT GetCaps(LPDSCCAPS pDSCCaps);
+};
+typedef struct IDirectSound *LPDIRECTSOUND;
+
+HRESULT WINAPI DirectSoundCreate(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN pUnkOuter);

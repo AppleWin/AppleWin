@@ -1,12 +1,21 @@
 #include "linux/windows/dsound.h"
 #include "linux/windows/winerror.h"
 
+#include <cstring>
+
 HRESULT IDirectSoundNotify::SetNotificationPositions(DWORD cPositionNotifies, LPCDSBPOSITIONNOTIFY lpcPositionNotifies)
 {
   return DS_OK;
 }
 
-IDirectSoundBuffer::IDirectSoundBuffer(): soundNotify(new IDirectSoundNotify)
+IDirectSoundBuffer::IDirectSoundBuffer(const size_t bufferSize, const size_t channels, const size_t sampleRate, const size_t bitsPerSample, const size_t flags)
+  : myBufferSize(bufferSize)
+  , myChannels(channels)
+  , mySampleRate(sampleRate)
+  , myBitsPerSample(bitsPerSample)
+  , myFlags(flags)
+  , mySoundNotify(new IDirectSoundNotify)
+  , mySoundBuffer(bufferSize)
 {
 }
 
@@ -14,7 +23,7 @@ HRESULT IDirectSoundBuffer::QueryInterface(int riid, void **ppvObject)
 {
   if (riid == IID_IDirectSoundNotify)
   {
-    *ppvObject = soundNotify.get();
+    *ppvObject = mySoundNotify.get();
     return S_OK;
   }
 
@@ -24,14 +33,14 @@ HRESULT IDirectSoundBuffer::QueryInterface(int riid, void **ppvObject)
 HRESULT IDirectSoundBuffer::Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2 )
 {
   const size_t totalWrittenBytes = dwAudioBytes1 + dwAudioBytes2;
-  writePosition = (writePosition + totalWrittenBytes) % this->soundBuffer.size();
+  this->myWritePosition = (this->myWritePosition + totalWrittenBytes) % this->mySoundBuffer.size();
   return DS_OK;
 }
 
 HRESULT IDirectSoundBuffer::Stop()
 {
   const DWORD mask = DSBSTATUS_PLAYING | DSBSTATUS_LOOPING;
-  this->status &= ~mask;
+  this->myStatus &= ~mask;
   return DS_OK;
 }
 
@@ -42,23 +51,23 @@ HRESULT IDirectSoundBuffer::SetCurrentPosition( DWORD dwNewPosition )
 
 HRESULT IDirectSoundBuffer::Play( DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags )
 {
-  this->status |= DSBSTATUS_PLAYING;
+  this->myStatus |= DSBSTATUS_PLAYING;
   if (dwFlags & DSBPLAY_LOOPING)
   {
-    this->status |= DSBSTATUS_LOOPING;
+    this->myStatus |= DSBSTATUS_LOOPING;
   }
   return S_OK;
 }
 
 HRESULT IDirectSoundBuffer::SetVolume( LONG lVolume )
 {
-  this->volume = lVolume;
+  this->myVolume = lVolume;
   return DS_OK;
 }
 
 HRESULT IDirectSoundBuffer::GetStatus( LPDWORD lpdwStatus )
 {
-  *lpdwStatus = this->status;
+  *lpdwStatus = this->myStatus;
   return DS_OK;
 }
 
@@ -71,8 +80,8 @@ HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOI
 {
   if (dwFlags & DSBLOCK_ENTIREBUFFER)
   {
-    *lplpvAudioPtr1 = this->soundBuffer.data();
-    *lpdwAudioBytes1 = this->soundBuffer.size();
+    *lplpvAudioPtr1 = this->mySoundBuffer.data();
+    *lpdwAudioBytes1 = this->mySoundBuffer.size();
     if (lplpvAudioPtr2 && lpdwAudioBytes2)
     {
       *lplpvAudioPtr2 = nullptr;
@@ -81,16 +90,16 @@ HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOI
   }
   else
   {
-    const DWORD availableInFirstPart = this->soundBuffer.size() - dwWriteCursor;
+    const DWORD availableInFirstPart = this->mySoundBuffer.size() - dwWriteCursor;
 
-    *lplpvAudioPtr1 = this->soundBuffer.data() + dwWriteCursor;
+    *lplpvAudioPtr1 = this->mySoundBuffer.data() + dwWriteCursor;
     *lpdwAudioBytes1 = std::min(availableInFirstPart, dwWriteBytes);
 
     if (lplpvAudioPtr2 && lpdwAudioBytes2)
     {
       if (*lpdwAudioBytes1 < dwWriteBytes)
       {
-	*lplpvAudioPtr2 = this->soundBuffer.data();
+	*lplpvAudioPtr2 = this->mySoundBuffer.data();
 	*lpdwAudioBytes2 = std::min(dwWriteCursor, dwWriteBytes - *lpdwAudioBytes1);
       }
       else
@@ -106,7 +115,50 @@ HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOI
 
 HRESULT IDirectSoundBuffer::GetCurrentPosition( LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor )
 {
-  *lpdwCurrentPlayCursor = this->writePosition;
-  *lpdwCurrentWriteCursor = this->writePosition;
+  *lpdwCurrentPlayCursor = this->myWritePosition;
+  *lpdwCurrentWriteCursor = this->myWritePosition;
+  return DS_OK;
+}
+
+HRESULT IDirectSoundBuffer::GetVolume( LONG * lplVolume )
+{
+  *lplVolume = this->myVolume;
+  return DS_OK;
+}
+
+HRESULT WINAPI DirectSoundCreate(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN pUnkOuter)
+{
+  *ppDS = new IDirectSound();
+  return DS_OK;
+}
+
+HRESULT DirectSoundEnumerate(LPDSENUMCALLBACK lpDSEnumCallback, LPVOID lpContext)
+{
+  GUID guid = 123;
+  lpDSEnumCallback(&guid, "audio", "linux", lpContext);
+  return DS_OK;
+}
+
+HRESULT IDirectSound::CreateSoundBuffer( LPCDSBUFFERDESC lpcDSBufferDesc, IDirectSoundBuffer **lplpDirectSoundBuffer, IUnknown FAR* pUnkOuter )
+{
+  const size_t bufferSize = lpcDSBufferDesc->dwBufferBytes;
+  const size_t channels = lpcDSBufferDesc->lpwfxFormat->nChannels;
+  const size_t sampleRate = lpcDSBufferDesc->lpwfxFormat->nSamplesPerSec;
+  const size_t bitsPerSample = lpcDSBufferDesc->lpwfxFormat->wBitsPerSample;
+  const size_t flags = lpcDSBufferDesc->dwFlags;
+  IDirectSoundBuffer * dsb = new IDirectSoundBuffer(bufferSize, channels, sampleRate, bitsPerSample, flags);
+
+  *lplpDirectSoundBuffer = dsb;
+  return DS_OK;
+}
+
+HRESULT IDirectSound::SetCooperativeLevel( HWND hwnd, DWORD dwLevel )
+{
+  return DS_OK;
+}
+
+HRESULT IDirectSound::GetCaps(LPDSCCAPS pDSCCaps)
+{
+  memset(pDSCCaps, 0, sizeof(*pDSCCaps));
   return DS_OK;
 }

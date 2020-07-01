@@ -5,6 +5,7 @@
 #define FAILED(stat) ((HRESULT)(stat)<0)
 #define E_NOINTERFACE HRESULT(0x80004002)
 #define S_OK HRESULT(0)
+#define S_FALSE HRESULT(1)
 #define SEVERITY_SUCCESS    0
 #define SEVERITY_ERROR      1
 
