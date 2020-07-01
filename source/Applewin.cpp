@@ -145,15 +145,15 @@ void LogPerfTimings(void)
 		UINT64 other = g_timeTotal - g_timeCpu - g_timeSpeaker - g_timeMB_NoTimer - g_timeVideoRefresh;
 
 		LogOutput("Perf breakdown:\n");
-		LogOutput(". CPU %%     = %2f.2\n", (double)cpu / (double)g_timeTotal * 100.0);
-		LogOutput(". Video %%   = %2f.2\n", (double)video / (double)g_timeTotal * 100.0);
-		LogOutput("... NTSC %%    = %2f.2\n", (double)g_timeVideo / (double)g_timeTotal * 100.0);
-		LogOutput("... refresh %% = %2f.2\n", (double)g_timeVideoRefresh / (double)g_timeTotal * 100.0);
-		LogOutput(". Audio %%   = %2f.2\n", (double)audio / (double)g_timeTotal * 100.0);
-		LogOutput("... Speaker %% = %2f.2\n", (double)spkr / (double)g_timeTotal * 100.0);
-		LogOutput("... MB %%      = %2f.2\n", (double)mb / (double)g_timeTotal * 100.0);
-		LogOutput(". Other %%   = %2f.2\n", (double)other / (double)g_timeTotal * 100.0);
-		LogOutput(". TOTAL %%   = %2f.2\n", (double)(cpu+video+audio+other) / (double)g_timeTotal * 100.0);
+		LogOutput(". CPU %%        = %6.2f\n", (double)cpu / (double)g_timeTotal * 100.0);
+		LogOutput(". Video %%      = %6.2f\n", (double)video / (double)g_timeTotal * 100.0);
+		LogOutput("... NTSC %%     = %6.2f\n", (double)g_timeVideo / (double)g_timeTotal * 100.0);
+		LogOutput("... refresh %%  = %6.2f\n", (double)g_timeVideoRefresh / (double)g_timeTotal * 100.0);
+		LogOutput(". Audio %%      = %6.2f\n", (double)audio / (double)g_timeTotal * 100.0);
+		LogOutput("... Speaker %%  = %6.2f\n", (double)spkr / (double)g_timeTotal * 100.0);
+		LogOutput("... MB %%       = %6.2f\n", (double)mb / (double)g_timeTotal * 100.0);
+		LogOutput(". Other %%      = %6.2f\n", (double)other / (double)g_timeTotal * 100.0);
+		LogOutput(". TOTAL %%      = %6.2f\n", (double)(cpu+video+audio+other) / (double)g_timeTotal * 100.0);
 	}
 }
 #endif

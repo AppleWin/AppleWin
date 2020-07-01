@@ -1,5 +1,5 @@
 #pragma once
 
-int RiffInitWriteFile(char* pszFile, unsigned int sample_rate, unsigned int NumChannels);
+int RiffInitWriteFile(const char* pszFile, unsigned int sample_rate, unsigned int NumChannels);
 int RiffFinishWriteFile();
-int RiffPutSamples(short* buf, unsigned int uSamples);
+int RiffPutSamples(const short* buf, unsigned int uSamples);
