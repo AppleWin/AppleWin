@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //===========================================================================
 
 #include "cpu_readwrite.inl"
+#include "../Video.h"
 
 static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate, Video *pVideo)
 {

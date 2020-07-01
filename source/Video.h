@@ -178,23 +178,6 @@ static const UINT kVideoRomSizeMax = kVideoRomSize16K;
 
 class Video {
 
-	// Globals __________________________________________________________
-
-private:
-	static BYTE g_videoRom[kVideoRomSizeMax];
-	static UINT g_videoRomSize;
-	static bool g_videoRomRockerSwitch;
-
-	static int g_nLastScreenShot;
-	const  int nMaxScreenShot = 999999999;
-	static std::string g_pLastDiskImageName;
-
-	void Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars);
-	bool Util_TestScreenShotFileName(const TCHAR* pFileName);
-	void Video_SaveScreenShot(const VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName);
-	void Video_MakeScreenShot(FILE* pFile, const VideoScreenShot_e ScreenShotType);
-
-	NTSC* pNTSC;
 
 public:
 	COLORREF   g_nMonochromeRGB;	// saved to Registry
@@ -205,7 +188,8 @@ public:
 	bool g_bShowPrintScreenWarningDialog;
 	bool g_bDisplayPrintScreenFileName;
 
-	// Prototypes _______________________________________________________
+	// ____________________________________________________________________
+
 	Video::Video();
 	~Video();
 
@@ -272,8 +256,26 @@ public:
 	static void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
 	static void CreateDIBBuffer(LPBITMAPINFO pFramebufferinfo, HBITMAP* hDeviceBitmap, uint8_t** pFramebufferbits);
 
+
+	// ____________________________________________________________________
+
+private:
+	static BYTE g_videoRom[kVideoRomSizeMax];
+	static UINT g_videoRomSize;
+	static bool g_videoRomRockerSwitch;
+
+	static int g_nLastScreenShot;
+	const  int nMaxScreenShot = 999999999;
+	static std::string g_pLastDiskImageName;
+
+	void Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars);
+	bool Util_TestScreenShotFileName(const TCHAR* pFileName);
+	void Video_SaveScreenShot(const VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName);
+	void Video_MakeScreenShot(FILE* pFile, const VideoScreenShot_e ScreenShotType);
+
+	NTSC* pNTSC;
 };
 
 
-
+// Main Video renderer
 extern Video *g_pVideo;

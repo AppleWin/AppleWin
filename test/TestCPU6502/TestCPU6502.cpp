@@ -1,8 +1,9 @@
 #include "stdafx.h"
 
 #include "../../source/Applewin.h"
-#include "../../source/CPU.h"
 #include "../../source/Memory.h"
+#include "../../source/Video.h"
+#include "../../source/CPU.h"
 
 // From Applewin.cpp
 bool g_bFullSpeed = false;
@@ -32,6 +33,9 @@ static signed int g_nIrqCheckTimeout = IRQ_CHECK_TIMEOUT;
 
 static eCpuType g_ActiveCPU = CPU_65C02;
 
+
+static Video* g_pVideo;
+
 eCpuType GetActiveCpu(void)
 {
 	return g_ActiveCPU;
@@ -54,7 +58,7 @@ static __forceinline void DoIrqProfiling(DWORD uCycles)
 {
 }
 
-static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const bool bVideoUpdate)
+static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const bool bVideoUpdate, Video* pVideo)
 {
 }
 
@@ -72,10 +76,10 @@ DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)
 	return 0;
 }
 
-// From NTSC.cpp
-void NTSC_VideoUpdateCycles( long cycles6502 )
-{
-}
+//// From NTSC.cpp
+//void NTSC_VideoUpdateCycles( long cycles6502 )
+//{
+//}
 
 //-------------------------------------
 
@@ -109,12 +113,12 @@ void reset(void)
 
 DWORD TestCpu6502(DWORD uTotalCycles)
 {
-	return Cpu6502(uTotalCycles, true);
+	return Cpu6502(uTotalCycles, true, g_pVideo);
 }
 
 DWORD TestCpu65C02(DWORD uTotalCycles)
 {
-	return Cpu65C02(uTotalCycles, true);
+	return Cpu65C02(uTotalCycles, true, g_pVideo);
 }
 
 //-------------------------------------
@@ -1244,6 +1248,8 @@ int GH321_test()
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	g_pVideo = new Video();
+
 	int res = 1;
 	init();
 	reset();

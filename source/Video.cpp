@@ -127,13 +127,12 @@ Video* g_pVideo = NULL;
 	};
 
 	int Video::g_nLastScreenShot = 0;
+	UINT g_videoRomSize = 0;
+	bool g_videoRomRockerSwitch = false;
 
 	Video::Video()
 	{
 		pNTSC = new NTSC();
-
-		g_videoRomSize = 0;
-		g_videoRomRockerSwitch = false;
 
 		g_bDisplayPrintScreenFileName = false;
 		g_bShowPrintScreenWarningDialog = true;
