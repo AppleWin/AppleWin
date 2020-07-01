@@ -7627,23 +7627,25 @@ void OutputTraceLine ()
 
 	if (g_bTraceFileWithVideoScanner)
 	{
-		uint16_t addr = NTSC_VideoGetScannerAddressForDebugger();
-		BYTE data = mem[addr];
+		// Disabled since NTSC.h rewrite
 
-		fprintf( g_hTraceFile,
-			"%04X %04X %04X   %02X %02X %02X %02X %04X %s  %s\n",
-			g_nVideoClockVert,
-			g_nVideoClockHorz,
-			addr,
-			data,
-			(unsigned)regs.a,
-			(unsigned)regs.x,
-			(unsigned)regs.y,
-			(unsigned)regs.sp,
-			(char*) sFlags
-			, sDisassembly
-			//, sTarget // TODO: Show target?
-		);
+		//uint16_t addr = NTSC_VideoGetScannerAddressForDebugger();
+		//BYTE data = mem[addr];
+
+		//fprintf( g_hTraceFile,
+		//	"%04X %04X %04X   %02X %02X %02X %02X %04X %s  %s\n",
+		//	g_nVideoClockVert,
+		//	g_nVideoClockHorz,
+		//	addr,
+		//	data,
+		//	(unsigned)regs.a,
+		//	(unsigned)regs.x,
+		//	(unsigned)regs.y,
+		//	(unsigned)regs.sp,
+		//	(char*) sFlags
+		//	, sDisassembly
+		//	//, sTarget // TODO: Show target?
+		//);
 	}
 	else
 	{

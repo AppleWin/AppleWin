@@ -105,300 +105,211 @@ struct ColorSpace_BGRA_t
 };
 
 
-// Globals (Private) __________________________________________________
-	static int g_nVideoCharSet = 0;
-	static int g_nVideoMixed   = 0;
-	static int g_nHiresPage    = 1;
-	static int g_nTextPage     = 1;
-
-	static bool g_bDelayVideoMode = false;	// NB. No need to save to save-state, as it will be done immediately after opcode completes in NTSC_VideoUpdateCycles()
-	static uint32_t g_uNewVideoModeFlags = 0;
-
-
-
-	static UINT g_videoScannerMaxVert = VIDEO_SCANNER_MAX_VERT;			// default to NTSC
-	static UINT g_videoScanner6502Cycles = VIDEO_SCANNER_6502_CYCLES;	// default to NTSC
-
-	#define VIDEO_SCANNER_HORZ_COLORBURST_BEG 12
-	#define VIDEO_SCANNER_HORZ_COLORBURST_END 16
-
-	#define VIDEO_SCANNER_HORZ_START 25 // first displayable horz scanner index
-	#define VIDEO_SCANNER_Y_MIXED   160 // num scanlins for mixed graphics + text
-	#define VIDEO_SCANNER_Y_DISPLAY 192 // max displayable scanlines
-
-	static bgra_t *g_pVideoAddress = 0;
-	static bgra_t *g_pScanLines[VIDEO_SCANNER_Y_DISPLAY*2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
-
-	static const UINT g_kFrameBufferWidth = GetFrameBufferWidth();
-
-	
-
-	typedef void (*UpdateScreenFunc_t)(long);
-	static UpdateScreenFunc_t g_apFuncVideoUpdateScanline[VIDEO_SCANNER_Y_DISPLAY];
-	static UpdateScreenFunc_t g_pFuncUpdateTextScreen     = 0; // updateScreenText40;
-	static UpdateScreenFunc_t g_pFuncUpdateGraphicsScreen = 0; // updateScreenText40;
-	static UpdateScreenFunc_t g_pFuncModeSwitchDelayed = 0;
-
-	typedef void (*UpdatePixelFunc_t)(uint16_t);
-	static UpdatePixelFunc_t g_pFuncUpdateBnWPixel = 0; //updatePixelBnWMonitorSingleScanline;
-	static UpdatePixelFunc_t g_pFuncUpdateHuePixel = 0; //updatePixelHueMonitorSingleScanline;
-
-	static uint8_t  g_nTextFlashCounter = 0;
-	static uint16_t g_nTextFlashMask    = 0;
-
-	static unsigned g_aPixelMaskGR       [ 16];
-	static uint16_t g_aPixelDoubleMaskHGR[128]; // hgrbits -> g_aPixelDoubleMaskHGR: 7-bit mono 280 pixels to 560 pixel doubling
-
-	static int g_nLastColumnPixelNTSC;
-	static int g_nColorBurstPixels;
-
-	#define INITIAL_COLOR_PHASE 0
-	static int g_nColorPhaseNTSC = INITIAL_COLOR_PHASE;
-	static int g_nSignalBitsNTSC = 0;
-
-	#define NTSC_NUM_PHASES     4
-	#define NTSC_NUM_SEQUENCES  4096
-
-	const uint32_t ALPHA32_MASK = 0xFF000000; // Win32: aarrggbb
-
-/*extern*/ uint32_t g_nChromaSize = 0; // for NTSC_VideoGetChromaTable()
-	static bgra_t   g_aBnWMonitor                 [NTSC_NUM_SEQUENCES];
-	static bgra_t   g_aHueMonitor[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES];
-	static bgra_t   g_aBnwColorTV                 [NTSC_NUM_SEQUENCES];
-	static bgra_t   g_aHueColorTV[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES];
-
-	// g_aBnWMonitor * g_nMonochromeRGB -> g_aBnWMonitorCustom
-	// g_aBnwColorTV * g_nMonochromeRGB -> g_aBnWColorTVCustom
-	static bgra_t g_aBnWMonitorCustom           [NTSC_NUM_SEQUENCES];
-	static bgra_t g_aBnWColorTVCustom           [NTSC_NUM_SEQUENCES];
-
-	#define CHROMA_ZEROS 2
-	#define CHROMA_POLES 2
-	#define CHROMA_GAIN  7.438011255f // Should this be 7.15909 MHz ?
-	#define CHROMA_0    -0.7318893645f
-	#define CHROMA_1     1.2336442711f
-
-	//#define LUMGAIN  1.062635655e+01
-	//#define LUMCOEF1  -0.3412038399
-	//#define LUMCOEF2  0.9647813115
-	#define LUMA_ZEROS  2
-	#define LUMA_POLES  2
-	#define LUMA_GAIN  13.71331570f   // Should this be 14.318180 MHz ?
-	#define LUMA_0     -0.3961075449f
-	#define LUMA_1      1.1044202472f
-
-	#define SIGNAL_ZEROS 2
-	#define SIGNAL_POLES 2
-	#define SIGNAL_GAIN  7.614490548f  // Should this be 7.15909 MHz ?
-	#define SIGNAL_0    -0.2718798058f 
-	#define SIGNAL_1     0.7465656072f 
-
-// Tables
-	// Video scanner tables are now runtime-generated using UTAIIe logic
-	static unsigned short g_aClockVertOffsetsHGR[VIDEO_SCANNER_MAX_VERT_PAL];
-	static unsigned short g_aClockVertOffsetsTXT[VIDEO_SCANNER_MAX_VERT_PAL/8];
-	static unsigned short APPLE_IIP_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];	// 5 = CEILING(312/64) = CEILING(262/64)
-	static unsigned short APPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];
-
 #ifdef _DEBUG
-	static unsigned short g_kClockVertOffsetsHGR[ VIDEO_SCANNER_MAX_VERT ] =
-	{
-		0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
-		0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
-		0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
-		0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
+static unsigned short g_kClockVertOffsetsHGR[VIDEO_SCANNER_MAX_VERT] =
+{
+	0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
+	0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
+	0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
+	0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
 
-		0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
-		0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
-		0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
-		0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
+	0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
+	0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
+	0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
+	0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
 
-		0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
-		0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
-		0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
-		0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
+	0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
+	0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
+	0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
+	0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
 
-		0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
-		0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
-		0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
-		0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
+	0x0000,0x0400,0x0800,0x0C00,0x1000,0x1400,0x1800,0x1C00,0x0080,0x0480,0x0880,0x0C80,0x1080,0x1480,0x1880,0x1C80,
+	0x0100,0x0500,0x0900,0x0D00,0x1100,0x1500,0x1900,0x1D00,0x0180,0x0580,0x0980,0x0D80,0x1180,0x1580,0x1980,0x1D80,
+	0x0200,0x0600,0x0A00,0x0E00,0x1200,0x1600,0x1A00,0x1E00,0x0280,0x0680,0x0A80,0x0E80,0x1280,0x1680,0x1A80,0x1E80,
+	0x0300,0x0700,0x0B00,0x0F00,0x1300,0x1700,0x1B00,0x1F00,0x0380,0x0780,0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80,
 
-		0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80
-	};
+	0x0B80,0x0F80,0x1380,0x1780,0x1B80,0x1F80
+};
 
-	static unsigned short g_kClockVertOffsetsTXT[33] =	// 33 = CEILING(262/8)
-	{
-		0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
-		0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
-		0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
-		0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
+static unsigned short g_kClockVertOffsetsTXT[33] =	// 33 = CEILING(262/8)
+{
+	0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
+	0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
+	0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
+	0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
 
-		0x380
-	};
+	0x380
+};
 
-	static unsigned short kAPPLE_IIP_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ] =
-	{
-		{0x1068,0x1068,0x1069,0x106A,0x106B,0x106C,0x106D,0x106E,0x106F,
-		 0x1070,0x1071,0x1072,0x1073,0x1074,0x1075,0x1076,0x1077,
-		 0x1078,0x1079,0x107A,0x107B,0x107C,0x107D,0x107E,0x107F,
-		 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
-		 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
-		 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
-		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F,
-		 0x0020,0x0021,0x0022,0x0023,0x0024,0x0025,0x0026,0x0027},
+static unsigned short kAPPLE_IIP_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ] =
+{
+	{0x1068,0x1068,0x1069,0x106A,0x106B,0x106C,0x106D,0x106E,0x106F,
+	 0x1070,0x1071,0x1072,0x1073,0x1074,0x1075,0x1076,0x1077,
+	 0x1078,0x1079,0x107A,0x107B,0x107C,0x107D,0x107E,0x107F,
+	 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
+	 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
+	 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
+	 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F,
+	 0x0020,0x0021,0x0022,0x0023,0x0024,0x0025,0x0026,0x0027},
 
-		{0x1010,0x1010,0x1011,0x1012,0x1013,0x1014,0x1015,0x1016,0x1017,
-		 0x1018,0x1019,0x101A,0x101B,0x101C,0x101D,0x101E,0x101F,
-		 0x1020,0x1021,0x1022,0x1023,0x1024,0x1025,0x1026,0x1027,
-		 0x0028,0x0029,0x002A,0x002B,0x002C,0x002D,0x002E,0x002F,
-		 0x0030,0x0031,0x0032,0x0033,0x0034,0x0035,0x0036,0x0037,
-		 0x0038,0x0039,0x003A,0x003B,0x003C,0x003D,0x003E,0x003F,
-		 0x0040,0x0041,0x0042,0x0043,0x0044,0x0045,0x0046,0x0047,
-		 0x0048,0x0049,0x004A,0x004B,0x004C,0x004D,0x004E,0x004F},
+	{0x1010,0x1010,0x1011,0x1012,0x1013,0x1014,0x1015,0x1016,0x1017,
+	 0x1018,0x1019,0x101A,0x101B,0x101C,0x101D,0x101E,0x101F,
+	 0x1020,0x1021,0x1022,0x1023,0x1024,0x1025,0x1026,0x1027,
+	 0x0028,0x0029,0x002A,0x002B,0x002C,0x002D,0x002E,0x002F,
+	 0x0030,0x0031,0x0032,0x0033,0x0034,0x0035,0x0036,0x0037,
+	 0x0038,0x0039,0x003A,0x003B,0x003C,0x003D,0x003E,0x003F,
+	 0x0040,0x0041,0x0042,0x0043,0x0044,0x0045,0x0046,0x0047,
+	 0x0048,0x0049,0x004A,0x004B,0x004C,0x004D,0x004E,0x004F},
 
-		{0x1038,0x1038,0x1039,0x103A,0x103B,0x103C,0x103D,0x103E,0x103F,
-		 0x1040,0x1041,0x1042,0x1043,0x1044,0x1045,0x1046,0x1047,
-		 0x1048,0x1049,0x104A,0x104B,0x104C,0x104D,0x104E,0x104F,
-		 0x0050,0x0051,0x0052,0x0053,0x0054,0x0055,0x0056,0x0057,
-		 0x0058,0x0059,0x005A,0x005B,0x005C,0x005D,0x005E,0x005F,
-		 0x0060,0x0061,0x0062,0x0063,0x0064,0x0065,0x0066,0x0067,
-		 0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
-		 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077},
+	{0x1038,0x1038,0x1039,0x103A,0x103B,0x103C,0x103D,0x103E,0x103F,
+	 0x1040,0x1041,0x1042,0x1043,0x1044,0x1045,0x1046,0x1047,
+	 0x1048,0x1049,0x104A,0x104B,0x104C,0x104D,0x104E,0x104F,
+	 0x0050,0x0051,0x0052,0x0053,0x0054,0x0055,0x0056,0x0057,
+	 0x0058,0x0059,0x005A,0x005B,0x005C,0x005D,0x005E,0x005F,
+	 0x0060,0x0061,0x0062,0x0063,0x0064,0x0065,0x0066,0x0067,
+	 0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
+	 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077},
 
-		{0x1060,0x1060,0x1061,0x1062,0x1063,0x1064,0x1065,0x1066,0x1067,
-		 0x1068,0x1069,0x106A,0x106B,0x106C,0x106D,0x106E,0x106F,
-		 0x1070,0x1071,0x1072,0x1073,0x1074,0x1075,0x1076,0x1077,
-		 0x0078,0x0079,0x007A,0x007B,0x007C,0x007D,0x007E,0x007F,
-		 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
-		 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
-		 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
-		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F},
+	{0x1060,0x1060,0x1061,0x1062,0x1063,0x1064,0x1065,0x1066,0x1067,
+	 0x1068,0x1069,0x106A,0x106B,0x106C,0x106D,0x106E,0x106F,
+	 0x1070,0x1071,0x1072,0x1073,0x1074,0x1075,0x1076,0x1077,
+	 0x0078,0x0079,0x007A,0x007B,0x007C,0x007D,0x007E,0x007F,
+	 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
+	 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
+	 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
+	 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F},
 
-		{0x1060,0x1060,0x1061,0x1062,0x1063,0x1064,0x1065,0x1066,0x1067,
-		 0x1068,0x1069,0x106A,0x106B,0x106C,0x106D,0x106E,0x106F,
-		 0x1070,0x1071,0x1072,0x1073,0x1074,0x1075,0x1076,0x1077,
-		 0x0078,0x0079,0x007A,0x007B,0x007C,0x007D,0x007E,0x007F,
-		 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
-		 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
-		 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
-		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F}
-	};
+	{0x1060,0x1060,0x1061,0x1062,0x1063,0x1064,0x1065,0x1066,0x1067,
+	 0x1068,0x1069,0x106A,0x106B,0x106C,0x106D,0x106E,0x106F,
+	 0x1070,0x1071,0x1072,0x1073,0x1074,0x1075,0x1076,0x1077,
+	 0x0078,0x0079,0x007A,0x007B,0x007C,0x007D,0x007E,0x007F,
+	 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
+	 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
+	 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
+	 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F}
+};
 
-	static unsigned short kAPPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ] =
-	{
-		{0x0068,0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
-		 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077,
-		 0x0078,0x0079,0x007A,0x007B,0x007C,0x007D,0x007E,0x007F,
-		 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
-		 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
-		 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
-		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F,
-		 0x0020,0x0021,0x0022,0x0023,0x0024,0x0025,0x0026,0x0027},
+static unsigned short kAPPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ] =
+{
+	{0x0068,0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
+	 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077,
+	 0x0078,0x0079,0x007A,0x007B,0x007C,0x007D,0x007E,0x007F,
+	 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
+	 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
+	 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
+	 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F,
+	 0x0020,0x0021,0x0022,0x0023,0x0024,0x0025,0x0026,0x0027},
 
-		{0x0010,0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
-		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F,
-		 0x0020,0x0021,0x0022,0x0023,0x0024,0x0025,0x0026,0x0027,
-		 0x0028,0x0029,0x002A,0x002B,0x002C,0x002D,0x002E,0x002F,
-		 0x0030,0x0031,0x0032,0x0033,0x0034,0x0035,0x0036,0x0037,
-		 0x0038,0x0039,0x003A,0x003B,0x003C,0x003D,0x003E,0x003F,
-		 0x0040,0x0041,0x0042,0x0043,0x0044,0x0045,0x0046,0x0047,
-		 0x0048,0x0049,0x004A,0x004B,0x004C,0x004D,0x004E,0x004F},
+	{0x0010,0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
+	 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F,
+	 0x0020,0x0021,0x0022,0x0023,0x0024,0x0025,0x0026,0x0027,
+	 0x0028,0x0029,0x002A,0x002B,0x002C,0x002D,0x002E,0x002F,
+	 0x0030,0x0031,0x0032,0x0033,0x0034,0x0035,0x0036,0x0037,
+	 0x0038,0x0039,0x003A,0x003B,0x003C,0x003D,0x003E,0x003F,
+	 0x0040,0x0041,0x0042,0x0043,0x0044,0x0045,0x0046,0x0047,
+	 0x0048,0x0049,0x004A,0x004B,0x004C,0x004D,0x004E,0x004F},
 
-		{0x0038,0x0038,0x0039,0x003A,0x003B,0x003C,0x003D,0x003E,0x003F,
-		 0x0040,0x0041,0x0042,0x0043,0x0044,0x0045,0x0046,0x0047,
-		 0x0048,0x0049,0x004A,0x004B,0x004C,0x004D,0x004E,0x004F,
-		 0x0050,0x0051,0x0052,0x0053,0x0054,0x0055,0x0056,0x0057,
-		 0x0058,0x0059,0x005A,0x005B,0x005C,0x005D,0x005E,0x005F,
-		 0x0060,0x0061,0x0062,0x0063,0x0064,0x0065,0x0066,0x0067,
-		 0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
-		 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077},
+	{0x0038,0x0038,0x0039,0x003A,0x003B,0x003C,0x003D,0x003E,0x003F,
+	 0x0040,0x0041,0x0042,0x0043,0x0044,0x0045,0x0046,0x0047,
+	 0x0048,0x0049,0x004A,0x004B,0x004C,0x004D,0x004E,0x004F,
+	 0x0050,0x0051,0x0052,0x0053,0x0054,0x0055,0x0056,0x0057,
+	 0x0058,0x0059,0x005A,0x005B,0x005C,0x005D,0x005E,0x005F,
+	 0x0060,0x0061,0x0062,0x0063,0x0064,0x0065,0x0066,0x0067,
+	 0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
+	 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077},
 
-		{0x0060,0x0060,0x0061,0x0062,0x0063,0x0064,0x0065,0x0066,0x0067,
-		 0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
-		 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077,
-		 0x0078,0x0079,0x007A,0x007B,0x007C,0x007D,0x007E,0x007F,
-		 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
-		 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
-		 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
-		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F},
+	{0x0060,0x0060,0x0061,0x0062,0x0063,0x0064,0x0065,0x0066,0x0067,
+	 0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
+	 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077,
+	 0x0078,0x0079,0x007A,0x007B,0x007C,0x007D,0x007E,0x007F,
+	 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
+	 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
+	 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
+	 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F},
 
-		{0x0060,0x0060,0x0061,0x0062,0x0063,0x0064,0x0065,0x0066,0x0067,
-		 0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
-		 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077,
-		 0x0078,0x0079,0x007A,0x007B,0x007C,0x007D,0x007E,0x007F,
-		 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
-		 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
-		 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
-		 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F}
-	};
+	{0x0060,0x0060,0x0061,0x0062,0x0063,0x0064,0x0065,0x0066,0x0067,
+	 0x0068,0x0069,0x006A,0x006B,0x006C,0x006D,0x006E,0x006F,
+	 0x0070,0x0071,0x0072,0x0073,0x0074,0x0075,0x0076,0x0077,
+	 0x0078,0x0079,0x007A,0x007B,0x007C,0x007D,0x007E,0x007F,
+	 0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
+	 0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
+	 0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
+	 0x0018,0x0019,0x001A,0x001B,0x001C,0x001D,0x001E,0x001F}
+};
 #endif
 
-	/*
-		http://www.kreativekorp.com/miscpages/a2info/munafo.shtml
+/*
+	http://www.kreativekorp.com/miscpages/a2info/munafo.shtml
 
-		"Primary" lo-res colors
-		Color      GR        Duty cycle  Phase
-		======================================
-		Red        COLOR=1    45 to 135    90
-		Dark-blue  COLOR=2   315 to 45      0
-		Dark-green COLOR=4   225 to 315   270
-		Brown      COLOR=8   135 to 225   180
-	*/
-	ColorSpace_PAL_t aPaletteYIQ[ 16 ] =
-	{                   // Lo Hi Dh
-		 {  0,  0,  0 } //  0  0     Black
-		,{ 90, 60, 25 } //  1     1  Red
-		,{  0, 60, 25 } //  2     8  Dark Blue
-		,{ 45,100, 50 } //  3  2  9  Purple
-		,{270, 60, 25 } //  4        Dark Green
-		,{  0,  0, 50 } //  5        Grey
-		,{315,100, 50 } //  6        Medium Blue
-		,{  0, 60, 75 } //  7        Light Blue
-		,{180, 60, 25 } //  8        Brown
-		,{135,100, 50 } //  9        Orange
-		,{  0,  0, 50 } // 10
-		,{ 90, 60, 75 } // 11        Pink
-		,{225,100, 50 } // 12        Light Green
-		,{180, 60, 75 } // 13        Yellow
-		,{270,  60, 75} // 14        Aqua
-		,{  0,  0,100 } // 15        White
-	};
+	"Primary" lo-res colors
+	Color      GR        Duty cycle  Phase
+	======================================
+	Red        COLOR=1    45 to 135    90
+	Dark-blue  COLOR=2   315 to 45      0
+	Dark-green COLOR=4   225 to 315   270
+	Brown      COLOR=8   135 to 225   180
+*/
+ColorSpace_PAL_t aPaletteYIQ[16] =
+{                   // Lo Hi Dh
+	 {  0,  0,  0 } //  0  0     Black
+	,{ 90, 60, 25 } //  1     1  Red
+	,{  0, 60, 25 } //  2     8  Dark Blue
+	,{ 45,100, 50 } //  3  2  9  Purple
+	,{270, 60, 25 } //  4        Dark Green
+	,{  0,  0, 50 } //  5        Grey
+	,{315,100, 50 } //  6        Medium Blue
+	,{  0, 60, 75 } //  7        Light Blue
+	,{180, 60, 25 } //  8        Brown
+	,{135,100, 50 } //  9        Orange
+	,{  0,  0, 50 } // 10
+	,{ 90, 60, 75 } // 11        Pink
+	,{225,100, 50 } // 12        Light Green
+	,{180, 60, 75 } // 13        Yellow
+	,{270,  60, 75} // 14        Aqua
+	,{  0,  0,100 } // 15        White
+};
 
 // purple   HCOLOR=2  45 100   50    255  68 253
 // orange   HCOLOR=5 135 100   50    255 106  60
 // green    HCOLOR=1 225 100   50     20 245  60
 // blue     HCOLOR=6 315 100   50     20 207 253
 
-	rgba_t aPaletteRGB[ 16 ] =
-	{
-		 {   0,   0,   0 } //  0
-		,{ 227,  30,  96 } //  1
-		,{  96,  78, 189 } //  2
-		,{ 255,  68, 253 } //  3
-		,{   0, 163,  96 } //  4
-		,{ 156, 156, 156 } //  5
-		,{  20, 207, 253 } //  6
-		,{ 208, 195, 255 } //  7
-		,{  96, 114,   3 } //  8
-		,{ 255, 106,  60 } //  9
-		,{ 156, 156, 156 } // 10
-		,{ 255, 160, 208 } // 11
-		,{  20, 245,  60 } // 12
-		,{ 208, 221, 141 } // 13
-		,{ 114, 255, 208 } // 14
-		,{ 255, 255, 255 } // 15
-	};
+rgba_t aPaletteRGB[16] =
+{
+	 {   0,   0,   0 } //  0
+	,{ 227,  30,  96 } //  1
+	,{  96,  78, 189 } //  2
+	,{ 255,  68, 253 } //  3
+	,{   0, 163,  96 } //  4
+	,{ 156, 156, 156 } //  5
+	,{  20, 207, 253 } //  6
+	,{ 208, 195, 255 } //  7
+	,{  96, 114,   3 } //  8
+	,{ 255, 106,  60 } //  9
+	,{ 156, 156, 156 } // 10
+	,{ 255, 160, 208 } // 11
+	,{  20, 245,  60 } // 12
+	,{ 208, 221, 141 } // 13
+	,{ 114, 255, 208 } // 14
+	,{ 255, 255, 255 } // 15
+};
 
 
+// Globals (Static) ___________________________________________________
 
-	NTSC::NTSC()
-	{
-		g_pHorzClockOffset = 0;
+int NTSC::g_nVideoCharSet = 0;
+UINT NTSC::g_videoScannerMaxVert = VIDEO_SCANNER_MAX_VERT;			// default to NTSC
+UINT NTSC::g_videoScanner6502Cycles = VIDEO_SCANNER_6502_CYCLES;	// default to NTSC
 
-		// Globals (Public) ___________________________________________________
-		g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
-		g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible (NB. final hpos is 2 cycles long, so a line is 65 cycles)
-	}
+
+NTSC::NTSC()
+{
+	g_nChromaSize = 0;
+
+	// Globals (Public) ___________________________________________________
+	g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
+	g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible (NB. final hpos is 2 cycles long, so a line is 65 cycles)
+}
 
 
 //===========================================================================
@@ -636,13 +547,13 @@ bool NTSC::GetColorBurst( void )
 
 void NTSC::update7MonoPixels(uint16_t bits)
 {
-	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-	g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-	g_pFuncUpdateBnWPixel(bits & 1);
+	FuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	FuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	FuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	FuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	FuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	FuncUpdateBnWPixel(bits & 1); bits >>= 1;
+	FuncUpdateBnWPixel(bits & 1);
 }
 
 //===========================================================================
@@ -654,51 +565,51 @@ void NTSC::updatePixels( uint16_t bits )
 	if (!GetColorBurst())
 	{ 
 		/* #1 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		FuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		FuncUpdateBnWPixel(bits & 1); bits >>= 1;
 		/* #2 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		FuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		FuncUpdateBnWPixel(bits & 1); bits >>= 1;
 		/* #3 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		FuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		FuncUpdateBnWPixel(bits & 1); bits >>= 1;
 		/* #4 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		FuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		FuncUpdateBnWPixel(bits & 1); bits >>= 1;
 		/* #5 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		FuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		FuncUpdateBnWPixel(bits & 1); bits >>= 1;
 		/* #6 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		FuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		FuncUpdateBnWPixel(bits & 1); bits >>= 1;
 		/* #7 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1);
+		FuncUpdateBnWPixel(bits & 1); bits >>= 1;
+		FuncUpdateBnWPixel(bits & 1);
         g_nLastColumnPixelNTSC = bits & 1;
 	}
 	else
 	{
 		/* #1 of 7 */                                // abcd efgh ijkl mnop
-		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0abc defg hijk lmno
-		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 00ab cdef ghi jklmn
+		FuncUpdateHuePixel(bits & 1); bits >>= 1; // 0abc defg hijk lmno
+		FuncUpdateHuePixel(bits & 1); bits >>= 1; // 00ab cdef ghi jklmn
 		/* #2 of 7 */
-		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 000a bcde fghi jklm
-		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 abcd efgh ijkl
+		FuncUpdateHuePixel(bits & 1); bits >>= 1; // 000a bcde fghi jklm
+		FuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 abcd efgh ijkl
 		/* #3 of 7 */
-		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0abc defg hijk
-		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 00ab cdef ghij
+		FuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0abc defg hijk
+		FuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 00ab cdef ghij
 		/* #4 of 7 */
-		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 000a bcde fghi
-		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 abcd efgh
+		FuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 000a bcde fghi
+		FuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 abcd efgh
 		/* #5 of 7 */
-		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 0abc defg
-		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 00ab cdef
+		FuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 0abc defg
+		FuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 00ab cdef
 		/* #6 of 7 */
-		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 000a bcde
-		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 0000 abcd
+		FuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 000a bcde
+		FuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 0000 abcd
 		/* #7 of 7 */
-		g_pFuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 0000 0abc
-		g_pFuncUpdateHuePixel(bits & 1);           
+		FuncUpdateHuePixel(bits & 1); bits >>= 1; // 0000 0000 0000 0abc
+		FuncUpdateHuePixel(bits & 1);           
         g_nLastColumnPixelNTSC = bits & 1;
 	}
 }
@@ -735,15 +646,15 @@ void NTSC::updateVideoScannerHorzEOL()
 			if (!GetColorBurst())
 			{
 				// Only for: VF_TEXT && !VF_MIXED (ie. full 24-row TEXT40 or TEXT80)
-				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
-				g_pFuncUpdateBnWPixel(0);
-				g_pFuncUpdateBnWPixel(0);
+				FuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
+				FuncUpdateBnWPixel(0);
+				FuncUpdateBnWPixel(0);
 			}
 			else
 			{
-				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
-				g_pFuncUpdateHuePixel(0);
-				g_pFuncUpdateHuePixel(0);
+				FuncUpdateHuePixel(g_nLastColumnPixelNTSC);
+				FuncUpdateHuePixel(0);
+				FuncUpdateHuePixel(0);
 			}
 		}
 
@@ -778,10 +689,10 @@ void NTSC::updateVideoScannerAddress()
 	// . 7x 14M pixels early + 1x 14M pixel shifted right = 2 complete color phase rotations.
 	// . ie. the 14M colors are correct, but being 1 pixel out is the closest we can get the 7M and 14M video modes to overlap.
 	// . The alternative is to render the 14M correctly 7 pixels early, but have 7-pixel borders left (for 7M modes) or right (for 14M modes).
-	if (((g_pFuncUpdateGraphicsScreen == updateScreenDoubleHires80) ||
-		(g_pFuncUpdateGraphicsScreen == updateScreenDoubleLores80) ||
-		(g_pFuncUpdateGraphicsScreen == updateScreenText80) ||
-		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && g_pFuncUpdateTextScreen == updateScreenText80))
+	if (((g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenDoubleHires80) ||
+		(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenDoubleLores80) ||
+		(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80) ||
+		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && g_pFuncUpdateTextScreen == &NTSC::updateScreenText80))
 		&& (g_pVideo->g_eVideoType != VT_COLOR_MONITOR_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
 	{
 		g_pVideoAddress -= 1;
@@ -1154,7 +1065,7 @@ void NTSC::updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFuncUpdateTextScreen( cycles6502 );
+		FuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 	
@@ -1187,7 +1098,7 @@ void NTSC::updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVid
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFuncUpdateTextScreen( cycles6502 );
+		FuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1253,7 +1164,7 @@ void NTSC::updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFuncUpdateTextScreen( cycles6502 );
+		FuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1290,7 +1201,7 @@ void NTSC::updateScreenDoubleLores40 (long cycles6502) // wsUpdateVideo7MLores
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFuncUpdateTextScreen( cycles6502 );
+		FuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1324,7 +1235,7 @@ void NTSC::updateScreenDoubleLores80Simplified (long cycles6502) // wsUpdateVide
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFuncUpdateTextScreen( cycles6502 );
+		FuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1353,7 +1264,7 @@ void NTSC::updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFuncUpdateTextScreen( cycles6502 );
+		FuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1394,7 +1305,7 @@ void NTSC::updateScreenSingleHires40Simplified (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFuncUpdateTextScreen( cycles6502 );
+		FuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1437,7 +1348,7 @@ void NTSC::updateScreenSingleHires40 (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFuncUpdateTextScreen( cycles6502 );
+		FuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1478,7 +1389,7 @@ void NTSC::updateScreenSingleLores40Simplified (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFuncUpdateTextScreen( cycles6502 );
+		FuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1507,7 +1418,7 @@ void NTSC::updateScreenSingleLores40 (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFuncUpdateTextScreen( cycles6502 );
+		FuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1686,10 +1597,10 @@ uint16_t NTSC::NTSC_VideoGetScannerAddressForDebugger(void)
 //===========================================================================
 void NTSC::NTSC_SetVideoTextMode( int cols )
 {
-	if( cols == 40 )
-		g_pFuncUpdateTextScreen = updateScreenText40;
+	if (cols == 40)
+		g_pFuncUpdateTextScreen = &NTSC::updateScreenText40;
 	else
-		g_pFuncUpdateTextScreen = updateScreenText80;
+		g_pFuncUpdateTextScreen = &NTSC::updateScreenText80;
 }
 
 //===========================================================================
@@ -1723,9 +1634,9 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	if (uVideoModeFlags & VF_TEXT)
 	{
 		if (uVideoModeFlags & VF_80COL)
-			g_pFuncUpdateGraphicsScreen = updateScreenText80;
+			g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText80;
 		else
-			g_pFuncUpdateGraphicsScreen = updateScreenText40;
+			g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText40;
 	}
 	else if (uVideoModeFlags & VF_HIRES)
 	{
@@ -1734,21 +1645,21 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			if (uVideoModeFlags & VF_80COL)
 			{
 				if (g_pVideo->g_eVideoType == VT_COLOR_MONITOR_RGB)
-					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80Simplified;
+					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires80Simplified;
 				else
-					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
+					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires80;
 			}
 			else
 			{
-				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires40;
+				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires40;
 			}
 		}
 		else
 		{
 			if (g_pVideo->g_eVideoType == VT_COLOR_MONITOR_RGB)
-				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Simplified;
+				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleHires40Simplified;
 			else
-				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
+				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleHires40;
 		}
 	}
 	else
@@ -1758,21 +1669,21 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			if (uVideoModeFlags & VF_80COL)
 			{
 				if (g_pVideo->g_eVideoType == VT_COLOR_MONITOR_RGB)
-					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simplified;
+					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores80Simplified;
 				else
-					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
+					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores80;
 			}
 			else
 			{
-				g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores40;
+				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores40;
 			}
 		}
 		else
 		{
 			if (g_pVideo->g_eVideoType == VT_COLOR_MONITOR_RGB)
-				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simplified;
+				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleLores40Simplified;
 			else
-				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
+				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleLores40;
 		}
 	}
 }
@@ -1793,12 +1704,12 @@ void NTSC::NTSC_SetVideoStyle() // (int v, int s)
 			updateMonochromeTables( r, g, b );
 			if (half)
 			{
-				g_pFuncUpdateBnWPixel = updatePixelBnWColorTVSingleScanline;
-				g_pFuncUpdateHuePixel = updatePixelHueColorTVSingleScanline;
+				g_pFuncUpdateBnWPixel = &NTSC::updatePixelBnWColorTVSingleScanline;
+				g_pFuncUpdateHuePixel = &NTSC::updatePixelHueColorTVSingleScanline;
 			}
 			else {
-				g_pFuncUpdateBnWPixel = updatePixelBnWColorTVDoubleScanline;
-				g_pFuncUpdateHuePixel = updatePixelHueColorTVDoubleScanline;
+				g_pFuncUpdateBnWPixel = &NTSC::updatePixelBnWColorTVDoubleScanline;
+				g_pFuncUpdateHuePixel = &NTSC::updatePixelHueColorTVDoubleScanline;
 			}
 			break;
 
@@ -1810,12 +1721,12 @@ void NTSC::NTSC_SetVideoStyle() // (int v, int s)
 			updateMonochromeTables( r, g, b );
 			if (half)
 			{
-				g_pFuncUpdateBnWPixel = updatePixelBnWMonitorSingleScanline;
-				g_pFuncUpdateHuePixel = updatePixelHueMonitorSingleScanline;
+				g_pFuncUpdateBnWPixel = &NTSC::updatePixelBnWMonitorSingleScanline;
+				g_pFuncUpdateHuePixel = &NTSC::updatePixelHueMonitorSingleScanline;
 			}
 			else {
-				g_pFuncUpdateBnWPixel = updatePixelBnWMonitorDoubleScanline;
-				g_pFuncUpdateHuePixel = updatePixelHueMonitorDoubleScanline;
+				g_pFuncUpdateBnWPixel = &NTSC::updatePixelBnWMonitorDoubleScanline;
+				g_pFuncUpdateHuePixel = &NTSC::updatePixelHueMonitorDoubleScanline;
 			}
 			break;
 
@@ -1826,10 +1737,10 @@ void NTSC::NTSC_SetVideoStyle() // (int v, int s)
 			updateMonochromeTables( r, g, b ); // Custom Monochrome color
 			if (half)
 			{
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWColorTVSingleScanline;
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = &NTSC::updatePixelBnWColorTVSingleScanline;
 			}
 			else {
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWColorTVDoubleScanline;
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = &NTSC::updatePixelBnWColorTVDoubleScanline;
 			}
 			break;
 
@@ -1865,11 +1776,11 @@ _mono:
 			updateMonochromeTables( r, g, b ); // Custom Monochrome color
 			if (half)
 			{
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWMonitorSingleScanline;
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = &NTSC::updatePixelBnWMonitorSingleScanline;
 			}
 			else
 			{
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWMonitorDoubleScanline;
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = &NTSC::updatePixelBnWMonitorDoubleScanline;
 			}
 			break;
 		}
@@ -1894,8 +1805,8 @@ void NTSC::NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 
 	g_pVideoAddress = g_pScanLines[0];
 
-	g_pFuncUpdateTextScreen     = updateScreenText40;
-	g_pFuncUpdateGraphicsScreen = updateScreenText40;
+	g_pFuncUpdateTextScreen     = &NTSC::updateScreenText40;
+	g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText40;
 
 	g_pVideo->VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
 
@@ -2015,12 +1926,12 @@ void NTSC::VideoUpdateCycles( int cyclesLeftToUpdate )
 	{
 		const int cyclesToLine160 = VIDEO_SCANNER_MAX_HORZ * (VIDEO_SCANNER_Y_MIXED - g_nVideoClockVert - 1) + cyclesToEndOfLine;
 		int cycles = cyclesLeftToUpdate < cyclesToLine160 ? cyclesLeftToUpdate : cyclesToLine160;
-		g_pFuncUpdateGraphicsScreen(cycles);						// lines [currV...159]
+		FuncUpdateGraphicsScreen(cycles);						// lines [currV...159]
 		cyclesLeftToUpdate -= cycles;
 
 		const int cyclesFromLine160ToLine261 = g_videoScanner6502Cycles - (VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED);
 		cycles = cyclesLeftToUpdate < cyclesFromLine160ToLine261 ? cyclesLeftToUpdate : cyclesFromLine160ToLine261;
-		g_pFuncUpdateGraphicsScreen(cycles);						// lines [160..191..261]
+		FuncUpdateGraphicsScreen(cycles);						// lines [160..191..261]
 		cyclesLeftToUpdate -= cycles;
 
 		// Any remaining cyclesLeftToUpdate: lines [0...currV)
@@ -2029,19 +1940,19 @@ void NTSC::VideoUpdateCycles( int cyclesLeftToUpdate )
 	{
 		const int cyclesToLine262 = VIDEO_SCANNER_MAX_HORZ * (g_videoScannerMaxVert - g_nVideoClockVert - 1) + cyclesToEndOfLine;
 		int cycles = cyclesLeftToUpdate < cyclesToLine262 ? cyclesLeftToUpdate : cyclesToLine262;
-		g_pFuncUpdateGraphicsScreen(cycles);						// lines [currV...261]
+		FuncUpdateGraphicsScreen(cycles);						// lines [currV...261]
 		cyclesLeftToUpdate -= cycles;
 
 		const int cyclesFromLine0ToLine159 = VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_Y_MIXED;
 		cycles = cyclesLeftToUpdate < cyclesFromLine0ToLine159 ? cyclesLeftToUpdate : cyclesFromLine0ToLine159;
-		g_pFuncUpdateGraphicsScreen(cycles);					// lines [0..159]
+		FuncUpdateGraphicsScreen(cycles);					// lines [0..159]
 		cyclesLeftToUpdate -= cycles;
 
 		// Any remaining cyclesLeftToUpdate: lines [160...currV)
 	}
 
 	if (cyclesLeftToUpdate)
-		g_pFuncUpdateGraphicsScreen(cyclesLeftToUpdate);
+		FuncUpdateGraphicsScreen(cyclesLeftToUpdate);
 }
 
 //===========================================================================
