@@ -76,10 +76,14 @@ DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)
 	return 0;
 }
 
-//// From NTSC.cpp
-//void NTSC_VideoUpdateCycles( long cycles6502 )
-//{
-//}
+// From Video.cpp
+Video::Video()
+{
+}
+
+void Video::NTSC_VideoUpdateCycles( UINT cycles6502 )
+{
+}
 
 //-------------------------------------
 
