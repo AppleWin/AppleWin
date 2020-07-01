@@ -246,6 +246,7 @@ const UINT Apple2eRomSize = Apple2RomSize + CxRomSize;
 //const UINT Pravets82RomSize = 12*1024;
 //const UINT Pravets8ARomSize = Pravets82RomSize+CxRomSize;
 const UINT MaxRomPages = 4;
+const UINT Base64ARomSize = MaxRomPages * Apple2RomSize;
 
 // Called from MemLoadSnapshot()
 static void ResetDefaultMachineMemTypes(void)
@@ -712,6 +713,11 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 
 	if (address >= 0xC05C && address <= 0xC05D && IsApple2JPlus(GetApple2Type()))
 		NTSC_VideoInitAppleType();		// AN2 switches between Katakana & ASCII video rom chars (GH#773)
+
+	if (address >= 0xC058 && address <= 0xC05B && (g_Apple2Type == A2TYPE_BASE64A))
+	{
+		MemSetPaging(programcounter, address, write, value, nExecutedCycles);
+	}
 
 	if (!write)
 		return MemReadFloatingBus(nExecutedCycles);
@@ -1531,6 +1537,7 @@ void MemInitializeROM(void)
 	case A2TYPE_PRAVETS8M:      hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_8M_ROM      ), "ROM"); ROM_SIZE = Apple2RomSize ; break;
 	case A2TYPE_PRAVETS8A:      hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_8C_ROM      ), "ROM"); ROM_SIZE = Apple2eRomSize; break;
 	case A2TYPE_TK30002E:       hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_TK3000_2E_ROM       ), "ROM"); ROM_SIZE = Apple2eRomSize; break;
+	case A2TYPE_BASE64A:        hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_BASE_64A_ROM        ), "ROM"); ROM_SIZE = Base64ARomSize; break;
 	}
 
 	if (hResInfo == NULL)
@@ -1547,6 +1554,7 @@ void MemInitializeROM(void)
 		case A2TYPE_PRAVETS8M:      _tcscpy(sRomFileName, TEXT("PRAVETS8M.ROM"       )); break;
 		case A2TYPE_PRAVETS8A:      _tcscpy(sRomFileName, TEXT("PRAVETS8C.ROM"       )); break;
 		case A2TYPE_TK30002E:       _tcscpy(sRomFileName, TEXT("TK3000e.ROM"         )); break;
+		case A2TYPE_BASE64A:        _tcscpy(sRomFileName, TEXT("BASE64A.ROM"         )); break;
 		default:
 			{
 				_tcscpy(sRomFileName, TEXT("Unknown type!"));
@@ -2052,6 +2060,17 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 				}
 				break;
 #endif
+		}
+	}
+
+	if (g_Apple2Type == A2TYPE_BASE64A)
+	{
+		switch (address)
+		{
+			case 0x58: SetMemMode(memmode & ~MF_ALTROM0);  break;
+			case 0x59: SetMemMode(memmode |  MF_ALTROM0);  break;
+			case 0x5A: SetMemMode(memmode & ~MF_ALTROM1);  break;
+			case 0x5B: SetMemMode(memmode |  MF_ALTROM1);  break;
 		}
 	}
 
