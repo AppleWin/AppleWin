@@ -75,14 +75,8 @@ typedef struct IDirectSoundNotify *LPDIRECTSOUNDNOTIFY,**LPLPDIRECTSOUNDNOTIFY;
 
 class IDirectSoundBuffer : public IUnknown
 {
-  const size_t myBufferSize;
-  const size_t mySampleRate;
-  const size_t myChannels;
-  const size_t myBitsPerSample;
-  const size_t myFlags;
-
   std::unique_ptr<IDirectSoundNotify> mySoundNotify;
-  std::vector<SHORT> mySoundBuffer;
+  std::vector<char> mySoundBuffer;
 
   size_t myPlayPosition = 0;
   size_t myWritePosition = 0;
@@ -90,12 +84,22 @@ class IDirectSoundBuffer : public IUnknown
   LONG myVolume = DSBVOLUME_MIN;
 
  public:
+  const size_t bufferSize;
+  const size_t sampleRate;
+  const size_t channels;
+  const size_t bitsPerSample;
+  const size_t flags;
+
   IDirectSoundBuffer(const size_t bufferSize, const size_t channels, const size_t sampleRate, const size_t bitsPerSample, const size_t flags);
+  virtual ~IDirectSoundBuffer();
 
   HRESULT QueryInterface(int riid, void **ppvObject);
 
   HRESULT SetCurrentPosition( DWORD dwNewPosition );
   HRESULT GetCurrentPosition( LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor );
+
+  // Read is NOT part of Windows API
+  HRESULT Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2);
 
   HRESULT Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2, DWORD dwFlags );
   HRESULT Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2 );

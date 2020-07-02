@@ -1,5 +1,6 @@
 #include "linux/windows/dsound.h"
 #include "linux/windows/winerror.h"
+#include "linux/interface.h"
 
 #include <cstring>
 
@@ -8,15 +9,21 @@ HRESULT IDirectSoundNotify::SetNotificationPositions(DWORD cPositionNotifies, LP
   return DS_OK;
 }
 
-IDirectSoundBuffer::IDirectSoundBuffer(const size_t bufferSize, const size_t channels, const size_t sampleRate, const size_t bitsPerSample, const size_t flags)
-  : myBufferSize(bufferSize)
-  , myChannels(channels)
-  , mySampleRate(sampleRate)
-  , myBitsPerSample(bitsPerSample)
-  , myFlags(flags)
+IDirectSoundBuffer::IDirectSoundBuffer(const size_t aBufferSize, const size_t aChannels, const size_t aSampleRate, const size_t aBitsPerSample, const size_t aFlags)
+  : bufferSize(aBufferSize)
+  , channels(aChannels)
+  , sampleRate(aSampleRate)
+  , bitsPerSample(aBitsPerSample)
+  , flags(aFlags)
   , mySoundNotify(new IDirectSoundNotify)
-  , mySoundBuffer(bufferSize)
+  , mySoundBuffer(aBufferSize)
 {
+  registerSoundBuffer(this);
+}
+
+IDirectSoundBuffer::~IDirectSoundBuffer()
+{
+  unregisterSoundBuffer(this);
 }
 
 HRESULT IDirectSoundBuffer::QueryInterface(int riid, void **ppvObject)
@@ -113,9 +120,37 @@ HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOI
   return DS_OK;
 }
 
+HRESULT IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2)
+{
+  const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->bufferSize;
+  dwReadBytes = std::min(dwReadBytes, available);
+
+  const DWORD availableInFirstPart = this->mySoundBuffer.size() - this->myPlayPosition;
+
+  *lplpvAudioPtr1 = this->mySoundBuffer.data() + this->myPlayPosition;
+  *lpdwAudioBytes1 = std::min(availableInFirstPart, dwReadBytes);
+
+  if (lplpvAudioPtr2 && lpdwAudioBytes2)
+  {
+    if (*lpdwAudioBytes1 < dwReadBytes)
+    {
+      *lplpvAudioPtr2 = this->mySoundBuffer.data();
+      *lpdwAudioBytes2 = dwReadBytes - *lpdwAudioBytes1;
+    }
+    else
+    {
+      *lplpvAudioPtr2 = nullptr;
+      *lpdwAudioBytes2 = 0;
+    }
+  }
+  this->myPlayPosition = (this->myPlayPosition + dwReadBytes) % this->mySoundBuffer.size();
+  return DS_OK;
+}
+
+
 HRESULT IDirectSoundBuffer::GetCurrentPosition( LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor )
 {
-  *lpdwCurrentPlayCursor = this->myWritePosition;
+  *lpdwCurrentPlayCursor = this->myPlayPosition;
   *lpdwCurrentWriteCursor = this->myWritePosition;
   return DS_OK;
 }

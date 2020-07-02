@@ -1,5 +1,13 @@
 #include "linux/interface.h"
 
+void registerSoundBuffer(IDirectSoundBuffer * buffer)
+{
+}
+
+void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
+{
+}
+
 // Resources
 
 HRSRC FindResource(void *, const std::string & filename, const char *)

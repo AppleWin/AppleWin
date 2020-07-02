@@ -15,6 +15,8 @@ struct IUnknown
 {
   HRESULT QueryInterface(int riid, void **ppvObject);
   HRESULT Release();
+
+  virtual ~IUnknown();
 };
 typedef IUnknown *LPUNKNOWN;
 

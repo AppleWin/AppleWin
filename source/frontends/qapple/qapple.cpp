@@ -29,6 +29,7 @@
 #include "emulator.h"
 #include "memorycontainer.h"
 #include "audiogenerator.h"
+#include "qdirectsound.h"
 #include "gamepadpaddle.h"
 #include "preferences.h"
 
@@ -288,6 +289,7 @@ void QApple::on_stateChanged(QAudio::State state)
 void QApple::on_timer()
 {
     AudioGenerator::instance().start();
+    QDirectSound::start();
 
     if (!myElapsedTimer.isValid())
     {
@@ -304,6 +306,7 @@ void QApple::on_timer()
 
         // just check if we got something to write
         AudioGenerator::instance().writeAudio();
+        QDirectSound::writeAudio();
 
         // wait next call
         return;
@@ -345,6 +348,7 @@ void QApple::on_timer()
     else
     {
         AudioGenerator::instance().writeAudio();
+        QDirectSound::writeAudio();
     }
 }
 
@@ -362,6 +366,7 @@ void QApple::restartTimeCounters()
 {
     // let them restart next time
     AudioGenerator::instance().stop();
+    QDirectSound::stop();
     myElapsedTimer.invalidate();
 }
 
@@ -465,6 +470,7 @@ void QApple::reloadOptions()
 
     Paddle::instance() = GamepadPaddle::fromName(myOptions.gamepadName);
     AudioGenerator::instance().setOptions(myOptions.audioLatency, myOptions.silenceDelay, myOptions.volume);
+    QDirectSound::setOptions(myOptions.audioLatency, myOptions.silenceDelay, myOptions.volume);
 }
 
 void QApple::on_actionSave_state_triggered()

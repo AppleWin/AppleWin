@@ -1,6 +1,10 @@
 #include "linux/windows/guiddef.h"
 #include "linux/windows/winerror.h"
 
+IUnknown::~IUnknown()
+{
+}
+
 HRESULT IUnknown::QueryInterface(int riid, void **ppvObject)
 {
   return S_OK;
