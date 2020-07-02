@@ -52,6 +52,7 @@ static DWORD Cpu6502(DWORD uTotalCycles, const bool bVideoUpdate)
 		}
 		else
 		{
+			HEATMAP_X( regs.pc );
 			Fetch(iOpcode, uExecutedCycles);
 
 //#define $ INV // INV = Invalid -> Debugger Break

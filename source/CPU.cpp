@@ -214,7 +214,6 @@ void SetMouseCardInstalled(bool installed)
 //
 
 #include "CPU/cpu_general.inl"
-
 #include "CPU/cpu_instructions.inl"
 
 // Break into debugger on invalid opcodes
@@ -277,12 +276,12 @@ static __forceinline void DoIrqProfiling(DWORD uCycles)
 
 BYTE CpuRead(USHORT addr, ULONG uExecutedCycles)
 {
-	return READ;
+	return _READ;
 }
 
 void CpuWrite(USHORT addr, BYTE a, ULONG uExecutedCycles)
 {
-	WRITE(a);
+	_WRITE(a);
 }
 
 //===========================================================================
@@ -487,18 +486,83 @@ void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 
 //===========================================================================
 
+void Heatmap_R(WORD pc)	// todo: move to header & make inline
+{
+	// todo
+}
+
+void Heatmap_W(WORD pc)	// todo: move to header & make inline
+{
+	// todo
+}
+
+void Heatmap_X(WORD pc)	// todo: move to header & make inline
+{
+	// todo
+}
+
+//===========================================================================
+
+#define READ _READ
+#define WRITE(a) _WRITE(a)
+
+#define HEATMAP_R(pc)
+#define HEATMAP_W(pc)
+#define HEATMAP_X(pc)
+
 #include "CPU/cpu6502.h"  // MOS 6502
 #include "CPU/cpu65C02.h" // WDC 65C02
-#include "CPU/cpu65d02.h" // Debug CPU Memory Visualizer
+//#include "CPU/cpu65d02.h" // Debug CPU Memory Visualizer
+
+#undef READ
+#undef WRITE
+
+#undef HEATMAP_R
+#undef HEATMAP_W
+#undef HEATMAP_X
+
+//-----------------
+
+#define READ ReadByte(addr, uExecutedCycles)
+#define WRITE(a) WriteByte(addr, uExecutedCycles, a);
+
+#define HEATMAP_R(pc) Heatmap_R(pc)
+#define HEATMAP_W(pc) Heatmap_W(pc)
+#define HEATMAP_X(pc) Heatmap_X(pc)
+
+#include "CPU/cpu_readwrite.inl"
+
+#define Cpu6502 Cpu6502_debug
+#include "CPU/cpu6502.h"  // MOS 6502
+#undef Cpu6502
+
+#define Cpu65C02 Cpu65C02_debug
+#include "CPU/cpu65C02.h" // WDC 65C02
+#undef Cpu65C02
+
+#undef HEATMAP_R
+#undef HEATMAP_W
+#undef HEATMAP_X
 
 //===========================================================================
 
 static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdate)
 {
-	if (GetMainCpu() == CPU_6502)
-		return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
+	if (g_nAppMode == MODE_RUNNING)
+	{
+		if (GetMainCpu() == CPU_6502)
+			return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
+		else
+			return Cpu65C02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+	}
 	else
-		return Cpu65C02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+	{
+		_ASSERT(g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
+		if (GetMainCpu() == CPU_6502)
+			return Cpu6502_debug(uTotalCycles, bVideoUpdate);	// Apple ][, ][+, //e, Clones
+		else
+			return Cpu65C02_debug(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+	}
 }
 
 //

@@ -81,8 +81,25 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 
 #include "../../source/CPU/cpu_general.inl"
 #include "../../source/CPU/cpu_instructions.inl"
+
+#define READ _READ
+#define WRITE(a) _WRITE(a)
+
+#define HEATMAP_R(pc)
+#define HEATMAP_W(pc)
+#define HEATMAP_X(pc)
+
 #include "../../source/CPU/cpu6502.h"  // MOS 6502
 #include "../../source/CPU/cpu65C02.h"  // WDC 65C02
+
+#undef READ
+#undef WRITE
+
+#undef HEATMAP_R
+#undef HEATMAP_W
+#undef HEATMAP_X
+
+//-------------------------------------
 
 void init(void)
 {

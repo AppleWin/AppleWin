@@ -837,6 +837,10 @@
 					RelativePath=".\source\CPU\cpu_instructions.inl"
 					>
 				</File>
+				<File
+					RelativePath=".\source\CPU\cpu_readwrite.inl"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Disk"
