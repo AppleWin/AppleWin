@@ -1,5 +1,8 @@
 #include "stdafx.h"
 
+
+typedef int LPDIRECTDRAW;
+
 #include "../../source/Applewin.h"
 #include "../../source/Memory.h"
 #include "../../source/Video.h"
@@ -25,6 +28,8 @@ iofunction		IOWrite[256] = {0};	// TODO: Init
 #define	 AF_INTERRUPT  0x04
 #define	 AF_ZERO       0x02
 #define	 AF_CARRY      0x01
+
+
 
 regsrec regs;
 

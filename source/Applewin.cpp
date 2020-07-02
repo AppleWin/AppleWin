@@ -1658,7 +1658,7 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 			}
 			else
 			{
-				g_pVideo->SetVideoRomRockerSwitch(true);	// Use PAL char set
+				Video::SetVideoRomRockerSwitch(true);	// Use PAL char set
 			}
 		}
 		else if (strcmp(lpCmdLine, "-printscreen") == 0)		// Turn on display of the last filename print screen was saved to

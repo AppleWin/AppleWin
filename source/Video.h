@@ -180,13 +180,24 @@ class Video {
 
 
 public:
-	COLORREF   g_nMonochromeRGB;	// saved to Registry
-	uint32_t   g_uVideoMode;
-	DWORD      g_eVideoType;		// saved to Registry
-	uint8_t* g_pFramebufferbits;
+	COLORREF	g_nMonochromeRGB;	// saved to Registry
+	uint32_t	g_uVideoMode;
+	DWORD		g_eVideoType;		// saved to Registry
+	uint8_t*	g_pFramebufferbits;
+	VideoStyle_e g_eVideoStyle;
 
 	bool g_bShowPrintScreenWarningDialog;
 	bool g_bDisplayPrintScreenFileName;
+
+
+	// Globals ____________________________________________________________________
+
+	static HBITMAP       g_hDeviceBitmap;
+	static HDC           g_hDeviceDC;
+	static LPBITMAPINFO  g_pFramebufferinfo;
+	static HBITMAP       g_hLogoBitmap;
+	static bool g_bVideoScannerNTSC;  // NTSC video scanning (or PAL)
+	static LPDIRECTDRAW g_lpDD;
 
 	// ____________________________________________________________________
 
@@ -230,9 +241,9 @@ public:
 
 	bool ReadVideoRomFile(const char* pRomFile);
 	UINT GetVideoRom(const BYTE*& pVideoRom);
-	bool GetVideoRomRockerSwitch(void);
-	void SetVideoRomRockerSwitch(bool state);
-	bool IsVideoRom4K(void);
+	static bool GetVideoRomRockerSwitch(void);
+	static void SetVideoRomRockerSwitch(bool state);
+	static bool IsVideoRom4K(void);
 
 	void Config_Load_Video(void);
 	void Config_Save_Video(void);
@@ -267,6 +278,8 @@ private:
 	static int g_nLastScreenShot;
 	const  int nMaxScreenShot = 999999999;
 	static std::string g_pLastDiskImageName;
+
+	int g_nAltCharSetOffset; // alternate character set
 
 	void Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars);
 	bool Util_TestScreenShotFileName(const TCHAR* pFileName);

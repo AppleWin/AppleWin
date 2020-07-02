@@ -93,7 +93,6 @@ private:
 	const UINT g_kFrameBufferWidth = GetFrameBufferWidth();
 
 
-
 	typedef void (NTSC::*UpdateScreenFunc_t)(long);
 	UpdateScreenFunc_t g_apFuncVideoUpdateScanline[VIDEO_SCANNER_Y_DISPLAY];
 	UpdateScreenFunc_t g_pFuncUpdateTextScreen = 0; // updateScreenText40;
@@ -166,6 +165,7 @@ private:
 	// Video scanner tables are now runtime-generated using UTAIIe logic
 	unsigned short g_aClockVertOffsetsHGR[VIDEO_SCANNER_MAX_VERT_PAL];
 	unsigned short g_aClockVertOffsetsTXT[VIDEO_SCANNER_MAX_VERT_PAL / 8];
+
 	static unsigned short APPLE_IIP_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];	// 5 = CEILING(312/64) = CEILING(262/64)
 	static unsigned short APPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];
 

@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Globals (Public)
 
-    uint8_t      *g_pFramebufferbits = NULL; // last drawn frame
+    
 	int           g_nAltCharSetOffset  = 0; // alternate character set
 
 // Globals (Private)
@@ -79,63 +79,68 @@ int const kVDisplayableScanLines = 192; // max displayable scanlines
 
 static COLORREF      customcolors[256];	// MONOCHROME is last custom color
 
-static HBITMAP       g_hDeviceBitmap;
-static HDC           g_hDeviceDC;
-static LPBITMAPINFO  g_pFramebufferinfo = NULL;
-
-       HBITMAP       g_hLogoBitmap;
-
-COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
-
-uint32_t  g_uVideoMode     = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
-
-DWORD     g_eVideoType     = VT_DEFAULT;
-static VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
-
-static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
-
-static LPDIRECTDRAW g_lpDD = NULL;
-
-Video* g_pVideo = NULL;
-
 //-------------------------------------
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
-	TCHAR g_aVideoChoices[] =
-		TEXT("Monochrome (Custom)\0")
-		TEXT("Color (RGB Monitor)\0")
-		TEXT("Color (NTSC Monitor)\0")
-		TEXT("Color TV\0")
-		TEXT("B&W TV\0")
-		TEXT("Monochrome (Amber)\0")
-		TEXT("Monochrome (Green)\0")
-		TEXT("Monochrome (White)\0")
-		;
+TCHAR g_aVideoChoices[] =
+TEXT("Monochrome (Custom)\0")
+TEXT("Color (RGB Monitor)\0")
+TEXT("Color (NTSC Monitor)\0")
+TEXT("Color TV\0")
+TEXT("B&W TV\0")
+TEXT("Monochrome (Amber)\0")
+TEXT("Monochrome (Green)\0")
+TEXT("Monochrome (White)\0")
+;
 
-	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
-	// The window title will be set to this.
-	char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
-	{
-		  "Monochrome Monitor (Custom)"
-		, "Color (RGB Monitor)"
-		, "Color (NTSC Monitor)"
-		, "Color TV"
-		, "B&W TV"
-		, "Amber Monitor"
-		, "Green Monitor"
-		, "White Monitor"
-	};
+// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
+// The window title will be set to this.
+char* g_apVideoModeDesc[NUM_VIDEO_MODES] =
+{
+	  "Monochrome Monitor (Custom)"
+	, "Color (RGB Monitor)"
+	, "Color (NTSC Monitor)"
+	, "Color TV"
+	, "B&W TV"
+	, "Amber Monitor"
+	, "Green Monitor"
+	, "White Monitor"
+};
 
-	int Video::g_nLastScreenShot = 0;
-	UINT g_videoRomSize = 0;
-	bool g_videoRomRockerSwitch = false;
+
+// Globals ____________________________________________________________________
+
+HBITMAP       Video::g_hDeviceBitmap = NULL;
+HDC           Video::g_hDeviceDC = NULL;
+LPBITMAPINFO  Video::g_pFramebufferinfo = NULL;
+HBITMAP       Video::g_hLogoBitmap = NULL;
+LPDIRECTDRAW  Video::g_lpDD = NULL;
+std::string   Video::g_pLastDiskImageName;
+
+
+int		Video::g_nLastScreenShot = 0;
+BYTE	Video::g_videoRom[kVideoRomSizeMax];
+UINT	Video::g_videoRomSize = 0;
+bool	Video::g_videoRomRockerSwitch = false;
+bool	Video::g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
+
+
+Video* g_pVideo = NULL;
 
 	Video::Video()
 	{
-		pNTSC = new NTSC();
-
 		g_bDisplayPrintScreenFileName = false;
 		g_bShowPrintScreenWarningDialog = true;
+
+		g_pFramebufferbits = NULL; // last drawn frame
+
+		g_nMonochromeRGB = RGB(0xC0, 0xC0, 0xC0);
+		g_uVideoMode = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
+		g_eVideoType = VT_DEFAULT;
+		VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
+		g_nAltCharSetOffset = 0;
+
+		pNTSC = new NTSC();
 	}
 
 //===========================================================================
@@ -953,7 +958,7 @@ bool Video::DDInit(void)
 	bool bCreatedOK = false;
 	for (int x=0; x<num_draw_devices; x++)
 	{
-		hr = DirectDrawCreate(&draw_device_guid[x], &g_lpDD, NULL);
+		hr = DirectDrawCreate(&draw_device_guid[x], &Video::g_lpDD, NULL);
 		if (SUCCEEDED(hr))
 		{
 			LogFileOutput("DSCreate succeeded for draw device #%d\n", x);
@@ -979,7 +984,7 @@ bool Video::DDInit(void)
 
 void Video::DDUninit(void)
 {
-	SAFE_RELEASE(g_lpDD);
+	SAFE_RELEASE(Video::g_lpDD);
 }
 
 #undef SAFE_RELEASE
@@ -993,8 +998,8 @@ void Video::DDUninit(void)
 //===========================================================================
 void Video::Video_ResetScreenshotCounter( const std::string & pImageName )
 {
-	g_nLastScreenShot = 0;
-	g_pLastDiskImageName = pImageName;
+	Video::g_nLastScreenShot = 0;
+	Video::g_pLastDiskImageName = pImageName;
 }
 
 //===========================================================================
@@ -1002,9 +1007,9 @@ void Video::Util_MakeScreenShotFileName( TCHAR *pFinalFileName_, DWORD chars )
 {
 	const std::string sPrefixScreenShotFileName = "AppleWin_ScreenShot";
 	// TODO: g_sScreenshotDir
-	const std::string pPrefixFileName = !g_pLastDiskImageName.empty() ? g_pLastDiskImageName : sPrefixScreenShotFileName;
+	const std::string pPrefixFileName = !Video::g_pLastDiskImageName.empty() ? Video::g_pLastDiskImageName : sPrefixScreenShotFileName;
 #if SCREENSHOT_BMP
-	StringCbPrintf( pFinalFileName_, chars, TEXT("%s_%09d.bmp"), pPrefixFileName.c_str(), g_nLastScreenShot );
+	StringCbPrintf( pFinalFileName_, chars, TEXT("%s_%09d.bmp"), pPrefixFileName.c_str(), Video::g_nLastScreenShot );
 #endif
 #if SCREENSHOT_TGA
 	StringCbPrintf( pFinalFileName_, chars, TEXT("%s%09d.tga"), pPrefixFileName.c_str(), g_nLastScreenShot );
@@ -1034,12 +1039,12 @@ void Video::Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 	bool bExists = true;
 	while( bExists )
 	{
-		if (g_nLastScreenShot > nMaxScreenShot) // Holy Crap! User has maxed the number of screenshots!?
+		if (Video::g_nLastScreenShot > nMaxScreenShot) // Holy Crap! User has maxed the number of screenshots!?
 		{
 			TCHAR msg[512];
 			StringCbPrintf( msg, 512, "You have more then %d screenshot filenames!  They will no longer be saved.\n\nEither move some of your screenshots or increase the maximum in video.cpp\n", nMaxScreenShot );
 			MessageBox( g_hFrameWindow, msg, "Warning", MB_OK );
-			g_nLastScreenShot = 0;
+			Video::g_nLastScreenShot = 0;
 			return;
 		}
 
@@ -1049,7 +1054,7 @@ void Video::Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 		{
 			break;
 		}
-		g_nLastScreenShot++;
+		Video::g_nLastScreenShot++;
 	}
 
 	Video_SaveScreenShot( ScreenShotType, sScreenShotFileName );

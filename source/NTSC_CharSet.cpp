@@ -281,8 +281,8 @@ csbits_t Get2e_csbits(void)
 {
 	const csbits_t videoRom4K = (GetApple2Type() == A2TYPE_APPLE2E) ? csbits_2e : csbits_enhanced2e;
 
-	if (g_pVideo->IsVideoRom4K())	// 4K means US-only, so no secondary PAL video ROM
+	if (Video::IsVideoRom4K())	// 4K means US-only, so no secondary PAL video ROM
 		return videoRom4K;
 
-	return g_pVideo->GetVideoRomRockerSwitch() == false ? videoRom4K : csbits_2e_pal;	// NB. Same PAL video ROM for Original & Enhanced //e
+	return Video::GetVideoRomRockerSwitch() == false ? videoRom4K : csbits_2e_pal;	// NB. Same PAL video ROM for Original & Enhanced //e
 }
