@@ -2455,7 +2455,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 				MemSaveSnapshotMemory(yamlSaveHelper, false, uBank);
 			}
 
-			RGB_SaveSnapshot(yamlSaveHelper);
+			g_pVideo->RGB_SaveSnapshot(yamlSaveHelper);
 		}
 	}
 }
@@ -2543,7 +2543,7 @@ static void MemLoadSnapshotAuxVer2(YamlLoadHelper& yamlLoadHelper)
 
 	MemLoadSnapshotAuxCommon(yamlLoadHelper, card);
 
-	RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
+	g_pVideo->RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
 }
 
 bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)

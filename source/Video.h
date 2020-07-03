@@ -201,7 +201,7 @@ public:
 
 	// ____________________________________________________________________
 
-	Video::Video();
+	Video();
 	~Video();
 
 	void    VideoBenchmark();
@@ -266,6 +266,9 @@ public:
 
 	static void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
 	static void CreateDIBBuffer(LPBITMAPINFO pFramebufferinfo, HBITMAP* hDeviceBitmap, uint8_t** pFramebufferbits);
+
+	void RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+	void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion);
 
 
 	// ____________________________________________________________________

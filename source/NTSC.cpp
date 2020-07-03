@@ -309,13 +309,21 @@ csbits_t NTSC::csbits;
 
 
 
-NTSC::NTSC()
+NTSC::NTSC(Video* _pVideo)
 {
+	pVideo = _pVideo;
+	pRGBMonitor = new RGBMonitor();
+
 	g_nChromaSize = 0;
 
 	// Globals (Public) ___________________________________________________
 	g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
 	g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible (NB. final hpos is 2 cycles long, so a line is 65 cycles)
+}
+
+NTSC::~NTSC()
+{
+	delete pRGBMonitor;
 }
 
 
@@ -688,7 +696,7 @@ void NTSC::updateVideoScannerAddress()
 
 	// Adjust, as these video styles have 2x 14M pixels of pre-render
 	// NB. For VT_COLOR_MONITOR_NTSC, also check color-burst so that TEXT and MIXED(HGR+TEXT) render the TEXT at the same offset (GH#341)
-	if (g_pVideo->g_eVideoType == VT_MONO_TV || g_pVideo->g_eVideoType == VT_COLOR_TV || (g_pVideo->g_eVideoType == VT_COLOR_MONITOR_NTSC && GetColorBurst()))
+	if (pVideo->g_eVideoType == VT_MONO_TV || pVideo->g_eVideoType == VT_COLOR_TV || (pVideo->g_eVideoType == VT_COLOR_MONITOR_NTSC && GetColorBurst()))
 		g_pVideoAddress -= 2;
 
 	// GH#555: For the 14M video modes (DHGR,DGR,80COL), start rendering 1x 14M pixel early to account for these video modes being shifted right by 1 pixel
@@ -700,7 +708,7 @@ void NTSC::updateVideoScannerAddress()
 		(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenDoubleLores80) ||
 		(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80) ||
 		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && g_pFuncUpdateTextScreen == &NTSC::updateScreenText80))
-		&& (g_pVideo->g_eVideoType != VT_COLOR_MONITOR_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
+		&& (pVideo->g_eVideoType != VT_COLOR_MONITOR_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
 	{
 		g_pVideoAddress -= 1;
 	}
@@ -1125,39 +1133,39 @@ void NTSC::updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVid
 				uint8_t a = *MemGetAuxPtr(addr);
 				uint8_t m = *MemGetMainPtr(addr);
 
-				if (RGB_IsMixModeInvertBit7())	// Invert high bit? (GH#633)
+				if (pRGBMonitor->RGB_IsMixModeInvertBit7())	// Invert high bit? (GH#633)
 				{
 					a ^= 0x80;
 					m ^= 0x80;
 				}
 
-				if (RGB_Is160Mode())
+				if (pRGBMonitor->RGB_Is160Mode())
 				{
-					int width = UpdateDHiRes160Cell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+					int width = pRGBMonitor->UpdateDHiRes160Cell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
 					g_pVideoAddress += width;
 				}
-				else if (RGB_Is560Mode() || (RGB_IsMixMode() && !((a | m) & 0x80)))
+				else if (pRGBMonitor->RGB_Is560Mode() || (pRGBMonitor->RGB_IsMixMode() && !((a | m) & 0x80)))
 				{
 					update7MonoPixels(a);
 					update7MonoPixels(m);
 				}
-				else if (!RGB_IsMixMode() || (RGB_IsMixMode() && (a & m & 0x80)))
+				else if (!pRGBMonitor->RGB_IsMixMode() || (pRGBMonitor->RGB_IsMixMode() && (a & m & 0x80)))
 				{
-					UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
+					pRGBMonitor->UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
 					g_pVideoAddress += 14;
 				}
 				else	// RGB_IsMixMode() && ((a ^ m) & 0x80)
 				{
 					if (a & 0x80)	// RGB color, then monochrome
 					{
-						UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true ,false);
+						pRGBMonitor->UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true ,false);
 						g_pVideoAddress += 7;
 						update7MonoPixels(m);
 					}
 					else			// monochrome, then RGB color
 					{
 						update7MonoPixels(a);
-						UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, false, true);
+						pRGBMonitor->UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, false, true);
 						g_pVideoAddress += 7;
 					}
 				}
@@ -1259,7 +1267,7 @@ void NTSC::updateScreenDoubleLores80Simplified (long cycles6502) // wsUpdateVide
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
 				uint16_t addr = getVideoScannerAddressTXT();
-				UpdateDLoResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+				pRGBMonitor->UpdateDLoResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
 				g_pVideoAddress += 14;
 			}
 		}
@@ -1328,9 +1336,9 @@ void NTSC::updateScreenSingleHires40Simplified (long cycles6502)
 			{
 				uint16_t addr = getVideoScannerAddressHGR();
 
-				if (!RGB_Is560Mode())
+				if (!pRGBMonitor->RGB_Is560Mode())
 				{
-					UpdateHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+					pRGBMonitor->UpdateHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, pVideo);
 					g_pVideoAddress += 14;
 				}
 				else	// Color Burst is off - duplicate code from updateScreenSingleHires40() (GH#631)
@@ -1413,7 +1421,7 @@ void NTSC::updateScreenSingleLores40Simplified (long cycles6502)
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
 				uint16_t addr = getVideoScannerAddressTXT();
-				UpdateLoResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+				pRGBMonitor->UpdateLoResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
 				g_pVideoAddress += 14;
 			}
 		}
@@ -1795,9 +1803,12 @@ _mono:
 
 //===========================================================================
 
-
-void NTSC::NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
+void NTSC::NTSC_VideoInit( uint8_t* pFramebuffer, Video* pVideo ) // wsVideoInit
 {
+	if (pRGBMonitor == NULL)
+	{
+		pRGBMonitor = new RGBMonitor();
+	}
 	make_csbits();
 	GenerateVideoTables();
 	initPixelDoubleMasks();
@@ -1807,7 +1818,7 @@ void NTSC::NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
 	{
 		uint32_t offset = sizeof(bgra_t) * GetFrameBufferWidth() * ((GetFrameBufferHeight() - 1) - y - GetFrameBufferBorderHeight()) + (sizeof(bgra_t) * GetFrameBufferBorderWidth());
-		g_pScanLines[y] = (bgra_t*) (g_pVideo->g_pFramebufferbits + offset);
+		g_pScanLines[y] = (bgra_t*) (pVideo->g_pFramebufferbits + offset);
 	}
 
 	g_pVideoAddress = g_pScanLines[0];
@@ -1815,11 +1826,11 @@ void NTSC::NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	g_pFuncUpdateTextScreen     = &NTSC::updateScreenText40;
 	g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText40;
 
-	g_pVideo->VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
+	pVideo->VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
 
 	bgra_t baseColors[kNumBaseColors];
 	GenerateBaseColors(&baseColors);
-	VideoInitializeOriginal(&baseColors);
+	pRGBMonitor->VideoInitializeOriginal(&baseColors);
 
 #if HGR_TEST_PATTERN
 // Init HGR to almost all-possible-combinations
@@ -2215,4 +2226,9 @@ UINT NTSC::NTSC_GetVideoLines(void)
 bool NTSC::NTSC_IsVisible(void)
 {
 	return (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START);
+}
+
+RGBMonitor* NTSC::GetRGBMonitor()
+{
+	return pRGBMonitor;
 }

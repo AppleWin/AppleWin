@@ -1760,7 +1760,7 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-rgb-card-invert-bit7") == 0)	// GH#633
 		{
-			RGB_SetInvertBit7(true);
+			RGBMonitor::RGB_SetInvertBit7(true);
 		}
 		else if (strcmp(lpCmdLine, "-screenshot-and-exit") == 0)	// GH#616: For testing - Use in combination with -load-state
 		{

@@ -140,7 +140,7 @@ Video* g_pVideo = NULL;
 		VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
 		g_nAltCharSetOffset = 0;
 
-		pNTSC = new NTSC();
+		pNTSC = new NTSC(this);
 	}
 
 //===========================================================================
@@ -171,7 +171,7 @@ void Video::VideoInitialize ()
 	Video::CreateDIBBuffer(g_pFramebufferinfo, &g_hDeviceBitmap, &g_pFramebufferbits);
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
-	pNTSC->NTSC_VideoInit(g_pFramebufferbits);
+	pNTSC->NTSC_VideoInit(g_pFramebufferbits, this);
 }
 
 //===========================================================================
@@ -644,7 +644,7 @@ void Video::VideoResetState ()
 	pNTSC->NTSC_SetVideoTextMode( 40 );
 	pNTSC->NTSC_SetVideoMode( g_uVideoMode );
 
-	RGB_ResetState();
+	pNTSC->GetRGBMonitor()->RGB_ResetState();
 }
 
 //===========================================================================
@@ -676,7 +676,7 @@ BYTE Video::VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCy
 	}
 
 	if (!IS_APPLE2)
-		RGB_SetVideoMode(address);
+		pNTSC->GetRGBMonitor()->RGB_SetVideoMode(address);
 
 	// Only 1-cycle delay for VF_TEXT & VF_MIXED mode changes (GH#656)
 	bool delay = false;
@@ -1454,4 +1454,14 @@ void Video::CreateDIBBuffer(LPBITMAPINFO pFramebufferinfo, HBITMAP *hBitmap, uin
 
 	// Clear the new buffer
 	ZeroMemory( *pFramebufferbits, pFramebufferinfo->bmiHeader.biWidth * pFramebufferinfo->bmiHeader.biHeight * pFramebufferinfo->bmiHeader.biPlanes * (pFramebufferinfo->bmiHeader.biBitCount/8));
+}
+
+void Video::RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
+{
+	pNTSC->GetRGBMonitor()->RGB_SaveSnapshot(yamlSaveHelper);
+}
+
+void Video::RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
+{
+	pNTSC->GetRGBMonitor()->RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
 }

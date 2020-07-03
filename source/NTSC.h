@@ -17,6 +17,7 @@ static const UINT VIDEO_SCANNER_6502_CYCLES = VIDEO_SCANNER_MAX_HORZ * VIDEO_SCA
 static const UINT VIDEO_SCANNER_6502_CYCLES_PAL = VIDEO_SCANNER_MAX_HORZ * VIDEO_SCANNER_MAX_VERT_PAL;
 
 class Video;
+class RGBMonitor;
 enum	VideoRefreshRate_e;
 
 
@@ -26,7 +27,8 @@ class NTSC
 
 
 public:
-	NTSC();
+	NTSC(Video* _pVideo);
+	~NTSC();
 
 	// Globals (Public)
 	uint16_t g_nVideoClockVert;
@@ -43,7 +45,7 @@ public:
 	void     NTSC_VideoClockResync(const DWORD dwCyclesThisFrame);
 	uint16_t NTSC_VideoGetScannerAddress(const ULONG uExecutedCycles);
 	uint16_t NTSC_VideoGetScannerAddressForDebugger(void);
-	void     NTSC_VideoInit(uint8_t* pFramebuffer);
+	void     NTSC_VideoInit(uint8_t* pFramebuffer, Video* pVideo);
 	void     NTSC_VideoReinitialize(DWORD cyclesThisFrame, bool bInitVideoScannerAddress);
 	static void     NTSC_VideoInitAppleType(eApple2Type type);
 	void     NTSC_VideoInitChroma();
@@ -56,6 +58,8 @@ public:
 
 	void updateVideoScannerHorzEOLSimple();
 
+	RGBMonitor* GetRGBMonitor();
+
 	static UINT NTSC_GetCyclesPerFrame(void);
 
 
@@ -65,6 +69,9 @@ private:
 	// everything related to the current video rendering must NOT be static
 
 	// Globals (Private) __________________________________________________
+	RGBMonitor* pRGBMonitor = NULL; // child
+	Video* pVideo = NULL; //parent
+
 	static int g_nVideoCharSet;
 	int g_nVideoMixed = 0;
 	int g_nHiresPage = 1;

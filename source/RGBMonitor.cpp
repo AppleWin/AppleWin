@@ -9,104 +9,6 @@
 #include "YamlHelper.h"
 #include "AppleWin.h"
 
-const int HIRES_COLUMN_SUBUNIT_SIZE = 16;
-const int HIRES_COLUMN_UNIT_SIZE = (HIRES_COLUMN_SUBUNIT_SIZE)*2;
-const int HIRES_NUMBER_COLUMNS = (1<<5);	// 5 bits
-
-
-const int SRCOFFS_LORES   = 0;							//    0
-const int SRCOFFS_HIRES   = (SRCOFFS_LORES  + 16);		//   16
-const int SRCOFFS_DHIRES  = (SRCOFFS_HIRES  + (HIRES_NUMBER_COLUMNS*HIRES_COLUMN_UNIT_SIZE)); // 1040
-const int SRCOFFS_TOTAL   = (SRCOFFS_DHIRES + 2560);	// 3600
-
-const int MAX_SOURCE_Y = 256;
-static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
-#define  SETSOURCEPIXEL(x,y,c)  g_aSourceStartofLine[(y)][(x)] = (c)
-
-// TC: Tried to remove HiresToPalIndex[] translation table, so get purple bars when hires data is: 0x80 0x80...
-// . V_CreateLookup_HiResHalfPixel_Authentic() uses both ColorMapping (CM_xxx) indices and Color_Palette_Index_e (HGR_xxx)!
-#define DO_OPT_PALETTE 0
-
-enum Color_Palette_Index_e
-{
-// hires (don't change order) - For tv emulation HGR Video Mode
-#if DO_OPT_PALETTE
-	  HGR_VIOLET       // HCOLOR=2 VIOLET , 2800: 01 00 55 2A
-	, HGR_BLUE         // HCOLOR=6 BLUE   , 3000: 81 00 D5 AA
-	, HGR_GREEN        // HCOLOR=1 GREEN  , 2400: 02 00 2A 55
-	, HGR_ORANGE       // HCOLOR=5 ORANGE , 2C00: 82 00 AA D5
-	, HGR_BLACK
-	, HGR_WHITE
-#else
-	  HGR_BLACK
-	, HGR_WHITE
-	, HGR_BLUE         // HCOLOR=6 BLUE   , 3000: 81 00 D5 AA
-	, HGR_ORANGE       // HCOLOR=5 ORANGE , 2C00: 82 00 AA D5
-	, HGR_GREEN        // HCOLOR=1 GREEN  , 2400: 02 00 2A 55
-	, HGR_VIOLET       // HCOLOR=2 VIOLET , 2800: 01 00 55 2A
-#endif
-
-// TV emu
-	, HGR_GREY1
-	, HGR_GREY2
-	, HGR_YELLOW
-	, HGR_AQUA
-	, HGR_PURPLE
-	, HGR_PINK
-// lores & dhires
-	, BLACK
-	, DEEP_RED
-	, DARK_BLUE
-	, MAGENTA
-	, DARK_GREEN
-	, DARK_GRAY
-	, BLUE
-	, LIGHT_BLUE
-	, BROWN
-	, ORANGE
-	, LIGHT_GRAY
-	, PINK
-	, GREEN
-	, YELLOW
-	, AQUA
-	, WHITE
-};
-
-// __ Map HGR color index to Palette index
-enum ColorMapping
-{
-	  CM_Violet
-	, CM_Blue
-	, CM_Green
-	, CM_Orange
-	, CM_Black
-	, CM_White
-	, NUM_COLOR_MAPPING
-};
-
-const BYTE HiresToPalIndex[ NUM_COLOR_MAPPING ] =
-{
-	  HGR_VIOLET
-	, HGR_BLUE
-	, HGR_GREEN
-	, HGR_ORANGE
-	, HGR_BLACK
-	, HGR_WHITE
-};
-
-const BYTE LoresResColors[16] = {
-		BLACK,     DEEP_RED, DARK_BLUE, MAGENTA,
-		DARK_GREEN,DARK_GRAY,BLUE,      LIGHT_BLUE,
-		BROWN,     ORANGE,   LIGHT_GRAY,PINK,
-		GREEN,     YELLOW,   AQUA,      WHITE
-	};
-
-const BYTE DoubleHiresPalIndex[16] = {
-		BLACK,   DARK_BLUE, DARK_GREEN,BLUE,
-		BROWN,   LIGHT_GRAY,GREEN,     AQUA,
-		DEEP_RED,MAGENTA,   DARK_GRAY, LIGHT_BLUE,
-		ORANGE,  PINK,      YELLOW,    WHITE
-	};
 
 #define  SETRGBCOLOR(r,g,b) {b,g,r,0}
 
@@ -157,8 +59,20 @@ static RGBQUAD PalIndex2RGB[] =
 };
 
 //===========================================================================
+// Globals (static)
 
-static void V_CreateLookup_DoubleHires ()
+bool RGBMonitor::g_rgbInvertBit7 = false;
+
+//===========================================================================
+
+RGBMonitor::~RGBMonitor()
+{
+	if (g_pSourcePixels != NULL)
+		delete[] g_pSourcePixels;
+}
+
+
+void RGBMonitor::V_CreateLookup_DoubleHires ()
 {
 #define OFFSET  3
 #define SIZE    10
@@ -212,7 +126,7 @@ static void V_CreateLookup_DoubleHires ()
 
 //===========================================================================
 
-void V_CreateLookup_Lores()
+void RGBMonitor::V_CreateLookup_Lores()
 {
 	for (int color = 0; color < 16; color++)
 		for (int x = 0; x < 16; x++)
@@ -231,7 +145,7 @@ void V_CreateLookup_Lores()
 //		currHighBit=1: {1 pixel + 14 pixels + 1 pad} * 2
 //   . and each byte is an index into the colour palette
 
-void V_CreateLookup_HiResHalfPixel_Authentic(VideoType_e videoType)
+void RGBMonitor::V_CreateLookup_HiResHalfPixel_Authentic(VideoType_e videoType)
 {
 	// high-bit & 2-bits from previous byte, 2-bits from next byte = 2^5 = 32 total permutations
 	for (int iColumn = 0; iColumn < HIRES_NUMBER_COLUMNS; iColumn++)
@@ -341,13 +255,8 @@ void V_CreateLookup_HiResHalfPixel_Authentic(VideoType_e videoType)
 
 // For AppleWin 1.25 "tv emulation" HGR Video Mode
 
-const UINT HGR_MATRIX_YOFFSET = 2;
 
-static BYTE hgrpixelmatrix[FRAMEBUFFER_W][FRAMEBUFFER_H/2 + 2 * HGR_MATRIX_YOFFSET];	// 2 extra scan lines on top & bottom
-static BYTE colormixbuffer[6];		// 6 hires colours
-static WORD colormixmap[6][6][6];	// top x middle x bottom
-
-BYTE MixColors(BYTE c1, BYTE c2)
+BYTE RGBMonitor::MixColors(BYTE c1, BYTE c2)
 {
 #define COMBINATION(c1,c2,ref1,ref2) (((c1)==(ref1)&&(c2)==(ref2)) || ((c1)==(ref2)&&(c2)==(ref1)))
 
@@ -371,7 +280,7 @@ BYTE MixColors(BYTE c1, BYTE c2)
 #undef COMBINATION
 }
 
-static void CreateColorMixMap(void)
+void RGBMonitor::CreateColorMixMap(void)
 {
 	const int FROM_NEIGHBOUR = 0x00;
 	const int MIX_THRESHOLD = HGR_BLUE; // (skip) bottom 2 HGR colors
@@ -418,7 +327,7 @@ static void CreateColorMixMap(void)
 	}
 }
 
-static void MixColorsVertical(int matx, int maty, bool isSWMIXED)
+void RGBMonitor::MixColorsVertical(int matx, int maty, bool isSWMIXED)
 {
 	int bot1idx, bot2idx;
 
@@ -459,7 +368,7 @@ static void MixColorsVertical(int matx, int maty, bool isSWMIXED)
 	colormixbuffer[5] = (twoHalfPixel & 0x00FF);
 }
 
-static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
+void RGBMonitor::CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 {
 	const BYTE* const pSrc = g_aSourceStartofLine[ sy ] + sx;
 
@@ -505,7 +414,7 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 //===========================================================================
 
 // Pre: nSrcAdjustment: for 160-color images, src is +1 compared to dst
-static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, const int nSrcAdjustment = 0)
+void RGBMonitor::CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, const int nSrcAdjustment = 0)
 {
 	UINT32* pDst = (UINT32*) pVideoAddress;
 	const BYTE* const pSrc = g_aSourceStartofLine[ sy ] + sx;
@@ -538,14 +447,14 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 
 #define HIRES_COLUMN_OFFSET (((byteval1 & 0xE0) << 2) | ((byteval3 & 0x03) << 5))	// (prevHighBit | last 2 pixels | next 2 pixesl) * HIRES_COLUMN_UNIT_SIZE
 
-void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
+void RGBMonitor::UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, Video* pVideo)
 {
 	uint8_t *pMain = MemGetMainPtr(addr);
 	BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
 	BYTE byteval2 =            *(pMain);
 	BYTE byteval3 = (x < 39) ? *(pMain+1) : 0;
 
-	if (g_pVideo->IsVideoStyle(VS_COLOR_VERTICAL_BLEND))
+	if (pVideo->IsVideoStyle(VS_COLOR_VERTICAL_BLEND))
 	{
 		CopyMixedSource(x, y, SRCOFFS_HIRES+HIRES_COLUMN_OFFSET+((x & 1)*HIRES_COLUMN_SUBUNIT_SIZE), (int)byteval2, pVideoAddress);
 	}
@@ -560,7 +469,7 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 #define COLOR  ((xpixel + PIXEL) & 3)
 #define VALUE  (dwordval >> (4 + PIXEL - COLOR))
 
-void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool updateAux, bool updateMain)
+void RGBMonitor::UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool updateAux, bool updateMain)
 {
 	const int xpixel = x*14;
 
@@ -593,7 +502,7 @@ void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool 
 
 #if 1
 // Squash the 640 pixel image into 560 pixels
-int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
+int RGBMonitor::UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 {
 	const int xpixel = x*16;
 
@@ -622,7 +531,7 @@ int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 }
 #else
 // Left align the 640 pixel image, losing the right-hand 80 pixels
-int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
+int RGBMonitor::UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 {
 	const int xpixel = x*16;
 	if (xpixel >= 560)	// clip to our 560px display (losing 80 pixels)
@@ -656,7 +565,7 @@ int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 //===========================================================================
 
 // Tested with Deater's Cycle-Counting Megademo
-void UpdateLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
+void RGBMonitor::UpdateLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 {
 	const BYTE val = *MemGetMainPtr(addr);
 
@@ -675,7 +584,7 @@ void UpdateLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 #define ROL_NIB(x) ( (((x)<<1)&0xF) | (((x)>>3)&1) )
 
 // Tested with FT's Ansi Story
-void UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
+void RGBMonitor::UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 {
 	BYTE auxval = *MemGetAuxPtr(addr);
 	const BYTE mainval = *MemGetMainPtr(addr);
@@ -698,9 +607,9 @@ void UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 
 //===========================================================================
 
-static LPBYTE g_pSourcePixels = NULL;
 
-static void V_CreateDIBSections(void)
+
+void RGBMonitor::V_CreateDIBSections(void)
 {
 	g_pSourcePixels = new BYTE[SRCOFFS_TOTAL * MAX_SOURCE_Y];
 
@@ -718,7 +627,7 @@ static void V_CreateDIBSections(void)
 	CreateColorMixMap();
 }
 
-void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
+void RGBMonitor::VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 {
 	// CREATE THE SOURCE IMAGE AND DRAW INTO THE SOURCE BIT BUFFER
 	V_CreateDIBSections();
@@ -732,17 +641,13 @@ void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 
 //===========================================================================
 
-static UINT g_rgbFlags = 0;
-static UINT g_rgbMode = 0;
-static WORD g_rgbPrevAN3Addr = 0;
-static bool g_rgbSet80COL = false;
-static bool g_rgbInvertBit7 = false;
+
 
 // Video7 RGB card:
 // . Clock in the !80COL state to define the 2 flags: F2, F1
 // . Clocking done by toggling AN3
 // . NB. There's a final 5th AN3 transition to set DHGR mode
-void RGB_SetVideoMode(WORD address)
+void RGBMonitor::RGB_SetVideoMode(WORD address)
 {
 	if ((address&~1) == 0x0C)			// 0x0C or 0x0D? (80COL)
 	{
@@ -779,39 +684,39 @@ void RGB_SetVideoMode(WORD address)
 	g_rgbSet80COL = false;
 }
 
-bool RGB_Is140Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 2
+bool RGBMonitor::RGB_Is140Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 2
 {
 	return g_rgbMode == 0;
 }
 
-bool RGB_Is160Mode(void)	// Extended 80-Column Text/AppleColor Card: N/A
+bool RGBMonitor::RGB_Is160Mode(void)	// Extended 80-Column Text/AppleColor Card: N/A
 {
 	return g_rgbMode == 1;
 }
 
-bool RGB_IsMixMode(void)	// Extended 80-Column Text/AppleColor Card's Mode 3
+bool RGBMonitor::RGB_IsMixMode(void)	// Extended 80-Column Text/AppleColor Card's Mode 3
 {
 	return g_rgbMode == 2;
 }
 
-bool RGB_Is560Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 1
+bool RGBMonitor::RGB_Is560Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 1
 {
 	return g_rgbMode == 3;
 }
 
-bool RGB_IsMixModeInvertBit7(void)
+bool RGBMonitor::RGB_IsMixModeInvertBit7(void)
 {
 	return RGB_IsMixMode() && g_rgbInvertBit7;
 }
 
-void RGB_ResetState(void)
+void RGBMonitor::RGB_ResetState(void)
 {
 	g_rgbFlags = 0;
 	g_rgbMode = 0;
 	g_rgbPrevAN3Addr = 0;
 }
 
-void RGB_SetInvertBit7(bool state)
+void RGBMonitor::RGB_SetInvertBit7(bool state)
 {
 	g_rgbInvertBit7 = state;
 }
@@ -827,7 +732,7 @@ void RGB_SetInvertBit7(bool state)
 #define SS_YAML_KEY_RGB_80COL_CHANGED "80COL changed"
 #define SS_YAML_KEY_RGB_INVERT_BIT7 "Invert bit7"
 
-void RGB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+void RGBMonitor::RGB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_RGB_CARD);
 
@@ -838,7 +743,7 @@ void RGB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_RGB_INVERT_BIT7, g_rgbInvertBit7);
 }
 
-void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
+void RGBMonitor::RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
 {
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_RGB_CARD))
 		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_RGB_CARD);
