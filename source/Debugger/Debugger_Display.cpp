@@ -640,7 +640,7 @@ HDC GetDebuggerExtraDC(void)
 		SelectObject(g_hDebuggerExtraDC, g_hDebuggerExtraBM);
 
 		// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-		ZeroMemory(g_pVideo->g_pFramebufferbits, FRAMEBUFFER_W * FRAMEBUFFER_H * sizeof(bgra_t));
+		ZeroMemory(pDebuggerExtraFramebits, FRAMEBUFFER_W * FRAMEBUFFER_H * sizeof(bgra_t));
 
 	}
 

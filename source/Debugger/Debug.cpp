@@ -8036,6 +8036,9 @@ void DebugBegin ()
 	GetDebuggerMemDC();
 	GetDebuggerExtraDC();
 
+	if (debug_pVideo == NULL)
+		debug_pVideo = new Video();
+
 	g_nAppMode = MODE_DEBUG;
 	CpuEnableHeatmapGeneration(true);
 	FrameRefreshStatus(DRAW_TITLE);
