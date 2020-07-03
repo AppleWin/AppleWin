@@ -65,6 +65,12 @@ bool RGBMonitor::g_rgbInvertBit7 = false;
 
 //===========================================================================
 
+
+RGBMonitor::RGBMonitor()
+{
+
+}
+
 RGBMonitor::~RGBMonitor()
 {
 	if (g_pSourcePixels != NULL)

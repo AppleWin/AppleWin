@@ -103,6 +103,7 @@ const BYTE DoubleHiresPalIndex[16] = {
 class RGBMonitor
 {
 public:
+	RGBMonitor();
 	~RGBMonitor();
 
 	void UpdateHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, Video* pVideo);
