@@ -192,9 +192,9 @@ public:
 
 	// Globals ____________________________________________________________________
 
-	static HBITMAP       g_hDeviceBitmap;
-	static HDC           g_hDeviceDC;
-	static LPBITMAPINFO  g_pFramebufferinfo;
+	HBITMAP       g_hDeviceBitmap = NULL;
+	HDC           g_hDeviceDC = NULL;
+	LPBITMAPINFO  g_pFramebufferinfo = NULL;
 	static HBITMAP       g_hLogoBitmap;
 	static bool g_bVideoScannerNTSC;  // NTSC video scanning (or PAL)
 	static LPDIRECTDRAW g_lpDD;
@@ -211,7 +211,7 @@ public:
 	void    VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
 	void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 	void    VideoRedrawScreen(void);
-	void    VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedrawWholeScreen = false);
+	void    VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedrawWholeScreen = false, int scale = 2, int xdest = 0, int ydest = 0);
 	void    VideoReinitialize(bool bInitVideoScannerAddress = true);
 	void    VideoResetState();
 
@@ -265,7 +265,7 @@ public:
 	void DDUninit(void);
 
 	static void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
-	static void CreateDIBBuffer(LPBITMAPINFO pFramebufferinfo, HBITMAP* hDeviceBitmap, uint8_t** pFramebufferbits);
+	void CreateDIBBuffer(LPBITMAPINFO pFramebufferinfo, HBITMAP* hDeviceBitmap, uint8_t** pFramebufferbits);
 
 	void RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion);

@@ -1343,13 +1343,13 @@ LRESULT CALLBACK FrameWndProc (
 				{
 					UINT debugVideoMode;
 					if ( DebugGetVideoMode(&debugVideoMode) )
-						g_pVideo->VideoRefreshScreen(debugVideoMode, true);
+						g_pVideo->VideoRefreshScreen(debugVideoMode, true, GetViewportScale() / (GetDebugMode() ? 2 : 1), 0, 0);
 					else
-						g_pVideo->VideoRefreshScreen();
+						g_pVideo->VideoRefreshScreen(0, false, GetViewportScale() / (GetDebugMode() ? 2 : 1), 0, 0);
 				}
 				else
 				{
-					g_pVideo->VideoRefreshScreen();
+					g_pVideo->VideoRefreshScreen(0, false, GetViewportScale() / (GetDebugMode() ? 2 : 1), 0, 0);
 				}
 			}
 

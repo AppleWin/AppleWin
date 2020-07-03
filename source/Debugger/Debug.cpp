@@ -6358,7 +6358,7 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 	}
 
 	DebugVideoMode::Instance().Set(bVideoModeFlags);
-	g_pVideo->VideoRefreshScreen( bVideoModeFlags, true );
+	g_pVideo->VideoRefreshScreen( bVideoModeFlags, true, GetViewportScale() / (GetDebugMode() ? 2 : 1), 0, 0);
 	return UPDATE_NOTHING; // intentional
 }
 
@@ -9096,7 +9096,7 @@ void DebugDisplay( BOOL bInitDisasm/*=FALSE*/ )
 	{
 		uint32_t mode = 0;
 		DebugVideoMode::Instance().Get(&mode);
-		g_pVideo->VideoRefreshScreen(mode, true);
+		g_pVideo->VideoRefreshScreen(mode, true, GetViewportScale() / (GetDebugMode() ? 2 : 1), 0, 0);
 		return;
 	}
 

@@ -765,6 +765,8 @@ void StretchBltMemToFrameDC(void)
 		FRAMEBUFFER_W, FRAMEBUFFER_H,						// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
+
+	debug_pVideo->VideoRefreshScreen(VF_HIRES|(g_pVideo->VideoGetSWPAGE2() ? 0: VF_PAGE2), true, 1, FRAMEBUFFER_W, FRAMEBUFFER_H);
 }
 
 // Font: Apple Text
