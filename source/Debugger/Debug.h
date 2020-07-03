@@ -189,4 +189,3 @@
 	bool	IsDebugSteppingCycleAccurate(void);
 	bool    IsDebugSteppingWithPCFollow(void);
 
-	static  Video* debug_pVideo = NULL;

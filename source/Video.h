@@ -207,7 +207,7 @@ public:
 	void    VideoBenchmark();
 	void    VideoChooseMonochromeColor(); // FIXME: Should be moved to PageConfig and call VideoSetMonochromeColor()	
 	void    VideoDisplayLogo();
-	void    VideoInitialize();
+
 	void    VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
 	void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 	void    VideoRedrawScreen(void);
@@ -226,7 +226,7 @@ public:
 	bool    VideoGetSWMIXED(void);
 	bool    VideoGetSWPAGE2(void);
 	bool    VideoGetSWTEXT(void);
-	bool    VideoGetSWAltCharSet(void);
+	static bool    VideoGetSWAltCharSet(void);
 
 	void    VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
@@ -282,8 +282,9 @@ private:
 	const  int nMaxScreenShot = 999999999;
 	static std::string g_pLastDiskImageName;
 
-	int g_nAltCharSetOffset; // alternate character set
+	static int g_nAltCharSetOffset; // alternate character set
 
+	void VideoInitialize();
 	void Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars);
 	bool Util_TestScreenShotFileName(const TCHAR* pFileName);
 	void Video_SaveScreenShot(const VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName);
@@ -295,3 +296,4 @@ private:
 
 // Main Video renderer
 extern Video *g_pVideo;
+extern Video* debug_pVideo;

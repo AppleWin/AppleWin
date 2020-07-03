@@ -8317,6 +8317,8 @@ static void DebugEnd ()
 
 	ReleaseDebuggerMemDC();
 	ReleaseDebuggerExtraDC();
+	delete debug_pVideo;
+	debug_pVideo = NULL;
 }
 
 

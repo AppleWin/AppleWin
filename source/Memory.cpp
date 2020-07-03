@@ -416,7 +416,7 @@ static BYTE __stdcall IORead_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xB: res = g_pVideo->VideoGetSWMIXED();					break;
 	case 0xC: res = SW_PAGE2     ? true : false;		break;
 	case 0xD: res = g_pVideo->VideoGetSWHIRES();					break;
-	case 0xE: res = g_pVideo->VideoGetSWAltCharSet();				break;
+	case 0xE: res = Video::VideoGetSWAltCharSet();				break;
 	case 0xF: res = g_pVideo->VideoGetSW80COL();					break;
 	}
 

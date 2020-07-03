@@ -1631,7 +1631,7 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	}
 
 	g_nVideoMixed   = uVideoModeFlags & VF_MIXED;
-	g_nVideoCharSet = g_pVideo->VideoGetSWAltCharSet() ? 1 : 0;
+	g_nVideoCharSet = Video::VideoGetSWAltCharSet() ? 1 : 0;
 
 	g_nTextPage  = 1;
 	g_nHiresPage = 1;
@@ -1707,10 +1707,10 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 void NTSC::NTSC_SetVideoStyle() // (int v, int s)
 {
-    int half = g_pVideo->IsVideoStyle(VS_HALF_SCANLINES);
+    int half = pVideo->IsVideoStyle(VS_HALF_SCANLINES);
 	uint8_t r, g, b;
 
-	switch (g_pVideo->g_eVideoType )
+	switch (pVideo->g_eVideoType )
 	{
 		case VT_COLOR_TV:
 			r = 0xFF;
@@ -2030,15 +2030,15 @@ bool NTSC::CheckVideoTables2( eApple2Type type, uint32_t mode )
 	SetApple2Type(type);
 	NTSC::NTSC_VideoInitAppleType(GetApple2Type());
 
-	g_pVideo->g_uVideoMode = mode;
+	pVideo->g_uVideoMode = mode;
 
 	g_dwCyclesThisFrame = 0;
 	g_nVideoClockHorz = g_nVideoClockVert = 0;
 
 	for (DWORD cycles=0; cycles<VIDEO_SCANNER_MAX_VERT*VIDEO_SCANNER_MAX_HORZ; cycles++)
 	{
-		WORD addr1 = g_pVideo->VideoGetScannerAddress(cycles);
-		WORD addr2 = g_pVideo->g_uVideoMode & VF_TEXT ? getVideoScannerAddressTXT()
+		WORD addr1 = pVideo->VideoGetScannerAddress(cycles);
+		WORD addr2 = pVideo->g_uVideoMode & VF_TEXT ? getVideoScannerAddressTXT()
 											: getVideoScannerAddressHGR();
 		_ASSERT(addr1 == addr2);
 		if (addr1 != addr2)
@@ -2076,7 +2076,7 @@ bool NTSC::IsNTSC(void)
 void NTSC::GenerateVideoTables( void )
 {
 	eApple2Type currentApple2Type = GetApple2Type();
-	uint32_t currentVideoMode = g_pVideo->g_uVideoMode;
+	uint32_t currentVideoMode = pVideo->g_uVideoMode;
 	int currentHiresPage = g_nHiresPage;
 	int currentTextPage = g_nTextPage;
 
@@ -2086,18 +2086,18 @@ void NTSC::GenerateVideoTables( void )
 	// g_aClockVertOffsetsHGR[]
 	//
 
-	g_pVideo->g_uVideoMode = VF_HIRES;
+	pVideo->g_uVideoMode = VF_HIRES;
 	{
 		UINT i = 0, cycle = VIDEO_SCANNER_HORZ_START;
 		for (; i < VIDEO_SCANNER_MAX_VERT; i++, cycle += VIDEO_SCANNER_MAX_HORZ)
 		{
-			g_aClockVertOffsetsHGR[i] = g_pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrV);
+			g_aClockVertOffsetsHGR[i] = pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrV);
 			if (IsNTSC()) _ASSERT(g_aClockVertOffsetsHGR[i] == g_kClockVertOffsetsHGR[i]);
 		}
 		if (!IsNTSC())
 		{
 			for (; i < VIDEO_SCANNER_MAX_VERT_PAL; i++, cycle += VIDEO_SCANNER_MAX_HORZ)
-				g_aClockVertOffsetsHGR[i] = g_pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrV);
+				g_aClockVertOffsetsHGR[i] = pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrV);
 		}
 	}
 
@@ -2105,18 +2105,18 @@ void NTSC::GenerateVideoTables( void )
 	// g_aClockVertOffsetsTXT[]
 	//
 
-	g_pVideo->g_uVideoMode = VF_TEXT;
+	pVideo->g_uVideoMode = VF_TEXT;
 	{
 		UINT i = 0, cycle = VIDEO_SCANNER_HORZ_START;
 		for (; i < (256 + 8) / 8; i++, cycle += VIDEO_SCANNER_MAX_HORZ * 8)
 		{
-			g_aClockVertOffsetsTXT[i] = g_pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrV);
+			g_aClockVertOffsetsTXT[i] = pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrV);
 			if (IsNTSC()) _ASSERT(g_aClockVertOffsetsTXT[i] == g_kClockVertOffsetsTXT[i]);
 		}
 		if (!IsNTSC())
 		{
 			for (; i < VIDEO_SCANNER_MAX_VERT_PAL / 8; i++, cycle += VIDEO_SCANNER_MAX_HORZ * 8)
-				g_aClockVertOffsetsTXT[i] = g_pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrV);
+				g_aClockVertOffsetsTXT[i] = pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrV);
 		}
 	}
 
@@ -2124,13 +2124,13 @@ void NTSC::GenerateVideoTables( void )
 	// APPLE_IIP_HORZ_CLOCK_OFFSET[]
 	//
 
-	g_pVideo->g_uVideoMode = VF_TEXT;
+	pVideo->g_uVideoMode = VF_TEXT;
 	SetApple2Type(A2TYPE_APPLE2PLUS);
 	for (UINT j=0; j<5; j++)
 	{
 		for (UINT i=0, cycle=j*64*VIDEO_SCANNER_MAX_HORZ; i<VIDEO_SCANNER_MAX_HORZ; i++, cycle++)
 		{
-			APPLE_IIP_HORZ_CLOCK_OFFSET[j][i] = g_pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrH);
+			APPLE_IIP_HORZ_CLOCK_OFFSET[j][i] = pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrH);
 			if (IsNTSC()) _ASSERT(APPLE_IIP_HORZ_CLOCK_OFFSET[j][i] == kAPPLE_IIP_HORZ_CLOCK_OFFSET[j][i]);
 		}
 	}
@@ -2139,13 +2139,13 @@ void NTSC::GenerateVideoTables( void )
 	// APPLE_IIE_HORZ_CLOCK_OFFSET[]
 	//
 
-	g_pVideo->g_uVideoMode = VF_TEXT;
+	pVideo->g_uVideoMode = VF_TEXT;
 	SetApple2Type(A2TYPE_APPLE2E);
 	for (UINT j=0; j<5; j++)
 	{
 		for (UINT i=0, cycle=j*64*VIDEO_SCANNER_MAX_HORZ; i<VIDEO_SCANNER_MAX_HORZ; i++, cycle++)
 		{
-			APPLE_IIE_HORZ_CLOCK_OFFSET[j][i] = g_pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrH);
+			APPLE_IIE_HORZ_CLOCK_OFFSET[j][i] = pVideo->VideoGetScannerAddress(cycle, VS_PartialAddrH);
 			if (IsNTSC()) _ASSERT(APPLE_IIE_HORZ_CLOCK_OFFSET[j][i] == kAPPLE_IIE_HORZ_CLOCK_OFFSET[j][i]);
 		}
 	}
@@ -2157,7 +2157,7 @@ void NTSC::GenerateVideoTables( void )
 //	VideoResetState();
 
 	SetApple2Type(currentApple2Type);
-	g_pVideo->g_uVideoMode = currentVideoMode;
+	pVideo->g_uVideoMode = currentVideoMode;
 	g_nHiresPage = currentHiresPage;
 	g_nTextPage = currentTextPage;
 }

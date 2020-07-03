@@ -1999,8 +1999,8 @@ static void RepeatInitialization(void)
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
-		g_pVideo->VideoInitialize(); // g_pFramebufferinfo been created now
-		LogFileOutput("Main: VideoInitialize()\n");
+		//g_pVideo->VideoInitialize(); // g_pFramebufferinfo been created now
+		//LogFileOutput("Main: VideoInitialize()\n");
 
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");
 		FrameCreateWindow();	// g_hFrameWindow is now valid

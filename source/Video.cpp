@@ -116,6 +116,7 @@ LPBITMAPINFO  Video::g_pFramebufferinfo = NULL;
 HBITMAP       Video::g_hLogoBitmap = NULL;
 LPDIRECTDRAW  Video::g_lpDD = NULL;
 std::string   Video::g_pLastDiskImageName;
+int			  Video::g_nAltCharSetOffset = 0;
 
 
 int		Video::g_nLastScreenShot = 0;
@@ -126,25 +127,28 @@ bool	Video::g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 
 Video* g_pVideo = NULL;
+Video* debug_pVideo = NULL;
 
-	Video::Video()
-	{
-		g_bDisplayPrintScreenFileName = false;
-		g_bShowPrintScreenWarningDialog = true;
+Video::Video()
+{
+	g_bDisplayPrintScreenFileName = false;
+	g_bShowPrintScreenWarningDialog = true;
 
-		g_pFramebufferbits = NULL; // last drawn frame
+	g_pFramebufferbits = NULL; // last drawn frame
 
-		g_nMonochromeRGB = RGB(0xC0, 0xC0, 0xC0);
-		g_uVideoMode = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
-		g_eVideoType = VT_DEFAULT;
-		VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
-		g_nAltCharSetOffset = 0;
+	g_nMonochromeRGB = RGB(0xC0, 0xC0, 0xC0);
+	g_uVideoMode = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
+	g_eVideoType = VT_DEFAULT;
+	VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
+	Video::g_nAltCharSetOffset = 0;
 
-		pNTSC = new NTSC(this);
-	}
+	pNTSC = new NTSC(this);
+
+	VideoInitialize();
+}
 
 //===========================================================================
-void Video::VideoInitialize ()
+void Video::VideoInitialize()
 {
 	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
 	VideoResetState();
@@ -638,7 +642,7 @@ void Video::VideoReinitialize (bool bInitVideoScannerAddress /*= true*/)
 //===========================================================================
 void Video::VideoResetState ()
 {
-	g_nAltCharSetOffset    = 0;
+	Video::g_nAltCharSetOffset    = 0;
 	g_uVideoMode           = VF_TEXT;
 
 	pNTSC->NTSC_SetVideoTextMode( 40 );
@@ -661,8 +665,8 @@ BYTE Video::VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCy
 		case 0x01:                 g_uVideoMode |=  VF_80STORE;                            break;
 		case 0x0C: if (!IS_APPLE2){g_uVideoMode &= ~VF_80COL; pNTSC->NTSC_SetVideoTextMode(40);}; break;
 		case 0x0D: if (!IS_APPLE2){g_uVideoMode |=  VF_80COL; pNTSC->NTSC_SetVideoTextMode(80);}; break;
-		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
-		case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
+		case 0x0E: if (!IS_APPLE2) Video::g_nAltCharSetOffset = 0;           break;	// Alternate char set off
+		case 0x0F: if (!IS_APPLE2) Video::g_nAltCharSetOffset = 256;         break;	// Alternate char set on
 		case 0x50: g_uVideoMode &= ~VF_TEXT;    break;
 		case 0x51: g_uVideoMode |=  VF_TEXT;    break;
 		case 0x52: g_uVideoMode &= ~VF_MIXED;   break;
@@ -727,7 +731,7 @@ bool Video::VideoGetSWTEXT(void)
 
 bool Video::VideoGetSWAltCharSet(void)
 {
-	return g_nAltCharSetOffset != 0;
+	return Video::g_nAltCharSetOffset != 0;
 }
 
 //===========================================================================
@@ -746,7 +750,7 @@ static std::string VideoGetSnapshotStructName(void)
 void Video::VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", VideoGetSnapshotStructName().c_str());
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALT_CHARSET, g_nAltCharSetOffset ? true : false);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALT_CHARSET, Video::g_nAltCharSetOffset ? true : false);
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEO_MODE, g_uVideoMode);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLES_THIS_FRAME, g_dwCyclesThisFrame);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_VIDEO_REFRESH_RATE, (UINT)GetVideoRefreshRate());
@@ -764,7 +768,7 @@ void Video::VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 		SetCurrentCLK6502();
 	}
 
-	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALT_CHARSET) ? 256 : 0;
+	Video::g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALT_CHARSET) ? 256 : 0;
 	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEO_MODE);
 	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLES_THIS_FRAME);
 
