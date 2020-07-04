@@ -57,7 +57,6 @@ namespace
 
         LogFileOutput("Initialisation\n");
 
-        ImageInitialize();
         g_bFullSpeed = false;
     }
 
@@ -73,6 +72,7 @@ namespace
 
     void loadEmulator(QWidget * window, Emulator * emulator, const GlobalOptions & options)
     {
+        ImageInitialize();
         LoadConfiguration();
 
         CheckCpu();
@@ -113,28 +113,27 @@ namespace
         HD_Reset();
     }
 
-    void stopEmulator()
+    void unloadEmulator()
     {
         CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
         if (pMouseCard)
         {
             pMouseCard->Reset();
         }
+        HD_Destroy();
+        PrintDestroy();
         MemDestroy();
         MB_Destroy();
         DSUninit();
-    }
-
-    void uninitialiseEmulator()
-    {
-        HD_Destroy();
-        PrintDestroy();
         CpuDestroy();
 
         g_CardMgr.GetDisk2CardMgr().Destroy();
         ImageDestroy();
         LogDone();
         RiffFinishWriteFile();
+
+        AudioGenerator::instance().stop();
+        QDirectSound::stop();
     }
 
     qint64 emulatorTimeInMS()
@@ -251,8 +250,7 @@ QApple::~QApple()
 void QApple::closeEvent(QCloseEvent * event)
 {
     stopTimer();
-    stopEmulator();
-    uninitialiseEmulator();
+    unloadEmulator();
 
     QSettings settings;
     settings.setValue("QApple/window/geometry", saveGeometry().toBase64());
@@ -403,13 +401,14 @@ void QApple::on_action4_3_triggered()
 
 void QApple::on_actionReboot_triggered()
 {
+    PauseEmulator pause(this);
+
     emit endEmulator();
     mySaveStateLabel->clear();
-    stopEmulator();
+    unloadEmulator();
     loadEmulator(myEmulatorWindow, myEmulator, myOptions);
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
     myEmulator->updateVideo();
-    restartTimeCounters();
 }
 
 void QApple::on_actionBenchmark_triggered()
@@ -480,6 +479,8 @@ void QApple::on_actionSave_state_triggered()
 
 void QApple::on_actionLoad_state_triggered()
 {
+    PauseEmulator pause(this);
+
     emit endEmulator();
     Snapshot_LoadState();
     SetWindowTitle();
@@ -541,6 +542,7 @@ void QApple::on_actionScreenshot_triggered()
 void QApple::on_actionSwap_disks_triggered()
 {
     PauseEmulator pause(this);
+
     if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
     {
         dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->DriveSwap();
