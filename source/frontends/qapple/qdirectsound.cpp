@@ -206,7 +206,13 @@ void registerSoundBuffer(IDirectSoundBuffer * buffer)
 
 void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
 {
-    activeSoundGenerators.erase(buffer);
+    const auto it = activeSoundGenerators.find(buffer);
+    if (it != activeSoundGenerators.end())
+    {
+        // stop the QAudioOutput before removing. is this necessary?
+        it->second->stop();
+        activeSoundGenerators.erase(it);
+    }
 }
 
 namespace QDirectSound

@@ -91,7 +91,7 @@ class IDirectSoundBuffer : public IUnknown
   const size_t flags;
 
   IDirectSoundBuffer(const size_t bufferSize, const size_t channels, const size_t sampleRate, const size_t bitsPerSample, const size_t flags);
-  virtual ~IDirectSoundBuffer();
+  virtual HRESULT Release();
 
   HRESULT QueryInterface(int riid, void **ppvObject);
 

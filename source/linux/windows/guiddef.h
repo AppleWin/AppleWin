@@ -14,7 +14,7 @@ typedef GUID REFIID;
 struct IUnknown
 {
   HRESULT QueryInterface(int riid, void **ppvObject);
-  HRESULT Release();
+  virtual HRESULT Release();
 
   virtual ~IUnknown();
 };

@@ -18,12 +18,16 @@ IDirectSoundBuffer::IDirectSoundBuffer(const size_t aBufferSize, const size_t aC
   , mySoundNotify(new IDirectSoundNotify)
   , mySoundBuffer(aBufferSize)
 {
-  registerSoundBuffer(this);
 }
 
-IDirectSoundBuffer::~IDirectSoundBuffer()
+HRESULT IDirectSoundBuffer::Release()
 {
+  // unregister *before* the destructor is called (in Release below)
+  // makes things a little bit more linear
   unregisterSoundBuffer(this);
+
+  // do not call any more methods after the next function returns
+  return IUnknown::Release();
 }
 
 HRESULT IDirectSoundBuffer::QueryInterface(int riid, void **ppvObject)
@@ -85,6 +89,7 @@ HRESULT IDirectSoundBuffer::Restore()
 
 HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2, DWORD dwFlags )
 {
+  // No attempt is made at restricting write buffer not to overtake play cursor
   if (dwFlags & DSBLOCK_ENTIREBUFFER)
   {
     *lplpvAudioPtr1 = this->mySoundBuffer.data();
@@ -122,6 +127,8 @@ HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOI
 
 HRESULT IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2)
 {
+  // Read up to dwReadBytes, never going past the write cursor
+  // Positions are updated immediately
   const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->bufferSize;
   dwReadBytes = std::min(dwReadBytes, available);
 
@@ -182,6 +189,8 @@ HRESULT IDirectSound::CreateSoundBuffer( LPCDSBUFFERDESC lpcDSBufferDesc, IDirec
   const size_t bitsPerSample = lpcDSBufferDesc->lpwfxFormat->wBitsPerSample;
   const size_t flags = lpcDSBufferDesc->dwFlags;
   IDirectSoundBuffer * dsb = new IDirectSoundBuffer(bufferSize, channels, sampleRate, bitsPerSample, flags);
+
+  registerSoundBuffer(dsb);
 
   *lplpDirectSoundBuffer = dsb;
   return DS_OK;
