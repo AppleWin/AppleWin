@@ -133,7 +133,6 @@ void VideoDestroy () {
   g_pFramebufferinfo = NULL;
   free(g_pFramebufferbits);
   g_pFramebufferbits = NULL;
-  VideoDestroyOriginal();
 }
 
 

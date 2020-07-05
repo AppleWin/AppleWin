@@ -732,13 +732,6 @@ void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 	PalIndex2RGB[HGR_VIOLET] = PalIndex2RGB[MAGENTA];
 }
 
-void VideoDestroyOriginal()
-{
-  delete [] g_pSourcePixels;
-  g_pSourcePixels = NULL;
-}
-
-
 //===========================================================================
 
 static UINT g_rgbFlags = 0;
