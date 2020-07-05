@@ -703,7 +703,8 @@ static LPBYTE g_pSourcePixels = NULL;
 
 static void V_CreateDIBSections(void)
 {
-	g_pSourcePixels = new BYTE[SRCOFFS_TOTAL * MAX_SOURCE_Y];
+	if (!g_pSourcePixels)	// NB. Will be non-zero after a VM restart (GH#809)
+		g_pSourcePixels = new BYTE[SRCOFFS_TOTAL * MAX_SOURCE_Y];
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE SOURCE IMAGE
 	for (int y = 0; y < MAX_SOURCE_Y; y++)
