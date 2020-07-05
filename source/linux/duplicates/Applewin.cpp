@@ -326,29 +326,15 @@ void LoadConfiguration(void)
   if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
     g_CardMgr.Insert(5, (SS_CARDTYPE)dwTmp);
 
-  //
-
   char szFilename[MAX_PATH] = {0};
 
   RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH);
-  if (szFilename[0] == 0)
-    GetCurrentDirectory(sizeof(szFilename), szFilename);
-  SetCurrentImageDir(szFilename);
-
   HD_LoadLastDiskImage(HARDDISK_1);
   HD_LoadLastDiskImage(HARDDISK_2);
 
-  //
-
-  // Current/Starting Dir is the "root" of where the user keeps his disk images
   RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szFilename, MAX_PATH);
-  if (szFilename[0] == 0)
-    GetCurrentDirectory(sizeof(szFilename), szFilename);
-  SetCurrentImageDir(szFilename);
 
   g_CardMgr.GetDisk2CardMgr().LoadLastDiskImage();
-
-  //
 
   szFilename[0] = 0;
   RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_SAVESTATE_FILENAME),1,szFilename,sizeof(szFilename));

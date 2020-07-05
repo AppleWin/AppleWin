@@ -483,11 +483,19 @@ void QApple::on_actionLoad_state_triggered()
     PauseEmulator pause(this);
 
     emit endEmulator();
+
+    const std::string & filename = Snapshot_GetFilename();
+
+    const QFileInfo file(QString::fromStdString(filename));
+    const QString path = file.absoluteDir().canonicalPath();
+    // this is useful as snapshots from the test
+    // have relative disk location
+    SetCurrentImageDir(path.toStdString().c_str());
+
     Snapshot_LoadState();
     SetWindowTitle();
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
-    const std::string & filename = Snapshot_GetFilename();
-    QString message = QString("State file: %1").arg(QString::fromStdString(filename));
+    QString message = QString("State file: %1").arg(file.filePath());
     mySaveStateLabel->setText(message);
     myEmulator->updateVideo();
 }
@@ -584,13 +592,6 @@ void QApple::on_actionNext_video_mode_triggered()
 
 void QApple::loadStateFile(const QString & filename)
 {
-    const QFileInfo file(filename);
-    const QString path = file.absoluteDir().canonicalPath();
-
-    // this is useful as snapshots from the test
-    // have relative disk location
-    SetCurrentImageDir(path.toStdString().c_str());
-
     Snapshot_SetFilename(filename.toStdString().c_str());
     ui->actionLoad_state->trigger();
 }
