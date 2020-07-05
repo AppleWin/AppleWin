@@ -123,6 +123,7 @@ namespace
         HD_Destroy();
         PrintDestroy();
         MemDestroy();
+        VideoDestroy();
         MB_Destroy();
         DSUninit();
         CpuDestroy();
