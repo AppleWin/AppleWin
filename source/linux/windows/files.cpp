@@ -113,10 +113,8 @@ HANDLE CreateFile(LPCTSTR               lpFileName,
 
 DWORD GetFileAttributes(const char * filename)
 {
-  const int exists = access(filename, F_OK);
-  if (exists)
-    return INVALID_FILE_ATTRIBUTES;
-
+  // minimum is R_OK
+  // no point checking F_OK as it is useless
   const int read = access(filename, R_OK);
   if (read)
     return INVALID_FILE_ATTRIBUTES;

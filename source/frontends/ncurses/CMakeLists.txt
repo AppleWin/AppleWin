@@ -27,7 +27,6 @@ target_compile_options(applen PRIVATE
   ${NCURSESW_CFLAGS_OTHER}
   ${LIBEVDEV_CFLAGS_OTHER}
   )
-target_compile_features(applen PUBLIC cxx_std_17)
 
 target_link_libraries(applen PRIVATE
   ${NCURSESW_LIBRARIES}
@@ -35,12 +34,6 @@ target_link_libraries(applen PRIVATE
   Boost::program_options
   appleii
   )
-
-if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
-  target_link_libraries(applen PRIVATE
-    stdc++fs
-    )
-endif()
 
 add_custom_target(copy-resources ALL
     COMMAND cmake -E copy_directory ${CMAKE_SOURCE_DIR}/resource ${CMAKE_BINARY_DIR}/resource)
