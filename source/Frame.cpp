@@ -268,6 +268,7 @@ static void GetAppleWindowTitle()
 		case A2TYPE_PRAVETS8M:		 g_pAppTitle = TITLE_PRAVETS_8M       ; break;
 		case A2TYPE_PRAVETS8A:		 g_pAppTitle = TITLE_PRAVETS_8A       ; break;
 		case A2TYPE_TK30002E:		 g_pAppTitle = TITLE_TK3000_2E        ; break;
+		case A2TYPE_BASE64A:		 g_pAppTitle = TITLE_BASE64A          ; break;
 	}
 
 #if _DEBUG
@@ -390,6 +391,9 @@ static void CreateGdiObjects(void)
 		break;
 	case A2TYPE_TK30002E:
 		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN3000E_BUTTON"));
+		break;
+	case A2TYPE_BASE64A:
+		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNBASE64A_BUTTON"));
 		break;
 	default:
 		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON"));
@@ -1354,7 +1358,7 @@ LRESULT CALLBACK FrameWndProc (
 		}
 		else if (wparam == VK_F10)
 		{
-			if (g_Apple2Type == A2TYPE_APPLE2E || g_Apple2Type == A2TYPE_APPLE2EENHANCED)
+			if (g_Apple2Type == A2TYPE_APPLE2E || g_Apple2Type == A2TYPE_APPLE2EENHANCED || g_Apple2Type == A2TYPE_BASE64A)
 			{
 				SetVideoRomRockerSwitch( !GetVideoRomRockerSwitch() );	// F10: toggle rocker switch
 				NTSC_VideoInitAppleType();

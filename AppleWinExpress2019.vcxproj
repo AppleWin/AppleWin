@@ -239,6 +239,8 @@
     <None Include="resource\Apple2e.rom" />
     <None Include="resource\Apple2e_Enhanced.rom" />
     <None Include="resource\Apple2_Plus.rom" />
+    <None Include="resource\Base64A.rom" />
+    <None Include="resource\Base64A_German_Video.rom" />
     <None Include="resource\DISK2.rom" />
     <None Include="resource\Freezes_Non-autostart_F8_Rom.rom" />
     <None Include="resource\Hddrvr.bin" />
@@ -301,6 +303,7 @@
     <Image Include="resource\LED_CAPS_ON_P8.BMP" />
     <Image Include="resource\RUN.BMP" />
     <Image Include="resource\RUN3000E.bmp" />
+    <Image Include="resource\RUNBASE64A.BMP" />
     <Image Include="resource\RUNP.BMP" />
     <Image Include="resource\SETUP.BMP" />
   </ItemGroup>

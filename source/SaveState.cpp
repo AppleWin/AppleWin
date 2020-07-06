@@ -155,6 +155,7 @@ static std::string GetSnapshotUnitMiscName(void)
 #define SS_YAML_VALUE_PRAVETS8M			"Pravets8M"
 #define SS_YAML_VALUE_PRAVETS8A			"Pravets8A"
 #define SS_YAML_VALUE_TK30002E			"TK3000//e"
+#define SS_YAML_VALUE_BASE64A			"Base 64A"
 
 static eApple2Type ParseApple2Type(std::string type)
 {
@@ -168,6 +169,7 @@ static eApple2Type ParseApple2Type(std::string type)
 	else if (type == SS_YAML_VALUE_PRAVETS8M)		return A2TYPE_PRAVETS8M;
 	else if (type == SS_YAML_VALUE_PRAVETS8A)		return A2TYPE_PRAVETS8A;
 	else if (type == SS_YAML_VALUE_TK30002E)		return A2TYPE_TK30002E;
+	else if (type == SS_YAML_VALUE_BASE64A)			return A2TYPE_BASE64A;
 
 	throw std::string("Load: Unknown Apple2 type");
 }
@@ -186,6 +188,7 @@ static std::string GetApple2TypeAsString(void)
 		case A2TYPE_PRAVETS8M:		return SS_YAML_VALUE_PRAVETS8M;
 		case A2TYPE_PRAVETS8A:		return SS_YAML_VALUE_PRAVETS8A;
 		case A2TYPE_TK30002E:		return SS_YAML_VALUE_TK30002E;
+		case A2TYPE_BASE64A:		return SS_YAML_VALUE_BASE64A;
 		default:
 			throw std::string("Save: Unknown Apple2 type");
 	}
