@@ -181,7 +181,7 @@ static void userVideoRomForIIe(void)
 
 //-------------------------------------
 
-static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, eApple2Type type = A2TYPE_APPLE2, const int AN2=0);
+static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const eApple2Type type = A2TYPE_APPLE2, const int AN2=0);
 
 static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const eApple2Type type /*= A2TYPE_APPLE2*/, const int AN2/*=0*/)
 {

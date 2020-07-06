@@ -77,8 +77,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  SW_INTCXROM   (memmode & MF_INTCXROM)
 #define  SW_WRITERAM   (memmode & MF_WRITERAM)
 #define  SW_IOUDIS     (memmode & MF_IOUDIS)
-#define  SW_ALTROM0    (memmode & MF_ALTROM0)
-#define  SW_ALTROM1    (memmode & MF_ALTROM1)
+#define  SW_ALTROM0    (memmode & MF_ALTROM0)	// For Copam Base64A
+#define  SW_ALTROM1    (memmode & MF_ALTROM1)	// For Copam Base64A
 
 /*
 MEMORY MANAGEMENT SOFT SWITCHES
@@ -243,7 +243,7 @@ const UINT Apple2RomSize = 12 * 1024;
 const UINT Apple2eRomSize = Apple2RomSize + CxRomSize;
 //const UINT Pravets82RomSize = 12*1024;
 //const UINT Pravets8ARomSize = Pravets82RomSize+CxRomSize;
-const UINT MaxRomPages = 4;
+const UINT MaxRomPages = 4;		// For Copam Base64A
 const UINT Base64ARomSize = MaxRomPages * Apple2RomSize;
 
 // Called from MemLoadSnapshot()
@@ -705,17 +705,13 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 	g_Annunciator[(address>>1) & 3] = (address&1) ? true : false;
 
 	if (address >= 0xC058 && address <= 0xC05B)
-	{
 		JoyportControl(address & 0x3);	// AN0 and AN1 control
-	}
+
+	if (address >= 0xC058 && address <= 0xC05B && IsCopamBase64A(GetApple2Type()))
+		MemSetPaging(programcounter, address, write, value, nExecutedCycles);
 
 	if (address >= 0xC05C && address <= 0xC05D && IsApple2JPlus(GetApple2Type()))
 		NTSC_VideoInitAppleType();		// AN2 switches between Katakana & ASCII video rom chars (GH#773)
-
-	if (address >= 0xC058 && address <= 0xC05B && (g_Apple2Type == A2TYPE_BASE64A))
-	{
-		MemSetPaging(programcounter, address, write, value, nExecutedCycles);
-	}
 
 	if (!write)
 		return MemReadFloatingBus(nExecutedCycles);
@@ -1152,11 +1148,14 @@ static void UpdatePaging(BOOL initialize)
 														: pCxRomInternal+uRomOffset;			// C800..CFFF - Internal ROM
 	}
 
-	int selectedrompage = (SW_ALTROM0 ? 1 : 0) | (SW_ALTROM1 ? 2 : 0);
-	int romoffset = (selectedrompage % memrompages) * Apple2RomSize;
+	const int selectedrompage = (SW_ALTROM0 ? 1 : 0) | (SW_ALTROM1 ? 2 : 0);
+#ifdef _DEBUG
+	if (selectedrompage) { _ASSERT(IsCopamBase64A(GetApple2Type())); }
+#endif
+	const int romoffset = (selectedrompage % memrompages) * Apple2RomSize;	// Only Copam Base64A has a non-zero romoffset
 	for (loop = 0xD0; loop < 0xE0; loop++)
 	{
-		int bankoffset = (SW_BANK2 ? 0 : 0x1000);
+		const int bankoffset = (SW_BANK2 ? 0 : 0x1000);
 		memshadow[loop] = SW_HIGHRAM ? SW_ALTZP	? memaux+(loop << 8)-bankoffset
 												: g_pMemMainLanguageCard+((loop-0xC0)<<8)-bankoffset
 									 : memrom+((loop-0xD0) * 0x100)+romoffset;
@@ -2147,7 +2146,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 		}
 	}
 
-	if (g_Apple2Type == A2TYPE_BASE64A)
+	if (IsCopamBase64A(GetApple2Type()))
 	{
 		switch (address)
 		{

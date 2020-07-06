@@ -236,6 +236,11 @@ inline bool IsEnhancedIIEorIIC(void)
 	return ( (g_Apple2Type == A2TYPE_APPLE2EENHANCED) || (g_Apple2Type == A2TYPE_TK30002E) || IS_APPLE2C() );
 }
 
+inline bool IsCopamBase64A(eApple2Type type)		// Copam Base64A
+{
+	return type == A2TYPE_BASE64A;
+}
+
 enum eBUTTON {BUTTON0=0, BUTTON1};
 
 enum eBUTTONSTATE {BUTTON_UP=0, BUTTON_DOWN};
