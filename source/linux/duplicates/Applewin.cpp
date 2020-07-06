@@ -111,6 +111,13 @@ void SetApple2Type(eApple2Type type)
 	SetMainCpuDefault(type);
 }
 
+static void SetCurrentDir(const std::string & pathname)
+{
+  const std::size_t found = pathname.find_last_of("/");
+  const std::string path = pathname.substr(0, found);
+  SetCurrentImageDir(path);
+}
+
 bool SetCurrentImageDir(const std::string & dir ) {
   if (chdir(dir.c_str()) == 0)
     return true;
@@ -326,19 +333,20 @@ void LoadConfiguration(void)
   if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
     g_CardMgr.Insert(5, (SS_CARDTYPE)dwTmp);
 
-  char szFilename[MAX_PATH] = {0};
-
-  RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH);
-  HD_LoadLastDiskImage(HARDDISK_1);
-  HD_LoadLastDiskImage(HARDDISK_2);
-
-  RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szFilename, MAX_PATH);
-
-  g_CardMgr.GetDisk2CardMgr().LoadLastDiskImage();
+  char szFilename[MAX_PATH];
 
   szFilename[0] = 0;
   RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_SAVESTATE_FILENAME),1,szFilename,sizeof(szFilename));
   Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
+  if (szFilename[0])
+    SetCurrentDir(szFilename);
+
+  szFilename[0] = 0;
+  RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH);
+  HD_LoadLastDiskImage(HARDDISK_1);
+  HD_LoadLastDiskImage(HARDDISK_2);
+
+  g_CardMgr.GetDisk2CardMgr().LoadLastDiskImage();
 
   szFilename[0] = 0;
   RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_PRINTER_FILENAME),1,szFilename,sizeof(szFilename));
