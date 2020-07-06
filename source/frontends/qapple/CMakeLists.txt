@@ -21,6 +21,7 @@ add_executable(qapple
   audiogenerator.cpp
   loggingcategory.cpp
   viewbuffer.cpp
+  qdirectsound.cpp
 
   ${QHEXVIEW_SOURCES}
   )

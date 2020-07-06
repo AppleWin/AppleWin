@@ -17,6 +17,7 @@ typedef struct tagOFN {
   LPCTSTR       lpstrTitle;
   DWORD         Flags;
   WORD          nFileExtension;
+  WORD		nFileOffset;
 } OPENFILENAME, *LPOPENFILENAME;
 
 #define FILE_BEGIN 	SEEK_SET
@@ -32,6 +33,7 @@ typedef struct tagOFN {
 #define OFN_FILEMUSTEXIST            0x00001000
 #define OPEN_EXISTING           3
 #define CREATE_NEW              1
+#define CREATE_ALWAYS           2
 
 #define GENERIC_READ 0x80000000
 #define GENERIC_WRITE 0x40000000
@@ -56,6 +58,7 @@ BOOL DeleteFile(LPCTSTR lpFileName);
 DWORD GetFileAttributes(const char * filename);
 DWORD GetFullPathName(const char* filename, DWORD, char *, char **);
 BOOL GetOpenFileName(LPOPENFILENAME lpofn);
+BOOL GetSaveFileName(LPOPENFILENAME lpofn);
 
 HANDLE CreateFile(LPCTSTR               lpFileName,
 		  DWORD                 dwDesiredAccess,

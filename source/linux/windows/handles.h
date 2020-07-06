@@ -15,13 +15,15 @@ typedef HANDLE HGLOBAL;
 typedef void * HWD;
 typedef void * HDC;
 typedef void * HINSTANCE;
-typedef void * LPARAM;
-typedef void * WPARAM;
+typedef LONG_PTR LPARAM;
+typedef UINT_PTR WPARAM;
 typedef void * SOCKET;
 typedef void * CRITICAL_SECTION;
 typedef void * LPDIRECTDRAW;
 typedef void * LPOVERLAPPED;
 typedef void * OVERLAPPED;
 typedef void * LPSECURITY_ATTRIBUTES;
+typedef void * HSEMAPHORE;
+
 
 BOOL CloseHandle(HANDLE hObject);

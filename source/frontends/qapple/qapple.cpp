@@ -12,11 +12,14 @@
 #include "Frame.h"
 #include "Memory.h"
 #include "LanguageCard.h"
+#include "Mockingboard.h"
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
 #include "Video.h"
+#include "SoundCore.h"
 #include "NTSC.h"
 #include "SaveState.h"
+#include "Riff.h"
 
 #include "linux/data.h"
 #include "linux/benchmark.h"
@@ -26,6 +29,7 @@
 #include "emulator.h"
 #include "memorycontainer.h"
 #include "audiogenerator.h"
+#include "qdirectsound.h"
 #include "gamepadpaddle.h"
 #include "preferences.h"
 
@@ -44,12 +48,15 @@ namespace
 
     void initialiseEmulator()
     {
+#ifdef RIFF_MB
+        RiffInitWriteFile("/tmp/Mockingboard.wav", 44100, 2);
+#endif
+
         g_fh = fopen("/tmp/applewin.txt", "w");
         setbuf(g_fh, nullptr);
 
         LogFileOutput("Initialisation\n");
 
-        ImageInitialize();
         g_bFullSpeed = false;
     }
 
@@ -65,6 +72,7 @@ namespace
 
     void loadEmulator(QWidget * window, Emulator * emulator, const GlobalOptions & options)
     {
+        ImageInitialize();
         LoadConfiguration();
 
         CheckCpu();
@@ -94,6 +102,8 @@ namespace
             break;
         }
 
+        DSInit();
+        MB_Initialize();
         MemInitialize();
         VideoInitialize();
 
@@ -103,26 +113,28 @@ namespace
         HD_Reset();
     }
 
-    void stopEmulator()
+    void unloadEmulator()
     {
         CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
         if (pMouseCard)
         {
             pMouseCard->Reset();
         }
-        MemDestroy();
-    }
-
-    void uninitialiseEmulator()
-    {
         HD_Destroy();
         PrintDestroy();
+        MemDestroy();
+        VideoDestroy();
+        MB_Destroy();
+        DSUninit();
         CpuDestroy();
 
         g_CardMgr.GetDisk2CardMgr().Destroy();
         ImageDestroy();
-        fclose(g_fh);
-        g_fh = nullptr;
+        LogDone();
+        RiffFinishWriteFile();
+
+        AudioGenerator::instance().stop();
+        QDirectSound::stop();
     }
 
     qint64 emulatorTimeInMS()
@@ -239,8 +251,7 @@ QApple::~QApple()
 void QApple::closeEvent(QCloseEvent * event)
 {
     stopTimer();
-    stopEmulator();
-    uninitialiseEmulator();
+    unloadEmulator();
 
     QSettings settings;
     settings.setValue("QApple/window/geometry", saveGeometry().toBase64());
@@ -277,6 +288,7 @@ void QApple::on_stateChanged(QAudio::State state)
 void QApple::on_timer()
 {
     AudioGenerator::instance().start();
+    QDirectSound::start();
 
     if (!myElapsedTimer.isValid())
     {
@@ -293,6 +305,7 @@ void QApple::on_timer()
 
         // just check if we got something to write
         AudioGenerator::instance().writeAudio();
+        QDirectSound::writeAudio();
 
         // wait next call
         return;
@@ -315,6 +328,8 @@ void QApple::on_timer()
         const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
         g_dwCyclesThisFrame += uActualCyclesExecuted;
         g_CardMgr.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
+        MB_PeriodicUpdate(uActualCyclesExecuted);
+
         // in case we run more than 1 frame
         g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
         ++count;
@@ -332,6 +347,7 @@ void QApple::on_timer()
     else
     {
         AudioGenerator::instance().writeAudio();
+        QDirectSound::writeAudio();
     }
 }
 
@@ -349,6 +365,7 @@ void QApple::restartTimeCounters()
 {
     // let them restart next time
     AudioGenerator::instance().stop();
+    QDirectSound::stop();
     myElapsedTimer.invalidate();
 }
 
@@ -385,13 +402,14 @@ void QApple::on_action4_3_triggered()
 
 void QApple::on_actionReboot_triggered()
 {
+    PauseEmulator pause(this);
+
     emit endEmulator();
     mySaveStateLabel->clear();
-    stopEmulator();
+    unloadEmulator();
     loadEmulator(myEmulatorWindow, myEmulator, myOptions);
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
     myEmulator->updateVideo();
-    restartTimeCounters();
 }
 
 void QApple::on_actionBenchmark_triggered()
@@ -452,6 +470,7 @@ void QApple::reloadOptions()
 
     Paddle::instance() = GamepadPaddle::fromName(myOptions.gamepadName);
     AudioGenerator::instance().setOptions(myOptions.audioLatency, myOptions.silenceDelay, myOptions.volume);
+    QDirectSound::setOptions(myOptions.audioLatency, myOptions.silenceDelay, myOptions.volume);
 }
 
 void QApple::on_actionSave_state_triggered()
@@ -461,12 +480,22 @@ void QApple::on_actionSave_state_triggered()
 
 void QApple::on_actionLoad_state_triggered()
 {
+    PauseEmulator pause(this);
+
     emit endEmulator();
+
+    const std::string & filename = Snapshot_GetFilename();
+
+    const QFileInfo file(QString::fromStdString(filename));
+    const QString path = file.absoluteDir().canonicalPath();
+    // this is useful as snapshots from the test
+    // have relative disk location
+    SetCurrentImageDir(path.toStdString().c_str());
+
     Snapshot_LoadState();
     SetWindowTitle();
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
-    const std::string & filename = Snapshot_GetFilename();
-    QString message = QString("State file: %1").arg(QString::fromStdString(filename));
+    QString message = QString("State file: %1").arg(file.filePath());
     mySaveStateLabel->setText(message);
     myEmulator->updateVideo();
 }
@@ -522,6 +551,7 @@ void QApple::on_actionScreenshot_triggered()
 void QApple::on_actionSwap_disks_triggered()
 {
     PauseEmulator pause(this);
+
     if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
     {
         dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->DriveSwap();
@@ -562,13 +592,6 @@ void QApple::on_actionNext_video_mode_triggered()
 
 void QApple::loadStateFile(const QString & filename)
 {
-    const QFileInfo file(filename);
-    const QString path = file.absoluteDir().canonicalPath();
-
-    // this is useful as snapshots from the test
-    // have relative disk location
-    SetCurrentImageDir(path.toStdString().c_str());
-
     Snapshot_SetFilename(filename.toStdString().c_str());
     ui->actionLoad_state->trigger();
 }

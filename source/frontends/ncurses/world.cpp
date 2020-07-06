@@ -547,3 +547,12 @@ BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecu
 
   return MemReadFloatingBus(uExecutedCycles);
 }
+
+// Mockingboard
+void registerSoundBuffer(IDirectSoundBuffer * buffer)
+{
+}
+
+void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
+{
+}

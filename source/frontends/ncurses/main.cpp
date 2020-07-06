@@ -21,6 +21,8 @@
 #include "ParallelPrinter.h"
 #include "SaveState.h"
 #include "MouseInterface.h"
+#include "Mockingboard.h"
+#include "SoundCore.h"
 
 #include "linux/data.h"
 #include "linux/benchmark.h"
@@ -305,6 +307,8 @@ namespace
 
 	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
+	DSInit();
+	MB_Initialize();
 	MemInitialize();
 	NVideoInitialize();
 	g_CardMgr.GetDisk2CardMgr().Reset();
@@ -330,6 +334,8 @@ namespace
 	  pMouseCard->Reset();
 	}
 	MemDestroy();
+	MB_Destroy();
+	DSUninit();
       }
       while (g_bRestart);
 
@@ -347,8 +353,7 @@ namespace
     g_CardMgr.GetDisk2CardMgr().Destroy();
     ImageDestroy();
 
-    fclose(g_fh);
-    g_fh = NULL;
+    LogDone();
 
     return 0;
   }

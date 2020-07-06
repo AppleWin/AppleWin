@@ -1,6 +1,10 @@
 include(FindPkgConfig)
 
 add_library(appleii SHARED
+  SoundCore.cpp
+  AY8910.cpp
+  Mockingboard.cpp
+
   Pravets.cpp
   Tape.cpp
   YamlHelper.cpp
@@ -25,6 +29,9 @@ add_library(appleii SHARED
   CardManager.cpp
   Disk2CardManager.cpp
   SaveState.cpp  # uses g_CardMgr in m_ConfigNew (reverse order)
+  Riff.cpp
+
+  Configuration/PropertySheetHelper.cpp
 
   linux/windows/memory.cpp
   linux/windows/handles.cpp
@@ -37,6 +44,9 @@ add_library(appleii SHARED
   linux/windows/misc.cpp
   linux/windows/winbase.cpp
   linux/windows/winuser.cpp
+  linux/windows/dsound.cpp
+  linux/windows/guiddef.cpp
+  linux/windows/dmusicc.cpp
 
   linux/data.cpp
   linux/benchmark.cpp
@@ -47,7 +57,6 @@ add_library(appleii SHARED
 
   linux/duplicates/Debug.cpp
   linux/duplicates/Video.cpp
-  linux/duplicates/Mockingboard.cpp
   linux/duplicates/Joystick.cpp
   linux/duplicates/Frame.cpp
   linux/duplicates/SerialComms.cpp

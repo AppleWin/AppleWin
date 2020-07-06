@@ -118,6 +118,26 @@ namespace
         item->addChildren(items);
     }
 
+    const std::vector<eApple2Type> computerTypes = {A2TYPE_APPLE2, A2TYPE_APPLE2PLUS, A2TYPE_APPLE2JPLUS, A2TYPE_APPLE2E,
+                                                    A2TYPE_APPLE2EENHANCED, A2TYPE_PRAVETS82, A2TYPE_PRAVETS8M, A2TYPE_PRAVETS8A,
+                                                    A2TYPE_TK30002E};
+    const std::vector<SS_CARDTYPE> cardsInSlot4 = {CT_Empty, CT_MouseInterface, CT_MockingboardC, CT_Phasor};
+    const std::vector<SS_CARDTYPE> cardsInSlot5 = {CT_Empty, CT_Z80, CT_MockingboardC, CT_SAM};
+
+    template<class T>
+    int getIndexInList(const std::vector<T> & values, const T value, const int defaultValue)
+    {
+        const auto it = std::find(values.begin(), values.end(), value);
+        if (it != values.end())
+        {
+            return std::distance(values.begin(), it);
+        }
+        else
+        {
+            return defaultValue;
+        }
+    }
+
 }
 
 Preferences::Preferences(QWidget *parent) :
@@ -193,9 +213,16 @@ void Preferences::setData(const PreferenceData & data)
     initialiseDisks(myHDs, data.hds);
 
     ui->enhanced_speed->setChecked(data.enhancedSpeed);
-    ui->apple2Type->setCurrentIndex(data.apple2Type);
-    ui->mouse_4->setChecked(data.mouseInSlot4);
-    ui->cpm_5->setChecked(data.cpmInSlot5);
+
+    const int apple2Index = getIndexInList(computerTypes, data.apple2Type, 2);
+    ui->apple2Type->setCurrentIndex(apple2Index);
+
+    const int slot4Index = getIndexInList(cardsInSlot4, data.cardInSlot4, 0);
+    ui->slot4_combo->setCurrentIndex(slot4Index);
+
+    const int slot5Index = getIndexInList(cardsInSlot4, data.cardInSlot5, 0);
+    ui->slot5_combo->setCurrentIndex(slot5Index);
+
     ui->hd_7->setChecked(data.hdInSlot7);
 
     // synchronise
@@ -234,9 +261,9 @@ PreferenceData Preferences::getData() const
     fillData(myHDs, data.hds);
 
     data.enhancedSpeed = ui->enhanced_speed->isChecked();
-    data.apple2Type = ui->apple2Type->currentIndex();
-    data.mouseInSlot4 = ui->mouse_4->isChecked();
-    data.cpmInSlot5 = ui->cpm_5->isChecked();
+    data.apple2Type = computerTypes[ui->apple2Type->currentIndex()];
+    data.cardInSlot4 = cardsInSlot4[ui->slot4_combo->currentIndex()];
+    data.cardInSlot5 = cardsInSlot5[ui->slot5_combo->currentIndex()];
     data.hdInSlot7 = ui->hd_7->isChecked();
 
     data.saveState = ui->save_state->text();
@@ -337,5 +364,41 @@ void Preferences::on_colorButton_clicked()
     if (dialog.exec())
     {
         myMonochromeColor = dialog.currentColor();
+    }
+}
+
+void Preferences::on_slot4_combo_activated(int index)
+{
+    const SS_CARDTYPE slot4Card = cardsInSlot4[index];
+    if (slot4Card == CT_MockingboardC)
+    {
+        const int slot5Index = getIndexInList(cardsInSlot5, CT_MockingboardC, 0);
+        ui->slot5_combo->setCurrentIndex(slot5Index);
+    }
+    else
+    {
+        const SS_CARDTYPE slot5Card = cardsInSlot5[ui->slot5_combo->currentIndex()];
+        if (slot5Card == CT_MockingboardC)
+        {
+            ui->slot5_combo->setCurrentIndex(0);
+        }
+    }
+}
+
+void Preferences::on_slot5_combo_activated(int index)
+{
+    const SS_CARDTYPE slot5Card = cardsInSlot5[index];
+    if (slot5Card == CT_MockingboardC)
+    {
+        const int slot4Index = getIndexInList(cardsInSlot4, CT_MockingboardC, 0);
+        ui->slot4_combo->setCurrentIndex(slot4Index);
+    }
+    else
+    {
+        const SS_CARDTYPE slot4Card = cardsInSlot4[ui->slot4_combo->currentIndex()];
+        if (slot4Card == CT_MockingboardC)
+        {
+            ui->slot4_combo->setCurrentIndex(0);
+        }
     }
 }

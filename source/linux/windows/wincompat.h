@@ -37,6 +37,9 @@ typedef signed short INT16;		// why there was char instead of short? --bb ??????
 typedef unsigned short UINT16;		// why there was char instead of short? --bb ??????????????????? 0_0
 #define __int64 long long
 
+typedef unsigned __int64 UINT_PTR, *PUINT_PTR;
+typedef long long LONGLONG;
+
 typedef unsigned int UINT32;
 typedef unsigned char UINT8;
 typedef int INT32;
@@ -199,8 +202,8 @@ typedef unsigned char TBYTE , *PTBYTE ;
 #define _tmain main
 
 typedef void * HWND;
-typedef void * LPARAM;
-typedef void * WPARAM;
+typedef LONG_PTR LPARAM;
+typedef UINT_PTR WPARAM;
 
 #ifdef __cplusplus
 }

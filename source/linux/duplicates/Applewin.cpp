@@ -61,6 +61,9 @@ static IPropertySheet * sg = NULL;
 IPropertySheet&	sg_PropertySheet = *sg;
 static double g_fMHz		= 1.0;			// Affected by Config dialog's speed slider bar
 
+bool g_bDisableDirectSound = false;
+bool g_bDisableDirectSoundMockingboard = false;
+
 void LogFileTimeUntilFirstKeyReadReset(void)
 {
 	if (!g_fh)
@@ -106,6 +109,13 @@ void SetApple2Type(eApple2Type type)
 {
 	g_Apple2Type = type;
 	SetMainCpuDefault(type);
+}
+
+static void SetCurrentDir(const std::string & pathname)
+{
+  const std::size_t found = pathname.find_last_of("/");
+  const std::string path = pathname.substr(0, found);
+  SetCurrentImageDir(path);
 }
 
 bool SetCurrentImageDir(const std::string & dir ) {
@@ -323,33 +333,20 @@ void LoadConfiguration(void)
   if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
     g_CardMgr.Insert(5, (SS_CARDTYPE)dwTmp);
 
-  //
-
-  char szFilename[MAX_PATH] = {0};
-
-  RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH);
-  if (szFilename[0] == 0)
-    GetCurrentDirectory(sizeof(szFilename), szFilename);
-  SetCurrentImageDir(szFilename);
-
-  HD_LoadLastDiskImage(HARDDISK_1);
-  HD_LoadLastDiskImage(HARDDISK_2);
-
-  //
-
-  // Current/Starting Dir is the "root" of where the user keeps his disk images
-  RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szFilename, MAX_PATH);
-  if (szFilename[0] == 0)
-    GetCurrentDirectory(sizeof(szFilename), szFilename);
-  SetCurrentImageDir(szFilename);
-
-  g_CardMgr.GetDisk2CardMgr().LoadLastDiskImage();
-
-  //
+  char szFilename[MAX_PATH];
 
   szFilename[0] = 0;
   RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_SAVESTATE_FILENAME),1,szFilename,sizeof(szFilename));
   Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
+  if (szFilename[0])
+    SetCurrentDir(szFilename);
+
+  szFilename[0] = 0;
+  RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH);
+  HD_LoadLastDiskImage(HARDDISK_1);
+  HD_LoadLastDiskImage(HARDDISK_2);
+
+  g_CardMgr.GetDisk2CardMgr().LoadLastDiskImage();
 
   szFilename[0] = 0;
   RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_PRINTER_FILENAME),1,szFilename,sizeof(szFilename));
@@ -370,4 +367,9 @@ void LoadConfiguration(void)
   if (REGLOAD(TEXT(REGVALUE_CONFIRM_REBOOT), &dwTmp))
     g_bConfirmReboot = dwTmp;
 #endif
+}
+
+double Get6502BaseClock(void)
+{
+	return (GetVideoRefreshRate() == VR_50HZ) ? CLK_6502_PAL : CLK_6502_NTSC;
 }
