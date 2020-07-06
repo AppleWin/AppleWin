@@ -220,7 +220,7 @@ void Preferences::setData(const PreferenceData & data)
     const int slot4Index = getIndexInList(cardsInSlot4, data.cardInSlot4, 0);
     ui->slot4_combo->setCurrentIndex(slot4Index);
 
-    const int slot5Index = getIndexInList(cardsInSlot4, data.cardInSlot5, 0);
+    const int slot5Index = getIndexInList(cardsInSlot5, data.cardInSlot5, 0);
     ui->slot5_combo->setCurrentIndex(slot5Index);
 
     ui->hd_7->setChecked(data.hdInSlot7);
