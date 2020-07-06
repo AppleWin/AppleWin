@@ -202,8 +202,8 @@ typedef unsigned char TBYTE , *PTBYTE ;
 #define _tmain main
 
 typedef void * HWND;
-typedef void * LPARAM;
-typedef void * WPARAM;
+typedef LONG_PTR LPARAM;
+typedef UINT_PTR WPARAM;
 
 #ifdef __cplusplus
 }

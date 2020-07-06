@@ -1,7 +1,6 @@
 include(FindPkgConfig)
 
 add_library(appleii SHARED
-
   SoundCore.cpp
   AY8910.cpp
   Mockingboard.cpp
@@ -31,6 +30,8 @@ add_library(appleii SHARED
   Disk2CardManager.cpp
   SaveState.cpp  # uses g_CardMgr in m_ConfigNew (reverse order)
   Riff.cpp
+
+  Configuration/PropertySheetHelper.cpp
 
   linux/windows/memory.cpp
   linux/windows/handles.cpp

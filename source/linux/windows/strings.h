@@ -16,6 +16,7 @@ void strcpy_s(char * dest, size_t size, const char * source);
 #define _tcsncpy strncpy
 #define _tcslen     strlen
 #define _tcscmp strcmp
+#define _tcsicmp _stricmp
 #define _stricmp strcasecmp
 #define _tcschr strchr
 #define _tcsstr strstr

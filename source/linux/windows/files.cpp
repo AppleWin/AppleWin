@@ -154,3 +154,8 @@ BOOL GetOpenFileName(LPOPENFILENAME lpofn)
 {
   return FALSE;
 }
+
+BOOL GetSaveFileName(LPOPENFILENAME lpofn)
+{
+  return FALSE;
+}

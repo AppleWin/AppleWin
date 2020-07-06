@@ -24,3 +24,13 @@ BOOL KillTimer(HWND hWnd, UINT uIDEvent)
 {
   return TRUE;
 }
+
+HWND        WINAPI GetDlgItem(HWND,INT)
+{
+  return nullptr;
+}
+
+LRESULT     WINAPI SendMessage(HWND,UINT,WPARAM,LPARAM)
+{
+  return 0;
+}
