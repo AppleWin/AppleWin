@@ -77,6 +77,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  SW_INTCXROM   (memmode & MF_INTCXROM)
 #define  SW_WRITERAM   (memmode & MF_WRITERAM)
 #define  SW_IOUDIS     (memmode & MF_IOUDIS)
+#define  SW_ALTROM0    (memmode & MF_ALTROM0)
+#define  SW_ALTROM1    (memmode & MF_ALTROM1)
 
 /*
 MEMORY MANAGEMENT SOFT SWITCHES
@@ -210,6 +212,8 @@ static LPBYTE g_pMemMainLanguageCard = NULL;
 static DWORD   memmode      = LanguageCardUnit::kMemModeInitialState;
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
 
+static UINT    memrompages = 1;
+
 static CNoSlotClock* g_NoSlotClock = new CNoSlotClock;
 static LanguageCardUnit* g_pLanguageCard = NULL;	// For all Apple II, //e and above
 
@@ -232,6 +236,15 @@ static SS_CARDTYPE g_MemTypeAppleII = CT_Empty;
 static SS_CARDTYPE g_MemTypeAppleIIPlus = CT_LanguageCard;	// Keep a copy so it's not lost if machine type changes, eg: A][ -> A//e -> A][
 static SS_CARDTYPE g_MemTypeAppleIIe = CT_Extended80Col;	// Keep a copy so it's not lost if machine type changes, eg: A//e -> A][ -> A//e
 static UINT g_uSaturnBanksFromCmdLine = 0;
+
+
+const UINT CxRomSize = 4 * 1024;
+const UINT Apple2RomSize = 12 * 1024;
+const UINT Apple2eRomSize = Apple2RomSize + CxRomSize;
+//const UINT Pravets82RomSize = 12*1024;
+//const UINT Pravets8ARomSize = Pravets82RomSize+CxRomSize;
+const UINT MaxRomPages = 4;
+const UINT Base64ARomSize = MaxRomPages * Apple2RomSize;
 
 // Called from MemLoadSnapshot()
 static void ResetDefaultMachineMemTypes(void)
@@ -699,6 +712,11 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 	if (address >= 0xC05C && address <= 0xC05D && IsApple2JPlus(GetApple2Type()))
 		NTSC_VideoInitAppleType();		// AN2 switches between Katakana & ASCII video rom chars (GH#773)
 
+	if (address >= 0xC058 && address <= 0xC05B && (g_Apple2Type == A2TYPE_BASE64A))
+	{
+		MemSetPaging(programcounter, address, write, value, nExecutedCycles);
+	}
+
 	if (!write)
 		return MemReadFloatingBus(nExecutedCycles);
 	else
@@ -1132,12 +1150,14 @@ static void UpdatePaging(BOOL initialize)
 														: pCxRomInternal+uRomOffset;			// C800..CFFF - Internal ROM
 	}
 
+	int selectedrompage = (SW_ALTROM0 ? 1 : 0) | (SW_ALTROM1 ? 2 : 0);
+	int romoffset = (selectedrompage % memrompages) * Apple2RomSize;
 	for (loop = 0xD0; loop < 0xE0; loop++)
 	{
 		int bankoffset = (SW_BANK2 ? 0 : 0x1000);
 		memshadow[loop] = SW_HIGHRAM ? SW_ALTZP	? memaux+(loop << 8)-bankoffset
 												: g_pMemMainLanguageCard+((loop-0xC0)<<8)-bankoffset
-									 : memrom+((loop-0xD0) * 0x100);
+									 : memrom+((loop-0xD0) * 0x100)+romoffset;
 
 		memwrite[loop]  = SW_WRITERAM	? SW_HIGHRAM	? mem+(loop << 8)
 														: SW_ALTZP	? memaux+(loop << 8)-bankoffset
@@ -1149,7 +1169,7 @@ static void UpdatePaging(BOOL initialize)
 	{
 		memshadow[loop] = SW_HIGHRAM	? SW_ALTZP	? memaux+(loop << 8)
 													: g_pMemMainLanguageCard+((loop-0xC0)<<8)
-										: memrom+((loop-0xD0) * 0x100);
+										: memrom+((loop-0xD0) * 0x100)+romoffset;
 
 		memwrite[loop]  = SW_WRITERAM	? SW_HIGHRAM	? mem+(loop << 8)
 														: SW_ALTZP	? memaux+(loop << 8)
@@ -1429,19 +1449,13 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 
 //===========================================================================
 
-const UINT CxRomSize = 4*1024;
-const UINT Apple2RomSize = 12*1024;
-const UINT Apple2eRomSize = Apple2RomSize+CxRomSize;
-//const UINT Pravets82RomSize = 12*1024;
-//const UINT Pravets8ARomSize = Pravets82RomSize+CxRomSize;
-
 void MemInitialize()
 {
 	// ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
 	memaux   = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
 	memmain  = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
 	memdirty = (LPBYTE)VirtualAlloc(NULL,0x100  ,MEM_COMMIT,PAGE_READWRITE);
-	memrom   = (LPBYTE)VirtualAlloc(NULL,0x5000 ,MEM_COMMIT,PAGE_READWRITE);
+	memrom   = (LPBYTE)VirtualAlloc(NULL,0x3000 * MaxRomPages ,MEM_COMMIT,PAGE_READWRITE);
 	memimage = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_RESERVE,PAGE_NOACCESS);
 
 	pCxRomInternal		= (LPBYTE) VirtualAlloc(NULL, CxRomSize, MEM_COMMIT, PAGE_READWRITE);
@@ -1522,6 +1536,7 @@ void MemInitializeROM(void)
 	case A2TYPE_PRAVETS8M:      hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_8M_ROM      ), "ROM"); ROM_SIZE = Apple2RomSize ; break;
 	case A2TYPE_PRAVETS8A:      hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_8C_ROM      ), "ROM"); ROM_SIZE = Apple2eRomSize; break;
 	case A2TYPE_TK30002E:       hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_TK3000_2E_ROM       ), "ROM"); ROM_SIZE = Apple2eRomSize; break;
+	case A2TYPE_BASE64A:        hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_BASE_64A_ROM        ), "ROM"); ROM_SIZE = Base64ARomSize; break;
 	}
 
 	if (hResInfo == NULL)
@@ -1538,6 +1553,7 @@ void MemInitializeROM(void)
 		case A2TYPE_PRAVETS8M:      _tcscpy(sRomFileName, TEXT("PRAVETS8M.ROM"       )); break;
 		case A2TYPE_PRAVETS8A:      _tcscpy(sRomFileName, TEXT("PRAVETS8C.ROM"       )); break;
 		case A2TYPE_TK30002E:       _tcscpy(sRomFileName, TEXT("TK3000e.ROM"         )); break;
+		case A2TYPE_BASE64A:        _tcscpy(sRomFileName, TEXT("BASE64A.ROM"         )); break;
 		default:
 			{
 				_tcscpy(sRomFileName, TEXT("Unknown type!"));
@@ -1581,8 +1597,9 @@ void MemInitializeROM(void)
 		ROM_SIZE -= CxRomSize;
 	}
 
-	_ASSERT(ROM_SIZE == Apple2RomSize);
-	memcpy(memrom, pData, Apple2RomSize);			// ROM at $D000...$FFFF
+	memrompages = MAX(MaxRomPages, ROM_SIZE / Apple2RomSize);
+	_ASSERT(ROM_SIZE % Apple2RomSize == 0);
+	memcpy(memrom, pData, ROM_SIZE);			// ROM at $D000...$FFFF, one or several pages
 }
 
 void MemInitializeCustomF8ROM(void)
@@ -2042,6 +2059,17 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 				}
 				break;
 #endif
+		}
+	}
+
+	if (g_Apple2Type == A2TYPE_BASE64A)
+	{
+		switch (address)
+		{
+			case 0x58: SetMemMode(memmode & ~MF_ALTROM0);  break;
+			case 0x59: SetMemMode(memmode |  MF_ALTROM0);  break;
+			case 0x5A: SetMemMode(memmode & ~MF_ALTROM1);  break;
+			case 0x5B: SetMemMode(memmode |  MF_ALTROM1);  break;
 		}
 	}
 
