@@ -85,6 +85,18 @@
 	extern void ReleaseConsoleFontDC(void);
 	extern bgra_t* GetpDebuggerExtraFramebits(void);
 
+	// See: CmdWindowViewOutput (int nArgs)
+	enum ViewVideoPage_t
+	{
+		VIEW_PAGE_CURRENT, // current page
+		VIEW_PAGE_DISABLED,
+		VIEW_PAGE_1,
+		VIEW_PAGE_2
+	};
+
+	extern uint32_t        g_iGraphicMonitoringMode;
+	extern ViewVideoPage_t g_eGraphicMonitoringPage;
+
 	enum DebugVirtualTextScreen_e
 	{
 		DEBUG_VIRTUAL_TEXT_WIDTH  = 80,

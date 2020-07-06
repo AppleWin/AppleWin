@@ -494,21 +494,27 @@
 // Video-scanner info
 		, CMD_VIDEO_SCANNER_INFO
 // View
-		, CMD_VIEW_TEXT4X
+		, CMD_VIEW_TEXT40
+		, CMD_VIEW_TEXT40X
 		, CMD_VIEW_TEXT41
 		, CMD_VIEW_TEXT42
-		, CMD_VIEW_TEXT8X
+		, CMD_VIEW_TEXT80
+		, CMD_VIEW_TEXT80X
 		, CMD_VIEW_TEXT81
 		, CMD_VIEW_TEXT82
+		, CMD_VIEW_GR
 		, CMD_VIEW_GRX
 		, CMD_VIEW_GR1
 		, CMD_VIEW_GR2
+		, CMD_VIEW_DGR
 		, CMD_VIEW_DGRX
 		, CMD_VIEW_DGR1
 		, CMD_VIEW_DGR2
+		, CMD_VIEW_HGR
 		, CMD_VIEW_HGRX
 		, CMD_VIEW_HGR1
 		, CMD_VIEW_HGR2
+		, CMD_VIEW_DHGR
 		, CMD_VIEW_DHGRX
 		, CMD_VIEW_DHGR1
 		, CMD_VIEW_DHGR2
@@ -753,23 +759,29 @@
 	Update_t CmdVideoScannerInfo   (int nArgs);
 
 // View
-	Update_t CmdViewOutput_Text4X  (int nArgs);
+	Update_t CmdViewOutput_Text40  (int nArgs);
+	Update_t CmdViewOutput_Text40X (int nArgs);
 	Update_t CmdViewOutput_Text41  (int nArgs);
 	Update_t CmdViewOutput_Text42  (int nArgs);
-	Update_t CmdViewOutput_Text8X  (int nArgs);
+	Update_t CmdViewOutput_Text80  (int nArgs);
+	Update_t CmdViewOutput_Text80X (int nArgs);
 	Update_t CmdViewOutput_Text81  (int nArgs);
 	Update_t CmdViewOutput_Text82  (int nArgs);
 
+	Update_t CmdViewOutput_GR      (int nArgs);
 	Update_t CmdViewOutput_GRX     (int nArgs);
 	Update_t CmdViewOutput_GR1     (int nArgs);
 	Update_t CmdViewOutput_GR2     (int nArgs);
+	Update_t CmdViewOutput_DGR     (int nArgs);
 	Update_t CmdViewOutput_DGRX    (int nArgs);
 	Update_t CmdViewOutput_DGR1    (int nArgs);
 	Update_t CmdViewOutput_DGR2    (int nArgs);
 
+	Update_t CmdViewOutput_HGR     (int nArgs);
 	Update_t CmdViewOutput_HGRX    (int nArgs);
 	Update_t CmdViewOutput_HGR1    (int nArgs);
 	Update_t CmdViewOutput_HGR2    (int nArgs);
+	Update_t CmdViewOutput_DHGR    (int nArgs);
 	Update_t CmdViewOutput_DHGRX   (int nArgs);
 	Update_t CmdViewOutput_DHGR1   (int nArgs);
 	Update_t CmdViewOutput_DHGR2   (int nArgs);

@@ -6333,113 +6333,118 @@ Update_t CmdCyclesReset(int /*nArgs*/)
 }
 
 // View ___________________________________________________________________________________________
+// Graphic (video) pages monitoring setup
 
-// See: CmdWindowViewOutput (int nArgs)
-enum ViewVideoPage_t
+Update_t _ViewOutput(ViewVideoPage_t iPage, int bVideoModeFlags)
 {
-	VIEW_PAGE_X, // current page
-	VIEW_PAGE_1,
-	VIEW_PAGE_2
-};
-
-Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
-{
-	switch( iPage ) 
-	{
-		case VIEW_PAGE_X:
-			bVideoModeFlags |= !g_pVideo->VideoGetSWPAGE2() ? 0 : VF_PAGE2;
-			bVideoModeFlags |= !g_pVideo->VideoGetSWMIXED() ? 0 : VF_MIXED;
-			break; // Page Current & current MIXED state
-		case VIEW_PAGE_1: bVideoModeFlags |= 0; break; // Page 1
-		case VIEW_PAGE_2: bVideoModeFlags |= VF_PAGE2; break; // Page 2
-		default:
-			_ASSERT(0);
-			break;
-	}
-
-	DebugVideoMode::Instance().Set(bVideoModeFlags);
-	g_pVideo->VideoRefreshScreen( bVideoModeFlags, true, GetViewportScale() / (GetDebugMode() ? 2 : 1), 0, 0);
-	return UPDATE_NOTHING; // intentional
+	g_iGraphicMonitoringMode = bVideoModeFlags;
+	g_eGraphicMonitoringPage = iPage;
+	return UPDATE_NOTHING;
 }
 
 // Text 40
-	Update_t CmdViewOutput_Text4X (int nArgs)
+	Update_t CmdViewOutput_Text40(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, VF_TEXT );
+		return _ViewOutput(VIEW_PAGE_CURRENT, VF_TEXT);
 	}
-	Update_t CmdViewOutput_Text41 (int nArgs)
+	Update_t CmdViewOutput_Text40X(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, VF_TEXT );
+		return _ViewOutput(VIEW_PAGE_DISABLED, VF_TEXT);
 	}
-	Update_t CmdViewOutput_Text42 (int nArgs)
+	Update_t CmdViewOutput_Text41(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, VF_TEXT );
+		return _ViewOutput(VIEW_PAGE_1, VF_TEXT);
+	}
+	Update_t CmdViewOutput_Text42(int nArgs)
+	{
+		return _ViewOutput(VIEW_PAGE_2, VF_TEXT);
 	}
 // Text 80
-	Update_t CmdViewOutput_Text8X (int nArgs)
+	Update_t CmdViewOutput_Text80(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, VF_TEXT | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_CURRENT, VF_TEXT | VF_80COL);
 	}
-	Update_t CmdViewOutput_Text81 (int nArgs)
+	Update_t CmdViewOutput_Text80X(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, VF_TEXT | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_DISABLED, VF_TEXT | VF_80COL);
 	}
-	Update_t CmdViewOutput_Text82 (int nArgs)
+	Update_t CmdViewOutput_Text81(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, VF_TEXT | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_1, VF_TEXT | VF_80COL);
+	}
+	Update_t CmdViewOutput_Text82(int nArgs)
+	{
+		return _ViewOutput(VIEW_PAGE_2, VF_TEXT | VF_80COL);
 	}
 // Lo-Res
-	Update_t CmdViewOutput_GRX (int nArgs)
+	Update_t CmdViewOutput_GR(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, 0 );
+		return _ViewOutput(VIEW_PAGE_CURRENT, 0);
 	}
-	Update_t CmdViewOutput_GR1 (int nArgs)
+	Update_t CmdViewOutput_GRX(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, 0 );
+		return _ViewOutput(VIEW_PAGE_DISABLED, 0);
 	}
-	Update_t CmdViewOutput_GR2 (int nArgs)
+	Update_t CmdViewOutput_GR1(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, 0 );
+		return _ViewOutput(VIEW_PAGE_1, 0);
+	}
+	Update_t CmdViewOutput_GR2(int nArgs)
+	{
+		return _ViewOutput(VIEW_PAGE_2, 0);
 	}
 // Double Lo-Res
-	Update_t CmdViewOutput_DGRX (int nArgs)
+	Update_t CmdViewOutput_DGR(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, VF_DHIRES | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_CURRENT, VF_DHIRES | VF_80COL);
 	}
-	Update_t CmdViewOutput_DGR1 (int nArgs)
+	Update_t CmdViewOutput_DGRX(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, VF_DHIRES | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_DISABLED, VF_DHIRES | VF_80COL);
 	}
-	Update_t CmdViewOutput_DGR2 (int nArgs)
+	Update_t CmdViewOutput_DGR1(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, VF_DHIRES | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_1, VF_DHIRES | VF_80COL);
+	}
+	Update_t CmdViewOutput_DGR2(int nArgs)
+	{
+		return _ViewOutput(VIEW_PAGE_2, VF_DHIRES | VF_80COL);
 	}
 // Hi-Res
-	Update_t CmdViewOutput_HGRX (int nArgs)
+	Update_t CmdViewOutput_HGR(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, VF_HIRES );
+		return _ViewOutput(VIEW_PAGE_CURRENT, VF_HIRES);
 	}
-	Update_t CmdViewOutput_HGR1 (int nArgs)
+	Update_t CmdViewOutput_HGRX(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, VF_HIRES );
+		return _ViewOutput(VIEW_PAGE_DISABLED, VF_HIRES);
 	}
-	Update_t CmdViewOutput_HGR2 (int nArgs)
+	Update_t CmdViewOutput_HGR1(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, VF_HIRES );
+		return _ViewOutput(VIEW_PAGE_1, VF_HIRES);
+	}
+	Update_t CmdViewOutput_HGR2(int nArgs)
+	{
+		return _ViewOutput(VIEW_PAGE_2, VF_HIRES);
 	}
 // Double Hi-Res
-	Update_t CmdViewOutput_DHGRX (int nArgs)
+	Update_t CmdViewOutput_DHGR(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, VF_HIRES | VF_DHIRES | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_CURRENT, VF_HIRES | VF_DHIRES | VF_80COL);
 	}
-	Update_t CmdViewOutput_DHGR1 (int nArgs)
+	Update_t CmdViewOutput_DHGRX(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, VF_HIRES | VF_DHIRES | VF_80COL);
+		return _ViewOutput(VIEW_PAGE_DISABLED, VF_HIRES | VF_DHIRES | VF_80COL);
 	}
-	Update_t CmdViewOutput_DHGR2 (int nArgs)
+	Update_t CmdViewOutput_DHGR1(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, VF_HIRES | VF_DHIRES | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_1, VF_HIRES | VF_DHIRES | VF_80COL);
 	}
+	Update_t CmdViewOutput_DHGR2(int nArgs)
+	{
+		return _ViewOutput(VIEW_PAGE_2, VF_HIRES | VF_DHIRES | VF_80COL);
+	}
+
 
 // Watches ________________________________________________________________________________________
 

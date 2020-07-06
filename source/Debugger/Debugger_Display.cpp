@@ -94,6 +94,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static LPBITMAPINFO  g_hConsoleFontFramebufferinfo = NULL;
 	static bgra_t* g_hConsoleFontFramebits;
 
+	uint32_t        g_iGraphicMonitoringMode = 0;
+	ViewVideoPage_t g_eGraphicMonitoringPage = VIEW_PAGE_CURRENT;
+
 	char g_cConsoleBrushFG_r;
 	char g_cConsoleBrushFG_g;
 	char g_cConsoleBrushFG_b;
@@ -766,7 +769,21 @@ void StretchBltMemToFrameDC(void)
 		SRCCOPY                                             // DWORD dwRop
 	);
 
-	debug_pVideo->VideoRefreshScreen(VF_HIRES|(g_pVideo->VideoGetSWPAGE2() ? 0: VF_PAGE2), true, 1, FRAMEBUFFER_W, FRAMEBUFFER_H);
+	// Graphic page monitoring
+	uint32_t refreshMode = g_iGraphicMonitoringMode & ~VF_PAGE2;
+	switch (g_eGraphicMonitoringPage)
+	{
+	case VIEW_PAGE_CURRENT:
+		refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() ? VF_PAGE2 : 0);
+		break;
+	case VIEW_PAGE_DISABLED:
+		refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() ? 0 : VF_PAGE2);
+		break;
+	case VIEW_PAGE_2:
+		refreshMode = refreshMode | VF_PAGE2;
+		break;
+	}
+	debug_pVideo->VideoRefreshScreen(refreshMode, true, 1, FRAMEBUFFER_W, FRAMEBUFFER_H);
 }
 
 // Font: Apple Text
