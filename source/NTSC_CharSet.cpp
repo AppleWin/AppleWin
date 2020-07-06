@@ -207,7 +207,8 @@ static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const eApple2
 			// Base64A: Bit 0 instead of bit 7
 			if (RA < 1024)
 			{
-				if (type == A2TYPE_BASE64A) {
+				if (type == A2TYPE_BASE64A)
+				{
 					if (!(n & 0x01))
 						n = n ^ 0xfe;
 				}
@@ -219,7 +220,8 @@ static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const eApple2
 			}
 
 			BYTE d = 0;
-			if (type == A2TYPE_BASE64A) {
+			if (type == A2TYPE_BASE64A)
+			{
 				// On the Base 64A bits are ordered 1345672.
 				d = (n >> 2) | ((n & 2) >> 1) | ((n & 4) << 4);
 			}
@@ -309,7 +311,7 @@ void make_csbits(void)
 	memcpy(&csbits_2e[1][64], &csbits_2e[0][64], 32*8);
 
 	VideoRomForIIJPlus();	// GH#773
-	VideoRomForBase64A();
+	VideoRomForBase64A();	// GH#806
 
 	// Try to use any user-provided video ROM for Original/Enhanced //e
 	userVideoRomForIIe();

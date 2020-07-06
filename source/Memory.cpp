@@ -80,8 +80,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  SW_ALTROM0    (memmode & MF_ALTROM0)
 #define  SW_ALTROM1    (memmode & MF_ALTROM1)
 
-#define  SELECTED_ROM_PAGE       (SW_ALTROM0?1:0 | SW_ALTROM1?2:0)
-
 /*
 MEMORY MANAGEMENT SOFT SWITCHES
  $C000   W       80STOREOFF      Allow page2 to switch video page1 page2
@@ -1152,7 +1150,8 @@ static void UpdatePaging(BOOL initialize)
 														: pCxRomInternal+uRomOffset;			// C800..CFFF - Internal ROM
 	}
 
-	int romoffset = (SELECTED_ROM_PAGE % memrompages) * Apple2RomSize;
+	int selectedrompage = (SW_ALTROM0 ? 1 : 0) | (SW_ALTROM1 ? 2 : 0);
+	int romoffset = (selectedrompage % memrompages) * Apple2RomSize;
 	for (loop = 0xD0; loop < 0xE0; loop++)
 	{
 		int bankoffset = (SW_BANK2 ? 0 : 0x1000);

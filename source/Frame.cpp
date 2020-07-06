@@ -387,7 +387,9 @@ static void CreateGdiObjects(void)
 	case A2TYPE_TK30002E:
 		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN3000E_BUTTON"));
 		break;
-	// TODO: button for Base 64A
+	case A2TYPE_BASE64A:
+		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNBASE64A_BUTTON"));
+		break;
 	default:
 		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON"));
 		break;
