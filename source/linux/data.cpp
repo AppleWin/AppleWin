@@ -21,6 +21,7 @@ void SetWindowTitle()
   case A2TYPE_PRAVETS8M:		g_pAppTitle = TITLE_PRAVETS_8M; break;
   case A2TYPE_PRAVETS8A:		g_pAppTitle = TITLE_PRAVETS_8A; break;
   case A2TYPE_TK30002E:                 g_pAppTitle = TITLE_TK3000_2E; break;
+  case A2TYPE_BASE64A:                  g_pAppTitle = TITLE_BASE64A; break;
   }
 
   g_pAppTitle += " - ";

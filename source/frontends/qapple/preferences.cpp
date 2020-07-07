@@ -120,7 +120,7 @@ namespace
 
     const std::vector<eApple2Type> computerTypes = {A2TYPE_APPLE2, A2TYPE_APPLE2PLUS, A2TYPE_APPLE2JPLUS, A2TYPE_APPLE2E,
                                                     A2TYPE_APPLE2EENHANCED, A2TYPE_PRAVETS82, A2TYPE_PRAVETS8M, A2TYPE_PRAVETS8A,
-                                                    A2TYPE_TK30002E};
+                                                    A2TYPE_BASE64A, A2TYPE_TK30002E};
     const std::vector<SS_CARDTYPE> cardsInSlot4 = {CT_Empty, CT_MouseInterface, CT_MockingboardC, CT_Phasor};
     const std::vector<SS_CARDTYPE> cardsInSlot5 = {CT_Empty, CT_Z80, CT_MockingboardC, CT_SAM};
 

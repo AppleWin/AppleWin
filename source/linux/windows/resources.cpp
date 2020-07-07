@@ -15,6 +15,7 @@ const char * MAKEINTRESOURCE(int x)
   case IDR_PRAVETS_8C_ROM: return "PRAVETS8C.ROM";
   case IDR_PRAVETS_8M_ROM: return "PRAVETS8M.ROM";
   case IDR_TK3000_2E_ROM: return "TK3000e.rom";
+  case IDR_BASE_64A_ROM: return "Base64A.rom";
 
   case IDR_APPLE2_JPLUS_VIDEO_ROM: return "Apple2_JPlus_Video.rom";
   case IDR_DISK2_16SECTOR_FW: return "DISK2.rom";
@@ -26,6 +27,7 @@ const char * MAKEINTRESOURCE(int x)
   case IDR_MOUSEINTERFACE_FW: return "MouseInterface.rom";
   case IDR_THUNDERCLOCKPLUS_FW: return "ThunderClockPlus.rom";
   case IDR_TKCLOCK_FW: return "TKClock.rom";
+  case IDR_BASE64A_VIDEO_ROM: return "Base64A_German_Video.rom";
   }
 
   LogFileOutput("Unknown resource %d\n", x);

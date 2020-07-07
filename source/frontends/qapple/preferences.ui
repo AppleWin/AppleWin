@@ -222,6 +222,11 @@
             </item>
             <item>
              <property name="text">
+              <string>Base64A</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
               <string>TK3000 //e</string>
              </property>
             </item>

@@ -20,5 +20,7 @@
         <file>resources/PRAVETS82.ROM</file>
         <file>resources/TK3000e.rom</file>
         <file>resources/Apple2_JPlus_Video.rom</file>
+        <file>resources/Base64A.rom</file>
+        <file>resources/Base64A_German_Video.rom</file>
     </qresource>
 </RCC>
