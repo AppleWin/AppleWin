@@ -1957,6 +1957,7 @@ void MemReset()
 
 	// INITIALIZE PAGING, FILLING IN THE 64K MEMORY IMAGE
 	ResetPaging(TRUE);		// Initialize=1, init memmode
+	MemAnnunciatorReset();
 
 	// INITIALIZE & RESET THE CPU
 	// . Do this after ROM has been copied back to mem[], so that PC is correctly init'ed from 6502's reset vector
@@ -2156,6 +2157,18 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 }
 
 //===========================================================================
+
+void MemAnnunciatorReset(void)
+{
+	for (UINT i=0; i<kNumAnnunciators; i++)
+		g_Annunciator[i] = 0;
+
+	if (IsCopamBase64A(GetApple2Type()))
+	{
+		SetMemMode(memmode & ~(MF_ALTROM0|MF_ALTROM1));
+		UpdatePaging(FALSE);	// Initialize=FALSE
+	}
+}
 
 bool MemGetAnnunciator(UINT annunciator)
 {
