@@ -6,13 +6,13 @@
 
 #include "Log.h"
 
-HRSRC FindResource(void *, const std::string & filename, const char *)
+HRSRC FindResource(void *, const char * filename, const char *)
 {
   HRSRC result;
 
-  if (!filename.empty())
+  if (filename)
   {
-    const std::string path = "resource/" + filename;
+    const std::string path = std::string("resource/") + filename;
 
     int fd = open(path.c_str(), O_RDONLY);
 
@@ -31,15 +31,15 @@ HRSRC FindResource(void *, const std::string & filename, const char *)
 
   if (result.data.empty())
   {
-    LogFileOutput("FindResource: could not load resource %s\n", filename.c_str());
+    LogFileOutput("FindResource: could not load resource %s\n", filename);
   }
 
   return result;
 }
 
-HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename)
+HBITMAP LoadBitmap(HINSTANCE hInstance, const char * filename)
 {
-  LogFileOutput("LoadBitmap: not loading resource %s\n", filename.c_str());
+  LogFileOutput("LoadBitmap: not loading resource %s\n", filename);
   return nullptr;
 }
 

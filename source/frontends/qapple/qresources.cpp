@@ -5,13 +5,13 @@
 
 #include "Log.h"
 
-HRSRC FindResource(void *, const std::string & filename, const char *)
+HRSRC FindResource(void *, const char * filename, const char *)
 {
     HRSRC result;
 
-    if (!filename.empty())
+    if (filename)
     {
-        const std::string path = ":/resources/" + filename;
+        const std::string path = std::string(":/resources/") + filename;
 
         QFile res(QString::fromStdString(path));
         if (res.exists() && res.open(QIODevice::ReadOnly))
@@ -23,7 +23,7 @@ HRSRC FindResource(void *, const std::string & filename, const char *)
 
     if (result.data.empty())
     {
-          LogFileOutput("FindResource: could not load resource %s\n", filename.c_str());
+          LogFileOutput("FindResource: could not load resource %s\n", filename);
     }
 
     return result;
@@ -34,20 +34,20 @@ struct CBITMAP : public CHANDLE
     QImage image;
 };
 
-HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename)
+HBITMAP LoadBitmap(HINSTANCE hInstance, const char * filename)
 {
     Q_UNUSED(hInstance)
 
     QImage image;
-    if (!filename.empty())
+    if (filename)
     {
-        const std::string path = ":/resources/" + filename + ".BMP";
+        const std::string path = std::string(":/resources/") + filename + ".BMP";
         image = QImage(QString::fromStdString(path));
     }
 
     if (image.isNull())
     {
-        LogFileOutput("LoadBitmap: could not load resource %s\n", filename.c_str());
+        LogFileOutput("LoadBitmap: could not load resource %s\n", filename);
         return nullptr;
     }
     else

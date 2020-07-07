@@ -9,10 +9,10 @@
 
 // Resources
 
-HRSRC FindResource(void *, const std::string & filename, const char *);
+HRSRC FindResource(void *, const char * filename, const char *);
 
 // Bitmap
-HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename);
+HBITMAP LoadBitmap(HINSTANCE hInstance, const char * filename);
 LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits);
 
 

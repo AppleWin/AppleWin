@@ -10,7 +10,7 @@ void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
 
 // Resources
 
-HRSRC FindResource(void *, const std::string & filename, const char *)
+HRSRC FindResource(void *, const char * filename, const char *)
 {
   return HRSRC();
 }
@@ -51,7 +51,7 @@ int MessageBox(HWND, const char * text, const char * caption, UINT type) { retur
 
 // Bitmap
 
-HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename)
+HBITMAP LoadBitmap(HINSTANCE hInstance, const char * filename)
 {
   return nullptr;
 }

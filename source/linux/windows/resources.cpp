@@ -2,9 +2,6 @@
 #include "../resource/resource.h"
 #include "Log.h"
 
-// forward declared
-HRSRC FindResource(void *, const std::string & filename, const char *);
-
 const char * MAKEINTRESOURCE(int x)
 {
   switch (x)

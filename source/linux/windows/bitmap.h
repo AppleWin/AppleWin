@@ -38,7 +38,7 @@ typedef HANDLE HBITMAP;
 typedef HANDLE HGDIOBJ;
 
 // Bitmap
-HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename);
+HBITMAP LoadBitmap(HINSTANCE hInstance, const char * filename);
 LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits);
 
 BOOL DeleteObject(HGDIOBJ ho);
