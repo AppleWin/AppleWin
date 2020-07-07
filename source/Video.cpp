@@ -216,7 +216,7 @@ void Video::VideoBenchmark () {
       FillMemory(mem+0x400,0x400,0x14);
     else
       CopyMemory(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
-    VideoRefreshScreen(0,false, GetViewportScale() / (GetDebugMode() ? 2 : 1), 0, 0);
+    VideoRefreshScreen(0,false, GetViewportScale(), 0, 0, GetDebugMode());
     if (cycle++ >= 3)
       cycle = 0;
     totaltextfps++;
@@ -238,7 +238,7 @@ void Video::VideoBenchmark () {
       FillMemory(mem+0x2000,0x2000,0x14);
     else
       CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRefreshScreen(0,false, GetViewportScale() / (GetDebugMode() ? 2 : 1), 0, 0);
+    VideoRefreshScreen(0,false, GetViewportScale(), 0, 0, GetDebugMode());
     if (cycle++ >= 3)
       cycle = 0;
     totalhiresfps++;
@@ -570,12 +570,12 @@ void Video::VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 void Video::VideoRedrawScreen (void)
 {
 	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
-	VideoRefreshScreen( g_uVideoMode, true, GetViewportScale() / (GetDebugMode() ? 2 : 1), 0, 0);
+	VideoRefreshScreen( g_uVideoMode, true, GetViewportScale(), 0, 0, GetDebugMode());
 }
 
 //===========================================================================
 
-void Video::VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/, int scale, int xdest, int ydest)
+void Video::VideoRefreshScreen (uint32_t uRedrawWholeScreenVideoMode =0, bool bRedrawWholeScreen = false, int scale = 2, int xdest = 0, int ydest = 0, bool bReducedSize = false)
 {
 
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
@@ -607,8 +607,8 @@ void Video::VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, b
 
 		xdest += (IsFullScreen() ? GetFullScreenOffsetX() : 0);
 		ydest += (IsFullScreen() ? GetFullScreenOffsetY() : 0);
-		int wdest = FRAMEBUFFER_W * scale; //) / (isDebugMode ? 2 : 1); // g_nViewportCX;
-		int hdest = FRAMEBUFFER_H * scale; //) / (isDebugMode ? 2 : 1); // g_nViewportCY;
+		int wdest = (FRAMEBUFFER_W * scale) >> (bReducedSize ? 1 : 0); // g_nViewportCX;
+		int hdest = (FRAMEBUFFER_H * scale) >> (bReducedSize ? 1 : 0); // g_nViewportCY;
 
 		SetStretchBltMode(hFrameDC, COLORONCOLOR);
 		StretchBlt(

@@ -405,7 +405,7 @@ static void ContinueExecution(void)
 		if (g_bFullSpeed)
 			g_pVideo->VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
 		else
-			g_pVideo->VideoRefreshScreen(0, false, GetViewportScale() / (GetDebugMode() ? 2 : 1), 0, 0); // Just copy the output of our Apple framebuffer to the system Back Buffer
+			g_pVideo->VideoRefreshScreen(0, false, GetViewportScale(), 0, 0, GetDebugMode()); // Just copy the output of our Apple framebuffer to the system Back Buffer
 
 		if (g_nAppMode == MODE_STEPPING && GetDebugMode() && !IsDebugSteppingAtFullSpeed()) {
 			DebugDisplay(IsDebugSteppingWithPCFollow());

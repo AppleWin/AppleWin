@@ -740,6 +740,8 @@ void StretchBltMemToFrameDC(void)
 	xdest+= (FRAMEBUFFER_W * scale) / 2;
 	int wdest = (FRAMEBUFFER_W * scale) / 2;
 	int hdest = (FRAMEBUFFER_H * scale) / 2;
+	int wsrc = FRAMEBUFFER_W;
+	int xsrc = 0;
 
 	BOOL bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
@@ -758,18 +760,21 @@ void StretchBltMemToFrameDC(void)
 	ydest += (384 * scale) / 2;
 	wdest = (FRAMEBUFFER_W * scale) / 2;
 	hdest = (FRAMEBUFFER_H * scale) / 2;
-	int wsrc = FRAMEBUFFER_W;
 	
 	SS_CARDTYPE ram = GetCurrentExpansionMemType();
 	if (ram != CT_80Col && ram != CT_Extended80Col && ram != CT_RamWorksIII)
-		wsrc /= 2;  // show only the first 64k of RAM
+	{
+		// show only the first 64k of RAM
+		xsrc = 8;
+		wsrc /= 2;
+	}
 
 	bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
 		xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
 		GetDebuggerExtraDC(),								// HDC hdcSrc,
-		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
+		xsrc, 0,												// int nXOriginSrc,  int nYOriginSrc,
 		wsrc, FRAMEBUFFER_H,						// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
@@ -792,7 +797,7 @@ void StretchBltMemToFrameDC(void)
 	// Refresh VideoStyle in case the user changed it in the config panel
 	debug_pVideo->getNTSC()->NTSC_SetVideoStyle();
 
-	debug_pVideo->VideoRefreshScreen(refreshMode, true, 1, FRAMEBUFFER_W, FRAMEBUFFER_H);
+	debug_pVideo->VideoRefreshScreen(refreshMode, true, GetViewportScale(), FRAMEBUFFER_W, FRAMEBUFFER_H, true);
 }
 
 // Font: Apple Text

@@ -212,7 +212,8 @@ public:
 	void    VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
 	void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 	void    VideoRedrawScreen(void);
-	void    VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedrawWholeScreen = false, int scale = 2, int xdest = 0, int ydest = 0);
+	void    VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen,
+								int scale, int xdest, int ydest, bool bReducedSize);
 	void    VideoReinitialize(bool bInitVideoScannerAddress = true);
 	void    VideoResetState();
 
