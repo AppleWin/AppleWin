@@ -758,14 +758,19 @@ void StretchBltMemToFrameDC(void)
 	ydest += (384 * scale) / 2;
 	wdest = (FRAMEBUFFER_W * scale) / 2;
 	hdest = (FRAMEBUFFER_H * scale) / 2;
+	int wsrc = FRAMEBUFFER_W;
 	
+	SS_CARDTYPE ram = GetCurrentExpansionMemType();
+	if (ram != CT_80Col && ram != CT_Extended80Col && ram != CT_RamWorksIII)
+		wsrc /= 2;  // show only the first 64k of RAM
+
 	bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
 		xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
 		GetDebuggerExtraDC(),								// HDC hdcSrc,
 		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
-		FRAMEBUFFER_W, FRAMEBUFFER_H,						// int nWidthSrc,    int nHeightSrc,
+		wsrc, FRAMEBUFFER_H,						// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
 
