@@ -198,12 +198,12 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 			CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, g_bConfirmReboot ? BST_CHECKED : BST_UNCHECKED );
 
-			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE, g_aVideoChoices, g_pVideo->GetVideoType());
-			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, g_pVideo->IsVideoStyle(VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
+			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE, g_aVideoChoices, Video::GetVideoType());
+			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, Video::IsVideoStyle(VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, GetFullScreenShowSubunitStatus() ? BST_CHECKED : BST_UNCHECKED);
 
-			CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, g_pVideo->IsVideoStyle(VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
-			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (g_pVideo->GetVideoType() == VT_COLOR_MONITOR_RGB) ? TRUE : FALSE);
+			CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, Video::IsVideoStyle(VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
+			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (Video::GetVideoType() == VT_COLOR_MONITOR_RGB) ? TRUE : FALSE);
 
 			if (g_CardMgr.IsSSCInstalled())
 			{
@@ -272,20 +272,20 @@ void CPageConfig::DlgOK(HWND hWnd)
 	bool bVideoReinit = false;
 
 	const VideoType_e newVideoType = (VideoType_e) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
-	if (g_pVideo->GetVideoType() != newVideoType)
+	if (Video::GetVideoType() != newVideoType)
 	{
-		g_pVideo->SetVideoType(newVideoType);
+		Video::SetVideoType(newVideoType);
 		bVideoReinit = true;
 	}
 
 	const bool newHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) != 0;
-	const bool currentHalfScanLines = g_pVideo->IsVideoStyle(VS_HALF_SCANLINES);
+	const bool currentHalfScanLines = Video::IsVideoStyle(VS_HALF_SCANLINES);
 	if (currentHalfScanLines != newHalfScanLines)
 	{
 		if (newHalfScanLines)
-			g_pVideo->SetVideoStyle( (VideoStyle_e) (g_pVideo->GetVideoStyle() | VS_HALF_SCANLINES) );
+			Video::SetVideoStyle( (VideoStyle_e) (Video::GetVideoStyle() | VS_HALF_SCANLINES) );
 		else
-			g_pVideo->SetVideoStyle( (VideoStyle_e) (g_pVideo->GetVideoStyle() & ~VS_HALF_SCANLINES) );
+			Video::SetVideoStyle( (VideoStyle_e) (Video::GetVideoStyle() & ~VS_HALF_SCANLINES) );
 		bVideoReinit = true;
 	}
 
@@ -294,9 +294,9 @@ void CPageConfig::DlgOK(HWND hWnd)
 	if (currentVerticalBlend != newVerticalBlend)
 	{
 		if (newVerticalBlend)
-			g_pVideo->SetVideoStyle( (VideoStyle_e) (g_pVideo->GetVideoStyle() | VS_COLOR_VERTICAL_BLEND) );
+			Video::SetVideoStyle( (VideoStyle_e) (Video::GetVideoStyle() | VS_COLOR_VERTICAL_BLEND) );
 		else
-			g_pVideo->SetVideoStyle( (VideoStyle_e) (g_pVideo->GetVideoStyle() & ~VS_COLOR_VERTICAL_BLEND) );
+			Video::SetVideoStyle( (VideoStyle_e) (Video::GetVideoStyle() & ~VS_COLOR_VERTICAL_BLEND) );
 		bVideoReinit = true;
 	}
 

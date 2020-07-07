@@ -388,7 +388,7 @@ void RGBMonitor::CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAdd
 		hgrpixelmatrix[matx+nBytes][maty] = *(pSrc+nBytes);
 	}
 
-	const bool bIsHalfScanLines = g_pVideo->IsVideoStyle(VS_HALF_SCANLINES);
+	const bool bIsHalfScanLines = Video::IsVideoStyle(VS_HALF_SCANLINES);
 	const UINT frameBufferWidth = GetFrameBufferWidth();
 
 	for (int nBytes=13; nBytes>=0; nBytes--)
@@ -425,7 +425,7 @@ void RGBMonitor::CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress,
 	UINT32* pDst = (UINT32*) pVideoAddress;
 	const BYTE* const pSrc = g_aSourceStartofLine[ sy ] + sx;
 
-	const bool bIsHalfScanLines = g_pVideo->IsVideoStyle(VS_HALF_SCANLINES);
+	const bool bIsHalfScanLines = Video::IsVideoStyle(VS_HALF_SCANLINES);
 	const UINT frameBufferWidth = GetFrameBufferWidth();
 
 	while (h--)
@@ -460,7 +460,7 @@ void RGBMonitor::UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAdd
 	BYTE byteval2 =            *(pMain);
 	BYTE byteval3 = (x < 39) ? *(pMain+1) : 0;
 
-	if (pVideo->IsVideoStyle(VS_COLOR_VERTICAL_BLEND))
+	if (Video::IsVideoStyle(VS_COLOR_VERTICAL_BLEND))
 	{
 		CopyMixedSource(x, y, SRCOFFS_HIRES+HIRES_COLUMN_OFFSET+((x & 1)*HIRES_COLUMN_SUBUNIT_SIZE), (int)byteval2, pVideoAddress);
 	}

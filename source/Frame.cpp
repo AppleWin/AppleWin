@@ -279,9 +279,9 @@ static void GetAppleWindowTitle()
 
 	g_pAppTitle += " - ";
 
-	if(g_pVideo->IsVideoStyle(VS_HALF_SCANLINES) )
+	if(Video::IsVideoStyle(VS_HALF_SCANLINES) )
 		g_pAppTitle += " 50% ";
-	g_pAppTitle += g_apVideoModeDesc[g_pVideo->g_eVideoType ];
+	g_pAppTitle += g_apVideoModeDesc[Video::g_eVideoType ];
 
 	if (g_CardMgr.GetDisk2CardMgr().IsAnyFirmware13Sector())
 		g_pAppTitle += " (S6-13) ";
@@ -1317,19 +1317,19 @@ LRESULT CALLBACK FrameWndProc (
 
 			if ( !KeybGetCtrlStatus() && !KeybGetShiftStatus() )		// F9
 			{
-				g_pVideo->g_eVideoType++;
-				if (g_pVideo->g_eVideoType >= NUM_VIDEO_MODES)
-					g_pVideo->g_eVideoType = 0;
+				Video::g_eVideoType++;
+				if (Video::g_eVideoType >= NUM_VIDEO_MODES)
+					Video::g_eVideoType = 0;
 			}
 			else if ( !KeybGetCtrlStatus() && KeybGetShiftStatus() )	// SHIFT+F9
 			{
-				if (g_pVideo->g_eVideoType <= 0)
-					g_pVideo->g_eVideoType = NUM_VIDEO_MODES;
-				g_pVideo->g_eVideoType--;
+				if (Video::g_eVideoType <= 0)
+					Video::g_eVideoType = NUM_VIDEO_MODES;
+				Video::g_eVideoType--;
 			}
 			else if ( KeybGetCtrlStatus() && KeybGetShiftStatus() )		// CTRL+SHIFT+F9
 			{
-				g_pVideo->SetVideoStyle( (VideoStyle_e) (g_pVideo->GetVideoStyle() ^ VS_HALF_SCANLINES) );
+				Video::SetVideoStyle( (VideoStyle_e) (Video::GetVideoStyle() ^ VS_HALF_SCANLINES) );
 			}
 
 			// TODO: Clean up code:FrameRefreshStatus(DRAW_TITLE) DrawStatusArea((HDC)0,DRAW_TITLE)

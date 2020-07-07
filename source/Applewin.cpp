@@ -1950,10 +1950,10 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.newVideoType >= 0)
 		{
-			g_pVideo->SetVideoType( (VideoType_e)g_cmdLine.newVideoType );
+			Video::SetVideoType( (VideoType_e)g_cmdLine.newVideoType );
 			g_cmdLine.newVideoType = -1;	// Don't reapply after a restart
 		}
-		g_pVideo->SetVideoStyle( (VideoStyle_e) ((g_pVideo->GetVideoStyle() | g_cmdLine.newVideoStyleEnableMask) & ~g_cmdLine.newVideoStyleDisableMask) );
+		Video::SetVideoStyle( (VideoStyle_e) ((Video::GetVideoStyle() | g_cmdLine.newVideoStyleEnableMask) & ~g_cmdLine.newVideoStyleDisableMask) );
 
 		if (g_cmdLine.newVideoRefreshRate != VR_NONE)
 		{

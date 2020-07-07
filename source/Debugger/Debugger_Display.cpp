@@ -783,6 +783,10 @@ void StretchBltMemToFrameDC(void)
 		refreshMode = refreshMode | VF_PAGE2;
 		break;
 	}
+
+	// Refresh VideoStyle in case the user changed it in the config panel
+	debug_pVideo->getNTSC()->NTSC_SetVideoStyle();
+
 	debug_pVideo->VideoRefreshScreen(refreshMode, true, 1, FRAMEBUFFER_W, FRAMEBUFFER_H);
 }
 

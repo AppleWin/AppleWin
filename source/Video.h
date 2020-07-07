@@ -180,11 +180,12 @@ class Video {
 
 
 public:
-	COLORREF	g_nMonochromeRGB;	// saved to Registry
+	
 	uint32_t	g_uVideoMode;
-	DWORD		g_eVideoType;		// saved to Registry
 	uint8_t*	g_pFramebufferbits;
-	VideoStyle_e g_eVideoStyle;
+	static COLORREF	g_nMonochromeRGB;	// saved to Registry
+	static DWORD	g_eVideoType;		// saved to Registry
+	static VideoStyle_e	g_eVideoStyle;
 
 	bool g_bShowPrintScreenWarningDialog;
 	bool g_bDisplayPrintScreenFileName;
@@ -195,9 +196,9 @@ public:
 	HBITMAP       g_hDeviceBitmap = NULL;
 	HDC           g_hDeviceDC = NULL;
 	LPBITMAPINFO  g_pFramebufferinfo = NULL;
-	static HBITMAP       g_hLogoBitmap;
-	static bool g_bVideoScannerNTSC;  // NTSC video scanning (or PAL)
-	static LPDIRECTDRAW g_lpDD;
+	static HBITMAP	g_hLogoBitmap;
+	static bool		g_bVideoScannerNTSC;  // NTSC video scanning (or PAL)
+	static LPDIRECTDRAW	g_lpDD;
 
 	// ____________________________________________________________________
 
@@ -248,11 +249,11 @@ public:
 	void Config_Load_Video(void);
 	void Config_Save_Video(void);
 
-	VideoType_e GetVideoType(void);
-	void SetVideoType(VideoType_e newVideoType);
-	VideoStyle_e GetVideoStyle(void);
-	void SetVideoStyle(VideoStyle_e newVideoStyle);
-	bool IsVideoStyle(VideoStyle_e mask);
+	static VideoType_e GetVideoType(void);
+	static void SetVideoType(VideoType_e newVideoType);
+	static VideoStyle_e GetVideoStyle(void);
+	static void SetVideoStyle(VideoStyle_e newVideoStyle);
+	static bool IsVideoStyle(VideoStyle_e mask);
 
 	VideoRefreshRate_e GetVideoRefreshRate(void);
 	void SetVideoRefreshRate(VideoRefreshRate_e rate);
