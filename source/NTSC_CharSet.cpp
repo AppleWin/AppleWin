@@ -34,6 +34,8 @@ unsigned char csbits_a2j[2][256][8];		// ][J-Plus
 unsigned char csbits_pravets82[1][256][8];	// Pravets 82
 unsigned char csbits_pravets8M[1][256][8];	// Pravets 8M
 unsigned char csbits_pravets8C[2][256][8];	// Pravets 8A & 8C
+unsigned char csbits_base64a[2][256][8];	// Base 64A
+
 
 //
 
@@ -179,15 +181,15 @@ static void userVideoRomForIIe(void)
 
 //-------------------------------------
 
-static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const bool isApple2JPlus=false, const int AN2=0);
+static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const eApple2Type type = A2TYPE_APPLE2, const int AN2=0);
 
-static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const bool isApple2JPlus/*=false*/, const int AN2/*=0*/)
+static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const eApple2Type type /*= A2TYPE_APPLE2*/, const int AN2/*=0*/)
 {
 	for (int i=0; i<256; i++)
 	{
 		int RA = i*8;	// rom address
 
-		if (isApple2JPlus)
+		if (type == A2TYPE_APPLE2JPLUS)
 		{
 			// AN2=0: $00-3F, $00-3F; $80-BF, $80-BF => KKAA (Repeat Katakana)
 			// AN2=1: $40-7F, $40-7F; $C0-FF, $C0-FF => AAAA (Repeat ASCII)
@@ -202,16 +204,33 @@ static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const bool is
 			// UTAII:8-30 "Bit 7 of your EPROM fonts will control flashing in the lower 1024 bytes of the EPROM"
 			// UTAII:8-31 "If you leave O7 (EPROM Output7) reset in these patterns, the resulting characters will be inversions..."
 			// Apple II J-Plus: simplest logic is just invert if reading low 1K of video ROM
+			// Base64A: Bit 0 instead of bit 7
 			if (RA < 1024)
 			{
-				if (!(n & 0x80) || isApple2JPlus)
-					n = n ^ 0x7f;
+				if (type == A2TYPE_BASE64A)
+				{
+					if (!(n & 0x01))
+						n = n ^ 0xfe;
+				}
+				else
+				{
+					if (!(n & 0x80) || (type == A2TYPE_APPLE2JPLUS))
+						n = n ^ 0x7f;
+				}
 			}
 
-			// UTAII:8-30 "TEXT ROM pattern is ... reversed"
 			BYTE d = 0;
-			for (BYTE j=0; j<7; j++, n >>= 1)	// Just bits [0..6]
-				d = (d << 1) | (n & 1);
+			if (type == A2TYPE_BASE64A)
+			{
+				// On the Base 64A bits are ordered 1345672.
+				d = (n >> 2) | ((n & 2) >> 1) | ((n & 4) << 4);
+			}
+			else
+			{
+				// UTAII:8-30 "TEXT ROM pattern is ... reversed"
+				for (BYTE j = 0; j < 7; j++, n >>= 1)	// Just bits [0..6]
+					d = (d << 1) | (n & 1);
+			}
 
 			csbits[0][i][y] = d;
 		}
@@ -248,9 +267,32 @@ static void VideoRomForIIJPlus(void)
 	if (pVideoRom == NULL)
 		return;
 
-	userVideoRom2K(&csbits_a2j[0], pVideoRom, true, 0);
-	userVideoRom2K(&csbits_a2j[1], pVideoRom, true, 1);
+	userVideoRom2K(&csbits_a2j[0], pVideoRom, A2TYPE_APPLE2JPLUS, 0);
+	userVideoRom2K(&csbits_a2j[1], pVideoRom, A2TYPE_APPLE2JPLUS, 1);
 }
+
+static void VideoRomForBase64A(void)
+{
+	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_BASE64A_VIDEO_ROM), "ROM");
+	if (hResInfo == NULL)
+		return;
+
+	DWORD dwResSize = SizeofResource(NULL, hResInfo);
+	if (dwResSize != kVideoRomSize4K)
+		return;
+
+	HGLOBAL hResData = LoadResource(NULL, hResInfo);
+	if (hResData == NULL)
+		return;
+
+	BYTE* pVideoRom = (BYTE*)LockResource(hResData);	// NB. Don't need to unlock resource
+	if (pVideoRom == NULL)
+		return;
+
+	userVideoRom2K(&csbits_base64a[0], pVideoRom, A2TYPE_BASE64A, 0);
+	userVideoRom2K(&csbits_base64a[1], pVideoRom + kVideoRomSize2K, A2TYPE_BASE64A, 0);
+}
+
 
 //-------------------------------------
 
@@ -269,6 +311,7 @@ void make_csbits(void)
 	memcpy(&csbits_2e[1][64], &csbits_2e[0][64], 32*8);
 
 	VideoRomForIIJPlus();	// GH#773
+	VideoRomForBase64A();	// GH#806
 
 	// Try to use any user-provided video ROM for Original/Enhanced //e
 	userVideoRomForIIe();
