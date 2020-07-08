@@ -90,9 +90,9 @@ static bool g_bSpkrAvailable = false;
 //-----------------------------------------------------------------------------
 
 // Forward refs:
-ULONG   Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSamples);
-ULONG   Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples);
-void    Spkr_SetActive(bool bActive);
+static ULONG   Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSamples);
+static ULONG   Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples);
+static void    Spkr_SetActive(bool bActive);
 
 //=============================================================================
 
