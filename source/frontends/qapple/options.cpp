@@ -10,6 +10,8 @@
 #include "SaveState.h"
 #include "CPU.h"
 #include "Video.h"
+#include "Speaker.h"
+#include "Mockingboard.h"
 
 #include <QMessageBox>
 #include <QGamepad>
@@ -115,8 +117,6 @@ GlobalOptions GlobalOptions::fromQSettings()
     options.msGap = settings.value(REG_TIMER, 5).toInt();
     options.msFullSpeed = settings.value(REG_FULL_SPEED, 5).toInt();
     options.audioLatency = settings.value(REG_AUDIO_LATENCY, 200).toInt();
-    options.silenceDelay = settings.value(REG_SILENCE_DELAY, 10000).toInt();
-    options.volume = settings.value(REG_VOLUME, 0x0fff).toInt();
 
     return options;
 }
@@ -165,17 +165,6 @@ void GlobalOptions::setData(const GlobalOptions & data)
         QSettings().setValue(REG_AUDIO_LATENCY, this->audioLatency);
     }
 
-    if (this->silenceDelay != data.silenceDelay)
-    {
-        this->silenceDelay = data.silenceDelay;
-        QSettings().setValue(REG_SILENCE_DELAY, this->silenceDelay);
-    }
-
-    if (this->volume != data.volume)
-    {
-        this->volume = data.volume;
-        QSettings().setValue(REG_VOLUME, this->volume);
-    }
 }
 
 void getAppleWinPreferences(PreferenceData & data)
@@ -209,6 +198,9 @@ void getAppleWinPreferences(PreferenceData & data)
 
     data.apple2Type = GetApple2Type();
 
+    data.speakerVolume = SpkrGetVolume();
+    data.mockingboardVolume = MB_GetVolume();
+
     const std::string & saveState = Snapshot_GetFilename();
     if (!saveState.empty())
     {
@@ -225,6 +217,18 @@ void getAppleWinPreferences(PreferenceData & data)
 void setAppleWinPreferences(const PreferenceData & currentData, const PreferenceData & newData)
 {
     Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+
+    if (currentData.speakerVolume != newData.speakerVolume)
+    {
+        SpkrSetVolume(newData.speakerVolume, 99);
+        REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
+    }
+
+    if (currentData.mockingboardVolume != newData.mockingboardVolume)
+    {
+        MB_SetVolume(newData.mockingboardVolume, 99);
+        REGSAVE(TEXT(REGVALUE_MB_VOLUME), MB_GetVolume());
+    }
 
     if (currentData.apple2Type != newData.apple2Type)
     {

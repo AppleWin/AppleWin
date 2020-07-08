@@ -81,7 +81,7 @@ class IDirectSoundBuffer : public IUnknown
   size_t myPlayPosition = 0;
   size_t myWritePosition = 0;
   WORD myStatus = 0;
-  LONG myVolume = DSBVOLUME_MIN;
+  LONG myVolume = DSBVOLUME_MAX;
 
  public:
   const size_t bufferSize;

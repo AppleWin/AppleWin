@@ -1,6 +1,7 @@
 include(FindPkgConfig)
 
 add_library(appleii SHARED
+  Speaker.cpp
   SoundCore.cpp
   AY8910.cpp
   Mockingboard.cpp
@@ -60,7 +61,6 @@ add_library(appleii SHARED
   linux/duplicates/Joystick.cpp
   linux/duplicates/Frame.cpp
   linux/duplicates/SerialComms.cpp
-  linux/duplicates/Speaker.cpp
   linux/duplicates/IPropertySheet.cpp
   linux/duplicates/Applewin.cpp   # defines g_CardMgr (reverse order)
 

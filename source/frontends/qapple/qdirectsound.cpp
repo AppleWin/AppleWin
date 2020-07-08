@@ -20,7 +20,7 @@ namespace
         void stop();
         void writeAudio();
         void stateChanged(QAudio::State state);
-        void setOptions(const qint32 initialSilence, const qint32 silenceDelay, const qint32 volume);
+        void setOptions(const qint32 initialSilence);
 
     private:
         IDirectSoundBuffer * myBuffer;
@@ -33,8 +33,8 @@ namespace
 
         // options
         qint32 myInitialSilence;
-        qint32 mySilenceDelay;
 
+        void setVolume();
         bool isRunning();
         void initialise();
         void writeEnoughSilence(const qint64 ms);
@@ -46,7 +46,6 @@ namespace
     DirectSoundGenerator::DirectSoundGenerator(IDirectSoundBuffer * buffer) : myBuffer(buffer)
     {
         myInitialSilence = 200;
-        mySilenceDelay = 10000;
     }
 
     void DirectSoundGenerator::initialise()
@@ -64,10 +63,9 @@ namespace
         myAudioFormat = myAudioOutput->format();
     }
 
-    void DirectSoundGenerator::setOptions(const qint32 initialSilence, const qint32 silenceDelay, const qint32 volume)
+    void DirectSoundGenerator::setOptions(const qint32 initialSilence)
     {
         myInitialSilence = std::max(0, initialSilence);
-        mySilenceDelay = std::max(0, silenceDelay);
     }
 
     bool DirectSoundGenerator::isRunning()
@@ -88,6 +86,14 @@ namespace
             return true;
         }
         return false;
+    }
+
+    void DirectSoundGenerator::setVolume()
+    {
+        LONG dwVolume = 0;
+        myBuffer->GetVolume(&dwVolume);
+        const qreal volume = - qreal(dwVolume) / DSBVOLUME_MIN + 1.0;
+        myAudioOutput->setVolume(volume);
     }
 
     void DirectSoundGenerator::start()
@@ -118,6 +124,8 @@ namespace
         }
 
         qDebug(appleAudio) << "Restarting the AudioGenerator";
+
+        setVolume();
 
         const int bytesSize = myAudioOutput->bufferSize();
         const qint32 frameSize = myAudioFormat.framesForBytes(bytesSize);
@@ -245,12 +253,12 @@ namespace QDirectSound
         }
     }
 
-    void setOptions(const qint32 initialSilence, const qint32 silenceDelay, const qint32 volume)
+    void setOptions(const qint32 initialSilence)
     {
         for (auto & it : activeSoundGenerators)
         {
             const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
-            generator->setOptions(initialSilence, silenceDelay, volume);
+            generator->setOptions(initialSilence);
         }
     }
 

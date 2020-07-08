@@ -18,7 +18,6 @@ add_executable(qapple
   video.cpp
   registry.cpp
   options.cpp
-  audiogenerator.cpp
   loggingcategory.cpp
   viewbuffer.cpp
   qdirectsound.cpp

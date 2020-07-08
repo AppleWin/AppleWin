@@ -75,8 +75,6 @@ private slots:
 
     void on_actionSwap_disks_triggered();
 
-    void on_stateChanged(QAudio::State state);
-
     void on_actionLoad_state_from_triggered();
 
     void on_actionNext_video_mode_triggered();

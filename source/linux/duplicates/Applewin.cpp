@@ -19,6 +19,7 @@
 #include "Harddisk.h"
 #include "ParallelPrinter.h"
 #include "SaveState.h"
+#include "Mockingboard.h"
 
 #include <unistd.h>
 
@@ -26,6 +27,8 @@ static const UINT VERSIONSTRING_SIZE = 16;
 TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";
 
 HANDLE		g_hCustomRom = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $C000..$FFFF(16KiB) or $D000..$FFFF(12KiB)
+
+int			g_nCpuCyclesFeedback = 0;
 
 static bool bLogKeyReadDone = false;
 static DWORD dwLogKeyReadTickStart;
@@ -49,11 +52,6 @@ std::string     g_sCurrentDir; // Also Starting Dir.  Debugger uses this when lo
 std::string     g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 bool      g_bRestart = false;
 CardManager g_CardMgr;
-const short		SPKR_DATA_INIT = (short)0x8000;
-
-short		g_nSpeakerData	= SPKR_DATA_INIT;
-bool			g_bQuieterSpeaker = false;
-SoundType_e		soundtype		= SOUND_WAVE;
 
 HINSTANCE g_hInstance = NULL;
 HWND g_hFrameWindow = NULL;
@@ -232,6 +230,7 @@ void LoadConfiguration(void)
     JoySetJoyType(JN_JOYSTICK1, dwJoyType);
   else
     LoadConfigOldJoystick(JN_JOYSTICK1);
+#endif
 
   DWORD dwSoundType;
   if (REGLOAD(TEXT("Sound Emulation"), &dwSoundType))
@@ -250,6 +249,7 @@ void LoadConfiguration(void)
     }
   }
 
+#if 0
   char aySerialPortName[ CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM ];
   if (RegLoadString(	TEXT("Configuration"),
 			TEXT(REGVALUE_SERIAL_PORT_NAME),
@@ -260,6 +260,7 @@ void LoadConfiguration(void)
     sg_SSC.SetSerialPortName(aySerialPortName);
   }
 #endif
+
   REGLOAD(TEXT(REGVALUE_EMULATION_SPEED)   ,&g_dwSpeed);
 
   DWORD dwEnhanceDisk;
@@ -267,24 +268,25 @@ void LoadConfiguration(void)
   g_CardMgr.GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
   Config_Load_Video();
+
 #if 0
   REGLOAD(TEXT("Uthernet Active"), &tfe_enabled);
 #endif
+
   SetCurrentCLK6502();
 
   //
 
   DWORD dwTmp;
 
-#if 0
   if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
     sg_PropertySheet.SetTheFreezesF8Rom(dwTmp);
 
   if(REGLOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp))
-    SpkrSetVolume(dwTmp, sg_PropertySheet.GetVolumeMax());
+    SpkrSetVolume(dwTmp, 99);
 
   if(REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp))
-    MB_SetVolume(dwTmp, sg_PropertySheet.GetVolumeMax());
+    MB_SetVolume(dwTmp, 99);
 
   if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
     g_bSaveStateOnExit = dwTmp ? true : false;
@@ -301,7 +303,6 @@ void LoadConfiguration(void)
 
   if(REGLOAD(TEXT(REGVALUE_PRINTER_APPEND), &dwTmp))
     g_bPrinterAppend = dwTmp ? true : false;
-#endif
 
   if(REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
     HD_SetEnabled(dwTmp ? true : false);

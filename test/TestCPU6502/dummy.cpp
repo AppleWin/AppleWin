@@ -23,19 +23,15 @@ void FrameRefreshStatus(int x, bool) { }
 
 // Keyboard
 
-BYTE    KeybGetKeycode () { return 0; }
+BYTE KeybGetKeycode () { return 0; }
 BYTE KeybReadData() { return 0; }
 BYTE KeybReadFlag() { return 0; }
 
 // Joystick
 
-BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) { return 0; }
-BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) { return 0; }
+BYTE JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) { return 0; }
+BYTE JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) { return 0; }
 void JoyResetPosition(ULONG nCyclesLeft) { }
-
-// Speaker
-
-BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) { return 0; }
 
 // Registry
 
@@ -59,9 +55,4 @@ HBITMAP LoadBitmap(HINSTANCE hInstance, const char * filename)
 LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits)
 {
   return 0;
-}
-
-BOOL DeleteObject(HGDIOBJ ho)
-{
-  return TRUE;
 }

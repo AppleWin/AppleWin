@@ -206,8 +206,9 @@ void Preferences::setData(const PreferenceData & data)
     ui->joystick->setCurrentText(data.options.gamepadName);
     ui->screenshot->setText(data.options.screenshotTemplate);
     ui->audio_latency->setValue(data.options.audioLatency);
-    ui->silence_delay->setValue(data.options.silenceDelay);
-    ui->volume->setValue(data.options.volume);
+
+    ui->speaker_volume->setValue(ui->speaker_volume->maximum() - data.speakerVolume);
+    ui->mb_volume->setValue(ui->mb_volume->maximum() - data.mockingboardVolume);
 
     initialiseDisks(myDisks, data.disks);
     initialiseDisks(myHDs, data.hds);
@@ -248,8 +249,6 @@ PreferenceData Preferences::getData() const
     data.options.msFullSpeed = ui->full_ms->value();
     data.options.screenshotTemplate = ui->screenshot->text();
     data.options.audioLatency = ui->audio_latency->value();
-    data.options.silenceDelay = ui->silence_delay->value();
-    data.options.volume = ui->volume->value();
 
     // because index = 0 is None
     if (ui->joystick->currentIndex() >= 1)
@@ -260,6 +259,8 @@ PreferenceData Preferences::getData() const
     fillData(myDisks, data.disks);
     fillData(myHDs, data.hds);
 
+    data.speakerVolume = ui->speaker_volume->maximum() - ui->speaker_volume->value();
+    data.mockingboardVolume = ui->mb_volume->maximum() - ui->mb_volume->value();
     data.enhancedSpeed = ui->enhanced_speed->isChecked();
     data.apple2Type = computerTypes[ui->apple2Type->currentIndex()];
     data.cardInSlot4 = cardsInSlot4[ui->slot4_combo->currentIndex()];

@@ -58,9 +58,6 @@ namespace
 
   bool g_bTextFlashState = false;
 
-  double alpha = 10.0;
-  double F = 0;
-
   void sig_handler(int signo)
   {
     // Ctrl-C
@@ -134,17 +131,6 @@ namespace
       nTextFlashCnt = 0;
       g_bTextFlashState = !g_bTextFlashState;
     }
-  }
-
-  ULONG lastUpdate = 0;
-
-  void updateSpeaker()
-  {
-    const ULONG dCycles = g_nCumulativeCycles - lastUpdate;
-    const double dt = dCycles / g_fCurrentCLK6502;
-    const double coeff = exp(- alpha * dt);
-    F = F * coeff;
-    lastUpdate = g_nCumulativeCycles;
   }
 
   typedef bool (*VideoUpdateFuncPtr_t)(int, int, int, int, int);
@@ -264,13 +250,6 @@ void FrameRefresh()
 
   mvwprintw(status, 1, 2, "D1: %d, %s, %s", g_eStatusDrive1, g_sTrackDrive1, g_sSectorDrive1);
   mvwprintw(status, 2, 2, "D2: %d, %s, %s", g_eStatusDrive2, g_sTrackDrive2, g_sSectorDrive2);
-
-  // approximate
-  const double frequency = 0.5 * alpha * F;
-  mvwprintw(status, 1, 20, "%5.fHz", frequency);
-  mvwprintw(status, 2, 20, "%5.1f%%", 100 * g_relativeSpeed);
-
-  wrefresh(status);
 }
 
 void FrameDrawDiskLEDS(HDC x)
@@ -404,7 +383,6 @@ void VideoUninitialize()
 void VideoRedrawScreen()
 {
   VideoUpdateFlash();
-  updateSpeaker();
   FrameRefresh();
 
   const int displaypage2 = (SW_PAGE2) == 0 ? 0 : 1;
@@ -533,19 +511,6 @@ int ProcessKeyboard()
 void ProcessInput()
 {
   paddle->poll();
-}
-
-
-// Speaker
-
-BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
-{
-  CpuCalcCycles(uExecutedCycles);
-
-  updateSpeaker();
-  F += 1;
-
-  return MemReadFloatingBus(uExecutedCycles);
 }
 
 // Mockingboard

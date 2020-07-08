@@ -19,6 +19,7 @@
 #include "SoundCore.h"
 #include "NTSC.h"
 #include "SaveState.h"
+#include "Speaker.h"
 #include "Riff.h"
 
 #include "linux/data.h"
@@ -28,7 +29,6 @@
 
 #include "emulator.h"
 #include "memorycontainer.h"
-#include "audiogenerator.h"
 #include "qdirectsound.h"
 #include "gamepadpaddle.h"
 #include "preferences.h"
@@ -104,6 +104,7 @@ namespace
 
         DSInit();
         MB_Initialize();
+        SpkrInitialize();
         MemInitialize();
         VideoInitialize();
 
@@ -123,6 +124,7 @@ namespace
         HD_Destroy();
         PrintDestroy();
         MemDestroy();
+        SpkrDestroy();
         VideoDestroy();
         MB_Destroy();
         DSUninit();
@@ -133,7 +135,6 @@ namespace
         LogDone();
         RiffFinishWriteFile();
 
-        AudioGenerator::instance().stop();
         QDirectSound::stop();
     }
 
@@ -231,8 +232,6 @@ QApple::QApple(QWidget *parent) :
     myEmulator = new Emulator(ui->mdiArea);
     myEmulatorWindow = ui->mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
 
-    connect(AudioGenerator::instance().getAudioOutput(), SIGNAL(stateChanged(QAudio::State)), this, SLOT(on_stateChanged(QAudio::State)));
-
     readSettings();
 
     myOptions = GlobalOptions::fromQSettings();
@@ -280,14 +279,8 @@ void QApple::startEmulator()
     ui->actionStart->trigger();
 }
 
-void QApple::on_stateChanged(QAudio::State state)
-{
-    AudioGenerator::instance().stateChanged(state);
-}
-
 void QApple::on_timer()
 {
-    AudioGenerator::instance().start();
     QDirectSound::start();
 
     if (!myElapsedTimer.isValid())
@@ -304,7 +297,6 @@ void QApple::on_timer()
         // we got ahead of the timer by a lot
 
         // just check if we got something to write
-        AudioGenerator::instance().writeAudio();
         QDirectSound::writeAudio();
 
         // wait next call
@@ -329,6 +321,7 @@ void QApple::on_timer()
         g_dwCyclesThisFrame += uActualCyclesExecuted;
         g_CardMgr.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
         MB_PeriodicUpdate(uActualCyclesExecuted);
+        SpkrUpdate(uActualCyclesExecuted);
 
         // in case we run more than 1 frame
         g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
@@ -346,7 +339,6 @@ void QApple::on_timer()
     }
     else
     {
-        AudioGenerator::instance().writeAudio();
         QDirectSound::writeAudio();
     }
 }
@@ -364,7 +356,6 @@ void QApple::stopTimer()
 void QApple::restartTimeCounters()
 {
     // let them restart next time
-    AudioGenerator::instance().stop();
     QDirectSound::stop();
     myElapsedTimer.invalidate();
 }
@@ -469,8 +460,7 @@ void QApple::reloadOptions()
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
 
     Paddle::instance() = GamepadPaddle::fromName(myOptions.gamepadName);
-    AudioGenerator::instance().setOptions(myOptions.audioLatency, myOptions.silenceDelay, myOptions.volume);
-    QDirectSound::setOptions(myOptions.audioLatency, myOptions.silenceDelay, myOptions.volume);
+    QDirectSound::setOptions(myOptions.audioLatency);
 }
 
 void QApple::on_actionSave_state_triggered()

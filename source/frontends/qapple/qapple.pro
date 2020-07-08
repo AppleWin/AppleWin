@@ -23,7 +23,6 @@ SOURCES += main.cpp\
     QHexView/document/qhexmetadata.cpp \
     QHexView/document/qhexrenderer.cpp \
     QHexView/qhexview.cpp \
-    audiogenerator.cpp \
     loggingcategory.cpp \
     options.cpp \
     qapple.cpp \
@@ -50,7 +49,6 @@ HEADERS  += qapple.h \
     QHexView/document/qhexmetadata.h \
     QHexView/document/qhexrenderer.h \
     QHexView/qhexview.h \
-    audiogenerator.h \
     emulator.h \
     loggingcategory.h \
     options.h \

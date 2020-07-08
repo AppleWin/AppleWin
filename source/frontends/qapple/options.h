@@ -22,8 +22,6 @@ public:
     int msFullSpeed;
 
     int audioLatency;
-    int silenceDelay;
-    int volume;
 
     void setData(const GlobalOptions & data);
 };
@@ -43,6 +41,8 @@ struct PreferenceData
     int videoType;
     bool scanLines;
     bool verticalBlend;
+    int speakerVolume;
+    int mockingboardVolume;
 
     std::vector<QString> disks;
     std::vector<QString> hds;
