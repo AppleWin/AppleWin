@@ -2344,6 +2344,13 @@ void CtrlReset()
 		VideoResetState();	// Switch Alternate char set off
 	}
 
+	if (IsAppleIIeOrAbove(GetApple2Type()) || IsCopamBase64A(GetApple2Type()))
+	{
+		// For A][ & A][+, reset doesn't reset the annunciators (UTAIIe:I-5)
+		// Base 64A: on RESET does reset to ROM page 0 (GH#807)
+		MemAnnunciatorReset();
+	}
+
 	PravetsReset();
 	g_CardMgr.GetDisk2CardMgr().Reset();
 	HD_Reset();

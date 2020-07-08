@@ -84,6 +84,7 @@ void    MemReset ();
 void    MemResetPaging ();
 void    MemUpdatePaging(BOOL initialize);
 LPVOID	MemGetSlotParameters (UINT uSlot);
+void	MemAnnunciatorReset(void);
 bool    MemGetAnnunciator(UINT annunciator);
 bool    MemHasNoSlotClock(void);
 void    MemInsertNoSlotClock(void);
