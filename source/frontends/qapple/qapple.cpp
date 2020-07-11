@@ -477,7 +477,7 @@ void QApple::on_actionLoad_state_triggered()
     const std::string & filename = Snapshot_GetFilename();
 
     const QFileInfo file(QString::fromStdString(filename));
-    const QString path = file.absoluteDir().canonicalPath();
+    const QString path = file.absolutePath();
     // this is useful as snapshots from the test
     // have relative disk location
     SetCurrentImageDir(path.toStdString().c_str());
@@ -582,6 +582,11 @@ void QApple::on_actionNext_video_mode_triggered()
 
 void QApple::loadStateFile(const QString & filename)
 {
-    Snapshot_SetFilename(filename.toStdString().c_str());
+    const QFileInfo path(filename);
+    // store it as absolute path
+    // use case is:
+    // later, when we change dir to allow loading of disks relative to the yamls file,
+    // a snapshot relative path would be lost
+    Snapshot_SetFilename(path.absoluteFilePath().toStdString().c_str());
     ui->actionLoad_state->trigger();
 }
