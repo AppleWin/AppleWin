@@ -342,7 +342,7 @@ void NTSC::set_csbits(eApple2Type type)
 	case A2TYPE_PRAVETS8M:	    NTSC::csbits = &csbits_pravets8M[0];  g_nVideoCharSet = 0; break;	// Apple ][ clone
 	case A2TYPE_PRAVETS8A:	    NTSC::csbits = &csbits_pravets8C[0];  break;	// Apple //e clone
 	case A2TYPE_TK30002E:		NTSC::csbits = &csbits_enhanced2e[0]; break;	// Enhanced Apple //e clone
-	case A2TYPE_BASE64A:		NTSC::csbits = &csbits_base64a[GetVideoRomRockerSwitch() ? 0 : 1]; g_nVideoCharSet = 0; break; // Apple ][ clone
+	case A2TYPE_BASE64A:		NTSC::csbits = &csbits_base64a[Video::GetVideoRomRockerSwitch() ? 0 : 1]; g_nVideoCharSet = 0; break; // Apple ][ clone
 	default: _ASSERT(0);		NTSC::csbits = &csbits_enhanced2e[0]; break;
 	}
 }
