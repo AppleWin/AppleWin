@@ -217,6 +217,9 @@ QApple::QApple(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    QIcon icon(QIcon::fromTheme(":/resources/APPLEWIN.ICO"));
+    this->setWindowIcon(icon);
+
     ui->actionStart->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
     ui->actionPause->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
     ui->actionReboot->setIcon(style()->standardIcon(QStyle::SP_MediaSkipBackward));
