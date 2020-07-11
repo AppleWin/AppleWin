@@ -402,7 +402,7 @@ static BYTE __stdcall IOWrite_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	if ((addr & 0xf) <= 0xB)
 		return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	else
-		return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+		return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
 }
 
 //-------------------------------------
@@ -424,13 +424,13 @@ static BYTE __stdcall IORead_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0x6: res = SW_ALTZP     ? true : false;		break;
 	case 0x7: res = SW_SLOTC3ROM ? true : false;		break;
 	case 0x8: res = SW_80STORE   ? true : false;		break;
-	case 0x9: res = VideoGetVblBar(nExecutedCycles);	break;
-	case 0xA: res = VideoGetSWTEXT();					break;
-	case 0xB: res = VideoGetSWMIXED();					break;
+	case 0x9: res = g_pVideo->VideoGetVblBar(nExecutedCycles);	break;
+	case 0xA: res = g_pVideo->VideoGetSWTEXT();					break;
+	case 0xB: res = g_pVideo->VideoGetSWMIXED();					break;
 	case 0xC: res = SW_PAGE2     ? true : false;		break;
-	case 0xD: res = VideoGetSWHIRES();					break;
-	case 0xE: res = VideoGetSWAltCharSet();				break;
-	case 0xF: res = VideoGetSW80COL();					break;
+	case 0xD: res = g_pVideo->VideoGetSWHIRES();					break;
+	case 0xE: res = Video::VideoGetSWAltCharSet();				break;
+	case 0xF: res = g_pVideo->VideoGetSW80COL();					break;
 	}
 
 	return KeybGetKeycode() | (res ? 0x80 : 0);
@@ -483,10 +483,10 @@ static BYTE __stdcall IORead_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 {
 	switch (addr & 0xf)
 	{
-	case 0x0:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x1:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x2:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x3:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x0:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x1:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x2:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x3:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x4:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x5:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x6:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
@@ -501,7 +501,7 @@ static BYTE __stdcall IORead_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xF:	if (IsApple2PlusOrClone(GetApple2Type()))
 					IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 				else
-					return (!SW_IOUDIS) ? VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
+					return (!SW_IOUDIS) ? g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
 										: IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
@@ -512,10 +512,10 @@ static BYTE __stdcall IOWrite_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 {
 	switch (addr & 0xf)
 	{
-	case 0x0:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x1:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x2:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x3:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x0:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x1:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x2:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x3:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x4:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x5:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x6:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
@@ -530,7 +530,7 @@ static BYTE __stdcall IOWrite_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	case 0xF:	if (IsApple2PlusOrClone(GetApple2Type()))
 					IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 				else
-					return (!SW_IOUDIS) ? VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
+					return (!SW_IOUDIS) ? g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
 										: IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
@@ -598,7 +598,7 @@ static BYTE __stdcall IORead_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xD:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xE:	return IsEnhancedIIE()		? MemReadFloatingBus(SW_IOUDIS ? true : false, nExecutedCycles)	// GH#636
 											: IO_Null(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xF:	return IsEnhancedIIEorIIC()	? MemReadFloatingBus(VideoGetSWDHIRES(), nExecutedCycles)		// GH#636
+	case 0xF:	return IsEnhancedIIEorIIC()	? MemReadFloatingBus(g_pVideo->VideoGetSWDHIRES(), nExecutedCycles)		// GH#636
 											: IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
@@ -711,7 +711,7 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 		MemSetPaging(programcounter, address, write, value, nExecutedCycles);
 
 	if (address >= 0xC05C && address <= 0xC05D && IsApple2JPlus(GetApple2Type()))
-		NTSC_VideoInitAppleType();		// AN2 switches between Katakana & ASCII video rom chars (GH#773)
+		NTSC::NTSC_VideoInitAppleType(GetApple2Type());		// AN2 switches between Katakana & ASCII video rom chars (GH#773)
 
 	if (!write)
 		return MemReadFloatingBus(nExecutedCycles);
@@ -1322,7 +1322,7 @@ LPBYTE MemGetAuxPtr(const WORD offset)
 
 #ifdef RAMWORKS
 	// Video scanner (for 14M video modes) always fetches from 1st 64K aux bank (UTAIIe ref?)
-	if (((SW_PAGE2 && SW_80STORE) || VideoGetSW80COL()) &&
+	if (((SW_PAGE2 && SW_80STORE) || g_pVideo->VideoGetSW80COL()) &&
 			(
 				(             ((offset & 0xFF00)>=0x0400) && ((offset & 0xFF00)<=0x0700) ) ||
 				( SW_HIRES && ((offset & 0xFF00)>=0x2000) && ((offset & 0xFF00)<=0x3F00) )
@@ -2059,7 +2059,7 @@ void MemReset()
 
 BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 {
-	return mem[ NTSC_VideoGetScannerAddress(uExecutedCycles) ];		// OK: This does the 2-cycle adjust for ANSI STORY (End Credits)
+	return mem[ g_pVideo->getNTSC()->NTSC_VideoGetScannerAddress(uExecutedCycles) ];		// OK: This does the 2-cycle adjust for ANSI STORY (End Credits)
 }
 
 //===========================================================================
@@ -2197,7 +2197,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 
 	// Replicate 80STORE, PAGE2 and HIRES to video sub-system
 	if ((address <= 1) || ((address >= 0x54) && (address <= 0x57)))
-		return VideoSetMode(programcounter,address,write,value,nExecutedCycles);
+		return g_pVideo->VideoSetMode(programcounter,address,write,value,nExecutedCycles);
 
 	return write ? 0 : MemReadFloatingBus(nExecutedCycles);
 }
@@ -2495,7 +2495,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 				MemSaveSnapshotMemory(yamlSaveHelper, false, uBank);
 			}
 
-			RGB_SaveSnapshot(yamlSaveHelper);
+			g_pVideo->RGB_SaveSnapshot(yamlSaveHelper);
 		}
 	}
 }
@@ -2583,7 +2583,7 @@ static void MemLoadSnapshotAuxVer2(YamlLoadHelper& yamlLoadHelper)
 
 	MemLoadSnapshotAuxCommon(yamlLoadHelper, card);
 
-	RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
+	g_pVideo->RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
 }
 
 bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)

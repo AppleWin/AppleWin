@@ -115,7 +115,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 			break;
 
 		case IDC_MONOCOLOR:
-			VideoChooseMonochromeColor();
+			g_pVideo->VideoChooseMonochromeColor();
 			break;
 
 		case IDC_CHECK_CONFIRM_REBOOT:
@@ -199,12 +199,12 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 			CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, g_bConfirmReboot ? BST_CHECKED : BST_UNCHECKED );
 
-			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE, g_aVideoChoices, GetVideoType());
-			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, IsVideoStyle(VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
+			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE, g_aVideoChoices, Video::GetVideoType());
+			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, Video::IsVideoStyle(VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, GetFullScreenShowSubunitStatus() ? BST_CHECKED : BST_UNCHECKED);
 
-			CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, IsVideoStyle(VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
-			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (GetVideoType() == VT_COLOR_MONITOR_RGB) ? TRUE : FALSE);
+			CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, Video::IsVideoStyle(VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
+			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (Video::GetVideoType() == VT_COLOR_MONITOR_RGB) ? TRUE : FALSE);
 
 			if (g_CardMgr.IsSSCInstalled())
 			{
@@ -217,7 +217,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), FALSE);
 			}
 
-			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (g_pVideo->GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
 
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETPAGESIZE,0,5);
@@ -273,36 +273,36 @@ void CPageConfig::DlgOK(HWND hWnd)
 	bool bVideoReinit = false;
 
 	const VideoType_e newVideoType = (VideoType_e) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
-	if (GetVideoType() != newVideoType)
+	if (Video::GetVideoType() != newVideoType)
 	{
-		SetVideoType(newVideoType);
+		Video::SetVideoType(newVideoType);
 		bVideoReinit = true;
 	}
 
 	const bool newHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) != 0;
-	const bool currentHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const bool currentHalfScanLines = Video::IsVideoStyle(VS_HALF_SCANLINES);
 	if (currentHalfScanLines != newHalfScanLines)
 	{
 		if (newHalfScanLines)
-			SetVideoStyle( (VideoStyle_e) (GetVideoStyle() | VS_HALF_SCANLINES) );
+			Video::SetVideoStyle( (VideoStyle_e) (Video::GetVideoStyle() | VS_HALF_SCANLINES) );
 		else
-			SetVideoStyle( (VideoStyle_e) (GetVideoStyle() & ~VS_HALF_SCANLINES) );
+			Video::SetVideoStyle( (VideoStyle_e) (Video::GetVideoStyle() & ~VS_HALF_SCANLINES) );
 		bVideoReinit = true;
 	}
 
 	const bool newVerticalBlend = IsDlgButtonChecked(hWnd, IDC_CHECK_VERTICAL_BLEND) != 0;
-	const bool currentVerticalBlend = IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
+	const bool currentVerticalBlend = g_pVideo->IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
 	if (currentVerticalBlend != newVerticalBlend)
 	{
 		if (newVerticalBlend)
-			SetVideoStyle( (VideoStyle_e) (GetVideoStyle() | VS_COLOR_VERTICAL_BLEND) );
+			Video::SetVideoStyle( (VideoStyle_e) (Video::GetVideoStyle() | VS_COLOR_VERTICAL_BLEND) );
 		else
-			SetVideoStyle( (VideoStyle_e) (GetVideoStyle() & ~VS_COLOR_VERTICAL_BLEND) );
+			Video::SetVideoStyle( (VideoStyle_e) (Video::GetVideoStyle() & ~VS_COLOR_VERTICAL_BLEND) );
 		bVideoReinit = true;
 	}
 
 	const bool isNewVideoRate50Hz = IsDlgButtonChecked(hWnd, IDC_CHECK_50HZ_VIDEO) != 0;
-	const bool isCurrentVideoRate50Hz = GetVideoRefreshRate() == VR_50HZ;
+	const bool isCurrentVideoRate50Hz = g_pVideo->GetVideoRefreshRate() == VR_50HZ;
 	if (isCurrentVideoRate50Hz != isNewVideoRate50Hz)
 	{
 		m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = isNewVideoRate50Hz ? VR_50HZ : VR_60HZ;
@@ -310,14 +310,14 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	if (bVideoReinit)
 	{
-		Config_Save_Video();
+		g_pVideo->Config_Save_Video();
 
 		FrameRefreshStatus(DRAW_TITLE, false);
 
-		VideoReinitialize();
+		g_pVideo->VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
-			VideoRedrawScreen();
+			g_pVideo->VideoRedrawScreen();
 		}
 	}
 

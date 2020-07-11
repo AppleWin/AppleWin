@@ -469,7 +469,7 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 const int IRQ_CHECK_OPCODE_FULL_SPEED = 40;	// ~128 cycles (assume 3 cycles per opcode)
 static int g_fullSpeedOpcodeCount = IRQ_CHECK_OPCODE_FULL_SPEED;
 
-static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const bool bVideoUpdate)
+static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const bool bVideoUpdate, Video* pVideo)
 {
 	if (!bVideoUpdate)
 	{
@@ -483,7 +483,7 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const boo
 		g_irqOnLastOpcodeCycle = true;
 
 	if (g_isMouseCardInstalled)
-		g_CardMgr.GetMouseCard()->SetVBlank( !VideoGetVblBar(uExecutedCycles) );
+		g_CardMgr.GetMouseCard()->SetVBlank( !pVideo->VideoGetVblBar(uExecutedCycles) );
 }
 
 // GH#608: IRQ needs to occur within 17 cycles (6 opcodes) of configuring the timer interrupt
@@ -505,12 +505,12 @@ void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdate)
 {
 	if (GetDebugMode())
-		return Cpu65D02(uTotalCycles, bVideoUpdate, GetMainCpu() == CPU_65C02);
+		return Cpu65D02(uTotalCycles, bVideoUpdate, g_pVideo, GetMainCpu() == CPU_65C02);
 
 	if (GetMainCpu() == CPU_6502)
-		return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
+		return Cpu6502(uTotalCycles, bVideoUpdate, g_pVideo);		// Apple ][, ][+, //e, Clones
 	else
-		return Cpu65C02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+		return Cpu65C02(uTotalCycles, bVideoUpdate, g_pVideo);	// Enhanced Apple //e
 }
 
 //

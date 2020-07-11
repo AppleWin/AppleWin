@@ -99,7 +99,7 @@ void    Spkr_SetActive(bool bActive);
 static void DisplayBenchmarkResults ()
 {
   DWORD totaltime = GetTickCount()-extbench;
-  VideoRedrawScreen();
+  g_pVideo->VideoRedrawScreen();
   TCHAR buffer[64];
   wsprintf(buffer,
            TEXT("This benchmark took %u.%02u seconds."),

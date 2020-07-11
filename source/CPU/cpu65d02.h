@@ -65,12 +65,13 @@ inline uint8_t ReadByte(uint16_t addr, int uExecutedCycles)
 	 }
 
 #include "CPU/cpu_instructions.inl"
+#include "Video.h"
 
 //===========================================================================
 
 // Michael's Real-Time Debugger/Visualizer CPU
 // Based on Modified 65C02
-static DWORD Cpu65D02(DWORD uTotalCycles, const bool bVideoUpdate, bool is65C02)
+static DWORD Cpu65D02(DWORD uTotalCycles, const bool bVideoUpdate, Video* pVideo, bool is65C02)
 {
 	// Optimisation:
 	// . Copy the global /regs/ vars to stack-based local vars
@@ -642,7 +643,7 @@ static DWORD Cpu65D02(DWORD uTotalCycles, const bool bVideoUpdate, bool is65C02)
 		}
 #undef $
 
-		CheckInterruptSources(uExecutedCycles, bVideoUpdate);
+		CheckInterruptSources(uExecutedCycles, bVideoUpdate, pVideo);
 		NMI(uExecutedCycles, flagc, flagn, flagv, flagz);
 		IRQ(uExecutedCycles, flagc, flagn, flagv, flagz);
 
@@ -650,7 +651,7 @@ static DWORD Cpu65D02(DWORD uTotalCycles, const bool bVideoUpdate, bool is65C02)
 		if (bVideoUpdate)
 		{
 			ULONG uElapsedCycles = uExecutedCycles - uPreviousCycles;
-			NTSC_VideoUpdateCycles(uElapsedCycles);
+			g_pVideo->NTSC_VideoUpdateCycles(uElapsedCycles);
 		}
 		// NTSC_END
 

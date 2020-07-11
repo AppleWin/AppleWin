@@ -94,6 +94,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static LPBITMAPINFO  g_hConsoleFontFramebufferinfo = NULL;
 	static bgra_t* g_hConsoleFontFramebits;
 
+	uint32_t        g_iGraphicMonitoringMode = 0;
+	ViewVideoPage_t g_eGraphicMonitoringPage = VIEW_PAGE_CURRENT;
+
 	char g_cConsoleBrushFG_r;
 	char g_cConsoleBrushFG_g;
 	char g_cConsoleBrushFG_b;
@@ -643,7 +646,7 @@ HDC GetDebuggerExtraDC(void)
 		SelectObject(g_hDebuggerExtraDC, g_hDebuggerExtraBM);
 
 		// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-		ZeroMemory(g_pFramebufferbits, FRAMEBUFFER_W * FRAMEBUFFER_H * sizeof(bgra_t));
+		ZeroMemory(pDebuggerExtraFramebits, FRAMEBUFFER_W * FRAMEBUFFER_H * sizeof(bgra_t));
 
 	}
 
@@ -746,8 +749,10 @@ void StretchBltMemToFrameDC(void)
 	int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 	int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
 	xdest+= (FRAMEBUFFER_W * scale) / 2;
-	int wdest = FRAMEBUFFER_W * scale;
-	int hdest = FRAMEBUFFER_H * scale;
+	int wdest = (FRAMEBUFFER_W * scale) / 2;
+	int hdest = (FRAMEBUFFER_H * scale) / 2;
+	int wsrc = FRAMEBUFFER_W;
+	int xsrc = 0;
 
 	BOOL bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
@@ -767,15 +772,43 @@ void StretchBltMemToFrameDC(void)
 	wdest = (FRAMEBUFFER_W * scale) / 2;
 	hdest = (FRAMEBUFFER_H * scale) / 2;
 	
+	SS_CARDTYPE ram = GetCurrentExpansionMemType();
+	if (ram != CT_80Col && ram != CT_Extended80Col && ram != CT_RamWorksIII)
+	{
+		// show only the first 64k of RAM
+		xsrc = 8;
+		wsrc /= 2;
+	}
+
 	bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
 		xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
 		GetDebuggerExtraDC(),								// HDC hdcSrc,
-		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
-		FRAMEBUFFER_W, FRAMEBUFFER_H,						// int nWidthSrc,    int nHeightSrc,
+		xsrc, 0,												// int nXOriginSrc,  int nYOriginSrc,
+		wsrc, FRAMEBUFFER_H,						// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
+
+	// Graphic page monitoring
+	uint32_t refreshMode = g_iGraphicMonitoringMode & ~VF_PAGE2;
+	switch (g_eGraphicMonitoringPage)
+	{
+	case VIEW_PAGE_CURRENT:
+		refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() ? VF_PAGE2 : 0);
+		break;
+	case VIEW_PAGE_DISABLED:
+		refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() ? 0 : VF_PAGE2);
+		break;
+	case VIEW_PAGE_2:
+		refreshMode = refreshMode | VF_PAGE2;
+		break;
+	}
+
+	// Refresh VideoStyle in case the user changed it in the config panel
+	debug_pVideo->getNTSC()->NTSC_SetVideoStyle();
+
+	debug_pVideo->VideoRefreshScreen(refreshMode, true, GetViewportScale(), FRAMEBUFFER_W, FRAMEBUFFER_H, true);
 }
 
 // Font: Apple Text
@@ -3236,25 +3269,25 @@ void DrawSoftSwitches( int iSoftSwitch )
 		bool bSet;
 
 		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
-		bSet = !VideoGetSWTEXT();
+		bSet = !g_pVideo->VideoGetSWTEXT();
 		_DrawSoftSwitch( rect, 0xC050, bSet, NULL, "GR.", "TEXT" );
 
 		// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
 		// FULL/MIXED
 		// MIX OFF/ON
-		bSet = !VideoGetSWMIXED();
+		bSet = !g_pVideo->VideoGetSWMIXED();
 		_DrawSoftSwitch( rect, 0xC052, bSet, NULL, "FULL", "MIX" );
 
 		// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
 		// PAGE 1 / 2
-		bSet = !VideoGetSWPAGE2();
+		bSet = !g_pVideo->VideoGetSWPAGE2();
 		_DrawSoftSwitch( rect, 0xC054, bSet, "PAGE ", "1", "2" );
 		
 		// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
 		// LO / HIRES
 		// LO / -----
 		// -- / HIRES
-		bSet = !VideoGetSWHIRES();
+		bSet = !g_pVideo->VideoGetSWHIRES();
 		_DrawSoftSwitch( rect, 0xC056, bSet, NULL, "LO", "HI", "RES" );
 
 		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
@@ -3262,7 +3295,7 @@ void DrawSoftSwitches( int iSoftSwitch )
 
 		// 280/560 HGR
 		// C05E = ON, C05F = OFF
-		bSet = VideoGetSWDHIRES();
+		bSet = g_pVideo->VideoGetSWDHIRES();
 		_DrawSoftSwitch( rect, 0xC05E, bSet, NULL, "DHGR", "HGR" );
 
 
@@ -3270,18 +3303,18 @@ void DrawSoftSwitches( int iSoftSwitch )
 		int bgMemory = BG_DATA_2;
 
 		// C000 = 80STOREOFF, C001 = 80STOREON
-		bSet = !VideoGetSW80STORE();
+		bSet = !g_pVideo->VideoGetSW80STORE();
 		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1", NULL, bgMemory );
 
 		// C002 .. C005
 		_DrawSoftSwitchMainAuxBanks( rect, bgMemory );
 
 		// C00C = off, C00D = on
-		bSet = !VideoGetSW80COL();
+		bSet = !g_pVideo->VideoGetSW80COL();
 		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80", NULL, bgMemory );
 
 		// C00E = off, C00F = on
-		bSet = !VideoGetSWAltCharSet();
+		bSet = !Video::VideoGetSWAltCharSet();
 		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS", NULL, bgMemory ); // ASCII/MouseText
 
 #if SOFTSWITCH_LANGCARD
@@ -3906,10 +3939,11 @@ void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 
 void DrawVideoScannerInfo (int line)
 {
-	NTSC_VideoGetScannerAddressForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
+	NTSC* n = g_pVideo->getNTSC();
+	n->NTSC_VideoGetScannerAddressForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
 
-	int v = g_nVideoClockVert;
-	int h = g_nVideoClockHorz;
+	int v = n->g_nVideoClockVert;
+	int h = n->g_nVideoClockHorz;
 
 	if (g_videoScannerDisplayInfo.isHorzReal)
 	{
@@ -3917,10 +3951,10 @@ void DrawVideoScannerInfo (int line)
 
 		if (h < 0)
 		{
-			h = h + NTSC_GetCyclesPerLine();
+			h = h + n->NTSC_GetCyclesPerLine();
 			v = v - 1;
 			if (v < 0)
-				v = v + NTSC_GetVideoLines();
+				v = v + n->NTSC_GetVideoLines();
 		}
 	}
 
@@ -3930,7 +3964,7 @@ void DrawVideoScannerInfo (int line)
 		g_videoScannerDisplayInfo.lastCumulativeCycles = g_nCumulativeCycles;
 	}
 
-	DrawVideoScannerValue(line, v, h, NTSC_IsVisible());
+	DrawVideoScannerValue(line, v, h, n->NTSC_IsVisible());
 	line++;
 
 	//

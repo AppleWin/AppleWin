@@ -24,8 +24,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //===========================================================================
 
 #include "cpu_readwrite.inl"
+#include "../Video.h"
 
-static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
+static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate, Video *pVideo)
 {
 	// Optimisation:
 	// . Copy the global /regs/ vars to stack-based local vars
@@ -323,7 +324,7 @@ static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 #undef $
 		}
 
-		CheckInterruptSources(uExecutedCycles, bVideoUpdate);
+		CheckInterruptSources(uExecutedCycles, bVideoUpdate, pVideo);
 		NMI(uExecutedCycles, flagc, flagn, flagv, flagz);
 		IRQ(uExecutedCycles, flagc, flagn, flagv, flagz);
 
@@ -331,7 +332,7 @@ static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 		if ( bVideoUpdate )
 		{
 			ULONG uElapsedCycles = uExecutedCycles - uPreviousCycles;
-			NTSC_VideoUpdateCycles( uElapsedCycles );
+			pVideo->NTSC_VideoUpdateCycles( uElapsedCycles );
 		}
 // NTSC_END
 

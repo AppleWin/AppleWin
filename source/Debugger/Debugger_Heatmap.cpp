@@ -217,36 +217,36 @@ void DrawMemHeatmap(Update_t bUpdate)
 	// Drawing Video display bars
 
 	// TEXT or GR or MIXED + PAGE2OFF or 80STOREON
-	color = ((VideoGetSWTEXT() || !VideoGetSWHIRES() || VideoGetSWMIXED()) && (VideoGetSW80STORE() || !VideoGetSWPAGE2())) * 0x00FFFFFF;
+	color = ((g_pVideo->VideoGetSWTEXT() || !g_pVideo->VideoGetSWHIRES() || g_pVideo->VideoGetSWMIXED()) && (g_pVideo->VideoGetSW80STORE() || !g_pVideo->VideoGetSWPAGE2())) * 0x00FFFFFF;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x04, HEATMAP_MAIN_LEFTMARGIN + 256 + 8, HEATMAP_TOPMARGIN + 0x08, g_pDebuggerExtraFramebits);
 	// 80COL or DGR + PAGE2OFF or 80STOREON 
-	color = (((VideoGetSWTEXT() && VideoGetSW80COL()) || (!VideoGetSWTEXT() && !VideoGetSWHIRES() || VideoGetSWMIXED()) && VideoGetSWDHIRES()) && (VideoGetSW80STORE() || !VideoGetSWPAGE2())) * 0x00FFFFFF;
+	color = (((g_pVideo->VideoGetSWTEXT() && g_pVideo->VideoGetSW80COL()) || (!g_pVideo->VideoGetSWTEXT() && !g_pVideo->VideoGetSWHIRES() || g_pVideo->VideoGetSWMIXED()) && g_pVideo->VideoGetSWDHIRES()) && (g_pVideo->VideoGetSW80STORE() || !g_pVideo->VideoGetSWPAGE2())) * 0x00FFFFFF;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 8, HEATMAP_TOPMARGIN + 0x04, HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x08, g_pDebuggerExtraFramebits);
 	// TEXT or GR or MIXED + PAGE2ON + 80STOREOFF
-	color = ((VideoGetSWTEXT() || !VideoGetSWHIRES() || VideoGetSWMIXED()) && !VideoGetSW80STORE() && VideoGetSWPAGE2()) * 0x00FFFFFF;
+	color = ((g_pVideo->VideoGetSWTEXT() || !g_pVideo->VideoGetSWHIRES() || g_pVideo->VideoGetSWMIXED()) && !g_pVideo->VideoGetSW80STORE() && g_pVideo->VideoGetSWPAGE2()) * 0x00FFFFFF;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x08, HEATMAP_MAIN_LEFTMARGIN + 256 + 8, HEATMAP_TOPMARGIN + 0x0C, g_pDebuggerExtraFramebits);
 	// 80COL or DGR + PAGE2ON + 80STOREOFF
-	color = (((VideoGetSWTEXT() && VideoGetSW80COL()) || (!VideoGetSWTEXT() && !VideoGetSWHIRES() || VideoGetSWMIXED()) && VideoGetSWDHIRES()) && !VideoGetSW80STORE() && VideoGetSWPAGE2()) * 0x00FFFFFF;
+	color = (((g_pVideo->VideoGetSWTEXT() && g_pVideo->VideoGetSW80COL()) || (!g_pVideo->VideoGetSWTEXT() && !g_pVideo->VideoGetSWHIRES() || g_pVideo->VideoGetSWMIXED()) && g_pVideo->VideoGetSWDHIRES()) && !g_pVideo->VideoGetSW80STORE() && g_pVideo->VideoGetSWPAGE2()) * 0x00FFFFFF;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 8, HEATMAP_TOPMARGIN + 0x08, HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x0C, g_pDebuggerExtraFramebits);
 
 	// HGR + PAGE2OFF or 80STOREON
-	color = (!VideoGetSWTEXT() && VideoGetSWHIRES() && (VideoGetSW80STORE() || !VideoGetSWPAGE2())) * 0x00FFFFFF;
+	color = (!g_pVideo->VideoGetSWTEXT() && g_pVideo->VideoGetSWHIRES() && (g_pVideo->VideoGetSW80STORE() || !g_pVideo->VideoGetSWPAGE2())) * 0x00FFFFFF;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x20, HEATMAP_MAIN_LEFTMARGIN + 256 + 8, HEATMAP_TOPMARGIN + 0x40, g_pDebuggerExtraFramebits);
 	// DHGR + PAGE2OFF or 80STOREON 
-	color = (!VideoGetSWTEXT() && VideoGetSWHIRES() && VideoGetSWDHIRES() && (VideoGetSW80STORE() || !VideoGetSWPAGE2())) * 0x00FFFFFF;
+	color = (!g_pVideo->VideoGetSWTEXT() && g_pVideo->VideoGetSWHIRES() && g_pVideo->VideoGetSWDHIRES() && (g_pVideo->VideoGetSW80STORE() || !g_pVideo->VideoGetSWPAGE2())) * 0x00FFFFFF;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 8, HEATMAP_TOPMARGIN + 0x20, HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x40, g_pDebuggerExtraFramebits);
 	// HGR + PAGE2ON + 80STOREOFF
-	color = (!VideoGetSWTEXT() && VideoGetSWHIRES() && !VideoGetSW80STORE() && VideoGetSWPAGE2()) * 0x00FFFFFF;
+	color = (!g_pVideo->VideoGetSWTEXT() && g_pVideo->VideoGetSWHIRES() && !g_pVideo->VideoGetSW80STORE() && g_pVideo->VideoGetSWPAGE2()) * 0x00FFFFFF;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_MAIN_LEFTMARGIN + 256 + 4, HEATMAP_TOPMARGIN + 0x40, HEATMAP_MAIN_LEFTMARGIN + 256 + 8, HEATMAP_TOPMARGIN + 0x60, g_pDebuggerExtraFramebits);
 	// DHGR + PAGE2ON + 80STOREOFF
-	color = (!VideoGetSWTEXT() && VideoGetSWHIRES() && VideoGetSWDHIRES() && !VideoGetSW80STORE() && VideoGetSWPAGE2()) * 0x00FFFFFF;
+	color = (!g_pVideo->VideoGetSWTEXT() && g_pVideo->VideoGetSWHIRES() && g_pVideo->VideoGetSWDHIRES() && !g_pVideo->VideoGetSW80STORE() && g_pVideo->VideoGetSWPAGE2()) * 0x00FFFFFF;
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 8, HEATMAP_TOPMARGIN + 0x40, HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x60, g_pDebuggerExtraFramebits);
 
