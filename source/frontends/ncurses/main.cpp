@@ -272,10 +272,7 @@ namespace
       char * temp = strdup(absPath);
       const char * dir = dirname(temp);
       // dir points inside temp!
-      if (dir)
-      {
-	  chdir(dir);
-      }
+      chdir(dir);
       Snapshot_SetFilename(absPath);
 
       free(temp);
