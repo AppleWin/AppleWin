@@ -18,6 +18,7 @@ find_package(Boost REQUIRED
   )
 
 target_include_directories(applen PRIVATE
+  ${CMAKE_CURRENT_BINARY_DIR}
   ${NCURSESW_INCLUDE_DIRS}
   ${LIBEVDEV_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
@@ -35,3 +36,5 @@ target_link_libraries(applen PRIVATE
   appleii
   )
 
+file(RELATIVE_PATH RESOURCE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/resource)
+configure_file(config.h.in config.h)

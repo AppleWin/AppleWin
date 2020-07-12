@@ -1,27 +1,31 @@
 #include "StdAfx.h"
 
+#include <sstream>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <libgen.h>
 
 #include "Log.h"
+#include "config.h"
 
 namespace
 {
   std::string getResourcePath()
   {
-    std::string resource;
+    std::ostringstream resource;
     char self[1024] = {0};
     const int ch = readlink("/proc/self/exe", self,  sizeof(self));
     if (ch != -1)
     {
       const char * path = dirname(self);
-      resource.assign(path);
-      resource += "/../resource/";
+      resource << path;
+      resource << '/';
+      resource << RESOURCE_PATH;
+      resource << '/';
     }
     // else?
-    return resource;
+    return resource.str();
   }
 
   const std::string resourcePath = getResourcePath();

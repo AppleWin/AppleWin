@@ -1,0 +1,2 @@
+// relative path from executable to resources
+#cmakedefine RESOURCE_PATH "@RESOURCE_PATH@"
