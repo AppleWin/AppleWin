@@ -4,6 +4,7 @@
 #include <thread>
 #include <iostream>
 #include <ncurses.h>
+#include <libgen.h>
 
 #include <boost/program_options.hpp>
 
@@ -259,6 +260,30 @@ namespace
     return Error == eIMAGE_ERROR_NONE;
   }
 
+  void setSnapshotFilename(const std::string & filename)
+  {
+    // same logic as qapple
+    // setting chdir allows to load relative disks from the snapshot file (tests?)
+    // but if the snapshot file itself is relative, it wont work after a chdir
+    // so we convert to absolute first
+    char * absPath = realpath(filename.c_str(), nullptr);
+    if (absPath)
+    {
+      char * temp = strdup(absPath);
+      const char * dir = dirname(temp);
+      // dir points inside temp!
+      if (dir)
+      {
+	  chdir(dir);
+      }
+      Snapshot_SetFilename(absPath);
+
+      free(temp);
+      free(absPath);
+      Snapshot_LoadState();
+    }
+  }
+
   int foo(int argc, const char * argv [])
   {
     EmulatorOptions options;
@@ -316,8 +341,7 @@ namespace
 
 	if (!options.snapshot.empty())
 	{
-	  Snapshot_SetFilename(options.snapshot.c_str());
-	  Snapshot_LoadState();
+	  setSnapshotFilename(options.snapshot);
 	}
 
 	if (options.benchmark)
@@ -328,6 +352,7 @@ namespace
 	{
 	  EnterMessageLoop(options);
 	}
+
 	CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
 	if (pMouseCard)
 	{
@@ -370,5 +395,15 @@ int main(int argc, const char * argv [])
   {
     std::cerr << e.what() << std::endl;
     return 1;
+  }
+  catch (const std::string & e)
+  {
+    std::cerr << e << std::endl;
+    return 1;
+  }
+  catch (int e)
+  {
+    std::cerr << "Exit process called: " << e << std::endl;
+    return e;
   }
 }

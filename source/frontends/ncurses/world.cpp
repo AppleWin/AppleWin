@@ -1,3 +1,4 @@
+#include "frontends/ncurses/world.h"
 #include "StdAfx.h"
 
 #include <ncurses.h>
@@ -355,6 +356,9 @@ void NVideoInitialize()
 
   setlocale(LC_ALL, "");
   initscr();
+
+  // does not seem to be a problem calling endwin() multiple times
+  std::atexit(VideoUninitialize);
 
   colors.reset(new GraphicsColors(20, 20, 32));
 

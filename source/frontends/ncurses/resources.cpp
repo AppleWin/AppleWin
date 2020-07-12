@@ -3,8 +3,29 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <libgen.h>
 
 #include "Log.h"
+
+namespace
+{
+  std::string getResourcePath()
+  {
+    std::string resource;
+    char self[1024] = {0};
+    const int ch = readlink("/proc/self/exe", self,  sizeof(self));
+    if (ch != -1)
+    {
+      const char * path = dirname(self);
+      resource.assign(path);
+      resource += "/../resource/";
+    }
+    // else?
+    return resource;
+  }
+
+  const std::string resourcePath = getResourcePath();
+}
 
 HRSRC FindResource(void *, const char * filename, const char *)
 {
@@ -12,7 +33,7 @@ HRSRC FindResource(void *, const char * filename, const char *)
 
   if (filename)
   {
-    const std::string path = std::string("resource/") + filename;
+    const std::string path = resourcePath + filename;
 
     int fd = open(path.c_str(), O_RDONLY);
 

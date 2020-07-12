@@ -33,7 +33,7 @@ void OutputDebugString(const char * str)
 
 void ExitProcess(int status)
 {
-  exit(status);
+  throw status;
 }
 
 DWORD       WINAPI WaitForMultipleObjects(DWORD,const HANDLE*,BOOL,DWORD)
