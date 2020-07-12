@@ -35,3 +35,5 @@ target_link_libraries(qapple PRIVATE
   Qt5::Multimedia
   appleii
   )
+
+install(TARGETS qapple)

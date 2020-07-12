@@ -1,2 +1,3 @@
 // relative path from executable to resources
-#cmakedefine RESOURCE_PATH "@RESOURCE_PATH@"
+#cmakedefine ROOT_PATH "@ROOT_PATH@"
+#cmakedefine SHARE_PATH "@SHARE_PATH@"

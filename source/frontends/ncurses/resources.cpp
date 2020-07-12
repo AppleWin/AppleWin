@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 
-#include <sstream>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -11,21 +10,45 @@
 
 namespace
 {
+
+  bool dirExists(const std::string & folder)
+  {
+    struct stat stdbuf;
+
+    if (stat(folder.c_str(), &stdbuf) == 0 && S_ISDIR(stdbuf.st_mode))
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
   std::string getResourcePath()
   {
-    std::ostringstream resource;
     char self[1024] = {0};
     const int ch = readlink("/proc/self/exe", self,  sizeof(self));
     if (ch != -1)
     {
       const char * path = dirname(self);
-      resource << path;
-      resource << '/';
-      resource << RESOURCE_PATH;
-      resource << '/';
+
+      // case 1: run from the build folder
+      const std::string path1 = std::string(path) + '/'+ ROOT_PATH + "/resource/";
+      if (dirExists(path1))
+      {
+	return path1;
+      }
+
+      // case 2: run from the installation folder
+      const std::string path2 = std::string(path) + '/'+ SHARE_PATH + "/resource/";
+      if (dirExists(path2))
+      {
+	return path2;
+      }
     }
     // else?
-    return resource.str();
+    return std::string();
   }
 
   const std::string resourcePath = getResourcePath();

@@ -84,3 +84,5 @@ target_link_libraries(appleii PRIVATE
   ${YAML_LIBRARIES}
   ${MINIZIP_LIBRARIES}
   )
+
+install(TARGETS appleii)

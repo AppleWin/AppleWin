@@ -1,4 +1,5 @@
 include(FindPkgConfig)
+include(GNUInstallDirs)
 
 add_executable(applen
   main.cpp
@@ -36,5 +37,10 @@ target_link_libraries(applen PRIVATE
   appleii
   )
 
-file(RELATIVE_PATH RESOURCE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/resource)
+file(RELATIVE_PATH ROOT_PATH ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+file(RELATIVE_PATH SHARE_PATH ${CMAKE_INSTALL_FULL_BINDIR} ${CMAKE_INSTALL_FULL_DATADIR}/applewin)
+
 configure_file(config.h.in config.h)
+
+install(TARGETS applen)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/resource DESTINATION ${CMAKE_INSTALL_DATADIR}/applewin)
