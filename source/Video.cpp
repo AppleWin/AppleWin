@@ -173,7 +173,7 @@ void Video::VideoInitialize()
 	Video::CreateDIBBuffer(g_pFramebufferinfo, &g_hDeviceBitmap, &g_pFramebufferbits);
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
-	NTSC_VideoInit(g_pFramebufferbits);
+	NTSC_VideoInit(g_pFramebufferbits, this);
 }
 
 //===========================================================================
