@@ -486,6 +486,7 @@
     <ClInclude Include="source\Card.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
+    <ClInclude Include="source\VideoTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\Applewin.bmp">

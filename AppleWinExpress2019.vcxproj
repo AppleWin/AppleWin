@@ -108,6 +108,7 @@
     <ClInclude Include="source\Tfe\Tfesupp.h" />
     <ClInclude Include="source\Tfe\Uilib.h" />
     <ClInclude Include="source\Video.h" />
+    <ClInclude Include="source\VideoTypes.h" />
     <ClInclude Include="source\YamlHelper.h" />
     <ClInclude Include="source\z80emu.h" />
     <ClInclude Include="source\Z80VICE\daa.h" />

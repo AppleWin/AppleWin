@@ -324,7 +324,7 @@ static void ContinueExecution(void)
 	if (g_bFullSpeed)
 	{
 		if (!bWasFullSpeed)
-			VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
+			g_pVideo->VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
 
 		// Don't call Spkr_Mute() - will get speaker clicks
 		MB_Mute();
@@ -342,7 +342,7 @@ static void ContinueExecution(void)
 	else
 	{
 		if (bWasFullSpeed)
-			VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
+			g_pVideo->VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
 
 		// Don't call Spkr_Demute()
 		MB_Demute();
@@ -395,7 +395,7 @@ static void ContinueExecution(void)
 	//
 
 	const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-	if (g_dwCyclesThisFrame >= dwClksPerFrame && !VideoGetVblBarEx(g_dwCyclesThisFrame))
+	if (g_dwCyclesThisFrame >= dwClksPerFrame && !g_pVideo->VideoGetVblBarEx(g_dwCyclesThisFrame))
 	{
 #ifdef LOG_PERF_TIMINGS
 		PerfMarker perfMarkerVideoRefresh(g_timeVideoRefresh);
@@ -403,9 +403,9 @@ static void ContinueExecution(void)
 		g_dwCyclesThisFrame -= dwClksPerFrame;
 
 		if (g_bFullSpeed)
-			VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
+			g_pVideo->VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
 		else
-			VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
+			g_pVideo->VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
 	}
 
 #ifdef LOG_PERF_TIMINGS
@@ -433,7 +433,7 @@ void SingleStep(bool bReinit)
 
 double Get6502BaseClock(void)
 {
-	return (GetVideoRefreshRate() == VR_50HZ) ? CLK_6502_PAL : CLK_6502_NTSC;
+	return (g_pVideo->GetVideoRefreshRate() == VR_50HZ) ? CLK_6502_PAL : CLK_6502_NTSC;
 }
 
 void UseClockMultiplier(double clockMultiplier)
@@ -462,11 +462,11 @@ void SetCurrentCLK6502(void)
 	static DWORD dwPrevSpeed = (DWORD) -1;
 	static VideoRefreshRate_e prevVideoRefreshRate = VR_NONE;
 
-	if (dwPrevSpeed == g_dwSpeed && GetVideoRefreshRate() == prevVideoRefreshRate)
+	if (dwPrevSpeed == g_dwSpeed && g_pVideo->GetVideoRefreshRate() == prevVideoRefreshRate)
 		return;
 
 	dwPrevSpeed = g_dwSpeed;
-	prevVideoRefreshRate = GetVideoRefreshRate();
+	prevVideoRefreshRate = g_pVideo->GetVideoRefreshRate();
 
 	// SPEED_MIN    =  0 = 0.50 MHz
 	// SPEED_NORMAL = 10 = 1.00 MHz
@@ -704,7 +704,7 @@ void LoadConfiguration(void)
 	}
 
 	REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
-	Config_Load_Video();
+	g_pVideo->Config_Load_Video();
 	SetCurrentCLK6502();	// Pre: g_dwSpeed && Config_Load_Video()->SetVideoRefreshRate()
 
 	DWORD dwEnhanceDisk;
@@ -975,7 +975,7 @@ static void RegisterHotKeys(void)
 		if (!bStatus[2])
 			msg += "\n. Ctrl+PrintScreen";
 
-		if (g_bShowPrintScreenWarningDialog)
+		if (g_pVideo->g_bShowPrintScreenWarningDialog)
 			MessageBox( g_hFrameWindow, msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK );
 
 		msg += "\n";
@@ -1645,7 +1645,7 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
-			if (!ReadVideoRomFile(lpCmdLine))
+			if (!g_pVideo->ReadVideoRomFile(lpCmdLine))
 			{
 				std::string msg = "Failed to load video rom (not found or not exactly 2/4/8/16KiB)\n";
 				LogFileOutput("%s", msg.c_str());
@@ -1653,12 +1653,12 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 			}
 			else
 			{
-				SetVideoRomRockerSwitch(true);	// Use PAL char set
+				Video::SetVideoRomRockerSwitch(true);	// Use PAL char set
 			}
 		}
 		else if (strcmp(lpCmdLine, "-printscreen") == 0)		// Turn on display of the last filename print screen was saved to
 		{
-			g_bDisplayPrintScreenFileName = true;
+			g_pVideo->g_bDisplayPrintScreenFileName = true;
 		}
 		else if (strcmp(lpCmdLine, "-no-printscreen-key") == 0)		// Don't try to capture PrintScreen key GH#469
 		{
@@ -1666,7 +1666,7 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-no-printscreen-dlg") == 0)		// Turn off the PrintScreen warning message dialog (if PrintScreen key can't be grabbed)
 		{
-			g_bShowPrintScreenWarningDialog = false;
+			g_pVideo->g_bShowPrintScreenWarningDialog = false;
 		}
 		else if (strcmp(lpCmdLine, "-no-hook-system-key") == 0)		// Don't hook the System keys (eg. Left-ALT+ESC/SPACE/TAB) GH#556
 		{
@@ -1929,6 +1929,12 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 // DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
 static void RepeatInitialization(void)
 {
+		if (g_pVideo == NULL)
+		{
+			g_pVideo = new Video();
+			LogFileOutput("Main: VideoInitialize()\n");
+		}
+
 		ResetToLogoMode();
 
 		// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
@@ -1942,14 +1948,14 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.newVideoType >= 0)
 		{
-			SetVideoType( (VideoType_e)g_cmdLine.newVideoType );
+			Video::SetVideoType( (VideoType_e)g_cmdLine.newVideoType );
 			g_cmdLine.newVideoType = -1;	// Don't reapply after a restart
 		}
-		SetVideoStyle( (VideoStyle_e) ((GetVideoStyle() | g_cmdLine.newVideoStyleEnableMask) & ~g_cmdLine.newVideoStyleDisableMask) );
+		Video::SetVideoStyle( (VideoStyle_e) ((Video::GetVideoStyle() | g_cmdLine.newVideoStyleEnableMask) & ~g_cmdLine.newVideoStyleDisableMask) );
 
 		if (g_cmdLine.newVideoRefreshRate != VR_NONE)
 		{
-			SetVideoRefreshRate(g_cmdLine.newVideoRefreshRate);
+			g_pVideo->SetVideoRefreshRate(g_cmdLine.newVideoRefreshRate);
 			g_cmdLine.newVideoRefreshRate = VR_NONE;	// Don't reapply after a restart
 			SetCurrentCLK6502();
 		}
@@ -1990,9 +1996,6 @@ static void RepeatInitialization(void)
 
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
-
-		VideoInitialize(); // g_pFramebufferinfo been created now
-		LogFileOutput("Main: VideoInitialize()\n");
 
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");
 		FrameCreateWindow();	// g_hFrameWindow is now valid
@@ -2126,7 +2129,7 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.szScreenshotFilename)
 		{
-			Video_RedrawAndTakeScreenShot(g_cmdLine.szScreenshotFilename);
+			g_pVideo->Video_RedrawAndTakeScreenShot(g_cmdLine.szScreenshotFilename);
 			g_cmdLine.bShutdown = true;
 		}
 
@@ -2174,7 +2177,7 @@ static void Shutdown(void)
 		ChangeDisplaySettings(NULL, 0);	// restore default
 
 	// Release COM
-	DDUninit();
+	g_pVideo->DDUninit();
 	SysClk_UninitTimer();
 	LogFileOutput("Exit: SysClk_UninitTimer()\n");
 

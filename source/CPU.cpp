@@ -474,7 +474,7 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const boo
 		g_irqOnLastOpcodeCycle = true;
 
 	if (g_isMouseCardInstalled)
-		g_CardMgr.GetMouseCard()->SetVBlank( !VideoGetVblBar(uExecutedCycles) );
+		g_CardMgr.GetMouseCard()->SetVBlank( !g_pVideo->VideoGetVblBar(uExecutedCycles) );
 }
 
 // GH#608: IRQ needs to occur within 17 cycles (6 opcodes) of configuring the timer interrupt

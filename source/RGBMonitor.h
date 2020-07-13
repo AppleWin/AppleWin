@@ -1,3 +1,5 @@
+#include "VideoTypes.h"
+
 void UpdateHiResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
 void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool updateAux, bool updateMain);
 int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress);

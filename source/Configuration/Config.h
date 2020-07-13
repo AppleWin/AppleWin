@@ -14,7 +14,7 @@ public:
 		m_Apple2Type( GetApple2Type() ),
 		m_CpuType( GetMainCpu() ),
 		m_uSaveLoadStateMsg(0),
-		m_videoRefreshRate( GetVideoRefreshRate() )
+		m_videoRefreshRate( g_pVideo->GetVideoRefreshRate() )
 	{
 		m_bEnableHDD = HD_CardIsEnabled();
 		m_bEnableTheFreezesF8Rom = bEnableTheFreezesF8Rom;
