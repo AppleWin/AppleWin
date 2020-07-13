@@ -148,15 +148,6 @@ typedef LONG_PTR        LRESULT;
 
 typedef DWORD           LCID,       *PLCID;
 
-typedef char WCHAR;    // wc,   16-bit UNICODE character
-typedef WCHAR *PWCHAR;
-typedef WCHAR *LPWCH, *PWCH;
-typedef CONST WCHAR *LPCWCH, *PCWCH;
-typedef WCHAR *NWPSTR;
-typedef WCHAR *LPWSTR, *PWSTR;
-
-typedef CONST WCHAR *LPCWSTR, *PCWSTR;
-
 typedef unsigned __int64 UINT64, *PUINT64;
 
 //
@@ -170,14 +161,19 @@ typedef CHAR *NPSTR;
 typedef CHAR *LPSTR, *PSTR;
 typedef CONST CHAR *LPCSTR, *PCSTR;
 
-typedef LPWSTR LPTCH, PTCH;
-typedef LPWSTR PTSTR, LPTSTR;
-typedef LPCWSTR LPCTSTR;
-typedef LPWSTR LP;
+typedef LPSTR LPTCH, PTCH;
+typedef LPSTR PTSTR, LPTSTR;
+typedef LPCSTR LPCTSTR;
+typedef LPSTR LP;
 
 
 #ifndef _TCHAR_DEFINED
-typedef char TCHAR, _TCHAR, *PTCHAR;
+// TCHAR a typedef or a define?
+// a define for the single reason that
+// othwerise QTCreator does not show the values (i.e. string) while debugging
+// it treats it as an array of bytes
+#define TCHAR char
+typedef TCHAR _TCHAR, *PTCHAR;
 typedef unsigned char TBYTE , *PTBYTE ;
 #define _TCHAR_DEFINED
 #endif /* !_TCHAR_DEFINED */
