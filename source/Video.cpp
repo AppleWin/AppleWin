@@ -122,9 +122,9 @@ UINT	Video::g_videoRomSize = 0;
 bool	Video::g_videoRomRockerSwitch = false;
 bool	Video::g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
-COLORREF	Video::g_nMonochromeRGB = 0;
-DWORD		Video::g_eVideoType = 0;		// saved to Registry
-VideoStyle_e	Video::g_eVideoStyle = VS_NONE;
+COLORREF	Video::g_nMonochromeRGB;
+DWORD		Video::g_eVideoType;		// saved to Registry
+VideoStyle_e	Video::g_eVideoStyle;
 
 Video* g_pVideo = NULL;
 Video* debug_pVideo = NULL;
@@ -1404,6 +1404,16 @@ void Video::SetVideoStyle(VideoStyle_e newVideoStyle)
 bool Video::IsVideoStyle(VideoStyle_e mask)
 {
 	return (Video::g_eVideoStyle & mask) != 0;
+}
+
+COLORREF Video::GetMonochromeRGB(void)
+{
+	return Video::g_nMonochromeRGB;
+}
+
+void Video::SetMonochromeRGB(COLORREF newMonochromeRGB)
+{
+	Video::g_nMonochromeRGB = newMonochromeRGB;
 }
 
 //===========================================================================

@@ -183,9 +183,7 @@ public:
 	
 	uint32_t	g_uVideoMode;
 	uint8_t*	g_pFramebufferbits;
-	static COLORREF	g_nMonochromeRGB;	// saved to Registry
-	static DWORD	g_eVideoType;		// saved to Registry
-	static VideoStyle_e	g_eVideoStyle;
+
 
 	bool g_bShowPrintScreenWarningDialog;
 	bool g_bDisplayPrintScreenFileName;
@@ -199,6 +197,8 @@ public:
 	static HBITMAP	g_hLogoBitmap;
 	static bool		g_bVideoScannerNTSC;  // NTSC video scanning (or PAL)
 	static LPDIRECTDRAW	g_lpDD;
+
+	static DWORD	g_eVideoType;		// saved to Registry
 
 	// ____________________________________________________________________
 
@@ -255,6 +255,8 @@ public:
 	static VideoStyle_e GetVideoStyle(void);
 	static void SetVideoStyle(VideoStyle_e newVideoStyle);
 	static bool IsVideoStyle(VideoStyle_e mask);
+	static COLORREF Video::GetMonochromeRGB(void);
+	static void Video::SetMonochromeRGB(COLORREF newMonochromeRGB);
 
 	VideoRefreshRate_e GetVideoRefreshRate(void);
 	void SetVideoRefreshRate(VideoRefreshRate_e rate);
@@ -285,6 +287,9 @@ private:
 	static std::string g_pLastDiskImageName;
 
 	static int g_nAltCharSetOffset; // alternate character set
+
+	static COLORREF	g_nMonochromeRGB;	// saved to Registry
+	static VideoStyle_e	g_eVideoStyle;
 
 	void VideoInitialize();
 	void Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars);

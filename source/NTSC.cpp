@@ -695,9 +695,11 @@ void NTSC::updateVideoScannerAddress()
 {
 	g_pVideoAddress = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2*g_nVideoClockVert] : g_pScanLines[0];
 
+	VideoType_e eVideoType = Video::GetVideoType();
+
 	// Adjust, as these video styles have 2x 14M pixels of pre-render
 	// NB. For VT_COLOR_MONITOR_NTSC, also check color-burst so that TEXT and MIXED(HGR+TEXT) render the TEXT at the same offset (GH#341)
-	if (Video::g_eVideoType == VT_MONO_TV || Video::g_eVideoType == VT_COLOR_TV || (Video::g_eVideoType == VT_COLOR_MONITOR_NTSC && GetColorBurst()))
+	if (eVideoType == VT_MONO_TV || eVideoType == VT_COLOR_TV || (eVideoType == VT_COLOR_MONITOR_NTSC && GetColorBurst()))
 		g_pVideoAddress -= 2;
 
 	// GH#555: For the 14M video modes (DHGR,DGR,80COL), start rendering 1x 14M pixel early to account for these video modes being shifted right by 1 pixel
@@ -709,7 +711,7 @@ void NTSC::updateVideoScannerAddress()
 		(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenDoubleLores80) ||
 		(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80) ||
 		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && g_pFuncUpdateTextScreen == &NTSC::updateScreenText80))
-		&& (Video::g_eVideoType != VT_COLOR_MONITOR_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
+		&& (eVideoType != VT_COLOR_MONITOR_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
 	{
 		g_pVideoAddress -= 1;
 	}
@@ -1525,7 +1527,7 @@ void NTSC::updateScreenText80 (long cycles6502)
 					aux ^= g_nTextFlashMask;
 
 				uint16_t bits = (main << 7) | (aux & 0x7f);
-				if (Video::g_eVideoType != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
+				if (Video::GetVideoType() != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
 					bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
 				updatePixels( bits );
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
@@ -1660,7 +1662,7 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if (Video::g_eVideoType == VT_COLOR_MONITOR_RGB)
+				if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires80Simplified;
 				else
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires80;
@@ -1672,7 +1674,7 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 		else
 		{
-			if (Video::g_eVideoType == VT_COLOR_MONITOR_RGB)
+			if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
 				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleHires40Simplified;
 			else
 				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleHires40;
@@ -1684,7 +1686,7 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if (Video::g_eVideoType == VT_COLOR_MONITOR_RGB)
+				if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores80Simplified;
 				else
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores80;
@@ -1696,7 +1698,7 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 		else
 		{
-			if (Video::g_eVideoType == VT_COLOR_MONITOR_RGB)
+			if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
 				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleLores40Simplified;
 			else
 				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleLores40;
@@ -1711,7 +1713,7 @@ void NTSC::NTSC_SetVideoStyle() // (int v, int s)
     int half = Video::IsVideoStyle(VS_HALF_SCANLINES);
 	uint8_t r, g, b;
 
-	switch (Video::g_eVideoType )
+	switch (Video::GetVideoType())
 	{
 		case VT_COLOR_TV:
 			r = 0xFF;
@@ -1785,9 +1787,10 @@ void NTSC::NTSC_SetVideoStyle() // (int v, int s)
 			//#define GetRValue(rgb)      (LOBYTE(rgb))
 			//#define GetGValue(rgb)      (LOBYTE(((WORD)(rgb)) >> 8))
 			//#define GetBValue(rgb)      (LOBYTE((rgb)>>16))
-			r = (g_pVideo->Video::g_nMonochromeRGB >>  0) & 0xFF;
-			g = (g_pVideo->Video::g_nMonochromeRGB >>  8) & 0xFF;
-			b = (g_pVideo->Video::g_nMonochromeRGB >> 16) & 0xFF;
+			COLORREF nMonochromeRGB = Video::GetMonochromeRGB();
+			r = (nMonochromeRGB >>  0) & 0xFF;
+			g = (nMonochromeRGB >>  8) & 0xFF;
+			b = (nMonochromeRGB >> 16) & 0xFF;
 _mono:
 			updateMonochromeTables( r, g, b ); // Custom Monochrome color
 			if (half)
