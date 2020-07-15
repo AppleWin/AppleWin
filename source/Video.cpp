@@ -138,8 +138,8 @@ Video::Video()
 
 	Video::g_nMonochromeRGB = RGB(0xC0, 0xC0, 0xC0);
 	g_uVideoMode = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
-	g_eVideoType = VT_DEFAULT;
-	VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
+	//g_eVideoType = VT_DEFAULT;
+	//VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
 	Video::g_nAltCharSetOffset = 0;
 
 	pNTSC = new NTSC(this);
