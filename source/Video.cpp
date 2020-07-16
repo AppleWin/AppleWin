@@ -144,7 +144,7 @@ Video::Video()
 
 	pNTSC = new NTSC(this);
 
-	VideoInitialize();
+//	VideoInitialize();
 }
 
 //===========================================================================
@@ -1320,13 +1320,13 @@ void Video::Config_Load_Video()
 	DWORD dwTmp;
 
 	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MODE), &dwTmp, (DWORD)VT_DEFAULT);
-	Video::g_eVideoType = dwTmp;
+	Video::SetVideoType((VideoType_e)dwTmp);
 
 	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_STYLE), &dwTmp, (DWORD)VS_HALF_SCANLINES);
-	Video::g_eVideoStyle = (VideoStyle_e)dwTmp;
+	Video::SetVideoStyle((VideoStyle_e)dwTmp);
 
 	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MONO_COLOR), &dwTmp, (DWORD)RGB(0xC0, 0xC0, 0xC0));
-	Video::g_nMonochromeRGB = (COLORREF)dwTmp;
+	Video::SetMonochromeRGB((COLORREF)dwTmp);
 
 	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_REFRESH_RATE), &dwTmp, (DWORD)VR_60HZ);
 	g_pVideo->SetVideoRefreshRate((VideoRefreshRate_e)dwTmp);
@@ -1340,11 +1340,11 @@ void Video::Config_Load_Video()
 		REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES), &dwHalfScanLines, 0);
 
 		if (dwHalfScanLines)
-			Video::g_eVideoStyle = (VideoStyle_e) ((DWORD)Video::g_eVideoStyle | VS_HALF_SCANLINES);
+			Video::SetVideoStyle((VideoStyle_e) ((DWORD)Video::GetVideoStyle() | VS_HALF_SCANLINES));
 		else
-			Video::g_eVideoStyle = (VideoStyle_e) ((DWORD)Video::g_eVideoStyle & ~VS_HALF_SCANLINES);
+			Video::SetVideoStyle((VideoStyle_e) ((DWORD)Video::GetVideoStyle() & ~VS_HALF_SCANLINES));
 
-		REGSAVE(TEXT(REGVALUE_VIDEO_STYLE), Video::g_eVideoStyle);
+		REGSAVE(TEXT(REGVALUE_VIDEO_STYLE), Video::GetVideoStyle());
 	}
 
 	//
@@ -1353,28 +1353,28 @@ void Video::Config_Load_Video()
 	{
 		switch (Video::g_eVideoType)
 		{
-		case VT127_MONO_CUSTOM:			Video::g_eVideoType = VT_MONO_CUSTOM; break;
-		case VT127_COLOR_MONITOR_NTSC:	Video::g_eVideoType = VT_COLOR_MONITOR_NTSC; break;
-		case VT127_MONO_TV:				Video::g_eVideoType = VT_MONO_TV; break;
-		case VT127_COLOR_TV:			Video::g_eVideoType = VT_COLOR_TV; break;
-		case VT127_MONO_AMBER:			Video::g_eVideoType = VT_MONO_AMBER; break;
-		case VT127_MONO_GREEN:			Video::g_eVideoType = VT_MONO_GREEN; break;
-		case VT127_MONO_WHITE:			Video::g_eVideoType = VT_MONO_WHITE; break;
-		default:						Video::g_eVideoType = VT_DEFAULT; break;
+		case VT127_MONO_CUSTOM:			Video::SetVideoType(VT_MONO_CUSTOM); break;
+		case VT127_COLOR_MONITOR_NTSC:	Video::SetVideoType(VT_COLOR_MONITOR_NTSC); break;
+		case VT127_MONO_TV:				Video::SetVideoType(VT_MONO_TV); break;
+		case VT127_COLOR_TV:			Video::SetVideoType(VT_COLOR_TV); break;
+		case VT127_MONO_AMBER:			Video::SetVideoType(VT_MONO_AMBER); break;
+		case VT127_MONO_GREEN:			Video::SetVideoType(VT_MONO_GREEN); break;
+		case VT127_MONO_WHITE:			Video::SetVideoType(VT_MONO_WHITE); break;
+		default:						Video::SetVideoType(VT_DEFAULT); break;
 		}
 
-		REGSAVE(TEXT(REGVALUE_VIDEO_MODE), g_eVideoType);
+		REGSAVE(TEXT(REGVALUE_VIDEO_MODE), Video::GetVideoType());
 	}
 
-	if (Video::g_eVideoType >= NUM_VIDEO_MODES)
-		Video::g_eVideoType = VT_DEFAULT;
+	if (Video::GetVideoType() >= NUM_VIDEO_MODES)
+		Video::SetVideoType(VT_DEFAULT);
 }
 
 void Video::Config_Save_Video()
 {
-	REGSAVE(TEXT(REGVALUE_VIDEO_MODE)      , Video::g_eVideoType);
-	REGSAVE(TEXT(REGVALUE_VIDEO_STYLE)     , Video::g_eVideoStyle);
-	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR), Video::g_nMonochromeRGB);
+	REGSAVE(TEXT(REGVALUE_VIDEO_MODE)      , Video::GetVideoType());
+	REGSAVE(TEXT(REGVALUE_VIDEO_STYLE)     , Video::GetVideoStyle());
+	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR), Video::GetMonochromeRGB());
 	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), Video::GetVideoRefreshRate());
 }
 

@@ -205,6 +205,7 @@ public:
 	Video();
 	~Video();
 
+	void	VideoInitialize();
 	void    VideoBenchmark();
 	void    VideoChooseMonochromeColor(); // FIXME: Should be moved to PageConfig and call VideoSetMonochromeColor()	
 	void    VideoDisplayLogo();
@@ -291,7 +292,6 @@ private:
 	static COLORREF	g_nMonochromeRGB;	// saved to Registry
 	static VideoStyle_e	g_eVideoStyle;
 
-	void VideoInitialize();
 	void Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars);
 	bool Util_TestScreenShotFileName(const TCHAR* pFileName);
 	void Video_SaveScreenShot(const VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName);
