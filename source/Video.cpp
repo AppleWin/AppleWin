@@ -138,11 +138,9 @@ Video::Video()
 
 	Video::g_nMonochromeRGB = RGB(0xC0, 0xC0, 0xC0);
 	g_uVideoMode = VF_TEXT; // Current Video Mode (this is the last set one as it may change mid-scan line!)
-	g_eVideoType = VT_DEFAULT;
-	VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
 	Video::g_nAltCharSetOffset = 0;
 
-	VideoInitialize();
+	NTSC(this); // for future NTSC class compatibility
 }
 
 //===========================================================================
@@ -173,7 +171,7 @@ void Video::VideoInitialize()
 	Video::CreateDIBBuffer(g_pFramebufferinfo, &g_hDeviceBitmap, &g_pFramebufferbits);
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
-	NTSC_VideoInit(g_pFramebufferbits, this);
+	NTSC_VideoInit(g_pFramebufferbits);
 }
 
 //===========================================================================

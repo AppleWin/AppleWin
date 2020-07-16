@@ -7,6 +7,7 @@ class Video;
 	extern uint32_t g_nChromaSize;
 
 // Prototypes (Public) ________________________________________________
+	void	NTSC(Video* _pVideo);
 	extern void     NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay=false );
 	extern void     NTSC_SetVideoStyle();
 	extern void     NTSC_SetVideoTextMode( int cols );
@@ -14,7 +15,7 @@ class Video;
 	extern void     NTSC_VideoClockResync( const DWORD dwCyclesThisFrame );
 	extern uint16_t NTSC_VideoGetScannerAddress( const ULONG uExecutedCycles );
 	extern uint16_t NTSC_VideoGetScannerAddressForDebugger(void);
-	extern void     NTSC_VideoInit( uint8_t *pFramebuffer, Video* _pVideo );
+	extern void     NTSC_VideoInit( uint8_t *pFramebuffer );
 	extern void     NTSC_VideoReinitialize( DWORD cyclesThisFrame, bool bInitVideoScannerAddress );
 	extern void     NTSC_VideoInitAppleType();
 	extern void     NTSC_VideoInitChroma();

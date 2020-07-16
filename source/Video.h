@@ -203,6 +203,7 @@ public:
 	Video();
 	~Video();
 
+	void	VideoInitialize();
 	void    VideoBenchmark();
 	void    VideoChooseMonochromeColor(); // FIXME: Should be moved to PageConfig and call VideoSetMonochromeColor()	
 	void    VideoDisplayLogo();
@@ -229,13 +230,13 @@ public:
 
 	void    VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
-	void Video_ResetScreenshotCounter(const std::string& pDiskImageFileName);
+	void	Video_ResetScreenshotCounter(const std::string& pDiskImageFileName);
 
-	void Video_TakeScreenShot(VideoScreenShot_e ScreenShotType);
-	void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
-	void Video_SetBitmapHeader(WinBmpHeader_t* pBmp, int nWidth, int nHeight, int nBitsPerPixel);
+	void	Video_TakeScreenShot(VideoScreenShot_e ScreenShotType);
+	void	Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
+	void	Video_SetBitmapHeader(WinBmpHeader_t* pBmp, int nWidth, int nHeight, int nBitsPerPixel);
 
-	BYTE VideoSetMode(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+	BYTE	VideoSetMode(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 
 
 	bool ReadVideoRomFile(const char* pRomFile);
@@ -282,7 +283,6 @@ private:
 
 	static int g_nAltCharSetOffset; // alternate character set
 
-	void VideoInitialize();
 	void Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars);
 	bool Util_TestScreenShotFileName(const TCHAR* pFileName);
 	void Video_SaveScreenShot(const VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName);

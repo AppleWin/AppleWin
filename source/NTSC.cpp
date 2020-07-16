@@ -1923,10 +1923,13 @@ _mono:
 void GenerateVideoTables( void );
 void GenerateBaseColors(baseColors_t pBaseNtscColors);
 
-void NTSC_VideoInit( uint8_t* pFramebuffer, Video* _pVideo ) // wsVideoInit
+void NTSC(Video* _pVideo)
 {
 	pVideo = _pVideo;
+}
 
+void NTSC_VideoInit( uint8_t* pFramebuffer) // wsVideoInit
+{
 	make_csbits();
 	GenerateVideoTables();
 	initPixelDoubleMasks();
