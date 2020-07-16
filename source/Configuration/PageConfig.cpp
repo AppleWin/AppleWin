@@ -315,7 +315,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 		FrameRefreshStatus(DRAW_TITLE, false);
 
 		g_pVideo->VideoReinitialize();
-		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
+		if (g_nAppMode != MODE_LOGO) // && (g_nAppMode != MODE_DEBUG))
 		{
 			g_pVideo->VideoRedrawScreen();
 		}

@@ -1375,7 +1375,7 @@ void Video::Config_Save_Video()
 	REGSAVE(TEXT(REGVALUE_VIDEO_MODE)      , Video::GetVideoType());
 	REGSAVE(TEXT(REGVALUE_VIDEO_STYLE)     , Video::GetVideoStyle());
 	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR), Video::GetMonochromeRGB());
-	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), Video::GetVideoRefreshRate());
+	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), GetVideoRefreshRate());
 }
 
 //===========================================================================

@@ -711,7 +711,7 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 		MemSetPaging(programcounter, address, write, value, nExecutedCycles);
 
 	if (address >= 0xC05C && address <= 0xC05D && IsApple2JPlus(GetApple2Type()))
-		NTSC::NTSC_VideoInitAppleType(GetApple2Type());		// AN2 switches between Katakana & ASCII video rom chars (GH#773)
+		g_pVideo->getNTSC()->NTSC_VideoInitAppleType(GetApple2Type());		// AN2 switches between Katakana & ASCII video rom chars (GH#773)
 
 	if (!write)
 		return MemReadFloatingBus(nExecutedCycles);

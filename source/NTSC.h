@@ -47,7 +47,7 @@ public:
 	uint16_t NTSC_VideoGetScannerAddressForDebugger(void);
 	void     NTSC_VideoInit(uint8_t* pFramebuffer, Video* pVideo);
 	void     NTSC_VideoReinitialize(DWORD cyclesThisFrame, bool bInitVideoScannerAddress);
-	static void     NTSC_VideoInitAppleType(eApple2Type type);
+	void     NTSC_VideoInitAppleType(eApple2Type type);
 	void     NTSC_VideoInitChroma();
 	void     NTSC_VideoUpdateCycles(UINT cycles6502);
 	void     NTSC_VideoRedrawWholeScreen(void);
@@ -84,7 +84,7 @@ private:
 	static UINT g_videoScannerMaxVert;
 	static UINT g_videoScanner6502Cycles;
 
-	static unsigned short(*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ];
+	unsigned short(*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ];
 
 
 #define VIDEO_SCANNER_HORZ_COLORBURST_BEG 12
@@ -173,8 +173,8 @@ private:
 	unsigned short g_aClockVertOffsetsHGR[VIDEO_SCANNER_MAX_VERT_PAL];
 	unsigned short g_aClockVertOffsetsTXT[VIDEO_SCANNER_MAX_VERT_PAL / 8];
 
-	static unsigned short APPLE_IIP_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];	// 5 = CEILING(312/64) = CEILING(262/64)
-	static unsigned short APPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];
+	unsigned short APPLE_IIP_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];	// 5 = CEILING(312/64) = CEILING(262/64)
+	unsigned short APPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];
 
 
 	static csbits_t csbits;		// charset, optionally followed by alt charset

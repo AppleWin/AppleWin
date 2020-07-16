@@ -301,9 +301,9 @@ int NTSC::g_nVideoCharSet = 0;
 UINT NTSC::g_videoScannerMaxVert = VIDEO_SCANNER_MAX_VERT;			// default to NTSC
 UINT NTSC::g_videoScanner6502Cycles = VIDEO_SCANNER_6502_CYCLES;	// default to NTSC
 
-unsigned short NTSC::APPLE_IIP_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];	// 5 = CEILING(312/64) = CEILING(262/64)
-unsigned short NTSC::APPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];
-unsigned short (*NTSC::g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ];
+//unsigned short NTSC::APPLE_IIP_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];	// 5 = CEILING(312/64) = CEILING(262/64)
+//unsigned short NTSC::APPLE_IIE_HORZ_CLOCK_OFFSET[5][VIDEO_SCANNER_MAX_HORZ];
+//unsigned short (*NTSC::g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ];
 
 csbits_t NTSC::csbits;
 
