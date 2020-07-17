@@ -2063,7 +2063,7 @@ void MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 
 	MockingboardVoice.nVolume = NewVolume(dwVolume, dwVolumeMax);
 
-	if(MockingboardVoice.bActive)
+	if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
 		MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
 }
 

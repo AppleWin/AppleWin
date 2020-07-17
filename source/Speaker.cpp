@@ -873,7 +873,7 @@ void SpkrSetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 
 	SpeakerVoice.nVolume = NewVolume(dwVolume, dwVolumeMax);
 
-	if(SpeakerVoice.bActive)
+	if (SpeakerVoice.bActive && !SpeakerVoice.bMute)
 		SpeakerVoice.lpDSBvoice->SetVolume(SpeakerVoice.nVolume);
 }
 
