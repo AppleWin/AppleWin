@@ -199,6 +199,12 @@
     <ClCompile Include="source\CardManager.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\KiwiPad.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
+    <ClCompile Include="source\GenericSocketDriver.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">

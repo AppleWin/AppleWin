@@ -702,6 +702,13 @@ void JoySetButton(eBUTTON number, eBUTTONSTATE down)
 }
 
 //===========================================================================
+
+void JoySetButton(int num, BOOL state)
+{
+    joybutton[num] = state;
+}
+
+//===========================================================================
 BOOL JoySetEmulationType(HWND window, DWORD newtype, int nJoystickNumber, const bool bMousecardActive)
 {
   if(joytype[nJoystickNumber] == newtype)
@@ -792,7 +799,19 @@ void JoySetPosition(int xvalue, int xrange, int yvalue, int yrange)
   xpos[nJoyNum] = (xvalue*255)/xrange;
   ypos[nJoyNum] = (yvalue*255)/yrange;
 }
- 
+
+//===========================================================================
+
+void JoySetPositionX(int num, int value)
+{
+    xpos[num] = value;
+}
+
+void JoySetPositionY(int num, int value)
+{
+    ypos[num] = value;
+}
+
 //===========================================================================
 
 // Update the latch (debounce) time for each button

@@ -350,6 +350,7 @@ static HGLOBAL hglb = NULL;
 static LPTSTR lptstr = NULL;
 static bool g_bPasteFromClipboard = false;
 static bool g_bClipboardActive = false;
+static bool g_bClipboardActiveFake = false;
 
 void ClipboardInitiatePaste()
 {
@@ -364,8 +365,11 @@ static void ClipboardDone()
 	if (g_bClipboardActive)
 	{
 		g_bClipboardActive = false;
-		GlobalUnlock(hglb);
-		CloseClipboard();
+		if (!g_bClipboardActiveFake)
+		{
+			GlobalUnlock(hglb);
+			CloseClipboard();
+		}
 	}
 }
 
@@ -395,6 +399,18 @@ static void ClipboardInit()
 
 	g_bPasteFromClipboard = false;
 	g_bClipboardActive = true;
+	g_bClipboardActiveFake = false;
+}
+
+bool ClipboardInitiatePasteFake(LPTSTR str)
+{
+	if (g_bClipboardActive)
+		return false;
+
+	lptstr = str;
+	g_bClipboardActive = true;
+	g_bClipboardActiveFake = true;
+	return true;
 }
 
 static char ClipboardCurrChar(bool bIncPtr)

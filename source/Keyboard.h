@@ -3,6 +3,7 @@
 enum	Keystroke_e {NOT_ASCII=0, ASCII};
 
 void    ClipboardInitiatePaste();
+bool    ClipboardInitiatePasteFake(LPTSTR str);
 
 void    KeybReset();
 void    KeybSetAltGrSendsWM_CHAR(bool state);

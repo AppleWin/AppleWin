@@ -1,5 +1,3 @@
-//#define WIN32_LEAN_AND_MEAN
-
 // Required for Win98/ME support:
 // . See: http://support.embarcadero.com/article/35754
 // . "GetOpenFileName() fails under Windows 95/98/NT/ME due to incorrect OPENFILENAME structure size"
@@ -14,12 +12,33 @@
 #define WM_MOUSEWHEEL 0x020A
 #endif
 
+// The Winsock2.h header file internally includes core elements from the 
+// Windows.h header file, so there is not usually an #include line for the 
+// Windows.h header file in Winsock applications. If an #include line is 
+// needed for the Windows.h header file, this should be preceded with the 
+// #define WIN32_LEAN_AND_MEAN macro. For historical reasons, the Windows.h 
+// header defaults to including the Winsock.h header file for Windows 
+// Sockets 1.1. The declarations in the Winsock.h header file will conflict 
+// with the declarations in the Winsock2.h header file required by Windows 
+// Sockets 2.0. The WIN32_LEAN_AND_MEAN macro prevents the Winsock.h from 
+// being included by the Windows.h header. 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+// TODO: https://stackoverflow.com/questions/52727565/client-in-c-use-gethostbyname-or-getaddrinfo
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#include <winsock2.h>
+
 // Not needed in VC7.1, but needed in VC Express
 #include <tchar.h>
 
 #include <crtdbg.h>
+#include <Mmreg.h>
+//#include <mmeapi.h>
 #include <dsound.h>
 #include <dshow.h>
+#include <commdlg.h>
+#include <shellapi.h>
+#include <dde.h>
 
 #include <math.h>
 #include <stdio.h>
@@ -34,7 +53,6 @@ typedef UINT32 uint32_t;
 typedef UINT64 uint64_t;
 #endif
 
-#include <windows.h>
 #include <winuser.h> // WM_MOUSEWHEEL
 #include <strsafe.h>
 #include <commctrl.h>
