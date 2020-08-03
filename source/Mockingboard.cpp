@@ -1682,6 +1682,31 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 	}
 #endif
 
+	// Support 6502/65C02 false-reads of 6522 (GH#52)
+	if ( ((mem[(PC-2)&0xffff] == 0x91) && GetMainCpu() == CPU_6502) ||	// sta (zp),y - 6502 only (no-PX variant only) (UTAIIe:4-23)
+		 (mem[(PC-3)&0xffff] == 0x99) ||	// sta abs16,y - 65C02: it's only the no-PX variant that does the false-read (UTAIIe:4-27)
+		 (mem[(PC-3)&0xffff] == 0x9D) )		// sta abs16,x - 65C02: it's only the no-PX variant that does the false-read (UTAIIe:4-27)
+	{
+		WORD addr16;
+		if (mem[(PC-2)&0xffff] == 0x91)
+		{
+			BYTE zp = mem[(PC-1)&0xffff];
+			addr16 = (mem[zp] | (mem[(zp+1)&0xff]<<8)) + regs.y;
+		}
+		else
+		{
+			addr16 = mem[(PC-2)&0xffff] | (mem[(PC-1)&0xffff]<<8);
+			addr16 += (mem[(PC-3)&0xffff] == 0x99)? regs.y : regs.x;
+		}
+
+		_ASSERT(addr16 == nAddr);
+		if (addr16 == nAddr)	// Check we've reverse looked-up the 6502 opcode correctly
+		{
+			if ( ((nAddr&0xf) == 4) || ((nAddr&0xf) == 8) )	// Only reading 6522 reg-4 or reg-8 actually has an effect
+				MB_Read(PC, nAddr, 0, 0, nExecutedCycles);
+		}
+	}
+
 	BYTE nMB = (nAddr>>8)&0xf - SLOT4;
 	BYTE nOffset = nAddr&0xff;
 
@@ -1898,7 +1923,7 @@ void MB_PeriodicUpdate(UINT executedCycles)
 
 //-----------------------------------------------------------------------------
 
-static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, const USHORT nClocks, bool* pTimerUnderflow=NULL)
+static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, const USHORT nClocks)
 {
 	if (nClocks == 0)
 		return false;
@@ -1920,9 +1945,6 @@ static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, 
 
 	if (oldTimer >= 0 && timer < 0)	// Underflow occurs for 0x0000 -> 0xFFFF
 	{
-		if (pTimerUnderflow)
-			*pTimerUnderflow = true;	// Just for Willy Byte!
-
 		if (timer <= -2)				// TIMER = 0xFFFE (or less)
 			timerIrq = true;
 		else							// TIMER = 0xFFFF
@@ -1958,35 +1980,21 @@ bool MB_UpdateCycles(ULONG uExecutedCycles)
 	{
 		SY6522_AY8910* pMB = &g_MB[i];
 
-		bool bTimer1Underflow = false;	// Just for Willy Byte!
 		bool bTimer1Irq = false;
 		bool bTimer1IrqOnLastCycle = false;
 
 		if (isOpcode)
 		{
-			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks-1, &bTimer1Underflow);
-			bTimer1IrqOnLastCycle  = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, 1, &bTimer1Underflow);
+			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks-1);
+			bTimer1IrqOnLastCycle  = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, 1);
 			bTimer1Irq = bTimer1Irq || bTimer1IrqOnLastCycle;
 		}
 		else
 		{
-			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks, &bTimer1Underflow);
+			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks);
 		}
 
 		const bool bTimer2Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER2_COUNTER.w, pMB->sy6522.timer2IrqDelay, nClocks);
-
-		if (!pMB->bTimer1Active && bTimer1Underflow)
-		{
-			if ( (g_nMBTimerDevice == kTIMERDEVICE_INVALID)			// StopTimer1() has been called
-				&& (pMB->sy6522.IFR & IxR_TIMER1)					// Counter underflowed
-				&& ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT) )	// One-shot mode
-			{
-				// Fix for Willy Byte - need to confirm that 6522 really does this!
-				// . It never accesses IER/IFR/TIMER1 regs to clear IRQ
-				// . NB. Willy Byte doesn't work with Phasor.
-				UpdateIFR(pMB, IxR_TIMER1);		// Deassert the TIMER IRQ
-			}
-		}
 
 		if (pMB->bTimer1Active && bTimer1Irq)
 		{
@@ -1999,7 +2007,6 @@ bool MB_UpdateCycles(ULONG uExecutedCycles)
 			{
 				// One-shot mode
 				// - Phasor's playback code uses one-shot mode
-				// - Willy Byte sets to one-shot to stop the timer IRQ
 				StopTimer1(pMB);
 			}
 			else
@@ -2063,7 +2070,7 @@ void MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 
 	MockingboardVoice.nVolume = NewVolume(dwVolume, dwVolumeMax);
 
-	if(MockingboardVoice.bActive)
+	if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
 		MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
 }
 
