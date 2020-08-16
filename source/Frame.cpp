@@ -772,7 +772,7 @@ void FrameDrawDiskStatus( HDC passdc )
 	if (g_nAppMode == MODE_LOGO)
 		return;
 
-	if (g_windowMinimized)
+	if (g_windowMinimized)	// Prevent DC leaks when app window is minimised (GH#820)
 		return;
 
 	// We use the actual drive since probing from memory doesn't tell us anything we don't already know.
