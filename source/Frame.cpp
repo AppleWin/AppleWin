@@ -169,6 +169,7 @@ static int						g_win_fullscreen_offsetx = 0;
 static int						g_win_fullscreen_offsety = 0;
 
 static bool g_bFrameActive = false;
+static bool g_windowMinimized = false;
 
 static std::string driveTooltip;
 
@@ -771,6 +772,9 @@ void FrameDrawDiskStatus( HDC passdc )
 	if (g_nAppMode == MODE_LOGO)
 		return;
 
+	if (g_windowMinimized)
+		return;
+
 	// We use the actual drive since probing from memory doesn't tell us anything we don't already know.
 	//        DOS3.3   ProDOS
 	// Drive  $B7EA    $BE3D
@@ -1095,6 +1099,21 @@ LRESULT CALLBACK FrameWndProc (
 							// Eg. Deactivate when AppleWin app loses focus
       g_bAppActive = (wparam ? TRUE : FALSE);
       break;
+
+	case WM_SIZE:
+		switch(wparam)
+		{
+		case SIZE_RESTORED:
+		case SIZE_MAXIMIZED:
+			g_windowMinimized = false;
+			break;
+		case SIZE_MINIMIZED:
+			g_windowMinimized = true;
+			break;
+		default:	// SIZE_MAXSHOW, SIZE_MAXHIDE
+			break;
+		}
+		break;
 
     case WM_CLOSE:
       LogFileOutput("WM_CLOSE\n");
