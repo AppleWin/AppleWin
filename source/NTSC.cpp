@@ -808,7 +808,7 @@ inline void updateVideoScannerHorzEOL()
 //===========================================================================
 inline void updateVideoScannerAddress()
 {
-	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && GetVideoRefreshRate() == VR_50HZ)
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && GetVideoRefreshRate() == VR_50HZ)	// GH#763
 		g_nColorBurstPixels = 0;	// instantaneously kill color-burst!
 
 	g_pVideoAddress = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2*g_nVideoClockVert] : g_pScanLines[0];
@@ -1769,7 +1769,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 	}
 
-	if (GetVideoRefreshRate() == VR_50HZ)
+	if (GetVideoRefreshRate() == VR_50HZ)	// GH#763
 	{
 		if (uVideoModeFlags & VF_TEXT)
 		{
