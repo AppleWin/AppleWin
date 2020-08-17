@@ -112,16 +112,22 @@ static LPDIRECTDRAW g_lpDD = NULL;
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	// The window title will be set to this.
-	char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
+	const char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	{
 		  "Monochrome Monitor (Custom)"
 		, "Color (RGB Monitor)"
-		, "Color (NTSC Monitor)"
+		, "Color (NTSC/PAL Monitor)"
 		, "Color TV"
 		, "B&W TV"
 		, "Amber Monitor"
 		, "Green Monitor"
 		, "White Monitor"
+	};
+
+	const char *g_apVideoMonitorModeDesc[ 2 ] =
+	{
+		  "Color (NTSC Monitor)"
+		, "Color (PAL Monitor)"
 	};
 
 // Prototypes (Private) _____________________________________________
