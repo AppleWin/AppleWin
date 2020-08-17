@@ -124,12 +124,6 @@ static LPDIRECTDRAW g_lpDD = NULL;
 		, "White Monitor"
 	};
 
-	const char *g_apVideoMonitorModeDesc[ 2 ] =
-	{
-		  "Color (NTSC Monitor)"
-		, "Color (PAL Monitor)"
-	};
-
 // Prototypes (Private) _____________________________________________
 
 	bool g_bDisplayPrintScreenFileName = false;
@@ -1441,4 +1435,21 @@ static void videoCreateDIBSection()
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	NTSC_VideoInit( g_pFramebufferbits );
+}
+
+//===========================================================================
+
+const char* VideoGetAppWindowTitle(void)
+{
+	static const char *apVideoMonitorModeDesc[ 2 ] =
+	{
+		"Color (NTSC Monitor)",
+		"Color (PAL Monitor)"
+	};
+
+	const VideoType_e videoType = GetVideoType();
+	if ( videoType != VT_COLOR_MONITOR_NTSC)
+		return g_apVideoModeDesc[ videoType ];
+	else
+		return apVideoMonitorModeDesc[ GetVideoRefreshRate() == VR_60HZ ? 0 : 1 ];	// NTSC or PAL
 }

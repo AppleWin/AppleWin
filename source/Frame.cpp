@@ -279,10 +279,7 @@ static void GetAppleWindowTitle()
 	if( IsVideoStyle(VS_HALF_SCANLINES) )
 		g_pAppTitle += " 50% ";
 
-	if ( g_eVideoType != VT_COLOR_MONITOR_NTSC)
-		g_pAppTitle += g_apVideoModeDesc[ g_eVideoType ];
-	else
-		g_pAppTitle += g_apVideoMonitorModeDesc[ GetVideoRefreshRate() == VR_60HZ ? 0 : 1 ];	// NTSC or PAL
+	g_pAppTitle += VideoGetAppWindowTitle();
 
 	if (g_CardMgr.GetDisk2CardMgr().IsAnyFirmware13Sector())
 		g_pAppTitle += " (S6-13) ";

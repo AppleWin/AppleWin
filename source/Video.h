@@ -19,8 +19,6 @@
 	};
 
 	extern TCHAR g_aVideoChoices[];
-	extern const char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];
-	extern const char *g_apVideoMonitorModeDesc[ 2 ];
 
 	enum VideoStyle_e
 	{
@@ -241,3 +239,5 @@ void SetVideoRefreshRate(VideoRefreshRate_e rate);
 
 bool DDInit(void);
 void DDUninit(void);
+
+const char* VideoGetAppWindowTitle(void);
