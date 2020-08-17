@@ -411,7 +411,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	INLINE void      updateFramebufferMonitorSingleScanline( uint16_t signal, bgra_t *pTable );
 	INLINE void      updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTable );
 	INLINE void      updatePixels( uint16_t bits );
-	INLINE void      updatePixelsText(uint16_t bits);
 	INLINE void      updateVideoScannerHorzEOL();
 	INLINE void      updateVideoScannerAddress();
 	INLINE uint16_t  getVideoScannerAddressTXT();
