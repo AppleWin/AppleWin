@@ -156,7 +156,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	typedef void (*UpdatePixelFunc_t)(uint16_t);
 	static UpdatePixelFunc_t g_pFuncUpdateBnWPixel = 0; //updatePixelBnWMonitorSingleScanline;
 	static UpdatePixelFunc_t g_pFuncUpdateHuePixel = 0; //updatePixelHueMonitorSingleScanline;
-	static UpdatePixelFunc_t g_pFuncUpdateHuePixelText = 0;
 
 	static uint8_t  g_nTextFlashCounter = 0;
 	static uint16_t g_nTextFlashMask    = 0;
@@ -693,7 +692,7 @@ void update7MonoPixels( uint16_t bits )
 
 // NB. g_nLastColumnPixelNTSC = bits.b13 will be superseded by these parent funcs which use bits.b14:
 // . updateScreenDoubleHires80(), updateScreenDoubleLores80(), updateScreenText80()
-inline void updatePixels( uint16_t bits )
+inline void updatePixels(uint16_t bits)
 {
 	if (!GetColorBurst())
 	{ 
@@ -746,63 +745,7 @@ inline void updatePixels( uint16_t bits )
         g_nLastColumnPixelNTSC = bits & 1;
 	}
 }
-//===========================================================================
 
-// NB. g_nLastColumnPixelNTSC = bits.b13 will be superseded by these parent funcs which use bits.b14:
-// . updateScreenDoubleHires80(), updateScreenDoubleLores80(), updateScreenText80()
-inline void updatePixelsText(uint16_t bits)
-{
-	if (!GetColorBurst())
-	{
-		/* #1 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		/* #2 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		/* #3 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		/* #4 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		/* #5 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		/* #6 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		/* #7 of 7 */
-		g_pFuncUpdateBnWPixel(bits & 1); bits >>= 1;
-		g_pFuncUpdateBnWPixel(bits & 1);
-		g_nLastColumnPixelNTSC = bits & 1;
-	}
-	else
-	{
-		/* #1 of 7 */                                    // abcd efgh ijkl mnop
-		g_pFuncUpdateHuePixelText(bits & 1); bits >>= 1; // 0abc defg hijk lmno
-		g_pFuncUpdateHuePixelText(bits & 1); bits >>= 1; // 00ab cdef ghi jklmn
-		/* #2 of 7 */
-		g_pFuncUpdateHuePixelText(bits & 1); bits >>= 1; // 000a bcde fghi jklm
-		g_pFuncUpdateHuePixelText(bits & 1); bits >>= 1; // 0000 abcd efgh ijkl
-		/* #3 of 7 */
-		g_pFuncUpdateHuePixelText(bits & 1); bits >>= 1; // 0000 0abc defg hijk
-		g_pFuncUpdateHuePixelText(bits & 1); bits >>= 1; // 0000 00ab cdef ghij
-		/* #4 of 7 */
-		g_pFuncUpdateHuePixelText(bits & 1); bits >>= 1; // 0000 000a bcde fghi
-		g_pFuncUpdateHuePixelText(bits & 1); bits >>= 1; // 0000 0000 abcd efgh
-		/* #5 of 7 */
-		g_pFuncUpdateHuePixelText(bits & 1); bits >>= 1; // 0000 0000 0abc defg
-		g_pFuncUpdateHuePixelText(bits & 1); bits >>= 1; // 0000 0000 00ab cdef
-		/* #6 of 7 */
-		g_pFuncUpdateHuePixelText(bits & 1); bits >>= 1; // 0000 0000 000a bcde
-		g_pFuncUpdateHuePixelText(bits & 1); bits >>= 1; // 0000 0000 0000 abcd
-		/* #7 of 7 */
-		g_pFuncUpdateHuePixelText(bits & 1); bits >>= 1; // 0000 0000 0000 0abc
-		g_pFuncUpdateHuePixelText(bits & 1);
-		g_nLastColumnPixelNTSC = bits & 1;
-	}
-}
 //===========================================================================
 
 inline void updateVideoScannerHorzEOLSimple()
@@ -844,7 +787,6 @@ inline void updateVideoScannerHorzEOL()
 				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
 				g_pFuncUpdateHuePixel(0);
 				g_pFuncUpdateHuePixel(0);
-				g_pFuncUpdateHuePixelText(0);
 			}
 		}
 
@@ -867,6 +809,9 @@ inline void updateVideoScannerHorzEOL()
 //===========================================================================
 inline void updateVideoScannerAddress()
 {
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && GetVideoRefreshRate() == VR_50HZ)
+		g_nColorBurstPixels = 0;	// instantaneously kill color-burst!
+
 	g_pVideoAddress = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2*g_nVideoClockVert] : g_pScanLines[0];
 
 	// Adjust, as these video styles have 2x 14M pixels of pre-render
@@ -1202,28 +1147,28 @@ void updateMonochromeTables( uint16_t r, uint16_t g, uint16_t b )
 static void updatePixelBnWMonitorSingleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorSingleScanline(compositeSignal, g_aBnWMonitorCustom);
-	updateColorPhase();
+	updateColorPhase();	// Maintain color-phase, as could be switching graphics/text video modes mid-scanline
 }
 
 //===========================================================================
 static void updatePixelBnWMonitorDoubleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorDoubleScanline(compositeSignal, g_aBnWMonitorCustom);
-	updateColorPhase();
+	updateColorPhase();	// Maintain color-phase, as could be switching graphics/text video modes mid-scanline
 }
 
 //===========================================================================
 static void updatePixelBnWColorTVSingleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferTVSingleScanline(compositeSignal, g_aBnWColorTVCustom);
-	updateColorPhase();
+	updateColorPhase();	// Maintain color-phase, as could be switching graphics/text video modes mid-scanline
 }
 
 //===========================================================================
 static void updatePixelBnWColorTVDoubleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferTVDoubleScanline(compositeSignal, g_aBnWColorTVCustom);
-	updateColorPhase();
+	updateColorPhase();	// Maintain color-phase, as could be switching graphics/text video modes mid-scanline
 }
 
 //===========================================================================
@@ -1663,8 +1608,7 @@ void updateScreenText40 (long cycles6502)
 				if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
 					bits ^= g_nTextFlashMask;
 
-				updatePixelsText( bits );
-
+				updatePixels( bits );
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1705,7 +1649,8 @@ void updateScreenText80 (long cycles6502)
 				uint16_t bits = (main << 7) | (aux & 0x7f);
 				if (g_eVideoType != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
 					bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
-				updatePixelsText( bits );
+
+				updatePixels( bits );
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
 			}
 		}
@@ -1825,6 +1770,32 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 	}
 
+	if (GetVideoRefreshRate() == VR_50HZ)
+	{
+		if (uVideoModeFlags & VF_TEXT)
+		{
+			g_nColorBurstPixels = 0;		// (For mid-line video mode change) Instantaneously kill color-burst! (not correct as TV's can take many lines)
+
+			// Switching mid-line from graphics to TEXT
+			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
+				g_pFuncUpdateGraphicsScreen != updateScreenText40 && g_pFuncUpdateGraphicsScreen != updateScreenText80)
+			{
+					g_pVideoAddress += 2;	// eg. FT's TRIBU demo & ANSI STORY (at "turn the disk over!")
+			}
+		}
+		else
+		{
+			g_nColorBurstPixels = 1024;		// (For mid-line video mode change)
+
+			// Switching mid-line from TEXT to graphics
+			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
+				(g_pFuncUpdateGraphicsScreen == updateScreenText40 || g_pFuncUpdateGraphicsScreen == updateScreenText80))
+			{
+					g_pVideoAddress -= 2;	// eg. FT's TRIBU demo & ANSI STORY (at "turn the disk over!")
+			}
+		}
+	}
+
 	if (uVideoModeFlags & VF_TEXT)
 	{
 		if (uVideoModeFlags & VF_80COL)
@@ -1884,11 +1855,11 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 //===========================================================================
 
-void NTSC_SetVideoStyle() // (int v, int s)
+void NTSC_SetVideoStyle(void)
 {
-    int half = IsVideoStyle(VS_HALF_SCANLINES);
+	const bool half = IsVideoStyle(VS_HALF_SCANLINES);
+	const VideoRefreshRate_e refresh = GetVideoRefreshRate();
 	uint8_t r, g, b;
-	int refresh = GetVideoRefreshRate();
 
 	switch ( g_eVideoType )
 	{
@@ -1901,26 +1872,11 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			{
 				g_pFuncUpdateBnWPixel = updatePixelBnWColorTVSingleScanline;
 				g_pFuncUpdateHuePixel = updatePixelHueColorTVSingleScanline;
-				if (refresh == VR_50HZ)
-				{
-					g_pFuncUpdateHuePixelText = updatePixelBnWColorTVSingleScanline;
-				}
-				else
-				{
-					g_pFuncUpdateHuePixelText = updatePixelHueColorTVSingleScanline;
-				}
 			}
-			else {
+			else
+			{
 				g_pFuncUpdateBnWPixel = updatePixelBnWColorTVDoubleScanline;
 				g_pFuncUpdateHuePixel = updatePixelHueColorTVDoubleScanline;
-				if (refresh == VR_50HZ)
-				{
-					g_pFuncUpdateHuePixelText = updatePixelBnWColorTVDoubleScanline;
-				}
-				else
-				{
-					g_pFuncUpdateHuePixelText = updatePixelHueColorTVDoubleScanline;
-				}
 			}
 			break;
 
@@ -1934,24 +1890,11 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			{
 				g_pFuncUpdateBnWPixel = updatePixelBnWMonitorSingleScanline;
 				g_pFuncUpdateHuePixel = updatePixelHueMonitorSingleScanline;
-				if (refresh == VR_50HZ)
-				{
-					g_pFuncUpdateHuePixelText = updatePixelBnWMonitorSingleScanline;
-				}
-				else {
-					g_pFuncUpdateHuePixelText = updatePixelHueMonitorSingleScanline;
-				}
 			}
-			else {
+			else
+			{
 				g_pFuncUpdateBnWPixel = updatePixelBnWMonitorDoubleScanline;
 				g_pFuncUpdateHuePixel = updatePixelHueMonitorDoubleScanline;
-				if (refresh == VR_50HZ)
-				{
-					g_pFuncUpdateHuePixelText = updatePixelBnWMonitorDoubleScanline;
-				}
-				else {
-					g_pFuncUpdateHuePixelText = updatePixelHueMonitorDoubleScanline;
-				}
 			}
 			break;
 
@@ -1961,12 +1904,9 @@ void NTSC_SetVideoStyle() // (int v, int s)
 			b = 0xFF;
 			updateMonochromeTables( r, g, b ); // Custom Monochrome color
 			if (half)
-			{
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = g_pFuncUpdateHuePixelText = updatePixelBnWColorTVSingleScanline;
-			}
-			else {
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = g_pFuncUpdateHuePixelText = updatePixelBnWColorTVDoubleScanline;
-			}
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWColorTVSingleScanline;
+			else
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWColorTVDoubleScanline;
 			break;
 
 		case VT_MONO_AMBER:
@@ -2000,12 +1940,9 @@ void NTSC_SetVideoStyle() // (int v, int s)
 _mono:
 			updateMonochromeTables( r, g, b ); // Custom Monochrome color
 			if (half)
-			{
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = g_pFuncUpdateHuePixelText = updatePixelBnWMonitorSingleScanline;
-			}
-			else {
-				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = g_pFuncUpdateHuePixelText = updatePixelBnWMonitorDoubleScanline;
-			}
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWMonitorSingleScanline;
+			else
+				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWMonitorDoubleScanline;
 			break;
 		}
 }
