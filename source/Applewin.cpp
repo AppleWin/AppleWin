@@ -1745,6 +1745,10 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.newVideoType = VT_COLOR_MONITOR_RGB;
 		}
+		else if (strcmp(lpCmdLine, "-video-mode=composite-monitor") == 0)	// GH#763
+		{
+			g_cmdLine.newVideoType = VT_COLOR_MONITOR_NTSC;
+		}
 		else if (strcmp(lpCmdLine, "-video-style=vertical-blend") == 0)		// GH#616
 		{
 			g_cmdLine.newVideoStyleEnableMask = VS_COLOR_VERTICAL_BLEND;

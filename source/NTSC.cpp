@@ -1769,7 +1769,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 	}
 
-	if (GetVideoRefreshRate() == VR_50HZ)	// GH#763
+	if (GetVideoRefreshRate() == VR_50HZ && g_pVideoAddress)	// GH#763 / NB. g_pVideoAddress==NULL when called via VideoResetState()
 	{
 		if (uVideoModeFlags & VF_TEXT)
 		{
@@ -1779,7 +1779,9 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
 				g_pFuncUpdateGraphicsScreen != updateScreenText40 && g_pFuncUpdateGraphicsScreen != updateScreenText80)
 			{
-					g_pVideoAddress += 2;	// eg. FT's TRIBU demo & ANSI STORY (at "turn the disk over!")
+				*(uint32_t*)&g_pVideoAddress[0] = 0;	// blank out any stale pixel data, eg. ANSI STORY (at end credits)
+				*(uint32_t*)&g_pVideoAddress[1] = 0;
+				g_pVideoAddress += 2;	// eg. FT's TRIBU demo & ANSI STORY (at "turn the disk over!")
 			}
 		}
 		else
@@ -1790,7 +1792,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
 				(g_pFuncUpdateGraphicsScreen == updateScreenText40 || g_pFuncUpdateGraphicsScreen == updateScreenText80))
 			{
-					g_pVideoAddress -= 2;	// eg. FT's TRIBU demo & ANSI STORY (at "turn the disk over!")
+				g_pVideoAddress -= 2;	// eg. FT's TRIBU demo & ANSI STORY (at "turn the disk over!")
 			}
 		}
 	}
