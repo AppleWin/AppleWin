@@ -283,9 +283,7 @@ static void GetAppleWindowTitle()
 
 	if(Video::IsVideoStyle(VS_HALF_SCANLINES) )
 		g_pAppTitle += " 50% ";
-	g_pAppTitle += g_apVideoModeDesc[Video::GetVideoType()];
-
-	g_pAppTitle += VideoGetAppWindowTitle();
+	g_pAppTitle += Video::VideoGetAppWindowTitle();
 
 	if (g_CardMgr.GetDisk2CardMgr().IsAnyFirmware13Sector())
 		g_pAppTitle += " (S6-13) ";

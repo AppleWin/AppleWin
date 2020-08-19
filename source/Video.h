@@ -199,6 +199,8 @@ public:
 
 	static DWORD	g_eVideoType;		// saved to Registry
 
+	static const char* g_apVideoModeDesc[NUM_VIDEO_MODES];
+
 	// ____________________________________________________________________
 
 	Video();
@@ -274,6 +276,7 @@ public:
 	void RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion);
 
+	static const char* VideoGetAppWindowTitle(void);
 
 	// ____________________________________________________________________
 
@@ -305,4 +308,3 @@ extern Video *g_pVideo;
 extern Video* debug_pVideo;bool DDInit(void);
 void DDUninit(void);
 
-const char* VideoGetAppWindowTitle(void);

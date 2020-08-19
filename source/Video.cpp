@@ -93,20 +93,6 @@ TEXT("Monochrome (Green)\0")
 TEXT("Monochrome (White)\0")
 ;
 
-// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
-// The window title will be set to this.
-char* g_apVideoModeDesc[NUM_VIDEO_MODES] =
-{
-	  "Monochrome Monitor (Custom)"
-	, "Color (RGB Monitor)"
-	, "Color (NTSC Monitor)"
-	, "Color TV"
-	, "B&W TV"
-	, "Amber Monitor"
-	, "Green Monitor"
-	, "White Monitor"
-};
-
 
 // Globals (static) ____________________________________________________________________
 
@@ -128,7 +114,7 @@ VideoStyle_e	Video::g_eVideoStyle;
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	// The window title will be set to this.
-	const char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
+	const char *Video::g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	{
 		  "Monochrome Monitor (Custom)"
 		, "Color (RGB Monitor)"
@@ -1495,7 +1481,7 @@ void Video::RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVers
 
 //===========================================================================
 
-const char* VideoGetAppWindowTitle(void)
+const char* Video::VideoGetAppWindowTitle(void)
 {
 	static const char *apVideoMonitorModeDesc[ 2 ] =
 	{
@@ -1507,5 +1493,5 @@ const char* VideoGetAppWindowTitle(void)
 	if ( videoType != VT_COLOR_MONITOR_NTSC)
 		return g_apVideoModeDesc[ videoType ];
 	else
-		return apVideoMonitorModeDesc[ GetVideoRefreshRate() == VR_60HZ ? 0 : 1 ];	// NTSC or PAL
+		return apVideoMonitorModeDesc[ g_pVideo->GetVideoRefreshRate() == VR_60HZ ? 0 : 1 ];	// NTSC or PAL
 }
