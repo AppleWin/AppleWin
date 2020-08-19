@@ -81,7 +81,7 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 	if (!bExpectFloppy)
 		return eIMAGE_ERROR_UNSUPPORTED;
 
-	pImageInfo->uNumTracks = sg_DiskImageHelper.GetNumTracksInImage(pImageInfo->pImageType);
+	_ASSERT(pImageInfo->uNumTracks);
 
 	*pWriteProtected = pImageInfo->bWriteProtected;
 

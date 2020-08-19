@@ -693,6 +693,9 @@ void NTSC::updateVideoScannerHorzEOL()
 //===========================================================================
 void NTSC::updateVideoScannerAddress()
 {
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && GetVideoRefreshRate() == VR_50HZ)	// GH#763
+		g_nColorBurstPixels = 0;	// instantaneously kill color-burst!
+
 	g_pVideoAddress = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2*g_nVideoClockVert] : g_pScanLines[0];
 
 	VideoType_e eVideoType = Video::GetVideoType();
@@ -1030,24 +1033,28 @@ void NTSC::updateMonochromeTables( uint16_t r, uint16_t g, uint16_t b )
 void NTSC::updatePixelBnWMonitorSingleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorSingleScanline(compositeSignal, g_aBnWMonitorCustom);
+	updateColorPhase();	// Maintain color-phase, as could be switching graphics/text video modes mid-scanline
 }
 
 //===========================================================================
 void NTSC::updatePixelBnWMonitorDoubleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferMonitorDoubleScanline(compositeSignal, g_aBnWMonitorCustom);
+	updateColorPhase();	// Maintain color-phase, as could be switching graphics/text video modes mid-scanline
 }
 
 //===========================================================================
 void NTSC::updatePixelBnWColorTVSingleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferTVSingleScanline(compositeSignal, g_aBnWColorTVCustom);
+	updateColorPhase();	// Maintain color-phase, as could be switching graphics/text video modes mid-scanline
 }
 
 //===========================================================================
 void NTSC::updatePixelBnWColorTVDoubleScanline (uint16_t compositeSignal)
 {
 	updateFramebufferTVDoubleScanline(compositeSignal, g_aBnWColorTVCustom);
+	updateColorPhase();	// Maintain color-phase, as could be switching graphics/text video modes mid-scanline
 }
 
 //===========================================================================
@@ -1488,7 +1495,6 @@ void NTSC::updateScreenText40 (long cycles6502)
 					bits ^= g_nTextFlashMask;
 
 				updatePixels( bits );
-
 			}
 		}
 		updateVideoScannerHorzEOL();
@@ -1529,6 +1535,7 @@ void NTSC::updateScreenText80 (long cycles6502)
 				uint16_t bits = (main << 7) | (aux & 0x7f);
 				if (Video::GetVideoType() != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
 					bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
+
 				updatePixels( bits );
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
 			}
@@ -1649,6 +1656,34 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 	}
 
+	if (GetVideoRefreshRate() == VR_50HZ && g_pVideoAddress)	// GH#763 / NB. g_pVideoAddress==NULL when called via VideoResetState()
+	{
+		if (uVideoModeFlags & VF_TEXT)
+		{
+			g_nColorBurstPixels = 0;		// (For mid-line video mode change) Instantaneously kill color-burst! (not correct as TV's can take many lines)
+
+			// Switching mid-line from graphics to TEXT
+			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
+				g_pFuncUpdateGraphicsScreen != updateScreenText40 && g_pFuncUpdateGraphicsScreen != updateScreenText80)
+			{
+				*(uint32_t*)&g_pVideoAddress[0] = 0;	// blank out any stale pixel data, eg. ANSI STORY (at end credits)
+				*(uint32_t*)&g_pVideoAddress[1] = 0;
+				g_pVideoAddress += 2;	// eg. FT's TRIBU demo & ANSI STORY (at "turn the disk over!")
+			}
+		}
+		else
+		{
+			g_nColorBurstPixels = 1024;		// (For mid-line video mode change)
+
+			// Switching mid-line from TEXT to graphics
+			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
+				(g_pFuncUpdateGraphicsScreen == updateScreenText40 || g_pFuncUpdateGraphicsScreen == updateScreenText80))
+			{
+				g_pVideoAddress -= 2;	// eg. FT's TRIBU demo & ANSI STORY (at "turn the disk over!")
+			}
+		}
+	}
+
 	if (uVideoModeFlags & VF_TEXT)
 	{
 		if (uVideoModeFlags & VF_80COL)
@@ -1711,6 +1746,8 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 void NTSC::NTSC_SetVideoStyle() // (int v, int s)
 {
     int half = Video::IsVideoStyle(VS_HALF_SCANLINES);
+
+	const VideoRefreshRate_e refresh = GetVideoRefreshRate();
 	uint8_t r, g, b;
 
 	switch (Video::GetVideoType())
@@ -1725,7 +1762,8 @@ void NTSC::NTSC_SetVideoStyle() // (int v, int s)
 				g_pFuncUpdateBnWPixel = &NTSC::updatePixelBnWColorTVSingleScanline;
 				g_pFuncUpdateHuePixel = &NTSC::updatePixelHueColorTVSingleScanline;
 			}
-			else {
+			else
+			{
 				g_pFuncUpdateBnWPixel = &NTSC::updatePixelBnWColorTVDoubleScanline;
 				g_pFuncUpdateHuePixel = &NTSC::updatePixelHueColorTVDoubleScanline;
 			}
@@ -1742,7 +1780,8 @@ void NTSC::NTSC_SetVideoStyle() // (int v, int s)
 				g_pFuncUpdateBnWPixel = &NTSC::updatePixelBnWMonitorSingleScanline;
 				g_pFuncUpdateHuePixel = &NTSC::updatePixelHueMonitorSingleScanline;
 			}
-			else {
+			else
+			{
 				g_pFuncUpdateBnWPixel = &NTSC::updatePixelBnWMonitorDoubleScanline;
 				g_pFuncUpdateHuePixel = &NTSC::updatePixelHueMonitorDoubleScanline;
 			}
@@ -1754,12 +1793,9 @@ void NTSC::NTSC_SetVideoStyle() // (int v, int s)
 			b = 0xFF;
 			updateMonochromeTables( r, g, b ); // Custom Monochrome color
 			if (half)
-			{
 				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = &NTSC::updatePixelBnWColorTVSingleScanline;
-			}
-			else {
+			else
 				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = &NTSC::updatePixelBnWColorTVDoubleScanline;
-			}
 			break;
 
 		case VT_MONO_AMBER:
@@ -1794,13 +1830,9 @@ void NTSC::NTSC_SetVideoStyle() // (int v, int s)
 _mono:
 			updateMonochromeTables( r, g, b ); // Custom Monochrome color
 			if (half)
-			{
 				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = &NTSC::updatePixelBnWMonitorSingleScanline;
-			}
 			else
-			{
 				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = &NTSC::updatePixelBnWMonitorDoubleScanline;
-			}
 			break;
 		}
 }

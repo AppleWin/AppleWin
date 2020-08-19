@@ -748,6 +748,31 @@ public:
 			return eMismatch;
 
 		m_uNumTracksInImage = dwImageSize / NIB1_TRACK_SIZE;
+
+		for (UINT track=0; track<m_uNumTracksInImage; track++)	// Quick NIB sanity check (GH#139)
+		{
+			BYTE* pTrack = &pImage[track*NIB1_TRACK_SIZE];
+			for (UINT byte=0; byte<NIB1_TRACK_SIZE; byte++)
+			{
+				if (pTrack[byte] != 0xD5)	// find 1st D5 in track
+					continue;
+				UINT prologueHdr = 0;
+				for (int i=0; i<3; i++)
+				{
+					prologueHdr <<= 8;
+					prologueHdr |= pTrack[byte++];
+					if (byte == NIB1_TRACK_SIZE) byte = 0;
+				}
+				if (prologueHdr != 0xD5AA96 && prologueHdr != 0xD5AAB5)	// ProDOS/DOS 3.3 or DOS 3.2
+				{
+					std::string warning = "Warning: T$%02X: NIB image's first D5 header isn't D5AA96 or D5AAB5 (found: %06X)\n";
+					LogOutput(warning.c_str(), track, prologueHdr);
+					LogFileOutput(warning.c_str(), track, prologueHdr);
+				}
+				break;
+			}
+		}
+
 		return eMatch;
 	}
 
@@ -1866,6 +1891,7 @@ void CImageHelperBase::SetImageInfo(ImageInfo* pImageInfo, FileType_e fileType, 
 	pImageInfo->uOffset = dwOffset;
 	pImageInfo->pImageType = pImageType;
 	pImageInfo->uImageSize = dwSize;
+	pImageInfo->uNumTracks = pImageType->m_uNumTracksInImage;// Copy ImageType's m_uNumTracksInImage, which may get trashed by subsequent images in the zip (GH#824)
 }
 
 //-------------------------------------

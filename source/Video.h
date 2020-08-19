@@ -12,7 +12,7 @@ class NTSC;
 	{
 		  VT_MONO_CUSTOM
 		, VT_COLOR_MONITOR_RGB		// Color rendering from AppleWin 1.25 (GH#357)
-		, VT_COLOR_MONITOR_NTSC
+		, VT_COLOR_MONITOR_NTSC		// NTSC or PAL
 		, VT_COLOR_TV
 		, VT_MONO_TV
 		, VT_MONO_AMBER
@@ -23,7 +23,6 @@ class NTSC;
 	};
 
 	extern TCHAR g_aVideoChoices[];
-	extern char *g_apVideoModeDesc[ NUM_VIDEO_MODES ];
 
 	enum VideoStyle_e
 	{
@@ -303,4 +302,7 @@ private:
 
 // Main Video renderer
 extern Video *g_pVideo;
-extern Video* debug_pVideo;
+extern Video* debug_pVideo;bool DDInit(void);
+void DDUninit(void);
+
+const char* VideoGetAppWindowTitle(void);
