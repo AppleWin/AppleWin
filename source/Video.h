@@ -21,7 +21,6 @@
 	};
 
 extern TCHAR g_aVideoChoices[];
-extern char* g_apVideoModeDesc[NUM_VIDEO_MODES];
 
 enum VideoStyle_e
 {
@@ -198,6 +197,8 @@ public:
 	static bool		g_bVideoScannerNTSC;  // NTSC video scanning (or PAL)
 	static LPDIRECTDRAW	g_lpDD;
 
+	static const char* g_apVideoModeDesc[NUM_VIDEO_MODES];
+
 	// ____________________________________________________________________
 
 	Video();
@@ -269,6 +270,7 @@ public:
 	void RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion);
 
+	static const char* VideoGetAppWindowTitle(void);
 
 	// ____________________________________________________________________
 
@@ -296,4 +298,3 @@ extern Video* g_pVideo;
 bool DDInit(void);
 void DDUninit(void);
 
-const char* VideoGetAppWindowTitle(void);

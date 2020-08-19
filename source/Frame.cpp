@@ -280,7 +280,7 @@ static void GetAppleWindowTitle()
 		g_pAppTitle += " 50% ";
 
 
-	g_pAppTitle += VideoGetAppWindowTitle();
+	g_pAppTitle += Video::VideoGetAppWindowTitle();
 
 	if (g_CardMgr.GetDisk2CardMgr().IsAnyFirmware13Sector())
 		g_pAppTitle += " (S6-13) ";

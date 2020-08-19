@@ -810,7 +810,7 @@ inline void updateVideoScannerHorzEOL()
 //===========================================================================
 inline void updateVideoScannerAddress()
 {
-	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && GetVideoRefreshRate() == VR_50HZ)	// GH#763
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && g_pVideo->GetVideoRefreshRate() == VR_50HZ)	// GH#763
 		g_nColorBurstPixels = 0;	// instantaneously kill color-burst!
 
 	g_pVideoAddress = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2*g_nVideoClockVert] : g_pScanLines[0];
@@ -1771,14 +1771,14 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 	}
 
-	if (GetVideoRefreshRate() == VR_50HZ && g_pVideoAddress)	// GH#763 / NB. g_pVideoAddress==NULL when called via VideoResetState()
+	if (g_pVideo->GetVideoRefreshRate() == VR_50HZ && g_pVideoAddress)	// GH#763 / NB. g_pVideoAddress==NULL when called via VideoResetState()
 	{
 		if (uVideoModeFlags & VF_TEXT)
 		{
 			g_nColorBurstPixels = 0;		// (For mid-line video mode change) Instantaneously kill color-burst! (not correct as TV's can take many lines)
 
 			// Switching mid-line from graphics to TEXT
-			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
+			if (g_pVideo->g_eVideoType == VT_COLOR_MONITOR_NTSC &&
 				g_pFuncUpdateGraphicsScreen != updateScreenText40 && g_pFuncUpdateGraphicsScreen != updateScreenText80)
 			{
 				*(uint32_t*)&g_pVideoAddress[0] = 0;	// blank out any stale pixel data, eg. ANSI STORY (at end credits)
@@ -1791,7 +1791,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			g_nColorBurstPixels = 1024;		// (For mid-line video mode change)
 
 			// Switching mid-line from TEXT to graphics
-			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
+			if (g_pVideo->g_eVideoType == VT_COLOR_MONITOR_NTSC &&
 				(g_pFuncUpdateGraphicsScreen == updateScreenText40 || g_pFuncUpdateGraphicsScreen == updateScreenText80))
 			{
 				g_pVideoAddress -= 2;	// eg. FT's TRIBU demo & ANSI STORY (at "turn the disk over!")
@@ -1862,7 +1862,7 @@ void NTSC_SetVideoStyle(void)
 {
     int half = Video::IsVideoStyle(VS_HALF_SCANLINES);
 
-	const VideoRefreshRate_e refresh = GetVideoRefreshRate();
+	const VideoRefreshRate_e refresh = g_pVideo->GetVideoRefreshRate();
 	uint8_t r, g, b;
 
 	switch ( Video::g_eVideoType )
