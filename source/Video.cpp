@@ -126,6 +126,19 @@ COLORREF	Video::g_nMonochromeRGB = 0;
 DWORD		Video::g_eVideoType = 0;		// saved to Registry
 VideoStyle_e	Video::g_eVideoStyle = VS_NONE;
 
+	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
+	// The window title will be set to this.
+	const char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
+	{
+		  "Monochrome Monitor (Custom)"
+		, "Color (RGB Monitor)"
+		, "Color (NTSC/PAL Monitor)"
+		, "Color TV"
+		, "B&W TV"
+		, "Amber Monitor"
+		, "Green Monitor"
+		, "White Monitor"
+	};
 Video* g_pVideo = NULL;
 
 
@@ -1453,4 +1466,21 @@ void Video::RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 void Video::RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
 {
 	RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
+}
+
+//===========================================================================
+
+const char* VideoGetAppWindowTitle(void)
+{
+	static const char *apVideoMonitorModeDesc[ 2 ] =
+	{
+		"Color (NTSC Monitor)",
+		"Color (PAL Monitor)"
+	};
+
+	const VideoType_e videoType = GetVideoType();
+	if ( videoType != VT_COLOR_MONITOR_NTSC)
+		return g_apVideoModeDesc[ videoType ];
+	else
+		return apVideoMonitorModeDesc[ GetVideoRefreshRate() == VR_60HZ ? 0 : 1 ];	// NTSC or PAL
 }

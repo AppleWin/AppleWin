@@ -37,6 +37,7 @@
 #include "tfe.h"
 #include "tfearch.h"
 #include "tfesupp.h"
+#include "../Log.h"
 
 
 typedef pcap_t	*(*pcap_open_live_t)(const char *, int, int, int, char *);
@@ -46,6 +47,7 @@ typedef int (*pcap_datalink_t)(pcap_t *);
 typedef int (*pcap_findalldevs_t)(pcap_if_t **, char *);
 typedef void (*pcap_freealldevs_t)(pcap_if_t *);
 typedef int (*pcap_sendpacket_t)(pcap_t *p, u_char *buf, int size);
+typedef const char *(*pcap_lib_version_t)(void);
 
 /** #define TFE_DEBUG_ARCH 1 **/
 /** #define TFE_DEBUG_PKTDUMP 1 **/
@@ -61,6 +63,7 @@ static pcap_findalldevs_t p_pcap_findalldevs;
 static pcap_freealldevs_t p_pcap_freealldevs;
 static pcap_sendpacket_t  p_pcap_sendpacket;
 static pcap_datalink_t p_pcap_datalink;
+static pcap_lib_version_t p_pcap_lib_version;
 
 static HINSTANCE pcap_library = NULL;
 
@@ -120,6 +123,7 @@ void TfePcapFreeLibrary(void)
         p_pcap_freealldevs = NULL;
         p_pcap_sendpacket = NULL;
         p_pcap_datalink = NULL;
+        p_pcap_lib_version = NULL;
     }
 }
 
@@ -136,6 +140,13 @@ static
 BOOL TfePcapLoadLibrary(void)
 {
     if (!pcap_library) {
+        if (!SetDllDirectory("C:\\Windows\\System32\\Npcap\\"))	// Prefer Npcap over WinPcap (GH#822)
+        {
+            const char* error = "Warning: SetDllDirectory() failed for Npcap";
+            LogOutput("%s\n", error);
+            LogFileOutput("%s\n", error);
+        }
+
         pcap_library = LoadLibrary("wpcap.dll");
 
         if (!pcap_library) {
@@ -150,6 +161,9 @@ BOOL TfePcapLoadLibrary(void)
         GET_PROC_ADDRESS_AND_TEST(pcap_freealldevs);
         GET_PROC_ADDRESS_AND_TEST(pcap_sendpacket);
         GET_PROC_ADDRESS_AND_TEST(pcap_datalink);
+        GET_PROC_ADDRESS_AND_TEST(pcap_lib_version);
+        LogOutput("%s\n", p_pcap_lib_version());
+        LogFileOutput("%s\n", p_pcap_lib_version());
     }
 
     return TRUE;
