@@ -1837,7 +1837,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 	if (g_eVideoType == VT_COLOR_MONITOR_RGB
 		&& RGB_GetVideocard() == RGB_Video7_SL7
-		&& !((uVideoModeFlags & VF_DHIRES) && (uVideoModeFlags & VF_TEXT) && !(uVideoModeFlags & VF_DHIRES) && !(uVideoModeFlags & VF_80COL)))
+		&& (!(uVideoModeFlags & VF_DHIRES) ^ !(!(uVideoModeFlags & VF_TEXT) && (uVideoModeFlags & VF_DHIRES) && (uVideoModeFlags & VF_80COL))))
 	{
 		// ----- Video-7 SL7 extra modes ----- (from the videocard manual)
 		//  AN3 TEXT HIRES 80COL
