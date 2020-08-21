@@ -8,6 +8,14 @@
 #include "RGBMonitor.h"
 #include "YamlHelper.h"
 
+
+// RGB videocards types
+
+static RGB_Videocard_e RGB_Videocard = RGB_Video7_SL7;
+static int nTextFBMode = 0; // F/B Text
+static int nRegularTextFG = 1; // Default TEXT color
+static int nRegularTextBG = 0; // Default TEXT background color
+
 const int HIRES_COLUMN_SUBUNIT_SIZE = 16;
 const int HIRES_COLUMN_UNIT_SIZE = (HIRES_COLUMN_SUBUNIT_SIZE)*2;
 const int HIRES_NUMBER_COLUMNS = (1<<5);	// 5 bits
@@ -698,6 +706,73 @@ void UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 }
 
 //===========================================================================
+// Color TEXT (some RGB cards only)
+void UpdateText40DuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits)
+{
+	const BYTE val = *MemGetAuxPtr(addr);
+	const uint8_t foreground = val >> 4;
+	const uint8_t background = val & 0x0F;
+
+	UpdateDuochromeCell(2, pVideoAddress, bits, foreground, background);
+}
+
+//===========================================================================
+// Duochrome HGR (some RGB cards only)
+void UpdateHiResDuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
+{
+	BYTE bits = *MemGetMainPtr(addr);
+	BYTE val = *MemGetAuxPtr(addr);
+	const uint8_t foreground = val >> 4;
+	const uint8_t background = val & 0x0F;
+
+	UpdateDuochromeCell(2, pVideoAddress, bits, foreground, background);
+}
+
+//===========================================================================
+// Writes a duochrome cell
+// 7 bits define a foreground/background pattern
+// Used on many RGB cards but activated differently, depending on the card.
+// Can be used in TEXT or HGR mode. The foreground & background colors could be fixed by hardware switches or data lying in AUX.
+void UpdateDuochromeCell(int h, bgra_t* pVideoAddress, uint8_t bits, uint8_t foreground, uint8_t background)
+{
+	UINT32* pDst = (UINT32*)pVideoAddress;
+
+	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const UINT frameBufferWidth = GetFrameBufferWidth();
+	const int w = 14;
+	UINT32 colors[2];
+	// use LoRes palette
+	background += 12;
+	foreground += 12;
+	// get bg/fg colors
+	colors[0] = PalIndex2RGB[background].rgbBlue << 16 | PalIndex2RGB[background].rgbGreen << 8 | PalIndex2RGB[background].rgbRed;
+	colors[1] = PalIndex2RGB[foreground].rgbBlue << 16 | PalIndex2RGB[foreground].rgbGreen << 8 | PalIndex2RGB[foreground].rgbRed;
+	int nbits = bits;
+
+	while (h--)
+	{
+		bits = nbits;
+		if (bIsHalfScanLines && !(h & 1))
+		{
+			// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
+			std::fill(pDst, pDst + w, 0);
+		}
+		else
+		{
+			for (int nBytes = 0; nBytes < w; nBytes += 2)
+			{
+				int bit = (bits & 1);
+				bits >>= 1;
+				*(pDst + nBytes) = colors[bit];
+				*(pDst + nBytes + 1) = colors[bit];
+			}
+		}
+
+		pDst -= frameBufferWidth;
+	}
+}
+
+//===========================================================================
 
 static LPBYTE g_pSourcePixels = NULL;
 
@@ -733,6 +808,7 @@ void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 }
 
 //===========================================================================
+
 
 static UINT g_rgbFlags = 0;
 static UINT g_rgbMode = 0;
@@ -856,4 +932,39 @@ void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
 	}
 
 	yamlLoadHelper.PopMap();
+}
+
+RGB_Videocard_e RGB_GetVideocard(void)
+{
+	return RGB_Videocard;
+}
+
+void RGB_SetVideocard(RGB_Videocard_e videocard)
+{
+	RGB_Videocard = videocard;
+}
+
+void RGB_SetRegularTextFG(int color)
+{
+	 nRegularTextFG = color;
+}
+
+void RGB_SetRegularTextBG(int color)
+{
+	nRegularTextBG = color;
+}
+
+void RGB_EnableTextFB()
+{
+	nTextFBMode = 1;
+}
+
+void RGB_DisableTextFB()
+{
+	nTextFBMode = 0;
+}
+
+int RGB_IsTextFB()
+{
+	return nTextFBMode;
 }

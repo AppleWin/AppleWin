@@ -8,7 +8,7 @@ AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
 (at your option) any later version.
-
+lecha
 AppleWin is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -1614,6 +1614,41 @@ void updateScreenText40 (long cycles6502)
 	}
 }
 
+
+//===========================================================================
+void updateScreenText40RGBColor(long cycles6502)
+{
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		uint16_t addr = getVideoScannerAddressTXT();
+
+		if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+		{
+			if (g_nColorBurstPixels > 0)
+				g_nColorBurstPixels -= 1;
+		}
+		else if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint8_t* pMain = MemGetMainPtr(addr);
+				uint8_t  m = pMain[0];
+				uint8_t  c = getCharSetBits(m);
+				//uint16_t bits = g_aPixelDoubleMaskHGR[c & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
+
+				if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
+					c ^= g_nTextFlashMask;
+
+				UpdateText40DuochromeCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, c);
+				g_pVideoAddress += 14;
+
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+
+	}
+}
+
 //===========================================================================
 void updateScreenText80 (long cycles6502)
 {
@@ -1753,8 +1788,11 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		return;
 	}
 
+
 	g_nVideoMixed   = uVideoModeFlags & VF_MIXED;
 	g_nVideoCharSet = VideoGetSWAltCharSet() ? 1 : 0;
+
+	RGB_DisableTextFB();
 
 	g_nTextPage  = 1;
 	g_nHiresPage = 1;
@@ -1777,7 +1815,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 			// Switching mid-line from graphics to TEXT
 			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
-				g_pFuncUpdateGraphicsScreen != updateScreenText40 && g_pFuncUpdateGraphicsScreen != updateScreenText80)
+				g_pFuncUpdateGraphicsScreen != updateScreenText40 && g_pFuncUpdateGraphicsScreen != updateScreenText40RGBColor && g_pFuncUpdateGraphicsScreen != updateScreenText80)
 			{
 				*(uint32_t*)&g_pVideoAddress[0] = 0;	// blank out any stale pixel data, eg. ANSI STORY (at end credits)
 				*(uint32_t*)&g_pVideoAddress[1] = 0;
@@ -1790,17 +1828,58 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 			// Switching mid-line from TEXT to graphics
 			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
-				(g_pFuncUpdateGraphicsScreen == updateScreenText40 || g_pFuncUpdateGraphicsScreen == updateScreenText80))
+				(g_pFuncUpdateGraphicsScreen == updateScreenText40 || g_pFuncUpdateGraphicsScreen == updateScreenText40RGBColor || g_pFuncUpdateGraphicsScreen == updateScreenText80))
 			{
 				g_pVideoAddress -= 2;	// eg. FT's TRIBU demo & ANSI STORY (at "turn the disk over!")
 			}
 		}
 	}
 
-	if (uVideoModeFlags & VF_TEXT)
+	if (g_eVideoType == VT_COLOR_MONITOR_RGB
+		&& RGB_GetVideocard() == RGB_Video7_SL7
+		&& !((uVideoModeFlags & VF_DHIRES) && (uVideoModeFlags & VF_TEXT) && !(uVideoModeFlags & VF_DHIRES) && !(uVideoModeFlags & VF_80COL)))
+	{
+		// ----- Video-7 SL7 extra modes ----- (from the videocard manual)
+		//  AN3 TEXT HIRES 80COL
+		//   0    1    ?     0    F/B Text
+		//   0    1    ?     1    80 col Text
+		//   0    0    0     0    LoRes (mixed with F/B Text)
+		//   0    0    0     1    DLoRes (mixed with 80 col. Text)
+		//   0    0    1     0    F/B HiRes (mixed with F/B Text)
+		if (uVideoModeFlags & VF_TEXT)
+		{
+			if (uVideoModeFlags & VF_80COL)
+				g_pFuncUpdateGraphicsScreen = updateScreenText80;
+			else
+			{
+				RGB_EnableTextFB();
+				g_pFuncUpdateGraphicsScreen = updateScreenText40RGBColor;
+			}
+		}
+		else if (uVideoModeFlags & VF_HIRES)
+		{
+			// F/B HiRes
+			g_pFuncUpdateTextScreen = updateScreenText40RGBColor;
+			RGB_EnableTextFB();
+		}
+		else if (uVideoModeFlags & VF_80COL)
+		{
+			g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simplified;
+		}
+		else
+		{
+			g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simplified;
+			g_pFuncUpdateTextScreen = updateScreenText40RGBColor;
+			RGB_EnableTextFB();
+		}
+	}
+	else if (uVideoModeFlags & VF_TEXT)
 	{
 		if (uVideoModeFlags & VF_80COL)
 			g_pFuncUpdateGraphicsScreen = updateScreenText80;
+		else if (g_eVideoType == VT_COLOR_MONITOR_RGB && (uVideoModeFlags & VF_DHIRES))
+			// Color Text when AN3 is off on RGB cards
+			g_pFuncUpdateGraphicsScreen = updateScreenText40RGBColor;
 		else
 			g_pFuncUpdateGraphicsScreen = updateScreenText40;
 	}
