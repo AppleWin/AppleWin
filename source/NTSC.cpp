@@ -1616,7 +1616,7 @@ void updateScreenText40 (long cycles6502)
 
 
 //===========================================================================
-void updateScreenText40RGBColor(long cycles6502)
+void updateScreenText40RGB(long cycles6502)
 {
 	for (; cycles6502 > 0; --cycles6502)
 	{
@@ -1639,7 +1639,7 @@ void updateScreenText40RGBColor(long cycles6502)
 				if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
 					c ^= g_nTextFlashMask;
 
-				UpdateText40DuochromeCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, c);
+				UpdateText40ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, c);
 				g_pVideoAddress += 14;
 
 			}
@@ -1770,7 +1770,14 @@ uint16_t NTSC_VideoGetScannerAddressForDebugger(void)
 //===========================================================================
 void NTSC_SetVideoTextMode( int cols )
 {
-	if( cols == 40 )
+	if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+	{
+		if (cols == 40)
+			g_pFuncUpdateTextScreen = updateScreenText40RGB;
+		else
+			g_pFuncUpdateTextScreen = updateScreenText80;
+	}
+	else if( cols == 40 )
 		g_pFuncUpdateTextScreen = updateScreenText40;
 	else
 		g_pFuncUpdateTextScreen = updateScreenText80;
@@ -1815,7 +1822,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 			// Switching mid-line from graphics to TEXT
 			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
-				g_pFuncUpdateGraphicsScreen != updateScreenText40 && g_pFuncUpdateGraphicsScreen != updateScreenText40RGBColor && g_pFuncUpdateGraphicsScreen != updateScreenText80)
+				g_pFuncUpdateGraphicsScreen != updateScreenText40 && g_pFuncUpdateGraphicsScreen != updateScreenText40RGB && g_pFuncUpdateGraphicsScreen != updateScreenText80)
 			{
 				*(uint32_t*)&g_pVideoAddress[0] = 0;	// blank out any stale pixel data, eg. ANSI STORY (at end credits)
 				*(uint32_t*)&g_pVideoAddress[1] = 0;
@@ -1828,7 +1835,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 			// Switching mid-line from TEXT to graphics
 			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
-				(g_pFuncUpdateGraphicsScreen == updateScreenText40 || g_pFuncUpdateGraphicsScreen == updateScreenText40RGBColor || g_pFuncUpdateGraphicsScreen == updateScreenText80))
+				(g_pFuncUpdateGraphicsScreen == updateScreenText40 || g_pFuncUpdateGraphicsScreen == updateScreenText40RGB || g_pFuncUpdateGraphicsScreen == updateScreenText80))
 			{
 				g_pVideoAddress -= 2;	// eg. FT's TRIBU demo & ANSI STORY (at "turn the disk over!")
 			}
@@ -1853,13 +1860,13 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			else
 			{
 				RGB_EnableTextFB();
-				g_pFuncUpdateGraphicsScreen = updateScreenText40RGBColor;
+				g_pFuncUpdateGraphicsScreen = updateScreenText40RGB;
 			}
 		}
 		else if (uVideoModeFlags & VF_HIRES)
 		{
 			// F/B HiRes
-			g_pFuncUpdateTextScreen = updateScreenText40RGBColor;
+			g_pFuncUpdateTextScreen = updateScreenText40RGB;
 			RGB_EnableTextFB();
 		}
 		else if (uVideoModeFlags & VF_80COL)
@@ -1869,7 +1876,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		else
 		{
 			g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simplified;
-			g_pFuncUpdateTextScreen = updateScreenText40RGBColor;
+			g_pFuncUpdateTextScreen = updateScreenText40RGB;
 			RGB_EnableTextFB();
 		}
 	}
@@ -1877,9 +1884,8 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	{
 		if (uVideoModeFlags & VF_80COL)
 			g_pFuncUpdateGraphicsScreen = updateScreenText80;
-		else if (g_eVideoType == VT_COLOR_MONITOR_RGB && (uVideoModeFlags & VF_DHIRES))
-			// Color Text when AN3 is off on RGB cards
-			g_pFuncUpdateGraphicsScreen = updateScreenText40RGBColor;
+		else if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+			g_pFuncUpdateGraphicsScreen = updateScreenText40RGB;
 		else
 			g_pFuncUpdateGraphicsScreen = updateScreenText40;
 	}

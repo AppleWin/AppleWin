@@ -13,7 +13,7 @@
 
 static RGB_Videocard_e RGB_Videocard = RGB_Video7_SL7;
 static int nTextFBMode = 0; // F/B Text
-static int nRegularTextFG = 1; // Default TEXT color
+static int nRegularTextFG = 3; // Default TEXT color
 static int nRegularTextBG = 0; // Default TEXT background color
 
 const int HIRES_COLUMN_SUBUNIT_SIZE = 16;
@@ -707,11 +707,17 @@ void UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 
 //===========================================================================
 // Color TEXT (some RGB cards only)
-void UpdateText40DuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits)
+// Default BG and FG are usually defined by hardware switches, defaults to black/white
+void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits)
 {
-	const BYTE val = *MemGetAuxPtr(addr);
-	const uint8_t foreground = val >> 4;
-	const uint8_t background = val & 0x0F;
+	uint8_t foreground = nRegularTextFG;
+	uint8_t background = nRegularTextBG;
+	if (nTextFBMode)
+	{
+		const BYTE val = *MemGetAuxPtr(addr);  // RGB cards with F/B text use their own AUX memory!
+		foreground = val >> 4;
+		background = val & 0x0F;
+	}
 
 	UpdateDuochromeCell(2, pVideoAddress, bits, foreground, background);
 }
