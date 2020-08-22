@@ -441,6 +441,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static void updateScreenSingleLores40( long cycles6502 );
 	static void updateScreenText40       ( long cycles6502 );
 	static void updateScreenText80       ( long cycles6502 );
+	static void updateScreenText40RGB	 ( long cycles6502 );
+	static void updateScreenText80RGB    ( long cycles6502 );
 
 //===========================================================================
 static void set_csbits()
@@ -826,7 +828,8 @@ inline void updateVideoScannerAddress()
 	if (((g_pFuncUpdateGraphicsScreen == updateScreenDoubleHires80) ||
 		(g_pFuncUpdateGraphicsScreen == updateScreenDoubleLores80) ||
 		(g_pFuncUpdateGraphicsScreen == updateScreenText80) ||
-		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && g_pFuncUpdateTextScreen == updateScreenText80))
+		(g_pFuncUpdateGraphicsScreen == updateScreenText80RGB) ||
+		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && (g_pFuncUpdateTextScreen == updateScreenText80 || g_pFuncUpdateGraphicsScreen == updateScreenText80RGB)))
 		&& (g_eVideoType != VT_COLOR_MONITOR_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
 	{
 		g_pVideoAddress -= 1;
@@ -1899,7 +1902,8 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 			// Switching mid-line from graphics to TEXT
 			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
-				g_pFuncUpdateGraphicsScreen != updateScreenText40 && g_pFuncUpdateGraphicsScreen != updateScreenText40RGB && g_pFuncUpdateGraphicsScreen != updateScreenText80)
+				g_pFuncUpdateGraphicsScreen != updateScreenText40 && g_pFuncUpdateGraphicsScreen != updateScreenText40RGB
+				&& g_pFuncUpdateGraphicsScreen != updateScreenText80 && g_pFuncUpdateGraphicsScreen != updateScreenText80RGB)
 			{
 				*(uint32_t*)&g_pVideoAddress[0] = 0;	// blank out any stale pixel data, eg. ANSI STORY (at end credits)
 				*(uint32_t*)&g_pVideoAddress[1] = 0;
@@ -1912,7 +1916,8 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 			// Switching mid-line from TEXT to graphics
 			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
-				(g_pFuncUpdateGraphicsScreen == updateScreenText40 || g_pFuncUpdateGraphicsScreen == updateScreenText40RGB || g_pFuncUpdateGraphicsScreen == updateScreenText80))
+				(g_pFuncUpdateGraphicsScreen == updateScreenText40 || g_pFuncUpdateGraphicsScreen == updateScreenText40RGB
+					|| g_pFuncUpdateGraphicsScreen == updateScreenText80 || g_pFuncUpdateGraphicsScreen == updateScreenText80RGB))
 			{
 				g_pVideoAddress -= 2;	// eg. FT's TRIBU demo & ANSI STORY (at "turn the disk over!")
 			}
@@ -1966,7 +1971,12 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	else if (uVideoModeFlags & VF_TEXT)
 	{
 		if (uVideoModeFlags & VF_80COL)
-			g_pFuncUpdateGraphicsScreen = updateScreenText80;
+		{
+			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+				g_pFuncUpdateGraphicsScreen = updateScreenText80RGB;
+			else
+				g_pFuncUpdateGraphicsScreen = updateScreenText80;
+		}
 		else if (g_eVideoType == VT_COLOR_MONITOR_RGB)
 			g_pFuncUpdateGraphicsScreen = updateScreenText40RGB;
 		else
