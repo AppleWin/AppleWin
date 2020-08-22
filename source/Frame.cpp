@@ -1312,7 +1312,7 @@ LRESULT CALLBACK FrameWndProc (
 	case WM_KEYDOWN:
 		KeybUpdateCtrlShiftStatus();
 
-		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
+		// Processing is done in WM_KEYUP for: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
 		{
 			SetUsingCursor(FALSE);
@@ -1514,7 +1514,6 @@ LRESULT CALLBACK FrameWndProc (
 			break;
 
 	case WM_KEYUP:
-		// Process is done in WM_KEYUP: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == (int)wparam-VK_F1))
 		{
 			buttondown = -1;
@@ -1522,7 +1521,23 @@ LRESULT CALLBACK FrameWndProc (
 				EraseButton(wparam-VK_F1);
 			else
 				DrawButton((HDC)0,wparam-VK_F1);
-			ProcessButtonClick(wparam-VK_F1, true);
+
+			const int iButton = wparam-VK_F1;
+			if (KeybGetCtrlStatus() && (wparam == VK_F3 || wparam == VK_F4))	// Ctrl+F3/F4 for drive pop-up menu (GH#817)
+			{
+				POINT pt;		// location of mouse click
+				pt.x = buttonx + BUTTONCX/2;
+				pt.y = buttony + BUTTONCY/2 + iButton * BUTTONCY;
+				const int iDrive = wparam - VK_F3;
+				ProcessDiskPopupMenu( window, pt, iDrive );
+
+				FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+				DrawButton((HDC)0, iButton);
+			}
+			else
+			{
+				ProcessButtonClick(iButton, true);
+			}
 		}
 		else
 		{
@@ -1793,7 +1808,6 @@ LRESULT CALLBACK FrameWndProc (
 
     case WM_RBUTTONDOWN:
     case WM_RBUTTONUP:
-		// Right Click on Drive Icon -- eject Disk
 		if ((buttonover == -1) && (message == WM_RBUTTONUP)) // HACK: BUTTON_NONE
 		{
 			int x = LOWORD(lparam);
@@ -1803,18 +1817,10 @@ LRESULT CALLBACK FrameWndProc (
 				(y >= buttony) &&
 				(y <= buttony+BUTTONS*BUTTONCY))
 			{
-				int iButton = (y-buttony-1)/BUTTONCY;
-				int iDrive = iButton - BTN_DRIVE1;
+				const int iButton = (y-buttony-1)/BUTTONCY;
+				const int iDrive = iButton - BTN_DRIVE1;
 				if ((iButton == BTN_DRIVE1) || (iButton == BTN_DRIVE2))
 				{
-/*
-					if (KeybGetShiftStatus())
-						DiskProtect( iDrive, true );
-					else
-					if (KeybGetCtrlStatus())
-						DiskProtect( iDrive, false );
-					else
-*/
 					{
 						RECT  rect;		// client area
 						POINT pt;		// location of mouse click
@@ -1834,7 +1840,7 @@ LRESULT CALLBACK FrameWndProc (
                 	}
 
 					FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
-					DrawButton((HDC)0,iButton);
+					DrawButton((HDC)0, iButton);
 				}			
 			}
 		}
