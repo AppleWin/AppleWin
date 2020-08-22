@@ -1482,6 +1482,35 @@ static void updateScreenSingleHires40Simplified (long cycles6502)
 	}
 }
 
+//===========================================================================
+static void updateScreenSingleHires40Duochrome(long cycles6502)
+{
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pFuncUpdateTextScreen(cycles6502);
+		return;
+	}
+
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint16_t addr = getVideoScannerAddressHGR();
+
+				UpdateHiResDuochromeCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+				g_pVideoAddress += 14;
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+	}
+}
+
 void updateScreenSingleHires40 (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
@@ -1894,6 +1923,8 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		&& RGB_GetVideocard() == RGB_Video7_SL7
 		&& (!(uVideoModeFlags & VF_DHIRES) ^ !(!(uVideoModeFlags & VF_TEXT) && (uVideoModeFlags & VF_DHIRES) && (uVideoModeFlags & VF_80COL))))
 	{
+		RGB_EnableTextFB(); // F/B text only shows in 40col mode anyway
+
 		// ----- Video-7 SL7 extra modes ----- (from the videocard manual)
 		//  AN3 TEXT HIRES 80COL
 		//   0    1    ?     0    F/B Text
@@ -1904,28 +1935,32 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		if (uVideoModeFlags & VF_TEXT)
 		{
 			if (uVideoModeFlags & VF_80COL)
+			{
+				// 80 col text
 				g_pFuncUpdateGraphicsScreen = updateScreenText80RGB;
+			}
 			else
 			{
-				RGB_EnableTextFB();
 				g_pFuncUpdateGraphicsScreen = updateScreenText40RGB;
 			}
 		}
 		else if (uVideoModeFlags & VF_HIRES)
 		{
 			// F/B HiRes
+			g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Duochrome;
 			g_pFuncUpdateTextScreen = updateScreenText40RGB;
-			RGB_EnableTextFB();
 		}
 		else if (uVideoModeFlags & VF_80COL)
 		{
+			// DLoRes
 			g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simplified;
+			g_pFuncUpdateTextScreen = updateScreenText80RGB;
 		}
 		else
 		{
+			// LoRes + F/B Text
 			g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simplified;
 			g_pFuncUpdateTextScreen = updateScreenText40RGB;
-			RGB_EnableTextFB();
 		}
 	}
 	else if (uVideoModeFlags & VF_TEXT)

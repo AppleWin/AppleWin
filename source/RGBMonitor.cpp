@@ -13,7 +13,7 @@
 
 static RGB_Videocard_e RGB_Videocard = RGB_Video7_SL7;
 static int nTextFBMode = 0; // F/B Text
-static int nRegularTextFG = 3; // Default TEXT color
+static int nRegularTextFG = 9; // Default TEXT color
 static int nRegularTextBG = 0; // Default TEXT background color
 
 const int HIRES_COLUMN_SUBUNIT_SIZE = 16;
