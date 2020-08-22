@@ -1692,6 +1692,54 @@ void updateScreenText80 (long cycles6502)
 	}
 }
 
+//===========================================================================
+void updateScreenText80RGB(long cycles6502)
+{
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		uint16_t addr = getVideoScannerAddressTXT();
+
+		if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+		{
+			if (g_nColorBurstPixels > 0)
+				g_nColorBurstPixels -= 1;
+		}
+		else if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint8_t* pMain = MemGetMainPtr(addr);
+				uint8_t* pAux = MemGetAuxPtr(addr);
+
+				uint8_t m = pMain[0];
+				uint8_t a = pAux[0];
+
+				uint16_t main = getCharSetBits(m);
+				uint16_t aux = getCharSetBits(a);
+
+				if ((0 == g_nVideoCharSet) && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
+					main ^= g_nTextFlashMask;
+
+				if ((0 == g_nVideoCharSet) && 0x40 == (a & 0xC0)) // Flash only if mousetext not active
+					aux ^= g_nTextFlashMask;
+
+				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, aux);
+				g_pVideoAddress += 7;
+				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, main);
+				g_pVideoAddress += 7;
+
+				uint16_t bits = (main << 7) | (aux & 0x7f);
+				//if (g_eVideoType != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
+				//	bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
+
+				//updatePixels(bits);
+				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
+			}
+		}
+		updateVideoScannerHorzEOL();
+	}
+}
+
 // Functions (Public) _____________________________________________________________________________
 
 //===========================================================================
@@ -1775,7 +1823,7 @@ void NTSC_SetVideoTextMode( int cols )
 		if (cols == 40)
 			g_pFuncUpdateTextScreen = updateScreenText40RGB;
 		else
-			g_pFuncUpdateTextScreen = updateScreenText80;
+			g_pFuncUpdateTextScreen = updateScreenText80RGB;
 	}
 	else if( cols == 40 )
 		g_pFuncUpdateTextScreen = updateScreenText40;
@@ -1856,7 +1904,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		if (uVideoModeFlags & VF_TEXT)
 		{
 			if (uVideoModeFlags & VF_80COL)
-				g_pFuncUpdateGraphicsScreen = updateScreenText80;
+				g_pFuncUpdateGraphicsScreen = updateScreenText80RGB;
 			else
 			{
 				RGB_EnableTextFB();

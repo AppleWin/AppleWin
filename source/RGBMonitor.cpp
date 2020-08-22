@@ -716,10 +716,16 @@ void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, u
 	{
 		const BYTE val = *MemGetAuxPtr(addr);  // RGB cards with F/B text use their own AUX memory!
 		foreground = val >> 4;
+		//foreground = (val >> 6) | ((val & 0x30) >> 2);
 		background = val & 0x0F;
 	}
 
-	UpdateDuochromeCell(2, pVideoAddress, bits, foreground, background);
+	UpdateDuochromeCell(2, 14, pVideoAddress, bits, foreground, background);
+}
+
+void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits)
+{
+	UpdateDuochromeCell(2, 7, pVideoAddress, bits, nRegularTextFG, nRegularTextBG);
 }
 
 //===========================================================================
@@ -731,7 +737,7 @@ void UpdateHiResDuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress
 	const uint8_t foreground = val >> 4;
 	const uint8_t background = val & 0x0F;
 
-	UpdateDuochromeCell(2, pVideoAddress, bits, foreground, background);
+	UpdateDuochromeCell(2, 14, pVideoAddress, bits, foreground, background);
 }
 
 //===========================================================================
@@ -739,21 +745,21 @@ void UpdateHiResDuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress
 // 7 bits define a foreground/background pattern
 // Used on many RGB cards but activated differently, depending on the card.
 // Can be used in TEXT or HGR mode. The foreground & background colors could be fixed by hardware switches or data lying in AUX.
-void UpdateDuochromeCell(int h, bgra_t* pVideoAddress, uint8_t bits, uint8_t foreground, uint8_t background)
+void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint8_t foreground, uint8_t background)
 {
 	UINT32* pDst = (UINT32*)pVideoAddress;
 
 	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
 	const UINT frameBufferWidth = GetFrameBufferWidth();
-	const int w = 14;
-	UINT32 colors[2];
+	RGBQUAD colors[2];
 	// use LoRes palette
 	background += 12;
 	foreground += 12;
 	// get bg/fg colors
-	colors[0] = PalIndex2RGB[background].rgbBlue << 16 | PalIndex2RGB[background].rgbGreen << 8 | PalIndex2RGB[background].rgbRed;
-	colors[1] = PalIndex2RGB[foreground].rgbBlue << 16 | PalIndex2RGB[foreground].rgbGreen << 8 | PalIndex2RGB[foreground].rgbRed;
+	colors[0] = PalIndex2RGB[background];
+	colors[1] = PalIndex2RGB[foreground];
 	int nbits = bits;
+	int doublepixels = (w == 14); // Double pixel (HiRes or Text40)
 
 	while (h--)
 	{
@@ -765,12 +771,16 @@ void UpdateDuochromeCell(int h, bgra_t* pVideoAddress, uint8_t bits, uint8_t for
 		}
 		else
 		{
-			for (int nBytes = 0; nBytes < w; nBytes += 2)
+			for (int nBytes = 0; nBytes < w; nBytes += (doublepixels?2:1))
 			{
 				int bit = (bits & 1);
 				bits >>= 1;
-				*(pDst + nBytes) = colors[bit];
-				*(pDst + nBytes + 1) = colors[bit];
+				const RGBQUAD& rRGB = colors[bit];
+				*(pDst + nBytes) = *reinterpret_cast<const UINT32*>(&rRGB);
+				if (doublepixels)
+				{
+					*(pDst + nBytes + 1) = *reinterpret_cast<const UINT32*>(&rRGB);
+				}
 			}
 		}
 
