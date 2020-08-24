@@ -506,7 +506,7 @@ void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 
 #define HEATMAP_X(pc) Heatmap_X(pc)
 
-#include "CPU/cpu_readwrite.inl"
+#include "CPU/cpu_heatmap.inl"
 
 #define Cpu6502 Cpu6502_debug
 #include "CPU/cpu6502.h"  // MOS 6502

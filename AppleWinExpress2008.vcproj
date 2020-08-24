@@ -838,7 +838,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\CPU\cpu_readwrite.inl"
+					RelativePath=".\source\CPU\cpu_heatmap.inl"
 					>
 				</File>
 			</Filter>
