@@ -25,9 +25,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 {
-	// Optimisation:
-	// . Copy the global /regs/ vars to stack-based local vars
-	//   (Oliver Schmidt says this gives a performance gain, see email - The real deal: "1.10.5")
 	WORD addr;
 	BOOL flagc; // must always be 0 or 1, no other values allowed
 	BOOL flagn; // must always be 0 or 0x80.
@@ -62,6 +59,7 @@ static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 #define $
 			switch (iOpcode)
 			{
+// TODO-MP Optimization Note: ?? Move CYC(#) to array ??
 			case 0x00:              BRK  CYC(7)  break;
 			case 0x01:   idx        ORA  CYC(6)  break;
 			case 0x02: $ IMM        NOP  CYC(2)  break;

@@ -216,10 +216,6 @@ void SetMouseCardInstalled(bool installed)
 #include "CPU/cpu_general.inl"
 #include "CPU/cpu_instructions.inl"
 
-// Break into debugger on invalid opcodes
-//#define INV IsDebugBreakOnInvalid(AM_1);
-#define INV
-
 /****************************************************************************
 *
 *  OPCODE TABLE
