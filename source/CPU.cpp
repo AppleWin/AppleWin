@@ -274,11 +274,13 @@ static __forceinline void DoIrqProfiling(DWORD uCycles)
 
 //===========================================================================
 
+// Called by z80_RDMEM()
 BYTE CpuRead(USHORT addr, ULONG uExecutedCycles)
 {
 	return _READ;
 }
 
+// Called by z80_WRMEM()
 void CpuWrite(USHORT addr, BYTE a, ULONG uExecutedCycles)
 {
 	_WRITE(a);
@@ -486,48 +488,22 @@ void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 
 //===========================================================================
 
-void Heatmap_R(WORD pc)	// todo: move to header & make inline
-{
-	// todo
-}
-
-void Heatmap_W(WORD pc)	// todo: move to header & make inline
-{
-	// todo
-}
-
-void Heatmap_X(WORD pc)	// todo: move to header & make inline
-{
-	// todo
-}
-
-//===========================================================================
-
 #define READ _READ
 #define WRITE(a) _WRITE(a)
-
-#define HEATMAP_R(pc)
-#define HEATMAP_W(pc)
 #define HEATMAP_X(pc)
 
 #include "CPU/cpu6502.h"  // MOS 6502
 #include "CPU/cpu65C02.h" // WDC 65C02
-//#include "CPU/cpu65d02.h" // Debug CPU Memory Visualizer
 
 #undef READ
 #undef WRITE
-
-#undef HEATMAP_R
-#undef HEATMAP_W
 #undef HEATMAP_X
 
 //-----------------
 
-#define READ ReadByte(addr, uExecutedCycles)
-#define WRITE(a) WriteByte(addr, uExecutedCycles, a);
+#define READ Heatmap_ReadByte(addr, uExecutedCycles)
+#define WRITE(a) Heatmap_WriteByte(addr, uExecutedCycles, a);
 
-#define HEATMAP_R(pc) Heatmap_R(pc)
-#define HEATMAP_W(pc) Heatmap_W(pc)
 #define HEATMAP_X(pc) Heatmap_X(pc)
 
 #include "CPU/cpu_readwrite.inl"
@@ -540,8 +516,8 @@ void Heatmap_X(WORD pc)	// todo: move to header & make inline
 #include "CPU/cpu65C02.h" // WDC 65C02
 #undef Cpu65C02
 
-#undef HEATMAP_R
-#undef HEATMAP_W
+#undef READ
+#undef WRITE
 #undef HEATMAP_X
 
 //===========================================================================
