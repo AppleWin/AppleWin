@@ -274,20 +274,6 @@ static __forceinline void DoIrqProfiling(DWORD uCycles)
 
 //===========================================================================
 
-// Called by z80_RDMEM()
-BYTE CpuRead(USHORT addr, ULONG uExecutedCycles)
-{
-	return _READ;
-}
-
-// Called by z80_WRMEM()
-void CpuWrite(USHORT addr, BYTE a, ULONG uExecutedCycles)
-{
-	_WRITE(a);
-}
-
-//===========================================================================
-
 #ifdef USE_SPEECH_API
 
 const USHORT COUT = 0xFDED;
@@ -502,7 +488,7 @@ void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 //-----------------
 
 #define READ Heatmap_ReadByte(addr, uExecutedCycles)
-#define WRITE(a) Heatmap_WriteByte(addr, uExecutedCycles, a);
+#define WRITE(a) Heatmap_WriteByte(addr, a, uExecutedCycles);
 
 #define HEATMAP_X(pc) Heatmap_X(pc)
 
@@ -544,6 +530,31 @@ static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdat
 //
 // ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
 //
+
+//===========================================================================
+
+// Called by z80_RDMEM()
+BYTE CpuRead(USHORT addr, ULONG uExecutedCycles)
+{
+	if (g_nAppMode == MODE_RUNNING)
+	{
+		return _READ;
+	}
+
+	return Heatmap_ReadByte(addr, uExecutedCycles);
+}
+
+// Called by z80_WRMEM()
+void CpuWrite(USHORT addr, BYTE a, ULONG uExecutedCycles)
+{
+	if (g_nAppMode == MODE_RUNNING)
+	{
+		_WRITE(a);
+		return;
+	}
+
+	Heatmap_WriteByte(addr, a, uExecutedCycles);
+}
 
 //===========================================================================
 

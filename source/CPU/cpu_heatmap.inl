@@ -53,7 +53,7 @@ inline uint8_t Heatmap_ReadByte(uint16_t addr, int uExecutedCycles)
 	return _READ;
 }
 
-inline void Heatmap_WriteByte(uint16_t addr, int uExecutedCycles, uint16_t a)
+inline void Heatmap_WriteByte(uint16_t addr, uint16_t a, int uExecutedCycles)
 {
 	Heatmap_W(addr);
 	_WRITE(a);
