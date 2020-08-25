@@ -11,7 +11,7 @@
 
 // RGB videocards types
 
-static RGB_Videocard_e RGB_Videocard = RGB_Video7_SL7;
+static RGB_Videocard_e RGB_Videocard = RGB_Videocard_e::Video7_SL7;
 static int nTextFBMode = 0; // F/B Text
 static int nRegularTextFG = 9; // Default TEXT color
 static int nRegularTextBG = 0; // Default TEXT background color
@@ -955,9 +955,21 @@ RGB_Videocard_e RGB_GetVideocard(void)
 	return RGB_Videocard;
 }
 
-void RGB_SetVideocard(RGB_Videocard_e videocard)
+void RGB_SetVideocard(RGB_Videocard_e videocard, int text_foreground, int text_background)
 {
 	RGB_Videocard = videocard;
+
+	// black & white text
+	RGB_SetRegularTextFG(15);
+	RGB_SetRegularTextBG(0);
+
+	if (videocard == RGB_Videocard_e::Video7_SL7 &&
+		(text_foreground == 6 || text_foreground == 9 || text_foreground == 12 || text_foreground == 15))
+	{
+		// SL7: Only Blue, Amber (Orange), Green, White are supported by hardware switches
+		RGB_SetRegularTextFG(text_foreground);
+		RGB_SetRegularTextBG(0);
+	}
 }
 
 void RGB_SetRegularTextFG(int color)

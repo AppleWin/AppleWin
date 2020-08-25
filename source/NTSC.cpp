@@ -1925,7 +1925,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	}
 
 	if (g_eVideoType == VT_COLOR_MONITOR_RGB
-		&& RGB_GetVideocard() == RGB_Video7_SL7
+		&& RGB_GetVideocard() == RGB_Videocard_e::Video7_SL7
 		&& (!(uVideoModeFlags & VF_DHIRES) ^ !(!(uVideoModeFlags & VF_TEXT) && (uVideoModeFlags & VF_DHIRES) && (uVideoModeFlags & VF_80COL))))
 	{
 		RGB_EnableTextFB(); // F/B text only shows in 40col mode anyway

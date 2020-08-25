@@ -1333,6 +1333,7 @@ struct CmdLine
 		newVideoRefreshRate = VR_NONE;
 		clockMultiplier = 0.0;	// 0 => not set from cmd-line
 		model = A2TYPE_MAX;
+		rgb_card = RGB_Videocard_e::Apple;
 
 		for (UINT i = 0; i < NUM_SLOTS; i++)
 		{
@@ -1367,6 +1368,9 @@ struct CmdLine
 	VideoRefreshRate_e newVideoRefreshRate;
 	double clockMultiplier;
 	eApple2Type model;
+	RGB_Videocard_e rgb_card;
+	int rgb_card_foreground_color;
+	int rgb_card_background_color;
 	std::string strCurrentDir;
 };
 
@@ -1798,6 +1802,37 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.newVideoRefreshRate = VR_60HZ;
 		}
+		else if (strcmp(lpCmdLine, "-rgb-card-type") == 0)
+		{
+			// RGB video card valide types are: "apple", "sl7", "eve", "feline"
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			if (strcmp(lpCmdLine, "apple") == 0)
+				g_cmdLine.rgb_card = RGB_Videocard_e::Apple;
+			else if (strcmp(lpCmdLine, "sl7") == 0)
+				g_cmdLine.rgb_card = RGB_Videocard_e::Video7_SL7;
+			else if (strcmp(lpCmdLine, "eve") == 0)
+				g_cmdLine.rgb_card = RGB_Videocard_e::LeChatMauve_EVE;
+			else if (strcmp(lpCmdLine, "feline") == 0)
+				g_cmdLine.rgb_card = RGB_Videocard_e::LeChatMauve_Feline;
+			else
+				LogFileOutput("-rgb-card-type: unsupported type: %s\n", lpCmdLine);
+		}
+		else if (strcmp(lpCmdLine, "-rgb-card-foreground") == 0)
+		{
+			// Default hardware-defined Text foreground color, for some RGB cards only
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			g_cmdLine.rgb_card_foreground_color = atoi(lpCmdLine);
+		}
+		else if (strcmp(lpCmdLine, "-rgb-card-background") == 0)
+		{
+			// Default hardware-defined Text background color, for some RGB cards only
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			g_cmdLine.rgb_card_background_color = atoi(lpCmdLine);
+		}
 		else if (strcmp(lpCmdLine, "-power-on") == 0)
 		{
 			g_cmdLine.bBoot = true;
@@ -1943,6 +1978,8 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.model != A2TYPE_MAX)
 			SetApple2Type(g_cmdLine.model);
+
+		RGB_SetVideocard(g_cmdLine.rgb_card, g_cmdLine.rgb_card_foreground_color, g_cmdLine.rgb_card_background_color);
 
 		if (g_cmdLine.newVideoType >= 0)
 		{

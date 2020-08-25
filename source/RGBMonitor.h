@@ -1,12 +1,12 @@
 // Handling of RGB videocards
 
-typedef enum
+enum class RGB_Videocard_e
 {
-	RGB_Apple,
-	RGB_Video7_SL7,
-	RGB_LeChatMauve_EVE,
-	RGB_LeChatMauve_Feline
-} RGB_Videocard_e;
+	Apple,
+	Video7_SL7,
+	LeChatMauve_EVE,
+	LeChatMauve_Feline
+};
 
 
 void UpdateHiResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
@@ -36,7 +36,7 @@ void RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion);
 
 RGB_Videocard_e RGB_GetVideocard(void);
-void RGB_SetVideocard(RGB_Videocard_e videocard);
+void RGB_SetVideocard(RGB_Videocard_e videocard, int text_foreground = -1, int text_background = -1);
 void RGB_SetRegularTextFG(int color);
 void RGB_SetRegularTextBG(int color);
 void RGB_EnableTextFB();
