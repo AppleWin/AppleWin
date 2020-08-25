@@ -32,17 +32,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
 ***/
 
-inline void Heatmap_R(WORD pc)
+inline void Heatmap_R(uint16_t address)
 {
 	// todo
 }
 
-inline void Heatmap_W(WORD pc)
+inline void Heatmap_W(uint16_t address)
 {
 	// todo
 }
 
-inline void Heatmap_X(WORD pc)
+inline void Heatmap_X(uint16_t address)
 {
 	// todo
 }
@@ -53,8 +53,8 @@ inline uint8_t Heatmap_ReadByte(uint16_t addr, int uExecutedCycles)
 	return _READ;
 }
 
-inline void Heatmap_WriteByte(uint16_t addr, uint16_t a, int uExecutedCycles)
+inline void Heatmap_WriteByte(uint16_t addr, uint16_t value, int uExecutedCycles)
 {
 	Heatmap_W(addr);
-	_WRITE(a);
+	_WRITE(value);
 }

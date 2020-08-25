@@ -471,8 +471,8 @@ void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 //===========================================================================
 
 #define READ _READ
-#define WRITE(a) _WRITE(a)
-#define HEATMAP_X(pc)
+#define WRITE(value) _WRITE(value)
+#define HEATMAP_X(address)
 
 #include "CPU/cpu6502.h"  // MOS 6502
 #include "CPU/cpu65C02.h" // WDC 65C02
@@ -484,9 +484,9 @@ void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 //-----------------
 
 #define READ Heatmap_ReadByte(addr, uExecutedCycles)
-#define WRITE(a) Heatmap_WriteByte(addr, a, uExecutedCycles);
+#define WRITE(value) Heatmap_WriteByte(addr, value, uExecutedCycles);
 
-#define HEATMAP_X(pc) Heatmap_X(pc)
+#define HEATMAP_X(address) Heatmap_X(address)
 
 #include "CPU/cpu_heatmap.inl"
 
@@ -541,15 +541,15 @@ BYTE CpuRead(USHORT addr, ULONG uExecutedCycles)
 }
 
 // Called by z80_WRMEM()
-void CpuWrite(USHORT addr, BYTE a, ULONG uExecutedCycles)
+void CpuWrite(USHORT addr, BYTE value, ULONG uExecutedCycles)
 {
 	if (g_nAppMode == MODE_RUNNING)
 	{
-		_WRITE(a);
+		_WRITE(value);
 		return;
 	}
 
-	Heatmap_WriteByte(addr, a, uExecutedCycles);
+	Heatmap_WriteByte(addr, value, uExecutedCycles);
 }
 
 //===========================================================================
