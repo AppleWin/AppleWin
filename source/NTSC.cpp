@@ -1666,7 +1666,6 @@ void updateScreenText40RGB(long cycles6502)
 				uint8_t* pMain = MemGetMainPtr(addr);
 				uint8_t  m = pMain[0];
 				uint8_t  c = getCharSetBits(m);
-				//uint16_t bits = g_aPixelDoubleMaskHGR[c & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
 
 				if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
 					c ^= g_nTextFlashMask;
@@ -1761,10 +1760,7 @@ void updateScreenText80RGB(long cycles6502)
 				g_pVideoAddress += 7;
 
 				uint16_t bits = (main << 7) | (aux & 0x7f);
-				//if (g_eVideoType != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
-				//	bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
 
-				//updatePixels(bits);
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
 			}
 		}

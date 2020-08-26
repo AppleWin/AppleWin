@@ -716,7 +716,6 @@ void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, u
 	{
 		const BYTE val = *MemGetAuxPtr(addr);  // RGB cards with F/B text use their own AUX memory!
 		foreground = val >> 4;
-		//foreground = (val >> 6) | ((val & 0x30) >> 2);
 		background = val & 0x0F;
 	}
 
