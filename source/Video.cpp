@@ -112,11 +112,11 @@ static LPDIRECTDRAW g_lpDD = NULL;
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	// The window title will be set to this.
-	char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
+	const char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	{
 		  "Monochrome Monitor (Custom)"
 		, "Color (RGB Monitor)"
-		, "Color (NTSC Monitor)"
+		, "Color (NTSC/PAL Monitor)"
 		, "Color TV"
 		, "B&W TV"
 		, "Amber Monitor"
@@ -1435,4 +1435,21 @@ static void videoCreateDIBSection()
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	NTSC_VideoInit( g_pFramebufferbits );
+}
+
+//===========================================================================
+
+const char* VideoGetAppWindowTitle(void)
+{
+	static const char *apVideoMonitorModeDesc[ 2 ] =
+	{
+		"Color (NTSC Monitor)",
+		"Color (PAL Monitor)"
+	};
+
+	const VideoType_e videoType = GetVideoType();
+	if ( videoType != VT_COLOR_MONITOR_NTSC)
+		return g_apVideoModeDesc[ videoType ];
+	else
+		return apVideoMonitorModeDesc[ GetVideoRefreshRate() == VR_60HZ ? 0 : 1 ];	// NTSC or PAL
 }

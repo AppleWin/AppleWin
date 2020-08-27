@@ -1891,6 +1891,7 @@ void CImageHelperBase::SetImageInfo(ImageInfo* pImageInfo, FileType_e fileType, 
 	pImageInfo->uOffset = dwOffset;
 	pImageInfo->pImageType = pImageType;
 	pImageInfo->uImageSize = dwSize;
+	pImageInfo->uNumTracks = pImageType->m_uNumTracksInImage;// Copy ImageType's m_uNumTracksInImage, which may get trashed by subsequent images in the zip (GH#824)
 }
 
 //-------------------------------------

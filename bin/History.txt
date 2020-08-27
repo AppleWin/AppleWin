@@ -8,6 +8,30 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.29.14.0 - 17 Aug 2020
+-----------------------
+. [Change #822] Updated Uthernet card support to use Npcap for Win10.
+. [Change #806] Added support for 'Base 64A' - a Taiwanese Apple II clone.
+. [Change #763] Support for PAL(50Hz) killing color-burst during TEXT video mode.
+	- When 50Hz, then AppleWin's window title changes to "Color (PAL Monitor)" instead of "Color (NTSC Monitor)"
+. [Change #781] Loading a large save-state takes some time - added a busy indicator.
+. [Change #139] NIB disk image: added warning if any track's first D5-nibble triple isn't an address prologue.
+. [Bug #824] Fixed a regression in multi-zip support (introduced at 1.29.10.0).
+. [Bug #820] Fixed a GDI Object leak (occurring when accessing the Disk II with AppleWin minimised).
+. [Bug #813] Mockingboard playback looping after entering debugger then configuration.
+. [Bug #809] Fixed a memory leak.
+. [Bug #801] Wrong timing with LSR abs,X / ROR abs,X / ROL abs,X for the 6502 CPU.
+. [Bug #796] Fix for 'IRQ occurring on last cycle of opcode' not always true.
+. [Bug #751] No-Slot Clock running and power-cycle can causes lock-up on power-cycle.
+	- NSC state persisted to save-state.
+	- added a new switch '-no-nsc' to configure Apple II without an NSC.
+. [Bug #663, #691] Fixes for image loading switches (-d1,-d2,-h1,-h2,-s5d1,-s5d2):
+	- support relative paths (#663).
+	- updated the current directory with the path for each loaded image (#663) & when saving state (#691).
+	- added a new switch '-current-dir <path>' to guarantee the current dir after using image loading switches.
+. [Bug #52] Fixed the 6502/65C02 false-read of 6522 issue for Willy Byte!
+. [PR #800] Improved debugger's rendering speed for PrintGlyph().
+
 
 1.29.13.0 - 31 May 2020
 -----------------------
