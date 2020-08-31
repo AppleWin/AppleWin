@@ -1920,9 +1920,16 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 	}
 
+	// Video7_SL7 extra RGB modes handling
 	if (g_eVideoType == VT_COLOR_MONITOR_RGB
 		&& RGB_GetVideocard() == RGB_Videocard_e::Video7_SL7
-		&& (!(uVideoModeFlags & VF_DHIRES) ^ !(!(uVideoModeFlags & VF_TEXT) && (uVideoModeFlags & VF_DHIRES) && (uVideoModeFlags & VF_80COL))))
+		// Exclude following modes (fallback through regular NTSC rendering with RGB text)
+		// VF_DHIRES = 1  -> regular Apple IIe modes
+		// VF_DHIRES = 0 and VF_TEXT=0, VF_DHIRES=1, VF_80COL=1  -> DHIRES modes, setup by F1/F2
+		&& !(!(uVideoModeFlags & VF_DHIRES) ||
+			 ((uVideoModeFlags & VF_DHIRES) && !(uVideoModeFlags & VF_TEXT) && (uVideoModeFlags & VF_DHIRES) && (uVideoModeFlags & VF_80COL))
+			)
+		)
 	{
 		RGB_EnableTextFB(); // F/B text only shows in 40col mode anyway
 
@@ -1964,6 +1971,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			g_pFuncUpdateTextScreen = updateScreenText40RGB;
 		}
 	}
+	// Regular NTSC modes
 	else if (uVideoModeFlags & VF_TEXT)
 	{
 		if (uVideoModeFlags & VF_80COL)
