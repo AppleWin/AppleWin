@@ -11,10 +11,10 @@
 
 // RGB videocards types
 
-static RGB_Videocard_e RGB_Videocard = RGB_Videocard_e::Apple;
-static int nTextFBMode = 0; // F/B Text
-static int nRegularTextFG = 15; // Default TEXT color
-static int nRegularTextBG = 0; // Default TEXT background color
+static RGB_Videocard_e g_RGBVideocard = RGB_Videocard_e::Apple;
+static int g_nTextFBMode = 0; // F/B Text
+static int g_nRegularTextFG = 15; // Default TEXT color
+static int g_nRegularTextBG = 0; // Default TEXT background color
 
 const int HIRES_COLUMN_SUBUNIT_SIZE = 16;
 const int HIRES_COLUMN_UNIT_SIZE = (HIRES_COLUMN_SUBUNIT_SIZE)*2;
@@ -710,9 +710,9 @@ void UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 // Default BG and FG are usually defined by hardware switches, defaults to black/white
 void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits)
 {
-	uint8_t foreground = nRegularTextFG;
-	uint8_t background = nRegularTextBG;
-	if (nTextFBMode)
+	uint8_t foreground = g_nRegularTextFG;
+	uint8_t background = g_nRegularTextBG;
+	if (g_nTextFBMode)
 	{
 		const BYTE val = *MemGetAuxPtr(addr);  // RGB cards with F/B text use their own AUX memory!
 		foreground = val >> 4;
@@ -724,7 +724,7 @@ void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, u
 
 void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits)
 {
-	UpdateDuochromeCell(2, 7, pVideoAddress, bits, nRegularTextFG, nRegularTextBG);
+	UpdateDuochromeCell(2, 7, pVideoAddress, bits, g_nRegularTextFG, g_nRegularTextBG);
 }
 
 //===========================================================================
@@ -951,12 +951,12 @@ void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
 
 RGB_Videocard_e RGB_GetVideocard(void)
 {
-	return RGB_Videocard;
+	return g_RGBVideocard;
 }
 
 void RGB_SetVideocard(RGB_Videocard_e videocard, int text_foreground, int text_background)
 {
-	RGB_Videocard = videocard;
+	g_RGBVideocard = videocard;
 
 	// black & white text
 	RGB_SetRegularTextFG(15);
@@ -973,25 +973,25 @@ void RGB_SetVideocard(RGB_Videocard_e videocard, int text_foreground, int text_b
 
 void RGB_SetRegularTextFG(int color)
 {
-	 nRegularTextFG = color;
+	g_nRegularTextFG = color;
 }
 
 void RGB_SetRegularTextBG(int color)
 {
-	nRegularTextBG = color;
+	g_nRegularTextBG = color;
 }
 
 void RGB_EnableTextFB()
 {
-	nTextFBMode = 1;
+	g_nTextFBMode = 1;
 }
 
 void RGB_DisableTextFB()
 {
-	nTextFBMode = 0;
+	g_nTextFBMode = 0;
 }
 
 int RGB_IsTextFB()
 {
-	return nTextFBMode;
+	return g_nTextFBMode;
 }

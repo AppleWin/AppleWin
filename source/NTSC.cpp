@@ -1754,9 +1754,9 @@ void updateScreenText80RGB(long cycles6502)
 				if ((0 == g_nVideoCharSet) && 0x40 == (a & 0xC0)) // Flash only if mousetext not active
 					aux ^= g_nTextFlashMask;
 
-				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, aux);
+				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)aux);
 				g_pVideoAddress += 7;
-				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, main);
+				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)main);
 				g_pVideoAddress += 7;
 
 				uint16_t bits = (main << 7) | (aux & 0x7f);

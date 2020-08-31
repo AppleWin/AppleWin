@@ -1,6 +1,6 @@
 // Handling of RGB videocards
 
-enum class RGB_Videocard_e
+enum RGB_Videocard_e
 {
 	Apple,
 	Video7_SL7,
