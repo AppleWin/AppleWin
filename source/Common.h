@@ -52,7 +52,6 @@ enum AppMode_e
 #define	TITLE_APPLE_2E			TEXT("Apple //e Emulator")
 #define	TITLE_APPLE_2E_ENHANCED	TEXT("Enhanced Apple //e Emulator")
 #define TITLE_APPLE_2C          TEXT("Apple //e Emulator")
-#define TITLE_APPLE_2D          TEXT("Apple )(d Virtual Debug Hardware") 
 #define	TITLE_PRAVETS_82        TEXT("Pravets 82 Emulator")
 #define	TITLE_PRAVETS_8M        TEXT("Pravets 8M Emulator")
 #define	TITLE_PRAVETS_8A        TEXT("Pravets 8A Emulator")
@@ -154,11 +153,9 @@ enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
  //e  10
  //e+ 11
  //c  20
- //d  40
 */
 #define APPLE2E_MASK	0x10
 #define APPLE2C_MASK	0x20
-#define APPLE2D_MASK    0x40
 #define APPLECLONE_MASK	0x100
 
 #define IS_APPLE2		((g_Apple2Type & (APPLE2E_MASK|APPLE2C_MASK)) == 0)
@@ -175,7 +172,6 @@ enum eApple2Type {
 					A2TYPE_APPLE2EENHANCED,
 					A2TYPE_UNDEFINED,
 					A2TYPE_APPLE2C=APPLE2C_MASK,
-					A2TYPE_APPLE2D=APPLE2D_MASK,
 
 					// ][ clones start here:
 					A2TYPE_CLONE=APPLECLONE_MASK,

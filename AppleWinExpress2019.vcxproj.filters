@@ -240,9 +240,6 @@
     <ClInclude Include="source\CPU\cpu6502.h">
       <Filter>Source Files\CPU</Filter>
     </ClInclude>
-    <ClInclude Include="source\CPU\cpu65d02.h">
-      <Filter>Source Files\CPU</Filter>
-    </ClInclude>
     <ClInclude Include="source\CPU\cpu65C02.h">
       <Filter>Source Files\CPU</Filter>
     </ClInclude>

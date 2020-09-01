@@ -226,10 +226,6 @@ void SetMouseCardInstalled(bool installed)
 #include "CPU/cpu_instructions.inl"
 #include "CPU/cpu_readwrite.inl"
 
-// Break into debugger on invalid opcodes
-//#define INV IsDebugBreakOnInvalid(AM_1);
-#define INV
-
 /****************************************************************************
 *
 *  OPCODE TABLE
@@ -280,18 +276,6 @@ static __forceinline void DoIrqProfiling(DWORD uCycles)
 		g_nMean = nTotal / BUFFER_SIZE;
 	}
 #endif
-}
-
-//===========================================================================
-
-BYTE CpuRead(USHORT addr, ULONG uExecutedCycles)
-{
-	return READ;
-}
-
-void CpuWrite(USHORT addr, BYTE a, ULONG uExecutedCycles)
-{
-	WRITE(a);
 }
 
 //===========================================================================
@@ -496,9 +480,37 @@ void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 
 //===========================================================================
 
+#define READ _READ
+#define WRITE(value) _WRITE(value)
+#define HEATMAP_X(address)
+
 #include "CPU/cpu6502.h"  // MOS 6502
 #include "CPU/cpu65C02.h" // WDC 65C02
-#include "CPU/cpu65d02.h" // Debug CPU Memory Visualizer
+
+#undef READ
+#undef WRITE
+#undef HEATMAP_X
+
+//-----------------
+
+#define READ Heatmap_ReadByte(addr, uExecutedCycles)
+#define WRITE(value) Heatmap_WriteByte(addr, value, uExecutedCycles);
+
+#define HEATMAP_X(address) Heatmap_X(address)
+
+#include "CPU/cpu_heatmap.inl"
+
+#define Cpu6502 Cpu6502_debug
+#include "CPU/cpu6502.h"  // MOS 6502
+#undef Cpu6502
+
+#define Cpu65C02 Cpu65C02_debug
+#include "CPU/cpu65C02.h" // WDC 65C02
+#undef Cpu65C02
+
+#undef READ
+#undef WRITE
+#undef HEATMAP_X
 
 //===========================================================================
 
@@ -509,13 +521,52 @@ static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdat
 
 	if (GetMainCpu() == CPU_6502)
 		return Cpu6502(uTotalCycles, bVideoUpdate, g_pVideo);		// Apple ][, ][+, //e, Clones
+	if (g_nAppMode == MODE_RUNNING)
+	{
+		if (GetMainCpu() == CPU_6502)
+			return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
+		else
+			return Cpu65C02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+	}
 	else
 		return Cpu65C02(uTotalCycles, bVideoUpdate, g_pVideo);	// Enhanced Apple //e
+	{
+		_ASSERT(g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
+		if (GetMainCpu() == CPU_6502)
+			return Cpu6502_debug(uTotalCycles, bVideoUpdate);	// Apple ][, ][+, //e, Clones
+		else
+			return Cpu65C02_debug(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+	}
 }
 
 //
 // ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
 //
+
+//===========================================================================
+
+// Called by z80_RDMEM()
+BYTE CpuRead(USHORT addr, ULONG uExecutedCycles)
+{
+	if (g_nAppMode == MODE_RUNNING)
+	{
+		return _READ;
+	}
+
+	return Heatmap_ReadByte(addr, uExecutedCycles);
+}
+
+// Called by z80_WRMEM()
+void CpuWrite(USHORT addr, BYTE value, ULONG uExecutedCycles)
+{
+	if (g_nAppMode == MODE_RUNNING)
+	{
+		_WRITE(value);
+		return;
+	}
+
+	Heatmap_WriteByte(addr, value, uExecutedCycles);
+}
 
 //===========================================================================
 

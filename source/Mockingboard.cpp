@@ -1684,26 +1684,31 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 
 	// Support 6502/65C02 false-reads of 6522 (GH#52)
 	if ( ((mem[(PC-2)&0xffff] == 0x91) && GetMainCpu() == CPU_6502) ||	// sta (zp),y - 6502 only (no-PX variant only) (UTAIIe:4-23)
-		 (mem[(PC-3)&0xffff] == 0x99) ||	// sta abs16,y - 65C02: it's only the no-PX variant that does the false-read (UTAIIe:4-27)
-		 (mem[(PC-3)&0xffff] == 0x9D) )		// sta abs16,x - 65C02: it's only the no-PX variant that does the false-read (UTAIIe:4-27)
+		 (mem[(PC-3)&0xffff] == 0x99) ||	// sta abs16,y - 6502/65C02, but for 65C02 only the no-PX variant that does the false-read (UTAIIe:4-27)
+		 (mem[(PC-3)&0xffff] == 0x9D) )		// sta abs16,x - 6502/65C02, but for 65C02 only the no-PX variant that does the false-read (UTAIIe:4-27)
 	{
+		WORD base;
 		WORD addr16;
 		if (mem[(PC-2)&0xffff] == 0x91)
 		{
 			BYTE zp = mem[(PC-1)&0xffff];
-			addr16 = (mem[zp] | (mem[(zp+1)&0xff]<<8)) + regs.y;
+			base = (mem[zp] | (mem[(zp+1)&0xff]<<8));
+			addr16 = base + regs.y;
 		}
 		else
 		{
-			addr16 = mem[(PC-2)&0xffff] | (mem[(PC-1)&0xffff]<<8);
-			addr16 += (mem[(PC-3)&0xffff] == 0x99)? regs.y : regs.x;
+			base = mem[(PC-2)&0xffff] | (mem[(PC-1)&0xffff]<<8);
+			addr16 = base + ((mem[(PC-3)&0xffff] == 0x99) ? regs.y : regs.x);
 		}
 
-		_ASSERT(addr16 == nAddr);
-		if (addr16 == nAddr)	// Check we've reverse looked-up the 6502 opcode correctly
+		if (((base ^ addr16) >> 8) == 0)	// Only the no-PX variant does the false read (to the same I/O SELECT page)
 		{
-			if ( ((nAddr&0xf) == 4) || ((nAddr&0xf) == 8) )	// Only reading 6522 reg-4 or reg-8 actually has an effect
-				MB_Read(PC, nAddr, 0, 0, nExecutedCycles);
+			_ASSERT(addr16 == nAddr);
+			if (addr16 == nAddr)	// Check we've reverse looked-up the 6502 opcode correctly
+			{
+				if ( ((nAddr&0xf) == 4) || ((nAddr&0xf) == 8) )	// Only reading 6522 reg-4 or reg-8 actually has an effect
+					MB_Read(PC, nAddr, 0, 0, nExecutedCycles);
+			}
 		}
 	}
 

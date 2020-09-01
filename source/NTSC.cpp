@@ -713,8 +713,10 @@ void NTSC::updateVideoScannerAddress()
 	if (((g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenDoubleHires80) ||
 		(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenDoubleLores80) ||
 		(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80) ||
-		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && g_pFuncUpdateTextScreen == &NTSC::updateScreenText80))
+		(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80RGB) ||
+		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && (g_pFuncUpdateTextScreen == &NTSC::updateScreenText80 || g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80RGB)))
 		&& (eVideoType != VT_COLOR_MONITOR_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
+
 	{
 		g_pVideoAddress -= 1;
 	}
@@ -1369,6 +1371,36 @@ void NTSC::updateScreenSingleHires40Simplified (long cycles6502)
 	}
 }
 
+//===========================================================================
+void NTSC::updateScreenSingleHires40Duochrome(long cycles6502)
+{
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pFuncUpdateTextScreen(cycles6502);
+		return;
+	}
+
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint16_t addr = getVideoScannerAddressHGR();
+
+				UpdateHiResDuochromeCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+				g_pVideoAddress += 14;
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+	}
+}
+
+
 void NTSC::updateScreenSingleHires40 (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
@@ -1501,7 +1533,42 @@ void NTSC::updateScreenText40 (long cycles6502)
 	}
 }
 
+
 //===========================================================================
+void updateScreenText40RGB(long cycles6502)
+{
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		uint16_t addr = getVideoScannerAddressTXT();
+
+		if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+		{
+			if (g_nColorBurstPixels > 0)
+				g_nColorBurstPixels -= 1;
+		}
+		else if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint8_t* pMain = MemGetMainPtr(addr);
+				uint8_t  m = pMain[0];
+				uint8_t  c = getCharSetBits(m);
+
+				if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
+					c ^= g_nTextFlashMask;
+
+				UpdateText40ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, c);
+				g_pVideoAddress += 14;
+
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+
+	}
+}
+
+//===========================================================================
+void updateScreenText80 (long cycles6502)
 void NTSC::updateScreenText80 (long cycles6502)
 {
 	for (; cycles6502 > 0; --cycles6502)
@@ -1537,6 +1604,51 @@ void NTSC::updateScreenText80 (long cycles6502)
 					bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
 
 				updatePixels( bits );
+				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
+			}
+		}
+		updateVideoScannerHorzEOL();
+	}
+}
+
+//===========================================================================
+void updateScreenText80RGB(long cycles6502)
+{
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		uint16_t addr = getVideoScannerAddressTXT();
+
+		if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+		{
+			if (g_nColorBurstPixels > 0)
+				g_nColorBurstPixels -= 1;
+		}
+		else if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint8_t* pMain = MemGetMainPtr(addr);
+				uint8_t* pAux = MemGetAuxPtr(addr);
+
+				uint8_t m = pMain[0];
+				uint8_t a = pAux[0];
+
+				uint16_t main = getCharSetBits(m);
+				uint16_t aux = getCharSetBits(a);
+
+				if ((0 == g_nVideoCharSet) && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
+					main ^= g_nTextFlashMask;
+
+				if ((0 == g_nVideoCharSet) && 0x40 == (a & 0xC0)) // Flash only if mousetext not active
+					aux ^= g_nTextFlashMask;
+
+				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)aux);
+				g_pVideoAddress += 7;
+				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)main);
+				g_pVideoAddress += 7;
+
+				uint16_t bits = (main << 7) | (aux & 0x7f);
+
 				g_nLastColumnPixelNTSC = (bits >> 14) & 1;
 			}
 		}
@@ -1622,8 +1734,15 @@ uint16_t NTSC::NTSC_VideoGetScannerAddressForDebugger(void)
 //===========================================================================
 void NTSC::NTSC_SetVideoTextMode( int cols )
 {
-	if (cols == 40)
-		g_pFuncUpdateTextScreen = &NTSC::updateScreenText40;
+	if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+	{
+		if (cols == 40)
+			g_pFuncUpdateTextScreen = &NTSC::updateScreenText40RGB;
+		else
+			g_pFuncUpdateTextScreen = &NTSC::updateScreenText80RGB;
+	}
+	else if( cols == 40 )
+		g_pFuncUpdateTextScreen = updateScreenText40;
 	else
 		g_pFuncUpdateTextScreen = &NTSC::updateScreenText80;
 }
@@ -1640,8 +1759,11 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		return;
 	}
 
+
 	g_nVideoMixed   = uVideoModeFlags & VF_MIXED;
 	g_nVideoCharSet = Video::VideoGetSWAltCharSet() ? 1 : 0;
+
+	RGB_DisableTextFB();
 
 	g_nTextPage  = 1;
 	g_nHiresPage = 1;
@@ -1663,8 +1785,9 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			g_nColorBurstPixels = 0;		// (For mid-line video mode change) Instantaneously kill color-burst! (not correct as TV's can take many lines)
 
 			// Switching mid-line from graphics to TEXT
-			if (pVideo->g_eVideoType == VT_COLOR_MONITOR_NTSC &&
-				g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText40 && g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText80)
+			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
+				g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText40 && g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText40RGB
+				&& g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText80 && g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText80RGB)
 			{
 				*(uint32_t*)&g_pVideoAddress[0] = 0;	// blank out any stale pixel data, eg. ANSI STORY (at end credits)
 				*(uint32_t*)&g_pVideoAddress[1] = 0;
@@ -1676,18 +1799,78 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			g_nColorBurstPixels = 1024;		// (For mid-line video mode change)
 
 			// Switching mid-line from TEXT to graphics
-			if (pVideo->g_eVideoType == VT_COLOR_MONITOR_NTSC &&
-				(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText40 || g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80))
+			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
+				(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText40 || g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText40RGB
+					|| g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80 || g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80RGB))
 			{
 				g_pVideoAddress -= 2;	// eg. FT's TRIBU demo & ANSI STORY (at "turn the disk over!")
 			}
 		}
 	}
 
-	if (uVideoModeFlags & VF_TEXT)
+	// Video7_SL7 extra RGB modes handling
+	if (g_eVideoType == VT_COLOR_MONITOR_RGB
+		&& RGB_GetVideocard() == RGB_Videocard_e::Video7_SL7
+		// Exclude following modes (fallback through regular NTSC rendering with RGB text)
+		// VF_DHIRES = 1  -> regular Apple IIe modes
+		// VF_DHIRES = 0 and VF_TEXT=0, VF_DHIRES=1, VF_80COL=1  -> DHIRES modes, setup by F1/F2
+		&& !(!(uVideoModeFlags & VF_DHIRES) ||
+			 ((uVideoModeFlags & VF_DHIRES) && !(uVideoModeFlags & VF_TEXT) && (uVideoModeFlags & VF_DHIRES) && (uVideoModeFlags & VF_80COL))
+			)
+		)
+	{
+		RGB_EnableTextFB(); // F/B text only shows in 40col mode anyway
+
+		// ----- Video-7 SL7 extra modes ----- (from the videocard manual)
+		//  AN3 TEXT HIRES 80COL
+		//   0    1    ?     0    F/B Text
+		//   0    1    ?     1    80 col Text
+		//   0    0    0     0    LoRes (mixed with F/B Text)
+		//   0    0    0     1    DLoRes (mixed with 80 col. Text)
+		//   0    0    1     0    F/B HiRes (mixed with F/B Text)
+		if (uVideoModeFlags & VF_TEXT)
+		{
+			if (uVideoModeFlags & VF_80COL)
+			{
+				// 80 col text
+				g_pFuncUpdateGraphicsScreen = updateScreenText80RGB;
+			}
+			else
+			{
+				g_pFuncUpdateGraphicsScreen = updateScreenText40RGB;
+			}
+		}
+		else if (uVideoModeFlags & VF_HIRES)
+		{
+			// F/B HiRes
+			g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Duochrome;
+			g_pFuncUpdateTextScreen = updateScreenText40RGB;
+		}
+		else if (uVideoModeFlags & VF_80COL)
+		{
+			// DLoRes
+			g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simplified;
+			g_pFuncUpdateTextScreen = updateScreenText80RGB;
+		}
+		else
+		{
+			// LoRes + F/B Text
+			g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simplified;
+			g_pFuncUpdateTextScreen = updateScreenText40RGB;
+		}
+	}
+	// Regular NTSC modes
+	else if (uVideoModeFlags & VF_TEXT)
 	{
 		if (uVideoModeFlags & VF_80COL)
-			g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText80;
+		{
+			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText80RGB;
+			else
+				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText80;
+		}
+		else if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+			g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText40RGB;
 		else
 			g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText40;
 	}

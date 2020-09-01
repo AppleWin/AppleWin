@@ -1,4 +1,24 @@
 #include "VideoTypes.h"
+// Handling of RGB videocards
+
+enum RGB_Videocard_e
+{
+	Apple,
+	Video7_SL7,
+	LeChatMauve_EVE,
+	LeChatMauve_Feline
+};
+
+
+void UpdateHiResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
+void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool updateAux, bool updateMain);
+int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress);
+void UpdateLoResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
+void UpdateDLoResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
+void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits);
+void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits);
+void UpdateHiResDuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
+void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint8_t foreground, uint8_t background);
 
 
 const int HIRES_COLUMN_SUBUNIT_SIZE = 16;
@@ -156,3 +176,14 @@ private:
 	void CopySource(int w, int h, int sx, int sy, bgra_t* pVideoAddress, const int nSrcAdjustment);
 	void V_CreateDIBSections(void);
 };
+
+--- from mergevoid RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion);
+
+RGB_Videocard_e RGB_GetVideocard(void);
+void RGB_SetVideocard(RGB_Videocard_e videocard, int text_foreground = -1, int text_background = -1);
+void RGB_SetRegularTextFG(int color);
+void RGB_SetRegularTextBG(int color);
+void RGB_EnableTextFB();
+void RGB_DisableTextFB();
+int RGB_IsTextFB();
