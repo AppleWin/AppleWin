@@ -34,17 +34,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 inline void Heatmap_R(uint16_t address)
 {
-	// todo
+	g_aMemoryHeatmap_R[g_aMemoryHeatmapPtr_R[address >> 8] + (address & 0xFF)] = g_iMemoryHeatmapValue;
 }
 
 inline void Heatmap_W(uint16_t address)
 {
-	// todo
+	g_aMemoryHeatmap_W[g_aMemoryHeatmapPtr_W[address >> 8] + (address & 0xFF)] = g_iMemoryHeatmapValue;
 }
 
 inline void Heatmap_X(uint16_t address)
 {
-	// todo
+	g_aMemoryHeatmap_X[g_aMemoryHeatmapPtr_R[address >> 8] + (address & 0xFF)] = ++g_iMemoryHeatmapValue;
 }
 
 inline uint8_t Heatmap_ReadByte(uint16_t addr, int uExecutedCycles)

@@ -61,7 +61,8 @@ static RGBQUAD PalIndex2RGB[] =
 // Globals (static)
 
 bool RGBMonitor::g_rgbInvertBit7 = false;
-RGB_Videocard_e g_RGBVideocard = RGB_Videocard_e::Apple;
+
+RGB_Videocard_e RGBMonitor::g_RGBVideocard = RGB_Videocard_e::Apple;
 int RGBMonitor::g_nTextFBMode = 0; // F/B Text
 int RGBMonitor::g_nRegularTextFG = 15; // Default TEXT color
 int RGBMonitor::g_nRegularTextBG = 0; // Default TEXT background color

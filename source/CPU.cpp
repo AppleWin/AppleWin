@@ -516,26 +516,20 @@ void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 
 static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdate)
 {
-	if (GetDebugMode())
-		return Cpu65D02(uTotalCycles, bVideoUpdate, g_pVideo, GetMainCpu() == CPU_65C02);
-
-	if (GetMainCpu() == CPU_6502)
-		return Cpu6502(uTotalCycles, bVideoUpdate, g_pVideo);		// Apple ][, ][+, //e, Clones
-	if (g_nAppMode == MODE_RUNNING)
+	if (!GetDebugMode())
 	{
 		if (GetMainCpu() == CPU_6502)
-			return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
+			return Cpu6502(uTotalCycles, bVideoUpdate, g_pVideo);		// Apple ][, ][+, //e, Clones
 		else
-			return Cpu65C02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+			return Cpu65C02(uTotalCycles, bVideoUpdate, g_pVideo);	// Enhanced Apple //e
 	}
 	else
-		return Cpu65C02(uTotalCycles, bVideoUpdate, g_pVideo);	// Enhanced Apple //e
 	{
 		_ASSERT(g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
 		if (GetMainCpu() == CPU_6502)
-			return Cpu6502_debug(uTotalCycles, bVideoUpdate);	// Apple ][, ][+, //e, Clones
+			return Cpu6502_debug(uTotalCycles, bVideoUpdate, g_pVideo);	// Apple ][, ][+, //e, Clones
 		else
-			return Cpu65C02_debug(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+			return Cpu65C02_debug(uTotalCycles, bVideoUpdate, g_pVideo);	// Enhanced Apple //e
 	}
 }
 

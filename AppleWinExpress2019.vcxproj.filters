@@ -661,9 +661,7 @@
     <None Include="resource\TKClock.rom">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="source\CPU\cpu_readwrite.inl">
-      <Filter>Source Files\CPU</Filter>
-    </None>    <None Include="resource\Base64A.rom">
+    <None Include="resource\Base64A.rom">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="resource\Base64A_German_Video.rom">
