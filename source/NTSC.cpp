@@ -307,8 +307,6 @@ UINT NTSC::g_videoScanner6502Cycles = VIDEO_SCANNER_6502_CYCLES;	// default to N
 
 csbits_t NTSC::csbits;
 
-
-
 NTSC::NTSC(Video* _pVideo)
 {
 	pVideo = _pVideo;
@@ -1376,7 +1374,7 @@ void NTSC::updateScreenSingleHires40Duochrome(long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
-		g_pFuncUpdateTextScreen(cycles6502);
+		FuncUpdateTextScreen(cycles6502);
 		return;
 	}
 
@@ -1392,7 +1390,7 @@ void NTSC::updateScreenSingleHires40Duochrome(long cycles6502)
 			{
 				uint16_t addr = getVideoScannerAddressHGR();
 
-				UpdateHiResDuochromeCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+				pRGBMonitor->UpdateHiResDuochromeCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
 				g_pVideoAddress += 14;
 			}
 		}
@@ -1535,7 +1533,7 @@ void NTSC::updateScreenText40 (long cycles6502)
 
 
 //===========================================================================
-void updateScreenText40RGB(long cycles6502)
+void NTSC::updateScreenText40RGB(long cycles6502)
 {
 	for (; cycles6502 > 0; --cycles6502)
 	{
@@ -1557,7 +1555,7 @@ void updateScreenText40RGB(long cycles6502)
 				if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
 					c ^= g_nTextFlashMask;
 
-				UpdateText40ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, c);
+				pRGBMonitor->UpdateText40ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, c);
 				g_pVideoAddress += 14;
 
 			}
@@ -1568,7 +1566,6 @@ void updateScreenText40RGB(long cycles6502)
 }
 
 //===========================================================================
-void updateScreenText80 (long cycles6502)
 void NTSC::updateScreenText80 (long cycles6502)
 {
 	for (; cycles6502 > 0; --cycles6502)
@@ -1612,7 +1609,7 @@ void NTSC::updateScreenText80 (long cycles6502)
 }
 
 //===========================================================================
-void updateScreenText80RGB(long cycles6502)
+void NTSC::updateScreenText80RGB(long cycles6502)
 {
 	for (; cycles6502 > 0; --cycles6502)
 	{
@@ -1642,9 +1639,9 @@ void updateScreenText80RGB(long cycles6502)
 				if ((0 == g_nVideoCharSet) && 0x40 == (a & 0xC0)) // Flash only if mousetext not active
 					aux ^= g_nTextFlashMask;
 
-				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)aux);
+				pRGBMonitor->UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)aux);
 				g_pVideoAddress += 7;
-				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)main);
+				pRGBMonitor->UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)main);
 				g_pVideoAddress += 7;
 
 				uint16_t bits = (main << 7) | (aux & 0x7f);
@@ -1734,7 +1731,7 @@ uint16_t NTSC::NTSC_VideoGetScannerAddressForDebugger(void)
 //===========================================================================
 void NTSC::NTSC_SetVideoTextMode( int cols )
 {
-	if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+	if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
 	{
 		if (cols == 40)
 			g_pFuncUpdateTextScreen = &NTSC::updateScreenText40RGB;
@@ -1742,7 +1739,7 @@ void NTSC::NTSC_SetVideoTextMode( int cols )
 			g_pFuncUpdateTextScreen = &NTSC::updateScreenText80RGB;
 	}
 	else if( cols == 40 )
-		g_pFuncUpdateTextScreen = updateScreenText40;
+		g_pFuncUpdateTextScreen = &NTSC::updateScreenText40;
 	else
 		g_pFuncUpdateTextScreen = &NTSC::updateScreenText80;
 }
@@ -1763,7 +1760,7 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	g_nVideoMixed   = uVideoModeFlags & VF_MIXED;
 	g_nVideoCharSet = Video::VideoGetSWAltCharSet() ? 1 : 0;
 
-	RGB_DisableTextFB();
+	RGBMonitor::RGB_DisableTextFB();
 
 	g_nTextPage  = 1;
 	g_nHiresPage = 1;
@@ -1785,7 +1782,7 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			g_nColorBurstPixels = 0;		// (For mid-line video mode change) Instantaneously kill color-burst! (not correct as TV's can take many lines)
 
 			// Switching mid-line from graphics to TEXT
-			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
+			if (Video::GetVideoType() == VT_COLOR_MONITOR_NTSC &&
 				g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText40 && g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText40RGB
 				&& g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText80 && g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText80RGB)
 			{
@@ -1799,7 +1796,7 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			g_nColorBurstPixels = 1024;		// (For mid-line video mode change)
 
 			// Switching mid-line from TEXT to graphics
-			if (g_eVideoType == VT_COLOR_MONITOR_NTSC &&
+			if (Video::GetVideoType() == VT_COLOR_MONITOR_NTSC &&
 				(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText40 || g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText40RGB
 					|| g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80 || g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80RGB))
 			{
@@ -1809,8 +1806,8 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	}
 
 	// Video7_SL7 extra RGB modes handling
-	if (g_eVideoType == VT_COLOR_MONITOR_RGB
-		&& RGB_GetVideocard() == RGB_Videocard_e::Video7_SL7
+	if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB
+		&& RGBMonitor::RGB_GetVideocard() == RGB_Videocard_e::Video7_SL7
 		// Exclude following modes (fallback through regular NTSC rendering with RGB text)
 		// VF_DHIRES = 1  -> regular Apple IIe modes
 		// VF_DHIRES = 0 and VF_TEXT=0, VF_DHIRES=1, VF_80COL=1  -> DHIRES modes, setup by F1/F2
@@ -1819,7 +1816,7 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			)
 		)
 	{
-		RGB_EnableTextFB(); // F/B text only shows in 40col mode anyway
+		RGBMonitor::RGB_EnableTextFB(); // F/B text only shows in 40col mode anyway
 
 		// ----- Video-7 SL7 extra modes ----- (from the videocard manual)
 		//  AN3 TEXT HIRES 80COL
@@ -1833,30 +1830,30 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			if (uVideoModeFlags & VF_80COL)
 			{
 				// 80 col text
-				g_pFuncUpdateGraphicsScreen = updateScreenText80RGB;
+				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText80RGB;
 			}
 			else
 			{
-				g_pFuncUpdateGraphicsScreen = updateScreenText40RGB;
+				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText40RGB;
 			}
 		}
 		else if (uVideoModeFlags & VF_HIRES)
 		{
 			// F/B HiRes
-			g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Duochrome;
-			g_pFuncUpdateTextScreen = updateScreenText40RGB;
+			g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleHires40Duochrome;
+			g_pFuncUpdateTextScreen = &NTSC::updateScreenText40RGB;
 		}
 		else if (uVideoModeFlags & VF_80COL)
 		{
 			// DLoRes
-			g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simplified;
-			g_pFuncUpdateTextScreen = updateScreenText80RGB;
+			g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores80Simplified;
+			g_pFuncUpdateTextScreen = &NTSC::updateScreenText80RGB;
 		}
 		else
 		{
 			// LoRes + F/B Text
-			g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simplified;
-			g_pFuncUpdateTextScreen = updateScreenText40RGB;
+			g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleLores40Simplified;
+			g_pFuncUpdateTextScreen = &NTSC::updateScreenText40RGB;
 		}
 	}
 	// Regular NTSC modes
@@ -1864,12 +1861,12 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	{
 		if (uVideoModeFlags & VF_80COL)
 		{
-			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+			if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
 				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText80RGB;
 			else
 				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText80;
 		}
-		else if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+		else if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
 			g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText40RGB;
 		else
 			g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText40;

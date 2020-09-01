@@ -35,7 +35,6 @@ public:
 	uint16_t g_nVideoClockHorz;
 	uint32_t g_nChromaSize;
 
-
 	void	NTSC_SetRefreshRate(VideoRefreshRate_e rate);
 
 	void     NTSC_SetVideoMode(uint32_t uVideoModeFlags, bool bDelay = false);
@@ -226,10 +225,13 @@ private:
 	void updateScreenSingleLores40(long cycles6502);
 	void updateScreenText40(long cycles6502);
 	void updateScreenText80(long cycles6502);
+	void updateScreenText40RGB(long cycles6502);
+	void updateScreenText80RGB(long cycles6502);
 	void updateScreenSingleLores40Simplified(long cycles6502);
 	void updateScreenDoubleLores80Simplified(long cycles6502);
 	void updateScreenSingleHires40Simplified(long cycles6502);
 	void updateScreenDoubleHires80Simplified(long cycles6502);
+	void updateScreenSingleHires40Duochrome(long cycles6502);
 
 	uint8_t getCharSetBits(int iChar);
 	uint16_t getLoResBits(uint8_t iByte);

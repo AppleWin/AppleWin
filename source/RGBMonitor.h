@@ -1,7 +1,7 @@
 #include "VideoTypes.h"
 // Handling of RGB videocards
 
-enum RGB_Videocard_e
+enum class RGB_Videocard_e
 {
 	Apple,
 	Video7_SL7,
@@ -9,22 +9,9 @@ enum RGB_Videocard_e
 	LeChatMauve_Feline
 };
 
-
-void UpdateHiResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
-void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool updateAux, bool updateMain);
-int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress);
-void UpdateLoResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
-void UpdateDLoResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
-void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits);
-void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits);
-void UpdateHiResDuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
-void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint8_t foreground, uint8_t background);
-
-
 const int HIRES_COLUMN_SUBUNIT_SIZE = 16;
 const int HIRES_COLUMN_UNIT_SIZE = (HIRES_COLUMN_SUBUNIT_SIZE) * 2;
 const int HIRES_NUMBER_COLUMNS = (1 << 5);	// 5 bits
-
 
 const int SRCOFFS_LORES = 0;							//    0
 const int SRCOFFS_HIRES = (SRCOFFS_LORES + 16);		//   16
@@ -131,7 +118,10 @@ public:
 	int UpdateDHiRes160Cell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
 	void UpdateLoResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
 	void UpdateDLoResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
-
+	void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits);
+	void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits);
+	void UpdateHiResDuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
+	void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint8_t foreground, uint8_t background);
 
 	void VideoInitializeOriginal(baseColors_t pBaseNtscColors);
 
@@ -144,6 +134,14 @@ public:
 	void RGB_ResetState(void);
 	static void RGB_SetInvertBit7(bool state);
 
+	static RGB_Videocard_e RGB_GetVideocard(void);
+	static void RGB_SetVideocard(RGB_Videocard_e videocard, int text_foreground = -1, int text_background = -1);
+	static void RGB_SetRegularTextFG(int color);
+	static void RGB_SetRegularTextBG(int color);
+	static void RGB_EnableTextFB();
+	static void RGB_DisableTextFB();
+	static int RGB_IsTextFB();
+
 	void RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion);
 
@@ -153,6 +151,12 @@ private:
 	WORD g_rgbPrevAN3Addr = 0;
 	bool g_rgbSet80COL = false;
 	static bool g_rgbInvertBit7;
+
+	// RGB videocards types
+	static RGB_Videocard_e g_RGBVideocard;
+	static int g_nTextFBMode; // F/B Text
+	static int g_nRegularTextFG; // Default TEXT color
+	static int g_nRegularTextBG; // Default TEXT background color
 
 	LPBYTE	g_aSourceStartofLine[MAX_SOURCE_Y];
 	void	V_CreateLookup_DoubleHires();
@@ -177,13 +181,4 @@ private:
 	void V_CreateDIBSections(void);
 };
 
---- from mergevoid RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion);
 
-RGB_Videocard_e RGB_GetVideocard(void);
-void RGB_SetVideocard(RGB_Videocard_e videocard, int text_foreground = -1, int text_background = -1);
-void RGB_SetRegularTextFG(int color);
-void RGB_SetRegularTextBG(int color);
-void RGB_EnableTextFB();
-void RGB_DisableTextFB();
-int RGB_IsTextFB();
