@@ -1989,7 +1989,7 @@ static void RepeatInitialization(void)
 		if (g_cmdLine.model != A2TYPE_MAX)
 			SetApple2Type(g_cmdLine.model);
 
-		RGBMonitor::RGB_SetVideocard(g_cmdLine.rgbCard, g_cmdLine.rgbCardForegroundColor, g_cmdLine.rgbCardBackgroundColor);
+		g_pVideo->getNTSC()->getRGBMonitor()->RGB_SetVideocard(g_cmdLine.rgbCard, g_cmdLine.rgbCardForegroundColor, g_cmdLine.rgbCardBackgroundColor);
 
 		if (g_cmdLine.newVideoType >= 0)
 		{

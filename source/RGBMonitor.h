@@ -135,12 +135,12 @@ public:
 	static void RGB_SetInvertBit7(bool state);
 
 	static RGB_Videocard_e RGB_GetVideocard(void);
-	static void RGB_SetVideocard(RGB_Videocard_e videocard, int text_foreground = -1, int text_background = -1);
-	static void RGB_SetRegularTextFG(int color);
-	static void RGB_SetRegularTextBG(int color);
-	static void RGB_EnableTextFB();
-	static void RGB_DisableTextFB();
-	static int RGB_IsTextFB();
+	void RGB_SetVideocard(RGB_Videocard_e videocard, int text_foreground = -1, int text_background = -1);
+	void RGB_SetRegularTextFG(int color);
+	void RGB_SetRegularTextBG(int color);
+	void RGB_EnableTextFB();
+	void RGB_DisableTextFB();
+	int RGB_IsTextFB();
 
 	void RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion);
@@ -154,9 +154,9 @@ private:
 
 	// RGB videocards types
 	static RGB_Videocard_e g_RGBVideocard;
-	static int g_nTextFBMode; // F/B Text
-	static int g_nRegularTextFG; // Default TEXT color
-	static int g_nRegularTextBG; // Default TEXT background color
+	int g_nTextFBMode = 0; // F/B Text
+	int g_nRegularTextFG = 15; // Default TEXT color
+	int g_nRegularTextBG = 0; // Default TEXT background color
 
 	LPBYTE	g_aSourceStartofLine[MAX_SOURCE_Y];
 	void	V_CreateLookup_DoubleHires();

@@ -63,9 +63,6 @@ static RGBQUAD PalIndex2RGB[] =
 bool RGBMonitor::g_rgbInvertBit7 = false;
 
 RGB_Videocard_e RGBMonitor::g_RGBVideocard = RGB_Videocard_e::Apple;
-int RGBMonitor::g_nTextFBMode = 0; // F/B Text
-int RGBMonitor::g_nRegularTextFG = 15; // Default TEXT color
-int RGBMonitor::g_nRegularTextBG = 0; // Default TEXT background color
 
 //===========================================================================
 
@@ -864,39 +861,39 @@ void RGBMonitor::RGB_SetVideocard(RGB_Videocard_e videocard, int text_foreground
 	RGBMonitor::g_RGBVideocard = videocard;
 
 	// black & white text
-	RGBMonitor::RGB_SetRegularTextFG(15);
-	RGBMonitor::RGB_SetRegularTextBG(0);
+	RGB_SetRegularTextFG(15);
+	RGB_SetRegularTextBG(0);
 
 	if (videocard == RGB_Videocard_e::Video7_SL7 &&
 		(text_foreground == 6 || text_foreground == 9 || text_foreground == 12 || text_foreground == 15))
 	{
 		// SL7: Only Blue, Amber (Orange), Green, White are supported by hardware switches
-		RGBMonitor::RGB_SetRegularTextFG(text_foreground);
-		RGBMonitor::RGB_SetRegularTextBG(0);
+		RGB_SetRegularTextFG(text_foreground);
+		RGB_SetRegularTextBG(0);
 	}
 }
 
 void RGBMonitor::RGB_SetRegularTextFG(int color)
 {
-	RGBMonitor::g_nRegularTextFG = color;
+	g_nRegularTextFG = color;
 }
 
 void RGBMonitor::RGB_SetRegularTextBG(int color)
 {
-	RGBMonitor::g_nRegularTextBG = color;
+	g_nRegularTextBG = color;
 }
 
 void RGBMonitor::RGB_EnableTextFB()
 {
-	RGBMonitor::g_nTextFBMode = 1;
+	g_nTextFBMode = 1;
 }
 
 void RGBMonitor::RGB_DisableTextFB()
 {
-	RGBMonitor::g_nTextFBMode = 0;
+	g_nTextFBMode = 0;
 }
 
 int RGBMonitor::RGB_IsTextFB()
 {
-	return RGBMonitor::g_nTextFBMode;
+	return g_nTextFBMode;
 }

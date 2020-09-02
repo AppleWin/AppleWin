@@ -647,7 +647,7 @@ void Video::VideoResetState ()
 	pNTSC->NTSC_SetVideoTextMode( 40 );
 	pNTSC->NTSC_SetVideoMode( g_uVideoMode );
 
-	pNTSC->GetRGBMonitor()->RGB_ResetState();
+	pNTSC->getRGBMonitor()->RGB_ResetState();
 }
 
 //===========================================================================
@@ -679,7 +679,7 @@ BYTE Video::VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCy
 	}
 
 	if (!IS_APPLE2)
-		pNTSC->GetRGBMonitor()->RGB_SetVideoMode(address);
+		pNTSC->getRGBMonitor()->RGB_SetVideoMode(address);
 
 	// Only 1-cycle delay for VF_TEXT & VF_MIXED mode changes (GH#656)
 	bool delay = false;
@@ -1471,12 +1471,12 @@ void Video::CreateDIBBuffer(LPBITMAPINFO pFramebufferinfo, HBITMAP *hBitmap, uin
 
 void Video::RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 {
-	pNTSC->GetRGBMonitor()->RGB_SaveSnapshot(yamlSaveHelper);
+	pNTSC->getRGBMonitor()->RGB_SaveSnapshot(yamlSaveHelper);
 }
 
 void Video::RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
 {
-	pNTSC->GetRGBMonitor()->RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
+	pNTSC->getRGBMonitor()->RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
 }
 
 //===========================================================================

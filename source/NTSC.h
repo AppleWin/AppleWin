@@ -57,7 +57,7 @@ public:
 
 	void updateVideoScannerHorzEOLSimple();
 
-	RGBMonitor* GetRGBMonitor();
+	RGBMonitor* getRGBMonitor();
 
 	static UINT NTSC_GetCyclesPerFrame(void);
 
