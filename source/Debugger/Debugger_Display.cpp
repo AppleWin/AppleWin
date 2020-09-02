@@ -795,10 +795,10 @@ void StretchBltMemToFrameDC(void)
 	switch (g_eGraphicMonitoringPage)
 	{
 	case VIEW_PAGE_CURRENT:
-		refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() ? VF_PAGE2 : 0);
+		refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() && !g_pVideo->VideoGetSW80STORE() ? VF_PAGE2 : 0);
 		break;
 	case VIEW_PAGE_DISABLED:
-		refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() ? 0 : VF_PAGE2);
+		refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() && !g_pVideo->VideoGetSW80STORE() ? 0 : VF_PAGE2 );
 		break;
 	case VIEW_PAGE_2:
 		refreshMode = refreshMode | VF_PAGE2;
