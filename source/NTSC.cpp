@@ -1442,7 +1442,7 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 }
 
 //===========================================================================
-static void updateScreenSingleHires40Simplified (long cycles6502)
+static void updateScreenSingleHires40SimplifiedColor (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1462,23 +1462,46 @@ static void updateScreenSingleHires40Simplified (long cycles6502)
 			{
 				uint16_t addr = getVideoScannerAddressHGR();
 
-				if (!RGB_Is560Mode())
-				{
-					UpdateHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
-					g_pVideoAddress += 14;
-				}
-				else	// Color Burst is off - duplicate code from updateScreenSingleHires40() (GH#631)
-				{
-					uint8_t *pMain = MemGetMainPtr(addr);
-					uint8_t  m     = pMain[0];
-					uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
-					if (m & 0x80)
-						bits = (bits << 1) | g_nLastColumnPixelNTSC;
-					updatePixels( bits );
+				UpdateHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+				g_pVideoAddress += 14;
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+	}
+}
 
-					if (g_nVideoClockHorz == (VIDEO_SCANNER_MAX_HORZ-1))
-						g_nLastColumnPixelNTSC = 0;
-				}
+//===========================================================================
+static void updateScreenSingleHires40SimplifiedBW(long cycles6502)
+{
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pFuncUpdateTextScreen(cycles6502);
+		return;
+	}
+
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint16_t addr = getVideoScannerAddressHGR();
+
+				// Color Burst is off - duplicate code from updateScreenSingleHires40() (GH#631)
+				
+				uint8_t* pMain = MemGetMainPtr(addr);
+				uint8_t  m = pMain[0];
+				uint16_t bits = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
+				if (m & 0x80)
+					bits = (bits << 1) | g_nLastColumnPixelNTSC;
+				updatePixels(bits);
+
+				if (g_nVideoClockHorz == (VIDEO_SCANNER_MAX_HORZ - 1))
+					g_nLastColumnPixelNTSC = 0;
 			}
 		}
 		updateVideoScannerHorzEOLSimple();
@@ -1999,13 +2022,18 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			}
 			else
 			{
-				g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires40;
+				if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+					g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40SimplifiedBW;
+				else
+					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires40;
 			}
 		}
 		else
 		{
 			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
-				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Simplified;
+			{
+				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40SimplifiedColor;
+			}
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
 		}
