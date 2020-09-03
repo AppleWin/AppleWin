@@ -128,6 +128,7 @@ static RGBQUAD PalIndex2RGB[] =
 	SETRGBCOLOR(/*HGR_BLACK, */ 0x00,0x00,0x00), // For TV emulation HGR Video Mode
 	SETRGBCOLOR(/*HGR_WHITE, */ 0xFF,0xFF,0xFF),
 #else
+// Note: this is a placeholder. This palette is overwritten by VideoInitializeOriginal()
 	SETRGBCOLOR(/*HGR_BLACK, */ 0x00,0x00,0x00), // For TV emulation HGR Video Mode
 	SETRGBCOLOR(/*HGR_WHITE, */ 0xFF,0xFF,0xFF),
 	SETRGBCOLOR(/*BLUE,      */ 0x0D,0xA1,0xFF), // FC Linards Tweaked 0x00,0x00,0xFF -> 0x0D,0xA1,0xFF
@@ -145,6 +146,7 @@ static RGBQUAD PalIndex2RGB[] =
 	SETRGBCOLOR(/*HGR_PINK,  */ 0xFF,0x32,0xB5), // 0xD0,0x40,0xA0 -> 0xFF,0x32,0xB5
 
 // lores & dhires
+// Note: this is a placeholder. This palette is overwritten by VideoInitializeOriginal()
 	SETRGBCOLOR(/*BLACK,*/      0x00,0x00,0x00), // 0
 	SETRGBCOLOR(/*DEEP_RED,*/   0x9D,0x09,0x66), // 0xD0,0x00,0x30 -> Linards Tweaked 0x9D,0x09,0x66
 	SETRGBCOLOR(/*DARK_BLUE,*/  0x2A,0x2A,0xE5), // 4 // Linards Tweaked 0x00,0x00,0x80 -> 0x2A,0x2A,0xE5
@@ -160,6 +162,29 @@ static RGBQUAD PalIndex2RGB[] =
 	SETRGBCOLOR(/*GREEN,*/      0x38,0xCB,0x00), // FA Linards Tweaked 0x00,0xFF,0x00 -> 0x38,0xCB,0x00
 	SETRGBCOLOR(/*YELLOW,*/     0xD5,0xD5,0x1A), // FB Linards Tweaked 0xFF,0xFF,0x00 -> 0xD5,0xD5,0x1A
 	SETRGBCOLOR(/*AQUA,*/       0x62,0xF6,0x99), // 0x40,0xFF,0x90 -> Linards Tweaked 0x62,0xF6,0x99
+	SETRGBCOLOR(/*WHITE,*/      0xFF,0xFF,0xFF),
+};
+
+// Le Chat Mauve Feline's palette
+// extracted from a white-balanced RGB video capture
+static RGBQUAD PalIndex2RGB_Feline[] =
+{
+	// Feline test
+	SETRGBCOLOR(/*BLACK,*/      0x00,0x00,0x00),
+	SETRGBCOLOR(/*DEEP_RED,*/   0xAC,0x12,0x4C),
+	SETRGBCOLOR(/*DARK_BLUE,*/  0x00,0x07,0x83),
+	SETRGBCOLOR(/*MAGENTA,*/    0xAA,0x1A,0xD1),
+	SETRGBCOLOR(/*DARK_GREEN,*/ 0x00,0x83,0x2F),
+	SETRGBCOLOR(/*DARK_GRAY,*/  0x9F,0x97,0x7E),
+	SETRGBCOLOR(/*BLUE,*/       0x00,0x8A,0xB5),
+	SETRGBCOLOR(/*LIGHT_BLUE,*/ 0x9F,0x9E,0xFF),
+	SETRGBCOLOR(/*BROWN,*/      0x7A,0x5F,0x00),
+	SETRGBCOLOR(/*ORANGE,*/     0xFF,0x72,0x47),
+	SETRGBCOLOR(/*LIGHT_GRAY,*/ 0x78,0x68,0x7F),
+	SETRGBCOLOR(/*PINK,*/       0xFF,0x7A,0xCF),
+	SETRGBCOLOR(/*GREEN,*/      0x6F,0xE6,0x2C),
+	SETRGBCOLOR(/*YELLOW,*/     0xFF,0xF6,0x7B),
+	SETRGBCOLOR(/*AQUA,*/       0x6C,0xEE,0xB2),
 	SETRGBCOLOR(/*WHITE,*/      0xFF,0xFF,0xFF),
 };
 
@@ -815,7 +840,14 @@ void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 	// CREATE THE SOURCE IMAGE AND DRAW INTO THE SOURCE BIT BUFFER
 	V_CreateDIBSections();
 
-	memcpy(&PalIndex2RGB[BLACK], *pBaseNtscColors, sizeof(RGBQUAD)*kNumBaseColors);
+	if (g_RGBVideocard == RGB_Videocard_e::LeChatMauve_Feline)
+	{
+		memcpy(&PalIndex2RGB[BLACK], &PalIndex2RGB_Feline[0], sizeof(RGBQUAD) * kNumBaseColors);
+	}
+	else
+	{
+		memcpy(&PalIndex2RGB[BLACK], *pBaseNtscColors, sizeof(RGBQUAD) * kNumBaseColors);
+	}
 	PalIndex2RGB[HGR_BLUE]   = PalIndex2RGB[BLUE];
 	PalIndex2RGB[HGR_ORANGE] = PalIndex2RGB[ORANGE];
 	PalIndex2RGB[HGR_GREEN]  = PalIndex2RGB[GREEN];
@@ -874,12 +906,14 @@ void RGB_SetVideoMode(WORD address)
 
 bool RGB_Is140Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 2
 {
-	return g_rgbMode == 0;
+	// Feline falls back to this mode instead of 160
+	return g_rgbMode == 0 || (g_RGBVideocard == RGB_Videocard_e::LeChatMauve_Feline && g_rgbMode == 1);
 }
 
 bool RGB_Is160Mode(void)	// Extended 80-Column Text/AppleColor Card: N/A
 {
-	return g_rgbMode == 1;
+	// Unsupported by Feline
+	return g_rgbMode == 1 && (g_RGBVideocard != RGB_Videocard_e::LeChatMauve_Feline);
 }
 
 bool RGB_IsMixMode(void)	// Extended 80-Column Text/AppleColor Card's Mode 3
