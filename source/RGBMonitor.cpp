@@ -733,7 +733,7 @@ void UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 //===========================================================================
 // Color TEXT (some RGB cards only)
 // Default BG and FG are usually defined by hardware switches, defaults to black/white
-void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits)
+void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits, uint8_t character)
 {
 	uint8_t foreground = g_nRegularTextFG;
 	uint8_t background = g_nRegularTextBG;
@@ -743,13 +743,25 @@ void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, u
 		foreground = val >> 4;
 		background = val & 0x0F;
 	}
+	else if (g_RGBVideocard == RGB_Videocard_e::Video7_SL7 && character < 0x80)
+	{
+		// in regular 40COL mode, the SL7 videocard renders inverse characters as B&W
+		foreground = 15;
+		background = 0;
+	}
 
 	UpdateDuochromeCell(2, 14, pVideoAddress, bits, foreground, background);
 }
 
-void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits)
+void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits, uint8_t character)
 {
-	UpdateDuochromeCell(2, 7, pVideoAddress, bits, g_nRegularTextFG, g_nRegularTextBG);
+	if (g_RGBVideocard == RGB_Videocard_e::Video7_SL7 && character < 0x80)
+	{
+		// in all 80COL modes, the SL7 videocard renders inverse characters as B&W
+		UpdateDuochromeCell(2, 7, pVideoAddress, bits, 15, 0);
+	}
+	else
+		UpdateDuochromeCell(2, 7, pVideoAddress, bits, g_nRegularTextFG, g_nRegularTextBG);
 }
 
 //===========================================================================
