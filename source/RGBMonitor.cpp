@@ -637,7 +637,8 @@ void UpdateDHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool i
 		byteval4 = ~byteval4;
 	}
 
-	// To be checked on real hardware
+	// In RGB, DHGR mixed mode switch between color and BW only every 4 bits, based on bit 7 of the last read byte
+	// each case is handled below.
 	// Note: Color mode is a real 140x192 RGB mode with no color fringe (ref. patent US4631692, "THE 140x192 VIDEO MODE")
 
 	UINT32* pDst = (UINT32*)pVideoAddress;
@@ -744,20 +745,17 @@ void UpdateDHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool i
 
 	// Second line
 	UINT32* pSrc = (UINT32*)pVideoAddress ;
-	pDst = pSrc + GetFrameBufferWidth();
-	for (int i = 0; i < 14; i++)
-		*(pDst+i) = *(pSrc+i);
-
-	// TODO: handle scanlines
-	//if (bIsHalfScanLines && !(h & 1))
-	//{
-	//	// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-	//	std::fill(pDst, pDst + 14, 0);
-	//	const UINT frameBufferWidth = GetFrameBufferWidth();
-	//}
-	//else
-	//{
-
+	pDst = pSrc - GetFrameBufferWidth();
+	if (bIsHalfScanLines)
+	{
+		// Scanlines
+		std::fill(pDst, pDst + 14, 0);
+	}
+	else
+	{
+		for (int i = 0; i < 14; i++)
+			*(pDst + i) = *(pSrc + i);
+	}
 }
 
 #if 1
