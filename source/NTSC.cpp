@@ -1270,31 +1270,37 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 					int width = UpdateDHiRes160Cell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
 					g_pVideoAddress += width;
 				}
-				else if (RGB_Is560Mode() || (RGB_IsMixMode() && !((a | m) & 0x80)))
+				else if (RGB_Is560Mode())// || (RGB_IsMixMode() && !((a | m) & 0x80)))
 				{
 					update7MonoPixels(a);
 					update7MonoPixels(m);
 				}
-				else if (!RGB_IsMixMode() || (RGB_IsMixMode() && (a & m & 0x80)))
+				else
 				{
-					UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
+					UpdateDHiResCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, RGB_IsMixMode(), RGB_IsMixModeInvertBit7());
 					g_pVideoAddress += 14;
 				}
-				else	// RGB_IsMixMode() && ((a ^ m) & 0x80)
-				{
-					if (a & 0x80)	// RGB color, then monochrome
-					{
-						UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true ,false);
-						g_pVideoAddress += 7;
-						update7MonoPixels(m);
-					}
-					else			// monochrome, then RGB color
-					{
-						update7MonoPixels(a);
-						UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, false, true);
-						g_pVideoAddress += 7;
-					}
-				}
+				//	
+				//	if (!RGB_IsMixMode() || (RGB_IsMixMode() && (a & m & 0x80)))
+				//{
+				//	UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
+				//	g_pVideoAddress += 14;
+				//}
+				//else	// RGB_IsMixMode() && ((a ^ m) & 0x80)
+				//{
+				//	if (a & 0x80)	// RGB color, then monochrome
+				//	{
+				//		UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true ,false);
+				//		g_pVideoAddress += 7;
+				//		update7MonoPixels(m);
+				//	}
+				//	else			// monochrome, then RGB color
+				//	{
+				//		update7MonoPixels(a);
+				//		UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, false, true);
+				//		g_pVideoAddress += 7;
+				//	}
+				//}
 			}
 		}
 		updateVideoScannerHorzEOLSimple();

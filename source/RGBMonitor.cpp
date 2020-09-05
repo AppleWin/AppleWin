@@ -594,35 +594,170 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 #define COLOR  ((xpixel + PIXEL) & 3)
 #define VALUE  (dwordval >> (4 + PIXEL - COLOR))
 
-void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool updateAux, bool updateMain)
+void UpdateDHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool isMixMode, bool isBit7Inversed)
 {
-	const int xpixel = x*14;
+	const int xpixel = x * 14;
+	int xoffset = x & 1; // offset to start of the 2 bytes
+	addr -= xoffset;
 
-	uint8_t *pAux = MemGetAuxPtr(addr);
-	uint8_t *pMain = MemGetMainPtr(addr);
+	uint8_t* pAux = MemGetAuxPtr(addr);
+	uint8_t* pMain = MemGetMainPtr(addr);
 
-	BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
-	BYTE byteval2 = *pAux;
-	BYTE byteval3 = *pMain;
-	BYTE byteval4 = (x < 39) ? *(pAux+1) : 0;
+	// We need all 28 bits because one 4-bits pixel overlaps two 14-bits cells
+	uint8_t byteval1 = *pAux;
+	uint8_t byteval2 = *pMain;
+	uint8_t byteval3 = *(pAux + 1);
+	uint8_t byteval4 = *(pMain + 1);
 
-	DWORD dwordval = (byteval1 & 0x70)        | ((byteval2 & 0x7F) << 7) |
-					((byteval3 & 0x7F) << 14) | ((byteval4 & 0x07) << 21);
+	// all 28 bits chained
+	DWORD dwordval = (byteval1 & 0x7F) | ((byteval2 & 0x7F) << 7) | ((byteval3 & 0x7F) << 14) | ((byteval4 & 0x7F) << 21);
 
-#define PIXEL  0
-	if (updateAux)
+	// Extraction of 7 color pixels and 7x4 bits
+	int bits[7];
+	UINT32 colors[7];
+	int color = 0;
+	DWORD dwordval_tmp = dwordval;
+	for (int i = 0; i < 7; i++)
 	{
-		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress);
-		pVideoAddress += 7;
+		bits[i] = dwordval_tmp & 0xF;
+		color = ((bits[i] & 7) << 1) | ((bits[i] & 8) >> 3); // DHGR colors are rotated 1 bit to the right
+		colors[i] = *reinterpret_cast<const UINT32*>(&PalIndex2RGB[12 + color]);
+		dwordval_tmp >>= 4;
 	}
-#undef PIXEL
+	UINT32 bw[2];
+	bw[0] = *reinterpret_cast<const UINT32*>(&PalIndex2RGB[12 + 0]);
+	bw[1] = *reinterpret_cast<const UINT32*>(&PalIndex2RGB[12 + 15]);
 
-#define PIXEL  7
-	if (updateMain)
+	if (isBit7Inversed)
 	{
-		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress);
+		// Invert mixed mode detection
+		byteval1 = ~byteval1;
+		byteval2 = ~byteval2;
+		byteval3 = ~byteval3;
+		byteval4 = ~byteval4;
 	}
-#undef PIXEL
+
+	// To be checked on real hardware
+	// Note: Color mode is a real 140x192 RGB mode with no color fringe (ref. patent US4631692, "THE 140x192 VIDEO MODE")
+
+	UINT32* pDst = (UINT32*)pVideoAddress;
+
+	if (xoffset == 0)	// First cell
+	{
+		if ((byteval1 & 0x80) || !isMixMode)
+		{
+			// Color
+			*(pDst++) = colors[0];
+			*(pDst++) = colors[0];
+			*(pDst++) = colors[0];
+			*(pDst++) = colors[0];
+			*(pDst++) = colors[1];
+			*(pDst++) = colors[1];
+			*(pDst++) = colors[1];
+			*(pDst++) = colors[1];
+			dwordval >>= 8;
+		}
+		else
+		{
+			// BW
+			for (int i = 0; i < 8; i++)
+			{
+				*(pDst++) = bw[dwordval & 1];
+				dwordval >>= 1;
+			}
+		}
+		if ((byteval2 & 0x80) || !isMixMode)
+		{
+			*(pDst++) = colors[2];
+			*(pDst++) = colors[2];
+			*(pDst++) = colors[2];
+			*(pDst++) = colors[2];
+			*(pDst++) = colors[3];
+			*(pDst++) = colors[3];
+			dwordval >>= 6;
+		}
+		else
+		{
+			for (int i = 0; i < 6; i++)
+			{
+				*(pDst++) = bw[dwordval & 1];
+				dwordval >>= 1;
+			}
+		}
+	}
+	else  // Second cell
+	{
+		dwordval >>= 14;
+
+		if ((byteval2 & 0x80) || !isMixMode)
+		{
+			*(pDst++) = colors[3];
+			*(pDst++) = colors[3];
+			dwordval >>= 2;
+		}
+		else
+		{
+			for (int i = 0; i < 2; i++)
+			{
+				*(pDst++) = bw[dwordval & 1];
+				dwordval >>= 1;
+			}
+		}
+		if ((byteval3 & 0x80) || !isMixMode)
+		{
+			*(pDst++) = colors[4];
+			*(pDst++) = colors[4];
+			*(pDst++) = colors[4];
+			*(pDst++) = colors[4];
+			*(pDst++) = colors[5];
+			*(pDst++) = colors[5];
+			*(pDst++) = colors[5];
+			*(pDst++) = colors[5];
+			dwordval >>= 8;
+		}
+		else
+		{
+			for (int i = 0; i < 8; i++)
+			{
+				*(pDst++) = bw[dwordval & 1];
+				dwordval >>= 1;
+			}
+		}
+		if ((byteval4 & 0x80) || !isMixMode)
+		{
+			*(pDst++) = colors[6];
+			*(pDst++) = colors[6];
+			*(pDst++) = colors[6];
+			*(pDst++) = colors[6];
+		}
+		else
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				*(pDst++) = bw[dwordval & 1];
+				dwordval >>= 1;
+			}
+		}
+	}
+
+	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+
+	// Second line
+	UINT32* pSrc = (UINT32*)pVideoAddress ;
+	pDst = pSrc + GetFrameBufferWidth();
+	for (int i = 0; i < 14; i++)
+		*(pDst+i) = *(pSrc+i);
+
+	// TODO: handle scanlines
+	//if (bIsHalfScanLines && !(h & 1))
+	//{
+	//	// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
+	//	std::fill(pDst, pDst + 14, 0);
+	//	const UINT frameBufferWidth = GetFrameBufferWidth();
+	//}
+	//else
+	//{
+
 }
 
 #if 1
@@ -881,13 +1016,14 @@ static bool g_rgbInvertBit7 = false;
 // . NB. There's a final 5th AN3 transition to set DHGR mode
 void RGB_SetVideoMode(WORD address)
 {
-	if ((address&~1) == 0x0C)			// 0x0C or 0x0D? (80COL)
-	{
-		g_rgbSet80COL = true;
-		return;
-	}
 
-	if ((address&~1) != 0x5E)			// 0x5E or 0x5F? (DHIRES)
+	//if ((address & ~1) == 0x0C)			// 0x0C or 0x0D? (80COL)
+	//{
+	//	g_rgbSet80COL = true;
+	//	return;
+	//}
+
+	if ((address & ~1) != 0x5E)			// 0x5E or 0x5F? (DHIRES)
 		return;
 
 	// Precondition before toggling AN3:
@@ -897,23 +1033,41 @@ void RGB_SetVideoMode(WORD address)
 	// . Apple II desktop sets DHGR B&W mode with HIRES off! (GH#631)
 	// Maybe there is no video-mode precondition?
 	// . After setting 80COL on/off then need a 0x5E->0x5F toggle. So if we see a 0x5F then reset (GH#633)
-	if ((g_uVideoMode & VF_MIXED) || (g_rgbSet80COL && address == 0x5F))
-	{
-		g_rgbMode = 0;
-		g_rgbPrevAN3Addr = 0;
-		g_rgbSet80COL = false;
-		return;
-	}
 
-	if (address == 0x5F && g_rgbPrevAN3Addr == 0x5E)	// Check for AN3 clock transition
+	// From Video7 patent and Le Chat Mauve manuals (under patent of Video7), no precondition is needed.
+
+	if (address == 0x5F)
 	{
-		g_rgbFlags = (g_rgbFlags<<1) & 3;
-		g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
-		g_rgbMode = g_rgbFlags;								// latch F2,F1
+		if (g_rgbPrevAN3Addr == 0x5E)// && g_rgbSet80COL)
+		{
+			g_rgbFlags = (g_rgbFlags << 1) & 3;
+			g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
+			g_rgbMode = g_rgbFlags;								// latch F2,F1
+		}
+
+		//To test with Prince of Persia:
+		//g_rgbSet80COL = false;
 	}
 
 	g_rgbPrevAN3Addr = address;
-	g_rgbSet80COL = false;
+
+	//if ((g_uVideoMode & VF_MIXED) || (g_rgbSet80COL && address == 0x5F))
+	//{
+	//	g_rgbMode = 0;
+	//	g_rgbPrevAN3Addr = 0;
+	//	g_rgbSet80COL = false;
+	//	return;
+	//}
+
+	//if (address == 0x5F && g_rgbPrevAN3Addr == 0x5E)	// Check for AN3 clock transition
+	//{
+	//	g_rgbFlags = (g_rgbFlags<<1) & 3;
+	//	g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
+	//	g_rgbMode = g_rgbFlags;								// latch F2,F1
+	//}
+
+	//g_rgbPrevAN3Addr = address;
+	//g_rgbSet80COL = false;
 }
 
 bool RGB_Is140Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 2
