@@ -594,6 +594,9 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 #define COLOR  ((xpixel + PIXEL) & 3)
 #define VALUE  (dwordval >> (4 + PIXEL - COLOR))
 
+bool dhgr_lastcell_iscolor = true;
+int dhgr_lastbit = 0;
+
 void UpdateDHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool isMixMode, bool isBit7Inversed)
 {
 	const int xpixel = x * 14;
@@ -637,9 +640,16 @@ void UpdateDHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool i
 		byteval4 = ~byteval4;
 	}
 
-	// In RGB, DHGR mixed mode switch between color and BW only every 4 bits, based on bit 7 of the last read byte
-	// each case is handled below.
-	// Note: Color mode is a real 140x192 RGB mode with no color fringe (ref. patent US4631692, "THE 140x192 VIDEO MODE")
+	// RGB DHGR is quite a mess:
+	// Color mode is a real 140x192 RGB mode with no color fringe (ref. patent US4631692, "THE 140x192 VIDEO MODE")
+	// BW mode is a real 560x192 monochrome mode
+	// Mixed mode seems easy but has a few traps since it's based on 4-bits cells coded into 7-bits bytes:
+	//   - Bit 7 of each byte defines the mode of the following 7 bits (BW or Color);
+	//   - BW pixels are 1 bit wide, color pixels are usually 4 bits wide;
+	//   - A color pixel can be less than 4 bits wide if it crosses a byte boundary and falls into a BW byte;
+	//   - If a 4-bit cell of BW bits crosses a byte boundary and falls into a Color byte, then the last BW bit is repeated until the next color pixel starts.
+	//
+	// (Tested on Le Chat Mauve IIc adapter, which was made under patent of Video-7)
 
 	UINT32* pDst = (UINT32*)pVideoAddress;
 
@@ -648,96 +658,137 @@ void UpdateDHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool i
 		if ((byteval1 & 0x80) || !isMixMode)
 		{
 			// Color
+			
+			// Color cell 0
 			*(pDst++) = colors[0];
 			*(pDst++) = colors[0];
 			*(pDst++) = colors[0];
 			*(pDst++) = colors[0];
+			// Color cell 1
 			*(pDst++) = colors[1];
 			*(pDst++) = colors[1];
 			*(pDst++) = colors[1];
-			*(pDst++) = colors[1];
-			dwordval >>= 8;
+			
+			dwordval >>= 7;
+			dhgr_lastcell_iscolor = true;
 		}
 		else
 		{
 			// BW
-			for (int i = 0; i < 8; i++)
+			for (int i = 0; i < 7; i++)
 			{
-				*(pDst++) = bw[dwordval & 1];
+				dhgr_lastbit = dwordval & 1;
+				*(pDst++) = bw[dhgr_lastbit];
 				dwordval >>= 1;
 			}
+			dhgr_lastcell_iscolor = false;
 		}
+
 		if ((byteval2 & 0x80) || !isMixMode)
 		{
+			// Remaining of color cell 1
+			if (dhgr_lastcell_iscolor)
+			{
+				*(pDst++) = colors[1];
+			}
+			else
+			{
+				// Repeat last BW bit once
+				*(pDst++) = bw[dhgr_lastbit];
+			}
+			// Color cell 2
 			*(pDst++) = colors[2];
 			*(pDst++) = colors[2];
 			*(pDst++) = colors[2];
 			*(pDst++) = colors[2];
+			// Color cell 3
 			*(pDst++) = colors[3];
 			*(pDst++) = colors[3];
-			dwordval >>= 6;
+			dhgr_lastcell_iscolor = true;
 		}
 		else
 		{
-			for (int i = 0; i < 6; i++)
+			for (int i = 0; i < 7; i++)
 			{
-				*(pDst++) = bw[dwordval & 1];
+				dhgr_lastbit = dwordval & 1;
+				*(pDst++) = bw[dhgr_lastbit];
 				dwordval >>= 1;
 			}
+			dhgr_lastcell_iscolor = false;
 		}
 	}
 	else  // Second cell
 	{
 		dwordval >>= 14;
 
-		if ((byteval2 & 0x80) || !isMixMode)
-		{
-			*(pDst++) = colors[3];
-			*(pDst++) = colors[3];
-			dwordval >>= 2;
-		}
-		else
-		{
-			for (int i = 0; i < 2; i++)
-			{
-				*(pDst++) = bw[dwordval & 1];
-				dwordval >>= 1;
-			}
-		}
 		if ((byteval3 & 0x80) || !isMixMode)
 		{
+			// Remaining of color cell 3
+			if (dhgr_lastcell_iscolor)
+			{
+				*(pDst++) = colors[3];
+				*(pDst++) = colors[3];
+			}
+			else
+			{
+				// Repeat last BW bit twice
+				*(pDst++) = bw[dhgr_lastbit];
+				*(pDst++) = bw[dhgr_lastbit];
+			}
+			// Color cell 4
 			*(pDst++) = colors[4];
 			*(pDst++) = colors[4];
 			*(pDst++) = colors[4];
 			*(pDst++) = colors[4];
+			// Color cell 5
 			*(pDst++) = colors[5];
-			*(pDst++) = colors[5];
-			*(pDst++) = colors[5];
-			*(pDst++) = colors[5];
-			dwordval >>= 8;
+			
+			dwordval >>= 7;
+			dhgr_lastcell_iscolor = true;
 		}
 		else
 		{
-			for (int i = 0; i < 8; i++)
+			for (int i = 0; i < 7; i++)
 			{
-				*(pDst++) = bw[dwordval & 1];
+				dhgr_lastbit = dwordval & 1;
+				*(pDst++) = bw[dhgr_lastbit];
 				dwordval >>= 1;
 			}
+			dhgr_lastcell_iscolor = false;
 		}
+
 		if ((byteval4 & 0x80) || !isMixMode)
 		{
+			// Remaining of color cell 5
+			if (dhgr_lastcell_iscolor)
+			{
+				*(pDst++) = colors[5];
+				*(pDst++) = colors[5];
+				*(pDst++) = colors[5];
+			}
+			else
+			{
+				// Repeat last BW bit three times
+				*(pDst++) = bw[dhgr_lastbit];
+				*(pDst++) = bw[dhgr_lastbit];
+				*(pDst++) = bw[dhgr_lastbit];
+			}
+			// Color cell 6
 			*(pDst++) = colors[6];
 			*(pDst++) = colors[6];
 			*(pDst++) = colors[6];
 			*(pDst++) = colors[6];
+			dhgr_lastcell_iscolor = true;
 		}
 		else
 		{
-			for (int i = 0; i < 4; i++)
+			for (int i = 0; i < 7; i++)
 			{
-				*(pDst++) = bw[dwordval & 1];
+				dhgr_lastbit = dwordval & 1;
+				*(pDst++) = bw[dhgr_lastbit];
 				dwordval >>= 1;
 			}
+			dhgr_lastcell_iscolor = false;
 		}
 	}
 
