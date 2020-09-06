@@ -1066,11 +1066,11 @@ static bool g_rgbInvertBit7 = false;
 void RGB_SetVideoMode(WORD address)
 {
 
-	//if ((address & ~1) == 0x0C)			// 0x0C or 0x0D? (80COL)
-	//{
-	//	g_rgbSet80COL = true;
-	//	return;
-	//}
+	if ((address & ~1) == 0x0C)			// 0x0C or 0x0D? (80COL)
+	{
+		g_rgbSet80COL = true;
+		return;
+	}
 
 	if ((address & ~1) != 0x5E)			// 0x5E or 0x5F? (DHIRES)
 		return;
@@ -1085,38 +1085,22 @@ void RGB_SetVideoMode(WORD address)
 
 	// From Video7 patent and Le Chat Mauve manuals (under patent of Video7), no precondition is needed.
 
+	// In Prince of Persia, in the game demo, the RGB card switches to BW DHIRES after the HGR animation with Jaffar.
+	// It's actually the same on real hardware (tested on IIc RGB adapter).
+
 	if (address == 0x5F)
 	{
-		if (g_rgbPrevAN3Addr == 0x5E)// && g_rgbSet80COL)
+		if ((g_rgbPrevAN3Addr == 0x5E) && g_rgbSet80COL)
 		{
 			g_rgbFlags = (g_rgbFlags << 1) & 3;
 			g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
 			g_rgbMode = g_rgbFlags;								// latch F2,F1
 		}
 
-		//To test with Prince of Persia:
-		//g_rgbSet80COL = false;
+		g_rgbSet80COL = false;
 	}
 
 	g_rgbPrevAN3Addr = address;
-
-	//if ((g_uVideoMode & VF_MIXED) || (g_rgbSet80COL && address == 0x5F))
-	//{
-	//	g_rgbMode = 0;
-	//	g_rgbPrevAN3Addr = 0;
-	//	g_rgbSet80COL = false;
-	//	return;
-	//}
-
-	//if (address == 0x5F && g_rgbPrevAN3Addr == 0x5E)	// Check for AN3 clock transition
-	//{
-	//	g_rgbFlags = (g_rgbFlags<<1) & 3;
-	//	g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
-	//	g_rgbMode = g_rgbFlags;								// latch F2,F1
-	//}
-
-	//g_rgbPrevAN3Addr = address;
-	//g_rgbSet80COL = false;
 }
 
 bool RGB_Is140Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 2
