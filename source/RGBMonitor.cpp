@@ -8,6 +8,14 @@
 #include "RGBMonitor.h"
 #include "YamlHelper.h"
 
+
+// RGB videocards types
+
+static RGB_Videocard_e g_RGBVideocard = RGB_Videocard_e::Apple;
+static int g_nTextFBMode = 0; // F/B Text
+static int g_nRegularTextFG = 15; // Default TEXT color
+static int g_nRegularTextBG = 0; // Default TEXT background color
+
 const int HIRES_COLUMN_SUBUNIT_SIZE = 16;
 const int HIRES_COLUMN_UNIT_SIZE = (HIRES_COLUMN_SUBUNIT_SIZE)*2;
 const int HIRES_NUMBER_COLUMNS = (1<<5);	// 5 bits
@@ -698,6 +706,88 @@ void UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 }
 
 //===========================================================================
+// Color TEXT (some RGB cards only)
+// Default BG and FG are usually defined by hardware switches, defaults to black/white
+void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits)
+{
+	uint8_t foreground = g_nRegularTextFG;
+	uint8_t background = g_nRegularTextBG;
+	if (g_nTextFBMode)
+	{
+		const BYTE val = *MemGetAuxPtr(addr);  // RGB cards with F/B text use their own AUX memory!
+		foreground = val >> 4;
+		background = val & 0x0F;
+	}
+
+	UpdateDuochromeCell(2, 14, pVideoAddress, bits, foreground, background);
+}
+
+void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits)
+{
+	UpdateDuochromeCell(2, 7, pVideoAddress, bits, g_nRegularTextFG, g_nRegularTextBG);
+}
+
+//===========================================================================
+// Duochrome HGR (some RGB cards only)
+void UpdateHiResDuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
+{
+	BYTE bits = *MemGetMainPtr(addr);
+	BYTE val = *MemGetAuxPtr(addr);
+	const uint8_t foreground = val >> 4;
+	const uint8_t background = val & 0x0F;
+
+	UpdateDuochromeCell(2, 14, pVideoAddress, bits, foreground, background);
+}
+
+//===========================================================================
+// Writes a duochrome cell
+// 7 bits define a foreground/background pattern
+// Used on many RGB cards but activated differently, depending on the card.
+// Can be used in TEXT or HGR mode. The foreground & background colors could be fixed by hardware switches or data lying in AUX.
+void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint8_t foreground, uint8_t background)
+{
+	UINT32* pDst = (UINT32*)pVideoAddress;
+
+	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const UINT frameBufferWidth = GetFrameBufferWidth();
+	RGBQUAD colors[2];
+	// use LoRes palette
+	background += 12;
+	foreground += 12;
+	// get bg/fg colors
+	colors[0] = PalIndex2RGB[background];
+	colors[1] = PalIndex2RGB[foreground];
+	int nbits = bits;
+	int doublepixels = (w == 14); // Double pixel (HiRes or Text40)
+
+	while (h--)
+	{
+		bits = nbits;
+		if (bIsHalfScanLines && !(h & 1))
+		{
+			// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
+			std::fill(pDst, pDst + w, 0);
+		}
+		else
+		{
+			for (int nBytes = 0; nBytes < w; nBytes += (doublepixels?2:1))
+			{
+				int bit = (bits & 1);
+				bits >>= 1;
+				const RGBQUAD& rRGB = colors[bit];
+				*(pDst + nBytes) = *reinterpret_cast<const UINT32*>(&rRGB);
+				if (doublepixels)
+				{
+					*(pDst + nBytes + 1) = *reinterpret_cast<const UINT32*>(&rRGB);
+				}
+			}
+		}
+
+		pDst -= frameBufferWidth;
+	}
+}
+
+//===========================================================================
 
 static LPBYTE g_pSourcePixels = NULL;
 
@@ -733,6 +823,7 @@ void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 }
 
 //===========================================================================
+
 
 static UINT g_rgbFlags = 0;
 static UINT g_rgbMode = 0;
@@ -856,4 +947,51 @@ void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
 	}
 
 	yamlLoadHelper.PopMap();
+}
+
+RGB_Videocard_e RGB_GetVideocard(void)
+{
+	return g_RGBVideocard;
+}
+
+void RGB_SetVideocard(RGB_Videocard_e videocard, int text_foreground, int text_background)
+{
+	g_RGBVideocard = videocard;
+
+	// black & white text
+	RGB_SetRegularTextFG(15);
+	RGB_SetRegularTextBG(0);
+
+	if (videocard == RGB_Videocard_e::Video7_SL7 &&
+		(text_foreground == 6 || text_foreground == 9 || text_foreground == 12 || text_foreground == 15))
+	{
+		// SL7: Only Blue, Amber (Orange), Green, White are supported by hardware switches
+		RGB_SetRegularTextFG(text_foreground);
+		RGB_SetRegularTextBG(0);
+	}
+}
+
+void RGB_SetRegularTextFG(int color)
+{
+	g_nRegularTextFG = color;
+}
+
+void RGB_SetRegularTextBG(int color)
+{
+	g_nRegularTextBG = color;
+}
+
+void RGB_EnableTextFB()
+{
+	g_nTextFBMode = 1;
+}
+
+void RGB_DisableTextFB()
+{
+	g_nTextFBMode = 0;
+}
+
+int RGB_IsTextFB()
+{
+	return g_nTextFBMode;
 }
