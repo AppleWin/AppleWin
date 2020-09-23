@@ -594,10 +594,41 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 #define COLOR  ((xpixel + PIXEL) & 3)
 #define VALUE  (dwordval >> (4 + PIXEL - COLOR))
 
+void UpdateDHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool updateAux, bool updateMain)
+{
+	const int xpixel = x * 14;
+
+	uint8_t* pAux = MemGetAuxPtr(addr);
+	uint8_t* pMain = MemGetMainPtr(addr);
+
+	BYTE byteval1 = (x > 0) ? *(pMain - 1) : 0;
+	BYTE byteval2 = *pAux;
+	BYTE byteval3 = *pMain;
+	BYTE byteval4 = (x < 39) ? *(pAux + 1) : 0;
+
+	DWORD dwordval = (byteval1 & 0x70) | ((byteval2 & 0x7F) << 7) |
+		((byteval3 & 0x7F) << 14) | ((byteval4 & 0x07) << 21);
+
+#define PIXEL  0
+	if (updateAux)
+	{
+		CopySource(7, 2, SRCOFFS_DHIRES + 10 * HIBYTE(VALUE) + COLOR, LOBYTE(VALUE), pVideoAddress);
+		pVideoAddress += 7;
+	}
+#undef PIXEL
+
+#define PIXEL  7
+	if (updateMain)
+	{
+		CopySource(7, 2, SRCOFFS_DHIRES + 10 * HIBYTE(VALUE) + COLOR, LOBYTE(VALUE), pVideoAddress);
+	}
+#undef PIXEL
+}
+
 bool dhgr_lastcell_iscolor = true;
 int dhgr_lastbit = 0;
 
-void UpdateDHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool isMixMode, bool isBit7Inversed)
+void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool isMixMode, bool isBit7Inversed)
 {
 	const int xpixel = x * 14;
 	int xoffset = x & 1; // offset to start of the 2 bytes

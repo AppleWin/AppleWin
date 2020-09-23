@@ -443,6 +443,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static void updateScreenText80       ( long cycles6502 );
 	static void updateScreenText40RGB	 ( long cycles6502 );
 	static void updateScreenText80RGB    ( long cycles6502 );
+	static void updateScreenDoubleHires80Simplified(long cycles6502);
+	static void updateScreenDoubleHires80RGB(long cycles6502);
 
 //===========================================================================
 static void set_csbits()
@@ -1235,7 +1237,75 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 
 //===========================================================================
 
-void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblHires
+void updateScreenDoubleHires80Simplified(long cycles6502) // wsUpdateVideoDblHires
+{
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pFuncUpdateTextScreen(cycles6502);
+		return;
+	}
+
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		uint16_t addr = getVideoScannerAddressHGR();
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint16_t addr = getVideoScannerAddressHGR();
+				uint8_t a = *MemGetAuxPtr(addr);
+				uint8_t m = *MemGetMainPtr(addr);
+
+				if (RGB_IsMixModeInvertBit7())	// Invert high bit? (GH#633)
+				{
+					a ^= 0x80;
+					m ^= 0x80;
+				}
+
+				if (RGB_Is160Mode())
+				{
+					int width = UpdateDHiRes160Cell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+					g_pVideoAddress += width;
+				}
+				else if (RGB_Is560Mode() || (RGB_IsMixMode() && !((a | m) & 0x80)))
+				{
+					update7MonoPixels(a);
+					update7MonoPixels(m);
+				}
+				else if (!RGB_IsMixMode() || (RGB_IsMixMode() && (a & m & 0x80)))
+				{
+					UpdateDHiResCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
+					g_pVideoAddress += 14;
+				}
+				else	// RGB_IsMixMode() && ((a ^ m) & 0x80)
+				{
+					if (a & 0x80)	// RGB color, then monochrome
+					{
+						UpdateDHiResCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, false);
+						g_pVideoAddress += 7;
+						update7MonoPixels(m);
+					}
+					else			// monochrome, then RGB color
+					{
+						update7MonoPixels(a);
+						UpdateDHiResCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, false, true);
+						g_pVideoAddress += 7;
+					}
+				}
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+	}
+}
+
+//===========================================================================
+
+void updateScreenDoubleHires80RGB (long cycles6502 ) // wsUpdateVideoDblHires
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1277,7 +1347,7 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 				}
 				else
 				{
-					UpdateDHiResCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, RGB_IsMixMode(), RGB_IsMixModeInvertBit7());
+					UpdateDHiResCellRGB(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, RGB_IsMixMode(), RGB_IsMixModeInvertBit7());
 					g_pVideoAddress += 14;
 				}
 			}
@@ -1978,8 +2048,10 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if ((g_eVideoType == VT_COLOR_MONITOR_RGB) || (g_eVideoType == VT_COLOR_VIDEOCARD_RGB))
+				if (g_eVideoType == VT_COLOR_MONITOR_RGB)
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80Simplified;
+				else if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
+					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80RGB;
 				else
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
 			}

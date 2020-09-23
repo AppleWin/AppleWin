@@ -10,7 +10,8 @@ enum RGB_Videocard_e
 
 
 void UpdateHiResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
-void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool updateAux, bool updateMain);
+void UpdateDHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool updateAux, bool updateMain);
+void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool isMixMode, bool isBit7Inversed);
 int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress);
 void UpdateLoResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
 void UpdateDLoResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
