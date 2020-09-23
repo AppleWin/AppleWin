@@ -101,8 +101,9 @@ static LPDIRECTDRAW g_lpDD = NULL;
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	TCHAR g_aVideoChoices[] =
 		TEXT("Monochrome (Custom)\0")
-		TEXT("Color (RGB Monitor)\0")
-		TEXT("Color (NTSC Monitor)\0")
+		TEXT("Color (RGB Idealized)\0")		// newly added
+		TEXT("Color (RGB Card/Monitor)\0")	// was "Color (RGB Monitor)"
+		TEXT("Color (Composite Monitor)\0")	// was "Color (NTSC Monitor)"
 		TEXT("Color TV\0")
 		TEXT("B&W TV\0")
 		TEXT("Monochrome (Amber)\0")
@@ -114,14 +115,15 @@ static LPDIRECTDRAW g_lpDD = NULL;
 	// The window title will be set to this.
 	const char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	{
-		  "Monochrome Monitor (Custom)"
-		, "Color (RGB Monitor)"
-		, "Color (NTSC/PAL Monitor)"
+		  "Monochrome (Custom)"
+		, "Color (RGB Idealized)"
+		, "Color (RGB Card/Monitor)"
+		, "Color (Composite Monitor)"
 		, "Color TV"
 		, "B&W TV"
-		, "Amber Monitor"
-		, "Green Monitor"
-		, "White Monitor"
+		, "Monochrome (Amber)"
+		, "Monochrome (Green)"
+		, "Monochrome (White)"
 	};
 
 // Prototypes (Private) _____________________________________________
