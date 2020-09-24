@@ -575,7 +575,7 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 		{
 			for (int nBytes=0; nBytes<w; ++nBytes)
 			{
-				_ASSERT( *(pSrc+nBytes+nSrcAdjustment) < (sizeof(PaletteRGB_Apple)/sizeof(PaletteRGB_Apple[0])) );
+				_ASSERT( *(pSrc+nBytes+nSrcAdjustment) < (sizeof(PaletteRGB_NTSC)/sizeof(PaletteRGB_NTSC[0])) );
 				const RGBQUAD& rRGB = g_pPaletteRGB[ *(pSrc+nBytes+nSrcAdjustment) ];
 				*(pDst+nBytes) = *reinterpret_cast<const UINT32 *>(&rRGB);
 			}
