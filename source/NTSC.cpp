@@ -2094,7 +2094,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		{
 			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Simplified;
-			if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
+			else if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40RGB;
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
