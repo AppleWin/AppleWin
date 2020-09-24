@@ -117,7 +117,9 @@ const BYTE DoubleHiresPalIndex[16] = {
 
 #define  SETRGBCOLOR(r,g,b) {b,g,r,0}
 
-static RGBQUAD PalIndex2RGB[] =
+static RGBQUAD* g_pPaletteRGB;
+
+static RGBQUAD PaletteRGB_NTSC[] =
 {
 // hires
 #if DO_OPT_PALETTE
@@ -167,9 +169,24 @@ static RGBQUAD PalIndex2RGB[] =
 
 // Le Chat Mauve Feline's palette
 // extracted from a white-balanced RGB video capture
-static RGBQUAD PalIndex2RGB_Feline[] =
+static RGBQUAD PaletteRGB_Feline[] =
 {
-	// Feline test
+	SETRGBCOLOR(/*HGR_BLACK, */ 0x00,0x00,0x00),
+	SETRGBCOLOR(/*HGR_WHITE, */ 0xFF,0xFF,0xFF),
+	SETRGBCOLOR(/*BLUE,      */ 0x00,0x8A,0xB5),
+	SETRGBCOLOR(/*ORANGE,    */ 0xFF,0x72,0x47),
+	SETRGBCOLOR(/*GREEN,     */ 0x6F,0xE6,0x2C),
+	SETRGBCOLOR(/*MAGENTA,   */ 0xAA,0x1A,0xD1),
+
+	// TV emu
+	SETRGBCOLOR(/*HGR_GREY1, */ 0x80,0x80,0x80),
+	SETRGBCOLOR(/*HGR_GREY2, */ 0x80,0x80,0x80),
+	SETRGBCOLOR(/*HGR_YELLOW,*/ 0x9E,0x9E,0x00),
+	SETRGBCOLOR(/*HGR_AQUA,  */ 0x00,0xCD,0x4A),
+	SETRGBCOLOR(/*HGR_PURPLE,*/ 0x61,0x61,0xFF),
+	SETRGBCOLOR(/*HGR_PINK,  */ 0xFF,0x32,0xB5),
+
+	// Feline
 	SETRGBCOLOR(/*BLACK,*/      0x00,0x00,0x00),
 	SETRGBCOLOR(/*DEEP_RED,*/   0xAC,0x12,0x4C),
 	SETRGBCOLOR(/*DARK_BLUE,*/  0x00,0x07,0x83),
@@ -526,8 +543,8 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 			}
 			else
 			{
-				_ASSERT( colormixbuffer[h] < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
-				const RGBQUAD& rRGB = PalIndex2RGB[ colormixbuffer[h] ];
+				_ASSERT( colormixbuffer[h] < (sizeof(PaletteRGB_NTSC)/sizeof(PaletteRGB_NTSC[0])) );
+				const RGBQUAD& rRGB = g_pPaletteRGB[ colormixbuffer[h] ];
 				*(pDst+nBytes) = *reinterpret_cast<const UINT32 *>(&rRGB);
 			}
 
@@ -558,8 +575,8 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 		{
 			for (int nBytes=0; nBytes<w; ++nBytes)
 			{
-				_ASSERT( *(pSrc+nBytes+nSrcAdjustment) < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
-				const RGBQUAD& rRGB = PalIndex2RGB[ *(pSrc+nBytes+nSrcAdjustment) ];
+				_ASSERT( *(pSrc+nBytes+nSrcAdjustment) < (sizeof(PaletteRGB_Apple)/sizeof(PaletteRGB_Apple[0])) );
+				const RGBQUAD& rRGB = g_pPaletteRGB[ *(pSrc+nBytes+nSrcAdjustment) ];
 				*(pDst+nBytes) = *reinterpret_cast<const UINT32 *>(&rRGB);
 			}
 		}
@@ -655,12 +672,12 @@ void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, boo
 	{
 		bits[i] = dwordval_tmp & 0xF;
 		color = ((bits[i] & 7) << 1) | ((bits[i] & 8) >> 3); // DHGR colors are rotated 1 bit to the right
-		colors[i] = *reinterpret_cast<const UINT32*>(&PalIndex2RGB[12 + color]);
+		colors[i] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[12 + color]);
 		dwordval_tmp >>= 4;
 	}
 	UINT32 bw[2];
-	bw[0] = *reinterpret_cast<const UINT32*>(&PalIndex2RGB[12 + 0]);
-	bw[1] = *reinterpret_cast<const UINT32*>(&PalIndex2RGB[12 + 15]);
+	bw[0] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[12 + 0]);
+	bw[1] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[12 + 15]);
 
 	if (isBit7Inversed)
 	{
@@ -1007,8 +1024,8 @@ void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint
 	background += 12;
 	foreground += 12;
 	// get bg/fg colors
-	colors[0] = PalIndex2RGB[background];
-	colors[1] = PalIndex2RGB[foreground];
+	colors[0] = g_pPaletteRGB[background];
+	colors[1] = g_pPaletteRGB[foreground];
 	int nbits = bits;
 	int doublepixels = (w == 14); // Double pixel (HiRes or Text40)
 
@@ -1067,18 +1084,24 @@ void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 	// CREATE THE SOURCE IMAGE AND DRAW INTO THE SOURCE BIT BUFFER
 	V_CreateDIBSections();
 
-	if (g_RGBVideocard == RGB_Videocard_e::LeChatMauve_Feline)
+	// Replace the default palette with true NTSC-generated colors
+	memcpy(&PaletteRGB_NTSC[BLACK], *pBaseNtscColors, sizeof(RGBQUAD) * kNumBaseColors);
+	PaletteRGB_NTSC[HGR_BLUE]   = PaletteRGB_NTSC[BLUE];
+	PaletteRGB_NTSC[HGR_ORANGE] = PaletteRGB_NTSC[ORANGE];
+	PaletteRGB_NTSC[HGR_GREEN]  = PaletteRGB_NTSC[GREEN];
+	PaletteRGB_NTSC[HGR_VIOLET] = PaletteRGB_NTSC[MAGENTA];
+}
+
+//===========================================================================
+
+// RGB videocards may use a different palette thant the NTSC-generated one
+void VideoSwitchVideocardPalette(RGB_Videocard_e videocard, VideoType_e type)
+{
+	g_pPaletteRGB = PaletteRGB_NTSC;
+	if (type==VideoType_e::VT_COLOR_VIDEOCARD_RGB && videocard == RGB_Videocard_e::LeChatMauve_Feline)
 	{
-		memcpy(&PalIndex2RGB[BLACK], &PalIndex2RGB_Feline[0], sizeof(RGBQUAD) * kNumBaseColors);
+		g_pPaletteRGB = PaletteRGB_Feline;
 	}
-	else
-	{
-		memcpy(&PalIndex2RGB[BLACK], *pBaseNtscColors, sizeof(RGBQUAD) * kNumBaseColors);
-	}
-	PalIndex2RGB[HGR_BLUE]   = PalIndex2RGB[BLUE];
-	PalIndex2RGB[HGR_ORANGE] = PalIndex2RGB[ORANGE];
-	PalIndex2RGB[HGR_GREEN]  = PalIndex2RGB[GREEN];
-	PalIndex2RGB[HGR_VIOLET] = PalIndex2RGB[MAGENTA];
 }
 
 //===========================================================================

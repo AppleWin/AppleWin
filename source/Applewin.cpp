@@ -2045,6 +2045,9 @@ static void RepeatInitialization(void)
 		FrameCreateWindow();	// g_hFrameWindow is now valid
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
 
+		// Init palette color
+		VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
+
 		// Allow the 4 hardcoded slots to be configurated as empty
 		// NB. this state is not persisted to the Registry/conf.ini (just as '-s7 empty' isn't)
 		// TODO: support bSlotEmpty[] for slots: 0,4,5

@@ -23,6 +23,7 @@ void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint
 const UINT kNumBaseColors = 16;
 typedef bgra_t (*baseColors_t)[kNumBaseColors];
 void VideoInitializeOriginal(baseColors_t pBaseNtscColors);
+void VideoSwitchVideocardPalette(RGB_Videocard_e videocard, VideoType_e type);
 
 void RGB_SetVideoMode(WORD address);
 bool RGB_Is140Mode(void);
