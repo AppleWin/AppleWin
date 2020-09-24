@@ -19,6 +19,7 @@ void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, u
 void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits, uint8_t character);
 void UpdateHiResDuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
 void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint8_t foreground, uint8_t background);
+void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
 
 const UINT kNumBaseColors = 16;
 typedef bgra_t (*baseColors_t)[kNumBaseColors];

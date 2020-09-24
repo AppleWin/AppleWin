@@ -642,6 +642,104 @@ void UpdateDHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool u
 #undef PIXEL
 }
 
+//===========================================================================
+// RGB videocards HGR
+
+void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
+{
+	const int xpixel = x * 14;
+	int xoffset = x & 1; // offset to start of the 2 bytes
+	addr -= xoffset;
+
+	uint8_t* pMain = MemGetMainPtr(addr);
+
+	// We need all 28 bits because each pixel needs a three bit evaluation
+	uint8_t byteval1 = (x < 2 ? 0 : *(pMain - 1));
+	uint8_t byteval2 = *pMain;
+	uint8_t byteval3 = *(pMain + 1);
+	uint8_t byteval4 = (x >= 38 ? 0 : *(pMain + 2));
+	
+	// all 28 bits chained
+	DWORD dwordval = (byteval1 & 0x7F) | ((byteval2 & 0x7F) << 7) | ((byteval3 & 0x7F) << 14) | ((byteval4 & 0x7F) << 21);
+
+	// Extraction of 14 color pixels
+	UINT32 colors[14];
+	int color = 0;
+	DWORD dwordval_tmp = dwordval;
+	dwordval_tmp = dwordval_tmp >> 7;
+	int value;
+	bool offset = (byteval2 & 0x80);
+	for (int i = 0; i < 14; i++)
+	{
+		if (i == 7) offset = (byteval3 & 0x80);
+		color = dwordval_tmp & 0x3;
+		// Two cases because AppleWin's palette is in a strange order
+		if (offset)
+			colors[i] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[1 + color]);
+		else
+			colors[i] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[6 - color]);
+		if (i%2) dwordval_tmp >>= 2;
+	}
+	// Black and White
+	UINT32 bw[2];
+	bw[0] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[0]);
+	bw[1] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[1]);
+
+	DWORD mask  =  0x01C0; //  00|000001 1|1000000
+	DWORD chck1 =  0x0140; //  00|000001 0|1000000
+	DWORD chck2 =  0x0080; //  00|000000 1|0000000
+
+	// HIRES render in RGB works on a pixel-basis (1-bit data in framebuffer)
+	// The pixel can be 'color', if it makes a 101 or 010 pattern with the two neighbour bits
+	// In all other cases, it's black if 0 and white if 1
+	// The value of 'color' is defined on a 2-bits basis
+
+	UINT32* pDst = (UINT32*)pVideoAddress;
+
+	if (xoffset)
+	{
+		// Second byte of the 14 pixels block
+		dwordval = dwordval >> 7;
+		xoffset = 7;
+	}
+
+	for (int i = xoffset; i < xoffset+7; i++)
+	{
+		if (((dwordval & mask) == chck1) || ((dwordval & mask) == chck2))
+		{
+			// Color pixel
+			*(pDst) = colors[i];
+			*(pDst + 1) = *(pDst);
+			pDst += 2;
+		}
+		else
+		{
+			// B&W pixel
+			*(pDst) = bw[(dwordval & chck2 ? 1 : 0)];
+			*(pDst + 1) = *(pDst);
+			pDst += 2;
+		}
+		// Next pixel
+		dwordval = dwordval >> 1;
+	}
+
+	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+
+	// Second line
+	UINT32* pSrc = (UINT32*)pVideoAddress;
+	pDst = pSrc - GetFrameBufferWidth();
+	if (bIsHalfScanLines)
+	{
+		// Scanlines
+		std::fill(pDst, pDst + 14, 0);
+	}
+	else
+	{
+		for (int i = 0; i < 14; i++)
+			*(pDst + i) = *(pSrc + i);
+	}
+}
+
 bool dhgr_lastcell_iscolor = true;
 int dhgr_lastbit = 0;
 
