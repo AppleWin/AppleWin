@@ -172,7 +172,11 @@ class YamlSaveHelper
 public:
 	YamlSaveHelper(std::string pathname) :
 		m_hFile(NULL),
-		m_indent(0)
+		m_indent(0),
+		m_pWcStr(NULL),
+		m_wcStrSize(0),
+		m_pMbStr(NULL),
+		m_mbStrSize(0)
 	{
 		m_hFile = fopen(pathname.c_str(), "wt");
 
@@ -203,6 +207,9 @@ public:
 			fprintf(m_hFile, "...\n");
 			fclose(m_hFile);
 		}
+
+		delete[] m_pWcStr;
+		delete[] m_pMbStr;
 	}
 
 	void Save(const char* format, ...);
@@ -271,4 +278,9 @@ private:
 	int m_indent;
 	static const UINT kMaxIndent = 50*2;
 	char m_szIndent[kMaxIndent];
+
+	LPWSTR m_pWcStr;
+	int m_wcStrSize;
+	LPSTR m_pMbStr;
+	int m_mbStrSize;
 };

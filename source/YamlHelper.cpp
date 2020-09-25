@@ -456,49 +456,43 @@ void YamlSaveHelper::SaveString(const char* key,  const char* value)
 	if (value[0] == 0)
 		value = "\"\"";
 
-	LPWSTR pWcStr = NULL;
-	LPSTR pMbStr = NULL;
-
 	// libyaml supports UTF-8 and not accented ANSI characters (GH#838)
 	// . So convert ANSI to UTF-8, which is a 2-step process:
 
 	// 1) ANSI -> unicode
 	{
-		int wcStrSize = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, value, -1, NULL, 0);
-		if (wcStrSize == 0)
-		{
-			delete[] pWcStr; delete[] pMbStr;
+		int size = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, value, -1, NULL, 0);
+		if (size == 0)
 			throw std::string("Unable to convert to unicode: ") + std::string(value);
+		if (size > m_wcStrSize)
+		{
+			delete[] m_pWcStr;
+			m_pWcStr = new WCHAR[size];
+			m_wcStrSize = size;
 		}
-		pWcStr = new WCHAR[wcStrSize];
-		int res = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, value, -1, pWcStr, wcStrSize);
+		int res = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, value, -1, m_pWcStr, m_wcStrSize);
 		if (!res)
-		{
-			delete[] pWcStr; delete[] pMbStr;
 			throw std::string("Unable to convert to unicode: ") + std::string(value);
-		}
 	}
 
 	// 2) unicode -> UTF-8
 	{
 		// NB. WC_ERR_INVALID_CHARS only defined when WIN_VER >= 0x600 - but stdafx.h defines it as 0x500
-		int mbStrSize = WideCharToMultiByte(CP_UTF8, 0/*WC_ERR_INVALID_CHARS*/, pWcStr, -1, NULL, 0, NULL, NULL);
-		if (mbStrSize == 0)
-		{
-			delete[] pWcStr; delete[] pMbStr;
+		int size = WideCharToMultiByte(CP_UTF8, 0/*WC_ERR_INVALID_CHARS*/, m_pWcStr, -1, NULL, 0, NULL, NULL);
+		if (size == 0)
 			throw std::string("Unable to convert to UTF-8: ") + std::string(value);
+		if (size > m_mbStrSize)
+		{
+			delete[] m_pMbStr;
+			m_pMbStr = new char[size];
+			m_mbStrSize = size;
 		}
-		pMbStr = new char[mbStrSize];
-		int res = WideCharToMultiByte(CP_UTF8, 0/*WC_ERR_INVALID_CHARS*/, pWcStr, -1, pMbStr, mbStrSize, NULL, NULL);
+		int res = WideCharToMultiByte(CP_UTF8, 0/*WC_ERR_INVALID_CHARS*/, m_pWcStr, -1, m_pMbStr, m_mbStrSize, NULL, NULL);
 		if (!res)
-		{
-			delete [] pWcStr; delete [] pMbStr;
 			throw std::string("Unable to convert to UTF-8: ") + std::string(value);
-		}
 	}
 
-	Save("%s: %s\n", key, pMbStr);
-	delete[] pWcStr; delete[] pMbStr;
+	Save("%s: %s\n", key, m_pMbStr);
 }
 
 void YamlSaveHelper::SaveString(const char* key, const std::string & value)
