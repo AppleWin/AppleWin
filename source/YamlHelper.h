@@ -29,6 +29,7 @@ public:
 	YamlHelper(void) :
 		m_hFile(NULL)
 	{
+		memset(&m_parser, 0, sizeof(m_parser));
 		MakeAsciiToHexTable();
 	}
 
