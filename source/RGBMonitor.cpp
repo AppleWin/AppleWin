@@ -667,7 +667,6 @@ void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 	int color = 0;
 	DWORD dwordval_tmp = dwordval;
 	dwordval_tmp = dwordval_tmp >> 7;
-	int value;
 	bool offset = (byteval2 & 0x80);
 	for (int i = 0; i < 14; i++)
 	{
