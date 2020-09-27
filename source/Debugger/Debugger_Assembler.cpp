@@ -794,9 +794,10 @@ bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 		(iOpmode != AM_3))
 	{
 		int nTargetPartial;
+		int nTargetPartial2;
 		int nTargetPointer;
 		int nTargetBytes;
-		_6502_GetTargets( nAddress, &nTargetPartial, &nTargetPointer, &nTargetBytes, false );
+		_6502_GetTargets( nAddress, &nTargetPartial, &nTargetPartial2, &nTargetPointer, &nTargetBytes, false );
 
 //		if (nTargetPointer == NO_6502_TARGET)
 //		{
