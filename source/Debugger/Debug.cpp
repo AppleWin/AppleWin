@@ -5370,7 +5370,7 @@ Update_t CmdNTSC (int nArgs)
 							*pDst++ = pTmp[3];
 					}
 				}
-/*
+
 				// we duplicate phase 0 a total of 4 times
 				const size_t nBytesPerScanLine = 4096 * nBPP;
 				for( int iPhase = 1; iPhase < 4; iPhase++ )
