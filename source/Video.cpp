@@ -101,7 +101,7 @@ static LPDIRECTDRAW g_lpDD = NULL;
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	TCHAR g_aVideoChoices[] =
 		TEXT("Monochrome (Custom)\0")
-		TEXT("Color (RGB Idealized)\0")		// newly added
+		TEXT("Color (Composite Idealized)\0")		// newly added
 		TEXT("Color (RGB Card/Monitor)\0")	// was "Color (RGB Monitor)"
 		TEXT("Color (Composite Monitor)\0")	// was "Color (NTSC Monitor)"
 		TEXT("Color TV\0")
@@ -116,7 +116,7 @@ static LPDIRECTDRAW g_lpDD = NULL;
 	const char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	{
 		  "Monochrome (Custom)"
-		, "Color (RGB Idealized)"
+		, "Color (Composite Idealized)"
 		, "Color (RGB Card/Monitor)"
 		, "Color (Composite Monitor)"
 		, "Color TV"
