@@ -10,18 +10,21 @@ enum RGB_Videocard_e
 
 
 void UpdateHiResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
-void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool updateAux, bool updateMain);
+void UpdateDHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool updateAux, bool updateMain);
+void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool isMixMode, bool isBit7Inversed);
 int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress);
 void UpdateLoResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
 void UpdateDLoResCell(int x, int y, uint16_t addr, bgra_t *pVideoAddress);
-void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits);
-void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits);
+void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits, uint8_t character);
+void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits, uint8_t character);
 void UpdateHiResDuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
 void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint8_t foreground, uint8_t background);
+void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
 
 const UINT kNumBaseColors = 16;
 typedef bgra_t (*baseColors_t)[kNumBaseColors];
 void VideoInitializeOriginal(baseColors_t pBaseNtscColors);
+void VideoSwitchVideocardPalette(RGB_Videocard_e videocard, VideoType_e type);
 
 void RGB_SetVideoMode(WORD address);
 bool RGB_Is140Mode(void);
