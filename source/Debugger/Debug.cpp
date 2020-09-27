@@ -440,10 +440,10 @@ bool DebugGetVideoMode(UINT* pVideoMode)
 
 // File _______________________________________________________________________
 
-int _GetFileSize( FILE *hFile )
+size_t _GetFileSize( FILE *hFile )
 {
 	fseek( hFile, 0, SEEK_END );
-	int nFileBytes = ftell( hFile );
+	size_t nFileBytes = ftell( hFile );
 	fseek( hFile, 0, SEEK_SET );
 
 	return nFileBytes;
@@ -4497,7 +4497,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 	if (hFile)
 	{
-		int nFileBytes = _GetFileSize( hFile );
+		size_t nFileBytes = _GetFileSize( hFile );
 
 		if (nFileBytes > _6502_MEM_END)
 			nFileBytes = _6502_MEM_END + 1; // Bank-switched RAM/ROM is only 16-bit
@@ -8134,6 +8134,9 @@ Update_t ExecuteCommand (int nArgs)
 //===========================================================================
 void OutputTraceLine ()
 {
+	if (!g_hTraceFile)
+		return;
+
 	DisasmLine_t line;
 	GetDisassemblyLine( regs.pc, line );
 
@@ -8151,9 +8154,6 @@ void OutputTraceLine ()
 			sFlags[nFlag] = g_aBreakpointSource[BP_SRC_FLAG_C + iFlag][0];
 		nRegFlags >>= 1;
 	}
-
-	if (!g_hTraceFile)
-		return;
 
 	if (g_bTraceHeader)
 	{
