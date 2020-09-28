@@ -667,10 +667,10 @@ void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 	int color = 0;
 	DWORD dwordval_tmp = dwordval;
 	dwordval_tmp = dwordval_tmp >> 7;
-	bool offset = (byteval2 & 0x80);
+	bool offset = (byteval2 & 0x80) ? true : false;
 	for (int i = 0; i < 14; i++)
 	{
-		if (i == 7) offset = (byteval3 & 0x80);
+		if (i == 7) offset = (byteval3 & 0x80) ? true : false;
 		color = dwordval_tmp & 0x3;
 		// Two cases because AppleWin's palette is in a strange order
 		if (offset)
@@ -739,8 +739,8 @@ void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 	}
 }
 
-bool dhgr_lastcell_iscolor = true;
-int dhgr_lastbit = 0;
+static bool g_dhgrLastCellIsColor = true;
+static int g_dhgrLastBit = 0;
 
 void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool isMixMode, bool isBit7Inversed)
 {
@@ -815,31 +815,31 @@ void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, boo
 			*(pDst++) = colors[1];
 			
 			dwordval >>= 7;
-			dhgr_lastcell_iscolor = true;
+			g_dhgrLastCellIsColor = true;
 		}
 		else
 		{
 			// BW
 			for (int i = 0; i < 7; i++)
 			{
-				dhgr_lastbit = dwordval & 1;
-				*(pDst++) = bw[dhgr_lastbit];
+				g_dhgrLastBit = dwordval & 1;
+				*(pDst++) = bw[g_dhgrLastBit];
 				dwordval >>= 1;
 			}
-			dhgr_lastcell_iscolor = false;
+			g_dhgrLastCellIsColor = false;
 		}
 
 		if ((byteval2 & 0x80) || !isMixMode)
 		{
 			// Remaining of color cell 1
-			if (dhgr_lastcell_iscolor)
+			if (g_dhgrLastCellIsColor)
 			{
 				*(pDst++) = colors[1];
 			}
 			else
 			{
 				// Repeat last BW bit once
-				*(pDst++) = bw[dhgr_lastbit];
+				*(pDst++) = bw[g_dhgrLastBit];
 			}
 			// Color cell 2
 			*(pDst++) = colors[2];
@@ -849,17 +849,17 @@ void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, boo
 			// Color cell 3
 			*(pDst++) = colors[3];
 			*(pDst++) = colors[3];
-			dhgr_lastcell_iscolor = true;
+			g_dhgrLastCellIsColor = true;
 		}
 		else
 		{
 			for (int i = 0; i < 7; i++)
 			{
-				dhgr_lastbit = dwordval & 1;
-				*(pDst++) = bw[dhgr_lastbit];
+				g_dhgrLastBit = dwordval & 1;
+				*(pDst++) = bw[g_dhgrLastBit];
 				dwordval >>= 1;
 			}
-			dhgr_lastcell_iscolor = false;
+			g_dhgrLastCellIsColor = false;
 		}
 	}
 	else  // Second cell
@@ -869,7 +869,7 @@ void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, boo
 		if ((byteval3 & 0x80) || !isMixMode)
 		{
 			// Remaining of color cell 3
-			if (dhgr_lastcell_iscolor)
+			if (g_dhgrLastCellIsColor)
 			{
 				*(pDst++) = colors[3];
 				*(pDst++) = colors[3];
@@ -877,8 +877,8 @@ void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, boo
 			else
 			{
 				// Repeat last BW bit twice
-				*(pDst++) = bw[dhgr_lastbit];
-				*(pDst++) = bw[dhgr_lastbit];
+				*(pDst++) = bw[g_dhgrLastBit];
+				*(pDst++) = bw[g_dhgrLastBit];
 			}
 			// Color cell 4
 			*(pDst++) = colors[4];
@@ -889,23 +889,23 @@ void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, boo
 			*(pDst++) = colors[5];
 			
 			dwordval >>= 7;
-			dhgr_lastcell_iscolor = true;
+			g_dhgrLastCellIsColor = true;
 		}
 		else
 		{
 			for (int i = 0; i < 7; i++)
 			{
-				dhgr_lastbit = dwordval & 1;
-				*(pDst++) = bw[dhgr_lastbit];
+				g_dhgrLastBit = dwordval & 1;
+				*(pDst++) = bw[g_dhgrLastBit];
 				dwordval >>= 1;
 			}
-			dhgr_lastcell_iscolor = false;
+			g_dhgrLastCellIsColor = false;
 		}
 
 		if ((byteval4 & 0x80) || !isMixMode)
 		{
 			// Remaining of color cell 5
-			if (dhgr_lastcell_iscolor)
+			if (g_dhgrLastCellIsColor)
 			{
 				*(pDst++) = colors[5];
 				*(pDst++) = colors[5];
@@ -914,26 +914,26 @@ void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, boo
 			else
 			{
 				// Repeat last BW bit three times
-				*(pDst++) = bw[dhgr_lastbit];
-				*(pDst++) = bw[dhgr_lastbit];
-				*(pDst++) = bw[dhgr_lastbit];
+				*(pDst++) = bw[g_dhgrLastBit];
+				*(pDst++) = bw[g_dhgrLastBit];
+				*(pDst++) = bw[g_dhgrLastBit];
 			}
 			// Color cell 6
 			*(pDst++) = colors[6];
 			*(pDst++) = colors[6];
 			*(pDst++) = colors[6];
 			*(pDst++) = colors[6];
-			dhgr_lastcell_iscolor = true;
+			g_dhgrLastCellIsColor = true;
 		}
 		else
 		{
 			for (int i = 0; i < 7; i++)
 			{
-				dhgr_lastbit = dwordval & 1;
-				*(pDst++) = bw[dhgr_lastbit];
+				g_dhgrLastBit = dwordval & 1;
+				*(pDst++) = bw[g_dhgrLastBit];
 				dwordval >>= 1;
 			}
-			dhgr_lastcell_iscolor = false;
+			g_dhgrLastCellIsColor = false;
 		}
 	}
 
