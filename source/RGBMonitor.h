@@ -17,8 +17,10 @@ const int SRCOFFS_LORES = 0;							//    0
 const int SRCOFFS_HIRES = (SRCOFFS_LORES + 16);		//   16
 const int SRCOFFS_DHIRES = (SRCOFFS_HIRES + (HIRES_NUMBER_COLUMNS * HIRES_COLUMN_UNIT_SIZE)); // 1040
 const int SRCOFFS_TOTAL = (SRCOFFS_DHIRES + 2560);	// 3600
+void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
 
 const int MAX_SOURCE_Y = 256;
+void VideoSwitchVideocardPalette(RGB_Videocard_e videocard, VideoType_e type);
 
 #define  SETSOURCEPIXEL(x,y,c)  g_aSourceStartofLine[(y)][(x)] = (c)
 

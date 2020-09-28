@@ -113,17 +113,31 @@ DWORD		Video::g_eVideoType;		// saved to Registry
 VideoStyle_e	Video::g_eVideoStyle;
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
+	TCHAR g_aVideoChoices[] =
+		TEXT("Monochrome (Custom)\0")
+		TEXT("Color (Composite Idealized)\0")		// newly added
+		TEXT("Color (RGB Card/Monitor)\0")	// was "Color (RGB Monitor)"
+		TEXT("Color (Composite Monitor)\0")	// was "Color (NTSC Monitor)"
+		TEXT("Color TV\0")
+		TEXT("B&W TV\0")
+		TEXT("Monochrome (Amber)\0")
+		TEXT("Monochrome (Green)\0")
+		TEXT("Monochrome (White)\0")
+		;
+
+	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	// The window title will be set to this.
 	const char *Video::g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	{
-		  "Monochrome Monitor (Custom)"
-		, "Color (RGB Monitor)"
-		, "Color (NTSC/PAL Monitor)"
+		  "Monochrome (Custom)"
+		, "Color (Composite Idealized)"
+		, "Color (RGB Card/Monitor)"
+		, "Color (Composite Monitor)"
 		, "Color TV"
 		, "B&W TV"
-		, "Amber Monitor"
-		, "Green Monitor"
-		, "White Monitor"
+		, "Monochrome (Amber)"
+		, "Monochrome (Green)"
+		, "Monochrome (White)"
 	};
 Video* g_pVideo = NULL;
 Video* debug_pVideo = NULL;
@@ -636,6 +650,7 @@ void Video::VideoReinitialize (bool bInitVideoScannerAddress /*= true*/)
 	pNTSC->NTSC_SetVideoStyle();
 	pNTSC->NTSC_SetVideoTextMode( g_uVideoMode &  VF_80COL ? 80 : 40 );
 	pNTSC->NTSC_SetVideoMode( g_uVideoMode );	// Pre-condition: g_nVideoClockHorz (derived from g_dwCyclesThisFrame)
+	VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
 }
 
 //===========================================================================

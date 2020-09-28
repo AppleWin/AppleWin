@@ -1756,6 +1756,10 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.newVideoType = VT_COLOR_MONITOR_RGB;
 		}
+		else if (strcmp(lpCmdLine, "-video-mode=rgb-videocard") == 0)
+		{
+			g_cmdLine.newVideoType = VT_COLOR_VIDEOCARD_RGB;
+		}
 		else if (strcmp(lpCmdLine, "-video-mode=composite-monitor") == 0)	// GH#763
 		{
 			g_cmdLine.newVideoType = VT_COLOR_MONITOR_NTSC;
@@ -2048,6 +2052,9 @@ static void RepeatInitialization(void)
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");
 		FrameCreateWindow();	// g_hFrameWindow is now valid
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
+
+		// Init palette color
+		VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
 
 		// Allow the 4 hardcoded slots to be configurated as empty
 		// NB. this state is not persisted to the Registry/conf.ini (just as '-s7 empty' isn't)

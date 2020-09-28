@@ -306,6 +306,8 @@ UINT NTSC::g_videoScanner6502Cycles = VIDEO_SCANNER_6502_CYCLES;	// default to N
 //unsigned short (*NTSC::g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ];
 
 csbits_t NTSC::csbits;
+	static void updateScreenDoubleHires80Simplified(long cycles6502);
+	static void updateScreenDoubleHires80RGB(long cycles6502);
 
 NTSC::NTSC(Video* _pVideo)
 {
@@ -713,7 +715,7 @@ void NTSC::updateVideoScannerAddress()
 		(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80) ||
 		(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80RGB) ||
 		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && (g_pFuncUpdateTextScreen == &NTSC::updateScreenText80 || g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80RGB)))
-		&& (eVideoType != VT_COLOR_MONITOR_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
+		&& (g_eVideoType != VT_COLOR_MONITOR_RGB) && (g_eVideoType != VT_COLOR_VIDEOCARD_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
 
 	{
 		g_pVideoAddress -= 1;
@@ -1124,6 +1126,41 @@ void NTSC::updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVid
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
 		FuncUpdateTextScreen( cycles6502 );
+
+		return;
+	}
+
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		uint16_t addr = getVideoScannerAddressHGR();
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint16_t addr = getVideoScannerAddressHGR();
+				uint8_t a = *MemGetAuxPtr(addr);
+				uint8_t m = *MemGetMainPtr(addr);
+
+				UpdateDHiResCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
+				g_pVideoAddress += 14;
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+	}
+}
+
+//===========================================================================
+
+void updateScreenDoubleHires80RGB (long cycles6502 ) // wsUpdateVideoDblHires
+{
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pFuncUpdateTextScreen( cycles6502 );
 		return;
 	}
 
@@ -1154,30 +1191,18 @@ void NTSC::updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVid
 					int width = pRGBMonitor->UpdateDHiRes160Cell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
 					g_pVideoAddress += width;
 				}
-				else if (pRGBMonitor->RGB_Is560Mode() || (pRGBMonitor->RGB_IsMixMode() && !((a | m) & 0x80)))
+				else if (pRGBMonitor->RGB_Is560Mode()) // || (pRGBMonitor->RGB_IsMixMode() && !((a | m) & 0x80)))
+
 				{
 					update7MonoPixels(a);
 					update7MonoPixels(m);
 				}
-				else if (!pRGBMonitor->RGB_IsMixMode() || (pRGBMonitor->RGB_IsMixMode() && (a & m & 0x80)))
+
+				else
 				{
-					pRGBMonitor->UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
+
+					pRGBMonitor->UpdateDHiResCellRGB(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, pRGBMonitor->RGB_IsMixMode(), pRGBMonitor->RGB_IsMixModeInvertBit7());
 					g_pVideoAddress += 14;
-				}
-				else	// RGB_IsMixMode() && ((a ^ m) & 0x80)
-				{
-					if (a & 0x80)	// RGB color, then monochrome
-					{
-						pRGBMonitor->UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true ,false);
-						g_pVideoAddress += 7;
-						update7MonoPixels(m);
-					}
-					else			// monochrome, then RGB color
-					{
-						update7MonoPixels(a);
-						pRGBMonitor->UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, false, true);
-						g_pVideoAddress += 7;
-					}
 				}
 			}
 		}
@@ -1398,6 +1423,37 @@ void NTSC::updateScreenSingleHires40Duochrome(long cycles6502)
 	}
 }
 
+//===========================================================================
+static void updateScreenSingleHires40RGB(long cycles6502)
+{
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pFuncUpdateTextScreen(cycles6502);
+		return;
+	}
+
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint16_t addr = getVideoScannerAddressHGR();
+
+				UpdateHiResRGBCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+				g_pVideoAddress += 14;
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+	}
+}
+
+//===========================================================================
+
 
 void NTSC::updateScreenSingleHires40 (long cycles6502)
 {
@@ -1555,7 +1611,8 @@ void NTSC::updateScreenText40RGB(long cycles6502)
 				if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
 					c ^= g_nTextFlashMask;
 
-				pRGBMonitor->UpdateText40ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, c);
+
+				pRGBMonitor->UpdateText40ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, c, m);
 				g_pVideoAddress += 14;
 
 			}
@@ -1597,7 +1654,8 @@ void NTSC::updateScreenText80 (long cycles6502)
 					aux ^= g_nTextFlashMask;
 
 				uint16_t bits = (main << 7) | (aux & 0x7f);
-				if (Video::GetVideoType() != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
+				if ((Video::GetVideoType() != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
+					&& (Video::GetVideoType() != VT_COLOR_VIDEOCARD_RGB))
 					bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
 
 				updatePixels( bits );
@@ -1639,9 +1697,11 @@ void NTSC::updateScreenText80RGB(long cycles6502)
 				if ((0 == g_nVideoCharSet) && 0x40 == (a & 0xC0)) // Flash only if mousetext not active
 					aux ^= g_nTextFlashMask;
 
-				pRGBMonitor->UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)aux);
+
+				pRGBMonitor->UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)aux, a);
 				g_pVideoAddress += 7;
-				pRGBMonitor->UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)main);
+
+				pRGBMonitor->UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)main, m);
 				g_pVideoAddress += 7;
 
 				uint16_t bits = (main << 7) | (aux & 0x7f);
@@ -1731,7 +1791,7 @@ uint16_t NTSC::NTSC_VideoGetScannerAddressForDebugger(void)
 //===========================================================================
 void NTSC::NTSC_SetVideoTextMode( int cols )
 {
-	if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
+	if (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB)
 	{
 		if (cols == 40)
 			g_pFuncUpdateTextScreen = &NTSC::updateScreenText40RGB;
@@ -1806,7 +1866,7 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	}
 
 	// Video7_SL7 extra RGB modes handling
-	if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB
+	if (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB
 		&& RGBMonitor::RGB_GetVideocard() == RGB_Videocard_e::Video7_SL7
 		// Exclude following modes (fallback through regular NTSC rendering with RGB text)
 		// VF_DHIRES = 1  -> regular Apple IIe modes
@@ -1863,17 +1923,24 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
+				if (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB)
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText80RGB;
 				else
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText80;
 			}
-			else if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
+			else if (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB)
 				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText40RGB;
 			else
 				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText40;
 		}
-		else if (uVideoModeFlags & VF_HIRES)
+		else if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
+			g_pFuncUpdateGraphicsScreen = updateScreenText40RGB;
+		else
+			g_pFuncUpdateGraphicsScreen = updateScreenText40;
+	}
+	else if (uVideoModeFlags & VF_HIRES)
+	{
+		if (uVideoModeFlags & VF_DHIRES)
 		{
 			if (uVideoModeFlags & VF_DHIRES)
 			{
@@ -1884,6 +1951,8 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 					else
 						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires80;
 				}
+				else if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
+					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80RGB;
 				else
 				{
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires40;
@@ -1899,15 +1968,22 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 		else
 		{
-			if (uVideoModeFlags & VF_DHIRES)
+			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Simplified;
+			else if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
+				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40RGB;
+			else
+				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
+		}
+	}
+	else
+	{
+		if (uVideoModeFlags & VF_DHIRES)
+		{
+			if (uVideoModeFlags & VF_80COL)
 			{
-				if (uVideoModeFlags & VF_80COL)
-				{
-					if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
-						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores80Simplified;
-					else
-						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores80;
-				}
+				if ((g_eVideoType == VT_COLOR_MONITOR_RGB) || (g_eVideoType == VT_COLOR_VIDEOCARD_RGB))
+					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simplified;
 				else
 				{
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores40;
@@ -1920,6 +1996,13 @@ void NTSC::NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 				else
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleLores40;
 			}
+		}
+		else
+		{
+			if ((g_eVideoType == VT_COLOR_MONITOR_RGB) || (g_eVideoType == VT_COLOR_VIDEOCARD_RGB))
+				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simplified;
+			else
+				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
 		}
 	}
 }
@@ -1994,6 +2077,7 @@ void NTSC::NTSC_SetVideoStyle() // (int v, int s)
 			goto _mono;
 
 		case VT_COLOR_MONITOR_RGB:
+		case VT_COLOR_VIDEOCARD_RGB:
 		case VT_MONO_WHITE:
 			r = 0xFF;
 			g = 0xFF;

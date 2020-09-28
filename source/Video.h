@@ -12,6 +12,7 @@ class NTSC;
 	{
 		  VT_MONO_CUSTOM
 		, VT_COLOR_MONITOR_RGB		// Color rendering from AppleWin 1.25 (GH#357)
+		, VT_COLOR_VIDEOCARD_RGB    // Real RGB card rendering
 		, VT_COLOR_MONITOR_NTSC		// NTSC or PAL
 		, VT_COLOR_TV
 		, VT_MONO_TV
