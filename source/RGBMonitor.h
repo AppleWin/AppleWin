@@ -17,10 +17,8 @@ const int SRCOFFS_LORES = 0;							//    0
 const int SRCOFFS_HIRES = (SRCOFFS_LORES + 16);		//   16
 const int SRCOFFS_DHIRES = (SRCOFFS_HIRES + (HIRES_NUMBER_COLUMNS * HIRES_COLUMN_UNIT_SIZE)); // 1040
 const int SRCOFFS_TOTAL = (SRCOFFS_DHIRES + 2560);	// 3600
-void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
-
 const int MAX_SOURCE_Y = 256;
-void VideoSwitchVideocardPalette(RGB_Videocard_e videocard, VideoType_e type);
+
 
 #define  SETSOURCEPIXEL(x,y,c)  g_aSourceStartofLine[(y)][(x)] = (c)
 
@@ -120,10 +118,13 @@ public:
 	int UpdateDHiRes160Cell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
 	void UpdateLoResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
 	void UpdateDLoResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
-	void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits);
-	void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits);
+	void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits, uint8_t character);
+	void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits, uint8_t character);
 	void UpdateHiResDuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
 	void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint8_t foreground, uint8_t background);
+	void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress);
+	void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool isMixMode, bool isBit7Inversed);
+
 
 	void VideoInitializeOriginal(baseColors_t pBaseNtscColors);
 
@@ -138,6 +139,7 @@ public:
 
 	static RGB_Videocard_e RGB_GetVideocard(void);
 	void RGB_SetVideocard(RGB_Videocard_e videocard, int text_foreground = -1, int text_background = -1);
+	static void VideoSwitchVideocardPalette(RGB_Videocard_e videocard, VideoType_e type);
 	void RGB_SetRegularTextFG(int color);
 	void RGB_SetRegularTextBG(int color);
 	void RGB_EnableTextFB();
@@ -153,12 +155,19 @@ private:
 	WORD g_rgbPrevAN3Addr = 0;
 	bool g_rgbSet80COL = false;
 	static bool g_rgbInvertBit7;
+	static RGBQUAD* g_pPaletteRGB;
+	static RGBQUAD PaletteRGB_NTSC[28];
+	static RGBQUAD PaletteRGB_Feline[28];
 
 	// RGB videocards types
 	static RGB_Videocard_e g_RGBVideocard;
 	int g_nTextFBMode = 0; // F/B Text
 	int g_nRegularTextFG = 15; // Default TEXT color
 	int g_nRegularTextBG = 0; // Default TEXT background color
+
+	// DHIRES rendering variables
+	bool dhgr_lastcell_iscolor = true;
+	int dhgr_lastbit = 0;
 
 	LPBYTE	g_aSourceStartofLine[MAX_SOURCE_Y];
 	void	V_CreateLookup_DoubleHires();

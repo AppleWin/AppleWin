@@ -232,6 +232,8 @@ private:
 	void updateScreenSingleHires40Simplified(long cycles6502);
 	void updateScreenDoubleHires80Simplified(long cycles6502);
 	void updateScreenSingleHires40Duochrome(long cycles6502);
+	void updateScreenSingleHires40RGB(long cycles6502);
+	void updateScreenDoubleHires80RGB(long cycles6502);
 
 	uint8_t getCharSetBits(int iChar);
 	uint16_t getLoResBits(uint8_t iByte);

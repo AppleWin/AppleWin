@@ -2054,7 +2054,7 @@ static void RepeatInitialization(void)
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
 
 		// Init palette color
-		VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
+		RGBMonitor::VideoSwitchVideocardPalette(RGBMonitor::RGB_GetVideocard(), Video::GetVideoType());
 
 		// Allow the 4 hardcoded slots to be configurated as empty
 		// NB. this state is not persisted to the Registry/conf.ini (just as '-s7 empty' isn't)

@@ -11,9 +11,11 @@
 
 #define  SETRGBCOLOR(r,g,b) {b,g,r,0}
 
-static RGBQUAD* g_pPaletteRGB;
 
-static RGBQUAD PaletteRGB_NTSC[] =
+//===========================================================================
+// Globals (static)
+
+RGBQUAD RGBMonitor::PaletteRGB_NTSC[] =
 {
 // hires
 #if DO_OPT_PALETTE
@@ -63,7 +65,7 @@ static RGBQUAD PaletteRGB_NTSC[] =
 
 // Le Chat Mauve Feline's palette
 // extracted from a white-balanced RGB video capture
-static RGBQUAD PaletteRGB_Feline[] =
+RGBQUAD RGBMonitor::PaletteRGB_Feline[] =
 {
 	SETRGBCOLOR(/*HGR_BLACK, */ 0x00,0x00,0x00),
 	SETRGBCOLOR(/*HGR_WHITE, */ 0xFF,0xFF,0xFF),
@@ -99,8 +101,8 @@ static RGBQUAD PaletteRGB_Feline[] =
 	SETRGBCOLOR(/*WHITE,*/      0xFF,0xFF,0xFF),
 };
 
-//===========================================================================
-// Globals (static)
+RGBQUAD* RGBMonitor::g_pPaletteRGB = NULL;
+
 
 bool RGBMonitor::g_rgbInvertBit7 = false;
 
@@ -552,7 +554,7 @@ void RGBMonitor::UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAd
 //===========================================================================
 // RGB videocards HGR
 
-void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
+void RGBMonitor::UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 {
 	const int xpixel = x * 14;
 	int xoffset = x & 1; // offset to start of the 2 bytes
@@ -629,7 +631,7 @@ void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 		dwordval = dwordval >> 1;
 	}
 
-	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const bool bIsHalfScanLines = Video::IsVideoStyle(VS_HALF_SCANLINES);
 
 	// Second line
 	UINT32* pSrc = (UINT32*)pVideoAddress;
@@ -646,10 +648,7 @@ void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 	}
 }
 
-bool dhgr_lastcell_iscolor = true;
-int dhgr_lastbit = 0;
-
-void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool isMixMode, bool isBit7Inversed)
+void RGBMonitor::UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool isMixMode, bool isBit7Inversed)
 {
 	const int xpixel = x * 14;
 	int xoffset = x & 1; // offset to start of the 2 bytes
@@ -844,7 +843,7 @@ void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, boo
 		}
 	}
 
-	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const bool bIsHalfScanLines = Video::IsVideoStyle(VS_HALF_SCANLINES);
 
 	// Second line
 	UINT32* pSrc = (UINT32*)pVideoAddress ;
@@ -1099,12 +1098,12 @@ void RGBMonitor::VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 //===========================================================================
 
 // RGB videocards may use a different palette thant the NTSC-generated one
-void VideoSwitchVideocardPalette(RGB_Videocard_e videocard, VideoType_e type)
+void RGBMonitor::VideoSwitchVideocardPalette(RGB_Videocard_e videocard, VideoType_e type)
 {
-	g_pPaletteRGB = PaletteRGB_NTSC;
+	RGBMonitor::g_pPaletteRGB = RGBMonitor::PaletteRGB_NTSC;
 	if (type==VideoType_e::VT_COLOR_VIDEOCARD_RGB && videocard == RGB_Videocard_e::LeChatMauve_Feline)
 	{
-		g_pPaletteRGB = PaletteRGB_Feline;
+		RGBMonitor::g_pPaletteRGB = RGBMonitor::PaletteRGB_Feline;
 	}
 }
 
@@ -1143,8 +1142,8 @@ void RGBMonitor::RGB_SetVideoMode(WORD address)
 		if ((g_rgbPrevAN3Addr == 0x5E) && g_rgbSet80COL)
 		{
 			g_rgbFlags = (g_rgbFlags << 1) & 3;
-			g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
-			g_rgbMode = g_rgbFlags;								// latch F2,F1
+			g_rgbFlags |= ((g_pVideo->g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
+			g_rgbMode = g_rgbFlags;											// latch F2,F1
 		}
 
 		g_rgbSet80COL = false;

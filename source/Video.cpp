@@ -79,20 +79,6 @@ int const kVDisplayableScanLines = 192; // max displayable scanlines
 
 static COLORREF      customcolors[256];	// MONOCHROME is last custom color
 
-//-------------------------------------
-
-	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
-TCHAR g_aVideoChoices[] =
-TEXT("Monochrome (Custom)\0")
-TEXT("Color (RGB Monitor)\0")
-TEXT("Color (NTSC Monitor)\0")
-TEXT("Color TV\0")
-TEXT("B&W TV\0")
-TEXT("Monochrome (Amber)\0")
-TEXT("Monochrome (Green)\0")
-TEXT("Monochrome (White)\0")
-;
-
 
 // Globals (static) ____________________________________________________________________
 
@@ -650,7 +636,7 @@ void Video::VideoReinitialize (bool bInitVideoScannerAddress /*= true*/)
 	pNTSC->NTSC_SetVideoStyle();
 	pNTSC->NTSC_SetVideoTextMode( g_uVideoMode &  VF_80COL ? 80 : 40 );
 	pNTSC->NTSC_SetVideoMode( g_uVideoMode );	// Pre-condition: g_nVideoClockHorz (derived from g_dwCyclesThisFrame)
-	VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
+	pNTSC->getRGBMonitor()->VideoSwitchVideocardPalette(RGBMonitor::RGB_GetVideocard(), Video::GetVideoType());
 }
 
 //===========================================================================
