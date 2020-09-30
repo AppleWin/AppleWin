@@ -440,6 +440,7 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 	g_irqOnLastOpcodeCycle = false;
 }
 
+#if 0
 const int IRQ_CHECK_OPCODE_FULL_SPEED = 40;	// ~128 cycles (assume 3 cycles per opcode)
 static int g_fullSpeedOpcodeCount = IRQ_CHECK_OPCODE_FULL_SPEED;
 
@@ -466,6 +467,15 @@ void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 	const UINT opcodesUntilInterrupt = uCyclesUntilInterrupt/3;	// assume 3 cycles per opcode
 	if (g_bFullSpeed && opcodesUntilInterrupt < IRQ_CHECK_OPCODE_FULL_SPEED)
 		g_fullSpeedOpcodeCount = opcodesUntilInterrupt;
+}
+#endif
+
+static __forceinline void CheckSynchronousInterruptSources(UINT cycles)
+{
+	if (!g_syncEventHead)
+		return;
+
+	g_syncEventHead->Update(cycles);
 }
 
 //===========================================================================

@@ -162,6 +162,10 @@ struct SY6522_AY8910
 // Support 2 MB's, each with 2x SY6522/AY8910 pairs.
 static SY6522_AY8910 g_MB[NUM_AY8910];
 
+const UINT kNumTimersPer6522 = 2;
+const UINT kNumSyncEvents = NUM_MB * NUM_SY6522 * kNumTimersPer6522;
+static SyncEvent* g_syncEvent[kNumSyncEvents];
+
 // Timer vars
 static const UINT kTIMERDEVICE_INVALID = -1;
 static UINT g_nMBTimerDevice = kTIMERDEVICE_INVALID;	// SY6522 device# which is generating timer IRQ
@@ -222,6 +226,7 @@ static UINT g_cyclesThisAudioFrame = 0;
 // Forward refs:
 static DWORD WINAPI SSI263Thread(LPVOID);
 static void Votrax_Write(BYTE nDevice, BYTE nValue);
+static int MB_SyncEventCallback(int syncEventId);
 
 //---------------------------------------------------------------------------
 
@@ -434,7 +439,12 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			pMB->bLoadT1C = true;
 
 			StartTimer1(pMB);
-			CpuAdjustIrqCheck(pMB->sy6522.TIMER1_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
+//			CpuAdjustIrqCheck(pMB->sy6522.TIMER1_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
+			{
+				SyncEvent* pSyncEvent = g_syncEvent[nDevice*2+0];				// TIMER1
+				pSyncEvent->m_cyclesRemaining = pMB->sy6522.TIMER1_LATCH.w+2;	// 6522 timeout = N+2
+				SyncEventAdd(pSyncEvent);
+			}
 			break;
 		case 0x07:	// TIMER1H_LATCH
 			// Clear Timer1 Interrupt Flag.
@@ -452,7 +462,12 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			pMB->sy6522.TIMER2_COUNTER.w = pMB->sy6522.TIMER2_LATCH.w;
 
 			StartTimer2(pMB);
-			CpuAdjustIrqCheck(pMB->sy6522.TIMER2_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
+//			CpuAdjustIrqCheck(pMB->sy6522.TIMER2_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
+			{
+				SyncEvent* pSyncEvent = g_syncEvent[nDevice*2+1];				// TIMER2
+				pSyncEvent->m_cyclesRemaining = pMB->sy6522.TIMER2_LATCH.w+2;	// 6522 timeout = N+2
+				SyncEventAdd(pSyncEvent);
+			}
 			break;
 		case 0x0a:	// SERIAL_SHIFT
 			break;
@@ -1509,6 +1524,11 @@ void MB_Initialize()
 
 	InitializeCriticalSection(&g_CriticalSection);
 	g_bCritSectionValid = true;
+
+	for (int i=0; i<kNumSyncEvents; i++)
+	{
+		g_syncEvent[i] = new SyncEvent(i, 0, MB_SyncEventCallback);
+	}
 }
 
 static void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType);
@@ -1549,6 +1569,11 @@ void MB_Destroy()
 	{
 		DeleteCriticalSection(&g_CriticalSection);
 		g_bCritSectionValid = false;
+	}
+
+	for (int i=0; i<kNumSyncEvents; i++)
+	{
+		delete g_syncEvent[i];
 	}
 }
 
@@ -2050,6 +2075,14 @@ bool MB_UpdateCycles(ULONG uExecutedCycles)
 	}
 
 	return bIrqOnLastOpcodeCycle;
+}
+
+//-----------------------------------------------------------------------------
+
+static int MB_SyncEventCallback(int syncEventId)
+{
+	// TODO
+	return 0;
 }
 
 //-----------------------------------------------------------------------------

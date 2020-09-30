@@ -66,6 +66,42 @@ extern __interface IPropertySheet& sg_PropertySheet;
 
 //
 
+typedef int (*syncEventCB)(int id);
+
+class SyncEvent;
+extern SyncEvent* g_syncEventHead;
+void SyncEventAdd(SyncEvent* pNewEvent);
+
+class SyncEvent
+{
+public:
+	SyncEvent(int id, int initCycles, syncEventCB callback)
+		: m_id(id), m_cyclesRemaining(initCycles), m_callback(callback), m_next(NULL)
+	{}
+	~SyncEvent(){}
+
+	void Update(int cycles)
+	{
+		m_cyclesRemaining -= cycles;
+		if (m_cyclesRemaining < 0)
+		{
+			m_cyclesRemaining = m_callback(m_id);
+			g_syncEventHead = m_next;	// unlink this event
+			m_next = NULL;
+
+			if (m_cyclesRemaining)
+				SyncEventAdd(this);			// re-add event
+		}
+	}
+
+	int m_id;
+	int m_cyclesRemaining;
+	syncEventCB m_callback;
+	SyncEvent* m_next;
+};
+
+//
+
 //#define LOG_PERF_TIMINGS
 #ifdef LOG_PERF_TIMINGS
 class PerfMarker

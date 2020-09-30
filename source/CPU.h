@@ -14,7 +14,7 @@ struct regsrec
 extern regsrec    regs;
 extern unsigned __int64 g_nCumulativeCycles;
 
-void    CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt);
+//void    CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt);
 void    CpuDestroy ();
 void    CpuCalcCycles(ULONG nExecutedCycles);
 DWORD   CpuExecute(const DWORD uCycles, const bool bVideoUpdate);
