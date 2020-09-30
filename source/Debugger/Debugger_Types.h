@@ -580,6 +580,10 @@
 		, _CMD_MEM_MINI_DUMP_HEX_1_1 // Memory Dump
 		, _CMD_MEM_MINI_DUMP_HEX_1_3 // alias M1
 		, _CMD_MEM_MINI_DUMP_HEX_2_1 // alias M2
+
+		, CMD_VIEW_SHOW1
+		, CMD_VIEW_SHOW3
+		, CMD_VIEW_SHOW4
 	};
 
 // Assembler
@@ -785,6 +789,10 @@
 	Update_t CmdViewOutput_DHGRX   (int nArgs);
 	Update_t CmdViewOutput_DHGR1   (int nArgs);
 	Update_t CmdViewOutput_DHGR2   (int nArgs);
+
+	Update_t CmdViewShow1          (int nArgs);
+	Update_t CmdViewShow3          (int nArgs);
+	Update_t CmdViewShow4          (int nArgs);
 // Watch
 	Update_t CmdWatch              (int nArgs);
 	Update_t CmdWatchAdd           (int nArgs);

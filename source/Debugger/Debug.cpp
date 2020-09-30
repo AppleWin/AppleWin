@@ -6445,6 +6445,24 @@ Update_t _ViewOutput(ViewVideoPage_t iPage, int bVideoModeFlags)
 		return _ViewOutput(VIEW_PAGE_2, VF_HIRES | VF_DHIRES | VF_80COL);
 	}
 
+	Update_t CmdViewShow1(int nArgs)
+	{
+		g_iDebugSplitView = 1;
+		return UPDATE_NOTHING;
+	}
+
+	Update_t CmdViewShow3(int nArgs)
+	{
+		g_iDebugSplitView = 3;
+		return UPDATE_NOTHING;
+	}
+
+	Update_t CmdViewShow4(int nArgs)
+	{
+		g_iDebugSplitView = 4;
+		return UPDATE_NOTHING;
+	}
+
 
 // Watches ________________________________________________________________________________________
 

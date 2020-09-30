@@ -97,6 +97,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	uint32_t        g_iGraphicMonitoringMode = 0;
 	ViewVideoPage_t g_eGraphicMonitoringPage = VIEW_PAGE_CURRENT;
 
+	uint32_t g_iDebugSplitView = 1;
+
 	char g_cConsoleBrushFG_r;
 	char g_cConsoleBrushFG_g;
 	char g_cConsoleBrushFG_b;
@@ -746,14 +748,25 @@ void StretchBltMemToFrameDC(void)
 
 	int scale = GetViewportScale();
 
+	// Display debugger
 	int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 	int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
-	xdest+= (FRAMEBUFFER_W * scale) / 2;
-	int wdest = (FRAMEBUFFER_W * scale) / 2;
-	int hdest = (FRAMEBUFFER_H * scale) / 2;
+	int wdest = FRAMEBUFFER_W * scale;
+	int hdest = FRAMEBUFFER_H * scale;
 	int wsrc = FRAMEBUFFER_W;
 	int xsrc = 0;
 
+	switch (g_iDebugSplitView)
+	{
+	case 3:
+		xdest += (FRAMEBUFFER_W * scale) / 2;
+		break;
+	case 4:
+		xdest += (FRAMEBUFFER_W * scale) / 2;
+		wdest /= 2;
+		hdest /= 2;
+		break;
+	}
 	BOOL bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
 		xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
@@ -764,51 +777,58 @@ void StretchBltMemToFrameDC(void)
 		SRCCOPY                                             // DWORD dwRop
 	);
 
-	// Extra display (bottom left)
-
-	xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
-	ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
-	ydest += (384 * scale) / 2;
-	wdest = (FRAMEBUFFER_W * scale) / 2;
-	hdest = (FRAMEBUFFER_H * scale) / 2;
-	
-	SS_CARDTYPE ram = GetCurrentExpansionMemType();
-	if (ram != CT_80Col && ram != CT_Extended80Col && ram != CT_RamWorksIII)
+	if (g_iDebugSplitView == 4)
 	{
-		// show only the first 64k of RAM
-		xsrc = 8;
-		wsrc /= 2;
+		// Extra display (bottom left)
+
+		xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
+		ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
+		xdest += (FRAMEBUFFER_W * scale) / 2;
+		ydest += (FRAMEBUFFER_H * scale) / 2;
+		wdest = (FRAMEBUFFER_W * scale) / 2;
+		hdest = (FRAMEBUFFER_H * scale) / 2;
+
+		SS_CARDTYPE ram = GetCurrentExpansionMemType();
+		if (ram != CT_80Col && ram != CT_Extended80Col && ram != CT_RamWorksIII)
+		{
+			// show only the first 64k of RAM
+			xsrc = 8;
+			wsrc /= 2;
+		}
+
+		bRes = StretchBlt(
+			FrameGetDC(),			                            // HDC hdcDest,
+			xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
+			wdest, hdest,										// int nWidthDest,   int nHeightDest,
+			GetDebuggerExtraDC(),								// HDC hdcSrc,
+			xsrc, 0,												// int nXOriginSrc,  int nYOriginSrc,
+			wsrc, FRAMEBUFFER_H,						// int nWidthSrc,    int nHeightSrc,
+			SRCCOPY                                             // DWORD dwRop
+		);
 	}
 
-	bRes = StretchBlt(
-		FrameGetDC(),			                            // HDC hdcDest,
-		xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
-		wdest, hdest,										// int nWidthDest,   int nHeightDest,
-		GetDebuggerExtraDC(),								// HDC hdcSrc,
-		xsrc, 0,												// int nXOriginSrc,  int nYOriginSrc,
-		wsrc, FRAMEBUFFER_H,						// int nWidthSrc,    int nHeightSrc,
-		SRCCOPY                                             // DWORD dwRop
-	);
-
-	// Graphic page monitoring
-	uint32_t refreshMode = g_iGraphicMonitoringMode & ~VF_PAGE2;
-	switch (g_eGraphicMonitoringPage)
+	if (g_iDebugSplitView > 1)
 	{
-	case VIEW_PAGE_CURRENT:
-		refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() && !g_pVideo->VideoGetSW80STORE() ? VF_PAGE2 : 0);
-		break;
-	case VIEW_PAGE_DISABLED:
-		refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() && !g_pVideo->VideoGetSW80STORE() ? 0 : VF_PAGE2 );
-		break;
-	case VIEW_PAGE_2:
-		refreshMode = refreshMode | VF_PAGE2;
-		break;
+		// Graphic page monitoring
+		uint32_t refreshMode = g_iGraphicMonitoringMode & ~VF_PAGE2;
+		switch (g_eGraphicMonitoringPage)
+		{
+		case VIEW_PAGE_CURRENT:
+			refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() && !g_pVideo->VideoGetSW80STORE() ? VF_PAGE2 : 0);
+			break;
+		case VIEW_PAGE_DISABLED:
+			refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() && !g_pVideo->VideoGetSW80STORE() ? 0 : VF_PAGE2);
+			break;
+		case VIEW_PAGE_2:
+			refreshMode = refreshMode | VF_PAGE2;
+			break;
+		}
+
+		// Refresh VideoStyle in case the user changed it in the config panel
+		debug_pVideo->getNTSC()->NTSC_SetVideoStyle();
+
+		debug_pVideo->VideoRefreshScreen(refreshMode, true, GetViewportScale(), 0, FRAMEBUFFER_H, true);
 	}
-
-	// Refresh VideoStyle in case the user changed it in the config panel
-	debug_pVideo->getNTSC()->NTSC_SetVideoStyle();
-
-	debug_pVideo->VideoRefreshScreen(refreshMode, true, GetViewportScale(), FRAMEBUFFER_W, FRAMEBUFFER_H, true);
 }
 
 // Font: Apple Text

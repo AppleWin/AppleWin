@@ -394,6 +394,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("EXITBENCH")   , NULL                 , CMD_BENCHMARK            }, // 2.8.03 was incorrectly alias with 'E' Bug #246. // CmdBenchmarkStop
 		{TEXT("MDB")         , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
 //		{TEXT("MEMORY")      , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
+
+	// Window setup (extended debugger)
+		{ TEXT("SHOW1")         , CmdViewShow1      , CMD_VIEW_SHOW1           },
+		{ TEXT("SHOW3")         , CmdViewShow3      , CMD_VIEW_SHOW3           },
+		{ TEXT("SHOW4")         , CmdViewShow4      , CMD_VIEW_SHOW4           },
 };
 
 	const int NUM_COMMANDS_WITH_ALIASES = sizeof(g_aCommands) / sizeof (Command_t); // Determined at compile-time ;-)

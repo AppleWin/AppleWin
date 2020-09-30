@@ -90,6 +90,7 @@
 
 	extern uint32_t        g_iGraphicMonitoringMode;
 	extern ViewVideoPage_t g_eGraphicMonitoringPage;
+	extern uint32_t g_iDebugSplitView;
 
 	enum DebugVirtualTextScreen_e
 	{
