@@ -85,7 +85,7 @@
 	{
 	public:
 		VideoScannerDisplayInfo(void) : isDecimal(false), isHorzReal(false), cycleMode(rel),
-										lastCumulativeCycles(0), cycleDelta(0) {}
+										lastCumulativeCycles(0), savedCumulativeCycles(0), cycleDelta(0) {}
 		void Reset(void) { lastCumulativeCycles = savedCumulativeCycles = g_nCumulativeCycles; cycleDelta = 0; }
 
 		bool isDecimal;
