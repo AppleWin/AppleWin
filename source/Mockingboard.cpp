@@ -227,7 +227,7 @@ static UINT g_cyclesThisAudioFrame = 0;
 // Forward refs:
 static DWORD WINAPI SSI263Thread(LPVOID);
 static void Votrax_Write(BYTE nDevice, BYTE nValue);
-static int MB_SyncEventCallback(int syncEventId);
+static int MB_SyncEventCallback(int id);
 
 //---------------------------------------------------------------------------
 
@@ -445,7 +445,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				UINT id = nDevice*2+0;						// TIMER1
 				SyncEvent* pSyncEvent = g_syncEvent[id];
 				if (pSyncEvent->m_active) g_SynchronousEventMgr.Remove(id);
-				pSyncEvent->m_cyclesRemaining = pMB->sy6522.TIMER1_LATCH.w+2;	// 6522 timeout = N+2
+				pSyncEvent->SetCycles(pMB->sy6522.TIMER2_LATCH.w + 2);	// 6522 timeout = N+2
 				g_SynchronousEventMgr.Add(pSyncEvent);
 			}
 			break;
@@ -470,7 +470,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				UINT id = nDevice*2+1;						// TIMER2
 				SyncEvent* pSyncEvent = g_syncEvent[id];
 				if (pSyncEvent->m_active) g_SynchronousEventMgr.Remove(id);
-				pSyncEvent->m_cyclesRemaining = pMB->sy6522.TIMER2_LATCH.w+2;	// 6522 timeout = N+2
+				pSyncEvent->SetCycles(pMB->sy6522.TIMER2_LATCH.w + 2);	// 6522 timeout = N+2
 				g_SynchronousEventMgr.Add(pSyncEvent);
 			}
 			break;
@@ -1530,9 +1530,9 @@ void MB_Initialize()
 	InitializeCriticalSection(&g_CriticalSection);
 	g_bCritSectionValid = true;
 
-	for (int i=0; i<kNumSyncEvents; i++)
+	for (int id=0; id<kNumSyncEvents; id++)
 	{
-		g_syncEvent[i] = new SyncEvent(i, 0, MB_SyncEventCallback);
+		g_syncEvent[id] = new SyncEvent(id, 0, MB_SyncEventCallback);
 	}
 }
 
@@ -1576,9 +1576,10 @@ void MB_Destroy()
 		g_bCritSectionValid = false;
 	}
 
-	for (int i=0; i<kNumSyncEvents; i++)
+	for (int id=0; id<kNumSyncEvents; id++)
 	{
-		delete g_syncEvent[i];
+		delete g_syncEvent[id];
+		g_syncEvent[id] = NULL;
 	}
 }
 
@@ -1603,6 +1604,13 @@ static void ResetState()
 
 	g_uLastMBUpdateCycle = 0;
 	g_cyclesThisAudioFrame = 0;
+
+	for (int id = 0; id < kNumSyncEvents; id++)
+	{
+		if (g_syncEvent[id] && g_syncEvent[id]->m_active)
+			g_SynchronousEventMgr.Remove(id);
+
+	}
 
 	// Not these, as they don't change on a CTRL+RESET or power-cycle:
 //	g_bMBAvailable = false;
@@ -1631,7 +1639,7 @@ void MB_Reset()	// CTRL+RESET or power-cycle
 
 static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	if (g_bFullSpeed)
+//	if (g_bFullSpeed)
 		MB_UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
@@ -1695,7 +1703,7 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 
 static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	if (g_bFullSpeed)
+//	if (g_bFullSpeed)
 		MB_UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
@@ -1989,14 +1997,13 @@ static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, 
 	return timerIrq;
 }
 
+#if 0
 // Called by:
 // . CpuExecute() every ~1000 @ 1MHz
 // . CheckInterruptSources() every opcode (or every 40 opcodes at full-speed)
 // . MB_Read() / MB_Write() (only for full-speed)
 bool MB_UpdateCycles(ULONG uExecutedCycles)
 {
-	return false;	// FIXME
-
 	if (g_SoundcardType == CT_Empty)
 		return false;
 
@@ -2083,6 +2090,101 @@ bool MB_UpdateCycles(ULONG uExecutedCycles)
 
 	return bIrqOnLastOpcodeCycle;
 }
+#endif
+
+// Called by:
+// . CpuExecute() every ~1000 cycles @ 1MHz
+// . MB_Read() / MB_Write() (for both normal & full-speed)
+bool MB_UpdateCycles(ULONG uExecutedCycles)
+{
+	if (g_SoundcardType == CT_Empty)
+		return false;
+
+	CpuCalcCycles(uExecutedCycles);
+	UINT64 uCycles = g_nCumulativeCycles - g_uLastCumulativeCycles;
+	if (uCycles == 0)
+		return false;		// Likely when called from CpuExecute()
+
+//	const bool isOpcode = (uCycles <= 7);		// todo: better to pass in a flag?
+
+	g_uLastCumulativeCycles = g_nCumulativeCycles;
+	_ASSERT(uCycles < 0x10000);
+	USHORT nClocks = (USHORT)uCycles;
+
+	bool bIrqOnLastOpcodeCycle = false;
+
+	for (int i = 0; i < NUM_SY6522; i++)
+	{
+		SY6522_AY8910* pMB = &g_MB[i];
+
+		bool bTimer1Irq = false;
+		bool bTimer1IrqOnLastCycle = false;
+
+//		if (isOpcode)
+//		{
+//			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks - 1);
+//			bTimer1IrqOnLastCycle = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, 1);
+//			bTimer1Irq = bTimer1Irq || bTimer1IrqOnLastCycle;
+//		}
+//		else
+		{
+			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks);
+		}
+
+		const bool bTimer2Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER2_COUNTER.w, pMB->sy6522.timer2IrqDelay, nClocks);
+
+#if 0
+		if (pMB->bTimer1Active && bTimer1Irq)
+		{
+			UpdateIFR(pMB, 0, IxR_TIMER1);
+			bIrqOnLastOpcodeCycle = bTimer1IrqOnLastCycle;
+
+			MB_Update();
+
+			if ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
+			{
+				// One-shot mode
+				// - Phasor's playback code uses one-shot mode
+				StopTimer1(pMB);
+			}
+			else
+			{
+				// Free-running mode
+				// - Ultima4/5 change ACCESS_TIMER1 after a couple of IRQs into tune
+				pMB->sy6522.TIMER1_COUNTER.w += pMB->sy6522.TIMER1_LATCH.w;	// GH#651: account for underflowed cycles too
+				pMB->sy6522.TIMER1_COUNTER.w += 2;							// GH#652: account for extra 2 cycles (Rockwell, Fig.16: period=N+2cycles)
+																			// EG. T1C=0xFFFE, T1L=0x0001
+																			// . T1C += T1L = 0xFFFF
+																			// . T1C +=   2 = 0x0001
+				if (pMB->sy6522.TIMER1_COUNTER.w > pMB->sy6522.TIMER1_LATCH.w)
+				{
+					if (pMB->sy6522.TIMER1_LATCH.w)
+						pMB->sy6522.TIMER1_COUNTER.w %= pMB->sy6522.TIMER1_LATCH.w;	// Only occurs if LATCH.w<0x0007 (# cycles for longest opcode)
+					else
+						pMB->sy6522.TIMER1_COUNTER.w = 0;
+				}
+				StartTimer1(pMB);
+			}
+		}
+
+		if (pMB->bLoadT1C)
+		{
+			pMB->bLoadT1C = false;
+			pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
+		}
+
+		if (pMB->bTimer2Active && bTimer2Irq)
+		{
+			UpdateIFR(pMB, 0, IxR_TIMER2);
+
+			// TIMER2 only runs in one-shot mode
+			StopTimer2(pMB);
+		}
+#endif
+	}
+
+	return bIrqOnLastOpcodeCycle;
+}
 
 //-----------------------------------------------------------------------------
 
@@ -2090,15 +2192,20 @@ static int MB_SyncEventCallback(int id)
 {
 	SY6522_AY8910* pMB = &g_MB[id>>1];
 	int cycles = g_syncEvent[id]->m_cyclesRemaining;
-	_ASSERT(cycles < 0);
+	_ASSERT(cycles <= 0);
 
 	if ((id & 1) == 0)
 	{
+		_ASSERT(pMB->bTimer1Active);
+		MB_Update();
+
 		UpdateIFR(pMB, 0, IxR_TIMER1);
-		return pMB->sy6522.TIMER1_LATCH.w+2 + cycles;	// FIXME: assume free-running
+		const int adjust = -16;
+		return pMB->sy6522.TIMER1_LATCH.w+2 + adjust + cycles;	// FIXME: assume free-running
 	}
 	else
 	{
+		_ASSERT(pMB->bTimer2Active);
 		UpdateIFR(pMB, 0, IxR_TIMER2);
 		return 0;	// TIMER2 only runs in one-shot mode
 	}

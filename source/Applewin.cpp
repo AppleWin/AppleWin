@@ -1483,6 +1483,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			DSUninit();
 			LogFileOutput("Main: DSUninit()\n");
 
+			g_SynchronousEventMgr.Reset();
+
 			if (g_bHookSystemKey)
 			{
 				UninitHookThread();

@@ -15,6 +15,7 @@ public:
 	void Add(SyncEvent* pNewEvent);
 	bool Remove(int id);
 	void Update(int cycles);
+	void Reset(void) { m_syncEventHead = NULL; }
 
 private:
 	SyncEvent* m_syncEventHead;
@@ -28,9 +29,18 @@ class SyncEvent
 {
 public:
 	SyncEvent(int id, int initCycles, syncEventCB callback)
-		: m_id(id), m_cyclesRemaining(initCycles), m_active(false), m_callback(callback), m_next(NULL)
+		: m_id(id),
+		m_cyclesRemaining(initCycles),
+		m_active(false),
+		m_callback(callback),
+		m_next(NULL)
 	{}
 	~SyncEvent(){}
+
+	void SetCycles(int cycles)
+	{
+		m_cyclesRemaining = cycles;
+	}
 
 	int m_id;
 	int m_cyclesRemaining;

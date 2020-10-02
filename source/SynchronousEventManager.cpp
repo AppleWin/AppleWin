@@ -133,11 +133,16 @@ void SynchronousEventManager::Update(int cycles)
 		return;
 
 	pCurrEvent->m_cyclesRemaining -= cycles;
-	if (pCurrEvent->m_cyclesRemaining < 0)
+	if (pCurrEvent->m_cyclesRemaining <= 0)
 	{
+		int underflowCycles = -pCurrEvent->m_cyclesRemaining;
+
 		pCurrEvent->m_cyclesRemaining = pCurrEvent->m_callback(pCurrEvent->m_id);
 		m_syncEventHead = pCurrEvent->m_next;	// unlink this event
 		pCurrEvent->m_next = NULL;
+
+		// Always Update even if underflowCycles=0, as next event may have cycleRemaining=0 (ie. the 2 events fire at the same time)
+		Update(underflowCycles);	// update (potential) next event with underflow cycles
 
 		if (pCurrEvent->m_cyclesRemaining)
 			Add(pCurrEvent);	// re-add event

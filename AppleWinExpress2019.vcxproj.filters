@@ -199,6 +199,9 @@
     <ClCompile Include="source\Disk2CardManager.cpp">
       <Filter>Source Files\Disk</Filter>
     </ClCompile>
+    <ClCompile Include="source\SynchronousEventManager.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -481,6 +484,9 @@
       <Filter>Source Files\Disk</Filter>
     </ClInclude>
     <ClInclude Include="source\Card.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\SynchronousEventManager.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
   </ItemGroup>
