@@ -410,7 +410,7 @@ static __forceinline void CheckSynchronousInterruptSources(UINT cycles)
 }
 
 // NB. No need to save to save-state, as IRQ() follows CheckInterruptSources(), and IRQ() always sets it to false.
-static bool g_irqOnLastOpcodeCycle = false;
+bool g_irqOnLastOpcodeCycle = false;
 
 static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {

@@ -125,6 +125,8 @@ bool SynchronousEventManager::Remove(int id)
 	return false;
 }
 
+extern bool g_irqOnLastOpcodeCycle;
+
 void SynchronousEventManager::Update(int cycles)
 {
 	SyncEvent* pCurrEvent = m_syncEventHead;
@@ -135,6 +137,9 @@ void SynchronousEventManager::Update(int cycles)
 	pCurrEvent->m_cyclesRemaining -= cycles;
 	if (pCurrEvent->m_cyclesRemaining <= 0)
 	{
+		if (pCurrEvent->m_cyclesRemaining == 0)
+			g_irqOnLastOpcodeCycle = true;		// IRQ occurs on last cycle of opcode
+
 		int cyclesUnderflowed = -pCurrEvent->m_cyclesRemaining;
 
 		pCurrEvent->m_cyclesRemaining = pCurrEvent->m_callback(pCurrEvent->m_id, cyclesUnderflowed);

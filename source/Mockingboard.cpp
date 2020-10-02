@@ -437,7 +437,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			UpdateIFR(pMB, IxR_TIMER1);
 
 			pMB->sy6522.TIMER1_LATCH.h = nValue;
-			pMB->bLoadT1C = true;
+//			pMB->bLoadT1C = true;
 
 			StartTimer1(pMB);
 //			CpuAdjustIrqCheck(pMB->sy6522.TIMER1_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
@@ -448,7 +448,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 					 (mem[regs.pc-3] == 0x8D) ||	// STA abs16
 					 (mem[regs.pc-3] == 0x8E) )		// STX abs16
 				{
-					opcodeCycleAdjust = 4;
+					opcodeCycleAdjust = 4;			// Same as the bLoadT1C flag
 				}
 
 				UINT id = nDevice*2+0;						// TIMER1
