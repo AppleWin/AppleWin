@@ -440,10 +440,10 @@ bool DebugGetVideoMode(UINT* pVideoMode)
 
 // File _______________________________________________________________________
 
-int _GetFileSize( FILE *hFile )
+size_t _GetFileSize( FILE *hFile )
 {
 	fseek( hFile, 0, SEEK_END );
-	int nFileBytes = ftell( hFile );
+	size_t nFileBytes = ftell( hFile );
 	fseek( hFile, 0, SEEK_SET );
 
 	return nFileBytes;
@@ -701,8 +701,6 @@ Update_t CmdBookmarkList (int nArgs)
 //===========================================================================
 Update_t CmdBookmarkLoad (int nArgs)
 {
-	char sFilePath[ MAX_PATH ] = "";
-
 	if (nArgs == 1)
 	{
 //		strcpy( sMiniFileName, pFileName );
@@ -991,7 +989,7 @@ Update_t CmdBreakInvalid (int nArgs) // Breakpoint IFF Full-speed!
 	return UPDATE_CONSOLE_DISPLAY;
 
 _Help:
-		return HelpLastCommand();
+	return HelpLastCommand();
 }
 
 
@@ -1457,8 +1455,6 @@ Update_t CmdBreakpointAddPC (int nArgs)
 		g_aArgs[1].nValue = g_nDisasmCurAddress;
 	}
 
-	bool bHaveCmp = false;
-
 //	int iParamSrc;
 	int iParamCmp;
 
@@ -1476,12 +1472,12 @@ Update_t CmdBreakpointAddPC (int nArgs)
 			{
 				switch (iParamCmp)
 				{
-					case PARAM_BP_LESS_EQUAL   : iCmp = BP_OP_LESS_EQUAL   ; bHaveCmp = true; break;
-					case PARAM_BP_LESS_THAN    : iCmp = BP_OP_LESS_THAN    ; bHaveCmp = true; break;
-					case PARAM_BP_EQUAL        : iCmp = BP_OP_EQUAL        ; bHaveCmp = true; break;
-					case PARAM_BP_NOT_EQUAL    : iCmp = BP_OP_NOT_EQUAL    ; bHaveCmp = true; break;
-					case PARAM_BP_GREATER_THAN : iCmp = BP_OP_GREATER_THAN ; bHaveCmp = true; break;
-					case PARAM_BP_GREATER_EQUAL: iCmp = BP_OP_GREATER_EQUAL; bHaveCmp = true; break;
+					case PARAM_BP_LESS_EQUAL   : iCmp = BP_OP_LESS_EQUAL   ; break;
+					case PARAM_BP_LESS_THAN    : iCmp = BP_OP_LESS_THAN    ; break;
+					case PARAM_BP_EQUAL        : iCmp = BP_OP_EQUAL        ; break;
+					case PARAM_BP_NOT_EQUAL    : iCmp = BP_OP_NOT_EQUAL    ; break;
+					case PARAM_BP_GREATER_THAN : iCmp = BP_OP_GREATER_THAN ; break;
+					case PARAM_BP_GREATER_EQUAL: iCmp = BP_OP_GREATER_EQUAL; break;
 					default:
 						break;
 				}
@@ -1816,8 +1812,6 @@ Update_t CmdBreakpointSave (int nArgs)
 //===========================================================================
 Update_t _CmdAssemble( WORD nAddress, int iArg, int nArgs )
 {
-	bool bHaveLabel = false;
-
 	// if AlphaNumeric
 	ArgToken_e iTokenSrc = NO_TOKEN;
 	ParserFindToken( g_pConsoleInput, g_aTokens, NUM_TOKENS, &iTokenSrc );
@@ -1825,8 +1819,6 @@ Update_t _CmdAssemble( WORD nAddress, int iArg, int nArgs )
 	if (iTokenSrc == NO_TOKEN) // is TOKEN_ALPHANUMERIC
 	if (g_pConsoleInput[0] != CHAR_SPACE)
 	{
-		bHaveLabel = true;
-
 		// Symbol
 		char *pSymbolName = g_aArgs[ iArg ].sArg; // pArg->sArg;
 		SymbolUpdate( SYMBOLS_ASSEMBLY, pSymbolName, nAddress, false, true ); // bool bRemoveSymbol, bool bUpdateSymbol )
@@ -4505,7 +4497,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 	if (hFile)
 	{
-		int nFileBytes = _GetFileSize( hFile );
+		size_t nFileBytes = _GetFileSize( hFile );
 
 		if (nFileBytes > _6502_MEM_END)
 			nFileBytes = _6502_MEM_END + 1; // Bank-switched RAM/ROM is only 16-bit
@@ -5378,7 +5370,7 @@ Update_t CmdNTSC (int nArgs)
 							*pDst++ = pTmp[3];
 					}
 				}
-/*
+
 				// we duplicate phase 0 a total of 4 times
 				const size_t nBytesPerScanLine = 4096 * nBPP;
 				for( int iPhase = 1; iPhase < 4; iPhase++ )
@@ -5939,11 +5931,6 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 		return ConsoleDisplayError( TEXT("Error: Missing address seperator (comma or colon)" ) );
 
 	int iArgFirstByte = 4;
-
-	// S start,len #
-	int nMinLen = nArgs - (iArgFirstByte - 1);
-
-	bool bHaveWildCards = false;
 	int iArg;
 
 	MemorySearchValues_t vMemorySearchValues;
@@ -6240,8 +6227,6 @@ Update_t CmdOutputCalc (int nArgs)
 //===========================================================================
 Update_t CmdOutputEcho (int nArgs)
 {
-	TCHAR sText[ CONSOLE_WIDTH ] = TEXT("");
-
 	if (g_aArgs[1].bType & TYPE_QUOTED_2)
 	{
 		ConsoleDisplayPush( g_aArgs[1].sArg );
@@ -6534,7 +6519,6 @@ Update_t CmdOutputRun (int nArgs)
 
 	if (script.Read( sFileName ))
 	{
-		int iLine = 0;
 		int nLine = script.GetNumLines();
 
 		Update_t bUpdateDisplay = UPDATE_NOTHING;	
@@ -6652,10 +6636,6 @@ bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
 	g_nSourceAssemblySymbols = 0;
 
 	const DWORD INVALID_ADDRESS = _6502_MEM_END + 1;
-
-	bool bPrevSymbol = false;
-	bool bFourBytes = false;		
-	BYTE nByte4 = 0;
 
 	int nLines = g_AssemblerSourceBuffer.GetNumLines();
 	for( int iLine = 0; iLine < nLines; iLine++ )
@@ -8154,6 +8134,9 @@ Update_t ExecuteCommand (int nArgs)
 //===========================================================================
 void OutputTraceLine ()
 {
+	if (!g_hTraceFile)
+		return;
+
 	DisasmLine_t line;
 	GetDisassemblyLine( regs.pc, line );
 
@@ -8171,9 +8154,6 @@ void OutputTraceLine ()
 			sFlags[nFlag] = g_aBreakpointSource[BP_SRC_FLAG_C + iFlag][0];
 		nRegFlags >>= 1;
 	}
-
-	if (!g_hTraceFile)
-		return;
 
 	if (g_bTraceHeader)
 	{

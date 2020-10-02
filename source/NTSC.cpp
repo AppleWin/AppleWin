@@ -443,6 +443,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static void updateScreenText80       ( long cycles6502 );
 	static void updateScreenText40RGB	 ( long cycles6502 );
 	static void updateScreenText80RGB    ( long cycles6502 );
+	static void updateScreenDoubleHires80Simplified(long cycles6502);
+	static void updateScreenDoubleHires80RGB(long cycles6502);
 
 //===========================================================================
 static void set_csbits()
@@ -830,7 +832,7 @@ inline void updateVideoScannerAddress()
 		(g_pFuncUpdateGraphicsScreen == updateScreenText80) ||
 		(g_pFuncUpdateGraphicsScreen == updateScreenText80RGB) ||
 		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && (g_pFuncUpdateTextScreen == updateScreenText80 || g_pFuncUpdateGraphicsScreen == updateScreenText80RGB)))
-		&& (g_eVideoType != VT_COLOR_MONITOR_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
+		&& (g_eVideoType != VT_COLOR_MONITOR_RGB) && (g_eVideoType != VT_COLOR_VIDEOCARD_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
 	{
 		g_pVideoAddress -= 1;
 	}
@@ -1235,7 +1237,41 @@ void updateScreenDoubleHires40 (long cycles6502) // wsUpdateVideoHires0
 
 //===========================================================================
 
-void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblHires
+void updateScreenDoubleHires80Simplified(long cycles6502) // wsUpdateVideoDblHires
+{
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pFuncUpdateTextScreen(cycles6502);
+		return;
+	}
+
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		uint16_t addr = getVideoScannerAddressHGR();
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint16_t addr = getVideoScannerAddressHGR();
+				uint8_t a = *MemGetAuxPtr(addr);
+				uint8_t m = *MemGetMainPtr(addr);
+
+				UpdateDHiResCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
+				g_pVideoAddress += 14;
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+	}
+}
+
+//===========================================================================
+
+void updateScreenDoubleHires80RGB (long cycles6502 ) // wsUpdateVideoDblHires
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1270,30 +1306,15 @@ void updateScreenDoubleHires80Simplified (long cycles6502 ) // wsUpdateVideoDblH
 					int width = UpdateDHiRes160Cell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
 					g_pVideoAddress += width;
 				}
-				else if (RGB_Is560Mode() || (RGB_IsMixMode() && !((a | m) & 0x80)))
+				else if (RGB_Is560Mode())// || (RGB_IsMixMode() && !((a | m) & 0x80)))
 				{
 					update7MonoPixels(a);
 					update7MonoPixels(m);
 				}
-				else if (!RGB_IsMixMode() || (RGB_IsMixMode() && (a & m & 0x80)))
+				else
 				{
-					UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true, true);
+					UpdateDHiResCellRGB(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, RGB_IsMixMode(), RGB_IsMixModeInvertBit7());
 					g_pVideoAddress += 14;
-				}
-				else	// RGB_IsMixMode() && ((a ^ m) & 0x80)
-				{
-					if (a & 0x80)	// RGB color, then monochrome
-					{
-						UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, true ,false);
-						g_pVideoAddress += 7;
-						update7MonoPixels(m);
-					}
-					else			// monochrome, then RGB color
-					{
-						update7MonoPixels(a);
-						UpdateDHiResCell(g_nVideoClockHorz-VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, false, true);
-						g_pVideoAddress += 7;
-					}
 				}
 			}
 		}
@@ -1514,6 +1535,36 @@ static void updateScreenSingleHires40Duochrome(long cycles6502)
 	}
 }
 
+//===========================================================================
+static void updateScreenSingleHires40RGB(long cycles6502)
+{
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+	{
+		g_pFuncUpdateTextScreen(cycles6502);
+		return;
+	}
+
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)
+		{
+			if ((g_nVideoClockHorz < VIDEO_SCANNER_HORZ_COLORBURST_END) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_COLORBURST_BEG))
+			{
+				g_nColorBurstPixels = 1024;
+			}
+			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint16_t addr = getVideoScannerAddressHGR();
+
+				UpdateHiResRGBCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress);
+				g_pVideoAddress += 14;
+			}
+		}
+		updateVideoScannerHorzEOLSimple();
+	}
+}
+
+//===========================================================================
 void updateScreenSingleHires40 (long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
@@ -1670,7 +1721,7 @@ void updateScreenText40RGB(long cycles6502)
 				if (0 == g_nVideoCharSet && 0x40 == (m & 0xC0)) // Flash only if mousetext not active
 					c ^= g_nTextFlashMask;
 
-				UpdateText40ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, c);
+				UpdateText40ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, c, m);
 				g_pVideoAddress += 14;
 
 			}
@@ -1712,7 +1763,8 @@ void updateScreenText80 (long cycles6502)
 					aux ^= g_nTextFlashMask;
 
 				uint16_t bits = (main << 7) | (aux & 0x7f);
-				if (g_eVideoType != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
+				if ((g_eVideoType != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
+					&& (g_eVideoType != VT_COLOR_VIDEOCARD_RGB))
 					bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
 
 				updatePixels( bits );
@@ -1754,9 +1806,9 @@ void updateScreenText80RGB(long cycles6502)
 				if ((0 == g_nVideoCharSet) && 0x40 == (a & 0xC0)) // Flash only if mousetext not active
 					aux ^= g_nTextFlashMask;
 
-				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)aux);
+				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)aux, a);
 				g_pVideoAddress += 7;
-				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)main);
+				UpdateText80ColorCell(g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START, g_nVideoClockVert, addr, g_pVideoAddress, (uint8_t)main, m);
 				g_pVideoAddress += 7;
 
 				uint16_t bits = (main << 7) | (aux & 0x7f);
@@ -1846,7 +1898,7 @@ uint16_t NTSC_VideoGetScannerAddressForDebugger(void)
 //===========================================================================
 void NTSC_SetVideoTextMode( int cols )
 {
-	if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+	if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
 	{
 		if (cols == 40)
 			g_pFuncUpdateTextScreen = updateScreenText40RGB;
@@ -1921,7 +1973,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	}
 
 	// Video7_SL7 extra RGB modes handling
-	if (g_eVideoType == VT_COLOR_MONITOR_RGB
+	if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB
 		&& RGB_GetVideocard() == RGB_Videocard_e::Video7_SL7
 		// Exclude following modes (fallback through regular NTSC rendering with RGB text)
 		// VF_DHIRES = 1  -> regular Apple IIe modes
@@ -1976,12 +2028,12 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	{
 		if (uVideoModeFlags & VF_80COL)
 		{
-			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+			if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
 				g_pFuncUpdateGraphicsScreen = updateScreenText80RGB;
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenText80;
 		}
-		else if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+		else if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
 			g_pFuncUpdateGraphicsScreen = updateScreenText40RGB;
 		else
 			g_pFuncUpdateGraphicsScreen = updateScreenText40;
@@ -1994,6 +2046,8 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			{
 				if (g_eVideoType == VT_COLOR_MONITOR_RGB)
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80Simplified;
+				else if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
+					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80RGB;
 				else
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80;
 			}
@@ -2006,6 +2060,8 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		{
 			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40Simplified;
+			else if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
+				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40RGB;
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
 		}
@@ -2016,7 +2072,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+				if ((g_eVideoType == VT_COLOR_MONITOR_RGB) || (g_eVideoType == VT_COLOR_VIDEOCARD_RGB))
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simplified;
 				else
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
@@ -2028,7 +2084,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 		else
 		{
-			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+			if ((g_eVideoType == VT_COLOR_MONITOR_RGB) || (g_eVideoType == VT_COLOR_VIDEOCARD_RGB))
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simplified;
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
@@ -2105,6 +2161,7 @@ void NTSC_SetVideoStyle(void)
 			goto _mono;
 
 		case VT_COLOR_MONITOR_RGB:
+		case VT_COLOR_VIDEOCARD_RGB:
 		case VT_MONO_WHITE:
 			r = 0xFF;
 			g = 0xFF;

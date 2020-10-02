@@ -57,8 +57,10 @@ void YamlHelper::GetNextEvent(bool bInMap /*= false*/)
 {
 	if (!yaml_parser_parse(&m_parser, &m_newEvent))
 	{
-		//printf("Parser error %d\n", m_parser.error);
-		throw std::string("Parser error");
+		std::string error = std::string("Save-state parser error: ");
+		if (m_parser.problem != NULL) error += std::string(m_parser.problem);
+		else error += std::string("unknown");
+		throw error;
 	}
 }
 
@@ -451,7 +453,46 @@ void YamlSaveHelper::SaveBool(const char* key, bool value)
 
 void YamlSaveHelper::SaveString(const char* key,  const char* value)
 {
-	Save("%s: %s\n", key, (value[0] != 0) ? value : "\"\"");
+	if (value[0] == 0)
+		value = "\"\"";
+
+	// libyaml supports UTF-8 and not accented ANSI characters (GH#838)
+	// . So convert ANSI to UTF-8, which is a 2-step process:
+
+	// 1) ANSI -> unicode
+	{
+		int size = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, value, -1, NULL, 0);
+		if (size == 0)
+			throw std::string("Unable to convert to unicode: ") + std::string(value);
+		if (size > m_wcStrSize)
+		{
+			delete[] m_pWcStr;
+			m_pWcStr = new WCHAR[size];
+			m_wcStrSize = size;
+		}
+		int res = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, value, -1, m_pWcStr, m_wcStrSize);
+		if (!res)
+			throw std::string("Unable to convert to unicode: ") + std::string(value);
+	}
+
+	// 2) unicode -> UTF-8
+	{
+		// NB. WC_ERR_INVALID_CHARS only defined when WIN_VER >= 0x600 - but stdafx.h defines it as 0x500
+		int size = WideCharToMultiByte(CP_UTF8, 0/*WC_ERR_INVALID_CHARS*/, m_pWcStr, -1, NULL, 0, NULL, NULL);
+		if (size == 0)
+			throw std::string("Unable to convert to UTF-8: ") + std::string(value);
+		if (size > m_mbStrSize)
+		{
+			delete[] m_pMbStr;
+			m_pMbStr = new char[size];
+			m_mbStrSize = size;
+		}
+		int res = WideCharToMultiByte(CP_UTF8, 0/*WC_ERR_INVALID_CHARS*/, m_pWcStr, -1, m_pMbStr, m_mbStrSize, NULL, NULL);
+		if (!res)
+			throw std::string("Unable to convert to UTF-8: ") + std::string(value);
+	}
+
+	Save("%s: %s\n", key, m_pMbStr);
 }
 
 void YamlSaveHelper::SaveString(const char* key, const std::string & value)

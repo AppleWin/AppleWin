@@ -117,7 +117,9 @@ const BYTE DoubleHiresPalIndex[16] = {
 
 #define  SETRGBCOLOR(r,g,b) {b,g,r,0xFF}
 
-static RGBQUAD PalIndex2RGB[] =
+static RGBQUAD* g_pPaletteRGB;
+
+static RGBQUAD PaletteRGB_NTSC[] =
 {
 // hires
 #if DO_OPT_PALETTE
@@ -128,6 +130,7 @@ static RGBQUAD PalIndex2RGB[] =
 	SETRGBCOLOR(/*HGR_BLACK, */ 0x00,0x00,0x00), // For TV emulation HGR Video Mode
 	SETRGBCOLOR(/*HGR_WHITE, */ 0xFF,0xFF,0xFF),
 #else
+// Note: this is a placeholder. This palette is overwritten by VideoInitializeOriginal()
 	SETRGBCOLOR(/*HGR_BLACK, */ 0x00,0x00,0x00), // For TV emulation HGR Video Mode
 	SETRGBCOLOR(/*HGR_WHITE, */ 0xFF,0xFF,0xFF),
 	SETRGBCOLOR(/*BLUE,      */ 0x0D,0xA1,0xFF), // FC Linards Tweaked 0x00,0x00,0xFF -> 0x0D,0xA1,0xFF
@@ -145,6 +148,7 @@ static RGBQUAD PalIndex2RGB[] =
 	SETRGBCOLOR(/*HGR_PINK,  */ 0xFF,0x32,0xB5), // 0xD0,0x40,0xA0 -> 0xFF,0x32,0xB5
 
 // lores & dhires
+// Note: this is a placeholder. This palette is overwritten by VideoInitializeOriginal()
 	SETRGBCOLOR(/*BLACK,*/      0x00,0x00,0x00), // 0
 	SETRGBCOLOR(/*DEEP_RED,*/   0x9D,0x09,0x66), // 0xD0,0x00,0x30 -> Linards Tweaked 0x9D,0x09,0x66
 	SETRGBCOLOR(/*DARK_BLUE,*/  0x2A,0x2A,0xE5), // 4 // Linards Tweaked 0x00,0x00,0x80 -> 0x2A,0x2A,0xE5
@@ -160,6 +164,44 @@ static RGBQUAD PalIndex2RGB[] =
 	SETRGBCOLOR(/*GREEN,*/      0x38,0xCB,0x00), // FA Linards Tweaked 0x00,0xFF,0x00 -> 0x38,0xCB,0x00
 	SETRGBCOLOR(/*YELLOW,*/     0xD5,0xD5,0x1A), // FB Linards Tweaked 0xFF,0xFF,0x00 -> 0xD5,0xD5,0x1A
 	SETRGBCOLOR(/*AQUA,*/       0x62,0xF6,0x99), // 0x40,0xFF,0x90 -> Linards Tweaked 0x62,0xF6,0x99
+	SETRGBCOLOR(/*WHITE,*/      0xFF,0xFF,0xFF),
+};
+
+// Le Chat Mauve Feline's palette
+// extracted from a white-balanced RGB video capture
+static RGBQUAD PaletteRGB_Feline[] =
+{
+	SETRGBCOLOR(/*HGR_BLACK, */ 0x00,0x00,0x00),
+	SETRGBCOLOR(/*HGR_WHITE, */ 0xFF,0xFF,0xFF),
+	SETRGBCOLOR(/*BLUE,      */ 0x00,0x8A,0xB5),
+	SETRGBCOLOR(/*ORANGE,    */ 0xFF,0x72,0x47),
+	SETRGBCOLOR(/*GREEN,     */ 0x6F,0xE6,0x2C),
+	SETRGBCOLOR(/*MAGENTA,   */ 0xAA,0x1A,0xD1),
+
+	// TV emu
+	SETRGBCOLOR(/*HGR_GREY1, */ 0x80,0x80,0x80),
+	SETRGBCOLOR(/*HGR_GREY2, */ 0x80,0x80,0x80),
+	SETRGBCOLOR(/*HGR_YELLOW,*/ 0x9E,0x9E,0x00),
+	SETRGBCOLOR(/*HGR_AQUA,  */ 0x00,0xCD,0x4A),
+	SETRGBCOLOR(/*HGR_PURPLE,*/ 0x61,0x61,0xFF),
+	SETRGBCOLOR(/*HGR_PINK,  */ 0xFF,0x32,0xB5),
+
+	// Feline
+	SETRGBCOLOR(/*BLACK,*/      0x00,0x00,0x00),
+	SETRGBCOLOR(/*DEEP_RED,*/   0xAC,0x12,0x4C),
+	SETRGBCOLOR(/*DARK_BLUE,*/  0x00,0x07,0x83),
+	SETRGBCOLOR(/*MAGENTA,*/    0xAA,0x1A,0xD1),
+	SETRGBCOLOR(/*DARK_GREEN,*/ 0x00,0x83,0x2F),
+	SETRGBCOLOR(/*DARK_GRAY,*/  0x9F,0x97,0x7E),
+	SETRGBCOLOR(/*BLUE,*/       0x00,0x8A,0xB5),
+	SETRGBCOLOR(/*LIGHT_BLUE,*/ 0x9F,0x9E,0xFF),
+	SETRGBCOLOR(/*BROWN,*/      0x7A,0x5F,0x00),
+	SETRGBCOLOR(/*ORANGE,*/     0xFF,0x72,0x47),
+	SETRGBCOLOR(/*LIGHT_GRAY,*/ 0x78,0x68,0x7F),
+	SETRGBCOLOR(/*PINK,*/       0xFF,0x7A,0xCF),
+	SETRGBCOLOR(/*GREEN,*/      0x6F,0xE6,0x2C),
+	SETRGBCOLOR(/*YELLOW,*/     0xFF,0xF6,0x7B),
+	SETRGBCOLOR(/*AQUA,*/       0x6C,0xEE,0xB2),
 	SETRGBCOLOR(/*WHITE,*/      0xFF,0xFF,0xFF),
 };
 
@@ -501,8 +543,8 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 			}
 			else
 			{
-				_ASSERT( colormixbuffer[h] < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
-				const RGBQUAD& rRGB = PalIndex2RGB[ colormixbuffer[h] ];
+				_ASSERT( colormixbuffer[h] < (sizeof(PaletteRGB_NTSC)/sizeof(PaletteRGB_NTSC[0])) );
+				const RGBQUAD& rRGB = g_pPaletteRGB[ colormixbuffer[h] ];
 				*(pDst+nBytes) = *reinterpret_cast<const UINT32 *>(&rRGB);
 			}
 
@@ -533,8 +575,8 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 		{
 			for (int nBytes=0; nBytes<w; ++nBytes)
 			{
-				_ASSERT( *(pSrc+nBytes+nSrcAdjustment) < (sizeof(PalIndex2RGB)/sizeof(PalIndex2RGB[0])) );
-				const RGBQUAD& rRGB = PalIndex2RGB[ *(pSrc+nBytes+nSrcAdjustment) ];
+				_ASSERT( *(pSrc+nBytes+nSrcAdjustment) < (sizeof(PaletteRGB_NTSC)/sizeof(PaletteRGB_NTSC[0])) );
+				const RGBQUAD& rRGB = g_pPaletteRGB[ *(pSrc+nBytes+nSrcAdjustment) ];
 				*(pDst+nBytes) = *reinterpret_cast<const UINT32 *>(&rRGB);
 			}
 		}
@@ -569,25 +611,25 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 #define COLOR  ((xpixel + PIXEL) & 3)
 #define VALUE  (dwordval >> (4 + PIXEL - COLOR))
 
-void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool updateAux, bool updateMain)
+void UpdateDHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool updateAux, bool updateMain)
 {
-	const int xpixel = x*14;
+	const int xpixel = x * 14;
 
-	uint8_t *pAux = MemGetAuxPtr(addr);
-	uint8_t *pMain = MemGetMainPtr(addr);
+	uint8_t* pAux = MemGetAuxPtr(addr);
+	uint8_t* pMain = MemGetMainPtr(addr);
 
-	BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
+	BYTE byteval1 = (x > 0) ? *(pMain - 1) : 0;
 	BYTE byteval2 = *pAux;
 	BYTE byteval3 = *pMain;
-	BYTE byteval4 = (x < 39) ? *(pAux+1) : 0;
+	BYTE byteval4 = (x < 39) ? *(pAux + 1) : 0;
 
-	DWORD dwordval = (byteval1 & 0x70)        | ((byteval2 & 0x7F) << 7) |
-					((byteval3 & 0x7F) << 14) | ((byteval4 & 0x07) << 21);
+	DWORD dwordval = (byteval1 & 0x70) | ((byteval2 & 0x7F) << 7) |
+		((byteval3 & 0x7F) << 14) | ((byteval4 & 0x07) << 21);
 
 #define PIXEL  0
 	if (updateAux)
 	{
-		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress);
+		CopySource(7, 2, SRCOFFS_DHIRES + 10 * HIBYTE(VALUE) + COLOR, LOBYTE(VALUE), pVideoAddress);
 		pVideoAddress += 7;
 	}
 #undef PIXEL
@@ -595,9 +637,321 @@ void UpdateDHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, bool 
 #define PIXEL  7
 	if (updateMain)
 	{
-		CopySource(7,2, SRCOFFS_DHIRES+10*HIBYTE(VALUE)+COLOR, LOBYTE(VALUE), pVideoAddress);
+		CopySource(7, 2, SRCOFFS_DHIRES + 10 * HIBYTE(VALUE) + COLOR, LOBYTE(VALUE), pVideoAddress);
 	}
 #undef PIXEL
+}
+
+//===========================================================================
+// RGB videocards HGR
+
+void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
+{
+	const int xpixel = x * 14;
+	int xoffset = x & 1; // offset to start of the 2 bytes
+	addr -= xoffset;
+
+	uint8_t* pMain = MemGetMainPtr(addr);
+
+	// We need all 28 bits because each pixel needs a three bit evaluation
+	uint8_t byteval1 = (x < 2 ? 0 : *(pMain - 1));
+	uint8_t byteval2 = *pMain;
+	uint8_t byteval3 = *(pMain + 1);
+	uint8_t byteval4 = (x >= 38 ? 0 : *(pMain + 2));
+	
+	// all 28 bits chained
+	DWORD dwordval = (byteval1 & 0x7F) | ((byteval2 & 0x7F) << 7) | ((byteval3 & 0x7F) << 14) | ((byteval4 & 0x7F) << 21);
+
+	// Extraction of 14 color pixels
+	UINT32 colors[14];
+	int color = 0;
+	DWORD dwordval_tmp = dwordval;
+	dwordval_tmp = dwordval_tmp >> 7;
+	bool offset = (byteval2 & 0x80) ? true : false;
+	for (int i = 0; i < 14; i++)
+	{
+		if (i == 7) offset = (byteval3 & 0x80) ? true : false;
+		color = dwordval_tmp & 0x3;
+		// Two cases because AppleWin's palette is in a strange order
+		if (offset)
+			colors[i] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[1 + color]);
+		else
+			colors[i] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[6 - color]);
+		if (i%2) dwordval_tmp >>= 2;
+	}
+	// Black and White
+	UINT32 bw[2];
+	bw[0] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[0]);
+	bw[1] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[1]);
+
+	DWORD mask  =  0x01C0; //  00|000001 1|1000000
+	DWORD chck1 =  0x0140; //  00|000001 0|1000000
+	DWORD chck2 =  0x0080; //  00|000000 1|0000000
+
+	// HIRES render in RGB works on a pixel-basis (1-bit data in framebuffer)
+	// The pixel can be 'color', if it makes a 101 or 010 pattern with the two neighbour bits
+	// In all other cases, it's black if 0 and white if 1
+	// The value of 'color' is defined on a 2-bits basis
+
+	UINT32* pDst = (UINT32*)pVideoAddress;
+
+	if (xoffset)
+	{
+		// Second byte of the 14 pixels block
+		dwordval = dwordval >> 7;
+		xoffset = 7;
+	}
+
+	for (int i = xoffset; i < xoffset+7; i++)
+	{
+		if (((dwordval & mask) == chck1) || ((dwordval & mask) == chck2))
+		{
+			// Color pixel
+			*(pDst) = colors[i];
+			*(pDst + 1) = *(pDst);
+			pDst += 2;
+		}
+		else
+		{
+			// B&W pixel
+			*(pDst) = bw[(dwordval & chck2 ? 1 : 0)];
+			*(pDst + 1) = *(pDst);
+			pDst += 2;
+		}
+		// Next pixel
+		dwordval = dwordval >> 1;
+	}
+
+	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+
+	// Second line
+	UINT32* pSrc = (UINT32*)pVideoAddress;
+	pDst = pSrc - GetFrameBufferWidth();
+	if (bIsHalfScanLines)
+	{
+		// Scanlines
+		std::fill(pDst, pDst + 14, 0);
+	}
+	else
+	{
+		for (int i = 0; i < 14; i++)
+			*(pDst + i) = *(pSrc + i);
+	}
+}
+
+static bool g_dhgrLastCellIsColor = true;
+static int g_dhgrLastBit = 0;
+
+void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool isMixMode, bool isBit7Inversed)
+{
+	const int xpixel = x * 14;
+	int xoffset = x & 1; // offset to start of the 2 bytes
+	addr -= xoffset;
+
+	uint8_t* pAux = MemGetAuxPtr(addr);
+	uint8_t* pMain = MemGetMainPtr(addr);
+
+	// We need all 28 bits because one 4-bits pixel overlaps two 14-bits cells
+	uint8_t byteval1 = *pAux;
+	uint8_t byteval2 = *pMain;
+	uint8_t byteval3 = *(pAux + 1);
+	uint8_t byteval4 = *(pMain + 1);
+
+	// all 28 bits chained
+	DWORD dwordval = (byteval1 & 0x7F) | ((byteval2 & 0x7F) << 7) | ((byteval3 & 0x7F) << 14) | ((byteval4 & 0x7F) << 21);
+
+	// Extraction of 7 color pixels and 7x4 bits
+	int bits[7];
+	UINT32 colors[7];
+	int color = 0;
+	DWORD dwordval_tmp = dwordval;
+	for (int i = 0; i < 7; i++)
+	{
+		bits[i] = dwordval_tmp & 0xF;
+		color = ((bits[i] & 7) << 1) | ((bits[i] & 8) >> 3); // DHGR colors are rotated 1 bit to the right
+		colors[i] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[12 + color]);
+		dwordval_tmp >>= 4;
+	}
+	UINT32 bw[2];
+	bw[0] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[12 + 0]);
+	bw[1] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[12 + 15]);
+
+	if (isBit7Inversed)
+	{
+		// Invert mixed mode detection
+		byteval1 = ~byteval1;
+		byteval2 = ~byteval2;
+		byteval3 = ~byteval3;
+		byteval4 = ~byteval4;
+	}
+
+	// RGB DHGR is quite a mess:
+	// Color mode is a real 140x192 RGB mode with no color fringe (ref. patent US4631692, "THE 140x192 VIDEO MODE")
+	// BW mode is a real 560x192 monochrome mode
+	// Mixed mode seems easy but has a few traps since it's based on 4-bits cells coded into 7-bits bytes:
+	//   - Bit 7 of each byte defines the mode of the following 7 bits (BW or Color);
+	//   - BW pixels are 1 bit wide, color pixels are usually 4 bits wide;
+	//   - A color pixel can be less than 4 bits wide if it crosses a byte boundary and falls into a BW byte;
+	//   - If a 4-bit cell of BW bits crosses a byte boundary and falls into a Color byte, then the last BW bit is repeated until the next color pixel starts.
+	//
+	// (Tested on Le Chat Mauve IIc adapter, which was made under patent of Video-7)
+
+	UINT32* pDst = (UINT32*)pVideoAddress;
+
+	if (xoffset == 0)	// First cell
+	{
+		if ((byteval1 & 0x80) || !isMixMode)
+		{
+			// Color
+			
+			// Color cell 0
+			*(pDst++) = colors[0];
+			*(pDst++) = colors[0];
+			*(pDst++) = colors[0];
+			*(pDst++) = colors[0];
+			// Color cell 1
+			*(pDst++) = colors[1];
+			*(pDst++) = colors[1];
+			*(pDst++) = colors[1];
+			
+			dwordval >>= 7;
+			g_dhgrLastCellIsColor = true;
+		}
+		else
+		{
+			// BW
+			for (int i = 0; i < 7; i++)
+			{
+				g_dhgrLastBit = dwordval & 1;
+				*(pDst++) = bw[g_dhgrLastBit];
+				dwordval >>= 1;
+			}
+			g_dhgrLastCellIsColor = false;
+		}
+
+		if ((byteval2 & 0x80) || !isMixMode)
+		{
+			// Remaining of color cell 1
+			if (g_dhgrLastCellIsColor)
+			{
+				*(pDst++) = colors[1];
+			}
+			else
+			{
+				// Repeat last BW bit once
+				*(pDst++) = bw[g_dhgrLastBit];
+			}
+			// Color cell 2
+			*(pDst++) = colors[2];
+			*(pDst++) = colors[2];
+			*(pDst++) = colors[2];
+			*(pDst++) = colors[2];
+			// Color cell 3
+			*(pDst++) = colors[3];
+			*(pDst++) = colors[3];
+			g_dhgrLastCellIsColor = true;
+		}
+		else
+		{
+			for (int i = 0; i < 7; i++)
+			{
+				g_dhgrLastBit = dwordval & 1;
+				*(pDst++) = bw[g_dhgrLastBit];
+				dwordval >>= 1;
+			}
+			g_dhgrLastCellIsColor = false;
+		}
+	}
+	else  // Second cell
+	{
+		dwordval >>= 14;
+
+		if ((byteval3 & 0x80) || !isMixMode)
+		{
+			// Remaining of color cell 3
+			if (g_dhgrLastCellIsColor)
+			{
+				*(pDst++) = colors[3];
+				*(pDst++) = colors[3];
+			}
+			else
+			{
+				// Repeat last BW bit twice
+				*(pDst++) = bw[g_dhgrLastBit];
+				*(pDst++) = bw[g_dhgrLastBit];
+			}
+			// Color cell 4
+			*(pDst++) = colors[4];
+			*(pDst++) = colors[4];
+			*(pDst++) = colors[4];
+			*(pDst++) = colors[4];
+			// Color cell 5
+			*(pDst++) = colors[5];
+			
+			dwordval >>= 7;
+			g_dhgrLastCellIsColor = true;
+		}
+		else
+		{
+			for (int i = 0; i < 7; i++)
+			{
+				g_dhgrLastBit = dwordval & 1;
+				*(pDst++) = bw[g_dhgrLastBit];
+				dwordval >>= 1;
+			}
+			g_dhgrLastCellIsColor = false;
+		}
+
+		if ((byteval4 & 0x80) || !isMixMode)
+		{
+			// Remaining of color cell 5
+			if (g_dhgrLastCellIsColor)
+			{
+				*(pDst++) = colors[5];
+				*(pDst++) = colors[5];
+				*(pDst++) = colors[5];
+			}
+			else
+			{
+				// Repeat last BW bit three times
+				*(pDst++) = bw[g_dhgrLastBit];
+				*(pDst++) = bw[g_dhgrLastBit];
+				*(pDst++) = bw[g_dhgrLastBit];
+			}
+			// Color cell 6
+			*(pDst++) = colors[6];
+			*(pDst++) = colors[6];
+			*(pDst++) = colors[6];
+			*(pDst++) = colors[6];
+			g_dhgrLastCellIsColor = true;
+		}
+		else
+		{
+			for (int i = 0; i < 7; i++)
+			{
+				g_dhgrLastBit = dwordval & 1;
+				*(pDst++) = bw[g_dhgrLastBit];
+				dwordval >>= 1;
+			}
+			g_dhgrLastCellIsColor = false;
+		}
+	}
+
+	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+
+	// Second line
+	UINT32* pSrc = (UINT32*)pVideoAddress ;
+	pDst = pSrc - GetFrameBufferWidth();
+	if (bIsHalfScanLines)
+	{
+		// Scanlines
+		std::fill(pDst, pDst + 14, 0);
+	}
+	else
+	{
+		for (int i = 0; i < 14; i++)
+			*(pDst + i) = *(pSrc + i);
+	}
 }
 
 #if 1
@@ -708,7 +1062,7 @@ void UpdateDLoResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 //===========================================================================
 // Color TEXT (some RGB cards only)
 // Default BG and FG are usually defined by hardware switches, defaults to black/white
-void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits)
+void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits, uint8_t character)
 {
 	uint8_t foreground = g_nRegularTextFG;
 	uint8_t background = g_nRegularTextBG;
@@ -718,13 +1072,25 @@ void UpdateText40ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, u
 		foreground = val >> 4;
 		background = val & 0x0F;
 	}
+	else if (g_RGBVideocard == RGB_Videocard_e::Video7_SL7 && character < 0x80)
+	{
+		// in regular 40COL mode, the SL7 videocard renders inverse characters as B&W
+		foreground = 15;
+		background = 0;
+	}
 
 	UpdateDuochromeCell(2, 14, pVideoAddress, bits, foreground, background);
 }
 
-void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits)
+void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, uint8_t bits, uint8_t character)
 {
-	UpdateDuochromeCell(2, 7, pVideoAddress, bits, g_nRegularTextFG, g_nRegularTextBG);
+	if (g_RGBVideocard == RGB_Videocard_e::Video7_SL7 && character < 0x80)
+	{
+		// in all 80COL modes, the SL7 videocard renders inverse characters as B&W
+		UpdateDuochromeCell(2, 7, pVideoAddress, bits, 15, 0);
+	}
+	else
+		UpdateDuochromeCell(2, 7, pVideoAddress, bits, g_nRegularTextFG, g_nRegularTextBG);
 }
 
 //===========================================================================
@@ -755,8 +1121,8 @@ void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint
 	background += 12;
 	foreground += 12;
 	// get bg/fg colors
-	colors[0] = PalIndex2RGB[background];
-	colors[1] = PalIndex2RGB[foreground];
+	colors[0] = g_pPaletteRGB[background];
+	colors[1] = g_pPaletteRGB[foreground];
 	int nbits = bits;
 	int doublepixels = (w == 14); // Double pixel (HiRes or Text40)
 
@@ -815,11 +1181,24 @@ void VideoInitializeOriginal(baseColors_t pBaseNtscColors)
 	// CREATE THE SOURCE IMAGE AND DRAW INTO THE SOURCE BIT BUFFER
 	V_CreateDIBSections();
 
-	memcpy(&PalIndex2RGB[BLACK], *pBaseNtscColors, sizeof(RGBQUAD)*kNumBaseColors);
-	PalIndex2RGB[HGR_BLUE]   = PalIndex2RGB[BLUE];
-	PalIndex2RGB[HGR_ORANGE] = PalIndex2RGB[ORANGE];
-	PalIndex2RGB[HGR_GREEN]  = PalIndex2RGB[GREEN];
-	PalIndex2RGB[HGR_VIOLET] = PalIndex2RGB[MAGENTA];
+	// Replace the default palette with true NTSC-generated colors
+	memcpy(&PaletteRGB_NTSC[BLACK], *pBaseNtscColors, sizeof(RGBQUAD) * kNumBaseColors);
+	PaletteRGB_NTSC[HGR_BLUE]   = PaletteRGB_NTSC[BLUE];
+	PaletteRGB_NTSC[HGR_ORANGE] = PaletteRGB_NTSC[ORANGE];
+	PaletteRGB_NTSC[HGR_GREEN]  = PaletteRGB_NTSC[GREEN];
+	PaletteRGB_NTSC[HGR_VIOLET] = PaletteRGB_NTSC[MAGENTA];
+}
+
+//===========================================================================
+
+// RGB videocards may use a different palette thant the NTSC-generated one
+void VideoSwitchVideocardPalette(RGB_Videocard_e videocard, VideoType_e type)
+{
+	g_pPaletteRGB = PaletteRGB_NTSC;
+	if (type==VideoType_e::VT_COLOR_VIDEOCARD_RGB && videocard == RGB_Videocard_e::LeChatMauve_Feline)
+	{
+		g_pPaletteRGB = PaletteRGB_Feline;
+	}
 }
 
 //===========================================================================
@@ -837,13 +1216,14 @@ static bool g_rgbInvertBit7 = false;
 // . NB. There's a final 5th AN3 transition to set DHGR mode
 void RGB_SetVideoMode(WORD address)
 {
-	if ((address&~1) == 0x0C)			// 0x0C or 0x0D? (80COL)
+
+	if ((address & ~1) == 0x0C)			// 0x0C or 0x0D? (80COL)
 	{
 		g_rgbSet80COL = true;
 		return;
 	}
 
-	if ((address&~1) != 0x5E)			// 0x5E or 0x5F? (DHIRES)
+	if ((address & ~1) != 0x5E)			// 0x5E or 0x5F? (DHIRES)
 		return;
 
 	// Precondition before toggling AN3:
@@ -853,33 +1233,37 @@ void RGB_SetVideoMode(WORD address)
 	// . Apple II desktop sets DHGR B&W mode with HIRES off! (GH#631)
 	// Maybe there is no video-mode precondition?
 	// . After setting 80COL on/off then need a 0x5E->0x5F toggle. So if we see a 0x5F then reset (GH#633)
-	if ((g_uVideoMode & VF_MIXED) || (g_rgbSet80COL && address == 0x5F))
-	{
-		g_rgbMode = 0;
-		g_rgbPrevAN3Addr = 0;
-		g_rgbSet80COL = false;
-		return;
-	}
 
-	if (address == 0x5F && g_rgbPrevAN3Addr == 0x5E)	// Check for AN3 clock transition
+	// From Video7 patent and Le Chat Mauve manuals (under patent of Video7), no precondition is needed.
+
+	// In Prince of Persia, in the game demo, the RGB card switches to BW DHIRES after the HGR animation with Jaffar.
+	// It's actually the same on real hardware (tested on IIc RGB adapter).
+
+	if (address == 0x5F)
 	{
-		g_rgbFlags = (g_rgbFlags<<1) & 3;
-		g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
-		g_rgbMode = g_rgbFlags;								// latch F2,F1
+		if ((g_rgbPrevAN3Addr == 0x5E) && g_rgbSet80COL)
+		{
+			g_rgbFlags = (g_rgbFlags << 1) & 3;
+			g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
+			g_rgbMode = g_rgbFlags;								// latch F2,F1
+		}
+
+		g_rgbSet80COL = false;
 	}
 
 	g_rgbPrevAN3Addr = address;
-	g_rgbSet80COL = false;
 }
 
 bool RGB_Is140Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 2
 {
-	return g_rgbMode == 0;
+	// Feline falls back to this mode instead of 160
+	return g_rgbMode == 0 || (g_RGBVideocard == RGB_Videocard_e::LeChatMauve_Feline && g_rgbMode == 1);
 }
 
 bool RGB_Is160Mode(void)	// Extended 80-Column Text/AppleColor Card: N/A
 {
-	return g_rgbMode == 1;
+	// Unsupported by Feline
+	return g_rgbMode == 1 && (g_RGBVideocard != RGB_Videocard_e::LeChatMauve_Feline);
 }
 
 bool RGB_IsMixMode(void)	// Extended 80-Column Text/AppleColor Card's Mode 3

@@ -354,7 +354,6 @@ void ConsoleBufferToDisplay ()
 //===========================================================================
 void ConsoleConvertFromText ( conchar_t * sText, const char * pText )
 {
-	int x = 0;
 	const char *pSrc = pText;
 	conchar_t  *pDst = sText;
 	while (pSrc && *pSrc)
@@ -522,13 +521,6 @@ void ConsoleInputReset ()
 //	_tcscpy( g_aConsoleInput, g_sConsolePrompt ); // Assembler can change prompt
 	g_aConsoleInput[0] = g_sConsolePrompt[0];
 	g_nConsolePromptLen = 1;
-
-//	int nLen = strlen( g_aConsoleInput );
-#if CONSOLE_INPUT_CHAR16
-	int nLen = ConsoleLineLength( g_aConsoleInput );
-#else
-	int nLen = strlen( g_aConsoleInput );
-#endif
 
 	g_pConsoleInput = &g_aConsoleInput[ g_nConsolePromptLen ];
 	g_nConsoleInputChars = 0;
