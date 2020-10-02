@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "AppleWin.h"
 #include "SynchronousEventManager.h"
 
-void SynchronousEventManager::Add(SyncEvent* pNewEvent)
+void SynchronousEventManager::Insert(SyncEvent* pNewEvent)
 {
 	pNewEvent->m_active = true;	// add always succeeds
 
@@ -135,16 +135,18 @@ void SynchronousEventManager::Update(int cycles)
 	pCurrEvent->m_cyclesRemaining -= cycles;
 	if (pCurrEvent->m_cyclesRemaining <= 0)
 	{
-		int underflowCycles = -pCurrEvent->m_cyclesRemaining;
+		int cyclesUnderflowed = -pCurrEvent->m_cyclesRemaining;
 
-		pCurrEvent->m_cyclesRemaining = pCurrEvent->m_callback(pCurrEvent->m_id);
+		pCurrEvent->m_cyclesRemaining = pCurrEvent->m_callback(pCurrEvent->m_id, cyclesUnderflowed);
 		m_syncEventHead = pCurrEvent->m_next;	// unlink this event
+
+		pCurrEvent->m_active = false;
 		pCurrEvent->m_next = NULL;
 
-		// Always Update even if underflowCycles=0, as next event may have cycleRemaining=0 (ie. the 2 events fire at the same time)
-		Update(underflowCycles);	// update (potential) next event with underflow cycles
+		// Always Update even if cyclesUnderflowed=0, as next event may have cycleRemaining=0 (ie. the 2 events fire at the same time)
+		Update(cyclesUnderflowed);	// update (potential) next event with underflow cycles
 
 		if (pCurrEvent->m_cyclesRemaining)
-			Add(pCurrEvent);	// re-add event
+			Insert(pCurrEvent);	// re-add event
 	}
 }

@@ -404,6 +404,11 @@ static __forceinline void NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #endif
 }
 
+static __forceinline void CheckSynchronousInterruptSources(UINT cycles)
+{
+	g_SynchronousEventMgr.Update(cycles);
+}
+
 // NB. No need to save to save-state, as IRQ() follows CheckInterruptSources(), and IRQ() always sets it to false.
 static bool g_irqOnLastOpcodeCycle = false;
 
@@ -436,6 +441,7 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #if defined(_DEBUG) && LOG_IRQ_TAKEN_AND_RTI
 		LogOutput("IRQ\n");
 #endif
+		CheckSynchronousInterruptSources(7);
 	}
 
 	g_irqOnLastOpcodeCycle = false;
@@ -470,11 +476,6 @@ void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 		g_fullSpeedOpcodeCount = opcodesUntilInterrupt;
 }
 #endif
-
-static __forceinline void CheckSynchronousInterruptSources(UINT cycles)
-{
-	g_SynchronousEventMgr.Update(cycles);
-}
 
 //===========================================================================
 

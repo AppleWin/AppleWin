@@ -127,7 +127,7 @@ CSpeech		g_Speech;
 
 //===========================================================================
 
-int testCB(int syncEventId)
+int testCB(int id, int underflowCycles)
 {
 	return 0;
 }
@@ -139,10 +139,10 @@ void SyncEventTest(void)
 	SyncEvent syncEvent2(2, 0x30, testCB);
 	SyncEvent syncEvent3(3, 0x40, testCB);
 
-	g_SynchronousEventMgr.Add(&syncEvent0);
-	g_SynchronousEventMgr.Add(&syncEvent1);
-	g_SynchronousEventMgr.Add(&syncEvent2);
-	g_SynchronousEventMgr.Add(&syncEvent3);
+	g_SynchronousEventMgr.Insert(&syncEvent0);
+	g_SynchronousEventMgr.Insert(&syncEvent1);
+	g_SynchronousEventMgr.Insert(&syncEvent2);
+	g_SynchronousEventMgr.Insert(&syncEvent3);
 	// id0 -> id1 -> id2 -> id3
 	_ASSERT(syncEvent0.m_cyclesRemaining == 0x10);
 	_ASSERT(syncEvent1.m_cyclesRemaining == 0x10);
@@ -162,10 +162,10 @@ void SyncEventTest(void)
 	syncEvent2.m_cyclesRemaining = 0x20;
 	syncEvent3.m_cyclesRemaining = 0x10;
 
-	g_SynchronousEventMgr.Add(&syncEvent0);
-	g_SynchronousEventMgr.Add(&syncEvent1);
-	g_SynchronousEventMgr.Add(&syncEvent2);
-	g_SynchronousEventMgr.Add(&syncEvent3);
+	g_SynchronousEventMgr.Insert(&syncEvent0);
+	g_SynchronousEventMgr.Insert(&syncEvent1);
+	g_SynchronousEventMgr.Insert(&syncEvent2);
+	g_SynchronousEventMgr.Insert(&syncEvent3);
 	// id3 -> id2 -> id1 -> id0
 	_ASSERT(syncEvent0.m_cyclesRemaining == 0x10);
 	_ASSERT(syncEvent1.m_cyclesRemaining == 0x10);

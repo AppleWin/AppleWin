@@ -12,7 +12,7 @@ public:
 	SyncEvent* GetHead(void) { return m_syncEventHead; }
 	void SetHead(SyncEvent* head) { m_syncEventHead = head; }
 
-	void Add(SyncEvent* pNewEvent);
+	void Insert(SyncEvent* pNewEvent);
 	bool Remove(int id);
 	void Update(int cycles);
 	void Reset(void) { m_syncEventHead = NULL; }
@@ -23,7 +23,7 @@ private:
 
 //
 
-typedef int (*syncEventCB)(int id);
+typedef int (*syncEventCB)(int id, int cyclesUnderflowed);
 
 class SyncEvent
 {
