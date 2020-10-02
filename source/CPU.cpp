@@ -96,6 +96,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
+#include "SynchronousEventManager.h"
 #include "Video.h"
 #include "NTSC.h"
 #include "Log.h"
@@ -472,10 +473,7 @@ void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 
 static __forceinline void CheckSynchronousInterruptSources(UINT cycles)
 {
-	if (!g_syncEventHead)
-		return;
-
-	g_syncEventHead->Update(cycles);
+	g_SynchronousEventMgr.Update(cycles);
 }
 
 //===========================================================================

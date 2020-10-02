@@ -1,0 +1,40 @@
+#pragma once
+
+class SyncEvent;
+
+class SynchronousEventManager
+{
+public:
+	SynchronousEventManager() : m_syncEventHead(NULL)
+	{}
+	~SynchronousEventManager(){}
+
+	SyncEvent* GetHead(void) { return m_syncEventHead; }
+	void SetHead(SyncEvent* head) { m_syncEventHead = head; }
+
+	void Add(SyncEvent* pNewEvent);
+	bool Remove(int id);
+	void Update(int cycles);
+
+private:
+	SyncEvent* m_syncEventHead;
+};
+
+//
+
+typedef int (*syncEventCB)(int id);
+
+class SyncEvent
+{
+public:
+	SyncEvent(int id, int initCycles, syncEventCB callback)
+		: m_id(id), m_cyclesRemaining(initCycles), m_active(false), m_callback(callback), m_next(NULL)
+	{}
+	~SyncEvent(){}
+
+	int m_id;
+	int m_cyclesRemaining;
+	bool m_active;
+	syncEventCB m_callback;
+	SyncEvent* m_next;
+};

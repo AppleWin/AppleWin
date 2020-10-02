@@ -86,6 +86,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "SoundCore.h"
+#include "SynchronousEventManager.h"
 #include "YamlHelper.h"
 #include "Riff.h"
 
@@ -441,9 +442,11 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			StartTimer1(pMB);
 //			CpuAdjustIrqCheck(pMB->sy6522.TIMER1_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
 			{
-				SyncEvent* pSyncEvent = g_syncEvent[nDevice*2+0];				// TIMER1
+				UINT id = nDevice*2+0;						// TIMER1
+				SyncEvent* pSyncEvent = g_syncEvent[id];
+				if (pSyncEvent->m_active) g_SynchronousEventMgr.Remove(id);
 				pSyncEvent->m_cyclesRemaining = pMB->sy6522.TIMER1_LATCH.w+2;	// 6522 timeout = N+2
-				SyncEventAdd(pSyncEvent);
+				g_SynchronousEventMgr.Add(pSyncEvent);
 			}
 			break;
 		case 0x07:	// TIMER1H_LATCH
@@ -464,9 +467,11 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			StartTimer2(pMB);
 //			CpuAdjustIrqCheck(pMB->sy6522.TIMER2_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
 			{
-				SyncEvent* pSyncEvent = g_syncEvent[nDevice*2+1];				// TIMER2
+				UINT id = nDevice*2+1;						// TIMER2
+				SyncEvent* pSyncEvent = g_syncEvent[id];
+				if (pSyncEvent->m_active) g_SynchronousEventMgr.Remove(id);
 				pSyncEvent->m_cyclesRemaining = pMB->sy6522.TIMER2_LATCH.w+2;	// 6522 timeout = N+2
-				SyncEventAdd(pSyncEvent);
+				g_SynchronousEventMgr.Add(pSyncEvent);
 			}
 			break;
 		case 0x0a:	// SERIAL_SHIFT
@@ -1990,6 +1995,8 @@ static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, 
 // . MB_Read() / MB_Write() (only for full-speed)
 bool MB_UpdateCycles(ULONG uExecutedCycles)
 {
+	return false;	// FIXME
+
 	if (g_SoundcardType == CT_Empty)
 		return false;
 
@@ -2079,10 +2086,22 @@ bool MB_UpdateCycles(ULONG uExecutedCycles)
 
 //-----------------------------------------------------------------------------
 
-static int MB_SyncEventCallback(int syncEventId)
+static int MB_SyncEventCallback(int id)
 {
-	// TODO
-	return 0;
+	SY6522_AY8910* pMB = &g_MB[id>>1];
+	int cycles = g_syncEvent[id]->m_cyclesRemaining;
+	_ASSERT(cycles < 0);
+
+	if ((id & 1) == 0)
+	{
+		UpdateIFR(pMB, 0, IxR_TIMER1);
+		return pMB->sy6522.TIMER1_LATCH.w+2 + cycles;	// FIXME: assume free-running
+	}
+	else
+	{
+		UpdateIFR(pMB, 0, IxR_TIMER2);
+		return 0;	// TIMER2 only runs in one-shot mode
+	}
 }
 
 //-----------------------------------------------------------------------------

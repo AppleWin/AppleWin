@@ -53,6 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
+#include "SynchronousEventManager.h"
 #include "Video.h"
 #include "RGBMonitor.h"
 #include "NTSC.h"
@@ -112,6 +113,8 @@ int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.c
 CardManager g_CardMgr;
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 
+SynchronousEventManager g_SynchronousEventMgr;
+
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom F8 ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom F8 ROM file failed
 HANDLE		g_hCustomRom = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $C000..$FFFF(16KiB) or $D000..$FFFF(12KiB)
@@ -124,62 +127,6 @@ CSpeech		g_Speech;
 
 //===========================================================================
 
-SyncEvent* g_syncEventHead = NULL;
-
-void SyncEventAdd(SyncEvent* pNewEvent)
-{
-	if (!g_syncEventHead)
-	{
-		g_syncEventHead = pNewEvent;
-		return;
-	}
-
-	// walk list to find where to insert new event
-
-	SyncEvent* pPrevEvent = NULL;
-	SyncEvent* pCurrEvent = g_syncEventHead;
-	int newEventExtraCycles = pNewEvent->m_cyclesRemaining;
-
-	do
-	{
-		if (newEventExtraCycles >= pCurrEvent->m_cyclesRemaining)
-		{
-			newEventExtraCycles -= pCurrEvent->m_cyclesRemaining;
-			_ASSERT(newEventExtraCycles >= 0);
-		}
-		else
-		{
-			// insert new event
-			if (!pPrevEvent)
-				g_syncEventHead = pNewEvent;
-			else
-				pPrevEvent->m_next = pNewEvent;
-			pNewEvent->m_next = pCurrEvent;
-
-			pNewEvent->m_cyclesRemaining = newEventExtraCycles;
-
-			// update cycles for remaining events
-			while (pCurrEvent)
-			{
-				pCurrEvent->m_cyclesRemaining -= newEventExtraCycles;
-				pCurrEvent = pCurrEvent->m_next;
-			}
-
-			break;
-		}
-
-		pPrevEvent = pCurrEvent;
-		pCurrEvent = pCurrEvent->m_next;
-
-		if (!pCurrEvent)	// end of list
-		{
-			pPrevEvent->m_next = pNewEvent;
-			pNewEvent->m_cyclesRemaining = newEventExtraCycles;
-		}
-	}
-	while (pCurrEvent);
-}
-
 int testCB(int syncEventId)
 {
 	return 0;
@@ -187,15 +134,49 @@ int testCB(int syncEventId)
 
 void SyncEventTest(void)
 {
-	SyncEvent syncEvent0(0, 0x1, testCB);
-	SyncEvent syncEvent1(1, 0x10, testCB);
-	SyncEvent syncEvent2(2, 0x20, testCB);
-	SyncEvent syncEvent3(3, 0x30, testCB);
+	SyncEvent syncEvent0(0, 0x10, testCB);
+	SyncEvent syncEvent1(1, 0x20, testCB);
+	SyncEvent syncEvent2(2, 0x30, testCB);
+	SyncEvent syncEvent3(3, 0x40, testCB);
 
-	SyncEventAdd(&syncEvent0);	// cycleRemaining: 0x01
-	SyncEventAdd(&syncEvent1);	// cycleRemaining: 0x0f
-	SyncEventAdd(&syncEvent2);	// cycleRemaining: 0x10
-	SyncEventAdd(&syncEvent3);	// cycleRemaining: 0x10
+	g_SynchronousEventMgr.Add(&syncEvent0);
+	g_SynchronousEventMgr.Add(&syncEvent1);
+	g_SynchronousEventMgr.Add(&syncEvent2);
+	g_SynchronousEventMgr.Add(&syncEvent3);
+	// id0 -> id1 -> id2 -> id3
+	_ASSERT(syncEvent0.m_cyclesRemaining == 0x10);
+	_ASSERT(syncEvent1.m_cyclesRemaining == 0x10);
+	_ASSERT(syncEvent2.m_cyclesRemaining == 0x10);
+	_ASSERT(syncEvent3.m_cyclesRemaining == 0x10);
+
+	g_SynchronousEventMgr.Remove(1);
+	g_SynchronousEventMgr.Remove(3);
+	g_SynchronousEventMgr.Remove(0);
+	_ASSERT(syncEvent2.m_cyclesRemaining == 0x30);
+	g_SynchronousEventMgr.Remove(2);
+
+	//
+
+	syncEvent0.m_cyclesRemaining = 0x40;
+	syncEvent1.m_cyclesRemaining = 0x30;
+	syncEvent2.m_cyclesRemaining = 0x20;
+	syncEvent3.m_cyclesRemaining = 0x10;
+
+	g_SynchronousEventMgr.Add(&syncEvent0);
+	g_SynchronousEventMgr.Add(&syncEvent1);
+	g_SynchronousEventMgr.Add(&syncEvent2);
+	g_SynchronousEventMgr.Add(&syncEvent3);
+	// id3 -> id2 -> id1 -> id0
+	_ASSERT(syncEvent0.m_cyclesRemaining == 0x10);
+	_ASSERT(syncEvent1.m_cyclesRemaining == 0x10);
+	_ASSERT(syncEvent2.m_cyclesRemaining == 0x10);
+	_ASSERT(syncEvent3.m_cyclesRemaining == 0x10);
+
+	g_SynchronousEventMgr.Remove(3);
+	g_SynchronousEventMgr.Remove(0);
+	g_SynchronousEventMgr.Remove(1);
+	_ASSERT(syncEvent2.m_cyclesRemaining == 0x20);
+	g_SynchronousEventMgr.Remove(2);
 }
 
 //===========================================================================
