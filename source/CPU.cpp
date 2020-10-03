@@ -409,7 +409,7 @@ static __forceinline void CheckSynchronousInterruptSources(UINT cycles, ULONG uE
 	g_SynchronousEventMgr.Update(cycles, uExecutedCycles);
 }
 
-// NB. No need to save to save-state, as IRQ() follows CheckInterruptSources(), and IRQ() always sets it to false.
+// NB. No need to save to save-state, as IRQ() follows CheckSynchronousInterruptSources(), and IRQ() always sets it to false.
 bool g_irqOnLastOpcodeCycle = false;
 
 static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
@@ -466,14 +466,6 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const boo
 
 	if (g_isMouseCardInstalled)
 		g_CardMgr.GetMouseCard()->SetVBlank( !VideoGetVblBar(uExecutedCycles) );
-}
-
-// GH#608: IRQ needs to occur within 17 cycles (6 opcodes) of configuring the timer interrupt
-void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
-{
-	const UINT opcodesUntilInterrupt = uCyclesUntilInterrupt/3;	// assume 3 cycles per opcode
-	if (g_bFullSpeed && opcodesUntilInterrupt < IRQ_CHECK_OPCODE_FULL_SPEED)
-		g_fullSpeedOpcodeCount = opcodesUntilInterrupt;
 }
 #endif
 

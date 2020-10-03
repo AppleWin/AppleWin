@@ -116,10 +116,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define SY6522B_Offset	0x80
 #define SSI263_Offset	0x40
 
-#define Phasor_SY6522A_CS		4
-#define Phasor_SY6522B_CS		7
-#define Phasor_SY6522A_Offset	(1<<Phasor_SY6522A_CS)
-#define Phasor_SY6522B_Offset	(1<<Phasor_SY6522B_CS)
+//#define Phasor_SY6522A_CS		4
+//#define Phasor_SY6522B_CS		7
+//#define Phasor_SY6522A_Offset	(1<<Phasor_SY6522A_CS)
+//#define Phasor_SY6522B_Offset	(1<<Phasor_SY6522B_CS)
 
 enum MockingboardUnitState_e {AY_NOP0, AY_NOP1, AY_INACTIVE, AY_READ, AY_NOP4, AY_NOP5, AY_WRITE, AY_LATCH};
 
@@ -133,10 +133,6 @@ struct SY6522_AY8910
 	SSI263A SpeechChip;
 	MockingboardUnitState_e state;	// Where a unit is a 6522+AY8910 pair
 	MockingboardUnitState_e stateB;	// Phasor: 6522 & 2nd AY8910
-
-	// NB. No need to save to save-state, as it will be done immediately after opcode completes in MB_UpdateCycles()
-	bool bLoadT1C;					// Load T1C with T1L after opcode completes
-	bool bLoadT2C;					// Load T2C with T2L after opcode completes
 };
 
 
@@ -163,6 +159,7 @@ struct SY6522_AY8910
 // Support 2 MB's, each with 2x SY6522/AY8910 pairs.
 static SY6522_AY8910 g_MB[NUM_AY8910];
 
+const UINT kExtraTimerCycles = 2;	// Rockwell, Fig.16: period = N+2 cycles
 const UINT kNumTimersPer6522 = 2;
 const UINT kNumSyncEvents = NUM_MB * NUM_SY6522 * kNumTimersPer6522;
 static SyncEvent* g_syncEvent[kNumSyncEvents];
@@ -437,11 +434,11 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			UpdateIFR(pMB, IxR_TIMER1);
 
 			pMB->sy6522.TIMER1_LATCH.h = nValue;
-//			pMB->bLoadT1C = true;
 
 			StartTimer1(pMB);
-//			CpuAdjustIrqCheck(pMB->sy6522.TIMER1_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
+
 			{
+				// NB. This TIMER adjustment value gets subtracted when this current opcode completes, so no need to persist to save-state
 				int opcodeCycleAdjust = 0;
 
 				// TODO: tighten up these checks
@@ -449,7 +446,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 					 (mem[regs.pc-3] == 0x8D) ||	// STA abs16
 					 (mem[regs.pc-3] == 0x8E) )		// STX abs16
 				{
-					opcodeCycleAdjust = 4;			// Same as the bLoadT1C flag
+					opcodeCycleAdjust = 4;
 				}
 				else if (mem[regs.pc-2] == 0x91)	// STA (zp),y
 				{	// FT: OMT, PLS
@@ -460,10 +457,10 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 					opcodeCycleAdjust = 0;
 				}
 
-				UINT id = nDevice*2+0;						// TIMER1
+				const UINT id = nDevice*kNumTimersPer6522+0;							// TIMER1
 				SyncEvent* pSyncEvent = g_syncEvent[id];
 				if (pSyncEvent->m_active) g_SynchronousEventMgr.Remove(id);
-				pSyncEvent->SetCycles(pMB->sy6522.TIMER1_LATCH.w + 2 + opcodeCycleAdjust);	// 6522 timeout = N+2
+				pSyncEvent->SetCycles(pMB->sy6522.TIMER1_LATCH.w + kExtraTimerCycles + opcodeCycleAdjust);
 				g_SynchronousEventMgr.Insert(pSyncEvent);
 
 				pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w + opcodeCycleAdjust;
@@ -485,12 +482,12 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			pMB->sy6522.TIMER2_COUNTER.w = pMB->sy6522.TIMER2_LATCH.w;
 
 			StartTimer2(pMB);
-//			CpuAdjustIrqCheck(pMB->sy6522.TIMER2_LATCH.w);	// Sync IRQ check timeout with 6522 counter underflow - GH#608
+
 			{
-				UINT id = nDevice*2+1;						// TIMER2
+				const UINT id = nDevice*kNumTimersPer6522+1;							// TIMER2
 				SyncEvent* pSyncEvent = g_syncEvent[id];
 				if (pSyncEvent->m_active) g_SynchronousEventMgr.Remove(id);
-				pSyncEvent->SetCycles(pMB->sy6522.TIMER2_LATCH.w + 2);	// 6522 timeout = N+2
+				pSyncEvent->SetCycles(pMB->sy6522.TIMER2_LATCH.w + kExtraTimerCycles);
 				g_SynchronousEventMgr.Insert(pSyncEvent);
 			}
 			break;
@@ -2044,7 +2041,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 		if (pMB->bTimer1Active && bTimer1Irq)
 		{
 			pMB->sy6522.TIMER1_COUNTER.w += pMB->sy6522.TIMER1_LATCH.w;	// GH#651: account for underflowed cycles too
-			pMB->sy6522.TIMER1_COUNTER.w += 2;							// GH#652: account for extra 2 cycles (Rockwell, Fig.16: period=N+2cycles)
+			pMB->sy6522.TIMER1_COUNTER.w += kExtraTimerCycles;			// GH#652: account for extra 2 cycles
 																		// EG. T1C=0xFFFE, T1L=0x0001
 																		// . T1C += T1L = 0xFFFF
 																		// . T1C +=   2 = 0x0001
@@ -2063,7 +2060,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 
 static int MB_SyncEventCallback(int id, int underflowCycles, ULONG uExecutedCycles)
 {
-	SY6522_AY8910* pMB = &g_MB[id>>1];
+	SY6522_AY8910* pMB = &g_MB[id / kNumTimersPer6522];
 	_ASSERT(underflowCycles >= 0);
 
 	if ((id & 1) == 0)
@@ -2394,6 +2391,14 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 				StartTimer1(pMB);			// Attempt to start timer
 		}
 
+		if (pMB->bTimer1Active)
+		{
+			const UINT id = nDeviceNum*kNumTimersPer6522+0;	// TIMER1
+			SyncEvent* pSyncEvent = g_syncEvent[id];
+			pSyncEvent->SetCycles(pMB->sy6522.TIMER1_COUNTER.w + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
+			g_SynchronousEventMgr.Insert(pSyncEvent);
+		}
+
 		// FIXME: currently only support a single speech chip
 		// NB. g_bVotraxPhoneme is never true, as the phoneme playback completes in SSI263Thread() before this point in the save-state.
 		// NB. SpeechChip.DurationPhoneme will mostly be non-zero during speech playback, as this is the SSI263 register, not whether the phonene is active.
@@ -2529,6 +2534,14 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 		{
 			if (pMB->bTimer1Active)
 				StartTimer1(pMB);			// Attempt to start timer
+		}
+
+		if (pMB->bTimer1Active)
+		{
+			const UINT id = nDeviceNum*kNumTimersPer6522+0;	// TIMER1
+			SyncEvent* pSyncEvent = g_syncEvent[id];
+			pSyncEvent->SetCycles(pMB->sy6522.TIMER1_COUNTER.w + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
+			g_SynchronousEventMgr.Insert(pSyncEvent);
 		}
 
 		// FIXME: currently only support a single speech chip
