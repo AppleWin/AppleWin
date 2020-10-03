@@ -404,9 +404,9 @@ static __forceinline void NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #endif
 }
 
-static __forceinline void CheckSynchronousInterruptSources(UINT cycles)
+static __forceinline void CheckSynchronousInterruptSources(UINT cycles, ULONG uExecutedCycles)
 {
-	g_SynchronousEventMgr.Update(cycles);
+	g_SynchronousEventMgr.Update(cycles, uExecutedCycles);
 }
 
 // NB. No need to save to save-state, as IRQ() follows CheckInterruptSources(), and IRQ() always sets it to false.
@@ -441,7 +441,7 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #if defined(_DEBUG) && LOG_IRQ_TAKEN_AND_RTI
 		LogOutput("IRQ\n");
 #endif
-		CheckSynchronousInterruptSources(7);
+		CheckSynchronousInterruptSources(7, uExecutedCycles);
 	}
 
 	g_irqOnLastOpcodeCycle = false;

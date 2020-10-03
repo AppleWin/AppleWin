@@ -227,7 +227,7 @@ static UINT g_cyclesThisAudioFrame = 0;
 // Forward refs:
 static DWORD WINAPI SSI263Thread(LPVOID);
 static void Votrax_Write(BYTE nDevice, BYTE nValue);
-static int MB_SyncEventCallback(int id, int underflowCycles);
+static int MB_SyncEventCallback(int id, int underflowCycles, ULONG uExecutedCycles);
 
 //---------------------------------------------------------------------------
 
@@ -444,11 +444,20 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			{
 				int opcodeCycleAdjust = 0;
 
+				// TODO: tighten up these checks
 				if ( (mem[regs.pc-3] == 0x8C) ||	// STY abs16
 					 (mem[regs.pc-3] == 0x8D) ||	// STA abs16
 					 (mem[regs.pc-3] == 0x8E) )		// STX abs16
 				{
 					opcodeCycleAdjust = 4;			// Same as the bLoadT1C flag
+				}
+				else if (mem[regs.pc-2] == 0x91)	// STA (zp),y
+				{	// FT: OMT, PLS
+					opcodeCycleAdjust = 6;
+				}
+				else
+				{
+					opcodeCycleAdjust = 0;
 				}
 
 				UINT id = nDevice*2+0;						// TIMER1
@@ -456,6 +465,8 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				if (pSyncEvent->m_active) g_SynchronousEventMgr.Remove(id);
 				pSyncEvent->SetCycles(pMB->sy6522.TIMER1_LATCH.w + 2 + opcodeCycleAdjust);	// 6522 timeout = N+2
 				g_SynchronousEventMgr.Insert(pSyncEvent);
+
+				pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w + opcodeCycleAdjust;
 			}
 			break;
 		case 0x07:	// TIMER1H_LATCH
@@ -1648,8 +1659,7 @@ void MB_Reset()	// CTRL+RESET or power-cycle
 
 static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-//	if (g_bFullSpeed)
-		MB_UpdateCycles(nExecutedCycles);
+	MB_UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
 	if(!IS_APPLE2 && MemCheckINTCXROM())
@@ -1712,8 +1722,7 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 
 static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-//	if (g_bFullSpeed)
-		MB_UpdateCycles(nExecutedCycles);
+	MB_UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
 	if(!IS_APPLE2 && MemCheckINTCXROM())
@@ -2006,198 +2015,53 @@ static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, 
 	return timerIrq;
 }
 
-#if 0
-// Called by:
-// . CpuExecute() every ~1000 @ 1MHz
-// . CheckInterruptSources() every opcode (or every 40 opcodes at full-speed)
-// . MB_Read() / MB_Write() (only for full-speed)
-bool MB_UpdateCycles(ULONG uExecutedCycles)
-{
-	if (g_SoundcardType == CT_Empty)
-		return false;
-
-	CpuCalcCycles(uExecutedCycles);
-	UINT64 uCycles = g_nCumulativeCycles - g_uLastCumulativeCycles;
-	if (uCycles == 0)
-		return false;		// Likely when called from CpuExecute()
-
-	const bool isOpcode = (uCycles <= 7);		// todo: better to pass in a flag?
-
-	g_uLastCumulativeCycles = g_nCumulativeCycles;
-	_ASSERT(uCycles < 0x10000);
-	USHORT nClocks = (USHORT) uCycles;
-
-	bool bIrqOnLastOpcodeCycle = false;
-
-	for (int i=0; i<NUM_SY6522; i++)
-	{
-		SY6522_AY8910* pMB = &g_MB[i];
-
-		bool bTimer1Irq = false;
-		bool bTimer1IrqOnLastCycle = false;
-
-		if (isOpcode)
-		{
-			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks-1);
-			bTimer1IrqOnLastCycle  = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, 1);
-			bTimer1Irq = bTimer1Irq || bTimer1IrqOnLastCycle;
-		}
-		else
-		{
-			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks);
-		}
-
-		const bool bTimer2Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER2_COUNTER.w, pMB->sy6522.timer2IrqDelay, nClocks);
-
-		if (pMB->bTimer1Active && bTimer1Irq)
-		{
-			UpdateIFR(pMB, 0, IxR_TIMER1);
-			bIrqOnLastOpcodeCycle = bTimer1IrqOnLastCycle;
-
-			MB_Update();
-
-			if ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
-			{
-				// One-shot mode
-				// - Phasor's playback code uses one-shot mode
-				StopTimer1(pMB);
-			}
-			else
-			{
-				// Free-running mode
-				// - Ultima4/5 change ACCESS_TIMER1 after a couple of IRQs into tune
-				pMB->sy6522.TIMER1_COUNTER.w += pMB->sy6522.TIMER1_LATCH.w;	// GH#651: account for underflowed cycles too
-				pMB->sy6522.TIMER1_COUNTER.w += 2;							// GH#652: account for extra 2 cycles (Rockwell, Fig.16: period=N+2cycles)
-																			// EG. T1C=0xFFFE, T1L=0x0001
-																			// . T1C += T1L = 0xFFFF
-																			// . T1C +=   2 = 0x0001
-				if (pMB->sy6522.TIMER1_COUNTER.w > pMB->sy6522.TIMER1_LATCH.w)
-				{
-					if (pMB->sy6522.TIMER1_LATCH.w)
-						pMB->sy6522.TIMER1_COUNTER.w %= pMB->sy6522.TIMER1_LATCH.w;	// Only occurs if LATCH.w<0x0007 (# cycles for longest opcode)
-					else
-						pMB->sy6522.TIMER1_COUNTER.w = 0;
-				}
-				StartTimer1(pMB);
-			}
-		}
-
-		if (pMB->bLoadT1C)
-		{
-			pMB->bLoadT1C = false;
-			pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
-		}
-
-		if (pMB->bTimer2Active && bTimer2Irq)
-		{
-			UpdateIFR(pMB, 0, IxR_TIMER2);
-
-			// TIMER2 only runs in one-shot mode
-			StopTimer2(pMB);
-		}
-	}
-
-	return bIrqOnLastOpcodeCycle;
-}
-#endif
-
 // Called by:
 // . CpuExecute() every ~1000 cycles @ 1MHz
+// . MB_SyncEventCallback() on a TIMER1/2 interrupt
 // . MB_Read() / MB_Write() (for both normal & full-speed)
-bool MB_UpdateCycles(ULONG uExecutedCycles)
+void MB_UpdateCycles(ULONG uExecutedCycles)
 {
 	if (g_SoundcardType == CT_Empty)
-		return false;
+		return;
 
 	CpuCalcCycles(uExecutedCycles);
 	UINT64 uCycles = g_nCumulativeCycles - g_uLastCumulativeCycles;
+	_ASSERT(uCycles >= 0);
 	if (uCycles == 0)
-		return false;		// Likely when called from CpuExecute()
-
-//	const bool isOpcode = (uCycles <= 7);		// todo: better to pass in a flag?
+		return;
 
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
 	_ASSERT(uCycles < 0x10000);
 	USHORT nClocks = (USHORT)uCycles;
 
-	bool bIrqOnLastOpcodeCycle = false;
-
 	for (int i = 0; i < NUM_SY6522; i++)
 	{
 		SY6522_AY8910* pMB = &g_MB[i];
 
-		bool bTimer1Irq = false;
-		bool bTimer1IrqOnLastCycle = false;
-
-//		if (isOpcode)
-//		{
-//			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks - 1);
-//			bTimer1IrqOnLastCycle = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, 1);
-//			bTimer1Irq = bTimer1Irq || bTimer1IrqOnLastCycle;
-//		}
-//		else
-		{
-			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks);
-		}
-
+		const bool bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks);
 		const bool bTimer2Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER2_COUNTER.w, pMB->sy6522.timer2IrqDelay, nClocks);
 
-#if 0
 		if (pMB->bTimer1Active && bTimer1Irq)
 		{
-			UpdateIFR(pMB, 0, IxR_TIMER1);
-			bIrqOnLastOpcodeCycle = bTimer1IrqOnLastCycle;
-
-			MB_Update();
-
-			if ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
+			pMB->sy6522.TIMER1_COUNTER.w += pMB->sy6522.TIMER1_LATCH.w;	// GH#651: account for underflowed cycles too
+			pMB->sy6522.TIMER1_COUNTER.w += 2;							// GH#652: account for extra 2 cycles (Rockwell, Fig.16: period=N+2cycles)
+																		// EG. T1C=0xFFFE, T1L=0x0001
+																		// . T1C += T1L = 0xFFFF
+																		// . T1C +=   2 = 0x0001
+			if (pMB->sy6522.TIMER1_COUNTER.w > pMB->sy6522.TIMER1_LATCH.w)
 			{
-				// One-shot mode
-				// - Phasor's playback code uses one-shot mode
-				StopTimer1(pMB);
-			}
-			else
-			{
-				// Free-running mode
-				// - Ultima4/5 change ACCESS_TIMER1 after a couple of IRQs into tune
-				pMB->sy6522.TIMER1_COUNTER.w += pMB->sy6522.TIMER1_LATCH.w;	// GH#651: account for underflowed cycles too
-				pMB->sy6522.TIMER1_COUNTER.w += 2;							// GH#652: account for extra 2 cycles (Rockwell, Fig.16: period=N+2cycles)
-																			// EG. T1C=0xFFFE, T1L=0x0001
-																			// . T1C += T1L = 0xFFFF
-																			// . T1C +=   2 = 0x0001
-				if (pMB->sy6522.TIMER1_COUNTER.w > pMB->sy6522.TIMER1_LATCH.w)
-				{
-					if (pMB->sy6522.TIMER1_LATCH.w)
-						pMB->sy6522.TIMER1_COUNTER.w %= pMB->sy6522.TIMER1_LATCH.w;	// Only occurs if LATCH.w<0x0007 (# cycles for longest opcode)
-					else
-						pMB->sy6522.TIMER1_COUNTER.w = 0;
-				}
-				StartTimer1(pMB);
+				if (pMB->sy6522.TIMER1_LATCH.w)
+					pMB->sy6522.TIMER1_COUNTER.w %= pMB->sy6522.TIMER1_LATCH.w;	// Only occurs if LATCH.w<0x0007 (# cycles for longest opcode)
+				else
+					pMB->sy6522.TIMER1_COUNTER.w = 0;
 			}
 		}
-
-		if (pMB->bLoadT1C)
-		{
-			pMB->bLoadT1C = false;
-			pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
-		}
-
-		if (pMB->bTimer2Active && bTimer2Irq)
-		{
-			UpdateIFR(pMB, 0, IxR_TIMER2);
-
-			// TIMER2 only runs in one-shot mode
-			StopTimer2(pMB);
-		}
-#endif
 	}
-
-	return bIrqOnLastOpcodeCycle;
 }
 
 //-----------------------------------------------------------------------------
 
-static int MB_SyncEventCallback(int id, int underflowCycles)
+static int MB_SyncEventCallback(int id, int underflowCycles, ULONG uExecutedCycles)
 {
 	SY6522_AY8910* pMB = &g_MB[id>>1];
 	_ASSERT(underflowCycles >= 0);
@@ -2217,24 +2081,9 @@ static int MB_SyncEventCallback(int id, int underflowCycles)
 			return 0;			// Don't repeat event
 		}
 
-		// Free-running mode
-		pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w;
-		// Not +=2, else COUNTER > LATCH!
-//		pMB->sy6522.TIMER1_COUNTER.w += 2;							// GH#652: account for extra 2 cycles (Rockwell, Fig.16: period=N+2cycles)
-																	// EG. T1C=0xFFFE, T1L=0x0001
-																	// . T1C += T1L = 0xFFFF
-																	// . T1C +=   2 = 0x0001
-		pMB->sy6522.TIMER1_COUNTER.w -= underflowCycles;			// Account for underflowed cycles too
-		if (pMB->sy6522.TIMER1_COUNTER.w > pMB->sy6522.TIMER1_LATCH.w)
-		{
-			if (pMB->sy6522.TIMER1_LATCH.w)
-				pMB->sy6522.TIMER1_COUNTER.w %= pMB->sy6522.TIMER1_LATCH.w;	// Only occurs if LATCH.w<0x0007 (# cycles for longest opcode)
-			else
-				pMB->sy6522.TIMER1_COUNTER.w = 0;
-		}
-		StartTimer1(pMB);
+		MB_UpdateCycles(uExecutedCycles);
 
-//		const int adjust = -16;
+		StartTimer1(pMB);
 		return pMB->sy6522.TIMER1_COUNTER.w+2;
 	}
 	else

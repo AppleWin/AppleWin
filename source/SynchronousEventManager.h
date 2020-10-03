@@ -14,7 +14,7 @@ public:
 
 	void Insert(SyncEvent* pNewEvent);
 	bool Remove(int id);
-	void Update(int cycles);
+	void Update(int cycles, ULONG uExecutedCycles);
 	void Reset(void) { m_syncEventHead = NULL; }
 
 private:
@@ -23,7 +23,7 @@ private:
 
 //
 
-typedef int (*syncEventCB)(int id, int cyclesUnderflowed);
+typedef int (*syncEventCB)(int id, int cyclesUnderflowed, ULONG uExecutedCycles);
 
 class SyncEvent
 {

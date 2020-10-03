@@ -127,7 +127,7 @@ CSpeech		g_Speech;
 
 //===========================================================================
 
-int testCB(int id, int underflowCycles)
+int testCB(int id, int underflowCycles, ULONG uExecutedCycles)
 {
 	return 0;
 }

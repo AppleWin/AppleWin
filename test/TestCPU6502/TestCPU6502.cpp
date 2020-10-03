@@ -58,7 +58,7 @@ static __forceinline void DoIrqProfiling(DWORD uCycles)
 //{
 //}
 
-static __forceinline void CheckSynchronousInterruptSources(UINT cycles)
+static __forceinline void CheckSynchronousInterruptSources(UINT cycles, ULONG uExecutedCycles)
 {
 }
 

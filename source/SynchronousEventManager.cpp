@@ -127,7 +127,7 @@ bool SynchronousEventManager::Remove(int id)
 
 extern bool g_irqOnLastOpcodeCycle;
 
-void SynchronousEventManager::Update(int cycles)
+void SynchronousEventManager::Update(int cycles, ULONG uExecutedCycles)
 {
 	SyncEvent* pCurrEvent = m_syncEventHead;
 
@@ -142,14 +142,14 @@ void SynchronousEventManager::Update(int cycles)
 
 		int cyclesUnderflowed = -pCurrEvent->m_cyclesRemaining;
 
-		pCurrEvent->m_cyclesRemaining = pCurrEvent->m_callback(pCurrEvent->m_id, cyclesUnderflowed);
+		pCurrEvent->m_cyclesRemaining = pCurrEvent->m_callback(pCurrEvent->m_id, cyclesUnderflowed, uExecutedCycles);
 		m_syncEventHead = pCurrEvent->m_next;	// unlink this event
 
 		pCurrEvent->m_active = false;
 		pCurrEvent->m_next = NULL;
 
 		// Always Update even if cyclesUnderflowed=0, as next event may have cycleRemaining=0 (ie. the 2 events fire at the same time)
-		Update(cyclesUnderflowed);	// update (potential) next event with underflow cycles
+		Update(cyclesUnderflowed, uExecutedCycles);	// update (potential) next event with underflow cycles
 
 		if (pCurrEvent->m_cyclesRemaining)
 			Insert(pCurrEvent);	// re-add event
