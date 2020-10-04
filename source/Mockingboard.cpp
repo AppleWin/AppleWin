@@ -429,14 +429,8 @@ static USHORT SetTimerSyncEvent(UINT id, BYTE reg, USHORT timerLatch)
 	pSyncEvent->SetCycles(timerLatch + kExtraTimerCycles + opcodeCycleAdjust);
 	g_SynchronousEventMgr.Insert(pSyncEvent);
 
-	UINT counter = timerLatch + opcodeCycleAdjust;
-	if (counter > 0xFFFF)
-	{
-		_ASSERT(0);
-		counter = 0xFFFF;
-	}
-
-	return (USHORT) counter;
+	// It doesn't matter if this overflows (ie. >0xFFFF), since on completion of current opcode it'll be corrected
+	return (USHORT) (timerLatch + opcodeCycleAdjust);
 }
 
 static void UpdateIFR(SY6522_AY8910* pMB, BYTE clr_ifr, BYTE set_ifr=0)
@@ -2454,6 +2448,13 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 			pSyncEvent->SetCycles(pMB->sy6522.TIMER1_COUNTER.w + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
 			g_SynchronousEventMgr.Insert(pSyncEvent);
 		}
+		if (pMB->bTimer2Active)
+		{
+			const UINT id = nDeviceNum*kNumTimersPer6522+1;	// TIMER2
+			SyncEvent* pSyncEvent = g_syncEvent[id];
+			pSyncEvent->SetCycles(pMB->sy6522.TIMER2_COUNTER.w + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
+			g_SynchronousEventMgr.Insert(pSyncEvent);
+		}
 
 		// FIXME: currently only support a single speech chip
 		// NB. g_bVotraxPhoneme is never true, as the phoneme playback completes in SSI263Thread() before this point in the save-state.
@@ -2597,6 +2598,13 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 			const UINT id = nDeviceNum*kNumTimersPer6522+0;	// TIMER1
 			SyncEvent* pSyncEvent = g_syncEvent[id];
 			pSyncEvent->SetCycles(pMB->sy6522.TIMER1_COUNTER.w + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
+			g_SynchronousEventMgr.Insert(pSyncEvent);
+		}
+		if (pMB->bTimer2Active)
+		{
+			const UINT id = nDeviceNum*kNumTimersPer6522+1;	// TIMER2
+			SyncEvent* pSyncEvent = g_syncEvent[id];
+			pSyncEvent->SetCycles(pMB->sy6522.TIMER2_COUNTER.w + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
 			g_SynchronousEventMgr.Insert(pSyncEvent);
 		}
 
