@@ -343,6 +343,102 @@ static void AY8910_Write(BYTE nDevice, BYTE /*nReg*/, BYTE nValue, BYTE nAYDevic
 	}
 }
 
+static UINT GetOpcodeCycles(BYTE reg)
+{
+	UINT opcodeCycles = 0;
+	BYTE opcode = 0;
+	bool abs16 = false;
+
+	const BYTE opcodeMinus3 = mem[(regs.pc-3)&0xffff];
+	const BYTE opcodeMinus2 = mem[(regs.pc-2)&0xffff];
+
+	if ( (opcodeMinus3 == 0x8C) ||		// sty abs16
+		 (opcodeMinus3 == 0x8D) ||		// sta abs16
+		 (opcodeMinus3 == 0x8E) )		// stx abs16
+	{	// Eg. FT demos: CHIP, MADEF, MAD2
+		opcodeCycles = 4;
+		opcode = opcodeMinus3;
+		abs16 = true;
+	}
+	else if ( (opcodeMinus3 == 0x99) ||	// sta abs16,y
+			  (opcodeMinus3 == 0x9D) )	// sta abs16,x
+	{	// Eg. Paleotronic microTracker demo
+		opcodeCycles = 5;
+		opcode = opcodeMinus3;
+		abs16 = true;
+	}
+	else if (opcodeMinus2 == 0x81)		// sta (zp,x)
+	{
+		opcodeCycles = 6;
+		opcode = opcodeMinus2;
+	}
+	else if (opcodeMinus2 == 0x91)		// sta (zp),y
+	{	// Eg. FT demos: OMT, PLS
+		opcodeCycles = 6;
+		opcode = opcodeMinus2;
+	}
+	else if (opcodeMinus2 == 0x92 && GetMainCpu() == CPU_65C02)		// sta (zp) : 65C02-only
+	{
+		opcodeCycles = 5;
+		opcode = opcodeMinus2;
+	}
+	else
+	{
+		_ASSERT(0);
+		opcodeCycles = 0;
+		return 0;
+	}
+
+	//
+
+	WORD addr16 = 0;
+
+	if (!abs16)
+	{
+		BYTE zp = mem[(regs.pc-1)&0xffff];
+		if (opcode == 0x81) zp += regs.x;
+		addr16 = (mem[zp] | (mem[(zp+1)&0xff]<<8));
+		if (opcode == 0x91) addr16 += regs.y;
+	}
+	else
+	{
+		addr16 = mem[(regs.pc-2)&0xffff] | (mem[(regs.pc-1)&0xffff]<<8);
+		if (opcode == 0x99) addr16 += regs.y;
+		if (opcode == 0x9D) addr16 += regs.x;
+	}
+
+	// Check we've reverse looked-up the 6502 opcode correctly
+	if ((addr16 & 0xF80F) != (0xC000+reg))
+	{
+		_ASSERT(0);
+		return 0;
+	}
+
+	return opcodeCycles;
+}
+
+static USHORT SetTimerSyncEvent(UINT id, BYTE reg, USHORT timerLatch)
+{
+	// NB. This TIMER adjustment value gets subtracted when this current opcode completes, so no need to persist to save-state
+	const UINT opcodeCycleAdjust = GetOpcodeCycles(reg);
+
+	SyncEvent* pSyncEvent = g_syncEvent[id];
+	if (pSyncEvent->m_active)
+		g_SynchronousEventMgr.Remove(id);
+
+	pSyncEvent->SetCycles(timerLatch + kExtraTimerCycles + opcodeCycleAdjust);
+	g_SynchronousEventMgr.Insert(pSyncEvent);
+
+	UINT counter = timerLatch + opcodeCycleAdjust;
+	if (counter > 0xFFFF)
+	{
+		_ASSERT(0);
+		counter = 0xFFFF;
+	}
+
+	return (USHORT) counter;
+}
+
 static void UpdateIFR(SY6522_AY8910* pMB, BYTE clr_ifr, BYTE set_ifr=0)
 {
 	// Need critical section to avoid data-race: main thread & SSI263Thread can both access IFR
@@ -428,67 +524,28 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			pMB->sy6522.TIMER1_LATCH.l = nValue;
 			break;
 		case 0x05:	// TIMER1H_COUNTER
-			/* Initiates timer1 & clears time-out of timer1 */
-
-			// Clear Timer Interrupt Flag.
-			UpdateIFR(pMB, IxR_TIMER1);
-
+			UpdateIFR(pMB, IxR_TIMER1);				// Clear Timer Interrupt Flag
 			pMB->sy6522.TIMER1_LATCH.h = nValue;
-
 			StartTimer1(pMB);
-
 			{
-				// NB. This TIMER adjustment value gets subtracted when this current opcode completes, so no need to persist to save-state
-				int opcodeCycleAdjust = 0;
-
-				// TODO: tighten up these checks
-				if ( (mem[regs.pc-3] == 0x8C) ||	// STY abs16
-					 (mem[regs.pc-3] == 0x8D) ||	// STA abs16
-					 (mem[regs.pc-3] == 0x8E) )		// STX abs16
-				{
-					opcodeCycleAdjust = 4;
-				}
-				else if (mem[regs.pc-2] == 0x91)	// STA (zp),y
-				{	// FT: OMT, PLS
-					opcodeCycleAdjust = 6;
-				}
-				else
-				{
-					opcodeCycleAdjust = 0;
-				}
-
-				const UINT id = nDevice*kNumTimersPer6522+0;							// TIMER1
-				SyncEvent* pSyncEvent = g_syncEvent[id];
-				if (pSyncEvent->m_active) g_SynchronousEventMgr.Remove(id);
-				pSyncEvent->SetCycles(pMB->sy6522.TIMER1_LATCH.w + kExtraTimerCycles + opcodeCycleAdjust);
-				g_SynchronousEventMgr.Insert(pSyncEvent);
-
-				pMB->sy6522.TIMER1_COUNTER.w = pMB->sy6522.TIMER1_LATCH.w + opcodeCycleAdjust;
+				const UINT id = nDevice*kNumTimersPer6522+0;	// TIMER1
+				pMB->sy6522.TIMER1_COUNTER.w = SetTimerSyncEvent(id, nReg, pMB->sy6522.TIMER1_LATCH.w);
 			}
 			break;
 		case 0x07:	// TIMER1H_LATCH
-			// Clear Timer1 Interrupt Flag.
-			UpdateIFR(pMB, IxR_TIMER1);
+			UpdateIFR(pMB, IxR_TIMER1);				// Clear Timer1 Interrupt Flag
 			pMB->sy6522.TIMER1_LATCH.h = nValue;
 			break;
 		case 0x08:	// TIMER2L
 			pMB->sy6522.TIMER2_LATCH.l = nValue;
 			break;
 		case 0x09:	// TIMER2H
-			// Clear Timer2 Interrupt Flag.
-			UpdateIFR(pMB, IxR_TIMER2);
-
-			pMB->sy6522.TIMER2_LATCH.h = nValue;			// NB. Real 6522 doesn't have TIMER2_LATCH.h
-			pMB->sy6522.TIMER2_COUNTER.w = pMB->sy6522.TIMER2_LATCH.w;
-
+			UpdateIFR(pMB, IxR_TIMER2);				// Clear Timer2 Interrupt Flag
+			pMB->sy6522.TIMER2_LATCH.h = nValue;	// NB. Real 6522 doesn't have TIMER2_LATCH.h
 			StartTimer2(pMB);
-
 			{
-				const UINT id = nDevice*kNumTimersPer6522+1;							// TIMER2
-				SyncEvent* pSyncEvent = g_syncEvent[id];
-				if (pSyncEvent->m_active) g_SynchronousEventMgr.Remove(id);
-				pSyncEvent->SetCycles(pMB->sy6522.TIMER2_LATCH.w + kExtraTimerCycles);
-				g_SynchronousEventMgr.Insert(pSyncEvent);
+				const UINT id = nDevice*kNumTimersPer6522+1;	// TIMER2
+				pMB->sy6522.TIMER2_COUNTER.w = SetTimerSyncEvent(id, nReg, pMB->sy6522.TIMER2_LATCH.w);
 			}
 			break;
 		case 0x0a:	// SERIAL_SHIFT
