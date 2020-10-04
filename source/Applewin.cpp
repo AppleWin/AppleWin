@@ -127,60 +127,6 @@ CSpeech		g_Speech;
 
 //===========================================================================
 
-int testCB(int id, int underflowCycles, ULONG uExecutedCycles)
-{
-	return 0;
-}
-
-void SyncEventTest(void)
-{
-	SyncEvent syncEvent0(0, 0x10, testCB);
-	SyncEvent syncEvent1(1, 0x20, testCB);
-	SyncEvent syncEvent2(2, 0x30, testCB);
-	SyncEvent syncEvent3(3, 0x40, testCB);
-
-	g_SynchronousEventMgr.Insert(&syncEvent0);
-	g_SynchronousEventMgr.Insert(&syncEvent1);
-	g_SynchronousEventMgr.Insert(&syncEvent2);
-	g_SynchronousEventMgr.Insert(&syncEvent3);
-	// id0 -> id1 -> id2 -> id3
-	_ASSERT(syncEvent0.m_cyclesRemaining == 0x10);
-	_ASSERT(syncEvent1.m_cyclesRemaining == 0x10);
-	_ASSERT(syncEvent2.m_cyclesRemaining == 0x10);
-	_ASSERT(syncEvent3.m_cyclesRemaining == 0x10);
-
-	g_SynchronousEventMgr.Remove(1);
-	g_SynchronousEventMgr.Remove(3);
-	g_SynchronousEventMgr.Remove(0);
-	_ASSERT(syncEvent2.m_cyclesRemaining == 0x30);
-	g_SynchronousEventMgr.Remove(2);
-
-	//
-
-	syncEvent0.m_cyclesRemaining = 0x40;
-	syncEvent1.m_cyclesRemaining = 0x30;
-	syncEvent2.m_cyclesRemaining = 0x20;
-	syncEvent3.m_cyclesRemaining = 0x10;
-
-	g_SynchronousEventMgr.Insert(&syncEvent0);
-	g_SynchronousEventMgr.Insert(&syncEvent1);
-	g_SynchronousEventMgr.Insert(&syncEvent2);
-	g_SynchronousEventMgr.Insert(&syncEvent3);
-	// id3 -> id2 -> id1 -> id0
-	_ASSERT(syncEvent0.m_cyclesRemaining == 0x10);
-	_ASSERT(syncEvent1.m_cyclesRemaining == 0x10);
-	_ASSERT(syncEvent2.m_cyclesRemaining == 0x10);
-	_ASSERT(syncEvent3.m_cyclesRemaining == 0x10);
-
-	g_SynchronousEventMgr.Remove(3);
-	g_SynchronousEventMgr.Remove(0);
-	g_SynchronousEventMgr.Remove(1);
-	_ASSERT(syncEvent2.m_cyclesRemaining == 0x20);
-	g_SynchronousEventMgr.Remove(2);
-}
-
-//===========================================================================
-
 #ifdef LOG_PERF_TIMINGS
 static UINT64 g_timeTotal = 0;
 UINT64 g_timeCpu = 0;
@@ -1437,8 +1383,6 @@ static CmdLine g_cmdLine;
 
 int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 {
-	SyncEventTest();
-
 	char startDir[_MAX_PATH];
 	GetCurrentDirectory(sizeof(startDir), startDir);
 	g_sStartDir = startDir;
