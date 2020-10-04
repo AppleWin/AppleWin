@@ -1911,10 +1911,11 @@ LRESULT CALLBACK FrameWndProc (
     case WM_USER_BENCHMARK: {
       UpdateWindow(window);
       ResetMachineState();
-      g_nAppMode = MODE_LOGO;
       DrawStatusArea((HDC)0,DRAW_TITLE);
       HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
+      g_nAppMode = MODE_BENCHMARK;
       VideoBenchmark();
+      g_nAppMode = MODE_LOGO;
       ResetMachineState();
       SetCursor(oldcursor);
       break;

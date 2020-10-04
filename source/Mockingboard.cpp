@@ -1626,7 +1626,6 @@ static void ResetState()
 	{
 		if (g_syncEvent[id] && g_syncEvent[id]->m_active)
 			g_SynchronousEventMgr.Remove(id);
-
 	}
 
 	// Not these, as they don't change on a CTRL+RESET or power-cycle:
@@ -2028,7 +2027,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 		return;
 
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
-	_ASSERT(uCycles < 0x10000);
+	_ASSERT(uCycles < 0x10000 || g_nAppMode == MODE_BENCHMARK);
 	USHORT nClocks = (USHORT)uCycles;
 
 	for (int i = 0; i < NUM_SY6522; i++)

@@ -44,11 +44,14 @@ Etc.
 #include "SaveState_Structs_common.h"
 #include "Common.h"
 
+#include "AppleWin.h"	// g_SynchronousEventMgr
+#include "CardManager.h"
 #include "CPU.h"
 #include "Frame.h"	// FrameSetCursorPosByMousePos()
 #include "Log.h"
 #include "Memory.h"
 #include "MouseInterface.h"
+#include "NTSC.h"	// NTSC_GetCyclesUntilVBlank()
 #include "YamlHelper.h"
 
 #include "../resource/resource.h"
@@ -132,7 +135,8 @@ void M6821_Listener_A( void* objTo, BYTE byData )
 CMouseInterface::CMouseInterface(UINT slot) :
 	Card(CT_MouseInterface),
 	m_uSlot(slot),
-	m_pSlotRom(NULL)
+	m_pSlotRom(NULL),
+	m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for MouseInterfaces
 {
 	m_6821.SetListenerB( this, M6821_Listener_B );
 	m_6821.SetListenerA( this, M6821_Listener_A );
@@ -145,6 +149,9 @@ CMouseInterface::CMouseInterface(UINT slot) :
 CMouseInterface::~CMouseInterface()
 {
 	delete [] m_pSlotRom;
+
+	if (m_syncEvent.m_active)
+		g_SynchronousEventMgr.Remove(m_syncEvent.m_id);
 }
 
 //===========================================================================
@@ -184,6 +191,10 @@ void CMouseInterface::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 	_ASSERT(m_uSlot == uSlot);
 	SetSlotRom();	// Pre: m_bActive == true
 	RegisterIoHandler(uSlot, &CMouseInterface::IORead, &CMouseInterface::IOWrite, NULL, NULL, this, NULL);
+
+	if (m_syncEvent.m_active) g_SynchronousEventMgr.Remove(m_syncEvent.m_id);
+	m_syncEvent.m_cyclesRemaining = NTSC_GetCyclesUntilVBlank();
+	g_SynchronousEventMgr.Insert(&m_syncEvent);
 }
 
 #if 0
@@ -221,6 +232,8 @@ void CMouseInterface::Reset()
 	Clear();
 	memset( m_byBuff, 0, sizeof( m_byBuff ) );
 	SetSlotRom();
+
+	// NB. Leave the syncEvent in the list - otherwise nothing else will re-add it!
 }
 
 void CMouseInterface::SetSlotRom()
@@ -475,16 +488,15 @@ void CMouseInterface::OnMouseEvent(bool bEventVBL)
 	}
 }
 
-void CMouseInterface::SetVBlank(bool bVBL)
+void CMouseInterface::SetVBlank(void)
 {
-//	_ASSERT(m_bActive);	// Only called from CheckInterruptSources()
+	OnMouseEvent(true);
+}
 
-	if ( m_bVBL != bVBL )
-	{
-		m_bVBL = bVBL;
-		if ( m_bVBL )	// Rising edge
-			OnMouseEvent(true);
-	}
+int CMouseInterface::SyncEventCallback(int id, int underflowCycles, ULONG uExecutedCycles)
+{
+	g_CardMgr.GetMouseCard()->SetVBlank();
+	return NTSC_GetCyclesUntilVBlank();
 }
 
 void CMouseInterface::Clear()

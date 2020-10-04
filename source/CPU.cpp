@@ -150,7 +150,7 @@ static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
 
 static bool g_irqDefer1Opcode = false;
 
-static bool g_isMouseCardInstalled = false;
+//static bool g_isMouseCardInstalled = false;
 
 //
 
@@ -207,10 +207,10 @@ void ResetCyclesExecutedForDebugger(void)
 	g_nCyclesExecuted = 0;
 }
 
-void SetMouseCardInstalled(bool installed)
-{
-	g_isMouseCardInstalled = installed;
-}
+//void SetMouseCardInstalled(bool installed)
+//{
+//	g_isMouseCardInstalled = installed;
+//}
 
 //
 
@@ -507,7 +507,7 @@ static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const boo
 
 static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdate)
 {
-	if (g_nAppMode == MODE_RUNNING)
+	if (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_BENCHMARK)
 	{
 		if (GetMainCpu() == CPU_6502)
 			return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones

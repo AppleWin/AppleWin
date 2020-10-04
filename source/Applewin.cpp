@@ -1483,7 +1483,8 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			DSUninit();
 			LogFileOutput("Main: DSUninit()\n");
 
-			g_SynchronousEventMgr.Reset();
+			if (g_bRestart)
+				g_SynchronousEventMgr.Reset();
 
 			if (g_bHookSystemKey)
 			{
@@ -2276,7 +2277,7 @@ static void RepeatInitialization(void)
 			}
 		}
 
-		SetMouseCardInstalled( g_CardMgr.IsMouseCardInstalled() );
+//		SetMouseCardInstalled( g_CardMgr.IsMouseCardInstalled() );
 }
 
 static void Shutdown(void)
