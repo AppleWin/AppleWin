@@ -150,8 +150,6 @@ static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
 
 static bool g_irqDefer1Opcode = false;
 
-//static bool g_isMouseCardInstalled = false;
-
 //
 
 static eCpuType g_MainCPU = CPU_65C02;
@@ -206,11 +204,6 @@ void ResetCyclesExecutedForDebugger(void)
 {
 	g_nCyclesExecuted = 0;
 }
-
-//void SetMouseCardInstalled(bool installed)
-//{
-//	g_isMouseCardInstalled = installed;
-//}
 
 //
 
@@ -446,28 +439,6 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 	g_irqOnLastOpcodeCycle = false;
 }
-
-#if 0
-const int IRQ_CHECK_OPCODE_FULL_SPEED = 40;	// ~128 cycles (assume 3 cycles per opcode)
-static int g_fullSpeedOpcodeCount = IRQ_CHECK_OPCODE_FULL_SPEED;
-
-static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const bool bVideoUpdate)
-{
-	if (!bVideoUpdate)
-	{
-		g_fullSpeedOpcodeCount--;
-		if (g_fullSpeedOpcodeCount >= 0)
-			return;
-		g_fullSpeedOpcodeCount = IRQ_CHECK_OPCODE_FULL_SPEED;
-	}
-
-	if (MB_UpdateCycles(uExecutedCycles))
-		g_irqOnLastOpcodeCycle = true;
-
-	if (g_isMouseCardInstalled)
-		g_CardMgr.GetMouseCard()->SetVBlank( !VideoGetVblBar(uExecutedCycles) );
-}
-#endif
 
 //===========================================================================
 

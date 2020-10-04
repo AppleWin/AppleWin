@@ -479,7 +479,6 @@ static void Snapshot_LoadState_v2(void)
 
 		MemUpdatePaging(TRUE);
 
-//		SetMouseCardInstalled( g_CardMgr.IsMouseCardInstalled() );
 		DebugReset();
 		if (g_nAppMode == MODE_DEBUG)
 			DebugDisplay(TRUE);

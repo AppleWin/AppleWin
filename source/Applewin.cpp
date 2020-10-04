@@ -2276,8 +2276,6 @@ static void RepeatInitialization(void)
 				g_cmdLine.bBoot = false;
 			}
 		}
-
-//		SetMouseCardInstalled( g_CardMgr.IsMouseCardInstalled() );
 }
 
 static void Shutdown(void)

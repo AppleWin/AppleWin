@@ -35,7 +35,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Keyboard.h"
 #include "Log.h"
 #include "Memory.h"
-#include "Mockingboard.h"	// MB_SetCumulativeCycles()
 #include "Registry.h"
 #include "Video.h"
 #include "NTSC.h"
