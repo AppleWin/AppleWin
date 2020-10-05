@@ -519,7 +519,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			break;
 		case 0x05:	// TIMER1H_COUNTER
 			{
-				UpdateIFR(pMB, IxR_TIMER1);			// Clear Timer Interrupt Flag
+				UpdateIFR(pMB, IxR_TIMER1);			// Clear Timer1 Interrupt Flag
 				pMB->sy6522.TIMER1_LATCH.h = nValue;
 				const UINT id = nDevice*kNumTimersPer6522+0;	// TIMER1
 				pMB->sy6522.TIMER1_COUNTER.w = SetTimerSyncEvent(id, nReg, pMB->sy6522.TIMER1_LATCH.w);
