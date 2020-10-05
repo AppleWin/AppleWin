@@ -48,44 +48,42 @@ void SynchronousEventManager::Insert(SyncEvent* pNewEvent)
 	SyncEvent* pCurrEvent = m_syncEventHead;
 	int newEventExtraCycles = pNewEvent->m_cyclesRemaining;
 
-	do
+	while (pCurrEvent)
 	{
 		if (newEventExtraCycles >= pCurrEvent->m_cyclesRemaining)
 		{
 			newEventExtraCycles -= pCurrEvent->m_cyclesRemaining;
-			_ASSERT(newEventExtraCycles >= 0);
-		}
-		else
-		{
-			// insert new event
-			if (!pPrevEvent)
-				m_syncEventHead = pNewEvent;
-			else
-				pPrevEvent->m_next = pNewEvent;
-			pNewEvent->m_next = pCurrEvent;
 
-			pNewEvent->m_cyclesRemaining = newEventExtraCycles;
+			pPrevEvent = pCurrEvent;
+			pCurrEvent = pCurrEvent->m_next;
 
-			// update cycles for next event
-			if (pCurrEvent)
+			if (!pCurrEvent)	// end of list
 			{
-				pCurrEvent->m_cyclesRemaining -= newEventExtraCycles;
-				_ASSERT(pCurrEvent->m_cyclesRemaining >= 0);
+				pPrevEvent->m_next = pNewEvent;
+				pNewEvent->m_cyclesRemaining = newEventExtraCycles;
 			}
 
-			return;
+			continue;
 		}
 
-		pPrevEvent = pCurrEvent;
-		pCurrEvent = pCurrEvent->m_next;
-
-		if (!pCurrEvent)	// end of list
-		{
+		// insert new event
+		if (!pPrevEvent)
+			m_syncEventHead = pNewEvent;
+		else
 			pPrevEvent->m_next = pNewEvent;
-			pNewEvent->m_cyclesRemaining = newEventExtraCycles;
+		pNewEvent->m_next = pCurrEvent;
+
+		pNewEvent->m_cyclesRemaining = newEventExtraCycles;
+
+		// update cycles for next event
+		if (pCurrEvent)
+		{
+			pCurrEvent->m_cyclesRemaining -= newEventExtraCycles;
+			_ASSERT(pCurrEvent->m_cyclesRemaining >= 0);
 		}
+
+		return;
 	}
-	while (pCurrEvent);
 }
 
 bool SynchronousEventManager::Remove(int id)
@@ -95,30 +93,31 @@ bool SynchronousEventManager::Remove(int id)
 
 	while (pCurrEvent)
 	{
-		if (pCurrEvent->m_id == id)
+		if (pCurrEvent->m_id != id)
 		{
-			// remove event
-			if (!pPrevEvent)
-				m_syncEventHead = pCurrEvent->m_next;
-			else
-				pPrevEvent->m_next = pCurrEvent->m_next;
-
-			int oldEventExtraCycles = pCurrEvent->m_cyclesRemaining;
 			pPrevEvent = pCurrEvent;
 			pCurrEvent = pCurrEvent->m_next;
-
-			pPrevEvent->m_active = false;
-			pPrevEvent->m_next = NULL;
-
-			// update cycles for next event
-			if (pCurrEvent)
-				pCurrEvent->m_cyclesRemaining += oldEventExtraCycles;
-
-			return true;
+			continue;
 		}
 
+		// remove event
+		if (!pPrevEvent)
+			m_syncEventHead = pCurrEvent->m_next;
+		else
+			pPrevEvent->m_next = pCurrEvent->m_next;
+
+		int oldEventExtraCycles = pCurrEvent->m_cyclesRemaining;
 		pPrevEvent = pCurrEvent;
 		pCurrEvent = pCurrEvent->m_next;
+
+		pPrevEvent->m_active = false;
+		pPrevEvent->m_next = NULL;
+
+		// update cycles for next event
+		if (pCurrEvent)
+			pCurrEvent->m_cyclesRemaining += oldEventExtraCycles;
+
+		return true;
 	}
 
 	_ASSERT(0);
