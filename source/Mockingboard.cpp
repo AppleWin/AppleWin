@@ -518,12 +518,12 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			pMB->sy6522.TIMER1_LATCH.l = nValue;
 			break;
 		case 0x05:	// TIMER1H_COUNTER
-			UpdateIFR(pMB, IxR_TIMER1);				// Clear Timer Interrupt Flag
-			pMB->sy6522.TIMER1_LATCH.h = nValue;
-			StartTimer1(pMB);
 			{
+				UpdateIFR(pMB, IxR_TIMER1);			// Clear Timer Interrupt Flag
+				pMB->sy6522.TIMER1_LATCH.h = nValue;
 				const UINT id = nDevice*kNumTimersPer6522+0;	// TIMER1
 				pMB->sy6522.TIMER1_COUNTER.w = SetTimerSyncEvent(id, nReg, pMB->sy6522.TIMER1_LATCH.w);
+				StartTimer1(pMB);
 			}
 			break;
 		case 0x07:	// TIMER1H_LATCH
@@ -534,12 +534,12 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			pMB->sy6522.TIMER2_LATCH.l = nValue;
 			break;
 		case 0x09:	// TIMER2H
-			UpdateIFR(pMB, IxR_TIMER2);				// Clear Timer2 Interrupt Flag
-			pMB->sy6522.TIMER2_LATCH.h = nValue;	// NB. Real 6522 doesn't have TIMER2_LATCH.h
-			StartTimer2(pMB);
 			{
+				UpdateIFR(pMB, IxR_TIMER2);			// Clear Timer2 Interrupt Flag
+				pMB->sy6522.TIMER2_LATCH.h = nValue;	// NB. Real 6522 doesn't have TIMER2_LATCH.h
 				const UINT id = nDevice*kNumTimersPer6522+1;	// TIMER2
 				pMB->sy6522.TIMER2_COUNTER.w = SetTimerSyncEvent(id, nReg, pMB->sy6522.TIMER2_LATCH.w);
+				StartTimer2(pMB);
 			}
 			break;
 		case 0x0a:	// SERIAL_SHIFT
