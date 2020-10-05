@@ -405,7 +405,8 @@ sound_write_buf_pstereo( libspectrum_signed_word * out, int c )
 #endif
 
 
-
+#define USE_OLD_AY_DO_TONE 0
+#if USE_OLD_AY_DO_TONE
 /* not great having this as a macro to inline it, but it's only
  * a fairly short routine, and it saves messing about.
  * (XXX ummm, possibly not so true any more :-))
@@ -446,6 +447,28 @@ sound_write_buf_pstereo( libspectrum_signed_word * out, int c )
   /* (That said, this should also help avoid aliasing noise.)   */	\
   if( count > 1 )							\
     ( var ) = -( level )
+#else
+/*static inline*/ void
+CAY8910::ay_do_tone( int level, unsigned int tone_count, int *var, int chan )
+{
+  *var = 0;
+
+  ay_tone_tick[ chan ] += tone_count;
+
+  if( ay_tone_tick[ chan ] >= ay_tone_period[ chan ] ) {
+    ay_tone_tick[ chan ] -= ay_tone_period[ chan ];
+    ay_tone_high[ chan ] = !ay_tone_high[ chan ];
+  }
+
+  if( level ) {
+    if( ay_tone_high[ chan ] )
+      *var = level;
+    else {
+      *var = 0;
+    }
+  }
+}
+#endif
 
 
 #if 0
@@ -656,21 +679,33 @@ void CAY8910::sound_ay_overlay( void )
 
     if( ( mixer & 1 ) == 0 ) {
       level = chan1;
+#if USE_OLD_AY_DO_TONE
       AY_DO_TONE( chan1, 0 );
+#else
+	  ay_do_tone( level, tone_count, &chan1, 0 );
+#endif
     }
     if( ( mixer & 0x08 ) == 0 && noise_toggle )
       chan1 = 0;
 
     if( ( mixer & 2 ) == 0 ) {
       level = chan2;
+#if USE_OLD_AY_DO_TONE
       AY_DO_TONE( chan2, 1 );
+#else
+      ay_do_tone( level, tone_count, &chan2, 1 );
+#endif
     }
     if( ( mixer & 0x10 ) == 0 && noise_toggle )
       chan2 = 0;
 
     if( ( mixer & 4 ) == 0 ) {
       level = chan3;
+#if USE_OLD_AY_DO_TONE
       AY_DO_TONE( chan3, 2 );
+#else
+      ay_do_tone( level, tone_count, &chan3, 2 );
+#endif
     }
     if( ( mixer & 0x20 ) == 0 && noise_toggle )
       chan3 = 0;

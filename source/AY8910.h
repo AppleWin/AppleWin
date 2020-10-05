@@ -53,6 +53,7 @@ private:
 	void init( void );
 	void sound_end( void );
 	void sound_ay_overlay( void );
+	void ay_do_tone( int level, unsigned int tone_count, int *var, int chan );
 
 private:
 	/* foo_subcycles are fixed-point with low 16 bits as fractional part.
