@@ -493,7 +493,7 @@ void CMouseInterface::SetVBlank(void)
 	OnMouseEvent(true);
 }
 
-int CMouseInterface::SyncEventCallback(int id, int underflowCycles, ULONG uExecutedCycles)
+int CMouseInterface::SyncEventCallback(int id, ULONG uExecutedCycles)
 {
 	g_CardMgr.GetMouseCard()->SetVBlank();
 	return NTSC_GetCyclesUntilVBlank();

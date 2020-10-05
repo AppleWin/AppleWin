@@ -63,7 +63,7 @@ protected:
 	void SetClampX(int iMinX, int iMaxX);
 	void SetClampY(int iMinY, int iMaxY);
 
-	static int SyncEventCallback(int id, int underflowCycles, ULONG uExecutedCycles);
+	static int SyncEventCallback(int id, ULONG uExecutedCycles);
 
 	void SaveSnapshotMC6821(class YamlSaveHelper& yamlSaveHelper, std::string key);
 	void LoadSnapshotMC6821(class YamlLoadHelper& yamlLoadHelper, std::string key);

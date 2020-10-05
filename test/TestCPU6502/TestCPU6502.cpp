@@ -1254,7 +1254,7 @@ int GH321_test()
 
 //-------------------------------------
 
-int testCB(int id, int underflowCycles, ULONG uExecutedCycles)
+int testCB(int id, ULONG uExecutedCycles)
 {
 	return 0;
 }

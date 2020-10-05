@@ -224,7 +224,7 @@ static UINT g_cyclesThisAudioFrame = 0;
 // Forward refs:
 static DWORD WINAPI SSI263Thread(LPVOID);
 static void Votrax_Write(BYTE nDevice, BYTE nValue);
-static int MB_SyncEventCallback(int id, int underflowCycles, ULONG uExecutedCycles);
+static int MB_SyncEventCallback(int id, ULONG uExecutedCycles);
 
 //---------------------------------------------------------------------------
 
@@ -2064,7 +2064,7 @@ static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, 
 
 // Called by:
 // . CpuExecute() every ~1000 cycles @ 1MHz
-// . MB_SyncEventCallback() on a TIMER1/2 interrupt
+// . MB_SyncEventCallback() on a TIMER1/2 underflow
 // . MB_Read() / MB_Write() (for both normal & full-speed)
 void MB_UpdateCycles(ULONG uExecutedCycles)
 {
@@ -2108,10 +2108,9 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 
 //-----------------------------------------------------------------------------
 
-static int MB_SyncEventCallback(int id, int underflowCycles, ULONG uExecutedCycles)
+static int MB_SyncEventCallback(int id, ULONG uExecutedCycles)
 {
 	SY6522_AY8910* pMB = &g_MB[id / kNumTimersPer6522];
-	_ASSERT(underflowCycles >= 0);
 
 	if ((id & 1) == 0)
 	{
@@ -2131,7 +2130,7 @@ static int MB_SyncEventCallback(int id, int underflowCycles, ULONG uExecutedCycl
 		MB_UpdateCycles(uExecutedCycles);
 
 		StartTimer1(pMB);
-		return pMB->sy6522.TIMER1_COUNTER.w+2;
+		return pMB->sy6522.TIMER1_COUNTER.w + kExtraTimerCycles;
 	}
 	else
 	{
