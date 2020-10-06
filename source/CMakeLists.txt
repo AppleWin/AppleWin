@@ -1,6 +1,8 @@
 include(FindPkgConfig)
 
 add_library(appleii SHARED
+  linux/data.cpp
+
   SaveState.cpp
   Pravets.cpp
   Tape.cpp
@@ -36,7 +38,6 @@ add_library(appleii SHARED
   linux/windows/strings.cpp
   linux/windows/misc.cpp
 
-  linux/data.cpp
   linux/dummies.cpp
   linux/state.cpp
   linux/benchmark.cpp

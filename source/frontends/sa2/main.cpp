@@ -9,6 +9,7 @@
 
 #include "StdAfx.h"
 #include "Common.h"
+#include "CardManager.h"
 #include "Applewin.h"
 #include "Disk.h"
 #include "Harddisk.h"
@@ -48,14 +49,17 @@ namespace
     MemInitialize();
     VideoInitialize();
 
-    sg_Disk2Card.Reset();
+    g_CardMgr.GetDisk2CardMgr().Reset();
     HD_Reset();
   }
 
   void stopEmulator()
   {
-    sg_Mouse.Uninitialize();
-    sg_Mouse.Reset();
+    CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
+    if (pMouseCard)
+    {
+      pMouseCard->Reset();
+    }
     MemDestroy();
   }
 
@@ -65,7 +69,7 @@ namespace
     PrintDestroy();
     CpuDestroy();
 
-    sg_Disk2Card.Destroy();
+    g_CardMgr.GetDisk2CardMgr().Destroy();
     ImageDestroy();
     fclose(g_fh);
     g_fh = nullptr;
@@ -236,7 +240,7 @@ void run_sdl()
     const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
     g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-    sg_Disk2Card.UpdateDriveState(uActualCyclesExecuted);
+    g_CardMgr.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
 
     const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
     if (g_dwCyclesThisFrame >= dwClksPerFrame)
