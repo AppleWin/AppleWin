@@ -20,3 +20,4 @@
 #include "linux/windows/mmreg.h"
 #include "linux/windows/mmsystem.h"
 #include "linux/windows/dmusicc.h"
+#include "linux/windows/winnls.h"

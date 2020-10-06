@@ -48,6 +48,7 @@ add_library(appleii SHARED
   linux/windows/dsound.cpp
   linux/windows/guiddef.cpp
   linux/windows/dmusicc.cpp
+  linux/windows/winnls.cpp
 
   linux/data.cpp
   linux/benchmark.cpp

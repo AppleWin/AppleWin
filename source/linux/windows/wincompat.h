@@ -139,6 +139,7 @@ typedef short SHORT;
 typedef /*long*/int LONG;
 typedef SHORT *PSHORT;
 typedef LONG *PLONG;
+typedef wchar_t WCHAR;
 #endif
 
 typedef LONG            HRESULT;
@@ -166,6 +167,8 @@ typedef LPSTR PTSTR, LPTSTR;
 typedef LPCSTR LPCTSTR;
 typedef LPSTR LP;
 
+typedef WCHAR *LPWSTR;
+typedef CONST WCHAR *LPCWSTR;
 
 #ifndef _TCHAR_DEFINED
 // TCHAR a typedef or a define?
