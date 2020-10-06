@@ -86,4 +86,5 @@ target_link_libraries(appleii PRIVATE
   ${MINIZIP_LIBRARIES}
   )
 
-install(TARGETS appleii)
+install(TARGETS appleii
+  DESTINATION lib)

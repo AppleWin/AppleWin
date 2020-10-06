@@ -36,4 +36,5 @@ target_link_libraries(qapple PRIVATE
   appleii
   )
 
-install(TARGETS qapple)
+install(TARGETS qapple
+  DESTINATION bin)

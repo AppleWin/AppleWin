@@ -42,5 +42,8 @@ file(RELATIVE_PATH SHARE_PATH ${CMAKE_INSTALL_FULL_BINDIR} ${CMAKE_INSTALL_FULL_
 
 configure_file(config.h.in config.h)
 
-install(TARGETS applen)
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/resource DESTINATION ${CMAKE_INSTALL_DATADIR}/applewin)
+install(TARGETS applen
+  DESTINATION bin)
+
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/resource
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/applewin)
