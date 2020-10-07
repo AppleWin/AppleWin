@@ -1840,12 +1840,12 @@ void MemReset()
 	//   F2. Ctrl-F2. CALL-151, C050 C053 C057
 	// OR
 	//   F2, Ctrl-F2, F7, HGR
-	DWORD clock = getRandomTime();
+	DWORD randTime = getRandomTime();
 	MemoryInitPattern_e eMemoryInitPattern = static_cast<MemoryInitPattern_e>(g_nMemoryClearType);
 
 	if (g_nMemoryClearType < 0)	// random
 	{
-		eMemoryInitPattern = static_cast<MemoryInitPattern_e>( clock % NUM_MIP );
+		eMemoryInitPattern = static_cast<MemoryInitPattern_e>( randTime % NUM_MIP );
 
 		// Don't use unless manually specified as a
 		// few badly written programs will not work correctly
@@ -1866,12 +1866,12 @@ void MemReset()
 			// Exceptions: xx28 xx29 xx68 xx69 Apple //e
 			for( iByte = 0x0000; iByte < 0xC000; iByte += 512 )
 			{
-				clock = getRandomTime();
-				memmain[ iByte + 0x28 ] = (clock >>  0) & 0xFF;
-				memmain[ iByte + 0x29 ] = (clock >>  8) & 0xFF;
-				clock = getRandomTime();
-				memmain[ iByte + 0x68 ] = (clock >>  0) & 0xFF;
-				memmain[ iByte + 0x69 ] = (clock >>  8) & 0xFF;
+				randTime = getRandomTime();
+				memmain[ iByte + 0x28 ] = (randTime >>  0) & 0xFF;
+				memmain[ iByte + 0x29 ] = (randTime >>  8) & 0xFF;
+				randTime = getRandomTime();
+				memmain[ iByte + 0x68 ] = (randTime >>  0) & 0xFF;
+				memmain[ iByte + 0x69 ] = (randTime >>  8) & 0xFF;
 			}
 			break;
 		
@@ -1907,9 +1907,9 @@ void MemReset()
 			{
 				for( int i = 0; i < 256; i++ )
 				{
-					clock = getRandomTime();
-					random[ (i+0) & 0xFF ] = (clock >>  0) & 0xFF;
-					random[ (i+1) & 0xFF ] = (clock >> 11) & 0xFF;
+					randTime = getRandomTime();
+					random[ (i+0) & 0xFF ] = (randTime >>  0) & 0xFF;
+					random[ (i+1) & 0xFF ] = (randTime >> 11) & 0xFF;
 				}
 
 				memcpy( &memmain[ iByte ], random, 256 );
@@ -1932,9 +1932,9 @@ void MemReset()
 
 	// https://github.com/AppleWin/AppleWin/issues/206
 	// Work-around for a cold-booting bug in "Pooyan" which expects RNDL and RNDH to be non-zero.
-	clock = getRandomTime();
-	memmain[ 0x4E ] = 0x20 | (clock >> 0) & 0xFF;
-	memmain[ 0x4F ] = 0x20 | (clock >> 8) & 0xFF;
+	randTime = getRandomTime();
+	memmain[ 0x4E ] = 0x20 | (randTime >> 0) & 0xFF;
+	memmain[ 0x4F ] = 0x20 | (randTime >> 8) & 0xFF;
 
 	// https://github.com/AppleWin/AppleWin/issues/222
 	// MIP_PAGE_ADDRESS_LOW breaks a few badly written programs!
