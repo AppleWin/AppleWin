@@ -2190,7 +2190,7 @@ Update_t CmdNOP (int nArgs)
 	int iOpmode;
 	int nOpbytes;
 
- 	_6502_GetOpcodeOpmodeOpbyte( iOpcode, iOpmode, nOpbytes );
+	_6502_GetOpcodeOpmodeOpbyte( iOpcode, iOpmode, nOpbytes );
 
 	while (nOpbytes--)
 	{
@@ -3034,7 +3034,7 @@ void DisasmCalcTopFromCurAddress( bool bUpdateTop )
 			break;
 		}
 		iTop++;
- 	}
+	}
 
 	if (! bFound)
 	{
@@ -3061,7 +3061,7 @@ void DisasmCalcTopFromCurAddress( bool bUpdateTop )
 			MessageBox( g_hFrameWindow, sText, "ERROR", MB_OK );
 #endif
 	}
- }
+}
 
 
 //===========================================================================
