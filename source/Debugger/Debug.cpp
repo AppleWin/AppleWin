@@ -7837,7 +7837,7 @@ int FindCommand( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 					if (iCommand_)
 						*iCommand_ = iCommand;
 // !_tcscmp
-					if (!_tcsicmp(pName, pCommandName)) // exact match?
+					if (!_tcsicmp(sCommand, pCommandName)) // exact match?
 					{
 	//					if (iCommand_)
 	//						*iCommand_ = iCommand;
@@ -7965,8 +7965,9 @@ Update_t ExecuteCommand (int nArgs)
 				}
 				else
 				// ####L -> Unassemble $address
-				if ((pCommand[nLen-1] == 'L') ||
-					(pCommand[nLen-1] == 'l'))
+				if (((pCommand[nLen-1] == 'L') ||
+				     (pCommand[nLen-1] == 'l'))&&
+				    (strcmp("cl", pCommand) != 0)) // workaround for ambiguous "cl": must be handled by "clear flag" command
 				{
 					pCommand[nLen-1] = 0;
 					ArgsGetValue( pArg, & nAddress );
