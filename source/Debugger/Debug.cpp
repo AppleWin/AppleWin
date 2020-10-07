@@ -1826,7 +1826,13 @@ Update_t _CmdAssemble( WORD nAddress, int iArg, int nArgs )
 
 	bool bStatus = Assemble( iArg, nArgs, nAddress );
 	if ( bStatus)
+	{
+		// move disassembler to current address
+		g_nDisasmCurAddress = g_nAssemblerAddress;
+		WindowUpdateDisasmSize(); // calc cur line
+		DisasmCalcTopBotAddress();
 		return UPDATE_ALL;
+	}
 		
 	return UPDATE_CONSOLE_DISPLAY; // UPDATE_NOTHING;
 }
@@ -1845,6 +1851,14 @@ Update_t CmdAssemble (int nArgs)
 	// 1 : A address
 	// 2+: A address mnemonic...
 
+	if (nArgs > 0)
+		g_nAssemblerAddress = g_aArgs[1].nValue;
+
+	// move disassembler window to current assembler address
+	g_nDisasmCurAddress = g_nAssemblerAddress;       // (2)
+	WindowUpdateDisasmSize(); // calc cur line
+	DisasmCalcTopBotAddress();
+
 	if (! nArgs)
 	{
 //		return Help_Arg_1( CMD_ASSEMBLE );
@@ -1853,8 +1867,6 @@ Update_t CmdAssemble (int nArgs)
 		AssemblerOn();
 		return UPDATE_CONSOLE_DISPLAY;
 	}
-		
-	g_nAssemblerAddress = g_aArgs[1].nValue;
 
 	if (nArgs == 1)
 	{
