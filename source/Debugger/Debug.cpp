@@ -898,7 +898,7 @@ static void SetDebugBreakOnInvalid( int iOpcodeType, int nValue )
 Update_t CmdBreakInvalid (int nArgs) // Breakpoint IFF Full-speed!
 {
 	if (nArgs > 2) // || (nArgs == 0))
-		goto _Help;
+		return HelpLastCommand();
 
 	int iType = AM_IMPLIED; // default to BRK
 	int nActive = 0;
@@ -3754,7 +3754,7 @@ Update_t CmdFlag (int nArgs)
 Update_t CmdDisk ( int nArgs)
 {
 	if (! nArgs)
-		goto _Help;
+		return HelpLastCommand();
 
 	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
 		return ConsoleDisplayError("No DiskII card in slot-6");
@@ -3768,7 +3768,7 @@ Update_t CmdDisk ( int nArgs)
 	if (iParam == PARAM_DISK_INFO)
 	{
 		if (nArgs > 2)
-			goto _Help;
+			return HelpLastCommand();
 
 		char buffer[200] = "";
 		ConsoleBufferPushFormat(buffer, "FW%2d: D%d at T$%s, phase $%s, offset $%X, mask $%02X, extraCycles %.2f, %s",
@@ -3786,7 +3786,7 @@ Update_t CmdDisk ( int nArgs)
 	}
 
 	if (nArgs < 2)
-		goto _Help;
+		return HelpLastCommand();
 
 	// first param should be drive
 	int iDrive = g_aArgs[ 1 ].nValue;
@@ -3800,12 +3800,12 @@ Update_t CmdDisk ( int nArgs)
 	int nFound = FindParam( g_aArgs[ 2 ].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END );
 
 	if (! nFound)
-		goto _Help;
+		return HelpLastCommand();
 
 	if (iParam == PARAM_DISK_EJECT)
 	{
 		if (nArgs > 2)
-			goto _Help;
+			return HelpLastCommand();
 
 		diskCard.EjectDisk( iDrive );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
@@ -3814,7 +3814,7 @@ Update_t CmdDisk ( int nArgs)
 	if (iParam == PARAM_DISK_PROTECT)
 	{
 		if (nArgs > 3)
-			goto _Help;
+			return HelpLastCommand();
 
 		bool bProtect = true;
 
@@ -3827,7 +3827,7 @@ Update_t CmdDisk ( int nArgs)
 	else
 	{
 		if (nArgs != 3)
-			goto _Help;
+			return HelpLastCommand();
 
 		LPCTSTR pDiskName = g_aArgs[ 3 ].sArg;
 
@@ -3837,9 +3837,6 @@ Update_t CmdDisk ( int nArgs)
 	}
 
 	return UPDATE_CONSOLE_DISPLAY;
-
-_Help:
-	return HelpLastCommand();
 }
 
 
@@ -6336,7 +6333,7 @@ Update_t CmdOutputPrintf (int nArgs)
 	int nValue = 0;
 
 	if (! nArgs)
-		goto _Help;
+		return Help_Arg_1( CMD_OUTPUT_PRINTF );
 
 	int nLen = 0;
 
