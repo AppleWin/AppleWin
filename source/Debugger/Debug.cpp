@@ -6501,7 +6501,7 @@ Update_t CmdOutputRun (int nArgs)
 
 //	if (g_aArgs[1].bType & TYPE_QUOTED_2)
 
-	sMiniFileName = pFileName.substr(0, min(pFileName.size(), CONSOLE_WIDTH));
+	sMiniFileName = pFileName.substr(0, MIN(pFileName.size(), CONSOLE_WIDTH));
 //	_tcscat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
 	if (pFileName[0] == '\\' || pFileName[1] == ':')	// NB. Any prefix quote has already been stripped
@@ -6778,7 +6778,7 @@ Update_t CmdSource (int nArgs)
 				const std::string sFileName = g_sProgramDir + pFileName;
 
 				const int MAX_MINI_FILENAME = 20; 
-				const std::string sMiniFileName = sFileName.substr(0, min(MAX_MINI_FILENAME, sFileName.size()));
+				const std::string sMiniFileName = sFileName.substr(0, MIN(MAX_MINI_FILENAME, sFileName.size()));
 
 				TCHAR buffer[MAX_PATH] = { 0 };
 

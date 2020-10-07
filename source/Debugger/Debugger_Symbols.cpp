@@ -556,7 +556,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 	char sText[ CONSOLE_WIDTH * 3 ];
 	bool bFileDisplayed = false;
 
-	const int nMaxLen = min(MAX_TARGET_LEN,MAX_SYMBOLS_LEN);
+	const int nMaxLen = MIN(MAX_TARGET_LEN,MAX_SYMBOLS_LEN);
 
 	int nSymbolsLoaded = 0;
 
