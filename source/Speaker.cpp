@@ -79,8 +79,6 @@ double		    g_fClksPerSpkrSample;		// Setup in SetClksPerSpkrSample()
 bool			g_bQuieterSpeaker = false;
 
 // Globals
-static DWORD	lastcyclenum	= 0;
-static DWORD	toggles			= 0;
 static unsigned __int64	g_nSpkrQuietCycleCount = 0;
 static unsigned __int64 g_nSpkrLastCycle = 0;
 static bool g_bSpkrToggleFlag = false;
@@ -90,9 +88,9 @@ static bool g_bSpkrAvailable = false;
 //-----------------------------------------------------------------------------
 
 // Forward refs:
-ULONG   Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSamples);
-ULONG   Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples);
-void    Spkr_SetActive(bool bActive);
+static ULONG   Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSamples);
+static ULONG   Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples);
+static void    Spkr_SetActive(bool bActive);
 
 //=============================================================================
 
