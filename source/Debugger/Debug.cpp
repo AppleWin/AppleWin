@@ -4762,7 +4762,7 @@ Update_t CmdMemorySave (int nArgs)
 //		if (g_aArgs[1].bType & TOKEN_QUOTE_DOUBLE)
 //			bHaveFileName = true;
 
-		int iArgComma1  = 2;
+//		int iArgComma1  = 2;
 		int iArgAddress = 3;
 		int iArgComma2  = 4;
 		int iArgLength  = 5;
@@ -4771,7 +4771,7 @@ Update_t CmdMemorySave (int nArgs)
 
 		if (! bHaveFileName)
 		{
-			iArgComma1  = 1;
+//			iArgComma1  = 1;
 			iArgAddress = 2;
 			iArgComma2  = 3;
 			iArgLength  = 4;
@@ -5767,8 +5767,6 @@ int _SearchMemoryFind(
 				// if next block matches, then this block matches (since we are wild)
 				if ((iBlock + 1) == nMemBlocks) // there is no next block, hence we match
 					continue;
-					
-				MemorySearch_t ms2 = vMemorySearchValues.at( iBlock + 1 );
 
 				WORD nAddress3 = nAddress2;
 				for (nAddress3 = nAddress2; nAddress3 < nAddressEnd; nAddress3++ )
@@ -6338,7 +6336,6 @@ Update_t CmdOutputPrintf (int nArgs)
 	int nLen = 0;
 
 	PrintState_e eThis = PS_LITERAL;
-//	PrintState_e eNext = PS_NEXT_ARG_HEX; // PS_LITERAL;
 
 	int nWidth = 0;
 
