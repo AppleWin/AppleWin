@@ -21,6 +21,7 @@
 #include "SaveState.h"
 #include "Speaker.h"
 #include "Riff.h"
+#include "RGBMonitor.h"
 
 #include "linux/data.h"
 #include "linux/benchmark.h"
@@ -107,6 +108,7 @@ namespace
         SpkrInitialize();
         MemInitialize();
         VideoInitialize();
+        VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
 
         emulator->displayLogo();
 
