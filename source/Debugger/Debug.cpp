@@ -297,8 +297,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static bool      g_bBenchmarking = false;
 
-	static BOOL      fulldisp      = 0;
-
 	static BOOL      g_bProfiling       = 0;
 	static int       g_nDebugSteps      = 0;
 	static DWORD     g_nDebugStepCycles = 0;
