@@ -20,19 +20,27 @@ std::string getPath(const std::string & resource)
   return resource;
 }
 
-HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & resource)
+HBITMAP LoadBitmap(HINSTANCE hInstance, const char * resource)
 {
-  const std::string path = getPath(resource);
-  std::shared_ptr<SDL_Surface> surface(SDL_LoadBMP(path.c_str()), SDL_FreeSurface);
-  if (surface)
+  if (resource)
   {
-    CBITMAP * bitmap = new CBITMAP;
-    bitmap->surface = surface;
-    return bitmap;
+    const std::string path = getPath(resource);
+    std::shared_ptr<SDL_Surface> surface(SDL_LoadBMP(path.c_str()), SDL_FreeSurface);
+    if (surface)
+    {
+      CBITMAP * bitmap = new CBITMAP;
+      bitmap->surface = surface;
+      return bitmap;
+    }
+    else
+    {
+      std::cerr << "Cannot load: " << resource << " with path: " << path << std::endl;
+      return nullptr;
+    }
   }
   else
   {
-    std::cerr << "Cannot load: " << resource << " with path: " << path << std::endl;
+    std::cerr << "Cannot load invalid resource." << std::endl;
     return nullptr;
   }
 }

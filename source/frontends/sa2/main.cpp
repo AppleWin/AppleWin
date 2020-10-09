@@ -23,6 +23,7 @@
 #include "Video.h"
 #include "NTSC.h"
 #include "SaveState.h"
+#include "RGBMonitor.h"
 
 
 namespace
@@ -48,6 +49,7 @@ namespace
 
     MemInitialize();
     VideoInitialize();
+    VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
 
     g_CardMgr.GetDisk2CardMgr().Reset();
     HD_Reset();
@@ -282,4 +284,13 @@ int main(int, char**)
   SDL_Quit();
 
   return exit;
+}
+
+// Mockingboard
+void registerSoundBuffer(IDirectSoundBuffer * buffer)
+{
+}
+
+void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
+{
 }

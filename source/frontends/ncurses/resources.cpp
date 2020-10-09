@@ -6,7 +6,7 @@
 #include <libgen.h>
 
 #include "Log.h"
-#include "config.h"
+#include "../ncurses/config.h"
 
 namespace
 {
@@ -83,16 +83,4 @@ HRSRC FindResource(void *, const char * filename, const char *)
   }
 
   return result;
-}
-
-HBITMAP LoadBitmap(HINSTANCE hInstance, const char * filename)
-{
-  LogFileOutput("LoadBitmap: not loading resource %s\n", filename);
-  return nullptr;
-}
-
-LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits)
-{
-  memset(lpvBits, 0, cb);
-  return cb;
 }

@@ -1,9 +1,9 @@
 #include "StdAfx.h"
 #include "Log.h"
 
-HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename)
+HBITMAP LoadBitmap(HINSTANCE hInstance, const char * filename)
 {
-  LogFileOutput("LoadBitmap: not loading resource %s\n", filename.c_str());
+  LogFileOutput("LoadBitmap: not loading resource %s\n", filename);
   return nullptr;
 }
 
