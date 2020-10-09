@@ -233,6 +233,8 @@ void run_sdl(int argc, const char * argv [])
   initialiseEmulator();
   loadEmulator();
 
+  applyOptions(options);
+
   const int width = GetFrameBufferWidth();
   const int height = GetFrameBufferHeight();
   const int sx = GetFrameBufferBorderWidth();
@@ -241,6 +243,7 @@ void run_sdl(int argc, const char * argv [])
   const int sh = GetFrameBufferBorderlessHeight();
 
   int multiplier = 1;
+  bool fullscreen = false;
 
   std::shared_ptr<SDL_Window> win(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, sw, sh, SDL_WINDOW_SHOWN), SDL_DestroyWindow);
   if (!win)
@@ -294,6 +297,19 @@ void run_sdl(int argc, const char * argv [])
 	      {
 		multiplier = multiplier == 1 ? 2 : 1;
 		SDL_SetWindowSize(win.get(), sw * multiplier, sh * multiplier);
+	      }
+	      else if (!(e.key.keysym.mod & KMOD_SHIFT))
+	      {
+		fullscreen = !fullscreen;
+		SDL_SetWindowFullscreen(win.get(), fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+	      }
+	      break;
+	    }
+	  case SDL_SCANCODE_F5:
+	    {
+	      if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+	      {
+		dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->DriveSwap();
 	      }
 	      break;
 	    }
