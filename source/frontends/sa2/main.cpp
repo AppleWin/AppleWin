@@ -139,6 +139,20 @@ namespace
     VideoRedrawScreen();
   }
 
+  int getFPS()
+  {
+    SDL_DisplayMode current;
+
+    int should_be_zero = SDL_GetCurrentDisplayMode(0, &current);
+
+    if (should_be_zero)
+    {
+      throw std::string(SDL_GetError());
+    }
+
+    return current.refresh_rate;
+  }
+
 }
 
 int MessageBox(HWND, const char * text, const char * caption, UINT type)
@@ -207,6 +221,10 @@ void run_sdl()
   const Uint32 format = SDL_PIXELFORMAT_BGRA32;
   std::shared_ptr<SDL_Texture> tex(SDL_CreateTexture(ren.get(), format, SDL_TEXTUREACCESS_STREAMING, width, height), SDL_DestroyTexture);
 
+  const int fps = getFPS();
+  const DWORD uCyclesToExecute = int(g_fCurrentCLK6502 / fps);
+  const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
+
   bool quit = false;
   do
   {
@@ -248,22 +266,16 @@ void run_sdl()
     }
 
     const bool bVideoUpdate = true;
-    DWORD uCyclesToExecute = 1000;
     const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
     g_dwCyclesThisFrame += uActualCyclesExecuted;
 
     g_CardMgr.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
 
-    const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-    if (g_dwCyclesThisFrame >= dwClksPerFrame)
-    {
-      if (g_dwCyclesThisFrame >= dwClksPerFrame)
-      {
-	const SDL_Rect srect = refreshTexture(tex);
-	renderScreen(ren, tex, srect);
-      }
-      g_dwCyclesThisFrame -= dwClksPerFrame;
-    }
+    // SDL2 seems to synch with screen refresh rate so we do not need to worry about timers
+    const SDL_Rect srect = refreshTexture(tex);
+    renderScreen(ren, tex, srect);
+
+    g_dwCyclesThisFrame = (g_dwCyclesThisFrame + g_dwCyclesThisFrame) % dwClksPerFrame;
   } while (!quit);
 
   stopEmulator();
