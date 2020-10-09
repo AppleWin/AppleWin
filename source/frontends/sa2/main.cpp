@@ -164,6 +164,16 @@ BYTE SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
   return MemReadFloatingBus(uExecutedCycles);
 }
 
+
+// Mockingboard
+void registerSoundBuffer(IDirectSoundBuffer * buffer)
+{
+}
+
+void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
+{
+}
+
 void run_sdl()
 {
   InitializeRegistry("applen.conf");
@@ -284,13 +294,4 @@ int main(int, char**)
   SDL_Quit();
 
   return exit;
-}
-
-// Mockingboard
-void registerSoundBuffer(IDirectSoundBuffer * buffer)
-{
-}
-
-void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
-{
 }

@@ -25,7 +25,7 @@ namespace
     }
   }
 
-  std::string getResourcePath()
+  std::string getResourcePathImpl()
   {
     char self[1024] = {0};
     const int ch = readlink("/proc/self/exe", self,  sizeof(self));
@@ -51,7 +51,12 @@ namespace
     return std::string();
   }
 
-  const std::string resourcePath = getResourcePath();
+}
+
+const std::string & getResourcePath()
+{
+  static const std::string path = getResourcePathImpl();
+  return path;
 }
 
 HRSRC FindResource(void *, const char * filename, const char *)
@@ -60,7 +65,7 @@ HRSRC FindResource(void *, const char * filename, const char *)
 
   if (filename)
   {
-    const std::string path = resourcePath + filename;
+    const std::string path = getResourcePath() + filename;
 
     int fd = open(path.c_str(), O_RDONLY);
 

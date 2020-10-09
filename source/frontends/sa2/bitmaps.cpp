@@ -4,18 +4,19 @@
 
 #include <linux/interface.h>
 #include <linux/windows/misc.h>
+#include <frontends/ncurses/resources.h>
 
 struct CBITMAP : public CHANDLE
 {
   std::shared_ptr<SDL_Surface> surface;
 };
 
-std::string getPath(const std::string & resource)
+std::string getFilename(const std::string & resource)
 {
-  if (resource == "CHARSET40") return "resource/CHARSET4.BMP";
-  if (resource == "CHARSET82") return "resource/CHARSET82.bmp";
-  if (resource == "CHARSET8M") return "resource/CHARSET8M.bmp";
-  if (resource == "CHARSET8C") return "resource/CHARSET8C.bmp";
+  if (resource == "CHARSET40") return "CHARSET4.BMP";
+  if (resource == "CHARSET82") return "CHARSET82.bmp";
+  if (resource == "CHARSET8M") return "CHARSET8M.bmp";
+  if (resource == "CHARSET8C") return "CHARSET8C.bmp";
 
   return resource;
 }
@@ -24,7 +25,9 @@ HBITMAP LoadBitmap(HINSTANCE hInstance, const char * resource)
 {
   if (resource)
   {
-    const std::string path = getPath(resource);
+    const std::string filename = getFilename(resource);
+    const std::string path = getResourcePath() + filename;
+
     std::shared_ptr<SDL_Surface> surface(SDL_LoadBMP(path.c_str()), SDL_FreeSurface);
     if (surface)
     {
