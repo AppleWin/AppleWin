@@ -28,7 +28,6 @@ add_library(appleii SHARED
   NTSC_CharSet.cpp
   CardManager.cpp
   Disk2CardManager.cpp
-  SaveState.cpp  # uses g_CardMgr in m_ConfigNew (reverse order)
   Riff.cpp
 
   Configuration/PropertySheetHelper.cpp
@@ -63,6 +62,7 @@ add_library(appleii SHARED
   linux/duplicates/SerialComms.cpp
   linux/duplicates/IPropertySheet.cpp
   linux/duplicates/Applewin.cpp   # defines g_CardMgr (reverse order)
+  SaveState.cpp  # uses g_CardMgr in m_ConfigNew (reverse order)
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp
