@@ -79,6 +79,10 @@
 			<param name="Local" value="savestate.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Command line">
+			<param name="Local" value="CommandLine.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Sound">
 			<param name="Local" value="sound.html">
 			</OBJECT>
@@ -101,10 +105,6 @@
 				<param name="Local" value="uthernet-wifi-workaround.html">
 				</OBJECT>
 		</UL>
-		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Command line">
-			<param name="Local" value="CommandLine.html">
-			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="AppleWin Configuration">
 			<param name="Local" value="configuration.html">
@@ -196,6 +196,10 @@
 				<param name="Local" value="dbg-breakpoints.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Bookmarks">
+				<param name="Local" value="dbg-bookmarks.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Configuration">
 				<param name="Local" value="dbg-configuration.html">
 				</OBJECT>
@@ -211,7 +215,7 @@
 				<param name="Local" value="newsgroups.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Internet FTP Sites">
+				<param name="Name" value="Internet Sites">
 				<param name="Local" value="ftp.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">

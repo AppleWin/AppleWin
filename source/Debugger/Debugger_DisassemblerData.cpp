@@ -197,7 +197,7 @@ Update_t CmdDisasmDataList (int nArgs)
 	// Need to iterate through all blocks
 	DisasmData_t* pData = NULL;
 
-	while( pData = Disassembly_Enumerate( pData ) )
+	while( (pData = Disassembly_Enumerate( pData )) )
 	{
 		if (pData->iDirective != _NOP_REMOVED)
 		{

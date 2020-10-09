@@ -237,9 +237,6 @@
     <ClInclude Include="source\CPU\cpu6502.h">
       <Filter>Source Files\CPU</Filter>
     </ClInclude>
-    <ClInclude Include="source\CPU\cpu65d02.h">
-      <Filter>Source Files\CPU</Filter>
-    </ClInclude>
     <ClInclude Include="source\CPU\cpu65C02.h">
       <Filter>Source Files\CPU</Filter>
     </ClInclude>
@@ -593,6 +590,9 @@
     <Image Include="resource\RUN3000E.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="resource\RUNBASE64A.BMP">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="resource\Apple2.rom">
@@ -650,6 +650,12 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="resource\TKClock.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\Base64A.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\Base64A_German_Video.rom">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

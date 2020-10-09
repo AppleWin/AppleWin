@@ -26,8 +26,15 @@ DWORD SetFilePointer(HANDLE hFile, LONG lDistanceToMove,
 {
   const FILE_HANDLE & file_handle = dynamic_cast<FILE_HANDLE &>(*hFile);
 
-  fseek(file_handle.f, lDistanceToMove, dwMoveMethod);
-  return ftell(file_handle.f);
+  const int res = fseek(file_handle.f, lDistanceToMove, dwMoveMethod);
+  if (res)
+  {
+    return INVALID_SET_FILE_POINTER;
+  }
+  else
+  {
+    return ftell(file_handle.f);
+  }
 }
 
 BOOL ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead,
@@ -78,7 +85,7 @@ HANDLE CreateFile(LPCTSTR               lpFileName,
 		  HANDLE                hTemplateFile)
 {
   FILE * f = nullptr;
-  if (dwCreationDisposition == CREATE_NEW)
+  if (dwCreationDisposition == CREATE_NEW || dwCreationDisposition == CREATE_ALWAYS)
   {
     if (dwDesiredAccess & GENERIC_READ)
       f = fopen(lpFileName, "w+");
@@ -106,10 +113,8 @@ HANDLE CreateFile(LPCTSTR               lpFileName,
 
 DWORD GetFileAttributes(const char * filename)
 {
-  const int exists = access(filename, F_OK);
-  if (exists)
-    return INVALID_FILE_ATTRIBUTES;
-
+  // minimum is R_OK
+  // no point checking F_OK as it is useless
   const int read = access(filename, R_OK);
   if (read)
     return INVALID_FILE_ATTRIBUTES;
@@ -146,6 +151,11 @@ DWORD GetCurrentDirectory(DWORD length, char * buffer)
 }
 
 BOOL GetOpenFileName(LPOPENFILENAME lpofn)
+{
+  return FALSE;
+}
+
+BOOL GetSaveFileName(LPOPENFILENAME lpofn)
 {
   return FALSE;
 }

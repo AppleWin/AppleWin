@@ -64,9 +64,9 @@ SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 
 //===========================================================================
 
-CSuperSerialCard::CSuperSerialCard() :
+CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	Card(CT_SSC),
-	m_uSlot(0),
+	m_uSlot(slot),
 	m_aySerialPortChoices(NULL),
 	m_uTCPChoiceItemIdx(0),
 	m_bCfgSupportDCD(false),
@@ -957,9 +957,8 @@ void CSuperSerialCard::CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 	if(pData == NULL)
 		return;
 
+	_ASSERT(m_uSlot == uSlot);
 	memcpy(pCxRomPeripheral + uSlot*256, pData+SSC_SLOT_FW_OFFSET, SSC_SLOT_FW_SIZE);
-
-	m_uSlot = uSlot;
 
 	// Expansion ROM
 	if (m_pExpansionRom == NULL)

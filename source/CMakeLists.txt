@@ -1,9 +1,10 @@
 include(FindPkgConfig)
 
 add_library(appleii SHARED
-  linux/data.cpp
-
-  SaveState.cpp
+  Speaker.cpp
+  SoundCore.cpp
+  AY8910.cpp
+  Mockingboard.cpp
   Pravets.cpp
   Tape.cpp
   YamlHelper.cpp
@@ -27,6 +28,10 @@ add_library(appleii SHARED
   NTSC_CharSet.cpp
   CardManager.cpp
   Disk2CardManager.cpp
+  SaveState.cpp  # uses g_CardMgr in m_ConfigNew (reverse order)
+  Riff.cpp
+
+  Configuration/PropertySheetHelper.cpp
 
   linux/windows/memory.cpp
   linux/windows/handles.cpp
@@ -37,9 +42,15 @@ add_library(appleii SHARED
   linux/windows/stringcb.cpp
   linux/windows/strings.cpp
   linux/windows/misc.cpp
+  linux/windows/winbase.cpp
+  linux/windows/winuser.cpp
+  linux/windows/dsound.cpp
+  linux/windows/guiddef.cpp
+  linux/windows/dmusicc.cpp
+  linux/windows/winnls.cpp
 
-  linux/dummies.cpp
-  linux/state.cpp
+
+  linux/data.cpp
   linux/benchmark.cpp
   linux/paddle.cpp
   linux/version.cpp
@@ -48,11 +59,11 @@ add_library(appleii SHARED
 
   linux/duplicates/Debug.cpp
   linux/duplicates/Video.cpp
-  linux/duplicates/Mockingboard.cpp
   linux/duplicates/Joystick.cpp
   linux/duplicates/Frame.cpp
   linux/duplicates/SerialComms.cpp
-  linux/duplicates/Applewin.cpp
+  linux/duplicates/IPropertySheet.cpp
+  linux/duplicates/Applewin.cpp   # defines g_CardMgr (reverse order)
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp
@@ -74,3 +85,6 @@ target_link_libraries(appleii PRIVATE
   ${YAML_LIBRARIES}
   ${MINIZIP_LIBRARIES}
   )
+
+install(TARGETS appleii
+  DESTINATION lib)

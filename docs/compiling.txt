@@ -98,3 +98,26 @@ N/A
 5. Clean & build:
 devenv AppleWinExpress2008.sln /clean
 cov-build --dir cov-int devenv AppleWinExpress2008.sln /build release
+
+
+
+
+How to disable F12 so it doesn't trigger a breakpoint
+=====================================================
+
+When running AppleWin from Visual Studio (eg. F5), then F12 will trigger a breakpoint.
+
+This is undesirable, since F12 is used to load a save-state.
+
+AppleWin does also support CTRL+F12 to load a save-state too (for this very reason), but it's possible to disable F12 triggering the breakpoint.
+
+Background:
+F12 is the OS's default UserDebuggerHotKey:
+https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2003/cc786263(v=ws.10)
+
+Fix:
+. Change this Registry key: "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug" -> UserDebuggerHotKey to 0x07 (*)
+. And restart the PC for it to take effect.
+
+(*) Where 0x07 = Undefined
+(See: https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes)

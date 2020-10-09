@@ -787,8 +787,6 @@ bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 	iOpcode = _6502_GetOpmodeOpbyte( nAddress, iOpmode, nOpbytes );
 
 	// Composite string that has the target nAddress
-//	WORD nTarget = 0;
-	int nTargetOffset_ = 0;
 
 	if ((iOpmode != AM_IMPLIED) &&
 		(iOpmode != AM_1) &&
@@ -796,10 +794,10 @@ bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 		(iOpmode != AM_3))
 	{
 		int nTargetPartial;
+		int nTargetPartial2;
 		int nTargetPointer;
-		WORD nTargetValue = 0; // de-ref
 		int nTargetBytes;
-		_6502_GetTargets( nAddress, &nTargetPartial, &nTargetPointer, &nTargetBytes, false );
+		_6502_GetTargets( nAddress, &nTargetPartial, &nTargetPartial2, &nTargetPointer, &nTargetBytes, false );
 
 //		if (nTargetPointer == NO_6502_TARGET)
 //		{
@@ -870,9 +868,8 @@ int AssemblerHashMnemonic ( const TCHAR * pMnemonic )
 	const int    NUM_MSK_BITS =  5; //  4 ->  5 prime
 	const Hash_t BIT_MSK_HIGH = ((1 << NUM_MSK_BITS) - 1) << NUM_LOW_BITS;
 
-	int nLen = strlen( pMnemonic );
-
 #if DEBUG_ASSEMBLER
+	int nLen = strlen( pMnemonic );
 	static int nMaxLen = 0;
 	if (nMaxLen < nLen) {
 		nMaxLen = nLen;
@@ -961,7 +958,7 @@ void _CmdAssembleHashDump ()
 	
 	std::sort( vHashes.begin(), vHashes.end(), HashOpcode_t() );
 
-	Hash_t nPrevHash = vHashes.at( 0 ).m_nValue;
+//	Hash_t nPrevHash = vHashes.at( 0 ).m_nValue;
 	Hash_t nThisHash = 0;
 
 	for( iOpcode = 0; iOpcode < NUM_OPCODES; iOpcode++ )
@@ -1097,7 +1094,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 	while (iArg < g_nArgRaw)
 	{
 		int iToken = pArg->eToken;
-		int iType  = pArg->bType;
+//		int iType  = pArg->bType;
 
 		if (iToken == TOKEN_HASH)
 		{

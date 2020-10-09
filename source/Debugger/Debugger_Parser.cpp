@@ -418,7 +418,6 @@ void ArgsRawParse ( void )
 	WORD   nAddressArg;
 	WORD   nAddressSymbol;
 	WORD   nAddressValue;
-	int    nParamLen = 0;
 
 	while (iArg <= nArg)
 	{
@@ -869,8 +868,6 @@ const TCHAR * FindTokenOrAlphaNumeric ( const TCHAR *pSrc, const TokenTable_t *a
 //===========================================================================
 void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDstSize, int nTabStop )
 {
-	int nLen = _tcslen( pText );
-
 	int TAB_SPACING = 8;
 	int TAB_SPACING_1 = 16;
 	int TAB_SPACING_2 = 21;
@@ -881,7 +878,6 @@ void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDst
 	LPCTSTR pSrc = pText;
 	LPTSTR  pDst = pDeTabified_;
 
-	int iTab = 0; // number of tabs seen
 	int nTab = 0; // gap left to next tab
 	int nGap = 0; // actual gap
 	int nCur = 0; // current cursor position

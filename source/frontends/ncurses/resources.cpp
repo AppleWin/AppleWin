@@ -3,16 +3,64 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <libgen.h>
 
 #include "Log.h"
+#include "config.h"
 
-HRSRC FindResource(void *, const std::string & filename, const char *)
+namespace
+{
+
+  bool dirExists(const std::string & folder)
+  {
+    struct stat stdbuf;
+
+    if (stat(folder.c_str(), &stdbuf) == 0 && S_ISDIR(stdbuf.st_mode))
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+  std::string getResourcePath()
+  {
+    char self[1024] = {0};
+    const int ch = readlink("/proc/self/exe", self,  sizeof(self));
+    if (ch != -1)
+    {
+      const char * path = dirname(self);
+
+      // case 1: run from the build folder
+      const std::string path1 = std::string(path) + '/'+ ROOT_PATH + "/resource/";
+      if (dirExists(path1))
+      {
+	return path1;
+      }
+
+      // case 2: run from the installation folder
+      const std::string path2 = std::string(path) + '/'+ SHARE_PATH + "/resource/";
+      if (dirExists(path2))
+      {
+	return path2;
+      }
+    }
+    // else?
+    return std::string();
+  }
+
+  const std::string resourcePath = getResourcePath();
+}
+
+HRSRC FindResource(void *, const char * filename, const char *)
 {
   HRSRC result;
 
-  if (!filename.empty())
+  if (filename)
   {
-    const std::string path = "resource/" + filename;
+    const std::string path = resourcePath + filename;
 
     int fd = open(path.c_str(), O_RDONLY);
 
@@ -31,8 +79,20 @@ HRSRC FindResource(void *, const std::string & filename, const char *)
 
   if (result.data.empty())
   {
-    LogFileOutput("FindResource: could not load resource %s\n", filename.c_str());
+    LogFileOutput("FindResource: could not load resource %s\n", filename);
   }
 
   return result;
+}
+
+HBITMAP LoadBitmap(HINSTANCE hInstance, const char * filename)
+{
+  LogFileOutput("LoadBitmap: not loading resource %s\n", filename);
+  return nullptr;
+}
+
+LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits)
+{
+  memset(lpvBits, 0, cb);
+  return cb;
 }

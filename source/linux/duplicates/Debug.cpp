@@ -3,6 +3,8 @@
 
 #include "Debug.h"
 
+DWORD extbench = 0;
+
 void	DebugReset(void)
 {
 }

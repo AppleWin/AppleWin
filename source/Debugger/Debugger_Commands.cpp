@@ -123,6 +123,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("PAGEDOWN4K" ) , CmdCursorPageDown4K  , CMD_CURSOR_PAGE_DOWN_4K  , "Scroll down 4096 bytes" }, // Ctrl
 	// Cycles info
 		{TEXT("CYCLES")      , CmdCyclesInfo        , CMD_CYCLES_INFO, "Cycles display configuration" },
+		{TEXT("RCC")		 , CmdCyclesReset		, CMD_CYCLES_RESET, "Reset cycles counter" },
 	// Disassembler Data 
 		{TEXT("Z")           , CmdDisasmDataDefByte1       , CMD_DISASM_DATA      , "Treat byte [range] as data"                },
 		{TEXT("X")           , CmdDisasmDataDefCode        , CMD_DISASM_CODE      , "Treat byte [range] as code"                },

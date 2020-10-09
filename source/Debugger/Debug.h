@@ -135,7 +135,7 @@
 // Prototypes _______________________________________________________________
 
 // Bookmarks
-	bool Bookmark_Find( const WORD nAddress );
+	int Bookmark_Find( const WORD nAddress );
 
 // Breakpoints
 	int CheckBreakpointsIO ();

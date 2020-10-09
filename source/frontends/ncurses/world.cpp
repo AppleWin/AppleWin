@@ -1,3 +1,4 @@
+#include "frontends/ncurses/world.h"
 #include "StdAfx.h"
 
 #include <ncurses.h>
@@ -13,6 +14,7 @@
 #include "DiskImageHelper.h"
 #include "Memory.h"
 #include "Applewin.h"
+#include "RGBMonitor.h"
 
 #include "linux/interface.h"
 #include "linux/paddle.h"
@@ -57,9 +59,6 @@ namespace
 #define  SW_TEXT          (g_uVideoMode & VF_TEXT)
 
   bool g_bTextFlashState = false;
-
-  double alpha = 10.0;
-  double F = 0;
 
   void sig_handler(int signo)
   {
@@ -136,20 +135,9 @@ namespace
     }
   }
 
-  ULONG lastUpdate = 0;
-
-  void updateSpeaker()
-  {
-    const ULONG dCycles = g_nCumulativeCycles - lastUpdate;
-    const double dt = dCycles / g_fCurrentCLK6502;
-    const double coeff = exp(- alpha * dt);
-    F = F * coeff;
-    lastUpdate = g_nCumulativeCycles;
-  }
-
   typedef bool (*VideoUpdateFuncPtr_t)(int, int, int, int, int);
 
-  bool Update40ColCell (int x, int y, int xpixel, int ypixel, int offset)
+  bool NUpdate40ColCell (int x, int y, int xpixel, int ypixel, int offset)
   {
     frame->init(24, 40);
     asciiArt->init(1, 1);
@@ -164,7 +152,7 @@ namespace
     return true;
   }
 
-  bool Update80ColCell (int x, int y, int xpixel, int ypixel, int offset)
+  bool NUpdate80ColCell (int x, int y, int xpixel, int ypixel, int offset)
   {
     frame->init(24, 80);
     asciiArt->init(1, 2);
@@ -183,7 +171,7 @@ namespace
     return true;
   }
 
-  bool UpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset)
+  bool NUpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset)
   {
     BYTE val = *(g_pTextBank0+offset);
 
@@ -205,12 +193,12 @@ namespace
     return true;
   }
 
-  bool UpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
+  bool NUpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
   {
     return true;
   }
 
-  bool UpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
+  bool NUpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
   {
     const BYTE * base = g_pHiresBank0 + offset;
 
@@ -238,7 +226,7 @@ namespace
     return true;
   }
 
-  bool UpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset)
+  bool NUpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset)
   {
     return true;
   }
@@ -264,13 +252,6 @@ void FrameRefresh()
 
   mvwprintw(status, 1, 2, "D1: %d, %s, %s", g_eStatusDrive1, g_sTrackDrive1, g_sSectorDrive1);
   mvwprintw(status, 2, 2, "D2: %d, %s, %s", g_eStatusDrive2, g_sTrackDrive2, g_sSectorDrive2);
-
-  // approximate
-  const double frequency = 0.5 * alpha * F;
-  mvwprintw(status, 1, 20, "%5.fHz", frequency);
-  mvwprintw(status, 2, 20, "%5.1f%%", 100 * g_relativeSpeed);
-
-  wrefresh(status);
 }
 
 void FrameDrawDiskLEDS(HDC x)
@@ -373,9 +354,13 @@ void FrameRefreshStatus(int x, bool)
 void NVideoInitialize()
 {
   VideoInitialize();
+  VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
 
   setlocale(LC_ALL, "");
   initscr();
+
+  // does not seem to be a problem calling endwin() multiple times
+  std::atexit(VideoUninitialize);
 
   colors.reset(new GraphicsColors(20, 20, 32));
 
@@ -404,7 +389,6 @@ void VideoUninitialize()
 void VideoRedrawScreen()
 {
   VideoUpdateFlash();
-  updateSpeaker();
   FrameRefresh();
 
   const int displaypage2 = (SW_PAGE2) == 0 ? 0 : 1;
@@ -416,15 +400,15 @@ void VideoRedrawScreen()
 
   VideoUpdateFuncPtr_t update = SW_TEXT
     ? SW_80COL
-    ? Update80ColCell
-    : Update40ColCell
+    ? NUpdate80ColCell
+    : NUpdate40ColCell
     : SW_HIRES
     ? (SW_DHIRES && SW_80COL)
-    ? UpdateDHiResCell
-    : UpdateHiResCell
+    ? NUpdateDHiResCell
+    : NUpdateHiResCell
     : (SW_DHIRES && SW_80COL)
-    ? UpdateDLoResCell
-    : UpdateLoResCell;
+    ? NUpdateDLoResCell
+    : NUpdateLoResCell;
 
   int  y        = 0;
   int  ypixel   = 0;
@@ -442,8 +426,8 @@ void VideoRedrawScreen()
   }
 
   if (SW_MIXED)
-    update = SW_80COL ? Update80ColCell
-      : Update40ColCell;
+    update = SW_80COL ? NUpdate80ColCell
+      : NUpdate40ColCell;
 
   while (y < 24) {
     int offset = ((y & 7) << 7) + ((y >> 3) * 40);
@@ -535,15 +519,11 @@ void ProcessInput()
   paddle->poll();
 }
 
-
-// Speaker
-
-BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
+// Mockingboard
+void registerSoundBuffer(IDirectSoundBuffer * buffer)
 {
-  CpuCalcCycles(uExecutedCycles);
+}
 
-  updateSpeaker();
-  F += 1;
-
-  return MemReadFloatingBus(uExecutedCycles);
+void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
+{
 }

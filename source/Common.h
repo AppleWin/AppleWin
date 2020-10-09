@@ -48,14 +48,15 @@ enum AppMode_e
 // TODO: Move to StringTable.h
 #define	TITLE_APPLE_2			TEXT("Apple ][ Emulator")
 #define	TITLE_APPLE_2_PLUS		TEXT("Apple ][+ Emulator")
+#define	TITLE_APPLE_2_JPLUS		TEXT("Apple ][ J-Plus Emulator")
 #define	TITLE_APPLE_2E			TEXT("Apple //e Emulator")
 #define	TITLE_APPLE_2E_ENHANCED	TEXT("Enhanced Apple //e Emulator")
 #define TITLE_APPLE_2C          TEXT("Apple //e Emulator")
-#define TITLE_APPLE_2D          TEXT("Apple )(d Virtual Debug Hardware") 
 #define	TITLE_PRAVETS_82        TEXT("Pravets 82 Emulator")
 #define	TITLE_PRAVETS_8M        TEXT("Pravets 8M Emulator")
 #define	TITLE_PRAVETS_8A        TEXT("Pravets 8A Emulator")
 #define	TITLE_TK3000_2E         TEXT("TK3000 //e Emulator")
+#define	TITLE_BASE64A           TEXT("Base64A Emulator")
 
 #define TITLE_PAUSED       TEXT("* PAUSED *")
 #define TITLE_STEPPING     TEXT("Stepping")
@@ -152,15 +153,13 @@ enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
  //e  10
  //e+ 11
  //c  20
- //d  40
 */
 #define APPLE2E_MASK	0x10
 #define APPLE2C_MASK	0x20
-#define APPLE2D_MASK    0x40
 #define APPLECLONE_MASK	0x100
 
 #define IS_APPLE2		((g_Apple2Type & (APPLE2E_MASK|APPLE2C_MASK)) == 0)
-#define IS_APPLE2E()	(g_Apple2Type & APPLE2E_MASK)
+//#define IS_APPLE2E()	(g_Apple2Type & APPLE2E_MASK)	// unused
 #define IS_APPLE2C()	(g_Apple2Type & APPLE2C_MASK)
 #define IS_CLONE()		(g_Apple2Type & APPLECLONE_MASK)
 
@@ -168,16 +167,17 @@ enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 enum eApple2Type {
 					A2TYPE_APPLE2=0,
 					A2TYPE_APPLE2PLUS,
+					A2TYPE_APPLE2JPLUS,
 					A2TYPE_APPLE2E=APPLE2E_MASK,
 					A2TYPE_APPLE2EENHANCED,
 					A2TYPE_UNDEFINED,
 					A2TYPE_APPLE2C=APPLE2C_MASK,
-					A2TYPE_APPLE2D=APPLE2D_MASK,
 
 					// ][ clones start here:
 					A2TYPE_CLONE=APPLECLONE_MASK,
 					A2TYPE_PRAVETS8M,								// Apple ][ clone
 					A2TYPE_PRAVETS82,								// Apple ][ clone
+					A2TYPE_BASE64A,									// Apple ][ clone
 					// (Gap for more Apple ][ clones)
 					A2TYPE_CLONE_A2_MAX,
 
@@ -196,9 +196,14 @@ inline bool IsApple2Original(eApple2Type type)		// Apple ][
 	return type == A2TYPE_APPLE2;
 }
 
-inline bool IsApple2Plus(eApple2Type type)			// Apple ][,][+
+inline bool IsApple2Plus(eApple2Type type)			// Apple ][,][+,][J-Plus
 {
 	return ((type & (APPLE2E_MASK|APPLE2C_MASK)) == 0) && !(type & APPLECLONE_MASK);
+}
+
+inline bool IsApple2JPlus(eApple2Type type)			// Apple ][J-Plus
+{
+	return type == A2TYPE_APPLE2JPLUS;
 }
 
 inline bool IsClone(eApple2Type type)
@@ -206,9 +211,14 @@ inline bool IsClone(eApple2Type type)
 	return (type & APPLECLONE_MASK) != 0;
 }
 
-inline bool IsApple2PlusOrClone(eApple2Type type)	// Apple ][,][+ or clone ][,][+
+inline bool IsApple2PlusOrClone(eApple2Type type)	// Apple ][,][+,][J-Plus or clone ][,][+
 {
 	return (type & (APPLE2E_MASK|APPLE2C_MASK)) == 0;
+}
+
+inline bool IsAppleIIeOrAbove(eApple2Type type)		// Apple //e,Enhanced//e,//c or clone //e,Enhanced//e
+{
+	return !IsApple2PlusOrClone(type);
 }
 
 extern eApple2Type g_Apple2Type;
@@ -220,6 +230,11 @@ inline bool IsEnhancedIIE(void)
 inline bool IsEnhancedIIEorIIC(void)
 {
 	return ( (g_Apple2Type == A2TYPE_APPLE2EENHANCED) || (g_Apple2Type == A2TYPE_TK30002E) || IS_APPLE2C() );
+}
+
+inline bool IsCopamBase64A(eApple2Type type)		// Copam Base64A
+{
+	return type == A2TYPE_BASE64A;
 }
 
 enum eBUTTON {BUTTON0=0, BUTTON1};

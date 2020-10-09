@@ -1,9 +1,9 @@
 #include "frontends/ncurses/configuration.h"
 
 #include "Log.h"
+#include "linux/windows/files.h"
 
 #include <boost/property_tree/ini_parser.hpp>
-#include <filesystem>
 
 class Configuration
 {
@@ -31,7 +31,7 @@ std::shared_ptr<Configuration> Configuration::instance;
 
 Configuration::Configuration(const std::string & filename) : myFilename(filename)
 {
-  if (std::filesystem::exists(filename))
+  if (GetFileAttributes(myFilename.c_str()) != INVALID_FILE_ATTRIBUTES)
   {
     boost::property_tree::ini_parser::read_ini(myFilename, myINI);
   }

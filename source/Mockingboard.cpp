@@ -87,11 +87,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Mockingboard.h"
 #include "SoundCore.h"
 #include "YamlHelper.h"
+#include "Riff.h"
 
 #include "AY8910.h"
 #include "SSI263Phonemes.h"
 
 #define LOG_SSI263 0
+#define LOG_SSI263B 0	// Alternate SSI263 logging (use in conjunction with CPU.cpp's LOG_IRQ_TAKEN_AND_RTI)
 
 
 #define SY6522_DEVICE_A 0
@@ -187,7 +189,8 @@ static bool g_bMBAvailable = false;
 
 static SS_CARDTYPE g_SoundcardType = CT_Empty;	// Use CT_Empty to mean: no soundcard
 static bool g_bPhasorEnable = false;
-static BYTE g_nPhasorMode = 0;	// 0=Mockingboard emulation, 1=Phasor native
+enum PHASOR_MODE {PH_Mockingboard=0, PH_UNDEF1, PH_UNDEF2, PH_UNDEF3, PH_UNDEF4, PH_Phasor/*=5*/, PH_UNDEF6, PH_EchoPlus/*=7*/};
+static PHASOR_MODE g_phasorMode = PH_Mockingboard;
 static UINT g_PhasorClockScaleFactor = 1;	// for save-state only
 
 //-------------------------------------
@@ -363,8 +366,7 @@ static void UpdateIFR(SY6522_AY8910* pMB, BYTE clr_ifr, BYTE set_ifr=0)
 	// NB. Mockingboard generates IRQ on both 6522s:
 	// . SSI263's IRQ (A/!R) is routed via the 2nd 6522 (at $Cx80) and must generate a 6502 IRQ (not NMI)
 	// . SC-01's IRQ (A/!R) is also routed via a (2nd?) 6522
-	// Phasor's SSI263 appears to be wired directly to the 6502's IRQ (ie. not via a 6522)
-	// . I assume Phasor's 6522s just generate 6502 IRQs (not NMIs)
+	// Phasor's SSI263 IRQ (A/!R) line is *also* wired directly to the 6502's IRQ (as well as the 6522's CA1)
 
 	if (bIRQ)
 	    CpuIrqAssert(IS_6522);
@@ -394,7 +396,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 
 				if(g_bPhasorEnable)
 				{
-					int nAY_CS = (g_nPhasorMode & 1) ? (~(nValue >> 3) & 3) : 1;
+					int nAY_CS = (g_phasorMode == PH_Phasor) ? (~(nValue >> 3) & 3) : 1;
 
 					if(nAY_CS & 1)
 						AY8910_Write(nDevice, nReg, nValue, 0);
@@ -446,7 +448,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 			// Clear Timer2 Interrupt Flag.
 			UpdateIFR(pMB, IxR_TIMER2);
 
-			pMB->sy6522.TIMER2_LATCH.h = nValue;
+			pMB->sy6522.TIMER2_LATCH.h = nValue;			// NB. Real 6522 doesn't have TIMER2_LATCH.h
 			pMB->sy6522.TIMER2_COUNTER.w = pMB->sy6522.TIMER2_LATCH.w;
 
 			StartTimer2(pMB);
@@ -471,29 +473,14 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				// Clear those bits which are set in the lower 7 bits.
 				nValue ^= 0x7F;
 				pMB->sy6522.IER &= nValue;
-				UpdateIFR(pMB, 0);
-				
-				// Check if active timer has been disabled:
-				if (((pMB->sy6522.IER & IxR_TIMER1) == 0) && pMB->bTimer1Active)
-					StopTimer1(pMB);
-
-				if (((pMB->sy6522.IER & IxR_TIMER2) == 0) && pMB->bTimer2Active)
-					StopTimer2(pMB);
 			}
 			else
 			{
 				// Set those bits which are set in the lower 7 bits.
 				nValue &= 0x7F;
 				pMB->sy6522.IER |= nValue;
-				UpdateIFR(pMB, 0);
-
-				// Check if a timer interrupt has been enabled (regardless of if there's an active timer or not): GH#567
-				if (pMB->sy6522.IER & IxR_TIMER1)
-					StartTimer1(pMB);
-
-				if (pMB->sy6522.IER & IxR_TIMER2)
-					StartTimer2(pMB);
 			}
+			UpdateIFR(pMB, 0);
 			break;
 		case 0x0f:	// ORA_NO_HS
 			break;
@@ -569,7 +556,7 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 
 //---------------------------------------------------------------------------
 
-void SSI263_Play(unsigned int nPhoneme);
+static void SSI263_Play(unsigned int nPhoneme);
 
 #if 0
 typedef struct
@@ -605,52 +592,77 @@ const BYTE CONTROL_MASK = 0x80;
 const BYTE ARTICULATION_MASK = 0x70;
 const BYTE AMPLITUDE_MASK = 0x0F;
 
-static BYTE SSI263_Read(BYTE nDevice, BYTE nReg)
+#if LOG_SSI263B
+static int ssiRegs[5]={-1,-1,-1,-1,-1};
+
+void SSI_Output(void)
+{
+	LogOutput("SSI: ");
+	for (int i=0; i<=4; i++)
+	{
+		char r[3]="--";
+		if (ssiRegs[i]>=0) sprintf(r,"%02X",ssiRegs[i]);
+		LogOutput("%s ", r);
+		ssiRegs[i] = -1;
+	}
+	LogOutput("\n");
+}
+#endif
+
+static BYTE SSI263_Read(BYTE nDevice, ULONG nExecutedCycles)
 {
 	SY6522_AY8910* pMB = &g_MB[nDevice];
 
 	// Regardless of register, just return inverted A/!R in bit7
 	// . A/!R is low for IRQ
 
-	return pMB->SpeechChip.CurrentMode << 7;
+	return MemReadFloatingBus(pMB->SpeechChip.CurrentMode & 1, nExecutedCycles);
 }
 
 static void SSI263_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 {
 	SY6522_AY8910* pMB = &g_MB[nDevice];
 
+#if LOG_SSI263B
+	_ASSERT(nReg < 5);
+	if (nReg>4) nReg=4;
+	if (ssiRegs[nReg]>=0) SSI_Output();	// overwriting a reg
+	ssiRegs[nReg] = nValue;
+#endif
+
 	switch(nReg)
 	{
 	case SSI_DURPHON:
 #if LOG_SSI263
 		if(g_fh) fprintf(g_fh, "DUR   = 0x%02X, PHON = 0x%02X\n\n", nValue>>6, nValue&PHONEME_MASK);
+		LogOutput("DUR   = %d, PHON = 0x%02X\n", nValue>>6, nValue&PHONEME_MASK);
+#endif
+#if LOG_SSI263B
+		SSI_Output();
 #endif
 
-		// Datasheet is not clear, but a write to DURPHON must clear the IRQ
-		if(g_bPhasorEnable)
-		{
-		    CpuIrqDeassert(IS_SPEECH);
-		}
-		else
-		{
-			UpdateIFR(pMB, IxR_PERIPHERAL);
-		}
+		// Notes:
+		// . Phasor's text-to-speech playback has no CTL H->L
+		//		- ISR just writes CTL=0 (and new ART+AMP values), and writes DUR=x (and new PHON)
+		//		- since no CTL H->L, then DUR value doesn't take affect (so continue using previous)
+		//		- so the write to DURPHON must clear the IRQ
+		// . Does a write of CTL=0 clear IRQ? (ie. CTL 0->0)
+		// . Does a write of CTL=1 clear IRQ? (ie. CTL 0->1)
+		//		- SSI263 datasheet says: "Setting the Control bit (CTL) to a logic one puts the device into Power Down mode..."
+		// . Does phoneme output only happen when CTL=0? (Otherwise device is in PD mode)
+
+		// SSI263 datasheet is not clear, but a write to DURPHON must clear the IRQ.
+		// NB. For Mockingboard, A/!R is ack'ed by 6522's PCR handshake.
+		if (g_bPhasorEnable && g_phasorMode == PH_Phasor)
+			CpuIrqDeassert(IS_SPEECH);
+
 		pMB->SpeechChip.CurrentMode &= ~1;	// Clear SSI263's D7 pin
 
 		pMB->SpeechChip.DurationPhoneme = nValue;
 
 		g_nSSI263Device = nDevice;
 
-		// Phoneme output not dependent on CONTROL bit
-		if(g_bPhasorEnable)
-		{
-			if(nValue || (g_nCurrentActivePhoneme<0))
-				SSI263_Play(nValue & PHONEME_MASK);
-		}
-		else
-		{
-			SSI263_Play(nValue & PHONEME_MASK);
-		}
+		SSI263_Play(nValue & PHONEME_MASK);
 		break;
 	case SSI_INFLECT:
 #if LOG_SSI263
@@ -658,6 +670,7 @@ static void SSI263_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 #endif
 		pMB->SpeechChip.Inflection = nValue;
 		break;
+
 	case SSI_RATEINF:
 #if LOG_SSI263
 		if(g_fh) fprintf(g_fh, "RATE  = 0x%02X, INF = 0x%02X\n", nValue>>4, nValue&0x0F);
@@ -667,18 +680,43 @@ static void SSI263_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 	case SSI_CTTRAMP:
 #if LOG_SSI263
 		if(g_fh) fprintf(g_fh, "CTRL  = %d, ART = 0x%02X, AMP=0x%02X\n", nValue>>7, (nValue&ARTICULATION_MASK)>>4, nValue&AMPLITUDE_MASK);
+		//
+		{
+			bool H2L = (pMB->SpeechChip.CtrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK);
+			char newMode[20];
+			sprintf_s(newMode, sizeof(newMode), "(new mode=%d)", pMB->SpeechChip.DurationPhoneme>>6);
+			LogOutput("CTRL  = %d->%d, ART = 0x%02X, AMP=0x%02X %s\n", pMB->SpeechChip.CtrlArtAmp>>7, nValue>>7, (nValue&ARTICULATION_MASK)>>4, nValue&AMPLITUDE_MASK, H2L?newMode:"");
+		}
+#endif
+#if LOG_SSI263B
+		if ( ((pMB->SpeechChip.CtrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK)) || ((nValue&0xF) == 0x0) )	// H->L or amp=0
+			SSI_Output();
 #endif
 		if((pMB->SpeechChip.CtrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK))	// H->L
+		{
 			pMB->SpeechChip.CurrentMode = pMB->SpeechChip.DurationPhoneme & DURATION_MODE_MASK;
+			if (pMB->SpeechChip.CurrentMode == MODE_IRQ_DISABLED)
+			{
+				// "Disables A/!R output only; does not change previous A/!R response" (SSI263 datasheet)
+//				CpuIrqDeassert(IS_SPEECH);
+			}
+		}
+
 		pMB->SpeechChip.CtrlArtAmp = nValue;
+
+		// "Setting the Control bit (CTL) to a logic one puts the device into Power Down mode..." (SSI263 datasheet)
+		if (pMB->SpeechChip.CtrlArtAmp & CONTROL_MASK)
+		{
+//			CpuIrqDeassert(IS_SPEECH);
+//			pMB->SpeechChip.CurrentMode &= ~1;	// Clear SSI263's D7 pin
+		}
 		break;
-	case SSI_FILFREQ:
+	case SSI_FILFREQ:	// RegAddr.b2=1 (b1 & b0 are: don't care)
+	default:
 #if LOG_SSI263
 		if(g_fh) fprintf(g_fh, "FFREQ = 0x%02X\n", nValue);
 #endif
 		pMB->SpeechChip.FilterFreq = nValue;
-		break;
-	default:
 		break;
 	}
 }
@@ -777,7 +815,7 @@ static UINT64 g_uLastMBUpdateCycle = 0;
 // Called by:
 // . MB_UpdateCycles()    - when g_nMBTimerDevice == {0,1,2,3}
 // . MB_PeriodicUpdate()  - when g_nMBTimerDevice == kTIMERDEVICE_INVALID
-static void MB_Update(void)
+static void MB_UpdateInt(void)
 {
 	if (!MockingboardVoice.bActive)
 		return;
@@ -984,7 +1022,58 @@ static void MB_Update(void)
 #endif
 }
 
+static void MB_Update(void)
+{
+#ifdef LOG_PERF_TIMINGS
+	extern UINT64 g_timeMB_NoTimer;
+	extern UINT64 g_timeMB_Timer;
+	PerfMarker perfMarker(g_nMBTimerDevice == kTIMERDEVICE_INVALID ? g_timeMB_NoTimer : g_timeMB_Timer);
+#endif
+
+	MB_UpdateInt();
+}
+
 //-----------------------------------------------------------------------------
+
+// Called by SSI263Thread(), MB_LoadSnapshot & Phasor_LoadSnapshot
+// Pre: g_bVotraxPhoneme, g_bPhasorEnable, g_phasorMode
+static void SetSpeechIRQ(SY6522_AY8910* pMB)
+{
+	if (!g_bVotraxPhoneme)
+	{
+		// Always set SSI263's D7 pin regardless of SSI263 mode (DR1:0), including MODE_IRQ_DISABLED
+		pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
+
+		if ((pMB->SpeechChip.CurrentMode & DURATION_MODE_MASK) != MODE_IRQ_DISABLED)
+		{
+			if (!g_bPhasorEnable || (g_bPhasorEnable && g_phasorMode == PH_Mockingboard))
+			{
+				if ((pMB->sy6522.PCR & 1) == 0)			// CA1 Latch/Input = 0 (Negative active edge)
+					UpdateIFR(pMB, 0, IxR_PERIPHERAL);
+				if (pMB->sy6522.PCR == 0x0C)			// CA2 Control = b#110 (Low output)
+					pMB->SpeechChip.CurrentMode &= ~1;	// Clear SSI263's D7 pin (cleared by 6522's PCR CA1/CA2 handshake)
+
+				// NB. Don't set CTL=1, as Mockingboard(SMS) speech doesn't work (it sets MODE_IRQ_DISABLED mode during ISR)
+				//pMB->SpeechChip.CtrlArtAmp |= CONTROL_MASK;	// 6522's CA2 sets Power Down mode (pin 18), which sets Control bit
+			}
+			else if (g_bPhasorEnable && g_phasorMode == PH_Phasor)	// Phasor's SSI263 IRQ (A/!R) line is *also* wired directly to the 6502's IRQ (as well as the 6522's CA1)
+			{
+				CpuIrqAssert(IS_SPEECH);
+			}
+		}
+	}
+
+	//
+
+	if (g_bVotraxPhoneme && pMB->sy6522.PCR == 0xB0)
+	{
+		// !A/R: Time-out of old phoneme (signal goes from low to high)
+
+		UpdateIFR(pMB, 0, IxR_VOTRAX);
+
+		g_bVotraxPhoneme = false;
+	}
+}
 
 static DWORD WINAPI SSI263Thread(LPVOID lpParameter)
 {
@@ -1016,41 +1105,15 @@ static DWORD WINAPI SSI263Thread(LPVOID lpParameter)
 		//if(g_fh) fprintf(g_fh, "IRQ: Phoneme complete (0x%02X)\n\n", g_nCurrentActivePhoneme);
 #endif
 
+		if (g_nCurrentActivePhoneme < 0)
+			continue;	// On CTRL+RESET or power-cycle (during phoneme playback): ResetState() is called, which set g_nCurrentActivePhoneme=-1
+
 		SSI263Voice[g_nCurrentActivePhoneme].bActive = false;
 		g_nCurrentActivePhoneme = -1;
 
 		// Phoneme complete, so generate IRQ if necessary
 		SY6522_AY8910* pMB = &g_MB[g_nSSI263Device];
-
-		if(g_bPhasorEnable)
-		{
-			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED))
-			{
-				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
-
-				// Phasor's SSI263.IRQ line appears to be wired directly to IRQ (Bypassing the 6522)
-				CpuIrqAssert(IS_SPEECH);
-			}
-		}
-		else
-		{
-			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C))
-			{
-				UpdateIFR(pMB, 0, IxR_PERIPHERAL);
-				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
-			}
-		}
-
-		//
-
-		if(g_bVotraxPhoneme && (pMB->sy6522.PCR == 0xB0))
-		{
-			// !A/R: Time-out of old phoneme (signal goes from low to high)
-
-			UpdateIFR(pMB, 0, IxR_VOTRAX);
-
-			g_bVotraxPhoneme = false;
-		}
+		SetSpeechIRQ(pMB);
 	}
 
 	return 0;
@@ -1219,13 +1282,13 @@ static bool MB_DSInit()
 									FALSE,	// bManualReset (FALSE = auto-reset)
 									FALSE,	// bInitialState (FALSE = non-signaled)
 									NULL);	// lpName
-	LogFileOutput("MB_DSInit: CreateEvent(), g_hSSI263Event[0]=0x%08X\n", (UINT32)g_hSSI263Event[0]);
+	LogFileOutput("MB_DSInit: CreateEvent(), g_hSSI263Event[0]=0x%08X\n", g_hSSI263Event[0]);
 
 	g_hSSI263Event[1] = CreateEvent(NULL,	// lpEventAttributes
 									FALSE,	// bManualReset (FALSE = auto-reset)
 									FALSE,	// bInitialState (FALSE = non-signaled)
 									NULL);	// lpName
-	LogFileOutput("MB_DSInit: CreateEvent(), g_hSSI263Event[1]=0x%08X\n", (UINT32)g_hSSI263Event[1]);
+	LogFileOutput("MB_DSInit: CreateEvent(), g_hSSI263Event[1]=0x%08X\n", g_hSSI263Event[1]);
 
 	if((g_hSSI263Event[0] == NULL) || (g_hSSI263Event[1] == NULL))
 	{
@@ -1327,7 +1390,7 @@ static bool MB_DSInit()
 								NULL,			// lpParameter
 								0,				// dwCreationFlags : 0 = Run immediately
 								&dwThreadId);	// lpThreadId
-	LogFileOutput("MB_DSInit: CreateThread(), g_hThread=0x%08X\n", (UINT32)g_hThread);
+	LogFileOutput("MB_DSInit: CreateThread(), g_hThread=0x%08X\n", g_hThread);
 
 	BOOL bRes2 = SetThreadPriority(g_hThread, THREAD_PRIORITY_TIME_CRITICAL);
 	LogFileOutput("MB_DSInit: SetThreadPriority(), bRes=%d\n", bRes2 ? 1 : 0);
@@ -1448,7 +1511,7 @@ void MB_Initialize()
 	g_bCritSectionValid = true;
 }
 
-void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType);
+static void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType);
 
 // NB. Mockingboard voice is *already* muted because showing 'Select Load State file' dialog
 // . and voice will be demuted when dialog is closed
@@ -1505,7 +1568,7 @@ static void ResetState()
 	g_bMB_RegAccessedFlag = false;
 	g_bMB_Active = false;
 
-	g_nPhasorMode = 0;
+	g_phasorMode = PH_Mockingboard;
 	g_PhasorClockScaleFactor = 1;
 
 	g_uLastMBUpdateCycle = 0;
@@ -1534,6 +1597,8 @@ void MB_Reset()	// CTRL+RESET or power-cycle
 
 //-----------------------------------------------------------------------------
 
+// Echo+ mode - Phasor's 2nd 6522 is mapped to every 16-byte offset in $Cnxx (Echo+ has a single 6522 controlling two AY-3-8913's)
+
 static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
 	if (g_bFullSpeed)
@@ -1561,11 +1626,13 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 		if(nMB != 0)	// Slot4 only
 			return MemReadFloatingBus(nExecutedCycles);
 
-		int CS;
-		if(g_nPhasorMode & 1)
-			CS = ( ( nAddr & 0x80 ) >> 6 ) | ( ( nAddr & 0x10 ) >> 4 );	// 0, 1, 2 or 3
-		else															// Mockingboard Mode
+		int CS = 0;
+		if (g_phasorMode == PH_Mockingboard)
 			CS = ( ( nAddr & 0x80 ) >> 7 ) + 1;							// 1 or 2
+		else if (g_phasorMode == PH_Phasor)
+			CS = ( ( nAddr & 0x80 ) >> 6 ) | ( ( nAddr & 0x10 ) >> 4 );	// 0, 1, 2 or 3
+		else if (g_phasorMode == PH_EchoPlus)
+			CS = 2;
 
 		BYTE nRes = 0;
 
@@ -1577,23 +1644,21 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 
 		bool bAccessedDevice = (CS & 3) ? true : false;
 
-		if((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x05)))
+		if ((g_phasorMode == PH_Phasor) && ((nAddr & 0xD0) == 0x40))	// $Cn4x and $Cn6x (Mockingboard mode: SSI263.bit7 not readable)
 		{
-			nRes |= SSI263_Read(nMB, nAddr&0xf);
+			_ASSERT(!bAccessedDevice);
+			nRes = SSI263_Read(nMB*2+1, nExecutedCycles);		// SSI263 only drives bit7
 			bAccessedDevice = true;
 		}
 
 		return bAccessedDevice ? nRes : MemReadFloatingBus(nExecutedCycles);
 	}
 
-	if(nOffset <= (SY6522A_Offset+0x0F))
+	// NB. Mockingboard: SSI263.bit7 not readable (TODO: check this with real h/w)
+	if (nOffset < SY6522B_Offset)
 		return SY6522_Read(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_A, nAddr&0xf);
-	else if((nOffset >= SY6522B_Offset) && (nOffset <= (SY6522B_Offset+0x0F)))
-		return SY6522_Read(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr&0xf);
-	else if((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x05)))
-		return SSI263_Read(nMB, nAddr&0xf);
 	else
-		return MemReadFloatingBus(nExecutedCycles);
+		return SY6522_Read(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr&0xf);
 }
 
 //-----------------------------------------------------------------------------
@@ -1617,6 +1682,36 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 	}
 #endif
 
+	// Support 6502/65C02 false-reads of 6522 (GH#52)
+	if ( ((mem[(PC-2)&0xffff] == 0x91) && GetMainCpu() == CPU_6502) ||	// sta (zp),y - 6502 only (no-PX variant only) (UTAIIe:4-23)
+		 (mem[(PC-3)&0xffff] == 0x99) ||	// sta abs16,y - 6502/65C02, but for 65C02 only the no-PX variant that does the false-read (UTAIIe:4-27)
+		 (mem[(PC-3)&0xffff] == 0x9D) )		// sta abs16,x - 6502/65C02, but for 65C02 only the no-PX variant that does the false-read (UTAIIe:4-27)
+	{
+		WORD base;
+		WORD addr16;
+		if (mem[(PC-2)&0xffff] == 0x91)
+		{
+			BYTE zp = mem[(PC-1)&0xffff];
+			base = (mem[zp] | (mem[(zp+1)&0xff]<<8));
+			addr16 = base + regs.y;
+		}
+		else
+		{
+			base = mem[(PC-2)&0xffff] | (mem[(PC-1)&0xffff]<<8);
+			addr16 = base + ((mem[(PC-3)&0xffff] == 0x99) ? regs.y : regs.x);
+		}
+
+		if (((base ^ addr16) >> 8) == 0)	// Only the no-PX variant does the false read (to the same I/O SELECT page)
+		{
+			_ASSERT(addr16 == nAddr);
+			if (addr16 == nAddr)	// Check we've reverse looked-up the 6502 opcode correctly
+			{
+				if ( ((nAddr&0xf) == 4) || ((nAddr&0xf) == 8) )	// Only reading 6522 reg-4 or reg-8 actually has an effect
+					MB_Read(PC, nAddr, 0, 0, nExecutedCycles);
+			}
+		}
+	}
+
 	BYTE nMB = (nAddr>>8)&0xf - SLOT4;
 	BYTE nOffset = nAddr&0xff;
 
@@ -1627,10 +1722,12 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 
 		int CS;
 
-		if(g_nPhasorMode & 1)
-			CS = ( ( nAddr & 0x80 ) >> 6 ) | ( ( nAddr & 0x10 ) >> 4 );	// 0, 1, 2 or 3
-		else															// Mockingboard Mode
+		if (g_phasorMode == PH_Mockingboard)
 			CS = ( ( nAddr & 0x80 ) >> 7 ) + 1;							// 1 or 2
+		else if (g_phasorMode == PH_Phasor)
+			CS = ( ( nAddr & 0x80 ) >> 6 ) | ( ( nAddr & 0x10 ) >> 4 );	// 0, 1, 2 or 3
+		else if (g_phasorMode == PH_EchoPlus)
+			CS = 2;
 
 		if(CS & 1)
 			SY6522_Write(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_A, nAddr&0xf, nValue);
@@ -1638,33 +1735,64 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 		if(CS & 2)
 			SY6522_Write(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr&0xf, nValue);
 
-		if((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x05)))
-			SSI263_Write(nMB*2+1, nAddr&0xf, nValue);		// Second 6522 is used for speech chip
+		int CS_SSI263 =   (g_phasorMode == PH_Mockingboard)	? (nAddr & 0xE0) == 0x40	// Mockingboard: $Cn4x
+						: (g_phasorMode == PH_Phasor)		? (nAddr & 0xC0) == 0x40	// Phasor:       $Cn4x and $Cn6x
+						: 0;															// Echo+
+
+		if (CS_SSI263)
+		{
+			// NB. Mockingboard mode: writes to $Cn4x/SSI263 also get written to 1st 6522 (have confirmed on real Phasor h/w)
+			_ASSERT( (g_phasorMode == PH_Mockingboard && (CS==0 || CS==1)) || (g_phasorMode == PH_Phasor && (CS==0)) );
+			SSI263_Write(nMB*2+1, nAddr&0x7, nValue);	// Second 6522 is used for speech chip
+		}
 
 		return 0;
 	}
 
-	if(nOffset <= (SY6522A_Offset+0x0F))
+	if (nOffset < SY6522B_Offset)
 		SY6522_Write(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_A, nAddr&0xf, nValue);
-	else if((nOffset >= SY6522B_Offset) && (nOffset <= (SY6522B_Offset+0x0F)))
+	else
 		SY6522_Write(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr&0xf, nValue);
-	else if((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x05)))
-		SSI263_Write(nMB*2+1, nAddr&0xf, nValue);		// Second 6522 is used for speech chip
+
+	if ((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x07)))
+		SSI263_Write(nMB*2+1, nAddr&0x7, nValue);		// Second 6522 is used for speech chip -- TODO confirm with real MB h/w that writes go to 1st 6522
 
 	return 0;
 }
 
 //-----------------------------------------------------------------------------
 
+// Phasor's DEVICE SELECT' logic:
+// . if addr.[b3]==1, then clear the card's mode bits b2:b0
+// . if any of addr.[b2:b0] are a logic 1, then set these bits in the card's mode
+//
+// Example DEVICE SELECT' accesses for Phasor in slot-4: (from empirical observations on real Phasor h/w)
+// 1)
+// . RESET -> Mockingboard mode (b#000)
+// . $C0C5 -> Phasor mode (b#101)
+// 2)
+// . RESET -> Mockingboard mode (b#000)
+// . $C0C1, then $C0C4  (or $C0C4, then $C0C1) -> Phasor mode (b#101)
+// . $C0C2 -> Echo+ mode (b#111)
+// . $C0C5 -> remaing in Echo+ mode (b#111)
+// So $C0C5 seemingly results in 2 different modes.
+//
+
 static BYTE __stdcall PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	if(!g_bPhasorEnable)
+	if (!g_bPhasorEnable)
 		return MemReadFloatingBus(nExecutedCycles);
 
-	if(g_nPhasorMode < 2)
-		g_nPhasorMode = nAddr & 1;
+	UINT bits = (UINT) g_phasorMode;
+	if (nAddr & 8)
+		bits = 0;
+	bits |= (nAddr & 7);
+	g_phasorMode = (PHASOR_MODE) bits;
 
-	g_PhasorClockScaleFactor = (nAddr & 4) ? 2 : 1;
+	if (g_phasorMode == PH_Mockingboard || g_phasorMode == PH_EchoPlus)
+		g_PhasorClockScaleFactor = 1;
+	else if (g_phasorMode == PH_Phasor)
+		g_PhasorClockScaleFactor = 2;
 
 	AY8910_InitClock((int)(Get6502BaseClock() * g_PhasorClockScaleFactor));
 
@@ -1800,7 +1928,7 @@ void MB_PeriodicUpdate(UINT executedCycles)
 
 //-----------------------------------------------------------------------------
 
-static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, const USHORT nClocks, bool* pTimerUnderflow=NULL)
+static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, const USHORT nClocks)
 {
 	if (nClocks == 0)
 		return false;
@@ -1822,9 +1950,6 @@ static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, 
 
 	if (oldTimer >= 0 && timer < 0)	// Underflow occurs for 0x0000 -> 0xFFFF
 	{
-		if (pTimerUnderflow)
-			*pTimerUnderflow = true;	// Just for Willy Byte!
-
 		if (timer <= -2)				// TIMER = 0xFFFE (or less)
 			timerIrq = true;
 		else							// TIMER = 0xFFFF
@@ -1860,40 +1985,26 @@ bool MB_UpdateCycles(ULONG uExecutedCycles)
 	{
 		SY6522_AY8910* pMB = &g_MB[i];
 
-		bool bTimer1Underflow = false;	// Just for Willy Byte!
 		bool bTimer1Irq = false;
 		bool bTimer1IrqOnLastCycle = false;
 
 		if (isOpcode)
 		{
-			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks-1, &bTimer1Underflow);
-			bTimer1IrqOnLastCycle  = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, 1, &bTimer1Underflow);
+			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks-1);
+			bTimer1IrqOnLastCycle  = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, 1);
 			bTimer1Irq = bTimer1Irq || bTimer1IrqOnLastCycle;
 		}
 		else
 		{
-			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks, &bTimer1Underflow);
+			bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks);
 		}
 
 		const bool bTimer2Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER2_COUNTER.w, pMB->sy6522.timer2IrqDelay, nClocks);
 
-		if (!pMB->bTimer1Active && bTimer1Underflow)
-		{
-			if ( (g_nMBTimerDevice == kTIMERDEVICE_INVALID)			// StopTimer1() has been called
-				&& (pMB->sy6522.IFR & IxR_TIMER1)					// Counter underflowed
-				&& ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT) )	// One-shot mode
-			{
-				// Fix for Willy Byte - need to confirm that 6522 really does this!
-				// . It never accesses IER/IFR/TIMER1 regs to clear IRQ
-				// . NB. Willy Byte doesn't work with Phasor.
-				UpdateIFR(pMB, IxR_TIMER1);		// Deassert the TIMER IRQ
-			}
-		}
-
 		if (pMB->bTimer1Active && bTimer1Irq)
 		{
 			UpdateIFR(pMB, 0, IxR_TIMER1);
-			bIrqOnLastOpcodeCycle = true;
+			bIrqOnLastOpcodeCycle = bTimer1IrqOnLastCycle;
 
 			MB_Update();
 
@@ -1901,7 +2012,6 @@ bool MB_UpdateCycles(ULONG uExecutedCycles)
 			{
 				// One-shot mode
 				// - Phasor's playback code uses one-shot mode
-				// - Willy Byte sets to one-shot to stop the timer IRQ
 				StopTimer1(pMB);
 			}
 			else
@@ -1934,22 +2044,8 @@ bool MB_UpdateCycles(ULONG uExecutedCycles)
 		{
 			UpdateIFR(pMB, 0, IxR_TIMER2);
 
-			if((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
-			{
-				StopTimer2(pMB);
-			}
-			else
-			{
-				pMB->sy6522.TIMER2_COUNTER.w += pMB->sy6522.TIMER2_LATCH.w;
-				if (pMB->sy6522.TIMER2_COUNTER.w > pMB->sy6522.TIMER2_LATCH.w)
-				{
-					if (pMB->sy6522.TIMER2_LATCH.w)
-						pMB->sy6522.TIMER2_COUNTER.w %= pMB->sy6522.TIMER2_LATCH.w;
-					else
-						pMB->sy6522.TIMER2_COUNTER.w = 0;
-				}
-				StartTimer2(pMB);
-			}
+			// TIMER2 only runs in one-shot mode
+			StopTimer2(pMB);
 		}
 	}
 
@@ -1979,7 +2075,7 @@ void MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 
 	MockingboardVoice.nVolume = NewVolume(dwVolume, dwVolumeMax);
 
-	if(MockingboardVoice.bActive)
+	if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
 		MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
 }
 
@@ -2021,7 +2117,10 @@ void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
 // 3: Added: Unit state - GH#320
 // 4: Added: 6522 timerIrqDelay - GH#652
 // 5: Added: Unit state-B (Phasor only) - GH#659
-const UINT kUNIT_VERSION = 5;
+// 6: Changed SS_YAML_KEY_PHASOR_MODE from (0,1) to (0,5,7)
+//    Added SS_YAML_KEY_VOTRAX_PHONEME
+//    Removed: redundant SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR
+const UINT kUNIT_VERSION = 6;
 
 const UINT NUM_MB_UNITS = 2;
 const UINT NUM_PHASOR_UNITS = 2;
@@ -2060,8 +2159,10 @@ const UINT NUM_PHASOR_UNITS = 2;
 #define SS_YAML_KEY_SY6522_TIMER2_IRQ_DELAY "Timer2 IRQ Delay"
 
 #define SS_YAML_KEY_PHASOR_UNIT "Unit"
-#define SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR "Clock Scale Factor"
+#define SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR "Clock Scale Factor"	// Redundant from v6
 #define SS_YAML_KEY_PHASOR_MODE "Mode"
+
+#define SS_YAML_KEY_VOTRAX_PHONEME "Votrax Phoneme"
 
 std::string MB_GetSnapshotCardName(void)
 {
@@ -2118,6 +2219,8 @@ void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 	YamlSaveHelper::Slot slot(yamlSaveHelper, MB_GetSnapshotCardName(), uSlot, kUNIT_VERSION);	// fixme: object should be just 1 Mockingboard card & it will know its slot
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, g_bVotraxPhoneme);
 
 	for(UINT i=0; i<NUM_MB_UNITS; i++)
 	{
@@ -2194,6 +2297,8 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
+	g_bVotraxPhoneme = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
+
 	AY8910UpdateSetCycles();
 
 	const UINT nMbCardNum = slot - SLOT4;
@@ -2245,19 +2350,15 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 				StartTimer1(pMB);			// Attempt to start timer
 		}
 
-		// Crude - currently only support a single speech chip
-		// FIX THIS:
-		// . Speech chip could be Votrax instead
-		// . Is this IRQ compatible with Phasor?
-		if(pMB->SpeechChip.DurationPhoneme)
+		// FIXME: currently only support a single speech chip
+		// NB. g_bVotraxPhoneme is never true, as the phoneme playback completes in SSI263Thread() before this point in the save-state.
+		// NB. SpeechChip.DurationPhoneme will mostly be non-zero during speech playback, as this is the SSI263 register, not whether the phonene is active.
+		// FIXME: So possible race-condition between saving-state & SSI263Thread()
+		if (pMB->SpeechChip.DurationPhoneme || g_bVotraxPhoneme)
 		{
 			g_nSSI263Device = nDeviceNum;
-
-			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C) && (pMB->sy6522.IER & IxR_PERIPHERAL))
-			{
-				UpdateIFR(pMB, 0, IxR_PERIPHERAL);
-				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
-			}
+			g_bPhasorEnable = false;
+			SetSpeechIRQ(pMB);
 		}
 
 		nDeviceNum++;
@@ -2283,8 +2384,8 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR, g_PhasorClockScaleFactor);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASOR_MODE, g_nPhasorMode);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASOR_MODE, g_phasorMode);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, g_bVotraxPhoneme);
 
 	for(UINT i=0; i<NUM_PHASOR_UNITS; i++)
 	{
@@ -2317,8 +2418,21 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
-	g_PhasorClockScaleFactor = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR);
-	g_nPhasorMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_MODE);
+	if (version < 6)
+		yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR);	// Consume redundant data
+
+	UINT phasorMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_MODE);
+	if (version < 6)
+	{
+		if (phasorMode == 0)
+			phasorMode = PH_Mockingboard;
+		else
+			phasorMode = PH_Phasor;
+	}
+	g_phasorMode = (PHASOR_MODE) phasorMode;
+	g_PhasorClockScaleFactor = (g_phasorMode == PH_Phasor) ? 2 : 1;
+
+	g_bVotraxPhoneme = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
 
 	AY8910UpdateSetCycles();
 
@@ -2373,19 +2487,12 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 				StartTimer1(pMB);			// Attempt to start timer
 		}
 
-		// Crude - currently only support a single speech chip
-		// FIX THIS:
-		// . Speech chip could be Votrax instead
-		// . Is this IRQ compatible with Phasor?
-		if(pMB->SpeechChip.DurationPhoneme)
+		// FIXME: currently only support a single speech chip
+		if (pMB->SpeechChip.DurationPhoneme || g_bVotraxPhoneme)
 		{
 			g_nSSI263Device = nDeviceNum;
-
-			if((pMB->SpeechChip.CurrentMode != MODE_IRQ_DISABLED) && (pMB->sy6522.PCR == 0x0C) && (pMB->sy6522.IER & IxR_PERIPHERAL))
-			{
-				UpdateIFR(pMB, 0, IxR_PERIPHERAL);
-				pMB->SpeechChip.CurrentMode |= 1;	// Set SSI263's D7 pin
-			}
+			g_bPhasorEnable = true;
+			SetSpeechIRQ(pMB);
 		}
 
 		nDeviceNum += 2;

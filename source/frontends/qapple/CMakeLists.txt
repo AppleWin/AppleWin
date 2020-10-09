@@ -18,9 +18,9 @@ add_executable(qapple
   video.cpp
   registry.cpp
   options.cpp
-  audiogenerator.cpp
   loggingcategory.cpp
   viewbuffer.cpp
+  qdirectsound.cpp
 
   ${QHEXVIEW_SOURCES}
   )
@@ -35,3 +35,6 @@ target_link_libraries(qapple PRIVATE
   Qt5::Multimedia
   appleii
   )
+
+install(TARGETS qapple
+  DESTINATION bin)

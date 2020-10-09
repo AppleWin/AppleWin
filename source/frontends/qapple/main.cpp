@@ -1,3 +1,5 @@
+#include "StdAfx.h"
+
 #include "qapple.h"
 #include <QApplication>
 #include <QTimer>

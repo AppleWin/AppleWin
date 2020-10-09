@@ -6,6 +6,7 @@
 #include "StdAfx.h"
 #include "linux/data.h"
 #include "linux/keyboard.h"
+#include "linux/paddle.h"
 #include "Common.h"
 #include "CardManager.h"
 #include "MouseInterface.h"
@@ -76,9 +77,61 @@ void Video::paintEvent(QPaintEvent *)
     }
 }
 
+bool Video::event(QEvent *event)
+{
+    if (isEnabled() && (event->type() == QEvent::KeyPress))
+    {
+        // This code bypasses the special QWidget handling of QKeyEvents
+        // Tab and Backtab (?) to move focus
+        // KeyPad Navigation
+        // F1 for whatsthis
+        QKeyEvent *k = (QKeyEvent *)event;
+        keyPressEvent(k);
+        return true;
+    }
+    else
+    {
+        return VIDEO_BASECLASS::event(event);
+    }
+}
+
+void Video::keyReleaseEvent(QKeyEvent *event)
+{
+    if (!event->isAutoRepeat())
+    {
+        // Qt::Key_Alt does not seem to work
+        // Qt::Key_AltGr & Qt::Key_Menu work well, but are on the same side
+        const int key = event->key();
+        switch (key)
+        {
+        case Qt::Key_AltGr:
+            Paddle::setButtonReleased(Paddle::ourOpenApple);
+            return;
+        case Qt::Key_Menu:
+            Paddle::setButtonReleased(Paddle::ourClosedApple);
+            return;
+        }
+    }
+
+    VIDEO_BASECLASS::keyReleaseEvent(event);
+}
+
 void Video::keyPressEvent(QKeyEvent *event)
 {
     const int key = event->key();
+
+    if (!event->isAutoRepeat())
+    {
+        switch (key)
+        {
+        case Qt::Key_AltGr:
+            Paddle::setButtonPressed(Paddle::ourOpenApple);
+            return;
+        case Qt::Key_Menu:
+            Paddle::setButtonPressed(Paddle::ourClosedApple);
+            return;
+        }
+    }
 
     BYTE ch = 0;
 
@@ -88,6 +141,7 @@ void Video::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Enter:
         ch = 0x0d;
         break;
+    case Qt::Key_Backspace: // same as AppleWin
     case Qt::Key_Left:
         ch = 0x08;
         break;
@@ -106,26 +160,53 @@ void Video::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Escape:
         ch = 0x1b;
         break;
-    default:
-        if (key < 0x80)
+    case Qt::Key_Tab:
+        ch = 0x09;
+        break;
+    case 'A' ... 'Z':
+    case ']':
+    case '[':
+    case '\\':
+    {
+        ch = key;
+        const Qt::KeyboardModifiers modifiers = event->modifiers();
+        if (modifiers & Qt::ControlModifier)
         {
-            ch = key;
-            if (ch >= 'A' && ch <= 'Z')
-            {
-                const Qt::KeyboardModifiers modifiers = event->modifiers();
-                if (modifiers & Qt::ShiftModifier)
-                {
-                    ch += 'a' - 'A';
-                }
-            }
+            ch = (ch - 'A') + 1;
+        }
+        else if (modifiers & Qt::ShiftModifier)
+        {
+            ch += 'a' - 'A';
         }
         break;
     }
+    case '-':
+    {
+        ch = key;
+        const Qt::KeyboardModifiers modifiers = event->modifiers();
+        if (modifiers & Qt::ControlModifier)
+        {
+           ch = 0x1f;
+        }
+        break;
+    }
+    default:
+    {
+        if (key < 0x80)
+        {
+            ch = key;
+        }
+    }
+    }
+
 
     if (ch)
     {
         addKeyToBuffer(ch);
-        event->accept();
+    }
+    else
+    {
+        VIDEO_BASECLASS::keyPressEvent(event);
     }
 }
 

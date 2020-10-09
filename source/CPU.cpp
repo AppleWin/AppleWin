@@ -98,12 +98,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #endif
 #include "Video.h"
 #include "NTSC.h"
+#include "Log.h"
 
 #include "z80emu.h"
 #include "Z80VICE/z80.h"
 #include "Z80VICE/z80mem.h"
 
 #include "YamlHelper.h"
+
+#define LOG_IRQ_TAKEN_AND_RTI 0
 
 // 6502 Accumulator Bit Flags
 	#define	 AF_SIGN       0x80
@@ -211,12 +214,7 @@ void SetMouseCardInstalled(bool installed)
 //
 
 #include "CPU/cpu_general.inl"
-
 #include "CPU/cpu_instructions.inl"
-
-// Break into debugger on invalid opcodes
-//#define INV IsDebugBreakOnInvalid(AM_1);
-#define INV
 
 /****************************************************************************
 *
@@ -243,6 +241,10 @@ static __forceinline void DoIrqProfiling(DWORD uCycles)
 	if(regs.ps & AF_INTERRUPT)
 		return;		// Still in Apple's ROM
 
+#if LOG_IRQ_TAKEN_AND_RTI
+	LogOutput("ISR-end\n\n");
+#endif
+
 	g_nCycleIrqEnd = g_nCumulativeCycles + uCycles;
 	g_nCycleIrqTime = (UINT) (g_nCycleIrqEnd - g_nCycleIrqStart);
 
@@ -264,18 +266,6 @@ static __forceinline void DoIrqProfiling(DWORD uCycles)
 		g_nMean = nTotal / BUFFER_SIZE;
 	}
 #endif
-}
-
-//===========================================================================
-
-BYTE CpuRead(USHORT addr, ULONG uExecutedCycles)
-{
-	return READ;
-}
-
-void CpuWrite(USHORT addr, BYTE a, ULONG uExecutedCycles)
-{
-	WRITE(a);
 }
 
 //===========================================================================
@@ -442,6 +432,9 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		regs.pc = * (WORD*) (mem+0xFFFE);
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7)
+#if defined(_DEBUG) && LOG_IRQ_TAKEN_AND_RTI
+		LogOutput("IRQ\n");
+#endif
 	}
 
 	g_irqOnLastOpcodeCycle = false;
@@ -477,23 +470,87 @@ void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
 
 //===========================================================================
 
+#define READ _READ
+#define WRITE(value) _WRITE(value)
+#define HEATMAP_X(address)
+
 #include "CPU/cpu6502.h"  // MOS 6502
 #include "CPU/cpu65C02.h" // WDC 65C02
-#include "CPU/cpu65d02.h" // Debug CPU Memory Visualizer
+
+#undef READ
+#undef WRITE
+#undef HEATMAP_X
+
+//-----------------
+
+#define READ Heatmap_ReadByte(addr, uExecutedCycles)
+#define WRITE(value) Heatmap_WriteByte(addr, value, uExecutedCycles);
+
+#define HEATMAP_X(address) Heatmap_X(address)
+
+#include "CPU/cpu_heatmap.inl"
+
+#define Cpu6502 Cpu6502_debug
+#include "CPU/cpu6502.h"  // MOS 6502
+#undef Cpu6502
+
+#define Cpu65C02 Cpu65C02_debug
+#include "CPU/cpu65C02.h" // WDC 65C02
+#undef Cpu65C02
+
+#undef READ
+#undef WRITE
+#undef HEATMAP_X
 
 //===========================================================================
 
 static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdate)
 {
-	if (GetMainCpu() == CPU_6502)
-		return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
+	if (g_nAppMode == MODE_RUNNING)
+	{
+		if (GetMainCpu() == CPU_6502)
+			return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
+		else
+			return Cpu65C02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+	}
 	else
-		return Cpu65C02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+	{
+		_ASSERT(g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
+		if (GetMainCpu() == CPU_6502)
+			return Cpu6502_debug(uTotalCycles, bVideoUpdate);	// Apple ][, ][+, //e, Clones
+		else
+			return Cpu65C02_debug(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+	}
 }
 
 //
 // ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
 //
+
+//===========================================================================
+
+// Called by z80_RDMEM()
+BYTE CpuRead(USHORT addr, ULONG uExecutedCycles)
+{
+	if (g_nAppMode == MODE_RUNNING)
+	{
+		return _READ;
+	}
+
+	return Heatmap_ReadByte(addr, uExecutedCycles);
+}
+
+// Called by z80_WRMEM()
+void CpuWrite(USHORT addr, BYTE value, ULONG uExecutedCycles)
+{
+	if (g_nAppMode == MODE_RUNNING)
+	{
+		_WRITE(value);
+		return;
+	}
+
+	Heatmap_WriteByte(addr, value, uExecutedCycles);
+}
 
 //===========================================================================
 
@@ -554,6 +611,11 @@ ULONG CpuGetCyclesThisVideoFrame(const ULONG nExecutedCycles)
 
 DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 {
+#ifdef LOG_PERF_TIMINGS
+	extern UINT64 g_timeCpu;
+	PerfMarker perfMarker(g_timeCpu);
+#endif
+
 	g_nCyclesExecuted =	0;
 
 #ifdef _DEBUG

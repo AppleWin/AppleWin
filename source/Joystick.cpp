@@ -650,6 +650,10 @@ BYTE __stdcall JoyReadPosition(WORD programcounter, WORD address, BYTE, BYTE, UL
 
 	BOOL nPdlCntrActive = g_nCumulativeCycles <= (g_nJoyCntrResetCycle + (unsigned __int64) ((double)nPdlPos * PDL_CNTR_INTERVAL));
 
+	// If no joystick connected, then this is always active (GH#778)
+	if (joyinfo[joytype[nJoyNum]] == DEVICE_NONE)
+		nPdlCntrActive = TRUE;
+
 	return MemReadFloatingBus(nPdlCntrActive, nExecutedCycles);
 }
 

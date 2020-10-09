@@ -1,8 +1,16 @@
 #include "linux/interface.h"
 
+void registerSoundBuffer(IDirectSoundBuffer * buffer)
+{
+}
+
+void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
+{
+}
+
 // Resources
 
-HRSRC FindResource(void *, const std::string & filename, const char *)
+HRSRC FindResource(void *, const char * filename, const char *)
 {
   return HRSRC();
 }
@@ -15,19 +23,15 @@ void FrameRefreshStatus(int x, bool) { }
 
 // Keyboard
 
-BYTE    KeybGetKeycode () { return 0; }
+BYTE KeybGetKeycode () { return 0; }
 BYTE KeybReadData() { return 0; }
 BYTE KeybReadFlag() { return 0; }
 
 // Joystick
 
-BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) { return 0; }
-BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) { return 0; }
+BYTE JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) { return 0; }
+BYTE JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) { return 0; }
 void JoyResetPosition(ULONG nCyclesLeft) { }
-
-// Speaker
-
-BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nCyclesLeft) { return 0; }
 
 // Registry
 
@@ -43,7 +47,7 @@ int MessageBox(HWND, const char * text, const char * caption, UINT type) { retur
 
 // Bitmap
 
-HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename)
+HBITMAP LoadBitmap(HINSTANCE hInstance, const char * filename)
 {
   return nullptr;
 }
@@ -51,9 +55,4 @@ HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename)
 LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits)
 {
   return 0;
-}
-
-BOOL DeleteObject(HGDIOBJ ho)
-{
-  return TRUE;
 }

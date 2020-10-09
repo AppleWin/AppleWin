@@ -71,9 +71,12 @@ static YamlHelper yamlHelper;
 // v3: Extended: memory (added 'AnnunciatorN')
 // v4: Extended: video (added 'Video Refresh Rate')
 // v5: Extended: cpu (added 'Defer IRQ By 1 Opcode')
-#define UNIT_APPLE2_VER 5
+// v6: Added 'Unit Miscellaneous' for NoSlotClock(NSC)
+#define UNIT_APPLE2_VER 6
 
 #define UNIT_SLOTS_VER 1
+
+#define UNIT_MISC_VER 1
 
 //-----------------------------------------------------------------------------
 
@@ -134,10 +137,17 @@ static std::string GetSnapshotUnitSlotsName(void)
 	return name;
 }
 
+static std::string GetSnapshotUnitMiscName(void)
+{
+	static const std::string name("Miscellaneous");
+	return name;
+}
+
 #define SS_YAML_KEY_MODEL "Model"
 
 #define SS_YAML_VALUE_APPLE2			"Apple]["
 #define SS_YAML_VALUE_APPLE2PLUS		"Apple][+"
+#define SS_YAML_VALUE_APPLE2JPLUS		"Apple][ J-Plus"
 #define SS_YAML_VALUE_APPLE2E			"Apple//e"
 #define SS_YAML_VALUE_APPLE2EENHANCED	"Enhanced Apple//e"
 #define SS_YAML_VALUE_APPLE2C			"Apple2c"
@@ -145,11 +155,13 @@ static std::string GetSnapshotUnitSlotsName(void)
 #define SS_YAML_VALUE_PRAVETS8M			"Pravets8M"
 #define SS_YAML_VALUE_PRAVETS8A			"Pravets8A"
 #define SS_YAML_VALUE_TK30002E			"TK3000//e"
+#define SS_YAML_VALUE_BASE64A			"Base 64A"
 
 static eApple2Type ParseApple2Type(std::string type)
 {
 	if (type == SS_YAML_VALUE_APPLE2)				return A2TYPE_APPLE2;
 	else if (type == SS_YAML_VALUE_APPLE2PLUS)		return A2TYPE_APPLE2PLUS;
+	else if (type == SS_YAML_VALUE_APPLE2JPLUS)		return A2TYPE_APPLE2JPLUS;
 	else if (type == SS_YAML_VALUE_APPLE2E)			return A2TYPE_APPLE2E;
 	else if (type == SS_YAML_VALUE_APPLE2EENHANCED)	return A2TYPE_APPLE2EENHANCED;
 	else if (type == SS_YAML_VALUE_APPLE2C)			return A2TYPE_APPLE2C;
@@ -157,6 +169,7 @@ static eApple2Type ParseApple2Type(std::string type)
 	else if (type == SS_YAML_VALUE_PRAVETS8M)		return A2TYPE_PRAVETS8M;
 	else if (type == SS_YAML_VALUE_PRAVETS8A)		return A2TYPE_PRAVETS8A;
 	else if (type == SS_YAML_VALUE_TK30002E)		return A2TYPE_TK30002E;
+	else if (type == SS_YAML_VALUE_BASE64A)			return A2TYPE_BASE64A;
 
 	throw std::string("Load: Unknown Apple2 type");
 }
@@ -167,6 +180,7 @@ static std::string GetApple2TypeAsString(void)
 	{
 		case A2TYPE_APPLE2:			return SS_YAML_VALUE_APPLE2;
 		case A2TYPE_APPLE2PLUS:		return SS_YAML_VALUE_APPLE2PLUS;
+		case A2TYPE_APPLE2JPLUS:	return SS_YAML_VALUE_APPLE2JPLUS;
 		case A2TYPE_APPLE2E:		return SS_YAML_VALUE_APPLE2E;
 		case A2TYPE_APPLE2EENHANCED:return SS_YAML_VALUE_APPLE2EENHANCED;
 		case A2TYPE_APPLE2C:		return SS_YAML_VALUE_APPLE2C;
@@ -174,6 +188,7 @@ static std::string GetApple2TypeAsString(void)
 		case A2TYPE_PRAVETS8M:		return SS_YAML_VALUE_PRAVETS8M;
 		case A2TYPE_PRAVETS8A:		return SS_YAML_VALUE_PRAVETS8A;
 		case A2TYPE_TK30002E:		return SS_YAML_VALUE_TK30002E;
+		case A2TYPE_BASE64A:		return SS_YAML_VALUE_BASE64A;
 		default:
 			throw std::string("Save: Unknown Apple2 type");
 	}
@@ -350,6 +365,9 @@ static void ParseUnit(void)
 	if (unit == GetSnapshotUnitApple2Name())
 	{
 		ParseUnitApple2(yamlLoadHelper, unitVersion);
+
+		if (unitVersion < 6) MemInsertNoSlotClock();	// NSC always inserted
+		else				 MemRemoveNoSlotClock();	// NSC only add if there's a misc unit
 	}
 	else if (unit == MemGetSnapshotUnitAuxSlotName())
 	{
@@ -358,6 +376,11 @@ static void ParseUnit(void)
 	else if (unit == GetSnapshotUnitSlotsName())
 	{
 		ParseSlots(yamlLoadHelper, unitVersion);
+	}
+	else if (unit == GetSnapshotUnitMiscName())
+	{
+		// NB. could extend for other misc devices - see how ParseSlots() calls GetMapNextSlotNumber()
+		NoSlotClockLoadSnapshot(yamlLoadHelper);
 	}
 	else
 	{
@@ -368,6 +391,7 @@ static void ParseUnit(void)
 static void Snapshot_LoadState_v2(void)
 {
 	bool restart = false;	// Only need to restart if any VM state has change
+	HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
 
 	try
 	{
@@ -448,9 +472,10 @@ static void Snapshot_LoadState_v2(void)
 		sg_PropertySheet.ApplyNewConfig(m_ConfigNew, ConfigOld);	// Mainly just saves (some) new state to Registry
 
 		MemInitializeROM();
+		MemInitializeCustomROM();
 		MemInitializeCustomF8ROM();
 		MemInitializeIO();
-		MemInitializeCardExpansionRomFromSnapshot();
+		MemInitializeCardSlotAndExpansionRomFromSnapshot();
 
 		MemUpdatePaging(TRUE);
 
@@ -470,6 +495,7 @@ static void Snapshot_LoadState_v2(void)
 			PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);		// Power-cycle VM (undoing all the new state just loaded)
 	}
 
+	SetCursor(oldcursor);
 	yamlHelper.FinaliseParser();
 }
 
@@ -563,6 +589,15 @@ void Snapshot_SaveState(void)
 
 			if (g_CardMgr.QuerySlot(SLOT7) == CT_GenericHDD)
 				HD_SaveSnapshot(yamlSaveHelper);
+		}
+
+		// Miscellaneous
+		if (MemHasNoSlotClock())
+		{
+			yamlSaveHelper.UnitHdr(GetSnapshotUnitMiscName(), UNIT_MISC_VER);
+			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+			NoSlotClockSaveSnapshot(yamlSaveHelper);
 		}
 	}
 	catch(std::string szMessage)

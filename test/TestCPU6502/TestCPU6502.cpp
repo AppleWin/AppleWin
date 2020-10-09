@@ -81,8 +81,19 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 
 #include "../../source/CPU/cpu_general.inl"
 #include "../../source/CPU/cpu_instructions.inl"
+
+#define READ _READ
+#define WRITE(a) _WRITE(a)
+#define HEATMAP_X(pc)
+
 #include "../../source/CPU/cpu6502.h"  // MOS 6502
 #include "../../source/CPU/cpu65C02.h"  // WDC 65C02
+
+#undef READ
+#undef WRITE
+#undef HEATMAP_X
+
+//-------------------------------------
 
 void init(void)
 {
@@ -374,7 +385,7 @@ const BYTE g_OpcodeTimings[256][4] =
 	{7,7,1,1},	// 3B
 	{4,5,4,5},	// 3C
 	{4,5,4,5},	// 3D
-	{6,6,6,7},	// 3E
+	{7,7,6,7},	// 3E
 	{7,7,1,1},	// 3F
 	{6,6,6,6},	// 40
 	{6,6,6,6},	// 41
@@ -406,7 +417,7 @@ const BYTE g_OpcodeTimings[256][4] =
 	{7,7,1,1},	// 5B
 	{4,5,8,8},	// 5C
 	{4,5,4,5},	// 5D
-	{6,6,6,7},	// 5E
+	{7,7,6,7},	// 5E
 	{7,7,1,1},	// 5F
 	{6,6,6,6},	// 60
 	{6,6,6,6},	// 61
@@ -438,7 +449,7 @@ const BYTE g_OpcodeTimings[256][4] =
 	{7,7,1,1},	// 7B
 	{4,5,6,6},	// 7C
 	{4,5,4,5},	// 7D
-	{6,6,6,7},	// 7E
+	{7,7,6,7},	// 7E
 	{7,7,1,1},	// 7F
 	{2,2,3,3},	// 80
 	{6,6,6,6},	// 81

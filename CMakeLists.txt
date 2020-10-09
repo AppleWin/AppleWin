@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
 
+include(CPack)
+
 project(applewin)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-multichar -Werror=return-type")

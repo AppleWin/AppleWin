@@ -1,6 +1,9 @@
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
+#include "StdAfx.h"
+#include "Card.h"
+#include "Common.h"
 #include "preferences.h"
 
 class GlobalOptions
@@ -19,8 +22,6 @@ public:
     int msFullSpeed;
 
     int audioLatency;
-    int silenceDelay;
-    int volume;
 
     void setData(const GlobalOptions & data);
 };
@@ -29,9 +30,9 @@ struct PreferenceData
 {
     GlobalOptions options;
 
-    int apple2Type;
-    bool mouseInSlot4;
-    bool cpmInSlot5;
+    eApple2Type apple2Type;
+    SS_CARDTYPE cardInSlot4;
+    SS_CARDTYPE cardInSlot5;
     bool hdInSlot7;
     bool hz50;
 
@@ -40,6 +41,8 @@ struct PreferenceData
     int videoType;
     bool scanLines;
     bool verticalBlend;
+    int speakerVolume;
+    int mockingboardVolume;
 
     std::vector<QString> disks;
     std::vector<QString> hds;

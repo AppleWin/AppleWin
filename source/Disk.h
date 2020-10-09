@@ -120,7 +120,7 @@ public:
 class Disk2InterfaceCard : public Card
 {
 public:
-	Disk2InterfaceCard(void);
+	Disk2InterfaceCard(UINT slot);
 	virtual ~Disk2InterfaceCard(void);
 
 	virtual void Init(void) {};
@@ -144,6 +144,7 @@ public:
 	void NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error);
 	bool GetProtect(const int drive);
 	void SetProtect(const int drive, const bool bWriteProtect);
+	UINT GetCurrentFirmware(void) { return m_is13SectorFirmware ? 13 : 16; }
 	int GetCurrentDrive(void);
 	int GetCurrentTrack(void);
 	float GetCurrentPhase(void);
@@ -185,15 +186,18 @@ private:
 	void WriteTrack(const int drive);
 	const std::string & DiskGetFullPathName(const int drive);
 	void ResetLogicStateSequencer(void);
-	void UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles);
-	UINT GetBitCellDelta(const BYTE optimalBitTiming);
+	UINT GetBitCellDelta(const ULONG uExecutedCycles);
 	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
 	void UpdateBitStreamOffsets(FloppyDisk& floppy);
+	__forceinline void IncBitStream(FloppyDisk& floppy);
 	void DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
-	void DataLatchWriteWOZ(WORD pc, WORD addr, BYTE d, UINT bitCellRemainder);
+	void DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
+	void DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCycles);
 	void SetSequencerFunction(WORD addr);
 	void DumpSectorWOZ(FloppyDisk floppy);
 	void DumpTrackWOZ(FloppyDisk floppy);
+	bool GetFirmware(LPCSTR lpName, BYTE* pDst);
+	void InitFirmware(LPBYTE pCxRomPeripheral);
 
 	void SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	void SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
@@ -206,7 +210,7 @@ private:
 	void __stdcall ControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
 	void __stdcall Enable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
 	void __stdcall ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
-	void __stdcall DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+	void __stdcall DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, ULONG uExecutedCycles);
 	void __stdcall LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG);
 	void __stdcall SetReadMode(WORD, WORD, BYTE, BYTE, ULONG);
 	void __stdcall SetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles);
@@ -216,6 +220,11 @@ private:
 #endif
 
 	//
+
+	static const UINT DISK2_FW_SIZE = 256;
+	BYTE m_13SectorFirmware[DISK2_FW_SIZE];
+	BYTE m_16SectorFirmware[DISK2_FW_SIZE];
+	bool m_is13SectorFirmware;
 
 	WORD m_currDrive;
 	FloppyDrive m_floppyDrive[NUM_DRIVES];
@@ -240,8 +249,9 @@ private:
 	BYTE m_shiftReg;
 	int m_latchDelay;
 	bool m_resetSequencer;
+	bool m_writeStarted;
 
-	enum SEQFUNC {readSequencing=0, checkWriteProtAndInitWrite, dataShiftWrite, dataLoadWrite};	// UTAIIe 9-14
+	enum SEQFUNC {readSequencing=0, dataShiftWrite, checkWriteProtAndInitWrite, dataLoadWrite};	// UTAIIe 9-14
 	union SEQUENCER_FUNCTION
 	{
 		struct

@@ -1,8 +1,10 @@
 #include "StdAfx.h"
 
 #include <chrono>
+#include <thread>
 #include <iostream>
 #include <ncurses.h>
+#include <libgen.h>
 
 #include <boost/program_options.hpp>
 
@@ -20,6 +22,8 @@
 #include "ParallelPrinter.h"
 #include "SaveState.h"
 #include "MouseInterface.h"
+#include "Mockingboard.h"
+#include "SoundCore.h"
 
 #include "linux/data.h"
 #include "linux/benchmark.h"
@@ -208,7 +212,8 @@ namespace
       {
 	if (us < nExecutionPeriodUsec)
 	{
-	  usleep(nExecutionPeriodUsec - us);
+	  const auto duration = std::chrono::microseconds(nExecutionPeriodUsec - us);
+	  std::this_thread::sleep_for(duration);
 	}
       }
     }
@@ -253,6 +258,27 @@ namespace
     Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*> (g_CardMgr.GetObj(slot));
     ImageError_e Error = pDisk2Card->InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
     return Error == eIMAGE_ERROR_NONE;
+  }
+
+  void setSnapshotFilename(const std::string & filename)
+  {
+    // same logic as qapple
+    // setting chdir allows to load relative disks from the snapshot file (tests?)
+    // but if the snapshot file itself is relative, it wont work after a chdir
+    // so we convert to absolute first
+    char * absPath = realpath(filename.c_str(), nullptr);
+    if (absPath)
+    {
+      char * temp = strdup(absPath);
+      const char * dir = dirname(temp);
+      // dir points inside temp!
+      chdir(dir);
+      Snapshot_SetFilename(absPath);
+
+      free(temp);
+      free(absPath);
+      Snapshot_LoadState();
+    }
   }
 
   int foo(int argc, const char * argv [])
@@ -303,6 +329,8 @@ namespace
 
 	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
+	DSInit();
+	MB_Initialize();
 	MemInitialize();
 	NVideoInitialize();
 	g_CardMgr.GetDisk2CardMgr().Reset();
@@ -310,8 +338,7 @@ namespace
 
 	if (!options.snapshot.empty())
 	{
-	  Snapshot_SetFilename(options.snapshot.c_str());
-	  Snapshot_LoadState();
+	  setSnapshotFilename(options.snapshot);
 	}
 
 	if (options.benchmark)
@@ -322,12 +349,15 @@ namespace
 	{
 	  EnterMessageLoop(options);
 	}
+
 	CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
 	if (pMouseCard)
 	{
 	  pMouseCard->Reset();
 	}
 	MemDestroy();
+	MB_Destroy();
+	DSUninit();
       }
       while (g_bRestart);
 
@@ -345,11 +375,7 @@ namespace
     g_CardMgr.GetDisk2CardMgr().Destroy();
     ImageDestroy();
 
-    if (g_fh)
-    {
-      fclose(g_fh);
-      g_fh = NULL;
-    }
+    LogDone();
 
     return 0;
   }
@@ -366,5 +392,15 @@ int main(int argc, const char * argv [])
   {
     std::cerr << e.what() << std::endl;
     return 1;
+  }
+  catch (const std::string & e)
+  {
+    std::cerr << e << std::endl;
+    return 1;
+  }
+  catch (int e)
+  {
+    std::cerr << "Exit process called: " << e << std::endl;
+    return e;
   }
 }

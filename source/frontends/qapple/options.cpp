@@ -10,6 +10,8 @@
 #include "SaveState.h"
 #include "CPU.h"
 #include "Video.h"
+#include "Speaker.h"
+#include "Mockingboard.h"
 
 #include <QMessageBox>
 #include <QGamepad>
@@ -96,24 +98,6 @@ namespace
         REGSAVE(slotText.c_str(), (DWORD)newCardType);
     }
 
-    const std::vector<eApple2Type> computerTypes = {A2TYPE_APPLE2, A2TYPE_APPLE2PLUS, A2TYPE_APPLE2E, A2TYPE_APPLE2EENHANCED,
-                                                    A2TYPE_PRAVETS82, A2TYPE_PRAVETS8M, A2TYPE_PRAVETS8A, A2TYPE_TK30002E};
-
-    int getApple2ComputerType()
-    {
-        const eApple2Type type = GetApple2Type();
-        const auto it = std::find(computerTypes.begin(), computerTypes.end(), type);
-        if (it != computerTypes.end())
-        {
-            return std::distance(computerTypes.begin(), it);
-        }
-        else
-        {
-            // default to A2E
-            return 2;
-        }
-    }
-
 }
 
 GlobalOptions::GlobalOptions()
@@ -133,8 +117,6 @@ GlobalOptions GlobalOptions::fromQSettings()
     options.msGap = settings.value(REG_TIMER, 5).toInt();
     options.msFullSpeed = settings.value(REG_FULL_SPEED, 5).toInt();
     options.audioLatency = settings.value(REG_AUDIO_LATENCY, 200).toInt();
-    options.silenceDelay = settings.value(REG_SILENCE_DELAY, 10000).toInt();
-    options.volume = settings.value(REG_VOLUME, 0x0fff).toInt();
 
     return options;
 }
@@ -183,17 +165,6 @@ void GlobalOptions::setData(const GlobalOptions & data)
         QSettings().setValue(REG_AUDIO_LATENCY, this->audioLatency);
     }
 
-    if (this->silenceDelay != data.silenceDelay)
-    {
-        this->silenceDelay = data.silenceDelay;
-        QSettings().setValue(REG_SILENCE_DELAY, this->silenceDelay);
-    }
-
-    if (this->volume != data.volume)
-    {
-        this->volume = data.volume;
-        QSettings().setValue(REG_VOLUME, this->volume);
-    }
 }
 
 void getAppleWinPreferences(PreferenceData & data)
@@ -221,11 +192,14 @@ void getAppleWinPreferences(PreferenceData & data)
     }
 
     data.enhancedSpeed = pDisk2Card->GetEnhanceDisk();
-    data.mouseInSlot4 = g_CardMgr.QuerySlot(SLOT4) == CT_MouseInterface;
-    data.cpmInSlot5 = g_CardMgr.QuerySlot(SLOT5) == CT_Z80;
+    data.cardInSlot4 = g_CardMgr.QuerySlot(SLOT4);
+    data.cardInSlot5 = g_CardMgr.QuerySlot(SLOT5);
     data.hdInSlot7 = HD_CardIsEnabled();
 
-    data.apple2Type = getApple2ComputerType();
+    data.apple2Type = GetApple2Type();
+
+    data.speakerVolume = SpkrGetVolume();
+    data.mockingboardVolume = MB_GetVolume();
 
     const std::string & saveState = Snapshot_GetFilename();
     if (!saveState.empty())
@@ -244,24 +218,33 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
 {
     Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
 
+    if (currentData.speakerVolume != newData.speakerVolume)
+    {
+        SpkrSetVolume(newData.speakerVolume, 99);
+        REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
+    }
+
+    if (currentData.mockingboardVolume != newData.mockingboardVolume)
+    {
+        MB_SetVolume(newData.mockingboardVolume, 99);
+        REGSAVE(TEXT(REGVALUE_MB_VOLUME), MB_GetVolume());
+    }
+
     if (currentData.apple2Type != newData.apple2Type)
     {
-        const eApple2Type type = computerTypes[newData.apple2Type];
-        SetApple2Type(type);
-        REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), type);
-        const eCpuType cpu = ProbeMainCpuDefault(type);
+        SetApple2Type(newData.apple2Type);
+        REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), newData.apple2Type);
+        const eCpuType cpu = ProbeMainCpuDefault(newData.apple2Type);
         SetMainCpu(cpu);
         REGSAVE(TEXT(REGVALUE_CPU_TYPE), cpu);
     }
-    if (currentData.mouseInSlot4 != newData.mouseInSlot4)
+    if (currentData.cardInSlot4 != newData.cardInSlot4)
     {
-        const SS_CARDTYPE card = newData.mouseInSlot4 ? CT_MouseInterface : CT_Empty;
-        SetSlot(SLOT4, card);
+        SetSlot(SLOT4, newData.cardInSlot4);
     }
-    if (currentData.cpmInSlot5 != newData.cpmInSlot5)
+    if (currentData.cardInSlot5 != newData.cardInSlot5)
     {
-        const SS_CARDTYPE card = newData.cpmInSlot5 ? CT_Z80 : CT_Empty;
-        SetSlot(SLOT5, card);
+        SetSlot(SLOT5, newData.cardInSlot5);
     }
     if (currentData.hdInSlot7 != newData.hdInSlot7)
     {

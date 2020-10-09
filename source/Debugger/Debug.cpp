@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,0,15);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,0);
 
 
 // Public _________________________________________________________________________________________
@@ -440,10 +440,10 @@ bool DebugGetVideoMode(UINT* pVideoMode)
 
 // File _______________________________________________________________________
 
-int _GetFileSize( FILE *hFile )
+size_t _GetFileSize( FILE *hFile )
 {
 	fseek( hFile, 0, SEEK_END );
-	int nFileBytes = ftell( hFile );
+	size_t nFileBytes = ftell( hFile );
 	fseek( hFile, 0, SEEK_SET );
 
 	return nFileBytes;
@@ -484,13 +484,17 @@ bool _Bookmark_Del( const WORD nAddress )
 		{
 //			g_aBookmarks.at( iBookmark ) = NO_6502_TARGET;
 			g_aBookmarks[ iBookmark ].bSet = false;
+			g_nBookmarks--;
 			bDeleted = true;
 		}
 	}
 	return bDeleted;
 }
 
-bool Bookmark_Find( const WORD nAddress )
+// Returns:
+//     0   if address does not have a bookmark set
+//     N+1 if there is an existing bookmark that has this address
+int Bookmark_Find( const WORD nAddress )
 {
 	// Ugh, linear search
 //	int nSize = g_aBookmarks.size();
@@ -500,10 +504,10 @@ bool Bookmark_Find( const WORD nAddress )
 		if (g_aBookmarks[ iBookmark ].nAddress == nAddress)
 		{
 			if (g_aBookmarks[ iBookmark ].bSet)
-				return true;
+				return iBookmark + 1;
 		}
 	}
-	return false;
+	return 0;
 }
 
 
@@ -534,6 +538,8 @@ void _Bookmark_Reset()
 	{
 		g_aBookmarks[ iBookmark ].bSet = false;
 	}
+
+	g_nBookmarks = 0;
 }
 
 
@@ -598,15 +604,26 @@ Update_t CmdBookmarkAdd (int nArgs )
 			ConsoleDisplayPush( sText );
 			return ConsoleUpdate();
 		}
-		
-		if ((iBookmark < MAX_BOOKMARKS) && (g_nBookmarks < MAX_BOOKMARKS))
+
+		// 2.9.0.16 Fixed: Replacing an existing bookmark incorrectly increased the total bookmark count.
+		int nOldBookmark = Bookmark_Find( nAddress );
+		if (nOldBookmark)
 		{
-			g_aBookmarks[iBookmark].bSet = true;
-			g_aBookmarks[iBookmark].nAddress = nAddress;
-			bAdded = true;
-			g_nBookmarks++;
-			iBookmark++;
+			_Bookmark_Del( nAddress );
 		}
+
+		// 2.9.0.17 Fixed: If all bookmarks were used then setting a new one wouldn't update an existing one to the new address.
+		if (g_aBookmarks[ iBookmark ].bSet)
+		{
+			g_aBookmarks[ iBookmark ].nAddress = nAddress;
+			bAdded = true;
+		}
+		else
+			if (g_nBookmarks < MAX_BOOKMARKS)
+			{
+				bAdded = _Bookmark_Add( iBookmark, nAddress );
+				iBookmark++;
+			}
 	}
 
 	if (!bAdded)
@@ -632,11 +649,7 @@ Update_t CmdBookmarkClear (int nArgs)
 	{
 		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
-			for (iBookmark = 0; iBookmark < MAX_BOOKMARKS; iBookmark++ )
-			{
-				if (g_aBookmarks[ iBookmark ].bSet)
-					g_aBookmarks[ iBookmark ].bSet = false;
-			}
+			_Bookmark_Reset();
 			break;
 		}
 
@@ -688,8 +701,6 @@ Update_t CmdBookmarkList (int nArgs)
 //===========================================================================
 Update_t CmdBookmarkLoad (int nArgs)
 {
-	char sFilePath[ MAX_PATH ] = "";
-
 	if (nArgs == 1)
 	{
 //		strcpy( sMiniFileName, pFileName );
@@ -978,7 +989,7 @@ Update_t CmdBreakInvalid (int nArgs) // Breakpoint IFF Full-speed!
 	return UPDATE_CONSOLE_DISPLAY;
 
 _Help:
-		return HelpLastCommand();
+	return HelpLastCommand();
 }
 
 
@@ -1444,8 +1455,6 @@ Update_t CmdBreakpointAddPC (int nArgs)
 		g_aArgs[1].nValue = g_nDisasmCurAddress;
 	}
 
-	bool bHaveCmp = false;
-
 //	int iParamSrc;
 	int iParamCmp;
 
@@ -1463,12 +1472,12 @@ Update_t CmdBreakpointAddPC (int nArgs)
 			{
 				switch (iParamCmp)
 				{
-					case PARAM_BP_LESS_EQUAL   : iCmp = BP_OP_LESS_EQUAL   ; bHaveCmp = true; break;
-					case PARAM_BP_LESS_THAN    : iCmp = BP_OP_LESS_THAN    ; bHaveCmp = true; break;
-					case PARAM_BP_EQUAL        : iCmp = BP_OP_EQUAL        ; bHaveCmp = true; break;
-					case PARAM_BP_NOT_EQUAL    : iCmp = BP_OP_NOT_EQUAL    ; bHaveCmp = true; break;
-					case PARAM_BP_GREATER_THAN : iCmp = BP_OP_GREATER_THAN ; bHaveCmp = true; break;
-					case PARAM_BP_GREATER_EQUAL: iCmp = BP_OP_GREATER_EQUAL; bHaveCmp = true; break;
+					case PARAM_BP_LESS_EQUAL   : iCmp = BP_OP_LESS_EQUAL   ; break;
+					case PARAM_BP_LESS_THAN    : iCmp = BP_OP_LESS_THAN    ; break;
+					case PARAM_BP_EQUAL        : iCmp = BP_OP_EQUAL        ; break;
+					case PARAM_BP_NOT_EQUAL    : iCmp = BP_OP_NOT_EQUAL    ; break;
+					case PARAM_BP_GREATER_THAN : iCmp = BP_OP_GREATER_THAN ; break;
+					case PARAM_BP_GREATER_EQUAL: iCmp = BP_OP_GREATER_EQUAL; break;
 					default:
 						break;
 				}
@@ -1803,8 +1812,6 @@ Update_t CmdBreakpointSave (int nArgs)
 //===========================================================================
 Update_t _CmdAssemble( WORD nAddress, int iArg, int nArgs )
 {
-	bool bHaveLabel = false;
-
 	// if AlphaNumeric
 	ArgToken_e iTokenSrc = NO_TOKEN;
 	ParserFindToken( g_pConsoleInput, g_aTokens, NUM_TOKENS, &iTokenSrc );
@@ -1812,8 +1819,6 @@ Update_t _CmdAssemble( WORD nAddress, int iArg, int nArgs )
 	if (iTokenSrc == NO_TOKEN) // is TOKEN_ALPHANUMERIC
 	if (g_pConsoleInput[0] != CHAR_SPACE)
 	{
-		bHaveLabel = true;
-
 		// Symbol
 		char *pSymbolName = g_aArgs[ iArg ].sArg; // pArg->sArg;
 		SymbolUpdate( SYMBOLS_ASSEMBLY, pSymbolName, nAddress, false, true ); // bool bRemoveSymbol, bool bUpdateSymbol )
@@ -3659,9 +3664,9 @@ Update_t CmdCursorPageUp4K (int nArgs)
 }
 
 //===========================================================================
-Update_t CmdCursorSetPC( int nArgs) // TODO rename
+Update_t CmdCursorSetPC(int)
 {
-	regs.pc = nArgs; // HACK:
+	regs.pc = g_nDisasmCurAddress; // set PC to current cursor address
 	return UPDATE_DISASM;
 }
 
@@ -3768,7 +3773,8 @@ Update_t CmdDisk ( int nArgs)
 			goto _Help;
 
 		char buffer[200] = "";
-		ConsoleBufferPushFormat(buffer, "D%d at T$%s, phase $%s, offset $%X, mask $%02X, extraCycles %.2f, %s",
+		ConsoleBufferPushFormat(buffer, "FW%2d: D%d at T$%s, phase $%s, offset $%X, mask $%02X, extraCycles %.2f, %s",
+			diskCard.GetCurrentFirmware(),
 			diskCard.GetCurrentDrive() + 1,
 			diskCard.GetCurrentTrackString().c_str(),
 			diskCard.GetCurrentPhaseString().c_str(),
@@ -4491,7 +4497,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 	if (hFile)
 	{
-		int nFileBytes = _GetFileSize( hFile );
+		size_t nFileBytes = _GetFileSize( hFile );
 
 		if (nFileBytes > _6502_MEM_END)
 			nFileBytes = _6502_MEM_END + 1; // Bank-switched RAM/ROM is only 16-bit
@@ -5364,7 +5370,7 @@ Update_t CmdNTSC (int nArgs)
 							*pDst++ = pTmp[3];
 					}
 				}
-/*
+
 				// we duplicate phase 0 a total of 4 times
 				const size_t nBytesPerScanLine = 4096 * nBPP;
 				for( int iPhase = 1; iPhase < 4; iPhase++ )
@@ -5925,11 +5931,6 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 		return ConsoleDisplayError( TEXT("Error: Missing address seperator (comma or colon)" ) );
 
 	int iArgFirstByte = 4;
-
-	// S start,len #
-	int nMinLen = nArgs - (iArgFirstByte - 1);
-
-	bool bHaveWildCards = false;
 	int iArg;
 
 	MemorySearchValues_t vMemorySearchValues;
@@ -6226,8 +6227,6 @@ Update_t CmdOutputCalc (int nArgs)
 //===========================================================================
 Update_t CmdOutputEcho (int nArgs)
 {
-	TCHAR sText[ CONSOLE_WIDTH ] = TEXT("");
-
 	if (g_aArgs[1].bType & TYPE_QUOTED_2)
 	{
 		ConsoleDisplayPush( g_aArgs[1].sArg );
@@ -6520,7 +6519,6 @@ Update_t CmdOutputRun (int nArgs)
 
 	if (script.Read( sFileName ))
 	{
-		int iLine = 0;
 		int nLine = script.GetNumLines();
 
 		Update_t bUpdateDisplay = UPDATE_NOTHING;	
@@ -6638,10 +6636,6 @@ bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
 	g_nSourceAssemblySymbols = 0;
 
 	const DWORD INVALID_ADDRESS = _6502_MEM_END + 1;
-
-	bool bPrevSymbol = false;
-	bool bFourBytes = false;		
-	BYTE nByte4 = 0;
 
 	int nLines = g_AssemblerSourceBuffer.GetNumLines();
 	for( int iLine = 0; iLine < nLines; iLine++ )
@@ -6895,17 +6889,28 @@ Update_t CmdCyclesInfo(int nArgs)
 	else
 	{
 		if (strcmp(g_aArgs[1].sArg, "abs") == 0)
-			g_videoScannerDisplayInfo.isAbsCycle = true;
+			g_videoScannerDisplayInfo.cycleMode = VideoScannerDisplayInfo::abs;
 		else if (strcmp(g_aArgs[1].sArg, "rel") == 0)
-			g_videoScannerDisplayInfo.isAbsCycle = false;
+			g_videoScannerDisplayInfo.cycleMode = VideoScannerDisplayInfo::rel;
+		else if (strcmp(g_aArgs[1].sArg, "part") == 0)
+			g_videoScannerDisplayInfo.cycleMode = VideoScannerDisplayInfo::part;
 		else
 			return Help_Arg_1(CMD_CYCLES_INFO);
+
+		if (g_videoScannerDisplayInfo.cycleMode == VideoScannerDisplayInfo::part)
+			CmdCyclesReset(0);
 	}
 
 	TCHAR sText[CONSOLE_WIDTH];
 	ConsoleBufferPushFormat(sText, "Cycles display updated: %s", g_aArgs[1].sArg);
 	ConsoleBufferToDisplay();
 
+	return UPDATE_ALL;
+}
+
+Update_t CmdCyclesReset(int /*nArgs*/)
+{
+	g_videoScannerDisplayInfo.savedCumulativeCycles = g_nCumulativeCycles;
 	return UPDATE_ALL;
 }
 
@@ -8129,16 +8134,26 @@ Update_t ExecuteCommand (int nArgs)
 //===========================================================================
 void OutputTraceLine ()
 {
+	if (!g_hTraceFile)
+		return;
+
 	DisasmLine_t line;
 	GetDisassemblyLine( regs.pc, line );
 
 	char sDisassembly[ CONSOLE_WIDTH ]; // DrawDisassemblyLine( 0,regs.pc, sDisassembly); // Get Disasm String
 	FormatDisassemblyLine( line, sDisassembly, CONSOLE_WIDTH );
 
-	char sFlags[ _6502_NUM_FLAGS + 1 ]; DrawFlags( 0, regs.ps, sFlags ); // Get Flags String
-
-	if (!g_hTraceFile)
-		return;
+	char sFlags[] = "........";
+	WORD nRegFlags = regs.ps;
+	int nFlag = _6502_NUM_FLAGS;
+	while (nFlag--)
+	{
+		int iFlag = (_6502_NUM_FLAGS - nFlag - 1);
+		bool bSet = (nRegFlags & 1);
+		if (bSet)
+			sFlags[nFlag] = g_aBreakpointSource[BP_SRC_FLAG_C + iFlag][0];
+		nRegFlags >>= 1;
+	}
 
 	if (g_bTraceHeader)
 	{
@@ -8153,8 +8168,8 @@ void OutputTraceLine ()
 		else
 		{
 			fprintf( g_hTraceFile,
-//				"00 00 00 0000 --------  0000:90 90 90  NOP"
-				"A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n");
+//				"00000000 00 00 00 0000 --------  0000:90 90 90  NOP"
+				"Cycles   A: X: Y: SP:  Flags     Addr:Opcode    Mnemonic\n");
 		}
 	}
 
@@ -8189,8 +8204,10 @@ void OutputTraceLine ()
 	}
 	else
 	{
+		const UINT cycles = (UINT)g_nCumulativeCycles;
 		fprintf( g_hTraceFile,
-			"%02X %02X %02X %04X %s  %s\n",
+			"%08X %02X %02X %02X %04X %s  %s\n",
+			cycles,
 			(unsigned)regs.a,
 			(unsigned)regs.x,
 			(unsigned)regs.y,
@@ -8806,11 +8823,7 @@ void DebugDestroy ()
 	}
 	// TODO: DataDisassembly_Clear()
 
-	DeleteObject( g_hConsoleBrushFG );
-	DeleteObject( g_hConsoleBrushBG );
-
-	DeleteDC( g_hConsoleFontDC );
-	DeleteObject( g_hConsoleFontBitmap );
+	ReleaseConsoleFontDC();
 }
 
 
@@ -8853,67 +8866,13 @@ void DebugInitialize ()
 #endif
 
 	// Must select a bitmap into the temp DC !
-	HDC hTmpDC  = CreateCompatibleDC( FrameGetDC() );
+//	HDC hTmpDC  = CreateCompatibleDC( FrameGetDC() );
 
 #if _DEBUG
 	nError = GetLastError();
 #endif
 
-	g_hConsoleFontDC = CreateCompatibleDC( FrameGetDC() );
-#if _DEBUG
-	nError = GetLastError();
-#endif
-
-#if APPLE_FONT_NEW
-	// Pre-scaled bitmap
-	g_hConsoleFontBitmap = LoadBitmap(g_hInstance,TEXT("IDB_DEBUG_FONT_7x8"));
-	SelectObject( g_hConsoleFontDC, g_hConsoleFontBitmap );
-#else
-	// Scale at run-time
-
-	// Black = Transparent
-	// White = Opaque
-	HBITMAP hTmpBitamp = LoadBitmap(g_hInstance,TEXT("CHARSET40"));
-#if _DEBUG
-	nError = GetLastError();
-#endif
-
-	SelectObject( hTmpDC ,hTmpBitamp);
-#if _DEBUG
-	nError = GetLastError();
-#endif
-
-	g_hConsoleFontBrush = GetStockBrush( WHITE_BRUSH );
-	SelectObject(g_hConsoleFontDC, g_hConsoleFontBrush );
-
-//	SelectObject(hTmpDC, g_hDebugFontBrush );
-
-#if _DEBUG
-	nError = GetLastError();
-#endif
-
-	g_hConsoleFontBitmap = CreateCompatibleBitmap(
-		hTmpDC, 
-		APPLE_FONT_X_REGIONSIZE/2, APPLE_FONT_Y_REGIONSIZE/2
-	);
-#if _DEBUG
-	nError = GetLastError();
-#endif
-	SelectObject( g_hConsoleFontDC, g_hConsoleFontBitmap );
-
-	StretchBlt(
-		g_hConsoleFontDC,                                     // HDC hdcDest,                        // handle to destination DC
-		0, 0,                                                 // int nXOriginDest, int nYOriginDest, // y-coord of destination upper-left corner
-		APPLE_FONT_X_REGIONSIZE/2, APPLE_FONT_Y_REGIONSIZE/2, //  int nWidthDest,   int nHeightDest,  
-		hTmpDC,                                               // HDC hdcSrc,                         // handle to source DC
-		0, APPLE_FONT_Y_APPLE_80COL,                          // int nXOriginSrc,  int nYOriginSrc,
-		APPLE_FONT_X_REGIONSIZE, APPLE_FONT_Y_REGIONSIZE,     // int nWidthSrc,    int nHeightSrc,
-		SRCCOPY                                               // DWORD dwRop                         // raster operation code
-	);
-
-	DeleteObject( hTmpBitamp );
-	DeleteObject( hTmpDC );
-#endif
+	GetConsoleFontDC(); // Load font
 
 	ZeroMemory( g_aConsoleDisplay, sizeof( g_aConsoleDisplay ) ); // CONSOLE_WIDTH * CONSOLE_HEIGHT );
 	ConsoleInputReset();
@@ -9609,7 +9568,7 @@ void DebuggerProcessKey( int keycode )
 
 			case VK_RIGHT:
 				if (KeybGetCtrlStatus())
-					bUpdateDisplay |= CmdCursorSetPC( g_nDisasmCurAddress );		
+					bUpdateDisplay |= CmdCursorSetPC(0/*unused*/);
 				else
 				if (KeybGetShiftStatus())
 					bUpdateDisplay |= CmdCursorJumpPC( CURSOR_ALIGN_TOP );

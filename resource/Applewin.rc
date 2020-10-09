@@ -55,6 +55,7 @@ FULLSCR_BUTTON          BITMAP                  "FULLSCR.BMP"
 RUN_BUTTON              BITMAP                  "RUN.BMP"
 RUNP_BUTTON             BITMAP                  "RUNP.BMP"
 RUN3000E_BUTTON         BITMAP                  "RUN3000E.BMP"
+RUNBASE64A_BUTTON       BITMAP                  "RUNBASE64A.BMP"
 DEBUG_BUTTON            BITMAP                  "DEBUG.BMP"
 DRIVE1_BUTTON           BITMAP                  "DRIVE1.BMP"
 DRIVE2_BUTTON           BITMAP                  "DRIVE2.BMP"
@@ -89,11 +90,11 @@ CAPTION "Configuration"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     LTEXT           "&Model:",IDC_STATIC,5,7,40,8
-    COMBOBOX        IDC_COMPUTER,45,5,90,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_COMPUTER,45,5,91,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     CONTROL         "Confirm reboot",IDC_CHECK_CONFIRM_REBOOT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,8,62,10
     GROUPBOX        "Video",IDC_STATIC,5,22,200,56
     LTEXT           "Mo&de:",IDC_STATIC,12,33,33,8
-    COMBOBOX        IDC_VIDEOTYPE,45,30,90,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_VIDEOTYPE,33,30,103,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Monochrome &Color...",IDC_MONOCOLOR,12,46,80,14
     CONTROL         "50% Scan lines",IDC_CHECK_HALF_SCAN_LINES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,33,62,10
     CONTROL         "Vertical blend",IDC_CHECK_VERTICAL_BLEND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,48,62,10
@@ -175,21 +176,20 @@ BEGIN
     GROUPBOX        "Floppy Disk Drives",IDC_STATIC,5,7,200,72
     LTEXT           "&Disk access speed:",IDC_STATIC,12,21,64,8
     COMBOBOX        IDC_DISKTYPE,80,18,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "Hard Disk Drives",IDC_STATIC,5,83,200,64
-    CONTROL         "&Enable hard disk controller in slot 7",IDC_HDD_ENABLE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,96,122,10
-    PUSHBUTTON      "Swap",IDC_HDD_SWAP,156,92,40,14
-    LTEXT           "&Path to CiderPress:",IDC_STATIC,7,155,74,8
-    EDITTEXT        IDC_CIDERPRESS_FILENAME,7,165,143,12,ES_AUTOHSCROLL | ES_READONLY
-    PUSHBUTTON      "&Browse...",IDC_CIDERPRESS_BROWSE,156,164,50,14
-    LTEXT           "HDD 1:",IDC_STATIC,11,113,23,8
-    LTEXT           "HDD 2:",IDC_STATIC,11,130,23,8
-    COMBOBOX        IDC_COMBO_HDD1,46,112,150,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    COMBOBOX        IDC_COMBO_HDD2,46,128,150,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Disk 1:",IDC_STATIC,10,41,23,8
     LTEXT           "Disk 2:",IDC_STATIC,10,58,23,8
     COMBOBOX        IDC_COMBO_DISK1,40,40,150,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     COMBOBOX        IDC_COMBO_DISK2,40,57,150,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "Hard Disk Drives",IDC_STATIC,5,83,200,64
+    CONTROL         "&Enable hard disk controller in slot 7",IDC_HDD_ENABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,96,122,10
+    PUSHBUTTON      "Swap",IDC_HDD_SWAP,156,92,40,14
+    LTEXT           "HDD 1:",IDC_STATIC,11,113,23,8
+    LTEXT           "HDD 2:",IDC_STATIC,11,130,23,8
+    COMBOBOX        IDC_COMBO_HDD1,46,112,150,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_COMBO_HDD2,46,128,150,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "&Path to CiderPress:",IDC_STATIC,7,155,74,8
+    EDITTEXT        IDC_CIDERPRESS_FILENAME,7,165,143,12,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "&Browse...",IDC_CIDERPRESS_BROWSE,156,164,50,14
 END
 
 IDD_TFE_SETTINGS_DIALOG DIALOGEX 0, 0, 270, 100
@@ -200,7 +200,7 @@ BEGIN
     LTEXT           "Ethernet",IDC_TFE_SETTINGS_ENABLE_T,9,7,30,8
     COMBOBOX        IDC_TFE_SETTINGS_ENABLE,45,5,50,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Interface",IDC_TFE_SETTINGS_INTERFACE_T,9,24,30,8
-    COMBOBOX        IDC_TFE_SETTINGS_INTERFACE,45,22,200,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_TFE_SETTINGS_INTERFACE,45,22,210,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "",IDC_TFE_SETTINGS_INTERFACE_NAME,9,44,250,8
     LTEXT           "",IDC_TFE_SETTINGS_INTERFACE_DESC,9,60,250,8
     DEFPUSHBUTTON   "Ok",IDOK,20,75,50,14
@@ -308,7 +308,8 @@ END
 // FIRMWARE
 //
 
-IDR_DISK2_FW            FIRMWARE                "Disk2.rom"
+IDR_DISK2_13SECTOR_FW   FIRMWARE                "Disk2-13sector.rom"
+IDR_DISK2_16SECTOR_FW   FIRMWARE                "Disk2.rom"
 IDR_SSC_FW              FIRMWARE                "SSC.rom"
 IDR_HDDRVR_FW           FIRMWARE                "Hddrvr.bin"
 IDR_PRINTDRVR_FW        FIRMWARE                "Parallel.rom"
@@ -324,13 +325,23 @@ IDR_TKCLOCK_FW          FIRMWARE                "TKClock.rom"
 
 IDR_APPLE2_ROM          ROM                     "Apple2.rom"
 IDR_APPLE2_PLUS_ROM     ROM                     "Apple2_Plus.rom"
+IDR_APPLE2_JPLUS_ROM    ROM                     "Apple2_JPlus.rom"
 IDR_APPLE2E_ROM         ROM                     "Apple2e.rom"
 IDR_APPLE2E_ENHANCED_ROM ROM                     "Apple2e_Enhanced.rom"
 IDR_PRAVETS_82_ROM      ROM                     "Pravets82.rom"
 IDR_PRAVETS_8M_ROM      ROM                     "Pravets8M.rom"
 IDR_PRAVETS_8C_ROM      ROM                     "Pravets8C.rom"
 IDR_TK3000_2E_ROM       ROM                     "TK3000e.rom"
+IDR_BASE_64A_ROM        ROM                     "Base64A.rom"
 IDR_FREEZES_F8_ROM      ROM                     "FREEZES_NON-AUTOSTART_F8_ROM.rom"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// VIDEO ROM
+//
+
+IDR_APPLE2_JPLUS_VIDEO_ROM    ROM               "Apple2_JPlus_Video.rom"
+IDR_BASE64A_VIDEO_ROM         ROM               "Base64A_German_Video.rom"
 
 /////////////////////////////////////////////////////////////////////////////
 //

@@ -11,6 +11,11 @@
 		<p style="FONT-WEIGHT: bold">AppleWin can be driven from the command line as 
 			follows:
 		</p>
+		-conf &lt;pathname&gt;<br>
+		Use an INI file for configuration instead of the Registry.<br><br>
+		-current-dir &lt;path&gt;<br>
+		This is guaranteed to be processed after all the image loading switches (eg. -d1, -h1, etc).<br>
+		Use this switch if you have a mix of (eg) -d1 and -h1 loading images from different folders, and you want to guarantee the current dir.<br><br>
 		-d1 &lt;pathname&gt;<br>
 		Start with a floppy disk in slot 6 drive-1 (and auto power-on the Apple II).<br>
 		NB. -s6d1 has the meaning same as -d1.<br><br>
@@ -25,8 +30,8 @@
 		Start with hard disk 1 plugged-in (and auto power-on the Apple II). NB. Hard disk controller card gets enabled.<br><br>
 		-h2 &lt;pathname&gt;<br>
 		Start with hard disk 2 plugged-in. NB. Hard disk controller card gets enabled.<br><br>
-		-model &lt;apple2|apple2p|apple2e|apple2ee&gt;<br>
-		Select the machine model: Apple II, Apple II+, Apple //e, Enhanced Apple //e.<br><br>
+		-model &lt;apple2|apple2p|apple2jp|apple2e|apple2ee&gt;<br>
+		Select the machine model: Apple II, Apple II+, Apple II J-Plus, Apple //e, Enhanced Apple //e.<br><br>
 		-clock-multiplier &lt;value&gt;<br>
 		Where value is between 0.5 and 3.9, and is a base-clock multiplier, roughly mapping to 0.5MHz - 3.9MHz<br><br>
 		-s0 &lt;saturn|saturn64|saturn128&gt;<br>
@@ -50,10 +55,12 @@
 		Useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br><br>
 		-s7-empty-on-exit<br>
 		Remove the hard disk controller card from slot 7 on AppleWin exit.<br><br>
+		-no-nsc<br>
+		Remove the No-Slot clock (NSC).<br><br>
 		-r &lt;number of pages&gt;<br>
 		Emulate a RamWorks III card with 1 to 127 pages (each page is 64K, giving a max of 8MB) in the auxiliary slot in an Apple //e machine.<br><br>
 		-load-state &lt;savestate&gt;<br>
-		Load a save-state file<br>
+		Load a save-state file (and auto power-on the Apple II).<br>
 		NB. This takes precedent over the -d1, -d2, -d#s#, -h1, -h2, s0-7, -model and -r switches.<br><br>
 		-f<br>
 		Start in full-screen mode<br><br>
@@ -64,8 +71,10 @@
 			<li>nnnn: select a specific resolution with height=nnnn pixels</li>
 		</ul>
 		NB. This changes the display resolution (and restores on exit).<br><br>
+		-rom &lt;file&gt;<br>
+		Use custom 12K ROM (at $D000) for Apple II machine, or 16K ROM (at $C000) for Apple //e machine.<br><br>
 		-f8rom &lt;file&gt;<br>
-		Use custom 2K ROM for any Apple II machine at [$F800..$FFFF]. &lt;file&gt; must be 2048 bytes long<br><br>
+		Use custom 2K ROM for any Apple II machine at [$F800..$FFFF]. &lt;file&gt; must be 2048 bytes long.<br><br>
 		-videorom &lt;file&gt;<br>
 		Use an alternate custom 2K video ROM for Apple II or II+ machines (but not clones).<br>
 		Use an alternate European or custom 4K, 8K or 16K (top 8K only) video ROM for the original or Enhanced //e (but not clones).<br><br>
@@ -89,16 +98,18 @@
 		NB. Using this switch may prevent international keyboards from being able to type certain keys.<br><br>
 
 		-left-alt-control-buttons<br>
-		Use LEFT CONTROL & LEFT ALT for Open Apple & Solid Apple keys respectively.<br><br>
+		Use Left Control & Left Alt for Open Apple & Solid Apple keys respectively.<br>
+		Caveat: Left Control + F2 will do the //e Ctrl+Open Apple+RESET (as Left Control is now both Ctrl and Open Apple!). A workaround is just to use the Right Control key.<br><br>
 		-right-alt-control-buttons<br>
-		Use RIGHT CONTROL & RIGHT ALT for Open Apple & Solid Apple keys respectively.<br><br>
+		Use Right Alt (AltGr) & Right Control for Open Apple & Solid Apple keys respectively.<br>
+		Caveat: Right Control + F2 will do the //e self test (as Right Control is now both Ctrl and Solid Apple!). A workaround is just to use the Left Control key.<br><br>
 		-swap-buttons<br>
 		Swap the Windows keys used for Open Apple & Solid Apple keys.<br><br>
 
 		-use-real-printer<br>
 		Enables Advanced configuration control to allow dumping to a real printer<br><br>
 		-noreg<br>
-		Disable registration of file extensions (.do/.dsk/.nib/.po)<br><br>
+		Disable registration of file extensions (.do/.dsk/.nib/.po/.woz)<br><br>
 		-memclear &lt;n&gt;<br>
 		Where n is [0..7]:
 		<ul>
@@ -132,7 +143,10 @@
 		-50hz<br>
 		Support 50Hz(PAL) video refresh rate and PAL 1.016MHz base CPU clock.<br><br>
 		-60hz<br>
-		Support 60Hz(NTSC) video refresh rate and NTSC 1.020MHz base CPU clock (default).<br>
+		Support 60Hz(NTSC) video refresh rate and NTSC 1.020MHz base CPU clock (default).<br><br>
+		-power-on<br>
+		Force a power-on.<br>
+		Use to auto power-on when not using -d1, -h1 or -load-state.<br>
 
 		<br>
 		<P style="FONT-WEIGHT: bold">Debug arguments:

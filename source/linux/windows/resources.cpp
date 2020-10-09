@@ -2,23 +2,24 @@
 #include "../resource/resource.h"
 #include "Log.h"
 
-// forward declared
-HRSRC FindResource(void *, const std::string & filename, const char *);
-
-std::string MAKEINTRESOURCE(int x)
+const char * MAKEINTRESOURCE(int x)
 {
   switch (x)
   {
   case IDR_APPLE2_ROM: return "Apple2.rom";
   case IDR_APPLE2_PLUS_ROM: return "Apple2_Plus.rom";
+  case IDR_APPLE2_JPLUS_ROM: return "Apple2_JPlus.rom";
   case IDR_APPLE2E_ROM: return "Apple2e.rom";
   case IDR_APPLE2E_ENHANCED_ROM: return "Apple2e_Enhanced.rom";
   case IDR_PRAVETS_82_ROM: return "PRAVETS82.ROM";
   case IDR_PRAVETS_8C_ROM: return "PRAVETS8C.ROM";
   case IDR_PRAVETS_8M_ROM: return "PRAVETS8M.ROM";
   case IDR_TK3000_2E_ROM: return "TK3000e.rom";
+  case IDR_BASE_64A_ROM: return "Base64A.rom";
 
-  case IDR_DISK2_FW: return "DISK2.rom";
+  case IDR_APPLE2_JPLUS_VIDEO_ROM: return "Apple2_JPlus_Video.rom";
+  case IDR_DISK2_16SECTOR_FW: return "DISK2.rom";
+  case IDR_DISK2_13SECTOR_FW: return "DISK2-13sector.rom";
   case IDR_SSC_FW: return "SSC.rom";
   case IDR_HDDRVR_FW: return "Hddrvr.bin";
   case IDR_PRINTDRVR_FW: return "Parallel.rom";
@@ -26,10 +27,11 @@ std::string MAKEINTRESOURCE(int x)
   case IDR_MOUSEINTERFACE_FW: return "MouseInterface.rom";
   case IDR_THUNDERCLOCKPLUS_FW: return "ThunderClockPlus.rom";
   case IDR_TKCLOCK_FW: return "TKClock.rom";
+  case IDR_BASE64A_VIDEO_ROM: return "Base64A_German_Video.rom";
   }
 
   LogFileOutput("Unknown resource %d\n", x);
-  return std::string();
+  return nullptr;
 }
 
 DWORD SizeofResource(void *, const HRSRC & res)

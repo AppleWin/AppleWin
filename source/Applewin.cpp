@@ -82,9 +82,12 @@ AppMode_e	g_nAppMode = MODE_LOGO;
 static bool g_bLoadedSaveState = false;
 static bool g_bSysClkOK = false;
 
+std::string g_sStartDir;	// NB. AppleWin.exe maybe relative to this! (GH#663)
 std::string g_sProgramDir; // Directory of where AppleWin executable resides
 std::string g_sDebugDir; // TODO: Not currently used
 std::string g_sScreenShotDir; // TODO: Not currently used
+std::string g_sConfigFile; // INI file to use instead of Registry
+
 bool      g_bCapturePrintScreenKey = true;
 static bool g_bHookSystemKey = true;
 static bool g_bHookAltTab = false;
@@ -109,12 +112,50 @@ int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.c
 CardManager g_CardMgr;
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 
-HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $F800..$FFFF
-static bool	g_bCustomRomF8Failed = false;			// Set if custom ROM file failed
+HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom F8 ROM at $F800..$FFFF
+static bool	g_bCustomRomF8Failed = false;			// Set if custom F8 ROM file failed
+HANDLE		g_hCustomRom = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $C000..$FFFF(16KiB) or $D000..$FFFF(12KiB)
+static bool	g_bCustomRomFailed = false;				// Set if custom ROM file failed
 
 static bool	g_bEnableSpeech = false;
 #ifdef USE_SPEECH_API
 CSpeech		g_Speech;
+#endif
+
+//===========================================================================
+
+#ifdef LOG_PERF_TIMINGS
+static UINT64 g_timeTotal = 0;
+UINT64 g_timeCpu = 0;
+UINT64 g_timeVideo = 0;			// part of timeCpu
+UINT64 g_timeMB_Timer = 0;		// part of timeCpu
+UINT64 g_timeMB_NoTimer = 0;
+UINT64 g_timeSpeaker = 0;
+static UINT64 g_timeVideoRefresh = 0;
+
+void LogPerfTimings(void)
+{
+	if (g_timeTotal)
+	{
+		UINT64 cpu = g_timeCpu - g_timeVideo - g_timeMB_Timer;
+		UINT64 video = g_timeVideo + g_timeVideoRefresh;
+		UINT64 spkr = g_timeSpeaker;
+		UINT64 mb = g_timeMB_Timer + g_timeMB_NoTimer;
+		UINT64 audio = spkr + mb;
+		UINT64 other = g_timeTotal - g_timeCpu - g_timeSpeaker - g_timeMB_NoTimer - g_timeVideoRefresh;
+
+		LogOutput("Perf breakdown:\n");
+		LogOutput(". CPU %%        = %6.2f\n", (double)cpu / (double)g_timeTotal * 100.0);
+		LogOutput(". Video %%      = %6.2f\n", (double)video / (double)g_timeTotal * 100.0);
+		LogOutput("... NTSC %%     = %6.2f\n", (double)g_timeVideo / (double)g_timeTotal * 100.0);
+		LogOutput("... refresh %%  = %6.2f\n", (double)g_timeVideoRefresh / (double)g_timeTotal * 100.0);
+		LogOutput(". Audio %%      = %6.2f\n", (double)audio / (double)g_timeTotal * 100.0);
+		LogOutput("... Speaker %%  = %6.2f\n", (double)spkr / (double)g_timeTotal * 100.0);
+		LogOutput("... MB %%       = %6.2f\n", (double)mb / (double)g_timeTotal * 100.0);
+		LogOutput(". Other %%      = %6.2f\n", (double)other / (double)g_timeTotal * 100.0);
+		LogOutput(". TOTAL %%      = %6.2f\n", (double)(cpu+video+audio+other) / (double)g_timeTotal * 100.0);
+	}
+}
 #endif
 
 //===========================================================================
@@ -124,6 +165,10 @@ static bool bLogKeyReadDone = false;
 
 void LogFileTimeUntilFirstKeyReadReset(void)
 {
+#ifdef LOG_PERF_TIMINGS
+	LogPerfTimings();
+#endif
+
 	if (!g_fh)
 		return;
 
@@ -230,6 +275,10 @@ static bool g_uModeStepping_LastGetKey_ScrollLock = false;
 
 static void ContinueExecution(void)
 {
+#ifdef LOG_PERF_TIMINGS
+	PerfMarker* pPerfMarkerTotal = new PerfMarker(g_timeTotal);
+#endif
+
 	_ASSERT(g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING);
 
 	const double fUsecPerSec        = 1.e6;
@@ -348,6 +397,9 @@ static void ContinueExecution(void)
 	const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 	if (g_dwCyclesThisFrame >= dwClksPerFrame && !VideoGetVblBarEx(g_dwCyclesThisFrame))
 	{
+#ifdef LOG_PERF_TIMINGS
+		PerfMarker perfMarkerVideoRefresh(g_timeVideoRefresh);
+#endif
 		g_dwCyclesThisFrame -= dwClksPerFrame;
 
 		if (g_bFullSpeed)
@@ -355,6 +407,10 @@ static void ContinueExecution(void)
 		else
 			VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
 	}
+
+#ifdef LOG_PERF_TIMINGS
+	delete pPerfMarkerTotal;	// Explicitly call dtor *before* SysClk_WaitTimer()
+#endif
 
 	if ((g_nAppMode == MODE_RUNNING && !g_bFullSpeed) || bModeStepping_WaitTimer)
 	{
@@ -486,7 +542,8 @@ void EnterMessageLoop(void)
 }
 
 //===========================================================================
-void GetProgramDirectory(void)
+
+static void GetProgramDirectory(void)
 {
 	TCHAR programDir[MAX_PATH];
 	GetModuleFileName((HINSTANCE)0, programDir, MAX_PATH);
@@ -1086,17 +1143,25 @@ static std::string GetFullPath(LPCSTR szFileName)
 	}
 	else
 	{
-		// Rel pathname
-		char szCWD[_MAX_PATH] = {0};
-		if (!GetCurrentDirectory(sizeof(szCWD), szCWD))
-			return "";
-
-		strPathName = szCWD;
-		strPathName.append("\\");
+		// Rel pathname (GH#663)
+		strPathName = g_sStartDir;
 		strPathName.append(szFileName);
 	}
 
 	return strPathName;
+}
+
+static void SetCurrentDir(std::string pathname)
+{
+	// Due to the order HDDs/disks are inserted, then s7 insertions take priority over s6 & s5; and d2 takes priority over d1:
+	// . if -s6[dN] and -hN are specified, then g_sCurrentDir will be set to the HDD image's path
+	// . if -s5[dN] and -s6[dN] are specified, then g_sCurrentDir will be set to the s6 image's path
+	// . if -[sN]d1 and -[sN]d2 are specified, then g_sCurrentDir will be set to the d2 image's path
+	// This is purely dependent on the current order of InsertFloppyDisks() & InsertHardDisks() - ie. very brittle!
+	// . better to use -current-dir to be explicit
+	std::size_t found = pathname.find_last_of("\\");
+	std::string path = pathname.substr(0, found);
+	SetCurrentImageDir(path);
 }
 
 static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
@@ -1107,7 +1172,10 @@ static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 	if (strPathName.empty()) return false;
 
 	ImageError_e Error = disk2Card.InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
-	return Error == eIMAGE_ERROR_NONE;
+	bool res = (Error == eIMAGE_ERROR_NONE);
+	if (res)
+		SetCurrentDir(strPathName);
+	return res;
 }
 
 static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
@@ -1116,7 +1184,10 @@ static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
 	if (strPathName.empty()) return false;
 
 	BOOL bRes = HD_Insert(nDrive, strPathName.c_str());
-	return bRes ? true : false;
+	bool res = (bRes == TRUE);
+	if (res)
+		SetCurrentDir(strPathName);
+	return res;
 }
 
 static void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], bool& bBoot)
@@ -1156,11 +1227,9 @@ static void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBo
 	HD_SetEnabled(true);
 
 	DWORD dwTmp;
-	if (REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
-	{
-		if (!dwTmp)
-			REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 1);	// Config: HDD Enabled
-	}
+	BOOL res = REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp);
+	if (!res || !dwTmp)
+		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 1);	// Config: HDD Enabled
 
 	//
 
@@ -1189,11 +1258,9 @@ static void UnplugHardDiskControllerCard(void)
 	HD_SetEnabled(false);
 
 	DWORD dwTmp;
-	if (REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
-	{
-		if (dwTmp)
-			REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 0);	// Config: HDD Disabled
-	}
+	BOOL res = REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp);
+	if (!res || dwTmp)
+		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 0);	// Config: HDD Disabled
 }
 
 static bool CheckOldAppleWinVersion(void)
@@ -1251,6 +1318,7 @@ struct CmdLine
 		bSlot0LanguageCard = false;
 		bSlot7EmptyOnExit = false;
 		bSwapButtons0and1 = false;
+		bRemoveNoSlotClock = false;
 		bestWidth = 0;
 		bestHeight = 0;
 		szImageName_harddisk[HARDDISK_1] = NULL;
@@ -1265,6 +1333,9 @@ struct CmdLine
 		newVideoRefreshRate = VR_NONE;
 		clockMultiplier = 0.0;	// 0 => not set from cmd-line
 		model = A2TYPE_MAX;
+		rgbCard = RGB_Videocard_e::Apple;
+		rgbCardForegroundColor = 15;
+		rgbCardBackgroundColor = 0;
 
 		for (UINT i = 0; i < NUM_SLOTS; i++)
 		{
@@ -1283,6 +1354,7 @@ struct CmdLine
 	bool bSlotEmpty[NUM_SLOTS];
 	bool bSlot7EmptyOnExit;
 	bool bSwapButtons0and1;
+	bool bRemoveNoSlotClock;
 	SS_CARDTYPE slotInsert[NUM_SLOTS];
 	UINT bestWidth;
 	UINT bestHeight;
@@ -1298,15 +1370,25 @@ struct CmdLine
 	VideoRefreshRate_e newVideoRefreshRate;
 	double clockMultiplier;
 	eApple2Type model;
+	RGB_Videocard_e rgbCard;
+	int rgbCardForegroundColor;
+	int rgbCardBackgroundColor;
+	std::string strCurrentDir;
 };
 
 static CmdLine g_cmdLine;
 
 int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 {
+	char startDir[_MAX_PATH];
+	GetCurrentDirectory(sizeof(startDir), startDir);
+	g_sStartDir = startDir;
+	if (*(g_sStartDir.end()-1) != '\\') g_sStartDir += '\\';
+
 	if (!ProcessCmdLine(lpCmdLine))
 		return 0;
 
+	LogFileOutput("g_sStartDir = %s\n", g_sStartDir.c_str());
 	GetAppleWinVersion();
 	OneTimeInitialization(passinstance);
 
@@ -1368,6 +1450,12 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
 	std::string strUnsupported;
 
+	// If 1st param looks like an abs pathname then assume that an associated filetype has been double-clicked
+	// NB. Handled by WM_DDE_INITIATE & WM_DDE_EXECUTE msgs
+	if ((lpCmdLine[0] >= '\"' && lpCmdLine[1] >= 'A' && lpCmdLine[1] <= 'Z' && lpCmdLine[2] == ':')	// always in quotes
+		|| strncmp("\\\\?\\", lpCmdLine, 4) == 0)
+		return true;
+
 	while (*lpCmdLine)
 	{
 		LPSTR lpNextArg = GetNextArg(lpCmdLine);
@@ -1379,6 +1467,17 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		else if (strcmp(lpCmdLine, "-noreg") == 0)
 		{
 			g_bRegisterFileTypes = false;
+		}
+		else if (strcmp(lpCmdLine, "-conf") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			char buf[MAX_PATH];
+			DWORD res = GetFullPathName(lpCmdLine, MAX_PATH, buf, NULL);
+			if (res == 0)
+				LogFileOutput("Failed to open configuration file: %s\n", lpCmdLine);
+			else
+				g_sConfigFile = buf;
 		}
 		else if (strcmp(lpCmdLine, "-d1") == 0)
 		{
@@ -1432,14 +1531,14 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 					g_cmdLine.szImageName_drive[slot][drive] = lpCmdLine;
 				}
 			}
+			else if (strcmp(lpCmdLine, "-s7-empty-on-exit") == 0)
+			{
+				g_cmdLine.bSlot7EmptyOnExit = true;
+			}
 			else
 			{
 				LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
 			}
-		}
-		else if (strcmp(lpCmdLine, "-s7-empty-on-exit") == 0)
-		{
-			g_cmdLine.bSlot7EmptyOnExit = true;
 		}
 		else if (strcmp(lpCmdLine, "-load-state") == 0)
 		{
@@ -1534,6 +1633,18 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 			g_hCustomRomF8 = CreateFile(lpCmdLine, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 			if ((g_hCustomRomF8 == INVALID_HANDLE_VALUE) || (GetFileSize(g_hCustomRomF8, NULL) != 0x800))
 				g_bCustomRomF8Failed = true;
+		}
+		else if (strcmp(lpCmdLine, "-rom") == 0)		// Use custom 16K at [$C000..$FFFF] or 12K ROM at [$D000..$FFFF]
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			if (g_hCustomRom != INVALID_HANDLE_VALUE)	// Stop resource leak if -rom is specified twice!
+				CloseHandle(g_hCustomRom);
+
+			g_hCustomRom = CreateFile(lpCmdLine, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+			if ((g_hCustomRom == INVALID_HANDLE_VALUE) || ((GetFileSize(g_hCustomRom, NULL) != 0x4000) && (GetFileSize(g_hCustomRom, NULL) != 0x3000)))
+				g_bCustomRomFailed = true;
 		}
 		else if (strcmp(lpCmdLine, "-videorom") == 0)			// Use 2K (for II/II+). Use 4K,8K or 16K video ROM (for Enhanced //e)
 		{
@@ -1640,6 +1751,14 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.newVideoType = VT_COLOR_MONITOR_RGB;
 		}
+		else if (strcmp(lpCmdLine, "-video-mode=rgb-videocard") == 0)
+		{
+			g_cmdLine.newVideoType = VT_COLOR_VIDEOCARD_RGB;
+		}
+		else if (strcmp(lpCmdLine, "-video-mode=composite-monitor") == 0)	// GH#763
+		{
+			g_cmdLine.newVideoType = VT_COLOR_MONITOR_NTSC;
+		}
 		else if (strcmp(lpCmdLine, "-video-style=vertical-blend") == 0)		// GH#616
 		{
 			g_cmdLine.newVideoStyleEnableMask = VS_COLOR_VERTICAL_BLEND;
@@ -1672,6 +1791,8 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 				g_cmdLine.model = A2TYPE_APPLE2;
 			else if (strcmp(lpCmdLine, "apple2p") == 0)
 				g_cmdLine.model = A2TYPE_APPLE2PLUS;
+			else if (strcmp(lpCmdLine, "apple2jp") == 0)
+				g_cmdLine.model = A2TYPE_APPLE2JPLUS;
 			else if (strcmp(lpCmdLine, "apple2e") == 0)
 				g_cmdLine.model = A2TYPE_APPLE2E;
 			else if (strcmp(lpCmdLine, "apple2ee") == 0)
@@ -1686,6 +1807,51 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		else if (_stricmp(lpCmdLine, "-60hz") == 0)	// (case-insensitive)
 		{
 			g_cmdLine.newVideoRefreshRate = VR_60HZ;
+		}
+		else if (strcmp(lpCmdLine, "-rgb-card-type") == 0)
+		{
+			// RGB video card valide types are: "apple", "sl7", "eve", "feline"
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			if (strcmp(lpCmdLine, "apple") == 0)
+				g_cmdLine.rgbCard = RGB_Videocard_e::Apple;
+			else if (strcmp(lpCmdLine, "sl7") == 0)
+				g_cmdLine.rgbCard = RGB_Videocard_e::Video7_SL7;
+			else if (strcmp(lpCmdLine, "eve") == 0)
+				g_cmdLine.rgbCard = RGB_Videocard_e::LeChatMauve_EVE;
+			else if (strcmp(lpCmdLine, "feline") == 0)
+				g_cmdLine.rgbCard = RGB_Videocard_e::LeChatMauve_Feline;
+			else
+				LogFileOutput("-rgb-card-type: unsupported type: %s\n", lpCmdLine);
+		}
+		else if (strcmp(lpCmdLine, "-rgb-card-foreground") == 0)
+		{
+			// Default hardware-defined Text foreground color, for some RGB cards only
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			g_cmdLine.rgbCardForegroundColor = atoi(lpCmdLine);
+		}
+		else if (strcmp(lpCmdLine, "-rgb-card-background") == 0)
+		{
+			// Default hardware-defined Text background color, for some RGB cards only
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			g_cmdLine.rgbCardBackgroundColor = atoi(lpCmdLine);
+		}
+		else if (strcmp(lpCmdLine, "-power-on") == 0)
+		{
+			g_cmdLine.bBoot = true;
+		}
+		else if (strcmp(lpCmdLine, "-current-dir") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			g_cmdLine.strCurrentDir = lpCmdLine;
+		}
+		else if (strcmp(lpCmdLine, "-no-nsc") == 0)
+		{
+			g_cmdLine.bRemoveNoSlotClock = true;
 		}
 		else	// unsupported
 		{
@@ -1819,6 +1985,8 @@ static void RepeatInitialization(void)
 		if (g_cmdLine.model != A2TYPE_MAX)
 			SetApple2Type(g_cmdLine.model);
 
+		RGB_SetVideocard(g_cmdLine.rgbCard, g_cmdLine.rgbCardForegroundColor, g_cmdLine.rgbCardBackgroundColor);
+
 		if (g_cmdLine.newVideoType >= 0)
 		{
 			SetVideoType( (VideoType_e)g_cmdLine.newVideoType );
@@ -1877,7 +2045,12 @@ static void RepeatInitialization(void)
 		FrameCreateWindow();	// g_hFrameWindow is now valid
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
 
+		// Init palette color
+		VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
+
 		// Allow the 4 hardcoded slots to be configurated as empty
+		// NB. this state is not persisted to the Registry/conf.ini (just as '-s7 empty' isn't)
+		// TODO: support bSlotEmpty[] for slots: 0,4,5
 		if (g_cmdLine.bSlotEmpty[SLOT1])
 			g_CardMgr.Remove(SLOT1);
 		if (g_cmdLine.bSlotEmpty[SLOT2])
@@ -1912,8 +2085,15 @@ static void RepeatInitialization(void)
 			g_cmdLine.szImageName_harddisk[HARDDISK_1] = g_cmdLine.szImageName_harddisk[HARDDISK_2] = NULL;	// Don't insert on a restart
 
 			if (g_cmdLine.bSlotEmpty[7])
-				HD_SetEnabled(false);
+				HD_SetEnabled(false);		// Disable HDD controller, but don't persist this to Registry/conf.ini (consistent with other '-sn empty' cmds)
 		}
+
+		// Set *after* InsertFloppyDisks() & InsertHardDisks(), which both update g_sCurrentDir
+		if (!g_cmdLine.strCurrentDir.empty())
+			SetCurrentImageDir(g_cmdLine.strCurrentDir);
+
+		if (g_cmdLine.bRemoveNoSlotClock)
+			MemRemoveNoSlotClock();
 
 		MemInitialize();
 		LogFileOutput("Main: MemInitialize()\n");
@@ -1951,9 +2131,12 @@ static void RepeatInitialization(void)
 			g_cmdLine.bShutdown = true;
 		}
 
-		if (g_bCustomRomF8Failed)
+		if (g_bCustomRomF8Failed || g_bCustomRomFailed || (g_hCustomRomF8 != INVALID_HANDLE_VALUE && g_hCustomRom != INVALID_HANDLE_VALUE))
 		{
-			std::string msg = "Failed to load custom F8 rom (not found or not exactly 2KiB)\n";
+			std::string msg = g_bCustomRomF8Failed ? "Failed to load custom F8 rom (not found or not exactly 2KiB)\n"
+							: g_bCustomRomFailed ? "Failed to load custom rom (not found or not exactly 12KiB or 16KiB)\n"
+							: "Unsupported -rom and -f8rom being used at the same time\n";
+
 			LogFileOutput("%s", msg.c_str());
 			MessageBox(g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			g_cmdLine.bShutdown = true;
@@ -2057,6 +2240,9 @@ static void Shutdown(void)
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 		CloseHandle(g_hCustomRomF8);
+
+	if (g_hCustomRom != INVALID_HANDLE_VALUE)
+		CloseHandle(g_hCustomRom);
 
 	if (g_cmdLine.bSlot7EmptyOnExit)
 		UnplugHardDiskControllerCard();

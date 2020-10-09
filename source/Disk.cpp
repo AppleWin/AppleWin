@@ -53,17 +53,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // . if false && I/O ReadWrite($C0EC) && drive is spinning, then advance the track buffer's nibble index (to simulate spinning).
 // Also m_enhanceDisk is persisted to the save-state, so it's an attribute of the DiskII interface card.
 
-Disk2InterfaceCard::Disk2InterfaceCard(void) :
-	Card(CT_Disk2)
+Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
+	Card(CT_Disk2),
+	m_slot(slot)
 {
 	ResetSwitches();
 
 	m_floppyLatch = 0;
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
-	m_slot = 0;
 	m_diskLastCycle = 0;
 	m_diskLastReadLatchCycle = 0;
 	m_enhanceDisk = true;
+	m_is13SectorFirmware = false;
 
 	ResetLogicStateSequencer();
 
@@ -228,33 +229,6 @@ void Disk2InterfaceCard::CheckSpinning(const ULONG uExecutedCycles)
 
 //===========================================================================
 
-Disk_Status_e Disk2InterfaceCard::GetDriveLightStatus(const int drive)
-{
-	if (IsDriveValid( drive ))
-	{
-		FloppyDrive* pDrive = &m_floppyDrive[ drive ];
-
-		if (pDrive->m_spinning)
-		{
-			if (pDrive->m_disk.m_bWriteProtected)
-				return DISK_STATUS_PROT;
-
-			if (pDrive->m_writelight)
-				return DISK_STATUS_WRITE;
-			else
-				return DISK_STATUS_READ;
-		}
-		else
-		{
-			return DISK_STATUS_OFF;
-		}
-	}
-
-	return DISK_STATUS_OFF;
-}
-
-//===========================================================================
-
 bool Disk2InterfaceCard::IsDriveValid(const int drive)
 {
 	return (drive >= 0 && drive < NUM_DRIVES);
@@ -282,6 +256,12 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 	if (ImagePhaseToTrack(pFloppy->m_imagehandle, pDrive->m_phasePrecise, false) >= ImageGetNumTracks(pFloppy->m_imagehandle))
 	{
 		_ASSERT(0);	// What can cause this? Add a comment to replace this assert.
+		// Boot with DOS 3.3 Master in D1
+		// Create a blank disk in D2
+		// INIT HELLO,D2
+		// RUN HELLO
+		// F2 to reboot DOS 3.3 Master
+		// RUN HELLO,D2
 		pFloppy->m_trackimagedata = false;
 		return;
 	}
@@ -589,6 +569,31 @@ const std::string & Disk2InterfaceCard::DiskGetFullPathName(const int drive)
 
 //===========================================================================
 
+Disk_Status_e Disk2InterfaceCard::GetDriveLightStatus(const int drive)
+{
+	if (IsDriveValid( drive ))
+	{
+		FloppyDrive* pDrive = &m_floppyDrive[ drive ];
+
+		if (pDrive->m_spinning)
+		{
+			if (pDrive->m_disk.m_bWriteProtected)
+				return DISK_STATUS_PROT;
+
+			if (pDrive->m_writelight)
+				return DISK_STATUS_WRITE;
+			else
+				return DISK_STATUS_READ;
+		}
+		else
+		{
+			return DISK_STATUS_OFF;
+		}
+	}
+
+	return DISK_STATUS_OFF;
+}
+
 void Disk2InterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status, Disk_Status_e *pDisk2Status)
 {
 	if (pDisk1Status)
@@ -613,8 +618,8 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	pFloppy->clear();
 
 	const DWORD dwAttributes = GetFileAttributes(pszImageFilename);
-	if(dwAttributes == INVALID_FILE_ATTRIBUTES)
-		pFloppy->m_bWriteProtected = false;	// Assume this is a new file to create
+	if (dwAttributes == INVALID_FILE_ATTRIBUTES)
+		pFloppy->m_bWriteProtected = false;	// Assume this is a new file to create (so it must be write-enabled to allow it to be formatted)
 	else
 		pFloppy->m_bWriteProtected = bForceWriteProtected ? true : (dwAttributes & FILE_ATTRIBUTE_READONLY);
 
@@ -656,6 +661,9 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	{
 		GetImageTitle(pszImageFilename, pFloppy->m_imagename, pFloppy->m_fullname);
 		Video_ResetScreenshotCounter(pFloppy->m_imagename);
+
+		if (g_nAppMode == MODE_LOGO)
+			InitFirmware(GetCxRomPeripheral());
 	}
 	else
 	{
@@ -727,17 +735,6 @@ void Disk2InterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFil
 			TEXT("because this UniDisk 3.5/Apple IIGS/hard-disk image is not supported.\n")
 			TEXT("Try inserting as a hard-disk image instead."),
 			pszImageFilename);
-		break;
-
-	case eIMAGE_ERROR_UNSUPPORTED_MULTI_ZIP:
-		StringCbPrintf(
-			szBuffer,
-			MAX_PATH + 128,
-			TEXT("Unable to use the file %s\nbecause the ")
-			TEXT("first file (%s) in this multi-zip archive is not recognized.\n")
-			TEXT("Try unzipping and using the disk images directly.\n"),
-			pszImageFilename,
-			m_floppyDrive[drive].m_disk.m_strFilenameInZip.c_str());
 		break;
 
 	case eIMAGE_ERROR_GZ:
@@ -984,23 +981,17 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 	m_shiftReg = 0;
 	m_latchDelay = 0;
 	m_resetSequencer = true;
+	m_writeStarted = false;
 	m_dbgLatchDelayedCnt = 0;
 }
 
-void Disk2InterfaceCard::UpdateBitStreamPositionAndDiskCycle(const ULONG uExecutedCycles)
+UINT Disk2InterfaceCard::GetBitCellDelta(const ULONG uExecutedCycles)
 {
-	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
-
 	CpuCalcCycles(uExecutedCycles);
-	const UINT bitCellDelta = GetBitCellDelta(ImageGetOptimalBitTiming(floppy.m_imagehandle));
-	UpdateBitStreamPosition(floppy, bitCellDelta);
 
-	m_diskLastCycle = g_nCumulativeCycles;
-}
-
-UINT Disk2InterfaceCard::GetBitCellDelta(const BYTE optimalBitTiming)
-{
 	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
+
+	const BYTE optimalBitTiming = ImageGetOptimalBitTiming(floppy.m_imagehandle);
 
 	// NB. m_extraCycles is needed to retain accuracy:
 	// . Read latch #1: 0-> 9: cycleDelta= 9, bitCellDelta=2, extraCycles=1
@@ -1010,9 +1001,9 @@ UINT Disk2InterfaceCard::GetBitCellDelta(const BYTE optimalBitTiming)
 #if 0
 	if (optimalBitTiming == 32)
 	{
-		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + (BYTE) m_extraCycles;
+		const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - m_diskLastCycle) + (BYTE) floppy.m_extraCycles;
 		bitCellDelta = cycleDelta / 4;	// DIV 4 for 4us per bit-cell
-		m_extraCycles = cycleDelta & 3;	// MOD 4 : remainder carried forward for next time
+		floppy.m_extraCycles = cycleDelta & 3;	// MOD 4 : remainder carried forward for next time
 	}
 	else
 #endif
@@ -1022,13 +1013,17 @@ UINT Disk2InterfaceCard::GetBitCellDelta(const BYTE optimalBitTiming)
 		bitCellDelta = (UINT) floor( cycleDelta / bitTime );
 		floppy.m_extraCycles = (double)cycleDelta - ((double)bitCellDelta * bitTime);
 	}
+
+	// NB. actual m_diskLastCycle for the last bitCell is minus floppy.m_extraCycles
+	// - but don't need this value; and it's correctly accounted for in this function.
+	m_diskLastCycle = g_nCumulativeCycles;
+
 	return bitCellDelta;
 }
 
 void Disk2InterfaceCard::UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta)
 {
-	_ASSERT(floppy.m_bitCount);	// Should never happen - ReadTrack() will handle this
-	if (floppy.m_bitCount == 0)
+	if (floppy.m_bitCount == 0)	// Repro: Boot DOS3.3(WOZ), eject+reinsert disk, CALL-151, C0E9 N C0ED ; motor-on & LoadWriteProtect()
 		return;
 
 	floppy.m_bitOffset += bitCellDelta;
@@ -1036,6 +1031,8 @@ void Disk2InterfaceCard::UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG
 		floppy.m_bitOffset %= floppy.m_bitCount;
 
 	UpdateBitStreamOffsets(floppy);
+
+	m_resetSequencer = false;
 }
 
 void Disk2InterfaceCard::UpdateBitStreamOffsets(FloppyDisk& floppy)
@@ -1045,8 +1042,28 @@ void Disk2InterfaceCard::UpdateBitStreamOffsets(FloppyDisk& floppy)
 	floppy.m_bitMask = 1 << remainder;
 }
 
-void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
+__forceinline void Disk2InterfaceCard::IncBitStream(FloppyDisk& floppy)
 {
+	floppy.m_bitMask >>= 1;
+	if (!floppy.m_bitMask)
+	{
+		floppy.m_bitMask = 1 << 7;
+		floppy.m_byte++;
+	}
+
+	floppy.m_bitOffset++;
+	if (floppy.m_bitOffset == floppy.m_bitCount)
+	{
+		floppy.m_bitMask = 1 << 7;
+		floppy.m_bitOffset = 0;
+		floppy.m_byte = 0;
+	}
+}
+
+void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, ULONG uExecutedCycles)
+{
+	_ASSERT(m_seqFunc.function != dataShiftWrite);
+
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
 	FloppyDisk& floppy = drive.m_disk;
 
@@ -1067,14 +1084,11 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	if (!drive.m_spinning)	// GH#599
 		return;
 
-	CpuCalcCycles(uExecutedCycles);
-
 	// Skipping forward a large amount of bitcells means the bitstream will very likely be out-of-sync.
 	// The first 1-bit will produce a latch nibble, and this 1-bit is unlikely to be the nibble's high bit.
 	// So we need to ensure we run enough bits through the sequencer to re-sync.
-	// NB. For Planetfall 13 bitcells(NG) / 14 bitcells(OK)
 	const UINT significantBitCells = 50;	// 5x 10-bit sync FF nibbles
-	UINT bitCellDelta = GetBitCellDelta(ImageGetOptimalBitTiming(floppy.m_imagehandle));
+	UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
 
 	UINT bitCellRemainder;
 	if (bitCellDelta <= significantBitCells)
@@ -1092,20 +1106,21 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 		drive.m_headWindow = 0;
 	}
 
-	// NB. actual m_diskLastCycle for the last bitCell is minus floppy.m_extraCycles
-	// - but don't need this value; and it's correctly accounted for in GetBitCellDelta()
-	m_diskLastCycle = g_nCumulativeCycles;
-
 	if (!bWrite)
 	{
 		if (m_seqFunc.function != readSequencing)
+		{
+			_ASSERT(m_seqFunc.function == checkWriteProtAndInitWrite);
+			UpdateBitStreamPosition(floppy, bitCellRemainder);
 			return;
+		}
 
 		DataLatchReadWOZ(pc, addr, bitCellRemainder);
 	}
 	else
 	{
-		DataLatchWriteWOZ(pc, addr, d, bitCellRemainder);
+		_ASSERT(m_seqFunc.function == dataLoadWrite);
+		DataLoadWriteWOZ(pc, addr, bitCellRemainder);
 	}
 
 	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
@@ -1147,20 +1162,7 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 		BYTE outputBit = (drive.m_headWindow & 0xf) ? (drive.m_headWindow >> 1) & 1
 		  : (rand() < (RAND_MAX / 10 * 3)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
 
-		floppy.m_bitMask >>= 1;
-		if (!floppy.m_bitMask)
-		{
-			floppy.m_bitMask = 1 << 7;
-			floppy.m_byte++;
-		}
-
-		floppy.m_bitOffset++;
-		if (floppy.m_bitOffset == floppy.m_bitCount)
-		{
-			floppy.m_bitMask = 1 << 7;
-			floppy.m_bitOffset = 0;
-			floppy.m_byte = 0;
-		}
+		IncBitStream(floppy);
 
 		if (m_resetSequencer)
 		{
@@ -1238,17 +1240,64 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 #endif
 }
 
-void Disk2InterfaceCard::DataLatchWriteWOZ(WORD pc, WORD addr, BYTE d, UINT bitCellRemainder)
+void Disk2InterfaceCard::DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder)
 {
-	_ASSERT(m_seqFunc.writeMode);
+	_ASSERT(m_seqFunc.function == dataLoadWrite);
 
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
 	FloppyDisk& floppy = drive.m_disk;
 
-	if (!floppy.m_bWriteProtected)
+	if (floppy.m_bWriteProtected)
 	{
-		//TODO
+		_ASSERT(0);	// Must be a bug in the 6502 code for this to occur!
+		UpdateBitStreamPosition(floppy, bitCellRemainder);
+		return;
 	}
+
+	if (!m_writeStarted)
+		UpdateBitStreamPosition(floppy, bitCellRemainder);	// skip over bitCells before switching to write mode
+
+	m_writeStarted = true;
+#if LOG_DISK_WOZ_LOADWRITE
+	LOG_DISK("load shiftReg with %02X (was: %02X)\n", m_floppyLatch, m_shiftReg);
+#endif
+	m_shiftReg = m_floppyLatch;
+}
+
+void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCycles)
+{
+	_ASSERT(m_seqFunc.function == dataShiftWrite);
+
+	FloppyDrive& drive = m_floppyDrive[m_currDrive];
+	FloppyDisk& floppy = drive.m_disk;
+
+	const UINT bitCellRemainder = GetBitCellDelta(uExecutedCycles);
+
+	if (floppy.m_bWriteProtected)
+	{
+		_ASSERT(0);	// Must be a bug in the 6502 code for this to occur!
+		UpdateBitStreamPosition(floppy, bitCellRemainder);
+		return;
+	}
+
+#if LOG_DISK_WOZ_SHIFTWRITE
+	LOG_DISK("T$%02X, bitOffset=%04X: %02X (%d bits)\n", drive.m_phase/2, floppy.m_bitOffset, m_shiftReg, bitCellRemainder);
+#endif
+
+	for (UINT i = 0; i < bitCellRemainder; i++)
+	{
+		BYTE outputBit = m_shiftReg & 0x80;
+		m_shiftReg <<= 1;
+
+		BYTE n = floppy.m_trackimage[floppy.m_byte];
+		n &= ~floppy.m_bitMask;
+		if (outputBit) n |= floppy.m_bitMask;
+		floppy.m_trackimage[floppy.m_byte] = n;
+
+		IncBitStream(floppy);
+	}
+
+	floppy.m_trackimagedirty = true;
 }
 
 //===========================================================================
@@ -1316,19 +1365,18 @@ void Disk2InterfaceCard::DumpSectorWOZ(FloppyDisk floppy)	// pass a copy of m_fl
 // Dump nibbles from current position bitstream wraps to same position
 void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_floppy
 {
-#ifdef LOG_DISK_NIBBLES_READ
-	FormatTrack formatTrack;
-#endif
+	FormatTrack formatTrack(true);
 
 	BYTE shiftReg = 0;
 	UINT zeroCount = 0;
 	UINT nibbleCount = 0;
 
-	floppy.m_bitMask = 1 << 7;
-	floppy.m_bitOffset = 0;
-	floppy.m_byte = 0;
+	const UINT startBitOffset = 0;
+	floppy.m_bitOffset = startBitOffset;
 
-	const UINT startBitOffset = floppy.m_bitOffset;
+	floppy.m_byte = floppy.m_bitOffset / 8;
+	const UINT remainder = 7 - (floppy.m_bitOffset & 7);
+	floppy.m_bitMask = 1 << remainder;
 
 	bool newLine = true;
 
@@ -1381,18 +1429,35 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 		if (zeroCount == 0)	StringCbPrintf(str, sizeof(str), "   %02X", shiftReg);
 		else				StringCbPrintf(str, sizeof(str), "(%c)%02X", syncBits, shiftReg);
 		OutputDebugString(str);
+
+		formatTrack.DecodeLatchNibbleRead(shiftReg);
+
 		if ((nibbleCount % 32) == 0)
 		{
+			std::string strReadDetected = formatTrack.GetReadD5AAxxDetectedString();
+			if (!strReadDetected.empty())
+			{
+				OutputDebugString("\t; ");
+				OutputDebugString(strReadDetected.c_str());
+			}
 			OutputDebugString("\n");
 			newLine = true;
 		}
 
-#ifdef LOG_DISK_NIBBLES_READ
-		formatTrack.DecodeLatchNibbleRead(shiftReg);
-#endif
-
 		shiftReg = 0;
 		zeroCount = 0;
+	}
+
+	// Output any remaining "read D5AAxx detected"
+	if (nibbleCount % 32)
+	{
+		std::string strReadDetected = formatTrack.GetReadD5AAxxDetectedString();
+		if (!strReadDetected.empty())
+		{
+			OutputDebugString("\t; ");
+			OutputDebugString(strReadDetected.c_str());
+		}
+		OutputDebugString("\n");
 	}
 }
 #endif
@@ -1421,6 +1486,9 @@ void Disk2InterfaceCard::Reset(const bool bIsPowerCycle)
 
 		FrameRefreshStatus(DRAW_LEDS, false);
 	}
+
+	InitFirmware(GetCxRomPeripheral());
+	FrameRefreshStatus(DRAW_TITLE, false);
 }
 
 void Disk2InterfaceCard::ResetSwitches(void)
@@ -1485,7 +1553,9 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 
 void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG uExecutedCycles)
 {
-	// NB. m_seqFunc.function == checkWriteProtAndInitWrite or shiftWrite (both OK)
+	// NB. Only reads in LOAD mode can issue the SR (shift write-protect) operation - UTAIIe page 9-20, fig 9.11
+	// But STA $C08D,X (no PX) does a read from $C08D+X, followed by the write to $C08D+X
+	// So just want to ignore: STA $C0ED or eg. STA $BFFF,X (PX, X=$EE)
 
 	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
 	// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
@@ -1500,20 +1570,28 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 	//    the write protect switch would still be read correctly" (UTAIIe page 9-21)
 	// . Sequencer "SR" (Shift Right) command only loads QA (bit7) of data register (UTAIIe page 9-21)
 	// . A read or write will shift 'write protect' in QA.
-	if (m_floppyDrive[m_currDrive].m_disk.m_bWriteProtected)
+	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
+	if (floppy.m_bWriteProtected)
 		m_floppyLatch |= 0x80;
 	else
 		m_floppyLatch &= 0x7F;
 
-	if (ImageIsWOZ(m_floppyDrive[m_currDrive].m_disk.m_imagehandle))
+	if (m_writeStarted)	// Prevent ResetLogicStateSequencer() from resetting m_writeStarted
+		return;
+
+	if (ImageIsWOZ(floppy.m_imagehandle))
 	{
 #if LOG_DISK_NIBBLES_READ
 		CpuCalcCycles(uExecutedCycles);
 		LOG_DISK("%08X: reset LSS: ~PC=%04X\r\n", (UINT32)g_nCumulativeCycles, regs.pc);
 #endif
+
+		const UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
+		UpdateBitStreamPosition(floppy, bitCellDelta);	// Fix E7-copy protection
+
+		// UpdateBitStreamPosition() must be done before ResetLSS, as the former clears m_resetSequencer (and the latter sets it).
+		// . Commando.woz is sensitive to this. EG. It can crash after pressing 'J' (1 failure in 20 reboot repeats)
 		ResetLogicStateSequencer();	// reset sequencer (UTAIIe page 9-21)
-//		m_latchDelay = 7;	// TODO: Treat like a regular $C0EC latch load?
-		UpdateBitStreamPositionAndDiskCycle(uExecutedCycles);	// Fix E7-copy protection
 	}
 }
 
@@ -1639,28 +1717,51 @@ bool Disk2InterfaceCard::DriveSwap(void)
 
 //===========================================================================
 
-// TODO: LoadRom_Disk_Floppy()
-void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+bool Disk2InterfaceCard::GetFirmware(LPCSTR lpName, BYTE* pDst)
 {
-	const UINT DISK2_FW_SIZE = APPLE_SLOT_SIZE;
-
-	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_DISK2_FW), "FIRMWARE");
+	HRSRC hResInfo = FindResource(NULL, lpName, "FIRMWARE");
 	if(hResInfo == NULL)
-		return;
+		return false;
 
 	DWORD dwResSize = SizeofResource(NULL, hResInfo);
 	if(dwResSize != DISK2_FW_SIZE)
-		return;
+		return false;
 
 	HGLOBAL hResData = LoadResource(NULL, hResInfo);
 	if(hResData == NULL)
-		return;
+		return false;
 
 	BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
-	if(pData == NULL)
+	if (!pData)
+		return false;
+
+	memcpy(pDst, pData, DISK2_FW_SIZE);
+	return true;
+}
+
+void Disk2InterfaceCard::InitFirmware(LPBYTE pCxRomPeripheral)
+{
+	if (pCxRomPeripheral == NULL)
 		return;
 
-	memcpy(pCxRomPeripheral + uSlot*APPLE_SLOT_SIZE, pData, DISK2_FW_SIZE);
+	ImageInfo* pImage = m_floppyDrive[DRIVE_1].m_disk.m_imagehandle;
+
+	m_is13SectorFirmware = ImageIsBootSectorFormatSector13(pImage);
+
+	if (m_is13SectorFirmware)
+		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_13SectorFirmware, DISK2_FW_SIZE);
+	else
+		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_16SectorFirmware, DISK2_FW_SIZE);
+}
+
+// TODO: LoadRom_Disk_Floppy()
+void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+{
+	bool res = GetFirmware(MAKEINTRESOURCE(IDR_DISK2_13SECTOR_FW), m_13SectorFirmware);
+	_ASSERT(res);
+
+	res = GetFirmware(MAKEINTRESOURCE(IDR_DISK2_16SECTOR_FW), m_16SectorFirmware);
+	_ASSERT(res);
 
 	// Note: We used to disable the track stepping delay in the Disk II controller firmware by
 	// patching $C64C with $A9,$00,$EA. Now not doing this since:
@@ -1669,9 +1770,12 @@ void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 	// . Patching the firmware breaks the ADC checksum used by "The CIA Files" (Tricky Dick)
 	// . In this case we can patch to compensate for an ADC or EOR checksum but not both (nickw)
 
+	_ASSERT(m_slot == uSlot);
 	RegisterIoHandler(uSlot, &Disk2InterfaceCard::IORead, &Disk2InterfaceCard::IOWrite, NULL, NULL, this, NULL);
 
 	m_slot = uSlot;
+
+	InitFirmware(pCxRomPeripheral);
 }
 
 //===========================================================================
@@ -1688,6 +1792,9 @@ void Disk2InterfaceCard::SetSequencerFunction(WORD addr)
 	case 2: m_seqFunc.loadMode = 0; break;	// $C08C,X (sequence addr A3 input)
 	case 3: m_seqFunc.loadMode = 1; break;	// $C08D,X (sequence addr A3 input)
 	}
+
+	if (!m_seqFunc.writeMode)
+		m_writeStarted = false;
 }
 
 BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
@@ -1697,6 +1804,9 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 
 	ImageInfo* pImage = pCard->m_floppyDrive[pCard->m_currDrive].m_disk.m_imagehandle;
 	bool isWOZ = ImageIsWOZ(pImage);
+
+	if (isWOZ && pCard->m_seqFunc.function == dataShiftWrite)	// Occurs at end of sector write ($C0EE)
+		pCard->DataShiftWriteWOZ(pc, addr, nExecutedCycles);	// Finish any previous write
 
 	pCard->SetSequencerFunction(addr);
 
@@ -1723,8 +1833,8 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	// only even addresses return the latch (UTAIIe Table 9.1)
 	if (!(addr & 1))
 	{
-		if (isWOZ)
-			pCard->DataLatchReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
+		if (isWOZ && pCard->m_seqFunc.function != dataShiftWrite)
+			pCard->DataLatchReadWriteWOZ(pc, addr, bWrite, nExecutedCycles);
 
 		return pCard->m_floppyLatch;
 	}
@@ -1739,6 +1849,9 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 
 	ImageInfo* pImage = pCard->m_floppyDrive[pCard->m_currDrive].m_disk.m_imagehandle;
 	bool isWOZ = ImageIsWOZ(pImage);
+
+	if (isWOZ && pCard->m_seqFunc.function == dataShiftWrite)
+		pCard->DataShiftWriteWOZ(pc, addr, nExecutedCycles);	// Finish any previous write
 
 	pCard->SetSequencerFunction(addr);
 
@@ -1763,13 +1876,12 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 	}
 
 	// any address writes the latch via sequencer LD command (74LS323 datasheet)
-//	if (pCard->m_seqFunc.writeMode /* && m_seqFunc.loadMode */)
 	if (pCard->m_seqFunc.function == dataLoadWrite)
 	{
 		pCard->m_floppyLatch = d;
 
 		if (isWOZ)
-			pCard->DataLatchReadWriteWOZ(pc, addr, bWrite, d, nExecutedCycles);
+			pCard->DataLatchReadWriteWOZ(pc, addr, bWrite, nExecutedCycles);
 	}
 
 	return 0;

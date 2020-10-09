@@ -74,8 +74,6 @@ int const kVDisplayableScanLines = 192; // max displayable scanlines
 
 static COLORREF      customcolors[256];	// MONOCHROME is last custom color
 
-static HBITMAP       g_hDeviceBitmap;
-static HDC           g_hDeviceDC;
 static LPBITMAPINFO  g_pFramebufferinfo = NULL;
 
 COLORREF         g_nMonochromeRGB    = RGB(0xC0,0xC0,0xC0);
@@ -91,9 +89,10 @@ static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 // The window title will be set to this.
 const char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
   {
-   "Monochrome Monitor (Custom)"
+     "Monochrome Monitor (Custom)"
+   , "Color (Composite Idealized)"
    , "Color (RGB Monitor)"
-   , "Color (NTSC Monitor)"
+   , "Color (Composite Monitor)"
    , "Color TV"
    , "B&W TV"
    , "Amber Monitor"
@@ -125,6 +124,16 @@ void VideoInitialize ()
 	g_pFramebufferinfo->bmiHeader.biClrUsed     = 0;
 
 	videoCreateDIBSection();
+}
+
+
+void VideoDestroy () {
+
+  // DESTROY BUFFERS
+  VirtualFree(g_pFramebufferinfo,0,MEM_RELEASE);
+  g_pFramebufferinfo = NULL;
+  free(g_pFramebufferbits);
+  g_pFramebufferbits = NULL;
 }
 
 

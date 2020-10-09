@@ -26,9 +26,7 @@
 
 #include "StdAfx.h"
 
-#include <windows.h>
 #include <stdio.h>
-#include <crtdbg.h>
 #include "AY8910.h"
 
 #include "Applewin.h"		// For g_fh
@@ -991,7 +989,7 @@ sound_beeper( int is_tape, int on )
 #define SS_YAML_KEY_CHANGE "Change"
 #define SS_YAML_VALUE_CHANGE_FORMAT "%d, %d, 0x%1X, 0x%02X"
 
-void CAY8910::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, std::string& suffix)
+void CAY8910::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const std::string& suffix)
 {
 	std::string unit = std::string(SS_YAML_KEY_AY8910) + suffix;
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", unit.c_str());
@@ -1046,7 +1044,7 @@ void CAY8910::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, std::string& suffix)
 	}
 }
 
-bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, std::string& suffix)
+bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, const std::string& suffix)
 {
 	std::string unit = std::string(SS_YAML_KEY_AY8910) + suffix;
 	if (!yamlLoadHelper.GetSubMap(unit))
@@ -1201,7 +1199,7 @@ BYTE* AY8910_GetRegsPtr(UINT uChip)
 	return g_AY8910[uChip].GetAYRegsPtr();
 }
 
-UINT AY8910_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT uChip, std::string& suffix)
+UINT AY8910_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT uChip, const std::string& suffix)
 {
 	if (uChip >= MAX_8910)
 		return 0;
@@ -1210,7 +1208,7 @@ UINT AY8910_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT uChip, std::string
 	return 1;
 }
 
-UINT AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT uChip, std::string& suffix)
+UINT AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT uChip, const std::string& suffix)
 {
 	if (uChip >= MAX_8910)
 		return 0;

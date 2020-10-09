@@ -47,24 +47,10 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="1">
-           <widget class="QCheckBox" name="mouse_4">
-            <property name="text">
-             <string>Mouse</string>
-            </property>
-           </widget>
-          </item>
           <item row="5" column="0">
            <widget class="QLabel" name="label_9">
             <property name="text">
              <string>Slot 5</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="1">
-           <widget class="QCheckBox" name="cpm_5">
-            <property name="text">
-             <string>CP/M</string>
             </property>
            </widget>
           </item>
@@ -132,6 +118,54 @@
             </property>
            </widget>
           </item>
+          <item row="4" column="1">
+           <widget class="QComboBox" name="slot4_combo">
+            <item>
+             <property name="text">
+              <string>Empty</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Mouse</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Mockingboard</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Phasor</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QComboBox" name="slot5_combo">
+            <item>
+             <property name="text">
+              <string>Empty</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>CP/M</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Mockingboard</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SAM/DAC</string>
+             </property>
+            </item>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
@@ -158,6 +192,11 @@
             </item>
             <item>
              <property name="text">
+              <string>Apple ][ J-Plus</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
               <string>Apple //e</string>
              </property>
             </item>
@@ -179,6 +218,11 @@
             <item>
              <property name="text">
               <string>Pravets 8A</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Base64A</string>
              </property>
             </item>
             <item>
@@ -522,6 +566,20 @@
        <string>Audio</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_7">
+       <item row="1" column="1">
+        <widget class="QSlider" name="speaker_volume">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_16">
+         <property name="text">
+          <string>Speaker volume</string>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="0">
         <widget class="QLabel" name="label_14">
          <property name="text">
@@ -539,43 +597,17 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
+       <item row="2" column="0">
         <widget class="QLabel" name="label_15">
          <property name="text">
-          <string>Silence delay (frames)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QSpinBox" name="silence_delay">
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-         <property name="maximum">
-          <number>50000</number>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_16">
-         <property name="text">
-          <string>Volume</string>
+          <string>Mockingboard volume</string>
          </property>
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QSpinBox" name="volume">
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-         <property name="prefix">
-          <string>0x</string>
-         </property>
-         <property name="maximum">
-          <number>32767</number>
-         </property>
-         <property name="displayIntegerBase">
-          <number>16</number>
+        <widget class="QSlider" name="mb_volume">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>

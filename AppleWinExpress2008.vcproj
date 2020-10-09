@@ -70,7 +70,7 @@
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4819;4995;4996"
+				DisableSpecificWarnings="4482;4819;4995;4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -169,7 +169,7 @@
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
-				DisableSpecificWarnings="4819;4995;4996"
+				DisableSpecificWarnings="4482;4819;4995;4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -826,11 +826,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\CPU\cpu65d02.h"
+					RelativePath=".\source\CPU\cpu_general.inl"
 					>
 				</File>
 				<File
-					RelativePath=".\source\CPU\cpu_general.inl"
+					RelativePath=".\source\CPU\cpu_heatmap.inl"
 					>
 				</File>
 				<File
@@ -1088,6 +1088,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource\Apple2_JPlus.rom"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\Apple2_JPlus_Video.rom"
+				>
+			</File>
+			<File
 				RelativePath=".\resource\Apple2_Plus.rom"
 				>
 			</File>
@@ -1175,6 +1183,10 @@
 			</File>
 			<File
 				RelativePath="RESOURCE\DISK.ICO"
+				>
+			</File>
+			<File
+				RelativePath=".\resource\Disk2-13sector.rom"
 				>
 			</File>
 			<File

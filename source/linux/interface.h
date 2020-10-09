@@ -1,6 +1,7 @@
 #pragma once
 
 #include "linux/windows/wincompat.h"
+#include "linux/windows/dsound.h"
 #include "linux/windows/resources.h"
 #include "linux/windows/bitmap.h"
 
@@ -8,10 +9,10 @@
 
 // Resources
 
-HRSRC FindResource(void *, const std::string & filename, const char *);
+HRSRC FindResource(void *, const char * filename, const char *);
 
 // Bitmap
-HBITMAP LoadBitmap(HINSTANCE hInstance, const std::string & filename);
+HBITMAP LoadBitmap(HINSTANCE hInstance, const char * filename);
 LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits);
 
 
@@ -23,19 +24,15 @@ void FrameRefreshStatus(int x, bool);
 
 // Keyboard
 
-BYTE    KeybGetKeycode ();
+BYTE KeybGetKeycode ();
 BYTE KeybReadData();
 BYTE KeybReadFlag();
 
 // Joystick
 
-BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
-BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+BYTE JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+BYTE JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 void JoyResetPosition(ULONG uExecutedCycles);
-
-// Speaker
-
-BYTE __stdcall SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 
 // Registry
 
@@ -48,3 +45,7 @@ void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value);
 // MessageBox
 
 int MessageBox(HWND, const char * text, const char * caption, UINT type);
+
+// Mockingboard
+void registerSoundBuffer(IDirectSoundBuffer * buffer);
+void unregisterSoundBuffer(IDirectSoundBuffer * buffer);
