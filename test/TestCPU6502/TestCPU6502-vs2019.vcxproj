@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\source\SynchronousEventManager.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="TestCPU6502.cpp" />
   </ItemGroup>
