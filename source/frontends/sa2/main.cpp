@@ -5,7 +5,9 @@
 #include "linux/interface.h"
 #include "linux/windows/misc.h"
 #include "linux/data.h"
-#include "frontends/ncurses/configuration.h"
+#include "frontends/common2/configuration.h"
+#include "frontends/common2/utils.h"
+#include "frontends/common2/programoptions.h"
 
 #include "StdAfx.h"
 #include "Common.h"
@@ -30,6 +32,8 @@ namespace
 {
   void initialiseEmulator()
   {
+    InitializeRegistry("applen.conf");
+
     g_fh = fopen("/tmp/applewin.txt", "w");
     setbuf(g_fh, nullptr);
 
@@ -53,6 +57,35 @@ namespace
 
     g_CardMgr.GetDisk2CardMgr().Reset();
     HD_Reset();
+  }
+
+  void applyOptions(const EmulatorOptions & options)
+  {
+    if (options.log)
+    {
+      LogInit();
+    }
+
+    bool disksOk = true;
+    if (!options.disk1.empty())
+    {
+      const bool ok = DoDiskInsert(SLOT6, DRIVE_1, options.disk1, options.createMissingDisks);
+      disksOk = disksOk && ok;
+      LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", ok);
+    }
+
+    if (!options.disk2.empty())
+    {
+      const bool ok = DoDiskInsert(SLOT6, DRIVE_2, options.disk2, options.createMissingDisks);
+      disksOk = disksOk && ok;
+      LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", ok);
+    }
+
+    if (!options.snapshot.empty())
+    {
+      setSnapshotFilename(options.snapshot);
+    }
+
   }
 
   void stopEmulator()
@@ -188,9 +221,14 @@ void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
 {
 }
 
-void run_sdl()
+void run_sdl(int argc, const char * argv [])
 {
-  InitializeRegistry("applen.conf");
+  EmulatorOptions options;
+  options.memclear = g_nMemoryClearType;
+  const bool run = getEmulatorOptions(argc, argv, "SDL2", options);
+
+  if (!run)
+    return;
 
   initialiseEmulator();
   loadEmulator();
@@ -282,7 +320,7 @@ void run_sdl()
   uninitialiseEmulator();
 }
 
-int main(int, char**)
+int main(int argc, const char * argv [])
 {
   //First we need to start up SDL, and make sure it went ok
   if (SDL_Init(SDL_INIT_VIDEO) != 0)
@@ -295,7 +333,7 @@ int main(int, char**)
 
   try
   {
-    run_sdl();
+    run_sdl(argc, argv);
   }
   catch (const std::exception & e)
   {

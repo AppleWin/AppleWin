@@ -6,7 +6,7 @@
 #include <libgen.h>
 
 #include "Log.h"
-#include "../ncurses/config.h"
+#include "config.h"
 
 namespace
 {

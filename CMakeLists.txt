@@ -31,6 +31,7 @@ endif()
 include_directories(source)
 
 add_subdirectory(source)
+add_subdirectory(source/frontends/common2)
 add_subdirectory(source/frontends/ncurses)
 add_subdirectory(source/frontends/qapple)
 add_subdirectory(source/frontends/sa2)

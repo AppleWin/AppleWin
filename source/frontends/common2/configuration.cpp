@@ -1,4 +1,4 @@
-#include "frontends/ncurses/configuration.h"
+#include "frontends/common2/configuration.h"
 
 #include "Log.h"
 #include "linux/windows/files.h"

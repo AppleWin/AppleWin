@@ -4,7 +4,7 @@
 
 #include <linux/interface.h>
 #include <linux/windows/misc.h>
-#include <frontends/ncurses/resources.h>
+#include <frontends/common2/resources.h>
 
 struct CBITMAP : public CHANDLE
 {
