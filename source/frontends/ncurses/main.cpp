@@ -4,9 +4,6 @@
 #include <thread>
 #include <iostream>
 #include <ncurses.h>
-#include <libgen.h>
-
-#include <boost/program_options.hpp>
 
 #include "Common.h"
 #include "CardManager.h"
@@ -27,116 +24,13 @@
 
 #include "linux/data.h"
 #include "linux/benchmark.h"
-#include "frontends/ncurses/configuration.h"
+#include "frontends/common2/configuration.h"
+#include "frontends/common2/programoptions.h"
+#include "frontends/common2/utils.h"
 #include "frontends/ncurses/world.h"
 
 namespace
 {
-  namespace po = boost::program_options;
-
-  struct EmulatorOptions
-  {
-    std::string disk1;
-    std::string disk2;
-    bool createMissingDisks;
-    std::string snapshot;
-    int memclear;
-    bool log;
-    bool benchmark;
-    bool headless;
-    bool ntsc;
-    bool saveConfigurationOnExit;
-
-    bool run;  // false if options include "-h"
-  };
-
-  bool getEmulatorOptions(int argc, const char * argv [], EmulatorOptions & options)
-  {
-    po::options_description desc("AppleWin ncurses");
-    desc.add_options()
-      ("help,h", "Print this help message")
-      ("conf", "Save configuration on exit");
-
-    po::options_description diskDesc("Disk");
-    diskDesc.add_options()
-      ("d1,1", po::value<std::string>(), "Mount disk image in first drive")
-      ("d2,2", po::value<std::string>(), "Mount disk image in second drive")
-      ("create,c", "Create missing disks");
-    desc.add(diskDesc);
-
-    po::options_description snapshotDesc("Snapshot");
-    snapshotDesc.add_options()
-      ("load-state,ls", po::value<std::string>(), "Load snapshot from file");
-    desc.add(snapshotDesc);
-
-    po::options_description memoryDesc("Memory");
-    memoryDesc.add_options()
-      ("memclear,m", po::value<int>(), "Memory initialization pattern [0..7]");
-    desc.add(memoryDesc);
-
-    po::options_description emulatorDesc("Emulator");
-    emulatorDesc.add_options()
-      ("log", "Log to AppleWin.log")
-      ("headless,hl", "Headless: disable video")
-      ("ntsc,nt", "NTSC: execute NTSC code")
-      ("benchmark,b", "Benchmark emulator");
-    desc.add(emulatorDesc);
-
-    po::variables_map vm;
-    try
-    {
-      po::store(po::parse_command_line(argc, argv, desc), vm);
-
-      if (vm.count("help"))
-      {
-	std::cout << "AppleWin ncurses edition" << std::endl << std::endl << desc << std::endl;
-	return false;
-      }
-
-      options.saveConfigurationOnExit = vm.count("conf");
-
-      if (vm.count("d1"))
-      {
-	options.disk1 = vm["d1"].as<std::string>();
-      }
-
-      if (vm.count("d2"))
-      {
-	options.disk2 = vm["d2"].as<std::string>();
-      }
-
-      options.createMissingDisks = vm.count("create") > 0;
-
-      if (vm.count("load-state"))
-      {
-	options.snapshot = vm["load-state"].as<std::string>();
-      }
-
-      if (vm.count("memclear"))
-      {
-	const int memclear = vm["memclear"].as<int>();
-	if (memclear >=0 && memclear < NUM_MIP)
-	  options.memclear = memclear;
-      }
-
-      options.benchmark = vm.count("benchmark") > 0;
-      options.headless = vm.count("headless") > 0;
-      options.log = vm.count("log") > 0;
-      options.ntsc = vm.count("ntsc") > 0;
-
-      return true;
-    }
-    catch (const po::error& e)
-    {
-      std::cerr << "ERROR: " << e.what() << std::endl << desc << std::endl;
-      return false;
-    }
-    catch (const std::exception & e)
-    {
-      std::cerr << "ERROR: " << e.what() << std::endl;
-      return false;
-    }
-  }
 
   bool ContinueExecution(const EmulatorOptions & options)
   {
@@ -229,63 +123,11 @@ namespace
     }
   }
 
-  bool DoDiskInsert(const UINT slot, const int nDrive, const std::string & fileName, const bool createMissingDisk)
-  {
-    std::string strPathName;
-
-    if (fileName.empty())
-    {
-      return false;
-    }
-
-    if (fileName[0] == '/')
-    {
-      // Abs pathname
-      strPathName = fileName;
-    }
-    else
-    {
-      // Rel pathname
-      char szCWD[MAX_PATH] = {0};
-      if (!GetCurrentDirectory(sizeof(szCWD), szCWD))
-	return false;
-
-      strPathName = szCWD;
-      strPathName.append("/");
-      strPathName.append(fileName);
-    }
-
-    Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*> (g_CardMgr.GetObj(slot));
-    ImageError_e Error = pDisk2Card->InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
-    return Error == eIMAGE_ERROR_NONE;
-  }
-
-  void setSnapshotFilename(const std::string & filename)
-  {
-    // same logic as qapple
-    // setting chdir allows to load relative disks from the snapshot file (tests?)
-    // but if the snapshot file itself is relative, it wont work after a chdir
-    // so we convert to absolute first
-    char * absPath = realpath(filename.c_str(), nullptr);
-    if (absPath)
-    {
-      char * temp = strdup(absPath);
-      const char * dir = dirname(temp);
-      // dir points inside temp!
-      chdir(dir);
-      Snapshot_SetFilename(absPath);
-
-      free(temp);
-      free(absPath);
-      Snapshot_LoadState();
-    }
-  }
-
   int foo(int argc, const char * argv [])
   {
     EmulatorOptions options;
     options.memclear = g_nMemoryClearType;
-    const bool run = getEmulatorOptions(argc, argv, options);
+    const bool run = getEmulatorOptions(argc, argv, "ncurses", options);
 
     if (!run)
       return 1;

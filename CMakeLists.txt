@@ -14,13 +14,25 @@ MESSAGE("CMAKE_CXX_FLAGS_RELWITHDEBINFO:  ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-include(CheckIPOSupported)
-check_ipo_supported()
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+execute_process(COMMAND uname -n
+  OUTPUT_VARIABLE UNAME
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+if(${UNAME} STREQUAL raspberrypi)
+  # it is too slow and might cause out of memory issues
+  # more forensic is required
+  MESSAGE("Raspberry Pi detected: IPO disabled")
+else()
+  include(CheckIPOSupported)
+  check_ipo_supported()
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+endif()
 
 include_directories(source)
 
 add_subdirectory(source)
+add_subdirectory(source/frontends/common2)
 add_subdirectory(source/frontends/ncurses)
 add_subdirectory(source/frontends/qapple)
+add_subdirectory(source/frontends/sa2)
 add_subdirectory(test/TestCPU6502)
