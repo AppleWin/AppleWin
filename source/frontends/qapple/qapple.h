@@ -79,6 +79,8 @@ private slots:
 
     void on_actionNext_video_mode_triggered();
 
+    void on_actionQuit_triggered();
+
 private:
 
     // helper class to pause the emulator and restart at the end of the block

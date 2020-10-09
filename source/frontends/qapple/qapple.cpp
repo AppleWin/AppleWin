@@ -595,3 +595,8 @@ void QApple::loadStateFile(const QString & filename)
     Snapshot_SetFilename(path.absoluteFilePath().toStdString().c_str());
     ui->actionLoad_state->trigger();
 }
+
+void QApple::on_actionQuit_triggered()
+{
+    this->close();
+}
