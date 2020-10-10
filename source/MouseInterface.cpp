@@ -193,7 +193,7 @@ void CMouseInterface::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 	RegisterIoHandler(uSlot, &CMouseInterface::IORead, &CMouseInterface::IOWrite, NULL, NULL, this, NULL);
 
 	if (m_syncEvent.m_active) g_SynchronousEventMgr.Remove(m_syncEvent.m_id);
-	m_syncEvent.m_cyclesRemaining = NTSC_GetCyclesUntilVBlank();
+	m_syncEvent.m_cyclesRemaining = NTSC_GetCyclesUntilVBlank(0);
 	g_SynchronousEventMgr.Insert(&m_syncEvent);
 }
 
@@ -488,15 +488,10 @@ void CMouseInterface::OnMouseEvent(bool bEventVBL)
 	}
 }
 
-void CMouseInterface::SetVBlank(void)
+int CMouseInterface::SyncEventCallback(int id, int cycles, ULONG /*uExecutedCycles*/)
 {
-	OnMouseEvent(true);
-}
-
-int CMouseInterface::SyncEventCallback(int id, ULONG uExecutedCycles)
-{
-	g_CardMgr.GetMouseCard()->SetVBlank();
-	return NTSC_GetCyclesUntilVBlank();
+	g_CardMgr.GetMouseCard()->OnMouseEvent(true);
+	return NTSC_GetCyclesUntilVBlank(cycles);
 }
 
 void CMouseInterface::Clear()

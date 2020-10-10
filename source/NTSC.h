@@ -23,5 +23,5 @@
 	UINT NTSC_GetCyclesPerFrame(void);
 	UINT NTSC_GetCyclesPerLine(void);
 	UINT NTSC_GetVideoLines(void);
-	UINT NTSC_GetCyclesUntilVBlank(void);
+	UINT NTSC_GetCyclesUntilVBlank(int cycles);
 	bool NTSC_IsVisible(void);

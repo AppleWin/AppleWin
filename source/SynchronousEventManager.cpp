@@ -141,7 +141,7 @@ void SynchronousEventManager::Update(int cycles, ULONG uExecutedCycles)
 
 		int cyclesUnderflowed = -pCurrEvent->m_cyclesRemaining;
 
-		pCurrEvent->m_cyclesRemaining = pCurrEvent->m_callback(pCurrEvent->m_id, uExecutedCycles);
+		pCurrEvent->m_cyclesRemaining = pCurrEvent->m_callback(pCurrEvent->m_id, cycles, uExecutedCycles);
 		m_syncEventHead = pCurrEvent->m_next;	// unlink this event
 
 		pCurrEvent->m_active = false;

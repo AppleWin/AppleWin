@@ -24,7 +24,6 @@ public:
 	bool IsEnabled() { return m_bEnabled; }	// NB. m_bEnabled == true implies that m_bActive == true
 	bool IsActiveAndEnabled() { return /*IsActive() &&*/ IsEnabled(); }	// todo: just use IsEnabled()
 	void SetEnabled(bool bEnabled) { m_bEnabled = bEnabled; }
-	void SetVBlank(void);
 	void GetXY(int& iX, int& iMinX, int& iMaxX, int& iY, int& iMinY, int& iMaxY)
 	{
 		iX    = m_iX;
@@ -63,7 +62,7 @@ protected:
 	void SetClampX(int iMinX, int iMaxX);
 	void SetClampY(int iMinY, int iMaxY);
 
-	static int SyncEventCallback(int id, ULONG uExecutedCycles);
+	static int SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
 
 	void SaveSnapshotMC6821(class YamlSaveHelper& yamlSaveHelper, std::string key);
 	void LoadSnapshotMC6821(class YamlLoadHelper& yamlLoadHelper, std::string key);

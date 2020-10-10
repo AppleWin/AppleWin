@@ -2609,17 +2609,22 @@ UINT NTSC_GetVideoLines(void)
 	return (GetVideoRefreshRate() == VR_50HZ) ? VIDEO_SCANNER_MAX_VERT_PAL : VIDEO_SCANNER_MAX_VERT;
 }
 
-// Get cycles until rising Vbl edge: !VBl -> VBl at (0,192)
-// . need to ensure that event occurs just after VBl edge, so use h=7 (where longest opcode is 7 cycles)
-// . NB. Called from CMouseInterface::SyncEventCallback(), which occurs before NTSC_VideoUpdateCycles(), so g_nVideoClockVert/Horz will be behind
-UINT NTSC_GetCyclesUntilVBlank(void)
+// Get # cycles until rising Vbl edge: !VBl -> VBl at (0,192)
+// . NB. Called from CMouseInterface::SyncEventCallback(), which occurs *before* NTSC_VideoUpdateCycles()
+//   therefore g_nVideoClockVert/Horz will be behind, so correct 'cycleCurrentPos' by adding 'cycles'.
+UINT NTSC_GetCyclesUntilVBlank(int cycles)
 {
+	const UINT cyclesPerFrames = NTSC_GetCyclesPerFrame();
+
+	if (g_bFullSpeed)
+		return cyclesPerFrames;	// g_nVideoClockVert/Horz not correct & accuracy isn't important: so just wait a frame's worth of cycles
+
 	const UINT cycleVBl = VIDEO_SCANNER_Y_DISPLAY * VIDEO_SCANNER_MAX_HORZ;
-	const UINT cycleCurrentPos = g_nVideoClockVert * VIDEO_SCANNER_MAX_HORZ + g_nVideoClockHorz;
+	const UINT cycleCurrentPos = (g_nVideoClockVert * VIDEO_SCANNER_MAX_HORZ + g_nVideoClockHorz + cycles) % cyclesPerFrames;
 
 	return (cycleCurrentPos < cycleVBl) ?
-		((cycleVBl+7) - cycleCurrentPos) :
-		(NTSC_GetCyclesPerFrame() - cycleCurrentPos + (cycleVBl+7));
+		(cycleVBl - cycleCurrentPos) :
+		(cyclesPerFrames - cycleCurrentPos + cycleVBl);
 }
 
 bool NTSC_IsVisible(void)

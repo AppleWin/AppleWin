@@ -224,7 +224,7 @@ static UINT g_cyclesThisAudioFrame = 0;
 // Forward refs:
 static DWORD WINAPI SSI263Thread(LPVOID);
 static void Votrax_Write(BYTE nDevice, BYTE nValue);
-static int MB_SyncEventCallback(int id, ULONG uExecutedCycles);
+static int MB_SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
 
 //---------------------------------------------------------------------------
 
@@ -2108,7 +2108,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 
 //-----------------------------------------------------------------------------
 
-static int MB_SyncEventCallback(int id, ULONG uExecutedCycles)
+static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 {
 	SY6522_AY8910* pMB = &g_MB[id / kNumTimersPer6522];
 

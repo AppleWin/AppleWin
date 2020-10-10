@@ -23,7 +23,7 @@ private:
 
 //
 
-typedef int (*syncEventCB)(int id, ULONG uExecutedCycles);
+typedef int (*syncEventCB)(int id, int cycles, ULONG uExecutedCycles);
 
 class SyncEvent
 {
