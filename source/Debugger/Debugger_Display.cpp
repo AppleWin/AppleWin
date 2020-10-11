@@ -3528,7 +3528,7 @@ void DrawZeroPagePointers ( int line )
 			}
 			else
 			{
-				int nMin = min( nLen1, nMaxSymbolLen );
+				int nMin = MIN( nLen1, nMaxSymbolLen );
 				memcpy(sText, pSymbol1, nMin);
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
 			}
@@ -3970,7 +3970,7 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 
 // Draw Title
 	std::string sTitle = "   Source: " + g_aSourceFileName;
-	sTitle.resize(min(sTitle.size(), size_t(g_nConsoleDisplayWidth)));
+	sTitle.resize(MIN(sTitle.size(), size_t(g_nConsoleDisplayWidth)));
 
 	DebuggerSetColorBG( DebuggerGetColor( BG_SOURCE_TITLE ));
 	DebuggerSetColorFG( DebuggerGetColor( FG_SOURCE_TITLE ));

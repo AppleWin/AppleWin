@@ -134,8 +134,8 @@ void M6821_Listener_A( void* objTo, BYTE byData )
 
 CMouseInterface::CMouseInterface(UINT slot) :
 	Card(CT_MouseInterface),
-	m_uSlot(slot),
 	m_pSlotRom(NULL),
+	m_uSlot(slot),
 	m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for MouseInterfaces
 {
 	m_6821.SetListenerB( this, M6821_Listener_B );

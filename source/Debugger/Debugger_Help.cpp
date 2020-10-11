@@ -877,7 +877,8 @@ Update_t CmdHelpSpecific (int nArgs)
 		{	
 	// CPU / General
 		case CMD_ASSEMBLE:
-			ConsoleBufferPush( " Built-in assember isn't functional yet." );
+			ConsoleColorizePrint( sText, " Usage: [address | symbol]" );
+			ConsoleBufferPush( " Enter mini-assembler mode [starting at optional address or symbol]." );
 			break;
 		case CMD_UNASSEMBLE:
 			ConsoleColorizePrint( sText, " Usage: [address | symbol]" );

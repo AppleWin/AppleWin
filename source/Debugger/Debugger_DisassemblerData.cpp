@@ -116,7 +116,7 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 		else
 			sprintf( aSymbolName, "B_%04X", tData_.nStartAddress ); // DB range
 
-			pSymbolName = aSymbolName;
+		pSymbolName = aSymbolName;
 	}
 
 	// bRemoveSymbol = false // use arg[2]

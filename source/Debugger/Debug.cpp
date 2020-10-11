@@ -297,8 +297,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static bool      g_bBenchmarking = false;
 
-	static BOOL      fulldisp      = 0;
-
 	static BOOL      g_bProfiling       = 0;
 	static int       g_nDebugSteps      = 0;
 	static DWORD     g_nDebugStepCycles = 0;
@@ -900,7 +898,7 @@ static void SetDebugBreakOnInvalid( int iOpcodeType, int nValue )
 Update_t CmdBreakInvalid (int nArgs) // Breakpoint IFF Full-speed!
 {
 	if (nArgs > 2) // || (nArgs == 0))
-		goto _Help;
+		return HelpLastCommand();
 
 	int iType = AM_IMPLIED; // default to BRK
 	int nActive = 0;
@@ -1828,7 +1826,13 @@ Update_t _CmdAssemble( WORD nAddress, int iArg, int nArgs )
 
 	bool bStatus = Assemble( iArg, nArgs, nAddress );
 	if ( bStatus)
+	{
+		// move disassembler to current address
+		g_nDisasmCurAddress = g_nAssemblerAddress;
+		WindowUpdateDisasmSize(); // calc cur line
+		DisasmCalcTopBotAddress();
 		return UPDATE_ALL;
+	}
 		
 	return UPDATE_CONSOLE_DISPLAY; // UPDATE_NOTHING;
 }
@@ -1847,6 +1851,14 @@ Update_t CmdAssemble (int nArgs)
 	// 1 : A address
 	// 2+: A address mnemonic...
 
+	if (nArgs > 0)
+		g_nAssemblerAddress = g_aArgs[1].nValue;
+
+	// move disassembler window to current assembler address
+	g_nDisasmCurAddress = g_nAssemblerAddress;       // (2)
+	WindowUpdateDisasmSize(); // calc cur line
+	DisasmCalcTopBotAddress();
+
 	if (! nArgs)
 	{
 //		return Help_Arg_1( CMD_ASSEMBLE );
@@ -1855,8 +1867,6 @@ Update_t CmdAssemble (int nArgs)
 		AssemblerOn();
 		return UPDATE_CONSOLE_DISPLAY;
 	}
-		
-	g_nAssemblerAddress = g_aArgs[1].nValue;
 
 	if (nArgs == 1)
 	{
@@ -2192,7 +2202,7 @@ Update_t CmdNOP (int nArgs)
 	int iOpmode;
 	int nOpbytes;
 
- 	_6502_GetOpcodeOpmodeOpbyte( iOpcode, iOpmode, nOpbytes );
+	_6502_GetOpcodeOpmodeOpbyte( iOpcode, iOpmode, nOpbytes );
 
 	while (nOpbytes--)
 	{
@@ -3036,7 +3046,7 @@ void DisasmCalcTopFromCurAddress( bool bUpdateTop )
 			break;
 		}
 		iTop++;
- 	}
+	}
 
 	if (! bFound)
 	{
@@ -3063,7 +3073,7 @@ void DisasmCalcTopFromCurAddress( bool bUpdateTop )
 			MessageBox( g_hFrameWindow, sText, "ERROR", MB_OK );
 #endif
 	}
- }
+}
 
 
 //===========================================================================
@@ -3756,7 +3766,7 @@ Update_t CmdFlag (int nArgs)
 Update_t CmdDisk ( int nArgs)
 {
 	if (! nArgs)
-		goto _Help;
+		return HelpLastCommand();
 
 	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
 		return ConsoleDisplayError("No DiskII card in slot-6");
@@ -3770,7 +3780,7 @@ Update_t CmdDisk ( int nArgs)
 	if (iParam == PARAM_DISK_INFO)
 	{
 		if (nArgs > 2)
-			goto _Help;
+			return HelpLastCommand();
 
 		char buffer[200] = "";
 		ConsoleBufferPushFormat(buffer, "FW%2d: D%d at T$%s, phase $%s, offset $%X, mask $%02X, extraCycles %.2f, %s",
@@ -3788,7 +3798,7 @@ Update_t CmdDisk ( int nArgs)
 	}
 
 	if (nArgs < 2)
-		goto _Help;
+		return HelpLastCommand();
 
 	// first param should be drive
 	int iDrive = g_aArgs[ 1 ].nValue;
@@ -3802,12 +3812,12 @@ Update_t CmdDisk ( int nArgs)
 	int nFound = FindParam( g_aArgs[ 2 ].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END );
 
 	if (! nFound)
-		goto _Help;
+		return HelpLastCommand();
 
 	if (iParam == PARAM_DISK_EJECT)
 	{
 		if (nArgs > 2)
-			goto _Help;
+			return HelpLastCommand();
 
 		diskCard.EjectDisk( iDrive );
 		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
@@ -3816,7 +3826,7 @@ Update_t CmdDisk ( int nArgs)
 	if (iParam == PARAM_DISK_PROTECT)
 	{
 		if (nArgs > 3)
-			goto _Help;
+			return HelpLastCommand();
 
 		bool bProtect = true;
 
@@ -3829,7 +3839,7 @@ Update_t CmdDisk ( int nArgs)
 	else
 	{
 		if (nArgs != 3)
-			goto _Help;
+			return HelpLastCommand();
 
 		LPCTSTR pDiskName = g_aArgs[ 3 ].sArg;
 
@@ -3839,9 +3849,6 @@ Update_t CmdDisk ( int nArgs)
 	}
 
 	return UPDATE_CONSOLE_DISPLAY;
-
-_Help:
-	return HelpLastCommand();
 }
 
 
@@ -4767,7 +4774,7 @@ Update_t CmdMemorySave (int nArgs)
 //		if (g_aArgs[1].bType & TOKEN_QUOTE_DOUBLE)
 //			bHaveFileName = true;
 
-		int iArgComma1  = 2;
+//		int iArgComma1  = 2;
 		int iArgAddress = 3;
 		int iArgComma2  = 4;
 		int iArgLength  = 5;
@@ -4776,7 +4783,7 @@ Update_t CmdMemorySave (int nArgs)
 
 		if (! bHaveFileName)
 		{
-			iArgComma1  = 1;
+//			iArgComma1  = 1;
 			iArgAddress = 2;
 			iArgComma2  = 3;
 			iArgLength  = 4;
@@ -5772,8 +5779,6 @@ int _SearchMemoryFind(
 				// if next block matches, then this block matches (since we are wild)
 				if ((iBlock + 1) == nMemBlocks) // there is no next block, hence we match
 					continue;
-					
-				MemorySearch_t ms2 = vMemorySearchValues.at( iBlock + 1 );
 
 				WORD nAddress3 = nAddress2;
 				for (nAddress3 = nAddress2; nAddress3 < nAddressEnd; nAddress3++ )
@@ -6338,12 +6343,11 @@ Update_t CmdOutputPrintf (int nArgs)
 	int nValue = 0;
 
 	if (! nArgs)
-		goto _Help;
+		return Help_Arg_1( CMD_OUTPUT_PRINTF );
 
 	int nLen = 0;
 
 	PrintState_e eThis = PS_LITERAL;
-//	PrintState_e eNext = PS_NEXT_ARG_HEX; // PS_LITERAL;
 
 	int nWidth = 0;
 
@@ -6503,7 +6507,7 @@ Update_t CmdOutputRun (int nArgs)
 
 //	if (g_aArgs[1].bType & TYPE_QUOTED_2)
 
-	sMiniFileName = pFileName.substr(0, min(pFileName.size(), CONSOLE_WIDTH));
+	sMiniFileName = pFileName.substr(0, MIN(pFileName.size(), CONSOLE_WIDTH));
 //	_tcscat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
 	if (pFileName[0] == '\\' || pFileName[1] == ':')	// NB. Any prefix quote has already been stripped
@@ -6780,7 +6784,7 @@ Update_t CmdSource (int nArgs)
 				const std::string sFileName = g_sProgramDir + pFileName;
 
 				const int MAX_MINI_FILENAME = 20; 
-				const std::string sMiniFileName = sFileName.substr(0, min(MAX_MINI_FILENAME, sFileName.size()));
+				const std::string sMiniFileName = sFileName.substr(0, MIN(MAX_MINI_FILENAME, sFileName.size()));
 
 				TCHAR buffer[MAX_PATH] = { 0 };
 
@@ -7845,7 +7849,7 @@ int FindCommand( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 					if (iCommand_)
 						*iCommand_ = iCommand;
 // !_tcscmp
-					if (!_tcsicmp(pName, pCommandName)) // exact match?
+					if (!_tcsicmp(sCommand, pCommandName)) // exact match?
 					{
 	//					if (iCommand_)
 	//						*iCommand_ = iCommand;
@@ -7973,8 +7977,9 @@ Update_t ExecuteCommand (int nArgs)
 				}
 				else
 				// ####L -> Unassemble $address
-				if ((pCommand[nLen-1] == 'L') ||
-					(pCommand[nLen-1] == 'l'))
+				if (((pCommand[nLen-1] == 'L') ||
+				     (pCommand[nLen-1] == 'l'))&&
+				    (strcmp("cl", pCommand) != 0)) // workaround for ambiguous "cl": must be handled by "clear flag" command
 				{
 					pCommand[nLen-1] = 0;
 					ArgsGetValue( pArg, & nAddress );

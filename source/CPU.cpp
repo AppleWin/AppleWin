@@ -427,7 +427,7 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		PUSH(regs.pc & 0xFF)
 		EF_TO_AF
 		PUSH(regs.ps & ~AF_BREAK)
-		regs.ps = regs.ps | AF_INTERRUPT & ~AF_DECIMAL;
+		regs.ps = (regs.ps | AF_INTERRUPT) & (~AF_DECIMAL);
 		regs.pc = * (WORD*) (mem+0xFFFE);
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7)

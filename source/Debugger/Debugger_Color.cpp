@@ -163,7 +163,7 @@ bool DebuggerSetColor( const int iScheme, const int iColor, const COLORREF nColo
 		bStatus = true;
 	}
 
-	// Propogate to console since it has its own copy of colors
+	// Propagate to console since it has its own copy of colors
 	if (iColor == FG_CONSOLE_OUTPUT)
 	{
 		COLORREF nConsole = DebuggerGetColor( FG_CONSOLE_OUTPUT );

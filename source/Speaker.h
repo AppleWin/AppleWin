@@ -24,8 +24,6 @@ void    SpkrReset();
 BOOL    SpkrSetEmulationType (HWND window, SoundType_e newSoundType);
 void    SpkrUpdate (DWORD);
 void    SpkrUpdate_Timer();
-void    Spkr_SetErrorInc(const int nErrorInc);
-void    Spkr_SetErrorMax(const int nErrorMax);
 DWORD   SpkrGetVolume();
 void    SpkrSetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 void    Spkr_Mute();
