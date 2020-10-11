@@ -142,50 +142,54 @@ void Emulator::processEvents(bool & quit)
     }
     case SDL_KEYDOWN:
     {
-      processKeyDown(e, quit);
+      processKeyDown(e.key, quit);
       break;
     }
     case SDL_KEYUP:
     {
-      processKeyUp(e);
+      processKeyUp(e.key);
       break;
     }
     }
   }
 }
 
-void Emulator::processKeyDown(const SDL_Event & e, bool & quit)
+void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
 {
-  if (!e.key.repeat)
+  // scancode vs keycode
+  // scancode is relative to the position on the keyboard
+  // keycode is what the os maps it to
+  // if the user has decided to change the layout, we just go with it and use the keycode
+  if (!key.repeat)
   {
-    switch (e.key.keysym.scancode)
+    switch (key.keysym.sym)
     {
-    case SDL_SCANCODE_F9:
+    case SDLK_F9:
     {
       cycleVideoType(myWindow);
       break;
     }
-    case SDL_SCANCODE_F6:
+    case SDLK_F6:
     {
-      if ((e.key.keysym.mod & KMOD_CTRL) && (e.key.keysym.mod & KMOD_SHIFT))
+      if ((key.keysym.mod & KMOD_CTRL) && (key.keysym.mod & KMOD_SHIFT))
       {
 	cycle50ScanLines(myWindow);
       }
-      else if (e.key.keysym.mod & KMOD_CTRL)
+      else if (key.keysym.mod & KMOD_CTRL)
       {
 	myMultiplier = myMultiplier == 1 ? 2 : 1;
 	const int sw = GetFrameBufferBorderlessWidth();
 	const int sh = GetFrameBufferBorderlessHeight();
 	SDL_SetWindowSize(myWindow.get(), sw * myMultiplier, sh * myMultiplier);
       }
-      else if (!(e.key.keysym.mod & KMOD_SHIFT))
+      else if (!(key.keysym.mod & KMOD_SHIFT))
       {
 	myFullscreen = !myFullscreen;
 	SDL_SetWindowFullscreen(myWindow.get(), myFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
       }
       break;
     }
-    case SDL_SCANCODE_F5:
+    case SDLK_F5:
     {
       if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
       {
@@ -193,41 +197,42 @@ void Emulator::processKeyDown(const SDL_Event & e, bool & quit)
       }
       break;
     }
-    case SDL_SCANCODE_F2:
+    case SDLK_F2:
     {
       quit = true;
       break;
     }
-    case SDL_SCANCODE_LALT:
+    case SDLK_LALT:
     {
       Paddle::setButtonPressed(Paddle::ourOpenApple);
       break;
     }
-    case SDL_SCANCODE_RALT:
+    case SDLK_RALT:
     {
       Paddle::setButtonPressed(Paddle::ourSolidApple);
       break;
     }
     }
   }
-  std::cerr << "KEY DOWN: " << e.key.keysym.scancode << "," << e.key.keysym.sym << "," << e.key.keysym.mod << "," << bool(e.key.repeat) << std::endl;
+
+  std::cerr << "KEY DOWN: " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
 
 }
 
-void Emulator::processKeyUp(const SDL_Event & e)
+void Emulator::processKeyUp(const SDL_KeyboardEvent & key)
 {
-  switch (e.key.keysym.scancode)
+  switch (key.keysym.sym)
   {
-  case SDL_SCANCODE_LALT:
+  case SDLK_LALT:
   {
     Paddle::setButtonReleased(Paddle::ourOpenApple);
     break;
   }
-  case SDL_SCANCODE_RALT:
+  case SDLK_RALT:
   {
     Paddle::setButtonReleased(Paddle::ourSolidApple);
     break;
   }
   }
-  std::cerr << "KEY UP:   " << e.key.keysym.scancode << "," << e.key.keysym.sym << "," << e.key.keysym.mod << "," << bool(e.key.repeat) << std::endl;
+  std::cerr << "KEY UP:   " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
 }
