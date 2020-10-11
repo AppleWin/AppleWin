@@ -385,6 +385,8 @@ void VideoDestroy () {
     DeleteObject(g_hLogoBitmap);
     g_hLogoBitmap = (HBITMAP)0;
   }
+
+  NTSC_Destroy();
 }
 
 //===========================================================================
