@@ -3,6 +3,7 @@ include(FindPkgConfig)
 add_executable(sa2
   main.cpp
   bitmaps.cpp
+  emulator.cpp
   )
 
 find_package(Boost REQUIRED
