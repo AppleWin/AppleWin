@@ -4,6 +4,7 @@
 
 #include "linux/data.h"
 #include "linux/paddle.h"
+#include "linux/keyboard.h"
 
 #include "StdAfx.h"
 #include "Common.h"
@@ -94,6 +95,51 @@ namespace
     return current.refresh_rate;
   }
 
+  void processAppleKey(const SDL_KeyboardEvent & key)
+  {
+    // using keycode (or scan code) one takes a physical view of the keyboard
+    // ignoring non US layouts
+    // SHIFT-3 on a A2 keyboard in # while on my UK keyboard is £?
+    // so for now all ASCII keys are handled as text below
+    // but this makes it impossible to detect CTRL-ASCII... more to follow
+    BYTE ch = 0;
+
+    switch (key.keysym.sym)
+    {
+    case SDLK_RETURN:
+      ch = 0x0d;
+      break;
+    case SDLK_BACKSPACE: // same as AppleWin
+    case SDLK_LEFT:
+      ch = 0x08;
+      break;
+    case SDLK_RIGHT:
+      ch = 0x15;
+      break;
+    case SDLK_UP:
+      ch = 0x0b;
+      break;
+    case SDLK_DOWN:
+      ch = 0x0a;
+      break;
+    case SDLK_DELETE:
+      ch = 0x7f;
+      break;
+    case SDLK_ESCAPE:
+      ch = 0x1b;
+      break;
+    case SDLK_TAB:
+      ch = 0x09;
+      break;
+    }
+
+    if (ch)
+    {
+      addKeyToBuffer(ch);
+      std::cerr << "Apple Key Down: " << std::hex << (int)ch << std::endl;
+    }
+  }
+
 }
 
 
@@ -148,6 +194,11 @@ void Emulator::processEvents(bool & quit)
     case SDL_KEYUP:
     {
       processKeyUp(e.key);
+      break;
+    }
+    case SDL_TEXTINPUT:
+    {
+      processText(e.text);
       break;
     }
     }
@@ -215,6 +266,8 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
     }
   }
 
+  processAppleKey(key);
+
   std::cerr << "KEY DOWN: " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
 
 }
@@ -235,4 +288,18 @@ void Emulator::processKeyUp(const SDL_KeyboardEvent & key)
   }
   }
   std::cerr << "KEY UP:   " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
+}
+
+void Emulator::processText(const SDL_TextInputEvent & text)
+{
+  if (strlen(text.text) == 1)
+  {
+    const char key = text.text[0];
+    if (key >= 0x20 && key <= 0x7e)
+    {
+      // this is very simple, but one cannot handle CRTL-key combination.
+      addKeyToBuffer(key);
+      std::cerr << "Apple Text: " << std::hex << (int)key << std::endl;
+    }
+  }
 }

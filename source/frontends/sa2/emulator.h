@@ -16,8 +16,9 @@ public:
   void processEvents(bool & quit);
 
 private:
-  void processKeyDown(const SDL_KeyboardEvent & e, bool & quit);
-  void processKeyUp(const SDL_KeyboardEvent & e);
+  void processKeyDown(const SDL_KeyboardEvent & key, bool & quit);
+  void processKeyUp(const SDL_KeyboardEvent & key);
+  void processText(const SDL_TextInputEvent & text);
 
   const std::shared_ptr<SDL_Window> myWindow;
   const std::shared_ptr<SDL_Renderer> myRenderer;
