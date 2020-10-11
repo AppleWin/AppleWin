@@ -23,6 +23,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Synchronous Event Manager
  *
+ * This manager class maintains a linked-list of ordered timer-based event,
+ * where only the head of the list needs updating after every opcode.
+ *
+ * The Nth event in the list will expire in: event[1] + ... + event[N] cycles time.
+ * (So each event has a cycle delta expiry time relative to the previous event.)
+ *
+ * A synchronous event is used for a deterministic event that will occur in N cycles' time,
+ * eg. 6522 timer & Mousecard VBlank. (As opposed to async events, like SSC Rx/Tx interrupts.)
+ *
+ * Events that are active in the list can be removed before they expire,
+ * eg. 6522 timer when the interval changes.
+ *
  * Author: Various
  *
  */

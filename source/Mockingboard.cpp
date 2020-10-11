@@ -417,6 +417,9 @@ static UINT GetOpcodeCycles(BYTE reg)
 	return opcodeCycles;
 }
 
+// Insert a new synchronous event whenever the 6522 timer's counter is written.
+// . NB. it doesn't matter if the timer's interrupt enable (IER) is set or not
+//   - the state of IER is only important when the counter underflows - see: MB_SyncEventCallback()
 static USHORT SetTimerSyncEvent(UINT id, BYTE reg, USHORT timerLatch)
 {
 	// NB. This TIMER adjustment value gets subtracted when this current opcode completes, so no need to persist to save-state
@@ -2031,7 +2034,7 @@ void MB_PeriodicUpdate(UINT executedCycles)
 
 //-----------------------------------------------------------------------------
 
-static bool CheckTimerUnderflowAndIrq(USHORT& timerCounter, int& timerIrqDelay, const USHORT nClocks)
+static bool CheckTimerUnderflow(USHORT& timerCounter, int& timerIrqDelay, const USHORT nClocks)
 {
 	if (nClocks == 0)
 		return false;
@@ -2085,10 +2088,10 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 	{
 		SY6522_AY8910* pMB = &g_MB[i];
 
-		const bool bTimer1Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks);
-		const bool bTimer2Irq = CheckTimerUnderflowAndIrq(pMB->sy6522.TIMER2_COUNTER.w, pMB->sy6522.timer2IrqDelay, nClocks);
+		const bool bTimer1Underflow = CheckTimerUnderflow(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks);
+		const bool bTimer2Underflow = CheckTimerUnderflow(pMB->sy6522.TIMER2_COUNTER.w, pMB->sy6522.timer2IrqDelay, nClocks);
 
-		if (pMB->bTimer1Active && bTimer1Irq)
+		if (pMB->bTimer1Active && bTimer1Underflow)
 		{
 			pMB->sy6522.TIMER1_COUNTER.w += pMB->sy6522.TIMER1_LATCH.w;	// GH#651: account for underflowed cycles too
 			pMB->sy6522.TIMER1_COUNTER.w += kExtraTimerCycles;			// GH#652: account for extra 2 cycles
