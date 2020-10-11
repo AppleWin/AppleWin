@@ -4,7 +4,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <string>
 
-void InitializeRegistry(const std::string & filename);
+void InitializeRegistry(const std::string & filename, const bool saveOnExit);
 
 const boost::property_tree::ptree & getProperties();
 

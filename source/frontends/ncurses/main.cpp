@@ -137,7 +137,7 @@ namespace
       LogInit();
     }
 
-    InitializeRegistry("applen.conf");
+    InitializeRegistry("applen.conf", options.saveConfigurationOnExit);
 
     g_nMemoryClearType = options.memclear;
 

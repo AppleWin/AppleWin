@@ -5,70 +5,78 @@
 
 #include <boost/property_tree/ini_parser.hpp>
 
-class Configuration
+namespace
 {
- public:
-  Configuration(const std::string & filename);
-  ~Configuration();
-
-  static std::shared_ptr<Configuration> instance;
-
-  template<typename T>
-  T getValue(const std::string & section, const std::string & key) const;
-
-  template<typename T>
-  void putValue(const std::string & section, const std::string & key, const T & value);
-
-  const boost::property_tree::ptree & getProperties() const;
-
- private:
-  const std::string myFilename;
-
-  boost::property_tree::ptree myINI;
-};
-
-std::shared_ptr<Configuration> Configuration::instance;
-
-Configuration::Configuration(const std::string & filename) : myFilename(filename)
-{
-  if (GetFileAttributes(myFilename.c_str()) != INVALID_FILE_ATTRIBUTES)
+  class Configuration
   {
-    boost::property_tree::ini_parser::read_ini(myFilename, myINI);
-  }
-  else
+  public:
+    Configuration(const std::string & filename, const bool saveOnExit);
+    ~Configuration();
+
+    static std::shared_ptr<Configuration> instance;
+
+    template<typename T>
+    T getValue(const std::string & section, const std::string & key) const;
+
+    template<typename T>
+    void putValue(const std::string & section, const std::string & key, const T & value);
+
+    const boost::property_tree::ptree & getProperties() const;
+
+  private:
+    const std::string myFilename;
+    bool mySaveOnExit;
+
+    boost::property_tree::ptree myINI;
+  };
+
+  std::shared_ptr<Configuration> Configuration::instance;
+
+  Configuration::Configuration(const std::string & filename, const bool saveOnExit) : myFilename(filename), mySaveOnExit(saveOnExit)
   {
-    LogFileOutput("Registry: configuration file '%s' not found\n", filename.c_str());
+    if (GetFileAttributes(myFilename.c_str()) != INVALID_FILE_ATTRIBUTES)
+    {
+      boost::property_tree::ini_parser::read_ini(myFilename, myINI);
+    }
+    else
+    {
+      LogFileOutput("Registry: configuration file '%s' not found\n", filename.c_str());
+    }
   }
+
+  Configuration::~Configuration()
+  {
+    if (mySaveOnExit)
+    {
+      boost::property_tree::ini_parser::write_ini(myFilename, myINI);
+    }
+  }
+
+  const boost::property_tree::ptree & Configuration::getProperties() const
+  {
+    return myINI;
+  }
+
+  template <typename T>
+  T Configuration::getValue(const std::string & section, const std::string & key) const
+  {
+    const std::string path = section + "." + key;
+    const T value = myINI.get<T>(path);
+    return value;
+  }
+
+  template <typename T>
+  void Configuration::putValue(const std::string & section, const std::string & key, const T & value)
+  {
+    const std::string path = section + "." + key;
+    myINI.put(path, value);
+  }
+
 }
 
-Configuration::~Configuration()
+void InitializeRegistry(const std::string & filename, const bool saveOnExit)
 {
-  boost::property_tree::ini_parser::write_ini(myFilename, myINI);
-}
-
-const boost::property_tree::ptree & Configuration::getProperties() const
-{
-  return myINI;
-}
-
-template <typename T>
-T Configuration::getValue(const std::string & section, const std::string & key) const
-{
-  const std::string path = section + "." + key;
-  const T value = myINI.get<T>(path);
-  return value;
-}
-
-template <typename T>
-void Configuration::putValue(const std::string & section, const std::string & key, const T & value)
-{
-  const std::string path = section + "." + key;
-  myINI.put(path, value);
-}
-
-void InitializeRegistry(const std::string & filename)
-{
-  Configuration::instance.reset(new Configuration(filename));
+  Configuration::instance.reset(new Configuration(filename, saveOnExit));
 }
 
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser,

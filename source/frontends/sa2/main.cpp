@@ -32,8 +32,6 @@ namespace
 {
   void initialiseEmulator()
   {
-    InitializeRegistry("applen.conf");
-
     g_fh = fopen("/tmp/applewin.txt", "w");
     setbuf(g_fh, nullptr);
 
@@ -229,6 +227,8 @@ void run_sdl(int argc, const char * argv [])
 
   if (!run)
     return;
+
+  InitializeRegistry("applen.conf", options.saveConfigurationOnExit);
 
   initialiseEmulator();
   loadEmulator();
