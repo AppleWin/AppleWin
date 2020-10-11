@@ -91,6 +91,7 @@ static bool g_bSpkrAvailable = false;
 static ULONG   Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSamples);
 static ULONG   Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples);
 static void    Spkr_SetActive(bool bActive);
+static void    Spkr_DSUninit();
 
 //=============================================================================
 
@@ -924,7 +925,7 @@ bool Spkr_DSInit()
 	return true;
 }
 
-void Spkr_DSUninit()
+static void Spkr_DSUninit()
 {
 	if(SpeakerVoice.lpDSBvoice && SpeakerVoice.bActive)
 	{

@@ -30,7 +30,6 @@ void    Spkr_Mute();
 void    Spkr_Demute();
 bool    Spkr_IsActive();
 bool    Spkr_DSInit();
-void    Spkr_DSUninit();
 void    SpkrSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    SpkrLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
