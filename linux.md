@@ -81,7 +81,7 @@ This is based on Qt, currently tested with 5.10
 * full speed when disk spins execute up to 5 ms real wall clock of emulator code (then returns to Qt)
 * (standard) audio is supported and there are a few configuration options to tune the latency (default very conservative 200ms)
 * plain mockingboard is supported as well (not speech, which hang the emulator)
-* Open Apple and Closed Apple can be emulated using AltGr and Menu (unfortunately, Alt does not work well)
+* Open Apple and Solid Apple can be emulated using AltGr and Menu (unfortunately, Alt does not work well)
 
 ## Build
 

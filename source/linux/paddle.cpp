@@ -74,7 +74,7 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExe
       case Paddle::ourOpenApple:
         pressed = paddle->getButton(0);
         break;
-      case Paddle::ourClosedApple:
+      case Paddle::ourSolidApple:
         pressed = paddle->getButton(1);
         break;
       case Paddle::ourThirdApple:

@@ -108,7 +108,7 @@ void Video::keyReleaseEvent(QKeyEvent *event)
             Paddle::setButtonReleased(Paddle::ourOpenApple);
             return;
         case Qt::Key_Menu:
-            Paddle::setButtonReleased(Paddle::ourClosedApple);
+            Paddle::setButtonReleased(Paddle::ourSolidApple);
             return;
         }
     }
@@ -128,7 +128,7 @@ void Video::keyPressEvent(QKeyEvent *event)
             Paddle::setButtonPressed(Paddle::ourOpenApple);
             return;
         case Qt::Key_Menu:
-            Paddle::setButtonPressed(Paddle::ourClosedApple);
+            Paddle::setButtonPressed(Paddle::ourSolidApple);
             return;
         }
     }

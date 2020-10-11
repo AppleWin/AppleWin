@@ -14,7 +14,7 @@ public:
   virtual int getAxis(int i) const;
 
   static constexpr int ourOpenApple = 0x61;
-  static constexpr int ourClosedApple = 0x62;
+  static constexpr int ourSolidApple = 0x62;
   static constexpr int ourThirdApple = 0x63;
 
   static void setButtonPressed(int i);

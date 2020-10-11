@@ -334,7 +334,7 @@ void run_sdl(int argc, const char * argv [])
 	  }
 	  case SDL_SCANCODE_RALT:
 	  {
-	    Paddle::setButtonPressed(Paddle::ourClosedApple);
+	    Paddle::setButtonPressed(Paddle::ourSolidApple);
 	    break;
 	  }
 	  }
@@ -353,7 +353,7 @@ void run_sdl(int argc, const char * argv [])
 	}
 	case SDL_SCANCODE_RALT:
 	{
-	  Paddle::setButtonReleased(Paddle::ourClosedApple);
+	  Paddle::setButtonReleased(Paddle::ourSolidApple);
 	  break;
 	}
 	}
