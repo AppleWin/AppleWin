@@ -196,6 +196,7 @@ compile_commands.json
 CTestTestfile.cmake
 *.so
 *.a
+Disks/
 
 # Qt
 # C++ objects and libs
