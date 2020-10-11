@@ -6,14 +6,15 @@
 #include <QCommandLineParser>
 
 #include "linux/version.h"
+#include "frontends/qapple/applicationname.h"
 
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    QApplication::setOrganizationName("AndSoft");
-    QApplication::setApplicationName("QAppleEmulator");
+    QApplication::setOrganizationName(ORGANIZATION_NAME);
+    QApplication::setApplicationName(APPLICATION_NAME);
     const QString qversion = QString::fromStdString(getVersion());
     QApplication::setApplicationVersion(qversion);
 

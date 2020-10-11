@@ -1,12 +1,11 @@
 #pragma once
 
 #include "linux/windows/wincompat.h"
-#include <boost/property_tree/ptree.hpp>
 #include <string>
 
-void InitializeRegistry(const std::string & filename, const bool saveOnExit);
+struct EmulatorOptions;
 
-const boost::property_tree::ptree & getProperties();
+void InitializeRegistry(const EmulatorOptions & options);
 
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, DWORD chars);
 BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD *value);

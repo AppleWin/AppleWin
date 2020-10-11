@@ -1,15 +1,40 @@
 #include "frontends/common2/configuration.h"
+#include <frontends/common2/programoptions.h>
 
 #include "Log.h"
 #include "linux/windows/files.h"
+#include "frontends/qapple/applicationname.h"
 
 #include <boost/property_tree/ini_parser.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 namespace
 {
+
+  struct KeyEncodedLess
+  {
+    static std::string decodeKey(const std::string & key)
+    {
+      std::string result = key;
+      // quick implementation, just to make it work.
+      // is there a library function available somewhere?
+      boost::algorithm::replace_all(result, "%20", " ");
+      return result;
+    }
+
+    bool operator()( const std::string & lhs, const std::string & rhs ) const
+    {
+      const std::string key1 = decodeKey(lhs);
+      const std::string key2 = decodeKey(rhs);
+      return key1 < key2;
+    }
+  };
+
   class Configuration
   {
   public:
+    typedef boost::property_tree::basic_ptree<std::string, std::string, KeyEncodedLess> ini_t;
+
     Configuration(const std::string & filename, const bool saveOnExit);
     ~Configuration();
 
@@ -21,13 +46,15 @@ namespace
     template<typename T>
     void putValue(const std::string & section, const std::string & key, const T & value);
 
-    const boost::property_tree::ptree & getProperties() const;
+    const ini_t & getProperties() const;
 
   private:
     const std::string myFilename;
-    bool mySaveOnExit;
+    const bool mySaveOnExit;
 
-    boost::property_tree::ptree myINI;
+    static std::string decodeKey(const std::string & key);
+
+    ini_t myINI;
   };
 
   std::shared_ptr<Configuration> Configuration::instance;
@@ -52,7 +79,7 @@ namespace
     }
   }
 
-  const boost::property_tree::ptree & Configuration::getProperties() const
+  const Configuration::ini_t & Configuration::getProperties() const
   {
     return myINI;
   }
@@ -74,8 +101,27 @@ namespace
 
 }
 
-void InitializeRegistry(const std::string & filename, const bool saveOnExit)
+void InitializeRegistry(const EmulatorOptions & options)
 {
+  std::string filename;
+  bool saveOnExit;
+
+  if (options.useQtIni)
+  {
+    const char* homeDir = getenv("HOME");
+    if (!homeDir)
+    {
+      throw std::runtime_error("${HOME} not set, cannot locate Qt ini");
+    }
+    filename = std::string(homeDir) + "/.config/" + ORGANIZATION_NAME + "/" + APPLICATION_NAME + ".conf";
+    saveOnExit = false;
+  }
+  else
+  {
+    filename = "applen.conf";
+    saveOnExit = options.saveConfigurationOnExit;
+  }
+
   Configuration::instance.reset(new Configuration(filename, saveOnExit));
 }
 
@@ -143,9 +189,4 @@ void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value)
 {
   Configuration::instance->putValue(section, key, value);
   LogFileOutput("RegSaveValue: %s - %s = %d\n", section, key, value);
-}
-
-const boost::property_tree::ptree & getProperties()
-{
-  return Configuration::instance->getProperties();
 }

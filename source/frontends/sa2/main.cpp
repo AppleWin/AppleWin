@@ -32,9 +32,6 @@ namespace
 {
   void initialiseEmulator()
   {
-    g_fh = fopen("/tmp/applewin.txt", "w");
-    setbuf(g_fh, nullptr);
-
     LogFileOutput("Initialisation\n");
 
     ImageInitialize();
@@ -104,8 +101,7 @@ namespace
 
     g_CardMgr.GetDisk2CardMgr().Destroy();
     ImageDestroy();
-    fclose(g_fh);
-    g_fh = nullptr;
+    LogDone();
   }
 
   SDL_Rect refreshTexture(const std::shared_ptr<SDL_Texture> & tex)
@@ -228,7 +224,15 @@ void run_sdl(int argc, const char * argv [])
   if (!run)
     return;
 
-  InitializeRegistry("applen.conf", options.saveConfigurationOnExit);
+
+  if (options.log)
+  {
+    LogInit();
+  }
+
+  InitializeRegistry(options);
+
+  g_nMemoryClearType = options.memclear;
 
   initialiseEmulator();
   loadEmulator();

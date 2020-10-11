@@ -12,7 +12,8 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
   po::options_description desc("AppleWin " + version);
   desc.add_options()
     ("help,h", "Print this help message")
-    ("conf", "Save configuration on exit");
+    ("conf", "Save configuration on exit")
+    ("qt-ini", "Use Qt ini file (read only)");
 
   po::options_description diskDesc("Disk");
   diskDesc.add_options()
@@ -51,6 +52,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
     }
 
     options.saveConfigurationOnExit = vm.count("conf");
+    options.useQtIni = vm.count("qt-ini");
 
     if (vm.count("d1"))
     {
