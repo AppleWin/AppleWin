@@ -174,7 +174,7 @@ namespace
 
     if (should_be_zero)
     {
-      throw std::string(SDL_GetError());
+      throw std::runtime_error(SDL_GetError());
     }
 
     return current.refresh_rate;
@@ -315,6 +315,11 @@ void run_sdl(int argc, const char * argv [])
 	    {
 	      dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->DriveSwap();
 	    }
+	    break;
+	  }
+	  case SDL_SCANCODE_F2:
+	  {
+	    quit = true;
 	    break;
 	  }
 	  }
