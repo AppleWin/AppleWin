@@ -16,7 +16,7 @@ void    MB_CheckCumulativeCycles();	// DEBUG
 void    MB_SetCumulativeCycles();
 void    MB_PeriodicUpdate(UINT executedCycles);
 void    MB_CheckIRQ();
-bool    MB_UpdateCycles(ULONG uExecutedCycles);
+void    MB_UpdateCycles(ULONG uExecutedCycles);
 SS_CARDTYPE MB_GetSoundcardType();
 bool    MB_IsActive();
 DWORD   MB_GetVolume();

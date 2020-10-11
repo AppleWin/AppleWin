@@ -53,6 +53,7 @@ extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't i
 extern int        g_nMemoryClearType;					// Cmd line switch: use specific MIP (Memory Initialization Pattern)
 
 extern class CardManager g_CardMgr;
+extern class SynchronousEventManager g_SynchronousEventMgr;
 
 extern HANDLE	g_hCustomRomF8;		// INVALID_HANDLE_VALUE if no custom F8 rom
 extern HANDLE	g_hCustomRom;		// INVALID_HANDLE_VALUE if no custom rom
