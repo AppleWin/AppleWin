@@ -305,8 +305,8 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 			newSlotAuxCard = type;
 	}
 
-	g_CardMgr.Insert(SLOT0, newSlot0Card);
-	g_CardMgr.InsertAux(newSlotAuxCard);
+	GetCardMgr().Insert(SLOT0, newSlot0Card);
+	GetCardMgr().InsertAux(newSlotAuxCard);
 }
 
 void CreateLanguageCard(void)
@@ -316,9 +316,9 @@ void CreateLanguageCard(void)
 
 	if (IsApple2PlusOrClone(GetApple2Type()))
 	{
-		if (g_CardMgr.QuerySlot(SLOT0) == CT_Saturn128K)
+		if (GetCardMgr().QuerySlot(SLOT0) == CT_Saturn128K)
 			g_pLanguageCard = new Saturn128K(g_uSaturnBanksFromCmdLine);
-		else if (g_CardMgr.QuerySlot(SLOT0) == CT_LanguageCard)
+		else if (GetCardMgr().QuerySlot(SLOT0) == CT_LanguageCard)
 			g_pLanguageCard = new LanguageCardSlot0;
 		else
 			g_pLanguageCard = NULL;
@@ -332,9 +332,9 @@ void CreateLanguageCard(void)
 SS_CARDTYPE GetCurrentExpansionMemType(void)
 {
 	if (IsApple2PlusOrClone(GetApple2Type()))
-		return g_CardMgr.QuerySlot(SLOT0);
+		return GetCardMgr().QuerySlot(SLOT0);
 	else
-		return g_CardMgr.QueryAux();
+		return GetCardMgr().QueryAux();
 }
 
 //
@@ -1077,7 +1077,7 @@ static void ResetPaging(BOOL initialize)
 {
 	SetLastRamWrite(0);
 
-	if (IsApple2PlusOrClone(GetApple2Type()) && g_CardMgr.QuerySlot(SLOT0) == CT_Empty)
+	if (IsApple2PlusOrClone(GetApple2Type()) && GetCardMgr().QuerySlot(SLOT0) == CT_Empty)
 		SetMemMode(0);
 	else
 		SetMemMode(LanguageCardUnit::kMemModeInitialState);
@@ -1495,7 +1495,7 @@ void MemInitialize()
 	SetExpansionMemTypeDefault();
 
 #ifdef RAMWORKS
-	if (g_CardMgr.QueryAux() == CT_RamWorksIII)
+	if (GetCardMgr().QueryAux() == CT_RamWorksIII)
 	{
 		// allocate memory for RAMWorks III - up to 8MB
 		g_uActiveBank = 0;
@@ -1606,7 +1606,7 @@ void MemInitializeCustomF8ROM(void)
 	const UINT F8RomSize = 0x800;
 	const UINT F8RomOffset = Apple2RomSize-F8RomSize;
 
-	if (IsApple2Original(GetApple2Type()) && g_CardMgr.QuerySlot(SLOT0) == CT_LanguageCard)
+	if (IsApple2Original(GetApple2Type()) && GetCardMgr().QuerySlot(SLOT0) == CT_LanguageCard)
 	{
 		try
 		{
@@ -1729,13 +1729,13 @@ void MemInitializeIO(void)
 	else
 		RegisterIoHandler(LanguageCardUnit::kSlot0, IO_Null, IO_Null, NULL, NULL, NULL, NULL);
 
-	if (g_CardMgr.QuerySlot(SLOT1) == CT_GenericPrinter)
+	if (GetCardMgr().QuerySlot(SLOT1) == CT_GenericPrinter)
 		PrintLoadRom(pCxRomPeripheral, SLOT1);				// $C100 : Parallel printer f/w
 
-	if (g_CardMgr.QuerySlot(SLOT2) == CT_SSC)
-		dynamic_cast<CSuperSerialCard&>(g_CardMgr.GetRef(SLOT2)).CommInitialize(pCxRomPeripheral, SLOT2);	// $C200 : SSC
+	if (GetCardMgr().QuerySlot(SLOT2) == CT_SSC)
+		dynamic_cast<CSuperSerialCard&>(GetCardMgr().GetRef(SLOT2)).CommInitialize(pCxRomPeripheral, SLOT2);	// $C200 : SSC
 
-	if (g_CardMgr.QuerySlot(SLOT3) == CT_Uthernet)
+	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
 	{
 		// Slot 3 contains the Uthernet card (which can coexist with an 80-col+Ram card in AUX slot)
 		// . Uthernet card has no ROM and only IO mapped at $C0Bx
@@ -1744,40 +1744,40 @@ void MemInitializeIO(void)
 
 	// Apple//e: Auxilary slot contains Extended 80 Column card or RamWorksIII card
 
-	if (g_CardMgr.QuerySlot(SLOT4) == CT_MouseInterface)
+	if (GetCardMgr().QuerySlot(SLOT4) == CT_MouseInterface)
 	{
-		dynamic_cast<CMouseInterface&>(g_CardMgr.GetRef(SLOT4)).Initialize(pCxRomPeripheral, SLOT4);	// $C400 : Mouse f/w
+		dynamic_cast<CMouseInterface&>(GetCardMgr().GetRef(SLOT4)).Initialize(pCxRomPeripheral, SLOT4);	// $C400 : Mouse f/w
 	}
-	else if (g_CardMgr.QuerySlot(SLOT4) == CT_MockingboardC || g_CardMgr.QuerySlot(SLOT4) == CT_Phasor)
+	else if (GetCardMgr().QuerySlot(SLOT4) == CT_MockingboardC || GetCardMgr().QuerySlot(SLOT4) == CT_Phasor)
 	{
 		MB_InitializeIO(pCxRomPeripheral, SLOT4, SLOT5);
 	}
-	else if (g_CardMgr.QuerySlot(SLOT4) == CT_Z80)
+	else if (GetCardMgr().QuerySlot(SLOT4) == CT_Z80)
 	{
 		ConfigureSoftcard(pCxRomPeripheral, SLOT4);		// $C400 : Z80 card
 	}
-//	else if (g_CardMgr.QuerySlot(SLOT4) == CT_GenericClock)
+//	else if (GetCardMgr().QuerySlot(SLOT4) == CT_GenericClock)
 //	{
 //		LoadRom_Clock_Generic(pCxRomPeripheral, SLOT4);
 //	}
 
-	if (g_CardMgr.QuerySlot(SLOT5) == CT_Z80)
+	if (GetCardMgr().QuerySlot(SLOT5) == CT_Z80)
 	{
 		ConfigureSoftcard(pCxRomPeripheral, SLOT5);		// $C500 : Z80 card
 	}
-	else if (g_CardMgr.QuerySlot(SLOT5) == CT_SAM)
+	else if (GetCardMgr().QuerySlot(SLOT5) == CT_SAM)
 	{
 		ConfigureSAM(pCxRomPeripheral, SLOT5);			// $C500 : Z80 card
 	}
-	else if (g_CardMgr.QuerySlot(SLOT5) == CT_Disk2)
+	else if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 	{
-		dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT5)).Initialize(pCxRomPeripheral, SLOT5);	// $C500 : Disk][ card
+		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).Initialize(pCxRomPeripheral, SLOT5);	// $C500 : Disk][ card
 	}
 
-	if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
-		dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6)).Initialize(pCxRomPeripheral, SLOT6);	// $C600 : Disk][ card
+	if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
+		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Initialize(pCxRomPeripheral, SLOT6);	// $C600 : Disk][ card
 
-	if (g_CardMgr.QuerySlot(SLOT7) == CT_GenericHDD)
+	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
 		HD_Load_Rom(pCxRomPeripheral, SLOT7);			// $C700 : HDD f/w
 }
 
@@ -2475,8 +2475,8 @@ static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::
 		yamlLoadHelper.PopMap();
 	}
 
-	g_CardMgr.Remove(SLOT0);
-	g_CardMgr.InsertAux(type);
+	GetCardMgr().Remove(SLOT0);
+	GetCardMgr().InsertAux(type);
 
 	memaux = RWpages[g_uActiveBank];
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()

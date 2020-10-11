@@ -281,7 +281,7 @@ static void GetAppleWindowTitle()
 
 	g_pAppTitle += VideoGetAppWindowTitle();
 
-	if (g_CardMgr.GetDisk2CardMgr().IsAnyFirmware13Sector())
+	if (GetCardMgr().GetDisk2CardMgr().IsAnyFirmware13Sector())
 		g_pAppTitle += " (S6-13) ";
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
@@ -328,7 +328,7 @@ static void FrameShowCursor(BOOL bShow)
 // . AppleWin's main window is activated/deactivated
 static void RevealCursor()
 {
-	CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
+	CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
 
 	if (!pMouseCard || !pMouseCard->IsActiveAndEnabled())
 		return;
@@ -355,7 +355,7 @@ static void FullScreenRevealCursor(void)
 	if (!g_bIsFullScreen)
 		return;
 
-	if (g_CardMgr.IsMouseCardInstalled())
+	if (GetCardMgr().IsMouseCardInstalled())
 		return;
 
 	if (!g_bUsingCursor && !g_bShowingCursor)
@@ -521,8 +521,8 @@ static void DrawButton (HDC passdc, int number) {
     SetTextAlign(dc,TA_CENTER | TA_TOP);
     SetBkMode(dc,TRANSPARENT);
 
-	LPCTSTR pszBaseName = (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
-		? dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6)).GetBaseName(number-BTN_DRIVE1).c_str()
+	LPCTSTR pszBaseName = (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
+		? dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).GetBaseName(number-BTN_DRIVE1).c_str()
 		: "";
 
     ExtTextOut(dc,x+offset+22,rect.top,ETO_CLIPPED,&rect,
@@ -717,15 +717,15 @@ void FrameDrawDiskLEDS( HDC passdc )
 	g_eStatusDrive2 = DISK_STATUS_OFF;
 
 	// Slot6 drive takes priority unless it's off:
-	if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
-		dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6)).GetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
+	if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
+		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).GetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
 
 	// Slot5:
 	{
 		Disk_Status_e eDrive1StatusSlot5 = DISK_STATUS_OFF;
 		Disk_Status_e eDrive2StatusSlot5 = DISK_STATUS_OFF;
-		if (g_CardMgr.QuerySlot(SLOT5) == CT_Disk2)
-			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT5)).GetLightStatus(&eDrive1StatusSlot5, &eDrive2StatusSlot5);
+		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).GetLightStatus(&eDrive1StatusSlot5, &eDrive2StatusSlot5);
 
 		if (g_eStatusDrive1 == DISK_STATUS_OFF) g_eStatusDrive1 = eDrive1StatusSlot5;
 		if (g_eStatusDrive2 == DISK_STATUS_OFF) g_eStatusDrive2 = eDrive2StatusSlot5;
@@ -783,10 +783,10 @@ void FrameDrawDiskStatus( HDC passdc )
 	// Sector $B7ED    LC1 $D357
 	// RWTS            LC1 $D300
 
-	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
+	if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
 		return;
 
-	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6));
+	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
 	int nActiveFloppy = disk2Card.GetCurrentDrive();
 	int nDisk1Track = disk2Card.GetTrack(DRIVE_1);
 	int nDisk2Track = disk2Card.GetTrack(DRIVE_2);
@@ -1149,13 +1149,13 @@ LRESULT CALLBACK FrameWndProc (
 		Snapshot_Shutdown();
       DebugDestroy();
       if (!g_bRestart) {
-		g_CardMgr.GetDisk2CardMgr().Destroy();
+		GetCardMgr().GetDisk2CardMgr().Destroy();
         ImageDestroy();
         HD_Destroy();
       }
       PrintDestroy();
-      if (g_CardMgr.IsSSCInstalled())
-		g_CardMgr.GetSSC()->CommDestroy();
+      if (GetCardMgr().IsSSCInstalled())
+		GetCardMgr().GetSSC()->CommDestroy();
       CpuDestroy();
       MemDestroy();
       SpkrDestroy();
@@ -1207,9 +1207,9 @@ LRESULT CALLBACK FrameWndProc (
     case WM_DDE_EXECUTE:
 	{
 		LogFileOutput("WM_DDE_EXECUTE\n");
-		if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+		if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 		{
-			Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6));
+			Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
 			LPTSTR filename = (LPTSTR)GlobalLock((HGLOBAL)lparam);
 			ImageError_e Error = disk2Card.InsertDisk(DRIVE_1, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 			if (Error == eIMAGE_ERROR_NONE)
@@ -1235,9 +1235,9 @@ LRESULT CALLBACK FrameWndProc (
 
     case WM_DROPFILES:
 	{
-		if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+		if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 		{
-			Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6));
+			Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
 			TCHAR filename[MAX_PATH];
 			DragQueryFile((HDROP)wparam,0,filename,sizeof(filename));
 			POINT point;
@@ -1569,7 +1569,7 @@ LRESULT CALLBACK FrameWndProc (
           DrawButton((HDC)0,buttonactive);
           SetCapture(window);
         }
-        else if (g_bUsingCursor && !g_CardMgr.IsMouseCardInstalled())
+        else if (g_bUsingCursor && !GetCardMgr().IsMouseCardInstalled())
 		{
           if (wparam & (MK_CONTROL | MK_SHIFT))
 		  {
@@ -1584,7 +1584,7 @@ LRESULT CALLBACK FrameWndProc (
 		{
           SetUsingCursor(TRUE);
 		}
-		else if (g_CardMgr.IsMouseCardInstalled())
+		else if (GetCardMgr().IsMouseCardInstalled())
 		{
 			if (wparam & (MK_CONTROL | MK_SHIFT))
 			{
@@ -1592,7 +1592,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 			else if (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING)
 			{
-				CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
+				CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
 
 				if (pMouseCard)
 				{
@@ -1634,13 +1634,13 @@ LRESULT CALLBACK FrameWndProc (
         }
         buttonactive = -1;
       }
-      else if (g_bUsingCursor && !g_CardMgr.IsMouseCardInstalled())
+      else if (g_bUsingCursor && !GetCardMgr().IsMouseCardInstalled())
 	  {
 	    JoySetButton(BUTTON0, BUTTON_UP);
 	  }
-	  else if (g_CardMgr.IsMouseCardInstalled())
+	  else if (GetCardMgr().IsMouseCardInstalled())
 	  {
-		g_CardMgr.GetMouseCard()->SetButton(BUTTON0, BUTTON_UP);
+		GetCardMgr().GetMouseCard()->SetButton(BUTTON0, BUTTON_UP);
 	  }
       RelayEvent(WM_LBUTTONUP,wparam,lparam);
       break;
@@ -1668,12 +1668,12 @@ LRESULT CALLBACK FrameWndProc (
         if (buttonover != -1)
           DrawButton((HDC)0,buttonover);
       }
-      else if (g_bUsingCursor && !g_CardMgr.IsMouseCardInstalled())
+      else if (g_bUsingCursor && !GetCardMgr().IsMouseCardInstalled())
 	  {
         DrawCrosshairs(x,y);
 	    JoySetPosition(x-viewportx-2, g_nViewportCX-4, y-viewporty-2, g_nViewportCY-4);
       }
-	  else if (g_CardMgr.IsMouseCardInstalled() && g_CardMgr.GetMouseCard()->IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
+	  else if (GetCardMgr().IsMouseCardInstalled() && GetCardMgr().GetMouseCard()->IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
 	  {
 			if (g_bLastCursorInAppleViewport)
 				break;
@@ -1706,7 +1706,7 @@ LRESULT CALLBACK FrameWndProc (
 		if (wparam == IDEVENT_TIMER_MOUSE)
 		{
 			// NB. Need to check /g_bAppActive/ since WM_TIMER events still occur after AppleWin app has lost focus
-			if (g_bAppActive && g_CardMgr.IsMouseCardInstalled() && g_CardMgr.GetMouseCard()->IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
+			if (g_bAppActive && GetCardMgr().IsMouseCardInstalled() && GetCardMgr().GetMouseCard()->IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
 			{
 				if (!g_bLastCursorInAppleViewport)
 					break;
@@ -1717,7 +1717,7 @@ LRESULT CALLBACK FrameWndProc (
 
 				long dX,dY;
 				if (DIMouse::ReadImmediateData(&dX, &dY) == S_OK)
-					g_CardMgr.GetMouseCard()->SetPositionRel(dX, dY, &iOutOfBoundsX, &iOutOfBoundsY);
+					GetCardMgr().GetMouseCard()->SetPositionRel(dX, dY, &iOutOfBoundsX, &iOutOfBoundsY);
 
 				UpdateMouseInAppleViewport(iOutOfBoundsX, iOutOfBoundsY);
 			}
@@ -1725,7 +1725,7 @@ LRESULT CALLBACK FrameWndProc (
 		else if (wparam == IDEVENT_TIMER_100MSEC)	// GH#504
 		{
 			if (g_bIsFullScreen
-				&& !g_CardMgr.IsMouseCardInstalled()	// Don't interfere if there's a mousecard present!
+				&& !GetCardMgr().IsMouseCardInstalled()	// Don't interfere if there's a mousecard present!
 				&& !g_bUsingCursor			// Using mouse for joystick emulation (or mousecard restricted to window)
 				&& g_bShowingCursor
 				&& g_bFrameActive)			// Frame inactive when eg. Config or 'Select Disk Image' dialogs are opened
@@ -1766,10 +1766,10 @@ LRESULT CALLBACK FrameWndProc (
 
 			Disk2InterfaceCard *pDisk2Slot5 = NULL, *pDisk2Slot6 = NULL;
 
-			if (g_CardMgr.QuerySlot(SLOT5) == CT_Disk2)
-				pDisk2Slot5 = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT5));
-			if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
-				pDisk2Slot6 = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+			if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
+				pDisk2Slot5 = dynamic_cast<Disk2InterfaceCard*>(GetCardMgr().GetObj(SLOT5));
+			if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
+				pDisk2Slot6 = dynamic_cast<Disk2InterfaceCard*>(GetCardMgr().GetObj(SLOT6));
 
 			std::string slot5 = pDisk2Slot5 ? pDisk2Slot5->GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom) : "";
 			std::string slot6 = pDisk2Slot6 ? pDisk2Slot6->GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom) : "";
@@ -1845,10 +1845,10 @@ LRESULT CALLBACK FrameWndProc (
 			}
 		}
 
-		if (g_bUsingCursor && !g_CardMgr.IsMouseCardInstalled())
+		if (g_bUsingCursor && !GetCardMgr().IsMouseCardInstalled())
 			JoySetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
-		else if (g_CardMgr.IsMouseCardInstalled())
-			g_CardMgr.GetMouseCard()->SetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
+		else if (GetCardMgr().IsMouseCardInstalled())
+			GetCardMgr().GetMouseCard()->SetButton(BUTTON1, (message == WM_RBUTTONDOWN) ? BUTTON_DOWN : BUTTON_UP);
 
 		RelayEvent(message,wparam,lparam);
 		break;
@@ -1948,13 +1948,13 @@ LRESULT CALLBACK FrameWndProc (
 			case WSAECONNRESET:
 			case WSAENOTCONN:
 			case WSAETIMEDOUT:
-				if (g_CardMgr.IsSSCInstalled())
-					g_CardMgr.GetSSC()->CommTcpSerialClose();
+				if (GetCardMgr().IsSSCInstalled())
+					GetCardMgr().GetSSC()->CommTcpSerialClose();
 				break;
 
 			default:
-				if (g_CardMgr.IsSSCInstalled())
-					g_CardMgr.GetSSC()->CommTcpSerialCleanup();
+				if (GetCardMgr().IsSSCInstalled())
+					GetCardMgr().GetSSC()->CommTcpSerialCleanup();
 				break;
 			}
 		}
@@ -1964,18 +1964,18 @@ LRESULT CALLBACK FrameWndProc (
 			switch(wSelectEvent)
 			{
 				case FD_ACCEPT:
-					if (g_CardMgr.IsSSCInstalled())
-						g_CardMgr.GetSSC()->CommTcpSerialAccept();
+					if (GetCardMgr().IsSSCInstalled())
+						GetCardMgr().GetSSC()->CommTcpSerialAccept();
 					break;
 
 				case FD_CLOSE:
-					if (g_CardMgr.IsSSCInstalled())
-						g_CardMgr.GetSSC()->CommTcpSerialClose();
+					if (GetCardMgr().IsSSCInstalled())
+						GetCardMgr().GetSSC()->CommTcpSerialClose();
 					break;
 
 				case FD_READ:
-					if (g_CardMgr.IsSSCInstalled())
-						g_CardMgr.GetSSC()->CommTcpSerialReceive();
+					if (GetCardMgr().IsSSCInstalled())
+						GetCardMgr().GetSSC()->CommTcpSerialReceive();
 					break;
 			}
 		}
@@ -2090,8 +2090,8 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
 		if (g_nAppMode == MODE_LOGO)
 		{
-			if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
-				dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6)).Boot();
+			if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
+				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
 
 			LogFileTimeUntilFirstKeyReadReset();
 			g_nAppMode = MODE_RUNNING;
@@ -2115,18 +2115,18 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_DRIVE1:
     case BTN_DRIVE2:
-		if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+		if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6)).UserSelectNewDiskImage(button-BTN_DRIVE1);
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).UserSelectNewDiskImage(button-BTN_DRIVE1);
 			if (!g_bIsFullScreen)
 				DrawButton((HDC)0,button);
 		}
 		break;
 
     case BTN_DRIVESWAP:
-		if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+		if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6)).DriveSwap();
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).DriveSwap();
 		}
 		break;
 
@@ -2182,10 +2182,10 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
 void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 {
-	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
+	if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
 		return;
 
-	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6));
+	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
 
 	// This is the default installation path of CiderPress. 
 	// It shall not be left blank, otherwise  an explorer window will be open.
@@ -2324,24 +2324,24 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 // todo: consolidate CtrlReset() and ResetMachineState()
 void ResetMachineState ()
 {
-  g_CardMgr.GetDisk2CardMgr().Reset(true);
+  GetCardMgr().GetDisk2CardMgr().Reset(true);
   HD_Reset();
   g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
   MemReset();	// calls CpuInitialize(), CNoSlotClock.Reset()
   PravetsReset();
-  if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
-	dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6)).Boot();
+  if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
+	dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
   VideoResetState();
   KeybReset();
-  if (g_CardMgr.IsSSCInstalled())
-	g_CardMgr.GetSSC()->CommReset();
+  if (GetCardMgr().IsSSCInstalled())
+	GetCardMgr().GetSSC()->CommReset();
   PrintReset();
   JoyReset();
   MB_Reset();
   SpkrReset();
-  if (g_CardMgr.IsMouseCardInstalled())
-	g_CardMgr.GetMouseCard()->Reset();
+  if (GetCardMgr().IsMouseCardInstalled())
+	GetCardMgr().GetMouseCard()->Reset();
   SetActiveCpu( GetMainCpu() );
 #ifdef USE_SPEECH_API
 	g_Speech.Reset();
@@ -2379,14 +2379,14 @@ void CtrlReset()
 	}
 
 	PravetsReset();
-	g_CardMgr.GetDisk2CardMgr().Reset();
+	GetCardMgr().GetDisk2CardMgr().Reset();
 	HD_Reset();
 	KeybReset();
-	if (g_CardMgr.IsSSCInstalled())
-		g_CardMgr.GetSSC()->CommReset();
+	if (GetCardMgr().IsSSCInstalled())
+		GetCardMgr().GetSSC()->CommReset();
 	MB_Reset();
-	if (g_CardMgr.IsMouseCardInstalled())
-		g_CardMgr.GetMouseCard()->Reset();		// Deassert any pending IRQs - GH#514
+	if (GetCardMgr().IsMouseCardInstalled())
+		GetCardMgr().GetMouseCard()->Reset();		// Deassert any pending IRQs - GH#514
 #ifdef USE_SPEECH_API
 	g_Speech.Reset();
 #endif
@@ -2792,8 +2792,8 @@ static bool FileExists(std::string strFilename)
 // . UpdateMouseInAppleViewport() is called and inside Apple screen
 void FrameSetCursorPosByMousePos()
 {
-//	_ASSERT(g_CardMgr.IsMouseCardInstalled());	// CMouseInterface::ctor calls this function, ie. before g_CardMgr::m_pMouseCard is setup
-	if (!g_CardMgr.IsMouseCardInstalled())
+//	_ASSERT(GetCardMgr().IsMouseCardInstalled());	// CMouseInterface::ctor calls this function, ie. before GetCardMgr()::m_pMouseCard is setup
+	if (!GetCardMgr().IsMouseCardInstalled())
 		return;
 
 	if (!g_hFrameWindow || g_bShowingCursor)
@@ -2801,7 +2801,7 @@ void FrameSetCursorPosByMousePos()
 
 	int iX, iMinX, iMaxX;
 	int iY, iMinY, iMaxY;
-	g_CardMgr.GetMouseCard()->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
+	GetCardMgr().GetMouseCard()->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 
 	float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));
 	float fScaleY = (float)(iY-iMinY) / ((float)(iMaxY-iMinY));
@@ -2831,8 +2831,8 @@ void FrameSetCursorPosByMousePos()
 // . NB. Not called when leaving & mouse clipped to Apple screen area
 static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen)
 {
-	_ASSERT(g_CardMgr.IsMouseCardInstalled());
-	if (!g_CardMgr.IsMouseCardInstalled())
+	_ASSERT(GetCardMgr().IsMouseCardInstalled());
+	if (!GetCardMgr().IsMouseCardInstalled())
 		return;
 
 //	char szDbg[200];
@@ -2841,7 +2841,7 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 
 	int iX, iMinX, iMaxX;
 	int iY, iMinY, iMaxY;
-	g_CardMgr.GetMouseCard()->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
+	GetCardMgr().GetMouseCard()->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 
 	if (bLeavingAppleScreen)
 	{
@@ -2879,7 +2879,7 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 		int iAppleX = iMinX + (int)(fScaleX * (float)(iMaxX-iMinX));
 		int iAppleY = iMinY + (int)(fScaleY * (float)(iMaxY-iMinY));
 
-		g_CardMgr.GetMouseCard()->SetCursorPos(iAppleX, iAppleY);	// Set new entry position
+		GetCardMgr().GetMouseCard()->SetCursorPos(iAppleX, iAppleY);	// Set new entry position
 
 		// Dump initial deltas (otherwise can get big deltas since last read when entering Apple screen area)
 		DIMouse::ReadImmediateData();
@@ -2888,8 +2888,8 @@ static void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeav
 
 static void DrawCrosshairsMouse()
 {
-	_ASSERT(g_CardMgr.IsMouseCardInstalled());
-	if (!g_CardMgr.IsMouseCardInstalled())
+	_ASSERT(GetCardMgr().IsMouseCardInstalled());
+	if (!GetCardMgr().IsMouseCardInstalled())
 		return;
 
 	if (!sg_PropertySheet.GetMouseShowCrosshair())
@@ -2897,7 +2897,7 @@ static void DrawCrosshairsMouse()
 
 	int iX, iMinX, iMaxX;
 	int iY, iMinY, iMaxY;
-	g_CardMgr.GetMouseCard()->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
+	GetCardMgr().GetMouseCard()->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 	_ASSERT(iMinX == 0 && iMinY == 0);
 
 	float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));

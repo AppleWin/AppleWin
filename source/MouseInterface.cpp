@@ -490,7 +490,7 @@ void CMouseInterface::OnMouseEvent(bool bEventVBL)
 
 int CMouseInterface::SyncEventCallback(int id, int cycles, ULONG /*uExecutedCycles*/)
 {
-	g_CardMgr.GetMouseCard()->OnMouseEvent(true);
+	GetCardMgr().GetMouseCard()->OnMouseEvent(true);
 	return NTSC_GetCyclesUntilVBlank(cycles);
 }
 

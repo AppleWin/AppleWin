@@ -3768,10 +3768,10 @@ Update_t CmdDisk ( int nArgs)
 	if (! nArgs)
 		return HelpLastCommand();
 
-	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
+	if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
 		return ConsoleDisplayError("No DiskII card in slot-6");
 
-	Disk2InterfaceCard& diskCard = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6));
+	Disk2InterfaceCard& diskCard = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
 
 	// check for info command
 	int iParam = 0;

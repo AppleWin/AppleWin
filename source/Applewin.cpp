@@ -110,7 +110,6 @@ bool		g_bDisableDirectSound = false;
 bool		g_bDisableDirectSoundMockingboard = false;
 int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.cpp MemReset()
 
-CardManager g_CardMgr;
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
 
 SynchronousEventManager g_SynchronousEventMgr;
@@ -235,6 +234,12 @@ bool GetHookAltGrControl(void)
 	return g_bHookAltGrControl;
 }
 
+CardManager& GetCardMgr(void)
+{
+	static CardManager g_CardMgr;	// singleton
+	return g_CardMgr;
+}
+
 static void ResetToLogoMode(void)
 {
 	g_nAppMode = MODE_LOGO;
@@ -321,7 +326,7 @@ static void ContinueExecution(void)
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (g_CardMgr.GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
+					 (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
@@ -368,7 +373,7 @@ static void ContinueExecution(void)
 	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-	g_CardMgr.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
+	GetCardMgr().GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 	PrintUpdate(uActualCyclesExecuted);
 	MB_PeriodicUpdate(uActualCyclesExecuted);
@@ -702,8 +707,8 @@ void LoadConfiguration(void)
 		serialPortName,
 		CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM))
 	{
-		if (g_CardMgr.IsSSCInstalled())
-			g_CardMgr.GetSSC()->SetSerialPortName(serialPortName);
+		if (GetCardMgr().IsSSCInstalled())
+			GetCardMgr().GetSSC()->SetSerialPortName(serialPortName);
 	}
 
 	REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
@@ -712,7 +717,7 @@ void LoadConfiguration(void)
 
 	DWORD dwEnhanceDisk;
 	REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
-	g_CardMgr.GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
+	GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	//
 
@@ -773,9 +778,9 @@ void LoadConfiguration(void)
 		sg_PropertySheet.SetMouseRestrictToWindow(dwTmp);
 
 	if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
-		g_CardMgr.Insert(4, (SS_CARDTYPE)dwTmp);
+		GetCardMgr().Insert(4, (SS_CARDTYPE)dwTmp);
 	if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
-		g_CardMgr.Insert(5, (SS_CARDTYPE)dwTmp);
+		GetCardMgr().Insert(5, (SS_CARDTYPE)dwTmp);
 
 	//
 
@@ -797,7 +802,7 @@ void LoadConfiguration(void)
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
-	g_CardMgr.GetDisk2CardMgr().LoadLastDiskImage();
+	GetCardMgr().GetDisk2CardMgr().LoadLastDiskImage();
 
 	//
 
@@ -1169,7 +1174,7 @@ static void SetCurrentDir(std::string pathname)
 
 static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 {
-	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(slot));
+	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
@@ -1417,7 +1422,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			MB_Reset();
 			LogFileOutput("Main: MB_Reset()\n");
 
-			CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
+			CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
 			if (pMouseCard)
 			{
 				pMouseCard->Reset();		// Deassert any pending IRQs - GH#514
@@ -1742,8 +1747,8 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if ((strcmp(lpCmdLine, "-dcd") == 0) || (strcmp(lpCmdLine, "-modem") == 0))	// GH#386
 		{
-			if (g_CardMgr.IsSSCInstalled())
-				g_CardMgr.GetSSC()->SupportDCD(true);
+			if (GetCardMgr().IsSSCInstalled())
+				GetCardMgr().GetSSC()->SupportDCD(true);
 		}
 		else if (strcmp(lpCmdLine, "-alt-enter=toggle-full-screen") == 0)	// GH#556
 		{
@@ -2058,23 +2063,23 @@ static void RepeatInitialization(void)
 		// NB. this state is not persisted to the Registry/conf.ini (just as '-s7 empty' isn't)
 		// TODO: support bSlotEmpty[] for slots: 0,4,5
 		if (g_cmdLine.bSlotEmpty[SLOT1])
-			g_CardMgr.Remove(SLOT1);
+			GetCardMgr().Remove(SLOT1);
 		if (g_cmdLine.bSlotEmpty[SLOT2])
-			g_CardMgr.Remove(SLOT2);
+			GetCardMgr().Remove(SLOT2);
 		if (g_cmdLine.bSlotEmpty[SLOT3])
-			g_CardMgr.Remove(SLOT3);
+			GetCardMgr().Remove(SLOT3);
 		if (g_cmdLine.bSlotEmpty[SLOT6])
-			g_CardMgr.Remove(SLOT6);
+			GetCardMgr().Remove(SLOT6);
 
 		if (g_cmdLine.slotInsert[SLOT5] != CT_Empty)
 		{
-			if (g_CardMgr.QuerySlot(SLOT4) == CT_MockingboardC && g_cmdLine.slotInsert[SLOT5] != CT_MockingboardC)	// Currently MB occupies slot4+5 when enabled
+			if (GetCardMgr().QuerySlot(SLOT4) == CT_MockingboardC && g_cmdLine.slotInsert[SLOT5] != CT_MockingboardC)	// Currently MB occupies slot4+5 when enabled
 			{
-				g_CardMgr.Remove(SLOT4);
-				g_CardMgr.Remove(SLOT5);
+				GetCardMgr().Remove(SLOT4);
+				GetCardMgr().Remove(SLOT5);
 			}
 
-			g_CardMgr.Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
+			GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
 		}
 
 		// Pre: may need g_hFrameWindow for MessageBox errors
@@ -2126,7 +2131,7 @@ static void RepeatInitialization(void)
 		}
 
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call Disk2Card's Reset():
-		g_CardMgr.GetDisk2CardMgr().Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
+		GetCardMgr().GetDisk2CardMgr().Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 		LogFileOutput("Main: DiskReset()\n");
 		HD_Reset();		// GH#515
 		LogFileOutput("Main: HDDReset()\n");
