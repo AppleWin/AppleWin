@@ -5,6 +5,8 @@
 #include "linux/interface.h"
 #include "linux/windows/misc.h"
 #include "linux/data.h"
+#include "linux/paddle.h"
+
 #include "frontends/common2/configuration.h"
 #include "frontends/common2/utils.h"
 #include "frontends/common2/programoptions.h"
@@ -276,11 +278,14 @@ void run_sdl(int argc, const char * argv [])
     SDL_Event e;
     while (SDL_PollEvent(&e) != 0)
     {
-      if (e.type == SDL_QUIT)
+      switch (e.type)
+      {
+      case SDL_QUIT:
       {
 	quit = true;
+	break;
       }
-      else if (e.type == SDL_KEYDOWN)
+      case SDL_KEYDOWN:
       {
 	if (!e.key.repeat)
 	{
@@ -322,9 +327,39 @@ void run_sdl(int argc, const char * argv [])
 	    quit = true;
 	    break;
 	  }
+	  case SDL_SCANCODE_LALT:
+	  {
+	    Paddle::setButtonPressed(Paddle::ourOpenApple);
+	    break;
+	  }
+	  case SDL_SCANCODE_RALT:
+	  {
+	    Paddle::setButtonPressed(Paddle::ourClosedApple);
+	    break;
+	  }
 	  }
 	}
-	std::cerr << e.key.keysym.scancode << "," << e.key.keysym.sym << "," << e.key.keysym.mod << "," << bool(e.key.repeat) << ",AAA" << std::endl;
+	std::cerr << "KEY DOWN: " << e.key.keysym.scancode << "," << e.key.keysym.sym << "," << e.key.keysym.mod << "," << bool(e.key.repeat) << std::endl;
+	break;
+      }
+      case SDL_KEYUP:
+      {
+	switch (e.key.keysym.scancode)
+	{
+	case SDL_SCANCODE_LALT:
+	{
+	  Paddle::setButtonReleased(Paddle::ourOpenApple);
+	  break;
+	}
+	case SDL_SCANCODE_RALT:
+	{
+	  Paddle::setButtonReleased(Paddle::ourClosedApple);
+	  break;
+	}
+	}
+	std::cerr << "KEY UP:   " << e.key.keysym.scancode << "," << e.key.keysym.sym << "," << e.key.keysym.mod << "," << bool(e.key.repeat) << std::endl;
+	break;
+      }
       }
     }
 
