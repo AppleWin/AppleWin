@@ -53,6 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
+#include "SynchronousEventManager.h"
 #include "Video.h"
 #include "RGBMonitor.h"
 #include "NTSC.h"
@@ -111,6 +112,8 @@ int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.c
 
 CardManager g_CardMgr;
 IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
+
+SynchronousEventManager g_SynchronousEventMgr;
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom F8 ROM at $F800..$FFFF
 static bool	g_bCustomRomF8Failed = false;			// Set if custom F8 ROM file failed
@@ -1424,6 +1427,9 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			DSUninit();
 			LogFileOutput("Main: DSUninit()\n");
 
+			if (g_bRestart)
+				g_SynchronousEventMgr.Reset();
+
 			if (g_bHookSystemKey)
 			{
 				UninitHookThread();
@@ -2214,8 +2220,6 @@ static void RepeatInitialization(void)
 				g_cmdLine.bBoot = false;
 			}
 		}
-
-		SetMouseCardInstalled( g_CardMgr.IsMouseCardInstalled() );
 }
 
 static void Shutdown(void)

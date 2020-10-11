@@ -172,6 +172,7 @@ void VideoInitialize ()
 
 //===========================================================================
 void VideoBenchmark () {
+  _ASSERT(g_nAppMode == MODE_BENCHMARK);
   Sleep(500);
 
   // PREPARE TWO DIFFERENT FRAME BUFFERS, EACH OF WHICH HAVE HALF OF THE

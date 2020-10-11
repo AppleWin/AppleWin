@@ -758,6 +758,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\SynchronousEventManager.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\SynchronousEventManager.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Tape.cpp"
 					>
 				</File>
