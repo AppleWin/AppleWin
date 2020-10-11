@@ -287,36 +287,36 @@ void run_sdl(int argc, const char * argv [])
 	  switch (e.key.keysym.scancode)
 	  {
 	  case SDL_SCANCODE_F9:
-	    {
-	      cycleVideoType(win);
-	      break;
-	    }
+	  {
+	    cycleVideoType(win);
+	    break;
+	  }
 	  case SDL_SCANCODE_F6:
+	  {
+	    if ((e.key.keysym.mod & KMOD_CTRL) && (e.key.keysym.mod & KMOD_SHIFT))
 	    {
-	      if ((e.key.keysym.mod & KMOD_CTRL) && (e.key.keysym.mod & KMOD_SHIFT))
-	      {
-		cycle50ScanLines(win);
-	      }
-	      else if (e.key.keysym.mod & KMOD_CTRL)
-	      {
-		multiplier = multiplier == 1 ? 2 : 1;
-		SDL_SetWindowSize(win.get(), sw * multiplier, sh * multiplier);
-	      }
-	      else if (!(e.key.keysym.mod & KMOD_SHIFT))
-	      {
-		fullscreen = !fullscreen;
-		SDL_SetWindowFullscreen(win.get(), fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-	      }
-	      break;
+	      cycle50ScanLines(win);
 	    }
+	    else if (e.key.keysym.mod & KMOD_CTRL)
+	    {
+	      multiplier = multiplier == 1 ? 2 : 1;
+	      SDL_SetWindowSize(win.get(), sw * multiplier, sh * multiplier);
+	    }
+	    else if (!(e.key.keysym.mod & KMOD_SHIFT))
+	    {
+	      fullscreen = !fullscreen;
+	      SDL_SetWindowFullscreen(win.get(), fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+	    }
+	    break;
+	  }
 	  case SDL_SCANCODE_F5:
+	  {
+	    if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
 	    {
-	      if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
-	      {
-		dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->DriveSwap();
-	      }
-	      break;
+	      dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->DriveSwap();
 	    }
+	    break;
+	  }
 	  }
 	}
 	std::cerr << e.key.keysym.scancode << "," << e.key.keysym.sym << "," << e.key.keysym.mod << "," << bool(e.key.repeat) << ",AAA" << std::endl;
