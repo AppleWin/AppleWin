@@ -858,10 +858,10 @@ bool _6502_IsOpcodeValid ( int iOpcode )
 
 
 //===========================================================================
-int AssemblerHashMnemonic ( const TCHAR * pMnemonic )
+Hash_t AssemblerHashMnemonic ( const TCHAR * pMnemonic )
 {
 	const TCHAR *pText = pMnemonic;
-	int nMnemonicHash = 0;
+	Hash_t nMnemonicHash = 0;
 	int iHighBits;
 
 	const int    NUM_LOW_BITS = 19; // 24 -> 19 prime
@@ -1471,7 +1471,7 @@ bool Assemble( int iArg, int nArgs, WORD nAddress )
 	m_nAsmBaseAddress = nAddress;
 
 	TCHAR *pMnemonic = g_aArgs[ iArg ].sArg;
-	int nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
+	Hash_t nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 
 #if DEBUG_ASSEMBLER
 	char sText[ CONSOLE_WIDTH * 2 ];

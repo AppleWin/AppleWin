@@ -172,6 +172,7 @@ void VideoInitialize ()
 
 //===========================================================================
 void VideoBenchmark () {
+  _ASSERT(g_nAppMode == MODE_BENCHMARK);
   Sleep(500);
 
   // PREPARE TWO DIFFERENT FRAME BUFFERS, EACH OF WHICH HAVE HALF OF THE
@@ -309,7 +310,7 @@ void VideoBenchmark () {
       while (cycles > 0) {
         DWORD executedcycles = CpuExecute(103, true);
         cycles -= executedcycles;
-		g_CardMgr.GetDisk2CardMgr().UpdateDriveState(executedcycles);
+		GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedcycles);
         JoyUpdateButtonLatch(executedcycles);
 	  }
     }

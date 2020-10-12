@@ -99,7 +99,7 @@ struct SS_CARD_DISK2
 {
 	SS_CARD_HDR	Hdr;
 	DISK2_Unit	Unit[2];
-    WORD    phases;
+	WORD    phases;
 	WORD	currdrive;
 	BOOL	diskaccessed;
 	BOOL	enhancedisk;

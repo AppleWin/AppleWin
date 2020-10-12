@@ -24,15 +24,12 @@ void    SpkrReset();
 BOOL    SpkrSetEmulationType (HWND window, SoundType_e newSoundType);
 void    SpkrUpdate (DWORD);
 void    SpkrUpdate_Timer();
-void    Spkr_SetErrorInc(const int nErrorInc);
-void    Spkr_SetErrorMax(const int nErrorMax);
 DWORD   SpkrGetVolume();
 void    SpkrSetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 void    Spkr_Mute();
 void    Spkr_Demute();
 bool    Spkr_IsActive();
 bool    Spkr_DSInit();
-void    Spkr_DSUninit();
 void    SpkrSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    SpkrLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 

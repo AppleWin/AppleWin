@@ -74,10 +74,10 @@ public:
 	YamlLoadHelper(YamlHelper& yamlHelper)
 		: m_yamlHelper(yamlHelper),
 		  m_pMapYaml(&yamlHelper.m_mapYaml),
-		  m_bIteratingOverMap(false),
 		  m_bDoGetMapRemainder(true),
 		  m_topLevelMapName(yamlHelper.m_scalarName),
-		  m_currentMapName(m_topLevelMapName)
+		  m_currentMapName(m_topLevelMapName),
+		  m_bIteratingOverMap(false)
 	{
 		if (!m_yamlHelper.ParseMap(yamlHelper.m_mapYaml))
 		{
