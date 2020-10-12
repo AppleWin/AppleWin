@@ -2191,6 +2191,13 @@ _mono:
 static void GenerateVideoTables( void );
 static void GenerateBaseColors(baseColors_t pBaseNtscColors);
 
+void NTSC_Destroy(void)
+{
+	// After a VM restart, this will point to an old g_pFramebufferbits
+	// - if it's now unmapped then this can cause a crash in NTSC_SetVideoMode()!
+	g_pVideoAddress = 0;
+}
+
 void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 {
 	make_csbits();

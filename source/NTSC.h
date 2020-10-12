@@ -11,6 +11,7 @@
 	extern void     NTSC_VideoClockResync( const DWORD dwCyclesThisFrame );
 	extern uint16_t NTSC_VideoGetScannerAddress( const ULONG uExecutedCycles );
 	extern uint16_t NTSC_VideoGetScannerAddressForDebugger(void);
+	extern void     NTSC_Destroy(void);
 	extern void     NTSC_VideoInit( uint8_t *pFramebuffer );
 	extern void     NTSC_VideoReinitialize( DWORD cyclesThisFrame, bool bInitVideoScannerAddress );
 	extern void     NTSC_VideoInitAppleType();
