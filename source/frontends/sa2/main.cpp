@@ -53,7 +53,7 @@ namespace
     VideoInitialize();
     VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
 
-    g_CardMgr.GetDisk2CardMgr().Reset();
+    GetCardMgr().GetDisk2CardMgr().Reset();
     HD_Reset();
   }
 
@@ -88,7 +88,7 @@ namespace
 
   void stopEmulator()
   {
-    CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
+    CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
     if (pMouseCard)
     {
       pMouseCard->Reset();
@@ -102,7 +102,7 @@ namespace
     PrintDestroy();
     CpuDestroy();
 
-    g_CardMgr.GetDisk2CardMgr().Destroy();
+    GetCardMgr().GetDisk2CardMgr().Destroy();
     ImageDestroy();
     LogDone();
   }

@@ -112,13 +112,15 @@ namespace
 
         emulator->displayLogo();
 
-        g_CardMgr.GetDisk2CardMgr().Reset();
+        GetCardMgr().GetDisk2CardMgr().Reset();
         HD_Reset();
     }
 
     void unloadEmulator()
     {
-        CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
+        CardManager & cardManager = GetCardMgr();
+
+        CMouseInterface* pMouseCard = cardManager.GetMouseCard();
         if (pMouseCard)
         {
             pMouseCard->Reset();
@@ -132,7 +134,7 @@ namespace
         DSUninit();
         CpuDestroy();
 
-        g_CardMgr.GetDisk2CardMgr().Destroy();
+        cardManager.GetDisk2CardMgr().Destroy();
         ImageDestroy();
         LogDone();
         RiffFinishWriteFile();
@@ -318,13 +320,15 @@ void QApple::on_timer()
 
     const bool bVideoUpdate = true;
 
+    CardManager & cardManager = GetCardMgr();
+
     int count = 0;
     const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
     do
     {
         const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
         g_dwCyclesThisFrame += uActualCyclesExecuted;
-        g_CardMgr.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
+        cardManager.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
         MB_PeriodicUpdate(uActualCyclesExecuted);
         SpkrUpdate(uActualCyclesExecuted);
 
@@ -332,7 +336,7 @@ void QApple::on_timer()
         g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
         ++count;
     }
-    while (g_CardMgr.GetDisk2CardMgr().IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < target + myOptions.msFullSpeed));
+    while (cardManager.GetDisk2CardMgr().IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < target + myOptions.msFullSpeed));
 
     // just repaint each time, to make it simpler
     // we run @ 60 fps anyway
@@ -546,10 +550,11 @@ void QApple::on_actionScreenshot_triggered()
 void QApple::on_actionSwap_disks_triggered()
 {
     PauseEmulator pause(this);
+    CardManager & cardManager = GetCardMgr();
 
-    if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+    if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
     {
-        dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->DriveSwap();
+        dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6))->DriveSwap();
     }
 }
 

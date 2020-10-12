@@ -36,7 +36,7 @@ bool DoDiskInsert(const UINT slot, const int nDrive, const std::string & fileNam
     strPathName.append(fileName);
   }
 
-  Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*> (g_CardMgr.GetObj(slot));
+  Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*> (GetCardMgr().GetObj(slot));
   ImageError_e Error = pDisk2Card->InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
   return Error == eIMAGE_ERROR_NONE;
 }

@@ -20,6 +20,7 @@
 #include "ParallelPrinter.h"
 #include "SaveState.h"
 #include "Mockingboard.h"
+#include "SynchronousEventManager.h"
 
 #include <unistd.h>
 
@@ -61,6 +62,8 @@ static double g_fMHz		= 1.0;			// Affected by Config dialog's speed slider bar
 
 bool g_bDisableDirectSound = false;
 bool g_bDisableDirectSoundMockingboard = false;
+
+SynchronousEventManager g_SynchronousEventMgr;
 
 void LogFileTimeUntilFirstKeyReadReset(void)
 {
@@ -373,4 +376,10 @@ void LoadConfiguration(void)
 double Get6502BaseClock(void)
 {
 	return (GetVideoRefreshRate() == VR_50HZ) ? CLK_6502_PAL : CLK_6502_NTSC;
+}
+
+CardManager& GetCardMgr(void)
+{
+	static CardManager g_CardMgr;	// singleton
+	return g_CardMgr;
 }

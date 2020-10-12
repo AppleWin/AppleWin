@@ -54,7 +54,9 @@ namespace
     const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
     g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-    g_CardMgr.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
+    CardManager & cardManager = GetCardMgr();
+
+    cardManager.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
 
     const int key = ProcessKeyboard();
 
@@ -102,7 +104,7 @@ namespace
 
       g_relativeSpeed = g_relativeSpeed * coeff + double(us) / double(nExecutionPeriodUsec) * (1.0 - coeff);
 
-      if (!g_CardMgr.GetDisk2CardMgr().IsConditionForFullSpeed())
+      if (!cardManager.GetDisk2CardMgr().IsConditionForFullSpeed())
       {
 	if (us < nExecutionPeriodUsec)
 	{
@@ -160,6 +162,8 @@ namespace
       LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", ok);
     }
 
+    CardManager & cardManager = GetCardMgr();
+
     if (disksOk)
     {
       // AFTER a restart
@@ -175,7 +179,7 @@ namespace
 	MB_Initialize();
 	MemInitialize();
 	NVideoInitialize();
-	g_CardMgr.GetDisk2CardMgr().Reset();
+	cardManager.GetDisk2CardMgr().Reset();
 	HD_Reset();
 
 	if (!options.snapshot.empty())
@@ -192,7 +196,7 @@ namespace
 	  EnterMessageLoop(options);
 	}
 
-	CMouseInterface* pMouseCard = g_CardMgr.GetMouseCard();
+	CMouseInterface* pMouseCard = cardManager.GetMouseCard();
 	if (pMouseCard)
 	{
 	  pMouseCard->Reset();
@@ -214,7 +218,7 @@ namespace
     PrintDestroy();
     CpuDestroy();
 
-    g_CardMgr.GetDisk2CardMgr().Destroy();
+    cardManager.GetDisk2CardMgr().Destroy();
     ImageDestroy();
 
     LogDone();

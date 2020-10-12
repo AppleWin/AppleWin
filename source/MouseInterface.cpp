@@ -44,13 +44,14 @@ Etc.
 #include "SaveState_Structs_common.h"
 #include "Common.h"
 
-#include "AppleWin.h"	// g_SynchronousEventMgr
+#include "Applewin.h"	// g_SynchronousEventMgr
 #include "CardManager.h"
 #include "CPU.h"
 #include "Frame.h"	// FrameSetCursorPosByMousePos()
 #include "Log.h"
 #include "Memory.h"
 #include "MouseInterface.h"
+#include "Video.h"
 #include "NTSC.h"	// NTSC_GetCyclesUntilVBlank()
 #include "YamlHelper.h"
 

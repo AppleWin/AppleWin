@@ -34,10 +34,11 @@ namespace
 
     void insertDisk(const QString & filename, const int disk)
     {
-        if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
+        CardManager & cardManager = GetCardMgr();
+        if (cardManager.QuerySlot(SLOT6) != CT_Disk2)
             return;
 
-        Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+        Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
         if (filename.isEmpty())
         {
             pDisk2Card->EjectDisk(disk);
@@ -76,11 +77,13 @@ namespace
         if (slot >= NUM_SLOTS)
             return;
 
+        CardManager & cardManager = GetCardMgr();
+
         // Two paths:
         // 1) Via Config dialog: card not inserted yet
         // 2) Snapshot_LoadState_v2(): card already inserted
-        if (g_CardMgr.QuerySlot(slot) != newCardType)
-            g_CardMgr.Insert(slot, newCardType);
+        if (cardManager.QuerySlot(slot) != newCardType)
+            cardManager.Insert(slot, newCardType);
 
         std::string slotText;
         switch (slot)
@@ -169,7 +172,9 @@ void GlobalOptions::setData(const GlobalOptions & data)
 
 void getAppleWinPreferences(PreferenceData & data)
 {
-    Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+    CardManager & cardManager = GetCardMgr();
+
+    Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
 
     data.disks.resize(diskIDs.size());
     for (size_t i = 0; i < diskIDs.size(); ++i)
@@ -192,8 +197,8 @@ void getAppleWinPreferences(PreferenceData & data)
     }
 
     data.enhancedSpeed = pDisk2Card->GetEnhanceDisk();
-    data.cardInSlot4 = g_CardMgr.QuerySlot(SLOT4);
-    data.cardInSlot5 = g_CardMgr.QuerySlot(SLOT5);
+    data.cardInSlot4 = cardManager.QuerySlot(SLOT4);
+    data.cardInSlot5 = cardManager.QuerySlot(SLOT5);
     data.hdInSlot7 = HD_CardIsEnabled();
 
     data.apple2Type = GetApple2Type();
@@ -216,7 +221,8 @@ void getAppleWinPreferences(PreferenceData & data)
 
 void setAppleWinPreferences(const PreferenceData & currentData, const PreferenceData & newData)
 {
-    Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+    CardManager & cardManager = GetCardMgr();
+    Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
 
     if (currentData.speakerVolume != newData.speakerVolume)
     {

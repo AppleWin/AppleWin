@@ -198,7 +198,7 @@ void Emulator::executeOneFrame()
   const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
   g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-  g_CardMgr.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
+  GetCardMgr().GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
 
   // SDL2 seems to synch with screen refresh rate so we do not need to worry about timers
   const SDL_Rect srect = refreshTexture(myTexture);
@@ -275,9 +275,10 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
     }
     case SDLK_F5:
     {
-      if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+      CardManager & cardManager = GetCardMgr();
+      if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
       {
-	dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->DriveSwap();
+	dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6))->DriveSwap();
       }
       break;
     }

@@ -256,8 +256,11 @@ void FrameRefresh()
 
 void FrameDrawDiskLEDS(HDC x)
 {
-  if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
-    dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6))->GetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
+  CardManager & cardManager = GetCardMgr();
+  if (cardManager.QuerySlot(SLOT6) != CT_Disk2)
+    return;
+
+  dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6))->GetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
 
   FrameRefresh();
 }
@@ -267,7 +270,11 @@ void FrameDrawDiskStatus(HDC x)
   if (mem == NULL)
     return;
 
-  Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(g_CardMgr.GetObj(SLOT6));
+  CardManager & cardManager = GetCardMgr();
+  if (cardManager.QuerySlot(SLOT6) != CT_Disk2)
+    return;
+
+  Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
 
   // We use the actual drive since probing from memory doesn't tell us anything we don't already know.
   //        DOS3.3   ProDOS

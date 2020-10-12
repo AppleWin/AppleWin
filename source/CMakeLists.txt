@@ -29,6 +29,8 @@ add_library(appleii SHARED
   CardManager.cpp
   Disk2CardManager.cpp
   Riff.cpp
+  SaveState.cpp
+  SynchronousEventManager.cpp
 
   Configuration/PropertySheetHelper.cpp
 
@@ -61,8 +63,7 @@ add_library(appleii SHARED
   linux/duplicates/Frame.cpp
   linux/duplicates/SerialComms.cpp
   linux/duplicates/IPropertySheet.cpp
-  linux/duplicates/Applewin.cpp   # defines g_CardMgr (reverse order)
-  SaveState.cpp  # uses g_CardMgr in m_ConfigNew (reverse order)
+  linux/duplicates/Applewin.cpp
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp
