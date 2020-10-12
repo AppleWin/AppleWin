@@ -237,9 +237,6 @@
    <property name="text">
     <string>Quit</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+Q</string>
-   </property>
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
