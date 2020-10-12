@@ -107,30 +107,63 @@ namespace
     switch (key.keysym.sym)
     {
     case SDLK_RETURN:
-      ch = 0x0d;
-      break;
+      {
+	ch = 0x0d;
+	break;
+      }
     case SDLK_BACKSPACE: // same as AppleWin
     case SDLK_LEFT:
-      ch = 0x08;
-      break;
+      {
+	ch = 0x08;
+	break;
+      }
     case SDLK_RIGHT:
-      ch = 0x15;
-      break;
+      {
+	ch = 0x15;
+	break;
+      }
     case SDLK_UP:
-      ch = 0x0b;
-      break;
+      {
+	ch = 0x0b;
+	break;
+      }
     case SDLK_DOWN:
-      ch = 0x0a;
-      break;
+      {
+	ch = 0x0a;
+	break;
+      }
     case SDLK_DELETE:
-      ch = 0x7f;
-      break;
+      {
+	ch = 0x7f;
+	break;
+      }
     case SDLK_ESCAPE:
-      ch = 0x1b;
-      break;
+      {
+	ch = 0x1b;
+	break;
+      }
     case SDLK_TAB:
-      ch = 0x09;
-      break;
+      {
+	ch = 0x09;
+	break;
+      }
+    case SDLK_a ... SDLK_z:
+      {
+	ch = (key.keysym.sym - SDLK_a) + 0x01;
+	if (key.keysym.mod & KMOD_CTRL)
+	{
+	  // ok
+	}
+	else if (key.keysym.mod & KMOD_SHIFT)
+	{
+	  ch += 0x60;
+	}
+	else
+	{
+	  ch += 0x40;
+	}
+	break;
+      }
     }
 
     if (ch)
@@ -295,11 +328,17 @@ void Emulator::processText(const SDL_TextInputEvent & text)
   if (strlen(text.text) == 1)
   {
     const char key = text.text[0];
-    if (key >= 0x20 && key <= 0x7e)
+    switch (key) {
+    case 0x20 ... 0x40:
+    case 0x5b ... 0x60:
+    case 0x7b ... 0x7e:
     {
+      // not the letters
       // this is very simple, but one cannot handle CRTL-key combination.
       addKeyToBuffer(key);
       std::cerr << "Apple Text: " << std::hex << (int)key << std::endl;
+      break;
+    }
     }
   }
 }
