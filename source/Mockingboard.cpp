@@ -1996,6 +1996,8 @@ void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
 // 4: Added: 6522 timerIrqDelay - GH#652
 // 5: Added: Unit state-B (Phasor only) - GH#659
 const UINT kUNIT_VERSION = 5;
+// 6: Change AY8910 to FUSE v1.5.7 (2016)
+//const UINT kUNIT_VERSION = 6;
 
 const UINT NUM_MB_UNITS = 2;
 const UINT NUM_PHASOR_UNITS = 2;
@@ -2186,7 +2188,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 
 		LoadSnapshotSY6522(yamlLoadHelper, pMB->sy6522, version);
 		UpdateIFR(pMB, 0, pMB->sy6522.IFR);					// Assert any pending IRQs (GH#677)
-		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum, std::string(""));
+		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum, std::string(""), version);
 		LoadSnapshotSSI263(yamlLoadHelper, pMB->SpeechChip);
 
 		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
@@ -2311,8 +2313,8 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 
 		LoadSnapshotSY6522(yamlLoadHelper, pMB->sy6522, version);
 		UpdateIFR(pMB, 0, pMB->sy6522.IFR);					// Assert any pending IRQs (GH#677)
-		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+0, std::string("-A"));
-		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+1, std::string("-B"));
+		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+0, std::string("-A"), version);
+		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+1, std::string("-B"), version);
 		LoadSnapshotSSI263(yamlLoadHelper, pMB->SpeechChip);
 
 		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);

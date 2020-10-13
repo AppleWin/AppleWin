@@ -405,7 +405,7 @@ sound_write_buf_pstereo( libspectrum_signed_word * out, int c )
 #endif
 
 
-#define USE_OLD_AY_DO_TONE 0
+#define USE_OLD_AY_DO_TONE 1
 #if USE_OLD_AY_DO_TONE
 /* not great having this as a macro to inline it, but it's only
  * a fairly short routine, and it saves messing about.
@@ -1022,7 +1022,7 @@ sound_beeper( int is_tape, int on )
 #define SS_YAML_KEY_TONE1_PERIOD "Tone1 Period"
 #define SS_YAML_KEY_TONE2_PERIOD "Tone2 Period"
 #define SS_YAML_KEY_NOISE_PERIOD "Noise Period"
-#define SS_YAML_KEY_ENV_PERIOD "Env Period"
+#define SS_YAML_KEY_ENV_PERIOD "Env Period"	// unused
 #define SS_YAML_KEY_RNG "RNG"
 #define SS_YAML_KEY_NOISE_TOGGLE "Noise Toggle"
 #define SS_YAML_KEY_ENV_FIRST "Env First"
@@ -1101,7 +1101,7 @@ void CAY8910::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, std::string& suffix)
 	}
 }
 
-bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, std::string& suffix)
+bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, std::string& suffix, UINT version)
 {
 	std::string unit = std::string(SS_YAML_KEY_AY8910) + suffix;
 	if (!yamlLoadHelper.GetSubMap(unit))
@@ -1265,10 +1265,10 @@ UINT AY8910_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT uChip, std::string
 	return 1;
 }
 
-UINT AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT uChip, std::string& suffix)
+UINT AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT uChip, std::string& suffix, UINT version)
 {
 	if (uChip >= MAX_8910)
 		return 0;
 
-	return g_AY8910[uChip].LoadSnapshot(yamlLoadHelper, suffix) ? 1 : 0;
+	return g_AY8910[uChip].LoadSnapshot(yamlLoadHelper, suffix, version) ? 1 : 0;
 }
