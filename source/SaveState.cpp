@@ -122,7 +122,6 @@ const std::string & Snapshot_GetPath()
 
 //-----------------------------------------------------------------------------
 
-static HANDLE m_hFile = INVALID_HANDLE_VALUE;
 static CConfigNeedingRestart m_ConfigNew;
 
 static std::string GetSnapshotUnitApple2Name(void)
