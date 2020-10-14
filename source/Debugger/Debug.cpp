@@ -6448,19 +6448,19 @@ Update_t _ViewOutput(ViewVideoPage_t iPage, int bVideoModeFlags)
 	Update_t CmdViewShow1(int nArgs)
 	{
 		g_iDebugSplitView = 1;
-		return UPDATE_NOTHING;
+		return UPDATE_ALL;
 	}
 
 	Update_t CmdViewShow3(int nArgs)
 	{
 		g_iDebugSplitView = 3;
-		return UPDATE_NOTHING;
+		return UPDATE_ALL;
 	}
 
 	Update_t CmdViewShow4(int nArgs)
 	{
 		g_iDebugSplitView = 4;
-		return UPDATE_NOTHING;
+		return UPDATE_ALL;
 	}
 
 
@@ -9106,7 +9106,7 @@ void DebuggerProcessKey( int keycode )
 		} // switch
 	}
 
-	if (bUpdateDisplay && !DebugVideoMode::Instance().IsSet()) //  & UPDATE_BACKGROUND)
+	if (bUpdateDisplay && !DebugVideoMode::Instance().IsSet())
 		UpdateDisplay( bUpdateDisplay );
 }
 

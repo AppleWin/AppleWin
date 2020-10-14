@@ -4291,6 +4291,19 @@ void UpdateDisplay (Update_t bUpdate)
 	}
 	spDrawMutex = true;
 
+	// Change emulator output's size
+	if (g_iDebugSplitView == 1)
+	{
+		g_pVideo->bDisplayBitmap = false;
+	}
+	else if (g_iDebugSplitView > 2)
+	{
+		g_pVideo->bDisplayBitmap = true;
+		g_pVideo->iXposition = 0;
+		g_pVideo->iYposition = 0;
+		g_pVideo->bHalfBitmapSize = true;
+	}
+
 	// Hack: Full screen console scrolled, "erase" left over console lines
 	if (g_iWindowThis == WINDOW_CONSOLE)
 		bUpdate |= UPDATE_BACKGROUND;
