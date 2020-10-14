@@ -9117,7 +9117,7 @@ void DebugDisplay( BOOL bInitDisasm/*=FALSE*/ )
 	{
 		uint32_t mode = 0;
 		DebugVideoMode::Instance().Get(&mode);
-		g_pVideo->VideoRefreshScreen(mode, true, GetViewportScale(), 0, 0, GetDebugMode());
+		g_pVideo->VideoRefreshScreen(mode, true, 0, 0, GetDebugMode());
 		return;
 	}
 
