@@ -1366,13 +1366,13 @@ LRESULT CALLBACK FrameWndProc (
 				{
 					UINT debugVideoMode;
 					if ( DebugGetVideoMode(&debugVideoMode) )
-						g_pVideo->VideoRefreshScreen(debugVideoMode, true, 0, 0, GetDebugMode());
+						g_pVideo->VideoRefreshScreen(debugVideoMode, true);
 					else
-						g_pVideo->VideoRefreshScreen(0, false, 0, 0, GetDebugMode());
+						g_pVideo->VideoRefreshScreen(0, false);
 				}
 				else
 				{
-					g_pVideo->VideoRefreshScreen(0, false, 0, 0, GetDebugMode());
+					g_pVideo->VideoRefreshScreen(0, false);
 				}
 			}
 
@@ -2549,6 +2549,14 @@ void SetDebugMode(bool newDebugMode)
 
 	if (!newDebugMode) {
 		DebugExitDebugger();
+
+		if (g_pVideo)
+		{
+			g_pVideo->bDisplayBitmap = true;
+			g_pVideo->iXposition = 0;
+			g_pVideo->iYposition = 0;
+			g_pVideo->bHalfBitmapSize = false;
+		}
 	}
 
 	bDebugMode = newDebugMode;
@@ -2557,6 +2565,11 @@ void SetDebugMode(bool newDebugMode)
 
 	if (newDebugMode) {
 		DebugBegin();
+
+		g_pVideo->bDisplayBitmap = true;
+		g_pVideo->iXposition = 0;
+		g_pVideo->iYposition = 0;
+		g_pVideo->bHalfBitmapSize = true;
 	}
 }
 

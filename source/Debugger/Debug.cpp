@@ -8063,6 +8063,8 @@ void DebugBegin ()
 	{
 		debug_pVideo = new Video();
 		debug_pVideo->VideoInitialize();
+		debug_pVideo->iYposition = FRAMEBUFFER_H;
+		debug_pVideo->bHalfBitmapSize = true;
 	}
 
 	g_nAppMode = MODE_DEBUG;
@@ -9117,7 +9119,7 @@ void DebugDisplay( BOOL bInitDisasm/*=FALSE*/ )
 	{
 		uint32_t mode = 0;
 		DebugVideoMode::Instance().Get(&mode);
-		g_pVideo->VideoRefreshScreen(mode, true, 0, 0, GetDebugMode());
+		g_pVideo->VideoRefreshScreen(mode, true);
 		return;
 	}
 

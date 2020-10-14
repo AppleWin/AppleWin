@@ -215,8 +215,7 @@ public:
 	void    VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
 	void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 	void    VideoRedrawScreen(void);
-	void    VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen,
-								int xdest, int ydest, bool bReducedSize);
+	void    VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
 	void    VideoReinitialize(bool bInitVideoScannerAddress = true);
 	void    VideoResetState();
 
@@ -280,6 +279,11 @@ public:
 	static const char* VideoGetAppWindowTitle(void);
 
 	// ____________________________________________________________________
+
+	int iXposition = 0;
+	int iYposition = 0;
+	bool bHalfBitmapSize = false;
+	bool bDisplayBitmap = true;
 
 private:
 	static BYTE g_videoRom[kVideoRomSizeMax];
