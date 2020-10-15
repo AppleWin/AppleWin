@@ -36,9 +36,11 @@
 		<ul>
 			<li><strong>Monochrome (custom) :</strong>&nbsp;This mode emulates a monochrome monitor.<br>
 			You can choose your monochrome color from the <em>Monochrome Color</em>	button described below.
-			<li><strong>Color (RGB Monitor) :</strong>&nbsp;This mode emulates a standard RBG color monitor.
-			<br>Text is sharp like a white monochrome monitor. Color graphics has only 16 colors (with no blurring or ringing).
-			<li><strong>Color (NTSC Monitor) :</strong>&nbsp;This mode emulates a standard NTSC color monitor.
+			<li><strong>Color (Composite Idealized) :</strong>&nbsp;This mode emulates an <i>idealized</i> composite color monitor.
+			<br>Text is sharp like a white monochrome monitor. Color graphics has only 16 colors (with no blurring or ringing). This is the only mode that supports vertical blend.
+			<li><strong>Color (RGB Card/Monitor) :</strong>&nbsp;This mode emulates a standard RGB card and monitor.
+			<br>Text is sharp like a white monochrome monitor. Color graphics has only 16 colors (with no blurring or ringing). Double hi-res is 140x192 chunky pixels (or software selectable as: B&W or mixed Color/B&W). From the <a href="CommandLine.html">command line</a> you can specify the RGB card, the default is the Extended 80-Column Text/AppleColor Adaptor Card. Some double hi-res titles may have compatibility issues. See <a href="Troubleshooting.html">troubleshooting</a>.
+			<li><strong>Color (Composite Monitor) :</strong>&nbsp;This mode emulates a standard NTSC (or PAL) color monitor.
 			<br>Text is sharp, but contains color artifacts. Color graphics has visible alternating color and black pixels.
 			<li><strong>Color TV :</strong>&nbsp;This mode emulates an NTSC color TV.
 			<br>All text and color graphics modes are blurry and have visible ringing.
@@ -55,7 +57,7 @@
 		<br>
 
 		<strong>Vertical blend:</strong><br>
-		When video mode is 'Color (RGB Monitor)' then vertically blend the hires screen.<br>
+		When video mode is 'Color (Composite Idealized)' then vertically blend the hi-res screen.<br>
 		<br>
 
 		<strong>Full-Screen: Show drive/keyboard status:</strong><br>
