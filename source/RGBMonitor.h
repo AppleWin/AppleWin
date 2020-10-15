@@ -166,8 +166,8 @@ private:
 	int g_nRegularTextBG = 0; // Default TEXT background color
 
 	// DHIRES rendering variables
-	bool dhgr_lastcell_iscolor = true;
-	int dhgr_lastbit = 0;
+	bool g_dhgrLastCellIsColor = true;
+	int g_dhgrLastBit = 0;
 
 	LPBYTE	g_aSourceStartofLine[MAX_SOURCE_Y];
 	void	V_CreateLookup_DoubleHires();

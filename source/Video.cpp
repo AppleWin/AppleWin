@@ -399,7 +399,7 @@ Video::~Video () {
     g_hLogoBitmap = (HBITMAP)0;
   }
 
-  NTSC_Destroy();
+  delete pNTSC;
 }
 
 //===========================================================================

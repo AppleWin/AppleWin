@@ -323,6 +323,10 @@ NTSC::NTSC(Video* _pVideo)
 
 NTSC::~NTSC()
 {
+	// After a VM restart, this will point to an old g_pFramebufferbits
+	// - if it's now unmapped then this can cause a crash in NTSC_SetVideoMode()!
+	g_pVideoAddress = 0;
+
 	delete pRGBMonitor;
 }
 
@@ -2514,9 +2518,9 @@ UINT NTSC::NTSC_GetVideoLines(void)
 // Get # cycles until rising Vbl edge: !VBl -> VBl at (0,192)
 // . NB. Called from CMouseInterface::SyncEventCallback(), which occurs *before* NTSC_VideoUpdateCycles()
 //   therefore g_nVideoClockVert/Horz will be behind, so correct 'cycleCurrentPos' by adding 'cycles'.
-UINT NTSC_GetCyclesUntilVBlank(int cycles)
+UINT NTSC::NTSC_GetCyclesUntilVBlank(int cycles)
 {
-	const UINT cyclesPerFrames = NTSC_GetCyclesPerFrame();
+	const UINT cyclesPerFrames = NTSC::NTSC_GetCyclesPerFrame();
 
 	if (g_bFullSpeed)
 		return cyclesPerFrames;	// g_nVideoClockVert/Horz not correct & accuracy isn't important: so just wait a frame's worth of cycles
