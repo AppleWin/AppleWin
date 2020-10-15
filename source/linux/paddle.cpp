@@ -45,9 +45,16 @@ bool Paddle::getButton(int i) const
   return false;
 }
 
-int Paddle::getAxis(int i) const
+double Paddle::getAxis(int i) const
 {
   return 0;
+}
+
+int Paddle::getAxisValue(int i) const
+{
+  const double axis = getAxis(i);
+  const int value = static_cast<int>((axis + 1.0) * 0.5 * 255);
+  return value;
 }
 
 Paddle::~Paddle()
@@ -100,7 +107,7 @@ BYTE __stdcall JoyReadPosition(WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG
     if (nJoyNum == 0)
     {
       int axis = address & 1;
-      int pdl = paddle->getAxis(axis);
+      int pdl = paddle->getAxisValue(axis);
       // This is from KEGS. It helps games like Championship Lode Runner & Boulderdash
       if (pdl >= 255)
 	pdl = 280;

@@ -90,14 +90,14 @@ bool EvDevPaddle::getButton(int i) const
   return value != 0;
 }
 
-int EvDevPaddle::getAxis(int i) const
+double EvDevPaddle::getAxis(int i) const
 {
   if  (myDev)
   {
     int value = 0;
     int rc = libevdev_fetch_event_value(myDev.get(), EV_ABS, myAxisCodes[i], &value);
-    int pdl = 255 * (value - myAxisMins[i]) / (myAxisMaxs[i] - myAxisMins[i]);
-    return pdl;
+    const double axis = 2.0 * (value - myAxisMins[i]) / (myAxisMaxs[i] - myAxisMins[i]) - 1.0;
+    return axis;
   }
   else
   {

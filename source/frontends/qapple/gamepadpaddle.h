@@ -12,7 +12,7 @@ public:
     static std::shared_ptr<Paddle> fromName(const QString & name);
 
     virtual bool getButton(int i) const;
-    virtual int getAxis(int i) const;
+    virtual double getAxis(int i) const;
 
 private:
     GamepadPaddle(const std::shared_ptr<QGamepad> & gamepad);

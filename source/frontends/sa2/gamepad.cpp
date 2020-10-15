@@ -27,16 +27,16 @@ bool Gamepad::getButton(int i) const
   return value != 0;
 }
 
-int Gamepad::getAxis(int i) const
+double Gamepad::getAxis(int i) const
 {
   if (myController)
   {
     const int value = SDL_GameControllerGetAxis(myController.get(), myAxisCodes[i]);
-    int pdl = 255 * (value - AXIS_MIN) / (AXIS_MAX - AXIS_MIN);
-    return pdl;
+    const double axis = 2.0 * double(value - AXIS_MIN) / double(AXIS_MAX - AXIS_MIN) - 1.0;
+    return axis;
   }
   else
   {
-    return 0;
+    return 0.0;
   }
 }

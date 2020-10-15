@@ -11,7 +11,9 @@ public:
   virtual ~Paddle();
 
   virtual bool getButton(int i) const;
-  virtual int getAxis(int i) const;
+  virtual double getAxis(int i) const;
+
+  int getAxisValue(int i) const;
 
   static constexpr int ourOpenApple = 0x61;
   static constexpr int ourSolidApple = 0x62;

@@ -43,7 +43,7 @@ bool GamepadPaddle::getButton(int i) const
     }
 }
 
-int GamepadPaddle::getAxis(int i) const
+double GamepadPaddle::getAxis(int i) const
 {
     double value;
     switch (i)
@@ -58,6 +58,5 @@ int GamepadPaddle::getAxis(int i) const
         value = 0.0;
     }
 
-    const int pdl = int((value + 1.0) / 2.0 * 255.0);
-    return pdl;
+    return value;
 }

@@ -18,7 +18,7 @@ public:
 
   const std::string & getName() const;
   virtual bool getButton(int i) const;
-  virtual int getAxis(int i) const;
+  virtual double getAxis(int i) const;
 
 private:
   int myFD;
