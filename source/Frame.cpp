@@ -207,7 +207,12 @@ void SetAltEnterToggleFullScreen(bool mode)
 UINT GetFrameBufferBorderlessWidth(void)
 {
 	static const UINT uFrameBufferBorderlessW = FRAMEBUFFER_W;	// 560 = Double Hi-Res
-	return uFrameBufferBorderlessW; // +(bDebugMode ? uFrameBufferBorderlessW / 2 : 0); // Debug Mode: 50% wider
+	if (bDebugMode && g_iDebugSplitView == 3)
+	{
+		// Debug Mode in 3-split view: 50% wider (hacky & unclean)
+		return uFrameBufferBorderlessW + (uFrameBufferBorderlessW >> 1);
+	}
+	return uFrameBufferBorderlessW;
 }
 
 UINT GetFrameBufferBorderlessHeight(void)
@@ -1495,8 +1500,16 @@ LRESULT CALLBACK FrameWndProc (
 			}
 		}
 		else if (g_nAppMode == MODE_DEBUG)
-		{		
+		{	
+			int old_iDebugSplitView = g_iDebugSplitView;
+
 			DebuggerProcessKey(wparam); // Debugger already active, re-direct key to debugger
+
+			if (old_iDebugSplitView != g_iDebugSplitView)
+			{
+				// The debugger changed view, may need a window resizing
+				FrameResizeWindow(g_nViewportScale);
+			}
 		}
 		break;
 
@@ -2557,20 +2570,14 @@ void SetDebugMode(bool newDebugMode)
 			g_pVideo->iYposition = 0;
 			g_pVideo->bHalfBitmapSize = false;
 		}
+		bDebugMode = newDebugMode;
+		FrameResizeWindow(g_nViewportScale);
+		return;
 	}
 
+	DebugBegin();
 	bDebugMode = newDebugMode;
-
 	FrameResizeWindow(g_nViewportScale);
-
-	if (newDebugMode) {
-		DebugBegin();
-
-		g_pVideo->bDisplayBitmap = true;
-		g_pVideo->iXposition = 0;
-		g_pVideo->iYposition = 0;
-		g_pVideo->bHalfBitmapSize = true;
-	}
 }
 
 int GetViewportScale(void)
@@ -2651,8 +2658,6 @@ static void FrameResizeWindow(int nNewScale)
 	GetWindowRect(g_hFrameWindow, &framerect);
 	int nXPos = framerect.left;
 	int nYPos = framerect.top;
-
-	//
 
 	buttonx = g_nViewportCX + VIEWPORTX*2;
 	buttony = 0;
