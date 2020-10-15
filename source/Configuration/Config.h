@@ -20,9 +20,9 @@ public:
 		m_bEnableTheFreezesF8Rom = bEnableTheFreezesF8Rom;
 		memset(&m_Slot, 0, sizeof(m_Slot));
 		m_SlotAux = CT_Empty;
-		m_Slot[SLOT4] = g_CardMgr.QuerySlot(SLOT4);
-		m_Slot[SLOT5] = g_CardMgr.QuerySlot(SLOT5);
-		m_Slot[SLOT7] = g_CardMgr.QuerySlot(SLOT7);
+		m_Slot[SLOT4] = GetCardMgr().QuerySlot(SLOT4);
+		m_Slot[SLOT5] = GetCardMgr().QuerySlot(SLOT5);
+		m_Slot[SLOT7] = GetCardMgr().QuerySlot(SLOT7);
 	}
 
 	const CConfigNeedingRestart& operator= (const CConfigNeedingRestart& other)

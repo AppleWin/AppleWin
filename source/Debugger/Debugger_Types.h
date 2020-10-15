@@ -1575,19 +1575,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 	
 	struct WindowSplit_t
 	{
-		RECT tBoundingBox; // 
-
-		int  nWidth ; // Width & Height are always valid 
-		int  nHeight; // If window is split/join, then auto-updated (right,bottom)
-
-		int  nCursorY; // Address
-		int  nCursorX; // or line,col of text file ...
-
 		int  bSplit ; 
-
-		int  iParent;// index into g_aWindowConfig
-		int  iChild ; // index into g_aWindowConfig
-
 		Window_e eTop;
 		Window_e eBot;	
 	};

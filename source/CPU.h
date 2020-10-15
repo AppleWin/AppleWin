@@ -26,7 +26,6 @@ extern int32_t g_aMemoryHeatmapPtr_R[];
 extern int32_t g_aMemoryHeatmapPtr_W[];
 extern int32_t g_iMemoryHeatmapValue;
 
-void    CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt);
 void    CpuDestroy ();
 void    CpuCalcCycles(ULONG nExecutedCycles);
 DWORD   CpuExecute(const DWORD uCycles, const bool bVideoUpdate);
@@ -59,5 +58,3 @@ void	CpuEnableHeatmapGeneration(bool enable);
 
 bool Is6502InterruptEnabled(void);
 void ResetCyclesExecutedForDebugger(void);
-void SetMouseCardInstalled(bool installed);
-

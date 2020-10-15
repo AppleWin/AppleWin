@@ -60,7 +60,6 @@ bool TestStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
 	int nLenDst = _tcslen( pDst );
 	int nLenSrc = _tcslen( pSrc );
 	int nSpcDst = nDstSize - nLenDst;
-	int nChars  = MIN( nLenSrc, nSpcDst );
 
 	bool bOverflow = (nSpcDst <= nLenSrc); // 2.5.6.25 BUGFIX
 	if (bOverflow)
@@ -390,7 +389,6 @@ bool Colorize( char * pDst, const char * pSrc )
 	const char sExamples[] = "Examples:";
 	const int  nExamples = sizeof( sExamples ) - 1;
 
-	int nLen = 0;
 	while (*pSrc)
 	{
 		if (strncmp( sUsage, pSrc, nUsage) == 0)
@@ -879,7 +877,8 @@ Update_t CmdHelpSpecific (int nArgs)
 		{	
 	// CPU / General
 		case CMD_ASSEMBLE:
-			ConsoleBufferPush( " Built-in assember isn't functional yet." );
+			ConsoleColorizePrint( sText, " Usage: [address | symbol]" );
+			ConsoleBufferPush( " Enter mini-assembler mode [starting at optional address or symbol]." );
 			break;
 		case CMD_UNASSEMBLE:
 			ConsoleColorizePrint( sText, " Usage: [address | symbol]" );
@@ -1536,10 +1535,6 @@ Update_t CmdHelpList (int nArgs)
 
 	char sText[ nBuf ] = "";
 	
-	int nLenLine = strlen( sText );
-	int y = 0;
-	int nLinesScrolled = 0;
-
 	int nMaxWidth = g_nConsoleDisplayWidth - 1;
 	int iCommand;
 
@@ -1553,7 +1548,6 @@ Update_t CmdHelpList (int nArgs)
 		}
 		std::sort( g_vSortedCommands.begin(), g_vSortedCommands.end(), commands_functor_compare() );
 	}
-	int nCommands = g_vSortedCommands.size();
 
 	int nLen = 0;
 //		Colorize( sText, "Commands: " );

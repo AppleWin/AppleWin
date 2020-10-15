@@ -128,8 +128,8 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 	// Two paths:
 	// 1) Via Config dialog: card not inserted yet
 	// 2) Snapshot_LoadState_v2(): card already inserted
-	if (g_CardMgr.QuerySlot(slot) != newCardType)
-		g_CardMgr.Insert(slot, newCardType);
+	if (GetCardMgr().QuerySlot(slot) != newCardType)
+		GetCardMgr().Insert(slot, newCardType);
 
 	std::string slotText;
 	switch (slot)
@@ -214,10 +214,10 @@ void CPropertySheetHelper::SaveStateUpdate()
 
 void CPropertySheetHelper::GetDiskBaseNameWithAWS(std::string & pszFilename)
 {
-	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
+	if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
 		return;
 
-	const std::string& diskName = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6)).GetBaseName(DRIVE_1);
+	const std::string& diskName = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).GetBaseName(DRIVE_1);
 	if (!diskName.empty())
 	{
 		pszFilename = diskName + ".aws.yaml";
@@ -453,8 +453,8 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	m_ConfigOld.m_Apple2Type = GetApple2Type();
 	m_ConfigOld.m_CpuType = GetMainCpu();
-	m_ConfigOld.m_Slot[SLOT4] = g_CardMgr.QuerySlot(SLOT4);
-	m_ConfigOld.m_Slot[SLOT5] = g_CardMgr.QuerySlot(SLOT5);
+	m_ConfigOld.m_Slot[SLOT4] = GetCardMgr().QuerySlot(SLOT4);
+	m_ConfigOld.m_Slot[SLOT5] = GetCardMgr().QuerySlot(SLOT5);
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = sg_PropertySheet.GetTheFreezesF8Rom();
 	m_ConfigOld.m_videoRefreshRate = g_pVideo->GetVideoRefreshRate();
@@ -472,8 +472,8 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	SetApple2Type(m_ConfigOld.m_Apple2Type);
 	SetMainCpu(m_ConfigOld.m_CpuType);
-	g_CardMgr.Insert(SLOT4, m_ConfigOld.m_Slot[SLOT4]);
-	g_CardMgr.Insert(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
+	GetCardMgr().Insert(SLOT4, m_ConfigOld.m_Slot[SLOT4]);
+	GetCardMgr().Insert(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
 	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);
 	sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
 	g_pVideo->SetVideoRefreshRate(m_ConfigOld.m_videoRefreshRate);

@@ -131,9 +131,9 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 
 	case WM_INITDIALOG:
 		{
-			m_PropertySheetHelper.FillComboBox(hWnd, IDC_DISKTYPE, m_discchoices, g_CardMgr.GetDisk2CardMgr().GetEnhanceDisk() ? 1 : 0);
+			m_PropertySheetHelper.FillComboBox(hWnd, IDC_DISKTYPE, m_discchoices, GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk() ? 1 : 0);
 
-			if (g_CardMgr.QuerySlot(SLOT6) == CT_Disk2)
+			if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 				InitComboFloppyDrive(hWnd, SLOT6);
 			else
 				EnableFloppyDrive(hWnd, FALSE);
@@ -160,7 +160,7 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 
 void CPageDisk::InitComboFloppyDrive(HWND hWnd, UINT slot)
 {
-	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(slot));
+	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_DISK1, m_defaultDiskOptions, -1);
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_DISK2, m_defaultDiskOptions, -1);
@@ -199,9 +199,9 @@ void CPageDisk::InitComboHDD(HWND hWnd, UINT /*slot*/)
 void CPageDisk::DlgOK(HWND hWnd)
 {
 	const bool bNewEnhanceDisk = SendDlgItemMessage(hWnd, IDC_DISKTYPE,CB_GETCURSEL, 0, 0) ? true : false;
-	if (bNewEnhanceDisk != g_CardMgr.GetDisk2CardMgr().GetEnhanceDisk())
+	if (bNewEnhanceDisk != GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk())
 	{
-		g_CardMgr.GetDisk2CardMgr().SetEnhanceDisk(bNewEnhanceDisk);
+		GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(bNewEnhanceDisk);
 		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (DWORD)bNewEnhanceDisk);
 	}
 
@@ -302,13 +302,13 @@ void CPageDisk::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected
 
 void CPageDisk::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected)
 {
-	if (g_CardMgr.QuerySlot(SLOT6) != CT_Disk2)
+	if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
 	{
 		_ASSERT(0);	// Shouldn't come here, as the combo is disabled
 		return;
 	}
 
-	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(SLOT6));
+	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
 
 	// Search from "select floppy drive"
 	DWORD dwOpenDialogIndex = (DWORD)SendDlgItemMessage(hWnd, comboSelected, CB_FINDSTRINGEXACT, -1, (LPARAM)&m_defaultDiskOptions[0]);

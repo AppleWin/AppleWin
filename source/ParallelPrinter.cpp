@@ -159,17 +159,17 @@ static BYTE __stdcall PrintStatus(WORD, WORD, BYTE, BYTE, ULONG)
 //===========================================================================
 static BYTE __stdcall PrintTransmit(WORD, WORD, BYTE, BYTE value, ULONG)
 {
-	         char Lat8A[]= "abwgdevzijklmnoprstufhc~{}yx`q|]";
-             char Lat82[]= "abwgdevzijklmnoprstufhc^[]yx@q{}~`"; 
-			 char Kir82[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞß[]^@";
-	  char Kir8ACapital[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞßÝ";
+	char Lat8A[]= "abwgdevzijklmnoprstufhc~{}yx`q|]";
+	char Lat82[]= "abwgdevzijklmnoprstufhc^[]yx@q{}~`";
+	char Kir82[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞß[]^@";
+	char Kir8ACapital[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞßÝ";
 	char Kir8ALowerCase[]= "àáâãäåæçèéêëìíîïðñòóôõö÷øùúüþÿý";
-	bool Pres = false;
-    if (!CheckPrint())
-    {
-        return 0;
-    }
-	
+
+	if (!CheckPrint())
+	{
+			return 0;
+	}
+
 	char c = 0;
 	if ((g_Apple2Type == A2TYPE_PRAVETS8A) &&  g_bConvertEncoding)  //This is print conversion for Pravets 8A/C. Print conversion for Pravets82/M is still to be done.
 		{

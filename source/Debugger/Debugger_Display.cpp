@@ -1196,7 +1196,6 @@ char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iView,
 		const int iCtrlBackground /*= BG_INFO_CHAR*/, const int iCtrlForeground /*= FG_INFO_CHAR_LO*/ )
 {
 	bool bHighBit = false;
-	bool bAsciBit = false;
 	bool bCtrlBit = false;
 
 	int iTextBG = iAsciBackground;
@@ -1289,7 +1288,6 @@ void DrawBreakpoints ( int line )
 	rect.right  = DISPLAY_WIDTH;
 	rect.bottom = rect.top + g_nFontHeight;
 
-	const int MAX_BP_LEN = 16;
 	char sText[16] = "Breakpoints"; // TODO: Move to BP1
 
 #if DISPLAY_BREAKPOINT_TITLE
@@ -1634,7 +1632,7 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 		(iOpmode != AM_3))
 	{
 		// Assume target address starts after the opcode ...
-		// BUT in the Assembler Directve / Data Disassembler case for define addr/word
+		// BUT in the Assembler Directive / Data Disassembler case for define addr/word
 		// the opcode literally IS the target address!
 		if( pData )
 		{
@@ -1898,10 +1896,10 @@ void FormatOpcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 void FormatNopcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 {
 		char *pDst = line_.sTarget;
-const	char *pSrc = 0;
+		const	char *pSrc = 0;
 		DWORD nStartAddress = line_.pDisasmData->nStartAddress;
 		DWORD nEndAddress   = line_.pDisasmData->nEndAddress  ;
-		int   nDataLen      = nEndAddress - nStartAddress + 1 ;
+//		int   nDataLen      = nEndAddress - nStartAddress + 1 ;
 		int   nDisplayLen   = nEndAddress - nBaseAddress  + 1 ; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
 		int   len           = nDisplayLen;
 
@@ -2055,7 +2053,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return 0;
 
-	int iOpcode;
+//	int iOpcode;
 	int iOpmode;
 	int nOpbyte;
 	DisasmLine_t line;
@@ -2066,7 +2064,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	int bDisasmFormatFlags = GetDisassemblyLine( nBaseAddress, line );
 	const DisasmData_t *pData = line.pDisasmData;
 
-	iOpcode = line.iOpcode;	
+//	iOpcode = line.iOpcode;	
 	iOpmode = line.iOpmode;
 	nOpbyte = line.nOpbyte;
 
@@ -2119,7 +2117,6 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 		aTabs[ TS_IMMEDIATE   ] -= 1;
 	}
 #endif	
-	const int OPCODE_TO_LABEL_SPACE = static_cast<int>( aTabs[ TS_INSTRUCTION ] - aTabs[ TS_LABEL ] );
 
 	int iTab = 0;
 	int nSpacer = 11; // 9
@@ -2144,12 +2141,6 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 
 		aTabs[ iTab ] *= nDefaultFontWidth;
 	}	
-
-#if USE_APPLE_FONT
-	const int DISASM_SYMBOL_LEN = 12;
-#else
-	const int DISASM_SYMBOL_LEN = 9;
-#endif
 
 	int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight; // _nFontHeight; // g_nFontHeight
 
@@ -2698,7 +2689,6 @@ void DrawMemory ( int line, int iMemDump )
 
 	const int MAX_MEM_VIEW_TXT = 16;
 	char sText[ MAX_MEM_VIEW_TXT * 2 ];
-	char sData[ MAX_MEM_VIEW_TXT * 2 ];
 
 	char sType   [ 6 ] = "Mem";
 	char sAddress[ 8 ] = "";
@@ -2745,8 +2735,6 @@ void DrawMemory ( int line, int iMemDump )
 	rect.top    = rect2.top;
 	rect.bottom = rect2.bottom;
 
-	sData[0] = 0;
-
 	WORD iAddress = nAddr;
 
 	int nLines = g_nDisplayMemoryLines;
@@ -2783,9 +2771,6 @@ void DrawMemory ( int line, int iMemDump )
 
 		for (int iCol = 0; iCol < nCols; iCol++)
 		{
-			bool bHiBit = false;
-			bool bLoBit = false;
-
 			DebuggerSetColorBG( DebuggerGetColor( iBackground ));
 			DebuggerSetColorFG( DebuggerGetColor( iForeground ));
 
@@ -2817,8 +2802,6 @@ void DrawMemory ( int line, int iMemDump )
 				BYTE nData = (unsigned)*(LPBYTE)(mem+iAddress);
 				sText[0] = 0;
 
-				char c = nData;
-
 				if (iView == MEM_VIEW_HEX)
 				{
 					if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
@@ -2847,7 +2830,6 @@ void DrawMemory ( int line, int iMemDump )
 
 		rect.top    += g_nFontHeight;
 		rect.bottom += g_nFontHeight;
-		sData[0] = 0;
 	}
 }
 
@@ -2992,7 +2974,6 @@ void _DrawSoftSwitchAddress( RECT & rect, int nAddress, int bg_default = BG_INFO
 void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, char *sPrefix, char *sOn, char *sOff, const char *sSuffix = NULL, int bg_default = BG_INFO )
 {
 	RECT temp = rect;
-	char sText[ 4 ] = "";
 
 	_DrawSoftSwitchAddress( temp, nAddress, bg_default );
 
@@ -3238,10 +3219,9 @@ void DrawSoftSwitches( int iSoftSwitch )
 
 		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
-
-		char sText[16] = "";
 		
 #if SOFTSWITCH_OLD
+		char sText[16] = "";
 		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
 		// GR  / TEXT
 		// GRAPH/TEXT
@@ -3546,7 +3526,6 @@ void DrawWatches (int line)
 			PrintTextCursorX( ":", rect2 );
 
 			BYTE nTarget8 = 0;
-			BYTE nValue8 = 0;
 
 			nTarget8 = (unsigned)*(LPBYTE)(mem+g_aWatches[iWatch].nAddress);
 			sprintf(sText,"%02X", nTarget8 );
@@ -3684,7 +3663,7 @@ void DrawZeroPagePointers ( int line )
 			}
 			else
 			{
-				int nMin = min( nLen1, nMaxSymbolLen );
+				int nMin = MIN( nLen1, nMaxSymbolLen );
 				memcpy(sText, pSymbol1, nMin);
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
 			}
@@ -3852,7 +3831,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 
 		rect.left = X_CHAR;
 
-	// Seperator
+	// Separator
 		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ));
 		PrintTextCursorX( "  |  ", rect );
 
@@ -3868,12 +3847,12 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		for (iByte = 0; iByte < nMaxOpcodes; iByte++ )
 		{
 			BYTE nImmediate = (unsigned)*(LPBYTE)(mem + iAddress);
-			int iTextBackground = iBackground;
+			/*int iTextBackground = iBackground;
 			if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
 			{
 				iTextBackground = BG_INFO_IO_BYTE;
 			}
-
+			*/
 			ColorizeSpecialChar( sImmediate, (BYTE) nImmediate, eView, iBackground );
 			PrintTextCursorX( (LPCSTR) sImmediate, rect );
 
@@ -4111,7 +4090,6 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 
 	DebuggerSetColorFG( DebuggerGetColor( FG_SOURCE ));
 
-	int iSource = g_iSourceDisplayStart;
 	int nLines  = g_nDisasmWinHeight;
 
 	int y = g_nDisasmWinHeight;
@@ -4128,7 +4106,7 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 
 // Draw Title
 	std::string sTitle = "   Source: " + g_aSourceFileName;
-	sTitle.resize(min(sTitle.size(), size_t(g_nConsoleDisplayWidth)));
+	sTitle.resize(MIN(sTitle.size(), size_t(g_nConsoleDisplayWidth)));
 
 	DebuggerSetColorBG( DebuggerGetColor( BG_SOURCE_TITLE ));
 	DebuggerSetColorFG( DebuggerGetColor( FG_SOURCE_TITLE ));
@@ -4266,7 +4244,7 @@ void DrawWindowBackground_Info( int g_iWindowThis )
 {
     RECT rect;
     rect.top    = 0;
-	rect.left   = DISPLAY_DISASM_RIGHT;
+    rect.left   = DISPLAY_DISASM_RIGHT;
     rect.right  = DISPLAY_WIDTH;
 	int nTop = GetConsoleTopPixels( g_nConsoleDisplayLines - 1 );
 	rect.bottom = nTop;

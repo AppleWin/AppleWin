@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "AppleWin.h"
+#include "Applewin.h"
 #include "CardManager.h"
 #include "Disk.h"
 #include "Disk2CardManager.h"
@@ -38,9 +38,9 @@ bool Disk2CardManager::IsConditionForFullSpeed(void)
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{
-		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
+		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
 		{
-			if (dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).IsConditionForFullSpeed())
+			if (dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).IsConditionForFullSpeed())
 				return true;	// if any card is true then the condition for full-speed is true
 		}
 	}
@@ -52,9 +52,9 @@ void Disk2CardManager::UpdateDriveState(UINT cycles)
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{
-		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
+		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).UpdateDriveState(cycles);
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).UpdateDriveState(cycles);
 		}
 	}
 }
@@ -63,9 +63,9 @@ void Disk2CardManager::Reset(const bool powerCycle /*=false*/)
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{
-		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
+		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).Reset(powerCycle);
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).Reset(powerCycle);
 		}
 	}
 }
@@ -74,10 +74,10 @@ bool Disk2CardManager::GetEnhanceDisk(void)
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{
-		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
+		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
 		{
 			// All Disk2 cards should have the same setting, so just return the state of the first card
-			return dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).GetEnhanceDisk();
+			return dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).GetEnhanceDisk();
 		}
 	}
 	return false;
@@ -87,9 +87,9 @@ void Disk2CardManager::SetEnhanceDisk(bool enhanceDisk)
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{
-		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
+		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).SetEnhanceDisk(enhanceDisk);
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).SetEnhanceDisk(enhanceDisk);
 		}
 	}
 }
@@ -100,10 +100,10 @@ void Disk2CardManager::LoadLastDiskImage(void)
 	{
 		if (i != SLOT6) continue;	// FIXME
 
-		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
+		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).LoadLastDiskImage(DRIVE_1);
-			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).LoadLastDiskImage(DRIVE_2);
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).LoadLastDiskImage(DRIVE_1);
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).LoadLastDiskImage(DRIVE_2);
 		}
 	}
 }
@@ -112,9 +112,9 @@ void Disk2CardManager::Destroy(void)
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{
-		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
+		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).Destroy();
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).Destroy();
 		}
 	}
 }
@@ -123,10 +123,10 @@ bool Disk2CardManager::IsAnyFirmware13Sector(void)
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{
-		if (g_CardMgr.QuerySlot(i) == CT_Disk2)
+		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
 		{
 			// If any Disk2 card has 13-sector firmware then return true
-			if (dynamic_cast<Disk2InterfaceCard&>(g_CardMgr.GetRef(i)).GetCurrentFirmware() == 13)
+			if (dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).GetCurrentFirmware() == 13)
 				return true;
 		}
 	}

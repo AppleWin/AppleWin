@@ -96,6 +96,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
+#include "SynchronousEventManager.h"
 #include "Video.h"
 #include "NTSC.h"
 #include "Log.h"
@@ -148,8 +149,6 @@ static volatile UINT32 g_bmNMI = 0;
 static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
 
 static bool g_irqDefer1Opcode = false;
-
-static bool g_isMouseCardInstalled = false;
 
 static eCpuType g_MainCPU = CPU_65C02;
 static eCpuType g_ActiveCPU = CPU_65C02;
@@ -213,11 +212,6 @@ bool Is6502InterruptEnabled(void)
 void ResetCyclesExecutedForDebugger(void)
 {
 	g_nCyclesExecuted = 0;
-}
-
-void SetMouseCardInstalled(bool installed)
-{
-	g_isMouseCardInstalled = installed;
 }
 
 //
@@ -412,8 +406,13 @@ static __forceinline void NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #endif
 }
 
-// NB. No need to save to save-state, as IRQ() follows CheckInterruptSources(), and IRQ() always sets it to false.
-static bool g_irqOnLastOpcodeCycle = false;
+static __forceinline void CheckSynchronousInterruptSources(UINT cycles, ULONG uExecutedCycles)
+{
+	g_SynchronousEventMgr.Update(cycles, uExecutedCycles);
+}
+
+// NB. No need to save to save-state, as IRQ() follows CheckSynchronousInterruptSources(), and IRQ() always sets it to false.
+bool g_irqOnLastOpcodeCycle = false;
 
 static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
@@ -437,44 +436,17 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		PUSH(regs.pc & 0xFF)
 		EF_TO_AF
 		PUSH(regs.ps & ~AF_BREAK)
-		regs.ps = regs.ps | AF_INTERRUPT & ~AF_DECIMAL;
+		regs.ps = (regs.ps | AF_INTERRUPT) & (~AF_DECIMAL);
 		regs.pc = * (WORD*) (mem+0xFFFE);
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7)
 #if defined(_DEBUG) && LOG_IRQ_TAKEN_AND_RTI
 		LogOutput("IRQ\n");
 #endif
+		CheckSynchronousInterruptSources(7, uExecutedCycles);
 	}
 
 	g_irqOnLastOpcodeCycle = false;
-}
-
-const int IRQ_CHECK_OPCODE_FULL_SPEED = 40;	// ~128 cycles (assume 3 cycles per opcode)
-static int g_fullSpeedOpcodeCount = IRQ_CHECK_OPCODE_FULL_SPEED;
-
-static __forceinline void CheckInterruptSources(ULONG uExecutedCycles, const bool bVideoUpdate, Video* pVideo)
-{
-	if (!bVideoUpdate)
-	{
-		g_fullSpeedOpcodeCount--;
-		if (g_fullSpeedOpcodeCount >= 0)
-			return;
-		g_fullSpeedOpcodeCount = IRQ_CHECK_OPCODE_FULL_SPEED;
-	}
-
-	if (MB_UpdateCycles(uExecutedCycles))
-		g_irqOnLastOpcodeCycle = true;
-
-	if (g_isMouseCardInstalled)
-		g_CardMgr.GetMouseCard()->SetVBlank( !pVideo->VideoGetVblBar(uExecutedCycles) );
-}
-
-// GH#608: IRQ needs to occur within 17 cycles (6 opcodes) of configuring the timer interrupt
-void CpuAdjustIrqCheck(UINT uCyclesUntilInterrupt)
-{
-	const UINT opcodesUntilInterrupt = uCyclesUntilInterrupt/3;	// assume 3 cycles per opcode
-	if (g_bFullSpeed && opcodesUntilInterrupt < IRQ_CHECK_OPCODE_FULL_SPEED)
-		g_fullSpeedOpcodeCount = opcodesUntilInterrupt;
 }
 
 //===========================================================================

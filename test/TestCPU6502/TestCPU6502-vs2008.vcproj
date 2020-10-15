@@ -195,6 +195,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\SynchronousEventManager.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\TestCPU6502.cpp"
 				>
 			</File>

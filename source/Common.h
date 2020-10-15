@@ -24,6 +24,7 @@ enum AppMode_e
 	, MODE_RUNNING  // 6502 is running at normal/full speed (Debugger breakpoints may or may not be active)
 	, MODE_DEBUG    // 6502 is paused
 	, MODE_STEPPING // 6502 is running at normal/full speed (Debugger breakpoints always active)
+	, MODE_BENCHMARK
 };
 
 #define  SPEED_MIN         0
