@@ -11,6 +11,7 @@
 #include "frontends/common2/utils.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/sa2/emulator.h"
+#include "frontends/sa2/gamepad.h"
 
 #include "StdAfx.h"
 #include "Common.h"
@@ -159,6 +160,8 @@ void run_sdl(int argc, const char * argv [])
 
   InitializeRegistry(options);
 
+  Paddle::instance().reset(new Gamepad(0));
+
   g_nMemoryClearType = options.memclear;
 
   initialiseEmulator();
@@ -206,7 +209,7 @@ void run_sdl(int argc, const char * argv [])
 int main(int argc, const char * argv [])
 {
   //First we need to start up SDL, and make sure it went ok
-  if (SDL_Init(SDL_INIT_VIDEO) != 0)
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0)
   {
     std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
     return 1;
@@ -224,6 +227,9 @@ int main(int argc, const char * argv [])
     std::cerr << e.what() << std::endl;
   }
 
+
+  // this must happen BEFORE the SDL_Quit() as otherwise we have a double free (of the game controller).
+  Paddle::instance().reset();
   SDL_Quit();
 
   return exit;
