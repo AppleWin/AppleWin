@@ -594,8 +594,15 @@ void Video::VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode = 0, bool bR
 			pNTSC->NTSC_VideoRedrawWholeScreen();
 	}
 
-	HDC hFrameDC = FrameGetDC();
+	VideoDrawBitmap();
+}
 
+//===========================================================================
+
+// Draw already rendered bitmap on screen
+void Video::VideoDrawBitmap()
+{
+	HDC hFrameDC = FrameGetDC();
 	if (hFrameDC && bDisplayBitmap)
 	{
 		// Copy emulator output
@@ -612,7 +619,7 @@ void Video::VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode = 0, bool bR
 
 		SetStretchBltMode(hFrameDC, COLORONCOLOR);
 		StretchBlt(
-			hFrameDC, 
+			hFrameDC,
 			xdest, ydest,
 			wdest, hdest,
 			g_hDeviceDC,

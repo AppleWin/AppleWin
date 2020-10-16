@@ -1981,7 +1981,7 @@ void NTSC::NTSC_SetVideoMode(uint32_t uVideoModeFlags, bool bDelay/*=false*/)
 				{
 					if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
 						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleLores40Simplified;
-					else
+					//else
 						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleLores40;
 				}
 			}

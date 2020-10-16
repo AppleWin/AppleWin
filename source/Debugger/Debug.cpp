@@ -6916,7 +6916,7 @@ Update_t CmdWindowViewData (int nArgs)
 //===========================================================================
 Update_t CmdWindowViewOutput (int nArgs)
 {
-	g_pVideo->VideoRedrawScreen();
+	g_pVideo->VideoDrawBitmap();
 
 	DebugVideoMode::Instance().Set(g_pVideo->g_uVideoMode);
 

@@ -1509,6 +1509,7 @@ LRESULT CALLBACK FrameWndProc (
 			{
 				// The debugger changed view, may need a window resizing
 				FrameResizeWindow(g_nViewportScale);
+				g_pVideo->VideoDrawBitmap();
 			}
 		}
 		break;
@@ -2578,6 +2579,7 @@ void SetDebugMode(bool newDebugMode)
 	DebugBegin();
 	bDebugMode = newDebugMode;
 	FrameResizeWindow(g_nViewportScale);
+	g_pVideo->VideoDrawBitmap();
 }
 
 int GetViewportScale(void)
