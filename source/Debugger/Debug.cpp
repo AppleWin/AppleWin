@@ -6916,7 +6916,22 @@ Update_t CmdWindowViewData (int nArgs)
 //===========================================================================
 Update_t CmdWindowViewOutput (int nArgs)
 {
+	int oldX = g_pVideo->iXposition;
+	int oldY = g_pVideo->iYposition;
+	int oldHalf = g_pVideo->bHalfBitmapSize;
+	int oldDisplay = g_pVideo->bDisplayBitmap;
+
+	g_pVideo->iXposition = (g_iDebugSplitView == 3 ? FRAMEBUFFER_W : 0);
+	g_pVideo->iYposition = 0;
+	g_pVideo->bHalfBitmapSize = false;
+	g_pVideo->bDisplayBitmap = true;
+
 	g_pVideo->VideoDrawBitmap();
+
+	g_pVideo->iXposition = oldX;
+	g_pVideo->iYposition = oldY;
+	g_pVideo->bHalfBitmapSize = oldHalf;
+	g_pVideo->bDisplayBitmap = oldDisplay;
 
 	DebugVideoMode::Instance().Set(g_pVideo->g_uVideoMode);
 
@@ -8734,6 +8749,7 @@ void DebuggerProcessKey( int keycode )
 //		    if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		DebugVideoMode::Instance().Reset();
 		UpdateDisplay( UPDATE_ALL ); // 1
+		g_pVideo->VideoDrawBitmap();
 		return;
 	}
 
