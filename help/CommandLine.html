@@ -135,11 +135,28 @@
 		-alt-enter=&lt;toggle-full-screen|open-apple-enter&gt;<br>
 		Define the behavior of Alt+Enter:
 		<ul>
-			<li>Either: Toggle between windowed and full screen video modes (default).
-			<li>Or: Allow the emulated Apple II to read the Enter key state when Alt (Open Apple key) is pressed.
+			<li>Either: Toggle between windowed and full screen video modes (default).</li>
+			<li>Or: Allow the emulated Apple II to read the Enter key state when Alt (Open Apple key) is pressed.</li>
 		</ul>
+		-rgb-card-type &lt;apple|sl7|eve|feline&gt;<br>
+		<ul>
+			<li><i>apple</i> is the Extended 80-Column Text/AppleColor Adaptor Card (default).</li>
+			<li><i>sl7</i> is Video-7's RGB-SL7 card.</li>
+			<ul>
+				<li>NB. This card supports an extra foreground/background hi-res mode that can be triggered by AN3 switching, resulting in corrupt color graphics!
+			</ul>
+			<li><i>eve/feline</i> are Le Chat Mauve variants.</li>
+		</ul>
+		Use in conjunction with the 'Color (RGB Card/Monitor)' video mode.<br><br>
+		-rgb-card-foreground &lt;n&gt;<br>
+		-rgb-card-background &lt;n&gt;<br>
+		Where n is [0..15]. Defaults are foreground=15(White) and background=0(Black).<br>
+		The only supported DIPSW colors are: Black=0, Blue=6, Orange=9, Green=12, White=15<br>
+		NB. Only supported by '-rgb-card-type sl7'.<br>
+		Use in conjunction with the 'Color (RGB Card/Monitor)' video mode.<br><br>
 		-rgb-card-invert-bit7<br>
-		Force the RGB card (in "Color (RGB Monitor)" video mode) to invert bit7 in MIX mode. Enables the correct rendering for Dragon Wars.<br><br>
+		Force the RGB card to invert bit7 in MIX mode. Enables the correct rendering for Dragon Wars.<br>
+		Use in conjunction with the 'Color (RGB Card/Monitor)' video mode.<br><br>
 		-50hz<br>
 		Support 50Hz(PAL) video refresh rate and PAL 1.016MHz base CPU clock.<br><br>
 		-60hz<br>
