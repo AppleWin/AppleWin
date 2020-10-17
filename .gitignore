@@ -183,3 +183,4 @@ UpgradeLog*.htm
 
 # Microsoft Fakes
 FakesAssemblies/
+/help/AppleWin.chm

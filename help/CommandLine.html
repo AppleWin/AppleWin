@@ -140,13 +140,21 @@
 		</ul>
 		-rgb-card-invert-bit7<br>
 		Force the RGB card (in "Color (RGB Monitor)" video mode) to invert bit7 in MIX mode. Enables the correct rendering for Dragon Wars.<br><br>
+		-rgb-card-type<br>
+		Chose the RGB card to emulate. Allowed values are 'apple' (default), 'sl7' (Video-7 SL7) and 'feline' (Le Chat Mauve F&eacute;line).<br><br>
+		-rgb-card-foreground<br>
+		Setup the default text foreground color for some RGB cards.<br>
+		Currently only emulates the hardware switch of the SL7 video card with allowed values 6 (blue), 9 (amber), 12 (green), 15 (white).<br>
+		Default is white.<br><br>
 		-50hz<br>
 		Support 50Hz(PAL) video refresh rate and PAL 1.016MHz base CPU clock.<br><br>
 		-60hz<br>
 		Support 60Hz(NTSC) video refresh rate and NTSC 1.020MHz base CPU clock (default).<br><br>
 		-power-on<br>
 		Force a power-on.<br>
-		Use to auto power-on when not using -d1, -h1 or -load-state.<br>
+		Use to auto power-on when not using -d1, -h1 or -load-state.<br><br>
+		-debug-split-view<br>
+		Setup the default split view mode of the FT extended debugger. Allowed values are 1 (default), 3, 4.<br>		
 
 		<br>
 		<P style="FONT-WEIGHT: bold">Debug arguments:

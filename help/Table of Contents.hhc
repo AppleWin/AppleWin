@@ -160,6 +160,10 @@
 				<param name="Local" value="dbg-screen-layout.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="French Touch extended features">
+				<param name="Local" value="dbg-extended.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Scrolling">
 				<param name="Local" value="dbg-scrolling.html">
 				</OBJECT>
