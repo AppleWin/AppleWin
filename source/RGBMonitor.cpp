@@ -251,7 +251,7 @@ void RGBMonitor::V_CreateLookup_HiResHalfPixel_Authentic(VideoType_e videoType)
 				{
 					if ( aPixels[2] )
 					{
-						if ((videoType == VT_COLOR_MONITOR_RGB) || ( !aPixels[3] ))
+						if ((videoType == VT_COLOR_IDEALIZED) || ( !aPixels[3] ))
 						{ 
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y  , HGR_ORANGE ); // 2000: AA D5
@@ -284,7 +284,7 @@ void RGBMonitor::V_CreateLookup_HiResHalfPixel_Authentic(VideoType_e videoType)
 					{
 						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
 						if (
-							(videoType == VT_COLOR_MONITOR_RGB) // Fill in colors in between white pixels
+							(videoType == VT_COLOR_IDEALIZED) // Fill in colors in between white pixels
 						|| !(aPixels[iPixel-2] && aPixels[iPixel+2]) ) // VT_COLOR_TEXT_OPTIMIZED -> Don't fill in colors in between white
 						{
 							color = ((odd ^ !(iPixel&1)) << 1) | currHighBit;	// No white HGR text optimization
@@ -496,7 +496,7 @@ void RGBMonitor::CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress,
 
 //===========================================================================
 
-#define HIRES_COLUMN_OFFSET (((byteval1 & 0xE0) << 2) | ((byteval3 & 0x03) << 5))	// (prevHighBit | last 2 pixels | next 2 pixesl) * HIRES_COLUMN_UNIT_SIZE
+#define HIRES_COLUMN_OFFSET (((byteval1 & 0xE0) << 2) | ((byteval3 & 0x03) << 5))	// (prevHighBit | last 2 pixels | next 2 pixels) * HIRES_COLUMN_UNIT_SIZE
 
 void RGBMonitor::UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress, Video* pVideo)
 {
@@ -504,6 +504,14 @@ void RGBMonitor::UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAdd
 	BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
 	BYTE byteval2 =            *(pMain);
 	BYTE byteval3 = (x < 39) ? *(pMain+1) : 0;
+
+	if (g_uVideoMode & VF_DHIRES)	// ie. VF_DHIRES=1, VF_HIRES=1, VF_80COL=0 - NTSC.cpp refers to this as "DoubleHires40"
+	{
+		byteval1 &= 0x7f;
+		byteval2 &= 0x7f;
+		byteval3 &= 0x7f;
+	}
+
 
 	if (Video::IsVideoStyle(VS_COLOR_VERTICAL_BLEND))
 	{
@@ -1076,7 +1084,7 @@ void RGBMonitor::V_CreateDIBSections(void)
 	ZeroMemory(g_pSourcePixels, SRCOFFS_TOTAL*MAX_SOURCE_Y);
 
 	V_CreateLookup_Lores();
-	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_MONITOR_RGB);
+	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_IDEALIZED);
 	V_CreateLookup_DoubleHires();
 
 	CreateColorMixMap();

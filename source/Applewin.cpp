@@ -1304,12 +1304,12 @@ static bool CheckOldAppleWinVersion(void)
 
 static void ExceptionHandler(const char* pError)
 {
-		MessageBox(	g_hFrameWindow,
-					pError,
-					TEXT("Runtime Exception"),
-					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+	MessageBox(	g_hFrameWindow,
+				pError,
+				TEXT("Runtime Exception"),
+				MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
-		LogFileOutput("Runtime Exception: %s\n", pError);
+	LogFileOutput("Runtime Exception: %s\n", pError);
 }
 
 //---------------------------------------------------------------------------
@@ -1766,9 +1766,9 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			SetAltEnterToggleFullScreen(false);
 		}
-		else if (strcmp(lpCmdLine, "-video-mode=rgb-monitor") == 0)			// GH#616
+		else if (strcmp(lpCmdLine, "-video-mode=idealized") == 0)			// GH#616
 		{
-			g_cmdLine.newVideoType = VT_COLOR_MONITOR_RGB;
+			g_cmdLine.newVideoType = VT_COLOR_IDEALIZED;
 		}
 		else if (strcmp(lpCmdLine, "-video-mode=rgb-videocard") == 0)
 		{
@@ -1829,7 +1829,7 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-rgb-card-type") == 0)
 		{
-			// RGB video card valide types are: "apple", "sl7", "eve", "feline"
+			// RGB video card valid types are: "apple", "sl7", "eve", "feline"
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
@@ -1846,14 +1846,14 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-rgb-card-foreground") == 0)
 		{
-			// Default hardware-defined Text foreground color, for some RGB cards only
+			// Default hardware-defined Text foreground color, for Video-7's RGB-SL7 card only
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 			g_cmdLine.rgbCardForegroundColor = atoi(lpCmdLine);
 		}
 		else if (strcmp(lpCmdLine, "-rgb-card-background") == 0)
 		{
-			// Default hardware-defined Text background color, for some RGB cards only
+			// Default hardware-defined Text background color, for Video-7's RGB-SL7 card only
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 			g_cmdLine.rgbCardBackgroundColor = atoi(lpCmdLine);
