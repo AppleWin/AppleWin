@@ -85,6 +85,7 @@ namespace
       setSnapshotFilename(options.snapshot);
     }
 
+    Paddle::setSquaring(options.squaring);
   }
 
   void stopEmulator()

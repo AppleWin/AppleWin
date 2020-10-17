@@ -24,6 +24,7 @@
 
 #include "linux/data.h"
 #include "linux/benchmark.h"
+#include "linux/paddle.h"
 #include "frontends/common2/configuration.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/utils.h"
@@ -138,6 +139,8 @@ namespace
     {
       LogInit();
     }
+
+    Paddle::setSquaring(options.squaring);
 
     InitializeRegistry(options);
 

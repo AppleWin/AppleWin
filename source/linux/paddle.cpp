@@ -22,6 +22,7 @@ std::shared_ptr<const Paddle> & Paddle::instance()
 }
 
 std::set<int> Paddle::ourButtons;
+bool Paddle::ourSquaring = true;
 
 void Paddle::setButtonPressed(int i)
 {
@@ -33,7 +34,10 @@ void Paddle::setButtonReleased(int i)
   ourButtons.erase(i);
 }
 
-
+void Paddle::setSquaring(bool value)
+{
+  ourSquaring = value;
+}
 
 
 Paddle::Paddle()
@@ -52,7 +56,26 @@ double Paddle::getAxis(int i) const
 
 int Paddle::getAxisValue(int i) const
 {
-  const double axis = getAxis(i);
+  double axis;
+  if (ourSquaring)
+  {
+    const double x[2] = {getAxis(0), getAxis(1)};
+    axis = x[i];
+
+    if (x[0] * x[1] != 0.0)
+    {
+      // rescale the circle to the square
+      const double ratio2 = (x[1] * x[1]) / (x[0] * x[0]);
+      const double c = std::min(ratio2, 1.0 / ratio2);
+      const double coeff = std::sqrt(1.0 + c);
+      axis *= coeff;
+    }
+  }
+  else
+  {
+    axis = getAxis(i);
+  }
+
   const int value = static_cast<int>((axis + 1.0) * 0.5 * 255);
   return value;
 }

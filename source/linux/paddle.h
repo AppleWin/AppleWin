@@ -22,6 +22,10 @@ public:
   static void setButtonPressed(int i);
   static void setButtonReleased(int i);
   static std::set<int> ourButtons;
+  static void setSquaring(bool value);
 
   static std::shared_ptr<const Paddle> & instance();
+
+private:
+  static bool ourSquaring;
 };

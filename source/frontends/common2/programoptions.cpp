@@ -37,7 +37,8 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
     ("log", "Log to AppleWin.log")
     ("headless,hl", "Headless: disable video")
     ("ntsc,nt", "NTSC: execute NTSC code")
-    ("benchmark,b", "Benchmark emulator");
+    ("benchmark,b", "Benchmark emulator")
+    ("no-squaring", "Gamepad range is (already) a square");
   desc.add(emulatorDesc);
 
   po::variables_map vm;
@@ -47,7 +48,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
 
     if (vm.count("help"))
     {
-      std::cout << "AppleWin " << version << " edition" << std::endl << std::endl << desc << std::endl;
+      std::cout << "AppleWin " << version << " edition." << std::endl << std::endl << desc << std::endl;
       return false;
     }
 
@@ -82,6 +83,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
     options.headless = vm.count("headless") > 0;
     options.log = vm.count("log") > 0;
     options.ntsc = vm.count("ntsc") > 0;
+    options.squaring = vm.count("no-squaring") == 0;
 
     return true;
   }

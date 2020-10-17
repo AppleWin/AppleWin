@@ -204,6 +204,7 @@ void Preferences::setData(const PreferenceData & data)
     ui->rw_size->setMaximum(kMaxExMemoryBanks);
     ui->rw_size->setValue(data.options.ramWorksMemorySize);
     ui->joystick->setCurrentText(data.options.gamepadName);
+    ui->squareCircle->setChecked(data.options.gamepadSquaring);
     ui->screenshot->setText(data.options.screenshotTemplate);
     ui->audio_latency->setValue(data.options.audioLatency);
 
@@ -255,6 +256,7 @@ PreferenceData Preferences::getData() const
     {
         data.options.gamepadName = ui->joystick->currentText();
     }
+    data.options.gamepadSquaring = ui->squareCircle->isChecked();
 
     fillData(myDisks, data.disks);
     fillData(myHDs, data.hds);

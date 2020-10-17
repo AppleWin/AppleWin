@@ -15,6 +15,7 @@ public:
 
     QString screenshotTemplate;
     QString gamepadName;
+    bool gamepadSquaring;
 
     int slot0Card;
     int ramWorksMemorySize;

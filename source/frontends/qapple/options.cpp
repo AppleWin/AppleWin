@@ -25,7 +25,8 @@ namespace
     const QString REG_SCREENSHOT_TEMPLATE = QString::fromUtf8("QApple/Screenshot Template");
     const QString REG_SLOT0_CARD = QString::fromUtf8("QApple/Hardware/Slot 0");
     const QString REG_RAMWORKS_SIZE = QString::fromUtf8("QApple/Hardware/RamWorks Size");
-    const QString REG_GAMEPAD_NAME = QString::fromUtf8("QApple/Hardware/Gamepad");
+    const QString REG_GAMEPAD_NAME = QString::fromUtf8("QApple/Hardware/Gamepad/Name");
+    const QString REG_GAMEPAD_SQUARING = QString::fromUtf8("QApple/Hardware/Gamepad/Squaring");
     const QString REG_AUDIO_LATENCY = QString::fromUtf8("QApple/Audio/Latency");
     const QString REG_SILENCE_DELAY = QString::fromUtf8("QApple/Audio/Silence Delay");
     const QString REG_VOLUME = QString::fromUtf8("QApple/Audio/Volume");
@@ -114,6 +115,7 @@ GlobalOptions GlobalOptions::fromQSettings()
 
     options.screenshotTemplate = settings.value(REG_SCREENSHOT_TEMPLATE, "/tmp/qapple_%1.png").toString();
     options.gamepadName = settings.value(REG_GAMEPAD_NAME, QString()).toString();
+    options.gamepadSquaring = settings.value(REG_GAMEPAD_SQUARING, true).toBool();
     options.slot0Card = settings.value(REG_SLOT0_CARD, 0).toInt();
     options.ramWorksMemorySize = settings.value(REG_RAMWORKS_SIZE, 0).toInt();
 
@@ -160,6 +162,12 @@ void GlobalOptions::setData(const GlobalOptions & data)
     {
         this->gamepadName = data.gamepadName;
         QSettings().setValue(REG_GAMEPAD_NAME, this->gamepadName);
+    }
+
+    if (this->gamepadSquaring != data.gamepadSquaring)
+    {
+        this->gamepadSquaring = data.gamepadSquaring;
+        QSettings().setValue(REG_GAMEPAD_SQUARING, this->gamepadSquaring);
     }
 
     if (this->audioLatency != data.audioLatency)

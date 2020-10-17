@@ -19,6 +19,8 @@ struct EmulatorOptions
   bool headless;
   bool ntsc;
 
+  bool squaring;  // turn the x/y range to a square
+
   bool saveConfigurationOnExit;
   bool useQtIni;  // use Qt .ini file (read only)
 
