@@ -1823,7 +1823,7 @@ void NTSC::NTSC_SetVideoMode(uint32_t uVideoModeFlags, bool bDelay/*=false*/)
 	g_nVideoMixed = uVideoModeFlags & VF_MIXED;
 	g_nVideoCharSet = Video::VideoGetSWAltCharSet() ? 1 : 0;
 
-	//RGBMonitor::RGB_DisableTextFB();
+	pRGBMonitor->RGB_DisableTextFB();
 
 	g_nTextPage = 1;
 	g_nHiresPage = 1;
@@ -1921,7 +1921,6 @@ void NTSC::NTSC_SetVideoMode(uint32_t uVideoModeFlags, bool bDelay/*=false*/)
 	}
 	else {
 		// Regular NTSC modes
-		pRGBMonitor->RGB_DisableTextFB();
 		if (uVideoModeFlags & VF_TEXT)
 		{
 			if (uVideoModeFlags & VF_80COL)
@@ -1973,16 +1972,11 @@ void NTSC::NTSC_SetVideoMode(uint32_t uVideoModeFlags, bool bDelay/*=false*/)
 					if ((Video::GetVideoType() == VT_COLOR_MONITOR_RGB) || (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB))
 						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores80Simplified;
 					else
-					{
-						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores40;
-					}
+						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores80;
 				}
 				else
 				{
-					if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
-						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleLores40Simplified;
-					//else
-						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleLores40;
+					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores40;
 				}
 			}
 			else
