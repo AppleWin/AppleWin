@@ -832,7 +832,7 @@ inline void updateVideoScannerAddress()
 		(g_pFuncUpdateGraphicsScreen == updateScreenText80) ||
 		(g_pFuncUpdateGraphicsScreen == updateScreenText80RGB) ||
 		(g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && (g_pFuncUpdateTextScreen == updateScreenText80 || g_pFuncUpdateGraphicsScreen == updateScreenText80RGB)))
-		&& (g_eVideoType != VT_COLOR_MONITOR_RGB) && (g_eVideoType != VT_COLOR_VIDEOCARD_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
+		&& (g_eVideoType != VT_COLOR_IDEALIZED) && (g_eVideoType != VT_COLOR_VIDEOCARD_RGB))	// Fix for "Ansi Story" (Turn the disk over) - Top row of TEXT80 is shifted by 1 pixel
 	{
 		g_pVideoAddress -= 1;
 	}
@@ -1749,7 +1749,7 @@ void updateScreenText80 (long cycles6502)
 					aux ^= g_nTextFlashMask;
 
 				uint16_t bits = (main << 7) | (aux & 0x7f);
-				if ((g_eVideoType != VT_COLOR_MONITOR_RGB)			// No extra 14M bit needed for VT_COLOR_MONITOR_RGB
+				if ((g_eVideoType != VT_COLOR_IDEALIZED)			// No extra 14M bit needed for VT_COLOR_IDEALIZED
 					&& (g_eVideoType != VT_COLOR_VIDEOCARD_RGB))
 					bits = (bits << 1) | g_nLastColumnPixelNTSC;	// GH#555: Align TEXT80 chars with DHGR
 
@@ -2030,7 +2030,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+				if (g_eVideoType == VT_COLOR_IDEALIZED)
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80Simplified;
 				else if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleHires80RGB;
@@ -2039,7 +2039,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			}
 			else
 			{
-				if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+				if (g_eVideoType == VT_COLOR_IDEALIZED)
 					g_pFuncUpdateGraphicsScreen = updateScreenHires40Simplified;	// handles both Single/Double Hires40 (EG. FT's DIGIDREAM demo)
 //				else if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
 //					// TODO
@@ -2049,7 +2049,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 		else
 		{
-			if (g_eVideoType == VT_COLOR_MONITOR_RGB)
+			if (g_eVideoType == VT_COLOR_IDEALIZED)
 				g_pFuncUpdateGraphicsScreen = updateScreenHires40Simplified;
 			else if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40RGB;
@@ -2063,7 +2063,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if ((g_eVideoType == VT_COLOR_MONITOR_RGB) || (g_eVideoType == VT_COLOR_VIDEOCARD_RGB))
+				if ((g_eVideoType == VT_COLOR_IDEALIZED) || (g_eVideoType == VT_COLOR_VIDEOCARD_RGB))
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simplified;
 				else
 					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80;
@@ -2075,7 +2075,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 		else
 		{
-			if ((g_eVideoType == VT_COLOR_MONITOR_RGB) || (g_eVideoType == VT_COLOR_VIDEOCARD_RGB))
+			if ((g_eVideoType == VT_COLOR_IDEALIZED) || (g_eVideoType == VT_COLOR_VIDEOCARD_RGB))
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simplified;
 			else
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
@@ -2151,7 +2151,7 @@ void NTSC_SetVideoStyle(void)
 			b = 0x00;
 			goto _mono;
 
-		case VT_COLOR_MONITOR_RGB:
+		case VT_COLOR_IDEALIZED:
 		case VT_COLOR_VIDEOCARD_RGB:
 		case VT_MONO_WHITE:
 			r = 0xFF;

@@ -335,7 +335,7 @@ void V_CreateLookup_HiResHalfPixel_Authentic(VideoType_e videoType)
 				{
 					if ( aPixels[2] )
 					{
-						if ((videoType == VT_COLOR_MONITOR_RGB) || ( !aPixels[3] ))
+						if ((videoType == VT_COLOR_IDEALIZED) || ( !aPixels[3] ))
 						{ 
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+0 ,y  , HGR_BLUE ); // 2000:D5 AA D5
 							SETSOURCEPIXEL(SRCOFFS_HIRES+offsetx+HIRES_COLUMN_SUBUNIT_SIZE,y  , HGR_ORANGE ); // 2000: AA D5
@@ -368,7 +368,7 @@ void V_CreateLookup_HiResHalfPixel_Authentic(VideoType_e videoType)
 					{
 						// Activate fringe reduction on white HGR text - drawback: loss of color mix patterns in HGR video mode.
 						if (
-							(videoType == VT_COLOR_MONITOR_RGB) // Fill in colors in between white pixels
+							(videoType == VT_COLOR_IDEALIZED) // Fill in colors in between white pixels
 						|| !(aPixels[iPixel-2] && aPixels[iPixel+2]) ) // VT_COLOR_TEXT_OPTIMIZED -> Don't fill in colors in between white
 						{
 							color = ((odd ^ !(iPixel&1)) << 1) | currHighBit;	// No white HGR text optimization
@@ -1177,7 +1177,7 @@ static void V_CreateDIBSections(void)
 	ZeroMemory(g_pSourcePixels, SRCOFFS_TOTAL*MAX_SOURCE_Y);
 
 	V_CreateLookup_Lores();
-	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_MONITOR_RGB);
+	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_IDEALIZED);
 	V_CreateLookup_DoubleHires();
 
 	CreateColorMixMap();

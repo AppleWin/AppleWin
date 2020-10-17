@@ -1758,9 +1758,9 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			SetAltEnterToggleFullScreen(false);
 		}
-		else if (strcmp(lpCmdLine, "-video-mode=rgb-monitor") == 0)			// GH#616
+		else if (strcmp(lpCmdLine, "-video-mode=idealized") == 0)			// GH#616
 		{
-			g_cmdLine.newVideoType = VT_COLOR_MONITOR_RGB;
+			g_cmdLine.newVideoType = VT_COLOR_IDEALIZED;
 		}
 		else if (strcmp(lpCmdLine, "-video-mode=rgb-videocard") == 0)
 		{
