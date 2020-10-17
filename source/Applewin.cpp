@@ -1349,6 +1349,7 @@ struct CmdLine
 		rgbCard = RGB_Videocard_e::Apple;
 		rgbCardForegroundColor = 15;
 		rgbCardBackgroundColor = 0;
+		debugSplitView = 1;
 
 		for (UINT i = 0; i < NUM_SLOTS; i++)
 		{
@@ -1386,6 +1387,7 @@ struct CmdLine
 	RGB_Videocard_e rgbCard;
 	int rgbCardForegroundColor;
 	int rgbCardBackgroundColor;
+	int debugSplitView;
 	std::string strCurrentDir;
 };
 
@@ -1870,6 +1872,17 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.bRemoveNoSlotClock = true;
 		}
+		else if (strcmp(lpCmdLine, "-debug-split-view") == 0)
+		{
+		// Default hardware-defined Text foreground color, for some RGB cards only
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			int pvalue = atoi(lpCmdLine);
+			if (pvalue == 1 || pvalue == 3 || pvalue == 4)
+			{
+				g_cmdLine.debugSplitView = pvalue;
+			}
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
@@ -1986,6 +1999,8 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 
 	ImageInitialize();
 	LogFileOutput("Init: ImageInitialize()\n");
+
+	g_iDebugSplitView = g_cmdLine.debugSplitView;
 }
 
 // DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
