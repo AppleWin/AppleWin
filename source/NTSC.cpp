@@ -1357,7 +1357,7 @@ void NTSC::updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 
 // Handles both the "SingleHires40" & "DoubleHires40" cases, via UpdateHiResCell()
 
-void NTSC::updateScreenSingleHires40Simplified (long cycles6502)
+void NTSC::updateScreenHires40Simplified(long cycles6502)
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
 	{
@@ -1810,6 +1810,8 @@ void NTSC::NTSC_SetVideoMode(uint32_t uVideoModeFlags, bool bDelay/*=false*/)
 	g_nVideoMixed = uVideoModeFlags & VF_MIXED;
 	g_nVideoCharSet = Video::VideoGetSWAltCharSet() ? 1 : 0;
 
+	VideoType_e eVideoType = Video::GetVideoType();
+
 	pRGBMonitor->RGB_DisableTextFB();
 
 	g_nTextPage = 1;
@@ -1832,7 +1834,7 @@ void NTSC::NTSC_SetVideoMode(uint32_t uVideoModeFlags, bool bDelay/*=false*/)
 			g_nColorBurstPixels = 0;		// (For mid-line video mode change) Instantaneously kill color-burst! (not correct as TV's can take many lines)
 
 			// Switching mid-line from graphics to TEXT
-			if (Video::GetVideoType() == VT_COLOR_MONITOR_NTSC &&
+			if (eVideoType == VT_COLOR_MONITOR_NTSC &&
 				g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText40 && g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText40RGB
 				&& g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText80 && g_pFuncUpdateGraphicsScreen != &NTSC::updateScreenText80RGB)
 			{
@@ -1846,7 +1848,7 @@ void NTSC::NTSC_SetVideoMode(uint32_t uVideoModeFlags, bool bDelay/*=false*/)
 			g_nColorBurstPixels = 1024;		// (For mid-line video mode change)
 
 			// Switching mid-line from TEXT to graphics
-			if (Video::GetVideoType() == VT_COLOR_MONITOR_NTSC &&
+			if (eVideoType == VT_COLOR_MONITOR_NTSC &&
 				(g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText40 || g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText40RGB
 					|| g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80 || g_pFuncUpdateGraphicsScreen == &NTSC::updateScreenText80RGB))
 			{
@@ -1856,7 +1858,7 @@ void NTSC::NTSC_SetVideoMode(uint32_t uVideoModeFlags, bool bDelay/*=false*/)
 	}
 
 	// Video7_SL7 extra RGB modes handling
-	if (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB
+	if (eVideoType == VT_COLOR_VIDEOCARD_RGB
 		&& RGBMonitor::RGB_GetVideocard() == RGB_Videocard_e::Video7_SL7
 		// Exclude following modes (fallback through regular NTSC rendering with RGB text)
 		// VF_DHIRES = 1  -> regular Apple IIe modes
@@ -1912,12 +1914,12 @@ void NTSC::NTSC_SetVideoMode(uint32_t uVideoModeFlags, bool bDelay/*=false*/)
 		{
 			if (uVideoModeFlags & VF_80COL)
 			{
-				if (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB)
+				if (eVideoType == VT_COLOR_VIDEOCARD_RGB)
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText80RGB;
 				else
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText80;
 			}
-			else if (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB)
+			else if (eVideoType == VT_COLOR_VIDEOCARD_RGB)
 				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText40RGB;
 			else
 				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenText40;
@@ -1926,84 +1928,64 @@ void NTSC::NTSC_SetVideoMode(uint32_t uVideoModeFlags, bool bDelay/*=false*/)
 		{
 			if (uVideoModeFlags & VF_DHIRES)
 			{
-				if (Video::GetVideoType() == VT_COLOR_IDEALIZED)
-					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires80Simplified;
-				else if (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB)
-					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires80RGB;
-	//			if (uVideoModeFlags & VF_80COL)
-	//			{
-	//				if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
-	//					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires80Simplified;
-	//				else if (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB)
-		//				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires80RGB;
-	//				else
-	//					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires80;
-	//			}
+				if (uVideoModeFlags & VF_80COL)
+				{
+					// AN3=0 HIRES=1 80COL=1 => DHGR
+					if (eVideoType == VT_COLOR_IDEALIZED)
+						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires80Simplified;
+					else if (eVideoType == VT_COLOR_VIDEOCARD_RGB)
+						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires80RGB;
+					else
+						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires80;
+				}
 				else
 				{
-					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires40;
+					// AN3=0 HIRES=1 80COL=0 => HGR Color shift (composite) or BW (RGB)
+					if (eVideoType == VT_COLOR_IDEALIZED)
+						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenHires40Simplified;	// handles both Single/Double Hires40 (EG. FT's DIGIDREAM demo)
+	//				else if (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB)
+	//					// TODO
+					else
+						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleHires40;
 				}
 			}
 			else
 			{
-				if (Video::GetVideoType() == VT_COLOR_IDEALIZED)
-					g_pFuncUpdateGraphicsScreen = &NTSC:updateScreenHires40Simplified;	// handles both Single/Double Hires40 (EG. FT's DIGIDREAM demo)
-//				else if (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB)
-//					// TODO
+				// AN3=1 HIRES=1 80COL=X => HGR
+				if (eVideoType == VT_COLOR_IDEALIZED)
+					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenHires40Simplified;
+				else if (eVideoType == VT_COLOR_VIDEOCARD_RGB)
+					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleHires40RGB;
 				else
-					g_pFuncUpdateGraphicsScreen = &NTSC:updateScreenDoubleHires40;
-	//			if (Video::GetVideoType() == VT_COLOR_MONITOR_RGB)
-	//				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleHires40Simplified;
-	//			else if (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB)
-	//				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleHires40RGB;
-	//			else
-		//			g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleHires40;
+					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleHires40;
 			}
 		}
 		else
 		{
-			if (g_eVideoType == VT_COLOR_IDEALIZED)
-				g_pFuncUpdateGraphicsScreen = updateScreenHires40Simplified;
-			else if (g_eVideoType == VT_COLOR_VIDEOCARD_RGB)
-				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40RGB;
-			else
-				g_pFuncUpdateGraphicsScreen = updateScreenSingleHires40;
-		}
-	}
-	else
-	{
-		if (uVideoModeFlags & VF_DHIRES)
-		{
-			if (uVideoModeFlags & VF_80COL)
+			if (uVideoModeFlags & VF_DHIRES)
 			{
-				if ((g_eVideoType == VT_COLOR_IDEALIZED) || (g_eVideoType == VT_COLOR_VIDEOCARD_RGB))
-					g_pFuncUpdateGraphicsScreen = updateScreenDoubleLores80Simplified;
-	//			if (uVideoModeFlags & VF_80COL)
-	//			{
-		//			if ((Video::GetVideoType() == VT_COLOR_MONITOR_RGB) || (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB))
-	//					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores80Simplified;
-		//			else
-		//				g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores80;
-		//		}
+				if (uVideoModeFlags & VF_80COL)
+				{
+					// AN3=0 HIRES=0 80COL=1 => DGR
+					if ((eVideoType == VT_COLOR_IDEALIZED) || (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB))
+						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores80Simplified;
+					else
+						g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores80;
+				}
 				else
 				{
+					// AN3=0 HIRES=0 80COL=0 => GR buggy
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenDoubleLores40;
 				}
 			}
 			else
 			{
-				if ((Video::GetVideoType() == VT_COLOR_MONITOR_RGB) || (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB))
+				// AN3=1 HIRES=0 80COL=0 => GR
+				if ((eVideoType == VT_COLOR_IDEALIZED) || (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB))
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleLores40Simplified;
 				else
 					g_pFuncUpdateGraphicsScreen = &NTSC::updateScreenSingleLores40;
 			}
-		}
-		else
-		{
-			if ((Video::GetVideoType() == VT_COLOR_IDEALIZED) || (Video::GetVideoType() == VT_COLOR_VIDEOCARD_RGB))
-				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40Simplified;
-			else
-				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
 		}
 	}
 }

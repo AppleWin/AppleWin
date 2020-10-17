@@ -230,7 +230,8 @@ private:
 	void updateScreenText80RGB(long cycles6502);
 	void updateScreenSingleLores40Simplified(long cycles6502);
 	void updateScreenDoubleLores80Simplified(long cycles6502);
-	void updateScreenSingleHires40Simplified(long cycles6502);
+	void updateScreenHires40Simplified(long cycles6502);
+//	void updateScreenSingleHires40Simplified(long cycles6502);
 	void updateScreenDoubleHires80Simplified(long cycles6502);
 	void updateScreenSingleHires40Duochrome(long cycles6502);
 	void updateScreenSingleHires40RGB(long cycles6502);
