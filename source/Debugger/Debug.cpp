@@ -1264,7 +1264,7 @@ Update_t CmdBreakpoint (int nArgs)
 //===========================================================================
 Update_t CmdBreakpointAddSmart (int nArgs)
 {
-	int nAddress = g_aArgs[1].nValue;
+	unsigned int nAddress = g_aArgs[1].nValue;
 
 	if (! nArgs)
 	{
@@ -1368,7 +1368,7 @@ bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoin
 	if (pBP)
 	{
 		_ASSERT(nLen <= _6502_MEM_LEN);
-		if (nLen > _6502_MEM_LEN) nLen = _6502_MEM_LEN;
+		if (nLen > (int) _6502_MEM_LEN) nLen = (int) _6502_MEM_LEN;
 
 		pBP->eSource   = iSrc;
 		pBP->eOperator = iCmp;
@@ -1944,7 +1944,7 @@ static Update_t CmdGo (int nArgs, const bool bFullSpeed)
 				{
 					nLen = g_aArgs[ iArg + 2 ].nValue;
 					nEnd = g_nDebugSkipStart + nLen;
-					if (nEnd > _6502_MEM_END)
+					if (nEnd > (int) _6502_MEM_END)
 						nEnd = _6502_MEM_END + 1;
 				}
 				else
@@ -4527,7 +4527,7 @@ Update_t CmdMemoryLoad (int nArgs)
 		}
 		else
 		{
-			for (UINT i=(nAddressStart>>8); i!=((nAddressStart+nAddressLen)>>8); i++)
+			for (WORD i=(nAddressStart>>8); i!=((nAddressStart+(WORD)nAddressLen)>>8); i++)
 			{
 				memdirty[i] = 0xff;
 			}
