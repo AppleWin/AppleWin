@@ -3521,13 +3521,10 @@ void _CursorMoveDownAligned( int nDelta )
 {
 	if (g_iWindowThis == WINDOW_DATA)
 	{
-		if (g_aMemDump[0].bActive)
+		if (g_aMemDump[0].eDevice == DEV_MEMORY)
 		{
-			if (g_aMemDump[0].eDevice == DEV_MEMORY)
-			{
-				g_aMemDump[0].nAddress += nDelta;
-				g_aMemDump[0].nAddress &= _6502_MEM_END;
-			}
+			g_aMemDump[0].nAddress += nDelta;
+			g_aMemDump[0].nAddress &= _6502_MEM_END;
 		}
 	}
 	else
@@ -3549,13 +3546,10 @@ void _CursorMoveUpAligned( int nDelta )
 {
 	if (g_iWindowThis == WINDOW_DATA)
 	{
-		if (g_aMemDump[0].bActive)
+		if (g_aMemDump[0].eDevice == DEV_MEMORY)
 		{
-			if (g_aMemDump[0].eDevice == DEV_MEMORY)
-			{
-				g_aMemDump[0].nAddress -= nDelta;
-				g_aMemDump[0].nAddress &= _6502_MEM_END;
-			}
+			g_aMemDump[0].nAddress -= nDelta;
+			g_aMemDump[0].nAddress &= _6502_MEM_END;
 		}
 	}
 	else
