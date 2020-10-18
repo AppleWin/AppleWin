@@ -3616,7 +3616,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 	const int nMaxOpcodes = WINDOW_DATA_BYTES_PER_LINE;
 	char  sAddress[ 5 ];
 
-	assert( CONSOLE_WIDTH > WINDOW_DATA_BYTES_PER_LINE );
+	_ASSERT( CONSOLE_WIDTH > WINDOW_DATA_BYTES_PER_LINE );
 
 	char sOpcodes  [ CONSOLE_WIDTH ] = "";
 	char sImmediate[ 4 ]; // 'c'
