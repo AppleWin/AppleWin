@@ -800,8 +800,8 @@ void DebuggerPrint ( int x, int y, const char *pText )
 
 	char c;
 	const char *p = pText;
-	
-	while (c = *p)
+
+	while ((c = *p))
 	{
 		if (c == '\n')
 		{
@@ -828,7 +828,7 @@ void DebuggerPrintColor( int x, int y, const conchar_t * pText )
 	if( !pText)
 		return;
 
-	while (g = (*pSrc))
+	while ((g = (*pSrc)))
 	{
 		if (g == '\n')
 		{

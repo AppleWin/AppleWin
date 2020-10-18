@@ -1818,7 +1818,7 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 		}
 	}
 
-	BYTE nMB = (nAddr>>8)&0xf - SLOT4;
+	BYTE nMB = ((nAddr>>8)&0xf) - SLOT4;
 	BYTE nOffset = nAddr&0xff;
 
 	if(g_bPhasorEnable)

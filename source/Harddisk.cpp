@@ -657,16 +657,16 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 			g_nHD_UnitNum = d;
 			break;
 		case 0xF4:
-			pHDD->hd_memblock = pHDD->hd_memblock & 0xFF00 | d;
+			pHDD->hd_memblock = (pHDD->hd_memblock & 0xFF00) | d;
 			break;
 		case 0xF5:
-			pHDD->hd_memblock = pHDD->hd_memblock & 0x00FF | (d << 8);
+			pHDD->hd_memblock = (pHDD->hd_memblock & 0x00FF) | (d << 8);
 			break;
 		case 0xF6:
-			pHDD->hd_diskblock = pHDD->hd_diskblock & 0xFF00 | d;
+			pHDD->hd_diskblock = (pHDD->hd_diskblock & 0xFF00) | d;
 			break;
 		case 0xF7:
-			pHDD->hd_diskblock = pHDD->hd_diskblock & 0x00FF | (d << 8);
+			pHDD->hd_diskblock = (pHDD->hd_diskblock & 0x00FF) | (d << 8);
 			break;
 		default:
 #if HD_LED
