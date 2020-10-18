@@ -3502,19 +3502,6 @@ Update_t CmdCursorRunUntil (int nArgs)
 	return CmdGo( nArgs, true );
 }
 
-
-//===========================================================================
-WORD _ClampAddress( int nAddress )
-{
-	if (nAddress < 0)
-		nAddress = 0;
-	if (nAddress > _6502_MEM_END)
-		nAddress = _6502_MEM_END;
-
-	return (WORD) nAddress;
-}
-
-
 // nDelta must be a power of 2
 //===========================================================================
 void _CursorMoveDownAligned( int nDelta )
