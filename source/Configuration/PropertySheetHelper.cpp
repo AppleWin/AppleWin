@@ -147,23 +147,18 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 	REGSAVE(slotText.c_str(), (DWORD)newCardType);
 }
 
-// Looks like a (bad) C&P from SaveStateSelectImage()
-// - eg. see "RAPCS" tags below...
 // Used by:
 // . CPageDisk:		IDC_CIDERPRESS_BROWSE
 // . CPageAdvanced:	IDC_PRINTER_DUMP_FILENAME_BROWSE
 std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE, TCHAR* FILEMASKS)
 {
-	static std::string PathToFile; //This is a really awkward way to prevent mixing CiderPress and SaveStated values (RAPCS), but it seem the quickest. Here is its Line 1.
-	PathToFile = Snapshot_GetFilename(); //RAPCS, line 2.
-	TCHAR szDirectory[MAX_PATH] = TEXT("");
 	TCHAR szFilename[MAX_PATH];
-	RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename, MAX_PATH, TEXT(""));
-	std::string PathName = szFilename;
+	RegLoadString(REG_CONFIG, REGVALUE, 1, szFilename, MAX_PATH, TEXT(""));
+	std::string pathname = szFilename;
 
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn,sizeof(OPENFILENAME));
-	
+
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;
 	ofn.hInstance       = g_hInstance;
@@ -173,30 +168,15 @@ std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TC
 							TEXT("All Files\0*.*\0");*/
 	ofn.lpstrFile       = szFilename;
 	ofn.nMaxFile        = MAX_PATH;
-	ofn.lpstrInitialDir = szDirectory;
+	ofn.lpstrInitialDir = "";
 	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
 	ofn.lpstrTitle      = pszTitle;
-		
+
 	int nRes = GetOpenFileName(&ofn);
-	if(nRes)	// Okay is pressed
-	{
-		m_szNewFilename = &szFilename[ofn.nFileOffset];	// TODO:TC: m_szNewFilename not used! (Was g_szNewFilename)
+	if (nRes)	// OK is pressed
+		pathname = szFilename;
 
-		szFilename[ofn.nFileOffset] = 0;
-		if (_tcsicmp(szDirectory, szFilename))
-			m_szSSNewDirectory = szFilename;				// TODO:TC: m_szSSNewDirectory looks dodgy! (Was g_szSSNewDirectory)
-
-		PathName = szFilename;
-		PathName.append (m_szNewFilename);	
-	}
-	else		// Cancel is pressed
-	{
-		RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename, MAX_PATH, TEXT(""));
-		PathName = szFilename;
-	}
-
-	m_szNewFilename = PathToFile; //RAPCS, line 3 (last).
-	return PathName;
+	return pathname;
 }
 
 void CPropertySheetHelper::SaveStateUpdate()
@@ -205,10 +185,10 @@ void CPropertySheetHelper::SaveStateUpdate()
 	{
 		Snapshot_SetFilename(m_szSSNewPathname);
 
-		RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, m_szSSNewPathname);
+		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_SAVESTATE, 1, m_szSSNewPathname);
 
-		if(!m_szSSNewDirectory.empty())
-			RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_START_DIR, 1, m_szSSNewDirectory);
+		if (!m_szSSNewDirectory.empty())
+			RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_SAVESTATE_START_DIR, 1, m_szSSNewDirectory);
 	}
 }
 
@@ -252,7 +232,7 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 
 		szDirectory = Snapshot_GetPath();
 	}
-	
+
 	if (szDirectory.empty())
 		szDirectory = g_sCurrentDir;
 
@@ -262,10 +242,10 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 	tempFilename.clear(); // do NOT use this any longer
 
 	//
-	
+
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn,sizeof(OPENFILENAME));
-	
+
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;
 	ofn.hInstance       = g_hInstance;
@@ -286,8 +266,7 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 	ofn.lpstrTitle      = pszTitle;
 
 	int nRes = bSave ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn);
-
-	if(nRes)
+	if (nRes)
 	{
 		if (bSave)	// Only for saving (allow loading of any file for backwards compatibility)
 		{
@@ -325,7 +304,7 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 		m_szSSNewPathname = szFilename;
 
 		szFilename[ofn.nFileOffset] = 0;
-		if (_tcsicmp(szDirectory.c_str(), szFilename))
+		if (_stricmp(szDirectory.c_str(), szFilename))
 			m_szSSNewDirectory = szFilename;
 	}
 

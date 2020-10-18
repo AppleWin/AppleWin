@@ -53,7 +53,6 @@ private:
 
 	PAGETYPE m_LastPage;
 	UINT32 m_bmPages;
-	std::string m_szNewFilename;
 	bool m_bSSNewFilename;
 	std::string m_szSSNewDirectory;
 	std::string m_szSSNewFilename;

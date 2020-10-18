@@ -815,8 +815,18 @@ void LoadConfiguration(void)
 
 	//
 
-	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));
-	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_SAVESTATE_START_DIR), 1, szFilename, MAX_PATH, TEXT(""));	// Added at 1.29.15 (GH#691)
+	if (szFilename[0] != '\0')
+	{
+		std::string path(szFilename);
+		RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_SAVESTATE), 1, szFilename, MAX_PATH, TEXT(""));
+		Snapshot_SetFilename(szFilename, path);
+	}
+	else	// ...else try to use deprecated REG_CONFIG filename (GH#691)
+	{
+		RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));	// Can be pathname or just filename
+		Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
+	}
 
 	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_PRINTER_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));
 	Printer_SetFilename(szFilename);	// If not in Registry than default will be used
@@ -2160,7 +2170,7 @@ static void RepeatInitialization(void)
 		{
 			std::string strPathname(g_cmdLine.szSnapshotName);
 			int nIdx = strPathname.find_last_of('\\');
-			if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())
+			if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())	// path exists?
 			{
 				const std::string strPath = strPathname.substr(0, nIdx+1);
 				SetCurrentImageDir(strPath);
@@ -2171,12 +2181,6 @@ static void RepeatInitialization(void)
 			Snapshot_SetFilename(g_cmdLine.szSnapshotName);
 			Snapshot_LoadState();
 			g_cmdLine.bBoot = true;
-#if _DEBUG && 0	// Debug/test: Save a duplicate of the save-state file in tmp folder
-			std::string saveName = std::string("tmp\\") + std::string(szSnapshotName); 
-			Snapshot_SetFilename(saveName);
-			g_bSaveStateOnExit = true;
-			bShutdown = true;
-#endif
 			g_cmdLine.szSnapshotName = NULL;
 		}
 		else

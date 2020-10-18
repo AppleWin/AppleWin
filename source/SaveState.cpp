@@ -80,7 +80,7 @@ static YamlHelper yamlHelper;
 
 //-----------------------------------------------------------------------------
 
-void Snapshot_SetFilename(const std::string & strPathname)
+static void Snapshot_SetPathname(const std::string& strPathname)
 {
 	if (strPathname.empty())
 	{
@@ -100,7 +100,7 @@ void Snapshot_SetFilename(const std::string & strPathname)
 	g_strSaveStatePath.clear();
 
 	int nIdx = strPathname.find_last_of('\\');
-	if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())
+	if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())	// path exists?
 	{
 		strFilename = &strPathname[nIdx+1];
 		g_strSaveStatePath = strPathname.substr(0, nIdx+1); // Bugfix: 1.25.0.2 // Snapshot_LoadState() -> SetCurrentImageDir() -> g_sCurrentDir 
@@ -110,12 +110,27 @@ void Snapshot_SetFilename(const std::string & strPathname)
 	g_strSaveStatePathname = strPathname;
 }
 
-const std::string & Snapshot_GetFilename()
+void Snapshot_SetFilename(const std::string& filename, const std::string& path/*=""*/)
+{
+	if (path.empty())
+		return Snapshot_SetPathname(filename);
+
+	_ASSERT(filename.find('\\') == std::string::npos);	// since we have a path, then filename mustn't contain a path too!
+
+	// Ensure path is suffixed with '\' before adding filename
+	std::string pathname = path;
+	if (*pathname.rbegin() != '\\')
+		pathname.append("\\");
+
+	Snapshot_SetPathname(pathname+filename);
+}
+
+const std::string& Snapshot_GetFilename()
 {
 	return g_strSaveStateFilename;
 }
 
-const std::string & Snapshot_GetPath()
+const std::string& Snapshot_GetPath()
 {
 	return g_strSaveStatePath;
 }

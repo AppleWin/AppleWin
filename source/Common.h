@@ -72,7 +72,7 @@ enum AppMode_e
 #define  REGVALUE_SOUND_EMULATION    "Sound Emulation"
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
-#define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
+#define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"	// GH#691: Deprecated from 1.29.15
 #define  REGVALUE_SAVE_STATE_ON_EXIT "Save State On Exit"
 #define  REGVALUE_HDD_ENABLED        "Harddisk Enable"
 #define  REGVALUE_JOYSTICK0_EMU_TYPE		"Joystick0 Emu Type v3"	// GH#434: Added at 1.26.3.0 (previously was "Joystick0 Emu Type")
@@ -132,6 +132,8 @@ enum AppMode_e
 #define REGVALUE_PREF_HDV_START_DIR  "HDV Starting Directory"
 #define REGVALUE_PREF_LAST_HARDDISK_1 "Last Harddisk Image 1"
 #define REGVALUE_PREF_LAST_HARDDISK_2 "Last Harddisk Image 2"
+#define REGVALUE_PREF_SAVESTATE_START_DIR  "Save-state Starting Directory"	// GH#691: Added at 1.29.15
+#define REGVALUE_PREF_LAST_SAVESTATE "Last Save-state File"					// GH#691: Added at 1.29.15
 
 #define WM_USER_BENCHMARK	WM_USER+1
 #define WM_USER_RESTART		WM_USER+2
