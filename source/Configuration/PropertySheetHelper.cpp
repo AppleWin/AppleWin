@@ -183,12 +183,10 @@ void CPropertySheetHelper::SaveStateUpdate()
 {
 	if (m_bSSNewFilename)
 	{
-		Snapshot_SetFilename(m_szSSNewPathname);
+		Snapshot_SetFilename(m_szSSNewFilename, m_szSSNewDirectory);
 
-		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_SAVESTATE, 1, m_szSSNewPathname);
-
-		if (!m_szSSNewDirectory.empty())
-			RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_SAVESTATE_START_DIR, 1, m_szSSNewDirectory);
+		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_SAVESTATE, 1, m_szSSNewFilename);
+		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_SAVESTATE_START_DIR, 1, m_szSSNewDirectory);
 	}
 }
 
@@ -304,8 +302,7 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 		m_szSSNewPathname = szFilename;
 
 		szFilename[ofn.nFileOffset] = 0;
-		if (_stricmp(szDirectory.c_str(), szFilename))
-			m_szSSNewDirectory = szFilename;
+		m_szSSNewDirectory = szFilename;	// always set this, even if unchanged
 	}
 
 	m_bSSNewFilename = nRes ? true : false;

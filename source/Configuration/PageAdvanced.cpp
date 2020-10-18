@@ -140,8 +140,6 @@ BOOL CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 
 			InitOptions(hWnd);
 
-			m_PropertySheetHelper.ClearSSNewDirectory();
-
 			// Need to specify cmd-line switch: -printer-real to enable this control
 			EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), g_bEnableDumpToRealPrinter ? TRUE : FALSE);
 

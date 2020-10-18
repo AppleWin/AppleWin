@@ -87,7 +87,7 @@ static void Snapshot_SetPathname(const std::string& strPathname)
 		g_strSaveStateFilename = DEFAULT_SNAPSHOT_NAME;
 
 		g_strSaveStatePathname = g_sCurrentDir;
-		if (g_strSaveStatePathname.length() && g_strSaveStatePathname[g_strSaveStatePathname.length()-1] != '\\')
+		if (!g_strSaveStatePathname.empty() && *g_strSaveStatePathname.rbegin() != '\\')
 			g_strSaveStatePathname += "\\";
 		g_strSaveStatePathname.append(DEFAULT_SNAPSHOT_NAME);
 
@@ -120,7 +120,7 @@ void Snapshot_SetFilename(const std::string& filename, const std::string& path/*
 	// Ensure path is suffixed with '\' before adding filename
 	std::string pathname = path;
 	if (*pathname.rbegin() != '\\')
-		pathname.append("\\");
+		pathname += "\\";
 
 	Snapshot_SetPathname(pathname+filename);
 }

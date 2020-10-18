@@ -30,7 +30,6 @@ public:
 
 	void SaveCurrentConfig(void);
 	const std::string & GetSSNewFilename(void) { return m_szSSNewFilename; }
-	void ClearSSNewDirectory(void) { m_szSSNewDirectory.clear(); }
 //	const CConfigNeedingRestart& GetConfigOld(void) { return m_ConfigOld; }
 	CConfigNeedingRestart& GetConfigNew(void) { return m_ConfigNew; }
 	bool IsConfigChanged(void) { return m_ConfigNew != m_ConfigOld; }
