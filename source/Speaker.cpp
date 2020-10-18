@@ -226,7 +226,7 @@ void SpkrInitialize ()
 {
 	if(g_fh)
 	{
-		fprintf(g_fh, "Spkr Config: soundtype = %d ",soundtype);
+		fprintf(g_fh, "Spkr Config: soundtype = %d ", (int) soundtype);
 		switch(soundtype)
 		{
 			case SOUND_NONE:   fprintf(g_fh, "(NONE)\n"); break;
