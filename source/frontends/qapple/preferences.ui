@@ -500,12 +500,17 @@
             </item>
             <item>
              <property name="text">
-              <string>Color (RGB Monitor)</string>
+              <string>Color (Composite Idealized)</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Color (NTSC Monitor)</string>
+              <string>Color (RGB Card/Monitor)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Color (Composite Monitor)</string>
              </property>
             </item>
             <item>

@@ -89,15 +89,15 @@ static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 // The window title will be set to this.
 const char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
   {
-     "Monochrome Monitor (Custom)"
+     "Monochrome (Custom)"
    , "Color (Composite Idealized)"
-   , "Color (RGB Monitor)"
+   , "Color (RGB Card/Monitor)"
    , "Color (Composite Monitor)"
    , "Color TV"
    , "B&W TV"
-   , "Amber Monitor"
-   , "Green Monitor"
-   , "White Monitor"
+   , "Monochrome (Amber)"
+   , "Monochrome (Green)"
+   , "Monochrome (White)"
   };
 
 static void videoCreateDIBSection();
