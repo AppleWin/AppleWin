@@ -52,7 +52,6 @@ std::string     g_sProgramDir; // Directory of where AppleWin executable resides
 std::string     g_sCurrentDir; // Also Starting Dir.  Debugger uses this when load/save
 std::string     g_pAppTitle = TITLE_APPLE_2E_ENHANCED;
 bool      g_bRestart = false;
-CardManager g_CardMgr;
 
 HINSTANCE g_hInstance = NULL;
 HWND g_hFrameWindow = NULL;
@@ -266,9 +265,11 @@ void LoadConfiguration(void)
 
   REGLOAD(TEXT(REGVALUE_EMULATION_SPEED)   ,&g_dwSpeed);
 
+  CardManager & cardManager = GetCardMgr();
+
   DWORD dwEnhanceDisk;
   REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
-  g_CardMgr.GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
+  cardManager.GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
   Config_Load_Video();
 
@@ -333,9 +334,9 @@ void LoadConfiguration(void)
 #endif
 
   if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
-    g_CardMgr.Insert(4, (SS_CARDTYPE)dwTmp);
+    cardManager.Insert(4, (SS_CARDTYPE)dwTmp);
   if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
-    g_CardMgr.Insert(5, (SS_CARDTYPE)dwTmp);
+    cardManager.Insert(5, (SS_CARDTYPE)dwTmp);
 
   char szFilename[MAX_PATH];
 
@@ -350,7 +351,7 @@ void LoadConfiguration(void)
   HD_LoadLastDiskImage(HARDDISK_1);
   HD_LoadLastDiskImage(HARDDISK_2);
 
-  g_CardMgr.GetDisk2CardMgr().LoadLastDiskImage();
+  cardManager.GetDisk2CardMgr().LoadLastDiskImage();
 
   szFilename[0] = 0;
   RegLoadString(TEXT(REG_CONFIG),TEXT(REGVALUE_PRINTER_FILENAME),1,szFilename,sizeof(szFilename));
