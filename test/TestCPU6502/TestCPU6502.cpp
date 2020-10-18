@@ -1,8 +1,12 @@
 #include "stdafx.h"
 
+
+typedef int LPDIRECTDRAW;
+
 #include "../../source/Applewin.h"
-#include "../../source/CPU.h"
 #include "../../source/Memory.h"
+#include "../../source/Video.h"
+#include "../../source/CPU.h"
 #include "../../source/SynchronousEventManager.h"
 
 // From Applewin.cpp
@@ -27,11 +31,16 @@ iofunction		IOWrite[256] = {0};	// TODO: Init
 #define	 AF_ZERO       0x02
 #define	 AF_CARRY      0x01
 
+
+
 regsrec regs;
 
 bool g_irqOnLastOpcodeCycle = false;
 
 static eCpuType g_ActiveCPU = CPU_65C02;
+
+
+static Video* g_pVideo;
 
 eCpuType GetActiveCpu(void)
 {
@@ -73,8 +82,12 @@ DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)
 	return 0;
 }
 
-// From NTSC.cpp
-void NTSC_VideoUpdateCycles( long cycles6502 )
+// From Video.cpp
+Video::Video()
+{
+}
+
+void Video::NTSC_VideoUpdateCycles( UINT cycles6502 )
 {
 }
 
@@ -121,12 +134,12 @@ void reset(void)
 
 DWORD TestCpu6502(DWORD uTotalCycles)
 {
-	return Cpu6502(uTotalCycles, true);
+	return Cpu6502(uTotalCycles, true, g_pVideo);
 }
 
 DWORD TestCpu65C02(DWORD uTotalCycles)
 {
-	return Cpu65C02(uTotalCycles, true);
+	return Cpu65C02(uTotalCycles, true, g_pVideo);
 }
 
 //-------------------------------------
@@ -1312,6 +1325,8 @@ int SyncEvents_test(void)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	g_pVideo = new Video();
+
 	int res = 1;
 	init();
 	reset();

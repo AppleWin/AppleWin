@@ -2,6 +2,9 @@
 #include "Common.h"
 #include "Card.h"
 #include "SynchronousEventManager.h"
+#include "Video.h"
+
+extern Video* g_pVideo;
 
 class CMouseInterface : public Card
 {

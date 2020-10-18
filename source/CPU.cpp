@@ -150,10 +150,19 @@ static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
 
 static bool g_irqDefer1Opcode = false;
 
-//
-
 static eCpuType g_MainCPU = CPU_65C02;
 static eCpuType g_ActiveCPU = CPU_65C02;
+
+// Memory heatmap for debug purpose
+static bool bMemoryHeatmap = false;
+// Displayed as 256x256 64K memory access
+int32_t g_aMemoryHeatmap_R[65536 * 3];
+int32_t g_aMemoryHeatmap_W[65536 * 3];
+int32_t g_aMemoryHeatmap_X[65536 * 3];
+int32_t g_iMemoryHeatmapValue = 0x1FFFF;
+// Keeps trace of all current active pages
+int32_t g_aMemoryHeatmapPtr_R[256];
+int32_t g_aMemoryHeatmapPtr_W[256];
 
 eCpuType GetMainCpu(void)
 {
@@ -478,20 +487,20 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdate)
 {
-	if (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_BENCHMARK)
+	if (!GetDebugMode())
 	{
 		if (GetMainCpu() == CPU_6502)
-			return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
+			return Cpu6502(uTotalCycles, bVideoUpdate, g_pVideo);		// Apple ][, ][+, //e, Clones
 		else
-			return Cpu65C02(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+			return Cpu65C02(uTotalCycles, bVideoUpdate, g_pVideo);	// Enhanced Apple //e
 	}
 	else
 	{
 		_ASSERT(g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
 		if (GetMainCpu() == CPU_6502)
-			return Cpu6502_debug(uTotalCycles, bVideoUpdate);	// Apple ][, ][+, //e, Clones
+			return Cpu6502_debug(uTotalCycles, bVideoUpdate, g_pVideo);	// Apple ][, ][+, //e, Clones
 		else
-			return Cpu65C02_debug(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+			return Cpu65C02_debug(uTotalCycles, bVideoUpdate, g_pVideo);	// Enhanced Apple //e
 	}
 }
 
@@ -797,4 +806,9 @@ void CpuLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 		g_irqDefer1Opcode = yamlLoadHelper.LoadBool(SS_YAML_KEY_IRQ_DEFER_1_OPCODE);
 
 	yamlLoadHelper.PopMap();
+}
+
+void CpuEnableHeatmapGeneration(bool enable)
+{
+	bMemoryHeatmap = enable;
 }

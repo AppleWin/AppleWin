@@ -50,7 +50,10 @@ extern iofunction IORead[256];
 extern iofunction IOWrite[256];
 extern LPBYTE     memwrite[0x100];
 extern LPBYTE     mem;
+extern LPBYTE	  memmain;
+extern LPBYTE     memaux;
 extern LPBYTE     memdirty;
+extern LPBYTE     memshadow[0x100];
 
 #ifdef RAMWORKS
 const UINT kMaxExMemoryBanks = 127;	// 127 * aux mem(64K) + main mem(64K) = 8MB
@@ -66,6 +69,8 @@ bool	MemCheckINTCXROM();
 LPBYTE  MemGetAuxPtr(const WORD);
 LPBYTE  MemGetMainPtr(const WORD);
 LPBYTE  MemGetBankPtr(const UINT nBank);
+int32_t MemGetBank(int32_t addr, bool write);
+void	MemSetBankIndexes(void);
 LPBYTE  MemGetCxRomPeripheral();
 DWORD   GetMemMode(void);
 void    SetMemMode(DWORD memmode);

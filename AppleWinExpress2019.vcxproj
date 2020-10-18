@@ -55,6 +55,7 @@
     <ClInclude Include="source\Debugger\Debugger_Console.h" />
     <ClInclude Include="source\Debugger\Debugger_DisassemblerData.h" />
     <ClInclude Include="source\Debugger\Debugger_Display.h" />
+    <ClInclude Include="source\Debugger\Debugger_Heatmap.h" />
     <ClInclude Include="source\Debugger\Debugger_Help.h" />
     <ClInclude Include="source\Debugger\Debugger_Parser.h" />
     <ClInclude Include="source\Debugger\Debugger_Range.h" />
@@ -108,6 +109,7 @@
     <ClInclude Include="source\Tfe\Tfesupp.h" />
     <ClInclude Include="source\Tfe\Uilib.h" />
     <ClInclude Include="source\Video.h" />
+    <ClInclude Include="source\VideoTypes.h" />
     <ClInclude Include="source\YamlHelper.h" />
     <ClInclude Include="source\z80emu.h" />
     <ClInclude Include="source\Z80VICE\daa.h" />
@@ -139,6 +141,7 @@
     <ClCompile Include="source\Configuration\PropertySheet.cpp" />
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\CPU.cpp" />
+    <ClCompile Include="source\Debugger\Debugger_Heatmap.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
     <ClCompile Include="source\SAM.cpp" />

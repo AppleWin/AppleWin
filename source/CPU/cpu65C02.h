@@ -23,7 +23,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //===========================================================================
 
-static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
+#include "../Video.h"
+
+static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate, Video *pVideo)
 {
 	WORD addr;
 	BOOL flagc; // must always be 0 or 1, no other values allowed
@@ -325,7 +327,7 @@ static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 		if ( bVideoUpdate )
 		{
 			ULONG uElapsedCycles = uExecutedCycles - uPreviousCycles;
-			NTSC_VideoUpdateCycles( uElapsedCycles );
+			pVideo->NTSC_VideoUpdateCycles( uElapsedCycles );
 		}
 // NTSC_END
 

@@ -66,7 +66,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  VIEWPORTY   5
 
 static const int kDEFAULT_VIEWPORT_SCALE = 2;
-       int g_nViewportCX = GetFrameBufferBorderlessWidth()  * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCX = GetFrameBufferBorderlessWidth() * kDEFAULT_VIEWPORT_SCALE;
        int g_nViewportCY = GetFrameBufferBorderlessHeight() * kDEFAULT_VIEWPORT_SCALE;
 static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
 static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Windowed mode with borders, buttons etc (full-screen may be +1)
@@ -151,6 +151,8 @@ void    SetNormalMode ();
 static void SetUsingCursor(BOOL);
 static bool FileExists(std::string strFilename);
 
+static bool	bDebugMode = false;
+
 bool	g_bScrollLock_FullSpeed = false;
 bool	g_bFreshReset = false;
 static bool g_bFullScreen32Bit = true;
@@ -201,15 +203,21 @@ void SetAltEnterToggleFullScreen(bool mode)
 //   - Optional: Draw status area to frame DC
 //
 
+// Used for main window's size
 UINT GetFrameBufferBorderlessWidth(void)
 {
-	static const UINT uFrameBufferBorderlessW = 560;	// 560 = Double Hi-Res
+	static const UINT uFrameBufferBorderlessW = FRAMEBUFFER_W;	// 560 = Double Hi-Res
+	if (bDebugMode && g_iDebugSplitView == 3)
+	{
+		// Debug Mode in 3-split view: 50% wider (hacky & unclean)
+		return uFrameBufferBorderlessW + (uFrameBufferBorderlessW >> 1);
+	}
 	return uFrameBufferBorderlessW;
 }
 
 UINT GetFrameBufferBorderlessHeight(void)
 {
-	static const UINT uFrameBufferBorderlessH = 384;	// 384 = Double Scan Line
+	static const UINT uFrameBufferBorderlessH = FRAMEBUFFER_H;	// 384 = Double Scan Line
 	return uFrameBufferBorderlessH;
 }
 
@@ -226,14 +234,16 @@ UINT GetFrameBufferBorderHeight(void)
 	return uBorderH;
 }
 
+// Used for emulator's graphic framebuffer
 UINT GetFrameBufferWidth(void)
 {
-	return GetFrameBufferBorderlessWidth() + 2*GetFrameBufferBorderWidth();
+	//return GetFrameBufferBorderlessWidth() + 2*GetFrameBufferBorderWidth();
+	return FRAMEBUFFER_W + 2 * GetFrameBufferBorderWidth();
 }
 
 UINT GetFrameBufferHeight(void)
 {
-	return GetFrameBufferBorderlessHeight() + 2*GetFrameBufferBorderHeight();
+	return FRAMEBUFFER_H + 2*GetFrameBufferBorderHeight();
 }
 
 //
@@ -276,10 +286,9 @@ static void GetAppleWindowTitle()
 
 	g_pAppTitle += " - ";
 
-	if( IsVideoStyle(VS_HALF_SCANLINES) )
+	if(Video::IsVideoStyle(VS_HALF_SCANLINES) )
 		g_pAppTitle += " 50% ";
-
-	g_pAppTitle += VideoGetAppWindowTitle();
+	g_pAppTitle += Video::VideoGetAppWindowTitle();
 
 	if (GetCardMgr().GetDisk2CardMgr().IsAnyFirmware13Sector())
 		g_pAppTitle += " (S6-13) ";
@@ -678,12 +687,12 @@ static void DrawFrameWindow (bool bPaintingWindow/*=false*/)
 	DrawStatusArea(dc,DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
 
 	// DRAW THE CONTENTS OF THE EMULATED SCREEN
-	if (g_nAppMode == MODE_LOGO)
-		VideoDisplayLogo();
+	if (g_nAppMode == MODE_LOGO && !bDebugMode)
+		g_pVideo->VideoDisplayLogo();
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay();
 	else
-		VideoRedrawScreen();
+		g_pVideo->VideoRedrawScreen();
 
 	if (bPaintingWindow)
 		EndPaint(g_hFrameWindow,&ps);
@@ -1159,7 +1168,10 @@ LRESULT CALLBACK FrameWndProc (
       CpuDestroy();
       MemDestroy();
       SpkrDestroy();
-      VideoDestroy();
+
+	  delete g_pVideo;
+	  g_pVideo = NULL;
+
       MB_Destroy();
       DeleteGdiObjects();
       DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
@@ -1230,7 +1242,7 @@ LRESULT CALLBACK FrameWndProc (
 	}
 
     case WM_DISPLAYCHANGE:
-      VideoReinitialize();
+		g_pVideo->VideoReinitialize();
       break;
 
     case WM_DROPFILES:
@@ -1284,7 +1296,7 @@ LRESULT CALLBACK FrameWndProc (
 #if _DEBUG
 //			MessageBox( g_hFrameWindow, "Double 580x384 size!", "PrintScreen", MB_OK );
 #endif
-			Video_TakeScreenShot( SCREENSHOT_560x384 );
+			g_pVideo->Video_TakeScreenShot( SCREENSHOT_560x384 );
 		}
 		else
 		if (wparam == VK_SNAPSHOT_280) // ( lparam & MOD_SHIFT )
@@ -1292,7 +1304,7 @@ LRESULT CALLBACK FrameWndProc (
 #if _DEBUG
 //			MessageBox( g_hFrameWindow, "Normal 280x192 size!", "PrintScreen", MB_OK );
 #endif
-			Video_TakeScreenShot( SCREENSHOT_280x192 );
+			g_pVideo->Video_TakeScreenShot( SCREENSHOT_280x192 );
 		}
 		else
 		if (wparam == VK_SNAPSHOT_TEXT) // ( lparam & MOD_CONTROL )
@@ -1333,25 +1345,25 @@ LRESULT CALLBACK FrameWndProc (
 
 			if ( !KeybGetCtrlStatus() && !KeybGetShiftStatus() )		// F9
 			{
-				g_eVideoType++;
-				if (g_eVideoType >= NUM_VIDEO_MODES)
-					g_eVideoType = 0;
+				Video::g_eVideoType++;
+				if (Video::GetVideoType() >= NUM_VIDEO_MODES)
+					Video::SetVideoType((VideoType_e)0);
 			}
 			else if ( !KeybGetCtrlStatus() && KeybGetShiftStatus() )	// SHIFT+F9
 			{
-				if (g_eVideoType <= 0)
-					g_eVideoType = NUM_VIDEO_MODES;
-				g_eVideoType--;
+				if (Video::GetVideoType() <= (VideoType_e)0)
+					Video::SetVideoType(NUM_VIDEO_MODES);
+				Video::g_eVideoType--;
 			}
 			else if ( KeybGetCtrlStatus() && KeybGetShiftStatus() )		// CTRL+SHIFT+F9
 			{
-				SetVideoStyle( (VideoStyle_e) (GetVideoStyle() ^ VS_HALF_SCANLINES) );
+				Video::SetVideoStyle( (VideoStyle_e) (Video::GetVideoStyle() ^ VS_HALF_SCANLINES) );
 			}
 
 			// TODO: Clean up code:FrameRefreshStatus(DRAW_TITLE) DrawStatusArea((HDC)0,DRAW_TITLE)
 			DrawStatusArea( (HDC)0, DRAW_TITLE );
 
-			VideoReinitialize(false);
+			g_pVideo->VideoReinitialize(false);
 
 			if (g_nAppMode != MODE_LOGO)
 			{
@@ -1359,24 +1371,24 @@ LRESULT CALLBACK FrameWndProc (
 				{
 					UINT debugVideoMode;
 					if ( DebugGetVideoMode(&debugVideoMode) )
-						VideoRefreshScreen(debugVideoMode, true);
+						g_pVideo->VideoRefreshScreen(debugVideoMode, true);
 					else
-						VideoRefreshScreen();
+						g_pVideo->VideoRefreshScreen(0, false);
 				}
 				else
 				{
-					VideoRefreshScreen();
+					g_pVideo->VideoRefreshScreen(0, false);
 				}
 			}
 
-			Config_Save_Video();
+			g_pVideo->Config_Save_Video();
 		}
 		else if (wparam == VK_F10)
 		{
 			if (g_Apple2Type == A2TYPE_APPLE2E || g_Apple2Type == A2TYPE_APPLE2EENHANCED || g_Apple2Type == A2TYPE_BASE64A)
 			{
-				SetVideoRomRockerSwitch( !GetVideoRomRockerSwitch() );	// F10: toggle rocker switch
-				NTSC_VideoInitAppleType();
+				Video::SetVideoRomRockerSwitch( !Video::GetVideoRomRockerSwitch() );	// F10: toggle rocker switch
+				g_pVideo->getNTSC()->NTSC_VideoInitAppleType(GetApple2Type());
 			}
 			else if (g_Apple2Type == A2TYPE_PRAVETS8A)
 			{
@@ -1427,7 +1439,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 			DrawStatusArea((HDC)0,DRAW_TITLE);
 			if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
-				VideoRedrawScreen();
+				g_pVideo->VideoRedrawScreen();
 		}
 		else if ((wparam == VK_SCROLL) && sg_PropertySheet.GetScrollLockToggle())
 		{
@@ -1488,8 +1500,17 @@ LRESULT CALLBACK FrameWndProc (
 			}
 		}
 		else if (g_nAppMode == MODE_DEBUG)
-		{		
+		{	
+			int old_iDebugSplitView = g_iDebugSplitView;
+
 			DebuggerProcessKey(wparam); // Debugger already active, re-direct key to debugger
+
+			if (old_iDebugSplitView != g_iDebugSplitView)
+			{
+				// The debugger changed view, may need a window resizing
+				FrameResizeWindow(g_nViewportScale);
+				g_pVideo->VideoDrawBitmap();
+			}
 		}
 		break;
 
@@ -1909,12 +1930,12 @@ LRESULT CALLBACK FrameWndProc (
 		return (MNC_CLOSE << 16) | (wparam & 0xffff);
 
     case WM_USER_BENCHMARK: {
+	  SetDebugMode(false);
       UpdateWindow(window);
       ResetMachineState();
       DrawStatusArea((HDC)0,DRAW_TITLE);
       HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
-      g_nAppMode = MODE_BENCHMARK;
-      VideoBenchmark();
+	  g_pVideo->VideoBenchmark();
       g_nAppMode = MODE_LOGO;
       ResetMachineState();
       SetCursor(oldcursor);
@@ -2110,7 +2131,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		}
 
       DrawStatusArea((HDC)0,DRAW_TITLE);
-      VideoRedrawScreen();
+	  g_pVideo->VideoRedrawScreen();
       break;
 
     case BTN_DRIVE1:
@@ -2147,16 +2168,21 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		{
 			// Allow F7 to enter debugger even when not MODE_RUNNING
 			DebugStopStepping();
+			SetDebugMode(true);
 			bAllowFadeIn = false;
 		}
 		else if (g_nAppMode == MODE_DEBUG)
 		{
-			DebugExitDebugger(); // Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
+			// Exit debugger, switch to MODE_RUNNING or MODE_STEPPING
+			// & resize window
+			SetDebugMode(false);
+
 			g_bDebuggerEatKey = false;	// Don't "eat" the next keypress when leaving the debugger via F7 (or clicking the Debugger button)
 		}
 		else	// MODE_RUNNING, MODE_LOGO, MODE_PAUSED
 		{
-			DebugBegin();
+			// Resize window
+			SetDebugMode(true);
 		}
       break;
 
@@ -2332,7 +2358,7 @@ void ResetMachineState ()
   PravetsReset();
   if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 	dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
-  VideoResetState();
+  g_pVideo->VideoResetState();
   KeybReset();
   if (GetCardMgr().IsSSCInstalled())
 	GetCardMgr().GetSSC()->CommReset();
@@ -2368,7 +2394,14 @@ void CtrlReset()
 		MemResetPaging();
 
 		// For A][ & A][+, reset doesn't reset the video mode (UTAII:4-4)
-		VideoResetState();	// Switch Alternate char set off
+		g_pVideo->VideoResetState();	// Switch Alternate char set off
+	}
+
+	if (IsAppleIIeOrAbove(GetApple2Type()) || IsCopamBase64A(GetApple2Type()))
+	{
+		// For A][ & A][+, reset doesn't reset the annunciators (UTAIIe:I-5)
+		// Base 64A: on RESET does reset to ROM page 0 (GH#807)
+		MemAnnunciatorReset();
 	}
 
 	if (IsAppleIIeOrAbove(GetApple2Type()) || IsCopamBase64A(GetApple2Type()))
@@ -2519,6 +2552,36 @@ void SetUsingCursor (BOOL bNewValue)
 	}
 }
 
+bool GetDebugMode(void)
+{
+	return bDebugMode;
+}
+
+void SetDebugMode(bool newDebugMode)
+{
+	if (newDebugMode == bDebugMode) return; // No change
+
+	if (!newDebugMode) {
+		DebugExitDebugger();
+
+		if (g_pVideo)
+		{
+			g_pVideo->bDisplayBitmap = true;
+			g_pVideo->iXposition = 0;
+			g_pVideo->iYposition = 0;
+			g_pVideo->bHalfBitmapSize = false;
+		}
+		bDebugMode = newDebugMode;
+		FrameResizeWindow(g_nViewportScale);
+		return;
+	}
+
+	DebugBegin();
+	bDebugMode = newDebugMode;
+	FrameResizeWindow(g_nViewportScale);
+	g_pVideo->VideoDrawBitmap();
+}
+
 int GetViewportScale(void)
 {
 	return g_nViewportScale;
@@ -2598,8 +2661,6 @@ static void FrameResizeWindow(int nNewScale)
 	int nXPos = framerect.left;
 	int nYPos = framerect.top;
 
-	//
-
 	buttonx = g_nViewportCX + VIEWPORTX*2;
 	buttony = 0;
 
@@ -2647,8 +2708,8 @@ void FrameCreateWindow(void)
 		int nOldViewportCX = g_nViewportCX;
 		int nOldViewportCY = g_nViewportCY;
 
-		g_nViewportCX = GetFrameBufferBorderlessWidth() * 2;
-		g_nViewportCY = GetFrameBufferBorderlessHeight() * 2;
+		g_nViewportCX = GetFrameBufferBorderlessWidth() *2;
+		g_nViewportCY = GetFrameBufferBorderlessHeight() *2;
 		GetWidthHeight(nWidth, nHeight);	// Probe with 2x dimensions
 
 		g_nViewportCX = nOldViewportCX;
@@ -2725,6 +2786,7 @@ void FrameCreateWindow(void)
 		g_hInstance,NULL ); 
 
 	SetupTooltipControls();
+
 
 	_ASSERT(g_TimerIDEvent_100msec == 0);
 	g_TimerIDEvent_100msec = SetTimer(g_hFrameWindow, IDEVENT_TIMER_100MSEC, 100, NULL);

@@ -13,7 +13,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
+You should have received a copy of the GNU General Public Licen
 along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
@@ -45,8 +45,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// CPU (Main)
 		{TEXT(".")           , CmdCursorJumpPC      , CMD_CURSOR_JUMP_PC       , "Locate the cursor in the disasm window" }, // centered
 		{TEXT("=")           , CmdCursorSetPC       , CMD_CURSOR_SET_PC        , "Sets the PC to the current instruction" },
-		{TEXT("G")           , CmdGoNormalSpeed     , CMD_GO_NORMAL_SPEED      , "Run at normal speed [until PC == address]"   },
+		{TEXT("G")           , CmdGoNormalSpeed     , CMD_GO_NORMAL_SPEED      , "Run at normal speed and follow PC [until PC == address]"   },
 		{TEXT("GG")          , CmdGoFullSpeed       , CMD_GO_FULL_SPEED        , "Run at full speed [until PC == address]"   },
+		{TEXT("GC")          , CmdGoCycleSpeed      , CMD_GO_CYCLE_SPEED       , "Run with video cycle-accurate refresh [until PC == address]"   },
+		{TEXT("GD")          , CmdGoDebugSpeed      , CMD_GO_DEBUG_SPEED       , "Run at normal speed [until PC == address]"   },
 		{TEXT("IN")          , CmdIn                , CMD_IN                   , "Input byte from IO $C0xx"   },
 		{TEXT("KEY")         , CmdKey               , CMD_INPUT_KEY            , "Feed key into emulator"     },
 		{TEXT("JSR")         , CmdJSR               , CMD_JSR                  , "Call sub-routine"           },
@@ -208,7 +210,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("SH")          , CmdMemorySearchHex   , CMD_MEMORY_SEARCH_HEX    , "Search memory for hex values" },
 		{TEXT("F")           , CmdMemoryFill        , CMD_MEMORY_FILL          , "Memory fill"                  },
 
-		{TEXT("NTSC")        , CmdNTSC              , CMD_NTSC                 , "Save/Load the NTSC palette"   },
+	//	{TEXT("NTSC")        , CmdNTSC              , CMD_NTSC                 , "Save/Load the NTSC palette"   },
 		{TEXT("TSAVE")       , CmdTextSave          , CMD_TEXT_SAVE            , "Save text screen"             },
 	// Output / Scripts
 		{TEXT("CALC")        , CmdOutputCalc        , CMD_OUTPUT_CALC          , "Display mini calc result"               },
@@ -247,24 +249,30 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Video-scanner info
 		{TEXT("VIDEOINFO")   , CmdVideoScannerInfo  , CMD_VIDEO_SCANNER_INFO, "Video-scanner display configuration" },
 	// View
-		{TEXT("TEXT")        , CmdViewOutput_Text4X , CMD_VIEW_TEXT4X, "View Text screen (current page)"        },
-		{TEXT("TEXT1")       , CmdViewOutput_Text41 , CMD_VIEW_TEXT41, "View Text screen Page 1"                },
-		{TEXT("TEXT2")       , CmdViewOutput_Text42 , CMD_VIEW_TEXT42, "View Text screen Page 2"                },
-		{TEXT("TEXT80")      , CmdViewOutput_Text8X , CMD_VIEW_TEXT8X, "View 80-col Text screen (current page)" },
-		{TEXT("TEXT81")      , CmdViewOutput_Text81 , CMD_VIEW_TEXT81, "View 80-col Text screen Page 1"         },
-		{TEXT("TEXT82")      , CmdViewOutput_Text82 , CMD_VIEW_TEXT82, "View 80-col Text screen Page 2"         },
-		{TEXT("GR")          , CmdViewOutput_GRX    , CMD_VIEW_GRX   , "View Lo-Res screen (current page)"      },
-		{TEXT("GR1")         , CmdViewOutput_GR1    , CMD_VIEW_GR1   , "View Lo-Res screen Page 1"              },
-		{TEXT("GR2")         , CmdViewOutput_GR2    , CMD_VIEW_GR2   , "View Lo-Res screen Page 2"              },
-		{TEXT("DGR")         , CmdViewOutput_DGRX   , CMD_VIEW_DGRX  , "View Double lo-res (current page)"      },
-		{TEXT("DGR1")        , CmdViewOutput_DGR1   , CMD_VIEW_DGR1  , "View Double lo-res Page 1"              },
-		{TEXT("DGR2")        , CmdViewOutput_DGR2   , CMD_VIEW_DGR2  , "View Double lo-res Page 2"              },
-		{TEXT("HGR")         , CmdViewOutput_HGRX   , CMD_VIEW_HGRX  , "View Hi-res (current page)"             },
-		{TEXT("HGR1")        , CmdViewOutput_HGR1   , CMD_VIEW_HGR1  , "View Hi-res Page 1"                     },
-		{TEXT("HGR2")        , CmdViewOutput_HGR2   , CMD_VIEW_HGR2  , "View Hi-res Page 2"                     },
-		{TEXT("DHGR")        , CmdViewOutput_DHGRX  , CMD_VIEW_DHGRX , "View Double Hi-res (current page)"      },
-		{TEXT("DHGR1")       , CmdViewOutput_DHGR1  , CMD_VIEW_DHGR1 , "View Double Hi-res Page 1"              },
-		{TEXT("DHGR2")       , CmdViewOutput_DHGR2  , CMD_VIEW_DHGR2 , "View Double Hi-res Page 2"              },
+		{TEXT("TEXT")        , CmdViewOutput_Text40 , CMD_VIEW_TEXT40 , "View Text screen (current page)"        },
+		{TEXT("TEXTX")       , CmdViewOutput_Text40X, CMD_VIEW_TEXT40X, "View Text screen (disabled page)"       },
+		{TEXT("TEXT1")       , CmdViewOutput_Text41 , CMD_VIEW_TEXT41 , "View Text screen Page 1"                },
+		{TEXT("TEXT2")       , CmdViewOutput_Text42 , CMD_VIEW_TEXT42 , "View Text screen Page 2"                },
+		{TEXT("TEXT80")      , CmdViewOutput_Text80 , CMD_VIEW_TEXT80 , "View 80-col Text screen (current page)" },
+		{TEXT("TEXT80X")     , CmdViewOutput_Text80X, CMD_VIEW_TEXT80X, "View 80-col Text screen (disabled page)"},
+		{TEXT("TEXT81")      , CmdViewOutput_Text81 , CMD_VIEW_TEXT81 , "View 80-col Text screen Page 1"         },
+		{TEXT("TEXT82")      , CmdViewOutput_Text82 , CMD_VIEW_TEXT82 , "View 80-col Text screen Page 2"         },
+		{TEXT("GR")          , CmdViewOutput_GR     , CMD_VIEW_GR     , "View Lo-Res screen (current page)"      },
+		{TEXT("GRX")         , CmdViewOutput_GRX    , CMD_VIEW_GRX    , "View Lo-Res screen (disabled page)"     },
+		{TEXT("GR1")         , CmdViewOutput_GR1    , CMD_VIEW_GR1    , "View Lo-Res screen Page 1"              },
+		{TEXT("GR2")         , CmdViewOutput_GR2    , CMD_VIEW_GR2    , "View Lo-Res screen Page 2"              },
+		{TEXT("DGR")         , CmdViewOutput_DGR    , CMD_VIEW_DGR    , "View Double lo-res (current page)"      },
+		{TEXT("DGRX")         , CmdViewOutput_DGRX  , CMD_VIEW_DGRX   , "View Double lo-res (disabled page)"     },
+		{TEXT("DGR1")        , CmdViewOutput_DGR1   , CMD_VIEW_DGR1   , "View Double lo-res Page 1"              },
+		{TEXT("DGR2")        , CmdViewOutput_DGR2   , CMD_VIEW_DGR2   , "View Double lo-res Page 2"              },
+		{TEXT("HGR")         , CmdViewOutput_HGR    , CMD_VIEW_HGR    , "View Hi-res (current page)"             },
+		{TEXT("HGRX")         , CmdViewOutput_HGRX  , CMD_VIEW_HGRX   , "View Hi-res (disabled page)"            },
+		{TEXT("HGR1")        , CmdViewOutput_HGR1   , CMD_VIEW_HGR1   , "View Hi-res Page 1"                     },
+		{TEXT("HGR2")        , CmdViewOutput_HGR2   , CMD_VIEW_HGR2   , "View Hi-res Page 2"                     },
+		{TEXT("DHGR")        , CmdViewOutput_DHGR   , CMD_VIEW_DHGR   , "View Double Hi-res (current page)"      },
+		{TEXT("DHGRX")        , CmdViewOutput_DHGRX , CMD_VIEW_DHGRX  , "View Double Hi-res (disabled page)"     },
+		{TEXT("DHGR1")       , CmdViewOutput_DHGR1  , CMD_VIEW_DHGR1  , "View Double Hi-res Page 1"              },
+		{TEXT("DHGR2")       , CmdViewOutput_DHGR2  , CMD_VIEW_DHGR2  , "View Double Hi-res Page 2"              },
 	// Watch
 		{TEXT("W")           , CmdWatch             , CMD_WATCH         , "Alias for WA (Watch Add)"                      },
 		{TEXT("WA")          , CmdWatchAdd          , CMD_WATCH_ADD     , "Add/Update address or symbol to watch"         },
@@ -287,7 +295,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("SOURCE1")     , CmdWindowShowSource1 , CMD_WINDOW_SOURCE_1, "Show source on top split screen"             },
 		{TEXT("SOURCE2")     , CmdWindowShowSource2 , CMD_WINDOW_SOURCE_2, "Show source on bottom split screen"          },
 
-		{TEXT("\\")          , CmdWindowViewOutput  , CMD_WINDOW_OUTPUT  , "Display Apple output until key pressed" },
+		{TEXT("*")           , CmdWindowViewOutput  , CMD_WINDOW_OUTPUT  , "Display Apple output until key pressed" },
 //		{TEXT("INFO")        , CmdToggleInfoPanel   , CMD_WINDOW_TOGGLE },
 //		{TEXT("WINSOURCE")   , CmdWindowShowSource  , CMD_WINDOW_SOURCE },
 //		{TEXT("ZEROPAGE")    , CmdWindowShowZeropage, CMD_WINDOW_ZEROPAGE },
@@ -371,7 +379,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{"SYMDOS"            , CmdSymbolsCommand    , CMD_SYMBOLS_DOS33        },
 		{"SYMPRO"            , CmdSymbolsCommand    , CMD_SYMBOLS_PRODOS       },
 
-		{TEXT("TEXT40")      , CmdViewOutput_Text4X , CMD_VIEW_TEXT4X          },
+		{TEXT("TEXT40")      , CmdViewOutput_Text40 , CMD_VIEW_TEXT40          },
+		{TEXT("TEXT40")      , CmdViewOutput_Text40X, CMD_VIEW_TEXT40X         },
 		{TEXT("TEXT41")      , CmdViewOutput_Text41 , CMD_VIEW_TEXT41          },
 		{TEXT("TEXT42")      , CmdViewOutput_Text42 , CMD_VIEW_TEXT42          },
 
@@ -385,6 +394,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("EXITBENCH")   , NULL                 , CMD_BENCHMARK            }, // 2.8.03 was incorrectly alias with 'E' Bug #246. // CmdBenchmarkStop
 		{TEXT("MDB")         , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
 //		{TEXT("MEMORY")      , CmdMemoryMiniDumpHex , CMD_MEM_MINI_DUMP_HEX_1  }, // MemoryDumpByte  // Did anyone actually use this??
+
+	// Window setup (extended debugger)
+		{ TEXT("SHOW1")         , CmdViewShow1      , CMD_VIEW_SHOW1           },
+		{ TEXT("SHOW3")         , CmdViewShow3      , CMD_VIEW_SHOW3           },
+		{ TEXT("SHOW4")         , CmdViewShow4      , CMD_VIEW_SHOW4           },
 };
 
 	const int NUM_COMMANDS_WITH_ALIASES = sizeof(g_aCommands) / sizeof (Command_t); // Determined at compile-time ;-)

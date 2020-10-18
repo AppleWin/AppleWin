@@ -457,7 +457,7 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	m_ConfigOld.m_Slot[SLOT5] = GetCardMgr().QuerySlot(SLOT5);
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = sg_PropertySheet.GetTheFreezesF8Rom();
-	m_ConfigOld.m_videoRefreshRate = GetVideoRefreshRate();
+	m_ConfigOld.m_videoRefreshRate = g_pVideo->GetVideoRefreshRate();
 
 	// Reset flags each time:
 	m_ConfigOld.m_uSaveLoadStateMsg = 0;
@@ -476,7 +476,7 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	GetCardMgr().Insert(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
 	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);
 	sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
-	SetVideoRefreshRate(m_ConfigOld.m_videoRefreshRate);
+	g_pVideo->SetVideoRefreshRate(m_ConfigOld.m_videoRefreshRate);
 }
 
 bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged)

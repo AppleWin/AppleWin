@@ -38,7 +38,7 @@
 	void DebuggerSetColorFG( COLORREF nRGB );
 	void DebuggerSetColorBG( COLORREF nRGB, bool bTransparent = false );
 
-	void FillBackground(long left, long top, long right, long bottom);
+	void FillBackground(long left, long top, long right, long bottom, void *framebuffer);
 
 	int  PrintText       ( const char * pText, RECT & rRect );
 	int  PrintTextCursorX( const char * pText, RECT & rRect );
@@ -63,13 +63,34 @@
 	void FormatOpcodeBytes    ( WORD nBaseAddress, DisasmLine_t & line_ );
 	void FormatNopcodeBytes   ( WORD nBaseAddress, DisasmLine_t & line_ );
 
-	//
+#define HEATMAP_MAIN_LEFTMARGIN 16
+#define HEATMAP_AUX_LEFTMARGIN  16+256+16
+#define HEATMAP_TOPMARGIN 16
+
+	// From Video.h
+	struct bgra_t;
 
 	extern HDC GetDebuggerMemDC(void);
 	extern void ReleaseDebuggerMemDC(void);
+	extern HDC GetDebuggerExtraDC(void);
+	extern void ReleaseDebuggerExtraDC(void);
 	extern void StretchBltMemToFrameDC(void);
 	extern HDC GetConsoleFontDC(void);
 	extern void ReleaseConsoleFontDC(void);
+	extern bgra_t* GetpDebuggerExtraFramebits(void);
+
+	// See: CmdWindowViewOutput (int nArgs)
+	enum ViewVideoPage_t
+	{
+		VIEW_PAGE_CURRENT, // current page
+		VIEW_PAGE_DISABLED,
+		VIEW_PAGE_1,
+		VIEW_PAGE_2
+	};
+
+	extern uint32_t        g_iGraphicMonitoringMode;
+	extern ViewVideoPage_t g_eGraphicMonitoringPage;
+	extern uint32_t g_iDebugSplitView;
 
 	enum DebugVirtualTextScreen_e
 	{

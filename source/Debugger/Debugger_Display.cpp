@@ -27,10 +27,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * Author: Copyright (C) 2006-2020 Michael Pohoreski, (C) 2020 Cyril Lambin
  */
 
+#include <intrin.h> // For __popcnt() only... not portable
+
 #include "StdAfx.h"
 
 #include "Debug.h"
 #include "Debugger_Display.h"
+#include "Debugger_Heatmap.h"
 
 #include "../Applewin.h"
 #include "../CPU.h"
@@ -62,7 +65,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //	#define DISPLAY_BREAKPOINT_TITLE 1
 //	#define DISPLAY_WATCH_TITLE      1
 
-
 // Public _________________________________________________________________________________________
 
 // Font
@@ -82,11 +84,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static HBITMAP g_hDebuggerMemBM = NULL;
 	static LPBITMAPINFO  g_pDebuggerMemFramebufferinfo = NULL;
 	static bgra_t* g_pDebuggerMemFramebits = NULL;
+	static HDC g_hDebuggerExtraDC = NULL;
+	static HBITMAP g_hDebuggerExtraBM = NULL;
+	static LPBITMAPINFO  g_pDebuggerExtraFramebufferinfo = NULL;
+	static bgra_t* pDebuggerExtraFramebits = NULL;
 
 	static HDC g_hConsoleFontDC = NULL;
 	static HBITMAP g_hConsoleFontBitmap = NULL;
 	static LPBITMAPINFO  g_hConsoleFontFramebufferinfo = NULL;
 	static bgra_t* g_hConsoleFontFramebits;
+
+	uint32_t        g_iGraphicMonitoringMode = 0;
+	ViewVideoPage_t g_eGraphicMonitoringPage = VIEW_PAGE_CURRENT;
+
+	uint32_t g_iDebugSplitView = 1;
 
 	char g_cConsoleBrushFG_r;
 	char g_cConsoleBrushFG_g;
@@ -151,7 +162,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Drawing
 	// Width
-		const int DISPLAY_WIDTH  = 560;
+		const int DISPLAY_WIDTH  = FRAMEBUFFER_W;
 		// New Font = 50.5 char * 7 px/char = 353.5
 		const int DISPLAY_DISASM_RIGHT   = 353 ;
 
@@ -554,6 +565,7 @@ HDC GetDebuggerMemDC(void)
 		HDC hFrameDC = FrameGetDC();
 		g_hDebuggerMemDC = CreateCompatibleDC(hFrameDC);
 
+
 		// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
 		g_pDebuggerMemFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(
 			NULL,
@@ -563,8 +575,8 @@ HDC GetDebuggerMemDC(void)
 
 		ZeroMemory(g_pDebuggerMemFramebufferinfo, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 		g_pDebuggerMemFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		g_pDebuggerMemFramebufferinfo->bmiHeader.biWidth = 560;
-		g_pDebuggerMemFramebufferinfo->bmiHeader.biHeight = 384;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biWidth = FRAMEBUFFER_W;
+		g_pDebuggerMemFramebufferinfo->bmiHeader.biHeight = FRAMEBUFFER_H;
 		g_pDebuggerMemFramebufferinfo->bmiHeader.biPlanes = 1;
 		g_pDebuggerMemFramebufferinfo->bmiHeader.biBitCount = 32;
 		g_pDebuggerMemFramebufferinfo->bmiHeader.biCompression = BI_RGB;
@@ -599,6 +611,61 @@ void ReleaseDebuggerMemDC(void)
 		VirtualFree(g_pDebuggerMemFramebufferinfo, 0, MEM_RELEASE);
 		g_pDebuggerMemFramebufferinfo = NULL;
 		g_pDebuggerMemFramebits = NULL;
+	}
+}
+
+HDC GetDebuggerExtraDC(void)
+{
+	if (!g_hDebuggerExtraDC)
+	{
+		HDC hFrameDC = FrameGetDC();
+		g_hDebuggerExtraDC = CreateCompatibleDC(hFrameDC);
+
+		// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
+		g_pDebuggerExtraFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(
+			NULL,
+			sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD),
+			MEM_COMMIT,
+			PAGE_READWRITE);
+
+		ZeroMemory(g_pDebuggerExtraFramebufferinfo, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biWidth = FRAMEBUFFER_W;
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biHeight = FRAMEBUFFER_H;
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biPlanes = 1;
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biBitCount = 32;
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biCompression = BI_RGB;
+		g_pDebuggerExtraFramebufferinfo->bmiHeader.biClrUsed = 0;
+
+
+		// CREATE THE FRAME BUFFER DIB SECTION
+		g_hDebuggerExtraBM = CreateDIBSection(
+			hFrameDC,
+			g_pDebuggerExtraFramebufferinfo,
+			DIB_RGB_COLORS,
+			(LPVOID*)&pDebuggerExtraFramebits, 0, 0
+		);
+		SelectObject(g_hDebuggerExtraDC, g_hDebuggerExtraBM);
+
+		// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
+		ZeroMemory(pDebuggerExtraFramebits, FRAMEBUFFER_W * FRAMEBUFFER_H * sizeof(bgra_t));
+
+	}
+
+	_ASSERT(g_hDebuggerExtraDC);	// TC: Could this be NULL?
+	return g_hDebuggerExtraDC;
+}
+
+void ReleaseDebuggerExtraDC(void)
+{
+	if (g_hDebuggerExtraDC)
+	{
+		DeleteObject(g_hDebuggerExtraBM);
+		g_hDebuggerExtraBM = NULL;
+		DeleteDC(g_hDebuggerExtraDC);
+		g_hDebuggerExtraDC = NULL;
+		FrameReleaseDC();
+		pDebuggerExtraFramebits = NULL;
 	}
 }
 
@@ -679,20 +746,89 @@ void StretchBltMemToFrameDC(void)
 	int nViewportCX, nViewportCY;
 	GetViewportCXCY(nViewportCX, nViewportCY);
 
+	int scale = GetViewportScale();
+
+	// Display debugger
 	int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 	int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
-	int wdest = nViewportCX;
-	int hdest = nViewportCY;
+	int wdest = FRAMEBUFFER_W * scale;
+	int hdest = FRAMEBUFFER_H * scale;
+	int wsrc = FRAMEBUFFER_W;
+	int xsrc = 0;
 
+	switch (g_iDebugSplitView)
+	{
+	case 3:
+		xdest += (FRAMEBUFFER_W * scale) / 2;
+		break;
+	case 4:
+		xdest += (FRAMEBUFFER_W * scale) / 2;
+		wdest /= 2;
+		hdest /= 2;
+		break;
+	}
 	BOOL bRes = StretchBlt(
 		FrameGetDC(),			                            // HDC hdcDest,
 		xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
 		GetDebuggerMemDC(),									// HDC hdcSrc,
 		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
-		GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),	// int nWidthSrc,    int nHeightSrc,
+		FRAMEBUFFER_W, FRAMEBUFFER_H,				// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
+
+	if (g_iDebugSplitView == 4)
+	{
+		// Extra display (bottom left)
+
+		xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
+		ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
+		xdest += (FRAMEBUFFER_W * scale) / 2;
+		ydest += (FRAMEBUFFER_H * scale) / 2;
+		wdest = (FRAMEBUFFER_W * scale) / 2;
+		hdest = (FRAMEBUFFER_H * scale) / 2;
+
+		SS_CARDTYPE ram = GetCurrentExpansionMemType();
+		if (ram != CT_80Col && ram != CT_Extended80Col && ram != CT_RamWorksIII)
+		{
+			// show only the first 64k of RAM
+			xsrc = 8;
+			wsrc /= 2;
+		}
+
+		bRes = StretchBlt(
+			FrameGetDC(),			                            // HDC hdcDest,
+			xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
+			wdest, hdest,										// int nWidthDest,   int nHeightDest,
+			GetDebuggerExtraDC(),								// HDC hdcSrc,
+			xsrc, 0,												// int nXOriginSrc,  int nYOriginSrc,
+			wsrc, FRAMEBUFFER_H,						// int nWidthSrc,    int nHeightSrc,
+			SRCCOPY                                             // DWORD dwRop
+		);
+	}
+
+	if (g_iDebugSplitView > 1)
+	{
+		// Graphic page monitoring
+		uint32_t refreshMode = g_iGraphicMonitoringMode & ~VF_PAGE2;
+		switch (g_eGraphicMonitoringPage)
+		{
+		case VIEW_PAGE_CURRENT:
+			refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() && !g_pVideo->VideoGetSW80STORE() ? VF_PAGE2 : 0);
+			break;
+		case VIEW_PAGE_DISABLED:
+			refreshMode = refreshMode | (g_pVideo->VideoGetSWPAGE2() && !g_pVideo->VideoGetSW80STORE() ? 0 : VF_PAGE2);
+			break;
+		case VIEW_PAGE_2:
+			refreshMode = refreshMode | VF_PAGE2;
+			break;
+		}
+
+		// Refresh VideoStyle in case the user changed it in the config panel
+		debug_pVideo->getNTSC()->NTSC_SetVideoStyle();
+
+		debug_pVideo->VideoRefreshScreen(refreshMode, true);
+	}
 }
 
 // Font: Apple Text
@@ -882,7 +1018,7 @@ int PrintText ( const char * pText, RECT & rRect )
 	int nLen = strlen( pText );
 
 #if !DEBUG_FONT_NO_BACKGROUND_TEXT
-	FillBackground(rRect.left, rRect.top, rRect.right, rRect.bottom);
+	FillBackground(rRect.left, rRect.top, rRect.right, rRect.bottom, g_pDebuggerMemFramebits);
 #endif
 
 	DebuggerPrint( rRect.left, rRect.top, pText );
@@ -893,33 +1029,32 @@ int PrintText ( const char * pText, RECT & rRect )
 void PrintTextColor ( const conchar_t *pText, RECT & rRect )
 {
 #if !DEBUG_FONT_NO_BACKGROUND_TEXT
-	FillBackground(rRect.left, rRect.top, rRect.right, rRect.bottom);
+	FillBackground(rRect.left, rRect.top, rRect.right, rRect.bottom, g_pDebuggerMemFramebits);
 #endif
 
 	DebuggerPrintColor( rRect.left, rRect.top, pText );
 }
 
 //===========================================================================
-void FillBackground(long left, long top, long right, long bottom)
+void FillBackground(long left, long top, long right, long bottom, void *framebuffer)
 {
+	bgra_t* f = (bgra_t*)framebuffer;
 	long index_dst = (384-bottom) * 80 * CONSOLE_FONT_GRID_X;
 
-	for (long x = left; x < right; x++)
-	{
-		g_pDebuggerMemFramebits[index_dst + x].r = g_cConsoleBrushBG_r;
-		g_pDebuggerMemFramebits[index_dst + x].g = g_cConsoleBrushBG_g;
-		g_pDebuggerMemFramebits[index_dst + x].b = g_cConsoleBrushBG_b;
-	}
-
-	if (top != bottom)
-	{
-		bgra_t* src = g_pDebuggerMemFramebits + (index_dst + left);
-		bgra_t* dst = src + (80 * CONSOLE_FONT_GRID_X);
-		size_t size = (right - left) * sizeof(bgra_t);
-		for (int i = 0; i < bottom - top - 1; i++)
+		for (long x = left; x < right; x++)
 		{
+			f[index_dst + x].r = g_cConsoleBrushBG_r;
+			f[index_dst + x].g = g_cConsoleBrushBG_g;
+			f[index_dst + x].b = g_cConsoleBrushBG_b;
+		}
+
+	if (top != bottom) {
+		bgra_t* src = f + (index_dst + left);
+		bgra_t* dst = src + FRAMEBUFFER_W;
+		size_t size = (right - left) * sizeof(bgra_t);
+		for (int i = 0; i < bottom - top - 1; i++) {
 			memcpy((void*)dst, (void*)src, size);
-			dst += 80 * CONSOLE_FONT_GRID_X ;
+			dst += FRAMEBUFFER_W;
 		}
 	}
 }
@@ -3134,25 +3269,25 @@ void DrawSoftSwitches( int iSoftSwitch )
 		bool bSet;
 
 		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
-		bSet = !VideoGetSWTEXT();
+		bSet = !g_pVideo->VideoGetSWTEXT();
 		_DrawSoftSwitch( rect, 0xC050, bSet, NULL, "GR.", "TEXT" );
 
 		// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
 		// FULL/MIXED
 		// MIX OFF/ON
-		bSet = !VideoGetSWMIXED();
+		bSet = !g_pVideo->VideoGetSWMIXED();
 		_DrawSoftSwitch( rect, 0xC052, bSet, NULL, "FULL", "MIX" );
 
 		// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
 		// PAGE 1 / 2
-		bSet = !VideoGetSWPAGE2();
+		bSet = !g_pVideo->VideoGetSWPAGE2();
 		_DrawSoftSwitch( rect, 0xC054, bSet, "PAGE ", "1", "2" );
 		
 		// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
 		// LO / HIRES
 		// LO / -----
 		// -- / HIRES
-		bSet = !VideoGetSWHIRES();
+		bSet = !g_pVideo->VideoGetSWHIRES();
 		_DrawSoftSwitch( rect, 0xC056, bSet, NULL, "LO", "HI", "RES" );
 
 		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
@@ -3160,7 +3295,7 @@ void DrawSoftSwitches( int iSoftSwitch )
 
 		// 280/560 HGR
 		// C05E = ON, C05F = OFF
-		bSet = VideoGetSWDHIRES();
+		bSet = g_pVideo->VideoGetSWDHIRES();
 		_DrawSoftSwitch( rect, 0xC05E, bSet, NULL, "DHGR", "HGR" );
 
 
@@ -3168,18 +3303,18 @@ void DrawSoftSwitches( int iSoftSwitch )
 		int bgMemory = BG_DATA_2;
 
 		// C000 = 80STOREOFF, C001 = 80STOREON
-		bSet = !VideoGetSW80STORE();
+		bSet = !g_pVideo->VideoGetSW80STORE();
 		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1", NULL, bgMemory );
 
 		// C002 .. C005
 		_DrawSoftSwitchMainAuxBanks( rect, bgMemory );
 
 		// C00C = off, C00D = on
-		bSet = !VideoGetSW80COL();
+		bSet = !g_pVideo->VideoGetSW80COL();
 		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80", NULL, bgMemory );
 
 		// C00E = off, C00F = on
-		bSet = !VideoGetSWAltCharSet();
+		bSet = !Video::VideoGetSWAltCharSet();
 		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS", NULL, bgMemory ); // ASCII/MouseText
 
 #if SOFTSWITCH_LANGCARD
@@ -3803,10 +3938,11 @@ void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 
 void DrawVideoScannerInfo (int line)
 {
-	NTSC_VideoGetScannerAddressForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
+	NTSC* n = g_pVideo->getNTSC();
+	n->NTSC_VideoGetScannerAddressForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
 
-	int v = g_nVideoClockVert;
-	int h = g_nVideoClockHorz;
+	int v = n->g_nVideoClockVert;
+	int h = n->g_nVideoClockHorz;
 
 	if (g_videoScannerDisplayInfo.isHorzReal)
 	{
@@ -3814,10 +3950,10 @@ void DrawVideoScannerInfo (int line)
 
 		if (h < 0)
 		{
-			h = h + NTSC_GetCyclesPerLine();
+			h = h + n->NTSC_GetCyclesPerLine();
 			v = v - 1;
 			if (v < 0)
-				v = v + NTSC_GetVideoLines();
+				v = v + n->NTSC_GetVideoLines();
 		}
 	}
 
@@ -3827,7 +3963,7 @@ void DrawVideoScannerInfo (int line)
 		g_videoScannerDisplayInfo.lastCumulativeCycles = g_nCumulativeCycles;
 	}
 
-	DrawVideoScannerValue(line, v, h, NTSC_IsVisible());
+	DrawVideoScannerValue(line, v, h, n->NTSC_IsVisible());
 	line++;
 
 	//
@@ -4133,6 +4269,20 @@ void UpdateDisplay (Update_t bUpdate)
 	}
 	spDrawMutex = true;
 
+	// Change emulator output's size
+	if (g_iDebugSplitView == 1)
+	{
+		g_pVideo->bDisplayBitmap = false;
+	}
+	else if (g_iDebugSplitView > 2)
+	{
+		g_pVideo->bDisplayBitmap = true;
+		g_pVideo->iXposition = 0;
+		g_pVideo->iYposition = 0;
+		g_pVideo->bHalfBitmapSize = true;
+		debug_pVideo->iYposition = (FRAMEBUFFER_H >> 1) * GetViewportScale();
+	}
+
 	// Hack: Full screen console scrolled, "erase" left over console lines
 	if (g_iWindowThis == WINDOW_CONSOLE)
 		bUpdate |= UPDATE_BACKGROUND;
@@ -4210,11 +4360,12 @@ void UpdateDisplay (Update_t bUpdate)
 	if ((bUpdate & UPDATE_CONSOLE_DISPLAY) || (bUpdate & UPDATE_CONSOLE_INPUT))
 		DrawSubWindow_Console( bUpdate );
 
+	DrawMemHeatmap( bUpdate );
+
 	StretchBltMemToFrameDC();
 
 	spDrawMutex = false;
 }
-
 //===========================================================================
 void DrawWindowBottom ( Update_t bUpdate, int iWindow )
 {
@@ -4259,4 +4410,9 @@ void DrawSubWindow_Code ( int iWindow )
 #if !USE_APPLE_FONT
 	SelectObject( GetDebuggerMemDC(), g_aFontConfig[ FONT_INFO ]._hFont );
 #endif
+}
+
+bgra_t* GetpDebuggerExtraFramebits(void)
+{
+	return pDebuggerExtraFramebits;
 }

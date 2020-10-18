@@ -344,7 +344,7 @@ void Disk2InterfaceCard::EjectDisk(const int drive)
 	EjectDiskInternal(drive);
 
 	SaveLastDiskImage(drive);
-	Video_ResetScreenshotCounter("");
+	g_pVideo->Video_ResetScreenshotCounter("");
 }
 
 //===========================================================================
@@ -660,14 +660,14 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	if (Error == eIMAGE_ERROR_NONE)
 	{
 		GetImageTitle(pszImageFilename, pFloppy->m_imagename, pFloppy->m_fullname);
-		Video_ResetScreenshotCounter(pFloppy->m_imagename);
+		g_pVideo->Video_ResetScreenshotCounter(pFloppy->m_imagename);
 
 		if (g_nAppMode == MODE_LOGO)
 			InitFirmware(GetCxRomPeripheral());
 	}
 	else
 	{
-		Video_ResetScreenshotCounter("");
+		g_pVideo->Video_ResetScreenshotCounter("");
 	}
 
 	SaveLastDiskImage(drive);

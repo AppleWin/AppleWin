@@ -185,7 +185,7 @@ SOFT SWITCH STATUS FLAGS
 //			. memshadow[1] = &memaux[0x0100]
 //
 
-static LPBYTE  memshadow[0x100];
+LPBYTE		   memshadow[0x100];
 LPBYTE         memwrite[0x100];
 
 iofunction		IORead[256];
@@ -196,8 +196,8 @@ LPBYTE         mem          = NULL;
 
 //
 
-static LPBYTE  memaux       = NULL;
-static LPBYTE  memmain      = NULL;
+LPBYTE  memaux       = NULL;
+LPBYTE  memmain      = NULL;
 
 LPBYTE         memdirty     = NULL;
 static LPBYTE  memrom       = NULL;
@@ -402,7 +402,7 @@ static BYTE __stdcall IOWrite_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	if ((addr & 0xf) <= 0xB)
 		return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	else
-		return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+		return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
 }
 
 //-------------------------------------
@@ -424,13 +424,13 @@ static BYTE __stdcall IORead_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0x6: res = SW_ALTZP     ? true : false;		break;
 	case 0x7: res = SW_SLOTC3ROM ? true : false;		break;
 	case 0x8: res = SW_80STORE   ? true : false;		break;
-	case 0x9: res = VideoGetVblBar(nExecutedCycles);	break;
-	case 0xA: res = VideoGetSWTEXT();					break;
-	case 0xB: res = VideoGetSWMIXED();					break;
+	case 0x9: res = g_pVideo->VideoGetVblBar(nExecutedCycles);	break;
+	case 0xA: res = g_pVideo->VideoGetSWTEXT();					break;
+	case 0xB: res = g_pVideo->VideoGetSWMIXED();					break;
 	case 0xC: res = SW_PAGE2     ? true : false;		break;
-	case 0xD: res = VideoGetSWHIRES();					break;
-	case 0xE: res = VideoGetSWAltCharSet();				break;
-	case 0xF: res = VideoGetSW80COL();					break;
+	case 0xD: res = g_pVideo->VideoGetSWHIRES();					break;
+	case 0xE: res = Video::VideoGetSWAltCharSet();				break;
+	case 0xF: res = g_pVideo->VideoGetSW80COL();					break;
 	}
 
 	return KeybGetKeycode() | (res ? 0x80 : 0);
@@ -483,10 +483,10 @@ static BYTE __stdcall IORead_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 {
 	switch (addr & 0xf)
 	{
-	case 0x0:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x1:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x2:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x3:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x0:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x1:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x2:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x3:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x4:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x5:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x6:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
@@ -501,7 +501,7 @@ static BYTE __stdcall IORead_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xF:	if (IsApple2PlusOrClone(GetApple2Type()))
 					IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 				else
-					return (!SW_IOUDIS) ? VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
+					return (!SW_IOUDIS) ? g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
 										: IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
@@ -512,10 +512,10 @@ static BYTE __stdcall IOWrite_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 {
 	switch (addr & 0xf)
 	{
-	case 0x0:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x1:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x2:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x3:	return VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x0:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x1:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x2:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	case 0x3:	return g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x4:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x5:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x6:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
@@ -530,7 +530,7 @@ static BYTE __stdcall IOWrite_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	case 0xF:	if (IsApple2PlusOrClone(GetApple2Type()))
 					IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 				else
-					return (!SW_IOUDIS) ? VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
+					return (!SW_IOUDIS) ? g_pVideo->VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
 										: IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
@@ -598,7 +598,7 @@ static BYTE __stdcall IORead_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xD:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xE:	return IsEnhancedIIE()		? MemReadFloatingBus(SW_IOUDIS ? true : false, nExecutedCycles)	// GH#636
 											: IO_Null(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xF:	return IsEnhancedIIEorIIC()	? MemReadFloatingBus(VideoGetSWDHIRES(), nExecutedCycles)		// GH#636
+	case 0xF:	return IsEnhancedIIEorIIC()	? MemReadFloatingBus(g_pVideo->VideoGetSWDHIRES(), nExecutedCycles)		// GH#636
 											: IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
@@ -711,7 +711,7 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 		MemSetPaging(programcounter, address, write, value, nExecutedCycles);
 
 	if (address >= 0xC05C && address <= 0xC05D && IsApple2JPlus(GetApple2Type()))
-		NTSC_VideoInitAppleType();		// AN2 switches between Katakana & ASCII video rom chars (GH#773)
+		g_pVideo->getNTSC()->NTSC_VideoInitAppleType(GetApple2Type());		// AN2 switches between Katakana & ASCII video rom chars (GH#773)
 
 	if (!write)
 		return MemReadFloatingBus(nExecutedCycles);
@@ -1094,6 +1094,8 @@ void MemUpdatePaging(BOOL initialize)
 
 static void UpdatePaging(BOOL initialize)
 {
+	MemSetBankIndexes();
+
 	modechanging = 0;
 
 	// SAVE THE CURRENT PAGING SHADOW TABLE
@@ -1320,7 +1322,7 @@ LPBYTE MemGetAuxPtr(const WORD offset)
 
 #ifdef RAMWORKS
 	// Video scanner (for 14M video modes) always fetches from 1st 64K aux bank (UTAIIe ref?)
-	if (((SW_PAGE2 && SW_80STORE) || VideoGetSW80COL()) &&
+	if (((SW_PAGE2 && SW_80STORE) || g_pVideo->VideoGetSW80COL()) &&
 			(
 				(             ((offset & 0xFF00)>=0x0400) && ((offset & 0xFF00)<=0x0700) ) ||
 				( SW_HIRES && ((offset & 0xFF00)>=0x2000) && ((offset & 0xFF00)<=0x3F00) )
@@ -1407,6 +1409,89 @@ LPBYTE MemGetCxRomPeripheral()
 {
 	return pCxRomPeripheral;
 }
+
+//===========================================================================
+
+// Used for the debugger Heatmap, called from CPU.h
+// Get the active memory bank depending on all soft switches and RW mode
+// 0x00000-0x0FFFF => main
+// 0x10000-0x1FFFF => aux
+// 0x20000-0x2FFFF => IO/ROM
+// based on UpdatePaging()
+
+// Needed because there's no other way to know what are the exact current bank status for any page
+
+int32_t MemGetBank(int32_t addr, bool write)
+{
+	int page = addr >> 8;
+
+	if (page == 0xC0) // IO access
+		return addr + 0x20000;
+
+	if (page == 0x00 || page == 0x01)
+		return SW_ALTZP ? addr + 0x10000 : addr;
+
+	if (SW_80STORE)
+	{
+		if (page >= 0x04 && page < 0x08) {
+			return SW_PAGE2 ? addr + 0x10000 : addr;
+		}
+
+		if (SW_HIRES && page>= 0x20 && page < 0x40) {
+			return SW_PAGE2 ? addr + 0x10000 : addr;
+		}
+	}
+
+	if (page >= 0x02 && page < 0xC0) {
+		if (!write)
+			return SW_AUXREAD ? addr + 0x10000 : addr;
+
+		return SW_AUXWRITE ? addr + 0x10000 : addr;
+	}
+
+	if (page >= 0xD0 && page < 0xE0)
+	{
+		int bankoffset = (SW_BANK2 ? 0 : 0x1000);
+		if (!write) {
+			return SW_HIGHRAM ? SW_ALTZP ? addr + 0x10000 - bankoffset
+				: addr - bankoffset
+				: addr + 0x20000;
+		}
+
+		return SW_WRITERAM ? SW_ALTZP ? addr + 0x10000 - bankoffset
+			: addr - bankoffset
+			: addr + 0x20000; // NULL (ROM)
+	}
+
+	if (page >= 0xE0)
+	{
+		if (!write)
+			return SW_HIGHRAM ?
+				SW_ALTZP ? addr + 0x10000 : addr
+				: addr + 0x20000;
+
+		return SW_WRITERAM ?
+			SW_ALTZP ? addr + 0x10000 : addr
+			: addr + 0x20000;
+	}
+
+	// failover
+	return addr;
+}
+
+// Updates bank indexes
+// This actually checks which banks is active for every 6502's memory page
+// 0x00000-0x0FFFF => main
+// 0x10000-0x1FFFF => aux
+// 0x20000-0x2FFFF => IO/ROM
+void MemSetBankIndexes()
+{
+	for (int bank = 0; bank < 256; bank++) {
+		g_aMemoryHeatmapPtr_R[bank] = MemGetBank(bank << 8, false);
+		g_aMemoryHeatmapPtr_W[bank] = MemGetBank(bank << 8, true);
+	}
+}
+
 
 //===========================================================================
 
@@ -1974,7 +2059,7 @@ void MemReset()
 
 BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 {
-	return mem[ NTSC_VideoGetScannerAddress(uExecutedCycles) ];		// OK: This does the 2-cycle adjust for ANSI STORY (End Credits)
+	return mem[ g_pVideo->getNTSC()->NTSC_VideoGetScannerAddress(uExecutedCycles) ];		// OK: This does the 2-cycle adjust for ANSI STORY (End Credits)
 }
 
 //===========================================================================
@@ -2112,7 +2197,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 
 	// Replicate 80STORE, PAGE2 and HIRES to video sub-system
 	if ((address <= 1) || ((address >= 0x54) && (address <= 0x57)))
-		return VideoSetMode(programcounter,address,write,value,nExecutedCycles);
+		return g_pVideo->VideoSetMode(programcounter,address,write,value,nExecutedCycles);
 
 	return write ? 0 : MemReadFloatingBus(nExecutedCycles);
 }
@@ -2410,7 +2495,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 				MemSaveSnapshotMemory(yamlSaveHelper, false, uBank);
 			}
 
-			RGB_SaveSnapshot(yamlSaveHelper);
+			g_pVideo->RGB_SaveSnapshot(yamlSaveHelper);
 		}
 	}
 }
@@ -2498,7 +2583,7 @@ static void MemLoadSnapshotAuxVer2(YamlLoadHelper& yamlLoadHelper)
 
 	MemLoadSnapshotAuxCommon(yamlLoadHelper, card);
 
-	RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
+	g_pVideo->RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
 }
 
 bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)

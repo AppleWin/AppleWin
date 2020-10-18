@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+	<head>
+		<title>AppleWin Debugger Tutorial</title>
+		<meta http-equiv="CONTENT-TYPE" content="text/html; charset=windows-1252">
+	</head>
+	<body style="DIRECTION: ltr" lang="en-US">
+		<h2></a><a name="French Touch extended features"></a>French Touch extended features</h2>
+
+		<h2><a name="realtime-stepping"></a>Realtime stepping</h2>
+
+		<p>The commands G, GC and GG will run the stepping mode inside the debugger instead of exiting to the emulator.<br>
+		Press F7 to stop stepping mode.</p>
+
+		<h2><a name="debugger-split-view"></a>Debugger Split View</h2>
+
+		<p>French Touch's extended debugger allows you to see more than the debugger output by using a 3-panes or 4-panes split view.</p>
+
+		<img src="img/debugger-extended.png" hspace="5" vspace="5">
+
+		<table bgcolor="#e6e6e6" border="0" cellpadding="2" cellspacing="0" width="75%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#ffffff"><b>Command</b></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p style="FONT-STYLE: normal"><font color="#ffffff"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SHOW1</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Shows the debugger output only (default).</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SHOW3</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Shows the following outputs: Emulator, Debugger and an extra monitoring pane that displays any text/graphic page you want.</span></i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">SHOW4</span></b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i><span style="BACKGROUND: 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">Shows the following outputs: Emulator, Debugger, extra monitoring, and Memory heatmap.</span></i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+
+		<h2><a name="debugger-extra-monitoring"></a>Extra Monitoring</h2>
+
+		<p>In SPLIT2 or SLIT4 mode, you can monitor any additional video page.</p>
+		<p>Chose this page by typing one of the following command:</p>
+
+		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="90%">
+			<COLGROUP>
+				<col width="90">
+					<col width="166">
+						<tbody>
+							<tr bgcolor="#000000">
+								<td width="35%">
+									<p><font color="#ffffff"><b>Command</b></font></p>
+								</td>
+								<td width="65%">
+									<p style="FONT-STYLE: normal"><font color="#ffffff"><b>Description</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="35%">
+									<p>TEXT<br>TEXT80<br>GR<br>DGR<br>HGR<br>DHGR</p>
+								</td>
+								<td width="65%">
+									<p><i>Resume execution until PC = StopAddress.</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="35%">
+									<p>TEXT1<br>TEXT81<br>GR1<br>DGR1<br>HGR1<br>DHGR1</p>
+								</td>
+								<td width="65%">
+									<p><i>Shows the matching video page (PAGE1).</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="35%">
+									<p>TEXT2<br>TEXT82<br>GR2<br>DGR2<br>HGR2<br>DHGR2</p>
+								</td>
+								<td width="65%">
+									<p><i>Shows the matching video page (PAGE2).</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="35%">
+									<p>TEXTX<br>TEXT80X<br>GRX<br>DGRX<br>HGRX<br>DHGRX</p>
+								</td>
+								<td width="65%">
+									<p><i>Shows the matching video mode. PAGE1 or PAGE2 is auto-selected based on the current NON-SELECTED page.</i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+
+		<h2><a name="debugger-heatmap"></a>Memory Heatmap</h2>
+
+		<img src="img/debugger-extended-heatmap.png" hspace="5" vspace="5">
+
+		<p>In SPLIT4 mode, a memory heatmap is shown on the lower-bottom pane.</p>
+		<p>This allows to monitor all CPU access to the RAM. When 128k are emulated, both MAIN and AUX banks are displayed.<br>
+		Writes are in red, reads in blue, and executions in green.<br>
+		The current selected video page is shown with a white vertical bar.<br>
+		The current banks access setup (read/write) is shown with red and blue vertical bars.</p>
+
+		<p style="MARGIN-BOTTOM: 0in"><br>
+		</p>
+	</body>
+</html>

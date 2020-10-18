@@ -202,6 +202,9 @@
     <ClCompile Include="source\SynchronousEventManager.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\Debugger\Debugger_Heatmap.cpp">
+      <Filter>Source Files\Debugger</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -488,6 +491,12 @@
     </ClInclude>
     <ClInclude Include="source\SynchronousEventManager.h">
       <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Debugger\Debugger_Heatmap.h">
+      <Filter>Source Files\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="source\VideoTypes.h">
+      <Filter>Source Files\Video</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

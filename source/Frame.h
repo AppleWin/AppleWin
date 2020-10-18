@@ -3,6 +3,9 @@
 // 1.19.0.0 Hard Disk Status/Indicator Light
 #define HD_LED 1
 
+#define FRAMEBUFFER_W 560
+#define FRAMEBUFFER_H 384
+
 // Win32
 	extern HWND       g_hFrameWindow;
 	extern int        g_nViewportCX;
@@ -10,13 +13,11 @@
 	extern BOOL       g_bConfirmReboot; // saved PageConfig REGSAVE
 	extern BOOL       g_bMultiMon;
 
-
 // Emulator
 	extern bool   g_bFreshReset;
 	extern std::string PathFilename[2];
 	extern bool   g_bScrollLock_FullSpeed;
 	extern int    g_nCharsetType;
-
 
 // Prototypes
 	void CtrlReset();
@@ -27,6 +28,8 @@
 	void    FrameRefreshStatus (int, bool bUpdateDiskStatus = true );
 	void    FrameRegisterClass ();
 	void	FrameSetCursorPosByMousePos();
+	bool    GetDebugMode(void);
+	void	SetDebugMode(bool newDebugMode);
 	int		GetViewportScale(void);
 	int     SetViewportScale(int nNewScale, bool bForce = false);
 	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);

@@ -667,7 +667,7 @@ Update_t CmdHelpSpecific (int nArgs)
 					break;
 				case PARAM_CAT_VIEW       :
 					{
-						iCmdBegin = CMD_VIEW_TEXT4X                         ; iCmdEnd = CMD_VIEW_DHGR2          ;
+						iCmdBegin = CMD_VIEW_TEXT40                         ; iCmdEnd = CMD_VIEW_DHGR2          ;
 					}
 					break;
 				case PARAM_CAT_WATCHES    :
@@ -1432,21 +1432,27 @@ Update_t CmdHelpSpecific (int nArgs)
 			}
 			break;
 // View
-		case CMD_VIEW_TEXT4X:
+		case CMD_VIEW_TEXT40:
+		case CMD_VIEW_TEXT40X:
 		case CMD_VIEW_TEXT41:
 		case CMD_VIEW_TEXT42:
-		case CMD_VIEW_TEXT8X:
+		case CMD_VIEW_TEXT80:
+		case CMD_VIEW_TEXT80X:
 		case CMD_VIEW_TEXT81:
 		case CMD_VIEW_TEXT82:
+		case CMD_VIEW_GR    :
 		case CMD_VIEW_GRX   :
 		case CMD_VIEW_GR1   :
 		case CMD_VIEW_GR2   :
+		case CMD_VIEW_DGR   :
 		case CMD_VIEW_DGRX  :
 		case CMD_VIEW_DGR1  :
 		case CMD_VIEW_DGR2  :
+		case CMD_VIEW_HGR   :
 		case CMD_VIEW_HGRX  :
 		case CMD_VIEW_HGR1  :
 		case CMD_VIEW_HGR2  :
+		case CMD_VIEW_DHGR  :
 		case CMD_VIEW_DHGRX :
 		case CMD_VIEW_DHGR1 :
 		case CMD_VIEW_DHGR2 :

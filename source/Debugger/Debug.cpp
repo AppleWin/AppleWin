@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,0);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,3);
 
 
 // Public _________________________________________________________________________________________
@@ -202,9 +202,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	MemoryTextFile_t g_ConfigState;
 
-	static bool g_bDebugFullSpeed      = false;
-	static bool g_bLastGoCmdWasFullSpeed = false;
-	static bool g_bGoCmd_ReinitFlag = false;
+	static Speed_e g_nDebugSpeed      = RUN_NORMAL;
+	static Speed_e g_nLastGoCmdSpeed  = RUN_NORMAL;
+	static bool g_bGoCmd_ReinitFlag   = false;
 
 // Display ____________________________________________________________________
 
@@ -783,7 +783,7 @@ Update_t CmdBenchmarkStop (int nArgs)
 	DebugEnd();
 	
 	FrameRefreshStatus(DRAW_TITLE);
-	VideoRedrawScreen();
+	g_pVideo->VideoRedrawScreen();
 	DWORD currtime = GetTickCount();
 	while ((extbench = GetTickCount()) != currtime)
 		; // intentional busy-waiting
@@ -1901,7 +1901,7 @@ Update_t CmdAssemble (int nArgs)
 // CPU Step, Trace ________________________________________________________________________________
 
 //===========================================================================
-static Update_t CmdGo (int nArgs, const bool bFullSpeed)
+static Update_t CmdGo (int nArgs, const Speed_e nSpeed)
 {
 	// G StopAddress [SkipAddress,Length]
 	// Example:
@@ -1909,7 +1909,9 @@ static Update_t CmdGo (int nArgs, const bool bFullSpeed)
 	// TODO: G addr1,len   addr3,len
 	// TODO: G addr1:addr2 addr3:addr4
 
-	const int kCmdGo = !bFullSpeed ? CMD_GO_NORMAL_SPEED : CMD_GO_FULL_SPEED;
+	int kCmdGo = CMD_GO_NORMAL_SPEED;
+	if (nSpeed == RUN_CYCLESLOW) kCmdGo = CMD_GO_CYCLE_SPEED;
+	else if (nSpeed == RUN_FAST) kCmdGo = CMD_GO_FULL_SPEED;
 
 	g_nDebugSteps = -1;
 	g_nDebugStepCycles  = 0;
@@ -1987,8 +1989,8 @@ static Update_t CmdGo (int nArgs, const bool bFullSpeed)
 
 	g_bDebuggerEatKey = true;
 
-	g_bDebugFullSpeed = bFullSpeed;
-	g_bLastGoCmdWasFullSpeed = bFullSpeed;
+	g_nDebugSpeed = nSpeed;
+	g_nLastGoCmdSpeed = nSpeed;
 	g_bGoCmd_ReinitFlag = true;
 
 	g_nAppMode = MODE_STEPPING;
@@ -1999,14 +2001,24 @@ static Update_t CmdGo (int nArgs, const bool bFullSpeed)
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
+Update_t CmdGoCycleSpeed(int nArgs)
+{
+	return CmdGo(nArgs, RUN_CYCLESLOW);
+}
+
 Update_t CmdGoNormalSpeed (int nArgs)
 {
-	return CmdGo(nArgs, false);
+	return CmdGo(nArgs, RUN_NORMAL);
 }
 
 Update_t CmdGoFullSpeed (int nArgs)
 {
-	return CmdGo(nArgs, true);
+	return CmdGo(nArgs, RUN_FAST);
+}
+
+Update_t CmdGoDebugSpeed(int nArgs)
+{
+	return CmdGo(nArgs, RUN_DEBUG);
 }
 
 //===========================================================================
@@ -2047,7 +2059,7 @@ Update_t CmdStepOut (int nArgs)
 	{
 		nArgs = _Arg_1( nAddress );
 		g_aArgs[1].sArg[0] = 0;
-		CmdGo( 1, true );
+		CmdGo( 1, RUN_CYCLESLOW );
 	}
 
 	return UPDATE_ALL;
@@ -2061,6 +2073,7 @@ Update_t CmdTrace (int nArgs)
 	g_nDebugStepStart = regs.pc;
 	g_nDebugStepUntil = -1;
 	g_nAppMode = MODE_STEPPING;
+	g_nDebugSpeed = RUN_CYCLESLOW;
 	FrameRefreshStatus(DRAW_TITLE);
 	DebugContinueStepping(true);
 
@@ -3499,7 +3512,7 @@ Update_t CmdCursorJumpRetAddr (int nArgs)
 Update_t CmdCursorRunUntil (int nArgs)
 {
 	nArgs = _Arg_1( g_nDisasmCurAddress );
-	return CmdGo( nArgs, true );
+	return CmdGo( nArgs, RUN_FAST );
 }
 
 
@@ -4989,7 +5002,7 @@ size_t Util_GetTextScreen ( char* &pText_ )
 	g_nTextScreen = 0;
 	memset( pBeg, 0, sizeof( g_aTextScreen ) );
 
-	unsigned int uBank2 = VideoGetSWPAGE2() ? 1 : 0;
+	unsigned int uBank2 = g_pVideo->VideoGetSWPAGE2() ? 1 : 0;
 	LPBYTE g_pTextBank1  = MemGetAuxPtr (0x400 << uBank2);
 	LPBYTE g_pTextBank0  = MemGetMainPtr(0x400 << uBank2);
 
@@ -5002,7 +5015,7 @@ size_t Util_GetTextScreen ( char* &pText_ )
 		{
 			char c; // TODO: FormatCharTxtCtrl() ?
 
-			if ( VideoGetSW80COL() )
+			if (g_pVideo->VideoGetSW80COL() )
 			{ // AUX
 				c = g_pTextBank1[ nAddressStart ] & 0x7F;
 				c = RemapChar(c);
@@ -5044,621 +5057,6 @@ void Util_CopyTextToClipboard ( const size_t nSize, const char *pText )
 	// GlobalFree() ??
 }
 
-//===========================================================================
-Update_t CmdNTSC (int nArgs)
-{
-	int iParam;
-	int nFound = FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_GENERAL_BEGIN, _PARAM_GENERAL_END );
-
-	struct KnownFileType_t
-	{
-		char *pExtension;
-	};
-
-	enum KnownFileType_e
-	{
-		 TYPE_UNKNOWN
-		,TYPE_BMP
-		,TYPE_RAW
-		,NUM_FILE_TYPES
-	};
-
-	const KnownFileType_t aFileTypes[ NUM_FILE_TYPES ] = 
-	{
-		 { ""      } // n/a
-		,{ ".bmp"  }
-		,{ ".data" }
-//		,{ ".raw"  }
-//		,{ ".ntsc" }
-	};
-	const int              nFileType = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
-	const KnownFileType_t *pFileType = NULL;
-	/* */ KnownFileType_e  iFileType = TYPE_UNKNOWN;
-
-#if _DEBUG
-	assert( (nFileType == NUM_FILE_TYPES) );
-#endif
-
-	char *pFileName = (nArgs > 1) ? g_aArgs[ 2 ].sArg : "";
-	int   nLen = strlen( pFileName );
-	char *pEnd = pFileName + nLen - 1;
-	while( pEnd > pFileName )
-	{
-		if( *pEnd == '.' )
-		{
-			for( int i = TYPE_BMP; i < NUM_FILE_TYPES; i++ )
-			{
-				if( strcmp( pEnd, aFileTypes[i].pExtension ) == 0 )
-				{
-					pFileType = &aFileTypes[i];
-					iFileType = (KnownFileType_e) i;
-					break;
-				}
-			}
-		}
-
-		if( pFileType )
-			break;
-
-		pEnd--;
-	}
-
-	if( nLen == 0 )
-		pFileName = "AppleWinNTSC4096x4@32.data";
-
-	static std::string sPaletteFilePath;
-	sPaletteFilePath = g_sCurrentDir + pFileName;
-
-	class ConsoleFilename
-	{
-		public:
-			static void update( const char *pPrefixText )
-			{
-					TCHAR text[ CONSOLE_WIDTH*2 ] = TEXT("");
-
-					size_t len1 = strlen( pPrefixText      );
-					size_t len2 = sPaletteFilePath.size();
-					size_t len  = len1 + len2;
-
-					if (len >= CONSOLE_WIDTH)
-					{
-						ConsoleBufferPush( pPrefixText );	// TODO: Add a ": " separator
-
-#if _DEBUG
-						sprintf( text, "Filename.length.1: %d\n", len1 );
-						OutputDebugString( text );
-						sprintf( text, "Filename.length.2: %d\n", len2 );
-						OutputDebugString( text );
-						OutputDebugString( sPaletteFilePath.c_str() );
-#endif
-						// File path is too long
-						// TODO: Need to split very long path names
-						strncpy( text, sPaletteFilePath.c_str(), CONSOLE_WIDTH );
-						ConsoleBufferPush( text );	// TODO: Switch ConsoleBufferPush() to ConsoleBufferPushFormat()
-					}
-					else
-					{
-						ConsoleBufferPushFormat( text, "%s: %s", pPrefixText, sPaletteFilePath.c_str() );
-					}
-			}
-	};
-
-	class Swizzle32
-	{
-		public:
-			static void RGBAswapBGRA( size_t nSize, const uint8_t *pSrc, uint8_t *pDst ) // Note: pSrc and pDst _may_ alias; code handles this properly
-			{
-				const uint8_t* pEnd = pSrc + nSize;
-				while ( pSrc < pEnd )
-				{
-					const uint8_t r = pSrc[2];
-					const uint8_t g = pSrc[1];
-					const uint8_t b = pSrc[0];
-					const uint8_t a = 255; // Force A=1, 100% opacity; as pSrc[3] might not be 255
-
-					*pDst++ = r;
-					*pDst++ = g;
-					*pDst++ = b;
-					*pDst++ = a;
-					 pSrc  += 4;
-				}
-			}
-
-			static void ABGRswizzleBGRA( size_t nSize, const uint8_t *pSrc, uint8_t *pDst ) // Note: pSrc and pDst _may_ alias; code handles this properly
-			{
-				const uint8_t* pEnd = pSrc + nSize;
-				while ( pSrc < pEnd )
-				{
-					const uint8_t r = pSrc[3];
-					const uint8_t g = pSrc[2];
-					const uint8_t b = pSrc[1];
-					const uint8_t a = 255; // Force A=1, 100% opacity; as pSrc[3] might not be 255
-
-					*pDst++ = b;
-					*pDst++ = g;
-					*pDst++ = r;
-					*pDst++ = a;
-					 pSrc  += 4;
-				}
-			}
-#if 0
-			static void ABGRswizzleRGBA( size_t nSize, const uint8_t *pSrc, uint8_t *pDst ) // Note: pSrc and pDst _may_ alias; code handles this properly
-			{
-				const uint8_t* pEnd = pSrc + nSize;
-				while ( pSrc < pEnd )
-				{
-					const uint8_t r = pSrc[3];
-					const uint8_t g = pSrc[2];
-					const uint8_t b = pSrc[1];
-					const uint8_t a = 255; // Force A=1, 100% opacity; as pSrc[3] might not be 255
-
-					*pDst++ = r;
-					*pDst++ = g;
-					*pDst++ = b;
-					*pDst++ = a;
-					 pSrc  += 4;
-				}
-			}
-#endif
-	};
-
-	class Transpose64x1
-	{
-		public:
-			static void transposeTo64x256( const uint8_t *pSrc, uint8_t *pDst )
-			{
-				const uint32_t nBPP = 4; // bytes per pixel
-
-				// Expand y from 1 to 256 rows
-				const size_t nBytesPerScanLine = 16 * 4 * nBPP; // 16 colors * 4 phases
-				for( int y = 0; y < 256; y++ )
-					memcpy( pDst + y*nBytesPerScanLine, pSrc, nBytesPerScanLine );
-			}
-	};
-
-	// Transpose from 16x1 to 4096x16
-	class Transpose16x1
-	{
-		public:
-
-/*
-		.Column
-		.   Phases 0..3
-		. X P0 P1 P2 P3
-		. 0  0  0  0  0
-		. 1  1  8  4  2
-		. 2  2  1  8  4
-		. 3  3  9  C  6
-		. 4  4  2  1  8
-		. 5  5  A  5  A
-		. 6  6  3  9  C
-		. 7  7  B  D  E
-		. 8  8  4  2  1
-		. 9  9  C  6  3
-		. A  A  5  A  5
-		. B  B  D  E  7
-		. C  C  6  3  9
-		. D  D  E  7  B
-		. E  E  7  B  D
-		. F  F  F  F  F
-		.
-		.    1  2  4  8  Delta
-*/
-			static void transposeTo64x1( const uint8_t *pSrc, uint8_t *pDst )
-			{
-				const uint32_t *pPhase0 = (uint32_t*) pSrc;
-				/* */ uint32_t *pTmp    = (uint32_t*) pDst;
-
-#if 1 // Loop
-				// Expand x from 16 colors (single phase) to 64 colors (16 * 4 phases)
-				for( int iPhase = 0; iPhase < 4; iPhase++ )
-				{
-					int phase = iPhase;
-					if (iPhase == 1) phase = 3;
-					if (iPhase == 3) phase = 1;
-					int mul = (1 << phase); // Mul: *1 *8 *4 *2
-
-					for( int iDstX = 0; iDstX < 16; iDstX++ )
-					{
-						int iSrcX = (iDstX * mul) % 15; // Delta: +1 +2 +4 +8
-
-						if (iDstX == 15)
-							iSrcX = 15;
-#if 0 // _DEBUG
-	char text[ 128 ];
-	sprintf( text, "[ %X ] = [ %X ]\n", iDstX, iSrcX );
-	OutputDebugStringA( text );
-#endif
-						pTmp[ iDstX + 16*iPhase ] = pPhase0[ iSrcX ];
-					}
-				}
-#else // Manual Loop unrolled
-				const uint32_t nBPP = 4; // bytes per pixel
-
-				const size_t nBytesPerScanLine = 16 * 4 * nBPP; // 16 colors * 4 phases
-				memcpy( pDst, pSrc, nBytesPerScanLine );
-
-				int iPhase = 1;
-				int iDstX  = iPhase * 16;
-				pTmp[ iDstX + 0x0 ] = pPhase0[ 0x0 ];
-				pTmp[ iDstX + 0x1 ] = pPhase0[ 0x8 ];
-				pTmp[ iDstX + 0x2 ] = pPhase0[ 0x1 ];
-				pTmp[ iDstX + 0x3 ] = pPhase0[ 0x9 ];
-				pTmp[ iDstX + 0x4 ] = pPhase0[ 0x2 ];
-				pTmp[ iDstX + 0x5 ] = pPhase0[ 0xA ];
-				pTmp[ iDstX + 0x6 ] = pPhase0[ 0x3 ];
-				pTmp[ iDstX + 0x7 ] = pPhase0[ 0xB ];
-				pTmp[ iDstX + 0x8 ] = pPhase0[ 0x4 ];
-				pTmp[ iDstX + 0x9 ] = pPhase0[ 0xC ];
-				pTmp[ iDstX + 0xA ] = pPhase0[ 0x5 ];
-				pTmp[ iDstX + 0xB ] = pPhase0[ 0xD ];
-				pTmp[ iDstX + 0xC ] = pPhase0[ 0x6 ];
-				pTmp[ iDstX + 0xD ] = pPhase0[ 0xE ];
-				pTmp[ iDstX + 0xE ] = pPhase0[ 0x7 ];
-				pTmp[ iDstX + 0xF ] = pPhase0[ 0xF ];
-
-				iPhase = 2;
-				iDstX  = iPhase * 16;
-				pTmp[ iDstX + 0x0 ] = pPhase0[ 0x0 ];
-				pTmp[ iDstX + 0x1 ] = pPhase0[ 0x4 ];
-				pTmp[ iDstX + 0x2 ] = pPhase0[ 0x8 ];
-				pTmp[ iDstX + 0x3 ] = pPhase0[ 0xC ];
-				pTmp[ iDstX + 0x4 ] = pPhase0[ 0x1 ];
-				pTmp[ iDstX + 0x5 ] = pPhase0[ 0x5 ];
-				pTmp[ iDstX + 0x6 ] = pPhase0[ 0x9 ];
-				pTmp[ iDstX + 0x7 ] = pPhase0[ 0xD ];
-				pTmp[ iDstX + 0x8 ] = pPhase0[ 0x2 ];
-				pTmp[ iDstX + 0x9 ] = pPhase0[ 0x6 ];
-				pTmp[ iDstX + 0xA ] = pPhase0[ 0xA ];
-				pTmp[ iDstX + 0xB ] = pPhase0[ 0xE ];
-				pTmp[ iDstX + 0xC ] = pPhase0[ 0x3 ];
-				pTmp[ iDstX + 0xD ] = pPhase0[ 0x7 ];
-				pTmp[ iDstX + 0xE ] = pPhase0[ 0xB ];
-				pTmp[ iDstX + 0xF ] = pPhase0[ 0xF ];
-
-				iPhase = 3;
-				iDstX  = iPhase * 16;
-				pTmp[ iDstX + 0x0 ] = pPhase0[ 0x0 ];
-				pTmp[ iDstX + 0x1 ] = pPhase0[ 0x2 ];
-				pTmp[ iDstX + 0x2 ] = pPhase0[ 0x4 ];
-				pTmp[ iDstX + 0x3 ] = pPhase0[ 0x6 ];
-				pTmp[ iDstX + 0x4 ] = pPhase0[ 0x8 ];
-				pTmp[ iDstX + 0x5 ] = pPhase0[ 0xA ];
-				pTmp[ iDstX + 0x6 ] = pPhase0[ 0xC ];
-				pTmp[ iDstX + 0x7 ] = pPhase0[ 0xE ];
-				pTmp[ iDstX + 0x8 ] = pPhase0[ 0x1 ];
-				pTmp[ iDstX + 0x9 ] = pPhase0[ 0x3 ];
-				pTmp[ iDstX + 0xA ] = pPhase0[ 0x5 ];
-				pTmp[ iDstX + 0xB ] = pPhase0[ 0x7 ];
-				pTmp[ iDstX + 0xC ] = pPhase0[ 0x9 ];
-				pTmp[ iDstX + 0xD ] = pPhase0[ 0xB ];
-				pTmp[ iDstX + 0xE ] = pPhase0[ 0xD ];
-				pTmp[ iDstX + 0xF ] = pPhase0[ 0xF ];
-#endif
-			}
-
-		/*
-		.   Source layout = 16x1 @ 32-bit
-		.   |                                    phase 0                                    |
-		.   +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-		.   |BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 0
-		.   +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-		.    \ 0/ \ 1/ \ 2/ \ 3/ \ 4/ \ 5/ \ 6/ \ 7/ \ 8/ \ 9/ \ A/ \ B/ \ C/ \ D/ \ E/ \ F/
-		.
-		.   |<----------------------------------- 16 px ----------------------------------->|
-		.     64 byte
-		.
-		.   Destination layout = 4096x4 @ 32-bit
-		.   +----+----+----+----+----+
-		.   |BGRA|BGRA|BGRA|... |BGRA| phase 0
-		.   +----+----+----+----+----+
-		.   |BGRA|BGRA|BGRA|... |BGRA| phase 1
-		.   +----+----+----+----+----|
-		.   |BGRA|BGRA|BGRA|... |BGRA| phase 2
-		.   +----+----+----+----+----+
-		.   |BGRA|BGRA|BGRA|... |BGRA| phase 3
-		.   +----+----+----+----+----+
-		.    0    1    2         4095  column
-		*/
-/*
-			static void transposeFrom16x1( const uint8_t *pSrc, uint8_t *pDst )
-			{
-				const uint8_t *pTmp = pSrc;
-				const uint32_t nBPP = 4; // bytes per pixel
-
-				for( int x = 0; x < 16; x++ )
-				{
-					pTmp = pSrc + (x * nBPP); // dst is 16-px column
-					for( int y = 0; y < 256; y++ )
-					{
-							*pDst++ = pTmp[0];
-							*pDst++ = pTmp[1];
-							*pDst++ = pTmp[2];
-							*pDst++ = pTmp[3];
-					}
-				}
-
-				// we duplicate phase 0 a total of 4 times
-				const size_t nBytesPerScanLine = 4096 * nBPP;
-				for( int iPhase = 1; iPhase < 4; iPhase++ )
-					memcpy( pDst + iPhase*nBytesPerScanLine, pDst, nBytesPerScanLine );
-			}
-*/
-	};
-
-	class Transpose4096x4
-	{
-		/*
-		.   Source layout = 4096x4 @ 32-bit
-		.   +----+----+----+----+----+
-		.   |BGRA|BGRA|BGRA|... |BGRA| phase 0
-		.   +----+----+----+----+----+
-		.   |BGRA|BGRA|BGRA|... |BGRA| phase 1
-		.   +----+----+----+----+----|
-		.   |BGRA|BGRA|BGRA|... |BGRA| phase 2
-		.   +----+----+----+----+----+
-		.   |BGRA|BGRA|BGRA|... |BGRA| phase 3
-		.   +----+----+----+----+----+
-		.    0    1    2         4095  column
-		.
-		.   Destination layout = 64x256 @ 32-bit
-		.   | phase 0 | phase 1 | phase 2 | phase 3 |
-		.   +----+----+----+----+----+----+----+----+
-		.   |BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 0
-		.   +----+----+----+----+----+----+----+----+
-		.   |BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 1
-		.   +----+----+----+----+----+----+----+----+
-		.   |... |... |... |... |... |... |... |... |
-		.   +----+----+----+----+----+----+----+----+
-		.   |BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA|BGRA| row 255
-		.   +----+----+----+----+----+----+----+----+
-		.    \ 16 px / \ 16 px / \ 16 px / \ 16 px  / = 64 pixels
-		.     64 byte   64 byte   64 byte   64 byte
-		.
-		.Column
-		.   Phases 0..3
-		. X P0 P1 P2 P3
-		. 0  0  0  0  0
-		. 1  1  8  4  2
-		. 2  2  1  8  4
-		. 3  3  9  C  6
-		. 4  4  2  1  8
-		. 5  5  A  5  A
-		. 6  6  3  9  C
-		. 7  7  B  D  E
-		. 8  8  4  2  1
-		. 9  9  C  6  3
-		. A  A  5  A  5
-		. B  B  D  E  7
-		. C  C  6  3  9
-		. D  D  E  7  B
-		. E  E  7  B  D
-		. F  F  F  F  F
-		.
-		.    1  2  4  8  Delta
-		*/
-
-		public:
-			static void transposeTo64x256( const uint8_t *pSrc, uint8_t *pDst )
-			{
-				/* */ uint8_t *pTmp = pDst;
-				const uint32_t nBPP = 4; // bytes per pixel
-
-				for( int iPhase = 0; iPhase < 4; iPhase++ )
-				{
-					pDst = pTmp + (iPhase * 16 * nBPP); // dst is 16-px column
-
-					for( int x = 0; x < 4096/16; x++ ) // 4096px/16 px = 256 columns
-					{
-						for( int i = 0; i < 16*nBPP; i++ ) // 16 px, 32-bit
-							*pDst++ = *pSrc++;
-
-						pDst -= (16*nBPP);
-						pDst += (64*nBPP); // move to next scan line
-					}
-				}
-			}
-
-			static void transposeFrom64x256( const uint8_t *pSrc, uint8_t *pDst )
-			{
-				const uint8_t *pTmp = pSrc;
-				const uint32_t nBPP = 4; // bytes per pixel
-
-				for( int iPhase = 0; iPhase < 4; iPhase++ )
-				{
-					pSrc = pTmp + (iPhase * 16 * nBPP); // src is 16-px column
-					for( int y = 0; y < 256; y++ )
-					{
-						for( int i = 0; i < 16*nBPP; i++ ) // 16 px, 32-bit
-							*pDst++ = *pSrc++;
-
-						pSrc -= (16*nBPP);
-						pSrc += (64*nBPP); // move to next scan line
-					}
-				}
-			}
-	};
-
-	bool bColorTV = (g_eVideoType == VT_COLOR_TV);
-
-	uint32_t* pChromaTable = NTSC_VideoGetChromaTable( false, bColorTV );
-	char aStatusText[ CONSOLE_WIDTH*2 ] = "Loaded";
-
-//uint8_t* pTmp = (uint8_t*) pChromaTable; 
-//*pTmp++  = 0xFF; // b
-//*pTmp++ = 0x00; // g
-//*pTmp++ = 0x00; // r
-//*pTmp++ = 0xFF; // a
-
-	if (nFound)
-	{
-		if (iParam == PARAM_RESET)
-		{
-			NTSC_VideoInitChroma();
-			ConsoleBufferPush( TEXT(" Resetting NTSC palette." ) );
-		}
-		else
-		if (iParam == PARAM_SAVE)
-		{
-			FILE *pFile = fopen( sPaletteFilePath.c_str(), "w+b" );
-			if( pFile )
-			{
-				size_t nWrote = 0;
-				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
-
-				if( iFileType == TYPE_BMP )
-				{
-					// need to save 32-bit bpp as 24-bit bpp
-					// VideoSaveScreenShot()
-					Transpose4096x4::transposeTo64x256( (uint8_t*) pChromaTable, pSwizzled );
-
-					// Write BMP header
-					WinBmpHeader_t bmp, *pBmp = &bmp;
-					Video_SetBitmapHeader( pBmp, 64, 256, 32 );
-					fwrite( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
-				}
-				else
-				{
-					// RAW has no header
-					Swizzle32::RGBAswapBGRA( g_nChromaSize, (uint8_t*) pChromaTable, pSwizzled );
-				}
-
-				nWrote = fwrite( pSwizzled, g_nChromaSize, 1, pFile );
-				fclose( pFile );
-				delete [] pSwizzled;
-
-				if (nWrote == 1)
-				{
-					ConsoleFilename::update( "Saved" );
-				}
-				else
-					ConsoleBufferPush( TEXT( "Error saving." ) );
-			}
-			else
-			{
-					ConsoleFilename::update( "File" );
-					ConsoleBufferPush( TEXT( "Error couldn't open file for writing." ) );
-			}
-		}
-		else
-		if (iParam == PARAM_LOAD)
-		{
-			FILE *pFile = fopen( sPaletteFilePath.c_str(), "rb" );
-			if( pFile )
-			{
-				strcpy( aStatusText, "Loaded" );
-
-				// Get File Size
-				size_t  nFileSize  = _GetFileSize( pFile );
-				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
-				bool     bSwizzle  = true;
-
-				WinBmpHeader4_t bmp, *pBmp = &bmp;
-				if( iFileType == TYPE_BMP )
-				{
-					fread( pBmp, sizeof( WinBmpHeader4_t ), 1, pFile );
-					fseek( pFile, pBmp->nOffsetData, SEEK_SET );
-
-					if (pBmp->nBitsPerPixel != 32)
-					{
-						strcpy( aStatusText, "Bitmap not 32-bit RGBA" );
-						goto _error;
-					}
-
-					if (pBmp->nOffsetData > nFileSize)
-					{
-						strcpy( aStatusText, "Bad BITMAP: Data > file size !?" );
-						goto _error;
-					}
-
-					if( !
-					(  ((pBmp->nWidthPixels  == 64 ) && (pBmp->nHeightPixels == 256))
-					|| ((pBmp->nWidthPixels  == 64 ) && (pBmp->nHeightPixels == 1))
-					|| ((pBmp->nWidthPixels  == 16 ) && (pBmp->nHeightPixels == 1))
-					))
-					{
-						strcpy( aStatusText, "Bitmap not 64x256, 64x1, or 16x1" );
-						goto _error;
-					}
-
-					if(pBmp->nStructSize == 0x28)
-					{
-						if( pBmp->nCompression == 0) // BI_RGB mode
-							bSwizzle = false;
-					}
-					else // 0x7C version4 bitmap
-					{
-						if( pBmp->nCompression == 3 ) // BI_BITFIELDS
-						{
-							if((pBmp->nRedMask   == 0xFF000000 ) // Gimp writes in ABGR order
-							&& (pBmp->nGreenMask == 0x00FF0000 )
-							&& (pBmp->nBlueMask  == 0x0000FF00 ))
-								bSwizzle = true;
-						}
-					}
-				}
-				else
-					if( nFileSize != g_nChromaSize )
-					{
-						sprintf( aStatusText, "Raw size != %d", 64*256*4 );
-						goto _error;
-					}
-
-
-				size_t nRead = fread( pSwizzled, g_nChromaSize, 1, pFile );
-
-				if( iFileType == TYPE_BMP )
-				{
-
-					if (pBmp->nHeightPixels == 1)
-					{
-						uint8_t *pTemp64x256 = new uint8_t[ 64 * 256 * 4 ];
-						memset( pTemp64x256, 0, g_nChromaSize );
-
-//Transpose16x1::transposeFrom16x1( pSwizzled, (uint8_t*) pChromaTable );
-
-						if (pBmp->nWidthPixels == 16)
-						{
-							Transpose16x1::transposeTo64x1( pSwizzled, pTemp64x256 );
-							Transpose64x1::transposeTo64x256( pTemp64x256, pTemp64x256 );
-						}
-						else
-						if (pBmp->nWidthPixels == 64)
-							Transpose64x1::transposeTo64x256( pSwizzled, pTemp64x256 );
-
-						Transpose4096x4::transposeFrom64x256( pTemp64x256, (uint8_t*) pChromaTable );
-
-						delete [] pTemp64x256;
-					}
-					else
-						Transpose4096x4::transposeFrom64x256( pSwizzled, (uint8_t*) pChromaTable );
-
-					if( bSwizzle )
-						Swizzle32::ABGRswizzleBGRA( g_nChromaSize, (uint8_t*) pChromaTable, (uint8_t*) pChromaTable );
-				}
-				else
-					Swizzle32::RGBAswapBGRA( g_nChromaSize, pSwizzled, (uint8_t*) pChromaTable );
-
-_error:
-				fclose( pFile );
-				delete [] pSwizzled;
-			}
-			else
-			{
-				strcpy( aStatusText, "File: " );
-				ConsoleBufferPush( TEXT( "Error couldn't open file for reading." ) );
-			}
-
-			ConsoleFilename::update( aStatusText );
-		}
-		else
-			return HelpLastCommand();
-	}
-//	else
-
-	return ConsoleUpdate();
-}
-
 
 //===========================================================================
 int CmdTextSave (int nArgs)
@@ -5684,7 +5082,7 @@ int CmdTextSave (int nArgs)
 		g_sMemoryLoadSaveFileName = g_aArgs[ 1 ].sArg;
 	else
 	{
-		if( VideoGetSW80COL() )
+		if(g_pVideo->VideoGetSW80COL() )
 			g_sMemoryLoadSaveFileName = "AppleWin_Text80.txt";
 		else
 			g_sMemoryLoadSaveFileName = "AppleWin_Text40.txt";
@@ -6919,113 +6317,136 @@ Update_t CmdCyclesReset(int /*nArgs*/)
 }
 
 // View ___________________________________________________________________________________________
+// Graphic (video) pages monitoring setup
 
-// See: CmdWindowViewOutput (int nArgs)
-enum ViewVideoPage_t
+Update_t _ViewOutput(ViewVideoPage_t iPage, int bVideoModeFlags)
 {
-	VIEW_PAGE_X, // current page
-	VIEW_PAGE_1,
-	VIEW_PAGE_2
-};
-
-Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
-{
-	switch( iPage ) 
-	{
-		case VIEW_PAGE_X:
-			bVideoModeFlags |= !VideoGetSWPAGE2() ? 0 : VF_PAGE2;
-			bVideoModeFlags |= !VideoGetSWMIXED() ? 0 : VF_MIXED;
-			break; // Page Current & current MIXED state
-		case VIEW_PAGE_1: bVideoModeFlags |= 0; break; // Page 1
-		case VIEW_PAGE_2: bVideoModeFlags |= VF_PAGE2; break; // Page 2
-		default:
-			_ASSERT(0);
-			break;
-	}
-
-	DebugVideoMode::Instance().Set(bVideoModeFlags);
-	VideoRefreshScreen( bVideoModeFlags, true );
-	return UPDATE_NOTHING; // intentional
+	g_iGraphicMonitoringMode = bVideoModeFlags;
+	g_eGraphicMonitoringPage = iPage;
+	return UPDATE_NOTHING;
 }
 
 // Text 40
-	Update_t CmdViewOutput_Text4X (int nArgs)
+	Update_t CmdViewOutput_Text40(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, VF_TEXT );
+		return _ViewOutput(VIEW_PAGE_CURRENT, VF_TEXT);
 	}
-	Update_t CmdViewOutput_Text41 (int nArgs)
+	Update_t CmdViewOutput_Text40X(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, VF_TEXT );
+		return _ViewOutput(VIEW_PAGE_DISABLED, VF_TEXT);
 	}
-	Update_t CmdViewOutput_Text42 (int nArgs)
+	Update_t CmdViewOutput_Text41(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, VF_TEXT );
+		return _ViewOutput(VIEW_PAGE_1, VF_TEXT);
+	}
+	Update_t CmdViewOutput_Text42(int nArgs)
+	{
+		return _ViewOutput(VIEW_PAGE_2, VF_TEXT);
 	}
 // Text 80
-	Update_t CmdViewOutput_Text8X (int nArgs)
+	Update_t CmdViewOutput_Text80(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, VF_TEXT | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_CURRENT, VF_TEXT | VF_80COL);
 	}
-	Update_t CmdViewOutput_Text81 (int nArgs)
+	Update_t CmdViewOutput_Text80X(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, VF_TEXT | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_DISABLED, VF_TEXT | VF_80COL);
 	}
-	Update_t CmdViewOutput_Text82 (int nArgs)
+	Update_t CmdViewOutput_Text81(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, VF_TEXT | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_1, VF_TEXT | VF_80COL);
+	}
+	Update_t CmdViewOutput_Text82(int nArgs)
+	{
+		return _ViewOutput(VIEW_PAGE_2, VF_TEXT | VF_80COL);
 	}
 // Lo-Res
-	Update_t CmdViewOutput_GRX (int nArgs)
+	Update_t CmdViewOutput_GR(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, 0 );
+		return _ViewOutput(VIEW_PAGE_CURRENT, 0);
 	}
-	Update_t CmdViewOutput_GR1 (int nArgs)
+	Update_t CmdViewOutput_GRX(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, 0 );
+		return _ViewOutput(VIEW_PAGE_DISABLED, 0);
 	}
-	Update_t CmdViewOutput_GR2 (int nArgs)
+	Update_t CmdViewOutput_GR1(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, 0 );
+		return _ViewOutput(VIEW_PAGE_1, 0);
+	}
+	Update_t CmdViewOutput_GR2(int nArgs)
+	{
+		return _ViewOutput(VIEW_PAGE_2, 0);
 	}
 // Double Lo-Res
-	Update_t CmdViewOutput_DGRX (int nArgs)
+	Update_t CmdViewOutput_DGR(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, VF_DHIRES | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_CURRENT, VF_DHIRES | VF_80COL);
 	}
-	Update_t CmdViewOutput_DGR1 (int nArgs)
+	Update_t CmdViewOutput_DGRX(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, VF_DHIRES | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_DISABLED, VF_DHIRES | VF_80COL);
 	}
-	Update_t CmdViewOutput_DGR2 (int nArgs)
+	Update_t CmdViewOutput_DGR1(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, VF_DHIRES | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_1, VF_DHIRES | VF_80COL);
+	}
+	Update_t CmdViewOutput_DGR2(int nArgs)
+	{
+		return _ViewOutput(VIEW_PAGE_2, VF_DHIRES | VF_80COL);
 	}
 // Hi-Res
-	Update_t CmdViewOutput_HGRX (int nArgs)
+	Update_t CmdViewOutput_HGR(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, VF_HIRES );
+		return _ViewOutput(VIEW_PAGE_CURRENT, VF_HIRES);
 	}
-	Update_t CmdViewOutput_HGR1 (int nArgs)
+	Update_t CmdViewOutput_HGRX(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, VF_HIRES );
+		return _ViewOutput(VIEW_PAGE_DISABLED, VF_HIRES);
 	}
-	Update_t CmdViewOutput_HGR2 (int nArgs)
+	Update_t CmdViewOutput_HGR1(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, VF_HIRES );
+		return _ViewOutput(VIEW_PAGE_1, VF_HIRES);
+	}
+	Update_t CmdViewOutput_HGR2(int nArgs)
+	{
+		return _ViewOutput(VIEW_PAGE_2, VF_HIRES);
 	}
 // Double Hi-Res
-	Update_t CmdViewOutput_DHGRX (int nArgs)
+	Update_t CmdViewOutput_DHGR(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_X, VF_HIRES | VF_DHIRES | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_CURRENT, VF_HIRES | VF_DHIRES | VF_80COL);
 	}
-	Update_t CmdViewOutput_DHGR1 (int nArgs)
+	Update_t CmdViewOutput_DHGRX(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_1, VF_HIRES | VF_DHIRES | VF_80COL);
+		return _ViewOutput(VIEW_PAGE_DISABLED, VF_HIRES | VF_DHIRES | VF_80COL);
 	}
-	Update_t CmdViewOutput_DHGR2 (int nArgs)
+	Update_t CmdViewOutput_DHGR1(int nArgs)
 	{
-		return _ViewOutput( VIEW_PAGE_2, VF_HIRES | VF_DHIRES | VF_80COL );
+		return _ViewOutput(VIEW_PAGE_1, VF_HIRES | VF_DHIRES | VF_80COL);
 	}
+	Update_t CmdViewOutput_DHGR2(int nArgs)
+	{
+		return _ViewOutput(VIEW_PAGE_2, VF_HIRES | VF_DHIRES | VF_80COL);
+	}
+
+	Update_t CmdViewShow1(int nArgs)
+	{
+		g_iDebugSplitView = 1;
+		return UPDATE_ALL;
+	}
+
+	Update_t CmdViewShow3(int nArgs)
+	{
+		g_iDebugSplitView = 3;
+		return UPDATE_ALL;
+	}
+
+	Update_t CmdViewShow4(int nArgs)
+	{
+		g_iDebugSplitView = 4;
+		return UPDATE_ALL;
+	}
+
 
 // Watches ________________________________________________________________________________________
 
@@ -7495,9 +6916,24 @@ Update_t CmdWindowViewData (int nArgs)
 //===========================================================================
 Update_t CmdWindowViewOutput (int nArgs)
 {
-	VideoRedrawScreen();
+	int oldX = g_pVideo->iXposition;
+	int oldY = g_pVideo->iYposition;
+	int oldHalf = g_pVideo->bHalfBitmapSize;
+	int oldDisplay = g_pVideo->bDisplayBitmap;
 
-	DebugVideoMode::Instance().Set(g_uVideoMode);
+	g_pVideo->iXposition = (g_iDebugSplitView == 3 ? FRAMEBUFFER_W : 0);
+	g_pVideo->iYposition = 0;
+	g_pVideo->bHalfBitmapSize = false;
+	g_pVideo->bDisplayBitmap = true;
+
+	g_pVideo->VideoDrawBitmap();
+
+	g_pVideo->iXposition = oldX;
+	g_pVideo->iYposition = oldY;
+	g_pVideo->bHalfBitmapSize = oldHalf;
+	g_pVideo->bDisplayBitmap = oldDisplay;
+
+	DebugVideoMode::Instance().Set(g_pVideo->g_uVideoMode);
 
 	return UPDATE_NOTHING; // intentional
 }
@@ -7987,7 +7423,7 @@ Update_t ExecuteCommand (int nArgs)
 					g_iCommand = CMD_UNASSEMBLE;
 
 					// replace: addrL
-					// with:    comamnd addr
+					// with:    command addr
 					pArg[1] = pArg[0];
 					strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
 					pArg->nArgLen = strlen( pArg->sArg );
@@ -7997,7 +7433,32 @@ Update_t ExecuteCommand (int nArgs)
 					nArgs++;
 					pFunction = g_aCommands[ g_iCommand ].pFunction;
 					nFound = 1;
-				}					
+
+					CmdWindowViewCode(0);
+				}
+				// ####D -> Memory dump ̂$address
+				else if ((pCommand[nLen - 1] == 'D') ||
+					(pCommand[nLen - 1] == 'd'))
+				{
+					pCommand[nLen - 1] = 0;
+					ArgsGetValue(pArg, &nAddress);
+
+					g_iCommand = CMD_MEM_MINI_DUMP_HEX_1;
+
+					// replace: addrD
+					// with:    command addr
+					pArg[1] = pArg[0];
+					strcpy(pArg->sArg, g_aCommands[g_iCommand].m_sName);
+					pArg->nArgLen = strlen(pArg->sArg);
+
+					pArg++;
+					pArg->nValue = nAddress;
+					nArgs++;
+					pFunction = g_aCommands[g_iCommand].pFunction;
+					nFound = 1;
+
+					CmdWindowViewData(0);
+				}
 				else
 				// address: byte ...
 				if ((pArg+1)->eToken == TOKEN_COLON)
@@ -8189,23 +7650,25 @@ void OutputTraceLine ()
 
 	if (g_bTraceFileWithVideoScanner)
 	{
-		uint16_t addr = NTSC_VideoGetScannerAddressForDebugger();
-		BYTE data = mem[addr];
+		// Disabled since NTSC.h rewrite
 
-		fprintf( g_hTraceFile,
-			"%04X %04X %04X   %02X %02X %02X %02X %04X %s  %s\n",
-			g_nVideoClockVert,
-			g_nVideoClockHorz,
-			addr,
-			data,
-			(unsigned)regs.a,
-			(unsigned)regs.x,
-			(unsigned)regs.y,
-			(unsigned)regs.sp,
-			(char*) sFlags
-			, sDisassembly
-			//, sTarget // TODO: Show target?
-		);
+		//uint16_t addr = NTSC_VideoGetScannerAddressForDebugger();
+		//BYTE data = mem[addr];
+
+		//fprintf( g_hTraceFile,
+		//	"%04X %04X %04X   %02X %02X %02X %02X %04X %s  %s\n",
+		//	g_nVideoClockVert,
+		//	g_nVideoClockHorz,
+		//	addr,
+		//	data,
+		//	(unsigned)regs.a,
+		//	(unsigned)regs.x,
+		//	(unsigned)regs.y,
+		//	(unsigned)regs.sp,
+		//	(char*) sFlags
+		//	, sDisassembly
+		//	//, sTarget // TODO: Show target?
+		//);
 	}
 	else
 	{
@@ -8594,8 +8057,18 @@ void DebugBegin ()
 	// This is called every time the debugger is entered.
 
 	GetDebuggerMemDC();
+	GetDebuggerExtraDC();
+
+	if (debug_pVideo == NULL)
+	{
+		debug_pVideo = new Video();
+		debug_pVideo->VideoInitialize();
+		debug_pVideo->iYposition = FRAMEBUFFER_H;
+		debug_pVideo->bHalfBitmapSize = true;
+	}
 
 	g_nAppMode = MODE_DEBUG;
+	CpuEnableHeatmapGeneration(true);
 	FrameRefreshStatus(DRAW_TITLE);
 
 	if (GetMainCpu() == CPU_6502)
@@ -8652,10 +8125,18 @@ void DebugExitDebugger ()
 
 	// Still have some BPs set or tracing to file, so continue single-stepping
 
-	if (!g_bLastGoCmdWasFullSpeed)
+
+	switch (g_nLastGoCmdSpeed) {
+	case RUN_CYCLESLOW:
+		CmdGoCycleSpeed(0);
+		break;
+	case RUN_NORMAL:
 		CmdGoNormalSpeed(0);
-	else
+		break;
+	case RUN_FAST:
 		CmdGoFullSpeed(0);
+		break;
+	}
 }
 
 //===========================================================================
@@ -8745,6 +8226,8 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 
 		if (regs.pc == g_nDebugStepUntil || g_bDebugBreakpointHit)
 		{
+			SetDebugMode(true);
+
 			TCHAR sText[ CONSOLE_WIDTH ];
 			char szStopMessage[CONSOLE_WIDTH];
 			char* pszStopReason = szStopMessage;
@@ -8829,6 +8312,7 @@ void DebugDestroy ()
 	// TODO: DataDisassembly_Clear()
 
 	ReleaseConsoleFontDC();
+	
 }
 
 
@@ -8852,8 +8336,12 @@ static void DebugEnd ()
 	g_vMemorySearchResults.erase( g_vMemorySearchResults.begin(), g_vMemorySearchResults.end() );
 
 	g_nAppMode = MODE_RUNNING;
+	CpuEnableHeatmapGeneration(false);
 
 	ReleaseDebuggerMemDC();
+	ReleaseDebuggerExtraDC();
+	delete debug_pVideo;
+	debug_pVideo = NULL;
 }
 
 
@@ -9261,6 +8749,7 @@ void DebuggerProcessKey( int keycode )
 //		    if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		DebugVideoMode::Instance().Reset();
 		UpdateDisplay( UPDATE_ALL ); // 1
+		g_pVideo->VideoDrawBitmap();
 		return;
 	}
 
@@ -9618,7 +9107,7 @@ void DebuggerProcessKey( int keycode )
 		} // switch
 	}
 
-	if (bUpdateDisplay && !DebugVideoMode::Instance().IsSet()) //  & UPDATE_BACKGROUND)
+	if (bUpdateDisplay && !DebugVideoMode::Instance().IsSet())
 		UpdateDisplay( bUpdateDisplay );
 }
 
@@ -9631,7 +9120,7 @@ void DebugDisplay( BOOL bInitDisasm/*=FALSE*/ )
 	{
 		uint32_t mode = 0;
 		DebugVideoMode::Instance().Get(&mode);
-		VideoRefreshScreen(mode, true);
+		g_pVideo->VideoRefreshScreen(mode, true);
 		return;
 	}
 
@@ -9822,5 +9311,15 @@ void DebuggerMouseClick( int x, int y )
 //===========================================================================
 bool IsDebugSteppingAtFullSpeed(void)
 {
-	return (g_nAppMode == MODE_STEPPING) && g_bDebugFullSpeed;
+	return (g_nAppMode == MODE_STEPPING) && (g_nDebugSpeed == RUN_FAST);
+}
+
+bool IsDebugSteppingCycleAccurate(void)
+{
+	return (g_nAppMode == MODE_STEPPING) && (g_nDebugSpeed == RUN_CYCLESLOW);
+}
+
+bool IsDebugSteppingWithPCFollow(void)
+{
+	return (g_nAppMode == MODE_STEPPING) && ((g_nDebugSpeed != RUN_DEBUG) || (g_nDebugSpeed == RUN_CYCLESLOW));
 }

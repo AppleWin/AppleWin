@@ -274,6 +274,14 @@
 //		Hash_t       m_nHash; // TODO
 	};
 
+	enum Speed_e
+	{
+		RUN_CYCLESLOW,
+		RUN_NORMAL,
+		RUN_FAST,
+		RUN_DEBUG
+	};
+
 	// Commands sorted by Category
 	// NOTE: Commands_e and g_aCommands[] order _MUST_ match !!! Aliases are listed at the end
 	enum Commands_e
@@ -285,6 +293,8 @@
 		, CMD_CURSOR_SET_PC  // Ctrl
 		, CMD_GO_NORMAL_SPEED
 		, CMD_GO_FULL_SPEED
+		, CMD_GO_CYCLE_SPEED
+		, CMD_GO_DEBUG_SPEED
 		, CMD_IN
 		, CMD_INPUT_KEY
 		, CMD_JSR
@@ -451,7 +461,7 @@
 //		, CMD_MEMORY_SEARCH_APPLE   // Flashing Chars, Hi-Bit Set
 		, CMD_MEMORY_SEARCH_HEX
 		, CMD_MEMORY_FILL
-		, CMD_NTSC
+//		, CMD_NTSC
 		, CMD_TEXT_SAVE
 // Output
 		, CMD_OUTPUT_CALC
@@ -484,21 +494,27 @@
 // Video-scanner info
 		, CMD_VIDEO_SCANNER_INFO
 // View
-		, CMD_VIEW_TEXT4X
+		, CMD_VIEW_TEXT40
+		, CMD_VIEW_TEXT40X
 		, CMD_VIEW_TEXT41
 		, CMD_VIEW_TEXT42
-		, CMD_VIEW_TEXT8X
+		, CMD_VIEW_TEXT80
+		, CMD_VIEW_TEXT80X
 		, CMD_VIEW_TEXT81
 		, CMD_VIEW_TEXT82
+		, CMD_VIEW_GR
 		, CMD_VIEW_GRX
 		, CMD_VIEW_GR1
 		, CMD_VIEW_GR2
+		, CMD_VIEW_DGR
 		, CMD_VIEW_DGRX
 		, CMD_VIEW_DGR1
 		, CMD_VIEW_DGR2
+		, CMD_VIEW_HGR
 		, CMD_VIEW_HGRX
 		, CMD_VIEW_HGR1
 		, CMD_VIEW_HGR2
+		, CMD_VIEW_DHGR
 		, CMD_VIEW_DHGRX
 		, CMD_VIEW_DHGR1
 		, CMD_VIEW_DHGR2
@@ -564,6 +580,10 @@
 		, _CMD_MEM_MINI_DUMP_HEX_1_1 // Memory Dump
 		, _CMD_MEM_MINI_DUMP_HEX_1_3 // alias M1
 		, _CMD_MEM_MINI_DUMP_HEX_2_1 // alias M2
+
+		, CMD_VIEW_SHOW1
+		, CMD_VIEW_SHOW3
+		, CMD_VIEW_SHOW4
 	};
 
 // Assembler
@@ -595,6 +615,8 @@
 	Update_t CmdBreakOpcode        (int nArgs); // Breakpoint IFF Full-speed!
 	Update_t CmdGoNormalSpeed      (int nArgs);
 	Update_t CmdGoFullSpeed        (int nArgs);
+	Update_t CmdGoCycleSpeed	   (int nArgs);
+	Update_t CmdGoDebugSpeed	   (int nArgs);
 	Update_t CmdIn                 (int nArgs);
 	Update_t CmdKey                (int nArgs);
 	Update_t CmdJSR                (int nArgs);
@@ -741,26 +763,36 @@
 	Update_t CmdVideoScannerInfo   (int nArgs);
 
 // View
-	Update_t CmdViewOutput_Text4X  (int nArgs);
+	Update_t CmdViewOutput_Text40  (int nArgs);
+	Update_t CmdViewOutput_Text40X (int nArgs);
 	Update_t CmdViewOutput_Text41  (int nArgs);
 	Update_t CmdViewOutput_Text42  (int nArgs);
-	Update_t CmdViewOutput_Text8X  (int nArgs);
+	Update_t CmdViewOutput_Text80  (int nArgs);
+	Update_t CmdViewOutput_Text80X (int nArgs);
 	Update_t CmdViewOutput_Text81  (int nArgs);
 	Update_t CmdViewOutput_Text82  (int nArgs);
 
+	Update_t CmdViewOutput_GR      (int nArgs);
 	Update_t CmdViewOutput_GRX     (int nArgs);
 	Update_t CmdViewOutput_GR1     (int nArgs);
 	Update_t CmdViewOutput_GR2     (int nArgs);
+	Update_t CmdViewOutput_DGR     (int nArgs);
 	Update_t CmdViewOutput_DGRX    (int nArgs);
 	Update_t CmdViewOutput_DGR1    (int nArgs);
 	Update_t CmdViewOutput_DGR2    (int nArgs);
 
+	Update_t CmdViewOutput_HGR     (int nArgs);
 	Update_t CmdViewOutput_HGRX    (int nArgs);
 	Update_t CmdViewOutput_HGR1    (int nArgs);
 	Update_t CmdViewOutput_HGR2    (int nArgs);
+	Update_t CmdViewOutput_DHGR    (int nArgs);
 	Update_t CmdViewOutput_DHGRX   (int nArgs);
 	Update_t CmdViewOutput_DHGR1   (int nArgs);
 	Update_t CmdViewOutput_DHGR2   (int nArgs);
+
+	Update_t CmdViewShow1          (int nArgs);
+	Update_t CmdViewShow3          (int nArgs);
+	Update_t CmdViewShow4          (int nArgs);
 // Watch
 	Update_t CmdWatch              (int nArgs);
 	Update_t CmdWatchAdd           (int nArgs);

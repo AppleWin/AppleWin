@@ -58,6 +58,7 @@ extern class SynchronousEventManager g_SynchronousEventMgr;
 extern HANDLE	g_hCustomRomF8;		// INVALID_HANDLE_VALUE if no custom F8 rom
 extern HANDLE	g_hCustomRom;		// INVALID_HANDLE_VALUE if no custom rom
 
+
 #ifdef USE_SPEECH_API
 class CSpeech;
 extern CSpeech g_Speech;

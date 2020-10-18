@@ -1,5 +1,6 @@
 #pragma once
 
+
 struct regsrec
 {
   BYTE a;   // accumulator
@@ -13,6 +14,17 @@ struct regsrec
 
 extern regsrec    regs;
 extern unsigned __int64 g_nCumulativeCycles;
+
+extern int32_t MemGetBank(int32_t addr, bool write);
+
+// Memory heatmap for debug purpose
+// Displayed as 256x256 64K memory access
+extern int32_t g_aMemoryHeatmap_R[];
+extern int32_t g_aMemoryHeatmap_W[];
+extern int32_t g_aMemoryHeatmap_X[];
+extern int32_t g_aMemoryHeatmapPtr_R[];
+extern int32_t g_aMemoryHeatmapPtr_W[];
+extern int32_t g_iMemoryHeatmapValue;
 
 void    CpuDestroy ();
 void    CpuCalcCycles(ULONG nExecutedCycles);
@@ -41,6 +53,8 @@ eCpuType ProbeMainCpuDefault(eApple2Type apple2Type);
 void     SetMainCpuDefault(eApple2Type apple2Type);
 eCpuType GetActiveCpu(void);
 void     SetActiveCpu(eCpuType cpu);
+
+void	CpuEnableHeatmapGeneration(bool enable);
 
 bool Is6502InterruptEnabled(void);
 void ResetCyclesExecutedForDebugger(void);

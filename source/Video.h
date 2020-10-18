@@ -1,5 +1,9 @@
 #pragma once
 
+#include "VideoTypes.h"
+
+class NTSC;
+
 // Types ____________________________________________________________
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
@@ -78,15 +82,6 @@
 	#define PACKED // TODO: FIXME: gcc/clang __attribute__
 #endif
 
-// TODO: Replace with WinGDI.h / RGBQUAD
-struct bgra_t
-{
-	uint8_t b;
-	uint8_t g;
-	uint8_t r;
-	uint8_t a; // reserved on Win32
-};
-
 struct WinBmpHeader_t
 {
 	// BITMAPFILEHEADER     // Addr Size
@@ -162,83 +157,160 @@ struct WinBmpHeader4_t
 	uint32_t nBlueGamma      ; // 0x76 0x04
 };
 
-#ifdef _MSC_VER
-	#pragma pack(pop)
-#endif
-
-// Globals __________________________________________________________
-
-extern COLORREF   g_nMonochromeRGB;	// saved to Registry
-extern uint32_t   g_uVideoMode;
-extern DWORD      g_eVideoType;		// saved to Registry
-extern uint8_t   *g_pFramebufferbits;
-
-// Prototypes _______________________________________________________
-
-void    VideoBenchmark ();
-void    VideoChooseMonochromeColor (); // FIXME: Should be moved to PageConfig and call VideoSetMonochromeColor()
-void    VideoDestroy ();
-void    VideoDisplayLogo ();
-void    VideoInitialize ();
-void    VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
-void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
-void    VideoRedrawScreen (void);
-void    VideoRefreshScreen (uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedrawWholeScreen = false);
-void    VideoReinitialize (bool bInitVideoScannerAddress = true);
-void    VideoResetState ();
-enum VideoScanner_e {VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH};
-WORD    VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr = VS_FullAddr);
-bool    VideoGetVblBarEx(const DWORD dwCyclesThisFrame);
-bool    VideoGetVblBar(const DWORD uExecutedCycles);
-
-bool    VideoGetSW80COL(void);
-bool    VideoGetSWDHIRES(void);
-bool    VideoGetSWHIRES(void);
-bool    VideoGetSW80STORE(void);
-bool    VideoGetSWMIXED(void);
-bool    VideoGetSWPAGE2(void);
-bool    VideoGetSWTEXT(void);
-bool    VideoGetSWAltCharSet(void);
-
-void    VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
-
-extern bool g_bDisplayPrintScreenFileName;
-extern bool g_bShowPrintScreenWarningDialog;
-
-void Video_ResetScreenshotCounter( const std::string & pDiskImageFileName );
 enum VideoScreenShot_e
 {
 	SCREENSHOT_560x384 = 0,
 	SCREENSHOT_280x192
 };
-void Video_TakeScreenShot( VideoScreenShot_e ScreenShotType );
-void Video_RedrawAndTakeScreenShot( const char* pScreenshotFilename );
-void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel );
 
-BYTE VideoSetMode(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+enum VideoScanner_e { VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH };
 
-const UINT kVideoRomSize2K = 1024*2;
-const UINT kVideoRomSize4K = kVideoRomSize2K*2;
-bool ReadVideoRomFile(const char* pRomFile);
-UINT GetVideoRom(const BYTE*& pVideoRom);
-bool GetVideoRomRockerSwitch(void);
-void SetVideoRomRockerSwitch(bool state);
-bool IsVideoRom4K(void);
+#ifdef _MSC_VER
+	#pragma pack(pop)
+#endif
 
-void Config_Load_Video(void);
-void Config_Save_Video(void);
+const UINT kVideoRomSize2K = 1024 * 2;
+const UINT kVideoRomSize4K = kVideoRomSize2K * 2;
+static const UINT kVideoRomSize8K = kVideoRomSize4K * 2;
+static const UINT kVideoRomSize16K = kVideoRomSize8K * 2;
+static const UINT kVideoRomSizeMax = kVideoRomSize16K;
 
-VideoType_e GetVideoType(void);
-void SetVideoType(VideoType_e newVideoType);
-VideoStyle_e GetVideoStyle(void);
-void SetVideoStyle(VideoStyle_e newVideoStyle);
-bool IsVideoStyle(VideoStyle_e mask);
 
-VideoRefreshRate_e GetVideoRefreshRate(void);
-void SetVideoRefreshRate(VideoRefreshRate_e rate);
+class Video {
 
-bool DDInit(void);
+
+public:
+	
+	uint32_t	g_uVideoMode;
+	uint8_t*	g_pFramebufferbits;
+
+
+	bool g_bShowPrintScreenWarningDialog;
+	bool g_bDisplayPrintScreenFileName;
+
+
+	// Globals ____________________________________________________________________
+
+	HBITMAP       g_hDeviceBitmap = NULL;
+	HDC           g_hDeviceDC = NULL;
+	LPBITMAPINFO  g_pFramebufferinfo = NULL;
+	static HBITMAP	g_hLogoBitmap;
+	static bool		g_bVideoScannerNTSC;  // NTSC video scanning (or PAL)
+	static LPDIRECTDRAW	g_lpDD;
+
+	static DWORD	g_eVideoType;		// saved to Registry
+
+	static const char* g_apVideoModeDesc[NUM_VIDEO_MODES];
+
+	// ____________________________________________________________________
+
+	Video();
+	~Video();
+
+	void	VideoInitialize();
+	void    VideoBenchmark();
+	void    VideoChooseMonochromeColor(); // FIXME: Should be moved to PageConfig and call VideoSetMonochromeColor()	
+	void    VideoDisplayLogo();
+
+	void    VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
+	void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
+	void    VideoRedrawScreen(void);
+	void	VideoDrawBitmap();
+	void    VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
+	void    VideoReinitialize(bool bInitVideoScannerAddress = true);
+	void    VideoResetState();
+
+	WORD    VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr = VS_FullAddr);
+	bool    VideoGetVblBarEx(const DWORD dwCyclesThisFrame);
+	bool    VideoGetVblBar(const DWORD uExecutedCycles);
+
+	bool    VideoGetSW80COL(void);
+	bool    VideoGetSWDHIRES(void);
+	bool    VideoGetSWHIRES(void);
+	bool    VideoGetSW80STORE(void);
+	bool    VideoGetSWMIXED(void);
+	bool    VideoGetSWPAGE2(void);
+	bool    VideoGetSWTEXT(void);
+	static bool    VideoGetSWAltCharSet(void);
+
+	void    VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+	void    VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
+	void Video_ResetScreenshotCounter(const std::string& pDiskImageFileName);
+
+	void Video_TakeScreenShot(VideoScreenShot_e ScreenShotType);
+	void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
+	void Video_SetBitmapHeader(WinBmpHeader_t* pBmp, int nWidth, int nHeight, int nBitsPerPixel);
+
+	BYTE VideoSetMode(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
+
+
+	bool ReadVideoRomFile(const char* pRomFile);
+	UINT GetVideoRom(const BYTE*& pVideoRom);
+	static bool GetVideoRomRockerSwitch(void);
+	static void SetVideoRomRockerSwitch(bool state);
+	static bool IsVideoRom4K(void);
+
+	void Config_Load_Video(void);
+	void Config_Save_Video(void);
+
+	static VideoType_e GetVideoType(void);
+	static void SetVideoType(VideoType_e newVideoType);
+	static VideoStyle_e GetVideoStyle(void);
+	static void SetVideoStyle(VideoStyle_e newVideoStyle);
+	static bool IsVideoStyle(VideoStyle_e mask);
+	static COLORREF Video::GetMonochromeRGB(void);
+	static void Video::SetMonochromeRGB(COLORREF newMonochromeRGB);
+
+	VideoRefreshRate_e GetVideoRefreshRate(void);
+	void SetVideoRefreshRate(VideoRefreshRate_e rate);
+
+	void VideoInitAppleType();
+	void NTSC_VideoUpdateCycles(UINT cycles6502);
+	NTSC* getNTSC();
+
+	bool DDInit(void);
+	void DDUninit(void);
+
+	static void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
+	void CreateDIBBuffer(LPBITMAPINFO pFramebufferinfo, HBITMAP* hDeviceBitmap, uint8_t** pFramebufferbits);
+
+	void RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+	void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion);
+
+	static const char* VideoGetAppWindowTitle(void);
+
+	// ____________________________________________________________________
+
+	int iXposition = 0;
+	int iYposition = 0;
+	bool bHalfBitmapSize = false;
+	bool bDisplayBitmap = true;
+
+private:
+	static BYTE g_videoRom[kVideoRomSizeMax];
+	static UINT g_videoRomSize;
+	static bool g_videoRomRockerSwitch;
+
+	static int g_nLastScreenShot;
+	const  int nMaxScreenShot = 999999999;
+	static std::string g_pLastDiskImageName;
+
+	static int g_nAltCharSetOffset; // alternate character set
+
+	static COLORREF	g_nMonochromeRGB;	// saved to Registry
+	static VideoStyle_e	g_eVideoStyle;
+
+	void Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars);
+	bool Util_TestScreenShotFileName(const TCHAR* pFileName);
+	void Video_SaveScreenShot(const VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName);
+	void Video_MakeScreenShot(FILE* pFile, const VideoScreenShot_e ScreenShotType);
+
+	NTSC* pNTSC;
+};
+
+
+// Main Video renderer
+extern Video *g_pVideo;
+extern Video* debug_pVideo;bool DDInit(void);
 void DDUninit(void);
 
-const char* VideoGetAppWindowTitle(void);
