@@ -4280,6 +4280,7 @@ void UpdateDisplay (Update_t bUpdate)
 		g_pVideo->iXposition = 0;
 		g_pVideo->iYposition = 0;
 		g_pVideo->bHalfBitmapSize = true;
+		debug_pVideo->iYposition = (FRAMEBUFFER_H >> 1) * GetViewportScale();
 	}
 
 	// Hack: Full screen console scrolled, "erase" left over console lines
