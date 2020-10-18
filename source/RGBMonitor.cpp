@@ -505,7 +505,7 @@ void RGBMonitor::UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAdd
 	BYTE byteval2 =            *(pMain);
 	BYTE byteval3 = (x < 39) ? *(pMain+1) : 0;
 
-	if (g_uVideoMode & VF_DHIRES)	// ie. VF_DHIRES=1, VF_HIRES=1, VF_80COL=0 - NTSC.cpp refers to this as "DoubleHires40"
+	if (pVideo->g_uVideoMode & VF_DHIRES)	// ie. VF_DHIRES=1, VF_HIRES=1, VF_80COL=0 - NTSC.cpp refers to this as "DoubleHires40"
 	{
 		byteval1 &= 0x7f;
 		byteval2 &= 0x7f;
