@@ -7979,7 +7979,7 @@ Update_t ExecuteCommand (int nArgs)
 				// ####L -> Unassemble $address
 				if (((pCommand[nLen-1] == 'L') ||
 				     (pCommand[nLen-1] == 'l'))&&
-				    (strcmp("cl", pCommand) != 0)) // workaround for ambiguous "cl": must be handled by "clear flag" command
+				    (_stricmp("cl", pCommand) != 0)) // workaround for ambiguous "cl": must be handled by "clear flag" command
 				{
 					pCommand[nLen-1] = 0;
 					ArgsGetValue( pArg, & nAddress );
