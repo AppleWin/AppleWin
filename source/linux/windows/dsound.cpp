@@ -154,6 +154,11 @@ HRESULT IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DW
   return DS_OK;
 }
 
+DWORD IDirectSoundBuffer::GetAvailableBytes() const
+{
+  const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->bufferSize;
+  return available;
+}
 
 HRESULT IDirectSoundBuffer::GetCurrentPosition( LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor )
 {

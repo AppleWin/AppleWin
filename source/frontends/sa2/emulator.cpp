@@ -15,6 +15,8 @@
 #include "Frame.h"
 #include "Video.h"
 #include "NTSC.h"
+#include "Mockingboard.h"
+#include "Speaker.h"
 
 namespace
 {
@@ -169,7 +171,7 @@ namespace
     if (ch)
     {
       addKeyToBuffer(ch);
-      std::cerr << "Apple Key Down: " << std::hex << (int)ch << std::endl;
+      std::cerr << "Apple Key Down: " << std::hex << (int)ch << std::dec << std::endl;
     }
   }
 
@@ -196,15 +198,15 @@ void Emulator::executeOneFrame()
   const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
   const bool bVideoUpdate = true;
   const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
-  g_dwCyclesThisFrame += uActualCyclesExecuted;
+  g_dwCyclesThisFrame = (g_dwCyclesThisFrame + uActualCyclesExecuted) % dwClksPerFrame;
 
   GetCardMgr().GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
+  MB_PeriodicUpdate(uActualCyclesExecuted);
+  SpkrUpdate(uActualCyclesExecuted);
 
   // SDL2 seems to synch with screen refresh rate so we do not need to worry about timers
   const SDL_Rect srect = refreshTexture(myTexture);
   renderScreen(myRenderer, myTexture, srect);
-
-  g_dwCyclesThisFrame = (g_dwCyclesThisFrame + g_dwCyclesThisFrame) % dwClksPerFrame;
 }
 
 void Emulator::processEvents(bool & quit)
@@ -337,7 +339,7 @@ void Emulator::processText(const SDL_TextInputEvent & text)
       // not the letters
       // this is very simple, but one cannot handle CRTL-key combination.
       addKeyToBuffer(key);
-      std::cerr << "Apple Text: " << std::hex << (int)key << std::endl;
+      std::cerr << "Apple Text: " << std::hex << (int)key << std::dec << std::endl;
       break;
     }
     }

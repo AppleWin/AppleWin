@@ -12,13 +12,17 @@
 #include "frontends/common2/programoptions.h"
 #include "frontends/sa2/emulator.h"
 #include "frontends/sa2/gamepad.h"
+#include "frontends/sa2/sdirectsound.h"
 
 #include "StdAfx.h"
 #include "Common.h"
 #include "CardManager.h"
 #include "Applewin.h"
 #include "Disk.h"
+#include "Mockingboard.h"
+#include "SoundCore.h"
 #include "Harddisk.h"
+#include "Speaker.h"
 #include "Log.h"
 #include "CPU.h"
 #include "Frame.h"
@@ -30,6 +34,7 @@
 #include "NTSC.h"
 #include "SaveState.h"
 #include "RGBMonitor.h"
+#include "Riff.h"
 
 
 namespace
@@ -49,6 +54,10 @@ namespace
     SetWindowTitle();
     FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
     ResetDefaultMachineMemTypes();
+
+    DSInit();
+    MB_Initialize();
+    SpkrInitialize();
 
     MemInitialize();
     VideoInitialize();
@@ -100,6 +109,10 @@ namespace
 
   void uninitialiseEmulator()
   {
+    SpkrDestroy();
+    MB_Destroy();
+    DSUninit();
+
     HD_Destroy();
     PrintDestroy();
     CpuDestroy();
@@ -107,6 +120,7 @@ namespace
     GetCardMgr().GetDisk2CardMgr().Destroy();
     ImageDestroy();
     LogDone();
+    RiffFinishWriteFile();
   }
 
 }
@@ -126,21 +140,6 @@ void FrameDrawDiskStatus(HDC x)
 }
 
 void FrameRefreshStatus(int x, bool)
-{
-}
-
-BYTE SpkrToggle (WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
-{
-  return MemReadFloatingBus(uExecutedCycles);
-}
-
-
-// Mockingboard
-void registerSoundBuffer(IDirectSoundBuffer * buffer)
-{
-}
-
-void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
 {
 }
 
@@ -164,6 +163,13 @@ void run_sdl(int argc, const char * argv [])
   Paddle::instance().reset(new Gamepad(0));
 
   g_nMemoryClearType = options.memclear;
+
+#ifdef RIFF_SPKR
+  RiffInitWriteFile("/tmp/Spkr.wav", SPKR_SAMPLE_RATE, 1);
+#endif
+#ifdef RIFF_MB
+  RiffInitWriteFile("/tmp/Mockingboard.wav", 44100, 2);
+#endif
 
   initialiseEmulator();
   loadEmulator();
@@ -199,10 +205,12 @@ void run_sdl(int argc, const char * argv [])
   bool quit = false;
   do
   {
+    SDirectSound::writeAudio();
     emulator.processEvents(quit);
     emulator.executeOneFrame();
   } while (!quit);
 
+  SDirectSound::stop();
   stopEmulator();
   uninitialiseEmulator();
 }
@@ -210,7 +218,7 @@ void run_sdl(int argc, const char * argv [])
 int main(int argc, const char * argv [])
 {
   //First we need to start up SDL, and make sure it went ok
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0)
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) != 0)
   {
     std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
     return 1;
