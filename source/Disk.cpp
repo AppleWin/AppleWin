@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Log.h"
 #include "Memory.h"
 #include "Registry.h"
+#include "SaveState.h"
 #include "Video.h"
 #include "YamlHelper.h"
 
@@ -605,6 +606,7 @@ void Disk2InterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status, Disk_Status
 
 //===========================================================================
 
+// Pre: pszImageFilename is *not* qualified with path
 ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary)
 {
 	FloppyDrive* pDrive = &m_floppyDrive[drive];
@@ -661,6 +663,13 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	{
 		GetImageTitle(pszImageFilename, pFloppy->m_imagename, pFloppy->m_fullname);
 		Video_ResetScreenshotCounter(pFloppy->m_imagename);
+
+		{
+			char szCurrentPathname[MAX_PATH];
+			DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, szCurrentPathname, NULL);
+			if (uNameLen)
+				Snapshot_UpdatePath(szCurrentPathname, true);
+		}
 
 		if (g_nAppMode == MODE_LOGO)
 			InitFirmware(GetCxRomPeripheral());
@@ -1509,7 +1518,7 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 
 	StringCbCopy(filename, MAX_PATH, pszFilename);
 
-	RegLoadString(TEXT(REG_PREFS), REGVALUE_PREF_START_DIR, 1, directory, MAX_PATH, TEXT(""));
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, directory, MAX_PATH, TEXT(""));
 	StringCbPrintf(title, 40, TEXT("Select Disk Image For Drive %d"), drive + 1);
 
 	_ASSERT(sizeof(OPENFILENAME) == sizeof(OPENFILENAME_NT4));	// Required for Win98/ME support (selected by _WIN32_WINNT=0x0400 in stdafx.h)

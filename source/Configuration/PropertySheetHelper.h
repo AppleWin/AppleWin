@@ -55,7 +55,6 @@ private:
 	bool m_bSSNewFilename;
 	std::string m_szSSNewDirectory;
 	std::string m_szSSNewFilename;
-	std::string m_szSSNewPathname;
 	CConfigNeedingRestart m_ConfigOld;
 	CConfigNeedingRestart m_ConfigNew;
 	bool m_bDoBenchmark;

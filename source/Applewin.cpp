@@ -796,13 +796,18 @@ void LoadConfiguration(void)
 
 	//
 
-	// Current/Starting Dir is the "root" of where the user keeps his disk images
+	// Current/Starting Dir is the "root" of where the user keeps their disk images
 	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szFilename, MAX_PATH, TEXT(""));
 	if (szFilename[0] == '\0')
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
 	GetCardMgr().GetDisk2CardMgr().LoadLastDiskImage();
+
+	//
+
+	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));	// Can be pathname or just filename
+	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
 
 	//
 
@@ -814,19 +819,6 @@ void LoadConfiguration(void)
 	update_tfe_interface(szFilename, NULL);
 
 	//
-
-	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_SAVESTATE_START_DIR), 1, szFilename, MAX_PATH, TEXT(""));	// Added at 1.29.15 (GH#691)
-	if (szFilename[0] != '\0')
-	{
-		std::string path(szFilename);
-		RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_SAVESTATE), 1, szFilename, MAX_PATH, TEXT(""));
-		Snapshot_SetFilename(szFilename, path);
-	}
-	else	// ...else try to use deprecated REG_CONFIG filename (GH#691)
-	{
-		RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));	// Can be pathname or just filename
-		Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
-	}
 
 	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_PRINTER_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));
 	Printer_SetFilename(szFilename);	// If not in Registry than default will be used
@@ -843,12 +835,11 @@ void LoadConfiguration(void)
 
 //===========================================================================
 
-bool SetCurrentImageDir(const std::string & pszImageDir)
+bool SetCurrentImageDir(const std::string& pszImageDir)
 {
 	g_sCurrentDir = pszImageDir;
 
-	int nLen = g_sCurrentDir.size();
-	if ((nLen > 0) && (g_sCurrentDir[ nLen - 1 ] != '\\'))
+	if (!g_sCurrentDir.empty() && *g_sCurrentDir.rbegin() != '\\')
 		g_sCurrentDir += '\\';
 
 	if( SetCurrentDirectory(g_sCurrentDir.c_str()) )

@@ -36,9 +36,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debug.h"
 #include "Disk.h"
 #include "Frame.h"
+#include "Harddisk.h"
 #include "Joystick.h"
 #include "Keyboard.h"
 #include "LanguageCard.h"
+#include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"
@@ -92,6 +94,7 @@ static void Snapshot_SetPathname(const std::string& strPathname)
 		g_strSaveStatePathname.append(DEFAULT_SNAPSHOT_NAME);
 
 		g_strSaveStatePath = g_sCurrentDir;
+		LogOutput("Snapshot_SetPathname:(1) new path=%s (exit)\n", g_strSaveStatePath.c_str());
 
 		return;
 	}
@@ -104,6 +107,7 @@ static void Snapshot_SetPathname(const std::string& strPathname)
 	{
 		strFilename = &strPathname[nIdx+1];
 		g_strSaveStatePath = strPathname.substr(0, nIdx+1); // Bugfix: 1.25.0.2 // Snapshot_LoadState() -> SetCurrentImageDir() -> g_sCurrentDir 
+		LogOutput("Snapshot_SetPathname:(2) new path=%s (exit)\n", g_strSaveStatePath.c_str());
 	}
 
 	g_strSaveStateFilename = strFilename;
@@ -125,6 +129,51 @@ void Snapshot_SetFilename(const std::string& filename, const std::string& path/*
 	Snapshot_SetPathname(pathname+filename);
 }
 
+// Logic:
+// . If isFloppyDisk and a harddisk is plugged in, then return.
+// . Derive path from input pathname with filename removed
+// . If path != existing snapshot path then set it as the new path, and set filename=DEFAULT
+void Snapshot_UpdatePath(const std::string& pathname, bool isFloppyDisk)
+{
+	if (isFloppyDisk && HD_CardIsEnabled())
+	{
+		LogOutput("Snapshot_UpdatePath: hdd priority over floppy (exit)\n");
+		return;	// harddisk images take priority over floppy images
+	}
+	else if (!isFloppyDisk && !HD_CardIsEnabled())
+	{
+		LogOutput("Snapshot_UpdatePath: hdd image, but hdd not enabled! (exit)\n");
+		return;
+	}
+
+	if (pathname.empty())
+	{
+		LogOutput("Snapshot_UpdatePath: pathname empty! (exit)\n");
+		return;
+	}
+
+	std::string path;
+	int idx = pathname.find_last_of('\\');
+	if (idx >= 0 && idx+1 < (int)pathname.length())	// path exists?
+		path = pathname.substr(0, idx+1);
+
+	if (path.empty())
+	{
+		LogOutput("Snapshot_UpdatePath: path empty! (pathname=%s) (exit)\n", pathname.c_str());
+		return;
+	}
+
+	if (path == g_strSaveStatePath)
+	{
+		LogOutput("Snapshot_UpdatePath: path the same (exit)\n");
+		return;
+	}
+
+	g_strSaveStatePath = path;
+	g_strSaveStateFilename = DEFAULT_SNAPSHOT_NAME;
+	LogOutput("Snapshot_UpdatePath: new path = %s\n", path.c_str());
+}
+
 const std::string& Snapshot_GetFilename()
 {
 	return g_strSaveStateFilename;
@@ -133,6 +182,11 @@ const std::string& Snapshot_GetFilename()
 const std::string& Snapshot_GetPath()
 {
 	return g_strSaveStatePath;
+}
+
+const std::string& Snapshot_GetPathname()
+{
+	return g_strSaveStatePathname;
 }
 
 //-----------------------------------------------------------------------------
