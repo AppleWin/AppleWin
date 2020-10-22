@@ -184,3 +184,5 @@ UpgradeLog*.htm
 # Microsoft Fakes
 FakesAssemblies/
 /help/AppleWin.chm
+/Debug NoDX
+/~AutoRecover.AppleWinExpress2019.vcxproj

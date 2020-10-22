@@ -205,6 +205,7 @@
     <ClCompile Include="source\Debugger\Debugger_Heatmap.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
+    <ClCompile Include="source\MonitoringCard.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -498,6 +499,7 @@
     <ClInclude Include="source\VideoTypes.h">
       <Filter>Source Files\Video</Filter>
     </ClInclude>
+    <ClInclude Include="source\MonitoringCard.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\Applewin.bmp">

@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Memory.h"
 #include "../NTSC.h"
 #include "../Video.h"
+#include "../MonitoringCard.h"
 
 
 //========================================================================================
@@ -250,5 +251,66 @@ void DrawMemHeatmap(Update_t bUpdate)
 	DebuggerSetColorBG(color);
 	FillBackground(HEATMAP_AUX_LEFTMARGIN - 8, HEATMAP_TOPMARGIN + 0x40, HEATMAP_AUX_LEFTMARGIN - 4, HEATMAP_TOPMARGIN + 0x60, g_pDebuggerExtraFramebits);
 
+	// CPU monitoring
+	// Draw white borders
+	color = 0x00FFFFFF;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN - 1, HEATMAP_TOPMARGIN + 300 - 1, HEATMAP_MAIN_LEFTMARGIN + 255 + 1, HEATMAP_TOPMARGIN + 341 + 1, g_pDebuggerExtraFramebits);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN - 1, HEATMAP_TOPMARGIN + 320 - 1, HEATMAP_MAIN_LEFTMARGIN + 255 + 1, HEATMAP_TOPMARGIN + 341 + 1, g_pDebuggerExtraFramebits);
+	color = 0x00000000;
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + 255, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN, HEATMAP_TOPMARGIN + 321, HEATMAP_MAIN_LEFTMARGIN + 255, HEATMAP_TOPMARGIN + 341, g_pDebuggerExtraFramebits);
+
+	unsigned __int64 cycles = CMonitoringCard::getLastMonitoredCycles();
+	if (cycles <= NTSC::NTSC_GetCyclesPerFrame())
+	{
+		// Less than a frame
+		cycles = (cycles << 8) / NTSC::NTSC_GetCyclesPerFrame();
+		if (cycles > 255) cycles = 255;
+		color = 0x0000DD00; // green
+		DebuggerSetColorBG(color);
+		FillBackground(HEATMAP_MAIN_LEFTMARGIN, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + (long)cycles, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+	}
+	else if (cycles <= (NTSC::NTSC_GetCyclesPerFrame()<<2))
+	{
+		// More than a frame, we show 4 frames
+		cycles = (cycles << 6) / NTSC::NTSC_GetCyclesPerFrame();
+		if (cycles > 255) cycles = 255;
+		color = 0x000077FF; // orange
+		DebuggerSetColorBG(color);
+		FillBackground(HEATMAP_MAIN_LEFTMARGIN, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + (long)cycles, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+		color = 0x00FFFFFF;
+		DebuggerSetColorBG(color);
+		FillBackground(HEATMAP_MAIN_LEFTMARGIN + 63, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + 64, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+		FillBackground(HEATMAP_MAIN_LEFTMARGIN + 127, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + 128, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+		FillBackground(HEATMAP_MAIN_LEFTMARGIN + 191, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + 192, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+	}
+	else
+	{
+		// More than a frame, we show 8 frames
+		cycles = (cycles << 5) / NTSC::NTSC_GetCyclesPerFrame();
+		if (cycles > 255) cycles = 255;
+		color = 0x000000FF; // red
+		DebuggerSetColorBG(color);
+		FillBackground(HEATMAP_MAIN_LEFTMARGIN, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + (long)cycles, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+		color = 0x00FFFFFF;
+		DebuggerSetColorBG(color);
+		FillBackground(HEATMAP_MAIN_LEFTMARGIN + 31, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + 32, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+		FillBackground(HEATMAP_MAIN_LEFTMARGIN + 63, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + 64, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+		FillBackground(HEATMAP_MAIN_LEFTMARGIN + 95, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + 96, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+		FillBackground(HEATMAP_MAIN_LEFTMARGIN + 127, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + 128, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+		FillBackground(HEATMAP_MAIN_LEFTMARGIN + 159, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + 160, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+		FillBackground(HEATMAP_MAIN_LEFTMARGIN + 191, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + 192, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+		FillBackground(HEATMAP_MAIN_LEFTMARGIN + 223, HEATMAP_TOPMARGIN + 300, HEATMAP_MAIN_LEFTMARGIN + 224, HEATMAP_TOPMARGIN + 320, g_pDebuggerExtraFramebits);
+	}
+
+	// CPU IRQ monitoring
+	cycles = CMonitoringCard::getLastMonitoredInterruptCycles();
+	cycles = (cycles << 8) / NTSC::NTSC_GetCyclesPerFrame();
+	if (cycles > 255) cycles = 255;
+	color = 0x00FF7000; // light blue
+	DebuggerSetColorBG(color);
+	FillBackground(HEATMAP_MAIN_LEFTMARGIN, HEATMAP_TOPMARGIN + 321, HEATMAP_MAIN_LEFTMARGIN + (long)cycles, HEATMAP_TOPMARGIN + 341, g_pDebuggerExtraFramebits);
 }
 

@@ -53,6 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tape.h"
 #include "Video.h"
 #include "RGBMonitor.h"
+#include "MonitoringCard.h"
 
 #include "z80emu.h"
 #include "Z80VICE/z80.h"
@@ -564,11 +565,17 @@ static BYTE __stdcall IOWrite_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 {
 	switch (addr & 0xf)
 	{
-	case 0x0:	
+	case 0x0:
 		if (g_Apple2Type == A2TYPE_PRAVETS8A)
-			return TapeWrite (pc, addr, bWrite, d, nExecutedCycles);
+			return TapeWrite(pc, addr, bWrite, d, nExecutedCycles);
 		else
 			return IO_Null(pc, addr, bWrite, d, nExecutedCycles); //Apple2 value
+
+		// FT Monitoring Card => $C066 = stop, $C067 = start
+	case 0x6: CMonitoringCard::stopMonitoring(false); break;
+	case 0x7: CMonitoringCard::startMonitoring(false); break;
+	case 0x8: CMonitoringCard::stopMonitoring(true); break;
+	case 0x9: CMonitoringCard::startMonitoring(true); break;
 	}
 	return IO_Null(pc, addr, bWrite, d, nExecutedCycles); //Apple2 value
 }
