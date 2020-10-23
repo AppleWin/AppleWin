@@ -48,7 +48,6 @@ private:
 	void RestoreCurrentConfig(void);
 	std::string GetSlot(const UINT uSlot);
 	std::string GetCardName(const SS_CARDTYPE CardType);
-	void GetDiskBaseNameWithAWS(std::string & pszFilename);
 
 	PAGETYPE m_LastPage;
 	UINT32 m_bmPages;

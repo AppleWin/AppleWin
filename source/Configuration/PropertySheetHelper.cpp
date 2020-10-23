@@ -188,21 +188,23 @@ void CPropertySheetHelper::SaveStateUpdate()
 	}
 }
 
-void CPropertySheetHelper::GetDiskBaseNameWithAWS(std::string & szFilename)
-{
-	szFilename.clear();
-
-	HD_GetFilenameForSaveState(szFilename);
-	if (szFilename.empty())
-		GetCardMgr().GetDisk2CardMgr().GetFilenameForSaveState(szFilename);
-
-	if (!szFilename.empty())
-		szFilename += ".aws.yaml";
-}
-
 // NB. OK'ing this property sheet will call Snapshot_SetFilename() with this new filename
 int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 {
+	// Attempt to get a default filename/path based on harddisk plugged-in or floppy disk inserted
+	// . Priority given to harddisk over floppy images
+	std::string defaultFilename;
+	std::string defaultPath;
+
+	HD_GetFilenameAndPathForSaveState(defaultFilename, defaultPath);
+	if (defaultFilename.empty())
+		GetCardMgr().GetDisk2CardMgr().GetFilenameAndPathForSaveState(defaultFilename, defaultPath);
+
+	if (!defaultFilename.empty())
+		defaultFilename += ".aws.yaml";
+
+	//
+
 	std::string szDirectory;
 	std::string tempFilename;
 
@@ -210,15 +212,14 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 	{
 		// Attempt to use harddisk's or floppy disk's image name as the name for the .aws.yaml file
 		// Else Attempt to use the Prop Sheet's filename
-		GetDiskBaseNameWithAWS(tempFilename);
+		tempFilename = defaultFilename;
+		szDirectory = defaultPath;
+
 		if (tempFilename.empty())
 		{
 			tempFilename = Snapshot_GetFilename();
+			szDirectory = Snapshot_GetPath();
 		}
-
-		HD_GetPathForSaveState(szDirectory);
-		if (szDirectory.empty())
-			GetCardMgr().GetDisk2CardMgr().GetPathForSaveState(szDirectory);
 	}
 	else	// Load (or Browse)
 	{
@@ -226,9 +227,7 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 		// Else attempt to use harddisk's or floppy disk's image name as the name for the .aws.yaml file
 		tempFilename = Snapshot_GetFilename();
 		if (tempFilename.empty())
-		{
-			GetDiskBaseNameWithAWS(tempFilename);
-		}
+			tempFilename = defaultFilename;
 
 		szDirectory = Snapshot_GetPath();
 	}

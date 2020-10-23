@@ -313,8 +313,14 @@ const std::string & HD_GetFullPathName(const int iDrive)
 	return ImageGetPathname(g_HardDisk[iDrive].imagehandle);
 }
 
-void HD_GetPathForSaveState(std::string& path)
+static const std::string & HD_DiskGetBaseName(const int iDrive)
 {
+	return g_HardDisk[iDrive].imagename;
+}
+
+void HD_GetFilenameAndPathForSaveState(std::string& filename, std::string& path)
+{
+	filename = "";
 	path = "";
 
 	if (!g_bHD_Enabled)
@@ -325,6 +331,7 @@ void HD_GetPathForSaveState(std::string& path)
 		if (!g_HardDisk[i].hd_imageloaded)
 			continue;
 
+		filename = HD_DiskGetBaseName(i);
 		std::string pathname = HD_GetFullPathName(i);
 
 		int idx = pathname.find_last_of('\\');
@@ -336,28 +343,6 @@ void HD_GetPathForSaveState(std::string& path)
 
 		_ASSERT(0);
 		break;
-	}
-}
-
-static const std::string & HD_DiskGetBaseName(const int iDrive)
-{
-	return g_HardDisk[iDrive].imagename;
-}
-
-void HD_GetFilenameForSaveState(std::string& filename)
-{
-	filename = "";
-
-	if (!g_bHD_Enabled)
-		return;
-
-	for (UINT i=HARDDISK_1; i<=HARDDISK_2; i++)
-	{
-		if (!g_HardDisk[i].hd_imageloaded)
-			continue;
-
-		filename = HD_DiskGetBaseName(i);
-		return;
 	}
 }
 

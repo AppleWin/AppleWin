@@ -133,25 +133,13 @@ bool Disk2CardManager::IsAnyFirmware13Sector(void)
 	return false;
 }
 
-void Disk2CardManager::GetPathForSaveState(std::string& path)
+void Disk2CardManager::GetFilenameAndPathForSaveState(std::string& filename, std::string& path)
 {
 	for (int i = NUM_SLOTS-1; i >= 0; i--)	// scan slots backwards: 7->0
 	{
 		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).GetPathForSaveState(path);
-			return;
-		}
-	}
-}
-
-void Disk2CardManager::GetFilenameForSaveState(std::string& filename)
-{
-	for (int i = NUM_SLOTS-1; i >= 0; i--)	// scan slots backwards: 7->0
-	{
-		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
-		{
-			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).GetFilenameForSaveState(filename);
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).GetFilenameAndPathForSaveState(filename, path);
 			return;
 		}
 	}

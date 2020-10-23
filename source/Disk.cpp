@@ -562,8 +562,9 @@ const std::string & Disk2InterfaceCard::GetBaseName(const int drive)
 	return m_floppyDrive[drive].m_disk.m_imagename;
 }
 
-void Disk2InterfaceCard::GetPathForSaveState(std::string& path)
+void Disk2InterfaceCard::GetFilenameAndPathForSaveState(std::string& filename, std::string& path)
 {
+	filename = "";
 	path = "";
 
 	for (UINT i=DRIVE_1; i<=DRIVE_2; i++)
@@ -571,6 +572,7 @@ void Disk2InterfaceCard::GetPathForSaveState(std::string& path)
 		if (IsDriveEmpty(i))
 			continue;
 
+		filename = GetBaseName(i);
 		std::string pathname = DiskGetFullPathName(i);
 
 		int idx = pathname.find_last_of('\\');
@@ -582,20 +584,6 @@ void Disk2InterfaceCard::GetPathForSaveState(std::string& path)
 
 		_ASSERT(0);
 		break;
-	}
-}
-
-void Disk2InterfaceCard::GetFilenameForSaveState(std::string& filename)
-{
-	filename = "";
-
-	for (UINT i=DRIVE_1; i<=DRIVE_2; i++)
-	{
-		if (IsDriveEmpty(i))
-			continue;
-
-		filename = GetBaseName(i);
-		return;
 	}
 }
 
