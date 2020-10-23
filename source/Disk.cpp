@@ -40,7 +40,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Log.h"
 #include "Memory.h"
 #include "Registry.h"
-#include "SaveState.h"
 #include "Video.h"
 #include "YamlHelper.h"
 

@@ -835,7 +835,7 @@ void LoadConfiguration(void)
 
 //===========================================================================
 
-bool SetCurrentImageDir(const std::string& pszImageDir)
+bool SetCurrentImageDir(const std::string & pszImageDir)
 {
 	g_sCurrentDir = pszImageDir;
 

@@ -36,11 +36,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debug.h"
 #include "Disk.h"
 #include "Frame.h"
-#include "Harddisk.h"
 #include "Joystick.h"
 #include "Keyboard.h"
 #include "LanguageCard.h"
-#include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"
@@ -94,8 +92,6 @@ static void Snapshot_SetPathname(const std::string& strPathname)
 		g_strSaveStatePathname.append(DEFAULT_SNAPSHOT_NAME);
 
 		g_strSaveStatePath = g_sCurrentDir;
-		LogOutput("Snapshot_SetPathname:(1) new path=%s (exit)\n", g_strSaveStatePath.c_str());
-
 		return;
 	}
 
@@ -107,7 +103,6 @@ static void Snapshot_SetPathname(const std::string& strPathname)
 	{
 		strFilename = &strPathname[nIdx+1];
 		g_strSaveStatePath = strPathname.substr(0, nIdx+1); // Bugfix: 1.25.0.2 // Snapshot_LoadState() -> SetCurrentImageDir() -> g_sCurrentDir 
-		LogOutput("Snapshot_SetPathname:(2) new path=%s (exit)\n", g_strSaveStatePath.c_str());
 	}
 
 	g_strSaveStateFilename = strFilename;
@@ -129,17 +124,17 @@ void Snapshot_SetFilename(const std::string& filename, const std::string& path/*
 	Snapshot_SetPathname(pathname+filename);
 }
 
-const std::string& Snapshot_GetFilename()
+const std::string& Snapshot_GetFilename(void)
 {
 	return g_strSaveStateFilename;
 }
 
-const std::string& Snapshot_GetPath()
+const std::string& Snapshot_GetPath(void)
 {
 	return g_strSaveStatePath;
 }
 
-const std::string& Snapshot_GetPathname()
+const std::string& Snapshot_GetPathname(void)
 {
 	return g_strSaveStatePathname;
 }
