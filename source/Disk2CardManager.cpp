@@ -140,7 +140,8 @@ void Disk2CardManager::GetFilenameAndPathForSaveState(std::string& filename, std
 		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
 		{
 			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).GetFilenameAndPathForSaveState(filename, path);
-			return;
+			if (!filename.empty())
+				return;
 		}
 	}
 }
