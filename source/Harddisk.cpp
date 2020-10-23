@@ -144,7 +144,7 @@ struct HDD
 	}
 
 	// From FloppyDisk
-	std::string	imagename;	// <FILENAME> (ie. no extension)    [not used]
+	std::string	imagename;	// <FILENAME> (ie. no extension)
 	std::string fullname;	// <FILENAME.EXT> or <FILENAME.zip>
 	std::string strFilenameInZip;					// ""             or <FILENAME.EXT> [not used]
 	ImageInfo*	imagehandle;			// Init'd by HD_Insert() -> ImageOpen()
@@ -314,11 +314,53 @@ const std::string & HD_GetFullPathName(const int iDrive)
 	return ImageGetPathname(g_HardDisk[iDrive].imagehandle);
 }
 
-static const std::string & HD_DiskGetBaseName(const int iDrive)	// Not used
+void HD_GetPathForSaveState(std::string& path)
+{
+	path = "";
+
+	if (!g_bHD_Enabled)
+		return;
+
+	for (UINT i=HARDDISK_1; i<=HARDDISK_2; i++)
+	{
+		if (!g_HardDisk[i].hd_imageloaded)
+			continue;
+
+		std::string pathname = HD_GetFullPathName(i);
+
+		int idx = pathname.find_last_of('\\');
+		if (idx >= 0 && idx+1 < (int)pathname.length())	// path exists?
+		{
+			path = pathname.substr(0, idx+1);
+			return;
+		}
+
+		_ASSERT(0);
+		break;
+	}
+}
+
+static const std::string & HD_DiskGetBaseName(const int iDrive)
 {
 	return g_HardDisk[iDrive].imagename;
 }
 
+void HD_GetFilenameForSaveState(std::string& filename)
+{
+	filename = "";
+
+	if (!g_bHD_Enabled)
+		return;
+
+	for (UINT i=HARDDISK_1; i<=HARDDISK_2; i++)
+	{
+		if (!g_HardDisk[i].hd_imageloaded)
+			continue;
+
+		filename = HD_DiskGetBaseName(i);
+		return;
+	}
+}
 
 //-------------------------------------
 
@@ -414,7 +456,6 @@ BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename)
 	if (Error == eIMAGE_ERROR_NONE)
 	{
 		GetImageTitle(pszImageFilename.c_str(), g_HardDisk[iDrive].imagename, g_HardDisk[iDrive].fullname);
-		Snapshot_UpdatePath(pszImageFilename, false);
 	}
 
 	HD_SaveLastDiskImage(iDrive);

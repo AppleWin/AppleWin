@@ -14,4 +14,6 @@ public:
 	void LoadLastDiskImage(void);
 	void Destroy(void);
 	bool IsAnyFirmware13Sector(void);
+	void GetPathForSaveState(std::string& path);
+	void GetFilenameForSaveState(std::string& filename);
 };

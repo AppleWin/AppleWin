@@ -129,51 +129,6 @@ void Snapshot_SetFilename(const std::string& filename, const std::string& path/*
 	Snapshot_SetPathname(pathname+filename);
 }
 
-// Logic:
-// . If isFloppyDisk and a harddisk is plugged in, then return.
-// . Derive path from input pathname with filename removed
-// . If path != existing snapshot path then set it as the new path, and set filename=DEFAULT
-void Snapshot_UpdatePath(const std::string& pathname, bool isFloppyDisk)
-{
-	if (isFloppyDisk && HD_CardIsEnabled())
-	{
-		LogOutput("Snapshot_UpdatePath: hdd priority over floppy (exit)\n");
-		return;	// harddisk images take priority over floppy images
-	}
-	else if (!isFloppyDisk && !HD_CardIsEnabled())
-	{
-		LogOutput("Snapshot_UpdatePath: hdd image, but hdd not enabled! (exit)\n");
-		return;
-	}
-
-	if (pathname.empty())
-	{
-		LogOutput("Snapshot_UpdatePath: pathname empty! (exit)\n");
-		return;
-	}
-
-	std::string path;
-	int idx = pathname.find_last_of('\\');
-	if (idx >= 0 && idx+1 < (int)pathname.length())	// path exists?
-		path = pathname.substr(0, idx+1);
-
-	if (path.empty())
-	{
-		LogOutput("Snapshot_UpdatePath: path empty! (pathname=%s) (exit)\n", pathname.c_str());
-		return;
-	}
-
-	if (path == g_strSaveStatePath)
-	{
-		LogOutput("Snapshot_UpdatePath: path the same (exit)\n");
-		return;
-	}
-
-	g_strSaveStatePath = path;
-	g_strSaveStateFilename = DEFAULT_SNAPSHOT_NAME;
-	LogOutput("Snapshot_UpdatePath: new path = %s\n", path.c_str());
-}
-
 const std::string& Snapshot_GetFilename()
 {
 	return g_strSaveStateFilename;

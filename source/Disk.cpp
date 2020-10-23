@@ -563,6 +563,43 @@ const std::string & Disk2InterfaceCard::GetBaseName(const int drive)
 	return m_floppyDrive[drive].m_disk.m_imagename;
 }
 
+void Disk2InterfaceCard::GetPathForSaveState(std::string& path)
+{
+	path = "";
+
+	for (UINT i=DRIVE_1; i<=DRIVE_2; i++)
+	{
+		if (IsDriveEmpty(i))
+			continue;
+
+		std::string pathname = DiskGetFullPathName(i);
+
+		int idx = pathname.find_last_of('\\');
+		if (idx >= 0 && idx+1 < (int)pathname.length())	// path exists?
+		{
+			path = pathname.substr(0, idx+1);
+			return;
+		}
+
+		_ASSERT(0);
+		break;
+	}
+}
+
+void Disk2InterfaceCard::GetFilenameForSaveState(std::string& filename)
+{
+	filename = "";
+
+	for (UINT i=DRIVE_1; i<=DRIVE_2; i++)
+	{
+		if (IsDriveEmpty(i))
+			continue;
+
+		filename = GetBaseName(i);
+		return;
+	}
+}
+
 const std::string & Disk2InterfaceCard::DiskGetFullPathName(const int drive)
 {
 	return ImageGetPathname(m_floppyDrive[drive].m_disk.m_imagehandle);
@@ -663,13 +700,6 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	{
 		GetImageTitle(pszImageFilename, pFloppy->m_imagename, pFloppy->m_fullname);
 		Video_ResetScreenshotCounter(pFloppy->m_imagename);
-
-		{
-			char szCurrentPathname[MAX_PATH];
-			DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, szCurrentPathname, NULL);
-			if (uNameLen)
-				Snapshot_UpdatePath(szCurrentPathname, true);
-		}
 
 		if (g_nAppMode == MODE_LOGO)
 			InitFirmware(GetCxRomPeripheral());

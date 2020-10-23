@@ -184,20 +184,20 @@ void CPropertySheetHelper::SaveStateUpdate()
 	if (m_bSSNewFilename)
 	{
 		Snapshot_SetFilename(m_szSSNewFilename, m_szSSNewDirectory);
-		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, Snapshot_GetPathname());
+		RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, Snapshot_GetPathname());
 	}
 }
 
-void CPropertySheetHelper::GetDiskBaseNameWithAWS(std::string & pszFilename)
+void CPropertySheetHelper::GetDiskBaseNameWithAWS(std::string & szFilename)
 {
-	if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
-		return;
+	szFilename.clear();
 
-	const std::string& diskName = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).GetBaseName(DRIVE_1);
-	if (!diskName.empty())
-	{
-		pszFilename = diskName + ".aws.yaml";
-	}
+	HD_GetFilenameForSaveState(szFilename);
+	if (szFilename.empty())
+		GetCardMgr().GetDisk2CardMgr().GetFilenameForSaveState(szFilename);
+
+	if (!szFilename.empty())
+		szFilename += ".aws.yaml";
 }
 
 // NB. OK'ing this property sheet will call Snapshot_SetFilename() with this new filename
@@ -208,18 +208,22 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 
 	if (bSave)
 	{
-		// Attempt to use drive1's image name as the name for the .aws file
+		// Attempt to use harddisk's or floppy disk's image name as the name for the .aws.yaml file
 		// Else Attempt to use the Prop Sheet's filename
 		GetDiskBaseNameWithAWS(tempFilename);
 		if (tempFilename.empty())
 		{
 			tempFilename = Snapshot_GetFilename();
 		}
+
+		HD_GetPathForSaveState(szDirectory);
+		if (szDirectory.empty())
+			GetCardMgr().GetDisk2CardMgr().GetPathForSaveState(szDirectory);
 	}
 	else	// Load (or Browse)
 	{
 		// Attempt to use the Prop Sheet's filename first
-		// Else attempt to use drive1's image name as the name for the .aws file
+		// Else attempt to use harddisk's or floppy disk's image name as the name for the .aws.yaml file
 		tempFilename = Snapshot_GetFilename();
 		if (tempFilename.empty())
 		{
