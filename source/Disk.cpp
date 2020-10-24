@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Log.h"
 #include "Memory.h"
 #include "Registry.h"
+#include "SaveState.h"
 #include "Video.h"
 #include "YamlHelper.h"
 
@@ -686,6 +687,8 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	if (Error == eIMAGE_ERROR_NONE)
 	{
 		GetImageTitle(pszImageFilename, pFloppy->m_imagename, pFloppy->m_fullname);
+		Snapshot_UpdatePath();
+
 		Video_ResetScreenshotCounter(pFloppy->m_imagename);
 
 		if (g_nAppMode == MODE_LOGO)

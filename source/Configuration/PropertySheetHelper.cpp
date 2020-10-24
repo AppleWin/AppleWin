@@ -188,57 +188,18 @@ void CPropertySheetHelper::SaveStateUpdate()
 	}
 }
 
-// NB. OK'ing this property sheet will call Snapshot_SetFilename() with this new filename
+// NB. OK'ing this property sheet will call SaveStateUpdate()->Snapshot_SetFilename() with this new path & filename
 int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 {
-	// Attempt to get a default filename/path based on harddisk plugged-in or floppy disk inserted
-	// . Priority given to harddisk over floppy images
-	std::string defaultFilename;
-	std::string defaultPath;
+	// Whenever harddisks/disks are inserted and *if path has changed* then:
+	// . Snapshot's path & Snapshot's filename will be updated to reflect the new defaults.
 
-	HD_GetFilenameAndPathForSaveState(defaultFilename, defaultPath);
-	if (defaultFilename.empty())
-		GetCardMgr().GetDisk2CardMgr().GetFilenameAndPathForSaveState(defaultFilename, defaultPath);
-
-	if (!defaultFilename.empty())
-		defaultFilename += ".aws.yaml";
-
-	//
-
-	std::string szDirectory;
-	std::string tempFilename;
-
-	if (bSave)
-	{
-		// Attempt to use harddisk's or floppy disk's image name as the name for the .aws.yaml file
-		// Else Attempt to use the Prop Sheet's filename
-		tempFilename = defaultFilename;
-		szDirectory = defaultPath;
-
-		if (tempFilename.empty())
-		{
-			tempFilename = Snapshot_GetFilename();
-			szDirectory = Snapshot_GetPath();
-		}
-	}
-	else	// Load (or Browse)
-	{
-		// Attempt to use the Prop Sheet's filename first
-		// Else attempt to use harddisk's or floppy disk's image name as the name for the .aws.yaml file
-		tempFilename = Snapshot_GetFilename();
-		if (tempFilename.empty())
-			tempFilename = defaultFilename;
-
-		szDirectory = Snapshot_GetPath();
-	}
-
+	std::string szDirectory= Snapshot_GetPath();
 	if (szDirectory.empty())
 		szDirectory = g_sCurrentDir;
 
-	// convert tempFilename to char * for the rest of the function
-	TCHAR szFilename[MAX_PATH] = {0};
-	strcpy(szFilename, tempFilename.c_str());
-	tempFilename.clear(); // do NOT use this any longer
+	char szFilename[MAX_PATH] = {0};
+	strcpy(szFilename, Snapshot_GetFilename().c_str());
 
 	//
 

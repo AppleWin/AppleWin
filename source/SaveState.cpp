@@ -139,6 +139,32 @@ const std::string& Snapshot_GetPathname(void)
 	return g_strSaveStatePathname;
 }
 
+// Called on successful insertion and on prompting to save/load a save-state
+void Snapshot_GetDefaultFilenameAndPath(std::string& defaultFilename, std::string& defaultPath)
+{
+	// Attempt to get a default filename/path based on harddisk plugged-in or floppy disk inserted
+	// . Priority given to harddisk over floppy images
+	HD_GetFilenameAndPathForSaveState(defaultFilename, defaultPath);
+	if (defaultFilename.empty())
+		GetCardMgr().GetDisk2CardMgr().GetFilenameAndPathForSaveState(defaultFilename, defaultPath);
+}
+
+// Called by Disk2InterfaceCard::InsertDisk() and HD_Insert() after a successful insertion
+void Snapshot_UpdatePath(void)
+{
+	std::string defaultFilename;
+	std::string defaultPath;
+	Snapshot_GetDefaultFilenameAndPath(defaultFilename, defaultPath);
+
+	if (g_strSaveStatePath == defaultPath)
+		return;
+
+	if (!defaultFilename.empty())
+		defaultFilename += ".aws.yaml";
+
+	Snapshot_SetFilename(defaultFilename, defaultPath);
+}
+
 //-----------------------------------------------------------------------------
 
 static HANDLE m_hFile = INVALID_HANDLE_VALUE;
