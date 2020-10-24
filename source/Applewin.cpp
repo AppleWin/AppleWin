@@ -786,6 +786,13 @@ void LoadConfiguration(void)
 
 	TCHAR szFilename[MAX_PATH];
 
+	// Load save-state pathname *before* inserting any harddisk/disk images (for both init & reinit cases)
+	// NB. inserting harddisk/disk can change snapshot pathname
+	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));	// Can be pathname or just filename
+	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
+
+	//
+
 	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH, TEXT(""));
 	if (szFilename[0] == '\0')
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
@@ -803,11 +810,6 @@ void LoadConfiguration(void)
 	SetCurrentImageDir(szFilename);
 
 	GetCardMgr().GetDisk2CardMgr().LoadLastDiskImage();
-
-	//
-
-	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));	// Can be pathname or just filename
-	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
 
 	//
 

@@ -156,7 +156,7 @@ void Snapshot_UpdatePath(void)
 	std::string defaultPath;
 	Snapshot_GetDefaultFilenameAndPath(defaultFilename, defaultPath);
 
-	if (g_strSaveStatePath == defaultPath)
+	if (defaultPath.empty() || g_strSaveStatePath == defaultPath)
 		return;
 
 	if (!defaultFilename.empty())
