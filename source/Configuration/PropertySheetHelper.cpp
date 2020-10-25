@@ -191,7 +191,7 @@ void CPropertySheetHelper::SaveStateUpdate()
 // NB. OK'ing this property sheet will call SaveStateUpdate()->Snapshot_SetFilename() with this new path & filename
 int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 {
-	// Whenever harddisks/disks are inserted and *if path has changed* then:
+	// Whenever harddisks/disks are inserted (or removed) and *if path has changed* then:
 	// . Snapshot's path & Snapshot's filename will be updated to reflect the new defaults.
 
 	std::string szDirectory = Snapshot_GetPath();
