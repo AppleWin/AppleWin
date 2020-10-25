@@ -71,7 +71,7 @@ static BYTE __stdcall IOWrite_SAM(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	// 
 	//  SAM card     WAV driver           SAM WAV
 	//  0xFF 255     0x7f  127      _      FF  7F 
-	//  0x81 129     0x01    1     / \
+	//  0x81 129     0x01    1     / \     .
 	//  0x80 128     0x00    0    /   \   /80  00
 	//  0x7f 127     0xFF   -1         \_/
 	//  0x00   0     0x80 -128             00  80

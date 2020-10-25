@@ -29,7 +29,7 @@ public:
 
 	void Insert(UINT slot, SS_CARDTYPE type);
 	void Remove(UINT slot);
-	SS_CARDTYPE QuerySlot(UINT slot) { return m_slot[slot]->QueryType(); }
+	SS_CARDTYPE QuerySlot(UINT slot) { _ASSERT(slot<NUM_SLOTS); return m_slot[slot]->QueryType(); }
 	Card& GetRef(UINT slot)
 	{
 		SS_CARDTYPE t=QuerySlot(slot); _ASSERT((t==CT_SSC || t==CT_MouseInterface || t==CT_Disk2) && m_slot[slot]);

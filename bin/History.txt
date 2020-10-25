@@ -8,6 +8,24 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.29.15.0 - 25 Oct 2020
+-----------------------
+. [Change #764] Fully support the RGB cards, and introduce a new 'Color (RGB Card/Monitor)' dedicated video mode.
+	- [PR #837] Support for 'Le Chat Mauve' Eve and Féline RGB cards.
+	- [PR #826] Support for Video7's SL7 RGB card.
+	- New command line switch to select RGB card type: -rgb-card-type: apple (default), sl7, eve, feline
+	- New command line switches for SL7: -rgb-card-foreground <color> & -rgb-card-background <color>
+	- NB. The previous 'Color (RGB Monitor)' has now been renamed to 'Color (Composite Idealized)'.
+. [Change #817] Request for key-accelerators for UI operations.
+	- Ctrl+F3/F4 will show the Drive-1/Drive-2 pop-up menus. (Then use cursor up/down to pick a menu item.)
+. [Change #691] Improved determining path & filename when saving/loading a save-state.
+. [Bug #838] Improved support for accented ANSI chars in pathnames in save-states.
+. [Bug #612] Support IRQ cycle-accuracy in full-speed (unthrottled) mode.
+. [Bug #608] Fixed regression in Broadsides' Mockingboard detection (introduced at 1.29.6.0).
+. Extended support for command line switches -d1,-d2,-s5d1,-s5d2,-h1,-h2 such that if the param is "", then it will eject/unplug the disk/harddisk.
+. Development PRs to improve code quality: #840, #842, #843, #847
+
+
 1.29.14.0 - 17 Aug 2020
 -----------------------
 . [Change #822] Updated Uthernet card support to use Npcap for Win10.

@@ -30,7 +30,6 @@ public:
 
 	void SaveCurrentConfig(void);
 	const std::string & GetSSNewFilename(void) { return m_szSSNewFilename; }
-	void ClearSSNewDirectory(void) { m_szSSNewDirectory.clear(); }
 //	const CConfigNeedingRestart& GetConfigOld(void) { return m_ConfigOld; }
 	CConfigNeedingRestart& GetConfigNew(void) { return m_ConfigNew; }
 	bool IsConfigChanged(void) { return m_ConfigNew != m_ConfigOld; }
@@ -49,15 +48,12 @@ private:
 	void RestoreCurrentConfig(void);
 	std::string GetSlot(const UINT uSlot);
 	std::string GetCardName(const SS_CARDTYPE CardType);
-	void GetDiskBaseNameWithAWS(std::string & pszFilename);
 
 	PAGETYPE m_LastPage;
 	UINT32 m_bmPages;
-	std::string m_szNewFilename;
 	bool m_bSSNewFilename;
 	std::string m_szSSNewDirectory;
 	std::string m_szSSNewFilename;
-	std::string m_szSSNewPathname;
 	CConfigNeedingRestart m_ConfigOld;
 	CConfigNeedingRestart m_ConfigNew;
 	bool m_bDoBenchmark;

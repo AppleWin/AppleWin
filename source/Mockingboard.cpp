@@ -1818,7 +1818,7 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 		}
 	}
 
-	BYTE nMB = (nAddr>>8)&0xf - SLOT4;
+	BYTE nMB = ((nAddr>>8)&0xf) - SLOT4;
 	BYTE nOffset = nAddr&0xff;
 
 	if(g_bPhasorEnable)
@@ -2597,14 +2597,14 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 
 		if (pMB->bTimer1Active)
 		{
-			const UINT id = nDeviceNum*kNumTimersPer6522+0;	// TIMER1
+			const UINT id = (nDeviceNum/2)*kNumTimersPer6522+0;	// TIMER1
 			SyncEvent* pSyncEvent = g_syncEvent[id];
 			pSyncEvent->SetCycles(pMB->sy6522.TIMER1_COUNTER.w + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
 			g_SynchronousEventMgr.Insert(pSyncEvent);
 		}
 		if (pMB->bTimer2Active)
 		{
-			const UINT id = nDeviceNum*kNumTimersPer6522+1;	// TIMER2
+			const UINT id = (nDeviceNum/2)*kNumTimersPer6522+1;	// TIMER2
 			SyncEvent* pSyncEvent = g_syncEvent[id];
 			pSyncEvent->SetCycles(pMB->sy6522.TIMER2_COUNTER.w + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
 			g_SynchronousEventMgr.Insert(pSyncEvent);
@@ -2613,7 +2613,7 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 		// FIXME: currently only support a single speech chip
 		if (pMB->SpeechChip.DurationPhoneme || g_bVotraxPhoneme)
 		{
-			g_nSSI263Device = nDeviceNum;
+			g_nSSI263Device = nDeviceNum+1;	// +1 as speech is always 2nd device of the pair
 			g_bPhasorEnable = true;
 			SetSpeechIRQ(pMB);
 		}

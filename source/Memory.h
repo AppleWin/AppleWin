@@ -57,8 +57,6 @@ extern LPBYTE     memshadow[0x100];
 
 #ifdef RAMWORKS
 const UINT kMaxExMemoryBanks = 127;	// 127 * aux mem(64K) + main mem(64K) = 8MB
-extern UINT       g_uMaxExPages;	// user requested ram pages (from cmd line)
-extern UINT       g_uActiveBank;
 #endif
 
 void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
