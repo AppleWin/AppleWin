@@ -800,8 +800,8 @@ void DebuggerPrint ( int x, int y, const char *pText )
 
 	char c;
 	const char *p = pText;
-	
-	while (c = *p)
+
+	while ((c = *p))
 	{
 		if (c == '\n')
 		{
@@ -828,7 +828,7 @@ void DebuggerPrintColor( int x, int y, const conchar_t * pText )
 	if( !pText)
 		return;
 
-	while (g = (*pSrc))
+	while ((g = (*pSrc)))
 	{
 		if (g == '\n')
 		{
@@ -2430,7 +2430,6 @@ static void DrawFlags ( int line, WORD nRegFlags )
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
 
-	char sFlagNames[ _6502_NUM_FLAGS+1 ] = ""; // = "NVRBDIZC"; // copy from g_aFlagNames
 	char sText[4] = "?";
 	RECT rect;
 
@@ -2540,8 +2539,6 @@ void DrawMemory ( int line, int iMemDump )
 
 	if ((eDevice == DEV_SY6522) || (eDevice == DEV_AY8910))
 		MB_GetSnapshot_v1(&SS_MB, 4+(nAddr>>1));		// Slot4 or Slot5
-
-	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 
 	RECT rect;
 	rect.left   = DISPLAY_MINIMEM_COLUMN;
@@ -2685,7 +2682,7 @@ void DrawMemory ( int line, int iMemDump )
 					ColorizeSpecialChar( sText, nData, iView, iBackground );
 				}
 			}
-			int nChars = PrintTextCursorX( sText, rect2 ); // PrintTextCursorX()
+			PrintTextCursorX( sText, rect2 ); // PrintTextCursorX()
 			iAddress++;
 		}
 		// Windows HACK: Bugfix: Rest of line is still background color
@@ -3619,7 +3616,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 	const int nMaxOpcodes = WINDOW_DATA_BYTES_PER_LINE;
 	char  sAddress[ 5 ];
 
-	assert( CONSOLE_WIDTH > WINDOW_DATA_BYTES_PER_LINE );
+	_ASSERT( CONSOLE_WIDTH > WINDOW_DATA_BYTES_PER_LINE );
 
 	char sOpcodes  [ CONSOLE_WIDTH ] = "";
 	char sImmediate[ 4 ]; // 'c'
@@ -3632,8 +3629,6 @@ void DrawSubWindow_Data (Update_t bUpdate)
 
 	MemoryDump_t* pMD = &g_aMemDump[ iMemDump ];
 	USHORT       nAddress = pMD->nAddress;
-	DEVICE_e     eDevice  = pMD->eDevice;
-	MemoryView_e iView    = pMD->eView;
 
 //	if (!pMD->bActive)
 //		return;
@@ -3893,8 +3888,7 @@ void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 		if (bUpdate & UPDATE_ZERO_PAGE)
 			DrawZeroPagePointers( yZeroPage );
 
-		bool bForceDisplaySoftSwitches = DEBUG_FORCE_DISPLAY || (bUpdate & UPDATE_SOFTSWITCHES);
-			DrawSoftSwitches( ySoft );
+		DrawSoftSwitches( ySoft );
 
 	#if defined(SUPPORT_Z80_EMU) && defined(OUTPUT_Z80_REGS)
 		DrawRegister( 19,"AF",2,*(WORD*)(membank+REG_AF));

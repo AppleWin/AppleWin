@@ -30,6 +30,7 @@
 		Start with hard disk 1 plugged-in (and auto power-on the Apple II). NB. Hard disk controller card gets enabled.<br><br>
 		-h2 &lt;pathname&gt;<br>
 		Start with hard disk 2 plugged-in. NB. Hard disk controller card gets enabled.<br><br>
+		NB. For -d1,-d2,-s5d1,-s5d2,-h1,-h2, if pathname is "", then the disk is ejected or the harddisk is unplugged.<br><br>
 		-model &lt;apple2|apple2p|apple2jp|apple2e|apple2ee&gt;<br>
 		Select the machine model: Apple II, Apple II+, Apple II J-Plus, Apple //e, Enhanced Apple //e.<br><br>
 		-clock-multiplier &lt;value&gt;<br>
@@ -61,7 +62,7 @@
 		Emulate a RamWorks III card with 1 to 127 pages (each page is 64K, giving a max of 8MB) in the auxiliary slot in an Apple //e machine.<br><br>
 		-load-state &lt;savestate&gt;<br>
 		Load a save-state file (and auto power-on the Apple II).<br>
-		NB. This takes precedent over the -d1, -d2, -d#s#, -h1, -h2, s0-7, -model and -r switches.<br><br>
+		NB. This takes precedent over the -d1, -d2, -s#d#, -h1, -h2, s0-7, -model and -r switches.<br><br>
 		-f<br>
 		Start in full-screen mode<br><br>
 		-fs-height=&lt;best|nnnn&gt;<br>

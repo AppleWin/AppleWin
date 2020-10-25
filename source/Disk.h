@@ -135,6 +135,7 @@ public:
 	const std::string & GetFullDiskFilename(const int drive);
 	const std::string & GetFullName(const int drive);
 	const std::string & GetBaseName(const int drive);
+	void GetFilenameAndPathForSaveState(std::string& filename, std::string& path);
 	void GetLightStatus (Disk_Status_e* pDisk1Status, Disk_Status_e* pDisk2Status);
 
 	ImageError_e InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);

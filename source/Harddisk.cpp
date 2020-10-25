@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Harddisk.h"
 #include "Memory.h"
 #include "Registry.h"
+#include "SaveState.h"
 #include "YamlHelper.h"
 
 #include "../resource/resource.h"
@@ -143,7 +144,7 @@ struct HDD
 	}
 
 	// From FloppyDisk
-	std::string	imagename;	// <FILENAME> (ie. no extension)    [not used]
+	std::string	imagename;	// <FILENAME> (ie. no extension)
 	std::string fullname;	// <FILENAME.EXT> or <FILENAME.zip>
 	std::string strFilenameInZip;					// ""             or <FILENAME.EXT> [not used]
 	ImageInfo*	imagehandle;			// Init'd by HD_Insert() -> ImageOpen()
@@ -313,11 +314,38 @@ const std::string & HD_GetFullPathName(const int iDrive)
 	return ImageGetPathname(g_HardDisk[iDrive].imagehandle);
 }
 
-static const std::string & HD_DiskGetBaseName(const int iDrive)	// Not used
+static const std::string & HD_DiskGetBaseName(const int iDrive)
 {
 	return g_HardDisk[iDrive].imagename;
 }
 
+void HD_GetFilenameAndPathForSaveState(std::string& filename, std::string& path)
+{
+	filename = "";
+	path = "";
+
+	if (!g_bHD_Enabled)
+		return;
+
+	for (UINT i=HARDDISK_1; i<=HARDDISK_2; i++)
+	{
+		if (!g_HardDisk[i].hd_imageloaded)
+			continue;
+
+		filename = HD_DiskGetBaseName(i);
+		std::string pathname = HD_GetFullPathName(i);
+
+		int idx = pathname.find_last_of('\\');
+		if (idx >= 0 && idx+1 < (int)pathname.length())	// path exists?
+		{
+			path = pathname.substr(0, idx+1);
+			return;
+		}
+
+		_ASSERT(0);
+		break;
+	}
+}
 
 //-------------------------------------
 
@@ -413,6 +441,7 @@ BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename)
 	if (Error == eIMAGE_ERROR_NONE)
 	{
 		GetImageTitle(pszImageFilename.c_str(), g_HardDisk[iDrive].imagename, g_HardDisk[iDrive].fullname);
+		Snapshot_UpdatePath();
 	}
 
 	HD_SaveLastDiskImage(iDrive);
@@ -474,7 +503,10 @@ bool HD_Select(const int iDrive)
 void HD_Unplug(const int iDrive)
 {
 	if (g_HardDisk[iDrive].hd_imageloaded)
+	{
 		HD_CleanupDrive(iDrive);
+		Snapshot_UpdatePath();
+	}
 }
 
 bool HD_IsDriveUnplugged(const int iDrive)
@@ -657,16 +689,16 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 			g_nHD_UnitNum = d;
 			break;
 		case 0xF4:
-			pHDD->hd_memblock = pHDD->hd_memblock & 0xFF00 | d;
+			pHDD->hd_memblock = (pHDD->hd_memblock & 0xFF00) | d;
 			break;
 		case 0xF5:
-			pHDD->hd_memblock = pHDD->hd_memblock & 0x00FF | (d << 8);
+			pHDD->hd_memblock = (pHDD->hd_memblock & 0x00FF) | (d << 8);
 			break;
 		case 0xF6:
-			pHDD->hd_diskblock = pHDD->hd_diskblock & 0xFF00 | d;
+			pHDD->hd_diskblock = (pHDD->hd_diskblock & 0xFF00) | d;
 			break;
 		case 0xF7:
-			pHDD->hd_diskblock = pHDD->hd_diskblock & 0x00FF | (d << 8);
+			pHDD->hd_diskblock = (pHDD->hd_diskblock & 0x00FF) | (d << 8);
 			break;
 		default:
 #if HD_LED

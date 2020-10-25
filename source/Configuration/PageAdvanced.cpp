@@ -140,8 +140,6 @@ BOOL CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 
 			InitOptions(hWnd);
 
-			m_PropertySheetHelper.ClearSSNewDirectory();
-
 			// Need to specify cmd-line switch: -printer-real to enable this control
 			EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), g_bEnableDumpToRealPrinter ? TRUE : FALSE);
 
@@ -156,17 +154,8 @@ void CPageAdvanced::DlgOK(HWND hWnd)
 {
 	// Update save-state filename
 	{
-		char szFilename[MAX_PATH];
-		memset(szFilename, 0, sizeof(szFilename));
-		* (USHORT*) szFilename = sizeof(szFilename);
-
-		UINT nLineLength = SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, EM_LINELENGTH, 0, 0);
-
-		SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, EM_GETLINE, 0, (LPARAM)szFilename);
-
-		nLineLength = nLineLength > sizeof(szFilename)-1 ? sizeof(szFilename)-1 : nLineLength;
-		szFilename[nLineLength] = 0x00;
-
+		// NB. if SaveStateSelectImage() was called (by pressing the "Save State -> Browse..." button)
+		// and a new save-state file was selected ("OK" from the openfilename dialog) then m_bSSNewFilename etc. will have been set
 		m_PropertySheetHelper.SaveStateUpdate();
 	}
 
