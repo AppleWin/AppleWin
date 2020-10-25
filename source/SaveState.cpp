@@ -80,19 +80,18 @@ static YamlHelper yamlHelper;
 
 //-----------------------------------------------------------------------------
 
-void Snapshot_SetFilename(const std::string & strPathname)
+static void Snapshot_SetPathname(const std::string& strPathname)
 {
 	if (strPathname.empty())
 	{
 		g_strSaveStateFilename = DEFAULT_SNAPSHOT_NAME;
 
 		g_strSaveStatePathname = g_sCurrentDir;
-		if (g_strSaveStatePathname.length() && g_strSaveStatePathname[g_strSaveStatePathname.length()-1] != '\\')
+		if (!g_strSaveStatePathname.empty() && *g_strSaveStatePathname.rbegin() != '\\')
 			g_strSaveStatePathname += "\\";
 		g_strSaveStatePathname.append(DEFAULT_SNAPSHOT_NAME);
 
 		g_strSaveStatePath = g_sCurrentDir;
-
 		return;
 	}
 
@@ -100,7 +99,7 @@ void Snapshot_SetFilename(const std::string & strPathname)
 	g_strSaveStatePath.clear();
 
 	int nIdx = strPathname.find_last_of('\\');
-	if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())
+	if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())	// path exists?
 	{
 		strFilename = &strPathname[nIdx+1];
 		g_strSaveStatePath = strPathname.substr(0, nIdx+1); // Bugfix: 1.25.0.2 // Snapshot_LoadState() -> SetCurrentImageDir() -> g_sCurrentDir 
@@ -110,14 +109,62 @@ void Snapshot_SetFilename(const std::string & strPathname)
 	g_strSaveStatePathname = strPathname;
 }
 
-const std::string & Snapshot_GetFilename()
+void Snapshot_SetFilename(const std::string& filename, const std::string& path/*=""*/)
+{
+	if (path.empty())
+		return Snapshot_SetPathname(filename);
+
+	_ASSERT(filename.find('\\') == std::string::npos);	// since we have a path, then filename mustn't contain a path too!
+
+	// Ensure path is suffixed with '\' before adding filename
+	std::string pathname = path;
+	if (*pathname.rbegin() != '\\')
+		pathname += "\\";
+
+	Snapshot_SetPathname(pathname+filename);
+}
+
+const std::string& Snapshot_GetFilename(void)
 {
 	return g_strSaveStateFilename;
 }
 
-const std::string & Snapshot_GetPath()
+const std::string& Snapshot_GetPath(void)
 {
 	return g_strSaveStatePath;
+}
+
+const std::string& Snapshot_GetPathname(void)
+{
+	return g_strSaveStatePathname;
+}
+
+// Called on successful insertion and on prompting to save/load a save-state
+void Snapshot_GetDefaultFilenameAndPath(std::string& defaultFilename, std::string& defaultPath)
+{
+	// Attempt to get a default filename/path based on harddisk plugged-in or floppy disk inserted
+	// . Priority given to harddisk over floppy images
+	HD_GetFilenameAndPathForSaveState(defaultFilename, defaultPath);
+	if (defaultFilename.empty())
+		GetCardMgr().GetDisk2CardMgr().GetFilenameAndPathForSaveState(defaultFilename, defaultPath);
+}
+
+// Called by Disk2InterfaceCard::InsertDisk() and HD_Insert() after a successful insertion
+// Called by Disk2InterfaceCard::EjectDisk() and HD_Unplug()
+// Called by RepeatInitialization() when Harddisk Controller card is disabled
+void Snapshot_UpdatePath(void)
+{
+	std::string defaultFilename;
+	std::string defaultPath;
+	Snapshot_GetDefaultFilenameAndPath(defaultFilename, defaultPath);
+
+	if (defaultPath.empty() || g_strSaveStatePath == defaultPath)
+		return;
+
+	if (!defaultFilename.empty())
+		defaultFilename += ".aws.yaml";
+
+	Snapshot_SetFilename(defaultFilename, defaultPath);
 }
 
 //-----------------------------------------------------------------------------

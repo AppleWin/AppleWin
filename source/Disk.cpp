@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Log.h"
 #include "Memory.h"
 #include "Registry.h"
+#include "SaveState.h"
 #include "Video.h"
 #include "YamlHelper.h"
 
@@ -342,6 +343,7 @@ void Disk2InterfaceCard::EjectDisk(const int drive)
 		return;
 
 	EjectDiskInternal(drive);
+	Snapshot_UpdatePath();
 
 	SaveLastDiskImage(drive);
 	Video_ResetScreenshotCounter("");
@@ -562,6 +564,31 @@ const std::string & Disk2InterfaceCard::GetBaseName(const int drive)
 	return m_floppyDrive[drive].m_disk.m_imagename;
 }
 
+void Disk2InterfaceCard::GetFilenameAndPathForSaveState(std::string& filename, std::string& path)
+{
+	filename = "";
+	path = "";
+
+	for (UINT i=DRIVE_1; i<=DRIVE_2; i++)
+	{
+		if (IsDriveEmpty(i))
+			continue;
+
+		filename = GetBaseName(i);
+		std::string pathname = DiskGetFullPathName(i);
+
+		int idx = pathname.find_last_of('\\');
+		if (idx >= 0 && idx+1 < (int)pathname.length())	// path exists?
+		{
+			path = pathname.substr(0, idx+1);
+			return;
+		}
+
+		_ASSERT(0);
+		break;
+	}
+}
+
 const std::string & Disk2InterfaceCard::DiskGetFullPathName(const int drive)
 {
 	return ImageGetPathname(m_floppyDrive[drive].m_disk.m_imagehandle);
@@ -605,6 +632,7 @@ void Disk2InterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status, Disk_Status
 
 //===========================================================================
 
+// Pre: pszImageFilename is *not* qualified with path
 ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary)
 {
 	FloppyDrive* pDrive = &m_floppyDrive[drive];
@@ -660,6 +688,8 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	if (Error == eIMAGE_ERROR_NONE)
 	{
 		GetImageTitle(pszImageFilename, pFloppy->m_imagename, pFloppy->m_fullname);
+		Snapshot_UpdatePath();
+
 		Video_ResetScreenshotCounter(pFloppy->m_imagename);
 
 		if (g_nAppMode == MODE_LOGO)
@@ -1509,7 +1539,7 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 
 	StringCbCopy(filename, MAX_PATH, pszFilename);
 
-	RegLoadString(TEXT(REG_PREFS), REGVALUE_PREF_START_DIR, 1, directory, MAX_PATH, TEXT(""));
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, directory, MAX_PATH, TEXT(""));
 	StringCbPrintf(title, 40, TEXT("Select Disk Image For Drive %d"), drive + 1);
 
 	_ASSERT(sizeof(OPENFILENAME) == sizeof(OPENFILENAME_NT4));	// Required for Win98/ME support (selected by _WIN32_WINNT=0x0400 in stdafx.h)

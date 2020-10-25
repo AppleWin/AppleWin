@@ -786,6 +786,13 @@ void LoadConfiguration(void)
 
 	TCHAR szFilename[MAX_PATH];
 
+	// Load save-state pathname *before* inserting any harddisk/disk images (for both init & reinit cases)
+	// NB. inserting harddisk/disk can change snapshot pathname
+	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));	// Can be pathname or just filename
+	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
+
+	//
+
 	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH, TEXT(""));
 	if (szFilename[0] == '\0')
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
@@ -796,7 +803,7 @@ void LoadConfiguration(void)
 
 	//
 
-	// Current/Starting Dir is the "root" of where the user keeps his disk images
+	// Current/Starting Dir is the "root" of where the user keeps their disk images
 	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szFilename, MAX_PATH, TEXT(""));
 	if (szFilename[0] == '\0')
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
@@ -814,9 +821,6 @@ void LoadConfiguration(void)
 	update_tfe_interface(szFilename, NULL);
 
 	//
-
-	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));
-	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
 
 	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_PRINTER_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));
 	Printer_SetFilename(szFilename);	// If not in Registry than default will be used
@@ -837,8 +841,7 @@ bool SetCurrentImageDir(const std::string & pszImageDir)
 {
 	g_sCurrentDir = pszImageDir;
 
-	int nLen = g_sCurrentDir.size();
-	if ((nLen > 0) && (g_sCurrentDir[ nLen - 1 ] != '\\'))
+	if (!g_sCurrentDir.empty() && *g_sCurrentDir.rbegin() != '\\')
 		g_sCurrentDir += '\\';
 
 	if( SetCurrentDirectory(g_sCurrentDir.c_str()) )
@@ -1176,6 +1179,12 @@ static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 {
 	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 
+	if (szFileName[0] == '\0')
+	{
+		disk2Card.EjectDisk(nDrive);
+		return true;
+	}
+
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
@@ -1188,6 +1197,12 @@ static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 
 static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
 {
+	if (szFileName[0] == '\0')
+	{
+		HD_Unplug(nDrive);
+		return true;
+	}
+
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
@@ -2096,7 +2111,10 @@ static void RepeatInitialization(void)
 			g_cmdLine.szImageName_harddisk[HARDDISK_1] = g_cmdLine.szImageName_harddisk[HARDDISK_2] = NULL;	// Don't insert on a restart
 
 			if (g_cmdLine.bSlotEmpty[7])
+			{
 				HD_SetEnabled(false);		// Disable HDD controller, but don't persist this to Registry/conf.ini (consistent with other '-sn empty' cmds)
+				Snapshot_UpdatePath();		// If save-state's filename is a harddisk, and the floppy is in the same path, then the filename won't be updated
+			}
 		}
 
 		// Set *after* InsertFloppyDisks() & InsertHardDisks(), which both update g_sCurrentDir
@@ -2160,7 +2178,7 @@ static void RepeatInitialization(void)
 		{
 			std::string strPathname(g_cmdLine.szSnapshotName);
 			int nIdx = strPathname.find_last_of('\\');
-			if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())
+			if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())	// path exists?
 			{
 				const std::string strPath = strPathname.substr(0, nIdx+1);
 				SetCurrentImageDir(strPath);
@@ -2171,12 +2189,6 @@ static void RepeatInitialization(void)
 			Snapshot_SetFilename(g_cmdLine.szSnapshotName);
 			Snapshot_LoadState();
 			g_cmdLine.bBoot = true;
-#if _DEBUG && 0	// Debug/test: Save a duplicate of the save-state file in tmp folder
-			std::string saveName = std::string("tmp\\") + std::string(szSnapshotName); 
-			Snapshot_SetFilename(saveName);
-			g_bSaveStateOnExit = true;
-			bShutdown = true;
-#endif
 			g_cmdLine.szSnapshotName = NULL;
 		}
 		else

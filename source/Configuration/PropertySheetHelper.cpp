@@ -147,23 +147,18 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 	REGSAVE(slotText.c_str(), (DWORD)newCardType);
 }
 
-// Looks like a (bad) C&P from SaveStateSelectImage()
-// - eg. see "RAPCS" tags below...
 // Used by:
 // . CPageDisk:		IDC_CIDERPRESS_BROWSE
 // . CPageAdvanced:	IDC_PRINTER_DUMP_FILENAME_BROWSE
 std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE, TCHAR* FILEMASKS)
 {
-	static std::string PathToFile; //This is a really awkward way to prevent mixing CiderPress and SaveStated values (RAPCS), but it seem the quickest. Here is its Line 1.
-	PathToFile = Snapshot_GetFilename(); //RAPCS, line 2.
-	TCHAR szDirectory[MAX_PATH] = TEXT("");
 	TCHAR szFilename[MAX_PATH];
-	RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename, MAX_PATH, TEXT(""));
-	std::string PathName = szFilename;
+	RegLoadString(REG_CONFIG, REGVALUE, 1, szFilename, MAX_PATH, TEXT(""));
+	std::string pathname = szFilename;
 
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn,sizeof(OPENFILENAME));
-	
+
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;
 	ofn.hInstance       = g_hInstance;
@@ -173,121 +168,57 @@ std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TC
 							TEXT("All Files\0*.*\0");*/
 	ofn.lpstrFile       = szFilename;
 	ofn.nMaxFile        = MAX_PATH;
-	ofn.lpstrInitialDir = szDirectory;
+	ofn.lpstrInitialDir = "";
 	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
 	ofn.lpstrTitle      = pszTitle;
-		
+
 	int nRes = GetOpenFileName(&ofn);
-	if(nRes)	// Okay is pressed
-	{
-		m_szNewFilename = &szFilename[ofn.nFileOffset];	// TODO:TC: m_szNewFilename not used! (Was g_szNewFilename)
+	if (nRes)	// OK is pressed
+		pathname = szFilename;
 
-		szFilename[ofn.nFileOffset] = 0;
-		if (_tcsicmp(szDirectory, szFilename))
-			m_szSSNewDirectory = szFilename;				// TODO:TC: m_szSSNewDirectory looks dodgy! (Was g_szSSNewDirectory)
-
-		PathName = szFilename;
-		PathName.append (m_szNewFilename);	
-	}
-	else		// Cancel is pressed
-	{
-		RegLoadString(TEXT("Configuration"), REGVALUE, 1, szFilename, MAX_PATH, TEXT(""));
-		PathName = szFilename;
-	}
-
-	m_szNewFilename = PathToFile; //RAPCS, line 3 (last).
-	return PathName;
+	return pathname;
 }
 
 void CPropertySheetHelper::SaveStateUpdate()
 {
 	if (m_bSSNewFilename)
 	{
-		Snapshot_SetFilename(m_szSSNewPathname);
-
-		RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, m_szSSNewPathname);
-
-		if(!m_szSSNewDirectory.empty())
-			RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_START_DIR, 1, m_szSSNewDirectory);
+		Snapshot_SetFilename(m_szSSNewFilename, m_szSSNewDirectory);
+		RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, Snapshot_GetPathname());
 	}
 }
 
-void CPropertySheetHelper::GetDiskBaseNameWithAWS(std::string & pszFilename)
-{
-	if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
-		return;
-
-	const std::string& diskName = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).GetBaseName(DRIVE_1);
-	if (!diskName.empty())
-	{
-		pszFilename = diskName + ".aws.yaml";
-	}
-}
-
-// NB. OK'ing this property sheet will call Snapshot_SetFilename() with this new filename
+// NB. OK'ing this property sheet will call SaveStateUpdate()->Snapshot_SetFilename() with this new path & filename
 int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave)
 {
-	std::string szDirectory;
-	std::string tempFilename;
+	// Whenever harddisks/disks are inserted (or removed) and *if path has changed* then:
+	// . Snapshot's path & Snapshot's filename will be updated to reflect the new defaults.
 
-	if (bSave)
-	{
-		// Attempt to use drive1's image name as the name for the .aws file
-		// Else Attempt to use the Prop Sheet's filename
-		GetDiskBaseNameWithAWS(tempFilename);
-		if (tempFilename.empty())
-		{
-			tempFilename = Snapshot_GetFilename();
-		}
-	}
-	else	// Load (or Browse)
-	{
-		// Attempt to use the Prop Sheet's filename first
-		// Else attempt to use drive1's image name as the name for the .aws file
-		tempFilename = Snapshot_GetFilename();
-		if (tempFilename.empty())
-		{
-			GetDiskBaseNameWithAWS(tempFilename);
-		}
-
-		szDirectory = Snapshot_GetPath();
-	}
-	
+	std::string szDirectory = Snapshot_GetPath();
 	if (szDirectory.empty())
 		szDirectory = g_sCurrentDir;
 
-	// convert tempFilename to char * for the rest of the function
-	TCHAR szFilename[MAX_PATH] = {0};
-	strcpy(szFilename, tempFilename.c_str());
-	tempFilename.clear(); // do NOT use this any longer
+	char szFilename[MAX_PATH];
+	strcpy(szFilename, Snapshot_GetFilename().c_str());
 
 	//
-	
+
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn,sizeof(OPENFILENAME));
-	
+
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;
 	ofn.hInstance       = g_hInstance;
-	if (bSave)
-	{
-		ofn.lpstrFilter = TEXT("Save State files (*.aws.yaml)\0*.aws.yaml\0");
+	ofn.lpstrFilter     = TEXT("Save State files (*.aws.yaml)\0*.aws.yaml\0");
 						  TEXT("All Files\0*.*\0");
-	}
-	else
-	{
-		ofn.lpstrFilter = TEXT("Save State files (*.aws,*.aws.yaml)\0*.aws;*.aws.yaml\0");
-						  TEXT("All Files\0*.*\0");
-	}
 	ofn.lpstrFile       = szFilename;	// Dialog strips the last .EXT from this string (eg. file.aws.yaml is displayed as: file.aws
-	ofn.nMaxFile        = MAX_PATH;
+	ofn.nMaxFile        = sizeof(szFilename);
 	ofn.lpstrInitialDir = szDirectory.c_str();
 	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
 	ofn.lpstrTitle      = pszTitle;
 
 	int nRes = bSave ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn);
-
-	if(nRes)
+	if (nRes)
 	{
 		if (bSave)	// Only for saving (allow loading of any file for backwards compatibility)
 		{
@@ -322,11 +253,9 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 		}
 
 		m_szSSNewFilename = &szFilename[ofn.nFileOffset];
-		m_szSSNewPathname = szFilename;
 
 		szFilename[ofn.nFileOffset] = 0;
-		if (_tcsicmp(szDirectory.c_str(), szFilename))
-			m_szSSNewDirectory = szFilename;
+		m_szSSNewDirectory = szFilename;	// always set this, even if unchanged
 	}
 
 	m_bSSNewFilename = nRes ? true : false;

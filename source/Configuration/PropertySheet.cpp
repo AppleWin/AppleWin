@@ -92,8 +92,6 @@ DWORD CPropertySheet::GetVolumeMax()
 // Called when F11/F12 is pressed
 bool CPropertySheet::SaveStateSelectImage(HWND hWindow, bool bSave)
 {
-	m_PropertySheetHelper.ClearSSNewDirectory();
-
 	if(m_PropertySheetHelper.SaveStateSelectImage(hWindow, bSave ? TEXT("Select Save State file")
 																 : TEXT("Select Load State file"), bSave))
 	{
