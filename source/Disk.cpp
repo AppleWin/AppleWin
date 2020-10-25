@@ -343,6 +343,7 @@ void Disk2InterfaceCard::EjectDisk(const int drive)
 		return;
 
 	EjectDiskInternal(drive);
+	Snapshot_UpdatePath();
 
 	SaveLastDiskImage(drive);
 	Video_ResetScreenshotCounter("");

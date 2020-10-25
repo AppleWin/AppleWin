@@ -150,6 +150,7 @@ void Snapshot_GetDefaultFilenameAndPath(std::string& defaultFilename, std::strin
 }
 
 // Called by Disk2InterfaceCard::InsertDisk() and HD_Insert() after a successful insertion
+// Called by Disk2InterfaceCard::EjectDisk() and HD_Unplug()
 void Snapshot_UpdatePath(void)
 {
 	std::string defaultFilename;

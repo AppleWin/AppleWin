@@ -503,7 +503,10 @@ bool HD_Select(const int iDrive)
 void HD_Unplug(const int iDrive)
 {
 	if (g_HardDisk[iDrive].hd_imageloaded)
+	{
 		HD_CleanupDrive(iDrive);
+		Snapshot_UpdatePath();
+	}
 }
 
 bool HD_IsDriveUnplugged(const int iDrive)
