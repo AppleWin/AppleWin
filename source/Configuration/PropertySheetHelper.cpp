@@ -194,11 +194,11 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 	// Whenever harddisks/disks are inserted and *if path has changed* then:
 	// . Snapshot's path & Snapshot's filename will be updated to reflect the new defaults.
 
-	std::string szDirectory= Snapshot_GetPath();
+	std::string szDirectory = Snapshot_GetPath();
 	if (szDirectory.empty())
 		szDirectory = g_sCurrentDir;
 
-	char szFilename[MAX_PATH] = {0};
+	char szFilename[MAX_PATH];
 	strcpy(szFilename, Snapshot_GetFilename().c_str());
 
 	//
@@ -209,18 +209,10 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;
 	ofn.hInstance       = g_hInstance;
-	if (bSave)
-	{
-		ofn.lpstrFilter = TEXT("Save State files (*.aws.yaml)\0*.aws.yaml\0");
+	ofn.lpstrFilter     = TEXT("Save State files (*.aws.yaml)\0*.aws.yaml\0");
 						  TEXT("All Files\0*.*\0");
-	}
-	else
-	{
-		ofn.lpstrFilter = TEXT("Save State files (*.aws,*.aws.yaml)\0*.aws;*.aws.yaml\0");
-						  TEXT("All Files\0*.*\0");
-	}
 	ofn.lpstrFile       = szFilename;	// Dialog strips the last .EXT from this string (eg. file.aws.yaml is displayed as: file.aws
-	ofn.nMaxFile        = MAX_PATH;
+	ofn.nMaxFile        = sizeof(szFilename);
 	ofn.lpstrInitialDir = szDirectory.c_str();
 	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
 	ofn.lpstrTitle      = pszTitle;

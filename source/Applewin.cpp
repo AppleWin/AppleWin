@@ -1179,6 +1179,12 @@ static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 {
 	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 
+	if (szFileName[0] == '\0')
+	{
+		disk2Card.EjectDisk(nDrive);
+		return true;
+	}
+
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
@@ -1191,6 +1197,12 @@ static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 
 static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
 {
+	if (szFileName[0] == '\0')
+	{
+		HD_Unplug(nDrive);
+		return true;
+	}
+
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
@@ -2099,7 +2111,10 @@ static void RepeatInitialization(void)
 			g_cmdLine.szImageName_harddisk[HARDDISK_1] = g_cmdLine.szImageName_harddisk[HARDDISK_2] = NULL;	// Don't insert on a restart
 
 			if (g_cmdLine.bSlotEmpty[7])
+			{
 				HD_SetEnabled(false);		// Disable HDD controller, but don't persist this to Registry/conf.ini (consistent with other '-sn empty' cmds)
+				Snapshot_UpdatePath();		// If save-state's filename is a harddisk, and the floppy is in the same path, then the filename won't be updated
+			}
 		}
 
 		// Set *after* InsertFloppyDisks() & InsertHardDisks(), which both update g_sCurrentDir
