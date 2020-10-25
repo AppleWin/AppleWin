@@ -1264,7 +1264,7 @@ Update_t CmdBreakpoint (int nArgs)
 //===========================================================================
 Update_t CmdBreakpointAddSmart (int nArgs)
 {
-	int nAddress = g_aArgs[1].nValue;
+	unsigned int nAddress = g_aArgs[1].nValue;
 
 	if (! nArgs)
 	{
@@ -1368,7 +1368,7 @@ bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoin
 	if (pBP)
 	{
 		_ASSERT(nLen <= _6502_MEM_LEN);
-		if (nLen > _6502_MEM_LEN) nLen = _6502_MEM_LEN;
+		if (nLen > (int) _6502_MEM_LEN) nLen = (int) _6502_MEM_LEN;
 
 		pBP->eSource   = iSrc;
 		pBP->eOperator = iCmp;
@@ -1944,7 +1944,7 @@ static Update_t CmdGo (int nArgs, const bool bFullSpeed)
 				{
 					nLen = g_aArgs[ iArg + 2 ].nValue;
 					nEnd = g_nDebugSkipStart + nLen;
-					if (nEnd > _6502_MEM_END)
+					if (nEnd > (int) _6502_MEM_END)
 						nEnd = _6502_MEM_END + 1;
 				}
 				else
@@ -3502,32 +3502,16 @@ Update_t CmdCursorRunUntil (int nArgs)
 	return CmdGo( nArgs, true );
 }
 
-
-//===========================================================================
-WORD _ClampAddress( int nAddress )
-{
-	if (nAddress < 0)
-		nAddress = 0;
-	if (nAddress > _6502_MEM_END)
-		nAddress = _6502_MEM_END;
-
-	return (WORD) nAddress;
-}
-
-
 // nDelta must be a power of 2
 //===========================================================================
 void _CursorMoveDownAligned( int nDelta )
 {
 	if (g_iWindowThis == WINDOW_DATA)
 	{
-		if (g_aMemDump[0].bActive)
+		if (g_aMemDump[0].eDevice == DEV_MEMORY)
 		{
-			if (g_aMemDump[0].eDevice == DEV_MEMORY)
-			{
-				g_aMemDump[0].nAddress += nDelta;
-				g_aMemDump[0].nAddress &= _6502_MEM_END;
-			}
+			g_aMemDump[0].nAddress += nDelta;
+			g_aMemDump[0].nAddress &= _6502_MEM_END;
 		}
 	}
 	else
@@ -3549,13 +3533,10 @@ void _CursorMoveUpAligned( int nDelta )
 {
 	if (g_iWindowThis == WINDOW_DATA)
 	{
-		if (g_aMemDump[0].bActive)
+		if (g_aMemDump[0].eDevice == DEV_MEMORY)
 		{
-			if (g_aMemDump[0].eDevice == DEV_MEMORY)
-			{
-				g_aMemDump[0].nAddress -= nDelta;
-				g_aMemDump[0].nAddress &= _6502_MEM_END;
-			}
+			g_aMemDump[0].nAddress -= nDelta;
+			g_aMemDump[0].nAddress &= _6502_MEM_END;
 		}
 	}
 	else
@@ -4533,7 +4514,7 @@ Update_t CmdMemoryLoad (int nArgs)
 		}
 		else
 		{
-			for (UINT i=(nAddressStart>>8); i!=((nAddressStart+nAddressLen)>>8); i++)
+			for (WORD i=(nAddressStart>>8); i!=((nAddressStart+(WORD)nAddressLen)>>8); i++)
 			{
 				memdirty[i] = 0xff;
 			}
@@ -7979,7 +7960,7 @@ Update_t ExecuteCommand (int nArgs)
 				// ####L -> Unassemble $address
 				if (((pCommand[nLen-1] == 'L') ||
 				     (pCommand[nLen-1] == 'l'))&&
-				    (strcmp("cl", pCommand) != 0)) // workaround for ambiguous "cl": must be handled by "clear flag" command
+				    (_stricmp("cl", pCommand) != 0)) // workaround for ambiguous "cl": must be handled by "clear flag" command
 				{
 					pCommand[nLen-1] = 0;
 					ArgsGetValue( pArg, & nAddress );

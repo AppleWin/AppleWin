@@ -15,7 +15,6 @@
 	extern bool   g_bFreshReset;
 	extern std::string PathFilename[2];
 	extern bool   g_bScrollLock_FullSpeed;
-	extern int    g_nCharsetType;
 
 
 // Prototypes

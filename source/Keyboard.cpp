@@ -118,7 +118,7 @@ BYTE KeybGetKeycode ()		// Used by IORead_C01x() and TapeRead() for Pravets8A
 
 //===========================================================================
 
-bool IsVirtualKeyAnAppleIIKey(WPARAM wparam);
+static bool IsVirtualKeyAnAppleIIKey(WPARAM wparam);
 
 void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 {

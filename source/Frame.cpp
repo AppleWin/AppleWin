@@ -176,7 +176,7 @@ static std::string driveTooltip;
 // __ Prototypes __________________________________________________________________________________
 void DrawCrosshairs (int x, int y);
 void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
-void ScreenWindowResize(const bool bCtrlKey);
+static void ScreenWindowResize(const bool bCtrlKey);
 void FrameResizeWindow(int nNewScale);
 
 
@@ -2484,7 +2484,7 @@ void SetNormalMode ()
 }
 
 //===========================================================================
-void SetUsingCursor (BOOL bNewValue)
+static void SetUsingCursor (BOOL bNewValue)
 {
 	if (bNewValue == g_bUsingCursor)
 		return;
