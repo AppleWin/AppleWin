@@ -56,7 +56,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Globals (Public)
 
     uint8_t      *g_pFramebufferbits = NULL; // last drawn frame
-	// uint8_t		 *g_wysiwigBufferBits = NULL; // the frame as seen on the window	// RIK
+	uint8_t		 *g_pReorderedFramebufferbits = new uint8_t[GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t)]; // the frame realigned properly	// RIK
 	int           g_nAltCharSetOffset  = 0; // alternate character set
 
 // Globals (Private)
@@ -155,6 +155,8 @@ static Gamelink_Block g_gamelink;
 	void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const TCHAR *pScreenShotFileName );
 	void Video_MakeScreenShot( FILE *pFile, const VideoScreenShot_e ScreenShotType );
 	void videoCreateDIBSection();
+	void reverseScanlines(uint8_t* destination, uint8_t* source, uint32_t width, uint32_t height, uint8_t depth);
+
 
 //===========================================================================
 void VideoInitialize ()
@@ -603,13 +605,33 @@ void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 
 //===========================================================================
 
+
+// RIK BEGIN
+// The framebuffer has its scanlines inverted, from bottom to top
+// To send a correct bitmap out to a 3rd party program we need to reverse the scanlines
+static void reverseScanlines (uint8_t *destination, uint8_t *source, uint32_t width, uint32_t height, uint8_t depth)
+{
+	uint32_t linesize = width * depth;
+	uint8_t* loln = source;
+	uint8_t* hiln = destination + (height - 1) * linesize;	// first pixel of the last line
+	for (size_t i = 0; i < height; i++)
+	{
+		memcpy(hiln, loln, linesize);
+		loln = loln + linesize;
+		hiln = hiln - linesize;
+	}
+}
+// RIK END
+
+//===========================================================================
+
 void VideoRedrawScreen (void)
 {
 	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
 	VideoRefreshScreen( g_uVideoMode, true );
 }
 
-void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/ )
+void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/)
 {
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
 	{
@@ -617,7 +639,7 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 		// . MODE_DEBUG   : always
 		// . MODE_RUNNING : called from VideoRedrawScreen(), eg. during full-speed
 		if (bRedrawWholeScreen)
-			NTSC_SetVideoMode( uRedrawWholeScreenVideoMode );
+			NTSC_SetVideoMode(uRedrawWholeScreenVideoMode);
 		NTSC_VideoRedrawWholeScreen();
 
 		// MODE_DEBUG|PAUSED: Need to refresh a 2nd time if changing video-type, otherwise could have residue from prev image!
@@ -640,7 +662,7 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 
 		SetStretchBltMode(hFrameDC, COLORONCOLOR);
 		StretchBlt(
-			hFrameDC, 
+			hFrameDC,
 			xdest, ydest,
 			wdest, hdest,
 			g_hDeviceDC,
@@ -651,23 +673,24 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 
 	// RIK BEGIN
 	// here send the last drawn frame to GameLink
-	// We could use efficiently g_pFramebufferbits with GetFrameBufferWidth/GetFrameBufferHeight, but the image is inverted
-	// Below we copy again the bitmap of the frame into memory and pass that to GridCartographer.
-	// It's much less efficient but it guarantees WYSIWIG. When GridCartographer allows to pass in flags specifying the x/y/w/h,
+	// We could efficiently send to GameLink g_pFramebufferbits with GetFrameBufferWidth/GetFrameBufferHeight, but the scanlines are reversed
+	// We can copy again the bitmap of the frame into memory, reverse it and pass that to GameLink.
+	// When GridCartographer/GameLink allows to pass in flags specifying the x/y/w/h,
 	// Then we can go back to g_pFramebufferbits and let GC handle it efficiently on its end, as it uses the GPU
-	/*
-	ZeroMemory(g_wysiwigBufferBits, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
-	GetDIBits(
-		hFrameDC,
-		g_hDeviceBitmap,
-		0,
-		kVDisplayableScanLines,
-		g_wysiwigBufferBits,
-		g_pFramebufferinfo,
-		DIB_RGB_COLORS
-	);
-	*/
+	//
+	// TODO: See if there is an easy function for this in the Win API or if there's another faster way
 
+	if (g_pFramebufferbits != NULL)
+	{
+		reverseScanlines
+		(
+			g_pReorderedFramebufferbits, 
+			g_pFramebufferbits, 
+			g_pFramebufferinfo->bmiHeader.biWidth, 
+			g_pFramebufferinfo->bmiHeader.biHeight,
+			g_pFramebufferinfo->bmiHeader.biBitCount / 8
+		);
+	}
 	if (GameLink::GetGameLinkEnabled()) {
 		// TODO: handle the mouse
 		// TODO: only send the framebuffer out when not in trackonly_mode
@@ -675,7 +698,7 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			false,								// don't handle the mouse
 			g_gamelink.p_program,
 			g_gamelink.p_program_hash,
-			(const Bit8u*)g_pFramebufferbits,	// framebuffer
+			(const Bit8u*)g_pReorderedFramebufferbits,	// framebuffer
 			MemGetBankPtr(0));					// Main memory pointer
 	}
 	// RIK END
@@ -1520,7 +1543,8 @@ static void videoCreateDIBSection()
 	SelectObject(g_hDeviceDC,g_hDeviceBitmap);
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory( g_pFramebufferbits, GetFrameBufferWidth()*GetFrameBufferHeight()*sizeof(bgra_t) );
+	ZeroMemory(g_pFramebufferbits, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
+	ZeroMemory(g_pReorderedFramebufferbits, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	NTSC_VideoInit( g_pFramebufferbits );
