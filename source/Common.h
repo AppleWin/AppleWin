@@ -104,6 +104,7 @@ enum AppMode_e
 #define  REGVALUE_VIDEO_HALF_SCAN_LINES "Half Scan Lines"	// GH#616: Deprecated from 1.28.2
 #define  REGVALUE_VIDEO_MONO_COLOR      "Monochrome Color"
 #define  REGVALUE_VIDEO_REFRESH_RATE    "Video Refresh Rate"
+#define  REGVALUE_VIDEO_GAMELINK    "Grid Cartographer Gamelink"	// RIK
 #define  REGVALUE_SERIAL_PORT_NAME   "Serial Port Name"
 #define  REGVALUE_ENHANCE_DISK_SPEED "Enhance Disk Speed"
 #define  REGVALUE_CUSTOM_SPEED       "Custom Speed"

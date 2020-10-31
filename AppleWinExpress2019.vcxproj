@@ -70,6 +70,7 @@
     <ClInclude Include="source\DiskImageHelper.h" />
     <ClInclude Include="source\DiskLog.h" />
     <ClInclude Include="source\Frame.h" />
+    <ClInclude Include="source\gamelink\gamelink.h" />
     <ClInclude Include="source\Harddisk.h" />
     <ClInclude Include="source\Joystick.h" />
     <ClInclude Include="source\Keyboard.h" />
@@ -140,6 +141,8 @@
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\CPU.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
+    <ClCompile Include="source\gamelink\gamelink.cpp" />
+    <ClCompile Include="source\gamelink\gamelink_term.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
     <ClCompile Include="source\SAM.cpp" />
     <ClCompile Include="source\Debugger\Debug.cpp" />
@@ -237,9 +240,12 @@
     <None Include="resource\Apple2.rom" />
     <None Include="resource\Apple2e.rom" />
     <None Include="resource\Apple2e_Enhanced.rom" />
+    <None Include="resource\Apple2_JPlus.rom" />
+    <None Include="resource\Apple2_JPlus_Video.rom" />
     <None Include="resource\Apple2_Plus.rom" />
     <None Include="resource\Base64A.rom" />
     <None Include="resource\Base64A_German_Video.rom" />
+    <None Include="resource\Disk2-13sector.rom" />
     <None Include="resource\DISK2.rom" />
     <None Include="resource\Freezes_Non-autostart_F8_Rom.rom" />
     <None Include="resource\Hddrvr.bin" />
@@ -270,6 +276,7 @@
   <ItemGroup>
     <Image Include="resource\Applewin.bmp" />
     <Image Include="resource\APPLEWIN.ICO" />
+    <Image Include="resource\ApplewinLogo.bmp" />
     <Image Include="resource\CAPSOFF.BMP" />
     <Image Include="resource\CAPSOFF_P8.BMP" />
     <Image Include="resource\CAPSON.BMP" />

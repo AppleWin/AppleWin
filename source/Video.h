@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gamelink/gamelink.h"
+
 // Types ____________________________________________________________
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc

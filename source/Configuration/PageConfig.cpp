@@ -123,6 +123,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 		case IDC_CHECK_VERTICAL_BLEND:
 		case IDC_CHECK_FS_SHOW_SUBUNIT_STATUS:
 		case IDC_CHECK_50HZ_VIDEO:
+		case IDC_CHECK_GAMELINK:		// RIK
 			// Checked in DlgOK()
 			break;
 
@@ -218,6 +219,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 			}
 
 			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_CHECK_GAMELINK, (GameLink::GetGameLinkEnabled()) ? BST_CHECKED : BST_UNCHECKED);		// RIK
 
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETPAGESIZE,0,5);
@@ -307,6 +309,17 @@ void CPageConfig::DlgOK(HWND hWnd)
 	{
 		m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = isNewVideoRate50Hz ? VR_50HZ : VR_60HZ;
 	}
+
+	// RIK START Support gamelink activation via preferences
+	const bool isNewGamelink = IsDlgButtonChecked(hWnd, IDC_CHECK_GAMELINK);
+	const bool isGameLinkEnabled = GameLink::GetGameLinkEnabled();
+	if (isGameLinkEnabled != isNewGamelink)
+	{
+		m_PropertySheetHelper.GetConfigNew().m_bEnableGamelink = isNewGamelink;
+		GameLink::SetGameLinkEnabled(isNewGamelink);
+		bVideoReinit = true;
+	}
+	// RIK END
 
 	if (bVideoReinit)
 	{

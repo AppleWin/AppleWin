@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "Disk.h"
 #include "DiskImage.h"
+#include "gamelink/gamelink.h"
 #include "Harddisk.h"
 #include "Frame.h"
 #include "Keyboard.h"
@@ -2725,7 +2726,7 @@ void FrameCreateWindow(void)
 		g_hInstance,NULL ); 
 
 	SetupTooltipControls();
-
+	
 	_ASSERT(g_TimerIDEvent_100msec == 0);
 	g_TimerIDEvent_100msec = SetTimer(g_hFrameWindow, IDEVENT_TIMER_100MSEC, 100, NULL);
 	LogFileOutput("FrameCreateWindow: SetTimer(), id=0x%08X\n", g_TimerIDEvent_100msec);

@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "Disk.h"		// DiskUpdateDriveState()
 #include "Frame.h"
+#include "gamelink/gamelink.h"
 #include "Keyboard.h"
 #include "Log.h"
 #include "Memory.h"
@@ -55,6 +56,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Globals (Public)
 
     uint8_t      *g_pFramebufferbits = NULL; // last drawn frame
+	// uint8_t		 *g_wysiwigBufferBits = NULL; // the frame as seen on the window	// RIK
 	int           g_nAltCharSetOffset  = 0; // alternate character set
 
 // Globals (Private)
@@ -95,6 +97,24 @@ static VideoStyle_e g_eVideoStyle = VS_HALF_SCANLINES;
 static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 static LPDIRECTDRAW g_lpDD = NULL;
+
+// RIK BEGIN
+// The GameLink I/O structure
+struct Gamelink_Block {
+	// Bit32u pitch;	// TODO: not needed?
+	// void* framebuf;	// we use g_pFramebufferbits directly
+	const char* p_program;
+	const Bit32u* p_program_hash;
+	GameLink::sSharedMMapInput_R2 input_prev;
+	GameLink::sSharedMMapInput_R2 input;
+	GameLink::sSharedMMapAudio_R1 audio;
+	bool want_mouse;
+};
+
+static Gamelink_Block g_gamelink;
+// RIK END
+
+
 
 //-------------------------------------
 
@@ -162,6 +182,33 @@ void VideoInitialize ()
 	g_pFramebufferinfo->bmiHeader.biClrUsed     = 0;
 
 	videoCreateDIBSection();
+
+	// RIK START
+// Gamelink defaults to trackonly mode.
+// TODO: Put track-only/video choice in the preferences window.
+// TODO: Create the non-trackonly code as well
+	if (GameLink::GetGameLinkEnabled())
+	{
+		// initialize the gamelink previous input to 0
+		memset(&g_gamelink.input_prev, 0, sizeof(GameLink::sSharedMMapInput_R2));
+		bool trackonly_mode = false;
+		(GameLink::Init(trackonly_mode));
+		g_gamelink.p_program = g_pAppTitle.c_str();
+		Bit32u head_checksum = 0;	// checksum of the file header (we could use the VOLUME checksum here? -- or nothing)
+		Bit32u checksum_bytes = 0;	// size of the file bytestream that we checksum
+		Bit32u checksum = 0;		// checksum of the file bytestream
+
+		// TODO: FIXME Get a real program checksum!
+		// We're using the applewin title to checksum when we really want to be checksumming the unique loaded Apple 2 program
+		// One way to do this would be to checksum the first 16k of the boot disk/hdv. Need to figure out how to do this.
+		checksum_bytes = g_pAppTitle.length();
+		checksum = GameLink::crc32(checksum, (Bit8u*)g_pAppTitle.c_str(), checksum_bytes);
+
+		Bit32u RunningProgramHash[4] = { head_checksum, checksum_bytes, checksum, 0 };
+		g_gamelink.p_program_hash = RunningProgramHash;
+	}
+	// RIK END
+
 }
 
 //===========================================================================
@@ -562,8 +609,6 @@ void VideoRedrawScreen (void)
 	VideoRefreshScreen( g_uVideoMode, true );
 }
 
-//===========================================================================
-
 void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/ )
 {
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
@@ -603,6 +648,37 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),
 			SRCCOPY);
 	}
+
+	// RIK BEGIN
+	// here send the last drawn frame to GameLink
+	// We could use efficiently g_pFramebufferbits with GetFrameBufferWidth/GetFrameBufferHeight, but the image is inverted
+	// Below we copy again the bitmap of the frame into memory and pass that to GridCartographer.
+	// It's much less efficient but it guarantees WYSIWIG. When GridCartographer allows to pass in flags specifying the x/y/w/h,
+	// Then we can go back to g_pFramebufferbits and let GC handle it efficiently on its end, as it uses the GPU
+	/*
+	ZeroMemory(g_wysiwigBufferBits, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
+	GetDIBits(
+		hFrameDC,
+		g_hDeviceBitmap,
+		0,
+		kVDisplayableScanLines,
+		g_wysiwigBufferBits,
+		g_pFramebufferinfo,
+		DIB_RGB_COLORS
+	);
+	*/
+
+	if (GameLink::GetGameLinkEnabled()) {
+		// TODO: handle the mouse
+		// TODO: only send the framebuffer out when not in trackonly_mode
+		GameLink::Out((Bit16u)GetFrameBufferWidth(), (Bit16u)GetFrameBufferHeight(), 1.0,	// width, height and ratio
+			false,								// don't handle the mouse
+			g_gamelink.p_program,
+			g_gamelink.p_program_hash,
+			(const Bit8u*)g_pFramebufferbits,	// framebuffer
+			MemGetBankPtr(0));					// Main memory pointer
+	}
+	// RIK END
 
 #ifdef NO_DIRECT_X
 #else
@@ -1322,6 +1398,12 @@ void Config_Load_Video()
 	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_REFRESH_RATE), &dwTmp, (DWORD)VR_60HZ);
 	SetVideoRefreshRate((VideoRefreshRate_e)dwTmp);
 
+	// RIK START
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_GAMELINK), &dwTmp, (DWORD)false);
+	GameLink::SetGameLinkEnabled(dwTmp);
+	// RIK END
+
+
 	//
 
 	const UINT16* pOldVersion = GetOldAppleWinVersion();
@@ -1367,6 +1449,7 @@ void Config_Save_Video()
 	REGSAVE(TEXT(REGVALUE_VIDEO_STYLE)     ,g_eVideoStyle);
 	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR),g_nMonochromeRGB);
 	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), GetVideoRefreshRate());
+	REGSAVE(TEXT(REGVALUE_VIDEO_GAMELINK), GameLink::GetGameLinkEnabled());		// RIK
 }
 
 //===========================================================================

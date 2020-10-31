@@ -202,6 +202,12 @@
     <ClCompile Include="source\SynchronousEventManager.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\gamelink\gamelink.cpp">
+      <Filter>Source Files\gamelink</Filter>
+    </ClCompile>
+    <ClCompile Include="source\gamelink\gamelink_term.cpp">
+      <Filter>Source Files\gamelink</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -489,6 +495,9 @@
     <ClInclude Include="source\SynchronousEventManager.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
+    <ClInclude Include="source\gamelink\gamelink.h">
+      <Filter>Source Files\gamelink</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\Applewin.bmp">
@@ -599,6 +608,7 @@
     <Image Include="resource\RUNBASE64A.BMP">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="resource\ApplewinLogo.bmp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="resource\Apple2.rom">
@@ -664,6 +674,9 @@
     <None Include="resource\Base64A_German_Video.rom">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="resource\Disk2-13sector.rom" />
+    <None Include="resource\Apple2_JPlus.rom" />
+    <None Include="resource\Apple2_JPlus_Video.rom" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="docs\CodingConventions.txt">
@@ -728,6 +741,9 @@
     </Filter>
     <Filter Include="Source Files\Model">
       <UniqueIdentifier>{15b450e4-f89f-4d80-9c44-48b32f33f3e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\gamelink">
+      <UniqueIdentifier>{95126897-25dc-4245-9e63-20a0f09db967}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
