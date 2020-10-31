@@ -94,8 +94,8 @@ MEMORY MANAGEMENT SOFT SWITCHES
  $C009   W       ALTZPON         Enable aux memory from $0000-$01FF & avl BSR
  $C00A   W       SLOTC3ROMOFF    Enable main ROM from $C300-$C3FF
  $C00B   W       SLOTC3ROMON     Enable slot ROM from $C300-$C3FF
- $C07E   W       IOUDIS          [Enhanced //e] On: disable IOU access for addresses $C058 to $C05F; enable access to DHIRES switch
- $C07F   W       IOUDIS          [Enhanced //e] Off: enable IOU access for addresses $C058 to $C05F; disable access to DHIRES switch
+ $C07E   W       IOUDIS          [//c] On: disable IOU access for addresses $C058 to $C05F; enable access to DHIRES switch
+ $C07F   W       IOUDIS          [//c] Off: enable IOU access for addresses $C058 to $C05F; disable access to DHIRES switch
 
 VIDEO SOFT SWITCHES
  $C00C   W       80COLOFF        Turn off 80 column display
@@ -130,8 +130,8 @@ SOFT SWITCH STATUS FLAGS
  $C01D   R7      HIRES           1=high resolution graphics   0=low resolution
  $C01E   R7      ALTCHARSET      1=alt character set on    0=alt char set off
  $C01F   R7      80COL           1=80 col display on     0=80 col display off
- $C07E   R7      RDIOUDIS        [Enhanced //e] 1=IOUDIS off     0=IOUDIS on
- $C07F   R7      RDDHIRES        [Enhanced //e] 1=DHIRES on     0=DHIRES off
+ $C07E   R7      RDIOUDIS        [//c] 1=IOUDIS off     0=IOUDIS on
+ $C07F   R7      RDDHIRES        [Enhanced //e? or //c] 1=DHIRES on     0=DHIRES off
 */
 
 
@@ -596,7 +596,7 @@ static BYTE __stdcall IORead_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xB:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xC:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xD:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xE:	return IsEnhancedIIE()		? MemReadFloatingBus(SW_IOUDIS ? true : false, nExecutedCycles)	// GH#636
+	case 0xE:	return IS_APPLE2C()			? MemReadFloatingBus(SW_IOUDIS ? true : false, nExecutedCycles)	// GH#636
 											: IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xF:	return IsEnhancedIIEorIIC()	? MemReadFloatingBus(VideoGetSWDHIRES(), nExecutedCycles)		// GH#636
 											: IO_Null(pc, addr, bWrite, d, nExecutedCycles);
@@ -632,12 +632,12 @@ static BYTE __stdcall IOWrite_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	case 0xB:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xC:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xD:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xE:	if (IsEnhancedIIE())
+	case 0xE:	if (IS_APPLE2C())
 					SetMemMode(memmode & ~MF_IOUDIS);	// disable IOU access for addresses $C058 to $C05F; enable access to DHIRES switch
 				else
 					return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 				break;
-	case 0xF:	if (IsEnhancedIIE())
+	case 0xF:	if (IS_APPLE2C())
 					SetMemMode(memmode | MF_IOUDIS);	// enable IOU access for addresses $C058 to $C05F; disable access to DHIRES switch
 				else
 					return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
