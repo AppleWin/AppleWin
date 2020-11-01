@@ -232,7 +232,7 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 
 static BOOL g_bMemIsShared = 0;				// RIK -- Remembers which memory allocator is used (regular or shared) for later dealloc
 static UINT8 g_uKeybReadCount = 0;			// RIK -- Calculate program hash and name at the second call to IORead_C00x
-static UINT32 g_ProgramSig[PROG_SIG_LEN];	// RIK -- The full program signature
+static UINT32 g_ProgramSig[PROG_SIG_LEN] = { 0 };	// RIK -- The full program signature
 
 //=============================================================================
 
@@ -2610,8 +2610,8 @@ void NoSlotClockLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 // To calculate the program signature
 // We will CRC32 the following pages of mem:
 // $08->$1F	(23 pages)
-// $60->$BF (95 pages)
-// for a total of 118 pages (PROG_SIG_LEN)
+// $60->$BF (96 pages)
+// for a total of 119 pages (PROG_SIG_LEN)
 static void calculateProgramSig()
 {
 	UINT8 page = 0;
@@ -2620,7 +2620,7 @@ static void calculateProgramSig()
 		g_ProgramSig[page] = calculateMemPageSig(i);
 		page++;
 	}
-	for (UINT8 j = 0x60; j <= 0xBF; j++)
+	for (UINT8 j = 0x60; j <= 0xBF; j++)	// 60->BF
 	{
 		g_ProgramSig[page] = calculateMemPageSig(j);
 		page++;
@@ -2629,7 +2629,7 @@ static void calculateProgramSig()
 
 static UINT calculateMemPageSig(UINT8 pageNumber)
 {
-	return crc32(0, mem + pageNumber * 256, 256);
+	return crc32(0, memmain + pageNumber * 256, 256);
 }
 
 // =========================================
