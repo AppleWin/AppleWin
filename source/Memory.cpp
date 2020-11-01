@@ -232,6 +232,8 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 
 static BOOL g_bMemIsShared = 0;				// RIK -- Remembers which memory allocator is used (regular or shared) for later dealloc
 static UINT8 g_uKeybReadCount = 0;			// RIK -- Calculate program hash and name at the second call to IORead_C00x
+static UINT8 g_uMemPagesWrittenCount = 0;	// RIK -- The number of main memory pages written until the second call to IORead_C00x
+static UINT32 g_MemPagesWrittenFIFO[PROG_SIG_LEN] = { 0x08 };	// Tracks the last PRG_SIG_LEN memory pages written
 static UINT32 g_ProgramSig[PROG_SIG_LEN] = { 0 };	// RIK -- The full program signature
 
 //=============================================================================
@@ -1250,6 +1252,14 @@ static void UpdatePaging(BOOL initialize)
 			}
 
 			CopyMemory(mem+(loop << 8),memshadow[loop],256);
+			// RIK START
+			// Remember the last PROG_SIG_LEN pages that have been dirtied
+			if ((g_uKeybReadCount < 3) && (((loop >= 0x08) && (loop < 0x20)) || ((loop >= 0x20) && (loop < 0xc0))))
+			{
+				g_MemPagesWrittenFIFO[g_uMemPagesWrittenCount % PROG_SIG_LEN] = loop;
+				g_uMemPagesWrittenCount++;
+			}
+			// RIK END
 		}
 	}
 }
@@ -1908,7 +1918,7 @@ void MemReset()
 	// To figure out which program is running (get the signature) we absolutely must not
 	// initialize the memory with anything random.
 	// We force memory initialization to be systematically the same across reboots
-	g_nMemoryClearType = MIP_ZERO;
+	g_nMemoryClearType = MIP_FF_FF_00_00;
 	// RIK END
 
 	MemoryInitPattern_e eMemoryInitPattern = static_cast<MemoryInitPattern_e>(g_nMemoryClearType);
@@ -2609,27 +2619,29 @@ void NoSlotClockLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 
 // To calculate the program signature
 // We will CRC32 the following pages of mem:
-// $08->$1F	(23 pages)
-// $60->$BF (96 pages)
-// for a total of 119 pages (PROG_SIG_LEN)
+// $08
+// $09->$1F (22 pages)
+// $60->$8F (48 pages)
+// $90->$BF (48 pages)
+// for a total of 119 pages split in 4 CRCs
+//
+// Turns out that the most valuable CRC is that of $90->$8F
+// which uniquely identifies a program.
+// TODO: Track which memory pages are loaded and CRC only the
+// ones in the $90->$8F that have been modified. This way we
+// can keep the random initialization of memory at startup
 static void calculateProgramSig()
 {
-	UINT8 page = 0;
-	for (UINT8 i = 0x08; i <= 0x1f; i++)
+	for (UINT8 i = 0; i < PROG_SIG_LEN; i++)
 	{
-		g_ProgramSig[page] = calculateMemPageSig(i);
-		page++;
+		g_ProgramSig[i] = calculateMemPageSig(i, g_MemPagesWrittenFIFO[i]);
 	}
-	for (UINT8 j = 0x60; j <= 0xBF; j++)	// 60->BF
-	{
-		g_ProgramSig[page] = calculateMemPageSig(j);
-		page++;
-	}
+	return;
 }
 
-static UINT calculateMemPageSig(UINT8 pageNumber)
+static UINT calculateMemPageSig(UINT crc, UINT8 pageNumber)
 {
-	return crc32(0, memmain + pageNumber * 256, 256);
+	return crc32(crc, memmain + pageNumber * 256, 256);
 }
 
 // =========================================

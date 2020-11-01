@@ -113,4 +113,4 @@ class LanguageCardUnit* GetLanguageCard(void);
 
 LPBYTE GetCxRomPeripheral(void);
 void calculateProgramSig();	// RIK
-UINT calculateMemPageSig(UINT8 pageNumber);	//RIK
+UINT calculateMemPageSig(UINT crc, UINT8 pageNumber);	//RIK

@@ -65,7 +65,7 @@ enum AppMode_e
 // RIK BEGIN
 // Running program info
 // Number of items in the running program's signature array
-#define PROG_SIG_LEN			119
+#define PROG_SIG_LEN			4
 // RIK END
 
 // Configuration
