@@ -28,7 +28,7 @@ static Buffer* g_p_outbuf;
 //
 // Process a mechanical command - encoded form for computer-computer communication. Minimal feedback.
 //
-static void proc_mech( Buffer* cmd, Bit16u payload )
+static void proc_mech( Buffer* cmd, UINT16 payload )
 {
 	// Ignore NULL commands.
 	if ( payload <= 1 || payload > 128 )
@@ -98,7 +98,7 @@ void GameLink::ExecTerminal( Buffer* p_inbuf,
 	if ( p_inbuf->data[ 0 ] == ':' )
 	{
 		// Acknowledge now, to avoid loops.
-		Bit16u payload = p_inbuf->payload;
+		UINT16 payload = p_inbuf->payload;
 		p_inbuf->payload = 0;
 
 		// Copy out.
@@ -111,9 +111,9 @@ void GameLink::ExecTerminal( Buffer* p_inbuf,
 		char buf[ Buffer::BUFFER_SIZE + 1 ], *b = buf;
 
 		// Convert into printable ASCII
-		for ( Bit32u i = 0; i < p_inbuf->payload; ++i )
+		for ( UINT i = 0; i < p_inbuf->payload; ++i )
 		{
-			Bit8u u8 = p_inbuf->data[ i ];
+			UINT8 u8 = p_inbuf->data[ i ];
 			if ( u8 < 32 || u8 > 127 ) {
 				*b++ = '?';
 			} else {

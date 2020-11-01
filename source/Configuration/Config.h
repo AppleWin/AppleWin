@@ -6,7 +6,7 @@
 #include "../DiskImage.h"	// Disk_Status_e
 #include "../Harddisk.h"	// HD_CardIsEnabled()
 #include "../Video.h"		// VideoRefreshRate_e, GetVideoRefreshRate()
-#include "../gamelink/gamelink.h"		// RIK
+#include "../gamelink/gamelink.h"		// RIK -- enable GameLink
 
 class CConfigNeedingRestart
 {

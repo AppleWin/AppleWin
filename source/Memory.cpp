@@ -60,7 +60,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration/IPropertySheet.h"
 #include "Debugger/DebugDefs.h"
 #include "YamlHelper.h"
-#include "gamelink/gamelink.h"	// RIK
+#include "zlib.h"				// RIK crc32
+#include "gamelink/gamelink.h"	// RIK -- Select allocator
 
 // UTAIIe:5-28 (GH#419)
 // . Sather uses INTCXROM instead of SLOTCXROM' (used by the Apple//e Tech Ref Manual), so keep to this
@@ -229,7 +230,9 @@ static bool g_Annunciator[kNumAnnunciators] = {};
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
-static BOOL g_bMemIsShared = 0;		// RIK - Remembers if the memory allocation used is for shared or non-shared
+static BOOL g_bMemIsShared = 0;				// RIK -- Remembers which memory allocator is used (regular or shared) for later dealloc
+static UINT8 g_uKeybReadCount = 0;			// RIK -- Calculate program hash and name at the second call to IORead_C00x
+static UINT32 g_ProgramSig[PROG_SIG_LEN];	// RIK -- The full program signature
 
 //=============================================================================
 
@@ -397,6 +400,21 @@ LPBYTE GetCxRomPeripheral(void)
 
 static BYTE __stdcall IORead_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
+	// RIK BEGIN
+	// We will calculate the running program's unique hash signature by
+	// waiting for the 2nd call to this function after start of the emulator (click on logo).
+	// The 1st call happens right away and we discard it.
+	// Generally the 2nd call will happen after the emulated program has loaded enough data so that
+	// it expects a keypress. At that point we call the signature calculation code, which should
+	// have enough unique program data in memory to generate a solid signature.
+	// See the signature code for more details.
+	if (g_uKeybReadCount < 3) {
+		g_uKeybReadCount++;
+	}
+	if (g_uKeybReadCount == 2) {
+		calculateProgramSig();
+	}
+	// RIK END
 	return KeybReadData();
 }
 
@@ -1866,6 +1884,14 @@ void MemReset()
 	// OR
 	//   F2, Ctrl-F2, F7, HGR
 	DWORD randTime = getRandomTime();
+
+	// RIK BEGIN
+	// To figure out which program is running (get the signature) we absolutely must not
+	// initialize the memory with anything random.
+	// We force memory initialization to be systematically the same across reboots
+	g_nMemoryClearType = MIP_ZERO;
+	// RIK END
+
 	MemoryInitPattern_e eMemoryInitPattern = static_cast<MemoryInitPattern_e>(g_nMemoryClearType);
 
 	if (g_nMemoryClearType < 0)	// random
@@ -1993,6 +2019,10 @@ void MemReset()
 
 	if (g_NoSlotClock)
 		g_NoSlotClock->Reset();	// NB. Power-cycle, but not RESET signal
+
+	// Reset the flag to calculate the program sig and find its name
+	// after the 2nd call to IORead_C00x()
+	g_uKeybReadCount = 0;	// RIK
 }
 
 //===========================================================================
@@ -2552,3 +2582,36 @@ void NoSlotClockLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 
 	g_NoSlotClock->LoadSnapshot(yamlLoadHelper);
 }
+
+// RIK BEGIN
+// =========================================
+// Running program discovery
+//
+
+// To calculate the program signature
+// We will CRC32 the following pages of mem:
+// $08->$1F	(23 pages)
+// $60->$BF (95 pages)
+// for a total of 118 pages (PROG_SIG_LEN)
+static void calculateProgramSig()
+{
+	UINT8 page = 0;
+	for (UINT8 i = 0x08; i <= 0x1f; i++)
+	{
+		g_ProgramSig[page] = calculateMemPageSig(i);
+		page++;
+	}
+	for (UINT8 j = 0x60; j <= 0xBF; j++)
+	{
+		g_ProgramSig[page] = calculateMemPageSig(j);
+		page++;
+	}
+}
+
+static UINT calculateMemPageSig(UINT8 pageNumber)
+{
+	return crc32(0, mem + pageNumber * 256, 256);
+}
+
+// =========================================
+// RIK END

@@ -101,10 +101,10 @@ static LPDIRECTDRAW g_lpDD = NULL;
 // RIK BEGIN
 // The GameLink I/O structure
 struct Gamelink_Block {
-	// Bit32u pitch;	// TODO: not needed?
+	// UINT pitch;	// TODO: not needed?
 	// void* framebuf;	// we use g_pFramebufferbits directly
 	const char* p_program;
-	const Bit32u* p_program_hash;
+	const UINT* p_program_hash;
 	GameLink::sSharedMMapInput_R2 input_prev;
 	GameLink::sSharedMMapInput_R2 input;
 	GameLink::sSharedMMapAudio_R1 audio;
@@ -155,7 +155,7 @@ static Gamelink_Block g_gamelink;
 	void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const TCHAR *pScreenShotFileName );
 	void Video_MakeScreenShot( FILE *pFile, const VideoScreenShot_e ScreenShotType );
 	void videoCreateDIBSection();
-	void reverseScanlines(uint8_t* destination, uint8_t* source, uint32_t width, uint32_t height, uint8_t depth);
+	void reverseScanlines(uint8_t* destination, uint8_t* source, uint32_t width, uint32_t height, uint8_t depth);	// RIK
 
 
 //===========================================================================
@@ -195,18 +195,18 @@ void VideoInitialize ()
 		memset(&g_gamelink.input_prev, 0, sizeof(GameLink::sSharedMMapInput_R2));
 		bool trackonly_mode = false;
 		(GameLink::Init(trackonly_mode));
-		g_gamelink.p_program = g_pAppTitle.c_str();
-		Bit32u head_checksum = 0;	// checksum of the file header (we could use the VOLUME checksum here? -- or nothing)
-		Bit32u checksum_bytes = 0;	// size of the file bytestream that we checksum
-		Bit32u checksum = 0;		// checksum of the file bytestream
+		g_gamelink.p_program = g_pProgramName.c_str();
 
-		// TODO: FIXME Get a real program checksum!
-		// We're using the applewin title to checksum when we really want to be checksumming the unique loaded Apple 2 program
-		// One way to do this would be to checksum the first 16k of the boot disk/hdv. Need to figure out how to do this.
-		checksum_bytes = g_pAppTitle.length();
-		checksum = GameLink::crc32(checksum, (Bit8u*)g_pAppTitle.c_str(), checksum_bytes);
-
-		Bit32u RunningProgramHash[4] = { head_checksum, checksum_bytes, checksum, 0 };
+		// TODO: FIXME Get the sig to work.
+		// Right now we use the checksums of the first 4 pages of memory after the first
+		// real request for keyboard input from the program
+		UINT RunningProgramHash[4] =
+		{
+			g_ProgramSig[0],
+			g_ProgramSig[1],
+			g_ProgramSig[2],
+			g_ProgramSig[3],
+		};
 		g_gamelink.p_program_hash = RunningProgramHash;
 	}
 	// RIK END
@@ -672,33 +672,38 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 	}
 
 	// RIK BEGIN
-	// here send the last drawn frame to GameLink
-	// We could efficiently send to GameLink g_pFramebufferbits with GetFrameBufferWidth/GetFrameBufferHeight, but the scanlines are reversed
-	// We can copy again the bitmap of the frame into memory, reverse it and pass that to GameLink.
-	// When GridCartographer/GameLink allows to pass in flags specifying the x/y/w/h,
-	// Then we can go back to g_pFramebufferbits and let GC handle it efficiently on its end, as it uses the GPU
-	//
-	// TODO: See if there is an easy function for this in the Win API or if there's another faster way
 
-	if (g_pFramebufferbits != NULL)
-	{
-		reverseScanlines
-		(
-			g_pReorderedFramebufferbits, 
-			g_pFramebufferbits, 
-			g_pFramebufferinfo->bmiHeader.biWidth, 
-			g_pFramebufferinfo->bmiHeader.biHeight,
-			g_pFramebufferinfo->bmiHeader.biBitCount / 8
-		);
-	}
 	if (GameLink::GetGameLinkEnabled()) {
+		// here send the last drawn frame to GameLink
+		// We could efficiently send to GameLink g_pFramebufferbits with GetFrameBufferWidth/GetFrameBufferHeight, but the scanlines are reversed
+		// We instead memcpy each scanline of the bitmap of the frame in reverse into another buffer, and pass that to GameLink.
+		// When GridCartographer/GameLink allows to pass in flags specifying the x/y/w/h etc...,
+		// Then we can go back to using g_pFramebufferbits and let GC handle it efficiently on its end, as it uses the GPU
+		//
+		// TODO: See if there is an easy function for this in the Win API or if there's another faster way
+
+		if (g_pFramebufferbits != NULL)
+		{
+			reverseScanlines
+			(
+				g_pReorderedFramebufferbits,
+				g_pFramebufferbits,
+				g_pFramebufferinfo->bmiHeader.biWidth,
+				g_pFramebufferinfo->bmiHeader.biHeight,
+				g_pFramebufferinfo->bmiHeader.biBitCount / 8
+			);
+		}
+
 		// TODO: handle the mouse
 		// TODO: only send the framebuffer out when not in trackonly_mode
-		GameLink::Out((Bit16u)GetFrameBufferWidth(), (Bit16u)GetFrameBufferHeight(), 1.0,	// width, height and ratio
+		GameLink::Out(
+			(UINT16)g_pFramebufferinfo->bmiHeader.biWidth,
+			(UINT16)g_pFramebufferinfo->bmiHeader.biHeight,
+			1.0,								// image ratio
 			false,								// don't handle the mouse
-			g_gamelink.p_program,
-			g_gamelink.p_program_hash,
-			(const Bit8u*)g_pReorderedFramebufferbits,	// framebuffer
+			g_gamelink.p_program,				// TODO: Find emulated program name
+			g_gamelink.p_program_hash,			// TODO: Create emulated program hash
+			(const UINT8*)g_pReorderedFramebufferbits,
 			MemGetBankPtr(0));					// Main memory pointer
 	}
 	// RIK END
@@ -1543,8 +1548,9 @@ static void videoCreateDIBSection()
 	SelectObject(g_hDeviceDC,g_hDeviceBitmap);
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory(g_pFramebufferbits, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
-	ZeroMemory(g_pReorderedFramebufferbits, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
+	UINT fbSize = GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t);
+	ZeroMemory(g_pFramebufferbits, fbSize);
+	ZeroMemory(g_pReorderedFramebufferbits, fbSize);			// RIK
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	NTSC_VideoInit( g_pFramebufferbits );

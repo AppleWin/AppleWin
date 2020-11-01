@@ -62,6 +62,12 @@ enum AppMode_e
 #define TITLE_PAUSED       TEXT("* PAUSED *")
 #define TITLE_STEPPING     TEXT("Stepping")
 
+// RIK BEGIN
+// Running program info
+#define PROG_TITLE_MAXLEN		255
+#define PROG_SIG_LEN			118
+// RIK END
+
 // Configuration
 #define REG_CONFIG						"Configuration"
 #define  REGVALUE_APPLE2_TYPE        "Apple2 Type"

@@ -3,19 +3,6 @@
 
 #include <Windows.h>
 
-
-// RIK BEGIN
-// for simplicity typedef the internal types like the dosbox version
-typedef unsigned char     Bit8u;
-typedef signed char       Bit8s;
-typedef unsigned short    Bit16u;
-typedef signed short      Bit16s;
-typedef unsigned int      Bit32u;
-typedef signed int        Bit32s;
-typedef unsigned __int64  Bit64u;
-typedef signed __int64    Bit64s;
-// RIK END
-
 //------------------------------------------------------------------------------
 // Namespace Declaration
 //------------------------------------------------------------------------------
@@ -36,21 +23,21 @@ namespace GameLink
 	//
 	struct sSharedMMapFrame_R1
 	{
-		Bit16u seq;
-		Bit16u width;
-		Bit16u height;
+		UINT16 seq;
+		UINT16 width;
+		UINT16 height;
 
-		Bit8u image_fmt; // 0 = no frame; 1 = 32-bit 0xAARRGGBB
-		Bit8u reserved0;
+		UINT8 image_fmt; // 0 = no frame; 1 = 32-bit 0xAARRGGBB
+		UINT8 reserved0;
 
-		Bit16u par_x; // pixel aspect ratio
-		Bit16u par_y;
+		UINT16 par_x; // pixel aspect ratio
+		UINT16 par_y;
 
 		enum { MAX_WIDTH = 1280 };
 		enum { MAX_HEIGHT = 1024 };
 
 		enum { MAX_PAYLOAD = MAX_WIDTH * MAX_HEIGHT * 4 };
-		Bit8u buffer[ MAX_PAYLOAD ];
+		UINT8 buffer[ MAX_PAYLOAD ];
 	};
 
 	//
@@ -62,9 +49,9 @@ namespace GameLink
 	{
 		float mouse_dx;
 		float mouse_dy;
-		Bit8u ready;
-		Bit8u mouse_btn;
-		Bit32u keyb_state[ 8 ];
+		UINT8 ready;
+		UINT8 mouse_btn;
+		UINT keyb_state[ 8 ];
 	};
 
 	//
@@ -76,9 +63,9 @@ namespace GameLink
 	{
 		enum { PEEK_LIMIT = 16 * 1024 };
 
-		Bit32u addr_count;
-		Bit32u addr[ PEEK_LIMIT ];
-		Bit8u data[ PEEK_LIMIT ];
+		UINT addr_count;
+		UINT addr[ PEEK_LIMIT ];
+		UINT8 data[ PEEK_LIMIT ];
 	};
 
 	//
@@ -90,8 +77,8 @@ namespace GameLink
 	{
 		enum { BUFFER_SIZE = ( 64 * 1024 ) };
 
-		Bit16u payload;
-		Bit8u data[ BUFFER_SIZE ];
+		UINT16 payload;
+		UINT8 data[ BUFFER_SIZE ];
 	};
 
 	//
@@ -101,8 +88,8 @@ namespace GameLink
 	//
 	struct sSharedMMapAudio_R1
 	{
-		Bit8u master_vol_l;
-		Bit8u master_vol_r;
+		UINT8 master_vol_l;
+		UINT8 master_vol_r;
 	};
 
 	//
@@ -127,11 +114,11 @@ namespace GameLink
 			PROGRAM_MAXLEN			= 260
 		};
 
-		Bit8u version; // = PROTOCOL_VER
-		Bit8u flags;
+		UINT8 version; // = PROTOCOL_VER
+		UINT8 flags;
 		char system[ SYSTEM_MAXLEN ]; // System name.
 		char program[ PROGRAM_MAXLEN ]; // Program name. Zero terminated.
-		Bit32u program_hash[ 4 ]; // Program code hash (256-bits)
+		UINT program_hash[ 4 ]; // Program code hash (256-bits)
 
 		sSharedMMapFrame_R1 frame;
 		sSharedMMapInput_R2 input;
@@ -141,7 +128,7 @@ namespace GameLink
 		sSharedMMapAudio_R1 audio;
 
 		// added for protocol v4
-		Bit32u ram_size;
+		UINT ram_size;
 	};
 
 #pragma pack( pop )
@@ -156,23 +143,21 @@ namespace GameLink
 
 	extern int Init( const bool trackonly_mode );
 	
-	extern Bit8u* AllocRAM( const Bit32u size );
+	extern UINT8* AllocRAM( const UINT size );
 
 	extern void Term();
 
 	extern int In( sSharedMMapInput_R2* p_input,
 				   sSharedMMapAudio_R1* p_audio );
 
-	extern void Out( const Bit16u frame_width,
-					 const Bit16u frame_height,
+	extern void Out( const UINT16 frame_width,
+					 const UINT16 frame_height,
 					 const double source_ratio,
 					 const bool need_mouse,
 					 const char* p_program,
-					 const Bit32u* p_program_hash,
-					 const Bit8u* p_frame,
-					 const Bit8u* p_sysmem );
-
-	extern Bit32u crc32(Bit32u crc, Bit8u* buf, Bit32u len);
+					 const UINT* p_program_hash,
+					 const UINT8* p_frame,
+					 const UINT8* p_sysmem );
 
 	extern void ExecTerminal(sSharedMMapBuffer_R1* p_inbuf,
 		sSharedMMapBuffer_R1* p_outbuf,

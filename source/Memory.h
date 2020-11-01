@@ -112,3 +112,5 @@ void	SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain=false);
 class LanguageCardUnit* GetLanguageCard(void);
 
 LPBYTE GetCxRomPeripheral(void);
+void calculateProgramSig();	// RIK
+UINT calculateMemPageSig(UINT8 pageNumber);	//RIK

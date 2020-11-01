@@ -69,6 +69,8 @@ static UINT16 g_OldAppleWinVersion[4] = {0};
 TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";
 
 std::string g_pAppTitle;
+std::string g_pProgramName;	// RIK
+UINT32 g_ProgramSig[PROG_SIG_LEN];	// RIK
 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 
