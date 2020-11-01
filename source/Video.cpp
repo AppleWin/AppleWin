@@ -102,17 +102,15 @@ static LPDIRECTDRAW g_lpDD = NULL;
 // The GameLink I/O structure
 struct Gamelink_Block {
 	// UINT pitch;	// TODO: not needed?
-	// void* framebuf;	// we use g_pFramebufferbits directly
-	const char* p_program;
-	const UINT* p_program_hash;
 	GameLink::sSharedMMapInput_R2 input_prev;
 	GameLink::sSharedMMapInput_R2 input;
 	GameLink::sSharedMMapAudio_R1 audio;
 	bool want_mouse;
 };
 
-static Gamelink_Block g_gamelink;
+Gamelink_Block g_gamelink;
 // RIK END
+
 
 
 
@@ -186,28 +184,11 @@ void VideoInitialize ()
 	videoCreateDIBSection();
 
 	// RIK START
-// Gamelink defaults to trackonly mode.
-// TODO: Put track-only/video choice in the preferences window.
-// TODO: Create the non-trackonly code as well
+	// TODO: Might want to put this somewhere else
 	if (GameLink::GetGameLinkEnabled())
 	{
 		// initialize the gamelink previous input to 0
 		memset(&g_gamelink.input_prev, 0, sizeof(GameLink::sSharedMMapInput_R2));
-		bool trackonly_mode = false;
-		(GameLink::Init(trackonly_mode));
-		g_gamelink.p_program = g_pProgramName.c_str();
-
-		// TODO: FIXME Get the sig to work.
-		// Right now we use the checksums of the first 4 pages of memory after the first
-		// real request for keyboard input from the program
-		UINT RunningProgramHash[4] =
-		{
-			g_ProgramSig[0],
-			g_ProgramSig[1],
-			g_ProgramSig[2],
-			g_ProgramSig[3],
-		};
-		g_gamelink.p_program_hash = RunningProgramHash;
 	}
 	// RIK END
 
@@ -701,8 +682,6 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 			(UINT16)g_pFramebufferinfo->bmiHeader.biHeight,
 			1.0,								// image ratio
 			false,								// don't handle the mouse
-			g_gamelink.p_program,				// TODO: Find emulated program name
-			g_gamelink.p_program_hash,			// TODO: Create emulated program hash
 			(const UINT8*)g_pReorderedFramebufferbits,
 			MemGetBankPtr(0));					// Main memory pointer
 	}

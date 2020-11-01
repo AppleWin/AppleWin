@@ -408,11 +408,24 @@ static BYTE __stdcall IORead_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	// it expects a keypress. At that point we call the signature calculation code, which should
 	// have enough unique program data in memory to generate a solid signature.
 	// See the signature code for more details.
+	//
+	// Right now we use the crc32 of pages 0x08, 0x09, 0x0a, 0x0b
+
 	if (g_uKeybReadCount < 3) {
 		g_uKeybReadCount++;
 	}
 	if (g_uKeybReadCount == 2) {
 		calculateProgramSig();
+		if (GameLink::GetGameLinkEnabled())
+		{
+			GameLink::SetProgramInfo(
+				g_pProgramName.c_str(),
+				g_ProgramSig[0],
+				g_ProgramSig[1],
+				g_ProgramSig[2],
+				g_ProgramSig[3]
+			);
+		}
 	}
 	// RIK END
 	return KeybReadData();
@@ -1490,6 +1503,12 @@ void MemInitialize()
 			memaux = memmain + (_6502_MEM_END + 1);
 			g_bMemIsShared = TRUE;
 		}
+		// Gamelink defaults to trackonly mode.
+		// TODO: Put track-only/video choice in the preferences window.
+		// TODO: Create the non-trackonly code as well
+
+		bool trackonly_mode = false;
+		(GameLink::Init(trackonly_mode));
 	}
 	else {
 		memaux = (LPBYTE)VirtualAlloc(NULL, _6502_MEM_END + 1, MEM_COMMIT, PAGE_READWRITE);

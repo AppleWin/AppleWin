@@ -57,10 +57,10 @@ static void shared_memory_init()
 	strcpy( g_p_shared_memory->system, SYSTEM_NAME );
 	memset( g_p_shared_memory->program, 0, sizeof( g_p_shared_memory->program ) );
 
-	g_p_shared_memory->program_hash[ 0 ] = 0;
-	g_p_shared_memory->program_hash[ 1 ] = 0;
-	g_p_shared_memory->program_hash[ 2 ] = 0;
-	g_p_shared_memory->program_hash[ 3 ] = 0;
+	g_p_shared_memory->program_hash[0] = 0;
+	g_p_shared_memory->program_hash[1] = 0;
+	g_p_shared_memory->program_hash[2] = 0;
+	g_p_shared_memory->program_hash[3] = 0;
 
 	// reset input
 	g_p_shared_memory->input.mouse_dx = 0;
@@ -290,6 +290,25 @@ void GameLink::Term()
 	g_membase_size = 0;
 }
 
+
+//------------------------------------------------------------------------------
+// GameLink::SetProgramInfo
+//------------------------------------------------------------------------------
+void GameLink::SetProgramInfo(
+								std::string p_program,
+								const UINT p_program_hash0,
+								const UINT p_program_hash1,
+								const UINT p_program_hash2,
+								const UINT p_program_hash3
+	)
+{
+	strcpy(g_p_shared_memory->program, p_program.c_str());
+	g_p_shared_memory->program_hash[0] = p_program_hash0;
+	g_p_shared_memory->program_hash[1] = p_program_hash1;
+	g_p_shared_memory->program_hash[2] = p_program_hash2;
+	g_p_shared_memory->program_hash[3] = p_program_hash3;
+}
+
 //------------------------------------------------------------------------------
 // GameLink::In
 //------------------------------------------------------------------------------
@@ -339,8 +358,6 @@ void GameLink::Out( const UINT16 frame_width,
 					const UINT16 frame_height,
 					const double source_ratio,
 					const bool want_mouse,
-					const char* p_program,
-					const UINT* p_program_hash,
 					const UINT8* p_frame,
 					const UINT8* p_sysmem )
 {
@@ -401,13 +418,6 @@ void GameLink::Out( const UINT16 frame_width,
 
 			// Set version
 			g_p_shared_memory->version = PROTOCOL_VER;
-
-			// Set program
-			strncpy( g_p_shared_memory->program, p_program, 256 );
-			for ( int i = 0; i < 4; ++i )
-			{
-				g_p_shared_memory->program_hash[ i ] = p_program_hash[ i ];
-			}
 
 			// Store flags
 			g_p_shared_memory->flags = flags;
