@@ -1215,7 +1215,6 @@ void VideoSwitchVideocardPalette(RGB_Videocard_e videocard, VideoType_e type)
 static UINT g_rgbFlags = 0;
 static UINT g_rgbMode = 0;
 static WORD g_rgbPrevAN3Addr = 0;
-static bool g_rgbSet80COL = false;	// unused from 1.29.16.0
 static bool g_rgbInvertBit7 = false;
 
 // Video7 RGB card:
