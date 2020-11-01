@@ -8,11 +8,18 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.29.16.0 - 1 Nov 2020
+----------------------
+. [Bug #851] RGB support: AppleColor card (-rgb-card-type apple) is now an alias for Video7's RGB-SL7 card (-rgb-card-type sl7).
+. [Bug #850] RGB support: removed the preconditions for AN3 setting the RGB video mode flags.
+	- IOUDIS soft-switch is for //c only, so removed support for //e.
+
+
 1.29.15.0 - 25 Oct 2020
 -----------------------
 . [Change #764] Fully support the RGB cards, and introduce a new 'Color (RGB Card/Monitor)' dedicated video mode.
 	- [PR #837] Support for 'Le Chat Mauve' Eve and Féline RGB cards.
-	- [PR #826] Support for Video7's SL7 RGB card.
+	- [PR #826] Support for Video7's RGB-SL7 card.
 	- New command line switch to select RGB card type: -rgb-card-type: apple (default), sl7, eve, feline
 	- New command line switches for SL7: -rgb-card-foreground <color> & -rgb-card-background <color>
 	- NB. The previous 'Color (RGB Monitor)' has now been renamed to 'Color (Composite Idealized)'.
