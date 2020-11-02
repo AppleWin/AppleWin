@@ -846,7 +846,8 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 		}
 	}
 
-	if (g_NoSlotClock && IsPotentialNoSlotClockAccess(address))
+	// NSC only for //e at internal C3/C8 ROMs, as II/II+ has no internal ROM here! (GH#827)
+	if (!IS_APPLE2 && g_NoSlotClock && IsPotentialNoSlotClockAccess(address))
 	{
 		if (!write)
 		{
