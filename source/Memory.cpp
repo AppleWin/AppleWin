@@ -1915,12 +1915,7 @@ void MemReset()
 	//   F2, Ctrl-F2, F7, HGR
 	DWORD randTime = getRandomTime();
 
-	// RIK BEGIN
-	// To figure out which program is running (get the signature) we absolutely must not
-	// initialize the memory with anything random.
-	// We force memory initialization to be systematically the same across reboots
 	g_nMemoryClearType = MIP_FF_FF_00_00;
-	// RIK END
 
 	MemoryInitPattern_e eMemoryInitPattern = static_cast<MemoryInitPattern_e>(g_nMemoryClearType);
 
