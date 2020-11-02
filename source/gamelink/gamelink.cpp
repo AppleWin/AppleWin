@@ -6,6 +6,7 @@
 #include "StdAfx.h"
 #include "Log.h"
 #include "gamelink.h"
+#include "Applewin.h"
 
 //==============================================================================
 //------------------------------------------------------------------------------
@@ -294,24 +295,29 @@ void GameLink::Term()
 //------------------------------------------------------------------------------
 // GameLink::SetProgramInfo
 //------------------------------------------------------------------------------
-void GameLink::SetProgramInfo(
-								std::string p_program,
-								const UINT p_program_hash0,
-								const UINT p_program_hash1,
-								const UINT p_program_hash2,
-								const UINT p_program_hash3
-	)
+//
+// Grid Cartographer uses an array of 4 longs to determine the unique signature
+// of a program. Here we convert the Applewin signature of the form "page-crc"
+// where the page is a decimal and the crc is a hex, into 2 longs for use by
+// Grid Cartographer
+
+void GameLink::SetProgramInfo()
 {
-	strcpy(g_p_shared_memory->program, p_program.c_str());
-	g_p_shared_memory->program_hash[0] = p_program_hash0;
-	g_p_shared_memory->program_hash[1] = p_program_hash1;
-	g_p_shared_memory->program_hash[2] = p_program_hash2;
-	g_p_shared_memory->program_hash[3] = p_program_hash3;
+	strcpy(g_p_shared_memory->program, g_pProgramName.c_str());
+	char* end;
+	g_p_shared_memory->program_hash[0] = strtol(g_pProgramSig.c_str(), &end, 10);
+	g_p_shared_memory->program_hash[1] = strtol(end+1, &end, 16);
+	g_p_shared_memory->program_hash[2] = 0;
+	g_p_shared_memory->program_hash[3] = 0;
 }
 
 //------------------------------------------------------------------------------
 // GameLink::In
 //------------------------------------------------------------------------------
+//
+// Incoming information from the external program via the Gamelink API
+// Copy it to g_gamelink and let Applewin know we're ready
+
 int GameLink::In( GameLink::sSharedMMapInput_R2* p_input,
 				  GameLink::sSharedMMapAudio_R1* p_audio )
 {
@@ -340,7 +346,6 @@ int GameLink::In( GameLink::sSharedMMapInput_R2* p_input,
 				ready = 1; // Got some input
 			}
 
-			// Volume sync, ignore if out of range.
 			if ( g_p_shared_memory->audio.master_vol_l <= 100 )
 				p_audio->master_vol_l = g_p_shared_memory->audio.master_vol_l;
 			if ( g_p_shared_memory->audio.master_vol_r <= 100 )
@@ -354,6 +359,10 @@ int GameLink::In( GameLink::sSharedMMapInput_R2* p_input,
 //------------------------------------------------------------------------------
 // GameLink::Out
 //------------------------------------------------------------------------------
+//
+// Outgoing information to any programs conforming with the Gamelink API
+// This must be triggered for every frame if we want correct video output
+//
 void GameLink::Out( const UINT16 frame_width,
 					const UINT16 frame_height,
 					const double source_ratio,
@@ -384,7 +393,7 @@ void GameLink::Out( const UINT16 frame_width,
 
 	if ( g_trackonly_mode )
 	{
-		// Tracking Only - DOSBox handles video/input as usual.
+		// Tracking Only - Emulator handles video/input as usual.
 		flags = sSharedMemoryMap_R4::FLAG_NO_FRAME;
 	}
 	else
@@ -412,7 +421,6 @@ void GameLink::Out( const UINT16 frame_width,
 	if ( mutex_result == WAIT_OBJECT_0 )
 
 	{
-//		printf( "GAMELINK: MUTEX lock ok\n" );
 
 		{ // ========================
 

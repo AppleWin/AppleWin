@@ -112,5 +112,11 @@ void	SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain=false);
 class LanguageCardUnit* GetLanguageCard(void);
 
 LPBYTE GetCxRomPeripheral(void);
-void calculateProgramSig();	// RIK
-UINT calculateMemPageSig(UINT crc, UINT8 pageNumber);	//RIK
+
+// RIK BEGIN
+void loadSignatureFile();								// Loads the file with known signatures
+void calculateProgramSig();								// Calculates the running program's possible signatures
+														// and matches them to known signatures
+UINT calculateMemPageSig(UINT crc, UINT8 pageNumber);	// Calculate the crc of a single memory page
+void displaySigCalcs();									// Debug function to display the calculated signatures
+// RIK END

@@ -147,13 +147,7 @@ namespace GameLink
 
 	extern void Term();
 
-	extern void SetProgramInfo(
-		std::string p_program,
-		const UINT  p_program_hash0,
-		const UINT  p_program_hash1,
-		const UINT  p_program_hash2,
-		const UINT  p_program_hash3
-		);
+	extern void SetProgramInfo();
 
 	extern int In( sSharedMMapInput_R2* p_input,
 				   sSharedMMapAudio_R1* p_audio );

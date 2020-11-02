@@ -69,8 +69,8 @@ static UINT16 g_OldAppleWinVersion[4] = {0};
 TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";
 
 std::string g_pAppTitle;
-std::string g_pProgramName = "Unknown";	// RIK
-UINT32 g_ProgramSig[PROG_SIG_LEN] = { 0 };	// RIK
+std::string g_pProgramName = "Unknown";		// RIK -- Name of the emulated program
+std::string g_pProgramSig = "000-00000000";	// RIK -- Canonical signature of the emulated program using format: page-cnc32
 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 

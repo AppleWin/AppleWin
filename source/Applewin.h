@@ -14,7 +14,7 @@ extern TCHAR VERSIONSTRING[];	// Constructed in WinMain()
 
 extern std::string g_pAppTitle;
 extern std::string g_pProgramName;				// RIK -- Name of the emulated program
-extern UINT32 g_ProgramSig[PROG_SIG_LEN];		// RIK -- Signature of the emulated program
+extern std::string g_pProgramSig;				// RIK -- Canonical signature of the emulated program using format: page-cnc32
 
 extern eApple2Type g_Apple2Type;
 eApple2Type GetApple2Type(void);
