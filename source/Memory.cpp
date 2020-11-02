@@ -1253,7 +1253,8 @@ static void UpdatePaging(BOOL initialize)
 
 			CopyMemory(mem+(loop << 8),memshadow[loop],256);
 			// RIK START
-			// Remember the last PROG_SIG_LEN pages that have been dirtied
+			// Store this page number in the last PROG_SIG_LEN pages that have been dirtied
+			// This is used to calculate the sig of the running program and determine its name
 			if ((g_uKeybReadCount < 3) && (((loop >= 0x08) && (loop < 0x20)) || ((loop >= 0x20) && (loop < 0xc0))))
 			{
 				g_MemPagesWrittenFIFO[g_uMemPagesWrittenCount % PROG_SIG_LEN] = loop;
