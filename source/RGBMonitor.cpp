@@ -1097,7 +1097,9 @@ void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, u
 		UpdateDuochromeCell(2, 7, pVideoAddress, bits, 15, 0);
 	}
 	else
+	{
 		UpdateDuochromeCell(2, 7, pVideoAddress, bits, g_nRegularTextFG, g_nRegularTextBG);
+	}
 }
 
 //===========================================================================
@@ -1210,11 +1212,9 @@ void VideoSwitchVideocardPalette(RGB_Videocard_e videocard, VideoType_e type)
 
 //===========================================================================
 
-
 static UINT g_rgbFlags = 0;
 static UINT g_rgbMode = 0;
 static WORD g_rgbPrevAN3Addr = 0;
-static bool g_rgbSet80COL = false;
 static bool g_rgbInvertBit7 = false;
 
 // Video7 RGB card:
@@ -1223,13 +1223,6 @@ static bool g_rgbInvertBit7 = false;
 // . NB. There's a final 5th AN3 transition to set DHGR mode
 void RGB_SetVideoMode(WORD address)
 {
-
-	if ((address & ~1) == 0x0C)			// 0x0C or 0x0D? (80COL)
-	{
-		g_rgbSet80COL = true;
-		return;
-	}
-
 	if ((address & ~1) != 0x5E)			// 0x5E or 0x5F? (DHIRES)
 		return;
 
@@ -1246,16 +1239,11 @@ void RGB_SetVideoMode(WORD address)
 	// In Prince of Persia, in the game demo, the RGB card switches to BW DHIRES after the HGR animation with Jaffar.
 	// It's actually the same on real hardware (tested on IIc RGB adapter).
 
-	if (address == 0x5F)
+	if (address == 0x5F && g_rgbPrevAN3Addr == 0x5E)
 	{
-		if ((g_rgbPrevAN3Addr == 0x5E) && g_rgbSet80COL)
-		{
-			g_rgbFlags = (g_rgbFlags << 1) & 3;
-			g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
-			g_rgbMode = g_rgbFlags;								// latch F2,F1
-		}
-
-		g_rgbSet80COL = false;
+		g_rgbFlags = (g_rgbFlags << 1) & 3;
+		g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
+		g_rgbMode = g_rgbFlags;								// latch F2,F1
 	}
 
 	g_rgbPrevAN3Addr = address;
@@ -1318,7 +1306,7 @@ void RGB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_FLAGS, g_rgbFlags);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_MODE, g_rgbMode);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_RGB_PREVIOUS_AN3, g_rgbPrevAN3Addr);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_RGB_80COL_CHANGED, g_rgbSet80COL);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_RGB_80COL_CHANGED, false);	// unused (todo: remove next time the parent card's version changes)
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_RGB_INVERT_BIT7, g_rgbInvertBit7);
 }
 
@@ -1333,7 +1321,7 @@ void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
 
 	if (cardVersion >= 3)
 	{
-		g_rgbSet80COL = yamlLoadHelper.LoadBool(SS_YAML_KEY_RGB_80COL_CHANGED);
+		yamlLoadHelper.LoadBool(SS_YAML_KEY_RGB_80COL_CHANGED);	// Obsolete (so just consume)
 		g_rgbInvertBit7 = yamlLoadHelper.LoadBool(SS_YAML_KEY_RGB_INVERT_BIT7);
 	}
 

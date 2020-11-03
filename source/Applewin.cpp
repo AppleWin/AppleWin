@@ -1840,7 +1840,7 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
-			if (strcmp(lpCmdLine, "apple") == 0)
+			if (strcmp(lpCmdLine, "apple") == 0)	// Just an alias for SL7
 				g_cmdLine.rgbCard = RGB_Videocard_e::Apple;
 			else if (strcmp(lpCmdLine, "sl7") == 0)
 				g_cmdLine.rgbCard = RGB_Videocard_e::Video7_SL7;

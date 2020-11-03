@@ -12,7 +12,8 @@
 			follows:
 		</p>
 		-conf &lt;pathname&gt;<br>
-		Use an INI file for configuration instead of the Registry.<br><br>
+		Use an INI file for configuration instead of the Registry.<br>
+		Use this switch if you want to have multiple copies of AppleWin with different configurations, or don't want to use the Registry.<br><br>
 		-current-dir &lt;path&gt;<br>
 		This is guaranteed to be processed after all the image loading switches (eg. -d1, -h1, etc).<br>
 		Use this switch if you have a mix of (eg) -d1 and -h1 loading images from different folders, and you want to guarantee the current dir.<br><br>
@@ -141,10 +142,10 @@
 		</ul>
 		-rgb-card-type &lt;apple|sl7|eve|feline&gt;<br>
 		<ul>
-			<li><i>apple</i> is the Extended 80-Column Text/AppleColor Adaptor Card (default).</li>
+			<li><i>apple</i> is Apple's Extended 80-Column Text/AppleColor Adaptor Card (default).</li>
 			<li><i>sl7</i> is Video-7's RGB-SL7 card.</li>
 			<ul>
-				<li>NB. This card supports an extra foreground/background hi-res mode that can be triggered by AN3 switching, resulting in corrupt color graphics!
+				<li>NB. Both these apple/sl7 cards support an extra foreground/background hi-res mode that can be triggered by AN3 switching, resulting in corrupt color graphics! See <a href="Troubleshooting.html">troubleshooting</a>.
 			</ul>
 			<li><i>eve/feline</i> are Le Chat Mauve variants.</li>
 		</ul>
@@ -153,7 +154,7 @@
 		-rgb-card-background &lt;n&gt;<br>
 		Where n is [0..15]. Defaults are foreground=15(White) and background=0(Black).<br>
 		The only supported DIPSW colors are: Black=0, Blue=6, Orange=9, Green=12, White=15<br>
-		NB. Only supported by '-rgb-card-type sl7'.<br>
+		NB. Only supported by '-rgb-card-type &lt;apple|sl7&gt;'.<br>
 		Use in conjunction with the 'Color (RGB Card/Monitor)' video mode.<br><br>
 		-rgb-card-invert-bit7<br>
 		Force the RGB card to invert bit7 in MIX mode. Enables the correct rendering for Dragon Wars.<br>

@@ -2,8 +2,8 @@
 
 enum RGB_Videocard_e
 {
-	Apple,
 	Video7_SL7,
+	Apple = Video7_SL7,		// Apple's Extended 80-Column Text/AppleColor Adaptor Card is an alias for Video7's RGB-SL7
 	LeChatMauve_EVE,
 	LeChatMauve_Feline
 };
