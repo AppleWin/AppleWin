@@ -2612,6 +2612,8 @@ void NoSlotClockLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 // To calculate the program signature we will CRC32 the last 4 modified pages of mainmem
 // and we will match each signature in turn to a file of known signatures.
 // This will give us the canonical signature and the name for the running program
+//
+// RIK TODO: Move all the below and the related headers into their own h/cpp files
 
 static std::string runningProgramName()
 {
