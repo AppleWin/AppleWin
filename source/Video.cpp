@@ -702,7 +702,9 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 		}
 
 		CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
-		g_gamelink.want_mouse = (pMouseCard && pMouseCard->IsActiveAndEnabled());
+		// Do not use pMouseCard->isEnabled() or equivalent, since it'll return false
+		// when Applewin is not in focus, and that's exactly what it'll be.
+		g_gamelink.want_mouse = (bool)pMouseCard;
 		// TODO: only send the framebuffer out when not in trackonly_mode
 		GameLink::Out(
 			(UINT16)g_pFramebufferinfo->bmiHeader.biWidth,
@@ -712,54 +714,46 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 			(const UINT8*)g_pReorderedFramebufferbits,
 			MemGetBankPtr(0));					// Main memory pointer
 	}
-		/////////////////////////////////////////////////////////////////////////////////////////
-		// Now get the input from GameLink
-		// and fire off all necessary inputs to Applewin
-		// TODO: Put this at the beginning of the main loop to ensure we're not 1 frame behind
-		// TODO: Handle Gamelink track-only
 
-	if (GameLink::GetGameLinkEnabled() && GameLink::In(&g_gamelink.input, &g_gamelink.audio)) {
+
+	/////////////////////////////////////////////////////////////////////////////////////////
+	// Now get the input from GameLink and fire off all necessary inputs to Applewin
+	// Only get inputs when AppleWin is not in focus
+	// TODO: Put this at the beginning of the main loop to ensure we're not 1 frame behind
+	// TODO: Handle Gamelink track-only
+
+	if (
+		GameLink::GetGameLinkEnabled()
+		&& g_hFrameWindow != GetFocus()
+		&& GameLink::In(&g_gamelink.input, &g_gamelink.audio)
+		) {
+#ifdef DEBUG
+		LogOutput("Mouse dX, dY, WPARAM: %0.2f %0.2f %02X\n", g_gamelink.input.mouse_dx, g_gamelink.input.mouse_dy, g_gamelink.input.mouse_btn);
+#endif DEBUG
 		// -- Audio input
 		SpkrSetVolume(g_gamelink.audio.master_vol_l, 100);
 		MB_SetVolume(g_gamelink.audio.master_vol_l, 100);
 
 		// -- Mouse input
-		// The Gamelink mouse input gives us delta x and delta y
-		// The windows PostMessage WM_MOUSEMOVE requires absolute positioning on the frame window
-		// We could go straight to the MouseInterface but using PostMessage is more WYSIWYG
+		// Go straight into MouseInterface, it already has support for delta movement
 		if (g_gamelink.want_mouse) {
 			CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
-			int iX, iMinX, iMaxX, iY, iMinY, iMaxY;
-			pMouseCard->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
-			// Get absolute coordinates
-			int iMouseX = iX + (int)g_gamelink.input.mouse_dx;
-			int iMouseY = iY + (int)g_gamelink.input.mouse_dy;
-			// The lparam has Y as high byte and X as low byte
-			LPARAM lparam = ((iMouseY << 8) | iMouseX & 0x00FF);
-			// Check button presses for WPARAM
-			WPARAM wparam = 0;
+			int iOOBX, iOOBY;	// out of bounds
+			pMouseCard->SetPositionRel(g_gamelink.input.mouse_dx, g_gamelink.input.mouse_dy, &iOOBX, &iOOBY);
+			LogOutput("SETTING MOUSE POSITION");
+			// Mouse buttons are LEFT, RIGHT, MIDDLE
+			// TODO: Check also for CONTROL and SHIFT here?
 			// Cache old and new
 			const UINT8 old = g_gamelink.input_prev.mouse_btn;
 			const UINT8 btn = g_gamelink.input.mouse_btn;
-
-			// Mouse buttons are LEFT, RIGHT, MIDDLE
-			// TODO: Check also for CONTROL and SHIFT here?
-			for (UINT8 i = 0; i < 3; ++i)
+			for (UINT8 i = 0; i <= BUTTON1; i++)
 			{
 				const UINT8 mask = 1 << i;
-				if ((btn & mask) && !(old & mask)) {
-					if (i < 1)
-						wparam |= MK_LBUTTON;
-					else if (i < 2)
-						wparam |= MK_RBUTTON;
-					else
-						wparam |= MK_MBUTTON;
-				}
+				if ((btn & mask) && !(old & mask))
+					pMouseCard->SetButton((eBUTTON)i, BUTTON_DOWN);
+				if (!(btn & mask) && (old & mask))
+					pMouseCard->SetButton((eBUTTON)i, BUTTON_UP);
 			}
-#ifdef DEBUG
-			LogOutput("Mouse dX, dY, WPARAM: %02d %02d %04X\n", g_gamelink.input.mouse_dx, g_gamelink.input.mouse_dy, wparam);
-#endif // DEBUG
-			PostMessageW(g_hFrameWindow, WM_MOUSEMOVE, wparam, lparam);
 		}
 
 
@@ -821,7 +815,7 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 					PostMessageW(g_hFrameWindow, iKeyState, iVK_Code, lparam);
 #ifdef DEBUG
 					LogOutput("SCANCODE, iVK, LPARAM: %04X, %04X, %04X\n", scancode, iVK_Code, LPARAM);
-#endif // DEBUG
+#endif DEBUG
 				}
 			}
 		}
