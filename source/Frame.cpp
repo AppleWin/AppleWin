@@ -143,7 +143,6 @@ static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
 
 void    DrawStatusArea (HDC passdc, BOOL drawflags);
-static void ProcessButtonClick (int button, bool bFromButtonUI=false);
 void	ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive);
 void    RelayEvent (UINT message, WPARAM wparam, LPARAM lparam);
 void    ResetMachineState ();
@@ -2050,7 +2049,7 @@ static bool ConfirmReboot(bool bFromButtonUI)
 	return res == IDYES;
 }
 
-static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
+void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 {
 	SoundCore_SetFade(FADE_OUT);
 	bool bAllowFadeIn = true;

@@ -205,9 +205,6 @@
     <ClCompile Include="source\gamelink\gamelink.cpp">
       <Filter>Source Files\gamelink</Filter>
     </ClCompile>
-    <ClCompile Include="source\gamelink\gamelink_term.cpp">
-      <Filter>Source Files\gamelink</Filter>
-    </ClCompile>
     <ClCompile Include="source\Signatures.cpp">
       <Filter>Source Files\Disk</Filter>
     </ClCompile>

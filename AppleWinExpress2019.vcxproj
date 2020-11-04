@@ -143,7 +143,6 @@
     <ClCompile Include="source\CPU.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
     <ClCompile Include="source\gamelink\gamelink.cpp" />
-    <ClCompile Include="source\gamelink\gamelink_term.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
     <ClCompile Include="source\SAM.cpp" />
     <ClCompile Include="source\Debugger\Debug.cpp" />
