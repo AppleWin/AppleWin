@@ -702,13 +702,13 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 		}
 
 		CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
-		bool bWantMouse = (pMouseCard && pMouseCard->IsActiveAndEnabled());
+		g_gamelink.want_mouse = (pMouseCard && pMouseCard->IsActiveAndEnabled());
 		// TODO: only send the framebuffer out when not in trackonly_mode
 		GameLink::Out(
 			(UINT16)g_pFramebufferinfo->bmiHeader.biWidth,
 			(UINT16)g_pFramebufferinfo->bmiHeader.biHeight,
 			1.0,								// image ratio
-			bWantMouse,
+			g_gamelink.want_mouse,
 			(const UINT8*)g_pReorderedFramebufferbits,
 			MemGetBankPtr(0));					// Main memory pointer
 	}
@@ -724,13 +724,11 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 		MB_SetVolume(g_gamelink.audio.master_vol_l, 100);
 
 		// -- Mouse input
-		//g_gamelink.input.mouse_dx
 		// The Gamelink mouse input gives us delta x and delta y
 		// The windows PostMessage WM_MOUSEMOVE requires absolute positioning on the frame window
 		// We could go straight to the MouseInterface but using PostMessage is more WYSIWYG
-		CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
-		bool bWantMouse = (pMouseCard && pMouseCard->IsActiveAndEnabled());
-		if (bWantMouse) {
+		if (g_gamelink.want_mouse) {
+			CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
 			int iX, iMinX, iMaxX, iY, iMinY, iMaxY;
 			pMouseCard->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 			// Get absolute coordinates
@@ -758,22 +756,21 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 						wparam |= MK_MBUTTON;
 				}
 			}
-			LogOutput("Mouse X,Y, WPARAM: %02d %02d %04X\n", g_gamelink.input.mouse_dx, g_gamelink.input.mouse_dy, wparam);
+#ifdef DEBUG
+			LogOutput("Mouse dX, dY, WPARAM: %02d %02d %04X\n", g_gamelink.input.mouse_dx, g_gamelink.input.mouse_dy, wparam);
+#endif // DEBUG
 			PostMessageW(g_hFrameWindow, WM_MOUSEMOVE, wparam, lparam);
 		}
 
 
 		// -- Keyboard input
 		// Gamelink sets in shm 8 UINT32s, for a total of $FF bits
-		// Which match the space of keyboard scancodes
+		// Which match the space of DIK keyboard scancodes
 		// Each bit will state if the scancode at that position is pressed (1) or released (0)
 		// We keep a cache of the previous state, so we'll know if a key has changed state
 		// and trigger the event
-		std::string sKeybString = "00000409";
+		// First we need to map DIK scancodes to VK codes
 		HKL hKeyboardLayout = GetKeyboardLayout(0);
-//		HKL hKeyboardLayout = LoadKeyboardLayoutW((LPCWSTR)"00000409", KLF_SUBSTITUTE_OK);	// TODO put this in a file global
-
-//		LPBYTE pKeyboardState = new UINT8[256];
 		UINT8 aDIKtoVK[256] = { 0x00, 0x1B, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30, 0xBD, 0xBB,
 								0x08, 0x09, 0x51, 0x57, 0x45, 0x52, 0x54, 0x59, 0x55, 0x49, 0x4F, 0x50, 0xDB, 0xDD, 0x0D,
 								0xA2, 0x41, 0x53, 0x44, 0x46, 0x47, 0x48, 0x4A, 0x4B, 0x4C, 0xBA, 0xDE, 0xC0, 0xA0, 0xDC,
@@ -809,46 +806,27 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 				mask = 1 << bit;
 				if ((key & mask) && !(old & mask)) {
 					iKeyState = WM_KEYDOWN;
-//					pKeyboardState[scancode] = 0b10000001;
-//					iVK_Code = MapVirtualKeyExA(scancode, MAPVK_VSC_TO_VK_EX, hKeyboardLayout);
-//					KeybQueueKeypress(iVK_Code, NOT_ASCII);
-//					KeybAnyKeyDown(iKeyState, iVK_Code, 0);
 				}
 				if (!(key & mask) && (old & mask)) {
 					iKeyState = WM_KEYUP;
-//					pKeyboardState[scancode] = 0;
-//					iVK_Code = MapVirtualKeyExA(scancode, MAPVK_VSC_TO_VK_EX, hKeyboardLayout);
-//					KeybQueueKeypress(iVK_Code, NOT_ASCII);
-//					KeybAnyKeyDown(iKeyState, iVK_Code, 0);
 				}
 				if (iKeyState)
 				{
-//					SetKeyboardState(pKeyboardState);
 					iVK_Code = aDIKtoVK[scancode];
-//					iVK_Code = MapVirtualKeyExW(scancode, MAPVK_VSC_TO_VK_EX, hKeyboardLayout);
-//					if (iKeyState == WM_KEYUP)
-//   						keybd_event(iVK_Code, scancode, KEYEVENTF_KEYUP, 0);	// doesn't work
-//					else
-//						keybd_event(iVK_Code, scancode, 0, 0);	// doesn't work
 					// https://stackoverflow.com/questions/10280000/how-to-create-lparam-of-sendmessage-wm-keydown#10281086
 					// Build the generic lparam to be used for WM_KEYDOWN/WM_KEYUP/WM_CHAR
 					LPARAM lparam = 0x00000001 | (LPARAM)(scancode << 16);         // Scan code, repeat=1
 					if (scancode > 0x7F)
 						lparam = lparam | 0x01000000;	// set extended
-					//FrameWndProc(g_hFrameWindow, iKeyState, iVK_Code, lparam);
 					PostMessageW(g_hFrameWindow, iKeyState, iVK_Code, lparam);
-//					LogOutput("SCANCODE: %04X\n", scancode);
-//					LogOutput("iVK: %04X\n", iVK_Code);
-//					LogOutput("LPARAM: %04X\n", lparam);
-					// the directions key seem to be sending 0 as the scancode, at least in Frame.cpp's KeybQueueKeypress
-					// And although regular keys are triggering KeybQueueKeypress correctly, nothing is happening on the screen.
+#ifdef DEBUG
+					LogOutput("SCANCODE, iVK, LPARAM: %04X, %04X, %04X\n", scancode, iVK_Code, LPARAM);
+#endif // DEBUG
 				}
-//				pKeyboardState++;
 			}
 		}
 		// We're done parsing the input. Store it as the previous state
 		memcpy(&g_gamelink.input_prev, &g_gamelink.input, sizeof(GameLink::sSharedMMapInput_R2));
-//		delete [] pKeyboardState;
 	}
 	// RIK END
 
