@@ -13,7 +13,6 @@
 // Globals
 //------------------------------------------------------------------------------
 bool g_bEnableGamelink;	// RIK Global to remember the state of GameLink
-bool g_paused;			// RIK Not used now TODO
 
 //------------------------------------------------------------------------------
 // Local Definitions
@@ -405,7 +404,7 @@ void GameLink::Out( const UINT16 frame_width,
 	}
 
 	// Paused?
-	if ( g_paused )
+	if (g_nAppMode == MODE_PAUSED)
 		flags |= sSharedMemoryMap_R4::FLAG_PAUSED;
 
 

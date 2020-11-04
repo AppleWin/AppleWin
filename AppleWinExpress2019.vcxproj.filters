@@ -208,6 +208,9 @@
     <ClCompile Include="source\gamelink\gamelink_term.cpp">
       <Filter>Source Files\gamelink</Filter>
     </ClCompile>
+    <ClCompile Include="source\Signatures.cpp">
+      <Filter>Source Files\Disk</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Applewin.h">
@@ -497,6 +500,9 @@
     </ClInclude>
     <ClInclude Include="source\gamelink\gamelink.h">
       <Filter>Source Files\gamelink</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Signatures.h">
+      <Filter>Source Files\Disk</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -61,9 +61,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debugger/DebugDefs.h"
 #include "YamlHelper.h"
 #include <map>
-#include "Util_MemoryTextFile.h"// RIK load boot disk signatures
-#include "zlib.h"				// RIK crc32
-#include "gamelink/gamelink.h"	// RIK -- Select allocator
+#include "Signatures.h"			// RIK load and calculate boot disk signatures
+
 
 // UTAIIe:5-28 (GH#419)
 // . Sather uses INTCXROM instead of SLOTCXROM' (used by the Apple//e Tech Ref Manual), so keep to this
@@ -232,14 +231,8 @@ static bool g_Annunciator[kNumAnnunciators] = {};
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
-// RIK BEGIN
-static BOOL g_bMemIsShared = 0;									//  Remembers which memory allocator is used (regular or shared) for later dealloc
-static UINT8 g_uKeybReadCount = 0;								// Calculate program hash and name at the second call to IORead_C00x
-static UINT8 g_uMemPagesWrittenCount = 0;						// The number of main memory pages written until the second call to IORead_C00x
-static UINT32 g_MemPagesWrittenFIFO[PROG_SIG_LEN] = { 0x08 };	// Tracks the last PRG_SIG_LEN memory pages written
-static UINT32 g_PagesCRC[PROG_SIG_LEN] = { 0 };					// CRC of the last PRG_SOG_LEN pages
-static std::map< std::string, std::string > g_mBootDisksSignatures;	// Map of signatures to program names (loaded from file)
-// RIK END
+static BOOL g_bMemIsShared = 0;				// RIK -- Remembers which memory allocator is used (regular or shared) for later dealloc
+static UINT8 g_uKeybReadCount = 0;			// RIK -- Calculate signatures at the second call to IORead_C00x
 
 //=============================================================================
 
@@ -1249,13 +1242,12 @@ static void UpdatePaging(BOOL initialize)
 			}
 
 			CopyMemory(mem+(loop << 8),memshadow[loop],256);
-			// RIK START
+			// RIK BEGIN
 			// Store this page number in the last PROG_SIG_LEN pages that have been dirtied
 			// This is used to calculate the sig of the running program and determine its name
 			if ((g_uKeybReadCount < 3) && (((loop >= 0x08) && (loop < 0x20)) || ((loop >= 0x20) && (loop < 0xc0))))
 			{
-				g_MemPagesWrittenFIFO[g_uMemPagesWrittenCount % PROG_SIG_LEN] = loop;
-				g_uMemPagesWrittenCount++;
+				addPageToSigCalculation(loop);
 			}
 			// RIK END
 		}
@@ -2604,128 +2596,3 @@ void NoSlotClockLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 
 	g_NoSlotClock->LoadSnapshot(yamlLoadHelper);
 }
-
-// RIK BEGIN
-// =========================================
-// Running program discovery
-//
-// To calculate the program signature we will CRC32 the last 4 modified pages of mainmem
-// and we will match each signature in turn to a file of known signatures.
-// This will give us the canonical signature and the name for the running program
-//
-// RIK TODO: Move all the below and the related headers into their own h/cpp files
-
-static std::string runningProgramName()
-{
-	return g_pProgramName;
-}
-static void calculateProgramSig()
-{
-	std::string pName;
-	char pSig[13] = "";
-	std::string pSigStr;
-	loadSignatureFile();
-	for (UINT8 i = 0; i < PROG_SIG_LEN; i++)
-	{
-		g_PagesCRC[i] = calculateMemPageSig(i, g_MemPagesWrittenFIFO[i]);
-		int ct = snprintf(pSig, sizeof(pSig), "%03d-%08X", g_MemPagesWrittenFIFO[i], g_PagesCRC[i]);
-		pSigStr.assign(pSig);
-		pName = g_mBootDisksSignatures[pSigStr];
-		if (!pName.empty())
-		{
-			g_pProgramName = pName;
-			g_pProgramSig = pSigStr;
-			break;
-		}
-	}
-	displaySigCalcs();
-}
-
-static UINT calculateMemPageSig(UINT crc, UINT8 pageNumber)
-{
-	return crc32(crc, memmain + pageNumber * 256, 256);
-}
-
-static void displaySigCalcs()	// for debugging
-{
-	std::string sigsMsg = "Signatures:\n";
-	char buf[50];
-	UINT8 len;
-	for (UINT8 i = 0; i < PROG_SIG_LEN; i++)
-	{
-		len = sprintf(buf, "%03d-%08X: %s\n", g_MemPagesWrittenFIFO[i], g_PagesCRC[i], "Unknown Program");
-		sigsMsg.append(buf, len);
-	}
-	MessageBox(g_hFrameWindow,
-		sigsMsg.c_str(),
-		TEXT("Current Boot Disk Signatures"),
-		MB_ICONEXCLAMATION | MB_SETFOREGROUND);
-}
-
-static void loadSignatureFile()
-{
-
-	MemoryTextFile_t vSigFile = MemoryTextFile_t();
-	if (vSigFile.Read(g_sProgramDir + std::string("Boot Disks Signatures.yaml")))
-	{
-		g_mBootDisksSignatures.empty();
-		std::string key;
-		std::string value;
-		UINT numLines = vSigFile.GetNumLines();
-		UINT trailingSpaces = 0;
-		char* s;
-		for (UINT i = 0; i < numLines; i++)
-		{
-			key.clear(); value.clear();
-			trailingSpaces = 0;
-			s = vSigFile.GetLine(i);
-			// parse the key
-			while (*s && *s != ':') {
-				if (*s == '#')	// if there's a comment already, pass
-				{
-					*s = '\0';
-					break;
-				}
-				key.push_back(*s);
-				++s;
-			}
-			if (!*s) continue; // if end of the string, pass
-			s++; // pass the ':'
-			// delimiter between key and value should be ':'
-			// but it allows spaces and tabs after the ':'
-			while (*s && ((*s == ' ') || (*s == '\t'))) {
-				s++;
-			}
-			// parse the value
-			// Allow for comments # after the value
-			// Get rid of trailing spaces as well, between value and comment or EOL
-			// But keep them if they're within the disk name
-			while (*s && *s != '#') {
-				if ((*s == ' ') || (*s == '\t'))
-				{
-					trailingSpaces++;
-				}
-				else {
-					for (UINT j = 0; j < trailingSpaces; j++)
-					{
-						value.push_back(' ');
-					}
-					trailingSpaces = 0;
-					value.push_back(*s);
-				}
-				++s;
-			}
-			g_mBootDisksSignatures[key] = value;
-		}
-	}
-	else {
-		MessageBox(g_hFrameWindow,
-			TEXT("Can't read Boot Disks Signatures file"),
-			TEXT("Load Boot Disks Signatures"),
-			MB_ICONEXCLAMATION | MB_SETFOREGROUND);
-	}
-
-
-}
-// =========================================
-// RIK END
