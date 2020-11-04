@@ -1,5 +1,19 @@
-
 // Game Link
+//
+// Game Link is an API created by DWD for Grid Cartographer, to link his map-making software
+// to emulators like DosBox. There is a version of DosBox called dosbox-gridc that implements this API,
+// as well as multiple other emulators.
+// Game Link's core premise is to link the emulator and 3rd party programs via shared memory.
+// There are 4 main pieces:
+// 	- A map that contains input from the 3rd party into the emulator, containing audio, keystrokes and mouse
+// 	- A map that contains output from the emulator, containing the emulated hardware RAM and frame information
+// 	- Also included in the output is information about the active emulated program and its unique signature
+// 	- A special terminal-style interface to pass to the emulator commands that are not keystrokes (reset, quit, pause, etc...)
+//
+// Applewin's code:
+//	- allocates main and aux mem as shared memory
+//	- creates a running program signature with help from Signatures.cpp
+//	- calls Gamelink::In() and Gamelink::Out() to grab commands/keystrokes and send video & ram respectively
 
 #include <Windows.h>
 #include "Common.h"
