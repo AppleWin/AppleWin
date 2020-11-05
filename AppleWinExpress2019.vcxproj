@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="RemoteControlManager.h" />
     <ClInclude Include="resource\resource.h" />
     <ClInclude Include="resource\winres.h" />
     <ClInclude Include="source\6821.h" />
@@ -127,6 +128,7 @@
     <Text Include="docs\Wishlist.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="RemoteControlManager.cpp" />
     <ClCompile Include="source\6821.cpp" />
     <ClCompile Include="source\Applewin.cpp" />
     <ClCompile Include="source\AY8910.cpp" />

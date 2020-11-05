@@ -45,6 +45,7 @@ namespace GameLink
 	//
 	// Client -> Server Input Data
 	//
+
 	struct sSharedMMapInput_R2
 	{
 		float mouse_dx;

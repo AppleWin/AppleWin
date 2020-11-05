@@ -1,11 +1,13 @@
 // Game Link
 //
 // Game Link is an API created by DWD for Grid Cartographer, to link his map-making software
-// to emulators like DosBox. There is a version of DosBox called dosbox-gridc that implements this API,
+// to emulators like DosBox and FS-UAE. There is a version of DosBox called dosbox-gridc that implements this API,
 // as well as multiple other emulators.
 // Game Link's core premise is to link the emulator and 3rd party programs via shared memory.
 // There are 4 main pieces:
-// 	- A map that contains input from the 3rd party into the emulator, containing audio, keystrokes and mouse
+// 	- A map that contains input from the 3rd party into the emulator, containing:
+//		- a structure with audio volume information
+//		- a structure that passes the current state of the keyboard and the delta mouse
 // 	- A map that contains output from the emulator, containing the emulated hardware RAM and frame information
 // 	- Also included in the output is information about the active emulated program and its unique signature
 // 	- A special terminal-style interface to pass to the emulator commands that are not keystrokes (reset, quit, pause, etc...)
@@ -238,12 +240,16 @@ static void proc_mech(GameLink::sSharedMMapBuffer_R1* cmd, UINT16 payload)
 	}
 	else if (strcmp(com, ":pause") == 0)
 	{
-		PostMessageW(g_hFrameWindow, WM_KEYDOWN, VK_PAUSE, 0);
+		LPARAM lparam = 1;
+		lparam = lparam | (LPARAM)(0x45 << 16);				// scancode for PAUSE
+		PostMessageW(g_hFrameWindow, WM_KEYDOWN, VK_PAUSE, lparam);
+		lparam = lparam | (LPARAM)(1 << 30);				// previous key state
+		lparam = lparam | (LPARAM)(1 << 31);				// transition state (1 for keyup)
 		PostMessageW(g_hFrameWindow, WM_KEYUP, VK_PAUSE, 0);
 	}
 	else if (strcmp(com, ":shutdown") == 0)
 	{
-		PostMessage(g_hFrameWindow, WM_DESTROY, 0, 0);
+		PostMessageW(g_hFrameWindow, WM_DESTROY, 0, 0);
 	}
 }
 

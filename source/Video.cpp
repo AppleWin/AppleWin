@@ -49,26 +49,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "MouseInterface.h"	// RIK -- for Gamelink in and out
 #include "Speaker.h"		// RIK -- for Gamelink::In()
 #include "Mockingboard.h"	// RIK -- TODO should probably be moved somewhere other than Video.cpp !!!
-#include <map>
-// RIK BEGIN
-// This map is to find the virtual keyboard codes given the scancodes
-// because keybd_event needs both the virtual and scancodes. Totally useless.
-struct VirtualKeys {
-	static std::map<int, int> create_map()
-	{
-		std::map<int, int> m;
-		m[1] = VK_BACK;
-		m[3] = VK_TAB;
-		m[5] = 6;
-		return m;
-	}
-	static const std::map<int, int> g_mScanCodeMap;
-
-};
-
-const std::map<int, int> VirtualKeys::g_mScanCodeMap = VirtualKeys::create_map();
-
-// RIK END
 
 
 	#define  SW_80COL         (g_uVideoMode & VF_80COL)
@@ -131,10 +111,15 @@ struct Gamelink_Block {
 	GameLink::sSharedMMapInput_R2 input_prev;
 	GameLink::sSharedMMapInput_R2 input;
 	GameLink::sSharedMMapAudio_R1 audio;
+	UINT repeat_last_tick[256];
 	bool want_mouse;
 };
 
 Gamelink_Block g_gamelink;
+
+UINT const kMinRepeatInterval = 400;	// Minimum keypress repeat message interval in ms
+UINT iCurrentTicks;						// Used to check the repeat interval
+
 // RIK END
 
 
@@ -722,6 +707,7 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 	// TODO: Put this at the beginning of the main loop to ensure we're not 1 frame behind
 	// TODO: Handle Gamelink track-only
 
+
 	if (
 		GameLink::GetGameLinkEnabled()
 		&& g_hFrameWindow != GetFocus()
@@ -757,12 +743,13 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 
 
 		// -- Keyboard input
+
 		// Gamelink sets in shm 8 UINT32s, for a total of $FF bits
-		// Which match the space of DIK keyboard scancodes
+		// Using some kid of DIK keycodes.
 		// Each bit will state if the scancode at that position is pressed (1) or released (0)
 		// We keep a cache of the previous state, so we'll know if a key has changed state
 		// and trigger the event
-		// First we need to map DIK scancodes to VK codes
+		// This is a map from the custom DIK scancodes to VK codes
 		HKL hKeyboardLayout = GetKeyboardLayout(0);
 		UINT8 aDIKtoVK[256] = { 0x00, 0x1B, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30, 0xBD, 0xBB,
 								0x08, 0x09, 0x51, 0x57, 0x45, 0x52, 0x54, 0x59, 0x55, 0x49, 0x4F, 0x50, 0xDB, 0xDD, 0x0D,
@@ -783,6 +770,10 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 								0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 								0x00, 0x00 };
 
+		// We need to handle long keypresses
+		// We set up a do-nothing timer for each key so that the first repeat isn't too fast
+
+		iCurrentTicks = GetTickCount();
 		for (UINT8 blk = 0; blk < 8; ++blk)
 		{
 			const UINT old = g_gamelink.input_prev.keyb_state[blk];
@@ -791,31 +782,43 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 			UINT32 mask;
 			UINT iKeyState;
 			UINT iVK_Code;
+			LPARAM lparam;
+			UINT16 repeat;
+			bool bCD, bPD;	// is current key down? is previous key down?
 
 			for (UINT8 bit = 0; bit < 32; ++bit)
 			{
-				iKeyState = 0;
 				scancode = static_cast<UINT8>((blk * 32) + bit);
 				mask = 1 << bit;
-				if ((key & mask) && !(old & mask)) {
-					iKeyState = WM_KEYDOWN;
-				}
-				if (!(key & mask) && (old & mask)) {
-					iKeyState = WM_KEYUP;
-				}
-				if (iKeyState)
+				bCD = (key & mask);	// key is down (bCD)
+				bPD = (old & mask);	// key was down previously (bPD)
+				if ((!bCD) && (!bPD))
+					continue;	// the key was neither pressed previously nor now
+				if (bCD && bPD)
 				{
-					iVK_Code = aDIKtoVK[scancode];
-					// https://stackoverflow.com/questions/10280000/how-to-create-lparam-of-sendmessage-wm-keydown#10281086
-					// Build the generic lparam to be used for WM_KEYDOWN/WM_KEYUP/WM_CHAR
-					LPARAM lparam = 0x00000001 | (LPARAM)(scancode << 16);         // Scan code, repeat=1
-					if (scancode > 0x7F)
-						lparam = lparam | 0x01000000;	// set extended
-					PostMessageW(g_hFrameWindow, iKeyState, iVK_Code, lparam);
-#ifdef DEBUG
-					LogOutput("SCANCODE, iVK, LPARAM: %04X, %04X, %04X\n", scancode, iVK_Code, lparam);
-#endif DEBUG
+					// it's a repeat key
+					if ((iCurrentTicks - g_gamelink.repeat_last_tick[scancode]) < kMinRepeatInterval)
+						continue;	// drop repeat messages within kMinRepeatInterval ms
 				}
+				if (!bPD)	// This is the first time we're pressing the key, set the no-repeat interval
+					g_gamelink.repeat_last_tick[scancode] = iCurrentTicks;
+				else		// The key is already in repeat mode. Let it repeat as fast as it wants
+					g_gamelink.repeat_last_tick[scancode] = 0;
+				// Set up message
+				iKeyState = bCD ? WM_KEYDOWN : WM_KEYUP;
+				iVK_Code = aDIKtoVK[scancode];
+				repeat = 1;		// TODO: Should we remember the key's repeat?
+				{	// set up lparam
+					lparam = repeat;
+					lparam = lparam | (LPARAM)(scancode << 16);				// scancode
+					lparam = lparam | (LPARAM)((scancode > 0x7F) << 24);	// extended
+					lparam = lparam | (LPARAM)(bPD << 30);				// previous key state
+					lparam = lparam | (LPARAM)(!bCD << 31);		// transition state (1 for keyup)
+				}
+				PostMessageW(g_hFrameWindow, iKeyState, iVK_Code, lparam);
+#ifdef DEBUG
+				LogOutput("SCANCODE, iVK, LPARAM: %04X, %04X, %04X\n", scancode, iVK_Code, lparam);
+#endif DEBUG
 			}
 		}
 		// We're done parsing the input. Store it as the previous state
