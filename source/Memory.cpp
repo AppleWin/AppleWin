@@ -849,17 +849,8 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 	// NSC only for //e at internal C3/C8 ROMs, as II/II+ has no internal ROM here! (GH#827)
 	if (!IS_APPLE2 && g_NoSlotClock && IsPotentialNoSlotClockAccess(address))
 	{
-		if (!write)
-		{
-			int data = 0;
-			if (g_NoSlotClock->Read(address, data))
-				return (BYTE) data;
-		}
-		else
-		{
-			g_NoSlotClock->Write(address);
-			return 0;
-		}
+		if (g_NoSlotClock->ReadWrite(address, value, write))
+			return value;
 	}
 
 	if (!IS_APPLE2 && SW_INTCXROM)
@@ -906,6 +897,30 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 		return IO_Null(programcounter, address, write, value, nExecutedCycles);
 
 	return mem[address];
+}
+
+BYTE __stdcall IO_F8xx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
+{
+	if (IS_APPLE2 && g_NoSlotClock && !SW_HIGHRAM)
+	{
+		if (g_NoSlotClock->ReadWrite(address, value, write))
+			return value;
+	}
+
+	//
+
+	if (!write)
+	{
+		return *(mem+address);
+	}
+	else
+	{
+		memdirty[address >> 8] = 0xFF;
+		LPBYTE page = memwrite[address >> 8];
+		if (page)
+			*(page+(address & 0xFF)) = value;
+		return 0;
+	}
 }
 
 //===========================================================================

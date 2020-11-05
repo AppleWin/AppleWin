@@ -47,14 +47,26 @@ inline void Heatmap_X(uint16_t address)
 	// todo
 }
 
-inline uint8_t Heatmap_ReadByte(uint16_t addr, int uExecutedCycles)
+inline uint8_t Heatmap_ReadByte_CMOS(uint16_t addr, int uExecutedCycles)
 {
 	Heatmap_R(addr);
-	return _READ;
+	return _READ_CMOS;
 }
 
-inline void Heatmap_WriteByte(uint16_t addr, uint16_t value, int uExecutedCycles)
+inline uint8_t Heatmap_ReadByte_NMOS(uint16_t addr, int uExecutedCycles)
+{
+	Heatmap_R(addr);
+	return _READ_NMOS;
+}
+
+inline void Heatmap_WriteByte_CMOS(uint16_t addr, uint16_t value, int uExecutedCycles)
 {
 	Heatmap_W(addr);
-	_WRITE(value);
+	_WRITE_CMOS(value);
+}
+
+inline void Heatmap_WriteByte_NMOS(uint16_t addr, uint16_t value, int uExecutedCycles)
+{
+	Heatmap_W(addr);
+	_WRITE_NMOS(value);
 }
