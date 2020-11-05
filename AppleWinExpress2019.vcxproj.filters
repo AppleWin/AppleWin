@@ -208,7 +208,7 @@
     <ClCompile Include="source\Signatures.cpp">
       <Filter>Source Files\Disk</Filter>
     </ClCompile>
-    <ClCompile Include="RemoteControlManager.cpp">
+    <ClCompile Include="source\Gamelink\RemoteControlManager.cpp">
       <Filter>Source Files\Gamelink</Filter>
     </ClCompile>
   </ItemGroup>
@@ -504,7 +504,7 @@
     <ClInclude Include="source\Signatures.h">
       <Filter>Source Files\Disk</Filter>
     </ClInclude>
-    <ClInclude Include="RemoteControlManager.h">
+    <ClInclude Include="source\Gamelink\RemoteControlManager.h">
       <Filter>Source Files\Gamelink</Filter>
     </ClInclude>
   </ItemGroup>

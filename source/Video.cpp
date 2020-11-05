@@ -44,12 +44,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"
 #include "YamlHelper.h"
-
-#include <Windows.h>		// RIK -- to inject the incoming Gamelink inputs into Applewin
-#include "MouseInterface.h"	// RIK -- for Gamelink in and out
-#include "Speaker.h"		// RIK -- for Gamelink::In()
-#include "Mockingboard.h"	// RIK -- TODO should probably be moved somewhere other than Video.cpp !!!
-
+#include "Gamelink/RemoteControlManager.h"
 
 	#define  SW_80COL         (g_uVideoMode & VF_80COL)
 	#define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
@@ -62,7 +57,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Globals (Public)
 
     uint8_t      *g_pFramebufferbits = NULL; // last drawn frame
-	uint8_t		 *g_pReorderedFramebufferbits = new uint8_t[GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t)]; // the frame realigned properly	// RIK
 	int           g_nAltCharSetOffset  = 0; // alternate character set
 
 // Globals (Private)
@@ -104,25 +98,7 @@ static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 static LPDIRECTDRAW g_lpDD = NULL;
 
-// RIK BEGIN
-// The GameLink I/O structure
-struct Gamelink_Block {
-	// UINT pitch;	// TODO: not needed?
-	GameLink::sSharedMMapInput_R2 input_prev;
-	GameLink::sSharedMMapInput_R2 input;
-	GameLink::sSharedMMapAudio_R1 audio;
-	UINT repeat_last_tick[256];
-	bool want_mouse;
-};
-
-Gamelink_Block g_gamelink;
-
-UINT const kMinRepeatInterval = 400;	// Minimum keypress repeat message interval in ms
-UINT iCurrentTicks;						// Used to check the repeat interval
-
-// RIK END
-
-
+static RemoteControlManager g_rcManager;	// RIK
 
 
 //-------------------------------------
@@ -193,16 +169,7 @@ void VideoInitialize ()
 	g_pFramebufferinfo->bmiHeader.biClrUsed     = 0;
 
 	videoCreateDIBSection();
-
-	// RIK START
-	// TODO: Might want to put this somewhere else
-	if (GameLink::GetGameLinkEnabled())
-	{
-		// initialize the gamelink previous input to 0
-		memset(&g_gamelink.input_prev, 0, sizeof(GameLink::sSharedMMapInput_R2));
-	}
-	// RIK END
-
+	g_rcManager.initialize();
 }
 
 //===========================================================================
@@ -597,26 +564,6 @@ void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 
 //===========================================================================
 
-
-// RIK BEGIN
-// The framebuffer has its scanlines inverted, from bottom to top
-// To send a correct bitmap out to a 3rd party program we need to reverse the scanlines
-static void reverseScanlines (uint8_t *destination, uint8_t *source, uint32_t width, uint32_t height, uint8_t depth)
-{
-	uint32_t linesize = width * depth;
-	uint8_t* loln = source;
-	uint8_t* hiln = destination + (height - 1) * linesize;	// first pixel of the last line
-	for (size_t i = 0; i < height; i++)
-	{
-		memcpy(hiln, loln, linesize);
-		loln = loln + linesize;
-		hiln = hiln - linesize;
-	}
-}
-// RIK END
-
-//===========================================================================
-
 void VideoRedrawScreen (void)
 {
 	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
@@ -625,6 +572,8 @@ void VideoRedrawScreen (void)
 
 void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/)
 {
+	g_rcManager.getInput();	// RIK
+
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
 	{
 		// uVideoModeForWholeScreen set if:
@@ -663,168 +612,7 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 			SRCCOPY);
 	}
 
-	// RIK BEGIN
-
-	if (GameLink::GetGameLinkEnabled()) {
-		// here send the last drawn frame to GameLink
-		// We could efficiently send to GameLink g_pFramebufferbits with GetFrameBufferWidth/GetFrameBufferHeight, but the scanlines are reversed
-		// We instead memcpy each scanline of the bitmap of the frame in reverse into another buffer, and pass that to GameLink.
-		// When GridCartographer/GameLink allows to pass in flags specifying the x/y/w/h etc...,
-		// Then we can go back to using g_pFramebufferbits and let GC handle it efficiently on its end, as it uses the GPU
-		//
-		// TODO: See if there is an easy function for this in the Win API or if there's another faster way
-
-		if (g_pFramebufferbits != NULL)
-		{
-			reverseScanlines
-			(
-				g_pReorderedFramebufferbits,
-				g_pFramebufferbits,
-				g_pFramebufferinfo->bmiHeader.biWidth,
-				g_pFramebufferinfo->bmiHeader.biHeight,
-				g_pFramebufferinfo->bmiHeader.biBitCount / 8
-			);
-		}
-
-		CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
-		// Do not use pMouseCard->isEnabled() or equivalent, since it'll return false
-		// when Applewin is not in focus, and that's exactly what it'll be.
-		g_gamelink.want_mouse = (bool)pMouseCard;
-		// TODO: only send the framebuffer out when not in trackonly_mode
-		GameLink::Out(
-			(UINT16)g_pFramebufferinfo->bmiHeader.biWidth,
-			(UINT16)g_pFramebufferinfo->bmiHeader.biHeight,
-			1.0,								// image ratio
-			g_gamelink.want_mouse,
-			(const UINT8*)g_pReorderedFramebufferbits,
-			MemGetBankPtr(0));					// Main memory pointer
-	}
-
-
-	/////////////////////////////////////////////////////////////////////////////////////////
-	// Now get the input from GameLink and fire off all necessary inputs to Applewin
-	// Only get inputs when AppleWin is not in focus
-	// TODO: Put this at the beginning of the main loop to ensure we're not 1 frame behind
-	// TODO: Handle Gamelink track-only
-
-
-	if (
-		GameLink::GetGameLinkEnabled()
-		&& g_hFrameWindow != GetFocus()
-		&& GameLink::In(&g_gamelink.input, &g_gamelink.audio)
-		) {
-#ifdef DEBUG
-		LogOutput("Mouse dX, dY, WPARAM: %0.2f %0.2f %02X\n", g_gamelink.input.mouse_dx, g_gamelink.input.mouse_dy, g_gamelink.input.mouse_btn);
-#endif DEBUG
-		// -- Audio input
-		SpkrSetVolume(g_gamelink.audio.master_vol_l, 100);
-		MB_SetVolume(g_gamelink.audio.master_vol_l, 100);
-
-		// -- Mouse input
-		// Go straight into MouseInterface, it already has support for delta movement
-		if (g_gamelink.want_mouse) {
-			CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
-			int iOOBX, iOOBY;	// out of bounds
-			pMouseCard->SetPositionRel((long)g_gamelink.input.mouse_dx, (long)g_gamelink.input.mouse_dy, &iOOBX, &iOOBY);
-			// Mouse buttons are LEFT, RIGHT, MIDDLE
-			// TODO: Check also for CONTROL and SHIFT here?
-			// Cache old and new
-			const UINT8 old = g_gamelink.input_prev.mouse_btn;
-			const UINT8 btn = g_gamelink.input.mouse_btn;
-			for (UINT8 i = 0; i <= BUTTON1; i++)
-			{
-				const UINT8 mask = 1 << i;
-				if ((btn & mask) && !(old & mask))
-					pMouseCard->SetButton((eBUTTON)i, BUTTON_DOWN);
-				if (!(btn & mask) && (old & mask))
-					pMouseCard->SetButton((eBUTTON)i, BUTTON_UP);
-			}
-		}
-
-
-		// -- Keyboard input
-
-		// Gamelink sets in shm 8 UINT32s, for a total of $FF bits
-		// Using some kid of DIK keycodes.
-		// Each bit will state if the scancode at that position is pressed (1) or released (0)
-		// We keep a cache of the previous state, so we'll know if a key has changed state
-		// and trigger the event
-		// This is a map from the custom DIK scancodes to VK codes
-		HKL hKeyboardLayout = GetKeyboardLayout(0);
-		UINT8 aDIKtoVK[256] = { 0x00, 0x1B, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30, 0xBD, 0xBB,
-								0x08, 0x09, 0x51, 0x57, 0x45, 0x52, 0x54, 0x59, 0x55, 0x49, 0x4F, 0x50, 0xDB, 0xDD, 0x0D,
-								0xA2, 0x41, 0x53, 0x44, 0x46, 0x47, 0x48, 0x4A, 0x4B, 0x4C, 0xBA, 0xDE, 0xC0, 0xA0, 0xDC,
-								0x5A, 0x58, 0x43, 0x56, 0x42, 0x4E, 0x4D, 0xBC, 0xBE, 0xBF, 0xA1, 0x6A, 0xA4, 0x20, 0x14,
-								0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x13, 0x91, 0x24, 0x26, 0x21,
-								0x6D, 0x25, 0x0C, 0x27, 0x6B, 0x23, 0x28, 0x22, 0x2D, 0x2E, 0x2C, 0x00, 0xE2, 0x7A, 0x7B,
-								0x0C, 0xEE, 0xF1, 0xEA, 0xF9, 0xF5, 0xF3, 0x00, 0x00, 0xFB, 0x2F, 0x7C, 0x7D, 0x7E, 0x7F,
-								0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0xED, 0x00, 0xE9, 0x00, 0xC1, 0x00, 0x00, 0x87,
-								0x00, 0x00, 0x00, 0x00, 0xEB, 0x09, 0x00, 0xC2, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-								0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xB1, 0x00, 0x00, 0x00, 0x00,
-								0x00, 0x00, 0x00, 0x00, 0xB0, 0x00, 0x00, 0x0D, 0xA3, 0x00, 0x00, 0xAD, 0xB6, 0xB3, 0x00,
-								0xB2, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xAE, 0x00, 0xAF, 0x00, 0xB7,
-								0x00, 0x00, 0xBF, 0x00, 0x2A, 0xA5, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-								0x00, 0x00, 0x00, 0x90, 0x00, 0x24, 0x26, 0x21, 0x00, 0x25, 0x00, 0x27, 0x00, 0x23, 0x28,
-								0x22, 0x2D, 0x2E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5B, 0x5C, 0x5D, 0x00, 0x5F,
-								0x00, 0x00, 0x00, 0x00, 0x00, 0xAA, 0xAB, 0xA8, 0xA9, 0xA7, 0xA6, 0xAC, 0xB4, 0xB5, 0x00,
-								0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-								0x00, 0x00 };
-
-		// We need to handle long keypresses
-		// We set up a do-nothing timer for each key so that the first repeat isn't too fast
-
-		iCurrentTicks = GetTickCount();
-		for (UINT8 blk = 0; blk < 8; ++blk)
-		{
-			const UINT old = g_gamelink.input_prev.keyb_state[blk];
-			const UINT key = g_gamelink.input.keyb_state[blk];
-			UINT8 scancode;
-			UINT32 mask;
-			UINT iKeyState;
-			UINT iVK_Code;
-			LPARAM lparam;
-			UINT16 repeat;
-			bool bCD, bPD;	// is current key down? is previous key down?
-
-			for (UINT8 bit = 0; bit < 32; ++bit)
-			{
-				scancode = static_cast<UINT8>((blk * 32) + bit);
-				mask = 1 << bit;
-				bCD = (key & mask);	// key is down (bCD)
-				bPD = (old & mask);	// key was down previously (bPD)
-				if ((!bCD) && (!bPD))
-					continue;	// the key was neither pressed previously nor now
-				if (bCD && bPD)
-				{
-					// it's a repeat key
-					if ((iCurrentTicks - g_gamelink.repeat_last_tick[scancode]) < kMinRepeatInterval)
-						continue;	// drop repeat messages within kMinRepeatInterval ms
-				}
-				if (!bPD)	// This is the first time we're pressing the key, set the no-repeat interval
-					g_gamelink.repeat_last_tick[scancode] = iCurrentTicks;
-				else		// The key is already in repeat mode. Let it repeat as fast as it wants
-					g_gamelink.repeat_last_tick[scancode] = 0;
-				// Set up message
-				iKeyState = bCD ? WM_KEYDOWN : WM_KEYUP;
-				iVK_Code = aDIKtoVK[scancode];
-				repeat = 1;		// TODO: Should we remember the key's repeat?
-				{	// set up lparam
-					lparam = repeat;
-					lparam = lparam | (LPARAM)(scancode << 16);				// scancode
-					lparam = lparam | (LPARAM)((scancode > 0x7F) << 24);	// extended
-					lparam = lparam | (LPARAM)(bPD << 30);				// previous key state
-					lparam = lparam | (LPARAM)(!bCD << 31);		// transition state (1 for keyup)
-				}
-				PostMessageW(g_hFrameWindow, iKeyState, iVK_Code, lparam);
-#ifdef DEBUG
-				LogOutput("SCANCODE, iVK, LPARAM: %04X, %04X, %04X\n", scancode, iVK_Code, lparam);
-#endif DEBUG
-			}
-		}
-		// We're done parsing the input. Store it as the previous state
-		memcpy(&g_gamelink.input_prev, &g_gamelink.input, sizeof(GameLink::sSharedMMapInput_R2));
-	}
-	// RIK END
+	g_rcManager.sendOutput(g_pFramebufferinfo, g_pFramebufferbits);	// RIK
 
 #ifdef NO_DIRECT_X
 #else
@@ -1668,7 +1456,6 @@ static void videoCreateDIBSection()
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
 	UINT fbSize = GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t);
 	ZeroMemory(g_pFramebufferbits, fbSize);
-	ZeroMemory(g_pReorderedFramebufferbits, fbSize);			// RIK
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	NTSC_VideoInit( g_pFramebufferbits );

@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RemoteControlManager.h" />
     <ClInclude Include="resource\resource.h" />
     <ClInclude Include="resource\winres.h" />
     <ClInclude Include="source\6821.h" />
@@ -72,6 +71,7 @@
     <ClInclude Include="source\DiskLog.h" />
     <ClInclude Include="source\Frame.h" />
     <ClInclude Include="source\gamelink\gamelink.h" />
+    <ClInclude Include="source\Gamelink\RemoteControlManager.h" />
     <ClInclude Include="source\Harddisk.h" />
     <ClInclude Include="source\Joystick.h" />
     <ClInclude Include="source\Keyboard.h" />
@@ -128,7 +128,6 @@
     <Text Include="docs\Wishlist.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="RemoteControlManager.cpp" />
     <ClCompile Include="source\6821.cpp" />
     <ClCompile Include="source\Applewin.cpp" />
     <ClCompile Include="source\AY8910.cpp" />
@@ -145,6 +144,7 @@
     <ClCompile Include="source\CPU.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
     <ClCompile Include="source\gamelink\gamelink.cpp" />
+    <ClCompile Include="source\Gamelink\RemoteControlManager.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
     <ClCompile Include="source\SAM.cpp" />
     <ClCompile Include="source\Debugger\Debug.cpp" />
