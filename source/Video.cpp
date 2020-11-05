@@ -140,7 +140,6 @@ static RemoteControlManager g_rcManager;	// RIK
 	void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const TCHAR *pScreenShotFileName );
 	void Video_MakeScreenShot( FILE *pFile, const VideoScreenShot_e ScreenShotType );
 	void videoCreateDIBSection();
-	void reverseScanlines(uint8_t* destination, uint8_t* source, uint32_t width, uint32_t height, uint8_t depth);	// RIK
 
 
 //===========================================================================

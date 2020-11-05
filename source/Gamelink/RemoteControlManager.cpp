@@ -58,7 +58,7 @@ UINT iCurrentTicks;						// Used to check the repeat interval
 UINT8 *pReorderedFramebufferbits = new UINT8[GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t)]; // the frame realigned properly	// RIK
 
 
-
+// Private Prototypes
 void reverseScanlines(uint8_t* destination, uint8_t* source, uint32_t width, uint32_t height, uint8_t depth);
 
 
