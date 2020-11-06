@@ -105,6 +105,7 @@ enum AppMode_e
 #define  REGVALUE_VIDEO_MONO_COLOR      "Monochrome Color"
 #define  REGVALUE_VIDEO_REFRESH_RATE    "Video Refresh Rate"
 #define  REGVALUE_VIDEO_REMOTECONTROL   "Remote Control"	// RIK
+#define  REGVALUE_VIDEO_RC_TRACKONLY   "Remote Control Track Only"	// RIK
 #define  REGVALUE_SERIAL_PORT_NAME   "Serial Port Name"
 #define  REGVALUE_ENHANCE_DISK_SPEED "Enhance Disk Speed"
 #define  REGVALUE_CUSTOM_SPEED       "Custom Speed"

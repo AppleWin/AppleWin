@@ -124,6 +124,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 		case IDC_CHECK_FS_SHOW_SUBUNIT_STATUS:
 		case IDC_CHECK_50HZ_VIDEO:
 		case IDC_CHECK_REMOTECONTROL:		// RIK
+		case IDC_CHECK_RC_TRACKONLY:		// RIK
 			// Checked in DlgOK()
 			break;
 
@@ -220,6 +221,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_CHECK_REMOTECONTROL, (RemoteControlManager::isRemoteControlEnabled()) ? BST_CHECKED : BST_UNCHECKED);		// RIK
+			CheckDlgButton(hWnd, IDC_CHECK_RC_TRACKONLY, (RemoteControlManager::isTrackOnlyEnabled()) ? BST_CHECKED : BST_UNCHECKED);		// RIK
 
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETPAGESIZE,0,5);
@@ -317,6 +319,13 @@ void CPageConfig::DlgOK(HWND hWnd)
 	{
 		m_PropertySheetHelper.GetConfigNew().m_bEnableRemoteControl = isNewRC;
 		RemoteControlManager::setRemoteControlEnabled(isNewRC);
+		bVideoReinit = true;
+	}
+	const bool isnewRCTC = IsDlgButtonChecked(hWnd, IDC_CHECK_RC_TRACKONLY);
+	const bool isRCTCEnabled = RemoteControlManager::isTrackOnlyEnabled();
+	if (isRCTCEnabled != isnewRCTC)
+	{
+		RemoteControlManager::setTrackOnlyEnabled(isnewRCTC);
 		bVideoReinit = true;
 	}
 	// RIK END

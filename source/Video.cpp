@@ -1329,6 +1329,8 @@ void Config_Load_Video()
 	// RIK START
 	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_REMOTECONTROL), &dwTmp, (DWORD)false);
 	RemoteControlManager::setRemoteControlEnabled(dwTmp);
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_RC_TRACKONLY), &dwTmp, (DWORD)false);
+	RemoteControlManager::setTrackOnlyEnabled(dwTmp);
 	// RIK END
 
 
@@ -1378,6 +1380,7 @@ void Config_Save_Video()
 	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR),g_nMonochromeRGB);
 	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), GetVideoRefreshRate());
 	REGSAVE(TEXT(REGVALUE_VIDEO_REMOTECONTROL), RemoteControlManager::isRemoteControlEnabled());		// RIK
+	REGSAVE(TEXT(REGVALUE_VIDEO_RC_TRACKONLY), RemoteControlManager::isRemoteControlEnabled());		// RIK
 }
 
 //===========================================================================

@@ -92,7 +92,6 @@ bool RemoteControlManager::isRemoteControlEnabled()
 }
 
 //===========================================================================
-// Global functions
 
 void RemoteControlManager::setRemoteControlEnabled(bool bEnabled)
 {
@@ -101,6 +100,19 @@ void RemoteControlManager::setRemoteControlEnabled(bool bEnabled)
 
 //===========================================================================
 
+bool RemoteControlManager::isTrackOnlyEnabled()
+{
+	return GameLink::GetTrackOnlyEnabled();
+}
+
+//===========================================================================
+
+void RemoteControlManager::setTrackOnlyEnabled(bool bEnabled)
+{
+	return GameLink::SetTrackOnlyEnabled(bEnabled);
+}
+
+//===========================================================================
 LPBYTE RemoteControlManager::initializeMem(UINT size)
 {
 	if (GameLink::GetGameLinkEnabled())
@@ -110,11 +122,7 @@ LPBYTE RemoteControlManager::initializeMem(UINT size)
 		// initialize the gamelink previous input to 0
 		memset(&g_gamelink.input_prev, 0, sizeof(GameLink::sSharedMMapInput_R2));
 
-		// Gamelink defaults to trackonly mode.
-		// TODO: Put track-only/video choice in the preferences window.
-		// TODO: Create the non-trackonly code as well
-		bool trackonly_mode = false;
-		(GameLink::Init(trackonly_mode));
+		(GameLink::Init(isTrackOnlyEnabled()));
 		updateRunningProgramInfo();	// Disks might have been loaded before the shm was ready
 		return mem;
 	}

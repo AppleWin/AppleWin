@@ -141,6 +141,8 @@ namespace GameLink
 
 	extern bool GetGameLinkEnabled(void);
 	extern void SetGameLinkEnabled(const bool bEnabled);
+	extern bool GetTrackOnlyEnabled(void);
+	extern void SetTrackOnlyEnabled(const bool bEnabled);
 
 	extern int Init( const bool trackonly_mode );
 	

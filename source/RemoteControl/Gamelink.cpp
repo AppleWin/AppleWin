@@ -25,12 +25,6 @@
 #include "Applewin.h"
 #include "Frame.h"
 
-//==============================================================================
-//------------------------------------------------------------------------------
-// Globals
-//------------------------------------------------------------------------------
-bool g_bEnableGamelink;	// RIK Global to remember the state of GameLink
-
 //------------------------------------------------------------------------------
 // Local Definitions
 //------------------------------------------------------------------------------
@@ -49,8 +43,8 @@ using namespace GameLink;
 static HANDLE g_mutex_handle;
 static HANDLE g_mmap_handle;
 
-
-static bool g_trackonly_mode;
+static bool g_bEnableGamelink;
+static bool g_bEnableTrackOnly;
 
 static UINT g_membase_size;
 
@@ -268,6 +262,16 @@ void GameLink::SetGameLinkEnabled(const bool bEnabled)
 	g_bEnableGamelink = bEnabled;
 }
 
+bool GameLink::GetTrackOnlyEnabled(void)
+{
+	return g_bEnableTrackOnly;
+}
+
+void GameLink::SetTrackOnlyEnabled(const bool bEnabled)
+{
+	g_bEnableTrackOnly = bEnabled;
+}
+
 
 //------------------------------------------------------------------------------
 // GameLink::Init
@@ -286,7 +290,7 @@ int GameLink::Init( const bool trackonly_mode )
 	}
 
 	// Store the mode we're in.
-	g_trackonly_mode = trackonly_mode;
+	g_bEnableTrackOnly = trackonly_mode;
 
 	// Create a fresh mutex.
 	iresult = create_mutex( GAMELINK_MUTEX_NAME );
@@ -384,7 +388,7 @@ int GameLink::In( GameLink::sSharedMMapInput_R2* p_input,
 
 	if ( g_p_shared_memory )
 	{
-		if ( g_trackonly_mode )
+		if (g_bEnableTrackOnly)
 		{
 			// No input.
 			memset( p_input, 0, sizeof( sSharedMMapInput_R2 ) );
@@ -450,7 +454,7 @@ void GameLink::Out( const UINT16 frame_width,
 	// Build flags
 	UINT8 flags;
 
-	if ( g_trackonly_mode )
+	if (g_bEnableTrackOnly)
 	{
 		// Tracking Only - Emulator handles video/input as usual.
 		flags = sSharedMemoryMap_R4::FLAG_NO_FRAME;
@@ -489,7 +493,7 @@ void GameLink::Out( const UINT16 frame_width,
 			// Store flags
 			g_p_shared_memory->flags = flags;
 
-			if ( g_trackonly_mode == false )
+			if (g_bEnableTrackOnly == false )
 			{
 				// Update the frame sequence
 				++g_p_shared_memory->frame.seq;

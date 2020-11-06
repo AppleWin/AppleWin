@@ -17,6 +17,8 @@ public:
 
 	static bool RemoteControlManager::isRemoteControlEnabled();
 	static void RemoteControlManager::setRemoteControlEnabled(bool bEnabled);
+	static bool RemoteControlManager::isTrackOnlyEnabled();
+	static void RemoteControlManager::setTrackOnlyEnabled(bool bEnabled);
 
 	UINT const kMinRepeatInterval = 400;	// Minimum keypress repeat message interval in ms
 };

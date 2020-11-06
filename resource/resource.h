@@ -122,6 +122,7 @@
 #define IDC_CHECK_VERTICAL_BLEND        1083
 #define IDC_CHECK_50HZ_VIDEO            1084
 #define IDC_CHECK_REMOTECONTROL         1085
+#define IDC_CHECK_RC_TRACKONLY          1086
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
