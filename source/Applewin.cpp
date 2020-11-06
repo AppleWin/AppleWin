@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
 #include "Registry.h"
+#include "Gamelink/RemoteControlManager.h"	// RIK
 #include "Riff.h"
 #include "SaveState.h"
 #include "SerialComms.h"
@@ -71,6 +72,7 @@ TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";
 std::string g_pAppTitle;
 std::string g_pProgramName = "Unknown";		// RIK -- Name of the emulated program
 std::string g_pProgramSig = "000-00000000";	// RIK -- Canonical signature of the emulated program using format: page-cnc32
+RemoteControlManager g_RemoteControlMgr;
 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 

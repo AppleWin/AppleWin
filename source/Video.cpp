@@ -98,9 +98,6 @@ static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 static LPDIRECTDRAW g_lpDD = NULL;
 
-static RemoteControlManager g_rcManager;	// RIK
-
-
 //-------------------------------------
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
@@ -168,7 +165,6 @@ void VideoInitialize ()
 	g_pFramebufferinfo->bmiHeader.biClrUsed     = 0;
 
 	videoCreateDIBSection();
-	g_rcManager.initialize();
 }
 
 //===========================================================================
@@ -571,7 +567,7 @@ void VideoRedrawScreen (void)
 
 void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/)
 {
-	g_rcManager.getInput();	// RIK
+	g_RemoteControlMgr.getInput();	// RIK
 
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
 	{
@@ -611,7 +607,7 @@ void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedr
 			SRCCOPY);
 	}
 
-	g_rcManager.sendOutput(g_pFramebufferinfo, g_pFramebufferbits);	// RIK
+	g_RemoteControlMgr.sendOutput(g_pFramebufferinfo, g_pFramebufferbits);	// RIK
 
 #ifdef NO_DIRECT_X
 #else

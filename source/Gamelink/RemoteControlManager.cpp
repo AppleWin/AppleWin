@@ -41,40 +41,123 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speaker.h"		// for Gamelink::In()
 #include "Mockingboard.h"	// for sound
 #include "Gamelink/RemoteControlManager.h"
+#include "zlib.h"
+
+
+#define UNKNOWN_VOLUME_NAME "Unknown Volume"
 
  // The GameLink I/O structure
 struct Gamelink_Block {
-	// UINT pitch;	// TODO: not needed?
+	// UINT pitch;	// not implemented here
 	GameLink::sSharedMMapInput_R2 input_prev;
 	GameLink::sSharedMMapInput_R2 input;
 	GameLink::sSharedMMapAudio_R1 audio;
 	UINT repeat_last_tick[256];
 	bool want_mouse;
 };
-
 Gamelink_Block g_gamelink;
 
+struct Info_WOZ {
+	std::string Title;
+	std::string Subtitle;
+	std::string Version;
+	UINT32 crc32;
+};
+Info_WOZ g_infoWoz_disk1;
+
+struct Info_HDV {
+	std::string VolumeName;
+};
+Info_HDV g_infoHdv_disk1;
+
 UINT iCurrentTicks;						// Used to check the repeat interval
-UINT8 *pReorderedFramebufferbits = new UINT8[GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t)]; // the frame realigned properly	// RIK
+UINT8 *pReorderedFramebufferbits = new UINT8[GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t)]; // the frame realigned properly
 
 
 // Private Prototypes
 void reverseScanlines(uint8_t* destination, uint8_t* source, uint32_t width, uint32_t height, uint8_t depth);
 
+//===========================================================================
+// Global functions
+
+bool RemoteControlManager::isRemoteControlEnabled()
+{
+	return GameLink::GetGameLinkEnabled();
+}
 
 //===========================================================================
 
-void RemoteControlManager::initialize()
+LPBYTE RemoteControlManager::initializeMem(UINT size)
 {
 	if (GameLink::GetGameLinkEnabled())
 	{
+		LPBYTE mem = (LPBYTE)GameLink::AllocRAM(size);
+
 		// initialize the gamelink previous input to 0
 		memset(&g_gamelink.input_prev, 0, sizeof(GameLink::sSharedMMapInput_R2));
+
+		// Gamelink defaults to trackonly mode.
+		// TODO: Put track-only/video choice in the preferences window.
+		// TODO: Create the non-trackonly code as well
+		bool trackonly_mode = false;
+		(GameLink::Init(trackonly_mode));
+		return mem;
+	}
+	return NULL;
+}
+
+//===========================================================================
+
+bool RemoteControlManager::destroyMem()
+{
+	if (GameLink::GetGameLinkEnabled())
+	{
+		GameLink::Term();
+		return true;
+	}
+	return false;
+}
+
+//===========================================================================
+
+void RemoteControlManager::setRunningProgramInfo()
+{
+	// TODO:	add to app window title
+	//			set GameLink signature
+	// Choose from HDV disk 1 or WOZ disk 1 info, or nothing
+	// The file being run could/should be passed in
+}
+
+//===========================================================================
+
+void RemoteControlManager::setWozSignature(std::string Title, std::string Subtitle, std::string Version, UINT32 iCrc32)
+{
+	// CRC can be 0, in this case make one from incoming info
+	g_infoWoz_disk1.Title = Title;
+	g_infoWoz_disk1.Subtitle = Subtitle;
+	g_infoWoz_disk1.Version = Version;
+	if (iCrc32 == 0)
+	{
+		std::string szForCrc = Title + Subtitle + Version;
+		g_infoWoz_disk1.crc32 = crc32(0, (BYTE*)szForCrc.c_str(), szForCrc.length());
+	}
+	else
+	{
+		g_infoWoz_disk1.crc32 = iCrc32;
 	}
 }
 
 //===========================================================================
 
+void RemoteControlManager::setHdvSignature(std::string VolumeName)
+{
+	if (VolumeName.size() == 0)
+		g_infoHdv_disk1.VolumeName = UNKNOWN_VOLUME_NAME;
+	else
+		g_infoHdv_disk1.VolumeName = VolumeName;
+}
+
+//===========================================================================
 void RemoteControlManager::getInput()
 {
 	if (

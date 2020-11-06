@@ -148,7 +148,7 @@ namespace GameLink
 
 	extern void Term();
 
-	extern void SetProgramInfo();
+	extern void SetProgramInfo(UINT i1, UINT i2, UINT i3, UINT i4);
 
 	extern int In( sSharedMMapInput_R2* p_input,
 				   sSharedMMapAudio_R1* p_audio );

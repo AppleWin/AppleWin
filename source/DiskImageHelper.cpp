@@ -38,6 +38,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskImageHelper.h"
 #include "Log.h"
 #include "Memory.h"
+#include <sstream>	// RIK -- Parse metadata of WOZ disks
+#include "Applewin.h"	// RIK -- g_programName
+#include "Gamelink/RemoteControlManager.h"	// RIK -- send signature info
 
 ImageInfo::ImageInfo()
 {
@@ -1483,11 +1486,34 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 	if (imageSizeRemaining < 0)
 		return eMismatch;
 
+	// RIK BEGIN
+	UINT32 pCRC32 = *(pImageInfo->pImageBuffer + 8);	// The CRC32 inside the WOZ header
+	// Get title, subtitle and version from metadata
+	std::string szMetadata;
+	std::stringstream ssMetadata;
+	std::string szTmp;
+	const char* sTitle = "title";
+	const char* sSubtitle = "subtitle";
+	const char* sVersion = "version";
+	std::string szColTmp;
+	UINT iTabPos;
+	const char cRowDelim = '\n';
+	const char cColDelim = '\t';
+	UINT iCmp;
+	// RIK END
+
 	while(imageSizeRemaining >= sizeof(WOZChunkHdr))
 	{
 		UINT32 chunkId = *pImage32++;
 		UINT32 chunkSize = *pImage32++;
+		// BEGIN RIK
 		imageSizeRemaining -= sizeof(WOZChunkHdr);
+		if (chunkId == META_CHUNK_ID)
+		{
+			std::string szMetadata = std::string((const char*)pImage32, chunkSize);
+			ssMetadata = std::stringstream(szMetadata);
+		}
+		// END RIK
 
 		switch(chunkId)
 		{
@@ -1505,6 +1531,38 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 			case WRIT_CHUNK_ID:	// WOZ v2 (optional)
 				break;
 			case META_CHUNK_ID:	// (optional)
+				// BEGIN RIK
+				// RIK -- get title, subtitle and version
+				// RIK -- I know this code sucks.
+				while (std::getline(ssMetadata, szTmp, cRowDelim))
+				{
+					iTabPos = szTmp.find(cColDelim);
+					if (iTabPos)
+					{
+						szColTmp = szTmp.substr(0, iTabPos);
+						iCmp = strncmp(sTitle, szColTmp.c_str(), iTabPos);
+						if (iCmp == 0)
+						{
+							pImageInfo->szTitle = szTmp.substr(iTabPos + 1);
+							continue;
+						}
+						iCmp = strncmp(sSubtitle, szColTmp.c_str(), iTabPos);
+						if (iCmp == 0)
+						{
+							pImageInfo->szSubtitle = szTmp.substr(iTabPos + 1);
+							continue;
+						}
+						iCmp = strncmp(sVersion, szColTmp.c_str(), iTabPos);
+						if (iCmp == 0)
+						{
+							pImageInfo->szVersion = szTmp.substr(iTabPos + 1);
+							continue;
+						}
+					}
+				}
+				// Send the info to the signature generator
+				g_RemoteControlMgr.setWozSignature(pImageInfo->szTitle, pImageInfo->szSubtitle, pImageInfo->szVersion, pCRC32);
+				// END RIK
 				break;
 			default:	// no idea what this chunk is, so skip it
 				_ASSERT(0);

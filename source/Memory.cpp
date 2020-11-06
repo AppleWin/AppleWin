@@ -62,6 +62,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "YamlHelper.h"
 #include <map>
 #include "Signatures.h"			// RIK load and calculate boot disk signatures
+#include "Gamelink/RemoteControlManager.h"
 
 
 // UTAIIe:5-28 (GH#419)
@@ -231,9 +232,6 @@ static bool g_Annunciator[kNumAnnunciators] = {};
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
-static BOOL g_bMemIsShared = 0;				// RIK -- Remembers which memory allocator is used (regular or shared) for later dealloc
-static UINT8 g_uKeybReadCount = 0;			// RIK -- Calculate signatures at the second call to IORead_C00x
-
 //=============================================================================
 
 // Default memory types on a VM restart
@@ -400,26 +398,6 @@ LPBYTE GetCxRomPeripheral(void)
 
 static BYTE __stdcall IORead_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	// RIK BEGIN
-	// We will calculate the running program's unique hash signature by
-	// waiting for the 2nd call to this function after start of the emulator (click on logo).
-	// The 1st call happens right away and we discard it.
-	// Generally the 2nd call will happen after the emulated program has loaded enough data so that
-	// it expects a keypress. At that point we call the signature calculation code, which should
-	// have enough unique program data in memory to generate a solid signature.
-	// See the signature code for more details.
-	//
-	// Right now we use the crc32 of pages 0x08, 0x09, 0x0a, 0x0b
-
-	if (g_uKeybReadCount < 3) {
-		g_uKeybReadCount++;
-	}
-	if (g_uKeybReadCount == 2) {
-		calculateProgramSig();
-		if (GameLink::GetGameLinkEnabled())
-			GameLink::SetProgramInfo();
-	}
-	// RIK END
 	return KeybReadData();
 }
 
@@ -1242,14 +1220,6 @@ static void UpdatePaging(BOOL initialize)
 			}
 
 			CopyMemory(mem+(loop << 8),memshadow[loop],256);
-			// RIK BEGIN
-			// Store this page number in the last PROG_SIG_LEN pages that have been dirtied
-			// This is used to calculate the sig of the running program and determine its name
-			if ((g_uKeybReadCount < 3) && (((loop >= 0x08) && (loop < 0x20)) || ((loop >= 0x20) && (loop < 0xc0))))
-			{
-				addPageToSigCalculation(loop);
-			}
-			// RIK END
 		}
 	}
 }
@@ -1262,11 +1232,7 @@ static void UpdatePaging(BOOL initialize)
 
 void MemDestroy()
 {
-	if (g_bMemIsShared)		// RIK
-	{
-		GameLink::Term();
-	}
-	else
+	if (!g_RemoteControlMgr.destroyMem())		// RIK
 	{
 		VirtualFree(memaux, 0, MEM_RELEASE);
 		VirtualFree(memmain, 0, MEM_RELEASE);
@@ -1494,21 +1460,12 @@ void MemInitialize()
 	// ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
 
 	// RIK BEGIN
-	// if GameLink is enabled, allocate memmain and memaux as one block of shared memory
-	if (GameLink::GetGameLinkEnabled())
-	{
-		memmain = (LPBYTE)GameLink::AllocRAM((_6502_MEM_END + 1) * 2);
-		if (memmain)
-		{
-			memaux = memmain + (_6502_MEM_END + 1);
-			g_bMemIsShared = TRUE;
-		}
-		// Gamelink defaults to trackonly mode.
-		// TODO: Put track-only/video choice in the preferences window.
-		// TODO: Create the non-trackonly code as well
+	// if Remote Control is active, allocate memmain and memaux as one block of shared memory
 
-		bool trackonly_mode = false;
-		(GameLink::Init(trackonly_mode));
+	memmain = g_RemoteControlMgr.initializeMem((_6502_MEM_END + 1) * 2);
+	if (memmain)
+	{
+		memaux = memmain + (_6502_MEM_END + 1);
 	}
 	else {
 		memaux = (LPBYTE)VirtualAlloc(NULL, _6502_MEM_END + 1, MEM_COMMIT, PAGE_READWRITE);
@@ -2033,10 +1990,6 @@ void MemReset()
 
 	if (g_NoSlotClock)
 		g_NoSlotClock->Reset();	// NB. Power-cycle, but not RESET signal
-
-	// Reset the flag to calculate the program sig and find its name
-	// after the 2nd call to IORead_C00x()
-	g_uKeybReadCount = 0;	// RIK
 }
 
 //===========================================================================

@@ -357,14 +357,13 @@ void GameLink::Term()
 // where the page is a decimal and the crc is a hex, into 2 longs for use by
 // Grid Cartographer
 
-void GameLink::SetProgramInfo()
+void GameLink::SetProgramInfo(UINT i1, UINT i2, UINT i3, UINT i4)
 {
 	strcpy(g_p_shared_memory->program, g_pProgramName.c_str());
-	char* end;
-	g_p_shared_memory->program_hash[0] = strtol(g_pProgramSig.c_str(), &end, 10);
-	g_p_shared_memory->program_hash[1] = strtol(end+1, &end, 16);
-	g_p_shared_memory->program_hash[2] = 0;
-	g_p_shared_memory->program_hash[3] = 0;
+	g_p_shared_memory->program_hash[0] = i1;
+	g_p_shared_memory->program_hash[1] = i2;
+	g_p_shared_memory->program_hash[2] = i3;
+	g_p_shared_memory->program_hash[3] = i4;
 }
 
 //------------------------------------------------------------------------------
