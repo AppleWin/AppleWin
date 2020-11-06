@@ -1786,6 +1786,16 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			RGB_SetInvertBit7(true);
 		}
+		// RIK BEGIN
+		else if (strcmp(lpCmdLine, "-remote-control") == 0)	// Activate Remote Control
+		{
+		g_RemoteControlMgr.setRemoteControlEnabled(true);
+		}
+		else if (strcmp(lpCmdLine, "-rc-track-only") == 0)	// Make Remote Control track-only
+		{
+		g_RemoteControlMgr.setTrackOnlyEnabled(true);
+		}
+		// RIK END
 		else if (strcmp(lpCmdLine, "-screenshot-and-exit") == 0)	// GH#616: For testing - Use in combination with -load-state
 		{
 			g_cmdLine.szScreenshotFilename = GetCurrArg(lpNextArg);
