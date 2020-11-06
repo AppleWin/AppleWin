@@ -591,29 +591,4 @@ void GameLink::ExecTerminal(GameLink::sSharedMMapBuffer_R1* p_inbuf,
 		memcpy(p_procbuf->data, p_inbuf->data, payload);
 		p_procbuf->payload = payload;
 	}
-	else
-	{
-		// Human command
-		char buf[GameLink::sSharedMMapBuffer_R1::BUFFER_SIZE + 1], * b = buf;
-
-		// Convert into printable ASCII
-		for (UINT i = 0; i < p_inbuf->payload; ++i)
-		{
-			UINT8 u8 = p_inbuf->data[i];
-			if (u8 < 32 || u8 > 127) {
-				*b++ = '?';
-			}
-			else {
-				*b++ = (char)u8;
-			}
-		}
-
-		// ... terminate
-		*b++ = 0;
-
-		// Acknowledge
-		p_inbuf->payload = 0;
-
-		// proc_human( buf ); // <-- deprecated
-	}
 }
