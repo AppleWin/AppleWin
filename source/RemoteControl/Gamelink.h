@@ -117,9 +117,9 @@ namespace GameLink
 
 		UINT8 version; // = PROTOCOL_VER
 		UINT8 flags;
-		char system[ SYSTEM_MAXLEN ]; // System name.
-		char program[ PROGRAM_MAXLEN ]; // Program name. Zero terminated.
-		UINT program_hash[ 4 ]; // Program code hash (256-bits)
+		char system[SYSTEM_MAXLEN] = {}; // System name.
+		char program[PROGRAM_MAXLEN] = {}; // Program name. Zero terminated.
+		UINT program_hash[4] = { 0,0,0,0 }; // Program code hash (256-bits)
 
 		sSharedMMapFrame_R1 frame;
 		sSharedMMapInput_R2 input;
@@ -148,7 +148,7 @@ namespace GameLink
 
 	extern void Term();
 
-	extern void SetProgramInfo(UINT i1, UINT i2, UINT i3, UINT i4);
+	extern void SetProgramInfo(const std::string name, UINT i1, UINT i2, UINT i3, UINT i4);
 
 	extern int In( sSharedMMapInput_R2* p_input,
 				   sSharedMMapAudio_R1* p_audio );

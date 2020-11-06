@@ -70,8 +70,6 @@
     <ClInclude Include="source\DiskImageHelper.h" />
     <ClInclude Include="source\DiskLog.h" />
     <ClInclude Include="source\Frame.h" />
-    <ClInclude Include="source\gamelink\gamelink.h" />
-    <ClInclude Include="source\Gamelink\RemoteControlManager.h" />
     <ClInclude Include="source\Harddisk.h" />
     <ClInclude Include="source\Joystick.h" />
     <ClInclude Include="source\Keyboard.h" />
@@ -86,6 +84,8 @@
     <ClInclude Include="source\ParallelPrinter.h" />
     <ClInclude Include="source\Pravets.h" />
     <ClInclude Include="source\Registry.h" />
+    <ClInclude Include="source\RemoteControl\Gamelink.h" />
+    <ClInclude Include="source\RemoteControl\RemoteControlManager.h" />
     <ClInclude Include="source\RGBMonitor.h" />
     <ClInclude Include="source\Riff.h" />
     <ClInclude Include="source\SAM.h" />
@@ -93,7 +93,6 @@
     <ClInclude Include="source\SaveState_Structs_common.h" />
     <ClInclude Include="source\SaveState_Structs_v1.h" />
     <ClInclude Include="source\SerialComms.h" />
-    <ClInclude Include="source\Signatures.h" />
     <ClInclude Include="source\SoundCore.h" />
     <ClInclude Include="source\Speaker.h" />
     <ClInclude Include="source\Speech.h" />
@@ -143,8 +142,8 @@
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\CPU.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
-    <ClCompile Include="source\gamelink\gamelink.cpp" />
-    <ClCompile Include="source\Gamelink\RemoteControlManager.cpp" />
+    <ClCompile Include="source\RemoteControl\Gamelink.cpp" />
+    <ClCompile Include="source\RemoteControl\RemoteControlManager.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
     <ClCompile Include="source\SAM.cpp" />
     <ClCompile Include="source\Debugger\Debug.cpp" />
@@ -181,7 +180,6 @@
     <ClCompile Include="source\Riff.cpp" />
     <ClCompile Include="source\SaveState.cpp" />
     <ClCompile Include="source\SerialComms.cpp" />
-    <ClCompile Include="source\Signatures.cpp" />
     <ClCompile Include="source\SoundCore.cpp" />
     <ClCompile Include="source\Speaker.cpp" />
     <ClCompile Include="source\Speech.cpp" />

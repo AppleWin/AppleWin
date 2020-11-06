@@ -6,7 +6,7 @@
 #include "../DiskImage.h"	// Disk_Status_e
 #include "../Harddisk.h"	// HD_CardIsEnabled()
 #include "../Video.h"		// VideoRefreshRate_e, GetVideoRefreshRate()
-#include "../gamelink/gamelink.h"		// RIK -- enable GameLink
+#include "../RemoteControl/RemoteControlManager.h"	// RIK
 
 class CConfigNeedingRestart
 {
@@ -15,7 +15,7 @@ public:
 		m_Apple2Type( GetApple2Type() ),
 		m_CpuType( GetMainCpu() ),
 		m_uSaveLoadStateMsg(0),
-		m_bEnableGamelink(GameLink::GetGameLinkEnabled()),	// RIK
+		m_bEnableRemoteControl(RemoteControlManager::isRemoteControlEnabled()),	// RIK
 		m_videoRefreshRate( GetVideoRefreshRate() )
 	{
 		m_bEnableHDD = HD_CardIsEnabled();
@@ -35,7 +35,7 @@ public:
 		m_bEnableHDD = other.m_bEnableHDD;
 		m_bEnableTheFreezesF8Rom = other.m_bEnableTheFreezesF8Rom;
 		m_uSaveLoadStateMsg = other.m_uSaveLoadStateMsg;
-		m_bEnableGamelink = other.m_bEnableGamelink;	// RIK
+		m_bEnableRemoteControl = other.m_bEnableRemoteControl;	// RIK
 		m_videoRefreshRate = other.m_videoRefreshRate;
 		return *this;
 	}
@@ -48,7 +48,7 @@ public:
 			m_bEnableHDD == other.m_bEnableHDD &&
 			m_bEnableTheFreezesF8Rom == other.m_bEnableTheFreezesF8Rom &&
 			m_uSaveLoadStateMsg == other.m_uSaveLoadStateMsg &&
-			m_bEnableGamelink == other.m_bEnableGamelink &&	// RIK
+			m_bEnableRemoteControl == other.m_bEnableRemoteControl &&	// RIK
 			m_videoRefreshRate == other.m_videoRefreshRate;
 	}
 
@@ -64,6 +64,6 @@ public:
 	bool m_bEnableHDD;
 	UINT m_bEnableTheFreezesF8Rom;
 	UINT m_uSaveLoadStateMsg;
-	bool m_bEnableGamelink;	// RIK
+	bool m_bEnableRemoteControl;	// RIK
 	VideoRefreshRate_e m_videoRefreshRate;
 };

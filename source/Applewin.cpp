@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
 #include "Registry.h"
-#include "Gamelink/RemoteControlManager.h"	// RIK
+#include "RemoteControl/RemoteControlManager.h"	// RIK
 #include "Riff.h"
 #include "SaveState.h"
 #include "SerialComms.h"

@@ -21,7 +21,7 @@
 #include "Common.h"
 #include "StdAfx.h"
 #include "Log.h"
-#include "gamelink.h"
+#include "Gamelink.h"
 #include "Applewin.h"
 #include "Frame.h"
 
@@ -357,13 +357,17 @@ void GameLink::Term()
 // where the page is a decimal and the crc is a hex, into 2 longs for use by
 // Grid Cartographer
 
-void GameLink::SetProgramInfo(UINT i1, UINT i2, UINT i3, UINT i4)
+void GameLink::SetProgramInfo(const std::string name, UINT i1, UINT i2, UINT i3, UINT i4)
 {
-	strcpy(g_p_shared_memory->program, g_pProgramName.c_str());
-	g_p_shared_memory->program_hash[0] = i1;
-	g_p_shared_memory->program_hash[1] = i2;
-	g_p_shared_memory->program_hash[2] = i3;
-	g_p_shared_memory->program_hash[3] = i4;
+	if (g_p_shared_memory)
+	{
+		std::string szTmp = name.substr(0, sizeof(g_p_shared_memory->program));
+		strcpy(g_p_shared_memory->program, szTmp.c_str());
+		g_p_shared_memory->program_hash[0] = i1;
+		g_p_shared_memory->program_hash[1] = i2;
+		g_p_shared_memory->program_hash[2] = i3;
+		g_p_shared_memory->program_hash[3] = i4;
+	}
 }
 
 //------------------------------------------------------------------------------

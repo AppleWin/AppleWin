@@ -202,14 +202,11 @@
     <ClCompile Include="source\SynchronousEventManager.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
-    <ClCompile Include="source\gamelink\gamelink.cpp">
-      <Filter>Source Files\Gamelink</Filter>
+    <ClCompile Include="source\RemoteControl\Gamelink.cpp">
+      <Filter>Source Files\RemoteControl</Filter>
     </ClCompile>
-    <ClCompile Include="source\Signatures.cpp">
-      <Filter>Source Files\Disk</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Gamelink\RemoteControlManager.cpp">
-      <Filter>Source Files\Gamelink</Filter>
+    <ClCompile Include="source\RemoteControl\RemoteControlManager.cpp">
+      <Filter>Source Files\RemoteControl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -498,14 +495,11 @@
     <ClInclude Include="source\SynchronousEventManager.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
-    <ClInclude Include="source\gamelink\gamelink.h">
-      <Filter>Source Files\Gamelink</Filter>
+    <ClInclude Include="source\RemoteControl\Gamelink.h">
+      <Filter>Source Files\RemoteControl</Filter>
     </ClInclude>
-    <ClInclude Include="source\Signatures.h">
-      <Filter>Source Files\Disk</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Gamelink\RemoteControlManager.h">
-      <Filter>Source Files\Gamelink</Filter>
+    <ClInclude Include="source\RemoteControl\RemoteControlManager.h">
+      <Filter>Source Files\RemoteControl</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -751,7 +745,7 @@
     <Filter Include="Source Files\Model">
       <UniqueIdentifier>{15b450e4-f89f-4d80-9c44-48b32f33f3e3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Gamelink">
+    <Filter Include="Source Files\RemoteControl">
       <UniqueIdentifier>{95126897-25dc-4245-9e63-20a0f09db967}</UniqueIdentifier>
     </Filter>
   </ItemGroup>

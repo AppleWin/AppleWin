@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Gamelink/Gamelink.h"
+#include "DiskImage.h"
 
 class RemoteControlManager
 {
@@ -10,13 +10,13 @@ public:
 
 	LPBYTE RemoteControlManager::initializeMem(UINT size);
 	bool destroyMem();
-	void RemoteControlManager::setRunningProgramInfo();
-	void setWozSignature(std::string Title, std::string Subtitle, std::string Version, UINT32 iCrc32);
-	void setHdvSignature(std::string VolumeName);
+	void RemoteControlManager::setLoadedFloppyInfo(ImageInfo* imageInfo);
+	void RemoteControlManager::setLoadedHDInfo(ImageInfo* imageInfo);
 	void getInput();
 	void sendOutput(LPBITMAPINFO g_pFramebufferinfo, UINT8* g_pFramebufferbits);
 
 	static bool RemoteControlManager::isRemoteControlEnabled();
+	static void RemoteControlManager::setRemoteControlEnabled(bool bEnabled);
 
 	UINT const kMinRepeatInterval = 400;	// Minimum keypress repeat message interval in ms
 };

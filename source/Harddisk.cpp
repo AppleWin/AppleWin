@@ -417,6 +417,14 @@ BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename)
 
 	HD_SaveLastDiskImage(iDrive);
 
+	// RIK BEGIN
+	// If we've just loaded the boot drive, tell Remote Control
+	if (iDrive == 0)
+	{
+		g_RemoteControlMgr.setLoadedHDInfo(g_HardDisk[iDrive].imagehandle);
+	}
+	// RIK END
+
 	return g_HardDisk[iDrive].hd_imageloaded;
 }
 
@@ -474,7 +482,15 @@ bool HD_Select(const int iDrive)
 void HD_Unplug(const int iDrive)
 {
 	if (g_HardDisk[iDrive].hd_imageloaded)
+	{
 		HD_CleanupDrive(iDrive);
+		// RIK BEGIN
+		if (iDrive == 0)
+		{
+			g_RemoteControlMgr.setLoadedHDInfo(NULL);
+		}
+		// RIK END
+	}
 }
 
 bool HD_IsDriveUnplugged(const int iDrive)

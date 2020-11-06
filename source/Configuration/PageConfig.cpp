@@ -123,7 +123,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 		case IDC_CHECK_VERTICAL_BLEND:
 		case IDC_CHECK_FS_SHOW_SUBUNIT_STATUS:
 		case IDC_CHECK_50HZ_VIDEO:
-		case IDC_CHECK_GAMELINK:		// RIK
+		case IDC_CHECK_REMOTECONTROL:		// RIK
 			// Checked in DlgOK()
 			break;
 
@@ -219,7 +219,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 			}
 
 			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_CHECK_GAMELINK, (GameLink::GetGameLinkEnabled()) ? BST_CHECKED : BST_UNCHECKED);		// RIK
+			CheckDlgButton(hWnd, IDC_CHECK_REMOTECONTROL, (RemoteControlManager::isRemoteControlEnabled()) ? BST_CHECKED : BST_UNCHECKED);		// RIK
 
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETPAGESIZE,0,5);
@@ -310,13 +310,13 @@ void CPageConfig::DlgOK(HWND hWnd)
 		m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = isNewVideoRate50Hz ? VR_50HZ : VR_60HZ;
 	}
 
-	// RIK START Support gamelink activation via preferences
-	const bool isNewGamelink = IsDlgButtonChecked(hWnd, IDC_CHECK_GAMELINK);
-	const bool isGameLinkEnabled = GameLink::GetGameLinkEnabled();
-	if (isGameLinkEnabled != isNewGamelink)
+	// RIK START Support remote control activation via preferences
+	const bool isNewRC = IsDlgButtonChecked(hWnd, IDC_CHECK_REMOTECONTROL);
+	const bool isRCEnabled = RemoteControlManager::isRemoteControlEnabled();
+	if (isRCEnabled != isNewRC)
 	{
-		m_PropertySheetHelper.GetConfigNew().m_bEnableGamelink = isNewGamelink;
-		GameLink::SetGameLinkEnabled(isNewGamelink);
+		m_PropertySheetHelper.GetConfigNew().m_bEnableRemoteControl = isNewRC;
+		RemoteControlManager::setRemoteControlEnabled(isNewRC);
 		bVideoReinit = true;
 	}
 	// RIK END

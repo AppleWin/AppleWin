@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include <sstream>	// RIK -- Parse metadata of WOZ disks
 #include "Applewin.h"	// RIK -- g_programName
-#include "Gamelink/RemoteControlManager.h"	// RIK -- send signature info
+#include "RemoteControl/RemoteControlManager.h"	// RIK -- send signature info
 
 ImageInfo::ImageInfo()
 {
@@ -1507,6 +1507,7 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 		UINT32 chunkId = *pImage32++;
 		UINT32 chunkSize = *pImage32++;
 		// BEGIN RIK
+		UINT8 iRead = 0;
 		imageSizeRemaining -= sizeof(WOZChunkHdr);
 		if (chunkId == META_CHUNK_ID)
 		{
@@ -1533,35 +1534,47 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 			case META_CHUNK_ID:	// (optional)
 				// BEGIN RIK
 				// RIK -- get title, subtitle and version
-				// RIK -- I know this code sucks.
+				// RIK -- I know this code is... not ideal
 				while (std::getline(ssMetadata, szTmp, cRowDelim))
 				{
 					iTabPos = szTmp.find(cColDelim);
 					if (iTabPos)
 					{
-						szColTmp = szTmp.substr(0, iTabPos);
-						iCmp = strncmp(sTitle, szColTmp.c_str(), iTabPos);
-						if (iCmp == 0)
+						if (!(iRead & 0b001))
 						{
-							pImageInfo->szTitle = szTmp.substr(iTabPos + 1);
-							continue;
+							szColTmp = szTmp.substr(0, iTabPos);
+							iCmp = strncmp(sTitle, szColTmp.c_str(), iTabPos);
+							if (iCmp == 0)
+							{
+								pImageInfo->szTitle = szTmp.substr(iTabPos + 1);
+								iRead &= 0b1;
+								continue;
+							}
 						}
-						iCmp = strncmp(sSubtitle, szColTmp.c_str(), iTabPos);
-						if (iCmp == 0)
+						if (!(iRead & 0b010))
 						{
-							pImageInfo->szSubtitle = szTmp.substr(iTabPos + 1);
-							continue;
+							iCmp = strncmp(sSubtitle, szColTmp.c_str(), iTabPos);
+							if (iCmp == 0)
+							{
+								pImageInfo->szSubtitle = szTmp.substr(iTabPos + 1);
+								iRead &= 0b10;
+								continue;
+							}
 						}
-						iCmp = strncmp(sVersion, szColTmp.c_str(), iTabPos);
-						if (iCmp == 0)
+						if (!(iRead & 0b100))
 						{
-							pImageInfo->szVersion = szTmp.substr(iTabPos + 1);
-							continue;
+							iCmp = strncmp(sVersion, szColTmp.c_str(), iTabPos);
+							if (iCmp == 0)
+							{
+								pImageInfo->szVersion = szTmp.substr(iTabPos + 1);
+								iRead &= 0b100;
+								continue;
+							}
 						}
 					}
+					if (iRead & 0b111)
+						break;				// found all
 				}
-				// Send the info to the signature generator
-				g_RemoteControlMgr.setWozSignature(pImageInfo->szTitle, pImageInfo->szSubtitle, pImageInfo->szVersion, pCRC32);
 				// END RIK
 				break;
 			default:	// no idea what this chunk is, so skip it
@@ -1988,7 +2001,6 @@ ImageError_e CImageHelperBase::Open(	LPCTSTR pszImageFilename,
 	pImageInfo->szFilename = szFilename;
 	if (uNameLen == 0 || uNameLen >= MAX_PATH)
 		Err = eIMAGE_ERROR_FAILED_TO_GET_PATHNAME;
-
 	return eIMAGE_ERROR_NONE;
 }
 
@@ -2215,7 +2227,7 @@ CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHA
 	// RIK BEGIN
 	// For HDV images, load the volume name into the image info
 	// if the title is missing (which it should, be as this is no WOZ with metadata)
-	// The code needs to be lcated here, otherwise the imagebuffer is gone later
+	// The code needs to be located here, otherwise the imagebuffer is gone later
 	// As per qkumba, to read volume name:
 	// Seek to offset $404, read 1 byte, AND with #$0F, and read that many bytes
 

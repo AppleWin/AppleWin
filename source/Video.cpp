@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "Disk.h"		// DiskUpdateDriveState()
 #include "Frame.h"
-#include "gamelink/gamelink.h"
 #include "Keyboard.h"
 #include "Log.h"
 #include "Memory.h"
@@ -44,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"
 #include "YamlHelper.h"
-#include "Gamelink/RemoteControlManager.h"
+#include "RemoteControl/RemoteControlManager.h"	// RIK
 
 	#define  SW_80COL         (g_uVideoMode & VF_80COL)
 	#define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
@@ -1328,8 +1327,8 @@ void Config_Load_Video()
 	SetVideoRefreshRate((VideoRefreshRate_e)dwTmp);
 
 	// RIK START
-	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_GAMELINK), &dwTmp, (DWORD)false);
-	GameLink::SetGameLinkEnabled(dwTmp);
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_REMOTECONTROL), &dwTmp, (DWORD)false);
+	RemoteControlManager::setRemoteControlEnabled(dwTmp);
 	// RIK END
 
 
@@ -1378,7 +1377,7 @@ void Config_Save_Video()
 	REGSAVE(TEXT(REGVALUE_VIDEO_STYLE)     ,g_eVideoStyle);
 	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR),g_nMonochromeRGB);
 	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), GetVideoRefreshRate());
-	REGSAVE(TEXT(REGVALUE_VIDEO_GAMELINK), GameLink::GetGameLinkEnabled());		// RIK
+	REGSAVE(TEXT(REGVALUE_VIDEO_REMOTECONTROL), RemoteControlManager::isRemoteControlEnabled());		// RIK
 }
 
 //===========================================================================

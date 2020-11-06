@@ -40,7 +40,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CardManager.h"	// for Gamelink in and out
 #include "Speaker.h"		// for Gamelink::In()
 #include "Mockingboard.h"	// for sound
-#include "Gamelink/RemoteControlManager.h"
+#include "DiskImageHelper.h"
+#include "RemoteControl/RemoteControlManager.h"
+#include "Gamelink.h"
 #include "zlib.h"
 
 
@@ -61,21 +63,25 @@ struct Info_WOZ {
 	std::string Title;
 	std::string Subtitle;
 	std::string Version;
-	UINT32 crc32;
+	UINT32 sig;
 };
-Info_WOZ g_infoWoz_disk1;
+Info_WOZ g_infoWoz;
 
 struct Info_HDV {
 	std::string VolumeName;
+	UINT32 sig;
 };
-Info_HDV g_infoHdv_disk1;
+Info_HDV g_infoHdv;
 
 UINT iCurrentTicks;						// Used to check the repeat interval
 UINT8 *pReorderedFramebufferbits = new UINT8[GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t)]; // the frame realigned properly
 
+bool bHardDiskIsLoaded = false;			// If HD is loaded, use it instead of floppy
+bool bFloppyIsLoaded = false;
 
 // Private Prototypes
 void reverseScanlines(uint8_t* destination, uint8_t* source, uint32_t width, uint32_t height, uint8_t depth);
+void updateRunningProgramInfo();
 
 //===========================================================================
 // Global functions
@@ -83,6 +89,14 @@ void reverseScanlines(uint8_t* destination, uint8_t* source, uint32_t width, uin
 bool RemoteControlManager::isRemoteControlEnabled()
 {
 	return GameLink::GetGameLinkEnabled();
+}
+
+//===========================================================================
+// Global functions
+
+void RemoteControlManager::setRemoteControlEnabled(bool bEnabled)
+{
+	return GameLink::SetGameLinkEnabled(bEnabled);
 }
 
 //===========================================================================
@@ -101,6 +115,7 @@ LPBYTE RemoteControlManager::initializeMem(UINT size)
 		// TODO: Create the non-trackonly code as well
 		bool trackonly_mode = false;
 		(GameLink::Init(trackonly_mode));
+		updateRunningProgramInfo();	// Disks might have been loaded before the shm was ready
 		return mem;
 	}
 	return NULL;
@@ -120,41 +135,71 @@ bool RemoteControlManager::destroyMem()
 
 //===========================================================================
 
-void RemoteControlManager::setRunningProgramInfo()
+void RemoteControlManager::setLoadedFloppyInfo(ImageInfo* imageInfo)
 {
-	// TODO:	add to app window title
-	//			set GameLink signature
-	// Choose from HDV disk 1 or WOZ disk 1 info, or nothing
-	// The file being run could/should be passed in
+	if (imageInfo)
+	{
+		bFloppyIsLoaded = true;
+		// CRC can be 0, let's just make a signature from the metadata
+		g_infoWoz.Title = imageInfo->szTitle;
+		g_infoWoz.Subtitle = imageInfo->szSubtitle;
+		g_infoWoz.Version = imageInfo->szVersion;
+		std::string szForCrc = g_infoWoz.Title + g_infoWoz.Subtitle + g_infoWoz.Version;
+		g_infoWoz.sig = crc32(0, (BYTE*)szForCrc.c_str(), szForCrc.length());
+	}
+	else {
+		bFloppyIsLoaded = false;
+		g_infoWoz.Title = "";
+		g_infoWoz.Subtitle = "";
+		g_infoWoz.Version = "";
+		g_infoWoz.sig = 0;
+	}
+	updateRunningProgramInfo();
 }
 
 //===========================================================================
 
-void RemoteControlManager::setWozSignature(std::string Title, std::string Subtitle, std::string Version, UINT32 iCrc32)
+void RemoteControlManager::setLoadedHDInfo(ImageInfo* imageInfo)
 {
-	// CRC can be 0, in this case make one from incoming info
-	g_infoWoz_disk1.Title = Title;
-	g_infoWoz_disk1.Subtitle = Subtitle;
-	g_infoWoz_disk1.Version = Version;
-	if (iCrc32 == 0)
+	// pass in NULL to remove it
+	if (imageInfo)
 	{
-		std::string szForCrc = Title + Subtitle + Version;
-		g_infoWoz_disk1.crc32 = crc32(0, (BYTE*)szForCrc.c_str(), szForCrc.length());
+		bHardDiskIsLoaded = true;
+		if (imageInfo->szVolumeName.length() == 0)
+			g_infoHdv.VolumeName = UNKNOWN_VOLUME_NAME;
+		else
+			g_infoHdv.VolumeName = imageInfo->szVolumeName;
+		g_infoHdv.sig = crc32(0, (BYTE*)(g_infoHdv.VolumeName.c_str()), g_infoHdv.VolumeName.length());
 	}
-	else
-	{
-		g_infoWoz_disk1.crc32 = iCrc32;
+	else {
+		bHardDiskIsLoaded = false;
+		g_infoHdv.VolumeName = "";
+		g_infoHdv.sig = 0;
 	}
+	updateRunningProgramInfo();
 }
 
 //===========================================================================
 
-void RemoteControlManager::setHdvSignature(std::string VolumeName)
+void updateRunningProgramInfo()
 {
-	if (VolumeName.size() == 0)
-		g_infoHdv_disk1.VolumeName = UNKNOWN_VOLUME_NAME;
+	// Updates which program is running
+	if (bHardDiskIsLoaded)
+	{
+		g_pProgramName = g_infoHdv.VolumeName;
+		GameLink::SetProgramInfo(g_pProgramName, 0, 0, 0, g_infoHdv.sig);
+	}
+	else if (bFloppyIsLoaded)
+	{
+		g_pProgramName = g_infoWoz.Title;
+		GameLink::SetProgramInfo(g_pProgramName, 0, 0, 0, g_infoWoz.sig);
+	}
 	else
-		g_infoHdv_disk1.VolumeName = VolumeName;
+	{
+		g_pProgramName = "";
+		GameLink::SetProgramInfo(g_pProgramName, 0, 0, 0, 0);
+	}
+
 }
 
 //===========================================================================
