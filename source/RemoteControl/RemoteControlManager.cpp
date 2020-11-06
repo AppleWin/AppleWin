@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <Windows.h>		// to inject the incoming Gamelink inputs into Applewin
 #include "Memory.h"
 #include "Frame.h"
+#include "Log.h"
 #include "Video.h"
 #include "MouseInterface.h"	// for Gamelink in and out
 #include "CardManager.h"	// for Gamelink in and out
@@ -44,6 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "RemoteControl/RemoteControlManager.h"
 #include "Gamelink.h"
 #include "zlib.h"
+#include "Configuration/PropertySheet.h"
 
 
 #define UNKNOWN_VOLUME_NAME "Unknown Volume"
@@ -220,9 +222,14 @@ void RemoteControlManager::getInput()
 		LogOutput("Mouse dX, dY, WPARAM: %0.2f %0.2f %02X\n", g_gamelink.input.mouse_dx, g_gamelink.input.mouse_dy, g_gamelink.input.mouse_btn);
 #endif DEBUG
 		// -- Audio input
-		SpkrSetVolume(g_gamelink.audio.master_vol_l, 100);
-		MB_SetVolume(g_gamelink.audio.master_vol_l, 100);
-
+		UINT iVolMax = sg_PropertySheet.GetVolumeMax();
+		UINT iVolNow = (100 - g_gamelink.audio.master_vol_l);
+		LogOutput("iVolNow, SpkrGetVolume:   %d, %d\n", iVolNow, SpkrGetVolume());
+		if (iVolNow != SpkrGetVolume())
+		{
+			SpkrSetVolume(100 - g_gamelink.audio.master_vol_l, iVolMax);
+			MB_SetVolume(100 - g_gamelink.audio.master_vol_l, iVolMax);
+		}
 		// -- Mouse input
 		// Go straight into MouseInterface, it already has support for delta movement
 		if (g_gamelink.want_mouse) {
