@@ -345,6 +345,13 @@ void RemoteControlManager::sendOutput(LPBITMAPINFO g_pFramebufferinfo, UINT8 *g_
 		// We instead memcpy each scanline of the bitmap of the frame in reverse into another buffer, and pass that to GameLink.
 		// When GridCartographer/GameLink allows to pass in flags specifying the x/y/w/h etc...,
 
+		if (g_pFramebufferinfo == NULL)
+		{
+			// Don't send out video, just handle out-of-band commands
+			GameLink::Out(MemGetBankPtr(0));
+			return;
+		}
+
 		UINT fbSize = GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t);
 		ZeroMemory(pReorderedFramebufferbits, fbSize);
 

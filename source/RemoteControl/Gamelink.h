@@ -155,6 +155,8 @@ namespace GameLink
 	extern int In( sSharedMMapInput_R2* p_input,
 				   sSharedMMapAudio_R1* p_audio );
 
+	extern void Out(const UINT8* p_sysmem);
+
 	extern void Out( const UINT16 frame_width,
 					 const UINT16 frame_height,
 					 const double source_ratio,

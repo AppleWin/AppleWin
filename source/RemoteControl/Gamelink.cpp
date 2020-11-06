@@ -426,6 +426,13 @@ int GameLink::In( GameLink::sSharedMMapInput_R2* p_input,
 // Outgoing information to any programs conforming with the Gamelink API
 // This must be triggered for every frame if we want correct video output
 //
+// Version only with memory, used for out-of-band commands
+void GameLink::Out(const UINT8* p_sysmem)
+{
+	Out(0, 0, 1, false, NULL, p_sysmem);
+}
+
+// Full version with video out
 void GameLink::Out( const UINT16 frame_width,
 					const UINT16 frame_height,
 					const double source_ratio,
@@ -493,7 +500,7 @@ void GameLink::Out( const UINT16 frame_width,
 			// Store flags
 			g_p_shared_memory->flags = flags;
 
-			if (g_bEnableTrackOnly == false )
+			if ((g_bEnableTrackOnly == false) && p_frame)
 			{
 				// Update the frame sequence
 				++g_p_shared_memory->frame.seq;
@@ -514,7 +521,7 @@ void GameLink::Out( const UINT16 frame_width,
 				}
 			}
 
-			// Peek
+			// Peek for special requested memory items
 			for ( UINT pindex = 0;
 					pindex < g_p_shared_memory->peek.addr_count &&
 					pindex < sSharedMMapPeek_R2::PEEK_LIMIT;

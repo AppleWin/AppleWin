@@ -546,7 +546,10 @@ void EnterMessageLoop(void)
 			if (g_nAppMode == MODE_DEBUG)
 				DebuggerUpdate();
 			else if (g_nAppMode == MODE_PAUSED)
+			{
+				g_RemoteControlMgr.sendOutput(NULL, NULL);
 				Sleep(1);		// Stop process hogging CPU - 1ms, as need to fade-out speaker sound buffer
+			}
 			else if (g_nAppMode == MODE_LOGO)
 				Sleep(1);		// Stop process hogging CPU (NB. don't delay for too long otherwise key input can be slow in other apps - GH#569)
 		}
