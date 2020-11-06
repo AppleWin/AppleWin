@@ -8,12 +8,13 @@ public:
 	RemoteControlManager(void) {}
 	~RemoteControlManager(void) {}
 
-	LPBYTE RemoteControlManager::initializeMem(UINT size);
+	LPBYTE initializeMem(UINT size);
 	bool destroyMem();
-	void RemoteControlManager::setLoadedFloppyInfo(ImageInfo* imageInfo);
-	void RemoteControlManager::setLoadedHDInfo(ImageInfo* imageInfo);
+	void setLoadedFloppyInfo(ImageInfo* imageInfo);
+	void setLoadedHDInfo(ImageInfo* imageInfo);
 	void getInput();
 	void sendOutput(LPBITMAPINFO g_pFramebufferinfo, UINT8* g_pFramebufferbits);
+	void updateRunningProgramInfo();
 
 	static bool RemoteControlManager::isRemoteControlEnabled();
 	static void RemoteControlManager::setRemoteControlEnabled(bool bEnabled);

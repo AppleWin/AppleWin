@@ -81,7 +81,6 @@ bool bFloppyIsLoaded = false;
 
 // Private Prototypes
 void reverseScanlines(uint8_t* destination, uint8_t* source, uint32_t width, uint32_t height, uint8_t depth);
-void updateRunningProgramInfo();
 
 //===========================================================================
 // Global functions
@@ -162,7 +161,6 @@ void RemoteControlManager::setLoadedFloppyInfo(ImageInfo* imageInfo)
 		g_infoWoz.Version = "";
 		g_infoWoz.sig = 0;
 	}
-	updateRunningProgramInfo();
 }
 
 //===========================================================================
@@ -184,14 +182,14 @@ void RemoteControlManager::setLoadedHDInfo(ImageInfo* imageInfo)
 		g_infoHdv.VolumeName = "";
 		g_infoHdv.sig = 0;
 	}
-	updateRunningProgramInfo();
 }
 
 //===========================================================================
 
-void updateRunningProgramInfo()
+void RemoteControlManager::updateRunningProgramInfo()
 {
 	// Updates which program is running
+	// Should only be called on re/boot
 	if (bHardDiskIsLoaded)
 	{
 		g_pProgramName = g_infoHdv.VolumeName;

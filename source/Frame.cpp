@@ -2093,6 +2093,7 @@ void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
 
 			LogFileTimeUntilFirstKeyReadReset();
+			g_RemoteControlMgr.updateRunningProgramInfo();
 			g_nAppMode = MODE_RUNNING;
 		}
 		else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_PAUSED))
@@ -2100,7 +2101,7 @@ void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 			if (ConfirmReboot(bFromButtonUI))
 			{
 				ResetMachineState();
-
+				g_RemoteControlMgr.updateRunningProgramInfo();
 				// NB. Don't exit debugger or stepping
 
 				if (g_nAppMode == MODE_DEBUG)
