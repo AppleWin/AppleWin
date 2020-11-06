@@ -2212,6 +2212,18 @@ CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHA
 	pImageInfo->optimalBitTiming = 0;	// TODO: WOZ
 	pImageInfo->maxNibblesPerTrack = 0;	// TODO
 
+	// RIK BEGIN
+	// For HDV images, load the volume name into the image info
+	// if the title is missing (which it should, be as this is no WOZ with metadata)
+	// The code needs to be lcated here, otherwise the imagebuffer is gone later
+	// As per qkumba, to read volume name:
+	// Seek to offset $404, read 1 byte, AND with #$0F, and read that many bytes
+
+	UINT volumeNameLength = UINT8(pImageInfo->pImageBuffer[0x404]) & 0x0f;
+	std::string volumeName((const char*)(pImageInfo->pImageBuffer + 0x405), volumeNameLength);
+	pImageInfo->szVolumeName = volumeName;
+	// RIK END
+
 	return pImageType;
 }
 

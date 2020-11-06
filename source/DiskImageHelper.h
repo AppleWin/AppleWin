@@ -35,6 +35,7 @@ struct ImageInfo
 	std::string		szTitle;				// RIK
 	std::string		szSubtitle;				// RIK
 	std::string		szVersion;				// RIK
+	std::string		szVolumeName;			// RIK
 	// Floppy only
 	UINT			uNumTracks;
 	BYTE*			pImageBuffer;
