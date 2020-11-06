@@ -318,6 +318,11 @@ void RemoteControlManager::getInput()
 					lparam = lparam | (LPARAM)(bPD << 30);				// previous key state
 					lparam = lparam | (LPARAM)(!bCD << 31);		// transition state (1 for keyup)
 				}
+				// With PostMessage, the message goes to the highest level of AppleWin, hence controlling
+				// all of AppleWin's behavior, including opening popups, etc...
+				// It's not at all ideal, and we should be able to force the message to only apply to the Apple 2
+				// Right now there's no way to do it without duplicating a lot of the message parsing code
+				// TODO
 				PostMessageW(g_hFrameWindow, iKeyState, iVK_Code, lparam);
 #ifdef DEBUG
 				LogOutput("SCANCODE, iVK, LPARAM: %04X, %04X, %04X\n", scancode, iVK_Code, lparam);
