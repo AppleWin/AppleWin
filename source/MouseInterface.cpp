@@ -51,6 +51,7 @@ Etc.
 #include "Log.h"
 #include "Memory.h"
 #include "MouseInterface.h"
+#include "Video.h"
 #include "NTSC.h"	// NTSC_GetCyclesUntilVBlank()
 #include "YamlHelper.h"
 
