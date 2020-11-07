@@ -77,6 +77,7 @@ Info_HDV g_infoHdv;
 
 UINT iCurrentTicks;						// Used to check the repeat interval
 UINT8 *pReorderedFramebufferbits = new UINT8[GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t)]; // the frame realigned properly
+UINT8 iOldVolumeLevel;
 
 bool bHardDiskIsLoaded = false;			// If HD is loaded, use it instead of floppy
 bool bFloppyIsLoaded = false;
@@ -118,6 +119,7 @@ LPBYTE RemoteControlManager::initializeMem(UINT size)
 {
 	if (GameLink::GetGameLinkEnabled())
 	{
+		iOldVolumeLevel = SpkrGetVolume();
 		LPBYTE mem = (LPBYTE)GameLink::AllocRAM(size);
 
 		// initialize the gamelink previous input to 0
@@ -223,13 +225,14 @@ void RemoteControlManager::getInput()
 #endif DEBUG
 		// -- Audio input
 		UINT iVolMax = sg_PropertySheet.GetVolumeMax();
-		UINT iVolNow = (100 - g_gamelink.audio.master_vol_l);
-		LogOutput("iVolNow, SpkrGetVolume:   %d, %d\n", iVolNow, SpkrGetVolume());
-		if (iVolNow != SpkrGetVolume())
+		UINT iVolNow = (100 - g_gamelink.audio.master_vol_l) * iVolMax / 100;
+		if (iVolNow != iOldVolumeLevel)
 		{
-			SpkrSetVolume(100 - g_gamelink.audio.master_vol_l, iVolMax);
-			MB_SetVolume(100 - g_gamelink.audio.master_vol_l, iVolMax);
+			SpkrSetVolume(iVolNow, iVolMax);
+			MB_SetVolume(iVolNow, iVolMax);
+			iOldVolumeLevel = SpkrGetVolume();
 		}
+
 		// -- Mouse input
 		// Go straight into MouseInterface, it already has support for delta movement
 		if (g_gamelink.want_mouse) {
