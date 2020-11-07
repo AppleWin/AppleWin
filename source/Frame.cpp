@@ -142,7 +142,6 @@ static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
 
 void    DrawStatusArea (HDC passdc, BOOL drawflags);
-static void ProcessButtonClick (int button, bool bFromButtonUI=false);
 void	ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive);
 void    RelayEvent (UINT message, WPARAM wparam, LPARAM lparam);
 void    ResetMachineState ();
@@ -2049,7 +2048,7 @@ static bool ConfirmReboot(bool bFromButtonUI)
 	return res == IDYES;
 }
 
-static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
+void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 {
 	SoundCore_SetFade(FADE_OUT);
 	bool bAllowFadeIn = true;
@@ -2094,6 +2093,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
 
 			LogFileTimeUntilFirstKeyReadReset();
+			g_RemoteControlMgr.updateRunningProgramInfo();
 			g_nAppMode = MODE_RUNNING;
 		}
 		else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_PAUSED))
@@ -2101,7 +2101,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 			if (ConfirmReboot(bFromButtonUI))
 			{
 				ResetMachineState();
-
+				g_RemoteControlMgr.updateRunningProgramInfo();
 				// NB. Don't exit debugger or stepping
 
 				if (g_nAppMode == MODE_DEBUG)
@@ -2725,7 +2725,7 @@ void FrameCreateWindow(void)
 		g_hInstance,NULL ); 
 
 	SetupTooltipControls();
-
+	
 	_ASSERT(g_TimerIDEvent_100msec == 0);
 	g_TimerIDEvent_100msec = SetTimer(g_hFrameWindow, IDEVENT_TIMER_100MSEC, 100, NULL);
 	LogFileOutput("FrameCreateWindow: SetTimer(), id=0x%08X\n", g_TimerIDEvent_100msec);

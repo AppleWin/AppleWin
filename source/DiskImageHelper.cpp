@@ -38,6 +38,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskImageHelper.h"
 #include "Log.h"
 #include "Memory.h"
+#include <sstream>	// RIK -- Parse metadata of WOZ disks
+#include "Applewin.h"	// RIK -- g_programName
+#include "RemoteControl/RemoteControlManager.h"	// RIK -- send signature info
 
 ImageInfo::ImageInfo()
 {
@@ -1483,11 +1486,35 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 	if (imageSizeRemaining < 0)
 		return eMismatch;
 
+	// RIK BEGIN
+	UINT32 pCRC32 = *(pImageInfo->pImageBuffer + 8);	// The CRC32 inside the WOZ header
+	// Get title, subtitle and version from metadata
+	std::string szMetadata;
+	std::stringstream ssMetadata;
+	std::string szTmp;
+	const char* sTitle = "title";
+	const char* sSubtitle = "subtitle";
+	const char* sVersion = "version";
+	std::string szColTmp;
+	UINT iTabPos;
+	const char cRowDelim = '\n';
+	const char cColDelim = '\t';
+	UINT iCmp;
+	// RIK END
+
 	while(imageSizeRemaining >= sizeof(WOZChunkHdr))
 	{
 		UINT32 chunkId = *pImage32++;
 		UINT32 chunkSize = *pImage32++;
+		// BEGIN RIK
+		UINT8 iRead = 0;
 		imageSizeRemaining -= sizeof(WOZChunkHdr);
+		if (chunkId == META_CHUNK_ID)
+		{
+			std::string szMetadata = std::string((const char*)pImage32, chunkSize);
+			ssMetadata = std::stringstream(szMetadata);
+		}
+		// END RIK
 
 		switch(chunkId)
 		{
@@ -1505,6 +1532,50 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 			case WRIT_CHUNK_ID:	// WOZ v2 (optional)
 				break;
 			case META_CHUNK_ID:	// (optional)
+				// BEGIN RIK
+				// RIK -- get title, subtitle and version
+				// RIK -- I know this code is... not ideal
+				while (std::getline(ssMetadata, szTmp, cRowDelim))
+				{
+					iTabPos = szTmp.find(cColDelim);
+					if (iTabPos)
+					{
+						if (!(iRead & 0b001))
+						{
+							szColTmp = szTmp.substr(0, iTabPos);
+							iCmp = strncmp(sTitle, szColTmp.c_str(), iTabPos);
+							if (iCmp == 0)
+							{
+								pImageInfo->szTitle = szTmp.substr(iTabPos + 1);
+								iRead &= 0b1;
+								continue;
+							}
+						}
+						if (!(iRead & 0b010))
+						{
+							iCmp = strncmp(sSubtitle, szColTmp.c_str(), iTabPos);
+							if (iCmp == 0)
+							{
+								pImageInfo->szSubtitle = szTmp.substr(iTabPos + 1);
+								iRead &= 0b10;
+								continue;
+							}
+						}
+						if (!(iRead & 0b100))
+						{
+							iCmp = strncmp(sVersion, szColTmp.c_str(), iTabPos);
+							if (iCmp == 0)
+							{
+								pImageInfo->szVersion = szTmp.substr(iTabPos + 1);
+								iRead &= 0b100;
+								continue;
+							}
+						}
+					}
+					if (iRead & 0b111)
+						break;				// found all
+				}
+				// END RIK
 				break;
 			default:	// no idea what this chunk is, so skip it
 				_ASSERT(0);
@@ -1930,7 +2001,6 @@ ImageError_e CImageHelperBase::Open(	LPCTSTR pszImageFilename,
 	pImageInfo->szFilename = szFilename;
 	if (uNameLen == 0 || uNameLen >= MAX_PATH)
 		Err = eIMAGE_ERROR_FAILED_TO_GET_PATHNAME;
-
 	return eIMAGE_ERROR_NONE;
 }
 
@@ -2153,6 +2223,18 @@ CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHA
 	pImageInfo->pWOZTrackMap = 0;	// TODO: WOZ
 	pImageInfo->optimalBitTiming = 0;	// TODO: WOZ
 	pImageInfo->maxNibblesPerTrack = 0;	// TODO
+
+	// RIK BEGIN
+	// For HDV images, load the volume name into the image info
+	// if the title is missing (which it should, be as this is no WOZ with metadata)
+	// The code needs to be located here, otherwise the imagebuffer is gone later
+	// As per qkumba, to read volume name:
+	// Seek to offset $404, read 1 byte, AND with #$0F, and read that many bytes
+
+	UINT volumeNameLength = UINT8(pImageInfo->pImageBuffer[0x404]) & 0x0f;
+	std::string volumeName((const char*)(pImageInfo->pImageBuffer + 0x405), volumeNameLength);
+	pImageInfo->szVolumeName = volumeName;
+	// RIK END
 
 	return pImageType;
 }

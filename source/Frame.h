@@ -58,3 +58,5 @@
 	UINT Get3DBorderHeight(void);
 
 	void SetAltEnterToggleFullScreen(bool mode);
+	void ProcessButtonClick(int button, bool bFromButtonUI = false);		// RIK To allow Remote Control
+

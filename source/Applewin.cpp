@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
 #include "Registry.h"
+#include "RemoteControl/RemoteControlManager.h"	// RIK
 #include "Riff.h"
 #include "SaveState.h"
 #include "SerialComms.h"
@@ -69,6 +70,9 @@ static UINT16 g_OldAppleWinVersion[4] = {0};
 TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";
 
 std::string g_pAppTitle;
+std::string g_pProgramName = "Unknown";		// RIK -- Name of the emulated program
+std::string g_pProgramSig = "000-00000000";	// RIK -- Canonical signature of the emulated program using format: page-cnc32
+RemoteControlManager g_RemoteControlMgr;
 
 eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
 
@@ -542,7 +546,10 @@ void EnterMessageLoop(void)
 			if (g_nAppMode == MODE_DEBUG)
 				DebuggerUpdate();
 			else if (g_nAppMode == MODE_PAUSED)
+			{
+				g_RemoteControlMgr.sendOutput(NULL, NULL);
 				Sleep(1);		// Stop process hogging CPU - 1ms, as need to fade-out speaker sound buffer
+			}
 			else if (g_nAppMode == MODE_LOGO)
 				Sleep(1);		// Stop process hogging CPU (NB. don't delay for too long otherwise key input can be slow in other apps - GH#569)
 		}
@@ -1359,6 +1366,8 @@ struct CmdLine
 		rgbCard = RGB_Videocard_e::Apple;
 		rgbCardForegroundColor = 15;
 		rgbCardBackgroundColor = 0;
+		bRemoteControlEnabled = 0;
+		bRCTrackOnlyEnabled = 0;
 
 		for (UINT i = 0; i < NUM_SLOTS; i++)
 		{
@@ -1397,6 +1406,8 @@ struct CmdLine
 	int rgbCardForegroundColor;
 	int rgbCardBackgroundColor;
 	std::string strCurrentDir;
+	bool bRemoteControlEnabled;
+	bool bRCTrackOnlyEnabled;
 };
 
 static CmdLine g_cmdLine;
@@ -1797,6 +1808,16 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			RGB_SetInvertBit7(true);
 		}
+		// RIK BEGIN
+		else if (strcmp(lpCmdLine, "-remote-control") == 0)	// Activate Remote Control
+		{
+			g_cmdLine.bRemoteControlEnabled = true;
+		}
+		else if (strcmp(lpCmdLine, "-rc-track-only") == 0)	// Make Remote Control track-only
+		{
+			g_cmdLine.bRCTrackOnlyEnabled = true;
+		}
+		// RIK END
 		else if (strcmp(lpCmdLine, "-screenshot-and-exit") == 0)	// GH#616: For testing - Use in combination with -load-state
 		{
 			g_cmdLine.szScreenshotFilename = GetCurrArg(lpNextArg);
@@ -1876,6 +1897,10 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 			g_cmdLine.strCurrentDir = lpCmdLine;
 		}
 		else if (strcmp(lpCmdLine, "-no-nsc") == 0)
+		{
+			g_cmdLine.bRemoveNoSlotClock = true;
+		}
+				else if (strcmp(lpCmdLine, "-no-nsc") == 0)
 		{
 			g_cmdLine.bRemoveNoSlotClock = true;
 		}
@@ -2056,6 +2081,16 @@ static void RepeatInitialization(void)
 		{
 			sg_PropertySheet.SetButtonsSwapState(true);
 			// Reapply after a restart - TODO: grey-out the Config UI for "Swap 0/1" when this cmd line is passed in
+		}
+
+		if (g_cmdLine.bRemoteControlEnabled)
+		{
+			g_RemoteControlMgr.setRemoteControlEnabled(true);
+		}
+
+		if (g_cmdLine.bRCTrackOnlyEnabled)
+		{
+			g_RemoteControlMgr.setTrackOnlyEnabled(true);
 		}
 
 		DebugInitialize();

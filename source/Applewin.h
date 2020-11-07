@@ -3,6 +3,7 @@
 #include "Card.h"
 #include "SaveState_Structs_common.h"
 #include "Common.h"
+#include "RemoteControl/RemoteControlManager.h"
 
 void LogFileTimeUntilFirstKeyReadReset(void);
 void LogFileTimeUntilFirstKeyRead(void);
@@ -13,6 +14,9 @@ extern const UINT16* GetOldAppleWinVersion(void);
 extern TCHAR VERSIONSTRING[];	// Constructed in WinMain()
 
 extern std::string g_pAppTitle;
+extern std::string g_pProgramName;						// RIK -- Name of the emulated program
+extern std::string g_pProgramSig;						// RIK -- Canonical signature of the emulated program using format: page-cnc32
+extern RemoteControlManager g_RemoteControlMgr;			// RIK -- Necessary to have a single instance only
 
 extern eApple2Type g_Apple2Type;
 eApple2Type GetApple2Type(void);

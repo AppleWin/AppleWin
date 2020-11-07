@@ -269,7 +269,7 @@ public:
 		~Slot(void) {}
 	};
 
-	void FileHdr(UINT version);
+	void FileHdr(UINT version, const char hdrstring[255] = SS_YAML_VALUE_AWSS);
 	void UnitHdr(std::string type, UINT version);
 
 private:

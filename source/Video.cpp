@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"
 #include "YamlHelper.h"
+#include "RemoteControl/RemoteControlManager.h"	// RIK
 
 	#define  SW_80COL         (g_uVideoMode & VF_80COL)
 	#define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
@@ -135,6 +136,7 @@ static LPDIRECTDRAW g_lpDD = NULL;
 	void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const TCHAR *pScreenShotFileName );
 	void Video_MakeScreenShot( FILE *pFile, const VideoScreenShot_e ScreenShotType );
 	void videoCreateDIBSection();
+
 
 //===========================================================================
 void VideoInitialize ()
@@ -562,17 +564,17 @@ void VideoRedrawScreen (void)
 	VideoRefreshScreen( g_uVideoMode, true );
 }
 
-//===========================================================================
-
-void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/ )
+void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/)
 {
+	g_RemoteControlMgr.getInput();	// RIK
+
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
 	{
 		// uVideoModeForWholeScreen set if:
 		// . MODE_DEBUG   : always
 		// . MODE_RUNNING : called from VideoRedrawScreen(), eg. during full-speed
 		if (bRedrawWholeScreen)
-			NTSC_SetVideoMode( uRedrawWholeScreenVideoMode );
+			NTSC_SetVideoMode(uRedrawWholeScreenVideoMode);
 		NTSC_VideoRedrawWholeScreen();
 
 		// MODE_DEBUG|PAUSED: Need to refresh a 2nd time if changing video-type, otherwise could have residue from prev image!
@@ -595,7 +597,7 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 
 		SetStretchBltMode(hFrameDC, COLORONCOLOR);
 		StretchBlt(
-			hFrameDC, 
+			hFrameDC,
 			xdest, ydest,
 			wdest, hdest,
 			g_hDeviceDC,
@@ -603,6 +605,8 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),
 			SRCCOPY);
 	}
+
+	g_RemoteControlMgr.sendOutput(g_pFramebufferinfo, g_pFramebufferbits);	// RIK
 
 #ifdef NO_DIRECT_X
 #else
@@ -1322,6 +1326,14 @@ void Config_Load_Video()
 	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_REFRESH_RATE), &dwTmp, (DWORD)VR_60HZ);
 	SetVideoRefreshRate((VideoRefreshRate_e)dwTmp);
 
+	// RIK START
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_REMOTECONTROL), &dwTmp, (DWORD)false);
+	RemoteControlManager::setRemoteControlEnabled(dwTmp);
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_RC_TRACKONLY), &dwTmp, (DWORD)false);
+	RemoteControlManager::setTrackOnlyEnabled(dwTmp);
+	// RIK END
+
+
 	//
 
 	const UINT16* pOldVersion = GetOldAppleWinVersion();
@@ -1367,6 +1379,8 @@ void Config_Save_Video()
 	REGSAVE(TEXT(REGVALUE_VIDEO_STYLE)     ,g_eVideoStyle);
 	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR),g_nMonochromeRGB);
 	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), GetVideoRefreshRate());
+	REGSAVE(TEXT(REGVALUE_VIDEO_REMOTECONTROL), RemoteControlManager::isRemoteControlEnabled());		// RIK
+	REGSAVE(TEXT(REGVALUE_VIDEO_RC_TRACKONLY), RemoteControlManager::isTrackOnlyEnabled());		// RIK
 }
 
 //===========================================================================
@@ -1437,7 +1451,8 @@ static void videoCreateDIBSection()
 	SelectObject(g_hDeviceDC,g_hDeviceBitmap);
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory( g_pFramebufferbits, GetFrameBufferWidth()*GetFrameBufferHeight()*sizeof(bgra_t) );
+	UINT fbSize = GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t);
+	ZeroMemory(g_pFramebufferbits, fbSize);
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	NTSC_VideoInit( g_pFramebufferbits );

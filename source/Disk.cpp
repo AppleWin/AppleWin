@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SaveState.h"
 #include "Video.h"
 #include "YamlHelper.h"
+#include "RemoteControl/RemoteControlManager.h"	// RIK Notify when boot drives are changed
 
 #include "../resource/resource.h"
 
@@ -344,6 +345,12 @@ void Disk2InterfaceCard::EjectDisk(const int drive)
 
 	EjectDiskInternal(drive);
 	Snapshot_UpdatePath();
+	// RIK BEGIN
+	if (drive == 0)
+	{
+		g_RemoteControlMgr.setLoadedFloppyInfo(0);
+	}
+	// RIK END
 
 	SaveLastDiskImage(drive);
 	Video_ResetScreenshotCounter("");
@@ -702,6 +709,13 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 
 	SaveLastDiskImage(drive);
 	
+	// RIK BEGIN
+	// If we've just loaded the boot drive, tell Remote Control
+	if (drive == 0)
+	{
+		g_RemoteControlMgr.setLoadedFloppyInfo(pFloppy->m_imagehandle);
+	}
+	// RIK END
 	return Error;
 }
 

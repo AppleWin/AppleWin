@@ -60,6 +60,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration/IPropertySheet.h"
 #include "Debugger/DebugDefs.h"
 #include "YamlHelper.h"
+#include <map>
+#include "RemoteControl/RemoteControlManager.h"	// RIK -- For shared memory
+
 
 // UTAIIe:5-28 (GH#419)
 // . Sather uses INTCXROM instead of SLOTCXROM' (used by the Apple//e Tech Ref Manual), so keep to this
@@ -1229,8 +1232,11 @@ static void UpdatePaging(BOOL initialize)
 
 void MemDestroy()
 {
-	VirtualFree(memaux  ,0,MEM_RELEASE);
-	VirtualFree(memmain ,0,MEM_RELEASE);
+	if (!g_RemoteControlMgr.destroyMem())		// RIK
+	{
+		VirtualFree(memaux, 0, MEM_RELEASE);
+		VirtualFree(memmain, 0, MEM_RELEASE);
+	}
 	VirtualFree(memdirty,0,MEM_RELEASE);
 	VirtualFree(memrom  ,0,MEM_RELEASE);
 	VirtualFree(memimage,0,MEM_RELEASE);
@@ -1452,8 +1458,20 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 void MemInitialize()
 {
 	// ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
-	memaux   = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
-	memmain  = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
+
+	// RIK BEGIN
+	// if Remote Control is active, allocate memmain and memaux as one block of shared memory
+
+	memmain = g_RemoteControlMgr.initializeMem((_6502_MEM_END + 1) * 2);
+	if (memmain)
+	{
+		memaux = memmain + (_6502_MEM_END + 1);
+	}
+	else {
+		memaux = (LPBYTE)VirtualAlloc(NULL, _6502_MEM_END + 1, MEM_COMMIT, PAGE_READWRITE);
+		memmain = (LPBYTE)VirtualAlloc(NULL, _6502_MEM_END + 1, MEM_COMMIT, PAGE_READWRITE);
+	}
+	// RIK END
 	memdirty = (LPBYTE)VirtualAlloc(NULL,0x100  ,MEM_COMMIT,PAGE_READWRITE);
 	memrom   = (LPBYTE)VirtualAlloc(NULL,0x3000 * MaxRomPages ,MEM_COMMIT,PAGE_READWRITE);
 	memimage = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_RESERVE,PAGE_NOACCESS);
@@ -1816,11 +1834,11 @@ inline DWORD getRandomTime()
 void MemReset()
 {
 	// INITIALIZE THE PAGING TABLES
-	ZeroMemory(memshadow,256*sizeof(LPBYTE));
-	ZeroMemory(memwrite ,256*sizeof(LPBYTE));
+	ZeroMemory(memshadow, 256 * sizeof(LPBYTE));
+	ZeroMemory(memwrite, 256 * sizeof(LPBYTE));
 
 	// INITIALIZE THE RAM IMAGES
-	ZeroMemory(memaux ,0x10000);
+	ZeroMemory(memaux, 0x10000);
 	ZeroMemory(memmain,0x10000);
 
 	// Init the I/O ROM vars
@@ -1842,6 +1860,9 @@ void MemReset()
 	// OR
 	//   F2, Ctrl-F2, F7, HGR
 	DWORD randTime = getRandomTime();
+
+	g_nMemoryClearType = MIP_FF_FF_00_00;
+
 	MemoryInitPattern_e eMemoryInitPattern = static_cast<MemoryInitPattern_e>(g_nMemoryClearType);
 
 	if (g_nMemoryClearType < 0)	// random
