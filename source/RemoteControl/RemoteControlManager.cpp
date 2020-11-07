@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "RemoteControl/RemoteControlManager.h"
 #include "Gamelink.h"
 #include "zlib.h"
+#include <unordered_set>
 #include "Configuration/PropertySheet.h"
 
 
@@ -78,6 +79,7 @@ Info_HDV g_infoHdv;
 UINT iCurrentTicks;						// Used to check the repeat interval
 UINT8 *pReorderedFramebufferbits = new UINT8[GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t)]; // the frame realigned properly
 UINT8 iOldVolumeLevel;
+static std::unordered_set<UINT8> exclusionSet;		// list of VK codes that will not be passed through to Applewin
 
 bool bHardDiskIsLoaded = false;			// If HD is loaded, use it instead of floppy
 bool bFloppyIsLoaded = false;
@@ -126,6 +128,7 @@ LPBYTE RemoteControlManager::initializeMem(UINT size)
 		memset(&g_gamelink.input_prev, 0, sizeof(GameLink::sSharedMMapInput_R2));
 
 		(GameLink::Init(isTrackOnlyEnabled()));
+		setKeypressExclusionList(aDefaultKeyExclusionList, sizeof(aDefaultKeyExclusionList));
 		updateRunningProgramInfo();	// Disks might have been loaded before the shm was ready
 		return mem;
 	}
@@ -142,6 +145,17 @@ bool RemoteControlManager::destroyMem()
 		return true;
 	}
 	return false;
+}
+
+//===========================================================================
+
+void RemoteControlManager::setKeypressExclusionList(UINT8 _exclusionList[], UINT8 length)
+{
+	exclusionSet.clear();
+	for (UINT8 i = 0; i < length; i++)
+	{
+		exclusionSet.insert(_exclusionList[i]);
+	}
 }
 
 //===========================================================================
@@ -320,7 +334,7 @@ void RemoteControlManager::getInput()
 				// Set up message
 				iKeyState = bCD ? WM_KEYDOWN : WM_KEYUP;
 				iVK_Code = aDIKtoVK[scancode];
-				repeat = 1;		// TODO: Should we remember the key's repeat?
+				repeat = 1;		// Managed with ticks above
 				{	// set up lparam
 					lparam = repeat;
 					lparam = lparam | (LPARAM)(scancode << 16);				// scancode
@@ -330,13 +344,14 @@ void RemoteControlManager::getInput()
 				}
 				// With PostMessage, the message goes to the highest level of AppleWin, hence controlling
 				// all of AppleWin's behavior, including opening popups, etc...
-				// It's not at all ideal, and we should be able to force the message to only apply to the Apple 2
-				// Right now there's no way to do it without duplicating a lot of the message parsing code
-				// TODO
-				PostMessageW(g_hFrameWindow, iKeyState, iVK_Code, lparam);
+				// It's not at all ideal, so we filter which keystrokes to pass in with a configurable exclusion list
+				if (!exclusionSet.count(iVK_Code))
+				{
+					PostMessageW(g_hFrameWindow, iKeyState, iVK_Code, lparam);
 #ifdef DEBUG
-				LogOutput("SCANCODE, iVK, LPARAM: %04X, %04X, %04X\n", scancode, iVK_Code, lparam);
+					LogOutput("SCANCODE, iVK, LPARAM: %04X, %04X, %04X\n", scancode, iVK_Code, lparam);
 #endif DEBUG
+				}
 			}
 		}
 		// We're done parsing the input. Store it as the previous state
