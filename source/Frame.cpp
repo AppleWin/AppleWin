@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"
+#include "DirectInput.h"
 #include "NTSC.h"
 #include "ParallelPrinter.h"
 #include "Pravets.h"
