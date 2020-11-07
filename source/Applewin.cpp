@@ -1351,6 +1351,8 @@ struct CmdLine
 		rgbCard = RGB_Videocard_e::Apple;
 		rgbCardForegroundColor = 15;
 		rgbCardBackgroundColor = 0;
+		bRemoteControlEnabled = 0;
+		bRCTrackOnlyEnabled = 0;
 
 		for (UINT i = 0; i < NUM_SLOTS; i++)
 		{
@@ -1389,6 +1391,8 @@ struct CmdLine
 	int rgbCardForegroundColor;
 	int rgbCardBackgroundColor;
 	std::string strCurrentDir;
+	bool bRemoteControlEnabled;
+	bool bRCTrackOnlyEnabled;
 };
 
 static CmdLine g_cmdLine;
@@ -1792,11 +1796,11 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 		// RIK BEGIN
 		else if (strcmp(lpCmdLine, "-remote-control") == 0)	// Activate Remote Control
 		{
-		g_RemoteControlMgr.setRemoteControlEnabled(true);
+			g_cmdLine.bRemoteControlEnabled = true;
 		}
 		else if (strcmp(lpCmdLine, "-rc-track-only") == 0)	// Make Remote Control track-only
 		{
-		g_RemoteControlMgr.setTrackOnlyEnabled(true);
+			g_cmdLine.bRCTrackOnlyEnabled = true;
 		}
 		// RIK END
 		else if (strcmp(lpCmdLine, "-screenshot-and-exit") == 0)	// GH#616: For testing - Use in combination with -load-state
@@ -1878,6 +1882,10 @@ static bool ProcessCmdLine(LPSTR lpCmdLine)
 			g_cmdLine.strCurrentDir = lpCmdLine;
 		}
 		else if (strcmp(lpCmdLine, "-no-nsc") == 0)
+		{
+			g_cmdLine.bRemoveNoSlotClock = true;
+		}
+				else if (strcmp(lpCmdLine, "-no-nsc") == 0)
 		{
 			g_cmdLine.bRemoveNoSlotClock = true;
 		}
@@ -2058,6 +2066,16 @@ static void RepeatInitialization(void)
 		{
 			sg_PropertySheet.SetButtonsSwapState(true);
 			// Reapply after a restart - TODO: grey-out the Config UI for "Swap 0/1" when this cmd line is passed in
+		}
+
+		if (g_cmdLine.bRemoteControlEnabled)
+		{
+			g_RemoteControlMgr.setRemoteControlEnabled(true);
+		}
+
+		if (g_cmdLine.bRCTrackOnlyEnabled)
+		{
+			g_RemoteControlMgr.setTrackOnlyEnabled(true);
 		}
 
 		DebugInitialize();
