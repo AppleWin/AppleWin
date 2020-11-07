@@ -239,7 +239,24 @@ void RemoteControlManager::getInput()
 #endif DEBUG
 		// -- Audio input
 		UINT iVolMax = sg_PropertySheet.GetVolumeMax();
-		UINT iVolNow = (100 - g_gamelink.audio.master_vol_l) * iVolMax / 100;
+		
+		UINT iVolNow;
+
+		if ( g_gamelink.audio.master_vol_l == 0 )
+		{
+			// 0 = "-Inf" dB ; which maps to iVolMax
+			iVolNow = iVolMax;
+		}
+		else
+		{
+			float fVolumeLinear, fVolumedB, fVolumeForSpeaker;
+
+			fVolumeLinear = static_cast< float >( g_gamelink.audio.master_vol_l ) / 100.0f;
+			fVolumedB = 20.0f * log10f( fVolumeLinear );
+			fVolumeForSpeaker = fVolumedB * iVolMax / -48.0f; // note: 1% gives a value of about -40dB, so we scale to fit 0 to iVolMax
+			iVolNow = static_cast< UINT >( fVolumeForSpeaker );
+		}
+		
 		if (iVolNow != iOldVolumeLevel)
 		{
 			SpkrSetVolume(iVolNow, iVolMax);
