@@ -514,7 +514,6 @@ void HD_Unplug(const int iDrive)
 	{
 		HD_CleanupDrive(iDrive);
 		Snapshot_UpdatePath();
-	}
 		// RIK BEGIN
 		if (iDrive == 0)
 		{
