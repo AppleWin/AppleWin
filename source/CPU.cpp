@@ -442,8 +442,8 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //===========================================================================
 
-#define READ _READ_NMOS
-#define WRITE(value) _WRITE_NMOS(value)
+#define READ _READ_WITH_IO_F8xx
+#define WRITE(value) _WRITE_WITH_IO_F8xx(value)
 #define HEATMAP_X(address)
 
 #include "CPU/cpu6502.h"  // MOS 6502
@@ -453,8 +453,8 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //-------
 
-#define READ _READ_CMOS
-#define WRITE(value) _WRITE_CMOS(value)
+#define READ _READ
+#define WRITE(value) _WRITE(value)
 
 #include "CPU/cpu65C02.h" // WDC 65C02
 
@@ -464,8 +464,8 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //-----------------
 
-#define READ Heatmap_ReadByte_NMOS(addr, uExecutedCycles)
-#define WRITE(value) Heatmap_WriteByte_NMOS(addr, value, uExecutedCycles);
+#define READ Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles)
+#define WRITE(value) Heatmap_WriteByte_With_IO_F8xx(addr, value, uExecutedCycles);
 
 #define HEATMAP_X(address) Heatmap_X(address)
 
@@ -480,8 +480,8 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //-------
 
-#define READ Heatmap_ReadByte_CMOS(addr, uExecutedCycles)
-#define WRITE(value) Heatmap_WriteByte_CMOS(addr, value, uExecutedCycles);
+#define READ Heatmap_ReadByte(addr, uExecutedCycles)
+#define WRITE(value) Heatmap_WriteByte(addr, value, uExecutedCycles);
 
 #define Cpu65C02 Cpu65C02_debug
 #include "CPU/cpu65C02.h" // WDC 65C02
@@ -523,10 +523,10 @@ BYTE CpuRead(USHORT addr, ULONG uExecutedCycles)
 {
 	if (g_nAppMode == MODE_RUNNING)
 	{
-		return _READ_NMOS;	// Superset of _READ_CMOS
+		return _READ_WITH_IO_F8xx;	// Superset of _READ
 	}
 
-	return Heatmap_ReadByte_NMOS(addr, uExecutedCycles);
+	return Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles);
 }
 
 // Called by z80_WRMEM()
@@ -534,11 +534,11 @@ void CpuWrite(USHORT addr, BYTE value, ULONG uExecutedCycles)
 {
 	if (g_nAppMode == MODE_RUNNING)
 	{
-		_WRITE_NMOS(value);
+		_WRITE_WITH_IO_F8xx(value);	// Superset of _WRITE
 		return;
 	}
 
-	Heatmap_WriteByte_NMOS(addr, value, uExecutedCycles);
+	Heatmap_WriteByte_With_IO_F8xx(addr, value, uExecutedCycles);
 }
 
 //===========================================================================
