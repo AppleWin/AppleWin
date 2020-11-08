@@ -30,7 +30,7 @@ The process described here has several goals:
 
 Smaller PRs are highly desirable, as they should be simpler to review and approve. Large changes are likely to be rejected or not get looked at (resulting in them going stale, and ultimately diverging further from the mainline repo).
 
-For large changes being submitted for review, then it's highly recommended to split the large PR into smaller PRs, and submit them piece by piece. This means that no dependencies can exist between each smaller PR.
+For large changes being submitted for review, then it's HIGHLY recommended to split the large PR into smaller PRs, and submit them piece by piece. This means that no dependencies can exist between each smaller PR.
 
 For a PR, don't make changes that are unrelated to the PR. These can be done in separate PRs.
 
