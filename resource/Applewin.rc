@@ -1,6 +1,7 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
+#include "version.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -51,59 +52,32 @@ END
 //
 
 FULLSCR_BUTTON          BITMAP                  "FULLSCR.BMP"
-
 RUN_BUTTON              BITMAP                  "RUN.BMP"
-
 RUNP_BUTTON             BITMAP                  "RUNP.BMP"
-
 RUN3000E_BUTTON         BITMAP                  "RUN3000E.BMP"
-
 RUNBASE64A_BUTTON       BITMAP                  "RUNBASE64A.BMP"
-
 DEBUG_BUTTON            BITMAP                  "DEBUG.BMP"
-
 DRIVE1_BUTTON           BITMAP                  "DRIVE1.BMP"
-
 DRIVE2_BUTTON           BITMAP                  "DRIVE2.BMP"
-
 SETUP_BUTTON            BITMAP                  "SETUP.BMP"
-
 CHARSET40               BITMAP                  "CHARSET4.BMP"
-
 DISKOFF_BITMAP          BITMAP                  "DISKOFF.BMP"
-
 DISKREAD_BITMAP         BITMAP                  "DISKREAD.BMP"
-
 DISKWRITE_BITMAP        BITMAP                  "DISKWRIT.BMP"
-
 DISKPROT_BITMAP         BITMAP                  "DISKPROT.BMP"
-
 LED_CAPSOFF_BITMAP      BITMAP                  "LED_CAPS_OFF.BMP"
-
 LED_CAPSON_BITMAP       BITMAP                  "LED_CAPS_ON.BMP"
-
 LED_CAPSOFF_P8_BITMAP   BITMAP                  "LED_CAPS_OFF_P8.BMP"
-
 LED_CAPSON_P8_BITMAP    BITMAP                  "LED_CAPS_ON_P8.BMP"
-
 LED_LATOFF_BITMAP       BITMAP                  "LED_CAPS_OFF_LAT.BMP"
-
 LED_LATON_BITMAP        BITMAP                  "LED_CAPS_ON_LAT.BMP"
-
 CHARSET82               BITMAP                  "CHARSET82.BMP"
-
 CHARSET8M               BITMAP                  "CHARSET8M.BMP"
-
 CHARSET8C               BITMAP                  "CHARSET8C.BMP"
-
 HELP_BUTTON             BITMAP                  "HELP.BMP"
-
 DRIVESWAP_BUTTON        BITMAP                  "DRIVESWAP.BMP"
-
 IDB_APPLEWIN            BITMAP                  "ApplewinLogo.bmp"
-
 IDB_DEBUG_FONT_7X8      BITMAP                  "Debug_Font.bmp"
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -124,8 +98,7 @@ BEGIN
     PUSHBUTTON      "Monochrome &Color...",IDC_MONOCOLOR,12,46,80,14
     CONTROL         "50% Scan lines",IDC_CHECK_HALF_SCAN_LINES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,33,62,10
     CONTROL         "Vertical blend",IDC_CHECK_VERTICAL_BLEND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,48,62,10
-    CONTROL         "Full-Screen: Show drive/keyboard status",IDC_CHECK_FS_SHOW_SUBUNIT_STATUS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,64,140,10
+    CONTROL         "Full-Screen: Show drive/keyboard status",IDC_CHECK_FS_SHOW_SUBUNIT_STATUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,64,140,10
     LTEXT           "&Serial Port:",IDC_STATIC,5,89,40,8
     COMBOBOX        IDC_SERIALPORT,45,87,90,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "&Ethernet Settings...",IDC_ETHERNET,4,105,80,14
@@ -210,8 +183,7 @@ BEGIN
     COMBOBOX        IDC_COMBO_DISK1,40,40,150,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     COMBOBOX        IDC_COMBO_DISK2,40,57,150,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     GROUPBOX        "Hard Disk Drives",IDC_STATIC,5,83,200,64
-    CONTROL         "&Enable hard disk controller in slot 7",IDC_HDD_ENABLE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,96,122,10
+    CONTROL         "&Enable hard disk controller in slot 7",IDC_HDD_ENABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,96,122,10
     PUSHBUTTON      "Swap",IDC_HDD_SWAP,156,92,40,14
     LTEXT           "HDD 1:",IDC_STATIC,11,113,23,8
     LTEXT           "HDD 2:",IDC_STATIC,11,130,23,8
@@ -279,9 +251,7 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 APPLEWIN_ICON           ICON                    "APPLEWIN.ICO"
-
 DISK_ICON               ICON                    "DISK.ICO"
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -289,8 +259,8 @@ DISK_ICON               ICON                    "DISK.ICO"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,29,14,0
- PRODUCTVERSION 1,29,14,0
+ FILEVERSION APPLEWIN_VERSION
+ PRODUCTVERSION APPLEWIN_VERSION
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -308,12 +278,12 @@ BEGIN
             VALUE "Comments", "https://github.com/AppleWin"
             VALUE "CompanyName", "AppleWin"
             VALUE "FileDescription", "Apple //e Emulator for Windows"
-            VALUE "FileVersion", "1,29,14,0"
+            VALUE "FileVersion", APPLEWIN_VERSION_STR
             VALUE "InternalName", "APPLEWIN"
             VALUE "LegalCopyright", " 1994-2020 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
-            VALUE "ProductVersion", "1,29,14,0"
+            VALUE "ProductVersion", APPLEWIN_VERSION_STR
         END
     END
     BLOCK "VarFileInfo"
@@ -341,23 +311,14 @@ END
 //
 
 IDR_DISK2_13SECTOR_FW   FIRMWARE                "Disk2-13sector.rom"
-
 IDR_DISK2_16SECTOR_FW   FIRMWARE                "Disk2.rom"
-
 IDR_SSC_FW              FIRMWARE                "SSC.rom"
-
 IDR_HDDRVR_FW           FIRMWARE                "Hddrvr.bin"
-
 IDR_PRINTDRVR_FW        FIRMWARE                "Parallel.rom"
-
 IDR_MOCKINGBOARD_D_FW   FIRMWARE                "Mockingboard-D.rom"
-
 IDR_MOUSEINTERFACE_FW   FIRMWARE                "MouseInterface.rom"
-
 IDR_THUNDERCLOCKPLUS_FW FIRMWARE                "ThunderClockPlus.rom"
-
 IDR_TKCLOCK_FW          FIRMWARE                "TKClock.rom"
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -365,31 +326,24 @@ IDR_TKCLOCK_FW          FIRMWARE                "TKClock.rom"
 //
 
 IDR_APPLE2_ROM          ROM                     "Apple2.rom"
-
 IDR_APPLE2_PLUS_ROM     ROM                     "Apple2_Plus.rom"
-
 IDR_APPLE2_JPLUS_ROM    ROM                     "Apple2_JPlus.rom"
-
 IDR_APPLE2E_ROM         ROM                     "Apple2e.rom"
-
 IDR_APPLE2E_ENHANCED_ROM ROM                     "Apple2e_Enhanced.rom"
-
 IDR_PRAVETS_82_ROM      ROM                     "Pravets82.rom"
-
 IDR_PRAVETS_8M_ROM      ROM                     "Pravets8M.rom"
-
 IDR_PRAVETS_8C_ROM      ROM                     "Pravets8C.rom"
-
 IDR_TK3000_2E_ROM       ROM                     "TK3000e.rom"
-
 IDR_BASE_64A_ROM        ROM                     "Base64A.rom"
-
 IDR_FREEZES_F8_ROM      ROM                     "FREEZES_NON-AUTOSTART_F8_ROM.rom"
 
-IDR_APPLE2_JPLUS_VIDEO_ROM ROM                     "Apple2_JPlus_Video.rom"
+/////////////////////////////////////////////////////////////////////////////
+//
+// VIDEO ROM
+//
 
-IDR_BASE64A_VIDEO_ROM   ROM                     "Base64A_German_Video.rom"
-
+IDR_APPLE2_JPLUS_VIDEO_ROM    ROM               "Apple2_JPlus_Video.rom"
+IDR_BASE64A_VIDEO_ROM         ROM               "Base64A_German_Video.rom"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -429,10 +383,6 @@ END
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO
 BEGIN
-    IDD_PROPPAGE_CONFIG, DIALOG
-    BEGIN
-    END
-
     IDD_PROPPAGE_INPUT, DIALOG
     BEGIN
         BOTTOMMARGIN, 182
@@ -445,10 +395,6 @@ BEGIN
     END
 
     IDD_TFE_SETTINGS_DIALOG, DIALOG
-    BEGIN
-    END
-
-    IDD_PROPPAGE_ADVANCED, DIALOG
     BEGIN
     END
 END
@@ -464,11 +410,11 @@ STRINGTABLE
 BEGIN
     IDS_TFE_CAPTION         "Ethernet Settings"
     IDS_TFE_ETHERNET        "Ethernet"
+    IDS_TFE_INTERFACE       "Interface"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_TFE_INTERFACE       "Interface"
     IDS_OK                  "OK"
     IDS_CANCEL              "Cancel"
 END
