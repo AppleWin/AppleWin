@@ -62,6 +62,7 @@
     <ClInclude Include="source\Debugger\Debugger_Types.h" />
     <ClInclude Include="source\Debugger\Util_MemoryTextFile.h" />
     <ClInclude Include="source\Debugger\Util_Text.h" />
+    <ClInclude Include="source\DirectInput.h" />
     <ClInclude Include="source\Disk.h" />
     <ClInclude Include="source\Disk2CardManager.h" />
     <ClInclude Include="source\DiskDefs.h" />
@@ -96,6 +97,7 @@
     <ClInclude Include="source\Speech.h" />
     <ClInclude Include="source\SSI263Phonemes.h" />
     <ClInclude Include="source\StdAfx.h" />
+    <ClInclude Include="source\SynchronousEventManager.h" />
     <ClInclude Include="source\Tape.h" />
     <ClInclude Include="source\Tfe\Bittypes.h" />
     <ClInclude Include="source\Tfe\Bpf.h" />
@@ -138,6 +140,7 @@
     <ClCompile Include="source\Configuration\PropertySheet.cpp" />
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\CPU.cpp" />
+    <ClCompile Include="source\DirectInput.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
     <ClCompile Include="source\SAM.cpp" />
@@ -184,6 +187,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="source\SynchronousEventManager.cpp" />
     <ClCompile Include="source\Tape.cpp" />
     <ClCompile Include="source\Tfe\Tfe.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>

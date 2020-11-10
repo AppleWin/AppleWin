@@ -2179,8 +2179,8 @@ _mono:
 }
 
 //===========================================================================
-void GenerateVideoTables( void );
-void GenerateBaseColors(baseColors_t pBaseNtscColors);
+static void GenerateVideoTables( void );
+static void GenerateBaseColors(baseColors_t pBaseNtscColors);
 
 void NTSC_Destroy(void)
 {
