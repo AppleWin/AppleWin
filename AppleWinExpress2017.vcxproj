@@ -84,6 +84,8 @@
     <ClInclude Include="source\ParallelPrinter.h" />
     <ClInclude Include="source\Pravets.h" />
     <ClInclude Include="source\Registry.h" />
+    <ClInclude Include="source\RemoteControl\Gamelink.h" />
+    <ClInclude Include="source\RemoteControl\RemoteControlManager.h" />
     <ClInclude Include="source\RGBMonitor.h" />
     <ClInclude Include="source\Riff.h" />
     <ClInclude Include="source\SAM.h" />
@@ -96,6 +98,7 @@
     <ClInclude Include="source\Speech.h" />
     <ClInclude Include="source\SSI263Phonemes.h" />
     <ClInclude Include="source\StdAfx.h" />
+    <ClInclude Include="source\SynchronousEventManager.h" />
     <ClInclude Include="source\Tape.h" />
     <ClInclude Include="source\Tfe\Bittypes.h" />
     <ClInclude Include="source\Tfe\Bpf.h" />
@@ -139,6 +142,8 @@
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\CPU.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
+    <ClCompile Include="source\RemoteControl\Gamelink.cpp" />
+    <ClCompile Include="source\RemoteControl\RemoteControlManager.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
     <ClCompile Include="source\SAM.cpp" />
     <ClCompile Include="source\Debugger\Debug.cpp" />
@@ -184,6 +189,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="source\SynchronousEventManager.cpp" />
     <ClCompile Include="source\Tape.cpp" />
     <ClCompile Include="source\Tfe\Tfe.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
@@ -235,7 +241,12 @@
     <None Include="resource\Apple2.rom" />
     <None Include="resource\Apple2e.rom" />
     <None Include="resource\Apple2e_Enhanced.rom" />
+    <None Include="resource\Apple2_JPlus.rom" />
+    <None Include="resource\Apple2_JPlus_Video.rom" />
     <None Include="resource\Apple2_Plus.rom" />
+    <None Include="resource\Base64A.rom" />
+    <None Include="resource\Base64A_German_Video.rom" />
+    <None Include="resource\Disk2-13sector.rom" />
     <None Include="resource\DISK2.rom" />
     <None Include="resource\Freezes_Non-autostart_F8_Rom.rom" />
     <None Include="resource\Hddrvr.bin" />
@@ -266,6 +277,7 @@
   <ItemGroup>
     <Image Include="resource\Applewin.bmp" />
     <Image Include="resource\APPLEWIN.ICO" />
+    <Image Include="resource\ApplewinLogo.bmp" />
     <Image Include="resource\CAPSOFF.BMP" />
     <Image Include="resource\CAPSOFF_P8.BMP" />
     <Image Include="resource\CAPSON.BMP" />
@@ -297,6 +309,7 @@
     <Image Include="resource\LED_CAPS_ON_P8.BMP" />
     <Image Include="resource\RUN.BMP" />
     <Image Include="resource\RUN3000E.bmp" />
+    <Image Include="resource\RUNBASE64A.BMP" />
     <Image Include="resource\RUNP.BMP" />
     <Image Include="resource\SETUP.BMP" />
   </ItemGroup>
@@ -371,7 +384,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>source\cpu;source\emulator;source\debugger;zlib;zip_lib;libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;zip_lib;libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -398,7 +411,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;NO_DIRECT_X;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>source\cpu;source\emulator;source\debugger;zlib;zip_lib;libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;zip_lib;libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -426,7 +439,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>source\cpu;source\emulator;source\debugger;zlib;zip_lib;libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;zip_lib;libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -458,7 +471,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;NO_DIRECT_X;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>source\cpu;source\emulator;source\debugger;zlib;zip_lib;libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;zip_lib;libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
