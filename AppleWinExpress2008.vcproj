@@ -622,6 +622,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\DirectInput.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\DirectInput.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Joystick.cpp"
 					>
 				</File>

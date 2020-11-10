@@ -37,7 +37,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskImage.h"
 #include "DiskImageHelper.h"
 #include "Log.h"
-#include "Card.h"
 #include "Memory.h"
 
 ImageInfo::ImageInfo()
