@@ -33,12 +33,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //=============================================================================
 
 //#define STRICT
-#define DIRECTINPUT_VERSION 0x0800
 
+#include "DirectInput.h"
 #include "SoundCore.h"	// SAFE_RELEASE()
 #include "Log.h"
-#include "DirectInput.h"
 #include "Common.h"
+
+#define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 
 extern bool g_bDisableDirectInput;	// currently in AppleWin.h

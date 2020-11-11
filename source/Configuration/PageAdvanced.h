@@ -1,7 +1,9 @@
 #pragma once
 
-#include "IPropertySheetPage.h"
 #include "PropertySheetDefs.h"
+#include "IPropertySheetPage.h"
+#include "Common.h"
+
 class CPropertySheetHelper;
 
 class CPageAdvanced : private IPropertySheetPage

@@ -1,5 +1,4 @@
-#ifndef AY8910_H
-#define AY8910_H
+#pragma once
 
 #define MAX_8910 4
 
@@ -87,5 +86,3 @@ private:
 	// Vars shared between all AY's
 	static double m_fCurrentCLK_AY8910;
 };
-
-#endif

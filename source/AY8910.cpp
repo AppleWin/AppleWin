@@ -26,7 +26,6 @@
 
 #include "StdAfx.h"
 
-#include <stdio.h>
 #include "AY8910.h"
 
 #include "Applewin.h"		// For g_fh

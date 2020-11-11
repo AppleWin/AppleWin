@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DiskDefs.h"
+#include "DiskImage.h"
 #include "zip.h"
 
 #define GZ_SUFFIX ".gz"

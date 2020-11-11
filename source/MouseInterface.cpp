@@ -41,6 +41,8 @@ Etc.
 
 
 #include "StdAfx.h"
+
+#include "MouseInterface.h"
 #include "SaveState_Structs_common.h"
 #include "Common.h"
 
@@ -50,7 +52,6 @@ Etc.
 #include "Frame.h"	// FrameSetCursorPosByMousePos()
 #include "Log.h"
 #include "Memory.h"
-#include "MouseInterface.h"
 #include "Video.h"
 #include "NTSC.h"	// NTSC_GetCyclesUntilVBlank()
 #include "YamlHelper.h"

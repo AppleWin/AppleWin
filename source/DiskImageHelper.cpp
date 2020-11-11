@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 #include "StdAfx.h"
+#include "DiskImageHelper.h"
+
 #include "Common.h"
 
 #include "zlib.h"
@@ -35,7 +37,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "CPU.h"
 #include "DiskImage.h"
-#include "DiskImageHelper.h"
 #include "Log.h"
 #include "Memory.h"
 

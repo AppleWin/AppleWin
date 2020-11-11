@@ -23,6 +23,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "PropertySheetHelper.h"
+#include "IPropertySheet.h"
+
 #include "../Applewin.h"	// g_nAppMode, g_uScrollLockToggle, sg_PropertySheet
 #include "../CardManager.h"
 #include "../Disk.h"
@@ -30,8 +33,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Log.h"
 #include "../Registry.h"
 #include "../SaveState.h"
-#include "IPropertySheet.h"
-#include "PropertySheetHelper.h"
 
 /*
 Config causing AfterClose msgs:

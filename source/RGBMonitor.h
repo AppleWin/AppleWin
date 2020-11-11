@@ -1,3 +1,7 @@
+#pragma once
+
+#include "Video.h"
+
 // Handling of RGB videocards
 
 enum RGB_Videocard_e

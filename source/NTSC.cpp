@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Includes
 	#include "StdAfx.h"
+	#include "NTSC.h"
 	#include "Applewin.h"
 	#include "CPU.h"	// CpuGetCyclesThisVideoFrame()
 	#include "Frame.h"
@@ -28,7 +29,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "Video.h"  // g_pFramebufferbits
 	#include "RGBMonitor.h"
 
-	#include "NTSC.h"
 	#include "NTSC_CharSet.h"
 
 
