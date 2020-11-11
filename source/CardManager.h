@@ -2,6 +2,7 @@
 
 #include "Card.h"
 #include "Disk2CardManager.h"
+#include "Common.h"
 
 class CardManager
 {

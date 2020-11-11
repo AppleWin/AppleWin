@@ -22,16 +22,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #include "StdAfx.h"
+
+#include "PageSound.h"
+#include "PropertySheetHelper.h"
+
 #include "../SaveState_Structs_common.h"
 #include "../Common.h"
-
 #include "../CardManager.h"
 #include "../Mockingboard.h"
 #include "../Registry.h"
 #include "../Speaker.h"
 #include "../resource/resource.h"
-#include "PageSound.h"
-#include "PropertySheetHelper.h"
 
 CPageSound* CPageSound::ms_this = 0;	// reinit'd in ctor
 

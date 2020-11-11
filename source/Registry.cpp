@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "Registry.h"
+
 extern std::string g_sConfigFile;
 
 namespace _ini {

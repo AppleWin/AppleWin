@@ -1,3 +1,5 @@
+#pragma once
+
 #include "6821.h"
 #include "Common.h"
 #include "Card.h"
