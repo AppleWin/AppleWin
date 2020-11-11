@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PropertySheetHelper.h"
 #include "IPropertySheet.h"
 
-#include "../Applewin.h"	// g_nAppMode, g_uScrollLockToggle, sg_PropertySheet
+#include "../AppleWin.h"	// g_nAppMode, g_uScrollLockToggle, sg_PropertySheet
 #include "../CardManager.h"
 #include "../Disk.h"
 #include "../Frame.h"

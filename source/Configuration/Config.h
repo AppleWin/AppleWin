@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Applewin.h"
+#include "../AppleWin.h"
 #include "../CardManager.h"
 #include "../CPU.h"
 #include "../DiskImage.h"	// Disk_Status_e

@@ -207,7 +207,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source\Applewin.h">
+    <ClInclude Include="source\AppleWin.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="source\CommonVICE\6510core.h">

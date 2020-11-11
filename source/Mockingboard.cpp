@@ -80,7 +80,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Mockingboard.h"
 #include "SaveState_Structs_v1.h"
 
-#include "Applewin.h"
+#include "AppleWin.h"
 #include "CardManager.h"
 #include "CPU.h"
 #include "Log.h"
