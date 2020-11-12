@@ -247,7 +247,7 @@ const UINT MaxRomPages = 4;		// For Copam Base64A
 const UINT Base64ARomSize = MaxRomPages * Apple2RomSize;
 
 // Called from MemLoadSnapshot()
-void ResetDefaultMachineMemTypes(void)
+static void ResetDefaultMachineMemTypes(void)
 {
 	g_MemTypeAppleII = CT_Empty;
 	g_MemTypeAppleIIPlus = CT_LanguageCard;

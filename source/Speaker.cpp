@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 // [OLD: 23.191 Apple CLKs == 44100Hz (CLK_6502/44100)]
 // 23 Apple CLKS per PC sample (played back at 44.1KHz)
-//
+// 
 //
 // The speaker's wave output drives how much 6502 emulation is done in real-time, eg:
 // If the speaker's wave buffer is running out of sample-data, then more 6502 cycles
@@ -129,21 +129,21 @@ static void DisplayBenchmarkResults ()
 //     and the samples are unaffected
 //   - if the counter is < 32768 but > 0, it is used to scale the
 //     sample to reduce +ve or -ve speaker states towards zero
-//   - In the two cases above, the counter is decremented
+//   - In the two cases above, the counter is decremented 
 //   - if the counter is zero, the speaker has been silent for a while
 //     and the output is 0 regardless of the speaker state.
 //
-// - the initial "high value" is chosen so 10000/44100 = about a
+// - the initial "high value" is chosen so 10000/44100 = about a 
 //   quarter of a second of speaker inactivity is needed before attenuation
 //   begins.
 //
 //   NOTE: The attenuation is not ever reducing the level of audio, just
-//         the DC offset at which the speaker has been left.
+//         the DC offset at which the speaker has been left.  
 //
 //  This approach has zero impact on any speaker tones including PWM
 //  due to the samples being unchanged for at least 0.25 seconds after
 //  any speaker activity.
-//
+// 
 
 static UINT g_uDCFilterState = 0;
 
@@ -214,7 +214,7 @@ void SpkrDestroy ()
 	{
 		delete [] g_pSpeakerBuffer;
 		delete [] g_pRemainderBuffer;
-
+		
 		g_pSpeakerBuffer = NULL;
 		g_pRemainderBuffer = NULL;
 	}
@@ -610,7 +610,7 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 				if(dwBufferSize1 > dwDSLockedBufferSize1)
 					dwBufferSize1 = dwDSLockedBufferSize1;
 			}
-
+			
 			memcpy(pDSLockedBuffer0, &pSpeakerBuffer[0], dwBufferSize0);
 #ifdef RIFF_SPKR
 			RiffPutSamples(pDSLockedBuffer0, dwBufferSize0/sizeof(short));
