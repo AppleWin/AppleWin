@@ -1503,36 +1503,36 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 
 		switch(chunkId)
 		{
-		case INFO_CHUNK_ID:
-			m_pInfo = (InfoChunkv2*)pImage32;
-			if (m_pInfo->v1.diskType != InfoChunk::diskType5_25)
-				return eMismatch;
-			break;
-		case TMAP_CHUNK_ID:
-			pImageInfo->pWOZTrackMap = (BYTE*) pImage32;
-			break;
-		case TRKS_CHUNK_ID:
-			dwOffset = pImageInfo->uOffset = pImageInfo->uImageSize - imageSizeRemaining;	// offset into image of track data
-			break;
-		case WRIT_CHUNK_ID:	// WOZ v2 (optional)
-			break;
-		case META_CHUNK_ID:	// (optional)
-			// get all metadata into usWOZMetadata
-			// Multiple values are "|" separated
-			szMetadata = std::string((const char*)pImage32, chunkSize);
-			ssMetadata = std::stringstream(szMetadata);
-			while (std::getline(ssMetadata, szTmp, cRowDelim))
-			{
-				iTabPos = szTmp.find(szColDelim);
-				if (iTabPos && (iTabPos < szTmp.length()))
+			case INFO_CHUNK_ID:
+				m_pInfo = (InfoChunkv2*)pImage32;
+				if (m_pInfo->v1.diskType != InfoChunk::diskType5_25)
+					return eMismatch;
+				break;
+			case TMAP_CHUNK_ID:
+				pImageInfo->pWOZTrackMap = (BYTE*) pImage32;
+				break;
+			case TRKS_CHUNK_ID:
+				dwOffset = pImageInfo->uOffset = pImageInfo->uImageSize - imageSizeRemaining;	// offset into image of track data
+				break;
+			case WRIT_CHUNK_ID:	// WOZ v2 (optional)
+				break;
+			case META_CHUNK_ID:	// (optional)
+				// get all metadata into usWOZMetadata
+				// Multiple values are "|" separated
+				szMetadata = std::string((const char*)pImage32, chunkSize);
+				ssMetadata = std::stringstream(szMetadata);
+				while (std::getline(ssMetadata, szTmp, cRowDelim))
 				{
-					pImageInfo->umWOZMetadata[szTmp.substr(0, iTabPos)] = szTmp.substr(iTabPos+1);
+					iTabPos = szTmp.find(szColDelim);
+					if (iTabPos && (iTabPos < szTmp.length()))
+					{
+						pImageInfo->umWOZMetadata[szTmp.substr(0, iTabPos)] = szTmp.substr(iTabPos+1);
+					}
 				}
-			}
-			break;
-		default:	// no idea what this chunk is, so skip it
-			_ASSERT(0);
-			break;
+				break;
+			default:	// no idea what this chunk is, so skip it
+				_ASSERT(0);
+				break;
 		}
 
 		pImage32 = (UINT32*) ((BYTE*)pImage32 + chunkSize);
