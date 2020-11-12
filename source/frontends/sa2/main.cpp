@@ -133,11 +133,12 @@ namespace
   Uint32 my_callbackfunc(Uint32 interval, void *param)
   {
     Data * data = static_cast<Data *>(param);
-    SDL_LockMutex(data->mutex);
-    SDirectSound::writeAudio();
-    data->emulator->processEvents(data->quit);
-    data->emulator->executeOneFrame();
-    SDL_UnlockMutex(data->mutex);
+    if (!data->quit)
+    {
+      SDL_LockMutex(data->mutex);
+      data->emulator->executeOneFrame();
+      SDL_UnlockMutex(data->mutex);
+    }
     return interval;
   }
 
@@ -241,12 +242,16 @@ void run_sdl(int argc, const char * argv [])
   do
   {
     SDL_LockMutex(data.mutex);
-    const SDL_Rect rect = emulator.updateTexture();
+    SDirectSound::writeAudio();
+    emulator.processEvents(data.quit);
     SDL_UnlockMutex(data.mutex);
+    const SDL_Rect rect = emulator.updateTexture();
     emulator.refreshVideo(rect);
   } while (!data.quit);
 
   SDL_RemoveTimer(timer);
+  // if the following enough to make sure the timer has finished
+  // and wont be called again?
   SDL_LockMutex(data.mutex);
   SDL_UnlockMutex(data.mutex);
 
