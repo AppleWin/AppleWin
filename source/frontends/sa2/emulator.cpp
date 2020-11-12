@@ -212,11 +212,14 @@ void Emulator::executeOneFrame()
   myExtraCycles = uCyclesToExecute - totalCyclesExecuted;
 }
 
-void Emulator::refreshVideo()
+SDL_Rect Emulator::updateTexture()
 {
-  // SDL2 seems to synch with screen refresh rate so we do not need to worry about timers
-  const SDL_Rect srect = refreshTexture(myTexture);
-  renderScreen(myRenderer, myTexture, srect);
+  return refreshTexture(myTexture);
+}
+
+void Emulator::refreshVideo(const SDL_Rect & rect)
+{
+  renderScreen(myRenderer, myTexture, rect);
 }
 
 void Emulator::processEvents(bool & quit)

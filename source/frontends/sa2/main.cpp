@@ -1,6 +1,7 @@
 #include <iostream>
 #include <SDL.h>
 #include <memory>
+#include <chrono>
 
 #include "linux/interface.h"
 #include "linux/windows/misc.h"
@@ -210,14 +211,42 @@ void run_sdl(int argc, const char * argv [])
 
   Emulator emulator(win, ren, tex);
 
+  int tot1 = 0;
+  int tot2 = 0;
+  int tot3 = 0;
+  int tot4 = 0;
+
+  const auto start = std::chrono::steady_clock::now();
+  auto t0 = start;
+
   bool quit = false;
   do
   {
     SDirectSound::writeAudio();
     emulator.processEvents(quit);
+    const auto t1 = std::chrono::steady_clock::now();
+    tot1 += std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
     emulator.executeOneFrame();
-    emulator.refreshVideo();
+    const auto t2 = std::chrono::steady_clock::now();
+    tot2 += std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    const SDL_Rect rect = emulator.updateTexture();
+    const auto t3 = std::chrono::steady_clock::now();
+    tot3 += std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2).count();
+    emulator.refreshVideo(rect);
+    const auto t4 = std::chrono::steady_clock::now();
+    tot4 += std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count();
+    t0 = t4;
   } while (!quit);
+
+  const auto end = std::chrono::steady_clock::now();
+  const int tot = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+  std::cerr << "Total: " << tot << std::endl;
+  std::cerr << "1: " << tot1 << std::endl;
+  std::cerr << "2: " << tot2 << std::endl;
+  std::cerr << "3: " << tot3 << std::endl;
+  std::cerr << "4: " << tot4 << std::endl;
+  std::cerr << "T: " << tot1 + tot2 + tot3 + tot4 << std::endl;
 
   SDirectSound::stop();
   stopEmulator();

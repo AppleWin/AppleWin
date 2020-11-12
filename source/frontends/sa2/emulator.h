@@ -14,6 +14,9 @@ public:
 
   void executeOneFrame();
   void refreshVideo();
+  SDL_Rect updateTexture();
+  void refreshVideo(const SDL_Rect & rect);
+
   void processEvents(bool & quit);
 
 private:
