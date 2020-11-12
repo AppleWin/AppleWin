@@ -11,7 +11,7 @@
 #include "SaveState_Structs_v1.h"
 #include "Registry.h"
 #include "Log.h"
-#include "Applewin.h"
+#include "AppleWin.h"
 #include "CPU.h"
 #include "Joystick.h"
 #include "DiskImage.h"

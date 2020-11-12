@@ -9,7 +9,7 @@
 #include "StdAfx.h"
 #include "Common.h"
 #include "CardManager.h"
-#include "Applewin.h"
+#include "AppleWin.h"
 #include "Disk.h"
 #include "CPU.h"
 #include "Frame.h"

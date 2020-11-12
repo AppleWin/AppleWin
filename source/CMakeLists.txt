@@ -76,9 +76,13 @@ find_package(Boost REQUIRED)
 
 target_include_directories(appleii PRIVATE
   ${YAML_INCLUDE_DIRS}
-  ${MINIZIP_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   Debugger
+  )
+
+# this one appears in header files
+target_include_directories(appleii PUBLIC
+  ${MINIZIP_INCLUDE_DIRS}
   )
 
 target_link_libraries(appleii PRIVATE

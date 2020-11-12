@@ -3,7 +3,7 @@
 #include "Video.h"
 #include "Common.h"
 #include "CardManager.h"
-#include "Applewin.h"
+#include "AppleWin.h"
 #include "Memory.h"
 #include "Common.h"
 #include "Frame.h"

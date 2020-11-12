@@ -1,7 +1,7 @@
 #include "linux/keyboard.h"
 
 #include "StdAfx.h"
-#include "Applewin.h"
+#include "AppleWin.h"
 #include "YamlHelper.h"
 
 #include <queue>

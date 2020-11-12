@@ -4,7 +4,7 @@
 #include "StdAfx.h"
 #include "Common.h"
 #include "CardManager.h"
-#include "Applewin.h"
+#include "AppleWin.h"
 #include "Disk.h"
 #include "Harddisk.h"
 #include "Log.h"
@@ -86,7 +86,7 @@ namespace
 
         FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
-        ResetDefaultMachineMemTypes();
+        // ResetDefaultMachineMemTypes();
 
         switch (options.slot0Card) {
         case 1: // Language Card

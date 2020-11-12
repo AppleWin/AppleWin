@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 #include "Common.h"
-#include "Applewin.h"
+#include "AppleWin.h"
 #include "CardManager.h"
 #include "Disk.h"
 #include "SaveState.h"

@@ -10,7 +10,7 @@
 #include "Common.h"
 #include "CardManager.h"
 #include "MouseInterface.h"
-#include "Applewin.h"
+#include "AppleWin.h"
 
 Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
 {

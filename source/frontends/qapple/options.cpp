@@ -3,7 +3,7 @@
 #include "StdAfx.h"
 #include "Common.h"
 #include "CardManager.h"
-#include "Applewin.h"
+#include "AppleWin.h"
 #include "Disk.h"
 #include "Harddisk.h"
 #include "Registry.h"

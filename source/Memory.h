@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Card.h"
 
 // Memory Flag
 #define  MF_80STORE    0x00000001

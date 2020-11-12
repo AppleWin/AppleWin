@@ -17,7 +17,7 @@
 #include "StdAfx.h"
 #include "Common.h"
 #include "CardManager.h"
-#include "Applewin.h"
+#include "AppleWin.h"
 #include "Disk.h"
 #include "Mockingboard.h"
 #include "SoundCore.h"
@@ -53,7 +53,6 @@ namespace
     CheckCpu();
     SetWindowTitle();
     FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
-    ResetDefaultMachineMemTypes();
 
     DSInit();
     MB_Initialize();
