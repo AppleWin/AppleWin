@@ -197,12 +197,15 @@ void run_sdl(int argc, const char * argv [])
   SDL_RendererInfo info;
   SDL_GetRendererInfo(ren.get(), &info);
 
+  std::cerr << "SDL Renderer:" << info.name << std::endl;
   for (size_t i = 0; i < info.num_texture_formats; ++i)
   {
       std::cerr << SDL_GetPixelFormatName(info.texture_formats[i]) << std::endl;
   }
 
   const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
+  std::cerr << "Selected format: " << SDL_GetPixelFormatName(format) << std::endl;
+
   std::shared_ptr<SDL_Texture> tex(SDL_CreateTexture(ren.get(), format, SDL_TEXTUREACCESS_STATIC, width, height), SDL_DestroyTexture);
 
   Emulator emulator(win, ren, tex);

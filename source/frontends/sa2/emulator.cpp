@@ -30,18 +30,8 @@ namespace
     int sw, sh;
 
     getScreenData(data, width, height, sx, sy, sw, sh);
-
-#if 0
-    void * pixels;
-    int pitch;
-    SDL_LockTexture(tex.get(), nullptr, &pixels, &pitch);
-
-    memcpy(pixels, data, width * height * 4);
-
-    SDL_UnlockTexture(tex.get());
-#else
     SDL_UpdateTexture(tex.get(), nullptr, data, width * 4);
-#endif
+
     SDL_Rect srect;
     srect.x = sx;
     srect.y = sy;
