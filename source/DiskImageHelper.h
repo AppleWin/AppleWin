@@ -2,6 +2,7 @@
 
 #include "DiskDefs.h"
 #include "zip.h"
+#include <unordered_map>
 
 #define GZ_SUFFIX ".gz"
 #define GZ_SUFFIX_LEN (sizeof(GZ_SUFFIX)-1)
@@ -32,12 +33,14 @@ struct ImageInfo
 	zip_fileinfo	zipFileInfo;
 	UINT			uNumEntriesInZip;
 	UINT			uNumValidImagesInZip;
+	UINT32			iCRC32;
 	// Floppy only
 	UINT			uNumTracks;
 	BYTE*			pImageBuffer;
 	BYTE*			pWOZTrackMap;		// WOZ only (points into pImageBuffer)
 	BYTE			optimalBitTiming;	// WOZ only
 	BYTE			bootSectorFormat;	// WOZ only
+	std::unordered_map<std::string, std::string>	umWOZMetadata;	// WOZ only
 	UINT			maxNibblesPerTrack;
 
 	ImageInfo();

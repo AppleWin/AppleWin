@@ -85,6 +85,9 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 
 	*pWriteProtected = pImageInfo->bWriteProtected;
 
+	// Calculate the CRC32 of the whole image for any image
+	pImageInfo->iCRC32 = crc32(0, pImageInfo->pImageBuffer, sizeof(pImageInfo->pImageBuffer));
+
 	return eIMAGE_ERROR_NONE;
 }
 

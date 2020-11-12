@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskImageHelper.h"
 #include "Log.h"
 #include "Memory.h"
+#include <sstream>
 
 ImageInfo::ImageInfo()
 {
@@ -55,6 +56,7 @@ ImageInfo::ImageInfo()
 	uNumValidImagesInZip = 0;
 	uNumTracks = 0;
 	pImageBuffer = NULL;
+	iCRC32 = 0;
 	pWOZTrackMap = NULL;
 	optimalBitTiming = 0;
 	bootSectorFormat = CWOZHelper::bootUnknown;
@@ -1483,6 +1485,16 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 	if (imageSizeRemaining < 0)
 		return eMismatch;
 
+	std::string szMetadata;
+	std::stringstream ssMetadata;
+	std::string szTmp;
+	const char cRowDelim = '\n';
+	std::string szColDelim = "\t";
+	size_t iTabPos;
+	std::unordered_map<std::string, std::string>::const_iterator pTitlePos;
+
+	pImageInfo->iCRC32 = (UINT32)(pImageInfo->pImageBuffer + 8);	// The CRC32 of the image chunks, stored in the WOZ header
+
 	while(imageSizeRemaining >= sizeof(WOZChunkHdr))
 	{
 		UINT32 chunkId = *pImage32++;
@@ -1491,24 +1503,36 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 
 		switch(chunkId)
 		{
-			case INFO_CHUNK_ID:
-				m_pInfo = (InfoChunkv2*)pImage32;
-				if (m_pInfo->v1.diskType != InfoChunk::diskType5_25)
-					return eMismatch;
-				break;
-			case TMAP_CHUNK_ID:
-				pImageInfo->pWOZTrackMap = (BYTE*) pImage32;
-				break;
-			case TRKS_CHUNK_ID:
-				dwOffset = pImageInfo->uOffset = pImageInfo->uImageSize - imageSizeRemaining;	// offset into image of track data
-				break;
-			case WRIT_CHUNK_ID:	// WOZ v2 (optional)
-				break;
-			case META_CHUNK_ID:	// (optional)
-				break;
-			default:	// no idea what this chunk is, so skip it
-				_ASSERT(0);
-				break;
+		case INFO_CHUNK_ID:
+			m_pInfo = (InfoChunkv2*)pImage32;
+			if (m_pInfo->v1.diskType != InfoChunk::diskType5_25)
+				return eMismatch;
+			break;
+		case TMAP_CHUNK_ID:
+			pImageInfo->pWOZTrackMap = (BYTE*) pImage32;
+			break;
+		case TRKS_CHUNK_ID:
+			dwOffset = pImageInfo->uOffset = pImageInfo->uImageSize - imageSizeRemaining;	// offset into image of track data
+			break;
+		case WRIT_CHUNK_ID:	// WOZ v2 (optional)
+			break;
+		case META_CHUNK_ID:	// (optional)
+			// get all metadata into usWOZMetadata
+			// Multiple values are "|" separated
+			szMetadata = std::string((const char*)pImage32, chunkSize);
+			ssMetadata = std::stringstream(szMetadata);
+			while (std::getline(ssMetadata, szTmp, cRowDelim))
+			{
+				iTabPos = szTmp.find(szColDelim);
+				if (iTabPos && (iTabPos < szTmp.length()))
+				{
+					pImageInfo->umWOZMetadata[szTmp.substr(0, iTabPos)] = szTmp.substr(iTabPos+1);
+				}
+			}
+			break;
+		default:	// no idea what this chunk is, so skip it
+			_ASSERT(0);
+			break;
 		}
 
 		pImage32 = (UINT32*) ((BYTE*)pImage32 + chunkSize);
