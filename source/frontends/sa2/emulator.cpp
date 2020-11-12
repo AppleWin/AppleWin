@@ -182,21 +182,38 @@ Emulator::Emulator(
   , myFPS(getFPS())
   , myMultiplier(1)
   , myFullscreen(false)
+  , myExtraCycles(0)
 {
 }
 
 void Emulator::executeOneFrame()
 {
-  const DWORD uCyclesToExecute = int(g_fCurrentCLK6502 / myFPS);
-  const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
   const bool bVideoUpdate = true;
-  const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
-  g_dwCyclesThisFrame = (g_dwCyclesThisFrame + uActualCyclesExecuted) % dwClksPerFrame;
+  const int nExecutionPeriodUsec = 1000;		// 1.0ms
+  const double fUsecPerSec = 1.e6;
+  const double fExecutionPeriodClks = int(g_fCurrentCLK6502 * (nExecutionPeriodUsec / fUsecPerSec));
 
-  GetCardMgr().GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
-  MB_PeriodicUpdate(uActualCyclesExecuted);
-  SpkrUpdate(uActualCyclesExecuted);
+  int totalCyclesExecuted = 0;
+  const DWORD uCyclesToExecute = int(g_fCurrentCLK6502 / myFPS) + myExtraCycles;
+  const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 
+  while (totalCyclesExecuted < uCyclesToExecute)
+  {
+    // go in small steps of 1ms
+    const DWORD uActualCyclesExecuted = CpuExecute(fExecutionPeriodClks, bVideoUpdate);
+    totalCyclesExecuted += uActualCyclesExecuted;
+    g_dwCyclesThisFrame = (g_dwCyclesThisFrame + uActualCyclesExecuted) % dwClksPerFrame;
+
+    GetCardMgr().GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
+    MB_PeriodicUpdate(uActualCyclesExecuted);
+    SpkrUpdate(uActualCyclesExecuted);
+  }
+
+  myExtraCycles = uCyclesToExecute - totalCyclesExecuted;
+}
+
+void Emulator::refreshVideo()
+{
   // SDL2 seems to synch with screen refresh rate so we do not need to worry about timers
   const SDL_Rect srect = refreshTexture(myTexture);
   renderScreen(myRenderer, myTexture, srect);

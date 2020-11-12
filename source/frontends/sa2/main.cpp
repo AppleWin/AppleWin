@@ -216,6 +216,7 @@ void run_sdl(int argc, const char * argv [])
     SDirectSound::writeAudio();
     emulator.processEvents(quit);
     emulator.executeOneFrame();
+    emulator.refreshVideo();
   } while (!quit);
 
   SDirectSound::stop();

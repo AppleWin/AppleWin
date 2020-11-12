@@ -13,6 +13,7 @@ public:
     );
 
   void executeOneFrame();
+  void refreshVideo();
   void processEvents(bool & quit);
 
 private:
@@ -27,4 +28,5 @@ private:
 
   int myMultiplier;
   bool myFullscreen;
+  int myExtraCycles;
 };
