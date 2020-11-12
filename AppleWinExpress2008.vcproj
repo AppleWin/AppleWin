@@ -227,7 +227,7 @@
 			Filter=".cpp"
 			>
 			<File
-				RelativePath=".\source\Applewin.cpp"
+				RelativePath=".\source\AppleWin.cpp"
 				>
 			</File>
 			<File
