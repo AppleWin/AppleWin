@@ -1,7 +1,8 @@
 #pragma once
 
 #include "DiskDefs.h"
-#include "minizip/zip.h"
+#include "DiskImage.h"
+#include "zip.h"
 
 #define GZ_SUFFIX ".gz"
 #define GZ_SUFFIX_LEN (sizeof(GZ_SUFFIX)-1)

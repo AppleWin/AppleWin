@@ -30,11 +30,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "Disk.h"
+
 #include "SaveState_Structs_v1.h"
 
-#include "Applewin.h"
+#include "AppleWin.h"
 #include "CPU.h"
-#include "Disk.h"
 #include "DiskImage.h"
 #include "Frame.h"
 #include "Log.h"
@@ -1189,8 +1190,8 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 		drive.m_headWindow <<= 1;
 		drive.m_headWindow |= (n & floppy.m_bitMask) ? 1 : 0;
-		BYTE outputBit = (drive.m_headWindow & 0xf) ? (drive.m_headWindow >> 1) & 1
-		  : (rand() < (RAND_MAX / 10 * 3)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
+		BYTE outputBit = (drive.m_headWindow & 0xf)	? (drive.m_headWindow >> 1) & 1
+													: (rand() < RAND_THRESHOLD(3, 10)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
 
 		IncBitStream(floppy);
 

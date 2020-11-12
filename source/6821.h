@@ -1,3 +1,5 @@
+#pragma once
+
 /*
  * mc6821.h - MC6821 emulation for the 1571 disk drives with DD3.
  *

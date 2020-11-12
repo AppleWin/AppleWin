@@ -1,3 +1,5 @@
+#pragma once
+
 #define LOG_DISK_ENABLED 0	// Master enable
 
 #define LOG_DISK_TRACKS 1

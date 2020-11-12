@@ -15,10 +15,10 @@
 
 #include "StdAfx.h"
 
-#include "Applewin.h"
+#include "z80emu.h"
+#include "AppleWin.h"
 #include "CPU.h"
 #include "Memory.h"
-#include "z80emu.h"
 
 // Variaveis
 static int g_uCPMZ80Slot = 0;

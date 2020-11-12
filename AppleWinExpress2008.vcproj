@@ -231,7 +231,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\source\Applewin.h"
+				RelativePath=".\source\AppleWin.h"
 				>
 			</File>
 			<File
@@ -619,6 +619,14 @@
 				</File>
 				<File
 					RelativePath=".\source\CardManager.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\DirectInput.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\DirectInput.h"
 					>
 				</File>
 				<File

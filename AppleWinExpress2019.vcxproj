@@ -22,7 +22,7 @@
     <ClInclude Include="resource\resource.h" />
     <ClInclude Include="resource\winres.h" />
     <ClInclude Include="source\6821.h" />
-    <ClInclude Include="source\Applewin.h" />
+    <ClInclude Include="source\AppleWin.h" />
     <ClInclude Include="source\AY8910.h" />
     <ClInclude Include="source\Card.h" />
     <ClInclude Include="source\CardManager.h" />
@@ -62,6 +62,7 @@
     <ClInclude Include="source\Debugger\Debugger_Types.h" />
     <ClInclude Include="source\Debugger\Util_MemoryTextFile.h" />
     <ClInclude Include="source\Debugger\Util_Text.h" />
+    <ClInclude Include="source\DirectInput.h" />
     <ClInclude Include="source\Disk.h" />
     <ClInclude Include="source\Disk2CardManager.h" />
     <ClInclude Include="source\DiskDefs.h" />
@@ -139,6 +140,7 @@
     <ClCompile Include="source\Configuration\PropertySheet.cpp" />
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\CPU.cpp" />
+    <ClCompile Include="source\DirectInput.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
     <ClCompile Include="source\SAM.cpp" />

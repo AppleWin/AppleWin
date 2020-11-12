@@ -1,7 +1,6 @@
 #pragma once
 
-#include "SaveState_Structs_common.h"
-#include "Card.h"
+#include "Common.h"
 
 // Memory Flag
 #define  MF_80STORE    0x00000001
@@ -103,7 +102,6 @@ BYTE __stdcall MemSetPaging(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExec
 
 enum SS_CARDTYPE;
 void	SetExpansionMemType(const SS_CARDTYPE type);
-void	ResetDefaultMachineMemTypes(void);
 SS_CARDTYPE GetCurrentExpansionMemType(void);
 void	CreateLanguageCard(void);
 

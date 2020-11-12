@@ -3,6 +3,8 @@
 #include "IPropertySheetPage.h"
 #include "PropertySheetDefs.h"
 #include "PageConfigTfe.h"
+#include "Common.h"
+
 class CPropertySheetHelper;
 
 class CPageConfig : private IPropertySheetPage

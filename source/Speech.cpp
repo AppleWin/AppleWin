@@ -1,8 +1,9 @@
 #include "StdAfx.h"
 
+#include "Speech.h"
+
 #ifdef USE_SPEECH_API
 #include <sapi.h>
-#include "Speech.h"
 
 CSpeech::~CSpeech(void)
 {

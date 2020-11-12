@@ -20,11 +20,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #include "StdAfx.h"
-#include "Applewin.h"
+#include "NTSC_CharSet.h"
+#include "AppleWin.h"
 #include "../resource/resource.h"
 #include "Video.h"
 
-#include "NTSC_CharSet.h"
 
 unsigned char csbits_enhanced2e[2][256][8];	// Enhanced //e (2732 4K video ROM)
 static unsigned char csbits_2e_pal[2][256][8];	// PAL Original or Enhanced //e (2764 8K video ROM - low 4K) via rocker switch under keyboard

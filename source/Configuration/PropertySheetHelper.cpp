@@ -23,15 +23,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "../Applewin.h"	// g_nAppMode, g_uScrollLockToggle, sg_PropertySheet
+#include "PropertySheetHelper.h"
+#include "IPropertySheet.h"
+
+#include "../AppleWin.h"	// g_nAppMode, g_uScrollLockToggle, sg_PropertySheet
 #include "../CardManager.h"
 #include "../Disk.h"
 #include "../Frame.h"
 #include "../Log.h"
 #include "../Registry.h"
 #include "../SaveState.h"
-#include "IPropertySheet.h"
-#include "PropertySheetHelper.h"
 
 /*
 Config causing AfterClose msgs:

@@ -1,3 +1,5 @@
+#pragma once
+
 /*  Emulador do computador TK3000 //e (Microdigital)
  *  por Fábio Belavenuto - Copyright (C) 2004
  *

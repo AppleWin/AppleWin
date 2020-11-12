@@ -1,3 +1,5 @@
+#pragma once
+
 #include "6821.h"
 #include "Common.h"
 #include "Card.h"
@@ -106,11 +108,4 @@ protected:
 	UINT	m_uSlot;
 
 	SyncEvent m_syncEvent;
-};
-
-namespace DIMouse
-{
-	HRESULT DirectInputInit( HWND hDlg );
-	void DirectInputUninit( HWND hDlg );
-	HRESULT ReadImmediateData( long* pX=NULL, long* pY=NULL );
 };

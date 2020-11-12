@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Debug.h"
 
-#include "../Applewin.h"
+#include "../AppleWin.h"
 
 
 #define DEBUG_COLOR_CONSOLE 0

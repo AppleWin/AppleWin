@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-#include "../../source/Applewin.h"
+#include "../../source/AppleWin.h"
 #include "../../source/CPU.h"
 #include "../../source/Memory.h"
 #include "../../source/SynchronousEventManager.h"

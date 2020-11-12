@@ -25,6 +25,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "DiskDefs.h"
 
+#ifdef _MSC_VER
+
+#define RAND_THRESHOLD(num, den) ((RAND_MAX * num) / den)
+
+#else
+
+// RAND_MAX is a massive number which overflows when (* num) is applied above
+#define RAND_THRESHOLD(num, den) ((RAND_MAX / den) * num)
+
+#endif
+
+
 	#define TRACK_DENIBBLIZED_SIZE (16 * 256)	// #Sectors x Sector-size
 
 	#define	TRACKS_STANDARD	35

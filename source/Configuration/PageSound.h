@@ -2,6 +2,8 @@
 
 #include "IPropertySheetPage.h"
 #include "PropertySheetDefs.h"
+#include "Card.h"
+
 class CPropertySheetHelper;
 
 class CPageSound : private IPropertySheetPage

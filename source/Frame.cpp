@@ -27,20 +27,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
-#include <sys/stat.h>
 
-#include "Applewin.h"
+#include "Frame.h"
+#include "AppleWin.h"
 #include "CardManager.h"
 #include "CPU.h"
 #include "Disk.h"
 #include "DiskImage.h"
 #include "Harddisk.h"
-#include "Frame.h"
 #include "Keyboard.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"
+#include "DirectInput.h"
 #include "NTSC.h"
 #include "ParallelPrinter.h"
 #include "Pravets.h"

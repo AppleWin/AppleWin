@@ -28,7 +28,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "Applewin.h"
+#include "Video.h"
+#include "AppleWin.h"
 #include "CPU.h"
 #include "Disk.h"		// DiskUpdateDriveState()
 #include "Frame.h"
@@ -36,7 +37,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Log.h"
 #include "Memory.h"
 #include "Registry.h"
-#include "Video.h"
 #include "NTSC.h"
 #include "RGBMonitor.h"
 

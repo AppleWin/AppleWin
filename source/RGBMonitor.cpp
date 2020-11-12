@@ -2,10 +2,11 @@
 
 #include "StdAfx.h"
 
+#include "RGBMonitor.h"
 #include "Frame.h"
 #include "Memory.h" // MemGetMainPtr() MemGetAuxPtr()
 #include "Video.h"
-#include "RGBMonitor.h"
+#include "Card.h"
 #include "YamlHelper.h"
 
 

@@ -30,9 +30,16 @@ This is for shared vars, enums, structs, classes, etc.
 EG. const/enum/struct
 Obviously not for global funcs or vars.
 
-1.4: PCH (StdAfx.h)
-Could ditch this.
-Does this gain anything for such a simple project?
+1.4: At the start of each header file it must contain: #pragma once
+
+1.5: Each module (.cpp) to include stdafx.h, and then immediately after include
+the header file for that module.
+EG. For Debug.cpp:
+#include "stdafx.h"
+#include "Debug."
+
+This ensures that this header file can be included in any order in another module,
+and therefore by extension all header files can be included in any order.
 
 -------------------------------------------------------------------------------
 

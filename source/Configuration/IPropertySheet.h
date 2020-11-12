@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Common.h"
+
 class CConfigNeedingRestart;
 
 __interface IPropertySheet

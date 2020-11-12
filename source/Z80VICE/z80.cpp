@@ -26,7 +26,7 @@
 
 #include "../StdAfx.h"
 
-#include "../Applewin.h"
+#include "../AppleWin.h"
 #include "../CPU.h"
 #include "../Memory.h"
 #include "../YamlHelper.h"

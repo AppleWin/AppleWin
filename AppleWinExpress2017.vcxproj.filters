@@ -199,9 +199,15 @@
     <ClCompile Include="source\CardManager.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\SynchronousEventManager.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
+    <ClCompile Include="source\DirectInput.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source\Applewin.h">
+    <ClInclude Include="source\AppleWin.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="source\CommonVICE\6510core.h">
@@ -481,6 +487,12 @@
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
     <ClInclude Include="source\CardManager.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\SynchronousEventManager.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\DirectInput.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
   </ItemGroup>
