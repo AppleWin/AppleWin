@@ -123,6 +123,24 @@ namespace
     RiffFinishWriteFile();
   }
 
+  struct Data
+  {
+    Emulator * emulator;
+    SDL_mutex * mutex;
+    bool quit;
+  };
+
+  Uint32 my_callbackfunc(Uint32 interval, void *param)
+  {
+    Data * data = static_cast<Data *>(param);
+    SDL_LockMutex(data->mutex);
+    SDirectSound::writeAudio();
+    data->emulator->processEvents(data->quit);
+    data->emulator->executeOneFrame();
+    SDL_UnlockMutex(data->mutex);
+    return interval;
+  }
+
 }
 
 int MessageBox(HWND, const char * text, const char * caption, UINT type)
@@ -211,42 +229,26 @@ void run_sdl(int argc, const char * argv [])
 
   Emulator emulator(win, ren, tex);
 
-  int tot1 = 0;
-  int tot2 = 0;
-  int tot3 = 0;
-  int tot4 = 0;
+  std::shared_ptr<SDL_mutex> mutex(SDL_CreateMutex(), SDL_DestroyMutex);
 
-  const auto start = std::chrono::steady_clock::now();
-  auto t0 = start;
+  Data data;
+  data.quit = false;
+  data.mutex = mutex.get();
+  data.emulator = &emulator;
 
-  bool quit = false;
+  SDL_TimerID timer = SDL_AddTimer(1000 / 60, my_callbackfunc, &data);
+
   do
   {
-    SDirectSound::writeAudio();
-    emulator.processEvents(quit);
-    const auto t1 = std::chrono::steady_clock::now();
-    tot1 += std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
-    emulator.executeOneFrame();
-    const auto t2 = std::chrono::steady_clock::now();
-    tot2 += std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    SDL_LockMutex(data.mutex);
     const SDL_Rect rect = emulator.updateTexture();
-    const auto t3 = std::chrono::steady_clock::now();
-    tot3 += std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2).count();
+    SDL_UnlockMutex(data.mutex);
     emulator.refreshVideo(rect);
-    const auto t4 = std::chrono::steady_clock::now();
-    tot4 += std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count();
-    t0 = t4;
-  } while (!quit);
+  } while (!data.quit);
 
-  const auto end = std::chrono::steady_clock::now();
-  const int tot = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-
-  std::cerr << "Total: " << tot << std::endl;
-  std::cerr << "1: " << tot1 << std::endl;
-  std::cerr << "2: " << tot2 << std::endl;
-  std::cerr << "3: " << tot3 << std::endl;
-  std::cerr << "4: " << tot4 << std::endl;
-  std::cerr << "T: " << tot1 + tot2 + tot3 + tot4 << std::endl;
+  SDL_RemoveTimer(timer);
+  SDL_LockMutex(data.mutex);
+  SDL_UnlockMutex(data.mutex);
 
   SDirectSound::stop();
   stopEmulator();
@@ -256,7 +258,8 @@ void run_sdl(int argc, const char * argv [])
 int main(int argc, const char * argv [])
 {
   //First we need to start up SDL, and make sure it went ok
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) != 0)
+  const Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO | SDL_INIT_TIMER;
+  if (SDL_Init(flags) != 0)
   {
     std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
     return 1;
