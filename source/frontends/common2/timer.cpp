@@ -28,6 +28,11 @@ void Timer::toc()
   myT0 = now;
 }
 
+double Timer::getTimeInSeconds() const
+{
+  return mySum;
+}
+
 std::ostream& operator<<(std::ostream& os, const Timer & timer)
 {
   const double m1 = timer.mySum / timer.myN;

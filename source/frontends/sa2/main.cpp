@@ -232,7 +232,7 @@ void run_sdl(int argc, const char * argv [])
   SDL_RendererInfo info;
   SDL_GetRendererInfo(ren.get(), &info);
 
-  std::cerr << "SDL Renderer:" << info.name << std::endl;
+  std::cerr << "SDL Renderer: " << info.name << std::endl;
   for (size_t i = 0; i < info.num_texture_formats; ++i)
   {
       std::cerr << SDL_GetPixelFormatName(info.texture_formats[i]) << std::endl;
@@ -251,8 +251,23 @@ void run_sdl(int argc, const char * argv [])
   Timer cpuTimer;
   Timer eventTimer;
 
+  const std::string globalTag = ". .";
+  std::string updateTextureTimerTag, refreshScreenTimerTag, cpuTimerTag, eventTimerTag;
+
   if (options.multiThreaded)
   {
+    refreshScreenTimerTag = "0 .";
+    cpuTimerTag           = "1 M";
+    eventTimerTag         = "0 M";
+    if (options.looseMutex)
+    {
+      updateTextureTimerTag = "0 .";
+    }
+    else
+    {
+      updateTextureTimerTag = "0 M";
+    }
+
     std::shared_ptr<SDL_mutex> mutex(SDL_CreateMutex(), SDL_DestroyMutex);
 
     Data data;
@@ -307,12 +322,14 @@ void run_sdl(int argc, const char * argv [])
   }
   else
   {
+    refreshScreenTimerTag = "0 .";
+    cpuTimerTag           = "0 .";
+    eventTimerTag         = "0 .";
+    updateTextureTimerTag = "0 .";
+
     const int fps = getFPS();
     bool quit = false;
     const int uCyclesToExecute = int(g_fCurrentCLK6502 / fps);
-
-    Timer emulatorTimer;
-    Timer videoTimer;
 
     do
     {
@@ -337,11 +354,17 @@ void run_sdl(int argc, const char * argv [])
 
   global.toc();
 
-  std::cerr << "Global:  " << global << std::endl;
-  std::cerr << "Texture: " << updateTextureTimer << std::endl;
-  std::cerr << "Screen:  " << refreshScreenTimer << std::endl;
-  std::cerr << "CPU:     " << cpuTimer << std::endl;
-  std::cerr << "Events:  " << eventTimer << std::endl;
+  const char sep[] = "], ";
+  std::cerr << "Global:  [" << globalTag << sep << global << std::endl;
+  std::cerr << "Events:  [" << eventTimerTag << sep << eventTimer << std::endl;
+  std::cerr << "Texture: [" << updateTextureTimerTag << sep << updateTextureTimer << std::endl;
+  std::cerr << "Screen:  [" << refreshScreenTimerTag << sep << refreshScreenTimer << std::endl;
+  std::cerr << "CPU:     [" << cpuTimerTag << sep << cpuTimer << std::endl;
+
+  const int64_t totalCycles = g_nCumulativeCycles;
+  const int64_t averageClock = g_nCumulativeCycles / global.getTimeInSeconds();
+  std::cerr << "Expected clock: " << int64_t(g_fCurrentCLK6502) << std::endl;
+  std::cerr << "Average clock:  " << int64_t(averageClock) << std::endl;
 
   SDirectSound::stop();
   stopEmulator();

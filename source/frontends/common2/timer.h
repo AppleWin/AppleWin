@@ -8,6 +8,8 @@ public:
   void tic();
   void toc();
 
+  double getTimeInSeconds() const;
+
   friend std::ostream& operator<<(std::ostream& os, const Timer & timer);
 
 private:
