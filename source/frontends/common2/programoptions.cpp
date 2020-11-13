@@ -38,7 +38,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
   po::options_description emulatorDesc("Emulator");
   emulatorDesc.add_options()
     ("log", "Log to AppleWin.log")
-    ("headless,hl", "Headless: disable video")
+    ("headless", "Headless: disable video")
     ("ntsc,nt", "NTSC: execute NTSC code")
     ("benchmark,b", "Benchmark emulator")
     ("no-squaring", "Gamepad range is (already) a square");
