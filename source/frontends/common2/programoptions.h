@@ -25,6 +25,11 @@ struct EmulatorOptions
   bool useQtIni;  // use Qt .ini file (read only)
 
   bool run;  // false if options include "-h"
+
+  bool multiThreaded;
+  bool looseMutex;   // whether SDL_UpdateTexture is mutex protected (from CPU)
+  int timerInterval; // only when multithreaded
+
 };
 
 bool getEmulatorOptions(int argc, const char * argv [], const std::string & version, EmulatorOptions & options);

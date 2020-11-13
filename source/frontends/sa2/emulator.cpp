@@ -21,32 +21,6 @@
 namespace
 {
 
-  SDL_Rect refreshTexture(const std::shared_ptr<SDL_Texture> & tex)
-  {
-    uint8_t * data;
-    int width;
-    int height;
-    int sx, sy;
-    int sw, sh;
-
-    getScreenData(data, width, height, sx, sy, sw, sh);
-    SDL_UpdateTexture(tex.get(), nullptr, data, width * 4);
-
-    SDL_Rect srect;
-    srect.x = sx;
-    srect.y = sy;
-    srect.w = sw;
-    srect.h = sh;
-
-    return srect;
-  }
-
-  void renderScreen(const std::shared_ptr<SDL_Renderer> & ren, const std::shared_ptr<SDL_Texture> & tex, const SDL_Rect & srect)
-  {
-    SDL_RenderCopyEx(ren.get(), tex.get(), &srect, nullptr, 0.0, nullptr, SDL_FLIP_VERTICAL);
-    SDL_RenderPresent(ren.get());
-  }
-
   void cycleVideoType(const std::shared_ptr<SDL_Window> & win)
   {
     g_eVideoType++;
@@ -74,20 +48,6 @@ namespace
     Config_Save_Video();
     VideoReinitialize();
     VideoRedrawScreen();
-  }
-
-  int getFPS()
-  {
-    SDL_DisplayMode current;
-
-    int should_be_zero = SDL_GetCurrentDisplayMode(0, &current);
-
-    if (should_be_zero)
-    {
-      throw std::runtime_error(SDL_GetError());
-    }
-
-    return current.refresh_rate;
   }
 
   void processAppleKey(const SDL_KeyboardEvent & key)
@@ -179,47 +139,51 @@ Emulator::Emulator(
   : myWindow(window)
   , myRenderer(renderer)
   , myTexture(texture)
-  , myFPS(getFPS())
   , myMultiplier(1)
   , myFullscreen(false)
   , myExtraCycles(0)
 {
 }
 
-void Emulator::executeOneFrame()
+void Emulator::executeCycles(const int targetCycles)
 {
   const bool bVideoUpdate = true;
-  const int nExecutionPeriodUsec = 1000;		// 1.0ms
-  const double fUsecPerSec = 1.e6;
-  const double fExecutionPeriodClks = int(g_fCurrentCLK6502 * (nExecutionPeriodUsec / fUsecPerSec));
-
-  int totalCyclesExecuted = 0;
-  const DWORD uCyclesToExecute = int(g_fCurrentCLK6502 / myFPS) + myExtraCycles;
   const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 
-  while (totalCyclesExecuted < uCyclesToExecute)
-  {
-    // go in small steps of 1ms
-    const DWORD uActualCyclesExecuted = CpuExecute(fExecutionPeriodClks, bVideoUpdate);
-    totalCyclesExecuted += uActualCyclesExecuted;
-    g_dwCyclesThisFrame = (g_dwCyclesThisFrame + uActualCyclesExecuted) % dwClksPerFrame;
+  const DWORD executedCycles = CpuExecute(targetCycles + myExtraCycles, bVideoUpdate);
 
-    GetCardMgr().GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
-    MB_PeriodicUpdate(uActualCyclesExecuted);
-    SpkrUpdate(uActualCyclesExecuted);
-  }
+  g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
+  GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
+  MB_PeriodicUpdate(executedCycles);
+  SpkrUpdate(executedCycles);
 
-  myExtraCycles = uCyclesToExecute - totalCyclesExecuted;
+  myExtraCycles = targetCycles - executedCycles;
 }
 
 SDL_Rect Emulator::updateTexture()
 {
-  return refreshTexture(myTexture);
+  uint8_t * data;
+  int width;
+  int height;
+  int sx, sy;
+  int sw, sh;
+
+  getScreenData(data, width, height, sx, sy, sw, sh);
+  SDL_UpdateTexture(myTexture.get(), nullptr, data, width * 4);
+
+  SDL_Rect srect;
+  srect.x = sx;
+  srect.y = sy;
+  srect.w = sw;
+  srect.h = sh;
+
+  return srect;
 }
 
 void Emulator::refreshVideo(const SDL_Rect & rect)
 {
-  renderScreen(myRenderer, myTexture, rect);
+  SDL_RenderCopyEx(myRenderer.get(), myTexture.get(), &rect, nullptr, 0.0, nullptr, SDL_FLIP_VERTICAL);
+  SDL_RenderPresent(myRenderer.get());
 }
 
 void Emulator::processEvents(bool & quit)

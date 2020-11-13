@@ -123,22 +123,33 @@ namespace
     RiffFinishWriteFile();
   }
 
+  int getFPS()
+  {
+    SDL_DisplayMode current;
+
+    const int should_be_zero = SDL_GetCurrentDisplayMode(0, &current);
+
+    if (should_be_zero)
+    {
+      throw std::runtime_error(SDL_GetError());
+    }
+
+    return current.refresh_rate;
+  }
+
   struct Data
   {
     Emulator * emulator;
     SDL_mutex * mutex;
-    bool quit;
   };
 
-  Uint32 my_callbackfunc(Uint32 interval, void *param)
+  Uint32 emulator_callback(Uint32 interval, void *param)
   {
     Data * data = static_cast<Data *>(param);
-    if (!data->quit)
-    {
-      SDL_LockMutex(data->mutex);
-      data->emulator->executeOneFrame();
-      SDL_UnlockMutex(data->mutex);
-    }
+    SDL_LockMutex(data->mutex);
+    const int uCyclesToExecute = int(g_fCurrentCLK6502 * interval * 0.001);
+    data->emulator->executeCycles(uCyclesToExecute);
+    SDL_UnlockMutex(data->mutex);
     return interval;
   }
 
@@ -170,7 +181,6 @@ void run_sdl(int argc, const char * argv [])
 
   if (!run)
     return;
-
 
   if (options.log)
   {
@@ -230,30 +240,61 @@ void run_sdl(int argc, const char * argv [])
 
   Emulator emulator(win, ren, tex);
 
-  std::shared_ptr<SDL_mutex> mutex(SDL_CreateMutex(), SDL_DestroyMutex);
-
-  Data data;
-  data.quit = false;
-  data.mutex = mutex.get();
-  data.emulator = &emulator;
-
-  SDL_TimerID timer = SDL_AddTimer(1000 / 60, my_callbackfunc, &data);
-
-  do
+  if (options.multiThreaded)
   {
-    SDL_LockMutex(data.mutex);
-    SDirectSound::writeAudio();
-    emulator.processEvents(data.quit);
-    SDL_UnlockMutex(data.mutex);
-    const SDL_Rect rect = emulator.updateTexture();
-    emulator.refreshVideo(rect);
-  } while (!data.quit);
+    std::shared_ptr<SDL_mutex> mutex(SDL_CreateMutex(), SDL_DestroyMutex);
 
-  SDL_RemoveTimer(timer);
-  // if the following enough to make sure the timer has finished
-  // and wont be called again?
-  SDL_LockMutex(data.mutex);
-  SDL_UnlockMutex(data.mutex);
+    Data data;
+    data.mutex = mutex.get();
+    data.emulator = &emulator;
+
+    const SDL_TimerID timer = SDL_AddTimer(options.timerInterval, emulator_callback, &data);
+
+    bool quit = false;
+    do
+    {
+      SDL_LockMutex(data.mutex);
+      SDirectSound::writeAudio();
+      emulator.processEvents(quit);
+      if (options.looseMutex)
+      {
+	// loose mutex
+	// unlock early and let CPU run again in the timer callback
+	SDL_UnlockMutex(data.mutex);
+	// but the texture will be updated concurrently with the CPU updating the video buffer
+	// pixels are not atomic, so a pixel error could happen (if pixel changes while being read)
+	// on the positive side this will release pressure from CPU and allow for more parallelism
+      }
+      const SDL_Rect rect = emulator.updateTexture();
+      if (!options.looseMutex)
+      {
+	// safe mutex, only unlock after texture has been updated
+	// this will stop the CPU for longer
+	SDL_UnlockMutex(data.mutex);
+      }
+      emulator.refreshVideo(rect);
+    } while (!quit);
+
+    SDL_RemoveTimer(timer);
+    // if the following enough to make sure the timer has finished
+    // and wont be called again?
+    SDL_LockMutex(data.mutex);
+    SDL_UnlockMutex(data.mutex);
+  }
+  else
+  {
+    const int fps = getFPS();
+    bool quit = false;
+    const int uCyclesToExecute = int(g_fCurrentCLK6502 / fps);
+    do
+    {
+      SDirectSound::writeAudio();
+      emulator.processEvents(quit);
+      emulator.executeCycles(uCyclesToExecute);
+      const SDL_Rect rect = emulator.updateTexture();
+      emulator.refreshVideo(rect);
+    } while (!quit);
+  }
 
   SDirectSound::stop();
   stopEmulator();
