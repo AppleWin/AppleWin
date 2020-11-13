@@ -23,7 +23,7 @@ void Timer::toc()
   const auto micros = std::chrono::duration_cast<std::chrono::microseconds>(now - myT0).count();
   const double s = micros * 0.000001;
   mySum += s;
-  mySum2 += s * 2;
+  mySum2 += s * s;
   ++myN;
   myT0 = now;
 }
