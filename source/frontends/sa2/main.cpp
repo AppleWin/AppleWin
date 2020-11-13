@@ -1,7 +1,6 @@
 #include <iostream>
 #include <SDL.h>
 #include <memory>
-#include <chrono>
 
 #include "linux/interface.h"
 #include "linux/windows/misc.h"
@@ -11,6 +10,7 @@
 #include "frontends/common2/configuration.h"
 #include "frontends/common2/utils.h"
 #include "frontends/common2/programoptions.h"
+#include "frontends/common2/timer.h"
 #include "frontends/sa2/emulator.h"
 #include "frontends/sa2/gamepad.h"
 #include "frontends/sa2/sdirectsound.h"
@@ -141,14 +141,19 @@ namespace
   {
     Emulator * emulator;
     SDL_mutex * mutex;
+    Timer * timer;
   };
 
   Uint32 emulator_callback(Uint32 interval, void *param)
   {
     Data * data = static_cast<Data *>(param);
     SDL_LockMutex(data->mutex);
+
+    data->timer->tic();
     const int uCyclesToExecute = int(g_fCurrentCLK6502 * interval * 0.001);
     data->emulator->executeCycles(uCyclesToExecute);
+    data->timer->toc();
+
     SDL_UnlockMutex(data->mutex);
     return interval;
   }
@@ -240,6 +245,12 @@ void run_sdl(int argc, const char * argv [])
 
   Emulator emulator(win, ren, tex);
 
+  Timer global;
+  Timer updateTextureTimer;
+  Timer refreshScreenTimer;
+  Timer cpuTimer;
+  Timer eventTimer;
+
   if (options.multiThreaded)
   {
     std::shared_ptr<SDL_mutex> mutex(SDL_CreateMutex(), SDL_DestroyMutex);
@@ -247,6 +258,7 @@ void run_sdl(int argc, const char * argv [])
     Data data;
     data.mutex = mutex.get();
     data.emulator = &emulator;
+    data.timer = &cpuTimer;
 
     const SDL_TimerID timer = SDL_AddTimer(options.timerInterval, emulator_callback, &data);
 
@@ -254,8 +266,12 @@ void run_sdl(int argc, const char * argv [])
     do
     {
       SDL_LockMutex(data.mutex);
+
+      eventTimer.tic();
       SDirectSound::writeAudio();
       emulator.processEvents(quit);
+      eventTimer.toc();
+
       if (options.looseMutex)
       {
 	// loose mutex
@@ -265,14 +281,22 @@ void run_sdl(int argc, const char * argv [])
 	// pixels are not atomic, so a pixel error could happen (if pixel changes while being read)
 	// on the positive side this will release pressure from CPU and allow for more parallelism
       }
+
+      updateTextureTimer.tic();
       const SDL_Rect rect = emulator.updateTexture();
+      updateTextureTimer.toc();
+
       if (!options.looseMutex)
       {
 	// safe mutex, only unlock after texture has been updated
 	// this will stop the CPU for longer
 	SDL_UnlockMutex(data.mutex);
       }
+
+      refreshScreenTimer.tic();
       emulator.refreshVideo(rect);
+      refreshScreenTimer.toc();
+
     } while (!quit);
 
     SDL_RemoveTimer(timer);
@@ -286,15 +310,38 @@ void run_sdl(int argc, const char * argv [])
     const int fps = getFPS();
     bool quit = false;
     const int uCyclesToExecute = int(g_fCurrentCLK6502 / fps);
+
+    Timer emulatorTimer;
+    Timer videoTimer;
+
     do
     {
+      eventTimer.tic();
       SDirectSound::writeAudio();
       emulator.processEvents(quit);
+      eventTimer.toc();
+
+      cpuTimer.tic();
       emulator.executeCycles(uCyclesToExecute);
+      cpuTimer.toc();
+
+      updateTextureTimer.tic();
       const SDL_Rect rect = emulator.updateTexture();
+      updateTextureTimer.toc();
+
+      refreshScreenTimer.tic();
       emulator.refreshVideo(rect);
+      refreshScreenTimer.toc();
     } while (!quit);
   }
+
+  global.toc();
+
+  std::cerr << "Global:  " << global << std::endl;
+  std::cerr << "Texture: " << updateTextureTimer << std::endl;
+  std::cerr << "Screen:  " << refreshScreenTimer << std::endl;
+  std::cerr << "CPU:     " << cpuTimer << std::endl;
+  std::cerr << "Events:  " << eventTimer << std::endl;
 
   SDirectSound::stop();
   stopEmulator();
