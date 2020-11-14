@@ -2,6 +2,8 @@ Coding Conventions for AppleWin
 ===============================
 
 History:
+v3 - 14-Nov-2020 (TC)
+. #868: Reduced Hungarian notation
 v2 - 16-Feb-2006 (TC)
 . Updated after discussion with M.Pohoreski
 v1 - 04-Feb-2006 (TC)
@@ -46,50 +48,47 @@ and therefore by extension all header files can be included in any order.
 2) Coding Style:
 
 2.1: Naming
-The following simplied Hungarian style must be used:
+For functions use upper camel case.
+
+For variables use lower camel case.
+And if applicable, the following simplied prefix (Hungarian) style must be used:
 
 Prefixes:
-a	: array
-b	: bool
-e	: enum variable
 g_	: global
-h	: handle
-i	: iterator (eg. UINT, STL-iterator)
-m	: STL map
 m_	: member
-n	: int
 p	: pointer
-r	: reference
-s	: string
-sg_p	: singleton (could also use 'sgp' - to be reviewed)
-u	: unsigned int
-v	: STL vector
 
 Tags:
 _e	: named enum definitions
 _t	: struct/typedef
 
 Legacy:
-dw	: DWORD [legacy: existing 'dw' to be replaced with 'u' prefix]
-sz	: string (null-terminated) [legacy: 
+dw	: DWORD
+sz	: string (null-terminated)
+a	: array
+b	: bool
+e	: enum variable
+h	: handle
+i	: iterator (eg. UINT, STL-iterator)
+m	: STL map
+n	: int
+r	: reference
+s	: string
+sg_p	: singleton
+u	: unsigned int
+v	: STL vector
 
 EG:
 	enum MODE_e {MODE1, MODE2, MODE2};
-	MODE_e eMode;
+	MODE_e mode;
 	
 	struct PAIR_t
 	{
-		UINT uA;
-		UINT uB;
+		UINT a;
+		UINT b;
 	};
 
 Simple loop counters (i,j,k) don't need to adhere to this style.
-
-Don't go Hungarian-mad (you might argue that we already have :)
-. an array of any type can just be prefixed with 'a'. Eg. Array of bools:
-	bool aFlags[NUM_FLAGS];
-. a pointer to any type can just be prefixed with 'p'. Eg. Pointer to array of bools:
-	bool* pFlags;
 
 Naming for parameters that are being modified (eg. OUT):
 It is recommended (but not mandatory) to use a suffix of OUT or '_', eg:
@@ -127,3 +126,5 @@ It is recommended (but not mandatory):
 
 Eg:
 . Prefer: z = ((a + b) + 1) instead of: z=((a+b)+1)
+
+2.8: For consistency, adopt the coding convention of any module (or function) you are modifying.
