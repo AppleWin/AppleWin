@@ -12,7 +12,11 @@ public:
     const std::shared_ptr<SDL_Texture> & texture
     );
 
-  void executeOneFrame();
+  void executeCycles(const int cycles);
+  void refreshVideo();
+  SDL_Rect updateTexture();
+  void refreshVideo(const SDL_Rect & rect);
+
   void processEvents(bool & quit);
 
 private:
@@ -23,8 +27,8 @@ private:
   const std::shared_ptr<SDL_Window> myWindow;
   const std::shared_ptr<SDL_Renderer> myRenderer;
   const std::shared_ptr<SDL_Texture> myTexture;
-  const int myFPS;
 
   int myMultiplier;
   bool myFullscreen;
+  int myExtraCycles;
 };

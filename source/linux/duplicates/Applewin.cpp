@@ -286,11 +286,14 @@ void LoadConfiguration(void)
   if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
     sg_PropertySheet.SetTheFreezesF8Rom(dwTmp);
 
-  if(REGLOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp))
-    SpkrSetVolume(dwTmp, 99);
+  // if missing set volume low to avoid annoying beeps
+  dwTmp = 70;
+  REGLOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp);
+  SpkrSetVolume(dwTmp, 99);
 
-  if(REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp))
-    MB_SetVolume(dwTmp, 99);
+  dwTmp = 60;
+  REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp);
+  MB_SetVolume(dwTmp, 99);
 
   if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
     g_bSaveStateOnExit = dwTmp ? true : false;

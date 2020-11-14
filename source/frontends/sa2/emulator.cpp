@@ -21,32 +21,6 @@
 namespace
 {
 
-  SDL_Rect refreshTexture(const std::shared_ptr<SDL_Texture> & tex)
-  {
-    uint8_t * data;
-    int width;
-    int height;
-    int sx, sy;
-    int sw, sh;
-
-    getScreenData(data, width, height, sx, sy, sw, sh);
-    SDL_UpdateTexture(tex.get(), nullptr, data, width * 4);
-
-    SDL_Rect srect;
-    srect.x = sx;
-    srect.y = sy;
-    srect.w = sw;
-    srect.h = sh;
-
-    return srect;
-  }
-
-  void renderScreen(const std::shared_ptr<SDL_Renderer> & ren, const std::shared_ptr<SDL_Texture> & tex, const SDL_Rect & srect)
-  {
-    SDL_RenderCopyEx(ren.get(), tex.get(), &srect, nullptr, 0.0, nullptr, SDL_FLIP_VERTICAL);
-    SDL_RenderPresent(ren.get());
-  }
-
   void cycleVideoType(const std::shared_ptr<SDL_Window> & win)
   {
     g_eVideoType++;
@@ -74,20 +48,6 @@ namespace
     Config_Save_Video();
     VideoReinitialize();
     VideoRedrawScreen();
-  }
-
-  int getFPS()
-  {
-    SDL_DisplayMode current;
-
-    int should_be_zero = SDL_GetCurrentDisplayMode(0, &current);
-
-    if (should_be_zero)
-    {
-      throw std::runtime_error(SDL_GetError());
-    }
-
-    return current.refresh_rate;
   }
 
   void processAppleKey(const SDL_KeyboardEvent & key)
@@ -164,7 +124,7 @@ namespace
     if (ch)
     {
       addKeyToBuffer(ch);
-      std::cerr << "Apple Key Down: " << std::hex << (int)ch << std::dec << std::endl;
+      std::cerr << "SDL KeyboardEvent: " << std::hex << (int)ch << std::dec << std::endl;
     }
   }
 
@@ -179,27 +139,51 @@ Emulator::Emulator(
   : myWindow(window)
   , myRenderer(renderer)
   , myTexture(texture)
-  , myFPS(getFPS())
   , myMultiplier(1)
   , myFullscreen(false)
+  , myExtraCycles(0)
 {
 }
 
-void Emulator::executeOneFrame()
+void Emulator::executeCycles(const int targetCycles)
 {
-  const DWORD uCyclesToExecute = int(g_fCurrentCLK6502 / myFPS);
-  const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
   const bool bVideoUpdate = true;
-  const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
-  g_dwCyclesThisFrame = (g_dwCyclesThisFrame + uActualCyclesExecuted) % dwClksPerFrame;
+  const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 
-  GetCardMgr().GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
-  MB_PeriodicUpdate(uActualCyclesExecuted);
-  SpkrUpdate(uActualCyclesExecuted);
+  const DWORD executedCycles = CpuExecute(targetCycles + myExtraCycles, bVideoUpdate);
 
-  // SDL2 seems to synch with screen refresh rate so we do not need to worry about timers
-  const SDL_Rect srect = refreshTexture(myTexture);
-  renderScreen(myRenderer, myTexture, srect);
+  g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
+  GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
+  MB_PeriodicUpdate(executedCycles);
+  SpkrUpdate(executedCycles);
+
+  myExtraCycles = targetCycles - executedCycles;
+}
+
+SDL_Rect Emulator::updateTexture()
+{
+  uint8_t * data;
+  int width;
+  int height;
+  int sx, sy;
+  int sw, sh;
+
+  getScreenData(data, width, height, sx, sy, sw, sh);
+  SDL_UpdateTexture(myTexture.get(), nullptr, data, width * 4);
+
+  SDL_Rect srect;
+  srect.x = sx;
+  srect.y = sy;
+  srect.w = sw;
+  srect.h = sh;
+
+  return srect;
+}
+
+void Emulator::refreshVideo(const SDL_Rect & rect)
+{
+  SDL_RenderCopyEx(myRenderer.get(), myTexture.get(), &rect, nullptr, 0.0, nullptr, SDL_FLIP_VERTICAL);
+  SDL_RenderPresent(myRenderer.get());
 }
 
 void Emulator::processEvents(bool & quit)
@@ -297,7 +281,9 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
 
   processAppleKey(key);
 
+#if LOGGING_VERBOSE
   std::cerr << "KEY DOWN: " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
+#endif
 
 }
 
@@ -316,7 +302,11 @@ void Emulator::processKeyUp(const SDL_KeyboardEvent & key)
     break;
   }
   }
+
+#if LOGGING_VERBOSE
   std::cerr << "KEY UP:   " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
+#endif
+
 }
 
 void Emulator::processText(const SDL_TextInputEvent & text)
@@ -332,7 +322,7 @@ void Emulator::processText(const SDL_TextInputEvent & text)
       // not the letters
       // this is very simple, but one cannot handle CRTL-key combination.
       addKeyToBuffer(key);
-      std::cerr << "Apple Text: " << std::hex << (int)key << std::dec << std::endl;
+      std::cerr << "SDL TextInputEvent: " << std::hex << (int)key << std::dec << std::endl;
       break;
     }
     }

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <SDL.h>
 #include <memory>
+#include <iomanip>
 
 #include "linux/interface.h"
 #include "linux/windows/misc.h"
@@ -10,9 +11,11 @@
 #include "frontends/common2/configuration.h"
 #include "frontends/common2/utils.h"
 #include "frontends/common2/programoptions.h"
+#include "frontends/common2/timer.h"
 #include "frontends/sa2/emulator.h"
 #include "frontends/sa2/gamepad.h"
 #include "frontends/sa2/sdirectsound.h"
+#include "frontends/sa2/utils.h"
 
 #include "StdAfx.h"
 #include "Common.h"
@@ -122,6 +125,41 @@ namespace
     RiffFinishWriteFile();
   }
 
+  int getRefreshRate()
+  {
+    SDL_DisplayMode current;
+
+    const int should_be_zero = SDL_GetCurrentDisplayMode(0, &current);
+
+    if (should_be_zero)
+    {
+      throw std::runtime_error(SDL_GetError());
+    }
+
+    return current.refresh_rate;
+  }
+
+  struct Data
+  {
+    Emulator * emulator;
+    SDL_mutex * mutex;
+    Timer * timer;
+  };
+
+  Uint32 emulator_callback(Uint32 interval, void *param)
+  {
+    Data * data = static_cast<Data *>(param);
+    SDL_LockMutex(data->mutex);
+
+    data->timer->tic();
+    const int uCyclesToExecute = int(g_fCurrentCLK6502 * interval * 0.001);
+    data->emulator->executeCycles(uCyclesToExecute);
+    data->timer->toc();
+
+    SDL_UnlockMutex(data->mutex);
+    return interval;
+  }
+
 }
 
 int MessageBox(HWND, const char * text, const char * caption, UINT type)
@@ -151,7 +189,6 @@ void run_sdl(int argc, const char * argv [])
   if (!run)
     return;
 
-
   if (options.log)
   {
     LogInit();
@@ -180,6 +217,8 @@ void run_sdl(int argc, const char * argv [])
   const int sw = GetFrameBufferBorderlessWidth();
   const int sh = GetFrameBufferBorderlessHeight();
 
+  std::cerr << std::fixed << std::setprecision(2);
+
   std::shared_ptr<SDL_Window> win(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, sw, sh, SDL_WINDOW_SHOWN), SDL_DestroyWindow);
   if (!win)
   {
@@ -187,36 +226,141 @@ void run_sdl(int argc, const char * argv [])
     return;
   }
 
-  std::shared_ptr<SDL_Renderer> ren(SDL_CreateRenderer(win.get(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC), SDL_DestroyRenderer);
+  std::shared_ptr<SDL_Renderer> ren(SDL_CreateRenderer(win.get(), options.sdlDriver, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC), SDL_DestroyRenderer);
   if (!ren)
   {
     std::cout << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
     return;
   }
 
-  SDL_RendererInfo info;
-  SDL_GetRendererInfo(ren.get(), &info);
-
-  std::cerr << "SDL Renderer:" << info.name << std::endl;
-  for (size_t i = 0; i < info.num_texture_formats; ++i)
-  {
-      std::cerr << SDL_GetPixelFormatName(info.texture_formats[i]) << std::endl;
-  }
-
   const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
-  std::cerr << "Selected format: " << SDL_GetPixelFormatName(format) << std::endl;
+  printRendererInfo(std::cerr, ren, format, options.sdlDriver);
 
   std::shared_ptr<SDL_Texture> tex(SDL_CreateTexture(ren.get(), format, SDL_TEXTUREACCESS_STATIC, width, height), SDL_DestroyTexture);
 
+  const int fps = getRefreshRate();
+  std::cerr << "Video refresh rate: " << fps << " Hz, " << 1000.0 / fps << " ms" << std::endl;
   Emulator emulator(win, ren, tex);
 
-  bool quit = false;
-  do
+  Timer global;
+  Timer updateTextureTimer;
+  Timer refreshScreenTimer;
+  Timer cpuTimer;
+  Timer eventTimer;
+
+  const std::string globalTag = ". .";
+  std::string updateTextureTimerTag, refreshScreenTimerTag, cpuTimerTag, eventTimerTag;
+
+  if (options.multiThreaded)
   {
-    SDirectSound::writeAudio();
-    emulator.processEvents(quit);
-    emulator.executeOneFrame();
-  } while (!quit);
+    refreshScreenTimerTag = "0 .";
+    cpuTimerTag           = "1 M";
+    eventTimerTag         = "0 M";
+    if (options.looseMutex)
+    {
+      updateTextureTimerTag = "0 .";
+    }
+    else
+    {
+      updateTextureTimerTag = "0 M";
+    }
+
+    std::shared_ptr<SDL_mutex> mutex(SDL_CreateMutex(), SDL_DestroyMutex);
+
+    Data data;
+    data.mutex = mutex.get();
+    data.emulator = &emulator;
+    data.timer = &cpuTimer;
+
+    const SDL_TimerID timer = SDL_AddTimer(options.timerInterval, emulator_callback, &data);
+
+    bool quit = false;
+    do
+    {
+      SDL_LockMutex(data.mutex);
+
+      eventTimer.tic();
+      SDirectSound::writeAudio();
+      emulator.processEvents(quit);
+      eventTimer.toc();
+
+      if (options.looseMutex)
+      {
+	// loose mutex
+	// unlock early and let CPU run again in the timer callback
+	SDL_UnlockMutex(data.mutex);
+	// but the texture will be updated concurrently with the CPU updating the video buffer
+	// pixels are not atomic, so a pixel error could happen (if pixel changes while being read)
+	// on the positive side this will release pressure from CPU and allow for more parallelism
+      }
+
+      updateTextureTimer.tic();
+      const SDL_Rect rect = emulator.updateTexture();
+      updateTextureTimer.toc();
+
+      if (!options.looseMutex)
+      {
+	// safe mutex, only unlock after texture has been updated
+	// this will stop the CPU for longer
+	SDL_UnlockMutex(data.mutex);
+      }
+
+      refreshScreenTimer.tic();
+      emulator.refreshVideo(rect);
+      refreshScreenTimer.toc();
+
+    } while (!quit);
+
+    SDL_RemoveTimer(timer);
+    // if the following enough to make sure the timer has finished
+    // and wont be called again?
+    SDL_LockMutex(data.mutex);
+    SDL_UnlockMutex(data.mutex);
+  }
+  else
+  {
+    refreshScreenTimerTag = "0 .";
+    cpuTimerTag           = "0 .";
+    eventTimerTag         = "0 .";
+    updateTextureTimerTag = "0 .";
+
+    bool quit = false;
+    const int uCyclesToExecute = int(g_fCurrentCLK6502 / fps);
+
+    do
+    {
+      eventTimer.tic();
+      SDirectSound::writeAudio();
+      emulator.processEvents(quit);
+      eventTimer.toc();
+
+      cpuTimer.tic();
+      emulator.executeCycles(uCyclesToExecute);
+      cpuTimer.toc();
+
+      updateTextureTimer.tic();
+      const SDL_Rect rect = emulator.updateTexture();
+      updateTextureTimer.toc();
+
+      refreshScreenTimer.tic();
+      emulator.refreshVideo(rect);
+      refreshScreenTimer.toc();
+    } while (!quit);
+  }
+
+  global.toc();
+
+  const char sep[] = "], ";
+  std::cerr << "Global:  [" << globalTag << sep << global << std::endl;
+  std::cerr << "Events:  [" << eventTimerTag << sep << eventTimer << std::endl;
+  std::cerr << "Texture: [" << updateTextureTimerTag << sep << updateTextureTimer << std::endl;
+  std::cerr << "Screen:  [" << refreshScreenTimerTag << sep << refreshScreenTimer << std::endl;
+  std::cerr << "CPU:     [" << cpuTimerTag << sep << cpuTimer << std::endl;
+
+  const double timeInSeconds = global.getTimeInSeconds();
+  const double averageClock = g_nCumulativeCycles / timeInSeconds;
+  std::cerr << "Expected clock: " << g_fCurrentCLK6502 << " Hz, " << timeInSeconds << " s" << std::endl;
+  std::cerr << "Average clock:  " << averageClock << " Hz, " << g_nCumulativeCycles / g_fCurrentCLK6502 << " s" << std::endl;
 
   SDirectSound::stop();
   stopEmulator();
@@ -226,7 +370,8 @@ void run_sdl(int argc, const char * argv [])
 int main(int argc, const char * argv [])
 {
   //First we need to start up SDL, and make sure it went ok
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) != 0)
+  const Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO | SDL_INIT_TIMER;
+  if (SDL_Init(flags) != 0)
   {
     std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
     return 1;

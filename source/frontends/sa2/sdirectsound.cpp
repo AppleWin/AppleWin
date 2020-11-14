@@ -22,6 +22,8 @@ namespace
   private:
     IDirectSoundBuffer * myBuffer;
 
+    std::vector<Uint8> myMixerBuffer;
+
     SDL_AudioDeviceID myAudioDevice;
     SDL_AudioSpec myAudioSpec;
 
@@ -29,9 +31,10 @@ namespace
     int myInitialSilence;
 
     void close();
-    void setVolume();
     bool isRunning();
     void writeEnoughSilence(const int ms);
+
+    void mixBuffer(const void * ptr, const size_t size);
   };
 
 
@@ -95,14 +98,6 @@ namespace
     myInitialSilence = std::max(0, initialSilence);
   }
 
-  void DirectSoundGenerator::setVolume()
-  {
-    LONG dwVolume = 0;
-    myBuffer->GetVolume(&dwVolume);
-    const double volume = - double(dwVolume) / DSBVOLUME_MIN + 1.0;
-    // myAudioOutput->setVolume(volume);
-  }
-
   void DirectSoundGenerator::stop()
   {
     if (myAudioDevice)
@@ -122,6 +117,21 @@ namespace
 
     std::vector<char> silence(bytesToWrite);
     SDL_QueueAudio(myAudioDevice, silence.data(), silence.size());
+  }
+
+  void DirectSoundGenerator::mixBuffer(const void * ptr, const size_t size)
+  {
+    const double logVolume = myBuffer->GetLogarithmicVolume();
+    // same formula as QAudio::convertVolume()
+    const double linVolume = logVolume > 0.99 ? 1.0 : -std::log(1.0 - logVolume) / std::log(100.0);
+
+    const Uint8 svolume = Uint8(linVolume * SDL_MIX_MAXVOLUME);
+
+    // this is a bit of a waste copy-time, but it reuses SDL to do it properly
+    myMixerBuffer.resize(size);
+    memset(myMixerBuffer.data(), 0, size);
+    SDL_MixAudioFormat(myMixerBuffer.data(), (const Uint8*)ptr, myAudioSpec.format, size, svolume);
+    SDL_QueueAudio(myAudioDevice, myMixerBuffer.data(), size);
   }
 
   void DirectSoundGenerator::writeAudio()
@@ -152,11 +162,11 @@ namespace
 
       if (lpvAudioPtr1 && dwAudioBytes1)
       {
-	SDL_QueueAudio(myAudioDevice, lpvAudioPtr1, dwAudioBytes1);
+	mixBuffer(lpvAudioPtr1, dwAudioBytes1);
       }
       if (lpvAudioPtr2 && dwAudioBytes2)
       {
-	SDL_QueueAudio(myAudioDevice, lpvAudioPtr2, dwAudioBytes2);
+	mixBuffer(lpvAudioPtr2, dwAudioBytes2);
       }
     }
   }

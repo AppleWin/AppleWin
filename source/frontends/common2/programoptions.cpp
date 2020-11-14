@@ -13,29 +13,33 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
   desc.add_options()
     ("help,h", "Print this help message")
     ("conf", "Save configuration on exit")
-    ("qt-ini", "Use Qt ini file (read only)");
+    ("multi-threaded,m", "Multi threaded")
+    ("loose-mutex,l", "Loose mutex")
+    ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
+    ("timer-interval,i", po::value<int>()->default_value(options.timerInterval), "Timer interval in ms")
+    ("qt-ini,q", "Use Qt ini file (read only)");
 
   po::options_description diskDesc("Disk");
   diskDesc.add_options()
-    ("d1,1", po::value<std::string>(), "Mount disk image in first drive")
-    ("d2,2", po::value<std::string>(), "Mount disk image in second drive")
+    ("d1,1", po::value<std::string>(), "Disk in 1st drive")
+    ("d2,2", po::value<std::string>(), "Disk in 2nd drive")
     ("create,c", "Create missing disks");
   desc.add(diskDesc);
 
   po::options_description snapshotDesc("Snapshot");
   snapshotDesc.add_options()
-    ("load-state,ls", po::value<std::string>(), "Load snapshot from file");
+    ("load-state,s", po::value<std::string>(), "Load snapshot from file");
   desc.add(snapshotDesc);
 
   po::options_description memoryDesc("Memory");
   memoryDesc.add_options()
-    ("memclear,m", po::value<int>(), "Memory initialization pattern [0..7]");
+    ("memclear", po::value<int>()->default_value(options.memclear), "Memory initialization pattern [0..7]");
   desc.add(memoryDesc);
 
   po::options_description emulatorDesc("Emulator");
   emulatorDesc.add_options()
     ("log", "Log to AppleWin.log")
-    ("headless,hl", "Headless: disable video")
+    ("headless", "Headless: disable video")
     ("ntsc,nt", "NTSC: execute NTSC code")
     ("benchmark,b", "Benchmark emulator")
     ("no-squaring", "Gamepad range is (already) a square");
@@ -54,6 +58,10 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
 
     options.saveConfigurationOnExit = vm.count("conf");
     options.useQtIni = vm.count("qt-ini");
+    options.multiThreaded = vm.count("multi-threaded");
+    options.looseMutex = vm.count("loose-mutex");
+    options.timerInterval = vm["timer-interval"].as<int>();
+    options.sdlDriver = vm["sdl-driver"].as<int>();
 
     if (vm.count("d1"))
     {
@@ -72,12 +80,9 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
       options.snapshot = vm["load-state"].as<std::string>();
     }
 
-    if (vm.count("memclear"))
-    {
-      const int memclear = vm["memclear"].as<int>();
-      if (memclear >=0 && memclear < NUM_MIP)
-	options.memclear = memclear;
-    }
+    const int memclear = vm["memclear"].as<int>();
+    if (memclear >=0 && memclear < NUM_MIP)
+      options.memclear = memclear;
 
     options.benchmark = vm.count("benchmark") > 0;
     options.headless = vm.count("headless") > 0;
