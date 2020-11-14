@@ -358,9 +358,9 @@ void run_sdl(int argc, const char * argv [])
   std::cerr << "CPU:     [" << cpuTimerTag << sep << cpuTimer << std::endl;
 
   const double timeInSeconds = global.getTimeInSeconds();
-  const double averageClock = g_nCumulativeCycles / timeInSeconds;
-  std::cerr << "Expected clock: " << g_fCurrentCLK6502 << " Hz, " << timeInSeconds << " s" << std::endl;
-  std::cerr << "Average clock:  " << averageClock << " Hz, " << g_nCumulativeCycles / g_fCurrentCLK6502 << " s" << std::endl;
+  const double actualClock = g_nCumulativeCycles / timeInSeconds;
+  std::cerr << "Expected clock: " << g_fCurrentCLK6502 << " Hz, " << g_nCumulativeCycles / g_fCurrentCLK6502 << " s" << std::endl;
+  std::cerr << "Actual clock:   " << actualClock << " Hz, " << timeInSeconds << " s" << std::endl;
 
   SDirectSound::stop();
   stopEmulator();
