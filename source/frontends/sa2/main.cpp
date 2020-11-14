@@ -1,6 +1,7 @@
 #include <iostream>
 #include <SDL.h>
 #include <memory>
+#include <iomanip>
 
 #include "linux/interface.h"
 #include "linux/windows/misc.h"
@@ -123,7 +124,7 @@ namespace
     RiffFinishWriteFile();
   }
 
-  int getFPS()
+  int getRefreshRate()
   {
     SDL_DisplayMode current;
 
@@ -233,16 +234,21 @@ void run_sdl(int argc, const char * argv [])
   SDL_GetRendererInfo(ren.get(), &info);
 
   std::cerr << "SDL Renderer: " << info.name << std::endl;
+  std::cerr << "Supported pixel formats:" << std::endl;
   for (size_t i = 0; i < info.num_texture_formats; ++i)
   {
       std::cerr << SDL_GetPixelFormatName(info.texture_formats[i]) << std::endl;
   }
+
+  std::cerr << std::fixed << std::setprecision(2);
 
   const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
   std::cerr << "Selected format: " << SDL_GetPixelFormatName(format) << std::endl;
 
   std::shared_ptr<SDL_Texture> tex(SDL_CreateTexture(ren.get(), format, SDL_TEXTUREACCESS_STATIC, width, height), SDL_DestroyTexture);
 
+  const int fps = getRefreshRate();
+  std::cerr << "Refresh rate: " << fps << "Hz, " << 1000.0 / fps << "ms" << std::endl;
   Emulator emulator(win, ren, tex);
 
   Timer global;
@@ -327,7 +333,6 @@ void run_sdl(int argc, const char * argv [])
     eventTimerTag         = "0 .";
     updateTextureTimerTag = "0 .";
 
-    const int fps = getFPS();
     bool quit = false;
     const int uCyclesToExecute = int(g_fCurrentCLK6502 / fps);
 
@@ -361,10 +366,10 @@ void run_sdl(int argc, const char * argv [])
   std::cerr << "Screen:  [" << refreshScreenTimerTag << sep << refreshScreenTimer << std::endl;
   std::cerr << "CPU:     [" << cpuTimerTag << sep << cpuTimer << std::endl;
 
-  const int64_t totalCycles = g_nCumulativeCycles;
-  const int64_t averageClock = g_nCumulativeCycles / global.getTimeInSeconds();
-  std::cerr << "Expected clock: " << int64_t(g_fCurrentCLK6502) << std::endl;
-  std::cerr << "Average clock:  " << int64_t(averageClock) << std::endl;
+  const double timeInSeconds = global.getTimeInSeconds();
+  const double averageClock = g_nCumulativeCycles / timeInSeconds;
+  std::cerr << "Expected clock: " << g_fCurrentCLK6502 << "Hz, " << timeInSeconds << " s" << std::endl;
+  std::cerr << "Average clock:  " << averageClock << "Hz, " << g_nCumulativeCycles / g_fCurrentCLK6502 << " s" << std::endl;
 
   SDirectSound::stop();
   stopEmulator();
