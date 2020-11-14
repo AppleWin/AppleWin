@@ -101,6 +101,7 @@ public:
 		m_phasePrecise = 0;
 		m_phase = 0;
 		m_lastStepperCycle = 0;
+		m_motorOnCycle = 0;
 		m_headWindow = 0;
 		m_spinning = 0;
 		m_writelight = 0;
@@ -111,6 +112,7 @@ public:
 	float m_phasePrecise;	// Phase precise to half a phase (aka quarter track)
 	int m_phase;			// Integral phase number
 	unsigned __int64 m_lastStepperCycle;
+	unsigned __int64 m_motorOnCycle;
 	BYTE m_headWindow;
 	DWORD m_spinning;
 	DWORD m_writelight;
@@ -178,7 +180,7 @@ public:
 
 private:
 	void ResetSwitches(void);
-	void CheckSpinning(const ULONG uExecutedCycles);
+	void CheckSpinning(const bool stateChanged, const ULONG uExecutedCycles);
 	Disk_Status_e GetDriveLightStatus(const int drive);
 	bool IsDriveValid(const int drive);
 	void EjectDiskInternal(const int drive);
@@ -199,6 +201,7 @@ private:
 	void DumpTrackWOZ(FloppyDisk floppy);
 	bool GetFirmware(LPCSTR lpName, BYTE* pDst);
 	void InitFirmware(LPBYTE pCxRomPeripheral);
+	void UpdateLatchForEmptyDrive(FloppyDrive* pDrive);
 
 	void SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	void SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
@@ -245,6 +248,7 @@ private:
 
 	static const UINT SPINNING_CYCLES = 1000*1000;		// 1M cycles = ~1.000s
 	static const UINT WRITELIGHT_CYCLES = 1000*1000;	// 1M cycles = ~1.000s
+	static const UINT SPINUP_UNTIL_LATCH_STABLE_CYCLES = 150*1000;	// ~0.150s
 
 	// Logic State Sequencer (for WOZ):
 	BYTE m_shiftReg;
