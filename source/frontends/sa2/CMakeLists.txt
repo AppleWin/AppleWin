@@ -6,6 +6,7 @@ add_executable(sa2
   emulator.cpp
   gamepad.cpp
   sdirectsound.cpp
+  utils.cpp
   )
 
 find_package(Boost REQUIRED

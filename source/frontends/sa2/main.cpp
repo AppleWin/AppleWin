@@ -15,6 +15,7 @@
 #include "frontends/sa2/emulator.h"
 #include "frontends/sa2/gamepad.h"
 #include "frontends/sa2/sdirectsound.h"
+#include "frontends/sa2/utils.h"
 
 #include "StdAfx.h"
 #include "Common.h"
@@ -216,6 +217,8 @@ void run_sdl(int argc, const char * argv [])
   const int sw = GetFrameBufferBorderlessWidth();
   const int sh = GetFrameBufferBorderlessHeight();
 
+  std::cerr << std::fixed << std::setprecision(2);
+
   std::shared_ptr<SDL_Window> win(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, sw, sh, SDL_WINDOW_SHOWN), SDL_DestroyWindow);
   if (!win)
   {
@@ -230,25 +233,13 @@ void run_sdl(int argc, const char * argv [])
     return;
   }
 
-  SDL_RendererInfo info;
-  SDL_GetRendererInfo(ren.get(), &info);
-
-  std::cerr << "SDL Renderer: " << info.name << std::endl;
-  std::cerr << "Supported pixel formats:" << std::endl;
-  for (size_t i = 0; i < info.num_texture_formats; ++i)
-  {
-      std::cerr << SDL_GetPixelFormatName(info.texture_formats[i]) << std::endl;
-  }
-
-  std::cerr << std::fixed << std::setprecision(2);
-
   const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
-  std::cerr << "Selected format: " << SDL_GetPixelFormatName(format) << std::endl;
+  printRendererInfo(std::cerr, ren, format);
 
   std::shared_ptr<SDL_Texture> tex(SDL_CreateTexture(ren.get(), format, SDL_TEXTUREACCESS_STATIC, width, height), SDL_DestroyTexture);
 
   const int fps = getRefreshRate();
-  std::cerr << "Refresh rate: " << fps << "Hz, " << 1000.0 / fps << "ms" << std::endl;
+  std::cerr << "Video refresh rate: " << fps << "Hz, " << 1000.0 / fps << "ms" << std::endl;
   Emulator emulator(win, ren, tex);
 
   Timer global;
