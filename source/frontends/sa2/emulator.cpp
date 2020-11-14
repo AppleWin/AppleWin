@@ -124,7 +124,7 @@ namespace
     if (ch)
     {
       addKeyToBuffer(ch);
-      std::cerr << "Apple Key Down: " << std::hex << (int)ch << std::dec << std::endl;
+      std::cerr << "SDL KeyboardEvent: " << std::hex << (int)ch << std::dec << std::endl;
     }
   }
 
@@ -281,7 +281,9 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
 
   processAppleKey(key);
 
+#if LOGGING_VERBOSE
   std::cerr << "KEY DOWN: " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
+#endif
 
 }
 
@@ -300,7 +302,11 @@ void Emulator::processKeyUp(const SDL_KeyboardEvent & key)
     break;
   }
   }
+
+#if LOGGING_VERBOSE
   std::cerr << "KEY UP:   " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
+#endif
+
 }
 
 void Emulator::processText(const SDL_TextInputEvent & text)
@@ -316,7 +322,7 @@ void Emulator::processText(const SDL_TextInputEvent & text)
       // not the letters
       // this is very simple, but one cannot handle CRTL-key combination.
       addKeyToBuffer(key);
-      std::cerr << "Apple Text: " << std::hex << (int)key << std::dec << std::endl;
+      std::cerr << "SDL TextInputEvent: " << std::hex << (int)key << std::dec << std::endl;
       break;
     }
     }
