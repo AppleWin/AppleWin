@@ -40,9 +40,9 @@ std::ostream& operator<<(std::ostream& os, const Timer & timer)
   const double m2 = timer.mySum2 / timer.myN;
   const double std = std::sqrt(std::max(0.0, m2 - m1 * m1));
   const double scale = 1000;
-  os << "total = " << std::setw(width) << timer.mySum * scale;
-  os << ", average = " << std::setw(width) << m1 * scale;
-  os << ", std = " << std::setw(width) << std * scale;
-  os << ", n = " << std::setw(width) << timer.myN;
+  os << "total = " << std::setw(width) << timer.mySum * scale << " ms";
+  os << ", average = " << std::setw(width) << m1 * scale << " ms";
+  os << ", std = " << std::setw(width) << std * scale << " ms";
+  os << ", n = " << std::setw(6) << timer.myN;
   return os;
 }

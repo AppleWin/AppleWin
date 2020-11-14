@@ -239,7 +239,7 @@ void run_sdl(int argc, const char * argv [])
   std::shared_ptr<SDL_Texture> tex(SDL_CreateTexture(ren.get(), format, SDL_TEXTUREACCESS_STATIC, width, height), SDL_DestroyTexture);
 
   const int fps = getRefreshRate();
-  std::cerr << "Video refresh rate: " << fps << "Hz, " << 1000.0 / fps << "ms" << std::endl;
+  std::cerr << "Video refresh rate: " << fps << " Hz, " << 1000.0 / fps << " ms" << std::endl;
   Emulator emulator(win, ren, tex);
 
   Timer global;
@@ -359,8 +359,8 @@ void run_sdl(int argc, const char * argv [])
 
   const double timeInSeconds = global.getTimeInSeconds();
   const double averageClock = g_nCumulativeCycles / timeInSeconds;
-  std::cerr << "Expected clock: " << g_fCurrentCLK6502 << "Hz, " << timeInSeconds << " s" << std::endl;
-  std::cerr << "Average clock:  " << averageClock << "Hz, " << g_nCumulativeCycles / g_fCurrentCLK6502 << " s" << std::endl;
+  std::cerr << "Expected clock: " << g_fCurrentCLK6502 << " Hz, " << timeInSeconds << " s" << std::endl;
+  std::cerr << "Average clock:  " << averageClock << " Hz, " << g_nCumulativeCycles / g_fCurrentCLK6502 << " s" << std::endl;
 
   SDirectSound::stop();
   stopEmulator();
