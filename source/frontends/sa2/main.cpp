@@ -226,7 +226,7 @@ void run_sdl(int argc, const char * argv [])
     return;
   }
 
-  std::shared_ptr<SDL_Renderer> ren(SDL_CreateRenderer(win.get(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC), SDL_DestroyRenderer);
+  std::shared_ptr<SDL_Renderer> ren(SDL_CreateRenderer(win.get(), options.sdlDriver, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC), SDL_DestroyRenderer);
   if (!ren)
   {
     std::cout << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
@@ -234,7 +234,7 @@ void run_sdl(int argc, const char * argv [])
   }
 
   const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
-  printRendererInfo(std::cerr, ren, format);
+  printRendererInfo(std::cerr, ren, format, options.sdlDriver);
 
   std::shared_ptr<SDL_Texture> tex(SDL_CreateTexture(ren.get(), format, SDL_TEXTUREACCESS_STATIC, width, height), SDL_DestroyTexture);
 

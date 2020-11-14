@@ -4,4 +4,4 @@
 #include <memory>
 #include <iosfwd>
 
-void printRendererInfo(std::ostream & os, std::shared_ptr<SDL_Renderer> & ren, const Uint32 pixelFormat);
+void printRendererInfo(std::ostream & os, std::shared_ptr<SDL_Renderer> & ren, const Uint32 pixelFormat, const int selectedDriver);

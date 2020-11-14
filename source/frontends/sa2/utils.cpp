@@ -1,7 +1,7 @@
 #include "frontends/sa2/utils.h"
 #include <ostream>
 
-void printRendererInfo(std::ostream & os, std::shared_ptr<SDL_Renderer> & ren, const Uint32 pixelFormat)
+void printRendererInfo(std::ostream & os, std::shared_ptr<SDL_Renderer> & ren, const Uint32 pixelFormat, const int selectedDriver)
 {
   SDL_RendererInfo info;
   SDL_GetRendererInfo(ren.get(), &info);
@@ -17,7 +17,7 @@ void printRendererInfo(std::ostream & os, std::shared_ptr<SDL_Renderer> & ren, c
 
   if (SDL_GetRendererInfo(ren.get(), &info) == 0)
   {
-    os << "Active driver: " << info.name << std::endl;
+    os << "Active driver (" << selectedDriver << "): " << info.name << std::endl;
     os << " SDL_RENDERER_SOFTWARE: " << ((info.flags & SDL_RENDERER_SOFTWARE) > 0) << std::endl;
     os << " SDL_RENDERER_ACCELERATED: " << ((info.flags & SDL_RENDERER_ACCELERATED) > 0) << std::endl;
     os << " SDL_RENDERER_PRESENTVSYNC: " << ((info.flags & SDL_RENDERER_PRESENTVSYNC) > 0) << std::endl;

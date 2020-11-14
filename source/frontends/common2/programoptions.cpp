@@ -15,7 +15,8 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
     ("conf", "Save configuration on exit")
     ("multi-threaded,m", "Multi threaded")
     ("loose-mutex,l", "Loose mutex")
-    ("timer-interval,i", po::value<int>()->default_value(16), "Timer interval in ms")
+    ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
+    ("timer-interval,i", po::value<int>()->default_value(options.timerInterval), "Timer interval in ms")
     ("qt-ini,q", "Use Qt ini file (read only)");
 
   po::options_description diskDesc("Disk");
@@ -32,7 +33,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
 
   po::options_description memoryDesc("Memory");
   memoryDesc.add_options()
-    ("memclear", po::value<int>(), "Memory initialization pattern [0..7]");
+    ("memclear", po::value<int>()->default_value(options.memclear), "Memory initialization pattern [0..7]");
   desc.add(memoryDesc);
 
   po::options_description emulatorDesc("Emulator");
@@ -60,6 +61,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
     options.multiThreaded = vm.count("multi-threaded");
     options.looseMutex = vm.count("loose-mutex");
     options.timerInterval = vm["timer-interval"].as<int>();
+    options.sdlDriver = vm["sdl-driver"].as<int>();
 
     if (vm.count("d1"))
     {
@@ -78,12 +80,9 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
       options.snapshot = vm["load-state"].as<std::string>();
     }
 
-    if (vm.count("memclear"))
-    {
-      const int memclear = vm["memclear"].as<int>();
-      if (memclear >=0 && memclear < NUM_MIP)
-	options.memclear = memclear;
-    }
+    const int memclear = vm["memclear"].as<int>();
+    if (memclear >=0 && memclear < NUM_MIP)
+      options.memclear = memclear;
 
     options.benchmark = vm.count("benchmark") > 0;
     options.headless = vm.count("headless") > 0;
