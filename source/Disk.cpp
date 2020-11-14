@@ -221,8 +221,6 @@ void Disk2InterfaceCard::CheckSpinning(const bool stateChanged, const ULONG uExe
 	if (modeChanged)
 		FrameDrawDiskLEDS( (HDC)0 );
 
-	CpuCalcCycles(uExecutedCycles);
-
 	if (modeChanged)
 	{
 		// Set m_diskLastCycle when motor changes: not spinning (ie. off for 1 sec) -> on
@@ -545,7 +543,6 @@ void __stdcall Disk2InterfaceCard::Enable(WORD, WORD address, BYTE, BYTE, ULONG 
 
 	m_currDrive = newDrive;
 #if LOG_DISK_ENABLE_DRIVE
-	CpuCalcCycles(uExecutedCycles);
 	LOG_DISK("%08X: enable drive: %d\r\n", (UINT32)g_nCumulativeCycles, m_currDrive);
 #endif
 	m_floppyDrive[!m_currDrive].m_spinning   = 0;
@@ -904,7 +901,6 @@ bool Disk2InterfaceCard::LogWriteCheckSyncFF(ULONG& uCycleDelta)
 
 //===========================================================================
 
-// Pre: called CpuCalcCycles()
 void Disk2InterfaceCard::UpdateLatchForEmptyDrive(FloppyDrive* pDrive)
 {
 	if ((g_nCumulativeCycles - pDrive->m_motorOnCycle) < SPINUP_UNTIL_LATCH_STABLE_CYCLES)
@@ -920,8 +916,6 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 	if (!pFloppy->m_trackimagedata && pFloppy->m_imagehandle)
 		ReadTrack(m_currDrive, uExecutedCycles);
-
-	CpuCalcCycles(uExecutedCycles);	// g_nCumulativeCycles required for UpdateLatchForEmptyDrive(), uSpinNibbleCount & LogWriteCheckSyncFF()
 
 	if (!pFloppy->m_trackimagedata)
 		return UpdateLatchForEmptyDrive(pDrive);
