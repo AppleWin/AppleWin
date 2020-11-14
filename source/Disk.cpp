@@ -224,7 +224,6 @@ void Disk2InterfaceCard::CheckSpinning(const ULONG uExecutedCycles)
 	if (modechange)
 	{
 		// Set m_diskLastCycle when motor changes: not spinning (ie. off for 1 sec) -> on
-		CpuCalcCycles(uExecutedCycles);
 		m_diskLastCycle = g_nCumulativeCycles;
 	}
 }
@@ -412,7 +411,6 @@ void __stdcall Disk2InterfaceCard::ControlMotor(WORD, WORD address, BYTE, BYTE, 
 	// NB. Motor off doesn't reset the Command Decoder like reset. (UTAIIe figures 9.7 & 9.8 chip C2)
 	// - so it doesn't reset this state: m_seqFunc, m_magnetStates
 #if LOG_DISK_MOTOR
-	CpuCalcCycles(uExecutedCycles);
 	LOG_DISK("%08X: motor %s\r\n", (UINT32)g_nCumulativeCycles, (m_floppyMotorOn) ? "on" : "off");
 #endif
 	CheckSpinning(uExecutedCycles);
@@ -452,7 +450,6 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 			m_magnetStates &= ~phase_bit;	// phase off
 	}
 
-	CpuCalcCycles(uExecutedCycles);
 #if LOG_DISK_PHASES
 	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
 #endif
@@ -906,7 +903,6 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 	// Improve precision of "authentic" drive mode - GH#125
 	UINT uSpinNibbleCount = 0;
-	CpuCalcCycles(uExecutedCycles);	// g_nCumulativeCycles required for uSpinNibbleCount & LogWriteCheckSyncFF()
 
 	if (!m_enhanceDisk && pDrive->m_spinning)
 	{
@@ -1018,8 +1014,6 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 
 UINT Disk2InterfaceCard::GetBitCellDelta(const ULONG uExecutedCycles)
 {
-	CpuCalcCycles(uExecutedCycles);
-
 	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
 
 	const BYTE optimalBitTiming = ImageGetOptimalBitTiming(floppy.m_imagehandle);
@@ -1613,7 +1607,6 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 	if (ImageIsWOZ(floppy.m_imagehandle))
 	{
 #if LOG_DISK_NIBBLES_READ
-		CpuCalcCycles(uExecutedCycles);
 		LOG_DISK("%08X: reset LSS: ~PC=%04X\r\n", (UINT32)g_nCumulativeCycles, regs.pc);
 #endif
 
@@ -1633,7 +1626,6 @@ void __stdcall Disk2InterfaceCard::SetReadMode(WORD, WORD, BYTE, BYTE, ULONG uEx
 	m_formatTrack.DriveSwitchedToReadMode(&m_floppyDrive[m_currDrive].m_disk);
 
 #if LOG_DISK_RW_MODE
-	CpuCalcCycles(uExecutedCycles);
 	LOG_DISK("%08X: rw mode: read\r\n", (UINT32)g_nCumulativeCycles);
 #endif
 }
@@ -1830,6 +1822,8 @@ void Disk2InterfaceCard::SetSequencerFunction(WORD addr)
 
 BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
+	CpuCalcCycles(nExecutedCycles);	// g_nCumulativeCycles needed by most Disk I/O functions
+
 	UINT uSlot = ((addr & 0xff) >> 4) - 8;
 	Disk2InterfaceCard* pCard = (Disk2InterfaceCard*) MemGetSlotParameters(uSlot);
 
@@ -1875,6 +1869,8 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 
 BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
+	CpuCalcCycles(nExecutedCycles);	// g_nCumulativeCycles needed by most Disk I/O functions
+
 	UINT uSlot = ((addr & 0xff) >> 4) - 8;
 	Disk2InterfaceCard* pCard = (Disk2InterfaceCard*) MemGetSlotParameters(uSlot);
 
