@@ -90,10 +90,9 @@ namespace
 
     void DirectSoundGenerator::setVolume()
     {
-        LONG dwVolume = 0;
-        myBuffer->GetVolume(&dwVolume);
-        const qreal volume = - qreal(dwVolume) / DSBVOLUME_MIN + 1.0;
-        myAudioOutput->setVolume(volume);
+        const qreal logVolume = myBuffer->GetLogarithmicVolume();
+        const qreal linVolume = QAudio::convertVolume(logVolume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
+        myAudioOutput->setVolume(linVolume);
     }
 
     void DirectSoundGenerator::start()

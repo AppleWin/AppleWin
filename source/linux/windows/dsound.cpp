@@ -173,6 +173,12 @@ HRESULT IDirectSoundBuffer::GetVolume( LONG * lplVolume )
   return DS_OK;
 }
 
+double IDirectSoundBuffer::GetLogarithmicVolume() const
+{
+  const double volume = (double(myVolume) - DSBVOLUME_MIN) / (0.0 - DSBVOLUME_MIN);
+  return volume;
+}
+
 HRESULT WINAPI DirectSoundCreate(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN pUnkOuter)
 {
   *ppDS = new IDirectSound();

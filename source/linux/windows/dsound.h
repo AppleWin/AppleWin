@@ -111,6 +111,8 @@ class IDirectSoundBuffer : public IUnknown
   HRESULT SetVolume( LONG lVolume );
   HRESULT GetVolume( LONG * lplVolume );
 
+  double GetLogarithmicVolume() const;  // in [0, 1]
+
   HRESULT GetStatus( LPDWORD lpdwStatus );
   HRESULT Restore();
 };
