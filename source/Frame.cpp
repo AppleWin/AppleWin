@@ -57,6 +57,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"
 #include "Debugger/Debug.h"
+#if _MSC_VER <= 1500	// VS2008 only (cl.exe v15.00)
+#include <sys/stat.h>
+#endif
 
 //#define ENABLE_MENU 0
 #define DEBUG_KEY_MESSAGES 0
