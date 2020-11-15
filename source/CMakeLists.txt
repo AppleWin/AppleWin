@@ -63,7 +63,7 @@ add_library(appleii SHARED
   linux/duplicates/Frame.cpp
   linux/duplicates/SerialComms.cpp
   linux/duplicates/IPropertySheet.cpp
-  linux/duplicates/Applewin.cpp
+  linux/duplicates/AppleWin.cpp
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp
