@@ -565,77 +565,46 @@ Update_t CmdBookmark (int nArgs)
 //===========================================================================
 Update_t CmdBookmarkAdd (int nArgs )
 {
-	// BMA [address]
-	// BMA # address
+	// BMA address
+	// BMA # address	; where # is [0...9]
 	if (! nArgs)
 	{
-		return CmdZeroPageList( 0 );
+		return CmdBookmarkList( 0 );
 	}
+
+	int iBookmark = 0;
 
 	int iArg = 1;
-	int iBookmark = NO_6502_TARGET;
-
 	if (nArgs > 1)
 	{
-		iBookmark = g_aArgs[ 1 ].nValue;
+		iBookmark = g_aArgs[ iArg ].nValue;
 		iArg++;
 	}
-
-	bool bAdded = false;
-	for (; iArg <= nArgs; iArg++ )
+	else
 	{
-		WORD nAddress = g_aArgs[ iArg ].nValue;
-
-		if (iBookmark == NO_6502_TARGET)
-		{
-			iBookmark = 0;
-			while ((iBookmark < MAX_BOOKMARKS) && (g_aBookmarks[iBookmark].bSet))
-			{
-				iBookmark++;
-			}
-		}
-
-		if ((iBookmark >= MAX_BOOKMARKS) && !bAdded)
-		{
-			char sText[ CONSOLE_WIDTH ];
-			sprintf( sText, "All bookmarks are currently in use.  (Max: %d)", MAX_BOOKMARKS );
-			ConsoleDisplayPush( sText );
-			return ConsoleUpdate();
-		}
-
-		// 2.9.0.16 Fixed: Replacing an existing bookmark incorrectly increased the total bookmark count.
-		int nOldBookmark = Bookmark_Find( nAddress );
-		if (nOldBookmark)
-		{
-			_Bookmark_Del( nAddress );
-		}
-
-		// 2.9.0.17 Fixed: If all bookmarks were used then setting a new one wouldn't update an existing one to the new address.
-		if (g_aBookmarks[ iBookmark ].bSet)
-		{
-			g_aBookmarks[ iBookmark ].nAddress = nAddress;
-			bAdded = true;
-		}
-		else
-			if (g_nBookmarks < MAX_BOOKMARKS)
-			{
-				bAdded = _Bookmark_Add( iBookmark, nAddress );
-				iBookmark++;
-			}
+		while ((iBookmark < MAX_BOOKMARKS) && g_aBookmarks[iBookmark].bSet)
+			iBookmark++;
 	}
 
+	WORD nAddress = g_aArgs[ iArg ].nValue;
+
+	if (iBookmark >= MAX_BOOKMARKS)
+	{
+		char sText[ CONSOLE_WIDTH ];
+		sprintf( sText, "All bookmarks are currently in use.  (Max: %d)", MAX_BOOKMARKS );
+		ConsoleDisplayPush( sText );
+		return ConsoleUpdate();
+	}
+
+	if (Bookmark_Find( nAddress ))
+		_Bookmark_Del( nAddress );
+
+	bool bAdded = _Bookmark_Add( iBookmark, nAddress );
 	if (!bAdded)
-		goto _Help;
+		return Help_Arg_1( CMD_BOOKMARK_ADD );
 
 	return UPDATE_DISASM | ConsoleUpdate();
-
-_Help:
-	return Help_Arg_1( CMD_BOOKMARK_ADD );
-
 }
-
-
-
 
 //===========================================================================
 Update_t CmdBookmarkClear (int nArgs)
@@ -653,7 +622,7 @@ Update_t CmdBookmarkClear (int nArgs)
 
 		iBookmark = g_aArgs[ iArg ].nValue;
 		if (g_aBookmarks[ iBookmark ].bSet)
-			g_aBookmarks[ iBookmark ].bSet = false;
+			_Bookmark_Del(g_aBookmarks[ iBookmark ].nAddress);
 	}
 
 	return UPDATE_DISASM;

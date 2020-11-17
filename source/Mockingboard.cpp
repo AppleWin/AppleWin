@@ -1826,8 +1826,7 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 		if(nMB != 0)	// Slot4 only
 			return 0;
 
-		int CS;
-
+		int CS = 0;
 		if (g_phasorMode == PH_Mockingboard)
 			CS = ( ( nAddr & 0x80 ) >> 7 ) + 1;							// 1 or 2
 		else if (g_phasorMode == PH_Phasor)
