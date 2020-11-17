@@ -63,6 +63,7 @@
     <ClInclude Include="source\Debugger\Util_MemoryTextFile.h" />
     <ClInclude Include="source\Debugger\Util_Text.h" />
     <ClInclude Include="source\DirectInput.h" />
+    <ClInclude Include="source\DirectVideo.h" />
     <ClInclude Include="source\Disk.h" />
     <ClInclude Include="source\Disk2CardManager.h" />
     <ClInclude Include="source\DiskDefs.h" />
@@ -141,6 +142,7 @@
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\CPU.cpp" />
     <ClCompile Include="source\DirectInput.cpp" />
+    <ClCompile Include="source\DirectVideo.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
     <ClCompile Include="source\SAM.cpp" />

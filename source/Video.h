@@ -167,7 +167,6 @@ struct WinBmpHeader4_t
 #endif
 
 // Globals __________________________________________________________
-
 extern COLORREF   g_nMonochromeRGB;	// saved to Registry
 extern uint32_t   g_uVideoMode;
 extern DWORD      g_eVideoType;		// saved to Registry
@@ -175,15 +174,6 @@ extern uint8_t   *g_pFramebufferbits;
 
 // Prototypes _______________________________________________________
 
-void    VideoBenchmark ();
-void    VideoChooseMonochromeColor (); // FIXME: Should be moved to PageConfig and call VideoSetMonochromeColor()
-void    VideoDestroy ();
-void    VideoDisplayLogo ();
-void    VideoInitialize ();
-void    VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
-void    VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
-void    VideoRedrawScreen (void);
-void    VideoRefreshScreen (uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedrawWholeScreen = false);
 void    VideoReinitialize (bool bInitVideoScannerAddress = true);
 void    VideoResetState ();
 enum VideoScanner_e {VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH};
@@ -213,8 +203,8 @@ enum VideoScreenShot_e
 	SCREENSHOT_280x192
 };
 void Video_TakeScreenShot( VideoScreenShot_e ScreenShotType );
-void Video_RedrawAndTakeScreenShot( const char* pScreenshotFilename );
 void Video_SetBitmapHeader( WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel );
+void Video_SaveScreenShot(const VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName);
 
 BYTE VideoSetMode(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 
@@ -237,8 +227,5 @@ bool IsVideoStyle(VideoStyle_e mask);
 
 VideoRefreshRate_e GetVideoRefreshRate(void);
 void SetVideoRefreshRate(VideoRefreshRate_e rate);
-
-bool DDInit(void);
-void DDUninit(void);
 
 const char* VideoGetAppWindowTitle(void);

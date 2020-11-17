@@ -205,6 +205,9 @@
     <ClCompile Include="source\DirectInput.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\DirectVideo.cpp">
+      <Filter>Source Files\Video</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\AppleWin.h">
@@ -494,6 +497,9 @@
     </ClInclude>
     <ClInclude Include="source\DirectInput.h">
       <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\DirectVideo.h">
+      <Filter>Source Files\Video</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

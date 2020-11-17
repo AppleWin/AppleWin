@@ -89,7 +89,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "AppleWin.h"
 #include "CardManager.h"
-#include "Frame.h"
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"

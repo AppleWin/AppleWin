@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 #include "SynchronousEventManager.h"
-#include "Video.h"
+#include "DirectVideo.h"
 #include "RGBMonitor.h"
 #include "NTSC.h"
 
@@ -2064,7 +2064,7 @@ static void RepeatInitialization(void)
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
-		VideoInitialize(); // g_pFramebufferinfo been created now
+		DirectVideoInitialize(); // g_pFramebufferinfo been created now
 		LogFileOutput("Main: VideoInitialize()\n");
 
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");
