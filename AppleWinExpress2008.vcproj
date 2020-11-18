@@ -918,6 +918,14 @@
 				Name="Video"
 				>
 				<File
+					RelativePath=".\source\DirectVideo.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\DirectVideo.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Frame.cpp"
 					>
 				</File>
