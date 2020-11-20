@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"
-#include "DirectInput.h"
+#include "Windows/DirectInput.h"
 #include "NTSC.h"
 #include "ParallelPrinter.h"
 #include "Pravets.h"
@@ -52,7 +52,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
-#include "DirectVideo.h"
+#include "Windows/DirectVideo.h"
 
 #include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"

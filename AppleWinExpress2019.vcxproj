@@ -62,8 +62,6 @@
     <ClInclude Include="source\Debugger\Debugger_Types.h" />
     <ClInclude Include="source\Debugger\Util_MemoryTextFile.h" />
     <ClInclude Include="source\Debugger\Util_Text.h" />
-    <ClInclude Include="source\DirectInput.h" />
-    <ClInclude Include="source\DirectVideo.h" />
     <ClInclude Include="source\Disk.h" />
     <ClInclude Include="source\Disk2CardManager.h" />
     <ClInclude Include="source\DiskDefs.h" />
@@ -110,6 +108,8 @@
     <ClInclude Include="source\Tfe\Tfesupp.h" />
     <ClInclude Include="source\Tfe\Uilib.h" />
     <ClInclude Include="source\Video.h" />
+    <ClInclude Include="source\Windows\DirectInput.h" />
+    <ClInclude Include="source\Windows\DirectVideo.h" />
     <ClInclude Include="source\YamlHelper.h" />
     <ClInclude Include="source\z80emu.h" />
     <ClInclude Include="source\Z80VICE\daa.h" />
@@ -141,8 +141,6 @@
     <ClCompile Include="source\Configuration\PropertySheet.cpp" />
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\CPU.cpp" />
-    <ClCompile Include="source\DirectInput.cpp" />
-    <ClCompile Include="source\DirectVideo.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
     <ClCompile Include="source\SAM.cpp" />
@@ -216,6 +214,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="source\Video.cpp" />
+    <ClCompile Include="source\Windows\DirectInput.cpp" />
+    <ClCompile Include="source\Windows\DirectVideo.cpp" />
     <ClCompile Include="source\YamlHelper.cpp" />
     <ClCompile Include="source\z80emu.cpp" />
     <ClCompile Include="source\Z80VICE\daa.cpp">

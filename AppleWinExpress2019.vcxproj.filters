@@ -202,11 +202,11 @@
     <ClCompile Include="source\SynchronousEventManager.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
-    <ClCompile Include="source\DirectInput.cpp">
-      <Filter>Source Files\Emulator</Filter>
+    <ClCompile Include="source\Windows\DirectInput.cpp">
+      <Filter>Source Files\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="source\DirectVideo.cpp">
-      <Filter>Source Files\Video</Filter>
+    <ClCompile Include="source\Windows\DirectVideo.cpp">
+      <Filter>Source Files\Windows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -495,11 +495,11 @@
     <ClInclude Include="source\SynchronousEventManager.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
-    <ClInclude Include="source\DirectInput.h">
-      <Filter>Source Files\Emulator</Filter>
+    <ClInclude Include="source\Windows\DirectInput.h">
+      <Filter>Source Files\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="source\DirectVideo.h">
-      <Filter>Source Files\Video</Filter>
+    <ClInclude Include="source\Windows\DirectVideo.h">
+      <Filter>Source Files\Windows</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -740,6 +740,9 @@
     </Filter>
     <Filter Include="Source Files\Model">
       <UniqueIdentifier>{15b450e4-f89f-4d80-9c44-48b32f33f3e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Windows">
+      <UniqueIdentifier>{95d0abc3-4007-4eb0-8222-4579b565de23}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
