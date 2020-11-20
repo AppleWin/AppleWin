@@ -7,5 +7,5 @@ namespace SDirectSound
 {
   void stop();
   void writeAudio();
-  void setOptions(const int initialSilence);
+  void printInfo();
 }

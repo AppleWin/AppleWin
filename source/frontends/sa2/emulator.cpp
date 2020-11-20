@@ -1,4 +1,5 @@
 #include "frontends/sa2/emulator.h"
+#include "frontends/sa2/sdirectsound.h"
 
 #include <iostream>
 
@@ -263,6 +264,11 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
     case SDLK_F2:
     {
       quit = true;
+      break;
+    }
+    case SDLK_F1:
+    {
+      SDirectSound::printInfo();
       break;
     }
     case SDLK_LALT:

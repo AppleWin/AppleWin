@@ -4,6 +4,8 @@
 
 #include <unordered_map>
 #include <memory>
+#include <iostream>
+#include <iomanip>
 
 namespace
 {
@@ -17,7 +19,7 @@ namespace
     void stop();
     void writeAudio();
 
-    void setOptions(const int initialSilence);
+    void printInfo() const;
 
   private:
     IDirectSoundBuffer * myBuffer;
@@ -27,12 +29,14 @@ namespace
     SDL_AudioDeviceID myAudioDevice;
     SDL_AudioSpec myAudioSpec;
 
+    int myBytesPerSecond;
+
     // options
     int myInitialSilence;
 
     void close();
+    bool isRunning() const;
     bool isRunning();
-    void writeEnoughSilence(const int ms);
 
     void mixBuffer(const void * ptr, const size_t size);
   };
@@ -44,7 +48,6 @@ namespace
     : myBuffer(buffer)
     , myAudioDevice(0)
   {
-    myInitialSilence = 200;
   }
 
   DirectSoundGenerator::~DirectSoundGenerator()
@@ -56,6 +59,11 @@ namespace
   {
     SDL_CloseAudioDevice(myAudioDevice);
     myAudioDevice = 0;
+  }
+
+  bool DirectSoundGenerator::isRunning() const
+  {
+    return myAudioDevice;
   }
 
   bool DirectSoundGenerator::isRunning()
@@ -84,39 +92,38 @@ namespace
 
     if (myAudioDevice)
     {
+      const int bitsPerSample = myAudioSpec.format & SDL_AUDIO_MASK_BITSIZE;
+      myBytesPerSecond = myAudioSpec.freq * myAudioSpec.channels * bitsPerSample / 8;
+
       SDL_PauseAudioDevice(myAudioDevice, 0);
-      // we give ourselves a bit of time in case things are not smooth
-      writeEnoughSilence(myInitialSilence);
       return true;
     }
 
     return false;
   }
 
-  void DirectSoundGenerator::setOptions(const int initialSilence)
+  void DirectSoundGenerator::printInfo() const
   {
-    myInitialSilence = std::max(0, initialSilence);
+    if (isRunning())
+    {
+      const int width = 5;
+      const DWORD bytesInBuffer = myBuffer->bufferSize - myBuffer->GetAvailableBytes();
+      const Uint32 bytesInQueue = SDL_GetQueuedAudioSize(myAudioDevice);
+      std::cerr << "Channels: " << (int)myAudioSpec.channels;
+      std::cerr << ", buffer: " << std::setw(width) << bytesInBuffer;
+      std::cerr << ", SDL: " << std::setw(width) << bytesInQueue;
+      const double queue = double(bytesInBuffer + bytesInQueue) / myBytesPerSecond;
+      std::cerr << ", queue: " << queue << " s" << std::endl;
+    }
   }
 
   void DirectSoundGenerator::stop()
   {
     if (myAudioDevice)
     {
-      writeEnoughSilence(10);  // just ti ensure we end up in silence
       SDL_PauseAudioDevice(myAudioDevice, 1);
       close();
     }
-  }
-
-  void DirectSoundGenerator::writeEnoughSilence(const int ms)
-  {
-    // write a few ms of silence
-    const int bitsPerSample = myAudioSpec.format & SDL_AUDIO_MASK_BITSIZE;
-    const int framesToWrite = (myAudioSpec.freq * ms * myAudioSpec.channels) / 1000;  // target frames to write
-    const int bytesToWrite = framesToWrite * bitsPerSample / 8;
-
-    std::vector<char> silence(bytesToWrite);
-    SDL_QueueAudio(myAudioDevice, silence.data(), silence.size());
   }
 
   void DirectSoundGenerator::mixBuffer(const void * ptr, const size_t size)
@@ -143,22 +150,19 @@ namespace
       return;
     }
 
-    // this is woraround of the AW nErrorInc calculation
-    // we are basically reading data too fast
-    // and AW then thinks we are running behind, and produces more data
-    // shoudl we instead check how much data is queued in SDL using SDL_GetQueuedAudioSize()?
+    // SDL does not have a maximum buffer size
+    // we have to be careful not writing too much
+    // otherwise AW starts generating a lot of samples
+    // and we loose sync
 
-    const int availableBytes = myBuffer->GetAvailableBytes();
-    const int bufferSize = myBuffer->bufferSize;
-    const int minimumAvailable = bufferSize / 4;  // look in Speaker.cpp and Mockingboard.cpp
+    // assume SDL's buffer is the same size as AW's
+    const int bytesFree = myBuffer->bufferSize - SDL_GetQueuedAudioSize(myAudioDevice);
 
-    if (availableBytes > minimumAvailable)
+    if (bytesFree > 0)
     {
-      const int toRead = availableBytes - minimumAvailable;
-
       LPVOID lpvAudioPtr1, lpvAudioPtr2;
       DWORD dwAudioBytes1, dwAudioBytes2;
-      myBuffer->Read(toRead, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
+      myBuffer->Read(bytesFree, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
 
       if (lpvAudioPtr1 && dwAudioBytes1)
       {
@@ -211,13 +215,12 @@ namespace SDirectSound
     }
   }
 
-  void setOptions(const int initialSilence)
+  void printInfo()
   {
     for (auto & it : activeSoundGenerators)
     {
       const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
-      generator->setOptions(initialSilence);
+      generator->printInfo();
     }
   }
-
 }
