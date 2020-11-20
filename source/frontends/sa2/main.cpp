@@ -152,8 +152,7 @@ namespace
     SDL_LockMutex(data->mutex);
 
     data->timer->tic();
-    const int uCyclesToExecute = int(g_fCurrentCLK6502 * interval * 0.001);
-    data->emulator->executeCycles(uCyclesToExecute);
+    data->emulator->execute(interval);
     data->timer->toc();
 
     SDL_UnlockMutex(data->mutex);
@@ -325,7 +324,9 @@ void run_sdl(int argc, const char * argv [])
     updateTextureTimerTag = "0 .";
 
     bool quit = false;
-    const int uCyclesToExecute = int(g_fCurrentCLK6502 / fps);
+
+    // it does not need to be exact
+    const size_t oneFrame = 1000 / fps;
 
     do
     {
@@ -335,7 +336,7 @@ void run_sdl(int argc, const char * argv [])
       eventTimer.toc();
 
       cpuTimer.tic();
-      emulator.executeCycles(uCyclesToExecute);
+      emulator.execute(oneFrame);
       cpuTimer.toc();
 
       updateTextureTimer.tic();

@@ -141,23 +141,22 @@ Emulator::Emulator(
   , myTexture(texture)
   , myMultiplier(1)
   , myFullscreen(false)
-  , myExtraCycles(0)
 {
 }
 
-void Emulator::executeCycles(const int targetCycles)
+void Emulator::execute(const size_t next)
 {
+  const size_t cyclesToExecute = mySpeed.getCyclesTillNext(next);
+
   const bool bVideoUpdate = true;
   const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 
-  const DWORD executedCycles = CpuExecute(targetCycles + myExtraCycles, bVideoUpdate);
+  const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
 
   g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
   GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
   MB_PeriodicUpdate(executedCycles);
   SpkrUpdate(executedCycles);
-
-  myExtraCycles = targetCycles - executedCycles;
 }
 
 SDL_Rect Emulator::updateTexture()

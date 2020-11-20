@@ -6,6 +6,7 @@ add_library(common2 STATIC
   programoptions.cpp
   utils.cpp
   timer.cpp
+  speed.cpp
   )
 
 find_package(Boost REQUIRED

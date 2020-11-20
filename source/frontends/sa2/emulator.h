@@ -3,6 +3,8 @@
 #include <SDL.h>
 #include <memory>
 
+#include "frontends/common2/speed.h"
+
 class Emulator
 {
 public:
@@ -12,7 +14,7 @@ public:
     const std::shared_ptr<SDL_Texture> & texture
     );
 
-  void executeCycles(const int cycles);
+  void execute(const size_t milliseconds);
   void refreshVideo();
   SDL_Rect updateTexture();
   void refreshVideo(const SDL_Rect & rect);
@@ -30,5 +32,6 @@ private:
 
   int myMultiplier;
   bool myFullscreen;
-  int myExtraCycles;
+
+  Speed mySpeed;
 };
