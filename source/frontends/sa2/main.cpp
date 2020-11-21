@@ -230,7 +230,7 @@ void run_sdl(int argc, const char * argv [])
 
   std::cerr << std::fixed << std::setprecision(2);
 
-  std::shared_ptr<SDL_Window> win(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, sw, sh, SDL_WINDOW_SHOWN), SDL_DestroyWindow);
+  std::shared_ptr<SDL_Window> win(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, sw, sh, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE), SDL_DestroyWindow);
   if (!win)
   {
     std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
