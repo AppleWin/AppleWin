@@ -31,14 +31,17 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
   // SEE HOW MANY HIRES FRAMES PER SECOND WE CAN PRODUCE WITH NOTHING ELSE
   // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
-  DWORD totalhiresfps = 0;
   g_uVideoMode             = VF_HIRES;
   FillMemory(mem+0x2000,0x2000,0x14);
   redraw();
 
-  auto start = std::chrono::steady_clock::now();
-  long elapsed;
+  typedef std::chrono::microseconds interval_t;
+  typedef uint64_t counter_t; // avoid overflows
+  const counter_t onesecond = 1000000;
+  counter_t totalhiresfps = 0;
+  counter_t elapsed;
 
+  auto start = std::chrono::steady_clock::now();
   do {
     if (totalhiresfps & 1)
       FillMemory(mem+0x2000,0x2000,0x14);
@@ -48,13 +51,15 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
     totalhiresfps++;
 
     const auto end = std::chrono::steady_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-  } while (elapsed < 1000);
+    elapsed = std::chrono::duration_cast<interval_t>(end - start).count();
+  } while (elapsed < onesecond);
+  // adjust for broken ms
+  totalhiresfps = totalhiresfps * onesecond / elapsed;
 
   // DETERMINE HOW MANY 65C02 CLOCK CYCLES WE CAN EMULATE PER SECOND WITH
   // NOTHING ELSE GOING ON
-  DWORD totalmhz10[2] = {0,0};	// bVideoUpdate & !bVideoUpdate
-  for (UINT i=0; i<2; i++)
+  counter_t totalmhz10[2] = {0, 0};	// bVideoUpdate & !bVideoUpdate
+  for (size_t i = 0; i < 2; i++)
   {
     CpuSetupBenchmark();
     start = std::chrono::steady_clock::now();
@@ -62,8 +67,9 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
       CpuExecute(100000, i==0 ? true : false);
       totalmhz10[i]++;
       const auto end = std::chrono::steady_clock::now();
-      elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    } while (elapsed < 1000);
+      elapsed = std::chrono::duration_cast<interval_t>(end - start).count();
+    } while (elapsed < onesecond);
+    totalmhz10[i] = totalmhz10[i] * onesecond / elapsed;
   }
 
   // IF THE PROGRAM COUNTER IS NOT IN THE EXPECTED RANGE AT THE END OF THE
@@ -117,16 +123,16 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
   // DO A REALISTIC TEST OF HOW MANY FRAMES PER SECOND WE CAN PRODUCE
   // WITH FULL EMULATION OF THE CPU, JOYSTICK, AND DISK HAPPENING AT
   // THE SAME TIME
-  DWORD realisticfps = 0;
+  counter_t realisticfps = 0;
   FillMemory(mem+0x2000,0x2000,0xAA);
   redraw();
 
+  const size_t dwClksPerFrame = NTSC_GetCyclesPerFrame();
+  const size_t cyclesPerMs = g_fCurrentCLK6502 / 1000;
+
+  counter_t cyclesThisFrame = 0;
   start = std::chrono::steady_clock::now();
 
-  const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-  const UINT cyclesPerMs = g_fCurrentCLK6502 / 1000;
-
-  int cyclesThisFrame = 0;
   do {
     // this is a simplified version of AppleWin.cpp:ContinueExecution()
     const DWORD executedcycles = CpuExecute(cyclesPerMs, true);
@@ -147,8 +153,9 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
       refresh();
     }
     const auto end = std::chrono::steady_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-  } while (elapsed < 1000);
+    elapsed = std::chrono::duration_cast<interval_t>(end - start).count();
+  } while (elapsed < onesecond);
+  realisticfps = realisticfps * onesecond / elapsed;
 
   // DISPLAY THE RESULTS
   TCHAR outstr[256];
