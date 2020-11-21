@@ -31,9 +31,6 @@ namespace
 
     int myBytesPerSecond;
 
-    // options
-    int myInitialSilence;
-
     void close();
     bool isRunning() const;
     bool isRunning();
@@ -107,7 +104,7 @@ namespace
     if (isRunning())
     {
       const int width = 5;
-      const DWORD bytesInBuffer = myBuffer->bufferSize - myBuffer->GetAvailableBytes();
+      const DWORD bytesInBuffer = myBuffer->GetBytesInBuffer();
       const Uint32 bytesInQueue = SDL_GetQueuedAudioSize(myAudioDevice);
       std::cerr << "Channels: " << (int)myAudioSpec.channels;
       std::cerr << ", buffer: " << std::setw(width) << bytesInBuffer;
