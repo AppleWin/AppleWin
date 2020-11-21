@@ -8,6 +8,7 @@
 #include "linux/windows/misc.h"
 #include "linux/data.h"
 #include "linux/paddle.h"
+#include "linux/benchmark.h"
 
 #include "frontends/common2/configuration.h"
 #include "frontends/common2/utils.h"
@@ -175,7 +176,10 @@ namespace
 
 int MessageBox(HWND, const char * text, const char * caption, UINT type)
 {
-  SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, caption, text, nullptr);
+  // tabs do not render properly
+  std::string s(text);
+  std::replace(s.begin(), s.end(), '\t', ' ');
+  SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, caption, s.c_str(), nullptr);
   return IDOK;
 }
 
@@ -253,137 +257,158 @@ void run_sdl(int argc, const char * argv [])
 
   const int fps = getRefreshRate();
   std::cerr << "Video refresh rate: " << fps << " Hz, " << 1000.0 / fps << " ms" << std::endl;
+
   Emulator emulator(win, ren, tex, options.fixedSpeed);
 
-  Timer global;
-  Timer updateTextureTimer;
-  Timer refreshScreenTimer;
-  Timer cpuTimer;
-  Timer eventTimer;
 
-  const std::string globalTag = ". .";
-  std::string updateTextureTimerTag, refreshScreenTimerTag, cpuTimerTag, eventTimerTag;
-
-  if (options.multiThreaded)
+  if (options.benchmark)
   {
-    refreshScreenTimerTag = "0 .";
-    cpuTimerTag           = "1 M";
-    eventTimerTag         = "0 M";
-    if (options.looseMutex)
-    {
-      updateTextureTimerTag = "0 .";
-    }
-    else
-    {
-      updateTextureTimerTag = "0 M";
-    }
+    // benchmark and vsync do not work together...
+    // so we only count the time to update the texture, not the video repaint
+    const auto redraw = [&emulator]{
+			  emulator.updateTexture();
+			};
 
-    std::shared_ptr<SDL_mutex> mutex(SDL_CreateMutex(), SDL_DestroyMutex);
+    const auto refresh = [&emulator]{
+			   NTSC_SetVideoMode( g_uVideoMode );
+			   NTSC_VideoRedrawWholeScreen();
+			   emulator.updateTexture();
+			 };
 
-    Data data;
-    data.mutex = mutex.get();
-    data.emulator = &emulator;
-    data.timer = &cpuTimer;
-
-    const SDL_TimerID timer = SDL_AddTimer(options.timerInterval, emulator_callback, &data);
-
-    bool quit = false;
-    do
-    {
-      SDL_LockMutex(data.mutex);
-
-      eventTimer.tic();
-      SDirectSound::writeAudio();
-      emulator.processEvents(quit);
-      eventTimer.toc();
-
-      if (options.looseMutex)
-      {
-	// loose mutex
-	// unlock early and let CPU run again in the timer callback
-	SDL_UnlockMutex(data.mutex);
-	// but the texture will be updated concurrently with the CPU updating the video buffer
-	// pixels are not atomic, so a pixel error could happen (if pixel changes while being read)
-	// on the positive side this will release pressure from CPU and allow for more parallelism
-      }
-
-      updateTextureTimer.tic();
-      const SDL_Rect rect = emulator.updateTexture();
-      updateTextureTimer.toc();
-
-      if (!options.looseMutex)
-      {
-	// safe mutex, only unlock after texture has been updated
-	// this will stop the CPU for longer
-	SDL_UnlockMutex(data.mutex);
-      }
-
-      if (!options.headless)
-      {
-	refreshScreenTimer.tic();
-	emulator.refreshVideo(rect);
-	refreshScreenTimer.toc();
-      }
-
-    } while (!quit);
-
-    SDL_RemoveTimer(timer);
-    // if the following enough to make sure the timer has finished
-    // and wont be called again?
-    SDL_LockMutex(data.mutex);
-    SDL_UnlockMutex(data.mutex);
+    VideoBenchmark(redraw, refresh);
   }
   else
   {
-    refreshScreenTimerTag = "0 .";
-    cpuTimerTag           = "0 .";
-    eventTimerTag         = "0 .";
-    updateTextureTimerTag = "0 .";
+    Timer global;
+    Timer updateTextureTimer;
+    Timer refreshScreenTimer;
+    Timer cpuTimer;
+    Timer eventTimer;
 
-    bool quit = false;
+    const std::string globalTag = ". .";
+    std::string updateTextureTimerTag, refreshScreenTimerTag, cpuTimerTag, eventTimerTag;
 
-    // it does not need to be exact
-    const size_t oneFrame = 1000 / fps;
-
-    do
+    if (options.multiThreaded)
     {
-      eventTimer.tic();
-      SDirectSound::writeAudio();
-      emulator.processEvents(quit);
-      eventTimer.toc();
-
-      cpuTimer.tic();
-      emulator.execute(oneFrame);
-      cpuTimer.toc();
-
-      updateTextureTimer.tic();
-      const SDL_Rect rect = emulator.updateTexture();
-      updateTextureTimer.toc();
-
-      if (!options.headless)
+      refreshScreenTimerTag = "0 .";
+      cpuTimerTag           = "1 M";
+      eventTimerTag         = "0 M";
+      if (options.looseMutex)
       {
-	refreshScreenTimer.tic();
-	emulator.refreshVideo(rect);
-	refreshScreenTimer.toc();
+	updateTextureTimerTag = "0 .";
       }
-    } while (!quit);
+      else
+      {
+	updateTextureTimerTag = "0 M";
+      }
+
+      std::shared_ptr<SDL_mutex> mutex(SDL_CreateMutex(), SDL_DestroyMutex);
+
+      Data data;
+      data.mutex = mutex.get();
+      data.emulator = &emulator;
+      data.timer = &cpuTimer;
+
+      const SDL_TimerID timer = SDL_AddTimer(options.timerInterval, emulator_callback, &data);
+
+      bool quit = false;
+      do
+      {
+	SDL_LockMutex(data.mutex);
+
+	eventTimer.tic();
+	SDirectSound::writeAudio();
+	emulator.processEvents(quit);
+	eventTimer.toc();
+
+	if (options.looseMutex)
+	{
+	  // loose mutex
+	  // unlock early and let CPU run again in the timer callback
+	  SDL_UnlockMutex(data.mutex);
+	  // but the texture will be updated concurrently with the CPU updating the video buffer
+	  // pixels are not atomic, so a pixel error could happen (if pixel changes while being read)
+	  // on the positive side this will release pressure from CPU and allow for more parallelism
+	}
+
+	updateTextureTimer.tic();
+	const SDL_Rect rect = emulator.updateTexture();
+	updateTextureTimer.toc();
+
+	if (!options.looseMutex)
+	{
+	  // safe mutex, only unlock after texture has been updated
+	  // this will stop the CPU for longer
+	  SDL_UnlockMutex(data.mutex);
+	}
+
+	if (!options.headless)
+	{
+	  refreshScreenTimer.tic();
+	  emulator.refreshVideo(rect);
+	  refreshScreenTimer.toc();
+	}
+
+      } while (!quit);
+
+      SDL_RemoveTimer(timer);
+      // if the following enough to make sure the timer has finished
+      // and wont be called again?
+      SDL_LockMutex(data.mutex);
+      SDL_UnlockMutex(data.mutex);
+    }
+    else
+    {
+      refreshScreenTimerTag = "0 .";
+      cpuTimerTag           = "0 .";
+      eventTimerTag         = "0 .";
+      updateTextureTimerTag = "0 .";
+
+      bool quit = false;
+
+      // it does not need to be exact
+      const size_t oneFrame = 1000 / fps;
+
+      do
+      {
+	eventTimer.tic();
+	SDirectSound::writeAudio();
+	emulator.processEvents(quit);
+	eventTimer.toc();
+
+	cpuTimer.tic();
+	emulator.execute(oneFrame);
+	cpuTimer.toc();
+
+	updateTextureTimer.tic();
+	const SDL_Rect rect = emulator.updateTexture();
+	updateTextureTimer.toc();
+
+	if (!options.headless)
+	{
+	  refreshScreenTimer.tic();
+	  emulator.refreshVideo(rect);
+	  refreshScreenTimer.toc();
+	}
+      } while (!quit);
+    }
+
+    global.toc();
+
+    const char sep[] = "], ";
+    std::cerr << "Global:  [" << globalTag << sep << global << std::endl;
+    std::cerr << "Events:  [" << eventTimerTag << sep << eventTimer << std::endl;
+    std::cerr << "Texture: [" << updateTextureTimerTag << sep << updateTextureTimer << std::endl;
+    std::cerr << "Screen:  [" << refreshScreenTimerTag << sep << refreshScreenTimer << std::endl;
+    std::cerr << "CPU:     [" << cpuTimerTag << sep << cpuTimer << std::endl;
+
+    const double timeInSeconds = global.getTimeInSeconds();
+    const double actualClock = g_nCumulativeCycles / timeInSeconds;
+    std::cerr << "Expected clock: " << g_fCurrentCLK6502 << " Hz, " << g_nCumulativeCycles / g_fCurrentCLK6502 << " s" << std::endl;
+    std::cerr << "Actual clock:   " << actualClock << " Hz, " << timeInSeconds << " s" << std::endl;
+    SDirectSound::stop();
   }
 
-  global.toc();
-
-  const char sep[] = "], ";
-  std::cerr << "Global:  [" << globalTag << sep << global << std::endl;
-  std::cerr << "Events:  [" << eventTimerTag << sep << eventTimer << std::endl;
-  std::cerr << "Texture: [" << updateTextureTimerTag << sep << updateTextureTimer << std::endl;
-  std::cerr << "Screen:  [" << refreshScreenTimerTag << sep << refreshScreenTimer << std::endl;
-  std::cerr << "CPU:     [" << cpuTimerTag << sep << cpuTimer << std::endl;
-
-  const double timeInSeconds = global.getTimeInSeconds();
-  const double actualClock = g_nCumulativeCycles / timeInSeconds;
-  std::cerr << "Expected clock: " << g_fCurrentCLK6502 << " Hz, " << g_nCumulativeCycles / g_fCurrentCLK6502 << " s" << std::endl;
-  std::cerr << "Actual clock:   " << actualClock << " Hz, " << timeInSeconds << " s" << std::endl;
-
-  SDirectSound::stop();
   stopEmulator();
   uninitialiseEmulator();
 }
