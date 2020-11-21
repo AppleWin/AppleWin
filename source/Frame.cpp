@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"
-#include "DirectInput.h"
+#include "Windows/DirectInput.h"
 #include "NTSC.h"
 #include "ParallelPrinter.h"
 #include "Pravets.h"
@@ -52,7 +52,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
-#include "Video.h"
+#include "Windows/WinVideo.h"
 
 #include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"
@@ -1162,7 +1162,7 @@ LRESULT CALLBACK FrameWndProc (
       CpuDestroy();
       MemDestroy();
       SpkrDestroy();
-      VideoDestroy();
+      DirectVideoDestroy();
       MB_Destroy();
       DeleteGdiObjects();
       DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
