@@ -205,7 +205,7 @@
     <ClCompile Include="source\Windows\DirectInput.cpp">
       <Filter>Source Files\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="source\Windows\DirectVideo.cpp">
+    <ClCompile Include="source\Windows\WinVideo.cpp">
       <Filter>Source Files\Windows</Filter>
     </ClCompile>
   </ItemGroup>
@@ -498,7 +498,7 @@
     <ClInclude Include="source\Windows\DirectInput.h">
       <Filter>Source Files\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="source\Windows\DirectVideo.h">
+    <ClInclude Include="source\Windows\WinVideo.h">
       <Filter>Source Files\Windows</Filter>
     </ClInclude>
   </ItemGroup>

@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Frame.h"
 #include "../Registry.h"
 #include "../SerialComms.h"
-#include "../Windows/DirectVideo.h"
+#include "../Windows/WinVideo.h"
 #include "../resource/resource.h"
 
 CPageConfig* CPageConfig::ms_this = 0;	// reinit'd in ctor

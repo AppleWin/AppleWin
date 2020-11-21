@@ -622,14 +622,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\DirectInput.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\DirectInput.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\Joystick.cpp"
 					>
 				</File>
@@ -918,14 +910,6 @@
 				Name="Video"
 				>
 				<File
-					RelativePath=".\source\DirectVideo.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\DirectVideo.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\Frame.cpp"
 					>
 				</File>
@@ -963,6 +947,26 @@
 				</File>
 				<File
 					RelativePath=".\source\Video.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Windows"
+				>
+				<File
+					RelativePath=".\source\Windows\DirectInput.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Windows\DirectInput.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Windows\WinVideo.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Windows\WinVideo.h"
 					>
 				</File>
 			</Filter>
