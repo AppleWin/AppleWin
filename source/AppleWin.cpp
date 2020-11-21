@@ -2064,7 +2064,7 @@ static void RepeatInitialization(void)
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
-		DirectVideoInitialize(); // g_pFramebufferinfo been created now
+		WinVideoInitialize(); // g_pFramebufferinfo been created now
 		LogFileOutput("Main: VideoInitialize()\n");
 
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");

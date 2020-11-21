@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Globals (Public)
 
-    uint8_t      *g_pFramebufferbits = NULL; // last drawn frame (initialized in DirectVideoInitialize)
+    uint8_t      *g_pFramebufferbits = NULL; // last drawn frame (initialized in WinVideoInitialize)
 	int           g_nAltCharSetOffset  = 0; // alternate character set
 
 // Globals (Private)

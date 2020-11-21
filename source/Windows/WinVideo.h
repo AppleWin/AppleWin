@@ -2,8 +2,8 @@
 
 // Prototypes _______________________________________________________
 
-void DirectVideoInitialize();
-void DirectVideoDestroy();
+void WinVideoInitialize();
+void WinVideoDestroy();
 
 void    VideoBenchmark ();
 void    VideoChooseMonochromeColor (); // FIXME: Should be moved to PageConfig and call VideoSetMonochromeColor()

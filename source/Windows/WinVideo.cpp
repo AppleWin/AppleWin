@@ -81,7 +81,7 @@ static void videoCreateDIBSection()
 // ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
 //
 
-void DirectVideoInitialize()
+void WinVideoInitialize()
 {
 	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
 	VideoResetState();
@@ -108,7 +108,7 @@ void DirectVideoInitialize()
 	videoCreateDIBSection();
 }
 
-void DirectVideoDestroy()
+void WinVideoDestroy()
 {
 
 	// DESTROY BUFFERS

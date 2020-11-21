@@ -1162,7 +1162,7 @@ LRESULT CALLBACK FrameWndProc (
       CpuDestroy();
       MemDestroy();
       SpkrDestroy();
-      DirectVideoDestroy();
+      WinVideoDestroy();
       MB_Destroy();
       DeleteGdiObjects();
       DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
