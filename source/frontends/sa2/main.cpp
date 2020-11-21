@@ -1,5 +1,6 @@
 #include <iostream>
 #include <SDL.h>
+#include <SDL_image.h>
 #include <memory>
 #include <iomanip>
 
@@ -12,6 +13,7 @@
 #include "frontends/common2/utils.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/timer.h"
+#include <frontends/common2/resources.h>
 #include "frontends/sa2/emulator.h"
 #include "frontends/sa2/gamepad.h"
 #include "frontends/sa2/sdirectsound.h"
@@ -159,6 +161,16 @@ namespace
     return interval;
   }
 
+  void setApplicationIcon(const std::shared_ptr<SDL_Window> & win)
+  {
+    const std::string path = getResourcePath() + "APPLEWIN.ICO";
+    std::shared_ptr<SDL_Surface> icon(IMG_Load(path.c_str()), SDL_FreeSurface);
+    if (icon)
+    {
+      SDL_SetWindowIcon(win.get(), icon.get());
+    }
+  }
+
 }
 
 int MessageBox(HWND, const char * text, const char * caption, UINT type)
@@ -224,6 +236,8 @@ void run_sdl(int argc, const char * argv [])
     std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
     return;
   }
+
+  setApplicationIcon(win);
 
   std::shared_ptr<SDL_Renderer> ren(SDL_CreateRenderer(win.get(), options.sdlDriver, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC), SDL_DestroyRenderer);
   if (!ren)
