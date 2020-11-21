@@ -5,7 +5,7 @@
 class Speed
 {
 public:
-  Speed();
+  Speed(const bool fixedSpeed);
 
   // calculate the number of cycles to execute in the current period
   // assuming the next call will happen in x milliseconds
@@ -13,6 +13,7 @@ public:
 
 private:
 
+  const bool myFixedSpeed;
   std::chrono::time_point<std::chrono::steady_clock> myStartTime;
   uint64_t myStartCycles;
 };

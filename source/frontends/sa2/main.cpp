@@ -253,7 +253,7 @@ void run_sdl(int argc, const char * argv [])
 
   const int fps = getRefreshRate();
   std::cerr << "Video refresh rate: " << fps << " Hz, " << 1000.0 / fps << " ms" << std::endl;
-  Emulator emulator(win, ren, tex);
+  Emulator emulator(win, ren, tex, options.fixedSpeed);
 
   Timer global;
   Timer updateTextureTimer;
@@ -318,9 +318,12 @@ void run_sdl(int argc, const char * argv [])
 	SDL_UnlockMutex(data.mutex);
       }
 
-      refreshScreenTimer.tic();
-      emulator.refreshVideo(rect);
-      refreshScreenTimer.toc();
+      if (!options.headless)
+      {
+	refreshScreenTimer.tic();
+	emulator.refreshVideo(rect);
+	refreshScreenTimer.toc();
+      }
 
     } while (!quit);
 
@@ -357,9 +360,12 @@ void run_sdl(int argc, const char * argv [])
       const SDL_Rect rect = emulator.updateTexture();
       updateTextureTimer.toc();
 
-      refreshScreenTimer.tic();
-      emulator.refreshVideo(rect);
-      refreshScreenTimer.toc();
+      if (!options.headless)
+      {
+	refreshScreenTimer.tic();
+	emulator.refreshVideo(rect);
+	refreshScreenTimer.toc();
+      }
     } while (!quit);
   }
 

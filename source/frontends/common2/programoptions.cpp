@@ -39,7 +39,8 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
   po::options_description emulatorDesc("Emulator");
   emulatorDesc.add_options()
     ("log", "Log to AppleWin.log")
-    ("headless", "Headless: disable video")
+    ("headless", "Headless: disable video (freewheel)")
+    ("fixed-speed", "Fixed (non-adaptive) speed")
     ("ntsc,nt", "NTSC: execute NTSC code")
     ("benchmark,b", "Benchmark emulator")
     ("no-squaring", "Gamepad range is (already) a square");
@@ -89,6 +90,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
     options.log = vm.count("log") > 0;
     options.ntsc = vm.count("ntsc") > 0;
     options.squaring = vm.count("no-squaring") == 0;
+    options.fixedSpeed = vm.count("fixed-speed") > 0;
 
     return true;
   }

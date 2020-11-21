@@ -29,6 +29,7 @@ struct EmulatorOptions
   bool multiThreaded = false;
   bool looseMutex = false;   // whether SDL_UpdateTexture is mutex protected (from CPU)
   int timerInterval = 16; // only when multithreaded
+  bool fixedSpeed = false; // default adaptive
 
   int sdlDriver = -1; // default = -1 to let SDL choose
 };

@@ -135,13 +135,15 @@ namespace
 Emulator::Emulator(
   const std::shared_ptr<SDL_Window> & window,
   const std::shared_ptr<SDL_Renderer> & renderer,
-  const std::shared_ptr<SDL_Texture> & texture
+  const std::shared_ptr<SDL_Texture> & texture,
+  const bool fixedSpeed
 )
   : myWindow(window)
   , myRenderer(renderer)
   , myTexture(texture)
   , myMultiplier(1)
   , myFullscreen(false)
+  , mySpeed(fixedSpeed)
 {
 }
 
