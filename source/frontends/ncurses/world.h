@@ -3,7 +3,7 @@
 int ProcessKeyboard();
 void ProcessInput();
 void NVideoInitialize();
-void VideoUninitialize();
+void NVideoUninitialize();
 void VideoRedrawScreen();
 
 void output(const char *fmt, ...);

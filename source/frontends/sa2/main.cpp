@@ -9,6 +9,7 @@
 #include "linux/data.h"
 #include "linux/paddle.h"
 #include "linux/benchmark.h"
+#include "linux/videobuffer.h"
 
 #include "frontends/common2/configuration.h"
 #include "frontends/common2/utils.h"
@@ -65,11 +66,38 @@ namespace
     SpkrInitialize();
 
     MemInitialize();
-    VideoInitialize();
+    VideoBufferInitialize();
     VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
 
     GetCardMgr().GetDisk2CardMgr().Reset();
     HD_Reset();
+  }
+
+  void stopEmulator()
+  {
+    CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
+    if (pMouseCard)
+    {
+      pMouseCard->Reset();
+    }
+    VideoBufferInitialize();
+    MemDestroy();
+  }
+
+  void uninitialiseEmulator()
+  {
+    SpkrDestroy();
+    MB_Destroy();
+    DSUninit();
+
+    HD_Destroy();
+    PrintDestroy();
+    CpuDestroy();
+
+    GetCardMgr().GetDisk2CardMgr().Destroy();
+    ImageDestroy();
+    LogDone();
+    RiffFinishWriteFile();
   }
 
   void applyOptions(const EmulatorOptions & options)
@@ -100,32 +128,6 @@ namespace
     }
 
     Paddle::setSquaring(options.squaring);
-  }
-
-  void stopEmulator()
-  {
-    CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
-    if (pMouseCard)
-    {
-      pMouseCard->Reset();
-    }
-    MemDestroy();
-  }
-
-  void uninitialiseEmulator()
-  {
-    SpkrDestroy();
-    MB_Destroy();
-    DSUninit();
-
-    HD_Destroy();
-    PrintDestroy();
-    CpuDestroy();
-
-    GetCardMgr().GetDisk2CardMgr().Destroy();
-    ImageDestroy();
-    LogDone();
-    RiffFinishWriteFile();
   }
 
   int getRefreshRate()

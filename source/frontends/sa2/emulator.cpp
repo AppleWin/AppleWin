@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include "linux/videobuffer.h"
 #include "linux/data.h"
 #include "linux/paddle.h"
 #include "linux/keyboard.h"
@@ -15,6 +16,7 @@
 #include "CPU.h"
 #include "Frame.h"
 #include "Video.h"
+#include "Windows/WinVideo.h"
 #include "NTSC.h"
 #include "Mockingboard.h"
 #include "Speaker.h"

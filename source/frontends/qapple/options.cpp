@@ -12,6 +12,7 @@
 #include "Video.h"
 #include "Speaker.h"
 #include "Mockingboard.h"
+#include "Windows/WinVideo.h"
 
 #include <QMessageBox>
 #include <QGamepad>

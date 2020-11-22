@@ -31,6 +31,7 @@ add_library(appleii SHARED
   Riff.cpp
   SaveState.cpp
   SynchronousEventManager.cpp
+  Video.cpp
 
   Configuration/PropertySheetHelper.cpp
 
@@ -56,9 +57,10 @@ add_library(appleii SHARED
   linux/version.cpp
   linux/registry.cpp
   linux/keyboard.cpp
+  linux/videobuffer.cpp
 
   linux/duplicates/Debug.cpp
-  linux/duplicates/Video.cpp
+  linux/duplicates/WinVideo.cpp
   linux/duplicates/Joystick.cpp
   linux/duplicates/Frame.cpp
   linux/duplicates/SerialComms.cpp

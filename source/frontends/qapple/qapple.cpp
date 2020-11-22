@@ -22,8 +22,10 @@
 #include "Speaker.h"
 #include "Riff.h"
 #include "RGBMonitor.h"
+#include "Windows/WinVideo.h"
 
 #include "linux/data.h"
+#include "linux/videobuffer.h"
 #include "linux/benchmark.h"
 #include "linux/version.h"
 #include "linux/paddle.h"
@@ -110,7 +112,7 @@ namespace
         MB_Initialize();
         SpkrInitialize();
         MemInitialize();
-        VideoInitialize();
+        VideoBufferInitialize();
         VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
 
         emulator->displayLogo();
@@ -132,7 +134,7 @@ namespace
         PrintDestroy();
         MemDestroy();
         SpkrDestroy();
-        VideoDestroy();
+        VideoBufferDestroy();
         MB_Destroy();
         DSUninit();
         CpuDestroy();

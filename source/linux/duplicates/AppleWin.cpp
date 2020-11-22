@@ -26,6 +26,7 @@
 
 static const UINT VERSIONSTRING_SIZE = 16;
 TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";
+static UINT16 g_OldAppleWinVersion[4] = {0};
 
 HANDLE		g_hCustomRom = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $C000..$FFFF(16KiB) or $D000..$FFFF(12KiB)
 
@@ -386,4 +387,9 @@ CardManager& GetCardMgr(void)
 {
 	static CardManager g_CardMgr;	// singleton
 	return g_CardMgr;
+}
+
+const UINT16* GetOldAppleWinVersion(void)
+{
+	return g_OldAppleWinVersion;
 }

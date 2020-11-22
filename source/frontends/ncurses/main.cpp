@@ -25,6 +25,7 @@
 #include "linux/data.h"
 #include "linux/benchmark.h"
 #include "linux/paddle.h"
+#include "linux/videobuffer.h"
 #include "frontends/common2/configuration.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/utils.h"
@@ -181,6 +182,7 @@ namespace
 	DSInit();
 	MB_Initialize();
 	MemInitialize();
+	VideoBufferInitialize();
 	NVideoInitialize();
 	cardManager.GetDisk2CardMgr().Reset();
 	HD_Reset();
@@ -204,13 +206,14 @@ namespace
 	{
 	  pMouseCard->Reset();
 	}
+	VideoBufferDestroy();
 	MemDestroy();
 	MB_Destroy();
 	DSUninit();
       }
       while (g_bRestart);
 
-      VideoUninitialize();
+      NVideoUninitialize();
     }
     else
     {

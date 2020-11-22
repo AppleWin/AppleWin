@@ -360,14 +360,13 @@ void FrameRefreshStatus(int x, bool)
 
 void NVideoInitialize()
 {
-  VideoInitialize();
   VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
 
   setlocale(LC_ALL, "");
   initscr();
 
   // does not seem to be a problem calling endwin() multiple times
-  std::atexit(VideoUninitialize);
+  std::atexit(NVideoUninitialize);
 
   colors.reset(new GraphicsColors(20, 20, 32));
 
@@ -387,7 +386,7 @@ void NVideoInitialize()
   signal(SIGINT, sig_handler);
 }
 
-void VideoUninitialize()
+void NVideoUninitialize()
 {
   endwin();
 }
