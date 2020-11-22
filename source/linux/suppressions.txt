@@ -1,0 +1,50 @@
+# from build folder
+# valgrind --suppressions=../source/linux/suppressions.txt --gen-suppressions=all --leak-check=full ./sa2
+
+# for sa2
+{
+   Intel Addr2
+   Memcheck:Addr2
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/dri/i965_dri.so
+}
+
+{
+   Intel Addr4
+   Memcheck:Addr4
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/dri/i965_dri.so
+}
+
+{
+   Intel Addr8
+   Memcheck:Addr8
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/dri/i965_dri.so
+}
+
+{
+   PA Cond
+   Memcheck:Cond
+   fun:pa_shm_cleanup
+   fun:pa_shm_create_rw
+   fun:pa_mempool_new
+   fun:pa_context_new_with_proplist
+}
+
+{
+   X Param
+   Memcheck:Param
+   writev(vector[...])
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/libxcb.so.1.1.0
+}
+
+# for qapple
+
+{
+   Intel Addr1
+   Memcheck:Addr1
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/dri/i965_dri.so
+}
