@@ -59,7 +59,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
 				: *(mem+addr)													\
 		)
-#define _READ_WITH_IO_F8xx (													\
+#define _READ_WITH_IO_F8xx (										/* GH#827 */\
 			((addr & 0xF000) == 0xC000)											\
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
 				: ((addr & 0xFF00) == 0xF800)									\
@@ -81,7 +81,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles);\
 			}																			\
 		}
-#define _WRITE_WITH_IO_F8xx(a) {														\
+#define _WRITE_WITH_IO_F8xx(a) {											/* GH#827 */\
 			if ((addr & 0xFF00) == 0xF800)												\
 				IO_F8xx(regs.pc,addr,1,(BYTE)(a),uExecutedCycles);						\
 			else {																		\
