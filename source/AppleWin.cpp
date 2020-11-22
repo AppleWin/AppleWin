@@ -34,7 +34,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debug.h"
 #include "Disk.h"
 #include "DiskImage.h"
-#include "Frame.h"
 #include "Harddisk.h"
 #include "Joystick.h"
 #include "Keyboard.h"
@@ -55,6 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #endif
 #include "SynchronousEventManager.h"
 #include "Windows/WinVideo.h"
+#include "Windows/WinFrame.h"
 #include "RGBMonitor.h"
 #include "NTSC.h"
 
