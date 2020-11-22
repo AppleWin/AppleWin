@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //#define STRICT
 
-#include "DirectInput.h"
+#include "Windows/DirectInput.h"
 #include "SoundCore.h"	// SAFE_RELEASE()
 #include "Log.h"
 #include "Common.h"

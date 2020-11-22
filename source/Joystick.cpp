@@ -507,7 +507,7 @@ static void DoAutofire(UINT uButton, BOOL& pressed)
 	BOOL nowPressed = pressed;
 	if (sg_PropertySheet.GetAutofire(uButton) && pressed)
 	{
-		toggle[uButton] = (!lastPressed[uButton]) ? TRUE : toggle[uButton] = !toggle[uButton];
+		toggle[uButton] = (!lastPressed[uButton]) ? TRUE : !toggle[uButton];
 		pressed = pressed && toggle[uButton];
 	}
 	lastPressed[uButton] = nowPressed;
