@@ -1485,14 +1485,6 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 	if (imageSizeRemaining < 0)
 		return eMismatch;
 
-	std::string szMetadata;
-	std::stringstream ssMetadata;
-	std::string szTmp;
-	const char cRowDelim = '\n';
-	std::string szColDelim = "\t";
-	size_t iTabPos;
-	std::unordered_map<std::string, std::string>::const_iterator pTitlePos;
-
 	pImageInfo->iCRC32 = (UINT32)(pImageInfo->pImageBuffer + 8);	// The CRC32 of the image chunks, stored in the WOZ header
 
 	while(imageSizeRemaining >= sizeof(WOZChunkHdr))
@@ -1517,8 +1509,18 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 			case WRIT_CHUNK_ID:	// WOZ v2 (optional)
 				break;
 			case META_CHUNK_ID:	// (optional)
+			{
 				// get all metadata into usWOZMetadata
 				// Multiple values are "|" separated
+
+				std::string szMetadata;
+				std::stringstream ssMetadata;
+				std::string szTmp;
+				const char cRowDelim = '\n';
+				std::string szColDelim = "\t";
+				size_t iTabPos;
+				std::unordered_map<std::string, std::string>::const_iterator pTitlePos;
+
 				szMetadata = std::string((const char*)pImage32, chunkSize);
 				ssMetadata = std::stringstream(szMetadata);
 				while (std::getline(ssMetadata, szTmp, cRowDelim))
@@ -1526,10 +1528,11 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 					iTabPos = szTmp.find(szColDelim);
 					if (iTabPos && (iTabPos < szTmp.length()))
 					{
-						pImageInfo->umWOZMetadata[szTmp.substr(0, iTabPos)] = szTmp.substr(iTabPos+1);
+						pImageInfo->umWOZMetadata[szTmp.substr(0, iTabPos)] = szTmp.substr(iTabPos + 1);
 					}
 				}
 				break;
+			}
 			default:	// no idea what this chunk is, so skip it
 				_ASSERT(0);
 				break;
