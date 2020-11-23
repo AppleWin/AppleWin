@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "Debug.h"
 #include "Disk.h"
-#include "Frame.h"
+#include "Windows/WinFrame.h"
 #include "Joystick.h"
 #include "Keyboard.h"
 #include "LanguageCard.h"

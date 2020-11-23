@@ -208,6 +208,9 @@
     <ClCompile Include="source\Windows\WinVideo.cpp">
       <Filter>Source Files\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="source\Windows\WinFrame.cpp">
+      <Filter>Source Files\Windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\AppleWin.h">
@@ -499,6 +502,9 @@
       <Filter>Source Files\Windows</Filter>
     </ClInclude>
     <ClInclude Include="source\Windows\WinVideo.h">
+      <Filter>Source Files\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Windows\WinFrame.h">
       <Filter>Source Files\Windows</Filter>
     </ClInclude>
   </ItemGroup>

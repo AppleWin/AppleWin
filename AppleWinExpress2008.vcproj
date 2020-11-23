@@ -962,6 +962,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Windows\WinFrame.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Windows\WinFrame.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Windows\WinVideo.cpp"
 					>
 				</File>
