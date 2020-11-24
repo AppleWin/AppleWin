@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Harddisk.h"
 #include "Core.h"
-#include "AppleWin.h"
+#include "Windows/AppleWin.h"
 #include "CardManager.h"
 #include "CPU.h"
 #include "DiskImage.h"	// ImageError_e, Disk_Status_e

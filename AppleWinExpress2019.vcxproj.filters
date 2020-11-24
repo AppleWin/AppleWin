@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="source\AppleWin.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\6821.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
@@ -217,11 +214,11 @@
     <ClCompile Include="source\Utilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\Windows\AppleWin.cpp">
+      <Filter>Source Files\Windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source\AppleWin.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="source\CommonVICE\6510core.h">
       <Filter>Source Files\CommonVICE</Filter>
     </ClInclude>
@@ -518,6 +515,9 @@
     </ClInclude>
     <ClInclude Include="source\Utilities.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Windows\AppleWin.h">
+      <Filter>Source Files\Windows</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

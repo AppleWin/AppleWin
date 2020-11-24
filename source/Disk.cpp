@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "SaveState_Structs_v1.h"
 
-#include "AppleWin.h"
+#include "Windows/AppleWin.h"
 #include "Core.h"
 #include "CPU.h"
 #include "DiskImage.h"

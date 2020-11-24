@@ -22,7 +22,6 @@
     <ClInclude Include="resource\resource.h" />
     <ClInclude Include="resource\winres.h" />
     <ClInclude Include="source\6821.h" />
-    <ClInclude Include="source\AppleWin.h" />
     <ClInclude Include="source\AY8910.h" />
     <ClInclude Include="source\Card.h" />
     <ClInclude Include="source\CardManager.h" />
@@ -110,6 +109,7 @@
     <ClInclude Include="source\Tfe\Uilib.h" />
     <ClInclude Include="source\Utilities.h" />
     <ClInclude Include="source\Video.h" />
+    <ClInclude Include="source\Windows\AppleWin.h" />
     <ClInclude Include="source\Windows\DirectInput.h" />
     <ClInclude Include="source\Windows\WinFrame.h" />
     <ClInclude Include="source\Windows\WinVideo.h" />
@@ -131,7 +131,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\6821.cpp" />
-    <ClCompile Include="source\AppleWin.cpp" />
     <ClCompile Include="source\AY8910.cpp" />
     <ClCompile Include="source\CardManager.cpp" />
     <ClCompile Include="source\Configuration\About.cpp" />
@@ -219,6 +218,7 @@
     </ClCompile>
     <ClCompile Include="source\Utilities.cpp" />
     <ClCompile Include="source\Video.cpp" />
+    <ClCompile Include="source\Windows\AppleWin.cpp" />
     <ClCompile Include="source\Windows\DirectInput.cpp" />
     <ClCompile Include="source\Windows\WinFrame.cpp" />
     <ClCompile Include="source\Windows\WinVideo.cpp" />
