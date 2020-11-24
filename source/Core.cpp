@@ -232,6 +232,27 @@ void SetCurrentCLK6502(void)
 	MB_Reinitialize();
 }
 
+void UseClockMultiplier(double clockMultiplier)
+{
+	if (clockMultiplier == 0.0)
+		return;
+
+	if (clockMultiplier < 1.0)
+	{
+		if (clockMultiplier < 0.5)
+			clockMultiplier = 0.5;
+		g_dwSpeed = (ULONG)((clockMultiplier - 0.5) * 20);	// [0.5..0.9] -> [0..9]
+	}
+	else
+	{
+		g_dwSpeed = (ULONG)(clockMultiplier * 10);
+		if (g_dwSpeed >= SPEED_MAX)
+			g_dwSpeed = SPEED_MAX - 1;
+	}
+
+	SetCurrentCLK6502();
+}
+
 void SetAppleWinVersion(UINT16 major, UINT16 minor, UINT16 fix, UINT16 fix_minor)
 {
 	g_AppleWinVersion[0] = major;

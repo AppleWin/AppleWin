@@ -20,8 +20,7 @@ void SetApple2Type(eApple2Type type);
 
 double Get6502BaseClock(void);
 void SetCurrentCLK6502(void);
-
-void SingleStep(bool bReinit);
+void UseClockMultiplier(double clockMultiplier);
 
 extern bool       g_bFullSpeed;
 
