@@ -211,6 +211,9 @@
     <ClCompile Include="source\Windows\WinFrame.cpp">
       <Filter>Source Files\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="source\Core.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\AppleWin.h">
@@ -506,6 +509,9 @@
     </ClInclude>
     <ClInclude Include="source\Windows\WinFrame.h">
       <Filter>Source Files\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Core.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

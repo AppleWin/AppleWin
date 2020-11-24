@@ -62,162 +62,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Configuration/PropertySheet.h"
 #include "Tfe/Tfe.h"
 
-static const UINT VERSIONSTRING_SIZE = 16;
-
-static UINT16 g_AppleWinVersion[4] = {0};
-static UINT16 g_OldAppleWinVersion[4] = {0};
-TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";
-
-std::string g_pAppTitle;
-
-eApple2Type	g_Apple2Type = A2TYPE_APPLE2EENHANCED;
-
-bool      g_bFullSpeed      = false;
-
 //=================================================
 
 // Win32
 HINSTANCE g_hInstance          = (HINSTANCE)0;
 
-AppMode_e	g_nAppMode = MODE_LOGO;
 static bool g_bLoadedSaveState = false;
 static bool g_bSysClkOK = false;
 
-std::string g_sStartDir;	// NB. AppleWin.exe maybe relative to this! (GH#663)
-std::string g_sProgramDir; // Directory of where AppleWin executable resides
-std::string g_sDebugDir; // TODO: Not currently used
-std::string g_sScreenShotDir; // TODO: Not currently used
 std::string g_sConfigFile; // INI file to use instead of Registry
 
-bool      g_bCapturePrintScreenKey = true;
+static bool g_bCapturePrintScreenKey = true;
 static bool g_bHookSystemKey = true;
 static bool g_bHookAltTab = false;
 static bool g_bHookAltGrControl = false;
 
-std::string g_sCurrentDir; // Also Starting Dir.  Debugger uses this when load/save
-bool      g_bRestart = false;
 bool      g_bRestartFullScreen = false;
 
-DWORD		g_dwSpeed		= SPEED_NORMAL;	// Affected by Config dialog's speed slider bar
-double		g_fCurrentCLK6502 = CLK_6502_NTSC;	// Affected by Config dialog's speed slider bar
-static double g_fMHz		= 1.0;			// Affected by Config dialog's speed slider bar
-
-int			g_nCpuCyclesFeedback = 0;
-DWORD       g_dwCyclesThisFrame = 0;
-
-bool		g_bDisableDirectInput = false;
-bool		g_bDisableDirectSound = false;
-bool		g_bDisableDirectSoundMockingboard = false;
-int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.cpp MemReset()
-
-IPropertySheet&		sg_PropertySheet = * new CPropertySheet;
-
-SynchronousEventManager g_SynchronousEventMgr;
-
-HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom F8 ROM at $F800..$FFFF
-static bool	g_bCustomRomF8Failed = false;			// Set if custom F8 ROM file failed
-HANDLE		g_hCustomRom = INVALID_HANDLE_VALUE;	// Cmd-line specified custom ROM at $C000..$FFFF(16KiB) or $D000..$FFFF(12KiB)
-static bool	g_bCustomRomFailed = false;				// Set if custom ROM file failed
-
-static bool	g_bEnableSpeech = false;
-#ifdef USE_SPEECH_API
-CSpeech		g_Speech;
-#endif
-
 //===========================================================================
-
-#ifdef LOG_PERF_TIMINGS
-static UINT64 g_timeTotal = 0;
-UINT64 g_timeCpu = 0;
-UINT64 g_timeVideo = 0;			// part of timeCpu
-UINT64 g_timeMB_Timer = 0;		// part of timeCpu
-UINT64 g_timeMB_NoTimer = 0;
-UINT64 g_timeSpeaker = 0;
-static UINT64 g_timeVideoRefresh = 0;
-
-void LogPerfTimings(void)
-{
-	if (g_timeTotal)
-	{
-		UINT64 cpu = g_timeCpu - g_timeVideo - g_timeMB_Timer;
-		UINT64 video = g_timeVideo + g_timeVideoRefresh;
-		UINT64 spkr = g_timeSpeaker;
-		UINT64 mb = g_timeMB_Timer + g_timeMB_NoTimer;
-		UINT64 audio = spkr + mb;
-		UINT64 other = g_timeTotal - g_timeCpu - g_timeSpeaker - g_timeMB_NoTimer - g_timeVideoRefresh;
-
-		LogOutput("Perf breakdown:\n");
-		LogOutput(". CPU %%        = %6.2f\n", (double)cpu / (double)g_timeTotal * 100.0);
-		LogOutput(". Video %%      = %6.2f\n", (double)video / (double)g_timeTotal * 100.0);
-		LogOutput("... NTSC %%     = %6.2f\n", (double)g_timeVideo / (double)g_timeTotal * 100.0);
-		LogOutput("... refresh %%  = %6.2f\n", (double)g_timeVideoRefresh / (double)g_timeTotal * 100.0);
-		LogOutput(". Audio %%      = %6.2f\n", (double)audio / (double)g_timeTotal * 100.0);
-		LogOutput("... Speaker %%  = %6.2f\n", (double)spkr / (double)g_timeTotal * 100.0);
-		LogOutput("... MB %%       = %6.2f\n", (double)mb / (double)g_timeTotal * 100.0);
-		LogOutput(". Other %%      = %6.2f\n", (double)other / (double)g_timeTotal * 100.0);
-		LogOutput(". TOTAL %%      = %6.2f\n", (double)(cpu+video+audio+other) / (double)g_timeTotal * 100.0);
-	}
-}
-#endif
-
-//===========================================================================
-
-static DWORD dwLogKeyReadTickStart;
-static bool bLogKeyReadDone = false;
-
-void LogFileTimeUntilFirstKeyReadReset(void)
-{
-#ifdef LOG_PERF_TIMINGS
-	LogPerfTimings();
-#endif
-
-	if (!g_fh)
-		return;
-
-	dwLogKeyReadTickStart = GetTickCount();
-
-	bLogKeyReadDone = false;
-}
-
-// Log the time from emulation restart/reboot until the first key read: BIT $C000
-// . AZTEC.DSK (DOS 3.3) does prior LDY $C000 reads, but the BIT $C000 is at the "Press any key" message
-// . Phasor1.dsk / ProDOS 1.1.1: PC=E797: B1 50: LDA ($50),Y / "Select an Option:" message
-// . Rescue Raiders v1.3,v1.5: PC=895: LDA $C000 / boot to intro
-void LogFileTimeUntilFirstKeyRead(void)
-{
-	if (!g_fh || bLogKeyReadDone)
-		return;
-
-	if ( (mem[regs.pc-3] != 0x2C)	// AZTEC: bit $c000
-		&& !((regs.pc-2) == 0xE797 && mem[regs.pc-2] == 0xB1 && mem[regs.pc-1] == 0x50)	// Phasor1: lda ($50),y
-		&& !((regs.pc-3) == 0x0895 && mem[regs.pc-3] == 0xAD)	// Rescue Raiders v1.3,v1.5: lda $c000
-		)
-		return;
-
-	DWORD dwTime = GetTickCount() - dwLogKeyReadTickStart;
-
-	LogFileOutput("Time from emulation reboot until first $C000 access: %d msec\n", dwTime);
-
-	bLogKeyReadDone = true;
-}
-
-//---------------------------------------------------------------------------
-
-eApple2Type GetApple2Type(void)
-{
-	return g_Apple2Type;
-}
-
-void SetApple2Type(eApple2Type type)
-{
-	g_Apple2Type = type;
-	SetMainCpuDefault(type);
-}
-
-const UINT16* GetOldAppleWinVersion(void)
-{
-	return g_OldAppleWinVersion;
-}
 
 bool GetLoadedSaveStateFlag(void)
 {
@@ -232,12 +94,6 @@ void SetLoadedSaveStateFlag(const bool bFlag)
 bool GetHookAltGrControl(void)
 {
 	return g_bHookAltGrControl;
-}
-
-CardManager& GetCardMgr(void)
-{
-	static CardManager g_CardMgr;	// singleton
-	return g_CardMgr;
 }
 
 static void ResetToLogoMode(void)
@@ -439,10 +295,6 @@ void SingleStep(bool bReinit)
 
 //===========================================================================
 
-double Get6502BaseClock(void)
-{
-	return (GetVideoRefreshRate() == VR_50HZ) ? CLK_6502_PAL : CLK_6502_NTSC;
-}
 
 void UseClockMultiplier(double clockMultiplier)
 {
@@ -463,38 +315,6 @@ void UseClockMultiplier(double clockMultiplier)
 	}
 
 	SetCurrentCLK6502();
-}
-
-void SetCurrentCLK6502(void)
-{
-	static DWORD dwPrevSpeed = (DWORD) -1;
-	static VideoRefreshRate_e prevVideoRefreshRate = VR_NONE;
-
-	if (dwPrevSpeed == g_dwSpeed && GetVideoRefreshRate() == prevVideoRefreshRate)
-		return;
-
-	dwPrevSpeed = g_dwSpeed;
-	prevVideoRefreshRate = GetVideoRefreshRate();
-
-	// SPEED_MIN    =  0 = 0.50 MHz
-	// SPEED_NORMAL = 10 = 1.00 MHz
-	//                20 = 2.00 MHz
-	// SPEED_MAX-1  = 39 = 3.90 MHz
-	// SPEED_MAX    = 40 = ???? MHz (run full-speed, /g_fCurrentCLK6502/ is ignored)
-
-	if(g_dwSpeed < SPEED_NORMAL)
-		g_fMHz = 0.5 + (double)g_dwSpeed * 0.05;
-	else
-		g_fMHz = (double)g_dwSpeed / 10.0;
-
-	g_fCurrentCLK6502 = Get6502BaseClock() * g_fMHz;
-
-	//
-	// Now re-init modules that are dependent on /g_fCurrentCLK6502/
-	//
-
-	SpkrReinitialize();
-	MB_Reinitialize();
 }
 
 //===========================================================================
@@ -833,21 +653,6 @@ void LoadConfiguration(void)
 
 	if (REGLOAD(TEXT(REGVALUE_CONFIRM_REBOOT), &dwTmp))
 		g_bConfirmReboot = dwTmp;
-}
-
-//===========================================================================
-
-bool SetCurrentImageDir(const std::string & pszImageDir)
-{
-	g_sCurrentDir = pszImageDir;
-
-	if (!g_sCurrentDir.empty() && *g_sCurrentDir.rbegin() != '\\')
-		g_sCurrentDir += '\\';
-
-	if( SetCurrentDirectory(g_sCurrentDir.c_str()) )
-		return true;
-
-	return false;
 }
 
 //===========================================================================
@@ -1284,30 +1089,6 @@ static void UnplugHardDiskControllerCard(void)
 	BOOL res = REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp);
 	if (!res || dwTmp)
 		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 0);	// Config: HDD Disabled
-}
-
-static bool CheckOldAppleWinVersion(void)
-{
-	TCHAR szOldAppleWinVersion[VERSIONSTRING_SIZE + 1];
-	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, szOldAppleWinVersion, VERSIONSTRING_SIZE, TEXT(""));
-	const bool bShowAboutDlg = strcmp(szOldAppleWinVersion, VERSIONSTRING) != 0;
-
-	// version: xx.yy.zz.ww
-	char* p0 = szOldAppleWinVersion;
-	int len = strlen(szOldAppleWinVersion);
-	szOldAppleWinVersion[len] = '.';	// append a null terminator
-	szOldAppleWinVersion[len + 1] = '\0';
-	for (UINT i=0; i<4; i++)
-	{
-		char* p1 = strstr(p0, ".");
-		if (!p1)
-			break;
-		*p1 = 0;
-		g_OldAppleWinVersion[i] = atoi(p0);
-		p0 = p1+1;
-	}
-
-	return bShowAboutDlg;
 }
 
 //---------------------------------------------------------------------------
@@ -1934,11 +1715,11 @@ static void GetAppleWinVersion(void)
 
             // Construct version string from fixed file info block
 
-            unsigned long major     = g_AppleWinVersion[0] = pFixedFileInfo->dwFileVersionMS >> 16;
-            unsigned long minor     = g_AppleWinVersion[1] = pFixedFileInfo->dwFileVersionMS & 0xffff;
-            unsigned long fix       = g_AppleWinVersion[2] = pFixedFileInfo->dwFileVersionLS >> 16;
-			unsigned long fix_minor = g_AppleWinVersion[3] = pFixedFileInfo->dwFileVersionLS & 0xffff;
-			StringCbPrintf(VERSIONSTRING, VERSIONSTRING_SIZE, "%d.%d.%d.%d", major, minor, fix, fix_minor);
+            UINT16 major     = pFixedFileInfo->dwFileVersionMS >> 16;
+			UINT16 minor     = pFixedFileInfo->dwFileVersionMS & 0xffff;
+			UINT16 fix       = pFixedFileInfo->dwFileVersionLS >> 16;
+			UINT16 fix_minor = pFixedFileInfo->dwFileVersionLS & 0xffff;
+			SetAppleWinVersion(major, minor, fix, fix_minor);
 		}
 
 		delete [] pVerInfoBlock;

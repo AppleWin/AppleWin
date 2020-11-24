@@ -45,6 +45,7 @@
     <ClInclude Include="source\Configuration\PropertySheet.h" />
     <ClInclude Include="source\Configuration\PropertySheetDefs.h" />
     <ClInclude Include="source\Configuration\PropertySheetHelper.h" />
+    <ClInclude Include="source\Core.h" />
     <ClInclude Include="source\CPU.h" />
     <ClInclude Include="source\CPU\cpu6502.h" />
     <ClInclude Include="source\CPU\cpu65C02.h" />
@@ -141,6 +142,7 @@
     <ClCompile Include="source\Configuration\PageSound.cpp" />
     <ClCompile Include="source\Configuration\PropertySheet.cpp" />
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
+    <ClCompile Include="source\Core.cpp" />
     <ClCompile Include="source\CPU.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
