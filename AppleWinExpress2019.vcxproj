@@ -109,6 +109,7 @@
     <ClInclude Include="source\Tfe\Uilib.h" />
     <ClInclude Include="source\Video.h" />
     <ClInclude Include="source\Windows\DirectInput.h" />
+    <ClInclude Include="source\Windows\WinFrame.h" />
     <ClInclude Include="source\Windows\WinVideo.h" />
     <ClInclude Include="source\YamlHelper.h" />
     <ClInclude Include="source\z80emu.h" />
@@ -215,6 +216,7 @@
     </ClCompile>
     <ClCompile Include="source\Video.cpp" />
     <ClCompile Include="source\Windows\DirectInput.cpp" />
+    <ClCompile Include="source\Windows\WinFrame.cpp" />
     <ClCompile Include="source\Windows\WinVideo.cpp" />
     <ClCompile Include="source\YamlHelper.cpp" />
     <ClCompile Include="source\z80emu.cpp" />

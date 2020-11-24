@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "AppleWin.h"
 #include "CPU.h"
 #include "Frame.h"
+#include "Windows/WinFrame.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Registry.h"

@@ -49,7 +49,7 @@ Etc.
 #include "AppleWin.h"	// g_SynchronousEventMgr
 #include "CardManager.h"
 #include "CPU.h"
-#include "Frame.h"	// FrameSetCursorPosByMousePos()
+#include "Windows/WinFrame.h"	// FrameSetCursorPosByMousePos()
 #include "Log.h"
 #include "Memory.h"
 #include "Video.h"

@@ -38,12 +38,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../CardManager.h"
 #include "../CPU.h"
 #include "../Disk.h"
-#include "../Frame.h"
 #include "../Keyboard.h"
 #include "../Memory.h"
 #include "../NTSC.h"
 #include "../SoundCore.h"	// SoundCore_SetFade()
 #include "../Windows/WinVideo.h"
+#include "../Windows/WinFrame.h"
 #include "../Video.h"
 
 //	#define DEBUG_COMMAND_HELP  1

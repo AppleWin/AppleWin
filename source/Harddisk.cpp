@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "DiskImage.h"	// ImageError_e, Disk_Status_e
 #include "DiskImageHelper.h"
-#include "Frame.h"
+#include "Windows/WinFrame.h"
 #include "Memory.h"
 #include "Registry.h"
 #include "SaveState.h"

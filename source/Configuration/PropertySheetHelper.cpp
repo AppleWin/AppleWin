@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../AppleWin.h"	// g_nAppMode, g_uScrollLockToggle, sg_PropertySheet
 #include "../CardManager.h"
 #include "../Disk.h"
-#include "../Frame.h"
+#include "../Windows/WinFrame.h"
 #include "../Log.h"
 #include "../Registry.h"
 #include "../SaveState.h"
