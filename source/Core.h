@@ -20,6 +20,11 @@ void SetApple2Type(eApple2Type type);
 
 double Get6502BaseClock(void);
 void SetCurrentCLK6502(void);
+
+// set g_dwSpeed =
+// | clockMultiplier == 0  => unchanged
+// | clockMultiplier < 1   => (max(0.5, clockMultiplier) - 0.5) * 20
+// | else                  => min(SPEED_MAX - 1, clockMultiplier * 10)
 void UseClockMultiplier(double clockMultiplier);
 
 extern bool       g_bFullSpeed;
