@@ -29,6 +29,7 @@
 #include "linux/benchmark.h"
 #include "linux/version.h"
 #include "linux/paddle.h"
+#include "linux/interface.h"
 
 #include "emulator.h"
 #include "memorycontainer.h"
@@ -86,7 +87,7 @@ namespace
         SetWindowTitle();
         window->setWindowTitle(QString::fromStdString(g_pAppTitle));
 
-        FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+        FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
 
         // ResetDefaultMachineMemTypes();
 

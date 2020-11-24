@@ -59,7 +59,7 @@ namespace
     LoadConfiguration();
     CheckCpu();
     SetWindowTitle();
-    FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+    FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
 
     DSInit();
     MB_Initialize();
