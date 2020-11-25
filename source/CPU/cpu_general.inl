@@ -62,7 +62,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define _READ_WITH_IO_F8xx (										/* GH#827 */\
 			((addr & 0xF000) == 0xC000)											\
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
-				: ((addr & 0xFF00) == 0xF800)									\
+				: (addr >= 0xF800)												\
 					? IO_F8xx(regs.pc,addr,0,0,uExecutedCycles)					\
 					: *(mem+addr)												\
 		)
@@ -82,7 +82,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			}																			\
 		}
 #define _WRITE_WITH_IO_F8xx(a) {											/* GH#827 */\
-			if ((addr & 0xFF00) == 0xF800)												\
+			if (addr >= 0xF800)															\
 				IO_F8xx(regs.pc,addr,1,(BYTE)(a),uExecutedCycles);						\
 			else {																		\
 				memdirty[addr >> 8] = 0xFF;												\
