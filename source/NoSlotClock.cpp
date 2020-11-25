@@ -59,7 +59,20 @@ void CNoSlotClock::Reset()
 	m_bWriteEnabled = true;
 }
 
-bool CNoSlotClock::Read(int address, int& data)
+bool CNoSlotClock::ReadWrite(int address, BYTE& data, BYTE write)
+{
+	if (!write)
+	{
+		return Read(address, data);
+	}
+	else
+	{
+		Write(address);
+		return true;
+	}
+}
+
+bool CNoSlotClock::Read(int address, BYTE& data)
 {
 	// this may read or write the clock (returns true if data is changed)
 	if (address & 0x04)
@@ -74,14 +87,14 @@ bool CNoSlotClock::Read(int address, int& data)
 void CNoSlotClock::Write(int address)
 {
 	// this may read or write the clock
-	int dummy = 0;
+	BYTE dummy = 0;
 	if (address & 0x04)
 		ClockRead(dummy);
 	else
 		ClockWrite(address);
 }
 
-bool CNoSlotClock::ClockRead(int& data)
+bool CNoSlotClock::ClockRead(BYTE& data)
 {
 	// for a ROM, A2 high = read, and data out (if any) is on D0
 	if (!m_bClockRegisterEnabled)
@@ -243,7 +256,7 @@ void CNoSlotClock::RingRegister64::WriteBit(int data)
 	m_Register = (data & 0x1) ? (m_Register | m_Mask) : (m_Register & ~m_Mask);
 }
 
-void CNoSlotClock::RingRegister64::ReadBit(int& data)
+void CNoSlotClock::RingRegister64::ReadBit(BYTE& data)
 {
 	data = (m_Register & m_Mask) ? data | 1 : data & ~1;
 }
