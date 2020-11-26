@@ -227,6 +227,14 @@
 			Filter=".cpp"
 			>
 			<File
+				RelativePath=".\source\CmdLine.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\CmdLine.h"
+				>
+			</File>
+			<File
 				RelativePath=".\source\Core.cpp"
 				>
 			</File>

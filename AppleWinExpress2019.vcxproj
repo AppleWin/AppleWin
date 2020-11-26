@@ -25,6 +25,7 @@
     <ClInclude Include="source\AY8910.h" />
     <ClInclude Include="source\Card.h" />
     <ClInclude Include="source\CardManager.h" />
+    <ClInclude Include="source\CmdLine.h" />
     <ClInclude Include="source\Common.h" />
     <ClInclude Include="source\CommonVICE\6510core.h" />
     <ClInclude Include="source\CommonVICE\alarm.h" />
@@ -133,6 +134,7 @@
     <ClCompile Include="source\6821.cpp" />
     <ClCompile Include="source\AY8910.cpp" />
     <ClCompile Include="source\CardManager.cpp" />
+    <ClCompile Include="source\CmdLine.cpp" />
     <ClCompile Include="source\Configuration\About.cpp" />
     <ClCompile Include="source\Configuration\PageAdvanced.cpp" />
     <ClCompile Include="source\Configuration\PageConfig.cpp" />
