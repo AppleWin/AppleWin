@@ -22,10 +22,10 @@
     <ClInclude Include="resource\resource.h" />
     <ClInclude Include="resource\winres.h" />
     <ClInclude Include="source\6821.h" />
-    <ClInclude Include="source\AppleWin.h" />
     <ClInclude Include="source\AY8910.h" />
     <ClInclude Include="source\Card.h" />
     <ClInclude Include="source\CardManager.h" />
+    <ClInclude Include="source\CmdLine.h" />
     <ClInclude Include="source\Common.h" />
     <ClInclude Include="source\CommonVICE\6510core.h" />
     <ClInclude Include="source\CommonVICE\alarm.h" />
@@ -45,6 +45,7 @@
     <ClInclude Include="source\Configuration\PropertySheet.h" />
     <ClInclude Include="source\Configuration\PropertySheetDefs.h" />
     <ClInclude Include="source\Configuration\PropertySheetHelper.h" />
+    <ClInclude Include="source\Core.h" />
     <ClInclude Include="source\CPU.h" />
     <ClInclude Include="source\CPU\cpu6502.h" />
     <ClInclude Include="source\CPU\cpu65C02.h" />
@@ -107,7 +108,9 @@
     <ClInclude Include="source\Tfe\Tfearch.h" />
     <ClInclude Include="source\Tfe\Tfesupp.h" />
     <ClInclude Include="source\Tfe\Uilib.h" />
+    <ClInclude Include="source\Utilities.h" />
     <ClInclude Include="source\Video.h" />
+    <ClInclude Include="source\Windows\AppleWin.h" />
     <ClInclude Include="source\Windows\DirectInput.h" />
     <ClInclude Include="source\Windows\WinFrame.h" />
     <ClInclude Include="source\Windows\WinVideo.h" />
@@ -129,9 +132,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\6821.cpp" />
-    <ClCompile Include="source\AppleWin.cpp" />
     <ClCompile Include="source\AY8910.cpp" />
     <ClCompile Include="source\CardManager.cpp" />
+    <ClCompile Include="source\CmdLine.cpp" />
     <ClCompile Include="source\Configuration\About.cpp" />
     <ClCompile Include="source\Configuration\PageAdvanced.cpp" />
     <ClCompile Include="source\Configuration\PageConfig.cpp" />
@@ -141,6 +144,7 @@
     <ClCompile Include="source\Configuration\PageSound.cpp" />
     <ClCompile Include="source\Configuration\PropertySheet.cpp" />
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
+    <ClCompile Include="source\Core.cpp" />
     <ClCompile Include="source\CPU.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
@@ -214,7 +218,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="source\Utilities.cpp" />
     <ClCompile Include="source\Video.cpp" />
+    <ClCompile Include="source\Windows\AppleWin.cpp" />
     <ClCompile Include="source\Windows\DirectInput.cpp" />
     <ClCompile Include="source\Windows\WinFrame.cpp" />
     <ClCompile Include="source\Windows\WinVideo.cpp" />

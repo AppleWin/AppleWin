@@ -33,7 +33,6 @@
 #include "StdAfx.h"
 
 #include "SAM.h"
-#include "AppleWin.h"
 #include "Memory.h"
 #include "Speaker.h"
 

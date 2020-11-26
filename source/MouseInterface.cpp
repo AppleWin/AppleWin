@@ -46,7 +46,7 @@ Etc.
 #include "SaveState_Structs_common.h"
 #include "Common.h"
 
-#include "AppleWin.h"	// g_SynchronousEventMgr
+#include "Core.h"	// g_SynchronousEventMgr
 #include "CardManager.h"
 #include "CPU.h"
 #include "Windows/WinFrame.h"	// FrameSetCursorPosByMousePos()

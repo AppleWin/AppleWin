@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 #include "StdAfx.h"
+#include "Core.h"
 #include "DiskImageHelper.h"
 
 #include "Common.h"
@@ -2198,8 +2199,6 @@ UINT CHardDiskImageHelper::GetMinDetectSize(const UINT uImageSize, bool* pTempDe
 //-----------------------------------------------------------------------------
 
 #define ASSERT_OFFSET(x, offset) _ASSERT( ((BYTE*)&pWOZ->x - (BYTE*)pWOZ) == offset )
-
-extern TCHAR VERSIONSTRING[];	// AppleWin.h
 
 BYTE* CWOZHelper::CreateEmptyDisk(DWORD& size)
 {
