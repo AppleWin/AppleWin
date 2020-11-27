@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-#include "../../source/Applewin.h"
+#include "../../source/Windows/Applewin.h"
 #include "../../source/CPU.h"
 
 #include "../../source/Debugger/Debugger_Types.h"

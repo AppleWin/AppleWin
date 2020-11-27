@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-#include "../../source/AppleWin.h"
+#include "../../source/Windows/AppleWin.h"
 #include "../../source/CPU.h"
 #include "../../source/Memory.h"
 #include "../../source/SynchronousEventManager.h"
@@ -16,6 +16,11 @@ LPBYTE         mem          = NULL;	// TODO: Init
 LPBYTE         memdirty     = NULL;	// TODO: Init
 iofunction		IORead[256] = {0};	// TODO: Init
 iofunction		IOWrite[256] = {0};	// TODO: Init
+
+BYTE __stdcall IO_F8xx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
+{
+	return 0;
+}
 
 // From CPU.cpp
 #define	 AF_SIGN       0x80
@@ -83,11 +88,20 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 #include "../../source/CPU/cpu_general.inl"
 #include "../../source/CPU/cpu_instructions.inl"
 
-#define READ _READ
-#define WRITE(a) _WRITE(a)
+#define READ _READ_WITH_IO_F8xx
+#define WRITE(a) _WRITE_WITH_IO_F8xx(a)
 #define HEATMAP_X(pc)
 
 #include "../../source/CPU/cpu6502.h"  // MOS 6502
+
+#undef READ
+#undef WRITE
+
+//-------
+
+#define READ _READ
+#define WRITE(a) _WRITE(a)
+
 #include "../../source/CPU/cpu65C02.h"  // WDC 65C02
 
 #undef READ

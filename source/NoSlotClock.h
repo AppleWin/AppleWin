@@ -40,7 +40,7 @@ class CNoSlotClock
 		void WriteNibble(int data);
 		void WriteBits(int data, int count);
 		void WriteBit(int data);
-		void ReadBit(int& data);
+		void ReadBit(BYTE& data);
 		bool CompareBit(int data);
 		bool NextBit();
 
@@ -52,9 +52,8 @@ public:
 	CNoSlotClock();
 
 	void Reset();
-	bool Read(int address, int& data);
-	void Write(int address);
-	bool ClockRead(int& data);
+	bool ReadWrite(int address, BYTE& data, BYTE write);
+	bool ClockRead(BYTE& data);
 	void ClockWrite(int address);
 
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
@@ -66,6 +65,8 @@ public:
 	RingRegister64 m_ComparisonRegister;
 
 private:
+	bool Read(int address, BYTE& data);
+	void Write(int address);
 	void PopulateClockRegister();
 	std::string GetSnapshotStructName(void);
 

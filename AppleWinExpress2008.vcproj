@@ -227,11 +227,27 @@
 			Filter=".cpp"
 			>
 			<File
-				RelativePath=".\source\AppleWin.cpp"
+				RelativePath=".\source\CmdLine.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\source\AppleWin.h"
+				RelativePath=".\source\CmdLine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\source\Core.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\Core.h"
+				>
+			</File>
+			<File
+				RelativePath=".\source\Utilities.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\Utilities.h"
 				>
 			</File>
 			<File
@@ -953,6 +969,14 @@
 			<Filter
 				Name="Windows"
 				>
+				<File
+					RelativePath=".\source\Windows\AppleWin.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Windows\AppleWin.h"
+					>
+				</File>
 				<File
 					RelativePath=".\source\Windows\DirectInput.cpp"
 					>
