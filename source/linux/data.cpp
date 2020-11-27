@@ -3,7 +3,7 @@
 
 #include "Log.h"
 #include "CPU.h"
-#include "AppleWin.h"
+#include "Core.h"
 #include "Video.h"
 
 

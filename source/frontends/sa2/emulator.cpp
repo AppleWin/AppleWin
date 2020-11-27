@@ -11,7 +11,7 @@
 #include "StdAfx.h"
 #include "Common.h"
 #include "CardManager.h"
-#include "AppleWin.h"
+#include "Core.h"
 #include "Disk.h"
 #include "CPU.h"
 #include "Frame.h"

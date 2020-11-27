@@ -13,7 +13,7 @@
 #include "Log.h"
 #include "DiskImageHelper.h"
 #include "Memory.h"
-#include "AppleWin.h"
+#include "Core.h"
 #include "RGBMonitor.h"
 
 #include "linux/interface.h"

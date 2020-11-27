@@ -22,3 +22,36 @@ void IPropertySheet::ConfigSaveApple2Type(eApple2Type apple2Type)
 void IPropertySheet::SetTheFreezesF8Rom(UINT uValue)
 {
 }
+
+void IPropertySheet::SetJoystickCursorControl(UINT uValue)
+{
+}
+
+void IPropertySheet::SetMouseRestrictToWindow(UINT uValue)
+{
+}
+
+void IPropertySheet::SetScrollLockToggle(UINT uValue)
+{
+}
+
+void IPropertySheet::SetJoystickCenteringControl(UINT uValue)
+{
+}
+
+DWORD IPropertySheet::GetVolumeMax(void)
+{
+  return 99;
+}
+
+void IPropertySheet::SetButtonsSwapState(bool value)
+{
+}
+
+void IPropertySheet::SetAutofire(UINT uValue)
+{
+}
+
+void IPropertySheet::SetMouseShowCrosshair(UINT uValue)
+{
+}

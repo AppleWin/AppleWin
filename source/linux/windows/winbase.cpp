@@ -4,6 +4,8 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <unistd.h>
+
 
 DWORD       WINAPI GetLastError(void)
 {
@@ -25,6 +27,13 @@ void EnterCriticalSection(CRITICAL_SECTION * criticalSection)
 void LeaveCriticalSection(CRITICAL_SECTION * criticalSection)
 {
 }
+
+BOOL SetCurrentDirectory(LPCSTR path)
+{
+  const int res = chdir(path);
+  return res == 0;
+}
+
 
 void OutputDebugString(const char * str)
 {

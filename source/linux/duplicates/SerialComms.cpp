@@ -14,6 +14,10 @@ CSuperSerialCard::~CSuperSerialCard()
 {
 }
 
+void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
+{
+}
+
 void CSuperSerialCard::CommReset()
 {
 }

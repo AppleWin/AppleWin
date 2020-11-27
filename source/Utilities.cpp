@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Mockingboard.h"
 #include "Windows/WinFrame.h"
 
-#include "Configuration/PropertySheet.h"
+#include "Configuration/IPropertySheet.h"
 #include "Tfe/Tfe.h"
 
 // Backwards compatibility with AppleWin <1.24.0
@@ -205,11 +205,13 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
 		sg_PropertySheet.SetTheFreezesF8Rom(dwTmp);
 
-	if(REGLOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp))
-		SpkrSetVolume(dwTmp, sg_PropertySheet.GetVolumeMax());
+	dwTmp = 70;
+	REGLOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp);
+	SpkrSetVolume(dwTmp, sg_PropertySheet.GetVolumeMax());
 
-	if(REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp))
-		MB_SetVolume(dwTmp, sg_PropertySheet.GetVolumeMax());
+	dwTmp = 70;
+	REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp);
+	MB_SetVolume(dwTmp, sg_PropertySheet.GetVolumeMax());
 
 	if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
 		g_bSaveStateOnExit = dwTmp ? true : false;

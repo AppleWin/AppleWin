@@ -11,6 +11,7 @@ void InitializeCriticalSection(CRITICAL_SECTION * criticalSection);
 void EnterCriticalSection(CRITICAL_SECTION * criticalSection);
 void LeaveCriticalSection(CRITICAL_SECTION * criticalSection);
 void OutputDebugString(const char * str);
+BOOL WINAPI SetCurrentDirectory(LPCSTR path);
 
 #define INFINITE      0xFFFFFFFF
 #define WAIT_OBJECT_0		0

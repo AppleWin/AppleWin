@@ -4,7 +4,7 @@
 #include "StdAfx.h"
 #include "Common.h"
 #include "CardManager.h"
-#include "AppleWin.h"
+#include "Core.h"
 #include "Disk.h"
 #include "Harddisk.h"
 #include "Log.h"
@@ -22,6 +22,7 @@
 #include "Speaker.h"
 #include "Riff.h"
 #include "RGBMonitor.h"
+#include "Utilities.h"
 #include "Windows/WinVideo.h"
 
 #include "linux/data.h"

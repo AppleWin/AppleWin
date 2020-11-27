@@ -38,13 +38,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speaker.h"
 #include "Registry.h"
 #include "SynchronousEventManager.h"
-#include "Configuration/PropertySheet.h"
 
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
 
-static const UINT VERSIONSTRING_SIZE = 16; 
+static const UINT VERSIONSTRING_SIZE = 16;
 static UINT16 g_OldAppleWinVersion[4] = {0};
 UINT16 g_AppleWinVersion[4] = { 0 };
 TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";
@@ -80,7 +79,8 @@ int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.c
 
 SynchronousEventManager g_SynchronousEventMgr;
 
-IPropertySheet& sg_PropertySheet = *new CPropertySheet;
+static IPropertySheet * sg = nullptr;
+IPropertySheet& sg_PropertySheet = *sg;  // *new CPropertySheet;
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom F8 ROM at $F800..$FFFF
 bool	    g_bCustomRomF8Failed = false;			// Set if custom F8 ROM file failed

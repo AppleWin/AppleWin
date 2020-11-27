@@ -2,7 +2,7 @@
 
 #include "StdAfx.h"
 #include "CPU.h"
-#include "AppleWin.h"
+#include "Core.h"
 
 Speed::Speed(const bool fixedSpeed)
   : myFixedSpeed(fixedSpeed)

@@ -11,6 +11,14 @@ void JoySaveSnapshot(YamlSaveHelper&)
 {
 }
 
+void JoySetTrim(short nValue, bool bAxisX)
+{
+}
+
+void JoySetJoyType(UINT num, DWORD type)
+{
+}
+
 #define SS_YAML_KEY_COUNTERRESETCYCLE "Counter Reset Cycle"
 #define SS_YAML_KEY_JOY0TRIMX "Joystick0 TrimX"
 #define SS_YAML_KEY_JOY0TRIMY "Joystick0 TrimY"

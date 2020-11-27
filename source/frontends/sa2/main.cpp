@@ -24,7 +24,7 @@
 #include "StdAfx.h"
 #include "Common.h"
 #include "CardManager.h"
-#include "AppleWin.h"
+#include "Core.h"
 #include "Disk.h"
 #include "Mockingboard.h"
 #include "SoundCore.h"
@@ -42,6 +42,7 @@
 #include "SaveState.h"
 #include "RGBMonitor.h"
 #include "Riff.h"
+#include "Utilities.h"
 
 
 namespace
@@ -110,14 +111,14 @@ namespace
     bool disksOk = true;
     if (!options.disk1.empty())
     {
-      const bool ok = DoDiskInsert(SLOT6, DRIVE_1, options.disk1, options.createMissingDisks);
+      const bool ok = DoDiskInsert(SLOT6, DRIVE_1, options.disk1.c_str());
       disksOk = disksOk && ok;
       LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", ok);
     }
 
     if (!options.disk2.empty())
     {
-      const bool ok = DoDiskInsert(SLOT6, DRIVE_2, options.disk2, options.createMissingDisks);
+      const bool ok = DoDiskInsert(SLOT6, DRIVE_2, options.disk2.c_str());
       disksOk = disksOk && ok;
       LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", ok);
     }

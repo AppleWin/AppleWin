@@ -33,6 +33,8 @@ add_library(appleii SHARED
   SynchronousEventManager.cpp
   Video.cpp
   Frame.cpp
+  Core.cpp
+  Utilities.cpp
 
   Configuration/PropertySheetHelper.cpp
 
@@ -66,6 +68,7 @@ add_library(appleii SHARED
   linux/duplicates/WinFrame.cpp
   linux/duplicates/SerialComms.cpp
   linux/duplicates/IPropertySheet.cpp
+  linux/duplicates/Tfe.cpp
   linux/duplicates/AppleWin.cpp
 
   Z80VICE/z80.cpp
