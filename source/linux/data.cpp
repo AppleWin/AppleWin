@@ -30,7 +30,7 @@ void SetWindowTitle()
   {
           g_pAppTitle += " 50% ";
   }
-  g_pAppTitle += g_apVideoModeDesc[ g_eVideoType ];
+  g_pAppTitle += VideoGetAppWindowTitle();
 }
 
 void CheckCpu()
