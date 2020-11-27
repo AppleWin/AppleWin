@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Mockingboard.h"
 #include "Windows/WinFrame.h"
 
-#include "Configuration/PropertySheet.h"
+#include "Configuration/IPropertySheet.h"
 #include "Tfe/Tfe.h"
 
 // Backwards compatibility with AppleWin <1.24.0

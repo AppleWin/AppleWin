@@ -44,7 +44,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 
-static const UINT VERSIONSTRING_SIZE = 16; 
+static const UINT VERSIONSTRING_SIZE = 16;
 static UINT16 g_OldAppleWinVersion[4] = {0};
 UINT16 g_AppleWinVersion[4] = { 0 };
 TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";

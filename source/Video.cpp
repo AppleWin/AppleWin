@@ -100,7 +100,7 @@ static bool g_bVideoScannerNTSC = true;  // NTSC video scanning (or PAL)
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
 	// The window title will be set to this.
-	const char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
+	static const char *g_apVideoModeDesc[ NUM_VIDEO_MODES ] =
 	{
 		  "Monochrome (Custom)"
 		, "Color (Composite Idealized)"
