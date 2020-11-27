@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Video.h"
+
 // Globals (Public)
 	extern uint16_t g_nVideoClockVert;
 	extern uint16_t g_nVideoClockHorz;
