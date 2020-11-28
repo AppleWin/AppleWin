@@ -173,8 +173,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#define NTSC_NUM_PHASES     4
 	#define NTSC_NUM_SEQUENCES  4096
 
-	const uint32_t ALPHA32_MASK = 0xFF000000; // Win32: aarrggbb
-
 /*extern*/ uint32_t g_nChromaSize = 0; // for NTSC_VideoGetChromaTable()
 	static bgra_t   g_aBnWMonitor                 [NTSC_NUM_SEQUENCES];
 	static bgra_t   g_aHueMonitor[NTSC_NUM_PHASES][NTSC_NUM_SEQUENCES];

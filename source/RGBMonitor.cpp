@@ -35,14 +35,6 @@ static LPBYTE        g_aSourceStartofLine[ MAX_SOURCE_Y ];
 // . V_CreateLookup_HiResHalfPixel_Authentic() uses both ColorMapping (CM_xxx) indices and Color_Palette_Index_e (HGR_xxx)!
 #define DO_OPT_PALETTE 0
 
-#ifdef _MSC_VER
-#define BACKGOUND_BLACK 0x00000000
-#define SETRGBCOLOR(r,g,b) {b,g,r,0x00}
-#else
-#define BACKGOUND_BLACK 0xFF000000
-#define SETRGBCOLOR(r,g,b) {b,g,r,0xFF}
-#endif
-
 enum Color_Palette_Index_e
 {
 // hires (don't change order) - For tv emulation HGR Video Mode
@@ -546,7 +538,7 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 			if (bIsHalfScanLines && (h & 1))
 			{
 				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-				*(pDst+nBytes) = BACKGOUND_BLACK;
+				*(pDst+nBytes) = OPAQUE_BLACK;
 			}
 			else
 			{
@@ -576,7 +568,7 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 		if (bIsHalfScanLines && !(h & 1))
 		{
 			// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-			std::fill(pDst, pDst + w, BACKGOUND_BLACK);
+			std::fill(pDst, pDst + w, OPAQUE_BLACK);
 		}
 		else
 		{
@@ -744,7 +736,7 @@ void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 	if (bIsHalfScanLines)
 	{
 		// Scanlines
-		std::fill(pDst, pDst + 14, BACKGOUND_BLACK);
+		std::fill(pDst, pDst + 14, OPAQUE_BLACK);
 	}
 	else
 	{
@@ -959,7 +951,7 @@ void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, boo
 	if (bIsHalfScanLines)
 	{
 		// Scanlines
-		std::fill(pDst, pDst + 14, BACKGOUND_BLACK);
+		std::fill(pDst, pDst + 14, OPAQUE_BLACK);
 	}
 	else
 	{
@@ -1148,7 +1140,7 @@ void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint
 		if (bIsHalfScanLines && !(h & 1))
 		{
 			// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-			std::fill(pDst, pDst + w, BACKGOUND_BLACK);
+			std::fill(pDst, pDst + w, OPAQUE_BLACK);
 		}
 		else
 		{
