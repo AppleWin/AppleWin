@@ -266,16 +266,22 @@ void run_sdl(int argc, const char * argv [])
 
   if (options.benchmark)
   {
-    // benchmark and vsync do not work together...
-    // so we only count the time to update the texture, not the video repaint
-    const auto redraw = [&emulator]{
-			  emulator.updateTexture();
+    // we need to switch off vsync, otherwise FPS is limited to 60
+    // and it will take longer to run
+    const int res = SDL_GL_SetSwapInterval(0);
+    // if this fails, should we throw, print something or just ignore?
+
+    const auto redraw = [&emulator, res]{
+			  const auto rect = emulator.updateTexture();
+			  if (res == 0) {
+			    emulator.refreshVideo(rect);
+			  }
 			};
 
-    const auto refresh = [&emulator]{
+    const auto refresh = [&emulator, redraw]{
 			   NTSC_SetVideoMode( g_uVideoMode );
 			   NTSC_VideoRedrawWholeScreen();
-			   emulator.updateTexture();
+			   redraw();
 			 };
 
     VideoBenchmark(redraw, refresh);
