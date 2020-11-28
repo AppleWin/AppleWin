@@ -12,7 +12,9 @@ extern "C" __declspec(dllexport) LRESULT CALLBACK LowLevelKeyboardProc(
   _In_ WPARAM wParam,
   _In_ LPARAM lParam)
 {
+#ifndef _WIN64
 	#pragma comment(linker, "/EXPORT:" __FUNCTION__ "=" __FUNCDNAME__)
+#endif
 
 	if (nCode == HC_ACTION)
 	{
