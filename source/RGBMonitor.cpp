@@ -116,8 +116,6 @@ const BYTE DoubleHiresPalIndex[16] = {
 		ORANGE,  PINK,      YELLOW,    WHITE
 	};
 
-#define  SETRGBCOLOR(r,g,b) {b,g,r,0}
-
 static RGBQUAD* g_pPaletteRGB;
 
 static RGBQUAD PaletteRGB_NTSC[] =
@@ -540,7 +538,7 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 			if (bIsHalfScanLines && (h & 1))
 			{
 				// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-				*(pDst+nBytes) = 0;
+				*(pDst+nBytes) = OPAQUE_BLACK;
 			}
 			else
 			{
@@ -570,7 +568,7 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 		if (bIsHalfScanLines && !(h & 1))
 		{
 			// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-			std::fill(pDst, pDst + w, 0);
+			std::fill(pDst, pDst + w, OPAQUE_BLACK);
 		}
 		else
 		{
@@ -738,7 +736,7 @@ void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 	if (bIsHalfScanLines)
 	{
 		// Scanlines
-		std::fill(pDst, pDst + 14, 0);
+		std::fill(pDst, pDst + 14, OPAQUE_BLACK);
 	}
 	else
 	{
@@ -953,7 +951,7 @@ void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, boo
 	if (bIsHalfScanLines)
 	{
 		// Scanlines
-		std::fill(pDst, pDst + 14, 0);
+		std::fill(pDst, pDst + 14, OPAQUE_BLACK);
 	}
 	else
 	{
@@ -1142,7 +1140,7 @@ void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint
 		if (bIsHalfScanLines && !(h & 1))
 		{
 			// 50% Half Scan Line clears every odd scanline (and SHIFT+PrintScreen saves only the even rows)
-			std::fill(pDst, pDst + w, 0);
+			std::fill(pDst, pDst + w, OPAQUE_BLACK);
 		}
 		else
 		{
