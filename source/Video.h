@@ -1,5 +1,16 @@
 #pragma once
 
+// in Windows it seems that the ALPHA value is irrelevant
+// we have selected 0xFF since it works everywhere
+// Windows
+// SDL (SDL_PIXELFORMAT_ARGB8888)
+// Qt (QImage::Format_ARGB32_Premultiplied)
+#define ALPHA 0xFF  // fully opaque
+#define ALPHA32_MASK (ALPHA << 24)
+#define SETRGBCOLOR(r, g, b) {b, g, r, ALPHA}  // to create a RGBQUAD
+#define OPAQUE_BLACK (0 | ALPHA32_MASK)  // Black is RGB 0 0 0
+
+
 // Types ____________________________________________________________
 
 	// NOTE: KEEP IN SYNC: VideoType_e g_aVideoChoices g_apVideoModeDesc
