@@ -4,6 +4,7 @@ extern HINSTANCE  g_hInstance;
 extern HWND       g_hFrameWindow;
 extern BOOL       g_bConfirmReboot; // saved PageConfig REGSAVE
 extern BOOL       g_bMultiMon;
+extern bool       g_bFreshReset;
 
 void	FrameDrawDiskLEDS(HDC hdc);
 void	FrameDrawDiskStatus(HDC hdc);
