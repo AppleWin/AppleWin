@@ -15,7 +15,3 @@ void CheckCpu()
     LogFileOutput("Detected non standard CPU for Apple2 = %d: default = %d, actual = %d\n", apple2Type, defaultCpu, mainCpu);
   }
 }
-
-void alarm_log_too_many_alarms()
-{
-}
