@@ -136,7 +136,7 @@ static UINT		g_uCount100msec = 0;
 static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
 
-void    DrawStatusArea (HDC passdc, BOOL drawflags);
+static void DrawStatusArea (HDC passdc, int drawflags);
 static void ProcessButtonClick (int button, bool bFromButtonUI=false);
 void	ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive);
 void    RelayEvent (UINT message, WPARAM wparam, LPARAM lparam);
