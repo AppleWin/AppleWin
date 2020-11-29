@@ -34,4 +34,4 @@ struct EmulatorOptions
   int sdlDriver = -1; // default = -1 to let SDL choose
 };
 
-bool getEmulatorOptions(int argc, const char * argv [], const std::string & version, EmulatorOptions & options);
+bool getEmulatorOptions(int argc, const char * argv [], const std::string & edition, EmulatorOptions & options);

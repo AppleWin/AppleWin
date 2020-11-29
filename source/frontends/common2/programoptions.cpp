@@ -1,4 +1,5 @@
 #include <frontends/common2/programoptions.h>
+#include <linux/version.h>
 #include <boost/program_options.hpp>
 
 #include "StdAfx.h"
@@ -7,9 +8,10 @@
 
 namespace po = boost::program_options;
 
-bool getEmulatorOptions(int argc, const char * argv [], const std::string & version, EmulatorOptions & options)
+bool getEmulatorOptions(int argc, const char * argv [], const std::string & edition, EmulatorOptions & options)
 {
-  po::options_description desc("AppleWin " + version);
+  const std::string name = "Apple Emulator for " + edition + " (based on AppleWin " + getVersion() + ")\n";
+  po::options_description desc(name);
   desc.add_options()
     ("help,h", "Print this help message")
     ("conf", "Save configuration on exit")
@@ -53,7 +55,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & vers
 
     if (vm.count("help"))
     {
-      std::cout << "AppleWin " << version << " edition." << std::endl << std::endl << desc << std::endl;
+      std::cout << desc << std::endl;
       return false;
     }
 
