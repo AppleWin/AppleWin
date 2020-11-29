@@ -30,34 +30,8 @@
 #ifndef _TYPES_H
 #define _TYPES_H
 
-#ifndef BYTE
-#define BYTE unsigned char
-#endif
-
-#ifndef WORD
-#define WORD unsigned short
-#endif
-
-#ifndef DWORD
-   //#ifdef DWORD_IS_LONG
-   #define DWORD unsigned long
-   //#else
-   //#define DWORD unsigned int
-   //#endif
-#endif
-
-/* RGJ added for AppleWin */
-#ifndef ULONG 
-typedef unsigned long ULONG;
-#endif
-/* TC added for AppleWin */
-#ifndef LPVOID
-typedef void *LPVOID;
-#endif
-
-typedef signed char SIGNED_CHAR;
-typedef signed short SWORD;
-typedef signed int SDWORD;
+// do not redefine windows.h types here to avoid inconsistencies
+// include StdAfx.h before this file
 
 typedef DWORD CLOCK;
 /* Maximum value of a CLOCK.  */
