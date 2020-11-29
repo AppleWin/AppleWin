@@ -10,3 +10,4 @@ bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName);
 void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], bool& bBoot);
 void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot);
 void UnplugHardDiskControllerCard(void);
+void GetAppleWindowTitle();

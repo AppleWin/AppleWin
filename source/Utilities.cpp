@@ -455,3 +455,49 @@ void UnplugHardDiskControllerCard(void)
 	if (!res || dwTmp)
 		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 0);	// Config: HDD Disabled
 }
+
+void GetAppleWindowTitle()
+{
+	switch (g_Apple2Type)
+	{
+	default:
+	case A2TYPE_APPLE2:			 g_pAppTitle = TITLE_APPLE_2; break;
+	case A2TYPE_APPLE2PLUS:		 g_pAppTitle = TITLE_APPLE_2_PLUS; break;
+	case A2TYPE_APPLE2JPLUS:	 g_pAppTitle = TITLE_APPLE_2_JPLUS; break;
+	case A2TYPE_APPLE2E:		 g_pAppTitle = TITLE_APPLE_2E; break;
+	case A2TYPE_APPLE2EENHANCED: g_pAppTitle = TITLE_APPLE_2E_ENHANCED; break;
+	case A2TYPE_PRAVETS82:		 g_pAppTitle = TITLE_PRAVETS_82; break;
+	case A2TYPE_PRAVETS8M:		 g_pAppTitle = TITLE_PRAVETS_8M; break;
+	case A2TYPE_PRAVETS8A:		 g_pAppTitle = TITLE_PRAVETS_8A; break;
+	case A2TYPE_TK30002E:		 g_pAppTitle = TITLE_TK3000_2E; break;
+	case A2TYPE_BASE64A:		 g_pAppTitle = TITLE_BASE64A; break;
+	}
+
+#if _DEBUG
+	g_pAppTitle += " *DEBUG* ";
+#endif
+
+	if (g_nAppMode == MODE_LOGO)
+		return;
+
+	g_pAppTitle += " - ";
+
+	if (IsVideoStyle(VS_HALF_SCANLINES))
+		g_pAppTitle += " 50% ";
+
+	g_pAppTitle += VideoGetAppWindowTitle();
+
+	if (GetCardMgr().GetDisk2CardMgr().IsAnyFirmware13Sector())
+		g_pAppTitle += " (S6-13) ";
+
+	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
+		g_pAppTitle += TEXT(" (custom rom)");
+	else if (sg_PropertySheet.GetTheFreezesF8Rom() && IS_APPLE2)
+		g_pAppTitle += TEXT(" (The Freeze's non-autostart F8 rom)");
+
+	switch (g_nAppMode)
+	{
+	case MODE_PAUSED: g_pAppTitle += std::string(TEXT(" [")) + TITLE_PAUSED + TEXT("]"); break;
+	case MODE_STEPPING: g_pAppTitle += std::string(TEXT(" [")) + TITLE_STEPPING + TEXT("]"); break;
+	}
+}
