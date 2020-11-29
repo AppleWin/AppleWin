@@ -31,11 +31,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speaker.h"
 #include "Core.h"
 #include "CPU.h"
-#include "Windows/WinFrame.h"
+#include "Interface.h"
 #include "Log.h"
 #include "Memory.h"
 #include "SoundCore.h"
-#include "Windows/WinVideo.h"	// VideoRedrawScreen()
 #include "YamlHelper.h"
 #include "Riff.h"
 

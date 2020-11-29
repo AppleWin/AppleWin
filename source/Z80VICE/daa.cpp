@@ -24,6 +24,7 @@
  *
  */
 
+#include "StdAfx.h"
 #include "daa.h"
 #include "../CommonVICE/types.h"	// [AppleWin-TC]
 

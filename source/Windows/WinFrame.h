@@ -1,8 +1,5 @@
 #pragma once
 
-// 1.19.0.0 Hard Disk Status/Indicator Light
-#define HD_LED 1
-
 // Win32
 	extern HWND       g_hFrameWindow;
 	extern int        g_nViewportCX;

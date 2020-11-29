@@ -225,9 +225,6 @@
     <ClInclude Include="source\CommonVICE\6510core.h">
       <Filter>Source Files\CommonVICE</Filter>
     </ClInclude>
-    <ClInclude Include="source\CommonVICE\alarm.h">
-      <Filter>Source Files\CommonVICE</Filter>
-    </ClInclude>
     <ClInclude Include="source\6821.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
@@ -523,6 +520,9 @@
       <Filter>Source Files\Windows</Filter>
     </ClInclude>
     <ClInclude Include="source\CmdLine.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Interface.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

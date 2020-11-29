@@ -26,8 +26,7 @@
 
 //#include "vice.h"
 
-#include <stdio.h>
-#include <string.h>
+#include "StdAfx.h"
 
 //#include "c128mem.h"					// [AppleWin-TC]
 //#include "c128mmu.h"

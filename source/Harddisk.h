@@ -25,6 +25,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "DiskImage.h"
 
+// 1.19.0.0 Hard Disk Status/Indicator Light
+#define HD_LED 1
+
 	enum HardDrive_e
 	{
 		HARDDISK_1 = 0,

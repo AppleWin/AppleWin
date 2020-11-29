@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "SaveState_Structs_v1.h"
 
-#include "Windows/AppleWin.h"
+#include "Interface.h"
 #include "Core.h"
 #include "CPU.h"
 #include "DiskImage.h"
@@ -43,8 +43,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Registry.h"
 #include "SaveState.h"
 #include "Video.h"
-#include "Windows/WinVideo.h"
-#include "Windows/WinFrame.h"
 #include "YamlHelper.h"
 
 #include "../resource/resource.h"

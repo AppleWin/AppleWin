@@ -28,7 +28,6 @@
     <ClInclude Include="source\CmdLine.h" />
     <ClInclude Include="source\Common.h" />
     <ClInclude Include="source\CommonVICE\6510core.h" />
-    <ClInclude Include="source\CommonVICE\alarm.h" />
     <ClInclude Include="source\CommonVICE\interrupt.h" />
     <ClInclude Include="source\CommonVICE\mem.h" />
     <ClInclude Include="source\CommonVICE\types.h" />
@@ -72,6 +71,7 @@
     <ClInclude Include="source\DiskLog.h" />
     <ClInclude Include="source\Frame.h" />
     <ClInclude Include="source\Harddisk.h" />
+    <ClInclude Include="source\Interface.h" />
     <ClInclude Include="source\Joystick.h" />
     <ClInclude Include="source\Keyboard.h" />
     <ClInclude Include="source\LanguageCard.h" />
