@@ -28,7 +28,6 @@
     <ClInclude Include="source\CmdLine.h" />
     <ClInclude Include="source\Common.h" />
     <ClInclude Include="source\CommonVICE\6510core.h" />
-    <ClInclude Include="source\CommonVICE\alarm.h" />
     <ClInclude Include="source\CommonVICE\interrupt.h" />
     <ClInclude Include="source\CommonVICE\mem.h" />
     <ClInclude Include="source\CommonVICE\types.h" />

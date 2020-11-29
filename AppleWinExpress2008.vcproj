@@ -247,14 +247,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\source\Utilities.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\source\Utilities.h"
-				>
-			</File>
-			<File
 				RelativePath=".\source\StdAfx.cpp"
 				>
 				<FileConfiguration
@@ -276,6 +268,14 @@
 			</File>
 			<File
 				RelativePath=".\source\StdAfx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\source\Utilities.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\Utilities.h"
 				>
 			</File>
 			<Filter
@@ -591,10 +591,6 @@
 				>
 				<File
 					RelativePath=".\source\CommonVICE\6510core.h"
-					>
-				</File>
-				<File
-					RelativePath=".\source\CommonVICE\alarm.h"
 					>
 				</File>
 				<File
