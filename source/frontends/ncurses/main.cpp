@@ -146,7 +146,7 @@ namespace
     Paddle::setSquaring(options.squaring);
 
     InitializeRegistry(options);
-
+    g_nAppMode = MODE_RUNNING;
     g_nMemoryClearType = options.memclear;
 
     LogFileOutput("Initialisation\n");

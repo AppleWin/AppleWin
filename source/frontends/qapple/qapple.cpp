@@ -59,7 +59,7 @@ namespace
 #ifdef RIFF_MB
         RiffInitWriteFile("/tmp/Mockingboard.wav", 44100, 2);
 #endif
-
+        g_nAppMode = MODE_RUNNING;
         g_fh = fopen("/tmp/applewin.txt", "w");
         setbuf(g_fh, nullptr);
 
@@ -85,7 +85,7 @@ namespace
 
         CheckCpu();
 
-        SetWindowTitle();
+        GetAppleWindowTitle();
         window->setWindowTitle(QString::fromStdString(g_pAppTitle));
 
         FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
@@ -472,7 +472,7 @@ void QApple::on_actionOptions_triggered()
 
 void QApple::reloadOptions()
 {
-    SetWindowTitle();
+    GetAppleWindowTitle();
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
 
     Paddle::instance() = GamepadPaddle::fromName(myOptions.gamepadName);
@@ -500,7 +500,7 @@ void QApple::on_actionLoad_state_triggered()
     SetCurrentImageDir(path.toStdString().c_str());
 
     Snapshot_LoadState();
-    SetWindowTitle();
+    GetAppleWindowTitle();
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
     QString message = QString("State file: %1").arg(file.filePath());
     mySaveStateLabel->setText(message);
@@ -590,7 +590,7 @@ void QApple::on_actionNext_video_mode_triggered()
     if (g_eVideoType >= NUM_VIDEO_MODES)
         g_eVideoType = 0;
 
-    SetWindowTitle();
+    GetAppleWindowTitle();
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
 
     Config_Save_Video();

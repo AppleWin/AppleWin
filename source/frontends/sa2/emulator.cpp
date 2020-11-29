@@ -20,6 +20,7 @@
 #include "NTSC.h"
 #include "Mockingboard.h"
 #include "Speaker.h"
+#include "Utilities.h"
 
 namespace
 {
@@ -30,7 +31,7 @@ namespace
     if (g_eVideoType >= NUM_VIDEO_MODES)
       g_eVideoType = 0;
 
-    SetWindowTitle();
+    GetAppleWindowTitle();
     SDL_SetWindowTitle(win.get(), g_pAppTitle.c_str());
 
     Config_Save_Video();
@@ -45,7 +46,7 @@ namespace
 
     SetVideoStyle(videoStyle);
 
-    SetWindowTitle();
+    GetAppleWindowTitle();
     SDL_SetWindowTitle(win.get(), g_pAppTitle.c_str());
 
     Config_Save_Video();

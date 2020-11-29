@@ -49,6 +49,7 @@ namespace
 {
   void initialiseEmulator()
   {
+    g_nAppMode = MODE_RUNNING;
     LogFileOutput("Initialisation\n");
 
     ImageInitialize();
@@ -59,7 +60,7 @@ namespace
   {
     LoadConfiguration();
     CheckCpu();
-    SetWindowTitle();
+    GetAppleWindowTitle();
     FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
 
     DSInit();
