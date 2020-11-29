@@ -21,10 +21,10 @@ protected:
 	virtual void DlgCANCEL(HWND window);
 
 private:
-	BOOL CPageConfigTfe::get_tfename(int number, char **ppname, char **ppdescription);
-	int CPageConfigTfe::gray_ungray_items(HWND hwnd);
-	void CPageConfigTfe::init_tfe_dialog(HWND hwnd);
-	void CPageConfigTfe::save_tfe_dialog(HWND hwnd);
+	BOOL get_tfename(int number, char **ppname, char **ppdescription);
+	int gray_ungray_items(HWND hwnd);
+	void init_tfe_dialog(HWND hwnd);
+	void save_tfe_dialog(HWND hwnd);
 
 	static CPageConfigTfe* ms_this;
 	static uilib_localize_dialog_param ms_dialog[];
