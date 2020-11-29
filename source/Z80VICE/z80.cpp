@@ -39,7 +39,7 @@
 #include <stdlib.h>
 
 #include "../CommonVICE/6510core.h"	// [AppleWin-TC]
-#include "../CommonVICE/alarm.h"
+//#include "../CommonVICE/alarm.h"  // [AppleWin-TC]
 #include "daa.h"
 //#include "debug.h"				// [AppleWin-TC]
 #include "../CommonVICE/interrupt.h"
