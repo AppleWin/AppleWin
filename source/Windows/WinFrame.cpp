@@ -2747,13 +2747,8 @@ void FrameRegisterClass () {
 // TODO: FIXME: Util_TestFileExists()
 static bool FileExists(std::string strFilename) 
 {
-#ifdef _MSC_VER
 	struct _stat64 stFileInfo; 
 	int intStat = _stat64(strFilename.c_str(), &stFileInfo);
-#else
-	struct stat stFileInfo;
-	int intStat = stat(strFilename.c_str(), &stFileInfo);
-#endif
 	return (intStat == 0);
 }
 
