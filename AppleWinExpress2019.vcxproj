@@ -72,6 +72,7 @@
     <ClInclude Include="source\DiskLog.h" />
     <ClInclude Include="source\Frame.h" />
     <ClInclude Include="source\Harddisk.h" />
+    <ClInclude Include="source\Interface.h" />
     <ClInclude Include="source\Joystick.h" />
     <ClInclude Include="source\Keyboard.h" />
     <ClInclude Include="source\LanguageCard.h" />
