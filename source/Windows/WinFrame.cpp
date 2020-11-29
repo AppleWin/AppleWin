@@ -59,7 +59,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"
 #include "Debugger/Debug.h"
-#if _MSC_VER <= 1500	// VS2008 only (cl.exe v15.00)
+#if _MSC_VER < 1900	// VS2013 or before (cl.exe v18.x or before)
 #include <sys/stat.h>
 #endif
 
@@ -2699,10 +2699,10 @@ void FrameRegisterClass () {
 //===========================================================================
 // TODO: FIXME: Util_TestFileExists()
 static bool FileExists(std::string strFilename) 
-{ 
-	struct stat stFileInfo; 
-	int intStat = stat(strFilename.c_str(),&stFileInfo); 
-	return (intStat == 0) ? true : false;
+{
+	struct _stat64 stFileInfo; 
+	int intStat = _stat64(strFilename.c_str(), &stFileInfo);
+	return (intStat == 0);
 }
 
 //===========================================================================
