@@ -29,9 +29,6 @@
 #ifndef _UILIB_H
 #define _UILIB_H
 
-#include <windows.h>
-#include <tchar.h>
-
 typedef struct {
     unsigned int idc;
     int element_type;
