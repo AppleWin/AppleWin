@@ -1,5 +1,9 @@
 dist: focal
 
+arch:
+  - arm32
+  - amd64
+
 addons:
   apt:
     packages:
