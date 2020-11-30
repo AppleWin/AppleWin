@@ -2,7 +2,7 @@ dist: focal
 
 addons:
   apt:
-    packages
+    packages:
       - cmake
       - libyaml-dev
       - libminizip-dev
