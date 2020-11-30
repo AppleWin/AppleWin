@@ -42,11 +42,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SaveState.h"
 #include "SerialComms.h"
 #include "Speaker.h"
+#include "Memory.h"
+#include "Pravets.h"
+#include "Keyboard.h"
 #include "Mockingboard.h"
 #include "Interface.h"
+#include "SoundCore.h"
 
 #include "Configuration/IPropertySheet.h"
 #include "Tfe/Tfe.h"
+
+#ifdef USE_SPEECH_API
+#include "Speech.h"
+#endif
 
 // Backwards compatibility with AppleWin <1.24.0
 static void LoadConfigOldJoystick_v1(const UINT uJoyNum)
@@ -500,4 +508,87 @@ void GetAppleWindowTitle()
 	case MODE_PAUSED: g_pAppTitle += std::string(TEXT(" [")) + TITLE_PAUSED + TEXT("]"); break;
 	case MODE_STEPPING: g_pAppTitle += std::string(TEXT(" [")) + TITLE_STEPPING + TEXT("]"); break;
 	}
+}
+
+//===========================================================================
+
+// CtrlReset() vs ResetMachineState():
+// . CPU:
+//		Ctrl+Reset : 6502.sp=-3    / CpuReset()
+//		Power cycle: 6502.sp=0x1ff / CpuInitialize()
+// . Disk][:
+//		Ctrl+Reset : if motor-on, then motor-off but continue to spin for 1s
+//		Power cycle: motor-off & immediately stop spinning
+
+// todo: consolidate CtrlReset() and ResetMachineState()
+void ResetMachineState()
+{
+	GetCardMgr().GetDisk2CardMgr().Reset(true);
+	HD_Reset();
+	g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
+
+	MemReset();	// calls CpuInitialize(), CNoSlotClock.Reset()
+	PravetsReset();
+	if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
+		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
+	VideoResetState();
+	KeybReset();
+	if (GetCardMgr().IsSSCInstalled())
+		GetCardMgr().GetSSC()->CommReset();
+	PrintReset();
+	JoyReset();
+	MB_Reset();
+	SpkrReset();
+	if (GetCardMgr().IsMouseCardInstalled())
+		GetCardMgr().GetMouseCard()->Reset();
+	SetActiveCpu(GetMainCpu());
+#ifdef USE_SPEECH_API
+	g_Speech.Reset();
+#endif
+
+	SoundCore_SetFade(FADE_NONE);
+	LogFileTimeUntilFirstKeyReadReset();
+}
+
+
+//===========================================================================
+
+/*
+ * In comments, UTAII is an abbreviation for a reference to "Understanding the Apple II" by James Sather
+ */
+
+ // todo: consolidate CtrlReset() and ResetMachineState()
+void CtrlReset()
+{
+	if (!IS_APPLE2)
+	{
+		// For A][ & A][+, reset doesn't reset the LC switches (UTAII:5-29)
+		MemResetPaging();
+
+		// For A][ & A][+, reset doesn't reset the video mode (UTAII:4-4)
+		VideoResetState();	// Switch Alternate char set off
+	}
+
+	if (IsAppleIIeOrAbove(GetApple2Type()) || IsCopamBase64A(GetApple2Type()))
+	{
+		// For A][ & A][+, reset doesn't reset the annunciators (UTAIIe:I-5)
+		// Base 64A: on RESET does reset to ROM page 0 (GH#807)
+		MemAnnunciatorReset();
+	}
+
+	PravetsReset();
+	GetCardMgr().GetDisk2CardMgr().Reset();
+	HD_Reset();
+	KeybReset();
+	if (GetCardMgr().IsSSCInstalled())
+		GetCardMgr().GetSSC()->CommReset();
+	MB_Reset();
+	if (GetCardMgr().IsMouseCardInstalled())
+		GetCardMgr().GetMouseCard()->Reset();		// Deassert any pending IRQs - GH#514
+#ifdef USE_SPEECH_API
+	g_Speech.Reset();
+#endif
+
+	CpuReset();
+	g_bFreshReset = true;
 }

@@ -30,11 +30,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Windows/WinFrame.h"
 #include "Windows/AppleWin.h"
-#include "CardManager.h"
-#include "CPU.h"
-#include "Disk.h"
-#include "DiskImage.h"
-#include "Harddisk.h"
 #include "Keyboard.h"
 #include "Log.h"
 #include "Memory.h"
@@ -43,7 +38,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Windows/DirectInput.h"
 #include "NTSC.h"
 #include "ParallelPrinter.h"
-#include "Pravets.h"
 #include "Registry.h"
 #include "SaveState.h"
 #include "SerialComms.h"
@@ -51,11 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speaker.h"
 #include "Frame.h"
 #include "Utilities.h"
-#ifdef USE_SPEECH_API
-#include "Speech.h"
-#endif
 #include "Windows/WinVideo.h"
-
 #include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"
 #include "Debugger/Debug.h"
@@ -146,11 +136,10 @@ static UINT		g_uCount100msec = 0;
 static bool g_bShowingCursor = true;
 static bool g_bLastCursorInAppleViewport = false;
 
-void    DrawStatusArea (HDC passdc, BOOL drawflags);
+static void DrawStatusArea (HDC passdc, int drawflags);
 static void ProcessButtonClick (int button, bool bFromButtonUI=false);
 void	ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive);
 void    RelayEvent (UINT message, WPARAM wparam, LPARAM lparam);
-void    ResetMachineState ();
 void    SetFullScreenMode ();
 void    SetNormalMode ();
 static void SetUsingCursor(BOOL);
@@ -2229,90 +2218,6 @@ void RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
   msg.wParam  = wparam;
   msg.lParam  = lparam;
   SendMessage(tooltipwindow,TTM_RELAYEVENT,0,(LPARAM)&msg);
-}
-
-//===========================================================================
-
-// CtrlReset() vs ResetMachineState():
-// . CPU: 
-//		Ctrl+Reset : 6502.sp=-3    / CpuReset()
-//		Power cycle: 6502.sp=0x1ff / CpuInitialize()
-// . Disk][:
-//		Ctrl+Reset : if motor-on, then motor-off but continue to spin for 1s
-//		Power cycle: motor-off & immediately stop spinning
-
-// todo: consolidate CtrlReset() and ResetMachineState()
-void ResetMachineState ()
-{
-  GetCardMgr().GetDisk2CardMgr().Reset(true);
-  HD_Reset();
-  g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
-
-  MemReset();	// calls CpuInitialize(), CNoSlotClock.Reset()
-  PravetsReset();
-  if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
-	dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
-  VideoResetState();
-  KeybReset();
-  if (GetCardMgr().IsSSCInstalled())
-	GetCardMgr().GetSSC()->CommReset();
-  PrintReset();
-  JoyReset();
-  MB_Reset();
-  SpkrReset();
-  if (GetCardMgr().IsMouseCardInstalled())
-	GetCardMgr().GetMouseCard()->Reset();
-  SetActiveCpu( GetMainCpu() );
-#ifdef USE_SPEECH_API
-	g_Speech.Reset();
-#endif
-
-  SoundCore_SetFade(FADE_NONE);
-  LogFileTimeUntilFirstKeyReadReset();
-}
-
-
-//===========================================================================
-
-/*
- * In comments, UTAII is an abbreviation for a reference to "Understanding the Apple II" by James Sather
- */
-
-// todo: consolidate CtrlReset() and ResetMachineState()
-// Ctrl+Reset - TODO: This is a terrible place for this code! Should be in AppleWin.cpp
-void CtrlReset()
-{
-	if (!IS_APPLE2)
-	{
-		// For A][ & A][+, reset doesn't reset the LC switches (UTAII:5-29) 
-		MemResetPaging();
-
-		// For A][ & A][+, reset doesn't reset the video mode (UTAII:4-4)
-		VideoResetState();	// Switch Alternate char set off
-	}
-
-	if (IsAppleIIeOrAbove(GetApple2Type()) || IsCopamBase64A(GetApple2Type()))
-	{
-		// For A][ & A][+, reset doesn't reset the annunciators (UTAIIe:I-5)
-		// Base 64A: on RESET does reset to ROM page 0 (GH#807)
-		MemAnnunciatorReset();
-	}
-
-	PravetsReset();
-	GetCardMgr().GetDisk2CardMgr().Reset();
-	HD_Reset();
-	KeybReset();
-	if (GetCardMgr().IsSSCInstalled())
-		GetCardMgr().GetSSC()->CommReset();
-	MB_Reset();
-	if (GetCardMgr().IsMouseCardInstalled())
-		GetCardMgr().GetMouseCard()->Reset();		// Deassert any pending IRQs - GH#514
-#ifdef USE_SPEECH_API
-	g_Speech.Reset();
-#endif
-
-	CpuReset();
-	g_bFreshReset = true;
 }
 
 
