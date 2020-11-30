@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speaker.h"
 #include "Registry.h"
 #include "SynchronousEventManager.h"
+#include "Configuration/PropertySheet.h"
 
 #ifdef USE_SPEECH_API
 #include "Speech.h"
@@ -79,8 +80,12 @@ int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.c
 
 SynchronousEventManager g_SynchronousEventMgr;
 
-static IPropertySheet * sg = nullptr;
-IPropertySheet& sg_PropertySheet = *sg;  // *new CPropertySheet;
+#ifdef _MSC_VER
+IPropertySheet& sg_PropertySheet = *new CPropertySheet;
+#else
+static IPropertySheet* nullPropertySheet = nullptr;
+IPropertySheet& sg_PropertySheet = *nullPropertySheet;
+#endif
 
 HANDLE		g_hCustomRomF8 = INVALID_HANDLE_VALUE;	// Cmd-line specified custom F8 ROM at $F800..$FFFF
 bool	    g_bCustomRomF8Failed = false;			// Set if custom F8 ROM file failed
