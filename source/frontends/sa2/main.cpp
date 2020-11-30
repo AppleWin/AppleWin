@@ -269,13 +269,13 @@ void run_sdl(int argc, const char * argv [])
     // if this fails, should we throw, print something or just ignore?
 
     const auto redraw = [&emulator, res]{
-			  const auto rect = emulator.updateTexture();
+			  emulator.updateTexture();
 			  if (res == 0) {
-			    emulator.refreshVideo(rect);
+			    emulator.refreshVideo();
 			  }
 			};
 
-    const auto refresh = [&emulator, redraw]{
+    const auto refresh = [redraw]{
 			   NTSC_SetVideoMode( g_uVideoMode );
 			   NTSC_VideoRedrawWholeScreen();
 			   redraw();
@@ -338,7 +338,7 @@ void run_sdl(int argc, const char * argv [])
 	}
 
 	updateTextureTimer.tic();
-	const SDL_Rect rect = emulator.updateTexture();
+	emulator.updateTexture();
 	updateTextureTimer.toc();
 
 	if (!options.looseMutex)
@@ -351,7 +351,7 @@ void run_sdl(int argc, const char * argv [])
 	if (!options.headless)
 	{
 	  refreshScreenTimer.tic();
-	  emulator.refreshVideo(rect);
+	  emulator.refreshVideo();
 	  refreshScreenTimer.toc();
 	}
 
@@ -387,13 +387,13 @@ void run_sdl(int argc, const char * argv [])
 	cpuTimer.toc();
 
 	updateTextureTimer.tic();
-	const SDL_Rect rect = emulator.updateTexture();
+	emulator.updateTexture();
 	updateTextureTimer.toc();
 
 	if (!options.headless)
 	{
 	  refreshScreenTimer.tic();
-	  emulator.refreshVideo(rect);
+	  emulator.refreshVideo();
 	  refreshScreenTimer.toc();
 	}
       } while (!quit);

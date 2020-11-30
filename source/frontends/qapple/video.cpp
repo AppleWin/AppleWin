@@ -4,66 +4,58 @@
 #include <QKeyEvent>
 
 #include "StdAfx.h"
-#include "linux/videobuffer.h"
 #include "linux/keyboard.h"
 #include "linux/paddle.h"
 #include "Common.h"
 #include "CardManager.h"
 #include "MouseInterface.h"
 #include "Core.h"
+#include "Frame.h"
+#include "Video.h"
 
 Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
 {
     setMouseTracking(true);
 
     myLogo = QImage(":/resources/APPLEWINLOGO.BMP").mirrored(false, true);
+
+    mySX = GetFrameBufferBorderWidth();
+    mySY = GetFrameBufferBorderHeight();
+    mySW = GetFrameBufferBorderlessWidth();
+    mySH = GetFrameBufferBorderlessHeight();
+    myWidth = GetFrameBufferWidth();
+    myHeight = GetFrameBufferHeight();
+}
+
+QImage Video::getScreenImage() const
+{
+    QImage frameBuffer(g_pFramebufferbits, myWidth, myHeight, QImage::Format_ARGB32_Premultiplied);
+    return frameBuffer;
 }
 
 QImage Video::getScreen() const
 {
-    uint8_t * data;
-    int width;
-    int height;
-    int sx, sy;
-    int sw, sh;
-
-    getScreenData(data, width, height, sx, sy, sw, sh);
-    QImage frameBuffer(data, width, height, QImage::Format_ARGB32_Premultiplied);
-
-    QImage screen = frameBuffer.copy(sx, sy, sw, sh);
+    QImage frameBuffer = getScreenImage();
+    QImage screen = frameBuffer.copy(mySX, mySY, mySW, mySH);
 
     return screen;
 }
 
 void Video::displayLogo()
 {
-    uint8_t * data;
-    int width;
-    int height;
-    int sx, sy;
-    int sw, sh;
-
-    getScreenData(data, width, height, sx, sy, sw, sh);
-    QImage frameBuffer(data, width, height, QImage::Format_ARGB32_Premultiplied);
+    QImage frameBuffer = getScreenImage();
 
     QPainter painter(&frameBuffer);
-    painter.drawImage(sx, sy, myLogo);
+    painter.drawImage(mySX, mySY, myLogo);
 }
 
 void Video::paintEvent(QPaintEvent *)
 {
-    uint8_t * data;
-    int width;
-    int height;
-    int sx, sy;
-    int sw, sh;
-
-    getScreenData(data, width, height, sx, sy, sw, sh);
-    QImage frameBuffer(data, width, height, QImage::Format_ARGB32_Premultiplied);
+    QImage frameBuffer = getScreenImage();
 
     const QSize actual = size();
-    const double scaleX = double(actual.width()) / sw;
-    const double scaleY = double(actual.height()) / sh;
+    const double scaleX = double(actual.width()) / mySW;
+    const double scaleY = double(actual.height()) / mySH;
 
     // then paint it on the widget with scale
     {
@@ -73,7 +65,7 @@ void Video::paintEvent(QPaintEvent *)
         const QTransform transform(scaleX, 0.0, 0.0, -scaleY, 0.0, actual.height());
         painter.setTransform(transform);
 
-        painter.drawImage(0, 0, frameBuffer, sx, sy, sw, sh);
+        painter.drawImage(0, 0, frameBuffer, mySX, mySY, mySW, mySH);
     }
 }
 

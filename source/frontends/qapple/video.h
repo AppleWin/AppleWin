@@ -31,6 +31,15 @@ protected:
 
 private:
     QImage myLogo;
+
+    int mySX;
+    int mySY;
+    int mySW;
+    int mySH;
+    int myWidth;
+    int myHeight;
+
+    QImage getScreenImage() const;
 };
 
 #endif // VIDEO_H

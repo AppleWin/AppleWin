@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include "linux/videobuffer.h"
-#include "linux/data.h"
 #include "linux/paddle.h"
 #include "linux/keyboard.h"
 
@@ -148,6 +147,11 @@ Emulator::Emulator(
   , myFullscreen(false)
   , mySpeed(fixedSpeed)
 {
+  myRect.x = GetFrameBufferBorderWidth();
+  myRect.y = GetFrameBufferBorderHeight();
+  myRect.w = GetFrameBufferBorderlessWidth();
+  myRect.h = GetFrameBufferBorderlessHeight();
+  myPitch = GetFrameBufferWidth() * sizeof(bgra_t);
 }
 
 void Emulator::execute(const size_t next)
@@ -165,29 +169,14 @@ void Emulator::execute(const size_t next)
   SpkrUpdate(executedCycles);
 }
 
-SDL_Rect Emulator::updateTexture()
+void Emulator::updateTexture()
 {
-  uint8_t * data;
-  int width;
-  int height;
-  int sx, sy;
-  int sw, sh;
-
-  getScreenData(data, width, height, sx, sy, sw, sh);
-  SDL_UpdateTexture(myTexture.get(), nullptr, data, width * 4);
-
-  SDL_Rect srect;
-  srect.x = sx;
-  srect.y = sy;
-  srect.w = sw;
-  srect.h = sh;
-
-  return srect;
+  SDL_UpdateTexture(myTexture.get(), nullptr, g_pFramebufferbits, myPitch);
 }
 
-void Emulator::refreshVideo(const SDL_Rect & rect)
+void Emulator::refreshVideo()
 {
-  SDL_RenderCopyEx(myRenderer.get(), myTexture.get(), &rect, nullptr, 0.0, nullptr, SDL_FLIP_VERTICAL);
+  SDL_RenderCopyEx(myRenderer.get(), myTexture.get(), &myRect, nullptr, 0.0, nullptr, SDL_FLIP_VERTICAL);
   SDL_RenderPresent(myRenderer.get());
 }
 

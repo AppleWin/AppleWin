@@ -16,9 +16,9 @@ public:
     );
 
   void execute(const size_t milliseconds);
+
+  void updateTexture();
   void refreshVideo();
-  SDL_Rect updateTexture();
-  void refreshVideo(const SDL_Rect & rect);
 
   void processEvents(bool & quit);
 
@@ -35,4 +35,7 @@ private:
   bool myFullscreen;
 
   Speed mySpeed;
+
+  SDL_Rect myRect;
+  int myPitch;
 };
