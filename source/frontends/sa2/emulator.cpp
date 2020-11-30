@@ -268,7 +268,14 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
     }
     case SDLK_F2:
     {
-      quit = true;
+      if (key.keysym.mod & KMOD_CTRL)
+      {
+	CtrlReset();
+      }
+      else
+      {
+	ResetMachineState();
+      }
       break;
     }
     case SDLK_F1:
