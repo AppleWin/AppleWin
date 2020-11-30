@@ -7,11 +7,11 @@ The format of the configuration file is the same as the Windows Registry of Appl
 
 On a Raspberry Pi, one needs the KMS (fake or not). Better performance has been observed with the ``opengles2`` driver (use ``sa2 --sdl-driver 1``).
 
-It is possible to run the CPU in a separate thread to keep the emulator running in real time (necessary for slower Pi, with some Apple video types and bigger window sizes):
+It is possible to run the CPU in a separate thread to keep the emulator running in real time (necessary for slower Pis, with some Apple video types and bigger window sizes):
 - ``sa2 -m``
 - optionally add ``-l``
 
-If you have a modern gamepad where the axis (``LEFTX`` and ``LEFTY``) move in a circle, the emulator will automatically map to a square: use ``--no-squaring`` to avoid this.
+If you have a modern gamepad where the axes (``LEFTX`` and ``LEFTY``) move in a circle, the emulator will automatically map to a square: use ``--no-squaring`` to avoid this.
 
 Speech / phonemes are known to hang the emulator.
 
