@@ -2,7 +2,6 @@ dist: focal
 
 arch:
   - arm64
-  - amd64
 
 addons:
   apt:
