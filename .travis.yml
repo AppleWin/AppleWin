@@ -1,0 +1,19 @@
+dist: focal
+
+addons:
+  apt:
+    packages
+      - cmake
+      - libyaml-dev
+      - libminizip-dev
+      - qtbase5-dev
+      - qtmultimedia5-dev
+      - libqt5gamepad5-dev
+      - libboost-program-options-dev
+      - libncurses-dev
+      - libevdev-dev
+      - libsdl2-image-dev
+
+language: cpp
+
+script: source/linux/build.sh
