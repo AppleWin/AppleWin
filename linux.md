@@ -20,6 +20,7 @@ There are 3 projects
 * libapple: the core emulator files
 * applen: a frontend based on ncurses
 * qapple: Qt frontend
+* sa2: SDL frontend
 
 The libapple interface is a *link time* interface: some functions are not defined and must be provided in order to properly link
 the application. These functions are listed in [interface.h](source/linux/interface.h).
@@ -36,9 +37,8 @@ been modified, mostly for
 Some key files have been completely reimplemented or discarded:
 
 * AppleWin.cpp
-* Frame.cpp
-* Video.cpp (partially)
-* Audio (including Mockingboard but excluding speech in QApple)
+* WinFrame.cpp
+* WinVideo.cpp
 
 Some features totally ignored:
 
@@ -74,13 +74,13 @@ This is based on Qt, currently tested with 5.10
 
 * keyboard shortcuts are listed in the menu entries
 * graphics: runs the native NTSC code
-* joystick: it uses QtGamepad (correct names will only be displayed with 5.11)
+* joystick: it uses QtGamepad
 * emulator runs in the main UI thread
 * Qt timers are very coarse: the emulator needs to dynamically adapt the cycles to execute
 * the app runs at 60FPS with correction for uneven timer deltas.
 * full speed when disk spins execute up to 5 ms real wall clock of emulator code (then returns to Qt)
 * (standard) audio is supported and there are a few configuration options to tune the latency (default very conservative 200ms)
-* plain mockingboard is supported as well (not speech, which hang the emulator)
+* plain mockingboard is supported as well (not speech, which hangs the emulator)
 * Open Apple and Solid Apple can be emulated using AltGr and Menu (unfortunately, Alt does not work well)
 
 ## Build
