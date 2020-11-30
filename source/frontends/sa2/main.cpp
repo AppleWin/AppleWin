@@ -49,16 +49,21 @@ namespace
 {
   void initialiseEmulator()
   {
+#ifdef RIFF_SPKR
+    RiffInitWriteFile("/tmp/Spkr.wav", SPKR_SAMPLE_RATE, 1);
+#endif
+#ifdef RIFF_MB
+    RiffInitWriteFile("/tmp/Mockingboard.wav", 44100, 2);
+#endif
+
     g_nAppMode = MODE_RUNNING;
     LogFileOutput("Initialisation\n");
 
     ImageInitialize();
     g_bFullSpeed = false;
-  }
 
-  void loadEmulator()
-  {
     LoadConfiguration();
+    SetCurrentCLK6502();
     CheckCpu();
     GetAppleWindowTitle();
     FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
@@ -73,10 +78,12 @@ namespace
 
     GetCardMgr().GetDisk2CardMgr().Reset();
     HD_Reset();
+    Snapshot_Startup();
   }
 
-  void stopEmulator()
+  void uninitialiseEmulator()
   {
+    Snapshot_Shutdown();
     CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
     if (pMouseCard)
     {
@@ -84,10 +91,7 @@ namespace
     }
     VideoBufferInitialize();
     MemDestroy();
-  }
 
-  void uninitialiseEmulator()
-  {
     SpkrDestroy();
     MB_Destroy();
     DSUninit();
@@ -219,15 +223,7 @@ void run_sdl(int argc, const char * argv [])
 
   g_nMemoryClearType = options.memclear;
 
-#ifdef RIFF_SPKR
-  RiffInitWriteFile("/tmp/Spkr.wav", SPKR_SAMPLE_RATE, 1);
-#endif
-#ifdef RIFF_MB
-  RiffInitWriteFile("/tmp/Mockingboard.wav", 44100, 2);
-#endif
-
   initialiseEmulator();
-  loadEmulator();
 
   applyOptions(options);
 
@@ -419,7 +415,6 @@ void run_sdl(int argc, const char * argv [])
     SDirectSound::stop();
   }
 
-  stopEmulator();
   uninitialiseEmulator();
 }
 

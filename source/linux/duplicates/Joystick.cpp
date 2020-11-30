@@ -19,6 +19,10 @@ void JoySetJoyType(UINT num, DWORD type)
 {
 }
 
+void JoyReset()
+{
+}
+
 #define SS_YAML_KEY_COUNTERRESETCYCLE "Counter Reset Cycle"
 #define SS_YAML_KEY_JOY0TRIMX "Joystick0 TrimX"
 #define SS_YAML_KEY_JOY0TRIMY "Joystick0 TrimY"

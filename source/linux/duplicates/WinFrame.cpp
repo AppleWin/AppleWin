@@ -4,6 +4,7 @@
 
 HWND   g_hFrameWindow   = (HWND)0;
 BOOL   g_bConfirmReboot = 1;
+bool   g_bFreshReset    = false;
 
 void FrameSetCursorPosByMousePos()
 {
