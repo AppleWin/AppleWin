@@ -8,6 +8,8 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
+#include <sys/stat.h>
+
 namespace
 {
 
@@ -106,20 +108,26 @@ void InitializeRegistry(const EmulatorOptions & options)
   std::string filename;
   bool saveOnExit;
 
+  const char* homeDir = getenv("HOME");
+  if (!homeDir)
+  {
+    throw std::runtime_error("${HOME} not set, cannot locate configuration file");
+  }
+
   if (options.useQtIni)
   {
-    const char* homeDir = getenv("HOME");
-    if (!homeDir)
-    {
-      throw std::runtime_error("${HOME} not set, cannot locate Qt ini");
-    }
     filename = std::string(homeDir) + "/.config/" + ORGANIZATION_NAME + "/" + APPLICATION_NAME + ".conf";
     saveOnExit = false;
   }
   else
   {
-    filename = "applen.conf";
-    saveOnExit = options.saveConfigurationOnExit;
+    const std::string dir = std::string(homeDir) + "/.applewin";
+    const int status = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    filename = dir + "/applewin.conf";
+    if (!status || (status == EEXIST))
+    {
+      saveOnExit = options.saveConfigurationOnExit;
+    }
   }
 
   Configuration::instance.reset(new Configuration(filename, saveOnExit));
