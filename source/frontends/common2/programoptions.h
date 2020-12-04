@@ -1,13 +1,13 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 
 struct EmulatorOptions
 {
   std::string disk1;
   std::string disk2;
-  bool createMissingDisks = false;
 
   std::string snapshot;
 
@@ -32,6 +32,8 @@ struct EmulatorOptions
   bool fixedSpeed = false; // default adaptive
 
   int sdlDriver = -1; // default = -1 to let SDL choose
+
+  std::vector<std::string> registryOptions;
 };
 
 bool getEmulatorOptions(int argc, const char * argv [], const std::string & edition, EmulatorOptions & options);

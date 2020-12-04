@@ -13,6 +13,19 @@
 namespace
 {
 
+  void parseOption(const std::string & s, std::string & path, std::string & value)
+  {
+    const size_t pos = s.find('=');
+    if (pos == std::string::npos)
+    {
+      throw std::runtime_error("Invalid option format: " + s + ", expected: section.key=value");
+    }
+    path = s.substr(0, pos);
+    std::replace(path.begin(), path.end(), '_', ' ');
+    value = s.substr(pos + 1);
+    std::replace(value.begin(), value.end(), '_', ' ');
+  }
+
   struct KeyEncodedLess
   {
     static std::string decodeKey(const std::string & key)
@@ -49,6 +62,8 @@ namespace
     void putValue(const std::string & section, const std::string & key, const T & value);
 
     const ini_t & getProperties() const;
+
+    void addExtraOptions(const std::vector<std::string> & options);
 
   private:
     const std::string myFilename;
@@ -101,6 +116,15 @@ namespace
     myINI.put(path, value);
   }
 
+  void Configuration::addExtraOptions(const std::vector<std::string> & options)
+  {
+    for (const std::string & option : options)
+    {
+      std::string path, value;
+      parseOption(option, path, value);
+      myINI.put(path, value);
+    }
+  }
 }
 
 void InitializeRegistry(const EmulatorOptions & options)
@@ -130,7 +154,9 @@ void InitializeRegistry(const EmulatorOptions & options)
     }
   }
 
-  Configuration::instance.reset(new Configuration(filename, saveOnExit));
+  std::shared_ptr<Configuration> config(new Configuration(filename, saveOnExit));
+  config->addExtraOptions(options.registryOptions);
+  std::swap(Configuration::instance, config);
 }
 
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser,

@@ -10,22 +10,26 @@ namespace po = boost::program_options;
 
 bool getEmulatorOptions(int argc, const char * argv [], const std::string & edition, EmulatorOptions & options)
 {
-  const std::string name = "Apple Emulator for " + edition + " (based on AppleWin " + getVersion() + ")\n";
+  const std::string name = "Apple Emulator for " + edition + " (based on AppleWin " + getVersion() + ")";
   po::options_description desc(name);
   desc.add_options()
     ("help,h", "Print this help message")
-    ("conf", "Save configuration on exit")
     ("multi-threaded,m", "Multi threaded")
     ("loose-mutex,l", "Loose mutex")
     ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
-    ("timer-interval,i", po::value<int>()->default_value(options.timerInterval), "Timer interval in ms")
+    ("timer-interval,i", po::value<int>()->default_value(options.timerInterval), "Timer interval in ms");
+
+  po::options_description configDesc("configuration");
+  configDesc.add_options()
+    ("save-conf", "Save configuration on exit")
+    ("config,c", po::value<std::vector<std::string>>(), "Registry options section.path=value")
     ("qt-ini,q", "Use Qt ini file (read only)");
+  desc.add(configDesc);
 
   po::options_description diskDesc("Disk");
   diskDesc.add_options()
     ("d1,1", po::value<std::string>(), "Disk in 1st drive")
-    ("d2,2", po::value<std::string>(), "Disk in 2nd drive")
-    ("create,c", "Create missing disks");
+    ("d2,2", po::value<std::string>(), "Disk in 2nd drive");
   desc.add(diskDesc);
 
   po::options_description snapshotDesc("Snapshot");
@@ -59,12 +63,17 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
       return false;
     }
 
-    options.saveConfigurationOnExit = vm.count("conf");
+    options.saveConfigurationOnExit = vm.count("save-conf");
     options.useQtIni = vm.count("qt-ini");
     options.multiThreaded = vm.count("multi-threaded");
     options.looseMutex = vm.count("loose-mutex");
     options.timerInterval = vm["timer-interval"].as<int>();
     options.sdlDriver = vm["sdl-driver"].as<int>();
+
+    if (vm.count("config"))
+    {
+      options.registryOptions = vm["config"].as<std::vector<std::string> >();
+    }
 
     if (vm.count("d1"))
     {
@@ -75,8 +84,6 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
     {
       options.disk2 = vm["d2"].as<std::string>();
     }
-
-    options.createMissingDisks = vm.count("create") > 0;
 
     if (vm.count("load-state"))
     {
