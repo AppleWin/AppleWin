@@ -5,6 +5,7 @@
 * [Executables](#executables)
   * [applen](#applen)
   * [qapple](#qapple)
+  * [sa2](#sa2)
 * [Build](#build)
   * [Checkout](#checkout)
   * [Fedora](#fedora)
@@ -15,12 +16,12 @@
 
 ## Structure
 
-There are 3 projects
+There are 4 projects
 
 * libapple: the core emulator files
 * applen: a frontend based on ncurses
 * qapple: Qt frontend
-* sa2: SDL frontend
+* sa2: SDL2 frontend
 
 The libapple interface is a *link time* interface: some functions are not defined and must be provided in order to properly link
 the application. These functions are listed in [interface.h](source/linux/interface.h).
@@ -83,6 +84,10 @@ This is based on Qt, currently tested with 5.10
 * plain mockingboard is supported as well (not speech, which hangs the emulator)
 * Open Apple and Solid Apple can be emulated using AltGr and Menu (unfortunately, Alt does not work well)
 
+### sa2
+
+See [sa2](source/frontends/sa2/README.md).
+
 ## Build
 
 The project can be built using cmake from the top level directory.
@@ -109,7 +114,7 @@ On Fedora 31, from a fresh installation, install all packages from [fedora.list.
 
 On Raspbian 10, from a fresh installation, install all packages from [raspbian.list.txt](source/linux/raspbian.list.txt).
 
-Audio does not work and CPU utilisation is very high.
+See [Travis](.travis.yml) CI too.
 
 ## Speed
 
