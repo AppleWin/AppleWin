@@ -1244,21 +1244,21 @@ static void UpdatePaging(BOOL initialize)
 
 void MemDestroy()
 {
-	VirtualFree(memaux  ,0,MEM_RELEASE);
-	VirtualFree(memmain ,0,MEM_RELEASE);
-	VirtualFree(memdirty,0,MEM_RELEASE);
-	VirtualFree(memrom  ,0,MEM_RELEASE);
-	VirtualFree(memimage,0,MEM_RELEASE);
+	free(memaux);
+	free(memmain);
+	free(memdirty);
+	free(memrom);
+	free(memimage);
 
-	VirtualFree(pCxRomInternal,0,MEM_RELEASE);
-	VirtualFree(pCxRomPeripheral,0,MEM_RELEASE);
+	free(pCxRomInternal);
+	free(pCxRomPeripheral);
 
 #ifdef RAMWORKS
 	for (UINT i=1; i<g_uMaxExPages; i++)
 	{
 		if (RWpages[i])
 		{
-			VirtualFree(RWpages[i], 0, MEM_RELEASE);
+			free(RWpages[i]);
 			RWpages[i] = NULL;
 		}
 	}
@@ -1279,8 +1279,8 @@ void MemDestroy()
 
 	mem      = NULL;
 
-	ZeroMemory(memwrite, sizeof(memwrite));
-	ZeroMemory(memshadow,sizeof(memshadow));
+	memset(memwrite,  0, sizeof(memwrite));
+	memset(memshadow, 0, sizeof(memshadow));
 }
 
 //===========================================================================
@@ -1467,14 +1467,14 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 void MemInitialize()
 {
 	// ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
-	memaux   = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
-	memmain  = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
-	memdirty = (LPBYTE)VirtualAlloc(NULL,0x100  ,MEM_COMMIT,PAGE_READWRITE);
-	memrom   = (LPBYTE)VirtualAlloc(NULL,0x3000 * MaxRomPages ,MEM_COMMIT,PAGE_READWRITE);
-	memimage = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_RESERVE,PAGE_NOACCESS);
+	memaux   = (LPBYTE)malloc(_6502_MEM_END+1);
+	memmain  = (LPBYTE)malloc(_6502_MEM_END+1);
+	memdirty = (LPBYTE)malloc(0x100);
+	memrom   = (LPBYTE)malloc(0x3000 * MaxRomPages);
+	memimage = (LPBYTE)malloc(_6502_MEM_END+1);
 
-	pCxRomInternal		= (LPBYTE) VirtualAlloc(NULL, CxRomSize, MEM_COMMIT, PAGE_READWRITE);
-	pCxRomPeripheral	= (LPBYTE) VirtualAlloc(NULL, CxRomSize, MEM_COMMIT, PAGE_READWRITE);
+	pCxRomInternal		= (LPBYTE) malloc(CxRomSize);
+	pCxRomPeripheral	= (LPBYTE) malloc(CxRomSize);
 
 	if (!memaux || !memdirty || !memimage || !memmain || !memrom || !pCxRomInternal || !pCxRomPeripheral)
 	{
@@ -1487,25 +1487,6 @@ void MemInitialize()
 		ExitProcess(1);
 	}
 
-	LPVOID newloc = VirtualAlloc(memimage,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
-	if (newloc != memimage)
-		MessageBox(
-			GetDesktopWindow(),
-			TEXT("The emulator has detected a bug in your operating ")
-			TEXT("system.  While changing the attributes of a memory ")
-			TEXT("object, the operating system also changed its ")
-			TEXT("location."),
-			g_pAppTitle.c_str(),
-			MB_ICONEXCLAMATION | MB_SETFOREGROUND);
-
-	// memimage has been freed
-	// if we have come here we should use newloc
-	//
-	// this happens when running under valgrind
-	memimage = (LPBYTE)newloc;
-
-	//
-
 	RWpages[0] = memaux;
 
 	SetExpansionMemTypeDefault();
@@ -1517,7 +1498,7 @@ void MemInitialize()
 		g_uActiveBank = 0;
 
 		UINT i = 1;
-		while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) VirtualAlloc(NULL, _6502_MEM_END+1, MEM_COMMIT, PAGE_READWRITE)))
+		while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) malloc(_6502_MEM_END+1)))
 			i++;
 		while (i < kMaxExMemoryBanks)
 			RWpages[i++] = NULL;
@@ -1831,12 +1812,12 @@ inline DWORD getRandomTime()
 void MemReset()
 {
 	// INITIALIZE THE PAGING TABLES
-	ZeroMemory(memshadow,256*sizeof(LPBYTE));
-	ZeroMemory(memwrite ,256*sizeof(LPBYTE));
+	memset(memshadow, 0, 256*sizeof(LPBYTE));
+	memset(memwrite , 0, 256*sizeof(LPBYTE));
 
 	// INITIALIZE THE RAM IMAGES
-	ZeroMemory(memaux ,0x10000);
-	ZeroMemory(memmain,0x10000);
+	memset(memaux , 0, 0x10000);
+	memset(memmain, 0, 0x10000);
 
 	// Init the I/O ROM vars
 	IO_SELECT = 0;
@@ -1844,7 +1825,7 @@ void MemReset()
 	g_eExpansionRomType = eExpRomNull;
 	g_uPeripheralRomSlot = 0;
 
-	ZeroMemory(memdirty, 0x100);
+	memset(memdirty, 0, 0x100);
 
 	//
 
@@ -2473,7 +2454,7 @@ static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::
 		LPBYTE pBank = MemGetBankPtr(uBank);
 		if (!pBank)
 		{
-			pBank = RWpages[uBank-1] = (LPBYTE) VirtualAlloc(NULL, _6502_MEM_END+1, MEM_COMMIT, PAGE_READWRITE);
+			pBank = RWpages[uBank-1] = (LPBYTE) malloc(_6502_MEM_END+1);
 			if (!pBank)
 				throw std::string("Card: mem alloc failed");
 		}

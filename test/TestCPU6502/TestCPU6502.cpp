@@ -112,7 +112,8 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 
 void init(void)
 {
-	mem = (LPBYTE)VirtualAlloc(NULL,64*1024,MEM_COMMIT,PAGE_READWRITE);
+	// memory must be zero initialised like MemInitiaize() does.
+	mem = (LPBYTE)calloc(64, 1024);
 
 	for (UINT i=0; i<256; i++)
 		memwrite[i] = mem+i*256;
