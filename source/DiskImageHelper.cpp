@@ -52,7 +52,7 @@ ImageInfo::ImageInfo()
 	uOffset = 0;
 	bWriteProtected = false;
 	uImageSize = 0;
-	ZeroMemory(&zipFileInfo, sizeof(zipFileInfo));
+	memset(&zipFileInfo, 0, sizeof(zipFileInfo));
 	uNumEntriesInZip = 0;
 	uNumValidImagesInZip = 0;
 	uNumTracks = 0;
@@ -363,7 +363,7 @@ void CImageBase::Decode62(LPBYTE imageptr)
 	static BYTE sixbitbyte[0x80];
 	if (!tablegenerated)
 	{
-		ZeroMemory(sixbitbyte,0x80);
+		memset(sixbitbyte, 0, 0x80);
 		int loop = 0;
 		while (loop < 0x40) {
 			sixbitbyte[ms_DiskByte[loop]-0x80] = loop << 2;
@@ -899,7 +899,7 @@ class CIIeImage : public CImageBase
 {
 public:
 	CIIeImage(void) : m_pHeader(NULL) {}
-	virtual ~CIIeImage(void) { delete [] m_pHeader; }
+	virtual ~CIIeImage(void) { free(m_pHeader); }
 
 	virtual eDetectResult Detect(const LPBYTE pImage, const DWORD dwImageSize, const TCHAR* pszExt)
 	{
@@ -917,13 +917,13 @@ public:
 		// IF WE HAVEN'T ALREADY DONE SO, READ THE IMAGE FILE HEADER
 		if (!m_pHeader)
 		{
-			m_pHeader = (LPBYTE) VirtualAlloc(NULL, 88, MEM_COMMIT, PAGE_READWRITE);
+			m_pHeader = (LPBYTE) malloc(88);
 			if (!m_pHeader)
 			{
 				*pNibbles = 0;
 				return;
 			}
-			ZeroMemory(m_pHeader, 88);
+			memset(m_pHeader, 0, 88);
 			DWORD dwBytesRead;
 			SetFilePointer(pImageInfo->hFile, 0, NULL,FILE_BEGIN);
 			ReadFile(pImageInfo->hFile, m_pHeader, 88, &dwBytesRead, NULL);
@@ -947,7 +947,7 @@ public:
 			while (track--)
 				Offset += *(LPWORD)(m_pHeader+track*2+14);
 			SetFilePointer(pImageInfo->hFile, Offset, NULL,FILE_BEGIN);
-			ZeroMemory(pTrackImageBuffer, *pNibbles);
+			memset(pTrackImageBuffer, 0, *pNibbles);
 			DWORD dwBytesRead;
 			ReadFile(pImageInfo->hFile, pTrackImageBuffer, *pNibbles, &dwBytesRead, NULL);
 		}
@@ -1867,7 +1867,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 				}
 				else
 				{
-					ZeroMemory(pImageInfo->pImageBuffer, dwSize);
+					memset(pImageInfo->pImageBuffer, 0, dwSize);
 				}
 			}
 
