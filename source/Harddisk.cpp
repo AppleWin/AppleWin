@@ -125,7 +125,7 @@ struct HDD
 	void clear()
 	{
 		// This is not a POD (there is a std::string)
-		// ZeroMemory does not work
+		// memset(0) does not work
 		imagename.clear();
 		fullname.clear();
 		strFilenameInZip.clear();
@@ -136,7 +136,7 @@ struct HDD
 		hd_diskblock = 0;
 		hd_buf_ptr = 0;
 		hd_imageloaded = false;
-		ZeroMemory(hd_buf, sizeof(hd_buf));
+		memset(hd_buf, 0, sizeof(hd_buf));
 #if HD_LED
 		hd_status_next = DISK_STATUS_OFF;
 		hd_status_prev = DISK_STATUS_OFF;
@@ -463,7 +463,7 @@ static bool HD_SelectImage(const int drive, LPCSTR pszFilename)
 	_ASSERT(sizeof(OPENFILENAME) == sizeof(OPENFILENAME_NT4));	// Required for Win98/ME support (selected by _WIN32_WINNT=0x0400 in stdafx.h)
 
 	OPENFILENAME ofn;
-	ZeroMemory(&ofn,sizeof(OPENFILENAME));
+	memset(&ofn, 0, sizeof(OPENFILENAME));
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = g_hFrameWindow;
 	ofn.hInstance       = g_hInstance;
@@ -584,7 +584,7 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 
 								if (bAppendBlocks)
 								{
-									ZeroMemory(pHDD->hd_buf, HD_BLOCK_SIZE);
+									memset(pHDD->hd_buf, 0, HD_BLOCK_SIZE);
 
 									// Inefficient (especially for gzip/zip files!)
 									UINT uBlock = ImageGetImageSize(pHDD->imagehandle) / HD_BLOCK_SIZE;

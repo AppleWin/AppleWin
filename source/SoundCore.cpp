@@ -530,7 +530,7 @@ bool DSInit()
 	}
 
 	DSCAPS DSCaps;
-    ZeroMemory(&DSCaps, sizeof(DSCAPS));
+    memset(&DSCaps, 0, sizeof(DSCAPS));
     DSCaps.dwSize = sizeof(DSCAPS);
 	hr = g_lpDS->GetCaps(&DSCaps);
 	if(FAILED(hr))

@@ -284,7 +284,7 @@ static void FullScreenRevealCursor(void)
 
 static void CreateGdiObjects(void)
 {
-	ZeroMemory(buttonbitmap, BUTTONS*sizeof(HBITMAP));
+	memset(buttonbitmap, 0, BUTTONS*sizeof(HBITMAP));
 
 	buttonbitmap[BTN_HELP] = (HBITMAP)LOADBUTTONBITMAP(TEXT("HELP_BUTTON"));
 
@@ -2583,7 +2583,7 @@ void FrameRefreshStatus (int drawflags, bool bUpdateDiskStatus) {
 //===========================================================================
 void FrameRegisterClass () {
   WNDCLASSEX wndclass;
-  ZeroMemory(&wndclass,sizeof(WNDCLASSEX));
+  memset(&wndclass, 0, sizeof(WNDCLASSEX));
   wndclass.cbSize        = sizeof(WNDCLASSEX);
   wndclass.style         = CS_OWNDC | CS_BYTEALIGNCLIENT;
   wndclass.lpfnWndProc   = FrameWndProc;

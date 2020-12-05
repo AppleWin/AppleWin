@@ -73,7 +73,7 @@ static void videoCreateDIBSection()
 	SelectObject(g_hDeviceDC, g_hDeviceBitmap);
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory(g_pFramebufferbits, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
+	memset(g_pFramebufferbits, 0, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	NTSC_VideoInit(g_pFramebufferbits);
@@ -92,13 +92,9 @@ void WinVideoInitialize()
 	g_hLogoBitmap = LoadBitmap(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN));
 
 	// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
-	g_pFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(
-		NULL,
-		sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD),
-		MEM_COMMIT,
-		PAGE_READWRITE);
+	g_pFramebufferinfo = (LPBITMAPINFO)malloc(sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 
-	ZeroMemory(g_pFramebufferinfo, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
+	memset(g_pFramebufferinfo, 0, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 	g_pFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	g_pFramebufferinfo->bmiHeader.biWidth = GetFrameBufferWidth();
 	g_pFramebufferinfo->bmiHeader.biHeight = GetFrameBufferHeight();
@@ -114,7 +110,7 @@ void WinVideoDestroy()
 {
 
 	// DESTROY BUFFERS
-	VirtualFree(g_pFramebufferinfo, 0, MEM_RELEASE);
+	free(g_pFramebufferinfo);
 	g_pFramebufferinfo = NULL;
 
 	// DESTROY FRAME BUFFER
@@ -312,7 +308,7 @@ void VideoBenchmark () {
 void VideoChooseMonochromeColor ()
 {
 	CHOOSECOLOR cc;
-	ZeroMemory(&cc,sizeof(CHOOSECOLOR));
+	memset(&cc, 0, sizeof(CHOOSECOLOR));
 	cc.lStructSize     = sizeof(CHOOSECOLOR);
 	cc.hwndOwner       = g_hFrameWindow;
 	cc.rgbResult       = g_nMonochromeRGB;

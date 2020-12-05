@@ -175,7 +175,7 @@ void CSuperSerialCard::UpdateCommState()
 		return;
 
 	DCB dcb;
-	ZeroMemory(&dcb,sizeof(DCB));
+	memset(&dcb, 0, sizeof(DCB));
 	dcb.DCBlength = sizeof(DCB);
 	GetCommState(m_hCommHandle,&dcb);
 	dcb.BaudRate = m_uBaudRate;
@@ -280,7 +280,7 @@ bool CSuperSerialCard::CheckComm()
 			// Read operation is to return immediately with the bytes that have already been received,
 			// even if no bytes have been received.
 			COMMTIMEOUTS ct;
-			ZeroMemory(&ct,sizeof(COMMTIMEOUTS));
+			memset(&ct, 0, sizeof(COMMTIMEOUTS));
 			ct.ReadIntervalTimeout = MAXDWORD;
 			SetCommTimeouts(m_hCommHandle,&ct);
 
