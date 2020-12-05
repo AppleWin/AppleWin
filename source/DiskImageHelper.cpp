@@ -63,6 +63,20 @@ ImageInfo::ImageInfo()
 	maxNibblesPerTrack = 0;
 }
 
+CImageBase::CImageBase()
+	: m_uNumTracksInImage(0)
+	, m_uVolumeNumber(DEFAULT_VOLUME_NUMBER)
+{
+	ms_pWorkBuffer = (LPBYTE)malloc(TRACK_DENIBBLIZED_SIZE * 2);
+}
+
+CImageBase::~CImageBase()
+{
+	free(ms_pWorkBuffer);
+	ms_pWorkBuffer = NULL;
+}
+
+
 /* DO logical order  0 1 2 3 4 5 6 7 8 9 A B C D E F */
 /*    physical order 0 D B 9 7 5 3 1 E C A 8 6 4 2 F */
 
@@ -87,8 +101,6 @@ BYTE CImageBase::ms_SectorNumber[NUM_SECTOR_ORDERS][0x10] =
 	{0x00,0x07,0x0E,0x06,0x0D,0x05,0x0C,0x04, 0x0B,0x03,0x0A,0x02,0x09,0x01,0x08,0x0F},
 	{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
 };
-
-LPBYTE CImageBase::ms_pWorkBuffer = NULL;
 
 //-----------------------------------------------------------------------------
 
@@ -417,7 +429,7 @@ void CImageBase::Decode62(LPBYTE imageptr)
 
 void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, int nibbles)
 {
-	ZeroMemory(ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
+	memset(ms_pWorkBuffer, 0, TRACK_DENIBBLIZED_SIZE);
 
 	// SEARCH THROUGH THE TRACK IMAGE FOR EACH SECTOR.  FOR EVERY SECTOR
 	// WE FIND, COPY THE NIBBLIZED DATA FOR THAT SECTOR INTO THE WORK
@@ -494,7 +506,7 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 
 DWORD CImageBase::NibblizeTrack(LPBYTE trackimagebuffer, SectorOrder_e SectorOrder, int track)
 {
-	ZeroMemory(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE, TRACK_DENIBBLIZED_SIZE);
+	memset(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE, 0, TRACK_DENIBBLIZED_SIZE);
 	LPBYTE imageptr = trackimagebuffer;
 	BYTE   sector   = 0;
 
@@ -922,7 +934,7 @@ public:
 		{
 			ConvertSectorOrder(m_pHeader+14);
 			SetFilePointer(pImageInfo->hFile, track*TRACK_DENIBBLIZED_SIZE+30, NULL, FILE_BEGIN);
-			ZeroMemory(ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
+			memset(ms_pWorkBuffer, 0, TRACK_DENIBBLIZED_SIZE);
 			DWORD bytesread;
 			ReadFile(pImageInfo->hFile, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE, &bytesread, NULL);
 			*pNibbles = NibblizeTrack(pTrackImageBuffer, eSIMSYSTEMOrder, track);

@@ -1059,7 +1059,6 @@ LRESULT CALLBACK FrameWndProc (
       DebugDestroy();
       if (!g_bRestart) {
 		GetCardMgr().GetDisk2CardMgr().Destroy();
-        ImageDestroy();
         HD_Destroy();
       }
       PrintDestroy();
