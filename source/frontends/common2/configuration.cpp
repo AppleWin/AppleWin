@@ -152,6 +152,10 @@ void InitializeRegistry(const EmulatorOptions & options)
     {
       saveOnExit = options.saveConfigurationOnExit;
     }
+    else
+    {
+      saveOnExit = false;
+    }
   }
 
   std::shared_ptr<Configuration> config(new Configuration(filename, saveOnExit));
