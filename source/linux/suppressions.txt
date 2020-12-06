@@ -48,3 +48,56 @@
    ...
    obj:/usr/lib/x86_64-linux-gnu/dri/i965_dri.so
 }
+
+# leaks
+
+{
+   Leak i965 calloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/dri/i965_dri.so
+}
+
+{
+   Leak i965 malloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   obj:/usr/lib/x86_64-linux-gnu/dri/i965_dri.so
+}
+
+{
+   Leak i965 realloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:realloc
+   obj:/usr/lib/x86_64-linux-gnu/dri/i965_dri.so
+}
+
+{
+   SDL Locale
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:_XlcDefaultMapModifiers
+   fun:XSetLocaleModifiers
+}
+
+{
+   GL misc 1
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   ...
+   fun:__glDispatchRegisterStubCallbacks
+}
+
+{
+   GL misc 2
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   ...
+   fun:__glDispatchInit
+}
