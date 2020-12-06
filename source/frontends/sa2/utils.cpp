@@ -1,7 +1,10 @@
 #include "frontends/sa2/utils.h"
 #include <ostream>
 
-void printRendererInfo(std::ostream & os, std::shared_ptr<SDL_Renderer> & ren, const Uint32 pixelFormat, const int selectedDriver)
+void printRendererInfo(std::ostream & os,
+		       const std::shared_ptr<SDL_Renderer> & ren,
+		       const Uint32 pixelFormat,
+		       const int selectedDriver)
 {
   SDL_RendererInfo info;
   SDL_GetRendererInfo(ren.get(), &info);
@@ -34,4 +37,33 @@ void printRendererInfo(std::ostream & os, std::shared_ptr<SDL_Renderer> & ren, c
   {
     os << "No Renderinfo" << std::endl;
   }
+}
+
+bool show_yes_no_dialog(const std::shared_ptr<SDL_Window> & win,
+			const std::string & title,
+			const std::string & text)
+{
+  const SDL_MessageBoxButtonData buttons[] =
+    {
+     { SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "yes" },
+     { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 1, "no" },
+    };
+
+  const SDL_MessageBoxData messageboxdata =
+    {
+     SDL_MESSAGEBOX_INFORMATION,
+     win.get(),
+     title.c_str(),
+     text.c_str(),
+     SDL_arraysize(buttons),
+     buttons,
+     nullptr
+    };
+
+  int buttonid;
+  if (SDL_ShowMessageBox(&messageboxdata, &buttonid) < 0) {
+    return false;
+  }
+
+  return buttonid == 0;
 }

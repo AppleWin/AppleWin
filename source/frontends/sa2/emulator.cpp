@@ -1,5 +1,6 @@
 #include "frontends/sa2/emulator.h"
 #include "frontends/sa2/sdirectsound.h"
+#include "frontends/sa2/utils.h"
 
 #include <iostream>
 
@@ -21,6 +22,7 @@
 #include "Speaker.h"
 #include "Utilities.h"
 #include "SaveState.h"
+#include "SoundCore.h"
 
 // #define KEY_LOGGING_VERBOSE
 
@@ -226,12 +228,20 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
     {
     case SDLK_F12:
     {
-      Snapshot_SaveState();
+      Snapshot_LoadState();
+      mySpeed.reset();
       break;
     }
     case SDLK_F11:
     {
-      Snapshot_LoadState();
+      const std::string & pathname = Snapshot_GetPathname();
+      const std::string message = "Do you want to save the state to " + pathname + "?";
+      SoundCore_SetFade(FADE_OUT);
+      if (show_yes_no_dialog(myWindow, "Save state", message))
+      {
+	Snapshot_SaveState();
+      }
+      SoundCore_SetFade(FADE_IN);
       mySpeed.reset();
       break;
     }
