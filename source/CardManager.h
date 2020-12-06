@@ -24,8 +24,8 @@ public:
 	~CardManager(void)
 	{
 		for (UINT i=0; i<NUM_SLOTS; i++)
-			Remove(i);
-		RemoveAux();
+			RemoveInternal(i);
+		RemoveAuxInternal();
 	}
 
 	void Insert(UINT slot, SS_CARDTYPE type);
@@ -34,7 +34,6 @@ public:
 	Card& GetRef(UINT slot)
 	{
 		SS_CARDTYPE t=QuerySlot(slot); _ASSERT((t==CT_SSC || t==CT_MouseInterface || t==CT_Disk2) && m_slot[slot]);
-		if (!m_slot[slot]) throw std::runtime_error("slot/card mismatch");
 		return *m_slot[slot];
 	}
 	Card* GetObj(UINT slot) { SS_CARDTYPE t=QuerySlot(slot); _ASSERT(t==CT_SSC || t==CT_MouseInterface || t==CT_Disk2); return m_slot[slot]; }
@@ -54,6 +53,7 @@ public:
 
 private:
 	void RemoveInternal(UINT slot);
+	void RemoveAuxInternal();
 
 	Card* m_slot[NUM_SLOTS];
 	Card* m_aux;
