@@ -557,7 +557,7 @@ HDC GetDebuggerMemDC(void)
 		g_hDebuggerMemDC = CreateCompatibleDC(hFrameDC);
 
 		// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
-		g_pDebuggerMemFramebufferinfo = (LPBITMAPINFO)malloc(sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
+		g_pDebuggerMemFramebufferinfo = (LPBITMAPINFO) new BYTE[sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)];
 
 		memset(g_pDebuggerMemFramebufferinfo, 0, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 		g_pDebuggerMemFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -594,7 +594,7 @@ void ReleaseDebuggerMemDC(void)
 
 		FrameReleaseDC();
 
-		free(g_pDebuggerMemFramebufferinfo);
+		delete [] g_pDebuggerMemFramebufferinfo;
 		g_pDebuggerMemFramebufferinfo = NULL;
 		g_pDebuggerMemFramebits = NULL;
 	}
@@ -609,7 +609,7 @@ HDC GetConsoleFontDC(void)
 		g_hConsoleFontDC = CreateCompatibleDC(hFrameDC);
 
 		// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
-		g_hConsoleFontFramebufferinfo = (LPBITMAPINFO)malloc(sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
+		g_hConsoleFontFramebufferinfo = (LPBITMAPINFO) new BYTE[sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)];
 
 		memset(g_hConsoleFontFramebufferinfo, 0, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 		g_hConsoleFontFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -656,7 +656,7 @@ void ReleaseConsoleFontDC(void)
 		DeleteObject( g_hConsoleFontBitmap );
 		g_hConsoleFontBitmap = NULL;
 
-		free(g_hConsoleFontFramebufferinfo);
+		delete [] g_hConsoleFontFramebufferinfo;
 		g_hConsoleFontFramebufferinfo = NULL;
 		g_hConsoleFontFramebits = NULL;
 	}

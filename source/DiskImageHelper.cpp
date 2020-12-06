@@ -67,12 +67,12 @@ CImageBase::CImageBase()
 	: m_uNumTracksInImage(0)
 	, m_uVolumeNumber(DEFAULT_VOLUME_NUMBER)
 {
-	ms_pWorkBuffer = (LPBYTE)malloc(TRACK_DENIBBLIZED_SIZE * 2);
+	ms_pWorkBuffer = new BYTE[TRACK_DENIBBLIZED_SIZE * 2];
 }
 
 CImageBase::~CImageBase()
 {
-	free(ms_pWorkBuffer);
+	delete [] ms_pWorkBuffer;
 	ms_pWorkBuffer = NULL;
 }
 
@@ -899,7 +899,7 @@ class CIIeImage : public CImageBase
 {
 public:
 	CIIeImage(void) : m_pHeader(NULL) {}
-	virtual ~CIIeImage(void) { free(m_pHeader); }
+	virtual ~CIIeImage(void) { delete [] m_pHeader; }
 
 	virtual eDetectResult Detect(const LPBYTE pImage, const DWORD dwImageSize, const TCHAR* pszExt)
 	{
@@ -917,12 +917,7 @@ public:
 		// IF WE HAVEN'T ALREADY DONE SO, READ THE IMAGE FILE HEADER
 		if (!m_pHeader)
 		{
-			m_pHeader = (LPBYTE) malloc(88);
-			if (!m_pHeader)
-			{
-				*pNibbles = 0;
-				return;
-			}
+			m_pHeader = new BYTE[88];
 			memset(m_pHeader, 0, 88);
 			DWORD dwBytesRead;
 			SetFilePointer(pImageInfo->hFile, 0, NULL,FILE_BEGIN);

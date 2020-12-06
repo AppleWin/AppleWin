@@ -92,7 +92,7 @@ void WinVideoInitialize()
 	g_hLogoBitmap = LoadBitmap(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN));
 
 	// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
-	g_pFramebufferinfo = (LPBITMAPINFO)malloc(sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
+	g_pFramebufferinfo = (LPBITMAPINFO) new BYTE[sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)];
 
 	memset(g_pFramebufferinfo, 0, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 	g_pFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -110,7 +110,7 @@ void WinVideoDestroy()
 {
 
 	// DESTROY BUFFERS
-	free(g_pFramebufferinfo);
+	delete [] g_pFramebufferinfo;
 	g_pFramebufferinfo = NULL;
 
 	// DESTROY FRAME BUFFER
