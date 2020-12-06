@@ -29,18 +29,23 @@
 namespace
 {
 
+  void updateWindowTitle(const std::shared_ptr<SDL_Window> & win)
+  {
+    GetAppleWindowTitle();
+    SDL_SetWindowTitle(win.get(), g_pAppTitle.c_str());
+  }
+
   void cycleVideoType(const std::shared_ptr<SDL_Window> & win)
   {
     g_eVideoType++;
     if (g_eVideoType >= NUM_VIDEO_MODES)
       g_eVideoType = 0;
 
-    GetAppleWindowTitle();
-    SDL_SetWindowTitle(win.get(), g_pAppTitle.c_str());
-
     Config_Save_Video();
     VideoReinitialize();
     VideoRedrawScreen();
+
+    updateWindowTitle(win);
   }
 
   void cycle50ScanLines(const std::shared_ptr<SDL_Window> & win)
@@ -50,12 +55,11 @@ namespace
 
     SetVideoStyle(videoStyle);
 
-    GetAppleWindowTitle();
-    SDL_SetWindowTitle(win.get(), g_pAppTitle.c_str());
-
     Config_Save_Video();
     VideoReinitialize();
     VideoRedrawScreen();
+
+    updateWindowTitle(win);
   }
 
   void processAppleKey(const SDL_KeyboardEvent & key)
@@ -161,17 +165,20 @@ Emulator::Emulator(
 
 void Emulator::execute(const size_t next)
 {
-  const size_t cyclesToExecute = mySpeed.getCyclesTillNext(next);
+  if (g_nAppMode == MODE_RUNNING)
+  {
+    const size_t cyclesToExecute = mySpeed.getCyclesTillNext(next);
 
-  const bool bVideoUpdate = true;
-  const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
+    const bool bVideoUpdate = true;
+    const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 
-  const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
+    const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
 
-  g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
-  GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
-  MB_PeriodicUpdate(executedCycles);
-  SpkrUpdate(executedCycles);
+    g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
+    GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
+    MB_PeriodicUpdate(executedCycles);
+    SpkrUpdate(executedCycles);
+  }
 }
 
 void Emulator::updateTexture()
@@ -304,6 +311,23 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
     case SDLK_RALT:
     {
       Paddle::setButtonPressed(Paddle::ourSolidApple);
+      break;
+    }
+    case SDLK_PAUSE:
+    {
+      switch (g_nAppMode)
+      {
+      case MODE_RUNNING:
+	g_nAppMode = MODE_PAUSED;
+	SoundCore_SetFade(FADE_OUT);
+	break;
+      case MODE_PAUSED:
+	g_nAppMode = MODE_RUNNING;
+	SoundCore_SetFade(FADE_IN);
+	mySpeed.reset();
+	break;
+      }
+      updateWindowTitle(myWindow);
       break;
     }
     }

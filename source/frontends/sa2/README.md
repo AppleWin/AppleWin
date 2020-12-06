@@ -21,9 +21,9 @@ It is possible to run the CPU in a separate thread to keep the emulator running 
 
 ## Hotkeys
 
-``F2``, ``F5``, ``F6`` and ``F9`` have the same meaning as in AppleWin.
+``F2``, ``F5``, ``F6``, ``F9``, ``F11``, ``F12`` and ``Pause``  have the same meaning as in AppleWin.
 
-Left ALT and Right ALT emulate the Open and Solid Apple key.
+``Left Alt`` and ``Right Alt`` emulate the Open and Solid Apple key.
 
 ## Audio
 
