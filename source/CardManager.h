@@ -24,8 +24,8 @@ public:
 	~CardManager(void)
 	{
 		for (UINT i=0; i<NUM_SLOTS; i++)
-			Remove(i);
-		RemoveAux();
+			RemoveInternal(i);
+		RemoveAuxInternal();
 	}
 
 	void Insert(UINT slot, SS_CARDTYPE type);
@@ -54,6 +54,7 @@ public:
 
 private:
 	void RemoveInternal(UINT slot);
+	void RemoveAuxInternal();
 
 	Card* m_slot[NUM_SLOTS];
 	Card* m_aux;
