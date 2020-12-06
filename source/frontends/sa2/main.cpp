@@ -89,7 +89,7 @@ namespace
     {
       pMouseCard->Reset();
     }
-    VideoBufferInitialize();
+    VideoBufferDestroy();
     MemDestroy();
 
     SpkrDestroy();
