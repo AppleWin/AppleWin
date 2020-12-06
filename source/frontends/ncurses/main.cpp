@@ -189,9 +189,9 @@ namespace
 	cardManager.GetDisk2CardMgr().Reset();
 	HD_Reset();
 
-	if (!options.snapshot.empty())
+	if (!options.snapshotFilename.empty())
 	{
-	  setSnapshotFilename(options.snapshot);
+	  setSnapshotFilename(options.snapshotFilename, options.loadSnapshot);
 	}
 
 	if (options.benchmark)

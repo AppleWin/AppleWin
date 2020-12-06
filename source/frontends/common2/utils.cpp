@@ -6,7 +6,7 @@
 #include <libgen.h>
 #include <unistd.h>
 
-void setSnapshotFilename(const std::string & filename)
+void setSnapshotFilename(const std::string & filename, const bool load)
 {
   // same logic as qapple
   // setting chdir allows to load relative disks from the snapshot file (tests?)
@@ -23,6 +23,10 @@ void setSnapshotFilename(const std::string & filename)
 
     free(temp);
     free(absPath);
-    Snapshot_LoadState();
+
+    if (load)
+    {
+      Snapshot_LoadState();
+    }
   }
 }

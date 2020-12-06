@@ -128,9 +128,9 @@ namespace
       LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", ok);
     }
 
-    if (!options.snapshot.empty())
+    if (!options.snapshotFilename.empty())
     {
-      setSnapshotFilename(options.snapshot);
+      setSnapshotFilename(options.snapshotFilename, options.loadSnapshot);
     }
 
     Paddle::setSquaring(options.squaring);

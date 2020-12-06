@@ -9,7 +9,8 @@ struct EmulatorOptions
   std::string disk1;
   std::string disk2;
 
-  std::string snapshot;
+  std::string snapshotFilename;
+  bool loadSnapshot = false;
 
   int memclear = 0;
 

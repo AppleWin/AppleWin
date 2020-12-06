@@ -6,9 +6,14 @@
 
 Speed::Speed(const bool fixedSpeed)
   : myFixedSpeed(fixedSpeed)
-  , myStartTime(std::chrono::steady_clock::now())
-  , myStartCycles(g_nCumulativeCycles)
 {
+  reset();
+}
+
+void Speed::reset()
+{
+  myStartTime = std::chrono::steady_clock::now();
+  myStartCycles = g_nCumulativeCycles;
 }
 
 size_t Speed::getCyclesTillNext(const size_t milliseconds) const

@@ -34,6 +34,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
 
   po::options_description snapshotDesc("Snapshot");
   snapshotDesc.add_options()
+    ("state-filename,f", po::value<std::string>(), "Set snapshot filename")
     ("load-state,s", po::value<std::string>(), "Load snapshot from file");
   desc.add(snapshotDesc);
 
@@ -87,7 +88,14 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
 
     if (vm.count("load-state"))
     {
-      options.snapshot = vm["load-state"].as<std::string>();
+      options.snapshotFilename = vm["load-state"].as<std::string>();
+      options.loadSnapshot = true;
+    }
+
+    if (vm.count("state-filename"))
+    {
+      options.snapshotFilename = vm["state-filename"].as<std::string>();
+      options.loadSnapshot = false;
     }
 
     const int memclear = vm["memclear"].as<int>();

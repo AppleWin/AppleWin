@@ -20,6 +20,9 @@
 #include "Mockingboard.h"
 #include "Speaker.h"
 #include "Utilities.h"
+#include "SaveState.h"
+
+// #define KEY_LOGGING_VERBOSE
 
 namespace
 {
@@ -221,6 +224,17 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
   {
     switch (key.keysym.sym)
     {
+    case SDLK_F12:
+    {
+      Snapshot_SaveState();
+      break;
+    }
+    case SDLK_F11:
+    {
+      Snapshot_LoadState();
+      mySpeed.reset();
+      break;
+    }
     case SDLK_F9:
     {
       cycleVideoType(myWindow);
@@ -287,7 +301,7 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
 
   processAppleKey(key);
 
-#if LOGGING_VERBOSE
+#ifdef KEY_LOGGING_VERBOSE
   std::cerr << "KEY DOWN: " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
 #endif
 
@@ -309,7 +323,7 @@ void Emulator::processKeyUp(const SDL_KeyboardEvent & key)
   }
   }
 
-#if LOGGING_VERBOSE
+#ifdef KEY_LOGGING_VERBOSE
   std::cerr << "KEY UP:   " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
 #endif
 
