@@ -34,7 +34,6 @@ public:
 	Card& GetRef(UINT slot)
 	{
 		SS_CARDTYPE t=QuerySlot(slot); _ASSERT((t==CT_SSC || t==CT_MouseInterface || t==CT_Disk2) && m_slot[slot]);
-		if (!m_slot[slot]) throw std::runtime_error("slot/card mismatch");
 		return *m_slot[slot];
 	}
 	Card* GetObj(UINT slot) { SS_CARDTYPE t=QuerySlot(slot); _ASSERT(t==CT_SSC || t==CT_MouseInterface || t==CT_Disk2); return m_slot[slot]; }
