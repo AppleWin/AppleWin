@@ -61,6 +61,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debugger/DebugDefs.h"
 #include "YamlHelper.h"
 
+// in this file use aligned memory allocations (0x1000)
+// to ease mapping between Apple ][ and host memory space
+
+#ifdef _MSC_VER
+// VS does not implement aligned_alloc in any version
+#define ALIGNED_ALLOC(size) VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE)
+#define ALIGNED_FREE(ptr) VirtualFree(ptr, 0, MEM_RELEASE)
+#else
+// in gcc we could use
+// https://en.cppreference.com/w/c/memory/aligned_alloc
+// but it is unclear if all sizes are (currently) accepted
+// some allocations below are as small as 0x100, with an alignment of 0x10000
+#define ALIGNED_ALLOC(size) malloc(size)
+#define ALIGNED_FREE(ptr) free(ptr)
+#endif
+
+
 // UTAIIe:5-28 (GH#419)
 // . Sather uses INTCXROM instead of SLOTCXROM' (used by the Apple//e Tech Ref Manual), so keep to this
 //   convention too since UTAIIe is the reference for most of the logic that we implement in the emulator.
@@ -1244,21 +1261,21 @@ static void UpdatePaging(BOOL initialize)
 
 void MemDestroy()
 {
-	free(memaux);
-	free(memmain);
-	free(memdirty);
-	free(memrom);
-	free(memimage);
+	ALIGNED_FREE(memaux);
+	ALIGNED_FREE(memmain);
+	ALIGNED_FREE(memdirty);
+	ALIGNED_FREE(memrom);
+	ALIGNED_FREE(memimage);
 
-	free(pCxRomInternal);
-	free(pCxRomPeripheral);
+	ALIGNED_FREE(pCxRomInternal);
+	ALIGNED_FREE(pCxRomPeripheral);
 
 #ifdef RAMWORKS
 	for (UINT i=1; i<g_uMaxExPages; i++)
 	{
 		if (RWpages[i])
 		{
-			free(RWpages[i]);
+			ALIGNED_FREE(RWpages[i]);
 			RWpages[i] = NULL;
 		}
 	}
@@ -1467,14 +1484,14 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 void MemInitialize()
 {
 	// ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
-	memaux   = (LPBYTE)malloc(_6502_MEM_END+1);
-	memmain  = (LPBYTE)malloc(_6502_MEM_END+1);
-	memdirty = (LPBYTE)malloc(0x100);
-	memrom   = (LPBYTE)malloc(0x3000 * MaxRomPages);
-	memimage = (LPBYTE)malloc(_6502_MEM_END+1);
+	memaux   = (LPBYTE)ALIGNED_ALLOC(_6502_MEM_LEN);
+	memmain  = (LPBYTE)ALIGNED_ALLOC(_6502_MEM_LEN);
+	memdirty = (LPBYTE)ALIGNED_ALLOC(0x100);
+	memrom   = (LPBYTE)ALIGNED_ALLOC(0x3000 * MaxRomPages);
+	memimage = (LPBYTE)ALIGNED_ALLOC(_6502_MEM_LEN);
 
-	pCxRomInternal		= (LPBYTE) malloc(CxRomSize);
-	pCxRomPeripheral	= (LPBYTE) malloc(CxRomSize);
+	pCxRomInternal		= (LPBYTE)ALIGNED_ALLOC(CxRomSize);
+	pCxRomPeripheral	= (LPBYTE)ALIGNED_ALLOC(CxRomSize);
 
 	if (!memaux || !memdirty || !memimage || !memmain || !memrom || !pCxRomInternal || !pCxRomPeripheral)
 	{
@@ -1498,7 +1515,7 @@ void MemInitialize()
 		g_uActiveBank = 0;
 
 		UINT i = 1;
-		while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) malloc(_6502_MEM_END+1)))
+		while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE)ALIGNED_ALLOC(_6502_MEM_LEN)))
 			i++;
 		while (i < kMaxExMemoryBanks)
 			RWpages[i++] = NULL;
@@ -2349,7 +2366,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 
 	memset(memmain+0xC000, 0, LanguageCardSlot0::kMemBankSize);	// Clear it, as high 16K may not be in the save-state's "Main Memory" (eg. the case of II+ Saturn replacing //e LC)
 
-	yamlLoadHelper.LoadMemory(memmain, _6502_MEM_END+1);
+	yamlLoadHelper.LoadMemory(memmain, _6502_MEM_LEN);
 	if (unitVersion == 1 && IsApple2PlusOrClone(GetApple2Type()))
 	{
 		// v1 for II/II+ doesn't have a dedicated slot-0 LC, instead the 16K is stored as the top 16K of memmain
@@ -2454,9 +2471,7 @@ static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::
 		LPBYTE pBank = MemGetBankPtr(uBank);
 		if (!pBank)
 		{
-			pBank = RWpages[uBank-1] = (LPBYTE) malloc(_6502_MEM_END+1);
-			if (!pBank)
-				throw std::string("Card: mem alloc failed");
+			pBank = RWpages[uBank-1] = (LPBYTE)ALIGNED_ALLOC(_6502_MEM_LEN);
 		}
 
 		// "Auxiliary Memory Bankxx"
@@ -2467,7 +2482,7 @@ static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::
 		if (!yamlLoadHelper.GetSubMap(auxMemName))
 			throw std::string("Memory: Missing map name: " + auxMemName);
 
-		yamlLoadHelper.LoadMemory(pBank, _6502_MEM_END+1);
+		yamlLoadHelper.LoadMemory(pBank, _6502_MEM_LEN);
 
 		yamlLoadHelper.PopMap();
 	}
