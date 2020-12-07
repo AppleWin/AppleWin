@@ -51,10 +51,14 @@ void YamlHelper::FinaliseParser(void)
 		fclose(m_hFile);
 
 	m_hFile = NULL;
+
+	yaml_event_delete(&m_newEvent);
+	yaml_parser_delete(&m_parser);
 }
 
 void YamlHelper::GetNextEvent(bool bInMap /*= false*/)
 {
+	yaml_event_delete(&m_newEvent);
 	if (!yaml_parser_parse(&m_parser, &m_newEvent))
 	{
 		std::string error = std::string("Save-state parser error: ");
@@ -116,7 +120,7 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 	const char*& pValue = (const char*&) m_newEvent.data.scalar.value;
 
 	bool bKey = true;
-	char* pKey = NULL;
+	std::string pKey;
 	int res = 1;
 	bool bDone = false;
 
@@ -135,7 +139,7 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 				MapValue mapValue;
 				mapValue.value = "";
 				mapValue.subMap = new MapYaml;
-				mapYaml[std::string(pKey)] = mapValue;
+				mapYaml[pKey] = mapValue;
 				res = ParseMap(*mapValue.subMap);
 				if (!res)
 					throw std::string("ParseMap: premature end of file during map parsing");
@@ -148,15 +152,16 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 		case YAML_SCALAR_EVENT:
 			if (bKey)
 			{
-				pKey = _strdup(pValue);
+				_ASSERT(pValue);  // std::string(NULL) generates AccessViolation
+				pKey = pValue;
 			}
 			else
 			{
 				MapValue mapValue;
 				mapValue.value = pValue;
 				mapValue.subMap = NULL;
-				mapYaml[std::string(pKey)] = mapValue;
-				free(pKey); pKey = NULL;
+				mapYaml[pKey] = mapValue;
+				pKey.clear();
 			}
 
 			bKey = bKey ? false : true;
@@ -166,9 +171,6 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 			throw std::string("ParseMap: Sequence event unsupported");
 		}
 	}
-
-	if (pKey)
-		free(pKey);
 
 	return res;
 }

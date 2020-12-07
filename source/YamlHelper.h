@@ -30,13 +30,13 @@ public:
 		m_hFile(NULL)
 	{
 		memset(&m_parser, 0, sizeof(m_parser));
+		memset(&m_newEvent, 0, sizeof(m_newEvent));
 		MakeAsciiToHexTable();
 	}
 
 	~YamlHelper(void)
 	{
-		if (m_hFile)
-			fclose(m_hFile);
+		FinaliseParser();
 	}
 
 	int InitParser(const char* pPathname);
