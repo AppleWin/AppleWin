@@ -175,7 +175,7 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 	return res;
 }
 
-std::string YamlHelper::GetMapValue(MapYaml& mapYaml, const std::string key, bool& bFound)
+std::string YamlHelper::GetMapValue(MapYaml& mapYaml, const std::string& key, bool& bFound)
 {
 	MapYaml::const_iterator iter = mapYaml.find(key);
 	if (iter == mapYaml.end() || iter->second.subMap != NULL)
@@ -192,7 +192,7 @@ std::string YamlHelper::GetMapValue(MapYaml& mapYaml, const std::string key, boo
 	return value;
 }
 
-bool YamlHelper::GetSubMap(MapYaml** mapYaml, const std::string key)
+bool YamlHelper::GetSubMap(MapYaml** mapYaml, const std::string& key)
 {
 	MapYaml::const_iterator iter = (*mapYaml)->find(key);
 	if (iter == (*mapYaml)->end() || iter->second.subMap == NULL)
@@ -351,7 +351,7 @@ std::string YamlLoadHelper::LoadString(const std::string& key)
 	return value;
 }
 
-float YamlLoadHelper::LoadFloat(const std::string key)
+float YamlLoadHelper::LoadFloat(const std::string& key)
 {
 	bool bFound;
 	std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
@@ -367,7 +367,7 @@ float YamlLoadHelper::LoadFloat(const std::string key)
 #endif
 }
 
-double YamlLoadHelper::LoadDouble(const std::string key)
+double YamlLoadHelper::LoadDouble(const std::string& key)
 {
 	bool bFound;
 	std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
@@ -577,7 +577,7 @@ void YamlSaveHelper::FileHdr(UINT version)
 	SaveInt(SS_YAML_KEY_VERSION, version);
 }
 
-void YamlSaveHelper::UnitHdr(std::string type, UINT version)
+void YamlSaveHelper::UnitHdr(const std::string& type, UINT version)
 {
 	fprintf(m_hFile, "\n%s:\n", SS_YAML_KEY_UNIT);
 	m_indent = 2;
