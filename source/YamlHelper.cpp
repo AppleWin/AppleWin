@@ -56,7 +56,7 @@ void YamlHelper::FinaliseParser(void)
 	yaml_parser_delete(&m_parser);
 }
 
-void YamlHelper::GetNextEvent(bool bInMap /*= false*/)
+void YamlHelper::GetNextEvent()
 {
 	yaml_event_delete(&m_newEvent);
 	if (!yaml_parser_parse(&m_parser, &m_newEvent))
@@ -126,7 +126,7 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 
 	while (!bDone)
 	{
-		GetNextEvent(true);
+		GetNextEvent();
 
 		switch(m_newEvent.type)
 		{
