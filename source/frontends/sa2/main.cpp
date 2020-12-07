@@ -44,6 +44,8 @@
 #include "Riff.h"
 #include "Utilities.h"
 
+// comment out to test / debug init / shutdown only
+#define EMULATOR_RUN
 
 namespace
 {
@@ -260,7 +262,7 @@ void run_sdl(int argc, const char * argv [])
 
   Emulator emulator(win, ren, tex, options.fixedSpeed);
 
-
+#ifdef EMULATOR_RUN
   if (options.benchmark)
   {
     // we need to switch off vsync, otherwise FPS is limited to 60
@@ -414,6 +416,7 @@ void run_sdl(int argc, const char * argv [])
     std::cerr << "Actual clock:   " << actualClock << " Hz, " << timeInSeconds << " s" << std::endl;
     SDirectSound::stop();
   }
+#endif
 
   uninitialiseEmulator();
 }
