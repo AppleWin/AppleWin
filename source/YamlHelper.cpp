@@ -56,7 +56,7 @@ void YamlHelper::FinaliseParser(void)
 	yaml_parser_delete(&m_parser);
 }
 
-void YamlHelper::GetNextEvent()
+void YamlHelper::GetNextEvent(void)
 {
 	yaml_event_delete(&m_newEvent);
 	if (!yaml_parser_parse(&m_parser, &m_newEvent))

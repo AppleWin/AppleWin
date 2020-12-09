@@ -46,7 +46,7 @@ public:
 	void GetMapStartEvent(void);
 
 private:
-	void GetNextEvent();
+	void GetNextEvent(void);
 	int ParseMap(MapYaml& mapYaml);
 	std::string GetMapValue(MapYaml& mapYaml, const std::string &key, bool& bFound);
 	UINT LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize);
