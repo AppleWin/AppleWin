@@ -46,9 +46,6 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 						std::string& strFilenameInZip,
 						const bool bExpectFloppy /*=true*/)
 {
-	if (bExpectFloppy && sg_DiskImageHelper.GetWorkBuffer() == NULL)
-		return eIMAGE_ERROR_BAD_POINTER;
-
 	if (!(!pszImageFilename.empty() && ppImageInfo && pWriteProtected))
 		return eIMAGE_ERROR_BAD_POINTER;
 
@@ -110,22 +107,6 @@ BOOL ImageBoot(ImageInfo* const pImageInfo)
 		pImageInfo->bWriteProtected = 1;
 
 	return result;
-}
-
-//===========================================================================
-
-void ImageDestroy(void)
-{
-	VirtualFree(sg_DiskImageHelper.GetWorkBuffer(), 0, MEM_RELEASE);
-	sg_DiskImageHelper.SetWorkBuffer(NULL);
-}
-
-//===========================================================================
-
-void ImageInitialize(void)
-{
-	LPBYTE pBuffer = (LPBYTE) VirtualAlloc(NULL, TRACK_DENIBBLIZED_SIZE*2, MEM_COMMIT, PAGE_READWRITE);
-	sg_DiskImageHelper.SetWorkBuffer(pBuffer);
 }
 
 //===========================================================================

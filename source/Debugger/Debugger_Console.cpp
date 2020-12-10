@@ -462,7 +462,7 @@ bool ConsoleInputBackSpace ()
 //===========================================================================
 bool ConsoleInputClear ()
 {
-	ZeroMemory( g_aConsoleInput, CONSOLE_WIDTH );
+	memset( g_aConsoleInput, 0, CONSOLE_WIDTH );
 
 	if (g_nConsoleInputChars)
 	{

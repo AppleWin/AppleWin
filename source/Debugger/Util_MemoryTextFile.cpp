@@ -67,7 +67,7 @@ void MemoryTextFile_t::GetLine( const int iLine, char *pLine, const int nMaxLine
 		GetLinePointers();
 	}		
 
-	ZeroMemory( pLine, nMaxLineChars );
+	memset( pLine, 0, nMaxLineChars );
 	strncpy( pLine, m_vLines[ iLine ], nMaxLineChars-1 );
 }
 

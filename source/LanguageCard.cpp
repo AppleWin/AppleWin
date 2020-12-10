@@ -139,13 +139,13 @@ bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 LanguageCardSlot0::LanguageCardSlot0(SS_CARDTYPE type/*=CT_LanguageCard*/)
 	: LanguageCardUnit(type)
 {
-	m_pMemory = (LPBYTE)VirtualAlloc(NULL, kMemBankSize, MEM_COMMIT, PAGE_READWRITE);
+	m_pMemory = new BYTE[kMemBankSize];
 	SetMemMainLanguageCard(m_pMemory);
 }
 
 LanguageCardSlot0::~LanguageCardSlot0(void)
 {
-	VirtualFree(m_pMemory, 0, MEM_RELEASE);
+	delete [] m_pMemory;
 	m_pMemory = NULL;
 }
 
@@ -218,9 +218,7 @@ bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, 
 
 	if (!m_pMemory)
 	{
-		m_pMemory = (LPBYTE) VirtualAlloc(NULL, kMemBankSize, MEM_COMMIT, PAGE_READWRITE);
-		if (!m_pMemory)
-			throw std::string("Card: mem alloc failed");
+		m_pMemory = new BYTE[kMemBankSize];
 	}
 
 	if (!yamlLoadHelper.GetSubMap(GetSnapshotMemStructName()))
@@ -249,7 +247,7 @@ Saturn128K::Saturn128K(UINT banks)
 	m_aSaturnBanks[0] = m_pMemory;	// Reuse memory allocated in base ctor
 
 	for (UINT i = 1; i < m_uSaturnTotalBanks; i++)
-		m_aSaturnBanks[i] = (LPBYTE) VirtualAlloc(NULL, kMemBankSize, MEM_COMMIT, PAGE_READWRITE); // Saturn banks are 16K, max 8 banks/card
+		m_aSaturnBanks[i] = new BYTE[kMemBankSize]; // Saturn banks are 16K, max 8 banks/card
 
 	SetMemMainLanguageCard( m_aSaturnBanks[ m_uSaturnActiveBank ] );
 }
@@ -262,7 +260,7 @@ Saturn128K::~Saturn128K(void)
 	{
 		if (m_aSaturnBanks[i])
 		{
-			VirtualFree(m_aSaturnBanks[i], 0, MEM_RELEASE);
+			delete [] m_aSaturnBanks[i];
 			m_aSaturnBanks[i] = NULL;
 		}
 	}
@@ -435,12 +433,9 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT ve
 
 	for(UINT uBank = 0; uBank < m_uSaturnTotalBanks; uBank++)
 	{
-		LPBYTE pBank = m_aSaturnBanks[uBank];
-		if (!pBank)
+		if (!m_aSaturnBanks[uBank])
 		{
-			pBank = m_aSaturnBanks[uBank] = (LPBYTE) VirtualAlloc(NULL, kMemBankSize, MEM_COMMIT, PAGE_READWRITE);
-			if (!pBank)
-				throw std::string("Card: mem alloc failed");
+			m_aSaturnBanks[uBank] = new BYTE[kMemBankSize];
 		}
 
 		// "Memory Bankxx"
@@ -451,7 +446,7 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT ve
 		if (!yamlLoadHelper.GetSubMap(memName))
 			throw std::string("Memory: Missing map name: " + memName);
 
-		yamlLoadHelper.LoadMemory(pBank, kMemBankSize);
+		yamlLoadHelper.LoadMemory(m_aSaturnBanks[uBank], kMemBankSize);
 
 		yamlLoadHelper.PopMap();
 	}

@@ -215,7 +215,7 @@ static void V_CreateLookup_DoubleHires ()
     int coloffs = SIZE * column;
     for (unsigned byteval = 0; byteval < 256; byteval++) {
       int color[SIZE];
-      ZeroMemory(color,sizeof(color));
+      memset(color, 0, sizeof(color));
       unsigned pattern = MAKEWORD(byteval,column);
       int pixel;
       for (pixel = 1; pixel < 15; pixel++) {
@@ -1175,7 +1175,7 @@ static void V_CreateDIBSections(void)
 		g_aSourceStartofLine[ y ] = g_pSourcePixels + SRCOFFS_TOTAL*((MAX_SOURCE_Y-1) - y);
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	ZeroMemory(g_pSourcePixels, SRCOFFS_TOTAL*MAX_SOURCE_Y);
+	memset(g_pSourcePixels, 0, SRCOFFS_TOTAL*MAX_SOURCE_Y);
 
 	V_CreateLookup_Lores();
 	V_CreateLookup_HiResHalfPixel_Authentic(VT_COLOR_IDEALIZED);

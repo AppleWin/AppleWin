@@ -158,7 +158,7 @@ std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, TCHAR* pszTitle, TC
 	std::string pathname = szFilename;
 
 	OPENFILENAME ofn;
-	ZeroMemory(&ofn,sizeof(OPENFILENAME));
+	memset(&ofn, 0, sizeof(OPENFILENAME));
 
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;
@@ -205,7 +205,7 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 	//
 
 	OPENFILENAME ofn;
-	ZeroMemory(&ofn,sizeof(OPENFILENAME));
+	memset(&ofn, 0, sizeof(OPENFILENAME));
 
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;

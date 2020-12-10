@@ -571,8 +571,8 @@ Update_t CmdHelpSpecific (int nArgs)
 	int iArg;
 	char sText[ CONSOLE_WIDTH * 2 ];
 	char sTemp[ CONSOLE_WIDTH * 2 ];
-	ZeroMemory( sText, CONSOLE_WIDTH*2 );
-	ZeroMemory( sTemp, CONSOLE_WIDTH*2 );
+	memset( sText, 0, CONSOLE_WIDTH*2 );
+	memset( sTemp, 0, CONSOLE_WIDTH*2 );
 
 	if (! nArgs)
 	{
