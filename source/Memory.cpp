@@ -61,20 +61,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debugger/DebugDefs.h"
 #include "YamlHelper.h"
 
-// in this file use aligned memory allocations (0x1000)
-// to ease mapping between Apple ][ and host memory space
+// in this file use allocate the 64KB of RAM with an aligned memory allocations (0x1000)
+// to ease mapping between Apple ][ and host memory space (while debugging)
+
+// this is not available in Visual Studio
+// https://en.cppreference.com/w/c/memory/aligned_alloc
 
 #ifdef _MSC_VER
-// VS does not implement aligned_alloc in any version
-#define ALIGNED_ALLOC(size) VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE)
+// VirtualAlloc is aligned
+#define ALIGNED_ALLOC(size) (LPBYTE)VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE)
 #define ALIGNED_FREE(ptr) VirtualFree(ptr, 0, MEM_RELEASE)
 #else
-// in gcc we could use
-// https://en.cppreference.com/w/c/memory/aligned_alloc
-// but it is unclear if all sizes are (currently) accepted
-// some allocations below are as small as 0x100, with an alignment of 0x10000
-#define ALIGNED_ALLOC(size) malloc(size)
-#define ALIGNED_FREE(ptr) free(ptr)
+// use plain "new" in gcc (where debugging needs are less important)
+#define ALIGNED_ALLOC(size) new BYTE[size]
+#define ALIGNED_FREE(ptr) delete [] ptr
 #endif
 
 
@@ -1263,12 +1263,13 @@ void MemDestroy()
 {
 	ALIGNED_FREE(memaux);
 	ALIGNED_FREE(memmain);
-	ALIGNED_FREE(memdirty);
-	ALIGNED_FREE(memrom);
 	ALIGNED_FREE(memimage);
 
-	ALIGNED_FREE(pCxRomInternal);
-	ALIGNED_FREE(pCxRomPeripheral);
+	delete [] memdirty;
+	delete [] memrom;
+
+	delete [] pCxRomInternal;
+	delete [] pCxRomPeripheral;
 
 #ifdef RAMWORKS
 	for (UINT i=1; i<g_uMaxExPages; i++)
@@ -1484,14 +1485,15 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 void MemInitialize()
 {
 	// ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
-	memaux   = (LPBYTE)ALIGNED_ALLOC(_6502_MEM_LEN);
-	memmain  = (LPBYTE)ALIGNED_ALLOC(_6502_MEM_LEN);
-	memdirty = (LPBYTE)ALIGNED_ALLOC(0x100);
-	memrom   = (LPBYTE)ALIGNED_ALLOC(0x3000 * MaxRomPages);
-	memimage = (LPBYTE)ALIGNED_ALLOC(_6502_MEM_LEN);
+	memaux   = ALIGNED_ALLOC(_6502_MEM_LEN);
+	memmain  = ALIGNED_ALLOC(_6502_MEM_LEN);
+	memimage = ALIGNED_ALLOC(_6502_MEM_LEN);
 
-	pCxRomInternal		= (LPBYTE)ALIGNED_ALLOC(CxRomSize);
-	pCxRomPeripheral	= (LPBYTE)ALIGNED_ALLOC(CxRomSize);
+	memdirty = new BYTE[0x100];
+	memrom   = new BYTE[0x3000 * MaxRomPages];
+
+	pCxRomInternal		= new BYTE[CxRomSize];
+	pCxRomPeripheral	= new BYTE[CxRomSize];
 
 	if (!memaux || !memdirty || !memimage || !memmain || !memrom || !pCxRomInternal || !pCxRomPeripheral)
 	{
@@ -1515,7 +1517,7 @@ void MemInitialize()
 		g_uActiveBank = 0;
 
 		UINT i = 1;
-		while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE)ALIGNED_ALLOC(_6502_MEM_LEN)))
+		while ((i < g_uMaxExPages) && (RWpages[i] = ALIGNED_ALLOC(_6502_MEM_LEN)))
 			i++;
 		while (i < kMaxExMemoryBanks)
 			RWpages[i++] = NULL;
@@ -2471,7 +2473,7 @@ static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::
 		LPBYTE pBank = MemGetBankPtr(uBank);
 		if (!pBank)
 		{
-			pBank = RWpages[uBank-1] = (LPBYTE)ALIGNED_ALLOC(_6502_MEM_LEN);
+			pBank = RWpages[uBank-1] = ALIGNED_ALLOC(_6502_MEM_LEN);
 		}
 
 		// "Auxiliary Memory Bankxx"
