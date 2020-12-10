@@ -61,8 +61,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debugger/DebugDefs.h"
 #include "YamlHelper.h"
 
-// in this file use allocate the 64KB of RAM with an aligned memory allocations (0x1000)
-// to ease mapping between Apple ][ and host memory space (while debugging)
+// In this file allocate the 64KB of RAM with aligned memory allocations (0x10000)
+// to ease mapping between Apple ][ and host memory space (while debugging).
 
 // this is not available in Visual Studio
 // https://en.cppreference.com/w/c/memory/aligned_alloc

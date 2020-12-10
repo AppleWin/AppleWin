@@ -99,8 +99,6 @@ protected:
 	DWORD NibblizeTrack (LPBYTE trackimagebuffer, SectorOrder_e SectorOrder, int track);
 	void SkewTrack (const int nTrack, const int nNumNibbles, const LPBYTE pTrackImageBuffer);
 
-	LPBYTE ms_pWorkBuffer;
-
 public:
 	UINT m_uNumTracksInImage;	// Init'd by CDiskImageHelper.Detect()/GetImageForCreation() & possibly updated by IsValidImageSize()
 
@@ -108,6 +106,7 @@ protected:
 	static BYTE ms_DiskByte[0x40];
 	static BYTE ms_SectorNumber[NUM_SECTOR_ORDERS][NUM_SECTORS];
 	BYTE m_uVolumeNumber;
+	LPBYTE m_pWorkBuffer;
 };
 
 //-------------------------------------
