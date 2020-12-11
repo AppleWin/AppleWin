@@ -35,9 +35,6 @@
 
 namespace
 {
-  bool use_audio_cb;
-  float last_aspect;
-  float last_sample_rate;
   std::string retro_base_directory;
 
   retro_video_refresh_t video_cb;
@@ -45,11 +42,10 @@ namespace
   retro_audio_sample_batch_t audio_batch_cb;
   retro_input_poll_t input_poll_cb;
   retro_input_state_t input_state_cb;
-  retro_rumble_interface rumble;
 
   retro_environment_t environ_cb;
 
-  Speed speed(true);
+  Speed speed(true);  // fixed speed
 
   void initialiseEmulator()
   {
@@ -63,7 +59,6 @@ namespace
     g_nAppMode = MODE_RUNNING;
     LogFileOutput("Initialisation\n");
 
-    ImageInitialize();
     g_bFullSpeed = false;
 
     LoadConfiguration();
@@ -103,9 +98,37 @@ namespace
     CpuDestroy();
 
     GetCardMgr().GetDisk2CardMgr().Destroy();
-    ImageDestroy();
     LogDone();
     RiffFinishWriteFile();
+  }
+
+  void runOneFrame()
+  {
+    if (g_nAppMode == MODE_RUNNING)
+    {
+      const size_t cyclesToExecute = speed.getCyclesTillNext(16);
+
+      const bool bVideoUpdate = true;
+      const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
+
+      const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
+
+      g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
+      GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
+      MB_PeriodicUpdate(executedCycles);
+      SpkrUpdate(executedCycles);
+    }
+  }
+
+  void processInputEvents()
+  {
+    input_poll_cb();
+
+    const int16_t is_down = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_a);
+    if (is_down)
+    {
+      log_cb(RETRO_LOG_INFO, "RA2: %s. A is down\n", __FUNCTION__);
+    }
   }
 
 }
@@ -185,17 +208,15 @@ void retro_get_system_info(retro_system_info *info)
 void retro_get_system_av_info(retro_system_av_info *info)
 {
   log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  float aspect                = 0.0f;
-  float sampling_rate         = 30000.0f;
 
   info->geometry.base_width   = GetFrameBufferWidth();
   info->geometry.base_height  = GetFrameBufferHeight();
   info->geometry.max_width    = GetFrameBufferWidth();
   info->geometry.max_height   = GetFrameBufferHeight();
-  info->geometry.aspect_ratio = aspect;
+  info->geometry.aspect_ratio = 0;
 
-  last_aspect                 = aspect;
-  last_sample_rate            = sampling_rate;
+  info->timing.fps            = 60;
+  info->timing.sample_rate    = 0;
 }
 
 void retro_set_environment(retro_environment_t cb)
@@ -210,7 +231,7 @@ void retro_set_environment(retro_environment_t cb)
 
   static const retro_controller_description controllers[] =
     {
-     { "Nintendo DS", RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_JOYPAD, 0) },
+     { "Apple Keyboard", RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_KEYBOARD, 0) },
     };
 
   static const retro_controller_info ports[] =
@@ -254,24 +275,10 @@ void retro_set_video_refresh(retro_video_refresh_t cb)
 
 void retro_run(void)
 {
-  if (g_nAppMode == MODE_RUNNING)
-  {
-    const size_t cyclesToExecute = speed.getCyclesTillNext(16);
-
-    const bool bVideoUpdate = true;
-    const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-
-    const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
-
-    g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
-    GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
-    MB_PeriodicUpdate(executedCycles);
-    SpkrUpdate(executedCycles);
-  }
-
-  //  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  const size_t pitch = GetFrameBufferWidth() * 4;
   input_poll_cb();
+  processInputEvents();
+  runOneFrame();
+  const size_t pitch = GetFrameBufferWidth() * 4;
   video_cb(g_pFramebufferbits, GetFrameBufferWidth(), GetFrameBufferHeight(), pitch);
 }
 
