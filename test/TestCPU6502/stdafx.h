@@ -26,6 +26,7 @@ typedef UINT64 uint64_t;
 
 #else
 
+#include <cstring>
 #include <linux/win.h>
 
 #endif

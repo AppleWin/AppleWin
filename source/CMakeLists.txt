@@ -38,7 +38,6 @@ add_library(appleii SHARED
 
   Configuration/PropertySheetHelper.cpp
 
-  linux/windows/memory.cpp
   linux/windows/handles.cpp
   linux/windows/files.cpp
   linux/windows/resources.cpp

@@ -151,8 +151,6 @@ namespace
 
     LogFileOutput("Initialisation\n");
 
-    ImageInitialize();
-
     bool disksOk = true;
     if (!options.disk1.empty())
     {
@@ -227,7 +225,6 @@ namespace
     CpuDestroy();
 
     cardManager.GetDisk2CardMgr().Destroy();
-    ImageDestroy();
 
     LogDone();
 

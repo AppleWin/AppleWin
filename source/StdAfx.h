@@ -68,6 +68,7 @@ typedef UINT64 uint64_t;
 #include <stack>
 #include <stdexcept>
 #include <cstdarg>
+#include <cstring>
 
 #include "linux/win.h"
 

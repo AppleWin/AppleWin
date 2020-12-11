@@ -80,7 +80,6 @@ namespace
 
     void loadEmulator(QWidget * window, Emulator * emulator, const GlobalOptions & options)
     {
-        ImageInitialize();
         LoadConfiguration();
 
         CheckCpu();
@@ -142,7 +141,6 @@ namespace
         CpuDestroy();
 
         cardManager.GetDisk2CardMgr().Destroy();
-        ImageDestroy();
         LogDone();
         RiffFinishWriteFile();
 

@@ -61,7 +61,6 @@ namespace
     g_nAppMode = MODE_RUNNING;
     LogFileOutput("Initialisation\n");
 
-    ImageInitialize();
     g_bFullSpeed = false;
 
     LoadConfiguration();
@@ -103,7 +102,6 @@ namespace
     CpuDestroy();
 
     GetCardMgr().GetDisk2CardMgr().Destroy();
-    ImageDestroy();
     LogDone();
     RiffFinishWriteFile();
   }
