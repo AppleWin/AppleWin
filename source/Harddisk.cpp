@@ -597,7 +597,7 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 									}
 								}
 
-								MoveMemory(pHDD->hd_buf, mem+pHDD->hd_memblock, HD_BLOCK_SIZE);
+								memmove(pHDD->hd_buf, mem+pHDD->hd_memblock, HD_BLOCK_SIZE);
 
 								if (bRes)
 									bRes = ImageWriteBlock(pHDD->imagehandle, pHDD->hd_diskblock, pHDD->hd_buf);
