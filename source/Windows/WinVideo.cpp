@@ -257,7 +257,7 @@ void VideoBenchmark () {
   // WITH FULL EMULATION OF THE CPU, JOYSTICK, AND DISK HAPPENING AT
   // THE SAME TIME
   DWORD realisticfps = 0;
-  FillMemory(mem+0x2000,0xAA,0x2000);
+  memset(mem+0x2000,0xAA,0x2000);
   VideoRedrawScreen();
   milliseconds = GetTickCount();
   while (GetTickCount() == milliseconds) ;
@@ -274,7 +274,7 @@ void VideoBenchmark () {
 	  }
     }
     if (cycle & 1)
-      FillMemory(mem+0x2000,0xAA,0x2000);
+      memset(mem+0x2000,0xAA,0x2000);
     else
       memcpy(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
     VideoRedrawScreen();
