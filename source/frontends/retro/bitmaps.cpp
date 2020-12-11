@@ -5,6 +5,7 @@
 #include <frontends/common2/resources.h>
 
 #include <fstream>
+#include <cstring>
 
 namespace
 {
@@ -94,8 +95,6 @@ HBITMAP LoadBitmap(HINSTANCE hInstance, const char * resource)
     const std::string filename = getFilename(resource);
     const std::string path = getResourcePath() + filename;
 
-    log_cb(RETRO_LOG_INFO, "RA2: %s. Path = %s\n", __FUNCTION__, path.c_str());
-
     std::vector<char> buffer;
     readFileToBuffer(path, buffer);
 
@@ -107,10 +106,21 @@ HBITMAP LoadBitmap(HINSTANCE hInstance, const char * resource)
       uint32_t size;
       const bool res = getBitmapData(buffer, width, height, bpp, data, size);
 
-      if (res)
+      log_cb(RETRO_LOG_INFO, "RA2: %s. %s = %dx%d, %dbpp\n", __FUNCTION__, path.c_str(),
+	     width, height, bpp);
+
+      if (res && height > 0)
       {
 	CBITMAP * bitmap = new CBITMAP;
-	bitmap->image.assign(data, data + size);
+	bitmap->image.resize(size);
+	const size_t length = size / height;
+	// rows are stored upside down
+	for (size_t row = 0; row < height; ++row)
+	{
+	  const char * src = data + row * length;
+	  char * dst = bitmap->image.data() + (height - row - 1) * length;
+	  memcpy(dst, src, length);
+	}
 	return bitmap;
       }
     }
@@ -135,9 +145,7 @@ LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits)
   const size_t copied = std::min(requested, size);
 
   char * dest = static_cast<char *>(lpvBits);
-  for (size_t i = 0; i < copied; ++i)
-  {
-    dest[i] = ~bits[i];
-  }
+  memcpy(dest, bits, copied);
+
   return copied;
 }
