@@ -52,7 +52,7 @@ ImageInfo::ImageInfo()
 	uOffset = 0;
 	bWriteProtected = false;
 	uImageSize = 0;
-	ZeroMemory(&zipFileInfo, sizeof(zipFileInfo));
+	memset(&zipFileInfo, 0, sizeof(zipFileInfo));
 	uNumEntriesInZip = 0;
 	uNumValidImagesInZip = 0;
 	uNumTracks = 0;
@@ -62,6 +62,20 @@ ImageInfo::ImageInfo()
 	bootSectorFormat = CWOZHelper::bootUnknown;
 	maxNibblesPerTrack = 0;
 }
+
+CImageBase::CImageBase()
+	: m_uNumTracksInImage(0)
+	, m_uVolumeNumber(DEFAULT_VOLUME_NUMBER)
+{
+	m_pWorkBuffer = new BYTE[TRACK_DENIBBLIZED_SIZE * 2];
+}
+
+CImageBase::~CImageBase()
+{
+	delete [] m_pWorkBuffer;
+	m_pWorkBuffer = NULL;
+}
+
 
 /* DO logical order  0 1 2 3 4 5 6 7 8 9 A B C D E F */
 /*    physical order 0 D B 9 7 5 3 1 E C A 8 6 4 2 F */
@@ -87,8 +101,6 @@ BYTE CImageBase::ms_SectorNumber[NUM_SECTOR_ORDERS][0x10] =
 	{0x00,0x07,0x0E,0x06,0x0D,0x05,0x0C,0x04, 0x0B,0x03,0x0A,0x02,0x09,0x01,0x08,0x0F},
 	{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
 };
-
-LPBYTE CImageBase::ms_pWorkBuffer = NULL;
 
 //-----------------------------------------------------------------------------
 
@@ -287,8 +299,8 @@ LPBYTE CImageBase::Code62(int sector)
 	// CONVERT THE 256 8-BIT BYTES INTO 342 6-BIT BYTES, WHICH WE STORE
 	// STARTING AT 4K INTO THE WORK BUFFER.
 	{
-		LPBYTE sectorbase = ms_pWorkBuffer+(sector << 8);
-		LPBYTE resultptr  = ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
+		LPBYTE sectorbase = m_pWorkBuffer+(sector << 8);
+		LPBYTE resultptr  = m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
 		BYTE   offset     = 0xAC;
 		while (offset != 0x02)
 		{
@@ -314,8 +326,8 @@ LPBYTE CImageBase::Code62(int sector)
 	// BLOCK OF 343 BYTES STARTING AT 5K INTO THE WORK BUFFER.
 	{
 		BYTE   savedval  = 0;
-		LPBYTE sourceptr = ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
-		LPBYTE resultptr = ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+0x400;
+		LPBYTE sourceptr = m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
+		LPBYTE resultptr = m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+0x400;
 		int    loop      = 342;
 		while (loop--)
 		{
@@ -331,14 +343,14 @@ LPBYTE CImageBase::Code62(int sector)
 	// ZERO BITS.  THE CONVERTED BLOCK OF 343 BYTES IS STORED STARTING AT 4K
 	// INTO THE WORK BUFFER.
 	{
-		LPBYTE sourceptr = ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+0x400;
-		LPBYTE resultptr = ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
+		LPBYTE sourceptr = m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+0x400;
+		LPBYTE resultptr = m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
 		int    loop      = 343;
 		while (loop--)
 			*(resultptr++) = ms_DiskByte[(*(sourceptr++)) >> 2];
 	}
 
-	return ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
+	return m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
 }
 
 //-------------------------------------
@@ -351,7 +363,7 @@ void CImageBase::Decode62(LPBYTE imageptr)
 	static BYTE sixbitbyte[0x80];
 	if (!tablegenerated)
 	{
-		ZeroMemory(sixbitbyte,0x80);
+		memset(sixbitbyte, 0, 0x80);
 		int loop = 0;
 		while (loop < 0x40) {
 			sixbitbyte[ms_DiskByte[loop]-0x80] = loop << 2;
@@ -362,8 +374,8 @@ void CImageBase::Decode62(LPBYTE imageptr)
 
 	// USING OUR TABLE, CONVERT THE DISK BYTES BACK INTO 6-BIT BYTES
 	{
-		LPBYTE sourceptr = ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
-		LPBYTE resultptr = ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+0x400;
+		LPBYTE sourceptr = m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
+		LPBYTE resultptr = m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+0x400;
 		int    loop      = 343;
 		while (loop--)
 			*(resultptr++) = sixbitbyte[*(sourceptr++) & 0x7F];
@@ -373,8 +385,8 @@ void CImageBase::Decode62(LPBYTE imageptr)
 	// TO UNDO THE EFFECTS OF THE CHECKSUMMING PROCESS
 	{
 		BYTE   savedval  = 0;
-		LPBYTE sourceptr = ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+0x400;
-		LPBYTE resultptr = ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
+		LPBYTE sourceptr = m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+0x400;
+		LPBYTE resultptr = m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
 		int    loop      = 342;
 		while (loop--)
 		{
@@ -385,8 +397,8 @@ void CImageBase::Decode62(LPBYTE imageptr)
 
 	// CONVERT THE 342 6-BIT BYTES INTO 256 8-BIT BYTES
 	{
-		LPBYTE lowbitsptr = ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
-		LPBYTE sectorbase = ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+0x56;
+		LPBYTE lowbitsptr = m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE;
+		LPBYTE sectorbase = m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+0x56;
 		BYTE   offset     = 0xAC;
 		while (offset != 0x02)
 		{
@@ -417,7 +429,7 @@ void CImageBase::Decode62(LPBYTE imageptr)
 
 void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, int nibbles)
 {
-	ZeroMemory(ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
+	memset(m_pWorkBuffer, 0, TRACK_DENIBBLIZED_SIZE);
 
 	// SEARCH THROUGH THE TRACK IMAGE FOR EACH SECTOR.  FOR EVERY SECTOR
 	// WE FIND, COPY THE NIBBLIZED DATA FOR THAT SECTOR INTO THE WORK
@@ -455,15 +467,15 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 			int tempoffset = offset;
 			while (loop < 384)	// TODO-TC: Why 384? Only need 343 for Decode62()
 			{
-				*(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+loop++) = *(trackimage+tempoffset++);
+				*(m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+loop++) = *(trackimage+tempoffset++);
 				if (tempoffset >= nibbles)
 					tempoffset = 0;
 			}
 
 			if (byteval[2] == 0x96)
 			{
-				sector = ((*(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+4) & 0x55) << 1)
-						| (*(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+5) & 0x55);
+				sector = ((*(m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+4) & 0x55) << 1)
+						| (*(m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE+5) & 0x55);
 
 #ifdef _DEBUG
 				_ASSERT( sector < NUM_SECTORS );
@@ -482,7 +494,7 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 					uWriteDataFieldPrologueCount++;
 					_ASSERT(uWriteDataFieldPrologueCount <= NUM_SECTORS);
 #endif
-					Decode62(ms_pWorkBuffer+(ms_SectorNumber[SectorOrder][sector] << 8));
+					Decode62(m_pWorkBuffer+(ms_SectorNumber[SectorOrder][sector] << 8));
 				}
 				sector = 0;
 			}
@@ -494,7 +506,7 @@ void CImageBase::DenibblizeTrack(LPBYTE trackimage, SectorOrder_e SectorOrder, i
 
 DWORD CImageBase::NibblizeTrack(LPBYTE trackimagebuffer, SectorOrder_e SectorOrder, int track)
 {
-	ZeroMemory(ms_pWorkBuffer+TRACK_DENIBBLIZED_SIZE, TRACK_DENIBBLIZED_SIZE);
+	memset(m_pWorkBuffer+TRACK_DENIBBLIZED_SIZE, 0, TRACK_DENIBBLIZED_SIZE);
 	LPBYTE imageptr = trackimagebuffer;
 	BYTE   sector   = 0;
 
@@ -563,9 +575,9 @@ DWORD CImageBase::NibblizeTrack(LPBYTE trackimagebuffer, SectorOrder_e SectorOrd
 void CImageBase::SkewTrack(const int nTrack, const int nNumNibbles, const LPBYTE pTrackImageBuffer)
 {
 	int nSkewBytes = (nTrack*768) % nNumNibbles;
-	CopyMemory(ms_pWorkBuffer, pTrackImageBuffer, nNumNibbles);
-	CopyMemory(pTrackImageBuffer, ms_pWorkBuffer+nSkewBytes, nNumNibbles-nSkewBytes);
-	CopyMemory(pTrackImageBuffer+nNumNibbles-nSkewBytes, ms_pWorkBuffer, nSkewBytes);
+	CopyMemory(m_pWorkBuffer, pTrackImageBuffer, nNumNibbles);
+	CopyMemory(pTrackImageBuffer, m_pWorkBuffer+nSkewBytes, nNumNibbles-nSkewBytes);
+	CopyMemory(pTrackImageBuffer+nNumNibbles-nSkewBytes, m_pWorkBuffer, nSkewBytes);
 }
 
 //-------------------------------------
@@ -647,7 +659,7 @@ public:
 	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
 		const UINT track = PhaseToTrack(phase);
-		ReadTrack(pImageInfo, track, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
+		ReadTrack(pImageInfo, track, m_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		*pNibbles = NibblizeTrack(pTrackImageBuffer, eDOSOrder, track);
 		if (!enhanceDisk)
 			SkewTrack(track, *pNibbles, pTrackImageBuffer);
@@ -657,7 +669,7 @@ public:
 	{
 		const UINT track = PhaseToTrack(phase);
 		DenibblizeTrack(pTrackImageBuffer, eDOSOrder, nNibbles);
-		WriteTrack(pImageInfo, track, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
+		WriteTrack(pImageInfo, track, m_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
 
 	virtual bool AllowCreate(void) { return true; }
@@ -715,7 +727,7 @@ public:
 	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
 		const UINT track = PhaseToTrack(phase);
-		ReadTrack(pImageInfo, track, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
+		ReadTrack(pImageInfo, track, m_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		*pNibbles = NibblizeTrack(pTrackImageBuffer, eProDOSOrder, track);
 		if (!enhanceDisk)
 			SkewTrack(track, *pNibbles, pTrackImageBuffer);
@@ -725,7 +737,7 @@ public:
 	{
 		const UINT track = PhaseToTrack(phase);
 		DenibblizeTrack(pTrackImageBuffer, eProDOSOrder, nNibbles);
-		WriteTrack(pImageInfo, track, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
+		WriteTrack(pImageInfo, track, m_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
 
 	virtual eImageType GetType(void) { return eImagePO; }
@@ -905,13 +917,8 @@ public:
 		// IF WE HAVEN'T ALREADY DONE SO, READ THE IMAGE FILE HEADER
 		if (!m_pHeader)
 		{
-			m_pHeader = (LPBYTE) VirtualAlloc(NULL, 88, MEM_COMMIT, PAGE_READWRITE);
-			if (!m_pHeader)
-			{
-				*pNibbles = 0;
-				return;
-			}
-			ZeroMemory(m_pHeader, 88);
+			m_pHeader = new BYTE[88];
+			memset(m_pHeader, 0, 88);
 			DWORD dwBytesRead;
 			SetFilePointer(pImageInfo->hFile, 0, NULL,FILE_BEGIN);
 			ReadFile(pImageInfo->hFile, m_pHeader, 88, &dwBytesRead, NULL);
@@ -922,9 +929,9 @@ public:
 		{
 			ConvertSectorOrder(m_pHeader+14);
 			SetFilePointer(pImageInfo->hFile, track*TRACK_DENIBBLIZED_SIZE+30, NULL, FILE_BEGIN);
-			ZeroMemory(ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
+			memset(m_pWorkBuffer, 0, TRACK_DENIBBLIZED_SIZE);
 			DWORD bytesread;
-			ReadFile(pImageInfo->hFile, ms_pWorkBuffer, TRACK_DENIBBLIZED_SIZE, &bytesread, NULL);
+			ReadFile(pImageInfo->hFile, m_pWorkBuffer, TRACK_DENIBBLIZED_SIZE, &bytesread, NULL);
 			*pNibbles = NibblizeTrack(pTrackImageBuffer, eSIMSYSTEMOrder, track);
 		}
 		// OTHERWISE, IF THIS IMAGE CONTAINS NIBBLE INFORMATION, READ IT DIRECTLY INTO THE TRACK BUFFER
@@ -935,7 +942,7 @@ public:
 			while (track--)
 				Offset += *(LPWORD)(m_pHeader+track*2+14);
 			SetFilePointer(pImageInfo->hFile, Offset, NULL,FILE_BEGIN);
-			ZeroMemory(pTrackImageBuffer, *pNibbles);
+			memset(pTrackImageBuffer, 0, *pNibbles);
 			DWORD dwBytesRead;
 			ReadFile(pImageInfo->hFile, pTrackImageBuffer, *pNibbles, &dwBytesRead, NULL);
 		}
@@ -1855,7 +1862,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 				}
 				else
 				{
-					ZeroMemory(pImageInfo->pImageBuffer, dwSize);
+					memset(pImageInfo->pImageBuffer, 0, dwSize);
 				}
 			}
 

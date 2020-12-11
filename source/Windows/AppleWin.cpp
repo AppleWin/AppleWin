@@ -770,9 +770,6 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 
 	FrameRegisterClass();
 	LogFileOutput("Init: FrameRegisterClass()\n");
-
-	ImageInitialize();
-	LogFileOutput("Init: ImageInitialize()\n");
 }
 
 // DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART

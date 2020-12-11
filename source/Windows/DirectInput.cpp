@@ -222,7 +222,7 @@ namespace DIMouse
 			return S_OK;
 
 		// Get the input's device state, and put the state in dims
-		ZeroMemory( &dims2, sizeof(dims2) );
+		memset( &dims2, 0, sizeof(dims2) );
 		hr = g_pMouse->GetDeviceState( sizeof(DIMOUSESTATE2), &dims2 );
 		if( FAILED(hr) ) 
 		{

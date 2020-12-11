@@ -61,6 +61,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Debugger/DebugDefs.h"
 #include "YamlHelper.h"
 
+// In this file allocate the 64KB of RAM with aligned memory allocations (0x10000)
+// to ease mapping between Apple ][ and host memory space (while debugging).
+
+// this is not available in Visual Studio
+// https://en.cppreference.com/w/c/memory/aligned_alloc
+
+#ifdef _MSC_VER
+// VirtualAlloc is aligned
+#define ALIGNED_ALLOC(size) (LPBYTE)VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE)
+#define ALIGNED_FREE(ptr) VirtualFree(ptr, 0, MEM_RELEASE)
+#else
+// use plain "new" in gcc (where debugging needs are less important)
+#define ALIGNED_ALLOC(size) new BYTE[size]
+#define ALIGNED_FREE(ptr) delete [] ptr
+#endif
+
+
 // UTAIIe:5-28 (GH#419)
 // . Sather uses INTCXROM instead of SLOTCXROM' (used by the Apple//e Tech Ref Manual), so keep to this
 //   convention too since UTAIIe is the reference for most of the logic that we implement in the emulator.
@@ -1244,21 +1261,22 @@ static void UpdatePaging(BOOL initialize)
 
 void MemDestroy()
 {
-	VirtualFree(memaux  ,0,MEM_RELEASE);
-	VirtualFree(memmain ,0,MEM_RELEASE);
-	VirtualFree(memdirty,0,MEM_RELEASE);
-	VirtualFree(memrom  ,0,MEM_RELEASE);
-	VirtualFree(memimage,0,MEM_RELEASE);
+	ALIGNED_FREE(memaux);
+	ALIGNED_FREE(memmain);
+	ALIGNED_FREE(memimage);
 
-	VirtualFree(pCxRomInternal,0,MEM_RELEASE);
-	VirtualFree(pCxRomPeripheral,0,MEM_RELEASE);
+	delete [] memdirty;
+	delete [] memrom;
+
+	delete [] pCxRomInternal;
+	delete [] pCxRomPeripheral;
 
 #ifdef RAMWORKS
 	for (UINT i=1; i<g_uMaxExPages; i++)
 	{
 		if (RWpages[i])
 		{
-			VirtualFree(RWpages[i], 0, MEM_RELEASE);
+			ALIGNED_FREE(RWpages[i]);
 			RWpages[i] = NULL;
 		}
 	}
@@ -1279,8 +1297,8 @@ void MemDestroy()
 
 	mem      = NULL;
 
-	ZeroMemory(memwrite, sizeof(memwrite));
-	ZeroMemory(memshadow,sizeof(memshadow));
+	memset(memwrite,  0, sizeof(memwrite));
+	memset(memshadow, 0, sizeof(memshadow));
 }
 
 //===========================================================================
@@ -1467,14 +1485,15 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 void MemInitialize()
 {
 	// ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
-	memaux   = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
-	memmain  = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
-	memdirty = (LPBYTE)VirtualAlloc(NULL,0x100  ,MEM_COMMIT,PAGE_READWRITE);
-	memrom   = (LPBYTE)VirtualAlloc(NULL,0x3000 * MaxRomPages ,MEM_COMMIT,PAGE_READWRITE);
-	memimage = (LPBYTE)VirtualAlloc(NULL,_6502_MEM_END+1,MEM_RESERVE,PAGE_NOACCESS);
+	memaux   = ALIGNED_ALLOC(_6502_MEM_LEN);
+	memmain  = ALIGNED_ALLOC(_6502_MEM_LEN);
+	memimage = ALIGNED_ALLOC(_6502_MEM_LEN);
 
-	pCxRomInternal		= (LPBYTE) VirtualAlloc(NULL, CxRomSize, MEM_COMMIT, PAGE_READWRITE);
-	pCxRomPeripheral	= (LPBYTE) VirtualAlloc(NULL, CxRomSize, MEM_COMMIT, PAGE_READWRITE);
+	memdirty = new BYTE[0x100];
+	memrom   = new BYTE[0x3000 * MaxRomPages];
+
+	pCxRomInternal		= new BYTE[CxRomSize];
+	pCxRomPeripheral	= new BYTE[CxRomSize];
 
 	if (!memaux || !memdirty || !memimage || !memmain || !memrom || !pCxRomInternal || !pCxRomPeripheral)
 	{
@@ -1487,25 +1506,6 @@ void MemInitialize()
 		ExitProcess(1);
 	}
 
-	LPVOID newloc = VirtualAlloc(memimage,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE);
-	if (newloc != memimage)
-		MessageBox(
-			GetDesktopWindow(),
-			TEXT("The emulator has detected a bug in your operating ")
-			TEXT("system.  While changing the attributes of a memory ")
-			TEXT("object, the operating system also changed its ")
-			TEXT("location."),
-			g_pAppTitle.c_str(),
-			MB_ICONEXCLAMATION | MB_SETFOREGROUND);
-
-	// memimage has been freed
-	// if we have come here we should use newloc
-	//
-	// this happens when running under valgrind
-	memimage = (LPBYTE)newloc;
-
-	//
-
 	RWpages[0] = memaux;
 
 	SetExpansionMemTypeDefault();
@@ -1517,7 +1517,7 @@ void MemInitialize()
 		g_uActiveBank = 0;
 
 		UINT i = 1;
-		while ((i < g_uMaxExPages) && (RWpages[i] = (LPBYTE) VirtualAlloc(NULL, _6502_MEM_END+1, MEM_COMMIT, PAGE_READWRITE)))
+		while ((i < g_uMaxExPages) && (RWpages[i] = ALIGNED_ALLOC(_6502_MEM_LEN)))
 			i++;
 		while (i < kMaxExMemoryBanks)
 			RWpages[i++] = NULL;
@@ -1831,12 +1831,12 @@ inline DWORD getRandomTime()
 void MemReset()
 {
 	// INITIALIZE THE PAGING TABLES
-	ZeroMemory(memshadow,256*sizeof(LPBYTE));
-	ZeroMemory(memwrite ,256*sizeof(LPBYTE));
+	memset(memshadow, 0, 256*sizeof(LPBYTE));
+	memset(memwrite , 0, 256*sizeof(LPBYTE));
 
 	// INITIALIZE THE RAM IMAGES
-	ZeroMemory(memaux ,0x10000);
-	ZeroMemory(memmain,0x10000);
+	memset(memaux , 0, 0x10000);
+	memset(memmain, 0, 0x10000);
 
 	// Init the I/O ROM vars
 	IO_SELECT = 0;
@@ -1844,7 +1844,7 @@ void MemReset()
 	g_eExpansionRomType = eExpRomNull;
 	g_uPeripheralRomSlot = 0;
 
-	ZeroMemory(memdirty, 0x100);
+	memset(memdirty, 0, 0x100);
 
 	//
 
@@ -2368,7 +2368,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 
 	memset(memmain+0xC000, 0, LanguageCardSlot0::kMemBankSize);	// Clear it, as high 16K may not be in the save-state's "Main Memory" (eg. the case of II+ Saturn replacing //e LC)
 
-	yamlLoadHelper.LoadMemory(memmain, _6502_MEM_END+1);
+	yamlLoadHelper.LoadMemory(memmain, _6502_MEM_LEN);
 	if (unitVersion == 1 && IsApple2PlusOrClone(GetApple2Type()))
 	{
 		// v1 for II/II+ doesn't have a dedicated slot-0 LC, instead the 16K is stored as the top 16K of memmain
@@ -2473,9 +2473,7 @@ static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::
 		LPBYTE pBank = MemGetBankPtr(uBank);
 		if (!pBank)
 		{
-			pBank = RWpages[uBank-1] = (LPBYTE) VirtualAlloc(NULL, _6502_MEM_END+1, MEM_COMMIT, PAGE_READWRITE);
-			if (!pBank)
-				throw std::string("Card: mem alloc failed");
+			pBank = RWpages[uBank-1] = ALIGNED_ALLOC(_6502_MEM_LEN);
 		}
 
 		// "Auxiliary Memory Bankxx"
@@ -2486,7 +2484,7 @@ static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::
 		if (!yamlLoadHelper.GetSubMap(auxMemName))
 			throw std::string("Memory: Missing map name: " + auxMemName);
 
-		yamlLoadHelper.LoadMemory(pBank, _6502_MEM_END+1);
+		yamlLoadHelper.LoadMemory(pBank, _6502_MEM_LEN);
 
 		yamlLoadHelper.PopMap();
 	}

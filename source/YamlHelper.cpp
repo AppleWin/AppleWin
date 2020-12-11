@@ -51,10 +51,14 @@ void YamlHelper::FinaliseParser(void)
 		fclose(m_hFile);
 
 	m_hFile = NULL;
+
+	yaml_event_delete(&m_newEvent);
+	yaml_parser_delete(&m_parser);
 }
 
-void YamlHelper::GetNextEvent(bool bInMap /*= false*/)
+void YamlHelper::GetNextEvent(void)
 {
+	yaml_event_delete(&m_newEvent);
 	if (!yaml_parser_parse(&m_parser, &m_newEvent))
 	{
 		std::string error = std::string("Save-state parser error: ");
@@ -116,13 +120,13 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 	const char*& pValue = (const char*&) m_newEvent.data.scalar.value;
 
 	bool bKey = true;
-	char* pKey = NULL;
+	std::string pKey;
 	int res = 1;
 	bool bDone = false;
 
 	while (!bDone)
 	{
-		GetNextEvent(true);
+		GetNextEvent();
 
 		switch(m_newEvent.type)
 		{
@@ -135,7 +139,7 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 				MapValue mapValue;
 				mapValue.value = "";
 				mapValue.subMap = new MapYaml;
-				mapYaml[std::string(pKey)] = mapValue;
+				mapYaml[pKey] = mapValue;
 				res = ParseMap(*mapValue.subMap);
 				if (!res)
 					throw std::string("ParseMap: premature end of file during map parsing");
@@ -148,15 +152,16 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 		case YAML_SCALAR_EVENT:
 			if (bKey)
 			{
-				pKey = _strdup(pValue);
+				_ASSERT(pValue);  // std::string(NULL) generates AccessViolation
+				pKey = pValue;
 			}
 			else
 			{
 				MapValue mapValue;
 				mapValue.value = pValue;
 				mapValue.subMap = NULL;
-				mapYaml[std::string(pKey)] = mapValue;
-				free(pKey); pKey = NULL;
+				mapYaml[pKey] = mapValue;
+				pKey.clear();
 			}
 
 			bKey = bKey ? false : true;
@@ -167,13 +172,10 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 		}
 	}
 
-	if (pKey)
-		free(pKey);
-
 	return res;
 }
 
-std::string YamlHelper::GetMapValue(MapYaml& mapYaml, const std::string key, bool& bFound)
+std::string YamlHelper::GetMapValue(MapYaml& mapYaml, const std::string& key, bool& bFound)
 {
 	MapYaml::const_iterator iter = mapYaml.find(key);
 	if (iter == mapYaml.end() || iter->second.subMap != NULL)
@@ -190,7 +192,7 @@ std::string YamlHelper::GetMapValue(MapYaml& mapYaml, const std::string key, boo
 	return value;
 }
 
-bool YamlHelper::GetSubMap(MapYaml** mapYaml, const std::string key)
+bool YamlHelper::GetSubMap(MapYaml** mapYaml, const std::string& key)
 {
 	MapYaml::const_iterator iter = (*mapYaml)->find(key);
 	if (iter == (*mapYaml)->end() || iter->second.subMap == NULL)
@@ -349,7 +351,7 @@ std::string YamlLoadHelper::LoadString(const std::string& key)
 	return value;
 }
 
-float YamlLoadHelper::LoadFloat(const std::string key)
+float YamlLoadHelper::LoadFloat(const std::string& key)
 {
 	bool bFound;
 	std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
@@ -365,7 +367,7 @@ float YamlLoadHelper::LoadFloat(const std::string key)
 #endif
 }
 
-double YamlLoadHelper::LoadDouble(const std::string key)
+double YamlLoadHelper::LoadDouble(const std::string& key)
 {
 	bool bFound;
 	std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
@@ -575,7 +577,7 @@ void YamlSaveHelper::FileHdr(UINT version)
 	SaveInt(SS_YAML_KEY_VERSION, version);
 }
 
-void YamlSaveHelper::UnitHdr(std::string type, UINT version)
+void YamlSaveHelper::UnitHdr(const std::string& type, UINT version)
 {
 	fprintf(m_hFile, "\n%s:\n", SS_YAML_KEY_UNIT);
 	m_indent = 2;

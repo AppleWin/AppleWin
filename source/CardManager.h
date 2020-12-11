@@ -53,7 +53,7 @@ public:
 
 private:
 	void RemoveInternal(UINT slot);
-	void RemoveAuxInternal();
+	void RemoveAuxInternal(void);
 
 	Card* m_slot[NUM_SLOTS];
 	Card* m_aux;

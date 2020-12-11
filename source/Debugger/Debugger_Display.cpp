@@ -557,13 +557,9 @@ HDC GetDebuggerMemDC(void)
 		g_hDebuggerMemDC = CreateCompatibleDC(hFrameDC);
 
 		// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
-		g_pDebuggerMemFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(
-			NULL,
-			sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD),
-			MEM_COMMIT,
-			PAGE_READWRITE);
+		g_pDebuggerMemFramebufferinfo = (LPBITMAPINFO) new BYTE[sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)];
 
-		ZeroMemory(g_pDebuggerMemFramebufferinfo, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
+		memset(g_pDebuggerMemFramebufferinfo, 0, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 		g_pDebuggerMemFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 		g_pDebuggerMemFramebufferinfo->bmiHeader.biWidth = 560;
 		g_pDebuggerMemFramebufferinfo->bmiHeader.biHeight = 384;
@@ -598,7 +594,7 @@ void ReleaseDebuggerMemDC(void)
 
 		FrameReleaseDC();
 
-		VirtualFree(g_pDebuggerMemFramebufferinfo, 0, MEM_RELEASE);
+		delete [] g_pDebuggerMemFramebufferinfo;
 		g_pDebuggerMemFramebufferinfo = NULL;
 		g_pDebuggerMemFramebits = NULL;
 	}
@@ -613,13 +609,9 @@ HDC GetConsoleFontDC(void)
 		g_hConsoleFontDC = CreateCompatibleDC(hFrameDC);
 
 		// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
-		 g_hConsoleFontFramebufferinfo = (LPBITMAPINFO)VirtualAlloc(
-			NULL,
-			sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD),
-			MEM_COMMIT,
-			PAGE_READWRITE);
+		g_hConsoleFontFramebufferinfo = (LPBITMAPINFO) new BYTE[sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)];
 
-		ZeroMemory(g_hConsoleFontFramebufferinfo, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
+		memset(g_hConsoleFontFramebufferinfo, 0, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 		g_hConsoleFontFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 		g_hConsoleFontFramebufferinfo->bmiHeader.biWidth = CONSOLE_FONT_BITMAP_WIDTH;
 		g_hConsoleFontFramebufferinfo->bmiHeader.biHeight = CONSOLE_FONT_BITMAP_HEIGHT;
@@ -664,7 +656,7 @@ void ReleaseConsoleFontDC(void)
 		DeleteObject( g_hConsoleFontBitmap );
 		g_hConsoleFontBitmap = NULL;
 
-		VirtualFree(g_hConsoleFontFramebufferinfo, 0, MEM_RELEASE);
+		delete [] g_hConsoleFontFramebufferinfo;
 		g_hConsoleFontFramebufferinfo = NULL;
 		g_hConsoleFontFramebits = NULL;
 	}
@@ -3204,7 +3196,7 @@ void DrawSoftSwitches( int iSoftSwitch )
 void DrawSourceLine( int iSourceLine, RECT &rect )
 {
 	char sLine[ CONSOLE_WIDTH ];
-	ZeroMemory( sLine, CONSOLE_WIDTH );
+	memset( sLine, 0, CONSOLE_WIDTH );
 
 	if ((iSourceLine >=0) && (iSourceLine < g_AssemblerSourceBuffer.GetNumLines() ))
 	{

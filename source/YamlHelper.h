@@ -30,13 +30,13 @@ public:
 		m_hFile(NULL)
 	{
 		memset(&m_parser, 0, sizeof(m_parser));
+		memset(&m_newEvent, 0, sizeof(m_newEvent));
 		MakeAsciiToHexTable();
 	}
 
 	~YamlHelper(void)
 	{
-		if (m_hFile)
-			fclose(m_hFile);
+		FinaliseParser();
 	}
 
 	int InitParser(const char* pPathname);
@@ -46,11 +46,11 @@ public:
 	void GetMapStartEvent(void);
 
 private:
-	void GetNextEvent(bool bInMap = false);
+	void GetNextEvent(void);
 	int ParseMap(MapYaml& mapYaml);
-	std::string GetMapValue(MapYaml& mapYaml, const std::string key, bool& bFound);
+	std::string GetMapValue(MapYaml& mapYaml, const std::string &key, bool& bFound);
 	UINT LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize);
-	bool GetSubMap(MapYaml** mapYaml, const std::string key);
+	bool GetSubMap(MapYaml** mapYaml, const std::string &key);
 	void GetMapRemainder(std::string& mapName, MapYaml& mapYaml);
 
 	void MakeAsciiToHexTable(void);
@@ -98,12 +98,12 @@ public:
 	bool LoadBool(const std::string key);
 	std::string LoadString_NoThrow(const std::string& key, bool& bFound);
 	std::string LoadString(const std::string& key);
-	float LoadFloat(const std::string key);
-	double LoadDouble(const std::string key);
+	float LoadFloat(const std::string & key);
+	double LoadDouble(const std::string & key);
 	void LoadMemory(const LPBYTE pMemBase, const size_t size);
 	void LoadMemory(std::vector<BYTE>& memory, const size_t size);
 
-	bool GetSubMap(const std::string key)
+	bool GetSubMap(const std::string & key)
 	{
 		YamlStackItem item = {m_pMapYaml, m_currentMapName};
 		m_stackMap.push(item);
@@ -170,7 +170,7 @@ private:
 class YamlSaveHelper
 {
 public:
-	YamlSaveHelper(std::string pathname) :
+	YamlSaveHelper(const std::string & pathname) :
 		m_hFile(NULL),
 		m_indent(0),
 		m_pWcStr(NULL),
@@ -259,7 +259,7 @@ public:
 	class Slot : public Label
 	{
 	public:
-		Slot(YamlSaveHelper& rYamlSaveHelper, std::string type, UINT slot, UINT version) :
+		Slot(YamlSaveHelper& rYamlSaveHelper, const std::string & type, UINT slot, UINT version) :
 			Label(rYamlSaveHelper, "%d:\n", slot)
 		{
 			rYamlSaveHelper.Save("%s: %s\n", SS_YAML_KEY_CARD, type.c_str());
@@ -270,7 +270,7 @@ public:
 	};
 
 	void FileHdr(UINT version);
-	void UnitHdr(std::string type, UINT version);
+	void UnitHdr(const std::string & type, UINT version);
 
 private:
 	FILE* m_hFile;

@@ -120,12 +120,6 @@ void CardManager::RemoveInternal(UINT slot)
 	m_slot[slot] = NULL;
 }
 
-void CardManager::RemoveAuxInternal()
-{
-	delete m_aux;
-	m_aux = NULL;
-}
-
 void CardManager::Remove(UINT slot)
 {
 	RemoveInternal(slot);
@@ -157,6 +151,12 @@ void CardManager::InsertAux(SS_CARDTYPE type)
 
 	// for consistency m_aux must never be NULL
 	_ASSERT(m_aux != NULL);
+}
+
+void CardManager::RemoveAuxInternal()
+{
+	delete m_aux;
+	m_aux = NULL;
 }
 
 void CardManager::RemoveAux(void)
