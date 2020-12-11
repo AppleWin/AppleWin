@@ -18,7 +18,7 @@ target_include_directories(common2 PRIVATE
   ${Boost_INCLUDE_DIRS}
   )
 
-target_link_libraries(common2 PRIVATE
+target_link_libraries(common2 PUBLIC
   Boost::program_options
 )
 

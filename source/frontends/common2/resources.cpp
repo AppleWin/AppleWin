@@ -48,7 +48,7 @@ namespace
       }
     }
     // else?
-    return std::string();
+    return "/home/andrea/projects/cvs/A2E/resource/";
   }
 
 }

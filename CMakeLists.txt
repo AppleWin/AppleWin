@@ -12,6 +12,9 @@ MESSAGE("CMAKE_CXX_FLAGS_RELEASE:         ${CMAKE_CXX_FLAGS_RELEASE}")
 MESSAGE("CMAKE_CXX_FLAGS_DEBUG:           ${CMAKE_CXX_FLAGS_DEBUG}")
 MESSAGE("CMAKE_CXX_FLAGS_RELWITHDEBINFO:  ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 
+# this only affects common2, the others are already build with fPIC by default
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 execute_process(COMMAND uname -n
@@ -35,4 +38,5 @@ add_subdirectory(source/frontends/common2)
 add_subdirectory(source/frontends/ncurses)
 add_subdirectory(source/frontends/qapple)
 add_subdirectory(source/frontends/sa2)
+add_subdirectory(source/frontends/retro)
 add_subdirectory(test/TestCPU6502)
