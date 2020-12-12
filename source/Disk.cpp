@@ -78,6 +78,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	m_uWriteLastCycle = 0;
 	m_uSyncFFCount = 0;
 #endif
+//	m_floppyDrive[0].m_isConnected = false;
 }
 
 Disk2InterfaceCard::~Disk2InterfaceCard(void)
@@ -901,10 +902,18 @@ bool Disk2InterfaceCard::LogWriteCheckSyncFF(ULONG& uCycleDelta)
 
 void Disk2InterfaceCard::UpdateLatchForEmptyDrive(FloppyDrive* pDrive)
 {
-	if ((g_nCumulativeCycles - pDrive->m_motorOnCycle) < SPINUP_UNTIL_LATCH_STABLE_CYCLES)
-		m_floppyLatch = rand() & 0xFF;	// GH#748
-	else
+	if (!pDrive->m_isConnected)
+	{
 		m_floppyLatch = 0x80;	// GH#864
+		return;
+	}
+
+	// Drive connected
+
+	if ((g_nCumulativeCycles - pDrive->m_motorOnCycle) < MOTOR_ON_UNTIL_LSS_STABLE_CYCLES)
+		m_floppyLatch = 0x80;	// GH#864
+	else
+		m_floppyLatch = rand() & 0xFF;	// GH#748
 }
 
 void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
@@ -1938,7 +1947,7 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 // 4: Added: WOZ state
 //    Split up 'Unit' putting some state into a new 'Floppy'
 // 5: Added: Sequencer Function
-// 6: Added: Motor On Cycle
+// 6: Added: Drive Connected & Motor On Cycle
 static const UINT kUNIT_VERSION = 6;
 
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
@@ -1958,7 +1967,7 @@ static const UINT kUNIT_VERSION = 6;
 #define SS_YAML_KEY_LSS_SEQUENCER_FUNCTION "LSS Sequencer Function"
 
 #define SS_YAML_KEY_DISK2UNIT "Unit"
-#define SS_YAML_KEY_FILENAME "Filename"
+#define SS_YAML_KEY_DRIVE_CONNECTED "Drive Connected"
 #define SS_YAML_KEY_PHASE "Phase"
 #define SS_YAML_KEY_PHASE_PRECISE "Phase (precise)"
 #define SS_YAML_KEY_TRACK "Track"	// deprecated at v4
@@ -1967,6 +1976,7 @@ static const UINT kUNIT_VERSION = 6;
 #define SS_YAML_KEY_MOTOR_ON_CYCLE "Motor On Cycle"
 
 #define SS_YAML_KEY_FLOPPY "Floppy"
+#define SS_YAML_KEY_FILENAME "Filename"
 #define SS_YAML_KEY_BYTE "Byte"
 #define SS_YAML_KEY_NIBBLES "Nibbles"
 #define SS_YAML_KEY_BIT_OFFSET "Bit Offset"
@@ -2008,6 +2018,7 @@ void Disk2InterfaceCard::SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT
 void Disk2InterfaceCard::SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_DISK2UNIT, unit);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_DRIVE_CONNECTED, m_floppyDrive[unit].m_isConnected);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASE, m_floppyDrive[unit].m_phase);
 	yamlSaveHelper.SaveFloat(SS_YAML_KEY_PHASE_PRECISE, m_floppyDrive[unit].m_phasePrecise);	// v4
 	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_HEAD_WINDOW, m_floppyDrive[unit].m_headWindow);		// v4
@@ -2145,7 +2156,10 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv4(YamlLoadHelper& yamlLoadHelper,
 	m_floppyDrive[unit].m_writelight = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
 
 	if (version >= 6)
+	{
+		m_floppyDrive[unit].m_isConnected = yamlLoadHelper.LoadBool(SS_YAML_KEY_DRIVE_CONNECTED);
 		m_floppyDrive[unit].m_motorOnCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_MOTOR_ON_CYCLE);
+	}
 
 	yamlLoadHelper.PopMap();
 

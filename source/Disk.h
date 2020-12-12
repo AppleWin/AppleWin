@@ -98,6 +98,7 @@ public:
 
 	void clear()
 	{
+		m_isConnected = true;
 		m_phasePrecise = 0;
 		m_phase = 0;
 		m_lastStepperCycle = 0;
@@ -109,6 +110,7 @@ public:
 	}
 
 public:
+	bool m_isConnected;
 	float m_phasePrecise;	// Phase precise to half a phase (aka quarter track)
 	int m_phase;			// Integral phase number
 	unsigned __int64 m_lastStepperCycle;
@@ -248,7 +250,7 @@ private:
 
 	static const UINT SPINNING_CYCLES = 1000*1000;		// 1M cycles = ~1.000s
 	static const UINT WRITELIGHT_CYCLES = 1000*1000;	// 1M cycles = ~1.000s
-	static const UINT SPINUP_UNTIL_LATCH_STABLE_CYCLES = 150*1000;	// ~0.150s
+	static const UINT MOTOR_ON_UNTIL_LSS_STABLE_CYCLES = 0x2EC;	// ~0x2EC-0x990 cycles (depending on card). See GH#864
 
 	// Logic State Sequencer (for WOZ):
 	BYTE m_shiftReg;
