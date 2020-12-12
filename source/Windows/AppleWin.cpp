@@ -653,18 +653,22 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			MB_Reset();
 			LogFileOutput("Main: MB_Reset()\n");
 
-			CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
-			if (pMouseCard)
+			if (g_bRestart)
 			{
-				pMouseCard->Reset();		// Deassert any pending IRQs - GH#514
-				LogFileOutput("Main: CMouseInterface::Uninitialize()\n");
+				CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
+				if (pMouseCard)
+				{
+					// dtor removes event from g_SynchronousEventMgr - do before g_SynchronousEventMgr.Reset()
+					GetCardMgr().Remove( pMouseCard->GetSlot() );
+					LogFileOutput("Main: CMouseInterface::dtor\n");
+				}
+
+				_ASSERT(g_SynchronousEventMgr.GetHead() == NULL);
+				g_SynchronousEventMgr.Reset();
 			}
 
 			DSUninit();
 			LogFileOutput("Main: DSUninit()\n");
-
-			if (g_bRestart)
-				g_SynchronousEventMgr.Reset();
 
 			if (g_bHookSystemKey)
 			{
@@ -985,23 +989,23 @@ static void RepeatInitialization(void)
 		}
 		else
 		{
+			if (g_cmdLine.bestWidth && g_cmdLine.bestHeight)
+			{
+				DEVMODE devMode;
+				memset(&devMode, 0, sizeof(devMode));
+				devMode.dmSize = sizeof(devMode);
+				devMode.dmPelsWidth = g_cmdLine.bestWidth;
+				devMode.dmPelsHeight = g_cmdLine.bestHeight;
+				devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
+
+				DWORD dwFlags = 0;
+				LONG res = ChangeDisplaySettings(&devMode, dwFlags);
+				if (res == 0)
+					g_cmdLine.bChangedDisplayResolution = true;
+			}
+
 			if (g_cmdLine.bSetFullScreen)
 			{
-				if (g_cmdLine.bestWidth && g_cmdLine.bestHeight)
-				{
-					DEVMODE devMode;
-					memset(&devMode, 0, sizeof(devMode));
-					devMode.dmSize = sizeof(devMode);
-					devMode.dmPelsWidth = g_cmdLine.bestWidth;
-					devMode.dmPelsHeight = g_cmdLine.bestHeight;
-					devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
-
-					DWORD dwFlags = 0;
-					LONG res = ChangeDisplaySettings(&devMode, dwFlags);
-					if (res == 0)
-						g_cmdLine.bChangedDisplayResolution = true;
-				}
-
 				PostMessage(g_hFrameWindow, WM_USER_FULLSCREEN, 0, 0);
 				g_cmdLine.bSetFullScreen = false;
 			}

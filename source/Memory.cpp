@@ -1132,7 +1132,7 @@ static void UpdatePaging(BOOL initialize)
 	// SAVE THE CURRENT PAGING SHADOW TABLE
 	LPBYTE oldshadow[256];
 	if (!initialize)
-		CopyMemory(oldshadow,memshadow,256*sizeof(LPBYTE));
+		memcpy(oldshadow,memshadow,256*sizeof(LPBYTE));
 
 	// UPDATE THE PAGING TABLES BASED ON THE NEW PAGING SWITCH VALUES
 	UINT loop;
@@ -1245,10 +1245,10 @@ static void UpdatePaging(BOOL initialize)
 				((*(memdirty+loop) & 1) || (loop <= 1)))
 			{
 				*(memdirty+loop) &= ~1;
-				CopyMemory(oldshadow[loop],mem+(loop << 8),256);
+				memcpy(oldshadow[loop],mem+(loop << 8),256);
 			}
 
-			CopyMemory(mem+(loop << 8),memshadow[loop],256);
+			memcpy(mem+(loop << 8),memshadow[loop],256);
 		}
 	}
 }
@@ -1320,7 +1320,7 @@ static void BackMainImage(void)
 	for (UINT loop = 0; loop < 256; loop++)
 	{
 		if (memshadow[loop] && ((*(memdirty+loop) & 1) || (loop <= 1)))
-			CopyMemory(memshadow[loop], mem+(loop << 8), 256);
+			memcpy(memshadow[loop], mem+(loop << 8), 256);
 
 		*(memdirty+loop) &= ~1;
 	}
