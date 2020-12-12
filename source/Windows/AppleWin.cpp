@@ -653,18 +653,22 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			MB_Reset();
 			LogFileOutput("Main: MB_Reset()\n");
 
-			CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
-			if (pMouseCard)
+			if (g_bRestart)
 			{
-				pMouseCard->Reset();		// Deassert any pending IRQs - GH#514
-				LogFileOutput("Main: CMouseInterface::Uninitialize()\n");
+				CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
+				if (pMouseCard)
+				{
+					// dtor removes event from g_SynchronousEventMgr - do before g_SynchronousEventMgr.Reset()
+					GetCardMgr().Remove( pMouseCard->GetSlot() );
+					LogFileOutput("Main: CMouseInterface::dtor\n");
+				}
+
+				_ASSERT(g_SynchronousEventMgr.GetHead() == NULL);
+				g_SynchronousEventMgr.Reset();
 			}
 
 			DSUninit();
 			LogFileOutput("Main: DSUninit()\n");
-
-			if (g_bRestart)
-				g_SynchronousEventMgr.Reset();
 
 			if (g_bHookSystemKey)
 			{
