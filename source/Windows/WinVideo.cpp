@@ -151,7 +151,7 @@ void VideoBenchmark () {
   DWORD totaltextfps = 0;
 
   g_uVideoMode            = VF_TEXT;
-  FillMemory(mem+0x400,0x400,0x14);
+  memset(mem+0x400,0x14,0x400);
   VideoRedrawScreen();
   DWORD milliseconds = GetTickCount();
   while (GetTickCount() == milliseconds) ;
@@ -159,9 +159,9 @@ void VideoBenchmark () {
   DWORD cycle = 0;
   do {
     if (cycle & 1)
-      FillMemory(mem+0x400,0x400,0x14);
+      memset(mem+0x400,0x14,0x400);
     else
-      CopyMemory(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
+      memcpy(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
     VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
@@ -173,7 +173,7 @@ void VideoBenchmark () {
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   DWORD totalhiresfps = 0;
   g_uVideoMode             = VF_HIRES;
-  FillMemory(mem+0x2000,0x2000,0x14);
+  memset(mem+0x2000,0x14,0x2000);
   VideoRedrawScreen();
   milliseconds = GetTickCount();
   while (GetTickCount() == milliseconds) ;
@@ -181,9 +181,9 @@ void VideoBenchmark () {
   cycle = 0;
   do {
     if (cycle & 1)
-      FillMemory(mem+0x2000,0x2000,0x14);
+      memset(mem+0x2000,0x14,0x2000);
     else
-      CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
+      memcpy(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
     VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
@@ -257,7 +257,7 @@ void VideoBenchmark () {
   // WITH FULL EMULATION OF THE CPU, JOYSTICK, AND DISK HAPPENING AT
   // THE SAME TIME
   DWORD realisticfps = 0;
-  FillMemory(mem+0x2000,0x2000,0xAA);
+  memset(mem+0x2000,0xAA,0x2000);
   VideoRedrawScreen();
   milliseconds = GetTickCount();
   while (GetTickCount() == milliseconds) ;
@@ -274,9 +274,9 @@ void VideoBenchmark () {
 	  }
     }
     if (cycle & 1)
-      FillMemory(mem+0x2000,0x2000,0xAA);
+      memset(mem+0x2000,0xAA,0x2000);
     else
-      CopyMemory(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
+      memcpy(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
     VideoRedrawScreen();
     if (cycle++ >= 3)
       cycle = 0;

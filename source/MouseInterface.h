@@ -17,6 +17,7 @@ public:
 	void Initialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 //	void Uninitialize();
 	void Reset();
+	UINT GetSlot(void) { return m_uSlot; }
 	static BYTE __stdcall IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 

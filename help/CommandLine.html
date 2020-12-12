@@ -64,15 +64,18 @@
 		-load-state &lt;savestate&gt;<br>
 		Load a save-state file (and auto power-on the Apple II).<br>
 		NB. This takes precedent over the -d1, -d2, -s#d#, -h1, -h2, s0-7, -model and -r switches.<br><br>
-		-f<br>
-		Start in full-screen mode<br><br>
+		-f or -full-screen<br>
+		Start in full-screen mode.<br><br>
+		-no-full-screen<br>
+		Start in Windowed mode (default).<br><br>
 		-fs-height=&lt;best|nnnn&gt;<br>
-		Use to select a better resolution for full-screen mode.<br>
+		Use to select a better resolution for full-screen or Windowed mode.<br>
 		<ul>
 			<li>best: picks the highest resolution where the height is an integer multiple of (192*2)</li>
 			<li>nnnn: select a specific resolution with height=nnnn pixels</li>
 		</ul>
-		NB. This changes the display resolution (and restores on exit).<br><br>
+		NB. This changes the display resolution (and restores on exit).<br>
+		NB. Specify -no-full-screen after this switch for Windowed mode. Without this it'll just default to full-screen.<br><br>
 		-rom &lt;file&gt;<br>
 		Use custom 12K ROM (at $D000) for Apple II machine, or 16K ROM (at $C000) for Apple //e machine.<br><br>
 		-f8rom &lt;file&gt;<br>

@@ -554,7 +554,7 @@ DWORD CImageBase::NibblizeTrack(LPBYTE trackimagebuffer, SectorOrder_e SectorOrd
 		*(imageptr++) = 0xD5;
 		*(imageptr++) = 0xAA;
 		*(imageptr++) = 0xAD;
-		CopyMemory(imageptr, Code62(ms_SectorNumber[SectorOrder][sector]), 343);
+		memcpy(imageptr, Code62(ms_SectorNumber[SectorOrder][sector]), 343);
 		imageptr += 343;
 		*(imageptr++) = 0xDE;
 		*(imageptr++) = 0xAA;
@@ -575,9 +575,9 @@ DWORD CImageBase::NibblizeTrack(LPBYTE trackimagebuffer, SectorOrder_e SectorOrd
 void CImageBase::SkewTrack(const int nTrack, const int nNumNibbles, const LPBYTE pTrackImageBuffer)
 {
 	int nSkewBytes = (nTrack*768) % nNumNibbles;
-	CopyMemory(m_pWorkBuffer, pTrackImageBuffer, nNumNibbles);
-	CopyMemory(pTrackImageBuffer, m_pWorkBuffer+nSkewBytes, nNumNibbles-nSkewBytes);
-	CopyMemory(pTrackImageBuffer+nNumNibbles-nSkewBytes, m_pWorkBuffer, nSkewBytes);
+	memcpy(m_pWorkBuffer, pTrackImageBuffer, nNumNibbles);
+	memcpy(pTrackImageBuffer, m_pWorkBuffer+nSkewBytes, nNumNibbles-nSkewBytes);
+	memcpy(pTrackImageBuffer+nNumNibbles-nSkewBytes, m_pWorkBuffer, nSkewBytes);
 }
 
 //-------------------------------------
