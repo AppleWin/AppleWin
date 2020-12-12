@@ -40,6 +40,9 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
 {
   log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   log_cb(RETRO_LOG_INFO, "Plugging device %u into port %u.\n", device, port);
+
+  if (port < RETRO_DEVICES)
+    retro_devices[port] = device;
 }
 
 void retro_get_system_info(retro_system_info *info)
@@ -78,7 +81,7 @@ void retro_set_environment(retro_environment_t cb)
     log_cb = logging.log;
   else
     log_cb = fallback_log;
-
+  /*
   static const retro_controller_description controllers[] =
     {
      { "Apple Keyboard", RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_KEYBOARD, 0) },
@@ -90,7 +93,7 @@ void retro_set_environment(retro_environment_t cb)
      { NULL, 0 },
     };
 
-  cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
+    cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);*/
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb)
