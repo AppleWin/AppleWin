@@ -17,6 +17,10 @@ public:
 
   static void keyboardCallback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers);
 
- private:
+private:
   Speed mySpeed;  // fixed speed
+
+  static void processKeyDown(unsigned keycode, uint32_t character, uint16_t key_modifiers);
+  static void processKeyUp(unsigned keycode, uint32_t character, uint16_t key_modifiers);
+
 };

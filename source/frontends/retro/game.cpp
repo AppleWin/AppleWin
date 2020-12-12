@@ -26,6 +26,7 @@
 
 #include "linux/videobuffer.h"
 #include "linux/keyboard.h"
+#include "linux/paddle.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/configuration.h"
 #include "frontends/retro/environment.h"
@@ -145,88 +146,124 @@ void Game::keyboardCallback(bool down, unsigned keycode, uint32_t character, uin
 {
   if (down)
   {
-    BYTE ch = 0;
-    switch (keycode)
+    processKeyDown(keycode, character, key_modifiers);
+  }
+  else
+  {
+    processKeyUp(keycode, character, key_modifiers);
+  }
+}
+
+void Game::processKeyDown(unsigned keycode, uint32_t character, uint16_t key_modifiers)
+{
+  BYTE ch = 0;
+  switch (keycode)
+  {
+  case RETROK_RETURN:
     {
-    case RETROK_RETURN:
+      ch = 0x0d;
+      break;
+    }
+  case RETROK_BACKSPACE: // same as AppleWin
+  case RETROK_LEFT:
+    {
+      ch = 0x08;
+      break;
+    }
+  case RETROK_RIGHT:
+    {
+      ch = 0x15;
+      break;
+    }
+  case RETROK_UP:
+    {
+      ch = 0x0b;
+      break;
+    }
+  case RETROK_DOWN:
+    {
+      ch = 0x0a;
+      break;
+    }
+  case RETROK_DELETE:
+    {
+      ch = 0x7f;
+      break;
+    }
+  case RETROK_ESCAPE:
+    {
+      ch = 0x1b;
+      break;
+    }
+  case RETROK_TAB:
+    {
+      ch = 0x09;
+      break;
+    }
+  case RETROK_LALT:
+    {
+      Paddle::setButtonPressed(Paddle::ourOpenApple);
+      break;
+    }
+  case RETROK_RALT:
+    {
+      Paddle::setButtonPressed(Paddle::ourSolidApple);
+      break;
+    }
+  case RETROK_a ... RETROK_z:
+    {
+      ch = (keycode - RETROK_a) + 0x01;
+      if (key_modifiers & RETROKMOD_CTRL)
       {
-	ch = 0x0d;
-	break;
+	// ok
       }
-    case RETROK_BACKSPACE: // same as AppleWin
-    case RETROK_LEFT:
+      else if (key_modifiers & RETROKMOD_SHIFT)
       {
-	ch = 0x08;
-	break;
+	ch += 0x60;
       }
-    case RETROK_RIGHT:
+      else
       {
-	ch = 0x15;
-	break;
+	ch += 0x40;
       }
-    case RETROK_UP:
+      break;
+    }
+  }
+
+  if (!ch)
+  {
+    switch (character) {
+    case 0x20 ... 0x40:
+    case 0x5b ... 0x60:
+    case 0x7b ... 0x7e:
       {
-	ch = 0x0b;
-	break;
-      }
-    case RETROK_DOWN:
-      {
-	ch = 0x0a;
-	break;
-      }
-    case RETROK_DELETE:
-      {
-	ch = 0x7f;
-	break;
-      }
-    case RETROK_ESCAPE:
-      {
-	ch = 0x1b;
-	break;
-      }
-    case RETROK_TAB:
-      {
-	ch = 0x09;
-	break;
-      }
-    case RETROK_a ... RETROK_z:
-      {
-	ch = (keycode - RETROK_a) + 0x01;
-	if (key_modifiers & RETROKMOD_CTRL)
-	{
-	  // ok
-	}
-	else if (key_modifiers & RETROKMOD_SHIFT)
-	{
-	  ch += 0x60;
-	}
-	else
-	{
-	  ch += 0x40;
-	}
+	// not the letters
+	// this is very simple, but one cannot handle CRTL-key combination.
+	ch = character;
 	break;
       }
     }
+  }
 
-    if (!ch)
+  if (ch)
+  {
+    addKeyToBuffer(ch);
+    log_cb(RETRO_LOG_INFO, "RA2: %s - %02x\n", __FUNCTION__, ch);
+  }
+}
+
+void Game::processKeyUp(unsigned keycode, uint32_t character, uint16_t key_modifiers)
+{
+  switch (keycode)
+  {
+  case RETROK_LALT:
     {
-      switch (character) {
-      case 0x20 ... 0x40:
-      case 0x5b ... 0x60:
-      case 0x7b ... 0x7e:
-	{
-	  // not the letters
-	  // this is very simple, but one cannot handle CRTL-key combination.
-	  ch = character;
-	  break;
-	}
-      }
+      Paddle::setButtonReleased(Paddle::ourOpenApple);
+      break;
     }
-
-    if (ch)
+  case RETROK_RALT:
     {
-      addKeyToBuffer(ch);
-      log_cb(RETRO_LOG_INFO, "RA2: %s - %02x\n", __FUNCTION__, ch);
+      Paddle::setButtonReleased(Paddle::ourSolidApple);
+      break;
     }
   }
 }
