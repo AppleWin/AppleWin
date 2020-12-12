@@ -31,7 +31,7 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
   // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   g_uVideoMode             = VF_HIRES;
-  FillMemory(mem+0x2000,0x2000,0x14);
+  memset(mem+0x2000,0x14,0x2000);
   redraw();
 
   typedef std::chrono::microseconds interval_t;
@@ -43,9 +43,9 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
   auto start = std::chrono::steady_clock::now();
   do {
     if (totalhiresfps & 1)
-      FillMemory(mem+0x2000,0x2000,0x14);
+      memset(mem+0x2000,0x14,0x2000);
     else
-      CopyMemory(mem+0x2000,mem+((totalhiresfps & 2) ? 0x4000 : 0x6000),0x2000);
+      memcpy(mem+0x2000,mem+((totalhiresfps & 2) ? 0x4000 : 0x6000),0x2000);
     refresh();
     totalhiresfps++;
 
@@ -123,7 +123,7 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
   // WITH FULL EMULATION OF THE CPU, JOYSTICK, AND DISK HAPPENING AT
   // THE SAME TIME
   counter_t realisticfps = 0;
-  FillMemory(mem+0x2000,0x2000,0xAA);
+  memset(mem+0x2000,0xAA,0x2000);
   redraw();
 
   const size_t dwClksPerFrame = NTSC_GetCyclesPerFrame();
@@ -145,9 +145,9 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
     {
       cyclesThisFrame -= dwClksPerFrame;
       if (realisticfps & 1)
-	FillMemory(mem+0x2000,0x2000,0xAA);
+	memset(mem+0x2000,0xAA,0x2000);
       else
-	CopyMemory(mem+0x2000,mem+((realisticfps & 2) ? 0x4000 : 0x6000),0x2000);
+	memcpy(mem+0x2000,mem+((realisticfps & 2) ? 0x4000 : 0x6000),0x2000);
       realisticfps++;
       refresh();
     }

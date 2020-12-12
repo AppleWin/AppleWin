@@ -2,7 +2,6 @@
 
 #include "linux/windows/wincompat.h"
 #include "linux/windows/guiddef.h"
-#include "linux/windows/memory.h"
 #include "linux/windows/handles.h"
 #include "linux/windows/bitmap.h"
 #include "linux/windows/files.h"
