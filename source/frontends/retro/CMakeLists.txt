@@ -4,6 +4,9 @@ add_library(ra2 SHARED
   libretro.cpp
   bitmaps.cpp
   rdirectsound.cpp
+  interface.cpp
+  events.cpp
+  game.cpp
   )
 
 target_include_directories(ra2 PRIVATE

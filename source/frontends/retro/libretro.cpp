@@ -1,154 +1,18 @@
 #include "libretro.h"
-#include <string>
+#include <memory>
+#include <cstring>
 
 #include "StdAfx.h"
 #include "Frame.h"
-#include "Video.h"
 
-#include "Common.h"
-#include "CardManager.h"
-#include "Core.h"
-#include "Disk.h"
-#include "Mockingboard.h"
-#include "SoundCore.h"
-#include "Harddisk.h"
-#include "Speaker.h"
-#include "Log.h"
-#include "CPU.h"
-#include "Memory.h"
-#include "LanguageCard.h"
-#include "MouseInterface.h"
-#include "ParallelPrinter.h"
-#include "NTSC.h"
-#include "SaveState.h"
-#include "RGBMonitor.h"
-#include "Riff.h"
-#include "Utilities.h"
+#include "linux/version.h"
 
-#include <linux/version.h>
-#include <linux/videobuffer.h>
-
-#include "frontends/common2/programoptions.h"
-#include "frontends/common2/configuration.h"
-#include "frontends/common2/speed.h"
+#include "frontends/retro/game.h"
 #include "frontends/retro/environment.h"
 
 namespace
 {
-  std::string retro_base_directory;
-
-  retro_video_refresh_t video_cb;
-  retro_audio_sample_t audio_cb;
-  retro_audio_sample_batch_t audio_batch_cb;
-  retro_input_poll_t input_poll_cb;
-  retro_input_state_t input_state_cb;
-
-  retro_environment_t environ_cb;
-
-  Speed speed(true);  // fixed speed
-
-  void initialiseEmulator()
-  {
-#ifdef RIFF_SPKR
-    RiffInitWriteFile("/tmp/Spkr.wav", SPKR_SAMPLE_RATE, 1);
-#endif
-#ifdef RIFF_MB
-    RiffInitWriteFile("/tmp/Mockingboard.wav", 44100, 2);
-#endif
-
-    g_nAppMode = MODE_RUNNING;
-    LogFileOutput("Initialisation\n");
-
-    g_bFullSpeed = false;
-
-    LoadConfiguration();
-    SetCurrentCLK6502();
-    GetAppleWindowTitle();
-
-    DSInit();
-    MB_Initialize();
-    SpkrInitialize();
-
-    MemInitialize();
-    VideoBufferInitialize();
-    VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
-
-    GetCardMgr().GetDisk2CardMgr().Reset();
-    HD_Reset();
-    Snapshot_Startup();
-  }
-
-  void uninitialiseEmulator()
-  {
-    Snapshot_Shutdown();
-    CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
-    if (pMouseCard)
-    {
-      pMouseCard->Reset();
-    }
-    VideoBufferDestroy();
-    MemDestroy();
-
-    SpkrDestroy();
-    MB_Destroy();
-    DSUninit();
-
-    HD_Destroy();
-    PrintDestroy();
-    CpuDestroy();
-
-    GetCardMgr().GetDisk2CardMgr().Destroy();
-    LogDone();
-    RiffFinishWriteFile();
-  }
-
-  void runOneFrame()
-  {
-    if (g_nAppMode == MODE_RUNNING)
-    {
-      const size_t cyclesToExecute = speed.getCyclesTillNext(16);
-
-      const bool bVideoUpdate = true;
-      const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-
-      const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
-
-      g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
-      GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
-      MB_PeriodicUpdate(executedCycles);
-      SpkrUpdate(executedCycles);
-    }
-  }
-
-  void processInputEvents()
-  {
-    input_poll_cb();
-
-    const int16_t is_down = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, RETROK_a);
-    if (is_down)
-    {
-      log_cb(RETRO_LOG_INFO, "RA2: %s. A is down\n", __FUNCTION__);
-    }
-  }
-
-}
-
-int MessageBox(HWND, const char * text, const char * caption, UINT type)
-{
-  log_cb(RETRO_LOG_INFO, "RA2: %s: %s - %s\n", __FUNCTION__, caption, text);
-  return IDOK;
-}
-
-void FrameDrawDiskLEDS(HDC x)
-{
-}
-
-void FrameDrawDiskStatus(HDC x)
-{
-}
-
-void FrameRefreshStatus(int x, bool)
-{
+  std::unique_ptr<Game> game;
 }
 
 void retro_init(void)
@@ -159,25 +23,11 @@ void retro_init(void)
   {
     retro_base_directory = dir;
   }
-
-  EmulatorOptions options;
-  options.memclear = g_nMemoryClearType;
-  options.log = true;
-  options.useQtIni = true;
-
-  if (options.log)
-  {
-    LogInit();
-  }
-
-  InitializeRegistry(options);
-  initialiseEmulator();
 }
 
 void retro_deinit(void)
 {
   log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  uninitialiseEmulator();
 }
 
 unsigned retro_api_version(void)
@@ -275,26 +125,14 @@ void retro_set_video_refresh(retro_video_refresh_t cb)
 
 void retro_run(void)
 {
-  input_poll_cb();
-  processInputEvents();
-  runOneFrame();
-  const size_t pitch = GetFrameBufferWidth() * 4;
-  video_cb(g_pFramebufferbits, GetFrameBufferWidth(), GetFrameBufferHeight(), pitch);
+  game->processInputEvents();
+  game->executeOneFrame();
+  game->drawVideoBuffer();
 }
 
 bool retro_load_game(const retro_game_info *info)
 {
   log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  retro_input_descriptor desc[] =
-    {
-     { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "Left" },
-     { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "Up" },
-     { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,  "Down" },
-     { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "Right" },
-     { 0 },
-    };
-
-  environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
 
   enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
   if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
@@ -303,14 +141,30 @@ bool retro_load_game(const retro_game_info *info)
     return false;
   }
 
-  const bool ok = DoDiskInsert(SLOT6, DRIVE_1, info->path);
-  log_cb(RETRO_LOG_INFO, "Game path: %s:%d\n", info->path, ok);
+  try
+  {
+    game.reset(new Game);
+    const bool ok = game->loadGame(info->path);
 
-  return true;
+    log_cb(RETRO_LOG_INFO, "Game path: %s:%d\n", info->path, ok);
+
+    return ok;
+  }
+  catch (const std::exception & e)
+  {
+    log_cb(RETRO_LOG_INFO, "Exception: %s\n", e.what());
+  }
+  catch (const std::string & s)
+  {
+    log_cb(RETRO_LOG_INFO, "Exception: %s\n", s.c_str());
+  }
+
+  return false;
 }
 
 void retro_unload_game(void)
 {
+  game.reset();
   log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 }
 

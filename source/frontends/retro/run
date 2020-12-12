@@ -1,0 +1,1 @@
+retroarch -L source/frontends/retro/libra2.so ../Disks/NoSlotClockTest.dsk
