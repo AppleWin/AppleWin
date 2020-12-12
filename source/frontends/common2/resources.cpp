@@ -27,6 +27,8 @@ namespace
 
   std::string getResourcePathImpl()
   {
+    std::vector<std::string> paths;
+
     char self[1024] = {0};
     const int ch = readlink("/proc/self/exe", self,  sizeof(self));
     if (ch != -1)
@@ -34,21 +36,24 @@ namespace
       const char * path = dirname(self);
 
       // case 1: run from the build folder
-      const std::string path1 = std::string(path) + '/'+ ROOT_PATH + "/resource/";
-      if (dirExists(path1))
-      {
-	return path1;
-      }
-
+      paths.emplace_back(std::string(path) + '/'+ ROOT_PATH);
       // case 2: run from the installation folder
-      const std::string path2 = std::string(path) + '/'+ SHARE_PATH + "/resource/";
-      if (dirExists(path2))
+      paths.emplace_back(std::string(path) + '/'+ SHARE_PATH);
+    }
+
+    // case 3: use the source folder
+    paths.emplace_back(CMAKE_SOURCE_DIR);
+
+    for (const std::string & path : paths)
+    {
+      const std::string resourcePath = path + "/resource/";
+      if (dirExists(resourcePath))
       {
-	return path2;
+	return resourcePath;
       }
     }
-    // else?
-    return std::string();
+
+    throw std::runtime_error("Cannot found the resource path");
   }
 
 }
