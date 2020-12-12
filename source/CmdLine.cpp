@@ -134,6 +134,14 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpNextArg = GetNextArg(lpNextArg);
 			g_cmdLine.szImageName_drive[SLOT6][DRIVE_2] = lpCmdLine;
 		}
+		else if (strcmp(lpCmdLine, "-d1-disconnected") == 0)
+		{
+			g_cmdLine.driveConnected[SLOT6][DRIVE_1] = false;
+		}
+		else if (strcmp(lpCmdLine, "-d2-disconnected") == 0)
+		{
+			g_cmdLine.driveConnected[SLOT6][DRIVE_2] = false;
+		}
 		else if (strcmp(lpCmdLine, "-h1") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);

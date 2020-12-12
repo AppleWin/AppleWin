@@ -355,6 +355,16 @@ void Disk2InterfaceCard::EjectDisk(const int drive)
 	Video_ResetScreenshotCounter("");
 }
 
+void Disk2InterfaceCard::UnplugDrive(const int drive)
+{
+	if (!IsDriveValid(drive))
+		return;
+
+	EjectDisk(drive);
+
+	m_floppyDrive[drive].m_isConnected = false;
+}
+
 //===========================================================================
 
 void Disk2InterfaceCard::WriteTrack(const int drive)
@@ -1552,6 +1562,12 @@ void Disk2InterfaceCard::ResetSwitches(void)
 
 bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilename/*=""*/)
 {
+	if (!IsDriveConnected(drive))
+	{
+		MessageBox(g_hFrameWindow, "Drive not connected!", "Insert disk", MB_ICONEXCLAMATION|MB_SETFOREGROUND|MB_OK);
+		return false;
+	}
+
 	TCHAR directory[MAX_PATH];
 	TCHAR filename[MAX_PATH];
 	TCHAR title[40];

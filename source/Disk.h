@@ -144,6 +144,7 @@ public:
 
 	ImageError_e InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);
 	void EjectDisk(const int drive);
+	void UnplugDrive(const int drive);
 
 	bool IsConditionForFullSpeed(void);
 	void NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error);
