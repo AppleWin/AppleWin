@@ -98,9 +98,11 @@ public:
 
 	void clear()
 	{
+		m_isConnected = true;
 		m_phasePrecise = 0;
 		m_phase = 0;
 		m_lastStepperCycle = 0;
+		m_motorOnCycle = 0;
 		m_headWindow = 0;
 		m_spinning = 0;
 		m_writelight = 0;
@@ -108,9 +110,11 @@ public:
 	}
 
 public:
+	bool m_isConnected;
 	float m_phasePrecise;	// Phase precise to half a phase (aka quarter track)
 	int m_phase;			// Integral phase number
 	unsigned __int64 m_lastStepperCycle;
+	unsigned __int64 m_motorOnCycle;
 	BYTE m_headWindow;
 	DWORD m_spinning;
 	DWORD m_writelight;
@@ -159,6 +163,7 @@ public:
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
 	void UpdateDriveState(DWORD cycles);
 	bool DriveSwap(void);
+	bool IsDriveConnected(int drive) { return m_floppyDrive[drive].m_isConnected; }
 
 	static std::string GetSnapshotCardName(void);
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
@@ -178,7 +183,7 @@ public:
 
 private:
 	void ResetSwitches(void);
-	void CheckSpinning(const ULONG uExecutedCycles);
+	void CheckSpinning(const bool stateChanged, const ULONG uExecutedCycles);
 	Disk_Status_e GetDriveLightStatus(const int drive);
 	bool IsDriveValid(const int drive);
 	void EjectDiskInternal(const int drive);
@@ -199,6 +204,7 @@ private:
 	void DumpTrackWOZ(FloppyDisk floppy);
 	bool GetFirmware(LPCSTR lpName, BYTE* pDst);
 	void InitFirmware(LPBYTE pCxRomPeripheral);
+	void UpdateLatchForEmptyDrive(FloppyDrive* pDrive);
 
 	void SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	void SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
@@ -245,6 +251,7 @@ private:
 
 	static const UINT SPINNING_CYCLES = 1000*1000;		// 1M cycles = ~1.000s
 	static const UINT WRITELIGHT_CYCLES = 1000*1000;	// 1M cycles = ~1.000s
+	static const UINT MOTOR_ON_UNTIL_LSS_STABLE_CYCLES = 0x2EC;	// ~0x2EC-0x990 cycles (depending on card). See GH#864
 
 	// Logic State Sequencer (for WOZ):
 	BYTE m_shiftReg;
