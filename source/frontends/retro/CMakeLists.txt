@@ -11,7 +11,6 @@ if (IS_DIRECTORY ${LIBRETRO_PATH})
     bitmaps.cpp
     rdirectsound.cpp
     interface.cpp
-    events.cpp
     game.cpp
     )
 
