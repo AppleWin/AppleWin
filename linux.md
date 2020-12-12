@@ -6,6 +6,7 @@
   * [applen](#applen)
   * [qapple](#qapple)
   * [sa2](#sa2)
+  * [libretro](#ra2)
 * [Build](#build)
   * [Checkout](#checkout)
   * [Fedora](#fedora)
@@ -87,6 +88,16 @@ This is based on Qt, currently tested with 5.10
 ### sa2
 
 See [sa2](source/frontends/sa2/README.md).
+
+### ra2
+
+There is an initial [libretro](https://docs.libretro.com/development/cores/developing-cores/) core, with minimal keyboard support and upside down video.
+
+Must be manually configured:
+``cmake -DLIBRETRO_PATH=/path/to/libretro-common``
+
+Easiest way to run from the ``build`` folder:
+``retroarch -L source/frontends/retro/libra2.so ../Disks/NoSlotClockTest.dsk``
 
 ## Build
 
