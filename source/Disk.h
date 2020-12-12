@@ -163,6 +163,7 @@ public:
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
 	void UpdateDriveState(DWORD cycles);
 	bool DriveSwap(void);
+	bool IsDriveConnected(int drive) { return m_floppyDrive[drive].m_isConnected; }
 
 	static std::string GetSnapshotCardName(void);
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);

@@ -78,7 +78,6 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	m_uWriteLastCycle = 0;
 	m_uSyncFFCount = 0;
 #endif
-//	m_floppyDrive[0].m_isConnected = false;
 }
 
 Disk2InterfaceCard::~Disk2InterfaceCard(void)
@@ -216,7 +215,7 @@ void Disk2InterfaceCard::CheckSpinning(const bool stateChanged, const ULONG uExe
 {
 	bool modeChanged = m_floppyMotorOn && !m_floppyDrive[m_currDrive].m_spinning;
 
-	if (m_floppyMotorOn)
+	if (m_floppyMotorOn && IsDriveConnected(m_currDrive))
 		m_floppyDrive[m_currDrive].m_spinning = SPINNING_CYCLES;
 
 	if (modeChanged)
