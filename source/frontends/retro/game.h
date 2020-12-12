@@ -2,8 +2,6 @@
 
 #include "frontends/common2/speed.h"
 
-#include <unordered_map>
-
 class Game
 {
 public:
@@ -17,11 +15,8 @@ public:
 
   void drawVideoBuffer();
 
+  static void keyboardCallback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers);
+
  private:
-  const std::unordered_map<unsigned, BYTE> myKeymap;
-
   Speed mySpeed;  // fixed speed
-  std::unordered_map<unsigned, bool> myKeystate;
-
-  void processKeyboardEvents();
 };

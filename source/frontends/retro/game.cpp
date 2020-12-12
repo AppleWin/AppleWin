@@ -109,38 +109,13 @@ namespace
     }
   }
 
-  std::unordered_map<unsigned, BYTE> getKeymap()
-  {
-    std::unordered_map<unsigned, BYTE> km;
-    for (unsigned key = RETROK_a; key <= RETROK_z; ++key)
-    {
-      km[key] = 0x41 + (key - RETROK_a);
-    }
-    for (unsigned key = RETROK_0; key <= RETROK_9; ++key)
-    {
-      km[key] = 0x30 + (key - RETROK_0);
-    }
-    km[RETROK_SPACE] = 0x20;
-    km[RETROK_RETURN] = 0x0d;
-    km[RETROK_UP] = 0x0b;
-    km[RETROK_DOWN] = 0x0a;
-    km[RETROK_LEFT] = 0x08;
-    km[RETROK_UP] = 0x15;
-    km[RETROK_DELETE] = 0x7f;
-    km[RETROK_BACKSPACE] = 0x08;
-    km[RETROK_ESCAPE] = 0x1b;
-
-    return km;
-  }
-
 }
 
-Game::Game() : myKeymap(getKeymap()), mySpeed(true)
+Game::Game() : mySpeed(true)
 {
   EmulatorOptions options;
   options.memclear = g_nMemoryClearType;
   options.log = true;
-  options.useQtIni = true;
 
   if (options.log)
   {
@@ -164,34 +139,96 @@ void Game::executeOneFrame()
 void Game::processInputEvents()
 {
   input_poll_cb();
-  processKeyboardEvents();
 }
 
-void Game::processKeyboardEvents()
+void Game::keyboardCallback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers)
 {
-  std::vector<unsigned> newKeys;
-
-  for (auto it : myKeymap)
+  if (down)
   {
-    const unsigned key = it.first;
-    const int16_t isDown = input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, key);
-
-    // pressed now, not pressed before
-    if (isDown && !myKeystate[key])
+    BYTE ch = 0;
+    switch (keycode)
     {
-      // add
-      newKeys.push_back(it.second);
+    case RETROK_RETURN:
+      {
+	ch = 0x0d;
+	break;
+      }
+    case RETROK_BACKSPACE: // same as AppleWin
+    case RETROK_LEFT:
+      {
+	ch = 0x08;
+	break;
+      }
+    case RETROK_RIGHT:
+      {
+	ch = 0x15;
+	break;
+      }
+    case RETROK_UP:
+      {
+	ch = 0x0b;
+	break;
+      }
+    case RETROK_DOWN:
+      {
+	ch = 0x0a;
+	break;
+      }
+    case RETROK_DELETE:
+      {
+	ch = 0x7f;
+	break;
+      }
+    case RETROK_ESCAPE:
+      {
+	ch = 0x1b;
+	break;
+      }
+    case RETROK_TAB:
+      {
+	ch = 0x09;
+	break;
+      }
+    case RETROK_a ... RETROK_z:
+      {
+	ch = (keycode - RETROK_a) + 0x01;
+	if (key_modifiers & RETROKMOD_CTRL)
+	{
+	  // ok
+	}
+	else if (key_modifiers & RETROKMOD_SHIFT)
+	{
+	  ch += 0x60;
+	}
+	else
+	{
+	  ch += 0x40;
+	}
+	break;
+      }
     }
 
-    myKeystate[key] = isDown != 0;
-  }
+    if (!ch)
+    {
+      switch (character) {
+      case 0x20 ... 0x40:
+      case 0x5b ... 0x60:
+      case 0x7b ... 0x7e:
+	{
+	  // not the letters
+	  // this is very simple, but one cannot handle CRTL-key combination.
+	  ch = character;
+	  break;
+	}
+      }
+    }
 
-  // pass to AppleWin. in which order?
-  for (unsigned key : newKeys)
-  {
-    addKeyToBuffer(key);
+    if (ch)
+    {
+      addKeyToBuffer(ch);
+      log_cb(RETRO_LOG_INFO, "RA2: %s - %02x\n", __FUNCTION__, ch);
+    }
   }
-
 }
 
 void Game::drawVideoBuffer()

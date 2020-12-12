@@ -94,6 +94,8 @@ void retro_set_environment(retro_environment_t cb)
     };
 
     cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);*/
+  retro_keyboard_callback callback = {&Game::keyboardCallback};
+  cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &callback);
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb)
