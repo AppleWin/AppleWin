@@ -112,7 +112,10 @@ namespace
 
 }
 
-Game::Game() : mySpeed(true)
+Game::Game()
+  : mySpeed(true)
+  , myWidth(GetFrameBufferWidth())
+  , myHeight(GetFrameBufferHeight())
 {
   EmulatorOptions options;
   options.memclear = g_nMemoryClearType;
@@ -125,6 +128,9 @@ Game::Game() : mySpeed(true)
 
   InitializeRegistry(options);
   initialiseEmulator();
+
+  const size_t size = myWidth * myHeight * sizeof(bgra_t);
+  myVideoBuffer.resize(size);
 }
 
 Game::~Game()
@@ -270,8 +276,18 @@ void Game::processKeyUp(unsigned keycode, uint32_t character, uint16_t key_modif
 
 void Game::drawVideoBuffer()
 {
-  const size_t pitch = GetFrameBufferWidth() * 4;
-  video_cb(g_pFramebufferbits, GetFrameBufferWidth(), GetFrameBufferHeight(), pitch);
+  const size_t pitch = myWidth * sizeof(bgra_t);
+  // this should not be necessary
+  // either libretro handles it
+  // or we should change AW
+  // but for now, there is no alternative
+  for (size_t row = 0; row < myHeight; ++row)
+  {
+    const uint8_t * src = g_pFramebufferbits + row * pitch;
+    uint8_t * dst = myVideoBuffer.data() + (myHeight - row - 1) * pitch;
+    memcpy(dst, src, pitch);
+  }
+  video_cb(myVideoBuffer.data(), myWidth, myHeight, pitch);
 }
 
 bool Game::loadGame(const char * path)

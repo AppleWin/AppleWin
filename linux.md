@@ -91,7 +91,11 @@ See [sa2](source/frontends/sa2/README.md).
 
 ### ra2
 
-There is an initial [libretro](https://docs.libretro.com/development/cores/developing-cores/) core, with minimal keyboard support and upside down video.
+There is an initial [libretro](https://docs.libretro.com/development/cores/developing-cores/) core.
+
+Keyboard works, but a lot of keys overlap with RetroArch shortcuts.
+
+Video works, but the vertical flip is done in software.
 
 Must be manually configured:
 ``cmake -DLIBRETRO_PATH=/path/to/libretro-common``
