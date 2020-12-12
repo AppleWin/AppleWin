@@ -989,23 +989,23 @@ static void RepeatInitialization(void)
 		}
 		else
 		{
+			if (g_cmdLine.bestWidth && g_cmdLine.bestHeight)
+			{
+				DEVMODE devMode;
+				memset(&devMode, 0, sizeof(devMode));
+				devMode.dmSize = sizeof(devMode);
+				devMode.dmPelsWidth = g_cmdLine.bestWidth;
+				devMode.dmPelsHeight = g_cmdLine.bestHeight;
+				devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
+
+				DWORD dwFlags = 0;
+				LONG res = ChangeDisplaySettings(&devMode, dwFlags);
+				if (res == 0)
+					g_cmdLine.bChangedDisplayResolution = true;
+			}
+
 			if (g_cmdLine.bSetFullScreen)
 			{
-				if (g_cmdLine.bestWidth && g_cmdLine.bestHeight)
-				{
-					DEVMODE devMode;
-					memset(&devMode, 0, sizeof(devMode));
-					devMode.dmSize = sizeof(devMode);
-					devMode.dmPelsWidth = g_cmdLine.bestWidth;
-					devMode.dmPelsHeight = g_cmdLine.bestHeight;
-					devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
-
-					DWORD dwFlags = 0;
-					LONG res = ChangeDisplaySettings(&devMode, dwFlags);
-					if (res == 0)
-						g_cmdLine.bChangedDisplayResolution = true;
-				}
-
 				PostMessage(g_hFrameWindow, WM_USER_FULLSCREEN, 0, 0);
 				g_cmdLine.bSetFullScreen = false;
 			}
