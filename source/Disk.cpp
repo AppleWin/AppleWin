@@ -211,20 +211,26 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 //===========================================================================
 
 // Called by ControlMotor() & Enable()
-void Disk2InterfaceCard::CheckSpinning(const ULONG uExecutedCycles)
+void Disk2InterfaceCard::CheckSpinning(const bool stateChanged, const ULONG uExecutedCycles)
 {
-	DWORD modechange = (m_floppyMotorOn && !m_floppyDrive[m_currDrive].m_spinning);
+	bool modeChanged = m_floppyMotorOn && !m_floppyDrive[m_currDrive].m_spinning;
 
-	if (m_floppyMotorOn)
+	if (m_floppyMotorOn && IsDriveConnected(m_currDrive))
 		m_floppyDrive[m_currDrive].m_spinning = SPINNING_CYCLES;
 
-	if (modechange)
+	if (modeChanged)
 		FrameDrawDiskLEDS( (HDC)0 );
 
-	if (modechange)
+	if (modeChanged)
 	{
 		// Set m_diskLastCycle when motor changes: not spinning (ie. off for 1 sec) -> on
 		m_diskLastCycle = g_nCumulativeCycles;
+	}
+
+	if (m_floppyMotorOn && stateChanged)
+	{
+		// Set m_motorOnCycle when: motor changes to on, or the other drive is enabled (and motor is on)
+		m_floppyDrive[m_currDrive].m_motorOnCycle = g_nCumulativeCycles;
 	}
 }
 
@@ -349,6 +355,16 @@ void Disk2InterfaceCard::EjectDisk(const int drive)
 	Video_ResetScreenshotCounter("");
 }
 
+void Disk2InterfaceCard::UnplugDrive(const int drive)
+{
+	if (!IsDriveValid(drive))
+		return;
+
+	EjectDisk(drive);
+
+	m_floppyDrive[drive].m_isConnected = false;
+}
+
 //===========================================================================
 
 void Disk2InterfaceCard::WriteTrack(const int drive)
@@ -403,17 +419,20 @@ void Disk2InterfaceCard::Boot(void)
 void __stdcall Disk2InterfaceCard::ControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	BOOL newState = address & 1;
+	bool stateChanged = (newState != m_floppyMotorOn);
 
-	if (newState != m_floppyMotorOn)	// motor changed state
+	if (stateChanged)
+	{
+		m_floppyMotorOn = newState;
 		m_formatTrack.DriveNotWritingTrack();
+	}
 
-	m_floppyMotorOn = newState;
 	// NB. Motor off doesn't reset the Command Decoder like reset. (UTAIIe figures 9.7 & 9.8 chip C2)
 	// - so it doesn't reset this state: m_seqFunc, m_magnetStates
 #if LOG_DISK_MOTOR
 	LOG_DISK("%08X: motor %s\r\n", (UINT32)g_nCumulativeCycles, (m_floppyMotorOn) ? "on" : "off");
 #endif
-	CheckSpinning(uExecutedCycles);
+	CheckSpinning(stateChanged, uExecutedCycles);
 }
 
 //===========================================================================
@@ -527,13 +546,16 @@ void Disk2InterfaceCard::Destroy(void)
 
 void __stdcall Disk2InterfaceCard::Enable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
-	m_currDrive = address & 1;
+	WORD newDrive = address & 1;
+	bool stateChanged = (newDrive != m_currDrive);
+
+	m_currDrive = newDrive;
 #if LOG_DISK_ENABLE_DRIVE
 	LOG_DISK("%08X: enable drive: %d\r\n", (UINT32)g_nCumulativeCycles, m_currDrive);
 #endif
 	m_floppyDrive[!m_currDrive].m_spinning   = 0;
 	m_floppyDrive[!m_currDrive].m_writelight = 0;
-	CheckSpinning(uExecutedCycles);
+	CheckSpinning(stateChanged, uExecutedCycles);
 }
 
 //===========================================================================
@@ -887,6 +909,22 @@ bool Disk2InterfaceCard::LogWriteCheckSyncFF(ULONG& uCycleDelta)
 
 //===========================================================================
 
+void Disk2InterfaceCard::UpdateLatchForEmptyDrive(FloppyDrive* pDrive)
+{
+	if (!pDrive->m_isConnected)
+	{
+		m_floppyLatch = 0x80;	// GH#864
+		return;
+	}
+
+	// Drive connected
+
+	if ((g_nCumulativeCycles - pDrive->m_motorOnCycle) < MOTOR_ON_UNTIL_LSS_STABLE_CYCLES)
+		m_floppyLatch = 0x80;	// GH#864
+	else
+		m_floppyLatch = rand() & 0xFF;	// GH#748
+}
+
 void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
 	FloppyDrive* pDrive = &m_floppyDrive[m_currDrive];
@@ -896,10 +934,7 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 		ReadTrack(m_currDrive, uExecutedCycles);
 
 	if (!pFloppy->m_trackimagedata)
-	{
-		m_floppyLatch = rand() & 0xFF;	// GH#748
-		return;
-	}
+		return UpdateLatchForEmptyDrive(pDrive);
 
 	// Improve precision of "authentic" drive mode - GH#125
 	UINT uSpinNibbleCount = 0;
@@ -1098,8 +1133,7 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	if (!floppy.m_trackimagedata)
 	{
 		_ASSERT(0);		// Can't happen for WOZ - ReadTrack() should return an empty track
-		m_floppyLatch = rand() & 0xFF;	// GH#748
-		return;
+		return UpdateLatchForEmptyDrive(&drive);
 	}
 
 	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
@@ -1528,6 +1562,12 @@ void Disk2InterfaceCard::ResetSwitches(void)
 
 bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilename/*=""*/)
 {
+	if (!IsDriveConnected(drive))
+	{
+		MessageBox(g_hFrameWindow, "Drive not connected!", "Insert disk", MB_ICONEXCLAMATION|MB_SETFOREGROUND|MB_OK);
+		return false;
+	}
+
 	TCHAR directory[MAX_PATH];
 	TCHAR filename[MAX_PATH];
 	TCHAR title[40];
@@ -1922,7 +1962,8 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 // 4: Added: WOZ state
 //    Split up 'Unit' putting some state into a new 'Floppy'
 // 5: Added: Sequencer Function
-static const UINT kUNIT_VERSION = 5;
+// 6: Added: Drive Connected & Motor On Cycle
+static const UINT kUNIT_VERSION = 6;
 
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
 
@@ -1941,14 +1982,16 @@ static const UINT kUNIT_VERSION = 5;
 #define SS_YAML_KEY_LSS_SEQUENCER_FUNCTION "LSS Sequencer Function"
 
 #define SS_YAML_KEY_DISK2UNIT "Unit"
-#define SS_YAML_KEY_FILENAME "Filename"
+#define SS_YAML_KEY_DRIVE_CONNECTED "Drive Connected"
 #define SS_YAML_KEY_PHASE "Phase"
 #define SS_YAML_KEY_PHASE_PRECISE "Phase (precise)"
 #define SS_YAML_KEY_TRACK "Track"	// deprecated at v4
 #define SS_YAML_KEY_HEAD_WINDOW "Head Window"
 #define SS_YAML_KEY_LAST_STEPPER_CYCLE "Last Stepper Cycle"
+#define SS_YAML_KEY_MOTOR_ON_CYCLE "Motor On Cycle"
 
 #define SS_YAML_KEY_FLOPPY "Floppy"
+#define SS_YAML_KEY_FILENAME "Filename"
 #define SS_YAML_KEY_BYTE "Byte"
 #define SS_YAML_KEY_NIBBLES "Nibbles"
 #define SS_YAML_KEY_BIT_OFFSET "Bit Offset"
@@ -1990,10 +2033,12 @@ void Disk2InterfaceCard::SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT
 void Disk2InterfaceCard::SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_DISK2UNIT, unit);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_DRIVE_CONNECTED, m_floppyDrive[unit].m_isConnected);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASE, m_floppyDrive[unit].m_phase);
 	yamlSaveHelper.SaveFloat(SS_YAML_KEY_PHASE_PRECISE, m_floppyDrive[unit].m_phasePrecise);	// v4
 	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_HEAD_WINDOW, m_floppyDrive[unit].m_headWindow);		// v4
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_STEPPER_CYCLE, m_floppyDrive[unit].m_lastStepperCycle);	// v4
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_MOTOR_ON_CYCLE, m_floppyDrive[unit].m_motorOnCycle);	// v6
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_SPINNING, m_floppyDrive[unit].m_spinning);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_WRITE_LIGHT, m_floppyDrive[unit].m_writelight);
 
@@ -2124,6 +2169,12 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv4(YamlLoadHelper& yamlLoadHelper,
 	m_floppyDrive[unit].m_lastStepperCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_LAST_STEPPER_CYCLE);
 	m_floppyDrive[unit].m_spinning = yamlLoadHelper.LoadUint(SS_YAML_KEY_SPINNING);
 	m_floppyDrive[unit].m_writelight = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_LIGHT);
+
+	if (version >= 6)
+	{
+		m_floppyDrive[unit].m_isConnected = yamlLoadHelper.LoadBool(SS_YAML_KEY_DRIVE_CONNECTED);
+		m_floppyDrive[unit].m_motorOnCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_MOTOR_ON_CYCLE);
+	}
 
 	yamlLoadHelper.PopMap();
 

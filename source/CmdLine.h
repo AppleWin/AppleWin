@@ -44,6 +44,8 @@ struct CmdLine
 			slotInsert[i] = CT_Empty;
 			szImageName_drive[i][DRIVE_1] = NULL;
 			szImageName_drive[i][DRIVE_2] = NULL;
+			driveConnected[i][DRIVE_1] = true;
+			driveConnected[i][DRIVE_2] = true;
 		}
 	}
 
@@ -60,6 +62,7 @@ struct CmdLine
 	UINT bestWidth;
 	UINT bestHeight;
 	LPSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES];
+	bool driveConnected[NUM_SLOTS][NUM_DRIVES];
 	LPSTR szImageName_harddisk[NUM_HARDDISKS];
 	LPSTR szSnapshotName;
 	LPSTR szScreenshotFilename;

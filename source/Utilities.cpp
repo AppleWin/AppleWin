@@ -391,16 +391,17 @@ bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
 	return res;
 }
 
-void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], bool& bBoot)
+void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], bool driveConnected[NUM_DRIVES], bool& bBoot)
 {
 	_ASSERT(slot == 5 || slot == 6);
 
-	if (!szImageName_drive[DRIVE_1] && !szImageName_drive[DRIVE_2])
-		return;
-
 	bool bRes = true;
 
-	if (szImageName_drive[DRIVE_1])
+	if (!driveConnected[DRIVE_1])
+	{
+		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).UnplugDrive(DRIVE_1);
+	}
+	else if (szImageName_drive[DRIVE_1])
 	{
 		bRes = DoDiskInsert(slot, DRIVE_1, szImageName_drive[DRIVE_1]);
 		LogFileOutput("Init: S%d, DoDiskInsert(D1), res=%d\n", slot, bRes);
@@ -408,7 +409,11 @@ void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], boo
 		bBoot = true;
 	}
 
-	if (szImageName_drive[DRIVE_2])
+	if (!driveConnected[DRIVE_2])
+	{
+		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).UnplugDrive(DRIVE_2);
+	}
+	else if (szImageName_drive[DRIVE_2])
 	{
 		bRes |= DoDiskInsert(slot, DRIVE_2, szImageName_drive[DRIVE_2]);
 		LogFileOutput("Init: S%d, DoDiskInsert(D2), res=%d\n", slot, bRes);
