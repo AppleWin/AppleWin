@@ -2,94 +2,28 @@
 #include "frontends/retro/game.h"
 
 #include "Frame.h"
-#include "Video.h"
 
 #include "Common.h"
 #include "CardManager.h"
 #include "Core.h"
-#include "Disk.h"
 #include "Mockingboard.h"
-#include "SoundCore.h"
-#include "Harddisk.h"
 #include "Speaker.h"
 #include "Log.h"
 #include "CPU.h"
-#include "Memory.h"
-#include "LanguageCard.h"
-#include "MouseInterface.h"
-#include "ParallelPrinter.h"
 #include "NTSC.h"
-#include "SaveState.h"
-#include "RGBMonitor.h"
-#include "Riff.h"
 #include "Utilities.h"
 
-#include "linux/videobuffer.h"
 #include "linux/keyboard.h"
 #include "linux/paddle.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/configuration.h"
+#include "frontends/common2/utils.h"
 #include "frontends/retro/environment.h"
 
 #include "libretro.h"
 
 namespace
 {
-
-  void initialiseEmulator()
-  {
-#ifdef RIFF_SPKR
-    RiffInitWriteFile("/tmp/Spkr.wav", SPKR_SAMPLE_RATE, 1);
-#endif
-#ifdef RIFF_MB
-    RiffInitWriteFile("/tmp/Mockingboard.wav", 44100, 2);
-#endif
-
-    g_nAppMode = MODE_RUNNING;
-    LogFileOutput("Initialisation\n");
-
-    g_bFullSpeed = false;
-
-    LoadConfiguration();
-    SetCurrentCLK6502();
-    GetAppleWindowTitle();
-
-    DSInit();
-    MB_Initialize();
-    SpkrInitialize();
-
-    MemInitialize();
-    VideoBufferInitialize();
-    VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
-
-    GetCardMgr().GetDisk2CardMgr().Reset();
-    HD_Reset();
-    Snapshot_Startup();
-  }
-
-  void uninitialiseEmulator()
-  {
-    Snapshot_Shutdown();
-    CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
-    if (pMouseCard)
-    {
-      pMouseCard->Reset();
-    }
-    VideoBufferDestroy();
-    MemDestroy();
-
-    SpkrDestroy();
-    MB_Destroy();
-    DSUninit();
-
-    HD_Destroy();
-    PrintDestroy();
-    CpuDestroy();
-
-    GetCardMgr().GetDisk2CardMgr().Destroy();
-    LogDone();
-    RiffFinishWriteFile();
-  }
 
   void runOneFrame(Speed & speed)
   {
@@ -101,7 +35,6 @@ namespace
       const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 
       const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
-      //      log_cb(RETRO_LOG_INFO, "RA2: %s %d\n", __FUNCTION__, executedCycles);
 
       g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
       GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);

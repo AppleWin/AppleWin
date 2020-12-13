@@ -101,8 +101,6 @@ namespace
       result = ACS_CKBOARD;
     }
 
-    result != A_BLINK;
-
     if (!high)
     {
       if ((g_nAltCharSetOffset == 0) && (low >= 0x40))

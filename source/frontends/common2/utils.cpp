@@ -1,7 +1,33 @@
-#include <frontends/common2/utils.h>
+#include "frontends/common2/utils.h"
+
+#include "linux/data.h"
+#include "linux/interface.h"
+#include "linux/videobuffer.h"
 
 #include "StdAfx.h"
 #include "SaveState.h"
+
+#include "Common.h"
+#include "CardManager.h"
+#include "Core.h"
+#include "Disk.h"
+#include "Mockingboard.h"
+#include "SoundCore.h"
+#include "Harddisk.h"
+#include "Speaker.h"
+#include "Log.h"
+#include "CPU.h"
+#include "Frame.h"
+#include "Memory.h"
+#include "LanguageCard.h"
+#include "MouseInterface.h"
+#include "ParallelPrinter.h"
+#include "Video.h"
+#include "NTSC.h"
+#include "SaveState.h"
+#include "RGBMonitor.h"
+#include "Riff.h"
+#include "Utilities.h"
 
 #include <libgen.h>
 #include <unistd.h>
@@ -29,4 +55,61 @@ void setSnapshotFilename(const std::string & filename, const bool load)
       Snapshot_LoadState();
     }
   }
+}
+
+void initialiseEmulator()
+{
+#ifdef RIFF_SPKR
+  RiffInitWriteFile("/tmp/Spkr.wav", SPKR_SAMPLE_RATE, 1);
+#endif
+#ifdef RIFF_MB
+  RiffInitWriteFile("/tmp/Mockingboard.wav", 44100, 2);
+#endif
+
+  g_nAppMode = MODE_RUNNING;
+  LogFileOutput("Initialisation\n");
+
+  g_bFullSpeed = false;
+
+  LoadConfiguration();
+  SetCurrentCLK6502();
+  CheckCpu();
+  GetAppleWindowTitle();
+  FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
+
+  DSInit();
+  MB_Initialize();
+  SpkrInitialize();
+
+  MemInitialize();
+  VideoBufferInitialize();
+  VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
+
+  GetCardMgr().GetDisk2CardMgr().Reset();
+  HD_Reset();
+  Snapshot_Startup();
+}
+
+void uninitialiseEmulator()
+{
+  Snapshot_Shutdown();
+  CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
+  if (pMouseCard)
+  {
+    pMouseCard->Reset();
+  }
+  MemDestroy();
+  VideoBufferDestroy();
+
+  SpkrDestroy();
+  MB_Destroy();
+  DSUninit();
+
+  HD_Destroy();
+  PrintDestroy();
+  CpuDestroy();
+
+  GetCardMgr().GetDisk2CardMgr().Destroy();
+  LogDone();
+  RiffFinishWriteFile();
 }

@@ -8,25 +8,14 @@
 #include "Common.h"
 #include "CardManager.h"
 #include "Core.h"
-#include "Disk.h"
-#include "Harddisk.h"
 #include "Log.h"
 #include "CPU.h"
-#include "Frame.h"
-#include "Memory.h"
-#include "Video.h"
 #include "NTSC.h"
-#include "ParallelPrinter.h"
 #include "SaveState.h"
-#include "MouseInterface.h"
-#include "Mockingboard.h"
-#include "SoundCore.h"
 #include "Utilities.h"
 
-#include "linux/data.h"
 #include "linux/benchmark.h"
 #include "linux/paddle.h"
-#include "linux/videobuffer.h"
 #include "linux/interface.h"
 #include "frontends/common2/configuration.h"
 #include "frontends/common2/programoptions.h"
@@ -67,23 +56,29 @@ namespace
     switch (key)
     {
     case KEY_F(2):
-      {
-	g_bRestart = false;
-	return false;
-      }
+    {
+      ResetMachineState();
+      break;
+    }
+    case 278: // Shift-F2
+    {
+      CtrlReset();
+      break;
+    }
     case KEY_F(3):
-      {
-	g_bRestart = true;
-	return false;
-      }
+    {
+      return false;
+    }
+    case KEY_F(11):
+    {
+      Snapshot_SaveState();
+      break;
+    }
     case KEY_F(12):
-      {
-	// F12: as F11 is already Fullscreen in the terminal
-	// To load an image, use command line options
-	Snapshot_SetFilename("");
-	Snapshot_SaveState();
-	break;
-      }
+    {
+      Snapshot_LoadState();
+      break;
+    }
     }
 
     ProcessInput();
@@ -129,7 +124,7 @@ namespace
     }
   }
 
-  int foo(int argc, const char * argv [])
+  int run_ncurses(int argc, const char * argv [])
   {
     EmulatorOptions options;
     options.memclear = g_nMemoryClearType;
@@ -143,90 +138,29 @@ namespace
       LogInit();
     }
 
-    Paddle::setSquaring(options.squaring);
-
     InitializeRegistry(options);
-    g_nAppMode = MODE_RUNNING;
+
     g_nMemoryClearType = options.memclear;
 
-    LogFileOutput("Initialisation\n");
-
-    bool disksOk = true;
-    if (!options.disk1.empty())
-    {
-      const bool ok = DoDiskInsert(SLOT6, DRIVE_1, options.disk1.c_str());
-      disksOk = disksOk && ok;
-      LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", ok);
-    }
-
-    if (!options.disk2.empty())
-    {
-      const bool ok = DoDiskInsert(SLOT6, DRIVE_2, options.disk2.c_str());
-      disksOk = disksOk && ok;
-      LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", ok);
-    }
+    initialiseEmulator();
+    NVideoInitialize();
+    applyOptions(options);
 
     CardManager & cardManager = GetCardMgr();
 
-    if (disksOk)
+    FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
+
+    if (options.benchmark)
     {
-      // AFTER a restart
-      do
-      {
-	LoadConfiguration();
-
-	CheckCpu();
-
-	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
-
-	DSInit();
-	MB_Initialize();
-	MemInitialize();
-	VideoBufferInitialize();
-	NVideoInitialize();
-	cardManager.GetDisk2CardMgr().Reset();
-	HD_Reset();
-
-	if (!options.snapshotFilename.empty())
-	{
-	  setSnapshotFilename(options.snapshotFilename, options.loadSnapshot);
-	}
-
-	if (options.benchmark)
-	{
-	  VideoBenchmark(&VideoRedrawScreen, &VideoRedrawScreen);
-	}
-	else
-	{
-	  EnterMessageLoop(options);
-	}
-
-	CMouseInterface* pMouseCard = cardManager.GetMouseCard();
-	if (pMouseCard)
-	{
-	  pMouseCard->Reset();
-	}
-	VideoBufferDestroy();
-	MemDestroy();
-	MB_Destroy();
-	DSUninit();
-      }
-      while (g_bRestart);
-
-      NVideoUninitialize();
+      VideoBenchmark(&VideoRedrawScreen, &VideoRedrawScreen);
     }
     else
     {
-      LogOutput("Disk error.");
+      EnterMessageLoop(options);
     }
 
-    HD_Destroy();
-    PrintDestroy();
-    CpuDestroy();
-
-    cardManager.GetDisk2CardMgr().Destroy();
-
-    LogDone();
+    NVideoUninitialize();
+    uninitialiseEmulator();
 
     return 0;
   }
@@ -237,7 +171,7 @@ int main(int argc, const char * argv [])
 {
   try
   {
-    return foo(argc, argv);
+    return run_ncurses(argc, argv);
   }
   catch (const std::exception & e)
   {

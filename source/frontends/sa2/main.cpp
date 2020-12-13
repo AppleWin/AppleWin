@@ -5,137 +5,31 @@
 #include <iomanip>
 
 #include "linux/interface.h"
-#include "linux/windows/misc.h"
-#include "linux/data.h"
-#include "linux/paddle.h"
 #include "linux/benchmark.h"
-#include "linux/videobuffer.h"
 
 #include "frontends/common2/configuration.h"
 #include "frontends/common2/utils.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/timer.h"
-#include <frontends/common2/resources.h>
+#include "frontends/common2/resources.h"
 #include "frontends/sa2/emulator.h"
 #include "frontends/sa2/gamepad.h"
 #include "frontends/sa2/sdirectsound.h"
 #include "frontends/sa2/utils.h"
 
 #include "StdAfx.h"
-#include "Common.h"
-#include "CardManager.h"
 #include "Core.h"
-#include "Disk.h"
-#include "Mockingboard.h"
-#include "SoundCore.h"
-#include "Harddisk.h"
-#include "Speaker.h"
 #include "Log.h"
 #include "CPU.h"
 #include "Frame.h"
-#include "Memory.h"
-#include "LanguageCard.h"
-#include "MouseInterface.h"
-#include "ParallelPrinter.h"
-#include "Video.h"
 #include "NTSC.h"
 #include "SaveState.h"
-#include "RGBMonitor.h"
-#include "Riff.h"
-#include "Utilities.h"
 
 // comment out to test / debug init / shutdown only
 #define EMULATOR_RUN
 
 namespace
 {
-  void initialiseEmulator()
-  {
-#ifdef RIFF_SPKR
-    RiffInitWriteFile("/tmp/Spkr.wav", SPKR_SAMPLE_RATE, 1);
-#endif
-#ifdef RIFF_MB
-    RiffInitWriteFile("/tmp/Mockingboard.wav", 44100, 2);
-#endif
-
-    g_nAppMode = MODE_RUNNING;
-    LogFileOutput("Initialisation\n");
-
-    g_bFullSpeed = false;
-
-    LoadConfiguration();
-    SetCurrentCLK6502();
-    CheckCpu();
-    GetAppleWindowTitle();
-    FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
-
-    DSInit();
-    MB_Initialize();
-    SpkrInitialize();
-
-    MemInitialize();
-    VideoBufferInitialize();
-    VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
-
-    GetCardMgr().GetDisk2CardMgr().Reset();
-    HD_Reset();
-    Snapshot_Startup();
-  }
-
-  void uninitialiseEmulator()
-  {
-    Snapshot_Shutdown();
-    CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
-    if (pMouseCard)
-    {
-      pMouseCard->Reset();
-    }
-    VideoBufferDestroy();
-    MemDestroy();
-
-    SpkrDestroy();
-    MB_Destroy();
-    DSUninit();
-
-    HD_Destroy();
-    PrintDestroy();
-    CpuDestroy();
-
-    GetCardMgr().GetDisk2CardMgr().Destroy();
-    LogDone();
-    RiffFinishWriteFile();
-  }
-
-  void applyOptions(const EmulatorOptions & options)
-  {
-    if (options.log)
-    {
-      LogInit();
-    }
-
-    bool disksOk = true;
-    if (!options.disk1.empty())
-    {
-      const bool ok = DoDiskInsert(SLOT6, DRIVE_1, options.disk1.c_str());
-      disksOk = disksOk && ok;
-      LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", ok);
-    }
-
-    if (!options.disk2.empty())
-    {
-      const bool ok = DoDiskInsert(SLOT6, DRIVE_2, options.disk2.c_str());
-      disksOk = disksOk && ok;
-      LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", ok);
-    }
-
-    if (!options.snapshotFilename.empty())
-    {
-      setSnapshotFilename(options.snapshotFilename, options.loadSnapshot);
-    }
-
-    Paddle::setSquaring(options.squaring);
-  }
-
   int getRefreshRate()
   {
     SDL_DisplayMode current;
@@ -224,7 +118,6 @@ void run_sdl(int argc, const char * argv [])
   g_nMemoryClearType = options.memclear;
 
   initialiseEmulator();
-
   applyOptions(options);
 
   const int width = GetFrameBufferWidth();

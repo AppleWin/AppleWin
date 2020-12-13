@@ -1,9 +1,16 @@
-#include <frontends/common2/programoptions.h>
-#include <linux/version.h>
+#include "frontends/common2/programoptions.h"
+#include "frontends/common2/utils.h"
+#include "linux/version.h"
+#include "linux/paddle.h"
+
 #include <boost/program_options.hpp>
 
 #include "StdAfx.h"
 #include "Memory.h"
+#include "Log.h"
+#include "Disk.h"
+#include "Utilities.h"
+
 #include <iostream>
 
 namespace po = boost::program_options;
@@ -121,4 +128,29 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
     std::cerr << "ERROR: " << e.what() << std::endl;
     return false;
   }
+}
+
+void applyOptions(const EmulatorOptions & options)
+{
+  bool disksOk = true;
+  if (!options.disk1.empty())
+  {
+    const bool ok = DoDiskInsert(SLOT6, DRIVE_1, options.disk1.c_str());
+    disksOk = disksOk && ok;
+    LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", ok);
+  }
+
+  if (!options.disk2.empty())
+  {
+    const bool ok = DoDiskInsert(SLOT6, DRIVE_2, options.disk2.c_str());
+    disksOk = disksOk && ok;
+    LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", ok);
+  }
+
+  if (!options.snapshotFilename.empty())
+  {
+    setSnapshotFilename(options.snapshotFilename, options.loadSnapshot);
+  }
+
+  Paddle::setSquaring(options.squaring);
 }
