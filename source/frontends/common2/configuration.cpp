@@ -129,14 +129,14 @@ namespace
 
 void InitializeRegistry(const EmulatorOptions & options)
 {
-  std::string filename;
-  bool saveOnExit;
-
   const char* homeDir = getenv("HOME");
   if (!homeDir)
   {
     throw std::runtime_error("${HOME} not set, cannot locate configuration file");
   }
+
+  std::string filename;
+  bool saveOnExit;
 
   if (options.useQtIni)
   {
@@ -148,12 +148,14 @@ void InitializeRegistry(const EmulatorOptions & options)
     const std::string dir = std::string(homeDir) + "/.applewin";
     const int status = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     filename = dir + "/applewin.conf";
-    if (!status || (status == EEXIST))
+    if (!status || (errno == EEXIST))
     {
       saveOnExit = options.saveConfigurationOnExit;
     }
     else
     {
+      const char * s = strerror(errno);
+      LogFileOutput("No registry. Cannot create %s: %s\n", dir.c_str(), s);
       saveOnExit = false;
     }
   }
