@@ -235,17 +235,6 @@ namespace
 
 double g_relativeSpeed = 1.0;
 
-void output(const char *fmt, ...)
-{
-  va_list args;
-  va_start(args, fmt);
-
-  WINDOW * win = frame->getBuffer();
-
-  vw_printw(win, fmt, args);
-  wrefresh(win);
-}
-
 void FrameRefresh()
 {
   WINDOW * status = frame->getStatus();
@@ -480,16 +469,16 @@ int ProcessKeyboard()
   case 0x14a: // DEL
     ch = 0x7f;
     break;
-  case 0x222: // ALT - LEFT
+  case 544: // ALT - LEFT (Ctrl would be 546)
     asciiArt->changeColumns(-1);
     break;
-  case 0x231: // ALT - RIGHT
+  case 559: // ALT - RIGHT (561)
     asciiArt->changeColumns(+1);
     break;
-  case 0x237: // ALT - UP
+  case 565: // ALT - UP (567)
     asciiArt->changeRows(-1);
     break;
-  case 0x20E: // ALT - DOWN
+  case 524: // ALT - DOWN (526)
     asciiArt->changeRows(+1);
     break;
   default:
