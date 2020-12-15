@@ -467,16 +467,16 @@ int ProcessKeyboard()
   case 0x14a: // DEL
     ch = 0x7f;
     break;
-  case 544: // ALT - LEFT (Ctrl would be 546)
+  case 543 ... 546: // Various values for Ctrl/Alt - Left on Ubuntu and Pi OS
     asciiArt->changeColumns(-1);
     break;
-  case 559: // ALT - RIGHT (561)
+  case 558 ... 561: // Ctrl/Alt - Right
     asciiArt->changeColumns(+1);
     break;
-  case 565: // ALT - UP (567)
+  case 564 ... 567: // Ctrl/Alt - Up
     asciiArt->changeRows(-1);
     break;
-  case 524: // ALT - DOWN (526)
+  case 523 ... 526: // Ctrl/Alt - Down
     asciiArt->changeRows(+1);
     break;
   default:

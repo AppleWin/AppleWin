@@ -59,14 +59,16 @@ Frontend based on ncurses, with a ASCII art graphic mode.
 
 Keyboard shortcuts
 
-* F2: terminate emulator
-* F12: Load Snapshot
-* ALT-RIGHT: wider hi res graphis
-* ALT-LEFT: narrower hi res graphics
-* ALT-UP: vertical hi res (smaller)
-* ALT-DOWN: vertical hires (bigger)
+* ``F2``: reset the machine
+* ``F3``: terminate the emulator
+* ``F11``, ``F12``: Save, Load Snapshot
+* ``ALT-RIGHT``: wider hi res graphis
+* ``ALT-LEFT``: narrower hi res graphics
+* ``ALT-UP``: vertical hi res (smaller)
+* ``ALT-DOWN``: vertical hires (bigger)
 
 In order to properly appreciate the wider hi res graphics, open a big terminal window and choose a small font size.
+Try ``CTRL-`` as well if ``ALT--` does not work: terminals do not report a consistent keycode for these combinations.
 
 The joystick uses evdev (currently the device name is hardcoded).
 
