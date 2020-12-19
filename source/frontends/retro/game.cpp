@@ -47,8 +47,6 @@ namespace
 
 Game::Game()
   : mySpeed(true)
-  , myWidth(GetFrameBufferWidth())
-  , myHeight(GetFrameBufferHeight())
 {
   EmulatorOptions options;
   options.memclear = g_nMemoryClearType;
@@ -62,7 +60,17 @@ Game::Game()
   InitializeRegistry(options);
   initialiseEmulator();
 
-  const size_t size = myWidth * myHeight * sizeof(bgra_t);
+  myBorderlessWidth = GetFrameBufferBorderlessWidth();
+  myBorderlessHeight = GetFrameBufferBorderlessHeight();
+  const size_t borderWidth = GetFrameBufferBorderWidth();
+  const size_t borderHeight = GetFrameBufferBorderHeight();
+  const size_t width = GetFrameBufferWidth();
+  myHeight = GetFrameBufferHeight();
+
+  myPitch = width * sizeof(bgra_t);
+  myOffset = (width * borderHeight + borderWidth) * sizeof(bgra_t);
+
+  const size_t size = myHeight * myPitch;
   myVideoBuffer.resize(size);
 }
 
@@ -209,18 +217,18 @@ void Game::processKeyUp(unsigned keycode, uint32_t character, uint16_t key_modif
 
 void Game::drawVideoBuffer()
 {
-  const size_t pitch = myWidth * sizeof(bgra_t);
   // this should not be necessary
   // either libretro handles it
   // or we should change AW
   // but for now, there is no alternative
   for (size_t row = 0; row < myHeight; ++row)
   {
-    const uint8_t * src = g_pFramebufferbits + row * pitch;
-    uint8_t * dst = myVideoBuffer.data() + (myHeight - row - 1) * pitch;
-    memcpy(dst, src, pitch);
+    const uint8_t * src = g_pFramebufferbits + row * myPitch;
+    uint8_t * dst = myVideoBuffer.data() + (myHeight - row - 1) * myPitch;
+    memcpy(dst, src, myPitch);
   }
-  video_cb(myVideoBuffer.data(), myWidth, myHeight, pitch);
+
+  video_cb(myVideoBuffer.data() + myOffset, myBorderlessWidth, myBorderlessHeight, myPitch);
 }
 
 bool Game::loadGame(const char * path)

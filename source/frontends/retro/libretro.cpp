@@ -62,10 +62,10 @@ void retro_get_system_av_info(retro_system_av_info *info)
 {
   log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 
-  info->geometry.base_width   = GetFrameBufferWidth();
-  info->geometry.base_height  = GetFrameBufferHeight();
-  info->geometry.max_width    = GetFrameBufferWidth();
-  info->geometry.max_height   = GetFrameBufferHeight();
+  info->geometry.base_width   = GetFrameBufferBorderlessWidth();
+  info->geometry.base_height  = GetFrameBufferBorderlessHeight();
+  info->geometry.max_width    = GetFrameBufferBorderlessWidth();
+  info->geometry.max_height   = GetFrameBufferBorderlessHeight();
   info->geometry.aspect_ratio = 0;
 
   info->timing.fps            = 60;
