@@ -4,6 +4,8 @@
 
 #include <ncurses.h>
 
+class GraphicsColors;
+
 class Frame
 {
  public:
@@ -15,6 +17,10 @@ class Frame
   void init(int rows, int columns);
   int getColumns() const;
 
+  static GraphicsColors & getColors();
+
+  static void unInitialise();
+
  private:
 
   int myRows;
@@ -23,4 +29,7 @@ class Frame
   std::shared_ptr<WINDOW> myFrame;
   std::shared_ptr<WINDOW> myStatus;
 
+  static std::shared_ptr<GraphicsColors> ourColors;
+  static bool ourInitialised;
+  static void initialise();
 };

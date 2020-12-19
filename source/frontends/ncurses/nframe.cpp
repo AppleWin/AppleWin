@@ -1,14 +1,24 @@
 #include "frontends/ncurses/nframe.h"
+#include "frontends/ncurses/colors.h"
+
+#include <signal.h>
+#include <locale.h>
+#include <stdlib.h>
+
+bool Frame::ourInitialised = false;
+std::shared_ptr<GraphicsColors> Frame::ourColors;
 
 Frame::Frame() : myColumns(-1), myRows(-1)
 {
-  init(24, 40);
+  // only initialise if actually used
+  // so we can run headless
 }
 
 void Frame::init(int rows, int columns)
 {
   if (myRows != rows || myColumns != columns)
   {
+    initialise();
     if (columns < myColumns || rows < myRows)
     {
       werase(myStatus.get());
@@ -49,4 +59,42 @@ WINDOW * Frame::getStatus()
 int Frame::getColumns() const
 {
   return myColumns;
+}
+
+void Frame::initialise()
+{
+  if (!ourInitialised)
+  {
+    setlocale(LC_ALL, "");
+    initscr();
+
+    // does not seem to be a problem calling endwin() multiple times
+    std::atexit(Frame::unInitialise);
+
+    curs_set(0);
+
+    noecho();
+    cbreak();
+    set_escdelay(0);
+
+    // make sure this happens when ncurses is indeed initialised
+    ourColors.reset(new GraphicsColors(20, 20, 32));
+
+    ourInitialised = true;
+  }
+}
+
+void Frame::unInitialise()
+{
+  if (ourInitialised)
+  {
+    ourColors.reset();
+    endwin();
+    ourInitialised = false;
+  }
+}
+
+GraphicsColors & Frame::getColors()
+{
+  return *ourColors;
 }

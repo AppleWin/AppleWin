@@ -2,8 +2,9 @@
 
 int ProcessKeyboard();
 void ProcessInput();
-void NVideoInitialize();
-void NVideoUninitialize();
+void NVideoInitialize(const bool headless);
 void VideoRedrawScreen();
 
 extern double g_relativeSpeed;
+
+extern bool g_stop;

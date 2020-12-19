@@ -30,7 +30,6 @@ namespace
 {
 
   std::shared_ptr<Frame> frame;
-  std::shared_ptr<GraphicsColors> colors;
   std::shared_ptr<ASCIIArt> asciiArt;
   std::shared_ptr<EvDevPaddle> paddle;
 
@@ -60,12 +59,17 @@ namespace
 
   bool g_bTextFlashState = false;
 
-  void sig_handler(int signo)
+  void sig_handler_pass(int signo)
   {
     // Ctrl-C
     // is there a race condition here?
     // is it a problem?
     addKeyToBuffer(0x03);
+  }
+
+  void sig_handler_exit(int signo)
+  {
+    g_stop = true;
   }
 
   chtype mapCharacter(BYTE ch)
@@ -173,7 +177,7 @@ namespace
   {
     BYTE val = *(g_pTextBank0+offset);
 
-    const int pair = colors->getPair(val);
+    const int pair = frame->getColors().getPair(val);
 
     WINDOW * win = frame->getWindow();
 
@@ -209,11 +213,13 @@ namespace
     frame->init(24 * rows, 40 * cols);
     WINDOW * win = frame->getWindow();
 
+    const GraphicsColors & colors = frame->getColors();
+
     for (size_t i = 0; i < rows; ++i)
     {
       for (size_t j = 0; j < cols; ++j)
       {
-	const int pair = colors->getGrey(chs[i][j].foreground, chs[i][j].background);
+	const int pair = colors.getGrey(chs[i][j].foreground, chs[i][j].background);
 
 	wcolor_set(win, pair, NULL);
 	mvwaddstr(win, 1 + rows * y + i, 1 + cols * x + j, chs[i][j].c);
@@ -232,13 +238,17 @@ namespace
 }
 
 double g_relativeSpeed = 1.0;
+bool g_stop = false;
 
 void FrameRefresh()
 {
   WINDOW * status = frame->getStatus();
 
-  mvwprintw(status, 1, 2, "D1: %d, %s, %s", g_eStatusDrive1, g_sTrackDrive1, g_sSectorDrive1);
-  mvwprintw(status, 2, 2, "D2: %d, %s, %s", g_eStatusDrive2, g_sTrackDrive2, g_sSectorDrive2);
+  if (status)
+  {
+    mvwprintw(status, 1, 2, "D1: %d, %s, %s", g_eStatusDrive1, g_sTrackDrive1, g_sSectorDrive1);
+    mvwprintw(status, 2, 2, "D2: %d, %s, %s", g_eStatusDrive2, g_sTrackDrive2, g_sSectorDrive2);
+  }
 }
 
 void FrameDrawDiskLEDS(HDC x)
@@ -345,24 +355,8 @@ void FrameRefreshStatus(int x, bool)
   // std::cerr << "Status: " << x << std::endl;
 }
 
-void NVideoInitialize()
+void NVideoInitialize(const bool headless)
 {
-  VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
-
-  setlocale(LC_ALL, "");
-  initscr();
-
-  // does not seem to be a problem calling endwin() multiple times
-  std::atexit(NVideoUninitialize);
-
-  colors.reset(new GraphicsColors(20, 20, 32));
-
-  curs_set(0);
-
-  noecho();
-  cbreak();
-  set_escdelay(0);
-
   frame.reset(new Frame());
   asciiArt.reset(new ASCIIArt());
 
@@ -370,14 +364,16 @@ void NVideoInitialize()
 
   Paddle::instance() = paddle;
 
-  signal(SIGINT, sig_handler);
+  if (headless)
+  {
+    signal(SIGINT, sig_handler_exit);
+  }
+  else
+  {
+    signal(SIGINT, sig_handler_pass);
+    // pass Ctrl-C to the emulator
+  }
 }
-
-void NVideoUninitialize()
-{
-  endwin();
-}
-
 
 void VideoRedrawScreen()
 {
@@ -440,7 +436,13 @@ void VideoRedrawScreen()
 
 int ProcessKeyboard()
 {
-  const int inch = wgetch(frame->getWindow());
+  WINDOW * window = frame->getWindow();
+  if (!window)
+  {
+    return ERR;
+  }
+
+  const int inch = wgetch(window);
 
   int ch = ERR;
 

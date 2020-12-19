@@ -21,6 +21,7 @@
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/utils.h"
 #include "frontends/ncurses/world.h"
+#include "frontends/ncurses/nframe.h"
 
 namespace
 {
@@ -111,9 +112,12 @@ namespace
 	  std::this_thread::sleep_for(duration);
 	}
       }
+      return true;
     }
-
-    return true;
+    else
+    {
+      return !g_stop;
+    }
   }
 
   void EnterMessageLoop(const EmulatorOptions & options)
@@ -143,7 +147,7 @@ namespace
     g_nMemoryClearType = options.memclear;
 
     initialiseEmulator();
-    NVideoInitialize();
+    NVideoInitialize(options.headless);
     applyOptions(options);
 
     CardManager & cardManager = GetCardMgr();
@@ -159,7 +163,7 @@ namespace
       EnterMessageLoop(options);
     }
 
-    NVideoUninitialize();
+    Frame::unInitialise();
     uninitialiseEmulator();
 
     return 0;
