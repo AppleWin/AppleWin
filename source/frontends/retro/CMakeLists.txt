@@ -12,6 +12,7 @@ if (IS_DIRECTORY ${LIBRETRO_PATH})
     rdirectsound.cpp
     interface.cpp
     game.cpp
+    joypad.cpp
     )
 
   target_include_directories(ra2 PRIVATE

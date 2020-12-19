@@ -95,7 +95,7 @@ See [sa2](source/frontends/sa2/README.md).
 
 There is an initial [libretro](https://docs.libretro.com/development/cores/developing-cores/) core.
 
-Keyboard works, but a lot of keys overlap with RetroArch shortcuts.
+Keyboard works, but a lot of keys overlap with RetroArch shortcuts. In the latest version the keyboard has been disabled and only the retro joypad works.
 
 Video works, but the vertical flip is done in software.
 

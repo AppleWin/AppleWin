@@ -6,9 +6,11 @@
 #include "Frame.h"
 
 #include "linux/version.h"
+#include "linux/paddle.h"
 
 #include "frontends/retro/game.h"
 #include "frontends/retro/environment.h"
+#include "frontends/retro/joypad.h"
 
 namespace
 {
@@ -81,21 +83,20 @@ void retro_set_environment(retro_environment_t cb)
     log_cb = logging.log;
   else
     log_cb = fallback_log;
-  /*
-  static const retro_controller_description controllers[] =
-    {
-     { "Apple Keyboard", RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_KEYBOARD, 0) },
-    };
 
-  static const retro_controller_info ports[] =
-    {
-     { controllers, 1 },
-     { NULL, 0 },
-    };
+   static const struct retro_controller_description controllers[] = {
+      { "Nintendo DS", RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_JOYPAD, 0) },
+   };
 
-    cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);*/
-  retro_keyboard_callback callback = {&Game::keyboardCallback};
-  cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &callback);
+   static const struct retro_controller_info ports[] = {
+      { controllers, 1 },
+      { NULL, 0 },
+   };
+
+   cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
+
+   //  retro_keyboard_callback callback = {&Game::keyboardCallback};
+   //  cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &callback);
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb)
@@ -152,6 +153,9 @@ bool retro_load_game(const retro_game_info *info)
     const bool ok = game->loadGame(info->path);
 
     log_cb(RETRO_LOG_INFO, "Game path: %s:%d\n", info->path, ok);
+
+    Paddle::instance().reset(new Joypad);
+    Paddle::setSquaring(false);
 
     return ok;
   }
