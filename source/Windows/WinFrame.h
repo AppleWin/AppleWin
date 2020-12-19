@@ -1,5 +1,9 @@
 #pragma once
 
+// make sure this is included as it specifies default parameters
+// and redefinition would cause a compiler error
+#include "Interface.h"
+
 // Win32
 	extern HWND       g_hFrameWindow;
 	extern int        g_nViewportCX;
@@ -20,14 +24,14 @@
 	void    FrameCreateWindow(void);
 	HDC     FrameGetDC ();
 	void    FrameReleaseDC ();
-	void    FrameRefreshStatus (int, bool bUpdateDiskStatus = true );
+	void    FrameRefreshStatus (int, bool bUpdateDiskStatus);
 	void    FrameRegisterClass ();
 	void	FrameSetCursorPosByMousePos();
 	int		GetViewportScale(void);
-	int     SetViewportScale(int nNewScale, bool bForce = false);
+	int     SetViewportScale(int nNewScale, bool bForce);
 	void	GetViewportCXCY(int& nViewportCX, int& nViewportCY);
 	void    FrameUpdateApple2Type(void);
-	bool	GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight=0);
+	bool	GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight);
 
 	bool	IsFullScreen(void);
 	bool	GetFullScreenShowSubunitStatus(void);

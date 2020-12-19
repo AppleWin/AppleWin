@@ -1,5 +1,7 @@
 #pragma once
 
+class IPropertySheet;
+
 extern HINSTANCE  g_hInstance;
 extern HWND       g_hFrameWindow;
 extern BOOL       g_bConfirmReboot; // saved PageConfig REGSAVE
@@ -19,3 +21,5 @@ int		SetViewportScale(int nNewScale, bool bForce = false);
 void	SetAltEnterToggleFullScreen(bool mode);
 
 void	SetLoadedSaveStateFlag(const bool bFlag);
+
+IPropertySheet& GetPropertySheet();

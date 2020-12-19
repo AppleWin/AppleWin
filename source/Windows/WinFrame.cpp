@@ -246,10 +246,10 @@ static void RevealCursor()
 
 	FrameShowCursor(TRUE);
 
-	if (sg_PropertySheet.GetMouseShowCrosshair())	// Erase crosshairs if they are being drawn
+	if (GetPropertySheet().GetMouseShowCrosshair())	// Erase crosshairs if they are being drawn
 		DrawCrosshairs(0,0);
 
-	if (sg_PropertySheet.GetMouseRestrictToWindow())
+	if (GetPropertySheet().GetMouseRestrictToWindow())
 		SetUsingCursor(FALSE);
 
 	g_bLastCursorInAppleViewport = false;
@@ -1294,7 +1294,7 @@ LRESULT CALLBACK FrameWndProc (
 		else if (wparam == VK_F11 && !KeybGetCtrlStatus())	// Save state (F11)
 		{
 			SoundCore_SetFade(FADE_OUT);
-			if(sg_PropertySheet.SaveStateSelectImage(window, true))
+			if(GetPropertySheet().SaveStateSelectImage(window, true))
 			{
 				Snapshot_SaveState();
 			}
@@ -1303,7 +1303,7 @@ LRESULT CALLBACK FrameWndProc (
 		else if (wparam == VK_F12)					// Load state (F12 or Ctrl+F12)
 		{
 			SoundCore_SetFade(FADE_OUT);
-			if(sg_PropertySheet.SaveStateSelectImage(window, false))
+			if(GetPropertySheet().SaveStateSelectImage(window, false))
 			{
 				Snapshot_LoadState();
 			}
@@ -1337,7 +1337,7 @@ LRESULT CALLBACK FrameWndProc (
 			if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 				VideoRedrawScreen();
 		}
-		else if ((wparam == VK_SCROLL) && sg_PropertySheet.GetScrollLockToggle())
+		else if ((wparam == VK_SCROLL) && GetPropertySheet().GetScrollLockToggle())
 		{
 			g_bScrollLock_FullSpeed = !g_bScrollLock_FullSpeed;
 		}
@@ -2070,7 +2070,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_SETUP:
       {
-		  sg_PropertySheet.Init();
+		  GetPropertySheet().Init();
       }
       break;
 
@@ -2716,7 +2716,7 @@ static void DrawCrosshairsMouse()
 	if (!GetCardMgr().IsMouseCardInstalled())
 		return;
 
-	if (!sg_PropertySheet.GetMouseShowCrosshair())
+	if (!GetPropertySheet().GetMouseShowCrosshair())
 		return;
 
 	int iX, iMinX, iMaxX;
@@ -2743,7 +2743,7 @@ static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int
 
 	if (bOutsideAppleViewport)
 	{
-		if (sg_PropertySheet.GetMouseRestrictToWindow())
+		if (GetPropertySheet().GetMouseRestrictToWindow())
 			return;
 
 		g_bLastCursorInAppleViewport = false;
@@ -2775,7 +2775,7 @@ static void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int
 
 			//
 
-			if (sg_PropertySheet.GetMouseRestrictToWindow())
+			if (GetPropertySheet().GetMouseRestrictToWindow())
 				SetUsingCursor(TRUE);
 		}
 		else

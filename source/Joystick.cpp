@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "Memory.h"
 #include "YamlHelper.h"
+#include "Interface.h"
 
 #include "Configuration/PropertySheet.h"
 
@@ -344,7 +345,7 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 
 	BOOL keychange = 0;
 	bool bIsCursorKey = false;
-	const bool swapButtons0and1 = sg_PropertySheet.GetButtonsSwapState();
+	const bool swapButtons0and1 = GetPropertySheet().GetButtonsSwapState();
 
 	if (virtKeyWithExtended == g_buttonVirtKey[!swapButtons0and1 ? 0 : 1])
 	{
@@ -433,7 +434,7 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 				buttonlatch[1] = BUTTONTIME;
 		}
 	}
-	else if ((down && !autorep) || (sg_PropertySheet.GetJoystickCenteringControl() == JOYSTICK_MODE_CENTERING))
+	else if ((down && !autorep) || (GetPropertySheet().GetJoystickCenteringControl() == JOYSTICK_MODE_CENTERING))
 	{
 		int xkeys  = 0;
 		int ykeys  = 0;
@@ -488,7 +489,7 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 			ypos[nJoyNum] = PDL_CENTRAL + g_nPdlTrimY;
 	}
 
-	if (bIsCursorKey && sg_PropertySheet.GetJoystickCursorControl())
+	if (bIsCursorKey && GetPropertySheet().GetJoystickCursorControl())
 	{
 		// Allow AppleII keyboard to see this cursor keypress too
 		return 0;
@@ -505,7 +506,7 @@ static void DoAutofire(UINT uButton, BOOL& pressed)
 	static BOOL lastPressed[3] = {0};
 
 	BOOL nowPressed = pressed;
-	if (sg_PropertySheet.GetAutofire(uButton) && pressed)
+	if (GetPropertySheet().GetAutofire(uButton) && pressed)
 	{
 		toggle[uButton] = (!lastPressed[uButton]) ? TRUE : !toggle[uButton];
 		pressed = pressed && toggle[uButton];

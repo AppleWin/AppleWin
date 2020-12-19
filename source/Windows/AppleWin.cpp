@@ -143,7 +143,7 @@ static void ContinueExecution(void)
 	//
 
 	bool bScrollLock_FullSpeed = false;
-	if (sg_PropertySheet.GetScrollLockToggle())
+	if (GetPropertySheet().GetScrollLockToggle())
 	{
 		bScrollLock_FullSpeed = g_bScrollLock_FullSpeed;
 	}
@@ -833,7 +833,7 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.bSwapButtons0and1)
 		{
-			sg_PropertySheet.SetButtonsSwapState(true);
+			GetPropertySheet().SetButtonsSwapState(true);
 			// Reapply after a restart - TODO: grey-out the Config UI for "Swap 0/1" when this cmd line is passed in
 		}
 
@@ -1046,4 +1046,10 @@ static void Shutdown(void)
 
 	if (g_cmdLine.bSlot7EmptyOnExit)
 		UnplugHardDiskControllerCard();
+}
+
+IPropertySheet& GetPropertySheet()
+{
+	static CPropertySheet sg_PropertySheet;
+	return sg_PropertySheet;
 }

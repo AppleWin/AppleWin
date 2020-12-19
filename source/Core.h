@@ -3,8 +3,6 @@
 #include "Card.h"
 #include "Common.h"
 
-class IPropertySheet;
-
 void LogFileTimeUntilFirstKeyReadReset(void);
 void LogFileTimeUntilFirstKeyRead(void);
 
@@ -68,8 +66,6 @@ extern CSpeech g_Speech;
 extern bool       g_bDisableDirectInput;				// Cmd line switch: don't init DI (so no DIMouse support)
 extern bool       g_bDisableDirectSound;				// Cmd line switch: don't init DS (so no MB/Speaker support)
 extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't init MB support
-
-extern IPropertySheet& sg_PropertySheet;
 
 //#define LOG_PERF_TIMINGS
 #ifdef LOG_PERF_TIMINGS
