@@ -75,11 +75,11 @@ static void LoadConfigOldJoystick_v1(const UINT uJoyNum)
 		break;
 	case 2:		// Keyboard (standard)
 		uNewJoyType = J0C_KEYBD_NUMPAD;
-		sg_PropertySheet.SetJoystickCenteringControl(JOYSTICK_MODE_FLOATING);
+		GetPropertySheet().SetJoystickCenteringControl(JOYSTICK_MODE_FLOATING);
 		break;
 	case 3:		// Keyboard (centering)
 		uNewJoyType = J0C_KEYBD_NUMPAD;
-		sg_PropertySheet.SetJoystickCenteringControl(JOYSTICK_MODE_CENTERING);
+		GetPropertySheet().SetJoystickCenteringControl(JOYSTICK_MODE_CENTERING);
 		break;
 	case 4:		// Mouse
 		uNewJoyType = J0C_MOUSE;
@@ -124,7 +124,7 @@ void LoadConfiguration(void)
 				"Load Configuration",
 				MB_ICONSTOP | MB_SETFOREGROUND);
 
-			sg_PropertySheet.ConfigSaveApple2Type((eApple2Type)dwComputerType);
+			GetPropertySheet().ConfigSaveApple2Type((eApple2Type)dwComputerType);
 		}
 
 		apple2Type = (eApple2Type) dwComputerType;
@@ -211,13 +211,13 @@ void LoadConfiguration(void)
 		SetFullScreenShowSubunitStatus(dwTmp ? true : false);
 
 	if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
-		sg_PropertySheet.SetTheFreezesF8Rom(dwTmp);
+		GetPropertySheet().SetTheFreezesF8Rom(dwTmp);
 
 	if(REGLOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp))
-		SpkrSetVolume(dwTmp, sg_PropertySheet.GetVolumeMax());
+		SpkrSetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
 	if(REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp))
-		MB_SetVolume(dwTmp, sg_PropertySheet.GetVolumeMax());
+		MB_SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
 	if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
 		g_bSaveStateOnExit = dwTmp ? true : false;
@@ -245,21 +245,21 @@ void LoadConfiguration(void)
 		JoySetTrim((short)dwTmp, false);
 
 	if(REGLOAD(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), &dwTmp))
-		sg_PropertySheet.SetScrollLockToggle(dwTmp);
+		GetPropertySheet().SetScrollLockToggle(dwTmp);
 
 	if(REGLOAD(TEXT(REGVALUE_CURSOR_CONTROL), &dwTmp))
-		sg_PropertySheet.SetJoystickCursorControl(dwTmp);
+		GetPropertySheet().SetJoystickCursorControl(dwTmp);
 	if(REGLOAD(TEXT(REGVALUE_AUTOFIRE), &dwTmp))
-		sg_PropertySheet.SetAutofire(dwTmp);
+		GetPropertySheet().SetAutofire(dwTmp);
 	if(REGLOAD(TEXT(REGVALUE_SWAP_BUTTONS_0_AND_1), &dwTmp))
-		sg_PropertySheet.SetButtonsSwapState(dwTmp ? true : false);
+		GetPropertySheet().SetButtonsSwapState(dwTmp ? true : false);
 	if(REGLOAD(TEXT(REGVALUE_CENTERING_CONTROL), &dwTmp))
-		sg_PropertySheet.SetJoystickCenteringControl(dwTmp);
+		GetPropertySheet().SetJoystickCenteringControl(dwTmp);
 
 	if(REGLOAD(TEXT(REGVALUE_MOUSE_CROSSHAIR), &dwTmp))
-		sg_PropertySheet.SetMouseShowCrosshair(dwTmp);
+		GetPropertySheet().SetMouseShowCrosshair(dwTmp);
 	if(REGLOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))
-		sg_PropertySheet.SetMouseRestrictToWindow(dwTmp);
+		GetPropertySheet().SetMouseRestrictToWindow(dwTmp);
 
 	if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
 		GetCardMgr().Insert(4, (SS_CARDTYPE)dwTmp);
@@ -503,7 +503,7 @@ void GetAppleWindowTitle()
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 		g_pAppTitle += TEXT(" (custom rom)");
-	else if (sg_PropertySheet.GetTheFreezesF8Rom() && IS_APPLE2)
+	else if (GetPropertySheet().GetTheFreezesF8Rom() && IS_APPLE2)
 		g_pAppTitle += TEXT(" (The Freeze's non-autostart F8 rom)");
 
 	switch (g_nAppMode)

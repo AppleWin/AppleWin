@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Log.h"
 #include "../Registry.h"
 #include "../SaveState.h"
+#include "../Interface.h"
 
 /*
 Config causing AfterClose msgs:
@@ -386,7 +387,7 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	m_ConfigOld.m_Slot[SLOT4] = GetCardMgr().QuerySlot(SLOT4);
 	m_ConfigOld.m_Slot[SLOT5] = GetCardMgr().QuerySlot(SLOT5);
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
-	m_ConfigOld.m_bEnableTheFreezesF8Rom = sg_PropertySheet.GetTheFreezesF8Rom();
+	m_ConfigOld.m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_ConfigOld.m_videoRefreshRate = GetVideoRefreshRate();
 
 	// Reset flags each time:
@@ -405,7 +406,7 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	GetCardMgr().Insert(SLOT4, m_ConfigOld.m_Slot[SLOT4]);
 	GetCardMgr().Insert(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
 	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);
-	sg_PropertySheet.SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
+	GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
 	m_ConfigNew.m_videoRefreshRate = m_ConfigOld.m_videoRefreshRate;	// Not SetVideoRefreshRate(), as this re-inits much Video/NTSC state!
 }
 
