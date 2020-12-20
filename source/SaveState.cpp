@@ -515,7 +515,7 @@ static void Snapshot_LoadState_v2(void)
 		// . A change in h/w via loading a save-state avoids this VM restart
 		// The latter is the desired approach (as the former needs a "power-on" / F2 to start things again)
 
-		sg_PropertySheet.ApplyNewConfig(m_ConfigNew, ConfigOld);	// Mainly just saves (some) new state to Registry
+		GetPropertySheet().ApplyNewConfig(m_ConfigNew, ConfigOld);	// Mainly just saves (some) new state to Registry
 
 		MemInitializeROM();
 		MemInitializeCustomROM();

@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "SerialComms.h"
 #include "CPU.h"
-#include "Windows/WinFrame.h"
+#include "Interface.h"
 #include "Log.h"
 #include "Memory.h"
 #include "YamlHelper.h"

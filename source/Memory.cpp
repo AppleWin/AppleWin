@@ -1572,7 +1572,7 @@ void MemInitializeROM(void)
 		default:
 			{
 				_tcscpy(sRomFileName, TEXT("Unknown type!"));
-				sg_PropertySheet.ConfigSaveApple2Type(A2TYPE_APPLE2EENHANCED);
+				GetPropertySheet().ConfigSaveApple2Type(A2TYPE_APPLE2EENHANCED);
 			}
 		}
 
@@ -1674,7 +1674,7 @@ void MemInitializeCustomF8ROM(void)
 		}
 	}
 
-	if (sg_PropertySheet.GetTheFreezesF8Rom() && IS_APPLE2)
+	if (GetPropertySheet().GetTheFreezesF8Rom() && IS_APPLE2)
 	{
 		HGLOBAL hResData = NULL;
 		BYTE* pData = NULL;
