@@ -1,25 +1,15 @@
 #pragma once
 
-class IPropertySheet;
+// an AppleWin frontend must provide the implementation of these 2 methods
+//
+// once this is done,
+// the core emulator files (i.e. almost all the .cpp directly in Source)
+// can compile, link and run properly
+// this does not include the main event loop which is left in the arch specific area
+// nor the actual rendering of the video buffer to screen
 
-extern HINSTANCE  g_hInstance;
-extern HWND       g_hFrameWindow;
-extern BOOL       g_bConfirmReboot; // saved PageConfig REGSAVE
-extern BOOL       g_bMultiMon;
-extern bool       g_bFreshReset;
-
-void	FrameDrawDiskLEDS(HDC hdc);
-void	FrameDrawDiskStatus(HDC hdc);
-void	FrameRefreshStatus(int, bool bUpdateDiskStatus = true);
-void	FrameUpdateApple2Type();
-void    FrameSetCursorPosByMousePos();
-
-void	VideoRedrawScreen();
-void	SetFullScreenShowSubunitStatus(bool bShow);
-bool	GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight = 0);
-int		SetViewportScale(int nNewScale, bool bForce = false);
-void	SetAltEnterToggleFullScreen(bool mode);
-
-void	SetLoadedSaveStateFlag(const bool bFlag);
-
+#include "Configuration/PropertySheet.h"
 IPropertySheet& GetPropertySheet();
+
+#include "FrameBase.h"
+FrameBase& GetFrame();

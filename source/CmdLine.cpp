@@ -214,13 +214,13 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			bool bRes = false;
 			if (strcmp(lpTmp, "best") == 0)
 			{
-				bRes = GetBestDisplayResolutionForFullScreen(g_cmdLine.bestWidth, g_cmdLine.bestHeight);
+				bRes = GetFrame().GetBestDisplayResolutionForFullScreen(g_cmdLine.bestWidth, g_cmdLine.bestHeight);
 			}
 			else
 			{
 				UINT userSpecifiedHeight = atoi(lpTmp);
 				if (userSpecifiedHeight)
-					bRes = GetBestDisplayResolutionForFullScreen(g_cmdLine.bestWidth, g_cmdLine.bestHeight, userSpecifiedHeight);
+					bRes = GetFrame().GetBestDisplayResolutionForFullScreen(g_cmdLine.bestWidth, g_cmdLine.bestHeight, userSpecifiedHeight);
 				else
 					LogFileOutput("Invalid cmd-line parameter for -fs-height=x switch\n");
 			}
@@ -310,7 +310,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			{
 				std::string msg = "Failed to load video rom (not found or not exactly 2/4/8/16KiB)\n";
 				LogFileOutput("%s", msg.c_str());
-				MessageBox(g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
+				MessageBox(GetFrame().g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			}
 			else
 			{
@@ -387,7 +387,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-multimon") == 0)
 		{
-			g_bMultiMon = true;
+			GetFrame().g_bMultiMon = true;
 		}
 		else if ((strcmp(lpCmdLine, "-dcd") == 0) || (strcmp(lpCmdLine, "-modem") == 0))	// GH#386
 		{
@@ -396,11 +396,11 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-alt-enter=toggle-full-screen") == 0)	// GH#556
 		{
-			SetAltEnterToggleFullScreen(true);
+			GetFrame().SetAltEnterToggleFullScreen(true);
 		}
 		else if (strcmp(lpCmdLine, "-alt-enter=open-apple-enter") == 0)		// GH#556
 		{
-			SetAltEnterToggleFullScreen(false);
+			GetFrame().SetAltEnterToggleFullScreen(false);
 		}
 		else if (strcmp(lpCmdLine, "-video-mode=idealized") == 0)			// GH#616
 		{

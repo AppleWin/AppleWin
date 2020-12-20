@@ -633,7 +633,7 @@ HDC GetConsoleFontDC(void)
 		// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
 		HDC tmpDC = CreateCompatibleDC(hFrameDC);
 		// Pre-scaled bitmap
-		HBITMAP tmpFont = LoadBitmap(g_hInstance, TEXT("IDB_DEBUG_FONT_7x8"));  // Bitmap must be 112x128 as defined above
+		HBITMAP tmpFont = LoadBitmap(GetFrame().g_hInstance, TEXT("IDB_DEBUG_FONT_7x8"));  // Bitmap must be 112x128 as defined above
 		SelectObject(tmpDC, tmpFont);
 		BitBlt(g_hConsoleFontDC, 0, 0, CONSOLE_FONT_BITMAP_WIDTH, CONSOLE_FONT_BITMAP_HEIGHT,
 			tmpDC, 0, 0,
@@ -754,7 +754,7 @@ static void PrintGlyph( const int xDst, const int yDst, const int glyph )
 	{
 #if _DEBUG
 		if ((xDst < 0) || (yDst < 0))
-			MessageBox( g_hFrameWindow, "X or Y out of bounds!", "PrintGlyph()", MB_OK );
+			MessageBox(GetFrame().g_hFrameWindow, "X or Y out of bounds!", "PrintGlyph()", MB_OK );
 #endif
 		int col = xDst / CONSOLE_FONT_WIDTH ;
 		int row = yDst / CONSOLE_FONT_HEIGHT;
@@ -870,7 +870,7 @@ int PrintText ( const char * pText, RECT & rRect )
 {
 #if _DEBUG
 	if (! pText)
-		MessageBox( g_hFrameWindow, "pText = NULL!", "DrawText()", MB_OK );
+		MessageBox(GetFrame().g_hFrameWindow, "pText = NULL!", "DrawText()", MB_OK );
 #endif
 
 	int nLen = strlen( pText );
@@ -4116,7 +4116,7 @@ void UpdateDisplay (Update_t bUpdate)
 	if (spDrawMutex)
 	{
 #if DEBUG
-		MessageBox( g_hFrameWindow, "Already drawing!", "!", MB_OK );
+		MessageBox( GetFrame().g_hFrameWindow, "Already drawing!", "!", MB_OK );
 #endif
 	}
 	spDrawMutex = true;

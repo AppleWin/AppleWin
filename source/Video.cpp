@@ -476,7 +476,7 @@ void Video_TakeScreenShot( const VideoScreenShot_e ScreenShotType )
 		{
 			TCHAR msg[512];
 			StringCbPrintf( msg, 512, "You have more then %d screenshot filenames!  They will no longer be saved.\n\nEither move some of your screenshots or increase the maximum in video.cpp\n", nMaxScreenShot );
-			MessageBox( g_hFrameWindow, msg, "Warning", MB_OK );
+			MessageBox( GetFrame().g_hFrameWindow, msg, "Warning", MB_OK );
 			g_nLastScreenShot = 0;
 			return;
 		}
@@ -574,9 +574,9 @@ static void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 
 //	char sText[256];
 //	sprintf( sText, "sizeof: BITMAPFILEHEADER = %d\n", sizeof(BITMAPFILEHEADER) ); // = 14
-//	MessageBox( g_hFrameWindow, sText, "Info 1", MB_OK );
+//	MessageBox( GetFrame().g_hFrameWindow, sText, "Info 1", MB_OK );
 //	sprintf( sText, "sizeof: BITMAPINFOHEADER = %d\n", sizeof(BITMAPINFOHEADER) ); // = 40
-//	MessageBox( g_hFrameWindow, sText, "Info 2", MB_OK );
+//	MessageBox( GetFrame().g_hFrameWindow, sText, "Info 2", MB_OK );
 
 	char sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[ sizeof( WinBmpHeader_t ) == (14 + 40) ];
 	/**/ sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[0]=0;
@@ -661,7 +661,7 @@ void Video_SaveScreenShot( const VideoScreenShot_e ScreenShotType, const TCHAR *
 
 	if( g_bDisplayPrintScreenFileName )
 	{
-		MessageBox( g_hFrameWindow, pScreenShotFileName, "Screen Captured", MB_OK );
+		MessageBox( GetFrame().g_hFrameWindow, pScreenShotFileName, "Screen Captured", MB_OK );
 	}
 }
 

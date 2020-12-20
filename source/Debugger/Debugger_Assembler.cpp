@@ -471,7 +471,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 #if _DEBUG
 	if (! g_aOpcodes)
 	{
-		MessageBox( g_hFrameWindow, "Debugger not properly initialized", "ERROR", MB_OK );
+		MessageBox(GetFrame().g_hFrameWindow, "Debugger not properly initialized", "ERROR", MB_OK );
 
 		g_aOpcodes = & g_aOpcodes65C02[ 0 ];	// Enhanced Apple //e
 		g_aOpmodes[ AM_2 ].m_nBytes = 2;
