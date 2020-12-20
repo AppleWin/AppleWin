@@ -3,6 +3,7 @@
 
 #include "StdAfx.h"
 #include "Common.h"
+#include "Interface.h"
 #include "CardManager.h"
 #include "Core.h"
 #include "Disk.h"

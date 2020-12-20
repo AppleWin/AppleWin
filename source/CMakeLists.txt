@@ -66,7 +66,7 @@ add_library(appleii SHARED
   linux/duplicates/Joystick.cpp
   linux/duplicates/WinFrame.cpp
   linux/duplicates/SerialComms.cpp
-  linux/duplicates/IPropertySheet.cpp
+  linux/duplicates/PropertySheet.cpp
   linux/duplicates/Tfe.cpp
   linux/duplicates/AppleWin.cpp
 

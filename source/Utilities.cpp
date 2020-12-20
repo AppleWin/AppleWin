@@ -215,11 +215,11 @@ void LoadConfiguration(void)
 
 	dwTmp = 70;
 	REGLOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp);
-	SpkrSetVolume(dwTmp, sg_PropertySheet.GetVolumeMax());
+	SpkrSetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
 	dwTmp = 70;
 	REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp);
-	MB_SetVolume(dwTmp, sg_PropertySheet.GetVolumeMax());
+	MB_SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
 	if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
 		g_bSaveStateOnExit = dwTmp ? true : false;

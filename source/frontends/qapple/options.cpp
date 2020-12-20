@@ -2,6 +2,7 @@
 
 #include "StdAfx.h"
 #include "Common.h"
+#include "Interface.h"
 #include "CardManager.h"
 #include "Core.h"
 #include "Disk.h"
@@ -236,13 +237,13 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
 
     if (currentData.speakerVolume != newData.speakerVolume)
     {
-        SpkrSetVolume(newData.speakerVolume, sg_PropertySheet.GetVolumeMax());
+        SpkrSetVolume(newData.speakerVolume, GetPropertySheet().GetVolumeMax());
         REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
     }
 
     if (currentData.mockingboardVolume != newData.mockingboardVolume)
     {
-        MB_SetVolume(newData.mockingboardVolume, sg_PropertySheet.GetVolumeMax());
+        MB_SetVolume(newData.mockingboardVolume, GetPropertySheet().GetVolumeMax());
         REGSAVE(TEXT(REGVALUE_MB_VOLUME), MB_GetVolume());
     }
 
