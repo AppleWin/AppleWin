@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Windows/WinFrame.h"
 #include "Windows/AppleWin.h"
+#include "Interface.h"
 #include "Keyboard.h"
 #include "Log.h"
 #include "Memory.h"
