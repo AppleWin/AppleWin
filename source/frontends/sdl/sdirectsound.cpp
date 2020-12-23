@@ -1,4 +1,4 @@
-#include "frontends/sa2/sdirectsound.h"
+#include "frontends/sdl/sdirectsound.h"
 
 #include "linux/windows/dsound.h"
 

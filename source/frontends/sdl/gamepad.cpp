@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-#include "frontends/sa2/gamepad.h"
+#include "frontends/sdl/gamepad.h"
 
 #include "Log.h"
 

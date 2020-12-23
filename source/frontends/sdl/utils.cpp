@@ -1,4 +1,4 @@
-#include "frontends/sa2/utils.h"
+#include "frontends/sdl/utils.h"
 #include <ostream>
 
 void printRendererInfo(std::ostream & os,

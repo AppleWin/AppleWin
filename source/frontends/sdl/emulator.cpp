@@ -1,6 +1,6 @@
-#include "frontends/sa2/emulator.h"
-#include "frontends/sa2/sdirectsound.h"
-#include "frontends/sa2/utils.h"
+#include "frontends/sdl/emulator.h"
+#include "frontends/sdl/sdirectsound.h"
+#include "frontends/sdl/utils.h"
 
 #include <iostream>
 
