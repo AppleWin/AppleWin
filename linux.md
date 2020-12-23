@@ -68,7 +68,7 @@ Keyboard shortcuts
 * ``ALT-DOWN``: vertical hires (bigger)
 
 In order to properly appreciate the wider hi res graphics, open a big terminal window and choose a small font size.
-Try ``CTRL-`` as well if ``ALT--` does not work: terminals do not report a consistent keycode for these combinations.
+Try ``CTRL-`` as well if ``ALT-`` does not work: terminals do not report a consistent keycode for these combinations.
 
 The joystick uses evdev (currently the device name is hardcoded).
 
@@ -95,7 +95,9 @@ See [sa2](source/frontends/sa2/README.md).
 
 There is an initial [libretro](https://docs.libretro.com/development/cores/developing-cores/) core.
 
-Keyboard works, but a lot of keys overlap with RetroArch shortcuts. In the latest version the keyboard has been disabled and only the retro joypad works.
+A retropad can be plugged in port 1 (with or without analog stick).
+
+In order to have a better experience with the keyboard, one should probably enable *Game Focus Mode* (normally Scroll-Lock) to disable hotkeys.
 
 Video works, but the vertical flip is done in software.
 

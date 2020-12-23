@@ -115,8 +115,8 @@ void retro_set_environment(retro_environment_t cb)
 
   cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
 
-  //  retro_keyboard_callback callback = {&Game::keyboardCallback};
-  //  cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &callback);
+  retro_keyboard_callback callback = {&Game::keyboardCallback};
+  cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &callback);
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb)
@@ -173,6 +173,11 @@ bool retro_load_game(const retro_game_info *info)
     const bool ok = game->loadGame(info->path);
 
     log_cb(RETRO_LOG_INFO, "Game path: %s:%d\n", info->path, ok);
+
+    if (ok)
+    {
+      display_message("Enable Game Focus Mode for better keyboard handling");
+    }
 
     return ok;
   }

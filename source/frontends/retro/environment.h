@@ -13,3 +13,5 @@ extern retro_audio_sample_t audio_cb;
 extern  retro_audio_sample_batch_t audio_batch_cb;
 
 extern std::string retro_base_directory;
+
+void display_message(const std::string & message);

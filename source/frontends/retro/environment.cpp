@@ -24,3 +24,11 @@ retro_audio_sample_t audio_cb;
 retro_audio_sample_batch_t audio_batch_cb;
 
 std::string retro_base_directory;
+
+void display_message(const std::string & message)
+{
+  retro_message rmsg;
+  rmsg.frames = 180;
+  rmsg.msg = message.c_str();
+  environ_cb(RETRO_ENVIRONMENT_SET_MESSAGE, &rmsg);
+}
