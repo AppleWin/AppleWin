@@ -6,7 +6,7 @@
 #include <QCommandLineParser>
 
 #include "linux/version.h"
-#include "frontends/qapple/applicationname.h"
+#include "applicationname.h"
 
 
 int main(int argc, char *argv[])

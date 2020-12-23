@@ -3,7 +3,7 @@
 
 #include "Log.h"
 #include "linux/windows/files.h"
-#include "frontends/qapple/applicationname.h"
+#include "frontends/qt/applicationname.h"
 
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/algorithm/string/replace.hpp>
