@@ -4,6 +4,9 @@ libminizip-dev
 qtbase5-dev
 qtmultimedia5-dev
 libqt5gamepad5-dev
+libqt5multimedia5-plugins
 libboost-program-options-dev
 libncurses-dev
 libevdev-dev
+libsdl2-image-dev
+libsdl2-dev

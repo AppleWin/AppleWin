@@ -15,6 +15,7 @@ addons:
       - libboost-program-options-dev
       - libncurses-dev
       - libevdev-dev
+      - libsdl2-dev
       - libsdl2-image-dev
 
 language: cpp
