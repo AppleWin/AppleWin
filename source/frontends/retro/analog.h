@@ -3,16 +3,15 @@
 #include "frontends/retro/joypadbase.h"
 
 #include <vector>
-#include <map>
 
 
-class Joypad : public JoypadBase
+class Analog : public JoypadBase
 {
 public:
-  Joypad();
+  Analog();
 
   virtual double getAxis(int i) const;
 
 private:
-  std::vector<std::map<unsigned, double> > myAxisCodes;
+  std::vector<std::pair<unsigned, unsigned> > myAxisCodes;
 };

@@ -11,6 +11,7 @@
 #include "frontends/retro/game.h"
 #include "frontends/retro/environment.h"
 #include "frontends/retro/joypad.h"
+#include "frontends/retro/analog.h"
 
 namespace
 {
@@ -40,11 +41,27 @@ unsigned retro_api_version(void)
 
 void retro_set_controller_port_device(unsigned port, unsigned device)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  log_cb(RETRO_LOG_INFO, "Plugging device %u into port %u.\n", device, port);
+  log_cb(RETRO_LOG_INFO, "RA2: %s, Plugging device %u into port %u.\n", __FUNCTION__, device, port);
 
-  if (port < RETRO_DEVICES)
-    retro_devices[port] = device;
+  if (port == 0)
+  {
+    switch (device)
+    {
+    case RETRO_DEVICE_NONE:
+      Paddle::instance().reset();
+      break;
+    case RETRO_DEVICE_JOYPAD:
+      Paddle::instance().reset(new Joypad);
+      Paddle::setSquaring(false);
+      break;
+    case RETRO_DEVICE_ANALOG:
+      Paddle::instance().reset(new Analog);
+      Paddle::setSquaring(true);
+      break;
+    default:
+      break;
+    }
+  }
 }
 
 void retro_get_system_info(retro_system_info *info)
@@ -84,19 +101,22 @@ void retro_set_environment(retro_environment_t cb)
   else
     log_cb = fallback_log;
 
-   static const struct retro_controller_description controllers[] = {
-      { "Nintendo DS", RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_JOYPAD, 0) },
-   };
+  static const struct retro_controller_description controllers[] =
+    {
+     { "Standard Joypad", RETRO_DEVICE_JOYPAD },
+     { "Analog Joypad", RETRO_DEVICE_ANALOG }
+    };
 
-   static const struct retro_controller_info ports[] = {
-      { controllers, 1 },
-      { NULL, 0 },
-   };
+  static const struct retro_controller_info ports[] =
+    {
+     { controllers, sizeof(controllers) / sizeof(controllers[0]) },
+     { nullptr, 0 }
+    };
 
-   cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
+  cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
 
-   //  retro_keyboard_callback callback = {&Game::keyboardCallback};
-   //  cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &callback);
+  //  retro_keyboard_callback callback = {&Game::keyboardCallback};
+  //  cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &callback);
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb)
@@ -153,9 +173,6 @@ bool retro_load_game(const retro_game_info *info)
     const bool ok = game->loadGame(info->path);
 
     log_cb(RETRO_LOG_INFO, "Game path: %s:%d\n", info->path, ok);
-
-    Paddle::instance().reset(new Joypad);
-    Paddle::setSquaring(false);
 
     return ok;
   }

@@ -24,5 +24,3 @@ retro_audio_sample_t audio_cb;
 retro_audio_sample_batch_t audio_batch_cb;
 
 std::string retro_base_directory;
-
-unsigned int retro_devices[RETRO_DEVICES] = {};
