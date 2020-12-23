@@ -97,6 +97,12 @@ There is an initial [libretro](https://docs.libretro.com/development/cores/devel
 
 A retropad can be plugged in port 1 (with or without analog stick).
 
+Keyboard emulation
+
+* ``JOYPAD_R``: equivalent to ``F9`` to cycle video types
+* ``JOYPAD_L``: equivalent to ``CTRL-SHIFT-F6`` to cycle 50% scan lines
+* ``START``: equivalent to ``F2`` to reset the machine
+
 In order to have a better experience with the keyboard, one should probably enable *Game Focus Mode* (normally Scroll-Lock) to disable hotkeys.
 
 Video works, but the vertical flip is done in software.

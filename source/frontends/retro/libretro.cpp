@@ -61,6 +61,8 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
     default:
       break;
     }
+
+    Game::input_devices[port] = device;
   }
 }
 

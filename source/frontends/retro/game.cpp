@@ -12,13 +12,14 @@
 #include "CPU.h"
 #include "NTSC.h"
 #include "Utilities.h"
+#include "Video.h"
+#include "Interface.h"
 
 #include "linux/keyboard.h"
 #include "linux/paddle.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/configuration.h"
 #include "frontends/common2/utils.h"
-#include "frontends/retro/environment.h"
 
 #include "libretro.h"
 
@@ -43,10 +44,18 @@ namespace
     }
   }
 
+  void updateWindowTitle()
+  {
+    GetAppleWindowTitle();
+    display_message(g_pAppTitle.c_str());
+  }
+
 }
 
+unsigned Game::input_devices[MAX_PADS] = {0};
+
 Game::Game()
-  : mySpeed(true)
+  : mySpeed(true), myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
 {
   EmulatorOptions options;
   options.memclear = g_nMemoryClearType;
@@ -87,6 +96,7 @@ void Game::executeOneFrame()
 void Game::processInputEvents()
 {
   input_poll_cb();
+  keyboardEmulation();
 }
 
 void Game::keyboardCallback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers)
@@ -212,6 +222,57 @@ void Game::processKeyUp(unsigned keycode, uint32_t character, uint16_t key_modif
       Paddle::setButtonReleased(Paddle::ourSolidApple);
       break;
     }
+  }
+}
+
+bool Game::checkButtonPressed(unsigned id)
+{
+  // pressed if it is down now, but was up before
+  const int value = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, id);
+  const bool pressed = (value != 0) && myButtonStates[id] == 0;
+
+  // update to avoid multiple fires
+  myButtonStates[id] = value;
+
+  return pressed;
+}
+
+
+void Game::keyboardEmulation()
+{
+  if (input_devices[0] != RETRO_DEVICE_NONE)
+  {
+    if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_R))
+    {
+      g_eVideoType++;
+      if (g_eVideoType >= NUM_VIDEO_MODES)
+	g_eVideoType = 0;
+
+      Config_Save_Video();
+      VideoReinitialize();
+      VideoRedrawScreen();
+      updateWindowTitle();
+    }
+    if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_L))
+    {
+      VideoStyle_e videoStyle = GetVideoStyle();
+      videoStyle = VideoStyle_e(videoStyle ^ VS_HALF_SCANLINES);
+
+      SetVideoStyle(videoStyle);
+
+      Config_Save_Video();
+      VideoReinitialize();
+      VideoRedrawScreen();
+      updateWindowTitle();
+    }
+    if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_START))
+    {
+      ResetMachineState();
+    }
+  }
+  else
+  {
+    std::fill(myButtonStates.begin(), myButtonStates.end(), 0);
   }
 }
 
