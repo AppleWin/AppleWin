@@ -1,5 +1,5 @@
-#include "frontends/retro/analog.h"
-#include "frontends/retro/environment.h"
+#include "frontends/libretro/analog.h"
+#include "frontends/libretro/environment.h"
 
 #include "libretro.h"
 

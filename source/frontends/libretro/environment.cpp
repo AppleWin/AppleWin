@@ -1,4 +1,4 @@
-#include "frontends/retro/environment.h"
+#include "frontends/libretro/environment.h"
 
 #include <cstdarg>
 #include <iostream>

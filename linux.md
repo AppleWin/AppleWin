@@ -111,7 +111,7 @@ Must be manually configured:
 ``cmake -DLIBRETRO_PATH=/path/to/libretro-common``
 
 Easiest way to run from the ``build`` folder:
-``retroarch -L source/frontends/retro/libra2.so ../Disks/NoSlotClockTest.dsk``
+``retroarch -L source/frontends/libretro/libra2.so ../Disks/NoSlotClockTest.dsk``
 
 ## Build
 

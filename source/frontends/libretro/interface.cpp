@@ -1,6 +1,6 @@
 #include "linux/interface.h"
 
-#include "frontends/retro/environment.h"
+#include "frontends/libretro/environment.h"
 #include "linux/win.h"
 
 int MessageBox(HWND, const char * text, const char * caption, UINT type)

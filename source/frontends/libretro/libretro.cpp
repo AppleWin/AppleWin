@@ -8,10 +8,10 @@
 #include "linux/version.h"
 #include "linux/paddle.h"
 
-#include "frontends/retro/game.h"
-#include "frontends/retro/environment.h"
-#include "frontends/retro/joypad.h"
-#include "frontends/retro/analog.h"
+#include "frontends/libretro/game.h"
+#include "frontends/libretro/environment.h"
+#include "frontends/libretro/joypad.h"
+#include "frontends/libretro/analog.h"
 
 namespace
 {

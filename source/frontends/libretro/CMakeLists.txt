@@ -2,7 +2,7 @@
 # this requires user input
 set(LIBRETRO_PATH NONE CACHE PATH "path to libretro-common")
 
-if (IS_DIRECTORY ${LIBRETRO_PATH})
+if (EXISTS ${LIBRETRO_PATH}/include/libretro.h)
   message("Using LIBRETRO_PATH=${LIBRETRO_PATH}")
 
   add_library(ra2 SHARED

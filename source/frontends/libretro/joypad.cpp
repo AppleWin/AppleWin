@@ -1,5 +1,5 @@
-#include "frontends/retro/joypad.h"
-#include "frontends/retro/environment.h"
+#include "frontends/libretro/joypad.h"
+#include "frontends/libretro/environment.h"
 
 #include "libretro.h"
 

@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-#include "frontends/retro/game.h"
+#include "frontends/libretro/game.h"
 
 #include "Frame.h"
 

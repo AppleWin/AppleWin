@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frontends/retro/joypadbase.h"
+#include "frontends/libretro/joypadbase.h"
 
 #include <vector>
 #include <map>
