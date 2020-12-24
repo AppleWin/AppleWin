@@ -64,7 +64,7 @@ static BOOL CALLBACK DlgProcAbout(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 	case WM_INITDIALOG:
 		{
-			HICON hIcon = LoadIcon(g_hInstance, TEXT("APPLEWIN_ICON"));
+			HICON hIcon = LoadIcon(GetFrame().g_hInstance, TEXT("APPLEWIN_ICON"));
 			SendDlgItemMessage(hWnd, IDC_APPLEWIN_ICON, STM_SETIMAGE, IMAGE_ICON, (LPARAM)hIcon);
 
 			TCHAR szAppleWinVersion[50];
@@ -81,5 +81,5 @@ static BOOL CALLBACK DlgProcAbout(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 bool AboutDlg(void)
 {
-	return DialogBox(g_hInstance, (LPCTSTR)IDD_ABOUT, g_hFrameWindow, DlgProcAbout) ? true : false;
+	return DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_ABOUT, GetFrame().g_hFrameWindow, DlgProcAbout) ? true : false;
 }

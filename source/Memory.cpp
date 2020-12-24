@@ -1646,7 +1646,7 @@ void MemInitializeCustomF8ROM(void)
 		}
 		catch (bool)
 		{
-			MessageBox( g_hFrameWindow, "Failed to read F8 (auto-start) ROM for language card in original Apple][", TEXT("AppleWin Error"), MB_OK );
+			MessageBox( GetFrame().g_hFrameWindow, "Failed to read F8 (auto-start) ROM for language card in original Apple][", TEXT("AppleWin Error"), MB_OK );
 		}
 	}
 
@@ -1667,7 +1667,7 @@ void MemInitializeCustomF8ROM(void)
 
 		if (!bRes)
 		{
-			MessageBox( g_hFrameWindow, "Failed to read custom F8 rom", TEXT("AppleWin Error"), MB_OK );
+			MessageBox( GetFrame().g_hFrameWindow, "Failed to read custom F8 rom", TEXT("AppleWin Error"), MB_OK );
 			CloseHandle(g_hCustomRomF8);
 			g_hCustomRomF8 = INVALID_HANDLE_VALUE;
 			// Failed, so use default rom...
@@ -1723,7 +1723,7 @@ void MemInitializeCustomROM(void)
 
 	if (!bRes)
 	{
-		MessageBox( g_hFrameWindow, "Failed to read custom rom", TEXT("AppleWin Error"), MB_OK );
+		MessageBox( GetFrame().g_hFrameWindow, "Failed to read custom rom", TEXT("AppleWin Error"), MB_OK );
 		CloseHandle(g_hCustomRom);
 		g_hCustomRom = INVALID_HANDLE_VALUE;
 		// Failed, so use default rom...

@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Windows/WinVideo.h"
+#include "Windows/Win32Frame.h"
 #include "Windows/WinFrame.h"
 #include "Windows/AppleWin.h"
 #include "Interface.h"
@@ -90,7 +91,7 @@ void WinVideoInitialize()
 	VideoResetState();
 
 	// LOAD THE LOGO
-	g_hLogoBitmap = LoadBitmap(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN));
+	g_hLogoBitmap = LoadBitmap(GetFrame().g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN));
 
 	// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
 	g_pFramebufferinfo = (LPBITMAPINFO) new BYTE[sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)];
@@ -153,7 +154,7 @@ void VideoBenchmark () {
 
   g_uVideoMode            = VF_TEXT;
   memset(mem+0x400,0x14,0x400);
-  VideoRedrawScreen();
+  GetFrame().VideoRedrawScreen();
   DWORD milliseconds = GetTickCount();
   while (GetTickCount() == milliseconds) ;
   milliseconds = GetTickCount();
@@ -175,7 +176,7 @@ void VideoBenchmark () {
   DWORD totalhiresfps = 0;
   g_uVideoMode             = VF_HIRES;
   memset(mem+0x2000,0x14,0x2000);
-  VideoRedrawScreen();
+  GetFrame().VideoRedrawScreen();
   milliseconds = GetTickCount();
   while (GetTickCount() == milliseconds) ;
   milliseconds = GetTickCount();
@@ -209,7 +210,7 @@ void VideoBenchmark () {
   // IF THE PROGRAM COUNTER IS NOT IN THE EXPECTED RANGE AT THE END OF THE
   // CPU BENCHMARK, REPORT AN ERROR AND OPTIONALLY TRACK IT DOWN
   if ((regs.pc < 0x300) || (regs.pc > 0x400))
-    if (MessageBox(g_hFrameWindow,
+    if (MessageBox(GetFrame().g_hFrameWindow,
                    TEXT("The emulator has detected a problem while running ")
                    TEXT("the CPU benchmark.  Would you like to gather more ")
                    TEXT("information?"),
@@ -238,13 +239,13 @@ void VideoBenchmark () {
                  (unsigned)loop,
                  (unsigned)lastpc,
                  (unsigned)regs.pc);
-        MessageBox(g_hFrameWindow,
+        MessageBox(GetFrame().g_hFrameWindow,
                    outstr,
                    TEXT("Benchmarks"),
                    MB_ICONINFORMATION | MB_SETFOREGROUND);
       }
       else
-        MessageBox(g_hFrameWindow,
+        MessageBox(GetFrame().g_hFrameWindow,
                    TEXT("The emulator was unable to locate the exact ")
                    TEXT("point of the error.  This probably means that ")
                    TEXT("the problem is external to the emulator, ")
@@ -259,7 +260,7 @@ void VideoBenchmark () {
   // THE SAME TIME
   DWORD realisticfps = 0;
   memset(mem+0x2000,0xAA,0x2000);
-  VideoRedrawScreen();
+  GetFrame().VideoRedrawScreen();
   milliseconds = GetTickCount();
   while (GetTickCount() == milliseconds) ;
   milliseconds = GetTickCount();
@@ -278,7 +279,7 @@ void VideoBenchmark () {
       memset(mem+0x2000,0xAA,0x2000);
     else
       memcpy(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRedrawScreen();
+	GetFrame().VideoRedrawScreen();
     if (cycle++ >= 3)
       cycle = 0;
     realisticfps++;
@@ -298,7 +299,7 @@ void VideoBenchmark () {
            (unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
            (unsigned)(totalmhz10[1] / 10), (unsigned)(totalmhz10[1] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
            (unsigned)realisticfps);
-  MessageBox(g_hFrameWindow,
+  MessageBox(GetFrame().g_hFrameWindow,
              outstr,
              TEXT("Benchmarks"),
              MB_ICONINFORMATION | MB_SETFOREGROUND);
@@ -311,7 +312,7 @@ void VideoChooseMonochromeColor ()
 	CHOOSECOLOR cc;
 	memset(&cc, 0, sizeof(CHOOSECOLOR));
 	cc.lStructSize     = sizeof(CHOOSECOLOR);
-	cc.hwndOwner       = g_hFrameWindow;
+	cc.hwndOwner       = GetFrame().g_hFrameWindow;
 	cc.rgbResult       = g_nMonochromeRGB;
 	cc.lpCustColors    = customcolors + 1;
 	cc.Flags           = CC_RGBINIT | CC_SOLIDCOLOR;
@@ -321,7 +322,7 @@ void VideoChooseMonochromeColor ()
 		VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
-			VideoRedrawScreen();
+			GetFrame().VideoRedrawScreen();
 		}
 		Config_Save_Video();
 	}
@@ -489,12 +490,12 @@ void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=fal
 void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
 	NTSC_VideoClockResync(dwCyclesThisFrame);
-	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
+	GetFrame().VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
 }
 
 //===========================================================================
 
-void VideoRedrawScreen (void)
+void Win32Frame::VideoRedrawScreen (void)
 {
 	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
 	VideoRefreshScreen( g_uVideoMode, true );
@@ -632,6 +633,6 @@ void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename)
 	if (!pScreenshotFilename)
 		return;
 
-	VideoRedrawScreen();
+	GetFrame().VideoRedrawScreen();
 	Video_SaveScreenShot(SCREENSHOT_560x384, pScreenshotFilename);
 }

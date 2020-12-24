@@ -208,7 +208,7 @@ void LoadConfiguration(void)
 	DWORD dwTmp = 0;
 
 	if(REGLOAD(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), &dwTmp))
-		SetFullScreenShowSubunitStatus(dwTmp ? true : false);
+		GetFrame().SetFullScreenShowSubunitStatus(dwTmp ? true : false);
 
 	if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
 		GetPropertySheet().SetTheFreezesF8Rom(dwTmp);
@@ -313,10 +313,10 @@ void LoadConfiguration(void)
 	Printer_SetIdleLimit(dwTmp);
 
 	if (REGLOAD(TEXT(REGVALUE_WINDOW_SCALE), &dwTmp))
-		SetViewportScale(dwTmp);
+		GetFrame().SetViewportScale(dwTmp);
 
 	if (REGLOAD(TEXT(REGVALUE_CONFIRM_REBOOT), &dwTmp))
-		g_bConfirmReboot = dwTmp;
+		GetFrame().g_bConfirmReboot = dwTmp;
 }
 
 static std::string GetFullPath(LPCSTR szFileName)
@@ -403,7 +403,7 @@ void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], boo
 	{
 		bRes = DoDiskInsert(slot, DRIVE_1, szImageName_drive[DRIVE_1]);
 		LogFileOutput("Init: S%d, DoDiskInsert(D1), res=%d\n", slot, bRes);
-		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);	// floppy activity LEDs and floppy buttons
+		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);	// floppy activity LEDs and floppy buttons
 		bBoot = true;
 	}
 
@@ -418,7 +418,7 @@ void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], boo
 	}
 
 	if (!bRes)
-		MessageBox(g_hFrameWindow, "Failed to insert floppy disk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
+		MessageBox(GetFrame().g_hFrameWindow, "Failed to insert floppy disk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
 }
 
 void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
@@ -443,7 +443,7 @@ void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 	{
 		bRes = DoHardDiskInsert(HARDDISK_1, szImageName_harddisk[HARDDISK_1]);
 		LogFileOutput("Init: DoHardDiskInsert(HDD1), res=%d\n", bRes);
-		FrameRefreshStatus(DRAW_LEDS);	// harddisk activity LED
+		GetFrame().FrameRefreshStatus(DRAW_LEDS);	// harddisk activity LED
 		bBoot = true;
 	}
 
@@ -454,7 +454,7 @@ void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 	}
 
 	if (!bRes)
-		MessageBox(g_hFrameWindow, "Failed to insert harddisk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
+		MessageBox(GetFrame().g_hFrameWindow, "Failed to insert harddisk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
 }
 
 void UnplugHardDiskControllerCard(void)
@@ -593,5 +593,5 @@ void CtrlReset()
 #endif
 
 	CpuReset();
-	g_bFreshReset = true;
+	GetFrame().g_bFreshReset = true;
 }
