@@ -4,6 +4,7 @@
 
 #include "StdAfx.h"
 #include "Frame.h"
+#include "Common.h"
 
 #include "linux/version.h"
 #include "linux/paddle.h"
@@ -12,6 +13,7 @@
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/joypad.h"
 #include "frontends/libretro/analog.h"
+#include "frontends/libretro/rdirectsound.h"
 
 namespace
 {
@@ -90,7 +92,7 @@ void retro_get_system_av_info(retro_system_av_info *info)
   info->geometry.aspect_ratio = 0;
 
   info->timing.fps            = 60;
-  info->timing.sample_rate    = 0;
+  info->timing.sample_rate    = SPKR_SAMPLE_RATE;
 }
 
 void retro_set_environment(retro_environment_t cb)
@@ -117,8 +119,11 @@ void retro_set_environment(retro_environment_t cb)
 
   cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
 
-  retro_keyboard_callback callback = {&Game::keyboardCallback};
-  cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &callback);
+  retro_keyboard_callback keyboardCallback = {&Game::keyboardCallback};
+  cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &keyboardCallback);
+
+  retro_audio_buffer_status_callback audioCallback = {&RDirectSound::bufferStatusCallback};
+  cb(RETRO_ENVIRONMENT_SET_AUDIO_BUFFER_STATUS_CALLBACK, &audioCallback);
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb)
@@ -156,6 +161,8 @@ void retro_run(void)
   game->processInputEvents();
   game->executeOneFrame();
   game->drawVideoBuffer();
+  const size_t ms = (1000 + 60 - 1) / 60; // round up
+  RDirectSound::writeAudio(ms);
 }
 
 bool retro_load_game(const retro_game_info *info)

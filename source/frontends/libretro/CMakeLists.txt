@@ -15,6 +15,7 @@ if (EXISTS ${LIBRETRO_PATH}/include/libretro.h)
     joypadbase.cpp
     joypad.cpp
     analog.cpp
+    rdirectsound.cpp
     )
 
   target_include_directories(ra2 PRIVATE

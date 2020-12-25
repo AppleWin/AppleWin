@@ -23,6 +23,7 @@ There are 4 projects
 * applen: a frontend based on ncurses
 * qapple: Qt frontend
 * sa2: SDL2 frontend
+* libra2: a libretro core
 
 The libapple interface is a *link time* interface: some functions are not defined and must be provided in order to properly link
 the application. These functions are listed in [interface.h](source/linux/interface.h).
@@ -106,6 +107,8 @@ Keyboard emulation
 In order to have a better experience with the keyboard, one should probably enable *Game Focus Mode* (normally Scroll-Lock) to disable hotkeys.
 
 Video works, but the vertical flip is done in software.
+
+Audio (speaker) works with some glitches.
 
 Must be manually configured:
 ``cmake -DLIBRETRO_PATH=/path/to/libretro-common``
