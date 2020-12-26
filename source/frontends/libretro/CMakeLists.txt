@@ -5,7 +5,7 @@ set(LIBRETRO_COMMON_PATH NONE CACHE PATH "path to libretro-common")
 if (EXISTS ${LIBRETRO_COMMON_PATH}/include/libretro.h)
   message("Using LIBRETRO_COMMON_PATH=${LIBRETRO_COMMON_PATH}")
 
-  add_library(ra2 SHARED
+  add_library(applewin_libretro SHARED
     environment.cpp
     libretro.cpp
     bitmaps.cpp
@@ -18,14 +18,18 @@ if (EXISTS ${LIBRETRO_COMMON_PATH}/include/libretro.h)
     rdirectsound.cpp
     )
 
-  target_include_directories(ra2 PRIVATE
+  target_include_directories(applewin_libretro PRIVATE
     ${LIBRETRO_COMMON_PATH}/include
     )
 
-  target_link_libraries(ra2 PRIVATE
+  target_link_libraries(applewin_libretro PRIVATE
     appleii
     common2
     )
+
+  # just call it "applewin_libretro.so" as per libretro standard
+  set_target_properties(applewin_libretro PROPERTIES PREFIX "")
+
 else()
   message("Bad LIBRETRO_COMMON_PATH=${LIBRETRO_COMMON_PATH}, skipping libretro code")
 endif()
