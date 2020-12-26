@@ -1,9 +1,9 @@
 # there is no simple package for libretro-common
 # this requires user input
-set(LIBRETRO_PATH NONE CACHE PATH "path to libretro-common")
+set(LIBRETRO_COMMON_PATH NONE CACHE PATH "path to libretro-common")
 
-if (EXISTS ${LIBRETRO_PATH}/include/libretro.h)
-  message("Using LIBRETRO_PATH=${LIBRETRO_PATH}")
+if (EXISTS ${LIBRETRO_COMMON_PATH}/include/libretro.h)
+  message("Using LIBRETRO_COMMON_PATH=${LIBRETRO_COMMON_PATH}")
 
   add_library(ra2 SHARED
     environment.cpp
@@ -19,7 +19,7 @@ if (EXISTS ${LIBRETRO_PATH}/include/libretro.h)
     )
 
   target_include_directories(ra2 PRIVATE
-    ${LIBRETRO_PATH}/include
+    ${LIBRETRO_COMMON_PATH}/include
     )
 
   target_link_libraries(ra2 PRIVATE
@@ -27,5 +27,5 @@ if (EXISTS ${LIBRETRO_PATH}/include/libretro.h)
     common2
     )
 else()
-  message("Bad LIBRETRO_PATH=${LIBRETRO_PATH}, skipping libretro code")
+  message("Bad LIBRETRO_COMMON_PATH=${LIBRETRO_COMMON_PATH}, skipping libretro code")
 endif()
