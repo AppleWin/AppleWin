@@ -12,6 +12,10 @@
 namespace
 {
 
+  // we can only run 1 generator at a time
+  // 1 is for speaker (2 would be Mockingboard)
+  const size_t ourChannels = 1;
+
   class DirectSoundGenerator
   {
   public:
@@ -20,6 +24,9 @@ namespace
     void writeAudio(const size_t ms);
     void playSilence(const size_t ms);
 
+    bool isRunning() const;
+    size_t getNumberOfChannels() const;
+
   private:
     IDirectSoundBuffer * myBuffer;
 
@@ -27,13 +34,23 @@ namespace
 
     size_t myBytesPerSecond;
 
-    bool isRunning() const;
-
     void mixBuffer(const void * ptr, const size_t size);
   };
 
-
   std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator>> activeSoundGenerators;
+
+  std::shared_ptr<DirectSoundGenerator> findRunningGenerator(const size_t channels)
+  {
+    for (auto & it : activeSoundGenerators)
+    {
+      const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
+      if (generator->isRunning() && generator->getNumberOfChannels() == channels)
+      {
+	return generator;
+      }
+    }
+    return std::shared_ptr<DirectSoundGenerator>();
+  }
 
   DirectSoundGenerator::DirectSoundGenerator(IDirectSoundBuffer * buffer)
     : myBuffer(buffer)
@@ -45,15 +62,19 @@ namespace
   {
     DWORD dwStatus;
     myBuffer->GetStatus(&dwStatus);
-    if (!(dwStatus & DSBSTATUS_PLAYING))
+    if (dwStatus & DSBSTATUS_PLAYING)
     {
-      return false;
+      return true;
     }
     else
     {
-      // for now, just play speaker audio
-      return myBuffer->channels == 1;
+      return false;
     }
+  }
+
+  size_t DirectSoundGenerator::getNumberOfChannels() const
+  {
+    return myBuffer->channels;
   }
 
   void DirectSoundGenerator::mixBuffer(const void * ptr, const size_t size)
@@ -67,7 +88,7 @@ namespace
     }
     else
     {
-      myMixerBuffer.resize(2 * size);
+      myMixerBuffer.resize(2 * frames);
       for (int16_t i = 0; i < frames; ++i)
       {
 	myMixerBuffer[i * 2] = data[i];
@@ -96,8 +117,7 @@ namespace
     }
 
     const size_t frames = ms * myBuffer->sampleRate / 1000;
-    const size_t bytesToWrite = frames * sizeof(int16_t) * 2;
-    myMixerBuffer.resize(bytesToWrite);
+    myMixerBuffer.resize(2 * frames);
     std::fill(myMixerBuffer.begin(), myMixerBuffer.end(), 0);
     audio_batch_cb(myMixerBuffer.data(), frames);
   }
@@ -111,7 +131,8 @@ namespace
       return;
     }
 
-    const size_t bytesToRead = ms * myBytesPerSecond / 1000;
+    const size_t frames = ms * myBuffer->sampleRate / 1000;
+    const size_t bytesToRead = frames * myBuffer->channels * sizeof(int16_t);
 
     LPVOID lpvAudioPtr1, lpvAudioPtr2;
     DWORD dwAudioBytes1, dwAudioBytes2;
@@ -149,18 +170,18 @@ namespace RDirectSound
 
   void writeAudio(const size_t ms)
   {
-    for (auto & it : activeSoundGenerators)
+    const auto generator = findRunningGenerator(ourChannels);
+    if (generator)
     {
-      const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
       generator->writeAudio(ms);
     }
   }
 
   void playSilence(const size_t ms)
   {
-    for (auto & it : activeSoundGenerators)
+    const auto generator = findRunningGenerator(ourChannels);
+    if (generator)
     {
-      const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
       generator->playSilence(ms);
     }
   }
@@ -170,10 +191,17 @@ namespace RDirectSound
     if (active)
     {
       // I am not sure this is any useful
-      if (underrun_likely || occupancy < 40)
+      if (underrun_likely)
       {
-	log_cb(RETRO_LOG_INFO, "RA2: %s occupancy = %d, underrun_likely = %d\n", __FUNCTION__, occupancy, underrun_likely);
-	playSilence(10);
+	if (occupancy < 20)
+	{
+	  log_cb(RETRO_LOG_INFO, "RA2: %s occupancy = %d, underrun_likely = %d\n", __FUNCTION__, occupancy, underrun_likely);
+	  playSilence(10);
+	}
+	if (occupancy > 80)
+	{
+	  log_cb(RETRO_LOG_INFO, "RA2: %s occupancy = %d, underrun_likely = %d\n", __FUNCTION__, occupancy, underrun_likely);
+	}
       }
     }
   }

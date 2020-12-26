@@ -168,7 +168,7 @@ void Emulator::execute(const size_t next)
 {
   if (g_nAppMode == MODE_RUNNING)
   {
-    const size_t cyclesToExecute = mySpeed.getCyclesTillNext(next);
+    const size_t cyclesToExecute = mySpeed.getCyclesTillNext(next * 1000);
 
     const bool bVideoUpdate = true;
     const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();

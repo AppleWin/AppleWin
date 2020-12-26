@@ -108,7 +108,7 @@ In order to have a better experience with the keyboard, one should probably enab
 
 Video works, but the vertical flip is done in software.
 
-Audio (speaker) works with some glitches.
+Audio (speaker) works.
 
 Must be manually configured:
 ``cmake -DLIBRETRO_PATH=/path/to/libretro-common``

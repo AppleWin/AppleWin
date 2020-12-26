@@ -91,7 +91,7 @@ void retro_get_system_av_info(retro_system_av_info *info)
   info->geometry.max_height   = GetFrameBufferBorderlessHeight();
   info->geometry.aspect_ratio = 0;
 
-  info->timing.fps            = 60;
+  info->timing.fps            = Game::FPS;
   info->timing.sample_rate    = SPKR_SAMPLE_RATE;
 }
 
@@ -124,6 +124,9 @@ void retro_set_environment(retro_environment_t cb)
 
   retro_audio_buffer_status_callback audioCallback = {&RDirectSound::bufferStatusCallback};
   cb(RETRO_ENVIRONMENT_SET_AUDIO_BUFFER_STATUS_CALLBACK, &audioCallback);
+
+  retro_frame_time_callback timeCallback = {&Game::frameTimeCallback, 1000000 / Game::FPS};
+  cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &timeCallback);
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb)

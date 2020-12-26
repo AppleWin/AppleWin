@@ -10,8 +10,8 @@ public:
   void reset();
 
   // calculate the number of cycles to execute in the current period
-  // assuming the next call will happen in x milliseconds
-  size_t getCyclesTillNext(const size_t milliseconds) const;
+  // assuming the next call will happen in x microseconds
+  size_t getCyclesTillNext(const size_t microseconds) const;
 
 private:
 

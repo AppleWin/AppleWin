@@ -16,11 +16,11 @@ void Speed::reset()
   myStartCycles = g_nCumulativeCycles;
 }
 
-size_t Speed::getCyclesTillNext(const size_t milliseconds) const
+size_t Speed::getCyclesTillNext(const size_t microseconds) const
 {
   if (myFixedSpeed)
   {
-    const size_t cycles = static_cast<uint64_t>(milliseconds * g_fCurrentCLK6502 * 1.0e-3);
+    const size_t cycles = static_cast<uint64_t>(microseconds * g_fCurrentCLK6502 * 1.0e-6);
     return cycles;
   }
   else
@@ -28,11 +28,11 @@ size_t Speed::getCyclesTillNext(const size_t milliseconds) const
     const uint64_t currentCycles = g_nCumulativeCycles;
     const auto currentTime = std::chrono::steady_clock::now();
 
-    const auto currentDelta = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - myStartTime).count();
+    const auto currentDelta = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - myStartTime).count();
     // target the next time we will be called
-    const auto targetDeltaInMillis = currentDelta + milliseconds;
+    const auto targetDeltaInMicros = currentDelta + microseconds;
 
-    const uint64_t targetCycles = static_cast<uint64_t>(targetDeltaInMillis * g_fCurrentCLK6502 * 1.0e-3) + myStartCycles;
+    const uint64_t targetCycles = static_cast<uint64_t>(targetDeltaInMicros * g_fCurrentCLK6502 * 1.0e-6) + myStartCycles;
     if (targetCycles > currentCycles)
     {
       // number of cycles to fill this period
