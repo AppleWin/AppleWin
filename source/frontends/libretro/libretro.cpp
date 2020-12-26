@@ -17,7 +17,18 @@
 
 namespace
 {
+
   std::unique_ptr<Game> game;
+
+  bool endsWith(const std::string & value, const std::string & ending)
+  {
+    if (ending.size() > value.size())
+    {
+      return false;
+    }
+    return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+  }
+
 }
 
 void retro_init(void)
@@ -77,7 +88,7 @@ void retro_get_system_info(retro_system_info *info)
   info->library_name     = "AppleWin";
   info->library_version  = version.c_str();
   info->need_fullpath    = true;
-  info->valid_extensions = "bin|do|dsk|nib|po|gz|woz|zip|2mg|2img|iie|apl|hdv";
+  info->valid_extensions = "bin|do|dsk|nib|po|gz|woz|zip|2mg|2img|iie|apl|hdv|yaml";
 }
 
 
@@ -182,7 +193,19 @@ bool retro_load_game(const retro_game_info *info)
   try
   {
     game.reset(new Game);
-    const bool ok = game->loadGame(info->path);
+
+    const std::string snapshotEnding = ".aws.yaml";
+    const std::string gamePath = info->path;
+
+    bool ok;
+    if (endsWith(gamePath, snapshotEnding))
+    {
+      ok = game->loadSnapshot(gamePath);
+    }
+    else
+    {
+      ok = game->loadGame(gamePath);
+    }
 
     log_cb(RETRO_LOG_INFO, "Game path: %s:%d\n", info->path, ok);
 

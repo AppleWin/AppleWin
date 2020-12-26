@@ -3,13 +3,17 @@
 #include "frontends/common2/speed.h"
 #include "frontends/libretro/environment.h"
 
+#include <string>
+#include <vector>
+
 class Game
 {
 public:
   Game();
   ~Game();
 
-  bool loadGame(const char * path);
+  bool loadGame(const std::string & path);
+  bool loadSnapshot(const std::string & path);
 
   void executeOneFrame();
   void processInputEvents();

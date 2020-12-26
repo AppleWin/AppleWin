@@ -293,8 +293,14 @@ void Game::drawVideoBuffer()
   video_cb(myVideoBuffer.data() + myOffset, myBorderlessWidth, myBorderlessHeight, myPitch);
 }
 
-bool Game::loadGame(const char * path)
+bool Game::loadGame(const std::string & path)
 {
-  const bool ok = DoDiskInsert(SLOT6, DRIVE_1, path);
+  const bool ok = DoDiskInsert(SLOT6, DRIVE_1, path.c_str());
   return ok;
+}
+
+bool Game::loadSnapshot(const std::string & path)
+{
+  setSnapshotFilename(path, true);
+  return true;
 }
