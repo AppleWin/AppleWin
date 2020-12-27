@@ -77,7 +77,6 @@
     <ClInclude Include="source\DiskImage.h" />
     <ClInclude Include="source\DiskImageHelper.h" />
     <ClInclude Include="source\DiskLog.h" />
-    <ClInclude Include="source\Frame.h" />
     <ClInclude Include="source\FrameBase.h" />
     <ClInclude Include="source\Harddisk.h" />
     <ClInclude Include="source\Interface.h" />
@@ -176,7 +175,6 @@
     <ClCompile Include="source\DiskFormatTrack.cpp" />
     <ClCompile Include="source\DiskImage.cpp" />
     <ClCompile Include="source\DiskImageHelper.cpp" />
-    <ClCompile Include="source\Frame.cpp" />
     <ClCompile Include="source\Harddisk.cpp" />
     <ClCompile Include="source\Joystick.cpp" />
     <ClCompile Include="source\Keyboard.cpp" />

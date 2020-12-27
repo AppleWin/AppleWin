@@ -45,7 +45,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SerialComms.h"
 #include "SoundCore.h"
 #include "Speaker.h"
-#include "Frame.h"
 #include "Utilities.h"
 #include "Windows/WinVideo.h"
 #include "../resource/resource.h"

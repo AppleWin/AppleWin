@@ -49,9 +49,6 @@
     <ClCompile Include="source\Debugger\Debugger_Symbols.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
-    <ClCompile Include="source\Frame.cpp">
-      <Filter>Source Files\Video</Filter>
-    </ClCompile>
     <ClCompile Include="source\Disk.cpp">
       <Filter>Source Files\Disk</Filter>
     </ClCompile>
@@ -296,9 +293,6 @@
     </ClInclude>
     <ClInclude Include="source\Debugger\Debugger_Symbols.h">
       <Filter>Source Files\Debugger</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Frame.h">
-      <Filter>Source Files\Video</Filter>
     </ClInclude>
     <ClInclude Include="source\Disk.h">
       <Filter>Source Files\Disk</Filter>

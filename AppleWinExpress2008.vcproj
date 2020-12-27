@@ -934,14 +934,6 @@
 				Name="Video"
 				>
 				<File
-					RelativePath=".\source\Frame.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Frame.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\NTSC.cpp"
 					>
 				</File>
