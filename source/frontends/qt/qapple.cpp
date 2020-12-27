@@ -61,11 +61,7 @@ namespace
         RiffInitWriteFile("/tmp/Mockingboard.wav", 44100, 2);
 #endif
         g_nAppMode = MODE_RUNNING;
-        g_fh = fopen("/tmp/applewin.txt", "w");
-        setbuf(g_fh, nullptr);
-
-        LogFileOutput("Initialisation\n");
-
+        LogInit();
         g_bFullSpeed = false;
     }
 
