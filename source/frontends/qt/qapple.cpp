@@ -38,6 +38,7 @@
 #include "qdirectsound.h"
 #include "gamepadpaddle.h"
 #include "preferences.h"
+#include "configuration.h"
 
 #include <QMdiSubWindow>
 #include <QMessageBox>
@@ -235,6 +236,8 @@ QApple::QApple(QWidget *parent) :
 
     mySaveStateLabel = new QLabel;
     statusBar()->addPermanentWidget(mySaveStateLabel);
+
+    Registry::instance.reset(new Configuration);
 
     myPreferences = new Preferences(this);
 

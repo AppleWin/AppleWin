@@ -17,7 +17,7 @@
 #include "linux/benchmark.h"
 #include "linux/paddle.h"
 #include "linux/interface.h"
-#include "frontends/common2/configuration.h"
+#include "frontends/common2/fileregistry.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/utils.h"
 #include "frontends/ncurses/world.h"
@@ -142,7 +142,7 @@ namespace
       LogInit();
     }
 
-    InitializeRegistry(options);
+    InitializeFileRegistry(options);
 
     g_nMemoryClearType = options.memclear;
 

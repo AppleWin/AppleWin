@@ -29,7 +29,7 @@ SOURCES += main.cpp\
     qdirectsound.cpp \
     qresources.cpp \
     emulator.cpp \
-    registry.cpp \
+    configuration.cpp \
     video.cpp \
     memorycontainer.cpp \
     preferences.cpp \
@@ -53,7 +53,7 @@ HEADERS  += qapple.h \
     loggingcategory.h \
     options.h \
     qdirectsound.h \
-    registry.h \
+    configuration.h \
     video.h \
     memorycontainer.h \
     preferences.h \

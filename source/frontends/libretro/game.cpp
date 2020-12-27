@@ -18,7 +18,7 @@
 #include "linux/keyboard.h"
 #include "linux/paddle.h"
 #include "frontends/common2/programoptions.h"
-#include "frontends/common2/configuration.h"
+#include "frontends/common2/fileregistry.h"
 #include "frontends/common2/utils.h"
 
 #include "libretro.h"
@@ -48,7 +48,7 @@ Game::Game()
     LogInit();
   }
 
-  InitializeRegistry(options);
+  InitializeFileRegistry(options);
   initialiseEmulator();
 
   myBorderlessWidth = GetFrameBufferBorderlessWidth();

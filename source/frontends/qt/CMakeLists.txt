@@ -16,7 +16,7 @@ add_executable(qapple
   memorycontainer.cpp
   gamepadpaddle.cpp
   video.cpp
-  registry.cpp
+  configuration.cpp
   options.cpp
   loggingcategory.cpp
   viewbuffer.cpp

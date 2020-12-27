@@ -7,7 +7,7 @@
 #include "linux/interface.h"
 #include "linux/benchmark.h"
 
-#include "frontends/common2/configuration.h"
+#include "frontends/common2/fileregistry.h"
 #include "frontends/common2/utils.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/timer.h"
@@ -111,7 +111,7 @@ void run_sdl(int argc, const char * argv [])
     LogInit();
   }
 
-  InitializeRegistry(options);
+  InitializeFileRegistry(options);
 
   Paddle::instance().reset(new Gamepad(0));
 
