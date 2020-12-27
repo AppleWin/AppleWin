@@ -191,17 +191,12 @@ namespace RDirectSound
     if (active)
     {
       // I am not sure this is any useful
-      if (underrun_likely)
+      static unsigned lastOccupancy = 0;
+      const int diff = std::abs(int(lastOccupancy) - int(occupancy));
+      if (diff >= 5)
       {
-	if (occupancy < 20)
-	{
-	  log_cb(RETRO_LOG_INFO, "RA2: %s occupancy = %d, underrun_likely = %d\n", __FUNCTION__, occupancy, underrun_likely);
-	  playSilence(10);
-	}
-	if (occupancy > 80)
-	{
-	  log_cb(RETRO_LOG_INFO, "RA2: %s occupancy = %d, underrun_likely = %d\n", __FUNCTION__, occupancy, underrun_likely);
-	}
+	log_cb(RETRO_LOG_INFO, "RA2: %s occupancy = %d, underrun_likely = %d\n", __FUNCTION__, occupancy, underrun_likely);
+	lastOccupancy = occupancy;
       }
     }
   }
