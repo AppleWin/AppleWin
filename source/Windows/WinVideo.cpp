@@ -37,7 +37,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Core.h"
 #include "CPU.h"
 #include "Joystick.h"
-#include "Frame.h"
 #include "Log.h"
 #include "Memory.h"
 #include "CardManager.h"

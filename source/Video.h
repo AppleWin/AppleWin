@@ -185,6 +185,14 @@ extern uint8_t   *g_pFramebufferbits;
 
 // Prototypes _______________________________________________________
 
+// size of the video buffer stored in g_pFramebufferbits
+UINT GetFrameBufferBorderlessWidth(void);
+UINT GetFrameBufferBorderlessHeight(void);
+UINT GetFrameBufferBorderWidth(void);
+UINT GetFrameBufferBorderHeight(void);
+UINT GetFrameBufferWidth(void);
+UINT GetFrameBufferHeight(void);
+
 void    VideoReinitialize (bool bInitVideoScannerAddress = true);
 void    VideoResetState ();
 enum VideoScanner_e {VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH};
