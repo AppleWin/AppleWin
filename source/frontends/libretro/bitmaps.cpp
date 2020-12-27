@@ -71,21 +71,21 @@ namespace
     return true;
   }
 
-}
+  struct CBITMAP : public CHANDLE
+  {
+    std::vector<char> image;
+  };
 
-struct CBITMAP : public CHANDLE
-{
-  std::vector<char> image;
-};
+  std::string getFilename(const std::string & resource)
+  {
+    if (resource == "CHARSET40") return "CHARSET4.BMP";
+    if (resource == "CHARSET82") return "CHARSET82.bmp";
+    if (resource == "CHARSET8M") return "CHARSET8M.bmp";
+    if (resource == "CHARSET8C") return "CHARSET8C.bmp";
 
-std::string getFilename(const std::string & resource)
-{
-  if (resource == "CHARSET40") return "CHARSET4.BMP";
-  if (resource == "CHARSET82") return "CHARSET82.bmp";
-  if (resource == "CHARSET8M") return "CHARSET8M.bmp";
-  if (resource == "CHARSET8C") return "CHARSET8C.bmp";
+    return resource;
+  }
 
-  return resource;
 }
 
 HBITMAP LoadBitmap(HINSTANCE hInstance, const char * resource)
