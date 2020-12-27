@@ -219,7 +219,7 @@ void Disk2InterfaceCard::CheckSpinning(const bool stateChanged, const ULONG uExe
 		m_floppyDrive[m_currDrive].m_spinning = SPINNING_CYCLES;
 
 	if (modeChanged)
-		FrameDrawDiskLEDS( (HDC)0 );
+		GetFrame().FrameDrawDiskLEDS( (HDC)0 );
 
 	if (modeChanged)
 	{
@@ -511,7 +511,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		pDrive->m_phasePrecise = newPhasePrecise;
 		pFloppy->m_trackimagedata = false;
 		m_formatTrack.DriveNotWritingTrack();
-		FrameDrawDiskStatus((HDC)0);	// Show track status (GH#201)
+		GetFrame().FrameDrawDiskStatus((HDC)0);	// Show track status (GH#201)
 	}
 
 #if LOG_DISK_PHASES
@@ -683,7 +683,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 		if (!strcmp(pszOtherPathname.c_str(), szCurrentPathname))
 		{
 			EjectDisk(!drive);
-			FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+			GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 		}
 	}
 
@@ -697,7 +697,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	{
 		TCHAR szText[100+MAX_PATH];
 		StringCbPrintf(szText, sizeof(szText), "Only the first file in a multi-file zip is supported\nUse disk image '%s' ?", pFloppy->m_strFilenameInZip.c_str());
-		int nRes = MessageBox(g_hFrameWindow, szText, TEXT("Multi-Zip Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
+		int nRes = MessageBox(GetFrame().g_hFrameWindow, szText, TEXT("Multi-Zip Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 		{
 			EjectDisk(drive);
@@ -827,7 +827,7 @@ void Disk2InterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFil
 	}
 
 	MessageBox(
-		g_hFrameWindow,
+		GetFrame().g_hFrameWindow,
 		szBuffer,
 		g_pAppTitle.c_str(),
 		MB_ICONEXCLAMATION | MB_SETFOREGROUND);
@@ -1033,7 +1033,7 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
 	if ((pFloppy->m_byte & 0xFF) == 0)
-		FrameDrawDiskStatus( (HDC)0 );
+		GetFrame().FrameDrawDiskStatus( (HDC)0 );
 }
 
 //===========================================================================
@@ -1184,7 +1184,7 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 
 	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
 	if ((floppy.m_byte & 0xFF) == 0)
-		FrameDrawDiskStatus((HDC)0);
+		GetFrame().FrameDrawDiskStatus((HDC)0);
 }
 
 void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder)
@@ -1543,11 +1543,11 @@ void Disk2InterfaceCard::Reset(const bool bIsPowerCycle)
 		m_floppyDrive[DRIVE_2].m_spinning   = 0;
 		m_floppyDrive[DRIVE_2].m_writelight = 0;
 
-		FrameRefreshStatus(DRAW_LEDS, false);
+		GetFrame().FrameRefreshStatus(DRAW_LEDS, false);
 	}
 
 	InitFirmware(GetCxRomPeripheral());
-	FrameRefreshStatus(DRAW_TITLE, false);
+	GetFrame().FrameRefreshStatus(DRAW_TITLE, false);
 }
 
 void Disk2InterfaceCard::ResetSwitches(void)
@@ -1564,7 +1564,7 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 {
 	if (!IsDriveConnected(drive))
 	{
-		MessageBox(g_hFrameWindow, "Drive not connected!", "Insert disk", MB_ICONEXCLAMATION|MB_SETFOREGROUND|MB_OK);
+		MessageBox(GetFrame().g_hFrameWindow, "Drive not connected!", "Insert disk", MB_ICONEXCLAMATION|MB_SETFOREGROUND|MB_OK);
 		return false;
 	}
 
@@ -1582,8 +1582,8 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 	OPENFILENAME ofn;
 	memset(&ofn, 0, sizeof(OPENFILENAME));
 	ofn.lStructSize     = sizeof(OPENFILENAME);
-	ofn.hwndOwner       = g_hFrameWindow;
-	ofn.hInstance       = g_hInstance;
+	ofn.hwndOwner       = GetFrame().g_hFrameWindow;
+	ofn.hInstance       = GetFrame().g_hInstance;
 	ofn.lpstrFilter     = TEXT("All Images\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie;*.apl\0")
 						  TEXT("Disk Images (*.bin,*.do,*.dsk,*.nib,*.po,*.gz,*.woz,*.zip,*.2mg,*.2img,*.iie)\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie\0")
 						  TEXT("All Files\0*.*\0");
@@ -1687,7 +1687,7 @@ void __stdcall Disk2InterfaceCard::SetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uE
 	m_floppyDrive[m_currDrive].m_writelight = WRITELIGHT_CYCLES;
 
 	if (modechange)
-		FrameDrawDiskLEDS( (HDC)0 );
+		GetFrame().FrameDrawDiskLEDS( (HDC)0 );
 }
 
 //===========================================================================
@@ -1703,8 +1703,8 @@ void Disk2InterfaceCard::UpdateDriveState(DWORD cycles)
 		{
 			if (!(pDrive->m_spinning -= MIN(pDrive->m_spinning, cycles)))
 			{
-				FrameDrawDiskLEDS( (HDC)0 );
-				FrameDrawDiskStatus( (HDC)0 );
+				GetFrame().FrameDrawDiskLEDS( (HDC)0 );
+				GetFrame().FrameDrawDiskStatus( (HDC)0 );
 			}
 		}
 
@@ -1716,8 +1716,8 @@ void Disk2InterfaceCard::UpdateDriveState(DWORD cycles)
 		{
 			if (!(pDrive->m_writelight -= MIN(pDrive->m_writelight, cycles)))
 			{
-				FrameDrawDiskLEDS( (HDC)0 );
-				FrameDrawDiskStatus( (HDC)0 );
+				GetFrame().FrameDrawDiskLEDS( (HDC)0 );
+				GetFrame().FrameDrawDiskStatus( (HDC)0 );
 			}
 		}
 	}
@@ -1733,7 +1733,7 @@ bool Disk2InterfaceCard::DriveSwap(void)
 	{
 		// 1.26.2.4 Prompt when trying to swap disks while drive is on instead of silently failing
 		int status = MessageBox(
-			g_hFrameWindow,
+			GetFrame().g_hFrameWindow,
 			"WARNING:\n"
 				"\n"
 				"\tAttempting to swap a disk while a drive is on\n"
@@ -1773,7 +1773,7 @@ bool Disk2InterfaceCard::DriveSwap(void)
 	SaveLastDiskImage(DRIVE_1);
 	SaveLastDiskImage(DRIVE_2);
 
-	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, false);
+	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, false);
 
 	return true;
 }
@@ -2264,7 +2264,7 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 	LoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_1, version);
 	LoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_2, version);
 
-	FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
 	return true;
 }

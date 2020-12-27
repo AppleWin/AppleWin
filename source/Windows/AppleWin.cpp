@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 #include "Windows/WinVideo.h"
+#include "Windows/Win32Frame.h"
 #include "Windows/WinFrame.h"
 #include "RGBMonitor.h"
 #include "NTSC.h"
@@ -56,9 +57,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tfe/Tfe.h"
 
 //=================================================
-
-// Win32
-HINSTANCE g_hInstance          = (HINSTANCE)0;
 
 static bool g_bLoadedSaveState = false;
 static bool g_bSysClkOK = false;
@@ -72,7 +70,7 @@ bool GetLoadedSaveStateFlag(void)
 	return g_bLoadedSaveState;
 }
 
-void SetLoadedSaveStateFlag(const bool bFlag)
+void Win32Frame::SetLoadedSaveStateFlag(const bool bFlag)
 {
 	g_bLoadedSaveState = bFlag;
 }
@@ -85,7 +83,7 @@ bool GetHookAltGrControl(void)
 static void ResetToLogoMode(void)
 {
 	g_nAppMode = MODE_LOGO;
-	SetLoadedSaveStateFlag(false);
+	GetFrame().SetLoadedSaveStateFlag(false);
 }
 
 //---------------------------------------------------------------------------
@@ -453,21 +451,21 @@ static void RegisterHotKeys(void)
 	BOOL bStatus[3] = {0,0,0};
 
 	bStatus[0] = RegisterHotKey( 
-		g_hFrameWindow , // HWND hWnd
+		GetFrame().g_hFrameWindow , // HWND hWnd
 		VK_SNAPSHOT_560, // int id (user/custom id)
 		0              , // UINT fsModifiers
 		VK_SNAPSHOT      // UINT vk = PrintScreen
 	);
 
 	bStatus[1] = RegisterHotKey( 
-		g_hFrameWindow , // HWND hWnd
+		GetFrame().g_hFrameWindow , // HWND hWnd
 		VK_SNAPSHOT_280, // int id (user/custom id)
 		MOD_SHIFT      , // UINT fsModifiers
 		VK_SNAPSHOT      // UINT vk = PrintScreen
 	);
 
 	bStatus[2] = RegisterHotKey( 
-		g_hFrameWindow  , // HWND hWnd
+		GetFrame().g_hFrameWindow  , // HWND hWnd
 		VK_SNAPSHOT_TEXT, // int id (user/custom id)
 		MOD_CONTROL     , // UINT fsModifiers
 		VK_SNAPSHOT       // UINT vk = PrintScreen
@@ -485,7 +483,7 @@ static void RegisterHotKeys(void)
 			msg += "\n. Ctrl+PrintScreen";
 
 		if (g_bShowPrintScreenWarningDialog)
-			MessageBox( g_hFrameWindow, msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK );
+			SHMessageBoxCheck( GetFrame().g_hFrameWindow, msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK, MB_OK, "AppleWin-75097740-8e59-444c-bc94-2d4915132599" );
 
 		msg += "\n";
 		LogFileOutput(msg.c_str());
@@ -505,12 +503,12 @@ static bool HookFilterForKeyboard()
 {
 	g_hinstDLL = LoadLibrary(TEXT("HookFilter.dll"));
 
-	_ASSERT(g_hFrameWindow);
+	_ASSERT(GetFrame().g_hFrameWindow);
 
 	typedef void (*RegisterHWNDProc)(HWND, bool, bool);
 	RegisterHWNDProc RegisterHWND = (RegisterHWNDProc) GetProcAddress(g_hinstDLL, "RegisterHWND");
 	if (RegisterHWND)
-		RegisterHWND(g_hFrameWindow, g_bHookAltTab, g_bHookAltGrControl);
+		RegisterHWND(GetFrame().g_hFrameWindow, g_bHookAltTab, g_bHookAltGrControl);
 
 	HOOKPROC hkprcLowLevelKeyboardProc = (HOOKPROC) GetProcAddress(g_hinstDLL, "LowLevelKeyboardProc");
 
@@ -520,7 +518,7 @@ static bool HookFilterForKeyboard()
 						g_hinstDLL,
 						0);
 
-	if (g_hhook != 0 && g_hFrameWindow != 0)
+	if (g_hhook != 0 && GetFrame().g_hFrameWindow != 0)
 		return true;
 
 	std::string msg("Failed to install hook filter for system keys");
@@ -603,7 +601,7 @@ static void UninitHookThread()
 
 static void ExceptionHandler(const char* pError)
 {
-	MessageBox(	g_hFrameWindow,
+	MessageBox(	GetFrame().g_hFrameWindow,
 				pError,
 				TEXT("Runtime Exception"),
 				MB_ICONEXCLAMATION | MB_SETFOREGROUND);
@@ -760,7 +758,7 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 	DDInit();	// For WaitForVerticalBlank()
 #endif
 
-	g_hInstance = passinstance;
+	GetFrame().g_hInstance = passinstance;
 	GdiSetBatchLimit(512);
 	LogFileOutput("Init: GdiSetBatchLimit()\n");
 
@@ -848,7 +846,7 @@ static void RepeatInitialization(void)
 		LogFileOutput("Main: VideoInitialize()\n");
 
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");
-		FrameCreateWindow();	// g_hFrameWindow is now valid
+		FrameCreateWindow();	// GetFrame().g_hFrameWindow is now valid
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
 
 		// Init palette color
@@ -936,7 +934,7 @@ static void RepeatInitialization(void)
 
 		if (!g_bSysClkOK)
 		{
-			MessageBox(g_hFrameWindow, "DirectX failed to create SystemClock instance", TEXT("AppleWin Error"), MB_OK);
+			MessageBox(GetFrame().g_hFrameWindow, "DirectX failed to create SystemClock instance", TEXT("AppleWin Error"), MB_OK);
 			g_cmdLine.bShutdown = true;
 		}
 
@@ -947,7 +945,7 @@ static void RepeatInitialization(void)
 							: "Unsupported -rom and -f8rom being used at the same time\n";
 
 			LogFileOutput("%s", msg.c_str());
-			MessageBox(g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
+			MessageBox(GetFrame().g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			g_cmdLine.bShutdown = true;
 		}
 
@@ -985,7 +983,7 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.bShutdown)
 		{
-			PostMessage(g_hFrameWindow, WM_DESTROY, 0, 0);	// Close everything down
+			PostMessage(GetFrame().g_hFrameWindow, WM_DESTROY, 0, 0);	// Close everything down
 			// NB. If shutting down, then don't post any other messages (GH#286)
 		}
 		else
@@ -1007,13 +1005,13 @@ static void RepeatInitialization(void)
 
 			if (g_cmdLine.bSetFullScreen)
 			{
-				PostMessage(g_hFrameWindow, WM_USER_FULLSCREEN, 0, 0);
+				PostMessage(GetFrame().g_hFrameWindow, WM_USER_FULLSCREEN, 0, 0);
 				g_cmdLine.bSetFullScreen = false;
 			}
 
 			if (g_cmdLine.bBoot)
 			{
-				PostMessage(g_hFrameWindow, WM_USER_BOOT, 0, 0);
+				PostMessage(GetFrame().g_hFrameWindow, WM_USER_BOOT, 0, 0);
 				g_cmdLine.bBoot = false;
 			}
 		}
@@ -1053,4 +1051,10 @@ IPropertySheet& GetPropertySheet()
 {
 	static CPropertySheet sg_PropertySheet;
 	return sg_PropertySheet;
+}
+
+FrameBase& GetFrame()
+{
+	static Win32Frame sg_Win32Frame;
+	return sg_Win32Frame;
 }

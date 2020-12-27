@@ -417,7 +417,7 @@ BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename)
 		if (!strcmp(pszOtherPathname.c_str(), szCurrentPathname))
 		{
 			HD_Unplug(!iDrive);
-			FrameRefreshStatus(DRAW_LEDS);
+			GetFrame().FrameRefreshStatus(DRAW_LEDS);
 		}
 	}
 
@@ -465,8 +465,8 @@ static bool HD_SelectImage(const int drive, LPCSTR pszFilename)
 	OPENFILENAME ofn;
 	memset(&ofn, 0, sizeof(OPENFILENAME));
 	ofn.lStructSize     = sizeof(OPENFILENAME);
-	ofn.hwndOwner       = g_hFrameWindow;
-	ofn.hInstance       = g_hInstance;
+	ofn.hwndOwner       = GetFrame().g_hFrameWindow;
+	ofn.hInstance       = GetFrame().g_hInstance;
 	ofn.lpstrFilter     = TEXT("Hard Disk Images (*.hdv,*.po,*.2mg,*.2img,*.gz,*.zip)\0*.hdv;*.po;*.2mg;*.2img;*.gz;*.zip\0")
 						  TEXT("All Files\0*.*\0");
 	ofn.lpstrFile       = filename;
@@ -713,7 +713,7 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 	if( pHDD->hd_status_prev != pHDD->hd_status_next ) // Update LEDs if state changes
 	{
 		pHDD->hd_status_prev = pHDD->hd_status_next;
-		FrameRefreshStatus(DRAW_LEDS);
+		GetFrame().FrameRefreshStatus(DRAW_LEDS);
 	}
 #endif
 
@@ -742,7 +742,7 @@ bool HD_ImageSwap(void)
 	HD_SaveLastDiskImage(HARDDISK_1);
 	HD_SaveLastDiskImage(HARDDISK_2);
 
-	FrameRefreshStatus(DRAW_LEDS, false);
+	GetFrame().FrameRefreshStatus(DRAW_LEDS, false);
 
 	return true;
 }
@@ -902,7 +902,7 @@ bool HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, co
 
 	HD_SetEnabled(true);
 
-	FrameRefreshStatus(DRAW_LEDS);
+	GetFrame().FrameRefreshStatus(DRAW_LEDS);
 
 	return true;
 }

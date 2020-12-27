@@ -85,7 +85,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib user32.lib gdi32.lib Advapi32.lib shell32.lib Comdlg32.lib ole32.lib wsock32.lib"
+				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib user32.lib gdi32.lib Advapi32.lib shell32.lib Comdlg32.lib ole32.lib wsock32.lib shlwapi.lib"
 				OutputFile=".\Release\Applewin.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -184,7 +184,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib user32.lib gdi32.lib Advapi32.lib shell32.lib Comdlg32.lib ole32.lib wsock32.lib"
+				AdditionalDependencies="htmlhelp.lib comctl32.lib ddraw.lib winmm.lib dsound.lib dxguid.lib version.lib strmiids.lib dinput8.lib user32.lib gdi32.lib Advapi32.lib shell32.lib Comdlg32.lib ole32.lib wsock32.lib shlwapi.lib"
 				OutputFile=".\Debug\Applewin.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -240,6 +240,14 @@
 			</File>
 			<File
 				RelativePath=".\source\Core.h"
+				>
+			</File>
+			<File
+				RelativePath=".\source\FrameBase.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\FrameBase.h"
 				>
 			</File>
 			<File
@@ -926,14 +934,6 @@
 				Name="Video"
 				>
 				<File
-					RelativePath=".\source\Frame.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Frame.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\NTSC.cpp"
 					>
 				</File>
@@ -983,6 +983,14 @@
 				</File>
 				<File
 					RelativePath=".\source\Windows\DirectInput.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Windows\Win32Frame.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Windows\Win32Frame.h"
 					>
 				</File>
 				<File
