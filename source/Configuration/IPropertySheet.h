@@ -4,28 +4,29 @@
 
 class CConfigNeedingRestart;
 
-__interface IPropertySheet
+class IPropertySheet
 {
-	void Init(void);
-	DWORD GetVolumeMax(void);								// TODO:TC: Move out of here
-	bool SaveStateSelectImage(HWND hWindow, bool bSave);	// TODO:TC: Move out of here
-	void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld);
-	void ConfigSaveApple2Type(eApple2Type apple2Type);
+public:
+	virtual void Init(void) = 0;
+	virtual DWORD GetVolumeMax(void) = 0;								// TODO:TC: Move out of here
+	virtual bool SaveStateSelectImage(HWND hWindow, bool bSave) = 0;	// TODO:TC: Move out of here
+	virtual void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld) = 0;
+	virtual void ConfigSaveApple2Type(eApple2Type apple2Type) = 0;
 
-	UINT GetScrollLockToggle(void);
-	void SetScrollLockToggle(UINT uValue);
-	UINT GetJoystickCursorControl(void);
-	void SetJoystickCursorControl(UINT uValue);
-	UINT GetJoystickCenteringControl(void);
-	void SetJoystickCenteringControl(UINT uValue);
-	UINT GetAutofire(UINT uButton);
-	void SetAutofire(UINT uValue);
-	bool GetButtonsSwapState(void);
-	void SetButtonsSwapState(bool value);
-	UINT GetMouseShowCrosshair(void);
-	void SetMouseShowCrosshair(UINT uValue);
-	UINT GetMouseRestrictToWindow(void);
-	void SetMouseRestrictToWindow(UINT uValue);
-	UINT GetTheFreezesF8Rom(void);
-	void SetTheFreezesF8Rom(UINT uValue);
+	virtual UINT GetScrollLockToggle(void) = 0;
+	virtual void SetScrollLockToggle(UINT uValue) = 0;
+	virtual UINT GetJoystickCursorControl(void) = 0;
+	virtual void SetJoystickCursorControl(UINT uValue) = 0;
+	virtual UINT GetJoystickCenteringControl(void) = 0;
+	virtual void SetJoystickCenteringControl(UINT uValue) = 0;
+	virtual UINT GetAutofire(UINT uButton) = 0;
+	virtual void SetAutofire(UINT uValue) = 0;
+	virtual bool GetButtonsSwapState(void) = 0;
+	virtual void SetButtonsSwapState(bool value) = 0;
+	virtual UINT GetMouseShowCrosshair(void) = 0;
+	virtual void SetMouseShowCrosshair(UINT uValue) = 0;
+	virtual UINT GetMouseRestrictToWindow(void) = 0;
+	virtual void SetMouseRestrictToWindow(UINT uValue) = 0;
+	virtual UINT GetTheFreezesF8Rom(void) = 0;
+	virtual void SetTheFreezesF8Rom(UINT uValue) = 0;
 };

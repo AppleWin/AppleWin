@@ -30,9 +30,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Debug.h"
 
+#include "../Interface.h"
 #include "../CPU.h"
 #include "../Memory.h"
-#include "../Windows/WinFrame.h"
 
 #define DEBUG_ASSEMBLER 0
 
@@ -471,7 +471,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 #if _DEBUG
 	if (! g_aOpcodes)
 	{
-		MessageBox( g_hFrameWindow, "Debugger not properly initialized", "ERROR", MB_OK );
+		MessageBox(GetFrame().g_hFrameWindow, "Debugger not properly initialized", "ERROR", MB_OK );
 
 		g_aOpcodes = & g_aOpcodes65C02[ 0 ];	// Enhanced Apple //e
 		g_aOpmodes[ AM_2 ].m_nBytes = 2;

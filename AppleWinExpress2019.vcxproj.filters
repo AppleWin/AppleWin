@@ -49,9 +49,6 @@
     <ClCompile Include="source\Debugger\Debugger_Symbols.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
-    <ClCompile Include="source\Frame.cpp">
-      <Filter>Source Files\Video</Filter>
-    </ClCompile>
     <ClCompile Include="source\Disk.cpp">
       <Filter>Source Files\Disk</Filter>
     </ClCompile>
@@ -220,6 +217,12 @@
     <ClCompile Include="source\CmdLine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\FrameBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Windows\Win32Frame.cpp">
+      <Filter>Source Files\Windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\CommonVICE\6510core.h">
@@ -290,9 +293,6 @@
     </ClInclude>
     <ClInclude Include="source\Debugger\Debugger_Symbols.h">
       <Filter>Source Files\Debugger</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Frame.h">
-      <Filter>Source Files\Video</Filter>
     </ClInclude>
     <ClInclude Include="source\Disk.h">
       <Filter>Source Files\Disk</Filter>
@@ -524,6 +524,12 @@
     </ClInclude>
     <ClInclude Include="source\Interface.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\FrameBase.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Windows\Win32Frame.h">
+      <Filter>Source Files\Windows</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1572,7 +1572,7 @@ void MemInitializeROM(void)
 		default:
 			{
 				_tcscpy(sRomFileName, TEXT("Unknown type!"));
-				sg_PropertySheet.ConfigSaveApple2Type(A2TYPE_APPLE2EENHANCED);
+				GetPropertySheet().ConfigSaveApple2Type(A2TYPE_APPLE2EENHANCED);
 			}
 		}
 
@@ -1646,7 +1646,7 @@ void MemInitializeCustomF8ROM(void)
 		}
 		catch (bool)
 		{
-			MessageBox( g_hFrameWindow, "Failed to read F8 (auto-start) ROM for language card in original Apple][", TEXT("AppleWin Error"), MB_OK );
+			MessageBox( GetFrame().g_hFrameWindow, "Failed to read F8 (auto-start) ROM for language card in original Apple][", TEXT("AppleWin Error"), MB_OK );
 		}
 	}
 
@@ -1667,14 +1667,14 @@ void MemInitializeCustomF8ROM(void)
 
 		if (!bRes)
 		{
-			MessageBox( g_hFrameWindow, "Failed to read custom F8 rom", TEXT("AppleWin Error"), MB_OK );
+			MessageBox( GetFrame().g_hFrameWindow, "Failed to read custom F8 rom", TEXT("AppleWin Error"), MB_OK );
 			CloseHandle(g_hCustomRomF8);
 			g_hCustomRomF8 = INVALID_HANDLE_VALUE;
 			// Failed, so use default rom...
 		}
 	}
 
-	if (sg_PropertySheet.GetTheFreezesF8Rom() && IS_APPLE2)
+	if (GetPropertySheet().GetTheFreezesF8Rom() && IS_APPLE2)
 	{
 		HGLOBAL hResData = NULL;
 		BYTE* pData = NULL;
@@ -1723,7 +1723,7 @@ void MemInitializeCustomROM(void)
 
 	if (!bRes)
 	{
-		MessageBox( g_hFrameWindow, "Failed to read custom rom", TEXT("AppleWin Error"), MB_OK );
+		MessageBox( GetFrame().g_hFrameWindow, "Failed to read custom rom", TEXT("AppleWin Error"), MB_OK );
 		CloseHandle(g_hCustomRom);
 		g_hCustomRom = INVALID_HANDLE_VALUE;
 		// Failed, so use default rom...

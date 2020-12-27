@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "SerialComms.h"
 #include "CPU.h"
-#include "Windows/WinFrame.h"
+#include "Interface.h"
 #include "Log.h"
 #include "Memory.h"
 #include "YamlHelper.h"
@@ -243,7 +243,7 @@ bool CSuperSerialCard::CheckComm()
 			// now send async events to our app's message handler
 			if (WSAAsyncSelect(
 					/* SOCKET s */ m_hCommListenSocket,
-					/* HWND hWnd */ g_hFrameWindow,
+					/* HWND hWnd */ GetFrame().g_hFrameWindow,
 					/* unsigned int wMsg */ WM_USER_TCP_SERIAL,
 					/* long lEvent */ (FD_ACCEPT | FD_CONNECT | FD_READ | FD_CLOSE)) != 0)
 			{
@@ -315,7 +315,7 @@ void CSuperSerialCard::CommTcpSerialCleanup()
 {
 	if (m_hCommListenSocket != INVALID_SOCKET)
 	{
-		WSAAsyncSelect(m_hCommListenSocket, g_hFrameWindow, 0, 0); // Stop event messages
+		WSAAsyncSelect(m_hCommListenSocket, GetFrame().g_hFrameWindow, 0, 0); // Stop event messages
 		closesocket(m_hCommListenSocket);
 		m_hCommListenSocket = INVALID_SOCKET;
 

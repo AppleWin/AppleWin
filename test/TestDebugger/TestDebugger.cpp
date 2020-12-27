@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-#include "../../source/Windows/Applewin.h"
+#include "../../source/Windows/AppleWin.h"
 #include "../../source/CPU.h"
 
 #include "../../source/Debugger/Debugger_Types.h"
@@ -9,11 +9,28 @@
 // NB. DebugDefs.h must come after Debugger_Types.h which declares these as extern
 #include "../../source/Debugger/DebugDefs.h"
 
+// From FrameBase
+class FrameBase
+{
+public:
+	FrameBase() { g_hFrameWindow = (HWND)0; }
+	HWND   g_hFrameWindow;
+};
+
+// From Win32Frame
+class Win32Frame : public FrameBase
+{
+};
+
+// From AppleWin.cpp
+FrameBase& GetFrame()
+{
+	static Win32Frame sg_Win32Frame;
+	return sg_Win32Frame;
+}
+
 // From CPU.cpp
 regsrec regs;
-
-// From Frame.cpp
-HWND   g_hFrameWindow   = (HWND)0;
 
 // From Memory.cpp
 LPBYTE         mem          = NULL;	// TODO: Init

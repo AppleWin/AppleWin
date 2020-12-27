@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PageConfig.h"
 #include "PropertySheetHelper.h"
 
+#include "../Interface.h"
 #include "../Windows/AppleWin.h"
 #include "../Windows/WinFrame.h"
 #include "../Registry.h"
@@ -198,7 +199,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMPUTER, m_ComputerChoices, nCurrentChoice);
 			}
 
-			CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, g_bConfirmReboot ? BST_CHECKED : BST_UNCHECKED );
+			CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, GetFrame().g_bConfirmReboot ? BST_CHECKED : BST_UNCHECKED );
 
 			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE, g_aVideoChoices, GetVideoType());
 			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, IsVideoStyle(VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
@@ -313,12 +314,12 @@ void CPageConfig::DlgOK(HWND hWnd)
 	{
 		Config_Save_Video();
 
-		FrameRefreshStatus(DRAW_TITLE, false);
+		GetFrame().FrameRefreshStatus(DRAW_TITLE, false);
 
 		VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
-			VideoRedrawScreen();
+			GetFrame().VideoRedrawScreen();
 		}
 	}
 
@@ -328,19 +329,19 @@ void CPageConfig::DlgOK(HWND hWnd)
 	if (GetFullScreenShowSubunitStatus() != bNewFSSubunitStatus)
 	{
 		REGSAVE(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), bNewFSSubunitStatus ? 1 : 0);
-		SetFullScreenShowSubunitStatus(bNewFSSubunitStatus);
+		GetFrame().SetFullScreenShowSubunitStatus(bNewFSSubunitStatus);
 
 		if (IsFullScreen())
-			FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
+			GetFrame().FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
 	}
 
 	//
 
 	const BOOL bNewConfirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT) ? 1 : 0;
-	if (g_bConfirmReboot != bNewConfirmReboot)
+	if (GetFrame().g_bConfirmReboot != bNewConfirmReboot)
 	{
 		REGSAVE(TEXT(REGVALUE_CONFIRM_REBOOT), bNewConfirmReboot);
-		g_bConfirmReboot = bNewConfirmReboot;
+		GetFrame().g_bConfirmReboot = bNewConfirmReboot;
 	}
 
 	//
@@ -404,7 +405,7 @@ void CPageConfig::EnableTrackbar(HWND hWnd, BOOL enable)
 
 void CPageConfig::ui_tfe_settings_dialog(HWND hwnd)
 {
-	DialogBox(g_hInstance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hwnd, CPageConfigTfe::DlgProc);
+	DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hwnd, CPageConfigTfe::DlgProc);
 }
 
 bool CPageConfig::IsOkToBenchmark(HWND hWnd, const bool bConfigChanged)

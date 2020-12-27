@@ -243,6 +243,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\FrameBase.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\FrameBase.h"
+				>
+			</File>
+			<File
 				RelativePath=".\source\Interface.h"
 				>
 			</File>
@@ -926,14 +934,6 @@
 				Name="Video"
 				>
 				<File
-					RelativePath=".\source\Frame.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Frame.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\NTSC.cpp"
 					>
 				</File>
@@ -983,6 +983,14 @@
 				</File>
 				<File
 					RelativePath=".\source\Windows\DirectInput.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Windows\Win32Frame.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Windows\Win32Frame.h"
 					>
 				</File>
 				<File

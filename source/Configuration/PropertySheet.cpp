@@ -31,8 +31,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "PropertySheet.h"
 
+#include "../Interface.h"
 #include "../Windows/AppleWin.h"
-#include "../Windows/WinFrame.h"
 #include "../resource/resource.h"
 
 void CPropertySheet::Init(void)
@@ -41,31 +41,31 @@ void CPropertySheet::Init(void)
 
 	PropSheetPages[PG_CONFIG].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_CONFIG].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_CONFIG].hInstance = g_hInstance;
+	PropSheetPages[PG_CONFIG].hInstance = GetFrame().g_hInstance;
 	PropSheetPages[PG_CONFIG].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_CONFIG);
 	PropSheetPages[PG_CONFIG].pfnDlgProc = (DLGPROC)CPageConfig::DlgProc;
 
 	PropSheetPages[PG_INPUT].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_INPUT].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_INPUT].hInstance = g_hInstance;
+	PropSheetPages[PG_INPUT].hInstance = GetFrame().g_hInstance;
 	PropSheetPages[PG_INPUT].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_INPUT);
 	PropSheetPages[PG_INPUT].pfnDlgProc = (DLGPROC)CPageInput::DlgProc;
 
 	PropSheetPages[PG_SOUND].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_SOUND].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_SOUND].hInstance = g_hInstance;
+	PropSheetPages[PG_SOUND].hInstance = GetFrame().g_hInstance;
 	PropSheetPages[PG_SOUND].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_SOUND);
 	PropSheetPages[PG_SOUND].pfnDlgProc = (DLGPROC)CPageSound::DlgProc;
 
 	PropSheetPages[PG_DISK].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_DISK].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_DISK].hInstance = g_hInstance;
+	PropSheetPages[PG_DISK].hInstance = GetFrame().g_hInstance;
 	PropSheetPages[PG_DISK].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_DISK);
 	PropSheetPages[PG_DISK].pfnDlgProc = (DLGPROC)CPageDisk::DlgProc;
 
 	PropSheetPages[PG_ADVANCED].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_ADVANCED].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_ADVANCED].hInstance = g_hInstance;
+	PropSheetPages[PG_ADVANCED].hInstance = GetFrame().g_hInstance;
 	PropSheetPages[PG_ADVANCED].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_ADVANCED);
 	PropSheetPages[PG_ADVANCED].pfnDlgProc = (DLGPROC)CPageAdvanced::DlgProc;
 
@@ -73,7 +73,7 @@ void CPropertySheet::Init(void)
 
 	PropSheetHeader.dwSize = sizeof(PROPSHEETHEADER);
 	PropSheetHeader.dwFlags = PSH_NOAPPLYNOW | /* PSH_NOCONTEXTHELP | */ PSH_PROPSHEETPAGE;
-	PropSheetHeader.hwndParent = g_hFrameWindow;
+	PropSheetHeader.hwndParent = GetFrame().g_hFrameWindow;
 	PropSheetHeader.pszCaption = "AppleWin Configuration";
 	PropSheetHeader.nPages = PG_NUM_SHEETS;
 	PropSheetHeader.nStartPage = m_PropertySheetHelper.GetLastPage();

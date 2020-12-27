@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "../Windows/AppleWin.h"
 #include "../Core.h"
+#include "../Interface.h"
 #include "../CardManager.h"
 #include "../CPU.h"
 #include "../Disk.h"
@@ -753,8 +754,8 @@ Update_t CmdBenchmarkStop (int nArgs)
 	g_bBenchmarking = false;
 	DebugEnd();
 	
-	FrameRefreshStatus(DRAW_TITLE);
-	VideoRedrawScreen();
+	GetFrame().FrameRefreshStatus(DRAW_TITLE);
+	GetFrame().VideoRedrawScreen();
 	DWORD currtime = GetTickCount();
 	while ((extbench = GetTickCount()) != currtime)
 		; // intentional busy-waiting
@@ -1963,7 +1964,7 @@ static Update_t CmdGo (int nArgs, const bool bFullSpeed)
 	g_bGoCmd_ReinitFlag = true;
 
 	g_nAppMode = MODE_STEPPING;
-	FrameRefreshStatus(DRAW_TITLE);
+	GetFrame().FrameRefreshStatus(DRAW_TITLE);
 
 	SoundCore_SetFade(FADE_IN);
 
@@ -2032,7 +2033,7 @@ Update_t CmdTrace (int nArgs)
 	g_nDebugStepStart = regs.pc;
 	g_nDebugStepUntil = -1;
 	g_nAppMode = MODE_STEPPING;
-	FrameRefreshStatus(DRAW_TITLE);
+	GetFrame().FrameRefreshStatus(DRAW_TITLE);
 	DebugContinueStepping(true);
 
 	return UPDATE_ALL; // TODO: Verify // 0
@@ -2092,7 +2093,7 @@ Update_t CmdTraceLine (int nArgs)
 	g_nDebugStepUntil = -1;
 
 	g_nAppMode = MODE_STEPPING;
-	FrameRefreshStatus(DRAW_TITLE);
+	GetFrame().FrameRefreshStatus(DRAW_TITLE);
 	DebugContinueStepping(true);
 
 	return UPDATE_ALL; // TODO: Verify // 0
@@ -2226,7 +2227,7 @@ void _CmdColorGet( const int iScheme, const int iColor )
 	{
 		TCHAR sText[ CONSOLE_WIDTH ];
 		wsprintf( sText, "Color: %d\nOut of range!", iColor );
-		MessageBox( g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
+		MessageBox(GetFrame().g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
 	}
 }
 
@@ -3041,7 +3042,7 @@ void DisasmCalcTopFromCurAddress( bool bUpdateTop )
 				"\tLen: %04X\n"
 				"\tMissed: %04X"),
 				g_nDisasmCurAddress - nLen, nLen, g_nDisasmCurAddress );
-			MessageBox( g_hFrameWindow, sText, "ERROR", MB_OK );
+			MessageBox( GetFrame().g_hFrameWindow, sText, "ERROR", MB_OK );
 #endif
 	}
 }
@@ -3772,7 +3773,7 @@ Update_t CmdDisk ( int nArgs)
 			return HelpLastCommand();
 
 		diskCard.EjectDisk( iDrive );
-		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 	else
 	if (iParam == PARAM_DISK_PROTECT)
@@ -3786,7 +3787,7 @@ Update_t CmdDisk ( int nArgs)
 			bProtect = g_aArgs[ 3 ].nValue ? true : false;
 
 		diskCard.SetProtect( iDrive, bProtect );
-		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 	else
 	{
@@ -3797,7 +3798,7 @@ Update_t CmdDisk ( int nArgs)
 
 		// DISK # "Diskname"
 		diskCard.InsertDisk( iDrive, pDiskName, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE );
-		FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 	}
 
 	return UPDATE_CONSOLE_DISPLAY;
@@ -7447,7 +7448,7 @@ Update_t CmdWindowViewData (int nArgs)
 //===========================================================================
 Update_t CmdWindowViewOutput (int nArgs)
 {
-	VideoRedrawScreen();
+	GetFrame().VideoRedrawScreen();
 
 	DebugVideoMode::Instance().Set(g_uVideoMode);
 
@@ -8548,7 +8549,7 @@ void DebugBegin ()
 	GetDebuggerMemDC();
 
 	g_nAppMode = MODE_DEBUG;
-	FrameRefreshStatus(DRAW_TITLE);
+	GetFrame().FrameRefreshStatus(DRAW_TITLE);
 
 	if (GetMainCpu() == CPU_6502)
 	{
@@ -8735,7 +8736,7 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 		SoundCore_SetFade(FADE_OUT);	// NB. Call when MODE_STEPPING (not MODE_DEBUG) - see function
 
 		g_nAppMode = MODE_DEBUG;
-		FrameRefreshStatus(DRAW_TITLE);
+		GetFrame().FrameRefreshStatus(DRAW_TITLE);
 // BUG: PageUp, Trace - doesn't center cursor
 
 		g_nDisasmCurAddress = regs.pc;
@@ -9063,7 +9064,7 @@ void DebuggerInputConsoleChar( TCHAR ch )
 		if (!IsClipboardFormatAvailable(CF_TEXT)) 
 			return;
 
-		if (!OpenClipboard( g_hFrameWindow )) 
+		if (!OpenClipboard(GetFrame().g_hFrameWindow ))
 			return;
 
 		HGLOBAL hClipboard;

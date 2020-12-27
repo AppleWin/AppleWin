@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Debug.h"
 
-#include "../Windows/WinFrame.h"
+#include "../Interface.h"
 
 // Commands _______________________________________________________________________________________
 
@@ -518,7 +518,7 @@ void VerifyDebuggerCommandTable()
 		if ( g_aCommands[ iCmd ].iCommand != iCmd)
 		{
 			sprintf( sText, "*** ERROR *** Enumerated Commands mis-matched at #%d!", iCmd );
-			MessageBoxA( g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
+			MessageBoxA(GetFrame().g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
 			PostQuitMessage( 1 );
 		}
 	}
@@ -527,14 +527,14 @@ void VerifyDebuggerCommandTable()
 	if (strcmp( g_aCommands[ NUM_COMMANDS ].m_sName, DEBUGGER__COMMANDS_VERIFY_TXT__))
 	{
 		sprintf( sText, "*** ERROR *** Total Commands mis-matched!" );
-		MessageBoxA( g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
+		MessageBoxA(GetFrame().g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
 		PostQuitMessage( 1 );
 	}
 
 	if (strcmp( g_aParameters[ NUM_PARAMS ].m_sName, DEBUGGER__PARAMS_VERIFY_TXT__))
 	{
 		sprintf( sText, "*** ERROR *** Total Parameters mis-matched!" );
-		MessageBoxA( g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
+		MessageBoxA(GetFrame().g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
 		PostQuitMessage( 2 );
 	}
 }
