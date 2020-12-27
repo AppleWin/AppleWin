@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "Configuration/IPropertySheet.h"
+#include "Configuration/PropertySheetHelper.h"
 
 class CConfigNeedingRestart;
 
@@ -29,4 +30,6 @@ public:
   virtual void SetMouseRestrictToWindow(UINT uValue);
   virtual UINT GetTheFreezesF8Rom(void);
   virtual void SetTheFreezesF8Rom(UINT uValue);
+private:
+  CPropertySheetHelper m_PropertySheetHelper;
 };

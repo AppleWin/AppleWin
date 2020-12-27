@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 
 #include "linux/duplicates/PropertySheet.h"
-#include "Configuration/PropertySheetHelper.h"
 
 void CPropertySheet::Init(void)
 {
@@ -19,6 +18,7 @@ bool CPropertySheet::SaveStateSelectImage(HWND hWindow, bool bSave)
 
 void CPropertySheet::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
 {
+  m_PropertySheetHelper.ApplyNewConfig(ConfigNew, ConfigOld);
 }
 
 void CPropertySheet::ConfigSaveApple2Type(eApple2Type apple2Type)
