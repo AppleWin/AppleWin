@@ -3,8 +3,8 @@
 #include <cstring>
 
 #include "StdAfx.h"
-#include "Frame.h"
 #include "Common.h"
+#include "Video.h"
 
 #include "linux/version.h"
 #include "linux/paddle.h"

@@ -2,7 +2,6 @@
 
 #include "StdAfx.h"
 #include "Video.h"
-#include "Frame.h"
 #include "NTSC.h"
 
 void VideoBufferInitialize()

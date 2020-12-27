@@ -32,9 +32,9 @@ add_library(appleii SHARED
   SaveState.cpp
   SynchronousEventManager.cpp
   Video.cpp
-  Frame.cpp
   Core.cpp
   Utilities.cpp
+  FrameBase.cpp
 
   Configuration/PropertySheetHelper.cpp
 
@@ -60,11 +60,11 @@ add_library(appleii SHARED
   linux/registry.cpp
   linux/keyboard.cpp
   linux/videobuffer.cpp
+  linux/linuxframe.cpp
 
   linux/duplicates/Debug.cpp
   linux/duplicates/WinVideo.cpp
   linux/duplicates/Joystick.cpp
-  linux/duplicates/WinFrame.cpp
   linux/duplicates/SerialComms.cpp
   linux/duplicates/PropertySheet.cpp
   linux/duplicates/Tfe.cpp

@@ -21,7 +21,6 @@
 #include "Core.h"
 #include "Log.h"
 #include "CPU.h"
-#include "Frame.h"
 #include "NTSC.h"
 #include "SaveState.h"
 

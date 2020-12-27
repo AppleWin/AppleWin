@@ -15,16 +15,9 @@ HRSRC FindResource(void *, const char * filename, const char *);
 HBITMAP LoadBitmap(HINSTANCE hInstance, const char * filename);
 LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits);
 
-
-// Frame
-
-void FrameDrawDiskLEDS(HDC x);
-void FrameDrawDiskStatus(HDC x);
-void FrameRefreshStatus(int x, bool);
-
 // Keyboard
 
-BYTE KeybGetKeycode ();
+BYTE KeybGetKeycode();
 BYTE KeybReadData();
 BYTE KeybReadFlag();
 
@@ -32,7 +25,6 @@ BYTE KeybReadFlag();
 
 BYTE JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 BYTE JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
-void JoyResetPosition(ULONG uExecutedCycles);
 
 // MessageBox
 

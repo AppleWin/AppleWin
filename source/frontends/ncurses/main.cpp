@@ -13,6 +13,7 @@
 #include "NTSC.h"
 #include "SaveState.h"
 #include "Utilities.h"
+#include "Interface.h"
 
 #include "linux/benchmark.h"
 #include "linux/paddle.h"
@@ -90,7 +91,7 @@ namespace
       g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
       if (!options.headless)
       {
-	VideoRedrawScreen();
+	NVideoRedrawScreen();
       }
     }
 
@@ -150,13 +151,11 @@ namespace
     NVideoInitialize(options.headless);
     applyOptions(options);
 
-    CardManager & cardManager = GetCardMgr();
-
-    FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
+    GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
 
     if (options.benchmark)
     {
-      VideoBenchmark(&VideoRedrawScreen, &VideoRedrawScreen);
+      VideoBenchmark(&NVideoRedrawScreen, &NVideoRedrawScreen);
     }
     else
     {

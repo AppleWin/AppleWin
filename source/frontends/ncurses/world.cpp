@@ -350,11 +350,6 @@ int MessageBox(HWND, const char * text, const char * caption, UINT)
   return IDOK;
 }
 
-void FrameRefreshStatus(int x, bool)
-{
-  // std::cerr << "Status: " << x << std::endl;
-}
-
 void NVideoInitialize(const bool headless)
 {
   frame.reset(new Frame());
@@ -375,7 +370,7 @@ void NVideoInitialize(const bool headless)
   }
 }
 
-void VideoRedrawScreen()
+void NVideoRedrawScreen()
 {
   VideoUpdateFlash();
   FrameRefresh();

@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "frontends/libretro/game.h"
 
-#include "Frame.h"
-
 #include "Common.h"
 #include "CardManager.h"
 #include "Core.h"
@@ -251,7 +249,7 @@ void Game::keyboardEmulation()
 
       Config_Save_Video();
       VideoReinitialize();
-      VideoRedrawScreen();
+      GetFrame().VideoRedrawScreen();
       updateWindowTitle();
     }
     if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_L))
@@ -263,7 +261,7 @@ void Game::keyboardEmulation()
 
       Config_Save_Video();
       VideoReinitialize();
-      VideoRedrawScreen();
+      GetFrame().VideoRedrawScreen();
       updateWindowTitle();
     }
     if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_START))

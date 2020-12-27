@@ -10,7 +10,6 @@
 #include "Harddisk.h"
 #include "Log.h"
 #include "CPU.h"
-#include "Frame.h"
 #include "Memory.h"
 #include "LanguageCard.h"
 #include "Mockingboard.h"
@@ -85,7 +84,7 @@ namespace
         GetAppleWindowTitle();
         window->setWindowTitle(QString::fromStdString(g_pAppTitle));
 
-        FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
+        GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
 
         // ResetDefaultMachineMemTypes();
 
@@ -593,7 +592,7 @@ void QApple::on_actionNext_video_mode_triggered()
 
     Config_Save_Video();
     VideoReinitialize();
-    VideoRedrawScreen();
+    GetFrame().VideoRedrawScreen();
 }
 
 void QApple::loadStateFile(const QString & filename)

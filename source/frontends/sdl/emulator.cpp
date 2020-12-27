@@ -15,7 +15,6 @@
 #include "Core.h"
 #include "Disk.h"
 #include "CPU.h"
-#include "Frame.h"
 #include "Video.h"
 #include "Windows/WinVideo.h"
 #include "NTSC.h"
@@ -44,7 +43,7 @@ namespace
 
     Config_Save_Video();
     VideoReinitialize();
-    VideoRedrawScreen();
+    GetFrame().VideoRedrawScreen();
 
     updateWindowTitle(win);
   }
@@ -58,7 +57,7 @@ namespace
 
     Config_Save_Video();
     VideoReinitialize();
-    VideoRedrawScreen();
+    GetFrame().VideoRedrawScreen();
 
     updateWindowTitle(win);
   }

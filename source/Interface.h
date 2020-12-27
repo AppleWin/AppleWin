@@ -8,7 +8,7 @@
 // this does not include the main event loop which is left in the arch specific area
 // nor the actual rendering of the video buffer to screen
 
-#include "Configuration/PropertySheet.h"
+#include "Configuration/IPropertySheet.h"
 IPropertySheet& GetPropertySheet();
 
 #include "FrameBase.h"

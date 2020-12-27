@@ -17,7 +17,6 @@
 #include "Speaker.h"
 #include "Log.h"
 #include "CPU.h"
-#include "Frame.h"
 #include "Memory.h"
 #include "LanguageCard.h"
 #include "MouseInterface.h"
@@ -28,6 +27,7 @@
 #include "RGBMonitor.h"
 #include "Riff.h"
 #include "Utilities.h"
+#include "Interface.h"
 
 #include <libgen.h>
 #include <unistd.h>
@@ -75,7 +75,7 @@ void initialiseEmulator()
   SetCurrentCLK6502();
   CheckCpu();
   GetAppleWindowTitle();
-  FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
+  GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
 
   DSInit();
   MB_Initialize();

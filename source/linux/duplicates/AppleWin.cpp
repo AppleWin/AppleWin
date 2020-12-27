@@ -2,15 +2,16 @@
 
 #include "Interface.h"
 #include "linux/duplicates/PropertySheet.h"
-
-HINSTANCE g_hInstance          = (HINSTANCE)0;
-
-void SetLoadedSaveStateFlag(bool)
-{
-}
+#include "linux/linuxframe.h"
 
 IPropertySheet& GetPropertySheet()
 {
   static CPropertySheet sg_PropertySheet;
   return sg_PropertySheet;
+}
+
+FrameBase& GetFrame()
+{
+  static LinuxFrame sg_LinuxFrame;
+  return sg_LinuxFrame;
 }
