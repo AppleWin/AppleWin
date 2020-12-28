@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Interface.h"
 #include "Core.h"
 #include "../resource/resource.h"
-#include "Video.h"
 
 
 unsigned char csbits_enhanced2e[2][256][8];	// Enhanced //e (2732 4K video ROM)
@@ -162,11 +161,11 @@ static void userVideoRom4K(csbits_t csbits, const BYTE* pVideoRom)
 static void userVideoRomForIIe(void)
 {
 	const BYTE* pVideoRom;
-	UINT size = GetVideoRom(pVideoRom);	// 2K or 4K or 8K
-	if (size < kVideoRomSize4K)
+	UINT size = GetVideo().GetVideoRom(pVideoRom);	// 2K or 4K or 8K
+	if (size < Video::kVideoRomSize4K)
 		return;
 
-	if (size == kVideoRomSize4K)
+	if (size == Video::kVideoRomSize4K)
 	{
 		userVideoRom4K(&csbits_enhanced2e[0], pVideoRom);
 	}
@@ -241,8 +240,8 @@ static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const eApple2
 static void userVideoRomForIIPlus(void)
 {
 	const BYTE* pVideoRom;
-	UINT size = GetVideoRom(pVideoRom);	// 2K or 4K or 8K
-	if (size != kVideoRomSize2K)
+	UINT size = GetVideo().GetVideoRom(pVideoRom);	// 2K or 4K or 8K
+	if (size != Video::kVideoRomSize2K)
 		return;
 
 	userVideoRom2K(&csbits_a2[0], pVideoRom);
@@ -257,7 +256,7 @@ static void VideoRomForIIJPlus(void)
 		return;
 
 	DWORD dwResSize = SizeofResource(NULL, hResInfo);
-	if(dwResSize != kVideoRomSize2K)
+	if(dwResSize != Video::kVideoRomSize2K)
 		return;
 
 	HGLOBAL hResData = LoadResource(NULL, hResInfo);
@@ -279,7 +278,7 @@ static void VideoRomForBase64A(void)
 		return;
 
 	DWORD dwResSize = SizeofResource(NULL, hResInfo);
-	if (dwResSize != kVideoRomSize4K)
+	if (dwResSize != Video::kVideoRomSize4K)
 		return;
 
 	HGLOBAL hResData = LoadResource(NULL, hResInfo);
@@ -291,7 +290,7 @@ static void VideoRomForBase64A(void)
 		return;
 
 	userVideoRom2K(&csbits_base64a[0], pVideoRom, A2TYPE_BASE64A, 0);
-	userVideoRom2K(&csbits_base64a[1], pVideoRom + kVideoRomSize2K, A2TYPE_BASE64A, 0);
+	userVideoRom2K(&csbits_base64a[1], pVideoRom + Video::kVideoRomSize2K, A2TYPE_BASE64A, 0);
 }
 
 
@@ -325,8 +324,8 @@ csbits_t Get2e_csbits(void)
 {
 	const csbits_t videoRom4K = (GetApple2Type() == A2TYPE_APPLE2E) ? csbits_2e : csbits_enhanced2e;
 
-	if (IsVideoRom4K())	// 4K means US-only, so no secondary PAL video ROM
+	if (GetVideo().IsVideoRom4K())	// 4K means US-only, so no secondary PAL video ROM
 		return videoRom4K;
 
-	return GetVideoRomRockerSwitch() == false ? videoRom4K : csbits_2e_pal;	// NB. Same PAL video ROM for Original & Enhanced //e
+	return GetVideo().GetVideoRomRockerSwitch() == false ? videoRom4K : csbits_2e_pal;	// NB. Same PAL video ROM for Original & Enhanced //e
 }

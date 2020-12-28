@@ -306,7 +306,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
-			if (!ReadVideoRomFile(lpCmdLine))
+			if (!GetVideo().ReadVideoRomFile(lpCmdLine))
 			{
 				std::string msg = "Failed to load video rom (not found or not exactly 2/4/8/16KiB)\n";
 				LogFileOutput("%s", msg.c_str());
@@ -314,12 +314,12 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			}
 			else
 			{
-				SetVideoRomRockerSwitch(true);	// Use PAL char set
+				GetVideo().SetVideoRomRockerSwitch(true);	// Use PAL char set
 			}
 		}
 		else if (strcmp(lpCmdLine, "-printscreen") == 0)		// Turn on display of the last filename print screen was saved to
 		{
-			g_bDisplayPrintScreenFileName = true;
+			GetVideo().SetDisplayPrintScreenFileName(true);
 		}
 		else if (strcmp(lpCmdLine, "-no-printscreen-key") == 0)		// Don't try to capture PrintScreen key GH#469
 		{
@@ -327,7 +327,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-no-printscreen-dlg") == 0)		// Turn off the PrintScreen warning message dialog (if PrintScreen key can't be grabbed)
 		{
-			g_bShowPrintScreenWarningDialog = false;
+			GetVideo().SetShowPrintScreenWarningDialog(false);
 		}
 		else if (strcmp(lpCmdLine, "-no-hook-system-key") == 0)		// Don't hook the System keys (eg. Left-ALT+ESC/SPACE/TAB) GH#556
 		{

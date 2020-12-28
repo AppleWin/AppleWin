@@ -24,9 +24,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "PageDisk.h"
+#include "../Interface.h"	// Need to include before PropertySheetHelper.h
 #include "PropertySheetHelper.h"
 
-#include "../Interface.h"
 #include "../Windows/AppleWin.h"
 #include "../CardManager.h"
 #include "../Disk.h"	// Drive_e, Disk_Status_e

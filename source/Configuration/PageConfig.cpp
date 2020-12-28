@@ -24,9 +24,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "PageConfig.h"
+#include "../Interface.h"	// Need to include before PropertySheetHelper.h
 #include "PropertySheetHelper.h"
 
-#include "../Interface.h"
 #include "../Windows/AppleWin.h"
 #include "../Windows/WinFrame.h"
 #include "../Registry.h"
@@ -201,12 +201,12 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 
 			CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, GetFrame().g_bConfirmReboot ? BST_CHECKED : BST_UNCHECKED );
 
-			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE, g_aVideoChoices, GetVideoType());
-			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, IsVideoStyle(VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
+			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE, GetVideo().GetVideoChoices(), GetVideo().GetVideoType());
+			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, GetVideo().IsVideoStyle(VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, GetFullScreenShowSubunitStatus() ? BST_CHECKED : BST_UNCHECKED);
 
-			CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, IsVideoStyle(VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
-			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (GetVideoType() == VT_COLOR_IDEALIZED) ? TRUE : FALSE);
+			CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, GetVideo().IsVideoStyle(VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
+			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (GetVideo().GetVideoType() == VT_COLOR_IDEALIZED) ? TRUE : FALSE);
 
 			if (GetCardMgr().IsSSCInstalled())
 			{
@@ -219,7 +219,7 @@ BOOL CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM
 				EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), FALSE);
 			}
 
-			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (GetVideo().GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
 
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETPAGESIZE,0,5);
@@ -275,36 +275,36 @@ void CPageConfig::DlgOK(HWND hWnd)
 	bool bVideoReinit = false;
 
 	const VideoType_e newVideoType = (VideoType_e) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
-	if (GetVideoType() != newVideoType)
+	if (GetVideo().GetVideoType() != newVideoType)
 	{
-		SetVideoType(newVideoType);
+		GetVideo().SetVideoType(newVideoType);
 		bVideoReinit = true;
 	}
 
 	const bool newHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) != 0;
-	const bool currentHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const bool currentHalfScanLines = GetVideo().IsVideoStyle(VS_HALF_SCANLINES);
 	if (currentHalfScanLines != newHalfScanLines)
 	{
 		if (newHalfScanLines)
-			SetVideoStyle( (VideoStyle_e) (GetVideoStyle() | VS_HALF_SCANLINES) );
+			GetVideo().SetVideoStyle( (VideoStyle_e) (GetVideo().GetVideoStyle() | VS_HALF_SCANLINES) );
 		else
-			SetVideoStyle( (VideoStyle_e) (GetVideoStyle() & ~VS_HALF_SCANLINES) );
+			GetVideo().SetVideoStyle( (VideoStyle_e) (GetVideo().GetVideoStyle() & ~VS_HALF_SCANLINES) );
 		bVideoReinit = true;
 	}
 
 	const bool newVerticalBlend = IsDlgButtonChecked(hWnd, IDC_CHECK_VERTICAL_BLEND) != 0;
-	const bool currentVerticalBlend = IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
+	const bool currentVerticalBlend = GetVideo().IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
 	if (currentVerticalBlend != newVerticalBlend)
 	{
 		if (newVerticalBlend)
-			SetVideoStyle( (VideoStyle_e) (GetVideoStyle() | VS_COLOR_VERTICAL_BLEND) );
+			GetVideo().SetVideoStyle( (VideoStyle_e) (GetVideo().GetVideoStyle() | VS_COLOR_VERTICAL_BLEND) );
 		else
-			SetVideoStyle( (VideoStyle_e) (GetVideoStyle() & ~VS_COLOR_VERTICAL_BLEND) );
+			GetVideo().SetVideoStyle( (VideoStyle_e) (GetVideo().GetVideoStyle() & ~VS_COLOR_VERTICAL_BLEND) );
 		bVideoReinit = true;
 	}
 
 	const bool isNewVideoRate50Hz = IsDlgButtonChecked(hWnd, IDC_CHECK_50HZ_VIDEO) != 0;
-	const bool isCurrentVideoRate50Hz = GetVideoRefreshRate() == VR_50HZ;
+	const bool isCurrentVideoRate50Hz = GetVideo().GetVideoRefreshRate() == VR_50HZ;
 	if (isCurrentVideoRate50Hz != isNewVideoRate50Hz)
 	{
 		m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = isNewVideoRate50Hz ? VR_50HZ : VR_60HZ;
@@ -312,11 +312,11 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	if (bVideoReinit)
 	{
-		Config_Save_Video();
+		GetVideo().Config_Save_Video();
 
 		GetFrame().FrameRefreshStatus(DRAW_TITLE, false);
 
-		VideoReinitialize();
+		GetVideo().VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
 			GetFrame().VideoRedrawScreen();

@@ -33,7 +33,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Windows/WinFrame.h"
 #include "Windows/AppleWin.h"
 #include "Interface.h"
-#include "Video.h"
 #include "Core.h"
 #include "CPU.h"
 #include "Joystick.h"
@@ -65,19 +64,21 @@ static void videoCreateDIBSection()
 	if (g_hDeviceBitmap)
 		DeleteObject(g_hDeviceBitmap);
 
+	uint8_t* pFrameBufferBits = GetVideo().GetFrameBuffer();
 	g_hDeviceBitmap = CreateDIBSection(
 		dc,
 		g_pFramebufferinfo,
 		DIB_RGB_COLORS,
-		(LPVOID*)&g_pFramebufferbits, 0, 0
+		(LPVOID*)&pFrameBufferBits, 0, 0
 	);
+	GetVideo().SetFrameBuffer(pFrameBufferBits);
 	SelectObject(g_hDeviceDC, g_hDeviceBitmap);
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	memset(g_pFramebufferbits, 0, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
+	memset(GetVideo().GetFrameBuffer(), 0, GetVideo().GetFrameBufferWidth() * GetVideo().GetFrameBufferHeight() * sizeof(bgra_t));
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
-	NTSC_VideoInit(g_pFramebufferbits);
+	NTSC_VideoInit(GetVideo().GetFrameBuffer());
 }
 
 //
@@ -87,7 +88,7 @@ static void videoCreateDIBSection()
 void WinVideoInitialize()
 {
 	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
-	VideoResetState();
+	GetVideo().VideoResetState();
 
 	// LOAD THE LOGO
 	g_hLogoBitmap = LoadBitmap(GetFrame().g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN));
@@ -97,8 +98,8 @@ void WinVideoInitialize()
 
 	memset(g_pFramebufferinfo, 0, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 	g_pFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	g_pFramebufferinfo->bmiHeader.biWidth = GetFrameBufferWidth();
-	g_pFramebufferinfo->bmiHeader.biHeight = GetFrameBufferHeight();
+	g_pFramebufferinfo->bmiHeader.biWidth = GetVideo().GetFrameBufferWidth();
+	g_pFramebufferinfo->bmiHeader.biHeight = GetVideo().GetFrameBufferHeight();
 	g_pFramebufferinfo->bmiHeader.biPlanes = 1;
 	g_pFramebufferinfo->bmiHeader.biBitCount = 32;
 	g_pFramebufferinfo->bmiHeader.biCompression = BI_RGB;
@@ -119,7 +120,7 @@ void WinVideoDestroy()
 	DeleteObject(g_hDeviceBitmap);
 	g_hDeviceDC = (HDC)0;
 	g_hDeviceBitmap = (HBITMAP)0;
-	g_pFramebufferbits = NULL;
+	GetVideo().SetFrameBuffer(NULL);
 
 	// DESTROY LOGO
 	if (g_hLogoBitmap) {
@@ -151,7 +152,7 @@ void VideoBenchmark () {
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   DWORD totaltextfps = 0;
 
-  g_uVideoMode            = VF_TEXT;
+  GetVideo().SetVideoMode(VF_TEXT);
   memset(mem+0x400,0x14,0x400);
   GetFrame().VideoRedrawScreen();
   DWORD milliseconds = GetTickCount();
@@ -173,7 +174,7 @@ void VideoBenchmark () {
   // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   DWORD totalhiresfps = 0;
-  g_uVideoMode             = VF_HIRES;
+  GetVideo().SetVideoMode(VF_HIRES);
   memset(mem+0x2000,0x14,0x2000);
   GetFrame().VideoRedrawScreen();
   milliseconds = GetTickCount();
@@ -312,18 +313,18 @@ void VideoChooseMonochromeColor ()
 	memset(&cc, 0, sizeof(CHOOSECOLOR));
 	cc.lStructSize     = sizeof(CHOOSECOLOR);
 	cc.hwndOwner       = GetFrame().g_hFrameWindow;
-	cc.rgbResult       = g_nMonochromeRGB;
+	cc.rgbResult       = GetVideo().GetMonochromeRGB();	// TODO: In future, WinVideo IS_A Video, so don't need to GetVideo()
 	cc.lpCustColors    = customcolors + 1;
 	cc.Flags           = CC_RGBINIT | CC_SOLIDCOLOR;
 	if (ChooseColor(&cc))
 	{
-		g_nMonochromeRGB = cc.rgbResult;
-		VideoReinitialize();
+		GetVideo().SetMonochromeRGB(cc.rgbResult);	// TODO: In future, WinVideo IS_A Video, so don't need to GetVideo()
+		GetVideo().VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
 			GetFrame().VideoRedrawScreen();
 		}
-		Config_Save_Video();
+		GetVideo().Config_Save_Video();
 	}
 }
 
@@ -497,7 +498,7 @@ void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 void Win32Frame::VideoRedrawScreen (void)
 {
 	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
-	VideoRefreshScreen( g_uVideoMode, true );
+	VideoRefreshScreen( GetVideo().GetVideoMode(), true );
 }
 
 //===========================================================================
@@ -523,8 +524,8 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 
 	if (hFrameDC)
 	{
-		int xSrc = GetFrameBufferBorderWidth();
-		int ySrc = GetFrameBufferBorderHeight();
+		int xSrc = GetVideo().GetFrameBufferBorderWidth();
+		int ySrc = GetVideo().GetFrameBufferBorderHeight();
 
 		int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 		int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
@@ -538,7 +539,7 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			wdest, hdest,
 			g_hDeviceDC,
 			xSrc, ySrc,
-			GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),
+			GetVideo().GetFrameBufferBorderlessWidth(), GetVideo().GetFrameBufferBorderlessHeight(),
 			SRCCOPY);
 	}
 
@@ -633,5 +634,5 @@ void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename)
 		return;
 
 	GetFrame().VideoRedrawScreen();
-	Video_SaveScreenShot(SCREENSHOT_560x384, pScreenshotFilename);
+	GetVideo().Video_SaveScreenShot(Video::SCREENSHOT_560x384, pScreenshotFilename);
 }

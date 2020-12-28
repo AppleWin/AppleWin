@@ -243,7 +243,7 @@ static void ContinueExecution(void)
 	//
 
 	const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-	if (g_dwCyclesThisFrame >= dwClksPerFrame && !VideoGetVblBarEx(g_dwCyclesThisFrame))
+	if (g_dwCyclesThisFrame >= dwClksPerFrame && !GetVideo().VideoGetVblBarEx(g_dwCyclesThisFrame))
 	{
 #ifdef LOG_PERF_TIMINGS
 		PerfMarker perfMarkerVideoRefresh(g_timeVideoRefresh);
@@ -482,7 +482,7 @@ static void RegisterHotKeys(void)
 		if (!bStatus[2])
 			msg += "\n. Ctrl+PrintScreen";
 
-		if (g_bShowPrintScreenWarningDialog)
+		if (GetVideo().GetShowPrintScreenWarningDialog())
 			SHMessageBoxCheck( GetFrame().g_hFrameWindow, msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK, MB_OK, "AppleWin-75097740-8e59-444c-bc94-2d4915132599" );
 
 		msg += "\n";
@@ -793,14 +793,14 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.newVideoType >= 0)
 		{
-			SetVideoType( (VideoType_e)g_cmdLine.newVideoType );
+			GetVideo().SetVideoType( (VideoType_e)g_cmdLine.newVideoType );
 			g_cmdLine.newVideoType = -1;	// Don't reapply after a restart
 		}
-		SetVideoStyle( (VideoStyle_e) ((GetVideoStyle() | g_cmdLine.newVideoStyleEnableMask) & ~g_cmdLine.newVideoStyleDisableMask) );
+		GetVideo().SetVideoStyle( (VideoStyle_e) ((GetVideo().GetVideoStyle() | g_cmdLine.newVideoStyleEnableMask) & ~g_cmdLine.newVideoStyleDisableMask) );
 
 		if (g_cmdLine.newVideoRefreshRate != VR_NONE)
 		{
-			SetVideoRefreshRate(g_cmdLine.newVideoRefreshRate);
+			GetVideo().SetVideoRefreshRate(g_cmdLine.newVideoRefreshRate);
 			g_cmdLine.newVideoRefreshRate = VR_NONE;	// Don't reapply after a restart
 			SetCurrentCLK6502();
 		}
@@ -850,7 +850,7 @@ static void RepeatInitialization(void)
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
 
 		// Init palette color
-		VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
+		VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
 
 		// Allow the 4 hardcoded slots to be configurated as empty
 		// NB. this state is not persisted to the Registry/conf.ini (just as '-s7 empty' isn't)
@@ -1047,14 +1047,20 @@ static void Shutdown(void)
 		UnplugHardDiskControllerCard();
 }
 
-IPropertySheet& GetPropertySheet()
+IPropertySheet& GetPropertySheet(void)
 {
 	static CPropertySheet sg_PropertySheet;
 	return sg_PropertySheet;
 }
 
-FrameBase& GetFrame()
+FrameBase& GetFrame(void)
 {
 	static Win32Frame sg_Win32Frame;
 	return sg_Win32Frame;
+}
+
+Video& GetVideo(void)
+{
+	static Video video;	// replace with subclass when available
+	return video;
 }

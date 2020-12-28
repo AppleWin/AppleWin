@@ -42,7 +42,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Registry.h"
 #include "SaveState.h"
-#include "Video.h"
 #include "YamlHelper.h"
 
 #include "../resource/resource.h"
@@ -352,7 +351,7 @@ void Disk2InterfaceCard::EjectDisk(const int drive)
 	Snapshot_UpdatePath();
 
 	SaveLastDiskImage(drive);
-	Video_ResetScreenshotCounter("");
+	GetVideo().Video_ResetScreenshotCounter("");
 }
 
 void Disk2InterfaceCard::UnplugDrive(const int drive)
@@ -710,14 +709,14 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 		GetImageTitle(pszImageFilename, pFloppy->m_imagename, pFloppy->m_fullname);
 		Snapshot_UpdatePath();
 
-		Video_ResetScreenshotCounter(pFloppy->m_imagename);
+		GetVideo().Video_ResetScreenshotCounter(pFloppy->m_imagename);
 
 		if (g_nAppMode == MODE_LOGO)
 			InitFirmware(GetCxRomPeripheral());
 	}
 	else
 	{
-		Video_ResetScreenshotCounter("");
+		GetVideo().Video_ResetScreenshotCounter("");
 	}
 
 	SaveLastDiskImage(drive);

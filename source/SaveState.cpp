@@ -47,7 +47,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SerialComms.h"
 #include "Speaker.h"
 #include "Speech.h"
-#include "Video.h"
 #include "z80emu.h"
 
 #include "Configuration/Config.h"
@@ -284,11 +283,11 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	JoyLoadSnapshot(yamlLoadHelper);
 	KeybLoadSnapshot(yamlLoadHelper, version);
 	SpkrLoadSnapshot(yamlLoadHelper);
-	VideoLoadSnapshot(yamlLoadHelper, version);
+	GetVideo().VideoLoadSnapshot(yamlLoadHelper, version);
 	MemLoadSnapshot(yamlLoadHelper, version);
 
 	// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)
-	VideoReinitialize();	// g_CharsetType changed
+	GetVideo().VideoReinitialize();	// g_CharsetType changed
 	GetFrame().FrameUpdateApple2Type();	// Calls VideoRedrawScreen() before the aux mem has been loaded (so if DHGR is enabled, then aux mem will be zeros at this stage)
 }
 
@@ -491,8 +490,8 @@ static void Snapshot_LoadState_v2(void)
 		HD_SetEnabled(false);
 
 		KeybReset();
-		VideoResetState();
-		SetVideoRefreshRate(VR_60HZ);		// Default to 60Hz as older save-states won't contain refresh rate
+		GetVideo().VideoResetState();
+		GetVideo().SetVideoRefreshRate(VR_60HZ);	// Default to 60Hz as older save-states won't contain refresh rate
 		MB_InitializeForLoadingSnapshot();	// GH#609
 #ifdef USE_SPEECH_API
 		g_Speech.Reset();
@@ -584,7 +583,7 @@ void Snapshot_SaveState(void)
 			JoySaveSnapshot(yamlSaveHelper);
 			KeybSaveSnapshot(yamlSaveHelper);
 			SpkrSaveSnapshot(yamlSaveHelper);
-			VideoSaveSnapshot(yamlSaveHelper);
+			GetVideo().VideoSaveSnapshot(yamlSaveHelper);
 			MemSaveSnapshot(yamlSaveHelper);
 		}
 
