@@ -741,7 +741,8 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 #endif
 
 	// Initialize COM - so we can use CoCreateInstance
-	// . NB. DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
+	// . DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
+	// . DDInit() is done in RepeatInitialization() by GetVideo().Initialize()
 	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	LogFileOutput("Init: CoInitializeEx(), hr=0x%08X\n", hr);
 
@@ -753,9 +754,6 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 		const bool bSpeechOK = g_Speech.Init();
 		LogFileOutput("Init: SysClk_InitTimer(), res=%d\n", bSpeechOK ? 1:0);
 	}
-#endif
-#if 0
-	GetVideo().DDInit();	// For WaitForVerticalBlank()
 #endif
 
 	GetFrame().g_hInstance = passinstance;
@@ -842,7 +840,7 @@ static void RepeatInitialization(void)
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
-		GetVideo().Initialize(); // g_pFramebufferinfo been created now
+		GetVideo().Initialize(); // g_pFramebufferinfo been created now & COM init'ed
 		LogFileOutput("Main: VideoInitialize()\n");
 
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");

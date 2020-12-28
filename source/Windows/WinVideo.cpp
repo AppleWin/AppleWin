@@ -96,6 +96,10 @@ void WinVideo::Initialize(void)
 	g_pFramebufferinfo->bmiHeader.biClrUsed = 0;
 
 	videoCreateDIBSection();
+
+#if 0
+	DDInit();	// For WaitForVerticalBlank()
+#endif
 }
 
 void WinVideo::Destroy(void)
@@ -118,6 +122,8 @@ void WinVideo::Destroy(void)
 	}
 
 	NTSC_Destroy();
+
+	DDUninit();
 
 	Video::Destroy();
 }

@@ -10,13 +10,10 @@ public:
 		g_pFramebufferinfo = NULL;
 		num_draw_devices = 0;
 		g_lpDD = NULL;
-
-		//DDInit();	// TODO: Need to ensure COM is init'd first
 	}
 
 	virtual ~WinVideo()
 	{
-		DDUninit();
 	}
 
 	virtual void Initialize(void);
