@@ -14,7 +14,6 @@
 #include "Speaker.h"
 #include "Mockingboard.h"
 #include "Configuration/IPropertySheet.h"
-#include "Windows/WinVideo.h"
 
 #include <QMessageBox>
 #include <QGamepad>
@@ -223,11 +222,13 @@ void getAppleWinPreferences(PreferenceData & data)
         data.saveState = QString::fromStdString(saveState);
     }
 
-    data.videoType = GetVideoType();
-    data.scanLines = IsVideoStyle(VS_HALF_SCANLINES);
-    data.verticalBlend = IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
-    data.hz50 = GetVideoRefreshRate() == VR_50HZ;
-    data.monochromeColor.setRgb(g_nMonochromeRGB);
+    Video & video = GetVideo();
+
+    data.videoType = video.GetVideoType();
+    data.scanLines = video.IsVideoStyle(VS_HALF_SCANLINES);
+    data.verticalBlend = video.IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
+    data.hz50 = video.GetVideoRefreshRate() == VR_50HZ;
+    data.monochromeColor.setRgb(video.GetMonochromeRGB());
 }
 
 void setAppleWinPreferences(const PreferenceData & currentData, const PreferenceData & newData)
@@ -301,25 +302,27 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
     if (currentData.videoType != newData.videoType || currentData.scanLines != newData.scanLines || currentData.verticalBlend != newData.verticalBlend
             || currentData.hz50 != newData.hz50 || currentData.monochromeColor != newData.monochromeColor)
     {
+        Video & video = GetVideo();
+
         const VideoType_e videoType = VideoType_e(newData.videoType);
-        SetVideoType(videoType);
+        video.SetVideoType(videoType);
 
         VideoStyle_e videoStyle = VS_NONE;
         if (newData.scanLines)
             videoStyle = VideoStyle_e(videoStyle | VS_HALF_SCANLINES);
         if (newData.verticalBlend)
             videoStyle = VideoStyle_e(videoStyle | VS_COLOR_VERTICAL_BLEND);
-        SetVideoStyle(videoStyle);
+        video.SetVideoStyle(videoStyle);
 
         const VideoRefreshRate_e videoRefreshRate = newData.hz50 ? VR_50HZ : VR_60HZ;
-        SetVideoRefreshRate(videoRefreshRate);
+        video.SetVideoRefreshRate(videoRefreshRate);
 
         const QColor color = newData.monochromeColor;
         // be careful QRgb is opposite way round to COLORREF
-        g_nMonochromeRGB = RGB(color.red(), color.green(), color.blue());
+        video.SetMonochromeRGB(RGB(color.red(), color.green(), color.blue()));
 
-        Config_Save_Video();
-        VideoReinitialize();
+        video.Config_Save_Video();
+        video.VideoReinitialize();
         GetFrame().VideoRedrawScreen();
     }
 

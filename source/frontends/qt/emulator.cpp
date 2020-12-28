@@ -44,6 +44,11 @@ bool Emulator::saveScreen(const QString & filename) const
     return ui->video->getScreen().save(filename);
 }
 
+void Emulator::loadVideoSettings()
+{
+    ui->video->loadVideoSettings();
+}
+
 void Emulator::displayLogo()
 {
     ui->video->displayLogo();

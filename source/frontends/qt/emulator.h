@@ -22,6 +22,7 @@ public:
     void refreshScreen();   // just repaint
 
     bool saveScreen(const QString & filename) const;
+    void loadVideoSettings();
     void displayLogo();
 
     void setZoom(QMdiSubWindow * window, const int x);

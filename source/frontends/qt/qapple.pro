@@ -30,7 +30,7 @@ SOURCES += main.cpp\
     qresources.cpp \
     emulator.cpp \
     configuration.cpp \
-    video.cpp \
+    qvideo.cpp \
     memorycontainer.cpp \
     preferences.cpp \
     gamepadpaddle.cpp \
@@ -54,7 +54,7 @@ HEADERS  += qapple.h \
     options.h \
     qdirectsound.h \
     configuration.h \
-    video.h \
+    qvideo.h \
     memorycontainer.h \
     preferences.h \
     gamepadpaddle.h \

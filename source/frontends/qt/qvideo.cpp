@@ -1,4 +1,4 @@
-#include "video.h"
+#include "qvideo.h"
 
 #include <QPainter>
 #include <QKeyEvent>
@@ -11,28 +11,36 @@
 #include "MouseInterface.h"
 #include "Core.h"
 #include "Video.h"
+#include "Interface.h"
 
-Video::Video(QWidget *parent) : VIDEO_BASECLASS(parent)
+QVideo::QVideo(QWidget *parent) : QVIDEO_BASECLASS(parent)
 {
-    setMouseTracking(true);
+    this->setMouseTracking(true);
 
     myLogo = QImage(":/resources/APPLEWINLOGO.BMP").mirrored(false, true);
-
-    mySX = GetFrameBufferBorderWidth();
-    mySY = GetFrameBufferBorderHeight();
-    mySW = GetFrameBufferBorderlessWidth();
-    mySH = GetFrameBufferBorderlessHeight();
-    myWidth = GetFrameBufferWidth();
-    myHeight = GetFrameBufferHeight();
 }
 
-QImage Video::getScreenImage() const
+void QVideo::loadVideoSettings()
 {
-    QImage frameBuffer(g_pFramebufferbits, myWidth, myHeight, QImage::Format_ARGB32_Premultiplied);
+    Video & video = GetVideo();
+
+    mySX = video.GetFrameBufferBorderWidth();
+    mySY = video.GetFrameBufferBorderHeight();
+    mySW = video.GetFrameBufferBorderlessWidth();
+    mySH = video.GetFrameBufferBorderlessHeight();
+    myWidth = video.GetFrameBufferWidth();
+    myHeight = video.GetFrameBufferHeight();
+
+    myFrameBuffer = video.GetFrameBuffer();
+}
+
+QImage QVideo::getScreenImage() const
+{
+    QImage frameBuffer(myFrameBuffer, myWidth, myHeight, QImage::Format_ARGB32_Premultiplied);
     return frameBuffer;
 }
 
-QImage Video::getScreen() const
+QImage QVideo::getScreen() const
 {
     QImage frameBuffer = getScreenImage();
     QImage screen = frameBuffer.copy(mySX, mySY, mySW, mySH);
@@ -40,7 +48,7 @@ QImage Video::getScreen() const
     return screen;
 }
 
-void Video::displayLogo()
+void QVideo::displayLogo()
 {
     QImage frameBuffer = getScreenImage();
 
@@ -48,7 +56,7 @@ void Video::displayLogo()
     painter.drawImage(mySX, mySY, myLogo);
 }
 
-void Video::paintEvent(QPaintEvent *)
+void QVideo::paintEvent(QPaintEvent *)
 {
     QImage frameBuffer = getScreenImage();
 
@@ -68,7 +76,7 @@ void Video::paintEvent(QPaintEvent *)
     }
 }
 
-bool Video::event(QEvent *event)
+bool QVideo::event(QEvent *event)
 {
     if (isEnabled() && (event->type() == QEvent::KeyPress))
     {
@@ -82,11 +90,11 @@ bool Video::event(QEvent *event)
     }
     else
     {
-        return VIDEO_BASECLASS::event(event);
+        return QVIDEO_BASECLASS::event(event);
     }
 }
 
-void Video::keyReleaseEvent(QKeyEvent *event)
+void QVideo::keyReleaseEvent(QKeyEvent *event)
 {
     if (!event->isAutoRepeat())
     {
@@ -104,10 +112,10 @@ void Video::keyReleaseEvent(QKeyEvent *event)
         }
     }
 
-    VIDEO_BASECLASS::keyReleaseEvent(event);
+    QVIDEO_BASECLASS::keyReleaseEvent(event);
 }
 
-void Video::keyPressEvent(QKeyEvent *event)
+void QVideo::keyPressEvent(QKeyEvent *event)
 {
     const int key = event->key();
 
@@ -197,11 +205,11 @@ void Video::keyPressEvent(QKeyEvent *event)
     }
     else
     {
-        VIDEO_BASECLASS::keyPressEvent(event);
+        QVIDEO_BASECLASS::keyPressEvent(event);
     }
 }
 
-void Video::mouseMoveEvent(QMouseEvent *event)
+void QVideo::mouseMoveEvent(QMouseEvent *event)
 {
     CardManager & cardManager = GetCardMgr();
 
@@ -228,7 +236,7 @@ void Video::mouseMoveEvent(QMouseEvent *event)
     }
 }
 
-void Video::mousePressEvent(QMouseEvent *event)
+void QVideo::mousePressEvent(QMouseEvent *event)
 {
     CardManager & cardManager = GetCardMgr();
 
@@ -250,7 +258,7 @@ void Video::mousePressEvent(QMouseEvent *event)
     }
 }
 
-void Video::mouseReleaseEvent(QMouseEvent *event)
+void QVideo::mouseReleaseEvent(QMouseEvent *event)
 {
     CardManager & cardManager = GetCardMgr();
 

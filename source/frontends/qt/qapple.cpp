@@ -111,6 +111,7 @@ namespace
         GetVideo().Initialize();
         VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
 
+        emulator->loadVideoSettings();
         emulator->displayLogo();
 
         GetCardMgr().GetDisk2CardMgr().Reset();
@@ -148,20 +149,6 @@ namespace
         const qint64 timeInMS = timeInSeconds * 1000;
         return timeInMS;
     }
-
-}
-
-void FrameDrawDiskLEDS(HDC)
-{
-}
-
-void FrameDrawDiskStatus(HDC)
-{
-
-}
-
-void FrameRefreshStatus(int, bool)
-{
 
 }
 

@@ -1,18 +1,19 @@
-#ifndef VIDEO_H
-#define VIDEO_H
+#ifndef QVIDEO_H
+#define QVIDEO_H
 
 #include <QOpenGLWidget>
 
-#define VIDEO_BASECLASS QOpenGLWidget
-//#define VIDEO_BASECLASS QWidget
+#define QVIDEO_BASECLASS QOpenGLWidget
+//#define QVIDEO_BASECLASS QWidget
 
-class Video : public VIDEO_BASECLASS
+class QVideo : public QVIDEO_BASECLASS
 {
     Q_OBJECT
 public:
-    explicit Video(QWidget *parent = nullptr);
+    explicit QVideo(QWidget *parent = nullptr);
 
     QImage getScreen() const;
+    void loadVideoSettings();
     void displayLogo();
 
 signals:
@@ -39,7 +40,9 @@ private:
     int myWidth;
     int myHeight;
 
+    quint8 * myFrameBuffer;
+
     QImage getScreenImage() const;
 };
 
-#endif // VIDEO_H
+#endif // QVIDEO_H

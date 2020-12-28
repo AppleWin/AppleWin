@@ -15,7 +15,7 @@ add_executable(qapple
   emulator.cpp
   memorycontainer.cpp
   gamepadpaddle.cpp
-  video.cpp
+  qvideo.cpp
   configuration.cpp
   options.cpp
   loggingcategory.cpp
