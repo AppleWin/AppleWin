@@ -23,9 +23,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "../Interface.h"	// Need to include before PropertySheetHelper.h
+#include "PropertySheet.h"
 #include "PropertySheetHelper.h"
-#include "IPropertySheet.h"
 
 #include "../Windows/AppleWin.h"	// g_nAppMode, g_uScrollLockToggle, sg_PropertySheet
 #include "../CardManager.h"

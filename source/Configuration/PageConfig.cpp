@@ -24,8 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "PageConfig.h"
-#include "../Interface.h"	// Need to include before PropertySheetHelper.h
-#include "PropertySheetHelper.h"
+#include "PropertySheet.h"
 
 #include "../Windows/AppleWin.h"
 #include "../Windows/WinFrame.h"
