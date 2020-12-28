@@ -17,7 +17,7 @@
 namespace
 {
 
-  std::unique_ptr<Game> game;
+  std::unique_ptr<Game> ourGame;
 
   bool endsWith(const std::string & value, const std::string & ending)
   {
@@ -155,15 +155,16 @@ void retro_set_video_refresh(retro_video_refresh_t cb)
 
 void retro_run(void)
 {
-  game->processInputEvents();
-  game->executeOneFrame();
-  game->drawVideoBuffer();
+  ourGame->processInputEvents();
+  ourGame->executeOneFrame();
+  ourGame->drawVideoBuffer();
   const size_t ms = (1000 + 60 - 1) / 60; // round up
   RDirectSound::writeAudio(ms);
 }
 
 bool retro_load_game(const retro_game_info *info)
 {
+  ourGame.reset();
   log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 
   enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
@@ -175,7 +176,7 @@ bool retro_load_game(const retro_game_info *info)
 
   try
   {
-    game.reset(new Game);
+    std::unique_ptr<Game> game(new Game);
 
     const std::string snapshotEnding = ".aws.yaml";
     const std::string gamePath = info->path;
@@ -197,6 +198,7 @@ bool retro_load_game(const retro_game_info *info)
       display_message("Enable Game Focus Mode for better keyboard handling");
     }
 
+    std::swap(ourGame, game);
     return ok;
   }
   catch (const std::exception & e)
@@ -213,7 +215,7 @@ bool retro_load_game(const retro_game_info *info)
 
 void retro_unload_game(void)
 {
-  game.reset();
+  ourGame.reset();
   log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 }
 
