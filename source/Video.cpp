@@ -75,7 +75,7 @@ const char Video::m_szModeDesc6[] = "Monochrome (Amber)";
 const char Video::m_szModeDesc7[] = "Monochrome (Green)";
 const char Video::m_szModeDesc8[] = "Monochrome (White)";
 
-const char* Video::g_apVideoModeDesc[NUM_VIDEO_MODES] =
+const char* const Video::g_apVideoModeDesc[NUM_VIDEO_MODES] =
 {
 	Video::m_szModeDesc0,
 	Video::m_szModeDesc1,

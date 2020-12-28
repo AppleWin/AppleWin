@@ -30,7 +30,7 @@ public:
 private:
 	void videoCreateDIBSection(void);
 	void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
-	static BOOL CALLBACK WinVideo::DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName, LPVOID lpContext);
+	static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName, LPVOID lpContext);
 	bool DDInit(void);
 	void DDUninit(void);
 

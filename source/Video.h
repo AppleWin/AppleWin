@@ -204,11 +204,11 @@ public:
 
 	virtual void Initialize(void)
 	{
-	};
+	}
 
 	virtual void Destroy(void)
 	{
-	};
+	}
 
 	virtual void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false) = 0;
 	virtual void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame) = 0;
@@ -304,7 +304,7 @@ private:
 	bool Util_TestScreenShotFileName(const TCHAR *pFileName);
 	void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShotType);
 
-	std::string Video::VideoGetSnapshotStructName(void);
+	std::string VideoGetSnapshotStructName(void);
 
 	int g_nAltCharSetOffset;
 	uint32_t g_uVideoMode;		// Current Video Mode (this is the last set one as it may change mid-scan line!)
@@ -331,16 +331,16 @@ private:
 	UINT g_videoRomSize;
 	bool g_videoRomRockerSwitch;
 
-	static const char Video::g_aVideoChoices[];
+	static const char g_aVideoChoices[];
 
-	static const char Video::m_szModeDesc0[];
-	static const char Video::m_szModeDesc1[];
-	static const char Video::m_szModeDesc2[];
-	static const char Video::m_szModeDesc3[];
-	static const char Video::m_szModeDesc4[];
-	static const char Video::m_szModeDesc5[];
-	static const char Video::m_szModeDesc6[];
-	static const char Video::m_szModeDesc7[];
-	static const char Video::m_szModeDesc8[];
-	static const char* Video::g_apVideoModeDesc[NUM_VIDEO_MODES];
+	static const char m_szModeDesc0[];
+	static const char m_szModeDesc1[];
+	static const char m_szModeDesc2[];
+	static const char m_szModeDesc3[];
+	static const char m_szModeDesc4[];
+	static const char m_szModeDesc5[];
+	static const char m_szModeDesc6[];
+	static const char m_szModeDesc7[];
+	static const char m_szModeDesc8[];
+	static const char* const g_apVideoModeDesc[NUM_VIDEO_MODES];
 };

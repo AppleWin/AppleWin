@@ -162,7 +162,7 @@ void WinVideo::Benchmark(void)
       memset(mem+0x400,0x14,0x400);
     else
       memcpy(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
-    GetVideo().VideoRefreshScreen();
+    VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
     totaltextfps++;
@@ -184,7 +184,7 @@ void WinVideo::Benchmark(void)
       memset(mem+0x2000,0x14,0x2000);
     else
       memcpy(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    GetVideo().VideoRefreshScreen();
+    VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
     totalhiresfps++;
@@ -284,7 +284,7 @@ void WinVideo::Benchmark(void)
   } while (GetTickCount() - milliseconds < 1000);
 
   // DISPLAY THE RESULTS
-  GetVideo().DisplayLogo();
+  DisplayLogo();
   TCHAR outstr[256];
   wsprintf(outstr,
            TEXT("Pure Video FPS:\t%u hires, %u text\n")
