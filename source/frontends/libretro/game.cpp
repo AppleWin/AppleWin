@@ -81,14 +81,14 @@ Game::Game()
   switch (ourInputDevices[0])
   {
   case RETRO_DEVICE_NONE:
-    Paddle::instance().reset();
+    Paddle::instance.reset();
     break;
   case RETRO_DEVICE_JOYPAD:
-    Paddle::instance().reset(new Joypad);
+    Paddle::instance.reset(new Joypad);
     Paddle::setSquaring(false);
     break;
   case RETRO_DEVICE_ANALOG:
-    Paddle::instance().reset(new Analog);
+    Paddle::instance.reset(new Analog);
     Paddle::setSquaring(true);
     break;
   default:
@@ -99,7 +99,7 @@ Game::Game()
 Game::~Game()
 {
   uninitialiseEmulator();
-  Paddle::instance().reset();
+  Paddle::instance.reset();
   Registry::instance.reset();
 }
 

@@ -472,7 +472,7 @@ void QApple::reloadOptions()
     GetAppleWindowTitle();
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
 
-    Paddle::instance() = GamepadPaddle::fromName(myOptions.gamepadName);
+    Paddle::instance = GamepadPaddle::fromName(myOptions.gamepadName);
     Paddle::setSquaring(myOptions.gamepadSquaring);
     QDirectSound::setOptions(myOptions.audioLatency);
 }

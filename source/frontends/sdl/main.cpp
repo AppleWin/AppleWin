@@ -112,7 +112,7 @@ void run_sdl(int argc, const char * argv [])
 
   InitializeFileRegistry(options);
 
-  Paddle::instance().reset(new Gamepad(0));
+  Paddle::instance.reset(new Gamepad(0));
 
   g_nMemoryClearType = options.memclear;
 
@@ -335,7 +335,7 @@ int main(int argc, const char * argv [])
 
 
   // this must happen BEFORE the SDL_Quit() as otherwise we have a double free (of the game controller).
-  Paddle::instance().reset();
+  Paddle::instance.reset();
   SDL_Quit();
 
   return exit;

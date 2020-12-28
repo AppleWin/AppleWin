@@ -357,7 +357,7 @@ void NVideoInitialize(const bool headless)
 
   paddle.reset(new EvDevPaddle("/dev/input/by-id/usb-©Microsoft_Corporation_Controller_1BBE3DB-event-joystick"));
 
-  Paddle::instance() = paddle;
+  Paddle::instance = paddle;
 
   if (headless)
   {

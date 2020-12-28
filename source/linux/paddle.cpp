@@ -15,11 +15,7 @@ namespace
 
 
 
-std::shared_ptr<const Paddle> & Paddle::instance()
-{
-  static std::shared_ptr<const Paddle> singleton = std::make_shared<Paddle>();
-  return singleton;
-}
+std::shared_ptr<const Paddle> Paddle::instance;
 
 std::set<int> Paddle::ourButtons;
 bool Paddle::ourSquaring = true;
@@ -95,17 +91,15 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExe
   }
   else
   {
-    const std::shared_ptr<const Paddle> & paddle = Paddle::instance();
-
-    if (paddle)
+    if (Paddle::instance)
     {
       switch (addr)
       {
       case Paddle::ourOpenApple:
-        pressed = paddle->getButton(0);
+        pressed = Paddle::instance->getButton(0);
         break;
       case Paddle::ourSolidApple:
-        pressed = paddle->getButton(1);
+        pressed = Paddle::instance->getButton(1);
         break;
       case Paddle::ourThirdApple:
         break;
@@ -123,14 +117,12 @@ BYTE __stdcall JoyReadPosition(WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG
   CpuCalcCycles(uExecutedCycles);
   BOOL nPdlCntrActive = 0;
 
-  const std::shared_ptr<const Paddle> & paddle = Paddle::instance();
-
-  if (paddle)
+  if (Paddle::instance)
   {
     if (nJoyNum == 0)
     {
       int axis = address & 1;
-      int pdl = paddle->getAxisValue(axis);
+      int pdl = Paddle::instance->getAxisValue(axis);
       // This is from KEGS. It helps games like Championship Lode Runner & Boulderdash
       if (pdl >= 255)
 	pdl = 280;
