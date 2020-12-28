@@ -43,13 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "../resource/resource.h"
 
-static COLORREF      customcolors[256];	// MONOCHROME is last custom color
-static HBITMAP       g_hLogoBitmap;
-static HBITMAP       g_hDeviceBitmap;
-static HDC           g_hDeviceDC;
-static LPBITMAPINFO  g_pFramebufferinfo = NULL;
-
-static void videoCreateDIBSection()
+void WinVideo::videoCreateDIBSection(void)
 {
 	// CREATE THE DEVICE CONTEXT
 	HWND window = GetDesktopWindow();
@@ -64,31 +58,27 @@ static void videoCreateDIBSection()
 	if (g_hDeviceBitmap)
 		DeleteObject(g_hDeviceBitmap);
 
-	uint8_t* pFrameBufferBits = GetVideo().GetFrameBuffer();
 	g_hDeviceBitmap = CreateDIBSection(
 		dc,
 		g_pFramebufferinfo,
 		DIB_RGB_COLORS,
-		(LPVOID*)&pFrameBufferBits, 0, 0
+		(LPVOID*)&g_pFramebufferbits, 0, 0
 	);
-	GetVideo().SetFrameBuffer(pFrameBufferBits);
 	SelectObject(g_hDeviceDC, g_hDeviceBitmap);
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	memset(GetVideo().GetFrameBuffer(), 0, GetVideo().GetFrameBufferWidth() * GetVideo().GetFrameBufferHeight() * sizeof(bgra_t));
+	memset(GetFrameBuffer(), 0, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
-	NTSC_VideoInit(GetVideo().GetFrameBuffer());
+	NTSC_VideoInit(GetFrameBuffer());
 }
 
-//
-// ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
-//
-
-void WinVideoInitialize()
+void WinVideo::Initialize(void)
 {
+	Video::Initialize();
+
 	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
-	GetVideo().VideoResetState();
+	VideoResetState();
 
 	// LOAD THE LOGO
 	g_hLogoBitmap = LoadBitmap(GetFrame().g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN));
@@ -98,8 +88,8 @@ void WinVideoInitialize()
 
 	memset(g_pFramebufferinfo, 0, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 	g_pFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	g_pFramebufferinfo->bmiHeader.biWidth = GetVideo().GetFrameBufferWidth();
-	g_pFramebufferinfo->bmiHeader.biHeight = GetVideo().GetFrameBufferHeight();
+	g_pFramebufferinfo->bmiHeader.biWidth = GetFrameBufferWidth();
+	g_pFramebufferinfo->bmiHeader.biHeight = GetFrameBufferHeight();
 	g_pFramebufferinfo->bmiHeader.biPlanes = 1;
 	g_pFramebufferinfo->bmiHeader.biBitCount = 32;
 	g_pFramebufferinfo->bmiHeader.biCompression = BI_RGB;
@@ -108,9 +98,8 @@ void WinVideoInitialize()
 	videoCreateDIBSection();
 }
 
-void WinVideoDestroy()
+void WinVideo::Destroy(void)
 {
-
 	// DESTROY BUFFERS
 	delete [] g_pFramebufferinfo;
 	g_pFramebufferinfo = NULL;
@@ -120,7 +109,7 @@ void WinVideoDestroy()
 	DeleteObject(g_hDeviceBitmap);
 	g_hDeviceDC = (HDC)0;
 	g_hDeviceBitmap = (HBITMAP)0;
-	GetVideo().SetFrameBuffer(NULL);
+	SetFrameBuffer(NULL);
 
 	// DESTROY LOGO
 	if (g_hLogoBitmap) {
@@ -129,10 +118,13 @@ void WinVideoDestroy()
 	}
 
 	NTSC_Destroy();
+
+	Video::Destroy();
 }
 
 //===========================================================================
-void VideoBenchmark () {
+void WinVideo::Benchmark(void)
+{
   _ASSERT(g_nAppMode == MODE_BENCHMARK);
   Sleep(500);
 
@@ -152,7 +144,7 @@ void VideoBenchmark () {
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   DWORD totaltextfps = 0;
 
-  GetVideo().SetVideoMode(VF_TEXT);
+  SetVideoMode(VF_TEXT);
   memset(mem+0x400,0x14,0x400);
   GetFrame().VideoRedrawScreen();
   DWORD milliseconds = GetTickCount();
@@ -164,7 +156,7 @@ void VideoBenchmark () {
       memset(mem+0x400,0x14,0x400);
     else
       memcpy(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
-    VideoRefreshScreen();
+    GetVideo().VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
     totaltextfps++;
@@ -174,7 +166,7 @@ void VideoBenchmark () {
   // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
   DWORD totalhiresfps = 0;
-  GetVideo().SetVideoMode(VF_HIRES);
+  SetVideoMode(VF_HIRES);
   memset(mem+0x2000,0x14,0x2000);
   GetFrame().VideoRedrawScreen();
   milliseconds = GetTickCount();
@@ -186,7 +178,7 @@ void VideoBenchmark () {
       memset(mem+0x2000,0x14,0x2000);
     else
       memcpy(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRefreshScreen();
+    GetVideo().VideoRefreshScreen();
     if (cycle++ >= 3)
       cycle = 0;
     totalhiresfps++;
@@ -286,7 +278,7 @@ void VideoBenchmark () {
   } while (GetTickCount() - milliseconds < 1000);
 
   // DISPLAY THE RESULTS
-  VideoDisplayLogo();
+  GetVideo().DisplayLogo();
   TCHAR outstr[256];
   wsprintf(outstr,
            TEXT("Pure Video FPS:\t%u hires, %u text\n")
@@ -305,32 +297,33 @@ void VideoBenchmark () {
              MB_ICONINFORMATION | MB_SETFOREGROUND);
 }
             
-// This is called from PageConfig
 //===========================================================================
-void VideoChooseMonochromeColor ()
+
+// This is called from PageConfig
+void WinVideo::ChooseMonochromeColor(void)
 {
 	CHOOSECOLOR cc;
 	memset(&cc, 0, sizeof(CHOOSECOLOR));
 	cc.lStructSize     = sizeof(CHOOSECOLOR);
 	cc.hwndOwner       = GetFrame().g_hFrameWindow;
-	cc.rgbResult       = GetVideo().GetMonochromeRGB();	// TODO: In future, WinVideo IS_A Video, so don't need to GetVideo()
+	cc.rgbResult       = GetMonochromeRGB();
 	cc.lpCustColors    = customcolors + 1;
 	cc.Flags           = CC_RGBINIT | CC_SOLIDCOLOR;
 	if (ChooseColor(&cc))
 	{
-		GetVideo().SetMonochromeRGB(cc.rgbResult);	// TODO: In future, WinVideo IS_A Video, so don't need to GetVideo()
-		GetVideo().VideoReinitialize();
+		SetMonochromeRGB(cc.rgbResult);
+		VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
 			GetFrame().VideoRedrawScreen();
 		}
-		GetVideo().Config_Save_Video();
+		Config_Save_Video();
 	}
 }
 
 //===========================================================================
 
-static void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale)
+void WinVideo::VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale)
 {
 	HDC hSrcDC = CreateCompatibleDC( hDstDC );
 	SelectObject( hSrcDC, g_hLogoBitmap );
@@ -348,7 +341,8 @@ static void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int sr
 }
 
 //===========================================================================
-void VideoDisplayLogo () 
+
+void WinVideo::DisplayLogo(void)
 {
 	int nLogoX = 0, nLogoY = 0;
 	int scale = GetViewportScale();
@@ -421,15 +415,13 @@ void VideoDisplayLogo ()
 
 //===========================================================================
 
-void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=false*/)
+void WinVideo::VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=false*/)
 {
 	static DWORD dwFullSpeedStartTime = 0;
-//	static bool bValid = false;
 
 	if (bInit)
 	{
 		// Just entered full-speed mode
-//		bValid = false;
 		dwFullSpeedStartTime = GetTickCount();
 		return;
 	}
@@ -440,54 +432,12 @@ void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=fal
 
 	dwFullSpeedStartTime += dwFullSpeedDuration;
 
-	//
-
-#if 0
-	static BYTE text_main[1024*2] = {0};	// page1 & 2
-	static BYTE text_aux[1024*2] = {0};		// page1 & 2
-	static BYTE hgr_main[8192*2] = {0};		// page1 & 2
-	static BYTE hgr_aux[8192*2] = {0};		// page1 & 2
-
-	bool bRedraw = true;	// Always redraw for bValid==false (ie. just entered full-speed mode)
-
-	if (bValid)
-	{
-		if ((g_uVideoMode&(VF_DHIRES|VF_HIRES|VF_TEXT|VF_MIXED)) == VF_HIRES)
-		{
-			// HIRES (not MIXED) - eg. AZTEC.DSK
-			if ((g_uVideoMode&VF_PAGE2) == 0)
-				bRedraw = memcmp(&hgr_main[0x0000],  MemGetMainPtr(0x2000), 8192) != 0;
-			else
-				bRedraw = memcmp(&hgr_main[0x2000],  MemGetMainPtr(0x4000), 8192) != 0;
-		}
-		else
-		{
-			bRedraw =
-				(memcmp(text_main, MemGetMainPtr(0x400),  sizeof(text_main)) != 0) ||
-				(memcmp(text_aux,  MemGetAuxPtr(0x400),   sizeof(text_aux))  != 0) ||
-				(memcmp(hgr_main,  MemGetMainPtr(0x2000), sizeof(hgr_main))  != 0) ||
-				(memcmp(hgr_aux,   MemGetAuxPtr(0x2000),  sizeof(hgr_aux))   != 0);
-		}
-	}
-
-	if (bRedraw)
-		VideoRedrawScreenAfterFullSpeed(dwCyclesThisFrame);
-
-	// Copy all video memory (+ screen holes)
-	memcpy(text_main, MemGetMainPtr(0x400),  sizeof(text_main));
-	memcpy(text_aux,  MemGetAuxPtr(0x400),   sizeof(text_aux));
-	memcpy(hgr_main,  MemGetMainPtr(0x2000), sizeof(hgr_main));
-	memcpy(hgr_aux,   MemGetAuxPtr(0x2000),  sizeof(hgr_aux));
-
-	bValid = true;
-#else
 	VideoRedrawScreenAfterFullSpeed(dwCyclesThisFrame);
-#endif
 }
 
 //===========================================================================
 
-void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
+void WinVideo::VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
 	NTSC_VideoClockResync(dwCyclesThisFrame);
 	GetFrame().VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
@@ -495,15 +445,7 @@ void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 
 //===========================================================================
 
-void Win32Frame::VideoRedrawScreen (void)
-{
-	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
-	VideoRefreshScreen( GetVideo().GetVideoMode(), true );
-}
-
-//===========================================================================
-
-void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/ )
+void WinVideo::VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/)
 {
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
 	{
@@ -524,8 +466,8 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 
 	if (hFrameDC)
 	{
-		int xSrc = GetVideo().GetFrameBufferBorderWidth();
-		int ySrc = GetVideo().GetFrameBufferBorderHeight();
+		int xSrc = GetFrameBufferBorderWidth();
+		int ySrc = GetFrameBufferBorderHeight();
 
 		int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
 		int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
@@ -539,7 +481,7 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 			wdest, hdest,
 			g_hDeviceDC,
 			xSrc, ySrc,
-			GetVideo().GetFrameBufferBorderlessWidth(), GetVideo().GetFrameBufferBorderlessHeight(),
+			GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),
 			SRCCOPY);
 	}
 
@@ -553,36 +495,31 @@ void VideoRefreshScreen ( uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRe
 
 //===========================================================================
 
-#define MAX_DRAW_DEVICES 10
-
-static char *draw_devices[MAX_DRAW_DEVICES];
-static GUID draw_device_guid[MAX_DRAW_DEVICES];
-static int num_draw_devices = 0;
-static LPDIRECTDRAW g_lpDD = NULL;
-
-static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName,  LPVOID lpContext)
+BOOL CALLBACK WinVideo::DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName,  LPVOID lpContext)
 {
-	int i = num_draw_devices;
+	WinVideo* obj = (WinVideo*)lpContext;
+
+	int i = obj->num_draw_devices;
 	if (i == MAX_DRAW_DEVICES)
 		return TRUE;
 	if (lpGUID != NULL)
-		memcpy(&draw_device_guid[i], lpGUID, sizeof (GUID));
-	draw_devices[i] = _strdup(lpszDesc);
+		memcpy(&(obj->draw_device_guid[i]), lpGUID, sizeof (GUID));
+	obj->draw_devices[i] = _strdup(lpszDesc);
 
 	if (g_fh) fprintf(g_fh, "%d: %s - %s\n",i,lpszDesc,lpszDrvName);
 
-	num_draw_devices++;
+	(obj->num_draw_devices)++;
 	return TRUE;
 }
 
-bool DDInit(void)
+bool WinVideo::DDInit(void)
 {
 #ifdef NO_DIRECT_X
 
 	return false;
 
 #else
-	HRESULT hr = DirectDrawEnumerate((LPDDENUMCALLBACK)DDEnumProc, NULL);
+	HRESULT hr = DirectDrawEnumerate((LPDDENUMCALLBACK)DDEnumProc, this);
 	if (FAILED(hr))
 	{
 		LogFileOutput("DSEnumerate failed (%08X)\n", hr);
@@ -618,7 +555,7 @@ bool DDInit(void)
 // From SoundCore.h
 #define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
 
-void DDUninit(void)
+void WinVideo::DDUninit(void)
 {
 	SAFE_RELEASE(g_lpDD);
 }
@@ -627,12 +564,22 @@ void DDUninit(void)
 
 //===========================================================================
 
-void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename)
+void WinVideo::Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename)
 {
 	_ASSERT(pScreenshotFilename);
 	if (!pScreenshotFilename)
 		return;
 
 	GetFrame().VideoRedrawScreen();
-	GetVideo().Video_SaveScreenShot(Video::SCREENSHOT_560x384, pScreenshotFilename);
+	Video_SaveScreenShot(Video::SCREENSHOT_560x384, pScreenshotFilename);
+}
+
+//===========================================================================
+//===========================================================================
+
+// NB. Win32Frame, not WinVideo
+void Win32Frame::VideoRedrawScreen(void)
+{
+	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
+	GetVideo().VideoRefreshScreen( GetVideo().GetVideoMode(), true );
 }

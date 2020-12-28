@@ -172,7 +172,7 @@ static void ContinueExecution(void)
 	if (g_bFullSpeed)
 	{
 		if (!bWasFullSpeed)
-			VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
+			GetVideo().VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
 
 		// Don't call Spkr_Mute() - will get speaker clicks
 		MB_Mute();
@@ -190,7 +190,7 @@ static void ContinueExecution(void)
 	else
 	{
 		if (bWasFullSpeed)
-			VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
+			GetVideo().VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
 
 		// Don't call Spkr_Demute()
 		MB_Demute();
@@ -251,9 +251,9 @@ static void ContinueExecution(void)
 		g_dwCyclesThisFrame -= dwClksPerFrame;
 
 		if (g_bFullSpeed)
-			VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
+			GetVideo().VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
 		else
-			VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
+			GetVideo().VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
 	}
 
 #ifdef LOG_PERF_TIMINGS
@@ -755,7 +755,7 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 	}
 #endif
 #if 0
-	DDInit();	// For WaitForVerticalBlank()
+	GetVideo().DDInit();	// For WaitForVerticalBlank()
 #endif
 
 	GetFrame().g_hInstance = passinstance;
@@ -842,7 +842,7 @@ static void RepeatInitialization(void)
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
-		WinVideoInitialize(); // g_pFramebufferinfo been created now
+		GetVideo().Initialize(); // g_pFramebufferinfo been created now
 		LogFileOutput("Main: VideoInitialize()\n");
 
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");
@@ -977,7 +977,7 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.szScreenshotFilename)
 		{
-			Video_RedrawAndTakeScreenShot(g_cmdLine.szScreenshotFilename);
+			GetVideo().Video_RedrawAndTakeScreenShot(g_cmdLine.szScreenshotFilename);
 			g_cmdLine.bShutdown = true;
 		}
 
@@ -1023,7 +1023,6 @@ static void Shutdown(void)
 		ChangeDisplaySettings(NULL, 0);	// restore default
 
 	// Release COM
-	DDUninit();
 	SysClk_UninitTimer();
 	LogFileOutput("Exit: SysClk_UninitTimer()\n");
 
@@ -1061,6 +1060,6 @@ FrameBase& GetFrame(void)
 
 Video& GetVideo(void)
 {
-	static Video video;	// replace with subclass when available
+	static WinVideo video;
 	return video;
 }

@@ -585,7 +585,7 @@ static void DrawFrameWindow (bool bPaintingWindow/*=false*/)
 
 	// DRAW THE CONTENTS OF THE EMULATED SCREEN
 	if (g_nAppMode == MODE_LOGO)
-		VideoDisplayLogo();
+		GetVideo().DisplayLogo();
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay();
 	else
@@ -1064,7 +1064,7 @@ LRESULT CALLBACK FrameWndProc (
       CpuDestroy();
       MemDestroy();
       SpkrDestroy();
-      WinVideoDestroy();
+      GetVideo().Destroy();
       MB_Destroy();
       DeleteGdiObjects();
       DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
@@ -1254,13 +1254,13 @@ LRESULT CALLBACK FrameWndProc (
 				{
 					UINT debugVideoMode;
 					if ( DebugGetVideoMode(&debugVideoMode) )
-						VideoRefreshScreen(debugVideoMode, true);
+						GetVideo().VideoRefreshScreen(debugVideoMode, true);
 					else
-						VideoRefreshScreen();
+						GetVideo().VideoRefreshScreen();
 				}
 				else
 				{
-					VideoRefreshScreen();
+					GetVideo().VideoRefreshScreen();
 				}
 			}
 
@@ -1809,7 +1809,7 @@ LRESULT CALLBACK FrameWndProc (
       DrawStatusArea((HDC)0,DRAW_TITLE);
       HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
       g_nAppMode = MODE_BENCHMARK;
-      VideoBenchmark();
+      GetVideo().Benchmark();
       g_nAppMode = MODE_LOGO;
       ResetMachineState();
       SetCursor(oldcursor);

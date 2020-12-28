@@ -202,6 +202,22 @@ public:
 	{
 	}
 
+	virtual void Initialize(void)
+	{
+	};
+
+	virtual void Destroy(void)
+	{
+	};
+
+	virtual void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false) = 0;
+	virtual void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame) = 0;
+	virtual void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedrawWholeScreen = false) = 0;
+	virtual void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename) = 0;
+	virtual void ChooseMonochromeColor(void) = 0;
+	virtual void Benchmark(void) = 0;
+	virtual void DisplayLogo(void) = 0;
+
 	uint8_t* GetFrameBuffer(void) { return g_pFramebufferbits; }
 	void SetFrameBuffer(uint8_t* frameBuffer) { g_pFramebufferbits = frameBuffer; }
 
@@ -280,6 +296,9 @@ public:
 	static const UINT kVideoRomSize2K = 1024*2;
 	static const UINT kVideoRomSize4K = kVideoRomSize2K*2;
 
+protected:
+	uint8_t *g_pFramebufferbits;
+
 private:
 	void Util_MakeScreenShotFileName(TCHAR *pFinalFileName_, DWORD chars);
 	bool Util_TestScreenShotFileName(const TCHAR *pFileName);
@@ -287,7 +306,6 @@ private:
 
 	std::string Video::VideoGetSnapshotStructName(void);
 
-	uint8_t *g_pFramebufferbits;
 	int g_nAltCharSetOffset;
 	uint32_t g_uVideoMode;		// Current Video Mode (this is the last set one as it may change mid-scan line!)
 	DWORD g_eVideoType;			// saved to Registry
