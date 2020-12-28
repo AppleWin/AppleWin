@@ -4,7 +4,6 @@
 
 #include <iostream>
 
-#include "linux/videobuffer.h"
 #include "linux/paddle.h"
 #include "linux/keyboard.h"
 
@@ -16,7 +15,6 @@
 #include "Disk.h"
 #include "CPU.h"
 #include "Video.h"
-#include "Windows/WinVideo.h"
 #include "NTSC.h"
 #include "Mockingboard.h"
 #include "Speaker.h"
@@ -37,12 +35,11 @@ namespace
 
   void cycleVideoType(const std::shared_ptr<SDL_Window> & win)
   {
-    g_eVideoType++;
-    if (g_eVideoType >= NUM_VIDEO_MODES)
-      g_eVideoType = 0;
+    Video & video = GetVideo();
+    video.IncVideoType();
 
-    Config_Save_Video();
-    VideoReinitialize();
+    video.Config_Save_Video();
+    video.VideoReinitialize();
     GetFrame().VideoRedrawScreen();
 
     updateWindowTitle(win);
@@ -50,13 +47,15 @@ namespace
 
   void cycle50ScanLines(const std::shared_ptr<SDL_Window> & win)
   {
-    VideoStyle_e videoStyle = GetVideoStyle();
+    Video & video = GetVideo();
+
+    VideoStyle_e videoStyle = video.GetVideoStyle();
     videoStyle = VideoStyle_e(videoStyle ^ VS_HALF_SCANLINES);
 
-    SetVideoStyle(videoStyle);
+    video.SetVideoStyle(videoStyle);
 
-    Config_Save_Video();
-    VideoReinitialize();
+    video.Config_Save_Video();
+    video.VideoReinitialize();
     GetFrame().VideoRedrawScreen();
 
     updateWindowTitle(win);
@@ -156,11 +155,15 @@ Emulator::Emulator(
   , myFullscreen(false)
   , mySpeed(fixedSpeed)
 {
-  myRect.x = GetFrameBufferBorderWidth();
-  myRect.y = GetFrameBufferBorderHeight();
-  myRect.w = GetFrameBufferBorderlessWidth();
-  myRect.h = GetFrameBufferBorderlessHeight();
-  myPitch = GetFrameBufferWidth() * sizeof(bgra_t);
+  Video & video = GetVideo();
+
+  myRect.x = video.GetFrameBufferBorderWidth();
+  myRect.y = video.GetFrameBufferBorderHeight();
+  myRect.w = video.GetFrameBufferBorderlessWidth();
+  myRect.h = video.GetFrameBufferBorderlessHeight();
+  myPitch = video.GetFrameBufferWidth() * sizeof(bgra_t);
+
+  myFrameBuffer = video.GetFrameBuffer();
 }
 
 void Emulator::execute(const size_t next)
@@ -183,7 +186,7 @@ void Emulator::execute(const size_t next)
 
 void Emulator::updateTexture()
 {
-  SDL_UpdateTexture(myTexture.get(), nullptr, g_pFramebufferbits, myPitch);
+  SDL_UpdateTexture(myTexture.get(), nullptr, myFrameBuffer, myPitch);
 }
 
 void Emulator::refreshVideo()
@@ -265,9 +268,10 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
       }
       else if (key.keysym.mod & KMOD_CTRL)
       {
+	Video & video = GetVideo();
 	myMultiplier = myMultiplier == 1 ? 2 : 1;
-	const int sw = GetFrameBufferBorderlessWidth();
-	const int sh = GetFrameBufferBorderlessHeight();
+	const int sw = video.GetFrameBufferBorderlessWidth();
+	const int sh = video.GetFrameBufferBorderlessHeight();
 	SDL_SetWindowSize(myWindow.get(), sw * myMultiplier, sh * myMultiplier);
       }
       else if (!(key.keysym.mod & KMOD_SHIFT))

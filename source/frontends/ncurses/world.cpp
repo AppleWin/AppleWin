@@ -15,6 +15,7 @@
 #include "Memory.h"
 #include "Core.h"
 #include "RGBMonitor.h"
+#include "Interface.h"
 
 #include "linux/interface.h"
 #include "linux/paddle.h"
@@ -49,14 +50,6 @@ namespace
   LPBYTE        g_pHiresBank1;
   LPBYTE        g_pHiresBank0;
 
-#define  SW_80COL         (g_uVideoMode & VF_80COL)
-#define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
-#define  SW_HIRES         (g_uVideoMode & VF_HIRES)
-#define  SW_80STORE       (g_uVideoMode & VF_80STORE)
-#define  SW_MIXED         (g_uVideoMode & VF_MIXED)
-#define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
-#define  SW_TEXT          (g_uVideoMode & VF_TEXT)
-
   bool g_bTextFlashState = false;
 
   void sig_handler_pass(int signo)
@@ -72,7 +65,7 @@ namespace
     g_stop = true;
   }
 
-  chtype mapCharacter(BYTE ch)
+  chtype mapCharacter(Video & video, BYTE ch)
   {
     const char low = ch & 0x7f;
     const char high = ch & 0x80;
@@ -93,7 +86,7 @@ namespace
       break;
     case 3:           // 60 - 7F
       // LOWERCASE
-      if (high == 0 && g_nAltCharSetOffset == 0)
+      if (high == 0 && !video.VideoGetSWAltCharSet())
       {
 	result -= 0x40;
       }
@@ -107,7 +100,7 @@ namespace
 
     if (!high)
     {
-      if ((g_nAltCharSetOffset == 0) && (low >= 0x40))
+      if (!video.VideoGetSWAltCharSet() && (low >= 0x40))
       {
 	// result |= A_BLINK; // does not work on my terminal
 	if (g_bTextFlashState)
@@ -137,9 +130,9 @@ namespace
     }
   }
 
-  typedef bool (*VideoUpdateFuncPtr_t)(int, int, int, int, int);
+  typedef bool (*VideoUpdateFuncPtr_t)(Video &, int, int, int, int, int);
 
-  bool NUpdate40ColCell (int x, int y, int xpixel, int ypixel, int offset)
+  bool NUpdate40ColCell (Video & video, int x, int y, int xpixel, int ypixel, int offset)
   {
     frame->init(24, 40);
     asciiArt->init(1, 1);
@@ -148,13 +141,13 @@ namespace
 
     WINDOW * win = frame->getWindow();
 
-    const chtype ch2 = mapCharacter(ch);
+    const chtype ch2 = mapCharacter(video, ch);
     mvwaddch(win, 1 + y, 1 + x, ch2);
 
     return true;
   }
 
-  bool NUpdate80ColCell (int x, int y, int xpixel, int ypixel, int offset)
+  bool NUpdate80ColCell (Video & video, int x, int y, int xpixel, int ypixel, int offset)
   {
     frame->init(24, 80);
     asciiArt->init(1, 2);
@@ -164,16 +157,16 @@ namespace
 
     WINDOW * win = frame->getWindow();
 
-    const chtype ch12 = mapCharacter(ch1);
+    const chtype ch12 = mapCharacter(video, ch1);
     mvwaddch(win, 1 + y, 1 + 2 * x, ch12);
 
-    const chtype ch22 = mapCharacter(ch2);
+    const chtype ch22 = mapCharacter(video, ch2);
     mvwaddch(win, 1 + y, 1 + 2 * x + 1, ch22);
 
     return true;
   }
 
-  bool NUpdateLoResCell (int x, int y, int xpixel, int ypixel, int offset)
+  bool NUpdateLoResCell (Video &, int x, int y, int xpixel, int ypixel, int offset)
   {
     BYTE val = *(g_pTextBank0+offset);
 
@@ -195,12 +188,12 @@ namespace
     return true;
   }
 
-  bool NUpdateDLoResCell (int x, int y, int xpixel, int ypixel, int offset)
+  bool NUpdateDLoResCell (Video &, int x, int y, int xpixel, int ypixel, int offset)
   {
     return true;
   }
 
-  bool NUpdateHiResCell (int x, int y, int xpixel, int ypixel, int offset)
+  bool NUpdateHiResCell (Video &, int x, int y, int xpixel, int ypixel, int offset)
   {
     const BYTE * base = g_pHiresBank0 + offset;
 
@@ -230,7 +223,7 @@ namespace
     return true;
   }
 
-  bool NUpdateDHiResCell (int x, int y, int xpixel, int ypixel, int offset)
+  bool NUpdateDHiResCell (Video &, int x, int y, int xpixel, int ypixel, int offset)
   {
     return true;
   }
@@ -375,22 +368,24 @@ void NVideoRedrawScreen()
   VideoUpdateFlash();
   FrameRefresh();
 
-  const int displaypage2 = (SW_PAGE2) == 0 ? 0 : 1;
+  Video & video = GetVideo();
+
+  const int displaypage2 = video.VideoGetSWPAGE2() == 0 ? 0 : 1;
 
   g_pHiresBank1 = MemGetAuxPtr (0x2000 << displaypage2);
   g_pHiresBank0 = MemGetMainPtr(0x2000 << displaypage2);
   g_pTextBank1  = MemGetAuxPtr (0x400  << displaypage2);
   g_pTextBank0  = MemGetMainPtr(0x400  << displaypage2);
 
-  VideoUpdateFuncPtr_t update = SW_TEXT
-    ? SW_80COL
+  VideoUpdateFuncPtr_t update = video.VideoGetSWTEXT()
+    ? video.VideoGetSW80COL()
     ? NUpdate80ColCell
     : NUpdate40ColCell
-    : SW_HIRES
-    ? (SW_DHIRES && SW_80COL)
+    : video.VideoGetSWHIRES()
+    ? (video.VideoGetSWDHIRES() && video.VideoGetSW80COL())
     ? NUpdateDHiResCell
     : NUpdateHiResCell
-    : (SW_DHIRES && SW_80COL)
+    : (video.VideoGetSWDHIRES() && video.VideoGetSW80COL())
     ? NUpdateDLoResCell
     : NUpdateLoResCell;
 
@@ -401,7 +396,7 @@ void NVideoRedrawScreen()
     int x      = 0;
     int xpixel = 0;
     while (x < 40) {
-      update(x, y, xpixel, ypixel, offset + x);
+      update(video, x, y, xpixel, ypixel, offset + x);
       ++x;
       xpixel += 14;
     }
@@ -409,8 +404,8 @@ void NVideoRedrawScreen()
     ypixel += 16;
   }
 
-  if (SW_MIXED)
-    update = SW_80COL ? NUpdate80ColCell
+  if (video.VideoGetSWMIXED())
+    update = video.VideoGetSW80COL() ? NUpdate80ColCell
       : NUpdate40ColCell;
 
   while (y < 24) {
@@ -418,7 +413,7 @@ void NVideoRedrawScreen()
     int x      = 0;
     int xpixel = 0;
     while (x < 40) {
-      update(x, y, xpixel, ypixel, offset + x);
+      update(video, x, y, xpixel, ypixel, offset + x);
       ++x;
       xpixel += 14;
     }

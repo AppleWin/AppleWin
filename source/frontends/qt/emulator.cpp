@@ -6,6 +6,7 @@
 #include "Common.h"
 #include "Video.h"
 #include "NTSC.h"
+#include "Interface.h"
 
 #include <cmath>
 
@@ -28,7 +29,7 @@ void Emulator::updateVideo()
 
 void Emulator::redrawScreen()
 {
-    NTSC_SetVideoMode( g_uVideoMode );
+    NTSC_SetVideoMode( GetVideo().GetVideoMode() );
     NTSC_VideoRedrawWholeScreen();
     refreshScreen();
 }

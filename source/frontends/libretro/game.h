@@ -36,6 +36,7 @@ private:
   size_t myHeight;
   size_t myBorderlessWidth;
   size_t myBorderlessHeight;
+  uint8_t* myFrameBuffer;
 
   std::vector<int> myButtonStates;
 

@@ -2,7 +2,6 @@
 
 #include "linux/data.h"
 #include "linux/interface.h"
-#include "linux/videobuffer.h"
 
 #include "StdAfx.h"
 #include "SaveState.h"
@@ -82,8 +81,8 @@ void initialiseEmulator()
   SpkrInitialize();
 
   MemInitialize();
-  VideoBufferInitialize();
-  VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
+  GetVideo().Initialize();
+  VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
 
   GetCardMgr().GetDisk2CardMgr().Reset();
   HD_Reset();
@@ -99,7 +98,7 @@ void uninitialiseEmulator()
     pMouseCard->Reset();
   }
   MemDestroy();
-  VideoBufferDestroy();
+  GetVideo().Destroy();
 
   SpkrDestroy();
   MB_Destroy();

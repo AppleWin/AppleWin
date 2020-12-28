@@ -23,6 +23,7 @@
 #include "CPU.h"
 #include "NTSC.h"
 #include "SaveState.h"
+#include "Interface.h"
 
 // comment out to test / debug init / shutdown only
 #define EMULATOR_RUN
@@ -119,10 +120,12 @@ void run_sdl(int argc, const char * argv [])
   initialiseEmulator();
   applyOptions(options);
 
-  const int width = GetFrameBufferWidth();
-  const int height = GetFrameBufferHeight();
-  const int sw = GetFrameBufferBorderlessWidth();
-  const int sh = GetFrameBufferBorderlessHeight();
+  Video & video = GetVideo();
+
+  const int width = video.GetFrameBufferWidth();
+  const int height = video.GetFrameBufferHeight();
+  const int sw = video.GetFrameBufferBorderlessWidth();
+  const int sh = video.GetFrameBufferBorderlessHeight();
 
   std::cerr << std::fixed << std::setprecision(2);
 
@@ -167,8 +170,8 @@ void run_sdl(int argc, const char * argv [])
 			  }
 			};
 
-    const auto refresh = [redraw]{
-			   NTSC_SetVideoMode( g_uVideoMode );
+    const auto refresh = [redraw, &video]{
+			   NTSC_SetVideoMode( video.GetVideoMode() );
 			   NTSC_VideoRedrawWholeScreen();
 			   redraw();
 			 };

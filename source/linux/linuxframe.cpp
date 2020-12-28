@@ -2,7 +2,7 @@
 #include "linux/linuxframe.h"
 
 #include "Video.h"
-#include "Windows/WinVideo.h"
+#include "Interface.h"
 #include "NTSC.h"
 
 void LinuxFrame::FrameDrawDiskLEDS(HDC hdc)
@@ -28,7 +28,7 @@ void LinuxFrame::FrameSetCursorPosByMousePos()
 void LinuxFrame::VideoRedrawScreen()
 {
   // NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
-  VideoRefreshScreen(g_uVideoMode, true);
+  GetVideo().VideoRefreshScreen(GetVideo().GetVideoMode(), true);
 }
 
 void LinuxFrame::SetFullScreenShowSubunitStatus(bool /* bShow */)

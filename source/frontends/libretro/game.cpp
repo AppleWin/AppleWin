@@ -65,12 +65,17 @@ Game::Game()
 
   initialiseEmulator();
 
-  myBorderlessWidth = GetFrameBufferBorderlessWidth();
-  myBorderlessHeight = GetFrameBufferBorderlessHeight();
-  const size_t borderWidth = GetFrameBufferBorderWidth();
-  const size_t borderHeight = GetFrameBufferBorderHeight();
-  const size_t width = GetFrameBufferWidth();
-  myHeight = GetFrameBufferHeight();
+  Video & video = GetVideo();
+
+  myBorderlessWidth = video.GetFrameBufferBorderlessWidth();
+  myBorderlessHeight = video.GetFrameBufferBorderlessHeight();
+  const size_t borderWidth = video.GetFrameBufferBorderWidth();
+  const size_t borderHeight = video.GetFrameBufferBorderHeight();
+  const size_t width = video.GetFrameBufferWidth();
+  myHeight = video.GetFrameBufferHeight();
+
+  myFrameBuffer = video.GetFrameBuffer();
+
 
   myPitch = width * sizeof(bgra_t);
   myOffset = (width * borderHeight + borderWidth) * sizeof(bgra_t);
@@ -276,26 +281,26 @@ void Game::keyboardEmulation()
 {
   if (ourInputDevices[0] != RETRO_DEVICE_NONE)
   {
+    Video & video = GetVideo();
+
     if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_R))
     {
-      g_eVideoType++;
-      if (g_eVideoType >= NUM_VIDEO_MODES)
-	g_eVideoType = 0;
+      video.IncVideoType();
 
-      Config_Save_Video();
-      VideoReinitialize();
+      video.Config_Save_Video();
+      video.VideoReinitialize();
       GetFrame().VideoRedrawScreen();
       updateWindowTitle();
     }
     if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_L))
     {
-      VideoStyle_e videoStyle = GetVideoStyle();
+      VideoStyle_e videoStyle = video.GetVideoStyle();
       videoStyle = VideoStyle_e(videoStyle ^ VS_HALF_SCANLINES);
 
-      SetVideoStyle(videoStyle);
+      video.SetVideoStyle(videoStyle);
 
-      Config_Save_Video();
-      VideoReinitialize();
+      video.Config_Save_Video();
+      video.VideoReinitialize();
       GetFrame().VideoRedrawScreen();
       updateWindowTitle();
     }
@@ -318,7 +323,7 @@ void Game::drawVideoBuffer()
   // but for now, there is no alternative
   for (size_t row = 0; row < myHeight; ++row)
   {
-    const uint8_t * src = g_pFramebufferbits + row * myPitch;
+    const uint8_t * src = myFrameBuffer + row * myPitch;
     uint8_t * dst = myVideoBuffer.data() + (myHeight - row - 1) * myPitch;
     memcpy(dst, src, myPitch);
   }

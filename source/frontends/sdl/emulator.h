@@ -38,4 +38,5 @@ private:
 
   SDL_Rect myRect;
   int myPitch;
+  uint8_t* myFrameBuffer;
 };

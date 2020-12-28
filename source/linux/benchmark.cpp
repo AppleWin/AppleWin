@@ -9,6 +9,7 @@
 #include "NTSC.h"
 #include "Disk.h"
 #include "CPU.h"
+#include "Interface.h"
 
 #include "linux/benchmark.h"
 
@@ -16,6 +17,7 @@
 
 void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
 {
+  Video & video = GetVideo();
   // PREPARE TWO DIFFERENT FRAME BUFFERS, EACH OF WHICH HAVE HALF OF THE
   // BYTES SET TO 0x14 AND THE OTHER HALF SET TO 0xAA
   int     loop;
@@ -30,7 +32,7 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
   // SEE HOW MANY HIRES FRAMES PER SECOND WE CAN PRODUCE WITH NOTHING ELSE
   // GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
   // SIMULATE THE ACTIVITY OF AN AVERAGE GAME
-  g_uVideoMode             = VF_HIRES;
+  video.SetVideoMode(VF_HIRES);
   memset(mem+0x2000,0x14,0x2000);
   redraw();
 

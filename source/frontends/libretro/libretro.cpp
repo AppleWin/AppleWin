@@ -5,6 +5,7 @@
 #include "StdAfx.h"
 #include "Common.h"
 #include "Video.h"
+#include "Interface.h"
 
 #include "linux/version.h"
 #include "linux/paddle.h"
@@ -77,10 +78,12 @@ void retro_get_system_av_info(retro_system_av_info *info)
 {
   log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 
-  info->geometry.base_width   = GetFrameBufferBorderlessWidth();
-  info->geometry.base_height  = GetFrameBufferBorderlessHeight();
-  info->geometry.max_width    = GetFrameBufferBorderlessWidth();
-  info->geometry.max_height   = GetFrameBufferBorderlessHeight();
+  Video & video = GetVideo();
+
+  info->geometry.base_width   = video.GetFrameBufferBorderlessWidth();
+  info->geometry.base_height  = video.GetFrameBufferBorderlessHeight();
+  info->geometry.max_width    = video.GetFrameBufferBorderlessWidth();
+  info->geometry.max_height   = video.GetFrameBufferBorderlessHeight();
   info->geometry.aspect_ratio = 0;
 
   info->timing.fps            = Game::FPS;

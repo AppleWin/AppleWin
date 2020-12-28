@@ -23,10 +23,8 @@
 #include "Riff.h"
 #include "RGBMonitor.h"
 #include "Utilities.h"
-#include "Windows/WinVideo.h"
 
 #include "linux/data.h"
-#include "linux/videobuffer.h"
 #include "linux/benchmark.h"
 #include "linux/version.h"
 #include "linux/paddle.h"
@@ -110,8 +108,8 @@ namespace
         MB_Initialize();
         SpkrInitialize();
         MemInitialize();
-        VideoBufferInitialize();
-        VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
+        GetVideo().Initialize();
+        VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
 
         emulator->displayLogo();
 
@@ -132,7 +130,7 @@ namespace
         PrintDestroy();
         MemDestroy();
         SpkrDestroy();
-        VideoBufferDestroy();
+        GetVideo().Destroy();
         MB_Destroy();
         DSUninit();
         CpuDestroy();
@@ -583,15 +581,14 @@ void QApple::on_actionLoad_state_from_triggered()
 
 void QApple::on_actionNext_video_mode_triggered()
 {
-    g_eVideoType++;
-    if (g_eVideoType >= NUM_VIDEO_MODES)
-        g_eVideoType = 0;
+    Video & video = GetVideo();
+    video.IncVideoType();
 
     GetAppleWindowTitle();
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
 
-    Config_Save_Video();
-    VideoReinitialize();
+    video.Config_Save_Video();
+    video.VideoReinitialize();
     GetFrame().VideoRedrawScreen();
 }
 
