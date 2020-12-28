@@ -14,6 +14,7 @@
 #include "frontends/libretro/joypad.h"
 #include "frontends/libretro/analog.h"
 #include "frontends/libretro/rdirectsound.h"
+#include "frontends/libretro/retroregistry.h"
 
 namespace
 {
@@ -138,6 +139,8 @@ void retro_set_environment(retro_environment_t cb)
 
   retro_frame_time_callback timeCallback = {&Game::frameTimeCallback, 1000000 / Game::FPS};
   cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &timeCallback);
+
+  SetupRetroVariables();
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb)

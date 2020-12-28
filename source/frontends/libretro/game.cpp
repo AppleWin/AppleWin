@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "frontends/libretro/game.h"
+#include "frontends/libretro/retroregistry.h"
 
 #include "Common.h"
 #include "CardManager.h"
@@ -14,9 +15,8 @@
 #include "Interface.h"
 
 #include "linux/keyboard.h"
+#include "linux/registry.h"
 #include "linux/paddle.h"
-#include "frontends/common2/programoptions.h"
-#include "frontends/common2/fileregistry.h"
 #include "frontends/common2/utils.h"
 
 #include "libretro.h"
@@ -32,21 +32,14 @@ namespace
 
 }
 
-unsigned Game::input_devices[MAX_PADS] = {0};
+unsigned Game::ourInputDevices[MAX_PADS] = {RETRO_DEVICE_NONE};
 
 Game::Game()
   : mySpeed(true), myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
 {
-  EmulatorOptions options;
-  options.memclear = g_nMemoryClearType;
-  options.log = true;
+  LogInit();
+  InitialiseRetroRegistry();
 
-  if (options.log)
-  {
-    LogInit();
-  }
-
-  InitializeFileRegistry(options);
   initialiseEmulator();
 
   myBorderlessWidth = GetFrameBufferBorderlessWidth();

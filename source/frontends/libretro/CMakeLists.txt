@@ -16,6 +16,7 @@ if (EXISTS ${LIBRETRO_COMMON_PATH}/include/libretro.h)
     joypad.cpp
     analog.cpp
     rdirectsound.cpp
+    retroregistry.cpp
     )
 
   target_include_directories(applewin_libretro PRIVATE
