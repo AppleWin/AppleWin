@@ -3,6 +3,7 @@ include(GNUInstallDirs)
 add_library(common2 STATIC
   resources.cpp
   fileregistry.cpp
+  ptreeregistry.cpp
   programoptions.cpp
   utils.cpp
   timer.cpp
