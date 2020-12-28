@@ -32,6 +32,27 @@ namespace
     display_message(g_pAppTitle.c_str());
   }
 
+  bool insertDisk(const std::string & filename)
+  {
+    if (filename.empty())
+    {
+      return false;
+    }
+
+    Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
+    const ImageError_e error = disk2Card.InsertDisk(DRIVE_1, filename.c_str(), IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE);
+
+    if (error == eIMAGE_ERROR_NONE)
+    {
+      return true;
+    }
+
+    // try a hard disk
+    HD_SetEnabled(true);
+    BOOL bRes = HD_Insert(HARDDISK_1, filename);
+    return bRes == TRUE;
+  }
+
 }
 
 unsigned Game::ourInputDevices[MAX_PADS] = {RETRO_DEVICE_NONE};
@@ -307,7 +328,7 @@ void Game::drawVideoBuffer()
 
 bool Game::loadGame(const std::string & path)
 {
-  const bool ok = DoDiskInsert(SLOT6, DRIVE_1, path.c_str());
+  const bool ok = insertDisk(path);
   return ok;
 }
 
