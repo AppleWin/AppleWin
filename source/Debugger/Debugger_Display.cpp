@@ -40,7 +40,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Memory.h"
 #include "../Mockingboard.h"
 #include "../NTSC.h"
-#include "../Video.h"
 
 // NEW UI debugging - force display ALL meta-info (regs, stack, bp, watches, zp) for debugging purposes
 #define DEBUG_FORCE_DISPLAY 0
@@ -683,7 +682,7 @@ void StretchBltMemToFrameDC(void)
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
 		GetDebuggerMemDC(),									// HDC hdcSrc,
 		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
-		GetFrameBufferBorderlessWidth(), GetFrameBufferBorderlessHeight(),	// int nWidthSrc,    int nHeightSrc,
+		GetVideo().GetFrameBufferBorderlessWidth(), GetVideo().GetFrameBufferBorderlessHeight(),	// int nWidthSrc,    int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
 }
@@ -3124,25 +3123,25 @@ void DrawSoftSwitches( int iSoftSwitch )
 		bool bSet;
 
 		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
-		bSet = !VideoGetSWTEXT();
+		bSet = !GetVideo().VideoGetSWTEXT();
 		_DrawSoftSwitch( rect, 0xC050, bSet, NULL, "GR.", "TEXT" );
 
 		// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
 		// FULL/MIXED
 		// MIX OFF/ON
-		bSet = !VideoGetSWMIXED();
+		bSet = !GetVideo().VideoGetSWMIXED();
 		_DrawSoftSwitch( rect, 0xC052, bSet, NULL, "FULL", "MIX" );
 
 		// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
 		// PAGE 1 / 2
-		bSet = !VideoGetSWPAGE2();
+		bSet = !GetVideo().VideoGetSWPAGE2();
 		_DrawSoftSwitch( rect, 0xC054, bSet, "PAGE ", "1", "2" );
 		
 		// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
 		// LO / HIRES
 		// LO / -----
 		// -- / HIRES
-		bSet = !VideoGetSWHIRES();
+		bSet = !GetVideo().VideoGetSWHIRES();
 		_DrawSoftSwitch( rect, 0xC056, bSet, NULL, "LO", "HI", "RES" );
 
 		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
@@ -3150,7 +3149,7 @@ void DrawSoftSwitches( int iSoftSwitch )
 
 		// 280/560 HGR
 		// C05E = ON, C05F = OFF
-		bSet = VideoGetSWDHIRES();
+		bSet = GetVideo().VideoGetSWDHIRES();
 		_DrawSoftSwitch( rect, 0xC05E, bSet, NULL, "DHGR", "HGR" );
 
 
@@ -3158,18 +3157,18 @@ void DrawSoftSwitches( int iSoftSwitch )
 		int bgMemory = BG_DATA_2;
 
 		// C000 = 80STOREOFF, C001 = 80STOREON
-		bSet = !VideoGetSW80STORE();
+		bSet = !GetVideo().VideoGetSW80STORE();
 		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1", NULL, bgMemory );
 
 		// C002 .. C005
 		_DrawSoftSwitchMainAuxBanks( rect, bgMemory );
 
 		// C00C = off, C00D = on
-		bSet = !VideoGetSW80COL();
+		bSet = !GetVideo().VideoGetSW80COL();
 		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80", NULL, bgMemory );
 
 		// C00E = off, C00F = on
-		bSet = !VideoGetSWAltCharSet();
+		bSet = !GetVideo().VideoGetSWAltCharSet();
 		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS", NULL, bgMemory ); // ASCII/MouseText
 
 #if SOFTSWITCH_LANGCARD

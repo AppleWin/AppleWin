@@ -4,7 +4,7 @@
 
 #include "RGBMonitor.h"
 #include "Memory.h" // MemGetMainPtr() MemGetAuxPtr()
-#include "Video.h"
+#include "Interface.h"
 #include "Card.h"
 #include "YamlHelper.h"
 
@@ -514,7 +514,7 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 
 	const int matx = x*14;
 	const int maty = HGR_MATRIX_YOFFSET + y;
-	const bool isSWMIXED = VideoGetSWMIXED();
+	const bool isSWMIXED = GetVideo().VideoGetSWMIXED();
 
 	// transfer 14 pixels (i.e. the visible part of an apple hgr-byte) from row to pixelmatrix
 	for (int nBytes=13; nBytes>=0; nBytes--)
@@ -522,8 +522,8 @@ static void CopyMixedSource(int x, int y, int sx, int sy, bgra_t *pVideoAddress)
 		hgrpixelmatrix[matx+nBytes][maty] = *(pSrc+nBytes);
 	}
 
-	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
-	const UINT frameBufferWidth = GetFrameBufferWidth();
+	const bool bIsHalfScanLines = GetVideo().IsVideoStyle(VS_HALF_SCANLINES);
+	const UINT frameBufferWidth = GetVideo().GetFrameBufferWidth();
 
 	for (int nBytes=13; nBytes>=0; nBytes--)
 	{
@@ -559,8 +559,8 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 	UINT32* pDst = (UINT32*) pVideoAddress;
 	const BYTE* const pSrc = g_aSourceStartofLine[ sy ] + sx;
 
-	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
-	const UINT frameBufferWidth = GetFrameBufferWidth();
+	const bool bIsHalfScanLines = GetVideo().IsVideoStyle(VS_HALF_SCANLINES);
+	const UINT frameBufferWidth = GetVideo().GetFrameBufferWidth();
 
 	while (h--)
 	{
@@ -594,14 +594,14 @@ void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	BYTE byteval2 =            *(pMain);
 	BYTE byteval3 = (x < 39) ? *(pMain+1) : 0;
 
-	if (g_uVideoMode & VF_DHIRES)	// ie. VF_DHIRES=1, VF_HIRES=1, VF_80COL=0 - NTSC.cpp refers to this as "DoubleHires40"
+	if (GetVideo().GetVideoMode() & VF_DHIRES)	// ie. VF_DHIRES=1, VF_HIRES=1, VF_80COL=0 - NTSC.cpp refers to this as "DoubleHires40"
 	{
 		byteval1 &= 0x7f;
 		byteval2 &= 0x7f;
 		byteval3 &= 0x7f;
 	}
 
-	if (IsVideoStyle(VS_COLOR_VERTICAL_BLEND))
+	if (GetVideo().IsVideoStyle(VS_COLOR_VERTICAL_BLEND))
 	{
 		CopyMixedSource(x, y, SRCOFFS_HIRES+HIRES_COLUMN_OFFSET+((x & 1)*HIRES_COLUMN_SUBUNIT_SIZE), (int)byteval2, pVideoAddress);
 	}
@@ -727,11 +727,11 @@ void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 		dwordval = dwordval >> 1;
 	}
 
-	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const bool bIsHalfScanLines = GetVideo().IsVideoStyle(VS_HALF_SCANLINES);
 
 	// Second line
 	UINT32* pSrc = (UINT32*)pVideoAddress;
-	pDst = pSrc - GetFrameBufferWidth();
+	pDst = pSrc - GetVideo().GetFrameBufferWidth();
 	if (bIsHalfScanLines)
 	{
 		// Scanlines
@@ -942,11 +942,11 @@ void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, boo
 		}
 	}
 
-	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
+	const bool bIsHalfScanLines = GetVideo().IsVideoStyle(VS_HALF_SCANLINES);
 
 	// Second line
 	UINT32* pSrc = (UINT32*)pVideoAddress ;
-	pDst = pSrc - GetFrameBufferWidth();
+	pDst = pSrc - GetVideo().GetFrameBufferWidth();
 	if (bIsHalfScanLines)
 	{
 		// Scanlines
@@ -1121,8 +1121,8 @@ void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint
 {
 	UINT32* pDst = (UINT32*)pVideoAddress;
 
-	const bool bIsHalfScanLines = IsVideoStyle(VS_HALF_SCANLINES);
-	const UINT frameBufferWidth = GetFrameBufferWidth();
+	const bool bIsHalfScanLines = GetVideo().IsVideoStyle(VS_HALF_SCANLINES);
+	const UINT frameBufferWidth = GetVideo().GetFrameBufferWidth();
 	RGBQUAD colors[2];
 	// use LoRes palette
 	background += 12;
@@ -1240,7 +1240,7 @@ void RGB_SetVideoMode(WORD address)
 	if (address == 0x5F && g_rgbPrevAN3Addr == 0x5E)
 	{
 		g_rgbFlags = (g_rgbFlags << 1) & 3;
-		g_rgbFlags |= ((g_uVideoMode & VF_80COL) ? 0 : 1);	// clock in !80COL
+		g_rgbFlags |= ((GetVideo().GetVideoMode() & VF_80COL) ? 0 : 1);	// clock in !80COL
 		g_rgbMode = g_rgbFlags;								// latch F2,F1
 	}
 

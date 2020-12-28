@@ -62,8 +62,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  VIEWPORTY   5
 
 static const int kDEFAULT_VIEWPORT_SCALE = 2;
-       int g_nViewportCX = GetFrameBufferBorderlessWidth()  * kDEFAULT_VIEWPORT_SCALE;
-       int g_nViewportCY = GetFrameBufferBorderlessHeight() * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCX = GetVideo().GetFrameBufferBorderlessWidth()  * kDEFAULT_VIEWPORT_SCALE;
+       int g_nViewportCY = GetVideo().GetFrameBufferBorderlessHeight() * kDEFAULT_VIEWPORT_SCALE;
 static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
 static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Windowed mode with borders, buttons etc (full-screen may be +1)
 
@@ -585,7 +585,7 @@ static void DrawFrameWindow (bool bPaintingWindow/*=false*/)
 
 	// DRAW THE CONTENTS OF THE EMULATED SCREEN
 	if (g_nAppMode == MODE_LOGO)
-		VideoDisplayLogo();
+		GetVideo().DisplayLogo();
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay();
 	else
@@ -1064,7 +1064,7 @@ LRESULT CALLBACK FrameWndProc (
       CpuDestroy();
       MemDestroy();
       SpkrDestroy();
-      WinVideoDestroy();
+      GetVideo().Destroy();
       MB_Destroy();
       DeleteGdiObjects();
       DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
@@ -1135,7 +1135,7 @@ LRESULT CALLBACK FrameWndProc (
 	}
 
     case WM_DISPLAYCHANGE:
-      VideoReinitialize();
+      GetVideo().VideoReinitialize();
       break;
 
     case WM_DROPFILES:
@@ -1186,18 +1186,12 @@ LRESULT CALLBACK FrameWndProc (
 		// lparam = modifiers: shift, ctrl, alt, win
 		if (wparam == VK_SNAPSHOT_560)
 		{
-#if _DEBUG
-//			MessageBox( GetFrame().g_hFrameWindow, "Double 580x384 size!", "PrintScreen", MB_OK );
-#endif
-			Video_TakeScreenShot( SCREENSHOT_560x384 );
+			GetVideo().Video_TakeScreenShot( Video::SCREENSHOT_560x384 );
 		}
 		else
 		if (wparam == VK_SNAPSHOT_280) // ( lparam & MOD_SHIFT )
 		{
-#if _DEBUG
-//			MessageBox( GetFrame().g_hFrameWindow, "Normal 280x192 size!", "PrintScreen", MB_OK );
-#endif
-			Video_TakeScreenShot( SCREENSHOT_280x192 );
+			GetVideo().Video_TakeScreenShot( Video::SCREENSHOT_280x192 );
 		}
 		else
 		if (wparam == VK_SNAPSHOT_TEXT) // ( lparam & MOD_CONTROL )
@@ -1238,25 +1232,21 @@ LRESULT CALLBACK FrameWndProc (
 
 			if ( !KeybGetCtrlStatus() && !KeybGetShiftStatus() )		// F9
 			{
-				g_eVideoType++;
-				if (g_eVideoType >= NUM_VIDEO_MODES)
-					g_eVideoType = 0;
+				GetVideo().IncVideoType();
 			}
 			else if ( !KeybGetCtrlStatus() && KeybGetShiftStatus() )	// SHIFT+F9
 			{
-				if (g_eVideoType <= 0)
-					g_eVideoType = NUM_VIDEO_MODES;
-				g_eVideoType--;
+				GetVideo().DecVideoType();
 			}
 			else if ( KeybGetCtrlStatus() && KeybGetShiftStatus() )		// CTRL+SHIFT+F9
 			{
-				SetVideoStyle( (VideoStyle_e) (GetVideoStyle() ^ VS_HALF_SCANLINES) );
+				GetVideo().SetVideoStyle( (VideoStyle_e) (GetVideo().GetVideoStyle() ^ VS_HALF_SCANLINES) );
 			}
 
 			// TODO: Clean up code:FrameRefreshStatus(DRAW_TITLE) DrawStatusArea((HDC)0,DRAW_TITLE)
 			DrawStatusArea( (HDC)0, DRAW_TITLE );
 
-			VideoReinitialize(false);
+			GetVideo().VideoReinitialize(false);
 
 			if (g_nAppMode != MODE_LOGO)
 			{
@@ -1264,23 +1254,23 @@ LRESULT CALLBACK FrameWndProc (
 				{
 					UINT debugVideoMode;
 					if ( DebugGetVideoMode(&debugVideoMode) )
-						VideoRefreshScreen(debugVideoMode, true);
+						GetVideo().VideoRefreshScreen(debugVideoMode, true);
 					else
-						VideoRefreshScreen();
+						GetVideo().VideoRefreshScreen();
 				}
 				else
 				{
-					VideoRefreshScreen();
+					GetVideo().VideoRefreshScreen();
 				}
 			}
 
-			Config_Save_Video();
+			GetVideo().Config_Save_Video();
 		}
 		else if (wparam == VK_F10)
 		{
 			if (g_Apple2Type == A2TYPE_APPLE2E || g_Apple2Type == A2TYPE_APPLE2EENHANCED || g_Apple2Type == A2TYPE_BASE64A)
 			{
-				SetVideoRomRockerSwitch( !GetVideoRomRockerSwitch() );	// F10: toggle rocker switch
+				GetVideo().SetVideoRomRockerSwitch( !GetVideo().GetVideoRomRockerSwitch() );	// F10: toggle rocker switch
 				NTSC_VideoInitAppleType();
 			}
 			else if (g_Apple2Type == A2TYPE_PRAVETS8A)
@@ -1819,7 +1809,7 @@ LRESULT CALLBACK FrameWndProc (
       DrawStatusArea((HDC)0,DRAW_TITLE);
       HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
       g_nAppMode = MODE_BENCHMARK;
-      VideoBenchmark();
+      GetVideo().Benchmark();
       g_nAppMode = MODE_LOGO;
       ResetMachineState();
       SetCursor(oldcursor);
@@ -2258,12 +2248,12 @@ void SetFullScreenMode ()
 	width  = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.right  - monitor_info.rcMonitor.left);
 	height = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top );
 
-	scalex = width  / GetFrameBufferBorderlessWidth();
-	scaley = height / GetFrameBufferBorderlessHeight();
+	scalex = width  / GetVideo().GetFrameBufferBorderlessWidth();
+	scaley = height / GetVideo().GetFrameBufferBorderlessHeight();
 
 	g_win_fullscreen_scale = (scalex <= scaley) ? scalex : scaley;
-	g_win_fullscreen_offsetx = ((int)width  - (int)(g_win_fullscreen_scale * GetFrameBufferBorderlessWidth())) / 2;
-	g_win_fullscreen_offsety = ((int)height - (int)(g_win_fullscreen_scale * GetFrameBufferBorderlessHeight())) / 2;
+	g_win_fullscreen_offsetx = ((int)width  - (int)(g_win_fullscreen_scale * GetVideo().GetFrameBufferBorderlessWidth())) / 2;
+	g_win_fullscreen_offsety = ((int)height - (int)(g_win_fullscreen_scale * GetVideo().GetFrameBufferBorderlessHeight())) / 2;
 	SetWindowPos(GetFrame().g_hFrameWindow, NULL, left, top, (int)width, (int)height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 	g_bIsFullScreen = true;
 
@@ -2351,8 +2341,8 @@ int Win32Frame::SetViewportScale(int nNewScale, bool bForce /*=false*/)
 		nNewScale = g_nMaxViewportScale;
 
 	g_nViewportScale = nNewScale;
-	g_nViewportCX = g_nViewportScale * GetFrameBufferBorderlessWidth();
-	g_nViewportCY = g_nViewportScale * GetFrameBufferBorderlessHeight();
+	g_nViewportCX = g_nViewportScale * GetVideo().GetFrameBufferBorderlessWidth();
+	g_nViewportCY = g_nViewportScale * GetVideo().GetFrameBufferBorderlessHeight();
 
 	return nNewScale;
 }
@@ -2468,8 +2458,8 @@ void FrameCreateWindow(void)
 		int nOldViewportCX = g_nViewportCX;
 		int nOldViewportCY = g_nViewportCY;
 
-		g_nViewportCX = GetFrameBufferBorderlessWidth() * 2;
-		g_nViewportCY = GetFrameBufferBorderlessHeight() * 2;
+		g_nViewportCX = GetVideo().GetFrameBufferBorderlessWidth() * 2;
+		g_nViewportCY = GetVideo().GetFrameBufferBorderlessHeight() * 2;
 		GetWidthHeight(nWidth, nHeight);	// Probe with 2x dimensions
 
 		g_nViewportCX = nOldViewportCX;
@@ -2844,8 +2834,8 @@ bool Win32Frame::GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& be
 		{
 			if (width > it->first)
 			{
-				UINT scaleFactor = it->second / GetFrameBufferBorderlessHeight();
-				if (it->first >= (GetFrameBufferBorderlessWidth() * scaleFactor))
+				UINT scaleFactor = it->second / GetVideo().GetFrameBufferBorderlessHeight();
+				if (it->first >= (GetVideo().GetFrameBufferBorderlessWidth() * scaleFactor))
 				{
 					width = it->first;
 				}
@@ -2865,12 +2855,12 @@ bool Win32Frame::GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& be
 	UINT tmpBestHeight = 0;
 	for (VEC_PAIR::iterator it = vecDisplayResolutions.begin(); it!= vecDisplayResolutions.end(); ++it)
 	{
-		if ((it->second % GetFrameBufferBorderlessHeight()) == 0)
+		if ((it->second % GetVideo().GetFrameBufferBorderlessHeight()) == 0)
 		{
 			if (it->second > tmpBestHeight)
 			{
-				UINT scaleFactor = it->second / GetFrameBufferBorderlessHeight();
-				if (it->first >= (GetFrameBufferBorderlessWidth() * scaleFactor))
+				UINT scaleFactor = it->second / GetVideo().GetFrameBufferBorderlessHeight();
+				if (it->first >= (GetVideo().GetFrameBufferBorderlessWidth() * scaleFactor))
 				{
 					tmpBestWidth = it->first;
 					tmpBestHeight = it->second;

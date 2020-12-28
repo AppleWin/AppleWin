@@ -46,7 +46,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../SoundCore.h"	// SoundCore_SetFade()
 #include "../Windows/WinVideo.h"
 #include "../Windows/WinFrame.h"
-#include "../Video.h"
 
 //	#define DEBUG_COMMAND_HELP  1
 //	#define DEBUG_ASM_HASH 1
@@ -4942,7 +4941,7 @@ size_t Util_GetTextScreen ( char* &pText_ )
 	g_nTextScreen = 0;
 	memset( pBeg, 0, sizeof( g_aTextScreen ) );
 
-	unsigned int uBank2 = VideoGetSWPAGE2() ? 1 : 0;
+	unsigned int uBank2 = GetVideo().VideoGetSWPAGE2() ? 1 : 0;
 	LPBYTE g_pTextBank1  = MemGetAuxPtr (0x400 << uBank2);
 	LPBYTE g_pTextBank0  = MemGetMainPtr(0x400 << uBank2);
 
@@ -4955,7 +4954,7 @@ size_t Util_GetTextScreen ( char* &pText_ )
 		{
 			char c; // TODO: FormatCharTxtCtrl() ?
 
-			if ( VideoGetSW80COL() )
+			if ( GetVideo().VideoGetSW80COL() )
 			{ // AUX
 				c = g_pTextBank1[ nAddressStart ] & 0x7F;
 				c = RemapChar(c);
@@ -5432,7 +5431,7 @@ Update_t CmdNTSC (int nArgs)
 			}
 	};
 
-	bool bColorTV = (g_eVideoType == VT_COLOR_TV);
+	bool bColorTV = (GetVideo().GetVideoType() == VT_COLOR_TV);
 
 	uint32_t* pChromaTable = NTSC_VideoGetChromaTable( false, bColorTV );
 	char aStatusText[ CONSOLE_WIDTH*2 ] = "Loaded";
@@ -5467,7 +5466,7 @@ Update_t CmdNTSC (int nArgs)
 
 					// Write BMP header
 					WinBmpHeader_t bmp, *pBmp = &bmp;
-					Video_SetBitmapHeader( pBmp, 64, 256, 32 );
+					GetVideo().Video_SetBitmapHeader( pBmp, 64, 256, 32 );
 					fwrite( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
 				}
 				else
@@ -5637,7 +5636,7 @@ int CmdTextSave (int nArgs)
 		g_sMemoryLoadSaveFileName = g_aArgs[ 1 ].sArg;
 	else
 	{
-		if( VideoGetSW80COL() )
+		if( GetVideo().VideoGetSW80COL() )
 			g_sMemoryLoadSaveFileName = "AppleWin_Text80.txt";
 		else
 			g_sMemoryLoadSaveFileName = "AppleWin_Text40.txt";
@@ -6886,8 +6885,8 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 	switch( iPage ) 
 	{
 		case VIEW_PAGE_X:
-			bVideoModeFlags |= !VideoGetSWPAGE2() ? 0 : VF_PAGE2;
-			bVideoModeFlags |= !VideoGetSWMIXED() ? 0 : VF_MIXED;
+			bVideoModeFlags |= !GetVideo().VideoGetSWPAGE2() ? 0 : VF_PAGE2;
+			bVideoModeFlags |= !GetVideo().VideoGetSWMIXED() ? 0 : VF_MIXED;
 			break; // Page Current & current MIXED state
 		case VIEW_PAGE_1: bVideoModeFlags |= 0; break; // Page 1
 		case VIEW_PAGE_2: bVideoModeFlags |= VF_PAGE2; break; // Page 2
@@ -6897,7 +6896,7 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 	}
 
 	DebugVideoMode::Instance().Set(bVideoModeFlags);
-	VideoRefreshScreen( bVideoModeFlags, true );
+	GetVideo().VideoRefreshScreen( bVideoModeFlags, true );
 	return UPDATE_NOTHING; // intentional
 }
 
@@ -7450,7 +7449,7 @@ Update_t CmdWindowViewOutput (int nArgs)
 {
 	GetFrame().VideoRedrawScreen();
 
-	DebugVideoMode::Instance().Set(g_uVideoMode);
+	DebugVideoMode::Instance().Set( GetVideo().GetVideoMode() );
 
 	return UPDATE_NOTHING; // intentional
 }
@@ -9584,7 +9583,7 @@ void DebugDisplay( BOOL bInitDisasm/*=FALSE*/ )
 	{
 		uint32_t mode = 0;
 		DebugVideoMode::Instance().Get(&mode);
-		VideoRefreshScreen(mode, true);
+		GetVideo().VideoRefreshScreen(mode, true);
 		return;
 	}
 
