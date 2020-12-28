@@ -23,8 +23,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "PropertySheet.h"
 #include "PropertySheetHelper.h"
-#include "IPropertySheet.h"
 
 #include "../Windows/AppleWin.h"	// g_nAppMode, g_uScrollLockToggle, sg_PropertySheet
 #include "../CardManager.h"
@@ -33,7 +33,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Log.h"
 #include "../Registry.h"
 #include "../SaveState.h"
-#include "../Interface.h"
 
 /*
 Config causing AfterClose msgs:
@@ -388,7 +387,7 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	m_ConfigOld.m_Slot[SLOT5] = GetCardMgr().QuerySlot(SLOT5);
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
-	m_ConfigOld.m_videoRefreshRate = GetVideoRefreshRate();
+	m_ConfigOld.m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
 
 	// Reset flags each time:
 	m_ConfigOld.m_uSaveLoadStateMsg = 0;

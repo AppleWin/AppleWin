@@ -172,7 +172,7 @@ static void ContinueExecution(void)
 	if (g_bFullSpeed)
 	{
 		if (!bWasFullSpeed)
-			VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
+			GetVideo().VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
 
 		// Don't call Spkr_Mute() - will get speaker clicks
 		MB_Mute();
@@ -190,7 +190,7 @@ static void ContinueExecution(void)
 	else
 	{
 		if (bWasFullSpeed)
-			VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
+			GetVideo().VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
 
 		// Don't call Spkr_Demute()
 		MB_Demute();
@@ -243,7 +243,7 @@ static void ContinueExecution(void)
 	//
 
 	const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-	if (g_dwCyclesThisFrame >= dwClksPerFrame && !VideoGetVblBarEx(g_dwCyclesThisFrame))
+	if (g_dwCyclesThisFrame >= dwClksPerFrame && !GetVideo().VideoGetVblBarEx(g_dwCyclesThisFrame))
 	{
 #ifdef LOG_PERF_TIMINGS
 		PerfMarker perfMarkerVideoRefresh(g_timeVideoRefresh);
@@ -251,9 +251,9 @@ static void ContinueExecution(void)
 		g_dwCyclesThisFrame -= dwClksPerFrame;
 
 		if (g_bFullSpeed)
-			VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
+			GetVideo().VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
 		else
-			VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
+			GetVideo().VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
 	}
 
 #ifdef LOG_PERF_TIMINGS
@@ -482,7 +482,7 @@ static void RegisterHotKeys(void)
 		if (!bStatus[2])
 			msg += "\n. Ctrl+PrintScreen";
 
-		if (g_bShowPrintScreenWarningDialog)
+		if (GetVideo().GetShowPrintScreenWarningDialog())
 			SHMessageBoxCheck( GetFrame().g_hFrameWindow, msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK, MB_OK, "AppleWin-75097740-8e59-444c-bc94-2d4915132599" );
 
 		msg += "\n";
@@ -741,7 +741,8 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 #endif
 
 	// Initialize COM - so we can use CoCreateInstance
-	// . NB. DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
+	// . DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
+	// . DDInit() is done in RepeatInitialization() by GetVideo().Initialize()
 	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	LogFileOutput("Init: CoInitializeEx(), hr=0x%08X\n", hr);
 
@@ -753,9 +754,6 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 		const bool bSpeechOK = g_Speech.Init();
 		LogFileOutput("Init: SysClk_InitTimer(), res=%d\n", bSpeechOK ? 1:0);
 	}
-#endif
-#if 0
-	DDInit();	// For WaitForVerticalBlank()
 #endif
 
 	GetFrame().g_hInstance = passinstance;
@@ -793,14 +791,14 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.newVideoType >= 0)
 		{
-			SetVideoType( (VideoType_e)g_cmdLine.newVideoType );
+			GetVideo().SetVideoType( (VideoType_e)g_cmdLine.newVideoType );
 			g_cmdLine.newVideoType = -1;	// Don't reapply after a restart
 		}
-		SetVideoStyle( (VideoStyle_e) ((GetVideoStyle() | g_cmdLine.newVideoStyleEnableMask) & ~g_cmdLine.newVideoStyleDisableMask) );
+		GetVideo().SetVideoStyle( (VideoStyle_e) ((GetVideo().GetVideoStyle() | g_cmdLine.newVideoStyleEnableMask) & ~g_cmdLine.newVideoStyleDisableMask) );
 
 		if (g_cmdLine.newVideoRefreshRate != VR_NONE)
 		{
-			SetVideoRefreshRate(g_cmdLine.newVideoRefreshRate);
+			GetVideo().SetVideoRefreshRate(g_cmdLine.newVideoRefreshRate);
 			g_cmdLine.newVideoRefreshRate = VR_NONE;	// Don't reapply after a restart
 			SetCurrentCLK6502();
 		}
@@ -842,7 +840,7 @@ static void RepeatInitialization(void)
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
-		WinVideoInitialize(); // g_pFramebufferinfo been created now
+		GetVideo().Initialize(); // g_pFramebufferinfo been created now & COM init'ed
 		LogFileOutput("Main: VideoInitialize()\n");
 
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");
@@ -850,7 +848,7 @@ static void RepeatInitialization(void)
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
 
 		// Init palette color
-		VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
+		VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
 
 		// Allow the 4 hardcoded slots to be configurated as empty
 		// NB. this state is not persisted to the Registry/conf.ini (just as '-s7 empty' isn't)
@@ -977,7 +975,7 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.szScreenshotFilename)
 		{
-			Video_RedrawAndTakeScreenShot(g_cmdLine.szScreenshotFilename);
+			GetVideo().Video_RedrawAndTakeScreenShot(g_cmdLine.szScreenshotFilename);
 			g_cmdLine.bShutdown = true;
 		}
 
@@ -1023,7 +1021,6 @@ static void Shutdown(void)
 		ChangeDisplaySettings(NULL, 0);	// restore default
 
 	// Release COM
-	DDUninit();
 	SysClk_UninitTimer();
 	LogFileOutput("Exit: SysClk_UninitTimer()\n");
 
@@ -1047,14 +1044,20 @@ static void Shutdown(void)
 		UnplugHardDiskControllerCard();
 }
 
-IPropertySheet& GetPropertySheet()
+IPropertySheet& GetPropertySheet(void)
 {
 	static CPropertySheet sg_PropertySheet;
 	return sg_PropertySheet;
 }
 
-FrameBase& GetFrame()
+FrameBase& GetFrame(void)
 {
 	static Win32Frame sg_Win32Frame;
 	return sg_Win32Frame;
+}
+
+Video& GetVideo(void)
+{
+	static WinVideo video;
+	return video;
 }

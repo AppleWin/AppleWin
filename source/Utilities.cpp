@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Core.h"
 #include "CardManager.h"
 #include "CPU.h"
-#include "Video.h"
 #include "Joystick.h"
 #include "Log.h"
 #include "Mockingboard.h"
@@ -196,7 +195,7 @@ void LoadConfiguration(void)
 	}
 
 	REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
-	Config_Load_Video();
+	GetVideo().Config_Load_Video();
 	SetCurrentCLK6502();	// Pre: g_dwSpeed && Config_Load_Video()->SetVideoRefreshRate()
 
 	DWORD dwEnhanceDisk;
@@ -495,10 +494,10 @@ void GetAppleWindowTitle()
 
 	g_pAppTitle += " - ";
 
-	if (IsVideoStyle(VS_HALF_SCANLINES))
+	if (GetVideo().IsVideoStyle(VS_HALF_SCANLINES))
 		g_pAppTitle += " 50% ";
 
-	g_pAppTitle += VideoGetAppWindowTitle();
+	g_pAppTitle += GetVideo().VideoGetAppWindowTitle();
 
 	if (GetCardMgr().GetDisk2CardMgr().IsAnyFirmware13Sector())
 		g_pAppTitle += " (S6-13) ";
@@ -536,7 +535,7 @@ void ResetMachineState()
 	PravetsReset();
 	if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
-	VideoResetState();
+	GetVideo().VideoResetState();
 	KeybReset();
 	if (GetCardMgr().IsSSCInstalled())
 		GetCardMgr().GetSSC()->CommReset();
@@ -571,7 +570,7 @@ void CtrlReset()
 		MemResetPaging();
 
 		// For A][ & A][+, reset doesn't reset the video mode (UTAII:4-4)
-		VideoResetState();	// Switch Alternate char set off
+		GetVideo().VideoResetState();	// Switch Alternate char set off
 	}
 
 	if (IsAppleIIeOrAbove(GetApple2Type()) || IsCopamBase64A(GetApple2Type()))

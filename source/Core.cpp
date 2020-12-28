@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Core.h"
 #include "CardManager.h"
 #include "CPU.h"
-#include "Video.h"
+#include "Interface.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
@@ -194,7 +194,7 @@ CardManager& GetCardMgr(void)
 
 double Get6502BaseClock(void)
 {
-	return (GetVideoRefreshRate() == VR_50HZ) ? CLK_6502_PAL : CLK_6502_NTSC;
+	return (GetVideo().GetVideoRefreshRate() == VR_50HZ) ? CLK_6502_PAL : CLK_6502_NTSC;
 }
 
 void SetCurrentCLK6502(void)
@@ -202,11 +202,11 @@ void SetCurrentCLK6502(void)
 	static DWORD dwPrevSpeed = (DWORD) -1;
 	static VideoRefreshRate_e prevVideoRefreshRate = VR_NONE;
 
-	if (dwPrevSpeed == g_dwSpeed && GetVideoRefreshRate() == prevVideoRefreshRate)
+	if (dwPrevSpeed == g_dwSpeed && GetVideo().GetVideoRefreshRate() == prevVideoRefreshRate)
 		return;
 
 	dwPrevSpeed = g_dwSpeed;
-	prevVideoRefreshRate = GetVideoRefreshRate();
+	prevVideoRefreshRate = GetVideo().GetVideoRefreshRate();
 
 	// SPEED_MIN    =  0 = 0.50 MHz
 	// SPEED_NORMAL = 10 = 1.00 MHz

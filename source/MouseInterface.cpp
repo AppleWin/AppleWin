@@ -52,7 +52,6 @@ Etc.
 #include "Interface.h"	// FrameSetCursorPosByMousePos()
 #include "Log.h"
 #include "Memory.h"
-#include "Video.h"
 #include "NTSC.h"	// NTSC_GetCyclesUntilVBlank()
 #include "YamlHelper.h"
 
