@@ -11,8 +11,6 @@
 
 #include "frontends/libretro/game.h"
 #include "frontends/libretro/environment.h"
-#include "frontends/libretro/joypad.h"
-#include "frontends/libretro/analog.h"
 #include "frontends/libretro/rdirectsound.h"
 #include "frontends/libretro/retroregistry.h"
 
@@ -56,27 +54,9 @@ unsigned retro_api_version(void)
 void retro_set_controller_port_device(unsigned port, unsigned device)
 {
   log_cb(RETRO_LOG_INFO, "RA2: %s, Plugging device %u into port %u.\n", __FUNCTION__, device, port);
-
   if (port == 0)
   {
-    switch (device)
-    {
-    case RETRO_DEVICE_NONE:
-      Paddle::instance().reset();
-      break;
-    case RETRO_DEVICE_JOYPAD:
-      Paddle::instance().reset(new Joypad);
-      Paddle::setSquaring(false);
-      break;
-    case RETRO_DEVICE_ANALOG:
-      Paddle::instance().reset(new Analog);
-      Paddle::setSquaring(true);
-      break;
-    default:
-      break;
-    }
-
-    Game::input_devices[port] = device;
+    Game::ourInputDevices[port] = device;
   }
 }
 

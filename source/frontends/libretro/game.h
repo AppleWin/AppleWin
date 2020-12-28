@@ -24,7 +24,7 @@ public:
 
   static void frameTimeCallback(retro_usec_t usec);
   static constexpr size_t FPS = 60;
-  static unsigned input_devices[MAX_PADS];
+  static unsigned ourInputDevices[MAX_PADS];
   static retro_usec_t ourFrameTime;
 
 private:

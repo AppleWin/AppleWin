@@ -1,6 +1,8 @@
 #include "StdAfx.h"
 #include "frontends/libretro/game.h"
 #include "frontends/libretro/retroregistry.h"
+#include "frontends/libretro/joypad.h"
+#include "frontends/libretro/analog.h"
 
 #include "Common.h"
 #include "CardManager.h"
@@ -54,11 +56,30 @@ Game::Game()
 
   const size_t size = myHeight * myPitch;
   myVideoBuffer.resize(size);
+
+  switch (ourInputDevices[0])
+  {
+  case RETRO_DEVICE_NONE:
+    Paddle::instance().reset();
+    break;
+  case RETRO_DEVICE_JOYPAD:
+    Paddle::instance().reset(new Joypad);
+    Paddle::setSquaring(false);
+    break;
+  case RETRO_DEVICE_ANALOG:
+    Paddle::instance().reset(new Analog);
+    Paddle::setSquaring(true);
+    break;
+  default:
+    break;
+  }
 }
 
 Game::~Game()
 {
   uninitialiseEmulator();
+  Paddle::instance().reset();
+  Registry::instance.reset();
 }
 
 retro_usec_t Game::ourFrameTime = 0;
@@ -232,7 +253,7 @@ bool Game::checkButtonPressed(unsigned id)
 
 void Game::keyboardEmulation()
 {
-  if (input_devices[0] != RETRO_DEVICE_NONE)
+  if (ourInputDevices[0] != RETRO_DEVICE_NONE)
   {
     if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_R))
     {
