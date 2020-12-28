@@ -31,8 +31,8 @@ namespace
      {
       "machine",
       "Apple ][ type",
-      "Configuration",
-      "Apple2 Type",
+      REG_CONFIG,
+      REGVALUE_APPLE2_TYPE,
       {
        {"Enhanced Apple //e", A2TYPE_APPLE2EENHANCED},
        {"Apple ][ (Original)", A2TYPE_APPLE2},
@@ -49,8 +49,8 @@ namespace
      {
       "slot4",
       "Card in slot 4",
-      "Configuration",
-      "Slot 4",
+      REG_CONFIG,
+      REGVALUE_SLOT4,
       {
        {"Empty", CT_Empty},
        {"Mouse", CT_MouseInterface},
@@ -61,8 +61,8 @@ namespace
      {
       "slot5",
       "Card in slot 5",
-      "Configuration",
-      "Slot 5",
+      REG_CONFIG,
+      REGVALUE_SLOT5,
       {
        {"Empty", CT_Empty},
        {"CP/M", CT_Z80},
@@ -73,8 +73,8 @@ namespace
      {
       "video",
       "Video mode",
-      "Configuration",
-      "Video Emulation",
+      REG_CONFIG,
+      REGVALUE_VIDEO_MODE,
       {
        {"Color (Composite Idealized)", VT_COLOR_IDEALIZED},
        {"Color (RGB Card/Monitor)", VT_COLOR_VIDEOCARD_RGB},
