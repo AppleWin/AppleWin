@@ -8,28 +8,15 @@
 #include <string>
 
 // Resources
-
 HRSRC FindResource(void *, const char * filename, const char *);
 
 // Bitmap
 HBITMAP LoadBitmap(HINSTANCE hInstance, const char * filename);
 LONG GetBitmapBits(HBITMAP hbit, LONG cb, LPVOID lpvBits);
 
-// Keyboard
-
-BYTE KeybGetKeycode();
-BYTE KeybReadData();
-BYTE KeybReadFlag();
-
-// Joystick
-
-BYTE JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
-BYTE JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
-
 // MessageBox
-
 int MessageBox(HWND, const char * text, const char * caption, UINT type);
 
-// Mockingboard
+// Sound
 void registerSoundBuffer(IDirectSoundBuffer * buffer);
 void unregisterSoundBuffer(IDirectSoundBuffer * buffer);

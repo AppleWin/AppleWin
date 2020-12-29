@@ -63,7 +63,6 @@ add_library(appleii SHARED
   linux/linuxframe.cpp
 
   linux/duplicates/Debug.cpp
-  linux/duplicates/WinVideo.cpp
   linux/duplicates/Joystick.cpp
   linux/duplicates/SerialComms.cpp
   linux/duplicates/PropertySheet.cpp
