@@ -31,6 +31,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Log.h"
 FILE* g_fh = NULL;
 
+#ifdef _MSC_VER
+#define LOG_FILENAME "AppleWin.log"
+#else
+// save to /tmp as otherwise it creates a file in the current folder which can be a bit everywhere
+// especially if the program is installed to /usr
+#define LOG_FILENAME "/tmp/AppleWin.log"
+#endif
+
+
 //---------------------------------------------------------------------------
 
 void LogInit(void)
@@ -38,7 +47,7 @@ void LogInit(void)
 	if (g_fh)
 		return;
 
-	g_fh = fopen("AppleWin.log", "a+t");	// Open log file (append & text mode)
+	g_fh = fopen(LOG_FILENAME, "a+t");	    // Open log file (append & text mode)
 	setvbuf(g_fh, NULL, _IONBF, 0);			// No buffering (so implicit fflush after every fprintf)
 	CHAR aDateStr[80], aTimeStr[80];
 	GetDateFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aDateStr, sizeof(aDateStr));
