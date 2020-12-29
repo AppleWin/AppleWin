@@ -12,6 +12,7 @@ Peripheral cards supported:
 - Super Serial Card (SSC)
 - Parallel printer card
 - Mouse interface
+- Apple IIe Extended 80-Column Text Card and RamWorks III (8MB)
 - RGB cards: Apple's Extended 80-Column Text/AppleColor Adaptor Card, 'Le Chat Mauve' Féline and Eve.
 - CP/M SoftCard
 - Uthernet I (ethernet card)
