@@ -210,13 +210,15 @@ public:
 	{
 	}
 
-	virtual void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false) = 0;
-	virtual void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame) = 0;
-	virtual void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedrawWholeScreen = false) = 0;
-	virtual void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename) = 0;
+	virtual void VideoPresentScreen(void) = 0;
 	virtual void ChooseMonochromeColor(void) = 0;
 	virtual void Benchmark(void) = 0;
 	virtual void DisplayLogo(void) = 0;
+
+	void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
+	void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
+	void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
+	void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
 
 	uint8_t* GetFrameBuffer(void) { return g_pFramebufferbits; }
 	void SetFrameBuffer(uint8_t* frameBuffer) { g_pFramebufferbits = frameBuffer; }
@@ -330,6 +332,8 @@ private:
 	BYTE g_videoRom[kVideoRomSizeMax];
 	UINT g_videoRomSize;
 	bool g_videoRomRockerSwitch;
+
+	DWORD dwFullSpeedStartTime;
 
 	static const char g_aVideoChoices[];
 

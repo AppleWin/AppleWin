@@ -19,10 +19,7 @@ public:
 	virtual void Initialize(void);
 	virtual void Destroy(void);
 
-	virtual void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
-	virtual void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
-	virtual void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode = 0, bool bRedrawWholeScreen = false);
-	virtual void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
+	virtual void VideoPresentScreen(void);
 	virtual void ChooseMonochromeColor(void);
 	virtual void Benchmark(void);
 	virtual void DisplayLogo(void);

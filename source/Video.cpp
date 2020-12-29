@@ -620,7 +620,7 @@ void Video::Video_SaveScreenShot(const VideoScreenShot_e ScreenShotType, const T
 
 //===========================================================================
 
-bool Video::ReadVideoRomFile(const TCHAR* pRomFile)
+bool Video::ReadVideoRomFile(const char* pRomFile)
 {
 	g_videoRomSize = 0;
 
@@ -829,4 +829,58 @@ const char* Video::VideoGetAppWindowTitle(void)
 		return g_apVideoModeDesc[ videoType ];
 	else
 		return apVideoMonitorModeDesc[ GetVideoRefreshRate() == VR_60HZ ? 0 : 1 ];	// NTSC or PAL
+}
+
+void Video::VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=false*/)
+{
+	if (bInit)
+	{
+		// Just entered full-speed mode
+		dwFullSpeedStartTime = GetTickCount();
+		return;
+	}
+
+	DWORD dwFullSpeedDuration = GetTickCount() - dwFullSpeedStartTime;
+	if (dwFullSpeedDuration <= 16)	// Only update after every realtime ~17ms of *continuous* full-speed
+		return;
+
+	dwFullSpeedStartTime += dwFullSpeedDuration;
+
+	VideoRedrawScreenAfterFullSpeed(dwCyclesThisFrame);
+}
+
+void Video::VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
+{
+	NTSC_VideoClockResync(dwCyclesThisFrame);
+	GetFrame().VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
+}
+
+void Video::Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename)
+{
+	_ASSERT(pScreenshotFilename);
+	if (!pScreenshotFilename)
+		return;
+
+	GetFrame().VideoRedrawScreen();
+	Video_SaveScreenShot(Video::SCREENSHOT_560x384, pScreenshotFilename);
+}
+
+void Video::VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen)
+{
+	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
+	{
+		// uVideoModeForWholeScreen set if:
+		// . MODE_DEBUG   : always
+		// . MODE_RUNNING : called from VideoRedrawScreen(), eg. during full-speed
+		if (bRedrawWholeScreen)
+			NTSC_SetVideoMode(uRedrawWholeScreenVideoMode);
+		NTSC_VideoRedrawWholeScreen();
+
+		// MODE_DEBUG|PAUSED: Need to refresh a 2nd time if changing video-type, otherwise could have residue from prev image!
+		// . eg. Amber -> B&W TV
+		if (g_nAppMode == MODE_DEBUG || g_nAppMode == MODE_PAUSED)
+			NTSC_VideoRedrawWholeScreen();
+	}
+
+	VideoPresentScreen();
 }
