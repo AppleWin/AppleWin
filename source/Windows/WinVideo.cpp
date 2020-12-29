@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Windows/WinVideo.h"
-#include "Windows/Win32Frame.h"
 #include "Windows/WinFrame.h"
 #include "Windows/AppleWin.h"
 #include "Interface.h"
@@ -524,10 +523,3 @@ void WinVideo::DDUninit(void)
 #undef SAFE_RELEASE
 
 //===========================================================================
-
-// NB. Win32Frame, not WinVideo
-void Win32Frame::VideoRedrawScreen(void)
-{
-	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
-	GetVideo().VideoRefreshScreen( GetVideo().GetVideoMode(), true );
-}
