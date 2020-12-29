@@ -1256,11 +1256,11 @@ LRESULT CALLBACK FrameWndProc (
 					if ( DebugGetVideoMode(&debugVideoMode) )
 						GetVideo().VideoRefreshScreen(debugVideoMode, true);
 					else
-						GetVideo().VideoRefreshScreen();
+						GetVideo().VideoPresentScreen();
 				}
 				else
 				{
-					GetVideo().VideoRefreshScreen();
+					GetVideo().VideoPresentScreen();
 				}
 			}
 
