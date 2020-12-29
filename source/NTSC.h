@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Video.h"
+
 // Globals (Public)
 	extern uint16_t g_nVideoClockVert;
 	extern uint16_t g_nVideoClockHorz;
@@ -21,7 +23,6 @@
 	extern void     NTSC_VideoUpdateCycles( UINT cycles6502 );
 	extern void     NTSC_VideoRedrawWholeScreen( void );
 
-	enum VideoRefreshRate_e;
 	void NTSC_SetRefreshRate(VideoRefreshRate_e rate);
 	UINT NTSC_GetCyclesPerFrame(void);
 	UINT NTSC_GetCyclesPerLine(void);

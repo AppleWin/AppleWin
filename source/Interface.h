@@ -11,7 +11,7 @@
 #include "Video.h"
 Video& GetVideo(void);
 
-#include "Configuration/PropertySheet.h"
+#include "Configuration/IPropertySheet.h"
 IPropertySheet& GetPropertySheet(void);
 
 #include "FrameBase.h"

@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define MAX_SOUND_DEVICES 10
 
-static char *sound_devices[MAX_SOUND_DEVICES];
+static std::string sound_devices[MAX_SOUND_DEVICES];
 static GUID sound_device_guid[MAX_SOUND_DEVICES];
 static int num_sound_devices = 0;
 
@@ -67,7 +67,9 @@ static BOOL CALLBACK DSEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrv
 		return TRUE;
 	if(lpGUID != NULL)
 		memcpy(&sound_device_guid[i], lpGUID, sizeof (GUID));
-	sound_devices[i] = _strdup(lpszDesc);
+	else
+		memset(&sound_device_guid[i], 0, sizeof(GUID));
+	sound_devices[i] = lpszDesc;
 
 	if(g_fh) fprintf(g_fh, "%d: %s - %s\n",i,lpszDesc,lpszDrvName);
 
@@ -491,6 +493,7 @@ bool DSInit()
 		return true;		// Already initialised successfully
 	}
 
+	num_sound_devices = 0;
 	HRESULT hr = DirectSoundEnumerate((LPDSENUMCALLBACK)DSEnumProc, NULL);
 	if(FAILED(hr))
 	{
