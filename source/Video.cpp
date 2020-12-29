@@ -862,7 +862,7 @@ void Video::Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename)
 		return;
 
 	GetFrame().VideoRedrawScreen();
-	Video_SaveScreenShot(Video::SCREENSHOT_560x384, pScreenshotFilename);
+	Video_SaveScreenShot(SCREENSHOT_560x384, pScreenshotFilename);
 }
 
 void Video::VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen)
