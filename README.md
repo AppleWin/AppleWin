@@ -1,7 +1,20 @@
 AppleWin
 ========
 
-Apple II emulator for Windows
+#### Apple II emulator for Windows
+
+AppleWin is a fully-featured emulator supporting different Apple II models and clones. A variety of peripheral cards and video display modes are supported (eg. NTSC, RGB); and there's an extensive built-in symbolic debugger.
+
+Peripheral cards supported:
+- Mockingboard, Phasor and SAM sound cards
+- Disk II interface for floppy disk drives
+- Hard disk controller
+- Super Serial Card (SSC)
+- Parallel printer card
+- Mouse interface
+- RGB cards: Apple's Extended 80-Column Text/AppleColor Adaptor Card, 'Le Chat Mauve' Féline and Eve.
+- CP/M SoftCard
+- Uthernet I (ethernet card)
 
 
 Download latest (stable) release: [AppleWin v1.29.16.0](https://github.com/AppleWin/AppleWin/releases/download/v1.29.16.0/AppleWin1.29.16.0.zip)
