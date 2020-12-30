@@ -253,7 +253,7 @@ static void ContinueExecution(void)
 		if (g_bFullSpeed)
 			GetVideo().VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
 		else
-			GetVideo().VideoRefreshScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
+			GetVideo().VideoPresentScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
 	}
 
 #ifdef LOG_PERF_TIMINGS

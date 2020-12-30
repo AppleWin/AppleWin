@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Windows/WinVideo.h"
-#include "Windows/Win32Frame.h"
 #include "Windows/WinFrame.h"
 #include "Windows/AppleWin.h"
 #include "Interface.h"
@@ -162,7 +161,7 @@ void WinVideo::Benchmark(void)
       memset(mem+0x400,0x14,0x400);
     else
       memcpy(mem+0x400,mem+((cycle & 2) ? 0x4000 : 0x6000),0x400);
-    VideoRefreshScreen();
+    VideoPresentScreen();
     if (cycle++ >= 3)
       cycle = 0;
     totaltextfps++;
@@ -184,7 +183,7 @@ void WinVideo::Benchmark(void)
       memset(mem+0x2000,0x14,0x2000);
     else
       memcpy(mem+0x2000,mem+((cycle & 2) ? 0x4000 : 0x6000),0x2000);
-    VideoRefreshScreen();
+    VideoPresentScreen();
     if (cycle++ >= 3)
       cycle = 0;
     totalhiresfps++;
@@ -421,53 +420,8 @@ void WinVideo::DisplayLogo(void)
 
 //===========================================================================
 
-void WinVideo::VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=false*/)
+void WinVideo::VideoPresentScreen(void)
 {
-	static DWORD dwFullSpeedStartTime = 0;
-
-	if (bInit)
-	{
-		// Just entered full-speed mode
-		dwFullSpeedStartTime = GetTickCount();
-		return;
-	}
-
-	DWORD dwFullSpeedDuration = GetTickCount() - dwFullSpeedStartTime;
-	if (dwFullSpeedDuration <= 16)	// Only update after every realtime ~17ms of *continuous* full-speed
-		return;
-
-	dwFullSpeedStartTime += dwFullSpeedDuration;
-
-	VideoRedrawScreenAfterFullSpeed(dwCyclesThisFrame);
-}
-
-//===========================================================================
-
-void WinVideo::VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
-{
-	NTSC_VideoClockResync(dwCyclesThisFrame);
-	GetFrame().VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
-}
-
-//===========================================================================
-
-void WinVideo::VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode /* =0*/, bool bRedrawWholeScreen /* =false*/)
-{
-	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
-	{
-		// uVideoModeForWholeScreen set if:
-		// . MODE_DEBUG   : always
-		// . MODE_RUNNING : called from VideoRedrawScreen(), eg. during full-speed
-		if (bRedrawWholeScreen)
-			NTSC_SetVideoMode( uRedrawWholeScreenVideoMode );
-		NTSC_VideoRedrawWholeScreen();
-
-		// MODE_DEBUG|PAUSED: Need to refresh a 2nd time if changing video-type, otherwise could have residue from prev image!
-		// . eg. Amber -> B&W TV
-		if (g_nAppMode == MODE_DEBUG || g_nAppMode == MODE_PAUSED)
-			NTSC_VideoRedrawWholeScreen();
-	}
-
 	HDC hFrameDC = FrameGetDC();
 
 	if (hFrameDC)
@@ -569,23 +523,3 @@ void WinVideo::DDUninit(void)
 #undef SAFE_RELEASE
 
 //===========================================================================
-
-void WinVideo::Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename)
-{
-	_ASSERT(pScreenshotFilename);
-	if (!pScreenshotFilename)
-		return;
-
-	GetFrame().VideoRedrawScreen();
-	Video_SaveScreenShot(Video::SCREENSHOT_560x384, pScreenshotFilename);
-}
-
-//===========================================================================
-//===========================================================================
-
-// NB. Win32Frame, not WinVideo
-void Win32Frame::VideoRedrawScreen(void)
-{
-	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
-	GetVideo().VideoRefreshScreen( GetVideo().GetVideoMode(), true );
-}
