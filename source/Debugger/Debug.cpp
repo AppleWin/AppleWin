@@ -754,7 +754,7 @@ Update_t CmdBenchmarkStop (int nArgs)
 	DebugEnd();
 	
 	GetFrame().FrameRefreshStatus(DRAW_TITLE);
-	GetFrame().VideoRedrawScreen();
+	GetVideo().VideoRedrawScreen();
 	DWORD currtime = GetTickCount();
 	while ((extbench = GetTickCount()) != currtime)
 		; // intentional busy-waiting
@@ -7447,7 +7447,7 @@ Update_t CmdWindowViewData (int nArgs)
 //===========================================================================
 Update_t CmdWindowViewOutput (int nArgs)
 {
-	GetFrame().VideoRedrawScreen();
+	GetVideo().VideoRedrawScreen();
 
 	DebugVideoMode::Instance().Set( GetVideo().GetVideoMode() );
 

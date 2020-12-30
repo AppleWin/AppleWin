@@ -318,7 +318,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 		GetVideo().VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
-			GetFrame().VideoRedrawScreen();
+			GetVideo().VideoRedrawScreen();
 		}
 	}
 

@@ -589,7 +589,7 @@ static void DrawFrameWindow (bool bPaintingWindow/*=false*/)
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay();
 	else
-		GetFrame().VideoRedrawScreen();
+		GetVideo().VideoRedrawScreen();
 
 	if (bPaintingWindow)
 		EndPaint(GetFrame().g_hFrameWindow,&ps);
@@ -1322,7 +1322,7 @@ LRESULT CALLBACK FrameWndProc (
 			}
 			DrawStatusArea((HDC)0,DRAW_TITLE);
 			if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
-				GetFrame().VideoRedrawScreen();
+				GetVideo().VideoRedrawScreen();
 		}
 		else if ((wparam == VK_SCROLL) && GetPropertySheet().GetScrollLockToggle())
 		{
@@ -2005,7 +2005,7 @@ static void ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		}
 
       DrawStatusArea((HDC)0,DRAW_TITLE);
-      GetFrame().VideoRedrawScreen();
+      GetVideo().VideoRedrawScreen();
       break;
 
     case BTN_DRIVE1:

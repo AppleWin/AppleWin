@@ -219,6 +219,7 @@ public:
 	void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
 	void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 	void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
+	void VideoRedrawScreen(void);
 
 	uint8_t* GetFrameBuffer(void) { return g_pFramebufferbits; }
 	void SetFrameBuffer(uint8_t* frameBuffer) { g_pFramebufferbits = frameBuffer; }
