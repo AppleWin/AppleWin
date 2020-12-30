@@ -20,20 +20,9 @@ void LinuxVideo::Destroy()
   NTSC_Destroy();
 }
 
-void LinuxVideo::VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit)
+void LinuxVideo::VideoPresentScreen()
 {
-}
-
-void LinuxVideo::VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
-{
-}
-
-void LinuxVideo::VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen)
-{
-}
-
-void LinuxVideo::Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename)
-{
+  // TODO we should really implement this
 }
 
 void LinuxVideo::ChooseMonochromeColor()

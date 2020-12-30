@@ -11,7 +11,6 @@ public:
   virtual void FrameUpdateApple2Type();
   virtual void FrameSetCursorPosByMousePos();
 
-  virtual void VideoRedrawScreen();
   virtual void SetFullScreenShowSubunitStatus(bool bShow);
   virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight = 0);
   virtual int SetViewportScale(int nNewScale, bool bForce = false);

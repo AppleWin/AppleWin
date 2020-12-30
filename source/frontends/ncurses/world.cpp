@@ -233,110 +233,6 @@ namespace
 double g_relativeSpeed = 1.0;
 bool g_stop = false;
 
-void FrameRefresh()
-{
-  WINDOW * status = frame->getStatus();
-
-  if (status)
-  {
-    mvwprintw(status, 1, 2, "D1: %d, %s, %s", g_eStatusDrive1, g_sTrackDrive1, g_sSectorDrive1);
-    mvwprintw(status, 2, 2, "D2: %d, %s, %s", g_eStatusDrive2, g_sTrackDrive2, g_sSectorDrive2);
-  }
-}
-
-void FrameDrawDiskLEDS(HDC x)
-{
-  CardManager & cardManager = GetCardMgr();
-  if (cardManager.QuerySlot(SLOT6) != CT_Disk2)
-    return;
-
-  dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6))->GetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
-
-  FrameRefresh();
-}
-
-void FrameDrawDiskStatus(HDC x)
-{
-  if (mem == NULL)
-    return;
-
-  CardManager & cardManager = GetCardMgr();
-  if (cardManager.QuerySlot(SLOT6) != CT_Disk2)
-    return;
-
-  Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
-
-  // We use the actual drive since probing from memory doesn't tell us anything we don't already know.
-  //        DOS3.3   ProDOS
-  // Drive  $B7EA    $BE3D
-  // Track  $B7EC    LC1 $D356
-  // Sector $B7ED    LC1 $D357
-  // RWTS            LC1 $D300
-
-  int nActiveFloppy = pDisk2Card->GetCurrentDrive();
-
-  int nDisk1Track  = pDisk2Card->GetTrack(0);
-  int nDisk2Track  = pDisk2Card->GetTrack(1);
-
-  // Probe known OS's for Track/Sector
-  int  isProDOS = mem[ 0xBF00 ] == 0x4C;
-  bool isValid  = true;
-
-  // Try DOS3.3 Sector
-  if ( !isProDOS )
-  {
-    int nDOS33track  = mem[ 0xB7EC ];
-    int nDOS33sector = mem[ 0xB7ED ];
-
-    if ((nDOS33track  >= 0 && nDOS33track  < 40)
-	&&  (nDOS33sector >= 0 && nDOS33sector < 16))
-    {
-
-      /**/ if (nActiveFloppy == 0) g_nSectorDrive1 = nDOS33sector;
-      else if (nActiveFloppy == 1) g_nSectorDrive2 = nDOS33sector;
-    }
-    else
-      isValid = false;
-  }
-  else // isProDOS
-  {
-    // we can't just read from mem[ 0xD357 ] since it might be bank-switched from ROM
-    // and we need the Language Card RAM
-    // memrom[ 0xD350 ] = " ERROR\x07\x00"  Applesoft error message
-    //                             T   S
-    int nProDOStrack  = *MemGetMainPtr( 0xC356 ); // LC1 $D356
-    int nProDOSsector = *MemGetMainPtr( 0xC357 ); // LC1 $D357
-
-    if ((nProDOStrack  >= 0 && nProDOStrack  < 40)
-	&&  (nProDOSsector >= 0 && nProDOSsector < 16))
-    {
-      /**/ if (nActiveFloppy == 0) g_nSectorDrive1 = nProDOSsector;
-      else if (nActiveFloppy == 1) g_nSectorDrive2 = nProDOSsector;
-    }
-    else
-      isValid = false;
-  }
-
-  g_nTrackDrive1  = nDisk1Track;
-  g_nTrackDrive2  = nDisk2Track;
-
-  if( !isValid )
-  {
-    if (nActiveFloppy == 0) g_nSectorDrive1 = -1;
-    else                    g_nSectorDrive2 = -1;
-  }
-
-  snprintf( g_sTrackDrive1 , sizeof(g_sTrackDrive1 ), "%2d", g_nTrackDrive1 );
-  if (g_nSectorDrive1 < 0) snprintf( g_sSectorDrive1, sizeof(g_sSectorDrive1), "??" );
-  else                     snprintf( g_sSectorDrive1, sizeof(g_sSectorDrive1), "%2d", g_nSectorDrive1 );
-
-  snprintf( g_sTrackDrive2 , sizeof(g_sTrackDrive2),  "%2d", g_nTrackDrive2 );
-  if (g_nSectorDrive2 < 0) snprintf( g_sSectorDrive2, sizeof(g_sSectorDrive2), "??" );
-  else                     snprintf( g_sSectorDrive2, sizeof(g_sSectorDrive2), "%2d", g_nSectorDrive2 );
-
-  FrameRefresh();
-}
-
 int MessageBox(HWND, const char * text, const char * caption, UINT)
 {
   LogFileOutput("MessageBox:\n%s\n%s\n\n", caption, text);
@@ -366,7 +262,6 @@ void NVideoInitialize(const bool headless)
 void NVideoRedrawScreen()
 {
   VideoUpdateFlash();
-  FrameRefresh();
 
   Video & video = GetVideo();
 

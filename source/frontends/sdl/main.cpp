@@ -85,18 +85,6 @@ int MessageBox(HWND, const char * text, const char * caption, UINT type)
   return IDOK;
 }
 
-void FrameDrawDiskLEDS(HDC x)
-{
-}
-
-void FrameDrawDiskStatus(HDC x)
-{
-}
-
-void FrameRefreshStatus(int x, bool)
-{
-}
-
 void run_sdl(int argc, const char * argv [])
 {
   EmulatorOptions options;
