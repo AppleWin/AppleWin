@@ -101,3 +101,59 @@
    ...
    fun:__glDispatchInit
 }
+
+{
+   X leak 1
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:XSetLocaleModifiers
+}
+
+{
+   X leak 2
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:XInitThreads
+}
+
+{
+   X leak 3
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:_XOpenLC
+}
+
+{
+   Pulse leak 1
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:pa_xmalloc
+}
+
+{
+   Pulse leak 2
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:pa_xmalloc0
+}
+
+{
+   dlopen leak 1
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:dlopen_doit
+}
+
+{
+   dbus leak 2
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:dbus_bus_register
+}
