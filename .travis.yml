@@ -1,23 +1,30 @@
-dist: focal
-
-arch:
-  - arm64
-
-addons:
-  apt:
-    packages:
-      - cmake
-      - libyaml-dev
-      - libminizip-dev
-      - qtbase5-dev
-      - qtmultimedia5-dev
-      - libqt5gamepad5-dev
-      - libboost-program-options-dev
-      - libncurses-dev
-      - libevdev-dev
-      - libsdl2-dev
-      - libsdl2-image-dev
-
 language: cpp
 
-script: source/linux/build.sh
+matrix:
+  include:
+
+    - name: "AppleWin on Windows"
+      os: windows
+      script: ./CIBuild.bat
+
+    - name: "AppleWin on Linux"
+      os: linux
+      dist: focal
+      arch: amd64
+
+      script: source/linux/build.sh
+
+      addons:
+        apt:
+          packages:
+            - cmake
+            - libyaml-dev
+            - libminizip-dev
+            - qtbase5-dev
+            - qtmultimedia5-dev
+            - libqt5gamepad5-dev
+            - libboost-program-options-dev
+            - libncurses-dev
+            - libevdev-dev
+            - libsdl2-dev
+            - libsdl2-image-dev
