@@ -1,9 +1,12 @@
 #pragma once
 
+#include <string>
+
 int ProcessKeyboard();
 void ProcessInput();
-void NVideoInitialize(const bool headless);
+void NVideoInitialise(const bool headless);
 void NVideoRedrawScreen();
+void PaddleInitialise(const std::string & device);
 
 extern double g_relativeSpeed;
 

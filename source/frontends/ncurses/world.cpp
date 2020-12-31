@@ -239,14 +239,16 @@ int MessageBox(HWND, const char * text, const char * caption, UINT)
   return IDOK;
 }
 
-void NVideoInitialize(const bool headless)
+void PaddleInitialise(const std::string & device)
+{
+  paddle.reset(new EvDevPaddle(device));
+  Paddle::instance = paddle;
+}
+
+void NVideoInitialise(const bool headless)
 {
   frame.reset(new Frame());
   asciiArt.reset(new ASCIIArt());
-
-  paddle.reset(new EvDevPaddle("/dev/input/by-id/usb-©Microsoft_Corporation_Controller_1BBE3DB-event-joystick"));
-
-  Paddle::instance = paddle;
 
   if (headless)
   {

@@ -71,11 +71,11 @@ Keyboard shortcuts
 In order to properly appreciate the wider hi res graphics, open a big terminal window and choose a small font size.
 Try ``CTRL-`` as well if ``ALT-`` does not work: terminals do not report a consistent keycode for these combinations.
 
-The joystick uses evdev (currently the device name is hardcoded).
+The joystick uses evdev (``--device-name /dev/input/by-id/id_of_device``).
 
 ### qapple
 
-This is based on Qt, currently tested with 5.10
+This is based on Qt.
 
 * keyboard shortcuts are listed in the menu entries
 * graphics: runs the native NTSC code

@@ -56,9 +56,14 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
     ("headless", "Headless: disable video (freewheel)")
     ("fixed-speed", "Fixed (non-adaptive) speed")
     ("ntsc,nt", "NTSC: execute NTSC code")
-    ("benchmark,b", "Benchmark emulator")
-    ("no-squaring", "Gamepad range is (already) a square");
+    ("benchmark,b", "Benchmark emulator");
   desc.add(emulatorDesc);
+
+  po::options_description paddleDesc("Paddle");
+  paddleDesc.add_options()
+    ("no-squaring", "Gamepad range is (already) a square")
+    ("device-name", po::value<std::string>(), "Gamepad device name");
+  desc.add(paddleDesc);
 
   po::variables_map vm;
   try
@@ -113,8 +118,13 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
     options.headless = vm.count("headless") > 0;
     options.log = vm.count("log") > 0;
     options.ntsc = vm.count("ntsc") > 0;
-    options.squaring = vm.count("no-squaring") == 0;
     options.fixedSpeed = vm.count("fixed-speed") > 0;
+
+    options.paddleSquaring = vm.count("no-squaring") == 0;
+    if (vm.count("device-name"))
+    {
+      options.paddleDeviceName = vm["device-name"].as<std::string>();
+    }
 
     return true;
   }
@@ -152,5 +162,5 @@ void applyOptions(const EmulatorOptions & options)
     setSnapshotFilename(options.snapshotFilename, options.loadSnapshot);
   }
 
-  Paddle::setSquaring(options.squaring);
+  Paddle::setSquaring(options.paddleSquaring);
 }

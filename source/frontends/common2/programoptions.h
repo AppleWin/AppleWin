@@ -20,7 +20,10 @@ struct EmulatorOptions
   bool headless = false;
   bool ntsc = false;  // only for applen
 
-  bool squaring = true;  // turn the x/y range to a square
+  bool paddleSquaring = true;  // turn the x/y range to a square
+  // on my PC it is something like
+  // "/dev/input/by-id/usb-©Microsoft_Corporation_Controller_1BBE3DB-event-joystick"
+  std::string paddleDeviceName;
 
   bool saveConfigurationOnExit = false;
   bool useQtIni = false;  // use Qt .ini file (read only)

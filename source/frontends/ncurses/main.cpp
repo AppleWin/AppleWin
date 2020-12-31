@@ -148,8 +148,9 @@ namespace
     g_nMemoryClearType = options.memclear;
 
     initialiseEmulator();
-    NVideoInitialize(options.headless);
+    NVideoInitialise(options.headless);
     applyOptions(options);
+    PaddleInitialise(options.paddleDeviceName);
 
     GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
 
