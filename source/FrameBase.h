@@ -13,6 +13,9 @@ public:
 	BOOL       g_bMultiMon;
 	bool       g_bFreshReset;
 
+	virtual void Initialize(void) = 0;
+	virtual void Destroy(void) = 0;
+
 	virtual void FrameDrawDiskLEDS(HDC hdc) = 0;
 	virtual void FrameDrawDiskStatus(HDC hdc) = 0;
 	virtual void FrameRefreshStatus(int, bool bUpdateDiskStatus = true) = 0;
@@ -25,4 +28,9 @@ public:
 	virtual void SetAltEnterToggleFullScreen(bool mode) = 0;
 
 	virtual void SetLoadedSaveStateFlag(const bool bFlag) = 0;
+
+	virtual void VideoPresentScreen(void) = 0;
+	virtual void ChooseMonochromeColor(void) = 0;
+	virtual void Benchmark(void) = 0;
+	virtual void DisplayLogo(void) = 0;
 };

@@ -46,7 +46,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SoundCore.h"
 #include "Speaker.h"
 #include "Utilities.h"
-#include "Windows/WinVideo.h"
 #include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"
 #include "Debugger/Debug.h"
@@ -585,7 +584,7 @@ static void DrawFrameWindow (bool bPaintingWindow/*=false*/)
 
 	// DRAW THE CONTENTS OF THE EMULATED SCREEN
 	if (g_nAppMode == MODE_LOGO)
-		GetVideo().DisplayLogo();
+		GetFrame().DisplayLogo();
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay();
 	else
@@ -1064,7 +1063,7 @@ LRESULT CALLBACK FrameWndProc (
       CpuDestroy();
       MemDestroy();
       SpkrDestroy();
-      GetVideo().Destroy();
+      GetFrame().Destroy();
       MB_Destroy();
       DeleteGdiObjects();
       DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
@@ -1256,11 +1255,11 @@ LRESULT CALLBACK FrameWndProc (
 					if ( DebugGetVideoMode(&debugVideoMode) )
 						GetVideo().VideoRefreshScreen(debugVideoMode, true);
 					else
-						GetVideo().VideoPresentScreen();
+						GetFrame().VideoPresentScreen();
 				}
 				else
 				{
-					GetVideo().VideoPresentScreen();
+					GetFrame().VideoPresentScreen();
 				}
 			}
 
@@ -1809,7 +1808,7 @@ LRESULT CALLBACK FrameWndProc (
       DrawStatusArea((HDC)0,DRAW_TITLE);
       HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
       g_nAppMode = MODE_BENCHMARK;
-      GetVideo().Benchmark();
+      GetFrame().Benchmark();
       g_nAppMode = MODE_LOGO;
       ResetMachineState();
       SetCursor(oldcursor);

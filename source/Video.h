@@ -202,18 +202,8 @@ public:
 	{
 	}
 
-	virtual void Initialize(void)
-	{
-	}
-
-	virtual void Destroy(void)
-	{
-	}
-
-	virtual void VideoPresentScreen(void) = 0;
-	virtual void ChooseMonochromeColor(void) = 0;
-	virtual void Benchmark(void) = 0;
-	virtual void DisplayLogo(void) = 0;
+	void Initialize(void); // Do not call directly. Call FrameBase::Initialize()
+	void Destroy(void); // Call FrameBase::Destroy()
 
 	void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
 	void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);

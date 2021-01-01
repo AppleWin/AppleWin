@@ -46,7 +46,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
-#include "Windows/WinVideo.h"
 #include "Windows/Win32Frame.h"
 #include "Windows/WinFrame.h"
 #include "RGBMonitor.h"
@@ -253,7 +252,7 @@ static void ContinueExecution(void)
 		if (g_bFullSpeed)
 			GetVideo().VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
 		else
-			GetVideo().VideoPresentScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
+			GetFrame().VideoPresentScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
 	}
 
 #ifdef LOG_PERF_TIMINGS
@@ -840,7 +839,7 @@ static void RepeatInitialization(void)
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
-		GetVideo().Initialize(); // g_pFramebufferinfo been created now & COM init'ed
+		GetFrame().Initialize(); // g_pFramebufferinfo been created now & COM init'ed
 		LogFileOutput("Main: VideoInitialize()\n");
 
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");
@@ -1058,6 +1057,6 @@ FrameBase& GetFrame(void)
 
 Video& GetVideo(void)
 {
-	static WinVideo video;
+	static Video video;
 	return video;
 }

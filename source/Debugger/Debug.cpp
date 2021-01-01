@@ -44,7 +44,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Memory.h"
 #include "../NTSC.h"
 #include "../SoundCore.h"	// SoundCore_SetFade()
-#include "../Windows/WinVideo.h"
 #include "../Windows/WinFrame.h"
 
 //	#define DEBUG_COMMAND_HELP  1

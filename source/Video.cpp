@@ -882,11 +882,35 @@ void Video::VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedra
 			NTSC_VideoRedrawWholeScreen();
 	}
 
-	VideoPresentScreen();
+	GetFrame().VideoPresentScreen();
 }
 
 void Video::VideoRedrawScreen(void)
 {
 	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
 	VideoRefreshScreen(GetVideoMode(), true);
+}
+
+void Video::Initialize(void)
+{
+	_ASSERT(g_pFramebufferbits != NULL); // must have called SetFrameBuffer() before
+
+	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
+	VideoResetState();
+
+	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
+	memset(GetFrameBuffer(), 0, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
+
+	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
+	NTSC_VideoInit(GetFrameBuffer());
+
+#if 0
+	DDInit();	// For WaitForVerticalBlank()
+#endif
+}
+
+void Video::Destroy(void)
+{
+	SetFrameBuffer(NULL);
+	NTSC_Destroy();
 }
