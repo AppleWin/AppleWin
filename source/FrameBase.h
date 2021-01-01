@@ -13,8 +13,6 @@ public:
 	BOOL       g_bMultiMon;
 	bool       g_bFreshReset;
 
-	void VideoRedrawScreen();
-
 	virtual void FrameDrawDiskLEDS(HDC hdc) = 0;
 	virtual void FrameDrawDiskStatus(HDC hdc) = 0;
 	virtual void FrameRefreshStatus(int, bool bUpdateDiskStatus = true) = 0;

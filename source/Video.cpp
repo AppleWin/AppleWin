@@ -852,7 +852,7 @@ void Video::VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit
 void Video::VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
 	NTSC_VideoClockResync(dwCyclesThisFrame);
-	GetFrame().VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
+	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
 }
 
 void Video::Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename)
@@ -861,7 +861,7 @@ void Video::Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename)
 	if (!pScreenshotFilename)
 		return;
 
-	GetFrame().VideoRedrawScreen();
+	VideoRedrawScreen();
 	Video_SaveScreenShot(SCREENSHOT_560x384, pScreenshotFilename);
 }
 
@@ -883,4 +883,10 @@ void Video::VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedra
 	}
 
 	VideoPresentScreen();
+}
+
+void Video::VideoRedrawScreen(void)
+{
+	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
+	VideoRefreshScreen(GetVideoMode(), true);
 }
