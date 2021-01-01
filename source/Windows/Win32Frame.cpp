@@ -65,9 +65,7 @@ void Win32Frame::Initialize(void)
 	g_pFramebufferinfo->bmiHeader.biClrUsed = 0;
 
 	videoCreateDIBSection(video);
-	video.SetFrameBuffer(g_pFramebufferbits);
-
-	video.Initialize();
+	video.Initialize(g_pFramebufferbits);
 
 #if 0
 	DDInit();	// For WaitForVerticalBlank()

@@ -891,9 +891,9 @@ void Video::VideoRedrawScreen(void)
 	VideoRefreshScreen(GetVideoMode(), true);
 }
 
-void Video::Initialize(void)
+void Video::Initialize(uint8_t* frameBuffer)
 {
-	_ASSERT(g_pFramebufferbits != NULL); // must have called SetFrameBuffer() before
+	SetFrameBuffer(frameBuffer);
 
 	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
 	VideoResetState();

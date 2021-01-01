@@ -202,7 +202,7 @@ public:
 	{
 	}
 
-	void Initialize(void); // Do not call directly. Call FrameBase::Initialize()
+	void Initialize(uint8_t* frameBuffer); // Do not call directly. Call FrameBase::Initialize()
 	void Destroy(void); // Call FrameBase::Destroy()
 
 	void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
@@ -212,7 +212,6 @@ public:
 	void VideoRedrawScreen(void);
 
 	uint8_t* GetFrameBuffer(void) { return g_pFramebufferbits; }
-	void SetFrameBuffer(uint8_t* frameBuffer) { g_pFramebufferbits = frameBuffer; }
 
 	// size of the video buffer stored in g_pFramebufferbits
 	UINT GetFrameBufferBorderlessWidth(void);
@@ -297,6 +296,7 @@ private:
 	bool Util_TestScreenShotFileName(const TCHAR *pFileName);
 	void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShotType);
 
+	void SetFrameBuffer(uint8_t* frameBuffer) { g_pFramebufferbits = frameBuffer; }
 	std::string VideoGetSnapshotStructName(void);
 
 	int g_nAltCharSetOffset;
