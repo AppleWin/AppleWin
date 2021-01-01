@@ -23,21 +23,10 @@ FrameBase::~FrameBase()
 
 void FrameBase::VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen)
 {
-	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
-	{
-		// uVideoModeForWholeScreen set if:
-		// . MODE_DEBUG   : always
-		// . MODE_RUNNING : called from VideoRedrawScreen(), eg. during full-speed
-		if (bRedrawWholeScreen)
-			NTSC_SetVideoMode(uRedrawWholeScreenVideoMode);
-		NTSC_VideoRedrawWholeScreen();
+	// regenerate video buffer if needed
+	GetVideo().VideoRefreshBuffer(uRedrawWholeScreenVideoMode, bRedrawWholeScreen);
 
-		// MODE_DEBUG|PAUSED: Need to refresh a 2nd time if changing video-type, otherwise could have residue from prev image!
-		// . eg. Amber -> B&W TV
-		if (g_nAppMode == MODE_DEBUG || g_nAppMode == MODE_PAUSED)
-			NTSC_VideoRedrawWholeScreen();
-	}
-
+	// actually draw it on screen
 	VideoPresentScreen();
 }
 
