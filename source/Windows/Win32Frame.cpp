@@ -120,7 +120,7 @@ void Win32Frame::Benchmark(void)
 
 	video.SetVideoMode(VF_TEXT);
 	memset(mem + 0x400, 0x14, 0x400);
-	video.VideoRedrawScreen();
+	VideoRedrawScreen();
 	DWORD milliseconds = GetTickCount();
 	while (GetTickCount() == milliseconds);
 	milliseconds = GetTickCount();
@@ -142,7 +142,7 @@ void Win32Frame::Benchmark(void)
 	DWORD totalhiresfps = 0;
 	video.SetVideoMode(VF_HIRES);
 	memset(mem + 0x2000, 0x14, 0x2000);
-	video.VideoRedrawScreen();
+	VideoRedrawScreen();
 	milliseconds = GetTickCount();
 	while (GetTickCount() == milliseconds);
 	milliseconds = GetTickCount();
@@ -226,7 +226,7 @@ void Win32Frame::Benchmark(void)
 	// THE SAME TIME
 	DWORD realisticfps = 0;
 	memset(mem + 0x2000, 0xAA, 0x2000);
-	video.VideoRedrawScreen();
+	VideoRedrawScreen();
 	milliseconds = GetTickCount();
 	while (GetTickCount() == milliseconds);
 	milliseconds = GetTickCount();
@@ -245,7 +245,7 @@ void Win32Frame::Benchmark(void)
 			memset(mem + 0x2000, 0xAA, 0x2000);
 		else
 			memcpy(mem + 0x2000, mem + ((cycle & 2) ? 0x4000 : 0x6000), 0x2000);
-		video.VideoRedrawScreen();
+		VideoRedrawScreen();
 		if (cycle++ >= 3)
 			cycle = 0;
 		realisticfps++;
@@ -290,7 +290,7 @@ void Win32Frame::ChooseMonochromeColor(void)
 		video.VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
-			video.VideoRedrawScreen();
+			VideoRedrawScreen();
 		}
 		video.Config_Save_Video();
 	}
@@ -494,5 +494,3 @@ void Win32Frame::DDUninit(void)
 }
 
 #undef SAFE_RELEASE
-
-//===========================================================================

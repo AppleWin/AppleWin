@@ -753,7 +753,7 @@ Update_t CmdBenchmarkStop (int nArgs)
 	DebugEnd();
 	
 	GetFrame().FrameRefreshStatus(DRAW_TITLE);
-	GetVideo().VideoRedrawScreen();
+	GetFrame().VideoRedrawScreen();
 	DWORD currtime = GetTickCount();
 	while ((extbench = GetTickCount()) != currtime)
 		; // intentional busy-waiting
@@ -6895,7 +6895,7 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 	}
 
 	DebugVideoMode::Instance().Set(bVideoModeFlags);
-	GetVideo().VideoRefreshScreen( bVideoModeFlags, true );
+	GetFrame().VideoRefreshScreen( bVideoModeFlags, true );
 	return UPDATE_NOTHING; // intentional
 }
 
@@ -7446,7 +7446,7 @@ Update_t CmdWindowViewData (int nArgs)
 //===========================================================================
 Update_t CmdWindowViewOutput (int nArgs)
 {
-	GetVideo().VideoRedrawScreen();
+	GetFrame().VideoRedrawScreen();
 
 	DebugVideoMode::Instance().Set( GetVideo().GetVideoMode() );
 
@@ -9582,7 +9582,7 @@ void DebugDisplay( BOOL bInitDisasm/*=FALSE*/ )
 	{
 		uint32_t mode = 0;
 		DebugVideoMode::Instance().Get(&mode);
-		GetVideo().VideoRefreshScreen(mode, true);
+		GetFrame().VideoRefreshScreen(mode, true);
 		return;
 	}
 

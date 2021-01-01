@@ -171,7 +171,7 @@ static void ContinueExecution(void)
 	if (g_bFullSpeed)
 	{
 		if (!bWasFullSpeed)
-			GetVideo().VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
+			GetFrame().VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
 
 		// Don't call Spkr_Mute() - will get speaker clicks
 		MB_Mute();
@@ -189,7 +189,7 @@ static void ContinueExecution(void)
 	else
 	{
 		if (bWasFullSpeed)
-			GetVideo().VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
+			GetFrame().VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
 
 		// Don't call Spkr_Demute()
 		MB_Demute();
@@ -250,7 +250,7 @@ static void ContinueExecution(void)
 		g_dwCyclesThisFrame -= dwClksPerFrame;
 
 		if (g_bFullSpeed)
-			GetVideo().VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
+			GetFrame().VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
 		else
 			GetFrame().VideoPresentScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
 	}
@@ -974,7 +974,7 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.szScreenshotFilename)
 		{
-			GetVideo().Video_RedrawAndTakeScreenShot(g_cmdLine.szScreenshotFilename);
+			GetFrame().Video_RedrawAndTakeScreenShot(g_cmdLine.szScreenshotFilename);
 			g_cmdLine.bShutdown = true;
 		}
 

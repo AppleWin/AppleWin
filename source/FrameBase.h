@@ -33,4 +33,13 @@ public:
 	virtual void ChooseMonochromeColor(void) = 0;
 	virtual void Benchmark(void) = 0;
 	virtual void DisplayLogo(void) = 0;
+
+	void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
+	void VideoRedrawScreen(void);
+	void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
+	void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
+	void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
+private:
+	DWORD dwFullSpeedStartTime;
+
 };

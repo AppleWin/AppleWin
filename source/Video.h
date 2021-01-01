@@ -198,18 +198,8 @@ public:
 		g_videoRomRockerSwitch = false;
 	}
 
-	virtual ~Video(void)
-	{
-	}
-
 	void Initialize(uint8_t* frameBuffer); // Do not call directly. Call FrameBase::Initialize()
 	void Destroy(void); // Call FrameBase::Destroy()
-
-	void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
-	void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
-	void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
-	void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
-	void VideoRedrawScreen(void);
 
 	uint8_t* GetFrameBuffer(void) { return g_pFramebufferbits; }
 
@@ -323,8 +313,6 @@ private:
 	BYTE g_videoRom[kVideoRomSizeMax];
 	UINT g_videoRomSize;
 	bool g_videoRomRockerSwitch;
-
-	DWORD dwFullSpeedStartTime;
 
 	static const char g_aVideoChoices[];
 
