@@ -37,7 +37,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.";
 
 
-static BOOL CALLBACK DlgProcAbout(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+static INT_PTR CALLBACK DlgProcAbout(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{

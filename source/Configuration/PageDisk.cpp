@@ -46,13 +46,13 @@ const TCHAR CPageDisk::m_defaultHDDOptions[] =
 				TEXT("Select Hard Disk Image...\0")
 				TEXT("Unplug Hard Disk Image\0");
 
-BOOL CALLBACK CPageDisk::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK CPageDisk::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
 	return CPageDisk::ms_this->DlgProcInternal(hWnd, message, wparam, lparam);
 }
 
-BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{
@@ -68,11 +68,11 @@ BOOL CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM l
 				InitOptions(hWnd);
 				break;
 			case PSN_KILLACTIVE:
-				SetWindowLong(hWnd, DWL_MSGRESULT, FALSE);			// Changes are valid
+				SetWindowLongPtr(hWnd, DWLP_MSGRESULT, FALSE);			// Changes are valid
 				break;
 			case PSN_APPLY:
 				DlgOK(hWnd);
-				SetWindowLong(hWnd, DWL_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
+				SetWindowLongPtr(hWnd, DWLP_MSGRESULT, PSNRET_NOERROR);	// Changes are valid
 				break;
 			case PSN_QUERYCANCEL:
 				// Can use this to ask user to confirm cancel
