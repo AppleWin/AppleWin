@@ -12,6 +12,8 @@ FrameBase::FrameBase()
 	g_bMultiMon = 0; // OFF = load window position & clamp initial frame to screen, ON = use window position as is
 	g_bFreshReset = false;
 	g_hInstance = (HINSTANCE)0;
+	g_bDisplayPrintScreenFileName = false;
+	g_bShowPrintScreenWarningDialog = true;
 }
 
 FrameBase::~FrameBase()
@@ -77,5 +79,79 @@ void FrameBase::Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename)
 		return;
 
 	VideoRedrawScreen();
-	GetVideo().Video_SaveScreenShot(Video::SCREENSHOT_560x384, pScreenshotFilename);
+	Video_SaveScreenShot(Video::SCREENSHOT_560x384, pScreenshotFilename);
+}
+
+void FrameBase::Video_TakeScreenShot(const Video::VideoScreenShot_e ScreenShotType)
+{
+	TCHAR sScreenShotFileName[MAX_PATH];
+
+	// find last screenshot filename so we don't overwrite the existing user ones
+	bool bExists = true;
+	while (bExists)
+	{
+		if (g_nLastScreenShot > nMaxScreenShot) // Holy Crap! User has maxed the number of screenshots!?
+		{
+			TCHAR msg[512];
+			StringCbPrintf(msg, 512, "You have more then %d screenshot filenames!  They will no longer be saved.\n\nEither move some of your screenshots or increase the maximum in video.cpp\n", nMaxScreenShot);
+			MessageBox(GetFrame().g_hFrameWindow, msg, "Warning", MB_OK);
+			g_nLastScreenShot = 0;
+			return;
+		}
+
+		Util_MakeScreenShotFileName(sScreenShotFileName, MAX_PATH);
+		bExists = Util_TestScreenShotFileName(sScreenShotFileName);
+		if (!bExists)
+		{
+			break;
+		}
+		g_nLastScreenShot++;
+	}
+
+	Video_SaveScreenShot(ScreenShotType, sScreenShotFileName);
+	g_nLastScreenShot++;
+}
+
+//===========================================================================
+
+void FrameBase::Video_SaveScreenShot(const Video::VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName)
+{
+	FILE* pFile = fopen(pScreenShotFileName, "wb");
+	if (pFile)
+	{
+		GetVideo().Video_MakeScreenShot(pFile, ScreenShotType);
+		fclose(pFile);
+	}
+
+	if (g_bDisplayPrintScreenFileName)
+	{
+		MessageBox(GetFrame().g_hFrameWindow, pScreenShotFileName, "Screen Captured", MB_OK);
+	}
+}
+
+void FrameBase::Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars)
+{
+	const std::string sPrefixScreenShotFileName = "AppleWin_ScreenShot";
+	// TODO: g_sScreenshotDir
+	const std::string pPrefixFileName = !g_pLastDiskImageName.empty() ? g_pLastDiskImageName : sPrefixScreenShotFileName;
+	StringCbPrintf(pFinalFileName_, chars, TEXT("%s_%09d.bmp"), pPrefixFileName.c_str(), g_nLastScreenShot);
+}
+
+// Returns TRUE if file exists, else FALSE
+bool FrameBase::Util_TestScreenShotFileName(const TCHAR* pFileName)
+{
+	bool bFileExists = false;
+	FILE* pFile = fopen(pFileName, "rt");
+	if (pFile)
+	{
+		fclose(pFile);
+		bFileExists = true;
+	}
+	return bFileExists;
+}
+
+void FrameBase::Video_ResetScreenshotCounter(const std::string& pImageName)
+{
+	g_nLastScreenShot = 0;
+	g_pLastDiskImageName = pImageName;
 }

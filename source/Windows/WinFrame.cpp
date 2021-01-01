@@ -1185,12 +1185,12 @@ LRESULT CALLBACK FrameWndProc (
 		// lparam = modifiers: shift, ctrl, alt, win
 		if (wparam == VK_SNAPSHOT_560)
 		{
-			GetVideo().Video_TakeScreenShot( Video::SCREENSHOT_560x384 );
+			GetFrame().Video_TakeScreenShot( Video::SCREENSHOT_560x384 );
 		}
 		else
 		if (wparam == VK_SNAPSHOT_280) // ( lparam & MOD_SHIFT )
 		{
-			GetVideo().Video_TakeScreenShot( Video::SCREENSHOT_280x192 );
+			GetFrame().Video_TakeScreenShot( Video::SCREENSHOT_280x192 );
 		}
 		else
 		if (wparam == VK_SNAPSHOT_TEXT) // ( lparam & MOD_CONTROL )

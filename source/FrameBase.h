@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Video.h"
+
 class FrameBase
 {
 public:
@@ -39,7 +41,25 @@ public:
 	void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
 	void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 	void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
-private:
-	DWORD dwFullSpeedStartTime;
 
+	void Video_TakeScreenShot(const Video::VideoScreenShot_e ScreenShotType);
+	void Video_SaveScreenShot(const Video::VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName);
+	void SetDisplayPrintScreenFileName(bool state) { g_bDisplayPrintScreenFileName = state; }
+	void Video_ResetScreenshotCounter(const std::string& pDiskImageFileName);
+
+	bool GetShowPrintScreenWarningDialog(void) { return g_bShowPrintScreenWarningDialog; }
+	void SetShowPrintScreenWarningDialog(bool state) { g_bShowPrintScreenWarningDialog = state; }
+
+private:
+	void Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars);
+	bool Util_TestScreenShotFileName(const TCHAR* pFileName);
+
+	bool g_bShowPrintScreenWarningDialog;
+
+	DWORD dwFullSpeedStartTime;
+	bool g_bDisplayPrintScreenFileName;
+
+	int g_nLastScreenShot;
+	std::string g_pLastDiskImageName;
+	static const int nMaxScreenShot = 999999999;
 };

@@ -481,7 +481,7 @@ static void RegisterHotKeys(void)
 		if (!bStatus[2])
 			msg += "\n. Ctrl+PrintScreen";
 
-		if (GetVideo().GetShowPrintScreenWarningDialog())
+		if (GetFrame().GetShowPrintScreenWarningDialog())
 			SHMessageBoxCheck( GetFrame().g_hFrameWindow, msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK, MB_OK, "AppleWin-75097740-8e59-444c-bc94-2d4915132599" );
 
 		msg += "\n";

@@ -191,9 +191,6 @@ public:
 		g_eVideoStyle = VS_HALF_SCANLINES;
 		g_bVideoScannerNTSC = true;
 		g_nMonochromeRGB = RGB(0xC0,0xC0,0xC0);
-		g_bDisplayPrintScreenFileName = false;
-		g_bShowPrintScreenWarningDialog = true;
-		g_nLastScreenShot = 0;
 		g_videoRomSize = 0;
 		g_videoRomRockerSwitch = false;
 	}
@@ -234,19 +231,14 @@ public:
 	void VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
 
-	void Video_ResetScreenshotCounter(const std::string & pDiskImageFileName);
 	enum VideoScreenShot_e
 	{
 		SCREENSHOT_560x384 = 0,
 		SCREENSHOT_280x192
 	};
-	void Video_TakeScreenShot(VideoScreenShot_e ScreenShotType);
 	void Video_SetBitmapHeader(WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel);
-	void Video_SaveScreenShot(const VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName);
-	void SetDisplayPrintScreenFileName(bool state) { g_bDisplayPrintScreenFileName = state; }
 
-	bool GetShowPrintScreenWarningDialog(void) { return g_bShowPrintScreenWarningDialog; }
-	void SetShowPrintScreenWarningDialog(bool state) { g_bShowPrintScreenWarningDialog = state; }
+	void Video_MakeScreenShot(FILE* pFile, const VideoScreenShot_e ScreenShotType);
 
 	BYTE VideoSetMode(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 
@@ -282,9 +274,6 @@ protected:
 	uint8_t *g_pFramebufferbits;
 
 private:
-	void Util_MakeScreenShotFileName(TCHAR *pFinalFileName_, DWORD chars);
-	bool Util_TestScreenShotFileName(const TCHAR *pFileName);
-	void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShotType);
 
 	void SetFrameBuffer(uint8_t* frameBuffer) { g_pFramebufferbits = frameBuffer; }
 	std::string VideoGetSnapshotStructName(void);
@@ -297,13 +286,6 @@ private:
 	COLORREF g_nMonochromeRGB;	// saved to Registry
 
 	WinBmpHeader_t g_tBmpHeader;
-
-	bool g_bDisplayPrintScreenFileName;
-	bool g_bShowPrintScreenWarningDialog;
-
-	int g_nLastScreenShot;
-	static const int nMaxScreenShot = 999999999;
-	std::string g_pLastDiskImageName;
 
 	static const int kVDisplayableScanLines = 192; // max displayable scanlines
 
