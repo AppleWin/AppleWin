@@ -1,4 +1,5 @@
 #include "StdAfx.h"
+#include "frontends/common2/resources.h"
 
 #include <sys/stat.h>
 #include <fcntl.h>
