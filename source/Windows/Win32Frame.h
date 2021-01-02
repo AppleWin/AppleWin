@@ -35,8 +35,6 @@ private:
 	bool DDInit(void);
 	void DDUninit(void);
 
-	uint8_t* g_pFramebufferbits;
-
 	COLORREF      customcolors[256];	// MONOCHROME is last custom color
 	HBITMAP       g_hLogoBitmap;
 	HBITMAP       g_hDeviceBitmap;

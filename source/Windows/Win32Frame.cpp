@@ -19,6 +19,9 @@ Win32Frame::Win32Frame()
 	g_pFramebufferinfo = NULL;
 	num_draw_devices = 0;
 	g_lpDD = NULL;
+	g_hLogoBitmap = (HBITMAP)0;
+	g_hDeviceBitmap = (HBITMAP)0;
+	g_hDeviceDC = (HDC)0;
 }
 
 void Win32Frame::videoCreateDIBSection(Video & video)
@@ -36,13 +39,16 @@ void Win32Frame::videoCreateDIBSection(Video & video)
 	if (g_hDeviceBitmap)
 		DeleteObject(g_hDeviceBitmap);
 
+	uint8_t* pFramebufferbits;
+
 	g_hDeviceBitmap = CreateDIBSection(
 		dc,
 		g_pFramebufferinfo,
 		DIB_RGB_COLORS,
-		(LPVOID*)&g_pFramebufferbits, 0, 0
+		(LPVOID*)&pFramebufferbits, 0, 0
 	);
 	SelectObject(g_hDeviceDC, g_hDeviceBitmap);
+	video.Initialize(pFramebufferbits);
 }
 
 void Win32Frame::Initialize(void)
@@ -65,7 +71,6 @@ void Win32Frame::Initialize(void)
 	g_pFramebufferinfo->bmiHeader.biClrUsed = 0;
 
 	videoCreateDIBSection(video);
-	video.Initialize(g_pFramebufferbits);
 
 #if 0
 	DDInit();	// For WaitForVerticalBlank()
