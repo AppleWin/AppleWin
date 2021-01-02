@@ -18,14 +18,14 @@ public:
 	}
 	virtual ~CPageAdvanced(){}
 
-	static BOOL CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
 	UINT GetTheFreezesF8Rom(void){ return m_uTheFreezesF8Rom; }
 	void SetTheFreezesF8Rom(UINT uValue){ m_uTheFreezesF8Rom = uValue; }
 
 protected:
 	// IPropertySheetPage
-	virtual BOOL DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	virtual INT_PTR DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	virtual void DlgOK(HWND hWnd);
 	virtual void DlgCANCEL(HWND hWnd){}
 

@@ -57,13 +57,13 @@ uilib_dialog_group CPageConfigTfe::ms_rightgroup[] =
 	{0, 0}
 };
 
-BOOL CALLBACK CPageConfigTfe::DlgProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK CPageConfigTfe::DlgProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
 	return CPageConfigTfe::ms_this->DlgProcInternal(hwnd, msg, wparam, lparam);
 }
 
-BOOL CPageConfigTfe::DlgProcInternal(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+INT_PTR CPageConfigTfe::DlgProcInternal(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	switch (msg)
 	{
