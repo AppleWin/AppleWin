@@ -321,9 +321,8 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
         // be careful QRgb is opposite way round to COLORREF
         video.SetMonochromeRGB(RGB(color.red(), color.green(), color.blue()));
 
+        video.VideoReinitialize(false);
         video.Config_Save_Video();
-        video.VideoReinitialize();
-        video.VideoRedrawScreen();
     }
 
 }

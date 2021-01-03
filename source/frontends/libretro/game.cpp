@@ -287,9 +287,8 @@ void Game::keyboardEmulation()
     {
       video.IncVideoType();
 
+      video.VideoReinitialize(false);
       video.Config_Save_Video();
-      video.VideoReinitialize();
-      video.VideoRedrawScreen();
       updateWindowTitle();
     }
     if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_L))
@@ -299,9 +298,8 @@ void Game::keyboardEmulation()
 
       video.SetVideoStyle(videoStyle);
 
+      video.VideoReinitialize(false);
       video.Config_Save_Video();
-      video.VideoReinitialize();
-      video.VideoRedrawScreen();
       updateWindowTitle();
     }
     if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_START))

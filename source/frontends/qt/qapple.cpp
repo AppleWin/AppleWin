@@ -108,8 +108,7 @@ namespace
         MB_Initialize();
         SpkrInitialize();
         MemInitialize();
-        GetVideo().Initialize();
-        VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
+        GetFrame().Initialize();
 
         emulator->loadVideoSettings();
         emulator->displayLogo();
@@ -574,9 +573,8 @@ void QApple::on_actionNext_video_mode_triggered()
     GetAppleWindowTitle();
     myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
 
+    video.VideoReinitialize(false);
     video.Config_Save_Video();
-    video.VideoReinitialize();
-    video.VideoRedrawScreen();
 }
 
 void QApple::loadStateFile(const QString & filename)

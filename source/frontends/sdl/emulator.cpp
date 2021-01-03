@@ -38,9 +38,8 @@ namespace
     Video & video = GetVideo();
     video.IncVideoType();
 
+    video.VideoReinitialize(false);
     video.Config_Save_Video();
-    video.VideoReinitialize();
-    video.VideoRedrawScreen();
 
     updateWindowTitle(win);
   }
@@ -54,9 +53,8 @@ namespace
 
     video.SetVideoStyle(videoStyle);
 
+    video.VideoReinitialize(false);
     video.Config_Save_Video();
-    video.VideoReinitialize();
-    video.VideoRedrawScreen();
 
     updateWindowTitle(win);
   }

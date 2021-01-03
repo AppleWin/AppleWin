@@ -81,8 +81,7 @@ void initialiseEmulator()
   SpkrInitialize();
 
   MemInitialize();
-  GetVideo().Initialize();
-  VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
+  GetFrame().Initialize();
 
   GetCardMgr().GetDisk2CardMgr().Reset();
   HD_Reset();

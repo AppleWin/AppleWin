@@ -59,7 +59,6 @@ add_library(appleii SHARED
   linux/version.cpp
   linux/registry.cpp
   linux/keyboard.cpp
-  linux/linuxvideo.cpp
   linux/linuxframe.cpp
 
   linux/duplicates/Debug.cpp

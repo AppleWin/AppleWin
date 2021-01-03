@@ -3,7 +3,6 @@
 #include "Interface.h"
 #include "linux/duplicates/PropertySheet.h"
 #include "linux/linuxframe.h"
-#include "linux/linuxvideo.h"
 
 IPropertySheet& GetPropertySheet()
 {
@@ -19,6 +18,6 @@ FrameBase& GetFrame()
 
 Video& GetVideo()
 {
-  static LinuxVideo sg_LinuxVideo;
-  return sg_LinuxVideo;
+  static Video sg_Video;
+  return sg_Video;
 }
