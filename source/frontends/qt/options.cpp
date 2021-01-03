@@ -323,7 +323,7 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
 
         video.Config_Save_Video();
         video.VideoReinitialize();
-        GetFrame().VideoRedrawScreen();
+        video.VideoRedrawScreen();
     }
 
 }

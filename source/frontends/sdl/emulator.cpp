@@ -40,7 +40,7 @@ namespace
 
     video.Config_Save_Video();
     video.VideoReinitialize();
-    GetFrame().VideoRedrawScreen();
+    video.VideoRedrawScreen();
 
     updateWindowTitle(win);
   }
@@ -56,7 +56,7 @@ namespace
 
     video.Config_Save_Video();
     video.VideoReinitialize();
-    GetFrame().VideoRedrawScreen();
+    video.VideoRedrawScreen();
 
     updateWindowTitle(win);
   }

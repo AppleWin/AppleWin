@@ -576,7 +576,7 @@ void QApple::on_actionNext_video_mode_triggered()
 
     video.Config_Save_Video();
     video.VideoReinitialize();
-    GetFrame().VideoRedrawScreen();
+    video.VideoRedrawScreen();
 }
 
 void QApple::loadStateFile(const QString & filename)

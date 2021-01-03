@@ -17,33 +17,34 @@
 #ifndef _WINDEF_
 #define _WINDEF_
 
+#include <cstdint>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef BASETYPES
 #define BASETYPES
-typedef unsigned /*long*/int ULONG;
+typedef uint32_t ULONG;  // 32 bit long in VS
 typedef ULONG *PULONG;
-typedef unsigned short USHORT;
-typedef USHORT *PUSHORT;
+typedef uint16_t USHORT;
 typedef unsigned char UCHAR;
-typedef UCHAR *PUCHAR;
 typedef char *PSZ;
 #endif  /* !BASETYPES */
 
+typedef int16_t INT16;
+typedef uint16_t UINT16;
 
-typedef signed short INT16;		// why there was char instead of short? --bb ??????????????????
-typedef unsigned short UINT16;		// why there was char instead of short? --bb ??????????????????? 0_0
 #define __int64 long long
 
-typedef unsigned __int64 UINT_PTR, *PUINT_PTR;
+typedef intptr_t INT_PTR;
+typedef uintptr_t UINT_PTR;
+
 typedef long long LONGLONG;
 
-typedef unsigned int UINT32;
-typedef unsigned char UINT8;
-typedef int INT32;
-//#define __stdcall _cdecl
+typedef uint32_t UINT32;
+typedef uint8_t UINT8;
+typedef int32_t INT32;
 
 
 #define MAX_PATH          260
@@ -96,29 +97,24 @@ typedef int INT32;
 #define CONST               const
 #endif
 
-typedef unsigned /*long*/int       DWORD;
-typedef int                 BOOL;
+typedef uint32_t            DWORD;
+typedef int32_t             BOOL;
 typedef unsigned char       BYTE;
-typedef unsigned short      WORD;
+typedef uint16_t            WORD;
 typedef float               FLOAT;
-typedef FLOAT               *PFLOAT;
 typedef BOOL near           *PBOOL;
 typedef BOOL far            *LPBOOL;
 typedef BYTE near           *PBYTE;
 typedef BYTE far            *LPBYTE;
-typedef int near            *PINT;
-typedef int far             *LPINT;
 typedef WORD near           *PWORD;
 typedef WORD far            *LPWORD;
-typedef long far            *LPLONG;
 typedef DWORD near          *PDWORD;
 typedef DWORD far           *LPDWORD;
 typedef void far            *LPVOID;
 typedef CONST void far      *LPCVOID;
 
-typedef int                 INT;
-typedef unsigned int        UINT;
-typedef unsigned int        *PUINT;
+typedef int32_t             INT;
+typedef uint32_t            UINT;
 
 #define MAKEWORD(a, b)      ((WORD)(((BYTE)(a)) | ((WORD)((BYTE)(b))) << 8))
 #define MAKELONG(a, b)      ((LONG)(((WORD)(a)) | ((DWORD)((WORD)(b))) << 16))
@@ -132,24 +128,22 @@ typedef DWORD   *LPCOLORREF;
 
 
 ////////////////////////// WINNT ///////////////////////////////
-#ifndef VOID
 #define VOID void
 typedef char CHAR;
 typedef short SHORT;
-typedef /*long*/int LONG;
+typedef int32_t /*long*/ LONG;
 typedef SHORT *PSHORT;
 typedef LONG *PLONG;
 typedef wchar_t WCHAR;
-#endif
 
 typedef LONG            HRESULT;
-typedef long            LONG_PTR;
-typedef unsigned long   ULONG_PTR;
+typedef intptr_t        LONG_PTR;
+typedef uintptr_t       ULONG_PTR;
 typedef LONG_PTR        LRESULT;
 
 typedef DWORD           LCID,       *PLCID;
 
-typedef unsigned __int64 UINT64, *PUINT64;
+typedef uint64_t UINT64, *PUINT64;
 
 //
 // ANSI (Multi-byte Character) types
