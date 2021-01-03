@@ -46,7 +46,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
-#include "Windows/WinVideo.h"
 #include "Windows/Win32Frame.h"
 #include "Windows/WinFrame.h"
 #include "RGBMonitor.h"
@@ -172,7 +171,7 @@ static void ContinueExecution(void)
 	if (g_bFullSpeed)
 	{
 		if (!bWasFullSpeed)
-			GetVideo().VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
+			GetFrame().VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
 
 		// Don't call Spkr_Mute() - will get speaker clicks
 		MB_Mute();
@@ -190,7 +189,7 @@ static void ContinueExecution(void)
 	else
 	{
 		if (bWasFullSpeed)
-			GetVideo().VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
+			GetFrame().VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
 
 		// Don't call Spkr_Demute()
 		MB_Demute();
@@ -251,9 +250,9 @@ static void ContinueExecution(void)
 		g_dwCyclesThisFrame -= dwClksPerFrame;
 
 		if (g_bFullSpeed)
-			GetVideo().VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
+			GetFrame().VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
 		else
-			GetVideo().VideoPresentScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
+			GetFrame().VideoPresentScreen(); // Just copy the output of our Apple framebuffer to the system Back Buffer
 	}
 
 #ifdef LOG_PERF_TIMINGS
@@ -482,7 +481,7 @@ static void RegisterHotKeys(void)
 		if (!bStatus[2])
 			msg += "\n. Ctrl+PrintScreen";
 
-		if (GetVideo().GetShowPrintScreenWarningDialog())
+		if (GetFrame().GetShowPrintScreenWarningDialog())
 			SHMessageBoxCheck( GetFrame().g_hFrameWindow, msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK, MB_OK, "AppleWin-75097740-8e59-444c-bc94-2d4915132599" );
 
 		msg += "\n";
@@ -840,7 +839,7 @@ static void RepeatInitialization(void)
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
-		GetVideo().Initialize(); // g_pFramebufferinfo been created now & COM init'ed
+		GetFrame().Initialize(); // g_pFramebufferinfo been created now & COM init'ed
 		LogFileOutput("Main: VideoInitialize()\n");
 
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");
@@ -975,7 +974,7 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.szScreenshotFilename)
 		{
-			GetVideo().Video_RedrawAndTakeScreenShot(g_cmdLine.szScreenshotFilename);
+			GetFrame().Video_RedrawAndTakeScreenShot(g_cmdLine.szScreenshotFilename);
 			g_cmdLine.bShutdown = true;
 		}
 
@@ -1058,6 +1057,6 @@ FrameBase& GetFrame(void)
 
 Video& GetVideo(void)
 {
-	static WinVideo video;
+	static Video video;
 	return video;
 }

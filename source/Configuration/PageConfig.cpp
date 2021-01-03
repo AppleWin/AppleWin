@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Windows/WinFrame.h"
 #include "../Registry.h"
 #include "../SerialComms.h"
-#include "../Windows/WinVideo.h"
 #include "../resource/resource.h"
 
 CPageConfig* CPageConfig::ms_this = 0;	// reinit'd in ctor
@@ -116,7 +115,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			break;
 
 		case IDC_MONOCOLOR:
-			GetVideo().ChooseMonochromeColor();
+			GetFrame().ChooseMonochromeColor();
 			break;
 
 		case IDC_CHECK_CONFIRM_REBOOT:
@@ -318,7 +317,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 		GetVideo().VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
-			GetVideo().VideoRedrawScreen();
+			GetFrame().VideoRedrawScreen();
 		}
 	}
 

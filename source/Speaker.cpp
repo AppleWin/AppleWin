@@ -97,7 +97,7 @@ static void    Spkr_DSUninit();
 static void DisplayBenchmarkResults ()
 {
   DWORD totaltime = GetTickCount()-extbench;
-  GetVideo().VideoRedrawScreen();
+  GetFrame().VideoRedrawScreen();
   TCHAR buffer[64];
   wsprintf(buffer,
            TEXT("This benchmark took %u.%02u seconds."),

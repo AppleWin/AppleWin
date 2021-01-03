@@ -319,7 +319,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-printscreen") == 0)		// Turn on display of the last filename print screen was saved to
 		{
-			GetVideo().SetDisplayPrintScreenFileName(true);
+			GetFrame().SetDisplayPrintScreenFileName(true);
 		}
 		else if (strcmp(lpCmdLine, "-no-printscreen-key") == 0)		// Don't try to capture PrintScreen key GH#469
 		{
@@ -327,7 +327,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-no-printscreen-dlg") == 0)		// Turn off the PrintScreen warning message dialog (if PrintScreen key can't be grabbed)
 		{
-			GetVideo().SetShowPrintScreenWarningDialog(false);
+			GetFrame().SetShowPrintScreenWarningDialog(false);
 		}
 		else if (strcmp(lpCmdLine, "-no-hook-system-key") == 0)		// Don't hook the System keys (eg. Left-ALT+ESC/SPACE/TAB) GH#556
 		{

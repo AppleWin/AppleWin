@@ -191,38 +191,14 @@ public:
 		g_eVideoStyle = VS_HALF_SCANLINES;
 		g_bVideoScannerNTSC = true;
 		g_nMonochromeRGB = RGB(0xC0,0xC0,0xC0);
-		g_bDisplayPrintScreenFileName = false;
-		g_bShowPrintScreenWarningDialog = true;
-		g_nLastScreenShot = 0;
 		g_videoRomSize = 0;
 		g_videoRomRockerSwitch = false;
 	}
 
-	virtual ~Video(void)
-	{
-	}
-
-	virtual void Initialize(void)
-	{
-	}
-
-	virtual void Destroy(void)
-	{
-	}
-
-	virtual void VideoPresentScreen(void) = 0;
-	virtual void ChooseMonochromeColor(void) = 0;
-	virtual void Benchmark(void) = 0;
-	virtual void DisplayLogo(void) = 0;
-
-	void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
-	void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
-	void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
-	void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
-	void VideoRedrawScreen(void);
+	void Initialize(uint8_t* frameBuffer); // Do not call directly. Call FrameBase::Initialize()
+	void Destroy(void); // Call FrameBase::Destroy()
 
 	uint8_t* GetFrameBuffer(void) { return g_pFramebufferbits; }
-	void SetFrameBuffer(uint8_t* frameBuffer) { g_pFramebufferbits = frameBuffer; }
 
 	// size of the video buffer stored in g_pFramebufferbits
 	UINT GetFrameBufferBorderlessWidth(void);
@@ -237,6 +213,7 @@ public:
 
 	void VideoReinitialize(bool bInitVideoScannerAddress = true);
 	void VideoResetState(void);
+	void VideoRefreshBuffer(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
 
 	enum VideoScanner_e {VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH};
 	WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr = VS_FullAddr);
@@ -255,19 +232,14 @@ public:
 	void VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
 
-	void Video_ResetScreenshotCounter(const std::string & pDiskImageFileName);
 	enum VideoScreenShot_e
 	{
 		SCREENSHOT_560x384 = 0,
 		SCREENSHOT_280x192
 	};
-	void Video_TakeScreenShot(VideoScreenShot_e ScreenShotType);
 	void Video_SetBitmapHeader(WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel);
-	void Video_SaveScreenShot(const VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName);
-	void SetDisplayPrintScreenFileName(bool state) { g_bDisplayPrintScreenFileName = state; }
 
-	bool GetShowPrintScreenWarningDialog(void) { return g_bShowPrintScreenWarningDialog; }
-	void SetShowPrintScreenWarningDialog(bool state) { g_bShowPrintScreenWarningDialog = state; }
+	void Video_MakeScreenShot(FILE* pFile, const VideoScreenShot_e ScreenShotType);
 
 	BYTE VideoSetMode(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 
@@ -303,10 +275,8 @@ protected:
 	uint8_t *g_pFramebufferbits;
 
 private:
-	void Util_MakeScreenShotFileName(TCHAR *pFinalFileName_, DWORD chars);
-	bool Util_TestScreenShotFileName(const TCHAR *pFileName);
-	void Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShotType);
 
+	void SetFrameBuffer(uint8_t* frameBuffer) { g_pFramebufferbits = frameBuffer; }
 	std::string VideoGetSnapshotStructName(void);
 
 	int g_nAltCharSetOffset;
@@ -318,13 +288,6 @@ private:
 
 	WinBmpHeader_t g_tBmpHeader;
 
-	bool g_bDisplayPrintScreenFileName;
-	bool g_bShowPrintScreenWarningDialog;
-
-	int g_nLastScreenShot;
-	static const int nMaxScreenShot = 999999999;
-	std::string g_pLastDiskImageName;
-
 	static const int kVDisplayableScanLines = 192; // max displayable scanlines
 
 	static const UINT kVideoRomSize8K = kVideoRomSize4K*2;
@@ -333,8 +296,6 @@ private:
 	BYTE g_videoRom[kVideoRomSizeMax];
 	UINT g_videoRomSize;
 	bool g_videoRomRockerSwitch;
-
-	DWORD dwFullSpeedStartTime;
 
 	static const char g_aVideoChoices[];
 

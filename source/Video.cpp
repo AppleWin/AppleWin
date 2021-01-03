@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Video.h"
 #include "Core.h"
 #include "CPU.h"
-#include "Interface.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Registry.h"
@@ -437,65 +436,6 @@ bool Video::VideoGetVblBar(const DWORD uExecutedCycles)
 
 //===========================================================================
 
-void Video::Video_ResetScreenshotCounter(const std::string& pImageName)
-{
-	g_nLastScreenShot = 0;
-	g_pLastDiskImageName = pImageName;
-}
-
-void Video::Util_MakeScreenShotFileName(TCHAR *pFinalFileName_, DWORD chars)
-{
-	const std::string sPrefixScreenShotFileName = "AppleWin_ScreenShot";
-	// TODO: g_sScreenshotDir
-	const std::string pPrefixFileName = !g_pLastDiskImageName.empty() ? g_pLastDiskImageName : sPrefixScreenShotFileName;
-	StringCbPrintf( pFinalFileName_, chars, TEXT("%s_%09d.bmp"), pPrefixFileName.c_str(), g_nLastScreenShot );
-}
-
-// Returns TRUE if file exists, else FALSE
-bool Video::Util_TestScreenShotFileName(const TCHAR *pFileName)
-{
-	bool bFileExists = false;
-	FILE *pFile = fopen( pFileName, "rt" );
-	if (pFile)
-	{
-		fclose( pFile );
-		bFileExists = true;
-	}
-	return bFileExists;
-}
-
-//===========================================================================
-
-void Video::Video_TakeScreenShot(const VideoScreenShot_e ScreenShotType)
-{
-	TCHAR sScreenShotFileName[ MAX_PATH ];
-
-	// find last screenshot filename so we don't overwrite the existing user ones
-	bool bExists = true;
-	while( bExists )
-	{
-		if (g_nLastScreenShot > nMaxScreenShot) // Holy Crap! User has maxed the number of screenshots!?
-		{
-			TCHAR msg[512];
-			StringCbPrintf( msg, 512, "You have more then %d screenshot filenames!  They will no longer be saved.\n\nEither move some of your screenshots or increase the maximum in video.cpp\n", nMaxScreenShot );
-			MessageBox( GetFrame().g_hFrameWindow, msg, "Warning", MB_OK );
-			g_nLastScreenShot = 0;
-			return;
-		}
-
-		Util_MakeScreenShotFileName(sScreenShotFileName, MAX_PATH);
-		bExists = Util_TestScreenShotFileName(sScreenShotFileName);
-		if( !bExists )
-		{
-			break;
-		}
-		g_nLastScreenShot++;
-	}
-
-	Video_SaveScreenShot(ScreenShotType, sScreenShotFileName);
-	g_nLastScreenShot++;
-}
-
 void Video::Video_SetBitmapHeader(WinBmpHeader_t *pBmp, int nWidth, int nHeight, int nBitsPerPixel)
 {
 	pBmp->nCookie[ 0 ]     = 'B'; // 0x42
@@ -598,23 +538,6 @@ void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 			fwrite( pSrc, sizeof(uint32_t), GetFrameBufferBorderlessWidth(), pFile );
 			pSrc += GetFrameBufferWidth();
 		}
-	}
-}
-
-//===========================================================================
-
-void Video::Video_SaveScreenShot(const VideoScreenShot_e ScreenShotType, const TCHAR *pScreenShotFileName)
-{
-	FILE *pFile = fopen( pScreenShotFileName, "wb" );
-	if( pFile )
-	{
-		Video_MakeScreenShot( pFile, ScreenShotType );
-		fclose( pFile );
-	}
-
-	if( g_bDisplayPrintScreenFileName )
-	{
-		MessageBox( GetFrame().g_hFrameWindow, pScreenShotFileName, "Screen Captured", MB_OK );
 	}
 }
 
@@ -831,41 +754,32 @@ const char* Video::VideoGetAppWindowTitle(void)
 		return apVideoMonitorModeDesc[ GetVideoRefreshRate() == VR_60HZ ? 0 : 1 ];	// NTSC or PAL
 }
 
-void Video::VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=false*/)
+
+void Video::Initialize(uint8_t* frameBuffer)
 {
-	if (bInit)
-	{
-		// Just entered full-speed mode
-		dwFullSpeedStartTime = GetTickCount();
-		return;
-	}
+	SetFrameBuffer(frameBuffer);
 
-	DWORD dwFullSpeedDuration = GetTickCount() - dwFullSpeedStartTime;
-	if (dwFullSpeedDuration <= 16)	// Only update after every realtime ~17ms of *continuous* full-speed
-		return;
+	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
+	VideoResetState();
 
-	dwFullSpeedStartTime += dwFullSpeedDuration;
+	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
+	memset(GetFrameBuffer(), 0, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
 
-	VideoRedrawScreenAfterFullSpeed(dwCyclesThisFrame);
+	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
+	NTSC_VideoInit(GetFrameBuffer());
+
+#if 0
+	DDInit();	// For WaitForVerticalBlank()
+#endif
 }
 
-void Video::VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
+void Video::Destroy(void)
 {
-	NTSC_VideoClockResync(dwCyclesThisFrame);
-	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
+	SetFrameBuffer(NULL);
+	NTSC_Destroy();
 }
 
-void Video::Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename)
-{
-	_ASSERT(pScreenshotFilename);
-	if (!pScreenshotFilename)
-		return;
-
-	VideoRedrawScreen();
-	Video_SaveScreenShot(SCREENSHOT_560x384, pScreenshotFilename);
-}
-
-void Video::VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen)
+void Video::VideoRefreshBuffer(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen)
 {
 	if (bRedrawWholeScreen || g_nAppMode == MODE_PAUSED)
 	{
@@ -881,12 +795,4 @@ void Video::VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedra
 		if (g_nAppMode == MODE_DEBUG || g_nAppMode == MODE_PAUSED)
 			NTSC_VideoRedrawWholeScreen();
 	}
-
-	VideoPresentScreen();
-}
-
-void Video::VideoRedrawScreen(void)
-{
-	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
-	VideoRefreshScreen(GetVideoMode(), true);
 }
