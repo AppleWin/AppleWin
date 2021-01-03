@@ -71,6 +71,15 @@ namespace
     {
       return false;
     }
+    case KEY_F(5):
+    {
+      CardManager & cardManager = GetCardMgr();
+      if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
+      {
+	dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6))->DriveSwap();
+      }
+      break;
+    }
     case KEY_F(11):
     {
       Snapshot_SaveState();
