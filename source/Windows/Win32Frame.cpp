@@ -85,8 +85,10 @@ void Win32Frame::Destroy(void)
 
 	// DESTROY FRAME BUFFER
 	DeleteDC(g_hDeviceDC);
-	DeleteObject(g_hDeviceBitmap);
 	g_hDeviceDC = (HDC)0;
+
+	DeleteObject(g_hDeviceBitmap);	// this invalidates the Video's FrameBuffer pointer
+	GetVideo().Destroy(); // this resets the Video's FrameBuffer pointer
 	g_hDeviceBitmap = (HBITMAP)0;
 
 	// DESTROY LOGO
@@ -96,8 +98,6 @@ void Win32Frame::Destroy(void)
 	}
 
 	DDUninit();
-
-	GetVideo().Destroy();
 }
 
 //===========================================================================
