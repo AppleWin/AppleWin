@@ -351,7 +351,7 @@ void Disk2InterfaceCard::EjectDisk(const int drive)
 	Snapshot_UpdatePath();
 
 	SaveLastDiskImage(drive);
-	GetVideo().Video_ResetScreenshotCounter("");
+	GetFrame().Video_ResetScreenshotCounter("");
 }
 
 void Disk2InterfaceCard::UnplugDrive(const int drive)
@@ -709,14 +709,14 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 		GetImageTitle(pszImageFilename, pFloppy->m_imagename, pFloppy->m_fullname);
 		Snapshot_UpdatePath();
 
-		GetVideo().Video_ResetScreenshotCounter(pFloppy->m_imagename);
+		GetFrame().Video_ResetScreenshotCounter(pFloppy->m_imagename);
 
 		if (g_nAppMode == MODE_LOGO)
 			InitFirmware(GetCxRomPeripheral());
 	}
 	else
 	{
-		GetVideo().Video_ResetScreenshotCounter("");
+		GetFrame().Video_ResetScreenshotCounter("");
 	}
 
 	SaveLastDiskImage(drive);

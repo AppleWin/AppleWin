@@ -101,10 +101,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#define VIDEO_SCANNER_Y_MIXED   160 // num scanlins for mixed graphics + text
 	#define VIDEO_SCANNER_Y_DISPLAY 192 // max displayable scanlines
 
-	static bgra_t *g_pVideoAddress = 0;
+	// these are initialized in NTSC_VideoInit
+	static bgra_t* g_pVideoAddress = 0;
 	static bgra_t *g_pScanLines[VIDEO_SCANNER_Y_DISPLAY*2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
-
-	static const UINT g_kFrameBufferWidth = GetVideo().GetFrameBufferWidth();
+	static UINT g_kFrameBufferWidth;
 
 	static unsigned short (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
 
@@ -2090,6 +2090,8 @@ void NTSC_Destroy(void)
 	// After a VM restart, this will point to an old FrameBuffer
 	// - if it's now unmapped then this can cause a crash in NTSC_SetVideoMode()!
 	g_pVideoAddress = 0;
+	g_kFrameBufferWidth = 0;
+	memset(g_pScanLines, 0, sizeof(g_pScanLines));
 }
 
 void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
@@ -2099,6 +2101,8 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	initPixelDoubleMasks();
 	initChromaPhaseTables();
 	updateMonochromeTables( 0xFF, 0xFF, 0xFF );
+
+	g_kFrameBufferWidth = GetVideo().GetFrameBufferWidth();
 
 	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
 	{

@@ -1001,14 +1001,6 @@
 					RelativePath=".\source\Windows\WinFrame.h"
 					>
 				</File>
-				<File
-					RelativePath=".\source\Windows\WinVideo.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Windows\WinVideo.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="Configuration"

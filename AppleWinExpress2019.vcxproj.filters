@@ -199,9 +199,6 @@
     <ClCompile Include="source\Windows\DirectInput.cpp">
       <Filter>Source Files\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="source\Windows\WinVideo.cpp">
-      <Filter>Source Files\Windows</Filter>
-    </ClCompile>
     <ClCompile Include="source\Windows\WinFrame.cpp">
       <Filter>Source Files\Windows</Filter>
     </ClCompile>
@@ -502,9 +499,6 @@
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
     <ClInclude Include="source\Windows\DirectInput.h">
-      <Filter>Source Files\Windows</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Windows\WinVideo.h">
       <Filter>Source Files\Windows</Filter>
     </ClInclude>
     <ClInclude Include="source\Windows\WinFrame.h">

@@ -36,7 +36,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Pravets.h"
 #include "Tape.h"
 #include "YamlHelper.h"
-#include "Windows/WinVideo.h" // Needed by TK3000 //e, to refresh the frame at each |Mode| change
 #include "Log.h"
 
 static BYTE asciicode[2][10] = {
@@ -303,7 +302,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 			{
 				g_bTK3KModeKey = (GetKeyState(VK_SCROLL) & 1) ? true : false;	// Sync with the Scroll Lock status
 				GetFrame().FrameRefreshStatus(DRAW_LEDS);	// TODO: Implement |Mode| LED in the UI; make it appear only when in TK3000 mode
-				GetVideo().VideoRedrawScreen();	// TODO: Still need to implement page mode switching and 'whatnot'
+				GetFrame().VideoRedrawScreen();	// TODO: Still need to implement page mode switching and 'whatnot'
 			}
 			return;
 		}
