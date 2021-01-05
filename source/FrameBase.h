@@ -18,8 +18,9 @@ public:
 	virtual void Initialize(void) = 0;
 	virtual void Destroy(void) = 0;
 
-	virtual void FrameDrawDiskLEDS(HDC hdc) = 0;
-	virtual void FrameDrawDiskStatus(HDC hdc) = 0;
+	virtual void FrameDrawDiskLEDS() = 0;
+	virtual void FrameDrawDiskStatus() = 0;
+
 	virtual void FrameRefreshStatus(int, bool bUpdateDiskStatus = true) = 0;
 	virtual void FrameUpdateApple2Type() = 0;
 	virtual void FrameSetCursorPosByMousePos() = 0;

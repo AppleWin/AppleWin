@@ -9,8 +9,12 @@ class Win32Frame : public FrameBase
 public:
 	Win32Frame();
 
-	virtual void FrameDrawDiskLEDS(HDC hdc);
-	virtual void FrameDrawDiskStatus(HDC hdc);
+	void FrameDrawDiskLEDS(HDC hdc);  // overloaded Win32 only, call via GetWin32Frame()
+	virtual void FrameDrawDiskLEDS();
+
+	void FrameDrawDiskStatus(HDC hdc);  // overloaded Win32 only, call via GetWin32Frame()
+	virtual void FrameDrawDiskStatus();
+
 	virtual void FrameRefreshStatus(int, bool bUpdateDiskStatus = true);
 	virtual void FrameUpdateApple2Type();
 	virtual void FrameSetCursorPosByMousePos();
@@ -28,6 +32,9 @@ public:
 	virtual void ChooseMonochromeColor(void);
 	virtual void Benchmark(void);
 	virtual void DisplayLogo(void);
+
+	static Win32Frame& GetWin32Frame();
+
 private:
 	void videoCreateDIBSection(Video& video);
 	void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);

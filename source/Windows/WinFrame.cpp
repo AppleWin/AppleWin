@@ -615,6 +615,11 @@ void Win32Frame::SetFullScreenShowSubunitStatus(bool bShow)
 	g_bFullScreen_ShowSubunitStatus = bShow;
 }
 
+void Win32Frame::FrameDrawDiskLEDS()
+{
+	FrameDrawDiskLEDS((HDC)0);
+}
+
 //===========================================================================
 void Win32Frame::FrameDrawDiskLEDS( HDC passdc )
 {
@@ -665,6 +670,11 @@ void Win32Frame::FrameDrawDiskLEDS( HDC passdc )
 		DrawBitmapRect(dc,x+12,y+6,&rDiskLed,g_hDiskWindowedLED[g_eStatusDrive1]);
 		DrawBitmapRect(dc,x+31,y+6,&rDiskLed,g_hDiskWindowedLED[g_eStatusDrive2]);
 	}
+}
+
+void Win32Frame::FrameDrawDiskStatus()
+{
+	FrameDrawDiskStatus((HDC)0);
 }
 
 // Feature Request #201 Show track status
@@ -859,7 +869,9 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 			SelectObject(dc,smallfont);
 
 			if (drawflags & DRAW_DISK_STATUS)
-				GetFrame().FrameDrawDiskStatus( dc );
+			{
+				Win32Frame::GetWin32Frame().FrameDrawDiskStatus(dc);
+			}
 
 #if HD_LED
 			SetTextAlign(dc, TA_RIGHT | TA_TOP);
@@ -926,10 +938,11 @@ static void DrawStatusArea (HDC passdc, int drawflags)
 
 		if (drawflags & DRAW_LEDS)
 		{
-			GetFrame().FrameDrawDiskLEDS( dc );
+			Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
+			win32Frame.FrameDrawDiskLEDS( dc );
 
 			if (drawflags & DRAW_DISK_STATUS)
-				GetFrame().FrameDrawDiskStatus( dc );
+				win32Frame.FrameDrawDiskStatus( dc );
 
 			if (!IS_APPLE2)
 			{
