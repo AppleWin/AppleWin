@@ -313,7 +313,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 	{
 		GetVideo().Config_Save_Video();
 
-		GetFrame().FrameRefreshStatus(DRAW_TITLE, false);
+		GetFrame().FrameRefreshStatus(DRAW_TITLE);
 
 		GetVideo().VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))

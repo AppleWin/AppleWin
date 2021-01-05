@@ -21,7 +21,7 @@ public:
 	virtual void FrameDrawDiskLEDS() = 0;
 	virtual void FrameDrawDiskStatus() = 0;
 
-	virtual void FrameRefreshStatus(int, bool bUpdateDiskStatus = true) = 0;
+	virtual void FrameRefreshStatus(int drawflags) = 0;
 	virtual void FrameUpdateApple2Type() = 0;
 	virtual void FrameSetCursorPosByMousePos() = 0;
 

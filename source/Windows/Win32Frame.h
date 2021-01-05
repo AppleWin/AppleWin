@@ -15,7 +15,7 @@ public:
 	void FrameDrawDiskStatus(HDC hdc);  // overloaded Win32 only, call via GetWin32Frame()
 	virtual void FrameDrawDiskStatus();
 
-	virtual void FrameRefreshStatus(int, bool bUpdateDiskStatus = true);
+	virtual void FrameRefreshStatus(int drawflags);
 	virtual void FrameUpdateApple2Type();
 	virtual void FrameSetCursorPosByMousePos();
 

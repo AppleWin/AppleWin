@@ -1438,7 +1438,7 @@ LRESULT CALLBACK FrameWndProc (
 				const int iDrive = wparam - VK_F3;
 				ProcessDiskPopupMenu( window, pt, iDrive );
 
-				GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+				GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 				DrawButton((HDC)0, iButton);
 			}
 			else
@@ -1746,7 +1746,7 @@ LRESULT CALLBACK FrameWndProc (
 							ProcessDiskPopupMenu( window, pt, iDrive );
                 	}
 
-					GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+					GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 					DrawButton((HDC)0, iButton);
 				}			
 			}
@@ -2573,9 +2573,7 @@ void FrameReleaseDC () {
 }
 
 //===========================================================================
-void Win32Frame::FrameRefreshStatus (int drawflags, bool bUpdateDiskStatus) {
-	// NB. 99% of the time we draw the disk status.  On DiskDriveSwap() we don't.
- 	drawflags |= bUpdateDiskStatus ? DRAW_DISK_STATUS : 0;
+void Win32Frame::FrameRefreshStatus (int drawflags) {
 	DrawStatusArea((HDC)0,drawflags);
 }
 
