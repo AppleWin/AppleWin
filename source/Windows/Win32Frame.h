@@ -29,9 +29,9 @@ public:
 	virtual void Initialize(void);
 	virtual void Destroy(void);
 	virtual void VideoPresentScreen(void);
-	virtual void ChooseMonochromeColor(void);
-	virtual void Benchmark(void);
-	virtual void DisplayLogo(void);
+			void ChooseMonochromeColor(void);
+			void Benchmark(void);
+			void DisplayLogo(void);
 
 	static Win32Frame& GetWin32Frame();
 

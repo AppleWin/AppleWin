@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "../Windows/AppleWin.h"
 #include "../Windows/WinFrame.h"
+#include "../Windows/Win32Frame.h"
 #include "../Registry.h"
 #include "../SerialComms.h"
 #include "../resource/resource.h"
@@ -115,7 +116,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			break;
 
 		case IDC_MONOCOLOR:
-			GetFrame().ChooseMonochromeColor();
+			Win32Frame::GetWin32Frame().ChooseMonochromeColor();
 			break;
 
 		case IDC_CHECK_CONFIRM_REBOOT:

@@ -584,7 +584,7 @@ static void DrawFrameWindow (bool bPaintingWindow/*=false*/)
 
 	// DRAW THE CONTENTS OF THE EMULATED SCREEN
 	if (g_nAppMode == MODE_LOGO)
-		GetFrame().DisplayLogo();
+		Win32Frame::GetWin32Frame().DisplayLogo();
 	else if (g_nAppMode == MODE_DEBUG)
 		DebugDisplay();
 	else
@@ -1821,7 +1821,7 @@ LRESULT CALLBACK FrameWndProc (
       DrawStatusArea((HDC)0,DRAW_TITLE);
       HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
       g_nAppMode = MODE_BENCHMARK;
-      GetFrame().Benchmark();
+      Win32Frame::GetWin32Frame().Benchmark();
       g_nAppMode = MODE_LOGO;
       ResetMachineState();
       SetCursor(oldcursor);
