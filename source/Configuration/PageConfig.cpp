@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PropertySheet.h"
 
 #include "../Windows/AppleWin.h"
-#include "../Windows/WinFrame.h"
 #include "../Windows/Win32Frame.h"
 #include "../Registry.h"
 #include "../SerialComms.h"
@@ -202,7 +201,8 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 
 			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE, GetVideo().GetVideoChoices(), GetVideo().GetVideoType());
 			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, GetVideo().IsVideoStyle(VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, GetFullScreenShowSubunitStatus() ? BST_CHECKED : BST_UNCHECKED);
+			Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
+			CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, win32Frame.GetFullScreenShowSubunitStatus() ? BST_CHECKED : BST_UNCHECKED);
 
 			CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, GetVideo().IsVideoStyle(VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
 			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (GetVideo().GetVideoType() == VT_COLOR_IDEALIZED) ? TRUE : FALSE);
@@ -272,6 +272,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 void CPageConfig::DlgOK(HWND hWnd)
 {
 	bool bVideoReinit = false;
+	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
 
 	const VideoType_e newVideoType = (VideoType_e) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
 	if (GetVideo().GetVideoType() != newVideoType)
@@ -313,34 +314,35 @@ void CPageConfig::DlgOK(HWND hWnd)
 	{
 		GetVideo().Config_Save_Video();
 
-		GetFrame().FrameRefreshStatus(DRAW_TITLE);
+		win32Frame.FrameRefreshStatus(DRAW_TITLE);
 
 		GetVideo().VideoReinitialize();
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
-			GetFrame().VideoRedrawScreen();
+			win32Frame.VideoRedrawScreen();
 		}
 	}
 
 	//
 
 	const bool bNewFSSubunitStatus = IsDlgButtonChecked(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS) ? true : false;
-	if (GetFullScreenShowSubunitStatus() != bNewFSSubunitStatus)
+
+	if (win32Frame.GetFullScreenShowSubunitStatus() != bNewFSSubunitStatus)
 	{
 		REGSAVE(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), bNewFSSubunitStatus ? 1 : 0);
-		GetFrame().SetFullScreenShowSubunitStatus(bNewFSSubunitStatus);
+		win32Frame.SetFullScreenShowSubunitStatus(bNewFSSubunitStatus);
 
-		if (IsFullScreen())
-			GetFrame().FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
+		if (win32Frame.IsFullScreen())
+			win32Frame.FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
 	}
 
 	//
 
 	const BOOL bNewConfirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT) ? 1 : 0;
-	if (GetFrame().g_bConfirmReboot != bNewConfirmReboot)
+	if (win32Frame.g_bConfirmReboot != bNewConfirmReboot)
 	{
 		REGSAVE(TEXT(REGVALUE_CONFIRM_REBOOT), bNewConfirmReboot);
-		GetFrame().g_bConfirmReboot = bNewConfirmReboot;
+		win32Frame.g_bConfirmReboot = bNewConfirmReboot;
 	}
 
 	//

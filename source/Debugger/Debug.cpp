@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Memory.h"
 #include "../NTSC.h"
 #include "../SoundCore.h"	// SoundCore_SetFade()
+#include "../Windows/Win32Frame.h"
 #include "../Windows/WinFrame.h"
 
 //	#define DEBUG_COMMAND_HELP  1
@@ -9662,9 +9663,10 @@ void DebuggerMouseClick( int x, int y )
 	int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight * GetViewportScale();
 
 	// do picking
+	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
 
-	const int nOffsetX = IsFullScreen() ? GetFullScreenOffsetX() : Get3DBorderWidth();
-	const int nOffsetY = IsFullScreen() ? GetFullScreenOffsetY() : Get3DBorderHeight();
+	const int nOffsetX = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetX() : win32Frame.Get3DBorderWidth();
+	const int nOffsetY = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetY() : win32Frame.Get3DBorderHeight();
 
 	const int nOffsetInScreenX = x - nOffsetX;
 	const int nOffsetInScreenY = y - nOffsetY;
