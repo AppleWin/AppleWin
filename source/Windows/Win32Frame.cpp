@@ -517,6 +517,6 @@ void Win32Frame::DDUninit(void)
 Win32Frame& Win32Frame::GetWin32Frame()
 {
 	FrameBase& frameBase = GetFrame();
-	Win32Frame& win32Frame = static_cast<Win32Frame&>(frameBase);
+	Win32Frame& win32Frame = dynamic_cast<Win32Frame&>(frameBase);
 	return win32Frame;
 }
