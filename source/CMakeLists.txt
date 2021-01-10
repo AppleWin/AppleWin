@@ -60,13 +60,13 @@ set(SOURCE_FILES
   linux/registry.cpp
   linux/keyboard.cpp
   linux/linuxframe.cpp
+  linux/context.cpp
 
   linux/duplicates/Debug.cpp
   linux/duplicates/Joystick.cpp
   linux/duplicates/SerialComms.cpp
   linux/duplicates/PropertySheet.cpp
   linux/duplicates/Tfe.cpp
-  linux/duplicates/AppleWin.cpp
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp

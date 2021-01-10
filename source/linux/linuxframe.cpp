@@ -10,7 +10,7 @@ void LinuxFrame::FrameDrawDiskStatus()
 {
 }
 
-void LinuxFrame::FrameRefreshStatus(int drawflags)
+void LinuxFrame::FrameRefreshStatus(int /* drawflags */)
 {
 }
 
@@ -51,13 +51,13 @@ void LinuxFrame::Initialize()
 
   const size_t numberOfPixels = video.GetFrameBufferWidth() * video.GetFrameBufferHeight();
   const size_t numberOfBytes = sizeof(bgra_t) * numberOfPixels;
-  myFramebufferbits.resize(numberOfBytes);
-  video.Initialize(myFramebufferbits.data());
+  myFramebuffer.resize(numberOfBytes);
+  video.Initialize(myFramebuffer.data());
 }
 
 void LinuxFrame::Destroy()
 {
-  myFramebufferbits.clear();
+  myFramebuffer.clear();
   GetVideo().Destroy(); // this resets the Video's FrameBuffer pointer
 }
 
@@ -75,4 +75,37 @@ void LinuxFrame::Benchmark()
 
 void LinuxFrame::DisplayLogo()
 {
+}
+
+void LinuxFrame::ApplyVideoModeChange()
+{
+  // this is similar to Win32Frame::ApplyVideoModeChange
+  // but it does not refresh the screen
+  // TODO see if the screen should refresh right now
+  Video & video = GetVideo();
+
+  video.VideoReinitialize(false);
+  video.Config_Save_Video();
+
+  FrameRefreshStatus(DRAW_TITLE);
+}
+
+void LinuxFrame::CycleVideoType()
+{
+  Video & video = GetVideo();
+  video.IncVideoType();
+
+  ApplyVideoModeChange();
+}
+
+void LinuxFrame::Cycle50ScanLines()
+{
+  Video & video = GetVideo();
+
+  VideoStyle_e videoStyle = video.GetVideoStyle();
+  videoStyle = VideoStyle_e(videoStyle ^ VS_HALF_SCANLINES);
+
+  video.SetVideoStyle(videoStyle);
+
+  ApplyVideoModeChange();
 }

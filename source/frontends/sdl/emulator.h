@@ -5,20 +5,17 @@
 
 #include "frontends/common2/speed.h"
 
+class SDLFrame;
+
 class Emulator
 {
 public:
   Emulator(
-    const std::shared_ptr<SDL_Window> & window,
-    const std::shared_ptr<SDL_Renderer> & renderer,
-    const std::shared_ptr<SDL_Texture> & texture,
+    const std::shared_ptr<SDLFrame> & frame,
     const bool fixedSpeed
     );
 
   void execute(const size_t milliseconds);
-
-  void updateTexture();
-  void refreshVideo();
 
   void processEvents(bool & quit);
 
@@ -27,16 +24,10 @@ private:
   void processKeyUp(const SDL_KeyboardEvent & key);
   void processText(const SDL_TextInputEvent & text);
 
-  const std::shared_ptr<SDL_Window> myWindow;
-  const std::shared_ptr<SDL_Renderer> myRenderer;
-  const std::shared_ptr<SDL_Texture> myTexture;
+  const std::shared_ptr<SDLFrame> myFrame;
 
   int myMultiplier;
   bool myFullscreen;
 
   Speed mySpeed;
-
-  SDL_Rect myRect;
-  int myPitch;
-  uint8_t* myFrameBuffer;
 };

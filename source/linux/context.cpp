@@ -1,8 +1,15 @@
 #include "StdAfx.h"
 
+#include "linux/context.h"
+
 #include "Interface.h"
 #include "linux/duplicates/PropertySheet.h"
 #include "linux/linuxframe.h"
+
+namespace
+{
+  std::shared_ptr<FrameBase> sg_LinuxFrame;
+}
 
 IPropertySheet& GetPropertySheet()
 {
@@ -12,8 +19,12 @@ IPropertySheet& GetPropertySheet()
 
 FrameBase& GetFrame()
 {
-  static LinuxFrame sg_LinuxFrame;
-  return sg_LinuxFrame;
+  return *sg_LinuxFrame;
+}
+
+void SetFrame(const std::shared_ptr<FrameBase> & frame)
+{
+  sg_LinuxFrame = frame;
 }
 
 Video& GetVideo()

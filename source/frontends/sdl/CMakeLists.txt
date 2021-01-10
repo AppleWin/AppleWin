@@ -7,6 +7,7 @@ set(SOURCE_FILES
   gamepad.cpp
   sdirectsound.cpp
   utils.cpp
+  sdlframe.cpp
   )
 
 set(HEADER_FILES
@@ -14,6 +15,7 @@ set(HEADER_FILES
   gamepad.h
   sdirectsound.h
   utils.h
+  sdlframe.h
   )
 
 add_executable(sa2

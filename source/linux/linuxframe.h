@@ -28,6 +28,11 @@ public:
   virtual void Benchmark();
   virtual void DisplayLogo();
 
-private:
-  std::vector<uint8_t> myFramebufferbits;
+  void CycleVideoType();
+  void Cycle50ScanLines();
+
+protected:
+  void ApplyVideoModeChange();
+
+  std::vector<uint8_t> myFramebuffer;
 };

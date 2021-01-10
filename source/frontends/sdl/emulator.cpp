@@ -1,13 +1,15 @@
+#include "StdAfx.h"
+
 #include "frontends/sdl/emulator.h"
 #include "frontends/sdl/sdirectsound.h"
 #include "frontends/sdl/utils.h"
+#include "frontends/sdl/sdlframe.h"
 
 #include <iostream>
 
 #include "linux/paddle.h"
 #include "linux/keyboard.h"
 
-#include "StdAfx.h"
 #include "Common.h"
 #include "Interface.h"
 #include "CardManager.h"
@@ -26,38 +28,6 @@
 
 namespace
 {
-
-  void updateWindowTitle(const std::shared_ptr<SDL_Window> & win)
-  {
-    GetAppleWindowTitle();
-    SDL_SetWindowTitle(win.get(), g_pAppTitle.c_str());
-  }
-
-  void cycleVideoType(const std::shared_ptr<SDL_Window> & win)
-  {
-    Video & video = GetVideo();
-    video.IncVideoType();
-
-    video.VideoReinitialize(false);
-    video.Config_Save_Video();
-
-    updateWindowTitle(win);
-  }
-
-  void cycle50ScanLines(const std::shared_ptr<SDL_Window> & win)
-  {
-    Video & video = GetVideo();
-
-    VideoStyle_e videoStyle = video.GetVideoStyle();
-    videoStyle = VideoStyle_e(videoStyle ^ VS_HALF_SCANLINES);
-
-    video.SetVideoStyle(videoStyle);
-
-    video.VideoReinitialize(false);
-    video.Config_Save_Video();
-
-    updateWindowTitle(win);
-  }
 
   void processAppleKey(const SDL_KeyboardEvent & key)
   {
@@ -141,27 +111,14 @@ namespace
 
 
 Emulator::Emulator(
-  const std::shared_ptr<SDL_Window> & window,
-  const std::shared_ptr<SDL_Renderer> & renderer,
-  const std::shared_ptr<SDL_Texture> & texture,
+  const std::shared_ptr<SDLFrame> & frame,
   const bool fixedSpeed
 )
-  : myWindow(window)
-  , myRenderer(renderer)
-  , myTexture(texture)
+  : myFrame(frame)
   , myMultiplier(1)
   , myFullscreen(false)
   , mySpeed(fixedSpeed)
 {
-  Video & video = GetVideo();
-
-  myRect.x = video.GetFrameBufferBorderWidth();
-  myRect.y = video.GetFrameBufferBorderHeight();
-  myRect.w = video.GetFrameBufferBorderlessWidth();
-  myRect.h = video.GetFrameBufferBorderlessHeight();
-  myPitch = video.GetFrameBufferWidth() * sizeof(bgra_t);
-
-  myFrameBuffer = video.GetFrameBuffer();
 }
 
 void Emulator::execute(const size_t next)
@@ -180,17 +137,6 @@ void Emulator::execute(const size_t next)
     MB_PeriodicUpdate(executedCycles);
     SpkrUpdate(executedCycles);
   }
-}
-
-void Emulator::updateTexture()
-{
-  SDL_UpdateTexture(myTexture.get(), nullptr, myFrameBuffer, myPitch);
-}
-
-void Emulator::refreshVideo()
-{
-  SDL_RenderCopyEx(myRenderer.get(), myTexture.get(), &myRect, nullptr, 0.0, nullptr, SDL_FLIP_VERTICAL);
-  SDL_RenderPresent(myRenderer.get());
 }
 
 void Emulator::processEvents(bool & quit)
@@ -232,6 +178,7 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
   // if the user has decided to change the layout, we just go with it and use the keycode
   if (!key.repeat)
   {
+    const std::shared_ptr<SDL_Window> & window = myFrame->GetWindow();
     switch (key.keysym.sym)
     {
     case SDLK_F12:
@@ -245,7 +192,7 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
       const std::string & pathname = Snapshot_GetPathname();
       const std::string message = "Do you want to save the state to " + pathname + "?";
       SoundCore_SetFade(FADE_OUT);
-      if (show_yes_no_dialog(myWindow, "Save state", message))
+      if (show_yes_no_dialog(window, "Save state", message))
       {
 	Snapshot_SaveState();
       }
@@ -255,14 +202,14 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
     }
     case SDLK_F9:
     {
-      cycleVideoType(myWindow);
+      myFrame->CycleVideoType();
       break;
     }
     case SDLK_F6:
     {
       if ((key.keysym.mod & KMOD_CTRL) && (key.keysym.mod & KMOD_SHIFT))
       {
-	cycle50ScanLines(myWindow);
+	myFrame->Cycle50ScanLines();
       }
       else if (key.keysym.mod & KMOD_CTRL)
       {
@@ -270,12 +217,12 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
 	myMultiplier = myMultiplier == 1 ? 2 : 1;
 	const int sw = video.GetFrameBufferBorderlessWidth();
 	const int sh = video.GetFrameBufferBorderlessHeight();
-	SDL_SetWindowSize(myWindow.get(), sw * myMultiplier, sh * myMultiplier);
+	SDL_SetWindowSize(window.get(), sw * myMultiplier, sh * myMultiplier);
       }
       else if (!(key.keysym.mod & KMOD_SHIFT))
       {
 	myFullscreen = !myFullscreen;
-	SDL_SetWindowFullscreen(myWindow.get(), myFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+	SDL_SetWindowFullscreen(window.get(), myFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
       }
       break;
     }
@@ -329,7 +276,7 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
 	mySpeed.reset();
 	break;
       }
-      updateWindowTitle(myWindow);
+      GetFrame().FrameRefreshStatus(DRAW_TITLE);
       break;
     }
     }

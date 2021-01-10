@@ -1,11 +1,11 @@
-#include <iostream>
 #include <SDL.h>
-#include <SDL_image.h>
+
+#include <iostream>
 #include <memory>
-#include <iomanip>
 
 #include "linux/interface.h"
 #include "linux/benchmark.h"
+#include "linux/context.h"
 
 #include "frontends/common2/fileregistry.h"
 #include "frontends/common2/utils.h"
@@ -16,6 +16,7 @@
 #include "frontends/sdl/gamepad.h"
 #include "frontends/sdl/sdirectsound.h"
 #include "frontends/sdl/utils.h"
+#include "frontends/sdl/sdlframe.h"
 
 #include "StdAfx.h"
 #include "Core.h"
@@ -30,6 +31,7 @@
 
 namespace
 {
+
   int getRefreshRate()
   {
     SDL_DisplayMode current;
@@ -64,16 +66,6 @@ namespace
     return interval;
   }
 
-  void setApplicationIcon(const std::shared_ptr<SDL_Window> & win)
-  {
-    const std::string path = getResourcePath() + "APPLEWIN.ICO";
-    std::shared_ptr<SDL_Surface> icon(IMG_Load(path.c_str()), SDL_FreeSurface);
-    if (icon)
-    {
-      SDL_SetWindowIcon(win.get(), icon.get());
-    }
-  }
-
 }
 
 int MessageBox(HWND, const char * text, const char * caption, UINT type)
@@ -94,6 +86,9 @@ void run_sdl(int argc, const char * argv [])
   if (!run)
     return;
 
+  const std::shared_ptr<SDLFrame> frame(new SDLFrame(options));
+  SetFrame(frame);
+
   if (options.log)
   {
     LogInit();
@@ -110,38 +105,10 @@ void run_sdl(int argc, const char * argv [])
 
   Video & video = GetVideo();
 
-  const int width = video.GetFrameBufferWidth();
-  const int height = video.GetFrameBufferHeight();
-  const int sw = video.GetFrameBufferBorderlessWidth();
-  const int sh = video.GetFrameBufferBorderlessHeight();
-
-  std::cerr << std::fixed << std::setprecision(2);
-
-  std::shared_ptr<SDL_Window> win(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, sw, sh, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE), SDL_DestroyWindow);
-  if (!win)
-  {
-    std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
-    return;
-  }
-
-  setApplicationIcon(win);
-
-  std::shared_ptr<SDL_Renderer> ren(SDL_CreateRenderer(win.get(), options.sdlDriver, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC), SDL_DestroyRenderer);
-  if (!ren)
-  {
-    std::cout << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
-    return;
-  }
-
-  const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
-  printRendererInfo(std::cerr, ren, format, options.sdlDriver);
-
-  std::shared_ptr<SDL_Texture> tex(SDL_CreateTexture(ren.get(), format, SDL_TEXTUREACCESS_STATIC, width, height), SDL_DestroyTexture);
-
   const int fps = getRefreshRate();
   std::cerr << "Video refresh rate: " << fps << " Hz, " << 1000.0 / fps << " ms" << std::endl;
 
-  Emulator emulator(win, ren, tex, options.fixedSpeed);
+  Emulator emulator(frame, options.fixedSpeed);
 
 #ifdef EMULATOR_RUN
   if (options.benchmark)
@@ -151,10 +118,10 @@ void run_sdl(int argc, const char * argv [])
     const int res = SDL_GL_SetSwapInterval(0);
     // if this fails, should we throw, print something or just ignore?
 
-    const auto redraw = [&emulator, res]{
-			  emulator.updateTexture();
+    const auto redraw = [&frame, res]{
+			  frame->UpdateTexture();
 			  if (res == 0) {
-			    emulator.refreshVideo();
+			    frame->RenderPresent();
 			  }
 			};
 
@@ -221,7 +188,7 @@ void run_sdl(int argc, const char * argv [])
 	}
 
 	updateTextureTimer.tic();
-	emulator.updateTexture();
+	frame->UpdateTexture();
 	updateTextureTimer.toc();
 
 	if (!options.looseMutex)
@@ -234,7 +201,7 @@ void run_sdl(int argc, const char * argv [])
 	if (!options.headless)
 	{
 	  refreshScreenTimer.tic();
-	  emulator.refreshVideo();
+	  frame->RenderPresent();
 	  refreshScreenTimer.toc();
 	}
 
@@ -270,13 +237,13 @@ void run_sdl(int argc, const char * argv [])
 	cpuTimer.toc();
 
 	updateTextureTimer.tic();
-	emulator.updateTexture();
+	frame->UpdateTexture();
 	updateTextureTimer.toc();
 
 	if (!options.headless)
 	{
 	  refreshScreenTimer.tic();
-	  emulator.refreshVideo();
+	  frame->RenderPresent();
 	  refreshScreenTimer.toc();
 	}
       } while (!quit);
@@ -324,9 +291,9 @@ int main(int argc, const char * argv [])
     std::cerr << e.what() << std::endl;
   }
 
-
   // this must happen BEFORE the SDL_Quit() as otherwise we have a double free (of the game controller).
   Paddle::instance.reset();
+  SetFrame(std::shared_ptr<FrameBase>());
   SDL_Quit();
 
   return exit;
