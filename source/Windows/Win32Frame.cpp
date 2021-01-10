@@ -306,7 +306,7 @@ void Win32Frame::ChooseMonochromeColor(void)
 	if (ChooseColor(&cc))
 	{
 		video.SetMonochromeRGB(cc.rgbResult);
-		video.VideoReinitialize();
+		video.VideoReinitialize(false);
 		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 		{
 			VideoRedrawScreen();

@@ -1113,7 +1113,7 @@ LRESULT Win32Frame::WndProc(
 	}
 
     case WM_DISPLAYCHANGE:
-      GetVideo().VideoReinitialize();
+      GetVideo().VideoReinitialize(false);
       break;
 
     case WM_DROPFILES:
