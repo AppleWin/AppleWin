@@ -402,7 +402,7 @@ void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], boo
 	{
 		bRes = DoDiskInsert(slot, DRIVE_1, szImageName_drive[DRIVE_1]);
 		LogFileOutput("Init: S%d, DoDiskInsert(D1), res=%d\n", slot, bRes);
-		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);	// floppy activity LEDs and floppy buttons
+		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);	// floppy activity LEDs and floppy buttons
 		bBoot = true;
 	}
 
@@ -442,7 +442,7 @@ void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 	{
 		bRes = DoHardDiskInsert(HARDDISK_1, szImageName_harddisk[HARDDISK_1]);
 		LogFileOutput("Init: DoHardDiskInsert(HDD1), res=%d\n", bRes);
-		GetFrame().FrameRefreshStatus(DRAW_LEDS);	// harddisk activity LED
+		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);	// harddisk activity LED
 		bBoot = true;
 	}
 

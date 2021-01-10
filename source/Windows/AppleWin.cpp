@@ -768,7 +768,7 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 		LogFileOutput("Init: RegisterExtensions()\n");
 	}
 
-	FrameRegisterClass();
+	Win32Frame::GetWin32Frame().FrameRegisterClass();
 	LogFileOutput("Init: FrameRegisterClass()\n");
 }
 
@@ -843,7 +843,7 @@ static void RepeatInitialization(void)
 		LogFileOutput("Main: VideoInitialize()\n");
 
 		LogFileOutput("Main: FrameCreateWindow() - pre\n");
-		FrameCreateWindow();	// GetFrame().g_hFrameWindow is now valid
+		Win32Frame::GetWin32Frame().FrameCreateWindow();	// GetFrame().g_hFrameWindow is now valid
 		LogFileOutput("Main: FrameCreateWindow() - post\n");
 
 		// Init palette color

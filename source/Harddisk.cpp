@@ -417,7 +417,7 @@ BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename)
 		if (!strcmp(pszOtherPathname.c_str(), szCurrentPathname))
 		{
 			HD_Unplug(!iDrive);
-			GetFrame().FrameRefreshStatus(DRAW_LEDS);
+			GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 		}
 	}
 
@@ -711,7 +711,7 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 	if( pHDD->hd_status_prev != pHDD->hd_status_next ) // Update LEDs if state changes
 	{
 		pHDD->hd_status_prev = pHDD->hd_status_next;
-		GetFrame().FrameRefreshStatus(DRAW_LEDS);
+		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 	}
 #endif
 
@@ -740,7 +740,7 @@ bool HD_ImageSwap(void)
 	HD_SaveLastDiskImage(HARDDISK_1);
 	HD_SaveLastDiskImage(HARDDISK_2);
 
-	GetFrame().FrameRefreshStatus(DRAW_LEDS, false);
+	GetFrame().FrameRefreshStatus(DRAW_LEDS);
 
 	return true;
 }
@@ -900,7 +900,7 @@ bool HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, co
 
 	HD_SetEnabled(true);
 
-	GetFrame().FrameRefreshStatus(DRAW_LEDS);
+	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 
 	return true;
 }

@@ -91,14 +91,14 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
 				HandleFloppyDriveCombo(hWnd, DRIVE_1, LOWORD(wparam));
-				GetFrame().FrameRefreshStatus(DRAW_BUTTON_DRIVES);
+				GetFrame().FrameRefreshStatus(DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 			}
 			break;
 		case IDC_COMBO_DISK2:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
 				HandleFloppyDriveCombo(hWnd, DRIVE_2, LOWORD(wparam));
-				GetFrame().FrameRefreshStatus(DRAW_BUTTON_DRIVES);
+				GetFrame().FrameRefreshStatus(DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 			}
 			break;
 		case IDC_COMBO_HDD1:

@@ -218,7 +218,7 @@ void Disk2InterfaceCard::CheckSpinning(const bool stateChanged, const ULONG uExe
 		m_floppyDrive[m_currDrive].m_spinning = SPINNING_CYCLES;
 
 	if (modeChanged)
-		GetFrame().FrameDrawDiskLEDS( (HDC)0 );
+		GetFrame().FrameDrawDiskLEDS();
 
 	if (modeChanged)
 	{
@@ -510,7 +510,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		pDrive->m_phasePrecise = newPhasePrecise;
 		pFloppy->m_trackimagedata = false;
 		m_formatTrack.DriveNotWritingTrack();
-		GetFrame().FrameDrawDiskStatus((HDC)0);	// Show track status (GH#201)
+		GetFrame().FrameDrawDiskStatus();	// Show track status (GH#201)
 	}
 
 #if LOG_DISK_PHASES
@@ -682,7 +682,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 		if (!strcmp(pszOtherPathname.c_str(), szCurrentPathname))
 		{
 			EjectDisk(!drive);
-			GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+			GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 		}
 	}
 
@@ -1032,7 +1032,7 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
 	if ((pFloppy->m_byte & 0xFF) == 0)
-		GetFrame().FrameDrawDiskStatus( (HDC)0 );
+		GetFrame().FrameDrawDiskStatus();
 }
 
 //===========================================================================
@@ -1183,7 +1183,7 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 
 	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
 	if ((floppy.m_byte & 0xFF) == 0)
-		GetFrame().FrameDrawDiskStatus((HDC)0);
+		GetFrame().FrameDrawDiskStatus();
 }
 
 void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder)
@@ -1542,11 +1542,11 @@ void Disk2InterfaceCard::Reset(const bool bIsPowerCycle)
 		m_floppyDrive[DRIVE_2].m_spinning   = 0;
 		m_floppyDrive[DRIVE_2].m_writelight = 0;
 
-		GetFrame().FrameRefreshStatus(DRAW_LEDS, false);
+		GetFrame().FrameRefreshStatus(DRAW_LEDS);
 	}
 
 	InitFirmware(GetCxRomPeripheral());
-	GetFrame().FrameRefreshStatus(DRAW_TITLE, false);
+	GetFrame().FrameRefreshStatus(DRAW_TITLE);
 }
 
 void Disk2InterfaceCard::ResetSwitches(void)
@@ -1684,7 +1684,7 @@ void __stdcall Disk2InterfaceCard::SetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uE
 	m_floppyDrive[m_currDrive].m_writelight = WRITELIGHT_CYCLES;
 
 	if (modechange)
-		GetFrame().FrameDrawDiskLEDS( (HDC)0 );
+		GetFrame().FrameDrawDiskLEDS();
 }
 
 //===========================================================================
@@ -1700,8 +1700,8 @@ void Disk2InterfaceCard::UpdateDriveState(DWORD cycles)
 		{
 			if (!(pDrive->m_spinning -= MIN(pDrive->m_spinning, cycles)))
 			{
-				GetFrame().FrameDrawDiskLEDS( (HDC)0 );
-				GetFrame().FrameDrawDiskStatus( (HDC)0 );
+				GetFrame().FrameDrawDiskLEDS();
+				GetFrame().FrameDrawDiskStatus();
 			}
 		}
 
@@ -1713,8 +1713,8 @@ void Disk2InterfaceCard::UpdateDriveState(DWORD cycles)
 		{
 			if (!(pDrive->m_writelight -= MIN(pDrive->m_writelight, cycles)))
 			{
-				GetFrame().FrameDrawDiskLEDS( (HDC)0 );
-				GetFrame().FrameDrawDiskStatus( (HDC)0 );
+				GetFrame().FrameDrawDiskLEDS();
+				GetFrame().FrameDrawDiskStatus();
 			}
 		}
 	}
@@ -1770,7 +1770,7 @@ bool Disk2InterfaceCard::DriveSwap(void)
 	SaveLastDiskImage(DRIVE_1);
 	SaveLastDiskImage(DRIVE_2);
 
-	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, false);
+	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
 
 	return true;
 }
@@ -2261,7 +2261,7 @@ bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT
 	LoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_1, version);
 	LoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_2, version);
 
-	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 
 	return true;
 }
