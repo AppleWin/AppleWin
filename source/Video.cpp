@@ -126,7 +126,7 @@ UINT Video::GetFrameBufferHeight(void)
 
 //===========================================================================
 
-void Video::VideoReinitialize(bool bInitVideoScannerAddress /*= true*/)
+void Video::VideoReinitialize(bool bInitVideoScannerAddress)
 {
 	NTSC_VideoReinitialize( g_dwCyclesThisFrame, bInitVideoScannerAddress );
 	NTSC_VideoInitAppleType();
