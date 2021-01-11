@@ -5,12 +5,12 @@ ViewBuffer::ViewBuffer(QObject *parent) : QHexBuffer(parent)
 
 }
 
-uchar ViewBuffer::at(int idx)
+uchar ViewBuffer::at(qint64 idx)
 {
     return static_cast<uchar>(myData.at(idx));
 }
 
-void ViewBuffer::replace(int offset, const QByteArray& data)
+void ViewBuffer::replace(qint64 offset, const QByteArray& data)
 {
     Q_UNUSED(offset)
     Q_UNUSED(data)
@@ -26,34 +26,45 @@ void ViewBuffer::read(const QByteArray& ba)
     Q_UNUSED(ba)
 }
 
-int ViewBuffer::length() const
+qint64 ViewBuffer::length() const
 {
     return myData.length();
 }
 
-void ViewBuffer::insert(int offset, const QByteArray& data)
+void ViewBuffer::insert(qint64 offset, const QByteArray& data)
 {
     Q_UNUSED(offset)
     Q_UNUSED(data)
 }
 
-void ViewBuffer::remove(int offset, int length)
+void ViewBuffer::remove(qint64 offset, int length)
 {
     Q_UNUSED(offset)
     Q_UNUSED(length)
 }
 
-QByteArray ViewBuffer::read(int offset, int length)
+QByteArray ViewBuffer::read(qint64 offset, int length)
 {
     return myData.mid(offset, length);
 }
 
-void ViewBuffer::read(QIODevice* iodevice)
+bool ViewBuffer::read(QIODevice* iodevice)
 {
     Q_UNUSED(iodevice)
+    return false;
 }
 
 void ViewBuffer::write(QIODevice* iodevice)
 {
     Q_UNUSED(iodevice)
+}
+
+qint64 ViewBuffer::indexOf(const QByteArray& ba, qint64 from)
+{
+    return myData.indexOf(ba, static_cast<int>(from));
+}
+
+qint64 ViewBuffer::lastIndexOf(const QByteArray& ba, qint64 from)
+{
+    return myData.lastIndexOf(ba, static_cast<int>(from));
 }

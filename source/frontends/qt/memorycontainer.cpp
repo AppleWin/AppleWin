@@ -3,45 +3,15 @@
 
 #include "StdAfx.h"
 #include "Memory.h"
+#include "Debugger/DebugDefs.h"
 
 #include "viewbuffer.h"
 
 namespace
 {
-    void setComment(QHexMetadata* metadata, int begin, int end, const QColor &fgcolor, const QColor &bgcolor, const QString &comment)
+    void setComment(QHexMetadata* metadata, qint64 begin, qint64 end, const QColor &fgcolor, const QColor &bgcolor, const QString &comment)
     {
-        // line and start are 0 based
-        // length is both ends included
-
-        const int width = HEX_LINE_LENGTH;
-        const int firstRow = begin / width;
-        const int lastRow = end / width;
-
-        for (int row = firstRow; row <= lastRow; ++row)
-        {
-            int start, length;
-            if (row == firstRow)
-            {
-                start = begin % width;
-            }
-            else
-            {
-                start = 0;
-            }
-            if (row == lastRow)
-            {
-                const int lastChar = end % width;
-                length = lastChar - start;
-            }
-            else
-            {
-                length = width;
-            }
-            if (length > 0)
-            {
-                metadata->metadata(row, start, length, fgcolor, bgcolor, comment);
-            }
-        }
+        metadata->metadata(begin, end, fgcolor, bgcolor, comment);
     }
 }
 
@@ -52,8 +22,10 @@ MemoryContainer::MemoryContainer(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    // main memory
     char * mainBase = reinterpret_cast<char *>(MemGetMainPtr(0));
-    QHexDocument * mainDocument = QHexDocument::fromMemory<ViewBuffer>(mainBase, 0x10000, this);
+    QHexDocument * mainDocument = QHexDocument::fromMemory<ViewBuffer>(mainBase, _6502_MEM_LEN, this);
+    mainDocument->setHexLineWidth(16);
     ui->main->setReadOnly(true);
     ui->main->setDocument(mainDocument);
 
@@ -67,8 +39,10 @@ MemoryContainer::MemoryContainer(QWidget *parent) :
     setComment(mainMetadata, 0xC100, 0xC800, Qt::white, Qt::red, "Peripheral Card Memory");
     setComment(mainMetadata, 0xF800, 0x10000, Qt::white, Qt::red, "System Monitor");
 
+    // aux memory
     char * auxBase = reinterpret_cast<char *>(MemGetAuxPtr(0));
-    QHexDocument * auxDocument = QHexDocument::fromMemory<ViewBuffer>(auxBase, 0x10000, this);
+    QHexDocument * auxDocument = QHexDocument::fromMemory<ViewBuffer>(auxBase, _6502_MEM_LEN, this);
+    auxDocument->setHexLineWidth(16);
     ui->aux->setReadOnly(true);
     ui->aux->setDocument(auxDocument);
 
