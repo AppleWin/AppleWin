@@ -9,6 +9,7 @@
 #include "Log.h"
 #include "Memory.h"
 #include "CardManager.h"
+#include "Debugger/Debug.h"
 #include "../resource/resource.h"
 
 // Win32Frame methods are implemented in AppleWin, WinFrame and WinVideo.
@@ -306,12 +307,7 @@ void Win32Frame::ChooseMonochromeColor(void)
 	if (ChooseColor(&cc))
 	{
 		video.SetMonochromeRGB(cc.rgbResult);
-		video.VideoReinitialize(false);
-		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
-		{
-			VideoRedrawScreen();
-		}
-		video.Config_Save_Video();
+		ApplyVideoModeChange();
 	}
 }
 
@@ -513,6 +509,29 @@ void Win32Frame::DDUninit(void)
 }
 
 #undef SAFE_RELEASE
+
+void Win32Frame::ApplyVideoModeChange(void)
+{
+	Video& video = GetVideo();
+	video.Config_Save_Video();
+	video.VideoReinitialize(false);
+
+	if (g_nAppMode != MODE_LOGO)
+	{
+		if (g_nAppMode == MODE_DEBUG)
+		{
+			UINT debugVideoMode;
+			if (DebugGetVideoMode(&debugVideoMode))
+				VideoRefreshScreen(debugVideoMode, true);
+			else
+				VideoPresentScreen();
+		}
+		else
+		{
+			VideoPresentScreen();
+		}
+	}
+}
 
 Win32Frame& Win32Frame::GetWin32Frame()
 {
