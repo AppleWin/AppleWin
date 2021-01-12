@@ -1,12 +1,24 @@
 include(FindPkgConfig)
 
-add_executable(sa2
+set(SOURCE_FILES
   main.cpp
   bitmaps.cpp
   emulator.cpp
   gamepad.cpp
   sdirectsound.cpp
   utils.cpp
+  )
+
+set(HEADER_FILES
+  emulator.h
+  gamepad.h
+  sdirectsound.h
+  utils.h
+  )
+
+add_executable(sa2
+  ${SOURCE_FILES}
+  ${HEADER_FILES}
   )
 
 find_package(SDL2 REQUIRED)

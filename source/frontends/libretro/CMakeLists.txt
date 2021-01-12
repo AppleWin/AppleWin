@@ -5,7 +5,7 @@ set(LIBRETRO_COMMON_PATH NONE CACHE PATH "path to libretro-common")
 if (EXISTS ${LIBRETRO_COMMON_PATH}/include/libretro.h)
   message("Using LIBRETRO_COMMON_PATH=${LIBRETRO_COMMON_PATH}")
 
-  add_library(applewin_libretro SHARED
+  set(SOURCE_FILES
     environment.cpp
     libretro.cpp
     bitmaps.cpp
@@ -17,6 +17,22 @@ if (EXISTS ${LIBRETRO_COMMON_PATH}/include/libretro.h)
     analog.cpp
     rdirectsound.cpp
     retroregistry.cpp
+    )
+
+  set(HEADER_FILES
+    environment.h
+    rdirectsound.h
+    game.h
+    joypadbase.h
+    joypad.h
+    analog.h
+    rdirectsound.h
+    retroregistry.h
+    )
+
+  add_library(applewin_libretro SHARED
+    ${SOURCE_FILES}
+    ${HEADER_FILES}
     )
 
   target_include_directories(applewin_libretro PRIVATE

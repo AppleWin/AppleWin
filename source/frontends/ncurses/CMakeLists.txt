@@ -1,6 +1,6 @@
 include(FindPkgConfig)
 
-add_executable(applen
+set(SOURCE_FILES
   main.cpp
   world.cpp
   colors.cpp
@@ -8,6 +8,19 @@ add_executable(applen
   nframe.cpp
   asciiart.cpp
   bitmaps.cpp
+  )
+
+set(HEADER_FILES
+  world.h
+  colors.h
+  evdevpaddle.h
+  nframe.h
+  asciiart.h
+  )
+
+add_executable(applen
+  ${SOURCE_FILES}
+  ${HEADER_FILES}
   )
 
 pkg_search_module(NCURSESW REQUIRED ncursesw)

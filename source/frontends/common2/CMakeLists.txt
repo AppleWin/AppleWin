@@ -1,6 +1,6 @@
 include(GNUInstallDirs)
 
-add_library(common2 STATIC
+set(SOURCE_FILES
   resources.cpp
   fileregistry.cpp
   ptreeregistry.cpp
@@ -8,6 +8,21 @@ add_library(common2 STATIC
   utils.cpp
   timer.cpp
   speed.cpp
+  )
+
+set(HEADER_FILES
+  resources.h
+  fileregistry.h
+  ptreeregistry.h
+  programoptions.h
+  utils.h
+  timer.h
+  speed.h
+  )
+
+add_library(common2 STATIC
+  ${SOURCE_FILES}
+  ${HEADER_FILES}
   )
 
 find_package(Boost REQUIRED

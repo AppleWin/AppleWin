@@ -10,9 +10,8 @@ find_package(Qt5 REQUIRED
 
 add_subdirectory(QHexView)
 
-add_executable(qapple
+set(SOURCE_FILES
   main.cpp
-  qapple.qrc
   qapple.cpp
   qresources.cpp
   preferences.cpp
@@ -25,7 +24,28 @@ add_executable(qapple
   loggingcategory.cpp
   viewbuffer.cpp
   qdirectsound.cpp
-)
+  )
+
+set(HEADER_FILES
+  applicationname.h
+  qapple.h
+  preferences.h
+  emulator.h
+  memorycontainer.h
+  gamepadpaddle.h
+  qvideo.h
+  configuration.h
+  options.h
+  loggingcategory.h
+  viewbuffer.h
+  qdirectsound.h
+  )
+
+add_executable(qapple
+  ${SOURCE_FILES}
+  ${HEADER_FILES}
+  qapple.qrc
+  )
 
 target_link_libraries(qapple PRIVATE
   Qt5::Widgets

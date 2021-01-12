@@ -1,6 +1,6 @@
 include(FindPkgConfig)
 
-add_library(appleii SHARED
+set(SOURCE_FILES
   Speaker.cpp
   SoundCore.cpp
   AY8910.cpp
@@ -71,6 +71,90 @@ add_library(appleii SHARED
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp
   Z80VICE/daa.cpp
+  )
+
+set(HEADER_FILES
+  Speaker.h
+  SoundCore.h
+  AY8910.h
+  Mockingboard.h
+  Pravets.h
+  Tape.h
+  YamlHelper.h
+  Log.h
+  Disk.h
+  DiskFormatTrack.h
+  DiskImage.h
+  DiskImageHelper.h
+  Harddisk.h
+  Memory.h
+  CPU.h
+  6821.h
+  NoSlotClock.h
+  SAM.h
+  z80emu.h
+  ParallelPrinter.h
+  MouseInterface.h
+  LanguageCard.h
+  RGBMonitor.h
+  NTSC.h
+  NTSC_CharSet.h
+  CardManager.h
+  Disk2CardManager.h
+  Riff.h
+  SaveState.h
+  SynchronousEventManager.h
+  Video.h
+  Core.h
+  Utilities.h
+  FrameBase.h
+
+  Common.h
+  DiskDefs.h
+  DiskLog.h
+  Interface.h
+  SaveState_Structs_common.h
+  SaveState_Structs_v1.h
+
+  Configuration/PropertySheetHelper.h
+
+  linux/windows/handles.h
+  linux/windows/files.h
+  linux/windows/resources.h
+  linux/windows/bitmap.h
+  linux/windows/time.h
+  linux/windows/stringcb.h
+  linux/windows/strings.h
+  linux/windows/misc.h
+  linux/windows/winbase.h
+  linux/windows/winuser.h
+  linux/windows/dsound.h
+  linux/windows/guiddef.h
+  linux/windows/dmusicc.h
+  linux/windows/winnls.h
+  linux/windows/gdi.h
+  linux/windows/mmreg.h
+  linux/windows/mmsystem.h
+
+  linux/interface.h
+  linux/data.h
+  linux/benchmark.h
+  linux/paddle.h
+  linux/version.h
+  linux/registry.h
+  linux/keyboard.h
+  linux/linuxframe.h
+  linux/win.h
+
+  Z80VICE/z80.h
+  Z80VICE/z80mem.h
+  Z80VICE/z80regs.h
+  Z80VICE/daa.h
+  )
+
+add_library(appleii SHARED
+  ${SOURCE_FILES}
+  ${HEADER_FILES}
   )
 
 pkg_check_modules(YAML REQUIRED yaml-0.1)
