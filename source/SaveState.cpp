@@ -287,7 +287,7 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	MemLoadSnapshot(yamlLoadHelper, version);
 
 	// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)
-	GetVideo().VideoReinitialize();	// g_CharsetType changed
+	GetVideo().VideoReinitialize(true);	// g_CharsetType changed
 	GetFrame().FrameUpdateApple2Type();	// Calls VideoRedrawScreen() before the aux mem has been loaded (so if DHGR is enabled, then aux mem will be zeros at this stage)
 }
 
