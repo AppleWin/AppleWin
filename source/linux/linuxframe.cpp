@@ -2,15 +2,15 @@
 #include "linux/linuxframe.h"
 #include "Interface.h"
 
-void LinuxFrame::FrameDrawDiskLEDS(HDC hdc)
+void LinuxFrame::FrameDrawDiskLEDS()
 {
 }
 
-void LinuxFrame::FrameDrawDiskStatus(HDC hdc)
+void LinuxFrame::FrameDrawDiskStatus()
 {
 }
 
-void LinuxFrame::FrameRefreshStatus(int, bool /* bUpdateDiskStatus */)
+void LinuxFrame::FrameRefreshStatus(int drawflags)
 {
 }
 

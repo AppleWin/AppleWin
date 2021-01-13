@@ -161,7 +161,7 @@ namespace
     applyOptions(options);
     PaddleInitialise(options.paddleDeviceName);
 
-    GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
+    GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 
     if (options.benchmark)
     {

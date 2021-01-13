@@ -10,9 +10,9 @@ public:
   virtual void Initialize();
   virtual void Destroy();
 
-  virtual void FrameDrawDiskLEDS(HDC hdc);
-  virtual void FrameDrawDiskStatus(HDC hdc);
-  virtual void FrameRefreshStatus(int, bool bUpdateDiskStatus = true);
+  virtual void FrameDrawDiskLEDS();
+  virtual void FrameDrawDiskStatus();
+  virtual void FrameRefreshStatus(int drawflags);
   virtual void FrameUpdateApple2Type();
   virtual void FrameSetCursorPosByMousePos();
 

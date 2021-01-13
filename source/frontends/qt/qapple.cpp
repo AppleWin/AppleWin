@@ -82,7 +82,7 @@ namespace
         GetAppleWindowTitle();
         window->setWindowTitle(QString::fromStdString(g_pAppTitle));
 
-        GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES, true);
+        GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 
         // ResetDefaultMachineMemTypes();
 
