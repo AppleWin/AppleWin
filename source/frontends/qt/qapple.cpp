@@ -29,6 +29,7 @@
 #include "linux/version.h"
 #include "linux/paddle.h"
 #include "linux/interface.h"
+#include "linux/context.h"
 
 #include "emulator.h"
 #include "memorycontainer.h"
@@ -36,6 +37,7 @@
 #include "gamepadpaddle.h"
 #include "preferences.h"
 #include "configuration.h"
+#include "qtframe.h"
 
 #include <QMdiSubWindow>
 #include <QMessageBox>
@@ -73,16 +75,11 @@ namespace
      *
      */
 
-    void loadEmulator(QWidget * window, Emulator * emulator, const GlobalOptions & options)
+    void loadEmulator(const std::shared_ptr<QtFrame> & frame, const GlobalOptions & options)
     {
         LoadConfiguration();
 
         CheckCpu();
-
-        GetAppleWindowTitle();
-        window->setWindowTitle(QString::fromStdString(g_pAppTitle));
-
-        GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 
         // ResetDefaultMachineMemTypes();
 
@@ -108,16 +105,13 @@ namespace
         MB_Initialize();
         SpkrInitialize();
         MemInitialize();
-        GetFrame().Initialize();
-
-        emulator->loadVideoSettings();
-        emulator->displayLogo();
+        frame->Initialize();
 
         GetCardMgr().GetDisk2CardMgr().Reset();
         HD_Reset();
     }
 
-    void unloadEmulator()
+    void unloadEmulator(const std::shared_ptr<QtFrame> & frame)
     {
         CardManager & cardManager = GetCardMgr();
 
@@ -130,7 +124,7 @@ namespace
         PrintDestroy();
         MemDestroy();
         SpkrDestroy();
-        GetVideo().Destroy();
+        frame->Destroy();
         MB_Destroy();
         DSUninit();
         CpuDestroy();
@@ -224,8 +218,11 @@ QApple::QApple(QWidget *parent) :
 
     myPreferences = new Preferences(this);
 
-    myEmulator = new Emulator(ui->mdiArea);
-    myEmulatorWindow = ui->mdiArea->addSubWindow(myEmulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
+    Emulator * emulator = new Emulator(ui->mdiArea);
+    myEmulatorWindow = ui->mdiArea->addSubWindow(emulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
+
+    myFrame.reset(new QtFrame(emulator, myEmulatorWindow));
+    SetFrame(myFrame);
 
     readSettings();
 
@@ -234,7 +231,7 @@ QApple::QApple(QWidget *parent) :
 
     on_actionPause_triggered();
     initialiseEmulator();
-    loadEmulator(myEmulatorWindow, myEmulator, myOptions);
+    loadEmulator(myFrame, myOptions);
 }
 
 QApple::~QApple()
@@ -245,7 +242,7 @@ QApple::~QApple()
 void QApple::closeEvent(QCloseEvent * event)
 {
     stopTimer();
-    unloadEmulator();
+    unloadEmulator(myFrame);
 
     QSettings settings;
     settings.setValue("QApple/window/geometry", saveGeometry().toBase64());
@@ -328,7 +325,7 @@ void QApple::on_timer()
 
     // just repaint each time, to make it simpler
     // we run @ 60 fps anyway
-    myEmulator->updateVideo();
+    myFrame->VideoPresentScreen();
 
     if (count > 1)  // 1 is the non-full speed case
     {
@@ -375,17 +372,17 @@ void QApple::on_actionPause_triggered()
 
 void QApple::on_actionX1_triggered()
 {
-    myEmulator->setZoom(myEmulatorWindow, 1);
+    myFrame->SetZoom(1);
 }
 
 void QApple::on_actionX2_triggered()
 {
-    myEmulator->setZoom(myEmulatorWindow, 2);
+    myFrame->SetZoom(2);
 }
 
 void QApple::on_action4_3_triggered()
 {
-    myEmulator->set43AspectRatio(myEmulatorWindow);
+    myFrame->Set43Ratio();
 }
 
 void QApple::on_actionReboot_triggered()
@@ -394,10 +391,9 @@ void QApple::on_actionReboot_triggered()
 
     emit endEmulator();
     mySaveStateLabel->clear();
-    unloadEmulator();
-    loadEmulator(myEmulatorWindow, myEmulator, myOptions);
-    myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
-    myEmulator->updateVideo();
+    unloadEmulator(myFrame);
+    loadEmulator(myFrame, myOptions);
+    myFrame->VideoPresentScreen();
 }
 
 void QApple::on_actionBenchmark_triggered()
@@ -405,7 +401,9 @@ void QApple::on_actionBenchmark_triggered()
     // call repaint as we really want to for a paintEvent() so we can time it properly
     // if video is based on OpenGLWidget, this is not enough though,
     // and benchmark results are bad.
-    VideoBenchmark([this]() { myEmulator->redrawScreen(); }, [this]() { myEmulator->refreshScreen(); });
+    myFrame->SetForceRepaint(true);
+    VideoBenchmark([this]() { myFrame->VideoRedrawScreen(); }, [this]() { myFrame->VideoPresentScreen(); });
+    myFrame->SetForceRepaint(false);
     on_actionReboot_triggered();
 }
 
@@ -448,13 +446,11 @@ void QApple::on_actionOptions_triggered()
         myOptions.setData(newData.options);
         reloadOptions();
     }
-
 }
 
 void QApple::reloadOptions()
 {
-    GetAppleWindowTitle();
-    myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
+    myFrame->FrameRefreshStatus(DRAW_TITLE);
 
     Paddle::instance = GamepadPaddle::fromName(myOptions.gamepadName);
     Paddle::setSquaring(myOptions.gamepadSquaring);
@@ -481,11 +477,12 @@ void QApple::on_actionLoad_state_triggered()
     SetCurrentImageDir(path.toStdString().c_str());
 
     Snapshot_LoadState();
-    GetAppleWindowTitle();
-    myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
+
+    myFrame->FrameRefreshStatus(DRAW_TITLE);
+    myFrame->VideoPresentScreen();
+
     QString message = QString("State file: %1").arg(file.filePath());
     mySaveStateLabel->setText(message);
-    myEmulator->updateVideo();
 }
 
 void QApple::on_actionAbout_Qt_triggered()
@@ -527,7 +524,7 @@ void QApple::on_actionScreenshot_triggered()
     }
     else
     {
-        const bool ok = myEmulator->saveScreen(filename);
+        const bool ok = myFrame->saveScreen(filename);
         if (!ok)
         {
             const QString message = QString::fromUtf8("Cannot save screenshot to %1").arg(filename);
@@ -567,14 +564,7 @@ void QApple::on_actionLoad_state_from_triggered()
 
 void QApple::on_actionNext_video_mode_triggered()
 {
-    Video & video = GetVideo();
-    video.IncVideoType();
-
-    GetAppleWindowTitle();
-    myEmulatorWindow->setWindowTitle(QString::fromStdString(g_pAppTitle));
-
-    video.VideoReinitialize(false);
-    video.Config_Save_Video();
+    myFrame->CycleVideoType();
 }
 
 void QApple::loadStateFile(const QString & filename)

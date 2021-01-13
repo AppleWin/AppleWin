@@ -17,12 +17,12 @@ public:
     explicit Emulator(QWidget *parent = nullptr);
     ~Emulator();
 
-    void updateVideo();
     void redrawScreen();    // regenerate image and repaint
-    void refreshScreen();   // just repaint
+    void refreshScreen(const bool force);
 
     bool saveScreen(const QString & filename) const;
     void loadVideoSettings();
+    void unloadVideoSettings();
     void displayLogo();
 
     void setZoom(QMdiSubWindow * window, const int x);

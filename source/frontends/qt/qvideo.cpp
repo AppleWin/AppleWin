@@ -34,6 +34,11 @@ void QVideo::loadVideoSettings()
     myFrameBuffer = video.GetFrameBuffer();
 }
 
+void QVideo::unloadVideoSettings()
+{
+    myFrameBuffer = nullptr;
+}
+
 QImage QVideo::getScreenImage() const
 {
     QImage frameBuffer(myFrameBuffer, myWidth, myHeight, QImage::Format_ARGB32_Premultiplied);

@@ -12,8 +12,8 @@
 
 
 class QMdiSubWindow;
-class Emulator;
 class Preferences;
+class QtFrame;
 
 namespace Ui {
 class QApple;
@@ -106,9 +106,9 @@ private:
 
     QLabel * mySaveStateLabel;
 
+    std::shared_ptr<QtFrame> myFrame;
     QElapsedTimer myElapsedTimer;
     QMdiSubWindow * myEmulatorWindow;
-    Emulator * myEmulator;
     qint64 myCpuTimeReference;
 
     GlobalOptions myOptions;

@@ -22,21 +22,16 @@ Emulator::~Emulator()
     delete ui;
 }
 
-void Emulator::updateVideo()
+void Emulator::refreshScreen(const bool force)
 {
-    ui->video->update();
-}
-
-void Emulator::redrawScreen()
-{
-    NTSC_SetVideoMode( GetVideo().GetVideoMode() );
-    NTSC_VideoRedrawWholeScreen();
-    refreshScreen();
-}
-
-void Emulator::refreshScreen()
-{
-    ui->video->repaint();
+    if (force)
+    {
+        ui->video->repaint();
+    }
+    else
+    {
+        ui->video->update();
+    }
 }
 
 bool Emulator::saveScreen(const QString & filename) const
@@ -47,6 +42,11 @@ bool Emulator::saveScreen(const QString & filename) const
 void Emulator::loadVideoSettings()
 {
     ui->video->loadVideoSettings();
+}
+
+void Emulator::unloadVideoSettings()
+{
+    ui->video->unloadVideoSettings();
 }
 
 void Emulator::displayLogo()

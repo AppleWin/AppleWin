@@ -24,6 +24,7 @@ set(SOURCE_FILES
   loggingcategory.cpp
   viewbuffer.cpp
   qdirectsound.cpp
+  qtframe.cpp
   )
 
 set(HEADER_FILES
@@ -39,6 +40,7 @@ set(HEADER_FILES
   loggingcategory.h
   viewbuffer.h
   qdirectsound.h
+  qtframe.h
   )
 
 add_executable(qapple

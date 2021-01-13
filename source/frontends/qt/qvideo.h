@@ -14,6 +14,7 @@ public:
 
     QImage getScreen() const;
     void loadVideoSettings();
+    void unloadVideoSettings();
     void displayLogo();
 
 signals:
