@@ -44,6 +44,6 @@ void PravetsReset(void)
 	{
 		P8CAPS_ON = false; 
 		TapeWrite(0, 0, 0, 0 ,0);
-		GetFrame().FrameRefreshStatus(DRAW_LEDS);
+		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 	}
 }

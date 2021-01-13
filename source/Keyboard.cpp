@@ -301,7 +301,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 			if (g_Apple2Type == A2TYPE_TK30002E)
 			{
 				g_bTK3KModeKey = (GetKeyState(VK_SCROLL) & 1) ? true : false;	// Sync with the Scroll Lock status
-				GetFrame().FrameRefreshStatus(DRAW_LEDS);	// TODO: Implement |Mode| LED in the UI; make it appear only when in TK3000 mode
+				GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);	// TODO: Implement |Mode| LED in the UI; make it appear only when in TK3000 mode
 				GetFrame().VideoRedrawScreen();	// TODO: Still need to implement page mode switching and 'whatnot'
 			}
 			return;
@@ -537,7 +537,7 @@ void KeybToggleCapsLock ()
 	if (!IS_APPLE2)
 	{
 		g_bCapsLock = (GetKeyState(VK_CAPITAL) & 1);
-		GetFrame().FrameRefreshStatus(DRAW_LEDS);
+		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 	}
 }
 
@@ -546,7 +546,7 @@ void KeybToggleP8ACapsLock ()
 {
 	_ASSERT(g_Apple2Type == A2TYPE_PRAVETS8A);
 	P8CAPS_ON = !P8CAPS_ON;
-	GetFrame().FrameRefreshStatus(DRAW_LEDS);
+	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 	// g_bP8CapsLock= g_bP8CapsLock?false:true; //The same as the upper, but slower
 }
 

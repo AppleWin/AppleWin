@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Memory.h"
 #include "../NTSC.h"
 #include "../SoundCore.h"	// SoundCore_SetFade()
+#include "../Windows/Win32Frame.h"
 #include "../Windows/WinFrame.h"
 
 //	#define DEBUG_COMMAND_HELP  1
@@ -752,7 +753,7 @@ Update_t CmdBenchmarkStop (int nArgs)
 	g_bBenchmarking = false;
 	DebugEnd();
 	
-	GetFrame().FrameRefreshStatus(DRAW_TITLE);
+	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 	GetFrame().VideoRedrawScreen();
 	DWORD currtime = GetTickCount();
 	while ((extbench = GetTickCount()) != currtime)
@@ -1962,7 +1963,7 @@ static Update_t CmdGo (int nArgs, const bool bFullSpeed)
 	g_bGoCmd_ReinitFlag = true;
 
 	g_nAppMode = MODE_STEPPING;
-	GetFrame().FrameRefreshStatus(DRAW_TITLE);
+	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 
 	SoundCore_SetFade(FADE_IN);
 
@@ -2031,7 +2032,7 @@ Update_t CmdTrace (int nArgs)
 	g_nDebugStepStart = regs.pc;
 	g_nDebugStepUntil = -1;
 	g_nAppMode = MODE_STEPPING;
-	GetFrame().FrameRefreshStatus(DRAW_TITLE);
+	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 	DebugContinueStepping(true);
 
 	return UPDATE_ALL; // TODO: Verify // 0
@@ -2091,7 +2092,7 @@ Update_t CmdTraceLine (int nArgs)
 	g_nDebugStepUntil = -1;
 
 	g_nAppMode = MODE_STEPPING;
-	GetFrame().FrameRefreshStatus(DRAW_TITLE);
+	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 	DebugContinueStepping(true);
 
 	return UPDATE_ALL; // TODO: Verify // 0
@@ -3771,7 +3772,7 @@ Update_t CmdDisk ( int nArgs)
 			return HelpLastCommand();
 
 		diskCard.EjectDisk( iDrive );
-		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 	}
 	else
 	if (iParam == PARAM_DISK_PROTECT)
@@ -3785,7 +3786,7 @@ Update_t CmdDisk ( int nArgs)
 			bProtect = g_aArgs[ 3 ].nValue ? true : false;
 
 		diskCard.SetProtect( iDrive, bProtect );
-		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 	}
 	else
 	{
@@ -3796,7 +3797,7 @@ Update_t CmdDisk ( int nArgs)
 
 		// DISK # "Diskname"
 		diskCard.InsertDisk( iDrive, pDiskName, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE );
-		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES);
+		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 	}
 
 	return UPDATE_CONSOLE_DISPLAY;
@@ -8547,7 +8548,7 @@ void DebugBegin ()
 	GetDebuggerMemDC();
 
 	g_nAppMode = MODE_DEBUG;
-	GetFrame().FrameRefreshStatus(DRAW_TITLE);
+	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 
 	if (GetMainCpu() == CPU_6502)
 	{
@@ -8734,7 +8735,7 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 		SoundCore_SetFade(FADE_OUT);	// NB. Call when MODE_STEPPING (not MODE_DEBUG) - see function
 
 		g_nAppMode = MODE_DEBUG;
-		GetFrame().FrameRefreshStatus(DRAW_TITLE);
+		GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 // BUG: PageUp, Trace - doesn't center cursor
 
 		g_nDisasmCurAddress = regs.pc;
@@ -9662,9 +9663,10 @@ void DebuggerMouseClick( int x, int y )
 	int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight * GetViewportScale();
 
 	// do picking
+	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
 
-	const int nOffsetX = IsFullScreen() ? GetFullScreenOffsetX() : Get3DBorderWidth();
-	const int nOffsetY = IsFullScreen() ? GetFullScreenOffsetY() : Get3DBorderHeight();
+	const int nOffsetX = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetX() : win32Frame.Get3DBorderWidth();
+	const int nOffsetY = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetY() : win32Frame.Get3DBorderHeight();
 
 	const int nOffsetInScreenX = x - nOffsetX;
 	const int nOffsetInScreenY = y - nOffsetY;

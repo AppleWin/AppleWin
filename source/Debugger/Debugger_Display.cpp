@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Interface.h"
 #include "../CPU.h"
 #include "../Windows/WinFrame.h"
+#include "../Windows/Win32Frame.h"
 #include "../LanguageCard.h"
 #include "../Memory.h"
 #include "../Mockingboard.h"
@@ -671,8 +672,10 @@ void StretchBltMemToFrameDC(void)
 	int nViewportCX, nViewportCY;
 	GetViewportCXCY(nViewportCX, nViewportCY);
 
-	int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
-	int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
+	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
+
+	int xdest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetX() : 0;
+	int ydest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetY() : 0;
 	int wdest = nViewportCX;
 	int hdest = nViewportCY;
 

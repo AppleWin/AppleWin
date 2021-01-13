@@ -22,6 +22,20 @@ Win32Frame::Win32Frame()
 	g_hLogoBitmap = (HBITMAP)0;
 	g_hDeviceBitmap = (HBITMAP)0;
 	g_hDeviceDC = (HDC)0;
+	g_bAltEnter_ToggleFullScreen = false;
+	g_bIsFullScreen = false;
+	g_bShowingCursor = true;
+	g_bLastCursorInAppleViewport = false;
+	g_uCount100msec = 0;
+	g_TimerIDEvent_100msec = 0;
+	g_bUsingCursor = FALSE;
+	g_bAppActive = false;
+	g_bFrameActive = false;
+	g_windowMinimized = false;
+	g_bFullScreen_ShowSubunitStatus = true;
+	g_win_fullscreen_scale = 1;
+	g_win_fullscreen_offsetx = 0;
+	g_win_fullscreen_offsety = 0;
 }
 
 void Win32Frame::videoCreateDIBSection(Video & video)
@@ -499,3 +513,10 @@ void Win32Frame::DDUninit(void)
 }
 
 #undef SAFE_RELEASE
+
+Win32Frame& Win32Frame::GetWin32Frame()
+{
+	FrameBase& frameBase = GetFrame();
+	Win32Frame& win32Frame = dynamic_cast<Win32Frame&>(frameBase);
+	return win32Frame;
+}
