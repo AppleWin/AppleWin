@@ -17,6 +17,7 @@ if (EXISTS ${LIBRETRO_COMMON_PATH}/include/libretro.h)
     analog.cpp
     rdirectsound.cpp
     retroregistry.cpp
+    retroframe.cpp
     )
 
   set(HEADER_FILES
@@ -28,6 +29,7 @@ if (EXISTS ${LIBRETRO_COMMON_PATH}/include/libretro.h)
     analog.h
     rdirectsound.h
     retroregistry.h
+    retroframe.h
     )
 
   add_library(applewin_libretro SHARED

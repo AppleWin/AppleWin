@@ -3,6 +3,7 @@
 #include "frontends/libretro/retroregistry.h"
 #include "frontends/libretro/joypad.h"
 #include "frontends/libretro/analog.h"
+#include "frontends/libretro/retroframe.h"
 
 #include "Common.h"
 #include "CardManager.h"
@@ -13,24 +14,17 @@
 #include "CPU.h"
 #include "NTSC.h"
 #include "Utilities.h"
-#include "Video.h"
-#include "Interface.h"
 
 #include "linux/keyboard.h"
 #include "linux/registry.h"
 #include "linux/paddle.h"
+#include "linux/context.h"
 #include "frontends/common2/utils.h"
 
 #include "libretro.h"
 
 namespace
 {
-
-  void updateWindowTitle()
-  {
-    GetAppleWindowTitle();
-    display_message(g_pAppTitle.c_str());
-  }
 
   bool insertDisk(const std::string & filename)
   {
@@ -57,31 +51,15 @@ namespace
 
 unsigned Game::ourInputDevices[MAX_PADS] = {RETRO_DEVICE_NONE};
 
-Game::Game()
-  : mySpeed(true), myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
+Game::Game(const std::shared_ptr<RetroFrame> & frame)
+  : myFrame(frame), mySpeed(true), myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
 {
+  SetFrame(myFrame);
   LogInit();
   InitialiseRetroRegistry();
 
   initialiseEmulator();
 
-  Video & video = GetVideo();
-
-  myBorderlessWidth = video.GetFrameBufferBorderlessWidth();
-  myBorderlessHeight = video.GetFrameBufferBorderlessHeight();
-  const size_t borderWidth = video.GetFrameBufferBorderWidth();
-  const size_t borderHeight = video.GetFrameBufferBorderHeight();
-  const size_t width = video.GetFrameBufferWidth();
-  myHeight = video.GetFrameBufferHeight();
-
-  myFrameBuffer = video.GetFrameBuffer();
-
-
-  myPitch = width * sizeof(bgra_t);
-  myOffset = (width * borderHeight + borderWidth) * sizeof(bgra_t);
-
-  const size_t size = myHeight * myPitch;
-  myVideoBuffer.resize(size);
 
   switch (ourInputDevices[0])
   {
@@ -104,6 +82,7 @@ Game::Game()
 Game::~Game()
 {
   uninitialiseEmulator();
+  SetFrame(std::shared_ptr<FrameBase>());
   Paddle::instance.reset();
   Registry::instance.reset();
 }
@@ -281,26 +260,13 @@ void Game::keyboardEmulation()
 {
   if (ourInputDevices[0] != RETRO_DEVICE_NONE)
   {
-    Video & video = GetVideo();
-
     if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_R))
     {
-      video.IncVideoType();
-
-      video.VideoReinitialize(false);
-      video.Config_Save_Video();
-      updateWindowTitle();
+      myFrame->CycleVideoType();
     }
     if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_L))
     {
-      VideoStyle_e videoStyle = video.GetVideoStyle();
-      videoStyle = VideoStyle_e(videoStyle ^ VS_HALF_SCANLINES);
-
-      video.SetVideoStyle(videoStyle);
-
-      video.VideoReinitialize(false);
-      video.Config_Save_Video();
-      updateWindowTitle();
+      myFrame->Cycle50ScanLines();
     }
     if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_START))
     {
@@ -311,22 +277,6 @@ void Game::keyboardEmulation()
   {
     std::fill(myButtonStates.begin(), myButtonStates.end(), 0);
   }
-}
-
-void Game::drawVideoBuffer()
-{
-  // this should not be necessary
-  // either libretro handles it
-  // or we should change AW
-  // but for now, there is no alternative
-  for (size_t row = 0; row < myHeight; ++row)
-  {
-    const uint8_t * src = myFrameBuffer + row * myPitch;
-    uint8_t * dst = myVideoBuffer.data() + (myHeight - row - 1) * myPitch;
-    memcpy(dst, src, myPitch);
-  }
-
-  video_cb(myVideoBuffer.data() + myOffset, myBorderlessWidth, myBorderlessHeight, myPitch);
 }
 
 bool Game::loadGame(const std::string & path)

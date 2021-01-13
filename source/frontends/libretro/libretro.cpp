@@ -14,6 +14,7 @@
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/rdirectsound.h"
 #include "frontends/libretro/retroregistry.h"
+#include "frontends/libretro/retroframe.h"
 
 namespace
 {
@@ -160,7 +161,7 @@ void retro_run(void)
 {
   ourGame->processInputEvents();
   ourGame->executeOneFrame();
-  ourGame->drawVideoBuffer();
+  GetFrame().VideoPresentScreen();
   const size_t ms = (1000 + 60 - 1) / 60; // round up
   RDirectSound::writeAudio(ms);
 }
@@ -179,7 +180,8 @@ bool retro_load_game(const retro_game_info *info)
 
   try
   {
-    std::unique_ptr<Game> game(new Game);
+    std::shared_ptr<RetroFrame> frame(new RetroFrame());
+    std::unique_ptr<Game> game(new Game(frame));
 
     const std::string snapshotEnding = ".aws.yaml";
     const std::string gamePath = info->path;

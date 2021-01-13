@@ -6,10 +6,12 @@
 #include <string>
 #include <vector>
 
+class RetroFrame;
+
 class Game
 {
 public:
-  Game();
+  Game(const std::shared_ptr<RetroFrame> & frame);
   ~Game();
 
   bool loadGame(const std::string & path);
@@ -28,15 +30,9 @@ public:
   static retro_usec_t ourFrameTime;
 
 private:
-  Speed mySpeed;  // fixed speed
-  std::vector<uint8_t> myVideoBuffer;
+  const std::shared_ptr<RetroFrame> myFrame;
 
-  size_t myPitch;
-  size_t myOffset;
-  size_t myHeight;
-  size_t myBorderlessWidth;
-  size_t myBorderlessHeight;
-  uint8_t* myFrameBuffer;
+  Speed mySpeed;  // fixed speed
 
   std::vector<int> myButtonStates;
 
