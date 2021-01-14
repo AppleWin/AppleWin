@@ -97,7 +97,7 @@ void uninitialiseEmulator()
     pMouseCard->Reset();
   }
   MemDestroy();
-  GetVideo().Destroy();
+  GetFrame().Destroy();
 
   SpkrDestroy();
   MB_Destroy();
