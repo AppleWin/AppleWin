@@ -38,10 +38,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "YamlHelper.h"
 #include "Log.h"
 
-static BYTE asciicode[2][10] = {
+static BYTE asciicode[3][10] = {
 	// VK_LEFT/UP/RIGHT/DOWN/SELECT, VK_PRINT/EXECUTE/SNAPSHOT/INSERT/DELETE
 	{0x08,0x00,0x15,0x00,0x00, 0x00,0x00,0x00,0x00,0x00},	// Apple II
-	{0x08,0x0B,0x15,0x0A,0x00, 0x00,0x00,0x00,0x00,0x7F}	// Apple //e
+	{0x08,0x0B,0x15,0x0A,0x00, 0x00,0x00,0x00,0x00,0x7F},	// Apple //e
+	{0x08,0x00,0x15,0x00,0x00, 0x00,0x00,0x00,0x00,0x7F}	// Base 64A (like Apple II but with DELETE)
 };	// Convert PC arrow keys to Apple keycodes
 
 bool  g_bShiftKey = false;
@@ -309,7 +310,8 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 
 		if (key >= VK_LEFT && key <= VK_DELETE)
 		{
-			BYTE n = asciicode[IS_APPLE2 ? 0 : 1][key - VK_LEFT];		// Convert to Apple arrow keycode
+			UINT model = IsCopamBase64A(GetApple2Type()) ? 2 : IS_APPLE2 ? 0 : 1;
+			BYTE n = asciicode[model][key - VK_LEFT];		// Convert to Apple arrow keycode
 			if (!n)
 				return;
 			keycode = n;
