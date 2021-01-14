@@ -1,35 +1,65 @@
 #pragma once
 
-#include <memory>
+#include "linux/linuxframe.h"
 
+#include <memory>
+#include <string>
 #include <ncurses.h>
 
-class GraphicsColors;
+class ASCIIArt;
+class EvDevPaddle;
+struct NCurses;
 
-class Frame
+class NFrame : public LinuxFrame
 {
- public:
-  Frame();
+public:
+  NFrame(const std::string & paddleDevice);
 
-  WINDOW * getWindow();
-  WINDOW * getStatus();
+  WINDOW * GetWindow();
+  WINDOW * GetStatus();
 
-  void init(int rows, int columns);
-  int getColumns() const;
+  virtual void Initialize();
+  virtual void Destroy();
+  virtual void VideoPresentScreen();
 
-  static GraphicsColors & getColors();
+  void ProcessEvDev();
 
-  static void unInitialise();
+  void ChangeColumns(const int x);
+  void ChangeRows(const int x);
 
- private:
+  void Init(int rows, int columns);
 
+  static void Cleanup();
+
+private:
+
+  const std::string myPaddleDevice;
   int myRows;
   int myColumns;
+  int myTextFlashCounter;
+  bool myTextFlashState;
 
   std::shared_ptr<WINDOW> myFrame;
   std::shared_ptr<WINDOW> myStatus;
+  std::shared_ptr<ASCIIArt> myAsciiArt;
+  std::shared_ptr<EvDevPaddle> myPaddle;
+  std::shared_ptr<NCurses> myNCurses;
 
-  static std::shared_ptr<GraphicsColors> ourColors;
-  static bool ourInitialised;
-  static void initialise();
+  LPBYTE        myTextBank1; // Aux
+  LPBYTE        myTextBank0; // Main
+  LPBYTE        myHiresBank1;
+  LPBYTE        myHiresBank0;
+
+  void VideoUpdateFlash();
+
+  chtype MapCharacter(Video & video, BYTE ch);
+
+  bool Update40ColCell(Video & video, int x, int y, int xpixel, int ypixel, int offset);
+  bool Update80ColCell(Video & video, int x, int y, int xpixel, int ypixel, int offset);
+  bool UpdateLoResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
+  bool UpdateDLoResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
+  bool UpdateHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
+  bool UpdateDHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
+
+  void InitialiseNCurses();
 };

@@ -1,12 +1,11 @@
 #pragma once
 
-#include <string>
+#include <memory>
 
-int ProcessKeyboard();
-void ProcessInput();
-void NVideoInitialise(const bool headless);
-void NVideoRedrawScreen();
-void PaddleInitialise(const std::string & device);
+class NFrame;
+
+int ProcessKeyboard(const std::shared_ptr<NFrame> & frame);
+void SetCtrlCHandler(const bool headless);
 
 extern double g_relativeSpeed;
 

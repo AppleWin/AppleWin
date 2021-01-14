@@ -61,10 +61,6 @@ void LinuxFrame::Destroy()
   GetVideo().Destroy(); // this resets the Video's FrameBuffer pointer
 }
 
-void LinuxFrame::VideoPresentScreen()
-{
-}
-
 void LinuxFrame::ChooseMonochromeColor()
 {
 }

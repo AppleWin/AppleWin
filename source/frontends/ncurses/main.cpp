@@ -18,6 +18,7 @@
 #include "linux/benchmark.h"
 #include "linux/paddle.h"
 #include "linux/interface.h"
+#include "linux/context.h"
 #include "frontends/common2/fileregistry.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/utils.h"
@@ -26,8 +27,7 @@
 
 namespace
 {
-
-  bool ContinueExecution(const EmulatorOptions & options)
+  bool ContinueExecution(const EmulatorOptions & options, const std::shared_ptr<NFrame> & frame)
   {
     const auto start = std::chrono::steady_clock::now();
 
@@ -53,7 +53,7 @@ namespace
 
     cardManager.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
 
-    const int key = ProcessKeyboard();
+    const int key = ProcessKeyboard(frame);
 
     switch (key)
     {
@@ -92,7 +92,7 @@ namespace
     }
     }
 
-    ProcessInput();
+    frame->ProcessEvDev();
 
     const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
     if (g_dwCyclesThisFrame >= dwClksPerFrame)
@@ -100,7 +100,7 @@ namespace
       g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
       if (!options.headless)
       {
-	NVideoRedrawScreen();
+	frame->VideoPresentScreen();
       }
     }
 
@@ -130,10 +130,10 @@ namespace
     }
   }
 
-  void EnterMessageLoop(const EmulatorOptions & options)
+  void EnterMessageLoop(const EmulatorOptions & options, const std::shared_ptr<NFrame> & frame)
   {
     LogFileTimeUntilFirstKeyReadReset();
-    while (ContinueExecution(options))
+    while (ContinueExecution(options, frame))
     {
     }
   }
@@ -147,6 +147,11 @@ namespace
     if (!run)
       return 1;
 
+    std::shared_ptr<NFrame> frame(new NFrame(options.paddleDeviceName));
+    SetFrame(frame);
+    // does not seem to be a problem calling endwin() multiple times
+    std::atexit(NFrame::Cleanup);
+
     if (options.log)
     {
       LogInit();
@@ -157,22 +162,19 @@ namespace
     g_nMemoryClearType = options.memclear;
 
     initialiseEmulator();
-    NVideoInitialise(options.headless);
+    SetCtrlCHandler(options.headless);
     applyOptions(options);
-    PaddleInitialise(options.paddleDeviceName);
-
-    GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 
     if (options.benchmark)
     {
-      VideoBenchmark(&NVideoRedrawScreen, &NVideoRedrawScreen);
+      const auto redraw = [&frame]() { frame->VideoRedrawScreen(); };
+      VideoBenchmark(redraw, redraw);
     }
     else
     {
-      EnterMessageLoop(options);
+      EnterMessageLoop(options, frame);
     }
 
-    Frame::unInitialise();
     uninitialiseEmulator();
 
     return 0;

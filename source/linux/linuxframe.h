@@ -23,7 +23,6 @@ public:
 
   virtual void SetLoadedSaveStateFlag(const bool bFlag);
 
-  virtual void VideoPresentScreen();
   virtual void ChooseMonochromeColor();
   virtual void Benchmark();
   virtual void DisplayLogo();
