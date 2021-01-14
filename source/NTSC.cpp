@@ -2117,7 +2117,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 	g_pFuncUpdateTextScreen     = updateScreenText40;
 	g_pFuncUpdateGraphicsScreen = updateScreenText40;
 
-	GetVideo().VideoReinitialize(); // Setup g_pFunc_ntsc*Pixel()
+	GetVideo().VideoReinitialize(true); // Setup g_pFunc_ntsc*Pixel()
 
 	bgra_t baseColors[kNumBaseColors];
 	GenerateBaseColors(&baseColors);

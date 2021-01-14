@@ -44,6 +44,7 @@ public:
 	void ChooseMonochromeColor(void);
 	UINT Get3DBorderWidth(void);
 	UINT Get3DBorderHeight(void);
+	void ApplyVideoModeChange(void);
 	LRESULT WndProc(HWND   window, UINT   message, WPARAM wparam, LPARAM lparam);
 
 private:

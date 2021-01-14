@@ -16,6 +16,8 @@ Peripheral cards supported:
 - RGB cards: Apple's Extended 80-Column Text/AppleColor Adaptor Card, 'Le Chat Mauve' Féline and Eve.
 - CP/M SoftCard
 - Uthernet I (ethernet card)
+- Language Card and Saturn 64/128K for Apple II/II+
+- No Slot Clock (NSC)
 
 
 Download latest (stable) release: [AppleWin v1.29.16.0](https://github.com/AppleWin/AppleWin/releases/download/v1.29.16.0/AppleWin1.29.16.0.zip)

@@ -1113,7 +1113,7 @@ LRESULT Win32Frame::WndProc(
 	}
 
     case WM_DISPLAYCHANGE:
-      GetVideo().VideoReinitialize();
+      GetVideo().VideoReinitialize(false);
       break;
 
     case WM_DROPFILES:
@@ -1223,26 +1223,7 @@ LRESULT Win32Frame::WndProc(
 
 			// TODO: Clean up code:FrameRefreshStatus(DRAW_TITLE) DrawStatusArea((HDC)0,DRAW_TITLE)
 			DrawStatusArea( (HDC)0, DRAW_TITLE );
-
-			GetVideo().VideoReinitialize(false);
-
-			if (g_nAppMode != MODE_LOGO)
-			{
-				if (g_nAppMode == MODE_DEBUG)
-				{
-					UINT debugVideoMode;
-					if ( DebugGetVideoMode(&debugVideoMode) )
-						VideoRefreshScreen(debugVideoMode, true);
-					else
-						VideoPresentScreen();
-				}
-				else
-				{
-					VideoPresentScreen();
-				}
-			}
-
-			GetVideo().Config_Save_Video();
+			ApplyVideoModeChange();
 		}
 		else if (wparam == VK_F10)
 		{

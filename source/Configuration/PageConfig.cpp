@@ -312,15 +312,8 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	if (bVideoReinit)
 	{
-		GetVideo().Config_Save_Video();
-
 		win32Frame.FrameRefreshStatus(DRAW_TITLE);
-
-		GetVideo().VideoReinitialize();
-		if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
-		{
-			win32Frame.VideoRedrawScreen();
-		}
+		win32Frame.ApplyVideoModeChange();
 	}
 
 	//
