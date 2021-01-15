@@ -56,45 +56,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //#define ENABLE_MENU 0
 #define DEBUG_KEY_MESSAGES 0
 
-// 3D border around the 560x384 Apple II display
-#define  VIEWPORTX   5
-#define  VIEWPORTY   5
-
-static const int kDEFAULT_VIEWPORT_SCALE = 2;
-       int g_nViewportCX = GetVideo().GetFrameBufferBorderlessWidth()  * kDEFAULT_VIEWPORT_SCALE;
-       int g_nViewportCY = GetVideo().GetFrameBufferBorderlessHeight() * kDEFAULT_VIEWPORT_SCALE;
-static int g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
-static int g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Windowed mode with borders, buttons etc (full-screen may be +1)
-
-#define  BUTTONX     (g_nViewportCX + VIEWPORTX*2)
-#define  BUTTONY     0
-#define  BUTTONCX    45
-#define  BUTTONCY    45
-#define  BUTTONS     8
-
-	static HBITMAP g_hCapsLockBitmap[2];
-	static HBITMAP g_hHardDiskBitmap[2];
-
-	//Pravets8 only
-	static HBITMAP g_hCapsBitmapP8[2];
-	static HBITMAP g_hCapsBitmapLat[2];
-	//static HBITMAP charsetbitmap [4]; //The idea was to add a charset indicator on the front panel, but it was given up. All charsetbitmap occurences must be REMOVED!
-	//===========================
-	static HBITMAP g_hDiskWindowedLED[ NUM_DISK_STATUS ];
-
-static int    g_nTrackDrive1  = -1;
-static int    g_nTrackDrive2  = -1;
-static int    g_nSectorDrive1 = -1;
-static int    g_nSectorDrive2 = -1;
-static TCHAR  g_sTrackDrive1 [8] = TEXT("??");
-static TCHAR  g_sTrackDrive2 [8] = TEXT("??");
-static TCHAR  g_sSectorDrive1[8] = TEXT("??");
-static TCHAR  g_sSectorDrive2[8] = TEXT("??");
-Disk_Status_e g_eStatusDrive1 = DISK_STATUS_OFF;
-Disk_Status_e g_eStatusDrive2 = DISK_STATUS_OFF;
+static bool FileExists(std::string strFilename);
 
 // Must keep in sync with Disk_Status_e g_aDiskFullScreenColors
-static DWORD g_aDiskFullScreenColorsLED[ NUM_DISK_STATUS ] =
+static const DWORD g_aDiskFullScreenColorsLED[ NUM_DISK_STATUS ] =
 {
 	RGB(  0,  0,  0), // DISK_STATUS_OFF   BLACK
 	RGB(  0,255,  0), // DISK_STATUS_READ  GREEN
@@ -102,36 +67,6 @@ static DWORD g_aDiskFullScreenColorsLED[ NUM_DISK_STATUS ] =
 	RGB(255,128,  0)  // DISK_STATUS_PROT  ORANGE
 //	RGB(  0,  0,255)  // DISK_STATUS_PROT  -blue-
 };
-
-static HBITMAP buttonbitmap[BUTTONS];
-
-static HBRUSH  btnfacebrush    = (HBRUSH)0;
-static HPEN    btnfacepen      = (HPEN)0;
-static HPEN    btnhighlightpen = (HPEN)0;
-static HPEN    btnshadowpen    = (HPEN)0;
-static int     buttonactive    = -1;
-static int     buttondown      = -1;
-static int     buttonover      = -1;
-static int     buttonx         = BUTTONX;
-static int     buttony         = BUTTONY;
-static HDC     g_hFrameDC      = (HDC)0;
-static RECT    framerect       = {0,0,0,0};
-
-static BOOL    helpquit        = 0;
-static HFONT   smallfont       = (HFONT)0;
-static HWND    tooltipwindow   = (HWND)0;
-static int     viewportx       = VIEWPORTX;	// Default to Normal (non-FullScreen) mode
-static int     viewporty       = VIEWPORTY;	// Default to Normal (non-FullScreen) mode
-
-static bool FileExists(std::string strFilename);
-
-bool	g_bScrollLock_FullSpeed = false;
-
-static RECT						g_main_window_saved_rect;
-static int						g_main_window_saved_style;
-static int						g_main_window_saved_exstyle;
-
-// ==========================================================================
 
 void Win32Frame::SetAltEnterToggleFullScreen(bool mode)
 {
@@ -300,7 +235,7 @@ void Win32Frame::CreateGdiObjects(void)
 }
 
 //===========================================================================
-static void DeleteGdiObjects(void)
+void Win32Frame::DeleteGdiObjects(void)
 {
 	for (int loop = 0; loop < BUTTONS; loop++)
 		_ASSERT(DeleteObject(buttonbitmap[loop]));
@@ -326,7 +261,7 @@ static void DeleteGdiObjects(void)
 
 // Draws an 3D box around the main apple screen
 //===========================================================================
-static void Draw3dRect (HDC dc, int x1, int y1, int x2, int y2, BOOL out)
+void Win32Frame::Draw3dRect(HDC dc, int x1, int y1, int x2, int y2, BOOL out)
 {	
 	SelectObject(dc,GetStockObject(NULL_BRUSH));
 	SelectObject(dc,out ? btnshadowpen : btnhighlightpen);
@@ -342,7 +277,7 @@ static void Draw3dRect (HDC dc, int x1, int y1, int x2, int y2, BOOL out)
 }
 
 //===========================================================================
-static void DrawBitmapRect (HDC dc, int x, int y, LPRECT rect, HBITMAP bitmap) {
+void Win32Frame::DrawBitmapRect (HDC dc, int x, int y, LPRECT rect, HBITMAP bitmap) {
   HDC memdc = CreateCompatibleDC(dc);
   SelectObject(memdc,bitmap);
   BitBlt(dc,x,y,
@@ -2289,7 +2224,7 @@ void Win32Frame::SetUsingCursor (BOOL bNewValue)
 	}
 }
 
-int GetViewportScale(void)
+int Win32Frame::GetViewportScale(void)
 {
 	return g_nViewportScale;
 }
@@ -2329,7 +2264,7 @@ void Win32Frame::SetupTooltipControls(void)
 // SM_CXPADDEDBORDER is not supported on 2000 & XP, but GetSystemMetrics() returns 0 for unknown values, so this use of SM_CXPADDEDBORDER works on 2000 & XP too:
 // http://msdn.microsoft.com/en-nz/library/windows/desktop/ms724385(v=vs.85).aspx
 // NB. GetSystemMetrics(SM_CXPADDEDBORDER) returns 0 for Win7, when built with VS2008 (see GH#571)
-static void GetWidthHeight(int& nWidth, int& nHeight)
+void Win32Frame::GetWidthHeight(int& nWidth, int& nHeight)
 {
 	nWidth  = g_nViewportCX + VIEWPORTX*2
 						    + BUTTONCX
@@ -2502,19 +2437,19 @@ void Win32Frame::FrameCreateWindow(void)
 }
 
 //===========================================================================
-HDC FrameGetDC () {
+HDC Win32Frame::FrameGetDC () {
   if (!g_hFrameDC) {
-    g_hFrameDC = GetDC(GetFrame().g_hFrameWindow);
+    g_hFrameDC = GetDC(g_hFrameWindow);
     SetViewportOrgEx(g_hFrameDC,viewportx,viewporty,NULL);
   }
   return g_hFrameDC;
 }
 
 //===========================================================================
-void FrameReleaseDC () {
+void Win32Frame::FrameReleaseDC () {
   if (g_hFrameDC) {
     SetViewportOrgEx(g_hFrameDC,0,0,NULL);
-    ReleaseDC(GetFrame().g_hFrameWindow,g_hFrameDC);
+    ReleaseDC(g_hFrameWindow,g_hFrameDC);
     g_hFrameDC = (HDC)0;
   }
 }
@@ -2731,7 +2666,7 @@ void Win32Frame::UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY
 	}
 }
 
-void GetViewportCXCY(int& nViewportCX, int& nViewportCY)
+void Win32Frame::GetViewportCXCY(int& nViewportCX, int& nViewportCY)
 {
 	nViewportCX = g_nViewportCX;
 	nViewportCY = g_nViewportCY;

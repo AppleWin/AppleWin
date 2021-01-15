@@ -143,7 +143,7 @@ static void ContinueExecution(void)
 	bool bScrollLock_FullSpeed = false;
 	if (GetPropertySheet().GetScrollLockToggle())
 	{
-		bScrollLock_FullSpeed = g_bScrollLock_FullSpeed;
+		bScrollLock_FullSpeed = Win32Frame::GetWin32Frame().g_bScrollLock_FullSpeed;
 	}
 	else
 	{

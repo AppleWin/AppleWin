@@ -552,7 +552,9 @@ HDC GetDebuggerMemDC(void)
 {
 	if (!g_hDebuggerMemDC)
 	{
-		HDC hFrameDC = FrameGetDC();
+		Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
+
+		HDC hFrameDC = win32Frame.FrameGetDC();
 		g_hDebuggerMemDC = CreateCompatibleDC(hFrameDC);
 
 		// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
@@ -591,7 +593,8 @@ void ReleaseDebuggerMemDC(void)
 		DeleteDC(g_hDebuggerMemDC);
 		g_hDebuggerMemDC = NULL;
 
-		FrameReleaseDC();
+		Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
+		win32Frame.FrameReleaseDC();
 
 		delete [] g_pDebuggerMemFramebufferinfo;
 		g_pDebuggerMemFramebufferinfo = NULL;
@@ -604,7 +607,8 @@ HDC GetConsoleFontDC(void)
 {
 	if (!g_hConsoleFontDC)
 	{
-		HDC hFrameDC = FrameGetDC();
+		Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
+		HDC hFrameDC = win32Frame.FrameGetDC();
 		g_hConsoleFontDC = CreateCompatibleDC(hFrameDC);
 
 		// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
@@ -632,7 +636,7 @@ HDC GetConsoleFontDC(void)
 		// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
 		HDC tmpDC = CreateCompatibleDC(hFrameDC);
 		// Pre-scaled bitmap
-		HBITMAP tmpFont = LoadBitmap(GetFrame().g_hInstance, TEXT("IDB_DEBUG_FONT_7x8"));  // Bitmap must be 112x128 as defined above
+		HBITMAP tmpFont = LoadBitmap(win32Frame.g_hInstance, TEXT("IDB_DEBUG_FONT_7x8"));  // Bitmap must be 112x128 as defined above
 		SelectObject(tmpDC, tmpFont);
 		BitBlt(g_hConsoleFontDC, 0, 0, CONSOLE_FONT_BITMAP_WIDTH, CONSOLE_FONT_BITMAP_HEIGHT,
 			tmpDC, 0, 0,
@@ -669,10 +673,10 @@ void ReleaseConsoleFontDC(void)
 
 void StretchBltMemToFrameDC(void)
 {
-	int nViewportCX, nViewportCY;
-	GetViewportCXCY(nViewportCX, nViewportCY);
-
 	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
+
+	int nViewportCX, nViewportCY;
+	win32Frame.GetViewportCXCY(nViewportCX, nViewportCY);
 
 	int xdest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetX() : 0;
 	int ydest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetY() : 0;
@@ -680,7 +684,7 @@ void StretchBltMemToFrameDC(void)
 	int hdest = nViewportCY;
 
 	BOOL bRes = StretchBlt(
-		FrameGetDC(),			                            // HDC hdcDest,
+		win32Frame.FrameGetDC(),			                // HDC hdcDest,
 		xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
 		GetDebuggerMemDC(),									// HDC hdcSrc,
