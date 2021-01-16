@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 
 #include "Windows/Win32Frame.h"
-#include "Windows/WinFrame.h"
 #include "Interface.h"
 #include "Core.h"
 #include "CPU.h"
@@ -37,6 +36,39 @@ Win32Frame::Win32Frame()
 	g_win_fullscreen_scale = 1;
 	g_win_fullscreen_offsetx = 0;
 	g_win_fullscreen_offsety = 0;
+
+	btnfacebrush = (HBRUSH)0;
+	btnfacepen = (HPEN)0;
+	btnhighlightpen = (HPEN)0;
+	btnshadowpen = (HPEN)0;
+	buttonactive = -1;
+	buttondown = -1;
+	buttonover = -1;
+	buttonx = BUTTONX;
+	buttony = BUTTONY;
+	g_hFrameDC = (HDC)0;
+	framerect = { 0,0,0,0 };
+
+	helpquit = 0;
+	smallfont = (HFONT)0;
+	tooltipwindow = (HWND)0;
+	viewportx = VIEWPORTX;	// Default to Normal (non-FullScreen) mode
+	viewporty = VIEWPORTY;	// Default to Normal (non-FullScreen) mode
+
+	g_bScrollLock_FullSpeed = false;
+
+	g_nTrackDrive1 = -1;
+	g_nTrackDrive2 = -1;
+	g_nSectorDrive1 = -1;
+	g_nSectorDrive2 = -1;
+
+	g_eStatusDrive1 = DISK_STATUS_OFF;
+	g_eStatusDrive2 = DISK_STATUS_OFF;
+
+	g_nViewportCX = GetVideo().GetFrameBufferBorderlessWidth() * kDEFAULT_VIEWPORT_SCALE;
+	g_nViewportCY = GetVideo().GetFrameBufferBorderlessHeight() * kDEFAULT_VIEWPORT_SCALE;
+	g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
+	g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Windowed mode with borders, buttons etc (full-screen may be +1)
 }
 
 void Win32Frame::videoCreateDIBSection(Video & video)

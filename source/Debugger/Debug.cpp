@@ -45,7 +45,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../NTSC.h"
 #include "../SoundCore.h"	// SoundCore_SetFade()
 #include "../Windows/Win32Frame.h"
-#include "../Windows/WinFrame.h"
 
 //	#define DEBUG_COMMAND_HELP  1
 //	#define DEBUG_ASM_HASH 1
@@ -2811,7 +2810,9 @@ bool _CmdConfigFont ( int iFont, LPCSTR pFontName, int iPitchFamily, int nFontHe
 			_tcsncpy( pFont->_sFontName, pFontName, MAX_FONT_NAME-1 );
 			pFont->_sFontName[ MAX_FONT_NAME-1 ] = 0;
 
-			HDC hDC = FrameGetDC();
+			Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
+
+			HDC hDC = win32Frame.FrameGetDC();
 
 			TEXTMETRIC tm;
 			GetTextMetrics(hDC, &tm);
@@ -2850,7 +2851,7 @@ bool _CmdConfigFont ( int iFont, LPCSTR pFontName, int iPitchFamily, int nFontHe
 				nFontWidthMax = 7;
 			}
 
-			FrameReleaseDC();
+			win32Frame.FrameReleaseDC();
 
 //			DeleteObject( g_hFontDisasm );		
 //			g_hFontDisasm = hFont;
@@ -9659,11 +9660,12 @@ void DebuggerMouseClick( int x, int y )
 	if (iAltCtrlShift != g_bConfigDisasmClick)
 		return;
 
-	int nFontWidth  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg * GetViewportScale();
-	int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight * GetViewportScale();
+	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
+
+	int nFontWidth  = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg * win32Frame.GetViewportScale();
+	int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight * win32Frame.GetViewportScale();
 
 	// do picking
-	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
 
 	const int nOffsetX = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetX() : win32Frame.Get3DBorderWidth();
 	const int nOffsetY = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetY() : win32Frame.Get3DBorderHeight();

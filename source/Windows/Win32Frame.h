@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FrameBase.h"
+#include "DiskImage.h"
 
 class Video;
 
@@ -10,12 +11,24 @@ class Video;
 #define FULLSCREEN_SCALE_TYPE int
 #endif
 
+// 3D border around the 560x384 Apple II display
+#define  VIEWPORTX   5
+#define  VIEWPORTY   5
+
+#define  BUTTONX     (g_nViewportCX + VIEWPORTX*2)
+#define  BUTTONY     0
+#define  BUTTONCX    45
+#define  BUTTONCY    45
+#define  BUTTONS     8
+
+
 class Win32Frame : public FrameBase
 {
 public:
 	Win32Frame();
 
 	static Win32Frame& GetWin32Frame();
+	static LRESULT CALLBACK FrameWndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
 
 	virtual void FrameDrawDiskLEDS();
 	virtual void FrameDrawDiskStatus();
@@ -44,11 +57,19 @@ public:
 	void ChooseMonochromeColor(void);
 	UINT Get3DBorderWidth(void);
 	UINT Get3DBorderHeight(void);
+	int GetViewportScale(void);
+	void GetViewportCXCY(int& nViewportCX, int& nViewportCY);
+
 	void ApplyVideoModeChange(void);
-	LRESULT WndProc(HWND   window, UINT   message, WPARAM wparam, LPARAM lparam);
+
+	HDC FrameGetDC();
+	void FrameReleaseDC();
+
+	bool	g_bScrollLock_FullSpeed;
 
 private:
 	static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName, LPVOID lpContext);
+	LRESULT WndProc(HWND   window, UINT   message, WPARAM wparam, LPARAM lparam);
 
 	void videoCreateDIBSection(Video& video);
 	void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
@@ -64,6 +85,8 @@ private:
 	void DrawCrosshairs(int x, int y);
 	void DrawFrameWindow(bool bPaintingWindow = false);
 	void DrawStatusArea(HDC passdc, int drawflags);
+	void Draw3dRect(HDC dc, int x1, int y1, int x2, int y2, BOOL out);
+	void DrawBitmapRect(HDC dc, int x, int y, LPRECT rect, HBITMAP bitmap);
 	void ProcessButtonClick(int button, bool bFromButtonUI = false);
 	bool ConfirmReboot(bool bFromButtonUI);
 	void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive);
@@ -79,8 +102,10 @@ private:
 	void DrawCrosshairsMouse();
 	void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen);
 	void CreateGdiObjects(void);
+	void DeleteGdiObjects(void);
 	void FrameShowCursor(BOOL bShow);
 	void FullScreenRevealCursor(void);
+	void GetWidthHeight(int& nWidth, int& nHeight);
 
 	bool g_bAltEnter_ToggleFullScreen; // Default for ALT+ENTER is to toggle between windowed and full-screen modes
 	bool    g_bIsFullScreen;
@@ -108,4 +133,56 @@ private:
 	GUID draw_device_guid[MAX_DRAW_DEVICES];
 	int num_draw_devices;
 	LPDIRECTDRAW g_lpDD;
+
+	HBITMAP buttonbitmap[BUTTONS];
+
+	HBRUSH  btnfacebrush;
+	HPEN    btnfacepen;
+	HPEN    btnhighlightpen;
+	HPEN    btnshadowpen;
+	int     buttonactive;
+	int     buttondown;
+	int     buttonover;
+	int     buttonx;
+	int     buttony;
+	HDC     g_hFrameDC;
+	RECT    framerect;
+
+	BOOL    helpquit;
+	HFONT   smallfont;
+	HWND    tooltipwindow;
+	int     viewportx;	// Default to Normal (non-FullScreen) mode
+	int     viewporty;	// Default to Normal (non-FullScreen) mode
+
+	RECT	g_main_window_saved_rect;
+	int		g_main_window_saved_style;
+	int		g_main_window_saved_exstyle;
+
+
+	HBITMAP g_hCapsLockBitmap[2];
+	HBITMAP g_hHardDiskBitmap[2];
+
+	//Pravets8 only
+	HBITMAP g_hCapsBitmapP8[2];
+	HBITMAP g_hCapsBitmapLat[2];
+	//HBITMAP charsetbitmap [4]; //The idea was to add a charset indicator on the front panel, but it was given up. All charsetbitmap occurences must be REMOVED!
+	//===========================
+	HBITMAP g_hDiskWindowedLED[NUM_DISK_STATUS];
+
+	int    g_nTrackDrive1;
+	int    g_nTrackDrive2;
+	int    g_nSectorDrive1;
+	int    g_nSectorDrive2;
+	TCHAR  g_sTrackDrive1[8] = TEXT("??");
+	TCHAR  g_sTrackDrive2[8] = TEXT("??");
+	TCHAR  g_sSectorDrive1[8] = TEXT("??");
+	TCHAR  g_sSectorDrive2[8] = TEXT("??");
+	Disk_Status_e g_eStatusDrive1;
+	Disk_Status_e g_eStatusDrive2;
+
+	static const int kDEFAULT_VIEWPORT_SCALE = 2;
+	int g_nViewportCX;
+	int g_nViewportCY;
+	int g_nViewportScale; // saved REGSAVE
+	int g_nMaxViewportScale;	// Max scale in Windowed mode with borders, buttons etc (full-screen may be +1)
 };
