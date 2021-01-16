@@ -53,7 +53,6 @@ set(SOURCE_FILES
   linux/windows/dmusicc.cpp
   linux/windows/winnls.cpp
 
-  linux/data.cpp
   linux/benchmark.cpp
   linux/paddle.cpp
   linux/version.cpp
@@ -137,7 +136,6 @@ set(HEADER_FILES
   linux/windows/mmsystem.h
 
   linux/interface.h
-  linux/data.h
   linux/benchmark.h
   linux/paddle.h
   linux/version.h

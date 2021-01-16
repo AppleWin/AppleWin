@@ -24,7 +24,6 @@
 #include "RGBMonitor.h"
 #include "Utilities.h"
 
-#include "linux/data.h"
 #include "linux/benchmark.h"
 #include "linux/version.h"
 #include "linux/paddle.h"
@@ -78,8 +77,6 @@ namespace
     void loadEmulator(const std::shared_ptr<QtFrame> & frame, const GlobalOptions & options)
     {
         LoadConfiguration();
-
-        CheckCpu();
 
         // ResetDefaultMachineMemTypes();
 

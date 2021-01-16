@@ -1,6 +1,5 @@
 #include "frontends/common2/utils.h"
 
-#include "linux/data.h"
 #include "linux/interface.h"
 
 #include "StdAfx.h"
@@ -72,7 +71,6 @@ void initialiseEmulator()
 
   LoadConfiguration();
   SetCurrentCLK6502();
-  CheckCpu();
   GetAppleWindowTitle();
   GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 
