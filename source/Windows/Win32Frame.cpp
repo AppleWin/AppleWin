@@ -47,7 +47,7 @@ Win32Frame::Win32Frame()
 	buttonx = BUTTONX;
 	buttony = BUTTONY;
 	g_hFrameDC = (HDC)0;
-	framerect = { 0,0,0,0 };
+	memset(&framerect, 0, sizeof(framerect));
 
 	helpquit = 0;
 	smallfont = (HFONT)0;
@@ -61,6 +61,10 @@ Win32Frame::Win32Frame()
 	g_nTrackDrive2 = -1;
 	g_nSectorDrive1 = -1;
 	g_nSectorDrive2 = -1;
+	strcpy_s(g_sTrackDrive1, sizeof(g_sTrackDrive1), "??");
+	strcpy_s(g_sTrackDrive2, sizeof(g_sTrackDrive1), "??");
+	strcpy_s(g_sSectorDrive1, sizeof(g_sTrackDrive1), "??");
+	strcpy_s(g_sSectorDrive2, sizeof(g_sTrackDrive1), "??");
 
 	g_eStatusDrive1 = DISK_STATUS_OFF;
 	g_eStatusDrive2 = DISK_STATUS_OFF;
