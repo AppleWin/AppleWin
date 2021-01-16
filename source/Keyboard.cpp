@@ -133,10 +133,34 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 		}
 
 		GetFrame().g_bFreshReset = false;
-		if ((key > 0x7F) && !g_bTK3KModeKey) // When in TK3000 mode, we have special keys which need remapping
+
+		if (GetApple2Type() == A2TYPE_TK30002E && (key > 0x7F) && !g_bTK3KModeKey) // When in TK3000 mode, we have special keys which need remapping
 			return;
 
-		if (!IS_APPLE2) 
+		// Initially default to non-clone behaviour:
+		if (IsAppleIIeOrAbove(GetApple2Type()))
+		{
+			if (!IS_CLONE() && key > 0x7F)	// accented chars, eg. AltGr+A
+				return;
+
+			if (g_bCapsLock && key >= 'a' && key <='z')
+				keycode = key - 32;
+			else
+				keycode = key;
+		}
+		else
+		{
+			if (!IS_CLONE() && (key == '`' || key >= '{'))	// `,{,|,},~,DEL and >0x7F (excludes a..z)
+				return;
+
+			if (key >= 'a' && key <='z')
+				keycode = key - 32;
+			else
+				keycode = key;
+		}
+
+		// Next apply any clone override:
+		if (IS_CLONE())
 		{
 			P8Shift = false;
 			if (g_bCapsLock && (key >= 'a') && (key <='z'))
@@ -147,18 +171,20 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 			else
 			{
 				keycode = key;
-			}			
+			}
+
+			keycode &= 0x7F;	// for accented chars, eg. AltGr+A
 
 			//The latter line should be applied for Pravtes 8A/C only, but not for Pravets 82/M !!!			
 			if ((g_bCapsLock == false) && (key >= 'A') && (key <='Z'))
 			{
 				P8Shift = true;
-				if (g_Apple2Type == A2TYPE_PRAVETS8A) 
+				if (GetApple2Type() == A2TYPE_PRAVETS8A)
 					keycode = key + 32;
 			}
 
 			//Remap some keys for Pravets82/M
-			if (g_Apple2Type == A2TYPE_PRAVETS82)
+			if (GetApple2Type() == A2TYPE_PRAVETS82)
 			{
 				if (key == 64) 
 					keycode = 96;
@@ -178,7 +204,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 					if (key == 124) keycode = 92;
 				}
 			}
-			if (g_Apple2Type == A2TYPE_PRAVETS8M)  //Pravets 8M charset is still uncertain
+			if (GetApple2Type() == A2TYPE_PRAVETS8M)  //Pravets 8M charset is still uncertain
 			{
 				if (g_bCapsLock == false) //cyrillic letters
 				{
@@ -194,7 +220,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 				}
 			}
 			//Remap some keys for Pravets8A/C, which has a different charset for Pravtes82/M, whose keys MUST NOT be remapped.
-			if (g_Apple2Type == A2TYPE_PRAVETS8A) //&& (g_bCapsLock == false))
+			if (GetApple2Type() == A2TYPE_PRAVETS8A) //&& (g_bCapsLock == false))
 			{
 				if (g_bCapsLock == false) //i.e. cyrillic letters
 			    {
@@ -241,7 +267,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 			}
 			// Remap for the TK3000 //e, which had a special |Mode| key for displaying accented chars on screen
 			// Borrowed from Fábio Belavenuto's TK3000e emulator (Copyright (C) 2004) - http://code.google.com/p/tk3000e/
-			if (g_bTK3KModeKey)	// We already switch this on only if the the TK3000 is currently being emulated
+			if (GetApple2Type() == A2TYPE_TK30002E && g_bTK3KModeKey)	// We already switch this on only if the the TK3000 is currently being emulated
 			{
 				if ((key >= 0xC0) && (key <= 0xDA)) key += 0x20; // Convert uppercase to lowercase
 				switch (key)
@@ -266,19 +292,6 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 					keycode = key;
 			}
 		}
-		else
-		{
-			if (g_Apple2Type == A2TYPE_PRAVETS8A)
-			{
-			}
-			else
-			{
-				if (key >= '`')
-					keycode = key - 32;
-				else
-					keycode = key;
-			}
-		}
 	} 
 	else //(bASCII != ASCII)	// WM_KEYDOWN
 	{
@@ -299,7 +312,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 
 		if (key == VK_SCROLL)
 		{	// For the TK3000 //e we use Scroll Lock to switch between Apple ][ and accented chars modes
-			if (g_Apple2Type == A2TYPE_TK30002E)
+			if (GetApple2Type() == A2TYPE_TK30002E)
 			{
 				g_bTK3KModeKey = (GetKeyState(VK_SCROLL) & 1) ? true : false;	// Sync with the Scroll Lock status
 				GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);	// TODO: Implement |Mode| LED in the UI; make it appear only when in TK3000 mode
@@ -546,7 +559,7 @@ void KeybToggleCapsLock ()
 //===========================================================================
 void KeybToggleP8ACapsLock ()
 {
-	_ASSERT(g_Apple2Type == A2TYPE_PRAVETS8A);
+	_ASSERT(GetApple2Type() == A2TYPE_PRAVETS8A);
 	P8CAPS_ON = !P8CAPS_ON;
 	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 	// g_bP8CapsLock= g_bP8CapsLock?false:true; //The same as the upper, but slower
