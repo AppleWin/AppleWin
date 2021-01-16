@@ -103,7 +103,7 @@ BYTE Pravets::SetCapsLockAllowed(BYTE value)	// Write $C060
 	return 0;
 }
 
-BYTE Pravets::ConvertKeyToKeycode(WPARAM key, BYTE keycode)
+BYTE Pravets::ConvertToKeycode(WPARAM key, BYTE keycode)
 {
 	if (KeybGetCapsStatus() && (key >= 'a') && (key <='z'))
 		SetShift(true);
@@ -204,4 +204,58 @@ BYTE Pravets::ConvertKeyToKeycode(WPARAM key, BYTE keycode)
 	}
 
 	return keycode;
+}
+
+BYTE Pravets::ConvertToPrinterChar(BYTE value)
+{
+	char Lat8A[]= "abwgdevzijklmnoprstufhc~{}yx`q|]";
+	char Lat82[]= "abwgdevzijklmnoprstufhc^[]yx@q{}~`";
+	char Kir82[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞß[]^@";
+	char Kir8ACapital[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞßÝ";
+	char Kir8ALowerCase[]= "àáâãäåæçèéêëìíîïðñòóôõö÷øùúüþÿý";
+
+	BYTE c = 0;
+
+	if (GetApple2Type() == A2TYPE_PRAVETS8A)  //This is print conversion for Pravets 8A/C. Print conversion for Pravets82/M is still to be done.
+	{
+		if ((value > 90) && (value < 128)) //This range shall be set more precisely
+		{
+			c = value;
+			int loop = 0;
+			while (loop < 31)
+			{
+				if (c == Lat8A[loop])
+					c = Kir8ALowerCase[loop];
+				loop++;
+			}
+		}
+		else if ((value > 64) && (value < 91))
+		{
+			c = value + 32;
+		}
+		else
+		{
+			c = value & 0x7F;
+			int loop = 0;
+			while (loop < 31)
+			{
+				if (c == Lat8A[loop])
+					c = Kir8ACapital[loop];
+				loop++;
+			}
+		}
+	}
+	else if (GetApple2Type() == A2TYPE_PRAVETS82 || GetApple2Type() == A2TYPE_PRAVETS8M)
+	{
+		c = value & 0x7F;
+		int loop = 0;
+		while (loop < 34)
+		{
+			if (c == Lat82[loop])
+				c = Kir82[loop];
+			loop++;
+		}
+	}
+
+	return c;
 }

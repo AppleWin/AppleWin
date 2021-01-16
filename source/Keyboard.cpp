@@ -158,7 +158,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 			keycode &= 0x7F;	// for accented chars, eg. AltGr+A
 
 			if (GetApple2Type() == A2TYPE_PRAVETS8M || GetApple2Type() == A2TYPE_PRAVETS82 || GetApple2Type() == A2TYPE_PRAVETS8A)
-				keycode = GetPravets().ConvertKeyToKeycode(key, keycode);
+				keycode = GetPravets().ConvertToKeycode(key, keycode);
 
 			// Remap for the TK3000 //e, which had a special |Mode| key for displaying accented chars on screen
 			// Borrowed from Fábio Belavenuto's TK3000e emulator (Copyright (C) 2004) - http://code.google.com/p/tk3000e/

@@ -22,7 +22,8 @@ public:
 	bool GetCapsLockAllowed(void) { return g_CapsLockAllowed; }
 	BYTE GetKeycode(BYTE floatingBus);
 
-	BYTE ConvertKeyToKeycode(WPARAM key, BYTE keycode);
+	BYTE ConvertToKeycode(WPARAM key, BYTE keycode);
+	BYTE ConvertToPrinterChar(BYTE value);
 
 private:
 	bool g_CapsLockAllowed;
