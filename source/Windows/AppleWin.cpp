@@ -47,7 +47,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 #include "Windows/Win32Frame.h"
-#include "Windows/WinFrame.h"
 #include "RGBMonitor.h"
 #include "NTSC.h"
 

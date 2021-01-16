@@ -2,7 +2,6 @@
 
 #include "FrameBase.h"
 #include "DiskImage.h"
-#include "Windows/WinFrame.h"
 
 class Video;
 
@@ -29,6 +28,7 @@ public:
 	Win32Frame();
 
 	static Win32Frame& GetWin32Frame();
+	static LRESULT CALLBACK FrameWndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
 
 	virtual void FrameDrawDiskLEDS();
 	virtual void FrameDrawDiskStatus();
@@ -65,12 +65,11 @@ public:
 	HDC FrameGetDC();
 	void FrameReleaseDC();
 
-	LRESULT WndProc(HWND   window, UINT   message, WPARAM wparam, LPARAM lparam);
-
 	bool	g_bScrollLock_FullSpeed;
 
 private:
 	static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName, LPVOID lpContext);
+	LRESULT WndProc(HWND   window, UINT   message, WPARAM wparam, LPARAM lparam);
 
 	void videoCreateDIBSection(Video& video);
 	void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);

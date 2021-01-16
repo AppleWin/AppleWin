@@ -121,7 +121,6 @@
     <ClInclude Include="source\Windows\AppleWin.h" />
     <ClInclude Include="source\Windows\DirectInput.h" />
     <ClInclude Include="source\Windows\Win32Frame.h" />
-    <ClInclude Include="source\Windows\WinFrame.h" />
     <ClInclude Include="source\YamlHelper.h" />
     <ClInclude Include="source\z80emu.h" />
     <ClInclude Include="source\Z80VICE\daa.h" />

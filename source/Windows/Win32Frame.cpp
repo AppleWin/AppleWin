@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 
 #include "Windows/Win32Frame.h"
-#include "Windows/WinFrame.h"
 #include "Interface.h"
 #include "Core.h"
 #include "CPU.h"

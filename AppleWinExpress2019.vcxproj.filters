@@ -501,9 +501,6 @@
     <ClInclude Include="source\Windows\DirectInput.h">
       <Filter>Source Files\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="source\Windows\WinFrame.h">
-      <Filter>Source Files\Windows</Filter>
-    </ClInclude>
     <ClInclude Include="source\Core.h">
       <Filter>Source Files</Filter>
     </ClInclude>

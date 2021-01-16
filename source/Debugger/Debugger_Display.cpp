@@ -35,7 +35,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Core.h"
 #include "../Interface.h"
 #include "../CPU.h"
-#include "../Windows/WinFrame.h"
 #include "../Windows/Win32Frame.h"
 #include "../LanguageCard.h"
 #include "../Memory.h"

@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "Windows/WinFrame.h"
 #include "Windows/Win32Frame.h"
 #include "Windows/AppleWin.h"
 #include "Interface.h"
@@ -888,7 +887,7 @@ void Win32Frame::EraseButton (int number) {
 
 //===========================================================================
 
-LRESULT CALLBACK FrameWndProc(
+LRESULT CALLBACK Win32Frame::FrameWndProc(
 	HWND   window,
 	UINT   message,
 	WPARAM wparam,
