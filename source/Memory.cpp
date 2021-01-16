@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "MouseInterface.h"
 #include "NTSC.h"
 #include "NoSlotClock.h"
+#include "Pravets.h"
 #include "ParallelPrinter.h"
 #include "Registry.h"
 #include "SAM.h"
@@ -559,11 +560,7 @@ static BYTE __stdcall IORead_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 {	
 	switch (addr & 0x7) // address bit 4 is ignored (UTAIIe:7-5)
 	{
-	//In Pravets8A/C if SETMODE (8bit character encoding) is enabled, bit6 in $C060 is 0; Else it is 1
-	//If (CAPS lOCK of Pravets8A/C is on or Shift is pressed) and (MODE is enabled), bit7 in $C000 is 1; Else it is 0
-	//Writing into $C060 sets MODE on and off. If bit 0 is 0 the the MODE is set 0, if bit 0 is 1 then MODE is set to 1 (8-bit)
-
-	case 0x0:	return TapeRead(pc, addr, bWrite, d, nExecutedCycles);			// $C060 TAPEIN
+	case 0x0:	return TapeRead(pc, addr, bWrite, d, nExecutedCycles);			//$C060 TAPEIN
 	case 0x1:	return JoyReadButton(pc, addr, bWrite, d, nExecutedCycles);		//$C061 Digital input 0 (If bit 7=1 then JoyButton 0 or OpenApple is pressed)
 	case 0x2:	return JoyReadButton(pc, addr, bWrite, d, nExecutedCycles);		//$C062 Digital input 1 (If bit 7=1 then JoyButton 1 or ClosedApple is pressed)
 	case 0x3:	return JoyReadButton(pc, addr, bWrite, d, nExecutedCycles);		//$C063 Digital input 2
@@ -582,11 +579,11 @@ static BYTE __stdcall IOWrite_C06x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	{
 	case 0x0:	
 		if (g_Apple2Type == A2TYPE_PRAVETS8A)
-			return TapeWrite (pc, addr, bWrite, d, nExecutedCycles);
+			return GetPravets().SetCapsLockAllowed(d);
 		else
-			return IO_Null(pc, addr, bWrite, d, nExecutedCycles); //Apple2 value
+			return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
-	return IO_Null(pc, addr, bWrite, d, nExecutedCycles); //Apple2 value
+	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 }
 
 //-------------------------------------

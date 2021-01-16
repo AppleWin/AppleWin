@@ -805,7 +805,6 @@ void Win32Frame::DrawStatusArea (HDC passdc, int drawflags)
 	int  x      = buttonx;
 	int  y      = buttony+BUTTONS*BUTTONCY+1;
 	const bool bCaps = KeybGetCapsStatus();
-	//const bool bP8Caps = KeybGetP8CapsStatus(); // TODO: FIXME: Not used ?!  Should show the LED status ...
 
 #if HD_LED
 	// 1.19.0.0 Hard Disk Status/Indicator Light

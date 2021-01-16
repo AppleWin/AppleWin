@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
+#include "Pravets.h"
 #include "Speaker.h"
 #include "Registry.h"
 #include "SynchronousEventManager.h"
@@ -294,4 +295,10 @@ bool SetCurrentImageDir(const std::string& pszImageDir)
 		return true;
 
 	return false;
+}
+
+Pravets& GetPravets(void)
+{
+	static Pravets pravets;
+	return pravets;
 }

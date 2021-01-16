@@ -530,7 +530,7 @@ void ResetMachineState()
 	g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
 	MemReset();	// calls CpuInitialize(), CNoSlotClock.Reset()
-	PravetsReset();
+	GetPravets().Reset();
 	if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
 	GetVideo().VideoResetState();
@@ -578,7 +578,7 @@ void CtrlReset()
 		MemAnnunciatorReset();
 	}
 
-	PravetsReset();
+	GetPravets().Reset();
 	GetCardMgr().GetDisk2CardMgr().Reset();
 	HD_Reset();
 	KeybReset();
