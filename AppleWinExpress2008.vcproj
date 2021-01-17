@@ -997,10 +997,6 @@
 					RelativePath=".\source\Windows\WinFrame.cpp"
 					>
 				</File>
-				<File
-					RelativePath=".\source\Windows\WinFrame.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="Configuration"

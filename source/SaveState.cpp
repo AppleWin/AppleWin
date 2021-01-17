@@ -466,7 +466,7 @@ static void Snapshot_LoadState_v2(void)
 		//m_ConfigNew.m_bEnableTheFreezesF8Rom = ?;	// todo: when support saving config
 
 		MemReset();							// Also calls CpuInitialize()
-		PravetsReset();
+		GetPravets().Reset();
 
 		if (GetCardMgr().IsSSCInstalled())
 		{

@@ -47,7 +47,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 #include "Windows/Win32Frame.h"
-#include "Windows/WinFrame.h"
 #include "RGBMonitor.h"
 #include "NTSC.h"
 
@@ -143,7 +142,7 @@ static void ContinueExecution(void)
 	bool bScrollLock_FullSpeed = false;
 	if (GetPropertySheet().GetScrollLockToggle())
 	{
-		bScrollLock_FullSpeed = g_bScrollLock_FullSpeed;
+		bScrollLock_FullSpeed = Win32Frame::GetWin32Frame().g_bScrollLock_FullSpeed;
 	}
 	else
 	{

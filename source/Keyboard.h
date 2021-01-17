@@ -7,7 +7,6 @@ void    ClipboardInitiatePaste();
 void    KeybReset();
 void    KeybSetAltGrSendsWM_CHAR(bool state);
 bool    KeybGetCapsStatus();
-bool    KeybGetP8CapsStatus();
 bool    KeybGetAltStatus();
 bool    KeybGetCtrlStatus();
 bool    KeybGetShiftStatus();
