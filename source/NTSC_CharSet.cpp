@@ -76,8 +76,7 @@ static void get_csbits(csbits_t csbits, const char* resourceName, const UINT cy0
 	const UINT bufferSize = bitmapWidthBytes*bitmapHeight;
 	BYTE* pBuffer = new BYTE [bufferSize];
 
-	HBITMAP hCharBitmap = GetFrame().FrameLoadBitmap(resourceName);
-	GetBitmapBits(hCharBitmap, bufferSize, pBuffer);
+	GetFrame().GetBitmap(resourceName, bufferSize, pBuffer);
 
 	for (UINT cy=cy0, ch=0; cy<cy0+16; cy++)
 	{
@@ -86,8 +85,6 @@ static void get_csbits(csbits_t csbits, const char* resourceName, const UINT cy0
 			get_csbits_xy(csbits, ch++, cx, cy, pBuffer);
 		}
 	}
-
-	DeleteObject(hCharBitmap);
 
 	delete [] pBuffer;
 }

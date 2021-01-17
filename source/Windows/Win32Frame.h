@@ -49,7 +49,7 @@ public:
 	virtual void VideoPresentScreen(void);
 
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
-	virtual HBITMAP FrameLoadBitmap(LPCSTR lpBitmapName);
+	virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
 	virtual void Restart();
 
 	bool GetFullScreenShowSubunitStatus(void);

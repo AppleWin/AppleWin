@@ -37,8 +37,8 @@ public:
 	// this function has the same interface as MessageBox in windows.h
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) = 0;
 
-	// this function has the same interface as LoadBitmap in windows.h
-	virtual HBITMAP FrameLoadBitmap(LPCSTR lpBitmapName) = 0;
+	// this function merges LoadBitmap and GetBitmapBits from windows.h
+	virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) = 0;
 
 	virtual void Restart() = 0;
 
