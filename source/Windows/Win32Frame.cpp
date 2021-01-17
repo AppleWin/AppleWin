@@ -586,3 +586,10 @@ HBITMAP Win32Frame::FrameLoadBitmap(LPCSTR lpBitmapName)
 {
 	return LoadBitmap(g_hInstance, lpBitmapName);
 }
+
+void Win32Frame::Restart()
+{
+	// do we really need to PostMessage?
+	// could we just execute it here directly
+	PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);
+}

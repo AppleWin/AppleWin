@@ -40,6 +40,8 @@ public:
 	// this function has the same interface as LoadBitmap in windows.h
 	virtual HBITMAP FrameLoadBitmap(LPCSTR lpBitmapName) = 0;
 
+	virtual void Restart() = 0;
+
 	void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
 	void VideoRedrawScreen(void);
 	void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);

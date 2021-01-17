@@ -438,6 +438,8 @@ static void Snapshot_LoadState_v2(void)
 	bool restart = false;	// Only need to restart if any VM state has change
 	HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
 
+	FrameBase& frame = GetFrame();
+
 	try
 	{
 		if (!yamlHelper.InitParser( g_strSaveStatePathname.c_str() ))
@@ -507,7 +509,7 @@ static void Snapshot_LoadState_v2(void)
 		}
 
 		MB_SetCumulativeCycles();
-		GetFrame().SetLoadedSaveStateFlag(true);
+		frame.SetLoadedSaveStateFlag(true);
 
 		// NB. The following disparity should be resolved:
 		// . A change in h/w via the Configuration property sheets results in a the VM completely restarting (via WM_USER_RESTART)
@@ -530,13 +532,13 @@ static void Snapshot_LoadState_v2(void)
 	}
 	catch(std::string szMessage)
 	{
-		GetFrame().FrameMessageBox(
+		frame.FrameMessageBox(
 					szMessage.c_str(),
 					TEXT("Load State"),
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
 		if (restart)
-			PostMessage(GetFrame().g_hFrameWindow, WM_USER_RESTART, 0, 0);		// Power-cycle VM (undoing all the new state just loaded)
+			frame.Restart();		// Power-cycle VM (undoing all the new state just loaded)
 	}
 
 	SetCursor(oldcursor);

@@ -50,6 +50,7 @@ public:
 
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
 	virtual HBITMAP FrameLoadBitmap(LPCSTR lpBitmapName);
+	virtual void Restart();
 
 	bool GetFullScreenShowSubunitStatus(void);
 	int GetFullScreenOffsetX(void);
