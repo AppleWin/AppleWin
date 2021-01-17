@@ -52,7 +52,6 @@ bool  g_bAltKey   = false;
 static bool  g_bTK3KModeKey   = false; //TK3000 //e |Mode| key
 
 static bool  g_bCapsLock = true; //Caps lock key for Apple2 and Lat/Cyr lock for Pravets8
-static bool  g_bP8CapsLock = true; //Caps lock key of Pravets 8A/C
 static BYTE  keycode         = 0;	// Current Apple keycode
 static BOOL  keywaiting      = 0;
 static bool  g_bAltGrSendsWM_CHAR = false;
@@ -78,12 +77,6 @@ void KeybReset()
 bool KeybGetCapsStatus()
 {
 	return g_bCapsLock;
-}
-
-//===========================================================================
-bool KeybGetP8CapsStatus()
-{
-	return g_bP8CapsLock;
 }
 
 //===========================================================================
@@ -162,109 +155,11 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 		// Next apply any clone override:
 		if (IS_CLONE())
 		{
-			P8Shift = false;
-			if (g_bCapsLock && (key >= 'a') && (key <='z'))
-			{
-				P8Shift = true;
-				keycode = key - 32;
-			}
-			else
-			{
-				keycode = key;
-			}
-
 			keycode &= 0x7F;	// for accented chars, eg. AltGr+A
 
-			//The latter line should be applied for Pravtes 8A/C only, but not for Pravets 82/M !!!			
-			if ((g_bCapsLock == false) && (key >= 'A') && (key <='Z'))
-			{
-				P8Shift = true;
-				if (GetApple2Type() == A2TYPE_PRAVETS8A)
-					keycode = key + 32;
-			}
+			if (IsPravets(GetApple2Type()))
+				keycode = GetPravets().ConvertToKeycode(key, keycode);
 
-			//Remap some keys for Pravets82/M
-			if (GetApple2Type() == A2TYPE_PRAVETS82)
-			{
-				if (key == 64) 
-					keycode = 96;
-				if (key == '^') 
-					keycode = '~';
-
-				if (g_bCapsLock == false) //cyrillic letters
-				{
-					if (key == '`') keycode = '^';
-					if (key == 92) keycode = '@'; // \ to @	
-					if (key == 124) keycode = 92;
-				}
-				else //(g_bCapsLock == true) //latin letters
-				{
-					if (key == 91) keycode = 123;
-					if (key == 93) keycode = 125;
-					if (key == 124) keycode = 92;
-				}
-			}
-			if (GetApple2Type() == A2TYPE_PRAVETS8M)  //Pravets 8M charset is still uncertain
-			{
-				if (g_bCapsLock == false) //cyrillic letters
-				{
-					if (key == '[') keycode = '{';
-					if (key == ']') keycode = '}';
-					if (key == '`') keycode = '~'; //96= key `~
-					if (key == 92) keycode = 96;
-				}
-				else //latin letters
-				{
-					if (key == '`') 
-						keycode = '^'; //96= key `~
-				}
-			}
-			//Remap some keys for Pravets8A/C, which has a different charset for Pravtes82/M, whose keys MUST NOT be remapped.
-			if (GetApple2Type() == A2TYPE_PRAVETS8A) //&& (g_bCapsLock == false))
-			{
-				if (g_bCapsLock == false) //i.e. cyrillic letters
-			    {
-					if (key == '[') keycode = '{';
-					if (key == ']') keycode = '}';
-					if (key == '`') keycode = '~';
-					if (key == 92) keycode = 96;
-					if (GetCapsLockAllowed() == true)
-					{
-						if ((key == 92) || (key == 124)) keycode = 96; //Ý to Þ
-						//This shall be rewriten, so that enabling CAPS_LOCK (i.e. F10) will not invert these keys values)
-						//The same for latin letters.
-						if ((key == '{') || (key == '}') || (key == '~') || (key == 124) || (key == '^') ||  (key == 95))
-							P8Shift = true;					
-					}
-				}
-				else //i.e. latin letters
-				{
-					if (GetCapsLockAllowed() == false)
-					{
-						if (key == '{') keycode = '[';
-						if (key == '}') keycode = ']';
-						if (key == 124) 
-							keycode = 92;
-						/*if (key == 92) 
-							keycode = 124;*/
-					//Characters ` and ~ cannot be generated in 7bit character mode, so they are replaced with
-					}
-					else
-					{
-						if (key == '{') keycode = 91;
-						if (key == '}')	keycode = 93;
-						if (key == 124)	keycode = 92;					
-						if ((key == '[') || (key == ']') || (key == 92) || (key == '^') || (key == 95))
-							P8Shift= true; 
-						if (key == 96)	 //This line shall generate sth. else i.e. ` In fact. this character is not generateable by the pravets keyboard.
-						{
-							keycode = '^';
-							P8Shift= true;
-						}
-						if (key == 126)	keycode = '^';
-					}
-				}
-			}
 			// Remap for the TK3000 //e, which had a special |Mode| key for displaying accented chars on screen
 			// Borrowed from Fábio Belavenuto's TK3000e emulator (Copyright (C) 2004) - http://code.google.com/p/tk3000e/
 			if (GetApple2Type() == A2TYPE_TK30002E && g_bTK3KModeKey)	// We already switch this on only if the the TK3000 is currently being emulated
@@ -285,7 +180,8 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 					case 0xF5: key = '#';  break; // õ
 					case 0xFA: key = '|';  break; // ú
 				}
-				if (key > 0x7F) return;	// Get out
+				if (key > 0x7F)
+					return;
 				if ((key >= 'a') && (key <= 'z') && (g_bCapsLock))
 					keycode = key - ('a'-'A');
 				else
@@ -554,15 +450,6 @@ void KeybToggleCapsLock ()
 		g_bCapsLock = (GetKeyState(VK_CAPITAL) & 1);
 		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 	}
-}
-
-//===========================================================================
-void KeybToggleP8ACapsLock ()
-{
-	_ASSERT(GetApple2Type() == A2TYPE_PRAVETS8A);
-	P8CAPS_ON = !P8CAPS_ON;
-	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
-	// g_bP8CapsLock= g_bP8CapsLock?false:true; //The same as the upper, but slower
 }
 
 //===========================================================================

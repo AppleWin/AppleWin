@@ -67,6 +67,8 @@ extern bool       g_bDisableDirectInput;				// Cmd line switch: don't init DI (s
 extern bool       g_bDisableDirectSound;				// Cmd line switch: don't init DS (so no MB/Speaker support)
 extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't init MB support
 
+class Pravets& GetPravets(void);
+
 //#define LOG_PERF_TIMINGS
 #ifdef LOG_PERF_TIMINGS
 class PerfMarker
