@@ -10,11 +10,17 @@ namespace
 {
   std::queue<BYTE> keys;
   BYTE keycode = 0;
+  bool g_bCapsLock = true; //Caps lock key for Apple2 and Lat/Cyr lock for Pravets8
 }
 
 void addKeyToBuffer(BYTE key)
 {
   keys.push(key);
+}
+
+bool KeybGetCapsStatus()
+{
+  return g_bCapsLock;
 }
 
 BYTE KeybGetKeycode()
