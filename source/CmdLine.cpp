@@ -310,7 +310,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			{
 				std::string msg = "Failed to load video rom (not found or not exactly 2/4/8/16KiB)\n";
 				LogFileOutput("%s", msg.c_str());
-				MessageBox(GetFrame().g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
+				GetFrame().FrameMessageBox(msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			}
 			else
 			{

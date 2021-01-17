@@ -34,6 +34,9 @@ public:
 
 	virtual void VideoPresentScreen(void) = 0;
 
+	// this function has the same interface as MessageBox in windows.h
+	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) = 0;
+
 	void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
 	void VideoRedrawScreen(void);
 	void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);

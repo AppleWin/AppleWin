@@ -530,7 +530,7 @@ static void Snapshot_LoadState_v2(void)
 	}
 	catch(std::string szMessage)
 	{
-		MessageBox(	GetFrame().g_hFrameWindow,
+		GetFrame().FrameMessageBox(
 					szMessage.c_str(),
 					TEXT("Load State"),
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
@@ -549,7 +549,7 @@ void Snapshot_LoadState()
 	const size_t pos = g_strSaveStatePathname.size() - ext_aws.size();
 	if (g_strSaveStatePathname.find(ext_aws, pos) != std::string::npos)	// find ".aws" at end of pathname
 	{
-		MessageBox(	GetFrame().g_hFrameWindow,
+		GetFrame().FrameMessageBox(
 					"Save-state v1 no longer supported.\n"
 					"Please load using AppleWin 1.27, and re-save as a v2 state file.",
 					TEXT("Load State"),
@@ -646,7 +646,7 @@ void Snapshot_SaveState(void)
 	}
 	catch(std::string szMessage)
 	{
-		MessageBox(	GetFrame().g_hFrameWindow,
+		GetFrame().FrameMessageBox(
 					szMessage.c_str(),
 					TEXT("Save State"),
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);

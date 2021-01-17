@@ -1823,7 +1823,7 @@ bool Win32Frame::ConfirmReboot(bool bFromButtonUI)
 	if (!bFromButtonUI || !g_bConfirmReboot)
 		return true;
 
-	int res = MessageBox(g_hFrameWindow,
+	int res = FrameMessageBox(
 		"Are you sure you want to reboot?\n"
 		"(All data will be lost!)\n"
 		"\n"
@@ -2055,7 +2055,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		//if(!filename1.compare("\"\"") == false) //Do not use this, for some reason it does not work!!!
 		if(!filename1.compare(sFileNameEmpty) )
 		{
-			int MB_Result = MessageBox(g_hFrameWindow, "No disk image loaded. Do you want to run CiderPress anyway?" ,"No disk image.", MB_ICONINFORMATION|MB_YESNO);
+			int MB_Result = FrameMessageBox("No disk image loaded. Do you want to run CiderPress anyway?" ,"No disk image.", MB_ICONINFORMATION|MB_YESNO);
 			if (MB_Result == IDYES)
 			{
 				if (FileExists (PathToCiderPress ))
@@ -2064,7 +2064,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 				}
 				else
 				{
-					MessageBox(g_hFrameWindow, szCiderpressNotFoundText, szCiderpressNotFoundCaption, MB_ICONINFORMATION|MB_OK);
+					FrameMessageBox(szCiderpressNotFoundText, szCiderpressNotFoundCaption, MB_ICONINFORMATION|MB_OK);
 				}
 			}
 		}
@@ -2076,7 +2076,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 			}
 			else
 			{
-				MessageBox(g_hFrameWindow, szCiderpressNotFoundText, szCiderpressNotFoundCaption, MB_ICONINFORMATION|MB_OK);
+				FrameMessageBox(szCiderpressNotFoundText, szCiderpressNotFoundCaption, MB_ICONINFORMATION|MB_OK);
 			}
 		}
 	}

@@ -599,7 +599,7 @@ static void UninitHookThread()
 
 static void ExceptionHandler(const char* pError)
 {
-	MessageBox(	GetFrame().g_hFrameWindow,
+	GetFrame().FrameMessageBox(
 				pError,
 				TEXT("Runtime Exception"),
 				MB_ICONEXCLAMATION | MB_SETFOREGROUND);
@@ -930,7 +930,7 @@ static void RepeatInitialization(void)
 
 		if (!g_bSysClkOK)
 		{
-			MessageBox(GetFrame().g_hFrameWindow, "DirectX failed to create SystemClock instance", TEXT("AppleWin Error"), MB_OK);
+			GetFrame().FrameMessageBox("DirectX failed to create SystemClock instance", TEXT("AppleWin Error"), MB_OK);
 			g_cmdLine.bShutdown = true;
 		}
 
@@ -941,7 +941,7 @@ static void RepeatInitialization(void)
 							: "Unsupported -rom and -f8rom being used at the same time\n";
 
 			LogFileOutput("%s", msg.c_str());
-			MessageBox(GetFrame().g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
+			GetFrame().FrameMessageBox(msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			g_cmdLine.bShutdown = true;
 		}
 

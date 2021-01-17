@@ -2225,7 +2225,7 @@ void _CmdColorGet( const int iScheme, const int iColor )
 	{
 		TCHAR sText[ CONSOLE_WIDTH ];
 		wsprintf( sText, "Color: %d\nOut of range!", iColor );
-		MessageBox(GetFrame().g_hFrameWindow, sText, TEXT("ERROR"), MB_OK );
+		GetFrame().FrameMessageBox(sText, TEXT("ERROR"), MB_OK );
 	}
 }
 
@@ -3042,7 +3042,7 @@ void DisasmCalcTopFromCurAddress( bool bUpdateTop )
 				"\tLen: %04X\n"
 				"\tMissed: %04X"),
 				g_nDisasmCurAddress - nLen, nLen, g_nDisasmCurAddress );
-			MessageBox( GetFrame().g_hFrameWindow, sText, "ERROR", MB_OK );
+			GetFrame().FrameMessageBox( sText, "ERROR", MB_OK );
 #endif
 	}
 }
