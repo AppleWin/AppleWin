@@ -1537,22 +1537,28 @@ void MemInitializeROM(void)
 {
 	// READ THE APPLE FIRMWARE ROMS INTO THE ROM IMAGE
 	UINT ROM_SIZE = 0;
-	HRSRC hResInfo = NULL;
+	WORD resourceId = 0;
 	switch (g_Apple2Type)
 	{
-	case A2TYPE_APPLE2:         hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_ROM          ), "ROM"); ROM_SIZE = Apple2RomSize ; break;
-	case A2TYPE_APPLE2PLUS:     hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_PLUS_ROM     ), "ROM"); ROM_SIZE = Apple2RomSize ; break;
-	case A2TYPE_APPLE2JPLUS:    hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_JPLUS_ROM    ), "ROM"); ROM_SIZE = Apple2RomSize ; break;
-	case A2TYPE_APPLE2E:        hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2E_ROM         ), "ROM"); ROM_SIZE = Apple2eRomSize; break;
-	case A2TYPE_APPLE2EENHANCED:hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2E_ENHANCED_ROM), "ROM"); ROM_SIZE = Apple2eRomSize; break;
-	case A2TYPE_PRAVETS82:      hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_82_ROM      ), "ROM"); ROM_SIZE = Apple2RomSize ; break;
-	case A2TYPE_PRAVETS8M:      hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_8M_ROM      ), "ROM"); ROM_SIZE = Apple2RomSize ; break;
-	case A2TYPE_PRAVETS8A:      hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_PRAVETS_8C_ROM      ), "ROM"); ROM_SIZE = Apple2eRomSize; break;
-	case A2TYPE_TK30002E:       hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_TK3000_2E_ROM       ), "ROM"); ROM_SIZE = Apple2eRomSize; break;
-	case A2TYPE_BASE64A:        hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_BASE_64A_ROM        ), "ROM"); ROM_SIZE = Base64ARomSize; break;
+	case A2TYPE_APPLE2:         resourceId = IDR_APPLE2_ROM          ; ROM_SIZE = Apple2RomSize ; break;
+	case A2TYPE_APPLE2PLUS:     resourceId = IDR_APPLE2_PLUS_ROM     ; ROM_SIZE = Apple2RomSize ; break;
+	case A2TYPE_APPLE2JPLUS:    resourceId = IDR_APPLE2_JPLUS_ROM    ; ROM_SIZE = Apple2RomSize ; break;
+	case A2TYPE_APPLE2E:        resourceId = IDR_APPLE2E_ROM         ; ROM_SIZE = Apple2eRomSize; break;
+	case A2TYPE_APPLE2EENHANCED:resourceId = IDR_APPLE2E_ENHANCED_ROM; ROM_SIZE = Apple2eRomSize; break;
+	case A2TYPE_PRAVETS82:      resourceId = IDR_PRAVETS_82_ROM      ; ROM_SIZE = Apple2RomSize ; break;
+	case A2TYPE_PRAVETS8M:      resourceId = IDR_PRAVETS_8M_ROM      ; ROM_SIZE = Apple2RomSize ; break;
+	case A2TYPE_PRAVETS8A:      resourceId = IDR_PRAVETS_8C_ROM      ; ROM_SIZE = Apple2eRomSize; break;
+	case A2TYPE_TK30002E:       resourceId = IDR_TK3000_2E_ROM       ; ROM_SIZE = Apple2eRomSize; break;
+	case A2TYPE_BASE64A:        resourceId = IDR_BASE_64A_ROM        ; ROM_SIZE = Base64ARomSize; break;
 	}
 
-	if (hResInfo == NULL)
+	BYTE* pData = NULL;
+	if (resourceId)
+	{
+		pData = GetFrame().GetResource(resourceId, "ROM", ROM_SIZE);
+	}
+
+	if (pData == NULL)
 	{
 		TCHAR sRomFileName[ MAX_PATH ];
 		switch (g_Apple2Type)
@@ -1587,18 +1593,6 @@ void MemInitializeROM(void)
 		ExitProcess(1);
 	}
 
-	DWORD dwResSize = SizeofResource(NULL, hResInfo);
-	if(dwResSize != ROM_SIZE)
-		return;
-
-	HGLOBAL hResData = LoadResource(NULL, hResInfo);
-	if(hResData == NULL)
-		return;
-
-	BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
-	if (pData == NULL)
-		return;
-
 	memset(pCxRomInternal,0,CxRomSize);
 	memset(pCxRomPeripheral,0,CxRomSize);
 
@@ -1618,32 +1612,18 @@ void MemInitializeCustomF8ROM(void)
 {
 	const UINT F8RomSize = 0x800;
 	const UINT F8RomOffset = Apple2RomSize-F8RomSize;
+	FrameBase& frame = GetFrame();
 
 	if (IsApple2Original(GetApple2Type()) && GetCardMgr().QuerySlot(SLOT0) == CT_LanguageCard)
 	{
-		try
+		BYTE* pData = frame.GetResource(IDR_APPLE2_PLUS_ROM, "ROM", Apple2RomSize);
+		if (pData == NULL)
 		{
-			HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_PLUS_ROM), "ROM");
-			if (hResInfo == NULL)
-				throw false;
-
-			DWORD dwResSize = SizeofResource(NULL, hResInfo);
-			if(dwResSize != Apple2RomSize)
-				throw false;
-
-			HGLOBAL hResData = LoadResource(NULL, hResInfo);
-			if(hResData == NULL)
-				throw false;
-
-			BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
-			if (pData == NULL)
-				throw false;
-
-			memcpy(memrom+F8RomOffset, pData+F8RomOffset, F8RomSize);
+			frame.FrameMessageBox("Failed to read F8 (auto-start) ROM for language card in original Apple][", TEXT("AppleWin Error"), MB_OK);
 		}
-		catch (bool)
+		else
 		{
-			GetFrame().FrameMessageBox( "Failed to read F8 (auto-start) ROM for language card in original Apple][", TEXT("AppleWin Error"), MB_OK );
+			memcpy(memrom+F8RomOffset, pData+F8RomOffset, F8RomSize);
 		}
 	}
 
@@ -1673,12 +1653,8 @@ void MemInitializeCustomF8ROM(void)
 
 	if (GetPropertySheet().GetTheFreezesF8Rom() && IS_APPLE2)
 	{
-		HGLOBAL hResData = NULL;
-		BYTE* pData = NULL;
-
-		HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_FREEZES_F8_ROM), "ROM");
-
-		if (hResInfo && (SizeofResource(NULL, hResInfo) == 0x800) && (hResData = LoadResource(NULL, hResInfo)) && (pData = (BYTE*) LockResource(hResData)))
+		BYTE* pData = frame.GetResource(IDR_FREEZES_F8_ROM, "ROM", 0x800);
+		if (pData)
 		{
 			memcpy(memrom+Apple2RomSize-F8RomSize, pData, F8RomSize);
 		}

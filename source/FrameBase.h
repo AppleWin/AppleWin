@@ -40,6 +40,13 @@ public:
 	// this function merges LoadBitmap and GetBitmapBits from windows.h
 	virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) = 0;
 
+	// FindResource, MAKEINTRESOURCE, SizeofResource, LoadResource, LockResource
+	// Return pointer to resource if size is correct.
+	// NULL if resource is invalid or size check fails
+	// The pointer is only valid until the next call to GetResource
+	// (in Windows, the pointer is valid forever, but it would be very restrictive to force this on other FrameBase implementations)
+	virtual BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) = 0;
+
 	virtual void Restart() = 0;
 
 	void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);

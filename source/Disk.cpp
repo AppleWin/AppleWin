@@ -1775,21 +1775,9 @@ bool Disk2InterfaceCard::DriveSwap(void)
 
 //===========================================================================
 
-bool Disk2InterfaceCard::GetFirmware(LPCSTR lpName, BYTE* pDst)
+bool Disk2InterfaceCard::GetFirmware(WORD lpNameId, BYTE* pDst)
 {
-	HRSRC hResInfo = FindResource(NULL, lpName, "FIRMWARE");
-	if(hResInfo == NULL)
-		return false;
-
-	DWORD dwResSize = SizeofResource(NULL, hResInfo);
-	if(dwResSize != DISK2_FW_SIZE)
-		return false;
-
-	HGLOBAL hResData = LoadResource(NULL, hResInfo);
-	if(hResData == NULL)
-		return false;
-
-	BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
+	BYTE* pData = GetFrame().GetResource(lpNameId, "FIRMWARE", DISK2_FW_SIZE);
 	if (!pData)
 		return false;
 
@@ -1815,10 +1803,10 @@ void Disk2InterfaceCard::InitFirmware(LPBYTE pCxRomPeripheral)
 // TODO: LoadRom_Disk_Floppy()
 void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 {
-	bool res = GetFirmware(MAKEINTRESOURCE(IDR_DISK2_13SECTOR_FW), m_13SectorFirmware);
+	bool res = GetFirmware(IDR_DISK2_13SECTOR_FW, m_13SectorFirmware);
 	_ASSERT(res);
 
-	res = GetFirmware(MAKEINTRESOURCE(IDR_DISK2_16SECTOR_FW), m_16SectorFirmware);
+	res = GetFirmware(IDR_DISK2_16SECTOR_FW, m_16SectorFirmware);
 	_ASSERT(res);
 
 	// Note: We used to disable the track stepping delay in the Disk II controller firmware by

@@ -595,3 +595,22 @@ void Win32Frame::Restart()
 	// could we just execute it here directly
 	PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);
 }
+
+BYTE* Win32Frame::GetResource(WORD id, LPCSTR lpType, DWORD dwExpectedSize)
+{
+	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(id), lpType);
+	if (hResInfo == NULL)
+		return NULL;
+
+	DWORD dwResSize = SizeofResource(NULL, hResInfo);
+	if (dwResSize != dwExpectedSize)
+		return NULL;
+
+	HGLOBAL hResData = LoadResource(NULL, hResInfo);
+	if (hResData == NULL)
+		return NULL;
+
+	BYTE* pVideoRom = (BYTE*)LockResource(hResData);	// NB. Don't need to unlock resource
+
+	return pVideoRom;
+}

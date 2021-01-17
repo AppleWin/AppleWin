@@ -50,6 +50,7 @@ public:
 
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
 	virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
+	virtual BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize);
 	virtual void Restart();
 
 	bool GetFullScreenShowSubunitStatus(void);

@@ -940,19 +940,7 @@ void CSuperSerialCard::CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 	const UINT SSC_SLOT_FW_SIZE = 256;
 	const UINT SSC_SLOT_FW_OFFSET = 7*256;
 
-	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_SSC_FW), "FIRMWARE");
-	if(hResInfo == NULL)
-		return;
-
-	DWORD dwResSize = SizeofResource(NULL, hResInfo);
-	if(dwResSize != SSC_FW_SIZE)
-		return;
-
-	HGLOBAL hResData = LoadResource(NULL, hResInfo);
-	if(hResData == NULL)
-		return;
-
-	BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
+	BYTE* pData = GetFrame().GetResource(IDR_SSC_FW, "FIRMWARE", SSC_FW_SIZE);
 	if(pData == NULL)
 		return;
 

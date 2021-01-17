@@ -203,7 +203,7 @@ private:
 	void SetSequencerFunction(WORD addr);
 	void DumpSectorWOZ(FloppyDisk floppy);
 	void DumpTrackWOZ(FloppyDisk floppy);
-	bool GetFirmware(LPCSTR lpName, BYTE* pDst);
+	bool GetFirmware(WORD lpNameId, BYTE* pDst);
 	void InitFirmware(LPBYTE pCxRomPeripheral);
 	void UpdateLatchForEmptyDrive(FloppyDrive* pDrive);
 
