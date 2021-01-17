@@ -167,7 +167,7 @@ BYTE Pravets::ConvertToKeycode(WPARAM key, BYTE keycode)
 			if (key == 92) keycode = 96;
 			if (g_CapsLockAllowed == true)
 			{
-				if ((key == 92) || (key == 124)) keycode = 96; //İ to Ş
+				if ((key == 92) || (key == 124)) keycode = 96; //Ã to Ã
 				//This shall be rewriten, so that enabling CAPS_LOCK (i.e. F10) will not invert these keys values)
 				//The same for latin letters.
 				if ((key == '{') || (key == '}') || (key == '~') || (key == 124) || (key == '^') ||  (key == 95))
@@ -210,9 +210,9 @@ BYTE Pravets::ConvertToPrinterChar(BYTE value)
 {
 	char Lat8A[]= "abwgdevzijklmnoprstufhc~{}yx`q|]";
 	char Lat82[]= "abwgdevzijklmnoprstufhc^[]yx@q{}~`";
-	char Kir82[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ×ØÙÚÜŞß[]^@";
-	char Kir8ACapital[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ×ØÙÚÜŞßİ";
-	char Kir8ALowerCase[]= "àáâãäåæçèéêëìíîïğñòóôõö÷øùúüşÿı";
+	char Kir82[]= "Ã€ÃÃ‚ÃƒÃ„Ã…Ã†Ã‡ÃˆÃ‰ÃŠÃ‹ÃŒÃÃÃÃÃ‘Ã’Ã“Ã”Ã•Ã–Ã—Ã˜Ã™ÃšÃœÃÃŸ[]^@";
+	char Kir8ACapital[]= "Ã€ÃÃ‚ÃƒÃ„Ã…Ã†Ã‡ÃˆÃ‰ÃŠÃ‹ÃŒÃÃÃÃÃ‘Ã’Ã“Ã”Ã•Ã–Ã—Ã˜Ã™ÃšÃœÃÃŸÃ";
+	char Kir8ALowerCase[]= "Ã Ã¡Ã¢Ã£Ã¤Ã¥Ã¦Ã§Ã¨Ã©ÃªÃ«Ã¬Ã­Ã®Ã¯Ã°Ã±Ã²Ã³Ã´ÃµÃ¶Ã·Ã¸Ã¹ÃºÃ¼Ã¾Ã¿Ã½";
 
 	BYTE c = 0;
 
