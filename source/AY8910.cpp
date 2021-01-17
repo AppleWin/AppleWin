@@ -709,6 +709,47 @@ void CAY8910::sound_ay_overlay( void )
   }
 }
 
+BYTE CAY8910::sound_ay_read( int reg )
+{
+	reg &= 15;
+
+	BYTE val = 0;
+	bool got = false;
+
+	if (ay_change_count)
+	{
+		for (int i=ay_change_count-1; i>=0; i--)
+		{
+			if (ay_change[i].reg == reg)
+			{
+				val = ay_change[i].val;	// return the most recently written reg's value
+				got = true;
+			}
+		}
+	}
+
+	if (!got)
+		val = sound_ay_registers[reg];
+
+	switch (reg & 15)
+	{
+	case 1:
+	case 3:
+	case 5:
+	case 13:
+		val &= 15;
+		break;
+	case 6:
+	case 8:
+	case 9:
+	case 10:
+		val &= 31;
+		break;
+	}
+
+	return val;
+}
+
 // AppleWin:TC  Holding down ScrollLock will result in lots of AY changes /ay_change_count/
 //              - since sound_ay_overlay() is called to consume them.
 
@@ -1145,6 +1186,10 @@ bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, const std::string& su
 static CAY8910 g_AY8910[MAX_8910];
 static unsigned __int64 g_uLastCumulativeCycles = 0;
 
+BYTE AYReadReg(int chip, int r)
+{
+	return g_AY8910[chip].sound_ay_read(r);
+}
 
 void _AYWriteReg(int chip, int r, int v)
 {

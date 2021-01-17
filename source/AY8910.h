@@ -2,6 +2,8 @@
 
 #define MAX_8910 4
 
+BYTE AYReadReg(int chip, int r);	// TC
+
 //-------------------------------------
 // MAME interface
 
@@ -40,6 +42,7 @@ public:
 
 	void sound_ay_init( void );
 	void sound_init( const char *device );
+	BYTE sound_ay_read( int reg );	// TC
 	void sound_ay_write( int reg, int val, libspectrum_dword now );
 	void sound_ay_reset( void );
 	void sound_frame( void );

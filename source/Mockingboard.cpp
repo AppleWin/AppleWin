@@ -321,6 +321,7 @@ static void AY8910_Write(BYTE nDevice, BYTE /*nReg*/, BYTE nValue, BYTE nAYDevic
 					break;
 
 				case AY_READ:		// 5: READ FROM PSG (need to set DDRA to input)
+					pMB->sy6522.ORA = AYReadReg(nDevice+2*nAYDevice, pMB->nAYCurrentRegister) & (pMB->sy6522.DDRA ^ 0xff);
 					break;
 
 				case AY_WRITE:		// 6: WRITE TO PSG
