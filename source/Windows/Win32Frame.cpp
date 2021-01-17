@@ -581,3 +581,8 @@ int Win32Frame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 	const HWND handle = g_hFrameWindow ? g_hFrameWindow : GetDesktopWindow();
 	return MessageBox(handle, lpText, lpCaption, uType);
 }
+
+HBITMAP Win32Frame::FrameLoadBitmap(LPCSTR lpBitmapName)
+{
+	return LoadBitmap(g_hInstance, lpBitmapName);
+}
