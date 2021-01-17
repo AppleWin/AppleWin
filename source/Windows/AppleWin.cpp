@@ -522,7 +522,7 @@ static bool HookFilterForKeyboard()
 	std::string msg("Failed to install hook filter for system keys");
 
 	DWORD dwErr = GetLastError();
-	MessageBox(GetDesktopWindow(), msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK);
+	GetFrame().FrameMessageBox(msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK);
 
 	msg += "\n";
 	LogFileOutput(msg.c_str());

@@ -981,6 +981,7 @@ LRESULT Win32Frame::WndProc(
       DeleteGdiObjects();
       DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
       PostQuitMessage(0);	// Post WM_QUIT message to the thread's message queue
+      g_hFrameWindow = (HWND)0;
       LogFileOutput("WM_DESTROY (done)\n");
       break;
 

@@ -1496,8 +1496,7 @@ void MemInitialize()
 
 	if (!memaux || !memdirty || !memimage || !memmain || !memrom || !pCxRomInternal || !pCxRomPeripheral)
 	{
-		MessageBox(
-			GetDesktopWindow(),
+		GetFrame().FrameMessageBox(
 			TEXT("The emulator was unable to allocate the memory it ")
 			TEXT("requires.  Further execution is not possible."),
 			g_pAppTitle.c_str(),
@@ -1580,8 +1579,7 @@ void MemInitializeROM(void)
 
 		LogFileOutput("%s\n", sText);
 
-		MessageBox(
-			GetDesktopWindow(),
+		GetFrame().FrameMessageBox(
 			sText,
 			g_pAppTitle.c_str(),
 			MB_ICONSTOP | MB_SETFOREGROUND);

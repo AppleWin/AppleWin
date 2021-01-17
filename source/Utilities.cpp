@@ -117,8 +117,7 @@ void LoadConfiguration(void)
 
 			LogFileOutput("%s\n", sText);
 
-			MessageBox(
-				GetDesktopWindow(),		// NB. g_hFrameWindow is not yet valid
+			GetFrame().FrameMessageBox(
 				sText,
 				"Load Configuration",
 				MB_ICONSTOP | MB_SETFOREGROUND);

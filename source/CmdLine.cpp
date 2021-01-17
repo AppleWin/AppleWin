@@ -528,7 +528,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		msg += strUnsupported;
 		msg += "\n";
 		msg += "Continue running AppleWin?";
-		int res = MessageBox(GetDesktopWindow(),		// NB. g_hFrameWindow is not yet valid
+		int res = GetFrame().FrameMessageBox(
 				msg.c_str(),
 				"AppleWin Command Line",
 				MB_ICONSTOP | MB_SETFOREGROUND | MB_YESNO);

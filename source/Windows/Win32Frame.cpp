@@ -578,5 +578,6 @@ Win32Frame& Win32Frame::GetWin32Frame()
 
 int Win32Frame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 {
-	return MessageBox(g_hFrameWindow, lpText, lpCaption, uType);
+	const HWND handle = g_hFrameWindow ? g_hFrameWindow : GetDesktopWindow();
+	return MessageBox(handle, lpText, lpCaption, uType);
 }
