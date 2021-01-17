@@ -157,7 +157,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 		{
 			keycode &= 0x7F;	// for accented chars, eg. AltGr+A
 
-			if (GetApple2Type() == A2TYPE_PRAVETS8M || GetApple2Type() == A2TYPE_PRAVETS82 || GetApple2Type() == A2TYPE_PRAVETS8A)
+			if (IsPravets(GetApple2Type()))
 				keycode = GetPravets().ConvertToKeycode(key, keycode);
 
 			// Remap for the TK3000 //e, which had a special |Mode| key for displaying accented chars on screen
@@ -450,14 +450,6 @@ void KeybToggleCapsLock ()
 		g_bCapsLock = (GetKeyState(VK_CAPITAL) & 1);
 		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 	}
-}
-
-//===========================================================================
-void KeybToggleP8ACapsLock ()
-{
-	_ASSERT(GetApple2Type() == A2TYPE_PRAVETS8A);
-	GetPravets().SetCapsOn( !GetPravets().GetCapsOn() );
-	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 }
 
 //===========================================================================

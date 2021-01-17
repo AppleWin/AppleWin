@@ -21,8 +21,7 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-/* Description: This module is created for emulation of the 8bit character mode (mode 1) switch, 
- * which is located in $c060, and so far does not intend to emulate a tape device.
+/* Description: Tape interface.
  *
  * Author: Various
  *
@@ -38,10 +37,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //---------------------------------------------------------------------------
 
-BYTE __stdcall TapeRead(WORD, WORD address, BYTE, BYTE, ULONG nExecutedCycles)
+BYTE __stdcall TapeRead(WORD, WORD address, BYTE, BYTE, ULONG nExecutedCycles)	// $C060 TAPEIN
 {
 	if (g_Apple2Type == A2TYPE_PRAVETS8A)
 		return GetPravets().GetKeycode( MemReadFloatingBus(nExecutedCycles) );
 
 	return MemReadFloatingBus(1, nExecutedCycles); // TAPEIN has high bit 1 when input is low or not connected (UTAIIe page 7-5, 7-6)
+}
+
+BYTE __stdcall TapeWrite(WORD, WORD address, BYTE, BYTE, ULONG nExecutedCycles)	// $C020 TAPEOUT
+{
+	return 0;
 }

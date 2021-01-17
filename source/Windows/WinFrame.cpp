@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Windows/DirectInput.h"
 #include "NTSC.h"
 #include "ParallelPrinter.h"
+#include "Pravets.h"
 #include "Registry.h"
 #include "SaveState.h"
 #include "SerialComms.h"
@@ -1233,7 +1234,7 @@ LRESULT Win32Frame::WndProc(
 			}
 			else if (g_Apple2Type == A2TYPE_PRAVETS8A)
 			{
-				KeybToggleP8ACapsLock ();	// F10: Toggles Pravets8A Capslock
+				GetPravets().ToggleP8ACapsLock();	// F10: Toggles Pravets8A Capslock
 			}
 		}
 		else if (wparam == VK_F11 && !KeybGetCtrlStatus())	// Save state (F11)

@@ -164,7 +164,7 @@ static BYTE __stdcall PrintTransmit(WORD, WORD, BYTE, BYTE value, ULONG)
 
 	BYTE c = value & 0x7F;
 
-	if (GetApple2Type() == A2TYPE_PRAVETS8M || GetApple2Type() == A2TYPE_PRAVETS82 || GetApple2Type() == A2TYPE_PRAVETS8A)
+	if (IsPravets(GetApple2Type()))
 	{
 		if (g_bConvertEncoding)
 			c = GetPravets().ConvertToPrinterChar(value);

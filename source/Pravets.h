@@ -1,10 +1,5 @@
 #pragma once
 
-//Pravets 8A/C only variables
-//extern bool P8CAPS_ON;
-//extern bool	P8Shift; 
-//void PravetsReset(void);
-
 class Pravets
 {
 public:
@@ -13,13 +8,9 @@ public:
 
 	void Reset(void);
 
-	bool GetCapsOn(void) { return P8CAPS_ON; }
-	void SetCapsOn(bool state) { P8CAPS_ON = state; }
-	bool GetShift(void) { return P8Shift; }
-	void SetShift(bool state) { P8Shift = state; }
+	void ToggleP8ACapsLock(void) { P8CAPS_ON = !P8CAPS_ON; }
 
 	BYTE SetCapsLockAllowed(BYTE value);
-	bool GetCapsLockAllowed(void) { return g_CapsLockAllowed; }
 	BYTE GetKeycode(BYTE floatingBus);
 
 	BYTE ConvertToKeycode(WPARAM key, BYTE keycode);

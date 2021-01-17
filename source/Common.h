@@ -238,6 +238,11 @@ inline bool IsCopamBase64A(eApple2Type type)		// Copam Base64A
 	return type == A2TYPE_BASE64A;
 }
 
+inline bool IsPravets(eApple2Type type)
+{
+	return type == A2TYPE_PRAVETS8M || type == A2TYPE_PRAVETS82 || type == A2TYPE_PRAVETS8A;
+}
+
 enum eBUTTON {BUTTON0=0, BUTTON1};
 
 enum eBUTTONSTATE {BUTTON_UP=0, BUTTON_DOWN};

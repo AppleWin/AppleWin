@@ -65,7 +65,7 @@ BYTE Pravets::GetKeycode(BYTE floatingBus)	// Read $C060
 
 	if (GetApple2Type() == A2TYPE_PRAVETS8A && g_CapsLockAllowed) //8bit keyboard mode
 	{
-		if ((!GetCapsOn() && !GetShift()) || (GetCapsOn() && GetShift())) //LowerCase
+		if ((!P8CAPS_ON && !P8Shift) || (P8CAPS_ON && P8Shift)) //LowerCase
 		{
 			if ((uCurrentKeystroke<65) //|| ((uCurrentKeystroke>90) && (uCurrentKeystroke<96))
 				|| ((uCurrentKeystroke>126) && (uCurrentKeystroke<193)))
@@ -106,14 +106,14 @@ BYTE Pravets::SetCapsLockAllowed(BYTE value)	// Write $C060
 BYTE Pravets::ConvertToKeycode(WPARAM key, BYTE keycode)
 {
 	if (KeybGetCapsStatus() && (key >= 'a') && (key <='z'))
-		SetShift(true);
+		P8Shift = true;
 	else
-		SetShift(false);
+		P8Shift = false;
 
 	//The latter line should be applied for Pravtes 8A/C only, but not for Pravets 82/M !!!			
 	if ((KeybGetCapsStatus() == false) && (key >= 'A') && (key <='Z'))
 	{
-		SetShift(true);
+		P8Shift = true;
 		if (GetApple2Type() == A2TYPE_PRAVETS8A)
 			keycode = key + 32;
 	}
@@ -165,24 +165,24 @@ BYTE Pravets::ConvertToKeycode(WPARAM key, BYTE keycode)
 			if (key == ']') keycode = '}';
 			if (key == '`') keycode = '~';
 			if (key == 92) keycode = 96;
-			if (GetPravets().GetCapsLockAllowed() == true)
+			if (g_CapsLockAllowed == true)
 			{
 				if ((key == 92) || (key == 124)) keycode = 96; //Ý to Þ
 				//This shall be rewriten, so that enabling CAPS_LOCK (i.e. F10) will not invert these keys values)
 				//The same for latin letters.
 				if ((key == '{') || (key == '}') || (key == '~') || (key == 124) || (key == '^') ||  (key == 95))
-					GetPravets().SetShift(true);
+					P8Shift = true;
 			}
 		}
 		else //i.e. latin letters
 		{
-			if (GetPravets().GetCapsLockAllowed() == false)
+			if (g_CapsLockAllowed == false)
 			{
 				if (key == '{') keycode = '[';
 				if (key == '}') keycode = ']';
-				if (key == 124) 
+				if (key == 124)
 					keycode = 92;
-				/*if (key == 92) 
+				/*if (key == 92)
 					keycode = 124;*/
 			//Characters ` and ~ cannot be generated in 7bit character mode, so they are replaced with
 			}
@@ -190,13 +190,13 @@ BYTE Pravets::ConvertToKeycode(WPARAM key, BYTE keycode)
 			{
 				if (key == '{') keycode = 91;
 				if (key == '}')	keycode = 93;
-				if (key == 124)	keycode = 92;					
+				if (key == 124)	keycode = 92;
 				if ((key == '[') || (key == ']') || (key == 92) || (key == '^') || (key == 95))
-					GetPravets().SetShift(true); 
+					P8Shift = true;
 				if (key == 96)	 //This line shall generate sth. else i.e. ` In fact. this character is not generateable by the pravets keyboard.
 				{
 					keycode = '^';
-					GetPravets().SetShift(true);
+					P8Shift = true;
 				}
 				if (key == 126)	keycode = '^';
 			}

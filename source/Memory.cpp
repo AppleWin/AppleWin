@@ -467,7 +467,7 @@ static BYTE __stdcall IORead_C02x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 
 static BYTE __stdcall IOWrite_C02x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);	// $C020 TAPEOUT
+	return TapeWrite(pc, addr, bWrite, d, nExecutedCycles);	// $C020 TAPEOUT
 }
 
 //-------------------------------------
