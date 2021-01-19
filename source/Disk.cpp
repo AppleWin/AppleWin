@@ -696,7 +696,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	{
 		TCHAR szText[100+MAX_PATH];
 		StringCbPrintf(szText, sizeof(szText), "Only the first file in a multi-file zip is supported\nUse disk image '%s' ?", pFloppy->m_strFilenameInZip.c_str());
-		int nRes = MessageBox(GetFrame().g_hFrameWindow, szText, TEXT("Multi-Zip Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
+		int nRes = GetFrame().FrameMessageBox(szText, TEXT("Multi-Zip Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 		{
 			EjectDisk(drive);
@@ -825,8 +825,7 @@ void Disk2InterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFil
 		return;
 	}
 
-	MessageBox(
-		GetFrame().g_hFrameWindow,
+	GetFrame().FrameMessageBox(
 		szBuffer,
 		g_pAppTitle.c_str(),
 		MB_ICONEXCLAMATION | MB_SETFOREGROUND);
@@ -1563,7 +1562,7 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 {
 	if (!IsDriveConnected(drive))
 	{
-		MessageBox(GetFrame().g_hFrameWindow, "Drive not connected!", "Insert disk", MB_ICONEXCLAMATION|MB_SETFOREGROUND|MB_OK);
+		GetFrame().FrameMessageBox("Drive not connected!", "Insert disk", MB_ICONEXCLAMATION|MB_SETFOREGROUND|MB_OK);
 		return false;
 	}
 
@@ -1729,8 +1728,7 @@ bool Disk2InterfaceCard::DriveSwap(void)
 	if (m_floppyDrive[DRIVE_1].m_spinning || m_floppyDrive[DRIVE_2].m_spinning)
 	{
 		// 1.26.2.4 Prompt when trying to swap disks while drive is on instead of silently failing
-		int status = MessageBox(
-			GetFrame().g_hFrameWindow,
+		int status = GetFrame().FrameMessageBox(
 			"WARNING:\n"
 				"\n"
 				"\tAttempting to swap a disk while a drive is on\n"
@@ -1777,21 +1775,9 @@ bool Disk2InterfaceCard::DriveSwap(void)
 
 //===========================================================================
 
-bool Disk2InterfaceCard::GetFirmware(LPCSTR lpName, BYTE* pDst)
+bool Disk2InterfaceCard::GetFirmware(WORD lpNameId, BYTE* pDst)
 {
-	HRSRC hResInfo = FindResource(NULL, lpName, "FIRMWARE");
-	if(hResInfo == NULL)
-		return false;
-
-	DWORD dwResSize = SizeofResource(NULL, hResInfo);
-	if(dwResSize != DISK2_FW_SIZE)
-		return false;
-
-	HGLOBAL hResData = LoadResource(NULL, hResInfo);
-	if(hResData == NULL)
-		return false;
-
-	BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
+	BYTE* pData = GetFrame().GetResource(lpNameId, "FIRMWARE", DISK2_FW_SIZE);
 	if (!pData)
 		return false;
 
@@ -1817,10 +1803,10 @@ void Disk2InterfaceCard::InitFirmware(LPBYTE pCxRomPeripheral)
 // TODO: LoadRom_Disk_Floppy()
 void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 {
-	bool res = GetFirmware(MAKEINTRESOURCE(IDR_DISK2_13SECTOR_FW), m_13SectorFirmware);
+	bool res = GetFirmware(IDR_DISK2_13SECTOR_FW, m_13SectorFirmware);
 	_ASSERT(res);
 
-	res = GetFirmware(MAKEINTRESOURCE(IDR_DISK2_16SECTOR_FW), m_16SectorFirmware);
+	res = GetFirmware(IDR_DISK2_16SECTOR_FW, m_16SectorFirmware);
 	_ASSERT(res);
 
 	// Note: We used to disable the track stepping delay in the Disk II controller firmware by

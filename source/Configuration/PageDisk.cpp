@@ -412,7 +412,7 @@ UINT CPageDisk::RemovalConfirmation(UINT uCommand)
 
 	if (bMsgBox)
 	{
-		int nRes = MessageBox(GetFrame().g_hFrameWindow, szText, TEXT("Eject/Unplug Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
+		int nRes = GetFrame().FrameMessageBox(szText, TEXT("Eject/Unplug Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 			uCommand = 0;
 	}

@@ -117,8 +117,7 @@ void LoadConfiguration(void)
 
 			LogFileOutput("%s\n", sText);
 
-			MessageBox(
-				GetDesktopWindow(),		// NB. g_hFrameWindow is not yet valid
+			GetFrame().FrameMessageBox(
 				sText,
 				"Load Configuration",
 				MB_ICONSTOP | MB_SETFOREGROUND);
@@ -417,7 +416,7 @@ void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], boo
 	}
 
 	if (!bRes)
-		MessageBox(GetFrame().g_hFrameWindow, "Failed to insert floppy disk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
+		GetFrame().FrameMessageBox("Failed to insert floppy disk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
 }
 
 void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
@@ -453,7 +452,7 @@ void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 	}
 
 	if (!bRes)
-		MessageBox(GetFrame().g_hFrameWindow, "Failed to insert harddisk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
+		GetFrame().FrameMessageBox("Failed to insert harddisk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
 }
 
 void UnplugHardDiskControllerCard(void)

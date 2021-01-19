@@ -48,6 +48,11 @@ public:
 	virtual void Destroy(void);
 	virtual void VideoPresentScreen(void);
 
+	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
+	virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
+	virtual BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize);
+	virtual void Restart();
+
 	bool GetFullScreenShowSubunitStatus(void);
 	int GetFullScreenOffsetX(void);
 	int GetFullScreenOffsetY(void);

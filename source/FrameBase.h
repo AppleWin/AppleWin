@@ -34,6 +34,21 @@ public:
 
 	virtual void VideoPresentScreen(void) = 0;
 
+	// this function has the same interface as MessageBox in windows.h
+	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) = 0;
+
+	// this function merges LoadBitmap and GetBitmapBits from windows.h
+	virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) = 0;
+
+	// FindResource, MAKEINTRESOURCE, SizeofResource, LoadResource, LockResource
+	// Return pointer to resource if size is correct.
+	// NULL if resource is invalid or size check fails
+	// The pointer is only valid until the next call to GetResource
+	// (in Windows, the pointer is valid forever, but it would be very restrictive to force this on other FrameBase implementations)
+	virtual BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) = 0;
+
+	virtual void Restart() = 0;
+
 	void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
 	void VideoRedrawScreen(void);
 	void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);

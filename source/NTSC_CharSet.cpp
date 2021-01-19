@@ -76,8 +76,7 @@ static void get_csbits(csbits_t csbits, const char* resourceName, const UINT cy0
 	const UINT bufferSize = bitmapWidthBytes*bitmapHeight;
 	BYTE* pBuffer = new BYTE [bufferSize];
 
-	HBITMAP hCharBitmap = LoadBitmap(GetFrame().g_hInstance, resourceName);
-	GetBitmapBits(hCharBitmap, bufferSize, pBuffer);
+	GetFrame().GetBitmap(resourceName, bufferSize, pBuffer);
 
 	for (UINT cy=cy0, ch=0; cy<cy0+16; cy++)
 	{
@@ -86,8 +85,6 @@ static void get_csbits(csbits_t csbits, const char* resourceName, const UINT cy0
 			get_csbits_xy(csbits, ch++, cx, cy, pBuffer);
 		}
 	}
-
-	DeleteObject(hCharBitmap);
 
 	delete [] pBuffer;
 }
@@ -251,19 +248,7 @@ static void userVideoRomForIIPlus(void)
 
 static void VideoRomForIIJPlus(void)
 {
-	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_APPLE2_JPLUS_VIDEO_ROM), "ROM");
-	if (hResInfo == NULL)
-		return;
-
-	DWORD dwResSize = SizeofResource(NULL, hResInfo);
-	if(dwResSize != Video::kVideoRomSize2K)
-		return;
-
-	HGLOBAL hResData = LoadResource(NULL, hResInfo);
-	if(hResData == NULL)
-		return;
-
-	BYTE* pVideoRom = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
+	BYTE* pVideoRom = GetFrame().GetResource(IDR_APPLE2_JPLUS_VIDEO_ROM, "ROM", Video::kVideoRomSize2K);
 	if (pVideoRom == NULL)
 		return;
 
@@ -273,19 +258,7 @@ static void VideoRomForIIJPlus(void)
 
 static void VideoRomForBase64A(void)
 {
-	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_BASE64A_VIDEO_ROM), "ROM");
-	if (hResInfo == NULL)
-		return;
-
-	DWORD dwResSize = SizeofResource(NULL, hResInfo);
-	if (dwResSize != Video::kVideoRomSize4K)
-		return;
-
-	HGLOBAL hResData = LoadResource(NULL, hResInfo);
-	if (hResData == NULL)
-		return;
-
-	BYTE* pVideoRom = (BYTE*)LockResource(hResData);	// NB. Don't need to unlock resource
+	BYTE* pVideoRom = GetFrame().GetResource(IDR_BASE64A_VIDEO_ROM, "ROM", Video::kVideoRomSize4K);
 	if (pVideoRom == NULL)
 		return;
 

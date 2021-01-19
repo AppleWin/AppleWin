@@ -310,7 +310,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			{
 				std::string msg = "Failed to load video rom (not found or not exactly 2/4/8/16KiB)\n";
 				LogFileOutput("%s", msg.c_str());
-				MessageBox(GetFrame().g_hFrameWindow, msg.c_str(), TEXT("AppleWin Error"), MB_OK);
+				GetFrame().FrameMessageBox(msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			}
 			else
 			{
@@ -528,7 +528,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		msg += strUnsupported;
 		msg += "\n";
 		msg += "Continue running AppleWin?";
-		int res = MessageBox(GetDesktopWindow(),		// NB. g_hFrameWindow is not yet valid
+		int res = GetFrame().FrameMessageBox(
 				msg.c_str(),
 				"AppleWin Command Line",
 				MB_ICONSTOP | MB_SETFOREGROUND | MB_YESNO);

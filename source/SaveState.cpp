@@ -438,6 +438,8 @@ static void Snapshot_LoadState_v2(void)
 	bool restart = false;	// Only need to restart if any VM state has change
 	HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
 
+	FrameBase& frame = GetFrame();
+
 	try
 	{
 		if (!yamlHelper.InitParser( g_strSaveStatePathname.c_str() ))
@@ -507,7 +509,7 @@ static void Snapshot_LoadState_v2(void)
 		}
 
 		MB_SetCumulativeCycles();
-		GetFrame().SetLoadedSaveStateFlag(true);
+		frame.SetLoadedSaveStateFlag(true);
 
 		// NB. The following disparity should be resolved:
 		// . A change in h/w via the Configuration property sheets results in a the VM completely restarting (via WM_USER_RESTART)
@@ -530,13 +532,13 @@ static void Snapshot_LoadState_v2(void)
 	}
 	catch(std::string szMessage)
 	{
-		MessageBox(	GetFrame().g_hFrameWindow,
+		frame.FrameMessageBox(
 					szMessage.c_str(),
 					TEXT("Load State"),
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
 		if (restart)
-			PostMessage(GetFrame().g_hFrameWindow, WM_USER_RESTART, 0, 0);		// Power-cycle VM (undoing all the new state just loaded)
+			frame.Restart();		// Power-cycle VM (undoing all the new state just loaded)
 	}
 
 	SetCursor(oldcursor);
@@ -549,7 +551,7 @@ void Snapshot_LoadState()
 	const size_t pos = g_strSaveStatePathname.size() - ext_aws.size();
 	if (g_strSaveStatePathname.find(ext_aws, pos) != std::string::npos)	// find ".aws" at end of pathname
 	{
-		MessageBox(	GetFrame().g_hFrameWindow,
+		GetFrame().FrameMessageBox(
 					"Save-state v1 no longer supported.\n"
 					"Please load using AppleWin 1.27, and re-save as a v2 state file.",
 					TEXT("Load State"),
@@ -646,7 +648,7 @@ void Snapshot_SaveState(void)
 	}
 	catch(std::string szMessage)
 	{
-		MessageBox(	GetFrame().g_hFrameWindow,
+		GetFrame().FrameMessageBox(
 					szMessage.c_str(),
 					TEXT("Save State"),
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);

@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskImage.h"
 #include "Log.h"
 #include "Memory.h"
+#include "Interface.h"
 
 ImageInfo::ImageInfo()
 {
@@ -2051,7 +2052,7 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* p
 		if (pWozHdr->crc32 && // WOZ spec: CRC of 0 should be ignored
 			pWozHdr->crc32 != crc32(0, pImage+sizeof(CWOZHelper::WOZHeader), dwSize-sizeof(CWOZHelper::WOZHeader)))
 		{
-			int res = MessageBox(GetDesktopWindow(), "CRC mismatch\nContinue using image?", "AppleWin: WOZ Header", MB_ICONSTOP | MB_SETFOREGROUND | MB_YESNO);
+			int res = GetFrame().FrameMessageBox("CRC mismatch\nContinue using image?", "AppleWin: WOZ Header", MB_ICONSTOP | MB_SETFOREGROUND | MB_YESNO);
 			if (res == IDNO)
 				return NULL;
 		}
