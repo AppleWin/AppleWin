@@ -610,7 +610,7 @@ BYTE* Win32Frame::GetResource(WORD id, LPCSTR lpType, DWORD dwExpectedSize)
 	if (hResData == NULL)
 		return NULL;
 
-	BYTE* pVideoRom = (BYTE*)LockResource(hResData);	// NB. Don't need to unlock resource
+	BYTE* pResource = (BYTE*)LockResource(hResData);	// NB. Don't need to unlock resource
 
-	return pVideoRom;
+	return pResource;
 }
