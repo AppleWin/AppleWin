@@ -51,9 +51,11 @@ struct PreferenceData
     QColor monochromeColor;
 
     QString saveState;
+    QString printerFilename;
 };
 
+class QtFrame;
 void getAppleWinPreferences(PreferenceData & data);
-void setAppleWinPreferences(const PreferenceData & currentData, const PreferenceData & newData);
+void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const PreferenceData & currentData, const PreferenceData & newData);
 
 #endif // CONFIGURATION_H

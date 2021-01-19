@@ -439,7 +439,7 @@ void QApple::on_actionOptions_triggered()
     if (myPreferences->exec())
     {
         const PreferenceData newData = myPreferences->getData();
-        setAppleWinPreferences(currentData, newData);
+        setAppleWinPreferences(myFrame, currentData, newData);
         myOptions.setData(newData.options);
         reloadOptions();
     }

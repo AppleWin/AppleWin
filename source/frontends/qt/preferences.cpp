@@ -231,6 +231,7 @@ void Preferences::setData(const PreferenceData & data)
     on_hd_7_clicked(data.hdInSlot7);
 
     ui->save_state->setText(data.saveState);
+    ui->printer_filename->setText(data.printerFilename);
     ui->video_type->setCurrentIndex(data.videoType);
     ui->scan_lines->setChecked(data.scanLines);
     ui->vertical_blend->setChecked(data.verticalBlend);
@@ -270,6 +271,7 @@ PreferenceData Preferences::getData() const
     data.hdInSlot7 = ui->hd_7->isChecked();
 
     data.saveState = ui->save_state->text();
+    data.printerFilename = ui->printer_filename->text();
 
     data.videoType = ui->video_type->currentIndex();
     data.scanLines = ui->scan_lines->isChecked();
@@ -404,4 +406,14 @@ void Preferences::on_slot5_combo_activated(int index)
             ui->slot4_combo->setCurrentIndex(0);
         }
     }
+}
+
+void Preferences::on_browse_pf_clicked()
+{
+    const QString name = QFileDialog::getSaveFileName(this, QString(), ui->printer_filename->text());
+    if (!name.isEmpty())
+    {
+        ui->printer_filename->setText(name);
+    }
+
 }

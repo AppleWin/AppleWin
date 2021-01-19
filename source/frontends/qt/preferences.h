@@ -46,6 +46,8 @@ private slots:
 
     void on_slot5_combo_activated(int index);
 
+    void on_browse_pf_clicked();
+
 private:
     std::vector<QComboBox *> myDisks;
     std::vector<QComboBox *> myHDs;

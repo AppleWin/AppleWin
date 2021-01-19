@@ -13,7 +13,9 @@
 #include "Video.h"
 #include "Speaker.h"
 #include "Mockingboard.h"
+#include "ParallelPrinter.h"
 #include "Configuration/IPropertySheet.h"
+#include "qtframe.h"
 
 #include <QMessageBox>
 #include <QGamepad>
@@ -229,9 +231,16 @@ void getAppleWinPreferences(PreferenceData & data)
     data.verticalBlend = video.IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
     data.hz50 = video.GetVideoRefreshRate() == VR_50HZ;
     data.monochromeColor.setRgb(video.GetMonochromeRGB());
+
+    const std::string & printerFilename = Printer_GetFilename();
+    if (!printerFilename.empty())
+    {
+        data.printerFilename = QString::fromStdString(printerFilename);
+    }
+
 }
 
-void setAppleWinPreferences(const PreferenceData & currentData, const PreferenceData & newData)
+void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const PreferenceData & currentData, const PreferenceData & newData)
 {
     CardManager & cardManager = GetCardMgr();
     Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
@@ -299,6 +308,13 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
         RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, name);
     }
 
+    if (currentData.printerFilename != newData.printerFilename)
+    {
+        const std::string name = newData.printerFilename.toStdString();
+        Printer_SetFilename(name);
+        RegSaveString(TEXT(REG_CONFIG), REGVALUE_PRINTER_FILENAME, 1, name);
+    }
+
     if (currentData.videoType != newData.videoType || currentData.scanLines != newData.scanLines || currentData.verticalBlend != newData.verticalBlend
             || currentData.hz50 != newData.hz50 || currentData.monochromeColor != newData.monochromeColor)
     {
@@ -321,8 +337,7 @@ void setAppleWinPreferences(const PreferenceData & currentData, const Preference
         // be careful QRgb is opposite way round to COLORREF
         video.SetMonochromeRGB(RGB(color.red(), color.green(), color.blue()));
 
-        video.VideoReinitialize(false);
-        video.Config_Save_Video();
+        frame->ApplyVideoModeChange();
     }
 
 }

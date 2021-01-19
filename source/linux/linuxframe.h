@@ -30,8 +30,8 @@ public:
   void CycleVideoType();
   void Cycle50ScanLines();
 
-protected:
   void ApplyVideoModeChange();
 
+protected:
   std::vector<uint8_t> myFramebuffer;
 };
