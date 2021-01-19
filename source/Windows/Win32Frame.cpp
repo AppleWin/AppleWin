@@ -591,9 +591,9 @@ void Win32Frame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
 
 void Win32Frame::Restart()
 {
-	// do we really need to PostMessage?
-	// could we just execute it here directly
-	PostMessage(g_hFrameWindow, WM_USER_RESTART, 0, 0);
+	// Changed h/w config, eg. Apple computer type (][+ or //e), slot configuration, etc.
+	g_bRestart = true;
+	PostMessage(g_hFrameWindow, WM_CLOSE, 0, 0);
 }
 
 BYTE* Win32Frame::GetResource(WORD id, LPCSTR lpType, DWORD dwExpectedSize)

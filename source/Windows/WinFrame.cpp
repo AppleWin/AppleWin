@@ -1710,12 +1710,6 @@ LRESULT Win32Frame::WndProc(
       break;
     }
 
-    case WM_USER_RESTART:
-	  // Changed h/w config, eg. Apple computer type (][+ or //e), slot configuration, etc.
-      g_bRestart = true;
-      PostMessage(window,WM_CLOSE,0,0);
-      break;
-
     case WM_USER_SAVESTATE:		// Save state
 		Snapshot_SaveState();
 		break;
