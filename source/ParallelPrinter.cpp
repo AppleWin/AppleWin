@@ -167,7 +167,19 @@ static BYTE __stdcall PrintTransmit(WORD, WORD, BYTE, BYTE value, ULONG)
 	if (IsPravets(GetApple2Type()))
 	{
 		if (g_bConvertEncoding)
-			c = GetPravets().ConvertToPrinterChar(value);
+		{
+			const std::string cp = GetPravets().ConvertToPrinterChar(value);
+			if (cp.size() == 1)
+			{
+				// old logic, filter below
+				c = cp[0];
+			}
+			else
+			{
+				fwrite(cp.c_str(), 1, cp.size(), file);
+				return 0;
+			}
+		}
 	}
 
 	if ((g_bFilterUnprintable == false) || (c>31) || (c==13) || (c==10) || (c>0x7F)) //c>0x7F is needed for cyrillic characters

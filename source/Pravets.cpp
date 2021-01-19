@@ -34,6 +34,31 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Keyboard.h"
 #include "Tape.h"
 
+static void AdvanceToNextCodePoint(const char*& p)
+{
+	++p;
+	while ((*p & 0xc0) == 0x80)
+		++p;
+}
+
+static const char* FindInMap(const char * keys, const char * values, char value)
+{
+	// keys must be ASCII values
+	// values can be UTF-8
+	const char* k = keys;
+	const char* v = values;
+	while (*k && *v)
+	{
+		if (*k == value)
+		{
+			return v;
+		}
+		++k;
+		AdvanceToNextCodePoint(v);
+	}
+	return NULL;
+}
+
 Pravets::Pravets(void)
 {
 	// Pravets 8A
@@ -206,28 +231,23 @@ BYTE Pravets::ConvertToKeycode(WPARAM key, BYTE keycode)
 	return keycode;
 }
 
-BYTE Pravets::ConvertToPrinterChar(BYTE value)
+std::string Pravets::ConvertToPrinterChar(BYTE value)
 {
-	char Lat8A[]= "abwgdevzijklmnoprstufhc~{}yx`q|]";
-	char Lat82[]= "abwgdevzijklmnoprstufhc^[]yx@q{}~`";
-	char Kir82[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞß[]^@";
-	char Kir8ACapital[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞßÝ";
-	char Kir8ALowerCase[]= "àáâãäåæçèéêëìíîïðñòóôõö÷øùúüþÿý";
+	const char Lat8A[]          = "abwgdevzijklmnoprstufhc~{}yx`q|]";
+	const char Lat82[]          = "abwgdevzijklmnoprstufhc^[]yx@q{}~`";
+	const char Kir82[]          = "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞß[]^@";
+	const char Kir8ACapital[]   = "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞßÝ";
+	const char Kir8ALowerCase[] = "àáâãäåæçèéêëìíîïðñòóôõö÷øùúüþÿý";
 
 	BYTE c = 0;
+	const char *begin = NULL;
 
 	if (GetApple2Type() == A2TYPE_PRAVETS8A)  //This is print conversion for Pravets 8A/C. Print conversion for Pravets82/M is still to be done.
 	{
 		if ((value > 90) && (value < 128)) //This range shall be set more precisely
 		{
 			c = value;
-			int loop = 0;
-			while (loop < 31)
-			{
-				if (c == Lat8A[loop])
-					c = Kir8ALowerCase[loop];
-				loop++;
-			}
+			begin = FindInMap(Lat8A, Kir8ALowerCase, c);
 		}
 		else if ((value > 64) && (value < 91))
 		{
@@ -236,26 +256,23 @@ BYTE Pravets::ConvertToPrinterChar(BYTE value)
 		else
 		{
 			c = value & 0x7F;
-			int loop = 0;
-			while (loop < 31)
-			{
-				if (c == Lat8A[loop])
-					c = Kir8ACapital[loop];
-				loop++;
-			}
+			begin = FindInMap(Lat8A, Kir8ACapital, c);
 		}
 	}
 	else if (GetApple2Type() == A2TYPE_PRAVETS82 || GetApple2Type() == A2TYPE_PRAVETS8M)
 	{
 		c = value & 0x7F;
-		int loop = 0;
-		while (loop < 34)
-		{
-			if (c == Lat82[loop])
-				c = Kir82[loop];
-			loop++;
-		}
+		begin = FindInMap(Lat82, Kir82, c);
 	}
 
-	return c;
+	if (begin)
+	{
+		const char* end = begin;
+		AdvanceToNextCodePoint(end);
+		return std::string(begin, end);
+	}
+	else
+	{
+		return std::string(1, c);
+	}
 }
