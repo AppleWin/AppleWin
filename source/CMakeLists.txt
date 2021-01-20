@@ -40,8 +40,6 @@ set(SOURCE_FILES
 
   linux/windows/handles.cpp
   linux/windows/files.cpp
-  linux/windows/resources.cpp
-  linux/windows/bitmap.cpp
   linux/windows/time.cpp
   linux/windows/stringcb.cpp
   linux/windows/strings.cpp
@@ -53,6 +51,7 @@ set(SOURCE_FILES
   linux/windows/dmusicc.cpp
   linux/windows/winnls.cpp
 
+  linux/resources.cpp
   linux/benchmark.cpp
   linux/paddle.cpp
   linux/version.cpp
@@ -115,11 +114,12 @@ set(HEADER_FILES
   SaveState_Structs_common.h
   SaveState_Structs_v1.h
 
+  Debugger/Debug.h
+
   Configuration/PropertySheetHelper.h
 
   linux/windows/handles.h
   linux/windows/files.h
-  linux/windows/resources.h
   linux/windows/bitmap.h
   linux/windows/time.h
   linux/windows/stringcb.h
@@ -135,6 +135,7 @@ set(HEADER_FILES
   linux/windows/mmreg.h
   linux/windows/mmsystem.h
 
+  linux/resources.h
   linux/interface.h
   linux/benchmark.h
   linux/paddle.h

@@ -1,7 +1,7 @@
 include(GNUInstallDirs)
 
 set(SOURCE_FILES
-  resources.cpp
+  commonframe.cpp
   fileregistry.cpp
   ptreeregistry.cpp
   programoptions.cpp
@@ -11,7 +11,7 @@ set(SOURCE_FILES
   )
 
 set(HEADER_FILES
-  resources.h
+  commonframe.h
   fileregistry.h
   ptreeregistry.h
   programoptions.h

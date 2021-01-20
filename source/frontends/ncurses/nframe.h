@@ -1,6 +1,6 @@
 #pragma once
 
-#include "linux/linuxframe.h"
+#include "frontends/common2/commonframe.h"
 
 #include <memory>
 #include <string>
@@ -10,7 +10,7 @@ class ASCIIArt;
 class EvDevPaddle;
 struct NCurses;
 
-class NFrame : public LinuxFrame
+class NFrame : public CommonFrame
 {
 public:
   NFrame(const std::string & paddleDevice);
@@ -21,6 +21,7 @@ public:
   virtual void Initialize();
   virtual void Destroy();
   virtual void VideoPresentScreen();
+  virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
 
   void ProcessEvDev();
 

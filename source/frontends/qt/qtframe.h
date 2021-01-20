@@ -3,6 +3,7 @@
 
 #include "linux/linuxframe.h"
 #include <memory>
+#include <QByteArray>
 #include <QString>
 
 class Emulator;
@@ -18,6 +19,10 @@ public:
     virtual void Initialize();
     virtual void Destroy();
 
+    virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
+    virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
+    virtual BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize);
+
     void SetForceRepaint(const bool force);
     void SetZoom(const int x);
     void Set43Ratio();
@@ -27,6 +32,8 @@ private:
     Emulator * myEmulator;
     QMdiSubWindow * myWindow;
     bool myForceRepaint;
+
+    QByteArray myResource;
 };
 
 #endif // QTFRAME_H

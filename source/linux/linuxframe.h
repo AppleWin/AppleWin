@@ -27,6 +27,9 @@ public:
   virtual void Benchmark();
   virtual void DisplayLogo();
 
+  virtual void Restart();
+  virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
+
   void CycleVideoType();
   void Cycle50ScanLines();
 
@@ -35,3 +38,5 @@ public:
 protected:
   std::vector<uint8_t> myFramebuffer;
 };
+
+int MessageBox(HWND, LPCSTR lpText, LPCSTR lpCaption, UINT uType);

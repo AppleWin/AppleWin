@@ -33,12 +33,6 @@ namespace
 double g_relativeSpeed = 1.0;
 bool g_stop = false;
 
-int MessageBox(HWND, const char * text, const char * caption, UINT)
-{
-  LogFileOutput("MessageBox:\n%s\n%s\n\n", caption, text);
-  return IDOK;
-}
-
 void SetCtrlCHandler(const bool headless)
 {
   if (headless)

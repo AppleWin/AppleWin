@@ -7,7 +7,6 @@ set(SOURCE_FILES
   evdevpaddle.cpp
   nframe.cpp
   asciiart.cpp
-  bitmaps.cpp
   )
 
 set(HEADER_FILES

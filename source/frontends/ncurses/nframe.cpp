@@ -6,6 +6,7 @@
 
 #include "Interface.h"
 #include "Memory.h"
+#include "Log.h"
 
 #include <signal.h>
 #include <locale.h>
@@ -356,4 +357,10 @@ bool NFrame::UpdateDHiResCell(Video &, int x, int y, int xpixel, int ypixel, int
 void NFrame::Cleanup()
 {
   GetFrame().Destroy();
+}
+
+int NFrame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
+{
+  LogFileOutput("MessageBox:\n%s\n%s\n\n", lpCaption, lpText);
+  return IDOK;
 }

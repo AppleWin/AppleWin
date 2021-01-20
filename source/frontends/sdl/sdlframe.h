@@ -1,17 +1,19 @@
 #pragma once
 
-#include "linux/linuxframe.h"
+#include "frontends/common2/commonframe.h"
 #include <SDL.h>
 
 class EmulatorOptions;
 
-class SDLFrame : public LinuxFrame
+class SDLFrame : public CommonFrame
 {
 public:
   SDLFrame(const EmulatorOptions & options);
 
   virtual void VideoPresentScreen();
   virtual void FrameRefreshStatus(int drawflags);
+  virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
+  virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
 
   void UpdateTexture();
   void RenderPresent();

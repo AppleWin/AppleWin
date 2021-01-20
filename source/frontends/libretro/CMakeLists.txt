@@ -8,9 +8,7 @@ if (EXISTS ${LIBRETRO_COMMON_PATH}/include/libretro.h)
   set(SOURCE_FILES
     environment.cpp
     libretro.cpp
-    bitmaps.cpp
     rdirectsound.cpp
-    interface.cpp
     game.cpp
     joypadbase.cpp
     joypad.cpp

@@ -5,7 +5,6 @@
 #include "linux/windows/handles.h"
 #include "linux/windows/bitmap.h"
 #include "linux/windows/files.h"
-#include "linux/windows/resources.h"
 #include "linux/windows/time.h"
 #include "linux/windows/bitmap.h"
 #include "linux/windows/misc.h"

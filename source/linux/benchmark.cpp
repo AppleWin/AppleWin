@@ -17,6 +17,7 @@
 
 void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
 {
+  FrameBase & frame = GetFrame();
   Video & video = GetVideo();
   // PREPARE TWO DIFFERENT FRAME BUFFERS, EACH OF WHICH HAVE HALF OF THE
   // BYTES SET TO 0x14 AND THE OTHER HALF SET TO 0xAA
@@ -76,7 +77,7 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
   // IF THE PROGRAM COUNTER IS NOT IN THE EXPECTED RANGE AT THE END OF THE
   // CPU BENCHMARK, REPORT AN ERROR AND OPTIONALLY TRACK IT DOWN
   if ((regs.pc < 0x300) || (regs.pc > 0x400))
-    if (MessageBox(NULL,
+    if (frame.FrameMessageBox(
                    TEXT("The emulator has detected a problem while running ")
                    TEXT("the CPU benchmark.  Would you like to gather more ")
                    TEXT("information?"),
@@ -105,13 +106,13 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
                  (unsigned)loop,
                  (unsigned)lastpc,
                  (unsigned)regs.pc);
-        MessageBox(NULL,
+        frame.FrameMessageBox(
                    outstr,
                    TEXT("Benchmarks"),
                    MB_ICONINFORMATION | MB_SETFOREGROUND);
       }
       else
-        MessageBox(NULL,
+        frame.FrameMessageBox(
                    TEXT("The emulator was unable to locate the exact ")
                    TEXT("point of the error.  This probably means that ")
                    TEXT("the problem is external to the emulator, ")
@@ -170,7 +171,7 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
            (unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
            (unsigned)(totalmhz10[1] / 10), (unsigned)(totalmhz10[1] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
            (unsigned)realisticfps);
-  MessageBox(NULL,
+  frame.FrameMessageBox(
              outstr,
              TEXT("Benchmarks"),
              MB_ICONINFORMATION | MB_SETFOREGROUND);

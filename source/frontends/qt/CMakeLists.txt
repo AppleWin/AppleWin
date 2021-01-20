@@ -13,7 +13,6 @@ add_subdirectory(QHexView)
 set(SOURCE_FILES
   main.cpp
   qapple.cpp
-  qresources.cpp
   preferences.cpp
   emulator.cpp
   memorycontainer.cpp

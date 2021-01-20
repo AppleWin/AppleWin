@@ -2,7 +2,6 @@ include(FindPkgConfig)
 
 set(SOURCE_FILES
   main.cpp
-  bitmaps.cpp
   emulator.cpp
   gamepad.cpp
   sdirectsound.cpp

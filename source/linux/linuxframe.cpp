@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "linux/linuxframe.h"
 #include "Interface.h"
+#include "Log.h"
 
 void LinuxFrame::FrameDrawDiskLEDS()
 {
@@ -104,4 +105,20 @@ void LinuxFrame::Cycle50ScanLines()
   video.SetVideoStyle(videoStyle);
 
   ApplyVideoModeChange();
+}
+
+void LinuxFrame::Restart()
+{
+  LogFileOutput("Restart: not implemented\n");
+}
+
+void LinuxFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
+{
+  LogFileOutput("LoadBitmap: could not load resource %s\n", lpBitmapName);
+  memset(lpvBits, 0, cb);
+}
+
+int MessageBox(HWND, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
+{
+  return GetFrame().FrameMessageBox(lpText, lpCaption, uType);
 }

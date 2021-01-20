@@ -36,5 +36,4 @@ void InitializeCriticalSection(CRITICAL_SECTION * criticalSection);
 void EnterCriticalSection(CRITICAL_SECTION * criticalSection);
 void LeaveCriticalSection(CRITICAL_SECTION * criticalSection);
 
-HWND GetDesktopWindow();
 void ExitProcess(int);

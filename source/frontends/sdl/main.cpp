@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 
+#include "StdAfx.h"
 #include "linux/interface.h"
 #include "linux/benchmark.h"
 #include "linux/context.h"
@@ -11,14 +12,12 @@
 #include "frontends/common2/utils.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/timer.h"
-#include "frontends/common2/resources.h"
 #include "frontends/sdl/emulator.h"
 #include "frontends/sdl/gamepad.h"
 #include "frontends/sdl/sdirectsound.h"
 #include "frontends/sdl/utils.h"
 #include "frontends/sdl/sdlframe.h"
 
-#include "StdAfx.h"
 #include "Core.h"
 #include "Log.h"
 #include "CPU.h"
@@ -66,15 +65,6 @@ namespace
     return interval;
   }
 
-}
-
-int MessageBox(HWND, const char * text, const char * caption, UINT type)
-{
-  // tabs do not render properly
-  std::string s(text);
-  std::replace(s.begin(), s.end(), '\t', ' ');
-  SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, caption, s.c_str(), nullptr);
-  return IDOK;
 }
 
 void run_sdl(int argc, const char * argv [])

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "linux/linuxframe.h"
+#include "frontends/common2/commonframe.h"
 
 #include <memory>
 #include <vector>
 
-class RetroFrame : public LinuxFrame
+class RetroFrame : public CommonFrame
 {
 public:
   RetroFrame();
@@ -14,6 +14,9 @@ public:
   virtual void FrameRefreshStatus(int drawflags);
   virtual void Initialize();
   virtual void Destroy();
+  virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
+  virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
+
 private:
   std::vector<uint8_t> myVideoBuffer;
 

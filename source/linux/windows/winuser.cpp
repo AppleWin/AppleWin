@@ -10,11 +10,6 @@ HCURSOR SetCursor(HCURSOR hCursor)
   return nullptr;
 }
 
-HWND GetDesktopWindow()
-{
-  return NULL;
-}
-
 UINT_PTR SetTimer(HWND,UINT_PTR,UINT,TIMERPROC)
 {
   return NULL;
