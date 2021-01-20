@@ -285,7 +285,7 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 		return;
 	}
 
-	UINT uAfterClose = 0;
+	bool restart = false;
 
 	if (m_ConfigNew.m_Apple2Type == A2TYPE_CLONE)
 	{
@@ -310,11 +310,11 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 
 		ApplyNewConfig();
 
-		uAfterClose = WM_USER_RESTART;
+		restart = true;
 	}
 
-	if (uAfterClose)
-		PostMessage(GetFrame().g_hFrameWindow, uAfterClose, 0, 0);
+	if (restart)
+		GetFrame().Restart();
 }
 
 bool CPropertySheetHelper::CheckChangesForRestart(HWND hWnd)

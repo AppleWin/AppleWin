@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 Pravets::Pravets(void)
 {
 	// Pravets 8A
-	bool g_CapsLockAllowed = false;
+	g_CapsLockAllowed = false;
 
 	// Pravets 8A/8C
 	P8CAPS_ON = false;

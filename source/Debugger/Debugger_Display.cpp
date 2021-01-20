@@ -758,7 +758,7 @@ static void PrintGlyph( const int xDst, const int yDst, const int glyph )
 	{
 #if _DEBUG
 		if ((xDst < 0) || (yDst < 0))
-			MessageBox(GetFrame().g_hFrameWindow, "X or Y out of bounds!", "PrintGlyph()", MB_OK );
+			GetFrame().FrameMessageBox("X or Y out of bounds!", "PrintGlyph()", MB_OK );
 #endif
 		int col = xDst / CONSOLE_FONT_WIDTH ;
 		int row = yDst / CONSOLE_FONT_HEIGHT;
@@ -874,7 +874,7 @@ int PrintText ( const char * pText, RECT & rRect )
 {
 #if _DEBUG
 	if (! pText)
-		MessageBox(GetFrame().g_hFrameWindow, "pText = NULL!", "DrawText()", MB_OK );
+		GetFrame().FrameMessageBox("pText = NULL!", "DrawText()", MB_OK );
 #endif
 
 	int nLen = strlen( pText );
@@ -4120,7 +4120,7 @@ void UpdateDisplay (Update_t bUpdate)
 	if (spDrawMutex)
 	{
 #if DEBUG
-		MessageBox( GetFrame().g_hFrameWindow, "Already drawing!", "!", MB_OK );
+		GetFrame().FrameMessageBox( "Already drawing!", "!", MB_OK );
 #endif
 	}
 	spDrawMutex = true;

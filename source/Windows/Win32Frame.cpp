@@ -232,7 +232,7 @@ void Win32Frame::Benchmark(void)
 	// IF THE PROGRAM COUNTER IS NOT IN THE EXPECTED RANGE AT THE END OF THE
 	// CPU BENCHMARK, REPORT AN ERROR AND OPTIONALLY TRACK IT DOWN
 	if ((regs.pc < 0x300) || (regs.pc > 0x400))
-		if (MessageBox(g_hFrameWindow,
+		if (FrameMessageBox(
 			TEXT("The emulator has detected a problem while running ")
 			TEXT("the CPU benchmark.  Would you like to gather more ")
 			TEXT("information?"),
@@ -261,13 +261,13 @@ void Win32Frame::Benchmark(void)
 					(unsigned)loop,
 					(unsigned)lastpc,
 					(unsigned)regs.pc);
-				MessageBox(g_hFrameWindow,
+				FrameMessageBox(
 					outstr,
 					TEXT("Benchmarks"),
 					MB_ICONINFORMATION | MB_SETFOREGROUND);
 			}
 			else
-				MessageBox(g_hFrameWindow,
+				FrameMessageBox(
 					TEXT("The emulator was unable to locate the exact ")
 					TEXT("point of the error.  This probably means that ")
 					TEXT("the problem is external to the emulator, ")
@@ -321,7 +321,7 @@ void Win32Frame::Benchmark(void)
 		(unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
 		(unsigned)(totalmhz10[1] / 10), (unsigned)(totalmhz10[1] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
 		(unsigned)realisticfps);
-	MessageBox(g_hFrameWindow,
+	FrameMessageBox(
 		outstr,
 		TEXT("Benchmarks"),
 		MB_ICONINFORMATION | MB_SETFOREGROUND);
@@ -574,4 +574,43 @@ Win32Frame& Win32Frame::GetWin32Frame()
 	FrameBase& frameBase = GetFrame();
 	Win32Frame& win32Frame = dynamic_cast<Win32Frame&>(frameBase);
 	return win32Frame;
+}
+
+int Win32Frame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
+{
+	const HWND handle = g_hFrameWindow ? g_hFrameWindow : GetDesktopWindow();
+	return MessageBox(handle, lpText, lpCaption, uType);
+}
+
+void Win32Frame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
+{
+	HBITMAP hBitmap = LoadBitmap(g_hInstance, lpBitmapName);
+	GetBitmapBits(hBitmap, cb, lpvBits);
+	DeleteObject(hBitmap);
+}
+
+void Win32Frame::Restart()
+{
+	// Changed h/w config, eg. Apple computer type (][+ or //e), slot configuration, etc.
+	g_bRestart = true;
+	PostMessage(g_hFrameWindow, WM_CLOSE, 0, 0);
+}
+
+BYTE* Win32Frame::GetResource(WORD id, LPCSTR lpType, DWORD dwExpectedSize)
+{
+	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(id), lpType);
+	if (hResInfo == NULL)
+		return NULL;
+
+	DWORD dwResSize = SizeofResource(NULL, hResInfo);
+	if (dwResSize != dwExpectedSize)
+		return NULL;
+
+	HGLOBAL hResData = LoadResource(NULL, hResInfo);
+	if (hResData == NULL)
+		return NULL;
+
+	BYTE* pResource = (BYTE*)LockResource(hResData);	// NB. Don't need to unlock resource
+
+	return pResource;
 }

@@ -83,7 +83,7 @@ void FrameBase::Video_TakeScreenShot(const Video::VideoScreenShot_e ScreenShotTy
 		{
 			TCHAR msg[512];
 			StringCbPrintf(msg, 512, "You have more then %d screenshot filenames!  They will no longer be saved.\n\nEither move some of your screenshots or increase the maximum in video.cpp\n", nMaxScreenShot);
-			MessageBox(GetFrame().g_hFrameWindow, msg, "Warning", MB_OK);
+			FrameMessageBox(msg, "Warning", MB_OK);
 			g_nLastScreenShot = 0;
 			return;
 		}
@@ -114,7 +114,7 @@ void FrameBase::Video_SaveScreenShot(const Video::VideoScreenShot_e ScreenShotTy
 
 	if (g_bDisplayPrintScreenFileName)
 	{
-		MessageBox(GetFrame().g_hFrameWindow, pScreenShotFileName, "Screen Captured", MB_OK);
+		FrameMessageBox(pScreenShotFileName, "Screen Captured", MB_OK);
 	}
 }
 

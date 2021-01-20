@@ -164,20 +164,7 @@ void CMouseInterface::InitializeROM(void)
 		return;
 
 	const UINT FW_SIZE = 2*1024;
-
-	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_MOUSEINTERFACE_FW), "FIRMWARE");
-	if(hResInfo == NULL)
-		return;
-
-	DWORD dwResSize = SizeofResource(NULL, hResInfo);
-	if(dwResSize != FW_SIZE)
-		return;
-
-	HGLOBAL hResData = LoadResource(NULL, hResInfo);
-	if(hResData == NULL)
-		return;
-
-	BYTE* pData = (BYTE*) LockResource(hResData);	// NB. Don't need to unlock resource
+	BYTE* pData = GetFrame().GetResource(IDR_MOUSEINTERFACE_FW, "FIRMWARE", FW_SIZE);
 	if(pData == NULL)
 		return;
 
