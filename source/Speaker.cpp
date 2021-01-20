@@ -280,32 +280,13 @@ void SpkrReset()
 
 //=============================================================================
 
-BOOL SpkrSetEmulationType (HWND window, SoundType_e newtype)
+void SpkrSetEmulationType (SoundType_e newtype)
 {
   SpkrDestroy();	// GH#295: Destroy for all types (even SOUND_NONE)
 
   soundtype = newtype;
   if (soundtype != SOUND_NONE)
     SpkrInitialize();
-
-  if (soundtype != newtype)
-    switch (newtype) {
-
-      case SOUND_WAVE:
-        MessageBox(window,
-                   TEXT("The emulator is unable to initialize a waveform ")
-                   TEXT("output device.  Make sure you have a sound card ")
-                   TEXT("and a driver installed and that windows is ")
-                   TEXT("correctly configured to use the driver.  Also ")
-                   TEXT("ensure that no other program is currently using ")
-                   TEXT("the device."),
-                   TEXT("Configuration"),
-                   MB_ICONEXCLAMATION | MB_SETFOREGROUND);
-        return 0;
-
-    }
-
-  return 1;
 }
 
 //=============================================================================

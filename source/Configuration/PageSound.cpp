@@ -139,11 +139,9 @@ void CPageSound::DlgOK(HWND hWnd)
 	const DWORD dwSpkrVolume = SendDlgItemMessage(hWnd, IDC_SPKR_VOLUME, TBM_GETPOS, 0, 0);
 	const DWORD dwMBVolume = SendDlgItemMessage(hWnd, IDC_MB_VOLUME, TBM_GETPOS, 0, 0);
 
-	if (SpkrSetEmulationType(hWnd, newSoundType))
-	{
-		DWORD dwSoundType = (soundtype == SOUND_NONE) ? REG_SOUNDTYPE_NONE : REG_SOUNDTYPE_WAVE;
-		REGSAVE(TEXT(REGVALUE_SOUND_EMULATION), dwSoundType);
-	}
+	SpkrSetEmulationType(newSoundType);
+	DWORD dwSoundType = (soundtype == SOUND_NONE) ? REG_SOUNDTYPE_NONE : REG_SOUNDTYPE_WAVE;
+	REGSAVE(TEXT(REGVALUE_SOUND_EMULATION), dwSoundType);
 
 	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence
 	SpkrSetVolume(dwSpkrVolume, VOLUME_MAX);
