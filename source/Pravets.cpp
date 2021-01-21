@@ -261,6 +261,9 @@ BYTE Pravets::ConvertToKeycode(WPARAM key, BYTE keycode)
 
 BYTE Pravets::ConvertToPrinterChar(BYTE value)
 {
+	if (m_Kir8ACapital == 0 || m_Kir8ALowerCase == 0 || m_Kir82 == 0)
+		return value;
+
 	BYTE c = 0;
 
 	if (GetApple2Type() == A2TYPE_PRAVETS8A)  // Print conversion for Pravets 8A/C

@@ -4,7 +4,12 @@ class Pravets
 {
 public:
 	Pravets(void);
-	~Pravets(void){}
+	~Pravets(void)
+	{
+		delete [] m_Kir8ACapital;
+		delete [] m_Kir8ALowerCase;
+		delete [] m_Kir82;
+	}
 
 	void Reset(void);
 
