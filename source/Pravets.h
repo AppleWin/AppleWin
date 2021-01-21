@@ -17,7 +17,16 @@ public:
 	BYTE ConvertToPrinterChar(BYTE value);
 
 private:
+	char* ConvertUtf8ToAnsi(const char* pUTF8);
+
 	bool g_CapsLockAllowed;
 	bool P8CAPS_ON;
 	bool P8Shift;
+
+	static const char m_Lat8A[];
+	static const char m_Lat82[];
+
+	char* m_Kir8ACapital;
+	char* m_Kir8ALowerCase;
+	char* m_Kir82;
 };
