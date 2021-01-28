@@ -724,6 +724,7 @@ BYTE CAY8910::sound_ay_read( int reg )
 			{
 				val = ay_change[i].val;	// return the most recently written reg's value
 				got = true;
+				break;
 			}
 		}
 	}
