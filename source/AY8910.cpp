@@ -504,7 +504,7 @@ void CAY8910::sound_ay_overlay( void )
 		dbgCount++;
 	}
   }
-#if defined(_DEBUG) && 1
+#if defined(_DEBUG) && 0
   if (dbgCount)
   {
 	  LogOutput("ay_change: saved %d\n", dbgCount);	// [TC] previously would've been dumped!
