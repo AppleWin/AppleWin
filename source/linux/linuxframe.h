@@ -7,28 +7,24 @@ class LinuxFrame : public FrameBase
 {
 public:
 
-  virtual void Initialize();
-  virtual void Destroy();
+  void Initialize() override;
+  void Destroy() override;
 
-  virtual void FrameDrawDiskLEDS();
-  virtual void FrameDrawDiskStatus();
-  virtual void FrameRefreshStatus(int drawflags);
-  virtual void FrameUpdateApple2Type();
-  virtual void FrameSetCursorPosByMousePos();
+  void FrameDrawDiskLEDS() override;
+  void FrameDrawDiskStatus() override;
+  void FrameRefreshStatus(int drawflags) override;
+  void FrameUpdateApple2Type() override;
+  void FrameSetCursorPosByMousePos() override;
 
-  virtual void SetFullScreenShowSubunitStatus(bool bShow);
-  virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight = 0);
-  virtual int SetViewportScale(int nNewScale, bool bForce = false);
-  virtual void SetAltEnterToggleFullScreen(bool mode);
+  void SetFullScreenShowSubunitStatus(bool bShow) override;
+  bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight = 0) override;
+  int SetViewportScale(int nNewScale, bool bForce = false) override;
+  void SetAltEnterToggleFullScreen(bool mode) override;
 
-  virtual void SetLoadedSaveStateFlag(const bool bFlag);
+  void SetLoadedSaveStateFlag(const bool bFlag) override;
 
-  virtual void ChooseMonochromeColor();
-  virtual void Benchmark();
-  virtual void DisplayLogo();
-
-  virtual void Restart();
-  virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
+  void Restart() override;
+  void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
 
   void CycleVideoType();
   void Cycle50ScanLines();

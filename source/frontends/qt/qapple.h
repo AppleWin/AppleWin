@@ -38,8 +38,8 @@ public slots:
     void startEmulator();
 
 protected:
-    virtual void closeEvent(QCloseEvent * event);
-    virtual void timerEvent(QTimerEvent *event);
+    void closeEvent(QCloseEvent * event) override;
+    void timerEvent(QTimerEvent *event) override;
 
 private slots:
 

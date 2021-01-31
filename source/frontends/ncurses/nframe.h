@@ -18,10 +18,10 @@ public:
   WINDOW * GetWindow();
   WINDOW * GetStatus();
 
-  virtual void Initialize();
-  virtual void Destroy();
-  virtual void VideoPresentScreen();
-  virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
+  void Initialize() override;
+  void Destroy() override;
+  void VideoPresentScreen() override;
+  int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
 
   void ProcessEvDev();
 

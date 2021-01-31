@@ -17,8 +17,8 @@ public:
   int poll();
 
   const std::string & getName() const;
-  virtual bool getButton(int i) const;
-  virtual double getAxis(int i) const;
+  bool getButton(int i) const override;
+  double getAxis(int i) const override;
 
 private:
   int myFD;

@@ -11,7 +11,7 @@ class Joypad : public JoypadBase
 public:
   Joypad();
 
-  virtual double getAxis(int i) const;
+  double getAxis(int i) const override;
 
 private:
   std::vector<std::map<unsigned, double> > myAxisCodes;

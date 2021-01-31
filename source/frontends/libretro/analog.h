@@ -10,7 +10,7 @@ class Analog : public JoypadBase
 public:
   Analog();
 
-  virtual double getAxis(int i) const;
+  double getAxis(int i) const override;
 
 private:
   std::vector<std::pair<unsigned, unsigned> > myAxisCodes;

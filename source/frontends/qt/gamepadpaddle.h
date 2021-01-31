@@ -11,8 +11,8 @@ class GamepadPaddle : public Paddle
 public:
     static std::shared_ptr<Paddle> fromName(const QString & name);
 
-    virtual bool getButton(int i) const;
-    virtual double getAxis(int i) const;
+    bool getButton(int i) const override;
+    double getAxis(int i) const override;
 
 private:
     GamepadPaddle(const std::shared_ptr<QGamepad> & gamepad);

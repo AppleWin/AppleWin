@@ -12,8 +12,8 @@ class Gamepad : public Paddle
 public:
   Gamepad(const int index);
 
-  virtual bool getButton(int i) const;
-  virtual double getAxis(int i) const;
+  bool getButton(int i) const override;
+  double getAxis(int i) const override;
 
 private:
   std::shared_ptr<SDL_GameController> myController;

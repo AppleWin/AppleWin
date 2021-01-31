@@ -14,14 +14,14 @@ class QtFrame : public LinuxFrame
 public:
     QtFrame(Emulator * emulator, QMdiSubWindow * window);
 
-    virtual void VideoPresentScreen();
-    virtual void FrameRefreshStatus(int drawflags);
-    virtual void Initialize();
-    virtual void Destroy();
+    void VideoPresentScreen() override;
+    void FrameRefreshStatus(int drawflags) override;
+    void Initialize() override;
+    void Destroy() override;
 
-    virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
-    virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
-    virtual BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize);
+    int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
+    void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
+    BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) override;
 
     void SetForceRepaint(const bool force);
     void SetZoom(const int x);

@@ -62,18 +62,6 @@ void LinuxFrame::Destroy()
   GetVideo().Destroy(); // this resets the Video's FrameBuffer pointer
 }
 
-void LinuxFrame::ChooseMonochromeColor()
-{
-}
-
-void LinuxFrame::Benchmark()
-{
-}
-
-void LinuxFrame::DisplayLogo()
-{
-}
-
 void LinuxFrame::ApplyVideoModeChange()
 {
   // this is similar to Win32Frame::ApplyVideoModeChange

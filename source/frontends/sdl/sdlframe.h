@@ -10,10 +10,10 @@ class SDLFrame : public CommonFrame
 public:
   SDLFrame(const EmulatorOptions & options);
 
-  virtual void VideoPresentScreen();
-  virtual void FrameRefreshStatus(int drawflags);
-  virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
-  virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
+  void VideoPresentScreen() override;
+  void FrameRefreshStatus(int drawflags) override;
+  int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
+  void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
 
   void UpdateTexture();
   void RenderPresent();

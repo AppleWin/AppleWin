@@ -9,27 +9,27 @@ class CConfigNeedingRestart;
 class CPropertySheet : public IPropertySheet
 {
 public:
-  virtual void Init(void);
-  virtual DWORD GetVolumeMax(void);
-  virtual bool SaveStateSelectImage(HWND hWindow, bool bSave);
-  virtual void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld);
-  virtual void ConfigSaveApple2Type(eApple2Type apple2Type);
-  virtual UINT GetScrollLockToggle(void);
-  virtual void SetScrollLockToggle(UINT uValue);
-  virtual UINT GetJoystickCursorControl(void);
-  virtual void SetJoystickCursorControl(UINT uValue);
-  virtual UINT GetJoystickCenteringControl(void);
-  virtual void SetJoystickCenteringControl(UINT uValue);
-  virtual UINT GetAutofire(UINT uButton);
-  virtual void SetAutofire(UINT uValue);
-  virtual bool GetButtonsSwapState(void);
-  virtual void SetButtonsSwapState(bool value);
-  virtual UINT GetMouseShowCrosshair(void);
-  virtual void SetMouseShowCrosshair(UINT uValue);
-  virtual UINT GetMouseRestrictToWindow(void);
-  virtual void SetMouseRestrictToWindow(UINT uValue);
-  virtual UINT GetTheFreezesF8Rom(void);
-  virtual void SetTheFreezesF8Rom(UINT uValue);
+  void Init(void) override;
+  DWORD GetVolumeMax(void) override;
+  bool SaveStateSelectImage(HWND hWindow, bool bSave) override;
+  void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld) override;
+  void ConfigSaveApple2Type(eApple2Type apple2Type) override;
+  UINT GetScrollLockToggle(void) override;
+  void SetScrollLockToggle(UINT uValue) override;
+  UINT GetJoystickCursorControl(void) override;
+  void SetJoystickCursorControl(UINT uValue) override;
+  UINT GetJoystickCenteringControl(void) override;
+  void SetJoystickCenteringControl(UINT uValue) override;
+  UINT GetAutofire(UINT uButton) override;
+  void SetAutofire(UINT uValue) override;
+  bool GetButtonsSwapState(void) override;
+  void SetButtonsSwapState(bool value) override;
+  UINT GetMouseShowCrosshair(void) override;
+  void SetMouseShowCrosshair(UINT uValue) override;
+  UINT GetMouseRestrictToWindow(void) override;
+  void SetMouseRestrictToWindow(UINT uValue) override;
+  UINT GetTheFreezesF8Rom(void) override;
+  void SetTheFreezesF8Rom(UINT uValue) override;
 private:
   CPropertySheetHelper m_PropertySheetHelper;
 };

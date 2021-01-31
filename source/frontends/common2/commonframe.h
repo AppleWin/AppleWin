@@ -9,9 +9,9 @@ class CommonFrame : public LinuxFrame
 public:
   CommonFrame();
 
-  virtual void Destroy();
+  void Destroy() override;
 
-  virtual BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize);
+  BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) override;
 
 protected:
   static std::string getBitmapFilename(const std::string & resource);

@@ -10,12 +10,12 @@ class RetroFrame : public CommonFrame
 public:
   RetroFrame();
 
-  virtual void VideoPresentScreen();
-  virtual void FrameRefreshStatus(int drawflags);
-  virtual void Initialize();
-  virtual void Destroy();
-  virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
-  virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
+  void VideoPresentScreen() override;
+  void FrameRefreshStatus(int drawflags) override;
+  void Initialize() override;
+  void Destroy() override;
+  int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
+  void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
 
 private:
   std::vector<uint8_t> myVideoBuffer;
