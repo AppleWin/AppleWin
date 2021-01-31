@@ -58,8 +58,7 @@ Game::Game(const std::shared_ptr<RetroFrame> & frame)
   LogInit();
   InitialiseRetroRegistry();
 
-  initialiseEmulator();
-
+  myInit.reset(new Initialisation);
 
   switch (ourInputDevices[0])
   {
@@ -81,7 +80,7 @@ Game::Game(const std::shared_ptr<RetroFrame> & frame)
 
 Game::~Game()
 {
-  uninitialiseEmulator();
+  myInit.reset();
   SetFrame(std::shared_ptr<FrameBase>());
   Paddle::instance.reset();
   Registry::instance.reset();

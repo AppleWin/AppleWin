@@ -55,7 +55,7 @@ void setSnapshotFilename(const std::string & filename, const bool load)
   }
 }
 
-void initialiseEmulator()
+Initialisation::Initialisation()
 {
 #ifdef RIFF_SPKR
   RiffInitWriteFile("/tmp/Spkr.wav", SPKR_SAMPLE_RATE, 1);
@@ -86,7 +86,7 @@ void initialiseEmulator()
   Snapshot_Startup();
 }
 
-void uninitialiseEmulator()
+Initialisation::~Initialisation()
 {
   Snapshot_Shutdown();
   CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();

@@ -3,5 +3,10 @@
 #include <string>
 
 void setSnapshotFilename(const std::string & filename, const bool load);
-void initialiseEmulator();
-void uninitialiseEmulator();
+
+class Initialisation
+{
+public:
+  Initialisation();
+  ~Initialisation();
+};

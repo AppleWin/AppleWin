@@ -90,7 +90,7 @@ void run_sdl(int argc, const char * argv [])
 
   g_nMemoryClearType = options.memclear;
 
-  initialiseEmulator();
+  Initialisation init;
   applyOptions(options);
 
   Video & video = GetVideo();
@@ -255,8 +255,6 @@ void run_sdl(int argc, const char * argv [])
     SDirectSound::stop();
   }
 #endif
-
-  uninitialiseEmulator();
 }
 
 int main(int argc, const char * argv [])

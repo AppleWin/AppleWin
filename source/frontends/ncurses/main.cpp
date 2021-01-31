@@ -161,7 +161,7 @@ namespace
 
     g_nMemoryClearType = options.memclear;
 
-    initialiseEmulator();
+    Initialisation init;
     SetCtrlCHandler(options.headless);
     applyOptions(options);
 
@@ -174,8 +174,6 @@ namespace
     {
       EnterMessageLoop(options, frame);
     }
-
-    uninitialiseEmulator();
 
     return 0;
   }
