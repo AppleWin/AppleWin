@@ -174,6 +174,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int INFO_COL_3 = (63 * 7); // nFontWidth
 		const int DISPLAY_MINIMEM_COLUMN = INFO_COL_3;
 		const int DISPLAY_VIDEO_SCANNER_COLUMN = INFO_COL_3;
+		const int DISPLAY_IRQ_COLUMN = INFO_COL_3 + (12 * 7); // (12 chars from v/h-pos) * nFontWidth
 #else
 		const int DISPLAY_CPU_INFO_LEFT_COLUMN = SCREENSPLIT1;	// TC: SCREENSPLIT1 is not defined anywhere in the .sln!
 
@@ -3748,7 +3749,33 @@ void DrawSubWindow_Data (Update_t bUpdate)
 }
 
 //===========================================================================
-void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
+static void DrawIRQInfo(int line)
+{
+	if (!((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
+		return;
+
+	const int nFontWidth = g_aFontConfig[FONT_INFO]._nFontWidthAvg;
+
+	const int nameWidth = 3;	// 3 chars
+	const int totalWidth = nameWidth;
+
+	RECT rect;
+	rect.top = line * g_nFontHeight;
+	rect.bottom = rect.top + g_nFontHeight;
+	rect.left = DISPLAY_IRQ_COLUMN;
+	rect.right = rect.left + (totalWidth * nFontWidth);
+
+	DebuggerSetColorBG(DebuggerGetColor(BG_IRQ_TITLE));
+	DebuggerSetColorFG(DebuggerGetColor(FG_IRQ_TITLE));
+
+	if (IsIrqAsserted())
+		PrintText("IRQ", rect);
+	else
+		PrintText("   ", rect);
+}
+
+//===========================================================================
+static void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 {
 	if (!((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
@@ -3784,7 +3811,7 @@ void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 			sprintf_s(sValue, sizeof(sValue), "%03X", nValue);
 
 		if (!isVisible)
-			DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_INVISIBLE));	// red
+			DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_INVISIBLE));	// yellow
 		else
 			DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_VISIBLE));		// green
 		PrintText(sValue, rect);
@@ -3793,8 +3820,7 @@ void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 }
 
 //===========================================================================
-
-void DrawVideoScannerInfo (int line)
+static void DrawVideoScannerInfo(int line)
 {
 	NTSC_VideoGetScannerAddressForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
 
@@ -3871,6 +3897,8 @@ void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 
 		if (bUpdate & UPDATE_VIDEOSCANNER)
 			DrawVideoScannerInfo(yBeam);
+
+		DrawIRQInfo(yBeam);
 
 		if ((bUpdate & UPDATE_REGS) || (bUpdate & UPDATE_FLAGS))
 			DrawRegisters( yRegs );
