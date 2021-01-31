@@ -7,6 +7,7 @@
 #include <vector>
 
 class RetroFrame;
+class Initialisation;
 
 class Game
 {
@@ -35,6 +36,8 @@ private:
   Speed mySpeed;  // fixed speed
 
   std::vector<int> myButtonStates;
+
+  std::shared_ptr<Initialisation> myInit;
 
   bool checkButtonPressed(unsigned id);
   void keyboardEmulation();
