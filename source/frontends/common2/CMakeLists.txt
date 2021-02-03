@@ -39,6 +39,10 @@ target_link_libraries(common2 PUBLIC
 )
 
 file(RELATIVE_PATH ROOT_PATH ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+if (NOT DEFINED ${ROOT_PATH})
+  # if the 2 paths are the same
+  set(ROOT_PATH "./")
+endif()
 file(RELATIVE_PATH SHARE_PATH ${CMAKE_INSTALL_FULL_BINDIR} ${CMAKE_INSTALL_FULL_DATADIR}/applewin)
 
 configure_file(config.h.in config.h)
