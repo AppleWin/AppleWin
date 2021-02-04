@@ -39,7 +39,7 @@ target_link_libraries(common2 PUBLIC
 )
 
 file(RELATIVE_PATH ROOT_PATH ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
-if (NOT DEFINED ${ROOT_PATH})
+if ("${ROOT_PATH}" STREQUAL "")
   # if the 2 paths are the same
   set(ROOT_PATH "./")
 endif()
