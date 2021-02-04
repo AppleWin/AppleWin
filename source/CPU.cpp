@@ -193,6 +193,11 @@ void SetActiveCpu(eCpuType cpu)
 	g_ActiveCPU = cpu;
 }
 
+bool IsIrqAsserted(void)
+{
+	return g_bmIRQ ? true : false;
+}
+
 bool Is6502InterruptEnabled(void)
 {
 	return !(regs.ps & AF_INTERRUPT);

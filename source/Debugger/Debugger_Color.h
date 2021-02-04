@@ -129,6 +129,9 @@
 		, FG_VIDEOSCANNER_INVISIBLE	// yellow
 		, FG_VIDEOSCANNER_VISIBLE	// green
 
+		, BG_IRQ_TITLE
+		, FG_IRQ_TITLE		// red
+
 		, NUM_DEBUG_COLORS
 	};
 
