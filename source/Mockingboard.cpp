@@ -383,6 +383,18 @@ static UINT GetOpcodeCycles(BYTE reg)
 		opcodeCycles = 5;
 		opcode = opcodeMinus2;
 	}
+	else if (opcodeMinus3 == 0x9C && GetMainCpu() == CPU_65C02)		// stz abs16 : 65C02-only
+	{
+		opcodeCycles = 4;
+		opcode = opcodeMinus3;
+		abs16 = true;
+	}
+	else if (opcodeMinus3 == 0x9E && GetMainCpu() == CPU_65C02)		// stz abs16,x : 65C02-only
+	{
+		opcodeCycles = 5;
+		opcode = opcodeMinus3;
+		abs16 = true;
+	}
 	else
 	{
 		_ASSERT(0);
@@ -405,7 +417,7 @@ static UINT GetOpcodeCycles(BYTE reg)
 	{
 		addr16 = mem[(regs.pc-2)&0xffff] | (mem[(regs.pc-1)&0xffff]<<8);
 		if (opcode == 0x99) addr16 += regs.y;
-		if (opcode == 0x9D) addr16 += regs.x;
+		if (opcode == 0x9D || opcode == 0x9E) addr16 += regs.x;
 	}
 
 	// Check we've reverse looked-up the 6502 opcode correctly
