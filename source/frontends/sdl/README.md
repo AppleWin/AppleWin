@@ -19,6 +19,14 @@ It is possible to run the CPU in a separate thread to keep the emulator running 
 - ``sa2 -m``
 - optionally add ``-l``
 
+## Dear ImGui
+
+Rendering with [Dear ImGui](https://github.com/ocornut/imgui) is possible, although no fancy features are used.
+
+Must be configured in ``cmake`` via the external path ``IMGUI_PATH``, and enabled at runtime with ``--imgui``. It requires a working OpenGL ES2.0 implementation (works on Pi3 and Pi4).
+
+Output mentions the Dear ImGui version: ``IMGUI_VERSION: 1.81 WIP``
+
 ## Hotkeys
 
 ``F2``, ``F5``, ``F6``, ``F9``, ``F11``, ``F12`` and ``Pause``  have the same meaning as in AppleWin.
