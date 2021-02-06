@@ -1,5 +1,7 @@
 include(FindPkgConfig)
 
+add_executable(sa2)
+
 set(SOURCE_FILES
   main.cpp
   emulator.cpp
@@ -7,7 +9,7 @@ set(SOURCE_FILES
   sdirectsound.cpp
   utils.cpp
   sdlframe.cpp
-  sdlrendererframe.cpp
+  renderer/sdlrendererframe.cpp
   )
 
 set(HEADER_FILES
@@ -16,12 +18,7 @@ set(HEADER_FILES
   sdirectsound.h
   utils.h
   sdlframe.h
-  sdlrendererframe.h
-  )
-
-add_executable(sa2
-  ${SOURCE_FILES}
-  ${HEADER_FILES}
+  renderer/sdlrendererframe.h
   )
 
 find_package(SDL2 REQUIRED)
@@ -40,6 +37,51 @@ target_link_libraries(sa2 PRIVATE
   appleii
   common2
   )
+
+target_sources(sa2 PRIVATE
+  ${SOURCE_FILES}
+  ${HEADER_FILES}
+  )
+
+set(IMGUI_PATH NONE CACHE PATH "path to imgui")
+
+if (EXISTS ${IMGUI_PATH}/imgui.h)
+  message("Using IMGUI_PATH=${IMGUI_PATH}")
+
+  pkg_search_module(GLES2 REQUIRED glesv2)
+
+  target_sources(sa2 PRIVATE
+    imgui/sdlimguiframe.cpp
+    imgui/image.cpp
+    imgui/gles.h
+    imgui/image.h
+    imgui/sdlimguiframe.h
+    ${IMGUI_PATH}/imgui.cpp
+    ${IMGUI_PATH}/imgui_demo.cpp
+    ${IMGUI_PATH}/imgui_draw.cpp
+    ${IMGUI_PATH}/imgui_tables.cpp
+    ${IMGUI_PATH}/imgui_widgets.cpp
+    ${IMGUI_PATH}/backends/imgui_impl_sdl.cpp
+    ${IMGUI_PATH}/backends/imgui_impl_opengl3.cpp
+    )
+
+  target_include_directories(sa2 PRIVATE
+    ${IMGUI_PATH}
+    ${IMGUI_PATH}/backends
+    )
+
+  target_link_libraries(sa2 PRIVATE
+    ${GLES2_LIBRARIES}
+    )
+
+  target_compile_definitions(sa2 PRIVATE
+    SA2_IMGUI
+    IMGUI_IMPL_OPENGL_ES2
+    )
+else()
+  message("Bad IMGUI_PATH=${IMGUI_PATH}, skipping imgui code")
+endif()
+
 
 install(TARGETS sa2
   DESTINATION bin)

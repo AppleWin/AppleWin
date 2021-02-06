@@ -17,7 +17,12 @@
 #include "frontends/sdl/gamepad.h"
 #include "frontends/sdl/sdirectsound.h"
 #include "frontends/sdl/utils.h"
-#include "frontends/sdl/sdlrendererframe.h"
+
+#include "frontends/sdl/renderer/sdlrendererframe.h"
+
+#ifdef SA2_IMGUI
+#include "frontends/sdl/imgui/sdlimguiframe.h"
+#endif
 
 #include "Core.h"
 #include "Log.h"
@@ -79,7 +84,21 @@ void run_sdl(int argc, const char * argv [])
   if (!run)
     return;
 
-  const std::shared_ptr<SDLFrame> frame(new SDLRendererFrame(options));
+  std::shared_ptr<SDLFrame> frame;
+
+#ifdef SA2_IMGUI
+  if (options.imgui)
+  {
+    frame.reset(new SDLImGuiFrame());
+  }
+  else
+  {
+    frame.reset(new SDLRendererFrame(options));
+  }
+#else
+  frame.reset(new SDLRendererFrame(options));
+#endif
+
   SetFrame(frame);
 
   if (options.log)

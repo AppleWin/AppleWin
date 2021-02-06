@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-#include "frontends/sdl/sdlrendererframe.h"
+#include "frontends/sdl/renderer/sdlrendererframe.h"
 #include "frontends/sdl/utils.h"
 #include "frontends/common2/programoptions.h"
 
@@ -20,8 +20,7 @@ SDLRendererFrame::SDLRendererFrame(const EmulatorOptions & options)
   myWindow.reset(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, sw, sh, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE), SDL_DestroyWindow);
   if (!myWindow)
   {
-    std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
-    return;
+    throw std::runtime_error(SDL_GetError());
   }
 
   SetApplicationIcon();
@@ -29,8 +28,7 @@ SDLRendererFrame::SDLRendererFrame(const EmulatorOptions & options)
   myRenderer.reset(SDL_CreateRenderer(myWindow.get(), options.sdlDriver, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC), SDL_DestroyRenderer);
   if (!myRenderer)
   {
-    std::cerr << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
-    return;
+    throw std::runtime_error(SDL_GetError());
   }
 
   const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
