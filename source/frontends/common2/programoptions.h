@@ -36,6 +36,7 @@ struct EmulatorOptions
   bool fixedSpeed = false; // default adaptive
 
   int sdlDriver = -1; // default = -1 to let SDL choose
+  bool imgui = false; // use imgui renderer
 
   std::vector<std::string> registryOptions;
 };

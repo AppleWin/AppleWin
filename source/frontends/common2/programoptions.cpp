@@ -24,6 +24,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
     ("multi-threaded,m", "Multi threaded")
     ("loose-mutex,l", "Loose mutex")
     ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
+    ("imgui", "Render with Dear ImGui")
     ("timer-interval,i", po::value<int>()->default_value(options.timerInterval), "Timer interval in ms");
 
   po::options_description configDesc("configuration");
@@ -82,6 +83,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
     options.looseMutex = vm.count("loose-mutex");
     options.timerInterval = vm["timer-interval"].as<int>();
     options.sdlDriver = vm["sdl-driver"].as<int>();
+    options.imgui = vm.count("imgui");
 
     if (vm.count("config"))
     {

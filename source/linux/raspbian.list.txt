@@ -10,3 +10,4 @@ libncurses-dev
 libevdev-dev
 libsdl2-image-dev
 libsdl2-dev
+libgles-dev
