@@ -344,7 +344,108 @@ static void AY8910_Write(BYTE nDevice, BYTE /*nReg*/, BYTE nValue, BYTE nAYDevic
 	}
 }
 
-static UINT GetOpcodeCycles(BYTE reg)
+// TODO: RMW opcodes: dec,inc,asl,lsr,rol,ror (abs16 & abs16,x) + 65C02 trb,tsb (abs16)
+static UINT GetOpcodeCyclesForRead(BYTE reg)
+{
+	UINT opcodeCycles = 0;
+	BYTE opcode = 0;
+	bool abs16 = false;
+	bool abs16x = false;
+	bool abs16y = false;
+	bool indx = false;
+	bool indy = false;
+
+	const BYTE opcodeMinus3 = mem[(regs.pc-3)&0xffff];
+	const BYTE opcodeMinus2 = mem[(regs.pc-2)&0xffff];
+
+	if ( ((opcodeMinus2 & 0x0f) == 0x01) && ((opcodeMinus2 & 0x10) == 0x00) )	// ora (zp,x), and (zp,x), ..., sbc (zp,x)
+	{
+		// NB. this is for read, so don't need to exclude 0x81 / sta (zp,x)
+		opcodeCycles = 6;
+		opcode = opcodeMinus2;
+		indx = true;
+	}
+	else if ( ((opcodeMinus2 & 0x0f) == 0x01) && ((opcodeMinus2 & 0x10) == 0x10) )	// ora (zp),y, and (zp),y, ..., sbc (zp),y
+	{
+		// NB. this is for read, so don't need to exclude 0x91 / sta (zp),y
+		opcodeCycles = 5;
+		opcode = opcodeMinus2;
+		indy = true;
+	}
+	else if ( ((opcodeMinus2 & 0x0f) == 0x02) && ((opcodeMinus2 & 0x10) == 0x10) && GetMainCpu() == CPU_65C02 )	// ora (zp), and (zp), ..., sbc (zp) : 65C02-only
+	{
+		// NB. this is for read, so don't need to exclude 0x92 / sta (zp)
+		opcodeCycles = 5;
+		opcode = opcodeMinus2;
+	}
+	else
+	{
+		if ( (((opcodeMinus3 & 0x0f) == 0x0D) && ((opcodeMinus3 & 0x10) == 0x00)) ||	// ora abs16, and abs16, ..., sbc abs16
+				(opcodeMinus3 == 0x2C) ||			// bit abs16
+				(opcodeMinus3 == 0xAC) ||			// ldy abs16
+				(opcodeMinus3 == 0xAE) ||			// ldx abs16
+				(opcodeMinus3 == 0xCC) ||			// cpy abs16
+				(opcodeMinus3 == 0xEC) )			// cpx abs16
+		{
+		}
+		else if ( (opcodeMinus3 == 0xBC) ||			// ldy abs16,x
+					((opcodeMinus3 == 0x3C) && GetMainCpu() == CPU_65C02) )		// bit abs16,x : 65C02-only
+		{
+			abs16x = true;
+		}
+		else if ( (opcodeMinus3 == 0xBE) )			// ldx abs16,y
+		{
+			abs16y = true;
+		}
+		else if ((opcodeMinus3 & 0x10) == 0x10)
+		{
+			if ((opcodeMinus3 & 0x0f) == 0x0D)		// ora abs16,x, and abs16,x, ..., sbc abs16,x
+				abs16x = true;
+			else if ((opcodeMinus3 & 0x0f) == 0x09) // ora abs16,y, and abs16,y, ..., sbc abs16,y
+				abs16y = true;
+		}
+		else
+		{
+			_ASSERT(0);
+			opcodeCycles = 0;
+			return 0;
+		}
+
+		opcodeCycles = 4;
+		opcode = opcodeMinus3;
+		abs16 = true;
+	}
+
+	//
+
+	WORD addr16 = 0;
+
+	if (!abs16)
+	{
+		BYTE zp = mem[(regs.pc-1)&0xffff];
+		if (indx) zp += regs.x;
+		addr16 = (mem[zp] | (mem[(zp+1)&0xff]<<8));
+		if (indy) addr16 += regs.y;
+	}
+	else
+	{
+		addr16 = mem[(regs.pc-2)&0xffff] | (mem[(regs.pc-1)&0xffff]<<8);
+		if (abs16y) addr16 += regs.y;
+		if (abs16x) addr16 += regs.x;
+	}
+
+	// Check we've reverse looked-up the 6502 opcode correctly
+	if ((addr16 & 0xF80F) != (0xC000+reg))
+	{
+		_ASSERT(0);
+		return 0;
+	}
+
+	return opcodeCycles;
+}
+
+// TODO: RMW opcodes: dec,inc,asl,lsr,rol,ror (abs16 & abs16,x) + 65C02 trb,tsb (abs16)
+static UINT GetOpcodeCyclesForWrite(BYTE reg)
 {
 	UINT opcodeCycles = 0;
 	BYTE opcode = 0;
@@ -436,7 +537,7 @@ static UINT GetOpcodeCycles(BYTE reg)
 static USHORT SetTimerSyncEvent(UINT id, BYTE reg, USHORT timerLatch)
 {
 	// NB. This TIMER adjustment value gets subtracted when this current opcode completes, so no need to persist to save-state
-	const UINT opcodeCycleAdjust = GetOpcodeCycles(reg);
+	const UINT opcodeCycleAdjust = GetOpcodeCyclesForWrite(reg);
 
 	SyncEvent* pSyncEvent = g_syncEvent[id];
 	if (pSyncEvent->m_active)
@@ -595,7 +696,6 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 
 static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 {
-//	g_bMB_RegAccessedFlag = true;
 	g_bMB_Active = true;
 
 	SY6522_AY8910* pMB = &g_MB[nDevice];
@@ -616,12 +716,18 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 			nValue = pMB->sy6522.DDRA;
 			break;
 		case 0x04:	// TIMER1L_COUNTER
-			// NB. GH#701 (T1C:=0xFFFF, LDA T1C_L, A==0xFC)
-			nValue = (pMB->sy6522.TIMER1_COUNTER.w - 3) & 0xff;		// -3 to compensate for the (assumed) 4-cycle STA 6522.T1C_H
-			UpdateIFR(pMB, IxR_TIMER1);
+			{
+				// NB. GH#701 (T1C:=0xFFFF, LDA T1C_L, A==0xFC)
+				const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(nReg) - 1;	// to compensate for the 4/5/6 cycle read opcode
+				nValue = (pMB->sy6522.TIMER1_COUNTER.w - opcodeCycleAdjust) & 0xff;
+				UpdateIFR(pMB, IxR_TIMER1);
+			}
 			break;
 		case 0x05:	// TIMER1H_COUNTER
-			nValue = pMB->sy6522.TIMER1_COUNTER.h;
+			{
+				const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(nReg) - 1;	// to compensate for the 4/5/6 cycle read opcode
+				nValue = (pMB->sy6522.TIMER1_COUNTER.w - opcodeCycleAdjust) >> 8;
+			}
 			break;
 		case 0x06:	// TIMER1L_LATCH
 			nValue = pMB->sy6522.TIMER1_LATCH.l;
@@ -630,11 +736,17 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 			nValue = pMB->sy6522.TIMER1_LATCH.h;
 			break;
 		case 0x08:	// TIMER2L
-			nValue = pMB->sy6522.TIMER2_COUNTER.l;
-			UpdateIFR(pMB, IxR_TIMER2);
+			{
+				const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(nReg) - 1;	// to compensate for the 4/5/6 cycle read opcode
+				nValue = (pMB->sy6522.TIMER2_COUNTER.w - opcodeCycleAdjust) & 0xff;
+				UpdateIFR(pMB, IxR_TIMER2);
+			}
 			break;
 		case 0x09:	// TIMER2H
-			nValue = pMB->sy6522.TIMER2_COUNTER.h;
+			{
+				const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(nReg) - 1;	// to compensate for the 4/5/6 cycle read opcode
+				nValue = (pMB->sy6522.TIMER2_COUNTER.w - opcodeCycleAdjust) >> 8;
+			}
 			break;
 		case 0x0a:	// SERIAL_SHIFT
 			break;
