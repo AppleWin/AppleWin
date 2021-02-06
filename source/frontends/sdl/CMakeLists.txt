@@ -53,6 +53,7 @@ if (EXISTS ${IMGUI_PATH}/imgui.h)
   target_sources(sa2 PRIVATE
     imgui/sdlimguiframe.cpp
     imgui/image.cpp
+    imgui/imconfig.h
     imgui/gles.h
     imgui/image.h
     imgui/sdlimguiframe.h
@@ -77,6 +78,7 @@ if (EXISTS ${IMGUI_PATH}/imgui.h)
   target_compile_definitions(sa2 PRIVATE
     SA2_IMGUI
     IMGUI_IMPL_OPENGL_ES2
+    IMGUI_USER_CONFIG="frontends/sdl/imgui/imconfig.h"
     )
 else()
   message("Bad IMGUI_PATH=${IMGUI_PATH}, skipping imgui code")

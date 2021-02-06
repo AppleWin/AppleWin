@@ -96,7 +96,7 @@ void SDLImGuiFrame::RenderPresent()
   const ImVec2 uv1(1, 0);
   const ImVec2 zero(0, 0);
   // draw on the background
-  ImGui::GetBackgroundDrawList()->AddImage((void*)(intptr_t)myTexture, zero, ImGui::GetIO().DisplaySize, uv0, uv1);
+  ImGui::GetBackgroundDrawList()->AddImage(myTexture, zero, ImGui::GetIO().DisplaySize, uv0, uv1);
 
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

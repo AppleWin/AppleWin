@@ -20,5 +20,5 @@ private:
   size_t myBorderlessHeight;
 
   SDL_GLContext myGLContext;
-  GLuint myTexture;
+  ImTextureID myTexture;
 };
