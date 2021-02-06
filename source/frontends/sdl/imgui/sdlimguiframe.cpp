@@ -41,6 +41,7 @@ SDLImGuiFrame::SDLImGuiFrame()
   SDL_GL_MakeCurrent(myWindow.get(), myGLContext);
 
   // Setup Platform/Renderer backends
+  std::cerr << "IMGUI_VERSION: " << IMGUI_VERSION << std::endl;
   std::cerr << "GL_VENDOR: " << glGetString(GL_VENDOR) << std::endl;
   std::cerr << "GL_RENDERER: " << glGetString(GL_RENDERER) << std::endl;
   std::cerr << "GL_VERSION: " << glGetString(GL_VERSION) << std::endl;
