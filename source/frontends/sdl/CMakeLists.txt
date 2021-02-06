@@ -7,6 +7,7 @@ set(SOURCE_FILES
   sdirectsound.cpp
   utils.cpp
   sdlframe.cpp
+  sdlrendererframe.cpp
   )
 
 set(HEADER_FILES
@@ -15,6 +16,7 @@ set(HEADER_FILES
   sdirectsound.h
   utils.h
   sdlframe.h
+  sdlrendererframe.h
   )
 
 add_executable(sa2

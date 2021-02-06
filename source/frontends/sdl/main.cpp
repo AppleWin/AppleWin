@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <memory>
+#include <iomanip>
 
 #include "StdAfx.h"
 #include "linux/interface.h"
@@ -16,7 +17,7 @@
 #include "frontends/sdl/gamepad.h"
 #include "frontends/sdl/sdirectsound.h"
 #include "frontends/sdl/utils.h"
-#include "frontends/sdl/sdlframe.h"
+#include "frontends/sdl/sdlrendererframe.h"
 
 #include "Core.h"
 #include "Log.h"
@@ -69,6 +70,8 @@ namespace
 
 void run_sdl(int argc, const char * argv [])
 {
+  std::cerr << std::fixed << std::setprecision(2);
+
   EmulatorOptions options;
   options.memclear = g_nMemoryClearType;
   const bool run = getEmulatorOptions(argc, argv, "SDL2", options);
@@ -76,7 +79,7 @@ void run_sdl(int argc, const char * argv [])
   if (!run)
     return;
 
-  const std::shared_ptr<SDLFrame> frame(new SDLFrame(options));
+  const std::shared_ptr<SDLFrame> frame(new SDLRendererFrame(options));
   SetFrame(frame);
 
   if (options.log)
