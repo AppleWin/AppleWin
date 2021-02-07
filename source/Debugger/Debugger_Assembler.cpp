@@ -705,13 +705,13 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 			*pTargetPartial_    = nTarget16;
 			*pTargetPartial2_   = nTarget16+1;
 			if (bIncludeNextOpcodeAddress)
-				*pTargetPointer_ = *(LPWORD)(mem + nTarget16);
+				*pTargetPointer_ = mem[nTarget16] | (mem[(nTarget16+1)&0xFFFF]<<8);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
 
 		case AM_IZX: // Indexed (Zeropage Indirect, X)
-			nTarget8  += regs.x;
+			nTarget8 = (nTarget8 + regs.x) & 0xFF;
 			*pTargetPartial_    = nTarget8;
 			*pTargetPointer_    = *(LPWORD)(mem + nTarget8);
 			if (pTargetBytes_)

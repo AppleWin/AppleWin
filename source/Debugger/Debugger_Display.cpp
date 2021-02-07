@@ -1502,7 +1502,7 @@ int GetDisassemblyLine ( WORD nBaseAddress, DisasmLine_t & line_ )
 		{
 			nTarget = pData->nTargetAddress;
 		} else {
-			nTarget = *(LPWORD)(mem+nBaseAddress+1);
+			nTarget = mem[(nBaseAddress+1)&0xFFFF] | (mem[(nBaseAddress+2)&0xFFFF]<<8);
 			if (nOpbyte == 2)
 				nTarget &= 0xFF;
 		}
@@ -1742,7 +1742,7 @@ void FormatOpcodeBytes ( WORD nBaseAddress, DisasmLine_t & line_ )
 
 	for( int iByte = 0; iByte < nMaxOpBytes; iByte++ )
 	{
-		BYTE nMem = (unsigned)*(mem+nBaseAddress + iByte);
+		BYTE nMem = mem[(nBaseAddress+iByte)&0xFFFF];
 		sprintf( pDst, "%02X", nMem ); // sBytes+strlen(sBytes)
 		pDst += 2;
 
