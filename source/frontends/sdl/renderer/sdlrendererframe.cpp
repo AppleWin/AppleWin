@@ -39,7 +39,7 @@ SDLRendererFrame::SDLRendererFrame(const EmulatorOptions & options)
   myRect.x = video.GetFrameBufferBorderWidth();
   myRect.y = video.GetFrameBufferBorderHeight();
   myRect.w = sw;
-  myRect.h = sw;
+  myRect.h = sh;
   myPitch = width * sizeof(bgra_t);
 }
 
