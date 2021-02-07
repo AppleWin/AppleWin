@@ -4,7 +4,7 @@ include(CPack)
 
 project(applewin)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-multichar -Werror=return-type")
+add_compile_options(-Werror=return-type)
 
 MESSAGE("CMAKE_BUILD_TYPE:                ${CMAKE_BUILD_TYPE}")
 MESSAGE("CMAKE_CXX_FLAGS:                 ${CMAKE_CXX_FLAGS}")

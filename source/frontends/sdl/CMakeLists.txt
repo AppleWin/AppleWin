@@ -57,6 +57,8 @@ if (EXISTS ${IMGUI_PATH}/imgui.h)
     imgui/gles.h
     imgui/image.h
     imgui/sdlimguiframe.h
+
+    ${IMGUI_PATH}/imgui.h
     ${IMGUI_PATH}/imgui.cpp
     ${IMGUI_PATH}/imgui_demo.cpp
     ${IMGUI_PATH}/imgui_draw.cpp

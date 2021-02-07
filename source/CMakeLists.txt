@@ -176,5 +176,9 @@ target_link_libraries(appleii PRIVATE
   ${MINIZIP_LIBRARIES}
   )
 
+target_compile_options(appleii PUBLIC
+  -Wno-multichar
+  )
+
 install(TARGETS appleii
   DESTINATION lib)
