@@ -14,6 +14,17 @@ public:
   void RenderPresent() override;
 
 private:
+
+  void DrawAppleVideo();
+  void ShowSettings();
+
+  struct ImGuiSettings
+  {
+    std::string iniFileLocation;
+    bool windowed = false;
+    bool showDemo = false;
+  };
+
   size_t myPitch;
   size_t myOffset;
   size_t myBorderlessWidth;
@@ -21,4 +32,6 @@ private:
 
   SDL_GLContext myGLContext;
   ImTextureID myTexture;
+
+  ImGuiSettings mySettings;
 };

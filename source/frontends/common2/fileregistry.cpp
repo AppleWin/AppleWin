@@ -28,6 +28,17 @@ namespace
     std::replace(value.begin(), value.end(), '_', ' ');
   }
 
+  std::string getHomeDir()
+  {
+    const char* homeDir = getenv("HOME");
+    if (!homeDir)
+    {
+      throw std::runtime_error("${HOME} not set, cannot locate configuration file");
+    }
+
+    return std::string(homeDir);
+  }
+
   class Configuration : public PTreeRegistry
   {
   public:
@@ -73,37 +84,38 @@ namespace
 
 }
 
+std::string GetConfigFile(const std::string & filename)
+{
+  const std::string dir = getHomeDir() + "/.applewin";
+  const int status = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  if (!status || (errno == EEXIST))
+  {
+    return dir + "/" + filename;
+  }
+  else
+  {
+    const char * s = strerror(errno);
+    LogFileOutput("No registry. Cannot create %s in %s: %s\n", filename.c_str(), dir.c_str(), s);
+    return std::string();
+  }
+}
+
 void InitializeFileRegistry(const EmulatorOptions & options)
 {
-  const char* homeDir = getenv("HOME");
-  if (!homeDir)
-  {
-    throw std::runtime_error("${HOME} not set, cannot locate configuration file");
-  }
+  const std::string homeDir = getHomeDir();
 
   std::string filename;
   bool saveOnExit;
 
   if (options.useQtIni)
   {
-    filename = std::string(homeDir) + "/.config/" + ORGANIZATION_NAME + "/" + APPLICATION_NAME + ".conf";
+    filename = homeDir + "/.config/" + ORGANIZATION_NAME + "/" + APPLICATION_NAME + ".conf";
     saveOnExit = false;
   }
   else
   {
-    const std::string dir = std::string(homeDir) + "/.applewin";
-    const int status = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    filename = dir + "/applewin.conf";
-    if (!status || (errno == EEXIST))
-    {
-      saveOnExit = options.saveConfigurationOnExit;
-    }
-    else
-    {
-      const char * s = strerror(errno);
-      LogFileOutput("No registry. Cannot create %s: %s\n", dir.c_str(), s);
-      saveOnExit = false;
-    }
+    filename = GetConfigFile("applewin.conf");
+    saveOnExit = !filename.empty() && options.saveConfigurationOnExit;
   }
 
   std::shared_ptr<Configuration> config(new Configuration(filename, saveOnExit));

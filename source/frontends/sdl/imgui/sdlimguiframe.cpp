@@ -2,11 +2,30 @@
 #include "frontends/sdl/imgui/sdlimguiframe.h"
 #include "frontends/sdl/imgui/image.h"
 #include "frontends/sdl/utils.h"
+#include "frontends/common2/fileregistry.h"
 
 #include "Interface.h"
 #include "Core.h"
 
 #include <iostream>
+
+namespace
+{
+
+  void HelpMarker(const char* desc)
+  {
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered())
+    {
+      ImGui::BeginTooltip();
+      ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+      ImGui::TextUnformatted(desc);
+      ImGui::PopTextWrapPos();
+      ImGui::EndTooltip();
+    }
+  }
+
+}
 
 SDLImGuiFrame::SDLImGuiFrame()
 {
@@ -52,7 +71,18 @@ SDLImGuiFrame::SDLImGuiFrame()
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
-  ImGuiIO& io = ImGui::GetIO(); (void)io;
+  ImGuiIO& io = ImGui::GetIO();
+
+  mySettings.iniFileLocation = GetConfigFile("imgui.ini");
+  if (mySettings.iniFileLocation.empty())
+  {
+    io.IniFilename = nullptr;
+  }
+  else
+  {
+    io.IniFilename = mySettings.iniFileLocation.c_str();
+  }
+
   //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
   //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -86,18 +116,67 @@ void SDLImGuiFrame::UpdateTexture()
   LoadTextureFromData(myTexture, myFramebuffer.data() + myOffset, myBorderlessWidth, myBorderlessHeight, myPitch);
 }
 
+void SDLImGuiFrame::DrawAppleVideo()
+{
+  // need to flip the texture vertically
+  const ImVec2 uv0(0, 1);
+  const ImVec2 uv1(1, 0);
+
+  ImGuiIO& io = ImGui::GetIO();
+
+  if (mySettings.windowed)
+  {
+    if (ImGui::Begin("Apple ]["))
+    {
+      ImGui::Image(myTexture, ImGui::GetContentRegionAvail(), uv0, uv1);
+    }
+    ImGui::End();
+
+    // must clean background if in windowed mode
+    glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+    const ImVec4 background(0.45f, 0.55f, 0.60f, 1.00f);
+    glClearColor(background.x, background.y, background.z, background.w);
+    glClear(GL_COLOR_BUFFER_BIT);
+  }
+  else
+  {
+    const ImVec2 zero(0, 0);
+    // draw on the background
+    ImGui::GetBackgroundDrawList()->AddImage(myTexture, zero, io.DisplaySize, uv0, uv1);
+  }
+}
+
+void SDLImGuiFrame::ShowSettings()
+{
+  if (ImGui::Begin("Settings"))
+  {
+    ImGuiIO& io = ImGui::GetIO();
+
+    ImGui::Checkbox("Apple Video windowed", &mySettings.windowed);
+    ImGui::SameLine(); HelpMarker("Show Apple Video in a separate window.");
+
+    ImGui::Checkbox("Show Demo", &mySettings.showDemo);
+    ImGui::SameLine(); HelpMarker("Show Dear ImGui DemoWindow.");
+
+    ImGui::Text("FPS: %d", int(io.Framerate));
+  }
+  ImGui::End();
+}
+
 void SDLImGuiFrame::RenderPresent()
 {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL2_NewFrame(myWindow.get());
   ImGui::NewFrame();
 
-  // need to flip the texture vertically
-  const ImVec2 uv0(0, 1);
-  const ImVec2 uv1(1, 0);
-  const ImVec2 zero(0, 0);
-  // draw on the background
-  ImGui::GetBackgroundDrawList()->AddImage(myTexture, zero, ImGui::GetIO().DisplaySize, uv0, uv1);
+  ShowSettings();
+
+  if (mySettings.showDemo)
+  {
+    ImGui::ShowDemoWindow();
+  }
+
+  DrawAppleVideo();
 
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
