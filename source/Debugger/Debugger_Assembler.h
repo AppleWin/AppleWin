@@ -172,7 +172,7 @@ extern	int g_aAssemblerFirstDirective[ NUM_ASSEMBLERS ];
 
 	struct AssemblerDirective_t
 	{
-		char  *m_pMnemonic;
+		const char  *m_pMnemonic;
 		Hash_t m_nHash;
 	};
 
