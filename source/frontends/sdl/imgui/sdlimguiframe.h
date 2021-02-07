@@ -23,6 +23,8 @@ private:
     std::string iniFileLocation;
     bool windowed = false;
     bool showDemo = false;
+    int speakerVolume = 50;
+    int mockingboardVolume = 50;
   };
 
   size_t myPitch;

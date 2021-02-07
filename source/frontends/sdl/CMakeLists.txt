@@ -53,10 +53,13 @@ if (EXISTS ${IMGUI_PATH}/imgui.h)
   target_sources(sa2 PRIVATE
     imgui/sdlimguiframe.cpp
     imgui/image.cpp
+    imgui/settingshelper.cpp
+
+    imgui/sdlimguiframe.h
+    imgui/image.h
+    imgui/settingshelper.h
     imgui/imconfig.h
     imgui/gles.h
-    imgui/image.h
-    imgui/sdlimguiframe.h
 
     ${IMGUI_PATH}/imgui.h
     ${IMGUI_PATH}/imgui.cpp

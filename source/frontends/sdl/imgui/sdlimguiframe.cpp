@@ -1,11 +1,15 @@
 #include "StdAfx.h"
 #include "frontends/sdl/imgui/sdlimguiframe.h"
-#include "frontends/sdl/imgui/image.h"
+
 #include "frontends/sdl/utils.h"
 #include "frontends/common2/fileregistry.h"
+#include "frontends/sdl/imgui/image.h"
+#include "frontends/sdl/imgui/settingshelper.h"
 
 #include "Interface.h"
 #include "Core.h"
+#include "CPU.h"
+#include "CardManager.h"
 
 #include <iostream>
 
@@ -50,6 +54,8 @@ SDLImGuiFrame::SDLImGuiFrame()
   {
     throw std::runtime_error(SDL_GetError());
   }
+
+  SetApplicationIcon();
 
   myGLContext = SDL_GL_CreateContext(myWindow.get());
   if (!myGLContext)
@@ -152,13 +158,75 @@ void SDLImGuiFrame::ShowSettings()
   {
     ImGuiIO& io = ImGui::GetIO();
 
-    ImGui::Checkbox("Apple Video windowed", &mySettings.windowed);
-    ImGui::SameLine(); HelpMarker("Show Apple Video in a separate window.");
+    if (ImGui::BeginTabBar("Settings"))
+    {
+      if (ImGui::BeginTabItem("General"))
+      {
+	ImGui::Checkbox("Apple Video windowed", &mySettings.windowed);
+	ImGui::SameLine(); HelpMarker("Show Apple Video in a separate window.");
 
-    ImGui::Checkbox("Show Demo", &mySettings.showDemo);
-    ImGui::SameLine(); HelpMarker("Show Dear ImGui DemoWindow.");
+	ImGui::Checkbox("Show Demo", &mySettings.showDemo);
+	ImGui::SameLine(); HelpMarker("Show Dear ImGui DemoWindow.");
 
-    ImGui::Text("FPS: %d", int(io.Framerate));
+	ImGui::Text("FPS: %d", int(io.Framerate));
+	ImGui::EndTabItem();
+      }
+      if (ImGui::BeginTabItem("Hardware"))
+      {
+        if (ImGui::BeginTable("Cards", 2, ImGuiTableFlags_RowBg))
+        {
+	  CardManager & manager = GetCardMgr();
+	  ImGui::TableSetupColumn("Slot");
+	  ImGui::TableSetupColumn("Card");
+	  ImGui::TableHeadersRow();
+
+	  for (size_t slot = 0; slot < 8; ++slot)
+	  {
+	    ImGui::TableNextColumn();
+	    ImGui::Selectable(std::to_string(slot).c_str());
+	    ImGui::TableNextColumn();
+	    const SS_CARDTYPE card = manager.QuerySlot(slot);;
+	    ImGui::Selectable(getCardName(card).c_str());
+	  }
+	  ImGui::TableNextColumn();
+	  ImGui::Selectable("AUX");
+	  ImGui::TableNextColumn();
+	  const SS_CARDTYPE card = manager.QueryAux();
+	  ImGui::Selectable(getCardName(card).c_str());
+
+	  ImGui::EndTable();
+        }
+	ImGui::Separator();
+
+        if (ImGui::BeginTable("Type", 2, ImGuiTableFlags_RowBg))
+        {
+	  ImGui::TableNextColumn();
+	  ImGui::Selectable("Apple 2");
+	  ImGui::TableNextColumn();
+	  const eApple2Type a2e = GetApple2Type();
+	  ImGui::Selectable(getApple2Name(a2e).c_str());
+
+	  ImGui::TableNextColumn();
+	  ImGui::Selectable("CPU");
+	  ImGui::TableNextColumn();
+	  const eCpuType cpu = GetMainCpu();
+	  ImGui::Selectable(getCPUName(cpu).c_str());
+
+	  ImGui::EndTable();
+        }
+
+	ImGui::EndTabItem();
+      }
+      if (ImGui::BeginTabItem("Audio"))
+      {
+        ImGui::SliderInt("Speaker volume", &mySettings.speakerVolume, 0, 100, "%d");
+        ImGui::SliderInt("Mockingboard volume", &mySettings.mockingboardVolume, 0, 100, "%d");
+
+	ImGui::EndTabItem();
+      }
+      ImGui::EndTabBar();
+    }
+
   }
   ImGui::End();
 }
