@@ -204,7 +204,7 @@ void NFrame::VideoUpdateFlash()
   if (myTextFlashCounter == 16) // Flash rate = 0.5 * 60 / 16 Hz (as we need 2 changes for a period)
   {
     myTextFlashCounter = 0;
-    myTextFlashState = myTextFlashState;
+    myTextFlashState = !myTextFlashState;
   }
 }
 

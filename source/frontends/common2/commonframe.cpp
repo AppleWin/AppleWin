@@ -99,7 +99,7 @@ BYTE* CommonFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)
 
   if (myResource.empty())
   {
-    LogFileOutput("FindResource: could not load resource %s\n", filename);
+    LogFileOutput("FindResource: could not load resource %s\n", filename.c_str());
   }
 
   return myResource.data();

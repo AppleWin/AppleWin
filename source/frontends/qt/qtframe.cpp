@@ -128,16 +128,16 @@ BYTE* QtFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)
     QFile res(QString::fromStdString(path));
     if (res.exists() && res.open(QIODevice::ReadOnly))
     {
-      QByteArray resource = res.readAll();
-      if (resource.size() == expectedSize)
-      {
-	std::swap(myResource, resource);
-      }
+        QByteArray resource = res.readAll();
+        if (resource.size() == expectedSize)
+        {
+            std::swap(myResource, resource);
+        }
     }
 
     if (myResource.isEmpty())
     {
-          LogFileOutput("FindResource: could not load resource %s\n", filename);
+        LogFileOutput("FindResource: could not load resource %s\n", filename.c_str());
     }
 
     return reinterpret_cast<BYTE *>(myResource.data());
