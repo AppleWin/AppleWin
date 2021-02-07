@@ -10,6 +10,9 @@
 #include "Core.h"
 #include "CPU.h"
 #include "CardManager.h"
+#include "Speaker.h"
+#include "Mockingboard.h"
+#include "Registry.h"
 
 #include <iostream>
 
@@ -217,10 +220,21 @@ void SDLImGuiFrame::ShowSettings()
 
 	ImGui::EndTabItem();
       }
+
       if (ImGui::BeginTabItem("Audio"))
       {
-        ImGui::SliderInt("Speaker volume", &mySettings.speakerVolume, 0, 100, "%d");
-        ImGui::SliderInt("Mockingboard volume", &mySettings.mockingboardVolume, 0, 100, "%d");
+	const int volumeMax = GetPropertySheet().GetVolumeMax();
+	if (ImGui::SliderInt("Speaker volume", &mySettings.speakerVolume, 0, volumeMax))
+	{
+	  SpkrSetVolume(volumeMax - mySettings.speakerVolume, volumeMax);
+	  REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
+	}
+
+	if (ImGui::SliderInt("Mockingboard volume", &mySettings.mockingboardVolume, 0, volumeMax))
+	{
+	  MB_SetVolume(volumeMax - mySettings.mockingboardVolume, volumeMax);
+	  REGSAVE(TEXT(REGVALUE_MB_VOLUME), MB_GetVolume());
+	}
 
 	ImGui::EndTabItem();
       }
