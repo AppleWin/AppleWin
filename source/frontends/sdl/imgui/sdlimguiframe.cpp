@@ -109,6 +109,8 @@ SDLImGuiFrame::SDLImGuiFrame()
 
   myPitch = width;
   myOffset = (width * borderHeight + borderWidth) * sizeof(bgra_t);
+
+  allocateTexture(myTexture, myBorderlessWidth, myBorderlessHeight);
 }
 
 SDLImGuiFrame::~SDLImGuiFrame()
@@ -122,7 +124,7 @@ SDLImGuiFrame::~SDLImGuiFrame()
 
 void SDLImGuiFrame::UpdateTexture()
 {
-  LoadTextureFromData(myTexture, myFramebuffer.data() + myOffset, myBorderlessWidth, myBorderlessHeight, myPitch);
+  loadTextureFromData(myTexture, myFramebuffer.data() + myOffset, myBorderlessWidth, myBorderlessHeight, myPitch);
 }
 
 void SDLImGuiFrame::DrawAppleVideo()
