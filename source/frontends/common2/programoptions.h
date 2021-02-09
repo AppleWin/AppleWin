@@ -37,6 +37,7 @@ struct EmulatorOptions
 
   int sdlDriver = -1; // default = -1 to let SDL choose
   bool imgui = false; // use imgui renderer
+  std::pair<int, int> size; // width x height
 
   std::vector<std::string> registryOptions;
 };

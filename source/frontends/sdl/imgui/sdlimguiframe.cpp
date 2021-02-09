@@ -3,6 +3,7 @@
 
 #include "frontends/sdl/utils.h"
 #include "frontends/common2/fileregistry.h"
+#include "frontends/common2/programoptions.h"
 #include "frontends/sdl/imgui/image.h"
 #include "frontends/sdl/imgui/settingshelper.h"
 
@@ -34,13 +35,8 @@ namespace
 
 }
 
-SDLImGuiFrame::SDLImGuiFrame()
+SDLImGuiFrame::SDLImGuiFrame(const EmulatorOptions & options)
 {
-  Video & video = GetVideo();
-
-  myBorderlessWidth = video.GetFrameBufferBorderlessWidth();
-  myBorderlessHeight = video.GetFrameBufferBorderlessHeight();
-
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, SDL_CONTEXT_MAJOR); // from local gles.h
@@ -52,7 +48,7 @@ SDLImGuiFrame::SDLImGuiFrame()
   SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
   SDL_WindowFlags windowFlags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-  myWindow.reset(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, myBorderlessWidth, myBorderlessHeight, windowFlags), SDL_DestroyWindow);
+  myWindow.reset(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, options.size.first, options.size.second, windowFlags), SDL_DestroyWindow);
   if (!myWindow)
   {
     throw std::runtime_error(SDL_GetError());
@@ -102,6 +98,11 @@ SDLImGuiFrame::SDLImGuiFrame()
   ImGui_ImplOpenGL3_Init();
 
   glGenTextures(1, &myTexture);
+
+  Video & video = GetVideo();
+
+  myBorderlessWidth = video.GetFrameBufferBorderlessWidth();
+  myBorderlessHeight = video.GetFrameBufferBorderlessHeight();
 
   const int width = video.GetFrameBufferWidth();
   const size_t borderWidth = video.GetFrameBufferBorderWidth();

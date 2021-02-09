@@ -78,6 +78,12 @@ void run_sdl(int argc, const char * argv [])
   std::cerr << std::fixed << std::setprecision(2);
 
   EmulatorOptions options;
+
+  Video & video = GetVideo();
+  const int sw = video.GetFrameBufferBorderlessWidth();
+  const int sh = video.GetFrameBufferBorderlessHeight();
+
+  options.size = std::make_pair(sw, sh);
   options.memclear = g_nMemoryClearType;
   const bool run = getEmulatorOptions(argc, argv, "SDL2", options);
 
@@ -89,7 +95,7 @@ void run_sdl(int argc, const char * argv [])
 #ifdef SA2_IMGUI
   if (options.imgui)
   {
-    frame.reset(new SDLImGuiFrame());
+    frame.reset(new SDLImGuiFrame(options));
   }
   else
   {
@@ -114,8 +120,6 @@ void run_sdl(int argc, const char * argv [])
 
   Initialisation init;
   applyOptions(options);
-
-  Video & video = GetVideo();
 
   const int fps = getRefreshRate();
   std::cerr << "Video refresh rate: " << fps << " Hz, " << 1000.0 / fps << " ms" << std::endl;

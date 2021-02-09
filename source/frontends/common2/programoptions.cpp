@@ -12,8 +12,26 @@
 #include "Utilities.h"
 
 #include <iostream>
+#include <regex>
 
 namespace po = boost::program_options;
+
+namespace
+{
+
+  std::pair<int, int> parseSize(const std::string & s)
+  {
+    std::smatch m;
+    if (std::regex_match(s, m, std::regex("^(\\d+)x(\\d+)$")))
+    {
+      const int width = std::stoi(m.str(1));
+      const int height = std::stoi(m.str(2));
+      return std::make_pair(width, height);
+    }
+    throw std::runtime_error("Invalid sizes: " + s);
+  }
+
+}
 
 bool getEmulatorOptions(int argc, const char * argv [], const std::string & edition, EmulatorOptions & options)
 {
@@ -21,34 +39,34 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
   po::options_description desc(name);
   desc.add_options()
     ("help,h", "Print this help message")
-    ("multi-threaded,m", "Multi threaded")
-    ("loose-mutex,l", "Loose mutex")
-    ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
-    ("imgui", "Render with Dear ImGui")
-    ("timer-interval,i", po::value<int>()->default_value(options.timerInterval), "Timer interval in ms");
+    ;
 
   po::options_description configDesc("configuration");
   configDesc.add_options()
     ("save-conf", "Save configuration on exit")
     ("config,c", po::value<std::vector<std::string>>(), "Registry options section.path=value")
-    ("qt-ini,q", "Use Qt ini file (read only)");
+    ("qt-ini,q", "Use Qt ini file (read only)")
+    ;
   desc.add(configDesc);
 
   po::options_description diskDesc("Disk");
   diskDesc.add_options()
     ("d1,1", po::value<std::string>(), "Disk in 1st drive")
-    ("d2,2", po::value<std::string>(), "Disk in 2nd drive");
+    ("d2,2", po::value<std::string>(), "Disk in 2nd drive")
+    ;
   desc.add(diskDesc);
 
   po::options_description snapshotDesc("Snapshot");
   snapshotDesc.add_options()
     ("state-filename,f", po::value<std::string>(), "Set snapshot filename")
-    ("load-state,s", po::value<std::string>(), "Load snapshot from file");
+    ("load-state,s", po::value<std::string>(), "Load snapshot from file")
+    ;
   desc.add(snapshotDesc);
 
   po::options_description memoryDesc("Memory");
   memoryDesc.add_options()
-    ("memclear", po::value<int>()->default_value(options.memclear), "Memory initialization pattern [0..7]");
+    ("memclear", po::value<int>()->default_value(options.memclear), "Memory initialization pattern [0..7]")
+    ;
   desc.add(memoryDesc);
 
   po::options_description emulatorDesc("Emulator");
@@ -57,13 +75,26 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
     ("headless", "Headless: disable video (freewheel)")
     ("fixed-speed", "Fixed (non-adaptive) speed")
     ("ntsc,nt", "NTSC: execute NTSC code")
-    ("benchmark,b", "Benchmark emulator");
+    ("benchmark,b", "Benchmark emulator")
+    ;
   desc.add(emulatorDesc);
+
+  po::options_description sdlDesc("SDL");
+  sdlDesc.add_options()
+    ("multi-threaded,m", "Multi threaded")
+    ("timer-interval,i", po::value<int>()->default_value(options.timerInterval), "Timer interval in ms")
+    ("loose-mutex,l", "Loose mutex")
+    ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
+    ("imgui", "Render with Dear ImGui")
+    ("size", po::value<std::string>(), "WxH")
+    ;
+  desc.add(sdlDesc);
 
   po::options_description paddleDesc("Paddle");
   paddleDesc.add_options()
     ("no-squaring", "Gamepad range is (already) a square")
-    ("device-name", po::value<std::string>(), "Gamepad device name");
+    ("device-name", po::value<std::string>(), "Gamepad device name")
+    ;
   desc.add(paddleDesc);
 
   po::variables_map vm;
@@ -126,6 +157,11 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
     if (vm.count("device-name"))
     {
       options.paddleDeviceName = vm["device-name"].as<std::string>();
+    }
+
+    if (vm.count("size"))
+    {
+      options.size = parseSize(vm["size"].as<std::string>());
     }
 
     return true;

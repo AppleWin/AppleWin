@@ -10,14 +10,7 @@
 
 SDLRendererFrame::SDLRendererFrame(const EmulatorOptions & options)
 {
-  Video & video = GetVideo();
-
-  const int width = video.GetFrameBufferWidth();
-  const int height = video.GetFrameBufferHeight();
-  const int sw = video.GetFrameBufferBorderlessWidth();
-  const int sh = video.GetFrameBufferBorderlessHeight();
-
-  myWindow.reset(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, sw, sh, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE), SDL_DestroyWindow);
+  myWindow.reset(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, options.size.first, options.size.second, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE), SDL_DestroyWindow);
   if (!myWindow)
   {
     throw std::runtime_error(SDL_GetError());
@@ -33,6 +26,13 @@ SDLRendererFrame::SDLRendererFrame(const EmulatorOptions & options)
 
   const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
   printRendererInfo(std::cerr, myRenderer, format, options.sdlDriver);
+
+  Video & video = GetVideo();
+
+  const int width = video.GetFrameBufferWidth();
+  const int height = video.GetFrameBufferHeight();
+  const int sw = video.GetFrameBufferBorderlessWidth();
+  const int sh = video.GetFrameBufferBorderlessHeight();
 
   myTexture.reset(SDL_CreateTexture(myRenderer.get(), format, SDL_TEXTUREACCESS_STATIC, width, height), SDL_DestroyTexture);
 
