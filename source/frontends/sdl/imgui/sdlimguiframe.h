@@ -17,6 +17,7 @@ public:
 
 private:
 
+  void ClearBackground();
   void DrawAppleVideo();
   void ShowSettings();
 

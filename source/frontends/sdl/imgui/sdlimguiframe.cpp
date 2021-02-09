@@ -128,6 +128,13 @@ void SDLImGuiFrame::UpdateTexture()
   loadTextureFromData(myTexture, myFramebuffer.data() + myOffset, myBorderlessWidth, myBorderlessHeight, myPitch);
 }
 
+void SDLImGuiFrame::ClearBackground()
+{
+  const ImVec4 background(0.45f, 0.55f, 0.60f, 1.00f);
+  glClearColor(background.x, background.y, background.z, background.w);
+  glClear(GL_COLOR_BUFFER_BIT);
+}
+
 void SDLImGuiFrame::DrawAppleVideo()
 {
   // need to flip the texture vertically
@@ -143,12 +150,6 @@ void SDLImGuiFrame::DrawAppleVideo()
       ImGui::Image(myTexture, ImGui::GetContentRegionAvail(), uv0, uv1);
     }
     ImGui::End();
-
-    // must clean background if in windowed mode
-    glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-    const ImVec4 background(0.45f, 0.55f, 0.60f, 1.00f);
-    glClearColor(background.x, background.y, background.z, background.w);
-    glClear(GL_COLOR_BUFFER_BIT);
   }
   else
   {
@@ -241,6 +242,7 @@ void SDLImGuiFrame::ShowSettings()
 
 	ImGui::EndTabItem();
       }
+
       ImGui::EndTabBar();
     }
 
@@ -264,6 +266,7 @@ void SDLImGuiFrame::RenderPresent()
   DrawAppleVideo();
 
   ImGui::Render();
+  ClearBackground();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   SDL_GL_SwapWindow(myWindow.get());
 }
