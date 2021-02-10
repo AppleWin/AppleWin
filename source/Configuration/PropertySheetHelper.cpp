@@ -209,7 +209,7 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bo
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;
 	ofn.hInstance       = GetFrame().g_hInstance;
-	ofn.lpstrFilter     = TEXT("Save State files (*.aws.yaml)\0*.aws.yaml\0");
+	ofn.lpstrFilter     = TEXT("Save State files (*.aws.yaml)\0*.aws.yaml\0")
 						  TEXT("All Files\0*.*\0");
 	ofn.lpstrFile       = szFilename;	// Dialog strips the last .EXT from this string (eg. file.aws.yaml is displayed as: file.aws
 	ofn.nMaxFile        = sizeof(szFilename);
