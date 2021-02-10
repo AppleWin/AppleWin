@@ -275,6 +275,8 @@ static void StopTimer2(SY6522_AY8910* pMB)
 static void ResetSY6522(SY6522_AY8910* pMB)
 {
 	memset(&pMB->sy6522,0,sizeof(SY6522));
+	pMB->sy6522.TIMER1_LATCH.w = 0xffff;	// Some random value (but pick $ffff so it's deterministic)
+											// . NB. if it's too small (< ~$0007) then MB detection routines will fail!
 
 	StopTimer1(pMB);
 	StopTimer2(pMB);
@@ -2007,7 +2009,7 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 // . RESET -> Mockingboard mode (b#000)
 // . $C0C1, then $C0C4  (or $C0C4, then $C0C1) -> Phasor mode (b#101)
 // . $C0C2 -> Echo+ mode (b#111)
-// . $C0C5 -> remaing in Echo+ mode (b#111)
+// . $C0C5 -> remaining in Echo+ mode (b#111)
 // So $C0C5 seemingly results in 2 different modes.
 //
 
@@ -2216,9 +2218,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 		SY6522_AY8910* pMB = &g_MB[i];
 
 		const bool bTimer1Underflow = CheckTimerUnderflow(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks);
-		const bool bTimer2Underflow = CheckTimerUnderflow(pMB->sy6522.TIMER2_COUNTER.w, pMB->sy6522.timer2IrqDelay, nClocks);
-
-		if (pMB->bTimer1Active && bTimer1Underflow)
+		if (bTimer1Underflow)
 		{
 			pMB->sy6522.TIMER1_COUNTER.w += pMB->sy6522.TIMER1_LATCH.w;	// GH#651: account for underflowed cycles too
 			pMB->sy6522.TIMER1_COUNTER.w += kExtraTimerCycles;			// GH#652: account for extra 2 cycles
@@ -2233,6 +2233,9 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 					pMB->sy6522.TIMER1_COUNTER.w = 0;
 			}
 		}
+
+		// No TIMER2 latch so "after timing out, the counter will continue to decrement"
+		CheckTimerUnderflow(pMB->sy6522.TIMER2_COUNTER.w, pMB->sy6522.timer2IrqDelay, nClocks);
 	}
 }
 
@@ -2249,6 +2252,8 @@ static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 
 		UpdateIFR(pMB, 0, IxR_TIMER1);
 
+		MB_UpdateCycles(uExecutedCycles);
+
 		if ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
 		{
 			// One-shot mode
@@ -2256,8 +2261,6 @@ static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 			StopTimer1(pMB);
 			return 0;			// Don't repeat event
 		}
-
-		MB_UpdateCycles(uExecutedCycles);
 
 		StartTimer1(pMB);
 		return pMB->sy6522.TIMER1_COUNTER.w + kExtraTimerCycles;
