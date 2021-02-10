@@ -4368,7 +4368,7 @@ Update_t CmdMemoryLoad (int nArgs)
 
 	struct KnownFileType_t
 	{
-		char *pExtension;
+		const char *pExtension;
 		int   nAddress;
 		int   nLength;
 	};
@@ -5005,7 +5005,7 @@ Update_t CmdNTSC (int nArgs)
 
 	struct KnownFileType_t
 	{
-		char *pExtension;
+		const char *pExtension;
 	};
 
 	enum KnownFileType_e
@@ -5032,9 +5032,9 @@ Update_t CmdNTSC (int nArgs)
 	assert( (nFileType == NUM_FILE_TYPES) );
 #endif
 
-	char *pFileName = (nArgs > 1) ? g_aArgs[ 2 ].sArg : "";
+	const char *pFileName = (nArgs > 1) ? g_aArgs[ 2 ].sArg : "";
 	int   nLen = strlen( pFileName );
-	char *pEnd = pFileName + nLen - 1;
+	const char *pEnd = pFileName + nLen - 1;
 	while( pEnd > pFileName )
 	{
 		if( *pEnd == '.' )
@@ -5558,7 +5558,7 @@ Update_t CmdNTSC (int nArgs)
 					}
 
 
-				size_t nRead = fread( pSwizzled, g_nChromaSize, 1, pFile );
+				fread( pSwizzled, g_nChromaSize, 1, pFile );
 
 				if( iFileType == TYPE_BMP )
 				{
@@ -8296,12 +8296,12 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		bOpcodeGood = false;
 	}
 
-	char *pColorOperator = "";
-	char *pColorNumber   = "";
-	char *pColorOpcode   = "";
-	char *pColorMnemonic = "";
-	char *pColorOpmode   = "";
-	char *pColorTotal    = "";
+	const char *pColorOperator = "";
+	const char *pColorNumber   = "";
+	const char *pColorOpcode   = "";
+	const char *pColorMnemonic = "";
+	const char *pColorOpmode   = "";
+	const char *pColorTotal    = "";
 	if (! bExport)
 	{
 		pColorOperator = CHC_ARG_SEP; // grey
@@ -8700,7 +8700,7 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 		{
 			TCHAR sText[ CONSOLE_WIDTH ];
 			char szStopMessage[CONSOLE_WIDTH];
-			char* pszStopReason = szStopMessage;
+			const char* pszStopReason = szStopMessage;
 
 			if (regs.pc == g_nDebugStepUntil)
 				pszStopReason = TEXT("PC matches 'Go until' address");
@@ -8966,7 +8966,7 @@ void DebugInitialize ()
 	// Check all summary help to see if it fits within the console
 	for (int iCmd = 0; iCmd < NUM_COMMANDS; iCmd++ )
 	{	
-		char *pHelp = g_aCommands[ iCmd ].pHelpSummary;
+		const char *pHelp = g_aCommands[ iCmd ].pHelpSummary;
 		if (pHelp)
 		{
 			int nLen = _tcslen( pHelp ) + 2;
