@@ -696,13 +696,15 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 
 //-----------------------------------------------------------------------------
 
-static USHORT GetTimer1Counter(BYTE reg, USHORT counter, USHORT latch)
+static bool CheckTimerUnderflow(USHORT& counter, int& timerIrqDelay, const USHORT nClocks);
+static int OnTimer1Underflow(USHORT& counter, USHORT latch);
+
+static USHORT GetTimer1Counter(BYTE reg, USHORT counter, USHORT latch, int timerIrqDelay)
 {
 	const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(reg) - 1;	// to compensate for the 4/5/6 cycle read opcode
-	int timer = (short)counter - opcodeCycleAdjust;
-	while (timer < -1)
-		timer += (latch + kExtraTimerCycles);
-	return (USHORT)timer;
+	if (CheckTimerUnderflow(counter, timerIrqDelay, opcodeCycleAdjust))
+		OnTimer1Underflow(counter, latch);
+	return counter;
 }
 
 static USHORT GetTimer2Counter(BYTE reg, USHORT counter)
@@ -734,11 +736,11 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 			break;
 		case 0x04:	// TIMER1L_COUNTER
 			// NB. GH#701 (T1C:=0xFFFF, LDA T1C_L[4cy], A==0xFC)
-			nValue = GetTimer1Counter(nReg, pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.TIMER1_LATCH.w) & 0xff;
+			nValue = GetTimer1Counter(nReg, pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.TIMER1_LATCH.w, pMB->sy6522.timer1IrqDelay) & 0xff;
 			UpdateIFR(pMB, IxR_TIMER1);
 			break;
 		case 0x05:	// TIMER1H_COUNTER
-			nValue = GetTimer1Counter(nReg, pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.TIMER1_LATCH.w) >> 8;
+			nValue = GetTimer1Counter(nReg, pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.TIMER1_LATCH.w, pMB->sy6522.timer1IrqDelay) >> 8;
 			break;
 		case 0x06:	// TIMER1L_LATCH
 			nValue = pMB->sy6522.TIMER1_LATCH.l;
@@ -2166,15 +2168,15 @@ void MB_PeriodicUpdate(UINT executedCycles)
 
 //-----------------------------------------------------------------------------
 
-static bool CheckTimerUnderflow(USHORT& timerCounter, int& timerIrqDelay, const USHORT nClocks)
+static bool CheckTimerUnderflow(USHORT& counter, int& timerIrqDelay, const USHORT nClocks)
 {
 	if (nClocks == 0)
 		return false;
 
-	int oldTimer = timerCounter;
-	int timer = timerCounter;
+	int oldTimer = counter;
+	int timer = counter;
 	timer -= nClocks;
-	timerCounter = (USHORT)timer;
+	counter = (USHORT)timer;
 
 	bool timerIrq = false;
 
@@ -2195,6 +2197,15 @@ static bool CheckTimerUnderflow(USHORT& timerCounter, int& timerIrqDelay, const 
 	}
 
 	return timerIrq;
+}
+
+static int OnTimer1Underflow(USHORT& counter, USHORT latch)
+{
+	int timer = (int)(short)(counter);
+	while (timer < -1)
+		timer += (latch + kExtraTimerCycles);	// GH#651: account for underflowed cycles / GH#652: account for extra 2 cycles
+	counter = (USHORT)timer;
+	return (timer == -1) ? 1 : 0;				// timer1IrqDelay
 }
 
 // Called by:
@@ -2222,12 +2233,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 
 		const bool bTimer1Underflow = CheckTimerUnderflow(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks);
 		if (bTimer1Underflow)
-		{
-			int timer = (int) (short) (pMB->sy6522.TIMER1_COUNTER.w);
-			while (timer < -1)
-				timer += (pMB->sy6522.TIMER1_LATCH.w + kExtraTimerCycles);	// GH#651: account for underflowed cycles / GH#652: account for extra 2 cycles
-			pMB->sy6522.TIMER1_COUNTER.w = (USHORT)timer;
-		}
+			pMB->sy6522.timer1IrqDelay = OnTimer1Underflow(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.TIMER1_LATCH.w);
 
 		// No TIMER2 latch so "after timing out, the counter will continue to decrement"
 		CheckTimerUnderflow(pMB->sy6522.TIMER2_COUNTER.w, pMB->sy6522.timer2IrqDelay, nClocks);
