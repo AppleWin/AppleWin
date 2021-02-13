@@ -85,6 +85,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
     ("timer-interval,i", po::value<int>()->default_value(options.timerInterval), "Timer interval in ms")
     ("loose-mutex,l", "Loose mutex")
     ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
+    ("gl-swap", po::value<int>()->default_value(options.glSwapInterval), "SDL_GL_SwapInterval")
     ("imgui", "Render with Dear ImGui")
     ("size", po::value<std::string>(), "WxH")
     ;
@@ -114,6 +115,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
     options.looseMutex = vm.count("loose-mutex");
     options.timerInterval = vm["timer-interval"].as<int>();
     options.sdlDriver = vm["sdl-driver"].as<int>();
+    options.glSwapInterval = vm["gl-swap"].as<int>();
     options.imgui = vm.count("imgui");
 
     if (vm.count("config"))

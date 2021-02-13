@@ -105,6 +105,11 @@ void run_sdl(int argc, const char * argv [])
   frame.reset(new SDLRendererFrame(options));
 #endif
 
+  if (SDL_GL_SetSwapInterval(options.glSwapInterval))
+  {
+    throw std::runtime_error(SDL_GetError());
+  }
+
   SetFrame(frame);
 
   if (options.log)
@@ -131,14 +136,14 @@ void run_sdl(int argc, const char * argv [])
   {
     // we need to switch off vsync, otherwise FPS is limited to 60
     // and it will take longer to run
-    const int res = SDL_GL_SetSwapInterval(0);
-    // if this fails, should we throw, print something or just ignore?
+    if (SDL_GL_SetSwapInterval(0))
+    {
+      throw std::runtime_error(SDL_GetError());
+    }
 
-    const auto redraw = [&frame, res]{
+    const auto redraw = [&frame]{
 			  frame->UpdateTexture();
-			  if (res == 0) {
-			    frame->RenderPresent();
-			  }
+			  frame->RenderPresent();
 			};
 
     const auto refresh = [redraw, &video]{
