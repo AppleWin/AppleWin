@@ -272,11 +272,20 @@ static void StopTimer2(SY6522_AY8910* pMB)
 
 //-----------------------------------------------------------------------------
 
-static void ResetSY6522(SY6522_AY8910* pMB)
+static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue);
+
+static void ResetSY6522(SY6522_AY8910* pMB, const bool powerCycle)
 {
-	memset(&pMB->sy6522,0,sizeof(SY6522));
-	pMB->sy6522.TIMER1_LATCH.w = 0xffff;	// Some random value (but pick $ffff so it's deterministic)
-											// . NB. if it's too small (< ~$0007) then MB detection routines will fail!
+	if (powerCycle)
+	{
+		memset(&pMB->sy6522,0,sizeof(SY6522));
+		pMB->sy6522.TIMER1_LATCH.w = 0xffff;	// Some random value (but pick $ffff so it's deterministic)
+												// . NB. if it's too small (< ~$0007) then MB detection routines will fail!
+	}
+
+	SY6522_Write(pMB->nAY8910Number, 0x0b, 0x00);	// ACR = 0x00: T1 one-shot mode
+	SY6522_Write(pMB->nAY8910Number, 0x0d, 0x7f);	// IFR = 0x7F: de-assert any IRQs
+	SY6522_Write(pMB->nAY8910Number, 0x0e, 0x7f);	// IFE = 0x7F: disable all IRQs
 
 	StopTimer1(pMB);
 	StopTimer2(pMB);
@@ -556,7 +565,6 @@ static void UpdateIFR(SY6522_AY8910* pMB, BYTE clr_ifr, BYTE set_ifr=0)
 {
 	// Need critical section to avoid data-race: main thread & SSI263Thread can both access IFR
 	// . NB. Loading a save-state just directly writes into 6522.IFR (which is fine)
-	_ASSERT(g_bCritSectionValid);
 	if (g_bCritSectionValid) EnterCriticalSection(&g_CriticalSection);
 	{
 		pMB->sy6522.IFR &= ~clr_ifr;
@@ -1726,7 +1734,7 @@ void MB_Initialize()
 		g_bMBAvailable = MB_DSInit();
 		LogFileOutput("MB_Initialize: MB_DSInit(), g_bMBAvailable=%d\n", g_bMBAvailable);
 
-		MB_Reset();
+		MB_Reset(true);
 		LogFileOutput("MB_Initialize: MB_Reset()\n");
 	}
 
@@ -1745,7 +1753,7 @@ static void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType);
 // . and voice will be demuted when dialog is closed
 void MB_InitializeForLoadingSnapshot()	// GH#609
 {
-	MB_Reset();
+	MB_Reset(true);
 	InitSoundcardType();
 
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
@@ -1823,14 +1831,14 @@ static void ResetState()
 //	g_bPhasorEnable = false;
 }
 
-void MB_Reset()	// CTRL+RESET or power-cycle
+void MB_Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 {
-	if(!g_bDSAvailable)
+	if (!g_bDSAvailable)
 		return;
 
-	for(int i=0; i<NUM_AY8910; i++)
+	for (int i=0; i<NUM_AY8910; i++)
 	{
-		ResetSY6522(&g_MB[i]);
+		ResetSY6522(&g_MB[i], powerCycle);
 		AY8910_reset(i);
 	}
 

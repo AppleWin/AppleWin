@@ -538,7 +538,7 @@ void ResetMachineState()
 		GetCardMgr().GetSSC()->CommReset();
 	PrintReset();
 	JoyReset();
-	MB_Reset();
+	MB_Reset(true);
 	SpkrReset();
 	if (GetCardMgr().IsMouseCardInstalled())
 		GetCardMgr().GetMouseCard()->Reset();
@@ -583,7 +583,7 @@ void CtrlReset()
 	KeybReset();
 	if (GetCardMgr().IsSSCInstalled())
 		GetCardMgr().GetSSC()->CommReset();
-	MB_Reset();
+	MB_Reset(false);
 	if (GetCardMgr().IsMouseCardInstalled())
 		GetCardMgr().GetMouseCard()->Reset();		// Deassert any pending IRQs - GH#514
 #ifdef USE_SPEECH_API

@@ -647,7 +647,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				g_bRestartFullScreen = false;
 			}
 
-			MB_Reset();
+			MB_Reset(true);
 			LogFileOutput("Main: MB_Reset()\n");
 
 			if (g_bRestart)
