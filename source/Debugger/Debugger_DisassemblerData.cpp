@@ -80,7 +80,7 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 	tData_.nEndAddress = nAddress + nLen;
 //	tData_.nArraySize = 0;
 
-	char *pSymbolName = "";
+	const char *pSymbolName = "";
 	char aSymbolName[ MAX_SYMBOLS_LEN+1 ];
 	SymbolTable_Index_e eSymbolTable = SYMBOLS_ASSEMBLY;
 	bool bAutoDefineName = false; // 2.7.0.34
@@ -93,8 +93,8 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 		}
 		else
 		{
-			pSymbolName = g_aArgs[ 1 ].sArg;
-			pSymbolName[MAX_SYMBOLS_LEN] = 0;	// truncate to max symbol length
+			g_aArgs[ 1 ].sArg[MAX_SYMBOLS_LEN] = 0;	// truncate to max symbol length
+			pSymbolName = g_aArgs[1].sArg;
 		}
 	}
 	else
@@ -167,7 +167,7 @@ Update_t CmdDisasmDataDefCode (int nArgs)
 	return UPDATE_DISASM | ConsoleUpdate();
 }
 
-char* g_aNopcodeTypes[ NUM_NOPCODE_TYPES ] =
+const char* g_aNopcodeTypes[ NUM_NOPCODE_TYPES ] =
 {
 	 "-n/a-"
 	,"byte1"

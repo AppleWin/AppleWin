@@ -275,6 +275,8 @@ static void StopTimer2(SY6522_AY8910* pMB)
 static void ResetSY6522(SY6522_AY8910* pMB)
 {
 	memset(&pMB->sy6522,0,sizeof(SY6522));
+	pMB->sy6522.TIMER1_LATCH.w = 0xffff;	// Some random value (but pick $ffff so it's deterministic)
+											// . NB. if it's too small (< ~$0007) then MB detection routines will fail!
 
 	StopTimer1(pMB);
 	StopTimer2(pMB);
@@ -694,6 +696,23 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 
 //-----------------------------------------------------------------------------
 
+static bool CheckTimerUnderflow(USHORT& counter, int& timerIrqDelay, const USHORT nClocks);
+static int OnTimer1Underflow(USHORT& counter, USHORT latch);
+
+static USHORT GetTimer1Counter(BYTE reg, USHORT counter, USHORT latch, int timerIrqDelay)
+{
+	const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(reg) - 1;	// to compensate for the 4/5/6 cycle read opcode
+	if (CheckTimerUnderflow(counter, timerIrqDelay, opcodeCycleAdjust))
+		OnTimer1Underflow(counter, latch);
+	return counter;
+}
+
+static USHORT GetTimer2Counter(BYTE reg, USHORT counter)
+{
+	const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(reg) - 1;	// to compensate for the 4/5/6 cycle read opcode
+	return counter - opcodeCycleAdjust;
+}
+
 static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 {
 	g_bMB_Active = true;
@@ -716,18 +735,12 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 			nValue = pMB->sy6522.DDRA;
 			break;
 		case 0x04:	// TIMER1L_COUNTER
-			{
-				// NB. GH#701 (T1C:=0xFFFF, LDA T1C_L, A==0xFC)
-				const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(nReg) - 1;	// to compensate for the 4/5/6 cycle read opcode
-				nValue = (pMB->sy6522.TIMER1_COUNTER.w - opcodeCycleAdjust) & 0xff;
-				UpdateIFR(pMB, IxR_TIMER1);
-			}
+			// NB. GH#701 (T1C:=0xFFFF, LDA T1C_L[4cy], A==0xFC)
+			nValue = GetTimer1Counter(nReg, pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.TIMER1_LATCH.w, pMB->sy6522.timer1IrqDelay) & 0xff;
+			UpdateIFR(pMB, IxR_TIMER1);
 			break;
 		case 0x05:	// TIMER1H_COUNTER
-			{
-				const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(nReg) - 1;	// to compensate for the 4/5/6 cycle read opcode
-				nValue = (pMB->sy6522.TIMER1_COUNTER.w - opcodeCycleAdjust) >> 8;
-			}
+			nValue = GetTimer1Counter(nReg, pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.TIMER1_LATCH.w, pMB->sy6522.timer1IrqDelay) >> 8;
 			break;
 		case 0x06:	// TIMER1L_LATCH
 			nValue = pMB->sy6522.TIMER1_LATCH.l;
@@ -736,17 +749,11 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 			nValue = pMB->sy6522.TIMER1_LATCH.h;
 			break;
 		case 0x08:	// TIMER2L
-			{
-				const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(nReg) - 1;	// to compensate for the 4/5/6 cycle read opcode
-				nValue = (pMB->sy6522.TIMER2_COUNTER.w - opcodeCycleAdjust) & 0xff;
-				UpdateIFR(pMB, IxR_TIMER2);
-			}
+			nValue = GetTimer2Counter(nReg, pMB->sy6522.TIMER2_COUNTER.w) & 0xff;
+			UpdateIFR(pMB, IxR_TIMER2);
 			break;
 		case 0x09:	// TIMER2H
-			{
-				const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(nReg) - 1;	// to compensate for the 4/5/6 cycle read opcode
-				nValue = (pMB->sy6522.TIMER2_COUNTER.w - opcodeCycleAdjust) >> 8;
-			}
+			nValue = GetTimer2Counter(nReg, pMB->sy6522.TIMER2_COUNTER.w) >> 8;
 			break;
 		case 0x0a:	// SERIAL_SHIFT
 			break;
@@ -2007,7 +2014,7 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 // . RESET -> Mockingboard mode (b#000)
 // . $C0C1, then $C0C4  (or $C0C4, then $C0C1) -> Phasor mode (b#101)
 // . $C0C2 -> Echo+ mode (b#111)
-// . $C0C5 -> remaing in Echo+ mode (b#111)
+// . $C0C5 -> remaining in Echo+ mode (b#111)
 // So $C0C5 seemingly results in 2 different modes.
 //
 
@@ -2161,15 +2168,15 @@ void MB_PeriodicUpdate(UINT executedCycles)
 
 //-----------------------------------------------------------------------------
 
-static bool CheckTimerUnderflow(USHORT& timerCounter, int& timerIrqDelay, const USHORT nClocks)
+static bool CheckTimerUnderflow(USHORT& counter, int& timerIrqDelay, const USHORT nClocks)
 {
 	if (nClocks == 0)
 		return false;
 
-	int oldTimer = timerCounter;
-	int timer = timerCounter;
+	int oldTimer = counter;
+	int timer = counter;
 	timer -= nClocks;
-	timerCounter = (USHORT)timer;
+	counter = (USHORT)timer;
 
 	bool timerIrq = false;
 
@@ -2190,6 +2197,15 @@ static bool CheckTimerUnderflow(USHORT& timerCounter, int& timerIrqDelay, const 
 	}
 
 	return timerIrq;
+}
+
+static int OnTimer1Underflow(USHORT& counter, USHORT latch)
+{
+	int timer = (int)(short)(counter);
+	while (timer < -1)
+		timer += (latch + kExtraTimerCycles);	// GH#651: account for underflowed cycles / GH#652: account for extra 2 cycles
+	counter = (USHORT)timer;
+	return (timer == -1) ? 1 : 0;				// timer1IrqDelay
 }
 
 // Called by:
@@ -2216,23 +2232,11 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 		SY6522_AY8910* pMB = &g_MB[i];
 
 		const bool bTimer1Underflow = CheckTimerUnderflow(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.timer1IrqDelay, nClocks);
-		const bool bTimer2Underflow = CheckTimerUnderflow(pMB->sy6522.TIMER2_COUNTER.w, pMB->sy6522.timer2IrqDelay, nClocks);
+		if (bTimer1Underflow)
+			pMB->sy6522.timer1IrqDelay = OnTimer1Underflow(pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.TIMER1_LATCH.w);
 
-		if (pMB->bTimer1Active && bTimer1Underflow)
-		{
-			pMB->sy6522.TIMER1_COUNTER.w += pMB->sy6522.TIMER1_LATCH.w;	// GH#651: account for underflowed cycles too
-			pMB->sy6522.TIMER1_COUNTER.w += kExtraTimerCycles;			// GH#652: account for extra 2 cycles
-																		// EG. T1C=0xFFFE, T1L=0x0001
-																		// . T1C += T1L = 0xFFFF
-																		// . T1C +=   2 = 0x0001
-			if (pMB->sy6522.TIMER1_COUNTER.w > pMB->sy6522.TIMER1_LATCH.w)
-			{
-				if (pMB->sy6522.TIMER1_LATCH.w)
-					pMB->sy6522.TIMER1_COUNTER.w %= pMB->sy6522.TIMER1_LATCH.w;	// Only occurs if LATCH.w<0x0007 (# cycles for longest opcode)
-				else
-					pMB->sy6522.TIMER1_COUNTER.w = 0;
-			}
-		}
+		// No TIMER2 latch so "after timing out, the counter will continue to decrement"
+		CheckTimerUnderflow(pMB->sy6522.TIMER2_COUNTER.w, pMB->sy6522.timer2IrqDelay, nClocks);
 	}
 }
 
@@ -2249,6 +2253,8 @@ static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 
 		UpdateIFR(pMB, 0, IxR_TIMER1);
 
+		MB_UpdateCycles(uExecutedCycles);
+
 		if ((pMB->sy6522.ACR & RUNMODE) == RM_ONESHOT)
 		{
 			// One-shot mode
@@ -2256,8 +2262,6 @@ static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 			StopTimer1(pMB);
 			return 0;			// Don't repeat event
 		}
-
-		MB_UpdateCycles(uExecutedCycles);
 
 		StartTimer1(pMB);
 		return pMB->sy6522.TIMER1_COUNTER.w + kExtraTimerCycles;

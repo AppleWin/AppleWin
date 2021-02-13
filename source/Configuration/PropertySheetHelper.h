@@ -15,9 +15,9 @@ public:
 
 	void FillComboBox(HWND window, int controlid, LPCTSTR choices, int currentchoice);
 	void SetSlot(UINT slot, SS_CARDTYPE newCardType);
-	std::string BrowseToFile(HWND hWindow, TCHAR* pszTitle, TCHAR* REGVALUE,TCHAR* FILEMASKS);
+	std::string BrowseToFile(HWND hWindow, const TCHAR* pszTitle, const TCHAR* REGVALUE, const TCHAR* FILEMASKS);
 	void SaveStateUpdate();
-	int SaveStateSelectImage(HWND hWindow, TCHAR* pszTitle, bool bSave);
+	int SaveStateSelectImage(HWND hWindow, const TCHAR* pszTitle, bool bSave);
 	void PostMsgAfterClose(HWND hWnd, PAGETYPE page);
 
 	void ResetPageMask(void) { m_bmPages = 0; }	// Req'd because cancelling doesn't clear the page-mask

@@ -80,7 +80,7 @@ static BOOL CALLBACK DSEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrv
 //-----------------------------------------------------------------------------
 
 #ifdef _DEBUG
-static char *DirectSound_ErrorText (HRESULT error)
+static const char *DirectSound_ErrorText (HRESULT error)
 {
     switch( error )
     {
