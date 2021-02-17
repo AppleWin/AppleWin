@@ -825,9 +825,13 @@ const BYTE AMPLITUDE_MASK = 0x0F;
 
 #if LOG_SSI263B
 static int ssiRegs[5]={-1,-1,-1,-1,-1};
+static int totalDuration_ms = 0;
 
 void SSI_Output(void)
 {
+	int ssi0 = ssiRegs[SSI_DURPHON];
+	int ssi2 = ssiRegs[SSI_RATEINF];
+
 	LogOutput("SSI: ");
 	for (int i=0; i<=4; i++)
 	{
@@ -836,6 +840,14 @@ void SSI_Output(void)
 		LogOutput("%s ", r);
 		ssiRegs[i] = -1;
 	}
+
+	if (ssi0 != -1 && ssi2 != -1)
+	{
+		int phonemeDuration_ms = (((16-(ssi2>>4))*4096)/1023) * (4-(ssi0>>6));
+		totalDuration_ms += phonemeDuration_ms;
+		LogOutput("/ duration = %d (total = %d) ms", phonemeDuration_ms, totalDuration_ms);
+	}
+
 	LogOutput("\n");
 }
 #endif
