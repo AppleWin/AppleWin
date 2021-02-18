@@ -701,7 +701,6 @@ void CpuIrqAssert(eIRQSRC Device)
 
 void CpuIrqDeassert(eIRQSRC Device)
 {
-	_ASSERT(g_bCritSectionValid);
 	if (g_bCritSectionValid) EnterCriticalSection(&g_CriticalSection);
 	g_bmIRQ &= ~(1<<Device);
 	if (g_bCritSectionValid) LeaveCriticalSection(&g_CriticalSection);
