@@ -41,6 +41,7 @@ namespace
     switch (key.keysym.sym)
     {
     case SDLK_RETURN:
+    case SDLK_KP_ENTER:
       {
 	ch = 0x0d;
 	break;
@@ -83,18 +84,29 @@ namespace
       }
     case SDLK_a ... SDLK_z:
       {
+	/*
+	  It looks to me this is very similar to AW,
+	  except the meaning of CAPS_LOCK is inverted.
+
+	  I would like to flip the CAPS state when this apps starts,
+	  so it defaults to upper case until manually changed,
+	  but i was not able to do so.
+	 */
+	const SDL_Keymod keymod = SDL_GetModState();
+	const bool lower = (keymod & KMOD_CAPS) && !(key.keysym.mod & KMOD_SHIFT);
+
 	ch = (key.keysym.sym - SDLK_a) + 0x01;
 	if (key.keysym.mod & KMOD_CTRL)
 	{
 	  // ok
 	}
-	else if (key.keysym.mod & KMOD_SHIFT)
+	else if (lower)
 	{
-	  ch += 0x60;
+	  ch += 0x60; // lower case
 	}
 	else
 	{
-	  ch += 0x40;
+	  ch += 0x40; // upper case
 	}
 	break;
       }
