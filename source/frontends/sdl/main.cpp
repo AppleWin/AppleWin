@@ -161,6 +161,7 @@ void run_sdl(int argc, const char * argv [])
     Timer refreshScreenTimer;
     Timer cpuTimer;
     Timer eventTimer;
+    Timer frameTimer;
 
     const std::string globalTag = ". .";
     std::string updateTextureTimerTag, refreshScreenTimerTag, cpuTimerTag, eventTimerTag;
@@ -191,6 +192,7 @@ void run_sdl(int argc, const char * argv [])
       bool quit = false;
       do
       {
+	frameTimer.tic();
 	SDL_LockMutex(data.mutex);
 
 	eventTimer.tic();
@@ -225,7 +227,7 @@ void run_sdl(int argc, const char * argv [])
 	  frame->RenderPresent();
 	  refreshScreenTimer.toc();
 	}
-
+	frameTimer.toc();
       } while (!quit);
 
       SDL_RemoveTimer(timer);
@@ -248,6 +250,8 @@ void run_sdl(int argc, const char * argv [])
 
       do
       {
+	frameTimer.tic();
+
 	eventTimer.tic();
 	SDirectSound::writeAudio();
 	emulator.processEvents(quit);
@@ -267,6 +271,7 @@ void run_sdl(int argc, const char * argv [])
 	  frame->RenderPresent();
 	  refreshScreenTimer.toc();
 	}
+	frameTimer.toc();
       } while (!quit);
     }
 
@@ -274,9 +279,10 @@ void run_sdl(int argc, const char * argv [])
 
     const char sep[] = "], ";
     std::cerr << "Global:  [" << globalTag << sep << global << std::endl;
-    std::cerr << "Events:  [" << eventTimerTag << sep << eventTimer << std::endl;
-    std::cerr << "Texture: [" << updateTextureTimerTag << sep << updateTextureTimer << std::endl;
+    std::cerr << "Frame:   [" << globalTag << sep << frameTimer << std::endl;
     std::cerr << "Screen:  [" << refreshScreenTimerTag << sep << refreshScreenTimer << std::endl;
+    std::cerr << "Texture: [" << updateTextureTimerTag << sep << updateTextureTimer << std::endl;
+    std::cerr << "Events:  [" << eventTimerTag << sep << eventTimer << std::endl;
     std::cerr << "CPU:     [" << cpuTimerTag << sep << cpuTimer << std::endl;
 
     const double timeInSeconds = global.getTimeInSeconds();
