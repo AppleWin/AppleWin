@@ -141,7 +141,9 @@ void NFrame::VideoPresentScreen()
 
   Video & video = GetVideo();
 
-  const int displaypage2 = video.VideoGetSWPAGE2() == 0 ? 0 : 1;
+  // see NTSC_SetVideoMode in NTSC.cpp
+  // we shoudl really use g_nTextPage and g_nHiresPage
+  const int displaypage2 = (video.VideoGetSWPAGE2() && !video.VideoGetSW80STORE()) ? 1 : 0;
 
   myHiresBank1 = MemGetAuxPtr (0x2000 << displaypage2);
   myHiresBank0 = MemGetMainPtr(0x2000 << displaypage2);
