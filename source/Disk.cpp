@@ -1202,7 +1202,6 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 	if (dbgWOZ)
 	{
 		dbgWOZ = 0;
-//		DumpSectorWOZ(floppy);
 		DumpTrackWOZ(floppy);	// Enable as necessary
 	}
 #endif
@@ -1360,65 +1359,6 @@ void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCy
 //===========================================================================
 
 #ifdef _DEBUG
-// Dump nibbles from current position until 0xDEAA (ie. data epilogue)
-void Disk2InterfaceCard::DumpSectorWOZ(FloppyDisk floppy)	// pass a copy of m_floppy
-{
-	BYTE shiftReg = 0;
-	UINT32 lastNibbles = 0;
-	UINT zeroCount = 0;
-	UINT nibbleCount = 0;
-
-	while (1)
-	{
-		BYTE n = floppy.m_trackimage[floppy.m_byte];
-		BYTE outputBit = (n & floppy.m_bitMask) ? 1 : 0;
-
-		floppy.m_bitMask >>= 1;
-		if (!floppy.m_bitMask)
-		{
-			floppy.m_bitMask = 1 << 7;
-			floppy.m_byte++;
-		}
-
-		floppy.m_bitOffset++;
-		if (floppy.m_bitOffset == floppy.m_bitCount)
-		{
-			floppy.m_bitMask = 1 << 7;
-			floppy.m_bitOffset = 0;
-			floppy.m_byte = 0;
-		}
-
-		if (shiftReg == 0 && outputBit == 0)
-		{
-			zeroCount++;
-			continue;
-		}
-
-		shiftReg <<= 1;
-		shiftReg |= outputBit;
-
-		if ((shiftReg & 0x80) == 0)
-			continue;
-
-		nibbleCount++;
-
-		char str[10];
-		sprintf(str, "%02X ", shiftReg);
-		OutputDebugString(str);
-		if ((nibbleCount & 0xf) == 0)
-			OutputDebugString("\n");
-
-		lastNibbles <<= 8;
-		lastNibbles |= shiftReg;
-
-		if ((lastNibbles & 0xffff) == 0xDEAA)
-			break;
-
-		shiftReg = 0;
-		zeroCount = 0;
-	}
-}
-
 // Dump nibbles from current position bitstream wraps to same position
 void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_floppy
 {
