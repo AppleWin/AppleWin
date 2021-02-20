@@ -1360,6 +1360,7 @@ void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCy
 
 #ifdef _DEBUG
 // Dump nibbles from current position bitstream wraps to same position
+// NB. Need to define LOG_DISK_NIBBLES_READ so that GetReadD5AAxxDetectedString() works.
 void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_floppy
 {
 	FormatTrack formatTrack(true);
@@ -1368,7 +1369,7 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 	UINT zeroCount = 0;
 	UINT nibbleCount = 0;
 
-	const UINT startBitOffset = 0;
+	const UINT startBitOffset = 0;	// NB. may need to tweak this offset, since the bistream is a circular buffer
 	floppy.m_bitOffset = startBitOffset;
 
 	floppy.m_byte = floppy.m_bitOffset / 8;
@@ -1376,10 +1377,10 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 	floppy.m_bitMask = 1 << remainder;
 
 	bool newLine = true;
+	TCHAR str[20];
 
 	while (1)
 	{
-		TCHAR str[10];
 		if (newLine)
 		{
 			newLine = false;
@@ -1390,22 +1391,9 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 		BYTE n = floppy.m_trackimage[floppy.m_byte];
 		BYTE outputBit = (n & floppy.m_bitMask) ? 1 : 0;
 
-		floppy.m_bitMask >>= 1;
-		if (!floppy.m_bitMask)
-		{
-			floppy.m_bitMask = 1 << 7;
-			floppy.m_byte++;
-		}
+		IncBitStream(floppy);
 
-		floppy.m_bitOffset++;
-		if (floppy.m_bitOffset == floppy.m_bitCount)
-		{
-			floppy.m_bitMask = 1 << 7;
-			floppy.m_bitOffset = 0;
-			floppy.m_byte = 0;
-		}
-
-		if (startBitOffset == floppy.m_bitOffset)
+		if (startBitOffset == floppy.m_bitOffset)	// done complete track?
 			break;
 
 		if (shiftReg == 0 && outputBit == 0)
@@ -1443,6 +1431,21 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 
 		shiftReg = 0;
 		zeroCount = 0;
+	}
+
+	// Output any remaining zeroCount
+	if (zeroCount)
+	{
+		char syncBits = zeroCount <= 9 ? '0'+zeroCount : '+';
+		StringCbPrintf(str, sizeof(str), "(%c)", syncBits);
+		OutputDebugString(str);
+	}
+
+	// Output any partial nibble
+	if (shiftReg)
+	{
+		StringCbPrintf(str, sizeof(str), "%02X/Partial Nibble", shiftReg);
+		OutputDebugString(str);
 	}
 
 	// Output any remaining "read D5AAxx detected"
