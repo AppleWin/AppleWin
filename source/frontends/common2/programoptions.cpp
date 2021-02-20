@@ -19,14 +19,23 @@ namespace po = boost::program_options;
 namespace
 {
 
-  std::pair<int, int> parseSize(const std::string & s)
+  void parseGeometry(const std::string & s, Geometry & geometry)
   {
     std::smatch m;
-    if (std::regex_match(s, m, std::regex("^(\\d+)x(\\d+)$")))
+    if (std::regex_match(s, m, std::regex("^(\\d+)x(\\d+)(\\+(\\d+)\\+(\\d+))?$")))
     {
-      const int width = std::stoi(m.str(1));
-      const int height = std::stoi(m.str(2));
-      return std::make_pair(width, height);
+      const size_t groups = m.size();
+      if (groups == 6)
+      {
+	geometry.width = std::stoi(m.str(1));
+	geometry.height = std::stoi(m.str(2));
+	if (!m.str(3).empty())
+	{
+	  geometry.x = std::stoi(m.str(4));
+	  geometry.y = std::stoi(m.str(5));
+	}
+	return;
+      }
     }
     throw std::runtime_error("Invalid sizes: " + s);
   }
@@ -87,7 +96,7 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
     ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
     ("gl-swap", po::value<int>()->default_value(options.glSwapInterval), "SDL_GL_SwapInterval")
     ("imgui", "Render with Dear ImGui")
-    ("size", po::value<std::string>(), "WxH")
+    ("geometry", po::value<std::string>(), "WxH(+X+Y)")
     ;
   desc.add(sdlDesc);
 
@@ -161,9 +170,9 @@ bool getEmulatorOptions(int argc, const char * argv [], const std::string & edit
       options.paddleDeviceName = vm["device-name"].as<std::string>();
     }
 
-    if (vm.count("size"))
+    if (vm.count("geometry"))
     {
-      options.size = parseSize(vm["size"].as<std::string>());
+      parseGeometry(vm["geometry"].as<std::string>(), options.geometry);
     }
 
     return true;

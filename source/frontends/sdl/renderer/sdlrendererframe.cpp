@@ -10,7 +10,9 @@
 
 SDLRendererFrame::SDLRendererFrame(const EmulatorOptions & options)
 {
-  myWindow.reset(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, options.size.first, options.size.second, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE), SDL_DestroyWindow);
+  const Geometry & geometry = options.geometry;
+
+  myWindow.reset(SDL_CreateWindow(g_pAppTitle.c_str(), geometry.x, geometry.y, geometry.width, geometry.height, SDL_WINDOW_RESIZABLE), SDL_DestroyWindow);
   if (!myWindow)
   {
     throw std::runtime_error(SDL_GetError());

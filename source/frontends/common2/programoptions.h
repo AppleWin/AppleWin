@@ -4,6 +4,15 @@
 #include <vector>
 
 
+struct Geometry
+{
+  int width;
+  int height;
+  int x;
+  int y;
+};
+
+
 struct EmulatorOptions
 {
   std::string disk1;
@@ -37,7 +46,7 @@ struct EmulatorOptions
 
   int sdlDriver = -1; // default = -1 to let SDL choose
   bool imgui = false; // use imgui renderer
-  std::pair<int, int> size; // width x height
+  Geometry geometry; // must be initialised with defaults
   int glSwapInterval = 1; // SDL_GL_SetSwapInterval
 
   std::vector<std::string> registryOptions;

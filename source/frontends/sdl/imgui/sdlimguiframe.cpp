@@ -47,8 +47,10 @@ SDLImGuiFrame::SDLImGuiFrame(const EmulatorOptions & options)
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
   SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-  SDL_WindowFlags windowFlags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-  myWindow.reset(SDL_CreateWindow(g_pAppTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, options.size.first, options.size.second, windowFlags), SDL_DestroyWindow);
+  const SDL_WindowFlags windowFlags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+  const Geometry & geometry = options.geometry;
+
+  myWindow.reset(SDL_CreateWindow(g_pAppTitle.c_str(), geometry.x, geometry.y, geometry.width, geometry.height, windowFlags), SDL_DestroyWindow);
   if (!myWindow)
   {
     throw std::runtime_error(SDL_GetError());

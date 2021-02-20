@@ -83,7 +83,10 @@ void run_sdl(int argc, const char * argv [])
   const int sw = video.GetFrameBufferBorderlessWidth();
   const int sh = video.GetFrameBufferBorderlessHeight();
 
-  options.size = std::make_pair(sw, sh);
+  options.geometry.width = sw;
+  options.geometry.height = sh;
+  options.geometry.x = SDL_WINDOWPOS_UNDEFINED;
+  options.geometry.y = SDL_WINDOWPOS_UNDEFINED;
   options.memclear = g_nMemoryClearType;
   const bool run = getEmulatorOptions(argc, argv, "SDL2", options);
 
