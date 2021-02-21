@@ -332,7 +332,10 @@ static void AY8910_Write(BYTE nDevice, BYTE /*nReg*/, BYTE nValue, BYTE nAYDevic
 					break;
 
 				case AY_READ:		// 5: READ FROM PSG (need to set DDRA to input)
-					pMB->sy6522.ORA = AYReadReg(nDevice+2*nAYDevice, pMB->nAYCurrentRegister) & (pMB->sy6522.DDRA ^ 0xff);
+					if (g_bPhasorEnable)
+						pMB->sy6522.ORA = 0xff & (pMB->sy6522.DDRA ^ 0xff);	// Phasor doesn't support reading AY8913s - it just reads 1's for the input bits
+					else
+						pMB->sy6522.ORA = AYReadReg(nDevice+2*nAYDevice, pMB->nAYCurrentRegister) & (pMB->sy6522.DDRA ^ 0xff);
 					break;
 
 				case AY_WRITE:		// 6: WRITE TO PSG
@@ -584,8 +587,9 @@ static void UpdateIFR(SY6522_AY8910* pMB, BYTE clr_ifr, BYTE set_ifr=0)
 		bIRQ |= g_MB[i].sy6522.IFR & 0x80;
 
 	// NB. Mockingboard generates IRQ on both 6522s:
-	// . SSI263's IRQ (A/!R) is routed via the 2nd 6522 (at $Cx80) and must generate a 6502 IRQ (not NMI)
-	// . SC-01's IRQ (A/!R) is also routed via a (2nd?) 6522
+	// . SSI263's IRQ (A/!R) is routed via the 2nd 6522 (at $Cn80) and must generate a 6502 IRQ (not NMI)
+	//   - NB. 2nd SSI263's IRQ is routed via the 1st 6522 (at $Cn00) and again generates a 6502 IRQ
+	// . SC-01's IRQ (A/!R) is routed via the 6522 at $Cn00 (NB. Only the Mockingboard "Sound/Speech I" card supports the SC-01)
 	// Phasor's SSI263 IRQ (A/!R) line is *also* wired directly to the 6502's IRQ (as well as the 6522's CA1)
 
 	if (bIRQ)
@@ -1906,10 +1910,15 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 
 		bool bAccessedDevice = (CS & 3) ? true : false;
 
-		if ((g_phasorMode == PH_Phasor) && ((nAddr & 0xD0) == 0x40))	// $Cn4x and $Cn6x (Mockingboard mode: SSI263.bit7 not readable)
+		bool CS_SSI263 = !(nAddr & 0x80) && (nAddr & 0x60);			// SSI263 at $Cn2x and/or $Cn4x
+
+		if (g_phasorMode == PH_Phasor && CS_SSI263)					// NB. Mockingboard mode: SSI263.bit7 not readable
 		{
 			_ASSERT(!bAccessedDevice);
-			nRes = SSI263_Read(nMB*2+1, nExecutedCycles);		// SSI263 only drives bit7
+			if (nAddr & 0x40)	// Primary SSI263
+				nRes = SSI263_Read(nMB*2+1, nExecutedCycles);		// SSI263 only drives bit7
+			if (nAddr & 0x20)	// Secondary SSI263
+				nRes = SSI263_Read(nMB*2+0, nExecutedCycles);		// SSI263 only drives bit7
 			bAccessedDevice = true;
 		}
 
@@ -1995,15 +2004,16 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 		if(CS & 2)
 			SY6522_Write(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr&0xf, nValue);
 
-		int CS_SSI263 =   (g_phasorMode == PH_Mockingboard)	? (nAddr & 0xE0) == 0x40	// Mockingboard: $Cn4x
-						: (g_phasorMode == PH_Phasor)		? (nAddr & 0xC0) == 0x40	// Phasor:       $Cn4x and $Cn6x
-						: 0;															// Echo+
+		bool CS_SSI263 = !(nAddr & 0x80) && (nAddr & 0x60);				// SSI263 at $Cn2x and/or $Cn4x
 
-		if (CS_SSI263)
+		if ((g_phasorMode == PH_Mockingboard || g_phasorMode == PH_Phasor) && CS_SSI263)	// No SSI263 for Echo+
 		{
 			// NB. Mockingboard mode: writes to $Cn4x/SSI263 also get written to 1st 6522 (have confirmed on real Phasor h/w)
 			_ASSERT( (g_phasorMode == PH_Mockingboard && (CS==0 || CS==1)) || (g_phasorMode == PH_Phasor && (CS==0)) );
-			SSI263_Write(nMB*2+1, nAddr&0x7, nValue);	// Second 6522 is used for speech chip
+			if (nAddr & 0x40)	// Primary SSI263
+				SSI263_Write(nMB*2+1, nAddr&0x7, nValue);	// 2nd 6522 is used for 1st speech chip
+			if (nAddr & 0x20)	// Secondary SSI263
+				SSI263_Write(nMB*2+0, nAddr&0x7, nValue);	// 1st 6522 is used for 2nd speech chip
 		}
 
 		return 0;
@@ -2014,8 +2024,10 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 	else
 		SY6522_Write(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr&0xf, nValue);
 
-	if ((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset+0x07)))
-		SSI263_Write(nMB*2+1, nAddr&0x7, nValue);		// Second 6522 is used for speech chip -- TODO confirm with real MB h/w that writes go to 1st 6522
+	if (nAddr & 0x40)
+		SSI263_Write(nMB*2+1, nAddr&0x7, nValue);		// 2nd 6522 is used for 1st speech chip
+	if (nAddr & 0x20)
+		SSI263_Write(nMB*2+0, nAddr&0x7, nValue);		// 1st 6522 is used for 2nd speech chip
 
 	return 0;
 }
