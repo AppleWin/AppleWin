@@ -26,6 +26,7 @@ private:
 
   const std::shared_ptr<SDLFrame> myFrame;
 
+  bool myForceCapsLock;
   int myMultiplier;
   bool myFullscreen;
 

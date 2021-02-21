@@ -29,7 +29,7 @@
 namespace
 {
 
-  void processAppleKey(const SDL_KeyboardEvent & key)
+  void processAppleKey(const SDL_KeyboardEvent & key, const bool forceCapsLock)
   {
     // using keycode (or scan code) one takes a physical view of the keyboard
     // ignoring non US layouts
@@ -84,29 +84,24 @@ namespace
       }
     case SDLK_a ... SDLK_z:
       {
-	/*
-	  It looks to me this is very similar to AW,
-	  except the meaning of CAPS_LOCK is inverted.
-
-	  I would like to flip the CAPS state when this apps starts,
-	  so it defaults to upper case until manually changed,
-	  but i was not able to do so.
-	 */
-	const SDL_Keymod keymod = SDL_GetModState();
-	const bool lower = (keymod & KMOD_CAPS) && !(key.keysym.mod & KMOD_SHIFT);
+	// same logic as AW
+	// CAPS is forced when the emulator starts
+	// until is used the first time
+	const bool capsLock = forceCapsLock || (SDL_GetModState() & KMOD_CAPS);
+	const bool upper = capsLock || (key.keysym.mod & KMOD_SHIFT);
 
 	ch = (key.keysym.sym - SDLK_a) + 0x01;
 	if (key.keysym.mod & KMOD_CTRL)
 	{
 	  // ok
 	}
-	else if (lower)
+	else if (upper)
 	{
-	  ch += 0x60; // lower case
+	  ch += 0x40; // upper case
 	}
 	else
 	{
-	  ch += 0x40; // upper case
+	  ch += 0x60; // lower case
 	}
 	break;
       }
@@ -127,6 +122,7 @@ Emulator::Emulator(
   const bool fixedSpeed
 )
   : myFrame(frame)
+  , myForceCapsLock(true)
   , myMultiplier(1)
   , myFullscreen(false)
   , mySpeed(fixedSpeed)
@@ -291,10 +287,15 @@ void Emulator::processKeyDown(const SDL_KeyboardEvent & key, bool & quit)
       GetFrame().FrameRefreshStatus(DRAW_TITLE);
       break;
     }
+    case SDLK_CAPSLOCK:
+    {
+      myForceCapsLock = false;
+      break;
+    }
     }
   }
 
-  processAppleKey(key);
+  processAppleKey(key, myForceCapsLock);
 
 #ifdef KEY_LOGGING_VERBOSE
   std::cerr << "KEY DOWN: " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
