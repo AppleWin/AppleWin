@@ -143,7 +143,23 @@ void SDLImGuiFrame::DrawAppleVideo()
   const ImVec2 uv0(0, 1);
   const ImVec2 uv1(1, 0);
 
-  ImGuiIO& io = ImGui::GetIO();
+  float menuBarHeight;
+
+  if (ImGui::BeginMainMenuBar())
+  {
+    menuBarHeight = ImGui::GetWindowHeight();
+    if (ImGui::BeginMenu("System"))
+    {
+      ImGui::MenuItem("Settings", nullptr, &mySettings.showSettings);
+      ImGui::MenuItem("Demo", nullptr, &mySettings.showDemo);
+      ImGui::EndMenu();
+    }
+    ImGui::EndMainMenuBar();
+  }
+  else
+  {
+    menuBarHeight = 0.0;
+  }
 
   if (mySettings.windowed)
   {
@@ -155,101 +171,105 @@ void SDLImGuiFrame::DrawAppleVideo()
   }
   else
   {
-    const ImVec2 zero(0, 0);
+    const ImVec2 zero(0, menuBarHeight);
     // draw on the background
+    ImGuiIO& io = ImGui::GetIO();
     ImGui::GetBackgroundDrawList()->AddImage(myTexture, zero, io.DisplaySize, uv0, uv1);
   }
 }
 
 void SDLImGuiFrame::ShowSettings()
 {
-  if (ImGui::Begin("Settings"))
+  if (mySettings.showSettings)
   {
-    ImGuiIO& io = ImGui::GetIO();
-
-    if (ImGui::BeginTabBar("Settings"))
+    if (ImGui::Begin("Settings", &mySettings.showSettings))
     {
-      if (ImGui::BeginTabItem("General"))
+      ImGuiIO& io = ImGui::GetIO();
+
+      if (ImGui::BeginTabBar("Settings"))
       {
-	ImGui::Checkbox("Apple Video windowed", &mySettings.windowed);
-	ImGui::SameLine(); HelpMarker("Show Apple Video in a separate window.");
+	if (ImGui::BeginTabItem("General"))
+	{
+	  ImGui::Checkbox("Apple Video windowed", &mySettings.windowed);
+	  ImGui::SameLine(); HelpMarker("Show Apple Video in a separate window.");
 
-	ImGui::Checkbox("Show Demo", &mySettings.showDemo);
-	ImGui::SameLine(); HelpMarker("Show Dear ImGui DemoWindow.");
+	  ImGui::Checkbox("Show Demo", &mySettings.showDemo);
+	  ImGui::SameLine(); HelpMarker("Show Dear ImGui DemoWindow.");
 
-	ImGui::Text("FPS: %d", int(io.Framerate));
-	ImGui::EndTabItem();
-      }
-      if (ImGui::BeginTabItem("Hardware"))
-      {
-        if (ImGui::BeginTable("Cards", 2, ImGuiTableFlags_RowBg))
-        {
-	  CardManager & manager = GetCardMgr();
-	  ImGui::TableSetupColumn("Slot");
-	  ImGui::TableSetupColumn("Card");
-	  ImGui::TableHeadersRow();
+	  ImGui::Text("FPS: %d", int(io.Framerate));
+	  ImGui::EndTabItem();
+	}
+	if (ImGui::BeginTabItem("Hardware"))
+	{
+	  if (ImGui::BeginTable("Cards", 2, ImGuiTableFlags_RowBg))
+	  {
+	    CardManager & manager = GetCardMgr();
+	    ImGui::TableSetupColumn("Slot");
+	    ImGui::TableSetupColumn("Card");
+	    ImGui::TableHeadersRow();
 
-	  for (size_t slot = 0; slot < 8; ++slot)
+	    for (size_t slot = 0; slot < 8; ++slot)
+	    {
+	      ImGui::TableNextColumn();
+	      ImGui::Selectable(std::to_string(slot).c_str());
+	      ImGui::TableNextColumn();
+	      const SS_CARDTYPE card = manager.QuerySlot(slot);;
+	      ImGui::Selectable(getCardName(card).c_str());
+	    }
+	    ImGui::TableNextColumn();
+	    ImGui::Selectable("AUX");
+	    ImGui::TableNextColumn();
+	    const SS_CARDTYPE card = manager.QueryAux();
+	    ImGui::Selectable(getCardName(card).c_str());
+
+	    ImGui::EndTable();
+	  }
+	  ImGui::Separator();
+
+	  if (ImGui::BeginTable("Type", 2, ImGuiTableFlags_RowBg))
 	  {
 	    ImGui::TableNextColumn();
-	    ImGui::Selectable(std::to_string(slot).c_str());
+	    ImGui::Selectable("Apple 2");
 	    ImGui::TableNextColumn();
-	    const SS_CARDTYPE card = manager.QuerySlot(slot);;
-	    ImGui::Selectable(getCardName(card).c_str());
+	    const eApple2Type a2e = GetApple2Type();
+	    ImGui::Selectable(getApple2Name(a2e).c_str());
+
+	    ImGui::TableNextColumn();
+	    ImGui::Selectable("CPU");
+	    ImGui::TableNextColumn();
+	    const eCpuType cpu = GetMainCpu();
+	    ImGui::Selectable(getCPUName(cpu).c_str());
+
+	    ImGui::EndTable();
 	  }
-	  ImGui::TableNextColumn();
-	  ImGui::Selectable("AUX");
-	  ImGui::TableNextColumn();
-	  const SS_CARDTYPE card = manager.QueryAux();
-	  ImGui::Selectable(getCardName(card).c_str());
 
-	  ImGui::EndTable();
-        }
-	ImGui::Separator();
-
-        if (ImGui::BeginTable("Type", 2, ImGuiTableFlags_RowBg))
-        {
-	  ImGui::TableNextColumn();
-	  ImGui::Selectable("Apple 2");
-	  ImGui::TableNextColumn();
-	  const eApple2Type a2e = GetApple2Type();
-	  ImGui::Selectable(getApple2Name(a2e).c_str());
-
-	  ImGui::TableNextColumn();
-	  ImGui::Selectable("CPU");
-	  ImGui::TableNextColumn();
-	  const eCpuType cpu = GetMainCpu();
-	  ImGui::Selectable(getCPUName(cpu).c_str());
-
-	  ImGui::EndTable();
-        }
-
-	ImGui::EndTabItem();
-      }
-
-      if (ImGui::BeginTabItem("Audio"))
-      {
-	const int volumeMax = GetPropertySheet().GetVolumeMax();
-	if (ImGui::SliderInt("Speaker volume", &mySettings.speakerVolume, 0, volumeMax))
-	{
-	  SpkrSetVolume(volumeMax - mySettings.speakerVolume, volumeMax);
-	  REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
+	  ImGui::EndTabItem();
 	}
 
-	if (ImGui::SliderInt("Mockingboard volume", &mySettings.mockingboardVolume, 0, volumeMax))
+	if (ImGui::BeginTabItem("Audio"))
 	{
-	  MB_SetVolume(volumeMax - mySettings.mockingboardVolume, volumeMax);
-	  REGSAVE(TEXT(REGVALUE_MB_VOLUME), MB_GetVolume());
+	  const int volumeMax = GetPropertySheet().GetVolumeMax();
+	  if (ImGui::SliderInt("Speaker volume", &mySettings.speakerVolume, 0, volumeMax))
+	  {
+	    SpkrSetVolume(volumeMax - mySettings.speakerVolume, volumeMax);
+	    REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
+	  }
+
+	  if (ImGui::SliderInt("Mockingboard volume", &mySettings.mockingboardVolume, 0, volumeMax))
+	  {
+	    MB_SetVolume(volumeMax - mySettings.mockingboardVolume, volumeMax);
+	    REGSAVE(TEXT(REGVALUE_MB_VOLUME), MB_GetVolume());
+	  }
+
+	  ImGui::EndTabItem();
 	}
 
-	ImGui::EndTabItem();
+	ImGui::EndTabBar();
       }
 
-      ImGui::EndTabBar();
     }
-
+    ImGui::End();
   }
-  ImGui::End();
 }
 
 void SDLImGuiFrame::RenderPresent()
@@ -262,7 +282,7 @@ void SDLImGuiFrame::RenderPresent()
 
   if (mySettings.showDemo)
   {
-    ImGui::ShowDemoWindow();
+    ImGui::ShowDemoWindow(&mySettings.showDemo);
   }
 
   DrawAppleVideo();
