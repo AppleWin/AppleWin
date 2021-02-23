@@ -1248,10 +1248,11 @@ static void MB_UpdateInt(void)
 	DWORD dwDSLockedBufferSize0, dwDSLockedBufferSize1;
 	SHORT *pDSLockedBuffer0, *pDSLockedBuffer1;
 
-	if(!DSGetLock(MockingboardVoice.lpDSBvoice,
-						dwByteOffset, (DWORD)nNumSamples*sizeof(short)*g_nMB_NumChannels,
-						&pDSLockedBuffer0, &dwDSLockedBufferSize0,
-						&pDSLockedBuffer1, &dwDSLockedBufferSize1))
+	hr = DSGetLock(MockingboardVoice.lpDSBvoice,
+		dwByteOffset, (DWORD)nNumSamples * sizeof(short) * g_nMB_NumChannels,
+		&pDSLockedBuffer0, &dwDSLockedBufferSize0,
+		&pDSLockedBuffer1, &dwDSLockedBufferSize1);
+	if (FAILED(hr))
 		return;
 
 	memcpy(pDSLockedBuffer0, &g_nMixBuffer[0], dwDSLockedBufferSize0);
@@ -1425,7 +1426,8 @@ static void SSI263_Play(unsigned int nPhoneme)
 
 	hr = SSI263Voice.lpDSBvoice->Stop();
 
-	if(!DSGetLock(SSI263Voice.lpDSBvoice, 0, 0, &pDSLockedBuffer, &dwDSLockedBufferSize, NULL, 0))
+	hr = DSGetLock(SSI263Voice.lpDSBvoice, 0, 0, &pDSLockedBuffer, &dwDSLockedBufferSize, NULL, 0);
+	if (FAILED(hr))
 		return;
 
 	unsigned int nPhonemeShortLength = g_nPhonemeInfo[nPhoneme].nLength;
