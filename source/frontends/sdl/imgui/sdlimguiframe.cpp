@@ -36,6 +36,7 @@ namespace
 }
 
 SDLImGuiFrame::SDLImGuiFrame(const EmulatorOptions & options)
+  : SDLFrame(options)
 {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
@@ -291,4 +292,25 @@ void SDLImGuiFrame::RenderPresent()
   ClearBackground();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   SDL_GL_SwapWindow(myWindow.get());
+}
+
+void SDLImGuiFrame::ProcessSingleEvent(const SDL_Event & event, bool & quit)
+{
+  ImGui_ImplSDL2_ProcessEvent(&event);
+
+  switch (event.type)
+  {
+  case SDL_KEYDOWN:
+  case SDL_KEYUP:
+  case SDL_TEXTINPUT:
+  {
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureKeyboard)
+    {
+      return; // do not pass on
+    }
+  }
+  }
+
+  SDLFrame::ProcessSingleEvent(event, quit);
 }

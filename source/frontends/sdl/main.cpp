@@ -13,7 +13,6 @@
 #include "frontends/common2/utils.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/timer.h"
-#include "frontends/sdl/emulator.h"
 #include "frontends/sdl/gamepad.h"
 #include "frontends/sdl/sdirectsound.h"
 #include "frontends/sdl/utils.h"
@@ -24,12 +23,15 @@
 #include "frontends/sdl/imgui/sdlimguiframe.h"
 #endif
 
+#include "CardManager.h"
 #include "Core.h"
 #include "Log.h"
 #include "CPU.h"
 #include "NTSC.h"
 #include "SaveState.h"
 #include "Interface.h"
+#include "Mockingboard.h"
+#include "Speaker.h"
 
 // comment out to test / debug init / shutdown only
 #define EMULATOR_RUN
@@ -51,9 +53,27 @@ namespace
     return current.refresh_rate;
   }
 
+  void execute(Speed speed, const size_t next)
+  {
+    if (g_nAppMode == MODE_RUNNING)
+    {
+      const size_t cyclesToExecute = speed.getCyclesTillNext(next * 1000);
+
+      const bool bVideoUpdate = true;
+      const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
+
+      const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
+
+      g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
+      GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
+      MB_PeriodicUpdate(executedCycles);
+      SpkrUpdate(executedCycles);
+    }
+  }
+
   struct Data
   {
-    Emulator * emulator;
+    Speed * speed;
     SDL_mutex * mutex;
     Timer * timer;
   };
@@ -64,7 +84,7 @@ namespace
     SDL_LockMutex(data->mutex);
 
     data->timer->tic();
-    data->emulator->execute(interval);
+    execute(*data->speed, interval);
     data->timer->toc();
 
     SDL_UnlockMutex(data->mutex);
@@ -132,8 +152,6 @@ void run_sdl(int argc, const char * argv [])
   const int fps = getRefreshRate();
   std::cerr << "Video refresh rate: " << fps << " Hz, " << 1000.0 / fps << " ms" << std::endl;
 
-  Emulator emulator(frame, options.fixedSpeed);
-
 #ifdef EMULATOR_RUN
   if (options.benchmark)
   {
@@ -169,6 +187,8 @@ void run_sdl(int argc, const char * argv [])
     const std::string globalTag = ". .";
     std::string updateTextureTimerTag, refreshScreenTimerTag, cpuTimerTag, eventTimerTag;
 
+    Speed speed(options.fixedSpeed);
+
     if (options.multiThreaded)
     {
       refreshScreenTimerTag = "0 .";
@@ -187,8 +207,8 @@ void run_sdl(int argc, const char * argv [])
 
       Data data;
       data.mutex = mutex.get();
-      data.emulator = &emulator;
       data.timer = &cpuTimer;
+      data.speed = &speed;
 
       const SDL_TimerID timer = SDL_AddTimer(options.timerInterval, emulator_callback, &data);
 
@@ -200,7 +220,7 @@ void run_sdl(int argc, const char * argv [])
 
 	eventTimer.tic();
 	SDirectSound::writeAudio();
-	emulator.processEvents(quit);
+	frame->ProcessEvents(quit);
 	eventTimer.toc();
 
 	if (options.looseMutex)
@@ -257,11 +277,11 @@ void run_sdl(int argc, const char * argv [])
 
 	eventTimer.tic();
 	SDirectSound::writeAudio();
-	emulator.processEvents(quit);
+	frame->ProcessEvents(quit);
 	eventTimer.toc();
 
 	cpuTimer.tic();
-	emulator.execute(oneFrame);
+	execute(speed, oneFrame);
 	cpuTimer.toc();
 
 	updateTextureTimer.tic();

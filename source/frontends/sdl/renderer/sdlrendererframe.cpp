@@ -9,6 +9,7 @@
 #include <iostream>
 
 SDLRendererFrame::SDLRendererFrame(const EmulatorOptions & options)
+  : SDLFrame(options)
 {
   const Geometry & geometry = options.geometry;
 

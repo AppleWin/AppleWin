@@ -15,6 +15,10 @@ public:
   void UpdateTexture() override;
   void RenderPresent() override;
 
+protected:
+
+  void ProcessSingleEvent(const SDL_Event & event, bool & quit) override;
+
 private:
 
   void ClearBackground();

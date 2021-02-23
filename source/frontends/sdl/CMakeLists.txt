@@ -4,7 +4,6 @@ add_executable(sa2)
 
 set(SOURCE_FILES
   main.cpp
-  emulator.cpp
   gamepad.cpp
   sdirectsound.cpp
   utils.cpp
@@ -13,7 +12,6 @@ set(SOURCE_FILES
   )
 
 set(HEADER_FILES
-  emulator.h
   gamepad.h
   sdirectsound.h
   utils.h
