@@ -2,11 +2,16 @@
 
 #include <memory>
 
-class NFrame;
+namespace na2
+{
 
-int ProcessKeyboard(const std::shared_ptr<NFrame> & frame);
-void SetCtrlCHandler(const bool headless);
+  class NFrame;
 
-extern double g_relativeSpeed;
+  int ProcessKeyboard(const std::shared_ptr<NFrame> & frame);
+  void SetCtrlCHandler(const bool headless);
 
-extern bool g_stop;
+  extern double g_relativeSpeed;
+
+  extern bool g_stop;
+
+}

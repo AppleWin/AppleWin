@@ -8,28 +8,33 @@
 struct libevdev;
 struct input_event;
 
-class EvDevPaddle : public Paddle
+namespace na2
 {
-public:
-  EvDevPaddle(const std::string & device);
-  ~EvDevPaddle();
 
-  int poll();
+  class EvDevPaddle : public Paddle
+  {
+  public:
+    EvDevPaddle(const std::string & device);
+    ~EvDevPaddle();
 
-  const std::string & getName() const;
-  bool getButton(int i) const override;
-  double getAxis(int i) const override;
+    int poll();
 
-private:
-  int myFD;
-  std::shared_ptr<libevdev> myDev;
+    const std::string & getName() const;
+    bool getButton(int i) const override;
+    double getAxis(int i) const override;
 
-  void process(const input_event & ev);
+  private:
+    int myFD;
+    std::shared_ptr<libevdev> myDev;
 
-  std::string myName;
+    void process(const input_event & ev);
 
-  std::vector<unsigned int> myButtonCodes;
-  std::vector<unsigned int> myAxisCodes;
-  std::vector<int> myAxisMins;
-  std::vector<int> myAxisMaxs;
-};
+    std::string myName;
+
+    std::vector<unsigned int> myButtonCodes;
+    std::vector<unsigned int> myAxisCodes;
+    std::vector<int> myAxisMins;
+    std::vector<int> myAxisMaxs;
+  };
+
+}

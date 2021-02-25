@@ -1,18 +1,23 @@
 #pragma once
 
-class GraphicsColors
+namespace na2
 {
- public:
-  GraphicsColors(const int firstColor, const int firstPair, const int numberOfGreys);
 
-  int getPair(int color) const;
-  int getGrey(double foreground, double background) const;
+  class GraphicsColors
+  {
+  public:
+    GraphicsColors(const int firstColor, const int firstPair, const int numberOfGreys);
 
- private:
-  int myFirstGRPair;
-  int myFirstHGRPair;
+    int getPair(int color) const;
+    int getGrey(double foreground, double background) const;
 
-  const int myNumberOfGRColors;
-  const int myNumberOfGreys;
+  private:
+    int myFirstGRPair;
+    int myFirstHGRPair;
 
-};
+    const int myNumberOfGRColors;
+    const int myNumberOfGreys;
+
+  };
+
+}

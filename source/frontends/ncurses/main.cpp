@@ -27,7 +27,7 @@
 
 namespace
 {
-  bool ContinueExecution(const common2::EmulatorOptions & options, const std::shared_ptr<NFrame> & frame)
+  bool ContinueExecution(const common2::EmulatorOptions & options, const std::shared_ptr<na2::NFrame> & frame)
   {
     const auto start = std::chrono::steady_clock::now();
 
@@ -58,38 +58,38 @@ namespace
     switch (key)
     {
     case KEY_F(2):
-    {
-      ResetMachineState();
-      break;
-    }
-    case 278: // Shift-F2
-    {
-      CtrlReset();
-      break;
-    }
-    case KEY_F(3):
-    {
-      return false;
-    }
-    case KEY_F(5):
-    {
-      CardManager & cardManager = GetCardMgr();
-      if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
       {
-	dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6))->DriveSwap();
+        ResetMachineState();
+        break;
       }
-      break;
-    }
+    case 278: // Shift-F2
+      {
+        CtrlReset();
+        break;
+      }
+    case KEY_F(3):
+      {
+        return false;
+      }
+    case KEY_F(5):
+      {
+        CardManager & cardManager = GetCardMgr();
+        if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
+        {
+          dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6))->DriveSwap();
+        }
+        break;
+      }
     case KEY_F(11):
-    {
-      Snapshot_SaveState();
-      break;
-    }
+      {
+        Snapshot_SaveState();
+        break;
+      }
     case KEY_F(12):
-    {
-      Snapshot_LoadState();
-      break;
-    }
+      {
+        Snapshot_LoadState();
+        break;
+      }
     }
 
     frame->ProcessEvDev();
@@ -112,7 +112,7 @@ namespace
 
       const double coeff = exp(-0.000001 * nExecutionPeriodUsec);  // 0.36 after 1 second
 
-      g_relativeSpeed = g_relativeSpeed * coeff + double(us) / double(nExecutionPeriodUsec) * (1.0 - coeff);
+      na2::g_relativeSpeed = na2::g_relativeSpeed * coeff + double(us) / double(nExecutionPeriodUsec) * (1.0 - coeff);
 
       if (!cardManager.GetDisk2CardMgr().IsConditionForFullSpeed())
       {
@@ -126,11 +126,11 @@ namespace
     }
     else
     {
-      return !g_stop;
+      return !na2::g_stop;
     }
   }
 
-  void EnterMessageLoop(const common2::EmulatorOptions & options, const std::shared_ptr<NFrame> & frame)
+  void EnterMessageLoop(const common2::EmulatorOptions & options, const std::shared_ptr<na2::NFrame> & frame)
   {
     LogFileTimeUntilFirstKeyReadReset();
     while (ContinueExecution(options, frame))
@@ -147,10 +147,10 @@ namespace
     if (!run)
       return 1;
 
-    std::shared_ptr<NFrame> frame(new NFrame(options.paddleDeviceName));
+    std::shared_ptr<na2::NFrame> frame(new na2::NFrame(options.paddleDeviceName));
     SetFrame(frame);
     // does not seem to be a problem calling endwin() multiple times
-    std::atexit(NFrame::Cleanup);
+    std::atexit(na2::NFrame::Cleanup);
 
     if (options.log)
     {
@@ -162,7 +162,7 @@ namespace
     g_nMemoryClearType = options.memclear;
 
     common2::Initialisation init;
-    SetCtrlCHandler(options.headless);
+    na2::SetCtrlCHandler(options.headless);
     applyOptions(options);
 
     if (options.benchmark)

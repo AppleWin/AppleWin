@@ -6,61 +6,66 @@
 #include <string>
 #include <ncurses.h>
 
-class ASCIIArt;
-class EvDevPaddle;
-struct NCurses;
-
-class NFrame : public common2::CommonFrame
+namespace na2
 {
-public:
-  NFrame(const std::string & paddleDevice);
 
-  WINDOW * GetWindow();
-  WINDOW * GetStatus();
+  class ASCIIArt;
+  class EvDevPaddle;
+  struct NCurses;
 
-  void Initialize() override;
-  void Destroy() override;
-  void VideoPresentScreen() override;
-  int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
+  class NFrame : public common2::CommonFrame
+  {
+  public:
+    NFrame(const std::string & paddleDevice);
 
-  void ProcessEvDev();
+    WINDOW * GetWindow();
+    WINDOW * GetStatus();
 
-  void ChangeColumns(const int x);
-  void ChangeRows(const int x);
+    void Initialize() override;
+    void Destroy() override;
+    void VideoPresentScreen() override;
+    int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
 
-  void Init(int rows, int columns);
+    void ProcessEvDev();
 
-  static void Cleanup();
+    void ChangeColumns(const int x);
+    void ChangeRows(const int x);
 
-private:
+    void Init(int rows, int columns);
 
-  const std::string myPaddleDevice;
-  int myRows;
-  int myColumns;
-  int myTextFlashCounter;
-  bool myTextFlashState;
+    static void Cleanup();
 
-  std::shared_ptr<WINDOW> myFrame;
-  std::shared_ptr<WINDOW> myStatus;
-  std::shared_ptr<ASCIIArt> myAsciiArt;
-  std::shared_ptr<EvDevPaddle> myPaddle;
-  std::shared_ptr<NCurses> myNCurses;
+  private:
 
-  LPBYTE        myTextBank1; // Aux
-  LPBYTE        myTextBank0; // Main
-  LPBYTE        myHiresBank1;
-  LPBYTE        myHiresBank0;
+    const std::string myPaddleDevice;
+    int myRows;
+    int myColumns;
+    int myTextFlashCounter;
+    bool myTextFlashState;
 
-  void VideoUpdateFlash();
+    std::shared_ptr<WINDOW> myFrame;
+    std::shared_ptr<WINDOW> myStatus;
+    std::shared_ptr<ASCIIArt> myAsciiArt;
+    std::shared_ptr<EvDevPaddle> myPaddle;
+    std::shared_ptr<NCurses> myNCurses;
 
-  chtype MapCharacter(Video & video, BYTE ch);
+    LPBYTE        myTextBank1; // Aux
+    LPBYTE        myTextBank0; // Main
+    LPBYTE        myHiresBank1;
+    LPBYTE        myHiresBank0;
 
-  bool Update40ColCell(Video & video, int x, int y, int xpixel, int ypixel, int offset);
-  bool Update80ColCell(Video & video, int x, int y, int xpixel, int ypixel, int offset);
-  bool UpdateLoResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
-  bool UpdateDLoResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
-  bool UpdateHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
-  bool UpdateDHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
+    void VideoUpdateFlash();
 
-  void InitialiseNCurses();
-};
+    chtype MapCharacter(Video & video, BYTE ch);
+
+    bool Update40ColCell(Video & video, int x, int y, int xpixel, int ypixel, int offset);
+    bool Update80ColCell(Video & video, int x, int y, int xpixel, int ypixel, int offset);
+    bool UpdateLoResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
+    bool UpdateDLoResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
+    bool UpdateHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
+    bool UpdateDHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
+
+    void InitialiseNCurses();
+  };
+
+}
