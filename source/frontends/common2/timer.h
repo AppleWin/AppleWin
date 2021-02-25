@@ -1,24 +1,29 @@
 #include <chrono>
 #include <iosfwd>
 
-class Timer
+namespace common2
 {
-public:
-  Timer();
-  void tic();
-  void toc();
 
-  double getTimeInSeconds() const;
+  class Timer
+  {
+  public:
+    Timer();
+    void tic();
+    void toc();
 
-  friend std::ostream& operator<<(std::ostream& os, const Timer & timer);
+    double getTimeInSeconds() const;
 
-private:
+    friend std::ostream& operator<<(std::ostream& os, const Timer & timer);
 
-  std::chrono::time_point<std::chrono::steady_clock> myT0;
+  private:
 
-  double mySum;
-  double mySum2;
-  int myN;
-};
+    std::chrono::time_point<std::chrono::steady_clock> myT0;
 
-std::ostream& operator<<(std::ostream& os, const Timer & timer);
+    double mySum;
+    double mySum2;
+    int myN;
+  };
+
+  std::ostream& operator<<(std::ostream& os, const Timer & timer);
+
+}

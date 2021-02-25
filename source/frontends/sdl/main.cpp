@@ -53,7 +53,7 @@ namespace
     return current.refresh_rate;
   }
 
-  void execute(Speed speed, const size_t next)
+  void execute(common2::Speed speed, const size_t next)
   {
     if (g_nAppMode == MODE_RUNNING)
     {
@@ -73,9 +73,9 @@ namespace
 
   struct Data
   {
-    Speed * speed;
+    common2::Speed * speed;
     SDL_mutex * mutex;
-    Timer * timer;
+    common2::Timer * timer;
   };
 
   Uint32 emulator_callback(Uint32 interval, void *param)
@@ -97,7 +97,7 @@ void run_sdl(int argc, const char * argv [])
 {
   std::cerr << std::fixed << std::setprecision(2);
 
-  EmulatorOptions options;
+  common2::EmulatorOptions options;
 
   Video & video = GetVideo();
   const int sw = video.GetFrameBufferBorderlessWidth();
@@ -146,7 +146,7 @@ void run_sdl(int argc, const char * argv [])
 
   g_nMemoryClearType = options.memclear;
 
-  Initialisation init;
+  common2::Initialisation init;
   applyOptions(options);
 
   const int fps = getRefreshRate();
@@ -177,17 +177,17 @@ void run_sdl(int argc, const char * argv [])
   }
   else
   {
-    Timer global;
-    Timer updateTextureTimer;
-    Timer refreshScreenTimer;
-    Timer cpuTimer;
-    Timer eventTimer;
-    Timer frameTimer;
+    common2::Timer global;
+    common2::Timer updateTextureTimer;
+    common2::Timer refreshScreenTimer;
+    common2::Timer cpuTimer;
+    common2::Timer eventTimer;
+    common2::Timer frameTimer;
 
     const std::string globalTag = ". .";
     std::string updateTextureTimerTag, refreshScreenTimerTag, cpuTimerTag, eventTimerTag;
 
-    Speed speed(options.fixedSpeed);
+    common2::Speed speed(options.fixedSpeed);
 
     if (options.multiThreaded)
     {

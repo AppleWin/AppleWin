@@ -112,7 +112,7 @@ namespace
 
 }
 
-SDLFrame::SDLFrame(const EmulatorOptions & options)
+SDLFrame::SDLFrame(const common2::EmulatorOptions & options)
   : myForceCapsLock(true)
   , myMultiplier(1)
   , myFullscreen(false)

@@ -10,7 +10,7 @@ class ASCIIArt;
 class EvDevPaddle;
 struct NCurses;
 
-class NFrame : public CommonFrame
+class NFrame : public common2::CommonFrame
 {
 public:
   NFrame(const std::string & paddleDevice);

@@ -16,49 +16,54 @@ namespace
 
 }
 
-bool PTreeRegistry::KeyQtEncodedLess::operator()(const std::string & lhs, const std::string & rhs) const
+namespace common2
 {
-  const std::string key1 = decodeKey(lhs);
-  const std::string key2 = decodeKey(rhs);
-  return key1 < key2;
-}
 
-std::string PTreeRegistry::getString(const std::string & section, const std::string & key) const
-{
-  return getValue<std::string>(section, key);
-}
+  bool PTreeRegistry::KeyQtEncodedLess::operator()(const std::string & lhs, const std::string & rhs) const
+  {
+    const std::string key1 = decodeKey(lhs);
+    const std::string key2 = decodeKey(rhs);
+    return key1 < key2;
+  }
 
-DWORD PTreeRegistry::getDWord(const std::string & section, const std::string & key) const
-{
-  return getValue<DWORD>(section, key);
-}
+  std::string PTreeRegistry::getString(const std::string & section, const std::string & key) const
+  {
+    return getValue<std::string>(section, key);
+  }
 
-bool PTreeRegistry::getBool(const std::string & section, const std::string & key) const
-{
-  return getValue<bool>(section, key);
-}
+  DWORD PTreeRegistry::getDWord(const std::string & section, const std::string & key) const
+  {
+    return getValue<DWORD>(section, key);
+  }
 
-void PTreeRegistry::putString(const std::string & section, const std::string & key, const std::string & value)
-{
-  putValue(section, key, value);
-}
+  bool PTreeRegistry::getBool(const std::string & section, const std::string & key) const
+  {
+    return getValue<bool>(section, key);
+  }
 
-void PTreeRegistry::putDWord(const std::string & section, const std::string & key, const DWORD value)
-{
-  putValue(section, key, value);
-}
+  void PTreeRegistry::putString(const std::string & section, const std::string & key, const std::string & value)
+  {
+    putValue(section, key, value);
+  }
 
-template <typename T>
-T PTreeRegistry::getValue(const std::string & section, const std::string & key) const
-{
-  const std::string path = section + "." + key;
-  const T value = myINI.get<T>(path);
-  return value;
-}
+  void PTreeRegistry::putDWord(const std::string & section, const std::string & key, const DWORD value)
+  {
+    putValue(section, key, value);
+  }
 
-template <typename T>
-void PTreeRegistry::putValue(const std::string & section, const std::string & key, const T & value)
-{
-  const std::string path = section + "." + key;
-  myINI.put(path, value);
+  template <typename T>
+  T PTreeRegistry::getValue(const std::string & section, const std::string & key) const
+  {
+    const std::string path = section + "." + key;
+    const T value = myINI.get<T>(path);
+    return value;
+  }
+
+  template <typename T>
+  void PTreeRegistry::putValue(const std::string & section, const std::string & key, const T & value)
+  {
+    const std::string path = section + "." + key;
+    myINI.put(path, value);
+  }
+
 }

@@ -132,7 +132,7 @@ void SetupRetroVariables()
 
 void InitialiseRetroRegistry()
 {
-  const auto registry = std::make_shared<PTreeRegistry>();
+  const auto registry = std::make_shared<common2::PTreeRegistry>();
 
   for (const Variable & variable : ourVariables)
   {

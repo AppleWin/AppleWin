@@ -39,7 +39,7 @@ namespace
     return std::string(homeDir);
   }
 
-  class Configuration : public PTreeRegistry
+  class Configuration : public common2::PTreeRegistry
   {
   public:
     Configuration(const std::string & filename, const bool saveOnExit);
@@ -84,42 +84,47 @@ namespace
 
 }
 
-std::string GetConfigFile(const std::string & filename)
+namespace common2
 {
-  const std::string dir = getHomeDir() + "/.applewin";
-  const int status = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-  if (!status || (errno == EEXIST))
-  {
-    return dir + "/" + filename;
-  }
-  else
-  {
-    const char * s = strerror(errno);
-    LogFileOutput("No registry. Cannot create %s in %s: %s\n", filename.c_str(), dir.c_str(), s);
-    return std::string();
-  }
-}
 
-void InitializeFileRegistry(const EmulatorOptions & options)
-{
-  const std::string homeDir = getHomeDir();
-
-  std::string filename;
-  bool saveOnExit;
-
-  if (options.useQtIni)
+  std::string GetConfigFile(const std::string & filename)
   {
-    filename = homeDir + "/.config/" + ORGANIZATION_NAME + "/" + APPLICATION_NAME + ".conf";
-    saveOnExit = false;
-  }
-  else
-  {
-    filename = GetConfigFile("applewin.conf");
-    saveOnExit = !filename.empty() && options.saveConfigurationOnExit;
+    const std::string dir = getHomeDir() + "/.applewin";
+    const int status = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if (!status || (errno == EEXIST))
+    {
+      return dir + "/" + filename;
+    }
+    else
+    {
+      const char * s = strerror(errno);
+      LogFileOutput("No registry. Cannot create %s in %s: %s\n", filename.c_str(), dir.c_str(), s);
+      return std::string();
+    }
   }
 
-  std::shared_ptr<Configuration> config(new Configuration(filename, saveOnExit));
-  config->addExtraOptions(options.registryOptions);
+  void InitializeFileRegistry(const EmulatorOptions & options)
+  {
+    const std::string homeDir = getHomeDir();
 
-  Registry::instance = config;
+    std::string filename;
+    bool saveOnExit;
+
+    if (options.useQtIni)
+    {
+      filename = homeDir + "/.config/" + ORGANIZATION_NAME + "/" + APPLICATION_NAME + ".conf";
+      saveOnExit = false;
+    }
+    else
+    {
+      filename = GetConfigFile("applewin.conf");
+      saveOnExit = !filename.empty() && options.saveConfigurationOnExit;
+    }
+
+    std::shared_ptr<Configuration> config(new Configuration(filename, saveOnExit));
+    config->addExtraOptions(options.registryOptions);
+
+    Registry::instance = config;
+  }
+
 }

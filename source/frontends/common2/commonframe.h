@@ -4,18 +4,23 @@
 #include <vector>
 #include <string>
 
-class CommonFrame : public LinuxFrame
+namespace common2
 {
-public:
-  CommonFrame();
 
-  void Destroy() override;
+  class CommonFrame : public LinuxFrame
+  {
+  public:
+    CommonFrame();
 
-  BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) override;
+    void Destroy() override;
 
-protected:
-  static std::string getBitmapFilename(const std::string & resource);
+    BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) override;
 
-  const std::string myResourcePath;
-  std::vector<BYTE> myResource;
-};
+  protected:
+    static std::string getBitmapFilename(const std::string & resource);
+
+    const std::string myResourcePath;
+    std::vector<BYTE> myResource;
+  };
+
+}

@@ -35,7 +35,7 @@ namespace
 
 }
 
-SDLImGuiFrame::SDLImGuiFrame(const EmulatorOptions & options)
+SDLImGuiFrame::SDLImGuiFrame(const common2::EmulatorOptions & options)
   : SDLFrame(options)
 {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
@@ -49,7 +49,7 @@ SDLImGuiFrame::SDLImGuiFrame(const EmulatorOptions & options)
   SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
   const SDL_WindowFlags windowFlags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-  const Geometry & geometry = options.geometry;
+  const common2::Geometry & geometry = options.geometry;
 
   myWindow.reset(SDL_CreateWindow(g_pAppTitle.c_str(), geometry.x, geometry.y, geometry.width, geometry.height, windowFlags), SDL_DestroyWindow);
   if (!myWindow)
@@ -81,7 +81,7 @@ SDLImGuiFrame::SDLImGuiFrame(const EmulatorOptions & options)
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO();
 
-  mySettings.iniFileLocation = GetConfigFile("imgui.ini");
+  mySettings.iniFileLocation = common2::GetConfigFile("imgui.ini");
   if (mySettings.iniFileLocation.empty())
   {
     io.IniFilename = nullptr;

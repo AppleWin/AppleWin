@@ -27,7 +27,7 @@
 
 namespace
 {
-  bool ContinueExecution(const EmulatorOptions & options, const std::shared_ptr<NFrame> & frame)
+  bool ContinueExecution(const common2::EmulatorOptions & options, const std::shared_ptr<NFrame> & frame)
   {
     const auto start = std::chrono::steady_clock::now();
 
@@ -130,7 +130,7 @@ namespace
     }
   }
 
-  void EnterMessageLoop(const EmulatorOptions & options, const std::shared_ptr<NFrame> & frame)
+  void EnterMessageLoop(const common2::EmulatorOptions & options, const std::shared_ptr<NFrame> & frame)
   {
     LogFileTimeUntilFirstKeyReadReset();
     while (ContinueExecution(options, frame))
@@ -140,7 +140,7 @@ namespace
 
   int run_ncurses(int argc, const char * argv [])
   {
-    EmulatorOptions options;
+    common2::EmulatorOptions options;
     options.memclear = g_nMemoryClearType;
     const bool run = getEmulatorOptions(argc, argv, "ncurses", options);
 
@@ -161,7 +161,7 @@ namespace
 
     g_nMemoryClearType = options.memclear;
 
-    Initialisation init;
+    common2::Initialisation init;
     SetCtrlCHandler(options.headless);
     applyOptions(options);
 

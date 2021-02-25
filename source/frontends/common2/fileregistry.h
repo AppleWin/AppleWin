@@ -2,7 +2,12 @@
 
 #include <string>
 
-struct EmulatorOptions;
+namespace common2
+{
 
-std::string GetConfigFile(const std::string & filename);
-void InitializeFileRegistry(const EmulatorOptions & options);
+  struct EmulatorOptions;
+
+  std::string GetConfigFile(const std::string & filename);
+  void InitializeFileRegistry(const EmulatorOptions & options);
+
+}

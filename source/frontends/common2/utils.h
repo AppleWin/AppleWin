@@ -2,11 +2,16 @@
 
 #include <string>
 
-void setSnapshotFilename(const std::string & filename, const bool load);
-
-class Initialisation
+namespace common2
 {
-public:
-  Initialisation();
-  ~Initialisation();
-};
+
+  void setSnapshotFilename(const std::string & filename, const bool load);
+
+  class Initialisation
+  {
+  public:
+    Initialisation();
+    ~Initialisation();
+  };
+
+}

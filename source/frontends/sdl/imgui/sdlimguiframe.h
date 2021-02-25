@@ -3,12 +3,15 @@
 #include "frontends/sdl/sdlframe.h"
 #include "frontends/sdl/imgui/gles.h"
 
-class EmulatorOptions;
+namespace common2
+{
+  class EmulatorOptions;
+}
 
 class SDLImGuiFrame : public SDLFrame
 {
 public:
-  SDLImGuiFrame(const EmulatorOptions & options);
+  SDLImGuiFrame(const common2::EmulatorOptions & options);
 
   ~SDLImGuiFrame() override;
 

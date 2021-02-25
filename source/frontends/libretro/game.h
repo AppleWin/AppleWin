@@ -6,8 +6,12 @@
 #include <string>
 #include <vector>
 
+namespace common2
+{
+  class Initialisation;
+}
+
 class RetroFrame;
-class Initialisation;
 
 class Game
 {
@@ -33,11 +37,11 @@ public:
 private:
   const std::shared_ptr<RetroFrame> myFrame;
 
-  Speed mySpeed;  // fixed speed
+  common2::Speed mySpeed;  // fixed speed
 
   std::vector<int> myButtonStates;
 
-  std::shared_ptr<Initialisation> myInit;
+  std::shared_ptr<common2::Initialisation> myInit;
 
   bool checkButtonPressed(unsigned id);
   void keyboardEmulation();

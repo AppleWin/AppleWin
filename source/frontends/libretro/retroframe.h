@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-class RetroFrame : public CommonFrame
+class RetroFrame : public common2::CommonFrame
 {
 public:
   RetroFrame();

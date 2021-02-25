@@ -58,7 +58,7 @@ Game::Game(const std::shared_ptr<RetroFrame> & frame)
   LogInit();
   InitialiseRetroRegistry();
 
-  myInit.reset(new Initialisation);
+  myInit.reset(new common2::Initialisation);
 
   switch (ourInputDevices[0])
   {
@@ -286,6 +286,6 @@ bool Game::loadGame(const std::string & path)
 
 bool Game::loadSnapshot(const std::string & path)
 {
-  setSnapshotFilename(path, true);
+  common2::setSnapshotFilename(path, true);
   return true;
 }

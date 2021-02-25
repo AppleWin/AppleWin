@@ -4,12 +4,15 @@
 #include "frontends/common2/speed.h"
 #include <SDL.h>
 
-struct EmulatorOptions;
+namespace common2
+{
+  struct EmulatorOptions;
+}
 
-class SDLFrame : public CommonFrame
+class SDLFrame : public common2::CommonFrame
 {
 public:
-  SDLFrame(const EmulatorOptions & options);
+  SDLFrame(const common2::EmulatorOptions & options);
 
   void VideoPresentScreen() override;
   void FrameRefreshStatus(int drawflags) override;
@@ -38,5 +41,5 @@ protected:
   int myMultiplier;
   bool myFullscreen;
 
-  Speed mySpeed;
+  common2::Speed mySpeed;
 };

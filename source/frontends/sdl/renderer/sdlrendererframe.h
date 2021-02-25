@@ -2,12 +2,15 @@
 
 #include "frontends/sdl/sdlframe.h"
 
-class EmulatorOptions;
+namespace common2
+{
+  class EmulatorOptions;
+}
 
 class SDLRendererFrame : public SDLFrame
 {
 public:
-  SDLRendererFrame(const EmulatorOptions & options);
+  SDLRendererFrame(const common2::EmulatorOptions & options);
 
   void UpdateTexture() override;
   void RenderPresent() override;

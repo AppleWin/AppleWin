@@ -2,20 +2,25 @@
 
 #include <chrono>
 
-class Speed
+namespace common2
 {
-public:
-  Speed(const bool fixedSpeed);
 
-  void reset();
+  class Speed
+  {
+  public:
+    Speed(const bool fixedSpeed);
 
-  // calculate the number of cycles to execute in the current period
-  // assuming the next call will happen in x microseconds
-  size_t getCyclesTillNext(const size_t microseconds) const;
+    void reset();
 
-private:
+    // calculate the number of cycles to execute in the current period
+    // assuming the next call will happen in x microseconds
+    size_t getCyclesTillNext(const size_t microseconds) const;
 
-  const bool myFixedSpeed;
-  std::chrono::time_point<std::chrono::steady_clock> myStartTime;
-  uint64_t myStartCycles;
-};
+  private:
+
+    const bool myFixedSpeed;
+    std::chrono::time_point<std::chrono::steady_clock> myStartTime;
+    uint64_t myStartCycles;
+  };
+
+}

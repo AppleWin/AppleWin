@@ -8,10 +8,10 @@
 
 #include <iostream>
 
-SDLRendererFrame::SDLRendererFrame(const EmulatorOptions & options)
+SDLRendererFrame::SDLRendererFrame(const common2::EmulatorOptions & options)
   : SDLFrame(options)
 {
-  const Geometry & geometry = options.geometry;
+  const common2::Geometry & geometry = options.geometry;
 
   myWindow.reset(SDL_CreateWindow(g_pAppTitle.c_str(), geometry.x, geometry.y, geometry.width, geometry.height, SDL_WINDOW_RESIZABLE), SDL_DestroyWindow);
   if (!myWindow)
