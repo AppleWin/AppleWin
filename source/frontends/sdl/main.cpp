@@ -18,10 +18,7 @@
 #include "frontends/sdl/utils.h"
 
 #include "frontends/sdl/renderer/sdlrendererframe.h"
-
-#ifdef SA2_IMGUI
 #include "frontends/sdl/imgui/sdlimguiframe.h"
-#endif
 
 #include "CardManager.h"
 #include "Core.h"
@@ -115,7 +112,6 @@ void run_sdl(int argc, const char * argv [])
 
   std::shared_ptr<sa2::SDLFrame> frame;
 
-#ifdef SA2_IMGUI
   if (options.imgui)
   {
     frame.reset(new sa2::SDLImGuiFrame(options));
@@ -124,9 +120,6 @@ void run_sdl(int argc, const char * argv [])
   {
     frame.reset(new sa2::SDLRendererFrame(options));
   }
-#else
-  frame.reset(new sa2::SDLRendererFrame(options));
-#endif
 
   if (SDL_GL_SetSwapInterval(options.glSwapInterval))
   {
