@@ -112,289 +112,294 @@ namespace
 
 }
 
-SDLFrame::SDLFrame(const common2::EmulatorOptions & options)
-  : myForceCapsLock(true)
-  , myMultiplier(1)
-  , myFullscreen(false)
-  , mySpeed(options.fixedSpeed)
+namespace sa2
 {
-}
 
-void SDLFrame::FrameRefreshStatus(int drawflags)
-{
-  if (drawflags & DRAW_TITLE)
+  SDLFrame::SDLFrame(const common2::EmulatorOptions & options)
+    : myForceCapsLock(true)
+    , myMultiplier(1)
+    , myFullscreen(false)
+    , mySpeed(options.fixedSpeed)
   {
-    GetAppleWindowTitle();
-    SDL_SetWindowTitle(myWindow.get(), g_pAppTitle.c_str());
   }
-}
 
-void SDLFrame::SetApplicationIcon()
-{
-  const std::string path = myResourcePath + "APPLEWIN.ICO";
-  std::shared_ptr<SDL_Surface> icon(IMG_Load(path.c_str()), SDL_FreeSurface);
-  if (icon)
+  void SDLFrame::FrameRefreshStatus(int drawflags)
   {
-    SDL_SetWindowIcon(myWindow.get(), icon.get());
-  }
-}
-
-void SDLFrame::VideoPresentScreen()
-{
-  UpdateTexture();
-  RenderPresent();
-}
-
-const std::shared_ptr<SDL_Window> & SDLFrame::GetWindow() const
-{
-  return myWindow;
-}
-
-void SDLFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
-{
-  const std::string filename = getBitmapFilename(lpBitmapName);
-  const std::string path = myResourcePath + filename;
-
-  std::shared_ptr<SDL_Surface> surface(SDL_LoadBMP(path.c_str()), SDL_FreeSurface);
-  if (surface)
-  {
-    SDL_LockSurface(surface.get());
-
-    const char * source = static_cast<char *>(surface->pixels);
-    const size_t size = surface->h * surface->w / 8;
-    const size_t requested = cb;
-
-    const size_t copied = std::min(requested, size);
-
-    char * dest = static_cast<char *>(lpvBits);
-
-    for (size_t i = 0; i < copied; ++i)
+    if (drawflags & DRAW_TITLE)
     {
-      const size_t offset = i * 8;
-      char val = 0;
-      for (size_t j = 0; j < 8; ++j)
+      GetAppleWindowTitle();
+      SDL_SetWindowTitle(myWindow.get(), g_pAppTitle.c_str());
+    }
+  }
+
+  void SDLFrame::SetApplicationIcon()
+  {
+    const std::string path = myResourcePath + "APPLEWIN.ICO";
+    std::shared_ptr<SDL_Surface> icon(IMG_Load(path.c_str()), SDL_FreeSurface);
+    if (icon)
+    {
+      SDL_SetWindowIcon(myWindow.get(), icon.get());
+    }
+  }
+
+  void SDLFrame::VideoPresentScreen()
+  {
+    UpdateTexture();
+    RenderPresent();
+  }
+
+  const std::shared_ptr<SDL_Window> & SDLFrame::GetWindow() const
+  {
+    return myWindow;
+  }
+
+  void SDLFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
+  {
+    const std::string filename = getBitmapFilename(lpBitmapName);
+    const std::string path = myResourcePath + filename;
+
+    std::shared_ptr<SDL_Surface> surface(SDL_LoadBMP(path.c_str()), SDL_FreeSurface);
+    if (surface)
+    {
+      SDL_LockSurface(surface.get());
+
+      const char * source = static_cast<char *>(surface->pixels);
+      const size_t size = surface->h * surface->w / 8;
+      const size_t requested = cb;
+
+      const size_t copied = std::min(requested, size);
+
+      char * dest = static_cast<char *>(lpvBits);
+
+      for (size_t i = 0; i < copied; ++i)
       {
-	const char pixel = *(source + offset + j);
-	val = (val << 1) | pixel;
+        const size_t offset = i * 8;
+        char val = 0;
+        for (size_t j = 0; j < 8; ++j)
+        {
+          const char pixel = *(source + offset + j);
+          val = (val << 1) | pixel;
+        }
+        dest[i] = val;
       }
-      dest[i] = val;
+
+      SDL_UnlockSurface(surface.get());
+    }
+    else
+    {
+      CommonFrame::GetBitmap(lpBitmapName, cb, lpvBits);
+    }
+  }
+
+  int SDLFrame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
+  {
+    // tabs do not render properly
+    std::string s(lpText);
+    std::replace(s.begin(), s.end(), '\t', ' ');
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, lpCaption, s.c_str(), nullptr);
+    return IDOK;
+  }
+
+  void SDLFrame::ProcessEvents(bool &quit)
+  {
+    SDL_Event e;
+    while (SDL_PollEvent(&e) != 0)
+    {
+      ProcessSingleEvent(e, quit);
+    }
+  }
+
+  void SDLFrame::ProcessSingleEvent(const SDL_Event & e, bool &quit)
+  {
+    switch (e.type)
+    {
+    case SDL_QUIT:
+      {
+        quit = true;
+        break;
+      }
+    case SDL_KEYDOWN:
+      {
+        ProcessKeyDown(e.key);
+        break;
+      }
+    case SDL_KEYUP:
+      {
+        ProcessKeyUp(e.key);
+        break;
+      }
+    case SDL_TEXTINPUT:
+      {
+        ProcessText(e.text);
+        break;
+      }
+    }
+  }
+
+  void SDLFrame::ProcessKeyDown(const SDL_KeyboardEvent & key)
+  {
+    // scancode vs keycode
+    // scancode is relative to the position on the keyboard
+    // keycode is what the os maps it to
+    // if the user has decided to change the layout, we just go with it and use the keycode
+    if (!key.repeat)
+    {
+      switch (key.keysym.sym)
+      {
+      case SDLK_F12:
+        {
+          Snapshot_LoadState();
+          mySpeed.reset();
+          break;
+        }
+      case SDLK_F11:
+        {
+          const std::string & pathname = Snapshot_GetPathname();
+          const std::string message = "Do you want to save the state to " + pathname + "?";
+          SoundCore_SetFade(FADE_OUT);
+          if (show_yes_no_dialog(myWindow, "Save state", message))
+          {
+            Snapshot_SaveState();
+          }
+          SoundCore_SetFade(FADE_IN);
+          mySpeed.reset();
+          break;
+        }
+      case SDLK_F9:
+        {
+          CycleVideoType();
+          break;
+        }
+      case SDLK_F6:
+        {
+          if ((key.keysym.mod & KMOD_CTRL) && (key.keysym.mod & KMOD_SHIFT))
+          {
+            Cycle50ScanLines();
+          }
+          else if (key.keysym.mod & KMOD_CTRL)
+          {
+            Video & video = GetVideo();
+            myMultiplier = myMultiplier == 1 ? 2 : 1;
+            const int sw = video.GetFrameBufferBorderlessWidth();
+            const int sh = video.GetFrameBufferBorderlessHeight();
+            SDL_SetWindowSize(myWindow.get(), sw * myMultiplier, sh * myMultiplier);
+          }
+          else if (!(key.keysym.mod & KMOD_SHIFT))
+          {
+            myFullscreen = !myFullscreen;
+            SDL_SetWindowFullscreen(myWindow.get(), myFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+          }
+          break;
+        }
+      case SDLK_F5:
+        {
+          CardManager & cardManager = GetCardMgr();
+          if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
+          {
+            dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6))->DriveSwap();
+          }
+          break;
+        }
+      case SDLK_F2:
+        {
+          if (key.keysym.mod & KMOD_CTRL)
+          {
+            CtrlReset();
+          }
+          else
+          {
+            ResetMachineState();
+          }
+          break;
+        }
+      case SDLK_F1:
+        {
+          sa2::printInfo();
+          break;
+        }
+      case SDLK_LALT:
+        {
+          Paddle::setButtonPressed(Paddle::ourOpenApple);
+          break;
+        }
+      case SDLK_RALT:
+        {
+          Paddle::setButtonPressed(Paddle::ourSolidApple);
+          break;
+        }
+      case SDLK_PAUSE:
+        {
+          switch (g_nAppMode)
+          {
+          case MODE_RUNNING:
+            g_nAppMode = MODE_PAUSED;
+            SoundCore_SetFade(FADE_OUT);
+            break;
+          case MODE_PAUSED:
+            g_nAppMode = MODE_RUNNING;
+            SoundCore_SetFade(FADE_IN);
+            mySpeed.reset();
+            break;
+          }
+          GetFrame().FrameRefreshStatus(DRAW_TITLE);
+          break;
+        }
+      case SDLK_CAPSLOCK:
+        {
+          myForceCapsLock = false;
+          break;
+        }
+      }
     }
 
-    SDL_UnlockSurface(surface.get());
-  }
-  else
-  {
-    CommonFrame::GetBitmap(lpBitmapName, cb, lpvBits);
-  }
-}
+    processAppleKey(key, myForceCapsLock);
 
-int SDLFrame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
-{
-  // tabs do not render properly
-  std::string s(lpText);
-  std::replace(s.begin(), s.end(), '\t', ' ');
-  SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, lpCaption, s.c_str(), nullptr);
-  return IDOK;
-}
+#ifdef KEY_LOGGING_VERBOSE
+    std::cerr << "KEY DOWN: " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
+#endif
 
-void SDLFrame::ProcessEvents(bool &quit)
-{
-  SDL_Event e;
-  while (SDL_PollEvent(&e) != 0)
-  {
-    ProcessSingleEvent(e, quit);
   }
-}
 
-void SDLFrame::ProcessSingleEvent(const SDL_Event & e, bool &quit)
-{
-  switch (e.type)
-  {
-  case SDL_QUIT:
-  {
-    quit = true;
-    break;
-  }
-  case SDL_KEYDOWN:
-  {
-    ProcessKeyDown(e.key);
-    break;
-  }
-  case SDL_KEYUP:
-  {
-    ProcessKeyUp(e.key);
-    break;
-  }
-  case SDL_TEXTINPUT:
-  {
-    ProcessText(e.text);
-    break;
-  }
-  }
-}
-
-void SDLFrame::ProcessKeyDown(const SDL_KeyboardEvent & key)
-{
-  // scancode vs keycode
-  // scancode is relative to the position on the keyboard
-  // keycode is what the os maps it to
-  // if the user has decided to change the layout, we just go with it and use the keycode
-  if (!key.repeat)
+  void SDLFrame::ProcessKeyUp(const SDL_KeyboardEvent & key)
   {
     switch (key.keysym.sym)
     {
-    case SDLK_F12:
-    {
-      Snapshot_LoadState();
-      mySpeed.reset();
-      break;
-    }
-    case SDLK_F11:
-    {
-      const std::string & pathname = Snapshot_GetPathname();
-      const std::string message = "Do you want to save the state to " + pathname + "?";
-      SoundCore_SetFade(FADE_OUT);
-      if (show_yes_no_dialog(myWindow, "Save state", message))
-      {
-	Snapshot_SaveState();
-      }
-      SoundCore_SetFade(FADE_IN);
-      mySpeed.reset();
-      break;
-    }
-    case SDLK_F9:
-    {
-      CycleVideoType();
-      break;
-    }
-    case SDLK_F6:
-    {
-      if ((key.keysym.mod & KMOD_CTRL) && (key.keysym.mod & KMOD_SHIFT))
-      {
-	Cycle50ScanLines();
-      }
-      else if (key.keysym.mod & KMOD_CTRL)
-      {
-	Video & video = GetVideo();
-	myMultiplier = myMultiplier == 1 ? 2 : 1;
-	const int sw = video.GetFrameBufferBorderlessWidth();
-	const int sh = video.GetFrameBufferBorderlessHeight();
-	SDL_SetWindowSize(myWindow.get(), sw * myMultiplier, sh * myMultiplier);
-      }
-      else if (!(key.keysym.mod & KMOD_SHIFT))
-      {
-	myFullscreen = !myFullscreen;
-	SDL_SetWindowFullscreen(myWindow.get(), myFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-      }
-      break;
-    }
-    case SDLK_F5:
-    {
-      CardManager & cardManager = GetCardMgr();
-      if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
-      {
-	dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6))->DriveSwap();
-      }
-      break;
-    }
-    case SDLK_F2:
-    {
-      if (key.keysym.mod & KMOD_CTRL)
-      {
-	CtrlReset();
-      }
-      else
-      {
-	ResetMachineState();
-      }
-      break;
-    }
-    case SDLK_F1:
-    {
-      SDirectSound::printInfo();
-      break;
-    }
     case SDLK_LALT:
-    {
-      Paddle::setButtonPressed(Paddle::ourOpenApple);
-      break;
-    }
-    case SDLK_RALT:
-    {
-      Paddle::setButtonPressed(Paddle::ourSolidApple);
-      break;
-    }
-    case SDLK_PAUSE:
-    {
-      switch (g_nAppMode)
       {
-      case MODE_RUNNING:
-	g_nAppMode = MODE_PAUSED;
-	SoundCore_SetFade(FADE_OUT);
-	break;
-      case MODE_PAUSED:
-	g_nAppMode = MODE_RUNNING;
-	SoundCore_SetFade(FADE_IN);
-	mySpeed.reset();
-	break;
+        Paddle::setButtonReleased(Paddle::ourOpenApple);
+        break;
       }
-      GetFrame().FrameRefreshStatus(DRAW_TITLE);
-      break;
+    case SDLK_RALT:
+      {
+        Paddle::setButtonReleased(Paddle::ourSolidApple);
+        break;
+      }
     }
-    case SDLK_CAPSLOCK:
-    {
-      myForceCapsLock = false;
-      break;
-    }
-    }
-  }
-
-  processAppleKey(key, myForceCapsLock);
 
 #ifdef KEY_LOGGING_VERBOSE
-  std::cerr << "KEY DOWN: " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
+    std::cerr << "KEY UP:   " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
 #endif
 
-}
-
-void SDLFrame::ProcessKeyUp(const SDL_KeyboardEvent & key)
-{
-  switch (key.keysym.sym)
-  {
-  case SDLK_LALT:
-  {
-    Paddle::setButtonReleased(Paddle::ourOpenApple);
-    break;
-  }
-  case SDLK_RALT:
-  {
-    Paddle::setButtonReleased(Paddle::ourSolidApple);
-    break;
-  }
   }
 
-#ifdef KEY_LOGGING_VERBOSE
-  std::cerr << "KEY UP:   " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
-#endif
-
-}
-
-void SDLFrame::ProcessText(const SDL_TextInputEvent & text)
-{
-  if (strlen(text.text) == 1)
+  void SDLFrame::ProcessText(const SDL_TextInputEvent & text)
   {
-    const char key = text.text[0];
-    switch (key) {
-    case 0x20 ... 0x40:
-    case 0x5b ... 0x60:
-    case 0x7b ... 0x7e:
+    if (strlen(text.text) == 1)
     {
-      // not the letters
-      // this is very simple, but one cannot handle CRTL-key combination.
-      addKeyToBuffer(key);
-      std::cerr << "SDL TextInputEvent: " << std::hex << (int)key << std::dec << std::endl;
-      break;
-    }
+      const char key = text.text[0];
+      switch (key) {
+      case 0x20 ... 0x40:
+      case 0x5b ... 0x60:
+      case 0x7b ... 0x7e:
+        {
+          // not the letters
+          // this is very simple, but one cannot handle CRTL-key combination.
+          addKeyToBuffer(key);
+          std::cerr << "SDL TextInputEvent: " << std::hex << (int)key << std::dec << std::endl;
+          break;
+        }
+      }
     }
   }
+
 }

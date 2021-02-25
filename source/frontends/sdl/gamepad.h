@@ -6,18 +6,22 @@
 #include <vector>
 #include <memory>
 
-
-class Gamepad : public Paddle
+namespace sa2
 {
-public:
-  Gamepad(const int index);
 
-  bool getButton(int i) const override;
-  double getAxis(int i) const override;
+  class Gamepad : public Paddle
+  {
+  public:
+    Gamepad(const int index);
 
-private:
-  std::shared_ptr<SDL_GameController> myController;
+    bool getButton(int i) const override;
+    double getAxis(int i) const override;
 
-  std::vector<SDL_GameControllerButton> myButtonCodes;
-  std::vector<SDL_GameControllerAxis> myAxisCodes;
-};
+  private:
+    std::shared_ptr<SDL_GameController> myController;
+
+    std::vector<SDL_GameControllerButton> myButtonCodes;
+    std::vector<SDL_GameControllerAxis> myAxisCodes;
+  };
+
+}

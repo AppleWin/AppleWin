@@ -113,19 +113,19 @@ void run_sdl(int argc, const char * argv [])
   if (!run)
     return;
 
-  std::shared_ptr<SDLFrame> frame;
+  std::shared_ptr<sa2::SDLFrame> frame;
 
 #ifdef SA2_IMGUI
   if (options.imgui)
   {
-    frame.reset(new SDLImGuiFrame(options));
+    frame.reset(new sa2::SDLImGuiFrame(options));
   }
   else
   {
-    frame.reset(new SDLRendererFrame(options));
+    frame.reset(new sa2::SDLRendererFrame(options));
   }
 #else
-  frame.reset(new SDLRendererFrame(options));
+  frame.reset(new sa2::SDLRendererFrame(options));
 #endif
 
   if (SDL_GL_SetSwapInterval(options.glSwapInterval))
@@ -142,7 +142,7 @@ void run_sdl(int argc, const char * argv [])
 
   InitializeFileRegistry(options);
 
-  Paddle::instance.reset(new Gamepad(0));
+  Paddle::instance.reset(new sa2::Gamepad(0));
 
   g_nMemoryClearType = options.memclear;
 
@@ -219,7 +219,7 @@ void run_sdl(int argc, const char * argv [])
 	SDL_LockMutex(data.mutex);
 
 	eventTimer.tic();
-	SDirectSound::writeAudio();
+	sa2::writeAudio();
 	frame->ProcessEvents(quit);
 	eventTimer.toc();
 
@@ -276,7 +276,7 @@ void run_sdl(int argc, const char * argv [])
 	frameTimer.tic();
 
 	eventTimer.tic();
-	SDirectSound::writeAudio();
+	sa2::writeAudio();
 	frame->ProcessEvents(quit);
 	eventTimer.toc();
 
@@ -312,7 +312,7 @@ void run_sdl(int argc, const char * argv [])
     const double actualClock = g_nCumulativeCycles / timeInSeconds;
     std::cerr << "Expected clock: " << g_fCurrentCLK6502 << " Hz, " << g_nCumulativeCycles / g_fCurrentCLK6502 << " s" << std::endl;
     std::cerr << "Actual clock:   " << actualClock << " Hz, " << timeInSeconds << " s" << std::endl;
-    SDirectSound::stop();
+    sa2::stop();
   }
 #endif
 }

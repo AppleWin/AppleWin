@@ -1,9 +1,7 @@
 #pragma once
 
-#include <SDL.h>
 
-
-namespace SDirectSound
+namespace sa2
 {
   void stop();
   void writeAudio();

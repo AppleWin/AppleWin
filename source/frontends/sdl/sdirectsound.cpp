@@ -2,6 +2,8 @@
 
 #include "linux/windows/dsound.h"
 
+#include <SDL.h>
+
 #include <unordered_map>
 #include <memory>
 #include <iostream>
@@ -191,7 +193,7 @@ void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
   }
 }
 
-namespace SDirectSound
+namespace sa2
 {
 
   void stop()

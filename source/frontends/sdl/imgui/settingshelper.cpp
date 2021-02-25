@@ -48,17 +48,22 @@ namespace
     };
 }
 
-const std::string & getCardName(SS_CARDTYPE card)
+namespace sa2
 {
-  return cards.at(card);
-}
 
-const std::string & getApple2Name(eApple2Type type)
-{
-  return apple2types.at(type);
-}
+  const std::string & getCardName(SS_CARDTYPE card)
+  {
+    return cards.at(card);
+  }
 
-const std::string & getCPUName(eCpuType cpu)
-{
-  return cpuTypes.at(cpu);
+  const std::string & getApple2Name(eApple2Type type)
+  {
+    return apple2types.at(type);
+  }
+
+  const std::string & getCPUName(eCpuType cpu)
+  {
+    return cpuTypes.at(cpu);
+  }
+
 }

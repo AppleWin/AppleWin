@@ -9,37 +9,42 @@ namespace common2
   struct EmulatorOptions;
 }
 
-class SDLFrame : public common2::CommonFrame
+namespace sa2
 {
-public:
-  SDLFrame(const common2::EmulatorOptions & options);
 
-  void VideoPresentScreen() override;
-  void FrameRefreshStatus(int drawflags) override;
-  int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
-  void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
+  class SDLFrame : public common2::CommonFrame
+  {
+  public:
+    SDLFrame(const common2::EmulatorOptions & options);
 
-  void ProcessEvents(bool &quit);
+    void VideoPresentScreen() override;
+    void FrameRefreshStatus(int drawflags) override;
+    int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
+    void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
 
-  virtual void UpdateTexture() = 0;
-  virtual void RenderPresent() = 0;
+    void ProcessEvents(bool &quit);
 
-  const std::shared_ptr<SDL_Window> & GetWindow() const;
+    virtual void UpdateTexture() = 0;
+    virtual void RenderPresent() = 0;
 
-protected:
-  void SetApplicationIcon();
+    const std::shared_ptr<SDL_Window> & GetWindow() const;
 
-  virtual void ProcessSingleEvent(const SDL_Event & event, bool & quit);
+  protected:
+    void SetApplicationIcon();
 
-  void ProcessKeyDown(const SDL_KeyboardEvent & key);
-  void ProcessKeyUp(const SDL_KeyboardEvent & key);
-  void ProcessText(const SDL_TextInputEvent & text);
+    virtual void ProcessSingleEvent(const SDL_Event & event, bool & quit);
 
-  std::shared_ptr<SDL_Window> myWindow;
+    void ProcessKeyDown(const SDL_KeyboardEvent & key);
+    void ProcessKeyUp(const SDL_KeyboardEvent & key);
+    void ProcessText(const SDL_TextInputEvent & text);
 
-  bool myForceCapsLock;
-  int myMultiplier;
-  bool myFullscreen;
+    std::shared_ptr<SDL_Window> myWindow;
 
-  common2::Speed mySpeed;
-};
+    bool myForceCapsLock;
+    int myMultiplier;
+    bool myFullscreen;
+
+    common2::Speed mySpeed;
+  };
+
+}

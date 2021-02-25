@@ -6,6 +6,11 @@
 
 #include <string>
 
-const std::string & getCardName(SS_CARDTYPE card);
-const std::string & getApple2Name(eApple2Type type);
-const std::string & getCPUName(eCpuType cpu);
+namespace sa2
+{
+
+  const std::string & getCardName(SS_CARDTYPE card);
+  const std::string & getApple2Name(eApple2Type type);
+  const std::string & getCPUName(eCpuType cpu);
+
+}
