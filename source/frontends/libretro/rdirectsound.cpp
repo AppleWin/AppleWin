@@ -106,7 +106,7 @@ namespace
       sample = (sample * rvolume) / 128;
     }
 
-    audio_batch_cb(myMixerBuffer.data(), frames);
+    ra2::audio_batch_cb(myMixerBuffer.data(), frames);
   }
 
   void DirectSoundGenerator::playSilence(const size_t ms)
@@ -119,7 +119,7 @@ namespace
     const size_t frames = ms * myBuffer->sampleRate / 1000;
     myMixerBuffer.resize(2 * frames);
     std::fill(myMixerBuffer.begin(), myMixerBuffer.end(), 0);
-    audio_batch_cb(myMixerBuffer.data(), frames);
+    ra2::audio_batch_cb(myMixerBuffer.data(), frames);
   }
 
   void DirectSoundGenerator::writeAudio(const size_t ms)
@@ -165,7 +165,7 @@ void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
   }
 }
 
-namespace RDirectSound
+namespace ra2
 {
 
   void writeAudio(const size_t ms)

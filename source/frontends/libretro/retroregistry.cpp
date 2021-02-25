@@ -105,55 +105,60 @@ namespace
 
 }
 
-void SetupRetroVariables()
+namespace ra2
 {
-  const size_t numberOfVariables = ourVariables.size();
-  std::vector<retro_variable> retroVariables(numberOfVariables + 1);
-  std::list<std::string> workspace; // so objects do not move when it resized
 
-  // we need to keep the char * alive till after the call to RETRO_ENVIRONMENT_SET_VARIABLES
-  const auto c_str = [&workspace] (const auto & s)
-		     {
-		       workspace.push_back(s);
-		       return workspace.back().c_str();
-		     };
-
-  for (size_t i = 0; i < numberOfVariables; ++i)
+  void SetupRetroVariables()
   {
-    const Variable & variable = ourVariables[i];
-    retro_variable & retroVariable = retroVariables[i];
+    const size_t numberOfVariables = ourVariables.size();
+    std::vector<retro_variable> retroVariables(numberOfVariables + 1);
+    std::list<std::string> workspace; // so objects do not move when it resized
 
-    retroVariable.key = c_str(ourScope + variable.name);
-    retroVariable.value = c_str(getKey(variable));
+    // we need to keep the char * alive till after the call to RETRO_ENVIRONMENT_SET_VARIABLES
+    const auto c_str = [&workspace] (const auto & s)
+                       {
+                         workspace.push_back(s);
+                         return workspace.back().c_str();
+                       };
+
+    for (size_t i = 0; i < numberOfVariables; ++i)
+    {
+      const Variable & variable = ourVariables[i];
+      retro_variable & retroVariable = retroVariables[i];
+
+      retroVariable.key = c_str(ourScope + variable.name);
+      retroVariable.value = c_str(getKey(variable));
+    }
+
+    environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, retroVariables.data());
   }
 
-  environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, retroVariables.data());
-}
-
-void InitialiseRetroRegistry()
-{
-  const auto registry = std::make_shared<common2::PTreeRegistry>();
-
-  for (const Variable & variable : ourVariables)
+  void InitialiseRetroRegistry()
   {
-    const std::string retroKey = ourScope + variable.name;
-    retro_variable retroVariable;
-    retroVariable.key = retroKey.c_str();
-    retroVariable.value = nullptr;
-    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &retroVariable) && retroVariable.value)
+    const auto registry = std::make_shared<common2::PTreeRegistry>();
+
+    for (const Variable & variable : ourVariables)
     {
-      const std::string value(retroVariable.value);
-      const auto check = [&value] (const auto & x)
-			 {
-			   return x.first == value;
-			 };
-      const auto it = std::find_if(variable.values.begin(), variable.values.end(), check);
-      if (it != variable.values.end())
+      const std::string retroKey = ourScope + variable.name;
+      retro_variable retroVariable;
+      retroVariable.key = retroKey.c_str();
+      retroVariable.value = nullptr;
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &retroVariable) && retroVariable.value)
       {
-	registry->putDWord(variable.section, variable.key, it->second);
+        const std::string value(retroVariable.value);
+        const auto check = [&value] (const auto & x)
+                           {
+                             return x.first == value;
+                           };
+        const auto it = std::find_if(variable.values.begin(), variable.values.end(), check);
+        if (it != variable.values.end())
+        {
+          registry->putDWord(variable.section, variable.key, it->second);
+        }
       }
     }
+
+    Registry::instance = registry;
   }
 
-  Registry::instance = registry;
 }

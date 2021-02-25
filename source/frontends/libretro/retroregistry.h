@@ -1,4 +1,9 @@
 #pragma once
 
-void SetupRetroVariables();
-void InitialiseRetroRegistry();
+namespace ra2
+{
+
+  void SetupRetroVariables();
+  void InitialiseRetroRegistry();
+
+}

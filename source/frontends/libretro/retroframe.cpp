@@ -74,105 +74,109 @@ namespace
 
 }
 
-
-RetroFrame::RetroFrame()
+namespace ra2
 {
-}
 
-void RetroFrame::FrameRefreshStatus(int drawflags)
-{
-  if (drawflags & DRAW_TITLE)
+  RetroFrame::RetroFrame()
   {
-    GetAppleWindowTitle();
-    display_message(g_pAppTitle.c_str());
-  }
-}
-
-void RetroFrame::VideoPresentScreen()
-{
-  // this should not be necessary
-  // either libretro handles it
-  // or we should change AW
-  // but for now, there is no alternative
-  for (size_t row = 0; row < myHeight; ++row)
-  {
-    const uint8_t * src = myFrameBuffer + row * myPitch;
-    uint8_t * dst = myVideoBuffer.data() + (myHeight - row - 1) * myPitch;
-    memcpy(dst, src, myPitch);
   }
 
-  video_cb(myVideoBuffer.data() + myOffset, myBorderlessWidth, myBorderlessHeight, myPitch);
-}
-
-void RetroFrame::Initialize()
-{
-  LinuxFrame::Initialize();
-  FrameRefreshStatus(DRAW_TITLE);
-
-  Video & video = GetVideo();
-
-  myBorderlessWidth = video.GetFrameBufferBorderlessWidth();
-  myBorderlessHeight = video.GetFrameBufferBorderlessHeight();
-  const size_t borderWidth = video.GetFrameBufferBorderWidth();
-  const size_t borderHeight = video.GetFrameBufferBorderHeight();
-  const size_t width = video.GetFrameBufferWidth();
-  myHeight = video.GetFrameBufferHeight();
-
-  myFrameBuffer = video.GetFrameBuffer();
-
-  myPitch = width * sizeof(bgra_t);
-  myOffset = (width * borderHeight + borderWidth) * sizeof(bgra_t);
-
-  const size_t size = myHeight * myPitch;
-  myVideoBuffer.resize(size);
-}
-
-void RetroFrame::Destroy()
-{
-  LinuxFrame::Destroy();
-  myFrameBuffer = nullptr;
-  myVideoBuffer.clear();
-}
-
-void RetroFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
-{
-  const std::string filename = getBitmapFilename(lpBitmapName);
-  const std::string path = myResourcePath + filename;
-
-  std::vector<char> buffer;
-  readFileToBuffer(path, buffer);
-
-  if (!buffer.empty())
+  void RetroFrame::FrameRefreshStatus(int drawflags)
   {
-    int32_t width, height;
-    uint16_t bpp;
-    const char * data;
-    uint32_t size;
-    const bool res = getBitmapData(buffer, width, height, bpp, data, size);
-
-    log_cb(RETRO_LOG_INFO, "RA2: %s. %s = %dx%d, %dbpp\n", __FUNCTION__, path.c_str(),
-	   width, height, bpp);
-
-    if (res && height > 0 && size <= cb)
+    if (drawflags & DRAW_TITLE)
     {
-      const size_t length = size / height;
-      // rows are stored upside down
-      char * out = static_cast<char *>(lpvBits);
-      for (size_t row = 0; row < height; ++row)
-      {
-	const char * src = data + row * length;
-	char * dst = out + (height - row - 1) * length;
-	memcpy(dst, src, length);
-      }
-      return;
+      GetAppleWindowTitle();
+      display_message(g_pAppTitle.c_str());
     }
   }
 
-  CommonFrame::GetBitmap(lpBitmapName, cb, lpvBits);
-}
+  void RetroFrame::VideoPresentScreen()
+  {
+    // this should not be necessary
+    // either libretro handles it
+    // or we should change AW
+    // but for now, there is no alternative
+    for (size_t row = 0; row < myHeight; ++row)
+    {
+      const uint8_t * src = myFrameBuffer + row * myPitch;
+      uint8_t * dst = myVideoBuffer.data() + (myHeight - row - 1) * myPitch;
+      memcpy(dst, src, myPitch);
+    }
 
-int RetroFrame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
-{
-  log_cb(RETRO_LOG_INFO, "RA2: %s: %s - %s\n", __FUNCTION__, lpCaption, lpText);
-  return IDOK;
+    video_cb(myVideoBuffer.data() + myOffset, myBorderlessWidth, myBorderlessHeight, myPitch);
+  }
+
+  void RetroFrame::Initialize()
+  {
+    LinuxFrame::Initialize();
+    FrameRefreshStatus(DRAW_TITLE);
+
+    Video & video = GetVideo();
+
+    myBorderlessWidth = video.GetFrameBufferBorderlessWidth();
+    myBorderlessHeight = video.GetFrameBufferBorderlessHeight();
+    const size_t borderWidth = video.GetFrameBufferBorderWidth();
+    const size_t borderHeight = video.GetFrameBufferBorderHeight();
+    const size_t width = video.GetFrameBufferWidth();
+    myHeight = video.GetFrameBufferHeight();
+
+    myFrameBuffer = video.GetFrameBuffer();
+
+    myPitch = width * sizeof(bgra_t);
+    myOffset = (width * borderHeight + borderWidth) * sizeof(bgra_t);
+
+    const size_t size = myHeight * myPitch;
+    myVideoBuffer.resize(size);
+  }
+
+  void RetroFrame::Destroy()
+  {
+    LinuxFrame::Destroy();
+    myFrameBuffer = nullptr;
+    myVideoBuffer.clear();
+  }
+
+  void RetroFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
+  {
+    const std::string filename = getBitmapFilename(lpBitmapName);
+    const std::string path = myResourcePath + filename;
+
+    std::vector<char> buffer;
+    readFileToBuffer(path, buffer);
+
+    if (!buffer.empty())
+    {
+      int32_t width, height;
+      uint16_t bpp;
+      const char * data;
+      uint32_t size;
+      const bool res = getBitmapData(buffer, width, height, bpp, data, size);
+
+      log_cb(RETRO_LOG_INFO, "RA2: %s. %s = %dx%d, %dbpp\n", __FUNCTION__, path.c_str(),
+             width, height, bpp);
+
+      if (res && height > 0 && size <= cb)
+      {
+        const size_t length = size / height;
+        // rows are stored upside down
+        char * out = static_cast<char *>(lpvBits);
+        for (size_t row = 0; row < height; ++row)
+        {
+          const char * src = data + row * length;
+          char * dst = out + (height - row - 1) * length;
+          memcpy(dst, src, length);
+        }
+        return;
+      }
+    }
+
+    CommonFrame::GetBitmap(lpBitmapName, cb, lpvBits);
+  }
+
+  int RetroFrame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
+  {
+    log_cb(RETRO_LOG_INFO, "RA2: %s: %s - %s\n", __FUNCTION__, lpCaption, lpText);
+    return IDOK;
+  }
+
 }

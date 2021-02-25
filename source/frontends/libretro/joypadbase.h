@@ -5,14 +5,18 @@
 #include <vector>
 #include <map>
 
-
-class JoypadBase : public Paddle
+namespace ra2
 {
-public:
-  JoypadBase();
 
-  bool getButton(int i) const override;
+  class JoypadBase : public Paddle
+  {
+  public:
+    JoypadBase();
 
-private:
-  std::vector<unsigned> myButtonCodes;
-};
+    bool getButton(int i) const override;
+
+  private:
+    std::vector<unsigned> myButtonCodes;
+  };
+
+}

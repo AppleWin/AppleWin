@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 
-namespace RDirectSound
+namespace ra2
 {
   void writeAudio(const size_t ms);
   void bufferStatusCallback(bool active, unsigned occupancy, bool underrun_likely);

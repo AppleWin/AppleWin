@@ -19,7 +19,7 @@
 namespace
 {
 
-  std::unique_ptr<Game> ourGame;
+  std::unique_ptr<ra2::Game> ourGame;
 
   bool endsWith(const std::string & value, const std::string & ending)
   {
@@ -34,37 +34,37 @@ namespace
 
 void retro_init(void)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   const char *dir = NULL;
-  if (environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &dir) && dir)
+  if (ra2::environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &dir) && dir)
   {
-    retro_base_directory = dir;
+    ra2::retro_base_directory = dir;
   }
 }
 
 void retro_deinit(void)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 }
 
 unsigned retro_api_version(void)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   return RETRO_API_VERSION;
 }
 
 void retro_set_controller_port_device(unsigned port, unsigned device)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s, Plugging device %u into port %u.\n", __FUNCTION__, device, port);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s, Plugging device %u into port %u.\n", __FUNCTION__, device, port);
   if (port == 0)
   {
-    Game::ourInputDevices[port] = device;
+    ra2::Game::ourInputDevices[port] = device;
   }
 }
 
 void retro_get_system_info(retro_system_info *info)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   static std::string version = getVersion();
 
   memset(info, 0, sizeof(*info));
@@ -77,7 +77,7 @@ void retro_get_system_info(retro_system_info *info)
 
 void retro_get_system_av_info(retro_system_av_info *info)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 
   Video & video = GetVideo();
 
@@ -87,19 +87,19 @@ void retro_get_system_av_info(retro_system_av_info *info)
   info->geometry.max_height   = video.GetFrameBufferBorderlessHeight();
   info->geometry.aspect_ratio = 0;
 
-  info->timing.fps            = Game::FPS;
+  info->timing.fps            = ra2::Game::FPS;
   info->timing.sample_rate    = SPKR_SAMPLE_RATE;
 }
 
 void retro_set_environment(retro_environment_t cb)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  environ_cb = cb;
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::environ_cb = cb;
 
-  if (cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging))
-    log_cb = logging.log;
+  if (cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &ra2::logging))
+    ra2::log_cb = ra2::logging.log;
   else
-    log_cb = fallback_log;
+    ra2::log_cb = ra2::fallback_log;
 
   static const struct retro_controller_description controllers[] =
     {
@@ -115,46 +115,46 @@ void retro_set_environment(retro_environment_t cb)
 
   cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
 
-  retro_keyboard_callback keyboardCallback = {&Game::keyboardCallback};
+  retro_keyboard_callback keyboardCallback = {&ra2::Game::keyboardCallback};
   cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &keyboardCallback);
 
-  retro_audio_buffer_status_callback audioCallback = {&RDirectSound::bufferStatusCallback};
+  retro_audio_buffer_status_callback audioCallback = {&ra2::bufferStatusCallback};
   cb(RETRO_ENVIRONMENT_SET_AUDIO_BUFFER_STATUS_CALLBACK, &audioCallback);
 
-  retro_frame_time_callback timeCallback = {&Game::frameTimeCallback, 1000000 / Game::FPS};
+  retro_frame_time_callback timeCallback = {&ra2::Game::frameTimeCallback, 1000000 / ra2::Game::FPS};
   cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &timeCallback);
 
-  SetupRetroVariables();
+  ra2::SetupRetroVariables();
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  audio_cb = cb;
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::audio_cb = cb;
 }
 
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  audio_batch_cb = cb;
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::audio_batch_cb = cb;
 }
 
 void retro_set_input_poll(retro_input_poll_t cb)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  input_poll_cb = cb;
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::input_poll_cb = cb;
 }
 
 void retro_set_input_state(retro_input_state_t cb)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  input_state_cb = cb;
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::input_state_cb = cb;
 }
 
 void retro_set_video_refresh(retro_video_refresh_t cb)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  video_cb = cb;
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::video_cb = cb;
 }
 
 void retro_run(void)
@@ -163,25 +163,25 @@ void retro_run(void)
   ourGame->executeOneFrame();
   GetFrame().VideoPresentScreen();
   const size_t ms = (1000 + 60 - 1) / 60; // round up
-  RDirectSound::writeAudio(ms);
+  ra2::writeAudio(ms);
 }
 
 bool retro_load_game(const retro_game_info *info)
 {
   ourGame.reset();
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 
   enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
-  if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
+  if (!ra2::environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
   {
-    log_cb(RETRO_LOG_INFO, "XRGB8888 is not supported.\n");
+    ra2::log_cb(RETRO_LOG_INFO, "XRGB8888 is not supported.\n");
     return false;
   }
 
   try
   {
-    std::shared_ptr<RetroFrame> frame(new RetroFrame());
-    std::unique_ptr<Game> game(new Game(frame));
+    std::shared_ptr<ra2::RetroFrame> frame(new ra2::RetroFrame());
+    std::unique_ptr<ra2::Game> game(new ra2::Game(frame));
 
     const std::string snapshotEnding = ".aws.yaml";
     const std::string gamePath = info->path;
@@ -196,11 +196,11 @@ bool retro_load_game(const retro_game_info *info)
       ok = game->loadGame(gamePath);
     }
 
-    log_cb(RETRO_LOG_INFO, "Game path: %s:%d\n", info->path, ok);
+    ra2::log_cb(RETRO_LOG_INFO, "Game path: %s:%d\n", info->path, ok);
 
     if (ok)
     {
-      display_message("Enable Game Focus Mode for better keyboard handling");
+      ra2::display_message("Enable Game Focus Mode for better keyboard handling");
     }
 
     std::swap(ourGame, game);
@@ -208,11 +208,11 @@ bool retro_load_game(const retro_game_info *info)
   }
   catch (const std::exception & e)
   {
-    log_cb(RETRO_LOG_INFO, "Exception: %s\n", e.what());
+    ra2::log_cb(RETRO_LOG_INFO, "Exception: %s\n", e.what());
   }
   catch (const std::string & s)
   {
-    log_cb(RETRO_LOG_INFO, "Exception: %s\n", s.c_str());
+    ra2::log_cb(RETRO_LOG_INFO, "Exception: %s\n", s.c_str());
   }
 
   return false;
@@ -221,62 +221,62 @@ bool retro_load_game(const retro_game_info *info)
 void retro_unload_game(void)
 {
   ourGame.reset();
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 }
 
 unsigned retro_get_region(void)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   return RETRO_REGION_NTSC;
 }
 
 void retro_reset(void)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 }
 
 bool retro_load_game_special(unsigned type, const struct retro_game_info *info, size_t num)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   return false;
 }
 
 size_t retro_serialize_size(void)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   return 0;
 }
 
 bool retro_serialize(void *data, size_t size)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   return false;
 }
 
 bool retro_unserialize(const void *data, size_t size)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   return false;
 }
 
 void retro_cheat_reset(void)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 }
 
 void retro_cheat_set(unsigned index, bool enabled, const char *code)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 }
 
 void *retro_get_memory_data(unsigned id)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   return nullptr;
 }
 
 size_t retro_get_memory_size(unsigned id)
 {
-  log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   return 0;
 }

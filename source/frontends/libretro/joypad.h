@@ -5,14 +5,18 @@
 #include <vector>
 #include <map>
 
-
-class Joypad : public JoypadBase
+namespace ra2
 {
-public:
-  Joypad();
 
-  double getAxis(int i) const override;
+  class Joypad : public JoypadBase
+  {
+  public:
+    Joypad();
 
-private:
-  std::vector<std::map<unsigned, double> > myAxisCodes;
-};
+    double getAxis(int i) const override;
+
+  private:
+    std::vector<std::map<unsigned, double> > myAxisCodes;
+  };
+
+}

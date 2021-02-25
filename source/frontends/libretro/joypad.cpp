@@ -3,26 +3,30 @@
 
 #include "libretro.h"
 
-
-Joypad::Joypad()
-  : myAxisCodes(2)
+namespace ra2
 {
-  myAxisCodes[0][RETRO_DEVICE_ID_JOYPAD_LEFT] = -1.0;
-  myAxisCodes[0][RETRO_DEVICE_ID_JOYPAD_RIGHT] = 1.0;
-  myAxisCodes[1][RETRO_DEVICE_ID_JOYPAD_UP] = -1.0;
-  myAxisCodes[1][RETRO_DEVICE_ID_JOYPAD_DOWN] = 1.0;
-}
 
-double Joypad::getAxis(int i) const
-{
-  for (const auto & axis : myAxisCodes[i])
+  Joypad::Joypad()
+    : myAxisCodes(2)
   {
-    const int value = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, axis.first);
-    if (value)
-    {
-      return axis.second;
-    }
+    myAxisCodes[0][RETRO_DEVICE_ID_JOYPAD_LEFT] = -1.0;
+    myAxisCodes[0][RETRO_DEVICE_ID_JOYPAD_RIGHT] = 1.0;
+    myAxisCodes[1][RETRO_DEVICE_ID_JOYPAD_UP] = -1.0;
+    myAxisCodes[1][RETRO_DEVICE_ID_JOYPAD_DOWN] = 1.0;
   }
 
-  return 0.0;
+  double Joypad::getAxis(int i) const
+  {
+    for (const auto & axis : myAxisCodes[i])
+    {
+      const int value = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, axis.first);
+      if (value)
+      {
+        return axis.second;
+      }
+    }
+
+    return 0.0;
+  }
+
 }

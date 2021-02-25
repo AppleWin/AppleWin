@@ -11,41 +11,46 @@ namespace common2
   class Initialisation;
 }
 
-class RetroFrame;
-
-class Game
+namespace ra2
 {
-public:
-  Game(const std::shared_ptr<RetroFrame> & frame);
-  ~Game();
 
-  bool loadGame(const std::string & path);
-  bool loadSnapshot(const std::string & path);
+  class RetroFrame;
 
-  void executeOneFrame();
-  void processInputEvents();
+  class Game
+  {
+  public:
+    Game(const std::shared_ptr<RetroFrame> & frame);
+    ~Game();
 
-  void drawVideoBuffer();
+    bool loadGame(const std::string & path);
+    bool loadSnapshot(const std::string & path);
 
-  static void keyboardCallback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers);
+    void executeOneFrame();
+    void processInputEvents();
 
-  static void frameTimeCallback(retro_usec_t usec);
-  static constexpr size_t FPS = 60;
-  static unsigned ourInputDevices[MAX_PADS];
-  static retro_usec_t ourFrameTime;
+    void drawVideoBuffer();
 
-private:
-  const std::shared_ptr<RetroFrame> myFrame;
+    static void keyboardCallback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers);
 
-  common2::Speed mySpeed;  // fixed speed
+    static void frameTimeCallback(retro_usec_t usec);
+    static constexpr size_t FPS = 60;
+    static unsigned ourInputDevices[MAX_PADS];
+    static retro_usec_t ourFrameTime;
 
-  std::vector<int> myButtonStates;
+  private:
+    const std::shared_ptr<RetroFrame> myFrame;
 
-  std::shared_ptr<common2::Initialisation> myInit;
+    common2::Speed mySpeed;  // fixed speed
 
-  bool checkButtonPressed(unsigned id);
-  void keyboardEmulation();
+    std::vector<int> myButtonStates;
 
-  static void processKeyDown(unsigned keycode, uint32_t character, uint16_t key_modifiers);
-  static void processKeyUp(unsigned keycode, uint32_t character, uint16_t key_modifiers);
-};
+    std::shared_ptr<common2::Initialisation> myInit;
+
+    bool checkButtonPressed(unsigned id);
+    void keyboardEmulation();
+
+    static void processKeyDown(unsigned keycode, uint32_t character, uint16_t key_modifiers);
+    static void processKeyUp(unsigned keycode, uint32_t character, uint16_t key_modifiers);
+  };
+
+}

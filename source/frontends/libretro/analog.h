@@ -4,14 +4,18 @@
 
 #include <vector>
 
-
-class Analog : public JoypadBase
+namespace ra2
 {
-public:
-  Analog();
 
-  double getAxis(int i) const override;
+  class Analog : public JoypadBase
+  {
+  public:
+    Analog();
 
-private:
-  std::vector<std::pair<unsigned, unsigned> > myAxisCodes;
-};
+    double getAxis(int i) const override;
+
+  private:
+    std::vector<std::pair<unsigned, unsigned> > myAxisCodes;
+  };
+
+}

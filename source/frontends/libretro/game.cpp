@@ -49,243 +49,248 @@ namespace
 
 }
 
-unsigned Game::ourInputDevices[MAX_PADS] = {RETRO_DEVICE_NONE};
-
-Game::Game(const std::shared_ptr<RetroFrame> & frame)
-  : myFrame(frame), mySpeed(true), myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
+namespace ra2
 {
-  SetFrame(myFrame);
-  LogInit();
-  InitialiseRetroRegistry();
 
-  myInit.reset(new common2::Initialisation);
+  unsigned Game::ourInputDevices[MAX_PADS] = {RETRO_DEVICE_NONE};
 
-  switch (ourInputDevices[0])
+  Game::Game(const std::shared_ptr<RetroFrame> & frame)
+    : myFrame(frame), mySpeed(true), myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
   {
-  case RETRO_DEVICE_NONE:
+    SetFrame(myFrame);
+    LogInit();
+    InitialiseRetroRegistry();
+
+    myInit.reset(new common2::Initialisation);
+
+    switch (ourInputDevices[0])
+    {
+    case RETRO_DEVICE_NONE:
+      Paddle::instance.reset();
+      break;
+    case RETRO_DEVICE_JOYPAD:
+      Paddle::instance.reset(new Joypad);
+      Paddle::setSquaring(false);
+      break;
+    case RETRO_DEVICE_ANALOG:
+      Paddle::instance.reset(new Analog);
+      Paddle::setSquaring(true);
+      break;
+    default:
+      break;
+    }
+  }
+
+  Game::~Game()
+  {
+    myInit.reset();
+    SetFrame(std::shared_ptr<FrameBase>());
     Paddle::instance.reset();
-    break;
-  case RETRO_DEVICE_JOYPAD:
-    Paddle::instance.reset(new Joypad);
-    Paddle::setSquaring(false);
-    break;
-  case RETRO_DEVICE_ANALOG:
-    Paddle::instance.reset(new Analog);
-    Paddle::setSquaring(true);
-    break;
-  default:
-    break;
+    Registry::instance.reset();
   }
-}
 
-Game::~Game()
-{
-  myInit.reset();
-  SetFrame(std::shared_ptr<FrameBase>());
-  Paddle::instance.reset();
-  Registry::instance.reset();
-}
+  retro_usec_t Game::ourFrameTime = 0;
 
-retro_usec_t Game::ourFrameTime = 0;
-
-void Game::executeOneFrame()
-{
-  const size_t cyclesToExecute = mySpeed.getCyclesTillNext(ourFrameTime);
-  if (g_nAppMode == MODE_RUNNING)
+  void Game::executeOneFrame()
   {
-    const bool bVideoUpdate = true;
-    const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
+    const size_t cyclesToExecute = mySpeed.getCyclesTillNext(ourFrameTime);
+    if (g_nAppMode == MODE_RUNNING)
+    {
+      const bool bVideoUpdate = true;
+      const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 
-    const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
+      const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
 
-    g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
-    GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
-    MB_PeriodicUpdate(executedCycles);
-    SpkrUpdate(executedCycles);
+      g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
+      GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
+      MB_PeriodicUpdate(executedCycles);
+      SpkrUpdate(executedCycles);
+    }
   }
-}
 
-void Game::processInputEvents()
-{
-  input_poll_cb();
-  keyboardEmulation();
-}
-
-void Game::keyboardCallback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers)
-{
-  if (down)
+  void Game::processInputEvents()
   {
-    processKeyDown(keycode, character, key_modifiers);
+    input_poll_cb();
+    keyboardEmulation();
   }
-  else
+
+  void Game::keyboardCallback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers)
   {
-    processKeyUp(keycode, character, key_modifiers);
+    if (down)
+    {
+      processKeyDown(keycode, character, key_modifiers);
+    }
+    else
+    {
+      processKeyUp(keycode, character, key_modifiers);
+    }
   }
-}
 
-void Game::frameTimeCallback(retro_usec_t usec)
-{
-  ourFrameTime = usec;
-}
-
-void Game::processKeyDown(unsigned keycode, uint32_t character, uint16_t key_modifiers)
-{
-  BYTE ch = 0;
-  switch (keycode)
+  void Game::frameTimeCallback(retro_usec_t usec)
   {
-  case RETROK_RETURN:
+    ourFrameTime = usec;
+  }
+
+  void Game::processKeyDown(unsigned keycode, uint32_t character, uint16_t key_modifiers)
+  {
+    BYTE ch = 0;
+    switch (keycode)
     {
-      ch = 0x0d;
-      break;
-    }
-  case RETROK_BACKSPACE: // same as AppleWin
-  case RETROK_LEFT:
-    {
-      ch = 0x08;
-      break;
-    }
-  case RETROK_RIGHT:
-    {
-      ch = 0x15;
-      break;
-    }
-  case RETROK_UP:
-    {
-      ch = 0x0b;
-      break;
-    }
-  case RETROK_DOWN:
-    {
-      ch = 0x0a;
-      break;
-    }
-  case RETROK_DELETE:
-    {
-      ch = 0x7f;
-      break;
-    }
-  case RETROK_ESCAPE:
-    {
-      ch = 0x1b;
-      break;
-    }
-  case RETROK_TAB:
-    {
-      ch = 0x09;
-      break;
-    }
-  case RETROK_LALT:
-    {
-      Paddle::setButtonPressed(Paddle::ourOpenApple);
-      break;
-    }
-  case RETROK_RALT:
-    {
-      Paddle::setButtonPressed(Paddle::ourSolidApple);
-      break;
-    }
-  case RETROK_a ... RETROK_z:
-    {
-      ch = (keycode - RETROK_a) + 0x01;
-      if (key_modifiers & RETROKMOD_CTRL)
+    case RETROK_RETURN:
       {
-	// ok
+        ch = 0x0d;
+        break;
       }
-      else if (key_modifiers & RETROKMOD_SHIFT)
+    case RETROK_BACKSPACE: // same as AppleWin
+    case RETROK_LEFT:
       {
-	ch += 0x60;
+        ch = 0x08;
+        break;
       }
-      else
+    case RETROK_RIGHT:
       {
-	ch += 0x40;
+        ch = 0x15;
+        break;
       }
-      break;
-    }
-  }
-
-  if (!ch)
-  {
-    switch (character) {
-    case 0x20 ... 0x40:
-    case 0x5b ... 0x60:
-    case 0x7b ... 0x7e:
+    case RETROK_UP:
       {
-	// not the letters
-	// this is very simple, but one cannot handle CRTL-key combination.
-	ch = character;
-	break;
+        ch = 0x0b;
+        break;
+      }
+    case RETROK_DOWN:
+      {
+        ch = 0x0a;
+        break;
+      }
+    case RETROK_DELETE:
+      {
+        ch = 0x7f;
+        break;
+      }
+    case RETROK_ESCAPE:
+      {
+        ch = 0x1b;
+        break;
+      }
+    case RETROK_TAB:
+      {
+        ch = 0x09;
+        break;
+      }
+    case RETROK_LALT:
+      {
+        Paddle::setButtonPressed(Paddle::ourOpenApple);
+        break;
+      }
+    case RETROK_RALT:
+      {
+        Paddle::setButtonPressed(Paddle::ourSolidApple);
+        break;
+      }
+    case RETROK_a ... RETROK_z:
+      {
+        ch = (keycode - RETROK_a) + 0x01;
+        if (key_modifiers & RETROKMOD_CTRL)
+        {
+          // ok
+        }
+        else if (key_modifiers & RETROKMOD_SHIFT)
+        {
+          ch += 0x60;
+        }
+        else
+        {
+          ch += 0x40;
+        }
+        break;
       }
     }
+
+    if (!ch)
+    {
+      switch (character) {
+      case 0x20 ... 0x40:
+      case 0x5b ... 0x60:
+      case 0x7b ... 0x7e:
+        {
+          // not the letters
+          // this is very simple, but one cannot handle CRTL-key combination.
+          ch = character;
+          break;
+        }
+      }
+    }
+
+    if (ch)
+    {
+      addKeyToBuffer(ch);
+      log_cb(RETRO_LOG_INFO, "RA2: %s - %02x\n", __FUNCTION__, ch);
+    }
   }
 
-  if (ch)
+  void Game::processKeyUp(unsigned keycode, uint32_t character, uint16_t key_modifiers)
   {
-    addKeyToBuffer(ch);
-    log_cb(RETRO_LOG_INFO, "RA2: %s - %02x\n", __FUNCTION__, ch);
+    switch (keycode)
+    {
+    case RETROK_LALT:
+      {
+        Paddle::setButtonReleased(Paddle::ourOpenApple);
+        break;
+      }
+    case RETROK_RALT:
+      {
+        Paddle::setButtonReleased(Paddle::ourSolidApple);
+        break;
+      }
+    }
   }
-}
 
-void Game::processKeyUp(unsigned keycode, uint32_t character, uint16_t key_modifiers)
-{
-  switch (keycode)
+  bool Game::checkButtonPressed(unsigned id)
   {
-  case RETROK_LALT:
-    {
-      Paddle::setButtonReleased(Paddle::ourOpenApple);
-      break;
-    }
-  case RETROK_RALT:
-    {
-      Paddle::setButtonReleased(Paddle::ourSolidApple);
-      break;
-    }
+    // pressed if it is down now, but was up before
+    const int value = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, id);
+    const bool pressed = (value != 0) && myButtonStates[id] == 0;
+
+    // update to avoid multiple fires
+    myButtonStates[id] = value;
+
+    return pressed;
   }
-}
-
-bool Game::checkButtonPressed(unsigned id)
-{
-  // pressed if it is down now, but was up before
-  const int value = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, id);
-  const bool pressed = (value != 0) && myButtonStates[id] == 0;
-
-  // update to avoid multiple fires
-  myButtonStates[id] = value;
-
-  return pressed;
-}
 
 
-void Game::keyboardEmulation()
-{
-  if (ourInputDevices[0] != RETRO_DEVICE_NONE)
+  void Game::keyboardEmulation()
   {
-    if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_R))
+    if (ourInputDevices[0] != RETRO_DEVICE_NONE)
     {
-      myFrame->CycleVideoType();
+      if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_R))
+      {
+        myFrame->CycleVideoType();
+      }
+      if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_L))
+      {
+        myFrame->Cycle50ScanLines();
+      }
+      if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_START))
+      {
+        ResetMachineState();
+      }
     }
-    if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_L))
+    else
     {
-      myFrame->Cycle50ScanLines();
-    }
-    if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_START))
-    {
-      ResetMachineState();
+      std::fill(myButtonStates.begin(), myButtonStates.end(), 0);
     }
   }
-  else
+
+  bool Game::loadGame(const std::string & path)
   {
-    std::fill(myButtonStates.begin(), myButtonStates.end(), 0);
+    const bool ok = insertDisk(path);
+    return ok;
   }
-}
 
-bool Game::loadGame(const std::string & path)
-{
-  const bool ok = insertDisk(path);
-  return ok;
-}
+  bool Game::loadSnapshot(const std::string & path)
+  {
+    common2::setSnapshotFilename(path, true);
+    return true;
+  }
 
-bool Game::loadSnapshot(const std::string & path)
-{
-  common2::setSnapshotFilename(path, true);
-  return true;
 }
