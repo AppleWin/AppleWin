@@ -30,6 +30,7 @@ namespace sa2
     void ClearBackground();
     void DrawAppleVideo();
     void ShowSettings();
+    void ShowMemory();
 
     struct ImGuiSettings
     {
@@ -37,6 +38,7 @@ namespace sa2
       bool windowed = false;
       bool showDemo = false;
       bool showSettings = false;
+      bool showMemory = false;
       int speakerVolume = 50;
       int mockingboardVolume = 50;
     };
@@ -50,6 +52,8 @@ namespace sa2
     ImTextureID myTexture;
 
     ImGuiSettings mySettings;
+    MemoryEditor myMainMemoryEditor;
+    MemoryEditor myAuxMemoryEditor;
   };
 
 }

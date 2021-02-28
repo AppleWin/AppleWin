@@ -14,6 +14,8 @@
 #include "Speaker.h"
 #include "Mockingboard.h"
 #include "Registry.h"
+#include "Memory.h"
+#include "Debugger/DebugDefs.h"
 
 #include <iostream>
 
@@ -155,6 +157,7 @@ namespace sa2
       if (ImGui::BeginMenu("System"))
       {
         ImGui::MenuItem("Settings", nullptr, &mySettings.showSettings);
+        ImGui::MenuItem("Memory", nullptr, &mySettings.showMemory);
         ImGui::MenuItem("Demo", nullptr, &mySettings.showDemo);
         ImGui::EndMenu();
       }
@@ -196,6 +199,9 @@ namespace sa2
           {
             ImGui::Checkbox("Apple Video windowed", &mySettings.windowed);
             ImGui::SameLine(); HelpMarker("Show Apple Video in a separate window.");
+
+            ImGui::Checkbox("Show Memory", &mySettings.showMemory);
+            ImGui::SameLine(); HelpMarker("Show Apple ][ memroy pages.");
 
             ImGui::Checkbox("Show Demo", &mySettings.showDemo);
             ImGui::SameLine(); HelpMarker("Show Dear ImGui DemoWindow.");
@@ -244,6 +250,11 @@ namespace sa2
               const eCpuType cpu = GetMainCpu();
               ImGui::Selectable(getCPUName(cpu).c_str());
 
+              ImGui::TableNextColumn();
+              ImGui::Selectable("Mode");
+              ImGui::TableNextColumn();
+              ImGui::Selectable(getModeName(g_nAppMode).c_str());
+
               ImGui::EndTable();
             }
 
@@ -276,6 +287,33 @@ namespace sa2
     }
   }
 
+  void SDLImGuiFrame::ShowMemory()
+  {
+    if (mySettings.showMemory)
+    {
+      if (ImGui::Begin("Memory Viewer", &mySettings.showMemory))
+      {
+        if (ImGui::BeginTabBar("Memory"))
+        {
+          if (ImGui::BeginTabItem("Main"))
+          {
+            void * mainBase = MemGetMainPtr(0);
+            myMainMemoryEditor.DrawContents(mainBase, _6502_MEM_LEN);
+            ImGui::EndTabItem();
+          }
+          if (ImGui::BeginTabItem("AUX"))
+          {
+            void * auxBase = MemGetAuxPtr(0);
+            myMainMemoryEditor.DrawContents(auxBase, _6502_MEM_LEN);
+            ImGui::EndTabItem();
+          }
+          ImGui::EndTabBar();
+        }
+      }
+      ImGui::End();
+    }
+  }
+
   void SDLImGuiFrame::RenderPresent()
   {
     ImGui_ImplOpenGL3_NewFrame();
@@ -283,6 +321,7 @@ namespace sa2
     ImGui::NewFrame();
 
     ShowSettings();
+    ShowMemory();
 
     if (mySettings.showDemo)
     {

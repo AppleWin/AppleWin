@@ -4,6 +4,7 @@ find_package(SDL2 REQUIRED)
 pkg_search_module(SDL2_IMAGE REQUIRED SDL2_image)
 pkg_search_module(GLES2 REQUIRED glesv2)
 set(IMGUI_PATH "imgui/imgui")
+set(IMGUI_CLUB_PATH "imgui/imgui_club")
 
 add_executable(sa2)
 
@@ -69,6 +70,7 @@ target_sources(sa2 PRIVATE
 target_include_directories(sa2 PRIVATE
   ${IMGUI_PATH}
   ${IMGUI_PATH}/backends
+  ${IMGUI_CLUB_PATH}/imgui_memory_editor
   )
 
 target_compile_definitions(sa2 PRIVATE
