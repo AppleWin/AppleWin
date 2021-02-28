@@ -220,6 +220,9 @@
     <ClCompile Include="source\Windows\Win32Frame.cpp">
       <Filter>Source Files\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="source\Debugger\Debugger_Disassembler.cpp">
+      <Filter>Source Files\Debugger</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\CommonVICE\6510core.h">
@@ -521,6 +524,9 @@
     </ClInclude>
     <ClInclude Include="source\Windows\Win32Frame.h">
       <Filter>Source Files\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Debugger\Debugger_Disassembler.h">
+      <Filter>Source Files\Debugger</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

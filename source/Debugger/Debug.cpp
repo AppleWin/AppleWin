@@ -361,20 +361,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	Update_t _CmdWindowViewCommon (int iNewWindow);
 
 // Utility
-	char FormatCharTxtCtrl ( const BYTE b, bool *pWasCtrl_ );
-	char FormatCharTxtAsci ( const BYTE b, bool *pWasAsci_ );
-	char FormatCharTxtHigh ( const BYTE b, bool *pWasHi_ );
-	char FormatChar4Font ( const BYTE b, bool *pWasHi_, bool *pWasLo_ );
-
 	void _CursorMoveDownAligned( int nDelta );
 	void _CursorMoveUpAligned( int nDelta );
-
-	void DisasmCalcTopFromCurAddress( bool bUpdateTop = true );
-	void DisasmCalcCurFromTopAddress();
-	void DisasmCalcBotFromTopAddress();
-	void DisasmCalcTopBotAddress ();
-	WORD DisasmCalcAddressFromLines( WORD iAddress, int nLines );
-
 
 // DebugVideoMode _____________________________________________________________
 
@@ -2956,133 +2944,6 @@ Update_t CmdConfigGetFont (int nArgs)
 
 
 // Cursor _________________________________________________________________________________________
-
-// Given an Address, and Line to display it on
-// Calculate the address of the top and bottom lines
-// @param bUpdateCur
-// true  = Update Cur based on Top
-// false = Update Top & Bot based on Cur
-//===========================================================================
-void DisasmCalcTopFromCurAddress( bool bUpdateTop )
-{
-	int nLen = ((g_nDisasmWinHeight - g_nDisasmCurLine) * 3); // max 3 opcodes/instruction, is our search window
-
-	// Look for a start address that when disassembled,
-	// will have the cursor on the specified line and address
-	int iTop = g_nDisasmCurAddress - nLen;
-	int iCur = g_nDisasmCurAddress;
-
-	g_bDisasmCurBad = false;
-	
-	bool bFound = false;
-	while (iTop <= iCur)
-	{
-		WORD iAddress = iTop;
-//		int iOpcode;
-		int iOpmode;
-		int nOpbytes;
-
-		for( int iLine = 0; iLine <= nLen; iLine++ ) // min 1 opcode/instruction
-		{
-// a.
-			_6502_GetOpmodeOpbyte( iAddress, iOpmode, nOpbytes );
-// b.
-//			_6502_GetOpcodeOpmodeOpbyte( iOpcode, iOpmode, nOpbytes );
-
-			if (iLine == g_nDisasmCurLine) // && (iAddress == g_nDisasmCurAddress))
-			{
-				if (iAddress == g_nDisasmCurAddress)
-// b.
-//					&& (iOpmode != AM_1) &&
-//					&& (iOpmode != AM_2) &&
-//					&& (iOpmode != AM_3) &&
-//					&& _6502_IsOpcodeValid( iOpcode))
-				{
-					g_nDisasmTopAddress = iTop;
-					bFound = true;
-					break;
-				}
-			}
-
-			// .20 Fixed: DisasmCalcTopFromCurAddress()
-			//if ((eMode >= AM_1) && (eMode <= AM_3))
-#if 0 // _DEBUG
-			TCHAR sText[ CONSOLE_WIDTH ];
-			wsprintf( sText, "%04X : %d bytes\n", iAddress, nOpbytes );
-			OutputDebugString( sText );
-#endif
-			iAddress += nOpbytes;
-		}
-		if (bFound)
-		{
-			break;
-		}
-		iTop++;
-	}
-
-	if (! bFound)
-	{
-		// Well, we're up the creek.
-		// There is no (valid) solution!
-		// Basically, there is no address, that when disassembled,
-		// will put our Address on the cursor Line!
-		// So, like typical game programming, when we don't like the solution, change the problem!
-//		if (bUpdateTop)
-			g_nDisasmTopAddress = g_nDisasmCurAddress;
-
-		g_bDisasmCurBad = true; // Bad Disassembler, no opcode for you!
-
-		// We reall should move the cursor line to the top for one instruction.
-		// Moving the cursor line around is not really a good idea, since we're breaking consistency paradigm for the user.
-		// g_nDisasmCurLine = 0;
-#if 0 // _DEBUG
-			TCHAR sText[ CONSOLE_WIDTH * 2 ];
-			sprintf( sText, TEXT("DisasmCalcTopFromCurAddress()\n"
-				"\tTop: %04X\n"
-				"\tLen: %04X\n"
-				"\tMissed: %04X"),
-				g_nDisasmCurAddress - nLen, nLen, g_nDisasmCurAddress );
-			GetFrame().FrameMessageBox( sText, "ERROR", MB_OK );
-#endif
-	}
-}
-
-
-//===========================================================================
-WORD DisasmCalcAddressFromLines( WORD iAddress, int nLines )
-{
-	while (nLines-- > 0)
-	{
-		int iOpmode;
-		int nOpbytes;
-		_6502_GetOpmodeOpbyte( iAddress, iOpmode, nOpbytes );
-		iAddress += nOpbytes;
-	}
-	return iAddress;
-}
-
-
-//===========================================================================
-void DisasmCalcCurFromTopAddress()
-{
-	g_nDisasmCurAddress = DisasmCalcAddressFromLines( g_nDisasmTopAddress, g_nDisasmCurLine );
-}
-
-
-//===========================================================================
-void DisasmCalcBotFromTopAddress( )
-{
-	g_nDisasmBotAddress = DisasmCalcAddressFromLines( g_nDisasmTopAddress, g_nDisasmWinHeight );
-}
-
-
-//===========================================================================
-void DisasmCalcTopBotAddress ()
-{
-	DisasmCalcTopFromCurAddress();
-	DisasmCalcBotFromTopAddress();
-}
-
 
 //===========================================================================
 Update_t CmdCursorFollowTarget ( int nArgs )
@@ -8859,7 +8720,6 @@ void DebugInitialize ()
 	memset( g_aZeroPagePointers, 0, MAX_ZEROPAGE_POINTERS * sizeof(ZeroPagePointers_t));
 
 	// Load Main, Applesoft, and User Symbols
-	extern bool g_bSymbolsDisplayMissingFile;
 	g_bSymbolsDisplayMissingFile = false;
 
 	g_iCommand = CMD_SYMBOLS_ROM;
