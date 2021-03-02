@@ -3435,7 +3435,7 @@ void DrawWatches (int line)
 				else
 					DebuggerSetColorBG( DebuggerGetColor( BG_DATA_2 ));
 
-				BYTE nValue8 = (unsigned)*(LPBYTE)(mem + nTarget16 + iByte );
+				BYTE nValue8 = mem[ (nTarget16 + iByte) & 0xffff ];
 				sprintf(sText,"%02X", nValue8 );
 				PrintTextCursorX( sText, rect2 );
 			}
