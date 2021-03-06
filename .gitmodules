@@ -4,3 +4,6 @@
 [submodule "source/frontends/sdl/imgui/imgui"]
 	path = source/frontends/sdl/imgui/imgui
 	url = ../../ocornut/imgui
+[submodule "source/frontends/sdl/imgui/imgui_club"]
+	path = source/frontends/sdl/imgui/imgui_club
+	url = ../../ocornut/imgui_club

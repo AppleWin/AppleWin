@@ -16,10 +16,16 @@ namespace sa2
   private:
     bool myShowDemo = false;
     bool myShowSettings = false;
+    bool myShowMemory = false;
+
     int mySpeakerVolume = 50;
     int myMockingboardVolume = 50;
 
+    MemoryEditor myMainMemoryEditor;
+    MemoryEditor myAuxMemoryEditor;
+
     void showSettings();
+    void showMemory();
   };
 
 }

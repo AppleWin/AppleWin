@@ -10,6 +10,9 @@
 #include "Speaker.h"
 #include "Mockingboard.h"
 #include "Registry.h"
+#include "Memory.h"
+
+#include "Debugger/DebugDefs.h"
 
 namespace
 {
@@ -43,7 +46,10 @@ namespace sa2
         if (ImGui::BeginTabItem("General"))
         {
           ImGui::Checkbox("Apple Video windowed", &windowed);
-          ImGui::SameLine(); HelpMarker("Show Apple Video in a separate window.");
+          ImGui::SameLine(); HelpMarker("Show Apple video in a separate window.");
+
+          ImGui::Checkbox("Memory", &myShowMemory);
+          ImGui::SameLine(); HelpMarker("Show Apple memory.");
 
           ImGui::Checkbox("Show Demo", &myShowDemo);
           ImGui::SameLine(); HelpMarker("Show Dear ImGui DemoWindow.");
@@ -130,6 +136,11 @@ namespace sa2
       showSettings();
     }
 
+    if (myShowMemory)
+    {
+      showMemory();
+    }
+
     if (myShowDemo)
     {
       ImGui::ShowDemoWindow(&myShowDemo);
@@ -146,6 +157,8 @@ namespace sa2
       if (ImGui::BeginMenu("System"))
       {
         ImGui::MenuItem("Settings", nullptr, &myShowSettings);
+        ImGui::MenuItem("Memory", nullptr, &myShowMemory);
+        ImGui::Separator();
         ImGui::MenuItem("Demo", nullptr, &myShowDemo);
         ImGui::EndMenu();
       }
@@ -157,6 +170,30 @@ namespace sa2
     }
 
     return menuBarHeight;
+  }
+
+  void ImGuiSettings::showMemory()
+  {
+    if (ImGui::Begin("Memory Viewer", &myShowMemory))
+    {
+      if (ImGui::BeginTabBar("Memory"))
+      {
+        if (ImGui::BeginTabItem("Main"))
+        {
+          void * mainBase = MemGetMainPtr(0);
+          myMainMemoryEditor.DrawContents(mainBase, _6502_MEM_LEN);
+          ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("AUX"))
+        {
+          void * auxBase = MemGetAuxPtr(0);
+          myMainMemoryEditor.DrawContents(auxBase, _6502_MEM_LEN);
+          ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+      }
+    }
+    ImGui::End();
   }
 
 }
