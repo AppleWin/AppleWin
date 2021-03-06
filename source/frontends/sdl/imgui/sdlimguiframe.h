@@ -1,6 +1,7 @@
 #pragma once
 
 #include "frontends/sdl/sdlframe.h"
+#include "frontends/sdl/imgui/sdlsettings.h"
 #include "frontends/sdl/imgui/gles.h"
 
 namespace common2
@@ -29,17 +30,6 @@ namespace sa2
 
     void ClearBackground();
     void DrawAppleVideo();
-    void ShowSettings();
-
-    struct ImGuiSettings
-    {
-      std::string iniFileLocation;
-      bool windowed = false;
-      bool showDemo = false;
-      bool showSettings = false;
-      int speakerVolume = 50;
-      int mockingboardVolume = 50;
-    };
 
     size_t myPitch;
     size_t myOffset;
@@ -49,6 +39,7 @@ namespace sa2
     SDL_GLContext myGLContext;
     ImTextureID myTexture;
 
+    std::string myIniFileLocation;
     ImGuiSettings mySettings;
   };
 

@@ -49,10 +49,12 @@ target_sources(sa2 PRIVATE
   imgui/sdlimguiframe.cpp
   imgui/image.cpp
   imgui/settingshelper.cpp
+  imgui/sdlsettings.cpp
 
   imgui/sdlimguiframe.h
   imgui/image.h
   imgui/settingshelper.h
+  imgui/sdlsettings.h
   imgui/imconfig.h
   imgui/gles.h
 
