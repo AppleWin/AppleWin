@@ -98,6 +98,11 @@ namespace sa2
             const eCpuType cpu = GetMainCpu();
             ImGui::Selectable(getCPUName(cpu).c_str());
 
+            ImGui::TableNextColumn();
+            ImGui::Selectable("Mode");
+            ImGui::TableNextColumn();
+            ImGui::Selectable(getModeName(g_nAppMode).c_str());
+
             ImGui::EndTable();
           }
 
