@@ -5,6 +5,7 @@
 
 #include "Debugger_Types.h"
 #include "Debugger_DisassemblerData.h"
+#include "Debugger_Disassembler.h"
 #include "Debugger_Range.h"
 #include "Debugger_Parser.h"
 #include "Debugger_Console.h"
@@ -145,15 +146,6 @@
 
 // Source Level Debugging
 	int FindSourceLine( WORD nAddress );
-	const char* FormatAddress( WORD nAddress, int nBytes );
-
-// Symbol Table / Memory
-	bool FindAddressFromSymbol( const char* pSymbol, WORD * pAddress_ = NULL, int * iTable_ = NULL );
-	WORD GetAddressFromSymbol( const char* symbol); // HACK: returns 0 if symbol not found
-	void SymbolUpdate( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, WORD nAddrss, bool bRemoveSymbol, bool bUpdateSymbol );
-
-	const char* FindSymbolFromAddress( WORD nAdress, int * iTable_ = NULL );
-	const char* GetSymbol( WORD nAddress, int nBytes);
 
 // Memory
 	size_t Util_GetTextScreen( char* &pText_ );

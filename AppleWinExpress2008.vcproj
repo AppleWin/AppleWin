@@ -330,6 +330,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Debugger\Debugger_Disassembler.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Disassembler.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Debugger\Debugger_DisassemblerData.cpp"
 					>
 				</File>
