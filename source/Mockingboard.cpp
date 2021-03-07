@@ -2351,10 +2351,25 @@ void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
 	UINT nDeviceNum = nMbCardNum*2;
 	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
 
-	for(UINT i=0; i<MB_UNITS_PER_CARD_v1; i++)
+	for (UINT i=0; i<MB_UNITS_PER_CARD_v1; i++)
 	{
-		memcpy(&pSS->Unit[i].RegsSY6522, &pMB->sy6522, sizeof(SY6522));
-		memcpy(&pSS->Unit[i].RegsAY8910, AY8910_GetRegsPtr(nDeviceNum), 16);
+		// 6522
+		{
+			BYTE* d = (BYTE*) &pSS->Unit[i].RegsSY6522;
+			BYTE* s = (BYTE*) &pMB->sy6522;
+			for (UINT j=0; j<=9; j++)	// regs $00-$09
+				*d++ = *s++;
+			s = &pMB->sy6522.SERIAL_SHIFT;
+			for (UINT j=0; j<=6; j++)	// regs $0A-$0F
+				*d++ = *s++;
+		}
+
+		// AY8913
+		for (UINT j=0; j<16; j++)
+		{
+			pSS->Unit[i].RegsAY8910[j] = AYReadReg(nDeviceNum, j);
+		}
+
 		memcpy(&pSS->Unit[i].RegsSSI263, &pMB->SpeechChip, sizeof(SSI263A));
 		pSS->Unit[i].nAYCurrentRegister = pMB->nAYCurrentRegister;
 		pSS->Unit[i].bTimer1IrqPending = false;

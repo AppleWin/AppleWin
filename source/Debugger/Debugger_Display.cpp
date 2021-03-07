@@ -2606,10 +2606,10 @@ void DrawMemory ( int line, int iMemDump )
 		nCols = MAX_MEM_VIEW_TXT;
 	}
 
-	if( (eDevice == DEV_SY6522) || (eDevice == DEV_AY8910) )
+	if (eDevice == DEV_SY6522 || eDevice == DEV_AY8910)
 	{
 		iAddress = 0;
-		nCols = 6;
+		nCols = 4;
 	}
 
 	rect.right = DISPLAY_WIDTH - 1;
@@ -2643,7 +2643,7 @@ void DrawMemory ( int line, int iMemDump )
 //			else
 			if (eDevice == DEV_SY6522)
 			{
-				sprintf( sText, "%02X", (unsigned) ((BYTE*)&SS_MB.Unit[nAddr & 1].RegsSY6522)[iAddress] );
+				sprintf( sText, "%02X ", (unsigned) ((BYTE*)&SS_MB.Unit[nAddr & 1].RegsSY6522)[iAddress] );
 				if (iCol & 1)
 					DebuggerSetColorFG( DebuggerGetColor( iForeground ));
 				else
@@ -2652,7 +2652,7 @@ void DrawMemory ( int line, int iMemDump )
 			else
 			if (eDevice == DEV_AY8910)
 			{
-				sprintf( sText, "%02X", (unsigned)SS_MB.Unit[nAddr & 1].RegsAY8910[iAddress] );
+				sprintf( sText, "%02X ", (unsigned)SS_MB.Unit[nAddr & 1].RegsAY8910[iAddress] );
 				if (iCol & 1)
 					DebuggerSetColorFG( DebuggerGetColor( iForeground ));
 				else
