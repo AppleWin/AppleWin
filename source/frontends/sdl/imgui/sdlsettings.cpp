@@ -12,6 +12,7 @@
 #include "Registry.h"
 #include "Memory.h"
 
+#include "Debugger/Debug.h"
 #include "Debugger/DebugDefs.h"
 
 namespace
@@ -50,6 +51,12 @@ namespace sa2
 
           ImGui::Checkbox("Memory", &myShowMemory);
           ImGui::SameLine(); HelpMarker("Show Apple memory.");
+
+          if (ImGui::Checkbox("CPU", &myShowCPU) && myShowCPU)
+          {
+            DebugBegin();
+          }
+          ImGui::SameLine(); HelpMarker("Show Apple CPU.");
 
           ImGui::Checkbox("Show Demo", &myShowDemo);
           ImGui::SameLine(); HelpMarker("Show Dear ImGui DemoWindow.");
@@ -146,6 +153,11 @@ namespace sa2
       showMemory();
     }
 
+    if (myShowCPU)
+    {
+      showCPU();
+    }
+
     if (myShowDemo)
     {
       ImGui::ShowDemoWindow(&myShowDemo);
@@ -163,6 +175,10 @@ namespace sa2
       {
         ImGui::MenuItem("Settings", nullptr, &myShowSettings);
         ImGui::MenuItem("Memory", nullptr, &myShowMemory);
+        if (ImGui::MenuItem("CPU", nullptr, &myShowCPU) && myShowCPU)
+        {
+          DebugBegin();
+        }
         ImGui::Separator();
         ImGui::MenuItem("Demo", nullptr, &myShowDemo);
         ImGui::EndMenu();
@@ -200,5 +216,91 @@ namespace sa2
     }
     ImGui::End();
   }
+
+  void ImGuiSettings::showCPU()
+  {
+    if (ImGui::Begin("CPU", &myShowCPU))
+    {
+      ImGui::Checkbox("Auto-sync PC", &mySyncCPU);
+
+      // complicated if condition to preserve widget order
+      const bool recalc = mySyncCPU || (ImGui::SameLine(), ImGui::Button("Sync PC"));
+      if (ImGui::SliderInt("PC position", &g_nDisasmCurLine, 1, 100) || recalc)
+      {
+        g_nDisasmCurAddress = regs.pc;
+        DisasmCalcTopBotAddress();
+      }
+
+      if (ImGui::BeginChild("CPU"))
+      {
+        const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter;
+        if (ImGui::BeginTable("CPU", 7, flags))
+        {
+          // weigths proportional to column width (including header)
+          ImGui::TableSetupColumn("Disassembly", 0, 30);
+          ImGui::TableSetupColumn("Target", 0, 6);
+          ImGui::TableSetupColumn("Offset", 0, 6);
+          ImGui::TableSetupColumn("Pointer", 0, 7);
+          ImGui::TableSetupColumn("Value", 0, 5);
+          ImGui::TableSetupColumn("Immediate", 0, 9);
+          ImGui::TableSetupColumn("Branch", 0, 6);
+          ImGui::TableHeadersRow();
+
+          ImGuiListClipper clipper;
+          clipper.Begin(1000);
+          int row = 0;
+          WORD nAddress = g_nDisasmTopAddress;
+          while (clipper.Step())
+          {
+            for (; row < clipper.DisplayStart; ++row)
+            {
+              int iOpcode, iOpmode, nOpbyte;
+              _6502_GetOpmodeOpbyte(nAddress, iOpmode, nOpbyte, nullptr);
+              nAddress += nOpbyte;
+            }
+            IM_ASSERT(row == clipper.DisplayStart && "Clipper position mismatch");
+            for (; row < clipper.DisplayEnd; ++row)
+            {
+              ImGui::TableNextRow();
+              DisasmLine_t line;
+              const char* pSymbol = FindSymbolFromAddress(nAddress);
+              const int bDisasmFormatFlags = GetDisassemblyLine(nAddress, line);
+              nAddress += line.nOpbyte;
+
+              static size_t m = 0;
+              char buffer[CONSOLE_WIDTH];
+              FormatDisassemblyLine(line, buffer, sizeof(buffer));
+              m = std::max(m, strlen(buffer));
+
+              if (nAddress == regs.pc)
+              {
+                const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(0, 0, 1, 1));
+                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
+              }
+
+              ImGui::TableSetColumnIndex(0);
+              ImGui::Selectable(buffer, false, ImGuiSelectableFlags_SpanAllColumns);
+              ImGui::TableSetColumnIndex(1);
+              ImGui::TextUnformatted(line.sTarget);
+              ImGui::TableSetColumnIndex(2);
+              ImGui::TextUnformatted(line.sTargetOffset);
+              ImGui::TableSetColumnIndex(3);
+              ImGui::TextUnformatted(line.sTargetPointer);
+              ImGui::TableSetColumnIndex(4);
+              ImGui::TextUnformatted(line.sTargetValue);
+              ImGui::TableSetColumnIndex(5);
+              ImGui::TextUnformatted(line.sImmediate);
+              ImGui::TableSetColumnIndex(6);
+              ImGui::TextUnformatted(line.sBranch);
+            }
+          }
+          ImGui::EndTable();
+        }
+        ImGui::EndChild();
+      }
+    }
+    ImGui::End();
+  }
+
 
 }

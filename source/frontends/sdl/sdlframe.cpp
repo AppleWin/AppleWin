@@ -336,6 +336,7 @@ namespace sa2
             SoundCore_SetFade(FADE_OUT);
             break;
           case MODE_PAUSED:
+          case MODE_DEBUG:
             g_nAppMode = MODE_RUNNING;
             SoundCore_SetFade(FADE_IN);
             mySpeed.reset();

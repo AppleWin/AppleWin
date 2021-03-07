@@ -17,6 +17,8 @@ namespace sa2
     bool myShowDemo = false;
     bool myShowSettings = false;
     bool myShowMemory = false;
+    bool myShowCPU = false;
+    bool mySyncCPU = false;
 
     int mySpeakerVolume = 50;
     int myMockingboardVolume = 50;
@@ -26,6 +28,7 @@ namespace sa2
 
     void showSettings();
     void showMemory();
+    void showCPU();
   };
 
 }

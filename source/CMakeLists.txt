@@ -1,6 +1,14 @@
 include(FindPkgConfig)
 
 set(SOURCE_FILES
+  Debugger/Debugger_Disassembler.cpp
+  Debugger/Debugger_Symbols.cpp
+  Debugger/Debugger_DisassemblerData.cpp
+  Debugger/Debugger_Console.cpp
+  Debugger/Debugger_Assembler.cpp
+  Debugger/Debugger_Parser.cpp
+  Debugger/Debugger_Range.cpp
+
   Speaker.cpp
   SoundCore.cpp
   AY8910.cpp
