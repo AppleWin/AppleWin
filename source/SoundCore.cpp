@@ -124,45 +124,44 @@ static const char *DirectSound_ErrorText (HRESULT error)
 
 //-----------------------------------------------------------------------------
 
-bool DSGetLock(LPDIRECTSOUNDBUFFER pVoice, DWORD dwOffset, DWORD dwBytes,
-					  SHORT** ppDSLockedBuffer0, DWORD* pdwDSLockedBufferSize0,
-					  SHORT** ppDSLockedBuffer1, DWORD* pdwDSLockedBufferSize1)
+HRESULT DSGetLock(LPDIRECTSOUNDBUFFER pVoice, DWORD dwOffset, DWORD dwBytes,
+	SHORT** ppDSLockedBuffer0, DWORD* pdwDSLockedBufferSize0,
+	SHORT** ppDSLockedBuffer1, DWORD* pdwDSLockedBufferSize1)
 {
 	DWORD nStatus;
 	HRESULT hr = pVoice->GetStatus(&nStatus);
-	if(hr != DS_OK)
-		return false;
+	if (hr != DS_OK)
+		return hr;
 
-	if(nStatus & DSBSTATUS_BUFFERLOST)
+	if (nStatus & DSBSTATUS_BUFFERLOST)
 	{
 		do
 		{
 			hr = pVoice->Restore();
-			if(hr == DSERR_BUFFERLOST)
+			if (hr == DSERR_BUFFERLOST)
 				Sleep(10);
-		}
-		while(hr != DS_OK);
+		} while (hr != DS_OK);
 	}
 
 	// Get write only pointer(s) to sound buffer
-	if(dwBytes == 0)
+	if (dwBytes == 0)
 	{
-		if(FAILED(hr = pVoice->Lock(0, 0,
-								(void**)ppDSLockedBuffer0, pdwDSLockedBufferSize0,
-								(void**)ppDSLockedBuffer1, pdwDSLockedBufferSize1,
-								DSBLOCK_ENTIREBUFFER)))
-			return false;
+		if (FAILED(hr = pVoice->Lock(0, 0,
+			(void**)ppDSLockedBuffer0, pdwDSLockedBufferSize0,
+			(void**)ppDSLockedBuffer1, pdwDSLockedBufferSize1,
+			DSBLOCK_ENTIREBUFFER)))
+			return hr;
 	}
 	else
 	{
-		if(FAILED(hr = pVoice->Lock(dwOffset, dwBytes,
-								(void**)ppDSLockedBuffer0, pdwDSLockedBufferSize0,
-								(void**)ppDSLockedBuffer1, pdwDSLockedBufferSize1,
-								0)))
-			return false;
+		if (FAILED(hr = pVoice->Lock(dwOffset, dwBytes,
+			(void**)ppDSLockedBuffer0, pdwDSLockedBufferSize0,
+			(void**)ppDSLockedBuffer1, pdwDSLockedBufferSize1,
+			0)))
+			return hr;
 	}
 
-	return true;
+	return hr;
 }
 
 //-----------------------------------------------------------------------------
