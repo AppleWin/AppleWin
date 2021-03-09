@@ -269,7 +269,8 @@ static __forceinline void DoIrqProfiling(DWORD uCycles)
 
 #ifdef USE_SPEECH_API
 
-const USHORT COUT = 0xFDED;
+const USHORT COUT1 = 0xFDF0;			// GH#934 - ProDOS: COUT1 better than using COUT/$FDED
+const USHORT BASICOUT = 0xC307;			// GH#934 - 80COL: use BASICOUT
 
 const UINT OUTPUT_BUFFER_SIZE = 256;
 char g_OutputBuffer[OUTPUT_BUFFER_SIZE+1+1];	// +1 for EOL, +1 for NULL
@@ -370,7 +371,7 @@ static __forceinline void Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 		: *(mem+PC);
 
 #ifdef USE_SPEECH_API
-	if (PC == COUT && g_Speech.IsEnabled() && !g_bFullSpeed)
+	if ((PC == COUT1 || PC == BASICOUT) && g_Speech.IsEnabled() && !g_bFullSpeed)
 		CaptureCOUT();
 #endif
 
