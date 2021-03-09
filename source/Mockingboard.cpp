@@ -171,19 +171,17 @@ static UINT64 g_uLastCumulativeCycles = 0;
 
 // SSI263 vars:
 static USHORT g_nSSI263Device = 0;	// SSI263 device# which is generating phoneme-complete IRQ
-static volatile int g_nCurrentActivePhoneme = -1;	// Modified by threads: main & SSI263Thread
-static volatile bool g_bStopPhoneme = false;		// Modified by threads: main & SSI263Thread
+static int g_nCurrentActivePhoneme = -1;
 static bool g_bVotraxPhoneme = false;
 
 static const DWORD SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
+static const DWORD SAMPLE_RATE_SSI263 = 22050;
 
 static short* ppAYVoiceBuffer[NUM_VOICES] = {0};
 
 static unsigned __int64	g_nMB_InActiveCycleCount = 0;
 static bool g_bMB_RegAccessedFlag = false;
 static bool g_bMB_Active = false;
-
-static HANDLE g_hThread = NULL;
 
 static bool g_bMBAvailable = false;
 
@@ -198,31 +196,31 @@ static UINT g_PhasorClockScaleFactor = 1;	// for save-state only
 //-------------------------------------
 
 static const unsigned short g_nMB_NumChannels = 2;
+static const unsigned short g_nSSI263_NumChannels = 1;
 
 static const DWORD g_dwDSBufferSize = MAX_SAMPLES * sizeof(short) * g_nMB_NumChannels;
+static const DWORD g_dwDSSSI263BufferSize = MAX_SAMPLES * sizeof(short) * g_nSSI263_NumChannels;
 
 static const SHORT nWaveDataMin = (SHORT)0x8000;
 static const SHORT nWaveDataMax = (SHORT)0x7FFF;
 
 static short g_nMixBuffer[g_dwDSBufferSize / sizeof(short)];
-
+static short g_nMixBufferSSI263[g_dwDSSSI263BufferSize / sizeof(short)];
 
 static VOICE MockingboardVoice = {0};
-static VOICE SSI263Voice[64] = {0};
+static VOICE SSI263SingleVoice = {0};
 
-static const int g_nNumEvents = 2;
-static HANDLE g_hSSI263Event[g_nNumEvents] = {NULL};	// 1: Phoneme finished playing, 2: Exit thread
-static DWORD g_dwMaxPhonemeLen = 0;
+//static DWORD g_dwMaxPhonemeLen = 0;	// unused
 
 static bool g_bCritSectionValid = false;	// Deleting CritialSection when not valid causes crash on Win98
 static CRITICAL_SECTION g_CriticalSection;	// To guard 6522's IFR
 
 static UINT g_cyclesThisAudioFrame = 0;
+static UINT g_cyclesThisAudioFrameSSI263 = 0;
 
 //---------------------------------------------------------------------------
 
 // Forward refs:
-static DWORD WINAPI SSI263Thread(LPVOID);
 static void Votrax_Write(BYTE nDevice, BYTE nValue);
 static int MB_SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
 
@@ -1282,7 +1280,289 @@ static void MB_Update(void)
 
 //-----------------------------------------------------------------------------
 
-// Called by SSI263Thread(), MB_LoadSnapshot & Phasor_LoadSnapshot
+#if 1
+static bool dbgFirst = true;
+static UINT64 dbgSTime = 0;
+#endif
+
+static void SetSpeechIRQ(SY6522_AY8910* pMB);
+
+#define DBG_SSI263_UPDATE
+static UINT64 g_uLastSSI263UpdateCycle = 0;
+static bool g_ssi263UpdateWasFullSpeed = false;
+
+static const short* g_pPhonemeData = NULL;
+static UINT g_uPhonemeLength = 0;	// length in samples
+
+static void SSI263_Update_IRQ(void)
+{
+	_ASSERT(g_nCurrentActivePhoneme != -1);
+	g_nCurrentActivePhoneme = -1;
+
+	if (dbgFirst)
+	{
+		UINT64 diff = g_nCumulativeCycles - dbgSTime;
+		LogOutput("1st phoneme playback time = 0x%08X cy\n", (UINT32)diff);
+		dbgFirst = false;
+	}
+
+	// Phoneme complete, so generate IRQ if necessary
+	SY6522_AY8910* pMB = &g_MB[g_nSSI263Device];
+	SetSpeechIRQ(pMB);
+}
+
+// Called by:
+// . SSI263_PeriodicUpdate()
+static void SSI263_Update(void)
+{
+	if (!SSI263SingleVoice.bActive)
+		return;
+
+	if (g_bFullSpeed)
+	{
+		if (g_uPhonemeLength)
+		{
+			// Willy Byte does SSI263 detection with drive motor on
+			g_uPhonemeLength = 0;
+			if (dbgFirst) LogOutput("1st phoneme short-circuited by fullspeed\n");
+			SSI263_Update_IRQ();
+		}
+
+		g_ssi263UpdateWasFullSpeed = true;
+		return;
+	}
+
+	const bool nowNormalSpeed = g_ssi263UpdateWasFullSpeed;	// Just transitioned from full-speed to normal speed
+	g_ssi263UpdateWasFullSpeed = false;
+
+	//
+
+#if 0
+	if (!g_bMB_RegAccessedFlag)
+	{
+		if(!g_nMB_InActiveCycleCount)
+		{
+			g_nMB_InActiveCycleCount = g_nCumulativeCycles;
+		}
+		else if(g_nCumulativeCycles - g_nMB_InActiveCycleCount > (unsigned __int64)g_fCurrentCLK6502/10)
+		{
+			// After 0.1 sec of Apple time, assume MB is not active
+			g_bMB_Active = false;
+		}
+	}
+	else
+	{
+		g_nMB_InActiveCycleCount = 0;
+		g_bMB_RegAccessedFlag = false;
+		g_bMB_Active = true;
+	}
+#endif
+
+	//
+
+	static int nNumSamplesError = 0;
+	static DWORD dwByteOffset = (DWORD)-1;
+
+	// Reset static vars here, since could early-return just below where: 'updateInterval < kMinimumUpdateInterval'
+	// . NB. next call to this function: nowNormalSpeed != true
+	if (nowNormalSpeed)
+		dwByteOffset = (DWORD)-1;	// ...which resets nNumSamplesError below
+
+	//-------------
+
+	DWORD dwCurrentPlayCursor, dwCurrentWriteCursor;
+	HRESULT hr = SSI263SingleVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
+	if (FAILED(hr))
+		return;
+
+	bool prefillBufferOnInit = false;
+
+	if (dwByteOffset == (DWORD)-1)
+	{
+		// First time in this func (or transitioned from full-speed to normal speed)
+#ifdef DBG_SSI263_UPDATE
+		double fTicksSecs = (double)GetTickCount() / 1000.0;
+		LogOutput("%010.3f: [SSUpdtInit]PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset);
+#endif
+		dwByteOffset = dwCurrentWriteCursor;
+		nNumSamplesError = 0;
+		prefillBufferOnInit = true;
+	}
+	else
+	{
+		// Check that our offset isn't between Play & Write positions
+
+		if (dwCurrentWriteCursor > dwCurrentPlayCursor)
+		{
+			// |-----PxxxxxW-----|
+			if((dwByteOffset > dwCurrentPlayCursor) && (dwByteOffset < dwCurrentWriteCursor))
+			{
+#ifdef DBG_SSI263_UPDATE
+				double fTicksSecs = (double)GetTickCount() / 1000.0;
+				LogOutput("%010.3f: [SSUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset);
+#endif
+				dwByteOffset = dwCurrentWriteCursor;
+				nNumSamplesError = 0;
+			}
+		}
+		else
+		{
+			// |xxW----------Pxxx|
+			if ((dwByteOffset > dwCurrentPlayCursor) || (dwByteOffset < dwCurrentWriteCursor))
+			{
+#ifdef DBG_SSI263_UPDATE
+				double fTicksSecs = (double)GetTickCount() / 1000.0;
+				LogOutput("%010.3f: [SSUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset);
+#endif
+				dwByteOffset = dwCurrentWriteCursor;
+				nNumSamplesError = 0;
+			}
+		}
+	}
+
+	//-------------
+
+	const UINT kMinBytesInBuffer = g_dwDSSSI263BufferSize / 4;	// 25% full
+	int nNumSamples = 0;
+	double updateInterval = 0.0;
+
+	if (prefillBufferOnInit)
+	{
+		// If we just set dwByteOffset := dwCurrentWriteCursor, then nBytesRemaining = (dwCurrentWriteCursor - dwCurrentPlayCursor) = 0x52A
+		// . And 0x52A is less than 0x2000 (quarter of ring-buffer size), so NumSamplesError = SoundCore_GetErrorInc()
+		// . So it'll insert ~44 samples (~1000 cycles) into the ring-buffer
+		// . Then next time (in ~1000 cycles time) the play-cursor *may* overtake dwByteOffset, so NumSamplesError will restart incrementing
+		// . ... and eventually NumSamplesError will continue incrementing until it gets to 0xC08, at which point the ring-buffer will be > a quarter full
+		// Instead just prefill first 25% of buffer with zeros:
+		// . so we have a quarter buffer of silence/lag before the real sample data begins.
+		// . NB. this is fine, since it's the steady state; and it's likely that no actual data will ever occur during this initial time.
+
+		g_uLastSSI263UpdateCycle = g_uLastCumulativeCycles;
+
+		nNumSamples = kMinBytesInBuffer / sizeof(short);
+		memset(&g_nMixBufferSSI263[0], 0, nNumSamples);
+	}
+	else
+	{
+		// For small timer periods, wait for a period of 500cy before updating DirectSound ring-buffer.
+		// NB. A timer period of less than 24cy will yield nNumSamplesPerPeriod=0.
+		const double kMinimumUpdateInterval = 500.0;	// Arbitary (500 cycles = 21 samples)
+		const double kMaximumUpdateInterval = (double)(0xFFFF+2);	// Max 6522 timer interval (1372 samples)
+
+		if (g_uLastSSI263UpdateCycle == 0)
+			g_uLastSSI263UpdateCycle = g_uLastCumulativeCycles;		// Initial call to SSI263_Update() after reset/power-cycle
+
+		_ASSERT(g_uLastCumulativeCycles >= g_uLastSSI263UpdateCycle);
+		updateInterval = (double)(g_uLastCumulativeCycles - g_uLastSSI263UpdateCycle);
+		if (updateInterval < kMinimumUpdateInterval)
+			return;
+		if (updateInterval > kMaximumUpdateInterval)
+			updateInterval = kMaximumUpdateInterval;
+
+		g_uLastSSI263UpdateCycle = g_uLastCumulativeCycles;
+
+		const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
+		const int nNumSamplesPerPeriod = (int) ((double)(SAMPLE_RATE_SSI263) / nIrqFreq);	// Eg. For 60Hz this is 367
+
+		nNumSamples = nNumSamplesPerPeriod + nNumSamplesError;						// Apply correction
+		if (nNumSamples <= 0)
+			nNumSamples = 0;
+		if (nNumSamples > 2*nNumSamplesPerPeriod)
+			nNumSamples = 2*nNumSamplesPerPeriod;
+
+		if (nNumSamples > g_dwDSSSI263BufferSize)
+			nNumSamples = g_dwDSSSI263BufferSize;	// Clamp to prevent buffer overflow
+
+//		if (nNumSamples)
+//			{ /* Generate new sample data*/ }
+
+		//
+
+		int nBytesRemaining = dwByteOffset - dwCurrentPlayCursor;
+		if (nBytesRemaining < 0)
+			nBytesRemaining += g_dwDSSSI263BufferSize;
+
+		// Calc correction factor so that play-buffer doesn't under/overflow
+		const int nErrorInc = SoundCore_GetErrorInc();
+		if (nBytesRemaining < kMinBytesInBuffer)
+			nNumSamplesError += nErrorInc;				// < 0.25 of buffer remaining
+		else if (nBytesRemaining > g_dwDSSSI263BufferSize / 2)
+			nNumSamplesError -= nErrorInc;				// > 0.50 of buffer remaining
+		else
+			nNumSamplesError = 0;						// Acceptable amount of data in buffer
+	}
+
+#ifdef DBG_SSI263_UPDATE
+	double fTicksSecs = (double)GetTickCount() / 1000.0;
+
+	LogOutput("%010.3f: [SSUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X, NSE=%08X, Interval=%f\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset, nNumSamples, nNumSamplesError, updateInterval);
+#endif
+
+	if (nNumSamples == 0)
+		return;
+
+	//-------------
+
+	bool bSpeechIRQ = false;
+
+	{
+		short* pMixBuffer = &g_nMixBufferSSI263[0];
+		UINT copyLength = nNumSamples;
+
+		if (g_uPhonemeLength && !prefillBufferOnInit)
+		{
+			UINT phonemeLen = g_uPhonemeLength > (UINT)nNumSamples ? nNumSamples : g_uPhonemeLength;
+			if (phonemeLen > copyLength) phonemeLen = copyLength;
+
+			memcpy(pMixBuffer, g_pPhonemeData, phonemeLen*sizeof(short));
+			g_pPhonemeData += phonemeLen;
+			g_uPhonemeLength -= phonemeLen;
+
+			pMixBuffer += phonemeLen;
+			copyLength -= phonemeLen;
+
+			if (g_uPhonemeLength == 0)
+				bSpeechIRQ = true;
+		}
+
+		if (copyLength)
+		{
+			memset(pMixBuffer, 0, copyLength*sizeof(short));
+		}
+	}
+
+	//
+
+	DWORD dwDSLockedBufferSize0, dwDSLockedBufferSize1;
+	SHORT *pDSLockedBuffer0, *pDSLockedBuffer1;
+
+	if (!DSGetLock(SSI263SingleVoice.lpDSBvoice,
+						dwByteOffset, (DWORD)nNumSamples*sizeof(short)*g_nSSI263_NumChannels,
+						&pDSLockedBuffer0, &dwDSLockedBufferSize0,
+						&pDSLockedBuffer1, &dwDSLockedBufferSize1))
+		return;
+
+	memcpy(pDSLockedBuffer0, &g_nMixBufferSSI263[0], dwDSLockedBufferSize0);
+	if(pDSLockedBuffer1)
+		memcpy(pDSLockedBuffer1, &g_nMixBufferSSI263[dwDSLockedBufferSize0/sizeof(short)], dwDSLockedBufferSize1);
+
+	// Commit sound buffer
+	hr = SSI263SingleVoice.lpDSBvoice->Unlock((void*)pDSLockedBuffer0, dwDSLockedBufferSize0,
+											  (void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
+	if (FAILED(hr))
+		return;
+
+	dwByteOffset = (dwByteOffset + (DWORD)nNumSamples*sizeof(short)*g_nSSI263_NumChannels) % g_dwDSSSI263BufferSize;
+
+	//
+
+	if (bSpeechIRQ)
+		SSI263_Update_IRQ();
+}
+
+//-----------------------------------------------------------------------------
+
+// Called by MB_LoadSnapshot & Phasor_LoadSnapshot
 // Pre: g_bVotraxPhoneme, g_bPhasorEnable, g_phasorMode
 static void SetSpeechIRQ(SY6522_AY8910* pMB)
 {
@@ -1322,150 +1602,48 @@ static void SetSpeechIRQ(SY6522_AY8910* pMB)
 	}
 }
 
-static DWORD WINAPI SSI263Thread(LPVOID lpParameter)
-{
-	while(1)
-	{
-		DWORD dwWaitResult = WaitForMultipleObjects( 
-								g_nNumEvents,		// number of handles in array
-								g_hSSI263Event,		// array of event handles
-								FALSE,				// wait until any one is signaled
-								INFINITE);
-
-		if((dwWaitResult < WAIT_OBJECT_0) || (dwWaitResult > WAIT_OBJECT_0+g_nNumEvents-1))
-			continue;
-
-		dwWaitResult -= WAIT_OBJECT_0;			// Determine event # that signaled
-
-		if(dwWaitResult == (g_nNumEvents-1))	// Termination event
-			break;
-
-		// Phoneme completed playing
-
-		if (g_bStopPhoneme)
-		{
-			g_bStopPhoneme = false;
-			continue;
-		}
-
-#if LOG_SSI263
-		//if(g_fh) fprintf(g_fh, "IRQ: Phoneme complete (0x%02X)\n\n", g_nCurrentActivePhoneme);
-#endif
-
-		if (g_nCurrentActivePhoneme < 0)
-			continue;	// On CTRL+RESET or power-cycle (during phoneme playback): ResetState() is called, which set g_nCurrentActivePhoneme=-1
-
-		SSI263Voice[g_nCurrentActivePhoneme].bActive = false;
-		g_nCurrentActivePhoneme = -1;
-
-		// Phoneme complete, so generate IRQ if necessary
-		SY6522_AY8910* pMB = &g_MB[g_nSSI263Device];
-		SetSpeechIRQ(pMB);
-	}
-
-	return 0;
-}
-
 //-----------------------------------------------------------------------------
+
+static short* g_pPhonemeData00 = NULL;	// TODO: fix leak
 
 static void SSI263_Play(unsigned int nPhoneme)
 {
-#if 1
-	HRESULT hr;
-
+	if (dbgFirst)
 	{
-		int nCurrPhoneme = g_nCurrentActivePhoneme;	// local copy in case SSI263Thread sets it to -1
-		if (nCurrPhoneme >= 0)
-		{
-			// A write to DURPHON before previous phoneme has completed
-			g_bStopPhoneme = true;
-			hr = SSI263Voice[nCurrPhoneme].lpDSBvoice->Stop();
-
-			// Busy-wait until ACK from SSI263Thread
-			// . required to avoid data-race
-			while (	g_bStopPhoneme &&				// wait for SSI263Thread to ACK the lpDSBVoice->Stop()
-					g_nCurrentActivePhoneme >= 0)	// wait for SSI263Thread to get end of sample event
-				;
-
-			g_bStopPhoneme = false;
-		}
+		dbgSTime = g_nCumulativeCycles;
+		LogOutput("1st phoneme = 0x%02X\n", nPhoneme);
 	}
 
+//	_ASSERT(g_nCurrentActivePhoneme == -1);
 	g_nCurrentActivePhoneme = nPhoneme;
 
-	hr = SSI263Voice[g_nCurrentActivePhoneme].lpDSBvoice->SetCurrentPosition(0);
-	if(FAILED(hr))
-		return;
+	bool bPause = false;
 
-	hr = SSI263Voice[g_nCurrentActivePhoneme].lpDSBvoice->Play(0,0,0);	// Not looping
-	if(FAILED(hr))
-		return;
-
-	SSI263Voice[g_nCurrentActivePhoneme].bActive = true;
-#else
-	HRESULT hr;
-	bool bPause;
-
-	if(nPhoneme == 1)
+	if (nPhoneme == 1)
 		nPhoneme = 2;	// Missing this sample, so map to phoneme-2
 
-	if(nPhoneme == 0)
-	{
+	if (nPhoneme == 0)
 		bPause = true;
-	}
 	else
-	{
-//		nPhoneme--;
 		nPhoneme-=2;	// Missing phoneme-1
-		bPause = false;
-	}
 
-	DWORD dwDSLockedBufferSize = 0;    // Size of the locked DirectSound buffer
-	SHORT* pDSLockedBuffer;
+	g_uPhonemeLength = g_nPhonemeInfo[nPhoneme].nLength;
 
-	hr = SSI263Voice.lpDSBvoice->Stop();
-
-	if(!DSGetLock(SSI263Voice.lpDSBvoice, 0, 0, &pDSLockedBuffer, &dwDSLockedBufferSize, NULL, 0))
-		return;
-
-	unsigned int nPhonemeShortLength = g_nPhonemeInfo[nPhoneme].nLength;
-	unsigned int nPhonemeByteLength = g_nPhonemeInfo[nPhoneme].nLength * sizeof(SHORT);
-
-	if(bPause)
+	if (bPause)
 	{
-		// 'pause' length is length of 1st phoneme (arbitrary choice, since don't know real length)
-		memset(pDSLockedBuffer, 0, g_dwMaxPhonemeLen);
+		if (!g_pPhonemeData00)
+		{
+			// 'pause' length is length of 1st phoneme (arbitrary choice, since don't know real length)
+			g_pPhonemeData00 = new SHORT [g_uPhonemeLength];
+			memset(g_pPhonemeData00, 0x00, g_uPhonemeLength*sizeof(short));
+		}
+
+		g_pPhonemeData = g_pPhonemeData00;
 	}
 	else
 	{
-		memcpy(pDSLockedBuffer, &g_nPhonemeData[g_nPhonemeInfo[nPhoneme].nOffset], nPhonemeByteLength);
-		memset(&pDSLockedBuffer[nPhonemeShortLength], 0, g_dwMaxPhonemeLen-nPhonemeByteLength);
+		g_pPhonemeData = (const short*) &g_nPhonemeData[g_nPhonemeInfo[nPhoneme].nOffset];
 	}
-
-#if 0
-	DSBPOSITIONNOTIFY PositionNotify;
-
-	PositionNotify.dwOffset = nPhonemeByteLength - 1;		// End of phoneme
-	PositionNotify.hEventNotify = g_hSSI263Event[0];
-
-	hr = SSI263Voice.lpDSNotify->SetNotificationPositions(1, &PositionNotify);
-	if(FAILED(hr))
-	{
-		DirectSound_ErrorText(hr);
-		return;
-	}
-#endif
-
-	hr = SSI263Voice.lpDSBvoice->Unlock((void*)pDSLockedBuffer, dwDSLockedBufferSize, NULL, 0);
-	if(FAILED(hr))
-		return;
-
-	hr = SSI263Voice.lpDSBvoice->Play(0,0,0);	// Not looping
-	if(FAILED(hr))
-		return;
-
-	SSI263Voice.bActive = true;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1483,13 +1661,10 @@ static bool MB_DSInit()
 	// Create single Mockingboard voice
 	//
 
-	DWORD dwDSLockedBufferSize = 0;    // Size of the locked DirectSound buffer
-	SHORT* pDSLockedBuffer;
-
 	if(!g_bDSAvailable)
 		return false;
 
-	HRESULT hr = DSGetSoundBuffer(&MockingboardVoice, DSBCAPS_CTRLVOLUME, g_dwDSBufferSize, SAMPLE_RATE, 2);
+	HRESULT hr = DSGetSoundBuffer(&MockingboardVoice, DSBCAPS_CTRLVOLUME, g_dwDSBufferSize, SAMPLE_RATE, g_nMB_NumChannels);
 	LogFileOutput("MB_DSInit: DSGetSoundBuffer(), hr=0x%08X\n", hr);
 	if(FAILED(hr))
 	{
@@ -1514,133 +1689,30 @@ static bool MB_DSInit()
 	//---------------------------------
 
 	//
-	// Create SSI263 voice
+	// Create single SSI263 voice
 	//
 
-#if 0
-	g_dwMaxPhonemeLen = 0;
-	for(int i=0; i<sizeof(g_nPhonemeInfo) / sizeof(PHONEME_INFO); i++)
-		if(g_dwMaxPhonemeLen < g_nPhonemeInfo[i].nLength)
-			g_dwMaxPhonemeLen = g_nPhonemeInfo[i].nLength;
-	g_dwMaxPhonemeLen *= sizeof(SHORT);
-#endif
-
-	g_hSSI263Event[0] = CreateEvent(NULL,	// lpEventAttributes
-									FALSE,	// bManualReset (FALSE = auto-reset)
-									FALSE,	// bInitialState (FALSE = non-signaled)
-									NULL);	// lpName
-	LogFileOutput("MB_DSInit: CreateEvent(), g_hSSI263Event[0]=0x%08X\n", g_hSSI263Event[0]);
-
-	g_hSSI263Event[1] = CreateEvent(NULL,	// lpEventAttributes
-									FALSE,	// bManualReset (FALSE = auto-reset)
-									FALSE,	// bInitialState (FALSE = non-signaled)
-									NULL);	// lpName
-	LogFileOutput("MB_DSInit: CreateEvent(), g_hSSI263Event[1]=0x%08X\n", g_hSSI263Event[1]);
-
-	if((g_hSSI263Event[0] == NULL) || (g_hSSI263Event[1] == NULL))
+	hr = DSGetSoundBuffer(&SSI263SingleVoice, DSBCAPS_CTRLVOLUME, g_dwDSSSI263BufferSize, SAMPLE_RATE_SSI263, g_nSSI263_NumChannels);
+	LogFileOutput("MB_DSInit: DSGetSoundBuffer(), hr=0x%08X\n", hr);
+	if (FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "SSI263: CreateEvent failed\n");
+		if(g_fh) fprintf(g_fh, "MB: DSGetSoundBuffer failed (%08X)\n",hr);
 		return false;
 	}
 
-	for(int i=0; i<64; i++)
-	{
-		unsigned int nPhoneme = i;
-		bool bPause;
+	bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, "SSI263", g_dwDSSSI263BufferSize);
+	LogFileOutput("MB_DSInit: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
+	if (!bRes)
+		return false;
 
-		if(nPhoneme == 1)
-			nPhoneme = 2;	// Missing this sample, so map to phoneme-2
+	SSI263SingleVoice.bActive = true;
 
-		if(nPhoneme == 0)
-		{
-			bPause = true;
-		}
-		else
-		{
-//			nPhoneme--;
-			nPhoneme-=2;	// Missing phoneme-1
-			bPause = false;
-		}
+	// Volume might've been setup from value in Registry
+	if (!SSI263SingleVoice.nVolume)
+		SSI263SingleVoice.nVolume = DSBVOLUME_MAX;
 
-		unsigned int nPhonemeByteLength = g_nPhonemeInfo[nPhoneme].nLength * sizeof(SHORT);
-
-		// NB. DSBCAPS_LOCSOFTWARE required for Phoneme+2==0x28 - sample too short (see KB327698)
-		hr = DSGetSoundBuffer(&SSI263Voice[i], DSBCAPS_CTRLVOLUME+DSBCAPS_CTRLPOSITIONNOTIFY+DSBCAPS_LOCSOFTWARE, nPhonemeByteLength, 22050, 1);
-		LogFileOutput("MB_DSInit: (%02d) DSGetSoundBuffer(), hr=0x%08X\n", i, hr);
-		if(FAILED(hr))
-		{
-			if(g_fh) fprintf(g_fh, "SSI263: DSGetSoundBuffer failed (%08X)\n",hr);
-			return false;
-		}
-
-		bRes = DSGetLock(SSI263Voice[i].lpDSBvoice, 0, 0, &pDSLockedBuffer, &dwDSLockedBufferSize, NULL, 0);
-		//LogFileOutput("MB_DSInit: (%02d) DSGetLock(), res=%d\n", i, bRes ? 1 : 0);	// WARNING: Lock acquired && doing heavy-weight logging
-		if(FAILED(hr))
-		{
-			if(g_fh) fprintf(g_fh, "SSI263: DSGetLock failed (%08X)\n",hr);
-			return false;
-		}
-
-		if(bPause)
-		{
-			// 'pause' length is length of 1st phoneme (arbitrary choice, since don't know real length)
-			memset(pDSLockedBuffer, 0x00, nPhonemeByteLength);
-		}
-		else
-		{
-			memcpy(pDSLockedBuffer, &g_nPhonemeData[g_nPhonemeInfo[nPhoneme].nOffset], nPhonemeByteLength);
-		}
-
- 		hr = SSI263Voice[i].lpDSBvoice->QueryInterface(IID_IDirectSoundNotify, (LPVOID *)&SSI263Voice[i].lpDSNotify);
-		//LogFileOutput("MB_DSInit: (%02d) QueryInterface(), hr=0x%08X\n", i, hr);	// WARNING: Lock acquired && doing heavy-weight logging
-		if(FAILED(hr))
-		{
-			if(g_fh) fprintf(g_fh, "SSI263: QueryInterface failed (%08X)\n",hr);
-			return false;
-		}
-
-		DSBPOSITIONNOTIFY PositionNotify;
-
-//		PositionNotify.dwOffset = nPhonemeByteLength - 1;	// End of buffer
-		PositionNotify.dwOffset = DSBPN_OFFSETSTOP;			// End of buffer
-		PositionNotify.hEventNotify = g_hSSI263Event[0];
-
-		hr = SSI263Voice[i].lpDSNotify->SetNotificationPositions(1, &PositionNotify);
-		//LogFileOutput("MB_DSInit: (%02d) SetNotificationPositions(), hr=0x%08X\n", i, hr);	// WARNING: Lock acquired && doing heavy-weight logging
-		if(FAILED(hr))
-		{
-			if(g_fh) fprintf(g_fh, "SSI263: SetNotifyPos failed (%08X)\n",hr);
-			return false;
-		}
-
-		hr = SSI263Voice[i].lpDSBvoice->Unlock((void*)pDSLockedBuffer, dwDSLockedBufferSize, NULL, 0);
-		LogFileOutput("MB_DSInit: (%02d) Unlock(),hr=0x%08X\n", i, hr);
-		if(FAILED(hr))
-		{
-			if(g_fh) fprintf(g_fh, "SSI263: DSUnlock failed (%08X)\n",hr);
-			return false;
-		}
-
-		SSI263Voice[i].bActive = false;
-		SSI263Voice[i].nVolume = MockingboardVoice.nVolume;		// Use same volume as MB
-		hr = SSI263Voice[i].lpDSBvoice->SetVolume(SSI263Voice[i].nVolume);
-		LogFileOutput("MB_DSInit: (%02d) SetVolume(), hr=0x%08X\n", i, hr);
-	}
-
-	//
-
-	DWORD dwThreadId;
-
-	g_hThread = CreateThread(NULL,				// lpThreadAttributes
-								0,				// dwStackSize
-								SSI263Thread,
-								NULL,			// lpParameter
-								0,				// dwCreationFlags : 0 = Run immediately
-								&dwThreadId);	// lpThreadId
-	LogFileOutput("MB_DSInit: CreateThread(), g_hThread=0x%08X\n", g_hThread);
-
-	BOOL bRes2 = SetThreadPriority(g_hThread, THREAD_PRIORITY_TIME_CRITICAL);
-	LogFileOutput("MB_DSInit: SetThreadPriority(), bRes=%d\n", bRes2 ? 1 : 0);
+	hr = SSI263SingleVoice.lpDSBvoice->SetVolume(SSI263SingleVoice.nVolume);
+	LogFileOutput("MB_DSInit: SetVolume(), hr=0x%08X\n", hr);
 
 	return true;
 
@@ -1649,29 +1721,6 @@ static bool MB_DSInit()
 
 static void MB_DSUninit()
 {
-	if(g_hThread)
-	{
-		DWORD dwExitCode;
-		SetEvent(g_hSSI263Event[g_nNumEvents-1]);	// Signal to thread that it should exit
-
-		do
-		{
-			if(GetExitCodeThread(g_hThread, &dwExitCode))
-			{
-				if(dwExitCode == STILL_ACTIVE)
-					Sleep(10);
-				else
-					break;
-			}
-		}
-		while(1);
-
-		CloseHandle(g_hThread);
-		g_hThread = NULL;
-	}
-
-	//
-
 	if(MockingboardVoice.lpDSBvoice && MockingboardVoice.bActive)
 	{
 		MockingboardVoice.lpDSBvoice->Stop();
@@ -1682,30 +1731,13 @@ static void MB_DSUninit()
 
 	//
 
-	for(int i=0; i<64; i++)
+	if(SSI263SingleVoice.lpDSBvoice && SSI263SingleVoice.bActive)
 	{
-		if(SSI263Voice[i].lpDSBvoice && SSI263Voice[i].bActive)
-		{
-			SSI263Voice[i].lpDSBvoice->Stop();
-			SSI263Voice[i].bActive = false;
-		}
-
-		DSReleaseSoundBuffer(&SSI263Voice[i]);
+		SSI263SingleVoice.lpDSBvoice->Stop();
+		SSI263SingleVoice.bActive = false;
 	}
 
-	//
-
-	if(g_hSSI263Event[0])
-	{
-		CloseHandle(g_hSSI263Event[0]);
-		g_hSSI263Event[0] = NULL;
-	}
-
-	if(g_hSSI263Event[1])
-	{
-		CloseHandle(g_hSSI263Event[1]);
-		g_hSSI263Event[1] = NULL;
-	}
+	DSReleaseSoundBuffer(&SSI263SingleVoice);
 }
 
 //=============================================================================
@@ -1777,6 +1809,9 @@ void MB_InitializeForLoadingSnapshot()	// GH#609
 
 	_ASSERT(MockingboardVoice.lpDSBvoice);
 	MockingboardVoice.lpDSBvoice->Stop();	// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
+
+	_ASSERT(SSI263SingleVoice.lpDSBvoice);
+	SSI263SingleVoice.lpDSBvoice->Stop();
 }
 
 //-----------------------------------------------------------------------------
@@ -1822,7 +1857,7 @@ static void ResetState()
 
 	g_nSSI263Device = 0;
 	g_nCurrentActivePhoneme = -1;
-	g_bStopPhoneme = false;
+	g_uPhonemeLength = 0;
 	g_bVotraxPhoneme = false;
 
 	g_nMB_InActiveCycleCount = 0;
@@ -1833,7 +1868,10 @@ static void ResetState()
 	g_PhasorClockScaleFactor = 1;
 
 	g_uLastMBUpdateCycle = 0;
+	g_uLastSSI263UpdateCycle = 0;
+	g_ssi263UpdateWasFullSpeed = false;
 	g_cyclesThisAudioFrame = 0;
+	g_cyclesThisAudioFrameSSI263 = 0;
 
 	for (int id = 0; id < kNumSyncEvents; id++)
 	{
@@ -1845,6 +1883,9 @@ static void ResetState()
 //	g_bMBAvailable = false;
 //	g_SoundcardType = CT_Empty;	// Don't uncomment, else _ASSERT will fire in MB_Read() after an F2->MB_Reset()
 //	g_bPhasorEnable = false;
+
+	dbgFirst = true;
+	dbgSTime = 0;
 }
 
 void MB_Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
@@ -2138,8 +2179,11 @@ void MB_Mute()
 		MockingboardVoice.bMute = true;
 	}
 
-	if(g_nCurrentActivePhoneme >= 0)
-		SSI263Voice[g_nCurrentActivePhoneme].lpDSBvoice->SetVolume(DSBVOLUME_MIN);
+	if(SSI263SingleVoice.bActive && !SSI263SingleVoice.bMute)
+	{
+		SSI263SingleVoice.lpDSBvoice->SetVolume(DSBVOLUME_MIN);
+		SSI263SingleVoice.bMute = true;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -2155,8 +2199,11 @@ void MB_Demute()
 		MockingboardVoice.bMute = false;
 	}
 
-	if(g_nCurrentActivePhoneme >= 0)
-		SSI263Voice[g_nCurrentActivePhoneme].lpDSBvoice->SetVolume(SSI263Voice[g_nCurrentActivePhoneme].nVolume);
+	if(SSI263SingleVoice.bActive && SSI263SingleVoice.bMute)
+	{
+		SSI263SingleVoice.lpDSBvoice->SetVolume(SSI263SingleVoice.nVolume);
+		SSI263SingleVoice.bMute = false;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -2178,10 +2225,27 @@ void MB_SetCumulativeCycles()
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
 }
 
+static void SSI263_PeriodicUpdate(UINT executedCycles)
+{
+	if (g_SoundcardType == CT_Empty)
+		return;
+
+	const UINT kCyclesPerAudioFrame = 1000;
+	g_cyclesThisAudioFrameSSI263 += executedCycles;
+	if (g_cyclesThisAudioFrameSSI263 < kCyclesPerAudioFrame)
+		return;
+
+	g_cyclesThisAudioFrameSSI263 %= kCyclesPerAudioFrame;
+
+	SSI263_Update();
+}
+
 // Called by ContinueExecution() at the end of every execution period (~1000 cycles or ~3 cycle when MODE_STEPPING)
 // NB. Required for FT's TEST LAB #1 player
 void MB_PeriodicUpdate(UINT executedCycles)
 {
+	SSI263_PeriodicUpdate(executedCycles);
+
 	if (g_SoundcardType == CT_Empty)
 		return;
 
@@ -2312,10 +2376,10 @@ static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 
 bool MB_IsActive()
 {
-	if (!MockingboardVoice.bActive)
+	if (!MockingboardVoice.bActive && !SSI263SingleVoice.bActive)
 		return false;
 
-	return g_bMB_Active;
+	return g_bMB_Active || g_nCurrentActivePhoneme >= 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -2333,6 +2397,16 @@ void MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 
 	if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
 		MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
+
+	//
+
+	SSI263SingleVoice.dwUserVolume = dwVolume;
+
+	SSI263SingleVoice.nVolume = NewVolume(dwVolume, dwVolumeMax);
+
+	if(SSI263SingleVoice.bActive && !SSI263SingleVoice.bMute)
+		SSI263SingleVoice.lpDSBvoice->SetVolume(SSI263SingleVoice.nVolume);
+
 }
 
 //===========================================================================
