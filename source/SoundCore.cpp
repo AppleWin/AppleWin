@@ -428,7 +428,7 @@ void SoundCore_SetFade(eFADE FadeType)
 	if(g_nAppMode == MODE_DEBUG)
 		return;
 
-	// Fade in/out for speaker, the others are demuted/muted here
+	// Fade in/out for speaker, the others are unmuted/muted here
 	if(FadeType != FADE_NONE)
 	{
 		for(UINT i=0; i<g_uNumVoices; i++)

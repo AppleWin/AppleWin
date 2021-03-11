@@ -287,7 +287,7 @@ void SpkrReset()
 	InitRemainderBuffer();
 	Spkr_SubmitWaveBuffer(NULL, 0);
 	Spkr_SetActive(false);
-	Spkr_Demute();
+	Spkr_Unmute();
 }
 
 //=============================================================================
@@ -813,7 +813,7 @@ void Spkr_Mute()
 	}
 }
 
-void Spkr_Demute()
+void Spkr_Unmute()
 {
 	if(SpeakerVoice.bActive && SpeakerVoice.bMute)
 	{
