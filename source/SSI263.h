@@ -7,46 +7,73 @@ class SSI263
 public:
 	SSI263(void)
 	{
-		g_nSSI263Device = 0;
+		m_device = -1;	// undefined
 		g_nCurrentActivePhoneme = -1;
 		g_bVotraxPhoneme = false;
 		g_cyclesThisAudioFrameSSI263 = 0;
 
 		memset(&SSI263SingleVoice, 0, sizeof(SSI263SingleVoice));
 
-		cardMode = PH_Mockingboard;
+		m_cardMode = PH_Mockingboard;
+
+		//
+
+		dbgFirst = true;
+		dbgSTime = 0;
+
+		g_uLastSSI263UpdateCycle = 0;
+		g_ssi263UpdateWasFullSpeed = false;
+
+		g_pPhonemeData = NULL;
+		g_uPhonemeLength = 0;
+
+		g_pPhonemeData00 = NULL;
+
+		//
+
+		nNumSamplesError = 0;
+		dwByteOffset = (DWORD)-1;
 	}
-	~SSI263(void){}
+	~SSI263(void)
+	{
+		delete [] g_pPhonemeData00;
+	}
 
 	bool DSInit(void);
 	void DSUninit(void);
 
-	void Play(unsigned int nPhoneme);
 	void Stop(void);
 	void Reset(void);
 	bool IsPhonemeActive(void) { return g_nCurrentActivePhoneme >= 0; }
 
-	BYTE Read(BYTE nDevice, ULONG nExecutedCycles);
-	void Write(BYTE nDevice, BYTE nReg, BYTE nValue);
+	BYTE Read(ULONG nExecutedCycles);
+	void Write(BYTE nReg, BYTE nValue);
 
 	void Mute(void);
 	void Unmute(void);
+	void SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 
 	void PeriodicUpdate(UINT executedCycles);
 	void Update(void);
-	void SetSpeechIRQ(BYTE nDevice);
+	void SetSpeechIRQ(void);
 
-	void Votrax_Write(BYTE nDevice, BYTE nValue);
+	void Votrax_Write(BYTE nValue);
+	bool GetVotraxPhoneme(void) { return g_bVotraxPhoneme; }
+	void SetVotraxPhoneme(bool value) { g_bVotraxPhoneme = value; }
+
+	void SetCardMode(PHASOR_MODE mode) { m_cardMode = mode; }
+	void SetDevice(UINT device) { m_device = device; }
 
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
 private:
+	void Play(unsigned int nPhoneme);
 	void UpdateIRQ(void);
 
 	static const BYTE Votrax2SSI263[/*64*/];
 
-	BYTE g_nSSI263Device;	// SSI263 device# which is generating phoneme-complete IRQ
+	BYTE m_device;	// SSI263 device# which is generating phoneme-complete IRQ (and only required whilst Mockingboard isn't a class)
 	int g_nCurrentActivePhoneme;
 	bool g_bVotraxPhoneme;
 
@@ -57,7 +84,23 @@ private:
 
 	UINT g_cyclesThisAudioFrameSSI263;
 
-	PHASOR_MODE cardMode;
+	PHASOR_MODE m_cardMode;
+
+	//
+	bool dbgFirst;
+	UINT64 dbgSTime;
+
+	UINT64 g_uLastSSI263UpdateCycle;
+	bool g_ssi263UpdateWasFullSpeed;
+
+	const short* g_pPhonemeData;
+	UINT g_uPhonemeLength;	// length in samples
+
+	short* g_pPhonemeData00;
+
+	//
+	int nNumSamplesError;
+	DWORD dwByteOffset;
 
 	// Regs:
 	BYTE m_durationPhoneme;

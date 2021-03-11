@@ -111,7 +111,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Chip offsets from card base.
 #define SY6522A_Offset	0x00
 #define SY6522B_Offset	0x80
-#define SSI263_Offset	0x40
+#define SSI263B_Offset	0x20
+#define SSI263A_Offset	0x40
 
 //#define Phasor_SY6522A_CS		4
 //#define Phasor_SY6522B_CS		7
@@ -127,7 +128,7 @@ struct SY6522_AY8910
 	BYTE nAYCurrentRegister;
 	bool bTimer1Active;
 	bool bTimer2Active;
-//	SSI263 SpeechChip;	// TODO: uncomment
+	SSI263 ssi263;
 	MockingboardUnitState_e state;	// Where a unit is a 6522+AY8910 pair
 	MockingboardUnitState_e stateB;	// Phasor: 6522 & 2nd AY8910
 };
@@ -530,7 +531,7 @@ static USHORT SetTimerSyncEvent(UINT id, BYTE reg, USHORT timerLatch)
 
 static void UpdateIFR(SY6522_AY8910* pMB, BYTE clr_ifr, BYTE set_ifr=0)
 {
-	// Need critical section to avoid data-race: main thread & SSI263Thread can both access IFR
+	// Need critical section to avoid data-race: main thread & SSI263Thread can both access IFR -- no longer a SSI263Thread
 	// . NB. Loading a save-state just directly writes into 6522.IFR (which is fine)
 	if (g_bCritSectionValid) EnterCriticalSection(&g_CriticalSection);
 	{
@@ -578,7 +579,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				if( (pMB->sy6522.DDRB == 0xFF) && (pMB->sy6522.PCR == 0xB0) )
 				{
 					// Votrax speech data
-					//g_SSI263.Votrax_Write(nDevice, nValue);
+					pMB->ssi263.Votrax_Write(nValue);
 					break;
 				}
 
@@ -1021,7 +1022,11 @@ static bool MB_DSInit()
 
 	//---------------------------------
 
-	//bRes = g_SSI263.DSInit();	// TODO
+	for (UINT i=0; i<NUM_AY8910; i++)
+	{
+		if (!g_MB[i].ssi263.DSInit())
+			return false;
+	}
 
 	return true;
 
@@ -1040,7 +1045,8 @@ static void MB_DSUninit()
 
 	//
 
-	//g_SSI263.DSUninit();	// TODO
+	for (UINT i=0; i<NUM_AY8910; i++)
+		g_MB[i].ssi263.DSUninit();
 }
 
 //=============================================================================
@@ -1070,15 +1076,17 @@ void MB_Initialize()
 	{
 		memset(&g_MB,0,sizeof(g_MB));
 
-		int i;
-		for(i=0; i<NUM_VOICES; i++)
+		for (UINT i=0; i<NUM_VOICES; i++)
 			ppAYVoiceBuffer[i] = new short [SAMPLE_RATE];	// Buffer can hold a max of 1 seconds worth of samples
 
 		AY8910_InitAll((int)g_fCurrentCLK6502, SAMPLE_RATE);
 		LogFileOutput("MB_Initialize: AY8910_InitAll()\n");
 
-		for(i=0; i<NUM_AY8910; i++)
+		for (UINT i=0; i<NUM_AY8910; i++)
+		{
 			g_MB[i].nAY8910Number = i;
+			g_MB[i].ssi263.SetDevice(i);
+		}
 
 		//
 
@@ -1113,7 +1121,8 @@ void MB_InitializeForLoadingSnapshot()	// GH#609
 	_ASSERT(MockingboardVoice.lpDSBvoice);
 	MockingboardVoice.lpDSBvoice->Stop();	// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
 
-	//g_SSI263.Stop();
+	for (UINT i=0; i<NUM_AY8910; i++)
+		g_MB[i].ssi263.Stop();
 }
 
 //-----------------------------------------------------------------------------
@@ -1173,12 +1182,16 @@ static void ResetState()
 			g_SynchronousEventMgr.Remove(id);
 	}
 
+	for (UINT i=0; i<NUM_AY8910; i++)
+	{
+		g_MB[i].ssi263.SetCardMode(g_phasorMode);
+		g_MB[i].ssi263.Reset();
+	}
+
 	// Not these, as they don't change on a CTRL+RESET or power-cycle:
 //	g_bMBAvailable = false;
 //	g_SoundcardType = CT_Empty;	// Don't uncomment, else _ASSERT will fire in MB_Read() after an F2->MB_Reset()
 //	g_bPhasorEnable = false;
-
-	//g_SSI263.Reset();
 }
 
 void MB_Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
@@ -1250,9 +1263,9 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 		{
 			_ASSERT(!bAccessedDevice);
 			if (nAddr & 0x40)	// Primary SSI263
-				nRes = SSI263_Read(nMB*2+1, nExecutedCycles);		// SSI263 only drives bit7
+				nRes = g_MB[nMB*2+1].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
 			if (nAddr & 0x20)	// Secondary SSI263
-				nRes = SSI263_Read(nMB*2+0, nExecutedCycles);		// SSI263 only drives bit7
+				nRes = g_MB[nMB*2+1].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
 			bAccessedDevice = true;
 		}
 
@@ -1345,9 +1358,9 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 			// NB. Mockingboard mode: writes to $Cn4x/SSI263 also get written to 1st 6522 (have confirmed on real Phasor h/w)
 			_ASSERT( (g_phasorMode == PH_Mockingboard && (CS==0 || CS==1)) || (g_phasorMode == PH_Phasor && (CS==0)) );
 			if (nAddr & 0x40)	// Primary SSI263
-				SSI263_Write(nMB*2+1, nAddr&0x7, nValue);	// 2nd 6522 is used for 1st speech chip
+				g_MB[nMB*2+1].ssi263.Write(nAddr&0x7, nValue);	// 2nd 6522 is used for 1st speech chip
 			if (nAddr & 0x20)	// Secondary SSI263
-				SSI263_Write(nMB*2+0, nAddr&0x7, nValue);	// 1st 6522 is used for 2nd speech chip
+				g_MB[nMB*2+0].ssi263.Write(nAddr&0x7, nValue);	// 1st 6522 is used for 2nd speech chip
 		}
 
 		return 0;
@@ -1359,9 +1372,9 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 		SY6522_Write(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr&0xf, nValue);
 
 	if (nAddr & 0x40)
-		SSI263_Write(nMB*2+1, nAddr&0x7, nValue);		// 2nd 6522 is used for 1st speech chip
+		g_MB[nMB*2+1].ssi263.Write(nAddr&0x7, nValue);		// 2nd 6522 is used for 1st speech chip
 	if (nAddr & 0x20)
-		SSI263_Write(nMB*2+0, nAddr&0x7, nValue);		// 1st 6522 is used for 2nd speech chip
+		g_MB[nMB*2+0].ssi263.Write(nAddr&0x7, nValue);		// 1st 6522 is used for 2nd speech chip
 
 	return 0;
 }
@@ -1401,6 +1414,9 @@ static BYTE __stdcall PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 		g_PhasorClockScaleFactor = 2;
 
 	AY8910_InitClock((int)(Get6502BaseClock() * g_PhasorClockScaleFactor));
+
+	for (UINT i=0; i<NUM_AY8910; i++)
+		g_MB[i].ssi263.SetCardMode(g_phasorMode);
 
 	return MemReadFloatingBus(nExecutedCycles);
 }
@@ -1472,7 +1488,8 @@ void MB_Mute(void)
 		MockingboardVoice.bMute = true;
 	}
 
-	//g_SSI263.Mute();
+	for (UINT i=0; i<NUM_AY8910; i++)
+		g_MB[i].ssi263.Mute();
 }
 
 //-----------------------------------------------------------------------------
@@ -1488,7 +1505,8 @@ void MB_Unmute(void)
 		MockingboardVoice.bMute = false;
 	}
 
-	//g_SSI263.Unmute();
+	for (UINT i=0; i<NUM_AY8910; i++)
+		g_MB[i].ssi263.Unmute();
 }
 
 //-----------------------------------------------------------------------------
@@ -1517,7 +1535,8 @@ void MB_PeriodicUpdate(UINT executedCycles)
 	if (g_SoundcardType == CT_Empty)
 		return;
 
-	//g_SSI263.PeriodicUpdate(executedCycles);
+	for (UINT i=0; i<NUM_AY8910; i++)
+		g_MB[i].ssi263.PeriodicUpdate(executedCycles);
 
 	if (g_nMBTimerDevice != kTIMERDEVICE_INVALID)
 		return;
@@ -1646,10 +1665,14 @@ static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 
 bool MB_IsActive()
 {
-	if (!MockingboardVoice.bActive && !SSI263SingleVoice.bActive)
+	if (!MockingboardVoice.bActive)
 		return false;
 
-	return g_bMB_Active /*|| g_SSI263.IsPhonemeActive()*/;	// g_SSI263 TODO
+	bool isSSI263Active = false;
+	for (UINT i=0; i<NUM_AY8910; i++)
+		isSSI263Active |= g_MB[i].ssi263.IsPhonemeActive();
+
+	return g_bMB_Active || isSSI263Active;
 }
 
 //-----------------------------------------------------------------------------
@@ -1670,13 +1693,8 @@ void MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 
 	//
 
-	SSI263SingleVoice.dwUserVolume = dwVolume;
-
-	SSI263SingleVoice.nVolume = NewVolume(dwVolume, dwVolumeMax);
-
-	if(SSI263SingleVoice.bActive && !SSI263SingleVoice.bMute)
-		SSI263SingleVoice.lpDSBvoice->SetVolume(SSI263SingleVoice.nVolume);
-
+	for (UINT i=0; i<NUM_AY8910; i++)
+		g_MB[i].ssi263.SetVolume(dwVolume, dwVolumeMax);
 }
 
 //---------------------------------------------------------------------------
@@ -1733,7 +1751,7 @@ void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
 			pSS->Unit[i].RegsAY8910[j] = AYReadReg(nDeviceNum, j);
 		}
 
-		memcpy(&pSS->Unit[i].RegsSSI263, &pMB->SpeechChip, sizeof(SSI263A));
+		memset(&pSS->Unit[i].RegsSSI263, 0, sizeof(SSI263A));	// Not used by debugger
 		pSS->Unit[i].nAYCurrentRegister = pMB->nAYCurrentRegister;
 		pSS->Unit[i].bTimer1IrqPending = false;
 		pSS->Unit[i].bTimer2IrqPending = false;
@@ -1789,6 +1807,8 @@ const UINT NUM_PHASOR_UNITS = 2;
 #define SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR "Clock Scale Factor"	// Redundant from v6
 #define SS_YAML_KEY_PHASOR_MODE "Mode"
 
+#define SS_YAML_KEY_VOTRAX_PHONEME "Votrax Phoneme"
+
 std::string MB_GetSnapshotCardName(void)
 {
 	static const std::string name("Mockingboard C");
@@ -1833,7 +1853,7 @@ void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, g_bVotraxPhoneme);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, pMB->ssi263.GetVotraxPhoneme());
 
 	for(UINT i=0; i<NUM_MB_UNITS; i++)
 	{
@@ -1841,7 +1861,7 @@ void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 
 		SaveSnapshotSY6522(yamlSaveHelper, pMB->sy6522);
 		AY8910_SaveSnapshot(yamlSaveHelper, nDeviceNum, std::string(""));
-		//g_SSI263.SaveSnapshot(yamlSaveHelper, pMB->SpeechChip);
+		pMB->ssi263.SaveSnapshot(yamlSaveHelper);
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state);
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
@@ -1895,15 +1915,14 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
-	g_bVotraxPhoneme = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
-
 	AY8910UpdateSetCycles();
 
 	const UINT nMbCardNum = slot - SLOT4;
 	UINT nDeviceNum = nMbCardNum*2;
 	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
 
-//	g_nSSI263Device = 0;	// g_SSI263 TODO
+	bool isVotrax = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
+	pMB->ssi263.SetVotraxPhoneme(isVotrax);
 
 	for(UINT i=0; i<NUM_MB_UNITS; i++)
 	{
@@ -1915,7 +1934,8 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 		LoadSnapshotSY6522(yamlLoadHelper, pMB->sy6522, version);
 		UpdateIFR(pMB, 0, pMB->sy6522.IFR);					// Assert any pending IRQs (GH#677)
 		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum, std::string(""));
-		//g_SSI263.LoadSnapshot(yamlLoadHelper, pMB->SpeechChip);
+		pMB->ssi263.LoadSnapshot(yamlLoadHelper);
+		pMB->ssi263.SetDevice(nDeviceNum);
 
 		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
 		yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER1_IRQ);	// Consume
@@ -1999,7 +2019,7 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASOR_MODE, g_phasorMode);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, g_bVotraxPhoneme);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, pMB->ssi263.GetVotraxPhoneme());
 
 	for(UINT i=0; i<NUM_PHASOR_UNITS; i++)
 	{
@@ -2008,7 +2028,7 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 		SaveSnapshotSY6522(yamlSaveHelper, pMB->sy6522);
 		AY8910_SaveSnapshot(yamlSaveHelper, nDeviceNum+0, std::string("-A"));
 		AY8910_SaveSnapshot(yamlSaveHelper, nDeviceNum+1, std::string("-B"));
-		//g_SSI263.SaveSnapshot(yamlSaveHelper, pMB->SpeechChip);
+		pMB->ssi263.SaveSnapshot(yamlSaveHelper);
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state);
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE_B, pMB->stateB);
@@ -2046,14 +2066,13 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 	g_phasorMode = (PHASOR_MODE) phasorMode;
 	g_PhasorClockScaleFactor = (g_phasorMode == PH_Phasor) ? 2 : 1;
 
-	g_bVotraxPhoneme = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
-
 	AY8910UpdateSetCycles();
 
 	UINT nDeviceNum = 0;
 	SY6522_AY8910* pMB = &g_MB[0];
 
-//	g_nSSI263Device = 0;	// g_SSI263 TODO
+	bool isVotrax = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
+	pMB->ssi263.SetVotraxPhoneme(isVotrax);
 
 	for(UINT i=0; i<NUM_PHASOR_UNITS; i++)
 	{
@@ -2066,7 +2085,8 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 		UpdateIFR(pMB, 0, pMB->sy6522.IFR);					// Assert any pending IRQs (GH#677)
 		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+0, std::string("-A"));
 		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+1, std::string("-B"));
-		//g_SSI263.LoadSnapshot(yamlLoadHelper, pMB->SpeechChip);
+		pMB->ssi263.LoadSnapshot(yamlLoadHelper);
+		pMB->ssi263.SetDevice(nDeviceNum);
 
 		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
 		yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER1_IRQ);	// Consume

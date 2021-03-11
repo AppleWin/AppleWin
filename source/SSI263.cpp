@@ -98,7 +98,7 @@ void SSI_Output(void)
 }
 #endif
 
-BYTE SSI263::Read(BYTE nDevice, ULONG nExecutedCycles)
+BYTE SSI263::Read(ULONG nExecutedCycles)
 {
 	// Regardless of register, just return inverted A/!R in bit7
 	// . inverted "A/!R" is high for REQ (ie. Request, as phoneme nearly complete)
@@ -106,7 +106,7 @@ BYTE SSI263::Read(BYTE nDevice, ULONG nExecutedCycles)
 	return MemReadFloatingBus(m_currentMode & 1, nExecutedCycles);
 }
 
-void SSI263::Write(BYTE nDevice, BYTE nReg, BYTE nValue)
+void SSI263::Write(BYTE nReg, BYTE nValue)
 {
 #if LOG_SSI263B
 	_ASSERT(nReg < 5);
@@ -138,14 +138,12 @@ void SSI263::Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 
 		// SSI263 datasheet is not clear, but a write to DURPHON must clear the IRQ.
 		// NB. For Mockingboard, A/!R is ack'ed by 6522's PCR handshake.
-		if (cardMode == PH_Phasor)
+		if (m_cardMode == PH_Phasor)
 			CpuIrqDeassert(IS_SPEECH);
 
 		m_currentMode &= ~1;	// Clear SSI263's D7 pin
 
 		m_durationPhoneme = nValue;
-
-		g_nSSI263Device = nDevice;
 
 		Play(nValue & PHONEME_MASK);
 		break;
@@ -279,31 +277,19 @@ const BYTE SSI263::Votrax2SSI263[/*64*/] =
 	0x00,	// 3F: STOP no sound -> PA
 };
 
-void SSI263::Votrax_Write(BYTE device, BYTE value)
+void SSI263::Votrax_Write(BYTE value)
 {
 	g_bVotraxPhoneme = true;
 
 	// !A/R: Acknowledge receipt of phoneme data (signal goes from high to low)
-	MB_UpdateIFR(device, IxR_VOTRAX, 0);
-
-	g_nSSI263Device = device;
+	MB_UpdateIFR(m_device, IxR_VOTRAX, 0);
 
 	Play(Votrax2SSI263[value & PHONEME_MASK]);
 }
 
 //-----------------------------------------------------------------------------
 
-#if 1
-static bool dbgFirst = true;
-static UINT64 dbgSTime = 0;
-#endif
-
-#define DBG_SSI263_UPDATE
-static UINT64 g_uLastSSI263UpdateCycle = 0;
-static bool g_ssi263UpdateWasFullSpeed = false;
-
-static const short* g_pPhonemeData = NULL;
-static UINT g_uPhonemeLength = 0;	// length in samples
+//#define DBG_SSI263_UPDATE
 
 void SSI263::UpdateIRQ(void)
 {
@@ -318,7 +304,7 @@ void SSI263::UpdateIRQ(void)
 	}
 
 	// Phoneme complete, so generate IRQ if necessary
-	SetSpeechIRQ(g_nSSI263Device);
+	SetSpeechIRQ();
 }
 
 // Called by:
@@ -369,9 +355,6 @@ void SSI263::Update(void)
 #endif
 
 	//
-
-	static int nNumSamplesError = 0;
-	static DWORD dwByteOffset = (DWORD)-1;
 
 	// Reset static vars here, since could early-return just below where: 'updateInterval < kMinimumUpdateInterval'
 	// . NB. next call to this function: nowNormalSpeed != true
@@ -573,9 +556,8 @@ void SSI263::Update(void)
 //-----------------------------------------------------------------------------
 
 // Called by MB_LoadSnapshot & Phasor_LoadSnapshot
-// Pre: g_bVotraxPhoneme, cardMode
-//void SSI263::SetSpeechIRQ(SY6522_AY8910* pMB)
-void SSI263::SetSpeechIRQ(BYTE device)
+// Pre: g_bVotraxPhoneme, m_cardMode, m_device
+void SSI263::SetSpeechIRQ(void)
 {
 	if (!g_bVotraxPhoneme)
 	{
@@ -584,17 +566,17 @@ void SSI263::SetSpeechIRQ(BYTE device)
 
 		if ((m_currentMode & DURATION_MODE_MASK) != MODE_IRQ_DISABLED)
 		{
-			if (cardMode == PH_Mockingboard)
+			if (m_cardMode == PH_Mockingboard)
 			{
-				if ((MB_GetPCR(device) & 1) == 0)			// CA1 Latch/Input = 0 (Negative active edge)
-					MB_UpdateIFR(device, 0, IxR_PERIPHERAL);
-				if (MB_GetPCR(device) == 0x0C)			// CA2 Control = b#110 (Low output)
+				if ((MB_GetPCR(m_device) & 1) == 0)			// CA1 Latch/Input = 0 (Negative active edge)
+					MB_UpdateIFR(m_device, 0, IxR_PERIPHERAL);
+				if (MB_GetPCR(m_device) == 0x0C)			// CA2 Control = b#110 (Low output)
 					m_currentMode &= ~1;	// Clear SSI263's D7 pin (cleared by 6522's PCR CA1/CA2 handshake)
 
 				// NB. Don't set CTL=1, as Mockingboard(SMS) speech doesn't work (it sets MODE_IRQ_DISABLED mode during ISR)
 				//pMB->SpeechChip.CtrlArtAmp |= CONTROL_MASK;	// 6522's CA2 sets Power Down mode (pin 18), which sets Control bit
 			}
-			else if (cardMode == PH_Phasor)	// Phasor's SSI263 IRQ (A/!R) line is *also* wired directly to the 6502's IRQ (as well as the 6522's CA1)
+			else if (m_cardMode == PH_Phasor)	// Phasor's SSI263 IRQ (A/!R) line is *also* wired directly to the 6502's IRQ (as well as the 6522's CA1)
 			{
 				CpuIrqAssert(IS_SPEECH);
 			}
@@ -607,19 +589,17 @@ void SSI263::SetSpeechIRQ(BYTE device)
 
 	//
 
-	if (g_bVotraxPhoneme && MB_GetPCR(device) == 0xB0)
+	if (g_bVotraxPhoneme && MB_GetPCR(m_device) == 0xB0)
 	{
 		// !A/R: Time-out of old phoneme (signal goes from low to high)
 
-		MB_UpdateIFR(device, 0, IxR_VOTRAX);
+		MB_UpdateIFR(m_device, 0, IxR_VOTRAX);
 
 		g_bVotraxPhoneme = false;
 	}
 }
 
 //-----------------------------------------------------------------------------
-
-static short* g_pPhonemeData00 = NULL;	// TODO: fix leak
 
 void SSI263::Play(unsigned int nPhoneme)
 {
@@ -715,7 +695,6 @@ void SSI263::DSUninit(void)
 
 void SSI263::Reset(void)
 {
-	g_nSSI263Device = 0;
 	g_nCurrentActivePhoneme = -1;
 	g_uPhonemeLength = 0;
 	g_bVotraxPhoneme = false;
@@ -748,6 +727,16 @@ void SSI263::Unmute(void)
 	}
 }
 
+void SSI263::SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
+{
+	SSI263SingleVoice.dwUserVolume = dwVolume;
+
+	SSI263SingleVoice.nVolume = NewVolume(dwVolume, dwVolumeMax);
+
+	if (SSI263SingleVoice.bActive && !SSI263SingleVoice.bMute)
+		SSI263SingleVoice.lpDSBvoice->SetVolume(SSI263SingleVoice.nVolume);
+}
+
 //-----------------------------------------------------------------------------
 
 void SSI263::PeriodicUpdate(UINT executedCycles)
@@ -771,8 +760,6 @@ void SSI263::PeriodicUpdate(UINT executedCycles)
 #define SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP "Control / Articulation / Amplitude"
 #define SS_YAML_KEY_SSI263_REG_FILTER_FREQ "Filter Frequency"
 #define SS_YAML_KEY_SSI263_REG_CURRENT_MODE "Current Mode"
-
-#define SS_YAML_KEY_VOTRAX_PHONEME "Votrax Phoneme"
 
 void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
