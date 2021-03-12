@@ -48,7 +48,7 @@ static LPDIRECTSOUND g_lpDS = NULL;
 
 // Used for muting & fading:
 
-static const UINT uMAX_VOICES = 66;	// 64 phonemes + spkr + mockingboard
+static const UINT uMAX_VOICES = 6;	// 4x SSI263 + spkr + mockingboard
 static UINT g_uNumVoices = 0;
 static VOICE* g_pVoices[uMAX_VOICES] = {NULL};
 
@@ -167,8 +167,10 @@ bool DSGetLock(LPDIRECTSOUNDBUFFER pVoice, DWORD dwOffset, DWORD dwBytes,
 
 //-----------------------------------------------------------------------------
 
-HRESULT DSGetSoundBuffer(VOICE* pVoice, DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels)
+HRESULT DSGetSoundBuffer(VOICE* pVoice, DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, const char* pszDevName)
 {
+	pVoice->name = pszDevName;
+
 	WAVEFORMATEX wavfmt;
 	DSBUFFERDESC dsbdesc;
 
@@ -226,29 +228,41 @@ void DSReleaseSoundBuffer(VOICE* pVoice)
 
 //-----------------------------------------------------------------------------
 
-bool DSZeroVoiceBuffer(PVOICE Voice, const char* pszDevName, DWORD dwBufferSize)
+bool DSVoiceStop(PVOICE Voice)
 {
 #ifdef NO_DIRECT_X
-
 	return false;
+#else
+	_ASSERT(Voice->lpDSBvoice);
+	HRESULT hr = Voice->lpDSBvoice->Stop();
+	if(FAILED(hr))
+	{
+		if(g_fh) fprintf(g_fh, "%s: DSStop failed (%08X)\n", Voice->name, hr);
+		return false;
+	}
 
+	Voice->bActive = false;
+	return true;
+#endif // NO_DIRECT_X
+}
+
+// Use this to Play()
+bool DSZeroVoiceBuffer(PVOICE Voice, DWORD dwBufferSize)
+{
+#ifdef NO_DIRECT_X
+	return false;
 #else
 
 	DWORD dwDSLockedBufferSize = 0;    // Size of the locked DirectSound buffer
 	SHORT* pDSLockedBuffer;
 
-	_ASSERT(Voice->lpDSBvoice);
-	HRESULT hr = Voice->lpDSBvoice->Stop();
-	if(FAILED(hr))
-	{
-		if(g_fh) fprintf(g_fh, "%s: DSStop failed (%08X)\n",pszDevName,hr);
+	if (!DSVoiceStop(Voice))
 		return false;
-	}
 
-	hr = DSGetLock(Voice->lpDSBvoice, 0, 0, &pDSLockedBuffer, &dwDSLockedBufferSize, NULL, 0);
+	HRESULT hr = DSGetLock(Voice->lpDSBvoice, 0, 0, &pDSLockedBuffer, &dwDSLockedBufferSize, NULL, 0);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n",pszDevName,hr);
+		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name, hr);
 		return false;
 	}
 
@@ -258,24 +272,25 @@ bool DSZeroVoiceBuffer(PVOICE Voice, const char* pszDevName, DWORD dwBufferSize)
 	hr = Voice->lpDSBvoice->Unlock((void*)pDSLockedBuffer, dwDSLockedBufferSize, NULL, 0);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n",pszDevName,hr);
+		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name, hr);
 		return false;
 	}
 
 	hr = Voice->lpDSBvoice->Play(0,0,DSBPLAY_LOOPING);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSPlay failed (%08X)\n",pszDevName,hr);
+		if(g_fh) fprintf(g_fh, "%s: DSPlay failed (%08X)\n", Voice->name, hr);
 		return false;
 	}
 
+	Voice->bActive = true;
 	return true;
 #endif // NO_DIRECT_X
 }
 
 //-----------------------------------------------------------------------------
 
-bool DSZeroVoiceWritableBuffer(PVOICE Voice, const char* pszDevName, DWORD dwBufferSize)
+bool DSZeroVoiceWritableBuffer(PVOICE Voice, DWORD dwBufferSize)
 {
 	DWORD dwDSLockedBufferSize0=0, dwDSLockedBufferSize1=0;
 	SHORT *pDSLockedBuffer0, *pDSLockedBuffer1;
@@ -287,7 +302,7 @@ bool DSZeroVoiceWritableBuffer(PVOICE Voice, const char* pszDevName, DWORD dwBuf
 							&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n",pszDevName,hr);
+		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name, hr);
 		return false;
 	}
 
@@ -299,7 +314,7 @@ bool DSZeroVoiceWritableBuffer(PVOICE Voice, const char* pszDevName, DWORD dwBuf
 									(void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n",pszDevName,hr);
+		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name, hr);
 		return false;
 	}
 

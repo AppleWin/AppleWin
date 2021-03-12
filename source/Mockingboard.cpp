@@ -179,7 +179,7 @@ static const SHORT nWaveDataMin = (SHORT)0x8000;
 static const SHORT nWaveDataMax = (SHORT)0x7FFF;
 
 static short g_nMixBuffer[g_dwDSBufferSize / sizeof(short)];
-static VOICE MockingboardVoice = {0};
+static VOICE MockingboardVoice;
 
 static bool g_bCritSectionValid = false;	// Deleting CritialSection when not valid causes crash on Win98
 static CRITICAL_SECTION g_CriticalSection;	// To guard 6522's IFR
@@ -998,15 +998,15 @@ static bool MB_DSInit()
 	if(!g_bDSAvailable)
 		return false;
 
-	HRESULT hr = DSGetSoundBuffer(&MockingboardVoice, DSBCAPS_CTRLVOLUME, g_dwDSBufferSize, SAMPLE_RATE, g_nMB_NumChannels);
+	HRESULT hr = DSGetSoundBuffer(&MockingboardVoice, DSBCAPS_CTRLVOLUME, g_dwDSBufferSize, SAMPLE_RATE, g_nMB_NumChannels, "MB");
 	LogFileOutput("MB_DSInit: DSGetSoundBuffer(), hr=0x%08X\n", hr);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "MB: DSGetSoundBuffer failed (%08X)\n",hr);
+		LogFileOutput("MB_DSInit: DSGetSoundBuffer failed (%08X)\n", hr);
 		return false;
 	}
 
-	bool bRes = DSZeroVoiceBuffer(&MockingboardVoice, "MB", g_dwDSBufferSize);
+	bool bRes = DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);
 	LogFileOutput("MB_DSInit: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
 	if (!bRes)
 		return false;
@@ -1036,10 +1036,7 @@ static bool MB_DSInit()
 static void MB_DSUninit()
 {
 	if(MockingboardVoice.lpDSBvoice && MockingboardVoice.bActive)
-	{
-		MockingboardVoice.lpDSBvoice->Stop();
-		MockingboardVoice.bActive = false;
-	}
+		DSVoiceStop(&MockingboardVoice);
 
 	DSReleaseSoundBuffer(&MockingboardVoice);
 
@@ -1119,7 +1116,7 @@ void MB_InitializeForLoadingSnapshot()	// GH#609
 		return;
 
 	_ASSERT(MockingboardVoice.lpDSBvoice);
-	MockingboardVoice.lpDSBvoice->Stop();	// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
+	DSVoiceStop(&MockingboardVoice);			// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
 
 	for (UINT i=0; i<NUM_AY8910; i++)
 		g_MB[i].ssi263.Stop();
@@ -1472,7 +1469,7 @@ void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 	// NB. DSZeroVoiceBuffer() also zeros the sound buffer, so it's better than directly calling IDirectSoundBuffer::Play():
 	// - without zeroing, then the previous sound buffer can be heard for a fraction of a second
 	// - eg. when doing Mockingboard playback, then loading a save-state which is also doing Mockingboard playback
-	DSZeroVoiceBuffer(&MockingboardVoice, "MB", g_dwDSBufferSize);
+	DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);
 }
 
 //-----------------------------------------------------------------------------

@@ -12,8 +12,6 @@ public:
 		g_bVotraxPhoneme = false;
 		g_cyclesThisAudioFrameSSI263 = 0;
 
-		memset(&SSI263SingleVoice, 0, sizeof(SSI263SingleVoice));
-
 		m_cardMode = PH_Mockingboard;
 
 		//

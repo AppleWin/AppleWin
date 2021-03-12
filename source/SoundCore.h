@@ -8,7 +8,7 @@
 //#define RIFF_SPKR
 //#define RIFF_MB
 
-typedef struct
+struct VOICE
 {
 	LPDIRECTSOUNDBUFFER lpDSBvoice;
 	LPDIRECTSOUNDNOTIFY lpDSNotify;
@@ -19,18 +19,35 @@ typedef struct
 	DWORD dwUserVolume;		// Volume from slider on Property Sheet (0=Max)
 	bool bIsSpeaker;
 	bool bRecentlyActive;	// (Speaker only) false after 0.2s of speaker inactivity
-} VOICE, *PVOICE;
+	std::string name;
 
+	VOICE(void)
+	{
+		lpDSBvoice = NULL;
+		lpDSNotify = NULL;
+		bActive = false;
+		bMute = false;
+		nVolume = 0;
+		nFadeVolume = 0;
+		dwUserVolume = 0;
+		bIsSpeaker = false;
+		bRecentlyActive = false;
+		name = "";
+	}
+};
+
+typedef VOICE* PVOICE;
 
 bool DSGetLock(LPDIRECTSOUNDBUFFER pVoice, DWORD dwOffset, DWORD dwBytes,
 					  SHORT** ppDSLockedBuffer0, DWORD* pdwDSLockedBufferSize0,
 					  SHORT** ppDSLockedBuffer1, DWORD* pdwDSLockedBufferSize1);
 
-HRESULT DSGetSoundBuffer(VOICE* pVoice, DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels);
+HRESULT DSGetSoundBuffer(VOICE* pVoice, DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, const char* pszDevName);
 void DSReleaseSoundBuffer(VOICE* pVoice);
 
-bool DSZeroVoiceBuffer(PVOICE Voice, const char* pszDevName, DWORD dwBufferSize);
-bool DSZeroVoiceWritableBuffer(PVOICE Voice, const char* pszDevName, DWORD dwBufferSize);
+bool DSVoiceStop(PVOICE Voice);
+bool DSZeroVoiceBuffer(PVOICE Voice, DWORD dwBufferSize);
+bool DSZeroVoiceWritableBuffer(PVOICE Voice, DWORD dwBufferSize);
 
 enum eFADE {FADE_NONE, FADE_IN, FADE_OUT};
 void SoundCore_SetFade(eFADE FadeType);

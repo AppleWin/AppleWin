@@ -467,7 +467,7 @@ void SSI263::Update(void)
 			nNumSamples = g_dwDSSSI263BufferSize;	// Clamp to prevent buffer overflow
 
 //		if (nNumSamples)
-//			{ /* Generate new sample data*/ }
+//		{ /* Generate new sample data - ie. could merge from all the SSI263 sources */ }
 
 		//
 
@@ -603,13 +603,20 @@ void SSI263::SetSpeechIRQ(void)
 
 void SSI263::Play(unsigned int nPhoneme)
 {
+	if (!SSI263SingleVoice.bActive)
+	{
+		bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, g_dwDSSSI263BufferSize);
+		LogFileOutput("SSI263::Play: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
+		if (!bRes)
+			return;
+	}
+
 	if (dbgFirst)
 	{
 		dbgSTime = g_nCumulativeCycles;
 		LogOutput("1st phoneme = 0x%02X\n", nPhoneme);
 	}
 
-//	_ASSERT(g_nCurrentActivePhoneme == -1);
 	g_nCurrentActivePhoneme = nPhoneme;
 
 	bool bPause = false;
@@ -643,8 +650,7 @@ void SSI263::Play(unsigned int nPhoneme)
 
 void SSI263::Stop(void)
 {
-	_ASSERT(SSI263SingleVoice.lpDSBvoice);
-	SSI263SingleVoice.lpDSBvoice->Stop();
+	DSVoiceStop(&SSI263SingleVoice);
 }
 
 //-----------------------------------------------------------------------------
@@ -655,38 +661,32 @@ bool SSI263::DSInit(void)
 	// Create single SSI263 voice
 	//
 
-	HRESULT hr = DSGetSoundBuffer(&SSI263SingleVoice, DSBCAPS_CTRLVOLUME, g_dwDSSSI263BufferSize, SAMPLE_RATE_SSI263, g_nSSI263_NumChannels);
-	LogFileOutput("MB_DSInit: DSGetSoundBuffer(), hr=0x%08X\n", hr);
+	HRESULT hr = DSGetSoundBuffer(&SSI263SingleVoice, DSBCAPS_CTRLVOLUME, g_dwDSSSI263BufferSize, SAMPLE_RATE_SSI263, g_nSSI263_NumChannels, "SSI263");
+	LogFileOutput("SSI263::DSInit: DSGetSoundBuffer(), hr=0x%08X\n", hr);
 	if (FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "MB: DSGetSoundBuffer failed (%08X)\n",hr);
+		LogFileOutput("SSI263::DSInit: DSGetSoundBuffer failed (%08X)\n", hr);
 		return false;
 	}
 
-	bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, "SSI263", g_dwDSSSI263BufferSize);
-	LogFileOutput("MB_DSInit: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
-	if (!bRes)
-		return false;
-
-	SSI263SingleVoice.bActive = true;
+	// Don't DirectSoundBuffer::Play() via DSZeroVoiceBuffer() - instead wait until this SSI263 is actually first used
+	// . different to Speaker & Mockingboard ring buffers
+	// . NB. we have 2x SSI263 per MB card, and it's rare if 1 is used (and *extremely* rare if 2 are used!)
 
 	// Volume might've been setup from value in Registry
 	if (!SSI263SingleVoice.nVolume)
 		SSI263SingleVoice.nVolume = DSBVOLUME_MAX;
 
 	hr = SSI263SingleVoice.lpDSBvoice->SetVolume(SSI263SingleVoice.nVolume);
-	LogFileOutput("MB_DSInit: SetVolume(), hr=0x%08X\n", hr);
+	LogFileOutput("SSI263::DSInit: SetVolume(), hr=0x%08X\n", hr);
 
 	return true;
 }
 
 void SSI263::DSUninit(void)
 {
-	if(SSI263SingleVoice.lpDSBvoice && SSI263SingleVoice.bActive)
-	{
-		SSI263SingleVoice.lpDSBvoice->Stop();
-		SSI263SingleVoice.bActive = false;
-	}
+	if (SSI263SingleVoice.lpDSBvoice && SSI263SingleVoice.bActive)
+		DSVoiceStop(&SSI263SingleVoice);
 
 	DSReleaseSoundBuffer(&SSI263SingleVoice);
 }
