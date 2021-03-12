@@ -1262,7 +1262,7 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 			if (nAddr & 0x40)	// Primary SSI263
 				nRes = g_MB[nMB*2+1].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
 			if (nAddr & 0x20)	// Secondary SSI263
-				nRes = g_MB[nMB*2+1].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
+				nRes = g_MB[nMB*2+0].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
 			bAccessedDevice = true;
 		}
 
