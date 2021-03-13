@@ -234,11 +234,12 @@ namespace sa2
       if (ImGui::BeginChild("CPU"))
       {
         const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter;
-        if (ImGui::BeginTable("CPU", 7, flags))
+        if (ImGui::BeginTable("CPU", 8, flags))
         {
           // weigths proportional to column width (including header)
           ImGui::TableSetupColumn("Disassembly", 0, 30);
-          ImGui::TableSetupColumn("Target", 0, 6);
+          ImGui::TableSetupColumn("Symbol", 0, 20);
+          ImGui::TableSetupColumn("Target", 0, 20);
           ImGui::TableSetupColumn("Offset", 0, 6);
           ImGui::TableSetupColumn("Pointer", 0, 7);
           ImGui::TableSetupColumn("Value", 0, 5);
@@ -261,7 +262,6 @@ namespace sa2
             IM_ASSERT(row == clipper.DisplayStart && "Clipper position mismatch");
             for (; row < clipper.DisplayEnd; ++row)
             {
-              ImGui::TableNextRow();
               DisasmLine_t line;
               const char* pSymbol = FindSymbolFromAddress(nAddress);
               const int bDisasmFormatFlags = GetDisassemblyLine(nAddress, line);
@@ -278,19 +278,31 @@ namespace sa2
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
               }
 
-              ImGui::TableSetColumnIndex(0);
+              ImGui::TableNextRow();
+              ImGui::TableNextColumn();
               ImGui::Selectable(buffer, false, ImGuiSelectableFlags_SpanAllColumns);
-              ImGui::TableSetColumnIndex(1);
+
+              ImGui::TableNextColumn();
+              if (pSymbol)
+              {
+                ImGui::TextUnformatted(pSymbol);
+              }
+              ImGui::TableNextColumn();
               ImGui::TextUnformatted(line.sTarget);
-              ImGui::TableSetColumnIndex(2);
+
+              ImGui::TableNextColumn();
               ImGui::TextUnformatted(line.sTargetOffset);
-              ImGui::TableSetColumnIndex(3);
+
+              ImGui::TableNextColumn();
               ImGui::TextUnformatted(line.sTargetPointer);
-              ImGui::TableSetColumnIndex(4);
+
+              ImGui::TableNextColumn();
               ImGui::TextUnformatted(line.sTargetValue);
-              ImGui::TableSetColumnIndex(5);
+
+              ImGui::TableNextColumn();
               ImGui::TextUnformatted(line.sImmediate);
-              ImGui::TableSetColumnIndex(6);
+
+              ImGui::TableNextColumn();
               ImGui::TextUnformatted(line.sBranch);
             }
           }

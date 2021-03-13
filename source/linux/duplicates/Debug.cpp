@@ -7,11 +7,8 @@
 #include "Core.h"
 #include "Interface.h"
 
-void InitDisasm()
-{
-  g_nDisasmCurAddress = regs.pc;
-  DisasmCalcTopBotAddress();
-}
+const int MIN_DISPLAY_CONSOLE_LINES =  5; // doesn't include ConsoleInput
+int g_iWindowThis = WINDOW_CODE; // TODO: FIXME! should be offset into WindowConfig!!!
 
 void WindowUpdateDisasmSize()
 {
@@ -19,9 +16,45 @@ void WindowUpdateDisasmSize()
   g_nDisasmCurLine = MAX(0, (g_nDisasmWinHeight - 1) / 2);
 }
 
+void WindowUpdateConsoleDisplayedSize()
+{
+  g_nConsoleDisplayLines = MIN_DISPLAY_CONSOLE_LINES;
+#if USE_APPLE_FONT
+  g_bConsoleFullWidth = true;
+  g_nConsoleDisplayWidth = CONSOLE_WIDTH - 1;
+
+  if (g_iWindowThis == WINDOW_CONSOLE)
+  {
+    g_nConsoleDisplayLines = MAX_DISPLAY_LINES;
+    g_nConsoleDisplayWidth = CONSOLE_WIDTH - 1;
+    g_bConsoleFullWidth = true;
+  }
+#else
+  g_nConsoleDisplayWidth = (CONSOLE_WIDTH / 2) + 10;
+  g_bConsoleFullWidth = false;
+
+  //	g_bConsoleFullWidth = false;
+  //	g_nConsoleDisplayWidth = CONSOLE_WIDTH - 10;
+
+  if (g_iWindowThis == WINDOW_CONSOLE)
+  {
+    g_nConsoleDisplayLines = MAX_DISPLAY_LINES;
+    g_nConsoleDisplayWidth = CONSOLE_WIDTH - 1;
+    g_bConsoleFullWidth = true;
+  }
+#endif
+}
+
+void InitDisasm()
+{
+  g_nDisasmCurAddress = regs.pc;
+  DisasmCalcTopBotAddress();
+}
+
 void DebugInitialize()
 {
   WindowUpdateDisasmSize();
+  WindowUpdateConsoleDisplayedSize();
 
   extern bool g_bSymbolsDisplayMissingFile;
   g_bSymbolsDisplayMissingFile = false;

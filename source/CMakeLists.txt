@@ -188,5 +188,10 @@ target_compile_options(appleii PUBLIC
   -Wno-multichar
   )
 
+add_custom_command(
+  TARGET appleii POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/bin/*.SYM ${CMAKE_BINARY_DIR}
+  )
+
 install(TARGETS appleii
   DESTINATION lib)
