@@ -279,6 +279,7 @@ namespace sa2
               }
 
               ImGui::TableNextRow();
+
               ImGui::TableNextColumn();
               ImGui::Selectable(buffer, false, ImGuiSelectableFlags_SpanAllColumns);
 
@@ -287,6 +288,7 @@ namespace sa2
               {
                 ImGui::TextUnformatted(pSymbol);
               }
+
               ImGui::TableNextColumn();
               ImGui::TextUnformatted(line.sTarget);
 
