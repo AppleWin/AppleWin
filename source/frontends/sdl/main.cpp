@@ -136,15 +136,15 @@ void run_sdl(int argc, const char * argv [])
     }
 
     const auto redraw = [&frame]{
-			  frame->UpdateTexture();
-			  frame->RenderPresent();
-			};
+                          frame->UpdateTexture();
+                          frame->RenderPresent();
+                        };
 
     const auto refresh = [redraw, &video]{
-			   NTSC_SetVideoMode( video.GetVideoMode() );
-			   NTSC_VideoRedrawWholeScreen();
-			   redraw();
-			 };
+                           NTSC_SetVideoMode( video.GetVideoMode() );
+                           NTSC_VideoRedrawWholeScreen();
+                           redraw();
+                         };
 
     VideoBenchmark(redraw, refresh);
   }
@@ -167,11 +167,11 @@ void run_sdl(int argc, const char * argv [])
       eventTimerTag         = "0 M";
       if (options.looseMutex)
       {
-	updateTextureTimerTag = "0 .";
+        updateTextureTimerTag = "0 .";
       }
       else
       {
-	updateTextureTimerTag = "0 M";
+        updateTextureTimerTag = "0 M";
       }
 
       std::shared_ptr<SDL_mutex> mutex(SDL_CreateMutex(), SDL_DestroyMutex);
@@ -186,42 +186,42 @@ void run_sdl(int argc, const char * argv [])
       bool quit = false;
       do
       {
-	frameTimer.tic();
-	SDL_LockMutex(data.mutex);
+        frameTimer.tic();
+        SDL_LockMutex(data.mutex);
 
-	eventTimer.tic();
-	sa2::writeAudio();
-	frame->ProcessEvents(quit);
-	eventTimer.toc();
+        eventTimer.tic();
+        sa2::writeAudio();
+        frame->ProcessEvents(quit);
+        eventTimer.toc();
 
-	if (options.looseMutex)
-	{
-	  // loose mutex
-	  // unlock early and let CPU run again in the timer callback
-	  SDL_UnlockMutex(data.mutex);
-	  // but the texture will be updated concurrently with the CPU updating the video buffer
-	  // pixels are not atomic, so a pixel error could happen (if pixel changes while being read)
-	  // on the positive side this will release pressure from CPU and allow for more parallelism
-	}
+        if (options.looseMutex)
+        {
+          // loose mutex
+          // unlock early and let CPU run again in the timer callback
+          SDL_UnlockMutex(data.mutex);
+          // but the texture will be updated concurrently with the CPU updating the video buffer
+          // pixels are not atomic, so a pixel error could happen (if pixel changes while being read)
+          // on the positive side this will release pressure from CPU and allow for more parallelism
+        }
 
-	updateTextureTimer.tic();
-	frame->UpdateTexture();
-	updateTextureTimer.toc();
+        updateTextureTimer.tic();
+        frame->UpdateTexture();
+        updateTextureTimer.toc();
 
-	if (!options.looseMutex)
-	{
-	  // safe mutex, only unlock after texture has been updated
-	  // this will stop the CPU for longer
-	  SDL_UnlockMutex(data.mutex);
-	}
+        if (!options.looseMutex)
+        {
+          // safe mutex, only unlock after texture has been updated
+          // this will stop the CPU for longer
+          SDL_UnlockMutex(data.mutex);
+        }
 
-	if (!options.headless)
-	{
-	  refreshScreenTimer.tic();
-	  frame->RenderPresent();
-	  refreshScreenTimer.toc();
-	}
-	frameTimer.toc();
+        if (!options.headless)
+        {
+          refreshScreenTimer.tic();
+          frame->RenderPresent();
+          refreshScreenTimer.toc();
+        }
+        frameTimer.toc();
       } while (!quit);
 
       SDL_RemoveTimer(timer);
@@ -244,28 +244,28 @@ void run_sdl(int argc, const char * argv [])
 
       do
       {
-	frameTimer.tic();
+        frameTimer.tic();
 
-	eventTimer.tic();
-	sa2::writeAudio();
-	frame->ProcessEvents(quit);
-	eventTimer.toc();
+        eventTimer.tic();
+        sa2::writeAudio();
+        frame->ProcessEvents(quit);
+        eventTimer.toc();
 
-	cpuTimer.tic();
-	frame->ExecuteOneFrame(oneFrame);
-	cpuTimer.toc();
+        cpuTimer.tic();
+        frame->ExecuteOneFrame(oneFrame);
+        cpuTimer.toc();
 
-	updateTextureTimer.tic();
-	frame->UpdateTexture();
-	updateTextureTimer.toc();
+        updateTextureTimer.tic();
+        frame->UpdateTexture();
+        updateTextureTimer.toc();
 
-	if (!options.headless)
-	{
-	  refreshScreenTimer.tic();
-	  frame->RenderPresent();
-	  refreshScreenTimer.toc();
-	}
-	frameTimer.toc();
+        if (!options.headless)
+        {
+          refreshScreenTimer.tic();
+          frame->RenderPresent();
+          refreshScreenTimer.toc();
+        }
+        frameTimer.toc();
       } while (!quit);
     }
 
