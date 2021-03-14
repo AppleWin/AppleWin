@@ -284,6 +284,7 @@ void SSI263::Votrax_Write(BYTE value)
 	// !A/R: Acknowledge receipt of phoneme data (signal goes from high to low)
 	MB_UpdateIFR(m_device, IxR_VOTRAX, 0);
 
+	m_durationPhoneme = value;	// Set reg0.DUR = I1:0 (inflection or pitch)
 	Play(Votrax2SSI263[value & PHONEME_MASK]);
 }
 
@@ -429,6 +430,7 @@ void SSI263::Update(void)
 		// Instead just prefill first 25% of buffer with zeros:
 		// . so we have a quarter buffer of silence/lag before the real sample data begins.
 		// . NB. this is fine, since it's the steady state; and it's likely that no actual data will ever occur during this initial time.
+		// This means that the '1st phoneme playback time' (in cycles) will be a bit longer for subsequent times.
 
 		g_uLastSSI263UpdateCycle = MB_GetLastCumulativeCycles();
 
