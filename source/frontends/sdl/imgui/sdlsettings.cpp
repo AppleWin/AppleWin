@@ -252,85 +252,82 @@ namespace sa2
         g_nDisasmCurAddress = regs.pc;
         DisasmCalcTopBotAddress();
       }
-      if (ImGui::BeginChild("CPU"))
+      const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
+      if (ImGui::BeginTable("Disassembly", 8, flags))
       {
-        const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter;
-        if (ImGui::BeginTable("CPU", 8, flags))
+        // weigths proportional to column width (including header)
+        ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
+        ImGui::TableSetupColumn("Disassembly", 0, 30);
+        ImGui::TableSetupColumn("Symbol", 0, 20);
+        ImGui::TableSetupColumn("Target", 0, 20);
+        ImGui::TableSetupColumn("Offset", 0, 6);
+        ImGui::TableSetupColumn("Pointer", 0, 7);
+        ImGui::TableSetupColumn("Value", 0, 5);
+        ImGui::TableSetupColumn("Immediate", 0, 9);
+        ImGui::TableSetupColumn("Branch", 0, 6);
+        ImGui::TableHeadersRow();
+
+        ImGuiListClipper clipper;
+        clipper.Begin(1000);
+        int row = 0;
+        WORD nAddress = g_nDisasmTopAddress;
+        while (clipper.Step())
         {
-          // weigths proportional to column width (including header)
-          ImGui::TableSetupColumn("Disassembly", 0, 30);
-          ImGui::TableSetupColumn("Symbol", 0, 20);
-          ImGui::TableSetupColumn("Target", 0, 20);
-          ImGui::TableSetupColumn("Offset", 0, 6);
-          ImGui::TableSetupColumn("Pointer", 0, 7);
-          ImGui::TableSetupColumn("Value", 0, 5);
-          ImGui::TableSetupColumn("Immediate", 0, 9);
-          ImGui::TableSetupColumn("Branch", 0, 6);
-          ImGui::TableHeadersRow();
-
-          ImGuiListClipper clipper;
-          clipper.Begin(1000);
-          int row = 0;
-          WORD nAddress = g_nDisasmTopAddress;
-          while (clipper.Step())
+          for (; row < clipper.DisplayStart; ++row)
           {
-            for (; row < clipper.DisplayStart; ++row)
-            {
-              int iOpcode, iOpmode, nOpbyte;
-              _6502_GetOpmodeOpbyte(nAddress, iOpmode, nOpbyte, nullptr);
-              nAddress += nOpbyte;
-            }
-            IM_ASSERT(row == clipper.DisplayStart && "Clipper position mismatch");
-            for (; row < clipper.DisplayEnd; ++row)
-            {
-              DisasmLine_t line;
-              const char* pSymbol = FindSymbolFromAddress(nAddress);
-              const int bDisasmFormatFlags = GetDisassemblyLine(nAddress, line);
-
-              char buffer[CONSOLE_WIDTH];
-              FormatDisassemblyLine(line, buffer, sizeof(buffer));
-
-              ImGui::TableNextRow();
-
-              if (nAddress == regs.pc)
-              {
-                const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(0, 0, 1, 1));
-                ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
-              }
-
-              ImGui::TableNextColumn();
-              ImGui::Selectable(buffer, false, ImGuiSelectableFlags_SpanAllColumns);
-
-              ImGui::TableNextColumn();
-              if (pSymbol)
-              {
-                ImGui::TextUnformatted(pSymbol);
-              }
-
-              ImGui::TableNextColumn();
-              ImGui::TextUnformatted(line.sTarget);
-
-              ImGui::TableNextColumn();
-              ImGui::TextUnformatted(line.sTargetOffset);
-
-              ImGui::TableNextColumn();
-              ImGui::TextUnformatted(line.sTargetPointer);
-
-              ImGui::TableNextColumn();
-              ImGui::TextUnformatted(line.sTargetValue);
-
-              ImGui::TableNextColumn();
-              ImGui::TextUnformatted(line.sImmediate);
-
-              ImGui::TableNextColumn();
-              ImGui::TextUnformatted(line.sBranch);
-
-              nAddress += line.nOpbyte;
-            }
+            int iOpcode, iOpmode, nOpbyte;
+            _6502_GetOpmodeOpbyte(nAddress, iOpmode, nOpbyte, nullptr);
+            nAddress += nOpbyte;
           }
-          ImGui::EndTable();
+          IM_ASSERT(row == clipper.DisplayStart && "Clipper position mismatch");
+          for (; row < clipper.DisplayEnd; ++row)
+          {
+            DisasmLine_t line;
+            const char* pSymbol = FindSymbolFromAddress(nAddress);
+            const int bDisasmFormatFlags = GetDisassemblyLine(nAddress, line);
+
+            char buffer[CONSOLE_WIDTH];
+            FormatDisassemblyLine(line, buffer, sizeof(buffer));
+
+            ImGui::TableNextRow();
+
+            if (nAddress == regs.pc)
+            {
+              const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(0, 0, 1, 1));
+              ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
+            }
+
+            ImGui::TableNextColumn();
+            ImGui::Selectable(buffer, false, ImGuiSelectableFlags_SpanAllColumns);
+
+            ImGui::TableNextColumn();
+            if (pSymbol)
+            {
+              ImGui::TextUnformatted(pSymbol);
+            }
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(line.sTarget);
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(line.sTargetOffset);
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(line.sTargetPointer);
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(line.sTargetValue);
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(line.sImmediate);
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(line.sBranch);
+
+            nAddress += line.nOpbyte;
+          }
         }
-        ImGui::EndChild();
+        ImGui::EndTable();
       }
     }
     ImGui::End();
