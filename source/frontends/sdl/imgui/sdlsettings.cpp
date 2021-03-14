@@ -267,10 +267,8 @@ namespace sa2
               const int bDisasmFormatFlags = GetDisassemblyLine(nAddress, line);
               nAddress += line.nOpbyte;
 
-              static size_t m = 0;
               char buffer[CONSOLE_WIDTH];
               FormatDisassemblyLine(line, buffer, sizeof(buffer));
-              m = std::max(m, strlen(buffer));
 
               if (nAddress == regs.pc)
               {
