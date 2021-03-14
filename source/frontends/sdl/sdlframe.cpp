@@ -332,20 +332,8 @@ namespace sa2
         }
       case SDLK_PAUSE:
         {
-          switch (g_nAppMode)
-          {
-          case MODE_RUNNING:
-            g_nAppMode = MODE_PAUSED;
-            SoundCore_SetFade(FADE_OUT);
-            break;
-          case MODE_PAUSED:
-          case MODE_DEBUG:
-            g_nAppMode = MODE_RUNNING;
-            SoundCore_SetFade(FADE_IN);
-            mySpeed.reset();
-            break;
-          }
-          GetFrame().FrameRefreshStatus(DRAW_TITLE);
+          const AppMode_e newMode = (g_nAppMode == MODE_RUNNING) ? MODE_PAUSED : MODE_RUNNING;
+          ChangeMode(newMode);
           break;
         }
       case SDLK_CAPSLOCK:
@@ -429,6 +417,25 @@ namespace sa2
       Execute(cyclesToExecute);
     }
     // else do nothing, it is either paused, debugged or stepped
+  }
+
+  void SDLFrame::ChangeMode(const AppMode_e mode)
+  {
+    if (mode != g_nAppMode)
+    {
+      g_nAppMode = mode;
+      switch (g_nAppMode)
+      {
+      case MODE_RUNNING:
+        SoundCore_SetFade(FADE_IN);
+        mySpeed.reset();
+        break;
+      default:
+        SoundCore_SetFade(FADE_OUT);
+        break;
+      }
+      FrameRefreshStatus(DRAW_TITLE);
+    }
   }
 
 }

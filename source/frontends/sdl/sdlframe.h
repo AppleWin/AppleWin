@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Common.h"
 #include "frontends/common2/commonframe.h"
 #include "frontends/common2/speed.h"
 #include <SDL.h>
@@ -26,6 +27,7 @@ namespace sa2
 
     void Execute(const DWORD uCycles);
     void ExecuteOneFrame(const size_t msNextFrame);
+    void ChangeMode(const AppMode_e mode);
 
     virtual void UpdateTexture() = 0;
     virtual void RenderPresent() = 0;

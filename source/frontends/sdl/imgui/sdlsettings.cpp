@@ -229,21 +229,21 @@ namespace sa2
 
       if (ImGui::Button("Step"))
       {
-        g_nAppMode = MODE_STEPPING;
+        frame->ChangeMode(MODE_STEPPING);
         frame->Execute(myStepCycles);
       }
       ImGui::SameLine();
       ImGui::PushItemWidth(150);
-      ImGui::DragInt("cycles", &myStepCycles, 0.2f, 0, 32, "%d");
+      ImGui::DragInt("cycles", &myStepCycles, 0.2f, 0, 256, "%d");
       ImGui::PopItemWidth();
 
       if ((ImGui::SameLine(), ImGui::Button("Run")))
       {
-        g_nAppMode = MODE_RUNNING;
+        frame->ChangeMode(MODE_RUNNING);
       }
       if ((ImGui::SameLine(), ImGui::Button("Pause")))
       {
-        g_nAppMode = MODE_PAUSED;
+        frame->ChangeMode(MODE_PAUSED);
       }
       ImGui::SameLine(); ImGui::Text("%016llu - %04X", g_nCumulativeCycles, regs.pc);
 
