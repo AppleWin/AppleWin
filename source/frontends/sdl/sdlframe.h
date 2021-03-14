@@ -24,6 +24,9 @@ namespace sa2
 
     void ProcessEvents(bool &quit);
 
+    void Execute(const DWORD uCycles);
+    void ExecuteOneFrame(const size_t msNextFrame);
+
     virtual void UpdateTexture() = 0;
     virtual void RenderPresent() = 0;
 

@@ -11,6 +11,9 @@
 #include "Speaker.h"
 #include "SoundCore.h"
 #include "Interface.h"
+#include "NTSC.h"
+#include "CPU.h"
+#include "Mockingboard.h"
 
 #include "linux/paddle.h"
 #include "linux/keyboard.h"
@@ -401,6 +404,31 @@ namespace sa2
         }
       }
     }
+  }
+
+  void SDLFrame::Execute(const DWORD cyclesToExecute)
+  {
+    const bool bVideoUpdate = true;
+    const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
+
+    const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
+
+    g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
+    GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
+    MB_PeriodicUpdate(executedCycles);
+    SpkrUpdate(executedCycles);
+  }
+
+  void SDLFrame::ExecuteOneFrame(const size_t msNextFrame)
+  {
+    // when running in adaptive speed
+    // the value msNextFrame is only a hint for when the next frame will arrive
+    if (g_nAppMode == MODE_RUNNING)
+    {
+      const size_t cyclesToExecute = mySpeed.getCyclesTillNext(msNextFrame * 1000);
+      Execute(cyclesToExecute);
+    }
+    // else do nothing, it is either paused, debugged or stepped
   }
 
 }

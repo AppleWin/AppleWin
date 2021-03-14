@@ -27,8 +27,6 @@
 #include "NTSC.h"
 #include "SaveState.h"
 #include "Interface.h"
-#include "Mockingboard.h"
-#include "Speaker.h"
 
 // comment out to test / debug init / shutdown only
 #define EMULATOR_RUN
@@ -50,27 +48,9 @@ namespace
     return current.refresh_rate;
   }
 
-  void execute(common2::Speed speed, const size_t next)
-  {
-    if (g_nAppMode == MODE_RUNNING)
-    {
-      const size_t cyclesToExecute = speed.getCyclesTillNext(next * 1000);
-
-      const bool bVideoUpdate = true;
-      const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-
-      const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
-
-      g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
-      GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
-      MB_PeriodicUpdate(executedCycles);
-      SpkrUpdate(executedCycles);
-    }
-  }
-
   struct Data
   {
-    common2::Speed * speed;
+    sa2::SDLFrame * frame;
     SDL_mutex * mutex;
     common2::Timer * timer;
   };
@@ -81,7 +61,7 @@ namespace
     SDL_LockMutex(data->mutex);
 
     data->timer->tic();
-    execute(*data->speed, interval);
+    data->frame->ExecuteOneFrame(interval);
     data->timer->toc();
 
     SDL_UnlockMutex(data->mutex);
@@ -180,8 +160,6 @@ void run_sdl(int argc, const char * argv [])
     const std::string globalTag = ". .";
     std::string updateTextureTimerTag, refreshScreenTimerTag, cpuTimerTag, eventTimerTag;
 
-    common2::Speed speed(options.fixedSpeed);
-
     if (options.multiThreaded)
     {
       refreshScreenTimerTag = "0 .";
@@ -201,7 +179,7 @@ void run_sdl(int argc, const char * argv [])
       Data data;
       data.mutex = mutex.get();
       data.timer = &cpuTimer;
-      data.speed = &speed;
+      data.frame = frame.get();
 
       const SDL_TimerID timer = SDL_AddTimer(options.timerInterval, emulator_callback, &data);
 
@@ -274,7 +252,7 @@ void run_sdl(int argc, const char * argv [])
 	eventTimer.toc();
 
 	cpuTimer.tic();
-	execute(speed, oneFrame);
+	frame->ExecuteOneFrame(oneFrame);
 	cpuTimer.toc();
 
 	updateTextureTimer.tic();
