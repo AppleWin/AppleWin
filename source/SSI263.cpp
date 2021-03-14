@@ -336,11 +336,11 @@ void SSI263::Update(void)
 #if 0
 	if (!g_bMB_RegAccessedFlag)
 	{
-		if(!g_nMB_InActiveCycleCount)
+		if (!g_nMB_InActiveCycleCount)
 		{
 			g_nMB_InActiveCycleCount = g_nCumulativeCycles;
 		}
-		else if(g_nCumulativeCycles - g_nMB_InActiveCycleCount > (unsigned __int64)g_fCurrentCLK6502/10)
+		else if (g_nCumulativeCycles - g_nMB_InActiveCycleCount > (unsigned __int64)g_fCurrentCLK6502 / 10)
 		{
 			// After 0.1 sec of Apple time, assume MB is not active
 			g_bMB_Active = false;
@@ -375,7 +375,7 @@ void SSI263::Update(void)
 		// First time in this func (or transitioned from full-speed to normal speed)
 #ifdef DBG_SSI263_UPDATE
 		double fTicksSecs = (double)GetTickCount() / 1000.0;
-		LogOutput("%010.3f: [SSUpdtInit]PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset);
+		LogOutput("%010.3f: [SSUpdtInit]PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset);
 #endif
 		dwByteOffset = dwCurrentWriteCursor;
 		nNumSamplesError = 0;
@@ -388,11 +388,11 @@ void SSI263::Update(void)
 		if (dwCurrentWriteCursor > dwCurrentPlayCursor)
 		{
 			// |-----PxxxxxW-----|
-			if((dwByteOffset > dwCurrentPlayCursor) && (dwByteOffset < dwCurrentWriteCursor))
+			if ((dwByteOffset > dwCurrentPlayCursor) && (dwByteOffset < dwCurrentWriteCursor))
 			{
 #ifdef DBG_SSI263_UPDATE
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				LogOutput("%010.3f: [SSUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset);
+				LogOutput("%010.3f: [SSUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset);
 #endif
 				dwByteOffset = dwCurrentWriteCursor;
 				nNumSamplesError = 0;
@@ -405,7 +405,7 @@ void SSI263::Update(void)
 			{
 #ifdef DBG_SSI263_UPDATE
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				LogOutput("%010.3f: [SSUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset);
+				LogOutput("%010.3f: [SSUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset);
 #endif
 				dwByteOffset = dwCurrentWriteCursor;
 				nNumSamplesError = 0;
@@ -440,7 +440,7 @@ void SSI263::Update(void)
 		// For small timer periods, wait for a period of 500cy before updating DirectSound ring-buffer.
 		// NB. A timer period of less than 24cy will yield nNumSamplesPerPeriod=0.
 		const double kMinimumUpdateInterval = 500.0;	// Arbitary (500 cycles = 21 samples)
-		const double kMaximumUpdateInterval = (double)(0xFFFF+2);	// Max 6522 timer interval (1372 samples)
+		const double kMaximumUpdateInterval = (double)(0xFFFF + 2);	// Max 6522 timer interval (1372 samples)
 
 		if (g_uLastSSI263UpdateCycle == 0)
 			g_uLastSSI263UpdateCycle = MB_GetLastCumulativeCycles();		// Initial call to SSI263_Update() after reset/power-cycle
@@ -455,13 +455,13 @@ void SSI263::Update(void)
 		g_uLastSSI263UpdateCycle = MB_GetLastCumulativeCycles();
 
 		const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
-		const int nNumSamplesPerPeriod = (int) ((double)(SAMPLE_RATE_SSI263) / nIrqFreq);	// Eg. For 60Hz this is 367
+		const int nNumSamplesPerPeriod = (int)((double)(SAMPLE_RATE_SSI263) / nIrqFreq);	// Eg. For 60Hz this is 367
 
 		nNumSamples = nNumSamplesPerPeriod + nNumSamplesError;						// Apply correction
 		if (nNumSamples <= 0)
 			nNumSamples = 0;
-		if (nNumSamples > 2*nNumSamplesPerPeriod)
-			nNumSamples = 2*nNumSamplesPerPeriod;
+		if (nNumSamples > 2 * nNumSamplesPerPeriod)
+			nNumSamples = 2 * nNumSamplesPerPeriod;
 
 		if (nNumSamples > g_dwDSSSI263BufferSize)
 			nNumSamples = g_dwDSSSI263BufferSize;	// Clamp to prevent buffer overflow
@@ -499,29 +499,53 @@ void SSI263::Update(void)
 	bool bSpeechIRQ = false;
 
 	{
+		const BYTE DUR = m_durationPhoneme >> 6;
+		const BYTE numSamplesToAvg = (DUR <= 1) ? 1 :
+									 (DUR == 2) ? 2 :
+												  4;
+
 		short* pMixBuffer = &g_nMixBufferSSI263[0];
-		UINT copyLength = nNumSamples;
+		int zeroSize = nNumSamples;
 
 		if (g_uPhonemeLength && !prefillBufferOnInit)
 		{
-			UINT phonemeLen = g_uPhonemeLength > (UINT)nNumSamples ? nNumSamples : g_uPhonemeLength;
-			if (phonemeLen > copyLength) phonemeLen = copyLength;
+			UINT samplesWritten = 0;
+			while (samplesWritten < (UINT)nNumSamples)
+			{
+				m_currSampleSum += (int)*g_pPhonemeData;
+				m_currNumSamples++;
 
-			memcpy(pMixBuffer, g_pPhonemeData, phonemeLen*sizeof(short));
-			g_pPhonemeData += phonemeLen;
-			g_uPhonemeLength -= phonemeLen;
+				g_pPhonemeData++;
+				g_uPhonemeLength--;
 
-			pMixBuffer += phonemeLen;
-			copyLength -= phonemeLen;
+				if (m_currNumSamples == numSamplesToAvg)
+				{
+					*pMixBuffer++ = (short)(m_currSampleSum / numSamplesToAvg);
+					samplesWritten++;
+					m_currSampleSum = 0;
+					m_currNumSamples = 0;
+				}
 
-			if (g_uPhonemeLength == 0)
-				bSpeechIRQ = true;
+				m_currSampleMod4 = (m_currSampleMod4 + 1) & 3;
+				if (DUR == 1 && m_currSampleMod4 == 3 && g_uPhonemeLength)
+				{
+					g_pPhonemeData++;
+					g_uPhonemeLength--;
+				}
+
+				if (!g_uPhonemeLength)
+				{
+					bSpeechIRQ = true;
+					break;
+				}
+			}
+
+			zeroSize = nNumSamples - samplesWritten;
+			_ASSERT(zeroSize >= 0);
 		}
 
-		if (copyLength)
-		{
-			memset(pMixBuffer, 0, copyLength*sizeof(short));
-		}
+		if (zeroSize)
+			memset(pMixBuffer, 0, zeroSize * sizeof(short));
 	}
 
 	//
@@ -646,6 +670,10 @@ void SSI263::Play(unsigned int nPhoneme)
 	{
 		g_pPhonemeData = (const short*) &g_nPhonemeData[g_nPhonemeInfo[nPhoneme].nOffset];
 	}
+
+	m_currSampleSum = 0;
+	m_currNumSamples = 0;
+	m_currSampleMod4 = 0;
 }
 
 void SSI263::Stop(void)

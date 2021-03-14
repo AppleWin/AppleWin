@@ -31,6 +31,9 @@ public:
 
 		nNumSamplesError = 0;
 		dwByteOffset = (DWORD)-1;
+		m_currSampleSum = 0;
+		m_currNumSamples = 0;
+		m_currSampleMod4 = 0;
 	}
 	~SSI263(void)
 	{
@@ -99,6 +102,9 @@ private:
 	//
 	int nNumSamplesError;
 	DWORD dwByteOffset;
+	int m_currSampleSum;
+	int m_currNumSamples;
+	UINT m_currSampleMod4;
 
 	// Regs:
 	BYTE m_durationPhoneme;
