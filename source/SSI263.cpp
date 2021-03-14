@@ -678,7 +678,8 @@ void SSI263::Play(unsigned int nPhoneme)
 
 void SSI263::Stop(void)
 {
-	DSVoiceStop(&SSI263SingleVoice);
+	if (SSI263SingleVoice.lpDSBvoice && SSI263SingleVoice.bActive)
+		DSVoiceStop(&SSI263SingleVoice);
 }
 
 //-----------------------------------------------------------------------------
@@ -713,9 +714,7 @@ bool SSI263::DSInit(void)
 
 void SSI263::DSUninit(void)
 {
-	if (SSI263SingleVoice.lpDSBvoice && SSI263SingleVoice.bActive)
-		DSVoiceStop(&SSI263SingleVoice);
-
+	Stop();
 	DSReleaseSoundBuffer(&SSI263SingleVoice);
 }
 
@@ -723,6 +722,8 @@ void SSI263::DSUninit(void)
 
 void SSI263::Reset(void)
 {
+	Stop();
+
 	g_nCurrentActivePhoneme = -1;
 	g_uPhonemeLength = 0;
 	g_bVotraxPhoneme = false;
