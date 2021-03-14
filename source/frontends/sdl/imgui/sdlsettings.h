@@ -5,10 +5,12 @@
 namespace sa2
 {
 
+  class SDLFrame;
+
   class ImGuiSettings
   {
   public:
-    void show();
+    void show(SDLFrame* frame);
     float drawMenuBar();
 
     bool windowed = false;
@@ -18,8 +20,9 @@ namespace sa2
     bool myShowSettings = false;
     bool myShowMemory = false;
     bool myShowCPU = false;
-    bool mySyncCPU = false;
+    bool mySyncCPU = true;
 
+    int myStepCycles = 0;
     int mySpeakerVolume = 50;
     int myMockingboardVolume = 50;
 
@@ -27,8 +30,8 @@ namespace sa2
     MemoryEditor myAuxMemoryEditor;
 
     void showSettings();
+    void showCPU(SDLFrame* frame);
     void showMemory();
-    void showCPU();
   };
 
 }

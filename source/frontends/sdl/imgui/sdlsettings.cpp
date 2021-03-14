@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "frontends/sdl/imgui/sdlsettings.h"
 #include "frontends/sdl/imgui/settingshelper.h"
+#include "frontends/sdl/sdlframe.h"
 
 #include "Interface.h"
 #include "CardManager.h"
@@ -141,7 +142,7 @@ namespace sa2
     ImGui::End();
   }
 
-  void ImGuiSettings::show()
+  void ImGuiSettings::show(SDLFrame * frame)
   {
     if (myShowSettings)
     {
@@ -155,7 +156,7 @@ namespace sa2
 
     if (myShowCPU)
     {
-      showCPU();
+      showCPU(frame);
     }
 
     if (myShowDemo)
@@ -217,7 +218,7 @@ namespace sa2
     ImGui::End();
   }
 
-  void ImGuiSettings::showCPU()
+  void ImGuiSettings::showCPU(SDLFrame * frame)
   {
     if (ImGui::Begin("CPU", &myShowCPU))
     {
@@ -225,12 +226,32 @@ namespace sa2
 
       // complicated if condition to preserve widget order
       const bool recalc = mySyncCPU || (ImGui::SameLine(), ImGui::Button("Sync PC"));
+
+      if (ImGui::Button("Step"))
+      {
+        g_nAppMode = MODE_STEPPING;
+        frame->Execute(myStepCycles);
+      }
+      ImGui::SameLine();
+      ImGui::PushItemWidth(150);
+      ImGui::DragInt("cycles", &myStepCycles, 0.2f, 0, 32, "%d");
+      ImGui::PopItemWidth();
+
+      if ((ImGui::SameLine(), ImGui::Button("Run")))
+      {
+        g_nAppMode = MODE_RUNNING;
+      }
+      if ((ImGui::SameLine(), ImGui::Button("Pause")))
+      {
+        g_nAppMode = MODE_PAUSED;
+      }
+      ImGui::SameLine(); ImGui::Text("%016llu - %04X", g_nCumulativeCycles, regs.pc);
+
       if (ImGui::SliderInt("PC position", &g_nDisasmCurLine, 1, 100) || recalc)
       {
         g_nDisasmCurAddress = regs.pc;
         DisasmCalcTopBotAddress();
       }
-
       if (ImGui::BeginChild("CPU"))
       {
         const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter;
@@ -265,18 +286,17 @@ namespace sa2
               DisasmLine_t line;
               const char* pSymbol = FindSymbolFromAddress(nAddress);
               const int bDisasmFormatFlags = GetDisassemblyLine(nAddress, line);
-              nAddress += line.nOpbyte;
 
               char buffer[CONSOLE_WIDTH];
               FormatDisassemblyLine(line, buffer, sizeof(buffer));
+
+              ImGui::TableNextRow();
 
               if (nAddress == regs.pc)
               {
                 const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(0, 0, 1, 1));
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
               }
-
-              ImGui::TableNextRow();
 
               ImGui::TableNextColumn();
               ImGui::Selectable(buffer, false, ImGuiSelectableFlags_SpanAllColumns);
@@ -304,6 +324,8 @@ namespace sa2
 
               ImGui::TableNextColumn();
               ImGui::TextUnformatted(line.sBranch);
+
+              nAddress += line.nOpbyte;
             }
           }
           ImGui::EndTable();
