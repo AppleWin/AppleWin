@@ -19,7 +19,7 @@ namespace sa2
     bool myShowDemo = false;
     bool myShowSettings = false;
     bool myShowMemory = false;
-    bool myShowCPU = false;
+    bool myShowDebugger = false;
     bool mySyncCPU = true;
 
     int myStepCycles = 0;
@@ -30,8 +30,11 @@ namespace sa2
     MemoryEditor myAuxMemoryEditor;
 
     void showSettings();
-    void showCPU(SDLFrame* frame);
+    void showDebugger(SDLFrame* frame);
     void showMemory();
+
+    void drawDisassemblyTable();
+    void drawConsole();
   };
 
 }

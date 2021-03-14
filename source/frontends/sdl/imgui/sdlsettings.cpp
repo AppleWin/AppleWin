@@ -53,7 +53,7 @@ namespace sa2
           ImGui::Checkbox("Memory", &myShowMemory);
           ImGui::SameLine(); HelpMarker("Show Apple memory.");
 
-          if (ImGui::Checkbox("CPU", &myShowCPU) && myShowCPU)
+          if (ImGui::Checkbox("Debugger", &myShowDebugger) && myShowDebugger)
           {
             DebugBegin();
           }
@@ -154,9 +154,9 @@ namespace sa2
       showMemory();
     }
 
-    if (myShowCPU)
+    if (myShowDebugger)
     {
-      showCPU(frame);
+      showDebugger(frame);
     }
 
     if (myShowDemo)
@@ -176,7 +176,7 @@ namespace sa2
       {
         ImGui::MenuItem("Settings", nullptr, &myShowSettings);
         ImGui::MenuItem("Memory", nullptr, &myShowMemory);
-        if (ImGui::MenuItem("CPU", nullptr, &myShowCPU) && myShowCPU)
+        if (ImGui::MenuItem("Debugger", nullptr, &myShowDebugger) && myShowDebugger)
         {
           DebugBegin();
         }
@@ -218,116 +218,177 @@ namespace sa2
     ImGui::End();
   }
 
-  void ImGuiSettings::showCPU(SDLFrame * frame)
+  void ImGuiSettings::drawDisassemblyTable()
   {
-    if (ImGui::Begin("CPU", &myShowCPU))
+    const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
+    if (ImGui::BeginTable("Disassembly", 6, flags))
     {
-      ImGui::Checkbox("Auto-sync PC", &mySyncCPU);
+      // weigths proportional to column width (including header)
+      ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
+      ImGui::TableSetupColumn("Disassembly", 0, 30);
+      ImGui::TableSetupColumn("Symbol", 0, 20);
+      ImGui::TableSetupColumn("Target", 0, 20);
+      ImGui::TableSetupColumn("Pointer", 0, 9);
+      ImGui::TableSetupColumn("Immediate", 0, 9);
+      ImGui::TableSetupColumn("Branch", 0, 6);
+      ImGui::TableHeadersRow();
 
-      // complicated if condition to preserve widget order
-      const bool recalc = mySyncCPU || (ImGui::SameLine(), ImGui::Button("Sync PC"));
-
-      if (ImGui::Button("Step"))
+      ImGuiListClipper clipper;
+      clipper.Begin(1000);
+      int row = 0;
+      WORD nAddress = g_nDisasmTopAddress;
+      while (clipper.Step())
       {
-        frame->ChangeMode(MODE_STEPPING);
-        frame->Execute(myStepCycles);
-      }
-      ImGui::SameLine();
-      ImGui::PushItemWidth(150);
-      ImGui::DragInt("cycles", &myStepCycles, 0.2f, 0, 256, "%d");
-      ImGui::PopItemWidth();
-
-      if ((ImGui::SameLine(), ImGui::Button("Run")))
-      {
-        frame->ChangeMode(MODE_RUNNING);
-      }
-      if ((ImGui::SameLine(), ImGui::Button("Pause")))
-      {
-        frame->ChangeMode(MODE_PAUSED);
-      }
-      ImGui::SameLine(); ImGui::Text("%016llu - %04X", g_nCumulativeCycles, regs.pc);
-
-      if (ImGui::SliderInt("PC position", &g_nDisasmCurLine, 1, 100) || recalc)
-      {
-        g_nDisasmCurAddress = regs.pc;
-        DisasmCalcTopBotAddress();
-      }
-      const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
-      if (ImGui::BeginTable("Disassembly", 8, flags))
-      {
-        // weigths proportional to column width (including header)
-        ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
-        ImGui::TableSetupColumn("Disassembly", 0, 30);
-        ImGui::TableSetupColumn("Symbol", 0, 20);
-        ImGui::TableSetupColumn("Target", 0, 20);
-        ImGui::TableSetupColumn("Offset", 0, 6);
-        ImGui::TableSetupColumn("Pointer", 0, 7);
-        ImGui::TableSetupColumn("Value", 0, 5);
-        ImGui::TableSetupColumn("Immediate", 0, 9);
-        ImGui::TableSetupColumn("Branch", 0, 6);
-        ImGui::TableHeadersRow();
-
-        ImGuiListClipper clipper;
-        clipper.Begin(1000);
-        int row = 0;
-        WORD nAddress = g_nDisasmTopAddress;
-        while (clipper.Step())
+        for (; row < clipper.DisplayStart; ++row)
         {
-          for (; row < clipper.DisplayStart; ++row)
+          int iOpcode, iOpmode, nOpbyte;
+          _6502_GetOpmodeOpbyte(nAddress, iOpmode, nOpbyte, nullptr);
+          nAddress += nOpbyte;
+        }
+        IM_ASSERT(row == clipper.DisplayStart && "Clipper position mismatch");
+        for (; row < clipper.DisplayEnd; ++row)
+        {
+          DisasmLine_t line;
+          const char* pSymbol = FindSymbolFromAddress(nAddress);
+          const int bDisasmFormatFlags = GetDisassemblyLine(nAddress, line);
+
+          char buffer[CONSOLE_WIDTH];
+          FormatDisassemblyLine(line, buffer, sizeof(buffer));
+
+          ImGui::TableNextRow();
+
+          if (nAddress == regs.pc)
           {
-            int iOpcode, iOpmode, nOpbyte;
-            _6502_GetOpmodeOpbyte(nAddress, iOpmode, nOpbyte, nullptr);
-            nAddress += nOpbyte;
+            const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(0, 0, 1, 1));
+            ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
           }
-          IM_ASSERT(row == clipper.DisplayStart && "Clipper position mismatch");
-          for (; row < clipper.DisplayEnd; ++row)
+
+          ImGui::TableNextColumn();
+          ImGui::Selectable(buffer, false, ImGuiSelectableFlags_SpanAllColumns);
+
+          ImGui::TableNextColumn();
+          if (pSymbol)
           {
-            DisasmLine_t line;
-            const char* pSymbol = FindSymbolFromAddress(nAddress);
-            const int bDisasmFormatFlags = GetDisassemblyLine(nAddress, line);
+            ImGui::TextUnformatted(pSymbol);
+          }
 
-            char buffer[CONSOLE_WIDTH];
-            FormatDisassemblyLine(line, buffer, sizeof(buffer));
-
-            ImGui::TableNextRow();
-
-            if (nAddress == regs.pc)
-            {
-              const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(0, 0, 1, 1));
-              ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
-            }
-
-            ImGui::TableNextColumn();
-            ImGui::Selectable(buffer, false, ImGuiSelectableFlags_SpanAllColumns);
-
-            ImGui::TableNextColumn();
-            if (pSymbol)
-            {
-              ImGui::TextUnformatted(pSymbol);
-            }
-
-            ImGui::TableNextColumn();
+          ImGui::TableNextColumn();
+          if (bDisasmFormatFlags & DISASM_FORMAT_OFFSET)
+          {
+            ImGui::Text("%s%+d", line.sTarget, line.nTargetOffset);
+          }
+          else
+          {
             ImGui::TextUnformatted(line.sTarget);
+          }
 
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted(line.sTargetOffset);
-
-            ImGui::TableNextColumn();
+          ImGui::TableNextColumn();
+          if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_VALUE)
+          {
+            ImGui::Text("%s:%s", line.sTargetPointer, line.sTargetValue);
+          }
+          else if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER)
+          {
             ImGui::TextUnformatted(line.sTargetPointer);
+          }
 
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted(line.sTargetValue);
-
-            ImGui::TableNextColumn();
+          ImGui::TableNextColumn();
+          if (bDisasmFormatFlags & DISASM_FORMAT_CHAR)
+          {
             ImGui::TextUnformatted(line.sImmediate);
+          }
 
-            ImGui::TableNextColumn();
+          ImGui::TableNextColumn();
+          if (bDisasmFormatFlags & DISASM_FORMAT_BRANCH)
+          {
             ImGui::TextUnformatted(line.sBranch);
+          }
 
-            nAddress += line.nOpbyte;
+          nAddress += line.nOpbyte;
+        }
+      }
+      ImGui::EndTable();
+    }
+  }
+
+  void ImGuiSettings::drawConsole()
+  {
+    const ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
+    if (ImGui::BeginTable("Console", 1, flags))
+    {
+//      ImGuiListClipper clipper;
+//      clipper.Begin(CONSOLE_HEIGHT);
+//      while (clipper.Step())
+      {
+//        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
+        for (int i = 0; i < CONSOLE_HEIGHT; ++i)
+        {
+          char line[CONSOLE_WIDTH + 1];
+          const conchar_t * src = g_aConsoleDisplay[CONSOLE_HEIGHT - i - 1];
+          for (size_t j = 0; j < CONSOLE_WIDTH; ++j)
+          {
+            line[j] = ConsoleChar_GetChar(src[j]);
+          }
+          if (line[0])
+          {
+            line[CONSOLE_WIDTH] = 0;
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(line);
           }
         }
-        ImGui::EndTable();
+      }
+      ImGui::EndTable();
+    }
+  }
+
+  void ImGuiSettings::showDebugger(SDLFrame * frame)
+  {
+    if (ImGui::Begin("Debugger", &myShowDebugger))
+    {
+      if (ImGui::BeginTabBar("Settings"))
+      {
+        if (ImGui::BeginTabItem("CPU"))
+        {
+          ImGui::Checkbox("Auto-sync PC", &mySyncCPU);
+
+          // complicated if condition to preserve widget order
+          const bool recalc = mySyncCPU || (ImGui::SameLine(), ImGui::Button("Sync PC"));
+
+          if (ImGui::Button("Step"))
+          {
+            frame->ChangeMode(MODE_STEPPING);
+            frame->Execute(myStepCycles);
+          }
+          ImGui::SameLine();
+          ImGui::PushItemWidth(150);
+          ImGui::DragInt("cycles", &myStepCycles, 0.2f, 0, 256, "%d");
+          ImGui::PopItemWidth();
+
+          if ((ImGui::SameLine(), ImGui::Button("Run")))
+          {
+            frame->ChangeMode(MODE_RUNNING);
+          }
+          if ((ImGui::SameLine(), ImGui::Button("Pause")))
+          {
+            frame->ChangeMode(MODE_PAUSED);
+          }
+          ImGui::SameLine(); ImGui::Text("%016llu - %04X", g_nCumulativeCycles, regs.pc);
+
+          if (ImGui::SliderInt("PC position", &g_nDisasmCurLine, 1, 100) || recalc)
+          {
+            g_nDisasmCurAddress = regs.pc;
+            DisasmCalcTopBotAddress();
+          }
+          drawDisassemblyTable();
+          ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Console"))
+        {
+          drawConsole();
+          ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
       }
     }
     ImGui::End();
