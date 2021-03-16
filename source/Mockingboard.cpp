@@ -193,6 +193,38 @@ static int MB_SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
 
 //---------------------------------------------------------------------------
 
+void MB_Get6522IrqDescription(std::string& desc)
+{
+	for (UINT i=0; i<NUM_AY8910; i++)
+	{
+		if (g_MB[i].sy6522.IFR & 0x80)
+		{
+			if (g_MB[i].sy6522.IFR & IxR_TIMER1)
+			{
+				desc += ((i&1)==0) ? "A:" : "B:";
+				desc += "TIMER1 ";
+			}
+			if (g_MB[i].sy6522.IFR & IxR_TIMER2)
+			{
+				desc += ((i&1)==0) ? "A:" : "B:";
+				desc += "TIMER2 ";
+			}
+			if (g_MB[i].sy6522.IFR & IxR_VOTRAX)
+			{
+				desc += ((i&1)==0) ? "A:" : "B:";
+				desc += "VOTRAX ";
+			}
+			if (g_MB[i].sy6522.IFR & IxR_SSI263)
+			{
+				desc += ((i&1)==0) ? "A:" : "B:";
+				desc += "SSI263 ";
+			}
+		}
+	}
+}
+
+//---------------------------------------------------------------------------
+
 static void StartTimer1(SY6522_AY8910* pMB)
 {
 	pMB->bTimer1Active = true;

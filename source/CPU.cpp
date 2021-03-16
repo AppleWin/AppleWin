@@ -436,7 +436,13 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7)
 #if defined(_DEBUG) && LOG_IRQ_TAKEN_AND_RTI
-		LogOutput("IRQ\n");
+		std::string irq6522;
+		MB_Get6522IrqDescription(irq6522);
+		const char* pSrc =	(g_bmIRQ & 1) ? irq6522.c_str() :
+							(g_bmIRQ & 2) ? "SPEECH" :
+							(g_bmIRQ & 4) ? "SSC" :
+							(g_bmIRQ & 8) ? "MOUSE" : "UNKNOWN";
+		LogOutput("IRQ (%s)\n", pSrc);
 #endif
 		CheckSynchronousInterruptSources(7, uExecutedCycles);
 	}

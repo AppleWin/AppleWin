@@ -5,10 +5,10 @@
 enum PHASOR_MODE {PH_Mockingboard=0, PH_UNDEF1, PH_UNDEF2, PH_UNDEF3, PH_UNDEF4, PH_Phasor/*=5*/, PH_UNDEF6, PH_EchoPlus/*=7*/};
 
 // IFR & IER:
-#define IxR_PERIPHERAL	(1<<1)
-#define IxR_VOTRAX		(1<<4)	// TO DO: Get proper name from 6522 datasheet!
-#define IxR_TIMER2		(1<<5)
-#define IxR_TIMER1		(1<<6)
+#define IxR_SSI263	(1<<1)
+#define IxR_VOTRAX	(1<<4)
+#define IxR_TIMER2	(1<<5)
+#define IxR_TIMER1	(1<<6)
 
 
 void	MB_Initialize();
@@ -30,6 +30,7 @@ SS_CARDTYPE MB_GetSoundcardType();
 bool    MB_IsActive();
 DWORD   MB_GetVolume();
 void    MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
+void MB_Get6522IrqDescription(std::string& desc);
 
 UINT64 MB_GetLastCumulativeCycles(void);
 void MB_UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);

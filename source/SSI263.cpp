@@ -595,7 +595,7 @@ void SSI263::SetSpeechIRQ(void)
 			if (m_cardMode == PH_Mockingboard)
 			{
 				if ((MB_GetPCR(m_device) & 1) == 0)			// CA1 Latch/Input = 0 (Negative active edge)
-					MB_UpdateIFR(m_device, 0, IxR_PERIPHERAL);
+					MB_UpdateIFR(m_device, 0, IxR_SSI263);
 				if (MB_GetPCR(m_device) == 0x0C)			// CA2 Control = b#110 (Low output)
 					m_currentMode &= ~1;	// Clear SSI263's D7 pin (cleared by 6522's PCR CA1/CA2 handshake)
 
