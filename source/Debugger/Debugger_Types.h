@@ -1,5 +1,10 @@
 #pragma once
 
+// use the new Debugger Font (Apple Font)
+#define USE_APPLE_FONT   1
+
+// Test Colors & Glyphs
+#define DEBUG_APPLE_FONT 0
 
 // Addressing _____________________________________________________________________________________
 
