@@ -32,6 +32,59 @@ namespace
     }
   }
 
+  void formatDisassemblyLine(const DisasmLine_t& line, const int bDisasmFormatFlags, char* sDisassembly, const int nBufferSize)
+  {
+    sDisassembly[0] = 0;
+
+    const char* pMnemonic = g_aOpcodes[line.iOpcode].sMnemonic;
+    strcat(sDisassembly, pMnemonic);
+    strcat(sDisassembly, " ");
+
+    if (line.bTargetImmediate)
+    {
+      strcat(sDisassembly, "#$");
+    }
+
+    if (line.bTargetIndexed || line.bTargetIndirect)
+    {
+      strcat(sDisassembly, "(");
+    }
+
+    strcat(sDisassembly, line.sTarget);
+
+    if (bDisasmFormatFlags & DISASM_FORMAT_OFFSET)
+    {
+      if (line.nTargetOffset > 0)
+      {
+        strcat(sDisassembly, "+");
+      }
+      else if (line.nTargetOffset < 0)
+      {
+        strcat(sDisassembly, "-");
+      }
+      strcat(sDisassembly, line.sTargetOffset);
+    }
+
+    if (line.bTargetX)
+    {
+      strcat(sDisassembly, ",X");
+    }
+    else if ((line.bTargetY) && (!line.bTargetIndirect))
+    {
+      strcat(sDisassembly, ",Y");
+    }
+
+    if (line.bTargetIndexed || line.bTargetIndirect)
+    {
+      strcat(sDisassembly, ")");
+    }
+
+    if (line.bTargetIndexed && line.bTargetY)
+    {
+      strcat(sDisassembly, ",Y");
+    }
+  }
+
 }
 
 namespace sa2
@@ -221,14 +274,16 @@ namespace sa2
   void ImGuiSettings::drawDisassemblyTable()
   {
     const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable("Disassembly", 6, flags))
+    if (ImGui::BeginTable("Disassembly", 8, flags))
     {
       // weigths proportional to column width (including header)
       ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
-      ImGui::TableSetupColumn("Disassembly", 0, 30);
-      ImGui::TableSetupColumn("Symbol", 0, 20);
-      ImGui::TableSetupColumn("Target", 0, 20);
-      ImGui::TableSetupColumn("Pointer", 0, 9);
+      ImGui::TableSetupColumn("Address", 0, 7);
+      ImGui::TableSetupColumn("Opcode", 0, 8);
+      ImGui::TableSetupColumn("Symbol", 0, 10);
+      ImGui::TableSetupColumn("Disassembly", 0, 20);
+      ImGui::TableSetupColumn("Target", 0, 6);
+      ImGui::TableSetupColumn("Value", 0, 6);
       ImGui::TableSetupColumn("Immediate", 0, 9);
       ImGui::TableSetupColumn("Branch", 0, 6);
       ImGui::TableHeadersRow();
@@ -252,8 +307,8 @@ namespace sa2
           const char* pSymbol = FindSymbolFromAddress(nAddress);
           const int bDisasmFormatFlags = GetDisassemblyLine(nAddress, line);
 
-          char buffer[CONSOLE_WIDTH];
-          FormatDisassemblyLine(line, buffer, sizeof(buffer));
+          char buffer[256];
+          formatDisassemblyLine(line, bDisasmFormatFlags, buffer, sizeof(buffer));
 
           ImGui::TableNextRow();
 
@@ -262,9 +317,11 @@ namespace sa2
             const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(0, 0, 1, 1));
             ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
           }
+          ImGui::TableNextColumn();
+          ImGui::TextUnformatted(line.sAddress);
 
           ImGui::TableNextColumn();
-          ImGui::Selectable(buffer, false, ImGuiSelectableFlags_SpanAllColumns);
+          ImGui::TextUnformatted(line.sOpCodes);
 
           ImGui::TableNextColumn();
           if (pSymbol)
@@ -273,23 +330,18 @@ namespace sa2
           }
 
           ImGui::TableNextColumn();
-          if (bDisasmFormatFlags & DISASM_FORMAT_OFFSET)
+          ImGui::Selectable(buffer, false, ImGuiSelectableFlags_SpanAllColumns);
+
+          ImGui::TableNextColumn();
+          if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER)
           {
-            ImGui::Text("%s%+d", line.sTarget, line.nTargetOffset);
-          }
-          else
-          {
-            ImGui::TextUnformatted(line.sTarget);
+            ImGui::TextUnformatted(line.sTargetPointer);
           }
 
           ImGui::TableNextColumn();
           if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_VALUE)
           {
-            ImGui::Text("%s:%s", line.sTargetPointer, line.sTargetValue);
-          }
-          else if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER)
-          {
-            ImGui::TextUnformatted(line.sTargetPointer);
+            ImGui::TextUnformatted(line.sTargetValue);
           }
 
           ImGui::TableNextColumn();
@@ -375,7 +427,7 @@ namespace sa2
           }
           ImGui::SameLine(); ImGui::Text("%016llu - %04X", g_nCumulativeCycles, regs.pc);
 
-          if (ImGui::SliderInt("PC position", &g_nDisasmCurLine, 1, 100) || recalc)
+          if (ImGui::SliderInt("PC position", &g_nDisasmCurLine, 0, 100) || recalc)
           {
             g_nDisasmCurAddress = regs.pc;
             DisasmCalcTopBotAddress();
