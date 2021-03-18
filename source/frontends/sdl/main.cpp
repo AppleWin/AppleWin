@@ -80,8 +80,8 @@ void run_sdl(int argc, const char * argv [])
   const int sw = video.GetFrameBufferBorderlessWidth();
   const int sh = video.GetFrameBufferBorderlessHeight();
 
-  options.geometry.width = sw;
-  options.geometry.height = sh;
+  options.geometry.width = sw * 2;
+  options.geometry.height = sh * 2;
   options.geometry.x = SDL_WINDOWPOS_UNDEFINED;
   options.geometry.y = SDL_WINDOWPOS_UNDEFINED;
   options.memclear = g_nMemoryClearType;
