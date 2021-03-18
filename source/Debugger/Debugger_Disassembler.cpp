@@ -627,7 +627,7 @@ void FormatDisassemblyLine(const DisasmLine_t& line, char* sDisassembly, const i
 //===========================================================================
 void DisasmCalcTopFromCurAddress(bool bUpdateTop)
 {
-	int nLen = ((g_nDisasmWinHeight - g_nDisasmCurLine) * 3); // max 3 opcodes/instruction, is our search window
+	int nLen = g_nDisasmCurLine * 3; // max 3 opcodes/instruction, is our search window
 
 	// Look for a start address that when disassembled,
 	// will have the cursor on the specified line and address
