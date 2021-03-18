@@ -316,22 +316,22 @@ namespace sa2
     const ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
     if (ImGui::BeginTable("Console", 1, flags))
     {
-//      ImGuiListClipper clipper;
-//      clipper.Begin(CONSOLE_HEIGHT);
-//      while (clipper.Step())
       {
-//        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
         for (int i = 0; i < CONSOLE_HEIGHT; ++i)
         {
           char line[CONSOLE_WIDTH + 1];
+          line[CONSOLE_WIDTH] = 0;
           const conchar_t * src = g_aConsoleDisplay[CONSOLE_HEIGHT - i - 1];
           for (size_t j = 0; j < CONSOLE_WIDTH; ++j)
           {
             line[j] = ConsoleChar_GetChar(src[j]);
+            if (!line[j])
+            {
+              break;
+            }
           }
           if (line[0])
           {
-            line[CONSOLE_WIDTH] = 0;
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             ImGui::TextUnformatted(line);
