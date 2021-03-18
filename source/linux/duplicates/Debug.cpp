@@ -69,6 +69,8 @@ void DebugInitialize()
   CmdSymbolsLoad(0);
 
   g_bSymbolsDisplayMissingFile = true;
+
+  g_iConfigDisasmBranchType = DISASM_BRANCH_PLAIN;
 }
 
 void DebugReset(void)
