@@ -149,7 +149,8 @@ namespace sa2
     ImGui_ImplSDL2_NewFrame(myWindow.get());
     ImGui::NewFrame();
 
-    mySettings.show();
+    // "this" is a bit circular
+    mySettings.show(this);
     DrawAppleVideo();
 
     ImGui::Render();

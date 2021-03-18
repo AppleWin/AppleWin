@@ -26,6 +26,7 @@
 #include "Riff.h"
 #include "Utilities.h"
 #include "Interface.h"
+#include "Debugger/Debug.h"
 
 #include <libgen.h>
 #include <unistd.h>
@@ -87,6 +88,8 @@ namespace common2
     GetCardMgr().GetDisk2CardMgr().Reset();
     HD_Reset();
     Snapshot_Startup();
+
+    DebugInitialize();
   }
 
   Initialisation::~Initialisation()

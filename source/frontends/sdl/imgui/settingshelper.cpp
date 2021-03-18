@@ -46,6 +46,16 @@ namespace
      {CPU_65C02, "CPU_65C02"},
      {CPU_Z80, "CPU_Z80"},
     };
+
+  const std::map<AppMode_e, std::string> modes =
+    {
+     {MODE_LOGO, "MODE_LOGO"},
+     {MODE_PAUSED, "MODE_PAUSED"},
+     {MODE_RUNNING, "MODE_RUNNING"},
+     {MODE_DEBUG, "MODE_DEBUG"},
+     {MODE_STEPPING, "MODE_STEPPING"},
+     {MODE_BENCHMARK, "MODE_BENCHMARCK"},
+    };
 }
 
 namespace sa2
@@ -64,6 +74,11 @@ namespace sa2
   const std::string & getCPUName(eCpuType cpu)
   {
     return cpuTypes.at(cpu);
+  }
+
+  const std::string & getModeName(AppMode_e mode)
+  {
+    return modes.at(mode);
   }
 
 }

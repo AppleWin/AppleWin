@@ -1,6 +1,14 @@
 include(FindPkgConfig)
 
 set(SOURCE_FILES
+  Debugger/Debugger_Disassembler.cpp
+  Debugger/Debugger_Symbols.cpp
+  Debugger/Debugger_DisassemblerData.cpp
+  Debugger/Debugger_Console.cpp
+  Debugger/Debugger_Assembler.cpp
+  Debugger/Debugger_Parser.cpp
+  Debugger/Debugger_Range.cpp
+
   Speaker.cpp
   SoundCore.cpp
   AY8910.cpp
@@ -178,6 +186,11 @@ target_link_libraries(appleii PRIVATE
 
 target_compile_options(appleii PUBLIC
   -Wno-multichar
+  )
+
+add_custom_command(
+  TARGET appleii POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/bin/*.SYM ${CMAKE_BINARY_DIR}
   )
 
 install(TARGETS appleii

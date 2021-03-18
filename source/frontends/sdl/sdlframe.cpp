@@ -11,6 +11,9 @@
 #include "Speaker.h"
 #include "SoundCore.h"
 #include "Interface.h"
+#include "NTSC.h"
+#include "CPU.h"
+#include "Mockingboard.h"
 
 #include "linux/paddle.h"
 #include "linux/keyboard.h"
@@ -329,19 +332,8 @@ namespace sa2
         }
       case SDLK_PAUSE:
         {
-          switch (g_nAppMode)
-          {
-          case MODE_RUNNING:
-            g_nAppMode = MODE_PAUSED;
-            SoundCore_SetFade(FADE_OUT);
-            break;
-          case MODE_PAUSED:
-            g_nAppMode = MODE_RUNNING;
-            SoundCore_SetFade(FADE_IN);
-            mySpeed.reset();
-            break;
-          }
-          GetFrame().FrameRefreshStatus(DRAW_TITLE);
+          const AppMode_e newMode = (g_nAppMode == MODE_RUNNING) ? MODE_PAUSED : MODE_RUNNING;
+          ChangeMode(newMode);
           break;
         }
       case SDLK_CAPSLOCK:
@@ -399,6 +391,50 @@ namespace sa2
           break;
         }
       }
+    }
+  }
+
+  void SDLFrame::Execute(const DWORD cyclesToExecute)
+  {
+    const bool bVideoUpdate = true;
+    const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
+
+    const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
+
+    g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
+    GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
+    MB_PeriodicUpdate(executedCycles);
+    SpkrUpdate(executedCycles);
+  }
+
+  void SDLFrame::ExecuteOneFrame(const size_t msNextFrame)
+  {
+    // when running in adaptive speed
+    // the value msNextFrame is only a hint for when the next frame will arrive
+    if (g_nAppMode == MODE_RUNNING)
+    {
+      const size_t cyclesToExecute = mySpeed.getCyclesTillNext(msNextFrame * 1000);
+      Execute(cyclesToExecute);
+    }
+    // else do nothing, it is either paused, debugged or stepped
+  }
+
+  void SDLFrame::ChangeMode(const AppMode_e mode)
+  {
+    if (mode != g_nAppMode)
+    {
+      g_nAppMode = mode;
+      switch (g_nAppMode)
+      {
+      case MODE_RUNNING:
+        SoundCore_SetFade(FADE_IN);
+        mySpeed.reset();
+        break;
+      default:
+        SoundCore_SetFade(FADE_OUT);
+        break;
+      }
+      FrameRefreshStatus(DRAW_TITLE);
     }
   }
 

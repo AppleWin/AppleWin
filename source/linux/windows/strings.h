@@ -4,8 +4,19 @@
 
 #include <cstddef>
 #include <ctype.h>
+#include <cstdarg>
 
 void strcpy_s(char * dest, size_t size, const char * source);
+
+int vsnprintf_s(
+   char *buffer,
+   size_t sizeOfBuffer,
+   size_t count,
+   const char *format,
+   va_list argptr
+);
+
+#define _TRUNCATE ((size_t)-1)
 
 #define sprintf_s snprintf
 
@@ -21,6 +32,8 @@ void strcpy_s(char * dest, size_t size, const char * source);
 #define _tcschr strchr
 #define _tcsstr strstr
 #define _tcscpy     strcpy
+#define _tcstol strtol
+#define _tcstoul strtoul
 #define _snprintf snprintf
 #define wsprintf sprintf
 #define sscanf_s sscanf

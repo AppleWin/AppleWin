@@ -27,8 +27,6 @@
 #include "NTSC.h"
 #include "SaveState.h"
 #include "Interface.h"
-#include "Mockingboard.h"
-#include "Speaker.h"
 
 // comment out to test / debug init / shutdown only
 #define EMULATOR_RUN
@@ -50,27 +48,9 @@ namespace
     return current.refresh_rate;
   }
 
-  void execute(common2::Speed speed, const size_t next)
-  {
-    if (g_nAppMode == MODE_RUNNING)
-    {
-      const size_t cyclesToExecute = speed.getCyclesTillNext(next * 1000);
-
-      const bool bVideoUpdate = true;
-      const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-
-      const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
-
-      g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
-      GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
-      MB_PeriodicUpdate(executedCycles);
-      SpkrUpdate(executedCycles);
-    }
-  }
-
   struct Data
   {
-    common2::Speed * speed;
+    sa2::SDLFrame * frame;
     SDL_mutex * mutex;
     common2::Timer * timer;
   };
@@ -81,7 +61,7 @@ namespace
     SDL_LockMutex(data->mutex);
 
     data->timer->tic();
-    execute(*data->speed, interval);
+    data->frame->ExecuteOneFrame(interval);
     data->timer->toc();
 
     SDL_UnlockMutex(data->mutex);
@@ -100,8 +80,8 @@ void run_sdl(int argc, const char * argv [])
   const int sw = video.GetFrameBufferBorderlessWidth();
   const int sh = video.GetFrameBufferBorderlessHeight();
 
-  options.geometry.width = sw;
-  options.geometry.height = sh;
+  options.geometry.width = sw * 2;
+  options.geometry.height = sh * 2;
   options.geometry.x = SDL_WINDOWPOS_UNDEFINED;
   options.geometry.y = SDL_WINDOWPOS_UNDEFINED;
   options.memclear = g_nMemoryClearType;
@@ -156,15 +136,15 @@ void run_sdl(int argc, const char * argv [])
     }
 
     const auto redraw = [&frame]{
-			  frame->UpdateTexture();
-			  frame->RenderPresent();
-			};
+                          frame->UpdateTexture();
+                          frame->RenderPresent();
+                        };
 
     const auto refresh = [redraw, &video]{
-			   NTSC_SetVideoMode( video.GetVideoMode() );
-			   NTSC_VideoRedrawWholeScreen();
-			   redraw();
-			 };
+                           NTSC_SetVideoMode( video.GetVideoMode() );
+                           NTSC_VideoRedrawWholeScreen();
+                           redraw();
+                         };
 
     VideoBenchmark(redraw, refresh);
   }
@@ -180,8 +160,6 @@ void run_sdl(int argc, const char * argv [])
     const std::string globalTag = ". .";
     std::string updateTextureTimerTag, refreshScreenTimerTag, cpuTimerTag, eventTimerTag;
 
-    common2::Speed speed(options.fixedSpeed);
-
     if (options.multiThreaded)
     {
       refreshScreenTimerTag = "0 .";
@@ -189,11 +167,11 @@ void run_sdl(int argc, const char * argv [])
       eventTimerTag         = "0 M";
       if (options.looseMutex)
       {
-	updateTextureTimerTag = "0 .";
+        updateTextureTimerTag = "0 .";
       }
       else
       {
-	updateTextureTimerTag = "0 M";
+        updateTextureTimerTag = "0 M";
       }
 
       std::shared_ptr<SDL_mutex> mutex(SDL_CreateMutex(), SDL_DestroyMutex);
@@ -201,49 +179,49 @@ void run_sdl(int argc, const char * argv [])
       Data data;
       data.mutex = mutex.get();
       data.timer = &cpuTimer;
-      data.speed = &speed;
+      data.frame = frame.get();
 
       const SDL_TimerID timer = SDL_AddTimer(options.timerInterval, emulator_callback, &data);
 
       bool quit = false;
       do
       {
-	frameTimer.tic();
-	SDL_LockMutex(data.mutex);
+        frameTimer.tic();
+        SDL_LockMutex(data.mutex);
 
-	eventTimer.tic();
-	sa2::writeAudio();
-	frame->ProcessEvents(quit);
-	eventTimer.toc();
+        eventTimer.tic();
+        sa2::writeAudio();
+        frame->ProcessEvents(quit);
+        eventTimer.toc();
 
-	if (options.looseMutex)
-	{
-	  // loose mutex
-	  // unlock early and let CPU run again in the timer callback
-	  SDL_UnlockMutex(data.mutex);
-	  // but the texture will be updated concurrently with the CPU updating the video buffer
-	  // pixels are not atomic, so a pixel error could happen (if pixel changes while being read)
-	  // on the positive side this will release pressure from CPU and allow for more parallelism
-	}
+        if (options.looseMutex)
+        {
+          // loose mutex
+          // unlock early and let CPU run again in the timer callback
+          SDL_UnlockMutex(data.mutex);
+          // but the texture will be updated concurrently with the CPU updating the video buffer
+          // pixels are not atomic, so a pixel error could happen (if pixel changes while being read)
+          // on the positive side this will release pressure from CPU and allow for more parallelism
+        }
 
-	updateTextureTimer.tic();
-	frame->UpdateTexture();
-	updateTextureTimer.toc();
+        updateTextureTimer.tic();
+        frame->UpdateTexture();
+        updateTextureTimer.toc();
 
-	if (!options.looseMutex)
-	{
-	  // safe mutex, only unlock after texture has been updated
-	  // this will stop the CPU for longer
-	  SDL_UnlockMutex(data.mutex);
-	}
+        if (!options.looseMutex)
+        {
+          // safe mutex, only unlock after texture has been updated
+          // this will stop the CPU for longer
+          SDL_UnlockMutex(data.mutex);
+        }
 
-	if (!options.headless)
-	{
-	  refreshScreenTimer.tic();
-	  frame->RenderPresent();
-	  refreshScreenTimer.toc();
-	}
-	frameTimer.toc();
+        if (!options.headless)
+        {
+          refreshScreenTimer.tic();
+          frame->RenderPresent();
+          refreshScreenTimer.toc();
+        }
+        frameTimer.toc();
       } while (!quit);
 
       SDL_RemoveTimer(timer);
@@ -266,28 +244,28 @@ void run_sdl(int argc, const char * argv [])
 
       do
       {
-	frameTimer.tic();
+        frameTimer.tic();
 
-	eventTimer.tic();
-	sa2::writeAudio();
-	frame->ProcessEvents(quit);
-	eventTimer.toc();
+        eventTimer.tic();
+        sa2::writeAudio();
+        frame->ProcessEvents(quit);
+        eventTimer.toc();
 
-	cpuTimer.tic();
-	execute(speed, oneFrame);
-	cpuTimer.toc();
+        cpuTimer.tic();
+        frame->ExecuteOneFrame(oneFrame);
+        cpuTimer.toc();
 
-	updateTextureTimer.tic();
-	frame->UpdateTexture();
-	updateTextureTimer.toc();
+        updateTextureTimer.tic();
+        frame->UpdateTexture();
+        updateTextureTimer.toc();
 
-	if (!options.headless)
-	{
-	  refreshScreenTimer.tic();
-	  frame->RenderPresent();
-	  refreshScreenTimer.toc();
-	}
-	frameTimer.toc();
+        if (!options.headless)
+        {
+          refreshScreenTimer.tic();
+          frame->RenderPresent();
+          refreshScreenTimer.toc();
+        }
+        frameTimer.toc();
       } while (!quit);
     }
 
