@@ -21,9 +21,9 @@ It is possible to run the CPU in a separate thread to keep the emulator running 
 
 ## Dear ImGui
 
-Rendering with [Dear ImGui](https://github.com/ocornut/imgui) is possible, although no fancy features are used.
+With the flag ``--imgui``, the rendering if performned with [Dear ImGui](https://github.com/ocornut/imgui). In this case ``--sdl-driver`` is ignored and a OpenGL ES2.0 implementation is required.
 
-Must be configured in ``cmake`` via the external path ``IMGUI_PATH``, and enabled at runtime with ``--imgui``. It requires a working OpenGL ES2.0 implementation (works on Pi3 and Pi4).
+On a Raspberry Pi, a KMS driver is mandatory and best results are obtained on a Pi4 with FullKMS (full screen via ``F6``).
 
 Output mentions the Dear ImGui version, e.g.: ``IMGUI_VERSION: 1.81 WIP``.
 
