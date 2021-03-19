@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "YamlHelper.h"
 
 #define LOG_SSI263 0
-#define LOG_SSI263B 0	// Alternate SSI263 logging (use in conjunction with CPU.cpp's LOG_IRQ_TAKEN_AND_RTI)
+#define LOG_SSI263B 1	// Alternate SSI263 logging (use in conjunction with CPU.cpp's LOG_IRQ_TAKEN_AND_RTI)
 
 // SSI263A registers:
 #define SSI_DURPHON	0x00
@@ -328,6 +328,43 @@ void SSI263::Update(void)
 		g_ssi263UpdateWasFullSpeed = true;
 		return;
 	}
+
+	if (g_nAppMode == MODE_STEPPING)	// Just count cycles
+	{
+		if (g_uLastSSI263UpdateCycle == 0)
+		{
+			g_uLastSSI263UpdateCycle = MB_GetLastCumulativeCycles();
+			return;
+		}
+
+		double updateInterval = (double)(MB_GetLastCumulativeCycles() - g_uLastSSI263UpdateCycle);
+		g_uLastSSI263UpdateCycle = MB_GetLastCumulativeCycles();
+
+		if (!g_uPhonemeLength)
+			return;
+
+		const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
+		const int nNumSamplesPerPeriod = (int)((double)(SAMPLE_RATE_SSI263) / nIrqFreq);	// Eg. For 60Hz this is 367
+
+		const BYTE DUR = m_durationPhoneme >> 6;
+
+		const UINT numSamples = nNumSamplesPerPeriod * (DUR+1);
+		if (g_uPhonemeLength > numSamples)
+		{
+			g_uPhonemeLength -= numSamples;
+			g_pPhonemeData += numSamples;
+		}
+		else
+		{
+			g_uPhonemeLength = 0;
+			g_pPhonemeData = NULL;
+			UpdateIRQ();
+		}
+
+		return;
+	}
+
+	//
 
 	const bool nowNormalSpeed = g_ssi263UpdateWasFullSpeed;	// Just transitioned from full-speed to normal speed
 	g_ssi263UpdateWasFullSpeed = false;
