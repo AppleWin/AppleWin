@@ -90,7 +90,7 @@ This is based on Qt.
 
 ### sa2
 
-See [sa2](source/frontends/sa2/README.md).
+See [sa2](source/frontends/sdl/README.md).
 
 ### ra2
 
