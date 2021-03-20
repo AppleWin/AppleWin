@@ -246,6 +246,15 @@ namespace sa2
           ImGui::EndTabItem();
         }
 
+        if (ImGui::BeginTabItem("Debugger"))
+        {
+          if (ImGui::RadioButton("Color", g_iColorScheme == SCHEME_COLOR)) { g_iColorScheme = SCHEME_COLOR; } ImGui::SameLine();
+          if (ImGui::RadioButton("Mono", g_iColorScheme == SCHEME_MONO)) { g_iColorScheme = SCHEME_MONO; } ImGui::SameLine();
+          if (ImGui::RadioButton("BW", g_iColorScheme == SCHEME_BW)) { g_iColorScheme = SCHEME_BW; }
+
+          ImGui::EndTabItem();
+        }
+
         ImGui::EndTabBar();
       }
 
