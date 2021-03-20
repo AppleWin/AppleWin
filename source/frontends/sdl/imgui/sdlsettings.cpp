@@ -320,7 +320,7 @@ namespace sa2
         if (ImGui::BeginTabItem("AUX"))
         {
           void * auxBase = MemGetAuxPtr(0);
-          myMainMemoryEditor.DrawContents(auxBase, _6502_MEM_LEN);
+          myAuxMemoryEditor.DrawContents(auxBase, _6502_MEM_LEN);
           ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
