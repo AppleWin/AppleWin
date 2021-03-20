@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "YamlHelper.h"
 
 #define LOG_SSI263 0
-#define LOG_SSI263B 1	// Alternate SSI263 logging (use in conjunction with CPU.cpp's LOG_IRQ_TAKEN_AND_RTI)
+#define LOG_SSI263B 0	// Alternate SSI263 logging (use in conjunction with CPU.cpp's LOG_IRQ_TAKEN_AND_RTI)
 
 // SSI263A registers:
 #define SSI_DURPHON	0x00
@@ -52,6 +52,7 @@ const DWORD SAMPLE_RATE_SSI263 = 22050;
 
 // Duration/Phonome
 const BYTE DURATION_MODE_MASK = 0xC0;
+const BYTE DURATION_SHIFT = 6;
 const BYTE PHONEME_MASK = 0x3F;
 
 const BYTE MODE_PHONEME_TRANSITIONED_INFLECTION = 0xC0;	// IRQ active
@@ -68,6 +69,8 @@ const BYTE INFLECTION_MASK_L = 0x07;	// I2..I0
 const BYTE CONTROL_MASK = 0x80;
 const BYTE ARTICULATION_MASK = 0x70;
 const BYTE AMPLITUDE_MASK = 0x0F;
+
+//-----------------------------------------------------------------------------
 
 #if LOG_SSI263B
 static int ssiRegs[5]={-1,-1,-1,-1,-1};
@@ -97,6 +100,8 @@ void SSI_Output(void)
 	LogOutput("\n");
 }
 #endif
+
+//-----------------------------------------------------------------------------
 
 BYTE SSI263::Read(ULONG nExecutedCycles)
 {
@@ -290,59 +295,70 @@ void SSI263::Votrax_Write(BYTE value)
 
 //-----------------------------------------------------------------------------
 
-//#define DBG_SSI263_UPDATE		// NB. This outputs for all active SSI263 ring-buffers (eg. for mb-audit this may be 2 or 4)
-
-// Called by:
-// . Update() when m_phonemeLengthRemaining -> 0
-// . UpdateAccurateLength() when m_phonemeAccurateLengthRemaining -> 0
-// . SignalPause(), eg. when built-in debugger is activated during phoneme playback
-void SSI263::UpdateIRQ(void)
+void SSI263::Play(unsigned int nPhoneme)
 {
-	m_phonemeLengthRemaining = m_phonemeAccurateLengthRemaining = 0;	// Prevent an IRQ from the other source
-
-	_ASSERT(m_currentActivePhoneme != -1);
-	m_currentActivePhoneme = -1;
+	if (!SSI263SingleVoice.bActive)
+	{
+		bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, m_kDSBufferSize);
+		LogFileOutput("SSI263::Play: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
+		if (!bRes)
+			return;
+	}
 
 	if (m_dbgFirst)
 	{
-		UINT64 diff = g_nCumulativeCycles - m_dbgStartTime;
-		LogOutput("1st phoneme playback time = 0x%08X cy\n", (UINT32)diff);
-		m_dbgFirst = false;
+		m_dbgStartTime = g_nCumulativeCycles;
+		LogOutput("1st phoneme = 0x%02X\n", nPhoneme);
 	}
 
-	// Phoneme complete, so generate IRQ if necessary
-	SetSpeechIRQ();
-}
+	m_currentActivePhoneme = nPhoneme;
 
-// The primary way for phonemes to generate IRQ is via the ring-buffer in Update(),
-// but when single-stepping (eg. timing-sensitive SSI263 detection code), then this secondary method is used.
-void SSI263::UpdateAccurateLength(void)
-{
-	if (!m_phonemeAccurateLengthRemaining)
-		return;
+	bool bPause = false;
 
-	if (m_lastUpdateCycle == 0)
-		return;
+	if (nPhoneme == 1)
+		nPhoneme = 2;	// Missing this sample, so map to phoneme-2
 
-	double updateInterval = (double)(MB_GetLastCumulativeCycles() - m_lastUpdateCycle);
+	if (nPhoneme == 0)
+		bPause = true;
+	else
+		nPhoneme-=2;	// Missing phoneme-1
 
-	const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
-	const int nNumSamplesPerPeriod = (int)((double)(SAMPLE_RATE_SSI263) / nIrqFreq);	// Eg. For 60Hz this is 367
+	m_phonemeLengthRemaining = g_nPhonemeInfo[nPhoneme].nLength;
 
-	const BYTE DUR = m_durationPhoneme >> 6;
+	m_phonemeAccurateLengthRemaining = m_phonemeLengthRemaining;
+	m_phonemePlaybackAndDebugger = (g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
+	m_phonemeCompleteByFullSpeed = false;
 
-	const UINT numSamples = nNumSamplesPerPeriod * (DUR+1);
-	if (m_phonemeAccurateLengthRemaining > numSamples)
+	if (bPause)
 	{
-		m_phonemeAccurateLengthRemaining -= numSamples;
+		if (!m_pPhonemeData00)
+		{
+			// 'pause' length is length of 1st phoneme (arbitrary choice, since don't know real length)
+			m_pPhonemeData00 = new short [m_phonemeLengthRemaining];
+			memset(m_pPhonemeData00, 0x00, m_phonemeLengthRemaining*sizeof(short));
+		}
+
+		m_pPhonemeData = m_pPhonemeData00;
 	}
 	else
 	{
-		m_phonemeAccurateLengthRemaining = 0;
-		if (m_phonemePlaybackAndDebugger || m_phonemeCompleteByFullSpeed)
-			UpdateIRQ();
+		m_pPhonemeData = (const short*) &g_nPhonemeData[g_nPhonemeInfo[nPhoneme].nOffset];
 	}
+
+	m_currSampleSum = 0;
+	m_currNumSamples = 0;
+	m_currSampleMod4 = 0;
 }
+
+void SSI263::Stop(void)
+{
+	if (SSI263SingleVoice.lpDSBvoice && SSI263SingleVoice.bActive)
+		DSVoiceStop(&SSI263SingleVoice);
+}
+
+//-----------------------------------------------------------------------------
+
+//#define DBG_SSI263_UPDATE		// NB. This outputs for all active SSI263 ring-buffers (eg. for mb-audit this may be 2 or 4)
 
 // Called by:
 // . PeriodicUpdate()
@@ -513,7 +529,7 @@ void SSI263::Update(void)
 	bool bSpeechIRQ = false;
 
 	{
-		const BYTE DUR = m_durationPhoneme >> 6;
+		const BYTE DUR = m_durationPhoneme >> DURATION_SHIFT;
 		const BYTE numSamplesToAvg = (DUR <= 1) ? 1 :
 									 (DUR == 2) ? 2 :
 												  4;
@@ -598,6 +614,60 @@ void SSI263::Update(void)
 
 //-----------------------------------------------------------------------------
 
+// The primary way for phonemes to generate IRQ is via the ring-buffer in Update(),
+// but when single-stepping (eg. timing-sensitive SSI263 detection code), then this secondary method is used.
+void SSI263::UpdateAccurateLength(void)
+{
+	if (!m_phonemeAccurateLengthRemaining)
+		return;
+
+	if (m_lastUpdateCycle == 0)
+		return;
+
+	double updateInterval = (double)(MB_GetLastCumulativeCycles() - m_lastUpdateCycle);
+
+	const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
+	const int nNumSamplesPerPeriod = (int)((double)(SAMPLE_RATE_SSI263) / nIrqFreq);	// Eg. For 60Hz this is 367
+
+	const BYTE DUR = m_durationPhoneme >> DURATION_SHIFT;
+
+	const UINT numSamples = nNumSamplesPerPeriod * (DUR+1);
+	if (m_phonemeAccurateLengthRemaining > numSamples)
+	{
+		m_phonemeAccurateLengthRemaining -= numSamples;
+	}
+	else
+	{
+		m_phonemeAccurateLengthRemaining = 0;
+		if (m_phonemePlaybackAndDebugger || m_phonemeCompleteByFullSpeed)
+			UpdateIRQ();
+	}
+}
+
+// Called by:
+// . Update() when m_phonemeLengthRemaining -> 0
+// . UpdateAccurateLength() when m_phonemeAccurateLengthRemaining -> 0
+// . SignalPause(), eg. when built-in debugger is activated during phoneme playback
+void SSI263::UpdateIRQ(void)
+{
+	m_phonemeLengthRemaining = m_phonemeAccurateLengthRemaining = 0;	// Prevent an IRQ from the other source
+
+	_ASSERT(m_currentActivePhoneme != -1);
+	m_currentActivePhoneme = -1;
+
+	if (m_dbgFirst)
+	{
+		UINT64 diff = g_nCumulativeCycles - m_dbgStartTime;
+		LogOutput("1st phoneme playback time = 0x%08X cy\n", (UINT32)diff);
+		m_dbgFirst = false;
+	}
+
+	// Phoneme complete, so generate IRQ if necessary
+	SetSpeechIRQ();
+}
+
+//-----------------------------------------------------------------------------
+
 // Called by MB_LoadSnapshot & Phasor_LoadSnapshot
 // Pre: g_bVotraxPhoneme, m_cardMode, m_device
 void SSI263::SetSpeechIRQ(void)
@@ -640,69 +710,6 @@ void SSI263::SetSpeechIRQ(void)
 
 		m_isVotraxPhoneme = false;
 	}
-}
-
-//-----------------------------------------------------------------------------
-
-void SSI263::Play(unsigned int nPhoneme)
-{
-	if (!SSI263SingleVoice.bActive)
-	{
-		bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, m_kDSBufferSize);
-		LogFileOutput("SSI263::Play: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
-		if (!bRes)
-			return;
-	}
-
-	if (m_dbgFirst)
-	{
-		m_dbgStartTime = g_nCumulativeCycles;
-		LogOutput("1st phoneme = 0x%02X\n", nPhoneme);
-	}
-
-	m_currentActivePhoneme = nPhoneme;
-
-	bool bPause = false;
-
-	if (nPhoneme == 1)
-		nPhoneme = 2;	// Missing this sample, so map to phoneme-2
-
-	if (nPhoneme == 0)
-		bPause = true;
-	else
-		nPhoneme-=2;	// Missing phoneme-1
-
-	m_phonemeLengthRemaining = g_nPhonemeInfo[nPhoneme].nLength;
-
-	m_phonemeAccurateLengthRemaining = m_phonemeLengthRemaining;
-	m_phonemePlaybackAndDebugger = (g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
-	m_phonemeCompleteByFullSpeed = false;
-
-	if (bPause)
-	{
-		if (!m_pPhonemeData00)
-		{
-			// 'pause' length is length of 1st phoneme (arbitrary choice, since don't know real length)
-			m_pPhonemeData00 = new short [m_phonemeLengthRemaining];
-			memset(m_pPhonemeData00, 0x00, m_phonemeLengthRemaining*sizeof(short));
-		}
-
-		m_pPhonemeData = m_pPhonemeData00;
-	}
-	else
-	{
-		m_pPhonemeData = (const short*) &g_nPhonemeData[g_nPhonemeInfo[nPhoneme].nOffset];
-	}
-
-	m_currSampleSum = 0;
-	m_currNumSamples = 0;
-	m_currSampleMod4 = 0;
-}
-
-void SSI263::Stop(void)
-{
-	if (SSI263SingleVoice.lpDSBvoice && SSI263SingleVoice.bActive)
-		DSVoiceStop(&SSI263SingleVoice);
 }
 
 //-----------------------------------------------------------------------------
@@ -765,6 +772,8 @@ void SSI263::Reset(void)
 // These interruptions are: Entering built-in debugger (F7), Configuration (F8), Pause key
 //
 // When the code restarts and reads the ring-buffer position it'll be at a random point, and maybe nearly full; so it waits until it drains.
+// . this is the reason for it taking much longer.
+//
 // So now on an interruption: just reset the ring-buffer (perhaps there'll be a sound glitch, but this is better than an SSI263 detection failure).
 void SSI263::SignalPause(void)
 {
