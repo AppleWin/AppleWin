@@ -54,6 +54,7 @@ void InitDisasm()
 void DebugInitialize()
 {
   WindowUpdateDisasmSize();
+  ConfigColorsReset();
   WindowUpdateConsoleDisplayedSize();
 
   extern bool g_bSymbolsDisplayMissingFile;

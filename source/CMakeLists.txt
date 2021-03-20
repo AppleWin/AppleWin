@@ -1,6 +1,7 @@
 include(FindPkgConfig)
 
 set(SOURCE_FILES
+  Debugger/Debugger_Color.cpp
   Debugger/Debugger_Disassembler.cpp
   Debugger/Debugger_Symbols.cpp
   Debugger/Debugger_DisassemblerData.cpp
@@ -69,6 +70,7 @@ set(SOURCE_FILES
   linux/context.cpp
 
   linux/duplicates/Debug.cpp
+  linux/duplicates/Debug_Display.cpp
   linux/duplicates/Joystick.cpp
   linux/duplicates/SerialComms.cpp
   linux/duplicates/PropertySheet.cpp

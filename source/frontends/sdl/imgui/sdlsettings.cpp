@@ -32,56 +32,108 @@ namespace
     }
   }
 
-  void formatDisassemblyLine(const DisasmLine_t& line, const int bDisasmFormatFlags, char* sDisassembly, const int nBufferSize)
+  ImVec4 debuggerGetColor(int iColor)
   {
-    sDisassembly[0] = 0;
+    const float coeff = 1.0 / 255.0;
+    const COLORREF cr = DebuggerGetColor(iColor);
+    const bgra_t * bgra = reinterpret_cast<const bgra_t *>(&cr);
+    const ImVec4 color(bgra->b * coeff, bgra->g * coeff, bgra->r * coeff, 1);
+    return color;
+  }
 
+  void debuggerTextColored(int iColor, const char* text)
+  {
+    const ImVec4 color = debuggerGetColor(iColor);
+    ImGui::TextColored(color, "%s", text);
+  }
+
+  void displayDisassemblyLine(const DisasmLine_t& line, const int bDisasmFormatFlags)
+  {
     const char* pMnemonic = g_aOpcodes[line.iOpcode].sMnemonic;
-    strcat(sDisassembly, pMnemonic);
-    strcat(sDisassembly, " ");
+    ImGui::Text("%s ", pMnemonic);
 
     if (line.bTargetImmediate)
     {
-      strcat(sDisassembly, "#$");
+      ImGui::SameLine(0, 0);
+      debuggerTextColored(FG_DISASM_OPERATOR, "#$");
     }
 
     if (line.bTargetIndexed || line.bTargetIndirect)
     {
-      strcat(sDisassembly, "(");
+      ImGui::SameLine(0, 0);
+      debuggerTextColored(FG_DISASM_OPERATOR, "(");
     }
 
-    strcat(sDisassembly, line.sTarget);
+    int targetColor;
+    if (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL)
+    {
+      targetColor = FG_DISASM_SYMBOL;
+    }
+    else
+    {
+      if (line.iOpmode == AM_M)
+      {
+        targetColor = FG_DISASM_OPCODE;
+      }
+      else
+      {
+        targetColor = FG_DISASM_TARGET;
+      }
+    }
+
+    const char * target = line.sTarget;
+    if (target[0] == '$')
+    {
+      ImGui::SameLine(0, 0);
+      debuggerTextColored(FG_DISASM_OPERATOR, "$");
+      ++target;
+    }
+    ImGui::SameLine(0, 0);
+    debuggerTextColored(targetColor, target);
 
     if (bDisasmFormatFlags & DISASM_FORMAT_OFFSET)
     {
       if (line.nTargetOffset > 0)
       {
-        strcat(sDisassembly, "+");
+        ImGui::SameLine(0, 0);
+        debuggerTextColored(FG_DISASM_OPERATOR, "+");
       }
       else if (line.nTargetOffset < 0)
       {
-        strcat(sDisassembly, "-");
+        ImGui::SameLine(0, 0);
+        debuggerTextColored(FG_DISASM_OPERATOR, "-");
       }
-      strcat(sDisassembly, line.sTargetOffset);
+      ImGui::SameLine(0, 0);
+      debuggerTextColored(FG_DISASM_OPCODE, line.sTargetOffset);
     }
 
     if (line.bTargetX)
     {
-      strcat(sDisassembly, ",X");
+      ImGui::SameLine(0, 0);
+      debuggerTextColored(FG_DISASM_OPERATOR, ",");
+      ImGui::SameLine(0, 0);
+      debuggerTextColored(FG_INFO_REG, "X");
     }
     else if ((line.bTargetY) && (!line.bTargetIndirect))
     {
-      strcat(sDisassembly, ",Y");
+      ImGui::SameLine(0, 0);
+      debuggerTextColored(FG_DISASM_OPERATOR, ",");
+      ImGui::SameLine(0, 0);
+      debuggerTextColored(FG_INFO_REG, "Y");
     }
 
     if (line.bTargetIndexed || line.bTargetIndirect)
     {
-      strcat(sDisassembly, ")");
+      ImGui::SameLine(0, 0);
+      debuggerTextColored(FG_DISASM_OPERATOR, ")");
     }
 
     if (line.bTargetIndexed && line.bTargetY)
     {
-      strcat(sDisassembly, ",Y");
+      ImGui::SameLine(0, 0);
+      debuggerTextColored(FG_DISASM_OPERATOR, ",");
+      ImGui::SameLine(0, 0);
+      debuggerTextColored(FG_INFO_REG, "Y");
     }
   }
 
@@ -307,9 +359,6 @@ namespace sa2
           const char* pSymbol = FindSymbolFromAddress(nAddress);
           const int bDisasmFormatFlags = GetDisassemblyLine(nAddress, line);
 
-          char buffer[256];
-          formatDisassemblyLine(line, bDisasmFormatFlags, buffer, sizeof(buffer));
-
           ImGui::TableNextRow();
 
           if (nAddress == regs.pc)
@@ -318,30 +367,30 @@ namespace sa2
             ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
           }
           ImGui::TableNextColumn();
-          ImGui::TextUnformatted(line.sAddress);
+          ImGui::Selectable(line.sAddress, false, ImGuiSelectableFlags_SpanAllColumns);
 
           ImGui::TableNextColumn();
-          ImGui::TextUnformatted(line.sOpCodes);
+          debuggerTextColored(FG_DISASM_OPCODE, line.sOpCodes);
 
           ImGui::TableNextColumn();
           if (pSymbol)
           {
-            ImGui::TextUnformatted(pSymbol);
+            debuggerTextColored(FG_DISASM_SYMBOL, pSymbol);
           }
 
           ImGui::TableNextColumn();
-          ImGui::Selectable(buffer, false, ImGuiSelectableFlags_SpanAllColumns);
+          displayDisassemblyLine(line, bDisasmFormatFlags);
 
           ImGui::TableNextColumn();
           if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER)
           {
-            ImGui::TextUnformatted(line.sTargetPointer);
+            debuggerTextColored(FG_DISASM_ADDRESS, line.sTargetPointer);
           }
 
           ImGui::TableNextColumn();
           if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_VALUE)
           {
-            ImGui::TextUnformatted(line.sTargetValue);
+            debuggerTextColored(FG_DISASM_OPCODE, line.sTargetValue);
           }
 
           ImGui::TableNextColumn();
