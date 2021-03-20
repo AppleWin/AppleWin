@@ -8,39 +8,41 @@ public:
 	SSI263(void)
 	{
 		m_device = -1;	// undefined
-		g_nCurrentActivePhoneme = -1;
-		g_bVotraxPhoneme = false;
-		g_cyclesThisAudioFrameSSI263 = 0;
+		m_currentActivePhoneme = -1;
+		m_isVotraxPhoneme = false;
+		m_cyclesThisAudioFrame = 0;
 
 		m_cardMode = PH_Mockingboard;
 
 		//
 
-		dbgFirst = true;
-		dbgSTime = 0;
+		m_lastUpdateCycle = 0;
+		m_updateWasFullSpeed = false;
 
-		g_uLastSSI263UpdateCycle = 0;
-		g_ssi263UpdateWasFullSpeed = false;
-
-		g_pPhonemeData = NULL;
-		g_uPhonemeLength = 0;
+		m_pPhonemeData = NULL;
+		m_phonemeLengthRemaining = 0;
 		m_phonemeAccurateLengthRemaining = 0;
 		m_phonemePlaybackAndDebugger = false;
 		m_phonemeCompleteByFullSpeed = false;
 
-		g_pPhonemeData00 = NULL;
+		m_pPhonemeData00 = NULL;
 
 		//
 
-		nNumSamplesError = 0;
-		dwByteOffset = (DWORD)-1;
+		m_numSamplesError = 0;
+		m_byteOffset = (DWORD)-1;
 		m_currSampleSum = 0;
 		m_currNumSamples = 0;
 		m_currSampleMod4 = 0;
+
+		//
+
+		m_dbgFirst = true;
+		m_dbgStartTime = 0;
 	}
 	~SSI263(void)
 	{
-		delete [] g_pPhonemeData00;
+		delete [] m_pPhonemeData00;
 	}
 
 	bool DSInit(void);
@@ -49,7 +51,7 @@ public:
 	void Stop(void);
 	void Reset(void);
 	void SignalPause(void);
-	bool IsPhonemeActive(void) { return g_nCurrentActivePhoneme >= 0; }
+	bool IsPhonemeActive(void) { return m_currentActivePhoneme >= 0; }
 
 	BYTE Read(ULONG nExecutedCycles);
 	void Write(BYTE nReg, BYTE nValue);
@@ -63,8 +65,8 @@ public:
 	void SetSpeechIRQ(void);
 
 	void Votrax_Write(BYTE nValue);
-	bool GetVotraxPhoneme(void) { return g_bVotraxPhoneme; }
-	void SetVotraxPhoneme(bool value) { g_bVotraxPhoneme = value; }
+	bool GetVotraxPhoneme(void) { return m_isVotraxPhoneme; }
+	void SetVotraxPhoneme(bool value) { m_isVotraxPhoneme = value; }
 
 	void SetCardMode(PHASOR_MODE mode) { m_cardMode = mode; }
 	void SetDevice(UINT device) { m_device = device; }
@@ -77,39 +79,37 @@ private:
 	void UpdateIRQ(void);
 	void UpdateAccurateLength(void);
 
-	static const BYTE Votrax2SSI263[/*64*/];
+	static const BYTE m_Votrax2SSI263[/*64*/];
 
 	BYTE m_device;	// SSI263 device# which is generating phoneme-complete IRQ (and only required whilst Mockingboard isn't a class)
-	int g_nCurrentActivePhoneme;
-	bool g_bVotraxPhoneme;
+	int m_currentActivePhoneme;
+	bool m_isVotraxPhoneme;
 
-	static const unsigned short g_nSSI263_NumChannels = 1;
-	static const DWORD g_dwDSSSI263BufferSize = MAX_SAMPLES * sizeof(short) * g_nSSI263_NumChannels;
-	short g_nMixBufferSSI263[g_dwDSSSI263BufferSize / sizeof(short)];
+	static const unsigned short m_kNumChannels = 1;
+	static const DWORD m_kDSBufferSize = MAX_SAMPLES * sizeof(short) * m_kNumChannels;
+	short m_mixBufferSSI263[m_kDSBufferSize / sizeof(short)];
 	VOICE SSI263SingleVoice;
 
-	UINT g_cyclesThisAudioFrameSSI263;
+	UINT m_cyclesThisAudioFrame;
 
 	PHASOR_MODE m_cardMode;
 
 	//
-	bool dbgFirst;
-	UINT64 dbgSTime;
 
-	UINT64 g_uLastSSI263UpdateCycle;
-	bool g_ssi263UpdateWasFullSpeed;
+	UINT64 m_lastUpdateCycle;
+	bool m_updateWasFullSpeed;
 
-	const short* g_pPhonemeData;
-	UINT g_uPhonemeLength;	// length in samples
-	UINT m_phonemeAccurateLengthRemaining;	// length in samples, decremented by cycles executed, triggers IRQ (if enabled) on reaching zero
+	const short* m_pPhonemeData;
+	UINT m_phonemeLengthRemaining;			// length in samples, decremented as space becomes available in the ring-buffer
+	UINT m_phonemeAccurateLengthRemaining;	// length in samples, decremented by cycles executed
 	bool m_phonemePlaybackAndDebugger;
 	bool m_phonemeCompleteByFullSpeed;
 
-	short* g_pPhonemeData00;
+	short* m_pPhonemeData00;
 
 	//
-	int nNumSamplesError;
-	DWORD dwByteOffset;
+	int m_numSamplesError;
+	DWORD m_byteOffset;
 	int m_currSampleSum;
 	int m_currNumSamples;
 	UINT m_currSampleMod4;
@@ -122,4 +122,9 @@ private:
 	BYTE m_filterFreq;
 
 	BYTE m_currentMode;		// b7:6=Mode; b0=D7 pin (for IRQ)
+
+	//
+
+	bool m_dbgFirst;
+	UINT64 m_dbgStartTime;
 };

@@ -206,7 +206,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 
 //-----------------------------------------------------------------------------
 
-const BYTE SSI263::Votrax2SSI263[/*64*/] = 
+const BYTE SSI263::m_Votrax2SSI263[/*64*/] =
 {
 	0x02,	// 00: EH3 jackEt -> E1 bEnt
 	0x0A,	// 01: EH2 Enlist -> EH nEst
@@ -279,46 +279,52 @@ const BYTE SSI263::Votrax2SSI263[/*64*/] =
 
 void SSI263::Votrax_Write(BYTE value)
 {
-	g_bVotraxPhoneme = true;
+	m_isVotraxPhoneme = true;
 
 	// !A/R: Acknowledge receipt of phoneme data (signal goes from high to low)
 	MB_UpdateIFR(m_device, IxR_VOTRAX, 0);
 
 	m_durationPhoneme = value;	// Set reg0.DUR = I1:0 (inflection or pitch)
-	Play(Votrax2SSI263[value & PHONEME_MASK]);
+	Play(m_Votrax2SSI263[value & PHONEME_MASK]);
 }
 
 //-----------------------------------------------------------------------------
 
 //#define DBG_SSI263_UPDATE		// NB. This outputs for all active SSI263 ring-buffers (eg. for mb-audit this may be 2 or 4)
 
+// Called by:
+// . Update() when m_phonemeLengthRemaining -> 0
+// . UpdateAccurateLength() when m_phonemeAccurateLengthRemaining -> 0
+// . SignalPause(), eg. when built-in debugger is activated during phoneme playback
 void SSI263::UpdateIRQ(void)
 {
-	g_uPhonemeLength = m_phonemeAccurateLengthRemaining = 0;	// Prevent an IRQ from the other source
+	m_phonemeLengthRemaining = m_phonemeAccurateLengthRemaining = 0;	// Prevent an IRQ from the other source
 
-	_ASSERT(g_nCurrentActivePhoneme != -1);
-	g_nCurrentActivePhoneme = -1;
+	_ASSERT(m_currentActivePhoneme != -1);
+	m_currentActivePhoneme = -1;
 
-	if (dbgFirst)
+	if (m_dbgFirst)
 	{
-		UINT64 diff = g_nCumulativeCycles - dbgSTime;
+		UINT64 diff = g_nCumulativeCycles - m_dbgStartTime;
 		LogOutput("1st phoneme playback time = 0x%08X cy\n", (UINT32)diff);
-		dbgFirst = false;
+		m_dbgFirst = false;
 	}
 
 	// Phoneme complete, so generate IRQ if necessary
 	SetSpeechIRQ();
 }
 
+// The primary way for phonemes to generate IRQ is via the ring-buffer in Update(),
+// but when single-stepping (eg. timing-sensitive SSI263 detection code), then this secondary method is used.
 void SSI263::UpdateAccurateLength(void)
 {
 	if (!m_phonemeAccurateLengthRemaining)
 		return;
 
-	if (g_uLastSSI263UpdateCycle == 0)
+	if (m_lastUpdateCycle == 0)
 		return;
 
-	double updateInterval = (double)(MB_GetLastCumulativeCycles() - g_uLastSSI263UpdateCycle);
+	double updateInterval = (double)(MB_GetLastCumulativeCycles() - m_lastUpdateCycle);
 
 	const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
 	const int nNumSamplesPerPeriod = (int)((double)(SAMPLE_RATE_SSI263) / nIrqFreq);	// Eg. For 60Hz this is 367
@@ -349,11 +355,11 @@ void SSI263::Update(void)
 
 	if (g_bFullSpeed)	// ie. only true when IsPhonemeActive() is true
 	{
-		if (g_uPhonemeLength)
+		if (m_phonemeLengthRemaining)
 		{
 			// Willy Byte does SSI263 detection with drive motor on
-			g_uPhonemeLength = 0;
-			if (dbgFirst) LogOutput("1st phoneme short-circuited by fullspeed\n");
+			m_phonemeLengthRemaining = 0;
+			if (m_dbgFirst) LogOutput("1st phoneme short-circuited by fullspeed\n");
 
 			if (m_phonemeAccurateLengthRemaining)
 				m_phonemeCompleteByFullSpeed = true;	// Let UpdateAccurateLength() call UpdateIRQ()
@@ -361,44 +367,18 @@ void SSI263::Update(void)
 				UpdateIRQ();
 		}
 
-		g_ssi263UpdateWasFullSpeed = true;
+		m_updateWasFullSpeed = true;
 		return;
 	}
 
 	//
 
-	const bool nowNormalSpeed = g_ssi263UpdateWasFullSpeed;	// Just transitioned from full-speed to normal speed
-	g_ssi263UpdateWasFullSpeed = false;
+	const bool nowNormalSpeed = m_updateWasFullSpeed;	// Just transitioned from full-speed to normal speed
+	m_updateWasFullSpeed = false;
 
-	//
-
-#if 0
-	if (!g_bMB_RegAccessedFlag)
-	{
-		if (!g_nMB_InActiveCycleCount)
-		{
-			g_nMB_InActiveCycleCount = g_nCumulativeCycles;
-		}
-		else if (g_nCumulativeCycles - g_nMB_InActiveCycleCount > (unsigned __int64)g_fCurrentCLK6502 / 10)
-		{
-			// After 0.1 sec of Apple time, assume MB is not active
-			g_bMB_Active = false;
-		}
-	}
-	else
-	{
-		g_nMB_InActiveCycleCount = 0;
-		g_bMB_RegAccessedFlag = false;
-		g_bMB_Active = true;
-	}
-#endif
-
-	//
-
-	// Reset static vars here, since could early-return just below where: 'updateInterval < kMinimumUpdateInterval'
-	// . NB. next call to this function: nowNormalSpeed != true
+	// NB. next call to this function: nowNormalSpeed = false
 	if (nowNormalSpeed)
-		dwByteOffset = (DWORD)-1;	// ...which resets nNumSamplesError below
+		m_byteOffset = (DWORD)-1;	// ...which resets m_numSamplesError below
 
 	//-------------
 
@@ -409,15 +389,15 @@ void SSI263::Update(void)
 
 	bool prefillBufferOnInit = false;
 
-	if (dwByteOffset == (DWORD)-1)
+	if (m_byteOffset == (DWORD)-1)
 	{
-		// First time in this func (or transitioned from full-speed to normal speed)
+		// First time in this func (or transitioned from full-speed to normal speed, or SignalPause())
 #ifdef DBG_SSI263_UPDATE
 		double fTicksSecs = (double)GetTickCount() / 1000.0;
-		LogOutput("%010.3f: [SSUpdtInit%1d]PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset);
+		LogOutput("%010.3f: [SSUpdtInit%1d]PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset);
 #endif
-		dwByteOffset = dwCurrentWriteCursor;
-		nNumSamplesError = 0;
+		m_byteOffset = dwCurrentWriteCursor;
+		m_numSamplesError = 0;
 		prefillBufferOnInit = true;
 	}
 	else
@@ -427,53 +407,48 @@ void SSI263::Update(void)
 		if (dwCurrentWriteCursor > dwCurrentPlayCursor)
 		{
 			// |-----PxxxxxW-----|
-			if ((dwByteOffset > dwCurrentPlayCursor) && (dwByteOffset < dwCurrentWriteCursor))
+			if ((m_byteOffset > dwCurrentPlayCursor) && (m_byteOffset < dwCurrentWriteCursor))
 			{
 #ifdef DBG_SSI263_UPDATE
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset);
+				LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset);
 #endif
-				dwByteOffset = dwCurrentWriteCursor;
-				nNumSamplesError = 0;
+				m_byteOffset = dwCurrentWriteCursor;
+				m_numSamplesError = 0;
 			}
 		}
 		else
 		{
 			// |xxW----------Pxxx|
-			if ((dwByteOffset > dwCurrentPlayCursor) || (dwByteOffset < dwCurrentWriteCursor))
+			if ((m_byteOffset > dwCurrentPlayCursor) || (m_byteOffset < dwCurrentWriteCursor))
 			{
 #ifdef DBG_SSI263_UPDATE
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X XXX\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset);
+				LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X XXX\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset);
 #endif
-				dwByteOffset = dwCurrentWriteCursor;
-				nNumSamplesError = 0;
+				m_byteOffset = dwCurrentWriteCursor;
+				m_numSamplesError = 0;
 			}
 		}
 	}
 
 	//-------------
 
-	const UINT kMinBytesInBuffer = g_dwDSSSI263BufferSize / 4;	// 25% full
+	const UINT kMinBytesInBuffer = m_kDSBufferSize / 4;	// 25% full
 	int nNumSamples = 0;
 	double updateInterval = 0.0;
 
 	if (prefillBufferOnInit)
 	{
-		// If we just set dwByteOffset := dwCurrentWriteCursor, then nBytesRemaining = (dwCurrentWriteCursor - dwCurrentPlayCursor) = 0x52A
-		// . And 0x52A is less than 0x2000 (quarter of ring-buffer size), so NumSamplesError = SoundCore_GetErrorInc()
-		// . So it'll insert ~44 samples (~1000 cycles) into the ring-buffer
-		// . Then next time (in ~1000 cycles time) the play-cursor *may* overtake dwByteOffset, so NumSamplesError will restart incrementing
-		// . ... and eventually NumSamplesError will continue incrementing until it gets to 0xC08, at which point the ring-buffer will be > a quarter full
-		// Instead just prefill first 25% of buffer with zeros:
+		// Just prefill first 25% of buffer with zeros:
 		// . so we have a quarter buffer of silence/lag before the real sample data begins.
 		// . NB. this is fine, since it's the steady state; and it's likely that no actual data will ever occur during this initial time.
 		// This means that the '1st phoneme playback time' (in cycles) will be a bit longer for subsequent times.
 
-		g_uLastSSI263UpdateCycle = MB_GetLastCumulativeCycles();
+		m_lastUpdateCycle = MB_GetLastCumulativeCycles();
 
 		nNumSamples = kMinBytesInBuffer / sizeof(short);
-		memset(&g_nMixBufferSSI263[0], 0, nNumSamples);
+		memset(&m_mixBufferSSI263[0], 0, nNumSamples);
 	}
 	else
 	{
@@ -482,52 +457,52 @@ void SSI263::Update(void)
 		const double kMinimumUpdateInterval = 500.0;	// Arbitary (500 cycles = 21 samples)
 		const double kMaximumUpdateInterval = (double)(0xFFFF + 2);	// Max 6522 timer interval (1372 samples)
 
-		if (g_uLastSSI263UpdateCycle == 0)
-			g_uLastSSI263UpdateCycle = MB_GetLastCumulativeCycles();		// Initial call to SSI263_Update() after reset/power-cycle
+		if (m_lastUpdateCycle == 0)
+			m_lastUpdateCycle = MB_GetLastCumulativeCycles();		// Initial call to SSI263_Update() after reset/power-cycle
 
-		_ASSERT(MB_GetLastCumulativeCycles() >= g_uLastSSI263UpdateCycle);
-		updateInterval = (double)(MB_GetLastCumulativeCycles() - g_uLastSSI263UpdateCycle);
+		_ASSERT(MB_GetLastCumulativeCycles() >= m_lastUpdateCycle);
+		updateInterval = (double)(MB_GetLastCumulativeCycles() - m_lastUpdateCycle);
 		if (updateInterval < kMinimumUpdateInterval)
 			return;
 		if (updateInterval > kMaximumUpdateInterval)
 			updateInterval = kMaximumUpdateInterval;
 
-		g_uLastSSI263UpdateCycle = MB_GetLastCumulativeCycles();
+		m_lastUpdateCycle = MB_GetLastCumulativeCycles();
 
 		const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
 		const int nNumSamplesPerPeriod = (int)((double)(SAMPLE_RATE_SSI263) / nIrqFreq);	// Eg. For 60Hz this is 367
 
-		nNumSamples = nNumSamplesPerPeriod + nNumSamplesError;						// Apply correction
+		nNumSamples = nNumSamplesPerPeriod + m_numSamplesError;						// Apply correction
 		if (nNumSamples <= 0)
 			nNumSamples = 0;
 		if (nNumSamples > 2 * nNumSamplesPerPeriod)
 			nNumSamples = 2 * nNumSamplesPerPeriod;
 
-		if (nNumSamples > g_dwDSSSI263BufferSize)
-			nNumSamples = g_dwDSSSI263BufferSize;	// Clamp to prevent buffer overflow
+		if (nNumSamples > m_kDSBufferSize)
+			nNumSamples = m_kDSBufferSize;	// Clamp to prevent buffer overflow
 
 //		if (nNumSamples)
 //		{ /* Generate new sample data - ie. could merge from all the SSI263 sources */ }
 
 		//
 
-		int nBytesRemaining = dwByteOffset - dwCurrentPlayCursor;
+		int nBytesRemaining = m_byteOffset - dwCurrentPlayCursor;
 		if (nBytesRemaining < 0)
-			nBytesRemaining += g_dwDSSSI263BufferSize;
+			nBytesRemaining += m_kDSBufferSize;
 
 		// Calc correction factor so that play-buffer doesn't under/overflow
 		const int nErrorInc = SoundCore_GetErrorInc();
 		if (nBytesRemaining < kMinBytesInBuffer)
-			nNumSamplesError += nErrorInc;				// < 0.25 of buffer remaining
-		else if (nBytesRemaining > g_dwDSSSI263BufferSize / 2)
-			nNumSamplesError -= nErrorInc;				// > 0.50 of buffer remaining
+			m_numSamplesError += nErrorInc;				// < 0.25 of buffer remaining
+		else if (nBytesRemaining > m_kDSBufferSize / 2)
+			m_numSamplesError -= nErrorInc;				// > 0.50 of buffer remaining
 		else
-			nNumSamplesError = 0;						// Acceptable amount of data in buffer
+			m_numSamplesError = 0;						// Acceptable amount of data in buffer
 	}
 
 #if defined(DBG_SSI263_UPDATE)
 	double fTicksSecs = (double)GetTickCount() / 1000.0;
-	LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X, NSE=%08X, Interval=%f\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset, nNumSamples, nNumSamplesError, updateInterval);
+	LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X, NSE=%08X, Interval=%f\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset, nNumSamples, m_numSamplesError, updateInterval);
 #endif
 
 	if (nNumSamples == 0)
@@ -543,19 +518,19 @@ void SSI263::Update(void)
 									 (DUR == 2) ? 2 :
 												  4;
 
-		short* pMixBuffer = &g_nMixBufferSSI263[0];
+		short* pMixBuffer = &m_mixBufferSSI263[0];
 		int zeroSize = nNumSamples;
 
-		if (g_uPhonemeLength && !prefillBufferOnInit)
+		if (m_phonemeLengthRemaining && !prefillBufferOnInit)
 		{
 			UINT samplesWritten = 0;
 			while (samplesWritten < (UINT)nNumSamples)
 			{
-				m_currSampleSum += (int)*g_pPhonemeData;
+				m_currSampleSum += (int)*m_pPhonemeData;
 				m_currNumSamples++;
 
-				g_pPhonemeData++;
-				g_uPhonemeLength--;
+				m_pPhonemeData++;
+				m_phonemeLengthRemaining--;
 
 				if (m_currNumSamples == numSamplesToAvg)
 				{
@@ -566,13 +541,13 @@ void SSI263::Update(void)
 				}
 
 				m_currSampleMod4 = (m_currSampleMod4 + 1) & 3;
-				if (DUR == 1 && m_currSampleMod4 == 3 && g_uPhonemeLength)
+				if (DUR == 1 && m_currSampleMod4 == 3 && m_phonemeLengthRemaining)
 				{
-					g_pPhonemeData++;
-					g_uPhonemeLength--;
+					m_pPhonemeData++;
+					m_phonemeLengthRemaining--;
 				}
 
-				if (!g_uPhonemeLength)
+				if (!m_phonemeLengthRemaining)
 				{
 					bSpeechIRQ = true;
 					break;
@@ -593,14 +568,14 @@ void SSI263::Update(void)
 	short *pDSLockedBuffer0, *pDSLockedBuffer1;
 
 	if (!DSGetLock(SSI263SingleVoice.lpDSBvoice,
-						dwByteOffset, (DWORD)nNumSamples*sizeof(short)*g_nSSI263_NumChannels,
+						m_byteOffset, (DWORD)nNumSamples*sizeof(short)*m_kNumChannels,
 						&pDSLockedBuffer0, &dwDSLockedBufferSize0,
 						&pDSLockedBuffer1, &dwDSLockedBufferSize1))
 		return;
 
-	memcpy(pDSLockedBuffer0, &g_nMixBufferSSI263[0], dwDSLockedBufferSize0);
+	memcpy(pDSLockedBuffer0, &m_mixBufferSSI263[0], dwDSLockedBufferSize0);
 	if(pDSLockedBuffer1)
-		memcpy(pDSLockedBuffer1, &g_nMixBufferSSI263[dwDSLockedBufferSize0/sizeof(short)], dwDSLockedBufferSize1);
+		memcpy(pDSLockedBuffer1, &m_mixBufferSSI263[dwDSLockedBufferSize0/sizeof(short)], dwDSLockedBufferSize1);
 
 	// Commit sound buffer
 	hr = SSI263SingleVoice.lpDSBvoice->Unlock((void*)pDSLockedBuffer0, dwDSLockedBufferSize0,
@@ -608,7 +583,7 @@ void SSI263::Update(void)
 	if (FAILED(hr))
 		return;
 
-	dwByteOffset = (dwByteOffset + (DWORD)nNumSamples*sizeof(short)*g_nSSI263_NumChannels) % g_dwDSSSI263BufferSize;
+	m_byteOffset = (m_byteOffset + (DWORD)nNumSamples*sizeof(short)*m_kNumChannels) % m_kDSBufferSize;
 
 	//
 
@@ -627,7 +602,7 @@ void SSI263::Update(void)
 // Pre: g_bVotraxPhoneme, m_cardMode, m_device
 void SSI263::SetSpeechIRQ(void)
 {
-	if (!g_bVotraxPhoneme)
+	if (!m_isVotraxPhoneme)
 	{
 		// Always set SSI263's D7 pin regardless of SSI263 mode (DR1:0), including MODE_IRQ_DISABLED
 		m_currentMode |= 1;	// Set SSI263's D7 pin
@@ -657,13 +632,13 @@ void SSI263::SetSpeechIRQ(void)
 
 	//
 
-	if (g_bVotraxPhoneme && MB_GetPCR(m_device) == 0xB0)
+	if (m_isVotraxPhoneme && MB_GetPCR(m_device) == 0xB0)
 	{
 		// !A/R: Time-out of old phoneme (signal goes from low to high)
 
 		MB_UpdateIFR(m_device, 0, IxR_VOTRAX);
 
-		g_bVotraxPhoneme = false;
+		m_isVotraxPhoneme = false;
 	}
 }
 
@@ -673,19 +648,19 @@ void SSI263::Play(unsigned int nPhoneme)
 {
 	if (!SSI263SingleVoice.bActive)
 	{
-		bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, g_dwDSSSI263BufferSize);
+		bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, m_kDSBufferSize);
 		LogFileOutput("SSI263::Play: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
 		if (!bRes)
 			return;
 	}
 
-	if (dbgFirst)
+	if (m_dbgFirst)
 	{
-		dbgSTime = g_nCumulativeCycles;
+		m_dbgStartTime = g_nCumulativeCycles;
 		LogOutput("1st phoneme = 0x%02X\n", nPhoneme);
 	}
 
-	g_nCurrentActivePhoneme = nPhoneme;
+	m_currentActivePhoneme = nPhoneme;
 
 	bool bPause = false;
 
@@ -697,26 +672,26 @@ void SSI263::Play(unsigned int nPhoneme)
 	else
 		nPhoneme-=2;	// Missing phoneme-1
 
-	g_uPhonemeLength = g_nPhonemeInfo[nPhoneme].nLength;
+	m_phonemeLengthRemaining = g_nPhonemeInfo[nPhoneme].nLength;
 
-	m_phonemeAccurateLengthRemaining = g_uPhonemeLength;
+	m_phonemeAccurateLengthRemaining = m_phonemeLengthRemaining;
 	m_phonemePlaybackAndDebugger = (g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
 	m_phonemeCompleteByFullSpeed = false;
 
 	if (bPause)
 	{
-		if (!g_pPhonemeData00)
+		if (!m_pPhonemeData00)
 		{
 			// 'pause' length is length of 1st phoneme (arbitrary choice, since don't know real length)
-			g_pPhonemeData00 = new short [g_uPhonemeLength];
-			memset(g_pPhonemeData00, 0x00, g_uPhonemeLength*sizeof(short));
+			m_pPhonemeData00 = new short [m_phonemeLengthRemaining];
+			memset(m_pPhonemeData00, 0x00, m_phonemeLengthRemaining*sizeof(short));
 		}
 
-		g_pPhonemeData = g_pPhonemeData00;
+		m_pPhonemeData = m_pPhonemeData00;
 	}
 	else
 	{
-		g_pPhonemeData = (const short*) &g_nPhonemeData[g_nPhonemeInfo[nPhoneme].nOffset];
+		m_pPhonemeData = (const short*) &g_nPhonemeData[g_nPhonemeInfo[nPhoneme].nOffset];
 	}
 
 	m_currSampleSum = 0;
@@ -738,7 +713,7 @@ bool SSI263::DSInit(void)
 	// Create single SSI263 voice
 	//
 
-	HRESULT hr = DSGetSoundBuffer(&SSI263SingleVoice, DSBCAPS_CTRLVOLUME, g_dwDSSSI263BufferSize, SAMPLE_RATE_SSI263, g_nSSI263_NumChannels, "SSI263");
+	HRESULT hr = DSGetSoundBuffer(&SSI263SingleVoice, DSBCAPS_CTRLVOLUME, m_kDSBufferSize, SAMPLE_RATE_SSI263, m_kNumChannels, "SSI263");
 	LogFileOutput("SSI263::DSInit: DSGetSoundBuffer(), hr=0x%08X\n", hr);
 	if (FAILED(hr))
 	{
@@ -772,16 +747,17 @@ void SSI263::Reset(void)
 {
 	Stop();
 
-	g_nCurrentActivePhoneme = -1;
-	g_uPhonemeLength = 0;
-	g_bVotraxPhoneme = false;
+	m_currentActivePhoneme = -1;
+	m_phonemeLengthRemaining = 0;
+	m_phonemeAccurateLengthRemaining = 0;
+	m_isVotraxPhoneme = false;
 
-	g_uLastSSI263UpdateCycle = 0;
-	g_ssi263UpdateWasFullSpeed = false;
-	g_cyclesThisAudioFrameSSI263 = 0;
+	m_lastUpdateCycle = 0;
+	m_updateWasFullSpeed = false;
+	m_cyclesThisAudioFrame = 0;
 
-	dbgFirst = true;
-	dbgSTime = 0;
+	m_dbgFirst = true;
+	m_dbgStartTime = 0;
 }
 
 // During phoneme playback, certain interruptions to the ring-buffer can cause the duration (in emulation cycles) to take much longer.
@@ -792,26 +768,13 @@ void SSI263::Reset(void)
 // So now on an interruption: just reset the ring-buffer (perhaps there'll be a sound glitch, but this is better than an SSI263 detection failure).
 void SSI263::SignalPause(void)
 {
-	dwByteOffset = (DWORD)-1;
+	m_byteOffset = (DWORD)-1;
 
 	if (!IsPhonemeActive())
 		return;
 
-#if 1
-	LogOutput("SignalPause: m_phonemeAccurateLengthRemaining=%04X, g_uPhonemeLength=%04X\n", m_phonemeAccurateLengthRemaining, g_uPhonemeLength);
+	LogOutput("SignalPause: m_phonemeAccurateLengthRemaining=%04X, m_phonemeLengthRemaining=%04X\n", m_phonemeAccurateLengthRemaining, m_phonemeLengthRemaining);
 	UpdateIRQ();
-#else
-	if (m_phonemeAccurateLengthRemaining)
-	{
-		LogOutput("SignalPause: m_phonemeAccurateLengthRemaining=%04X\n", m_phonemeAccurateLengthRemaining);
-		m_phonemePlaybackAndDebugger = true;
-	}
-	else if (g_uPhonemeLength)	// NB. !m_phonemeAccurateLengthRemaining && g_uPhonemeLength
-	{
-		LogOutput("SignalPause: g_uPhonemeLength=%04X\n", g_uPhonemeLength);
-		UpdateIRQ();
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -849,11 +812,11 @@ void SSI263::SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 void SSI263::PeriodicUpdate(UINT executedCycles)
 {
 	const UINT kCyclesPerAudioFrame = 1000;
-	g_cyclesThisAudioFrameSSI263 += executedCycles;
-	if (g_cyclesThisAudioFrameSSI263 < kCyclesPerAudioFrame)
+	m_cyclesThisAudioFrame += executedCycles;
+	if (m_cyclesThisAudioFrame < kCyclesPerAudioFrame)
 		return;
 
-	g_cyclesThisAudioFrameSSI263 %= kCyclesPerAudioFrame;
+	m_cyclesThisAudioFrame %= kCyclesPerAudioFrame;
 
 	Update();
 }
@@ -882,7 +845,7 @@ void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 {
-	g_nCurrentActivePhoneme = -1;
+	m_currentActivePhoneme = -1;
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263))
 		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_SSI263);
