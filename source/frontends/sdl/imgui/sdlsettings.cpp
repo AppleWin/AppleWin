@@ -32,12 +32,18 @@ namespace
     }
   }
 
-  ImVec4 debuggerGetColor(int iColor)
+  ImVec4 colorrefToImVec4(const COLORREF cr)
   {
     const float coeff = 1.0 / 255.0;
-    const COLORREF cr = DebuggerGetColor(iColor);
     const bgra_t * bgra = reinterpret_cast<const bgra_t *>(&cr);
     const ImVec4 color(bgra->b * coeff, bgra->g * coeff, bgra->r * coeff, 1);
+    return color;
+  }
+
+  ImVec4 debuggerGetColor(int iColor)
+  {
+    const COLORREF cr = DebuggerGetColor(iColor);
+    const ImVec4 color = colorrefToImVec4(cr);
     return color;
   }
 
@@ -417,27 +423,43 @@ namespace sa2
     const ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
     if (ImGui::BeginTable("Console", 1, flags))
     {
+      for (int i = 0; i < CONSOLE_HEIGHT; ++i)
       {
-        for (int i = 0; i < CONSOLE_HEIGHT; ++i)
+        const conchar_t * src = g_aConsoleDisplay[CONSOLE_HEIGHT - i - 1];
+        char line[CONSOLE_WIDTH + 1];
+        COLORREF currentColor = ConsoleColor_GetColor(src[0]);
+        line[0] = ConsoleChar_GetChar(src[0]);
+        size_t length = 1;
+        if (!line[0])
         {
-          char line[CONSOLE_WIDTH + 1];
-          line[CONSOLE_WIDTH] = 0;
-          const conchar_t * src = g_aConsoleDisplay[CONSOLE_HEIGHT - i - 1];
-          for (size_t j = 0; j < CONSOLE_WIDTH; ++j)
-          {
-            line[j] = ConsoleChar_GetChar(src[j]);
-            if (!line[j])
-            {
-              break;
-            }
-          }
-          if (line[0])
-          {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted(line);
-          }
+          continue;
         }
+
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+
+        const auto textAndReset = [&line, &length, & currentColor] () {
+          line[length] = 0;
+          length = 0;
+          const ImVec4 color = colorrefToImVec4(currentColor);
+          ImGui::TextColored(color, "%s", line);
+        };
+
+        for (size_t j = length; j < CONSOLE_WIDTH; ++j)
+        {
+          const conchar_t g = src[j];
+          if (ConsoleColor_IsColorOrMouse(g))
+          {
+            // colors propagate till next color information
+            // left in, right out = [ )
+            textAndReset();
+            ImGui::SameLine(0, 0);
+            currentColor = ConsoleColor_GetColor(g);
+          }
+          line[length] = ConsoleChar_GetChar(g);
+          ++length;
+        }
+        textAndReset();
       }
       ImGui::EndTable();
     }
