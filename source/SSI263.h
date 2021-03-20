@@ -24,6 +24,9 @@ public:
 
 		g_pPhonemeData = NULL;
 		g_uPhonemeLength = 0;
+		m_phonemeAccurateLengthRemaining = 0;
+		m_phonemePlaybackAndDebugger = false;
+		m_phonemeCompleteByFullSpeed = false;
 
 		g_pPhonemeData00 = NULL;
 
@@ -45,6 +48,7 @@ public:
 
 	void Stop(void);
 	void Reset(void);
+	void SignalPause(void);
 	bool IsPhonemeActive(void) { return g_nCurrentActivePhoneme >= 0; }
 
 	BYTE Read(ULONG nExecutedCycles);
@@ -71,6 +75,7 @@ public:
 private:
 	void Play(unsigned int nPhoneme);
 	void UpdateIRQ(void);
+	void UpdateAccurateLength(void);
 
 	static const BYTE Votrax2SSI263[/*64*/];
 
@@ -96,6 +101,9 @@ private:
 
 	const short* g_pPhonemeData;
 	UINT g_uPhonemeLength;	// length in samples
+	UINT m_phonemeAccurateLengthRemaining;	// length in samples, decremented by cycles executed, triggers IRQ (if enabled) on reaching zero
+	bool m_phonemePlaybackAndDebugger;
+	bool m_phonemeCompleteByFullSpeed;
 
 	short* g_pPhonemeData00;
 

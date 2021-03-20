@@ -442,7 +442,7 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 							(g_bmIRQ & 2) ? "SPEECH" :
 							(g_bmIRQ & 4) ? "SSC" :
 							(g_bmIRQ & 8) ? "MOUSE" : "UNKNOWN";
-		LogOutput("IRQ (%s)\n", pSrc);
+		LogOutput("IRQ (%08X) (%s)\n", (UINT)g_nCycleIrqStart, pSrc);
 #endif
 		CheckSynchronousInterruptSources(7, uExecutedCycles);
 	}

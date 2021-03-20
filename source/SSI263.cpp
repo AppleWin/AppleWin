@@ -290,10 +290,12 @@ void SSI263::Votrax_Write(BYTE value)
 
 //-----------------------------------------------------------------------------
 
-//#define DBG_SSI263_UPDATE
+//#define DBG_SSI263_UPDATE		// NB. This outputs for all active SSI263 ring-buffers (eg. for mb-audit this may be 2 or 4)
 
 void SSI263::UpdateIRQ(void)
 {
+	g_uPhonemeLength = m_phonemeAccurateLengthRemaining = 0;	// Prevent an IRQ from the other source
+
 	_ASSERT(g_nCurrentActivePhoneme != -1);
 	g_nCurrentActivePhoneme = -1;
 
@@ -308,59 +310,58 @@ void SSI263::UpdateIRQ(void)
 	SetSpeechIRQ();
 }
 
+void SSI263::UpdateAccurateLength(void)
+{
+	if (!m_phonemeAccurateLengthRemaining)
+		return;
+
+	if (g_uLastSSI263UpdateCycle == 0)
+		return;
+
+	double updateInterval = (double)(MB_GetLastCumulativeCycles() - g_uLastSSI263UpdateCycle);
+
+	const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
+	const int nNumSamplesPerPeriod = (int)((double)(SAMPLE_RATE_SSI263) / nIrqFreq);	// Eg. For 60Hz this is 367
+
+	const BYTE DUR = m_durationPhoneme >> 6;
+
+	const UINT numSamples = nNumSamplesPerPeriod * (DUR+1);
+	if (m_phonemeAccurateLengthRemaining > numSamples)
+	{
+		m_phonemeAccurateLengthRemaining -= numSamples;
+	}
+	else
+	{
+		m_phonemeAccurateLengthRemaining = 0;
+		if (m_phonemePlaybackAndDebugger || m_phonemeCompleteByFullSpeed)
+			UpdateIRQ();
+	}
+}
+
 // Called by:
 // . PeriodicUpdate()
 void SSI263::Update(void)
 {
+	UpdateAccurateLength();
+
 	if (!SSI263SingleVoice.bActive)
 		return;
 
-	if (g_bFullSpeed)
+	if (g_bFullSpeed)	// ie. only true when IsPhonemeActive() is true
 	{
 		if (g_uPhonemeLength)
 		{
 			// Willy Byte does SSI263 detection with drive motor on
 			g_uPhonemeLength = 0;
 			if (dbgFirst) LogOutput("1st phoneme short-circuited by fullspeed\n");
-			UpdateIRQ();
+
+			if (m_phonemeAccurateLengthRemaining)
+				m_phonemeCompleteByFullSpeed = true;	// Let UpdateAccurateLength() call UpdateIRQ()
+			else
+				UpdateIRQ();
 		}
 
 		g_ssi263UpdateWasFullSpeed = true;
-		return;
-	}
-
-	if (g_nAppMode == MODE_STEPPING)	// Just count cycles
-	{
-		if (g_uLastSSI263UpdateCycle == 0)
-		{
-			g_uLastSSI263UpdateCycle = MB_GetLastCumulativeCycles();
-			return;
-		}
-
-		double updateInterval = (double)(MB_GetLastCumulativeCycles() - g_uLastSSI263UpdateCycle);
-		g_uLastSSI263UpdateCycle = MB_GetLastCumulativeCycles();
-
-		if (!g_uPhonemeLength)
-			return;
-
-		const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
-		const int nNumSamplesPerPeriod = (int)((double)(SAMPLE_RATE_SSI263) / nIrqFreq);	// Eg. For 60Hz this is 367
-
-		const BYTE DUR = m_durationPhoneme >> 6;
-
-		const UINT numSamples = nNumSamplesPerPeriod * (DUR+1);
-		if (g_uPhonemeLength > numSamples)
-		{
-			g_uPhonemeLength -= numSamples;
-			g_pPhonemeData += numSamples;
-		}
-		else
-		{
-			g_uPhonemeLength = 0;
-			g_pPhonemeData = NULL;
-			UpdateIRQ();
-		}
-
 		return;
 	}
 
@@ -413,7 +414,7 @@ void SSI263::Update(void)
 		// First time in this func (or transitioned from full-speed to normal speed)
 #ifdef DBG_SSI263_UPDATE
 		double fTicksSecs = (double)GetTickCount() / 1000.0;
-		LogOutput("%010.3f: [SSUpdtInit]PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset);
+		LogOutput("%010.3f: [SSUpdtInit%1d]PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset);
 #endif
 		dwByteOffset = dwCurrentWriteCursor;
 		nNumSamplesError = 0;
@@ -430,7 +431,7 @@ void SSI263::Update(void)
 			{
 #ifdef DBG_SSI263_UPDATE
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				LogOutput("%010.3f: [SSUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset);
+				LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset);
 #endif
 				dwByteOffset = dwCurrentWriteCursor;
 				nNumSamplesError = 0;
@@ -443,7 +444,7 @@ void SSI263::Update(void)
 			{
 #ifdef DBG_SSI263_UPDATE
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				LogOutput("%010.3f: [SSUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset);
+				LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X XXX\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset);
 #endif
 				dwByteOffset = dwCurrentWriteCursor;
 				nNumSamplesError = 0;
@@ -524,10 +525,9 @@ void SSI263::Update(void)
 			nNumSamplesError = 0;						// Acceptable amount of data in buffer
 	}
 
-#ifdef DBG_SSI263_UPDATE
+#if defined(DBG_SSI263_UPDATE)
 	double fTicksSecs = (double)GetTickCount() / 1000.0;
-
-	LogOutput("%010.3f: [SSUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X, NSE=%08X, Interval=%f\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset, nNumSamples, nNumSamplesError, updateInterval);
+	LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X, NSE=%08X, Interval=%f\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset, nNumSamples, nNumSamplesError, updateInterval);
 #endif
 
 	if (nNumSamples == 0)
@@ -590,7 +590,7 @@ void SSI263::Update(void)
 	//
 
 	DWORD dwDSLockedBufferSize0, dwDSLockedBufferSize1;
-	SHORT *pDSLockedBuffer0, *pDSLockedBuffer1;
+	short *pDSLockedBuffer0, *pDSLockedBuffer1;
 
 	if (!DSGetLock(SSI263SingleVoice.lpDSBvoice,
 						dwByteOffset, (DWORD)nNumSamples*sizeof(short)*g_nSSI263_NumChannels,
@@ -613,7 +613,12 @@ void SSI263::Update(void)
 	//
 
 	if (bSpeechIRQ)
-		UpdateIRQ();
+	{
+		// NB. if m_phonemePlaybackAndDebugger==true, then "m_phonemeAccurateLengthRemaining!=0" must be true.
+		// Since in UpdateAccurateLength(), (when m_phonemePlaybackAndDebugger==true) then m_phonemeAccurateLengthRemaining decs to zero.
+		if (!m_phonemePlaybackAndDebugger /*|| m_phonemeAccurateLengthRemaining*/)	// superfluous, so commented out (see above)
+			UpdateIRQ();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -694,12 +699,16 @@ void SSI263::Play(unsigned int nPhoneme)
 
 	g_uPhonemeLength = g_nPhonemeInfo[nPhoneme].nLength;
 
+	m_phonemeAccurateLengthRemaining = g_uPhonemeLength;
+	m_phonemePlaybackAndDebugger = (g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
+	m_phonemeCompleteByFullSpeed = false;
+
 	if (bPause)
 	{
 		if (!g_pPhonemeData00)
 		{
 			// 'pause' length is length of 1st phoneme (arbitrary choice, since don't know real length)
-			g_pPhonemeData00 = new SHORT [g_uPhonemeLength];
+			g_pPhonemeData00 = new short [g_uPhonemeLength];
 			memset(g_pPhonemeData00, 0x00, g_uPhonemeLength*sizeof(short));
 		}
 
@@ -773,6 +782,36 @@ void SSI263::Reset(void)
 
 	dbgFirst = true;
 	dbgSTime = 0;
+}
+
+// During phoneme playback, certain interruptions to the ring-buffer can cause the duration (in emulation cycles) to take much longer.
+// . so this can cause SSI263 detection code to fail (either timing one or a sequence of phonemes).
+// These interruptions are: Entering built-in debugger (F7), Configuration (F8), Pause key
+//
+// When the code restarts and reads the ring-buffer position it'll be at a random point, and maybe nearly full; so it waits until it drains.
+// So now on an interruption: just reset the ring-buffer (perhaps there'll be a sound glitch, but this is better than an SSI263 detection failure).
+void SSI263::SignalPause(void)
+{
+	dwByteOffset = (DWORD)-1;
+
+	if (!IsPhonemeActive())
+		return;
+
+#if 1
+	LogOutput("SignalPause: m_phonemeAccurateLengthRemaining=%04X, g_uPhonemeLength=%04X\n", m_phonemeAccurateLengthRemaining, g_uPhonemeLength);
+	UpdateIRQ();
+#else
+	if (m_phonemeAccurateLengthRemaining)
+	{
+		LogOutput("SignalPause: m_phonemeAccurateLengthRemaining=%04X\n", m_phonemeAccurateLengthRemaining);
+		m_phonemePlaybackAndDebugger = true;
+	}
+	else if (g_uPhonemeLength)	// NB. !m_phonemeAccurateLengthRemaining && g_uPhonemeLength
+	{
+		LogOutput("SignalPause: g_uPhonemeLength=%04X\n", g_uPhonemeLength);
+		UpdateIRQ();
+	}
+#endif
 }
 
 //-----------------------------------------------------------------------------

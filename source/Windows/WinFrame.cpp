@@ -1202,6 +1202,7 @@ LRESULT Win32Frame::WndProc(
 				case MODE_RUNNING:
 					g_nAppMode = MODE_PAUSED;
 					SoundCore_SetFade(FADE_OUT);
+					MB_SignalPause();
 					RevealCursor();
 					break;
 				case MODE_PAUSED:
@@ -1939,12 +1940,14 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		}
 		else	// MODE_RUNNING, MODE_LOGO, MODE_PAUSED
 		{
+			MB_SignalPause();
 			DebugBegin();
 		}
       break;
 
     case BTN_SETUP:
       {
+		  MB_SignalPause();
 		  GetPropertySheet().Init();
       }
       break;
