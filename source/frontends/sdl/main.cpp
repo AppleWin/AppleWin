@@ -160,124 +160,45 @@ void run_sdl(int argc, const char * argv [])
     const std::string globalTag = ". .";
     std::string updateTextureTimerTag, refreshScreenTimerTag, cpuTimerTag, eventTimerTag;
 
-    if (options.multiThreaded)
+    // it does not need to be exact
+    const size_t oneFrame = 1000 / fps;
+
+    bool quit = false;
+
+    do
     {
-      refreshScreenTimerTag = "0 .";
-      cpuTimerTag           = "1 M";
-      eventTimerTag         = "0 M";
-      if (options.looseMutex)
+      frameTimer.tic();
+
+      eventTimer.tic();
+      sa2::writeAudio();
+      frame->ProcessEvents(quit);
+      eventTimer.toc();
+
+      cpuTimer.tic();
+      frame->ExecuteOneFrame(oneFrame);
+      cpuTimer.toc();
+
+      updateTextureTimer.tic();
+      frame->UpdateTexture();
+      updateTextureTimer.toc();
+
+      if (!options.headless)
       {
-        updateTextureTimerTag = "0 .";
+        refreshScreenTimer.tic();
+        frame->RenderPresent();
+        refreshScreenTimer.toc();
       }
-      else
-      {
-        updateTextureTimerTag = "0 M";
-      }
-
-      std::shared_ptr<SDL_mutex> mutex(SDL_CreateMutex(), SDL_DestroyMutex);
-
-      Data data;
-      data.mutex = mutex.get();
-      data.timer = &cpuTimer;
-      data.frame = frame.get();
-
-      const SDL_TimerID timer = SDL_AddTimer(options.timerInterval, emulator_callback, &data);
-
-      bool quit = false;
-      do
-      {
-        frameTimer.tic();
-        SDL_LockMutex(data.mutex);
-
-        eventTimer.tic();
-        sa2::writeAudio();
-        frame->ProcessEvents(quit);
-        eventTimer.toc();
-
-        if (options.looseMutex)
-        {
-          // loose mutex
-          // unlock early and let CPU run again in the timer callback
-          SDL_UnlockMutex(data.mutex);
-          // but the texture will be updated concurrently with the CPU updating the video buffer
-          // pixels are not atomic, so a pixel error could happen (if pixel changes while being read)
-          // on the positive side this will release pressure from CPU and allow for more parallelism
-        }
-
-        updateTextureTimer.tic();
-        frame->UpdateTexture();
-        updateTextureTimer.toc();
-
-        if (!options.looseMutex)
-        {
-          // safe mutex, only unlock after texture has been updated
-          // this will stop the CPU for longer
-          SDL_UnlockMutex(data.mutex);
-        }
-
-        if (!options.headless)
-        {
-          refreshScreenTimer.tic();
-          frame->RenderPresent();
-          refreshScreenTimer.toc();
-        }
-        frameTimer.toc();
-      } while (!quit);
-
-      SDL_RemoveTimer(timer);
-      // if the following enough to make sure the timer has finished
-      // and wont be called again?
-      SDL_LockMutex(data.mutex);
-      SDL_UnlockMutex(data.mutex);
-    }
-    else
-    {
-      refreshScreenTimerTag = "0 .";
-      cpuTimerTag           = "0 .";
-      eventTimerTag         = "0 .";
-      updateTextureTimerTag = "0 .";
-
-      bool quit = false;
-
-      // it does not need to be exact
-      const size_t oneFrame = 1000 / fps;
-
-      do
-      {
-        frameTimer.tic();
-
-        eventTimer.tic();
-        sa2::writeAudio();
-        frame->ProcessEvents(quit);
-        eventTimer.toc();
-
-        cpuTimer.tic();
-        frame->ExecuteOneFrame(oneFrame);
-        cpuTimer.toc();
-
-        updateTextureTimer.tic();
-        frame->UpdateTexture();
-        updateTextureTimer.toc();
-
-        if (!options.headless)
-        {
-          refreshScreenTimer.tic();
-          frame->RenderPresent();
-          refreshScreenTimer.toc();
-        }
-        frameTimer.toc();
-      } while (!quit);
-    }
+      frameTimer.toc();
+    } while (!quit);
 
     global.toc();
 
-    const char sep[] = "], ";
-    std::cerr << "Global:  [" << globalTag << sep << global << std::endl;
-    std::cerr << "Frame:   [" << globalTag << sep << frameTimer << std::endl;
-    std::cerr << "Screen:  [" << refreshScreenTimerTag << sep << refreshScreenTimer << std::endl;
-    std::cerr << "Texture: [" << updateTextureTimerTag << sep << updateTextureTimer << std::endl;
-    std::cerr << "Events:  [" << eventTimerTag << sep << eventTimer << std::endl;
-    std::cerr << "CPU:     [" << cpuTimerTag << sep << cpuTimer << std::endl;
+    std::cerr << "Global:  " << global << std::endl;
+    std::cerr << "Frame:   " << frameTimer << std::endl;
+    std::cerr << "Screen:  " << refreshScreenTimer << std::endl;
+    std::cerr << "Texture: " << updateTextureTimer << std::endl;
+    std::cerr << "Events:  " << eventTimer << std::endl;
+    std::cerr << "CPU:     " << cpuTimer << std::endl;
 
     const double timeInSeconds = global.getTimeInSeconds();
     const double actualClock = g_nCumulativeCycles / timeInSeconds;
