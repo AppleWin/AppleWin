@@ -237,7 +237,7 @@ bool DSVoiceStop(PVOICE Voice)
 	HRESULT hr = Voice->lpDSBvoice->Stop();
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSStop failed (%08X)\n", Voice->name, hr);
+		if(g_fh) fprintf(g_fh, "%s: DSStop failed (%08X)\n", Voice->name.c_str(), hr);
 		return false;
 	}
 
@@ -262,7 +262,7 @@ bool DSZeroVoiceBuffer(PVOICE Voice, DWORD dwBufferSize)
 	HRESULT hr = DSGetLock(Voice->lpDSBvoice, 0, 0, &pDSLockedBuffer, &dwDSLockedBufferSize, NULL, 0);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name, hr);
+		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name.c_str(), hr);
 		return false;
 	}
 
@@ -272,14 +272,14 @@ bool DSZeroVoiceBuffer(PVOICE Voice, DWORD dwBufferSize)
 	hr = Voice->lpDSBvoice->Unlock((void*)pDSLockedBuffer, dwDSLockedBufferSize, NULL, 0);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name, hr);
+		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name.c_str(), hr);
 		return false;
 	}
 
 	hr = Voice->lpDSBvoice->Play(0,0,DSBPLAY_LOOPING);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSPlay failed (%08X)\n", Voice->name, hr);
+		if(g_fh) fprintf(g_fh, "%s: DSPlay failed (%08X)\n", Voice->name.c_str(), hr);
 		return false;
 	}
 
@@ -302,7 +302,7 @@ bool DSZeroVoiceWritableBuffer(PVOICE Voice, DWORD dwBufferSize)
 							&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name, hr);
+		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name.c_str(), hr);
 		return false;
 	}
 
@@ -314,7 +314,7 @@ bool DSZeroVoiceWritableBuffer(PVOICE Voice, DWORD dwBufferSize)
 									(void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name, hr);
+		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name.c_str(), hr);
 		return false;
 	}
 
