@@ -656,7 +656,7 @@ void SSI263::UpdateIRQ(void)
 	_ASSERT(m_currentActivePhoneme != -1);
 	m_currentActivePhoneme = -1;
 
-	if (m_dbgFirst)
+	if (m_dbgFirst && m_dbgStartTime)
 	{
 		UINT64 diff = g_nCumulativeCycles - m_dbgStartTime;
 		LogOutput("1st phoneme playback time = 0x%08X cy\n", (UINT32)diff);
@@ -863,9 +863,11 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT device, PHASOR_MO
 
 	//
 
-	SetDevice(device);
+	_ASSERT(m_device != -1);
 	SetCardMode(mode);
 
 	if (IsPhonemeActive())
-		UpdateIRQ();
+		UpdateIRQ();		// Pre: m_device, m_cardMode
+
+	m_lastUpdateCycle = MB_GetLastCumulativeCycles();
 }
