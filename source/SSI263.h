@@ -72,7 +72,7 @@ public:
 	void SetDevice(UINT device) { m_device = device; }
 
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
+	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT device, PHASOR_MODE mode, UINT version);
 
 private:
 	void Play(unsigned int nPhoneme);

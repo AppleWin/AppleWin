@@ -1810,7 +1810,8 @@ void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
 // 6: Changed SS_YAML_KEY_PHASOR_MODE from (0,1) to (0,5,7)
 //    Added SS_YAML_KEY_VOTRAX_PHONEME
 //    Removed: redundant SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR
-const UINT kUNIT_VERSION = 6;
+// 7: Added SS_YAML_KEY_SSI263_REG_ACTIVE_PHONEME to SSI263 sub-unit
+const UINT kUNIT_VERSION = 7;
 
 const UINT NUM_MB_UNITS = 2;
 const UINT NUM_PHASOR_UNITS = 2;
@@ -1972,8 +1973,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 		LoadSnapshotSY6522(yamlLoadHelper, pMB->sy6522, version);
 		UpdateIFR(pMB, 0, pMB->sy6522.IFR);					// Assert any pending IRQs (GH#677)
 		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum, std::string(""));
-		pMB->ssi263.LoadSnapshot(yamlLoadHelper);
-		pMB->ssi263.SetDevice(nDeviceNum);
+		pMB->ssi263.LoadSnapshot(yamlLoadHelper, nDeviceNum, PH_Mockingboard, version);		// Pre: SetVotraxPhoneme()
 
 		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
 		yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER1_IRQ);	// Consume
@@ -2019,19 +2019,6 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 			pSyncEvent->SetCycles(pMB->sy6522.TIMER2_COUNTER.w + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
 			g_SynchronousEventMgr.Insert(pSyncEvent);
 		}
-
-#if 0
-		// FIXME: currently only support a single speech chip
-		// NB. g_bVotraxPhoneme is never true, as the phoneme playback completes in SSI263Thread() before this point in the save-state.
-		// NB. SpeechChip.DurationPhoneme will mostly be non-zero during speech playback, as this is the SSI263 register, not whether the phonene is active.
-		// FIXME: So possible race-condition between saving-state & SSI263Thread()
-		if (pMB->SpeechChip.DurationPhoneme || g_bVotraxPhoneme)
-		{
-			g_nSSI263Device = nDeviceNum;
-			g_bPhasorEnable = false;
-			SetSpeechIRQ(pMB);
-		}
-#endif
 
 		nDeviceNum++;
 		pMB++;
@@ -2123,8 +2110,7 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 		UpdateIFR(pMB, 0, pMB->sy6522.IFR);					// Assert any pending IRQs (GH#677)
 		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+0, std::string("-A"));
 		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+1, std::string("-B"));
-		pMB->ssi263.LoadSnapshot(yamlLoadHelper);
-		pMB->ssi263.SetDevice(nDeviceNum);
+		pMB->ssi263.LoadSnapshot(yamlLoadHelper, nDeviceNum, PH_Phasor, version);	// Pre: SetVotraxPhoneme()
 
 		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
 		yamlLoadHelper.LoadBool(SS_YAML_KEY_TIMER1_IRQ);	// Consume
@@ -2172,16 +2158,6 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 			pSyncEvent->SetCycles(pMB->sy6522.TIMER2_COUNTER.w + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
 			g_SynchronousEventMgr.Insert(pSyncEvent);
 		}
-
-#if 0
-		// FIXME: currently only support a single speech chip
-		if (pMB->SpeechChip.DurationPhoneme || g_bVotraxPhoneme)
-		{
-			g_nSSI263Device = nDeviceNum+1;	// +1 as speech is always 2nd device of the pair
-			g_bPhasorEnable = true;
-			SetSpeechIRQ(pMB);
-		}
-#endif
 
 		nDeviceNum += 2;
 		pMB++;

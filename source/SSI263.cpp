@@ -648,6 +648,7 @@ void SSI263::UpdateAccurateLength(void)
 // . Update() when m_phonemeLengthRemaining -> 0
 // . UpdateAccurateLength() when m_phonemeAccurateLengthRemaining -> 0
 // . SignalPause(), eg. when built-in debugger is activated during phoneme playback
+// . LoadSnapshot()
 void SSI263::UpdateIRQ(void)
 {
 	m_phonemeLengthRemaining = m_phonemeAccurateLengthRemaining = 0;	// Prevent an IRQ from the other source
@@ -668,8 +669,7 @@ void SSI263::UpdateIRQ(void)
 
 //-----------------------------------------------------------------------------
 
-// Called by MB_LoadSnapshot & Phasor_LoadSnapshot
-// Pre: g_bVotraxPhoneme, m_cardMode, m_device
+// Pre: m_isVotraxPhoneme, m_cardMode, m_device
 void SSI263::SetSpeechIRQ(void)
 {
 	if (!m_isVotraxPhoneme)
@@ -833,12 +833,15 @@ void SSI263::PeriodicUpdate(UINT executedCycles)
 //=============================================================================
 
 #define SS_YAML_KEY_SSI263 "SSI263"
+// NB. No version - this is determined by the parent "Mockingboard C" or "Phasor" unit
+
 #define SS_YAML_KEY_SSI263_REG_DUR_PHON "Duration / Phoneme"
 #define SS_YAML_KEY_SSI263_REG_INF "Inflection"
 #define SS_YAML_KEY_SSI263_REG_RATE_INF "Rate / Inflection"
 #define SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP "Control / Articulation / Amplitude"
 #define SS_YAML_KEY_SSI263_REG_FILTER_FREQ "Filter Frequency"
 #define SS_YAML_KEY_SSI263_REG_CURRENT_MODE "Current Mode"
+#define SS_YAML_KEY_SSI263_REG_ACTIVE_PHONEME "Active Phoneme"
 
 void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
@@ -850,12 +853,11 @@ void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, m_ctrlArtAmp);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CURRENT_MODE, m_currentMode);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_REG_ACTIVE_PHONEME, IsPhonemeActive());
 }
 
-void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT device, PHASOR_MODE mode, UINT version)
 {
-	m_currentActivePhoneme = -1;
-
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263))
 		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_SSI263);
 
@@ -865,6 +867,16 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper)
 	m_ctrlArtAmp      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP);
 	m_filterFreq      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_FILTER_FREQ);
 	m_currentMode     = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_CURRENT_MODE);
+	bool activePhoneme = (version >= 7) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_REG_ACTIVE_PHONEME) : false;
+	m_currentActivePhoneme = !activePhoneme ? -1 : 0x00;	// Not important which phoneme, since UpdateIRQ() resets this
 
 	yamlLoadHelper.PopMap();
+
+	//
+
+	SetDevice(device);
+	SetCardMode(mode);
+
+	if (IsPhonemeActive())
+		UpdateIRQ();
 }
