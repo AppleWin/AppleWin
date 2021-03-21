@@ -234,18 +234,84 @@ namespace sa2
         if (ImGui::BeginTabItem("Disks"))
         {
           CardManager & cardManager = GetCardMgr();
-          if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
+          if (ImGui::BeginTable("Disk2", 11, ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
           {
-            Disk2InterfaceCard * card2 = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
-            ImGui::Button("Drive 1");
-            ImGui::SameLine();
-            ImGui::TextUnformatted(card2->GetFullDiskFilename(DRIVE_1).c_str());
+            ImGui::TableSetupColumn("Slot", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Drive", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Firmware", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Track", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Track", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Phase", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Eject", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Swap", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Filename", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableHeadersRow();
 
-            ImGui::Button("Drive 2");
-            ImGui::SameLine();
-            ImGui::TextUnformatted(card2->GetFullDiskFilename(DRIVE_2).c_str());
+            for (int slot = SLOT5; slot < SLOT7; ++slot)
+            {
+              ImGui::PushID(slot);
+              if (cardManager.QuerySlot(slot) == CT_Disk2)
+              {
+                Disk2InterfaceCard * card2 = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
+
+                const int currentDrive = card2->GetCurrentDrive();
+                Disk_Status_e statuses[NUM_DRIVES] = {};
+                card2->GetLightStatus(statuses + 0, statuses + 1);
+                const UINT firmware = card2->GetCurrentFirmware();
+
+                for (size_t drive = 0; drive < NUM_DRIVES; ++drive)
+                {
+                  ImGui::PushID(drive);
+                  ImGui::TableNextRow();
+                  ImGui::TableNextColumn();
+                  ImGui::Text("%d", slot);
+                  ImGui::TableNextColumn();
+                  ImGui::Text("%d", drive + 1);
+                  ImGui::TableNextColumn();
+                  ImGui::Text("%d", firmware);
+                  ImGui::TableNextColumn();
+                  ImGui::Text("%d", card2->GetTrack(drive));
+                  ImGui::TableNextColumn();
+                  if (drive == currentDrive)
+                  {
+                    ImGui::TextUnformatted(card2->GetCurrentTrackString().c_str());
+                  }
+                  ImGui::TableNextColumn();
+                  if (drive == currentDrive)
+                  {
+                    ImGui::TextUnformatted(card2->GetCurrentPhaseString().c_str());
+                  }
+                  ImGui::TableNextColumn();
+                  ImGui::Text("%d", statuses[drive]);
+
+                  ImGui::TableNextColumn();
+                  if (ImGui::SmallButton("Eject"))
+                  {
+                    card2->EjectDisk(drive);
+                  }
+
+                  ImGui::TableNextColumn();
+                  if (ImGui::SmallButton("Swap"))
+                  {
+                    card2->DriveSwap();
+                  }
+
+                  ImGui::TableNextColumn();
+                  ImGui::TextUnformatted(card2->GetFullDiskFilename(drive).c_str());
+                  ImGui::PopID();
+                }
+              }
+              ImGui::PopID();
+            }
+            ImGui::EndTable();
           }
 
+          bool hdEnabled = HD_CardIsEnabled();
+          if (ImGui::Checkbox("HD card", &hdEnabled))
+          {
+            HD_SetEnabled(hdEnabled);
+          }
           ImGui::Button("Hard disk 1");
           ImGui::SameLine();
           ImGui::TextUnformatted(HD_GetFullName(HARDDISK_1).c_str());
