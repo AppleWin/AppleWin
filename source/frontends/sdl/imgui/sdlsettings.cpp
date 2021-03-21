@@ -8,6 +8,8 @@
 #include "Core.h"
 #include "CPU.h"
 #include "CardManager.h"
+#include "Disk.h"
+#include "Harddisk.h"
 #include "Speaker.h"
 #include "Mockingboard.h"
 #include "Registry.h"
@@ -176,6 +178,7 @@ namespace sa2
           ImGui::Text("FPS: %d", int(io.Framerate));
           ImGui::EndTabItem();
         }
+
         if (ImGui::BeginTabItem("Hardware"))
         {
           if (ImGui::BeginTable("Cards", 2, ImGuiTableFlags_RowBg))
@@ -224,6 +227,32 @@ namespace sa2
 
             ImGui::EndTable();
           }
+
+          ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Disks"))
+        {
+          CardManager & cardManager = GetCardMgr();
+          if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
+          {
+            Disk2InterfaceCard * card2 = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
+            ImGui::Button("Drive 1");
+            ImGui::SameLine();
+            ImGui::TextUnformatted(card2->GetFullDiskFilename(DRIVE_1).c_str());
+
+            ImGui::Button("Drive 2");
+            ImGui::SameLine();
+            ImGui::TextUnformatted(card2->GetFullDiskFilename(DRIVE_2).c_str());
+          }
+
+          ImGui::Button("Hard disk 1");
+          ImGui::SameLine();
+          ImGui::TextUnformatted(HD_GetFullName(HARDDISK_1).c_str());
+
+          ImGui::Button("Hard disk 2");
+          ImGui::SameLine();
+          ImGui::TextUnformatted(HD_GetFullName(HARDDISK_2).c_str());
 
           ImGui::EndTabItem();
         }

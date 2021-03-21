@@ -236,6 +236,27 @@ namespace sa2
         ProcessText(e.text);
         break;
       }
+    case SDL_DROPFILE:
+      {
+        ProcessDropEvent(e.drop);
+        SDL_free(e.drop.file);
+        break;
+      }
+    }
+  }
+
+  void SDLFrame::ProcessDropEvent(const SDL_DropEvent & drop)
+  {
+    CardManager & cardManager = GetCardMgr();
+    if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
+    {
+      // for now we insert in DRIVE_1
+      Disk2InterfaceCard * card2 = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
+      const ImageError_e error = card2->InsertDisk(DRIVE_1, drop.file, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+      if (error != eIMAGE_ERROR_NONE)
+      {
+        card2->NotifyInvalidImage(DRIVE_1, drop.file, error);
+      }
     }
   }
 
