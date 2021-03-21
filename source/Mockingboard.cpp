@@ -1150,8 +1150,7 @@ void MB_InitializeForLoadingSnapshot()	// GH#609
 	_ASSERT(MockingboardVoice.lpDSBvoice);
 	DSVoiceStop(&MockingboardVoice);			// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
 
-	for (UINT i=0; i<NUM_AY8910; i++)
-		g_MB[i].ssi263.Stop();
+	// NB. ssi263.Stop() already done by MB_Reset()
 }
 
 //-----------------------------------------------------------------------------

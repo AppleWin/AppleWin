@@ -8,11 +8,21 @@ public:
 	SSI263(void)
 	{
 		m_device = -1;	// undefined
+		m_cardMode = PH_Mockingboard;
+		m_pPhonemeData00 = NULL;
+
+		ResetState();
+	}
+	~SSI263(void)
+	{
+		delete [] m_pPhonemeData00;
+	}
+
+	void ResetState(void)
+	{
 		m_currentActivePhoneme = -1;
 		m_isVotraxPhoneme = false;
 		m_cyclesThisAudioFrame = 0;
-
-		m_cardMode = PH_Mockingboard;
 
 		//
 
@@ -25,8 +35,6 @@ public:
 		m_phonemePlaybackAndDebugger = false;
 		m_phonemeCompleteByFullSpeed = false;
 
-		m_pPhonemeData00 = NULL;
-
 		//
 
 		m_numSamplesError = 0;
@@ -37,18 +45,23 @@ public:
 
 		//
 
+		m_durationPhoneme = 0;
+		m_inflection = 0;
+		m_rateInflection = 0;
+		m_ctrlArtAmp = 0;
+		m_filterFreq = 0;
+
+		m_currentMode = 0;
+
+		//
+
 		m_dbgFirst = true;
 		m_dbgStartTime = 0;
-	}
-	~SSI263(void)
-	{
-		delete [] m_pPhonemeData00;
 	}
 
 	bool DSInit(void);
 	void DSUninit(void);
 
-	void Stop(void);
 	void Reset(void);
 	void SignalPause(void);
 	bool IsPhonemeActive(void) { return m_currentActivePhoneme >= 0; }
@@ -76,23 +89,26 @@ public:
 
 private:
 	void Play(unsigned int nPhoneme);
+	void Stop(void);
 	void UpdateIRQ(void);
 	void UpdateAccurateLength(void);
 
 	static const BYTE m_Votrax2SSI263[/*64*/];
-
-	BYTE m_device;	// SSI263 device# which is generating phoneme-complete IRQ (and only required whilst Mockingboard isn't a class)
-	int m_currentActivePhoneme;
-	bool m_isVotraxPhoneme;
 
 	static const unsigned short m_kNumChannels = 1;
 	static const DWORD m_kDSBufferSize = MAX_SAMPLES * sizeof(short) * m_kNumChannels;
 	short m_mixBufferSSI263[m_kDSBufferSize / sizeof(short)];
 	VOICE SSI263SingleVoice;
 
-	UINT m_cyclesThisAudioFrame;
+	//
 
+	BYTE m_device;	// SSI263 device# which is generating phoneme-complete IRQ (and only required whilst Mockingboard isn't a class)
 	PHASOR_MODE m_cardMode;
+	short* m_pPhonemeData00;
+
+	int m_currentActivePhoneme;
+	bool m_isVotraxPhoneme;
+	UINT m_cyclesThisAudioFrame;
 
 	//
 
@@ -105,9 +121,8 @@ private:
 	bool m_phonemePlaybackAndDebugger;
 	bool m_phonemeCompleteByFullSpeed;
 
-	short* m_pPhonemeData00;
-
 	//
+
 	int m_numSamplesError;
 	DWORD m_byteOffset;
 	int m_currSampleSum;
@@ -123,8 +138,7 @@ private:
 
 	BYTE m_currentMode;		// b7:6=Mode; b0=D7 pin (for IRQ)
 
-	//
-
+	// Debug
 	bool m_dbgFirst;
 	UINT64 m_dbgStartTime;
 };

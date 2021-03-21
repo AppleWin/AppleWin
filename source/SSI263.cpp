@@ -753,18 +753,7 @@ void SSI263::DSUninit(void)
 void SSI263::Reset(void)
 {
 	Stop();
-
-	m_currentActivePhoneme = -1;
-	m_phonemeLengthRemaining = 0;
-	m_phonemeAccurateLengthRemaining = 0;
-	m_isVotraxPhoneme = false;
-
-	m_lastUpdateCycle = 0;
-	m_updateWasFullSpeed = false;
-	m_cyclesThisAudioFrame = 0;
-
-	m_dbgFirst = true;
-	m_dbgStartTime = 0;
+	ResetState();
 }
 
 // During phoneme playback, certain interruptions to the ring-buffer can cause the duration (in emulation cycles) to take much longer.
