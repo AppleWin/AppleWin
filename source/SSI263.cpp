@@ -407,7 +407,7 @@ void SSI263::Update(void)
 
 	if (m_byteOffset == (DWORD)-1)
 	{
-		// First time in this func (or transitioned from full-speed to normal speed, or SignalPause())
+		// First time in this func (or transitioned from full-speed to normal speed, or a ring-buffer reset)
 #ifdef DBG_SSI263_UPDATE
 		double fTicksSecs = (double)GetTickCount() / 1000.0;
 		LogOutput("%010.3f: [SSUpdtInit%1d]PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset);
@@ -522,7 +522,22 @@ void SSI263::Update(void)
 #endif
 
 	if (nNumSamples == 0)
+	{
+		if (m_numSamplesError)
+		{
+			// Reset ring-buffer if we've had a major interruption, eg. F7 (enter debugger), F8 (configure), F11/12 (save-state), Pause, etc
+			// - this can cause Apple II SSI263 detection code to fail (when either timing one or a sequence of phonemes)
+			// When the AppleWin code restarts and reads the ring-buffer position it'll be at a random point, and maybe nearly full (>50% full)
+			// - so the code waits until it drains (nNumSamples=0 each time)
+			// - but it takes a large number of calls to this func to drain to an acceptable level
+			m_byteOffset = (DWORD)-1;
+#if defined(DBG_SSI263_UPDATE)
+			double fTicksSecs = (double)GetTickCount() / 1000.0;
+			LogOutput("%010.3f: [SSUpdt%1d]    Reset ring-buffer\n", fTicksSecs, m_device);
+#endif
+		}
 		return;
+	}
 
 	//-------------
 
@@ -647,7 +662,6 @@ void SSI263::UpdateAccurateLength(void)
 // Called by:
 // . Update() when m_phonemeLengthRemaining -> 0
 // . UpdateAccurateLength() when m_phonemeAccurateLengthRemaining -> 0
-// . SignalPause(), eg. when built-in debugger is activated during phoneme playback
 // . LoadSnapshot()
 void SSI263::UpdateIRQ(void)
 {
@@ -754,25 +768,6 @@ void SSI263::Reset(void)
 {
 	Stop();
 	ResetState();
-}
-
-// During phoneme playback, certain interruptions to the ring-buffer can cause the duration (in emulation cycles) to take much longer.
-// . so this can cause SSI263 detection code to fail (either timing one or a sequence of phonemes).
-// These interruptions are: Entering built-in debugger (F7), Configuration (F8), Pause key
-//
-// When the code restarts and reads the ring-buffer position it'll be at a random point, and maybe nearly full; so it waits until it drains.
-// . this is the reason for it taking much longer.
-//
-// So now on an interruption: just reset the ring-buffer (perhaps there'll be a sound glitch, but this is better than an SSI263 detection failure).
-void SSI263::SignalPause(void)
-{
-	m_byteOffset = (DWORD)-1;
-
-	if (!IsPhonemeActive())
-		return;
-
-	LogOutput("SignalPause: m_phonemeAccurateLengthRemaining=%04X, m_phonemeLengthRemaining=%04X\n", m_phonemeAccurateLengthRemaining, m_phonemeLengthRemaining);
-	UpdateIRQ();
 }
 
 //-----------------------------------------------------------------------------

@@ -1727,15 +1727,6 @@ void MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 
 //---------------------------------------------------------------------------
 
-// Called from WndProc()->ProcessButtonClick()
-void MB_SignalPause(void)
-{
-	for (UINT i=0; i<NUM_AY8910; i++)
-		g_MB[i].ssi263.SignalPause();
-}
-
-//---------------------------------------------------------------------------
-
 // Called from class SSI263
 UINT64 MB_GetLastCumulativeCycles(void)
 {

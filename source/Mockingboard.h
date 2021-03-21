@@ -30,7 +30,6 @@ SS_CARDTYPE MB_GetSoundcardType();
 bool    MB_IsActive();
 DWORD   MB_GetVolume();
 void    MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
-void MB_SignalPause(void);
 void MB_Get6522IrqDescription(std::string& desc);
 
 UINT64 MB_GetLastCumulativeCycles(void);

@@ -63,7 +63,6 @@ public:
 	void DSUninit(void);
 
 	void Reset(void);
-	void SignalPause(void);
 	bool IsPhonemeActive(void) { return m_currentActivePhoneme >= 0; }
 
 	BYTE Read(ULONG nExecutedCycles);
