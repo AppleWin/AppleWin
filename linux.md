@@ -10,7 +10,7 @@
 * [Build](#build)
   * [Checkout](#checkout)
   * [Fedora](#fedora)
-  * [Raspbian](#raspbian)
+  * [Raspberry Pi OS and Ubuntu](#raspbian)
 * [Speed](#build)
   * [Fedora](#fedora-1)
   * [Raspbian](#raspbian-1)
@@ -66,7 +66,7 @@ Keyboard shortcuts
 * ``ALT-RIGHT``: wider hi res graphis
 * ``ALT-LEFT``: narrower hi res graphics
 * ``ALT-UP``: vertical hi res (smaller)
-* ``ALT-DOWN``: vertical hires (bigger)
+* ``ALT-DOWN``: vertical hi res (bigger)
 
 In order to properly appreciate the wider hi res graphics, open a big terminal window and choose a small font size.
 Try ``CTRL-`` as well if ``ALT-`` does not work: terminals do not report a consistent keycode for these combinations.
@@ -129,18 +129,19 @@ git clone https://github.com/audetto/AppleWin.git --recursive
 cd AppleWin
 mkdir build
 cd build
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=RELEASE ..
 make
 ```
-Use `cmake -DCMAKE_BUILD_TYPE=RELEASE` to get a *release* build.
 
 ### Fedora
 
 On Fedora 31, from a fresh installation, install all packages from [fedora.list.txt](source/linux/fedora.list.txt).
 
-### Raspbian
+### Raspberry Pi OS, Ubuntu and other Debian distributions
 
-On Raspbian 10, from a fresh installation, install all packages from [raspbian.list.txt](source/linux/raspbian.list.txt).
+Install all packages from [raspbian.list.txt](source/linux/raspbian.list.txt).
+
+You can use `sudo apt-get -y install $(cat raspbian.list.txt)` for an automated installation.
 
 See [Travis](.travis.yml) CI too.
 
