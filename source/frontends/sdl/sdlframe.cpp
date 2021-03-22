@@ -42,67 +42,67 @@ namespace
     case SDLK_RETURN:
     case SDLK_KP_ENTER:
       {
-	ch = 0x0d;
-	break;
+        ch = 0x0d;
+        break;
       }
     case SDLK_BACKSPACE: // same as AppleWin
     case SDLK_LEFT:
       {
-	ch = 0x08;
-	break;
+        ch = 0x08;
+        break;
       }
     case SDLK_RIGHT:
       {
-	ch = 0x15;
-	break;
+        ch = 0x15;
+        break;
       }
     case SDLK_UP:
       {
-	ch = 0x0b;
-	break;
+        ch = 0x0b;
+        break;
       }
     case SDLK_DOWN:
       {
-	ch = 0x0a;
-	break;
+        ch = 0x0a;
+        break;
       }
     case SDLK_DELETE:
       {
-	ch = 0x7f;
-	break;
+        ch = 0x7f;
+        break;
       }
     case SDLK_ESCAPE:
       {
-	ch = 0x1b;
-	break;
+        ch = 0x1b;
+        break;
       }
     case SDLK_TAB:
       {
-	ch = 0x09;
-	break;
+        ch = 0x09;
+        break;
       }
     case SDLK_a ... SDLK_z:
       {
-	// same logic as AW
-	// CAPS is forced when the emulator starts
-	// until is used the first time
-	const bool capsLock = forceCapsLock || (SDL_GetModState() & KMOD_CAPS);
-	const bool upper = capsLock || (key.keysym.mod & KMOD_SHIFT);
+        // same logic as AW
+        // CAPS is forced when the emulator starts
+        // until is used the first time
+        const bool capsLock = forceCapsLock || (SDL_GetModState() & KMOD_CAPS);
+        const bool upper = capsLock || (key.keysym.mod & KMOD_SHIFT);
 
-	ch = (key.keysym.sym - SDLK_a) + 0x01;
-	if (key.keysym.mod & KMOD_CTRL)
-	{
-	  // ok
-	}
-	else if (upper)
-	{
-	  ch += 0x40; // upper case
-	}
-	else
-	{
-	  ch += 0x60; // lower case
-	}
-	break;
+        ch = (key.keysym.sym - SDLK_a) + 0x01;
+        if (key.keysym.mod & KMOD_CTRL)
+        {
+          // ok
+        }
+        else if (upper)
+        {
+          ch += 0x40; // upper case
+        }
+        else
+        {
+          ch += 0x60; // lower case
+        }
+        break;
       }
     }
 
