@@ -17,11 +17,13 @@ On a Raspberry Pi, one needs the KMS (fake or not). Better performance has been 
 
 ## Dear ImGui
 
-With the flag ``--imgui``, the rendering if performned with [Dear ImGui](https://github.com/ocornut/imgui). In this case ``--sdl-driver`` is ignored and a OpenGL ES2.0 implementation is required.
+With the flag ``--imgui``, the rendering is performed with [Dear ImGui](https://github.com/ocornut/imgui). In this case ``--sdl-driver`` is ignored and a OpenGL ES2.0 implementation is required.
 
 On a Raspberry Pi, a KMS driver is mandatory and best results are obtained on a Pi4 with FullKMS (full screen via ``F6``).
 
 Output mentions the Dear ImGui version, e.g.: ``IMGUI_VERSION: 1.81 WIP``.
+
+There is a rudimental suppor for configuration: *drag & drop* works for floppy disks, and they are inserted in Drive 1.
 
 ## Hotkeys
 
@@ -63,3 +65,9 @@ Actual clock:   1014560.11 Hz, 7.79 s
 - ``cpu``: AW's code
 
 The clock shows expected vs actual speed.
+
+## Debugging
+
+For debugging and profiling (valgrind), it is best to switch off adaptive speed, as otherwise it enters a feedback loop and seems to hang.
+
+Use ``--fixed-speed``.
