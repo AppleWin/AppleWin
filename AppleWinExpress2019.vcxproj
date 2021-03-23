@@ -61,6 +61,7 @@
     <ClInclude Include="source\Debugger\Debugger_Assembler.h" />
     <ClInclude Include="source\Debugger\Debugger_Color.h" />
     <ClInclude Include="source\Debugger\Debugger_Console.h" />
+    <ClInclude Include="source\Debugger\Debugger_Disassembler.h" />
     <ClInclude Include="source\Debugger\Debugger_DisassemblerData.h" />
     <ClInclude Include="source\Debugger\Debugger_Display.h" />
     <ClInclude Include="source\Debugger\Debugger_Help.h" />
@@ -154,6 +155,7 @@
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\Core.cpp" />
     <ClCompile Include="source\CPU.cpp" />
+    <ClCompile Include="source\Debugger\Debugger_Disassembler.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
     <ClCompile Include="source\FrameBase.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
