@@ -190,8 +190,8 @@ static void ContinueExecution(void)
 		if (bWasFullSpeed)
 			GetFrame().VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
 
-		// Don't call Spkr_Demute()
-		MB_Demute();
+		// Don't call Spkr_Unmute()
+		MB_Unmute();
 		SysClk_StartTimerUsec(nExecutionPeriodUsec);
 
 		// Switch to higher priority, eg. for audio (BUG #015394)

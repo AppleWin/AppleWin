@@ -220,6 +220,9 @@
     <ClCompile Include="source\Windows\Win32Frame.cpp">
       <Filter>Source Files\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="source\SSI263.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
     <ClCompile Include="source\Debugger\Debugger_Disassembler.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
@@ -524,6 +527,9 @@
     </ClInclude>
     <ClInclude Include="source\Windows\Win32Frame.h">
       <Filter>Source Files\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="source\SSI263.h">
+      <Filter>Source Files\Emulator</Filter>
     </ClInclude>
     <ClInclude Include="source\Debugger\Debugger_Disassembler.h">
       <Filter>Source Files\Debugger</Filter>

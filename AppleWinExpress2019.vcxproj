@@ -104,6 +104,7 @@
     <ClInclude Include="source\SoundCore.h" />
     <ClInclude Include="source\Speaker.h" />
     <ClInclude Include="source\Speech.h" />
+    <ClInclude Include="source\SSI263.h" />
     <ClInclude Include="source\SSI263Phonemes.h" />
     <ClInclude Include="source\StdAfx.h" />
     <ClInclude Include="source\SynchronousEventManager.h" />
@@ -195,6 +196,7 @@
     <ClCompile Include="source\SoundCore.cpp" />
     <ClCompile Include="source\Speaker.cpp" />
     <ClCompile Include="source\Speech.cpp" />
+    <ClCompile Include="source\SSI263.cpp" />
     <ClCompile Include="source\StdAfx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug v141_xp|Win32'">Create</PrecompiledHeader>
