@@ -10,6 +10,7 @@ set(SOURCE_FILES
   Debugger/Debugger_Parser.cpp
   Debugger/Debugger_Range.cpp
 
+  SSI263.cpp
   Speaker.cpp
   SoundCore.cpp
   AY8910.cpp
@@ -82,6 +83,8 @@ set(SOURCE_FILES
   )
 
 set(HEADER_FILES
+  SSI263.h
+  SSI263Phonemes.h
   Speaker.h
   SoundCore.h
   AY8910.h
