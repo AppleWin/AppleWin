@@ -81,7 +81,7 @@ bool			g_bQuieterSpeaker = false;
 static unsigned __int64	g_nSpkrQuietCycleCount = 0;
 static unsigned __int64 g_nSpkrLastCycle = 0;
 static bool g_bSpkrToggleFlag = false;
-static VOICE SpeakerVoice = {0};
+static VOICE SpeakerVoice;
 static bool g_bSpkrAvailable = false;
 
 //-----------------------------------------------------------------------------
@@ -287,7 +287,7 @@ void SpkrReset()
 	InitRemainderBuffer();
 	Spkr_SubmitWaveBuffer(NULL, 0);
 	Spkr_SetActive(false);
-	Spkr_Demute();
+	Spkr_Unmute();
 }
 
 //=============================================================================
@@ -673,7 +673,7 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 
 		// Don't call DSZeroVoiceBuffer() - get noise with "VIA AC'97 Enhanced Audio Controller"
 		// . I guess SpeakerVoice.Stop() isn't really working and the new zero buffer causes noise corruption when submitted.
-		DSZeroVoiceWritableBuffer(&SpeakerVoice, "Spkr", g_dwDSSpkrBufferSize);
+		DSZeroVoiceWritableBuffer(&SpeakerVoice, g_dwDSSpkrBufferSize);
 
 		return 0;
 	}
@@ -813,7 +813,7 @@ void Spkr_Mute()
 	}
 }
 
-void Spkr_Demute()
+void Spkr_Unmute()
 {
 	if(SpeakerVoice.bActive && SpeakerVoice.bMute)
 	{
@@ -881,14 +881,14 @@ bool Spkr_DSInit()
 
 	SpeakerVoice.bIsSpeaker = true;
 
-	HRESULT hr = DSGetSoundBuffer(&SpeakerVoice, DSBCAPS_CTRLVOLUME, g_dwDSSpkrBufferSize, SPKR_SAMPLE_RATE, 1);
+	HRESULT hr = DSGetSoundBuffer(&SpeakerVoice, DSBCAPS_CTRLVOLUME, g_dwDSSpkrBufferSize, SPKR_SAMPLE_RATE, 1, "Spkr");
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "Spkr: DSGetSoundBuffer failed (%08X)\n",hr);
+		LogFileOutput("Spkr: DSGetSoundBuffer failed (%08X)\n", hr);
 		return false;
 	}
 
-	if(!DSZeroVoiceBuffer(&SpeakerVoice, "Spkr", g_dwDSSpkrBufferSize))
+	if(!DSZeroVoiceBuffer(&SpeakerVoice, g_dwDSSpkrBufferSize))
 		return false;
 
 	SpeakerVoice.bActive = true;
@@ -920,10 +920,7 @@ bool Spkr_DSInit()
 static void Spkr_DSUninit()
 {
 	if(SpeakerVoice.lpDSBvoice && SpeakerVoice.bActive)
-	{
-		SpeakerVoice.lpDSBvoice->Stop();
-		SpeakerVoice.bActive = false;
-	}
+		DSVoiceStop(&SpeakerVoice);
 
 	DSReleaseSoundBuffer(&SpeakerVoice);
 }

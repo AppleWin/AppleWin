@@ -27,7 +27,7 @@ void    SpkrUpdate_Timer();
 DWORD   SpkrGetVolume();
 void    SpkrSetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 void    Spkr_Mute();
-void    Spkr_Demute();
+void    Spkr_Unmute();
 bool    Spkr_IsActive();
 bool    Spkr_DSInit();
 void    SpkrSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);

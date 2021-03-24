@@ -790,6 +790,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\SSI263.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\SSI263.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\SynchronousEventManager.cpp"
 					>
 				</File>
