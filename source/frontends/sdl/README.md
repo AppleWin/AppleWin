@@ -7,6 +7,8 @@ This file only lists options not already described in ``-h``.
 There is no GUI to configure the emulator: either manually edit the configuration file ``~/.applewin/applewin.conf`` or use ``qapple`` and run ``sa2 --qt-ini``.
 The format of the configuration file is the same as the Windows Registry of AppleWin.
 
+*Drag & drop* works for floppy disks: they are inserted in Drive 1. If the filename ends with `.yaml`, it will be loaded as a *State* file.
+
 Individual options can be passed via arguments too: ``-c Configuration.Printer_FileName=Printer.txt``.
 
 If you have a modern gamepad where the axes (``LEFTX`` and ``LEFTY``) move in a circle, the emulator will automatically map to a square: use ``--no-squaring`` to avoid this.
@@ -22,9 +24,6 @@ With the flag ``--imgui``, the rendering is performed with [Dear ImGui](https://
 On a Raspberry Pi, a KMS driver is mandatory and best results are obtained on a Pi4 with FullKMS (full screen via ``F6``).
 
 Output mentions the Dear ImGui version, e.g.: ``IMGUI_VERSION: 1.81 WIP``.
-
-There is a minimal support for configuration: *drag & drop* works for floppy disks, and they are inserted in Drive 1.
-If the filename ends with `.yaml`, it will be loaded as a *State* file.
 
 ## Hotkeys
 
