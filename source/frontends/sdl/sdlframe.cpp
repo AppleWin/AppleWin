@@ -127,6 +127,12 @@ namespace sa2
   {
   }
 
+  void SDLFrame::Initialize()
+  {
+    CommonFrame::Initialize();
+    mySpeed.reset();
+  }
+
   void SDLFrame::FrameRefreshStatus(int drawflags)
   {
     if (drawflags & DRAW_TITLE)
@@ -253,6 +259,7 @@ namespace sa2
     if (strlen(filename) > strlen(yaml) && !strcmp(filename + strlen(filename) - strlen(yaml), yaml))
     {
       common2::setSnapshotFilename(filename, true);
+      mySpeed.reset();
     }
     else
     {
