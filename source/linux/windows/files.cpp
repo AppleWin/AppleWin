@@ -15,7 +15,7 @@ namespace
     {
       if (f)
       {
-	fclose(f);
+        fclose(f);
       }
     }
   };
@@ -38,7 +38,7 @@ DWORD SetFilePointer(HANDLE hFile, LONG lDistanceToMove,
 }
 
 BOOL ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead,
-	      LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped)	{
+              LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped)   {
   const FILE_HANDLE & file_handle = dynamic_cast<FILE_HANDLE &>(*hFile);
 
   /* read something from file */
@@ -48,7 +48,7 @@ BOOL ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead,
 }
 
 BOOL WriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite,
-	       LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped) {
+               LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped) {
 
   const FILE_HANDLE & file_handle = dynamic_cast<FILE_HANDLE &>(*hFile);
 
@@ -70,19 +70,19 @@ DWORD GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
   /* what is the size of the specified file??? Hmmm, really I donna. ^_^ */
   long lcurset = ftell(file_handle.f); // remember current file position
 
-  fseek(file_handle.f, 0, FILE_END);	// go to the end of file
+  fseek(file_handle.f, 0, FILE_END);    // go to the end of file
   DWORD lfilesize = ftell(file_handle.f); // that is the real size of file, isn't it??
   fseek(file_handle.f, lcurset, FILE_BEGIN); // let the file position be the same as before
   return lfilesize;
 }
 
 HANDLE CreateFile(LPCTSTR               lpFileName,
-		  DWORD                 dwDesiredAccess,
-		  DWORD                 dwShareMode,
-		  LPSECURITY_ATTRIBUTES lpSecurityAttributes,
-		  DWORD                 dwCreationDisposition,
-		  DWORD                 dwFlagsAndAttributes,
-		  HANDLE                hTemplateFile)
+                  DWORD                 dwDesiredAccess,
+                  DWORD                 dwShareMode,
+                  LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+                  DWORD                 dwCreationDisposition,
+                  DWORD                 dwFlagsAndAttributes,
+                  HANDLE                hTemplateFile)
 {
   FILE * f = nullptr;
   if (dwCreationDisposition == CREATE_NEW || dwCreationDisposition == CREATE_ALWAYS)

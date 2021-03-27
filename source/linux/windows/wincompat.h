@@ -7,11 +7,11 @@
 ****************************************************************************/
 
 /*
-	Please note all long types (save for pointers) were replaced by int types
-	for x64 systems support!
+        Please note all long types (save for pointers) were replaced by int types
+        for x64 systems support!
 
-		On x32 long type takes 4 bytes, on x64 long type tekes 8 bytes)
-	-- Krez beotiger
+                On x32 long type takes 4 bytes, on x64 long type tekes 8 bytes)
+        -- Krez beotiger
 */
 
 #ifndef _WINDEF_
@@ -184,7 +184,7 @@ typedef unsigned char TBYTE , *PTBYTE ;
 #define CALLBACK
 
 #ifdef _DEBUG
-#define _ASSERT(expr)	assert(expr)
+#define _ASSERT(expr)   assert(expr)
 #else
 #define _ASSERT(expr)
 #endif

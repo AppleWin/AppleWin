@@ -111,13 +111,13 @@ HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOI
     {
       if (*lpdwAudioBytes1 < dwWriteBytes)
       {
-	*lplpvAudioPtr2 = this->mySoundBuffer.data();
-	*lpdwAudioBytes2 = std::min(dwWriteCursor, dwWriteBytes - *lpdwAudioBytes1);
+        *lplpvAudioPtr2 = this->mySoundBuffer.data();
+        *lpdwAudioBytes2 = std::min(dwWriteCursor, dwWriteBytes - *lpdwAudioBytes1);
       }
       else
       {
-	*lplpvAudioPtr2 = nullptr;
-	*lpdwAudioBytes2 = 0;
+        *lplpvAudioPtr2 = nullptr;
+        *lpdwAudioBytes2 = 0;
       }
     }
   }

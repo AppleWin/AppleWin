@@ -33,8 +33,8 @@ namespace
 
     const double fUsecPerSec        = 1.e6;
 #if 1
-    const UINT nExecutionPeriodUsec = 1000000 / 60;		// 60 FPS
-    //	const UINT nExecutionPeriodUsec = 100;		// 0.1ms
+    const UINT nExecutionPeriodUsec = 1000000 / 60;             // 60 FPS
+    //  const UINT nExecutionPeriodUsec = 100;          // 0.1ms
     const double fExecutionPeriodClks = g_fCurrentCLK6502 * ((double)nExecutionPeriodUsec / fUsecPerSec);
 #else
     const double fExecutionPeriodClks = 1800.0;
@@ -100,7 +100,7 @@ namespace
       g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
       if (!options.headless)
       {
-	frame->VideoPresentScreen();
+        frame->VideoPresentScreen();
       }
     }
 
@@ -116,11 +116,11 @@ namespace
 
       if (!cardManager.GetDisk2CardMgr().IsConditionForFullSpeed())
       {
-	if (us < nExecutionPeriodUsec)
-	{
-	  const auto duration = std::chrono::microseconds(nExecutionPeriodUsec - us);
-	  std::this_thread::sleep_for(duration);
-	}
+        if (us < nExecutionPeriodUsec)
+        {
+          const auto duration = std::chrono::microseconds(nExecutionPeriodUsec - us);
+          std::this_thread::sleep_for(duration);
+        }
       }
       return true;
     }

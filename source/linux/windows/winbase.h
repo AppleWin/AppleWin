@@ -14,8 +14,8 @@ void OutputDebugString(const char * str);
 BOOL WINAPI SetCurrentDirectory(LPCSTR path);
 
 #define INFINITE      0xFFFFFFFF
-#define WAIT_OBJECT_0		0
-#define WAIT_FAILED		0xffffffff
+#define WAIT_OBJECT_0           0
+#define WAIT_FAILED             0xffffffff
 #define STATUS_PENDING          0x00000103
 #define STILL_ACTIVE            STATUS_PENDING
 

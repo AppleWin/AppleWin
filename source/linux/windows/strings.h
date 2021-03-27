@@ -39,11 +39,11 @@ int vsnprintf_s(
 #define sscanf_s sscanf
 
 inline bool IsCharLower(char ch) {
-	return isascii(ch) && islower(ch);
+        return isascii(ch) && islower(ch);
 }
 
 inline bool IsCharUpper(char ch) {
-	return isascii(ch) && isupper(ch);
+        return isascii(ch) && isupper(ch);
 }
 
 DWORD CharLowerBuff(LPTSTR lpsz, DWORD cchLength);

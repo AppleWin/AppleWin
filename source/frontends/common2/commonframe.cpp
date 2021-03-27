@@ -51,7 +51,7 @@ namespace
       const std::string resourcePath = path + "/resource/";
       if (dirExists(resourcePath))
       {
-	return resourcePath;
+        return resourcePath;
       }
     }
 

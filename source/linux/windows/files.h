@@ -17,12 +17,12 @@ typedef struct tagOFN {
   LPCTSTR       lpstrTitle;
   DWORD         Flags;
   WORD          nFileExtension;
-  WORD		nFileOffset;
+  WORD          nFileOffset;
 } OPENFILENAME, *LPOPENFILENAME;
 
-#define FILE_BEGIN 	SEEK_SET
-#define FILE_CURRENT	SEEK_CUR
-#define FILE_END	SEEK_END
+#define FILE_BEGIN      SEEK_SET
+#define FILE_CURRENT    SEEK_CUR
+#define FILE_END        SEEK_END
 
 #define FILE_ATTRIBUTE_READONLY 0x00000001
 #define FILE_ATTRIBUTE_NORMAL 0
@@ -48,10 +48,10 @@ DWORD SetFilePointer(HANDLE hFile,
        DWORD dwMoveMethod);
 
 BOOL ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead,
-		     LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped);
+                     LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped);
 
 BOOL WriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite,
-		    LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped);
+                    LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped);
 
 BOOL DeleteFile(LPCTSTR lpFileName);
 
@@ -61,12 +61,12 @@ BOOL GetOpenFileName(LPOPENFILENAME lpofn);
 BOOL GetSaveFileName(LPOPENFILENAME lpofn);
 
 HANDLE CreateFile(LPCTSTR               lpFileName,
-		  DWORD                 dwDesiredAccess,
-		  DWORD                 dwShareMode,
-		  LPSECURITY_ATTRIBUTES lpSecurityAttributes,
-		  DWORD                 dwCreationDisposition,
-		  DWORD                 dwFlagsAndAttributes,
-		  HANDLE                hTemplateFile
+                  DWORD                 dwDesiredAccess,
+                  DWORD                 dwShareMode,
+                  LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+                  DWORD                 dwCreationDisposition,
+                  DWORD                 dwFlagsAndAttributes,
+                  HANDLE                hTemplateFile
 );
 
 DWORD GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh);

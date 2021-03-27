@@ -165,11 +165,11 @@ namespace
 
       if (lpvAudioPtr1 && dwAudioBytes1)
       {
-	mixBuffer(lpvAudioPtr1, dwAudioBytes1);
+        mixBuffer(lpvAudioPtr1, dwAudioBytes1);
       }
       if (lpvAudioPtr2 && dwAudioBytes2)
       {
-	mixBuffer(lpvAudioPtr2, dwAudioBytes2);
+        mixBuffer(lpvAudioPtr2, dwAudioBytes2);
       }
     }
   }

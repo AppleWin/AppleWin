@@ -9,7 +9,7 @@
 #define SEVERITY_SUCCESS    0
 #define SEVERITY_ERROR      1
 
-#define MAKE_HRESULT(sev,fac,code)					\
+#define MAKE_HRESULT(sev,fac,code)                                      \
     ((HRESULT) (((unsigned int)(sev)<<31) | ((unsigned int)(fac)<<16) | ((unsigned int)(code))) )
 #define MAKE_SCODE(sev,fac,code) \
         ((SCODE) (((unsigned int)(sev)<<31) | ((unsigned int)(fac)<<16) | ((unsigned int)(code))) )

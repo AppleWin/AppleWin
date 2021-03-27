@@ -27,14 +27,14 @@ namespace
       const size_t groups = m.size();
       if (groups == 6)
       {
-	geometry.width = std::stoi(m.str(1));
-	geometry.height = std::stoi(m.str(2));
-	if (!m.str(3).empty())
-	{
-	  geometry.x = std::stoi(m.str(4));
-	  geometry.y = std::stoi(m.str(5));
-	}
-	return;
+        geometry.width = std::stoi(m.str(1));
+        geometry.height = std::stoi(m.str(2));
+        if (!m.str(3).empty())
+        {
+          geometry.x = std::stoi(m.str(4));
+          geometry.y = std::stoi(m.str(5));
+        }
+        return;
       }
     }
     throw std::runtime_error("Invalid sizes: " + s);
