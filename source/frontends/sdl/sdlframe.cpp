@@ -3,6 +3,7 @@
 #include "frontends/sdl/utils.h"
 #include "frontends/sdl/sdirectsound.h"
 #include "frontends/common2/programoptions.h"
+#include "frontends/common2/utils.h"
 
 #include "CardManager.h"
 #include "Core.h"
@@ -247,15 +248,24 @@ namespace sa2
 
   void SDLFrame::ProcessDropEvent(const SDL_DropEvent & drop)
   {
-    CardManager & cardManager = GetCardMgr();
-    if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
+    const char * filename = drop.file;
+    const char * yaml = ".yaml";
+    if (strlen(filename) > strlen(yaml) && !strcmp(filename + strlen(filename) - strlen(yaml), yaml))
     {
-      // for now we insert in DRIVE_1
-      Disk2InterfaceCard * card2 = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
-      const ImageError_e error = card2->InsertDisk(DRIVE_1, drop.file, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
-      if (error != eIMAGE_ERROR_NONE)
+      common2::setSnapshotFilename(filename, true);
+    }
+    else
+    {
+      CardManager & cardManager = GetCardMgr();
+      if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
       {
-        card2->NotifyInvalidImage(DRIVE_1, drop.file, error);
+        // for now we insert in DRIVE_1
+        Disk2InterfaceCard * card2 = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
+        const ImageError_e error = card2->InsertDisk(DRIVE_1, drop.file, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+        if (error != eIMAGE_ERROR_NONE)
+        {
+          card2->NotifyInvalidImage(DRIVE_1, drop.file, error);
+        }
       }
     }
   }

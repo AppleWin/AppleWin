@@ -24,6 +24,7 @@ On a Raspberry Pi, a KMS driver is mandatory and best results are obtained on a 
 Output mentions the Dear ImGui version, e.g.: ``IMGUI_VERSION: 1.81 WIP``.
 
 There is a minimal support for configuration: *drag & drop* works for floppy disks, and they are inserted in Drive 1.
+If the filename ends with `.yaml`, it will be loaded as a *State* file.
 
 ## Hotkeys
 
