@@ -33,8 +33,6 @@ namespace na2
 
     void Init(int rows, int columns);
 
-    static void Cleanup();
-
   private:
 
     const std::string myPaddleDevice;

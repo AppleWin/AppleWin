@@ -57,11 +57,10 @@ namespace ra2
   Game::Game(const std::shared_ptr<RetroFrame> & frame)
     : myFrame(frame), mySpeed(true), myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
   {
-    SetFrame(myFrame);
     LogInit();
     InitialiseRetroRegistry();
-
-    myInit.reset(new common2::Initialisation);
+    SetFrame(myFrame);
+    myFrame->Initialize();
 
     switch (ourInputDevices[0])
     {
@@ -83,7 +82,7 @@ namespace ra2
 
   Game::~Game()
   {
-    myInit.reset();
+    myFrame->Destroy();
     SetFrame(std::shared_ptr<FrameBase>());
     Paddle::instance.reset();
     Registry::instance.reset();

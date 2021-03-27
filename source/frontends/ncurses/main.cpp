@@ -147,21 +147,17 @@ namespace
     if (!run)
       return 1;
 
-    std::shared_ptr<na2::NFrame> frame(new na2::NFrame(options.paddleDeviceName));
-    SetFrame(frame);
-    // does not seem to be a problem calling endwin() multiple times
-    std::atexit(na2::NFrame::Cleanup);
-
     if (options.log)
     {
       LogInit();
     }
 
     InitializeFileRegistry(options);
-
     g_nMemoryClearType = options.memclear;
 
-    common2::Initialisation init;
+    std::shared_ptr<na2::NFrame> frame(new na2::NFrame(options.paddleDeviceName));
+    Initialisation init(frame);
+
     na2::SetCtrlCHandler(options.headless);
     applyOptions(options);
 

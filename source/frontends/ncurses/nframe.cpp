@@ -50,7 +50,7 @@ namespace na2
 
   void NFrame::Initialize()
   {
-    LinuxFrame::Initialize();
+    CommonFrame::Initialize();
     myTextFlashCounter = 0;
     myTextFlashState = 0;
     myAsciiArt.reset(new ASCIIArt());
@@ -60,7 +60,7 @@ namespace na2
 
   void NFrame::Destroy()
   {
-    LinuxFrame::Destroy();
+    CommonFrame::Destroy();
     myTextFlashCounter = 0;
     myTextFlashState = 0;
     myFrame.reset();
@@ -357,11 +357,6 @@ namespace na2
   bool NFrame::UpdateDHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset)
   {
     return true;
-  }
-
-  void NFrame::Cleanup()
-  {
-    GetFrame().Destroy();
   }
 
   int NFrame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)

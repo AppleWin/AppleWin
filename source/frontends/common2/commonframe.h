@@ -12,6 +12,7 @@ namespace common2
   public:
     CommonFrame();
 
+    void Initialize() override;
     void Destroy() override;
 
     BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) override;

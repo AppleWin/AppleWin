@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "frontends/common2/commonframe.h"
+#include "frontends/common2/utils.h"
 #include "linux/resources.h"
 
 #include <sys/stat.h>
@@ -68,11 +69,17 @@ namespace common2
   {
   }
 
+  void CommonFrame::Initialize()
+  {
+    InitialiseEmulator();
+    LinuxFrame::Initialize();
+  }
 
   void CommonFrame::Destroy()
   {
     LinuxFrame::Destroy();
     myResource.clear();
+    DestroyEmulator();
   }
 
   BYTE* CommonFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)

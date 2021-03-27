@@ -90,6 +90,16 @@ void run_sdl(int argc, const char * argv [])
   if (!run)
     return;
 
+  InitializeFileRegistry(options);
+
+  if (options.log)
+  {
+    LogInit();
+  }
+
+  g_nMemoryClearType = options.memclear;
+  Paddle::instance.reset(new sa2::Gamepad(0));
+
   std::shared_ptr<sa2::SDLFrame> frame;
 
   if (options.imgui)
@@ -106,20 +116,8 @@ void run_sdl(int argc, const char * argv [])
     throw std::runtime_error(SDL_GetError());
   }
 
-  SetFrame(frame);
+  Initialisation init(frame);
 
-  if (options.log)
-  {
-    LogInit();
-  }
-
-  InitializeFileRegistry(options);
-
-  Paddle::instance.reset(new sa2::Gamepad(0));
-
-  g_nMemoryClearType = options.memclear;
-
-  common2::Initialisation init;
   applyOptions(options);
 
   const int fps = getRefreshRate();
@@ -233,7 +231,6 @@ int main(int argc, const char * argv [])
 
   // this must happen BEFORE the SDL_Quit() as otherwise we have a double free (of the game controller).
   Paddle::instance.reset();
-  SetFrame(std::shared_ptr<FrameBase>());
   SDL_Quit();
 
   return exit;

@@ -6,11 +6,6 @@
 #include <string>
 #include <vector>
 
-namespace common2
-{
-  class Initialisation;
-}
-
 namespace ra2
 {
 
@@ -43,8 +38,6 @@ namespace ra2
     common2::Speed mySpeed;  // fixed speed
 
     std::vector<int> myButtonStates;
-
-    std::shared_ptr<common2::Initialisation> myInit;
 
     bool checkButtonPressed(unsigned id);
     void keyboardEmulation();

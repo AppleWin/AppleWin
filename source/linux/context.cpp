@@ -32,3 +32,15 @@ Video& GetVideo()
   static Video sg_Video;
   return sg_Video;
 }
+
+Initialisation::Initialisation(const std::shared_ptr<FrameBase> & frame)
+{
+  SetFrame(frame);
+  frame->Initialize();
+}
+
+Initialisation::~Initialisation()
+{
+  GetFrame().Destroy();
+  SetFrame(std::shared_ptr<FrameBase>());
+}

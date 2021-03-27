@@ -59,7 +59,7 @@ namespace common2
     }
   }
 
-  Initialisation::Initialisation()
+  void InitialiseEmulator()
   {
 #ifdef RIFF_SPKR
     RiffInitWriteFile("/tmp/Spkr.wav", SPKR_SAMPLE_RATE, 1);
@@ -83,7 +83,6 @@ namespace common2
     SpkrInitialize();
 
     MemInitialize();
-    GetFrame().Initialize();
 
     GetCardMgr().GetDisk2CardMgr().Reset();
     HD_Reset();
@@ -92,7 +91,7 @@ namespace common2
     DebugInitialize();
   }
 
-  Initialisation::~Initialisation()
+  void DestroyEmulator()
   {
     Snapshot_Shutdown();
     CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
@@ -101,7 +100,6 @@ namespace common2
       pMouseCard->Reset();
     }
     MemDestroy();
-    GetFrame().Destroy();
 
     SpkrDestroy();
     MB_Destroy();
