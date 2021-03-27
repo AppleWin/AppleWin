@@ -1,6 +1,7 @@
 #pragma once
 
 #include "frontends/sdl/imgui/gles.h"
+#include "frontends/sdl/sdirectsound.h"
 
 namespace sa2
 {
@@ -23,11 +24,13 @@ namespace sa2
     bool mySyncCPU = true;
 
     int myStepCycles = 0;
-    int mySpeakerVolume = 50;
-    int myMockingboardVolume = 50;
+    int mySpeakerVolume;
+    int myMockingboardVolume;
 
     MemoryEditor myMainMemoryEditor;
     MemoryEditor myAuxMemoryEditor;
+
+    std::vector<SoundInfo> myAudioInfo;
 
     void showSettings();
     void showDebugger(SDLFrame* frame);

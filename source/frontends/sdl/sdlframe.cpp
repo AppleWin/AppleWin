@@ -338,7 +338,7 @@ namespace sa2
         }
       case SDLK_F1:
         {
-          sa2::printInfo();
+          sa2::printAudioInfo();
           break;
         }
       case SDLK_LALT:

@@ -22,6 +22,7 @@ namespace
     void writeAudio();
 
     void printInfo() const;
+    sa2::SoundInfo getInfo() const;
 
   private:
     IDirectSoundBuffer * myBuffer;
@@ -46,6 +47,7 @@ namespace
   DirectSoundGenerator::DirectSoundGenerator(IDirectSoundBuffer * buffer)
     : myBuffer(buffer)
     , myAudioDevice(0)
+    , myBytesPerSecond(0)
   {
   }
 
@@ -114,6 +116,26 @@ namespace
       const double queue = double(bytesInBuffer + bytesInQueue) / myBytesPerSecond;
       std::cerr << ", queue: " << queue << " s" << std::endl;
     }
+  }
+
+  sa2::SoundInfo DirectSoundGenerator::getInfo() const
+  {
+    sa2::SoundInfo info;
+    info.running = isRunning();
+    info.channels = myAudioSpec.channels;
+    info.volume = myBuffer->GetLogarithmicVolume();
+
+    if (info.running && myBytesPerSecond > 0.0)
+    {
+      const DWORD bytesInBuffer = myBuffer->GetBytesInBuffer();
+      const Uint32 bytesInQueue = SDL_GetQueuedAudioSize(myAudioDevice);
+      const float coeff = 1.0 / myBytesPerSecond;
+      info.buffer = bytesInBuffer * coeff;
+      info.queue = bytesInQueue * coeff;
+      info.size = myBuffer->bufferSize * coeff;
+    }
+
+    return info;
   }
 
   void DirectSoundGenerator::stop()
@@ -196,7 +218,7 @@ void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
 namespace sa2
 {
 
-  void stop()
+  void stopAudio()
   {
     for (auto & it : activeSoundGenerators)
     {
@@ -214,7 +236,7 @@ namespace sa2
     }
   }
 
-  void printInfo()
+  void printAudioInfo()
   {
     for (auto & it : activeSoundGenerators)
     {
@@ -222,4 +244,19 @@ namespace sa2
       generator->printInfo();
     }
   }
+
+  std::vector<SoundInfo> getAudioInfo()
+  {
+    std::vector<SoundInfo> info;
+    info.reserve(activeSoundGenerators.size());
+
+    for (auto & it : activeSoundGenerators)
+    {
+      const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
+      info.push_back(generator->getInfo());
+    }
+
+    return info;
+  }
+
 }

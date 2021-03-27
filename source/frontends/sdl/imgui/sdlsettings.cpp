@@ -18,6 +18,8 @@
 #include "Debugger/Debug.h"
 #include "Debugger/DebugDefs.h"
 
+#include "imgui_internal.h"
+
 namespace
 {
 
@@ -326,16 +328,49 @@ namespace sa2
         if (ImGui::BeginTabItem("Audio"))
         {
           const int volumeMax = GetPropertySheet().GetVolumeMax();
+          mySpeakerVolume = volumeMax - SpkrGetVolume();
           if (ImGui::SliderInt("Speaker volume", &mySpeakerVolume, 0, volumeMax))
           {
             SpkrSetVolume(volumeMax - mySpeakerVolume, volumeMax);
             REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
           }
 
+          myMockingboardVolume = volumeMax - MB_GetVolume();
           if (ImGui::SliderInt("Mockingboard volume", &myMockingboardVolume, 0, volumeMax))
           {
             MB_SetVolume(volumeMax - myMockingboardVolume, volumeMax);
             REGSAVE(TEXT(REGVALUE_MB_VOLUME), MB_GetVolume());
+          }
+
+          ImGui::Separator();
+
+          if (ImGui::BeginTable("Devices", 5, ImGuiTableFlags_RowBg))
+          {
+            myAudioInfo = getAudioInfo();
+            ImGui::TableSetupColumn("Running");
+            ImGui::TableSetupColumn("Channels");
+            ImGui::TableSetupColumn("Volume");
+            ImGui::TableSetupColumn("Buffer");
+            ImGui::TableSetupColumn("Queue");
+            ImGui::TableHeadersRow();
+
+            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true); // this requires imgui_internal.h
+            for (SoundInfo & device : myAudioInfo)
+            {
+              ImGui::TableNextColumn();
+              ImGui::Checkbox("", &device.running);
+              ImGui::TableNextColumn();
+              ImGui::Text("%d", device.channels);
+              ImGui::TableNextColumn();
+              ImGui::SliderFloat("", &device.volume, 0.0f, 1.0f, "%.2f");
+              ImGui::TableNextColumn();
+              ImGui::SliderFloat("", &device.buffer, 0.0f, device.size, "%.3f");
+              ImGui::TableNextColumn();
+              ImGui::SliderFloat("", &device.queue, 0.0f, device.size, "%.3f");
+            }
+            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, false);
+
+            ImGui::EndTable();
           }
 
           ImGui::EndTabItem();
