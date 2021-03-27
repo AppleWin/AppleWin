@@ -13,6 +13,7 @@
 #include "Speaker.h"
 #include "Mockingboard.h"
 #include "Registry.h"
+#include "Utilities.h"
 #include "Memory.h"
 
 #include "Debugger/Debug.h"
@@ -152,7 +153,7 @@ namespace
 namespace sa2
 {
 
-  void ImGuiSettings::showSettings()
+  void ImGuiSettings::showSettings(SDLFrame* frame)
   {
     if (ImGui::Begin("Settings", &myShowSettings))
     {
@@ -177,7 +178,29 @@ namespace sa2
           ImGui::Checkbox("Show Demo", &myShowDemo);
           ImGui::SameLine(); HelpMarker("Show Dear ImGui DemoWindow.");
 
+          ImGui::Separator();
+
           ImGui::Text("FPS: %d", int(io.Framerate));
+
+          ImGui::Separator();
+
+          if (ImGui::Button("Reboot"))
+          {
+            frame->Restart();
+          }
+
+          ImGui::SameLine();
+          if (ImGui::Button("ResetMachineState"))
+          {
+            ResetMachineState();
+          }
+
+          ImGui::SameLine();
+          if (ImGui::Button("CtrlReset"))
+          {
+            CtrlReset();
+          }
+
           ImGui::EndTabItem();
         }
 
@@ -396,7 +419,7 @@ namespace sa2
   {
     if (myShowSettings)
     {
-      showSettings();
+      showSettings(frame);
     }
 
     if (myShowMemory)

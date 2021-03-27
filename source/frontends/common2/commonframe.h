@@ -14,6 +14,7 @@ namespace common2
 
     void Initialize() override;
     void Destroy() override;
+    void Restart() override;
 
     BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) override;
 

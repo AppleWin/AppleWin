@@ -32,7 +32,7 @@ namespace sa2
 
     std::vector<SoundInfo> myAudioInfo;
 
-    void showSettings();
+    void showSettings(SDLFrame* frame);
     void showDebugger(SDLFrame* frame);
     void showMemory();
 

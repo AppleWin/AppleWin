@@ -82,6 +82,12 @@ namespace common2
     DestroyEmulator();
   }
 
+  void CommonFrame::Restart()
+  {
+    Destroy();
+    Initialize();
+  }
+
   BYTE* CommonFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)
   {
     myResource.clear();
