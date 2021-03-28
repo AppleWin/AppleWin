@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define LOG_SSI263 0
 #define LOG_SSI263B 0	// Alternate SSI263 logging (use in conjunction with CPU.cpp's LOG_IRQ_TAKEN_AND_RTI)
+#define LOG_SC01 0
 
 // SSI263A registers:
 #define SSI_DURPHON	0x00
@@ -284,6 +285,9 @@ const BYTE SSI263::m_Votrax2SSI263[/*64*/] =
 
 void SSI263::Votrax_Write(BYTE value)
 {
+#if LOG_SC01
+	LogOutput("SC01: %02X\n", value);
+#endif
 	m_isVotraxPhoneme = true;
 
 	// !A/R: Acknowledge receipt of phoneme data (signal goes from high to low)
