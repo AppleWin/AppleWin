@@ -105,7 +105,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "YamlHelper.h"
 
-#define LOG_IRQ_TAKEN_AND_RTI 0
+#define LOG_IRQ_TAKEN_AND_RTI 1
 
 // 6502 Accumulator Bit Flags
 	#define	 AF_SIGN       0x80
