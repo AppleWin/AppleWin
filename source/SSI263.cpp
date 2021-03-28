@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define LOG_SSI263 0
 #define LOG_SSI263B 0	// Alternate SSI263 logging (use in conjunction with CPU.cpp's LOG_IRQ_TAKEN_AND_RTI)
-#define LOG_SC01 1
+#define LOG_SC01 0
 
 // SSI263A registers:
 #define SSI_DURPHON	0x00
