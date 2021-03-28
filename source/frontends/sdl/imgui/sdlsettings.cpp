@@ -206,51 +206,82 @@ namespace sa2
 
         if (ImGui::BeginTabItem("Hardware"))
         {
-          if (ImGui::BeginTable("Cards", 2, ImGuiTableFlags_RowBg))
+          ImGui::LabelText("Option", "Value");
+          const eApple2Type a2e = GetApple2Type();
+          const std::map<eApple2Type, std::string> & apple2Types = getAapple2Types();
+
+          if (ImGui::BeginCombo("Apple 2", getApple2Name(a2e).c_str()))
           {
-            CardManager & manager = GetCardMgr();
-            ImGui::TableSetupColumn("Slot");
-            ImGui::TableSetupColumn("Card");
-            ImGui::TableHeadersRow();
-
-            for (size_t slot = 0; slot < 8; ++slot)
+            for (const auto & it : apple2Types)
             {
-              ImGui::TableNextColumn();
-              ImGui::Selectable(std::to_string(slot).c_str());
-              ImGui::TableNextColumn();
-              const SS_CARDTYPE card = manager.QuerySlot(slot);;
-              ImGui::Selectable(getCardName(card).c_str());
+              const bool isSelected = it.first == a2e;
+              if (ImGui::Selectable(getApple2Name(it.first).c_str(), isSelected))
+              {
+                SetApple2Type(it.first);
+                REGSAVE(REGVALUE_APPLE2_TYPE, it.first);
+              }
+              if (isSelected)
+              {
+                ImGui::SetItemDefaultFocus();
+              }
             }
-            ImGui::TableNextColumn();
-            ImGui::Selectable("AUX");
-            ImGui::TableNextColumn();
-            const SS_CARDTYPE card = manager.QueryAux();
-            ImGui::Selectable(getCardName(card).c_str());
-
-            ImGui::EndTable();
+            ImGui::EndCombo();
           }
+
+          // is there a better way?
+          std::string cpuName = getCPUName(GetMainCpu());
+          ImGui::InputText("CPU", cpuName.data(), cpuName.size(), ImGuiInputTextFlags_ReadOnly);
+          std::string modeName = getModeName(g_nAppMode);
+          ImGui::InputText("Mode", modeName.data(), modeName.size(), ImGuiInputTextFlags_ReadOnly);
+
           ImGui::Separator();
 
-          if (ImGui::BeginTable("Type", 2, ImGuiTableFlags_RowBg))
+          ImGui::LabelText("Slot", "Card");
+          CardManager & manager = GetCardMgr();
+          for (size_t slot = 1; slot < 8; ++slot)
           {
-            ImGui::TableNextColumn();
-            ImGui::Selectable("Apple 2");
-            ImGui::TableNextColumn();
-            const eApple2Type a2e = GetApple2Type();
-            ImGui::Selectable(getApple2Name(a2e).c_str());
+            const SS_CARDTYPE current = manager.QuerySlot(slot);;
+            if (ImGui::BeginCombo(std::to_string(slot).c_str(), getCardName(current).c_str()))
+            {
+              const std::vector<SS_CARDTYPE> & cards = getCardsForSlot(slot);
+              for (SS_CARDTYPE card : cards)
+              {
+                const bool isSelected = card == current;
+                if (ImGui::Selectable(getCardName(card).c_str(), isSelected))
+                {
+                  insertCard(slot, card);
+                }
+                if (isSelected)
+                {
+                  ImGui::SetItemDefaultFocus();
+                }
+              }
+              ImGui::EndCombo();
+            }
+          }
 
-            ImGui::TableNextColumn();
-            ImGui::Selectable("CPU");
-            ImGui::TableNextColumn();
-            const eCpuType cpu = GetMainCpu();
-            ImGui::Selectable(getCPUName(cpu).c_str());
+          ImGui::Separator();
 
-            ImGui::TableNextColumn();
-            ImGui::Selectable("Mode");
-            ImGui::TableNextColumn();
-            ImGui::Selectable(getModeName(g_nAppMode).c_str());
-
-            ImGui::EndTable();
+          {
+            // Expansion
+            const SS_CARDTYPE expansion = GetCurrentExpansionMemType();
+            if (ImGui::BeginCombo("Expansion", getCardName(expansion).c_str()))
+            {
+              const std::vector<SS_CARDTYPE> & cards = getExpansionCards();
+              for (SS_CARDTYPE card : cards)
+              {
+                const bool isSelected = card == expansion;
+                if (ImGui::Selectable(getCardName(card).c_str(), isSelected))
+                {
+                  SetExpansionMemType(card);
+                }
+                if (isSelected)
+                {
+                  ImGui::SetItemDefaultFocus();
+                }
+              }
+              ImGui::EndCombo();
+            }
           }
 
           ImGui::EndTabItem();
@@ -278,7 +309,7 @@ namespace sa2
               ImGui::PushID(slot);
               if (cardManager.QuerySlot(slot) == CT_Disk2)
               {
-                Disk2InterfaceCard * card2 = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
+                Disk2InterfaceCard * card2 = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(slot));
 
                 const int currentDrive = card2->GetCurrentDrive();
                 Disk_Status_e statuses[NUM_DRIVES] = {};
