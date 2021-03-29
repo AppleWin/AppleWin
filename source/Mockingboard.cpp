@@ -608,7 +608,8 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				nValue &= pMB->sy6522.DDRB;
 				pMB->sy6522.ORB = nValue;
 
-				if( (pMB->sy6522.DDRB == 0xFF) && (pMB->sy6522.PCR == 0xB0) )
+				if ((nDevice&1) == 0 && // SC01 only at $Cn00 (not $Cn80)
+					pMB->sy6522.DDRB == 0xFF && pMB->sy6522.PCR == 0xB0)
 				{
 					// Votrax speech data
 					pMB->ssi263.Votrax_Write(nValue);
