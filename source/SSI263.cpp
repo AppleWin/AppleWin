@@ -772,6 +772,7 @@ void SSI263::Reset(void)
 {
 	Stop();
 	ResetState();
+	CpuIrqDeassert(IS_SPEECH);
 }
 
 //-----------------------------------------------------------------------------
