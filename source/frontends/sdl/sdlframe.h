@@ -36,6 +36,9 @@ namespace sa2
 
     const std::shared_ptr<SDL_Window> & GetWindow() const;
 
+    void getDragDropSlotAndDrive(size_t & slot, size_t & drive) const;
+    void setDragDropSlotAndDrive(const size_t slot, const size_t drive);
+
   protected:
     void SetApplicationIcon();
 
@@ -51,6 +54,9 @@ namespace sa2
     bool myForceCapsLock;
     int myMultiplier;
     bool myFullscreen;
+
+    size_t myDragAndDropSlot;
+    size_t myDragAndDropDrive;
 
     common2::Speed mySpeed;
   };

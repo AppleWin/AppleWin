@@ -124,6 +124,8 @@ namespace sa2
     , myMultiplier(1)
     , myFullscreen(false)
     , mySpeed(options.fixedSpeed)
+    , myDragAndDropSlot(SLOT6)
+    , myDragAndDropDrive(DRIVE_1)
   {
   }
 
@@ -264,14 +266,31 @@ namespace sa2
     else
     {
       CardManager & cardManager = GetCardMgr();
-      if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
+      SS_CARDTYPE cardInSlot = cardManager.QuerySlot(myDragAndDropSlot);
+      switch (cardInSlot)
       {
-        // for now we insert in DRIVE_1
-        Disk2InterfaceCard * card2 = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
-        const ImageError_e error = card2->InsertDisk(DRIVE_1, drop.file, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
-        if (error != eIMAGE_ERROR_NONE)
+        case CT_Disk2:
         {
-          card2->NotifyInvalidImage(DRIVE_1, drop.file, error);
+          // for now we insert in DRIVE_1
+          Disk2InterfaceCard * card2 = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(myDragAndDropSlot));
+          const ImageError_e error = card2->InsertDisk(myDragAndDropDrive, drop.file, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+          if (error != eIMAGE_ERROR_NONE)
+          {
+            card2->NotifyInvalidImage(myDragAndDropDrive, drop.file, error);
+          }
+          break;
+        }
+        case CT_GenericHDD:
+        {
+          if (!HD_Insert(myDragAndDropDrive, drop.file))
+          {
+            FrameMessageBox("Invalid HD image", "ERROR", MB_OK);
+          }
+          break;
+        }
+        default:
+        {
+          FrameMessageBox("Invalid D&D target", "ERROR", MB_OK);
         }
       }
     }
@@ -474,6 +493,18 @@ namespace sa2
       }
       FrameRefreshStatus(DRAW_TITLE);
     }
+  }
+
+  void SDLFrame::getDragDropSlotAndDrive(size_t & slot, size_t & drive) const
+  {
+    slot = myDragAndDropSlot;
+    drive = myDragAndDropDrive;
+  }
+
+  void SDLFrame::setDragDropSlotAndDrive(const size_t slot, const size_t drive)
+  {
+    myDragAndDropSlot = slot;
+    myDragAndDropDrive = drive;
   }
 
 }

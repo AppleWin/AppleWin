@@ -250,7 +250,7 @@ namespace sa2
           CardManager & manager = GetCardMgr();
           for (size_t slot = 1; slot < 8; ++slot)
           {
-            const SS_CARDTYPE current = manager.QuerySlot(slot);;
+            const SS_CARDTYPE current = manager.QuerySlot(slot);
             if (ImGui::BeginCombo(std::to_string(slot).c_str(), getCardName(current).c_str()))
             {
               const std::vector<SS_CARDTYPE> & cards = getCardsForSlot(slot);
@@ -299,8 +299,12 @@ namespace sa2
 
         if (ImGui::BeginTabItem("Disks"))
         {
+          size_t dragAndDropSlot;
+          size_t dragAndDropDrive;
+          frame->getDragDropSlotAndDrive(dragAndDropSlot, dragAndDropDrive);
+
           CardManager & cardManager = GetCardMgr();
-          if (ImGui::BeginTable("Disk2", 11, ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
+          if (ImGui::BeginTable("Disk2", 12, ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
           {
             ImGui::TableSetupColumn("Slot", ImGuiTableColumnFlags_WidthFixed);
             ImGui::TableSetupColumn("Drive", ImGuiTableColumnFlags_WidthFixed);
@@ -311,6 +315,7 @@ namespace sa2
             ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthFixed);
             ImGui::TableSetupColumn("Eject", ImGuiTableColumnFlags_WidthFixed);
             ImGui::TableSetupColumn("Swap", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("D&D", ImGuiTableColumnFlags_WidthFixed);
             ImGui::TableSetupColumn("Filename", ImGuiTableColumnFlags_WidthStretch);
             ImGui::TableHeadersRow();
 
@@ -326,7 +331,7 @@ namespace sa2
                 card2->GetLightStatus(statuses + 0, statuses + 1);
                 const UINT firmware = card2->GetCurrentFirmware();
 
-                for (size_t drive = 0; drive < NUM_DRIVES; ++drive)
+                for (size_t drive = DRIVE_1; drive < NUM_DRIVES; ++drive)
                 {
                   ImGui::PushID(drive);
                   ImGui::TableNextRow();
@@ -364,28 +369,64 @@ namespace sa2
                   }
 
                   ImGui::TableNextColumn();
+                  if (ImGui::RadioButton("", (dragAndDropSlot == slot) && (dragAndDropDrive == drive)))
+                  {
+                    frame->setDragDropSlotAndDrive(slot, drive);
+                  }
+
+                  ImGui::TableNextColumn();
                   ImGui::TextUnformatted(card2->GetFullDiskFilename(drive).c_str());
                   ImGui::PopID();
                 }
               }
               ImGui::PopID();
             }
+
+            if (HD_CardIsEnabled())
+            {
+              ImGui::PushID(7);
+              Disk_Status_e disk1Status_;
+              HD_GetLightStatus(&disk1Status_);
+              for (size_t drive = HARDDISK_1; drive < NUM_HARDDISKS; ++drive)
+              {
+                ImGui::PushID(drive);
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("%d", SLOT7);
+                ImGui::TableNextColumn();
+                ImGui::Text("%d", drive + 1);
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted("HD");
+                ImGui::TableNextColumn();
+                ImGui::TableNextColumn();
+                ImGui::TableNextColumn();
+                ImGui::TableNextColumn();
+
+                ImGui::Text("%d", disk1Status_);
+                ImGui::TableNextColumn();
+                if (ImGui::SmallButton("Eject"))
+                {
+                  HD_Unplug(drive);
+                }
+                ImGui::TableNextColumn();
+                if (ImGui::SmallButton("Swap"))
+                {
+                  HD_ImageSwap();
+                }
+                ImGui::TableNextColumn();
+                if (ImGui::RadioButton("", (dragAndDropSlot == SLOT7) && (dragAndDropDrive == drive)))
+                {
+                  frame->setDragDropSlotAndDrive(SLOT7, drive);
+                }
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(HD_GetFullName(drive).c_str());
+                ImGui::PopID();
+              }
+              ImGui::PopID();
+            }
             ImGui::EndTable();
           }
-
-          bool hdEnabled = HD_CardIsEnabled();
-          if (ImGui::Checkbox("HD card", &hdEnabled))
-          {
-            HD_SetEnabled(hdEnabled);
-          }
-          ImGui::Button("Hard disk 1");
-          ImGui::SameLine();
-          ImGui::TextUnformatted(HD_GetFullName(HARDDISK_1).c_str());
-
-          ImGui::Button("Hard disk 2");
-          ImGui::SameLine();
-          ImGui::TextUnformatted(HD_GetFullName(HARDDISK_2).c_str());
-
           ImGui::EndTabItem();
         }
 
