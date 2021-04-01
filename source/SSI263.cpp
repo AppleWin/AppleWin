@@ -145,7 +145,9 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 		// SSI263 datasheet is not clear, but a write to DURPHON must clear the IRQ.
 		// NB. For Mockingboard, A/!R is ack'ed by 6522's PCR handshake.
 		if (m_cardMode == PH_Phasor)
+		{
 			CpuIrqDeassert(IS_SPEECH);
+		}
 
 		m_currentMode &= ~1;	// Clear SSI263's D7 pin
 
@@ -829,8 +831,8 @@ void SSI263::PeriodicUpdate(UINT executedCycles)
 #define SS_YAML_KEY_SSI263_REG_RATE_INF "Rate / Inflection"
 #define SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP "Control / Articulation / Amplitude"
 #define SS_YAML_KEY_SSI263_REG_FILTER_FREQ "Filter Frequency"
-#define SS_YAML_KEY_SSI263_REG_CURRENT_MODE "Current Mode"
-#define SS_YAML_KEY_SSI263_REG_ACTIVE_PHONEME "Active Phoneme"
+#define SS_YAML_KEY_SSI263_CURRENT_MODE "Current Mode"
+#define SS_YAML_KEY_SSI263_ACTIVE_PHONEME "Active Phoneme"
 
 void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
@@ -841,8 +843,8 @@ void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_RATE_INF, m_rateInflection);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, m_ctrlArtAmp);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CURRENT_MODE, m_currentMode);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_REG_ACTIVE_PHONEME, IsPhonemeActive());
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME, IsPhonemeActive());
 }
 
 void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT device, PHASOR_MODE mode, UINT version)
@@ -855,8 +857,8 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT device, PHASOR_MO
 	m_rateInflection  = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_RATE_INF);
 	m_ctrlArtAmp      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP);
 	m_filterFreq      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_FILTER_FREQ);
-	m_currentMode     = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_CURRENT_MODE);
-	bool activePhoneme = (version >= 7) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_REG_ACTIVE_PHONEME) : false;
+	m_currentMode     = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_CURRENT_MODE);
+	bool activePhoneme = (version >= 7) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME) : false;
 	m_currentActivePhoneme = !activePhoneme ? -1 : 0x00;	// Not important which phoneme, since UpdateIRQ() resets this
 
 	yamlLoadHelper.PopMap();
@@ -865,6 +867,10 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT device, PHASOR_MO
 
 	_ASSERT(m_device != -1);
 	SetCardMode(mode);
+
+	// Only need to directly assert IRQ for Phasor mode (for Mockingboard mode it's done via UpdateIFR() in parent)
+	if (m_cardMode == PH_Phasor && (m_currentMode & DURATION_MODE_MASK) != MODE_IRQ_DISABLED && (m_currentMode & 1))
+		CpuIrqAssert(IS_SPEECH);
 
 	if (IsPhonemeActive())
 		UpdateIRQ();		// Pre: m_device, m_cardMode
