@@ -3678,7 +3678,6 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 	if ( nArgs == 0 )
 		return CmdConfigGetDebugDir(0);
 
-#if _WIN32
 	// http://msdn.microsoft.com/en-us/library/aa365530(VS.85).aspx
 
 	// TODO: Support paths prefixed with "\\?\" (for long/unicode pathnames)
@@ -3710,9 +3709,6 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 
 	if ( SetCurrentImageDir( sPath ) )
 		nArgs = 0; // intentional fall into
-#else
-	#error "Need chdir() implemented"
-#endif
 
 	return CmdConfigGetDebugDir(0);		// Show the new PWD
 }
