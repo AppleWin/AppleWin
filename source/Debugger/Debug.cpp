@@ -660,7 +660,7 @@ Update_t CmdBookmarkLoad (int nArgs)
 	//	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
 //		_tcscpy(sFileName, g_sCurrentDir); // 
-//		_tcscat(sFileName, sMiniFileName);
+//		strcat(sFileName, sMiniFileName);
 	}
 
 	return UPDATE_CONSOLE_DISPLAY;
@@ -3793,7 +3793,7 @@ Update_t CmdMemoryLoad (int nArgs)
 		{
 			_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
 		}
-		_tcscat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
+		strcat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
 		
 		FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
 		if (hFile)
@@ -4172,7 +4172,7 @@ Update_t CmdMemorySave (int nArgs)
 			{
 				_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
 			}
-			_tcscat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
+			strcat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
 
 //				if (nArgs == 2)
 			{
@@ -5682,19 +5682,19 @@ Update_t CmdOutputCalc (int nArgs)
 		nAddress, nBit, nAddress, c );
 
 	if (bParen)
-		_tcscat( sText, TEXT("(") );
+		strcat( sText, TEXT("(") );
 
 	if (bHi & bLo)
-		_tcscat( sText, TEXT("High Ctrl") );
+		strcat( sText, TEXT("High Ctrl") );
 	else
 	if (bHi)
-		_tcscat( sText, TEXT("High") );
+		strcat( sText, TEXT("High") );
 	else
 	if (bLo)
-		_tcscat( sText, TEXT("Ctrl") );
+		strcat( sText, TEXT("Ctrl") );
 
 	if (bParen)
-		_tcscat( sText, TEXT(")") );
+		strcat( sText, TEXT(")") );
 
 	ConsoleBufferPush( sText );
 
@@ -5984,7 +5984,7 @@ Update_t CmdOutputRun (int nArgs)
 //	if (g_aArgs[1].bType & TYPE_QUOTED_2)
 
 	sMiniFileName = pFileName.substr(0, MIN(pFileName.size(), CONSOLE_WIDTH));
-//	_tcscat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
+//	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
 	if (pFileName[0] == '\\' || pFileName[1] == ':')	// NB. Any prefix quote has already been stripped
 	{
