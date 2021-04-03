@@ -536,6 +536,13 @@ namespace sa2
             frame->ApplyVideoModeChange();
           }
 
+          bool hertz50 = video.GetVideoRefreshRate() == VR_50HZ;
+          if (ImGui::Checkbox("50Hz video", &hertz50))
+          {
+            video.SetVideoRefreshRate(hertz50 ? VR_50HZ : VR_60HZ);
+            frame->ApplyVideoModeChange();
+          }
+
           ImGui::EndTabItem();
         }
 
