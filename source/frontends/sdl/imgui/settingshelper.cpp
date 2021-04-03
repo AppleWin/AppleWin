@@ -62,6 +62,14 @@ namespace
      {MODE_BENCHMARK, "MODE_BENCHMARCK"},
     };
 
+  const std::map<Disk_Status_e, std::string> statuses =
+    {
+      {DISK_STATUS_OFF, "OFF"},
+      {DISK_STATUS_READ, "READ"},
+      {DISK_STATUS_WRITE, "WRITE"},
+      {DISK_STATUS_PROT, "PROT"},
+    };
+
   const std::map<size_t, std::vector<SS_CARDTYPE>> cardsForSlots =
     {
       {0, {CT_Empty, CT_LanguageCard, CT_Saturn128K}},
@@ -114,6 +122,11 @@ namespace sa2
   const std::map<eApple2Type, std::string> & getAapple2Types()
   {
     return apple2Types;
+  }
+
+  const std::string & getDiskStatusName(Disk_Status_e status)
+  {
+    return statuses.at(status);
   }
 
   void insertCard(size_t slot, SS_CARDTYPE card)

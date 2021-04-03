@@ -354,7 +354,7 @@ namespace sa2
                     ImGui::TextUnformatted(card2->GetCurrentPhaseString().c_str());
                   }
                   ImGui::TableNextColumn();
-                  ImGui::Text("%d", statuses[drive]);
+                  ImGui::TextUnformatted(getDiskStatusName(statuses[drive]).c_str());
 
                   ImGui::TableNextColumn();
                   if (ImGui::SmallButton("Eject"))
@@ -402,7 +402,7 @@ namespace sa2
                 ImGui::TableNextColumn();
                 ImGui::TableNextColumn();
 
-                ImGui::Text("%d", disk1Status_);
+                ImGui::TextUnformatted(getDiskStatusName(disk1Status_).c_str());
                 ImGui::TableNextColumn();
                 if (ImGui::SmallButton("Eject"))
                 {
