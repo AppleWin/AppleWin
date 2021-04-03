@@ -52,7 +52,7 @@ namespace
      {CPU_Z80, "CPU_Z80"},
     };
 
-  const std::map<AppMode_e, std::string> modes =
+  const std::map<AppMode_e, std::string> appModes =
     {
      {MODE_LOGO, "MODE_LOGO"},
      {MODE_PAUSED, "MODE_PAUSED"},
@@ -69,6 +69,19 @@ namespace
       {DISK_STATUS_WRITE, "WRITE"},
       {DISK_STATUS_PROT, "PROT"},
     };
+
+  const std::map<VideoType_e, std::string> videoTypes =
+  {
+    {VT_MONO_CUSTOM, "Monochrome (Custom)"},
+    {VT_COLOR_IDEALIZED, "Color (Composite Idealized)"},
+    {VT_COLOR_VIDEOCARD_RGB, "Color (RGB Card/Monitor)"},
+    {VT_COLOR_MONITOR_NTSC, "Color (Composite Monitor)"},
+    {VT_COLOR_TV, "Color TV"},
+    {VT_MONO_TV, "B&W TV"},
+    {VT_MONO_AMBER, "Monochrome (Amber)"},
+    {VT_MONO_GREEN, "Monochrome (Green)"},
+    {VT_MONO_WHITE, "Monochrome (White)"},
+  };
 
   const std::map<size_t, std::vector<SS_CARDTYPE>> cardsForSlots =
     {
@@ -104,9 +117,14 @@ namespace sa2
     return cpuTypes.at(cpu);
   }
 
-  const std::string & getModeName(AppMode_e mode)
+  const std::string & getAppModeName(AppMode_e mode)
   {
-    return modes.at(mode);
+    return appModes.at(mode);
+  }
+
+  const std::string & getVideoTypeName(VideoType_e type)
+  {
+    return videoTypes.at(type);
   }
 
   const std::vector<SS_CARDTYPE> & getCardsForSlot(size_t slot)
@@ -150,6 +168,20 @@ namespace sa2
         break;
       }
     };
+  }
+
+  void setVideoStyle(Video & video, const VideoStyle_e style, const bool enabled)
+  {
+    VideoStyle_e currentVideoStyle = video.GetVideoStyle();
+    if (enabled)
+    {
+      currentVideoStyle = VideoStyle_e(currentVideoStyle | style);
+    }
+    else
+    {
+      currentVideoStyle = VideoStyle_e(currentVideoStyle & (~style));
+    }
+    video.SetVideoStyle(currentVideoStyle);
   }
 
 }

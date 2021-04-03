@@ -45,6 +45,19 @@ namespace
     return color;
   }
 
+  uint8_t roundToRGB(float x)
+  {
+    // c++ cast truncates
+    return uint8_t(x * 255 + 0.5);
+  }
+
+  COLORREF imVec4ToColorref(const ImVec4 & color)
+  {
+    const bgra_t bgra = {roundToRGB(color.x), roundToRGB(color.y), roundToRGB(color.z), roundToRGB(color.w)};
+    const COLORREF * cr = reinterpret_cast<const COLORREF *>(&bgra);
+    return *cr;
+  }
+
   ImVec4 debuggerGetColor(int iColor)
   {
     const COLORREF cr = DebuggerGetColor(iColor);
@@ -242,7 +255,7 @@ namespace sa2
           }
 
           standardLabelText("CPU", getCPUName(GetMainCpu()).c_str());
-          standardLabelText("Mode", getModeName(g_nAppMode).c_str());
+          standardLabelText("Mode", getAppModeName(g_nAppMode).c_str());
 
           ImGui::Separator();
 
@@ -476,6 +489,51 @@ namespace sa2
             ImGui::PushItemFlag(ImGuiItemFlags_Disabled, false);
 
             ImGui::EndTable();
+          }
+
+          ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Video"))
+        {
+          Video & video = GetVideo();
+          const VideoType_e videoType = video.GetVideoType();
+          if (ImGui::BeginCombo("Video mode", getVideoTypeName(videoType).c_str()))
+          {
+            for (size_t value = VT_MONO_CUSTOM; value < NUM_VIDEO_MODES; ++value)
+            {
+              const bool isSelected = value == videoType;
+              if (ImGui::Selectable(getVideoTypeName(VideoType_e(value)).c_str(), isSelected))
+              {
+                video.SetVideoType(VideoType_e(value));
+                frame->ApplyVideoModeChange();
+              }
+              if (isSelected)
+              {
+                ImGui::SetItemDefaultFocus();
+              }
+            }
+            ImGui::EndCombo();
+          }
+
+          ImVec4 color = colorrefToImVec4(video.GetMonochromeRGB());
+          ImGui::ColorEdit3("Monochrome Color", (float*)&color, 0);
+          const COLORREF cr = imVec4ToColorref(color);
+          video.SetMonochromeRGB(cr);
+          frame->ApplyVideoModeChange();
+
+          bool scanLines = video.IsVideoStyle(VS_HALF_SCANLINES);
+          if (ImGui::Checkbox("50% Scan lines", &scanLines))
+          {
+            setVideoStyle(video, VS_HALF_SCANLINES, scanLines);
+            frame->ApplyVideoModeChange();
+          }
+
+          bool verticalBlend = video.IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
+          if (ImGui::Checkbox("Vertical blend", &verticalBlend))
+          {
+            setVideoStyle(video, VS_COLOR_VERTICAL_BLEND, verticalBlend);
+            frame->ApplyVideoModeChange();
           }
 
           ImGui::EndTabItem();
