@@ -210,7 +210,7 @@ namespace sa2
 
           ImGui::Separator();
 
-          if (ImGui::Button("Reboot"))
+          if (ImGui::Button("Restart"))
           {
             frame->Restart();
           }

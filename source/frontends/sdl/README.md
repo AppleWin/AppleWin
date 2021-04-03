@@ -2,12 +2,15 @@
 
 This file only lists options not already described in ``-h``.
 
+There are really 2 frontends here, with and without ``ImGui``, which will become the default in the future.
+
 ## Configuration
 
-There is no GUI to configure the emulator: either manually edit the configuration file ``~/.applewin/applewin.conf`` or use ``qapple`` and run ``sa2 --qt-ini``.
+The configuration GUI only works with ``--imgui``: otherwise either manually edit the configuration file ``~/.applewin/applewin.conf`` or use ``qapple`` and run ``sa2 --qt-ini``.
 The format of the configuration file is the same as the Windows Registry of AppleWin.
 
-*Drag & drop* works for floppy disks: they are inserted in Drive 1. If the filename ends with `.yaml`, it will be loaded as a *State* file.
+*Drag & drop* works for floppy disks. With ``--imgui`` it is possible to select which drive they are dropped into (``D&D``).
+ If the filename ends with `.yaml`, it will be loaded as a *State* file.
 
 Individual options can be passed via arguments too: ``-c Configuration.Printer_FileName=Printer.txt``.
 
@@ -24,6 +27,8 @@ With the flag ``--imgui``, the rendering is performed with [Dear ImGui](https://
 On a Raspberry Pi, a KMS driver is mandatory and best results are obtained on a Pi4 with FullKMS (full screen via ``F6``).
 
 Output mentions the Dear ImGui version, e.g.: ``IMGUI_VERSION: 1.81 WIP``.
+
+Some of the configuration options are exposed in the ``Settings`` menu. This is **not** a modal dialog and options are applied immediately. You might need to **Restart** the emulator manually.
 
 ## Hotkeys
 
@@ -42,8 +47,6 @@ Channels: 1, buffer: 32768, SDL:  8804, queue: 0.47 s
 Channels: 2, buffer: 45000, SDL: 65536, queue: 0.63 s
 ```
 (1) is the speaker, (2) the Mockingboard.
-
-Speech / phonemes are known to hang the emulator.
 
 ## Speed diagnostic
 
