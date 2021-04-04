@@ -141,7 +141,6 @@ namespace
   int run_ncurses(int argc, const char * argv [])
   {
     common2::EmulatorOptions options;
-    options.memclear = g_nMemoryClearType;
     const bool run = getEmulatorOptions(argc, argv, "ncurses", options);
 
     if (!run)

@@ -49,7 +49,7 @@ namespace
 
   private:
     const std::string myFilename;
-    const bool mySaveOnExit;
+    bool mySaveOnExit;
   };
 
   Configuration::Configuration(const std::string & filename, const bool saveOnExit) : myFilename(filename), mySaveOnExit(saveOnExit)
@@ -60,6 +60,7 @@ namespace
     }
     else
     {
+      mySaveOnExit = false;
       LogFileOutput("Registry: configuration file '%s' not found\n", filename.c_str());
     }
   }
@@ -117,8 +118,8 @@ namespace common2
     }
     else
     {
-      filename = GetConfigFile("applewin.conf");
-      saveOnExit = !filename.empty() && options.saveConfigurationOnExit;
+      filename = options.configurationFile;
+      saveOnExit = true;
     }
 
     std::shared_ptr<Configuration> config(new Configuration(filename, saveOnExit));

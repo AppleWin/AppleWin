@@ -17,13 +17,15 @@ namespace common2
 
   struct EmulatorOptions
   {
+    EmulatorOptions();
+
     std::string disk1;
     std::string disk2;
 
     std::string snapshotFilename;
     bool loadSnapshot = false;
 
-    int memclear = 0;
+    int memclear;
 
     bool log = false;
 
@@ -36,7 +38,7 @@ namespace common2
     // "/dev/input/by-id/usb-©Microsoft_Corporation_Controller_1BBE3DB-event-joystick"
     std::string paddleDeviceName;
 
-    bool saveConfigurationOnExit = false;
+    std::string configurationFile;
     bool useQtIni = false;  // use Qt .ini file (read only)
 
     bool run = true;  // false if options include "-h"

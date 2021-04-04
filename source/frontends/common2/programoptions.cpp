@@ -1,5 +1,6 @@
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/utils.h"
+#include "frontends/common2/fileregistry.h"
 #include "linux/version.h"
 #include "linux/paddle.h"
 
@@ -10,6 +11,7 @@
 #include "Log.h"
 #include "Disk.h"
 #include "Utilities.h"
+#include "Core.h"
 
 #include <iostream>
 #include <regex>
@@ -45,6 +47,12 @@ namespace
 namespace common2
 {
 
+  EmulatorOptions::EmulatorOptions()
+  {
+    memclear = g_nMemoryClearType;
+    configurationFile = GetConfigFile("applewin.conf");
+  }
+
   bool getEmulatorOptions(int argc, const char * argv [], const std::string & edition, EmulatorOptions & options)
   {
     const std::string name = "Apple Emulator for " + edition + " (based on AppleWin " + getVersion() + ")";
@@ -55,8 +63,8 @@ namespace common2
 
     po::options_description configDesc("configuration");
     configDesc.add_options()
-      ("save-conf", "Save configuration on exit")
-      ("config,c", po::value<std::vector<std::string>>(), "Registry options section.path=value")
+      ("conf", po::value<std::string>()->default_value(options.configurationFile), "Select configuration file")
+      ("registry,r", po::value<std::vector<std::string>>(), "Registry options section.path=value")
       ("qt-ini,q", "Use Qt ini file (read only)")
       ;
     desc.add(configDesc);
@@ -96,7 +104,7 @@ namespace common2
       ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
       ("gl-swap", po::value<int>()->default_value(options.glSwapInterval), "SDL_GL_SwapInterval")
       ("imgui", "Render with Dear ImGui")
-      ("geometry", po::value<std::string>(), "WxH(+X+Y)")
+      ("geometry", po::value<std::string>(), "WxH[+X+Y]")
       ;
     desc.add(sdlDesc);
 
@@ -118,7 +126,7 @@ namespace common2
         return false;
       }
 
-      options.saveConfigurationOnExit = vm.count("save-conf");
+      options.configurationFile = vm["conf"].as<std::string>();
       options.useQtIni = vm.count("qt-ini");
       options.sdlDriver = vm["sdl-driver"].as<int>();
       options.glSwapInterval = vm["gl-swap"].as<int>();

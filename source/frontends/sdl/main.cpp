@@ -84,7 +84,6 @@ void run_sdl(int argc, const char * argv [])
   options.geometry.height = sh * 2;
   options.geometry.x = SDL_WINDOWPOS_UNDEFINED;
   options.geometry.y = SDL_WINDOWPOS_UNDEFINED;
-  options.memclear = g_nMemoryClearType;
   const bool run = getEmulatorOptions(argc, argv, "SDL2", options);
 
   if (!run)
