@@ -15,6 +15,8 @@ public:
     void putString(const std::string & section, const std::string & key, const std::string & value) override;
     void putDWord(const std::string & section, const std::string & key, const DWORD value) override;
 
+    std::map<std::string, std::map<std::string, std::string>> getAllValues() const override;
+
 private:
     QSettings mySettings;
 };

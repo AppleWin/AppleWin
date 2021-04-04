@@ -44,3 +44,8 @@ void Configuration::putDWord(const std::string & section, const std::string & ke
 {
     mySettings.setValue(getKey(section, key), QVariant::fromValue(value));
 }
+
+std::map<std::string, std::map<std::string, std::string>> Configuration::getAllValues() const
+{
+    throw std::runtime_error("Configuration::getAllValues not implemented.");
+}

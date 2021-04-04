@@ -33,6 +33,8 @@ namespace common2
     template<typename T>
     void putValue(const std::string & section, const std::string & key, const T & value);
 
+    std::map<std::string, std::map<std::string, std::string>> getAllValues() const override;
+
   protected:
     ini_t myINI;
   };

@@ -66,4 +66,17 @@ namespace common2
     myINI.put(path, value);
   }
 
+  std::map<std::string, std::map<std::string, std::string>> PTreeRegistry::getAllValues() const
+  {
+    std::map<std::string, std::map<std::string, std::string>> values;
+    for (const auto & it1 : myINI)
+    {
+      for (const auto & it2 : it1.second)
+      {
+        values[it1.first][it2.first] = it2.second.get_value<std::string>();
+      }
+    }
+    return values;
+  }
+
 }

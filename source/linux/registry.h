@@ -2,6 +2,7 @@
 
 #include "linux/windows/wincompat.h"
 #include <string>
+#include <map>
 #include <memory>
 #include <cstring>
 
@@ -18,6 +19,9 @@ public:
 
   virtual void putString(const std::string & section, const std::string & key, const std::string & value) = 0;
   virtual void putDWord(const std::string & section, const std::string & key, const DWORD value) = 0;
+
+  virtual std::map<std::string, std::map<std::string, std::string>> getAllValues() const = 0;
+
 };
 
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, DWORD chars);

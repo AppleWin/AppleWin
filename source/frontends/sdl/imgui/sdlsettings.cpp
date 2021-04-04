@@ -2,6 +2,7 @@
 #include "frontends/sdl/imgui/sdlsettings.h"
 #include "frontends/sdl/imgui/settingshelper.h"
 #include "frontends/sdl/sdlframe.h"
+#include "linux/registry.h"
 
 #include "Interface.h"
 #include "CardManager.h"
@@ -552,6 +553,44 @@ namespace sa2
           if (ImGui::RadioButton("Mono", g_iColorScheme == SCHEME_MONO)) { g_iColorScheme = SCHEME_MONO; } ImGui::SameLine();
           if (ImGui::RadioButton("BW", g_iColorScheme == SCHEME_BW)) { g_iColorScheme = SCHEME_BW; }
 
+          ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Registry"))
+        {
+          if (ImGui::BeginTable("Registry", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
+          {
+            ImGui::TableSetupColumn("Option", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableHeadersRow();
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            if (ImGui::TreeNode("Registry"))
+            {
+              const std::map<std::string, std::map<std::string, std::string>> values = Registry::instance->getAllValues();
+
+              for (const auto & it1 : values)
+              {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                if (ImGui::TreeNodeEx(it1.first.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
+                {
+                  for (const auto & it2 : it1.second)
+                  {
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::TreeNodeEx(it2.first.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth);
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(it2.second.c_str());
+                  }
+                  ImGui::TreePop();
+                }
+              }
+              ImGui::TreePop();
+            }
+            ImGui::EndTable();
+          }
           ImGui::EndTabItem();
         }
 
