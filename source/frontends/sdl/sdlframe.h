@@ -48,6 +48,8 @@ namespace sa2
     void ProcessKeyUp(const SDL_KeyboardEvent & key);
     void ProcessText(const SDL_TextInputEvent & text);
     void ProcessDropEvent(const SDL_DropEvent & drop);
+    void ProcessMouseButton(const SDL_MouseButtonEvent & button);
+    void ProcessMouseMotion(const SDL_MouseMotionEvent & motion);
 
     std::shared_ptr<SDL_Window> myWindow;
 

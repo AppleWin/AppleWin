@@ -175,6 +175,16 @@ namespace sa2
           return; // do not pass on
         }
       }
+    case SDL_MOUSEBUTTONDOWN:
+    case SDL_MOUSEBUTTONUP:
+    case SDL_MOUSEMOTION:
+      {
+        ImGuiIO& io = ImGui::GetIO();
+        if (io.WantCaptureMouse)
+        {
+          return; // do not pass on
+        }
+      }
     }
 
     SDLFrame::ProcessSingleEvent(event, quit);

@@ -15,6 +15,7 @@
 #include "NTSC.h"
 #include "CPU.h"
 #include "Mockingboard.h"
+#include "MouseInterface.h"
 
 #include "linux/paddle.h"
 #include "linux/keyboard.h"
@@ -245,12 +246,68 @@ namespace sa2
         ProcessText(e.text);
         break;
       }
+    case SDL_MOUSEBUTTONDOWN:
+    case SDL_MOUSEBUTTONUP:
+      {
+        ProcessMouseButton(e.button);
+        break;
+      }
+    case SDL_MOUSEMOTION:
+      {
+        ProcessMouseMotion(e.motion);
+        break;
+      }
     case SDL_DROPFILE:
       {
         ProcessDropEvent(e.drop);
         SDL_free(e.drop.file);
         break;
       }
+    }
+  }
+
+  void SDLFrame::ProcessMouseButton(const SDL_MouseButtonEvent & event)
+  {
+    CardManager & cardManager = GetCardMgr();
+
+    if (cardManager.IsMouseCardInstalled() && cardManager.GetMouseCard()->IsActiveAndEnabled())
+    {
+      switch (event.button)
+      {
+      case SDL_BUTTON_LEFT:
+      case SDL_BUTTON_RIGHT:
+        {
+          const eBUTTONSTATE state = (event.state == SDL_PRESSED) ? BUTTON_DOWN : BUTTON_UP;
+          const eBUTTON button = (event.button == SDL_BUTTON_LEFT) ? BUTTON0 : BUTTON1;
+          cardManager.GetMouseCard()->SetButton(button, state);
+          break;
+        }
+      }
+    }
+  }
+
+  void SDLFrame::ProcessMouseMotion(const SDL_MouseMotionEvent & motion)
+  {
+    CardManager & cardManager = GetCardMgr();
+
+    if (cardManager.IsMouseCardInstalled() && cardManager.GetMouseCard()->IsActiveAndEnabled())
+    {
+      int iX, iMinX, iMaxX;
+      int iY, iMinY, iMaxY;
+      cardManager.GetMouseCard()->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
+
+      int width, height;
+      SDL_GetWindowSize(myWindow.get(), &width, &height);
+
+      const int newX = int((double(motion.x) / double(width)) * (iMaxX - iMinX) + iMinX);
+      const int newY = int((double(motion.y) / double(height)) * (iMaxY - iMinY) + iMinY);
+
+      const int dx = newX - iX;
+      const int dy = newY - iY;
+
+      int outOfBoundsX;
+      int outOfBoundsY;
+      cardManager.GetMouseCard()->SetPositionRel(dx, dy, &outOfBoundsX, &outOfBoundsY);
     }
   }
 
