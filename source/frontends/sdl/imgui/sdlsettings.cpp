@@ -3,6 +3,7 @@
 #include "frontends/sdl/imgui/settingshelper.h"
 #include "frontends/sdl/sdlframe.h"
 #include "linux/registry.h"
+#include "linux/version.h"
 
 #include "Interface.h"
 #include "CardManager.h"
@@ -601,6 +602,22 @@ namespace sa2
     ImGui::End();
   }
 
+  void ImGuiSettings::showAboutWindow()
+  {
+    if (ImGui::Begin("About", &myShowAbout, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+      ImGui::TextUnformatted("sa2: Apple ][ emulator for Linux");
+      ImGui::Text("Based on AppleWin %s", getVersion().c_str());
+
+      ImGui::Separator();
+      SDL_version sdl;
+      SDL_GetVersion(&sdl);
+      ImGui::Text("SDL version %d.%d.%d", sdl.major, sdl.minor, sdl.patch);
+      ImGui::Text("Dear ImGui %s", ImGui::GetVersion());
+    }
+    ImGui::End();
+  }
+
   void ImGuiSettings::show(SDLFrame * frame)
   {
     if (myShowSettings)
@@ -616,6 +633,11 @@ namespace sa2
     if (myShowDebugger)
     {
       showDebugger(frame);
+    }
+
+    if (myShowAbout)
+    {
+      showAboutWindow();
     }
 
     if (myShowDemo)
@@ -639,8 +661,14 @@ namespace sa2
         {
           DebugBegin();
         }
-        ImGui::Separator();
+        ImGui::EndMenu();
+      }
+
+      if (ImGui::BeginMenu("Help"))
+      {
         ImGui::MenuItem("Demo", nullptr, &myShowDemo);
+        ImGui::Separator();
+        ImGui::MenuItem("About", nullptr, &myShowAbout);
         ImGui::EndMenu();
       }
       ImGui::EndMainMenuBar();

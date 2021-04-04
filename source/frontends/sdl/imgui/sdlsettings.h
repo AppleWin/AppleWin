@@ -22,6 +22,7 @@ namespace sa2
     bool myShowMemory = false;
     bool myShowDebugger = false;
     bool mySyncCPU = true;
+    bool myShowAbout = false;
 
     int myStepCycles = 0;
     int mySpeakerVolume;
@@ -35,6 +36,7 @@ namespace sa2
     void showSettings(SDLFrame* frame);
     void showDebugger(SDLFrame* frame);
     void showMemory();
+    void showAboutWindow();
 
     void drawDisassemblyTable();
     void drawConsole();
