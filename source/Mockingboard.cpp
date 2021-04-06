@@ -131,6 +131,20 @@ struct SY6522_AY8910
 	SSI263 ssi263;
 	MockingboardUnitState_e state;	// Where a unit is a 6522+AY8910 pair
 	MockingboardUnitState_e stateB;	// Phasor: 6522 & 2nd AY8910
+
+	// SSI263 has a constructor, and so SY6522_AY8910 needs one too
+	// memset(0) is not guaranteed to work
+	SY6522_AY8910(void)
+	{
+		memset(&sy6522, 0, sizeof(sy6522));
+		nAY8910Number = 0;
+		nAYCurrentRegister = 0;
+		bTimer1Active = false;
+		bTimer2Active = false;
+		state = AY_NOP0;
+		stateB = AY_NOP0;
+		// ssi263 has already been default constructed
+	}
 };
 
 
@@ -1104,8 +1118,6 @@ void MB_Initialize()
 	}
 	else
 	{
-		memset(&g_MB,0,sizeof(g_MB));
-
 		for (UINT i=0; i<NUM_VOICES; i++)
 			ppAYVoiceBuffer[i] = new short [SAMPLE_RATE];	// Buffer can hold a max of 1 seconds worth of samples
 
@@ -1114,6 +1126,7 @@ void MB_Initialize()
 
 		for (UINT i=0; i<NUM_AY8910; i++)
 		{
+			g_MB[i] = SY6522_AY8910();
 			g_MB[i].nAY8910Number = i;
 			g_MB[i].ssi263.SetDevice(i);
 		}

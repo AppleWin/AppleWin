@@ -288,7 +288,7 @@ const BYTE SSI263::m_Votrax2SSI263[/*64*/] =
 void SSI263::Votrax_Write(BYTE value)
 {
 #if LOG_SC01
-	LogOutput("SC01: %02X\n", value);
+	LogOutput("SC01: %02X (= SSI263: %02X)\n", value, m_Votrax2SSI263[value & PHONEME_MASK]);
 #endif
 	m_isVotraxPhoneme = true;
 
@@ -314,9 +314,15 @@ void SSI263::Play(unsigned int nPhoneme)
 	if (m_dbgFirst)
 	{
 		m_dbgStartTime = g_nCumulativeCycles;
+#if LOG_SSI263 || LOG_SSI263B || LOG_SC01
 		LogOutput("1st phoneme = 0x%02X\n", nPhoneme);
+#endif
 	}
 
+#if LOG_SSI263 || LOG_SSI263B || LOG_SC01
+	if (m_currentActivePhoneme != -1)
+		LogOutput("Overlapping phonemes: current=%02X, next=%02X\n", m_currentActivePhoneme&0xff, nPhoneme&0xff);
+#endif
 	m_currentActivePhoneme = nPhoneme;
 
 	bool bPause = false;
@@ -381,7 +387,9 @@ void SSI263::Update(void)
 		{
 			// Willy Byte does SSI263 detection with drive motor on
 			m_phonemeLengthRemaining = 0;
+#if LOG_SSI263 || LOG_SSI263B || LOG_SC01
 			if (m_dbgFirst) LogOutput("1st phoneme short-circuited by fullspeed\n");
+#endif
 
 			if (m_phonemeAccurateLengthRemaining)
 				m_phonemeCompleteByFullSpeed = true;	// Let UpdateAccurateLength() call UpdateIRQ()
@@ -678,8 +686,10 @@ void SSI263::UpdateIRQ(void)
 
 	if (m_dbgFirst && m_dbgStartTime)
 	{
+#if LOG_SSI263 || LOG_SSI263B || LOG_SC01
 		UINT64 diff = g_nCumulativeCycles - m_dbgStartTime;
 		LogOutput("1st phoneme playback time = 0x%08X cy\n", (UINT32)diff);
+#endif
 		m_dbgFirst = false;
 	}
 
