@@ -208,6 +208,9 @@ private:
 	void InitFirmware(LPBYTE pCxRomPeripheral);
 	void UpdateLatchForEmptyDrive(FloppyDrive* pDrive);
 
+	void PreJitterCheck(int phase, BYTE latch);
+	void AddJitter(int phase, FloppyDisk& floppy);
+
 	void SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	void SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	bool LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version, std::vector<BYTE>& track);
@@ -274,6 +277,11 @@ private:
 
 	SEQUENCER_FUNCTION m_seqFunc;
 	UINT m_dbgLatchDelayedCnt;
+
+	// Jitter (GH#930)
+	static const BYTE m_T00S00Pattern[];
+	UINT m_T00S00PatternIdx;
+	bool m_foundT00S00Pattern;
 
 	// Debug:
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR

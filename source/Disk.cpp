@@ -54,6 +54,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // . if false && I/O ReadWrite($C0EC) && drive is spinning, then advance the track buffer's nibble index (to simulate spinning).
 // Also m_enhanceDisk is persisted to the save-state, so it's an attribute of the DiskII interface card.
 
+const BYTE Disk2InterfaceCard::m_T00S00Pattern[] = {0xD5,0xAA,0x96,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xDE};
+
 Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	Card(CT_Disk2),
 	m_slot(slot)
@@ -1043,6 +1045,9 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 	m_resetSequencer = true;
 	m_writeStarted = false;
 	m_dbgLatchDelayedCnt = 0;
+
+	m_T00S00PatternIdx = 0;
+	m_foundT00S00Pattern = false;
 }
 
 UINT Disk2InterfaceCard::GetBitCellDelta(const ULONG uExecutedCycles)
@@ -1127,6 +1132,38 @@ __forceinline void Disk2InterfaceCard::IncBitStream(FloppyDisk& floppy)
 	}
 }
 
+void Disk2InterfaceCard::PreJitterCheck(int phase, BYTE latch)
+{
+	if (phase == 0 && latch == m_T00S00Pattern[m_T00S00PatternIdx])
+	{
+		m_T00S00PatternIdx++;
+		if (m_T00S00PatternIdx == sizeof(m_T00S00Pattern))
+			m_foundT00S00Pattern = true;	// 6502 code has just read latch nibbles for T$00,S$00 address prologue
+	}
+}
+
+// GH#930: After T$00,S$00 randomly skip 1 bit-cell.
+// . PreJitterCheck() condition met && skipped a big number of bit-cells
+// . Fix just for 'Wasteland' and 'Legacy of the Ancients' (but shouldn't interfere with any other woz images)
+void Disk2InterfaceCard::AddJitter(int phase, FloppyDisk& floppy)
+{
+	if (phase == 0 && m_foundT00S00Pattern)
+	{
+		if (rand() < RAND_THRESHOLD(1, 10))
+		{
+			LOG_DISK("Disk: T$00 jitter - slip 1 bitcell (PC=%04X)\n", regs.pc);
+			IncBitStream(floppy);
+		}
+		else
+		{
+			LOG_DISK("Disk: T$00 jitter - ***  SKIP  *** (PC=%04X)\n", regs.pc);
+		}
+	}
+
+	m_T00S00PatternIdx = 0;
+	m_foundT00S00Pattern = false;
+}
+
 void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, ULONG uExecutedCycles)
 {
 	_ASSERT(m_seqFunc.function != dataShiftWrite);
@@ -1163,30 +1200,15 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	}
 	else
 	{
-		const UINT dbgBitCellDelta = bitCellDelta;
-		const UINT dbgOldBitOffset = floppy.m_bitOffset;
 		bitCellRemainder = significantBitCells;
 		bitCellDelta -= significantBitCells;
 
 		UpdateBitStreamPosition(floppy, bitCellDelta);
-		if (drive.m_phase == 0)
-		{
-			LogOutput("Disk: T$00 big gap:                (PC=%04X), bitCellDelta=%08X, old,new offset=%04X,%04X\n", regs.pc, dbgBitCellDelta, dbgOldBitOffset, floppy.m_bitOffset);
-		}
 
 		m_latchDelay = 0;
 		drive.m_headWindow = 0;
 
-//		if (drive.m_phase == 0 && dbgBitCellDelta == 0x91E)
-		if (drive.m_phase == 0 && (rand() < RAND_THRESHOLD(1, 10)))
-		{
-//			DecBitStream(floppy);
-			IncBitStream(floppy);
-#if 1	//LOG_DISK_TRK00_JITTER
-//			LOG_DISK("Disk: T$00 jitter - slip 1 bitcell (PC=%04X)\n", regs.pc);
-			LogOutput("Disk: T$00 jitter - slip 1 bitcell (PC=%04X)\n", regs.pc);
-#endif
-		}
+		AddJitter(drive.m_phase, floppy);	// Only call when skipping a big number of bit-cells (ie. >significantBitCells)
 	}
 
 	if (!bWrite)
@@ -1199,6 +1221,8 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 		}
 
 		DataLatchReadWOZ(pc, addr, bitCellRemainder);
+
+		PreJitterCheck(drive.m_phase, m_floppyLatch);	// Pre: m_floppyLatch just updated
 	}
 	else
 	{
@@ -1224,23 +1248,11 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 #if _DEBUG
 	static int dbgWOZ = 0;
-
 	if (dbgWOZ)
 	{
 		dbgWOZ = 0;
 		DumpTrackWOZ(floppy);	// Enable as necessary
 	}
-#endif
-
-#if 0
-	// Only extraCycles of 2 & 3 can hold the latch for another bitCell period, eg. m_latchDelay: 3->5 or 7->9
-	UINT extraLatchDelay = ((UINT)floppy.m_extraCycles >= 2) ? 2 : 0;	// GH#733 (0,1->0; 2,3->2)
-
-	// GH#921: An extension to the Wasteland (and LOA) fix to support "Gruds in Space":
-	// 30% chance of 1 cycle (for "Gruds in Space side A.woz") / 70% chance of 2 cycles (helps with "Wasteland - Boot #1.woz" booting faster!)
-	// NB. When 50/50 then "Wasteland - Boot #1.woz" takes many retries to boot past T$00,S$00
-	if (extraLatchDelay)
-		extraLatchDelay = (rand() < RAND_THRESHOLD(3, 10)) ? 1 : 2;
 #endif
 
 	for (UINT i = 0; i < bitCellRemainder; i++)
@@ -1267,12 +1279,6 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 		if (m_latchDelay)
 		{
-#if 0
-			if (i == bitCellRemainder-1)			// On last bitCell
-				m_latchDelay += extraLatchDelay;	// +0 or +2
-			extraLatchDelay = 0;					// and always clear (even when not last bitCell)
-#endif
-
 			m_latchDelay -= 4;
 			if (m_latchDelay < 0)
 				m_latchDelay = 0;
