@@ -196,7 +196,6 @@ private:
 	UINT GetBitCellDelta(const ULONG uExecutedCycles);
 	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
 	void UpdateBitStreamOffsets(FloppyDisk& floppy);
-	void DecBitStream(FloppyDisk& floppy);
 	__forceinline void IncBitStream(FloppyDisk& floppy);
 	void DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder);

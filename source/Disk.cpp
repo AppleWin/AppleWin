@@ -1105,15 +1105,6 @@ void Disk2InterfaceCard::UpdateBitStreamOffsets(FloppyDisk& floppy)
 	floppy.m_bitMask = 1 << remainder;
 }
 
-void Disk2InterfaceCard::DecBitStream(FloppyDisk& floppy)
-{
-	if (floppy.m_bitOffset == 0)
-		floppy.m_bitOffset = floppy.m_bitCount;
-	floppy.m_bitOffset--;
-
-	UpdateBitStreamOffsets(floppy);
-}
-
 __forceinline void Disk2InterfaceCard::IncBitStream(FloppyDisk& floppy)
 {
 	floppy.m_bitMask >>= 1;
