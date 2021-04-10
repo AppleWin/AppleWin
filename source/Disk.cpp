@@ -54,6 +54,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // . if false && I/O ReadWrite($C0EC) && drive is spinning, then advance the track buffer's nibble index (to simulate spinning).
 // Also m_enhanceDisk is persisted to the save-state, so it's an attribute of the DiskII interface card.
 
+// NB. Non-standard 4&4, with Vol=0x00 and Chk=0x00 (only a few match, eg. Wasteland, Legacy of the Ancients, Planetfall, Border Zone & Wizardry). [*1]
+const BYTE Disk2InterfaceCard::m_T00S00Pattern[] = {0xD5,0xAA,0x96,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xDE};
+
 Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	Card(CT_Disk2),
 	m_slot(slot)
@@ -1043,6 +1046,9 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 	m_resetSequencer = true;
 	m_writeStarted = false;
 	m_dbgLatchDelayedCnt = 0;
+
+	m_T00S00PatternIdx = 0;
+	m_foundT00S00Pattern = false;
 }
 
 UINT Disk2InterfaceCard::GetBitCellDelta(const ULONG uExecutedCycles)
@@ -1118,6 +1124,48 @@ __forceinline void Disk2InterfaceCard::IncBitStream(FloppyDisk& floppy)
 	}
 }
 
+void Disk2InterfaceCard::PreJitterCheck(int phase, BYTE latch)
+{
+	if (phase != 0 || (latch & 0x80) == 0)
+		return;
+
+	if (latch == m_T00S00Pattern[m_T00S00PatternIdx])
+	{
+		m_T00S00PatternIdx++;
+		if (m_T00S00PatternIdx == sizeof(m_T00S00Pattern))
+			m_foundT00S00Pattern = true;	// 6502 code has just read latch nibbles for T$00,S$00 address prologue
+	}
+	else
+	{
+		m_T00S00PatternIdx = 0;
+	}
+}
+
+// GH#930: After T$00,S$00 randomly skip 1 bit-cell.
+// . PreJitterCheck() condition met && skipped a big number of bit-cells.
+// . Fix is just for 'Wasteland' and 'Legacy of the Ancients' (but shouldn't interfere with any other woz images).
+// . NB. This is likely to be the transition from DiskII firmware ($C6xx) to user-code ($801),
+//   so skipping 1 bit-cell here shouldn't matter.
+// . And (see comment [*1]) the T00S00 pattern only matches a handful of titles.
+void Disk2InterfaceCard::AddJitter(int phase, FloppyDisk& floppy)
+{
+	if (phase == 0 && m_foundT00S00Pattern)
+	{
+		if (rand() < RAND_THRESHOLD(1, 10))
+		{
+			LogOutput("Disk: T$00 jitter - slip 1 bitcell (PC=%04X)\n", regs.pc);
+			IncBitStream(floppy);
+		}
+		else
+		{
+			LogOutput("Disk: T$00 jitter - ***  SKIP  *** (PC=%04X)\n", regs.pc);
+		}
+	}
+
+	m_T00S00PatternIdx = 0;
+	m_foundT00S00Pattern = false;
+}
+
 void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, ULONG uExecutedCycles)
 {
 	_ASSERT(m_seqFunc.function != dataShiftWrite);
@@ -1161,6 +1209,8 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 
 		m_latchDelay = 0;
 		drive.m_headWindow = 0;
+
+		AddJitter(drive.m_phase, floppy);	// Only call when skipping a big number of bit-cells (ie. >significantBitCells)
 	}
 
 	if (!bWrite)
@@ -1173,6 +1223,8 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 		}
 
 		DataLatchReadWOZ(pc, addr, bitCellRemainder);
+
+		PreJitterCheck(drive.m_phase, m_floppyLatch);	// Pre: m_floppyLatch just updated
 	}
 	else
 	{
@@ -1198,16 +1250,12 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 #if _DEBUG
 	static int dbgWOZ = 0;
-
 	if (dbgWOZ)
 	{
 		dbgWOZ = 0;
 		DumpTrackWOZ(floppy);	// Enable as necessary
 	}
 #endif
-
-	// Only extraCycles of 2 & 3 can hold the latch for another bitCell period, eg. m_latchDelay: 3->5 or 7->9
-	UINT extraLatchDelay = ((UINT)floppy.m_extraCycles >= 2) ? 2 : 0;	// GH#733 (0,1->0; 2,3->2)
 
 	for (UINT i = 0; i < bitCellRemainder; i++)
 	{
@@ -1233,10 +1281,6 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 		if (m_latchDelay)
 		{
-			if (i == bitCellRemainder-1)			// On last bitCell
-				m_latchDelay += extraLatchDelay;	// +0 or +2
-			extraLatchDelay = 0;					// and always clear (even when not last bitCell)
-
 			m_latchDelay -= 4;
 			if (m_latchDelay < 0)
 				m_latchDelay = 0;
