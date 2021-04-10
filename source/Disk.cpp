@@ -57,7 +57,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // NB. Non-standard 4&4, with Vol=0x00 and Chk=0x00 (only a few match, eg. Wasteland, Legacy of the Ancients, Planetfall, Border Zone & Wizardry). [*1]
 const BYTE Disk2InterfaceCard::m_T00S00Pattern[] = {0xD5,0xAA,0x96,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xDE};
 
-
 Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	Card(CT_Disk2),
 	m_slot(slot)
