@@ -195,9 +195,6 @@ static const SHORT nWaveDataMax = (SHORT)0x7FFF;
 static short g_nMixBuffer[g_dwDSBufferSize / sizeof(short)];
 static VOICE MockingboardVoice;
 
-static bool g_bCritSectionValid = false;	// Deleting CritialSection when not valid causes crash on Win98
-static CRITICAL_SECTION g_CriticalSection;	// To guard 6522's IFR
-
 static UINT g_cyclesThisAudioFrame = 0;
 
 //---------------------------------------------------------------------------
@@ -577,19 +574,13 @@ static USHORT SetTimerSyncEvent(UINT id, BYTE reg, USHORT timerLatch)
 
 static void UpdateIFR(SY6522_AY8910* pMB, BYTE clr_ifr, BYTE set_ifr=0)
 {
-	// Need critical section to avoid data-race: main thread & SSI263Thread can both access IFR -- no longer a SSI263Thread
-	// . NB. Loading a save-state just directly writes into 6522.IFR (which is fine)
-	if (g_bCritSectionValid) EnterCriticalSection(&g_CriticalSection);
-	{
-		pMB->sy6522.IFR &= ~clr_ifr;
-		pMB->sy6522.IFR |= set_ifr;
+	pMB->sy6522.IFR &= ~clr_ifr;
+	pMB->sy6522.IFR |= set_ifr;
 
-		if (pMB->sy6522.IFR & pMB->sy6522.IER & 0x7F)
-			pMB->sy6522.IFR |= 0x80;
-		else
-			pMB->sy6522.IFR &= 0x7F;
-	}
-	if (g_bCritSectionValid) LeaveCriticalSection(&g_CriticalSection);
+	if (pMB->sy6522.IFR & pMB->sy6522.IER & 0x7F)
+		pMB->sy6522.IFR |= 0x80;
+	else
+		pMB->sy6522.IFR &= 0x7F;
 
 	// Now update the IRQ signal from all 6522s
 	// . OR-sum of all active TIMER1, TIMER2 & SPEECH sources (from all 6522s)
@@ -1140,9 +1131,6 @@ void MB_Initialize()
 		LogFileOutput("MB_Initialize: MB_Reset()\n");
 	}
 
-	InitializeCriticalSection(&g_CriticalSection);
-	g_bCritSectionValid = true;
-
 	for (int id=0; id<kNumSyncEvents; id++)
 	{
 		g_syncEvent[id] = new SyncEvent(id, 0, MB_SyncEventCallback);
@@ -1184,12 +1172,6 @@ void MB_Destroy()
 
 	for (int i=0; i<NUM_VOICES; i++)
 		delete [] ppAYVoiceBuffer[i];
-
-	if (g_bCritSectionValid)
-	{
-		DeleteCriticalSection(&g_CriticalSection);
-		g_bCritSectionValid = false;
-	}
 
 	for (int id=0; id<kNumSyncEvents; id++)
 	{
