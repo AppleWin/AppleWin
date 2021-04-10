@@ -54,7 +54,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // . if false && I/O ReadWrite($C0EC) && drive is spinning, then advance the track buffer's nibble index (to simulate spinning).
 // Also m_enhanceDisk is persisted to the save-state, so it's an attribute of the DiskII interface card.
 
-const BYTE Disk2InterfaceCard::m_T00S00Pattern[] = {0xD5,0xAA,0x96,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xDE};
+const Disk2InterfaceCard::VALUE_MASK Disk2InterfaceCard::m_T00S00Pattern[] = {
+	{0xD5,0xFF},
+	{0xAA,0xFF},
+	{0x96,0xFF},
+	{0x80,0x80},
+	{0x80,0x80},
+	{0xAA,0xFF},
+	{0xAA,0xFF},
+	{0xAA,0xFF},
+	{0xAA,0xFF},
+	{0x80,0x80},
+	{0x80,0x80},
+	{0x80,0x80}};
 
 Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	Card(CT_Disk2),
@@ -1125,11 +1137,18 @@ __forceinline void Disk2InterfaceCard::IncBitStream(FloppyDisk& floppy)
 
 void Disk2InterfaceCard::PreJitterCheck(int phase, BYTE latch)
 {
-	if (phase == 0 && latch == m_T00S00Pattern[m_T00S00PatternIdx])
+	if (phase != 0 || (latch & 0x80) == 0)
+		return;
+
+	if ((latch & m_T00S00Pattern[m_T00S00PatternIdx].mask) == m_T00S00Pattern[m_T00S00PatternIdx].value)
 	{
 		m_T00S00PatternIdx++;
-		if (m_T00S00PatternIdx == sizeof(m_T00S00Pattern))
+		if (m_T00S00PatternIdx == sizeof(m_T00S00Pattern)/sizeof(Disk2InterfaceCard::VALUE_MASK))
 			m_foundT00S00Pattern = true;	// 6502 code has just read latch nibbles for T$00,S$00 address prologue
+	}
+	else
+	{
+		m_T00S00PatternIdx = 0;
 	}
 }
 
@@ -1140,14 +1159,15 @@ void Disk2InterfaceCard::AddJitter(int phase, FloppyDisk& floppy)
 {
 	if (phase == 0 && m_foundT00S00Pattern)
 	{
+		//if (true)//if (false)
 		if (rand() < RAND_THRESHOLD(1, 10))
 		{
-			LOG_DISK("Disk: T$00 jitter - slip 1 bitcell (PC=%04X)\n", regs.pc);
+			LogOutput("Disk: T$00 jitter - slip 1 bitcell (PC=%04X)\n", regs.pc);
 			IncBitStream(floppy);
 		}
 		else
 		{
-			LOG_DISK("Disk: T$00 jitter - ***  SKIP  *** (PC=%04X)\n", regs.pc);
+			LogOutput("Disk: T$00 jitter - ***  SKIP  *** (PC=%04X)\n", regs.pc);
 		}
 	}
 
