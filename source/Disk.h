@@ -278,12 +278,7 @@ private:
 	UINT m_dbgLatchDelayedCnt;
 
 	// Jitter (GH#930)
-	struct VALUE_MASK
-	{
-		BYTE value;
-		BYTE mask;
-	};
-	static const VALUE_MASK m_T00S00Pattern[];
+	static const BYTE m_T00S00Pattern[];
 	UINT m_T00S00PatternIdx;
 	bool m_foundT00S00Pattern;
 

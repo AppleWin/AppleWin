@@ -54,19 +54,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // . if false && I/O ReadWrite($C0EC) && drive is spinning, then advance the track buffer's nibble index (to simulate spinning).
 // Also m_enhanceDisk is persisted to the save-state, so it's an attribute of the DiskII interface card.
 
-const Disk2InterfaceCard::VALUE_MASK Disk2InterfaceCard::m_T00S00Pattern[] = {
-	{0xD5,0xFF},
-	{0xAA,0xFF},
-	{0x96,0xFF},
-	{0x80,0x80},
-	{0x80,0x80},
-	{0xAA,0xFF},
-	{0xAA,0xFF},
-	{0xAA,0xFF},
-	{0xAA,0xFF},
-	{0x80,0x80},
-	{0x80,0x80},
-	{0x80,0x80}};
+// NB. Non-standard 4&4, with Vol=0x00 and Chk=0x00 (only a few match, eg. Wasteland, Legacy of the Ancients, Planetfall, Border Zone & Wizardry). [*1]
+const BYTE Disk2InterfaceCard::m_T00S00Pattern[] = {0xD5,0xAA,0x96,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xDE};
 
 Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	Card(CT_Disk2),
@@ -1140,10 +1129,10 @@ void Disk2InterfaceCard::PreJitterCheck(int phase, BYTE latch)
 	if (phase != 0 || (latch & 0x80) == 0)
 		return;
 
-	if ((latch & m_T00S00Pattern[m_T00S00PatternIdx].mask) == m_T00S00Pattern[m_T00S00PatternIdx].value)
+	if (latch == m_T00S00Pattern[m_T00S00PatternIdx])
 	{
 		m_T00S00PatternIdx++;
-		if (m_T00S00PatternIdx == sizeof(m_T00S00Pattern)/sizeof(Disk2InterfaceCard::VALUE_MASK))
+		if (m_T00S00PatternIdx == sizeof(m_T00S00Pattern))
 			m_foundT00S00Pattern = true;	// 6502 code has just read latch nibbles for T$00,S$00 address prologue
 	}
 	else
@@ -1153,13 +1142,15 @@ void Disk2InterfaceCard::PreJitterCheck(int phase, BYTE latch)
 }
 
 // GH#930: After T$00,S$00 randomly skip 1 bit-cell.
-// . PreJitterCheck() condition met && skipped a big number of bit-cells
-// . Fix just for 'Wasteland' and 'Legacy of the Ancients' (but shouldn't interfere with any other woz images)
+// . PreJitterCheck() condition met && skipped a big number of bit-cells.
+// . Fix is just for 'Wasteland' and 'Legacy of the Ancients' (but shouldn't interfere with any other woz images).
+// . NB. This is likely to be the transition from DiskII firmware ($C6xx) to user-code ($801),
+//   so skipping 1 bit-cell here shouldn't matter.
+// . And (see comment [*1]) the T00S00 pattern only matches a handful of titles.
 void Disk2InterfaceCard::AddJitter(int phase, FloppyDisk& floppy)
 {
 	if (phase == 0 && m_foundT00S00Pattern)
 	{
-		//if (true)//if (false)
 		if (rand() < RAND_THRESHOLD(1, 10))
 		{
 			LogOutput("Disk: T$00 jitter - slip 1 bitcell (PC=%04X)\n", regs.pc);
