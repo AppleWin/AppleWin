@@ -33,13 +33,15 @@ been modified.
 
 ##  What works
 
-Almost everythign works, except:
+Almost everything works, except:
 
 * ethernet
 * serial port
 * debugger (work started to port it)
 
-The rest is working very well.
+The UI has been rewritten in Qt or ImGui.
+
+The rest works very well.
 
 ## Executables
 
