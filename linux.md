@@ -29,29 +29,27 @@ The libapple interface is a *link time* interface: some functions are not define
 the application. These functions are listed in [interface.h](source/linux/interface.h).
 
 The main goal is to reuse the AppleWin source files without changes: only where really necessary the AppleWin source files have
-been modified, mostly for
-
-* header files issues
-* const char *
-* exclude some Windows heavy blocks (source/MouseInterface.cpp)
+been modified.
 
 ##  What works
 
-Some key files have been completely reimplemented or discarded:
-
-* AppleWin.cpp
-* WinFrame.cpp
-* WinVideo.cpp
-
-Some features totally ignored:
+Almost everythign works, except:
 
 * ethernet
 * serial port
-* debugger
+* debugger (work started to port it)
 
-The rest is in a very usable state.
+The rest is working very well.
 
 ## Executables
+
+### sa2
+
+This is your best choice, in particular the ImGui version.
+
+TL;DR: ``sa2 --imgui``
+
+See [sa2](source/frontends/sdl/README.md) for more details.
 
 ### applen
 
@@ -85,10 +83,6 @@ This is based on Qt.
 * full speed when disk spins execute up to 5 ms real wall clock of emulator code (then returns to Qt)
 * (standard) audio is supported and there are a few configuration options to tune the latency (default very conservative 200ms)
 * Open Apple and Solid Apple can be emulated using AltGr and Menu (unfortunately, Alt does not work well)
-
-### sa2
-
-See [sa2](source/frontends/sdl/README.md).
 
 ### ra2
 
