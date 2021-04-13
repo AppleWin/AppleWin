@@ -25,9 +25,6 @@ There are 4 projects
 * sa2: SDL2 frontend
 * libra2: a libretro core
 
-The libapple interface is a *link time* interface: some functions are not defined and must be provided in order to properly link
-the application. These functions are listed in [interface.h](source/linux/interface.h).
-
 The main goal is to reuse the AppleWin source files without changes: only where really necessary the AppleWin source files have
 been modified.
 
