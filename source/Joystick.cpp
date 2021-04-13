@@ -345,14 +345,13 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 
 	BOOL keychange = 0;
 	bool bIsCursorKey = false;
-	const bool swapButtons0and1 = GetPropertySheet().GetButtonsSwapState();
 
-	if (virtKeyWithExtended == g_buttonVirtKey[!swapButtons0and1 ? 0 : 1])
+	if (virtKeyWithExtended == g_buttonVirtKey[0])
 	{
 		keychange = 1;
 		keydown[JK_OPENAPPLE] = down;
 	}
-	else if (virtKeyWithExtended == g_buttonVirtKey[!swapButtons0and1 ? 1 : 0])
+	else if (virtKeyWithExtended == g_buttonVirtKey[1])
 	{
 		keychange = 1;
 		keydown[JK_CLOSEDAPPLE] = down;
@@ -367,7 +366,7 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 			{
 				keydown[virtkey-VK_NUMPAD1] = down;
 			}
-			else														// NumLock off
+			else														// NumLock off (except for '0' and '.')
 			{
 				switch (virtkey)
 				{
@@ -380,8 +379,10 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 				case VK_HOME:    keydown[JK_UPLEFT] = down;		break;
 				case VK_UP:      keydown[JK_UP] = down;			break;
 				case VK_PRIOR:   keydown[JK_UPRIGHT] = down;	break;
-				case VK_NUMPAD0: keydown[JK_BUTTON0] = down;	break;
-				case VK_DECIMAL: keydown[JK_BUTTON1] = down;	break;
+				case VK_INSERT:  // fall through... (NB. extended=0 for NumPad's Insert)
+				case VK_NUMPAD0: keydown[JK_BUTTON0] = down;	break;	// NumLock on
+				case VK_DELETE:  // fall through... (NB. extended=0 for NumPad's Delete)
+				case VK_DECIMAL: keydown[JK_BUTTON1] = down;	break;	// NumLock on
 				default:         keychange = 0;					break;
 				}
 			}
@@ -502,8 +503,8 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 
 static void DoAutofire(UINT uButton, BOOL& pressed)
 {
-	static BOOL toggle[3] = {0};
-	static BOOL lastPressed[3] = {0};
+	static BOOL toggle[3] = {0,0,0};
+	static BOOL lastPressed[3] = {0,0,0};
 
 	BOOL nowPressed = pressed;
 	if (GetPropertySheet().GetAutofire(uButton) && pressed)
@@ -565,6 +566,32 @@ BYTE __stdcall JoyportReadButton(WORD address, ULONG nExecutedCycles)
 	return MemReadFloatingBus(pressed, nExecutedCycles);
 }
 
+static BOOL CheckButton0Pressed(void)
+{
+	BOOL pressed =	buttonlatch[0] ||
+					joybutton[0] ||
+					setbutton[0] ||
+					keydown[JK_OPENAPPLE];
+
+	if (joyinfo[joytype[1]] != DEVICE_KEYBOARD)	// NB. always joytype[1] regardless if button is 0 or 1
+		pressed = pressed || keydown[JK_BUTTON0];
+
+	return pressed;
+}
+
+static BOOL CheckButton1Pressed(void)
+{
+	BOOL pressed =	buttonlatch[1] ||
+					joybutton[1] ||
+					setbutton[1] ||
+					keydown[JK_CLOSEDAPPLE];
+
+	if (joyinfo[joytype[1]] != DEVICE_KEYBOARD)	// NB. always joytype[1] regardless if button is 0 or 1
+		pressed = pressed || keydown[JK_BUTTON1];
+
+	return pressed;
+}
+
 BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedCycles)
 {
 	address &= 0xFF;
@@ -581,23 +608,27 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedC
 			return JoyportReadButton(address, nExecutedCycles);
 	}
 
-	BOOL pressed = 0;
+	const bool swapButtons0and1 = GetPropertySheet().GetButtonsSwapState();
+
+	BOOL pressed = FALSE;
 	switch (address)
 	{
 		case 0x61:
-			pressed = (buttonlatch[0] || joybutton[0] || setbutton[0] || keydown[JK_OPENAPPLE]);
-			if(joyinfo[joytype[1]] != DEVICE_KEYBOARD)	// BUG? joytype[1] should be [0] ?
-				pressed = (pressed || keydown[JK_BUTTON0]);
-			buttonlatch[0] = 0;
-			DoAutofire(0, pressed);
+			{
+				pressed = !swapButtons0and1 ? CheckButton0Pressed() : CheckButton1Pressed();
+				const UINT button0 = !swapButtons0and1 ? 0 : 1;
+				buttonlatch[button0] = 0;
+				DoAutofire(button0, pressed);
+			}
 			break;
 
 		case 0x62:
-			pressed = (buttonlatch[1] || joybutton[1] || setbutton[1] || keydown[JK_CLOSEDAPPLE]);
-			if(joyinfo[joytype[1]] != DEVICE_KEYBOARD)
-				pressed = (pressed || keydown[JK_BUTTON1]);
-			buttonlatch[1] = 0;
-			DoAutofire(1, pressed);
+			{
+				pressed = !swapButtons0and1 ? CheckButton1Pressed() : CheckButton0Pressed();
+				const UINT button1 = !swapButtons0and1 ? 1 : 0;
+				buttonlatch[button1] = 0;
+				DoAutofire(button1, pressed);
+			}
 			break;
 
 		case 0x63:
