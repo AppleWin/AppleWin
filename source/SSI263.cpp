@@ -295,7 +295,9 @@ void SSI263::Votrax_Write(BYTE value)
 	// !A/R: Acknowledge receipt of phoneme data (signal goes from high to low)
 	MB_UpdateIFR(m_device, IxR_VOTRAX, 0);
 
-	m_durationPhoneme = value;	// Set reg0.DUR = I1:0 (inflection or pitch)
+	// NB. Don't set reg0.DUR, as SC01's phoneme duration doesn't change with pitch (empirically determined from MAME's SC01 emulation)
+	//m_durationPhoneme = value;	// Set reg0.DUR = I1:0 (inflection or pitch)
+	m_durationPhoneme = 0;
 	Play(m_Votrax2SSI263[value & PHONEME_MASK]);
 }
 
