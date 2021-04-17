@@ -249,7 +249,10 @@ int tfe_arch_enumadapter(char **ppname, char **ppdescription)
         return 0;
 
     *ppname = lib_stralloc(TfePcapNextDev->name);
-    *ppdescription = lib_stralloc(TfePcapNextDev->description);
+    if (TfePcapNextDev->description)
+        *ppdescription = lib_stralloc(TfePcapNextDev->description);
+    else
+        *ppdescription = lib_stralloc(TfePcapNextDev->name);
 
     TfePcapNextDev = TfePcapNextDev->next;
 
