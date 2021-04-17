@@ -148,6 +148,13 @@ BOOL TfePcapLoadLibrary(void)
 
 static BOOL TfePcapLoadLibrary(void)
 {
+    static bool loaded = false;
+    if (!loaded)
+    {
+        loaded = true;
+        LogOutput("%s\n", p_pcap_lib_version());
+        LogFileOutput("%s\n", p_pcap_lib_version());
+    }
     return TRUE;
 }
 
