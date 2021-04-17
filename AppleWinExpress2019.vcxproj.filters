@@ -142,13 +142,13 @@
     <ClCompile Include="source\Tape.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
-    <ClCompile Include="source\Tfe\Tfe.cpp">
+    <ClCompile Include="source\Tfe\tfe.cpp">
       <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
-    <ClCompile Include="source\Tfe\Tfearch.cpp">
+    <ClCompile Include="source\Tfe\tfearch.cpp">
       <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
-    <ClCompile Include="source\Tfe\Tfesupp.cpp">
+    <ClCompile Include="source\Tfe\tfesupp.cpp">
       <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
     <ClCompile Include="source\Tfe\Uilib.cpp">
@@ -426,13 +426,13 @@
     <ClInclude Include="source\Tape.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
-    <ClInclude Include="source\Tfe\Tfe.h">
+    <ClInclude Include="source\Tfe\tfe.h">
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
-    <ClInclude Include="source\Tfe\Tfearch.h">
+    <ClInclude Include="source\Tfe\tfearch.h">
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
-    <ClInclude Include="source\Tfe\Tfesupp.h">
+    <ClInclude Include="source\Tfe\tfesupp.h">
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
     <ClInclude Include="source\Tfe\Uilib.h">

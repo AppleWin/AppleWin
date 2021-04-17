@@ -28,8 +28,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Common.h"
 #include "../Registry.h"
 #include "../resource/resource.h"
-#include "../Tfe/Tfe.h"
-#include "../Tfe/Tfesupp.h"
+#include "../Tfe/tfe.h"
+#include "../Tfe/tfesupp.h"
 
 CPageConfigTfe* CPageConfigTfe::ms_this = 0;	// reinit'd in ctor
 

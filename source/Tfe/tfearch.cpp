@@ -34,11 +34,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <StdAfx.h> // this is necessary in linux, but in MSVC windows.h MUST come after winsock2.h (from pcap.h above)
 #include "tfe.h"
 #include "tfearch.h"
 #include "tfesupp.h"
 #include "../Log.h"
 
+
+/** #define TFE_DEBUG_ARCH 1 **/
+/** #define TFE_DEBUG_PKTDUMP 1 **/
+
+/* #define TFE_DEBUG_FRAMES - might be defined in TFE.H! */
+
+#define TFE_DEBUG_WARN 1 /* this should not be deactivated */
+
+#ifdef _MSC_VER
 
 typedef pcap_t	*(*pcap_open_live_t)(const char *, int, int, int, char *);
 typedef int (*pcap_dispatch_t)(pcap_t *, int, pcap_handler, u_char *);
@@ -48,13 +58,6 @@ typedef int (*pcap_findalldevs_t)(pcap_if_t **, char *);
 typedef void (*pcap_freealldevs_t)(pcap_if_t *);
 typedef int (*pcap_sendpacket_t)(pcap_t *p, u_char *buf, int size);
 typedef const char *(*pcap_lib_version_t)(void);
-
-/** #define TFE_DEBUG_ARCH 1 **/
-/** #define TFE_DEBUG_PKTDUMP 1 **/
-
-/* #define TFE_DEBUG_FRAMES - might be defined in TFE.H! */
-
-#define TFE_DEBUG_WARN 1 /* this should not be deactivated */
 
 static pcap_open_live_t   p_pcap_open_live;
 static pcap_dispatch_t    p_pcap_dispatch;
@@ -66,46 +69,6 @@ static pcap_datalink_t p_pcap_datalink;
 static pcap_lib_version_t p_pcap_lib_version;
 
 static HINSTANCE pcap_library = NULL;
-
-
-/* ------------------------------------------------------------------------- */
-/*    variables needed                                                       */
-
-
-//static log_t g_fh = g_fh;
-
-
-static pcap_if_t *TfePcapNextDev = NULL;
-static pcap_if_t *TfePcapAlldevs = NULL;
-static pcap_t *TfePcapFP = NULL;
-
-static char TfePcapErrbuf[PCAP_ERRBUF_SIZE];
-
-#ifdef TFE_DEBUG_PKTDUMP
-
-static
-void debug_output( const char *text, BYTE *what, int count )
-{
-    char buffer[256];
-    char *p = buffer;
-    char *pbuffer1 = what;
-    int len1 = count;
-    int i;
-
-    sprintf(buffer, "\n%s: length = %u\n", text, len1);
-    OutputDebugString(buffer);
-    do {
-        p = buffer;
-        for (i=0; (i<8) && len1>0; len1--, i++) {
-            sprintf( p, "%02x ", (unsigned int)(unsigned char)*pbuffer1++);
-            p += 3;
-        }
-        *(p-1) = '\n'; *p = 0;
-        OutputDebugString(buffer);
-    } while (len1>0);
-}
-#endif // #ifdef TFE_DEBUG_PKTDUMP
-
 
 static
 void TfePcapFreeLibrary(void)
@@ -171,7 +134,62 @@ BOOL TfePcapLoadLibrary(void)
 
 #undef GET_PROC_ADDRESS_AND_TEST
 
+#else
 
+// libpcap is a standard package, just link to it
+#define p_pcap_open_live pcap_open_live
+#define p_pcap_dispatch pcap_dispatch
+#define p_pcap_setnonblock pcap_setnonblock
+#define p_pcap_findalldevs pcap_findalldevs
+#define p_pcap_freealldevs pcap_freealldevs
+#define p_pcap_sendpacket pcap_sendpacket
+#define p_pcap_datalink pcap_datalink
+#define p_pcap_lib_version pcap_lib_version
+
+static BOOL TfePcapLoadLibrary(void)
+{
+    return TRUE;
+}
+
+#endif
+
+/* ------------------------------------------------------------------------- */
+/*    variables needed                                                       */
+
+
+//static log_t g_fh = g_fh;
+
+
+static pcap_if_t *TfePcapNextDev = NULL;
+static pcap_if_t *TfePcapAlldevs = NULL;
+static pcap_t *TfePcapFP = NULL;
+
+static char TfePcapErrbuf[PCAP_ERRBUF_SIZE];
+
+#ifdef TFE_DEBUG_PKTDUMP
+
+static
+void debug_output( const char *text, BYTE *what, int count )
+{
+    char buffer[256];
+    char *p = buffer;
+    char *pbuffer1 = what;
+    int len1 = count;
+    int i;
+
+    sprintf(buffer, "\n%s: length = %u\n", text, len1);
+    OutputDebugString(buffer);
+    do {
+        p = buffer;
+        for (i=0; (i<8) && len1>0; len1--, i++) {
+            sprintf( p, "%02x ", (unsigned int)(unsigned char)*pbuffer1++);
+            p += 3;
+        }
+        *(p-1) = '\n'; *p = 0;
+        OutputDebugString(buffer);
+    } while (len1>0);
+}
+#endif // #ifdef TFE_DEBUG_PKTDUMP
 
 static
 void TfePcapCloseAdapter(void) 
