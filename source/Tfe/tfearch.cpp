@@ -228,13 +228,13 @@ int tfe_arch_enumadapter_open(void)
 
     if ((*p_pcap_findalldevs)(&TfePcapAlldevs, TfePcapErrbuf) == -1)
     {
-        if(g_fh) fprintf(g_fh, "ERROR in TfeEnumAdapterOpen: pcap_findalldevs: '%s'", TfePcapErrbuf);
+        if(g_fh) fprintf(g_fh, "ERROR in TfeEnumAdapterOpen: pcap_findalldevs: '%s'\n", TfePcapErrbuf);
         return 0;
     }
 
 	if (!TfePcapAlldevs) {
         if(g_fh) fprintf(g_fh, "ERROR in TfeEnumAdapterOpen, finding all pcap devices - "
-			"Do we have the necessary privilege rights?");
+			"Do we have the necessary privilege rights?\n");
 		return 0;
 	}
 
@@ -306,20 +306,20 @@ BOOL TfePcapOpenAdapter(const char *interface_name)
     TfePcapFP = (*p_pcap_open_live)(TfePcapDevice->name, 1700, 1, 20, TfePcapErrbuf);
     if ( TfePcapFP == NULL)
     {
-        if(g_fh) fprintf(g_fh, "ERROR opening adapter: '%s'", TfePcapErrbuf);
+        if(g_fh) fprintf(g_fh, "ERROR opening adapter: '%s'\n", TfePcapErrbuf);
         tfe_enumadapter_close();
         return FALSE;
     }
 
     if ((*p_pcap_setnonblock)(TfePcapFP, 1, TfePcapErrbuf)<0)
     {
-        if(g_fh) fprintf(g_fh, "WARNING: Setting PCAP to non-blocking failed: '%s'", TfePcapErrbuf);
+        if(g_fh) fprintf(g_fh, "WARNING: Setting PCAP to non-blocking failed: '%s'\n", TfePcapErrbuf);
     }
 
 	/* Check the link layer. We support only Ethernet for simplicity. */
 	if((*p_pcap_datalink)(TfePcapFP) != DLT_EN10MB)
 	{
-		if(g_fh) fprintf(g_fh, "ERROR: TFE works only on Ethernet networks.");
+		if(g_fh) fprintf(g_fh, "ERROR: TFE works only on Ethernet networks.\n");
 		tfe_enumadapter_close();
         return FALSE;
 	}
@@ -347,21 +347,21 @@ int tfe_arch_init(void)
 void tfe_arch_pre_reset( void )
 {
 #ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_pre_reset()." );
+    if(g_fh) fprintf( g_fh, "tfe_arch_pre_reset().\n" );
 #endif
 }
 
 void tfe_arch_post_reset( void )
 {
 #ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_post_reset()." );
+    if(g_fh) fprintf( g_fh, "tfe_arch_post_reset().\n" );
 #endif
 }
 
 int tfe_arch_activate(const char *interface_name)
 {
 #ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_activate()." );
+    if(g_fh) fprintf( g_fh, "tfe_arch_activate().\n" );
 #endif
     if (!TfePcapOpenAdapter(interface_name)) {
         return 0;
@@ -372,14 +372,14 @@ int tfe_arch_activate(const char *interface_name)
 void tfe_arch_deactivate( void )
 {
 #ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_deactivate()." );
+    if(g_fh) fprintf( g_fh, "tfe_arch_deactivate().\n" );
 #endif
 }
 
 void tfe_arch_set_mac( const BYTE mac[6] )
 {
 #if defined(TFE_DEBUG_ARCH) || defined(TFE_DEBUG_FRAMES)
-    if(g_fh) fprintf( g_fh, "New MAC address set: %02X:%02X:%02X:%02X:%02X:%02X.",
+    if(g_fh) fprintf( g_fh, "New MAC address set: %02X:%02X:%02X:%02X:%02X:%02X.\n",
         mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
 #endif
 }
@@ -387,7 +387,7 @@ void tfe_arch_set_mac( const BYTE mac[6] )
 void tfe_arch_set_hashfilter(const DWORD hash_mask[2])
 {
 #if defined(TFE_DEBUG_ARCH) || defined(TFE_DEBUG_FRAMES)
-    if(g_fh) fprintf( g_fh, "New hash filter set: %08X:%08X.",
+    if(g_fh) fprintf( g_fh, "New hash filter set: %08X:%08X.\n",
         hash_mask[1], hash_mask[0]);
 #endif
 }
@@ -397,7 +397,7 @@ void tfe_arch_set_hashfilter(const DWORD hash_mask[2])
 void tfe_arch_receive_remove_committed_frame(void)
 {
 #ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_receive_remove_committed_frame()." );
+    if(g_fh) fprintf( g_fh, "tfe_arch_receive_remove_committed_frame().\n" );
 #endif
 }
 */
@@ -419,6 +419,7 @@ void tfe_arch_recv_ctl( int bBroadcast,   /* broadcast */
 		fprintf( g_fh, "\tbCorrect     = %s", bCorrect     ? "TRUE" : "FALSE" );
 		fprintf( g_fh, "\tbPromiscuous = %s", bPromiscuous ? "TRUE" : "FALSE" );
 		fprintf( g_fh, "\tbIAHash      = %s", bIAHash      ? "TRUE" : "FALSE" );
+		fprintf( g_fh, "\n" );
 	}
 #endif
 }
@@ -430,6 +431,7 @@ void tfe_arch_line_ctl(int bEnableTransmitter, int bEnableReceiver )
 		fprintf( g_fh, "tfe_arch_line_ctl() called with the following parameters:" );
 		fprintf( g_fh, "\tbEnableTransmitter = %s", bEnableTransmitter ? "TRUE" : "FALSE" );
 		fprintf( g_fh, "\tbEnableReceiver    = %s", bEnableReceiver    ? "TRUE" : "FALSE" );
+		fprintf( g_fh, "\n" );
 	}
 #endif
 }
@@ -481,7 +483,7 @@ int tfe_arch_receive_frame(TFE_PCAP_INTERNAL *pinternal)
     }
 
 #ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_receive_frame() called, returns %d.", ret );
+    if(g_fh) fprintf( g_fh, "tfe_arch_receive_frame() called, returns %d.\n", ret );
 #endif
 
     return ret;
@@ -497,7 +499,7 @@ void tfe_arch_transmit(int force,       /* FORCE: Delete waiting frames in trans
 {
 #ifdef TFE_DEBUG_ARCH
     if(g_fh) fprintf( g_fh, "tfe_arch_transmit() called, with: "
-        "force = %s, onecoll = %s, inhibit_crc=%s, tx_pad_dis=%s, txlength=%u",
+        "force = %s, onecoll = %s, inhibit_crc=%s, tx_pad_dis=%s, txlength=%u\n",
         force ?       "TRUE" : "FALSE", 
         onecoll ?     "TRUE" : "FALSE", 
         inhibit_crc ? "TRUE" : "FALSE", 
@@ -511,7 +513,7 @@ void tfe_arch_transmit(int force,       /* FORCE: Delete waiting frames in trans
 #endif // #ifdef TFE_DEBUG_PKTDUMP
 
     if ((*p_pcap_sendpacket)(TfePcapFP, txframe, txlength) == -1) {
-        if(g_fh) fprintf(g_fh, "WARNING! Could not send packet!");
+        if(g_fh) fprintf(g_fh, "WARNING! Could not send packet!\n");
     }
 }
 
@@ -559,7 +561,7 @@ int tfe_arch_receive(BYTE *pbuffer  ,    /* where to store a frame */
 
 
 #ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_receive() called, with *plen=%u.", *plen );
+    if(g_fh) fprintf( g_fh, "tfe_arch_receive() called, with *plen=%u.\n", *plen );
 #endif
 
     assert((*plen&1)==0);
