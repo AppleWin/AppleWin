@@ -392,8 +392,8 @@ void tfe_debug_output_pp( void )
 /* ------------------------------------------------------------------------- */
 /*    initialization and deinitialization functions                          */
 
-BYTE __stdcall TfeIoCxxx (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
-BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
+static BYTE __stdcall TfeIoCxxx (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
+static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
 void tfe_reset(void)
 {
