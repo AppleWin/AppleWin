@@ -6,7 +6,9 @@
 #define CBR_9600 9600
 
 #define WM_USER 0x0400
+#ifndef INVALID_SOCKET
 #define INVALID_SOCKET             (SOCKET)(~0)
+#endif
 
 #define MB_OK			0x00000000
 #define MB_OKCANCEL		0x00000001

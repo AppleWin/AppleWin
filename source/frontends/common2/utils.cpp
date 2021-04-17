@@ -27,6 +27,7 @@
 #include "Utilities.h"
 #include "Interface.h"
 #include "Debugger/Debug.h"
+#include "Tfe/tfe.h"
 
 #include <libgen.h>
 #include <unistd.h>
@@ -86,6 +87,7 @@ namespace common2
 
     GetCardMgr().GetDisk2CardMgr().Reset();
     HD_Reset();
+    tfe_init();
     Snapshot_Startup();
 
     DebugInitialize();
@@ -105,6 +107,7 @@ namespace common2
     MB_Destroy();
     DSUninit();
 
+    tfe_shutdown();
     HD_Destroy();
     PrintDestroy();
     CpuDestroy();

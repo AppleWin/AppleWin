@@ -1,6 +1,10 @@
 include(FindPkgConfig)
 
 set(SOURCE_FILES
+  Tfe/tfe.cpp
+  Tfe/tfearch.cpp
+  Tfe/tfesupp.cpp
+
   Debugger/Debugger_Color.cpp
   Debugger/Debugger_Disassembler.cpp
   Debugger/Debugger_Symbols.cpp
@@ -75,7 +79,6 @@ set(SOURCE_FILES
   linux/duplicates/Joystick.cpp
   linux/duplicates/SerialComms.cpp
   linux/duplicates/PropertySheet.cpp
-  linux/duplicates/Tfe.cpp
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp
@@ -171,10 +174,12 @@ add_library(appleii SHARED
 
 pkg_check_modules(YAML REQUIRED yaml-0.1)
 pkg_check_modules(MINIZIP REQUIRED minizip)
+pkg_check_modules(PCAP REQUIRED libpcap)
 find_package(Boost REQUIRED)
 
 target_include_directories(appleii PRIVATE
   ${YAML_INCLUDE_DIRS}
+  ${PCAP_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   Debugger
   )
@@ -187,6 +192,7 @@ target_include_directories(appleii PUBLIC
 target_link_libraries(appleii PRIVATE
   ${YAML_LIBRARIES}
   ${MINIZIP_LIBRARIES}
+  ${PCAP_LIBRARIES}
   )
 
 target_compile_options(appleii PUBLIC
