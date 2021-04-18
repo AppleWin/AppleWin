@@ -153,21 +153,26 @@ namespace sa2
 
     switch (slot)
     {
+      case 3:
+      {
+        const bool enabled = card == CT_Uthernet;
+        REGSAVE(REGVALUE_UTHERNET_ACTIVE, enabled);
+        // needs a reboot anyway
+        break;
+      }
       case 7:
       {
         const bool enabled = card == CT_GenericHDD;
         REGSAVE(REGVALUE_HDD_ENABLED, enabled);
         HD_SetEnabled(enabled);
-      }
-      default:
-      {
-        // we do not use REGVALUE_SLOT5 as they are not "runtime friendly"
-        const std::string label = "Slot " + std::to_string(slot);
-        REGSAVE(label.c_str(), (DWORD)card);
-        cardManager.Insert(slot, card);
         break;
       }
     };
+
+    // we do not use REGVALUE_SLOT5 as they are not "runtime friendly"
+    const std::string label = "Slot " + std::to_string(slot);
+    REGSAVE(label.c_str(), (DWORD)card);
+    cardManager.Insert(slot, card);
   }
 
   void setVideoStyle(Video & video, const VideoStyle_e style, const bool enabled)

@@ -21,6 +21,9 @@
 #include "Debugger/Debug.h"
 #include "Debugger/DebugDefs.h"
 
+#include "Tfe/tfe.h"
+#include "Tfe/tfesupp.h"
+
 #include "imgui_internal.h"
 
 namespace
@@ -545,6 +548,41 @@ namespace sa2
             frame->ApplyVideoModeChange();
           }
 
+          ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Uthernet"))
+        {
+          standardLabelText("Status", tfe_enabled ? "enabled" : "disabled");
+          if (ImGui::BeginCombo("Interface", static_cast<const char *>(get_tfe_interface())))
+          {
+            if (tfe_enumadapter_open())
+            {
+              char *pname;
+              char *pdescription;
+
+              while (tfe_enumadapter(&pname, &pdescription))
+              {
+                // must call it each time
+                // as update_tfe_interface() will invalidate it
+                const char * current = static_cast<const char *>(get_tfe_interface());
+                const bool isSelected = strcmp(pname, current) == 0;
+                if (ImGui::Selectable(pname, isSelected))
+                {
+                  update_tfe_interface(pname, nullptr);
+                  RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, pname);
+                }
+                if (isSelected)
+                {
+                  ImGui::SetItemDefaultFocus();
+                }
+                lib_free(pname);
+                lib_free(pdescription);
+              }
+              tfe_enumadapter_close();
+            }
+            ImGui::EndCombo();
+          }
           ImGui::EndTabItem();
         }
 
