@@ -1929,6 +1929,13 @@ static void LoadSnapshotSY6522(YamlLoadHelper& yamlLoadHelper, SY6522& sy6522, U
 		sy6522.timer2IrqDelay = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_TIMER2_IRQ_DELAY);
 	}
 
+	if (version < 7)
+	{
+		// Assume t1_latch was never written to (so had the old default of 0x0000) - this now results in failure of Mockingboard detection!
+		if (sy6522.TIMER1_LATCH.w == 0x0000)
+			sy6522.TIMER1_LATCH.w = 0xFFFF;		// Allow Mockingboard detection to succeed
+	}
+
 	yamlLoadHelper.PopMap();
 }
 
