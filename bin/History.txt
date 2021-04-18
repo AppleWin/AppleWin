@@ -8,8 +8,49 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+
+1.30.0.0 - 17 Apr 2021
+----------------------
+Note: This version only works under Windows XP and later.
+
+. [Change #693] AppleWin built with VS2019 using v141_xp platform toolset
+. [Change #939] Improved support for SSI263 speech chip.
+	- Fix for 'Classic Adventure' (#929) not detecting speech chip.
+	- Support the 2-bit Duration b7:6 of phoneme register for SSI263 (not SC01).
+	- Support 2nd SSI263 at $Cn20 connected to 6522-A (at $Cn00).
+	- SC01: only support it mapped to 6522 at $Cn00.
+. [Change #936] Swap Joystick Buttons not working
+	- Command line (-swap-buttons) or GUI "Swap 0/1" now swaps buttons 0/1 for all devices.
+. [Change #930] WOZ support: add some random jitter in the bit stream
+	- A better alternative fix for WOZ images: 'Wasteland' and 'Legacy of the Ancients'.
+	- Fix for WOZ images: 'Gruds in Space' (bug #921) and 'Buzzard Bait' (bug #930).
+. [Change #912] For 'Base 64A' add support for its F2 key via the Windows DEL key.
+. [Change #876] Starting up windowed mode & fullscreen mode
+	- New command line switch -no-full-screen to start in windowed mode.
+	- Added command line switch -full-screen as an alias for -f.
+. [Change #864] Anti-M 1.8 doesn't work
+	- Improved Disk II card's data latch value when: (a) drive disconnected or (b) connected, but empty.
+	- New command line switches -d1-disconnected and -d2-disconnected to disconnect drives from slot-6 card.
+. [Bug #934] Characters doubled in BASIC.SYSTEM when using -speech switch.
+	- Trap calls to COUT1 and BASICOUT (instead of COUT).
+. [Bug #827] Fix bug where NSC is recognised on Apple II/II+ when slot-3 is empty.
+	- Support NSC on 6502-based Apple II's via F8-ROM for ProDOS 2.5 compatibility.
+. [Bug #770] Fix so that no AY changes get dropped.
+	- Support reading the AY-3-8913 registers (not Phasor though).
+. [Bug #652, #833] Fixes for Mockingboard's 6522 VIA.
+	- Cycle-accurate TIMER1/2 r/w for all addressing modes.
+	- Support TIMER1 latch in one-shot mode.
+	- Improve 6522 reset support - only ACR,IFR,IER affected.
+. [PR #891] Fix for "Unable to capture PrintScreen key" warning on startup.
+	- Adds a "Don't show this message again" checkbox to the message.
+. Debugger: add red 'IRQ' after the v/h-pos when IRQ is being asserted to the 6502.
+. Debugger: improve mini-memory views for 6522 & AY8913 chip registers.
+. Much refactoring to the code by Andrea Odetti / @audetto.
+
+
 1.29.16.0 - 1 Nov 2020
 ----------------------
+Note: This is the last planned version to support Windows 2000.
 . [Bug #851] RGB support: AppleColor card (-rgb-card-type apple) is now an alias for Video7's RGB-SL7 card (-rgb-card-type sl7).
 . [Bug #850] RGB support: removed the preconditions for AN3 setting the RGB video mode flags.
 	- IOUDIS soft-switch is for //c only, so removed support for //e.

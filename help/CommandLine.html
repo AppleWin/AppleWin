@@ -57,6 +57,8 @@
 		Useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br><br>
 		-s7-empty-on-exit<br>
 		Remove the hard disk controller card from slot 7 on AppleWin exit.<br><br>
+		-d1-disconnected, -d2-disconnected<br>
+		Disconnect drive-1 and/or drive-2 from the Disk II controller card in slot 6.<br><br>
 		-no-nsc<br>
 		Remove the No-Slot clock (NSC).<br><br>
 		-r &lt;number of pages&gt;<br>
@@ -109,7 +111,7 @@
 		Use Right Alt (AltGr) & Right Control for Open Apple & Solid Apple keys respectively.<br>
 		Caveat: Right Control + F2 will do the //e self test (as Right Control is now both Ctrl and Solid Apple!). A workaround is just to use the Left Control key.<br><br>
 		-swap-buttons<br>
-		Swap buttons 0 and 1 from all input devices.<br>
+		Swap buttons 0 and 1 for all input devices.<br>
 		EG. the Windows keys used for Open Apple & Solid Apple keys, and the current device being used to emulate a joystick (keyboard, real joystick or mouse)<br><br>
 
 		-use-real-printer<br>
@@ -179,7 +181,9 @@
 		-m<br>
 		Disable DirectSound support.<br><br>
 		-no-printscreen-dlg<br>
-		Suppress the warning message-box if AppleWin fails to capture the PrintScreen key.<br><br>
+		Suppress the warning message-box if AppleWin fails to capture the PrintScreen key.<br>
+		NB. There's now a "Don't show this message again" option on this message-box.
+		<br><br>
 		-screenshot-and-exit<br>
 		For testing. Use in combination with -load-state.<br><br>
 	</body>
