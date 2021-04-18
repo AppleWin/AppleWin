@@ -32,13 +32,17 @@ been modified.
 
 Almost everything works, except:
 
-* ethernet
 * serial port
 * debugger (work started to port it)
 
 The UI has been rewritten in Qt or ImGui.
 
 The rest works very well.
+Uthernet is supported, but it requires elevated capabilities:
+
+`sudo setcap cap_net_raw=ep ./sa2`
+
+Unfortunately, this must be reapplied after every build.
 
 ## Executables
 
