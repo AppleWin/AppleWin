@@ -27,7 +27,8 @@ namespace
     uint16_t receiveSize;
     uint16_t registers;
 
-    uint16_t rx_wr;
+    uint16_t sn_rx_wr;
+    uint16_t sn_rx_rsr;
   };
 
   std::vector<uint8_t> memory;
@@ -37,19 +38,25 @@ namespace
 
   void initialise();
 
+  uint8_t getIByte(const uint16_t value, const size_t shift)
+  {
+    return (value >> shift) & 0xFF;
+  }
+
   void write8(const size_t i, const uint8_t value)
   {
     Socket & socket = sockets[i];
     const uint16_t base = socket.receiveBase;
-    const uint16_t address = base + socket.rx_wr;
+    const uint16_t address = base + socket.sn_rx_wr;
     memory[address] = value;
-    socket.rx_wr = (socket.rx_wr + 1) % socket.receiveSize;
+    socket.sn_rx_wr = (socket.sn_rx_wr + 1) % socket.receiveSize;
+    ++socket.sn_rx_rsr;
   }
 
   void write16(const size_t i, const uint16_t value)
   {
-    write8(i, (value & 0xFF00) >> 8);  // high
-    write8(i, (value & 0x00FF) >> 0);  // low
+    write8(i, getIByte(value, 8));  // high
+    write8(i, getIByte(value, 0));  // low
   }
 
   void writeData(const size_t i, const BYTE * data, const size_t len)
@@ -158,10 +165,10 @@ namespace
     const uint16_t size = sockets[i].transmitSize;
     const uint16_t mask = size - 1;
 
-    const int TX_RR = readNetworkWord(sockets[i].registers + 0x22) & mask;
-    const int TX_WR = readNetworkWord(sockets[i].registers + 0x24) & mask;
+    const int sn_tx_rr = readNetworkWord(sockets[i].registers + 0x22) & mask;
+    const int sn_tx_wr = readNetworkWord(sockets[i].registers + 0x24) & mask;
 
-    int dataPresent = TX_WR - TX_RR;
+    int dataPresent = sn_tx_wr - sn_tx_rr;
     if (dataPresent < 0)
     {
       dataPresent += size;
@@ -174,48 +181,56 @@ namespace
     const int size = sockets[i].transmitSize;
     const uint16_t present = getTXDataSize(i);
     const uint16_t free = size - present;
-    const uint8_t reg = (free >> shift) & 0xFF;
+    const uint8_t reg = getIByte(free, shift);
     return reg;
   }
 
-  uint16_t getRXDataSize(const size_t i)
+  uint8_t getRXDataSizeRegister(const size_t i, const size_t shift)
   {
-    const int size = sockets[i].receiveSize;
-    const uint16_t mask = size - 1;
-
-    const int RX_RD = readNetworkWord(sockets[i].registers + 0x28) & mask;
-    const int RX_WR = sockets[i].rx_wr & mask;
-    int dataPresent = RX_WR - RX_RD;
-    if (dataPresent < 0)
-    {
-      dataPresent += size;
-    }
-    return dataPresent;
+    const uint16_t rsr = sockets[i].sn_rx_rsr;
+    const uint8_t reg = getIByte(rsr, shift);
+    return reg;
   }
 
   void updateRSR(const size_t i)
   {
-    const Socket & socket = sockets[i];
-    const uint16_t data = getRXDataSize(i);
-    memory[socket.registers + 0x26] = (data >> 8) & 0xFF;
-    memory[socket.registers + 0x27] = (data >> 0) & 0xFF;
+    Socket & socket = sockets[i];
+
+    const int size = sockets[i].receiveSize;
+    const uint16_t mask = size - 1;
+
+    const int sn_rx_rd = readNetworkWord(sockets[i].registers + 0x28) & mask;
+    const int sn_rx_wr = sockets[i].sn_rx_wr & mask;
+    int dataPresent = sn_rx_wr - sn_rx_rd;
+    if (dataPresent < 0)
+    {
+      dataPresent += size;
+    }
+    // is this logic correct?
+    // here we are re-synchronising the size with the pointers
+    // elsewhere I have seen people updating this value
+    // by the amount of how much 0x28 has moved forward
+    // but then we need to keep track of where it was
+    // the final result should be the same
+    socket.sn_rx_rsr = dataPresent;
   }
 
   void receiveOnePacketMacRaw(const size_t i)
   {
-    const uint16_t rxData = getRXDataSize(i);
+    Socket & socket = sockets[i];
+    const uint16_t rsr = socket.sn_rx_rsr;
 
     BYTE buffer[MAX_RXLENGTH];
     int len = sizeof(buffer);
     if (tfeReceiveOnePacket(memory.data() + 0x0009, buffer, len))
     {
-      const int size = sockets[i].receiveSize;
-      if (rxData + len < size) // we do not want to fill the buffer.
+      const int size = socket.receiveSize;
+      if (rsr + len < size) // "not =": we do not want to fill the buffer.
       {
         writeData(i, buffer, len);
-        updateRSR(i);
         std::cerr << "READ[" << i << "]: ";
-        as_hex(std::cerr, len, 4) << " bytes" << std::endl;
+        as_hex(std::cerr, len, 4) << " -> ";
+        as_hex(std::cerr, socket.sn_rx_rsr, 4) << " bytes" << std::endl;
       }
       else
       {
@@ -244,12 +259,12 @@ namespace
     const uint16_t size = socket.transmitSize;
     const uint16_t mask = size - 1;
 
-    const int TX_RR = readNetworkWord(socket.registers + 0x22);
-    const int TX_WR = readNetworkWord(socket.registers + 0x24);
+    const int sn_tx_rr = readNetworkWord(socket.registers + 0x22) & mask;
+    const int sn_tx_wr = readNetworkWord(socket.registers + 0x24) & mask;
 
     const uint16_t base = socket.transmitBase;
-    const uint16_t rr_address = base + (TX_RR & mask);
-    const uint16_t wr_address = base + (TX_WR & mask);
+    const uint16_t rr_address = base + sn_tx_rr;
+    const uint16_t wr_address = base + sn_tx_wr;
 
     std::vector<uint8_t> data;
     if (rr_address < wr_address)
@@ -263,8 +278,9 @@ namespace
       data.insert(data.end(), memory.begin() + base, memory.begin() + wr_address);
     }
 
-    memory[socket.registers + 0x22] = memory[socket.registers + 0x24];
-    memory[socket.registers + 0x23] = memory[socket.registers + 0x25];
+    // move read pointer to writer
+    memory[socket.registers + 0x22] = getIByte(sn_tx_wr, 8);
+    memory[socket.registers + 0x23] = getIByte(sn_tx_wr, 0);
 
     std::cerr << "SEND[" << i << "]: ";
     as_hex(std::cerr, data.size(), 4) << " bytes " << std::endl;
@@ -274,14 +290,14 @@ namespace
   void resetRXTXBuffers(const size_t i)
   {
     Socket & socket = sockets[i];
-    socket.rx_wr = 0x00;
+    socket.sn_rx_wr = 0x00;
+    socket.sn_rx_rsr = 0x00;
     memory[socket.registers + 0x22] = 0x00;
     memory[socket.registers + 0x23] = 0x00;
     memory[socket.registers + 0x24] = 0x00;
     memory[socket.registers + 0x25] = 0x00;
     memory[socket.registers + 0x28] = 0x00;
     memory[socket.registers + 0x29] = 0x00;
-    updateRSR(i);
   }
 
   void openSocket(const size_t i)
@@ -366,9 +382,10 @@ namespace
         value = memory[address];
         break;
       case 0x26:  // Sn_RX_RSR
+        value = getRXDataSizeRegister(i, 8);
+        break;
       case 0x27:  // Sn_RX_RSR
-        updateRSR(i);
-        value = memory[address];
+        value = getRXDataSizeRegister(i, 0);
         break;
       case 0x28:  // Sn_RX_RD
       case 0x29:  // Sn_RX_RD
@@ -472,17 +489,13 @@ namespace
         setIPTTL(i, value);
         break;
       case 0x24:    // Sn_TX_WR
-        // some code sets the absolute value of the address rather than the offset
-        // is this correct?
-        memory[address] = value % 0x40;
+        memory[address] = value;
         break;
       case 0x25:    // Sn_TX_WR
         memory[address] = value;
         break;
       case 0x28:    // Sn_RX_RD
-        // some code sets the absolute value of the address rather than the offset
-        // is this correct?
-        memory[address] = value % 0x60;
+        memory[address] = value;
         break;
       case 0x29:    // Sn_RX_RD
         memory[address] = value;
@@ -616,10 +629,10 @@ namespace
           res = modeRegister;
           break;
         case 5:
-          res = (dataAddress & 0xFF00) >> 8;
+          res = getIByte(dataAddress, 8);  // hi
           break;
         case 6:
-          res = (dataAddress & 0x00FF) >> 0;
+          res = getIByte(dataAddress, 0);  // low
           break;
         case 7:
           res = readValue();
