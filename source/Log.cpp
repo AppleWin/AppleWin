@@ -48,6 +48,12 @@ void LogInit(void)
 		return;
 
 	g_fh = fopen(LOG_FILENAME, "a+t");	    // Open log file (append & text mode)
+	if (!g_fh)
+	{
+		LogOutput("Failed to open logfile '%s'\n", LOG_FILENAME);
+		return;
+	}
+
 	setvbuf(g_fh, NULL, _IONBF, 0);			// No buffering (so implicit fflush after every fprintf)
 	CHAR aDateStr[80], aTimeStr[80];
 	GetDateFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aDateStr, sizeof(aDateStr));
