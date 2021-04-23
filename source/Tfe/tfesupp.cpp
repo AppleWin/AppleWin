@@ -33,19 +33,8 @@
  *
  */
 
-#include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <windows.h>
-#include <windowsx.h>
-#include <tchar.h>
-#include <commctrl.h>
-#include <commdlg.h>
-
-#include "tfesupp.h"
-
 
 // Lib Stuff
 /* #define LIB_DEBUG*/

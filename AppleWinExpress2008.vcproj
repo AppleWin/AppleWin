@@ -434,7 +434,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\Tfe\Tfe.cpp"
+					RelativePath=".\source\Tfe\tfe.cpp"
 					>
 					<FileConfiguration
 						Name="Release|Win32"
@@ -454,35 +454,11 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath=".\source\Tfe\Tfe.h"
+					RelativePath=".\source\Tfe\tfe.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Tfe\Tfearch.cpp"
-					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							UsePrecompiledHeader="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							UsePrecompiledHeader="0"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath=".\source\Tfe\Tfearch.h"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Tfe\Tfesupp.cpp"
+					RelativePath=".\source\Tfe\tfearch.cpp"
 					>
 					<FileConfiguration
 						Name="Release|Win32"
@@ -502,7 +478,31 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath=".\source\Tfe\Tfesupp.h"
+					RelativePath=".\source\Tfe\tfearch.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\tfesupp.cpp"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\tfesupp.h"
 					>
 				</File>
 				<File

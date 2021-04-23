@@ -115,9 +115,9 @@
     <ClInclude Include="source\Tfe\Ip6_misc.h" />
     <ClInclude Include="source\Tfe\Pcap-stdinc.h" />
     <ClInclude Include="source\Tfe\Pcap.h" />
-    <ClInclude Include="source\Tfe\Tfe.h" />
-    <ClInclude Include="source\Tfe\Tfearch.h" />
-    <ClInclude Include="source\Tfe\Tfesupp.h" />
+    <ClInclude Include="source\Tfe\tfe.h" />
+    <ClInclude Include="source\Tfe\tfearch.h" />
+    <ClInclude Include="source\Tfe\tfesupp.h" />
     <ClInclude Include="source\Tfe\Uilib.h" />
     <ClInclude Include="source\Utilities.h" />
     <ClInclude Include="source\Video.h" />
@@ -209,7 +209,7 @@
     </ClCompile>
     <ClCompile Include="source\SynchronousEventManager.cpp" />
     <ClCompile Include="source\Tape.cpp" />
-    <ClCompile Include="source\Tfe\Tfe.cpp">
+    <ClCompile Include="source\Tfe\tfe.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug v141_xp|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug NoDX|Win32'">NotUsing</PrecompiledHeader>
@@ -217,7 +217,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release v141_xp|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="source\Tfe\Tfearch.cpp">
+    <ClCompile Include="source\Tfe\tfearch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug v141_xp|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug NoDX|Win32'">NotUsing</PrecompiledHeader>
@@ -225,7 +225,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release v141_xp|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="source\Tfe\Tfesupp.cpp">
+    <ClCompile Include="source\Tfe\tfesupp.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug v141_xp|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug NoDX|Win32'">NotUsing</PrecompiledHeader>

@@ -392,8 +392,8 @@ void tfe_debug_output_pp( void )
 /* ------------------------------------------------------------------------- */
 /*    initialization and deinitialization functions                          */
 
-BYTE __stdcall TfeIoCxxx (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
-BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
+static BYTE __stdcall TfeIoCxxx (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
+static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
 void tfe_reset(void)
 {
@@ -535,8 +535,6 @@ int tfe_deactivate_i(void)
     if(g_fh) fprintf( g_fh, "tfe_deactivate_i()." );
 #endif
 
-    assert(tfe && tfe_packetpage);
-
     tfe_arch_deactivate();
 
     lib_free(tfe);
@@ -602,8 +600,8 @@ void tfe_shutdown(void)
     if (tfe)
         tfe_deactivate();
 
-    if (tfe_interface != NULL)
-        lib_free(tfe_interface);
+    lib_free(tfe_interface);
+    tfe_interface = NULL;
 }
 
 
