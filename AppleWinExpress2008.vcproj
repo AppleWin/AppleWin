@@ -390,6 +390,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Debugger\Debugger_Win32.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Debugger\Debugger_Win32.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Debugger\Util_MemoryTextFile.cpp"
 					>
 				</File>
