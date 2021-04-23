@@ -23,6 +23,7 @@
 
 #include "Tfe/tfe.h"
 #include "Tfe/tfesupp.h"
+#include "linux/uthernet2.h"
 
 #include "imgui_internal.h"
 
@@ -582,6 +583,10 @@ namespace sa2
               tfe_enumadapter_close();
             }
             ImGui::EndCombo();
+          }
+          if (ImGui::Button("Enable Uthernet 2"))
+          {
+            registerUthernet2();
           }
           ImGui::EndTabItem();
         }
