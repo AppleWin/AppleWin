@@ -45,11 +45,24 @@ std::ostream & stream_mac(std::ostream & s, const uint8_t * mac)
 {
     for (size_t i = 0; i < 6; ++i)
     {
-        as_hex(s, mac[i], 2);
-        if (i != 6 - 1)
+        if (i)
         {
             s << ":";
         }
+        as_hex(s, mac[i], 2);
+    }
+    return s;
+}
+
+std::ostream & stream_ip(std::ostream & s, const uint8_t * ip)
+{
+    for (size_t i = 0; i < 4; ++i)
+    {
+        if (i)
+        {
+            s << ".";
+        }
+        s << int(ip[i]);
     }
     return s;
 }

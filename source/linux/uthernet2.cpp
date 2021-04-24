@@ -253,6 +253,25 @@ namespace
     };
   }
 
+  void sendDataMacRaw(const size_t i, const std::vector<uint8_t> & data)
+  {
+    std::cerr << "SEND MACRAW[" << i << "]: ";
+    as_hex(std::cerr, data.size(), 4) << " bytes " << std::endl;
+    tfeTransmitOnePacket(data.data(), data.size());
+  }
+
+  void sendDataIPRaw(const size_t i, const std::vector<uint8_t> & data)
+  {
+    const Socket & socket = sockets[i];
+    const uint16_t ip = socket.registers + 0x0c;
+
+    std::cerr << "SEND IPRAW[" << i << "]: ";
+    as_hex(std::cerr, data.size(), 4) << " bytes from ";
+    stream_ip(std::cerr, memory.data() + 0x000f) << " to ";
+    stream_ip(std::cerr, memory.data() + ip) << " via ";
+    stream_ip(std::cerr, memory.data() + 0x0001) << std::endl;
+  }
+
   void sendData(const size_t i)
   {
     const Socket & socket = sockets[i];
@@ -282,9 +301,16 @@ namespace
     memory[socket.registers + 0x22] = getIByte(sn_tx_wr, 8);
     memory[socket.registers + 0x23] = getIByte(sn_tx_wr, 0);
 
-    std::cerr << "SEND[" << i << "]: ";
-    as_hex(std::cerr, data.size(), 4) << " bytes " << std::endl;
-    tfeTransmitOnePacket(data.data(), data.size());
+    const uint8_t sr = memory[socket.registers + 0x03];
+    switch (sr)
+    {
+      case 0x32:    // SOCK_IPRAW
+        sendDataIPRaw(i, data);
+        break;
+      case 0x42:    // SOCK_MACRAW
+        sendDataMacRaw(i, data);
+        break;
+    }
   }
 
   void resetRXTXBuffers(const size_t i)
@@ -469,7 +495,7 @@ namespace
 
   void writeSocketRegister(const uint16_t address, const uint8_t value)
   {
-    const uint16_t i = (address >> (2 + 8 + 8));
+    const uint16_t i = (address >> 8) - 0x04;
     const uint16_t loc = address & 0xFF;
     switch (loc)
     {
@@ -478,6 +504,9 @@ namespace
         break;
       case 0x01:
         setCommandRegister(i, value);
+        break;
+      case 0x0c ... 0x0f:  // Destination IP
+        memory[address] = value;
         break;
       case 0x14:
         setIPProtocol(i, value);
@@ -526,7 +555,10 @@ namespace
       case 0x0000:
         setModeRegister(address, value);
         break;
+      case 0x0001 ... 0x0004: // gateway
+      case 0x0005 ... 0x0008: // subnet
       case 0x0009 ... 0x000e: // mac address
+      case 0x000f ... 0x0012: // source IP
         memory[address] = value;
         break;
       case 0x001A:
