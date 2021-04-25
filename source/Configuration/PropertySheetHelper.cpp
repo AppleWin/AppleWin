@@ -370,6 +370,17 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 	{
 		REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), ConfigNew.m_videoRefreshRate);
 	}
+
+	if (CONFIG_CHANGED_LOCAL(m_tfeEnabled))
+	{
+		REGSAVE(TEXT(REGVALUE_UTHERNET_ACTIVE), ConfigNew.m_tfeEnabled ? 1 : 0);
+	}
+
+	if (CONFIG_CHANGED_LOCAL(m_tfeInterface))
+	{
+		RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, ConfigNew.m_tfeInterface);
+	}
+
 }
 
 void CPropertySheetHelper::ApplyNewConfig(void)
@@ -387,6 +398,15 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_ConfigOld.m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
+
+	int tfe_enabled;
+	get_tfe_enabled(&tfe_enabled);
+	m_ConfigOld.m_tfeEnabled = tfe_enabled != 0;
+	void * iface = get_tfe_interface();
+	if (iface)
+	{
+		m_ConfigOld.m_tfeInterface.assign((char *)iface);
+	}
 
 	// Reset flags each time:
 	m_ConfigOld.m_uSaveLoadStateMsg = 0;
@@ -470,6 +490,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
 			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
+
+		if (CONFIG_CHANGED(m_tfeEnabled) || CONFIG_CHANGED(m_tfeInterface))
+			strMsgMain += ". Ethernet (TFE) Options\n";
 	}
 
 	std::string strMsgPost("\n");

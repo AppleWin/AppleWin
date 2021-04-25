@@ -3,6 +3,8 @@
 #include "IPropertySheetPage.h"
 #include "../Tfe/Uilib.h"
 
+#include <string>
+
 class CPageConfigTfe : private IPropertySheetPage
 {
 public:
@@ -13,6 +15,9 @@ public:
 	virtual ~CPageConfigTfe(){}
 
 	static INT_PTR CALLBACK DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
+
+	bool m_tfe_enabled;
+	std::string m_tfe_interface_name;
 
 protected:
 	// IPropertySheetPage

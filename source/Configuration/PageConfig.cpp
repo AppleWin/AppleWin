@@ -238,6 +238,17 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 				EnableTrackbar(hWnd, bCustom);
 			}
 
+			{
+				int tfe_enabled;
+				get_tfe_enabled(&tfe_enabled);
+				m_PageConfigTfe.m_tfe_enabled = tfe_enabled != 0;
+				void * iface = get_tfe_interface();
+				if (iface)
+				{
+					m_PageConfigTfe.m_tfe_interface_name = (char *)iface;
+				}
+			}
+
 			InitOptions(hWnd);
 
 			break;
@@ -309,6 +320,9 @@ void CPageConfig::DlgOK(HWND hWnd)
 	{
 		m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = isNewVideoRate50Hz ? VR_50HZ : VR_60HZ;
 	}
+
+	m_PropertySheetHelper.GetConfigNew().m_tfeEnabled = m_PageConfigTfe.m_tfe_enabled;
+	m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
 
 	if (bVideoReinit)
 	{

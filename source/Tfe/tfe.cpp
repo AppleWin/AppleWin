@@ -60,13 +60,6 @@ typedef unsigned int UINT;
 /* ------------------------------------------------------------------------- */
 /*    variables needed                                                       */
 
-/*
- This variable is used when we need to postpone the initialization
- because tfe_init() is not yet called
-*/
-static int should_activate = 0;
-
-
 static int init_tfe_flag = 0;
 
 /* status which received packages to accept 
@@ -397,7 +390,7 @@ static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE
 
 void tfe_reset(void)
 {
-    if (tfe_enabled && !should_activate)
+    if (tfe_enabled)
     {
         assert( tfe );
         assert( tfe_packetpage );
@@ -550,13 +543,7 @@ int tfe_activate(void) {
     if(g_fh) fprintf( g_fh, "tfe_activate()." );
 #endif
 
- if (init_tfe_flag) {
-        return tfe_activate_i();
-    }
-    else {
-        should_activate = 1;
-    }
-    return 0;
+    return tfe_activate_i();
 }
 
 static
@@ -565,28 +552,25 @@ int tfe_deactivate(void) {
     if(g_fh) fprintf( g_fh, "tfe_deactivate()." );
 #endif
 
-    if (should_activate)
-        should_activate = 0;
-    else {
-        if (init_tfe_flag)
-            return tfe_deactivate_i();
-    }
-
-    return 0;
+    return tfe_deactivate_i();
 }
 
 void tfe_init(void)
 {
-    init_tfe_flag = 1;
-
     if (!tfe_arch_init()) {
         tfe_enabled = 0;
         tfe_cannot_use = 1;
     }
+    else
+    {
+        // the first time this is a NOOP
+        // but when called from RepeatInitialization()
+        // it ensures new settings are taken into account
+        if (tfe)
+            tfe_deactivate();
 
-    if (should_activate) {
-        should_activate = 0;
-        if (tfe_activate() < 0) {
+        // only activate if the settings say so
+        if (tfe_enabled && (tfe_activate() < 0)) {
             tfe_enabled = 0;
             tfe_cannot_use = 1;
         }
@@ -1404,27 +1388,8 @@ int set_tfe_interface(void *v, void *param)
         return 0;
 
     util_string_set(&tfe_interface, name);
-
-    if (tfe_enabled) {
-        /* ethernet is enabled, make sure that the new name is
-           taken account of 
-         */
-        if (tfe_deactivate() < 0) {
-            return -1;
-        }
-        if (tfe_activate() < 0) {
-            return -1;
-        }
-
-        /* virtually reset the LAN chip */
-        if (tfe) {
-            tfe_reset();
-        }
-    }
     return 0;
 }
-
-
 
 /* ------------------------------------------------------------------------- */
 /*    commandline support functions                                          */
