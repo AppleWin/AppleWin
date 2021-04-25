@@ -3,13 +3,12 @@
 #include "linux/tfe2.h"
 
 #include "Memory.h"
+#include "Log.h"
 
 #define MAX_RXLENGTH 1518
-//#define U2_VERBOSE
-#define U2_UNKNOWN
-
-#include <iostream>
-#include <iomanip>
+// #define U2_LOG_VERBOSE
+// #define U2_LOG_TRAFFIC
+#define U2_LOG_UNKNOWN
 
 namespace
 {
@@ -94,18 +93,17 @@ namespace
     switch (protocol)
     {
       case 0x00:
-        std::cerr << "Mode[" << i << "]: Closed" << std::endl;
+        LogFileOutput("U2: Mode[%d]: CLOSED\n", i);
         break;
       case 0x03:
-        std::cerr << "Mode[" << i << "]: IPRAW" << std::endl;
+        LogFileOutput("U2: Mode[%d]: IPRAW\n", i);
         break;
       case 0x04:
-        std::cerr << "Mode[" << i << "]: MACRAW" << std::endl;
+        LogFileOutput("U2: Mode[%d]: MACRAW\n", i);
         break;
-#ifdef U2_UNKNOWN
+#ifdef U2_LOG_UNKNOWN
       default:
-        std::cerr << "Unknown protocol: ";
-        as_hex(std::cerr, value, 2) << std::endl;
+        LogFileOutput("U2: Unknown protocol: %02x\n", value);
 #endif
     }
   }
@@ -130,8 +128,6 @@ namespace
         base = ceiling;
       }
       sockets[i].transmitSize = base - sockets[i].transmitBase;
-      // std::cerr << "TX[" << i << "] = ";
-      // as_hex(std::cerr, sockets[i].transmitSize, 4) << std::endl;
     }
   }
 
@@ -155,8 +151,6 @@ namespace
         base = ceiling;
       }
       sockets[i].receiveSize = base - sockets[i].receiveBase;
-      // std::cerr << "RX[" << i << "] = ";
-      // as_hex(std::cerr, sockets[i].receiveSize, 4) << std::endl;
     }
   }
 
@@ -228,15 +222,16 @@ namespace
       if (rsr + len < size) // "not =": we do not want to fill the buffer.
       {
         writeData(i, buffer, len);
-        std::cerr << "READ[" << i << "]: ";
-        as_hex(std::cerr, len, 4) << " -> ";
-        as_hex(std::cerr, socket.sn_rx_rsr, 4) << " bytes" << std::endl;
+#ifdef U2_LOG_TRAFFIC
+        LogFileOutput("U2: READ MACRAW[%d]: +%d -> %d bytes\n", i, len, socket.sn_rx_rsr);
+#endif
       }
       else
       {
         // ??? we just skip it
-        std::cerr << "SKIP[" << i << "]: ";
-        as_hex(std::cerr, len, 4) << " bytes" << std::endl;
+#ifdef U2_LOG_TRAFFIC
+        LogFileOutput("U2: SKIP MACRAW[%d]: %d bytes\n", i, len);
+#endif
       }
     }
   }
@@ -255,21 +250,26 @@ namespace
 
   void sendDataMacRaw(const size_t i, const std::vector<uint8_t> & data)
   {
-    std::cerr << "SEND MACRAW[" << i << "]: ";
-    as_hex(std::cerr, data.size(), 4) << " bytes " << std::endl;
+#ifdef U2_LOG_TRAFFIC
+    LogFileOutput("U2: SEND MACRAW[%d]: %d bytes\n", i, data.size());
+#endif
     tfeTransmitOnePacket(data.data(), data.size());
   }
 
   void sendDataIPRaw(const size_t i, const std::vector<uint8_t> & data)
   {
+#ifdef U2_LOG_TRAFFIC
     const Socket & socket = sockets[i];
     const uint16_t ip = socket.registers + 0x0c;
 
-    std::cerr << "SEND IPRAW[" << i << "]: ";
-    as_hex(std::cerr, data.size(), 4) << " bytes from ";
-    stream_ip(std::cerr, memory.data() + 0x000f) << " to ";
-    stream_ip(std::cerr, memory.data() + ip) << " via ";
-    stream_ip(std::cerr, memory.data() + 0x0001) << std::endl;
+    LogFileOutput("U2: SEND IPRAW[%d]: %d bytes", i, data.size());
+    const uint8_t * source = memory.data() + 0x000f;
+    const uint8_t * dest = memory.data() + ip;
+    const uint8_t * gway = memory.data() + 0x0001;
+    LogFileOutput(" from %d.%d.%d.%d", source[0], source[1], source[2], source[3]);
+    LogFileOutput(" to %d.%d.%d.%d", dest[0], dest[1], dest[2], dest[3]);
+    LogFileOutput(" via %d.%d.%d.%d\n", gway[0], gway[1], gway[2], gway[3]);
+#endif
   }
 
   void sendData(const size_t i)
@@ -340,22 +340,20 @@ namespace
       case 0x04:    // MACRAW
         sr = 0x42;  // SOCK_MACRAW
         break;
-#ifdef U2_UNKNOWN
+#ifdef U2_LOG_UNKNOWN
       default:
-        std::cerr << "OPEN: unknown mode: ";
-        as_hex(std::cerr, mr, 2) << std::endl;
+        LogFileOutput("U2: OPEN[%d]: unknown mode: %02x\n", i, mr);
 #endif
     }
     resetRXTXBuffers(i);
-    std::cerr << "OPEN[" << i << "] = ";
-    as_hex(std::cerr, sr, 2) << std::endl;
+    LogFileOutput("U2: OPEN[%d]: %02x\n", i, sr);
   }
 
   void closeSocket(const size_t i)
   {
     const Socket & socket = sockets[i];
     memory[socket.registers + 0x03] = 0x00; // SOCK_CLOSED
-    std::cerr << "CLOSE[" << i << "]" << std::endl;
+    LogFileOutput("U2: CLOSE[%d]\n", i);
   }
 
   void setCommandRegister(const size_t i, const uint8_t value)
@@ -374,10 +372,9 @@ namespace
       case 0x40:  // RECV
         updateRSR(i);
         break;
-#ifdef U2_UNKNOWN
+#ifdef U2_LOG_UNKNOWN
       default:
-        std::cerr << "Unknown command: ";
-        as_hex(std::cerr, value, 2) << std::endl;
+        LogFileOutput("U2: Unknown command[%d]: %02x\n", i, value);
 #endif
     }
   }
@@ -418,9 +415,8 @@ namespace
         value = memory[address];
         break;
       default:
-#ifdef U2_UNKNOWN
-        std::cerr << "Get unknown socket register: ";
-        as_hex(std::cerr, address, 4) << std::endl;
+#ifdef U2_LOG_UNKNOWN
+        LogFileOutput("U2: Get unknown socket register[%d]: %04x\n", i, address);
 #endif
         value = memory[address];
         break;
@@ -443,9 +439,8 @@ namespace
         value = memory[address];
         break;
       default:
-#ifdef U2_UNKNOWN
-        std::cerr << "Read unknown location: ";
-        as_hex(std::cerr, address, 4) << std::endl;
+#ifdef U2_LOG_UNKNOWN
+        LogFileOutput("U2: Read unknown location: %04x\n", address);
 #endif
         value = memory[address];
         break;
@@ -477,20 +472,17 @@ namespace
 
   void setIPProtocol(const size_t i, const uint8_t value)
   {
-    std::cerr << "IP PROTO[" << i << "] = ";
-    as_hex(std::cerr, value, 2) << std::endl;
+    LogFileOutput("U2: IP PROTO[%d] = %d\n", i, value);
   }
 
   void setIPTypeOfService(const size_t i, const uint8_t value)
   {
-    std::cerr << "IP TOS[" << i << "] = ";
-    as_hex(std::cerr, value, 2) << std::endl;
+    LogFileOutput("U2: IP TOS[%d] = %d\n", i, value);
   }
 
   void setIPTTL(const size_t i, const uint8_t value)
   {
-    std::cerr << "IP TTL[" << i << "] = ";
-    as_hex(std::cerr, value, 2) << std::endl;
+    LogFileOutput("U2: IP TTL[%d] = %d\n", i, value);
   }
 
   void writeSocketRegister(const uint16_t address, const uint8_t value)
@@ -529,10 +521,9 @@ namespace
       case 0x29:    // Sn_RX_RD
         memory[address] = value;
         break;
-#ifdef U2_UNKNOWN
+#ifdef U2_LOG_UNKNOWN
       default:
-        std::cerr << "Set unknown socket register: ";
-        as_hex(std::cerr, address, 4) << std::endl;
+        LogFileOutput("U2: Set unknown socket register[%d]: %04x\n", i, address);
         break;
 #endif
     };
@@ -567,10 +558,9 @@ namespace
       case 0x001B:
         setTXSizes(address, value);
         break;
-#ifdef U2_UNKNOWN
+#ifdef U2_LOG_UNKNOWN
       default:
-        std::cerr << "Set unknown common register: ";
-        as_hex(std::cerr, address, 4) << std::endl;
+        LogFileOutput("U2: Set unknown common register: %04x\n", address);
         break;
 #endif
     };
@@ -589,10 +579,9 @@ namespace
       case 0x4000 ... 0x7FFF:
         memory[address] = value;
         break;
-#ifdef U2_UNKNOWN
+#ifdef U2_LOG_UNKNOWN
       default:
-        std::cerr << "Write to an unknown location: ";
-        as_hex(std::cerr, address, 4) << std::endl;
+        LogFileOutput("U2: Read to unknown location: %04x\n", address);
         break;
 #endif
     }
@@ -606,7 +595,7 @@ namespace
 
   void initialise()
   {
-    std::cerr << "Init" << std::endl;
+    LogFileOutput("U2: Uthernet 2 initialisation\n");
     modeRegister = 0;
     dataAddress = 0;
     sockets.resize(4);
@@ -672,6 +661,7 @@ namespace
       }
     }
 
+#ifdef U2_LOG_VERBOSE
     const char * mode = write ? "WRITE " : "READ  ";
 
     char c;
@@ -687,11 +677,7 @@ namespace
         break;
     }
 
-#ifdef U2_VERBOSE
-    std::cerr << std::hex << programcounter << ": ";
-    std::cerr << mode << std::hex << address << " ";
-    std::cerr << std::setfill('0') << std::setw(2) << std::hex << size_t(value) << " = ";
-    std::cerr << std::setfill('0') << std::setw(2) << std::hex << size_t(res) << " " << c << std::endl;
+    LogFileOutput("U2: %04x: %s %04x %02x = %02x, %c\n", programcounter, mode, address, value, res, c);
 #endif
 
     return res;
