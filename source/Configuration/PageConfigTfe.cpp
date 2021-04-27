@@ -274,7 +274,7 @@ void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 	{
 		m_tfe_interface_name = buffer;
 		active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
-		m_tfe_enabled = active_value >= 1;
+		m_tfe_enabled = active_value >= 1 ? 1 : 0;
 	}
 	else
 	{

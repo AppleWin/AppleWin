@@ -25,14 +25,8 @@ public:
 		m_Slot[SLOT5] = GetCardMgr().QuerySlot(SLOT5);
 		m_Slot[SLOT7] = GetCardMgr().QuerySlot(SLOT7);
 
-		int tfe_enabled;
-		get_tfe_enabled(&tfe_enabled);
-		m_tfeEnabled = tfe_enabled != 0;
-		void * iface = get_tfe_interface();
-		if (iface)
-		{
-			m_tfeInterface.assign((char *)iface);
-		}
+		m_tfeEnabled = get_tfe_enabled();
+		m_tfeInterface = get_tfe_interface();
 	}
 
 	const CConfigNeedingRestart& operator= (const CConfigNeedingRestart& other)
@@ -72,7 +66,7 @@ public:
 	SS_CARDTYPE m_Slot[NUM_SLOTS];	// 0..7
 	SS_CARDTYPE m_SlotAux;
 	bool m_bEnableHDD;
-	bool m_tfeEnabled;
+	int m_tfeEnabled;
 	std::string m_tfeInterface;
 	UINT m_bEnableTheFreezesF8Rom;
 	UINT m_uSaveLoadStateMsg;

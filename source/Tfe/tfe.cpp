@@ -93,7 +93,7 @@ int tfe_enabled = 0;
 /* Flag: Do we use the "original" memory map or the memory map of the RR-Net? */
 //static int tfe_as_rr_net = 0;
 
-char *tfe_interface = NULL;
+std::string tfe_interface;
 
 /* TFE registers */
 /* these are the 8 16-bit-ports for "I/O space configuration"
@@ -584,8 +584,7 @@ void tfe_shutdown(void)
     if (tfe)
         tfe_deactivate();
 
-    lib_free(tfe_interface);
-    tfe_interface = NULL;
+    tfe_interface.clear();
 }
 
 
@@ -1379,15 +1378,9 @@ int set_tfe_enabled(void *v, void *param)
 
 
 static 
-int set_tfe_interface(void *v, void *param)
+int set_tfe_interface(const std::string & name)
 {
-    const char *name = (const char *)v;
-
-    if (tfe_interface != NULL && name != NULL
-        && strcmp(name, tfe_interface) == 0)
-        return 0;
-
-    util_string_set(&tfe_interface, name);
+    tfe_interface = name;
     return 0;
 }
 
@@ -1512,21 +1505,19 @@ void get_disabled_state(int * param)
 
 }
 
-int update_tfe_interface(void *v, void *param)
+int update_tfe_interface(const std::string & name)
 {
-	return set_tfe_interface(v,param);
+	return set_tfe_interface(name);
 }
 
-void * get_tfe_interface(void)
+const std::string & get_tfe_interface(void)
 {
-	void *v;
-	v = tfe_interface;
-	return v;
+	return tfe_interface;
 }
 
-void get_tfe_enabled(int * param)
+int get_tfe_enabled(void)
 {
-	*param = tfe_enabled;
+	return tfe_enabled;
 }
 
 //#endif /* #ifdef HAVE_TFE */

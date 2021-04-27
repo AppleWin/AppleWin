@@ -373,7 +373,7 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 
 	if (CONFIG_CHANGED_LOCAL(m_tfeEnabled))
 	{
-		REGSAVE(TEXT(REGVALUE_UTHERNET_ACTIVE), ConfigNew.m_tfeEnabled ? 1 : 0);
+		REGSAVE(TEXT(REGVALUE_UTHERNET_ACTIVE), ConfigNew.m_tfeEnabled);
 	}
 
 	if (CONFIG_CHANGED_LOCAL(m_tfeInterface))
@@ -398,15 +398,8 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_ConfigOld.m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
-
-	int tfe_enabled;
-	get_tfe_enabled(&tfe_enabled);
-	m_ConfigOld.m_tfeEnabled = tfe_enabled != 0;
-	void * iface = get_tfe_interface();
-	if (iface)
-	{
-		m_ConfigOld.m_tfeInterface.assign((char *)iface);
-	}
+	m_ConfigOld.m_tfeEnabled = get_tfe_enabled();
+	m_ConfigOld.m_tfeInterface = get_tfe_interface();
 
 	// Reset flags each time:
 	m_ConfigOld.m_uSaveLoadStateMsg = 0;

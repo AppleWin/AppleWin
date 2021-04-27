@@ -29,6 +29,7 @@
 
 #include "../CommonVICE/types.h"
 #include <stdio.h>
+#include <string>
 
 /* define this only if VICE should write each and every frame received
    and send into the VICE log
@@ -43,7 +44,7 @@ extern int tfe_enabled;
 extern void tfe_init(void);
 extern int tfe_resources_init(void);
 extern int tfe_cmdline_options_init(void);
-extern int update_tfe_interface(void *v, void *param);
+extern int update_tfe_interface(const std::string & name);
 void get_disabled_state(int * param);
 
 extern void tfe_reset(void);
@@ -77,8 +78,8 @@ extern int tfe_enumadapter_open(void);
 extern int tfe_enumadapter(char **ppname, char **ppdescription);
 extern int tfe_enumadapter_close(void);
 
-extern void* get_tfe_interface(void);
-extern void get_tfe_enabled(int *tfe_enabled);
+extern int get_tfe_enabled(void);
+extern const std::string & get_tfe_interface(void);
 
 extern FILE*      g_fh;				// Filehandle for log file
 

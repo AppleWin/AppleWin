@@ -239,14 +239,8 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			}
 
 			{
-				int tfe_enabled;
-				get_tfe_enabled(&tfe_enabled);
-				m_PageConfigTfe.m_tfe_enabled = tfe_enabled != 0;
-				void * iface = get_tfe_interface();
-				if (iface)
-				{
-					m_PageConfigTfe.m_tfe_interface_name = (char *)iface;
-				}
+				m_PageConfigTfe.m_tfe_enabled = get_tfe_enabled();
+				m_PageConfigTfe.m_tfe_interface_name = get_tfe_interface();
 			}
 
 			InitOptions(hWnd);

@@ -11,6 +11,7 @@ public:
 	CPageConfigTfe()
 	{
 		CPageConfigTfe::ms_this = this;
+		m_tfe_enabled = false;
 	}
 	virtual ~CPageConfigTfe(){}
 

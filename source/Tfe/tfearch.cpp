@@ -281,7 +281,7 @@ int tfe_arch_enumadapter_close(void)
 }
 
 static
-BOOL TfePcapOpenAdapter(const char *interface_name) 
+BOOL TfePcapOpenAdapter(const std::string & interface_name)
 {
     pcap_if_t *TfePcapDevice = NULL;
 
@@ -294,12 +294,12 @@ BOOL TfePcapOpenAdapter(const char *interface_name)
         char *pdescription;
         BOOL  found = FALSE;
 
-        if (interface_name) {
+        if (!interface_name.empty()) {
             /* we have an interface name, try it */
             TfePcapDevice = TfePcapAlldevs;
 
             while (tfe_enumadapter(&pname, &pdescription)) {
-                if (strcmp(pname, interface_name)==0) {
+                if (strcmp(pname, interface_name.c_str())==0) {
                     found = TRUE;
                 }
                 lib_free(pname);
@@ -372,7 +372,7 @@ void tfe_arch_post_reset( void )
 #endif
 }
 
-int tfe_arch_activate(const char *interface_name)
+int tfe_arch_activate(const std::string & interface_name)
 {
 #ifdef TFE_DEBUG_ARCH
     if(g_fh) fprintf( g_fh, "tfe_arch_activate().\n" );
