@@ -78,14 +78,6 @@ namespace
     }
   }
 
-  uint16_t readNetworkWord(const uint16_t address)
-  {
-    const uint8_t high = memory[address];
-    const uint8_t low = memory[address + 1];
-    const uint16_t value = low + (high << 8);
-    return value;
-  }
-
   void setSocketModeRegister(const size_t i, const uint16_t address, const uint8_t value)
   {
     memory[address] = value;
@@ -156,11 +148,12 @@ namespace
 
   uint16_t getTXDataSize(const size_t i)
   {
-    const uint16_t size = sockets[i].transmitSize;
+    const Socket & socket = sockets[i];
+    const uint16_t size = socket.transmitSize;
     const uint16_t mask = size - 1;
 
-    const int sn_tx_rr = readNetworkWord(sockets[i].registers + 0x22) & mask;
-    const int sn_tx_wr = readNetworkWord(sockets[i].registers + 0x24) & mask;
+    const int sn_tx_rr = readNetworkWord(memory.data() + socket.registers + 0x22) & mask;
+    const int sn_tx_wr = readNetworkWord(memory.data() + socket.registers + 0x24) & mask;
 
     int dataPresent = sn_tx_wr - sn_tx_rr;
     if (dataPresent < 0)
@@ -193,8 +186,8 @@ namespace
     const int size = sockets[i].receiveSize;
     const uint16_t mask = size - 1;
 
-    const int sn_rx_rd = readNetworkWord(sockets[i].registers + 0x28) & mask;
-    const int sn_rx_wr = sockets[i].sn_rx_wr & mask;
+    const int sn_rx_rd = readNetworkWord(memory.data() + socket.registers + 0x28) & mask;
+    const int sn_rx_wr = socket.sn_rx_wr & mask;
     int dataPresent = sn_rx_wr - sn_rx_rd;
     if (dataPresent < 0)
     {
@@ -269,6 +262,7 @@ namespace
     LogFileOutput(" from %d.%d.%d.%d", source[0], source[1], source[2], source[3]);
     LogFileOutput(" to %d.%d.%d.%d", dest[0], dest[1], dest[2], dest[3]);
     LogFileOutput(" via %d.%d.%d.%d\n", gway[0], gway[1], gway[2], gway[3]);
+    tfeTransmitOneUDPPacket(dest, data.data(), data.size());
 #endif
   }
 
@@ -278,8 +272,8 @@ namespace
     const uint16_t size = socket.transmitSize;
     const uint16_t mask = size - 1;
 
-    const int sn_tx_rr = readNetworkWord(socket.registers + 0x22) & mask;
-    const int sn_tx_wr = readNetworkWord(socket.registers + 0x24) & mask;
+    const int sn_tx_rr = readNetworkWord(memory.data() + socket.registers + 0x22) & mask;
+    const int sn_tx_wr = readNetworkWord(memory.data() + socket.registers + 0x24) & mask;
 
     const uint16_t base = socket.transmitBase;
     const uint16_t rr_address = base + sn_tx_rr;
