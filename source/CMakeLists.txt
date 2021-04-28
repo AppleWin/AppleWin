@@ -73,8 +73,8 @@ set(SOURCE_FILES
   linux/keyboard.cpp
   linux/linuxframe.cpp
   linux/context.cpp
-  linux/uthernet2.cpp
-  linux/tfe2.cpp
+  linux/network/uthernet2.cpp
+  linux/network/tfe2.cpp
 
   linux/duplicates/Debug.cpp
   linux/duplicates/Debug_Display.cpp
@@ -161,8 +161,8 @@ set(HEADER_FILES
   linux/registry.h
   linux/keyboard.h
   linux/linuxframe.h
-  linux/uthernet2.h
-  linux/tfe2.h
+  linux/network/uthernet2.h
+  linux/network/tfe2.h
   linux/win.h
 
   Z80VICE/z80.h

@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-#include "tfe2.h"
+#include "linux/network/tfe2.h"
 
 #include "Tfe/tfearch.h"
 #include "Tfe/tfe.h"

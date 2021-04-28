@@ -1,13 +1,13 @@
 #include <StdAfx.h>
-#include "linux/uthernet2.h"
-#include "linux/tfe2.h"
+#include "linux/network/uthernet2.h"
+#include "linux/network/tfe2.h"
 
 #include "Memory.h"
 #include "Log.h"
 
 #define MAX_RXLENGTH 1518
 // #define U2_LOG_VERBOSE
-// #define U2_LOG_TRAFFIC
+#define U2_LOG_TRAFFIC
 #define U2_LOG_UNKNOWN
 
 namespace
@@ -614,7 +614,7 @@ namespace
       receiveOnePacket(i);
     }
 
-  	BYTE res = write ? 0 : MemReadFloatingBus(nCycles);
+    BYTE res = write ? 0 : MemReadFloatingBus(nCycles);
 
     const uint8_t loc = address & 0x0F;
 

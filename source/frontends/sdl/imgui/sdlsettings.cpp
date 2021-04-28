@@ -23,7 +23,7 @@
 
 #include "Tfe/tfe.h"
 #include "Tfe/tfesupp.h"
-#include "linux/uthernet2.h"
+#include "linux/network/uthernet2.h"
 
 #include "imgui_internal.h"
 
