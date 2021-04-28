@@ -657,20 +657,7 @@ namespace
 
 #ifdef U2_LOG_VERBOSE
     const char * mode = write ? "WRITE " : "READ  ";
-
-    char c;
-    switch (res)
-    {
-      case 'A'...'Z':
-      case 'a'...'z':
-      case '0'...'9':
-        c = res;
-        break;
-      default:
-        c = '.';
-        break;
-    }
-
+    const char c = std::isprint(res) ? res : '.';
     LogFileOutput("U2: %04x: %s %04x %02x = %02x, %c\n", programcounter, mode, address, value, res, c);
 #endif
 
