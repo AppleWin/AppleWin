@@ -202,7 +202,7 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 	uilib_adjust_group_width(hwnd, ms_leftgroup);
 	uilib_move_group(hwnd, ms_rightgroup, xsize + 30);
 
-	active_value = (m_tfe_enabled ? 1 : 0);
+	active_value = (m_tfe_enabled > 0 ? 1 : 0);
 
 	temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_ENABLE);
 	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Disabled");

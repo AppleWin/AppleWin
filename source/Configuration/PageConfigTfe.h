@@ -11,13 +11,13 @@ public:
 	CPageConfigTfe()
 	{
 		CPageConfigTfe::ms_this = this;
-		m_tfe_enabled = false;
+		m_tfe_enabled = 0;
 	}
 	virtual ~CPageConfigTfe(){}
 
 	static INT_PTR CALLBACK DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
 
-	bool m_tfe_enabled;
+	int m_tfe_enabled;
 	std::string m_tfe_interface_name;
 
 protected:
