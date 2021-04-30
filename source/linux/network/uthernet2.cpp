@@ -1,14 +1,21 @@
 #include <StdAfx.h>
+
+#define MAX_RXLENGTH 1518
+// #define U2_LOG_VERBOSE
+// #define U2_LOG_TRAFFIC
+#define U2_LOG_UNKNOWN
+#define U2_USE_SLIRP
+
 #include "linux/network/uthernet2.h"
 #include "linux/network/tfe2.h"
+
+#ifdef U2_USE_SLIRP
+#include "linux/network/slirp2.h"
+#endif
 
 #include "Memory.h"
 #include "Log.h"
 
-#define MAX_RXLENGTH 1518
-// #define U2_LOG_VERBOSE
-#define U2_LOG_TRAFFIC
-#define U2_LOG_UNKNOWN
 
 namespace
 {
@@ -35,7 +42,20 @@ namespace
   uint8_t modeRegister = 0;
   uint16_t dataAddress = 0;
 
+#ifdef U2_USE_SLIRP
+  std::shared_ptr<SlirpNet> slirp;
+#endif
+
   void initialise();
+
+  bool isThereRoomFor(const size_t i, const size_t len)
+  {
+    const Socket & socket = sockets[i];
+    const uint16_t rsr = socket.sn_rx_rsr;  // already present
+    const int size = socket.receiveSize;    // total size
+
+    return rsr + len + sizeof(uint16_t) < size; // "not =": we do not want to fill the buffer.
+  }
 
   uint8_t getIByte(const uint16_t value, const size_t shift)
   {
@@ -204,29 +224,49 @@ namespace
 
   void receiveOnePacketMacRaw(const size_t i)
   {
-    Socket & socket = sockets[i];
+    const Socket & socket = sockets[i];
     const uint16_t rsr = socket.sn_rx_rsr;
 
-    BYTE buffer[MAX_RXLENGTH];
-    int len = sizeof(buffer);
-    if (tfeReceiveOnePacket(memory.data() + 0x0009, buffer, len))
+#ifdef U2_USE_SLIRP
     {
-      const int size = socket.receiveSize;
-      if (rsr + len < size) // "not =": we do not want to fill the buffer.
+      std::queue<std::vector<uint8_t>> & queue = slirp->getQueue();
+      if (!queue.empty())
       {
-        writeData(i, buffer, len);
+        const std::vector<uint8_t> & packet = queue.front();
+        if (isThereRoomFor(i, packet.size()))
+        {
+          writeData(i, packet.data(), packet.size());
 #ifdef U2_LOG_TRAFFIC
-        LogFileOutput("U2: READ MACRAW[%d]: +%d -> %d bytes\n", i, len, socket.sn_rx_rsr);
+          LogFileOutput("U2: READ MACRAW[%d]: +%d -> %d bytes\n", i, packet.size(), socket.sn_rx_rsr);
 #endif
-      }
-      else
-      {
-        // ??? we just skip it
-#ifdef U2_LOG_TRAFFIC
-        LogFileOutput("U2: SKIP MACRAW[%d]: %d bytes\n", i, len);
-#endif
+        }
+        // maybe we should wait?
+        queue.pop();
       }
     }
+#else
+    {
+      BYTE buffer[MAX_RXLENGTH];
+      int len = sizeof(buffer);
+      if (tfeReceiveOnePacket(memory.data() + 0x0009, buffer, len))
+      {
+        if (isThereRoomFor(i, len))
+        {
+          writeData(i, buffer, len);
+#ifdef U2_LOG_TRAFFIC
+          LogFileOutput("U2: READ MACRAW[%d]: +%d -> %d bytes\n", i, len, socket.sn_rx_rsr);
+#endif
+        }
+        else
+        {
+          // ??? we just skip it
+#ifdef U2_LOG_TRAFFIC
+          LogFileOutput("U2: SKIP MACRAW[%d]: %d bytes\n", i, len);
+#endif
+        }
+      }
+    }
+#endif
   }
 
   void receiveOnePacket(const size_t i)
@@ -246,10 +286,14 @@ namespace
 #ifdef U2_LOG_TRAFFIC
     LogFileOutput("U2: SEND MACRAW[%d]: %d bytes\n", i, data.size());
 #endif
+#ifdef U2_USE_SLIRP
+    slirp->sendFromGuest(data.data(), data.size());
+#else
     tfeTransmitOnePacket(data.data(), data.size());
+#endif
   }
 
-  void sendDataIPRaw(const size_t i, const std::vector<uint8_t> & data)
+  void sendDataIPRaw(const size_t i, std::vector<uint8_t> & data)
   {
 #ifdef U2_LOG_TRAFFIC
     const Socket & socket = sockets[i];
@@ -262,8 +306,8 @@ namespace
     LogFileOutput(" from %d.%d.%d.%d", source[0], source[1], source[2], source[3]);
     LogFileOutput(" to %d.%d.%d.%d", dest[0], dest[1], dest[2], dest[3]);
     LogFileOutput(" via %d.%d.%d.%d\n", gway[0], gway[1], gway[2], gway[3]);
-    tfeTransmitOneUDPPacket(dest, data.data(), data.size());
 #endif
+    // dont know how to send IP raw.
   }
 
   void sendData(const size_t i)
@@ -607,12 +651,17 @@ namespace
     setTXSizes(0x001B, 0x55);  // TMSR
   }
 
-  BYTE u2_C0(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
+  void receivePackets()
   {
     for (size_t i = 0; i < 4; ++i)
     {
       receiveOnePacket(i);
     }
+  }
+
+  BYTE u2_C0(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
+  {
+    receivePackets();
 
     BYTE res = write ? 0 : MemReadFloatingBus(nCycles);
 
@@ -669,5 +718,19 @@ namespace
 void registerUthernet2()
 {
   initialise();
+ #ifdef U2_USE_SLIRP
+  slirp.reset();
+  slirp = std::make_shared<SlirpNet>();
+#endif
   RegisterIoHandler(3, u2_C0, u2_C0, nullptr, nullptr, nullptr, nullptr);
+}
+
+void processEventsUthernet2(uint32_t timeout)
+{
+#ifdef U2_USE_SLIRP
+   if (slirp)
+  {
+    slirp->process(timeout);
+  }
+#endif
 }

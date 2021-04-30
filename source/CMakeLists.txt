@@ -75,6 +75,7 @@ set(SOURCE_FILES
   linux/context.cpp
   linux/network/uthernet2.cpp
   linux/network/tfe2.cpp
+  linux/network/slirp2.cpp
 
   linux/duplicates/Debug.cpp
   linux/duplicates/Debug_Display.cpp
@@ -163,6 +164,7 @@ set(HEADER_FILES
   linux/linuxframe.h
   linux/network/uthernet2.h
   linux/network/tfe2.h
+  linux/network/slirp2.h
   linux/win.h
 
   Z80VICE/z80.h
@@ -179,12 +181,14 @@ add_library(appleii SHARED
 pkg_check_modules(YAML REQUIRED yaml-0.1)
 pkg_check_modules(MINIZIP REQUIRED minizip)
 pkg_check_modules(PCAP REQUIRED libpcap)
+pkg_check_modules(SLIRP REQUIRED slirp)
 find_package(Boost REQUIRED)
 
 target_include_directories(appleii PRIVATE
   ${YAML_INCLUDE_DIRS}
   ${PCAP_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
+  ${SLIRP_INCLUDE_DIRS}
   Debugger
   )
 
@@ -197,6 +201,7 @@ target_link_libraries(appleii PRIVATE
   ${YAML_LIBRARIES}
   ${MINIZIP_LIBRARIES}
   ${PCAP_LIBRARIES}
+  ${SLIRP_LIBRARIES}
   )
 
 target_compile_options(appleii PUBLIC

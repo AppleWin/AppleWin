@@ -12,3 +12,4 @@ libsdl2-image-dev
 libsdl2-dev
 libgles-dev
 libpcap-dev
+libslirp-dev

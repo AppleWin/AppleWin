@@ -4,9 +4,6 @@
 #include "Tfe/tfearch.h"
 #include "Tfe/tfe.h"
 
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #include <arpa/inet.h>
 
 #include "../Log.h"
@@ -99,76 +96,6 @@ bool tfeReceiveOnePacket(const uint8_t * mac, BYTE * buffer, int & len)
         }
     } while (!done);
     return false;
-}
-
-void tfeTransmitOneUDPPacket(const uint8_t * dest, const BYTE * buffer, const int len)
-{
-    if (len < 8)
-    {
-        return;
-    }
-    const uint16_t length = readNetworkWord(buffer + 4);
-    if (len != length)
-    {
-        return;
-    }
-
-    const int socketSD = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (socketSD <= 0)
-    {
-        LogFileOutput("Error: Could not open socket.\n");
-        return;
-    }
-
-    sockaddr_in source;
-    memset(&source, 0, sizeof(source));
-    source.sin_family = AF_INET;
-
-    // already in network order
-    source.sin_port = *reinterpret_cast<const uint16_t *>(buffer + 0);
-    source.sin_addr.s_addr = INADDR_ANY;
-
-    int ret = bind(socketSD, (sockaddr*)&source, sizeof(source));
-    if (ret < 0)
-    {
-        perror(NULL);
-        LogFileOutput("Error: Could not bind socket.");
-        close(socketSD);
-        return;
-    }
-
-    // Configure the port and ip we want to send to
-    sockaddr_in destination;
-    memset(&destination, 0, sizeof(destination));
-    destination.sin_family = AF_INET;
-
-    // already in network order
-    destination.sin_port = *reinterpret_cast<const uint16_t *>(buffer + 2);
-    destination.sin_addr.s_addr = *reinterpret_cast<const uint32_t *>(dest);
-
-    if (destination.sin_addr.s_addr == INADDR_BROADCAST)
-    {
-        // set socket options enable broadcast
-        int broadcastEnable = 1;
-        const int ret = setsockopt(socketSD, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
-        if (ret)
-        {
-            LogFileOutput("Error: Could not open set socket to broadcast mode.\n");
-            close(socketSD);
-            return;
-        }
-    }
-
-    const void * data = buffer + 8;
-    ret = sendto(socketSD, data, len - 8, 0, (sockaddr*)&destination, sizeof(destination));
-    if (ret < 0)
-    {
-        LogFileOutput("Error: Could not open send broadcast.");
-        close(socketSD);
-        return;
-    }
-
-    close(socketSD);
 }
 
 uint16_t readNetworkWord(const uint8_t * address)
