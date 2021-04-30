@@ -728,6 +728,17 @@ static USHORT GetTimer2Counter(BYTE reg, USHORT counter)
 	return counter - opcodeCycleAdjust;
 }
 
+static bool IsTimer1Underflowed(BYTE reg, USHORT counter, USHORT latch, int timerIrqDelay)
+{
+	const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(reg);	// to compensate for the 4/5/6 cycle read opcode
+	return CheckTimerUnderflow(counter, timerIrqDelay, opcodeCycleAdjust);
+}
+
+static bool IsTimer2Underflowed(BYTE reg, USHORT counter)
+{
+	return counter >= 0 && (short)GetTimer2Counter(reg, counter) < 0;
+}
+
 static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 {
 	g_bMB_Active = true;
@@ -780,6 +791,10 @@ static BYTE SY6522_Read(BYTE nDevice, BYTE nReg)
 			break;
 		case 0x0d:	// IFR
 			nValue = pMB->sy6522.IFR;
+			if (pMB->bTimer1Active && IsTimer1Underflowed(nReg, pMB->sy6522.TIMER1_COUNTER.w, pMB->sy6522.TIMER1_LATCH.w, pMB->sy6522.timer1IrqDelay))
+				nValue |= IxR_TIMER1;
+			if (pMB->bTimer2Active && IsTimer2Underflowed(nReg, pMB->sy6522.TIMER2_COUNTER.w))
+				nValue |= IxR_TIMER2;
 			break;
 		case 0x0e:	// IER
 			nValue = 0x80 | pMB->sy6522.IER;	// GH#567
