@@ -1,13 +1,17 @@
 #include <StdAfx.h>
 
 #define MAX_RXLENGTH 1518
+
 // #define U2_LOG_VERBOSE
 // #define U2_LOG_TRAFFIC
 #define U2_LOG_UNKNOWN
+
+// if this is defined, libslirp is used as opposed to libpcap
 #define U2_USE_SLIRP
 
 #include "linux/network/uthernet2.h"
 #include "linux/network/tfe2.h"
+#include "linux/network/registers.h"
 
 #ifdef U2_USE_SLIRP
 #include "linux/network/slirp2.h"
@@ -19,11 +23,6 @@
 
 namespace
 {
-  #define MR_INDIRECT 0x01  // 0
-  #define MR_AUTO_INC 0x02  // 1
-  #define MR_PPOE_MOD 0x08  // 3
-  #define MR_PING_BLK 0x10  // 4
-  #define MR_SW_RESET 0x80  // 7
 
   struct Socket
   {
@@ -101,16 +100,16 @@ namespace
   void setSocketModeRegister(const size_t i, const uint16_t address, const uint8_t value)
   {
     memory[address] = value;
-    const uint8_t protocol = value & 0x0F;
+    const uint8_t protocol = value & SN_MR_PROTO_MASK;
     switch (protocol)
     {
-      case 0x00:
+      case SN_MR_CLOSED:
         LogFileOutput("U2: Mode[%d]: CLOSED\n", i);
         break;
-      case 0x03:
+      case SN_MR_IPRAW:
         LogFileOutput("U2: Mode[%d]: IPRAW\n", i);
         break;
-      case 0x04:
+      case SN_MR_MACRAW:
         LogFileOutput("U2: Mode[%d]: MACRAW\n", i);
         break;
 #ifdef U2_LOG_UNKNOWN
@@ -123,8 +122,8 @@ namespace
   void setTXSizes(const uint16_t address, uint8_t value)
   {
     memory[address] = value;
-    uint16_t base = 0x4000;
-    const uint16_t ceiling = base + 0x2000;
+    uint16_t base = TX_BASE;
+    const uint16_t end = RX_BASE;
     for (size_t i = 0; i < 4; ++i)
     {
       sockets[i].transmitBase = base;
@@ -135,9 +134,9 @@ namespace
       const uint16_t size = 1 << (10 + bits);
       base += size;
 
-      if (base > ceiling)
+      if (base > end)
       {
-        base = ceiling;
+        base = end;
       }
       sockets[i].transmitSize = base - sockets[i].transmitBase;
     }
@@ -146,8 +145,8 @@ namespace
   void setRXSizes(const uint16_t address, uint8_t value)
   {
     memory[address] = value;
-    uint16_t base = 0x6000;
-    const uint16_t ceiling = base + 0x2000;
+    uint16_t base = RX_BASE;
+    const uint16_t end = MEM_SIZE;
     for (size_t i = 0; i < 4; ++i)
     {
       sockets[i].receiveBase = base;
@@ -158,9 +157,9 @@ namespace
       const uint16_t size = 1 << (10 + bits);
       base += size;
 
-      if (base > ceiling)
+      if (base > end)
       {
-        base = ceiling;
+        base = end;
       }
       sockets[i].receiveSize = base - sockets[i].receiveBase;
     }
@@ -172,10 +171,10 @@ namespace
     const uint16_t size = socket.transmitSize;
     const uint16_t mask = size - 1;
 
-    const int sn_tx_rr = readNetworkWord(memory.data() + socket.registers + 0x22) & mask;
-    const int sn_tx_wr = readNetworkWord(memory.data() + socket.registers + 0x24) & mask;
+    const int sn_tx_rd = readNetworkWord(memory.data() + socket.registers + SN_TX_RD0) & mask;
+    const int sn_tx_wr = readNetworkWord(memory.data() + socket.registers + SN_TX_WR0) & mask;
 
-    int dataPresent = sn_tx_wr - sn_tx_rr;
+    int dataPresent = sn_tx_wr - sn_tx_rd;
     if (dataPresent < 0)
     {
       dataPresent += size;
@@ -206,7 +205,7 @@ namespace
     const int size = sockets[i].receiveSize;
     const uint16_t mask = size - 1;
 
-    const int sn_rx_rd = readNetworkWord(memory.data() + socket.registers + 0x28) & mask;
+    const int sn_rx_rd = readNetworkWord(memory.data() + socket.registers + SN_RX_RD0) & mask;
     const int sn_rx_wr = socket.sn_rx_wr & mask;
     int dataPresent = sn_rx_wr - sn_rx_rd;
     if (dataPresent < 0)
@@ -248,7 +247,7 @@ namespace
     {
       BYTE buffer[MAX_RXLENGTH];
       int len = sizeof(buffer);
-      if (tfeReceiveOnePacket(memory.data() + 0x0009, buffer, len))
+      if (tfeReceiveOnePacket(memory.data() + SHAR0, buffer, len))
       {
         if (isThereRoomFor(i, len))
         {
@@ -272,10 +271,10 @@ namespace
   void receiveOnePacket(const size_t i)
   {
     const Socket & socket = sockets[i];
-    const uint8_t sr = memory[socket.registers + 0x03];
+    const uint8_t sr = memory[socket.registers + SN_SR];
     switch (sr)
     {
-      case 0x42:
+      case SN_SR_SOCK_MACRAW:
         receiveOnePacketMacRaw(i);
         break;
     };
@@ -297,12 +296,12 @@ namespace
   {
 #ifdef U2_LOG_TRAFFIC
     const Socket & socket = sockets[i];
-    const uint16_t ip = socket.registers + 0x0c;
+    const uint16_t ip = socket.registers + SN_DIPR0;
 
     LogFileOutput("U2: SEND IPRAW[%d]: %d bytes", i, data.size());
-    const uint8_t * source = memory.data() + 0x000f;
+    const uint8_t * source = memory.data() + SIPR0;
     const uint8_t * dest = memory.data() + ip;
-    const uint8_t * gway = memory.data() + 0x0001;
+    const uint8_t * gway = memory.data() + GAR0;
     LogFileOutput(" from %d.%d.%d.%d", source[0], source[1], source[2], source[3]);
     LogFileOutput(" to %d.%d.%d.%d", dest[0], dest[1], dest[2], dest[3]);
     LogFileOutput(" via %d.%d.%d.%d\n", gway[0], gway[1], gway[2], gway[3]);
@@ -316,8 +315,8 @@ namespace
     const uint16_t size = socket.transmitSize;
     const uint16_t mask = size - 1;
 
-    const int sn_tx_rr = readNetworkWord(memory.data() + socket.registers + 0x22) & mask;
-    const int sn_tx_wr = readNetworkWord(memory.data() + socket.registers + 0x24) & mask;
+    const int sn_tx_rr = readNetworkWord(memory.data() + socket.registers + SN_TX_RD0) & mask;
+    const int sn_tx_wr = readNetworkWord(memory.data() + socket.registers + SN_TX_WR0) & mask;
 
     const uint16_t base = socket.transmitBase;
     const uint16_t rr_address = base + sn_tx_rr;
@@ -336,16 +335,16 @@ namespace
     }
 
     // move read pointer to writer
-    memory[socket.registers + 0x22] = getIByte(sn_tx_wr, 8);
-    memory[socket.registers + 0x23] = getIByte(sn_tx_wr, 0);
+    memory[socket.registers + SN_TX_RD0] = getIByte(sn_tx_wr, 8);
+    memory[socket.registers + SN_TX_RD1] = getIByte(sn_tx_wr, 0);
 
-    const uint8_t sr = memory[socket.registers + 0x03];
+    const uint8_t sr = memory[socket.registers + SN_SR];
     switch (sr)
     {
-      case 0x32:    // SOCK_IPRAW
+      case SN_SR_SOCK_IPRAW:
         sendDataIPRaw(i, data);
         break;
-      case 0x42:    // SOCK_MACRAW
+      case SN_SR_SOCK_MACRAW:
         sendDataMacRaw(i, data);
         break;
     }
@@ -356,27 +355,27 @@ namespace
     Socket & socket = sockets[i];
     socket.sn_rx_wr = 0x00;
     socket.sn_rx_rsr = 0x00;
-    memory[socket.registers + 0x22] = 0x00;
-    memory[socket.registers + 0x23] = 0x00;
-    memory[socket.registers + 0x24] = 0x00;
-    memory[socket.registers + 0x25] = 0x00;
-    memory[socket.registers + 0x28] = 0x00;
-    memory[socket.registers + 0x29] = 0x00;
+    memory[socket.registers + SN_TX_RD0] = 0x00;
+    memory[socket.registers + SN_TX_RD1] = 0x00;
+    memory[socket.registers + SN_TX_WR0] = 0x00;
+    memory[socket.registers + SN_TX_WR1] = 0x00;
+    memory[socket.registers + SN_RX_RD0] = 0x00;
+    memory[socket.registers + SN_RX_RD1] = 0x00;
   }
 
   void openSocket(const size_t i)
   {
     const Socket & socket = sockets[i];
-    const uint8_t mr = memory[socket.registers + 0x00];
-    const uint8_t protocol = mr & 0x0F;
-    uint8_t & sr = memory[socket.registers + 0x03];
+    const uint8_t mr = memory[socket.registers + SN_MR];
+    const uint8_t protocol = mr & SN_MR_PROTO_MASK;
+    uint8_t & sr = memory[socket.registers + SN_SR];
     switch (protocol)
     {
-      case 0x03:    // IPRAW
-        sr = 0x32;  // SOCK_IPRAW
+      case SN_MR_IPRAW:
+        sr = SN_SR_SOCK_IPRAW;
         break;
-      case 0x04:    // MACRAW
-        sr = 0x42;  // SOCK_MACRAW
+      case SN_MR_MACRAW:
+        sr = SN_SR_SOCK_MACRAW;
         break;
 #ifdef U2_LOG_UNKNOWN
       default:
@@ -390,7 +389,7 @@ namespace
   void closeSocket(const size_t i)
   {
     const Socket & socket = sockets[i];
-    memory[socket.registers + 0x03] = 0x00; // SOCK_CLOSED
+    memory[socket.registers + SN_SR] = SN_MR_CLOSED;
     LogFileOutput("U2: CLOSE[%d]\n", i);
   }
 
@@ -398,16 +397,16 @@ namespace
   {
     switch (value)
     {
-      case 0x01:  // OPEN
+      case SN_CR_OPEN:
         openSocket(i);
         break;
-      case 0x10:  // CLOSE
+      case SN_CR_CLOSE:
         closeSocket(i);
         break;
-      case 0x20:  // SEND
+      case SN_CR_SEND:
         sendData(i);
         break;
-      case 0x40:  // RECV
+      case SN_CR_RECV:
         updateRSR(i);
         break;
 #ifdef U2_LOG_UNKNOWN
@@ -424,32 +423,32 @@ namespace
     uint8_t value;
     switch (loc)
     {
-      case 0x00:  // Sn_MR
-      case 0x01:  // Sn_CR
+      case SN_MR:
+      case SN_CR:
         value = memory[address];
         break;
-      case 0x20:  // Sn_TX_FSR  high
+      case SN_TX_FSR0:
         value = getTXFreeSizeRegister(i, 8);
         break;
-      case 0x21:  // Sn_TX_FSR  low
+      case SN_TX_FSR1:
         value = getTXFreeSizeRegister(i, 0);
         break;
-      case 0x22:  // Sn_TX_RR
-      case 0x23:  // Sn_TX_RR
+      case SN_TX_RD0:
+      case SN_TX_RD1:
         value = memory[address];
         break;
-      case 0x24:  // Sn_TX_WR
-      case 0x25:  // Sn_TX_WR
+      case SN_TX_WR0:
+      case SN_TX_WR1:
         value = memory[address];
         break;
-      case 0x26:  // Sn_RX_RSR
+      case SN_RX_RSR0:
         value = getRXDataSizeRegister(i, 8);
         break;
-      case 0x27:  // Sn_RX_RSR
+      case SN_RX_RSR1:
         value = getRXDataSizeRegister(i, 0);
         break;
-      case 0x28:  // Sn_RX_RD
-      case 0x29:  // Sn_RX_RD
+      case SN_RX_RD0:
+      case SN_RX_RD1:
         value = memory[address];
         break;
       default:
@@ -467,20 +466,22 @@ namespace
     uint8_t value;
     switch (address)
     {
-      case 0x0000 ... 0x002F:
+      case MR ... UPORT1:
         value = memory[address];
         break;
-      case 0x0400 ... 0x07FF:
+      case S0_BASE ... S3_MAX:
         value = readSocketRegister(address);
         break;
-      case 0x4000 ... 0x7FFF:
+      case TX_BASE ... MEM_MAX:
         value = memory[address];
         break;
       default:
 #ifdef U2_LOG_UNKNOWN
         LogFileOutput("U2: Read unknown location: %04x\n", address);
 #endif
-        value = memory[address];
+        // this might not be 100% correct if address >= 0x8000
+        // see top of page 13 Uthernet II
+        value = memory[address & MEM_MAX];
         break;
     }
     return value;
@@ -488,13 +489,15 @@ namespace
 
   void autoIncrement()
   {
-    if (modeRegister & MR_AUTO_INC)
+    if (modeRegister & MR_AI)
     {
       ++dataAddress;
+      // Read bottom of Uthernet II page 12
+      // Setting the address to values >= 0x8000 is not really supported
       switch (dataAddress)
       {
-        case 0x8000:
-        case 0x6000:
+        case RX_BASE:
+        case MEM_SIZE:
           dataAddress -= 0x2000;
           break;
       }
@@ -529,34 +532,34 @@ namespace
     const uint16_t loc = address & 0xFF;
     switch (loc)
     {
-      case 0x00:
+      case SN_MR:
         setSocketModeRegister(i, address, value);
         break;
-      case 0x01:
+      case SN_CR:
         setCommandRegister(i, value);
         break;
-      case 0x0c ... 0x0f:  // Destination IP
+      case SN_DIPR0 ... SN_DIPR3:
         memory[address] = value;
         break;
-      case 0x14:
+      case SN_PROTO:
         setIPProtocol(i, value);
         break;
-      case 0x15:
+      case SN_TOS:
         setIPTypeOfService(i, value);
         break;
-      case 0x16:
+      case SN_TTL:
         setIPTTL(i, value);
         break;
-      case 0x24:    // Sn_TX_WR
+      case SN_TX_WR0:
         memory[address] = value;
         break;
-      case 0x25:    // Sn_TX_WR
+      case SN_TX_WR1:
         memory[address] = value;
         break;
-      case 0x28:    // Sn_RX_RD
+      case SN_RX_RD0:
         memory[address] = value;
         break;
-      case 0x29:    // Sn_RX_RD
+      case SN_RX_RD1:
         memory[address] = value;
         break;
 #ifdef U2_LOG_UNKNOWN
@@ -570,7 +573,7 @@ namespace
   void setModeRegister(const uint16_t address, const uint8_t value)
   {
     modeRegister = value;
-    if (modeRegister & MR_SW_RESET)
+    if (modeRegister & MR_RST)
     {
       initialise();
     }
@@ -581,19 +584,19 @@ namespace
   {
     switch (address)
     {
-      case 0x0000:
+      case MR:
         setModeRegister(address, value);
         break;
-      case 0x0001 ... 0x0004: // gateway
-      case 0x0005 ... 0x0008: // subnet
-      case 0x0009 ... 0x000e: // mac address
-      case 0x000f ... 0x0012: // source IP
+      case GAR0 ... GAR3:
+      case SUBR0 ... SUBR3:
+      case SHAR0 ... SHAR5:
+      case SIPR0 ... SIPR3:
         memory[address] = value;
         break;
-      case 0x001A:
+      case RMSR:
         setRXSizes(address, value);
         break;
-      case 0x001B:
+      case TMSR:
         setTXSizes(address, value);
         break;
 #ifdef U2_LOG_UNKNOWN
@@ -608,18 +611,18 @@ namespace
   {
     switch (address)
     {
-      case 0x0000 ... 0x002F:
+      case MR ... UPORT1:
         writeCommonRegister(address, value);
         break;
-      case 0x0400 ... 0x07FF:
+      case S0_BASE ... S3_MAX:
         writeSocketRegister(address, value);
         break;
-      case 0x4000 ... 0x7FFF:
+      case TX_BASE ... MEM_MAX:
         memory[address] = value;
         break;
 #ifdef U2_LOG_UNKNOWN
       default:
-        LogFileOutput("U2: Read to unknown location: %04x\n", address);
+        LogFileOutput("U2: Write to unknown location: %02x to %04x\n", value, address);
         break;
 #endif
     }
@@ -635,25 +638,26 @@ namespace
   {
     LogFileOutput("U2: Uthernet 2 initialisation\n");
     modeRegister = 0;
-    dataAddress = 0;
+    // dataAddress is NOT reset, see page 10 of Uthernet II
     sockets.resize(4);
     memory.clear();
-    memory.resize(0x8000);
+    memory.resize(MEM_SIZE, 0);
 
-    for (size_t i = 0; i < 4; ++i)
+    for (size_t i = 0; i < sockets.size(); ++i)
     {
-      sockets[i].registers = 0x0400 + (i << 8);
+      sockets[i].registers = S0_BASE + (i << 8);
     }
 
-    memory[0x0017] = 0x07;  // RTR
-    memory[0x0018] = 0xD0;  // RTR
-    setRXSizes(0x001A, 0x55);  // RMSR
-    setTXSizes(0x001B, 0x55);  // TMSR
+    // initial values
+    memory[RTR0] = 0x07;
+    memory[RTR1] = 0xD0;
+    setRXSizes(RMSR, 0x55);
+    setTXSizes(TMSR, 0x55);
   }
 
   void receivePackets()
   {
-    for (size_t i = 0; i < 4; ++i)
+    for (size_t i = 0; i < sockets.size(); ++i)
     {
       receiveOnePacket(i);
     }
@@ -671,16 +675,16 @@ namespace
     {
       switch (loc)
       {
-        case 4:
-          setModeRegister(0x0000, value);
+        case C0X_MODE_REGISTER:
+          setModeRegister(MR, value);
           break;
-        case 5: // set high. do not accept >= 0x8000
-          dataAddress = ((value & 0x7F) << 8) | (dataAddress & 0x00FF);
+        case C0X_ADDRESS_HIGH:
+          dataAddress = (value << 8) | (dataAddress & 0x00FF);
           break;
-        case 6: // set low
-          dataAddress = ((value & 0XFF) << 0) | (dataAddress & 0xFF00);
+        case C0X_ADDRESS_LOW:
+          dataAddress = (value << 0) | (dataAddress & 0xFF00);
           break;
-        case 7:
+        case C0X_DATA_PORT:
           writeValue(value);
           break;
       }
@@ -689,16 +693,16 @@ namespace
     {
       switch (loc)
       {
-        case 4:
+        case C0X_MODE_REGISTER:
           res = modeRegister;
           break;
-        case 5:
-          res = getIByte(dataAddress, 8);  // hi
+        case C0X_ADDRESS_HIGH:
+          res = getIByte(dataAddress, 8);
           break;
-        case 6:
-          res = getIByte(dataAddress, 0);  // low
+        case C0X_ADDRESS_LOW:
+          res = getIByte(dataAddress, 0);
           break;
-        case 7:
+        case C0X_DATA_PORT:
           res = readValue();
           break;
       }
@@ -722,7 +726,7 @@ void registerUthernet2()
   slirp.reset();
   slirp = std::make_shared<SlirpNet>();
 #endif
-  RegisterIoHandler(3, u2_C0, u2_C0, nullptr, nullptr, nullptr, nullptr);
+  RegisterIoHandler(SLOT3, u2_C0, u2_C0, nullptr, nullptr, nullptr, nullptr);
 }
 
 void processEventsUthernet2(uint32_t timeout)

@@ -165,6 +165,7 @@ set(HEADER_FILES
   linux/network/uthernet2.h
   linux/network/tfe2.h
   linux/network/slirp2.h
+  linux/network/registers.h
   linux/win.h
 
   Z80VICE/z80.h
