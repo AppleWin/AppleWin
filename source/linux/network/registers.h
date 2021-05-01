@@ -45,6 +45,8 @@
 #define SN_MR_PPPOE         0x05
 
 #define SN_CR_OPEN          0x01
+#define SN_CR_LISTENT       0x02
+#define SN_CR_CONNECT       0x04
 #define SN_CR_CLOSE         0x10
 #define SN_CR_SEND          0x20
 #define SN_CR_RECV          0x40
@@ -52,8 +54,12 @@
 #define SN_MR               0x00
 #define SN_CR               0x01
 #define SN_SR               0x03
+#define SN_PORT0            0x04
+#define SN_PORT1            0x05
 #define SN_DIPR0            0x0C
 #define SN_DIPR3            0x0F
+#define SN_DPORT0           0x10
+#define SN_DPORT1           0x11
 #define SN_PROTO            0x14
 #define SN_TOS              0x15
 #define SN_TTL              0x16
@@ -68,5 +74,9 @@
 #define SN_RX_RD0           0x28
 #define SN_RX_RD1           0x29
 
+#define SN_SR_CLOSED        0x00
+#define SN_SR_SOCK_INIT     0x13
+#define SN_SR_ESTABLISHED   0x17
+#define SN_SR_SOCK_UDP      0x22
 #define SN_SR_SOCK_IPRAW    0x32
 #define SN_SR_SOCK_MACRAW   0x42

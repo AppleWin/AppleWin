@@ -106,6 +106,12 @@ namespace
       case SN_MR_CLOSED:
         LogFileOutput("U2: Mode[%d]: CLOSED\n", i);
         break;
+      case SN_MR_TCP:
+        LogFileOutput("U2: Mode[%d]: TCP\n", i);
+        break;
+      case SN_MR_UDP:
+        LogFileOutput("U2: Mode[%d]: UDP\n", i);
+        break;
       case SN_MR_IPRAW:
         LogFileOutput("U2: Mode[%d]: IPRAW\n", i);
         break;
@@ -114,7 +120,7 @@ namespace
         break;
 #ifdef U2_LOG_UNKNOWN
       default:
-        LogFileOutput("U2: Unknown protocol: %02x\n", value);
+        LogFileOutput("U2: Unknown protocol: %02x\n", protocol);
 #endif
     }
   }
@@ -377,6 +383,12 @@ namespace
       case SN_MR_MACRAW:
         sr = SN_SR_SOCK_MACRAW;
         break;
+      case SN_MR_TCP:
+        sr = SN_SR_SOCK_INIT;
+        break;
+      case SN_MR_UDP:
+        sr = SN_SR_SOCK_UDP;
+        break;
 #ifdef U2_LOG_UNKNOWN
       default:
         LogFileOutput("U2: OPEN[%d]: unknown mode: %02x\n", i, mr);
@@ -389,8 +401,17 @@ namespace
   void closeSocket(const size_t i)
   {
     const Socket & socket = sockets[i];
-    memory[socket.registers + SN_SR] = SN_MR_CLOSED;
+    memory[socket.registers + SN_SR] = SN_SR_CLOSED;
     LogFileOutput("U2: CLOSE[%d]\n", i);
+  }
+
+  void connectSocket(const size_t i)
+  {
+    const Socket & socket = sockets[i];
+    memory[socket.registers + SN_SR] = SN_SR_ESTABLISHED;
+    const uint8_t * dest = memory.data() + socket.registers + SN_DIPR0;
+    const uint16_t port = readNetworkWord(memory.data() + socket.registers + SN_DPORT0);
+    LogFileOutput("U2: TCP[%d]: CONNECT to %d.%d.%d.%d:%d\n", i, dest[0], dest[1], dest[2], dest[3], port);
   }
 
   void setCommandRegister(const size_t i, const uint8_t value)
@@ -399,6 +420,9 @@ namespace
     {
       case SN_CR_OPEN:
         openSocket(i);
+        break;
+      case SN_CR_CONNECT:
+        connectSocket(i);
         break;
       case SN_CR_CLOSE:
         closeSocket(i);
@@ -425,6 +449,7 @@ namespace
     {
       case SN_MR:
       case SN_CR:
+      case SN_SR:
         value = memory[address];
         break;
       case SN_TX_FSR0:
@@ -537,6 +562,12 @@ namespace
         break;
       case SN_CR:
         setCommandRegister(i, value);
+        break;
+      case SN_PORT0:
+      case SN_PORT1:
+      case SN_DPORT0:
+      case SN_DPORT1:
+        memory[address] = value;
         break;
       case SN_DIPR0 ... SN_DIPR3:
         memory[address] = value;
@@ -711,7 +742,7 @@ namespace
 #ifdef U2_LOG_VERBOSE
     const char * mode = write ? "WRITE " : "READ  ";
     const char c = std::isprint(res) ? res : '.';
-    LogFileOutput("U2: %04x: %s %04x %02x = %02x, %c\n", programcounter, mode, address, value, res, c);
+    LogFileOutput("U2: %04x: %s %04x %02x = %02x, %c [%d = %d]\n", programcounter, mode, address, value, res, c, value, res);
 #endif
 
     return res;
@@ -732,7 +763,7 @@ void registerUthernet2()
 void processEventsUthernet2(uint32_t timeout)
 {
 #ifdef U2_USE_SLIRP
-   if (slirp)
+  if (slirp)
   {
     slirp->process(timeout);
   }
