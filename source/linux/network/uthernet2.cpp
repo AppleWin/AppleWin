@@ -491,7 +491,10 @@ namespace
     uint8_t value;
     switch (address)
     {
-      case MR ... UPORT1:
+      case MR:
+        value = modeRegister;
+        break;
+      case GAR0 ... UPORT1:
         value = memory[address];
         break;
       case S0_BASE ... S3_MAX:
@@ -603,12 +606,14 @@ namespace
 
   void setModeRegister(const uint16_t address, const uint8_t value)
   {
-    modeRegister = value;
-    if (modeRegister & MR_RST)
+    if (value & MR_RST)
     {
       initialise();
     }
-    memory[address] = value; // redundant
+    else
+    {
+      modeRegister = value;
+    }
   }
 
   void writeCommonRegister(const uint16_t address, const uint8_t value)
