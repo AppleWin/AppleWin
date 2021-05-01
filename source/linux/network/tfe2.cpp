@@ -43,7 +43,7 @@ namespace
 
 }
 
-void tfeTransmitOnePacket(const BYTE * buffer, const int len)
+void tfeTransmitOnePacket(BYTE * buffer, const int len)
 {
     if (tfe_enabled)
     {
