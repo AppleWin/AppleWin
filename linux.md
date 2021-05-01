@@ -44,6 +44,8 @@ Uthernet is supported, but it requires elevated capabilities:
 
 Unfortunately, this must be reapplied after every build.
 
+Uthernet II is supported too (only MACRAW) and by default uses `libslirp` which does *not* require elevated capabilities. Use the ImGui settings to enable it.
+
 ## Executables
 
 ### sa2
