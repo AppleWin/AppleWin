@@ -34,6 +34,9 @@
 
 	void FillBackground(long left, long top, long right, long bottom);
 
+	// Display ____________________________________________________________________
+	void UpdateDisplay(Update_t bUpdate);
+
 	int  PrintText       ( const char * pText, RECT & rRect );
 	int  PrintTextCursorX( const char * pText, RECT & rRect );
 	int  PrintTextCursorY( const char * pText, RECT & rRect );

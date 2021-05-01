@@ -69,6 +69,7 @@
     <ClInclude Include="source\Debugger\Debugger_Range.h" />
     <ClInclude Include="source\Debugger\Debugger_Symbols.h" />
     <ClInclude Include="source\Debugger\Debugger_Types.h" />
+    <ClInclude Include="source\Debugger\Debugger_Win32.h" />
     <ClInclude Include="source\Debugger\Util_MemoryTextFile.h" />
     <ClInclude Include="source\Debugger\Util_Text.h" />
     <ClInclude Include="source\Disk.h" />
@@ -156,6 +157,7 @@
     <ClCompile Include="source\Core.cpp" />
     <ClCompile Include="source\CPU.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Disassembler.cpp" />
+    <ClCompile Include="source\Debugger\Debugger_Win32.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
     <ClCompile Include="source\FrameBase.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />

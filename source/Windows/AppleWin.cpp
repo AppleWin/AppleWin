@@ -361,8 +361,8 @@ void RegisterExtensions(void)
 	TCHAR icon[MAX_PATH];
 	wsprintf(icon,TEXT("%s,1"),(LPCTSTR)command);
 
-	_tcscat(command,TEXT(" \"%1\""));			// Append "%1"
-//	_tcscat(command,TEXT("-d1 %1\""));			// Append "%1"
+	strcat(command,TEXT(" \"%1\""));			// Append "%1"
+//	strcat(command,TEXT("-d1 %1\""));			// Append "%1"
 //	sprintf(command, "\"%s\" \"-d1 %%1\"", szCommandTmp);	// Wrap	path & filename	in quotes &	null terminate
 
 	// NB. Registry access to HKLM typically results in ErrorCode 5(ACCESS DENIED), as UAC requires elevated permissions (Run as administrator).

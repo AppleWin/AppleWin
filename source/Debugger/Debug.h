@@ -84,6 +84,8 @@
 
 	extern const int WINDOW_DATA_BYTES_PER_LINE;
 
+	extern int g_nDisasmDisplayLines;
+
 // Config - Disassembly
 	extern bool  g_bConfigDisasmAddressView  ;
 	extern int   g_bConfigDisasmClick        ; // GH#462
@@ -134,6 +136,8 @@
 	extern ZeroPagePointers_t g_aZeroPagePointers[ MAX_ZEROPAGE_POINTERS ]; // TODO: use vector<> ?
 
 // Prototypes _______________________________________________________________
+
+	void WindowUpdateSizes();
 
 // Bookmarks
 	int Bookmark_Find( const WORD nAddress );

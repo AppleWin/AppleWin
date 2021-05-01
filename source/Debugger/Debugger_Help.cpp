@@ -261,18 +261,18 @@ void Help_Operators()
 	ConsolePrintFormat( sText,"  Operators: (%sBreakpoint%s)"                   , CHC_USAGE, CHC_DEFAULT );
 
 	_tcscpy( sText, "    " );
-	_tcscat( sText, CHC_USAGE );
+	strcat( sText, CHC_USAGE );
 	int iBreakOp = 0;
 	for( iBreakOp = 0; iBreakOp < NUM_BREAKPOINT_OPERATORS; iBreakOp++ )
 	{
 		if ((iBreakOp >= PARAM_BP_LESS_EQUAL) &&
 			(iBreakOp <= PARAM_BP_GREATER_EQUAL))
 		{
-			_tcscat( sText, g_aBreakpointSymbols[ iBreakOp ] );
-			_tcscat( sText, " " );
+			strcat( sText, g_aBreakpointSymbols[ iBreakOp ] );
+			strcat( sText, " " );
 		}
 	}	
-	_tcscat( sText, CHC_DEFAULT );
+	strcat( sText, CHC_DEFAULT );
 	ConsolePrint( sText );
 }
 
