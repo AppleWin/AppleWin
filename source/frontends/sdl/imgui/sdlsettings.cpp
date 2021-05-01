@@ -23,6 +23,7 @@
 
 #include "Tfe/tfe.h"
 #include "Tfe/tfesupp.h"
+#include "linux/network/uthernet2.h"
 
 #include "imgui_internal.h"
 
@@ -556,6 +557,7 @@ namespace sa2
           standardLabelText("Status", tfe_enabled ? "enabled" : "disabled");
           if (ImGui::BeginCombo("Interface", static_cast<const char *>(get_tfe_interface())))
           {
+            std::vector<char *> ifaces;
             if (tfe_enumadapter_open())
             {
               char *pname;
@@ -563,25 +565,35 @@ namespace sa2
 
               while (tfe_enumadapter(&pname, &pdescription))
               {
+                ifaces.push_back(pname);
+                lib_free(pdescription);
+              }
+              tfe_enumadapter_close();
+
+              for (const auto & iface : ifaces)
+              {
                 // must call it each time
                 // as update_tfe_interface() will invalidate it
                 const char * current = static_cast<const char *>(get_tfe_interface());
-                const bool isSelected = strcmp(pname, current) == 0;
-                if (ImGui::Selectable(pname, isSelected))
+                const bool isSelected = strcmp(iface, current) == 0;
+                if (ImGui::Selectable(iface, isSelected))
                 {
-                  update_tfe_interface(pname, nullptr);
-                  RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, pname);
+                  // the following line interacts with tfe_enumadapter, so we must run it outside the above loop
+                  update_tfe_interface(iface, nullptr);
+                  RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, iface);
                 }
                 if (isSelected)
                 {
                   ImGui::SetItemDefaultFocus();
                 }
-                lib_free(pname);
-                lib_free(pdescription);
+                lib_free(iface);
               }
-              tfe_enumadapter_close();
             }
             ImGui::EndCombo();
+          }
+          if (ImGui::Button("Enable Uthernet 2"))
+          {
+            registerUthernet2();
           }
           ImGui::EndTabItem();
         }

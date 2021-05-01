@@ -30,3 +30,4 @@ matrix:
             - libsdl2-image-dev
             - libgles-dev
             - libpcap-dev
+            - libslirp-dev

@@ -501,7 +501,7 @@ void tfe_arch_transmit(int force,       /* FORCE: Delete waiting frames in trans
                        int inhibit_crc, /* INHIBITCRC: Do not append CRC to the transmission */
                        int tx_pad_dis,  /* TXPADDIS: Disable padding to 60 Bytes */
                        int txlength,    /* Frame length */
-                       BYTE *txframe    /* Pointer to the frame to be transmitted */
+                       const BYTE *txframe    /* Pointer to the frame to be transmitted */
                       )
 {
 #ifdef TFE_DEBUG_ARCH
