@@ -237,10 +237,12 @@ void SpkrInitialize ()
 	if(g_bDisableDirectSound)
 	{
 		SpeakerVoice.bMute = true;
+		LogFileOutput("SpkrInitialize: g_bDisableDirectSound=1... SpeakerVoice.bMute=true\n");
 	}
 	else
 	{
 		g_bSpkrAvailable = Spkr_DSInit();
+		LogFileOutput("Spkr_DSInit(), res=%d\n", g_bSpkrAvailable ? 1 : 0);
 		if (!g_bSpkrAvailable)
 		{
 			GetFrame().FrameMessageBox(
@@ -673,7 +675,8 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 
 		// Don't call DSZeroVoiceBuffer() - get noise with "VIA AC'97 Enhanced Audio Controller"
 		// . I guess SpeakerVoice.Stop() isn't really working and the new zero buffer causes noise corruption when submitted.
-		DSZeroVoiceWritableBuffer(&SpeakerVoice, g_dwDSSpkrBufferSize);
+		bool res = DSZeroVoiceWritableBuffer(&SpeakerVoice, g_dwDSSpkrBufferSize);
+		LogFileOutput("Spkr_SubmitWaveBuffer: DSZeroVoiceWritableBuffer, res=%d\n", res ? 1 : 0);
 
 		return 0;
 	}
@@ -686,8 +689,11 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 
 	DWORD dwCurrentPlayCursor, dwCurrentWriteCursor;
 	HRESULT hr = SpeakerVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
-	if(FAILED(hr))
+	if (FAILED(hr))
+	{
+		LogFileOutput("Spkr_SubmitWaveBuffer: GetCurrentPosition failed (%08X)\n", hr);
 		return nNumSamples;
+	}
 
 	if(dwByteOffset == (DWORD)-1)
 	{
@@ -771,11 +777,14 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 	{
 		//sprintf(szDbg, "[Submit]    C=%08X, PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X +++\n", nDbgSpkrCnt, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamplesToUse); OutputDebugString(szDbg);
 
-		if(!DSGetLock(SpeakerVoice.lpDSBvoice,
-							dwByteOffset, (DWORD)nNumSamplesToUse*sizeof(short),
-							&pDSLockedBuffer0, &dwDSLockedBufferSize0,
-							&pDSLockedBuffer1, &dwDSLockedBufferSize1))
+		if (!DSGetLock(SpeakerVoice.lpDSBvoice,
+			dwByteOffset, (DWORD)nNumSamplesToUse * sizeof(short),
+			&pDSLockedBuffer0, &dwDSLockedBufferSize0,
+			&pDSLockedBuffer1, &dwDSLockedBufferSize1))
+		{
+			LogFileOutput("Spkr_SubmitWaveBuffer: DSGetLock failed\n");
 			return nNumSamples;
+		}
 
 		memcpy(pDSLockedBuffer0, &pSpeakerBuffer[0], dwDSLockedBufferSize0);
 #ifdef RIFF_SPKR
@@ -793,8 +802,11 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 		// Commit sound buffer
 		hr = SpeakerVoice.lpDSBvoice->Unlock((void*)pDSLockedBuffer0, dwDSLockedBufferSize0,
 											(void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
-		if(FAILED(hr))
+		if (FAILED(hr))
+		{
+			LogFileOutput("Spkr_SubmitWaveBuffer: Unlock failed (%08X)\n", hr);
 			return nNumSamples;
+		}
 
 		dwByteOffset = (dwByteOffset + (DWORD)nNumSamplesToUse*sizeof(short)*g_nSPKR_NumChannels) % g_dwDSSpkrBufferSize;
 	}
@@ -804,20 +816,24 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 
 //-----------------------------------------------------------------------------
 
+// NB. Not currently used
 void Spkr_Mute()
 {
 	if(SpeakerVoice.bActive && !SpeakerVoice.bMute)
 	{
-		SpeakerVoice.lpDSBvoice->SetVolume(DSBVOLUME_MIN);
+		HRESULT hr = SpeakerVoice.lpDSBvoice->SetVolume(DSBVOLUME_MIN);
+		LogFileOutput("Spkr_Mute: SetVolume(%d) res = %08X\n", DSBVOLUME_MIN, hr);
 		SpeakerVoice.bMute = true;
 	}
 }
 
+// NB. Only called by SpkrReset()
 void Spkr_Unmute()
 {
 	if(SpeakerVoice.bActive && SpeakerVoice.bMute)
 	{
-		SpeakerVoice.lpDSBvoice->SetVolume(SpeakerVoice.nVolume);
+		HRESULT hr = SpeakerVoice.lpDSBvoice->SetVolume(SpeakerVoice.nVolume);
+		LogFileOutput("Spkr_Unmute: SetVolume(%d) res = %08X\n", SpeakerVoice.nVolume, hr);
 		SpeakerVoice.bMute = false;
 	}
 }
@@ -865,7 +881,10 @@ void SpkrSetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 	SpeakerVoice.nVolume = NewVolume(dwVolume, dwVolumeMax);
 
 	if (SpeakerVoice.bActive && !SpeakerVoice.bMute)
-		SpeakerVoice.lpDSBvoice->SetVolume(SpeakerVoice.nVolume);
+	{
+		HRESULT hr = SpeakerVoice.lpDSBvoice->SetVolume(SpeakerVoice.nVolume);
+		LogFileOutput("SpkrSetVolume: SetVolume(%d) res = %08X\n", SpeakerVoice.nVolume, hr);
+	}
 }
 
 //=============================================================================
@@ -876,20 +895,26 @@ bool Spkr_DSInit()
 	// Create single Apple speaker voice
 	//
 
-	if(!g_bDSAvailable)
+	if (!g_bDSAvailable)
+	{
+		LogFileOutput("Spkr_DSInit: g_bDSAvailable=0\n");
 		return false;
+	}
 
 	SpeakerVoice.bIsSpeaker = true;
 
 	HRESULT hr = DSGetSoundBuffer(&SpeakerVoice, DSBCAPS_CTRLVOLUME, g_dwDSSpkrBufferSize, SPKR_SAMPLE_RATE, 1, "Spkr");
-	if(FAILED(hr))
+	if (FAILED(hr))
 	{
-		LogFileOutput("Spkr: DSGetSoundBuffer failed (%08X)\n", hr);
+		LogFileOutput("Spkr_DSInit: DSGetSoundBuffer failed (%08X)\n", hr);
 		return false;
 	}
 
-	if(!DSZeroVoiceBuffer(&SpeakerVoice, g_dwDSSpkrBufferSize))
+	if (!DSZeroVoiceBuffer(&SpeakerVoice, g_dwDSSpkrBufferSize))
+	{
+		LogFileOutput("Spkr_DSInit: DSZeroVoiceBuffer failed\n");
 		return false;
+	}
 
 	SpeakerVoice.bActive = true;
 
@@ -897,19 +922,23 @@ bool Spkr_DSInit()
 	if(!SpeakerVoice.nVolume)
 		SpeakerVoice.nVolume = DSBVOLUME_MAX;
 
-	SpeakerVoice.lpDSBvoice->SetVolume(SpeakerVoice.nVolume);
+	hr = SpeakerVoice.lpDSBvoice->SetVolume(SpeakerVoice.nVolume);
+	LogFileOutput("Spkr_DSInit: SetVolume(%d) res = %08X\n", SpeakerVoice.nVolume, hr);
 
 	//
 
 	DWORD dwCurrentPlayCursor, dwCurrentWriteCursor;
 	hr = SpeakerVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
-	if(SUCCEEDED(hr) && (dwCurrentPlayCursor == dwCurrentWriteCursor))
+	if (FAILED(hr))
+		LogFileOutput("Spkr_DSInit: GetCurrentPosition failed (%08X)\n", hr);
+	if (SUCCEEDED(hr) && (dwCurrentPlayCursor == dwCurrentWriteCursor))
 	{
 		// KLUDGE: For my WinXP PC with "VIA AC'97 Enhanced Audio Controller"
 		// . Not required for my Win98SE/WinXP PC with PCI "Soundblaster Live!"
 		Sleep(200);
 
 		hr = SpeakerVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
+		LogFileOutput("Spkr_DSInit: GetCurrentPosition kludge (%08X)\n", hr);
 		char szDbg[100];
 		sprintf(szDbg, "[DSInit] PC=%08X, WC=%08X, Diff=%08X\n", dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor); OutputDebugString(szDbg);
 	}
