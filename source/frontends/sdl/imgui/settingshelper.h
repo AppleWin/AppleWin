@@ -27,4 +27,6 @@ namespace sa2
   void insertCard(size_t slot, SS_CARDTYPE card);
 
   void setVideoStyle(Video & video, const VideoStyle_e style, const bool enabled);
+
+  void saveTFEEnabled(const int enabled);
 }

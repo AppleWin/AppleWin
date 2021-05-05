@@ -299,7 +299,7 @@ void LoadConfiguration(void)
 
 	DWORD dwTfeEnabled;
 	REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &dwTfeEnabled, 0);
-	tfe_enabled = dwTfeEnabled ? 1 : 0;
+	tfe_enabled = dwTfeEnabled;
 
 	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
 	update_tfe_interface(szFilename, NULL);

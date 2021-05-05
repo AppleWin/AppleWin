@@ -1,4 +1,5 @@
 #include <StdAfx.h>
+#include "linux/network/uthernet2.h"
 
 #include <unistd.h>
 #include <sys/socket.h>
@@ -965,6 +966,15 @@ void registerUthernet2()
 #endif
   initialise();
   RegisterIoHandler(SLOT3, u2_C0, u2_C0, nullptr, nullptr, nullptr, nullptr);
+}
+
+void unRegisterUthernet2()
+{
+ #ifdef U2_USE_SLIRP
+  slirp.reset();
+#endif
+  memory.clear();
+  sockets.clear();
 }
 
 void processEventsUthernet2(uint32_t timeout)

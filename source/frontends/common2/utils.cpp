@@ -1,6 +1,7 @@
 #include "frontends/common2/utils.h"
 
 #include "linux/interface.h"
+#include "linux/network/uthernet2.h"
 
 #include "StdAfx.h"
 #include "SaveState.h"
@@ -87,7 +88,17 @@ namespace common2
 
     GetCardMgr().GetDisk2CardMgr().Reset();
     HD_Reset();
-    tfe_init();
+
+    switch (tfe_enabled)
+    {
+      case 1:
+        tfe_init();
+        break;
+      case 2:
+        registerUthernet2();
+        break;
+    }
+
     Snapshot_Startup();
 
     DebugInitialize();
@@ -107,6 +118,7 @@ namespace common2
     MB_Destroy();
     DSUninit();
 
+    unRegisterUthernet2();
     tfe_shutdown();
     HD_Destroy();
     PrintDestroy();

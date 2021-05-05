@@ -4,6 +4,7 @@
 #include "Harddisk.h"
 #include "Core.h"
 
+#include "Tfe/tfe.h"
 #include "frontends/sdl/imgui/settingshelper.h"
 
 namespace
@@ -155,7 +156,7 @@ namespace sa2
     {
       case 3:
       {
-        const bool enabled = card == CT_Uthernet;
+        const int enabled = card == CT_Uthernet ? 1 : 0;
         REGSAVE(REGVALUE_UTHERNET_ACTIVE, enabled);
         // needs a reboot anyway
         break;
@@ -187,6 +188,12 @@ namespace sa2
       currentVideoStyle = VideoStyle_e(currentVideoStyle & (~style));
     }
     video.SetVideoStyle(currentVideoStyle);
+  }
+
+  void saveTFEEnabled(const int enabled)
+  {
+    tfe_enabled = enabled;
+    REGSAVE(TEXT(REGVALUE_UTHERNET_ACTIVE), tfe_enabled);
   }
 
 }

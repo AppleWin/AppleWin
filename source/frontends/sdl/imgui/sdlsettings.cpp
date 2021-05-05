@@ -554,7 +554,10 @@ namespace sa2
 
         if (ImGui::BeginTabItem("Uthernet"))
         {
-          standardLabelText("Status", tfe_enabled ? "enabled" : "disabled");
+          if (ImGui::RadioButton("Disabled", tfe_enabled == 0)) { saveTFEEnabled(0); } ImGui::SameLine();
+          if (ImGui::RadioButton("Uthernet I", tfe_enabled == 1)) { saveTFEEnabled(1); } ImGui::SameLine();
+          if (ImGui::RadioButton("Uthernet II", tfe_enabled == 2)) { saveTFEEnabled(2); }
+
           if (ImGui::BeginCombo("Interface", static_cast<const char *>(get_tfe_interface())))
           {
             std::vector<char *> ifaces;
@@ -590,10 +593,6 @@ namespace sa2
               }
             }
             ImGui::EndCombo();
-          }
-          if (ImGui::Button("Enable Uthernet 2"))
-          {
-            registerUthernet2();
           }
           ImGui::EndTabItem();
         }
