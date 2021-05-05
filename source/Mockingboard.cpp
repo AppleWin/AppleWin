@@ -93,6 +93,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "AY8910.h"
 #include "SSI263.h"
 
+#define DBG_MB_SS_CARD 0	// From UI, select Mockingboard (not Phasor)
 
 #define SY6522_DEVICE_A 0
 #define SY6522_DEVICE_B 1
@@ -621,6 +622,10 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 					break;
 				}
 
+#if DBG_MB_SS_CARD
+				if ((nDevice & 1) == 1)
+					AY8910_Write(nDevice, nReg, nValue, 0);
+#else
 				if(g_bPhasorEnable)
 				{
 					int nAY_CS = (g_phasorMode == PH_Phasor) ? (~(nValue >> 3) & 3) : 1;
@@ -635,6 +640,7 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				{
 					AY8910_Write(nDevice, nReg, nValue, 0);
 				}
+#endif
 
 				break;
 			}
@@ -1311,6 +1317,11 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 		return bAccessedDevice ? nRes : MemReadFloatingBus(nExecutedCycles);
 	}
 
+#if DBG_MB_SS_CARD
+	if (nMB == 1)
+		return MemReadFloatingBus(nExecutedCycles);
+#endif
+
 	// NB. Mockingboard: SSI263.bit7 not readable (TODO: check this with real h/w)
 	if (nOffset < SY6522B_Offset)
 		return SY6522_Read(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_A, nAddr&0xf);
@@ -1410,10 +1421,12 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 	else
 		SY6522_Write(nMB*NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr&0xf, nValue);
 
+#if !DBG_MB_SS_CARD
 	if (nAddr & 0x40)
 		g_MB[nMB*2+1].ssi263.Write(nAddr&0x7, nValue);		// 2nd 6522 is used for 1st speech chip
 	if (nAddr & 0x20)
 		g_MB[nMB*2+0].ssi263.Write(nAddr&0x7, nValue);		// 1st 6522 is used for 2nd speech chip
+#endif
 
 	return 0;
 }
