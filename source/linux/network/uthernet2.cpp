@@ -1,25 +1,31 @@
 #include <StdAfx.h>
 
+#include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <poll.h>
+
 #define MAX_RXLENGTH 1518
 
 // #define U2_LOG_VERBOSE
 // #define U2_LOG_TRAFFIC
-#define U2_LOG_UNKNOWN
+// #define U2_LOG_STATE
+// #define U2_LOG_UNKNOWN
 
 // if this is defined, libslirp is used as opposed to libpcap
 #define U2_USE_SLIRP
 
 #include "linux/network/uthernet2.h"
-#include "linux/network/tfe2.h"
 #include "linux/network/registers.h"
 
 #ifdef U2_USE_SLIRP
 #include "linux/network/slirp2.h"
+#else
+#include "linux/network/tfe2.h"
 #endif
 
 #include "Memory.h"
 #include "Log.h"
-
 
 namespace
 {
@@ -34,7 +40,64 @@ namespace
 
     uint16_t sn_rx_wr;
     uint16_t sn_rx_rsr;
+
+    uint8_t sn_sr = SN_SR_CLOSED;
+
+    int myFD = -1;
+    int myErrno = 0;
+
+    void clearFD();
+    void setFD(int fd);
+    void process();
+
+    ~Socket();
   };
+
+  void Socket::clearFD()
+  {
+    if (myFD != -1)
+    {
+      close(myFD);
+    }
+    myFD = -1;
+    sn_sr = SN_SR_CLOSED;
+  }
+
+  void Socket::setFD(const int fd)
+  {
+    clearFD();
+    myFD = fd;
+    myErrno = 0;
+    sn_sr = SN_SR_SOCK_INIT;
+  }
+
+  Socket::~Socket()
+  {
+    clearFD();
+  }
+
+  void Socket::process()
+  {
+    if (myFD != -1 && sn_sr == SN_SR_SOCK_INIT && myErrno == EINPROGRESS)
+    {
+      pollfd pfd = {.fd = myFD, .events = POLLOUT};
+      if (poll(&pfd, 1, 0) > 0)
+      {
+        int err = 0;
+        socklen_t elen = sizeof err;
+        getsockopt(myFD, SOL_SOCKET, SO_ERROR, &err, &elen);
+
+        if (err == 0)
+        {
+          myErrno = 0;
+          sn_sr = SN_SR_ESTABLISHED;
+#ifdef U2_LOG_STATE
+          LogFileOutput("U2: TCP[]: CONNECTED\n");
+#endif
+        }
+      }
+    }
+  }
 
   std::vector<uint8_t> memory;
   std::vector<Socket> sockets;
@@ -47,13 +110,29 @@ namespace
 
   void initialise();
 
-  bool isThereRoomFor(const size_t i, const size_t len)
+  uint16_t readNetworkWord(const uint8_t * address)
+  {
+    const uint16_t network = *reinterpret_cast<const uint16_t *>(address);
+    const uint16_t host = ntohs(network);
+    return host;
+  }
+
+  bool isThereRoomFor(const size_t i, const size_t len, const size_t header)
   {
     const Socket & socket = sockets[i];
-    const uint16_t rsr = socket.sn_rx_rsr;  // already present
-    const int size = socket.receiveSize;    // total size
+    const uint16_t rsr = socket.sn_rx_rsr;     // already present
+    const uint16_t size = socket.receiveSize;  // total size
 
-    return rsr + len + sizeof(uint16_t) < size; // "not =": we do not want to fill the buffer.
+    return rsr + len + header < size; // "not =": we do not want to fill the buffer.
+  }
+
+  uint16_t getFreeRoom(const size_t i)
+  {
+    const Socket & socket = sockets[i];
+    const uint16_t rsr = socket.sn_rx_rsr;     // already present
+    const uint16_t size = socket.receiveSize;  // total size
+
+    return size - rsr;
   }
 
   uint8_t getIByte(const uint16_t value, const size_t shift)
@@ -79,21 +158,20 @@ namespace
 
   void writeData(const size_t i, const BYTE * data, const size_t len)
   {
-    const uint16_t size = len + sizeof(uint16_t);
-    write16(i, size);
     for (size_t c = 0; c < len; ++c)
     {
       write8(i, data[c]);
     }
   }
 
-  void writePacketString(const size_t i, const std::string & s)
+  void writeDataMacRaw(const size_t i, const BYTE * data, const size_t len)
   {
-    const uint16_t size = s.size() + sizeof(uint16_t);  // no NULL
+    // size includes sizeof(size)
+    const uint16_t size = len + sizeof(uint16_t);
     write16(i, size);
-    for (size_t c = 0; c < s.size(); ++c)
+    for (size_t c = 0; c < len; ++c)
     {
-      write8(i, s[c]);
+      write8(i, data[c]);
     }
   }
 
@@ -104,19 +182,29 @@ namespace
     switch (protocol)
     {
       case SN_MR_CLOSED:
+#ifdef U2_LOG_STATE
         LogFileOutput("U2: Mode[%d]: CLOSED\n", i);
+#endif
         break;
       case SN_MR_TCP:
+#ifdef U2_LOG_STATE
         LogFileOutput("U2: Mode[%d]: TCP\n", i);
+#endif
         break;
       case SN_MR_UDP:
+#ifdef U2_LOG_STATE
         LogFileOutput("U2: Mode[%d]: UDP\n", i);
+#endif
         break;
       case SN_MR_IPRAW:
+#ifdef U2_LOG_STATE
         LogFileOutput("U2: Mode[%d]: IPRAW\n", i);
+#endif
         break;
       case SN_MR_MACRAW:
+#ifdef U2_LOG_STATE
         LogFileOutput("U2: Mode[%d]: MACRAW\n", i);
+#endif
         break;
 #ifdef U2_LOG_UNKNOWN
       default:
@@ -130,9 +218,9 @@ namespace
     memory[address] = value;
     uint16_t base = TX_BASE;
     const uint16_t end = RX_BASE;
-    for (size_t i = 0; i < 4; ++i)
+    for (Socket & socket : sockets)
     {
-      sockets[i].transmitBase = base;
+      socket.transmitBase = base;
 
       const uint8_t bits = value & 0x03;
       value >>= 2;
@@ -144,7 +232,7 @@ namespace
       {
         base = end;
       }
-      sockets[i].transmitSize = base - sockets[i].transmitBase;
+      socket.transmitSize = base - socket.transmitBase;
     }
   }
 
@@ -153,9 +241,9 @@ namespace
     memory[address] = value;
     uint16_t base = RX_BASE;
     const uint16_t end = MEM_SIZE;
-    for (size_t i = 0; i < 4; ++i)
+    for (Socket & socket : sockets)
     {
-      sockets[i].receiveBase = base;
+      socket.receiveBase = base;
 
       const uint8_t bits = value & 0x03;
       value >>= 2;
@@ -167,7 +255,7 @@ namespace
       {
         base = end;
       }
-      sockets[i].receiveSize = base - sockets[i].receiveBase;
+      socket.receiveSize = base - socket.receiveBase;
     }
   }
 
@@ -208,7 +296,7 @@ namespace
   {
     Socket & socket = sockets[i];
 
-    const int size = sockets[i].receiveSize;
+    const int size = socket.receiveSize;
     const uint16_t mask = size - 1;
 
     const int sn_rx_rd = readNetworkWord(memory.data() + socket.registers + SN_RX_RD0) & mask;
@@ -225,6 +313,12 @@ namespace
     // but then we need to keep track of where it was
     // the final result should be the same
     socket.sn_rx_rsr = dataPresent;
+#ifdef U2_LOG_TRAFFIC
+    if (socket.sn_rx_rsr != dataPresent)
+    {
+      LogFileOutput("U2: RECV[%d]: %d -> %d bytes\n", i, socket.sn_rx_rsr, dataPresent);
+    }
+#endif
   }
 
   void receiveOnePacketMacRaw(const size_t i)
@@ -238,15 +332,14 @@ namespace
       if (!queue.empty())
       {
         const std::vector<uint8_t> & packet = queue.front();
-        if (isThereRoomFor(i, packet.size()))
+        if (isThereRoomFor(i, packet.size(), sizeof(uint16_t)))
         {
-          writeData(i, packet.data(), packet.size());
+          writeDataMacRaw(i, packet.data(), packet.size());
+          queue.pop();
 #ifdef U2_LOG_TRAFFIC
-          LogFileOutput("U2: READ MACRAW[%d]: +%d -> %d bytes\n", i, packet.size(), socket.sn_rx_rsr);
+          LogFileOutput("U2: READ MACRAW[%d]: +%d -> %d bytes (%04x)\n", i, packet.size(), socket.sn_rx_rsr, socket.sn_rx_wr);
 #endif
         }
-        // maybe we should wait?
-        queue.pop();
       }
     }
 #else
@@ -255,9 +348,9 @@ namespace
       int len = sizeof(buffer);
       if (tfeReceiveOnePacket(memory.data() + SHAR0, buffer, len))
       {
-        if (isThereRoomFor(i, len))
+        if (isThereRoomFor(i, len, sizeof(uint16_t)))
         {
-          writeData(i, buffer, len);
+          writeDataMacRaw(i, buffer, len);
 #ifdef U2_LOG_TRAFFIC
           LogFileOutput("U2: READ MACRAW[%d]: +%d -> %d bytes\n", i, len, socket.sn_rx_rsr);
 #endif
@@ -274,15 +367,58 @@ namespace
 #endif
   }
 
+  void receiveOnePacketTCP(const size_t i)
+  {
+    Socket & socket = sockets[i];
+    if (socket.myFD != -1)
+    {
+      const uint16_t freeRoom = getFreeRoom(i);
+      if (freeRoom > 32) // avoid meaningless reads
+      {
+        std::vector<uint8_t> buffer(freeRoom - 1); // do not fill the buffer completely
+        const ssize_t data = recv(socket.myFD, buffer.data(), buffer.size(), 0);
+        if (data > 0)
+        {
+          // TCP: no header, just the data
+          writeData(i, buffer.data(), data);
+#ifdef U2_LOG_TRAFFIC
+          LogFileOutput("U2: READ TCP[%d]: +%d -> %d bytes\n", i, data, socket.sn_rx_rsr);
+#endif
+        }
+        else if (data == 0)
+        {
+          // gracefull termination
+          socket.clearFD();
+        }
+        else // data < 0;
+        {
+          const int error = errno;
+          if (error != EAGAIN && error != EWOULDBLOCK)
+          {
+            socket.clearFD();
+          }
+        }
+      }
+    }
+  }
+
   void receiveOnePacket(const size_t i)
   {
     const Socket & socket = sockets[i];
-    const uint8_t sr = memory[socket.registers + SN_SR];
-    switch (sr)
+    switch (socket.sn_sr)
     {
       case SN_SR_SOCK_MACRAW:
         receiveOnePacketMacRaw(i);
         break;
+      case SN_SR_ESTABLISHED:
+        receiveOnePacketTCP(i);
+        break;
+      case SN_SR_CLOSED:
+        break;  // nothing to do
+#ifdef U2_LOG_UNKNOWN
+      default:
+        LogFileOutput("U2: READ[%d]: unknown mode: %02x\n", i, socket.sn_sr);
+#endif
     };
   }
 
@@ -298,21 +434,24 @@ namespace
 #endif
   }
 
-  void sendDataIPRaw(const size_t i, std::vector<uint8_t> & data)
+  void sendDataTCP(const size_t i, std::vector<uint8_t> & data)
   {
+    Socket & socket = sockets[i];
+    if (socket.myFD != -1)
+    {
+      const ssize_t res = send(socket.myFD, data.data(), data.size(), 0);
+      if (res < 0)
+      {
+        const int error = errno;
+        if (error != EAGAIN && error != EWOULDBLOCK)
+        {
+          socket.clearFD();
+        }
+      }
 #ifdef U2_LOG_TRAFFIC
-    const Socket & socket = sockets[i];
-    const uint16_t ip = socket.registers + SN_DIPR0;
-
-    LogFileOutput("U2: SEND IPRAW[%d]: %d bytes", i, data.size());
-    const uint8_t * source = memory.data() + SIPR0;
-    const uint8_t * dest = memory.data() + ip;
-    const uint8_t * gway = memory.data() + GAR0;
-    LogFileOutput(" from %d.%d.%d.%d", source[0], source[1], source[2], source[3]);
-    LogFileOutput(" to %d.%d.%d.%d", dest[0], dest[1], dest[2], dest[3]);
-    LogFileOutput(" via %d.%d.%d.%d\n", gway[0], gway[1], gway[2], gway[3]);
+      LogFileOutput("U2: SEND TCP[%d]: %d of %d bytes\n", i, res, data.size());
 #endif
-    // dont know how to send IP raw.
+    }
   }
 
   void sendData(const size_t i)
@@ -344,15 +483,18 @@ namespace
     memory[socket.registers + SN_TX_RD0] = getIByte(sn_tx_wr, 8);
     memory[socket.registers + SN_TX_RD1] = getIByte(sn_tx_wr, 0);
 
-    const uint8_t sr = memory[socket.registers + SN_SR];
-    switch (sr)
+    switch (socket.sn_sr)
     {
-      case SN_SR_SOCK_IPRAW:
-        sendDataIPRaw(i, data);
-        break;
       case SN_SR_SOCK_MACRAW:
         sendDataMacRaw(i, data);
         break;
+      case SN_SR_ESTABLISHED:
+        sendDataTCP(i, data);
+        break;
+#ifdef U2_LOG_UNKNOWN
+      default:
+        LogFileOutput("U2: SEND[%d]: unknown mode: %02x\n", i, socket.sn_sr);
+#endif
     }
   }
 
@@ -369,12 +511,29 @@ namespace
     memory[socket.registers + SN_RX_RD1] = 0x00;
   }
 
+  void openSocketTCP(const size_t i)
+  {
+    Socket & s = sockets[i];
+    const int fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    if (fd < -1)
+    {
+#ifdef U2_LOG_STATE      
+      LogFileOutput("U2: TCP[%d]: %s\n", i, strerror(errno));
+#endif
+      s.clearFD();
+    }
+    else
+    {
+      s.setFD(fd);
+    }
+  }
+
   void openSocket(const size_t i)
   {
-    const Socket & socket = sockets[i];
+    Socket & socket = sockets[i];
     const uint8_t mr = memory[socket.registers + SN_MR];
     const uint8_t protocol = mr & SN_MR_PROTO_MASK;
-    uint8_t & sr = memory[socket.registers + SN_SR];
+    uint8_t & sr = socket.sn_sr;
     switch (protocol)
     {
       case SN_MR_IPRAW:
@@ -384,7 +543,7 @@ namespace
         sr = SN_SR_SOCK_MACRAW;
         break;
       case SN_MR_TCP:
-        sr = SN_SR_SOCK_INIT;
+        openSocketTCP(i);
         break;
       case SN_MR_UDP:
         sr = SN_SR_SOCK_UDP;
@@ -394,24 +553,55 @@ namespace
         LogFileOutput("U2: OPEN[%d]: unknown mode: %02x\n", i, mr);
 #endif
     }
-    resetRXTXBuffers(i);
+    resetRXTXBuffers(i); // needed?
+#ifdef U2_LOG_STATE      
     LogFileOutput("U2: OPEN[%d]: %02x\n", i, sr);
+#endif
   }
 
   void closeSocket(const size_t i)
   {
-    const Socket & socket = sockets[i];
-    memory[socket.registers + SN_SR] = SN_SR_CLOSED;
+    Socket & socket = sockets[i];
+    socket.clearFD();
+#ifdef U2_LOG_STATE      
     LogFileOutput("U2: CLOSE[%d]\n", i);
+#endif
   }
 
   void connectSocket(const size_t i)
   {
-    const Socket & socket = sockets[i];
-    memory[socket.registers + SN_SR] = SN_SR_ESTABLISHED;
+    Socket & socket = sockets[i];
     const uint8_t * dest = memory.data() + socket.registers + SN_DIPR0;
-    const uint16_t port = readNetworkWord(memory.data() + socket.registers + SN_DPORT0);
-    LogFileOutput("U2: TCP[%d]: CONNECT to %d.%d.%d.%d:%d\n", i, dest[0], dest[1], dest[2], dest[3], port);
+
+    sockaddr_in destination = {};
+    destination.sin_family = AF_INET;
+
+    // already in network order
+    destination.sin_port = *reinterpret_cast<const uint16_t *>(memory.data() + socket.registers + SN_DPORT0);
+    destination.sin_addr.s_addr = *reinterpret_cast<const uint32_t *>(dest);
+
+    const int res = connect(socket.myFD, (struct sockaddr *)&destination, sizeof(destination));
+
+    if (res == 0)
+    {
+      socket.sn_sr = SN_SR_ESTABLISHED;
+      socket.myErrno = 0;
+#ifdef U2_LOG_STATE
+      const uint16_t port = readNetworkWord(memory.data() + socket.registers + SN_DPORT0);
+      LogFileOutput("U2: TCP[%d]: CONNECT to %d.%d.%d.%d:%d\n", i, dest[0], dest[1], dest[2], dest[3], port);
+#endif
+    }
+    else
+    {
+      const int error = errno;
+      if (error == EINPROGRESS)
+      {
+        socket.myErrno = error;
+      }
+#ifdef U2_LOG_STATE
+      LogFileOutput("U2: TCP[%d]: %s\n", i, strerror(error));
+#endif
+    }
   }
 
   void setCommandRegister(const size_t i, const uint8_t value)
@@ -442,15 +632,17 @@ namespace
 
   uint8_t readSocketRegister(const uint16_t address)
   {
-    const uint16_t i = (address >> (2 + 8 + 8));
+    const uint16_t i = (address >> 8) - 0x04;
     const uint16_t loc = address & 0xFF;
     uint8_t value;
     switch (loc)
     {
       case SN_MR:
       case SN_CR:
-      case SN_SR:
         value = memory[address];
+        break;
+      case SN_SR:
+        value = sockets[i].sn_sr;
         break;
       case SN_TX_FSR0:
         value = getTXFreeSizeRegister(i, 8);
@@ -467,9 +659,11 @@ namespace
         value = memory[address];
         break;
       case SN_RX_RSR0:
+        receiveOnePacket(i);
         value = getRXDataSizeRegister(i, 8);
         break;
       case SN_RX_RSR1:
+        receiveOnePacket(i);
         value = getRXDataSizeRegister(i, 0);
         break;
       case SN_RX_RD0:
@@ -539,19 +733,28 @@ namespace
     return value;
   }
 
-  void setIPProtocol(const size_t i, const uint8_t value)
+  void setIPProtocol(const size_t i, const uint16_t address, const uint8_t value)
   {
+    memory[address] = value;
+#ifdef U2_LOG_STATE
     LogFileOutput("U2: IP PROTO[%d] = %d\n", i, value);
+#endif
   }
 
-  void setIPTypeOfService(const size_t i, const uint8_t value)
+  void setIPTypeOfService(const size_t i, const uint16_t address, const uint8_t value)
   {
+    memory[address] = value;
+#ifdef U2_LOG_STATE
     LogFileOutput("U2: IP TOS[%d] = %d\n", i, value);
+#endif
   }
 
-  void setIPTTL(const size_t i, const uint8_t value)
+  void setIPTTL(const size_t i, const uint16_t address, const uint8_t value)
   {
+    memory[address] = value;
+#ifdef U2_LOG_STATE
     LogFileOutput("U2: IP TTL[%d] = %d\n", i, value);
+#endif
   }
 
   void writeSocketRegister(const uint16_t address, const uint8_t value)
@@ -576,13 +779,13 @@ namespace
         memory[address] = value;
         break;
       case SN_PROTO:
-        setIPProtocol(i, value);
+        setIPProtocol(i, address, value);
         break;
       case SN_TOS:
-        setIPTypeOfService(i, value);
+        setIPTypeOfService(i, address, value);
         break;
       case SN_TTL:
-        setIPTTL(i, value);
+        setIPTTL(i, address, value);
         break;
       case SN_TX_WR0:
         memory[address] = value;
@@ -681,6 +884,7 @@ namespace
 
     for (size_t i = 0; i < sockets.size(); ++i)
     {
+      sockets[i].clearFD();
       sockets[i].registers = S0_BASE + (i << 8);
     }
 
@@ -689,21 +893,19 @@ namespace
     memory[RTR1] = 0xD0;
     setRXSizes(RMSR, 0x55);
     setTXSizes(TMSR, 0x55);
-  }
 
-  void receivePackets()
-  {
-    for (size_t i = 0; i < sockets.size(); ++i)
-    {
-      receiveOnePacket(i);
-    }
+#ifdef U2_USE_SLIRP
+    slirp->clearQueue();
+#endif
   }
 
   BYTE u2_C0(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
   {
-    receivePackets();
-
     BYTE res = write ? 0 : MemReadFloatingBus(nCycles);
+
+#ifdef U2_LOG_VERBOSE
+    const uint16_t oldAddress = dataAddress;
+#endif
 
     const uint8_t loc = address & 0x0F;
 
@@ -747,7 +949,7 @@ namespace
 #ifdef U2_LOG_VERBOSE
     const char * mode = write ? "WRITE " : "READ  ";
     const char c = std::isprint(res) ? res : '.';
-    LogFileOutput("U2: %04x: %s %04x %02x = %02x, %c [%d = %d]\n", programcounter, mode, address, value, res, c, value, res);
+    LogFileOutput("U2: %04x: %s %04x[%04x] %02x = %02x, %c [%d = %d]\n", programcounter, mode, address, oldAddress, value, res, c, value, res);
 #endif
 
     return res;
@@ -757,11 +959,11 @@ namespace
 
 void registerUthernet2()
 {
-  initialise();
  #ifdef U2_USE_SLIRP
   slirp.reset();
   slirp = std::make_shared<SlirpNet>();
 #endif
+  initialise();
   RegisterIoHandler(SLOT3, u2_C0, u2_C0, nullptr, nullptr, nullptr, nullptr);
 }
 
@@ -773,4 +975,8 @@ void processEventsUthernet2(uint32_t timeout)
     slirp->process(timeout);
   }
 #endif
+  for (Socket & socket : sockets)
+  {
+    socket.process();
+  }
 }

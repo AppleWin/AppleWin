@@ -4,10 +4,6 @@
 #include "Tfe/tfearch.h"
 #include "Tfe/tfe.h"
 
-#include <arpa/inet.h>
-
-#include "../Log.h"
-
 namespace
 {
 
@@ -43,11 +39,11 @@ namespace
 
 }
 
-void tfeTransmitOnePacket(BYTE * buffer, const int len)
+void tfeTransmitOnePacket(const BYTE * buffer, const int len)
 {
     if (tfe_enabled)
     {
-        tfe_arch_transmit(0, 0, 0, 0, len, buffer);
+        tfe_arch_transmit(0, 0, 0, 0, len, const_cast<BYTE *>(buffer));
     }
 }
 
@@ -96,11 +92,4 @@ bool tfeReceiveOnePacket(const uint8_t * mac, BYTE * buffer, int & len)
         }
     } while (!done);
     return false;
-}
-
-uint16_t readNetworkWord(const uint8_t * address)
-{
-    const uint16_t network = *reinterpret_cast<const uint16_t *>(address);
-    const uint16_t host = ntohs(network);
-    return host;
 }

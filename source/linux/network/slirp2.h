@@ -19,6 +19,7 @@ public:
   int getREvents(const int idx) const;
 
   std::queue<std::vector<uint8_t>> & getQueue();
+  void clearQueue();
 private:
   std::shared_ptr<Slirp> mySlirp;
   std::vector<pollfd> myFDs;

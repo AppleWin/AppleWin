@@ -167,3 +167,8 @@ std::queue<std::vector<uint8_t>> & SlirpNet::getQueue()
 {
   return myQueue;
 }
+
+void SlirpNet::clearQueue()
+{
+  std::queue<std::vector<uint8_t>>().swap(myQueue);
+}
