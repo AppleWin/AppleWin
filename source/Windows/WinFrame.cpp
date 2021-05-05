@@ -1078,14 +1078,6 @@ LRESULT Win32Frame::WndProc(
 					ProcessButtonClick(BTN_RUN);
 				}
 			}
-			else if (Error == eIMAGE_ERROR_UNSUPPORTED_HDV)
-			{
-				if (HD_CardIsEnabled() && DoHardDiskInsert(HARDDISK_1, filename))
-				{
-					SetForegroundWindow(window);
-					ProcessButtonClick(BTN_RUN);
-				}
-			}
 			else
 			{
 				disk2Card.NotifyInvalidImage(iDrive, filename, Error);
