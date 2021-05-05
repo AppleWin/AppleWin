@@ -142,7 +142,7 @@ public:
 	void GetFilenameAndPathForSaveState(std::string& filename, std::string& path);
 	void GetLightStatus (Disk_Status_e* pDisk1Status, Disk_Status_e* pDisk2Status);
 
-	ImageError_e InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary);
+	ImageError_e InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary, ImageInfo* pImageInfo = NULL);
 	void EjectDisk(const int drive);
 	void UnplugDrive(const int drive);
 

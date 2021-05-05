@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Core.h"
 #include "CPU.h"
 #include "DiskImage.h"
+#include "DiskImageHelper.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Registry.h"
@@ -655,7 +656,7 @@ void Disk2InterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status, Disk_Status
 //===========================================================================
 
 // Pre: pszImageFilename is *not* qualified with path
-ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary)
+ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary, ImageInfo* pImageInfo /* = NULL */)
 {
 	FloppyDrive* pDrive = &m_floppyDrive[drive];
 	FloppyDisk* pFloppy = &pDrive->m_disk;
@@ -689,11 +690,22 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 		}
 	}
 
-	ImageError_e Error = ImageOpen(pszImageFilename,
-		&pFloppy->m_imagehandle,
-		&pFloppy->m_bWriteProtected,
-		bCreateIfNecessary,
-		pFloppy->m_strFilenameInZip);
+	ImageError_e Error = eIMAGE_ERROR_NONE;
+	if (pImageInfo)
+	{
+		// Use already opened image
+		pFloppy->m_imagehandle = pImageInfo;
+		pFloppy->m_bWriteProtected = pImageInfo->bWriteProtected;
+	}
+	else
+	{
+		// Open new image
+		ImageError_e Error = ImageOpen(pszImageFilename,
+			&pFloppy->m_imagehandle,
+			&pFloppy->m_bWriteProtected,
+			bCreateIfNecessary,
+			pFloppy->m_strFilenameInZip);
+	}
 
 	if (Error == eIMAGE_ERROR_NONE && ImageIsMultiFileZip(pFloppy->m_imagehandle))
 	{
