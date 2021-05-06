@@ -25,3 +25,11 @@ int vsnprintf_s(char *buffer, size_t sizeOfBuffer, size_t count, const char *for
   buffer[sizeOfBuffer - 1] = 0;
   return res;
 }
+
+LPSTR _strupr( LPSTR str )
+{
+  LPSTR ret = str;
+  for ( ; *str; str++)
+    *str = toupper(*str);
+  return ret;
+}

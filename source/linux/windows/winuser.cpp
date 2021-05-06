@@ -29,3 +29,8 @@ LRESULT     WINAPI SendMessage(HWND,UINT,WPARAM,LPARAM)
 {
   return 0;
 }
+
+void        WINAPI PostQuitMessage(INT status)
+{
+  throw status;
+}

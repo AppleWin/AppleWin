@@ -37,6 +37,8 @@ int vsnprintf_s(
 #define _snprintf snprintf
 #define wsprintf sprintf
 #define sscanf_s sscanf
+#define _tcsncmp strncmp
+#define _tcsncat strncat
 
 inline bool IsCharLower(char ch) {
         return isascii(ch) && islower(ch);
@@ -47,3 +49,5 @@ inline bool IsCharUpper(char ch) {
 }
 
 DWORD CharLowerBuff(LPTSTR lpsz, DWORD cchLength);
+
+LPSTR _strupr( LPSTR str );

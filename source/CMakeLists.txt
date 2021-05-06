@@ -5,6 +5,8 @@ set(SOURCE_FILES
   Tfe/tfearch.cpp
   Tfe/tfesupp.cpp
 
+  Debugger/Debug.cpp
+  Debugger/Debugger_Help.cpp
   Debugger/Debugger_Color.cpp
   Debugger/Debugger_Disassembler.cpp
   Debugger/Debugger_Symbols.cpp
@@ -13,6 +15,8 @@ set(SOURCE_FILES
   Debugger/Debugger_Assembler.cpp
   Debugger/Debugger_Parser.cpp
   Debugger/Debugger_Range.cpp
+  Debugger/Debugger_Commands.cpp
+  Debugger/Util_MemoryTextFile.cpp
 
   SSI263.cpp
   Speaker.cpp
@@ -77,8 +81,9 @@ set(SOURCE_FILES
   linux/network/tfe2.cpp
   linux/network/slirp2.cpp
 
-  linux/duplicates/Debug.cpp
-  linux/duplicates/Debug_Display.cpp
+  linux/duplicates/AppleWin.cpp
+  linux/duplicates/Debugger_Display.cpp
+  linux/duplicates/Debugger_Win32.cpp
   linux/duplicates/Joystick.cpp
   linux/duplicates/SerialComms.cpp
   linux/duplicates/PropertySheet.cpp
@@ -134,6 +139,20 @@ set(HEADER_FILES
   SaveState_Structs_v1.h
 
   Debugger/Debug.h
+  Debugger/DebugDefs.h
+  Debugger/Debugger_Color.h
+  Debugger/Debugger_Console.h
+  Debugger/Debugger_Disassembler.h
+  Debugger/Debugger_DisassemblerData.h
+  Debugger/Debugger_Display.h
+  Debugger/Debugger_Help.h
+  Debugger/Debugger_Parser.h
+  Debugger/Debugger_Range.h
+  Debugger/Debugger_Symbols.h
+  Debugger/Debugger_Types.h
+  Debugger/Debugger_Win32.h
+  Debugger/Util_MemoryTextFile.h
+  Debugger/Util_Text.h
 
   Configuration/PropertySheetHelper.h
 

@@ -90,3 +90,18 @@ void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 void KeybReset()
 {
 }
+
+bool KeybGetShiftStatus()
+{
+  return false;
+}
+
+bool KeybGetAltStatus()
+{
+  return false;
+}
+
+bool KeybGetCtrlStatus()
+{
+  return false;
+}
