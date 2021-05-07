@@ -614,10 +614,11 @@ void SSI263::Update(void)
 	DWORD dwDSLockedBufferSize0, dwDSLockedBufferSize1;
 	short *pDSLockedBuffer0, *pDSLockedBuffer1;
 
-	if (!DSGetLock(SSI263SingleVoice.lpDSBvoice,
-						m_byteOffset, (DWORD)nNumSamples*sizeof(short)*m_kNumChannels,
-						&pDSLockedBuffer0, &dwDSLockedBufferSize0,
-						&pDSLockedBuffer1, &dwDSLockedBufferSize1))
+	hr = DSGetLock(SSI263SingleVoice.lpDSBvoice,
+		m_byteOffset, (DWORD)nNumSamples * sizeof(short) * m_kNumChannels,
+		&pDSLockedBuffer0, &dwDSLockedBufferSize0,
+		&pDSLockedBuffer1, &dwDSLockedBufferSize1);
+	if (FAILED(hr))
 		return;
 
 	memcpy(pDSLockedBuffer0, &m_mixBufferSSI263[0], dwDSLockedBufferSize0);
