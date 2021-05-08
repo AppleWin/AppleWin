@@ -184,16 +184,20 @@ namespace
     writeData(i, data, len);
   }
 
-  void writeDataUDP(const size_t i, const uint8_t * data, const size_t len, const sockaddr_in & source)
+  void writeDataForProtocol(const size_t i, const uint8_t * data, const size_t len, const sockaddr_in & source)
   {
     const Socket & socket = sockets[i];
 
-    // these are already in network order
-    writeAny(i, source.sin_addr);
-    writeAny(i, source.sin_port);
+    if (socket.sn_sr == SN_SR_SOCK_UDP)
+    {
+      // these are already in network order
+      writeAny(i, source.sin_addr);
+      writeAny(i, source.sin_port);
 
-    // size does not include sizeof(size)
-    write16(i, len);
+      // size does not include sizeof(size)
+      write16(i, len);
+    } // no header for TCP
+
     writeData(i, data, len);
   }
 
@@ -389,42 +393,8 @@ namespace
 #endif
   }
 
-  void receiveOnePacketTCP(const size_t i)
-  {
-    Socket & socket = sockets[i];
-    if (socket.myFD != -1)
-    {
-      const uint16_t freeRoom = getFreeRoom(i);
-      if (freeRoom > 32) // avoid meaningless reads
-      {
-        std::vector<uint8_t> buffer(freeRoom - 1); // do not fill the buffer completely
-        const ssize_t data = recv(socket.myFD, buffer.data(), buffer.size(), 0);
-        if (data > 0)
-        {
-          // TCP: no header, just the data
-          writeData(i, buffer.data(), data);
-#ifdef U2_LOG_TRAFFIC
-          LogFileOutput("U2: READ TCP[%d]: +%d -> %d bytes\n", i, data, socket.sn_rx_rsr);
-#endif
-        }
-        else if (data == 0)
-        {
-          // gracefull termination
-          socket.clearFD();
-        }
-        else // data < 0;
-        {
-          const int error = errno;
-          if (error != EAGAIN && error != EWOULDBLOCK)
-          {
-            socket.clearFD();
-          }
-        }
-      }
-    }
-  }
-
-  void receiveOnePacketUDP(const size_t i)
+  // UDP & TCP
+  void receiveOnePacketFromSocket(const size_t i)
   {
     Socket & socket = sockets[i];
     if (socket.myFD != -1)
@@ -436,12 +406,14 @@ namespace
         sockaddr_in source = {0};
         socklen_t len = sizeof(sockaddr_in);
         const ssize_t data = recvfrom(socket.myFD, buffer.data(), buffer.size(), 0, (struct sockaddr *) &source, &len);
+#ifdef U2_LOG_TRAFFIC
+        const char * proto = socket.sn_sr == SN_SR_SOCK_UDP ? "UDP" : "TCP";
+#endif
         if (data > 0)
         {
-          // TCP: no header, just the data
-          writeDataUDP(i, buffer.data(), data, source);
+          writeDataForProtocol(i, buffer.data(), data, source);
 #ifdef U2_LOG_TRAFFIC
-          LogFileOutput("U2: READ UDP[%d]: +%d -> %d bytes\n", i, data, socket.sn_rx_rsr);
+          LogFileOutput("U2: READ %s[%d]: +%d -> %d bytes\n", proto, i, data, socket.sn_rx_rsr);
 #endif
         }
         else if (data == 0)
@@ -454,6 +426,9 @@ namespace
           const int error = errno;
           if (error != EAGAIN && error != EWOULDBLOCK)
           {
+#ifdef U2_LOG_TRAFFIC
+            LogFileOutput("U2: ERROR %s[%d]: %d\n", proto, i, error);
+#endif
             socket.clearFD();
           }
         }
@@ -470,10 +445,8 @@ namespace
         receiveOnePacketMacRaw(i);
         break;
       case SN_SR_ESTABLISHED:
-        receiveOnePacketTCP(i);
-        break;
       case SN_SR_SOCK_UDP:
-        receiveOnePacketUDP(i);
+        receiveOnePacketFromSocket(i);
         break;
       case SN_SR_CLOSED:
         break;  // nothing to do
@@ -496,27 +469,7 @@ namespace
 #endif
   }
 
-  void sendDataTCP(const size_t i, std::vector<uint8_t> & data)
-  {
-    Socket & socket = sockets[i];
-    if (socket.myFD != -1)
-    {
-      const ssize_t res = send(socket.myFD, data.data(), data.size(), 0);
-      if (res < 0)
-      {
-        const int error = errno;
-        if (error != EAGAIN && error != EWOULDBLOCK)
-        {
-          socket.clearFD();
-        }
-      }
-#ifdef U2_LOG_TRAFFIC
-      LogFileOutput("U2: SEND TCP[%d]: %d of %d bytes\n", i, res, data.size());
-#endif
-    }
-  }
-
-  void sendDataUDP(const size_t i, std::vector<uint8_t> & data)
+  void sendDataToSocket(const size_t i, std::vector<uint8_t> & data)
   {
     Socket & socket = sockets[i];
     if (socket.myFD != -1)
@@ -525,22 +478,27 @@ namespace
       destination.sin_family = AF_INET;
 
       // already in network order
+      // this seems to be ignored for TCP, and so we reuse the same code
       const uint8_t * dest = memory.data() + socket.registers + SN_DIPR0;
       destination.sin_addr.s_addr = *reinterpret_cast<const uint32_t *>(dest);
       destination.sin_port = *reinterpret_cast<const uint16_t *>(memory.data() + socket.registers + SN_DPORT0);
 
       const ssize_t res = sendto(socket.myFD, data.data(), data.size(), 0, (const struct sockaddr *) &destination, sizeof(destination));
+#ifdef U2_LOG_TRAFFIC
+      const char * proto = socket.sn_sr == SN_SR_SOCK_UDP ? "UDP" : "TCP";
+      LogFileOutput("U2: SEND %s[%d]: %d of %d bytes\n", proto, i, res, data.size());
+#endif
       if (res < 0)
       {
         const int error = errno;
         if (error != EAGAIN && error != EWOULDBLOCK)
         {
+#ifdef U2_LOG_TRAFFIC
+          LogFileOutput("U2: ERROR %s[%d]: %d\n", proto, i, error);
+#endif
           socket.clearFD();
         }
       }
-#ifdef U2_LOG_TRAFFIC
-      LogFileOutput("U2: SEND UDP[%d]: %d of %d bytes\n", i, res, data.size());
-#endif
     }
   }
 
@@ -579,10 +537,8 @@ namespace
         sendDataMacRaw(i, data);
         break;
       case SN_SR_ESTABLISHED:
-        sendDataTCP(i, data);
-        break;
       case SN_SR_SOCK_UDP:
-        sendDataUDP(i, data);
+        sendDataToSocket(i, data);
         break;
 #ifdef U2_LOG_UNKNOWN
       default:
@@ -604,37 +560,21 @@ namespace
     memory[socket.registers + SN_RX_RD1] = 0x00;
   }
 
-  void openSocketTCP(const size_t i)
+  void openSystemSocket(const size_t i, const int type, const int protocol, const int state)
   {
     Socket & s = sockets[i];
-    const int fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP);
+    const int fd = socket(AF_INET, type | SOCK_NONBLOCK, protocol);
     if (fd < -1)
     {
 #ifdef U2_LOG_STATE      
-      LogFileOutput("U2: TCP[%d]: %s\n", i, strerror(errno));
+      const char * proto = state == SN_SR_SOCK_UDP ? "UDP" : "TCP";
+      LogFileOutput("U2: %s[%d]: %s\n", proto, i, strerror(errno));
 #endif
       s.clearFD();
     }
     else
     {
-      s.setFD(fd, SN_SR_SOCK_INIT);
-    }
-  }
-
-  void openSocketUDP(const size_t i)
-  {
-    Socket & s = sockets[i];
-    const int fd = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
-    if (fd < -1)
-    {
-#ifdef U2_LOG_STATE
-      LogFileOutput("U2: UDP[%d]: %s\n", i, strerror(errno));
-#endif
-      s.clearFD();
-    }
-    else
-    {
-      s.setFD(fd, SN_SR_SOCK_UDP);
+      s.setFD(fd, state);
     }
   }
 
@@ -653,10 +593,10 @@ namespace
         sr = SN_SR_SOCK_MACRAW;
         break;
       case SN_MR_TCP:
-        openSocketTCP(i);
+        openSystemSocket(i, SOCK_STREAM, IPPROTO_TCP, SN_SR_SOCK_INIT);
         break;
       case SN_MR_UDP:
-        openSocketUDP(i);
+        openSystemSocket(i, SOCK_DGRAM, IPPROTO_UDP, SN_SR_SOCK_UDP);
         break;
 #ifdef U2_LOG_UNKNOWN
       default:
