@@ -23,6 +23,7 @@
 #include "linux/network/slirp2.h"
 #else
 #include "linux/network/tfe2.h"
+#include "Tfe/tfe.h"
 #endif
 
 #include "Memory.h"
@@ -1071,6 +1072,8 @@ void registerUthernet2()
  #ifdef U2_USE_SLIRP
   slirp.reset();
   slirp = std::make_shared<SlirpNet>();
+#else
+  tfe_init();
 #endif
   initialise();
   RegisterIoHandler(SLOT3, u2_C0, u2_C0, nullptr, nullptr, nullptr, nullptr);
