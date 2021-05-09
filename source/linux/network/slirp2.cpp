@@ -132,7 +132,14 @@ void SlirpNet::sendFromGuest(const uint8_t *pkt, const int pkt_len)
 
 void SlirpNet::sendToGuest(const uint8_t *pkt, int pkt_len)
 {
-  myQueue.emplace(pkt, pkt + pkt_len);
+  if (myQueue.size() < ourQueueSize)
+  {
+    myQueue.emplace(pkt, pkt + pkt_len);
+  }
+  else
+  {
+    // drop it
+  }
 }
 
 void SlirpNet::process(uint32_t timeout)

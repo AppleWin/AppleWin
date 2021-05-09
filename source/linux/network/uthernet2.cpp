@@ -355,7 +355,7 @@ namespace
 #ifdef U2_USE_SLIRP
     {
       std::queue<std::vector<uint8_t>> & queue = slirp->getQueue();
-      if (!queue.empty())
+      while (!queue.empty())
       {
         const std::vector<uint8_t> & packet = queue.front();
         if (isThereRoomFor(i, packet.size(), sizeof(uint16_t)))
@@ -365,6 +365,10 @@ namespace
 #ifdef U2_LOG_TRAFFIC
           LogFileOutput("U2: READ MACRAW[%d]: +%d -> %d bytes (%04x)\n", i, packet.size(), socket.sn_rx_rsr, socket.sn_rx_wr);
 #endif
+        }
+        else
+        {
+          break;
         }
       }
     }
@@ -383,7 +387,7 @@ namespace
         }
         else
         {
-          // ??? we just skip it
+          // drop it
 #ifdef U2_LOG_TRAFFIC
           LogFileOutput("U2: SKIP MACRAW[%d]: %d bytes\n", i, len);
 #endif

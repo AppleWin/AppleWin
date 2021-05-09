@@ -21,6 +21,9 @@ public:
   std::queue<std::vector<uint8_t>> & getQueue();
   void clearQueue();
 private:
+
+  static constexpr size_t ourQueueSize = 10;
+
   std::shared_ptr<Slirp> mySlirp;
   std::vector<pollfd> myFDs;
 
