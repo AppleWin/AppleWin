@@ -455,6 +455,19 @@ namespace sa2
           myForceCapsLock = false;
           break;
         }
+      case SDLK_INSERT:
+        {
+          if (key.keysym.mod & KMOD_SHIFT)
+          {
+            char * text = SDL_GetClipboardText();
+            if (text)
+            {
+              addTextToBuffer(text);
+              SDL_free(text);
+            }
+          }
+          break;
+        }
       }
     }
 

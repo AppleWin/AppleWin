@@ -105,3 +105,15 @@ bool KeybGetCtrlStatus()
 {
   return false;
 }
+
+void addTextToBuffer(const char * text)
+{
+   while (*text)
+   {
+     if (*text >= 0x20 && *text <= 0x7e)
+     {
+       addKeyToBuffer(*text);
+       ++text;
+     }
+   }
+}
