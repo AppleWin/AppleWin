@@ -669,6 +669,7 @@ namespace
         connectSocket(i);
         break;
       case SN_CR_CLOSE:
+      case SN_CR_DISCON:
         closeSocket(i);
         break;
       case SN_CR_SEND:

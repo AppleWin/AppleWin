@@ -47,6 +47,7 @@
 #define SN_CR_OPEN          0x01
 #define SN_CR_LISTENT       0x02
 #define SN_CR_CONNECT       0x04
+#define SN_CR_DISCON        0x08
 #define SN_CR_CLOSE         0x10
 #define SN_CR_SEND          0x20
 #define SN_CR_RECV          0x40
