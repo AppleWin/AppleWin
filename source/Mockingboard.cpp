@@ -1805,8 +1805,8 @@ void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
 
 		memset(&pSS->Unit[i].RegsSSI263, 0, sizeof(SSI263A));	// Not used by debugger
 		pSS->Unit[i].nAYCurrentRegister = pMB->nAYCurrentRegister;
-		pSS->Unit[i].bTimer1IrqPending = false;
-		pSS->Unit[i].bTimer2IrqPending = false;
+		pSS->Unit[i].bTimer1Active = pMB->bTimer1Active;
+		pSS->Unit[i].bTimer2Active = pMB->bTimer2Active;
 		pSS->Unit[i].bSpeechIrqPending = false;
 
 		nDeviceNum++;

@@ -2051,10 +2051,21 @@ void DrawMemory ( int line, int iMemDump )
 			if (eDevice == DEV_SY6522)
 			{
 				sprintf( sText, "%02X ", (unsigned) ((BYTE*)&SS_MB.Unit[nAddr & 1].RegsSY6522)[iAddress] );
-				if (iCol & 1)
-					DebuggerSetColorFG( DebuggerGetColor( iForeground ));
+				if (SS_MB.Unit[nAddr & 1].bTimer1Active && (iAddress == 4 || iAddress == 5))		// T1C
+				{
+					DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));							// if timer1 active then draw in white
+				}
+				else if (SS_MB.Unit[nAddr & 1].bTimer2Active && (iAddress == 8 || iAddress == 9))	// T2C
+				{
+					DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));							// if timer2 active then draw in white
+				}
 				else
-					DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
+				{
+					if (iCol & 1)
+						DebuggerSetColorFG( DebuggerGetColor( iForeground ));
+					else
+						DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
+				}
 			}
 			else
 			if (eDevice == DEV_AY8910)
