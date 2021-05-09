@@ -93,7 +93,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "AY8910.h"
 #include "SSI263.h"
 
-#define DBG_MB_SS_CARD 0	// From UI, select Mockingboard (not Phasor)
+#define DBG_MB_SS_CARD 1	// From UI, select Mockingboard (not Phasor)
 
 #define SY6522_DEVICE_A 0
 #define SY6522_DEVICE_B 1
@@ -583,11 +583,16 @@ static void UpdateIFR(SY6522_AY8910* pMB, BYTE clr_ifr, BYTE set_ifr=0)
 	else
 		pMB->sy6522.IFR &= 0x7F;
 
+#if DBG_MB_SS_CARD
+	UINT bIRQ = (g_MB[0].sy6522.IFR & 0x80) | (g_MB[2].sy6522.IFR & 0x80);	// $Cn00
+	UINT bNMI = (g_MB[1].sy6522.IFR & 0x80) | (g_MB[3].sy6522.IFR & 0x80);	// $Cn80
+#else
 	// Now update the IRQ signal from all 6522s
 	// . OR-sum of all active TIMER1, TIMER2 & SPEECH sources (from all 6522s)
 	UINT bIRQ = 0;
 	for (UINT i=0; i<NUM_SY6522; i++)
 		bIRQ |= g_MB[i].sy6522.IFR & 0x80;
+#endif
 
 	// NB. Mockingboard generates IRQ on both 6522s:
 	// . SSI263's IRQ (A/!R) is routed via the 2nd 6522 (at $Cn80) and must generate a 6502 IRQ (not NMI)
@@ -599,6 +604,13 @@ static void UpdateIFR(SY6522_AY8910* pMB, BYTE clr_ifr, BYTE set_ifr=0)
 	    CpuIrqAssert(IS_6522);
 	else
 	    CpuIrqDeassert(IS_6522);
+
+#if DBG_MB_SS_CARD
+	if (bNMI)
+		CpuNmiAssert(IS_6522);
+	else
+		CpuNmiDeassert(IS_6522);
+#endif
 }
 
 static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)

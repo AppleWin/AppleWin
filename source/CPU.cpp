@@ -105,7 +105,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "YamlHelper.h"
 
-#define LOG_IRQ_TAKEN_AND_RTI 0
+#define LOG_IRQ_TAKEN_AND_RTI 1
 
 // 6502 Accumulator Bit Flags
 	#define	 AF_SIGN       0x80
@@ -236,7 +236,7 @@ static __forceinline void DoIrqProfiling(DWORD uCycles)
 {
 #ifdef _DEBUG
 	if(regs.ps & AF_INTERRUPT)
-		return;		// Still in Apple's ROM
+		return;		// Still in Apple's ROM (or an NMI with I=1)
 
 #if LOG_IRQ_TAKEN_AND_RTI
 	LogOutput("ISR-end\n\n");
@@ -378,7 +378,7 @@ static __forceinline void Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 	regs.pc++;
 }
 
-//#define ENABLE_NMI_SUPPORT	// Not used - so don't enable
+#define ENABLE_NMI_SUPPORT	// Not used - so don't enable
 static __forceinline void NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
 #ifdef ENABLE_NMI_SUPPORT
@@ -397,6 +397,12 @@ static __forceinline void NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		regs.pc = * (WORD*) (mem+0xFFFA);
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7)
+#if defined(_DEBUG) && LOG_IRQ_TAKEN_AND_RTI
+		std::string irq6522;
+		MB_Get6522IrqDescription(irq6522);
+		const char* pSrc = irq6522.c_str();
+		LogOutput("NMI (%08X) (%s)\n", (UINT)g_nCycleIrqStart, pSrc);
+#endif
 	}
 #endif
 }
@@ -736,7 +742,6 @@ void CpuNmiAssert(eIRQSRC Device)
 
 void CpuNmiDeassert(eIRQSRC Device)
 {
-	_ASSERT(g_bCritSectionValid);
 	if (g_bCritSectionValid) EnterCriticalSection(&g_CriticalSection);
 	g_bmNMI &= ~(1<<Device);
 	if (g_bCritSectionValid) LeaveCriticalSection(&g_CriticalSection);
