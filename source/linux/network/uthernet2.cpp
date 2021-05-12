@@ -1020,6 +1020,7 @@ void registerUthernet2()
 #else
   tfe_init();
 #endif
+  dataAddress = 0;
   initialise();
   RegisterIoHandler(SLOT3, u2_C0, u2_C0, nullptr, nullptr, nullptr, nullptr);
 }
