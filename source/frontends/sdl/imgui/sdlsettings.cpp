@@ -906,8 +906,12 @@ namespace sa2
         {
           ImGui::Checkbox("Auto-sync PC", &mySyncCPU);
 
-          // complicated if condition to preserve widget order
-          const bool recalc = mySyncCPU || (ImGui::SameLine(), ImGui::Button("Sync PC"));
+          bool recalc = false;
+          if (mySyncCPU || (ImGui::SameLine(), ImGui::Button("Sync PC")))
+          {
+            recalc = true;
+            g_nDisasmCurAddress = regs.pc;
+          }
 
           if (ImGui::Button("Step"))
           {
@@ -927,13 +931,26 @@ namespace sa2
           {
             frame->ChangeMode(MODE_PAUSED);
           }
-          ImGui::SameLine(); ImGui::Text("%016llu - %04X", g_nCumulativeCycles, regs.pc);
+          ImGui::SameLine();
+          ImGui::Text("%016llu - %04X", g_nCumulativeCycles, regs.pc);
 
+          if (!mySyncCPU)
+          {
+            ImGui::SameLine();
+            ImGui::PushItemWidth(ImGui::GetFontSize() * 5);
+            if (ImGui::InputScalar("Reference", ImGuiDataType_U16, &g_nDisasmCurAddress, nullptr, nullptr, "%04X", ImGuiInputTextFlags_CharsHexadecimal))
+            {
+              recalc = true;
+            }
+            ImGui::PopItemWidth();
+          }
+
+          // do not flip next ||
           if (ImGui::SliderInt("PC position", &g_nDisasmCurLine, 0, 100) || recalc)
           {
-            g_nDisasmCurAddress = regs.pc;
             DisasmCalcTopBotAddress();
           }
+
           drawDisassemblyTable();
           ImGui::EndTabItem();
         }
