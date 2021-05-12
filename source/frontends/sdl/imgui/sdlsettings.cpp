@@ -756,7 +756,7 @@ namespace sa2
 
   void ImGuiSettings::drawDisassemblyTable()
   {
-    const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
+    const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
     if (ImGui::BeginTable("Disassembly", 8, flags))
     {
       // weigths proportional to column width (including header)
@@ -797,6 +797,12 @@ namespace sa2
             const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(0, 0, 1, 1));
             ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
           }
+          else if (nAddress == g_nDisasmCurAddress)
+          {
+            const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(0, 0, 0.5, 1));
+            ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
+          }
+
           ImGui::TableNextColumn();
           ImGui::Selectable(line.sAddress, false, ImGuiSelectableFlags_SpanAllColumns);
 
