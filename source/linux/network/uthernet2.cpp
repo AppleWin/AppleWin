@@ -375,8 +375,8 @@ namespace
 #else
     {
       BYTE buffer[MAX_RXLENGTH];
-      int len = sizeof(buffer);
-      if (tfeReceiveOnePacket(memory.data() + SHAR0, buffer, len))
+      int len;
+      if (tfeReceiveOnePacket(memory.data() + SHAR0, sizeof(buffer), buffer, len))
       {
         if (isThereRoomFor(i, len, sizeof(uint16_t)))
         {

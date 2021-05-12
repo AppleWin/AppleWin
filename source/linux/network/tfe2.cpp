@@ -47,7 +47,7 @@ void tfeTransmitOnePacket(const BYTE * buffer, const int len)
     }
 }
 
-bool tfeReceiveOnePacket(const uint8_t * mac, BYTE * buffer, int & len)
+bool tfeReceiveOnePacket(const uint8_t * mac, const int size, BYTE * buffer, int & len)
 {
     if (!tfe_enabled)
     {
@@ -67,6 +67,7 @@ bool tfeReceiveOnePacket(const uint8_t * mac, BYTE * buffer, int & len)
         int multicast = 0;
         int crc_error;
 
+        len = size;
         const int newframe = tfe_arch_receive(
             buffer,       /* where to store a frame */
             &len,         /* length of received frame */
