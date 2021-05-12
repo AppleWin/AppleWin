@@ -116,8 +116,8 @@ struct MB_Unit_v1
 	BYTE		RegsAY8910[16];
 	SSI263A		RegsSSI263;
 	BYTE		nAYCurrentRegister;
-	bool		bTimer1IrqPending;
-	bool		bTimer2IrqPending;
+	bool		bTimer1Active;
+	bool		bTimer2Active;
 	bool		bSpeechIrqPending;
 };
 
