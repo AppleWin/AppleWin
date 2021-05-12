@@ -16,11 +16,11 @@
 #include "CPU.h"
 #include "Mockingboard.h"
 #include "MouseInterface.h"
+#include "Log.h"
 
 #include "linux/paddle.h"
 #include "linux/keyboard.h"
 
-#include <iostream>
 #include <algorithm>
 
 #include <SDL_image.h>
@@ -111,7 +111,9 @@ namespace
     if (ch)
     {
       addKeyToBuffer(ch);
-      std::cerr << "SDL KeyboardEvent: " << std::hex << (int)ch << std::dec << std::endl;
+#ifdef KEY_LOGGING_VERBOSE
+      LogOutput("SDL KeyboardEvent: %02x\n", ch);
+#endif
     }
   }
 
@@ -472,11 +474,6 @@ namespace sa2
     }
 
     processAppleKey(key, myForceCapsLock);
-
-#ifdef KEY_LOGGING_VERBOSE
-    std::cerr << "KEY DOWN: " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
-#endif
-
   }
 
   void SDLFrame::ProcessKeyUp(const SDL_KeyboardEvent & key)
@@ -494,11 +491,6 @@ namespace sa2
         break;
       }
     }
-
-#ifdef KEY_LOGGING_VERBOSE
-    std::cerr << "KEY UP:   " << key.keysym.scancode << "," << key.keysym.sym << "," << key.keysym.mod << "," << bool(key.repeat) << std::endl;
-#endif
-
   }
 
   void SDLFrame::ProcessText(const SDL_TextInputEvent & text)
@@ -514,7 +506,9 @@ namespace sa2
           // not the letters
           // this is very simple, but one cannot handle CRTL-key combination.
           addKeyToBuffer(key);
-          std::cerr << "SDL TextInputEvent: " << std::hex << (int)key << std::dec << std::endl;
+#ifdef KEY_LOGGING_VERBOSE
+          LogOutput("SDL TextInputEvent: %02x\n", key);
+#endif
           break;
         }
       }
