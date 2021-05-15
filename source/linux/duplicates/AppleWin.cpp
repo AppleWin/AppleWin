@@ -1,3 +1,0 @@
-void SingleStep(bool /* bReinit */)
-{
-}

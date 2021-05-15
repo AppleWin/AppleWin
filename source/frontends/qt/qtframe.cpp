@@ -142,3 +142,8 @@ BYTE* QtFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)
 
     return reinterpret_cast<BYTE *>(myResource.data());
 }
+
+void SingleStep(bool /* bReinit */)
+{
+
+}

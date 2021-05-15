@@ -18,7 +18,6 @@
 #include "Utilities.h"
 #include "Memory.h"
 
-#include "Debugger/Debug.h"
 #include "Debugger/DebugDefs.h"
 
 #include "Tfe/tfe.h"
@@ -854,20 +853,15 @@ namespace sa2
     const ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
     if (ImGui::BeginTable("Console", 1, flags))
     {
-      for (int i = 0; i < CONSOLE_HEIGHT; ++i)
+      for (int i = g_nConsoleDisplayTotal; i >= CONSOLE_FIRST_LINE; --i)
       {
-        const conchar_t * src = g_aConsoleDisplay[CONSOLE_HEIGHT - i - 1];
+        const conchar_t * src = g_aConsoleDisplay[i];
         char line[CONSOLE_WIDTH + 1];
-        COLORREF currentColor = ConsoleColor_GetColor(src[0]);
-        line[0] = ConsoleChar_GetChar(src[0]);
-        size_t length = 1;
-        if (!line[0])
-        {
-          continue;
-        }
+        size_t length = 0;
 
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
+        COLORREF currentColor = DebuggerGetColor( FG_CONSOLE_OUTPUT );
 
         const auto textAndReset = [&line, &length, & currentColor] () {
           line[length] = 0;
@@ -876,7 +870,7 @@ namespace sa2
           ImGui::TextColored(color, "%s", line);
         };
 
-        for (size_t j = length; j < CONSOLE_WIDTH; ++j)
+        for (size_t j = 0; j < CONSOLE_WIDTH; ++j)
         {
           const conchar_t g = src[j];
           if (ConsoleColor_IsColorOrMouse(g))
@@ -888,9 +882,25 @@ namespace sa2
             currentColor = ConsoleColor_GetColor(g);
           }
           line[length] = ConsoleChar_GetChar(g);
-          ++length;
+          if (line[length])
+          {
+            ++length;
+          }
+          else
+          {
+            break;
+          }
         }
         textAndReset();
+      }
+      ImGui::TableNextRow();
+      ImGui::TableNextColumn();
+      ImGui::TextUnformatted(g_aConsoleInput);
+
+      if (myScrollConsole)
+      {
+        ImGui::SetScrollHereY(1.0f);
+        myScrollConsole = false;
       }
       ImGui::EndTable();
     }
@@ -900,7 +910,8 @@ namespace sa2
   {
     if (ImGui::Begin("Debugger", &myShowDebugger))
     {
-      if (ImGui::BeginTabBar("Settings"))
+      ImGui::BeginChild("Console", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
+      if (ImGui::BeginTabBar("Tabs"))
       {
         if (ImGui::BeginTabItem("CPU"))
         {
@@ -930,6 +941,10 @@ namespace sa2
           if ((ImGui::SameLine(), ImGui::Button("Pause")))
           {
             frame->ChangeMode(MODE_PAUSED);
+          }
+          if ((ImGui::SameLine(), ImGui::Button("Debug")))
+          {
+            frame->ChangeMode(MODE_DEBUG);
           }
           ImGui::SameLine();
           ImGui::Text("%016llu - %04X", g_nCumulativeCycles, regs.pc);
@@ -961,9 +976,20 @@ namespace sa2
         }
         ImGui::EndTabBar();
       }
+      ImGui::EndChild();
+      if (ImGui::InputText("Prompt", myInputBuffer, IM_ARRAYSIZE(myInputBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
+      {
+        for (const char *ch = myInputBuffer; *ch; ++ch)
+        {
+          DebuggerInputConsoleChar(*ch);
+        }
+        DebuggerProcessKey(VK_RETURN);
+        myScrollConsole = true;
+        myInputBuffer[0] = 0;
+        ImGui::SetKeyboardFocusHere(-1);
+      }
     }
     ImGui::End();
   }
-
 
 }

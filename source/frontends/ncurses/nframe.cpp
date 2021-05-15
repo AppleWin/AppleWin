@@ -366,3 +366,8 @@ namespace na2
   }
 
 }
+
+void SingleStep(bool /* bReinit */)
+{
+
+}

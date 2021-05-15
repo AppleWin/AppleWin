@@ -81,7 +81,6 @@ set(SOURCE_FILES
   linux/network/tfe2.cpp
   linux/network/slirp2.cpp
 
-  linux/duplicates/AppleWin.cpp
   linux/duplicates/Debugger_Display.cpp
   linux/duplicates/Debugger_Win32.cpp
   linux/duplicates/Joystick.cpp

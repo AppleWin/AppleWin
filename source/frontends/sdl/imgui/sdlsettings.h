@@ -2,6 +2,8 @@
 
 #include "frontends/sdl/imgui/gles.h"
 #include "frontends/sdl/sdirectsound.h"
+#include "Debugger/Debug.h"
+#include "Debugger/Debugger_Console.h"
 
 namespace sa2
 {
@@ -23,6 +25,9 @@ namespace sa2
     bool myShowDebugger = false;
     bool mySyncCPU = true;
     bool myShowAbout = false;
+
+    bool myScrollConsole = true;
+    char myInputBuffer[CONSOLE_WIDTH] = "";
 
     int myStepCycles = 0;
     int mySpeakerVolume;

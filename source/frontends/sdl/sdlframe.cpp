@@ -17,6 +17,7 @@
 #include "Mockingboard.h"
 #include "MouseInterface.h"
 #include "Log.h"
+#include "Debugger/Debug.h"
 
 #include "linux/paddle.h"
 #include "linux/keyboard.h"
@@ -532,12 +533,20 @@ namespace sa2
   {
     // when running in adaptive speed
     // the value msNextFrame is only a hint for when the next frame will arrive
-    if (g_nAppMode == MODE_RUNNING)
+    switch (g_nAppMode)
     {
-      const size_t cyclesToExecute = mySpeed.getCyclesTillNext(msNextFrame * 1000);
-      Execute(cyclesToExecute);
-    }
-    // else do nothing, it is either paused, debugged or stepped
+      case MODE_RUNNING:
+        {
+          const size_t cyclesToExecute = mySpeed.getCyclesTillNext(msNextFrame * 1000);
+          Execute(cyclesToExecute);
+          break;
+        }
+      case MODE_STEPPING:
+        {
+          DebugContinueStepping();
+          break;
+        }
+    };
   }
 
   void SDLFrame::ChangeMode(const AppMode_e mode)
@@ -571,4 +580,9 @@ namespace sa2
     myDragAndDropDrive = drive;
   }
 
+}
+
+void SingleStep(bool /* bReinit */)
+{
+  dynamic_cast<sa2::SDLFrame &>(GetFrame()).Execute(0);
 }
