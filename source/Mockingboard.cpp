@@ -341,8 +341,8 @@ static void AY8910_Write(BYTE nDevice, BYTE /*nReg*/, BYTE nValue, BYTE nAYDevic
 					break;
 
 				case AY_READ:		// 5: READ FROM PSG (need to set DDRA to input)
-					if (g_bPhasorEnable)
-						pMB->sy6522.ORA = 0xff & (pMB->sy6522.DDRA ^ 0xff);	// Phasor doesn't support reading AY8913s - it just reads 1's for the input bits
+					if (g_bPhasorEnable && g_phasorMode == PH_EchoPlus)
+						pMB->sy6522.ORA = 0xff & (pMB->sy6522.DDRA ^ 0xff);	// Phasor (Echo+ mode) doesn't support reading AY8913s - it just reads 1's for the input bits
 					else
 						pMB->sy6522.ORA = AYReadReg(nDevice+2*nAYDevice, pMB->nAYCurrentRegister) & (pMB->sy6522.DDRA ^ 0xff);
 					break;
