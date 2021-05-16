@@ -615,10 +615,10 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				pMB->sy6522.ORB = nValue;
 
 				if ((nDevice&1) == 0 && // SC01 only at $Cn00 (not $Cn80)
-					pMB->sy6522.DDRB == 0xFF && pMB->sy6522.PCR == 0xB0)
+					pMB->sy6522.PCR == 0xB0)
 				{
 					// Votrax speech data
-					pMB->ssi263.Votrax_Write(nValue);
+					pMB->ssi263.Votrax_Write((nValue & pMB->sy6522.DDRB) | (pMB->sy6522.DDRB ^ 0xff));	// DDRB's zero bits (inputs) are high impedence, so output as 1 (GH#952)
 					break;
 				}
 
