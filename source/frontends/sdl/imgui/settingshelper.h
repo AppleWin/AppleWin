@@ -29,4 +29,14 @@ namespace sa2
   void setVideoStyle(Video & video, const VideoStyle_e style, const bool enabled);
 
   void saveTFEEnabled(const int enabled);
+
+  void changeBreakpoint(const DWORD nAddress, const bool enableAndSet);
+
+}
+
+namespace ImGui
+{
+  bool CheckBoxTristate(const char* label, int* v_tristate);
+  void PushStyleCompact();
+  void PopStyleCompact();
 }

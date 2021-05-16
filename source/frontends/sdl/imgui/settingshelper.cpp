@@ -3,9 +3,14 @@
 #include "Registry.h"
 #include "Harddisk.h"
 #include "Core.h"
+#include "Debugger/Debug.h"
 
 #include "Tfe/tfe.h"
 #include "frontends/sdl/imgui/settingshelper.h"
+
+#include "frontends/sdl/imgui/gles.h"
+#include "imgui_internal.h"
+
 
 namespace
 {
@@ -194,6 +199,64 @@ namespace sa2
   {
     tfe_enabled = enabled;
     REGSAVE(TEXT(REGVALUE_UTHERNET_ACTIVE), tfe_enabled);
+  }
+
+  void changeBreakpoint(const DWORD nAddress, const bool enableAndSet)
+  {
+    // see _BWZ_RemoveOne
+    for (Breakpoint_t & bp : g_aBreakpoints)
+    {
+      if (bp.bSet && bp.nLength && (nAddress >= bp.nAddress) && (nAddress < bp.nAddress + bp.nLength))
+      {
+        bp.bSet = enableAndSet;
+        bp.bEnabled = enableAndSet;
+        if (!enableAndSet)
+        {
+          bp.nLength = 0;
+          --g_nBreakpoints;
+        }
+      }
+    }
+  }
+
+
+}
+
+namespace ImGui
+{
+
+  bool CheckBoxTristate(const char* label, int* v_tristate)
+  {
+    bool ret;
+    if (*v_tristate == -1)
+    {
+      ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, true);
+      bool b = false;
+      ret = ImGui::Checkbox(label, &b);
+      if (ret)
+        *v_tristate = 1;
+      ImGui::PopItemFlag();
+    }
+    else
+    {
+      bool b = (*v_tristate != 0);
+      ret = ImGui::Checkbox(label, &b);
+      if (ret)
+        *v_tristate = (int)b;
+    }
+    return ret;
+  }
+
+  void PushStyleCompact()
+  {
+    ImGuiStyle& style = ImGui::GetStyle();
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, (float)(int)(style.FramePadding.y * 0.60f)));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, (float)(int)(style.ItemSpacing.y * 0.60f)));
+  }
+
+  void PopStyleCompact()
+  {
+    ImGui::PopStyleVar(2);
   }
 
 }

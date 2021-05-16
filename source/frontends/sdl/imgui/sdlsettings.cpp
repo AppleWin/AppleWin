@@ -176,7 +176,7 @@ namespace
     {
       ImGui::EndCombo();
     }
-    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, false);
+    ImGui::PopItemFlag();
   }
 
 }
@@ -202,7 +202,7 @@ namespace sa2
 
           if (ImGui::Checkbox("Debugger", &myShowDebugger) && myShowDebugger)
           {
-            DebugBegin();
+            frame->ChangeMode(MODE_DEBUG);
           }
           ImGui::SameLine(); HelpMarker("Show Apple CPU.");
 
@@ -694,7 +694,7 @@ namespace sa2
     }
   }
 
-  float ImGuiSettings::drawMenuBar()
+  float ImGuiSettings::drawMenuBar(SDLFrame* frame)
   {
     float menuBarHeight;
 
@@ -707,7 +707,7 @@ namespace sa2
         ImGui::MenuItem("Memory", nullptr, &myShowMemory);
         if (ImGui::MenuItem("Debugger", nullptr, &myShowDebugger) && myShowDebugger)
         {
-          DebugBegin();
+          frame->ChangeMode(MODE_DEBUG);
         }
         ImGui::EndMenu();
       }
@@ -756,10 +756,12 @@ namespace sa2
   void ImGuiSettings::drawDisassemblyTable()
   {
     const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable("Disassembly", 8, flags))
+    if (ImGui::BeginTable("Disassembly", 9, flags))
     {
+      ImGui::PushStyleCompact();
       // weigths proportional to column width (including header)
       ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
+      ImGui::TableSetupColumn("", 0, 1);
       ImGui::TableSetupColumn("Address", 0, 7);
       ImGui::TableSetupColumn("Opcode", 0, 8);
       ImGui::TableSetupColumn("Symbol", 0, 10);
@@ -785,20 +787,60 @@ namespace sa2
         IM_ASSERT(row == clipper.DisplayStart && "Clipper position mismatch");
         for (; row < clipper.DisplayEnd; ++row)
         {
+          ImGui::PushID(nAddress);
           DisasmLine_t line;
           const char* pSymbol = FindSymbolFromAddress(nAddress);
           const int bDisasmFormatFlags = GetDisassemblyLine(nAddress, line);
 
           ImGui::TableNextRow();
 
+          bool breakpointActive;
+          bool breakpointEnabled;
+          GetBreakpointInfo(nAddress, breakpointActive, breakpointEnabled);
+
+          float red = 0.0;
+          int state = 0;
+          if (breakpointEnabled)
+          {
+            red = 0.5;
+            state = 1;
+          }
+          else if (breakpointActive)
+          {
+            red = 0.25;
+            state = -1;
+          }
+
+          ImGui::TableNextColumn();
+
+          ImGui::PushItemFlag(ImGuiItemFlags_Disabled, g_nAppMode != MODE_DEBUG);
+          if (ImGui::CheckBoxTristate("", &state))
+          {
+            if (!breakpointActive && state == 1)
+            {
+              std::string command = std::string("bpx ") + line.sAddress;
+              debuggerCommand(command.c_str());
+            }
+            else
+            {
+              changeBreakpoint(nAddress, state == 1);
+            }
+          }
+          ImGui::PopItemFlag();
+
           if (nAddress == regs.pc)
           {
-            const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(0, 0, 1, 1));
+            const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(red, 0, 1, 1));
             ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
           }
           else if (nAddress == g_nDisasmCurAddress)
           {
-            const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(0, 0, 0.5, 1));
+            const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(red, 0, 0.5, 1));
+            ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
+          }
+          else if (breakpointActive || breakpointEnabled)
+          {
+            const ImU32 currentBgColor = ImGui::GetColorU32(ImVec4(red, 0, 0, 1));
             ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, currentBgColor);
           }
 
@@ -842,8 +884,10 @@ namespace sa2
           }
 
           nAddress += line.nOpbyte;
+          ImGui::PopID();
         }
       }
+      ImGui::PopStyleCompact();
       ImGui::EndTable();
     }
   }
@@ -926,25 +970,18 @@ namespace sa2
 
           if (ImGui::Button("Step"))
           {
-            frame->ChangeMode(MODE_STEPPING);
-            frame->Execute(myStepCycles);
+            frame->ChangeMode(MODE_DEBUG);
+            frame->Execute(0);
           }
           ImGui::SameLine();
-          ImGui::PushItemWidth(150);
-          ImGui::DragInt("cycles", &myStepCycles, 0.2f, 0, 256, "%d");
-          ImGui::PopItemWidth();
 
-          if ((ImGui::SameLine(), ImGui::Button("Run")))
-          {
-            frame->ChangeMode(MODE_RUNNING);
-          }
-          if ((ImGui::SameLine(), ImGui::Button("Pause")))
-          {
-            frame->ChangeMode(MODE_PAUSED);
-          }
           if ((ImGui::SameLine(), ImGui::Button("Debug")))
           {
             frame->ChangeMode(MODE_DEBUG);
+          }
+          if ((ImGui::SameLine(), ImGui::Button("Continue")))
+          {
+            frame->ChangeMode(MODE_RUNNING);
           }
           ImGui::SameLine();
           ImGui::Text("%016llu - %04X", g_nCumulativeCycles, regs.pc);
@@ -977,19 +1014,27 @@ namespace sa2
         ImGui::EndTabBar();
       }
       ImGui::EndChild();
-      if (ImGui::InputText("Prompt", myInputBuffer, IM_ARRAYSIZE(myInputBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
+      if (g_nAppMode == MODE_DEBUG)
       {
-        for (const char *ch = myInputBuffer; *ch; ++ch)
+        if (ImGui::InputText("Prompt", myInputBuffer, IM_ARRAYSIZE(myInputBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
         {
-          DebuggerInputConsoleChar(*ch);
+          debuggerCommand(myInputBuffer);
+          myInputBuffer[0] = 0;
+          ImGui::SetKeyboardFocusHere(-1);
         }
-        DebuggerProcessKey(VK_RETURN);
-        myScrollConsole = true;
-        myInputBuffer[0] = 0;
-        ImGui::SetKeyboardFocusHere(-1);
       }
     }
     ImGui::End();
+  }
+
+  void ImGuiSettings::debuggerCommand(const char * s)
+  {
+    for (; *s; ++s)
+    {
+      DebuggerInputConsoleChar(*s);
+    }
+    DebuggerProcessKey(VK_RETURN);
+    myScrollConsole = true;
   }
 
 }

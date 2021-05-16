@@ -124,7 +124,7 @@ namespace sa2
     const ImVec2 uv0(0, 1);
     const ImVec2 uv1(1, 0);
 
-    const float menuBarHeight = mySettings.drawMenuBar();
+    const float menuBarHeight = mySettings.drawMenuBar(this);
 
     if (mySettings.windowed)
     {

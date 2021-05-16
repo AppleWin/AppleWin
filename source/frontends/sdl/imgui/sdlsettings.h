@@ -14,7 +14,7 @@ namespace sa2
   {
   public:
     void show(SDLFrame* frame);
-    float drawMenuBar();
+    float drawMenuBar(SDLFrame* frame);
 
     bool windowed = false;
 
@@ -29,7 +29,6 @@ namespace sa2
     bool myScrollConsole = true;
     char myInputBuffer[CONSOLE_WIDTH] = "";
 
-    int myStepCycles = 0;
     int mySpeakerVolume;
     int myMockingboardVolume;
 
@@ -45,6 +44,8 @@ namespace sa2
 
     void drawDisassemblyTable();
     void drawConsole();
+
+    void debuggerCommand(const char * s);
   };
 
 }
