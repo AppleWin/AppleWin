@@ -30,10 +30,7 @@ been modified.
 
 ##  What works
 
-Almost everything works, except:
-
-* serial port
-* debugger (work started to port it)
+Almost everything works, except the serial port.
 
 The UI has been rewritten in Qt or ImGui.
 
@@ -45,6 +42,8 @@ Uthernet is supported, but it requires elevated capabilities:
 Unfortunately, this must be reapplied after every build.
 
 Uthernet II is supported too (only MACRAW) and by default uses `libslirp` which does *not* require elevated capabilities. Use the ImGui settings to enable it.
+
+Most of the debugger now works (in the ImGui version).
 
 ## Executables
 
