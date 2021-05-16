@@ -533,17 +533,24 @@ namespace sa2
   {
     // when running in adaptive speed
     // the value msNextFrame is only a hint for when the next frame will arrive
+    const uint64_t cyclesToExecute = mySpeed.getCyclesTillNext(msNextFrame * 1000);
     switch (g_nAppMode)
     {
       case MODE_RUNNING:
         {
-          const size_t cyclesToExecute = mySpeed.getCyclesTillNext(msNextFrame * 1000);
           Execute(cyclesToExecute);
           break;
         }
       case MODE_STEPPING:
         {
-          DebugContinueStepping();
+          // In AppleWin this is called without a timer for just one iteration
+          // because we run a "frame" at a time, we need a bit of ingenuity
+          const uint64_t target = g_nCumulativeCycles + cyclesToExecute;
+
+          while (g_nAppMode == MODE_STEPPING && g_nCumulativeCycles < target)
+          {
+            DebugContinueStepping();
+          }
           break;
         }
     };
@@ -553,14 +560,19 @@ namespace sa2
   {
     if (mode != g_nAppMode)
     {
-      g_nAppMode = mode;
-      switch (g_nAppMode)
+      switch (mode)
       {
       case MODE_RUNNING:
+        DebugExitDebugger();
         SoundCore_SetFade(FADE_IN);
         mySpeed.reset();
         break;
+      case MODE_DEBUG:
+        DebugBegin();
+        CmdWindowViewConsole(0);
+        break;
       default:
+        g_nAppMode = mode;
         SoundCore_SetFade(FADE_OUT);
         break;
       }

@@ -92,12 +92,12 @@ namespace ra2
 
   void Game::executeOneFrame()
   {
-    const size_t cyclesToExecute = mySpeed.getCyclesTillNext(ourFrameTime);
     if (g_nAppMode == MODE_RUNNING)
     {
       const bool bVideoUpdate = true;
       const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 
+      const uint64_t cyclesToExecute = mySpeed.getCyclesTillNext(ourFrameTime);
       const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
 
       g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
