@@ -7,7 +7,7 @@
 #define U2_USE_SLIRP
 #endif
 
-#ifdef U2_SLIRP_FOUND
+#ifdef U2_USE_SLIRP
 
 #include <memory>
 #include <vector>
