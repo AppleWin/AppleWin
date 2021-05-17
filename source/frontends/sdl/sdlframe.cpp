@@ -565,7 +565,6 @@ namespace sa2
       case MODE_RUNNING:
         DebugExitDebugger();
         SoundCore_SetFade(FADE_IN);
-        mySpeed.reset();
         break;
       case MODE_DEBUG:
         DebugBegin();
@@ -577,6 +576,7 @@ namespace sa2
         break;
       }
       FrameRefreshStatus(DRAW_TITLE);
+      mySpeed.reset();
     }
   }
 
