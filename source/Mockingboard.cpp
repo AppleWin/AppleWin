@@ -94,6 +94,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SSI263.h"
 
 #define DBG_MB_SS_CARD 1	// From UI, select Mockingboard (not Phasor)
+#define DBG_MB_SS_SLOT4_C_SLOT5 1
 
 #define SY6522_DEVICE_A 0
 #define SY6522_DEVICE_B 1
@@ -584,8 +585,13 @@ static void UpdateIFR(SY6522_AY8910* pMB, BYTE clr_ifr, BYTE set_ifr=0)
 		pMB->sy6522.IFR &= 0x7F;
 
 #if DBG_MB_SS_CARD
+  #if DBG_MB_SS_SLOT4_C_SLOT5
+	UINT bIRQ = (g_MB[0].sy6522.IFR & 0x80) | (g_MB[2].sy6522.IFR & 0x80) | (g_MB[3].sy6522.IFR & 0x80);	// $C400, $C500, $C580
+	UINT bNMI = (g_MB[1].sy6522.IFR & 0x80);	// $C480
+#else
 	UINT bIRQ = (g_MB[0].sy6522.IFR & 0x80) | (g_MB[2].sy6522.IFR & 0x80);	// $Cn00
 	UINT bNMI = (g_MB[1].sy6522.IFR & 0x80) | (g_MB[3].sy6522.IFR & 0x80);	// $Cn80
+  #endif
 #else
 	// Now update the IRQ signal from all 6522s
 	// . OR-sum of all active TIMER1, TIMER2 & SPEECH sources (from all 6522s)
@@ -635,8 +641,13 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				}
 
 #if DBG_MB_SS_CARD
-				if ((nDevice & 1) == 1)
+  #if DBG_MB_SS_SLOT4_C_SLOT5
+				if (nDevice != 0)
 					AY8910_Write(nDevice, nReg, nValue, 0);
+  #else
+				if (nDevice == 1)
+					AY8910_Write(nDevice, nReg, nValue, 0);
+  #endif
 #else
 				if(g_bPhasorEnable)
 				{
@@ -1330,8 +1341,10 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 	}
 
 #if DBG_MB_SS_CARD
+  #if !DBG_MB_SS_SLOT4_C_SLOT5
 	if (nMB == 1)
 		return MemReadFloatingBus(nExecutedCycles);
+  #endif
 #endif
 
 	// NB. Mockingboard: SSI263.bit7 not readable (TODO: check this with real h/w)
