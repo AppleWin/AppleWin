@@ -48,5 +48,5 @@ if (EXISTS ${LIBRETRO_COMMON_PATH}/include/libretro.h)
   set_target_properties(applewin_libretro PROPERTIES PREFIX "")
 
 else()
-  message("Bad LIBRETRO_COMMON_PATH=${LIBRETRO_COMMON_PATH}, skipping libretro code")
+  message(WARNING "Bad LIBRETRO_COMMON_PATH=${LIBRETRO_COMMON_PATH}, skipping 'libretro' core")
 endif()

@@ -13,15 +13,12 @@
 // #define U2_LOG_STATE
 // #define U2_LOG_UNKNOWN
 
-// if this is defined, libslirp is used as opposed to libpcap
-#define U2_USE_SLIRP
-
 #include "linux/network/uthernet2.h"
 #include "linux/network/registers.h"
 
-#ifdef U2_USE_SLIRP
 #include "linux/network/slirp2.h"
-#else
+
+#ifndef U2_USE_SLIRP
 #include "linux/network/tfe2.h"
 #include "Tfe/tfe.h"
 #endif
@@ -570,7 +567,7 @@ namespace
     const int fd = socket(AF_INET, type | SOCK_NONBLOCK, protocol);
     if (fd < -1)
     {
-#ifdef U2_LOG_STATE      
+#ifdef U2_LOG_STATE
       const char * proto = state == SN_SR_SOCK_UDP ? "UDP" : "TCP";
       LogFileOutput("U2: %s[%d]: %s\n", proto, i, strerror(errno));
 #endif
@@ -608,7 +605,7 @@ namespace
 #endif
     }
     resetRXTXBuffers(i); // needed?
-#ifdef U2_LOG_STATE      
+#ifdef U2_LOG_STATE
     LogFileOutput("U2: OPEN[%d]: %02x\n", i, sr);
 #endif
   }
@@ -617,7 +614,7 @@ namespace
   {
     Socket & socket = sockets[i];
     socket.clearFD();
-#ifdef U2_LOG_STATE      
+#ifdef U2_LOG_STATE
     LogFileOutput("U2: CLOSE[%d]\n", i);
 #endif
   }

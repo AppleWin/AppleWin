@@ -1,4 +1,14 @@
 #pragma once
+
+#include "linux/config.h"
+
+#ifdef SLIRP_FOUND
+// disable to use libpcap in all cases
+#define U2_USE_SLIRP
+#endif
+
+#ifdef U2_SLIRP_FOUND
+
 #include <memory>
 #include <vector>
 #include <queue>
@@ -29,3 +39,5 @@ private:
 
   std::queue<std::vector<uint8_t>> myQueue;
 };
+
+#endif

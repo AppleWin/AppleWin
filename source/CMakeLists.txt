@@ -1,5 +1,33 @@
 include(FindPkgConfig)
 
+pkg_check_modules(YAML REQUIRED yaml-0.1)
+pkg_check_modules(MINIZIP REQUIRED minizip)
+pkg_check_modules(SLIRP slirp)
+
+if ("${SLIRP_FOUND}" STREQUAL "")
+  message(WARNING "'libslirp' not found. Will use 'libpcap' instead")
+endif()
+
+pkg_check_modules(PCAP libpcap)
+if ("${PCAP_FOUND}" STREQUAL "")
+  # old versions of pcap do not work with pkg-config
+  # this is necessary on Rapsberri Pi OS
+  execute_process(COMMAND pcap-config --cflags
+    OUTPUT_VARIABLE PCAP_INCLUDE_DIRS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE STATUS)
+  if ("${STATUS}" STREQUAL "0")
+    message("Found 'libpcap' via pcap-config")
+  else()
+    message(FATAL_ERROR "Cannot locate 'libpcap-dev'")
+  endif()
+  execute_process(COMMAND pcap-config --libs
+    OUTPUT_VARIABLE PCAP_LIBRARIES
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
+
+find_package(Boost REQUIRED)
+
 set(SOURCE_FILES
   Tfe/tfe.cpp
   Tfe/tfearch.cpp
@@ -197,13 +225,8 @@ add_library(appleii SHARED
   ${HEADER_FILES}
   )
 
-pkg_check_modules(YAML REQUIRED yaml-0.1)
-pkg_check_modules(MINIZIP REQUIRED minizip)
-pkg_check_modules(PCAP REQUIRED libpcap)
-pkg_check_modules(SLIRP REQUIRED slirp)
-find_package(Boost REQUIRED)
-
 target_include_directories(appleii PRIVATE
+  ${CMAKE_CURRENT_BINARY_DIR}  # for config.h
   ${YAML_INCLUDE_DIRS}
   ${PCAP_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
@@ -231,6 +254,8 @@ add_custom_command(
   TARGET appleii POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/bin/*.SYM ${CMAKE_BINARY_DIR}
   )
+
+configure_file(linux/config.h.in linux/config.h)
 
 install(TARGETS appleii
   DESTINATION lib)
