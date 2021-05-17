@@ -341,8 +341,8 @@ static void AY8910_Write(BYTE nDevice, BYTE /*nReg*/, BYTE nValue, BYTE nAYDevic
 					break;
 
 				case AY_READ:		// 5: READ FROM PSG (need to set DDRA to input)
-					if (g_bPhasorEnable)
-						pMB->sy6522.ORA = 0xff & (pMB->sy6522.DDRA ^ 0xff);	// Phasor doesn't support reading AY8913s - it just reads 1's for the input bits
+					if (g_bPhasorEnable && g_phasorMode == PH_EchoPlus)
+						pMB->sy6522.ORA = 0xff & (pMB->sy6522.DDRA ^ 0xff);	// Phasor (Echo+ mode) doesn't support reading AY8913s - it just reads 1's for the input bits
 					else
 						pMB->sy6522.ORA = AYReadReg(nDevice+2*nAYDevice, pMB->nAYCurrentRegister) & (pMB->sy6522.DDRA ^ 0xff);
 					break;
@@ -615,10 +615,10 @@ static void SY6522_Write(BYTE nDevice, BYTE nReg, BYTE nValue)
 				pMB->sy6522.ORB = nValue;
 
 				if ((nDevice&1) == 0 && // SC01 only at $Cn00 (not $Cn80)
-					pMB->sy6522.DDRB == 0xFF && pMB->sy6522.PCR == 0xB0)
+					pMB->sy6522.PCR == 0xB0)
 				{
 					// Votrax speech data
-					pMB->ssi263.Votrax_Write(nValue);
+					pMB->ssi263.Votrax_Write((nValue & pMB->sy6522.DDRB) | (pMB->sy6522.DDRB ^ 0xff));	// DDRB's zero bits (inputs) are high impedence, so output as 1 (GH#952)
 					break;
 				}
 
@@ -1007,10 +1007,11 @@ static void MB_UpdateInt(void)
 	DWORD dwDSLockedBufferSize0, dwDSLockedBufferSize1;
 	SHORT *pDSLockedBuffer0, *pDSLockedBuffer1;
 
-	if(!DSGetLock(MockingboardVoice.lpDSBvoice,
-						dwByteOffset, (DWORD)nNumSamples*sizeof(short)*g_nMB_NumChannels,
-						&pDSLockedBuffer0, &dwDSLockedBufferSize0,
-						&pDSLockedBuffer1, &dwDSLockedBufferSize1))
+	hr = DSGetLock(MockingboardVoice.lpDSBvoice,
+		dwByteOffset, (DWORD)nNumSamples * sizeof(short) * g_nMB_NumChannels,
+		&pDSLockedBuffer0, &dwDSLockedBufferSize0,
+		&pDSLockedBuffer1, &dwDSLockedBufferSize1);
+	if (FAILED(hr))
 		return;
 
 	memcpy(pDSLockedBuffer0, &g_nMixBuffer[0], dwDSLockedBufferSize0);
