@@ -35,13 +35,15 @@ Almost everything works, except the serial port.
 The UI has been rewritten in Qt or ImGui.
 
 The rest works very well.
-Uthernet is supported, but it requires elevated capabilities:
+Uthernet I is supported via `libpcap`, but it requires elevated capabilities:
 
 `sudo setcap cap_net_raw=ep ./sa2`
 
 Unfortunately, this must be reapplied after every build.
 
-Uthernet II is supported too (only MACRAW) and by default uses `libslirp` which does *not* require elevated capabilities. Use the ImGui settings to enable it.
+Uthernet II is supported too and by default uses `libslirp` which does *not* require elevated capabilities. Use the ImGui settings to enable it.
+
+`libslirp` is not packaged on Raspberry Pi OS. `libpcap` will be used instead, unless the user manually compiles and installs [libslirp](https://gitlab.freedesktop.org/slirp/libslirp).
 
 Most of the debugger now works (in the ImGui version).
 

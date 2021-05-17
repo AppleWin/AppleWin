@@ -1,0 +1,1 @@
+#cmakedefine SLIRP_FOUND "@SLIRP_FOUND@"

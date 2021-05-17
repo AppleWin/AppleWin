@@ -1,11 +1,14 @@
 #include <StdAfx.h>
+
+#include "linux/network/slirp2.h"
+
+#ifdef U2_USE_SLIRP
+
 #include <libslirp.h>
 
 #include "Log.h"
 #include "CPU.h"
 #include "Core.h"
-
-#include "linux/network/slirp2.h"
 
 #define IP_PACK(a,b,c,d) htonl( ((a)<<24) | ((b)<<16) | ((c)<<8) | (d))
 
@@ -179,3 +182,5 @@ void SlirpNet::clearQueue()
 {
   std::queue<std::vector<uint8_t>>().swap(myQueue);
 }
+
+#endif
