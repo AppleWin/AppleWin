@@ -143,6 +143,12 @@ enum AppMode_e
 #define WM_USER_FULLSCREEN	WM_USER+8
 #define VK_SNAPSHOT_TEXT	WM_USER+9 // PrintScreen+Ctrl
 
+#ifdef _MSC_VER
+#define PATH_SEPARATOR '\\'
+#else
+#define PATH_SEPARATOR '/'
+#endif
+
 enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 
 //

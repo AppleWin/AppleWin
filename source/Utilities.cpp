@@ -321,7 +321,7 @@ static std::string GetFullPath(LPCSTR szFileName)
 {
 	std::string strPathName;
 
-	if (szFileName[0] == '\\' || szFileName[1] == ':')
+	if (szFileName[0] == PATH_SEPARATOR || szFileName[1] == ':')
 	{
 		// Abs pathname
 		strPathName = szFileName;
@@ -344,7 +344,7 @@ static void SetCurrentDir(std::string pathname)
 	// . if -[sN]d1 and -[sN]d2 are specified, then g_sCurrentDir will be set to the d2 image's path
 	// This is purely dependent on the current order of InsertFloppyDisks() & InsertHardDisks() - ie. very brittle!
 	// . better to use -current-dir to be explicit
-	std::size_t found = pathname.find_last_of("\\");
+	std::size_t found = pathname.find_last_of(PATH_SEPARATOR);
 	std::string path = pathname.substr(0, found);
 	SetCurrentImageDir(path);
 }

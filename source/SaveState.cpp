@@ -86,8 +86,8 @@ static void Snapshot_SetPathname(const std::string& strPathname)
 		g_strSaveStateFilename = DEFAULT_SNAPSHOT_NAME;
 
 		g_strSaveStatePathname = g_sCurrentDir;
-		if (!g_strSaveStatePathname.empty() && *g_strSaveStatePathname.rbegin() != '\\')
-			g_strSaveStatePathname += "\\";
+		if (!g_strSaveStatePathname.empty() && *g_strSaveStatePathname.rbegin() != PATH_SEPARATOR)
+			g_strSaveStatePathname += PATH_SEPARATOR;
 		g_strSaveStatePathname.append(DEFAULT_SNAPSHOT_NAME);
 
 		g_strSaveStatePath = g_sCurrentDir;
@@ -97,7 +97,7 @@ static void Snapshot_SetPathname(const std::string& strPathname)
 	std::string strFilename = strPathname;	// Set default, as maybe there's no path
 	g_strSaveStatePath.clear();
 
-	int nIdx = strPathname.find_last_of('\\');
+	int nIdx = strPathname.find_last_of(PATH_SEPARATOR);
 	if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())	// path exists?
 	{
 		strFilename = &strPathname[nIdx+1];
@@ -113,12 +113,12 @@ void Snapshot_SetFilename(const std::string& filename, const std::string& path/*
 	if (path.empty())
 		return Snapshot_SetPathname(filename);
 
-	_ASSERT(filename.find('\\') == std::string::npos);	// since we have a path, then filename mustn't contain a path too!
+	_ASSERT(filename.find(PATH_SEPARATOR) == std::string::npos);	// since we have a path, then filename mustn't contain a path too!
 
 	// Ensure path is suffixed with '\' before adding filename
 	std::string pathname = path;
-	if (*pathname.rbegin() != '\\')
-		pathname += "\\";
+	if (*pathname.rbegin() != PATH_SEPARATOR)
+		pathname += PATH_SEPARATOR;
 
 	Snapshot_SetPathname(pathname+filename);
 }

@@ -260,8 +260,8 @@ void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pF
 	LPCTSTR startpos = pPathname;
 
 	// imagetitle = <FILENAME.EXT>
-	if (_tcsrchr(startpos, TEXT('\\')))
-		startpos = _tcsrchr(startpos, TEXT('\\'))+1;
+	if (_tcsrchr(startpos, TEXT(PATH_SEPARATOR)))
+		startpos = _tcsrchr(startpos, TEXT(PATH_SEPARATOR))+1;
 
 	_tcsncpy(imagetitle, startpos, MAX_DISK_FULL_NAME);
 	imagetitle[MAX_DISK_FULL_NAME] = 0;
