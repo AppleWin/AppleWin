@@ -753,7 +753,7 @@ namespace sa2
     ImGui::End();
   }
 
-  void ImGuiSettings::drawDisassemblyTable()
+  void ImGuiSettings::drawDisassemblyTable(SDLFrame * frame)
   {
     const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
     if (ImGui::BeginTable("Disassembly", 9, flags))
@@ -818,8 +818,8 @@ namespace sa2
           {
             if (!breakpointActive && state == 1)
             {
-              std::string command = std::string("bpx ") + line.sAddress;
-              debuggerCommand(command.c_str());
+              const std::string command = std::string("bpx ") + line.sAddress;
+              debuggerCommand(frame, command.c_str());
             }
             else
             {
@@ -1003,7 +1003,7 @@ namespace sa2
             DisasmCalcTopBotAddress();
           }
 
-          drawDisassemblyTable();
+          drawDisassemblyTable(frame);
           ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Console"))
