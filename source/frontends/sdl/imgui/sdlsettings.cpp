@@ -1018,7 +1018,7 @@ namespace sa2
       {
         if (ImGui::InputText("Prompt", myInputBuffer, IM_ARRAYSIZE(myInputBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
         {
-          debuggerCommand(myInputBuffer);
+          debuggerCommand(frame, myInputBuffer);
           myInputBuffer[0] = 0;
           ImGui::SetKeyboardFocusHere(-1);
         }
@@ -1027,12 +1027,14 @@ namespace sa2
     ImGui::End();
   }
 
-  void ImGuiSettings::debuggerCommand(const char * s)
+  void ImGuiSettings::debuggerCommand(SDLFrame * frame, const char * s)
   {
     for (; *s; ++s)
     {
       DebuggerInputConsoleChar(*s);
     }
+    // this might trigger a GO
+    frame->ResetSpeed();
     DebuggerProcessKey(VK_RETURN);
     myScrollConsole = true;
   }

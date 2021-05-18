@@ -556,6 +556,11 @@ namespace sa2
     };
   }
 
+  void SDLFrame::ResetSpeed()
+  {
+    mySpeed.reset();
+  }
+
   void SDLFrame::ChangeMode(const AppMode_e mode)
   {
     if (mode != g_nAppMode)
@@ -576,7 +581,7 @@ namespace sa2
         break;
       }
       FrameRefreshStatus(DRAW_TITLE);
-      mySpeed.reset();
+      ResetSpeed();
     }
   }
 
