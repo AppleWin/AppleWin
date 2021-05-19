@@ -98,9 +98,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define SY6522_DEVICE_A 0
 #define SY6522_DEVICE_B 1
 
-#define SLOT4 4
-#define SLOT5 5
-
 #define NUM_MB 2
 #define NUM_DEVS_PER_MB 2
 #define NUM_AY8910 (NUM_MB*NUM_DEVS_PER_MB)

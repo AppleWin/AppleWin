@@ -175,7 +175,7 @@ static BYTE	g_nHD_Command;
 static HDD g_HardDisk[NUM_HARDDISKS];
 
 static bool g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
-static UINT g_uSlot = 7;
+static UINT g_uSlot = SLOT7;
 
 //===========================================================================
 

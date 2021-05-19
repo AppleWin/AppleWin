@@ -6,8 +6,6 @@ const double CLK_6502_NTSC = (_14M_NTSC * 65.0) / (65.0*14.0+2.0); // 65 cycles 
 const double CLK_6502_PAL  = (_14M_PAL  * 65.0) / (65.0*14.0+2.0);
 //const double CLK_6502 = 23 * 44100;			// 1014300
 
-#define NUM_SLOTS 8
-
 #define  MAX(a,b)          (((a) > (b)) ? (a) : (b))
 #define  MIN(a,b)          (((a) < (b)) ? (a) : (b))
 
