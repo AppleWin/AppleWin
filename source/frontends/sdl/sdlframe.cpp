@@ -1,4 +1,5 @@
 #include "StdAfx.h"
+#include "frontends/sdl/processfile.h"
 #include "frontends/sdl/sdlframe.h"
 #include "frontends/sdl/utils.h"
 #include "frontends/sdl/sdirectsound.h"
@@ -316,44 +317,7 @@ namespace sa2
 
   void SDLFrame::ProcessDropEvent(const SDL_DropEvent & drop)
   {
-    const char * filename = drop.file;
-    const char * yaml = ".yaml";
-    if (strlen(filename) > strlen(yaml) && !strcmp(filename + strlen(filename) - strlen(yaml), yaml))
-    {
-      common2::setSnapshotFilename(filename, true);
-      mySpeed.reset();
-    }
-    else
-    {
-      CardManager & cardManager = GetCardMgr();
-      SS_CARDTYPE cardInSlot = cardManager.QuerySlot(myDragAndDropSlot);
-      switch (cardInSlot)
-      {
-        case CT_Disk2:
-        {
-          // for now we insert in DRIVE_1
-          Disk2InterfaceCard * card2 = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(myDragAndDropSlot));
-          const ImageError_e error = card2->InsertDisk(myDragAndDropDrive, drop.file, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
-          if (error != eIMAGE_ERROR_NONE)
-          {
-            card2->NotifyInvalidImage(myDragAndDropDrive, drop.file, error);
-          }
-          break;
-        }
-        case CT_GenericHDD:
-        {
-          if (!HD_Insert(myDragAndDropDrive, drop.file))
-          {
-            FrameMessageBox("Invalid HD image", "ERROR", MB_OK);
-          }
-          break;
-        }
-        default:
-        {
-          FrameMessageBox("Invalid D&D target", "ERROR", MB_OK);
-        }
-      }
-    }
+    processFile(this, drop.file, myDragAndDropSlot);
   }
 
   void SDLFrame::ProcessKeyDown(const SDL_KeyboardEvent & key)

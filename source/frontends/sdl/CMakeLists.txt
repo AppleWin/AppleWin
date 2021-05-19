@@ -14,6 +14,7 @@ set(SOURCE_FILES
   sdirectsound.cpp
   utils.cpp
   sdlframe.cpp
+  processfile.cpp
   renderer/sdlrendererframe.cpp
   )
 
@@ -22,6 +23,7 @@ set(HEADER_FILES
   sdirectsound.h
   utils.h
   sdlframe.h
+  processfile.h
   renderer/sdlrendererframe.h
   )
 
