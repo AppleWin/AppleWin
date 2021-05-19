@@ -51,6 +51,7 @@
 #ifdef _MSC_VER
 
 typedef pcap_t	*(*pcap_open_live_t)(const char *, int, int, int, char *);
+typedef void (*pcap_close_t)(pcap_t *);
 typedef int (*pcap_dispatch_t)(pcap_t *, int, pcap_handler, u_char *);
 typedef int (*pcap_setnonblock_t)(pcap_t *, int, char *);
 typedef int (*pcap_datalink_t)(pcap_t *);
@@ -60,6 +61,7 @@ typedef int (*pcap_sendpacket_t)(pcap_t *p, u_char *buf, int size);
 typedef const char *(*pcap_lib_version_t)(void);
 
 static pcap_open_live_t   p_pcap_open_live;
+static pcap_close_t       p_pcap_close;
 static pcap_dispatch_t    p_pcap_dispatch;
 static pcap_setnonblock_t p_pcap_setnonblock;
 static pcap_findalldevs_t p_pcap_findalldevs;
@@ -80,6 +82,7 @@ void TfePcapFreeLibrary(void)
         pcap_library = NULL;
 
         p_pcap_open_live = NULL;
+        p_pcap_close = NULL;
         p_pcap_dispatch = NULL;
         p_pcap_setnonblock = NULL;
         p_pcap_findalldevs = NULL;
@@ -118,6 +121,7 @@ BOOL TfePcapLoadLibrary(void)
         }
 
         GET_PROC_ADDRESS_AND_TEST(pcap_open_live);
+        GET_PROC_ADDRESS_AND_TEST(pcap_close);
         GET_PROC_ADDRESS_AND_TEST(pcap_dispatch);
         GET_PROC_ADDRESS_AND_TEST(pcap_setnonblock);
         GET_PROC_ADDRESS_AND_TEST(pcap_findalldevs);
@@ -138,6 +142,7 @@ BOOL TfePcapLoadLibrary(void)
 
 // libpcap is a standard package, just link to it
 #define p_pcap_open_live pcap_open_live
+#define p_pcap_close pcap_close
 #define p_pcap_dispatch pcap_dispatch
 #define p_pcap_setnonblock pcap_setnonblock
 #define p_pcap_findalldevs pcap_findalldevs
@@ -276,7 +281,7 @@ int tfe_arch_enumadapter_close(void)
 }
 
 static
-BOOL TfePcapOpenAdapter(const char *interface_name) 
+BOOL TfePcapOpenAdapter(const std::string & interface_name)
 {
     pcap_if_t *TfePcapDevice = NULL;
 
@@ -289,12 +294,12 @@ BOOL TfePcapOpenAdapter(const char *interface_name)
         char *pdescription;
         BOOL  found = FALSE;
 
-        if (interface_name) {
+        if (!interface_name.empty()) {
             /* we have an interface name, try it */
             TfePcapDevice = TfePcapAlldevs;
 
             while (tfe_enumadapter(&pname, &pdescription)) {
-                if (strcmp(pname, interface_name)==0) {
+                if (strcmp(pname, interface_name.c_str())==0) {
                     found = TRUE;
                 }
                 lib_free(pname);
@@ -328,6 +333,8 @@ BOOL TfePcapOpenAdapter(const char *interface_name)
 	{
 		if(g_fh) fprintf(g_fh, "ERROR: TFE works only on Ethernet networks.\n");
 		tfe_enumadapter_close();
+        (*p_pcap_close)(TfePcapFP);
+        TfePcapFP = NULL;
         return FALSE;
 	}
 	
@@ -365,7 +372,7 @@ void tfe_arch_post_reset( void )
 #endif
 }
 
-int tfe_arch_activate(const char *interface_name)
+int tfe_arch_activate(const std::string & interface_name)
 {
 #ifdef TFE_DEBUG_ARCH
     if(g_fh) fprintf( g_fh, "tfe_arch_activate().\n" );
@@ -381,6 +388,10 @@ void tfe_arch_deactivate( void )
 #ifdef TFE_DEBUG_ARCH
     if(g_fh) fprintf( g_fh, "tfe_arch_deactivate().\n" );
 #endif
+    if (TfePcapFP) {
+        (*p_pcap_close)(TfePcapFP);
+        TfePcapFP = NULL;
+    }
 }
 
 void tfe_arch_set_mac( const BYTE mac[6] )

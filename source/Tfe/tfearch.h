@@ -29,11 +29,12 @@
 #define _TFEARCH_H
 
 #include "../CommonVICE/types.h"
+#include <string>
 
 extern int  tfe_arch_init(void);
 extern void tfe_arch_pre_reset(void);
 extern void tfe_arch_post_reset(void);
-extern int  tfe_arch_activate(const char *interface_name);
+extern int  tfe_arch_activate(const std::string & interface_name);
 extern void tfe_arch_deactivate(void);
 extern void tfe_arch_set_mac(const BYTE mac[6]);
 extern void tfe_arch_set_hashfilter(const DWORD hash_mask[2]);
