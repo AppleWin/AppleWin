@@ -202,7 +202,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 
 	TCHAR szPathName[MAX_PATH];
 	StringCbCopy(szPathName, MAX_PATH, DiskGetFullPathName(drive).c_str());
-	TCHAR* slash = _tcsrchr(szPathName, TEXT('\\'));
+	TCHAR* slash = _tcsrchr(szPathName, TEXT(PATH_SEPARATOR));
 	if (slash != NULL)
 	{
 		slash[1] = '\0';
@@ -599,7 +599,7 @@ void Disk2InterfaceCard::GetFilenameAndPathForSaveState(std::string& filename, s
 		filename = GetBaseName(i);
 		std::string pathname = DiskGetFullPathName(i);
 
-		int idx = pathname.find_last_of('\\');
+		int idx = pathname.find_last_of(PATH_SEPARATOR);
 		if (idx >= 0 && idx+1 < (int)pathname.length())	// path exists?
 		{
 			path = pathname.substr(0, idx+1);

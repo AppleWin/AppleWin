@@ -340,7 +340,7 @@ static void GetProgramDirectory(void)
 	int loop = g_sProgramDir.size();
 	while (loop--)
 	{
-		if ((g_sProgramDir[loop] == TEXT('\\')) || (g_sProgramDir[loop] == TEXT(':')))
+		if ((g_sProgramDir[loop] == TEXT(PATH_SEPARATOR)) || (g_sProgramDir[loop] == TEXT(':')))
 		{
 			g_sProgramDir.resize(loop + 1);  // this reduces the size
 			break;
@@ -619,7 +619,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 	char startDir[_MAX_PATH];
 	GetCurrentDirectory(sizeof(startDir), startDir);
 	g_sStartDir = startDir;
-	if (*(g_sStartDir.end()-1) != '\\') g_sStartDir += '\\';
+	if (*(g_sStartDir.end()-1) != PATH_SEPARATOR) g_sStartDir += PATH_SEPARATOR;
 
 	if (!ProcessCmdLine(lpCmdLine))
 		return 0;
@@ -948,7 +948,7 @@ static void RepeatInitialization(void)
 		if (g_cmdLine.szSnapshotName)
 		{
 			std::string strPathname(g_cmdLine.szSnapshotName);
-			int nIdx = strPathname.find_last_of('\\');
+			int nIdx = strPathname.find_last_of(PATH_SEPARATOR);
 			if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())	// path exists?
 			{
 				const std::string strPath = strPathname.substr(0, nIdx+1);
