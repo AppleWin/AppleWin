@@ -557,7 +557,9 @@ namespace sa2
           if (ImGui::RadioButton("Uthernet I", tfe_enabled == 1)) { saveTFEEnabled(1); } ImGui::SameLine();
           if (ImGui::RadioButton("Uthernet II", tfe_enabled == 2)) { saveTFEEnabled(2); }
 
-          if (ImGui::BeginCombo("Interface", static_cast<const char *>(get_tfe_interface())))
+          const std::string current_interface = get_tfe_interface().c_str();
+
+          if (ImGui::BeginCombo("Interface", current_interface.c_str()))
           {
             std::vector<char *> ifaces;
             if (tfe_enumadapter_open())
@@ -574,14 +576,11 @@ namespace sa2
 
               for (const auto & iface : ifaces)
               {
-                // must call it each time
-                // as update_tfe_interface() will invalidate it
-                const char * current = static_cast<const char *>(get_tfe_interface());
-                const bool isSelected = strcmp(iface, current) == 0;
+                const bool isSelected = strcmp(iface, current_interface.c_str()) == 0;
                 if (ImGui::Selectable(iface, isSelected))
                 {
                   // the following line interacts with tfe_enumadapter, so we must run it outside the above loop
-                  update_tfe_interface(iface, nullptr);
+                  update_tfe_interface(iface);
                   RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, iface);
                 }
                 if (isSelected)
