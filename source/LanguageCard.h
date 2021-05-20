@@ -29,7 +29,7 @@ public:
 	static BYTE __stdcall IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 
 	static const UINT kMemModeInitialState;
-	static const UINT kSlot0 = 0;
+	static const UINT kSlot0 = SLOT0;
 
 private:
 	UINT m_uLastRamWrite;

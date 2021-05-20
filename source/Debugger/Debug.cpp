@@ -3690,7 +3690,7 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 	{
 		sPath = g_aArgs[1].sArg;
 	}
-	else if (g_aArgs[1].sArg[0] == '\\')	// Absolute
+	else if (g_aArgs[1].sArg[0] == PATH_SEPARATOR)	// Absolute
 	{
 		if (g_sCurrentDir[1] == ':')
 		{
@@ -5982,7 +5982,7 @@ Update_t CmdOutputRun (int nArgs)
 	sMiniFileName = pFileName.substr(0, MIN(pFileName.size(), CONSOLE_WIDTH));
 //	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
-	if (pFileName[0] == '\\' || pFileName[1] == ':')	// NB. Any prefix quote has already been stripped
+	if (pFileName[0] == PATH_SEPARATOR || pFileName[1] == ':')	// NB. Any prefix quote has already been stripped
 	{
 		// Abs pathname
 		sFileName = sMiniFileName;

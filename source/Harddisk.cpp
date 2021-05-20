@@ -175,7 +175,7 @@ static BYTE	g_nHD_Command;
 static HDD g_HardDisk[NUM_HARDDISKS];
 
 static bool g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
-static UINT g_uSlot = 7;
+static UINT g_uSlot = SLOT7;
 
 //===========================================================================
 
@@ -247,9 +247,9 @@ static void HD_SaveLastDiskImage(const int iDrive)
 
 	char szPathName[MAX_PATH];
 	strcpy(szPathName, HD_GetFullPathName(iDrive).c_str());
-	if (_tcsrchr(szPathName, TEXT('\\')))
+	if (_tcsrchr(szPathName, TEXT(PATH_SEPARATOR)))
 	{
-		char* pPathEnd = _tcsrchr(szPathName, TEXT('\\'))+1;
+		char* pPathEnd = _tcsrchr(szPathName, TEXT(PATH_SEPARATOR))+1;
 		*pPathEnd = 0;
 		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szPathName);
 	}
@@ -335,7 +335,7 @@ void HD_GetFilenameAndPathForSaveState(std::string& filename, std::string& path)
 		filename = HD_DiskGetBaseName(i);
 		std::string pathname = HD_GetFullPathName(i);
 
-		int idx = pathname.find_last_of('\\');
+		int idx = pathname.find_last_of(PATH_SEPARATOR);
 		if (idx >= 0 && idx+1 < (int)pathname.length())	// path exists?
 		{
 			path = pathname.substr(0, idx+1);

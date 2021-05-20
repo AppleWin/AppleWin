@@ -288,8 +288,8 @@ bool SetCurrentImageDir(const std::string& pszImageDir)
 {
 	g_sCurrentDir = pszImageDir;
 
-	if (!g_sCurrentDir.empty() && *g_sCurrentDir.rbegin() != '\\')
-		g_sCurrentDir += '\\';
+	if (!g_sCurrentDir.empty() && *g_sCurrentDir.rbegin() != PATH_SEPARATOR)
+		g_sCurrentDir += PATH_SEPARATOR;
 
 	if (SetCurrentDirectory(g_sCurrentDir.c_str()))
 		return true;

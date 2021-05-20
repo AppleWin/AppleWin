@@ -6,6 +6,7 @@
 #include "../DiskImage.h"	// Disk_Status_e
 #include "../Harddisk.h"	// HD_CardIsEnabled()
 #include "../Interface.h"	// VideoRefreshRate_e, GetVideoRefreshRate()
+#include "../Tfe/tfe.h"
 
 class CConfigNeedingRestart
 {
@@ -23,6 +24,9 @@ public:
 		m_Slot[SLOT4] = GetCardMgr().QuerySlot(SLOT4);
 		m_Slot[SLOT5] = GetCardMgr().QuerySlot(SLOT5);
 		m_Slot[SLOT7] = GetCardMgr().QuerySlot(SLOT7);
+
+		m_tfeEnabled = get_tfe_enabled();
+		m_tfeInterface = get_tfe_interface();
 	}
 
 	const CConfigNeedingRestart& operator= (const CConfigNeedingRestart& other)
@@ -31,6 +35,8 @@ public:
 		m_CpuType = other.m_CpuType;
 		memcpy(m_Slot, other.m_Slot, sizeof(m_Slot));
 		m_bEnableHDD = other.m_bEnableHDD;
+		m_tfeEnabled = other.m_tfeEnabled;
+		m_tfeInterface = other.m_tfeInterface;
 		m_bEnableTheFreezesF8Rom = other.m_bEnableTheFreezesF8Rom;
 		m_uSaveLoadStateMsg = other.m_uSaveLoadStateMsg;
 		m_videoRefreshRate = other.m_videoRefreshRate;
@@ -43,6 +49,8 @@ public:
 			m_CpuType == other.m_CpuType &&
 			memcmp(m_Slot, other.m_Slot, sizeof(m_Slot)) == 0 &&
 			m_bEnableHDD == other.m_bEnableHDD &&
+			m_tfeEnabled == other.m_tfeEnabled &&
+			m_tfeInterface == other.m_tfeInterface &&
 			m_bEnableTheFreezesF8Rom == other.m_bEnableTheFreezesF8Rom &&
 			m_uSaveLoadStateMsg == other.m_uSaveLoadStateMsg &&
 			m_videoRefreshRate == other.m_videoRefreshRate;
@@ -58,6 +66,8 @@ public:
 	SS_CARDTYPE m_Slot[NUM_SLOTS];	// 0..7
 	SS_CARDTYPE m_SlotAux;
 	bool m_bEnableHDD;
+	int m_tfeEnabled;
+	std::string m_tfeInterface;
 	UINT m_bEnableTheFreezesF8Rom;
 	UINT m_uSaveLoadStateMsg;
 	VideoRefreshRate_e m_videoRefreshRate;

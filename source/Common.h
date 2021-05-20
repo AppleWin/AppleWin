@@ -6,8 +6,6 @@ const double CLK_6502_NTSC = (_14M_NTSC * 65.0) / (65.0*14.0+2.0); // 65 cycles 
 const double CLK_6502_PAL  = (_14M_PAL  * 65.0) / (65.0*14.0+2.0);
 //const double CLK_6502 = 23 * 44100;			// 1014300
 
-#define NUM_SLOTS 8
-
 #define  MAX(a,b)          (((a) > (b)) ? (a) : (b))
 #define  MIN(a,b)          (((a) < (b)) ? (a) : (b))
 
@@ -142,6 +140,12 @@ enum AppMode_e
 #define WM_USER_BOOT		WM_USER+7
 #define WM_USER_FULLSCREEN	WM_USER+8
 #define VK_SNAPSHOT_TEXT	WM_USER+9 // PrintScreen+Ctrl
+
+#ifdef _MSC_VER
+#define PATH_SEPARATOR '\\'
+#else
+#define PATH_SEPARATOR '/'
+#endif
 
 enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
 
