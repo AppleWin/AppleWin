@@ -433,6 +433,17 @@ namespace sa2
               SDL_free(text);
             }
           }
+          else if (key.keysym.mod & KMOD_CTRL)
+          {
+            // in AppleWin this is Ctrl-PrintScreen
+            // but PrintScreen is not passed to SDL
+            char *pText;
+            const size_t size = Util_GetTextScreen(pText);
+            if (size)
+            {
+              SDL_SetClipboardText(pText);
+            }
+          }
           break;
         }
       }

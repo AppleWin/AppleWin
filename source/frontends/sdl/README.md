@@ -36,6 +36,10 @@ Some of the configuration options are exposed in the ``Settings`` menu. This is 
 
 ``Left Alt`` and ``Right Alt`` emulate the Open and Solid Apple key.
 
+``Shift-Insert`` pastes the clipboard to the input key buffer.
+
+``Ctrl-Insert`` copies the text screen (in AppleWin this is ``Ctrl-PrintScreen``).
+
 ## Audio
 
 Audio works reasonably well, using AppleWin adaptive algorithm.
