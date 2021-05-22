@@ -317,7 +317,7 @@ namespace sa2
 
   void SDLFrame::ProcessDropEvent(const SDL_DropEvent & drop)
   {
-    processFile(this, drop.file, myDragAndDropSlot);
+    processFile(this, drop.file, myDragAndDropSlot, myDragAndDropDrive);
   }
 
   void SDLFrame::ProcessKeyDown(const SDL_KeyboardEvent & key)
