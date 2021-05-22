@@ -1,10 +1,16 @@
 git
 cmake
 gcc-c++
-qt5-devel
+qt5-qtbase-devel
+qt5-qtmultimedia-devel
 qt5-qtgamepad-devel
 libyaml-devel
 minizip-devel
 boost-devel
 ncurses-devel
 libevdev-devel
+mesa-libGLES-devel
+SDL2-devel
+SDL2_image-devel
+libpcap-devel
+libslirp-devel
