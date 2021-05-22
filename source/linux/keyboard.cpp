@@ -89,6 +89,7 @@ void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 void KeybReset()
 {
+  std::queue<BYTE>().swap(keys);
 }
 
 bool KeybGetShiftStatus()
