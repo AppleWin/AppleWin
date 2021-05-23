@@ -60,7 +60,6 @@ namespace
     }
     else
     {
-      mySaveOnExit = false;
       LogFileOutput("Registry: configuration file '%s' not found\n", filename.c_str());
     }
   }
@@ -69,7 +68,14 @@ namespace
   {
     if (mySaveOnExit)
     {
-      boost::property_tree::ini_parser::write_ini(myFilename, myINI);
+      try
+      {
+        boost::property_tree::ini_parser::write_ini(myFilename, myINI);
+      }
+      catch(const std::exception& e)
+      {
+        LogFileOutput("Registry: cannot save settings to '%s': %s\n", myFilename.c_str(), e.what());
+      }
     }
   }
 
