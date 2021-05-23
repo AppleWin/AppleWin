@@ -3,6 +3,8 @@
 #include "frontends/common2/speed.h"
 #include "frontends/libretro/environment.h"
 
+#include "linux/context.h"
+
 #include <string>
 #include <vector>
 
@@ -14,7 +16,7 @@ namespace ra2
   class Game
   {
   public:
-    Game(const std::shared_ptr<RetroFrame> & frame);
+    Game();
     ~Game();
 
     bool loadGame(const std::string & path);
@@ -33,6 +35,7 @@ namespace ra2
     static retro_usec_t ourFrameTime;
 
   private:
+    const Logger myLogger;
     const std::shared_ptr<RetroFrame> myFrame;
 
     common2::Speed mySpeed;  // fixed speed

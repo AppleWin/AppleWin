@@ -1,10 +1,13 @@
 #include "StdAfx.h"
 
 #include "linux/context.h"
+#include "linux/linuxframe.h"
+#include "linux/registry.h"
+#include "linux/paddle.h"
+#include "linux/duplicates/PropertySheet.h"
 
 #include "Interface.h"
-#include "linux/duplicates/PropertySheet.h"
-#include "linux/linuxframe.h"
+#include "Log.h"
 
 namespace
 {
@@ -43,4 +46,20 @@ Initialisation::~Initialisation()
 {
   GetFrame().Destroy();
   SetFrame(std::shared_ptr<FrameBase>());
+
+  Paddle::instance.reset();
+  Registry::instance.reset();
+}
+
+Logger::Logger(const bool log)
+{
+  if (log)
+  {
+    LogInit();
+  }
+}
+
+Logger::~Logger()
+{
+  LogDone();
 }

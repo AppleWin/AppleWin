@@ -54,10 +54,12 @@ namespace ra2
 
   unsigned Game::ourInputDevices[MAX_PADS] = {RETRO_DEVICE_NONE};
 
-  Game::Game(const std::shared_ptr<RetroFrame> & frame)
-    : myFrame(frame), mySpeed(true), myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
+  Game::Game()
+    : myLogger(true)
+    , myFrame(new ra2::RetroFrame())
+    , mySpeed(true)
+    , myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
   {
-    LogInit();
     InitialiseRetroRegistry();
     SetFrame(myFrame);
     myFrame->Initialize();

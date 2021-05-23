@@ -132,7 +132,6 @@ namespace
 
   void EnterMessageLoop(const common2::EmulatorOptions & options, const std::shared_ptr<na2::NFrame> & frame)
   {
-    LogFileTimeUntilFirstKeyReadReset();
     while (ContinueExecution(options, frame))
     {
     }
@@ -146,16 +145,12 @@ namespace
     if (!run)
       return 1;
 
-    if (options.log)
-    {
-      LogInit();
-    }
-
+    const Logger logger(options.log);
     InitializeFileRegistry(options);
     g_nMemoryClearType = options.memclear;
 
-    std::shared_ptr<na2::NFrame> frame(new na2::NFrame(options.paddleDeviceName));
-    Initialisation init(frame);
+    const std::shared_ptr<na2::NFrame> frame(new na2::NFrame(options.paddleDeviceName));
+    const Initialisation init(frame);
 
     na2::SetCtrlCHandler(options.headless);
     applyOptions(options);

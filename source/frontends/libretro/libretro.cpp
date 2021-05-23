@@ -14,7 +14,6 @@
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/rdirectsound.h"
 #include "frontends/libretro/retroregistry.h"
-#include "frontends/libretro/retroframe.h"
 
 namespace
 {
@@ -180,8 +179,7 @@ bool retro_load_game(const retro_game_info *info)
 
   try
   {
-    std::shared_ptr<ra2::RetroFrame> frame(new ra2::RetroFrame());
-    std::unique_ptr<ra2::Game> game(new ra2::Game(frame));
+    std::unique_ptr<ra2::Game> game(new ra2::Game());
 
     const std::string snapshotEnding = ".aws.yaml";
     const std::string gamePath = info->path;
