@@ -22,10 +22,10 @@ DWORD timeGetTime()
 /// Returns the number of ticks since an undefined time (usually system startup).
 DWORD GetTickCount()
 {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    const uint64_t ticks = (uint64_t)(ts.tv_nsec / 1000000) + ((uint64_t)ts.tv_sec * 1000ull);
-    return ticks;
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  const uint64_t ticks = (uint64_t)(ts.tv_nsec / 1000000) + ((uint64_t)ts.tv_sec * 1000ull);
+  return ticks;
 }
 
 void GetLocalTime(SYSTEMTIME *t)
@@ -48,18 +48,18 @@ void GetLocalTime(SYSTEMTIME *t)
   t->wYear = local->tm_year;
 }
 
-int GetDateFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpDate, LPCSTR lpFormat, LPSTR lpDateStr, int cchDate)
+int GetDateFormat(LCID /* Locale */, DWORD /* dwFlags */, CONST SYSTEMTIME * /* lpDate */, LPCSTR /* lpFormat */, LPSTR lpDateStr, int cchDate)
 {
   std::time_t t = std::time(nullptr);
   std::tm tm = *std::localtime(&t);
   std::ostringstream ss;
-  ss << std::put_time(&tm, "%D");
+  ss << std::put_time(&tm, "%F");
   const std::string str = ss.str();
   strncpy(lpDateStr, str.c_str(), cchDate);
   return cchDate; // not 100% sure, but it is never used
 }
 
-int GetTimeFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpTime, LPCSTR lpFormat, LPSTR lpTimeStr, int cchTime)
+int GetTimeFormat(LCID /* Locale */, DWORD /* dwFlags */, CONST SYSTEMTIME * /* lpTime */, LPCSTR /* lpFormat */, LPSTR lpTimeStr, int cchTime)
 {
   std::time_t t = std::time(nullptr);
   std::tm tm = *std::localtime(&t);
