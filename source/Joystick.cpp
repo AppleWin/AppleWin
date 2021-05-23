@@ -954,7 +954,7 @@ short JoyGetTrim(bool bAxisX)
 #if 0
 void JoyportEnable(const bool bEnable)
 {
-	if (IS_APPLE2C)
+	if (IS_APPLE2C())
 		g_bJoyportEnabled = false;
 	else
 		g_bJoyportEnabled = bEnable ? 1 : 0;
