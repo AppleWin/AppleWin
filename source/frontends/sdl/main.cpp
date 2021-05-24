@@ -90,18 +90,11 @@ void run_sdl(int argc, const char * argv [])
   if (!run)
     return;
 
-  InitializeFileRegistry(options);
-
-  if (options.log)
-  {
-    LogInit();
-  }
-
+  const Logger logger(options.log);
+  const std::shared_ptr<Registry> registry = CreateFileRegistry(options);
   g_nMemoryClearType = options.memclear;
-  Paddle::instance.reset(new sa2::Gamepad(0));
 
   std::shared_ptr<sa2::SDLFrame> frame;
-
   if (options.imgui)
   {
     frame.reset(new sa2::SDLImGuiFrame(options));
@@ -111,12 +104,13 @@ void run_sdl(int argc, const char * argv [])
     frame.reset(new sa2::SDLRendererFrame(options));
   }
 
+  std::shared_ptr<Paddle> paddle(new sa2::Gamepad(0));
+  const Initialisation init(registry, frame, paddle);
+
   if (SDL_GL_SetSwapInterval(options.glSwapInterval))
   {
     throw std::runtime_error(SDL_GetError());
   }
-
-  Initialisation init(frame);
 
   applyOptions(options);
 
@@ -230,8 +224,6 @@ int main(int argc, const char * argv [])
     std::cerr << e.what() << std::endl;
   }
 
-  // this must happen BEFORE the SDL_Quit() as otherwise we have a double free (of the game controller).
-  Paddle::instance.reset();
   SDL_Quit();
 
   return exit;

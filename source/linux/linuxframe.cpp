@@ -2,6 +2,7 @@
 #include "linux/linuxframe.h"
 #include "Interface.h"
 #include "Log.h"
+#include "Core.h"
 
 void LinuxFrame::FrameDrawDiskLEDS()
 {
@@ -54,6 +55,7 @@ void LinuxFrame::Initialize()
   const size_t numberOfBytes = sizeof(bgra_t) * numberOfPixels;
   myFramebuffer.resize(numberOfBytes);
   video.Initialize(myFramebuffer.data());
+  LogFileTimeUntilFirstKeyReadReset();
 }
 
 void LinuxFrame::Destroy()

@@ -3,7 +3,6 @@
 #include "frontends/ncurses/colors.h"
 #include "frontends/ncurses/asciiart.h"
 #include "frontends/ncurses/evdevpaddle.h"
-
 #include "Interface.h"
 #include "Memory.h"
 #include "Log.h"
@@ -39,8 +38,8 @@ namespace na2
     std::shared_ptr<GraphicsColors> colors;
   };
 
-  NFrame::NFrame(const std::string & paddleDevice)
-    : myPaddleDevice(paddleDevice)
+  NFrame::NFrame(const std::shared_ptr<EvDevPaddle> & paddle)
+    : myPaddle(paddle)
     , myRows(-1)
     , myColumns(-1)
   {
@@ -54,8 +53,6 @@ namespace na2
     myTextFlashCounter = 0;
     myTextFlashState = 0;
     myAsciiArt.reset(new ASCIIArt());
-    myPaddle.reset(new EvDevPaddle(myPaddleDevice));
-    Paddle::instance = myPaddle;
   }
 
   void NFrame::Destroy()
@@ -66,9 +63,6 @@ namespace na2
     myFrame.reset();
     myStatus.reset();
     myAsciiArt.reset();
-
-    myPaddle.reset();
-    Paddle::instance.reset();
 
     myNCurses.reset();
   }

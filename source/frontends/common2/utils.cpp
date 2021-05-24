@@ -123,9 +123,9 @@ namespace common2
     HD_Destroy();
     PrintDestroy();
     CpuDestroy();
+    DebugDestroy();
 
     GetCardMgr().GetDisk2CardMgr().Destroy();
-    LogDone();
     RiffFinishWriteFile();
   }
 

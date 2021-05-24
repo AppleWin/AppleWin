@@ -60,7 +60,6 @@ namespace
     }
     else
     {
-      mySaveOnExit = false;
       LogFileOutput("Registry: configuration file '%s' not found\n", filename.c_str());
     }
   }
@@ -69,7 +68,14 @@ namespace
   {
     if (mySaveOnExit)
     {
-      boost::property_tree::ini_parser::write_ini(myFilename, myINI);
+      try
+      {
+        boost::property_tree::ini_parser::write_ini(myFilename, myINI);
+      }
+      catch(const std::exception& e)
+      {
+        LogFileOutput("Registry: cannot save settings to '%s': %s\n", myFilename.c_str(), e.what());
+      }
     }
   }
 
@@ -104,7 +110,7 @@ namespace common2
     }
   }
 
-  void InitializeFileRegistry(const EmulatorOptions & options)
+  std::shared_ptr<Registry> CreateFileRegistry(const EmulatorOptions & options)
   {
     const std::string homeDir = getHomeDir();
 
@@ -125,7 +131,7 @@ namespace common2
     std::shared_ptr<Configuration> config(new Configuration(filename, saveOnExit));
     config->addExtraOptions(options.registryOptions);
 
-    Registry::instance = config;
+    return config;
   }
 
 }
