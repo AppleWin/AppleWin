@@ -133,7 +133,7 @@ namespace ra2
     environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, retroVariables.data());
   }
 
-  void InitialiseRetroRegistry()
+  std::shared_ptr<Registry> CreateRetroRegistry()
   {
     const auto registry = std::make_shared<common2::PTreeRegistry>();
 
@@ -158,7 +158,7 @@ namespace ra2
       }
     }
 
-    Registry::instance = registry;
+    return registry;
   }
 
 }

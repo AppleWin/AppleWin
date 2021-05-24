@@ -3,6 +3,8 @@
 #include <memory>
 
 class FrameBase;
+class Paddle;
+class Registry;
 
 void SetFrame(const std::shared_ptr<FrameBase> & frame);
 
@@ -10,7 +12,11 @@ void SetFrame(const std::shared_ptr<FrameBase> & frame);
 class Initialisation
 {
 public:
-  Initialisation(const std::shared_ptr<FrameBase> & frame);
+  Initialisation(
+    const std::shared_ptr<Registry> & registry,
+    const std::shared_ptr<FrameBase> & frame,
+    const std::shared_ptr<Paddle> & paddle
+    );
   ~Initialisation();
 };
 

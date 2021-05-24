@@ -1,9 +1,13 @@
 #pragma once
 
+#include <memory>
+
+class Registry;
+
 namespace ra2
 {
 
   void SetupRetroVariables();
-  void InitialiseRetroRegistry();
+  std::shared_ptr<Registry> CreateRetroRegistry();
 
 }

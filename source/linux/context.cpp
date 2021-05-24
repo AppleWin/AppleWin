@@ -36,9 +36,16 @@ Video& GetVideo()
   return sg_Video;
 }
 
-Initialisation::Initialisation(const std::shared_ptr<FrameBase> & frame)
+Initialisation::Initialisation(
+  const std::shared_ptr<Registry> & registry,
+  const std::shared_ptr<FrameBase> & frame,
+  const std::shared_ptr<Paddle> & paddle
+  )
 {
+  Registry::instance = registry;
   SetFrame(frame);
+  Paddle::instance = paddle;
+
   frame->Initialize();
 }
 

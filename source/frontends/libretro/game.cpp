@@ -60,7 +60,7 @@ namespace ra2
     , mySpeed(true)
     , myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
   {
-    InitialiseRetroRegistry();
+    Registry::instance = CreateRetroRegistry();
     SetFrame(myFrame);
     myFrame->Initialize();
 

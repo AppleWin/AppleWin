@@ -24,6 +24,7 @@
 #include "frontends/common2/utils.h"
 #include "frontends/ncurses/world.h"
 #include "frontends/ncurses/nframe.h"
+#include "frontends/ncurses/evdevpaddle.h"
 
 namespace
 {
@@ -146,11 +147,13 @@ namespace
       return 1;
 
     const Logger logger(options.log);
-    InitializeFileRegistry(options);
+    const std::shared_ptr<Registry> registry = CreateFileRegistry(options);
     g_nMemoryClearType = options.memclear;
 
-    const std::shared_ptr<na2::NFrame> frame(new na2::NFrame(options.paddleDeviceName));
-    const Initialisation init(frame);
+    const std::shared_ptr<na2::EvDevPaddle> paddle(new na2::EvDevPaddle(options.paddleDeviceName));
+
+    const std::shared_ptr<na2::NFrame> frame(new na2::NFrame(paddle));
+    const Initialisation init(registry, frame, paddle);
 
     na2::SetCtrlCHandler(options.headless);
     applyOptions(options);

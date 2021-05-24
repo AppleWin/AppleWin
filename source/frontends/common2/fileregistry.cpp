@@ -110,7 +110,7 @@ namespace common2
     }
   }
 
-  void InitializeFileRegistry(const EmulatorOptions & options)
+  std::shared_ptr<Registry> CreateFileRegistry(const EmulatorOptions & options)
   {
     const std::string homeDir = getHomeDir();
 
@@ -131,7 +131,7 @@ namespace common2
     std::shared_ptr<Configuration> config(new Configuration(filename, saveOnExit));
     config->addExtraOptions(options.registryOptions);
 
-    Registry::instance = config;
+    return config;
   }
 
 }

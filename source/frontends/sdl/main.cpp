@@ -91,8 +91,8 @@ void run_sdl(int argc, const char * argv [])
     return;
 
   const Logger logger(options.log);
+  const std::shared_ptr<Registry> registry = CreateFileRegistry(options);
   g_nMemoryClearType = options.memclear;
-  InitializeFileRegistry(options);
 
   std::shared_ptr<sa2::SDLFrame> frame;
   if (options.imgui)
@@ -104,8 +104,8 @@ void run_sdl(int argc, const char * argv [])
     frame.reset(new sa2::SDLRendererFrame(options));
   }
 
-  Paddle::instance.reset(new sa2::Gamepad(0));
-  const Initialisation init(frame);
+  std::shared_ptr<Paddle> paddle(new sa2::Gamepad(0));
+  const Initialisation init(registry, frame, paddle);
 
   if (SDL_GL_SetSwapInterval(options.glSwapInterval))
   {

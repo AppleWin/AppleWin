@@ -16,7 +16,7 @@ namespace na2
   class NFrame : public common2::CommonFrame
   {
   public:
-    NFrame(const std::string & paddleDevice);
+    NFrame(const std::shared_ptr<EvDevPaddle> & paddle);
 
     WINDOW * GetWindow();
     WINDOW * GetStatus();
@@ -35,7 +35,8 @@ namespace na2
 
   private:
 
-    const std::string myPaddleDevice;
+    const std::shared_ptr<EvDevPaddle> myPaddle;
+
     int myRows;
     int myColumns;
     int myTextFlashCounter;
@@ -44,7 +45,6 @@ namespace na2
     std::shared_ptr<WINDOW> myFrame;
     std::shared_ptr<WINDOW> myStatus;
     std::shared_ptr<ASCIIArt> myAsciiArt;
-    std::shared_ptr<EvDevPaddle> myPaddle;
     std::shared_ptr<NCurses> myNCurses;
 
     LPBYTE        myTextBank1; // Aux
