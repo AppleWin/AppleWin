@@ -11,16 +11,18 @@
 		<hr size="4">
 		<h3>Clock:</h3>
 		<p>AppleWin emulates a No-Slot clock (aka NSC).</p>
-		<p>This is a chip (a Dallas SmartWatch DS1216) that sits under one of the 28-pin ROM chips in the Apple II.<br>
-		No hardware configuration is required: this chip is always present (unless -no-nsc is used), but won't interfere with emulation when not in use.
+		<p>This is a chip (a Dallas SmartWatch DS1216) that sits under one of the 28-pin (or 24-pin) ROM chips in the Apple II.<br>
+		No hardware configuration is required: this chip is always present (unless -no-nsc is used), but won't interfere with system operation when not in use.
 		</p>
 		<p>It requires a software driver to be installed (for DOS and ProDOS). This driver then emulates the Thunderclock card.</p>
-		<p>Here's a summary of NSC/ROM chip locations and which drivers work:</p>
+		<br>
+
+		<p>For the <strong>Apple //e</strong>, here's a summary of NSC/ROM chip locations and which drivers work:</p>
 		<ul>
-			<li>"CD" ROM socket: C000-DFFF (internal) ROM space - all drivers work</li>
-			<li>"EF" ROM socket: E000-FFFF ROM space            - never seen any drivers use this space</li>
-			<li>"CF" ROM socket: C000-FFFF (internal) ROM space - all drivers work</li>
-			<li>Slot ROM socket: Cs00-CsFF (slot) ROM space     - NS.CLOCK.SYSTEM works</li>
+			<li>"CD" ROM socket: $C000-DFFF (internal) ROM space - all drivers work</li>
+			<li>"EF" ROM socket: $E000-FFFF ROM space            - never seen any drivers use this space</li>
+			<li>"CF" ROM socket: $C000-FFFF (internal) ROM space - all drivers work</li>
+			<li>Slot ROM socket: $Cs00-CsFF (slot) ROM space     - NS.CLOCK.SYSTEM works</li>
 		</ul>
 
 		<p>Here are the drivers and ROM pages they check:</p>
@@ -28,8 +30,21 @@
 			<li>ProDOS "SWU.SYSTEM"      - internal C3</li>
 			<li>ProDOS "NS.CLOCK.SYSTEM" - internal C3 C8 / external C1-C7</li>
 			<li>GEOS   "NoSlot Clock"    - internal    C8</li>
+			<li>ProDOS-8 v2.5.0 "NoSlotClk.IIe" - internal C3 (currently 65C02 only)</li>
 		</ul>
-		
+		<br>
+
+		<p>For the <strong>Apple II/II+</strong>, here's a summary of NSC/ROM chip locations and driver information:</p>
+		<ul>
+			<li>"F8" ROM socket: $F800-FFFF (internal) ROM space - ProDOS-8 v2.5.0a8 (not currently working)</li>
+		</ul>
+
+		<p>Here are the drivers and ROM pages they check:</p>
+		<ul>
+			<li>ProDOS-8 v2.5.0 "NOSLOTCLK.II" - internal F8</li>
+		</ul>
+		<br>
+
 		<p><strong>NOTE: </strong>For ProDOS, the load order of drivers is important:</p>
 		<p>Some .SYSTEM drivers will <strong>not</strong> chain-load the next driver.<br>
 		NS.CLOCK.SYSTEM does, so ensure this is the first one ProDOS finds,
