@@ -69,6 +69,17 @@ namespace
     return interval;
   }
 
+  void setGLSwapInterval(const int interval)
+  {
+    const int current = SDL_GL_GetSwapInterval();
+    // in QEMU with GL_RENDERER: llvmpipe (LLVM 12.0.0, 256 bits)
+    // SDL_GL_SetSwapInterval() always fails
+    if (interval != current && SDL_GL_SetSwapInterval(interval))
+    {
+      throw std::runtime_error(std::string("SDL_GL_SetSwapInterval: ") + SDL_GetError());
+    }
+  }
+
 }
 
 void run_sdl(int argc, const char * argv [])
@@ -107,10 +118,7 @@ void run_sdl(int argc, const char * argv [])
   std::shared_ptr<Paddle> paddle(new sa2::Gamepad(0));
   const Initialisation init(registry, frame, paddle);
 
-  if (SDL_GL_SetSwapInterval(options.glSwapInterval))
-  {
-    throw std::runtime_error(SDL_GetError());
-  }
+  std::cerr << "Default GL swap interval: " << SDL_GL_GetSwapInterval() << std::endl;
 
   applyOptions(options);
 
@@ -122,10 +130,7 @@ void run_sdl(int argc, const char * argv [])
   {
     // we need to switch off vsync, otherwise FPS is limited to 60
     // and it will take longer to run
-    if (SDL_GL_SetSwapInterval(0))
-    {
-      throw std::runtime_error(SDL_GetError());
-    }
+    setGLSwapInterval(0);
 
     const auto redraw = [&frame]{
                           frame->UpdateTexture();
@@ -142,6 +147,8 @@ void run_sdl(int argc, const char * argv [])
   }
   else
   {
+    setGLSwapInterval(options.glSwapInterval);
+
     common2::Timer global;
     common2::Timer updateTextureTimer;
     common2::Timer refreshScreenTimer;
