@@ -236,7 +236,7 @@ static void HD_SaveLastDiskImage(const int iDrive)
 	if (!g_bSaveDiskImage)
 		return;
 
-	const std::string & pFileName = g_HardDisk[iDrive].fullname;
+	const std::string & pFileName = HD_GetFullPathName(iDrive);
 
 	if (iDrive == HARDDISK_1)
 		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_HARDDISK_1, TRUE, pFileName);
@@ -246,7 +246,7 @@ static void HD_SaveLastDiskImage(const int iDrive)
 	//
 
 	char szPathName[MAX_PATH];
-	strcpy(szPathName, HD_GetFullPathName(iDrive).c_str());
+	strcpy(szPathName, pFileName.c_str());
 	if (_tcsrchr(szPathName, TEXT(PATH_SEPARATOR)))
 	{
 		char* pPathEnd = _tcsrchr(szPathName, TEXT(PATH_SEPARATOR))+1;
