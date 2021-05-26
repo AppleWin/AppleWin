@@ -9,6 +9,7 @@
 #include <libgen.h>
 
 #include "Log.h"
+#include "Core.h"
 #include "config.h"
 
 namespace
@@ -28,7 +29,7 @@ namespace
     }
   }
 
-  std::string getResourcePath()
+  std::string getResourcePath(const std::string & target)
   {
     std::vector<std::string> paths;
 
@@ -49,7 +50,7 @@ namespace
 
     for (const std::string & path : paths)
     {
-      const std::string resourcePath = path + "/resource/";
+      const std::string resourcePath = path + target;
       if (dirExists(resourcePath))
       {
         return resourcePath;
@@ -65,8 +66,10 @@ namespace common2
 {
 
   CommonFrame::CommonFrame()
-    : myResourcePath(getResourcePath())
+    : myResourcePath(getResourcePath("/resource/"))
   {
+    // should this go down to LinuxFrame (maybe Initialisation?)
+    g_sProgramDir = getResourcePath("/bin/");
   }
 
   void CommonFrame::Initialize()
@@ -93,7 +96,7 @@ namespace common2
     myResource.clear();
 
     const std::string & filename = getResourceName(id);
-    const std::string path = getResourcePath() + filename;
+    const std::string path = myResourcePath + filename;
 
     const int fd = open(path.c_str(), O_RDONLY);
 
