@@ -190,4 +190,10 @@ namespace sa2
     SDLFrame::ProcessSingleEvent(event, quit);
   }
 
+  void SDLImGuiFrame::ResetSpeed()
+  {
+    SDLFrame::ResetSpeed();
+    mySettings.resetDebuggerCycles();
+  }
+
 }

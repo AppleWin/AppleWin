@@ -30,7 +30,7 @@ namespace sa2
     void Execute(const DWORD uCycles);
     void ExecuteOneFrame(const size_t msNextFrame);
     void ChangeMode(const AppMode_e mode);
-    void ResetSpeed();
+    virtual void ResetSpeed();
 
     virtual void UpdateTexture() = 0;
     virtual void RenderPresent() = 0;

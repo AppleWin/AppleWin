@@ -22,6 +22,8 @@ namespace sa2
     void UpdateTexture() override;
     void RenderPresent() override;
 
+    void ResetSpeed() override;
+
   protected:
 
     void ProcessSingleEvent(const SDL_Event & event, bool & quit) override;

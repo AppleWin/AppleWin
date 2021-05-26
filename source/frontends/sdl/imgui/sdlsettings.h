@@ -15,6 +15,7 @@ namespace sa2
   public:
     void show(SDLFrame* frame);
     float drawMenuBar(SDLFrame* frame);
+    void resetDebuggerCycles();
 
     bool windowed = false;
 
@@ -31,6 +32,9 @@ namespace sa2
 
     int mySpeakerVolume;
     int myMockingboardVolume;
+
+    uint64_t myBaseDebuggerCycles;
+    std::unordered_map<DWORD, uint64_t> myAddressCycles;
 
     MemoryEditor myMainMemoryEditor;
     MemoryEditor myAuxMemoryEditor;

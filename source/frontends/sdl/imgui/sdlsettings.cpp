@@ -755,7 +755,7 @@ namespace sa2
   void ImGuiSettings::drawDisassemblyTable(SDLFrame * frame)
   {
     const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable("Disassembly", 9, flags))
+    if (ImGui::BeginTable("Disassembly", 10, flags))
     {
       ImGui::PushStyleCompact();
       // weigths proportional to column width (including header)
@@ -769,6 +769,7 @@ namespace sa2
       ImGui::TableSetupColumn("Value", 0, 6);
       ImGui::TableSetupColumn("Immediate", 0, 9);
       ImGui::TableSetupColumn("Branch", 0, 6);
+      ImGui::TableSetupColumn("Cycles", 0, 6);
       ImGui::TableHeadersRow();
 
       ImGuiListClipper clipper;
@@ -882,6 +883,15 @@ namespace sa2
             ImGui::TextUnformatted(line.sBranch);
           }
 
+          ImGui::TableNextColumn();
+          if (g_nAppMode == MODE_DEBUG)
+          {
+            if (myAddressCycles.find(nAddress) != myAddressCycles.end())
+            {
+              ImGui::Text("%d", myAddressCycles[nAddress]);
+            }
+          }
+
           nAddress += line.nOpbyte;
           ImGui::PopID();
         }
@@ -949,8 +959,16 @@ namespace sa2
     }
   }
 
+  void ImGuiSettings::resetDebuggerCycles()
+  {
+    myAddressCycles.clear();
+    myBaseDebuggerCycles = g_nCumulativeCycles;
+  }
+
   void ImGuiSettings::showDebugger(SDLFrame * frame)
   {
+    myAddressCycles[regs.pc] = g_nCumulativeCycles - myBaseDebuggerCycles;
+
     if (ImGui::Begin("Debugger", &myShowDebugger))
     {
       ImGui::BeginChild("Console", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
