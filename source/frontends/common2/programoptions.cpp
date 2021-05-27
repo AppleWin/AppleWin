@@ -96,6 +96,8 @@ namespace common2
       ("fixed-speed", "Fixed (non-adaptive) speed")
       ("ntsc,nt", "NTSC: execute NTSC code")
       ("benchmark,b", "Benchmark emulator")
+      ("rom", po::value<std::string>(), "Custom 12k/16k ROM")
+      ("f8rom", po::value<std::string>(), "Custom 2k ROM")
       ;
     desc.add(emulatorDesc);
 
@@ -159,6 +161,16 @@ namespace common2
         options.loadSnapshot = false;
       }
 
+      if (vm.count("rom"))
+      {
+        options.customRom = vm["rom"].as<std::string>();
+      }
+
+      if (vm.count("f8rom"))
+      {
+        options.customRomF8 = vm["f8rom"].as<std::string>();
+      }
+
       const int memclear = vm["memclear"].as<int>();
       if (memclear >=0 && memclear < NUM_MIP)
         options.memclear = memclear;
@@ -196,6 +208,8 @@ namespace common2
 
   void applyOptions(const EmulatorOptions & options)
   {
+    g_nMemoryClearType = options.memclear;
+
     bool disksOk = true;
     if (!options.disk1.empty())
     {
@@ -214,6 +228,26 @@ namespace common2
     if (!options.snapshotFilename.empty())
     {
       setSnapshotFilename(options.snapshotFilename, options.loadSnapshot);
+    }
+
+    if (!options.customRom.empty())
+    {
+      CloseHandle(g_hCustomRom);
+      g_hCustomRom = CreateFile(options.customRom.c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, nullptr);
+      if (g_hCustomRom == INVALID_HANDLE_VALUE)
+      {
+        LogFileOutput("Init: Failed to load Custom ROM: %s\n", options.customRom.c_str());
+      }
+    }
+
+    if (!options.customRomF8.empty())
+    {
+      CloseHandle(g_hCustomRomF8);
+      g_hCustomRomF8 = CreateFile(options.customRomF8.c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, nullptr);
+      if (g_hCustomRomF8 == INVALID_HANDLE_VALUE)
+      {
+        LogFileOutput("Init: Failed to load custom F8 ROM: %s\n", options.customRomF8.c_str());
+      }
     }
 
     Paddle::setSquaring(options.paddleSquaring);

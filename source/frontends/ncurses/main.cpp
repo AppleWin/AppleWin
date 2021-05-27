@@ -148,15 +148,14 @@ namespace
 
     const Logger logger(options.log);
     const std::shared_ptr<Registry> registry = CreateFileRegistry(options);
-    g_nMemoryClearType = options.memclear;
-
     const std::shared_ptr<na2::EvDevPaddle> paddle(new na2::EvDevPaddle(options.paddleDeviceName));
-
     const std::shared_ptr<na2::NFrame> frame(new na2::NFrame(paddle));
+
     const Initialisation init(registry, frame, paddle);
+    applyOptions(options);
+    frame->Initialize();
 
     na2::SetCtrlCHandler(options.headless);
-    applyOptions(options);
 
     if (options.benchmark)
     {

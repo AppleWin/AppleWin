@@ -50,6 +50,9 @@ namespace common2
     Geometry geometry; // must be initialised with defaults
     int glSwapInterval = 1; // SDL_GL_SetSwapInterval
 
+    std::string customRomF8;
+    std::string customRom;
+
     std::vector<std::string> registryOptions;
   };
 

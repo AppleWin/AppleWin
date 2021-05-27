@@ -45,8 +45,6 @@ Initialisation::Initialisation(
   Registry::instance = registry;
   SetFrame(frame);
   Paddle::instance = paddle;
-
-  frame->Initialize();
 }
 
 Initialisation::~Initialisation()
@@ -56,6 +54,11 @@ Initialisation::~Initialisation()
 
   Paddle::instance.reset();
   Registry::instance.reset();
+
+  CloseHandle(g_hCustomRomF8);
+  g_hCustomRomF8 = INVALID_HANDLE_VALUE;
+  CloseHandle(g_hCustomRom);
+  g_hCustomRom = INVALID_HANDLE_VALUE;
 }
 
 Logger::Logger(const bool log)

@@ -103,7 +103,6 @@ void run_sdl(int argc, const char * argv [])
 
   const Logger logger(options.log);
   const std::shared_ptr<Registry> registry = CreateFileRegistry(options);
-  g_nMemoryClearType = options.memclear;
 
   std::shared_ptr<sa2::SDLFrame> frame;
   if (options.imgui)
@@ -117,10 +116,10 @@ void run_sdl(int argc, const char * argv [])
 
   std::shared_ptr<Paddle> paddle(new sa2::Gamepad(0));
   const Initialisation init(registry, frame, paddle);
+  applyOptions(options);
+  frame->Initialize();
 
   std::cerr << "Default GL swap interval: " << SDL_GL_GetSwapInterval() << std::endl;
-
-  applyOptions(options);
 
   const int fps = getRefreshRate();
   std::cerr << "Video refresh rate: " << fps << " Hz, " << 1000.0 / fps << " ms" << std::endl;
