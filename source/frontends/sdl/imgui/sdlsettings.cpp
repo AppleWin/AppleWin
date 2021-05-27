@@ -42,6 +42,23 @@ namespace
     }
   }
 
+  char getPrintableChar(const uint8_t x)
+  {
+    if (x >= 0x20 && x <= 0x7e)
+    {
+      return x;
+    }
+    else
+    {
+      return '.';
+    }
+  }
+
+  void printReg(const char label, const BYTE value)
+  {
+    ImGui::Text("%c  '%c'  %02X", label, getPrintableChar(value), value);
+  }
+
   ImVec4 colorrefToImVec4(const COLORREF cr)
   {
     const float coeff = 1.0 / 255.0;
@@ -761,14 +778,14 @@ namespace sa2
       // weigths proportional to column width (including header)
       ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
       ImGui::TableSetupColumn("", 0, 1);
-      ImGui::TableSetupColumn("Address", 0, 7);
+      ImGui::TableSetupColumn("Address", 0, 5);
       ImGui::TableSetupColumn("Opcode", 0, 8);
       ImGui::TableSetupColumn("Symbol", 0, 10);
       ImGui::TableSetupColumn("Disassembly", 0, 20);
-      ImGui::TableSetupColumn("Target", 0, 6);
+      ImGui::TableSetupColumn("Target", 0, 4);
       ImGui::TableSetupColumn("Value", 0, 6);
-      ImGui::TableSetupColumn("Immediate", 0, 9);
-      ImGui::TableSetupColumn("Branch", 0, 6);
+      ImGui::TableSetupColumn("Immediate", 0, 4);
+      ImGui::TableSetupColumn("Branch", 0, 4);
       ImGui::TableSetupColumn("Cycles", 0, 6);
       ImGui::TableHeadersRow();
 
@@ -901,6 +918,23 @@ namespace sa2
     }
   }
 
+  void ImGuiSettings::drawRegisters()
+  {
+    ImGui::TextUnformatted("Registers");
+    ImGui::Separator();
+    printReg('A', regs.a);
+    printReg('X', regs.x);
+    printReg('Y', regs.y);
+    printReg('P', regs.ps);
+    ImGui::Text("PC    %04X", regs.pc);
+    ImGui::Text("SP    %04X", regs.sp);
+    if (regs.bJammed)
+    {
+      ImGui::Separator();
+      ImGui::Selectable("CPU Jammed");
+    }
+  }
+
   void ImGuiSettings::drawConsole()
   {
     const ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
@@ -1020,7 +1054,19 @@ namespace sa2
             DisasmCalcTopBotAddress();
           }
 
+          // this is about right to contain the fixed-size register child
+          const ImVec2 registerTextSize = ImGui::CalcTextSize("012345678901");
+
+          ImGui::BeginChild("Disasm", ImVec2(-registerTextSize.x, 0));
           drawDisassemblyTable(frame);
+          ImGui::EndChild();
+
+          ImGui::SameLine();
+
+          ImGui::BeginChild("Registers");
+          drawRegisters();
+          ImGui::EndChild();
+
           ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Console"))
