@@ -335,11 +335,21 @@ namespace sa2
 
         if (ImGui::BeginTabItem("Disks"))
         {
+          CardManager & cardManager = GetCardMgr();
+
+          bool enhancedSpeed = cardManager.GetDisk2CardMgr().GetEnhanceDisk();
+          if (ImGui::Checkbox("Enhanced speed", &enhancedSpeed))
+          {
+            cardManager.GetDisk2CardMgr().SetEnhanceDisk(enhancedSpeed);
+            REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (DWORD)enhancedSpeed);
+          }
+
+          ImGui::Separator();
+
           size_t dragAndDropSlot;
           size_t dragAndDropDrive;
           frame->getDragDropSlotAndDrive(dragAndDropSlot, dragAndDropDrive);
 
-          CardManager & cardManager = GetCardMgr();
           if (ImGui::BeginTable("Disk2", 12, ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
           {
             ImGui::TableSetupColumn("Slot", ImGuiTableColumnFlags_WidthFixed);
