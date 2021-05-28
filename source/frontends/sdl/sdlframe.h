@@ -52,6 +52,9 @@ namespace sa2
     void ProcessMouseButton(const SDL_MouseButtonEvent & button);
     void ProcessMouseMotion(const SDL_MouseMotionEvent & motion);
 
+    void ExecuteInRunningMode(const size_t msNextFrame);
+    void ExecuteInDebugMode(const size_t msNextFrame);
+
     std::shared_ptr<SDL_Window> myWindow;
 
     bool myForceCapsLock;

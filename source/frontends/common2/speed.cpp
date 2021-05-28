@@ -19,12 +19,17 @@ namespace common2
     myStartCycles = g_nCumulativeCycles;
   }
 
+  uint64_t Speed::getCyclesAtFixedSpeed(const size_t microseconds) const
+  {
+    const uint64_t cycles = static_cast<uint64_t>(microseconds * g_fCurrentCLK6502 * 1.0e-6);
+    return cycles;
+  }
+
   uint64_t Speed::getCyclesTillNext(const size_t microseconds) const
   {
     if (myFixedSpeed)
     {
-      const uint64_t cycles = static_cast<uint64_t>(microseconds * g_fCurrentCLK6502 * 1.0e-6);
-      return cycles;
+      return getCyclesAtFixedSpeed(microseconds);
     }
     else
     {

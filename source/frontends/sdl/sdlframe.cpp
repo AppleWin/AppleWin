@@ -32,6 +32,11 @@
 namespace
 {
 
+  bool canDoFullSpeed()
+  {
+    return GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive();
+  }
+
   void processAppleKey(const SDL_KeyboardEvent & key, const bool forceCapsLock)
   {
     // using keycode (or scan code) one takes a physical view of the keyboard
@@ -493,7 +498,7 @@ namespace sa2
 
   void SDLFrame::Execute(const DWORD cyclesToExecute)
   {
-    const bool bVideoUpdate = true;
+    const bool bVideoUpdate = !g_bFullSpeed;
     const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 
     const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
@@ -504,28 +509,59 @@ namespace sa2
     SpkrUpdate(executedCycles);
   }
 
+  void SDLFrame::ExecuteInRunningMode(const size_t msNextFrame)
+  {
+    // 1 frame at normal speed
+    const uint64_t cyclesToExecute = mySpeed.getCyclesTillNext(msNextFrame * 1000);
+    Execute(cyclesToExecute);
+
+    // up to 5x more as maximum speed
+    const int maximumFrames = 5;
+
+    const uint64_t cyclesToExecutePerFrame = mySpeed.getCyclesAtFixedSpeed(msNextFrame * 1000);
+    int count = maximumFrames;
+    while (g_bFullSpeed = (count && canDoFullSpeed()))
+    {
+      Execute(cyclesToExecutePerFrame);
+      --count;
+    }
+
+    if (count < maximumFrames)
+    {
+      // we have run something in full speed
+      // Redraw and Reset
+      VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
+      ResetSpeed();
+    }
+  }
+
+  void SDLFrame::ExecuteInDebugMode(const size_t msNextFrame)
+  {
+    // In AppleWin this is called without a timer for just one iteration
+    // because we run a "frame" at a time, we need a bit of ingenuity
+    const uint64_t cyclesToExecute = mySpeed.getCyclesTillNext(msNextFrame * 1000);
+    const uint64_t target = g_nCumulativeCycles + cyclesToExecute;
+
+    while (g_nAppMode == MODE_STEPPING && g_nCumulativeCycles < target)
+    {
+      DebugContinueStepping();
+    }
+  }
+
   void SDLFrame::ExecuteOneFrame(const size_t msNextFrame)
   {
     // when running in adaptive speed
     // the value msNextFrame is only a hint for when the next frame will arrive
-    const uint64_t cyclesToExecute = mySpeed.getCyclesTillNext(msNextFrame * 1000);
     switch (g_nAppMode)
     {
       case MODE_RUNNING:
         {
-          Execute(cyclesToExecute);
+          ExecuteInRunningMode(msNextFrame);
           break;
         }
       case MODE_STEPPING:
         {
-          // In AppleWin this is called without a timer for just one iteration
-          // because we run a "frame" at a time, we need a bit of ingenuity
-          const uint64_t target = g_nCumulativeCycles + cyclesToExecute;
-
-          while (g_nAppMode == MODE_STEPPING && g_nCumulativeCycles < target)
-          {
-            DebugContinueStepping();
-          }
+          ExecuteInDebugMode(msNextFrame);
           break;
         }
     };
