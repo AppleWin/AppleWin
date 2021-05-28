@@ -219,6 +219,7 @@ namespace sa2
     std::string s(lpText);
     std::replace(s.begin(), s.end(), '\t', ' ');
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, lpCaption, s.c_str(), nullptr);
+    ResetSpeed();
     return IDOK;
   }
 
