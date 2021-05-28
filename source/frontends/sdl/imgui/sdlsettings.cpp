@@ -1072,6 +1072,7 @@ namespace sa2
           if ((ImGui::SameLine(), ImGui::Button("Debug")))
           {
             frame->ChangeMode(MODE_DEBUG);
+            resetDebuggerCycles();
           }
           if ((ImGui::SameLine(), ImGui::Button("Continue")))
           {
