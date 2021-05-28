@@ -2,6 +2,7 @@
 
 * [Structure](#structure)
 * [What works](#what-works)
+* [New features](#new-features)
 * [Executables](#executables)
   * [applen](#applen)
   * [qapple](#qapple)
