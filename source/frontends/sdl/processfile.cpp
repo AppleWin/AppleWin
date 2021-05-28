@@ -3,6 +3,8 @@
 #include "frontends/sdl/sdlframe.h"
 #include "frontends/common2/utils.h"
 
+#include "linux/tape.h"
+
 #include "CardManager.h"
 #include "Disk.h"
 #include "Core.h"
@@ -41,6 +43,39 @@ namespace
       }
     }
   }
+
+  void insertTape(sa2::SDLFrame * frame, const char * filename)
+  {
+    SDL_AudioSpec wavSpec;
+    Uint32 wavLength;
+    Uint8 *wavBuffer;
+    if (!SDL_LoadWAV(filename, &wavSpec, &wavBuffer, &wavLength))
+    {
+      frame->FrameMessageBox("Could not open wav file", "ERROR", MB_OK);
+      return;
+    }
+
+    SDL_AudioCVT cvt;
+    // tested with all formats from https://asciiexpress.net/
+    // 8 bit mono is just enough
+    // TAPEIN will interpolate so we do not need to resample at a higher frequency
+    const SDL_AudioFormat format = sizeof(tape_data_t) == 1 ? AUDIO_S8 : AUDIO_S16SYS;
+    const int res = SDL_BuildAudioCVT(&cvt, wavSpec.format, wavSpec.channels, wavSpec.freq, format, 1, wavSpec.freq);
+    cvt.len = wavLength;
+    std::vector<tape_data_t> output(cvt.len_mult * cvt.len / sizeof(tape_data_t));
+    std::memcpy(output.data(), wavBuffer, cvt.len);
+    SDL_FreeWAV(wavBuffer);
+
+    if (res)
+    {
+      cvt.buf = reinterpret_cast<Uint8 *>(output.data());
+      SDL_ConvertAudio(&cvt);
+      output.resize(cvt.len_cvt / sizeof(tape_data_t));
+    }
+
+    setCassetteTape(output, wavSpec.freq);
+  }
+
 }
 
 
@@ -50,9 +85,14 @@ namespace sa2
   void processFile(SDLFrame * frame, const char * filename, const size_t dragAndDropSlot, const size_t dragAndDropDrive)
   {
     const char * yaml = ".yaml";
+    const char * wav = ".wav";
     if (strlen(filename) > strlen(yaml) && !strcmp(filename + strlen(filename) - strlen(yaml), yaml))
     {
       common2::setSnapshotFilename(filename, true);
+    }
+    else if (strlen(filename) > strlen(wav) && !strcmp(filename + strlen(filename) - strlen(wav), wav))
+    {
+      insertTape(frame, filename);
     }
     else
     {

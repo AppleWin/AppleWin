@@ -52,7 +52,6 @@ set(SOURCE_FILES
   AY8910.cpp
   Mockingboard.cpp
   Pravets.cpp
-  Tape.cpp
   YamlHelper.cpp
   Log.cpp
   Disk.cpp
@@ -105,6 +104,7 @@ set(SOURCE_FILES
   linux/keyboard.cpp
   linux/linuxframe.cpp
   linux/context.cpp
+  linux/tape.cpp
   linux/network/uthernet2.cpp
   linux/network/tfe2.cpp
   linux/network/slirp2.cpp
@@ -208,6 +208,7 @@ set(HEADER_FILES
   linux/registry.h
   linux/keyboard.h
   linux/linuxframe.h
+  linux/tape.h
   linux/network/uthernet2.h
   linux/network/tfe2.h
   linux/network/slirp2.h

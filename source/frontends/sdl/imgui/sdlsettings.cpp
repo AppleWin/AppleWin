@@ -4,6 +4,7 @@
 #include "frontends/sdl/sdlframe.h"
 #include "linux/registry.h"
 #include "linux/version.h"
+#include "linux/tape.h"
 
 #include "Interface.h"
 #include "CardManager.h"
@@ -609,6 +610,38 @@ namespace sa2
             }
             ImGui::EndCombo();
           }
+          ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Tape"))
+        {
+          size_t size;
+          size_t pos;
+          int frequency;
+          uint8_t bit;
+          getTapeInfo(size, pos, frequency, bit);
+
+          if (pos < size)
+          {
+            const float remaining = float(size - pos) / float(frequency);
+            const float fraction = float(pos) / float(size);
+            char buf[32];
+            sprintf(buf, "-%.1f s", remaining);
+            const ImU32 color = bit ? IM_COL32(200, 0, 0, 100) : IM_COL32(0, 200, 0, 100);
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, color);
+            ImGui::ProgressBar(fraction, ImVec2(-FLT_MIN, 0), buf);
+            ImGui::LabelText("Frequency", "%d Hz", frequency);
+            ImGui::PopStyleColor();
+            if (ImGui::Button("Eject tape"))
+            {
+              ejectTape();
+            }
+          }
+          else
+          {
+            ImGui::TextUnformatted("Drop a .wav file.");
+          }
+
           ImGui::EndTabItem();
         }
 

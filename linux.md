@@ -41,11 +41,15 @@ Uthernet I is supported via `libpcap`, but it requires elevated capabilities:
 
 Unfortunately, this must be reapplied after every build.
 
+Most of the debugger now works (in the ImGui version).
+
+## New features
+
 Uthernet II is supported too and by default uses `libslirp` which does *not* require elevated capabilities. Use the ImGui settings to enable it.
 
 `libslirp` is not packaged on Raspberry Pi OS. `libpcap` will be used instead, unless the user manually compiles and installs [libslirp](https://gitlab.freedesktop.org/slirp/libslirp).
 
-Most of the debugger now works (in the ImGui version).
+Audio files can be read via the cassette interface (SDL Version). Just drop a `wav` file into the emulator. Tested with all the formats from [asciiexpress](https://asciiexpress.net/).
 
 ## Executables
 
