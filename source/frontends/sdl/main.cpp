@@ -56,19 +56,6 @@ namespace
     common2::Timer * timer;
   };
 
-  Uint32 emulator_callback(Uint32 interval, void *param)
-  {
-    Data * data = static_cast<Data *>(param);
-    SDL_LockMutex(data->mutex);
-
-    data->timer->tic();
-    data->frame->ExecuteOneFrame(interval);
-    data->timer->toc();
-
-    SDL_UnlockMutex(data->mutex);
-    return interval;
-  }
-
   void setGLSwapInterval(const int interval)
   {
     const int current = SDL_GL_GetSwapInterval();

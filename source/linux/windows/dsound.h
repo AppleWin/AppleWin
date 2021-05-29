@@ -75,7 +75,7 @@ typedef struct IDirectSoundNotify *LPDIRECTSOUNDNOTIFY,**LPLPDIRECTSOUNDNOTIFY;
 
 class IDirectSoundBuffer : public IUnknown
 {
-  std::unique_ptr<IDirectSoundNotify> mySoundNotify;
+  const std::unique_ptr<IDirectSoundNotify> mySoundNotify;
   std::vector<char> mySoundBuffer;
 
   size_t myPlayPosition = 0;
@@ -116,7 +116,7 @@ class IDirectSoundBuffer : public IUnknown
   HRESULT GetStatus( LPDWORD lpdwStatus );
   HRESULT Restore();
 };
-typedef struct IDirectSoundBuffer *LPDIRECTSOUNDBUFFER,**LPLPDIRECTSOUNDBUFFER;
+typedef class IDirectSoundBuffer *LPDIRECTSOUNDBUFFER,**LPLPDIRECTSOUNDBUFFER;
 
 struct IDirectSound : public IUnknown
 {

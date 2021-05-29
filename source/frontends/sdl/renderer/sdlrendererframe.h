@@ -4,7 +4,7 @@
 
 namespace common2
 {
-  class EmulatorOptions;
+  struct EmulatorOptions;
 }
 
 namespace sa2

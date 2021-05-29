@@ -133,9 +133,9 @@ namespace sa2
     : myForceCapsLock(true)
     , myMultiplier(1)
     , myFullscreen(false)
-    , mySpeed(options.fixedSpeed)
     , myDragAndDropSlot(SLOT6)
     , myDragAndDropDrive(DRIVE_1)
+    , mySpeed(options.fixedSpeed)
   {
   }
 
@@ -521,7 +521,7 @@ namespace sa2
 
     const uint64_t cyclesToExecutePerFrame = mySpeed.getCyclesAtFixedSpeed(msNextFrame * 1000);
     int count = maximumFrames;
-    while (g_bFullSpeed = (count && canDoFullSpeed()))
+    while ((g_bFullSpeed = (count && canDoFullSpeed())))
     {
       Execute(cyclesToExecutePerFrame);
       --count;

@@ -378,7 +378,7 @@ namespace sa2
                   ImGui::TableNextColumn();
                   ImGui::Text("%d", slot);
                   ImGui::TableNextColumn();
-                  ImGui::Text("%d", drive + 1);
+                  ImGui::Text("%zu", drive + 1);
                   ImGui::TableNextColumn();
                   ImGui::Text("%d", firmware);
                   ImGui::TableNextColumn();
@@ -434,7 +434,7 @@ namespace sa2
                 ImGui::TableNextColumn();
                 ImGui::Text("%d", SLOT7);
                 ImGui::TableNextColumn();
-                ImGui::Text("%d", drive + 1);
+                ImGui::Text("%zu", drive + 1);
                 ImGui::TableNextColumn();
                 ImGui::TextUnformatted("HD");
                 ImGui::TableNextColumn();
@@ -947,7 +947,7 @@ namespace sa2
           {
             if (myAddressCycles.find(nAddress) != myAddressCycles.end())
             {
-              ImGui::Text("%d", myAddressCycles[nAddress]);
+              ImGui::Text("%" PRIu64, myAddressCycles[nAddress]);
             }
           }
 
@@ -1078,7 +1078,7 @@ namespace sa2
             frame->ChangeMode(MODE_RUNNING);
           }
           ImGui::SameLine();
-          ImGui::Text("%016llu - %04X", g_nCumulativeCycles, regs.pc);
+          ImGui::Text("%016" PRIu64 " - %04X", g_nCumulativeCycles, regs.pc);
 
           if (!mySyncCPU)
           {

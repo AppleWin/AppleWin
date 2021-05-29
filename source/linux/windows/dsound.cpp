@@ -10,13 +10,13 @@ HRESULT IDirectSoundNotify::SetNotificationPositions(DWORD cPositionNotifies, LP
 }
 
 IDirectSoundBuffer::IDirectSoundBuffer(const size_t aBufferSize, const size_t aChannels, const size_t aSampleRate, const size_t aBitsPerSample, const size_t aFlags)
-  : bufferSize(aBufferSize)
-  , channels(aChannels)
+  : mySoundNotify(new IDirectSoundNotify)
+  , mySoundBuffer(aBufferSize)
+  , bufferSize(aBufferSize)
   , sampleRate(aSampleRate)
+  , channels(aChannels)
   , bitsPerSample(aBitsPerSample)
   , flags(aFlags)
-  , mySoundNotify(new IDirectSoundNotify)
-  , mySoundBuffer(aBufferSize)
 {
 }
 
