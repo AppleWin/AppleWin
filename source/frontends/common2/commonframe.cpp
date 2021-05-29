@@ -50,14 +50,19 @@ namespace
 
     for (const std::string & path : paths)
     {
-      const std::string resourcePath = path + target;
-      if (dirExists(resourcePath))
+      char * real = realpath(path.c_str(), nullptr);
+      if (real)
       {
-        return resourcePath;
+        const std::string resourcePath = std::string(real) + target;
+        free(real);
+        if (dirExists(resourcePath))
+        {
+          return resourcePath;
+        }
       }
     }
 
-    throw std::runtime_error("Cannot found the resource path");
+    throw std::runtime_error("Cannot found the resource path: " + target);
   }
 
 }
