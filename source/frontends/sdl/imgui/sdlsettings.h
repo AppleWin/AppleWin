@@ -5,6 +5,8 @@
 #include "Debugger/Debug.h"
 #include "Debugger/Debugger_Console.h"
 
+#include <unordered_map>
+
 namespace sa2
 {
 
