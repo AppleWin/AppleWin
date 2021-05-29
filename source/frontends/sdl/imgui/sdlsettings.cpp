@@ -206,8 +206,6 @@ namespace sa2
   {
     if (ImGui::Begin("Settings", &myShowSettings))
     {
-      ImGuiIO& io = ImGui::GetIO();
-
       if (ImGui::BeginTabBar("Settings"))
       {
         if (ImGui::BeginTabItem("General"))
@@ -226,10 +224,6 @@ namespace sa2
 
           ImGui::Checkbox("Show Demo", &myShowDemo);
           ImGui::SameLine(); HelpMarker("Show Dear ImGui DemoWindow.");
-
-          ImGui::Separator();
-
-          ImGui::Text("FPS: %d", int(io.Framerate));
 
           ImGui::Separator();
 
@@ -722,6 +716,11 @@ namespace sa2
       ImGui::Text("SDL version %d.%d.%d", sdl.major, sdl.minor, sdl.patch);
       ImGui::Text("Dear ImGui %s", ImGui::GetVersion());
     }
+
+    ImGui::Separator();
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::Text("FPS: %d", int(io.Framerate));
+
     ImGui::End();
   }
 
