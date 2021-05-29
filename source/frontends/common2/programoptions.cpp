@@ -134,9 +134,9 @@ namespace common2
       options.glSwapInterval = vm["gl-swap"].as<int>();
       options.imgui = vm.count("imgui");
 
-      if (vm.count("config"))
+      if (vm.count("registry"))
       {
-        options.registryOptions = vm["config"].as<std::vector<std::string> >();
+        options.registryOptions = vm["registry"].as<std::vector<std::string> >();
       }
 
       if (vm.count("d1"))
