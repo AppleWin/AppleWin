@@ -35,12 +35,16 @@ typedef char *PSZ;
 typedef int16_t INT16;
 typedef uint16_t UINT16;
 
-#define __int64 long long
+#if __WORDSIZE == 64
+#define __int64 long int
+#else
+#define __int64 long long int
+#endif
 
 typedef intptr_t INT_PTR;
 typedef uintptr_t UINT_PTR;
 
-typedef long long LONGLONG;
+typedef int64_t LONGLONG;
 
 typedef uint32_t UINT32;
 typedef uint8_t UINT8;
