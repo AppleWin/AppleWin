@@ -394,9 +394,14 @@ void SSI263::Update(void)
 #endif
 
 			if (m_phonemeAccurateLengthRemaining)
+			{
 				m_phonemeCompleteByFullSpeed = true;	// Let UpdateAccurateLength() call UpdateIRQ()
+				m_lastUpdateCycle = MB_GetLastCumulativeCycles();	// Set m_lastUpdateCycle, otherwise UpdateAccurateLength() just early-returns!
+			}
 			else
+			{
 				UpdateIRQ();
+			}
 		}
 
 		m_updateWasFullSpeed = true;
