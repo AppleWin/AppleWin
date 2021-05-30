@@ -16,8 +16,9 @@ CassetteTape & CassetteTape::instance()
   return tape;
 }
 
-void CassetteTape::setData(const std::vector<tape_data_t> & data, const int frequency)
+void CassetteTape::setData(const std::string & filename, const std::vector<tape_data_t> & data, const int frequency)
 {
+  myFilename = filename;
   myData = data;
   myFrequency = frequency;
   myIsPlaying = false;
@@ -100,12 +101,13 @@ BYTE CassetteTape::getValue(const ULONG nExecutedCycles)
   return highBit;
 }
 
-void CassetteTape::getTapeInfo(size_t & size, size_t & pos, int & frequency, uint8_t & bit) const
+void CassetteTape::getTapeInfo(TapeInfo & info) const
 {
-  const tape_data_t val = getCurrentWave(pos);
-  bit = myLastBit;
-  size = myData.size();
-  frequency = myFrequency;
+  info.filename = myFilename;
+  const tape_data_t val = getCurrentWave(info.pos);
+  info.bit = myLastBit;
+  info.size = myData.size();
+  info.frequency = myFrequency;
 }
 
 BYTE __stdcall TapeRead(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedCycles)	// $C060 TAPEIN

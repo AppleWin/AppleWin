@@ -621,24 +621,27 @@ namespace sa2
         {
           CassetteTape & tape = CassetteTape::instance();
 
-          size_t size;
-          size_t pos;
-          int frequency;
-          uint8_t bit;
-          tape.getTapeInfo(size, pos, frequency, bit);
+          CassetteTape::TapeInfo info;
+          tape.getTapeInfo(info);
 
-          if (size)
+          if (info.size)
           {
-            const float remaining = float(size - (pos + 1)) / float(frequency);
-            const float fraction = float(pos + 1) / float(size);
+            const float remaining = float(info.size - (info.pos + 1)) / float(info.frequency);
+            const float fraction = float(info.pos + 1) / float(info.size);
             char buf[32];
             sprintf(buf, "-%.1f s", remaining);
-            const ImU32 color = bit ? IM_COL32(200, 0, 0, 100) : IM_COL32(0, 200, 0, 100);
+            const ImU32 color = info.bit ? IM_COL32(200, 0, 0, 100) : IM_COL32(0, 200, 0, 100);
+
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, color);
             ImGui::ProgressBar(fraction, ImVec2(-FLT_MIN, 0), buf);
-            ImGui::LabelText("Frequency", "%d Hz", frequency);
-            ImGui::LabelText("Auto Play", "%s", "ON");
             ImGui::PopStyleColor();
+
+            ImGui::LabelText("Filename", "%s", info.filename.c_str());
+            ImGui::LabelText("Frequency", "%d Hz", info.frequency);
+            ImGui::LabelText("Auto Play", "%s", "ON");
+
+            ImGui::Separator();
+
             if (ImGui::Button("Rewind"))
             {
               tape.rewind();

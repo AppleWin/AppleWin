@@ -73,7 +73,7 @@ namespace
       output.resize(cvt.len_cvt / sizeof(CassetteTape::tape_data_t));
     }
 
-    CassetteTape::instance().setData(output, wavSpec.freq);
+    CassetteTape::instance().setData(filename, output, wavSpec.freq);
   }
 
 }
