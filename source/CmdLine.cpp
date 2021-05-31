@@ -199,16 +199,17 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-f") == 0 || strcmp(lpCmdLine, "-full-screen") == 0)
 		{
-			g_cmdLine.bSetFullScreen = true;
+			g_cmdLine.setFullScreen = 1;
 		}
 		else if (strcmp(lpCmdLine, "-no-full-screen") == 0)
 		{
-			g_cmdLine.bSetFullScreen = false;
+			g_cmdLine.setFullScreen = 0;
 		}
 #define CMD_FS_HEIGHT "-fs-height="
 		else if (strncmp(lpCmdLine, CMD_FS_HEIGHT, sizeof(CMD_FS_HEIGHT)-1) == 0)
 		{
-			g_cmdLine.bSetFullScreen = true;	// Implied. Can be overridden by "-no-full-screen"
+			if (g_cmdLine.setFullScreen < 0)	// Not yet been specified on cmd line?
+				g_cmdLine.setFullScreen = 1;	// Implicity set full-screen. NB. Can be overridden by "-no-full-screen"
 
 			LPSTR lpTmp = lpCmdLine + sizeof(CMD_FS_HEIGHT)-1;
 			bool bRes = false;

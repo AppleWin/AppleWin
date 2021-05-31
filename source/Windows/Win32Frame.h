@@ -96,8 +96,8 @@ private:
 	bool ConfirmReboot(bool bFromButtonUI);
 	void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive);
 	void RelayEvent(UINT message, WPARAM wparam, LPARAM lparam);
-	void SetFullScreenMode();
-	void SetNormalMode();
+	void SetFullScreenMode(void);
+	void SetNormalMode(void);
 	void SetUsingCursor(BOOL bNewValue);
 	void SetupTooltipControls(void);
 	void FrameResizeWindow(int nNewScale);
@@ -132,6 +132,8 @@ private:
 	FULLSCREEN_SCALE_TYPE	g_win_fullscreen_scale;
 	int						g_win_fullscreen_offsetx;
 	int						g_win_fullscreen_offsety;
+	UINT m_bestWidthForFullScreen;
+	UINT m_bestHeightForFullScreen;
 
 	static const UINT MAX_DRAW_DEVICES = 10;
 	char* draw_devices[MAX_DRAW_DEVICES];

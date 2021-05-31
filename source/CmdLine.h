@@ -12,9 +12,8 @@ struct CmdLine
 	CmdLine()
 	{
 		bShutdown = false;
-		bSetFullScreen = false;
+		setFullScreen = -1;
 		bBoot = false;
-		bChangedDisplayResolution = false;
 		bSlot0LanguageCard = false;
 		bSlot7EmptyOnExit = false;
 		bSwapButtons0and1 = false;
@@ -49,9 +48,8 @@ struct CmdLine
 	}
 
 	bool bShutdown;
-	bool bSetFullScreen;
+	int setFullScreen;	// tristate: -1 (no cmd line specified), 0="-no-full-screen", 1="-full-screen"
 	bool bBoot;
-	bool bChangedDisplayResolution;
 	bool bSlot0LanguageCard;
 	bool bSlotEmpty[NUM_SLOTS];
 	bool bSlot7EmptyOnExit;

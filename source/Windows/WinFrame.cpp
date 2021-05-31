@@ -2107,13 +2107,28 @@ int Win32Frame::GetFullScreenOffsetY(void)
 	return g_win_fullscreen_offsety;
 }
 
-void Win32Frame::SetFullScreenMode ()
+void Win32Frame::SetFullScreenMode(void)
 {
 #ifdef NO_DIRECT_X
 
 	return;
 
 #else // NO_DIRECT_X
+
+	if (m_bestWidthForFullScreen && m_bestHeightForFullScreen)
+	{
+		DEVMODE devMode;
+		memset(&devMode, 0, sizeof(devMode));
+		devMode.dmSize = sizeof(devMode);
+		devMode.dmPelsWidth = m_bestWidthForFullScreen;
+		devMode.dmPelsHeight = m_bestHeightForFullScreen;
+		devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
+
+		DWORD dwFlags = 0;
+		LONG res = ChangeDisplaySettings(&devMode, dwFlags);
+	}
+
+	//
 
 	MONITORINFO monitor_info;
 	FULLSCREEN_SCALE_TYPE width, height, scalex, scaley;
@@ -2158,8 +2173,10 @@ void Win32Frame::SetFullScreenMode ()
 }
 
 //===========================================================================
-void Win32Frame::SetNormalMode ()
+void Win32Frame::SetNormalMode(void)
 {
+	ChangeDisplaySettings(NULL, 0);	// restore default resolution
+
 	FullScreenRevealCursor();	// Do before clearing g_bIsFullScreen flag
 
 	buttonover = -1;
@@ -2682,6 +2699,9 @@ void Win32Frame::FrameUpdateApple2Type(void)
 
 bool Win32Frame::GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight /*= 0*/)
 {
+	m_bestWidthForFullScreen = 0;
+	m_bestHeightForFullScreen = 0;
+
 	typedef std::vector< std::pair<UINT,UINT> > VEC_PAIR;
 	VEC_PAIR vecDisplayResolutions;
 
@@ -2733,6 +2753,9 @@ bool Win32Frame::GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& be
 
 		bestWidth = width;
 		bestHeight = userSpecifiedHeight;
+
+		m_bestWidthForFullScreen = bestWidth;
+		m_bestHeightForFullScreen = bestHeight;
 		return true;
 	}
 
@@ -2760,5 +2783,8 @@ bool Win32Frame::GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& be
 
 	bestWidth = tmpBestWidth;
 	bestHeight = tmpBestHeight;
+
+	m_bestWidthForFullScreen = bestWidth;
+	m_bestHeightForFullScreen = bestHeight;
 	return true;
 }
