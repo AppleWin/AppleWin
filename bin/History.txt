@@ -11,7 +11,7 @@ Tom Charlesworth
 
 1.30.2.0 - 31 May 2021
 ----------------------
-. [Change #947] Uthernet: fix so that a h/w change doesn't require the app to be close & reopened.
+. [Change #947] Uthernet: fix so that a h/w change doesn't require the app to be close & reopened. [audetto]
 . [Change #876] Command line: change -fs-height so only applied during full-screen (Windows mode unaffected).
 . [Bug #958] Debugger: Mockingboard speech interrupt not working in debugger 'gg' mode.
 . [Bug #952] Fix Mockingboard SC-01 speech for Ape Escape.
