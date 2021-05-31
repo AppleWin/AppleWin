@@ -213,20 +213,21 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 
 			LPSTR lpTmp = lpCmdLine + sizeof(CMD_FS_HEIGHT)-1;
 			bool bRes = false;
+			UINT bestWidth=0, bestHeight=0;
 			if (strcmp(lpTmp, "best") == 0)
 			{
-				bRes = GetFrame().GetBestDisplayResolutionForFullScreen(g_cmdLine.bestWidth, g_cmdLine.bestHeight);
+				bRes = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight);
 			}
 			else
 			{
 				UINT userSpecifiedHeight = atoi(lpTmp);
 				if (userSpecifiedHeight)
-					bRes = GetFrame().GetBestDisplayResolutionForFullScreen(g_cmdLine.bestWidth, g_cmdLine.bestHeight, userSpecifiedHeight);
+					bRes = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight, userSpecifiedHeight);
 				else
 					LogFileOutput("Invalid cmd-line parameter for -fs-height=x switch\n");
 			}
 			if (bRes)
-				LogFileOutput("Best resolution for -fs-height=x switch: Width=%d, Height=%d\n", g_cmdLine.bestWidth, g_cmdLine.bestHeight);
+				LogFileOutput("Best resolution for -fs-height=x switch: Width=%d, Height=%d\n", bestWidth, bestHeight);
 			else
 				LogFileOutput("Failed to set parameter for -fs-height=x switch\n");
 		}

@@ -18,8 +18,6 @@ struct CmdLine
 		bSlot7EmptyOnExit = false;
 		bSwapButtons0and1 = false;
 		bRemoveNoSlotClock = false;
-		bestWidth = 0;
-		bestHeight = 0;
 		szImageName_harddisk[HARDDISK_1] = NULL;
 		szImageName_harddisk[HARDDISK_2] = NULL;
 		szSnapshotName = NULL;
@@ -56,8 +54,6 @@ struct CmdLine
 	bool bSwapButtons0and1;
 	bool bRemoveNoSlotClock;
 	SS_CARDTYPE slotInsert[NUM_SLOTS];
-	UINT bestWidth;
-	UINT bestHeight;
 	LPSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES];
 	bool driveConnected[NUM_SLOTS][NUM_DRIVES];
 	LPSTR szImageName_harddisk[NUM_HARDDISKS];
