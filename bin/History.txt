@@ -9,6 +9,16 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.30.2.0 - 31 May 2021
+----------------------
+. [Change #947] Uthernet: fix so that a h/w change doesn't require the app to be close & reopened. [audetto]
+. [Change #876] Command line: change -fs-height so only applied during full-screen (Windows mode unaffected).
+. [Bug #958] Debugger: Mockingboard speech interrupt not working in debugger 'gg' mode.
+. [Bug #952] Fix Mockingboard SC-01 speech for Ape Escape.
+. Fix Phasor regression (at 1.30.0.0) as it does support reading AY-3-8913 registers in Mockingboard mode & Phasor native mode (just not Echo+ mode).
+. Debugger: when displaying 6522 registers, if T1 and/or T2 is active, then display in white.
+
+
 1.30.1.0 - 3 May 2021
 ---------------------
 . Improve Mockingboard's 6522 support for cycle-accurate reading of IFR at Timer1/2 underflow.
@@ -31,7 +41,7 @@ Note: This version only works under Windows XP and later.
 	- A better alternative fix for WOZ images: 'Wasteland' and 'Legacy of the Ancients'.
 	- Fix for WOZ images: 'Gruds in Space' (bug #921) and 'Buzzard Bait' (bug #930).
 . [Change #912] For 'Base 64A' add support for its F2 key via the Windows DEL key.
-. [Change #876] Starting up windowed mode & fullscreen mode
+. [Change #876] Starting up windowed mode & full-screen mode
 	- New command line switch -no-full-screen to start in windowed mode.
 	- Added command line switch -full-screen as an alias for -f.
 . [Change #864] Anti-M 1.8 doesn't work

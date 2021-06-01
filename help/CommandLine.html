@@ -71,13 +71,13 @@
 		-no-full-screen<br>
 		Start in Windowed mode (default).<br><br>
 		-fs-height=&lt;best|nnnn&gt;<br>
-		Use to select a better resolution for full-screen or Windowed mode.<br>
+		Use to select a better resolution for full-screen mode.<br>
 		<ul>
 			<li>best: picks the highest resolution where the height is an integer multiple of (192*2)</li>
 			<li>nnnn: select a specific resolution with height=nnnn pixels</li>
 		</ul>
-		NB. This changes the display resolution (and restores on exit).<br>
-		NB. Specify -no-full-screen after this switch for Windowed mode. Without this it'll just default to full-screen.<br><br>
+		NB. Combine with <em>-no-full-screen</em> to start in Windowed mode. Without this it'll just default to full-screen.<br>
+		NB. When switching to Windowed mode the default desktop resolution will be restored, and when switching back to full-screen mode this better resolution will again be used.<br><br>
 		-rom &lt;file&gt;<br>
 		Use custom 12K ROM (at $D000) for Apple II machine, or 16K ROM (at $C000) for Apple //e machine.<br><br>
 		-f8rom &lt;file&gt;<br>

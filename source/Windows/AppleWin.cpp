@@ -643,7 +643,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 			if (g_bRestart)
 			{
-				g_cmdLine.bSetFullScreen = g_bRestartFullScreen;
+				g_cmdLine.setFullScreen = g_bRestartFullScreen ? 1 : 0;
 				g_bRestartFullScreen = false;
 
 				MB_Reset(true);
@@ -981,25 +981,10 @@ static void RepeatInitialization(void)
 		}
 		else
 		{
-			if (g_cmdLine.bestWidth && g_cmdLine.bestHeight)
-			{
-				DEVMODE devMode;
-				memset(&devMode, 0, sizeof(devMode));
-				devMode.dmSize = sizeof(devMode);
-				devMode.dmPelsWidth = g_cmdLine.bestWidth;
-				devMode.dmPelsHeight = g_cmdLine.bestHeight;
-				devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
-
-				DWORD dwFlags = 0;
-				LONG res = ChangeDisplaySettings(&devMode, dwFlags);
-				if (res == 0)
-					g_cmdLine.bChangedDisplayResolution = true;
-			}
-
-			if (g_cmdLine.bSetFullScreen)
+			if (g_cmdLine.setFullScreen > 0)
 			{
 				PostMessage(GetFrame().g_hFrameWindow, WM_USER_FULLSCREEN, 0, 0);
-				g_cmdLine.bSetFullScreen = false;
+				g_cmdLine.setFullScreen = 0;
 			}
 
 			if (g_cmdLine.bBoot)
@@ -1012,8 +997,7 @@ static void RepeatInitialization(void)
 
 static void Shutdown(void)
 {
-	if (g_cmdLine.bChangedDisplayResolution)
-		ChangeDisplaySettings(NULL, 0);	// restore default
+	ChangeDisplaySettings(NULL, 0);	// restore default resolution
 
 	// Release COM
 	SysClk_UninitTimer();

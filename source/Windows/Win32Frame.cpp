@@ -36,6 +36,8 @@ Win32Frame::Win32Frame()
 	g_win_fullscreen_scale = 1;
 	g_win_fullscreen_offsetx = 0;
 	g_win_fullscreen_offsety = 0;
+	m_bestWidthForFullScreen = 0;
+	m_bestHeightForFullScreen = 0;
 
 	btnfacebrush = (HBRUSH)0;
 	btnfacepen = (HPEN)0;
