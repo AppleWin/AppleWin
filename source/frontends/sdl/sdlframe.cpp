@@ -502,12 +502,22 @@ namespace sa2
     const bool bVideoUpdate = !g_bFullSpeed;
     const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 
-    const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
+    // do it in the same batches as AppleWin (1 ms)
+    const DWORD fExecutionPeriodClks = g_fCurrentCLK6502 * (1.0 / 1000.0);  // 1 ms
 
-    g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
-    GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
-    MB_PeriodicUpdate(executedCycles);
-    SpkrUpdate(executedCycles);
+    DWORD totalCyclesExecuted = 0;
+    // check at the end because we want to always execute at least 1 cycle even for "0"
+    do
+    {
+      const DWORD thisCyclesToExecute = std::min(fExecutionPeriodClks, cyclesToExecute - totalCyclesExecuted);
+      const DWORD executedCycles = CpuExecute(thisCyclesToExecute, bVideoUpdate);
+      totalCyclesExecuted += executedCycles;
+
+      g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
+      GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
+      MB_PeriodicUpdate(executedCycles);
+      SpkrUpdate(executedCycles);
+    } while (totalCyclesExecuted < cyclesToExecute);
   }
 
   void SDLFrame::ExecuteInRunningMode(const size_t msNextFrame)
