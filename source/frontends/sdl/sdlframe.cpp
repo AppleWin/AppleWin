@@ -308,12 +308,45 @@ namespace sa2
 
       int width, height;
       SDL_GetWindowSize(myWindow.get(), &width, &height);
+      const bool geos = (iMaxX == 32767) && (iMaxY == 32767);
 
-      const int newX = int((double(motion.x) / double(width)) * (iMaxX - iMinX) + iMinX);
-      const int newY = int((double(motion.y) / double(height)) * (iMaxY - iMinY) + iMinY);
+      int dx, dy;
+      if (geos)
+      {
+        // in geos the screen in 280 * 2 mouse ticks in x and 192 in y
+        // everything works in relative motion
+        // so we do not know where the pointer is
+        //
+        // the risk is that we leave the SDL window before the guest pointer reaches the end
+        // and we stop receiving events
+        //
+        // we could call SDL_CaptureMouse(), but this interacts badly with ImGui
+        //
+        // so we make the guest pointer a bit faster (alpha > 1)
+        //
+        // at least the pointer moves at the right speed
+        // and with some gymnic, one can put it in the right place
 
-      const int dx = newX - iX;
-      const int dy = newY - iY;
+        const double sizeX = 280 * 2;
+        const double sizeY = 192;
+
+        const double relX = double(motion.xrel) / double(width) * sizeX;
+        const double relY = double(motion.yrel) / double(height) * sizeY;
+
+        const double alpha = 1.1;
+        dx = lround(relX * alpha);
+        dy = lround(relY * alpha);
+      }
+      else
+      {
+        const int sizeX = iMaxX - iMinX + 1;
+        const int sizeY = iMaxY - iMinY + 1;
+
+        const int newX = lround(double(motion.x) / double(width) * sizeX + iMinX);
+        const int newY = lround(double(motion.y) / double(height) * sizeY + iMinY);
+        dx = newX - iX;
+        dy = newY - iY;
+      }
 
       int outOfBoundsX;
       int outOfBoundsY;
