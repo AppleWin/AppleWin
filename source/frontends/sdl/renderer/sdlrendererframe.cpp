@@ -60,4 +60,14 @@ namespace sa2
     SDL_RenderPresent(myRenderer.get());
   }
 
+  void SDLRendererFrame::GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, double & x, double & y) const
+  {
+    int width, height;
+    SDL_GetWindowSize(myWindow.get(), &width, &height);
+
+    x = double(motion.x) / double(width);
+    y = double(motion.y) / double(height);
+  }
+
+
 }

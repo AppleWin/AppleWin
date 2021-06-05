@@ -342,8 +342,11 @@ namespace sa2
         const int sizeX = iMaxX - iMinX + 1;
         const int sizeY = iMaxY - iMinY + 1;
 
-        const int newX = lround(double(motion.x) / double(width) * sizeX + iMinX);
-        const int newY = lround(double(motion.y) / double(height) * sizeY + iMinY);
+        double x, y;
+        GetRelativeMousePosition(motion, x, y);
+
+        const int newX = lround(x * sizeX + iMinX);
+        const int newY = lround(y * sizeY + iMinY);
         dx = newX - iX;
         dy = newY - iY;
       }

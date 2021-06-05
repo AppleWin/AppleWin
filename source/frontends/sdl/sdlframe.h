@@ -44,6 +44,7 @@ namespace sa2
     void SetApplicationIcon();
 
     virtual void ProcessSingleEvent(const SDL_Event & event, bool & quit);
+    virtual void GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, double & x, double & y) const = 0;
 
     void ProcessKeyDown(const SDL_KeyboardEvent & key);
     void ProcessKeyUp(const SDL_KeyboardEvent & key);

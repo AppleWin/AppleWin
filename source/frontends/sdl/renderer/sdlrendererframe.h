@@ -18,6 +18,9 @@ namespace sa2
     void UpdateTexture() override;
     void RenderPresent() override;
 
+  protected:
+    void GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, double & x, double & y) const override;
+
   private:
     SDL_Rect myRect;
     int myPitch;

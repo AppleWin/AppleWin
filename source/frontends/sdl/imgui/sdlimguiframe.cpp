@@ -95,6 +95,8 @@ namespace sa2
     myOffset = (width * borderHeight + borderWidth) * sizeof(bgra_t);
 
     allocateTexture(myTexture, myBorderlessWidth, myBorderlessHeight);
+
+    myDeadTopZone = 0;
   }
 
   SDLImGuiFrame::~SDLImGuiFrame()
@@ -125,6 +127,7 @@ namespace sa2
     const ImVec2 uv1(1, 0);
 
     const float menuBarHeight = mySettings.drawMenuBar(this);
+    myDeadTopZone = menuBarHeight;
 
     if (mySettings.windowed)
     {
@@ -141,6 +144,16 @@ namespace sa2
       ImGuiIO& io = ImGui::GetIO();
       ImGui::GetBackgroundDrawList()->AddImage(myTexture, zero, io.DisplaySize, uv0, uv1);
     }
+  }
+
+  void SDLImGuiFrame::GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, double & x, double & y) const
+  {
+    // this currently ignores a windowed apple video and applies to the whole sdl window
+    int width, height;
+    SDL_GetWindowSize(myWindow.get(), &width, &height);
+
+    x = double(motion.x) / double(width);
+    y = double(std::max(motion.y, myDeadTopZone) - myDeadTopZone) / double(std::max(height - myDeadTopZone, 1));
   }
 
   void SDLImGuiFrame::RenderPresent()
