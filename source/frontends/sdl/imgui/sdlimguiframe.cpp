@@ -152,8 +152,11 @@ namespace sa2
     int width, height;
     SDL_GetWindowSize(myWindow.get(), &width, &height);
 
-    x = double(motion.x) / double(width);
-    y = double(std::max(motion.y, myDeadTopZone) - myDeadTopZone) / double(std::max(height - myDeadTopZone, 1));
+    const int posY = std::max(motion.y - myDeadTopZone, 0);
+    height = std::max(height - myDeadTopZone, 1);  // a real window has a minimum size of 1
+
+    x = GetRelativePosition(motion.x, width);
+    y = GetRelativePosition(posY, height);
   }
 
   void SDLImGuiFrame::RenderPresent()

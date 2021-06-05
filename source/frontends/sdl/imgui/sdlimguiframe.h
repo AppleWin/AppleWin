@@ -39,7 +39,7 @@ namespace sa2
     size_t myBorderlessWidth;
     size_t myBorderlessHeight;
 
-    Sint32 myDeadTopZone; // for mouse position
+    int myDeadTopZone; // for mouse position
 
     SDL_GLContext myGLContext;
     ImTextureID myTexture;

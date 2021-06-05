@@ -296,6 +296,13 @@ namespace sa2
     }
   }
 
+  double SDLFrame::GetRelativePosition(const int value, const int size)
+  {
+    // the minimum size of a window is 1
+    const double result = double(value) / double(std::max(1, size - 1));
+    return result;
+  }
+
   void SDLFrame::ProcessMouseMotion(const SDL_MouseMotionEvent & motion)
   {
     CardManager & cardManager = GetCardMgr();
@@ -339,14 +346,16 @@ namespace sa2
       }
       else
       {
-        const int sizeX = iMaxX - iMinX + 1;
-        const int sizeY = iMaxY - iMinY + 1;
+        const int sizeX = iMaxX - iMinX;
+        const int sizeY = iMaxY - iMinY;
+
 
         double x, y;
         GetRelativeMousePosition(motion, x, y);
 
-        const int newX = lround(x * sizeX + iMinX);
-        const int newY = lround(y * sizeY + iMinY);
+        const int newX = lround(x * sizeX) + iMinX;
+        const int newY = lround(y * sizeY) + iMinY;
+
         dx = newX - iX;
         dy = newY - iY;
       }

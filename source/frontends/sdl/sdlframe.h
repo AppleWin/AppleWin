@@ -56,6 +56,8 @@ namespace sa2
     void ExecuteInRunningMode(const size_t msNextFrame);
     void ExecuteInDebugMode(const size_t msNextFrame);
 
+    static double GetRelativePosition(const int value, const int width);
+
     std::shared_ptr<SDL_Window> myWindow;
 
     bool myForceCapsLock;

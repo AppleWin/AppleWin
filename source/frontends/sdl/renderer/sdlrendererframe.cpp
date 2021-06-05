@@ -65,8 +65,8 @@ namespace sa2
     int width, height;
     SDL_GetWindowSize(myWindow.get(), &width, &height);
 
-    x = double(motion.x) / double(width);
-    y = double(motion.y) / double(height);
+    x = GetRelativePosition(motion.x, width);
+    y = GetRelativePosition(motion.y, height);
   }
 
 
