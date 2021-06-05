@@ -1015,7 +1015,13 @@ void registerUthernet2()
   slirp.reset();
   slirp = std::make_shared<SlirpNet>();
 #else
+  const int check = tfe_enabled;
   tfe_init();
+  if (tfe_enabled != check)
+  {
+    // tfe initialisation failed
+    return;
+  }
 #endif
   dataAddress = 0;
   initialise();

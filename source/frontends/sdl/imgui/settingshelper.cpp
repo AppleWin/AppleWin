@@ -198,8 +198,7 @@ namespace sa2
 
   void saveTFEEnabled(const int enabled)
   {
-    tfe_enabled = enabled;
-    REGSAVE(TEXT(REGVALUE_UTHERNET_ACTIVE), tfe_enabled);
+    REGSAVE(TEXT(REGVALUE_UTHERNET_ACTIVE), enabled);
   }
 
   void changeBreakpoint(const DWORD nAddress, const bool enableAndSet)
