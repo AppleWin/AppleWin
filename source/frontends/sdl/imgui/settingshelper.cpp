@@ -104,6 +104,17 @@ namespace
 
     const std::vector<SS_CARDTYPE> expansionCards =
       {CT_Empty, CT_LanguageCard, CT_Extended80Col, CT_Saturn128K, CT_RamWorksIII};
+
+  void internalInsertCard(const size_t slot, const SS_CARDTYPE card)
+  {
+    CardManager & cardManager = GetCardMgr();
+
+    // we do not use REGVALUE_SLOT5 as they are not "runtime friendly"
+    const std::string label = "Slot " + std::to_string(slot);
+    REGSAVE(label.c_str(), (DWORD)card);
+    cardManager.Insert(slot, card);
+  }
+
 }
 
 namespace sa2
@@ -156,8 +167,6 @@ namespace sa2
 
   void insertCard(size_t slot, SS_CARDTYPE card)
   {
-    CardManager & cardManager = GetCardMgr();
-
     switch (slot)
     {
       case 3:
@@ -165,6 +174,23 @@ namespace sa2
         const int enabled = card == CT_Uthernet ? 1 : 0;
         REGSAVE(REGVALUE_UTHERNET_ACTIVE, enabled);
         // needs a reboot anyway
+        break;
+      }
+      case 4:
+      case 5:
+      {
+        if (card == CT_MockingboardC)
+        {
+          internalInsertCard(9 - slot, card);  // the other
+        }
+        else
+        {
+          CardManager & cardManager = GetCardMgr();
+          if (cardManager.QuerySlot(slot) == CT_MockingboardC)
+          {
+            internalInsertCard(9 - slot, CT_Empty);  // the other
+          }
+        }
         break;
       }
       case 7:
@@ -176,10 +202,7 @@ namespace sa2
       }
     };
 
-    // we do not use REGVALUE_SLOT5 as they are not "runtime friendly"
-    const std::string label = "Slot " + std::to_string(slot);
-    REGSAVE(label.c_str(), (DWORD)card);
-    cardManager.Insert(slot, card);
+    internalInsertCard(slot, card);
   }
 
   void setVideoStyle(Video & video, const VideoStyle_e style, const bool enabled)
