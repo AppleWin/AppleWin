@@ -30,6 +30,14 @@
 namespace
 {
 
+  struct MemoryTab
+  {
+    void * basePtr;
+    size_t baseAddr;
+    size_t length;
+    std::string name;
+  };
+
   void HelpMarker(const char* desc)
   {
     ImGui::TextDisabled("(?)");
@@ -804,18 +812,31 @@ namespace sa2
     {
       if (ImGui::BeginTabBar("Memory"))
       {
-        if (ImGui::BeginTabItem("Main"))
+        std::vector<MemoryTab> banks;
+
+        banks.push_back({mem, 0, _6502_MEM_LEN, "Memory"});
+        banks.push_back({MemGetCxRomPeripheral(), _6502_IO_BEGIN, 4 * 1024, "Cx ROM"});
+
+        size_t i = 0;
+        void * bank;
+        while ((bank = MemGetBankPtr(i)))
         {
-          void * mainBase = MemGetMainPtr(0);
-          myMainMemoryEditor.DrawContents(mainBase, _6502_MEM_LEN);
-          ImGui::EndTabItem();
+          const std::string name = "Bank " + std::to_string(i);
+          banks.push_back({bank, 0, _6502_MEM_LEN, name});
+          ++i;
         }
-        if (ImGui::BeginTabItem("AUX"))
+
+        myMemoryEditors.resize(banks.size());
+
+        for (i = 0; i < banks.size(); ++i)
         {
-          void * auxBase = MemGetAuxPtr(0);
-          myAuxMemoryEditor.DrawContents(auxBase, _6502_MEM_LEN);
-          ImGui::EndTabItem();
+          if (ImGui::BeginTabItem(banks[i].name.c_str()))
+          {
+            myMemoryEditors[i].DrawContents(banks[i].basePtr, banks[i].length, banks[i].baseAddr);
+            ImGui::EndTabItem();
+          }
         }
+
         ImGui::EndTabBar();
       }
     }

@@ -38,8 +38,7 @@ namespace sa2
     uint64_t myBaseDebuggerCycles;
     std::unordered_map<DWORD, uint64_t> myAddressCycles;
 
-    MemoryEditor myMainMemoryEditor;
-    MemoryEditor myAuxMemoryEditor;
+    std::vector<MemoryEditor> myMemoryEditors;
 
     std::vector<SoundInfo> myAudioInfo;
 
