@@ -315,10 +315,10 @@ namespace sa2
 
       int width, height;
       SDL_GetWindowSize(myWindow.get(), &width, &height);
-      const bool geos = (iMaxX == 32767) && (iMaxY == 32767);
+      const bool relative = (iMaxX - iMinX == 32767) && (iMaxY - iMinY == 32767);
 
       int dx, dy;
-      if (geos)
+      if (relative)
       {
         // in geos the screen in 280 * 2 mouse ticks in x and 192 in y
         // everything works in relative motion
