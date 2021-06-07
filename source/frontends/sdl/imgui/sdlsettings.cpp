@@ -232,6 +232,7 @@ namespace sa2
             g_dwSpeed = speed;
             SetCurrentCLK6502();
             REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
+            frame->ResetSpeed();
           }
           ImGui::LabelText("Clock", "%15.2f Hz", g_fCurrentCLK6502);
 
