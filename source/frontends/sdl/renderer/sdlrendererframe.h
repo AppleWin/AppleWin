@@ -15,8 +15,7 @@ namespace sa2
   public:
     SDLRendererFrame(const common2::EmulatorOptions & options);
 
-    void UpdateTexture() override;
-    void RenderPresent() override;
+    void VideoPresentScreen() override;
 
   protected:
     void GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, double & x, double & y) const override;

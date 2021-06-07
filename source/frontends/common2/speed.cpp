@@ -27,7 +27,7 @@ namespace common2
 
   uint64_t Speed::getCyclesTillNext(const size_t microseconds) const
   {
-    if (myFixedSpeed)
+    if (myFixedSpeed || g_bFullSpeed)
     {
       return getCyclesAtFixedSpeed(microseconds);
     }

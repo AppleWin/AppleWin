@@ -20,25 +20,23 @@ namespace sa2
 
     void Initialize() override;
 
-    void VideoPresentScreen() override;
     void FrameRefreshStatus(int drawflags) override;
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
     void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
 
     void ProcessEvents(bool &quit);
 
-    void Execute(const DWORD uCycles);
     void ExecuteOneFrame(const size_t msNextFrame);
     void ChangeMode(const AppMode_e mode);
+    void SingleStep();
     virtual void ResetSpeed();
-
-    virtual void UpdateTexture() = 0;
-    virtual void RenderPresent() = 0;
 
     const std::shared_ptr<SDL_Window> & GetWindow() const;
 
     void getDragDropSlotAndDrive(size_t & slot, size_t & drive) const;
     void setDragDropSlotAndDrive(const size_t slot, const size_t drive);
+
+    static void setGLSwapInterval(const int interval);
 
   protected:
     void SetApplicationIcon();
@@ -55,11 +53,14 @@ namespace sa2
 
     void ExecuteInRunningMode(const size_t msNextFrame);
     void ExecuteInDebugMode(const size_t msNextFrame);
+    void Execute(const DWORD uCycles);
+
+    void SetFullSpeed(const bool value);
+    bool CanDoFullSpeed();
 
     static double GetRelativePosition(const int value, const int width);
 
-    std::shared_ptr<SDL_Window> myWindow;
-
+    int myTargetGLSwap;
     bool myForceCapsLock;
     int myMultiplier;
     bool myFullscreen;
@@ -67,7 +68,11 @@ namespace sa2
     size_t myDragAndDropSlot;
     size_t myDragAndDropDrive;
 
+    bool myScrollLockFullSpeed;
+
     common2::Speed mySpeed;
+
+    std::shared_ptr<SDL_Window> myWindow;
   };
 
 }

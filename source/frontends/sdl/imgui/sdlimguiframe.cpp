@@ -133,12 +133,14 @@ namespace sa2
     {
       if (ImGui::Begin("Apple ]["))
       {
+        UpdateTexture();
         ImGui::Image(myTexture, ImGui::GetContentRegionAvail(), uv0, uv1);
       }
       ImGui::End();
     }
     else
     {
+      UpdateTexture();
       const ImVec2 zero(0, menuBarHeight);
       // draw on the background
       ImGuiIO& io = ImGui::GetIO();
@@ -159,7 +161,7 @@ namespace sa2
     y = GetRelativePosition(posY, height);
   }
 
-  void SDLImGuiFrame::RenderPresent()
+  void SDLImGuiFrame::VideoPresentScreen()
   {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame(myWindow.get());

@@ -19,9 +19,7 @@ namespace sa2
 
     ~SDLImGuiFrame() override;
 
-    void UpdateTexture() override;
-    void RenderPresent() override;
-
+    void VideoPresentScreen() override;
     void ResetSpeed() override;
 
   protected:
@@ -31,6 +29,7 @@ namespace sa2
 
   private:
 
+    void UpdateTexture();
     void ClearBackground();
     void DrawAppleVideo();
 

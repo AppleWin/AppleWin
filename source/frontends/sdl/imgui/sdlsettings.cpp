@@ -235,6 +235,12 @@ namespace sa2
 
           ImGui::Separator();
 
+          ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+          ImGui::Checkbox("Full speed", &g_bFullSpeed);
+          ImGui::PopItemFlag();
+
+          ImGui::Separator();
+
           if (ImGui::Button("Restart"))
           {
             frame->Restart();
@@ -1096,7 +1102,7 @@ namespace sa2
           if (ImGui::Button("Step"))
           {
             frame->ChangeMode(MODE_DEBUG);
-            frame->Execute(0);
+            frame->SingleStep();
           }
           ImGui::SameLine();
 

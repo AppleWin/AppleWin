@@ -32,11 +32,6 @@
 namespace
 {
 
-  bool canDoFullSpeed()
-  {
-    return GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive();
-  }
-
   void processAppleKey(const SDL_KeyboardEvent & key, const bool forceCapsLock)
   {
     // using keycode (or scan code) one takes a physical view of the keyboard
@@ -130,19 +125,33 @@ namespace sa2
 {
 
   SDLFrame::SDLFrame(const common2::EmulatorOptions & options)
-    : myForceCapsLock(true)
+    : myTargetGLSwap(options.glSwapInterval)
+    , myForceCapsLock(true)
     , myMultiplier(1)
     , myFullscreen(false)
     , myDragAndDropSlot(SLOT6)
     , myDragAndDropDrive(DRIVE_1)
+    , myScrollLockFullSpeed(false)
     , mySpeed(options.fixedSpeed)
   {
+  }
+
+  void SDLFrame::setGLSwapInterval(const int interval)
+  {
+    const int current = SDL_GL_GetSwapInterval();
+    // in QEMU with GL_RENDERER: llvmpipe (LLVM 12.0.0, 256 bits)
+    // SDL_GL_SetSwapInterval() always fails
+    if (interval != current && SDL_GL_SetSwapInterval(interval))
+    {
+      throw std::runtime_error(std::string("SDL_GL_SetSwapInterval: ") + SDL_GetError());
+    }
   }
 
   void SDLFrame::Initialize()
   {
     CommonFrame::Initialize();
     mySpeed.reset();
+    setGLSwapInterval(myTargetGLSwap);
   }
 
   void SDLFrame::FrameRefreshStatus(int drawflags)
@@ -162,12 +171,6 @@ namespace sa2
     {
       SDL_SetWindowIcon(myWindow.get(), icon.get());
     }
-  }
-
-  void SDLFrame::VideoPresentScreen()
-  {
-    UpdateTexture();
-    RenderPresent();
   }
 
   const std::shared_ptr<SDL_Window> & SDLFrame::GetWindow() const
@@ -497,6 +500,11 @@ namespace sa2
           }
           break;
         }
+      case SDLK_SCROLLLOCK:
+        {
+          myScrollLockFullSpeed = !myScrollLockFullSpeed;
+          break;
+        }
       }
     }
 
@@ -558,44 +566,35 @@ namespace sa2
       const DWORD executedCycles = CpuExecute(thisCyclesToExecute, bVideoUpdate);
       totalCyclesExecuted += executedCycles;
 
-      g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
       GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
       MB_PeriodicUpdate(executedCycles);
       SpkrUpdate(executedCycles);
+
+      g_dwCyclesThisFrame += executedCycles;
+      if (g_dwCyclesThisFrame >= dwClksPerFrame)
+      {
+        g_dwCyclesThisFrame -= dwClksPerFrame;
+        if (g_bFullSpeed)
+        {
+          NTSC_VideoClockResync(g_dwCyclesThisFrame);
+          GetVideo().VideoRefreshBuffer(GetVideo().GetVideoMode(), true);
+        }
+      }
     } while (totalCyclesExecuted < cyclesToExecute);
   }
 
   void SDLFrame::ExecuteInRunningMode(const size_t msNextFrame)
   {
-    // 1 frame at normal speed
-    const uint64_t cyclesToExecute = mySpeed.getCyclesTillNext(msNextFrame * 1000);
+    SetFullSpeed(CanDoFullSpeed());
+    const uint64_t cyclesToExecute = mySpeed.getCyclesTillNext(msNextFrame * 1000);  // this checks g_bFullSpeed
     Execute(cyclesToExecute);
-
-    // up to 5x more as maximum speed
-    const int maximumFrames = 5;
-
-    const uint64_t cyclesToExecutePerFrame = mySpeed.getCyclesAtFixedSpeed(msNextFrame * 1000);
-    int count = maximumFrames;
-    while ((g_bFullSpeed = (count && canDoFullSpeed())))
-    {
-      Execute(cyclesToExecutePerFrame);
-      --count;
-    }
-
-    if (count < maximumFrames)
-    {
-      // we have run something in full speed
-      // Redraw and Reset
-      VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
-      ResetSpeed();
-    }
   }
 
   void SDLFrame::ExecuteInDebugMode(const size_t msNextFrame)
   {
     // In AppleWin this is called without a timer for just one iteration
     // because we run a "frame" at a time, we need a bit of ingenuity
-    const uint64_t cyclesToExecute = mySpeed.getCyclesTillNext(msNextFrame * 1000);
+    const uint64_t cyclesToExecute = mySpeed.getCyclesAtFixedSpeed(msNextFrame * 1000);
     const uint64_t target = g_nCumulativeCycles + cyclesToExecute;
 
     while (g_nAppMode == MODE_STEPPING && g_nCumulativeCycles < target)
@@ -664,9 +663,44 @@ namespace sa2
     myDragAndDropDrive = drive;
   }
 
+  void SDLFrame::SetFullSpeed(const bool value)
+  {
+    if (g_bFullSpeed != value)
+    {
+      if (value)
+      {
+        // entering full speed
+        MB_Mute();
+        setGLSwapInterval(0);
+      }
+      else
+      {
+        // leaving full speed
+        MB_Unmute();
+        setGLSwapInterval(myTargetGLSwap);
+        mySpeed.reset();
+      }
+      g_bFullSpeed = value;
+    }
+  }
+
+  bool SDLFrame::CanDoFullSpeed()
+  {
+    return myScrollLockFullSpeed ||
+           (g_dwSpeed == SPEED_MAX) ||
+           (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
+           IsDebugSteppingAtFullSpeed();
+  }
+
+  void SDLFrame::SingleStep()
+  {
+    SetFullSpeed(CanDoFullSpeed());
+    Execute(0);
+  }
+
 }
 
 void SingleStep(bool /* bReinit */)
 {
-  dynamic_cast<sa2::SDLFrame &>(GetFrame()).Execute(0);
+  dynamic_cast<sa2::SDLFrame &>(GetFrame()).SingleStep();
 }

@@ -56,17 +56,6 @@ namespace
     common2::Timer * timer;
   };
 
-  void setGLSwapInterval(const int interval)
-  {
-    const int current = SDL_GL_GetSwapInterval();
-    // in QEMU with GL_RENDERER: llvmpipe (LLVM 12.0.0, 256 bits)
-    // SDL_GL_SetSwapInterval() always fails
-    if (interval != current && SDL_GL_SetSwapInterval(interval))
-    {
-      throw std::runtime_error(std::string("SDL_GL_SetSwapInterval: ") + SDL_GetError());
-    }
-  }
-
 }
 
 void run_sdl(int argc, const char * argv [])
@@ -116,11 +105,10 @@ void run_sdl(int argc, const char * argv [])
   {
     // we need to switch off vsync, otherwise FPS is limited to 60
     // and it will take longer to run
-    setGLSwapInterval(0);
+    sa2::SDLFrame::setGLSwapInterval(0);
 
     const auto redraw = [&frame]{
-                          frame->UpdateTexture();
-                          frame->RenderPresent();
+                          frame->VideoPresentScreen();
                         };
 
     const auto refresh = [redraw, &video]{
@@ -133,10 +121,7 @@ void run_sdl(int argc, const char * argv [])
   }
   else
   {
-    setGLSwapInterval(options.glSwapInterval);
-
     common2::Timer global;
-    common2::Timer updateTextureTimer;
     common2::Timer refreshScreenTimer;
     common2::Timer cpuTimer;
     common2::Timer eventTimer;
@@ -164,14 +149,10 @@ void run_sdl(int argc, const char * argv [])
       frame->ExecuteOneFrame(oneFrame);
       cpuTimer.toc();
 
-      updateTextureTimer.tic();
-      frame->UpdateTexture();
-      updateTextureTimer.toc();
-
       if (!options.headless)
       {
         refreshScreenTimer.tic();
-        frame->RenderPresent();
+        frame->VideoPresentScreen();
         refreshScreenTimer.toc();
       }
       frameTimer.toc();
@@ -182,7 +163,6 @@ void run_sdl(int argc, const char * argv [])
     std::cerr << "Global:  " << global << std::endl;
     std::cerr << "Frame:   " << frameTimer << std::endl;
     std::cerr << "Screen:  " << refreshScreenTimer << std::endl;
-    std::cerr << "Texture: " << updateTextureTimer << std::endl;
     std::cerr << "Events:  " << eventTimer << std::endl;
     std::cerr << "CPU:     " << cpuTimer << std::endl;
 

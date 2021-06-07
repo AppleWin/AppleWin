@@ -49,13 +49,9 @@ namespace sa2
     myPitch = width * sizeof(bgra_t);
   }
 
-  void SDLRendererFrame::UpdateTexture()
+  void SDLRendererFrame::VideoPresentScreen()
   {
     SDL_UpdateTexture(myTexture.get(), nullptr, myFramebuffer.data(), myPitch);
-  }
-
-  void SDLRendererFrame::RenderPresent()
-  {
     SDL_RenderCopyEx(myRenderer.get(), myTexture.get(), &myRect, nullptr, 0.0, nullptr, SDL_FLIP_VERTICAL);
     SDL_RenderPresent(myRenderer.get());
   }
