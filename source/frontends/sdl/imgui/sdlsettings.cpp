@@ -192,19 +192,6 @@ namespace
     }
   }
 
-  void standardLabelText(const char * label, const char * text)
-  {
-    // this is "better/different" that ImGui::LabelText();
-    // because it shows the text in the same style as other options
-    // it will not display the ARROW_DOWN, to indicate the option cannot be changed
-    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-    if (ImGui::BeginCombo(label, text, ImGuiComboFlags_NoArrowButton))
-    {
-      ImGui::EndCombo();
-    }
-    ImGui::PopItemFlag();
-  }
-
 }
 
 namespace sa2
@@ -238,6 +225,15 @@ namespace sa2
           ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
           ImGui::Checkbox("Full speed", &g_bFullSpeed);
           ImGui::PopItemFlag();
+
+          int speed = g_dwSpeed;
+          if (ImGui::SliderInt("Speed", &speed, SPEED_MIN, SPEED_MAX))
+          {
+            g_dwSpeed = speed;
+            SetCurrentCLK6502();
+            REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
+          }
+          ImGui::LabelText("Clock", "%15.2f Hz", g_fCurrentCLK6502);
 
           ImGui::Separator();
 
@@ -285,8 +281,8 @@ namespace sa2
             ImGui::EndCombo();
           }
 
-          standardLabelText("CPU", getCPUName(GetMainCpu()).c_str());
-          standardLabelText("Mode", getAppModeName(g_nAppMode).c_str());
+          ImGui::LabelText("CPU", "%s", getCPUName(GetMainCpu()).c_str());
+          ImGui::LabelText("Mode", "%s", getAppModeName(g_nAppMode).c_str());
 
           ImGui::Separator();
 
