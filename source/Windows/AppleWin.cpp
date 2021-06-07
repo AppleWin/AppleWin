@@ -489,31 +489,32 @@ static void RegisterHotKeys(void)
 }
 
 //---------------------------------------------------------------------------
+extern "C" LRESULT CALLBACK LowLevelKeyboardProc(
+	_In_ int    nCode,
+	_In_ WPARAM wParam,
+	_In_ LPARAM lParam);
+extern "C" void __cdecl RegisterHWND(HWND hWnd, bool bHookAltTab, bool bHookAltGrControl);
 
-static HINSTANCE g_hinstDLL = 0;
 static HHOOK g_hhook = 0;
 
 static HANDLE g_hHookThread = NULL;
 static DWORD g_HookThreadId = 0;
 
+// The hook filter code can be static (within the application) rather than in a DLL.
 // Pre: g_hFrameWindow must be valid
 static bool HookFilterForKeyboard()
 {
-	g_hinstDLL = LoadLibrary(TEXT("HookFilter.dll"));
-
 	_ASSERT(GetFrame().g_hFrameWindow);
 
-	typedef void (*RegisterHWNDProc)(HWND, bool, bool);
-	RegisterHWNDProc RegisterHWND = (RegisterHWNDProc) GetProcAddress(g_hinstDLL, "RegisterHWND");
-	if (RegisterHWND)
-		RegisterHWND(GetFrame().g_hFrameWindow, g_bHookAltTab, g_bHookAltGrControl);
+	RegisterHWND(GetFrame().g_hFrameWindow, g_bHookAltTab, g_bHookAltGrControl);
 
-	HOOKPROC hkprcLowLevelKeyboardProc = (HOOKPROC) GetProcAddress(g_hinstDLL, "LowLevelKeyboardProc");
+	// Since no DLL gets injected anyway for low-level hooks, we can use, for example, GetModuleHandle("kernel32.dll")
+	HINSTANCE hinstDLL = GetModuleHandle("kernel32.dll");
 
 	g_hhook = SetWindowsHookEx(
 						WH_KEYBOARD_LL,
-						hkprcLowLevelKeyboardProc,
-						g_hinstDLL,
+						LowLevelKeyboardProc,
+						hinstDLL,
 						0);
 
 	if (g_hhook != 0 && GetFrame().g_hFrameWindow != 0)
@@ -532,7 +533,6 @@ static bool HookFilterForKeyboard()
 static void UnhookFilterForKeyboard()
 {
 	UnhookWindowsHookEx(g_hhook);
-	FreeLibrary(g_hinstDLL);
 }
 
 static DWORD WINAPI HookThread(LPVOID lpParameter)

@@ -245,6 +245,7 @@
     <ClCompile Include="source\Video.cpp" />
     <ClCompile Include="source\Windows\AppleWin.cpp" />
     <ClCompile Include="source\Windows\DirectInput.cpp" />
+    <ClCompile Include="source\Windows\HookFilter.cpp" />
     <ClCompile Include="source\Windows\Win32Frame.cpp" />
     <ClCompile Include="source\Windows\WinFrame.cpp" />
     <ClCompile Include="source\YamlHelper.cpp" />

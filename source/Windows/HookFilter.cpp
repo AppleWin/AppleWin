@@ -1,4 +1,5 @@
-#include <windows.h>
+//#include <windows.h>
+#include "StdAfx.h"
 
 static HWND g_hFrameWindow = (HWND)0;
 static bool g_bHookAltTab = false;
@@ -7,7 +8,8 @@ static bool g_bHookAltGrControl = false;
 // NB. __stdcall (or WINAPI) and extern "C":
 // . symbol is decorated as _<symbol>@bytes
 // . so use the #pragma to create an undecorated alias for our symbol
-extern "C" __declspec(dllexport) LRESULT CALLBACK LowLevelKeyboardProc(
+//extern "C" __declspec(dllexport) LRESULT CALLBACK LowLevelKeyboardProc(
+extern "C" LRESULT CALLBACK LowLevelKeyboardProc(
   _In_ int    nCode,
   _In_ WPARAM wParam,
   _In_ LPARAM lParam)
@@ -73,7 +75,8 @@ extern "C" __declspec(dllexport) LRESULT CALLBACK LowLevelKeyboardProc(
 	return CallNextHookEx(0/*parameter is ignored*/, nCode, wParam, lParam);
 }
 
-extern "C" __declspec(dllexport) void __cdecl RegisterHWND(HWND hWnd, bool bHookAltTab, bool bHookAltGrControl)
+//extern "C" __declspec(dllexport) void __cdecl RegisterHWND(HWND hWnd, bool bHookAltTab, bool bHookAltGrControl)
+extern "C" void __cdecl RegisterHWND(HWND hWnd, bool bHookAltTab, bool bHookAltGrControl)
 {
 	g_hFrameWindow = hWnd;
 	g_bHookAltTab = bHookAltTab;
