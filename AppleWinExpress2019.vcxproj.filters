@@ -543,6 +543,9 @@
     <ClInclude Include="source\Debugger\Debugger_Win32.h">
       <Filter>Source Files\Debugger</Filter>
     </ClInclude>
+    <ClInclude Include="source\Windows\HookFilter.h">
+      <Filter>Source Files\Windows</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\Applewin.bmp">

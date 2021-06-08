@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Windows/AppleWin.h"
+#include "Windows/HookFilter.h"
 #include "Interface.h"
 #include "Utilities.h"
 #include "CmdLine.h"
@@ -489,113 +490,6 @@ static void RegisterHotKeys(void)
 }
 
 //---------------------------------------------------------------------------
-extern "C" LRESULT CALLBACK LowLevelKeyboardProc(
-	_In_ int    nCode,
-	_In_ WPARAM wParam,
-	_In_ LPARAM lParam);
-extern "C" void __cdecl RegisterHWND(HWND hWnd, bool bHookAltTab, bool bHookAltGrControl);
-
-static HHOOK g_hhook = 0;
-
-static HANDLE g_hHookThread = NULL;
-static DWORD g_HookThreadId = 0;
-
-// The hook filter code can be static (within the application) rather than in a DLL.
-// Pre: g_hFrameWindow must be valid
-static bool HookFilterForKeyboard()
-{
-	_ASSERT(GetFrame().g_hFrameWindow);
-
-	RegisterHWND(GetFrame().g_hFrameWindow, g_bHookAltTab, g_bHookAltGrControl);
-
-	// Since no DLL gets injected anyway for low-level hooks, we can use, for example, GetModuleHandle("kernel32.dll")
-	HINSTANCE hinstDLL = GetModuleHandle("kernel32.dll");
-
-	g_hhook = SetWindowsHookEx(
-						WH_KEYBOARD_LL,
-						LowLevelKeyboardProc,
-						hinstDLL,
-						0);
-
-	if (g_hhook != 0 && GetFrame().g_hFrameWindow != 0)
-		return true;
-
-	std::string msg("Failed to install hook filter for system keys");
-
-	DWORD dwErr = GetLastError();
-	GetFrame().FrameMessageBox(msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK);
-
-	msg += "\n";
-	LogFileOutput(msg.c_str());
-	return false;
-}
-
-static void UnhookFilterForKeyboard()
-{
-	UnhookWindowsHookEx(g_hhook);
-}
-
-static DWORD WINAPI HookThread(LPVOID lpParameter)
-{
-	if (!HookFilterForKeyboard())
-		return -1;
-
-	MSG msg;
-	while(GetMessage(&msg, NULL, 0, 0) > 0)
-	{
-		if (msg.message == WM_QUIT)
-			break;
-
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
-
-	UnhookFilterForKeyboard();
-	return 0;
-}
-
-static bool InitHookThread()
-{
-	g_hHookThread = CreateThread(NULL,			// lpThreadAttributes
-								0,				// dwStackSize
-								(LPTHREAD_START_ROUTINE) HookThread,
-								0,				// lpParameter
-								0,				// dwCreationFlags : 0 = Run immediately
-								&g_HookThreadId);	// lpThreadId
-	if (g_hHookThread == NULL)
-		return false;
-
-	return true;
-}
-
-static void UninitHookThread()
-{
-	if (g_hHookThread)
-	{
-		if (!PostThreadMessage(g_HookThreadId, WM_QUIT, 0, 0))
-		{
-			_ASSERT(0);
-			return;
-		}
-
-		do
-		{
-			DWORD dwExitCode;
-			if (GetExitCodeThread(g_hHookThread, &dwExitCode))
-			{
-				if(dwExitCode == STILL_ACTIVE)
-					Sleep(10);
-				else
-					break;
-			}
-		}
-		while(1);
-
-		CloseHandle(g_hHookThread);
-		g_hHookThread = NULL;
-		g_HookThreadId = 0;
-	}
-}
 
 static void ExceptionHandler(const char* pError)
 {

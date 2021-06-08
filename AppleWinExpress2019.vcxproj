@@ -123,6 +123,7 @@
     <ClInclude Include="source\Video.h" />
     <ClInclude Include="source\Windows\AppleWin.h" />
     <ClInclude Include="source\Windows\DirectInput.h" />
+    <ClInclude Include="source\Windows\HookFilter.h" />
     <ClInclude Include="source\Windows\Win32Frame.h" />
     <ClInclude Include="source\YamlHelper.h" />
     <ClInclude Include="source\z80emu.h" />

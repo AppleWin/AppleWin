@@ -1,5 +1,7 @@
-//#include <windows.h>
 #include "StdAfx.h"
+
+#include "Interface.h"
+#include "Log.h"
 
 static HWND g_hFrameWindow = (HWND)0;
 static bool g_bHookAltTab = false;
@@ -8,7 +10,6 @@ static bool g_bHookAltGrControl = false;
 // NB. __stdcall (or WINAPI) and extern "C":
 // . symbol is decorated as _<symbol>@bytes
 // . so use the #pragma to create an undecorated alias for our symbol
-//extern "C" __declspec(dllexport) LRESULT CALLBACK LowLevelKeyboardProc(
 extern "C" LRESULT CALLBACK LowLevelKeyboardProc(
   _In_ int    nCode,
   _In_ WPARAM wParam,
@@ -75,10 +76,111 @@ extern "C" LRESULT CALLBACK LowLevelKeyboardProc(
 	return CallNextHookEx(0/*parameter is ignored*/, nCode, wParam, lParam);
 }
 
-//extern "C" __declspec(dllexport) void __cdecl RegisterHWND(HWND hWnd, bool bHookAltTab, bool bHookAltGrControl)
-extern "C" void __cdecl RegisterHWND(HWND hWnd, bool bHookAltTab, bool bHookAltGrControl)
+static void RegisterHWND(HWND hWnd, bool bHookAltTab, bool bHookAltGrControl)
 {
 	g_hFrameWindow = hWnd;
 	g_bHookAltTab = bHookAltTab;
 	g_bHookAltGrControl = bHookAltGrControl;
+}
+
+//---------------------------------------------------------------------------
+
+static HHOOK g_hhook = 0;
+static HANDLE g_hHookThread = NULL;
+static DWORD g_HookThreadId = 0;
+
+// The hook filter code can be static (within the application) rather than in a DLL.
+// Pre: g_hFrameWindow must be valid
+static bool HookFilterForKeyboard(void)
+{
+	_ASSERT(GetFrame().g_hFrameWindow);
+
+	RegisterHWND(GetFrame().g_hFrameWindow, g_bHookAltTab, g_bHookAltGrControl);
+
+	// Since no DLL gets injected anyway for low-level hooks, we can use, for example, GetModuleHandle("kernel32.dll")
+	HINSTANCE hinstDLL = GetModuleHandle("kernel32.dll");
+
+	g_hhook = SetWindowsHookEx(
+		WH_KEYBOARD_LL,
+		LowLevelKeyboardProc,
+		hinstDLL,
+		0);
+
+	if (g_hhook != 0 && GetFrame().g_hFrameWindow != 0)
+		return true;
+
+	std::string msg("Failed to install hook filter for system keys");
+
+	DWORD dwErr = GetLastError();
+	GetFrame().FrameMessageBox(msg.c_str(), "Warning", MB_ICONASTERISK | MB_OK);
+
+	msg += "\n";
+	LogFileOutput(msg.c_str());
+	return false;
+}
+
+static void UnhookFilterForKeyboard(void)
+{
+	UnhookWindowsHookEx(g_hhook);
+}
+
+static DWORD WINAPI HookThread(LPVOID lpParameter)
+{
+	if (!HookFilterForKeyboard())
+		return -1;
+
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0) > 0)
+	{
+		if (msg.message == WM_QUIT)
+			break;
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	UnhookFilterForKeyboard();
+	return 0;
+}
+
+bool InitHookThread(void)
+{
+	g_hHookThread = CreateThread(NULL,			// lpThreadAttributes
+		0,				// dwStackSize
+		(LPTHREAD_START_ROUTINE)HookThread,
+		0,				// lpParameter
+		0,				// dwCreationFlags : 0 = Run immediately
+		&g_HookThreadId);	// lpThreadId
+	if (g_hHookThread == NULL)
+		return false;
+
+	return true;
+}
+
+void UninitHookThread(void)
+{
+	if (g_hHookThread)
+	{
+		if (!PostThreadMessage(g_HookThreadId, WM_QUIT, 0, 0))
+		{
+			_ASSERT(0);
+			return;
+		}
+
+		do
+		{
+			DWORD dwExitCode;
+			if (GetExitCodeThread(g_hHookThread, &dwExitCode))
+			{
+				if (dwExitCode == STILL_ACTIVE)
+					Sleep(10);
+				else
+					break;
+			}
+		} 		while (1);
+
+		CloseHandle(g_hHookThread);
+		g_hHookThread = NULL;
+		g_HookThreadId = 0;
+	}
 }
