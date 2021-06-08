@@ -590,7 +590,7 @@ namespace sa2
           if (ImGui::RadioButton("Uthernet I", tfe_enabled == 1)) { saveTFEEnabled(1); } ImGui::SameLine();
           if (ImGui::RadioButton("Uthernet II", tfe_enabled == 2)) { saveTFEEnabled(2); }
 
-          const std::string current_interface = get_tfe_interface().c_str();
+          const std::string current_interface = get_tfe_interface();
 
           if (ImGui::BeginCombo("Interface", current_interface.c_str()))
           {
