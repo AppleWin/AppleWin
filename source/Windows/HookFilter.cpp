@@ -7,18 +7,11 @@ static HWND g_hFrameWindow = (HWND)0;
 static bool g_bHookAltTab = false;
 static bool g_bHookAltGrControl = false;
 
-// NB. __stdcall (or WINAPI) and extern "C":
-// . symbol is decorated as _<symbol>@bytes
-// . so use the #pragma to create an undecorated alias for our symbol
-extern "C" LRESULT CALLBACK LowLevelKeyboardProc(
+static LRESULT CALLBACK LowLevelKeyboardProc(
   _In_ int    nCode,
   _In_ WPARAM wParam,
   _In_ LPARAM lParam)
 {
-#ifndef _WIN64
-	#pragma comment(linker, "/EXPORT:" __FUNCTION__ "=" __FUNCDNAME__)
-#endif
-
 	if (nCode == HC_ACTION)
 	{
 		bool suppress = false;
