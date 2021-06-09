@@ -57,6 +57,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //=================================================
 
+static HookFilter g_hookFilter;
+
 static bool g_bLoadedSaveState = false;
 static bool g_bSysClkOK = false;
 
@@ -72,6 +74,11 @@ bool GetLoadedSaveStateFlag(void)
 void Win32Frame::SetLoadedSaveStateFlag(const bool bFlag)
 {
 	g_bLoadedSaveState = bFlag;
+}
+
+bool GetHookAltTab(void)
+{
+	return g_bHookAltTab;
 }
 
 bool GetHookAltGrControl(void)
@@ -560,7 +567,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 
 			if (g_bHookSystemKey)
 			{
-				UninitHookThread();
+				g_hookFilter.UninitHookThread();
 				LogFileOutput("Main: UnhookFilterForKeyboard()\n");
 			}
 		}
@@ -809,7 +816,7 @@ static void RepeatInitialization(void)
 
 		if (g_bHookSystemKey)
 		{
-			if (InitHookThread())	// needs valid g_hFrameWindow (for message pump)
+			if (g_hookFilter.InitHookThread())	// needs valid g_hFrameWindow (for message pump)
 				LogFileOutput("Main: HookFilterForKeyboard()\n");
 		}
 

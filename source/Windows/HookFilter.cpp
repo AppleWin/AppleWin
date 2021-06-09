@@ -28,19 +28,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "HookFilter.h"
+
+#include "AppleWin.h"
 #include "Interface.h"
 #include "Log.h"
 
-static HWND g_hFrameWindow = (HWND)0;
-static bool g_bHookAltTab = false;
-static bool g_bHookAltGrControl = false;
+// Used by LowLevelKeyboardProc(), which has no parameter to pass 'this' into the function
+static HookFilter* g_pHookFilter = NULL;
 
-static LRESULT CALLBACK LowLevelKeyboardProc(
-  _In_ int    nCode,
-  _In_ WPARAM wParam,
-  _In_ LPARAM lParam)
+LRESULT CALLBACK HookFilter::LowLevelKeyboardProc(_In_ int nCode, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
-	if (nCode == HC_ACTION)
+	if (nCode == HC_ACTION && g_pHookFilter)
 	{
 		bool suppress = false;
 
@@ -55,29 +54,29 @@ static LRESULT CALLBACK LowLevelKeyboardProc(
 		// . For: Microsoft PS/2/Win7-64, VAIO laptop/Win7-64, Microsoft USB/Win10-64
 		// NB. WM_KEYDOWN also includes a 9/10-bit? scanCode: LCONTROL=0x1D, RCONTROL=0x11D, RMENU=0x1D(not 0x21D)
 		// . Can't suppress in app, since scanCode is not >= 0x200
-		if (g_bHookAltGrControl && pKbdLlHookStruct->vkCode == VK_LCONTROL && pKbdLlHookStruct->scanCode >= 0x200)	// GH#558
+		if (g_pHookFilter->m_bHookAltGrControl && pKbdLlHookStruct->vkCode == VK_LCONTROL && pKbdLlHookStruct->scanCode >= 0x200)	// GH#558
 		{
 			suppress = true;
 		}
 
 		// Suppress alt-tab
-		if (g_bHookAltTab && pKbdLlHookStruct->vkCode == VK_TAB && (pKbdLlHookStruct->flags & LLKHF_ALTDOWN))
+		if (g_pHookFilter->m_bHookAltTab && pKbdLlHookStruct->vkCode == VK_TAB && (pKbdLlHookStruct->flags & LLKHF_ALTDOWN))
 		{
-			PostMessage(g_hFrameWindow, newMsg, VK_TAB, newlParam);
+			PostMessage(g_pHookFilter->m_hFrameWindow, newMsg, VK_TAB, newlParam);
 			suppress = true;
 		}
 
 		// Suppress alt-escape
 		if (pKbdLlHookStruct->vkCode == VK_ESCAPE && (pKbdLlHookStruct->flags & LLKHF_ALTDOWN))
 		{
-			PostMessage(g_hFrameWindow, newMsg, VK_ESCAPE, newlParam);
+			PostMessage(g_pHookFilter->m_hFrameWindow, newMsg, VK_ESCAPE, newlParam);
 			suppress = true;
 		}
 
 		// Suppress alt-space
 		if (pKbdLlHookStruct->vkCode == VK_SPACE && (pKbdLlHookStruct->flags & LLKHF_ALTDOWN))
 		{
-			PostMessage(g_hFrameWindow, newMsg, VK_SPACE, newlParam);
+			PostMessage(g_pHookFilter->m_hFrameWindow, newMsg, VK_SPACE, newlParam);
 			suppress = true;
 		}
 
@@ -97,37 +96,28 @@ static LRESULT CALLBACK LowLevelKeyboardProc(
 	return CallNextHookEx(0/*parameter is ignored*/, nCode, wParam, lParam);
 }
 
-static void RegisterHWND(HWND hWnd, bool bHookAltTab, bool bHookAltGrControl)
-{
-	g_hFrameWindow = hWnd;
-	g_bHookAltTab = bHookAltTab;
-	g_bHookAltGrControl = bHookAltGrControl;
-}
-
 //---------------------------------------------------------------------------
-
-static HHOOK g_hhook = 0;
-static HANDLE g_hHookThread = NULL;
-static DWORD g_HookThreadId = 0;
 
 // The hook filter code can be static (within the application) rather than in a DLL.
 // Pre: g_hFrameWindow must be valid
-static bool HookFilterForKeyboard(void)
+bool HookFilter::HookFilterForKeyboard(void)
 {
 	_ASSERT(GetFrame().g_hFrameWindow);
 
-	RegisterHWND(GetFrame().g_hFrameWindow, g_bHookAltTab, g_bHookAltGrControl);
+	m_hFrameWindow = GetFrame().g_hFrameWindow;
+	m_bHookAltTab = GetHookAltTab();
+	m_bHookAltGrControl = GetHookAltGrControl();
 
 	// Since no DLL gets injected anyway for low-level hooks, we can use, for example, GetModuleHandle("kernel32.dll")
 	HINSTANCE hinstDLL = GetModuleHandle("kernel32.dll");
 
-	g_hhook = SetWindowsHookEx(
+	m_hhook = SetWindowsHookEx(
 		WH_KEYBOARD_LL,
 		LowLevelKeyboardProc,
 		hinstDLL,
 		0);
 
-	if (g_hhook != 0 && GetFrame().g_hFrameWindow != 0)
+	if (m_hhook != 0 && GetFrame().g_hFrameWindow != 0)
 		return true;
 
 	std::string msg("Failed to install hook filter for system keys");
@@ -140,14 +130,16 @@ static bool HookFilterForKeyboard(void)
 	return false;
 }
 
-static void UnhookFilterForKeyboard(void)
+void HookFilter::UnhookFilterForKeyboard(void)
 {
-	UnhookWindowsHookEx(g_hhook);
+	UnhookWindowsHookEx(m_hhook);
 }
 
-static DWORD WINAPI HookThread(LPVOID lpParameter)
+DWORD WINAPI HookFilter::HookThread(LPVOID lpParameter)
 {
-	if (!HookFilterForKeyboard())
+	HookFilter* hf = (HookFilter*)lpParameter;
+
+	if (!hf->HookFilterForKeyboard())
 		return -1;
 
 	MSG msg;
@@ -160,29 +152,32 @@ static DWORD WINAPI HookThread(LPVOID lpParameter)
 		DispatchMessage(&msg);
 	}
 
-	UnhookFilterForKeyboard();
+	hf->UnhookFilterForKeyboard();
 	return 0;
 }
 
-bool InitHookThread(void)
+bool HookFilter::InitHookThread(void)
 {
-	g_hHookThread = CreateThread(NULL,			// lpThreadAttributes
+	g_pHookFilter = this;
+
+	m_hHookThread = CreateThread(NULL,			// lpThreadAttributes
 		0,				// dwStackSize
 		(LPTHREAD_START_ROUTINE)HookThread,
-		0,				// lpParameter
+		this,			// lpParameter
 		0,				// dwCreationFlags : 0 = Run immediately
-		&g_HookThreadId);	// lpThreadId
-	if (g_hHookThread == NULL)
+		&m_HookThreadId);	// lpThreadId
+
+	if (m_hHookThread == NULL)
 		return false;
 
 	return true;
 }
 
-void UninitHookThread(void)
+void HookFilter::UninitHookThread(void)
 {
-	if (g_hHookThread)
+	if (m_hHookThread)
 	{
-		if (!PostThreadMessage(g_HookThreadId, WM_QUIT, 0, 0))
+		if (!PostThreadMessage(m_HookThreadId, WM_QUIT, 0, 0))
 		{
 			_ASSERT(0);
 			return;
@@ -191,7 +186,7 @@ void UninitHookThread(void)
 		do
 		{
 			DWORD dwExitCode;
-			if (GetExitCodeThread(g_hHookThread, &dwExitCode))
+			if (GetExitCodeThread(m_hHookThread, &dwExitCode))
 			{
 				if (dwExitCode == STILL_ACTIVE)
 					Sleep(10);
@@ -200,8 +195,10 @@ void UninitHookThread(void)
 			}
 		} 		while (1);
 
-		CloseHandle(g_hHookThread);
-		g_hHookThread = NULL;
-		g_HookThreadId = 0;
+		CloseHandle(m_hHookThread);
+		m_hHookThread = NULL;
+		m_HookThreadId = 0;
 	}
+
+	g_pHookFilter = NULL;
 }
