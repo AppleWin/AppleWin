@@ -34,12 +34,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Interface.h"
 #include "Log.h"
 
-// Used by LowLevelKeyboardProc(), which has no parameter to pass 'this' into the function
-static HookFilter* g_pHookFilter = NULL;
+HookFilter& GetHookFilter(void)
+{
+	static HookFilter hookFilter;
+	return hookFilter;
+}
 
 LRESULT CALLBACK HookFilter::LowLevelKeyboardProc(_In_ int nCode, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
-	if (nCode == HC_ACTION && g_pHookFilter)
+	if (nCode == HC_ACTION)
 	{
 		bool suppress = false;
 
@@ -54,29 +57,29 @@ LRESULT CALLBACK HookFilter::LowLevelKeyboardProc(_In_ int nCode, _In_ WPARAM wP
 		// . For: Microsoft PS/2/Win7-64, VAIO laptop/Win7-64, Microsoft USB/Win10-64
 		// NB. WM_KEYDOWN also includes a 9/10-bit? scanCode: LCONTROL=0x1D, RCONTROL=0x11D, RMENU=0x1D(not 0x21D)
 		// . Can't suppress in app, since scanCode is not >= 0x200
-		if (g_pHookFilter->m_bHookAltGrControl && pKbdLlHookStruct->vkCode == VK_LCONTROL && pKbdLlHookStruct->scanCode >= 0x200)	// GH#558
+		if (GetHookFilter().m_bHookAltGrControl && pKbdLlHookStruct->vkCode == VK_LCONTROL && pKbdLlHookStruct->scanCode >= 0x200)	// GH#558
 		{
 			suppress = true;
 		}
 
 		// Suppress alt-tab
-		if (g_pHookFilter->m_bHookAltTab && pKbdLlHookStruct->vkCode == VK_TAB && (pKbdLlHookStruct->flags & LLKHF_ALTDOWN))
+		if (GetHookFilter().m_bHookAltTab && pKbdLlHookStruct->vkCode == VK_TAB && (pKbdLlHookStruct->flags & LLKHF_ALTDOWN))
 		{
-			PostMessage(g_pHookFilter->m_hFrameWindow, newMsg, VK_TAB, newlParam);
+			PostMessage(GetHookFilter().m_hFrameWindow, newMsg, VK_TAB, newlParam);
 			suppress = true;
 		}
 
 		// Suppress alt-escape
 		if (pKbdLlHookStruct->vkCode == VK_ESCAPE && (pKbdLlHookStruct->flags & LLKHF_ALTDOWN))
 		{
-			PostMessage(g_pHookFilter->m_hFrameWindow, newMsg, VK_ESCAPE, newlParam);
+			PostMessage(GetHookFilter().m_hFrameWindow, newMsg, VK_ESCAPE, newlParam);
 			suppress = true;
 		}
 
 		// Suppress alt-space
 		if (pKbdLlHookStruct->vkCode == VK_SPACE && (pKbdLlHookStruct->flags & LLKHF_ALTDOWN))
 		{
-			PostMessage(g_pHookFilter->m_hFrameWindow, newMsg, VK_SPACE, newlParam);
+			PostMessage(GetHookFilter().m_hFrameWindow, newMsg, VK_SPACE, newlParam);
 			suppress = true;
 		}
 
@@ -158,8 +161,6 @@ DWORD WINAPI HookFilter::HookThread(LPVOID lpParameter)
 
 bool HookFilter::InitHookThread(void)
 {
-	g_pHookFilter = this;
-
 	m_hHookThread = CreateThread(NULL,			// lpThreadAttributes
 		0,				// dwStackSize
 		(LPTHREAD_START_ROUTINE)HookThread,
@@ -199,6 +200,4 @@ void HookFilter::UninitHookThread(void)
 		m_hHookThread = NULL;
 		m_HookThreadId = 0;
 	}
-
-	g_pHookFilter = NULL;
 }

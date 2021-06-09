@@ -34,3 +34,5 @@ private:
 	HANDLE m_hHookThread;
 	DWORD m_HookThreadId;
 };
+
+HookFilter& GetHookFilter(void);
