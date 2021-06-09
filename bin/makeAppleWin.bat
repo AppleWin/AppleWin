@@ -12,7 +12,6 @@
 @COPY /Y "%APPLEWIN_ROOT%\docs\Debugger_Changelog.txt" "%~1"
 @COPY /Y "%APPLEWIN_ROOT%\help\AppleWin.chm" "%~1"
 @COPY /Y "%APPLEWIN_ROOT%\Release v141_xp\AppleWin.exe" "%~1"
-@COPY /Y "%APPLEWIN_ROOT%\Release v141_xp\HookFilter.dll" "%~1"
 CD "%~1"
 "C:\Program Files (x86)\7-Zip\7z.exe" a ..\AppleWin"%~1".zip *
 @REM Even though LINK has /PDB: outputting to HookFilter.pdb, it ends up being called vc141.pdb! (and remaining in the HookFilter folder)
