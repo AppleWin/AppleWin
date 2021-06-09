@@ -229,6 +229,9 @@
     <ClCompile Include="source\Debugger\Debugger_Win32.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
+    <ClCompile Include="source\Windows\HookFilter.cpp">
+      <Filter>Source Files\Windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\CommonVICE\6510core.h">
@@ -539,6 +542,9 @@
     </ClInclude>
     <ClInclude Include="source\Debugger\Debugger_Win32.h">
       <Filter>Source Files\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Windows\HookFilter.h">
+      <Filter>Source Files\Windows</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
