@@ -1010,6 +1010,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Windows\HookFilter.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Windows\HookFilter.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Windows\Win32Frame.cpp"
 					>
 				</File>
