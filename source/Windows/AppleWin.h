@@ -9,4 +9,4 @@ bool GetLoadedSaveStateFlag(void);
 bool GetHookAltTab(void);
 bool GetHookAltGrControl(void);
 
-extern bool       g_bRestartFullScreen;
+extern bool g_bRestartFullScreen;

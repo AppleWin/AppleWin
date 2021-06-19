@@ -134,6 +134,7 @@ private:
 	int						g_win_fullscreen_offsety;
 	UINT m_bestWidthForFullScreen;
 	UINT m_bestHeightForFullScreen;
+	bool m_changedDisplaySettings;
 
 	static const UINT MAX_DRAW_DEVICES = 10;
 	char* draw_devices[MAX_DRAW_DEVICES];
