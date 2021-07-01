@@ -2126,6 +2126,7 @@ void Win32Frame::SetFullScreenMode(void)
 
 		DWORD dwFlags = 0;
 		LONG res = ChangeDisplaySettings(&devMode, dwFlags);
+		m_changedDisplaySettings = true;
 	}
 
 	//
@@ -2175,7 +2176,12 @@ void Win32Frame::SetFullScreenMode(void)
 //===========================================================================
 void Win32Frame::SetNormalMode(void)
 {
-	ChangeDisplaySettings(NULL, 0);	// restore default resolution
+	if (m_changedDisplaySettings)
+	{
+		// Only call ChangeDisplaySettings() if resolution has changed, otherwise there'll be a display flicker (GH#965)
+		ChangeDisplaySettings(NULL, 0);	// restore default resolution
+		m_changedDisplaySettings = false;
+	}
 
 	FullScreenRevealCursor();	// Do before clearing g_bIsFullScreen flag
 

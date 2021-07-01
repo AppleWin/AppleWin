@@ -14,8 +14,7 @@
 @COPY /Y "%APPLEWIN_ROOT%\Release v141_xp\AppleWin.exe" "%~1"
 CD "%~1"
 "C:\Program Files (x86)\7-Zip\7z.exe" a ..\AppleWin"%~1".zip *
-@REM Even though LINK has /PDB: outputting to HookFilter.pdb, it ends up being called vc141.pdb! (and remaining in the HookFilter folder)
-"C:\Program Files (x86)\7-Zip\7z.exe" a ..\AppleWin"%~1"-PDB.zip "%APPLEWIN_ROOT%\Release v141_xp\AppleWin.pdb" "%APPLEWIN_ROOT%\HookFilter\Release v141_xp\vc141.pdb"
+"C:\Program Files (x86)\7-Zip\7z.exe" a ..\AppleWin"%~1"-PDB.zip "%APPLEWIN_ROOT%\Release v141_xp\AppleWin.pdb"
 CD ..
 @GOTO end
 

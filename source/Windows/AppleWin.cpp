@@ -60,7 +60,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 static bool g_bLoadedSaveState = false;
 static bool g_bSysClkOK = false;
 
-bool      g_bRestartFullScreen = false;
+bool g_bRestartFullScreen = false;
 
 //===========================================================================
 
@@ -896,7 +896,7 @@ static void RepeatInitialization(void)
 
 static void Shutdown(void)
 {
-	ChangeDisplaySettings(NULL, 0);	// restore default resolution
+	// NB. WM_CLOSE has already called SetNormalMode() to exit full screen mode & restore default resolution
 
 	// Release COM
 	SysClk_UninitTimer();

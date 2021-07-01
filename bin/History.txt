@@ -9,6 +9,13 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.30.3.0 - 19 Jun 2021
+----------------------
+. [Change #962] Remove the HookFilter.dll, and statically link instead.
+	- this removes the runtime dependency on VCRUNTIME140.dll (ie. vc_redist.x86.exe).
+. [Bug #965] Fix display flicker on exit.
+
+
 1.30.2.0 - 31 May 2021
 ----------------------
 . [Change #947] Uthernet: fix so that a h/w change doesn't require the app to be close & reopened. [audetto]
