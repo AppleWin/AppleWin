@@ -780,7 +780,7 @@ static void RepeatInitialization(void)
 			InsertHardDisks(g_cmdLine.szImageName_harddisk, g_cmdLine.bBoot);
 			g_cmdLine.szImageName_harddisk[HARDDISK_1] = g_cmdLine.szImageName_harddisk[HARDDISK_2] = NULL;	// Don't insert on a restart
 
-			if (g_cmdLine.bSlotEmpty[7])
+			if (g_cmdLine.bSlotEmpty[SLOT7])
 			{
 				HD_SetEnabled(false);		// Disable HDD controller, but don't persist this to Registry/conf.ini (consistent with other '-sn empty' cmds)
 				Snapshot_UpdatePath();		// If save-state's filename is a harddisk, and the floppy is in the same path, then the filename won't be updated

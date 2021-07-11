@@ -349,7 +349,7 @@ static void SetCurrentDir(std::string pathname)
 	SetCurrentImageDir(path);
 }
 
-bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
+static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 {
 	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 
@@ -369,7 +369,7 @@ bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 	return res;
 }
 
-bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
+static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
 {
 	if (szFileName[0] == '\0')
 	{
