@@ -226,9 +226,6 @@ void CPageDisk::DlgOK(HWND hWnd)
 		m_PropertySheetHelper.GetConfigNew().m_bEnableHDD = bNewHDDIsEnabled;
 	}
 
-	RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_1), 1, HD_GetFullPathName(HARDDISK_1));
-	RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_HARDDISK_2), 1, HD_GetFullPathName(HARDDISK_2));
-
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 

@@ -191,7 +191,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 	if (!m_saveDiskImage)
 		return;
 
-	const std::string & pFileName = m_floppyDrive[drive].m_disk.m_fullname;
+	const std::string & pFileName = DiskGetFullPathName(drive);
 
 	if (drive == DRIVE_1)
 		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_DISK_1), TRUE, pFileName);
@@ -201,7 +201,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 	//
 
 	TCHAR szPathName[MAX_PATH];
-	StringCbCopy(szPathName, MAX_PATH, DiskGetFullPathName(drive).c_str());
+	StringCbCopy(szPathName, MAX_PATH, pFileName.c_str());
 	TCHAR* slash = _tcsrchr(szPathName, TEXT(PATH_SEPARATOR));
 	if (slash != NULL)
 	{
