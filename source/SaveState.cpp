@@ -480,11 +480,10 @@ static void Snapshot_LoadState_v2(void)
 			ConfigOld.m_Slot[2] = CT_Empty;
 		}
 
-		if (GetCardMgr().QuerySlot(SLOT4) == CT_MouseInterface)
-			GetCardMgr().Remove(SLOT4);		// Remove Mouse card from slot-4
-
-		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
-			GetCardMgr().Remove(SLOT5);		// Remove Disk2 card from slot-5
+		// because the save state only contains "present" cards
+		// we need to remove them all first
+		GetCardMgr().Remove(SLOT4);
+		GetCardMgr().Remove(SLOT5);
 
 		GetCardMgr().GetDisk2CardMgr().Reset(false);
 
