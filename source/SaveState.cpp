@@ -168,8 +168,6 @@ void Snapshot_UpdatePath(void)
 
 //-----------------------------------------------------------------------------
 
-static CConfigNeedingRestart m_ConfigNew;
-
 static std::string GetSnapshotUnitApple2Name(void)
 {
 	static const std::string name("Apple2");
@@ -275,10 +273,8 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	std::string model = yamlLoadHelper.LoadString(SS_YAML_KEY_MODEL);
 	SetApple2Type( ParseApple2Type(model) );	// NB. Sets default main CPU type
-	m_ConfigNew.m_Apple2Type = GetApple2Type();
 
 	CpuLoadSnapshot(yamlLoadHelper, version);	// NB. Overrides default main CPU type
-	m_ConfigNew.m_CpuType = GetMainCpu();
 
 	JoyLoadSnapshot(yamlLoadHelper);
 	KeybLoadSnapshot(yamlLoadHelper, version);
@@ -361,7 +357,6 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		else if (card == HD_GetSnapshotCardName())
 		{
 			bRes = HD_LoadSnapshot(yamlLoadHelper, slot, cardVersion, g_strSaveStatePath);
-			m_ConfigNew.m_bEnableHDD = true;
 			type = CT_GenericHDD;
 		}
 		else if (card == LanguageCardSlot0::GetSnapshotCardName())
@@ -383,11 +378,6 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			throw std::string("Slots: Unknown card: " + card);	// todo: don't throw - just ignore & continue
 		}
 
-		if (bRes)
-		{
-			m_ConfigNew.m_Slot[slot] = type;
-		}
-
 		yamlLoadHelper.PopMap();
 		yamlLoadHelper.PopMap();
 	}
@@ -395,7 +385,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 
 //---
 
-static void ParseUnit(void)
+static void ParseUnit()
 {
 	yamlHelper.GetMapStartEvent();
 
@@ -452,20 +442,7 @@ static void Snapshot_LoadState_v2(void)
 
 		restart = true;
 
-		CConfigNeedingRestart ConfigOld;
-		//ConfigOld.m_Slot[0] = CT_LanguageCard;	// fixme: II/II+=LC, //e=empty
-		ConfigOld.m_Slot[1] = CT_GenericPrinter;	// fixme
-		ConfigOld.m_Slot[2] = CT_SSC;				// fixme
-		//ConfigOld.m_Slot[3] = CT_Uthernet;		// todo
-		ConfigOld.m_Slot[6] = CT_Disk2;				// fixme
-		ConfigOld.m_Slot[7] = ConfigOld.m_bEnableHDD ? CT_GenericHDD : CT_Empty;	// fixme
-		//ConfigOld.m_SlotAux = ?;					// fixme
-
-		for (UINT i=0; i<NUM_SLOTS; i++)
-			m_ConfigNew.m_Slot[i] = CT_Empty;
-		m_ConfigNew.m_SlotAux = CT_Empty;
-		m_ConfigNew.m_bEnableHDD = false;
-		//m_ConfigNew.m_bEnableTheFreezesF8Rom = ?;	// todo: when support saving config
+		const CConfigNeedingRestart ConfigOld = CConfigNeedingRestart::Create();
 
 		MemReset();							// Also calls CpuInitialize()
 		GetPravets().Reset();
@@ -477,7 +454,6 @@ static void Snapshot_LoadState_v2(void)
 		else
 		{
 			_ASSERT(GetCardMgr().QuerySlot(SLOT2) == CT_Empty);
-			ConfigOld.m_Slot[2] = CT_Empty;
 		}
 
 		if (GetCardMgr().QuerySlot(SLOT4) == CT_MouseInterface)
@@ -516,7 +492,8 @@ static void Snapshot_LoadState_v2(void)
 		// . A change in h/w via loading a save-state avoids this VM restart
 		// The latter is the desired approach (as the former needs a "power-on" / F2 to start things again)
 
-		GetPropertySheet().ApplyNewConfig(m_ConfigNew, ConfigOld);	// Mainly just saves (some) new state to Registry
+		const CConfigNeedingRestart ConfigNew = CConfigNeedingRestart::Create();
+		GetPropertySheet().ApplyNewConfig(ConfigNew, ConfigOld);	// Mainly just saves (some) new state to Registry
 
 		MemInitializeROM();
 		MemInitializeCustomROM();

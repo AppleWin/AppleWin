@@ -270,7 +270,6 @@ bool HD_CardIsEnabled(void)
 
 // Called by:
 // . LoadConfiguration() - Done at each restart
-// . RestoreCurrentConfig() - Done when Config dialog is cancelled
 // . Snapshot_LoadState_v2() - Done to default to disabled state
 void HD_SetEnabled(const bool bEnabled)
 {

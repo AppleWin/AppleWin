@@ -11,22 +11,47 @@
 class CConfigNeedingRestart
 {
 public:
-	CConfigNeedingRestart(UINT bEnableTheFreezesF8Rom = false) :
-		m_Apple2Type( GetApple2Type() ),
-		m_CpuType( GetMainCpu() ),
-		m_uSaveLoadStateMsg(0),
-		m_videoRefreshRate( GetVideo().GetVideoRefreshRate() )
+	CConfigNeedingRestart()
 	{
-		m_bEnableHDD = HD_CardIsEnabled();
-		m_bEnableTheFreezesF8Rom = bEnableTheFreezesF8Rom;
-		memset(&m_Slot, 0, sizeof(m_Slot));
+		// do not call Reload() here
+		// it causes a circular loop in the initialisation of CPropertySheet
+		m_Apple2Type = A2TYPE_APPLE2;
+		m_CpuType = CPU_UNKNOWN;
+		memset(m_Slot, 0, sizeof(m_Slot));
 		m_SlotAux = CT_Empty;
-		m_Slot[SLOT4] = GetCardMgr().QuerySlot(SLOT4);
-		m_Slot[SLOT5] = GetCardMgr().QuerySlot(SLOT5);
-		m_Slot[SLOT7] = GetCardMgr().QuerySlot(SLOT7);
+		m_bEnableHDD = false;
+		m_tfeEnabled = false;;
+		m_bEnableTheFreezesF8Rom = 0;
+		m_uSaveLoadStateMsg = 0;
+		m_videoRefreshRate = VR_NONE;
+	}
 
+	// create and initialise to current state
+	// do not use in static variables
+	static CConfigNeedingRestart Create()
+	{
+		CConfigNeedingRestart config;
+		config.Reload();
+		return config;
+	}
+
+	void Reload()
+	{
+		m_uSaveLoadStateMsg = 0;
+
+		m_Apple2Type = GetApple2Type();
+		m_CpuType = GetMainCpu();
+		CardManager& cardManager = GetCardMgr();
+		for (int i = SLOT0; i < NUM_SLOTS; ++i)
+		{
+			m_Slot[i] = cardManager.QuerySlot(i);
+		}
+		m_bEnableHDD = HD_CardIsEnabled();
+		m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
+		m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
 		m_tfeEnabled = get_tfe_enabled();
 		m_tfeInterface = get_tfe_interface();
+		m_SlotAux = CT_Empty;
 	}
 
 	const CConfigNeedingRestart& operator= (const CConfigNeedingRestart& other)
@@ -34,6 +59,7 @@ public:
 		m_Apple2Type = other.m_Apple2Type;
 		m_CpuType = other.m_CpuType;
 		memcpy(m_Slot, other.m_Slot, sizeof(m_Slot));
+		m_SlotAux = other.m_SlotAux;
 		m_bEnableHDD = other.m_bEnableHDD;
 		m_tfeEnabled = other.m_tfeEnabled;
 		m_tfeInterface = other.m_tfeInterface;
@@ -48,6 +74,7 @@ public:
 		return	m_Apple2Type == other.m_Apple2Type &&
 			m_CpuType == other.m_CpuType &&
 			memcmp(m_Slot, other.m_Slot, sizeof(m_Slot)) == 0 &&
+			m_SlotAux == other.m_SlotAux &&
 			m_bEnableHDD == other.m_bEnableHDD &&
 			m_tfeEnabled == other.m_tfeEnabled &&
 			m_tfeInterface == other.m_tfeInterface &&

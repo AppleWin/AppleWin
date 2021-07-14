@@ -45,7 +45,6 @@ private:
 	bool HardwareConfigChanged(HWND hWnd);
 	bool CheckChangesForRestart(HWND hWnd);
 	void ApplyNewConfig(void);
-	void RestoreCurrentConfig(void);
 	std::string GetSlot(const UINT uSlot);
 	std::string GetCardName(const SS_CARDTYPE CardType);
 
