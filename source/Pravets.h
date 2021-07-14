@@ -14,7 +14,7 @@ public:
 	BYTE GetKeycode(BYTE floatingBus);
 
 	BYTE ConvertToKeycode(WPARAM key, BYTE keycode);
-	BYTE ConvertToPrinterChar(BYTE value);
+	std::string ConvertToPrinterChar(BYTE value);
 
 private:
 	bool g_CapsLockAllowed;
