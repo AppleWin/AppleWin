@@ -68,7 +68,11 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 	if (pImageInfo->pImageType && pImageInfo->pImageType->GetType() == eImageHDV)
 	{
 		if (bExpectFloppy)
+		{
 			Err = eIMAGE_ERROR_UNSUPPORTED_HDV;
+			ImageClose(*ppImageInfo);
+			*ppImageInfo = NULL;
+		}
 		return Err;
 	}
 

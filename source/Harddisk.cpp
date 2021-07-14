@@ -207,8 +207,6 @@ static void NotifyInvalidImage(TCHAR* pszImageFilename)
 
 //===========================================================================
 
-BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename);
-
 void HD_LoadLastDiskImage(const int iDrive)
 {
 	_ASSERT(iDrive == HARDDISK_1 || iDrive == HARDDISK_2);
@@ -385,7 +383,7 @@ void HD_Destroy(void)
 }
 
 // Pre: pszImageFilename is qualified with path
-BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename)
+BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename, ImageInfo* pImageInfo /* = NULL */)
 {
 	if (pszImageFilename.empty())
 		return FALSE;
@@ -409,15 +407,26 @@ BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename)
 		}
 	}
 
-	const bool bCreateIfNecessary = false;		// NB. Don't allow creation of HDV files
-	const bool bExpectFloppy = false;
-	const bool bIsHarddisk = true;
-	ImageError_e Error = ImageOpen(pszImageFilename,
-		&g_HardDisk[iDrive].imagehandle,
-		&g_HardDisk[iDrive].bWriteProtected,
-		bCreateIfNecessary,
-		g_HardDisk[iDrive].strFilenameInZip,	// TODO: Use this
-		bExpectFloppy);
+	ImageError_e Error = eIMAGE_ERROR_NONE;
+	if (pImageInfo)
+	{
+		// Use already opened image
+		g_HardDisk[iDrive].imagehandle = pImageInfo;
+		g_HardDisk[iDrive].bWriteProtected = pImageInfo->bWriteProtected;
+	}
+	else
+	{
+		// Open new image
+		const bool bCreateIfNecessary = false;		// NB. Don't allow creation of HDV files
+		const bool bExpectFloppy = false;
+		const bool bIsHarddisk = true;
+		Error = ImageOpen(pszImageFilename,
+			&g_HardDisk[iDrive].imagehandle,
+			&g_HardDisk[iDrive].bWriteProtected,
+			bCreateIfNecessary,
+			g_HardDisk[iDrive].strFilenameInZip,	// TODO: Use this
+			bExpectFloppy);
+	}
 
 	g_HardDisk[iDrive].hd_imageloaded = (Error == eIMAGE_ERROR_NONE);
 
