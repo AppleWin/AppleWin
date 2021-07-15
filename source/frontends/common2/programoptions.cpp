@@ -210,20 +210,31 @@ namespace common2
   {
     g_nMemoryClearType = options.memclear;
 
-    bool disksOk = true;
-    if (!options.disk1.empty())
+    LPSTR szImageName_drive[NUM_DRIVES];
+	  bool driveConnected[NUM_DRIVES];
+
+    if (options.disk1.empty())
     {
-      const bool ok = DoDiskInsert(SLOT6, DRIVE_1, options.disk1.c_str());
-      disksOk = disksOk && ok;
-      LogFileOutput("Init: DoDiskInsert(D1), res=%d\n", ok);
+      driveConnected[DRIVE_1] = false;
+    }
+    else
+    {
+      driveConnected[DRIVE_1] = true;
+      szImageName_drive[DRIVE_2] = const_cast<char *>(options.disk1.c_str());
     }
 
-    if (!options.disk2.empty())
+    if (options.disk2.empty())
     {
-      const bool ok = DoDiskInsert(SLOT6, DRIVE_2, options.disk2.c_str());
-      disksOk = disksOk && ok;
-      LogFileOutput("Init: DoDiskInsert(D2), res=%d\n", ok);
+      driveConnected[DRIVE_2] = false;
     }
+    else
+    {
+      driveConnected[DRIVE_2] = true;
+      szImageName_drive[DRIVE_2] = const_cast<char *>(options.disk2.c_str());
+    }
+
+    bool bBoot;
+    InsertFloppyDisks(SLOT6, szImageName_drive, driveConnected, bBoot);
 
     if (!options.snapshotFilename.empty())
     {
