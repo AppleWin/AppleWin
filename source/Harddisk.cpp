@@ -207,7 +207,7 @@ static void NotifyInvalidImage(TCHAR* pszImageFilename)
 
 //===========================================================================
 
-BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename);
+BOOL HD_Insert(const int iDrive, const std::string& pathname);
 
 void HD_LoadLastDiskImage(const int iDrive)
 {
@@ -384,10 +384,10 @@ void HD_Destroy(void)
 	g_bSaveDiskImage = true;
 }
 
-// Pre: pszImageFilename is qualified with path
-BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename)
+// Pre: pathname likely to include path (but can also just be filename)
+BOOL HD_Insert(const int iDrive, const std::string& pathname)
 {
-	if (pszImageFilename.empty())
+	if (pathname.empty())
 		return FALSE;
 
 	if (g_HardDisk[iDrive].hd_imageloaded)
@@ -398,9 +398,9 @@ BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename)
 		const std::string & pszOtherPathname = HD_GetFullPathName(!iDrive);
 
 		char szCurrentPathname[MAX_PATH]; 
-		DWORD uNameLen = GetFullPathName(pszImageFilename.c_str(), MAX_PATH, szCurrentPathname, NULL);
+		DWORD uNameLen = GetFullPathName(pathname.c_str(), MAX_PATH, szCurrentPathname, NULL);
 		if (uNameLen == 0 || uNameLen >= MAX_PATH)
-			strcpy_s(szCurrentPathname, MAX_PATH, pszImageFilename.c_str());
+			strcpy_s(szCurrentPathname, MAX_PATH, pathname.c_str());
 
 		if (!strcmp(pszOtherPathname.c_str(), szCurrentPathname))
 		{
@@ -412,7 +412,7 @@ BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename)
 	const bool bCreateIfNecessary = false;		// NB. Don't allow creation of HDV files
 	const bool bExpectFloppy = false;
 	const bool bIsHarddisk = true;
-	ImageError_e Error = ImageOpen(pszImageFilename,
+	ImageError_e Error = ImageOpen(pathname,
 		&g_HardDisk[iDrive].imagehandle,
 		&g_HardDisk[iDrive].bWriteProtected,
 		bCreateIfNecessary,
@@ -428,7 +428,7 @@ BOOL HD_Insert(const int iDrive, const std::string & pszImageFilename)
 
 	if (Error == eIMAGE_ERROR_NONE)
 	{
-		GetImageTitle(pszImageFilename.c_str(), g_HardDisk[iDrive].imagename, g_HardDisk[iDrive].fullname);
+		GetImageTitle(pathname.c_str(), g_HardDisk[iDrive].imagename, g_HardDisk[iDrive].fullname);
 		Snapshot_UpdatePath();
 	}
 

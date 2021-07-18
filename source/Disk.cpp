@@ -654,8 +654,8 @@ void Disk2InterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status, Disk_Status
 
 //===========================================================================
 
-// Pre: pszImageFilename is *not* qualified with path
-ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFilename, const bool bForceWriteProtected, const bool bCreateIfNecessary)
+// Pre: pathname likely to include path (but can also just be filename)
+ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, const std::string& pathname, const bool bForceWriteProtected, const bool bCreateIfNecessary)
 {
 	FloppyDrive* pDrive = &m_floppyDrive[drive];
 	FloppyDisk* pFloppy = &pDrive->m_disk;
@@ -667,7 +667,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 	// . Changing the disk (in the drive) doesn't affect the drive's attributes.
 	pFloppy->clear();
 
-	const DWORD dwAttributes = GetFileAttributes(pszImageFilename);
+	const DWORD dwAttributes = GetFileAttributes(pathname.c_str());
 	if (dwAttributes == INVALID_FILE_ATTRIBUTES)
 		pFloppy->m_bWriteProtected = false;	// Assume this is a new file to create (so it must be write-enabled to allow it to be formatted)
 	else
@@ -678,9 +678,9 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 		const std::string & pszOtherPathname = DiskGetFullPathName(!drive);
 
 		char szCurrentPathname[MAX_PATH]; 
-		DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, szCurrentPathname, NULL);
+		DWORD uNameLen = GetFullPathName(pathname.c_str(), MAX_PATH, szCurrentPathname, NULL);
 		if (uNameLen == 0 || uNameLen >= MAX_PATH)
-			strcpy_s(szCurrentPathname, MAX_PATH, pszImageFilename);
+			strcpy_s(szCurrentPathname, MAX_PATH, pathname.c_str());
 
 		if (!strcmp(pszOtherPathname.c_str(), szCurrentPathname))
 		{
@@ -689,7 +689,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 		}
 	}
 
-	ImageError_e Error = ImageOpen(pszImageFilename,
+	ImageError_e Error = ImageOpen(pathname,
 		&pFloppy->m_imagehandle,
 		&pFloppy->m_bWriteProtected,
 		bCreateIfNecessary,
@@ -709,7 +709,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, LPCTSTR pszImageFil
 
 	if (Error == eIMAGE_ERROR_NONE)
 	{
-		GetImageTitle(pszImageFilename, pFloppy->m_imagename, pFloppy->m_fullname);
+		GetImageTitle(pathname.c_str(), pFloppy->m_imagename, pFloppy->m_fullname);
 		Snapshot_UpdatePath();
 
 		GetFrame().Video_ResetScreenshotCounter(pFloppy->m_imagename);
