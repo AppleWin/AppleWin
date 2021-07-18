@@ -54,9 +54,9 @@ struct CmdLine
 	bool bSwapButtons0and1;
 	bool bRemoveNoSlotClock;
 	SS_CARDTYPE slotInsert[NUM_SLOTS];
-	LPSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES];
+	LPCSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES];
 	bool driveConnected[NUM_SLOTS][NUM_DRIVES];
-	LPSTR szImageName_harddisk[NUM_HARDDISKS];
+	LPCSTR szImageName_harddisk[NUM_HARDDISKS];
 	LPSTR szSnapshotName;
 	LPSTR szScreenshotFilename;
 	UINT uRamWorksExPages;
