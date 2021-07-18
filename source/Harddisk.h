@@ -55,4 +55,4 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	std::string HD_GetSnapshotCardName(void);
 	void HD_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-	bool HD_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, const std::string strSaveStatePath);
+	bool HD_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, const std::string & strSaveStatePath);

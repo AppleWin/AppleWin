@@ -336,7 +336,7 @@ static std::string GetFullPath(LPCSTR szFileName)
 	return strPathName;
 }
 
-static void SetCurrentDir(std::string pathname)
+static void SetCurrentDir(const std::string & pathname)
 {
 	// Due to the order HDDs/disks are inserted, then s7 insertions take priority over s6 & s5; and d2 takes priority over d1:
 	// . if -s6[dN] and -hN are specified, then g_sCurrentDir will be set to the HDD image's path
@@ -362,7 +362,7 @@ static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
-	ImageError_e Error = disk2Card.InsertDisk(nDrive, strPathName.c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+	ImageError_e Error = disk2Card.InsertDisk(nDrive, strPathName, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 	bool res = (Error == eIMAGE_ERROR_NONE);
 	if (res)
 		SetCurrentDir(strPathName);
@@ -380,14 +380,14 @@ static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
-	BOOL bRes = HD_Insert(nDrive, strPathName.c_str());
+	BOOL bRes = HD_Insert(nDrive, strPathName);
 	bool res = (bRes == TRUE);
 	if (res)
 		SetCurrentDir(strPathName);
 	return res;
 }
 
-void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], bool driveConnected[NUM_DRIVES], bool& bBoot)
+void InsertFloppyDisks(const UINT slot, LPCSTR szImageName_drive[NUM_DRIVES], bool driveConnected[NUM_DRIVES], bool& bBoot)
 {
 	_ASSERT(slot == 5 || slot == 6);
 
@@ -419,7 +419,7 @@ void InsertFloppyDisks(const UINT slot, LPSTR szImageName_drive[NUM_DRIVES], boo
 		GetFrame().FrameMessageBox("Failed to insert floppy disk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
 }
 
-void InsertHardDisks(LPSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
+void InsertHardDisks(LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 {
 	if (!szImageName_harddisk[HARDDISK_1] && !szImageName_harddisk[HARDDISK_2])
 		return;
