@@ -210,17 +210,17 @@ namespace common2
   {
     g_nMemoryClearType = options.memclear;
 
-    LPSTR szImageName_drive[NUM_DRIVES] = {nullptr, nullptr};
+    LPCSTR szImageName_drive[NUM_DRIVES] = {nullptr, nullptr};
 	  bool driveConnected[NUM_DRIVES] = {true, true};
 
     if (!options.disk1.empty())
     {
-      szImageName_drive[DRIVE_2] = const_cast<char *>(options.disk1.c_str());
+      szImageName_drive[DRIVE_2] = options.disk1.c_str();
     }
 
     if (!options.disk2.empty())
     {
-      szImageName_drive[DRIVE_2] = const_cast<char *>(options.disk2.c_str());
+      szImageName_drive[DRIVE_2] = options.disk2.c_str();
     }
 
     bool bBoot;
