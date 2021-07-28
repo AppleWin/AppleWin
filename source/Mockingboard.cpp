@@ -889,8 +889,8 @@ static void MB_UpdateInt(void)
 	if(nNumSamples > 2*nNumSamplesPerPeriod)
 		nNumSamples = 2*nNumSamplesPerPeriod;
 
-	if (nNumSamples > SAMPLE_RATE)
-		nNumSamples = SAMPLE_RATE;	// Clamp to prevent buffer overflow (bufferSize = SAMPLE_RATE)
+	if (nNumSamples > MAX_SAMPLES)
+		nNumSamples = MAX_SAMPLES;	// Clamp to prevent buffer overflow
 
 	if(nNumSamples)
 		for(int nChip=0; nChip<NUM_AY8910; nChip++)
@@ -1129,7 +1129,7 @@ void MB_Initialize()
 	else
 	{
 		for (UINT i=0; i<NUM_VOICES; i++)
-			ppAYVoiceBuffer[i] = new short [SAMPLE_RATE];	// Buffer can hold a max of 1 seconds worth of samples
+			ppAYVoiceBuffer[i] = new short [MAX_SAMPLES];	// Buffer can hold a max of 0.37 seconds worth of samples (16384/44100)
 
 		AY8910_InitAll((int)g_fCurrentCLK6502, SAMPLE_RATE);
 		LogFileOutput("MB_Initialize: AY8910_InitAll()\n");
