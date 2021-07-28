@@ -5416,14 +5416,14 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 	// Get search "string"
 	Arg_t *pArg = & g_aArgs[ iArgFirstByte ];
 	
-	WORD nTarget;
 	for (iArg = iArgFirstByte; iArg <= nArgs; iArg++, pArg++ )
 	{
-		MemorySearch_t ms;
+		WORD nTarget = pArg->nValue;
 
-		nTarget = pArg->nValue;
+		MemorySearch_t ms;
 		ms.m_nValue = nTarget & 0xFF;
 		ms.m_iType = MEM_SEARCH_BYTE_EXACT;
+		ms.m_bFound = false;
 
 		if (nTarget > 0xFF) // searching for 16-bit address
 		{
@@ -5810,7 +5810,8 @@ Update_t CmdOutputPrintf (int nArgs)
 	TCHAR sText[ CONSOLE_WIDTH ] = TEXT("");
 
 	std::vector<Arg_t> aValues;
-	Arg_t         entry;
+	Arg_t entry;
+	entry.sArg[0] = 0;
 	int iValue = 0;
 	int nValue = 0;
 
@@ -5833,11 +5834,8 @@ Update_t CmdOutputPrintf (int nArgs)
 			continue;
 		else
 		{
-//			entry.eType  = PS_LITERAL;
 			entry.nValue = g_aArgs[ iArg ].nValue;
 			aValues.push_back( entry );
-//			nValue = g_aArgs[ iArg ].nValue;
-//			aValues.push_back( nValue );
 		}
 	}
 	const int nParamValues = (int) aValues.size();
