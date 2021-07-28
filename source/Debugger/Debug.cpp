@@ -5811,7 +5811,6 @@ Update_t CmdOutputPrintf (int nArgs)
 
 	std::vector<Arg_t> aValues;
 	Arg_t entry;
-	entry.sArg[0] = 0;
 	int iValue = 0;
 	int nValue = 0;
 
