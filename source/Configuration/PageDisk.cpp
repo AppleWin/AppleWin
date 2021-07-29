@@ -155,12 +155,15 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 			//
 
 			slot = SLOT5;
+			CheckDlgButton(hWnd, IDC_DISKII_SLOT5_ENABLE, (GetCardMgr().QuerySlot(slot) == CT_Disk2) ? BST_CHECKED : BST_UNCHECKED);
+
+			if (GetCardMgr().QuerySlot(slot) == CT_Disk2 || GetCardMgr().QuerySlot(slot) == CT_Empty)
+				EnableWindow(GetDlgItem(hWnd, IDC_DISKII_SLOT5_ENABLE), TRUE);
+
 			if (GetCardMgr().QuerySlot(slot) == CT_Disk2)
 				InitComboFloppyDrive(hWnd, slot);
-			else if (GetCardMgr().QuerySlot(slot) != CT_Empty)
-				EnableFloppyDrive(hWnd, FALSE, slot);	// disable if slot5 has some other card in it
-
-			CheckDlgButton(hWnd, IDC_DISKII_SLOT5_ENABLE, (GetCardMgr().QuerySlot(slot) == CT_Disk2) ? BST_CHECKED : BST_UNCHECKED);
+			else
+				EnableFloppyDrive(hWnd, FALSE, slot);	// disable if slot5 is empty (or has some other card in it)
 
 			//
 
@@ -256,6 +259,7 @@ void CPageDisk::DlgOK(HWND hWnd)
 		if (newSlot5Card != GetCardMgr().QuerySlot(SLOT5))
 		{
 			GetCardMgr().Insert(SLOT5, newSlot5Card);
+			m_PropertySheetHelper.SetSlot(SLOT5, newSlot5Card);
 		}
 	}
 

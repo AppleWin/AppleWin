@@ -14,6 +14,7 @@ public:
 	virtual ~CPropertySheetHelper(){}
 
 	void FillComboBox(HWND window, int controlid, LPCTSTR choices, int currentchoice);
+	void SetSlot(UINT slot, SS_CARDTYPE newCardType);
 	std::string BrowseToFile(HWND hWindow, const TCHAR* pszTitle, const TCHAR* REGVALUE, const TCHAR* FILEMASKS);
 	void SaveStateUpdate();
 	int SaveStateSelectImage(HWND hWindow, const TCHAR* pszTitle, bool bSave);
@@ -37,7 +38,6 @@ public:
 	void ConfigSaveApple2Type(eApple2Type apple2Type);
 
 private:
-	void SetSlot(UINT slot, SS_CARDTYPE newCardType);
 	bool IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged);
 	bool IsOkToRestart(HWND hWnd);
 	void SaveComputerType(eApple2Type NewApple2Type);
