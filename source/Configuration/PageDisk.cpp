@@ -153,28 +153,11 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 		{
 			CheckDlgButton(hWnd, IDC_ENHANCE_DISK_ENABLE, GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk() ? BST_CHECKED : BST_UNCHECKED);
 
-			UINT slot = SLOT6;
-			if (m_PropertySheetHelper.GetConfigNew().m_Slot[slot] == CT_Disk2)
+			const UINT slot = SLOT6;
+			if (GetCardMgr().QuerySlot(slot) == CT_Disk2)	// NB. SLOT6 not setup in m_PropertySheetHelper.GetConfigNew().m_Slot[]
 				InitComboFloppyDrive(hWnd, slot);
 			else
 				EnableFloppyDrive(hWnd, FALSE, slot);	// disable if slot6 is empty (or has some other card in it)
-
-			//
-
-			slot = SLOT5;
-			const SS_CARDTYPE cardInSlot5 = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT5];
-
-			CheckDlgButton(hWnd, IDC_DISKII_SLOT5_ENABLE, (cardInSlot5 == CT_Disk2) ? BST_CHECKED : BST_UNCHECKED);
-
-			if (cardInSlot5 == CT_Disk2 || cardInSlot5 == CT_Empty)
-				EnableWindow(GetDlgItem(hWnd, IDC_DISKII_SLOT5_ENABLE), TRUE);
-
-			if (cardInSlot5 == CT_Disk2)
-				InitComboFloppyDrive(hWnd, slot);
-			else
-				EnableFloppyDrive(hWnd, FALSE, slot);	// disable if slot5 is empty (or has some other card in it)
-
-			//
 
 			InitComboHDD(hWnd, SLOT7);
 
@@ -186,7 +169,7 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 
 			EnableHDD(hWnd, IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE));
 
-			InitOptions(hWnd);
+			InitOptions(hWnd);	// init for slot-5
 
 			break;
 		}
@@ -273,8 +256,21 @@ void CPageDisk::DlgOK(HWND hWnd)
 
 void CPageDisk::InitOptions(HWND hWnd)
 {
-	// Nothing to do:
-	// - no changes made on any other pages affect this page
+	// Changes made on other pages that affect this page:
+	// . slot-5: MB add/removed
+
+	const UINT slot = SLOT5;
+	const SS_CARDTYPE cardInSlot5 = m_PropertySheetHelper.GetConfigNew().m_Slot[slot];
+
+	CheckDlgButton(hWnd, IDC_DISKII_SLOT5_ENABLE, (cardInSlot5 == CT_Disk2) ? BST_CHECKED : BST_UNCHECKED);
+
+	const BOOL enable = (cardInSlot5 == CT_Disk2 || cardInSlot5 == CT_Empty) ? TRUE : FALSE;
+	EnableWindow(GetDlgItem(hWnd, IDC_DISKII_SLOT5_ENABLE), enable);
+
+	if (cardInSlot5 == CT_Disk2)
+		InitComboFloppyDrive(hWnd, slot);
+	else
+		EnableFloppyDrive(hWnd, FALSE, slot);	// disable if slot5 is empty (or has some other card in it)
 }
 
 void CPageDisk::EnableHDD(HWND hWnd, BOOL bEnable)
