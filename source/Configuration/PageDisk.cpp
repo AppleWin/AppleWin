@@ -258,8 +258,7 @@ void CPageDisk::DlgOK(HWND hWnd)
 		const SS_CARDTYPE newSlot5Card = IsDlgButtonChecked(hWnd, IDC_DISKII_SLOT5_ENABLE) ? CT_Disk2 : CT_Empty;
 		if (newSlot5Card != GetCardMgr().QuerySlot(SLOT5))
 		{
-			GetCardMgr().Insert(SLOT5, newSlot5Card);
-			m_PropertySheetHelper.SetSlot(SLOT5, newSlot5Card);
+			m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT5] = newSlot5Card;
 		}
 	}
 
