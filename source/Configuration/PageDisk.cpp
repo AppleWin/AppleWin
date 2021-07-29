@@ -34,10 +34,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 CPageDisk* CPageDisk::ms_this = 0;	// reinit'd in ctor
 
-const TCHAR CPageDisk::m_discchoices[] =
-				TEXT("Authentic Speed\0")
-				TEXT("Enhanced Speed\0");
-
 const TCHAR CPageDisk::m_defaultDiskOptions[] =
 				TEXT("Select Disk...\0")
 				TEXT("Eject Disk\0");

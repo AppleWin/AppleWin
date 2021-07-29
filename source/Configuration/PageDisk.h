@@ -35,7 +35,6 @@ private:
 	UINT RemovalConfirmation(UINT uCommand);
 
 	static CPageDisk* ms_this;
-	static const TCHAR m_discchoices[];
 	static const TCHAR m_defaultDiskOptions[];
 	static const TCHAR m_defaultHDDOptions[];
 
