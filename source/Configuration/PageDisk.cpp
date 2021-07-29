@@ -87,6 +87,13 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 	case WM_COMMAND:
 		switch (LOWORD(wparam))
 		{
+		case IDC_DISKII_SLOT5_ENABLE:
+			{
+				const BOOL checked = IsDlgButtonChecked(hWnd, IDC_DISKII_SLOT5_ENABLE) ? TRUE : FALSE;
+				m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT5] = checked ? CT_Disk2 : CT_Empty;
+				EnableFloppyDrive(hWnd, checked, SLOT5);
+			}
+			break;
 		case IDC_COMBO_DISK1:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
@@ -147,7 +154,7 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 			CheckDlgButton(hWnd, IDC_ENHANCE_DISK_ENABLE, GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk() ? BST_CHECKED : BST_UNCHECKED);
 
 			UINT slot = SLOT6;
-			if (GetCardMgr().QuerySlot(slot) == CT_Disk2)
+			if (m_PropertySheetHelper.GetConfigNew().m_Slot[slot] == CT_Disk2)
 				InitComboFloppyDrive(hWnd, slot);
 			else
 				EnableFloppyDrive(hWnd, FALSE, slot);	// disable if slot6 is empty (or has some other card in it)
@@ -155,12 +162,14 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 			//
 
 			slot = SLOT5;
-			CheckDlgButton(hWnd, IDC_DISKII_SLOT5_ENABLE, (GetCardMgr().QuerySlot(slot) == CT_Disk2) ? BST_CHECKED : BST_UNCHECKED);
+			const SS_CARDTYPE cardInSlot5 = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT5];
 
-			if (GetCardMgr().QuerySlot(slot) == CT_Disk2 || GetCardMgr().QuerySlot(slot) == CT_Empty)
+			CheckDlgButton(hWnd, IDC_DISKII_SLOT5_ENABLE, (cardInSlot5 == CT_Disk2) ? BST_CHECKED : BST_UNCHECKED);
+
+			if (cardInSlot5 == CT_Disk2 || cardInSlot5 == CT_Empty)
 				EnableWindow(GetDlgItem(hWnd, IDC_DISKII_SLOT5_ENABLE), TRUE);
 
-			if (GetCardMgr().QuerySlot(slot) == CT_Disk2)
+			if (cardInSlot5 == CT_Disk2)
 				InitComboFloppyDrive(hWnd, slot);
 			else
 				EnableFloppyDrive(hWnd, FALSE, slot);	// disable if slot5 is empty (or has some other card in it)
@@ -251,15 +260,6 @@ void CPageDisk::DlgOK(HWND hWnd)
 	{
 		GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(bNewEnhanceDisk);
 		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (DWORD)bNewEnhanceDisk);
-	}
-
-	if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2 || GetCardMgr().QuerySlot(SLOT5) == CT_Empty)
-	{
-		const SS_CARDTYPE newSlot5Card = IsDlgButtonChecked(hWnd, IDC_DISKII_SLOT5_ENABLE) ? CT_Disk2 : CT_Empty;
-		if (newSlot5Card != GetCardMgr().QuerySlot(SLOT5))
-		{
-			m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT5] = newSlot5Card;
-		}
 	}
 
 	const bool bNewHDDIsEnabled = IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE) ? true : false;
@@ -367,7 +367,7 @@ void CPageDisk::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT combo
 {
 	_ASSERT(slot == SLOT6 || slot == SLOT5);
 
-	if (GetCardMgr().QuerySlot(slot) != CT_Disk2)
+	if (m_PropertySheetHelper.GetConfigNew().m_Slot[slot] != CT_Disk2)
 	{
 		_ASSERT(0);	// Shouldn't come here, as the combo is disabled
 		return;
