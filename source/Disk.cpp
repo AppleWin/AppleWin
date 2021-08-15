@@ -165,14 +165,13 @@ void Disk2InterfaceCard::LoadLastDiskImage(const int drive)
 {
 	_ASSERT(drive == DRIVE_1 || drive == DRIVE_2);
 
-	std::string regSection = REG_CONFIG_SLOT;
-	regSection += (char)('0' + m_slot);
-
 	const std::string regKey = (drive == DRIVE_1)
 		? REGVALUE_PREF_LAST_DISK_1
 		: REGVALUE_PREF_LAST_DISK_2;
 
 	char pathname[MAX_PATH];
+
+	std::string& regSection = RegGetConfigSlotSection(m_slot);
 	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")))
 	{
 		m_saveDiskImage = false;
@@ -191,8 +190,8 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 	if (!m_saveDiskImage)
 		return;
 
-	std::string regSection = REG_CONFIG_SLOT;
-	regSection += (char)('0' + m_slot);
+	std::string& regSection = RegGetConfigSlotSection(m_slot);
+	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, CT_Disk2);
 
 	const std::string regKey = (drive == DRIVE_1)
 		? REGVALUE_PREF_LAST_DISK_1

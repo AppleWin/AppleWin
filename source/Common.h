@@ -117,9 +117,10 @@ enum AppMode_e
 #define  REGVALUE_SLOT5					"Slot 5"
 #define  REGVALUE_SLOT6					"Slot 6"
 #define  REGVALUE_SLOT7					"Slot 7"
-#define  REGVALUE_SLOTAUX				"Slot Auxilary"
+#define  REGVALUE_SLOTAUX				"Slot Auxiliary"
 #define  REGVALUE_VERSION				"Version"
 #define REG_CONFIG_SLOT				"Configuration\\Slot "
+#define  REGVALUE_CARD_TYPE			"Card type"
 
 // Preferences 
 #define REG_PREFS						"Preferences"

@@ -131,20 +131,8 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 	if (GetCardMgr().QuerySlot(slot) != newCardType)
 		GetCardMgr().Insert(slot, newCardType);
 
-	std::string slotText;
-	switch (slot)
-	{
-	case 0: slotText = REGVALUE_SLOT0; break;
-	case 1: slotText = REGVALUE_SLOT1; break;
-	case 2: slotText = REGVALUE_SLOT2; break;
-	case 3: slotText = REGVALUE_SLOT3; break;
-	case 4: slotText = REGVALUE_SLOT4; break;
-	case 5: slotText = REGVALUE_SLOT5; break;
-	case 6: slotText = REGVALUE_SLOT6; break;
-	case 7: slotText = REGVALUE_SLOT7; break;
-	}
-
-	REGSAVE(slotText.c_str(), (DWORD)newCardType);
+	std::string& regSection = RegGetConfigSlotSection(slot);
+	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, newCardType);
 }
 
 // Used by:

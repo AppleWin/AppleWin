@@ -147,3 +147,11 @@ void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value) {
 	RegSaveString(section, key, peruser, buffer);
 }
 
+//===========================================================================
+std::string& RegGetConfigSlotSection(UINT slot)
+{
+	static std::string regSection;
+	regSection = REG_CONFIG_SLOT;
+	regSection += (char)('0' + slot);
+	return regSection;
+}
