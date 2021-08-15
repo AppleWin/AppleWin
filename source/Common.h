@@ -119,6 +119,7 @@ enum AppMode_e
 #define  REGVALUE_SLOT7					"Slot 7"
 #define  REGVALUE_SLOTAUX				"Slot Auxilary"
 #define  REGVALUE_VERSION				"Version"
+#define REG_CONFIG_SLOT				"Configuration\\Slot "
 
 // Preferences 
 #define REG_PREFS						"Preferences"
