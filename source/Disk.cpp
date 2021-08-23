@@ -203,6 +203,11 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 
 	//
 
+	// For now, only update 'Starting Directory' for slot6 & drive1
+	// . otherwise you'll get inconsistent results if you set drive1, then drive2 (and the images were in different folders)
+	if (m_slot != SLOT6 || drive != DRIVE_1)
+		return;
+
 	TCHAR szPathName[MAX_PATH];
 	StringCbCopy(szPathName, MAX_PATH, pathName.c_str());
 	TCHAR* slash = _tcsrchr(szPathName, PATH_SEPARATOR);

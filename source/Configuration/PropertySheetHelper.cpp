@@ -131,6 +131,8 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 	if (GetCardMgr().QuerySlot(slot) != newCardType)
 		GetCardMgr().Insert(slot, newCardType);
 
+	RegDeleteConfigSlotSection(slot);
+
 	std::string& regSection = RegGetConfigSlotSection(slot);
 	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, newCardType);
 }

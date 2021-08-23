@@ -12,3 +12,4 @@ void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::strin
 void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value);
 
 std::string& RegGetConfigSlotSection(UINT slot);
+void RegDeleteConfigSlotSection(UINT slot);
