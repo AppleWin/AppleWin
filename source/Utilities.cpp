@@ -264,7 +264,7 @@ void LoadConfiguration(void)
 		{
 			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp);
 		}
-		else	// legacy (AppleWin 1.30.0.3 or earlier)
+		else	// legacy (AppleWin 1.30.3 or earlier)
 		{
 			if (slot == SLOT4 && REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
 				GetCardMgr().Insert(SLOT4, (SS_CARDTYPE)dwTmp);

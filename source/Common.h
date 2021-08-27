@@ -109,15 +109,8 @@ enum AppMode_e
 #define  REGVALUE_WINDOW_SCALE       "Window Scale"
 #define  REGVALUE_UTHERNET_ACTIVE       "Uthernet Active"
 #define  REGVALUE_UTHERNET_INTERFACE    "Uthernet Interface"
-#define  REGVALUE_SLOT0					"Slot 0"
-#define  REGVALUE_SLOT1					"Slot 1"
-#define  REGVALUE_SLOT2					"Slot 2"
-#define  REGVALUE_SLOT3					"Slot 3"
-#define  REGVALUE_SLOT4					"Slot 4"
-#define  REGVALUE_SLOT5					"Slot 5"
-#define  REGVALUE_SLOT6					"Slot 6"
-#define  REGVALUE_SLOT7					"Slot 7"
-#define  REGVALUE_SLOTAUX				"Slot Auxiliary"
+#define  REGVALUE_SLOT4					"Slot 4"			// GH#977: Deprecated from 1.30.4
+#define  REGVALUE_SLOT5					"Slot 5"			// GH#977: Deprecated from 1.30.4
 #define  REGVALUE_VERSION				"Version"
 #define REG_CONFIG_SLOT				"Slot "
 #define  REGVALUE_CARD_TYPE			"Card type"
