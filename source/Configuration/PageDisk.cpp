@@ -74,6 +74,12 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 				// Can use this to ask user to confirm cancel
 				break;
 			case PSN_RESET:
+				// Support 'Cancel' case for Slot-5 DiskII enabled/disabled - needed as the Disk2InterfaceCard object is created on toggling the checkbox. See [*1]
+				if (m_PropertySheetHelper.GetConfigOld().m_Slot[SLOT5] != m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT5])
+				{
+					if (m_PropertySheetHelper.GetConfigOld().m_Slot[SLOT5] == CT_Disk2 || m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT5] == CT_Disk2)
+						m_PropertySheetHelper.SetSlot(SLOT5, m_PropertySheetHelper.GetConfigOld().m_Slot[SLOT5]);
+				}
 				DlgCANCEL(hWnd);
 				break;
 			}
@@ -87,6 +93,10 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 			{
 				const BOOL checked = IsDlgButtonChecked(hWnd, IDC_DISKII_SLOT5_ENABLE) ? TRUE : FALSE;
 				m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT5] = checked ? CT_Disk2 : CT_Empty;
+				// NB. Unusual as it creates slot object when checkbox is toggled (instead of after OK)
+				// Needed as we need a Disk2InterfaceCard object so that images can be inserted/ejected [*1]
+				m_PropertySheetHelper.SetSlot(SLOT5, m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT5]);
+				InitOptions(hWnd);
 				EnableFloppyDrive(hWnd, checked, SLOT5);
 			}
 			break;
@@ -254,6 +264,7 @@ void CPageDisk::InitOptions(HWND hWnd)
 {
 	// Changes made on other pages that affect this page:
 	// . slot-5: MB add/removed
+	// . slot-5: DiskII enabled/disabled
 
 	const UINT slot = SLOT5;
 	const SS_CARDTYPE cardInSlot5 = m_PropertySheetHelper.GetConfigNew().m_Slot[slot];
