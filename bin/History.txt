@@ -9,6 +9,17 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.30.4.0 - 29 Aug 2021
+----------------------
+. [Change #975] Extend Configuration's Disk GUI to support a Disk II controller in slot 5.
+. [Change #977] Add per-slot configuration to the Registry (and conf.ini).
+	- eg. "Last Disk Image 1" has moved from "Preferences" to "Configuration\Slot 6".
+. [Change #976] AppleWin's help now documents Control-PrintScreen to copy the debugger's disassembly window to the clipboard.
+. [Change #960] Floppy image names are now stored in Registry (or conf.ini) with their full path.
+	- NB. Hard disk images were already stored with full path.
+	- NB. save-states still only store the filename (and use "[HDV] Starting Directory" or prompt user to find the file).
+
+
 1.30.3.0 - 19 Jun 2021
 ----------------------
 . [Change #962] Remove the HookFilter.dll, and statically link instead.
