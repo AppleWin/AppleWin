@@ -28,14 +28,13 @@ private:
 	void InitComboFloppyDrive(HWND hWnd, UINT slot);
 	void InitComboHDD(HWND hWnd, UINT slot);
 	void EnableHDD(HWND hWnd, BOOL bEnable);
-	void EnableFloppyDrive(HWND hWnd, BOOL bEnable);
+	void EnableFloppyDrive(HWND hWnd, BOOL bEnable, UINT slot);
 	void HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected);
-	void HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected);
+	void HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT comboOther, UINT slot);
 	void HandleHDDSwap(HWND hWnd);
 	UINT RemovalConfirmation(UINT uCommand);
 
 	static CPageDisk* ms_this;
-	static const TCHAR m_discchoices[];
 	static const TCHAR m_defaultDiskOptions[];
 	static const TCHAR m_defaultHDDOptions[];
 

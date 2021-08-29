@@ -1728,7 +1728,7 @@ void MemInitializeIO(void)
 		// NB. I/O handlers setup via tfe_init() & update_tfe_interface()
 	}
 
-	// Apple//e: Auxilary slot contains Extended 80 Column card or RamWorksIII card
+	// Apple//e: Auxiliary slot contains Extended 80 Column card or RamWorksIII card
 
 	if (GetCardMgr().QuerySlot(SLOT4) == CT_MouseInterface)
 	{

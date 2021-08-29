@@ -29,15 +29,15 @@ public:
 
 	void SaveCurrentConfig(void);
 	const std::string & GetSSNewFilename(void) { return m_szSSNewFilename; }
-//	const CConfigNeedingRestart& GetConfigOld(void) { return m_ConfigOld; }
+	const CConfigNeedingRestart& GetConfigOld(void) { return m_ConfigOld; }
 	CConfigNeedingRestart& GetConfigNew(void) { return m_ConfigNew; }
 	bool IsConfigChanged(void) { return m_ConfigNew != m_ConfigOld; }
 	void SetDoBenchmark(void) { m_bDoBenchmark = true; }
 	void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld);
 	void ConfigSaveApple2Type(eApple2Type apple2Type);
+	void SetSlot(UINT slot, SS_CARDTYPE newCardType);
 
 private:
-	void SetSlot(UINT slot, SS_CARDTYPE newCardType);
 	bool IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged);
 	bool IsOkToRestart(HWND hWnd);
 	void SaveComputerType(eApple2Type NewApple2Type);

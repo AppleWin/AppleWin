@@ -234,9 +234,6 @@ void LoadConfiguration(void)
 		g_bPrinterAppend = dwTmp ? true : false;
 
 
-	if(REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))	// TODO: Change to REGVALUE_SLOT7
-		HD_SetEnabled(dwTmp ? true : false);
-
 	if(REGLOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
 		JoySetTrim((short)dwTmp, true);
 	if(REGLOAD(TEXT(REGVALUE_PDL_YTRIM), &dwTmp))
@@ -259,10 +256,24 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))
 		GetPropertySheet().SetMouseRestrictToWindow(dwTmp);
 
-	if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
-		GetCardMgr().Insert(4, (SS_CARDTYPE)dwTmp);
-	if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
-		GetCardMgr().Insert(5, (SS_CARDTYPE)dwTmp);
+	for (UINT slot = SLOT0; slot <= SLOT7; slot++)
+	{
+		std::string& regSection = RegGetConfigSlotSection(slot);
+
+		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
+		{
+			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp);
+		}
+		else	// legacy (AppleWin 1.30.3 or earlier)
+		{
+			if (slot == SLOT4 && REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
+				GetCardMgr().Insert(SLOT4, (SS_CARDTYPE)dwTmp);
+			else if (slot == SLOT5 && REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
+				GetCardMgr().Insert(SLOT5, (SS_CARDTYPE)dwTmp);
+			else if (slot == SLOT7 && REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
+				HD_SetEnabled(dwTmp ? true : false);
+		}
+	}
 
 	//
 
