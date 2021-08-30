@@ -1,11 +1,31 @@
 #pragma once
 
-//#include "Card.h"
+#include "Card.h"
 
-const UINT JOYSTICKSTATIONARY = 0x20;
+class FourPlayCard : public Card
+{
+public:
+	FourPlayCard(UINT slot) :
+		Card(CT_FourPlay),
+		m_slot(slot)
+	{
+	}
+	virtual ~FourPlayCard(void) {}
 
-void Configure4Play(LPBYTE pCxRomPeripheral, UINT uSlot);
+	virtual void Init(void) {};
+	virtual void Reset(const bool powerCycle) {};
 
-std::string FourPlay_GetSnapshotCardName(void);
-void FourPlay_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
-bool FourPlay_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+	void InitializeIO(LPBYTE pCxRomPeripheral, UINT slot);
+
+	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
+
+//	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT slot);
+//	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+
+	static const UINT JOYSTICKSTATIONARY = 0x20;
+
+private:
+	UINT m_slot;
+
+//	std::string GetSnapshotCardName(void);
+};

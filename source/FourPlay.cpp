@@ -51,8 +51,11 @@
 #include "FourPlay.h"
 #include "Memory.h"
 
-static BYTE __stdcall IORead_FourPlay(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
+BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
 {
+	const UINT slot = ((addr & 0xff) >> 4) - 8;
+	FourPlayCard* pCard = (FourPlayCard*)MemGetSlotParameters(slot);
+
 	BYTE nOutput = MemReadFloatingBus(nExecutedCycles);
 	BOOL up = 0;
 	BOOL down = 0;
@@ -70,7 +73,7 @@ static BYTE __stdcall IORead_FourPlay(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 	infoEx.dwSize = sizeof(infoEx);
 	infoEx.dwFlags = JOY_RETURNPOV | JOY_RETURNBUTTONS;
 
-	switch (nAddr & 0xF)
+	switch (addr & 0xF)
 	{
 	case 0: // Joystick 1
 		result = joyGetPosEx(JOYSTICKID1, &infoEx);
@@ -103,11 +106,11 @@ static BYTE __stdcall IORead_FourPlay(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 		nOutput = up | (down << 1) | (left << 2) | (right << 3) | (alwaysHigh << 5) | (trigger2 << 6) | (trigger1 << 7);
 		break;
 	case 2: // Joystick 3
-		nOutput = JOYSTICKSTATIONARY; // esdf - direction buttons, zx - trigger buttons
+		nOutput = FourPlayCard::JOYSTICKSTATIONARY; // esdf - direction buttons, zx - trigger buttons
 		nOutput = nOutput | (GetAsyncKeyState(0x45) | (GetAsyncKeyState(0x44) << 1) | (GetAsyncKeyState(0x53) << 2) | (GetAsyncKeyState(0x46) << 3) | (GetAsyncKeyState(0x58) << 6) | (GetAsyncKeyState(0x5A) << 7));
 		break;
 	case 3: // Joystick 4
-		nOutput = JOYSTICKSTATIONARY; // ijkl - direction buttons, nm - trigger buttons
+		nOutput = FourPlayCard::JOYSTICKSTATIONARY; // ijkl - direction buttons, nm - trigger buttons
 		nOutput = nOutput | (GetAsyncKeyState(0x49) | (GetAsyncKeyState(0x4B) << 1) | (GetAsyncKeyState(0x4A) << 2) | (GetAsyncKeyState(0x4C) << 3) | (GetAsyncKeyState(0x4D) << 6) | (GetAsyncKeyState(0x4E) << 7));
 		break;
 	default:
@@ -117,7 +120,7 @@ static BYTE __stdcall IORead_FourPlay(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 	return nOutput;
 }
 
-void Configure4Play(LPBYTE pCxRomPeripheral, UINT uSlot)
+void FourPlayCard::InitializeIO(LPBYTE pCxRomPeripheral, UINT slot)
 {
-	RegisterIoHandler(uSlot, IORead_FourPlay, IO_Null, IO_Null, IO_Null, NULL, NULL);
+	RegisterIoHandler(slot, &FourPlayCard::IORead, IO_Null, IO_Null, IO_Null, this, NULL);
 }

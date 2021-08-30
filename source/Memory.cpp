@@ -1750,7 +1750,7 @@ void MemInitializeIO(void)
 //	}
 	else if (GetCardMgr().QuerySlot(SLOT4) == CT_FourPlay)
 	{
-		Configure4Play(pCxRomPeripheral, SLOT4);		// $C400 : 4Play card
+		dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(SLOT4)).InitializeIO(pCxRomPeripheral, SLOT4);
 	}
 	else if (GetCardMgr().QuerySlot(SLOT4) == CT_SNESMAX)
 	{
@@ -1766,7 +1766,7 @@ void MemInitializeIO(void)
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_FourPlay)
 	{
-		Configure4Play(pCxRomPeripheral, SLOT5);		// $C500 : 4Play card
+		dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(SLOT5)).InitializeIO(pCxRomPeripheral, SLOT5);
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_SNESMAX)
 	{
