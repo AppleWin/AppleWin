@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Disk.h"
 #include "MouseInterface.h"
 #include "SerialComms.h"
+#include "SNESMAX.h"
 
 void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 {
@@ -89,7 +90,7 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = new DummyCard(type);
 		break;
 	case CT_SNESMAX:
-		m_slot[slot] = new DummyCard(type);
+		m_slot[slot] = new SNESMAXCard(slot);
 		break;
 
 	case CT_LanguageCard:

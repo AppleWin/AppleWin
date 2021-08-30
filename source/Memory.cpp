@@ -1754,7 +1754,7 @@ void MemInitializeIO(void)
 	}
 	else if (GetCardMgr().QuerySlot(SLOT4) == CT_SNESMAX)
 	{
-		ConfigureSNESMAX(pCxRomPeripheral, SLOT4);		// $C400 : SNES MAX card
+		dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(SLOT4)).InitializeIO(pCxRomPeripheral, SLOT4);
 	}
 	if (GetCardMgr().QuerySlot(SLOT5) == CT_Z80)
 	{
@@ -1770,7 +1770,7 @@ void MemInitializeIO(void)
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_SNESMAX)
 	{
-		ConfigureSNESMAX(pCxRomPeripheral, SLOT5);		// $C500 : SNES MAX card
+		dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(SLOT5)).InitializeIO(pCxRomPeripheral, SLOT5);
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 	{

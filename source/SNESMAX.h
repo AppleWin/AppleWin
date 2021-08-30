@@ -1,0 +1,37 @@
+#pragma once
+
+#include "Card.h"
+
+class SNESMAXCard : public Card
+{
+public:
+	SNESMAXCard(UINT slot) :
+		Card(CT_SNESMAX),
+		m_slot(slot)
+	{
+		buttonIndex = 0;
+		controller1Buttons = 0;
+		controller2Buttons = 0;
+	}
+	virtual ~SNESMAXCard(void) {}
+
+	virtual void Init(void) {};
+	virtual void Reset(const bool powerCycle) {};
+
+	void InitializeIO(LPBYTE pCxRomPeripheral, UINT slot);
+
+	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
+	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
+
+//	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT slot);
+//	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+
+private:
+	UINT m_slot;
+
+	UINT buttonIndex;
+	UINT controller1Buttons;
+	UINT controller2Buttons;
+
+//	std::string GetSnapshotCardName(void);
+};
