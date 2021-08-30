@@ -118,6 +118,9 @@
 #define IDC_CHECK_50HZ_VIDEO            1084
 #define IDC_COMBO_DISK1_SLOT5           1085
 #define IDC_COMBO_DISK2_SLOT5           1086
+#define IDC_4PLAY_CONFIG                1087
+#define IDC_FOURPLAY_CONFIG             1088
+#define IDC_SNESMAX_CONFIG              1089
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003

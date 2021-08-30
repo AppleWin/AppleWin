@@ -232,6 +232,12 @@
     <ClCompile Include="source\Windows\HookFilter.cpp">
       <Filter>Source Files\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="source\FourPlay.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
+    <ClCompile Include="source\SNESMAX.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\CommonVICE\6510core.h">
@@ -545,6 +551,12 @@
     </ClInclude>
     <ClInclude Include="source\Windows\HookFilter.h">
       <Filter>Source Files\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="source\FourPlay.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\SNESMAX.h">
+      <Filter>Source Files\Emulator</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

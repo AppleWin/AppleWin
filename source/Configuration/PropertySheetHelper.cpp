@@ -559,6 +559,10 @@ std::string CPropertySheetHelper::GetCardName(const SS_CARDTYPE CardType)
 		return "Echo";
 	case CT_SAM:			// Soundcard: Software Automated Mouth
 		return "SAM";
+	case CT_FourPlay:
+		return "4Play";
+	case CT_SNESMAX:
+		return "SNES MAX";
 	default:
 		return "Unknown";
 	}

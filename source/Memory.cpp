@@ -49,6 +49,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "ParallelPrinter.h"
 #include "Registry.h"
 #include "SAM.h"
+#include "FourPlay.h"
+#include "SNESMAX.h"
 #include "SerialComms.h"
 #include "Speaker.h"
 #include "Tape.h"
@@ -1746,14 +1748,29 @@ void MemInitializeIO(void)
 //	{
 //		LoadRom_Clock_Generic(pCxRomPeripheral, SLOT4);
 //	}
-
+	else if (GetCardMgr().QuerySlot(SLOT4) == CT_FourPlay)
+	{
+		Configure4Play(pCxRomPeripheral, SLOT4);		// $C400 : 4Play card
+	}
+	else if (GetCardMgr().QuerySlot(SLOT4) == CT_SNESMAX)
+	{
+		ConfigureSNESMAX(pCxRomPeripheral, SLOT4);		// $C400 : SNES MAX card
+	}
 	if (GetCardMgr().QuerySlot(SLOT5) == CT_Z80)
 	{
 		ConfigureSoftcard(pCxRomPeripheral, SLOT5);		// $C500 : Z80 card
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_SAM)
 	{
-		ConfigureSAM(pCxRomPeripheral, SLOT5);			// $C500 : Z80 card
+		ConfigureSAM(pCxRomPeripheral, SLOT5);			// $C500 : SAM card
+	}
+	else if (GetCardMgr().QuerySlot(SLOT5) == CT_FourPlay)
+	{
+		Configure4Play(pCxRomPeripheral, SLOT5);		// $C500 : 4Play card
+	}
+	else if (GetCardMgr().QuerySlot(SLOT5) == CT_SNESMAX)
+	{
+		ConfigureSNESMAX(pCxRomPeripheral, SLOT5);		// $C500 : SNES MAX card
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 	{
