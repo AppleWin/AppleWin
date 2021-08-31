@@ -19,13 +19,12 @@ public:
 
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
-//	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT slot);
-//	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+	static std::string GetSnapshotCardName(void);
+	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 	static const UINT JOYSTICKSTATIONARY = 0x20;
 
 private:
 	UINT m_slot;
-
-//	std::string GetSnapshotCardName(void);
 };

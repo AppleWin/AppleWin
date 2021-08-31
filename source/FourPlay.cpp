@@ -50,6 +50,7 @@
 
 #include "FourPlay.h"
 #include "Memory.h"
+#include "YamlHelper.h"
 
 BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
 {
@@ -123,4 +124,30 @@ BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 void FourPlayCard::InitializeIO(LPBYTE pCxRomPeripheral, UINT slot)
 {
 	RegisterIoHandler(slot, &FourPlayCard::IORead, IO_Null, IO_Null, IO_Null, this, NULL);
+}
+
+//===========================================================================
+
+static const UINT kUNIT_VERSION = 1;
+
+std::string FourPlayCard::GetSnapshotCardName(void)
+{
+	static const std::string name("4Play");
+	return name;
+}
+
+void FourPlayCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
+
+	YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+	// NB. No state for this card
+}
+
+bool FourPlayCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+{
+	if (version < 1 || version > kUNIT_VERSION)
+		throw std::string("Card: wrong version");
+
+	return true;
 }

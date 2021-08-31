@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "Debug.h"
 #include "Disk.h"
+#include "FourPlay.h"
 #include "Joystick.h"
 #include "Keyboard.h"
 #include "LanguageCard.h"
@@ -45,6 +46,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "ParallelPrinter.h"
 #include "Pravets.h"
 #include "SerialComms.h"
+#include "SNESMAX.h"
 #include "Speaker.h"
 #include "Speech.h"
 #include "z80emu.h"
@@ -378,6 +380,18 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			CreateLanguageCard();
 			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
+		else if (card == FourPlayCard::GetSnapshotCardName())
+		{
+			type = CT_FourPlay;
+			GetCardMgr().Insert(slot, type);
+			bRes = dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+		}
+		else if (card == SNESMAXCard::GetSnapshotCardName())
+		{
+			type = CT_SNESMAX;
+			GetCardMgr().Insert(slot, type);
+			bRes = dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+		}
 		else
 		{
 			throw std::string("Slots: Unknown card: " + card);	// todo: don't throw - just ignore & continue
@@ -635,6 +649,14 @@ void Snapshot_SaveState(void)
 
 			if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
 				HD_SaveSnapshot(yamlSaveHelper);
+
+			for (UINT slot = SLOT3; slot <= SLOT5; slot++)
+			{
+				if (GetCardMgr().QuerySlot(slot) == CT_FourPlay)
+					dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(slot)).SaveSnapshot(yamlSaveHelper);
+				else if (GetCardMgr().QuerySlot(slot) == CT_SNESMAX)
+					dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(slot)).SaveSnapshot(yamlSaveHelper);
+			}
 		}
 
 		// Miscellaneous
