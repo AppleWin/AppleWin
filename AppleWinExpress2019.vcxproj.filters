@@ -668,6 +668,9 @@
     <Image Include="resource\RUNBASE64A.BMP">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="resource\ApplewinLogo.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="resource\Apple2.rom">
@@ -731,6 +734,15 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="resource\Base64A_German_Video.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\Apple2_JPlus.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\Apple2_JPlus_Video.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\Disk2-13sector.rom">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
