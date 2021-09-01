@@ -54,9 +54,6 @@
 
 BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
 {
-	const UINT slot = ((addr & 0xff) >> 4) - 8;
-	FourPlayCard* pCard = (FourPlayCard*)MemGetSlotParameters(slot);
-
 	BYTE nOutput = MemReadFloatingBus(nExecutedCycles);
 	BOOL up = 0;
 	BOOL down = 0;
@@ -108,17 +105,22 @@ BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 		break;
 	case 2: // Joystick 3
 		nOutput = FourPlayCard::JOYSTICKSTATIONARY; // esdf - direction buttons, zx - trigger buttons
-		nOutput = nOutput | (GetAsyncKeyState(0x45) | (GetAsyncKeyState(0x44) << 1) | (GetAsyncKeyState(0x53) << 2) | (GetAsyncKeyState(0x46) << 3) | (GetAsyncKeyState(0x58) << 6) | (GetAsyncKeyState(0x5A) << 7));
+		nOutput = nOutput | (MyGetAsyncKeyState('E') | (MyGetAsyncKeyState('D') << 1) | (MyGetAsyncKeyState('S') << 2) | (MyGetAsyncKeyState('F') << 3) | (MyGetAsyncKeyState('X') << 6) | (MyGetAsyncKeyState('Z') << 7));
 		break;
 	case 3: // Joystick 4
 		nOutput = FourPlayCard::JOYSTICKSTATIONARY; // ijkl - direction buttons, nm - trigger buttons
-		nOutput = nOutput | (GetAsyncKeyState(0x49) | (GetAsyncKeyState(0x4B) << 1) | (GetAsyncKeyState(0x4A) << 2) | (GetAsyncKeyState(0x4C) << 3) | (GetAsyncKeyState(0x4D) << 6) | (GetAsyncKeyState(0x4E) << 7));
+		nOutput = nOutput | (MyGetAsyncKeyState('I') | (MyGetAsyncKeyState('K') << 1) | (MyGetAsyncKeyState('J') << 2) | (MyGetAsyncKeyState('L') << 3) | (MyGetAsyncKeyState('M') << 6) | (MyGetAsyncKeyState('N') << 7));
 		break;
 	default:
 		break;
 	}
 
 	return nOutput;
+}
+
+BYTE FourPlayCard::MyGetAsyncKeyState(int vKey)
+{
+	return GetAsyncKeyState(vKey) < 0 ? 1 : 0;
 }
 
 void FourPlayCard::InitializeIO(LPBYTE pCxRomPeripheral, UINT slot)

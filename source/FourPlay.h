@@ -26,5 +26,7 @@ public:
 	static const UINT JOYSTICKSTATIONARY = 0x20;
 
 private:
+	static BYTE MyGetAsyncKeyState(int vKey);
+
 	UINT m_slot;
 };
