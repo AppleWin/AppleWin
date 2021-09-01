@@ -140,7 +140,7 @@ void FourPlayCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
-	YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+	YamlSaveHelper::Label unit(yamlSaveHelper, "%s: null\n", SS_YAML_KEY_STATE);
 	// NB. No state for this card
 }
 

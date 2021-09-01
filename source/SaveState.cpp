@@ -316,7 +316,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
 		UINT cardVersion = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 
-		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
+		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE), true))	// NB. For some cards, State can be null
 			throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
 
 		SS_CARDTYPE type = CT_Empty;

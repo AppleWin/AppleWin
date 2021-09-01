@@ -192,10 +192,10 @@ std::string YamlHelper::GetMapValue(MapYaml& mapYaml, const std::string& key, bo
 	return value;
 }
 
-bool YamlHelper::GetSubMap(MapYaml** mapYaml, const std::string& key)
+bool YamlHelper::GetSubMap(MapYaml** mapYaml, const std::string& key, const bool canBeNull = false)
 {
 	MapYaml::const_iterator iter = (*mapYaml)->find(key);
-	if (iter == (*mapYaml)->end() || iter->second.subMap == NULL)
+	if (iter == (*mapYaml)->end() || (!canBeNull && iter->second.subMap == NULL))
 	{
 		return false;	// not found
 	}
