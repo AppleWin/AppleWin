@@ -76,11 +76,13 @@ private:
 	static const TCHAR m_szCPMSlotChoice_Unplugged[];
 	static const TCHAR m_szCPMSlotChoice_Unavailable[];
 
+	static const TCHAR m_szFourPlaySlotChoice_Slot3[];
 	static const TCHAR m_szFourPlaySlotChoice_Slot4[];
 	static const TCHAR m_szFourPlaySlotChoice_Slot5[];
 	static const TCHAR m_szFourPlaySlotChoice_Unplugged[];
 	static const TCHAR m_szFourPlaySlotChoice_Unavailable[];
 
+	static const TCHAR m_szSNESMAXSlotChoice_Slot3[];
 	static const TCHAR m_szSNESMAXSlotChoice_Slot4[];
 	static const TCHAR m_szSNESMAXSlotChoice_Slot5[];
 	static const TCHAR m_szSNESMAXSlotChoice_Unplugged[];
@@ -107,12 +109,12 @@ private:
 	CPMCHOICE m_CPMChoice; 
 	CPMCHOICE m_CPMComboItemToChoice[_CPM_MAX_CHOICES];
 
-	enum FOURPLAYCHOICE {FOURPLAY_SLOT4=0, FOURPLAY_SLOT5, FOURPLAY_UNPLUGGED, FOURPLAY_UNAVAILABLE, _FOURPLAY_MAX_CHOICES};
+	enum FOURPLAYCHOICE {FOURPLAY_SLOT3=0, FOURPLAY_SLOT4, FOURPLAY_SLOT5, FOURPLAY_UNPLUGGED, FOURPLAY_UNAVAILABLE, _FOURPLAY_MAX_CHOICES};
 	TCHAR m_szFourPlaySlotChoices[_FOURPLAY_MAX_CHOICES * MaxMenuChoiceLen];
 	FOURPLAYCHOICE m_FourPlayChoice;
 	FOURPLAYCHOICE m_FourPlayComboItemToChoice[_FOURPLAY_MAX_CHOICES];
 
-	enum SNESMAXCHOICE {SNESMAX_SLOT4=0, SNESMAX_SLOT5, SNESMAX_UNPLUGGED, SNESMAX_UNAVAILABLE, _SNESMAX_MAX_CHOICES};
+	enum SNESMAXCHOICE {SNESMAX_SLOT3=0, SNESMAX_SLOT4, SNESMAX_SLOT5, SNESMAX_UNPLUGGED, SNESMAX_UNAVAILABLE, _SNESMAX_MAX_CHOICES};
 	TCHAR m_szSNESMAXSlotChoices[_SNESMAX_MAX_CHOICES * MaxMenuChoiceLen];
 	SNESMAXCHOICE m_SNESMAXChoice;
 	SNESMAXCHOICE m_SNESMAXComboItemToChoice[_SNESMAX_MAX_CHOICES];

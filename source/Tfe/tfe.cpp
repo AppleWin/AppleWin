@@ -1500,9 +1500,7 @@ return ret;
 
 void get_disabled_state(int * param)
 {
-
-*param = tfe_cannot_use;
-
+    *param = tfe_cannot_use;
 }
 
 int update_tfe_interface(const std::string & name)

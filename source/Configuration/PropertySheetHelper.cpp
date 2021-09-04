@@ -385,6 +385,7 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	m_ConfigOld.m_Apple2Type = GetApple2Type();
 	m_ConfigOld.m_CpuType = GetMainCpu();
+	m_ConfigOld.m_Slot[SLOT3] = GetCardMgr().QuerySlot(SLOT3);
 	m_ConfigOld.m_Slot[SLOT4] = GetCardMgr().QuerySlot(SLOT4);
 	m_ConfigOld.m_Slot[SLOT5] = GetCardMgr().QuerySlot(SLOT5);
 	m_ConfigOld.m_Slot[SLOT6] = GetCardMgr().QuerySlot(SLOT6);	// CPageDisk::HandleFloppyDriveCombo() needs this to be CT_Disk2 (temp, as will replace with PR #955)
@@ -407,6 +408,7 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	SetApple2Type(m_ConfigOld.m_Apple2Type);
 	SetMainCpu(m_ConfigOld.m_CpuType);
+	SetSlot(SLOT3, m_ConfigOld.m_Slot[SLOT3]);
 	SetSlot(SLOT4, m_ConfigOld.m_Slot[SLOT4]);
 	SetSlot(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
 	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);

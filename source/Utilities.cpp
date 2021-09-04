@@ -256,6 +256,19 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))
 		GetPropertySheet().SetMouseRestrictToWindow(dwTmp);
 
+	//
+
+	TCHAR szFilename[MAX_PATH];
+
+	DWORD dwTfeEnabled;
+	REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &dwTfeEnabled, 0);
+	tfe_enabled = dwTfeEnabled ? 1 : 0;
+
+	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
+	update_tfe_interface(szFilename);
+
+	//
+
 	for (UINT slot = SLOT0; slot <= SLOT7; slot++)
 	{
 		std::string& regSection = RegGetConfigSlotSection(slot);
@@ -266,7 +279,9 @@ void LoadConfiguration(void)
 		}
 		else	// legacy (AppleWin 1.30.3 or earlier)
 		{
-			if (slot == SLOT4 && REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
+			if (slot == SLOT3)
+				GetCardMgr().Insert(SLOT3, tfe_enabled ? CT_Uthernet : CT_Empty);
+			else if (slot == SLOT4 && REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
 				GetCardMgr().Insert(SLOT4, (SS_CARDTYPE)dwTmp);
 			else if (slot == SLOT5 && REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
 				GetCardMgr().Insert(SLOT5, (SS_CARDTYPE)dwTmp);
@@ -276,8 +291,6 @@ void LoadConfiguration(void)
 	}
 
 	//
-
-	TCHAR szFilename[MAX_PATH];
 
 	// Load save-state pathname *before* inserting any harddisk/disk images (for both init & reinit cases)
 	// NB. inserting harddisk/disk can change snapshot pathname
@@ -303,15 +316,6 @@ void LoadConfiguration(void)
 	SetCurrentImageDir(szFilename);
 
 	GetCardMgr().GetDisk2CardMgr().LoadLastDiskImage();
-
-	//
-
-	DWORD dwTfeEnabled;
-	REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &dwTfeEnabled, 0);
-	tfe_enabled = dwTfeEnabled ? 1 : 0;
-
-	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
-	update_tfe_interface(szFilename);
 
 	//
 

@@ -112,6 +112,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 
 		case IDC_ETHERNET:
 			ui_tfe_settings_dialog(hWnd);
+			m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = m_PageConfigTfe.m_tfe_enabled ? CT_Uthernet : CT_Empty;
 			break;
 
 		case IDC_MONOCOLOR:
@@ -376,8 +377,9 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 void CPageConfig::InitOptions(HWND hWnd)
 {
-	// Nothing to do:
-	// - no changes made on any other pages affect this page
+	const SS_CARDTYPE slot3 = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3];
+	const BOOL enableUthernetDialog = slot3 == CT_Empty || slot3 == CT_Uthernet;
+	EnableWindow(GetDlgItem(hWnd, IDC_ETHERNET), enableUthernetDialog);
 }
 
 // Config->Computer: Menu item to eApple2Type
