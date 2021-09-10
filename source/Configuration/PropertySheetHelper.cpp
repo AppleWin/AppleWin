@@ -336,21 +336,33 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		SaveCpuType(ConfigNew.m_CpuType);
 	}
 
-	UINT slot = 4;
+	UINT slot = SLOT3;
+	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+	{
+		SetSlot(slot, ConfigNew.m_Slot[slot]);
+
+		if (ConfigNew.m_Slot[slot] == CT_Uthernet)	// TODO: move this to UthernetCard object
+		{
+			std::string& regSection = RegGetConfigSlotSection(slot);
+			RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, 1, ConfigNew.m_tfeInterface);
+		}
+	}
+
+	slot = SLOT4;
 	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
 		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
-	slot = 5;
+	slot = SLOT5;
 	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
 		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
-//	slot = 7;
+//	slot = SLOT7;
 //	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
 //		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
 	if (CONFIG_CHANGED_LOCAL(m_bEnableHDD))
 	{
-		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), ConfigNew.m_bEnableHDD ? 1 : 0);	// TODO: Change to REGVALUE_SLOT7
+		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), ConfigNew.m_bEnableHDD ? 1 : 0);
 	}
 
 	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))
@@ -362,17 +374,6 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 	{
 		REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), ConfigNew.m_videoRefreshRate);
 	}
-
-	if (CONFIG_CHANGED_LOCAL(m_tfeEnabled))
-	{
-		REGSAVE(TEXT(REGVALUE_UTHERNET_ACTIVE), ConfigNew.m_tfeEnabled);
-	}
-
-	if (CONFIG_CHANGED_LOCAL(m_tfeInterface))
-	{
-		RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, ConfigNew.m_tfeInterface);
-	}
-
 }
 
 void CPropertySheetHelper::ApplyNewConfig(void)

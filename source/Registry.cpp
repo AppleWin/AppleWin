@@ -195,7 +195,8 @@ void RegDeleteConfigSlotSection(UINT slot)
 	if (status == ERROR_SUCCESS)
 	{
 		std::string& keySlot = RegGetSlotSection(slot);
-		if (RegDeleteKey(keyhandle, keySlot.c_str()) != ERROR_SUCCESS)
+		LSTATUS status2 = RegDeleteKey(keyhandle, keySlot.c_str());
+		if (status2 != ERROR_SUCCESS && status2 != ERROR_FILE_NOT_FOUND)
 			_ASSERT(0);
 	}
 

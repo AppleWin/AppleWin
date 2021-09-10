@@ -260,13 +260,6 @@ void LoadConfiguration(void)
 
 	TCHAR szFilename[MAX_PATH];
 
-	DWORD dwTfeEnabled;
-	REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &dwTfeEnabled, 0);
-	tfe_enabled = dwTfeEnabled ? 1 : 0;
-
-	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
-	update_tfe_interface(szFilename);
-
 	//
 
 	for (UINT slot = SLOT0; slot <= SLOT7; slot++)
@@ -276,11 +269,37 @@ void LoadConfiguration(void)
 		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
 		{
 			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp);
+
+			if (slot == SLOT3)
+			{
+				if ((SS_CARDTYPE)dwTmp == CT_Uthernet)	// TODO: move this to when UthernetCard object is instantiated
+				{
+					tfe_enabled = 1;
+
+					std::string& regSection = RegGetConfigSlotSection(slot);
+					if (RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, szFilename, MAX_PATH, TEXT("")))
+						update_tfe_interface(szFilename);
+				}
+				else
+				{
+					tfe_enabled = 0;
+				}
+			}
 		}
 		else	// legacy (AppleWin 1.30.3 or earlier)
 		{
 			if (slot == SLOT3)
+			{
+				DWORD tfeEnabled;
+				REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &tfeEnabled, 0);
+				tfe_enabled = tfeEnabled ? 1 : 0;
+
 				GetCardMgr().Insert(SLOT3, tfe_enabled ? CT_Uthernet : CT_Empty);
+
+				// TODO: move this to when UthernetCard object is instantiated
+				RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
+				update_tfe_interface(szFilename);
+			}
 			else if (slot == SLOT4 && REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
 				GetCardMgr().Insert(SLOT4, (SS_CARDTYPE)dwTmp);
 			else if (slot == SLOT5 && REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
