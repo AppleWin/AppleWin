@@ -510,6 +510,14 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.bRemoveNoSlotClock = true;
 		}
+		else if (strcmp(lpCmdLine, "-snes-max-alt-joy1") == 0)
+		{
+			g_cmdLine.snesMaxAltControllerType[0] = true;
+		}
+		else if (strcmp(lpCmdLine, "-snes-max-alt-joy2") == 0)
+		{
+			g_cmdLine.snesMaxAltControllerType[1] = true;
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);

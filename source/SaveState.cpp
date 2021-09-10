@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "Debug.h"
 #include "Disk.h"
+#include "FourPlay.h"
 #include "Joystick.h"
 #include "Keyboard.h"
 #include "LanguageCard.h"
@@ -45,6 +46,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "ParallelPrinter.h"
 #include "Pravets.h"
 #include "SerialComms.h"
+#include "SNESMAX.h"
 #include "Speaker.h"
 #include "Speech.h"
 #include "z80emu.h"
@@ -314,7 +316,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
 		UINT cardVersion = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 
-		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
+		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE), true))	// NB. For some cards, State can be null
 			throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
 
 		SS_CARDTYPE type = CT_Empty;
@@ -377,6 +379,18 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			SetExpansionMemType(type);
 			CreateLanguageCard();
 			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+		}
+		else if (card == FourPlayCard::GetSnapshotCardName())
+		{
+			type = CT_FourPlay;
+			GetCardMgr().Insert(slot, type);
+			bRes = dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+		}
+		else if (card == SNESMAXCard::GetSnapshotCardName())
+		{
+			type = CT_SNESMAX;
+			GetCardMgr().Insert(slot, type);
+			bRes = dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else
 		{
@@ -635,6 +649,14 @@ void Snapshot_SaveState(void)
 
 			if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
 				HD_SaveSnapshot(yamlSaveHelper);
+
+			for (UINT slot = SLOT3; slot <= SLOT5; slot++)
+			{
+				if (GetCardMgr().QuerySlot(slot) == CT_FourPlay)
+					dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(slot)).SaveSnapshot(yamlSaveHelper);
+				else if (GetCardMgr().QuerySlot(slot) == CT_SNESMAX)
+					dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(slot)).SaveSnapshot(yamlSaveHelper);
+			}
 		}
 
 		// Miscellaneous

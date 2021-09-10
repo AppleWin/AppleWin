@@ -107,7 +107,7 @@ enum AppMode_e
 #define  REGVALUE_CUSTOM_SPEED       "Custom Speed"
 #define  REGVALUE_EMULATION_SPEED    "Emulation Speed"
 #define  REGVALUE_WINDOW_SCALE       "Window Scale"
-#define  REGVALUE_UTHERNET_ACTIVE       "Uthernet Active"
+#define  REGVALUE_UTHERNET_ACTIVE       "Uthernet Active"	// GH#977: Deprecated from 1.30.4
 #define  REGVALUE_UTHERNET_INTERFACE    "Uthernet Interface"
 #define  REGVALUE_SLOT4					"Slot 4"			// GH#977: Deprecated from 1.30.4
 #define  REGVALUE_SLOT5					"Slot 5"			// GH#977: Deprecated from 1.30.4

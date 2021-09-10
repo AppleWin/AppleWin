@@ -144,10 +144,7 @@ int CPageConfigTfe::gray_ungray_items(HWND hwnd)
 	int enable;
 	int number;
 
-	//resources_get_value("ETHERNET_DISABLED", (void *)&disabled);
-	DWORD dwDisabled;
-	REGLOAD_DEFAULT(TEXT("Uthernet Disabled"), &dwDisabled, 0);
-	int disabled = dwDisabled ? 1 : 0;
+	int disabled = 0;
 	get_disabled_state(&disabled);
 
 	if (disabled)
@@ -274,7 +271,7 @@ void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 	{
 		m_tfe_interface_name = buffer;
 		active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
-		m_tfe_enabled = active_value >= 1 ? 1 : 0;
+		m_tfe_enabled = active_value > 0 ? 1 : 0;
 	}
 	else
 	{
