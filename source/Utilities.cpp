@@ -446,7 +446,7 @@ void InsertFloppyDisks(const UINT slot, LPCSTR szImageName_drive[NUM_DRIVES], bo
 	}
 	else if (szImageName_drive[DRIVE_2])
 	{
-		bRes |= DoDiskInsert(slot, DRIVE_2, szImageName_drive[DRIVE_2]);
+		bRes &= DoDiskInsert(slot, DRIVE_2, szImageName_drive[DRIVE_2]);
 		LogFileOutput("Init: S%d, DoDiskInsert(D2), res=%d\n", slot, bRes);
 	}
 
@@ -482,7 +482,7 @@ void InsertHardDisks(LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 
 	if (szImageName_harddisk[HARDDISK_2])
 	{
-		bRes |= DoHardDiskInsert(HARDDISK_2, szImageName_harddisk[HARDDISK_2]);
+		bRes &= DoHardDiskInsert(HARDDISK_2, szImageName_harddisk[HARDDISK_2]);
 		LogFileOutput("Init: DoHardDiskInsert(HDD2), res=%d\n", bRes);
 	}
 
