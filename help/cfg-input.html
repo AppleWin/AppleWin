@@ -13,7 +13,7 @@
 
 <h2 style="color: rgb(0, 128, 0);">Input Settings</h2>
 
-<hr size="4"><img style="width: 344px; height: 460px; float: right;" src="img/input.png" alt="Input settings" hspace="5" vspace="5">
+<hr size="4"><img style="width: 354px; height: 497px; float: right;" src="img/input.png" alt="Input settings" hspace="5" vspace="5">
 <strong>Joystick Control:</strong><br>
 
 These options allow you to configure up to two joysticks attached to
@@ -38,6 +38,16 @@ then you should leave these values at 0.</li>
   <li>Keyboard auto-centering: When keys used for joystick emulation are released then the joystick will return to the central position.</li>
 </ul>
 
+<strong>4Play Joystick card:</strong><br>
+This card allows up to 4 Atari 9-pin joysticks to be connected. It can be configured in slots 3, 4 or 5. Since it only uses the slot's DEVICE SELECT space ($C0Bx for slot 3) then it can co-exist with 80-column cards in the Apple //e's AUX slot. NB. For a real PAL Apple //e, then a slot riser card is required for it to fit.<br>
+See Lukazi's <a href="https://lukazi.blogspot.com/2016/04/apple-ii-4play-joystick-card.html">4Play card</a> and <a href="https://lukazi.blogspot.com/2017/08/apple-ii-4play-joystick-card-software.html">4Play card software</a> blogs for more information.<br>
+<br>
+
+<strong>SNES MAX card:</strong><br>
+This card allows up to 2 SNES controllers to be connected and all 12 buttons can be read. It can be configured in slots 3, 4 or 5. Since it only uses the slot's DEVICE SELECT space ($C0Bx for slot 3) then it can co-exist with 80-column cards in the Apple //e's AUX slot. NB. This card is small, so no slot riser card is required.<br>
+See Lukazi's <a href="https://lukazi.blogspot.com/2021/06/game-controller-snes-max-snes.html">SNES MAX</a> blog for more information.<br>
+<br>
+<br>
 
 <strong>Scroll Lock acts as toggle for full-speed CPU:</strong><br>
 <ul>
@@ -50,13 +60,13 @@ then you should leave these values at 0.</li>
 <ul>
   <li>Disables joystick emulation with mouse.</li>
   <li>Disables Mockingboard/Phasor in slot 4.</li>
-  <li>Show crosshairs in window's frame:</li>
+  <li>Show cross-hairs in window's frame:</li>
   <ul>
-    <li>Configure whether you want crosshairs or not</li>
+    <li>Configure whether you want cross-hairs or not</li>
   </ul>
   <li>Restrict mouse to Apple window:</li>
   <ul>
-    <li>Resticting is useful for paint applications</li>
+    <li>Restricting is useful for paint applications</li>
     <li>When unrestricted, the emulated mouse is fully integrated with the Window desktop:
 moving in and out of the AppleWin window will switch between Windows' and the Apple's mouse cursor.</li>
     <li>NB. Even when unrestricted, you won't be able to move the mouse outside the Apple window for GEOS. This is not a bug.</li>
