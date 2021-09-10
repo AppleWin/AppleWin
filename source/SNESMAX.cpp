@@ -156,7 +156,7 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 //			controller2Buttons = controller2Buttons | 0 * 0x4000; // spare Button
 //			controller2Buttons = controller2Buttons | 0 * 0x8000; // spare Button
 
-			if (pCard->m_altControllerType[0])
+			if (pCard->m_altControllerType[1])
 			{
 				// 8BitDo NES30 PRO
 				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0002) >> 1); // B Button
