@@ -67,7 +67,7 @@ BYTE __stdcall SNESMAXCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, 
 	switch (addr & 0xF)
 	{
 	case 0:
-		output = (output & 0x3F) | ((pCard->controller2Buttons & 0x1) << 6) | ((pCard->controller1Buttons & 0x1) << 7);
+		output = (output & 0x3F) | ((pCard->m_controller2Buttons & 0x1) << 6) | ((pCard->m_controller1Buttons & 0x1) << 7);
 		break;
 	default:
 		break;
@@ -88,13 +88,13 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 	infoEx.dwSize = sizeof(infoEx);
 	infoEx.dwFlags = JOY_RETURNPOV | JOY_RETURNBUTTONS;
 
-	UINT& controller1Buttons = pCard->controller1Buttons;	// ref to object's controller1Buttons
-	UINT& controller2Buttons = pCard->controller2Buttons;	// ref to object's controller2Buttons
+	UINT& controller1Buttons = pCard->m_controller1Buttons;	// ref to object's controller1Buttons
+	UINT& controller2Buttons = pCard->m_controller2Buttons;	// ref to object's controller2Buttons
 
 	switch (addr & 0xF)
 	{
 	case 0: // Latch
-		pCard->buttonIndex = 0;
+		pCard->m_buttonIndex = 0;
 		controller1Buttons = 0;
 		controller2Buttons = 0;
 
@@ -188,9 +188,9 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 
 		break;
 	case 1: // Clock
-		if (pCard->buttonIndex <= 16)
+		if (pCard->m_buttonIndex <= 16)
 		{
-			pCard->buttonIndex++;
+			pCard->m_buttonIndex++;
 			controller1Buttons = controller1Buttons >> 1;
 			controller2Buttons = controller2Buttons >> 1;
 		}
@@ -224,7 +224,7 @@ void SNESMAXCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_BUTTON_INDEX, buttonIndex);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_BUTTON_INDEX, m_buttonIndex);
 }
 
 bool SNESMAXCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
@@ -232,7 +232,7 @@ bool SNESMAXCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT v
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
-	buttonIndex = yamlLoadHelper.LoadUint(SS_YAML_KEY_BUTTON_INDEX);
+	m_buttonIndex = yamlLoadHelper.LoadUint(SS_YAML_KEY_BUTTON_INDEX);
 
 	return true;
 }

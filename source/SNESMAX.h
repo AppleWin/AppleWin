@@ -10,9 +10,9 @@ public:
 		Card(CT_SNESMAX),
 		m_slot(slot)
 	{
-		buttonIndex = 0;
-		controller1Buttons = 0;
-		controller2Buttons = 0;
+		m_buttonIndex = 0;
+		m_controller1Buttons = 0;
+		m_controller2Buttons = 0;
 
 		m_altControllerType[0] = g_cmdLine.snesMaxAltControllerType[0];
 		m_altControllerType[1] = g_cmdLine.snesMaxAltControllerType[1];
@@ -34,9 +34,9 @@ public:
 private:
 	UINT m_slot;
 
-	UINT buttonIndex;
-	UINT controller1Buttons;
-	UINT controller2Buttons;
+	UINT m_buttonIndex;
+	UINT m_controller1Buttons;
+	UINT m_controller2Buttons;
 
 	bool m_altControllerType[2];
 };
