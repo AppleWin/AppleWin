@@ -197,10 +197,6 @@ void LoadConfiguration(void)
 	GetVideo().Config_Load_Video();
 	SetCurrentCLK6502();	// Pre: g_dwSpeed && Config_Load_Video()->SetVideoRefreshRate()
 
-	DWORD dwEnhanceDisk;
-	REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
-	GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
-
 	//
 
 	DWORD dwTmp = 0;
@@ -335,6 +331,11 @@ void LoadConfiguration(void)
 	SetCurrentImageDir(szFilename);
 
 	GetCardMgr().GetDisk2CardMgr().LoadLastDiskImage();
+
+	// Do this after populating the slots with Disk II controller(s)
+	DWORD dwEnhanceDisk;
+	REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
+	GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	//
 
