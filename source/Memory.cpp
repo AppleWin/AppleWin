@@ -1729,6 +1729,14 @@ void MemInitializeIO(void)
 		// . Uthernet card has no ROM and only IO mapped at $C0Bx
 		// NB. I/O handlers setup via tfe_init() & update_tfe_interface()
 	}
+	else if (GetCardMgr().QuerySlot(SLOT3) == CT_FourPlay)
+	{
+		dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(SLOT3)).InitializeIO(pCxRomPeripheral, SLOT3);
+	}
+	else if (GetCardMgr().QuerySlot(SLOT3) == CT_SNESMAX)
+	{
+		dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(SLOT3)).InitializeIO(pCxRomPeripheral, SLOT3);
+	}
 
 	// Apple//e: Auxiliary slot contains Extended 80 Column card or RamWorksIII card
 
@@ -1756,6 +1764,7 @@ void MemInitializeIO(void)
 	{
 		dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(SLOT4)).InitializeIO(pCxRomPeripheral, SLOT4);
 	}
+
 	if (GetCardMgr().QuerySlot(SLOT5) == CT_Z80)
 	{
 		ConfigureSoftcard(pCxRomPeripheral, SLOT5);		// $C500 : Z80 card

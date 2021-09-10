@@ -80,8 +80,6 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
 	SNESMAXCard* pCard = (SNESMAXCard*)MemGetSlotParameters(slot);
 
-	UINT controllerType = 1;
-//	UINT controllerType = 2;	// TODO: configurable via cmd line
 	UINT xAxis = 0;
 	UINT yAxis = 0;
 
@@ -114,9 +112,9 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 //			controller1Buttons = controller1Buttons | 0 * 0x4000; // spare Button
 //			controller1Buttons = controller1Buttons | 0 * 0x8000; // spare Button
 
-			switch (controllerType)
+			if (pCard->m_altControllerType[0])
 			{
-			case 2: // 8BitDo NES30 PRO
+				// 8BitDo NES30 PRO
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0002) >> 1); // B Button
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0010) >> 3); // Y Button
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0400) >> 8); // Sl Button
@@ -126,8 +124,10 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0008) << 6); // X Button
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0100) << 2) | ((infoEx.dwButtons & 0x0040) << 4); // Fl Button
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0200) << 2) | ((infoEx.dwButtons & 0x0080) << 4); // Fr Button
-				break;
-			default: // Logitech F310
+			}
+			else
+			{
+				// Logitech F310, Dualshock 4
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0002) >> 1); // B Button
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0001) << 1); // Y Button
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0100) >> 6); // Sl Button
@@ -137,7 +137,6 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0008) << 6); // X Button
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0010) << 6) | ((infoEx.dwButtons & 0x0040) << 4); // Fl Button
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0020) << 6) | ((infoEx.dwButtons & 0x0080) << 4); // Fr Button
-				break;
 			}
 			controller1Buttons = controller1Buttons | 0x10000; // Controller plugged in status.
 		}
@@ -157,9 +156,9 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 //			controller2Buttons = controller2Buttons | 0 * 0x4000; // spare Button
 //			controller2Buttons = controller2Buttons | 0 * 0x8000; // spare Button
 
-			switch (controllerType)
+			if (pCard->m_altControllerType[0])
 			{
-			case 2: // 8BitDo NES30 PRO
+				// 8BitDo NES30 PRO
 				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0002) >> 1); // B Button
 				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0010) >> 3); // Y Button
 				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0400) >> 8); // Sl Button
@@ -169,8 +168,10 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0008) << 6); // X Button
 				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0100) << 2) | ((infoEx.dwButtons & 0x0040) << 4); // Fl Button
 				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0200) << 2) | ((infoEx.dwButtons & 0x0080) << 4); // Fr Button
-				break;
-			default: // Logitech F310
+			}
+			else
+			{
+				// Logitech F310, Dualshock 4
 				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0002) >> 1); // B Button
 				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0001) << 1); // Y Button
 				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0100) >> 6); // Sl Button
@@ -180,7 +181,6 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0008) << 6); // X Button
 				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0010) << 6) | ((infoEx.dwButtons & 0x0040) << 4); // Fl Button
 				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0020) << 6) | ((infoEx.dwButtons & 0x0080) << 4); // Fr Button
-				break;
 			}
 			controller2Buttons = controller2Buttons | 0x10000; // Controller plugged in status.
 		}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Card.h"
+#include "CmdLine.h"
 
 class SNESMAXCard : public Card
 {
@@ -12,6 +13,9 @@ public:
 		buttonIndex = 0;
 		controller1Buttons = 0;
 		controller2Buttons = 0;
+
+		m_altControllerType[0] = g_cmdLine.snesMaxAltControllerType[0];
+		m_altControllerType[1] = g_cmdLine.snesMaxAltControllerType[1];
 	}
 	virtual ~SNESMAXCard(void) {}
 
@@ -33,4 +37,6 @@ private:
 	UINT buttonIndex;
 	UINT controller1Buttons;
 	UINT controller2Buttons;
+
+	bool m_altControllerType[2];
 };
