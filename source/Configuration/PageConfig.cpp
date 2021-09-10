@@ -316,7 +316,6 @@ void CPageConfig::DlgOK(HWND hWnd)
 		m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = isNewVideoRate50Hz ? VR_50HZ : VR_60HZ;
 	}
 
-	m_PropertySheetHelper.GetConfigNew().m_tfeEnabled = m_PageConfigTfe.m_tfe_enabled;
 	m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
 
 	if (bVideoReinit)

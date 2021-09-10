@@ -294,7 +294,7 @@ void LoadConfiguration(void)
 				REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &tfeEnabled, 0);
 				tfe_enabled = tfeEnabled ? 1 : 0;
 
-				GetCardMgr().Insert(SLOT3, tfe_enabled ? CT_Uthernet : CT_Empty);
+				GetCardMgr().Insert(SLOT3, get_tfe_enabled() ? CT_Uthernet : CT_Empty);
 
 				// TODO: move this to when UthernetCard object is instantiated
 				RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));

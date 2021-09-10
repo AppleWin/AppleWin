@@ -393,7 +393,6 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_ConfigOld.m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
-	m_ConfigOld.m_tfeEnabled = get_tfe_enabled();
 	m_ConfigOld.m_tfeInterface = get_tfe_interface();
 
 	// Reset flags each time:
@@ -468,20 +467,20 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 		if (CONFIG_CHANGED(m_videoRefreshRate))
 			strMsgMain += ". Video refresh rate has changed\n";
 
-		if (CONFIG_CHANGED(m_Slot[4]))
-			strMsgMain += GetSlot(4);
+		if (CONFIG_CHANGED(m_Slot[SLOT3]))
+			strMsgMain += GetSlot(SLOT3);
 
-		if (CONFIG_CHANGED(m_Slot[5]))
-			strMsgMain += GetSlot(5);
+		if (CONFIG_CHANGED(m_Slot[SLOT4]))
+			strMsgMain += GetSlot(SLOT4);
+
+		if (CONFIG_CHANGED(m_Slot[SLOT5]))
+			strMsgMain += GetSlot(SLOT5);
 
 		if (CONFIG_CHANGED(m_bEnableHDD))
 			strMsgMain += ". Harddisk(s) have been plugged/unplugged\n";
 
 		if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
 			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
-
-		if (CONFIG_CHANGED(m_tfeEnabled) || CONFIG_CHANGED(m_tfeInterface))
-			strMsgMain += ". Ethernet (TFE) Options\n";
 	}
 
 	std::string strMsgPost("\n");
@@ -562,6 +561,8 @@ std::string CPropertySheetHelper::GetCardName(const SS_CARDTYPE CardType)
 		return "Echo";
 	case CT_SAM:			// Soundcard: Software Automated Mouth
 		return "SAM";
+	case CT_Uthernet:
+		return "Uthernet";
 	case CT_FourPlay:
 		return "4Play";
 	case CT_SNESMAX:
