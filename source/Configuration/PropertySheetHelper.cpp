@@ -125,18 +125,10 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 	if (slot >= NUM_SLOTS)
 		return;
 
-	// Two paths:
-	// 1) Via Config dialog: card not inserted yet
-	// 2) Snapshot_LoadState_v2(): card already inserted
 	if (GetCardMgr().QuerySlot(slot) == newCardType)
 		return;
 
 	GetCardMgr().Insert(slot, newCardType);
-
-	RegDeleteConfigSlotSection(slot);
-
-	std::string& regSection = RegGetConfigSlotSection(slot);
-	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, newCardType);
 }
 
 // Used by:
@@ -374,6 +366,15 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 	{
 		REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), ConfigNew.m_videoRefreshRate);
 	}
+}
+
+void CPropertySheetHelper::ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew)
+{
+	SaveComputerType(ConfigNew.m_Apple2Type);
+	SaveCpuType(ConfigNew.m_CpuType);
+	REGSAVE(TEXT(REGVALUE_HDD_ENABLED), ConfigNew.m_bEnableHDD ? 1 : 0);
+	REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM), ConfigNew.m_bEnableTheFreezesF8Rom);
+	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), ConfigNew.m_videoRefreshRate);
 }
 
 void CPropertySheetHelper::ApplyNewConfig(void)

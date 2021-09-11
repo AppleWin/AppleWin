@@ -11,6 +11,7 @@ public:
 		m_pMouseCard(NULL),
 		m_pSSC(NULL)
 	{
+		m_updateRegistryForInsert = false;	// don't overwrite the Registry with these default cards
 		Insert(0, CT_Empty);
 		Insert(1, CT_GenericPrinter);
 		Insert(2, CT_SSC);
@@ -20,6 +21,7 @@ public:
 		Insert(6, CT_Disk2);
 		Insert(7, CT_Empty);
 		InsertAux(CT_Extended80Col);	// For Apple //e and above
+		m_updateRegistryForInsert = true;
 	}
 	~CardManager(void)
 	{
@@ -60,4 +62,5 @@ private:
 	Disk2CardManager m_disk2CardMgr;
 	class CMouseInterface* m_pMouseCard;
 	class CSuperSerialCard* m_pSSC;
+	bool m_updateRegistryForInsert;	// inserting a new card should update the Registry
 };

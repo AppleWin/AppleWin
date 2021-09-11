@@ -19,11 +19,10 @@ public:
 	{
 		m_bEnableHDD = HD_CardIsEnabled();
 		m_bEnableTheFreezesF8Rom = bEnableTheFreezesF8Rom;
-		memset(&m_Slot, 0, sizeof(m_Slot));
-		m_SlotAux = CT_Empty;
-		m_Slot[SLOT4] = GetCardMgr().QuerySlot(SLOT4);
-		m_Slot[SLOT5] = GetCardMgr().QuerySlot(SLOT5);
-		m_Slot[SLOT7] = GetCardMgr().QuerySlot(SLOT7);
+
+		for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+			m_Slot[slot] = GetCardMgr().QuerySlot(slot);
+		m_SlotAux = GetCardMgr().QueryAux();
 
 		m_tfeInterface = get_tfe_interface();
 	}
