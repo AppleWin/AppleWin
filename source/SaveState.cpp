@@ -301,6 +301,8 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 	if (unitVersion != UNIT_SLOTS_VER)
 		throw std::string(SS_YAML_KEY_UNIT ": Slots: Version mismatch");
 
+	bool cardInserted[NUM_SLOTS] = {};
+
 	while (1)
 	{
 		std::string scalar = yamlLoadHelper.GetMapNextSlotNumber();
@@ -403,8 +405,18 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			throw std::string("Slots: Unknown card: " + card);	// todo: don't throw - just ignore & continue
 		}
 
+		cardInserted[slot] = true;
+
 		yamlLoadHelper.PopMap();
 		yamlLoadHelper.PopMap();
+	}
+
+	// Save-state may not contain any info about empty slots, so ensure they are set to empty
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (cardInserted[slot])
+			continue;
+		GetCardMgr().Insert(slot, CT_Empty);
 	}
 }
 
