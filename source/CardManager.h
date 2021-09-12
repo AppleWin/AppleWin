@@ -11,17 +11,15 @@ public:
 		m_pMouseCard(NULL),
 		m_pSSC(NULL)
 	{
-		m_updateRegistryForInsert = false;	// don't overwrite the Registry with these default cards
-		Insert(0, CT_Empty);
-		Insert(1, CT_GenericPrinter);
-		Insert(2, CT_SSC);
-		Insert(3, CT_Uthernet);
-		Insert(4, CT_Empty);
-		Insert(5, CT_Empty);
-		Insert(6, CT_Disk2);
-		Insert(7, CT_Empty);
-		InsertAux(CT_Extended80Col);	// For Apple //e and above
-		m_updateRegistryForInsert = true;
+		InsertInternal(SLOT0, CT_Empty);
+		InsertInternal(SLOT1, CT_GenericPrinter);
+		InsertInternal(SLOT2, CT_SSC);
+		InsertInternal(SLOT3, CT_Uthernet);
+		InsertInternal(SLOT4, CT_Empty);
+		InsertInternal(SLOT5, CT_Empty);
+		InsertInternal(SLOT6, CT_Disk2);
+		InsertInternal(SLOT7, CT_Empty);
+		InsertAuxInternal(CT_Extended80Col);	// For Apple //e and above
 	}
 	~CardManager(void)
 	{
@@ -54,6 +52,8 @@ public:
 	bool IsSSCInstalled(void) { return m_pSSC != NULL; }
 
 private:
+	void InsertInternal(UINT slot, SS_CARDTYPE type);
+	void InsertAuxInternal(SS_CARDTYPE type);
 	void RemoveInternal(UINT slot);
 	void RemoveAuxInternal(void);
 
@@ -62,5 +62,4 @@ private:
 	Disk2CardManager m_disk2CardMgr;
 	class CMouseInterface* m_pMouseCard;
 	class CSuperSerialCard* m_pSSC;
-	bool m_updateRegistryForInsert;	// inserting a new card should update the Registry
 };

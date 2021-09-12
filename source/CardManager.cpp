@@ -39,14 +39,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SerialComms.h"
 #include "SNESMAX.h"
 
-void CardManager::Insert(UINT slot, SS_CARDTYPE type)
+void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 {
 	RemoveInternal(slot);
 
 	switch (type)
 	{
 	case CT_Empty:
-		Remove(slot);	// creates a new EmptyCard
+		m_slot[slot] = new EmptyCard;
 		break;
 	case CT_Disk2:
 		m_slot[slot] = new Disk2InterfaceCard(slot);
@@ -115,11 +115,12 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 
 	if (m_slot[slot] == NULL)
 		Remove(slot);			// creates a new EmptyCard
+}
 
-	//
-
-	if (m_updateRegistryForInsert)
-		RegSetConfigSlotNewCardType(slot, type);
+void CardManager::Insert(UINT slot, SS_CARDTYPE type)
+{
+	InsertInternal(slot, type);
+	RegSetConfigSlotNewCardType(slot, type);
 }
 
 void CardManager::RemoveInternal(UINT slot)
@@ -136,18 +137,17 @@ void CardManager::RemoveInternal(UINT slot)
 
 void CardManager::Remove(UINT slot)
 {
-	RemoveInternal(slot);
-	m_slot[slot] = new EmptyCard;
+	Insert(slot, CT_Empty);
 }
 
-void CardManager::InsertAux(SS_CARDTYPE type)
+void CardManager::InsertAuxInternal(SS_CARDTYPE type)
 {
 	RemoveAuxInternal();
 
 	switch (type)
 	{
 	case CT_Empty:
-		RemoveAux();	// creates a new EmptyCard
+		m_aux = new EmptyCard;
 		break;
 	case CT_80Col:
 		m_aux = new DummyCard(type);
@@ -167,11 +167,12 @@ void CardManager::InsertAux(SS_CARDTYPE type)
 	_ASSERT(m_aux != NULL);
 	if (m_aux == NULL)
 		RemoveAux();	// creates a new EmptyCard
+}
 
-	//
-
-	if (m_updateRegistryForInsert)
-		RegSetConfigSlotNewCardType(SLOT_AUX, type);
+void CardManager::InsertAux(SS_CARDTYPE type)
+{
+	InsertAuxInternal(type);
+	RegSetConfigSlotNewCardType(SLOT_AUX, type);
 }
 
 void CardManager::RemoveAuxInternal()
@@ -182,6 +183,5 @@ void CardManager::RemoveAuxInternal()
 
 void CardManager::RemoveAux(void)
 {
-	RemoveAuxInternal();
-	m_aux = new EmptyCard;
+	InsertAux(CT_Empty);
 }
