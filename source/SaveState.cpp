@@ -415,7 +415,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 	{
 		if (cardInserted[slot])
 			continue;
-		GetCardMgr().Insert(slot, CT_Empty);
+		GetCardMgr().Remove(slot);
 	}
 }
 
