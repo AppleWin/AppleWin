@@ -32,6 +32,7 @@ public:
 		m_Apple2Type = other.m_Apple2Type;
 		m_CpuType = other.m_CpuType;
 		memcpy(m_Slot, other.m_Slot, sizeof(m_Slot));
+		m_SlotAux = other.m_SlotAux;
 		m_bEnableHDD = other.m_bEnableHDD;
 		m_tfeInterface = other.m_tfeInterface;
 		m_bEnableTheFreezesF8Rom = other.m_bEnableTheFreezesF8Rom;
@@ -45,6 +46,7 @@ public:
 		return	m_Apple2Type == other.m_Apple2Type &&
 			m_CpuType == other.m_CpuType &&
 			memcmp(m_Slot, other.m_Slot, sizeof(m_Slot)) == 0 &&
+			m_SlotAux == other.m_SlotAux &&
 			m_bEnableHDD == other.m_bEnableHDD &&
 			m_tfeInterface == other.m_tfeInterface &&
 			m_bEnableTheFreezesF8Rom == other.m_bEnableTheFreezesF8Rom &&
