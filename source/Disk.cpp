@@ -175,7 +175,6 @@ void Disk2InterfaceCard::LoadLastDiskImage(const int drive)
 	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")))
 	{
 		m_saveDiskImage = false;
-		// Pass in ptr to local copy of filepath, since RemoveDisk() sets DiskPathFilename = ""
 		InsertDisk(drive, pathname, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 		m_saveDiskImage = true;
 	}

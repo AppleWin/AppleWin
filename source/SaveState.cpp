@@ -372,7 +372,6 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			type = CT_GenericHDD;
 			GetCardMgr().Insert(slot, type);
 			bRes = HD_LoadSnapshot(yamlLoadHelper, slot, cardVersion, g_strSaveStatePath);
-//			m_ConfigNew.m_bEnableHDD = true;
 		}
 		else if (card == LanguageCardSlot0::GetSnapshotCardName())
 		{
@@ -479,7 +478,6 @@ static void Snapshot_LoadState_v2(void)
 
 		restart = true;
 
-		//m_ConfigNew.m_bEnableHDD = false;
 		//m_ConfigNew.m_bEnableTheFreezesF8Rom = ?;	// todo: when support saving config
 
 		for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
@@ -490,7 +488,7 @@ static void Snapshot_LoadState_v2(void)
 		GetPravets().Reset();
 
 		HD_Reset();
-		HD_SetEnabled(false);
+		HD_SetEnabled(false);				// Set disabled & also removes card from slot 7
 
 		KeybReset();
 		GetVideo().VideoResetState();
