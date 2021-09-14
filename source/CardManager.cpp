@@ -117,10 +117,11 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		Remove(slot);			// creates a new EmptyCard
 }
 
-void CardManager::Insert(UINT slot, SS_CARDTYPE type)
+void CardManager::Insert(UINT slot, SS_CARDTYPE type, bool updateRegistry/*=true*/)
 {
 	InsertInternal(slot, type);
-	RegSetConfigSlotNewCardType(slot, type);
+	if (updateRegistry)
+		RegSetConfigSlotNewCardType(slot, type);
 }
 
 void CardManager::RemoveInternal(UINT slot)

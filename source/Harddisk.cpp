@@ -282,7 +282,7 @@ bool HD_CardIsEnabled(void)
 // . LoadConfiguration() - Done at each restart
 // . RestoreCurrentConfig() - Done when Config dialog is cancelled
 // . Snapshot_LoadState_v2() - Done to default to disabled state
-void HD_SetEnabled(const bool bEnabled)
+void HD_SetEnabled(const bool bEnabled, bool updateRegistry/*=true*/)
 {
 	if(g_bHD_Enabled == bEnabled)
 		return;
@@ -290,7 +290,7 @@ void HD_SetEnabled(const bool bEnabled)
 	g_bHD_Enabled = bEnabled;
 
 	if (bEnabled)
-		GetCardMgr().Insert(SLOT7, CT_GenericHDD);
+		GetCardMgr().Insert(SLOT7, CT_GenericHDD, updateRegistry);
 	else
 		GetCardMgr().Remove(SLOT7);
 

@@ -28,7 +28,7 @@ public:
 		RemoveAuxInternal();
 	}
 
-	void Insert(UINT slot, SS_CARDTYPE type);
+	void Insert(UINT slot, SS_CARDTYPE type, bool updateRegistry = true);
 	void Remove(UINT slot);
 	SS_CARDTYPE QuerySlot(UINT slot) { _ASSERT(slot<NUM_SLOTS); return m_slot[slot]->QueryType(); }
 	Card& GetRef(UINT slot)

@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Interface.h"
 #include "Log.h"
 #include "Memory.h"
+#include "Registry.h"
 #include "YamlHelper.h"
 
 #include "../resource/resource.h"
@@ -86,6 +87,8 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	memset(&m_o, 0, sizeof(m_o));
 
 	InternalReset();
+
+	SetSerialPortName();
 }
 
 void CSuperSerialCard::InternalReset()
@@ -983,7 +986,7 @@ void CSuperSerialCard::CommDestroy()
 //===========================================================================
 
 // dwNewSerialPortItem is the drop-down list item
-void CSuperSerialCard::CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem)
+void CSuperSerialCard::CommSetSerialPort(DWORD dwNewSerialPortItem)
 {
 	if (m_dwSerialPortItem == dwNewSerialPortItem)
 		return;
@@ -995,14 +998,22 @@ void CSuperSerialCard::CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem
 	m_dwSerialPortItem = dwNewSerialPortItem;
 
 	if (m_dwSerialPortItem == m_uTCPChoiceItemIdx)
+	{
 		m_ayCurrentSerialPortName = TEXT_SERIAL_TCP;
-	else if (m_dwSerialPortItem != 0) {
+	}
+	else if (m_dwSerialPortItem != 0)
+	{
 		TCHAR temp[SIZEOF_SERIALCHOICE_ITEM];
 		sprintf(temp, TEXT_SERIAL_COM"%d", m_vecSerialPortsItems[m_dwSerialPortItem]);
 		m_ayCurrentSerialPortName = temp;
 	}
 	else
+	{
 		m_ayCurrentSerialPortName.clear();	// "None"
+	}
+
+	std::string& regSection = RegGetConfigSlotSection(m_uSlot);
+	RegSaveString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, TRUE, GetSerialPortName());
 }
 
 //===========================================================================
@@ -1337,7 +1348,17 @@ char* CSuperSerialCard::GetSerialPortChoices()
 	return m_aySerialPortChoices;
 }
 
-// Called by LoadConfiguration()
+// Called by ctor
+void CSuperSerialCard::SetSerialPortName(void)
+{
+	char serialPortName[CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM];
+	std::string& regSection = RegGetConfigSlotSection(m_uSlot);
+	RegLoadString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, TRUE, serialPortName, sizeof(serialPortName), TEXT(""));
+
+	SetSerialPortName(serialPortName);
+}
+
+// Called by LoadSnapshot()
 void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 {
 	m_ayCurrentSerialPortName = pSerialPortName;

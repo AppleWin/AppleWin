@@ -181,18 +181,6 @@ void LoadConfiguration(void)
 		break;
 	}
 
-	TCHAR serialPortName[CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM];
-	if (RegLoadString(
-		TEXT(REG_CONFIG),
-		TEXT(REGVALUE_SERIAL_PORT_NAME),
-		TRUE,
-		serialPortName,
-		CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM))
-	{
-		if (GetCardMgr().IsSSCInstalled())
-			GetCardMgr().GetSSC()->SetSerialPortName(serialPortName);
-	}
-
 	REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
 	GetVideo().Config_Load_Video();
 	SetCurrentCLK6502();	// Pre: g_dwSpeed && Config_Load_Video()->SetVideoRefreshRate()
@@ -264,7 +252,7 @@ void LoadConfiguration(void)
 
 		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
 		{
-			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp);
+			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
 
 			if (slot == SLOT3)
 			{
@@ -284,7 +272,7 @@ void LoadConfiguration(void)
 			else if (slot == SLOT7)
 			{
 				if ((SS_CARDTYPE)dwTmp == CT_GenericHDD)	// TODO: move this to when HarddiskInterfaceCard object is instantiated
-					HD_SetEnabled(true);
+					HD_SetEnabled(true, false);
 			}
 		}
 		else	// legacy (AppleWin 1.30.3 or earlier)
