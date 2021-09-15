@@ -81,6 +81,7 @@ private:
 	UINT	GetNumSerialPortChoices() { return m_vecSerialPortsItems.size(); }
 	void	ScanCOMPorts();
 	void	SetSerialPortName(const char* pSerialPortName);
+	void	SetRegistrySerialPortName(void);
 	void	SaveSnapshotDIPSW(class YamlSaveHelper& yamlSaveHelper, std::string key, SSC_DIPSW& dipsw);
 	void	LoadSnapshotDIPSW(class YamlLoadHelper& yamlLoadHelper, std::string key, SSC_DIPSW& dipsw);
 

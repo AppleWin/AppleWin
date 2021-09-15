@@ -1012,8 +1012,7 @@ void CSuperSerialCard::CommSetSerialPort(DWORD dwNewSerialPortItem)
 		m_ayCurrentSerialPortName.clear();	// "None"
 	}
 
-	std::string& regSection = RegGetConfigSlotSection(m_uSlot);
-	RegSaveString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, TRUE, GetSerialPortName());
+	SetRegistrySerialPortName();
 }
 
 //===========================================================================
@@ -1396,6 +1395,14 @@ void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 		m_ayCurrentSerialPortName.clear();	// "None"
 		m_dwSerialPortItem = 0;
 	}
+
+	SetRegistrySerialPortName();
+}
+
+void CSuperSerialCard::SetRegistrySerialPortName(void)
+{
+	std::string& regSection = RegGetConfigSlotSection(m_uSlot);
+	RegSaveString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, TRUE, GetSerialPortName());
 }
 
 //===========================================================================
