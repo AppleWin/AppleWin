@@ -1395,8 +1395,6 @@ void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 		m_ayCurrentSerialPortName.clear();	// "None"
 		m_dwSerialPortItem = 0;
 	}
-
-	SetRegistrySerialPortName();
 }
 
 void CSuperSerialCard::SetRegistrySerialPortName(void)
@@ -1526,6 +1524,7 @@ bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, U
 
 	std::string serialPortName = yamlLoadHelper.LoadString(SS_YAML_KEY_SERIALPORTNAME);
 	SetSerialPortName(serialPortName.c_str());
+	SetRegistrySerialPortName();
 
 	return true;
 }
