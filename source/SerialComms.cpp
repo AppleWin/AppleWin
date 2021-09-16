@@ -72,7 +72,7 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	m_bCfgSupportDCD(false),
 	m_pExpansionRom(NULL)
 {
-	m_ayCurrentSerialPortName.clear();
+	m_currentSerialPortName.clear();
 	m_dwSerialPortItem = 0;
 
 	m_hCommHandle = INVALID_HANDLE_VALUE;
@@ -999,17 +999,17 @@ void CSuperSerialCard::CommSetSerialPort(DWORD dwNewSerialPortItem)
 
 	if (m_dwSerialPortItem == m_uTCPChoiceItemIdx)
 	{
-		m_ayCurrentSerialPortName = TEXT_SERIAL_TCP;
+		m_currentSerialPortName = TEXT_SERIAL_TCP;
 	}
 	else if (m_dwSerialPortItem != 0)
 	{
 		TCHAR temp[SIZEOF_SERIALCHOICE_ITEM];
 		sprintf(temp, TEXT_SERIAL_COM"%d", m_vecSerialPortsItems[m_dwSerialPortItem]);
-		m_ayCurrentSerialPortName = temp;
+		m_currentSerialPortName = temp;
 	}
 	else
 	{
-		m_ayCurrentSerialPortName.clear();	// "None"
+		m_currentSerialPortName.clear();	// "None"
 	}
 
 	SetRegistrySerialPortName();
@@ -1360,7 +1360,7 @@ void CSuperSerialCard::SetSerialPortName(void)
 // Called by LoadSnapshot()
 void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 {
-	m_ayCurrentSerialPortName = pSerialPortName;
+	m_currentSerialPortName = pSerialPortName;
 
 	// Init m_aySerialPortChoices, so that we have choices to show if serial is active when we 1st open Config dialog
 	GetSerialPortChoices();
@@ -1392,7 +1392,7 @@ void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 	}
 	else
 	{
-		m_ayCurrentSerialPortName.clear();	// "None"
+		m_currentSerialPortName.clear();	// "None"
 		m_dwSerialPortItem = 0;
 	}
 }

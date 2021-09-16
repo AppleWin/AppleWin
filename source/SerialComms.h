@@ -41,7 +41,7 @@ public:
 
 	char*	GetSerialPortChoices();
 	DWORD	GetSerialPort() { return m_dwSerialPortItem; }	// Drop-down list item
-	const std::string &	GetSerialPortName() { return m_ayCurrentSerialPortName; }
+	const std::string& GetSerialPortName() { return m_currentSerialPortName; }
 	void	SetSerialPortName(void);
 	bool	IsActive() { return (m_hCommHandle != INVALID_HANDLE_VALUE) || (m_hCommListenSocket != INVALID_SOCKET); }
 	void	SupportDCD(bool bEnable) { m_bCfgSupportDCD = bEnable; }	// Status
@@ -91,7 +91,7 @@ public:
 	static const UINT SIZEOF_SERIALCHOICE_ITEM = 12*sizeof(char);
 
 private:
-	std::string m_ayCurrentSerialPortName;
+	std::string m_currentSerialPortName;
 	DWORD	m_dwSerialPortItem;
 
 	static const UINT SERIALPORTITEM_INVALID_COM_PORT = 0;
