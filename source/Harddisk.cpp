@@ -214,8 +214,8 @@ void HD_LoadLastDiskImage(const int drive)
 	_ASSERT(drive == HARDDISK_1 || drive == HARDDISK_2);
 
 	const std::string regKey = (drive == HARDDISK_1)
-		? REGVALUE_PREF_LAST_HARDDISK_1
-		: REGVALUE_PREF_LAST_HARDDISK_2;
+		? REGVALUE_LAST_HARDDISK_1
+		: REGVALUE_LAST_HARDDISK_2;
 
 	char pathname[MAX_PATH];
 
@@ -241,8 +241,8 @@ static void HD_SaveLastDiskImage(const int drive)
 	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, CT_GenericHDD);
 
 	const std::string regKey = (drive == HARDDISK_1)
-		? REGVALUE_PREF_LAST_HARDDISK_1
-		: REGVALUE_PREF_LAST_HARDDISK_2;
+		? REGVALUE_LAST_HARDDISK_1
+		: REGVALUE_LAST_HARDDISK_2;
 
 	const std::string& pathName = HD_GetFullPathName(drive);
 

@@ -114,17 +114,17 @@ enum AppMode_e
 #define REG_CONFIG_SLOT_AUX			"Slot Auxiliary"
 #define REG_CONFIG_SLOT				"Slot "
 #define  REGVALUE_CARD_TYPE			"Card type"
+#define  REGVALUE_LAST_DISK_1		"Last Disk Image 1"
+#define  REGVALUE_LAST_DISK_2		"Last Disk Image 2"
+#define  REGVALUE_LAST_HARDDISK_1	"Last Harddisk Image 1"
+#define  REGVALUE_LAST_HARDDISK_2	"Last Harddisk Image 2"
 
 // Preferences 
 #define REG_PREFS						"Preferences"
 #define REGVALUE_PREF_START_DIR      "Starting Directory"
-#define REGVALUE_PREF_LAST_DISK_1	 "Last Disk Image 1"		// GH#977: Deprecated from 1.30.4
-#define REGVALUE_PREF_LAST_DISK_2	 "Last Disk Image 2"		// GH#977: Deprecated from 1.30.4
 #define REGVALUE_PREF_WINDOW_X_POS   "Window X-Position"
 #define REGVALUE_PREF_WINDOW_Y_POS   "Window Y-Position"
 #define REGVALUE_PREF_HDV_START_DIR  "HDV Starting Directory"
-#define REGVALUE_PREF_LAST_HARDDISK_1 "Last Harddisk Image 1"	// Deprecated from 1.30.5
-#define REGVALUE_PREF_LAST_HARDDISK_2 "Last Harddisk Image 2"	// Deprecated from 1.30.5
 
 #define WM_USER_BENCHMARK	WM_USER+1
 #define WM_USER_SAVESTATE	WM_USER+2
