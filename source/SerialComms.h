@@ -42,7 +42,6 @@ public:
 	char*	GetSerialPortChoices();
 	DWORD	GetSerialPort() { return m_dwSerialPortItem; }	// Drop-down list item
 	const std::string& GetSerialPortName() { return m_currentSerialPortName; }
-	void	SetSerialPortName(void);
 	bool	IsActive() { return (m_hCommHandle != INVALID_HANDLE_VALUE) || (m_hCommListenSocket != INVALID_SOCKET); }
 	void	SupportDCD(bool bEnable) { m_bCfgSupportDCD = bEnable; }	// Status
 

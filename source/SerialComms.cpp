@@ -72,7 +72,6 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	m_bCfgSupportDCD(false),
 	m_pExpansionRom(NULL)
 {
-	m_currentSerialPortName.clear();
 	m_dwSerialPortItem = 0;
 
 	m_hCommHandle = INVALID_HANDLE_VALUE;
@@ -88,7 +87,13 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 
 	InternalReset();
 
-	SetSerialPortName();
+	//
+
+	char serialPortName[CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM];
+	std::string& regSection = RegGetConfigSlotSection(m_uSlot);
+	RegLoadString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, TRUE, serialPortName, sizeof(serialPortName), TEXT(""));
+
+	SetSerialPortName(serialPortName);
 }
 
 void CSuperSerialCard::InternalReset()
@@ -1347,17 +1352,7 @@ char* CSuperSerialCard::GetSerialPortChoices()
 	return m_aySerialPortChoices;
 }
 
-// Called by ctor
-void CSuperSerialCard::SetSerialPortName(void)
-{
-	char serialPortName[CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM];
-	std::string& regSection = RegGetConfigSlotSection(m_uSlot);
-	RegLoadString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, TRUE, serialPortName, sizeof(serialPortName), TEXT(""));
-
-	SetSerialPortName(serialPortName);
-}
-
-// Called by LoadSnapshot()
+// Called by ctor & LoadSnapshot()
 void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 {
 	m_currentSerialPortName = pSerialPortName;
