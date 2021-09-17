@@ -209,49 +209,59 @@ static void NotifyInvalidImage(TCHAR* pszImageFilename)
 
 BOOL HD_Insert(const int iDrive, const std::string& pathname);
 
-void HD_LoadLastDiskImage(const int iDrive)
+void HD_LoadLastDiskImage(const int drive)
 {
-	_ASSERT(iDrive == HARDDISK_1 || iDrive == HARDDISK_2);
+	_ASSERT(drive == HARDDISK_1 || drive == HARDDISK_2);
 
-	const char *pRegKey = (iDrive == HARDDISK_1)
-		? REGVALUE_PREF_LAST_HARDDISK_1
-		: REGVALUE_PREF_LAST_HARDDISK_2;
+	const std::string regKey = (drive == HARDDISK_1)
+		? REGVALUE_LAST_HARDDISK_1
+		: REGVALUE_LAST_HARDDISK_2;
 
-	TCHAR sFilePath[MAX_PATH];
-	if (RegLoadString(TEXT(REG_PREFS), pRegKey, 1, sFilePath, MAX_PATH, TEXT("")))
+	char pathname[MAX_PATH];
+
+	std::string& regSection = RegGetConfigSlotSection(g_uSlot);
+	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")))
 	{
 		g_bSaveDiskImage = false;
-		// Pass in ptr to local copy of filepath, since RemoveDisk() sets DiskPathFilename = ""		// todo: update comment for HD func
-		HD_Insert(iDrive, sFilePath);
+		HD_Insert(drive, pathname);
 		g_bSaveDiskImage = true;
 	}
 }
 
 //===========================================================================
 
-static void HD_SaveLastDiskImage(const int iDrive)
+static void HD_SaveLastDiskImage(const int drive)
 {
-	_ASSERT(iDrive == HARDDISK_1 || iDrive == HARDDISK_2);
+	_ASSERT(drive == HARDDISK_1 || drive == HARDDISK_2);
 
 	if (!g_bSaveDiskImage)
 		return;
 
-	const std::string & pFileName = HD_GetFullPathName(iDrive);
+	std::string& regSection = RegGetConfigSlotSection(g_uSlot);
+	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, CT_GenericHDD);
 
-	if (iDrive == HARDDISK_1)
-		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_HARDDISK_1, TRUE, pFileName);
-	else
-		RegSaveString(TEXT(REG_PREFS), REGVALUE_PREF_LAST_HARDDISK_2, TRUE, pFileName);
+	const std::string regKey = (drive == HARDDISK_1)
+		? REGVALUE_LAST_HARDDISK_1
+		: REGVALUE_LAST_HARDDISK_2;
+
+	const std::string& pathName = HD_GetFullPathName(drive);
+
+	RegSaveString(regSection.c_str(), regKey.c_str(), TRUE, pathName);
 
 	//
 
-	char szPathName[MAX_PATH];
-	strcpy(szPathName, pFileName.c_str());
-	if (_tcsrchr(szPathName, TEXT(PATH_SEPARATOR)))
+	// For now, only update 'HDV Starting Directory' for slot7 & drive1
+	// . otherwise you'll get inconsistent results if you set drive1, then drive2 (and the images were in different folders)
+	if (g_uSlot != SLOT7 || drive != HARDDISK_1)
+		return;
+
+	TCHAR szPathName[MAX_PATH];
+	StringCbCopy(szPathName, MAX_PATH, pathName.c_str());
+	TCHAR* slash = _tcsrchr(szPathName, PATH_SEPARATOR);
+	if (slash != NULL)
 	{
-		char* pPathEnd = _tcsrchr(szPathName, TEXT(PATH_SEPARATOR))+1;
-		*pPathEnd = 0;
-		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szPathName);
+		slash[1] = '\0';
+		RegSaveString(REG_PREFS, REGVALUE_PREF_HDV_START_DIR, 1, szPathName);
 	}
 }
 
@@ -272,7 +282,7 @@ bool HD_CardIsEnabled(void)
 // . LoadConfiguration() - Done at each restart
 // . RestoreCurrentConfig() - Done when Config dialog is cancelled
 // . Snapshot_LoadState_v2() - Done to default to disabled state
-void HD_SetEnabled(const bool bEnabled)
+void HD_SetEnabled(const bool bEnabled, bool updateRegistry/*=true*/)
 {
 	if(g_bHD_Enabled == bEnabled)
 		return;
@@ -280,7 +290,7 @@ void HD_SetEnabled(const bool bEnabled)
 	g_bHD_Enabled = bEnabled;
 
 	if (bEnabled)
-		GetCardMgr().Insert(SLOT7, CT_GenericHDD);
+		GetCardMgr().Insert(SLOT7, CT_GenericHDD, updateRegistry);
 	else
 		GetCardMgr().Remove(SLOT7);
 
@@ -886,7 +896,7 @@ bool HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, co
 	if (!bResSelectImage1 && !bResSelectImage2)
 		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, strSaveStatePath);
 
-	HD_SetEnabled(true);
+	HD_SetEnabled(true, false);
 
 	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 

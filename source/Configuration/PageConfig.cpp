@@ -350,13 +350,8 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	if (GetCardMgr().IsSSCInstalled())
 	{
-		CSuperSerialCard* pSSC = GetCardMgr().GetSSC();
 		const DWORD uNewSerialPort = (DWORD) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
-		pSSC->CommSetSerialPort(hWnd, uNewSerialPort);
-		RegSaveString(	TEXT(REG_CONFIG),
-						TEXT(REGVALUE_SERIAL_PORT_NAME),
-						TRUE,
-						pSSC->GetSerialPortName() );
+		GetCardMgr().GetSSC()->CommSetSerialPort(uNewSerialPort);
 	}
 
 	//

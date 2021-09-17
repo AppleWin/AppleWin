@@ -158,8 +158,15 @@ void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value) {
 static std::string& RegGetSlotSection(UINT slot)
 {
 	static std::string section;
-	section = REG_CONFIG_SLOT;
-	section += (char)('0' + slot);
+	if (slot == SLOT_AUX)
+	{
+		section = REG_CONFIG_SLOT_AUX;
+	}
+	else
+	{
+		section = REG_CONFIG_SLOT;
+		section += (char)('0' + slot);
+	}
 	return section;
 }
 
@@ -177,8 +184,7 @@ void RegDeleteConfigSlotSection(UINT slot)
 
 	if (!g_sConfigFile.empty())
 	{
-		std::string section = REG_CONFIG "\\";
-		section += RegGetSlotSection(slot);
+		std::string& section = RegGetConfigSlotSection(slot);
 		return _ini::RegDeleteString(section.c_str(), peruser);
 	}
 
@@ -194,11 +200,21 @@ void RegDeleteConfigSlotSection(UINT slot)
 		&keyhandle);
 	if (status == ERROR_SUCCESS)
 	{
-		std::string& keySlot = RegGetSlotSection(slot);
-		LSTATUS status2 = RegDeleteKey(keyhandle, keySlot.c_str());
+		std::string& section = RegGetSlotSection(slot);
+		LSTATUS status2 = RegDeleteKey(keyhandle, section.c_str());
 		if (status2 != ERROR_SUCCESS && status2 != ERROR_FILE_NOT_FOUND)
 			_ASSERT(0);
 	}
 
 	RegCloseKey(keyhandle);
+}
+
+void RegSetConfigSlotNewCardType(UINT slot, SS_CARDTYPE type)
+{
+	RegDeleteConfigSlotSection(slot);
+
+	std::string regSection;
+	regSection = RegGetConfigSlotSection(slot);
+
+	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, type);
 }

@@ -181,18 +181,6 @@ void LoadConfiguration(void)
 		break;
 	}
 
-	TCHAR serialPortName[CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM];
-	if (RegLoadString(
-		TEXT(REG_CONFIG),
-		TEXT(REGVALUE_SERIAL_PORT_NAME),
-		TRUE,
-		serialPortName,
-		CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM))
-	{
-		if (GetCardMgr().IsSSCInstalled())
-			GetCardMgr().GetSSC()->SetSerialPortName(serialPortName);
-	}
-
 	REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
 	GetVideo().Config_Load_Video();
 	SetCurrentCLK6502();	// Pre: g_dwSpeed && Config_Load_Video()->SetVideoRefreshRate()
@@ -264,7 +252,7 @@ void LoadConfiguration(void)
 
 		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
 		{
-			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp);
+			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
 
 			if (slot == SLOT3)
 			{
@@ -280,6 +268,11 @@ void LoadConfiguration(void)
 				{
 					tfe_enabled = 0;
 				}
+			}
+			else if (slot == SLOT7)
+			{
+				if ((SS_CARDTYPE)dwTmp == CT_GenericHDD)	// TODO: move this to when HarddiskInterfaceCard object is instantiated
+					HD_SetEnabled(true, false);
 			}
 		}
 		else	// legacy (AppleWin 1.30.3 or earlier)
@@ -459,16 +452,7 @@ void InsertHardDisks(LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 	if (!szImageName_harddisk[HARDDISK_1] && !szImageName_harddisk[HARDDISK_2])
 		return;
 
-	// Enable the Harddisk controller card
-
-	HD_SetEnabled(true);
-
-	DWORD dwTmp;
-	BOOL res = REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp);
-	if (!res || !dwTmp)
-		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 1);	// Config: HDD Enabled
-
-	//
+	HD_SetEnabled(true);	// Enable the Harddisk controller card
 
 	bool bRes = true;
 
@@ -493,11 +477,6 @@ void InsertHardDisks(LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 void UnplugHardDiskControllerCard(void)
 {
 	HD_SetEnabled(false);
-
-	DWORD dwTmp;
-	BOOL res = REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp);
-	if (!res || dwTmp)
-		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 0);	// Config: HDD Disabled
 }
 
 void GetAppleWindowTitle()

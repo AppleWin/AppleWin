@@ -166,8 +166,8 @@ void Disk2InterfaceCard::LoadLastDiskImage(const int drive)
 	_ASSERT(drive == DRIVE_1 || drive == DRIVE_2);
 
 	const std::string regKey = (drive == DRIVE_1)
-		? REGVALUE_PREF_LAST_DISK_1
-		: REGVALUE_PREF_LAST_DISK_2;
+		? REGVALUE_LAST_DISK_1
+		: REGVALUE_LAST_DISK_2;
 
 	char pathname[MAX_PATH];
 
@@ -175,7 +175,6 @@ void Disk2InterfaceCard::LoadLastDiskImage(const int drive)
 	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")))
 	{
 		m_saveDiskImage = false;
-		// Pass in ptr to local copy of filepath, since RemoveDisk() sets DiskPathFilename = ""
 		InsertDisk(drive, pathname, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 		m_saveDiskImage = true;
 	}
@@ -194,8 +193,8 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, CT_Disk2);
 
 	const std::string regKey = (drive == DRIVE_1)
-		? REGVALUE_PREF_LAST_DISK_1
-		: REGVALUE_PREF_LAST_DISK_2;
+		? REGVALUE_LAST_DISK_1
+		: REGVALUE_LAST_DISK_2;
 
 	const std::string& pathName = DiskGetFullPathName(drive);
 

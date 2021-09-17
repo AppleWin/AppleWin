@@ -125,18 +125,10 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 	if (slot >= NUM_SLOTS)
 		return;
 
-	// Two paths:
-	// 1) Via Config dialog: card not inserted yet
-	// 2) Snapshot_LoadState_v2(): card already inserted
 	if (GetCardMgr().QuerySlot(slot) == newCardType)
 		return;
 
 	GetCardMgr().Insert(slot, newCardType);
-
-	RegDeleteConfigSlotSection(slot);
-
-	std::string& regSection = RegGetConfigSlotSection(slot);
-	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, newCardType);
 }
 
 // Used by:
@@ -356,14 +348,9 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
 		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
-//	slot = SLOT7;
-//	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-//		SetSlot(slot, ConfigNew.m_Slot[slot]);
-
-	if (CONFIG_CHANGED_LOCAL(m_bEnableHDD))
-	{
-		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), ConfigNew.m_bEnableHDD ? 1 : 0);
-	}
+	slot = SLOT7;
+	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
 	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))
 	{
@@ -374,6 +361,14 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 	{
 		REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), ConfigNew.m_videoRefreshRate);
 	}
+}
+
+void CPropertySheetHelper::ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew)
+{
+	SaveComputerType(ConfigNew.m_Apple2Type);
+	SaveCpuType(ConfigNew.m_CpuType);
+	REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM), ConfigNew.m_bEnableTheFreezesF8Rom);
+	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), ConfigNew.m_videoRefreshRate);
 }
 
 void CPropertySheetHelper::ApplyNewConfig(void)
@@ -390,7 +385,7 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	m_ConfigOld.m_Slot[SLOT4] = GetCardMgr().QuerySlot(SLOT4);
 	m_ConfigOld.m_Slot[SLOT5] = GetCardMgr().QuerySlot(SLOT5);
 	m_ConfigOld.m_Slot[SLOT6] = GetCardMgr().QuerySlot(SLOT6);	// CPageDisk::HandleFloppyDriveCombo() needs this to be CT_Disk2 (temp, as will replace with PR #955)
-	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
+	m_ConfigOld.m_Slot[SLOT7] = GetCardMgr().QuerySlot(SLOT7);
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_ConfigOld.m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
 	m_ConfigOld.m_tfeInterface = get_tfe_interface();
@@ -411,7 +406,7 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	SetSlot(SLOT3, m_ConfigOld.m_Slot[SLOT3]);
 	SetSlot(SLOT4, m_ConfigOld.m_Slot[SLOT4]);
 	SetSlot(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
-	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);
+	HD_SetEnabled(m_ConfigOld.m_Slot[SLOT7] == CT_GenericHDD);
 	GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
 	m_ConfigNew.m_videoRefreshRate = m_ConfigOld.m_videoRefreshRate;	// Not SetVideoRefreshRate(), as this re-inits much Video/NTSC state!
 }
@@ -476,7 +471,7 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 		if (CONFIG_CHANGED(m_Slot[SLOT5]))
 			strMsgMain += GetSlot(SLOT5);
 
-		if (CONFIG_CHANGED(m_bEnableHDD))
+		if (CONFIG_CHANGED(m_Slot[SLOT7]))
 			strMsgMain += ". Harddisk(s) have been plugged/unplugged\n";
 
 		if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))

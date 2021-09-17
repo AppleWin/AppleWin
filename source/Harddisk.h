@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	void HD_Destroy(void);
 	bool HD_CardIsEnabled(void);
-	void HD_SetEnabled(const bool bEnabled);
+	void HD_SetEnabled(const bool bEnabled, bool updateRegistry = true);
 	const std::string & HD_GetFullName(const int iDrive);
 	const std::string & HD_GetFullPathName(const int iDrive);
 	void HD_GetFilenameAndPathForSaveState(std::string& filename, std::string& path);

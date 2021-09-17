@@ -80,6 +80,12 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 					if (m_PropertySheetHelper.GetConfigOld().m_Slot[SLOT5] == CT_Disk2 || m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT5] == CT_Disk2)
 						m_PropertySheetHelper.SetSlot(SLOT5, m_PropertySheetHelper.GetConfigOld().m_Slot[SLOT5]);
 				}
+				// Support 'Cancel' case for Slot-7 HDD enabled/disabled - needed as the HarddiskInterfaceCard object is created on toggling the checkbox. See [*2]
+				if (m_PropertySheetHelper.GetConfigOld().m_Slot[SLOT7] != m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT7])
+				{
+					if (m_PropertySheetHelper.GetConfigOld().m_Slot[SLOT7] == CT_GenericHDD || m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT7] == CT_GenericHDD)
+						HD_SetEnabled(m_PropertySheetHelper.GetConfigOld().m_Slot[SLOT7] == CT_GenericHDD);
+				}
 				DlgCANCEL(hWnd);
 				break;
 			}
@@ -141,7 +147,14 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 			}
 			break;
 		case IDC_HDD_ENABLE:
-			EnableHDD(hWnd, IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE));
+			{
+				const BOOL checked = IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE) ? TRUE : FALSE;
+				m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT7] = checked ? CT_GenericHDD : CT_Empty;
+				// NB. Unusual as it creates slot object when checkbox is toggled (instead of after OK)
+				// Needed as we need a HarddiskInterfaceCard object so that images can be inserted/ejected [*2]
+				HD_SetEnabled(m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT7] == CT_GenericHDD);
+				EnableHDD(hWnd, checked);
+			}
 			break;
 		case IDC_HDD_SWAP:
 			HandleHDDSwap(hWnd);
@@ -249,12 +262,6 @@ void CPageDisk::DlgOK(HWND hWnd)
 	{
 		GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(bNewEnhanceDisk);
 		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (DWORD)bNewEnhanceDisk);
-	}
-
-	const bool bNewHDDIsEnabled = IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE) ? true : false;
-	if (bNewHDDIsEnabled != HD_CardIsEnabled())
-	{
-		m_PropertySheetHelper.GetConfigNew().m_bEnableHDD = bNewHDDIsEnabled;
 	}
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);

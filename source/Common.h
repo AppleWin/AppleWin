@@ -72,7 +72,7 @@ enum AppMode_e
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
 #define  REGVALUE_SAVE_STATE_ON_EXIT "Save State On Exit"
-#define  REGVALUE_HDD_ENABLED        "Harddisk Enable"
+#define  REGVALUE_HDD_ENABLED        "Harddisk Enable"		// Deprecated from 1.30.5
 #define  REGVALUE_JOYSTICK0_EMU_TYPE		"Joystick0 Emu Type v3"	// GH#434: Added at 1.26.3.0 (previously was "Joystick0 Emu Type")
 #define  REGVALUE_JOYSTICK1_EMU_TYPE		"Joystick1 Emu Type v3"	// GH#434: Added at 1.26.3.0 (previously was "Joystick1 Emu Type")
 #define  REGVALUE_OLD_JOYSTICK0_EMU_TYPE2	"Joystick0 Emu Type"	// GH#434: Deprecated from 1.26.3.0 (previously was "Joystick 0 Emulation")
@@ -90,7 +90,6 @@ enum AppMode_e
 #define  REGVALUE_MOUSE_RESTRICT_TO_WINDOW "Mouse restrict to window"
 #define  REGVALUE_THE_FREEZES_F8_ROM "The Freeze's F8 Rom"
 #define  REGVALUE_CIDERPRESSLOC      "CiderPress Location"
-#define  REGVALUE_CPM_CONFIG         "CPM Config"
 #define  REGVALUE_DUMP_TO_PRINTER    "Dump to printer"
 #define  REGVALUE_CONVERT_ENCODING   "Convert printer encoding for clones"
 #define  REGVALUE_FILTER_UNPRINTABLE "Filter unprintable characters"
@@ -107,24 +106,25 @@ enum AppMode_e
 #define  REGVALUE_CUSTOM_SPEED       "Custom Speed"
 #define  REGVALUE_EMULATION_SPEED    "Emulation Speed"
 #define  REGVALUE_WINDOW_SCALE       "Window Scale"
-#define  REGVALUE_UTHERNET_ACTIVE       "Uthernet Active"	// GH#977: Deprecated from 1.30.4
+#define  REGVALUE_UTHERNET_ACTIVE       "Uthernet Active"	// GH#977: Deprecated from 1.30.5
 #define  REGVALUE_UTHERNET_INTERFACE    "Uthernet Interface"
 #define  REGVALUE_SLOT4					"Slot 4"			// GH#977: Deprecated from 1.30.4
 #define  REGVALUE_SLOT5					"Slot 5"			// GH#977: Deprecated from 1.30.4
 #define  REGVALUE_VERSION				"Version"
+#define REG_CONFIG_SLOT_AUX			"Slot Auxiliary"
 #define REG_CONFIG_SLOT				"Slot "
 #define  REGVALUE_CARD_TYPE			"Card type"
+#define  REGVALUE_LAST_DISK_1		"Last Disk Image 1"
+#define  REGVALUE_LAST_DISK_2		"Last Disk Image 2"
+#define  REGVALUE_LAST_HARDDISK_1	"Last Harddisk Image 1"
+#define  REGVALUE_LAST_HARDDISK_2	"Last Harddisk Image 2"
 
 // Preferences 
 #define REG_PREFS						"Preferences"
 #define REGVALUE_PREF_START_DIR      "Starting Directory"
-#define REGVALUE_PREF_LAST_DISK_1	 "Last Disk Image 1"
-#define REGVALUE_PREF_LAST_DISK_2	 "Last Disk Image 2"
 #define REGVALUE_PREF_WINDOW_X_POS   "Window X-Position"
 #define REGVALUE_PREF_WINDOW_Y_POS   "Window Y-Position"
 #define REGVALUE_PREF_HDV_START_DIR  "HDV Starting Directory"
-#define REGVALUE_PREF_LAST_HARDDISK_1 "Last Harddisk Image 1"
-#define REGVALUE_PREF_LAST_HARDDISK_2 "Last Harddisk Image 2"
 
 #define WM_USER_BENCHMARK	WM_USER+1
 #define WM_USER_SAVESTATE	WM_USER+2

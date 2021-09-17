@@ -34,15 +34,14 @@ public:
 	void	CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot);
 	void    CommReset();
 	void    CommDestroy();
-	void    CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem);
+	void    CommSetSerialPort(DWORD dwNewSerialPortItem);
 	static std::string GetSnapshotCardName(void);
 	void	SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	bool	LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 	char*	GetSerialPortChoices();
 	DWORD	GetSerialPort() { return m_dwSerialPortItem; }	// Drop-down list item
-	const std::string &	GetSerialPortName() { return m_ayCurrentSerialPortName; }
-	void	SetSerialPortName(const char* pSerialPortName);
+	const std::string& GetSerialPortName() { return m_currentSerialPortName; }
 	bool	IsActive() { return (m_hCommHandle != INVALID_HANDLE_VALUE) || (m_hCommListenSocket != INVALID_SOCKET); }
 	void	SupportDCD(bool bEnable) { m_bCfgSupportDCD = bEnable; }	// Status
 
@@ -80,6 +79,8 @@ private:
 	void	CommThUninit();
 	UINT	GetNumSerialPortChoices() { return m_vecSerialPortsItems.size(); }
 	void	ScanCOMPorts();
+	void	SetSerialPortName(const char* pSerialPortName);
+	void	SetRegistrySerialPortName(void);
 	void	SaveSnapshotDIPSW(class YamlSaveHelper& yamlSaveHelper, std::string key, SSC_DIPSW& dipsw);
 	void	LoadSnapshotDIPSW(class YamlLoadHelper& yamlLoadHelper, std::string key, SSC_DIPSW& dipsw);
 
@@ -89,7 +90,7 @@ public:
 	static const UINT SIZEOF_SERIALCHOICE_ITEM = 12*sizeof(char);
 
 private:
-	std::string m_ayCurrentSerialPortName;
+	std::string m_currentSerialPortName;
 	DWORD	m_dwSerialPortItem;
 
 	static const UINT SERIALPORTITEM_INVALID_COM_PORT = 0;
