@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
 #include "Pravets.h"
+#include "SAM.h"
 #include "SerialComms.h"
 #include "SNESMAX.h"
 #include "Speaker.h"
@@ -361,6 +362,12 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			GetCardMgr().Insert(slot, type);
 			bRes = Phasor_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
+		else if (card == SAMCard::GetSnapshotCardName())
+		{
+			type = CT_SAM;
+			GetCardMgr().Insert(slot, type);
+			bRes = dynamic_cast<SAMCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+		}
 		else if (card == Disk2InterfaceCard::GetSnapshotCardName())
 		{
 			type = CT_Disk2;
@@ -625,6 +632,9 @@ void Snapshot_SaveState(void)
 
 			if (GetCardMgr().QuerySlot(SLOT4) == CT_Phasor)
 				Phasor_SaveSnapshot(yamlSaveHelper, SLOT4);
+
+			if (GetCardMgr().QuerySlot(SLOT5) == CT_SAM)
+				dynamic_cast<SAMCard&>(GetCardMgr().GetRef(SLOT5)).SaveSnapshot(yamlSaveHelper);
 
 			if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).SaveSnapshot(yamlSaveHelper);

@@ -1771,7 +1771,7 @@ void MemInitializeIO(void)
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_SAM)
 	{
-		ConfigureSAM(pCxRomPeripheral, SLOT5);			// $C500 : SAM card
+		dynamic_cast<SAMCard&>(GetCardMgr().GetRef(SLOT5)).InitializeIO(pCxRomPeripheral, SLOT5);
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_FourPlay)
 	{
