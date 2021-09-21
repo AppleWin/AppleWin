@@ -256,17 +256,15 @@ void LoadConfiguration(void)
 
 			if (slot == SLOT3)
 			{
+				tfe_enabled = 0;
+
 				if ((SS_CARDTYPE)dwTmp == CT_Uthernet)	// TODO: move this to when UthernetCard object is instantiated
 				{
-					tfe_enabled = 1;
-
 					std::string& regSection = RegGetConfigSlotSection(slot);
 					if (RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, szFilename, MAX_PATH, TEXT("")))
 						update_tfe_interface(szFilename);
-				}
-				else
-				{
-					tfe_enabled = 0;
+
+					tfe_init();
 				}
 			}
 			else if (slot == SLOT7)
@@ -279,15 +277,19 @@ void LoadConfiguration(void)
 		{
 			if (slot == SLOT3)
 			{
+				tfe_enabled = 0;
+
 				DWORD tfeEnabled;
 				REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &tfeEnabled, 0);
-				tfe_enabled = tfeEnabled ? 1 : 0;
 
 				GetCardMgr().Insert(SLOT3, get_tfe_enabled() ? CT_Uthernet : CT_Empty);
 
 				// TODO: move this to when UthernetCard object is instantiated
 				RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
 				update_tfe_interface(szFilename);
+
+				if (tfeEnabled)
+					tfe_init();
 			}
 			else if (slot == SLOT4 && REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
 				GetCardMgr().Insert(SLOT4, (SS_CARDTYPE)dwTmp);

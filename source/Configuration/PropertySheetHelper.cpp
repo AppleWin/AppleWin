@@ -334,10 +334,7 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
 		if (ConfigNew.m_Slot[slot] == CT_Uthernet)	// TODO: move this to UthernetCard object
-		{
-			std::string& regSection = RegGetConfigSlotSection(slot);
-			RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, 1, ConfigNew.m_tfeInterface);
-		}
+			tfe_SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
 	}
 
 	slot = SLOT4;

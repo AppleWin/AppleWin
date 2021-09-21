@@ -54,6 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SerialComms.h"
 #include "Speaker.h"
 #include "Tape.h"
+#include "tfe/tfe.h"
 #include "RGBMonitor.h"
 
 #include "z80emu.h"
@@ -1727,7 +1728,7 @@ void MemInitializeIO(void)
 	{
 		// Slot 3 contains the Uthernet card (which can coexist with an 80-col+Ram card in AUX slot)
 		// . Uthernet card has no ROM and only IO mapped at $C0Bx
-		// NB. I/O handlers setup via tfe_init() & update_tfe_interface()
+		tfe_InitializeIO(pCxRomPeripheral, SLOT3);
 	}
 	else if (GetCardMgr().QuerySlot(SLOT3) == CT_FourPlay)
 	{
