@@ -380,6 +380,12 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			GetCardMgr().Insert(slot, type);
 			bRes = HD_LoadSnapshot(yamlLoadHelper, slot, cardVersion, g_strSaveStatePath);
 		}
+		else if (card == tfe_GetSnapshotCardName())
+		{
+			type = CT_Uthernet;
+			GetCardMgr().Insert(slot, type);
+			tfe_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+		}
 		else if (card == LanguageCardSlot0::GetSnapshotCardName())
 		{
 			type = CT_LanguageCard;
@@ -612,8 +618,8 @@ void Snapshot_SaveState(void)
 			if (GetCardMgr().QuerySlot(SLOT2) == CT_SSC)
 				dynamic_cast<CSuperSerialCard&>(GetCardMgr().GetRef(SLOT2)).SaveSnapshot(yamlSaveHelper);
 
-//			if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
-//				sg_Uthernet.SaveSnapshot(yamlSaveHelper);
+			if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
+				tfe_SaveSnapshot(yamlSaveHelper);
 
 			if (GetCardMgr().QuerySlot(SLOT4) == CT_MouseInterface)
 				dynamic_cast<CMouseInterface&>(GetCardMgr().GetRef(SLOT4)).SaveSnapshot(yamlSaveHelper);

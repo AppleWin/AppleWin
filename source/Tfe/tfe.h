@@ -37,8 +37,6 @@
 */
 /** #define TFE_DEBUG_FRAMES **/
 
-struct snapshot_s;
-
 extern int tfe_enabled;
 
 extern void tfe_init(void);
@@ -51,8 +49,10 @@ extern void tfe_reset(void);
 extern void tfe_shutdown(void);
 extern BYTE REGPARM1 tfe_read(WORD addr);
 extern void REGPARM2 tfe_store(WORD addr, BYTE byte);
-extern int tfe_read_snapshot_module(struct snapshot_s *s);
-extern int tfe_write_snapshot_module(struct snapshot_s *s);
+
+std::string tfe_GetSnapshotCardName(void);
+void tfe_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+bool tfe_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 /*
  These functions let the UI enumerate the available interfaces.
