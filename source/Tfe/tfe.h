@@ -49,6 +49,8 @@ extern void tfe_reset(void);
 extern void tfe_shutdown(void);
 extern BYTE REGPARM1 tfe_read(WORD addr);
 extern void REGPARM2 tfe_store(WORD addr, BYTE byte);
+void tfe_InitializeIO(LPBYTE pCxRomPeripheral, UINT slot);
+void tfe_SetRegistryInterface(UINT slot, const std::string& name);
 
 std::string tfe_GetSnapshotCardName(void);
 void tfe_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);

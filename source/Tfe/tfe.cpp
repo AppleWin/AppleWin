@@ -48,7 +48,7 @@ typedef unsigned int UINT;
 #include "../Registry.h"
 #include "../YamlHelper.h"
 
-static const UINT g_slot = SLOT3;
+static UINT g_slot = SLOT3;
 
 /**/
 /** #define TFE_DEBUG_DUMP 1 **/
@@ -448,8 +448,6 @@ void tfe_reset(void)
 
         TFE_DEBUG_OUTPUT_REG();
     }
-
-	RegisterIoHandler(g_slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, NULL, NULL);
 }
 
 #ifdef DOS_TFE
@@ -558,6 +556,8 @@ int tfe_deactivate(void) {
 
 void tfe_init(void)
 {
+    tfe_enabled = 1;
+
     if (!tfe_arch_init()) {
         tfe_enabled = 0;
         tfe_cannot_use = 1;
@@ -1480,6 +1480,12 @@ return ret;
 
 }
 
+void tfe_InitializeIO(LPBYTE pCxRomPeripheral, UINT slot)
+{
+    g_slot = slot;
+    RegisterIoHandler(slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, NULL, NULL);
+}
+
 void get_disabled_state(int * param)
 {
     *param = tfe_cannot_use;
@@ -1498,6 +1504,13 @@ const std::string & get_tfe_interface(void)
 int get_tfe_enabled(void)
 {
 	return tfe_enabled;
+}
+
+// Called by: tfe_LoadSnapshot() & ApplyNewConfig()
+void tfe_SetRegistryInterface(UINT slot, const std::string& name)
+{
+    std::string& regSection = RegGetConfigSlotSection(slot);
+    RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, 1, name);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1589,8 +1602,7 @@ bool tfe_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 
     //
 
-    std::string& regSection = RegGetConfigSlotSection(slot);
-    RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, 1, get_tfe_interface().c_str());
+    tfe_SetRegistryInterface(slot, get_tfe_interface());
 
     return true;
 }

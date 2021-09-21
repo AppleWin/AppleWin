@@ -841,9 +841,6 @@ static void RepeatInitialization(void)
 			g_cmdLine.bShutdown = true;
 		}
 
-		tfe_init();
-		LogFileOutput("Main: tfe_init()\n");
-
 		if (g_cmdLine.szSnapshotName)
 		{
 			std::string strPathname(g_cmdLine.szSnapshotName);
