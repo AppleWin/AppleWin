@@ -106,7 +106,7 @@ std::string tfe_interface;
 */
 #define TFE_COUNT_IO_REGISTER 0x10 /* we have 16 I/O register */
 
-static BYTE *tfe = NULL;
+static BYTE tfe[TFE_COUNT_IO_REGISTER] = { 0 };
 /*
 	RW: RXTXDATA   = DE00/DE01
 	RW: RXTXDATA2  = DE02/DE03 (for 32-bit-operation)
@@ -156,7 +156,7 @@ static BYTE *tfe = NULL;
 
 #define MAX_PACKETPAGE_ARRAY 0x1000 /* 4 KB */
 
-static BYTE *tfe_packetpage = NULL;
+static BYTE tfe_packetpage[MAX_PACKETPAGE_ARRAY] = { 0 };
 
 static WORD tfe_packetpage_ptr = 0;
 
@@ -394,9 +394,6 @@ void tfe_reset(void)
 {
     if (tfe_enabled)
     {
-        assert( tfe );
-        assert( tfe_packetpage );
-
         tfe_arch_pre_reset();
 
         /* initialize visible IO register and PacketPage registers */
@@ -462,42 +459,8 @@ static void set_standard_tfe_interface(void)
 static
 int tfe_activate_i(void)
 {
-    assert( tfe == NULL );
-    assert( tfe_packetpage == NULL );
-
 #ifdef TFE_DEBUG
     if(g_fh) fprintf( g_fh, "tfe_activate_i()." );
-#endif
-
-    /* allocate memory for visible IO register */
-	/* RGJ added BYTE * for AppleWin */
-	tfe = (BYTE * )lib_malloc( TFE_COUNT_IO_REGISTER );
-    if (tfe==NULL)
-    {
-#ifdef TFE_DEBUG_INIT
-        if(g_fh) fprintf(g_fh, "tfe_activate_i: Allocating tfe failed.\n");
-#endif
-        tfe_enabled = 0;
-        return 0;
-    }
-
-    /* allocate memory for PacketPage register */
-	/* RGJ added BYTE * for AppleWin */
-	tfe_packetpage = (BYTE * ) lib_malloc( MAX_PACKETPAGE_ARRAY );
-    if (tfe_packetpage==NULL)
-    {
-#ifdef TFE_DEBUG_INIT
-        if(g_fh) fprintf(g_fh, "tfe_activate: Allocating tfe_packetpage failed.\n");
-#endif
-        lib_free(tfe);
-        tfe=NULL;
-        tfe_enabled = 0;
-        return 0;
-    }
-
-#ifdef TFE_DEBUG_INIT
-    if(g_fh) fprintf(g_fh, "tfe_activate: Allocated memory successfully.\n");
-    if(g_fh) fprintf(g_fh, "\ttfe at $%08llX, tfe_packetpage at $%08llX\n", (unsigned long long)uintptr_t(tfe), (unsigned long long)uintptr_t(tfe_packetpage) );
 #endif
 
 #ifdef DOS_TFE
@@ -505,10 +468,6 @@ int tfe_activate_i(void)
 #endif
 
     if (!tfe_arch_activate(tfe_interface)) {
-        lib_free(tfe_packetpage);
-        lib_free(tfe);
-        tfe=NULL;
-        tfe_packetpage=NULL;
         tfe_enabled = 0;
         tfe_cannot_use = 1;
         return 0;
@@ -529,10 +488,6 @@ int tfe_deactivate_i(void)
 
     tfe_arch_deactivate();
 
-    lib_free(tfe);
-    tfe = NULL;
-    lib_free(tfe_packetpage);
-    tfe_packetpage = NULL;
 	return 0;
 }
 
@@ -567,8 +522,7 @@ void tfe_init(void)
         // the first time this is a NOOP
         // but when called from RepeatInitialization()
         // it ensures new settings are taken into account
-        if (tfe)
-            tfe_deactivate();
+        tfe_deactivate();
 
         // only activate if the settings say so
         if (tfe_enabled && (tfe_activate() < 0)) {
@@ -580,10 +534,7 @@ void tfe_init(void)
 
 void tfe_shutdown(void)
 {
-    assert( (tfe && tfe_packetpage) || (!tfe && !tfe_packetpage));
-
-    if (tfe)
-        tfe_deactivate();
+    tfe_deactivate();
 
     tfe_interface.clear();
 }
@@ -1116,10 +1067,7 @@ BYTE REGPARM1 tfe_read(WORD ioaddress)
 {
     BYTE retval;
 
-    assert( tfe );
-    assert( tfe_packetpage );
-
-	assert( ioaddress < 0x10);
+	assert( ioaddress < TFE_COUNT_IO_REGISTER);
 
     switch (ioaddress) {
 
@@ -1195,10 +1143,7 @@ BYTE REGPARM1 tfe_read(WORD ioaddress)
 
 void REGPARM2 tfe_store(WORD ioaddress, BYTE byte)
 {
-    assert( tfe );
-    assert( tfe_packetpage );
-
-	assert( ioaddress < 0x10);
+	assert( ioaddress < TFE_COUNT_IO_REGISTER);
 
     switch (ioaddress)
     {
@@ -1591,6 +1536,8 @@ bool tfe_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
     yamlLoadHelper.PopMap();
 
     // Side effects after PackagePage has been loaded
+
+    tfe_packetpage_ptr = GET_TFE_16(TFE_ADDR_PP_PTR);
 
     tfe_sideeffects_write_pp(TFE_PP_ADDR_CC_RXCTL, 0);  // set the 6 tfe_recv_* vars
 
