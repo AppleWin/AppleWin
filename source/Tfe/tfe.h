@@ -39,13 +39,12 @@
 
 extern int tfe_enabled;
 
-extern void tfe_init(void);
+extern void tfe_init(bool reset);
 extern int tfe_resources_init(void);
 extern int tfe_cmdline_options_init(void);
 extern int update_tfe_interface(const std::string & name);
 void get_disabled_state(int * param);
 
-extern void tfe_reset(void);
 extern void tfe_shutdown(void);
 extern BYTE REGPARM1 tfe_read(WORD addr);
 extern void REGPARM2 tfe_store(WORD addr, BYTE byte);

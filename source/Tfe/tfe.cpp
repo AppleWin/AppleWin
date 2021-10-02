@@ -390,7 +390,7 @@ void tfe_debug_output_pp( void )
 static BYTE __stdcall TfeIoCxxx (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
-void tfe_reset(void)
+static void tfe_reset(void)
 {
     if (tfe_enabled)
     {
@@ -457,7 +457,7 @@ static void set_standard_tfe_interface(void)
 #endif
 
 static
-int tfe_activate_i(void)
+int tfe_activate_i(bool reset)
 {
 #ifdef TFE_DEBUG
     if(g_fh) fprintf( g_fh, "tfe_activate_i()." );
@@ -473,8 +473,11 @@ int tfe_activate_i(void)
         return 0;
     }
 
-    /* virtually reset the LAN chip */
-    tfe_reset();
+    if (reset)
+    {
+        /* virtually reset the LAN chip */
+        tfe_reset();
+    }
 
     return 0;
 }
@@ -492,12 +495,12 @@ int tfe_deactivate_i(void)
 }
 
 static
-int tfe_activate(void) {
+int tfe_activate(bool reset) {
 #ifdef TFE_DEBUG
     if(g_fh) fprintf( g_fh, "tfe_activate()." );
 #endif
 
-    return tfe_activate_i();
+    return tfe_activate_i(reset);
 }
 
 static
@@ -509,7 +512,7 @@ int tfe_deactivate(void) {
     return tfe_deactivate_i();
 }
 
-void tfe_init(void)
+void tfe_init(bool reset)
 {
     tfe_enabled = 1;
 
@@ -525,7 +528,7 @@ void tfe_init(void)
         tfe_deactivate();
 
         // only activate if the settings say so
-        if (tfe_enabled && (tfe_activate() < 0)) {
+        if (tfe_enabled && (tfe_activate(reset) < 0)) {
             tfe_enabled = 0;
             tfe_cannot_use = 1;
         }
@@ -1550,6 +1553,10 @@ bool tfe_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
     //
 
     tfe_SetRegistryInterface(slot, get_tfe_interface());
+
+    // Setup the npcap.dll func ptrs & open/configure the interface
+    // NB. Overrides tfe_enabled and tfe_cannot_use, which are set above
+    tfe_init(false);    // reset=false
 
     return true;
 }

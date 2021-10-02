@@ -264,7 +264,7 @@ void LoadConfiguration(void)
 					if (RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, szFilename, MAX_PATH, TEXT("")))
 						update_tfe_interface(szFilename);
 
-					tfe_init();
+					tfe_init(true);
 				}
 			}
 			else if (slot == SLOT7)
@@ -289,7 +289,7 @@ void LoadConfiguration(void)
 				update_tfe_interface(szFilename);
 
 				if (tfeEnabled)
-					tfe_init();
+					tfe_init(true);
 			}
 			else if (slot == SLOT4 && REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
 				GetCardMgr().Insert(SLOT4, (SS_CARDTYPE)dwTmp);
