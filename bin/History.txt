@@ -8,8 +8,9 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
-1.30.5.0 - 29 Sep 2021
-----------------------
+
+1.30.5.0 - 2 Oct 2021
+---------------------
 . [Change #972] Add SNES MAX card (in slots 3, 4 or 5) to support up to 2 SNES (or 12-button) controllers.
 . [Change #946] Add 4Play card (in slots 3, 4 or 5) to support up to 4 Atari controllers.
 . [Change #420] Uthernet card's state persisted to save-state.
