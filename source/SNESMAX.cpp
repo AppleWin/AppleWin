@@ -234,5 +234,9 @@ bool SNESMAXCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT v
 
 	m_buttonIndex = yamlLoadHelper.LoadUint(SS_YAML_KEY_BUTTON_INDEX);
 
+	// Initialise with no buttons pressed (loaded state maybe part way through reading the buttons)
+	m_controller1Buttons = 0xff;
+	m_controller2Buttons = 0xff;
+
 	return true;
 }
