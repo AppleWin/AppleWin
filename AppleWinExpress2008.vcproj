@@ -243,6 +243,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\FourPlay.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\FourPlay.h"
+				>
+			</File>
+			<File
 				RelativePath=".\source\FrameBase.cpp"
 				>
 			</File>
@@ -252,6 +260,14 @@
 			</File>
 			<File
 				RelativePath=".\source\Interface.h"
+				>
+			</File>
+			<File
+				RelativePath=".\source\SNESMAX.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\SNESMAX.h"
 				>
 			</File>
 			<File
