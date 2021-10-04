@@ -74,7 +74,8 @@ static YamlHelper yamlHelper;
 // v4: Extended: video (added 'Video Refresh Rate')
 // v5: Extended: cpu (added 'Defer IRQ By 1 Opcode')
 // v6: Added 'Unit Miscellaneous' for NoSlotClock(NSC)
-#define UNIT_APPLE2_VER 6
+// v7: Extended: joystick (added 'Paddle Inactive Cycle')
+#define UNIT_APPLE2_VER 7
 
 #define UNIT_SLOTS_VER 1
 
@@ -283,7 +284,7 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	CpuLoadSnapshot(yamlLoadHelper, version);	// NB. Overrides default main CPU type
 	m_ConfigNew.m_CpuType = GetMainCpu();
 
-	JoyLoadSnapshot(yamlLoadHelper);
+	JoyLoadSnapshot(yamlLoadHelper, version);
 	KeybLoadSnapshot(yamlLoadHelper, version);
 	SpkrLoadSnapshot(yamlLoadHelper);
 	GetVideo().VideoLoadSnapshot(yamlLoadHelper, version);

@@ -28,7 +28,7 @@ void	JoyportControl(const UINT uControl);
 void	JoySetHookAltKeys(bool hook);
 void	JoySetButtonVirtualKey(UINT button, UINT virtKey);
 void    JoySaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-void    JoyLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
+void    JoyLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
 
 BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 BYTE __stdcall JoyReadPosition(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
