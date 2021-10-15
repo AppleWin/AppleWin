@@ -430,19 +430,11 @@
 				Name="Uthernet"
 				>
 				<File
-					RelativePath=".\source\Tfe\Bittypes.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\Tfe\Bpf.h"
 					>
 				</File>
 				<File
 					RelativePath=".\source\Tfe\Ip6_misc.h"
-					>
-				</File>
-				<File
-					RelativePath=".\source\Tfe\Pcap-stdinc.h"
 					>
 				</File>
 				<File

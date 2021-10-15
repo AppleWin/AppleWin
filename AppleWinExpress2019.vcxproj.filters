@@ -252,9 +252,6 @@
     <ClInclude Include="source\AY8910.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
-    <ClInclude Include="source\Tfe\Bittypes.h">
-      <Filter>Source Files\Uthernet</Filter>
-    </ClInclude>
     <ClInclude Include="source\Tfe\Bpf.h">
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
@@ -391,9 +388,6 @@
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
     <ClInclude Include="source\Tfe\Pcap.h">
-      <Filter>Source Files\Uthernet</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Tfe\Pcap-stdinc.h">
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
     <ClInclude Include="source\Configuration\PropertySheet.h">

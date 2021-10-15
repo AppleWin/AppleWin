@@ -38,8 +38,8 @@
 #define lib_pcap_h
 
 #ifdef WIN32
-/* RGJ Changed it to "pcap-stdinc.h" for AppleWin */
-#include "pcap-stdinc.h"
+/* TC Changed it to "winsock2.h" for AppleWin */
+#include <winsock2.h>
 #else /* WIN32 */
 #include <sys/types.h>
 #include <sys/time.h>
