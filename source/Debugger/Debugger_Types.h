@@ -295,6 +295,7 @@
 		, CMD_JSR
 		, CMD_NOP
 		, CMD_OUT
+		, CMD_LBR
 // CPU - Meta Info
 		, CMD_PROFILE
 		, CMD_REGISTER_SET
@@ -605,6 +606,7 @@
 	Update_t CmdJSR                (int nArgs);
 	Update_t CmdNOP                (int nArgs);
 	Update_t CmdOut                (int nArgs);
+	Update_t CmdLBR                (int nArgs);
 	Update_t CmdStepOver           (int nArgs);
 	Update_t CmdStepOut            (int nArgs);
 	Update_t CmdTrace              (int nArgs);  // alias for CmdStepIn

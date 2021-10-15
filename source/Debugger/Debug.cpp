@@ -315,6 +315,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static bool      g_bIgnoreNextKey = false;
 
+	static WORD g_LBR = 0x0000;	// Last Branch Record
+
 // Private ________________________________________________________________________________________
 
 
@@ -2184,6 +2186,13 @@ Update_t CmdOut (int nArgs)
 	return UPDATE_CONSOLE_DISPLAY; // TODO: Verify // 1
 }
 
+//===========================================================================
+Update_t CmdLBR(int nArgs)
+{
+	TCHAR sText[CONSOLE_WIDTH];
+	ConsolePrintFormat(sText, " LBR = $%04X", g_LBR);
+	return ConsoleUpdate();
+}
 
 // Color __________________________________________________________________________________________
 
@@ -8145,6 +8154,28 @@ static void CheckBreakOpcode( int iOpcode )
 		g_bDebugBreakpointHit |= BP_HIT_OPCODE;
 }
 
+static void UpdateLBR(void)
+{
+	const BYTE nOpcode = *(mem + regs.pc);
+
+	bool isControlFlowOpcode =
+		nOpcode == OPCODE_BRK ||
+		nOpcode == OPCODE_JSR ||
+		nOpcode == OPCODE_JMP_A ||
+		nOpcode == OPCODE_RTI ||
+		nOpcode == OPCODE_RTS ||
+		nOpcode == OPCODE_JMP_NA;
+
+	if (GetMainCpu() == CPU_65C02 && nOpcode == OPCODE_JMP_IAX)
+		isControlFlowOpcode = true;
+
+	if (g_aOpcodes[nOpcode].nAddressMode == AM_R)
+		isControlFlowOpcode = true;
+
+	if (isControlFlowOpcode)
+		g_LBR = regs.pc;
+}
+
 void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 {
 	static bool bForceSingleStepNext = false; // Allow at least one instruction to execute so we don't trigger on the same invalid opcode
@@ -8186,7 +8217,7 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 				BYTE nOpcode = *(mem+regs.pc);
 
 				// Update profiling stats
-				int  nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;
+				int nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;
 				g_aProfileOpcodes[ nOpcode ].m_nCount++;
 				g_aProfileOpmodes[ nOpmode ].m_nCount++;
 
@@ -8206,6 +8237,8 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 
 		if (bDoSingleStep)
 		{
+			UpdateLBR();
+
 			SingleStep(g_bGoCmd_ReinitFlag);
 			g_bGoCmd_ReinitFlag = false;
 
@@ -8494,6 +8527,7 @@ void DebugInitialize ()
 void DebugReset(void)
 {
 	g_videoScannerDisplayInfo.Reset();
+	g_LBR = 0x0000;
 }
 
 // Add character to the input line

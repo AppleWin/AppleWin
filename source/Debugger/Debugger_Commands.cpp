@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("JSR")         , CmdJSR               , CMD_JSR                  , "Call sub-routine"           },
 		{TEXT("NOP")         , CmdNOP               , CMD_NOP                  , "Zap the current instruction with a NOP" },
 		{TEXT("OUT")         , CmdOut               , CMD_OUT                  , "Output byte to IO $C0xx"    },
+		{TEXT("LBR")         , CmdLBR               , CMD_LBR                  , "Show Last Branch Record"    },
 	// CPU - Meta Info
 		{TEXT("PROFILE")     , CmdProfile           , CMD_PROFILE              , "List/Save 6502 profiling" },
 		{TEXT("R")           , CmdRegisterSet       , CMD_REGISTER_SET         , "Set register" },
