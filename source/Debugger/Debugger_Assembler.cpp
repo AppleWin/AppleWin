@@ -703,9 +703,11 @@ bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial
 		case AM_NA: // Indirect (Absolute) - ie. JMP (abs)
 			_ASSERT(nOpcode == OPCODE_JMP_NA);
 			*pTargetPartial_    = nTarget16;
-			*pTargetPartial2_   = nTarget16+1;
+			*pTargetPartial2_   = (nTarget16+1) & _6502_MEM_END;
+			if (GetMainCpu() == CPU_6502 && (nTarget16 & 0xff) == 0xff)
+				*pTargetPartial2_ = nTarget16 & 0xff00;
 			if (bIncludeNextOpcodeAddress)
-				*pTargetPointer_ = mem[nTarget16] | (mem[(nTarget16+1)&0xFFFF]<<8);
+				*pTargetPointer_ = mem[*pTargetPartial_] | (mem[*pTargetPartial2_] << 8);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
