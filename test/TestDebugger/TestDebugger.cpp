@@ -32,6 +32,13 @@ FrameBase& GetFrame()
 // From CPU.cpp
 regsrec regs;
 
+static eCpuType g_MainCPU = CPU_65C02;
+
+eCpuType GetMainCpu(void)
+{
+	return g_MainCPU;
+}
+
 // From Memory.cpp
 LPBYTE         mem          = NULL;	// TODO: Init
 LPBYTE         memdirty     = NULL;	// TODO: Init
