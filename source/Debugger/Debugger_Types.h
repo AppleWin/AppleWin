@@ -1075,7 +1075,15 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 	enum Opcode_e
 	{
-		OPCODE_BRA     = 0x80,
+		OPCODE_BPL     = 0x10,
+		OPCODE_BMI     = 0x30,
+		OPCODE_BVC     = 0x50,
+		OPCODE_BVS     = 0x70,
+		OPCODE_BCC     = 0x90,
+		OPCODE_BCS     = 0xB0,
+		OPCODE_BNE     = 0xD0,
+		OPCODE_BEQ     = 0xF0,
+		OPCODE_BRA     = 0x80,	// 65C02
 
 		OPCODE_BRK     = 0x00,
 		OPCODE_JSR     = 0x20,
@@ -1083,7 +1091,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		OPCODE_JMP_A   = 0x4C, // Absolute
 		OPCODE_RTS     = 0x60,
 		OPCODE_JMP_NA  = 0x6C, // Indirect Absolute
-		OPCODE_JMP_IAX = 0x7C, // Indexed (Absolute Indirect, X)
+		OPCODE_JMP_IAX = 0x7C, // Indexed (Absolute Indirect, X); 65C02
 		OPCODE_LDA_A   = 0xAD, // Absolute
 
 		OPCODE_NOP     = 0xEA, // No operation

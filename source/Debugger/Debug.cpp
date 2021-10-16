@@ -8170,7 +8170,18 @@ static void UpdateLBR(void)
 		isControlFlowOpcode = true;
 
 	if (g_aOpcodes[nOpcode].nAddressMode == AM_R)
-		isControlFlowOpcode = true;
+	{
+		if ( (nOpcode == OPCODE_BRA) ||
+			(nOpcode == OPCODE_BPL && !(regs.ps & AF_SIGN)) ||
+			(nOpcode == OPCODE_BMI && (regs.ps & AF_SIGN)) ||
+			(nOpcode == OPCODE_BVC && !(regs.ps & AF_OVERFLOW)) ||
+			(nOpcode == OPCODE_BVS && (regs.ps & AF_OVERFLOW)) ||
+			(nOpcode == OPCODE_BCC && !(regs.ps & AF_CARRY)) ||
+			(nOpcode == OPCODE_BCS && (regs.ps & AF_CARRY)) ||
+			(nOpcode == OPCODE_BNE && !(regs.ps & AF_ZERO)) ||
+			(nOpcode == OPCODE_BEQ && (regs.ps & AF_ZERO)) )
+			isControlFlowOpcode = true;		// Branch taken
+	}
 
 	if (isControlFlowOpcode)
 		g_LBR = regs.pc;

@@ -13,6 +13,18 @@ struct regsrec
   BYTE bJammed; // CPU has crashed (NMOS 6502 only)
 };
 
+// 6502 Processor Status flags
+enum {
+	AF_SIGN = 0x80,
+	AF_OVERFLOW = 0x40,
+	AF_RESERVED = 0x20,
+	AF_BREAK = 0x10,
+	AF_DECIMAL = 0x08,
+	AF_INTERRUPT = 0x04,
+	AF_ZERO = 0x02,
+	AF_CARRY = 0x01
+};
+
 extern regsrec    regs;
 extern unsigned __int64 g_nCumulativeCycles;
 

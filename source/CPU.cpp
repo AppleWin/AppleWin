@@ -107,16 +107,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define LOG_IRQ_TAKEN_AND_RTI 0
 
-// 6502 Accumulator Bit Flags
-	#define	 AF_SIGN       0x80
-	#define	 AF_OVERFLOW   0x40
-	#define	 AF_RESERVED   0x20
-	#define	 AF_BREAK      0x10
-	#define	 AF_DECIMAL    0x08
-	#define	 AF_INTERRUPT  0x04
-	#define	 AF_ZERO       0x02
-	#define	 AF_CARRY      0x01
-
 #define	 SHORTOPCODES  22
 #define	 BENCHOPCODES  33
 
