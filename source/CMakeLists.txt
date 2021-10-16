@@ -201,7 +201,7 @@ set(HEADER_FILES
   linux/windows/mmsystem.h
 
   linux/resources.h
-  linux/interface.h
+  linux/linuxinterface.h
   linux/benchmark.h
   linux/paddle.h
   linux/version.h
