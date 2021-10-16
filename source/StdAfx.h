@@ -54,6 +54,8 @@ typedef UINT64 uint64_t;
 #include <cstdarg>
 #include <cstring>
 #include <algorithm>
+#include <string>
+#include <vector>
 
 #include "linux/win.h"
 
