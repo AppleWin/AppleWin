@@ -323,6 +323,7 @@
 // Breakpoints
 		, CMD_BREAK_INVALID
 		, CMD_BREAK_OPCODE
+		, CMD_BREAK_ON_INTERRUPT
 		, CMD_BREAKPOINT
 		, CMD_BREAKPOINT_ADD_SMART // smart breakpoint
 		, CMD_BREAKPOINT_ADD_REG   // break on: PC == Address (fetch/execute)
@@ -599,6 +600,7 @@
 	Update_t CmdCursorSetPC        (int nArgs);
 	Update_t CmdBreakInvalid       (int nArgs); // Breakpoint IFF Full-speed!
 	Update_t CmdBreakOpcode        (int nArgs); // Breakpoint IFF Full-speed!
+	Update_t CmdBreakOnInterrupt   (int nArgs);
 	Update_t CmdGoNormalSpeed      (int nArgs);
 	Update_t CmdGoFullSpeed        (int nArgs);
 	Update_t CmdIn                 (int nArgs);

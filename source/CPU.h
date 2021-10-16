@@ -59,3 +59,4 @@ void     SetActiveCpu(eCpuType cpu);
 bool IsIrqAsserted(void);
 bool Is6502InterruptEnabled(void);
 void ResetCyclesExecutedForDebugger(void);
+bool IsInterruptInLastExecution(void);
