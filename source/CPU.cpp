@@ -442,6 +442,8 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //===========================================================================
 
+#undef CPU6502_DEBUG
+
 #define READ _READ_WITH_IO_F8xx
 #define WRITE(value) _WRITE_WITH_IO_F8xx(value)
 #define HEATMAP_X(address)
@@ -463,6 +465,8 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #undef HEATMAP_X
 
 //-----------------
+
+#define CPU6502_DEBUG
 
 #define READ Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte_With_IO_F8xx(addr, value, uExecutedCycles);

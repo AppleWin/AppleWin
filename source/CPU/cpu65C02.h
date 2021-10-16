@@ -52,6 +52,21 @@ static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 		}
 		else
 		{
+			NMI(uExecutedCycles, flagc, flagn, flagv, flagz);
+			IRQ(uExecutedCycles, flagc, flagn, flagv, flagz);
+			const ULONG uElapsedCycles = uExecutedCycles - uPreviousCycles;
+			if (bVideoUpdate && uElapsedCycles)
+			{
+				NTSC_VideoUpdateCycles(uElapsedCycles);
+				uPreviousCycles = uExecutedCycles;
+			}
+#ifdef CPU6502_DEBUG
+			// Allow AppleWin debugger's single-stepping to just step the pending IRQ.
+			// For main emulation, then such fine-grain execution isn't needed, so don't include this code!
+			if (uExecutedCycles > uTotalCycles)
+				break;	// NMI/IRQ taken
+#endif
+
 			HEATMAP_X( regs.pc );
 			Fetch(iOpcode, uExecutedCycles);
 
@@ -318,8 +333,6 @@ static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 		}
 
 		CheckSynchronousInterruptSources(uExecutedCycles - uPreviousCycles, uExecutedCycles);
-		NMI(uExecutedCycles, flagc, flagn, flagv, flagz);
-		IRQ(uExecutedCycles, flagc, flagn, flagv, flagz);
 
 // NTSC_BEGIN
 		if ( bVideoUpdate )
