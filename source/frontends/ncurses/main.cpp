@@ -17,7 +17,6 @@
 
 #include "linux/benchmark.h"
 #include "linux/paddle.h"
-#include "linux/interface.h"
 #include "linux/context.h"
 #include "frontends/common2/fileregistry.h"
 #include "frontends/common2/programoptions.h"

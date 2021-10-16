@@ -5,7 +5,6 @@
 #include <iomanip>
 
 #include "StdAfx.h"
-#include "linux/interface.h"
 #include "linux/benchmark.h"
 #include "linux/context.h"
 #include "linux/network/uthernet2.h"

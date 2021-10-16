@@ -6,7 +6,7 @@
 
 #include "Log.h"
 
-#include "linux/interface.h"
+#include "linux/linuxinterface.h"
 #include "linux/keyboard.h"
 
 #include "frontends/ncurses/nframe.h"

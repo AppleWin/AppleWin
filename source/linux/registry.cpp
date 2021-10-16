@@ -1,6 +1,5 @@
 #include "linux/windows/stringcb.h"
 #include "linux/registry.h"
-#include "linux/interface.h"
 
 #include "Log.h"
 

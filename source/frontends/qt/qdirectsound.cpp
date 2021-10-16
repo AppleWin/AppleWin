@@ -3,6 +3,7 @@
 #include "loggingcategory.h"
 #include "qdirectsound.h"
 #include "linux/windows/dsound.h"
+#include "linux/linuxinterface.h"
 #include <unordered_map>
 #include <memory>
 

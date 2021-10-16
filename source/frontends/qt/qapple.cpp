@@ -27,7 +27,6 @@
 #include "linux/benchmark.h"
 #include "linux/version.h"
 #include "linux/paddle.h"
-#include "linux/interface.h"
 #include "linux/context.h"
 
 #include "emulator.h"

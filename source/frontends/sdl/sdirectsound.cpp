@@ -1,6 +1,7 @@
 #include "frontends/sdl/sdirectsound.h"
 
 #include "linux/windows/dsound.h"
+#include "linux/linuxinterface.h"
 
 #include <SDL.h>
 

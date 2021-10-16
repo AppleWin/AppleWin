@@ -1,6 +1,5 @@
 #include "frontends/common2/utils.h"
 
-#include "linux/interface.h"
 #include "linux/network/uthernet2.h"
 
 #include "StdAfx.h"
