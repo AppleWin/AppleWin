@@ -369,25 +369,28 @@ static __forceinline void Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 }
 
 //#define ENABLE_NMI_SUPPORT	// Not used - so don't enable
-static __forceinline void NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
+static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
 #ifdef ENABLE_NMI_SUPPORT
-	if(g_bNmiFlank)
-	{
-		// NMI signals are only serviced once
-		g_bNmiFlank = FALSE;
+	if (!g_bNmiFlank)
+		return false;
+
+	// NMI signals are only serviced once
+	g_bNmiFlank = FALSE;
 #ifdef _DEBUG
-		g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
+	g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
 #endif
-		PUSH(regs.pc >> 8)
-		PUSH(regs.pc & 0xFF)
-		EF_TO_AF
-		PUSH(regs.ps & ~AF_BREAK)
-		regs.ps = regs.ps | AF_INTERRUPT & ~AF_DECIMAL;
-		regs.pc = * (WORD*) (mem+0xFFFA);
-		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
-		CYC(7)
-	}
+	PUSH(regs.pc >> 8)
+	PUSH(regs.pc & 0xFF)
+	EF_TO_AF
+	PUSH(regs.ps & ~AF_BREAK)
+	regs.ps = regs.ps | AF_INTERRUPT & ~AF_DECIMAL;
+	regs.pc = * (WORD*) (mem+0xFFFA);
+	UINT uExtraCycles = 0;	// Needed for CYC(a) macro
+	CYC(7);
+	return true;
+#else
+	return false;
 #endif
 }
 
@@ -399,16 +402,18 @@ static __forceinline void CheckSynchronousInterruptSources(UINT cycles, ULONG uE
 // NB. No need to save to save-state, as IRQ() follows CheckSynchronousInterruptSources(), and IRQ() always sets it to false.
 bool g_irqOnLastOpcodeCycle = false;
 
-static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
+static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
-	if(g_bmIRQ && !(regs.ps & AF_INTERRUPT))
+	bool irqTaken = false;
+
+	if (g_bmIRQ && !(regs.ps & AF_INTERRUPT))
 	{
-		// if 6522 interrupt occurs on opcode's last cycle, then defer IRQ by 1 opcode
+		// if interrupt (eg. from 6522) occurs on opcode's last cycle, then defer IRQ by 1 opcode
 		if (g_irqOnLastOpcodeCycle && !g_irqDefer1Opcode)
 		{
 			g_irqOnLastOpcodeCycle = false;
 			g_irqDefer1Opcode = true;	// if INT occurs again on next opcode, then do NOT defer
-			return;
+			return false;
 		}
 
 		g_irqDefer1Opcode = false;
@@ -424,7 +429,7 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		regs.ps = (regs.ps | AF_INTERRUPT) & (~AF_DECIMAL);
 		regs.pc = * (WORD*) (mem+0xFFFE);
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
-		CYC(7)
+		CYC(7);
 #if defined(_DEBUG) && LOG_IRQ_TAKEN_AND_RTI
 		std::string irq6522;
 		MB_Get6522IrqDescription(irq6522);
@@ -435,14 +440,14 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		LogOutput("IRQ (%08X) (%s)\n", (UINT)g_nCycleIrqStart, pSrc);
 #endif
 		CheckSynchronousInterruptSources(7, uExecutedCycles);
+		irqTaken = true;
 	}
 
 	g_irqOnLastOpcodeCycle = false;
+	return irqTaken;
 }
 
 //===========================================================================
-
-#undef CPU6502_DEBUG
 
 #define READ _READ_WITH_IO_F8xx
 #define WRITE(value) _WRITE_WITH_IO_F8xx(value)
@@ -465,8 +470,6 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #undef HEATMAP_X
 
 //-----------------
-
-#define CPU6502_DEBUG
 
 #define READ Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte_With_IO_F8xx(addr, value, uExecutedCycles);
