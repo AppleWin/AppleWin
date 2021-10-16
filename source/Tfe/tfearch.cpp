@@ -27,7 +27,7 @@
 
 /* #define WPCAP */
 
-#include "pcap.h"
+#include <pcap.h>
 
 #include <assert.h>
 #include <stdio.h>
