@@ -25,8 +25,6 @@
 #include "Tfe/tfesupp.h"
 #include "linux/network/uthernet2.h"
 
-#include "imgui_internal.h"
-
 namespace
 {
 
@@ -222,9 +220,9 @@ namespace sa2
 
           ImGui::Separator();
 
-          ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+          ImGui::BeginDisabled();
           ImGui::Checkbox("Full speed", &g_bFullSpeed);
-          ImGui::PopItemFlag();
+          ImGui::EndDisabled();
 
           int speed = g_dwSpeed;
           if (ImGui::SliderInt("Speed", &speed, SPEED_MIN, SPEED_MAX))
@@ -510,7 +508,7 @@ namespace sa2
             ImGui::TableSetupColumn("Queue");
             ImGui::TableHeadersRow();
 
-            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true); // this requires imgui_internal.h
+            ImGui::BeginDisabled();
             for (SoundInfo & device : myAudioInfo)
             {
               ImGui::TableNextColumn();
@@ -524,7 +522,7 @@ namespace sa2
               ImGui::TableNextColumn();
               ImGui::SliderFloat("", &device.queue, 0.0f, device.size, "%.3f");
             }
-            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, false);
+            ImGui::EndDisabled();
 
             ImGui::EndTable();
           }
@@ -907,7 +905,7 @@ namespace sa2
 
           ImGui::TableNextColumn();
 
-          ImGui::PushItemFlag(ImGuiItemFlags_Disabled, g_nAppMode != MODE_DEBUG);
+          ImGui::BeginDisabled(g_nAppMode != MODE_DEBUG);
           if (ImGui::CheckBoxTristate("", &state))
           {
             if (!breakpointActive && state == 1)
@@ -920,7 +918,7 @@ namespace sa2
               changeBreakpoint(nAddress, state == 1);
             }
           }
-          ImGui::PopItemFlag();
+          ImGui::EndDisabled();
 
           if (nAddress == regs.pc)
           {
