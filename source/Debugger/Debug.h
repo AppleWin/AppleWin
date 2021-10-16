@@ -38,6 +38,7 @@
 		, BP_HIT_MEMR = (1 << 4)
 		, BP_HIT_MEMW = (1 << 5)
 		, BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM = (1 << 6)
+		, BP_HIT_INTERRUPT = (1 << 7)
 	};
 
 	extern int          g_nBreakpoints;

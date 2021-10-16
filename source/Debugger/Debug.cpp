@@ -67,6 +67,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Any Speed Breakpoints
 	int  g_nDebugBreakOnInvalid  = 0; // Bit Flags of Invalid Opcode to break on: // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
 	int  g_iDebugBreakOnOpcode   = 0;
+	bool g_bDebugBreakOnInterrupt = false;
 
 	static int  g_bDebugBreakpointHit = 0;	// See: BreakpointHit_t
 
@@ -984,6 +985,32 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 			, g_iDebugBreakOnOpcode
 			, g_aOpcodes65C02[ g_iDebugBreakOnOpcode ].sMnemonic
 		);
+
+	return ConsoleUpdate();
+}
+
+
+//===========================================================================
+Update_t CmdBreakOnInterrupt(int nArgs)
+{
+	TCHAR sText[CONSOLE_WIDTH];
+
+	if (nArgs > 1)
+		return HelpLastCommand();
+
+	TCHAR sAction[CONSOLE_WIDTH] = TEXT("Current"); // default to display
+
+	if (nArgs == 1)
+	{
+		g_bDebugBreakOnInterrupt = g_aArgs[1].nValue ? true : false;
+		_tcscpy(sAction, TEXT("Setting"));
+	}
+
+	// Show what the current break opcode is
+	ConsoleBufferPushFormat(sText, TEXT("%s Break on Interrupt: %s")
+		, sAction
+		, g_bDebugBreakOnInterrupt ? "Enabled" : "Disabled"
+	);
 
 	return ConsoleUpdate();
 }
@@ -8255,7 +8282,11 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 			g_bGoCmd_ReinitFlag = false;
 
 			if (IsInterruptInLastExecution())
+			{
 				g_LBR = oldPC;
+				if (g_bDebugBreakOnInterrupt)
+					g_bDebugBreakpointHit |= BP_HIT_INTERRUPT;
+			}
 
 			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg();
 		}
@@ -8282,6 +8313,8 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 				sprintf_s(szStopMessage, sizeof(szStopMessage), "Read access at $%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				pszStopReason = TEXT("PC reads from floating bus or I/O memory");
+			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "Interrupt occurred at $%04X", g_LBR);
 			else
 				pszStopReason = TEXT("Unknown!");
 
