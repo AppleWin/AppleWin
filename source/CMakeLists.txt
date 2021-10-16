@@ -247,6 +247,13 @@ target_link_libraries(appleii PRIVATE
   ${SLIRP_LIBRARIES}
   )
 
+target_link_directories(appleii PRIVATE
+  ${YAML_LIBRARY_DIR}
+  ${MINIZIP_LIBRARY_DIR}
+  ${PCAP_LIBRARY_DIR}
+  ${SLIRP_LIBRARY_DIR}
+  )
+
 target_compile_options(appleii PUBLIC
   -Wno-multichar
   )
