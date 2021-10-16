@@ -8249,9 +8249,13 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 		if (bDoSingleStep)
 		{
 			UpdateLBR();
+			const WORD oldPC = regs.pc;
 
 			SingleStep(g_bGoCmd_ReinitFlag);
 			g_bGoCmd_ReinitFlag = false;
+
+			if (IsInterruptInLastExecution())
+				g_LBR = oldPC;
 
 			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg();
 		}

@@ -137,6 +137,7 @@ static volatile UINT32 g_bmNMI = 0;
 static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
 
 static bool g_irqDefer1Opcode = false;
+static bool g_interruptInLastExecutionBatch = false;	// Last batch of executed cycles included an interrupt (IRQ/NMI)
 
 //
 
@@ -196,6 +197,11 @@ bool Is6502InterruptEnabled(void)
 void ResetCyclesExecutedForDebugger(void)
 {
 	g_nCyclesExecuted = 0;
+}
+
+bool IsInterruptInLastExecution(void)
+{
+	return g_interruptInLastExecutionBatch;
 }
 
 //
@@ -388,6 +394,7 @@ static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 	regs.pc = * (WORD*) (mem+0xFFFA);
 	UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 	CYC(7);
+	g_interruptInLastExecutionBatch = true;
 	return true;
 #else
 	return false;
@@ -440,6 +447,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		LogOutput("IRQ (%08X) (%s)\n", (UINT)g_nCycleIrqStart, pSrc);
 #endif
 		CheckSynchronousInterruptSources(7, uExecutedCycles);
+		g_interruptInLastExecutionBatch = true;
 		irqTaken = true;
 	}
 
@@ -613,6 +621,7 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 #endif
 
 	g_nCyclesExecuted =	0;
+	g_interruptInLastExecutionBatch = false;
 
 #ifdef _DEBUG
 	MB_CheckCumulativeCycles();
