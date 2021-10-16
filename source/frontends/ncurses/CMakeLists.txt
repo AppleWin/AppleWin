@@ -43,5 +43,10 @@ target_link_libraries(applen PRIVATE
   common2
   )
 
+target_link_directories(applen PRIVATE
+  ${NCURSESW_LIBRARY_DIRS}
+  ${LIBEVDEV_LIBRARY_DIRS}
+  )
+
 install(TARGETS applen
   DESTINATION bin)

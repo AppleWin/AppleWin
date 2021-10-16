@@ -43,6 +43,12 @@ target_link_libraries(sa2 PRIVATE
   common2
   )
 
+target_link_directories(sa2 PRIVATE
+  ${SDL2_LIBRARY_DIRS}
+  ${SDL2_IMAGE_LIBRARY_DIRS}
+  ${GLES2_LIBRARY_DIRS}
+  )
+
 target_sources(sa2 PRIVATE
   ${SOURCE_FILES}
   ${HEADER_FILES}
