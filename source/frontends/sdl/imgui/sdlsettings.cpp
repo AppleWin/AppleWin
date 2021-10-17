@@ -19,7 +19,7 @@
 #include "Utilities.h"
 #include "Memory.h"
 
-#include "Debugger/DebugDefs.h"
+#include "Debugger/Debugger_Types.h"
 
 #include "Tfe/tfe.h"
 #include "Tfe/tfesupp.h"
