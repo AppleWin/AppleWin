@@ -260,11 +260,11 @@ target_link_libraries(appleii PRIVATE
   )
 
 target_link_directories(appleii PRIVATE
-  ${YAML_LIBRARY_DIR}
-  ${MINIZIP_LIBRARY_DIR}
-  ${PCAP_LIBRARY_DIR}
-  ${SLIRP_LIBRARY_DIR}
-  ${ZLIB_LIBRARY_DIR}
+  ${YAML_LIBRARY_DIRS}
+  ${MINIZIP_LIBRARY_DIRS}
+  ${PCAP_LIBRARY_DIRS}
+  ${SLIRP_LIBRARY_DIRS}
+  ${ZLIB_LIBRARY_DIRS}
   )
 
 target_compile_options(appleii PUBLIC
