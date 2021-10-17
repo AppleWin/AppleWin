@@ -13,6 +13,7 @@ public:
   DWORD GetVolumeMax(void) override;
   bool SaveStateSelectImage(HWND hWindow, bool bSave) override;
   void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld) override;
+  void ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew) override;
   void ConfigSaveApple2Type(eApple2Type apple2Type) override;
   UINT GetScrollLockToggle(void) override;
   void SetScrollLockToggle(UINT uValue) override;

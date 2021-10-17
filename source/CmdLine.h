@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RgbMonitor.h"
+#include "RGBMonitor.h"
 #include "Harddisk.h"
 #include "Disk.h"
 #include "Common.h"

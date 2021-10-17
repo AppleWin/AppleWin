@@ -107,11 +107,10 @@ namespace
 
   void internalInsertCard(const size_t slot, const SS_CARDTYPE card)
   {
-    CardManager & cardManager = GetCardMgr();
+    std::string& regSection = RegGetConfigSlotSection(slot);
+    RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, CT_Disk2);
 
-    // we do not use REGVALUE_SLOT5 as they are not "runtime friendly"
-    const std::string label = "Slot " + std::to_string(slot);
-    REGSAVE(label.c_str(), (DWORD)card);
+    CardManager & cardManager = GetCardMgr();
     cardManager.Insert(slot, card);
   }
 

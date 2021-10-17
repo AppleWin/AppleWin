@@ -21,6 +21,11 @@ void CPropertySheet::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, cons
   m_PropertySheetHelper.ApplyNewConfig(ConfigNew, ConfigOld);
 }
 
+void CPropertySheet::ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew)
+{
+  m_PropertySheetHelper.ApplyNewConfigFromSnapshot(ConfigNew);
+}
+
 void CPropertySheet::ConfigSaveApple2Type(eApple2Type apple2Type)
 {
 }

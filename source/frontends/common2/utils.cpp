@@ -91,7 +91,7 @@ namespace common2
     switch (tfe_enabled)
     {
       case 1:
-        tfe_init();
+        tfe_init(true);
         break;
       case 2:
         registerUthernet2();

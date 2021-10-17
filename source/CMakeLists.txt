@@ -114,6 +114,10 @@ set(SOURCE_FILES
   linux/duplicates/Joystick.cpp
   linux/duplicates/SerialComms.cpp
   linux/duplicates/PropertySheet.cpp
+  linux/duplicates/Registry.cpp
+  linux/duplicates/FourPlay.cpp
+  linux/duplicates/SNESMAX.cpp
+  linux/duplicates/CmdLine.cpp
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp
@@ -157,6 +161,8 @@ set(HEADER_FILES
   Core.h
   Utilities.h
   FrameBase.h
+  FourPlay.h
+  SNESMAX.h
 
   Common.h
   DiskDefs.h

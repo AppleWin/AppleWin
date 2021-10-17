@@ -35,7 +35,7 @@ static std::string JoyGetSnapshotStructName(void)
   return name;
 }
 
-void JoyLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+void JoyLoadSnapshot(YamlLoadHelper& yamlLoadHelper, unsigned int)
 {
   if (!yamlLoadHelper.GetSubMap(JoyGetSnapshotStructName()))
     return;
