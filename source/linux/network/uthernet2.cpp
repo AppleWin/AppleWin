@@ -2,9 +2,19 @@
 #include "linux/network/uthernet2.h"
 
 #include <unistd.h>
+#include <sys/types.h>
+#include <errno.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <poll.h>
+
+// fix SOCK_NONBLOCK for e.g. macOS
+#ifndef SOCK_NONBLOCK
+// DISCALIMER
+// totally untested, use at your own risk
+#include <fcntl.h>
+#define SOCK_NONBLOCK O_NONBLOCK
+#endif
 
 #define MAX_RXLENGTH 1518
 
