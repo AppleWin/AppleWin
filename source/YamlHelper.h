@@ -50,7 +50,7 @@ private:
 	int ParseMap(MapYaml& mapYaml);
 	std::string GetMapValue(MapYaml& mapYaml, const std::string &key, bool& bFound);
 	UINT LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize);
-	bool GetSubMap(MapYaml** mapYaml, const std::string &key);
+	bool GetSubMap(MapYaml** mapYaml, const std::string &key, const bool canBeNull /*= false*/);
 	void GetMapRemainder(std::string& mapName, MapYaml& mapYaml);
 
 	void MakeAsciiToHexTable(void);
@@ -103,11 +103,11 @@ public:
 	void LoadMemory(const LPBYTE pMemBase, const size_t size);
 	void LoadMemory(std::vector<BYTE>& memory, const size_t size);
 
-	bool GetSubMap(const std::string & key)
+	bool GetSubMap(const std::string & key, const bool canBeNull=false)
 	{
 		YamlStackItem item = {m_pMapYaml, m_currentMapName};
 		m_stackMap.push(item);
-		bool res = m_yamlHelper.GetSubMap(&m_pMapYaml, key);
+		bool res = m_yamlHelper.GetSubMap(&m_pMapYaml, key, canBeNull);
 		if (!res)
 			m_stackMap.pop();
 		else

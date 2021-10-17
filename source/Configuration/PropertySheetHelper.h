@@ -14,7 +14,6 @@ public:
 	virtual ~CPropertySheetHelper(){}
 
 	void FillComboBox(HWND window, int controlid, LPCTSTR choices, int currentchoice);
-	void SetSlot(UINT slot, SS_CARDTYPE newCardType);
 	std::string BrowseToFile(HWND hWindow, const TCHAR* pszTitle, const TCHAR* REGVALUE, const TCHAR* FILEMASKS);
 	void SaveStateUpdate();
 	int SaveStateSelectImage(HWND hWindow, const TCHAR* pszTitle, bool bSave);
@@ -30,12 +29,14 @@ public:
 
 	void SaveCurrentConfig(void);
 	const std::string & GetSSNewFilename(void) { return m_szSSNewFilename; }
-//	const CConfigNeedingRestart& GetConfigOld(void) { return m_ConfigOld; }
+	const CConfigNeedingRestart& GetConfigOld(void) { return m_ConfigOld; }
 	CConfigNeedingRestart& GetConfigNew(void) { return m_ConfigNew; }
 	bool IsConfigChanged(void) { return m_ConfigNew != m_ConfigOld; }
 	void SetDoBenchmark(void) { m_bDoBenchmark = true; }
 	void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld);
+	void ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew);
 	void ConfigSaveApple2Type(eApple2Type apple2Type);
+	void SetSlot(UINT slot, SS_CARDTYPE newCardType);
 
 private:
 	bool IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged);

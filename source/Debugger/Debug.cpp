@@ -67,6 +67,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Any Speed Breakpoints
 	int  g_nDebugBreakOnInvalid  = 0; // Bit Flags of Invalid Opcode to break on: // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
 	int  g_iDebugBreakOnOpcode   = 0;
+	bool g_bDebugBreakOnInterrupt = false;
 
 	static int  g_bDebugBreakpointHit = 0;	// See: BreakpointHit_t
 
@@ -314,6 +315,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	DWORD     extbench      = 0;
 
 	static bool      g_bIgnoreNextKey = false;
+
+	static WORD g_LBR = 0x0000;	// Last Branch Record
 
 // Private ________________________________________________________________________________________
 
@@ -982,6 +985,32 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 			, g_iDebugBreakOnOpcode
 			, g_aOpcodes65C02[ g_iDebugBreakOnOpcode ].sMnemonic
 		);
+
+	return ConsoleUpdate();
+}
+
+
+//===========================================================================
+Update_t CmdBreakOnInterrupt(int nArgs)
+{
+	TCHAR sText[CONSOLE_WIDTH];
+
+	if (nArgs > 1)
+		return HelpLastCommand();
+
+	TCHAR sAction[CONSOLE_WIDTH] = TEXT("Current"); // default to display
+
+	if (nArgs == 1)
+	{
+		g_bDebugBreakOnInterrupt = g_aArgs[1].nValue ? true : false;
+		_tcscpy(sAction, TEXT("Setting"));
+	}
+
+	// Show what the current break opcode is
+	ConsoleBufferPushFormat(sText, TEXT("%s Break on Interrupt: %s")
+		, sAction
+		, g_bDebugBreakOnInterrupt ? "Enabled" : "Disabled"
+	);
 
 	return ConsoleUpdate();
 }
@@ -2184,6 +2213,13 @@ Update_t CmdOut (int nArgs)
 	return UPDATE_CONSOLE_DISPLAY; // TODO: Verify // 1
 }
 
+//===========================================================================
+Update_t CmdLBR(int nArgs)
+{
+	TCHAR sText[CONSOLE_WIDTH];
+	ConsolePrintFormat(sText, " LBR = $%04X", g_LBR);
+	return ConsoleUpdate();
+}
 
 // Color __________________________________________________________________________________________
 
@@ -5416,14 +5452,14 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 	// Get search "string"
 	Arg_t *pArg = & g_aArgs[ iArgFirstByte ];
 	
-	WORD nTarget;
 	for (iArg = iArgFirstByte; iArg <= nArgs; iArg++, pArg++ )
 	{
-		MemorySearch_t ms;
+		WORD nTarget = pArg->nValue;
 
-		nTarget = pArg->nValue;
+		MemorySearch_t ms;
 		ms.m_nValue = nTarget & 0xFF;
 		ms.m_iType = MEM_SEARCH_BYTE_EXACT;
+		ms.m_bFound = false;
 
 		if (nTarget > 0xFF) // searching for 16-bit address
 		{
@@ -5810,7 +5846,7 @@ Update_t CmdOutputPrintf (int nArgs)
 	TCHAR sText[ CONSOLE_WIDTH ] = TEXT("");
 
 	std::vector<Arg_t> aValues;
-	Arg_t         entry;
+	Arg_t entry;
 	int iValue = 0;
 	int nValue = 0;
 
@@ -5833,11 +5869,8 @@ Update_t CmdOutputPrintf (int nArgs)
 			continue;
 		else
 		{
-//			entry.eType  = PS_LITERAL;
 			entry.nValue = g_aArgs[ iArg ].nValue;
 			aValues.push_back( entry );
-//			nValue = g_aArgs[ iArg ].nValue;
-//			aValues.push_back( nValue );
 		}
 	}
 	const int nParamValues = (int) aValues.size();
@@ -8148,6 +8181,39 @@ static void CheckBreakOpcode( int iOpcode )
 		g_bDebugBreakpointHit |= BP_HIT_OPCODE;
 }
 
+static void UpdateLBR(void)
+{
+	const BYTE nOpcode = *(mem + regs.pc);
+
+	bool isControlFlowOpcode =
+		nOpcode == OPCODE_BRK ||
+		nOpcode == OPCODE_JSR ||
+		nOpcode == OPCODE_JMP_A ||
+		nOpcode == OPCODE_RTI ||
+		nOpcode == OPCODE_RTS ||
+		nOpcode == OPCODE_JMP_NA;
+
+	if (GetMainCpu() == CPU_65C02 && nOpcode == OPCODE_JMP_IAX)
+		isControlFlowOpcode = true;
+
+	if (g_aOpcodes[nOpcode].nAddressMode == AM_R)
+	{
+		if ( (nOpcode == OPCODE_BRA) ||
+			(nOpcode == OPCODE_BPL && !(regs.ps & AF_SIGN)) ||
+			(nOpcode == OPCODE_BMI && (regs.ps & AF_SIGN)) ||
+			(nOpcode == OPCODE_BVC && !(regs.ps & AF_OVERFLOW)) ||
+			(nOpcode == OPCODE_BVS && (regs.ps & AF_OVERFLOW)) ||
+			(nOpcode == OPCODE_BCC && !(regs.ps & AF_CARRY)) ||
+			(nOpcode == OPCODE_BCS && (regs.ps & AF_CARRY)) ||
+			(nOpcode == OPCODE_BNE && !(regs.ps & AF_ZERO)) ||
+			(nOpcode == OPCODE_BEQ && (regs.ps & AF_ZERO)) )
+			isControlFlowOpcode = true;		// Branch taken
+	}
+
+	if (isControlFlowOpcode)
+		g_LBR = regs.pc;
+}
+
 void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 {
 	static bool bForceSingleStepNext = false; // Allow at least one instruction to execute so we don't trigger on the same invalid opcode
@@ -8189,7 +8255,7 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 				BYTE nOpcode = *(mem+regs.pc);
 
 				// Update profiling stats
-				int  nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;
+				int nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;
 				g_aProfileOpcodes[ nOpcode ].m_nCount++;
 				g_aProfileOpmodes[ nOpmode ].m_nCount++;
 
@@ -8209,8 +8275,18 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 
 		if (bDoSingleStep)
 		{
+			UpdateLBR();
+			const WORD oldPC = regs.pc;
+
 			SingleStep(g_bGoCmd_ReinitFlag);
 			g_bGoCmd_ReinitFlag = false;
+
+			if (IsInterruptInLastExecution())
+			{
+				g_LBR = oldPC;
+				if (g_bDebugBreakOnInterrupt)
+					g_bDebugBreakpointHit |= BP_HIT_INTERRUPT;
+			}
 
 			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg();
 		}
@@ -8237,6 +8313,8 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 				sprintf_s(szStopMessage, sizeof(szStopMessage), "Read access at $%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				pszStopReason = TEXT("PC reads from floating bus or I/O memory");
+			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "Interrupt occurred at $%04X", g_LBR);
 			else
 				pszStopReason = TEXT("Unknown!");
 
@@ -8497,6 +8575,7 @@ void DebugInitialize ()
 void DebugReset(void)
 {
 	g_videoScannerDisplayInfo.Reset();
+	g_LBR = 0x0000;
 }
 
 // Add character to the input line

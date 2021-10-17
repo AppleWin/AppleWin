@@ -45,6 +45,10 @@ typedef unsigned int UINT;
 
 #include "../Common.h"	// For: IS_APPLE2
 #include "../Memory.h"
+#include "../Registry.h"
+#include "../YamlHelper.h"
+
+static UINT g_slot = SLOT3;
 
 /**/
 /** #define TFE_DEBUG_DUMP 1 **/
@@ -59,8 +63,6 @@ typedef unsigned int UINT;
 
 /* ------------------------------------------------------------------------- */
 /*    variables needed                                                       */
-
-static int init_tfe_flag = 0;
 
 /* status which received packages to accept 
    This is used in tfe_should_accept().
@@ -104,7 +106,7 @@ std::string tfe_interface;
 */
 #define TFE_COUNT_IO_REGISTER 0x10 /* we have 16 I/O register */
 
-static BYTE *tfe = NULL;
+static BYTE tfe[TFE_COUNT_IO_REGISTER] = { 0 };
 /*
 	RW: RXTXDATA   = DE00/DE01
 	RW: RXTXDATA2  = DE02/DE03 (for 32-bit-operation)
@@ -154,7 +156,7 @@ static BYTE *tfe = NULL;
 
 #define MAX_PACKETPAGE_ARRAY 0x1000 /* 4 KB */
 
-static BYTE *tfe_packetpage = NULL;
+static BYTE tfe_packetpage[MAX_PACKETPAGE_ARRAY] = { 0 };
 
 static WORD tfe_packetpage_ptr = 0;
 
@@ -388,13 +390,10 @@ void tfe_debug_output_pp( void )
 static BYTE __stdcall TfeIoCxxx (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
-void tfe_reset(void)
+static void tfe_reset(void)
 {
     if (tfe_enabled)
     {
-        assert( tfe );
-        assert( tfe_packetpage );
-
         tfe_arch_pre_reset();
 
         /* initialize visible IO register and PacketPage registers */
@@ -446,9 +445,6 @@ void tfe_reset(void)
 
         TFE_DEBUG_OUTPUT_REG();
     }
-
-	const UINT uSlot = 3;
-	RegisterIoHandler(uSlot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, NULL, NULL);
 }
 
 #ifdef DOS_TFE
@@ -461,44 +457,10 @@ static void set_standard_tfe_interface(void)
 #endif
 
 static
-int tfe_activate_i(void)
+int tfe_activate_i(bool reset)
 {
-    assert( tfe == NULL );
-    assert( tfe_packetpage == NULL );
-
 #ifdef TFE_DEBUG
     if(g_fh) fprintf( g_fh, "tfe_activate_i()." );
-#endif
-
-    /* allocate memory for visible IO register */
-	/* RGJ added BYTE * for AppleWin */
-	tfe = (BYTE * )lib_malloc( TFE_COUNT_IO_REGISTER );
-    if (tfe==NULL)
-    {
-#ifdef TFE_DEBUG_INIT
-        if(g_fh) fprintf(g_fh, "tfe_activate_i: Allocating tfe failed.\n");
-#endif
-        tfe_enabled = 0;
-        return 0;
-    }
-
-    /* allocate memory for PacketPage register */
-	/* RGJ added BYTE * for AppleWin */
-	tfe_packetpage = (BYTE * ) lib_malloc( MAX_PACKETPAGE_ARRAY );
-    if (tfe_packetpage==NULL)
-    {
-#ifdef TFE_DEBUG_INIT
-        if(g_fh) fprintf(g_fh, "tfe_activate: Allocating tfe_packetpage failed.\n");
-#endif
-        lib_free(tfe);
-        tfe=NULL;
-        tfe_enabled = 0;
-        return 0;
-    }
-
-#ifdef TFE_DEBUG_INIT
-    if(g_fh) fprintf(g_fh, "tfe_activate: Allocated memory successfully.\n");
-    if(g_fh) fprintf(g_fh, "\ttfe at $%08llX, tfe_packetpage at $%08llX\n", (unsigned long long)uintptr_t(tfe), (unsigned long long)uintptr_t(tfe_packetpage) );
 #endif
 
 #ifdef DOS_TFE
@@ -506,17 +468,16 @@ int tfe_activate_i(void)
 #endif
 
     if (!tfe_arch_activate(tfe_interface)) {
-        lib_free(tfe_packetpage);
-        lib_free(tfe);
-        tfe=NULL;
-        tfe_packetpage=NULL;
         tfe_enabled = 0;
         tfe_cannot_use = 1;
         return 0;
     }
 
-    /* virtually reset the LAN chip */
-    tfe_reset();
+    if (reset)
+    {
+        /* virtually reset the LAN chip */
+        tfe_reset();
+    }
 
     return 0;
 }
@@ -530,20 +491,16 @@ int tfe_deactivate_i(void)
 
     tfe_arch_deactivate();
 
-    lib_free(tfe);
-    tfe = NULL;
-    lib_free(tfe_packetpage);
-    tfe_packetpage = NULL;
 	return 0;
 }
 
 static
-int tfe_activate(void) {
+int tfe_activate(bool reset) {
 #ifdef TFE_DEBUG
     if(g_fh) fprintf( g_fh, "tfe_activate()." );
 #endif
 
-    return tfe_activate_i();
+    return tfe_activate_i(reset);
 }
 
 static
@@ -555,8 +512,10 @@ int tfe_deactivate(void) {
     return tfe_deactivate_i();
 }
 
-void tfe_init(void)
+void tfe_init(bool reset)
 {
+    tfe_enabled = 1;
+
     if (!tfe_arch_init()) {
         tfe_enabled = 0;
         tfe_cannot_use = 1;
@@ -566,11 +525,10 @@ void tfe_init(void)
         // the first time this is a NOOP
         // but when called from RepeatInitialization()
         // it ensures new settings are taken into account
-        if (tfe)
-            tfe_deactivate();
+        tfe_deactivate();
 
         // only activate if the settings say so
-        if (tfe_enabled && (tfe_activate() < 0)) {
+        if (tfe_enabled && (tfe_activate(reset) < 0)) {
             tfe_enabled = 0;
             tfe_cannot_use = 1;
         }
@@ -579,10 +537,7 @@ void tfe_init(void)
 
 void tfe_shutdown(void)
 {
-    assert( (tfe && tfe_packetpage) || (!tfe && !tfe_packetpage));
-
-    if (tfe)
-        tfe_deactivate();
+    tfe_deactivate();
 
     tfe_interface.clear();
 }
@@ -1115,10 +1070,7 @@ BYTE REGPARM1 tfe_read(WORD ioaddress)
 {
     BYTE retval;
 
-    assert( tfe );
-    assert( tfe_packetpage );
-
-	assert( ioaddress < 0x10);
+	assert( ioaddress < TFE_COUNT_IO_REGISTER);
 
     switch (ioaddress) {
 
@@ -1194,10 +1146,7 @@ BYTE REGPARM1 tfe_read(WORD ioaddress)
 
 void REGPARM2 tfe_store(WORD ioaddress, BYTE byte)
 {
-    assert( tfe );
-    assert( tfe_packetpage );
-
-	assert( ioaddress < 0x10);
+	assert( ioaddress < TFE_COUNT_IO_REGISTER);
 
     switch (ioaddress)
     {
@@ -1329,14 +1278,17 @@ void REGPARM2 tfe_store(WORD ioaddress, BYTE byte)
 
 
 
+#if 0
 static
 int set_tfe_disabled(void *v, void *param)
 {
     /* dummy function since we don't want "disabled" to be stored on disk */
     return 0;
 }
+#endif
 
 
+#if 0
 static
 int set_tfe_enabled(void *v, void *param)
 {
@@ -1375,6 +1327,7 @@ int set_tfe_enabled(void *v, void *param)
     }
     return 0;
 }
+#endif
 
 
 static 
@@ -1412,29 +1365,6 @@ int set_tfe_interface(const std::string & name)
 //    return cmdline_register_options(cmdline_options);
 //}
 
-
-/* ------------------------------------------------------------------------- */
-/*    snapshot support functions                                             */
-
-#if 0
-
-static char snap_module_name[] = "TFE1764";
-#define SNAP_MAJOR 0
-#define SNAP_MINOR 0
-
-int tfe_read_snapshot_module(struct snapshot_s *s)
-{
-	/* @SRT TODO: not yet implemented */
-	return -1;
-}
-
-int tfe_write_snapshot_module(struct snapshot_s *s)
-{
-	/* @SRT TODO: not yet implemented */
-	return -1;
-}
-
-#endif /* #if 0 */
 
 /* ------------------------------------------------------------------------- */
 /*    functions for selecting and querying available NICs                    */
@@ -1498,11 +1428,15 @@ return ret;
 
 }
 
+void tfe_InitializeIO(LPBYTE pCxRomPeripheral, UINT slot)
+{
+    g_slot = slot;
+    RegisterIoHandler(slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, NULL, NULL);
+}
+
 void get_disabled_state(int * param)
 {
-
-*param = tfe_cannot_use;
-
+    *param = tfe_cannot_use;
 }
 
 int update_tfe_interface(const std::string & name)
@@ -1518,6 +1452,113 @@ const std::string & get_tfe_interface(void)
 int get_tfe_enabled(void)
 {
 	return tfe_enabled;
+}
+
+// Called by: tfe_LoadSnapshot() & ApplyNewConfig()
+void tfe_SetRegistryInterface(UINT slot, const std::string& name)
+{
+    std::string& regSection = RegGetConfigSlotSection(slot);
+    RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, 1, name);
+}
+
+/* ------------------------------------------------------------------------- */
+/*    snapshot support functions                                             */
+
+#define SS_YAML_KEY_ENABLED "Enabled"
+#define SS_YAML_KEY_NETWORK_INTERFACE "Network Interface"
+#define SS_YAML_KEY_STARTED_TX "Started Tx"
+#define SS_YAML_KEY_CANNOT_USE "Cannot Use"
+#define SS_YAML_KEY_TXCOLLECT_BUFFER "Tx Collect Buffer"
+#define SS_YAML_KEY_RX_BUFFER "Rx Buffer"
+#define SS_YAML_KEY_CS8900A_REGS "CS8900A Registers"
+#define SS_YAML_KEY_PACKETPAGE_REGS "PacketPage Registers"
+
+static const UINT kUNIT_VERSION = 1;
+
+std::string tfe_GetSnapshotCardName(void)
+{
+    static const std::string name("Uthernet");
+    return name;
+}
+
+void tfe_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
+{
+    YamlSaveHelper::Slot slot(yamlSaveHelper, tfe_GetSnapshotCardName(), g_slot, kUNIT_VERSION);
+
+    YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+    yamlSaveHelper.SaveBool(SS_YAML_KEY_ENABLED, tfe_enabled ? true : false);
+    yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, get_tfe_interface());
+
+    yamlSaveHelper.SaveBool(SS_YAML_KEY_STARTED_TX, tfe_started_tx ? true : false);
+    yamlSaveHelper.SaveBool(SS_YAML_KEY_CANNOT_USE, tfe_cannot_use ? true : false);
+
+    yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_TXCOLLECT_BUFFER, txcollect_buffer);
+    yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_RX_BUFFER, rx_buffer);
+
+    {
+        YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_CS8900A_REGS);
+        yamlSaveHelper.SaveMemory(tfe, TFE_COUNT_IO_REGISTER);
+    }
+
+    {
+        YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_PACKETPAGE_REGS);
+        yamlSaveHelper.SaveMemory(tfe_packetpage, MAX_PACKETPAGE_ARRAY);
+    }
+}
+
+bool tfe_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+{
+    if (slot != SLOT3)	// fixme
+        throw std::string("Card: wrong slot");
+
+    if (version < 1 || version > kUNIT_VERSION)
+        throw std::string("Card: wrong version");
+
+    tfe_enabled = yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED) ? true : false;
+    set_tfe_interface(yamlLoadHelper.LoadStringA(SS_YAML_KEY_NETWORK_INTERFACE));
+
+    tfe_started_tx = yamlLoadHelper.LoadBool(SS_YAML_KEY_STARTED_TX) ? true : false;
+    tfe_cannot_use = yamlLoadHelper.LoadBool(SS_YAML_KEY_CANNOT_USE) ? true : false;
+
+    txcollect_buffer = yamlLoadHelper.LoadUint(SS_YAML_KEY_TXCOLLECT_BUFFER);
+    rx_buffer = yamlLoadHelper.LoadUint(SS_YAML_KEY_RX_BUFFER);
+
+    if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_CS8900A_REGS))
+        throw std::string("Card: Expected key: ") + SS_YAML_KEY_CS8900A_REGS;
+
+    memset(tfe, 0, TFE_COUNT_IO_REGISTER);
+    yamlLoadHelper.LoadMemory(tfe, TFE_COUNT_IO_REGISTER);
+    yamlLoadHelper.PopMap();
+
+    if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_PACKETPAGE_REGS))
+        throw std::string("Card: Expected key: ") + SS_YAML_KEY_PACKETPAGE_REGS;
+
+    memset(tfe_packetpage, 0, MAX_PACKETPAGE_ARRAY);
+    yamlLoadHelper.LoadMemory(tfe_packetpage, MAX_PACKETPAGE_ARRAY);
+    yamlLoadHelper.PopMap();
+
+    // Side effects after PackagePage has been loaded
+
+    tfe_packetpage_ptr = GET_TFE_16(TFE_ADDR_PP_PTR);
+
+    tfe_sideeffects_write_pp(TFE_PP_ADDR_CC_RXCTL, 0);  // set the 6 tfe_recv_* vars
+
+    for (UINT i = 0; i < 8; i++)
+        tfe_sideeffects_write_pp((TFE_PP_ADDR_LOG_ADDR_FILTER + i) & ~1, i & 1);    // set tfe_hash_mask
+
+    for (UINT i = 0; i < 6; i++)
+        tfe_sideeffects_write_pp((TFE_PP_ADDR_MAC_ADDR + i) & ~1, i & 1);           // set tfe_ia_mac
+
+    //
+
+    tfe_SetRegistryInterface(slot, get_tfe_interface());
+
+    // Setup the npcap.dll func ptrs & open/configure the interface
+    // NB. Overrides tfe_enabled and tfe_cannot_use, which are set above
+    tfe_init(false);    // reset=false
+
+    return true;
 }
 
 //#endif /* #ifdef HAVE_TFE */

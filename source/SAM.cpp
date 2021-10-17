@@ -35,13 +35,14 @@
 #include "SAM.h"
 #include "Memory.h"
 #include "Speaker.h"
+#include "YamlHelper.h"
 
 //
 // Write 8 bit data to speaker. Emulates a "SAM" speech card DAC
 //
 
 
-static BYTE __stdcall IOWrite_SAM(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+BYTE __stdcall SAMCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	// Emulate audio from a SAM / 8 bit DAC card
 	// Only supportable if AppleWin is using WAVE output
@@ -86,7 +87,33 @@ static BYTE __stdcall IOWrite_SAM(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	return res;
 }
 
-void ConfigureSAM(LPBYTE pCxRomPeripheral, UINT uSlot)
+void SAMCard::InitializeIO(LPBYTE pCxRomPeripheral, UINT slot)
 {
-	RegisterIoHandler(uSlot, IO_Null, IOWrite_SAM, IO_Null, IO_Null, NULL, NULL);
+	RegisterIoHandler(slot, IO_Null, IOWrite, IO_Null, IO_Null, NULL, NULL);
+}
+
+//===========================================================================
+
+static const UINT kUNIT_VERSION = 1;
+
+std::string SAMCard::GetSnapshotCardName(void)
+{
+	static const std::string name("SAM");
+	return name;
+}
+
+void SAMCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
+
+	YamlSaveHelper::Label unit(yamlSaveHelper, "%s: null\n", SS_YAML_KEY_STATE);
+	// NB. No state for this card
+}
+
+bool SAMCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+{
+	if (version < 1 || version > kUNIT_VERSION)
+		throw std::string("Card: wrong version");
+
+	return true;
 }

@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Interface.h"
 #include "Log.h"
 #include "Memory.h"
+#include "Registry.h"
 #include "YamlHelper.h"
 
 #include "../resource/resource.h"
@@ -71,7 +72,6 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	m_bCfgSupportDCD(false),
 	m_pExpansionRom(NULL)
 {
-	m_ayCurrentSerialPortName.clear();
 	m_dwSerialPortItem = 0;
 
 	m_hCommHandle = INVALID_HANDLE_VALUE;
@@ -86,6 +86,14 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	memset(&m_o, 0, sizeof(m_o));
 
 	InternalReset();
+
+	//
+
+	char serialPortName[CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM];
+	std::string& regSection = RegGetConfigSlotSection(m_uSlot);
+	RegLoadString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, TRUE, serialPortName, sizeof(serialPortName), TEXT(""));
+
+	SetSerialPortName(serialPortName);
 }
 
 void CSuperSerialCard::InternalReset()
@@ -983,7 +991,7 @@ void CSuperSerialCard::CommDestroy()
 //===========================================================================
 
 // dwNewSerialPortItem is the drop-down list item
-void CSuperSerialCard::CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem)
+void CSuperSerialCard::CommSetSerialPort(DWORD dwNewSerialPortItem)
 {
 	if (m_dwSerialPortItem == dwNewSerialPortItem)
 		return;
@@ -995,14 +1003,21 @@ void CSuperSerialCard::CommSetSerialPort(HWND hWindow, DWORD dwNewSerialPortItem
 	m_dwSerialPortItem = dwNewSerialPortItem;
 
 	if (m_dwSerialPortItem == m_uTCPChoiceItemIdx)
-		m_ayCurrentSerialPortName = TEXT_SERIAL_TCP;
-	else if (m_dwSerialPortItem != 0) {
+	{
+		m_currentSerialPortName = TEXT_SERIAL_TCP;
+	}
+	else if (m_dwSerialPortItem != 0)
+	{
 		TCHAR temp[SIZEOF_SERIALCHOICE_ITEM];
 		sprintf(temp, TEXT_SERIAL_COM"%d", m_vecSerialPortsItems[m_dwSerialPortItem]);
-		m_ayCurrentSerialPortName = temp;
+		m_currentSerialPortName = temp;
 	}
 	else
-		m_ayCurrentSerialPortName.clear();	// "None"
+	{
+		m_currentSerialPortName.clear();	// "None"
+	}
+
+	SetRegistrySerialPortName();
 }
 
 //===========================================================================
@@ -1337,10 +1352,10 @@ char* CSuperSerialCard::GetSerialPortChoices()
 	return m_aySerialPortChoices;
 }
 
-// Called by LoadConfiguration()
+// Called by ctor & LoadSnapshot()
 void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 {
-	m_ayCurrentSerialPortName = pSerialPortName;
+	m_currentSerialPortName = pSerialPortName;
 
 	// Init m_aySerialPortChoices, so that we have choices to show if serial is active when we 1st open Config dialog
 	GetSerialPortChoices();
@@ -1372,9 +1387,15 @@ void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 	}
 	else
 	{
-		m_ayCurrentSerialPortName.clear();	// "None"
+		m_currentSerialPortName.clear();	// "None"
 		m_dwSerialPortItem = 0;
 	}
+}
+
+void CSuperSerialCard::SetRegistrySerialPortName(void)
+{
+	std::string& regSection = RegGetConfigSlotSection(m_uSlot);
+	RegSaveString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, TRUE, GetSerialPortName());
 }
 
 //===========================================================================
@@ -1498,6 +1519,7 @@ bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, U
 
 	std::string serialPortName = yamlLoadHelper.LoadString(SS_YAML_KEY_SERIALPORTNAME);
 	SetSerialPortName(serialPortName.c_str());
+	SetRegistrySerialPortName();
 
 	return true;
 }

@@ -52,7 +52,7 @@ bool g_bHookAltGrControl = false;
 
 static LPSTR GetCurrArg(LPSTR lpCmdLine)
 {
-	if(*lpCmdLine == '\"')
+	if (*lpCmdLine == '\"')
 		lpCmdLine++;
 
 	return lpCmdLine;
@@ -62,9 +62,9 @@ static LPSTR GetNextArg(LPSTR lpCmdLine)
 {
 	int bInQuotes = 0;
 
-	while(*lpCmdLine)
+	while (*lpCmdLine)
 	{
-		if(*lpCmdLine == '\"')
+		if (*lpCmdLine == '\"')
 		{
 			bInQuotes ^= 1;
 			if(!bInQuotes)
@@ -74,9 +74,12 @@ static LPSTR GetNextArg(LPSTR lpCmdLine)
 			}
 		}
 
-		if((*lpCmdLine == ' ') && !bInQuotes)
+		if ((*lpCmdLine == ' ') && !bInQuotes)
 		{
 			*lpCmdLine++ = 0x00;
+
+			while ((*lpCmdLine == ' '))	// Skip multiple spaces between args
+				lpCmdLine++;
 			break;
 		}
 
@@ -509,6 +512,14 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		else if (strcmp(lpCmdLine, "-no-nsc") == 0)
 		{
 			g_cmdLine.bRemoveNoSlotClock = true;
+		}
+		else if (strcmp(lpCmdLine, "-snes-max-alt-joy1") == 0)
+		{
+			g_cmdLine.snesMaxAltControllerType[0] = true;
+		}
+		else if (strcmp(lpCmdLine, "-snes-max-alt-joy2") == 0)
+		{
+			g_cmdLine.snesMaxAltControllerType[1] = true;
 		}
 		else	// unsupported
 		{

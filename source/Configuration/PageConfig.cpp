@@ -112,6 +112,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 
 		case IDC_ETHERNET:
 			ui_tfe_settings_dialog(hWnd);
+			m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = m_PageConfigTfe.m_tfe_enabled ? CT_Uthernet : CT_Empty;
 			break;
 
 		case IDC_MONOCOLOR:
@@ -315,7 +316,6 @@ void CPageConfig::DlgOK(HWND hWnd)
 		m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = isNewVideoRate50Hz ? VR_50HZ : VR_60HZ;
 	}
 
-	m_PropertySheetHelper.GetConfigNew().m_tfeEnabled = m_PageConfigTfe.m_tfe_enabled;
 	m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
 
 	if (bVideoReinit)
@@ -350,13 +350,8 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	if (GetCardMgr().IsSSCInstalled())
 	{
-		CSuperSerialCard* pSSC = GetCardMgr().GetSSC();
 		const DWORD uNewSerialPort = (DWORD) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
-		pSSC->CommSetSerialPort(hWnd, uNewSerialPort);
-		RegSaveString(	TEXT(REG_CONFIG),
-						TEXT(REGVALUE_SERIAL_PORT_NAME),
-						TRUE,
-						pSSC->GetSerialPortName() );
+		GetCardMgr().GetSSC()->CommSetSerialPort(uNewSerialPort);
 	}
 
 	//
@@ -376,8 +371,9 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 void CPageConfig::InitOptions(HWND hWnd)
 {
-	// Nothing to do:
-	// - no changes made on any other pages affect this page
+	const SS_CARDTYPE slot3 = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3];
+	const BOOL enableUthernetDialog = slot3 == CT_Empty || slot3 == CT_Uthernet;
+	EnableWindow(GetDlgItem(hWnd, IDC_ETHERNET), enableUthernetDialog);
 }
 
 // Config->Computer: Menu item to eApple2Type

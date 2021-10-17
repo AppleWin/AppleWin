@@ -307,7 +307,7 @@ void SSI263::Play(unsigned int nPhoneme)
 {
 	if (!SSI263SingleVoice.bActive)
 	{
-		bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, m_kDSBufferSize);
+		bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, m_kDSBufferByteSize);
 		LogFileOutput("SSI263::Play: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
 		if (!bRes)
 			return;
@@ -471,7 +471,7 @@ void SSI263::Update(void)
 
 	//-------------
 
-	const UINT kMinBytesInBuffer = m_kDSBufferSize / 4;	// 25% full
+	const UINT kMinBytesInBuffer = m_kDSBufferByteSize / 4;	// 25% full
 	int nNumSamples = 0;
 	double updateInterval = 0.0;
 
@@ -515,8 +515,8 @@ void SSI263::Update(void)
 		if (nNumSamples > 2 * nNumSamplesPerPeriod)
 			nNumSamples = 2 * nNumSamplesPerPeriod;
 
-		if (nNumSamples > m_kDSBufferSize)
-			nNumSamples = m_kDSBufferSize;	// Clamp to prevent buffer overflow
+		if (nNumSamples > m_kDSBufferByteSize / sizeof(short))
+			nNumSamples = m_kDSBufferByteSize / sizeof(short);	// Clamp to prevent buffer overflow
 
 //		if (nNumSamples)
 //		{ /* Generate new sample data - ie. could merge from all the SSI263 sources */ }
@@ -525,13 +525,13 @@ void SSI263::Update(void)
 
 		int nBytesRemaining = m_byteOffset - dwCurrentPlayCursor;
 		if (nBytesRemaining < 0)
-			nBytesRemaining += m_kDSBufferSize;
+			nBytesRemaining += m_kDSBufferByteSize;
 
 		// Calc correction factor so that play-buffer doesn't under/overflow
 		const int nErrorInc = SoundCore_GetErrorInc();
 		if (nBytesRemaining < kMinBytesInBuffer)
 			m_numSamplesError += nErrorInc;				// < 0.25 of buffer remaining
-		else if (nBytesRemaining > m_kDSBufferSize / 2)
+		else if (nBytesRemaining > m_kDSBufferByteSize / 2)
 			m_numSamplesError -= nErrorInc;				// > 0.50 of buffer remaining
 		else
 			m_numSamplesError = 0;						// Acceptable amount of data in buffer
@@ -636,7 +636,7 @@ void SSI263::Update(void)
 	if (FAILED(hr))
 		return;
 
-	m_byteOffset = (m_byteOffset + (DWORD)nNumSamples*sizeof(short)*m_kNumChannels) % m_kDSBufferSize;
+	m_byteOffset = (m_byteOffset + (DWORD)nNumSamples*sizeof(short)*m_kNumChannels) % m_kDSBufferByteSize;
 
 	//
 
@@ -758,7 +758,7 @@ bool SSI263::DSInit(void)
 	// Create single SSI263 voice
 	//
 
-	HRESULT hr = DSGetSoundBuffer(&SSI263SingleVoice, DSBCAPS_CTRLVOLUME, m_kDSBufferSize, SAMPLE_RATE_SSI263, m_kNumChannels, "SSI263");
+	HRESULT hr = DSGetSoundBuffer(&SSI263SingleVoice, DSBCAPS_CTRLVOLUME, m_kDSBufferByteSize, SAMPLE_RATE_SSI263, m_kNumChannels, "SSI263");
 	LogFileOutput("SSI263::DSInit: DSGetSoundBuffer(), hr=0x%08X\n", hr);
 	if (FAILED(hr))
 	{

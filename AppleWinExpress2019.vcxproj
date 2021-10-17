@@ -79,6 +79,7 @@
     <ClInclude Include="source\DiskImage.h" />
     <ClInclude Include="source\DiskImageHelper.h" />
     <ClInclude Include="source\DiskLog.h" />
+    <ClInclude Include="source\FourPlay.h" />
     <ClInclude Include="source\FrameBase.h" />
     <ClInclude Include="source\Harddisk.h" />
     <ClInclude Include="source\Interface.h" />
@@ -102,6 +103,7 @@
     <ClInclude Include="source\SaveState_Structs_common.h" />
     <ClInclude Include="source\SaveState_Structs_v1.h" />
     <ClInclude Include="source\SerialComms.h" />
+    <ClInclude Include="source\SNESMAX.h" />
     <ClInclude Include="source\SoundCore.h" />
     <ClInclude Include="source\Speaker.h" />
     <ClInclude Include="source\Speech.h" />
@@ -110,10 +112,8 @@
     <ClInclude Include="source\StdAfx.h" />
     <ClInclude Include="source\SynchronousEventManager.h" />
     <ClInclude Include="source\Tape.h" />
-    <ClInclude Include="source\Tfe\Bittypes.h" />
     <ClInclude Include="source\Tfe\Bpf.h" />
     <ClInclude Include="source\Tfe\Ip6_misc.h" />
-    <ClInclude Include="source\Tfe\Pcap-stdinc.h" />
     <ClInclude Include="source\Tfe\Pcap.h" />
     <ClInclude Include="source\Tfe\tfe.h" />
     <ClInclude Include="source\Tfe\tfearch.h" />
@@ -160,6 +160,7 @@
     <ClCompile Include="source\Debugger\Debugger_Disassembler.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Win32.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
+    <ClCompile Include="source\FourPlay.cpp" />
     <ClCompile Include="source\FrameBase.cpp" />
     <ClCompile Include="source\RGBMonitor.cpp" />
     <ClCompile Include="source\SAM.cpp" />
@@ -196,6 +197,7 @@
     <ClCompile Include="source\Riff.cpp" />
     <ClCompile Include="source\SaveState.cpp" />
     <ClCompile Include="source\SerialComms.cpp" />
+    <ClCompile Include="source\SNESMAX.cpp" />
     <ClCompile Include="source\SoundCore.cpp" />
     <ClCompile Include="source\Speaker.cpp" />
     <ClCompile Include="source\Speech.cpp" />
@@ -280,9 +282,12 @@
     <None Include="resource\Apple2.rom" />
     <None Include="resource\Apple2e.rom" />
     <None Include="resource\Apple2e_Enhanced.rom" />
+    <None Include="resource\Apple2_JPlus.rom" />
+    <None Include="resource\Apple2_JPlus_Video.rom" />
     <None Include="resource\Apple2_Plus.rom" />
     <None Include="resource\Base64A.rom" />
     <None Include="resource\Base64A_German_Video.rom" />
+    <None Include="resource\Disk2-13sector.rom" />
     <None Include="resource\DISK2.rom" />
     <None Include="resource\Freezes_Non-autostart_F8_Rom.rom" />
     <None Include="resource\Hddrvr.bin" />
@@ -313,6 +318,7 @@
   <ItemGroup>
     <Image Include="resource\Applewin.bmp" />
     <Image Include="resource\APPLEWIN.ICO" />
+    <Image Include="resource\ApplewinLogo.bmp" />
     <Image Include="resource\CAPSOFF.BMP" />
     <Image Include="resource\CAPSOFF_P8.BMP" />
     <Image Include="resource\CAPSON.BMP" />

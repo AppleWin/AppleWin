@@ -232,6 +232,12 @@
     <ClCompile Include="source\Windows\HookFilter.cpp">
       <Filter>Source Files\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="source\FourPlay.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
+    <ClCompile Include="source\SNESMAX.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\CommonVICE\6510core.h">
@@ -245,9 +251,6 @@
     </ClInclude>
     <ClInclude Include="source\AY8910.h">
       <Filter>Source Files\Emulator</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Tfe\Bittypes.h">
-      <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
     <ClInclude Include="source\Tfe\Bpf.h">
       <Filter>Source Files\Uthernet</Filter>
@@ -385,9 +388,6 @@
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
     <ClInclude Include="source\Tfe\Pcap.h">
-      <Filter>Source Files\Uthernet</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Tfe\Pcap-stdinc.h">
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
     <ClInclude Include="source\Configuration\PropertySheet.h">
@@ -546,6 +546,12 @@
     <ClInclude Include="source\Windows\HookFilter.h">
       <Filter>Source Files\Windows</Filter>
     </ClInclude>
+    <ClInclude Include="source\FourPlay.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\SNESMAX.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\Applewin.bmp">
@@ -656,6 +662,9 @@
     <Image Include="resource\RUNBASE64A.BMP">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="resource\ApplewinLogo.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="resource\Apple2.rom">
@@ -719,6 +728,15 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="resource\Base64A_German_Video.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\Apple2_JPlus.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\Apple2_JPlus_Video.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\Disk2-13sector.rom">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

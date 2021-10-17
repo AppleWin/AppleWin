@@ -295,6 +295,7 @@
 		, CMD_JSR
 		, CMD_NOP
 		, CMD_OUT
+		, CMD_LBR
 // CPU - Meta Info
 		, CMD_PROFILE
 		, CMD_REGISTER_SET
@@ -322,6 +323,7 @@
 // Breakpoints
 		, CMD_BREAK_INVALID
 		, CMD_BREAK_OPCODE
+		, CMD_BREAK_ON_INTERRUPT
 		, CMD_BREAKPOINT
 		, CMD_BREAKPOINT_ADD_SMART // smart breakpoint
 		, CMD_BREAKPOINT_ADD_REG   // break on: PC == Address (fetch/execute)
@@ -598,6 +600,7 @@
 	Update_t CmdCursorSetPC        (int nArgs);
 	Update_t CmdBreakInvalid       (int nArgs); // Breakpoint IFF Full-speed!
 	Update_t CmdBreakOpcode        (int nArgs); // Breakpoint IFF Full-speed!
+	Update_t CmdBreakOnInterrupt   (int nArgs);
 	Update_t CmdGoNormalSpeed      (int nArgs);
 	Update_t CmdGoFullSpeed        (int nArgs);
 	Update_t CmdIn                 (int nArgs);
@@ -605,6 +608,7 @@
 	Update_t CmdJSR                (int nArgs);
 	Update_t CmdNOP                (int nArgs);
 	Update_t CmdOut                (int nArgs);
+	Update_t CmdLBR                (int nArgs);
 	Update_t CmdStepOver           (int nArgs);
 	Update_t CmdStepOut            (int nArgs);
 	Update_t CmdTrace              (int nArgs);  // alias for CmdStepIn
@@ -1073,7 +1077,15 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 	enum Opcode_e
 	{
-		OPCODE_BRA     = 0x80,
+		OPCODE_BPL     = 0x10,
+		OPCODE_BMI     = 0x30,
+		OPCODE_BVC     = 0x50,
+		OPCODE_BVS     = 0x70,
+		OPCODE_BCC     = 0x90,
+		OPCODE_BCS     = 0xB0,
+		OPCODE_BNE     = 0xD0,
+		OPCODE_BEQ     = 0xF0,
+		OPCODE_BRA     = 0x80,	// 65C02
 
 		OPCODE_BRK     = 0x00,
 		OPCODE_JSR     = 0x20,
@@ -1081,7 +1093,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		OPCODE_JMP_A   = 0x4C, // Absolute
 		OPCODE_RTS     = 0x60,
 		OPCODE_JMP_NA  = 0x6C, // Indirect Absolute
-		OPCODE_JMP_IAX = 0x7C, // Indexed (Absolute Indirect, X)
+		OPCODE_JMP_IAX = 0x7C, // Indexed (Absolute Indirect, X); 65C02
 		OPCODE_LDA_A   = 0xAD, // Absolute
 
 		OPCODE_NOP     = 0xEA, // No operation
@@ -1286,11 +1298,20 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 	struct Arg_t
 	{	
+		Arg_t()	// ctor added to fix Coverity (static analysis) defect
+		{
+			sArg[0] = 0;
+			nArgLen = 0;
+			nValue = 0;
+			eToken = TOKEN_ALPHANUMERIC;	// default
+			bType = 0;
+			eDevice = DEV_MEMORY;	// default
+			bSymbol = 0;
+		}
+
 		char       sArg[ MAX_ARG_LEN+1 ]; // Array chars comes first, for alignment, GH#481 echo 55 char limit
 		int        nArgLen; // Needed for TextSearch "ABC\x00"
 		WORD       nValue ; // 2
-//		WORD       nVal1  ; // 2
-//		WORD       nVal2  ; // 2 If we have a Len (,)
 		// Enums and Bools should come last for alignment
 		ArgToken_e eToken ; // 1/2/4
 		int        bType  ; // 1/2/4 // Flags of ArgType_e

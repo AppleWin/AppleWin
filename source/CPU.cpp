@@ -107,16 +107,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define LOG_IRQ_TAKEN_AND_RTI 0
 
-// 6502 Accumulator Bit Flags
-	#define	 AF_SIGN       0x80
-	#define	 AF_OVERFLOW   0x40
-	#define	 AF_RESERVED   0x20
-	#define	 AF_BREAK      0x10
-	#define	 AF_DECIMAL    0x08
-	#define	 AF_INTERRUPT  0x04
-	#define	 AF_ZERO       0x02
-	#define	 AF_CARRY      0x01
-
 #define	 SHORTOPCODES  22
 #define	 BENCHOPCODES  33
 
@@ -147,6 +137,7 @@ static volatile UINT32 g_bmNMI = 0;
 static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
 
 static bool g_irqDefer1Opcode = false;
+static bool g_interruptInLastExecutionBatch = false;	// Last batch of executed cycles included an interrupt (IRQ/NMI)
 
 //
 
@@ -206,6 +197,11 @@ bool Is6502InterruptEnabled(void)
 void ResetCyclesExecutedForDebugger(void)
 {
 	g_nCyclesExecuted = 0;
+}
+
+bool IsInterruptInLastExecution(void)
+{
+	return g_interruptInLastExecutionBatch;
 }
 
 //
@@ -379,25 +375,29 @@ static __forceinline void Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 }
 
 //#define ENABLE_NMI_SUPPORT	// Not used - so don't enable
-static __forceinline void NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
+static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
 #ifdef ENABLE_NMI_SUPPORT
-	if(g_bNmiFlank)
-	{
-		// NMI signals are only serviced once
-		g_bNmiFlank = FALSE;
+	if (!g_bNmiFlank)
+		return false;
+
+	// NMI signals are only serviced once
+	g_bNmiFlank = FALSE;
 #ifdef _DEBUG
-		g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
+	g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
 #endif
-		PUSH(regs.pc >> 8)
-		PUSH(regs.pc & 0xFF)
-		EF_TO_AF
-		PUSH(regs.ps & ~AF_BREAK)
-		regs.ps = regs.ps | AF_INTERRUPT & ~AF_DECIMAL;
-		regs.pc = * (WORD*) (mem+0xFFFA);
-		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
-		CYC(7)
-	}
+	PUSH(regs.pc >> 8)
+	PUSH(regs.pc & 0xFF)
+	EF_TO_AF
+	PUSH(regs.ps & ~AF_BREAK)
+	regs.ps = regs.ps | AF_INTERRUPT & ~AF_DECIMAL;
+	regs.pc = * (WORD*) (mem+0xFFFA);
+	UINT uExtraCycles = 0;	// Needed for CYC(a) macro
+	CYC(7);
+	g_interruptInLastExecutionBatch = true;
+	return true;
+#else
+	return false;
 #endif
 }
 
@@ -409,16 +409,18 @@ static __forceinline void CheckSynchronousInterruptSources(UINT cycles, ULONG uE
 // NB. No need to save to save-state, as IRQ() follows CheckSynchronousInterruptSources(), and IRQ() always sets it to false.
 bool g_irqOnLastOpcodeCycle = false;
 
-static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
+static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
-	if(g_bmIRQ && !(regs.ps & AF_INTERRUPT))
+	bool irqTaken = false;
+
+	if (g_bmIRQ && !(regs.ps & AF_INTERRUPT))
 	{
-		// if 6522 interrupt occurs on opcode's last cycle, then defer IRQ by 1 opcode
+		// if interrupt (eg. from 6522) occurs on opcode's last cycle, then defer IRQ by 1 opcode
 		if (g_irqOnLastOpcodeCycle && !g_irqDefer1Opcode)
 		{
 			g_irqOnLastOpcodeCycle = false;
 			g_irqDefer1Opcode = true;	// if INT occurs again on next opcode, then do NOT defer
-			return;
+			return false;
 		}
 
 		g_irqDefer1Opcode = false;
@@ -434,7 +436,7 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		regs.ps = (regs.ps | AF_INTERRUPT) & (~AF_DECIMAL);
 		regs.pc = * (WORD*) (mem+0xFFFE);
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
-		CYC(7)
+		CYC(7);
 #if defined(_DEBUG) && LOG_IRQ_TAKEN_AND_RTI
 		std::string irq6522;
 		MB_Get6522IrqDescription(irq6522);
@@ -445,9 +447,12 @@ static __forceinline void IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		LogOutput("IRQ (%08X) (%s)\n", (UINT)g_nCycleIrqStart, pSrc);
 #endif
 		CheckSynchronousInterruptSources(7, uExecutedCycles);
+		g_interruptInLastExecutionBatch = true;
+		irqTaken = true;
 	}
 
 	g_irqOnLastOpcodeCycle = false;
+	return irqTaken;
 }
 
 //===========================================================================
@@ -616,6 +621,7 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 #endif
 
 	g_nCyclesExecuted =	0;
+	g_interruptInLastExecutionBatch = false;
 
 #ifdef _DEBUG
 	MB_CheckCumulativeCycles();

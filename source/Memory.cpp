@@ -49,9 +49,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "ParallelPrinter.h"
 #include "Registry.h"
 #include "SAM.h"
+#include "FourPlay.h"
+#include "SNESMAX.h"
 #include "SerialComms.h"
 #include "Speaker.h"
 #include "Tape.h"
+#include "tfe/tfe.h"
 #include "RGBMonitor.h"
 
 #include "z80emu.h"
@@ -1725,10 +1728,18 @@ void MemInitializeIO(void)
 	{
 		// Slot 3 contains the Uthernet card (which can coexist with an 80-col+Ram card in AUX slot)
 		// . Uthernet card has no ROM and only IO mapped at $C0Bx
-		// NB. I/O handlers setup via tfe_init() & update_tfe_interface()
+		tfe_InitializeIO(pCxRomPeripheral, SLOT3);
+	}
+	else if (GetCardMgr().QuerySlot(SLOT3) == CT_FourPlay)
+	{
+		dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(SLOT3)).InitializeIO(pCxRomPeripheral, SLOT3);
+	}
+	else if (GetCardMgr().QuerySlot(SLOT3) == CT_SNESMAX)
+	{
+		dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(SLOT3)).InitializeIO(pCxRomPeripheral, SLOT3);
 	}
 
-	// Apple//e: Auxilary slot contains Extended 80 Column card or RamWorksIII card
+	// Apple//e: Auxiliary slot contains Extended 80 Column card or RamWorksIII card
 
 	if (GetCardMgr().QuerySlot(SLOT4) == CT_MouseInterface)
 	{
@@ -1746,6 +1757,14 @@ void MemInitializeIO(void)
 //	{
 //		LoadRom_Clock_Generic(pCxRomPeripheral, SLOT4);
 //	}
+	else if (GetCardMgr().QuerySlot(SLOT4) == CT_FourPlay)
+	{
+		dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(SLOT4)).InitializeIO(pCxRomPeripheral, SLOT4);
+	}
+	else if (GetCardMgr().QuerySlot(SLOT4) == CT_SNESMAX)
+	{
+		dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(SLOT4)).InitializeIO(pCxRomPeripheral, SLOT4);
+	}
 
 	if (GetCardMgr().QuerySlot(SLOT5) == CT_Z80)
 	{
@@ -1753,7 +1772,15 @@ void MemInitializeIO(void)
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_SAM)
 	{
-		ConfigureSAM(pCxRomPeripheral, SLOT5);			// $C500 : Z80 card
+		dynamic_cast<SAMCard&>(GetCardMgr().GetRef(SLOT5)).InitializeIO(pCxRomPeripheral, SLOT5);
+	}
+	else if (GetCardMgr().QuerySlot(SLOT5) == CT_FourPlay)
+	{
+		dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(SLOT5)).InitializeIO(pCxRomPeripheral, SLOT5);
+	}
+	else if (GetCardMgr().QuerySlot(SLOT5) == CT_SNESMAX)
+	{
+		dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(SLOT5)).InitializeIO(pCxRomPeripheral, SLOT5);
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 	{

@@ -1,0 +1,43 @@
+=== Updating CHM ===
+
+    cd help
+    "C:\Program Files (x86)\HTML Help Workshop\hhc" AppleWin.hhp
+
+To view:
+
+    start AppleWin.chm
+
+The batch file "update.bat" will both compile and view the CHM.
+
+
+=== Installing Microsoft Help Workshop ===
+
+The official site is here...
+
+* https://docs.microsoft.com/en-us/previous-versions/windows/desktop/htmlhelp/microsoft-html-help-downloads
+
+... but in typical MS fashion it is outdated -- it has two broken links since the Help Workshop is not on "Microsoft Download Center."
+
+i.e.
+
+* https://download.microsoft.com/download/0/A/9/0A939EF6-E31C-430F-A3DF-DFAE7960D564/htmlhelp.exe
+* https://download.microsoft.com/download/0/a/9/0a939ef6-e31c-430f-a3df-dfae7960d564/htmlhelpj.exe
+
+This community question ...
+
+* https://docs.microsoft.com/en-us/answers/questions/265752/htmlhelp-workshop-download-for-chm-compiler-instal.html
+
+... says to use Wayback Machine.
+
+* http://web.archive.org/web/20160201063255/http://download.microsoft.com/download/0/A/9/0A939EF6-E31C-430F-A3DF-DFAE7960D564/htmlhelp.exe
+* http://web.archive.org/web/20160314043751/http://download.microsoft.com/download/0/A/9/0A939EF6-E31C-430F-A3DF-DFAE7960D564/helpdocs.zip
+
+Installing it is straight-forward but you'll get a misleading pop-up dialog near the end:
+
+    "This computer has a newer version of HTML Help."
+
+This refers to the help VIEWER (which is already installed) and NOT the help COMPILER which was just installed.
+
+A step-by-step installation guide can be found here:
+
+* https://www.helpndoc.com/step-by-step-guides/how-to-download-and-install-microsofts-html-help-workshop-compiler/

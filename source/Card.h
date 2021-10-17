@@ -21,9 +21,11 @@ enum SS_CARDTYPE
 	CT_LanguageCard,	// Apple][ or ][+ in slot-0
 	CT_LanguageCardIIe,	// Apple//e LC instance (not a card)
 	CT_Saturn128K,		// Saturn 128K (but may be populated with less RAM, in multiples of 16K)
+	CT_FourPlay,		// 4 port Atari 2600 style digital joystick card
+	CT_SNESMAX,			// 2 port Nintendo NES/SNES controller serial interface card
 };
 
-enum SLOTS { SLOT0=0, SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6, SLOT7, NUM_SLOTS };
+enum SLOTS { SLOT0=0, SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6, SLOT7, NUM_SLOTS, SLOT_AUX };
 
 class Card
 {

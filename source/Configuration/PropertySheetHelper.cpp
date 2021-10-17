@@ -125,26 +125,10 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 	if (slot >= NUM_SLOTS)
 		return;
 
-	// Two paths:
-	// 1) Via Config dialog: card not inserted yet
-	// 2) Snapshot_LoadState_v2(): card already inserted
-	if (GetCardMgr().QuerySlot(slot) != newCardType)
-		GetCardMgr().Insert(slot, newCardType);
+	if (GetCardMgr().QuerySlot(slot) == newCardType)
+		return;
 
-	std::string slotText;
-	switch (slot)
-	{
-	case 0: slotText = REGVALUE_SLOT0; break;
-	case 1: slotText = REGVALUE_SLOT1; break;
-	case 2: slotText = REGVALUE_SLOT2; break;
-	case 3: slotText = REGVALUE_SLOT3; break;
-	case 4: slotText = REGVALUE_SLOT4; break;
-	case 5: slotText = REGVALUE_SLOT5; break;
-	case 6: slotText = REGVALUE_SLOT6; break;
-	case 7: slotText = REGVALUE_SLOT7; break;
-	}
-
-	REGSAVE(slotText.c_str(), (DWORD)newCardType);
+	GetCardMgr().Insert(slot, newCardType);
 }
 
 // Used by:
@@ -344,22 +328,26 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		SaveCpuType(ConfigNew.m_CpuType);
 	}
 
-	UINT slot = 4;
+	UINT slot = SLOT3;
 	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
-
-	slot = 5;
-	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
-
-//	slot = 7;
-//	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-//		SetSlot(slot, ConfigNew.m_Slot[slot]);
-
-	if (CONFIG_CHANGED_LOCAL(m_bEnableHDD))
 	{
-		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), ConfigNew.m_bEnableHDD ? 1 : 0);	// TODO: Change to REGVALUE_SLOT7
+		SetSlot(slot, ConfigNew.m_Slot[slot]);
+
+		if (ConfigNew.m_Slot[slot] == CT_Uthernet)	// TODO: move this to UthernetCard object
+			tfe_SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
 	}
+
+	slot = SLOT4;
+	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+		SetSlot(slot, ConfigNew.m_Slot[slot]);
+
+	slot = SLOT5;
+	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+		SetSlot(slot, ConfigNew.m_Slot[slot]);
+
+	slot = SLOT7;
+	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
 	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))
 	{
@@ -370,17 +358,14 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 	{
 		REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), ConfigNew.m_videoRefreshRate);
 	}
+}
 
-	if (CONFIG_CHANGED_LOCAL(m_tfeEnabled))
-	{
-		REGSAVE(TEXT(REGVALUE_UTHERNET_ACTIVE), ConfigNew.m_tfeEnabled);
-	}
-
-	if (CONFIG_CHANGED_LOCAL(m_tfeInterface))
-	{
-		RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, ConfigNew.m_tfeInterface);
-	}
-
+void CPropertySheetHelper::ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew)
+{
+	SaveComputerType(ConfigNew.m_Apple2Type);
+	SaveCpuType(ConfigNew.m_CpuType);
+	REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM), ConfigNew.m_bEnableTheFreezesF8Rom);
+	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), ConfigNew.m_videoRefreshRate);
 }
 
 void CPropertySheetHelper::ApplyNewConfig(void)
@@ -393,12 +378,13 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	m_ConfigOld.m_Apple2Type = GetApple2Type();
 	m_ConfigOld.m_CpuType = GetMainCpu();
+	m_ConfigOld.m_Slot[SLOT3] = GetCardMgr().QuerySlot(SLOT3);
 	m_ConfigOld.m_Slot[SLOT4] = GetCardMgr().QuerySlot(SLOT4);
 	m_ConfigOld.m_Slot[SLOT5] = GetCardMgr().QuerySlot(SLOT5);
-	m_ConfigOld.m_bEnableHDD = HD_CardIsEnabled();
+	m_ConfigOld.m_Slot[SLOT6] = GetCardMgr().QuerySlot(SLOT6);	// CPageDisk::HandleFloppyDriveCombo() needs this to be CT_Disk2 (temp, as will replace with PR #955)
+	m_ConfigOld.m_Slot[SLOT7] = GetCardMgr().QuerySlot(SLOT7);
 	m_ConfigOld.m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_ConfigOld.m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
-	m_ConfigOld.m_tfeEnabled = get_tfe_enabled();
 	m_ConfigOld.m_tfeInterface = get_tfe_interface();
 
 	// Reset flags each time:
@@ -414,9 +400,10 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	SetApple2Type(m_ConfigOld.m_Apple2Type);
 	SetMainCpu(m_ConfigOld.m_CpuType);
-	GetCardMgr().Insert(SLOT4, m_ConfigOld.m_Slot[SLOT4]);
-	GetCardMgr().Insert(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
-	HD_SetEnabled(m_ConfigOld.m_bEnableHDD);
+	SetSlot(SLOT3, m_ConfigOld.m_Slot[SLOT3]);
+	SetSlot(SLOT4, m_ConfigOld.m_Slot[SLOT4]);
+	SetSlot(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
+	HD_SetEnabled(m_ConfigOld.m_Slot[SLOT7] == CT_GenericHDD);
 	GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
 	m_ConfigNew.m_videoRefreshRate = m_ConfigOld.m_videoRefreshRate;	// Not SetVideoRefreshRate(), as this re-inits much Video/NTSC state!
 }
@@ -472,20 +459,20 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 		if (CONFIG_CHANGED(m_videoRefreshRate))
 			strMsgMain += ". Video refresh rate has changed\n";
 
-		if (CONFIG_CHANGED(m_Slot[4]))
-			strMsgMain += GetSlot(4);
+		if (CONFIG_CHANGED(m_Slot[SLOT3]))
+			strMsgMain += GetSlot(SLOT3);
 
-		if (CONFIG_CHANGED(m_Slot[5]))
-			strMsgMain += GetSlot(5);
+		if (CONFIG_CHANGED(m_Slot[SLOT4]))
+			strMsgMain += GetSlot(SLOT4);
 
-		if (CONFIG_CHANGED(m_bEnableHDD))
+		if (CONFIG_CHANGED(m_Slot[SLOT5]))
+			strMsgMain += GetSlot(SLOT5);
+
+		if (CONFIG_CHANGED(m_Slot[SLOT7]))
 			strMsgMain += ". Harddisk(s) have been plugged/unplugged\n";
 
 		if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
 			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
-
-		if (CONFIG_CHANGED(m_tfeEnabled) || CONFIG_CHANGED(m_tfeInterface))
-			strMsgMain += ". Ethernet (TFE) Options\n";
 	}
 
 	std::string strMsgPost("\n");
@@ -566,6 +553,12 @@ std::string CPropertySheetHelper::GetCardName(const SS_CARDTYPE CardType)
 		return "Echo";
 	case CT_SAM:			// Soundcard: Software Automated Mouth
 		return "SAM";
+	case CT_Uthernet:
+		return "Uthernet";
+	case CT_FourPlay:
+		return "4Play";
+	case CT_SNESMAX:
+		return "SNES MAX";
 	default:
 		return "Unknown";
 	}

@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "Debug.h"
 #include "Disk.h"
+#include "FourPlay.h"
 #include "Joystick.h"
 #include "Keyboard.h"
 #include "LanguageCard.h"
@@ -44,7 +45,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
 #include "Pravets.h"
+#include "SAM.h"
 #include "SerialComms.h"
+#include "SNESMAX.h"
 #include "Speaker.h"
 #include "Speech.h"
 #include "z80emu.h"
@@ -71,7 +74,8 @@ static YamlHelper yamlHelper;
 // v4: Extended: video (added 'Video Refresh Rate')
 // v5: Extended: cpu (added 'Defer IRQ By 1 Opcode')
 // v6: Added 'Unit Miscellaneous' for NoSlotClock(NSC)
-#define UNIT_APPLE2_VER 6
+// v7: Extended: joystick (added 'Paddle Inactive Cycle')
+#define UNIT_APPLE2_VER 7
 
 #define UNIT_SLOTS_VER 1
 
@@ -280,10 +284,11 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	CpuLoadSnapshot(yamlLoadHelper, version);	// NB. Overrides default main CPU type
 	m_ConfigNew.m_CpuType = GetMainCpu();
 
-	JoyLoadSnapshot(yamlLoadHelper);
+	JoyLoadSnapshot(yamlLoadHelper, version);
 	KeybLoadSnapshot(yamlLoadHelper, version);
 	SpkrLoadSnapshot(yamlLoadHelper);
 	GetVideo().VideoLoadSnapshot(yamlLoadHelper, version);
+	m_ConfigNew.m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
 	MemLoadSnapshot(yamlLoadHelper, version);
 
 	// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)
@@ -298,6 +303,8 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 	if (unitVersion != UNIT_SLOTS_VER)
 		throw std::string(SS_YAML_KEY_UNIT ": Slots: Version mismatch");
 
+	bool cardInserted[NUM_SLOTS] = {};
+
 	while (1)
 	{
 		std::string scalar = yamlLoadHelper.GetMapNextSlotNumber();
@@ -306,7 +313,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 
 		const int slot = strtoul(scalar.c_str(), NULL, 10);	// NB. aux slot supported as a different "unit"
 															// NB. slot-0 only supported for Apple II or II+ (or similar clones)
-		if (slot < 0 || slot > 7)
+		if (slot < SLOT0 || slot > SLOT7)
 			throw std::string("Slots: Invalid slot #: ") + scalar;
 
 		yamlLoadHelper.GetSubMap(scalar);
@@ -314,7 +321,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
 		UINT cardVersion = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 
-		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
+		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE), true))	// NB. For some cards, State can be null
 			throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
 
 		SS_CARDTYPE type = CT_Empty;
@@ -322,8 +329,9 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 
 		if (card == Printer_GetSnapshotCardName())
 		{
-			bRes = Printer_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_GenericPrinter;
+			GetCardMgr().Insert(slot, type);
+			bRes = Printer_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == CSuperSerialCard::GetSnapshotCardName())
 		{
@@ -339,18 +347,27 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		}
 		else if (card == Z80_GetSnapshotCardName())
 		{
-			bRes = Z80_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_Z80;
+			GetCardMgr().Insert(slot, type);
+			bRes = Z80_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == MB_GetSnapshotCardName())
 		{
-			bRes = MB_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_MockingboardC;
+			GetCardMgr().Insert(slot, type);
+			bRes = MB_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == Phasor_GetSnapshotCardName())
 		{
-			bRes = Phasor_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 			type = CT_Phasor;
+			GetCardMgr().Insert(slot, type);
+			bRes = Phasor_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+		}
+		else if (card == SAMCard::GetSnapshotCardName())
+		{
+			type = CT_SAM;
+			GetCardMgr().Insert(slot, type);
+			bRes = dynamic_cast<SAMCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == Disk2InterfaceCard::GetSnapshotCardName())
 		{
@@ -360,36 +377,59 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		}
 		else if (card == HD_GetSnapshotCardName())
 		{
-			bRes = HD_LoadSnapshot(yamlLoadHelper, slot, cardVersion, g_strSaveStatePath);
-			m_ConfigNew.m_bEnableHDD = true;
 			type = CT_GenericHDD;
+			GetCardMgr().Insert(slot, type);
+			bRes = HD_LoadSnapshot(yamlLoadHelper, slot, cardVersion, g_strSaveStatePath);
+		}
+		else if (card == tfe_GetSnapshotCardName())
+		{
+			type = CT_Uthernet;
+			GetCardMgr().Insert(slot, type);
+			tfe_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == LanguageCardSlot0::GetSnapshotCardName())
 		{
 			type = CT_LanguageCard;
-			SetExpansionMemType(type);
+			SetExpansionMemType(type);	// calls GetCardMgr().Insert() & InsertAux()
 			CreateLanguageCard();
 			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == Saturn128K::GetSnapshotCardName())
 		{
 			type = CT_Saturn128K;
-			SetExpansionMemType(type);
+			SetExpansionMemType(type);	// calls GetCardMgr().Insert() & InsertAux()
 			CreateLanguageCard();
 			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+		}
+		else if (card == FourPlayCard::GetSnapshotCardName())
+		{
+			type = CT_FourPlay;
+			GetCardMgr().Insert(slot, type);
+			bRes = dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+		}
+		else if (card == SNESMAXCard::GetSnapshotCardName())
+		{
+			type = CT_SNESMAX;
+			GetCardMgr().Insert(slot, type);
+			bRes = dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else
 		{
 			throw std::string("Slots: Unknown card: " + card);	// todo: don't throw - just ignore & continue
 		}
 
-		if (bRes)
-		{
-			m_ConfigNew.m_Slot[slot] = type;
-		}
+		cardInserted[slot] = true;
 
 		yamlLoadHelper.PopMap();
 		yamlLoadHelper.PopMap();
+	}
+
+	// Save-state may not contain any info about empty slots, so ensure they are set to empty
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (cardInserted[slot])
+			continue;
+		GetCardMgr().Remove(slot);
 	}
 }
 
@@ -452,44 +492,17 @@ static void Snapshot_LoadState_v2(void)
 
 		restart = true;
 
-		CConfigNeedingRestart ConfigOld;
-		//ConfigOld.m_Slot[0] = CT_LanguageCard;	// fixme: II/II+=LC, //e=empty
-		ConfigOld.m_Slot[1] = CT_GenericPrinter;	// fixme
-		ConfigOld.m_Slot[2] = CT_SSC;				// fixme
-		//ConfigOld.m_Slot[3] = CT_Uthernet;		// todo
-		ConfigOld.m_Slot[6] = CT_Disk2;				// fixme
-		ConfigOld.m_Slot[7] = ConfigOld.m_bEnableHDD ? CT_GenericHDD : CT_Empty;	// fixme
-		//ConfigOld.m_SlotAux = ?;					// fixme
-
-		for (UINT i=0; i<NUM_SLOTS; i++)
-			m_ConfigNew.m_Slot[i] = CT_Empty;
-		m_ConfigNew.m_SlotAux = CT_Empty;
-		m_ConfigNew.m_bEnableHDD = false;
 		//m_ConfigNew.m_bEnableTheFreezesF8Rom = ?;	// todo: when support saving config
+
+		for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+			GetCardMgr().Remove(slot);
+		GetCardMgr().RemoveAux();
 
 		MemReset();							// Also calls CpuInitialize()
 		GetPravets().Reset();
 
-		if (GetCardMgr().IsSSCInstalled())
-		{
-			GetCardMgr().GetSSC()->CommReset();
-		}
-		else
-		{
-			_ASSERT(GetCardMgr().QuerySlot(SLOT2) == CT_Empty);
-			ConfigOld.m_Slot[2] = CT_Empty;
-		}
-
-		if (GetCardMgr().QuerySlot(SLOT4) == CT_MouseInterface)
-			GetCardMgr().Remove(SLOT4);		// Remove Mouse card from slot-4
-
-		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
-			GetCardMgr().Remove(SLOT5);		// Remove Disk2 card from slot-5
-
-		GetCardMgr().GetDisk2CardMgr().Reset(false);
-
 		HD_Reset();
-		HD_SetEnabled(false);
+		HD_SetEnabled(false);				// Set disabled & also removes card from slot 7
 
 		KeybReset();
 		GetVideo().VideoResetState();
@@ -516,7 +529,7 @@ static void Snapshot_LoadState_v2(void)
 		// . A change in h/w via loading a save-state avoids this VM restart
 		// The latter is the desired approach (as the former needs a "power-on" / F2 to start things again)
 
-		GetPropertySheet().ApplyNewConfig(m_ConfigNew, ConfigOld);	// Mainly just saves (some) new state to Registry
+		GetPropertySheet().ApplyNewConfigFromSnapshot(m_ConfigNew);	// Saves new state to Registry (not slot/cards though)
 
 		MemInitializeROM();
 		MemInitializeCustomROM();
@@ -606,8 +619,8 @@ void Snapshot_SaveState(void)
 			if (GetCardMgr().QuerySlot(SLOT2) == CT_SSC)
 				dynamic_cast<CSuperSerialCard&>(GetCardMgr().GetRef(SLOT2)).SaveSnapshot(yamlSaveHelper);
 
-//			if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
-//				sg_Uthernet.SaveSnapshot(yamlSaveHelper);
+			if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
+				tfe_SaveSnapshot(yamlSaveHelper);
 
 			if (GetCardMgr().QuerySlot(SLOT4) == CT_MouseInterface)
 				dynamic_cast<CMouseInterface&>(GetCardMgr().GetRef(SLOT4)).SaveSnapshot(yamlSaveHelper);
@@ -627,6 +640,9 @@ void Snapshot_SaveState(void)
 			if (GetCardMgr().QuerySlot(SLOT4) == CT_Phasor)
 				Phasor_SaveSnapshot(yamlSaveHelper, SLOT4);
 
+			if (GetCardMgr().QuerySlot(SLOT5) == CT_SAM)
+				dynamic_cast<SAMCard&>(GetCardMgr().GetRef(SLOT5)).SaveSnapshot(yamlSaveHelper);
+
 			if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).SaveSnapshot(yamlSaveHelper);
 
@@ -635,6 +651,14 @@ void Snapshot_SaveState(void)
 
 			if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
 				HD_SaveSnapshot(yamlSaveHelper);
+
+			for (UINT slot = SLOT3; slot <= SLOT5; slot++)
+			{
+				if (GetCardMgr().QuerySlot(slot) == CT_FourPlay)
+					dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(slot)).SaveSnapshot(yamlSaveHelper);
+				else if (GetCardMgr().QuerySlot(slot) == CT_SNESMAX)
+					dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(slot)).SaveSnapshot(yamlSaveHelper);
+			}
 		}
 
 		// Miscellaneous

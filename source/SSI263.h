@@ -95,8 +95,8 @@ private:
 	static const BYTE m_Votrax2SSI263[/*64*/];
 
 	static const unsigned short m_kNumChannels = 1;
-	static const DWORD m_kDSBufferSize = MAX_SAMPLES * sizeof(short) * m_kNumChannels;
-	short m_mixBufferSSI263[m_kDSBufferSize / sizeof(short)];
+	static const DWORD m_kDSBufferByteSize = MAX_SAMPLES * sizeof(short) * m_kNumChannels;
+	short m_mixBufferSSI263[m_kDSBufferByteSize / sizeof(short)];
 	VOICE SSI263SingleVoice;
 
 	//

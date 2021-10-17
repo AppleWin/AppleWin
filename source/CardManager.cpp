@@ -31,20 +31,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "CardManager.h"
 #include "Core.h"
+#include "Registry.h"
 
 #include "Disk.h"
+#include "FourPlay.h"
 #include "MouseInterface.h"
+#include "SAM.h"
 #include "SerialComms.h"
+#include "SNESMAX.h"
 
-void CardManager::Insert(UINT slot, SS_CARDTYPE type)
+void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 {
-	if (type == CT_Empty)
-		return Remove(slot);
-
 	RemoveInternal(slot);
 
 	switch (type)
 	{
+	case CT_Empty:
+		m_slot[slot] = new EmptyCard;
+		break;
 	case CT_Disk2:
 		m_slot[slot] = new Disk2InterfaceCard(slot);
 		break;
@@ -80,10 +84,16 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = new DummyCard(type);
 		break;
 	case CT_SAM:
-		m_slot[slot] = new DummyCard(type);
+		m_slot[slot] = new SAMCard(slot);
 		break;
 	case CT_Uthernet:
 		m_slot[slot] = new DummyCard(type);
+		break;
+	case CT_FourPlay:
+		m_slot[slot] = new FourPlayCard(slot);
+		break;
+	case CT_SNESMAX:
+		m_slot[slot] = new SNESMAXCard(slot);
 		break;
 
 	case CT_LanguageCard:
@@ -105,16 +115,23 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type)
 	}
 
 	if (m_slot[slot] == NULL)
-		m_slot[slot] = new EmptyCard;
+		Remove(slot);			// creates a new EmptyCard
+}
+
+void CardManager::Insert(UINT slot, SS_CARDTYPE type, bool updateRegistry/*=true*/)
+{
+	InsertInternal(slot, type);
+	if (updateRegistry)
+		RegSetConfigSlotNewCardType(slot, type);
 }
 
 void CardManager::RemoveInternal(UINT slot)
 {
 	if (m_slot[slot] && m_slot[slot]->QueryType() == CT_MouseInterface)
-		m_pMouseCard = NULL;
+		m_pMouseCard = NULL;	// NB. object deleted below: delete m_slot[slot]
 
 	if (m_slot[slot] && m_slot[slot]->QueryType() == CT_SSC)
-		m_pSSC = NULL;
+		m_pSSC = NULL;			// NB. object deleted below: delete m_slot[slot]
 
 	delete m_slot[slot];
 	m_slot[slot] = NULL;
@@ -122,19 +139,18 @@ void CardManager::RemoveInternal(UINT slot)
 
 void CardManager::Remove(UINT slot)
 {
-	RemoveInternal(slot);
-	m_slot[slot] = new EmptyCard;
+	Insert(slot, CT_Empty);
 }
 
-void CardManager::InsertAux(SS_CARDTYPE type)
+void CardManager::InsertAuxInternal(SS_CARDTYPE type)
 {
-	if (type == CT_Empty)
-		return RemoveAux();
-
 	RemoveAuxInternal();
 
 	switch (type)
 	{
+	case CT_Empty:
+		m_aux = new EmptyCard;
+		break;
 	case CT_80Col:
 		m_aux = new DummyCard(type);
 		break;
@@ -151,6 +167,14 @@ void CardManager::InsertAux(SS_CARDTYPE type)
 
 	// for consistency m_aux must never be NULL
 	_ASSERT(m_aux != NULL);
+	if (m_aux == NULL)
+		RemoveAux();	// creates a new EmptyCard
+}
+
+void CardManager::InsertAux(SS_CARDTYPE type)
+{
+	InsertAuxInternal(type);
+	RegSetConfigSlotNewCardType(SLOT_AUX, type);
 }
 
 void CardManager::RemoveAuxInternal()
@@ -161,6 +185,5 @@ void CardManager::RemoveAuxInternal()
 
 void CardManager::RemoveAux(void)
 {
-	RemoveAuxInternal();
-	m_aux = new EmptyCard;
+	InsertAux(CT_Empty);
 }

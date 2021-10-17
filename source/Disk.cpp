@@ -165,16 +165,17 @@ void Disk2InterfaceCard::LoadLastDiskImage(const int drive)
 {
 	_ASSERT(drive == DRIVE_1 || drive == DRIVE_2);
 
-	const TCHAR *pRegKey = (drive == DRIVE_1)
-		? TEXT(REGVALUE_PREF_LAST_DISK_1)
-		: TEXT(REGVALUE_PREF_LAST_DISK_2);
+	const std::string regKey = (drive == DRIVE_1)
+		? REGVALUE_LAST_DISK_1
+		: REGVALUE_LAST_DISK_2;
 
-	TCHAR sFilePath[MAX_PATH];
-	if (RegLoadString(TEXT(REG_PREFS), pRegKey, 1, sFilePath, MAX_PATH, TEXT("")))
+	char pathname[MAX_PATH];
+
+	std::string& regSection = RegGetConfigSlotSection(m_slot);
+	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")))
 	{
 		m_saveDiskImage = false;
-		// Pass in ptr to local copy of filepath, since RemoveDisk() sets DiskPathFilename = ""
-		InsertDisk(drive, sFilePath, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+		InsertDisk(drive, pathname, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 		m_saveDiskImage = true;
 	}
 }
@@ -185,28 +186,34 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 {
 	_ASSERT(drive == DRIVE_1 || drive == DRIVE_2);
 
-	if (m_slot != 6)	// DiskII cards in other slots don't save image to Registry
-		return;
-
 	if (!m_saveDiskImage)
 		return;
 
-	const std::string & pFileName = DiskGetFullPathName(drive);
+	std::string& regSection = RegGetConfigSlotSection(m_slot);
+	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, CT_Disk2);
 
-	if (drive == DRIVE_1)
-		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_DISK_1), TRUE, pFileName);
-	else
-		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_LAST_DISK_2), TRUE, pFileName);
+	const std::string regKey = (drive == DRIVE_1)
+		? REGVALUE_LAST_DISK_1
+		: REGVALUE_LAST_DISK_2;
+
+	const std::string& pathName = DiskGetFullPathName(drive);
+
+	RegSaveString(regSection.c_str(), regKey.c_str(), TRUE, pathName);
 
 	//
 
+	// For now, only update 'Starting Directory' for slot6 & drive1
+	// . otherwise you'll get inconsistent results if you set drive1, then drive2 (and the images were in different folders)
+	if (m_slot != SLOT6 || drive != DRIVE_1)
+		return;
+
 	TCHAR szPathName[MAX_PATH];
-	StringCbCopy(szPathName, MAX_PATH, pFileName.c_str());
-	TCHAR* slash = _tcsrchr(szPathName, TEXT(PATH_SEPARATOR));
+	StringCbCopy(szPathName, MAX_PATH, pathName.c_str());
+	TCHAR* slash = _tcsrchr(szPathName, PATH_SEPARATOR);
 	if (slash != NULL)
 	{
 		slash[1] = '\0';
-		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szPathName);
+		RegSaveString(REG_PREFS, REGVALUE_PREF_START_DIR, 1, szPathName);
 	}
 }
 

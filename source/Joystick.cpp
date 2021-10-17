@@ -99,10 +99,10 @@ static DWORD joytype[2]            = {J0C_JOYSTICK1, J1C_DISABLED};	// Emulation
 
 static BOOL  setbutton[3]   = {0,0,0};	// Used when a mouse button is pressed/released
 
-static int   xpos[2]        = {PDL_CENTRAL,PDL_CENTRAL};
-static int   ypos[2]        = {PDL_CENTRAL,PDL_CENTRAL};
+static int   xpos[2]        = { PDL_MAX,PDL_MAX };
+static int   ypos[2]        = { PDL_MAX,PDL_MAX };
 
-static unsigned __int64 g_nJoyCntrResetCycle = 0;	// Abs cycle that joystick counters were reset
+static UINT64 g_paddleInactiveCycle[4] = { 0 };	// Abs cycle that each paddle becomes inactive after PTRIG strobe
 
 static short g_nPdlTrimX = 0;
 static short g_nPdlTrimY = 0;
@@ -671,20 +671,13 @@ static const double PDL_CNTR_INTERVAL = 2816.0 / 255.0;	// 11.04 (From KEGS)
 
 BYTE __stdcall JoyReadPosition(WORD programcounter, WORD address, BYTE, BYTE, ULONG nExecutedCycles)
 {
-	int nJoyNum = (address & 2) ? 1 : 0;	// $C064..$C067
-
 	CpuCalcCycles(nExecutedCycles);
 
-	ULONG nPdlPos = (address & 1) ? ypos[nJoyNum] : xpos[nJoyNum];
-
-	// This is from KEGS. It helps games like Championship Lode Runner & Boulderdash
-	if(nPdlPos >= 255)
-		nPdlPos = 280;
-
-	BOOL nPdlCntrActive = g_nCumulativeCycles <= (g_nJoyCntrResetCycle + (unsigned __int64) ((double)nPdlPos * PDL_CNTR_INTERVAL));
+	BOOL nPdlCntrActive = g_nCumulativeCycles <= g_paddleInactiveCycle[address & 3];
 
 	// If no joystick connected, then this is always active (GH#778)
-	if (joyinfo[joytype[nJoyNum]] == DEVICE_NONE)
+	const UINT joyNum = (address & 2) ? 1 : 0;	// $C064..$C067
+	if (joyinfo[joytype[joyNum]] == DEVICE_NONE)
 		nPdlCntrActive = TRUE;
 
 	return MemReadFloatingBus(nPdlCntrActive, nExecutedCycles);
@@ -702,12 +695,27 @@ void JoyReset()
 void JoyResetPosition(ULONG nExecutedCycles)
 {
 	CpuCalcCycles(nExecutedCycles);
-	g_nJoyCntrResetCycle = g_nCumulativeCycles;
 
 	if(joyinfo[joytype[0]] == DEVICE_JOYSTICK)
 		CheckJoystick0();
 	if((joyinfo[joytype[1]] == DEVICE_JOYSTICK) || (joyinfo[joytype[1]] == DEVICE_JOYSTICK_THUMBSTICK2))
 		CheckJoystick1();
+
+	// If any of the timers are still running then strobe has no effect (GH#985)
+	for (UINT pdl = 0; pdl < 4; pdl++)
+	{
+		if (g_nCumulativeCycles <= g_paddleInactiveCycle[pdl])
+			continue;
+
+		const UINT joyNum = (pdl & 2) ? 1 : 0;
+		UINT pdlPos = (pdl & 1) ? ypos[joyNum] : xpos[joyNum];
+
+		// This is from KEGS. It helps games like Championship Lode Runner & Boulderdash
+		if (pdlPos >= 255)
+			pdlPos = 280;
+
+		g_paddleInactiveCycle[pdl] = g_nCumulativeCycles + (UINT64)((double)pdlPos * PDL_CNTR_INTERVAL);
+	}
 }
 
 //===========================================================================
@@ -990,6 +998,7 @@ void JoyportControl(const UINT uControl)
 #define SS_YAML_KEY_JOY0TRIMY "Joystick0 TrimY"
 #define SS_YAML_KEY_JOY1TRIMX "Joystick1 TrimX"
 #define SS_YAML_KEY_JOY1TRIMY "Joystick1 TrimY"
+#define SS_YAML_KEY_PDL_INACTIVE_CYCLE "Paddle%1d Inactive Cycle"
 
 static std::string JoyGetSnapshotStructName(void)
 {
@@ -1000,23 +1009,44 @@ static std::string JoyGetSnapshotStructName(void)
 void JoySaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", JoyGetSnapshotStructName().c_str());
-	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_COUNTERRESETCYCLE, g_nJoyCntrResetCycle);
 	yamlSaveHelper.SaveInt(SS_YAML_KEY_JOY0TRIMX, JoyGetTrim(true));
 	yamlSaveHelper.SaveInt(SS_YAML_KEY_JOY0TRIMY, JoyGetTrim(false));
 	yamlSaveHelper.Save("%s: %d # not implemented yet\n", SS_YAML_KEY_JOY1TRIMX, 0);	// not implemented yet
 	yamlSaveHelper.Save("%s: %d # not implemented yet\n", SS_YAML_KEY_JOY1TRIMY, 0);	// not implemented yet
+
+	for (UINT n = 0; n < 4; n++)
+	{
+		char str[sizeof(SS_YAML_KEY_PDL_INACTIVE_CYCLE)+1];
+		sprintf_s(str, sizeof(str), SS_YAML_KEY_PDL_INACTIVE_CYCLE, n);
+		yamlSaveHelper.SaveHexUint64(str, g_paddleInactiveCycle[n]);
+	}
 }
 
-void JoyLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+void JoyLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (!yamlLoadHelper.GetSubMap(JoyGetSnapshotStructName()))
 		return;
 
-	g_nJoyCntrResetCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_COUNTERRESETCYCLE);
 	JoySetTrim(yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY0TRIMX), true);
 	JoySetTrim(yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY0TRIMY), false);
 	yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY1TRIMX);	// dump value
 	yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY1TRIMY);	// dump value
+
+	if (version >= 7)
+	{
+		for (UINT n = 0; n < 4; n++)
+		{
+			char str[sizeof(SS_YAML_KEY_PDL_INACTIVE_CYCLE) + 1];
+			sprintf_s(str, sizeof(str), SS_YAML_KEY_PDL_INACTIVE_CYCLE, n);
+			g_paddleInactiveCycle[n] = yamlLoadHelper.LoadUint64(str);
+		}
+	}
+	else
+	{
+		UINT64 resetCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_COUNTERRESETCYCLE);
+		for (UINT n = 0; n < 4; n++)
+			g_paddleInactiveCycle[n] = resetCycle;
+	}
 
 	yamlLoadHelper.PopMap();
 }

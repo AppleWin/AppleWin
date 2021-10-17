@@ -98,8 +98,6 @@ void Disk2CardManager::LoadLastDiskImage(void)
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{
-		if (i != SLOT6) continue;	// FIXME
-
 		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
 		{
 			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).LoadLastDiskImage(DRIVE_1);

@@ -745,7 +745,7 @@ static void RepeatInitialization(void)
 		VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
 
 		// Allow the 4 hardcoded slots to be configurated as empty
-		// NB. this state is not persisted to the Registry/conf.ini (just as '-s7 empty' isn't)
+		// NB. this state *is* persisted to the Registry/conf.ini (just like '-s7 empty' is)
 		// TODO: support bSlotEmpty[] for slots: 0,4,5
 		if (g_cmdLine.bSlotEmpty[SLOT1])
 			GetCardMgr().Remove(SLOT1);
@@ -772,7 +772,7 @@ static void RepeatInitialization(void)
 		{
 			bool temp = false;
 			InsertFloppyDisks(SLOT5, g_cmdLine.szImageName_drive[SLOT5], g_cmdLine.driveConnected[SLOT5], temp);
-			//g_cmdLine.szImageName_drive[SLOT5][DRIVE_1] = g_cmdLine.szImageName_drive[SLOT5][DRIVE_2] = NULL;	// *Do* insert on a restart (since no way they could have changed)
+			g_cmdLine.szImageName_drive[SLOT5][DRIVE_1] = g_cmdLine.szImageName_drive[SLOT5][DRIVE_2] = NULL;	// Don't insert on a restart
 
 			InsertFloppyDisks(SLOT6, g_cmdLine.szImageName_drive[SLOT6], g_cmdLine.driveConnected[SLOT6], g_cmdLine.bBoot);
 			g_cmdLine.szImageName_drive[SLOT6][DRIVE_1] = g_cmdLine.szImageName_drive[SLOT6][DRIVE_2] = NULL;	// Don't insert on a restart
@@ -782,7 +782,7 @@ static void RepeatInitialization(void)
 
 			if (g_cmdLine.bSlotEmpty[SLOT7])
 			{
-				HD_SetEnabled(false);		// Disable HDD controller, but don't persist this to Registry/conf.ini (consistent with other '-sn empty' cmds)
+				HD_SetEnabled(false);		// Disable HDD controller, and persist this to Registry/conf.ini (consistent with other '-sn empty' cmds)
 				Snapshot_UpdatePath();		// If save-state's filename is a harddisk, and the floppy is in the same path, then the filename won't be updated
 			}
 		}
@@ -840,9 +840,6 @@ static void RepeatInitialization(void)
 			GetFrame().FrameMessageBox(msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			g_cmdLine.bShutdown = true;
 		}
-
-		tfe_init();
-		LogFileOutput("Main: tfe_init()\n");
 
 		if (g_cmdLine.szSnapshotName)
 		{

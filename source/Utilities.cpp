@@ -181,25 +181,9 @@ void LoadConfiguration(void)
 		break;
 	}
 
-	TCHAR serialPortName[CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM];
-	if (RegLoadString(
-		TEXT(REG_CONFIG),
-		TEXT(REGVALUE_SERIAL_PORT_NAME),
-		TRUE,
-		serialPortName,
-		CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM))
-	{
-		if (GetCardMgr().IsSSCInstalled())
-			GetCardMgr().GetSSC()->SetSerialPortName(serialPortName);
-	}
-
 	REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
 	GetVideo().Config_Load_Video();
 	SetCurrentCLK6502();	// Pre: g_dwSpeed && Config_Load_Video()->SetVideoRefreshRate()
-
-	DWORD dwEnhanceDisk;
-	REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
-	GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	//
 
@@ -236,9 +220,6 @@ void LoadConfiguration(void)
 		g_bPrinterAppend = dwTmp ? true : false;
 
 
-	if(REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))	// TODO: Change to REGVALUE_SLOT7
-		HD_SetEnabled(dwTmp ? true : false);
-
 	if(REGLOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
 		JoySetTrim((short)dwTmp, true);
 	if(REGLOAD(TEXT(REGVALUE_PDL_YTRIM), &dwTmp))
@@ -261,14 +242,67 @@ void LoadConfiguration(void)
 	if(REGLOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))
 		GetPropertySheet().SetMouseRestrictToWindow(dwTmp);
 
-	if(REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
-		GetCardMgr().Insert(4, (SS_CARDTYPE)dwTmp);
-	if(REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
-		GetCardMgr().Insert(5, (SS_CARDTYPE)dwTmp);
-
 	//
 
 	TCHAR szFilename[MAX_PATH];
+
+	//
+
+	for (UINT slot = SLOT0; slot <= SLOT7; slot++)
+	{
+		std::string& regSection = RegGetConfigSlotSection(slot);
+
+		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
+		{
+			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
+
+			if (slot == SLOT3)
+			{
+				tfe_enabled = 0;
+
+				if ((SS_CARDTYPE)dwTmp == CT_Uthernet)	// TODO: move this to when UthernetCard object is instantiated
+				{
+					std::string& regSection = RegGetConfigSlotSection(slot);
+					if (RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, szFilename, MAX_PATH, TEXT("")))
+						update_tfe_interface(szFilename);
+
+					tfe_init(true);
+				}
+			}
+			else if (slot == SLOT7)
+			{
+				if ((SS_CARDTYPE)dwTmp == CT_GenericHDD)	// TODO: move this to when HarddiskInterfaceCard object is instantiated
+					HD_SetEnabled(true, false);
+			}
+		}
+		else	// legacy (AppleWin 1.30.3 or earlier)
+		{
+			if (slot == SLOT3)
+			{
+				tfe_enabled = 0;
+
+				DWORD tfeEnabled;
+				REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &tfeEnabled, 0);
+
+				GetCardMgr().Insert(SLOT3, get_tfe_enabled() ? CT_Uthernet : CT_Empty);
+
+				// TODO: move this to when UthernetCard object is instantiated
+				RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
+				update_tfe_interface(szFilename);
+
+				if (tfeEnabled)
+					tfe_init(true);
+			}
+			else if (slot == SLOT4 && REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
+				GetCardMgr().Insert(SLOT4, (SS_CARDTYPE)dwTmp);
+			else if (slot == SLOT5 && REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
+				GetCardMgr().Insert(SLOT5, (SS_CARDTYPE)dwTmp);
+			else if (slot == SLOT7 && REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
+				HD_SetEnabled(dwTmp ? true : false);
+		}
+	}
+
+	//
 
 	// Load save-state pathname *before* inserting any harddisk/disk images (for both init & reinit cases)
 	// NB. inserting harddisk/disk can change snapshot pathname
@@ -295,14 +329,10 @@ void LoadConfiguration(void)
 
 	GetCardMgr().GetDisk2CardMgr().LoadLastDiskImage();
 
-	//
-
-	DWORD dwTfeEnabled;
-	REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &dwTfeEnabled, 0);
-	tfe_enabled = dwTfeEnabled;
-
-	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
-	update_tfe_interface(szFilename);
+	// Do this after populating the slots with Disk II controller(s)
+	DWORD dwEnhanceDisk;
+	REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
+	GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	//
 
@@ -413,7 +443,7 @@ void InsertFloppyDisks(const UINT slot, LPCSTR szImageName_drive[NUM_DRIVES], bo
 	}
 	else if (szImageName_drive[DRIVE_2])
 	{
-		bRes |= DoDiskInsert(slot, DRIVE_2, szImageName_drive[DRIVE_2]);
+		bRes &= DoDiskInsert(slot, DRIVE_2, szImageName_drive[DRIVE_2]);
 		LogFileOutput("Init: S%d, DoDiskInsert(D2), res=%d\n", slot, bRes);
 	}
 
@@ -426,16 +456,7 @@ void InsertHardDisks(LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 	if (!szImageName_harddisk[HARDDISK_1] && !szImageName_harddisk[HARDDISK_2])
 		return;
 
-	// Enable the Harddisk controller card
-
-	HD_SetEnabled(true);
-
-	DWORD dwTmp;
-	BOOL res = REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp);
-	if (!res || !dwTmp)
-		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 1);	// Config: HDD Enabled
-
-	//
+	HD_SetEnabled(true);	// Enable the Harddisk controller card
 
 	bool bRes = true;
 
@@ -449,7 +470,7 @@ void InsertHardDisks(LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 
 	if (szImageName_harddisk[HARDDISK_2])
 	{
-		bRes |= DoHardDiskInsert(HARDDISK_2, szImageName_harddisk[HARDDISK_2]);
+		bRes &= DoHardDiskInsert(HARDDISK_2, szImageName_harddisk[HARDDISK_2]);
 		LogFileOutput("Init: DoHardDiskInsert(HDD2), res=%d\n", bRes);
 	}
 
@@ -460,11 +481,6 @@ void InsertHardDisks(LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 void UnplugHardDiskControllerCard(void)
 {
 	HD_SetEnabled(false);
-
-	DWORD dwTmp;
-	BOOL res = REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp);
-	if (!res || dwTmp)
-		REGSAVE(TEXT(REGVALUE_HDD_ENABLED), 0);	// Config: HDD Disabled
 }
 
 void GetAppleWindowTitle()

@@ -6,29 +6,38 @@
 </head>
 <body style="background-color: rgb(255, 255, 255); font-family: verdana;" alink="#008000" link="#008000" vlink="#008000">
 <h2 style="color: rgb(0, 128, 0);">Disk Settings</h2>
-<hr size="4"><img style="width: 344px; height: 460px; float: right;" src="img/disk.png" alt="Disk settings" hspace="5" vspace="5">
+<hr size="4"><img style="width: 354px; height: 460px; float: right;" src="img/disk.png" alt="Disk settings" hspace="5" vspace="5">
 
 <h3>Floppy Controller Settings:</h3>
-<p><strong>Disk Access Speed:</strong><br>
+<p><strong>Enhanced disk access speed:</strong><br>
 Here you can choose the speed at which the system can access
 an emulated floppy disk drive.
 By default, you would want "Enhanced Speed" so that data can
 be accessed as fast as possible. However, it is also possible that
 certain programs might depend on the "Authentic Speed" to function
 properly. This is the speed at which the real hardware
-would&nbsp;access data from your drives.
+would access data from your drives.
 </p>
 
-<p><strong>Disk 1/2 drop-down menus:</strong><br>
-These menus allow you to select floppy disk images (.dsk files) to
-'insert' into the
+<p><strong>Disk 1/2 drop-down menus (slot 6):</strong><br>
+These menus allow you to select floppy disk images to 'insert' into the
 emulated floppy drives 1 and 2. This can also be done during emulation by <a href="toolbar.html">using the toolbar</a> or using the F3/F4 keys. Diskettes can be swapped by pressing F5 during emulation. You can also eject images from this menu.
 </p>
+
+<p><strong>Enable Disk II controller in slot 5:</strong><br>
+A floppy controller card can be plugged into slot 5 by checking this box.
+</p>
+
+<p><strong>Disk 1/2 drop-down menus (slot 5):</strong><br>
+You can select floppy disk images to 'insert' into the
+emulated floppy drives 1 and 2.
+</p>
+<br>
 
 
 <h3>Hard disk Controller Settings:</h3>
 <p><strong>Enable hard disk controller in slot 7:</strong><br>
-A hard disk controller (or interface) card can be plugged in to slot 7 by checking this box.
+A hard disk controller (or interface) card can be plugged into slot 7 by checking this box.
 See <a href="ddi-harddisk.html">Hard disk Images</a> for more details.
 </p>
 
@@ -41,8 +50,10 @@ WARNING! If done during image access this could result in undefined behavior (eg
 These menus allow you to select hard disk images (eg. .hdv files) to
 connect to the emulated hard disk controller card. You can also unplug images from this menu.
 </p>
+<br>
 
-<p><strong>Path to CiderPress:</strong><br>
+
+<p><strong>CiderPress path:</strong><br>
 Use this to specify where CiderPress is installed.<br>
 The right mouse button context menu on either of the drive icons allows you to open CiderPress with the image in the drive.
 </p>
