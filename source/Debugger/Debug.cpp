@@ -814,7 +814,7 @@ Update_t CmdProfile (int nArgs)
 				if (ProfileSave())
 				{
 					TCHAR sText[ CONSOLE_WIDTH ];
-					ConsoleBufferPushFormat ( sText, " Saved: %s", g_FileNameProfile );
+					ConsoleBufferPushFormat ( sText, " Saved: %s", g_FileNameProfile.c_str() );
 				}
 				else
 					ConsoleBufferPush( TEXT(" ERROR: Couldn't save file. (In use?)" ) );
