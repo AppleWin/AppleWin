@@ -1516,7 +1516,7 @@ bool tfe_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
         throw std::string("Card: wrong version");
 
     tfe_enabled = yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED) ? true : false;
-    set_tfe_interface(yamlLoadHelper.LoadStringA(SS_YAML_KEY_NETWORK_INTERFACE));
+    set_tfe_interface(yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE));
 
     tfe_started_tx = yamlLoadHelper.LoadBool(SS_YAML_KEY_STARTED_TX) ? true : false;
     tfe_cannot_use = yamlLoadHelper.LoadBool(SS_YAML_KEY_CANNOT_USE) ? true : false;

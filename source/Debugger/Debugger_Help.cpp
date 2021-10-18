@@ -1066,11 +1066,11 @@ Update_t CmdHelpSpecific (int nArgs)
 	// Config - Load / Save
 		case CMD_CONFIG_LOAD:
 			ConsoleColorizePrint( sText, " Usage: [\"filename\"]" );
-			ConsoleBufferPushFormat( sText, "  Load debugger configuration from '%s', or the specificed file.", g_sFileNameConfig );
+			ConsoleBufferPushFormat( sText, "  Load debugger configuration from '%s', or the specificed file.", g_sFileNameConfig.c_str() );
 			break;
 		case CMD_CONFIG_SAVE:
 			ConsoleColorizePrint( sText, " Usage: [\"filename\"]" );
-			ConsoleBufferPushFormat( sText, "  Save debugger configuration to '%s', or the specificed file.", g_sFileNameConfig );
+			ConsoleBufferPushFormat( sText, "  Save debugger configuration to '%s', or the specificed file.", g_sFileNameConfig.c_str() );
 			break;
 	// Config - Color
 		case CMD_CONFIG_COLOR:

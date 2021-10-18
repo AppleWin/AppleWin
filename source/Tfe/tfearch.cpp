@@ -27,7 +27,12 @@
 
 /* #define WPCAP */
 
+#ifdef _MSC_VER
 #include "pcap.h"
+#else
+// on Linux and Mac OS X, we use system's pcap.h, which needs to be included as <>
+#include <pcap.h>
+#endif
 
 #include <assert.h>
 #include <stdio.h>

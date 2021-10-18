@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SerialComms.h"
 #include "Speaker.h"
 #include "Tape.h"
-#include "tfe/tfe.h"
+#include "Tfe/tfe.h"
 #include "RGBMonitor.h"
 
 #include "z80emu.h"

@@ -1,4 +1,5 @@
 #pragma once
+#include "Card.h"
 
 #define  REGLOAD(a, b)				RegLoadValue(TEXT(REG_CONFIG), (a), TRUE, (b))
 #define  REGLOAD_DEFAULT(a, b, c)	RegLoadValue(TEXT(REG_CONFIG), (a), TRUE, (b), (c))
