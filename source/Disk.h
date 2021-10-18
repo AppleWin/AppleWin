@@ -148,8 +148,6 @@ public:
 
 	bool IsConditionForFullSpeed(void);
 	void NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error);
-	bool GetProtect(const int drive);
-	void SetProtect(const int drive, const bool bWriteProtect);
 	UINT GetCurrentFirmware(void) { return m_is13SectorFirmware ? 13 : 16; }
 	int GetCurrentDrive(void);
 	int GetCurrentTrack(void);
@@ -173,8 +171,10 @@ public:
 	void LoadLastDiskImage(const int drive);
 	void SaveLastDiskImage(const int drive);
 
-	bool IsDiskImageWriteProtected(const int drive);
+	bool GetProtect(const int drive);
+	void SetProtect(const int drive, const bool bWriteProtect);
 	bool IsDriveEmpty(const int drive);
+	bool IsWozImageInDrive(const int drive);
 
 	bool GetEnhanceDisk(void);
 	void SetEnhanceDisk(bool bEnhanceDisk);
@@ -201,7 +201,6 @@ private:
 	void DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCycles);
 	void SetSequencerFunction(WORD addr);
-	void DumpSectorWOZ(FloppyDisk floppy);
 	void DumpTrackWOZ(FloppyDisk floppy);
 	bool GetFirmware(WORD lpNameId, BYTE* pDst);
 	void InitFirmware(LPBYTE pCxRomPeripheral);
