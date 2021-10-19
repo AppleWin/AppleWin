@@ -12,16 +12,35 @@
 #include <iostream>
 
 
+namespace
+{
+
+  std::string safeGlGetString(GLenum name)
+  {
+    const char * str = reinterpret_cast<const char *>(glGetString(name));
+    if (str)
+    {
+      return str;
+    }
+    else
+    {
+      return "<MISSING>";
+    }
+  }
+
+}
+
+
 namespace sa2
 {
 
   SDLImGuiFrame::SDLImGuiFrame(const common2::EmulatorOptions & options)
     : SDLFrame(options)
   {
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, SDL_CONTEXT_MAJOR); // from local gles.h
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SA2_CONTEXT_FLAGS);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SA2_CONTEXT_PROFILE_MASK);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, SA2_CONTEXT_MAJOR_VERSION); // from local gles.h
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, SA2_CONTEXT_MINOR_VERSION);
 
     // Create window with graphics context
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -49,11 +68,11 @@ namespace sa2
 
     // Setup Platform/Renderer backends
     std::cerr << "IMGUI_VERSION: " << IMGUI_VERSION << std::endl;
-    std::cerr << "GL_VENDOR: " << glGetString(GL_VENDOR) << std::endl;
-    std::cerr << "GL_RENDERER: " << glGetString(GL_RENDERER) << std::endl;
-    std::cerr << "GL_VERSION: " << glGetString(GL_VERSION) << std::endl;
-    std::cerr << "GL_SHADING_LANGUAGE_VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
-    //  const char* runtime_gl_extensions = (const char*)glGetString(GL_EXTENSIONS);
+    std::cerr << "GL_VENDOR: " << safeGlGetString(GL_VENDOR) << std::endl;
+    std::cerr << "GL_RENDERER: " << safeGlGetString(GL_RENDERER) << std::endl;
+    std::cerr << "GL_VERSION: " << safeGlGetString(GL_VERSION) << std::endl;
+    std::cerr << "GL_SHADING_LANGUAGE_VERSION: " << safeGlGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+    //  const char* runtime_gl_extensions = (const char*)safeGlGetString(GL_EXTENSIONS);
     //  std::cerr << "GL_EXTENSIONS: " << runtime_gl_extensions << std::endl;
 
     // Setup Dear ImGui context

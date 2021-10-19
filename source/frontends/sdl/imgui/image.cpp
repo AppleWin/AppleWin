@@ -31,7 +31,7 @@ namespace sa2
   {
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    const GLenum format = GL_BGRA_EXT; // this is defined in gl2ext.h and nowhere in gl3.h
+    const GLenum format = SA2_IMAGE_FORMAT;
     const GLenum type = GL_UNSIGNED_BYTE;
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, type, nullptr);
 
@@ -48,7 +48,7 @@ namespace sa2
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    const GLenum format = GL_BGRA_EXT; // this is defined in gl2ext.h and nowhere in gl3.h
+    const GLenum format = SA2_IMAGE_FORMAT;
     const GLenum type = GL_UNSIGNED_BYTE;
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, type, data);
     // reset to default state

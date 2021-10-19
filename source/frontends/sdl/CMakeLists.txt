@@ -1,12 +1,30 @@
 include(FindPkgConfig)
 
-find_package(SDL2 REQUIRED)
-pkg_search_module(SDL2_IMAGE REQUIRED SDL2_image)
-pkg_search_module(GLES2 REQUIRED glesv2)
+add_executable(sa2)
+
 set(IMGUI_PATH "imgui/imgui")
 set(IMGUI_CLUB_PATH "imgui/imgui_club")
 
-add_executable(sa2)
+find_package(SDL2 REQUIRED)
+pkg_search_module(SDL2_IMAGE REQUIRED SDL2_image)
+
+# the default is to use GLES
+set (SA2_USE_OPENGL 0)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set (SA2_USE_OPENGL 1)
+endif()
+
+
+if (${SA2_USE_OPENGL})
+  pkg_search_module(GLES2 REQUIRED opengl)
+else()
+  pkg_search_module(GLES2 REQUIRED glesv2)
+  target_compile_definitions(sa2 PRIVATE
+    IMGUI_IMPL_OPENGL_ES2
+  )
+endif()
+
 
 set(SOURCE_FILES
   main.cpp
@@ -86,7 +104,6 @@ target_include_directories(sa2 PRIVATE
   )
 
 target_compile_definitions(sa2 PRIVATE
-  IMGUI_IMPL_OPENGL_ES2
   IMGUI_USER_CONFIG="frontends/sdl/imgui/imconfig.h"
   )
 
