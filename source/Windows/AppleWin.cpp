@@ -552,7 +552,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				if (pMouseCard)
 				{
 					// dtor removes event from g_SynchronousEventMgr - do before g_SynchronousEventMgr.Reset()
-					GetCardMgr().Remove( pMouseCard->GetSlot() );
+					GetCardMgr().Remove( pMouseCard->GetSlot(), false );
 					LogFileOutput("Main: CMouseInterface::dtor\n");
 				}
 

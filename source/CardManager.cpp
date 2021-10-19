@@ -137,9 +137,9 @@ void CardManager::RemoveInternal(UINT slot)
 	m_slot[slot] = NULL;
 }
 
-void CardManager::Remove(UINT slot)
+void CardManager::Remove(UINT slot, bool updateRegistry/*=true*/)
 {
-	Insert(slot, CT_Empty);
+	Insert(slot, CT_Empty, updateRegistry);
 }
 
 void CardManager::InsertAuxInternal(SS_CARDTYPE type)
