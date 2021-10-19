@@ -80,6 +80,7 @@ set(SOURCE_FILES
   Core.cpp
   Utilities.cpp
   FrameBase.cpp
+  CmdLine.cpp
 
   Configuration/PropertySheetHelper.cpp
 
@@ -117,7 +118,7 @@ set(SOURCE_FILES
   linux/duplicates/Registry.cpp
   linux/duplicates/FourPlay.cpp
   linux/duplicates/SNESMAX.cpp
-  linux/duplicates/CmdLine.cpp
+  linux/duplicates/Keyboard.cpp
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp

@@ -35,6 +35,8 @@ namespace
      {CT_LanguageCard, "CT_LanguageCard"},
      {CT_LanguageCardIIe, "CT_LanguageCardIIe"},
      {CT_Saturn128K, "CT_Saturn128K"},
+     {CT_FourPlay, "CT_FourPlay"},
+     {CT_SNESMAX, "CT_SNESMAX"},
     };
 
   const std::map<eApple2Type, std::string> apple2Types =
@@ -97,7 +99,7 @@ namespace
       {2, {CT_Empty, CT_SSC}},
       {3, {CT_Empty, CT_Uthernet}},
       {4, {CT_Empty, CT_MockingboardC, CT_MouseInterface, CT_Phasor}},
-      {5, {CT_Empty, CT_MockingboardC, CT_Z80, CT_SAM, CT_Disk2}},
+      {5, {CT_Empty, CT_MockingboardC, CT_Z80, CT_SAM, CT_Disk2, CT_FourPlay, CT_SNESMAX}},
       {6, {CT_Empty, CT_Disk2}},
       {7, {CT_Empty, CT_GenericHDD}},
     };

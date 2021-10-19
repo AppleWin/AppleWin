@@ -39,3 +39,5 @@ void        WINAPI PostQuitMessage(INT);
 #define VK_DOWN           0x28
 #define VK_OEM_3          0xC0   // '`~' for US
 #define VK_OEM_8          0xDF
+
+#define KF_EXTENDED       0x0100
