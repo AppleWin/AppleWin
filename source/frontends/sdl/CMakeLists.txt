@@ -83,7 +83,7 @@ target_sources(sa2 PRIVATE
   imgui/settingshelper.h
   imgui/sdlsettings.h
   imgui/imconfig.h
-  imgui/gles.h
+  imgui/glselector.h
 
   ${IMGUI_PATH}/imgui.h
   ${IMGUI_PATH}/imgui.cpp

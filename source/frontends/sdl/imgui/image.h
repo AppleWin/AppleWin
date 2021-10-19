@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstddef>
-#include "frontends/sdl/imgui/gles.h"
+#include "frontends/sdl/imgui/glselector.h"
 
 namespace sa2
 {
