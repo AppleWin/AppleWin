@@ -23,7 +23,6 @@
 
 #include "Tfe/tfe.h"
 #include "Tfe/tfesupp.h"
-#include "linux/network/uthernet2.h"
 
 namespace
 {
@@ -287,7 +286,7 @@ namespace sa2
 
           ImGui::LabelText("Slot", "Card");
           CardManager & manager = GetCardMgr();
-          for (size_t slot = 1; slot < 8; ++slot)
+          for (size_t slot = SLOT1; slot < NUM_SLOTS; ++slot)
           {
             const SS_CARDTYPE current = manager.QuerySlot(slot);
             if (ImGui::BeginCombo(std::to_string(slot).c_str(), getCardName(current).c_str()))
@@ -331,6 +330,44 @@ namespace sa2
               }
               ImGui::EndCombo();
             }
+          }
+
+          ImGui::Separator();
+
+          const std::string current_interface = get_tfe_interface();
+
+          if (ImGui::BeginCombo("pcap", current_interface.c_str()))
+          {
+            std::vector<char *> ifaces;
+            if (tfe_enumadapter_open())
+            {
+              char *pname;
+              char *pdescription;
+
+              while (tfe_enumadapter(&pname, &pdescription))
+              {
+                ifaces.push_back(pname);
+                lib_free(pdescription);
+              }
+              tfe_enumadapter_close();
+
+              for (const auto & iface : ifaces)
+              {
+                const bool isSelected = strcmp(iface, current_interface.c_str()) == 0;
+                if (ImGui::Selectable(iface, isSelected))
+                {
+                  // the following line interacts with tfe_enumadapter, so we must run it outside the above loop
+                  update_tfe_interface(iface);
+                  tfe_SetRegistryInterface(SLOT3, iface);
+                }
+                if (isSelected)
+                {
+                  ImGui::SetItemDefaultFocus();
+                }
+                lib_free(iface);
+              }
+            }
+            ImGui::EndCombo();
           }
 
           ImGui::EndTabItem();
@@ -579,50 +616,6 @@ namespace sa2
             frame->ApplyVideoModeChange();
           }
 
-          ImGui::EndTabItem();
-        }
-
-        if (ImGui::BeginTabItem("Uthernet"))
-        {
-          if (ImGui::RadioButton("Disabled", tfe_enabled == 0)) { saveTFEEnabled(0); } ImGui::SameLine();
-          if (ImGui::RadioButton("Uthernet I", tfe_enabled == 1)) { saveTFEEnabled(1); } ImGui::SameLine();
-          if (ImGui::RadioButton("Uthernet II", tfe_enabled == 2)) { saveTFEEnabled(2); }
-
-          const std::string current_interface = get_tfe_interface();
-
-          if (ImGui::BeginCombo("Interface", current_interface.c_str()))
-          {
-            std::vector<char *> ifaces;
-            if (tfe_enumadapter_open())
-            {
-              char *pname;
-              char *pdescription;
-
-              while (tfe_enumadapter(&pname, &pdescription))
-              {
-                ifaces.push_back(pname);
-                lib_free(pdescription);
-              }
-              tfe_enumadapter_close();
-
-              for (const auto & iface : ifaces)
-              {
-                const bool isSelected = strcmp(iface, current_interface.c_str()) == 0;
-                if (ImGui::Selectable(iface, isSelected))
-                {
-                  // the following line interacts with tfe_enumadapter, so we must run it outside the above loop
-                  update_tfe_interface(iface);
-                  RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, iface);
-                }
-                if (isSelected)
-                {
-                  ImGui::SetItemDefaultFocus();
-                }
-                lib_free(iface);
-              }
-            }
-            ImGui::EndCombo();
-          }
           ImGui::EndTabItem();
         }
 

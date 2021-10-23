@@ -1009,14 +1009,14 @@ namespace
 
 }
 
-void registerUthernet2()
+void registerUthernet2(UINT uSlot)
 {
  #ifdef U2_USE_SLIRP
   slirp.reset();
   slirp = std::make_shared<SlirpNet>();
 #else
   const int check = tfe_enabled;
-  tfe_init();
+  tfe_init(true);
   if (tfe_enabled != check)
   {
     // tfe initialisation failed
@@ -1025,7 +1025,7 @@ void registerUthernet2()
 #endif
   dataAddress = 0;
   initialise();
-  RegisterIoHandler(SLOT3, u2_C0, u2_C0, nullptr, nullptr, nullptr, nullptr);
+  RegisterIoHandler(uSlot, u2_C0, u2_C0, nullptr, nullptr, nullptr, nullptr);
 }
 
 void unRegisterUthernet2()

@@ -37,6 +37,7 @@ namespace
      {CT_Saturn128K, "CT_Saturn128K"},
      {CT_FourPlay, "CT_FourPlay"},
      {CT_SNESMAX, "CT_SNESMAX"},
+     {CT_Uthernet2, "CT_Uthernet2"},
     };
 
   const std::map<eApple2Type, std::string> apple2Types =
@@ -95,26 +96,17 @@ namespace
   const std::map<size_t, std::vector<SS_CARDTYPE>> cardsForSlots =
     {
       {0, {CT_Empty, CT_LanguageCard, CT_Saturn128K}},
-      {1, {CT_Empty, CT_GenericPrinter}},
-      {2, {CT_Empty, CT_SSC}},
-      {3, {CT_Empty, CT_Uthernet}},
-      {4, {CT_Empty, CT_MockingboardC, CT_MouseInterface, CT_Phasor}},
-      {5, {CT_Empty, CT_MockingboardC, CT_Z80, CT_SAM, CT_Disk2, CT_FourPlay, CT_SNESMAX}},
+      {1, {CT_Empty, CT_GenericPrinter, CT_Uthernet2}},
+      {2, {CT_Empty, CT_SSC, CT_Uthernet2}},
+      {3, {CT_Empty, CT_Uthernet2}},
+      {4, {CT_Empty, CT_MockingboardC, CT_MouseInterface, CT_Phasor, CT_Uthernet2}},
+      {5, {CT_Empty, CT_MockingboardC, CT_Z80, CT_SAM, CT_Disk2, CT_FourPlay, CT_SNESMAX, CT_Uthernet2}},
       {6, {CT_Empty, CT_Disk2}},
       {7, {CT_Empty, CT_GenericHDD}},
     };
 
     const std::vector<SS_CARDTYPE> expansionCards =
       {CT_Empty, CT_LanguageCard, CT_Extended80Col, CT_Saturn128K, CT_RamWorksIII};
-
-  void internalInsertCard(const size_t slot, const SS_CARDTYPE card)
-  {
-    std::string& regSection = RegGetConfigSlotSection(slot);
-    RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, CT_Disk2);
-
-    CardManager & cardManager = GetCardMgr();
-    cardManager.Insert(slot, card);
-  }
 
 }
 
@@ -168,28 +160,22 @@ namespace sa2
 
   void insertCard(size_t slot, SS_CARDTYPE card)
   {
+    CardManager & cardManager = GetCardMgr();
     switch (slot)
     {
-      case 3:
-      {
-        const int enabled = card == CT_Uthernet ? 1 : 0;
-        REGSAVE(REGVALUE_UTHERNET_ACTIVE, enabled);
-        // needs a reboot anyway
-        break;
-      }
       case 4:
       case 5:
       {
         if (card == CT_MockingboardC)
         {
-          internalInsertCard(9 - slot, card);  // the other
+          cardManager.Insert(9 - slot, card);  // the other
         }
         else
         {
           CardManager & cardManager = GetCardMgr();
           if (cardManager.QuerySlot(slot) == CT_MockingboardC)
           {
-            internalInsertCard(9 - slot, CT_Empty);  // the other
+            cardManager.Insert(9 - slot, CT_Empty);  // the other
           }
         }
         break;
@@ -203,7 +189,19 @@ namespace sa2
       }
     };
 
-    internalInsertCard(slot, card);
+    if (card == CT_Uthernet2)
+    {
+      // only 1 Uthernet2 allowed
+      for (size_t s = SLOT1; s < NUM_SLOTS; ++s)
+      {
+        if (cardManager.QuerySlot(s) == card)
+        {
+          cardManager.Insert(s, CT_Empty);
+        }
+      }
+    }
+
+    cardManager.Insert(slot, card);
   }
 
   void setVideoStyle(Video & video, const VideoStyle_e style, const bool enabled)

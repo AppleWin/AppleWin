@@ -89,6 +89,9 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 	case CT_Uthernet:
 		m_slot[slot] = new DummyCard(type);
 		break;
+	case CT_Uthernet2:
+		m_slot[slot] = new DummyCard(type);
+		break;
 	case CT_FourPlay:
 		m_slot[slot] = new FourPlayCard(slot);
 		break;
