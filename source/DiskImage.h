@@ -86,7 +86,6 @@ bool ImageReadBlock(ImageInfo* const pImageInfo, UINT nBlock, LPBYTE pBlockBuffe
 bool ImageWriteBlock(ImageInfo* const pImageInfo, UINT nBlock, LPBYTE pBlockBuffer);
 
 UINT ImageGetNumTracks(ImageInfo* const pImageInfo);
-bool ImageIsWriteProtected(ImageInfo* const pImageInfo);
 bool ImageIsMultiFileZip(ImageInfo* const pImageInfo);
 const std::string & ImageGetPathname(ImageInfo* const pImageInfo);
 UINT ImageGetImageSize(ImageInfo* const pImageInfo);

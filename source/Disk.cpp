@@ -845,33 +845,20 @@ void Disk2InterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFil
 
 bool Disk2InterfaceCard::GetProtect(const int drive)
 {
-	if (IsDriveValid(drive))
-	{
-		if (m_floppyDrive[drive].m_disk.m_bWriteProtected)
-			return true;
-	}
+	if (!IsDriveValid(drive))
+		return true;
 
-	return false;
+	return m_floppyDrive[drive].m_disk.m_bWriteProtected;
 }
 
 //===========================================================================
 
 void Disk2InterfaceCard::SetProtect(const int drive, const bool bWriteProtect)
 {
-	if (IsDriveValid( drive ))
-	{
-		m_floppyDrive[drive].m_disk.m_bWriteProtected = bWriteProtect;
-	}
-}
-
-//===========================================================================
-
-bool Disk2InterfaceCard::IsDiskImageWriteProtected(const int drive)
-{
 	if (!IsDriveValid(drive))
-		return true;
+		return;
 
-	return ImageIsWriteProtected(m_floppyDrive[drive].m_disk.m_imagehandle);
+	m_floppyDrive[drive].m_disk.m_bWriteProtected = bWriteProtect;
 }
 
 //===========================================================================
@@ -882,6 +869,16 @@ bool Disk2InterfaceCard::IsDriveEmpty(const int drive)
 		return true;
 
 	return m_floppyDrive[drive].m_disk.m_imagehandle == NULL;
+}
+
+//===========================================================================
+
+bool Disk2InterfaceCard::IsWozImageInDrive(const int drive)
+{
+	if (!IsDriveValid(drive))
+		return false;
+
+	return ImageIsWOZ(m_floppyDrive[drive].m_disk.m_imagehandle);
 }
 
 //===========================================================================

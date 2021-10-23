@@ -1041,7 +1041,7 @@ static void MB_Update(void)
 
 static bool MB_DSInit()
 {
-	LogFileOutput("MB_DSInit\n", g_bMBAvailable);
+	LogFileOutput("MB_DSInit\n");
 #ifdef NO_DIRECT_X
 
 	return false;

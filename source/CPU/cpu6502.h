@@ -50,18 +50,12 @@ static DWORD Cpu6502(DWORD uTotalCycles, const bool bVideoUpdate)
 		{
 			const UINT uZ80Cycles = z80_mainloop(uTotalCycles, uExecutedCycles); CYC(uZ80Cycles)
 		}
+		else if (NMI(uExecutedCycles, flagc, flagn, flagv, flagz) || IRQ(uExecutedCycles, flagc, flagn, flagv, flagz))
+		{
+			// Allow AppleWin debugger's single-stepping to just step the pending IRQ
+		}
 		else
 		{
-			if (IRQ(uExecutedCycles, flagc, flagn, flagv, flagz) || NMI(uExecutedCycles, flagc, flagn, flagv, flagz))
-			{
-				if (bVideoUpdate)
-				{
-					ULONG uElapsedCycles = uExecutedCycles - uPreviousCycles;
-					NTSC_VideoUpdateCycles(uElapsedCycles);
-				}
-				continue;	// Allow AppleWin debugger's single-stepping to just step the pending IRQ
-			}
-
 			HEATMAP_X( regs.pc );
 			Fetch(iOpcode, uExecutedCycles);
 

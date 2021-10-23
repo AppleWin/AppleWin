@@ -446,7 +446,6 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 							(g_bmIRQ & 8) ? "MOUSE" : "UNKNOWN";
 		LogOutput("IRQ (%08X) (%s)\n", (UINT)g_nCycleIrqStart, pSrc);
 #endif
-		CheckSynchronousInterruptSources(7, uExecutedCycles);
 		g_interruptInLastExecutionBatch = true;
 		irqTaken = true;
 	}
