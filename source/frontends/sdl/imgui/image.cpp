@@ -31,10 +31,8 @@ namespace sa2
   {
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    const GLenum format = GL_BGRA_EXT; // this is defined in gl2ext.h and nowhere in gl3.h
     const GLenum type = GL_UNSIGNED_BYTE;
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, type, nullptr);
-
+    glTexImage2D(GL_TEXTURE_2D, 0, SA2_IMAGE_FORMAT_INTERNAL, width, height, 0, SA2_IMAGE_FORMAT, type, nullptr);
   }
 
   void loadTextureFromData(GLuint texture, const uint8_t * data, size_t width, size_t height, size_t pitch)
@@ -48,9 +46,8 @@ namespace sa2
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    const GLenum format = GL_BGRA_EXT; // this is defined in gl2ext.h and nowhere in gl3.h
     const GLenum type = GL_UNSIGNED_BYTE;
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, type, data);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, SA2_IMAGE_FORMAT, type, data);
     // reset to default state
     glPixelStorei(UGL_UNPACK_LENGTH, 0);
   }

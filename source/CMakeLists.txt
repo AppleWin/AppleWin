@@ -2,6 +2,7 @@ include(FindPkgConfig)
 
 pkg_check_modules(YAML REQUIRED yaml-0.1)
 pkg_check_modules(MINIZIP REQUIRED minizip)
+pkg_check_modules(ZLIB REQUIRED zlib)
 pkg_check_modules(SLIRP slirp)
 
 if ("${SLIRP_FOUND}" STREQUAL "")
@@ -228,7 +229,16 @@ set(HEADER_FILES
   Z80VICE/daa.h
   )
 
-add_library(appleii SHARED
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+# Applle's linker does not like the link-time interface of libappleii
+# we need link everything at once
+  message("Mac OS X detected, libappleii as static library")
+  set(LIBRARY_TYPE "STATIC")
+else()
+  set(LIBRARY_TYPE "SHARED")
+endif()
+
+add_library(appleii "${LIBRARY_TYPE}"
   ${SOURCE_FILES}
   ${HEADER_FILES}
   )
@@ -239,6 +249,7 @@ target_include_directories(appleii PRIVATE
   ${PCAP_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${SLIRP_INCLUDE_DIRS}
+  ${ZLIB_INCLUDE_DIRS}
   Debugger
   )
 
@@ -252,13 +263,15 @@ target_link_libraries(appleii PRIVATE
   ${MINIZIP_LIBRARIES}
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}
+  ${ZLIB_LIBRARIES}
   )
 
 target_link_directories(appleii PRIVATE
-  ${YAML_LIBRARY_DIR}
-  ${MINIZIP_LIBRARY_DIR}
-  ${PCAP_LIBRARY_DIR}
-  ${SLIRP_LIBRARY_DIR}
+  ${YAML_LIBRARY_DIRS}
+  ${MINIZIP_LIBRARY_DIRS}
+  ${PCAP_LIBRARY_DIRS}
+  ${SLIRP_LIBRARY_DIRS}
+  ${ZLIB_LIBRARY_DIRS}
   )
 
 target_compile_options(appleii PUBLIC

@@ -8,7 +8,7 @@
 #include "Tfe/tfe.h"
 #include "frontends/sdl/imgui/settingshelper.h"
 
-#include "frontends/sdl/imgui/gles.h"
+#include "frontends/sdl/imgui/glselector.h"
 #include "imgui_internal.h"
 
 
