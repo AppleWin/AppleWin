@@ -5,7 +5,11 @@ project(applewin)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_options(-Werror=return-type -Werror=format -Wno-error=format-overflow -Wno-error=format-truncation)
+add_compile_options(-Werror=return-type)
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  add_compile_options(-Werror=format -Wno-error=format-overflow -Wno-error=format-truncation)
+endif()
 
 MESSAGE("CMAKE_BUILD_TYPE:                ${CMAKE_BUILD_TYPE}")
 MESSAGE("CMAKE_CXX_FLAGS:                 ${CMAKE_CXX_FLAGS}")
