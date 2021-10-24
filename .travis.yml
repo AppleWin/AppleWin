@@ -3,9 +3,10 @@ language: cpp
 matrix:
   include:
 
-    - name: "AppleWin on Windows"
-      os: windows
-      script: ./CIBuild.bat
+    # disabled as too expensive
+    # - name: "AppleWin on Windows"
+    #   os: windows
+    #   script: ./CIBuild.bat
 
     - name: "AppleWin on Linux"
       os: linux

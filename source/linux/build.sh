@@ -8,4 +8,4 @@ mkdir -p build
 cd build
 
 cmake -DCMAKE_BUILD_TYPE=RELEASE -DLIBRETRO_COMMON_PATH=../libretro-common ..
-make
+make -j 4
