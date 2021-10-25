@@ -172,8 +172,6 @@ void Snapshot_UpdatePath(void)
 
 //-----------------------------------------------------------------------------
 
-static CConfigNeedingRestart m_ConfigNew;
-
 static std::string GetSnapshotUnitApple2Name(void)
 {
 	static const std::string name("Apple2");
@@ -279,16 +277,13 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	std::string model = yamlLoadHelper.LoadString(SS_YAML_KEY_MODEL);
 	SetApple2Type( ParseApple2Type(model) );	// NB. Sets default main CPU type
-	m_ConfigNew.m_Apple2Type = GetApple2Type();
 
 	CpuLoadSnapshot(yamlLoadHelper, version);	// NB. Overrides default main CPU type
-	m_ConfigNew.m_CpuType = GetMainCpu();
 
 	JoyLoadSnapshot(yamlLoadHelper, version);
 	KeybLoadSnapshot(yamlLoadHelper, version);
 	SpkrLoadSnapshot(yamlLoadHelper);
 	GetVideo().VideoLoadSnapshot(yamlLoadHelper, version);
-	m_ConfigNew.m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
 	MemLoadSnapshot(yamlLoadHelper, version);
 
 	// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)
@@ -529,7 +524,8 @@ static void Snapshot_LoadState_v2(void)
 		// . A change in h/w via loading a save-state avoids this VM restart
 		// The latter is the desired approach (as the former needs a "power-on" / F2 to start things again)
 
-		GetPropertySheet().ApplyNewConfigFromSnapshot(m_ConfigNew);	// Saves new state to Registry (not slot/cards though)
+		const CConfigNeedingRestart configNew = CConfigNeedingRestart::Create();
+		GetPropertySheet().ApplyNewConfigFromSnapshot(configNew);	// Saves new state to Registry (not slot/cards though)
 
 		MemInitializeROM();
 		MemInitializeCustomROM();
