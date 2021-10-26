@@ -32,7 +32,6 @@ public:
 	}
 
 	// update from current global configuration
-	// except m_uSaveLoadStateMsg
 	void Reload()
 	{
 		m_Apple2Type = GetApple2Type();
@@ -43,7 +42,7 @@ public:
 		m_SlotAux = cardManager.QueryAux();
 		m_tfeInterface = get_tfe_interface();
 		m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
-		// we do not touch m_uSaveLoadStateMsg
+		m_uSaveLoadStateMsg = 0;
 		m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
 	}
 

@@ -376,11 +376,13 @@ void CPropertySheetHelper::ApplyNewConfig(void)
 void CPropertySheetHelper::SaveCurrentConfig(void)
 {
 	// NB. clone-type is encoded in g_Apple2Type
-	m_ConfigNew.Reload();  // this preserves m_uSaveLoadStateMsg
-	m_ConfigOld = m_ConfigNew;
+	m_ConfigOld.Reload();
 
 	// Reset flags each time:
 	m_bDoBenchmark = false;
+
+	// Setup ConfigNew
+	m_ConfigNew = m_ConfigOld;
 }
 
 void CPropertySheetHelper::RestoreCurrentConfig(void)
