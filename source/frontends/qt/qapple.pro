@@ -15,7 +15,6 @@ SOURCES += main.cpp\
     options.cpp \
     qapple.cpp \
     qdirectsound.cpp \
-    qresources.cpp \
     emulator.cpp \
     configuration.cpp \
     qvideo.cpp \
