@@ -152,6 +152,7 @@ namespace sa2
     CommonFrame::Initialize();
     mySpeed.reset();
     setGLSwapInterval(myTargetGLSwap);
+    ResetHardware();
   }
 
   void SDLFrame::FrameRefreshStatus(int drawflags)
@@ -388,6 +389,7 @@ namespace sa2
         {
           Snapshot_LoadState();
           mySpeed.reset();
+          ResetHardware();
           break;
         }
       case SDLK_F11:
@@ -696,6 +698,17 @@ namespace sa2
   {
     SetFullSpeed(CanDoFullSpeed());
     Execute(0);
+  }
+
+  void SDLFrame::ResetHardware()
+  {
+    myHardwareConfig = CConfigNeedingRestart(GetPropertySheet().GetTheFreezesF8Rom());
+  }
+
+  bool SDLFrame::HardwareChanged() const
+  {
+    const CConfigNeedingRestart currentConfig(GetPropertySheet().GetTheFreezesF8Rom());
+    return myHardwareConfig != currentConfig;
   }
 
 }

@@ -235,10 +235,19 @@ namespace sa2
 
           ImGui::Separator();
 
+          if (frame->HardwareChanged())
+          {
+            ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(180, 0, 0));
+          }
+          else
+          {
+            ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0, 180, 0));
+          }
           if (ImGui::Button("Restart"))
           {
             frame->Restart();
           }
+          ImGui::PopStyleColor(1);
 
           ImGui::SameLine();
           if (ImGui::Button("ResetMachineState"))

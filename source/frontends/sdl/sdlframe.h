@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Configuration/Config.h"
 #include "frontends/common2/commonframe.h"
 #include "frontends/common2/speed.h"
 #include <SDL.h>
@@ -29,6 +30,8 @@ namespace sa2
     void ExecuteOneFrame(const size_t msNextFrame);
     void ChangeMode(const AppMode_e mode);
     void SingleStep();
+    void ResetHardware();
+    bool HardwareChanged() const;
     virtual void ResetSpeed();
 
     const std::shared_ptr<SDL_Window> & GetWindow() const;
@@ -73,6 +76,8 @@ namespace sa2
     common2::Speed mySpeed;
 
     std::shared_ptr<SDL_Window> myWindow;
+
+    CConfigNeedingRestart myHardwareConfig;
   };
 
 }

@@ -89,6 +89,7 @@ namespace sa2
     if (strlen(filename) > strlen(yaml) && !strcmp(filename + strlen(filename) - strlen(yaml), yaml))
     {
       common2::setSnapshotFilename(filename, true);
+      frame->ResetHardware();
     }
     else if (strlen(filename) > strlen(wav) && !strcmp(filename + strlen(filename) - strlen(wav), wav))
     {
