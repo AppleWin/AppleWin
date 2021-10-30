@@ -465,8 +465,7 @@
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>echo Performing unit-test: TestCPU6502
-.\Debug\TestCPU6502.exe</Command>
+      <Command>.\Debug\TestCPU6502.exe</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -521,8 +520,7 @@
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>echo Performing unit-test: TestCPU6502
-.\Debug\TestCPU6502.exe</Command>
+      <Command>.\Debug\TestCPU6502.exe</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -554,8 +552,7 @@
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>echo Performing unit-test: TestCPU6502
-.\Release\TestCPU6502.exe</Command>
+      <Command>.\Release\TestCPU6502.exe</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -621,8 +618,7 @@
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>echo Performing unit-test: TestCPU6502
-.\Release\TestCPU6502.exe</Command>
+      <Command>.\Release\TestCPU6502.exe</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
