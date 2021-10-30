@@ -76,8 +76,8 @@ void run_sdl(int argc, const char * argv [])
   if (!run)
     return;
 
-  const Logger logger(options.log);
-  const std::shared_ptr<Registry> registry = CreateFileRegistry(options);
+  const LoggerContext logger(options.log);
+  const RegistryContext registryContext(CreateFileRegistry(options));
 
   std::shared_ptr<sa2::SDLFrame> frame;
   if (options.imgui)
@@ -90,7 +90,7 @@ void run_sdl(int argc, const char * argv [])
   }
 
   std::shared_ptr<Paddle> paddle(new sa2::Gamepad(0));
-  const Initialisation init(registry, frame, paddle);
+  const Initialisation init(frame, paddle);
   applyOptions(options);
   frame->Initialize();
 

@@ -145,12 +145,12 @@ namespace
     if (!run)
       return 1;
 
-    const Logger logger(options.log);
-    const std::shared_ptr<Registry> registry = CreateFileRegistry(options);
+    const LoggerContext loggerContext(options.log);
+    const RegistryContext registryContet(CreateFileRegistry(options));
     const std::shared_ptr<na2::EvDevPaddle> paddle(new na2::EvDevPaddle(options.paddleDeviceName));
     const std::shared_ptr<na2::NFrame> frame(new na2::NFrame(paddle));
 
-    const Initialisation init(registry, frame, paddle);
+    const Initialisation init(frame, paddle);
     applyOptions(options);
     frame->Initialize();
 

@@ -55,7 +55,7 @@ namespace ra2
   unsigned Game::ourInputDevices[MAX_PADS] = {RETRO_DEVICE_NONE};
 
   Game::Game()
-    : myLogger(true)
+    : myLoggerContext(true)
     , myFrame(new ra2::RetroFrame())
     , mySpeed(true)
     , myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
