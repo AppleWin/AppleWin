@@ -144,8 +144,8 @@ namespace sa2
       SDL_GetWindowPosition(myWindow.get(), &geometry.x, &geometry.y);
       SDL_GetWindowSize(myWindow.get(), &geometry.width, &geometry.height);
       saveGeometryToRegistry("sa2", geometry);
-      common2::CommonFrame::Destroy();
     }
+    common2::CommonFrame::Destroy();
   }
 
   void SDLFrame::setGLSwapInterval(const int interval)
