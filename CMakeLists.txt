@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(applewin)
+project(applewin HOMEPAGE_URL "https://github.com/audetto/AppleWin")
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -46,13 +46,15 @@ add_subdirectory(source/frontends/sdl)
 add_subdirectory(source/frontends/libretro)
 add_subdirectory(test/TestCPU6502)
 
-set(CPACK_PACKAGE_VERSION "1.30.5.0")
+set(CPACK_PACKAGE_VERSION "1.30.6.0")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Apple ][ emulator for Linux")
+set(CPACK_PACKAGE_CONTACT "audetto <mariofutire@gmail.com>")
 
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libyaml-0-2,libminizip1,libqt5gui5,libqt5widgets5,libqt5multimedia5,libqt5gamepad5,libncursesw6,libevdev2,libsdl2-image-2.0-0,libsdl2-2.0-0,libgles2,libpcap0.8,libslirp0,libboost-program-options1.74.0")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Andrea Odetti")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/audetto/AppleWin")
 
-# RPM dependencies seem to be automatic
+set(CPACK_RPM_PACKAGE_LICENSE "GPLv2")
+set(CPACK_RPM_PACKAGE_GROUP "Applications/Emulators")
+# RPM dependencies are automatic
 
 include(CPack)
