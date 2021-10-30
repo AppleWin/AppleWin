@@ -10,7 +10,7 @@ The configuration GUI only works with ``--imgui``: otherwise either manually edi
 The format of the configuration file is the same as the Windows Registry of AppleWin.
 
 *Drag & drop* works for floppy disks. With ``--imgui`` it is possible to select which drive they are dropped into (``D&D``).
- If the filename ends with `.yaml`, it will be loaded as a *State* file.
+If the filename ends with `.yaml`, it will be loaded as a *State* file.
 
 Individual options can be passed via arguments too: ``-c Configuration.Printer_FileName=Printer.txt``.
 
@@ -28,7 +28,7 @@ On a Raspberry Pi, a KMS driver is mandatory and best results are obtained on a 
 
 Output mentions the Dear ImGui version, e.g.: ``IMGUI_VERSION: 1.81 WIP``.
 
-Some of the configuration options are exposed in the ``Settings`` menu. This is **not** a modal dialog and options are applied immediately. You might need to **Restart** the emulator manually. This is currently the only way to enable the Uthernet II card in slot 3, which has to be reapplied after every *restart*.
+Some of the configuration options are exposed in the ``Settings`` menu. This is **not** a modal dialog and options are applied immediately. You might need to **Restart** the emulator manually.
 
 ## Hotkeys
 

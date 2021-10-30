@@ -1,21 +1,5 @@
 # Linux
 
-* [Structure](#structure)
-* [What works](#what-works)
-* [New features](#new-features)
-* [Executables](#executables)
-  * [applen](#applen)
-  * [qapple](#qapple)
-  * [sa2](#sa2)
-  * [libretro](#ra2)
-* [Build](#build)
-  * [Checkout](#checkout)
-  * [Fedora](#fedora)
-  * [Raspberry Pi OS and Ubuntu](#raspbian)
-* [Speed](#build)
-  * [Fedora](#fedora-1)
-  * [Raspbian](#raspbian-1)
-
 ## Structure
 
 There are 4 projects
@@ -31,7 +15,7 @@ been modified.
 
 ##  What works
 
-Almost everything works, except the serial port.
+Almost everything works, except the serial port, SNES-MAX and FourPlay.
 
 The UI has been rewritten in Qt or ImGui.
 
@@ -138,7 +122,7 @@ make
 
 ### Fedora
 
-On Fedora 31, from a fresh installation, install all packages from [fedora.list.txt](source/linux/fedora.list.txt).
+On Fedora 35, from a fresh installation, install all packages from [fedora.list.txt](source/linux/fedora.list.txt).
 
 ### Raspberry Pi OS, Ubuntu and other Debian distributions
 
@@ -147,6 +131,10 @@ Install all packages from [raspbian.list.txt](source/linux/raspbian.list.txt).
 You can use `sudo apt-get -y install $(cat raspbian.list.txt)` for an automated installation.
 
 See [Travis](.travis.yml) CI too.
+
+### Packaging
+
+It is possible to create `.deb` and `.rpm` packages using `cpack`. Use `cpack -G DEB` or `cpack -G RPM` from the build folder. It is best to build packages for the running system.
 
 ## Speed
 
