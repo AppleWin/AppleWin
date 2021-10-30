@@ -98,7 +98,7 @@ namespace
       {0, {CT_Empty, CT_LanguageCard, CT_Saturn128K}},
       {1, {CT_Empty, CT_GenericPrinter, CT_Uthernet2}},
       {2, {CT_Empty, CT_SSC, CT_Uthernet2}},
-      {3, {CT_Empty, CT_Uthernet2}},
+      {3, {CT_Empty, CT_Uthernet, CT_Uthernet2}},
       {4, {CT_Empty, CT_MockingboardC, CT_MouseInterface, CT_Phasor, CT_Uthernet2}},
       {5, {CT_Empty, CT_MockingboardC, CT_Z80, CT_SAM, CT_Disk2, CT_FourPlay, CT_SNESMAX, CT_Uthernet2}},
       {6, {CT_Empty, CT_Disk2}},
