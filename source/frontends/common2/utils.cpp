@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "frontends/common2/utils.h"
+#include "frontends/common2/programoptions.h"
 
 #include "linux/network/uthernet2.h"
 
@@ -24,6 +25,7 @@
 #include "SaveState.h"
 #include "RGBMonitor.h"
 #include "Riff.h"
+#include "Registry.h"
 #include "Utilities.h"
 #include "Interface.h"
 #include "Debugger/Debug.h"
@@ -131,6 +133,41 @@ namespace common2
 
     GetCardMgr().GetDisk2CardMgr().Destroy();
     RiffFinishWriteFile();
+  }
+
+  void loadGeometryFromRegistry(const std::string &section, Geometry & geometry)
+  {
+    if (geometry.empty)  // otherwise it was user provided
+    {
+      const std::string path = section + "\\geometry";
+      const auto loadValue = [&path](const char * name, int & dest)
+      {
+        DWORD value;
+        if (RegLoadValue(path.c_str(), name, TRUE, &value))
+        {
+          dest = value;
+        }
+      };
+
+      loadValue("width", geometry.width);
+      loadValue("height", geometry.height);
+      loadValue("x", geometry.x);
+      loadValue("y", geometry.y);
+    }
+  }
+
+  void saveGeometryToRegistry(const std::string &section, const Geometry & geometry)
+  {
+    const std::string path = section + "\\geometry";
+    const auto saveValue = [&path](const char * name, const int source)
+    {
+      RegSaveValue(path.c_str(), name, TRUE, source);
+    };
+
+    saveValue("width", geometry.width);
+    saveValue("height", geometry.height);
+    saveValue("x", geometry.x);
+    saveValue("y", geometry.y);
   }
 
 }

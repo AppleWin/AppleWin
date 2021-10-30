@@ -67,6 +67,7 @@ void run_sdl(int argc, const char * argv [])
   const int sw = video.GetFrameBufferBorderlessWidth();
   const int sh = video.GetFrameBufferBorderlessHeight();
 
+  options.geometry.empty = true;
   options.geometry.width = sw * 2;
   options.geometry.height = sh * 2;
   options.geometry.x = SDL_WINDOWPOS_UNDEFINED;
@@ -78,6 +79,8 @@ void run_sdl(int argc, const char * argv [])
 
   const LoggerContext logger(options.log);
   const RegistryContext registryContext(CreateFileRegistry(options));
+
+  common2::loadGeometryFromRegistry("sa2", options.geometry);
 
   std::shared_ptr<sa2::SDLFrame> frame;
   if (options.imgui)
