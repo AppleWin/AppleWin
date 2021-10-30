@@ -993,20 +993,34 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 //===========================================================================
 Update_t CmdBreakOnInterrupt(int nArgs)
 {
-	TCHAR sText[CONSOLE_WIDTH];
-
 	if (nArgs > 1)
 		return HelpLastCommand();
 
+	int iParamArg = nArgs;
+	int iParam;
+	int nFound = FindParam(g_aArgs[iParamArg].sArg, MATCH_EXACT, iParam, _PARAM_GENERAL_BEGIN, _PARAM_GENERAL_END);
+
+	int nActive = -1;
+	if (nFound)
+	{
+		if (iParam == PARAM_ON)
+			nActive = 1;
+		else if (iParam == PARAM_OFF)
+			nActive = 0;
+	}
+
+	if (nArgs == 1 && nActive == -1)
+		return HelpLastCommand();
+
+	TCHAR sText[CONSOLE_WIDTH];
 	TCHAR sAction[CONSOLE_WIDTH] = TEXT("Current"); // default to display
 
 	if (nArgs == 1)
 	{
-		g_bDebugBreakOnInterrupt = g_aArgs[1].nValue ? true : false;
+		g_bDebugBreakOnInterrupt = (iParam == PARAM_ON) ? true : false;
 		_tcscpy(sAction, TEXT("Setting"));
 	}
 
-	// Show what the current break opcode is
 	ConsoleBufferPushFormat(sText, TEXT("%s Break on Interrupt: %s")
 		, sAction
 		, g_bDebugBreakOnInterrupt ? "Enabled" : "Disabled"

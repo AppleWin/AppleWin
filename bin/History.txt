@@ -8,6 +8,15 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.30.6.0 - 30 Oct 2021
+----------------------
+. [Bug #993] Fix Mousecard not persisting after a machine's hardware changes. (Regression at 1.30.5.0)
+. [Bug #985] Fix one-shot paddle timers. [xotmatrix]
+. [Bug #989] Debugger: Fix disassembly for NMOS 6502's JMP (Indirect) not showing correct target address.
+. [Change #987] Debugger: Add 'lbr' command to show Last Branch Record for a change to the control-flow from an instruction or interrupt.
+	- NB. Bcc opcodes that aren't taken don't affect lbr.
+. Debugger: Add 'brkint <on|off>' command to break at the instruction after an interrupt is taken.
+
 
 1.30.5.0 - 2 Oct 2021
 ---------------------
