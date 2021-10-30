@@ -42,7 +42,7 @@ Audio files can be read via the cassette interface (SDL Version). Just drop a `w
 
 This is your best choice, in particular the ImGui version.
 
-TL;DR: ``sa2 --imgui``
+TL;DR: just run ``sa2``
 
 See [sa2](source/frontends/sdl/README.md) for more details.
 

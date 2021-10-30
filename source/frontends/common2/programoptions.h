@@ -46,7 +46,7 @@ namespace common2
     bool fixedSpeed = false; // default adaptive
 
     int sdlDriver = -1; // default = -1 to let SDL choose
-    bool imgui = false; // use imgui renderer
+    bool imgui = true; // use imgui renderer
     Geometry geometry; // must be initialised with defaults
     int glSwapInterval = 1; // SDL_GL_SetSwapInterval
 

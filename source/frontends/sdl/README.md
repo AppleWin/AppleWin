@@ -2,27 +2,23 @@
 
 This file only lists options not already described in ``-h``.
 
-There are really 2 frontends here, with and without ``ImGui``, which will become the default in the future.
+The default frontend uses SDL2 + ImGui and requires an OpenGL ES2.0 implementation. It is possible to use plain SDL2 and select the renderer (pass ``--no-imgui`` and look at ``-h``).
 
 ## Configuration
 
-The configuration GUI only works with ``--imgui``: otherwise either manually edit the configuration file ``~/.applewin/applewin.conf`` or use ``qapple`` and run ``sa2 --qt-ini``.
+The configuration GUI only works with ImGui: otherwise either manually edit the configuration file ``~/.applewin/applewin.conf`` or use ``qapple`` and run ``sa2 --qt-ini``.
 The format of the configuration file is the same as the Windows Registry of AppleWin.
 
-*Drag & drop* works for floppy disks. With ``--imgui`` it is possible to select which drive they are dropped into (``D&D``).
+*Drag & drop* works for floppy disks. With ImGui it is possible to select which drive they are dropped into (``D&D``).
 If the filename ends with `.yaml`, it will be loaded as a *State* file.
 
 Individual options can be passed via arguments too: ``-c Configuration.Printer_FileName=Printer.txt``.
 
 If you have a modern gamepad where the axes (``LEFTX`` and ``LEFTY``) move in a circle, the emulator will automatically map to a square: use ``--no-squaring`` to avoid this.
 
-## Raspberry Pi
-
-On a Raspberry Pi, one needs the KMS (fake or not). Better performance has been observed with the ``opengles2`` driver (use ``sa2 --sdl-driver 1``).
-
 ## Dear ImGui
 
-With the flag ``--imgui``, the rendering is performed with [Dear ImGui](https://github.com/ocornut/imgui). In this case ``--sdl-driver`` is ignored and a OpenGL ES2.0 implementation is required.
+The rendering is performed with [Dear ImGui](https://github.com/ocornut/imgui).
 
 On a Raspberry Pi, a KMS driver is mandatory and best results are obtained on a Pi4 with FullKMS (full screen via ``F6``).
 
