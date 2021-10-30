@@ -37,12 +37,10 @@ Video& GetVideo()
 }
 
 Initialisation::Initialisation(
-  const std::shared_ptr<Registry> & registry,
   const std::shared_ptr<FrameBase> & frame,
   const std::shared_ptr<Paddle> & paddle
   )
 {
-  Registry::instance = registry;
   SetFrame(frame);
   Paddle::instance = paddle;
 }
@@ -53,7 +51,6 @@ Initialisation::~Initialisation()
   SetFrame(std::shared_ptr<FrameBase>());
 
   Paddle::instance.reset();
-  Registry::instance.reset();
 
   CloseHandle(g_hCustomRomF8);
   g_hCustomRomF8 = INVALID_HANDLE_VALUE;
@@ -61,7 +58,7 @@ Initialisation::~Initialisation()
   g_hCustomRom = INVALID_HANDLE_VALUE;
 }
 
-Logger::Logger(const bool log)
+LoggerContext::LoggerContext(const bool log)
 {
   if (log)
   {
@@ -69,7 +66,17 @@ Logger::Logger(const bool log)
   }
 }
 
-Logger::~Logger()
+LoggerContext::~LoggerContext()
 {
   LogDone();
+}
+
+RegistryContext::RegistryContext(const std::shared_ptr<Registry> & registry)
+{
+  Registry::instance = registry;
+}
+
+RegistryContext::~RegistryContext()
+{
+  Registry::instance.reset();
 }

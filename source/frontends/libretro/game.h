@@ -35,7 +35,7 @@ namespace ra2
     static retro_usec_t ourFrameTime;
 
   private:
-    const Logger myLogger;
+    const LoggerContext myLoggerContext;
     const std::shared_ptr<RetroFrame> myFrame;
 
     common2::Speed mySpeed;  // fixed speed

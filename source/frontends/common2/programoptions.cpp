@@ -189,6 +189,7 @@ namespace common2
 
       if (vm.count("geometry"))
       {
+        options.geometry.empty = false;
         parseGeometry(vm["geometry"].as<std::string>(), options.geometry);
       }
 

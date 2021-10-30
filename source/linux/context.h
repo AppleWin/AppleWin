@@ -13,7 +13,6 @@ class Initialisation
 {
 public:
   Initialisation(
-    const std::shared_ptr<Registry> & registry,
     const std::shared_ptr<FrameBase> & frame,
     const std::shared_ptr<Paddle> & paddle
     );
@@ -21,9 +20,16 @@ public:
 };
 
 // RAII around LogInit / LogDone.
-class Logger
+class LoggerContext
 {
 public:
-  Logger(const bool log);
-  ~Logger();
+  LoggerContext(const bool log);
+  ~LoggerContext();
+};
+
+class RegistryContext
+{
+public:
+  RegistryContext(const std::shared_ptr<Registry> & registry);
+  ~RegistryContext();
 };

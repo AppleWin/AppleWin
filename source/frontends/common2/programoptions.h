@@ -8,6 +8,7 @@ namespace common2
 
   struct Geometry
   {
+    bool empty = true;
     int width;
     int height;
     int x;

@@ -67,6 +67,7 @@ void run_sdl(int argc, const char * argv [])
   const int sw = video.GetFrameBufferBorderlessWidth();
   const int sh = video.GetFrameBufferBorderlessHeight();
 
+  options.geometry.empty = true;
   options.geometry.width = sw * 2;
   options.geometry.height = sh * 2;
   options.geometry.x = SDL_WINDOWPOS_UNDEFINED;
@@ -76,8 +77,10 @@ void run_sdl(int argc, const char * argv [])
   if (!run)
     return;
 
-  const Logger logger(options.log);
-  const std::shared_ptr<Registry> registry = CreateFileRegistry(options);
+  const LoggerContext logger(options.log);
+  const RegistryContext registryContext(CreateFileRegistry(options));
+
+  common2::loadGeometryFromRegistry("sa2", options.geometry);
 
   std::shared_ptr<sa2::SDLFrame> frame;
   if (options.imgui)
@@ -90,7 +93,7 @@ void run_sdl(int argc, const char * argv [])
   }
 
   std::shared_ptr<Paddle> paddle(new sa2::Gamepad(0));
-  const Initialisation init(registry, frame, paddle);
+  const Initialisation init(frame, paddle);
   applyOptions(options);
   frame->Initialize();
 
