@@ -110,6 +110,7 @@ public:
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 private:
+	void CleanupDriveInternal(const int iDrive);
 	void CleanupDrive(const int iDrive);
 	void NotifyInvalidImage(TCHAR* pszImageFilename);
 	void SaveLastDiskImage(const int drive);

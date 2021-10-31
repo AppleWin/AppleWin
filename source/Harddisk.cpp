@@ -131,6 +131,8 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 
 HarddiskInterfaceCard::~HarddiskInterfaceCard(void)
 {
+	CleanupDriveInternal(HARDDISK_1);
+	CleanupDriveInternal(HARDDISK_2);
 }
 
 void HarddiskInterfaceCard::Reset(const bool powerCycle)
@@ -141,7 +143,7 @@ void HarddiskInterfaceCard::Reset(const bool powerCycle)
 
 //===========================================================================
 
-void HarddiskInterfaceCard::CleanupDrive(const int iDrive)
+void HarddiskInterfaceCard::CleanupDriveInternal(const int iDrive)
 {
 	if (m_hardDiskDrive[iDrive].m_imagehandle)
 	{
@@ -154,6 +156,11 @@ void HarddiskInterfaceCard::CleanupDrive(const int iDrive)
 	m_hardDiskDrive[iDrive].m_imagename.clear();
 	m_hardDiskDrive[iDrive].m_fullname.clear();
 	m_hardDiskDrive[iDrive].m_strFilenameInZip.clear();
+}
+
+void HarddiskInterfaceCard::CleanupDrive(const int iDrive)
+{
+	CleanupDriveInternal(iDrive);
 
 	SaveLastDiskImage(iDrive);
 }
@@ -279,6 +286,8 @@ void HarddiskInterfaceCard::Initialize(const LPBYTE pCxRomPeripheral)
 
 	RegisterIoHandler(m_slot, IORead, IOWrite, NULL, NULL, this, NULL);
 }
+
+//===========================================================================
 
 void HarddiskInterfaceCard::Destroy(void)
 {
