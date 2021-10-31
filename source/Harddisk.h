@@ -114,7 +114,8 @@ public:
 	void HD_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	bool HD_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, const std::string& strSaveStatePath);
 
-	static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 private:
 	void HD_CleanupDrive(const int iDrive);

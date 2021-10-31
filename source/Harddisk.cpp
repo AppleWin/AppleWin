@@ -331,7 +331,7 @@ void HarddiskInterfaceCard::HD_Load_Rom(const LPBYTE pCxRomPeripheral, const UIN
 	memcpy(pCxRomPeripheral + uSlot*256, pData, HDDRVR_SIZE);
 	g_bHD_RomLoaded = true;
 
-	RegisterIoHandler(m_slot, HD_IO_EMUL, HD_IO_EMUL, NULL, NULL, NULL, NULL);
+	RegisterIoHandler(uSlot, IORead, IOWrite, NULL, NULL, this, NULL);
 }
 
 void HarddiskInterfaceCard::HD_Destroy(void)
@@ -467,195 +467,155 @@ bool HarddiskInterfaceCard::HD_IsDriveUnplugged(const int iDrive)
 #define DEVICE_UNKNOWN_ERROR	0x28
 #define DEVICE_IO_ERROR			0x27
 
-BYTE __stdcall HarddiskInterfaceCard::HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	UINT uSlot = ((addr & 0xff) >> 4) - 8;
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(uSlot);
 
 	BYTE r = DEVICE_OK;
-	addr &= 0xFF;
-
 	if (!pCard->HD_CardIsEnabled())
 		return r;
 
 	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->g_nHD_UnitNum >> 7]);	// bit7 = drive select
 	
-	if (bWrite == 0) // read
-	{
 #if HD_LED
-		pHDD->hd_status_next = DISK_STATUS_READ;
+	pHDD->hd_status_next = DISK_STATUS_READ;
 #endif
-		switch (addr)
-		{
-			case 0xF0:
-				if (pHDD->hd_imageloaded)
+	switch (addr & 0xF)
+	{
+		case 0x0:
+			if (pHDD->hd_imageloaded)
+			{
+				// based on loaded data block request, load block into memory
+				// returns status
+				switch (pCard->g_nHD_Command)
 				{
-					// based on loaded data block request, load block into memory
-					// returns status
-					switch (pCard->g_nHD_Command)
-					{
-						default:
-						case 0x00: //status
-							if (ImageGetImageSize(pHDD->imagehandle) == 0)
+					default:
+					case 0x00: //status
+						if (ImageGetImageSize(pHDD->imagehandle) == 0)
+						{
+							pHDD->hd_error = 1;
+							r = DEVICE_IO_ERROR;
+						}
+						break;
+					case 0x01: //read
+						if ((pHDD->hd_diskblock * HD_BLOCK_SIZE) < ImageGetImageSize(pHDD->imagehandle))
+						{
+							bool bRes = ImageReadBlock(pHDD->imagehandle, pHDD->hd_diskblock, pHDD->hd_buf);
+							if (bRes)
 							{
-								pHDD->hd_error = 1;
-								r = DEVICE_IO_ERROR;
-							}
-							break;
-						case 0x01: //read
-							if ((pHDD->hd_diskblock * HD_BLOCK_SIZE) < ImageGetImageSize(pHDD->imagehandle))
-							{
-								bool bRes = ImageReadBlock(pHDD->imagehandle, pHDD->hd_diskblock, pHDD->hd_buf);
-								if (bRes)
-								{
-									pHDD->hd_error = 0;
-									r = 0;
-									pHDD->hd_buf_ptr = 0;
-								}
-								else
-								{
-									pHDD->hd_error = 1;
-									r = DEVICE_IO_ERROR;
-								}
+								pHDD->hd_error = 0;
+								r = 0;
+								pHDD->hd_buf_ptr = 0;
 							}
 							else
 							{
 								pHDD->hd_error = 1;
 								r = DEVICE_IO_ERROR;
 							}
-							break;
-						case 0x02: //write
-							{
-#if HD_LED
-								pHDD->hd_status_next = DISK_STATUS_WRITE;
-#endif
-								bool bRes = true;
-								const bool bAppendBlocks = (pHDD->hd_diskblock * HD_BLOCK_SIZE) >= ImageGetImageSize(pHDD->imagehandle);
-
-								if (bAppendBlocks)
-								{
-									memset(pHDD->hd_buf, 0, HD_BLOCK_SIZE);
-
-									// Inefficient (especially for gzip/zip files!)
-									UINT uBlock = ImageGetImageSize(pHDD->imagehandle) / HD_BLOCK_SIZE;
-									while (uBlock < pHDD->hd_diskblock)
-									{
-										bRes = ImageWriteBlock(pHDD->imagehandle, uBlock++, pHDD->hd_buf);
-										_ASSERT(bRes);
-										if (!bRes)
-											break;
-									}
-								}
-
-								memmove(pHDD->hd_buf, mem+pHDD->hd_memblock, HD_BLOCK_SIZE);
-
-								if (bRes)
-									bRes = ImageWriteBlock(pHDD->imagehandle, pHDD->hd_diskblock, pHDD->hd_buf);
-
-								if (bRes)
-								{
-									pHDD->hd_error = 0;
-									r = 0;
-								}
-								else
-								{
-									pHDD->hd_error = 1;
-									r = DEVICE_IO_ERROR;
-								}
-							}
-							break;
-						case 0x03: //format
+						}
+						else
+						{
+							pHDD->hd_error = 1;
+							r = DEVICE_IO_ERROR;
+						}
+						break;
+					case 0x02: //write
+						{
 #if HD_LED
 							pHDD->hd_status_next = DISK_STATUS_WRITE;
 #endif
-							break;
-					}
-				}
-				else
-				{
-#if HD_LED
-					pHDD->hd_status_next = DISK_STATUS_OFF;
-#endif
-					pHDD->hd_error = 1;
-					r = DEVICE_UNKNOWN_ERROR;
-				}
-			break;
-		case 0xF1: // hd_error
-#if HD_LED
-			pHDD->hd_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
-#endif
-			if (pHDD->hd_error)
-			{
-				_ASSERT(pHDD->hd_error & 1);
-				pHDD->hd_error |= 1;	// Firmware requires that b0=1 for an error
-			}
+							bool bRes = true;
+							const bool bAppendBlocks = (pHDD->hd_diskblock * HD_BLOCK_SIZE) >= ImageGetImageSize(pHDD->imagehandle);
 
-			r = pHDD->hd_error;
-			break;
-		case 0xF2:
-			r = pCard->g_nHD_Command;
-			break;
-		case 0xF3:
-			r = pCard->g_nHD_UnitNum;
-			break;
-		case 0xF4:
-			r = (BYTE)(pHDD->hd_memblock & 0x00FF);
-			break;
-		case 0xF5:
-			r = (BYTE)(pHDD->hd_memblock & 0xFF00 >> 8);
-			break;
-		case 0xF6:
-			r = (BYTE)(pHDD->hd_diskblock & 0x00FF);
-			break;
-		case 0xF7:
-			r = (BYTE)(pHDD->hd_diskblock & 0xFF00 >> 8);
-			break;
-		case 0xF8:
-			r = pHDD->hd_buf[pHDD->hd_buf_ptr];
-			if (pHDD->hd_buf_ptr < sizeof(pHDD->hd_buf)-1)
-				pHDD->hd_buf_ptr++;
-			break;
-		default:
+							if (bAppendBlocks)
+							{
+								memset(pHDD->hd_buf, 0, HD_BLOCK_SIZE);
+
+								// Inefficient (especially for gzip/zip files!)
+								UINT uBlock = ImageGetImageSize(pHDD->imagehandle) / HD_BLOCK_SIZE;
+								while (uBlock < pHDD->hd_diskblock)
+								{
+									bRes = ImageWriteBlock(pHDD->imagehandle, uBlock++, pHDD->hd_buf);
+									_ASSERT(bRes);
+									if (!bRes)
+										break;
+								}
+							}
+
+							memmove(pHDD->hd_buf, mem+pHDD->hd_memblock, HD_BLOCK_SIZE);
+
+							if (bRes)
+								bRes = ImageWriteBlock(pHDD->imagehandle, pHDD->hd_diskblock, pHDD->hd_buf);
+
+							if (bRes)
+							{
+								pHDD->hd_error = 0;
+								r = 0;
+							}
+							else
+							{
+								pHDD->hd_error = 1;
+								r = DEVICE_IO_ERROR;
+							}
+						}
+						break;
+					case 0x03: //format
 #if HD_LED
-			pHDD->hd_status_next = DISK_STATUS_OFF;
+						pHDD->hd_status_next = DISK_STATUS_WRITE;
 #endif
-			return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
-		}
-	}
-	else // write to registers
-	{
+						break;
+				}
+			}
+			else
+			{
 #if HD_LED
-		pHDD->hd_status_next = DISK_STATUS_PROT; // TODO: FIXME: If we ever enable write-protect on HD then need to change to something else ...
+				pHDD->hd_status_next = DISK_STATUS_OFF;
 #endif
-		switch (addr)
+				pHDD->hd_error = 1;
+				r = DEVICE_UNKNOWN_ERROR;
+			}
+		break;
+	case 0x1: // hd_error
+#if HD_LED
+		pHDD->hd_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
+#endif
+		if (pHDD->hd_error)
 		{
-		case 0xF2:
-			pCard->g_nHD_Command = d;
-			break;
-		case 0xF3:
-			// b7    = drive#
-			// b6..4 = slot#
-			// b3..0 = ?
-			pCard->g_nHD_UnitNum = d;
-			break;
-		case 0xF4:
-			pHDD->hd_memblock = (pHDD->hd_memblock & 0xFF00) | d;
-			break;
-		case 0xF5:
-			pHDD->hd_memblock = (pHDD->hd_memblock & 0x00FF) | (d << 8);
-			break;
-		case 0xF6:
-			pHDD->hd_diskblock = (pHDD->hd_diskblock & 0xFF00) | d;
-			break;
-		case 0xF7:
-			pHDD->hd_diskblock = (pHDD->hd_diskblock & 0x00FF) | (d << 8);
-			break;
-		default:
-#if HD_LED
-			pHDD->hd_status_next = DISK_STATUS_OFF;
-#endif
-			return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+			_ASSERT(pHDD->hd_error & 1);
+			pHDD->hd_error |= 1;	// Firmware requires that b0=1 for an error
 		}
+
+		r = pHDD->hd_error;
+		break;
+	case 0x2:
+		r = pCard->g_nHD_Command;
+		break;
+	case 0x3:
+		r = pCard->g_nHD_UnitNum;
+		break;
+	case 0x4:
+		r = (BYTE)(pHDD->hd_memblock & 0x00FF);
+		break;
+	case 0x5:
+		r = (BYTE)(pHDD->hd_memblock & 0xFF00 >> 8);
+		break;
+	case 0x6:
+		r = (BYTE)(pHDD->hd_diskblock & 0x00FF);
+		break;
+	case 0x7:
+		r = (BYTE)(pHDD->hd_diskblock & 0xFF00 >> 8);
+		break;
+	case 0x8:
+		r = pHDD->hd_buf[pHDD->hd_buf_ptr];
+		if (pHDD->hd_buf_ptr < sizeof(pHDD->hd_buf)-1)
+			pHDD->hd_buf_ptr++;
+		break;
+	default:
+#if HD_LED
+		pHDD->hd_status_next = DISK_STATUS_OFF;
+#endif
+		return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 #if HD_LED
@@ -670,8 +630,64 @@ BYTE __stdcall HarddiskInterfaceCard::HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite
 	return r;
 }
 
+BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+{
+	UINT uSlot = ((addr & 0xff) >> 4) - 8;
+	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(uSlot);
+
+	BYTE r = DEVICE_OK;
+	if (!pCard->HD_CardIsEnabled())
+		return r;
+
+	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->g_nHD_UnitNum >> 7]);	// bit7 = drive select
+
+#if HD_LED
+	pHDD->hd_status_next = DISK_STATUS_PROT; // TODO: FIXME: If we ever enable write-protect on HD then need to change to something else ...
+#endif
+	switch (addr & 0xF)
+	{
+	case 0x2:
+		pCard->g_nHD_Command = d;
+		break;
+	case 0x3:
+		// b7    = drive#
+		// b6..4 = slot#
+		// b3..0 = ?
+		pCard->g_nHD_UnitNum = d;
+		break;
+	case 0x4:
+		pHDD->hd_memblock = (pHDD->hd_memblock & 0xFF00) | d;
+		break;
+	case 0x5:
+		pHDD->hd_memblock = (pHDD->hd_memblock & 0x00FF) | (d << 8);
+		break;
+	case 0x6:
+		pHDD->hd_diskblock = (pHDD->hd_diskblock & 0xFF00) | d;
+		break;
+	case 0x7:
+		pHDD->hd_diskblock = (pHDD->hd_diskblock & 0x00FF) | (d << 8);
+		break;
+	default:
+#if HD_LED
+		pHDD->hd_status_next = DISK_STATUS_OFF;
+#endif
+		return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+	}
+
+#if HD_LED
+	// 1.19.0.0 Hard Disk Status/Indicator Light
+	if (pHDD->hd_status_prev != pHDD->hd_status_next) // Update LEDs if state changes
+	{
+		pHDD->hd_status_prev = pHDD->hd_status_next;
+		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
+	}
+#endif
+
+	return r;
+}
+
 // 1.19.0.0 Hard Disk Status/Indicator Light
-void HarddiskInterfaceCard::HD_GetLightStatus (Disk_Status_e *pDisk1Status_)
+void HarddiskInterfaceCard::HD_GetLightStatus(Disk_Status_e *pDisk1Status_)
 {
 #if HD_LED
 	if ( HD_CardIsEnabled() )
