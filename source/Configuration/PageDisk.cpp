@@ -149,11 +149,20 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 		case IDC_HDD_ENABLE:
 			{
 				const BOOL checked = IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE) ? TRUE : FALSE;
-				m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT7] = checked ? CT_GenericHDD : CT_Empty;
-				// NB. Unusual as it creates slot object when checkbox is toggled (instead of after OK)
-				// Needed as we need a HarddiskInterfaceCard object so that images can be inserted/ejected [*2]
-				m_PropertySheetHelper.SetSlot(SLOT7, m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT7]);
-				EnableHDD(hWnd, checked);
+				// Add some user-protection, as (currently) removing the HDD images can't be undone!
+				if (!checked && GetFrame().FrameMessageBox("This will unplug the HDD image(s)! Proceed?", "Eject/Unplug Warning", MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND) != IDNO)
+				{
+					m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT7] = checked ? CT_GenericHDD : CT_Empty;
+					// NB. Unusual as it creates slot object when checkbox is toggled (instead of after OK)
+					// Needed as we need a HarddiskInterfaceCard object so that images can be inserted/ejected [*2]
+					m_PropertySheetHelper.SetSlot(SLOT7, m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT7]);
+					InitComboHDD(hWnd, SLOT7);	// disabling will remove the HDD images - so update drop-down to reflect this
+					EnableHDD(hWnd, checked);
+				}
+				else
+				{
+					CheckDlgButton(hWnd, IDC_HDD_ENABLE, BST_CHECKED);
+				}
 			}
 			break;
 		case IDC_HDD_SWAP:
@@ -494,7 +503,7 @@ UINT CPageDisk::RemovalConfirmation(UINT uCommand)
 
 	if (bMsgBox)
 	{
-		int nRes = GetFrame().FrameMessageBox(szText, TEXT("Eject/Unplug Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
+		int nRes = GetFrame().FrameMessageBox(szText, "Eject/Unplug Warning", MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 			uCommand = 0;
 	}
