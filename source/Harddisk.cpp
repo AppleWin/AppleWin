@@ -120,14 +120,11 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	Card(CT_GenericHDD),
 	m_slot(slot)
 {
-	g_bHD_RomLoaded = false;
-	g_bHD_Enabled = false;
-
 	g_nHD_UnitNum = HARDDISK_1 << 7;	// b7=unit
 
 	// The HDD interface has a single Command register for both drives:
 	// . ProDOS will write to Command before switching drives
-	g_nHD_Command;
+	g_nHD_Command = 0;
 
 	g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
 }
@@ -228,30 +225,6 @@ void HarddiskInterfaceCard::HD_SaveLastDiskImage(const int drive)
 
 //===========================================================================
 
-bool HarddiskInterfaceCard::HD_CardIsEnabled(void)
-{
-	return g_bHD_RomLoaded && g_bHD_Enabled;
-}
-
-// Called by:
-// . LoadConfiguration() - Done at each restart
-// . RestoreCurrentConfig() - Done when Config dialog is cancelled
-// . Snapshot_LoadState_v2() - Done to default to disabled state
-void HarddiskInterfaceCard::HD_SetEnabled(const bool bEnabled, bool updateRegistry/*=true*/)
-{
-	if(g_bHD_Enabled == bEnabled)
-		return;
-
-	g_bHD_Enabled = bEnabled;
-
-	if (bEnabled)
-		GetCardMgr().Insert(SLOT7, CT_GenericHDD, updateRegistry);
-	else
-		GetCardMgr().Remove(SLOT7);
-}
-
-//-------------------------------------
-
 const std::string& HarddiskInterfaceCard::HD_GetFullName(const int iDrive)
 {
 	return m_hardDiskDrive[iDrive].fullname;
@@ -271,9 +244,6 @@ void HarddiskInterfaceCard::HD_GetFilenameAndPathForSaveState(std::string& filen
 {
 	filename = "";
 	path = "";
-
-	if (!g_bHD_Enabled)
-		return;
 
 	for (UINT i=HARDDISK_1; i<=HARDDISK_2; i++)
 	{
@@ -301,15 +271,11 @@ void HarddiskInterfaceCard::Initialize(const LPBYTE pCxRomPeripheral)
 {
 	const DWORD HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
 
-	if (!g_bHD_Enabled)
-		return;
-
 	BYTE* pData = GetFrame().GetResource(IDR_HDDRVR_FW, "FIRMWARE", HARDDISK_FW_SIZE);
 	if (pData == NULL)
 		return;
 
 	memcpy(pCxRomPeripheral + m_slot * APPLE_SLOT_SIZE, pData, HARDDISK_FW_SIZE);
-	g_bHD_RomLoaded = true;
 
 	RegisterIoHandler(m_slot, IORead, IOWrite, NULL, NULL, this, NULL);
 }
@@ -451,13 +417,10 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 {
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
+	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->g_nHD_UnitNum >> 7]);	// bit7 = drive select
 
 	BYTE r = DEVICE_OK;
-	if (!pCard->HD_CardIsEnabled())
-		return r;
 
-	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->g_nHD_UnitNum >> 7]);	// bit7 = drive select
-	
 #if HD_LED
 	pHDD->hd_status_next = DISK_STATUS_READ;
 #endif
@@ -614,12 +577,9 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 {
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
+	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->g_nHD_UnitNum >> 7]);	// bit7 = drive select
 
 	BYTE r = DEVICE_OK;
-	if (!pCard->HD_CardIsEnabled())
-		return r;
-
-	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->g_nHD_UnitNum >> 7]);	// bit7 = drive select
 
 #if HD_LED
 	pHDD->hd_status_next = DISK_STATUS_PROT; // TODO: FIXME: If we ever enable write-protect on HD then need to change to something else ...
@@ -666,19 +626,10 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 	return r;
 }
 
-// 1.19.0.0 Hard Disk Status/Indicator Light
-void HarddiskInterfaceCard::HD_GetLightStatus(Disk_Status_e *pDisk1Status_)
+void HarddiskInterfaceCard::HD_GetLightStatus(Disk_Status_e *pDisk1Status)
 {
-#if HD_LED
-	if ( HD_CardIsEnabled() )
-	{
-		HardDiskDrive* pHDD = &m_hardDiskDrive[g_nHD_UnitNum >> 7];	// bit7 = drive select
-		*pDisk1Status_ = pHDD->hd_status_prev;
-	} else
-#endif
-	{
-		*pDisk1Status_ = DISK_STATUS_OFF;
-	}
+	HardDiskDrive* pHDD = &m_hardDiskDrive[g_nHD_UnitNum >> 7];	// bit7 = drive select
+	*pDisk1Status = pHDD->hd_status_prev;
 }
 
 bool HarddiskInterfaceCard::HD_ImageSwap(void)
@@ -742,9 +693,6 @@ void HarddiskInterfaceCard::HD_SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelpe
 
 void HarddiskInterfaceCard::HD_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	if (!HD_CardIsEnabled())
-		return;
-
 	YamlSaveHelper::Slot slot(yamlSaveHelper, HD_GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
@@ -845,8 +793,6 @@ bool HarddiskInterfaceCard::HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT
 
 	if (!bResSelectImage1 && !bResSelectImage2)
 		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, strSaveStatePath);
-
-	HD_SetEnabled(true, false);
 
 	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 
