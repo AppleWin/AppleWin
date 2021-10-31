@@ -78,7 +78,7 @@ public:
 	UINT hd_diskblock;
 	WORD hd_buf_ptr;
 	bool hd_imageloaded;
-	BYTE hd_buf[HD_BLOCK_SIZE + 1];	// Why +1? Probably for erroreous reads beyond the block size (ie. reads from I/O addr 0xC0F8)
+	BYTE hd_buf[HD_BLOCK_SIZE];
 
 #if HD_LED
 	Disk_Status_e hd_status_next;
