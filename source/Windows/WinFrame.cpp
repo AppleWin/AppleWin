@@ -745,7 +745,7 @@ void Win32Frame::DrawStatusArea (HDC passdc, int drawflags)
 	// 1.19.0.0 Hard Disk Status/Indicator Light
 	Disk_Status_e eHardDriveStatus = DISK_STATUS_OFF;
 	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).HD_GetLightStatus(&eHardDriveStatus);
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).GetLightStatus(&eHardDriveStatus);
 #endif
 
 	if (g_bIsFullScreen)
@@ -970,7 +970,7 @@ LRESULT Win32Frame::WndProc(
       if (!g_bRestart) {
 		GetCardMgr().GetDisk2CardMgr().Destroy();
 		if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-			dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).HD_Destroy();
+			dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Destroy();
       }
       PrintDestroy();
       if (GetCardMgr().IsSSCInstalled())

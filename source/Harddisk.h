@@ -96,42 +96,42 @@ public:
 	virtual void Reset(const bool powerCycle);
 
 	void Initialize(const LPBYTE pCxRomPeripheral);
-	void HD_Destroy(void);
-	const std::string& HD_GetFullName(const int iDrive);
-	const std::string& HD_GetFullPathName(const int iDrive);
-	void HD_GetFilenameAndPathForSaveState(std::string& filename, std::string& path);
-	bool HD_Select(const int iDrive);
-	BOOL HD_Insert(const int iDrive, const std::string& pathname);
-	void HD_Unplug(const int iDrive);
-	bool HD_IsDriveUnplugged(const int iDrive);
-	void HD_LoadLastDiskImage(const int iDrive);
+	void Destroy(void);
+	const std::string& GetFullName(const int iDrive);
+	const std::string& HarddiskGetFullPathName(const int iDrive);
+	void GetFilenameAndPathForSaveState(std::string& filename, std::string& path);
+	bool Select(const int iDrive);
+	BOOL Insert(const int iDrive, const std::string& pathname);
+	void Unplug(const int iDrive);
+	bool IsDriveUnplugged(const int iDrive);
+	void LoadLastDiskImage(const int iDrive);
 
-	void HD_GetLightStatus(Disk_Status_e* pDisk1Status);
-	bool HD_ImageSwap(void);
+	void GetLightStatus(Disk_Status_e* pDisk1Status);
+	bool ImageSwap(void);
 
-	static std::string HD_GetSnapshotCardName(void);
-	void HD_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-	bool HD_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, const std::string& strSaveStatePath);
+	static std::string GetSnapshotCardName(void);
+	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, const std::string& strSaveStatePath);
 
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 private:
-	void HD_CleanupDrive(const int iDrive);
+	void CleanupDrive(const int iDrive);
 	void NotifyInvalidImage(TCHAR* pszImageFilename);
-	void HD_SaveLastDiskImage(const int drive);
-	const std::string& HD_DiskGetBaseName(const int iDrive);
-	bool HD_SelectImage(const int drive, LPCSTR pszFilename);
+	void SaveLastDiskImage(const int drive);
+	const std::string& DiskGetBaseName(const int iDrive);
+	bool SelectImage(const int drive, LPCSTR pszFilename);
 
-	void HD_SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
-	bool HD_LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
+	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
+	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
 
 	//
 
-	BYTE g_nHD_UnitNum;		// b7=unit
-	BYTE g_nHD_Command;
+	BYTE m_unitNum;			// b7=unit
+	BYTE m_command;
 
-	bool g_bSaveDiskImage;	// Save the DiskImage name to Registry
+	bool m_bSaveDiskImage;	// Save the DiskImage name to Registry
 	UINT m_slot;
 
 	HardDiskDrive m_hardDiskDrive[NUM_HARDDISKS];

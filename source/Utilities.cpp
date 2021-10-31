@@ -311,8 +311,8 @@ void LoadConfiguration(void)
 
 	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
 	{
-		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).HD_LoadLastDiskImage(HARDDISK_1);
-		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).HD_LoadLastDiskImage(HARDDISK_2);
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).LoadLastDiskImage(HARDDISK_1);
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).LoadLastDiskImage(HARDDISK_2);
 	}
 
 	//
@@ -405,14 +405,14 @@ static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
 
 	if (szFileName[0] == '\0')
 	{
-		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).HD_Unplug(nDrive);
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Unplug(nDrive);
 		return true;
 	}
 
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
-	BOOL bRes = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).HD_Insert(nDrive, strPathName);
+	BOOL bRes = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Insert(nDrive, strPathName);
 	bool res = (bRes == TRUE);
 	if (res)
 		SetCurrentDir(strPathName);

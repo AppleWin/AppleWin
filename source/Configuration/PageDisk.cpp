@@ -230,15 +230,15 @@ void CPageDisk::InitComboHDD(HWND hWnd, UINT /*slot*/)
 		return;
 	HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7));
 
-	if (!card.HD_GetFullName(HARDDISK_1).empty())
+	if (!card.GetFullName(HARDDISK_1).empty())
 	{
-		SendDlgItemMessage(hWnd, IDC_COMBO_HDD1, CB_INSERTSTRING, 0, (LPARAM)card.HD_GetFullName(HARDDISK_1).c_str());
+		SendDlgItemMessage(hWnd, IDC_COMBO_HDD1, CB_INSERTSTRING, 0, (LPARAM)card.GetFullName(HARDDISK_1).c_str());
 		SendDlgItemMessage(hWnd, IDC_COMBO_HDD1, CB_SETCURSEL, 0, 0);
 	}
 
-	if (!card.HD_GetFullName(HARDDISK_2).empty())
+	if (!card.GetFullName(HARDDISK_2).empty())
 	{
-		SendDlgItemMessage(hWnd, IDC_COMBO_HDD2, CB_INSERTSTRING, 0, (LPARAM)card.HD_GetFullName(HARDDISK_2).c_str());
+		SendDlgItemMessage(hWnd, IDC_COMBO_HDD2, CB_INSERTSTRING, 0, (LPARAM)card.GetFullName(HARDDISK_2).c_str());
 		SendDlgItemMessage(hWnd, IDC_COMBO_HDD2, CB_SETCURSEL, 0, 0);
 	}
 }
@@ -333,7 +333,7 @@ void CPageDisk::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected
 	if (dwComboSelection == dwOpenDialogIndex)
 	{
 		EnableHDD(hWnd, FALSE);	// Prevent multiple Selection dialogs to be triggered
-		bool bRes = card.HD_Select(driveSelected);
+		bool bRes = card.Select(driveSelected);
 		EnableHDD(hWnd, TRUE);
 
 		if (!bRes)
@@ -350,13 +350,13 @@ void CPageDisk::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected
 			SendDlgItemMessage(hWnd, comboSelected, CB_DELETESTRING, 0, 0);
 		}
 
-		SendDlgItemMessage(hWnd, comboSelected, CB_INSERTSTRING, 0, (LPARAM)card.HD_GetFullName(driveSelected).c_str());
+		SendDlgItemMessage(hWnd, comboSelected, CB_INSERTSTRING, 0, (LPARAM)card.GetFullName(driveSelected).c_str());
 		SendDlgItemMessage(hWnd, comboSelected, CB_SETCURSEL, 0, 0);
 
 		// If the HD was in the other combo, remove now
 		DWORD comboOther = (comboSelected == IDC_COMBO_HDD1) ? IDC_COMBO_HDD2 : IDC_COMBO_HDD1;
 
-		DWORD duplicated = (DWORD)SendDlgItemMessage(hWnd, comboOther, CB_FINDSTRINGEXACT, -1, (LPARAM)card.HD_GetFullName(driveSelected).c_str());
+		DWORD duplicated = (DWORD)SendDlgItemMessage(hWnd, comboOther, CB_FINDSTRINGEXACT, -1, (LPARAM)card.GetFullName(driveSelected).c_str());
 		if (duplicated != CB_ERR)
 		{
 			SendDlgItemMessage(hWnd, comboOther, CB_DELETESTRING, duplicated, 0);
@@ -370,7 +370,7 @@ void CPageDisk::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected
 			if (RemovalConfirmation(comboSelected))
 			{
 				// Unplug selected disk
-				card.HD_Unplug(driveSelected);
+				card.Unplug(driveSelected);
 				// Remove drive from list
 				SendDlgItemMessage(hWnd, comboSelected, CB_DELETESTRING, 0, 0);
 			}
@@ -459,7 +459,7 @@ void CPageDisk::HandleHDDSwap(HWND hWnd)
 	if (GetCardMgr().QuerySlot(SLOT7) != CT_GenericHDD)
 		return;
 	
-	if (!dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).HD_ImageSwap())
+	if (!dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).ImageSwap())
 		return;
 
 	InitComboHDD(hWnd, SLOT7);
