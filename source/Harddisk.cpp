@@ -34,7 +34,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CardManager.h"
 #include "CPU.h"
 #include "DiskImage.h"	// ImageError_e, Disk_Status_e
-#include "DiskImageHelper.h"
 #include "Memory.h"
 #include "Registry.h"
 #include "SaveState.h"
@@ -115,101 +114,57 @@ Overview
       sound card in slot 7 is a generally bad idea) will cause problems.
 */
 
-struct HDD
+
+
+HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
+	Card(CT_GenericHDD),
+	m_slot(slot)
 {
-	HDD()
-	{
-		clear();
-	}
+	g_bHD_RomLoaded = false;
+	g_bHD_Enabled = false;
 
-	void clear()
-	{
-		// This is not a POD (there is a std::string)
-		// memset(0) does not work
-		imagename.clear();
-		fullname.clear();
-		strFilenameInZip.clear();
-		imagehandle = NULL;
-		bWriteProtected = false;
-		hd_error = 0;
-		hd_memblock = 0;
-		hd_diskblock = 0;
-		hd_buf_ptr = 0;
-		hd_imageloaded = false;
-		memset(hd_buf, 0, sizeof(hd_buf));
-#if HD_LED
-		hd_status_next = DISK_STATUS_OFF;
-		hd_status_prev = DISK_STATUS_OFF;
-#endif
-	}
+	g_nHD_UnitNum = HARDDISK_1 << 7;	// b7=unit
 
-	// From FloppyDisk
-	std::string	imagename;	// <FILENAME> (ie. no extension)
-	std::string fullname;	// <FILENAME.EXT> or <FILENAME.zip>
-	std::string strFilenameInZip;					// ""             or <FILENAME.EXT> [not used]
-	ImageInfo*	imagehandle;			// Init'd by HD_Insert() -> ImageOpen()
-	bool	bWriteProtected;			// Needed for ImageOpen() [otherwise not used]
-	//
-	BYTE	hd_error;		// NB. Firmware requires that b0=0 (OK) or b0=1 (Error)
-	WORD	hd_memblock;
-	UINT	hd_diskblock;
-	WORD	hd_buf_ptr;
-	bool	hd_imageloaded;
-	BYTE	hd_buf[HD_BLOCK_SIZE+1];	// Why +1? Probably for erroreous reads beyond the block size (ie. reads from I/O addr 0xC0F8)
+	// The HDD interface has a single Command register for both drives:
+	// . ProDOS will write to Command before switching drives
+	g_nHD_Command;
 
-#if HD_LED
-	Disk_Status_e hd_status_next;
-	Disk_Status_e hd_status_prev;
-#endif
-};
+	g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
+}
 
-static bool	g_bHD_RomLoaded = false;
-static bool g_bHD_Enabled = false;
-
-static BYTE	g_nHD_UnitNum = HARDDISK_1<<7;	// b7=unit
-
-// The HDD interface has a single Command register for both drives:
-// . ProDOS will write to Command before switching drives
-static BYTE	g_nHD_Command;
-
-static HDD g_HardDisk[NUM_HARDDISKS];
-
-static bool g_bSaveDiskImage = true;	// Save the DiskImage name to Registry
-static UINT g_uSlot = SLOT7;
+HarddiskInterfaceCard::~HarddiskInterfaceCard(void)
+{
+}
 
 //===========================================================================
 
-static void HD_SaveLastDiskImage(const int iDrive);
-
-static void HD_CleanupDrive(const int iDrive)
+void HarddiskInterfaceCard::HD_CleanupDrive(const int iDrive)
 {
-	if (g_HardDisk[iDrive].imagehandle)
+	if (m_hardDiskDrive[iDrive].imagehandle)
 	{
-		ImageClose(g_HardDisk[iDrive].imagehandle);
-		g_HardDisk[iDrive].imagehandle = NULL;
+		ImageClose(m_hardDiskDrive[iDrive].imagehandle);
+		m_hardDiskDrive[iDrive].imagehandle = NULL;
 	}
 
-	g_HardDisk[iDrive].hd_imageloaded = false;
+	m_hardDiskDrive[iDrive].hd_imageloaded = false;
 
-	g_HardDisk[iDrive].imagename.clear();
-	g_HardDisk[iDrive].fullname.clear();
-	g_HardDisk[iDrive].strFilenameInZip.clear();
+	m_hardDiskDrive[iDrive].imagename.clear();
+	m_hardDiskDrive[iDrive].fullname.clear();
+	m_hardDiskDrive[iDrive].strFilenameInZip.clear();
 
 	HD_SaveLastDiskImage(iDrive);
 }
 
-//-----------------------------------------------------------------------------
+//===========================================================================
 
-static void NotifyInvalidImage(TCHAR* pszImageFilename)
+void HarddiskInterfaceCard::NotifyInvalidImage(TCHAR* pszImageFilename)
 {
 	// TC: TO DO
 }
 
 //===========================================================================
 
-BOOL HD_Insert(const int iDrive, const std::string& pathname);
-
-void HD_LoadLastDiskImage(const int drive)
+void HarddiskInterfaceCard::HD_LoadLastDiskImage(const int drive)
 {
 	_ASSERT(drive == HARDDISK_1 || drive == HARDDISK_2);
 
@@ -219,7 +174,7 @@ void HD_LoadLastDiskImage(const int drive)
 
 	char pathname[MAX_PATH];
 
-	std::string& regSection = RegGetConfigSlotSection(g_uSlot);
+	std::string& regSection = RegGetConfigSlotSection(m_slot);
 	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")))
 	{
 		g_bSaveDiskImage = false;
@@ -230,14 +185,14 @@ void HD_LoadLastDiskImage(const int drive)
 
 //===========================================================================
 
-static void HD_SaveLastDiskImage(const int drive)
+void HarddiskInterfaceCard::HD_SaveLastDiskImage(const int drive)
 {
 	_ASSERT(drive == HARDDISK_1 || drive == HARDDISK_2);
 
 	if (!g_bSaveDiskImage)
 		return;
 
-	std::string& regSection = RegGetConfigSlotSection(g_uSlot);
+	std::string& regSection = RegGetConfigSlotSection(m_slot);
 	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, CT_GenericHDD);
 
 	const std::string regKey = (drive == HARDDISK_1)
@@ -252,7 +207,7 @@ static void HD_SaveLastDiskImage(const int drive)
 
 	// For now, only update 'HDV Starting Directory' for slot7 & drive1
 	// . otherwise you'll get inconsistent results if you set drive1, then drive2 (and the images were in different folders)
-	if (g_uSlot != SLOT7 || drive != HARDDISK_1)
+	if (m_slot != SLOT7 || drive != HARDDISK_1)
 		return;
 
 	TCHAR szPathName[MAX_PATH];
@@ -267,13 +222,9 @@ static void HD_SaveLastDiskImage(const int drive)
 
 //===========================================================================
 
-// (Nearly) everything below is global
-
-static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
-
 static const DWORD HDDRVR_SIZE = APPLE_SLOT_SIZE;
 
-bool HD_CardIsEnabled(void)
+bool HarddiskInterfaceCard::HD_CardIsEnabled(void)
 {
 	return g_bHD_RomLoaded && g_bHD_Enabled;
 }
@@ -282,7 +233,7 @@ bool HD_CardIsEnabled(void)
 // . LoadConfiguration() - Done at each restart
 // . RestoreCurrentConfig() - Done when Config dialog is cancelled
 // . Snapshot_LoadState_v2() - Done to default to disabled state
-void HD_SetEnabled(const bool bEnabled, bool updateRegistry/*=true*/)
+void HarddiskInterfaceCard::HD_SetEnabled(const bool bEnabled, bool updateRegistry/*=true*/)
 {
 	if(g_bHD_Enabled == bEnabled)
 		return;
@@ -314,22 +265,22 @@ void HD_SetEnabled(const bool bEnabled, bool updateRegistry/*=true*/)
 
 //-------------------------------------
 
-const std::string & HD_GetFullName(const int iDrive)
+const std::string& HarddiskInterfaceCard::HD_GetFullName(const int iDrive)
 {
-	return g_HardDisk[iDrive].fullname;
+	return m_hardDiskDrive[iDrive].fullname;
 }
 
-const std::string & HD_GetFullPathName(const int iDrive)
+const std::string& HarddiskInterfaceCard::HD_GetFullPathName(const int iDrive)
 {
-	return ImageGetPathname(g_HardDisk[iDrive].imagehandle);
+	return ImageGetPathname(m_hardDiskDrive[iDrive].imagehandle);
 }
 
-static const std::string & HD_DiskGetBaseName(const int iDrive)
+const std::string& HarddiskInterfaceCard::HD_DiskGetBaseName(const int iDrive)
 {
-	return g_HardDisk[iDrive].imagename;
+	return m_hardDiskDrive[iDrive].imagename;
 }
 
-void HD_GetFilenameAndPathForSaveState(std::string& filename, std::string& path)
+void HarddiskInterfaceCard::HD_GetFilenameAndPathForSaveState(std::string& filename, std::string& path)
 {
 	filename = "";
 	path = "";
@@ -339,7 +290,7 @@ void HD_GetFilenameAndPathForSaveState(std::string& filename, std::string& path)
 
 	for (UINT i=HARDDISK_1; i<=HARDDISK_2; i++)
 	{
-		if (!g_HardDisk[i].hd_imageloaded)
+		if (!m_hardDiskDrive[i].hd_imageloaded)
 			continue;
 
 		filename = HD_DiskGetBaseName(i);
@@ -359,15 +310,15 @@ void HD_GetFilenameAndPathForSaveState(std::string& filename, std::string& path)
 
 //-------------------------------------
 
-void HD_Reset(void)
+void HarddiskInterfaceCard::HD_Reset(void)
 {
-	g_HardDisk[HARDDISK_1].hd_error = 0;
-	g_HardDisk[HARDDISK_2].hd_error = 0;
+	m_hardDiskDrive[HARDDISK_1].hd_error = 0;
+	m_hardDiskDrive[HARDDISK_2].hd_error = 0;
 }
 
 //-------------------------------------
 
-void HD_Load_Rom(const LPBYTE pCxRomPeripheral, const UINT uSlot)
+void HarddiskInterfaceCard::HD_Load_Rom(const LPBYTE pCxRomPeripheral, const UINT uSlot)
 {
 	if(!g_bHD_Enabled)
 		return;
@@ -376,14 +327,14 @@ void HD_Load_Rom(const LPBYTE pCxRomPeripheral, const UINT uSlot)
 	if(pData == NULL)
 		return;
 
-	g_uSlot = uSlot;
+	m_slot = uSlot;
 	memcpy(pCxRomPeripheral + uSlot*256, pData, HDDRVR_SIZE);
 	g_bHD_RomLoaded = true;
 
-	RegisterIoHandler(g_uSlot, HD_IO_EMUL, HD_IO_EMUL, NULL, NULL, NULL, NULL);
+	RegisterIoHandler(m_slot, HD_IO_EMUL, HD_IO_EMUL, NULL, NULL, NULL, NULL);
 }
 
-void HD_Destroy(void)
+void HarddiskInterfaceCard::HD_Destroy(void)
 {
 	g_bSaveDiskImage = false;
 	HD_CleanupDrive(HARDDISK_1);
@@ -395,12 +346,12 @@ void HD_Destroy(void)
 }
 
 // Pre: pathname likely to include path (but can also just be filename)
-BOOL HD_Insert(const int iDrive, const std::string& pathname)
+BOOL HarddiskInterfaceCard::HD_Insert(const int iDrive, const std::string& pathname)
 {
 	if (pathname.empty())
 		return FALSE;
 
-	if (g_HardDisk[iDrive].hd_imageloaded)
+	if (m_hardDiskDrive[iDrive].hd_imageloaded)
 		HD_Unplug(iDrive);
 
 	// Check if image is being used by the other HDD, and unplug it in order to be swapped
@@ -423,31 +374,31 @@ BOOL HD_Insert(const int iDrive, const std::string& pathname)
 	const bool bExpectFloppy = false;
 	const bool bIsHarddisk = true;
 	ImageError_e Error = ImageOpen(pathname,
-		&g_HardDisk[iDrive].imagehandle,
-		&g_HardDisk[iDrive].bWriteProtected,
+		&m_hardDiskDrive[iDrive].imagehandle,
+		&m_hardDiskDrive[iDrive].bWriteProtected,
 		bCreateIfNecessary,
-		g_HardDisk[iDrive].strFilenameInZip,	// TODO: Use this
+		m_hardDiskDrive[iDrive].strFilenameInZip,	// TODO: Use this
 		bExpectFloppy);
 
-	g_HardDisk[iDrive].hd_imageloaded = (Error == eIMAGE_ERROR_NONE);
+	m_hardDiskDrive[iDrive].hd_imageloaded = (Error == eIMAGE_ERROR_NONE);
 
 #if HD_LED
-	g_HardDisk[iDrive].hd_status_next = DISK_STATUS_OFF;
-	g_HardDisk[iDrive].hd_status_prev = DISK_STATUS_OFF;
+	m_hardDiskDrive[iDrive].hd_status_next = DISK_STATUS_OFF;
+	m_hardDiskDrive[iDrive].hd_status_prev = DISK_STATUS_OFF;
 #endif
 
 	if (Error == eIMAGE_ERROR_NONE)
 	{
-		GetImageTitle(pathname.c_str(), g_HardDisk[iDrive].imagename, g_HardDisk[iDrive].fullname);
+		GetImageTitle(pathname.c_str(), m_hardDiskDrive[iDrive].imagename, m_hardDiskDrive[iDrive].fullname);
 		Snapshot_UpdatePath();
 	}
 
 	HD_SaveLastDiskImage(iDrive);
 
-	return g_HardDisk[iDrive].hd_imageloaded;
+	return m_hardDiskDrive[iDrive].hd_imageloaded;
 }
 
-static bool HD_SelectImage(const int drive, LPCSTR pszFilename)
+bool HarddiskInterfaceCard::HD_SelectImage(const int drive, LPCSTR pszFilename)
 {
 	TCHAR directory[MAX_PATH];
 	TCHAR filename[MAX_PATH];
@@ -491,23 +442,23 @@ static bool HD_SelectImage(const int drive, LPCSTR pszFilename)
 	return bRes;
 }
 
-bool HD_Select(const int iDrive)
+bool HarddiskInterfaceCard::HD_Select(const int iDrive)
 {
 	return HD_SelectImage(iDrive, TEXT(""));
 }
 
-void HD_Unplug(const int iDrive)
+void HarddiskInterfaceCard::HD_Unplug(const int iDrive)
 {
-	if (g_HardDisk[iDrive].hd_imageloaded)
+	if (m_hardDiskDrive[iDrive].hd_imageloaded)
 	{
 		HD_CleanupDrive(iDrive);
 		Snapshot_UpdatePath();
 	}
 }
 
-bool HD_IsDriveUnplugged(const int iDrive)
+bool HarddiskInterfaceCard::HD_IsDriveUnplugged(const int iDrive)
 {
-	return g_HardDisk[iDrive].hd_imageloaded == false;
+	return m_hardDiskDrive[iDrive].hd_imageloaded == false;
 }
 
 //-----------------------------------------------------------------------------
@@ -516,15 +467,18 @@ bool HD_IsDriveUnplugged(const int iDrive)
 #define DEVICE_UNKNOWN_ERROR	0x28
 #define DEVICE_IO_ERROR			0x27
 
-static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+BYTE __stdcall HarddiskInterfaceCard::HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
+	UINT uSlot = ((addr & 0xff) >> 4) - 8;
+	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(uSlot);
+
 	BYTE r = DEVICE_OK;
 	addr &= 0xFF;
 
-	if (!HD_CardIsEnabled())
+	if (!pCard->HD_CardIsEnabled())
 		return r;
 
-	HDD* pHDD = &g_HardDisk[g_nHD_UnitNum >> 7];	// bit7 = drive select
+	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->g_nHD_UnitNum >> 7]);	// bit7 = drive select
 	
 	if (bWrite == 0) // read
 	{
@@ -538,7 +492,7 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 				{
 					// based on loaded data block request, load block into memory
 					// returns status
-					switch (g_nHD_Command)
+					switch (pCard->g_nHD_Command)
 					{
 						default:
 						case 0x00: //status
@@ -639,10 +593,10 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 			r = pHDD->hd_error;
 			break;
 		case 0xF2:
-			r = g_nHD_Command;
+			r = pCard->g_nHD_Command;
 			break;
 		case 0xF3:
-			r = g_nHD_UnitNum;
+			r = pCard->g_nHD_UnitNum;
 			break;
 		case 0xF4:
 			r = (BYTE)(pHDD->hd_memblock & 0x00FF);
@@ -676,13 +630,13 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 		switch (addr)
 		{
 		case 0xF2:
-			g_nHD_Command = d;
+			pCard->g_nHD_Command = d;
 			break;
 		case 0xF3:
 			// b7    = drive#
 			// b6..4 = slot#
 			// b3..0 = ?
-			g_nHD_UnitNum = d;
+			pCard->g_nHD_UnitNum = d;
 			break;
 		case 0xF4:
 			pHDD->hd_memblock = (pHDD->hd_memblock & 0xFF00) | d;
@@ -717,12 +671,12 @@ static BYTE __stdcall HD_IO_EMUL(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG 
 }
 
 // 1.19.0.0 Hard Disk Status/Indicator Light
-void HD_GetLightStatus (Disk_Status_e *pDisk1Status_)
+void HarddiskInterfaceCard::HD_GetLightStatus (Disk_Status_e *pDisk1Status_)
 {
 #if HD_LED
 	if ( HD_CardIsEnabled() )
 	{
-		HDD* pHDD = &g_HardDisk[g_nHD_UnitNum >> 7];	// bit7 = drive select
+		HardDiskDrive* pHDD = &m_hardDiskDrive[g_nHD_UnitNum >> 7];	// bit7 = drive select
 		*pDisk1Status_ = pHDD->hd_status_prev;
 	} else
 #endif
@@ -731,9 +685,9 @@ void HD_GetLightStatus (Disk_Status_e *pDisk1Status_)
 	}
 }
 
-bool HD_ImageSwap(void)
+bool HarddiskInterfaceCard::HD_ImageSwap(void)
 {
-	std::swap(g_HardDisk[HARDDISK_1], g_HardDisk[HARDDISK_2]);
+	std::swap(m_hardDiskDrive[HARDDISK_1], m_hardDiskDrive[HARDDISK_2]);
 
 	HD_SaveLastDiskImage(HARDDISK_1);
 	HD_SaveLastDiskImage(HARDDISK_2);
@@ -765,37 +719,37 @@ static const UINT kUNIT_VERSION = 2;
 #define SS_YAML_KEY_BUF_PTR "Buffer Offset"
 #define SS_YAML_KEY_BUF "Buffer"
 
-std::string HD_GetSnapshotCardName(void)
+std::string HarddiskInterfaceCard::HD_GetSnapshotCardName(void)
 {
 	static const std::string name(SS_YAML_VALUE_CARD_HDD);
 	return name;
 }
 
-static void HD_SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit)
+void HarddiskInterfaceCard::HD_SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_HDDUNIT, unit);
-	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, g_HardDisk[unit].fullname);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_ERROR, g_HardDisk[unit].hd_error);
-	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_MEMBLOCK, g_HardDisk[unit].hd_memblock);
-	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_DISKBLOCK, g_HardDisk[unit].hd_diskblock);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_IMAGELOADED, g_HardDisk[unit].hd_imageloaded);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_STATUS_NEXT, g_HardDisk[unit].hd_status_next);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_STATUS_PREV, g_HardDisk[unit].hd_status_prev);
-	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_BUF_PTR, g_HardDisk[unit].hd_buf_ptr);
+	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, m_hardDiskDrive[unit].fullname);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_ERROR, m_hardDiskDrive[unit].hd_error);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_MEMBLOCK, m_hardDiskDrive[unit].hd_memblock);
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_DISKBLOCK, m_hardDiskDrive[unit].hd_diskblock);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_IMAGELOADED, m_hardDiskDrive[unit].hd_imageloaded);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_STATUS_NEXT, m_hardDiskDrive[unit].hd_status_next);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_STATUS_PREV, m_hardDiskDrive[unit].hd_status_prev);
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_BUF_PTR, m_hardDiskDrive[unit].hd_buf_ptr);
 
 	// New label
 	{
 		YamlSaveHelper::Label buffer(yamlSaveHelper, "%s:\n", SS_YAML_KEY_BUF);
-		yamlSaveHelper.SaveMemory(g_HardDisk[unit].hd_buf, HD_BLOCK_SIZE);
+		yamlSaveHelper.SaveMemory(m_hardDiskDrive[unit].hd_buf, HD_BLOCK_SIZE);
 	}
 }
 
-void HD_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+void HarddiskInterfaceCard::HD_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	if (!HD_CardIsEnabled())
 		return;
 
-	YamlSaveHelper::Slot slot(yamlSaveHelper, HD_GetSnapshotCardName(), g_uSlot, kUNIT_VERSION);
+	YamlSaveHelper::Slot slot(yamlSaveHelper, HD_GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	yamlSaveHelper.Save("%s: %d # b7=unit\n", SS_YAML_KEY_CURRENT_UNIT, g_nHD_UnitNum);
@@ -805,30 +759,30 @@ void HD_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	HD_SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_2);
 }
 
-static bool HD_LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
+bool HarddiskInterfaceCard::HD_LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 {
 	std::string hddUnitName = std::string(SS_YAML_KEY_HDDUNIT) + (unit == HARDDISK_1 ? std::string("0") : std::string("1"));
 	if (!yamlLoadHelper.GetSubMap(hddUnitName))
 		throw std::string("Card: Expected key: ") + hddUnitName;
 
-	g_HardDisk[unit].fullname.clear();
-	g_HardDisk[unit].imagename.clear();
-	g_HardDisk[unit].hd_imageloaded = false;	// Default to false (until image is successfully loaded below)
-	g_HardDisk[unit].hd_status_next = DISK_STATUS_OFF;
-	g_HardDisk[unit].hd_status_prev = DISK_STATUS_OFF;
+	m_hardDiskDrive[unit].fullname.clear();
+	m_hardDiskDrive[unit].imagename.clear();
+	m_hardDiskDrive[unit].hd_imageloaded = false;	// Default to false (until image is successfully loaded below)
+	m_hardDiskDrive[unit].hd_status_next = DISK_STATUS_OFF;
+	m_hardDiskDrive[unit].hd_status_prev = DISK_STATUS_OFF;
 
 	std::string filename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
-	g_HardDisk[unit].hd_error = yamlLoadHelper.LoadUint(SS_YAML_KEY_ERROR);
-	g_HardDisk[unit].hd_memblock = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMBLOCK);
-	g_HardDisk[unit].hd_diskblock = yamlLoadHelper.LoadUint(SS_YAML_KEY_DISKBLOCK);
+	m_hardDiskDrive[unit].hd_error = yamlLoadHelper.LoadUint(SS_YAML_KEY_ERROR);
+	m_hardDiskDrive[unit].hd_memblock = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMBLOCK);
+	m_hardDiskDrive[unit].hd_diskblock = yamlLoadHelper.LoadUint(SS_YAML_KEY_DISKBLOCK);
 	yamlLoadHelper.LoadBool(SS_YAML_KEY_IMAGELOADED);	// Consume
 	Disk_Status_e diskStatusNext = (Disk_Status_e) yamlLoadHelper.LoadUint(SS_YAML_KEY_STATUS_NEXT);
 	Disk_Status_e diskStatusPrev = (Disk_Status_e) yamlLoadHelper.LoadUint(SS_YAML_KEY_STATUS_PREV);
-	g_HardDisk[unit].hd_buf_ptr = yamlLoadHelper.LoadUint(SS_YAML_KEY_BUF_PTR);
+	m_hardDiskDrive[unit].hd_buf_ptr = yamlLoadHelper.LoadUint(SS_YAML_KEY_BUF_PTR);
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_BUF))
 		throw hddUnitName + std::string(": Missing: ") + std::string(SS_YAML_KEY_BUF);
-	yamlLoadHelper.LoadMemory(g_HardDisk[unit].hd_buf, HD_BLOCK_SIZE);
+	yamlLoadHelper.LoadMemory(m_hardDiskDrive[unit].hd_buf, HD_BLOCK_SIZE);
 
 	yamlLoadHelper.PopMap();
 	yamlLoadHelper.PopMap();
@@ -861,17 +815,17 @@ static bool HD_LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 			// . hd_status_next = DISK_STATUS_OFF
 			// . hd_status_prev = DISK_STATUS_OFF
 
-			g_HardDisk[unit].hd_status_next = diskStatusNext;
-			g_HardDisk[unit].hd_status_prev = diskStatusPrev;
+			m_hardDiskDrive[unit].hd_status_next = diskStatusNext;
+			m_hardDiskDrive[unit].hd_status_prev = diskStatusPrev;
 		}
 	}
 
 	return bResSelectImage;
 }
 
-bool HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, const std::string & strSaveStatePath)
+bool HarddiskInterfaceCard::HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, const std::string & strSaveStatePath)
 {
-	if (slot != 7)	// fixme
+	if (slot != SLOT7)	// fixme
 		throw std::string("Card: wrong slot");
 
 	if (version < 1 || version > kUNIT_VERSION)
@@ -887,7 +841,7 @@ bool HD_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, co
 	for (UINT i=0; i<NUM_HARDDISKS; i++)
 	{
 		HD_Unplug(i);
-		g_HardDisk[i].clear();
+		m_hardDiskDrive[i].clear();
 	}
 
 	bool bResSelectImage1 = HD_LoadSnapshotHDDUnit(yamlLoadHelper, HARDDISK_1);
