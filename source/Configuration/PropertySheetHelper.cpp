@@ -376,19 +376,9 @@ void CPropertySheetHelper::ApplyNewConfig(void)
 void CPropertySheetHelper::SaveCurrentConfig(void)
 {
 	// NB. clone-type is encoded in g_Apple2Type
-	m_ConfigOld.m_Apple2Type = GetApple2Type();
-	m_ConfigOld.m_CpuType = GetMainCpu();
-	m_ConfigOld.m_Slot[SLOT3] = GetCardMgr().QuerySlot(SLOT3);
-	m_ConfigOld.m_Slot[SLOT4] = GetCardMgr().QuerySlot(SLOT4);
-	m_ConfigOld.m_Slot[SLOT5] = GetCardMgr().QuerySlot(SLOT5);
-	m_ConfigOld.m_Slot[SLOT6] = GetCardMgr().QuerySlot(SLOT6);	// CPageDisk::HandleFloppyDriveCombo() needs this to be CT_Disk2 (temp, as will replace with PR #955)
-	m_ConfigOld.m_Slot[SLOT7] = GetCardMgr().QuerySlot(SLOT7);
-	m_ConfigOld.m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
-	m_ConfigOld.m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
-	m_ConfigOld.m_tfeInterface = get_tfe_interface();
+	m_ConfigOld.Reload();
 
 	// Reset flags each time:
-	m_ConfigOld.m_uSaveLoadStateMsg = 0;
 	m_bDoBenchmark = false;
 
 	// Setup ConfigNew
@@ -405,7 +395,6 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	SetSlot(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
 	HD_SetEnabled(m_ConfigOld.m_Slot[SLOT7] == CT_GenericHDD);
 	GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
-	m_ConfigNew.m_videoRefreshRate = m_ConfigOld.m_videoRefreshRate;	// Not SetVideoRefreshRate(), as this re-inits much Video/NTSC state!
 }
 
 bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged)
