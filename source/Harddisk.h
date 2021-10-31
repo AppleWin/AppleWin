@@ -97,7 +97,7 @@ public:
 
 	void Initialize(const LPBYTE pCxRomPeripheral);
 	void HD_Destroy(void);
-	bool HD_CardIsEnabled(void);
+	bool HD_CardIsEnabled(void);	// delete?
 	void HD_SetEnabled(const bool bEnabled, bool updateRegistry = true);
 	const std::string& HD_GetFullName(const int iDrive);
 	const std::string& HD_GetFullPathName(const int iDrive);
@@ -132,7 +132,7 @@ private:
 	//
 
 	bool g_bHD_RomLoaded;
-	bool g_bHD_Enabled;
+	bool g_bHD_Enabled;		// redundant?
 
 	BYTE g_nHD_UnitNum;		// b7=unit
 	BYTE g_nHD_Command;
