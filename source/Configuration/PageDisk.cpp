@@ -150,7 +150,7 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 			{
 				const BOOL checked = IsDlgButtonChecked(hWnd, IDC_HDD_ENABLE) ? TRUE : FALSE;
 				// Add some user-protection, as (currently) removing the HDD images can't be undone!
-				if (!checked && GetFrame().FrameMessageBox("This will unplug the HDD image(s)! Proceed?", "Eject/Unplug Warning", MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND) != IDNO)
+				if (checked || !checked && GetFrame().FrameMessageBox("This will unplug the HDD image(s)! Proceed?", "Eject/Unplug Warning", MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND) != IDNO)
 				{
 					m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT7] = checked ? CT_GenericHDD : CT_Empty;
 					// NB. Unusual as it creates slot object when checkbox is toggled (instead of after OK)

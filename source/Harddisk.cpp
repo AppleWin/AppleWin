@@ -127,12 +127,19 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	m_command = 0;
 
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
+
+	// if created by user in Config->Disk, then MemInitializeIO() won't be called
+	if (GetCxRomPeripheral())
+		Initialize(GetCxRomPeripheral());	// During regular start-up, Initialize() will be called later by MemInitializeIO()
 }
 
 HarddiskInterfaceCard::~HarddiskInterfaceCard(void)
 {
 	CleanupDriveInternal(HARDDISK_1);
 	CleanupDriveInternal(HARDDISK_2);
+
+	// if destroyed by user in Config->Disk, then ensure that old object's reference is removed
+	UnregisterIoHandler(m_slot);
 }
 
 void HarddiskInterfaceCard::Reset(const bool powerCycle)

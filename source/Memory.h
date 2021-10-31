@@ -60,6 +60,7 @@ const UINT kMaxExMemoryBanks = 127;	// 127 * aux mem(64K) + main mem(64K) = 8MB
 #endif
 
 void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
+void	UnregisterIoHandler(UINT uSlot);
 
 void    MemDestroy ();
 bool	MemCheckSLOTC3ROM();

@@ -1012,6 +1012,12 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 	ExpansionRom[uSlot] = pExpansionRom;
 }
 
+void UnregisterIoHandler(UINT uSlot)
+{
+	RegisterIoHandler(uSlot, NULL, NULL, NULL, NULL, NULL, NULL);
+	g_SlotInfo[uSlot].bHasCard = false;
+}
+
 // From UTAIIe:5-28: Since INTCXROM==1 then state of SLOTC3ROM is not important
 static void IoHandlerCardsOut(void)
 {
