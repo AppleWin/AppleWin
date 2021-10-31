@@ -92,14 +92,16 @@ public:
 	HarddiskInterfaceCard(UINT slot);
 	virtual ~HarddiskInterfaceCard(void);
 
+	virtual void Init(void) {}
+	virtual void Reset(const bool powerCycle);
+
+	void Initialize(const LPBYTE pCxRomPeripheral);
 	void HD_Destroy(void);
 	bool HD_CardIsEnabled(void);
 	void HD_SetEnabled(const bool bEnabled, bool updateRegistry = true);
 	const std::string& HD_GetFullName(const int iDrive);
 	const std::string& HD_GetFullPathName(const int iDrive);
 	void HD_GetFilenameAndPathForSaveState(std::string& filename, std::string& path);
-	void HD_Reset(void);
-	void HD_Load_Rom(const LPBYTE pCxRomPeripheral, const UINT uSlot);
 	bool HD_Select(const int iDrive);
 	BOOL HD_Insert(const int iDrive, const std::string& pathname);
 	void HD_Unplug(const int iDrive);
@@ -110,7 +112,7 @@ public:
 	void HD_GetLightStatus(Disk_Status_e* pDisk1Status_);
 	bool HD_ImageSwap(void);
 
-	std::string HD_GetSnapshotCardName(void);
+	static std::string HD_GetSnapshotCardName(void);
 	void HD_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	bool HD_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, const std::string& strSaveStatePath);
 

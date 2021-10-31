@@ -1791,7 +1791,7 @@ void MemInitializeIO(void)
 		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Initialize(pCxRomPeripheral, SLOT6);	// $C600 : Disk][ card
 
 	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-		HD_Load_Rom(pCxRomPeripheral, SLOT7);			// $C700 : HDD f/w
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Initialize(pCxRomPeripheral);
 }
 
 // Called by:

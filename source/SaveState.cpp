@@ -147,7 +147,10 @@ void Snapshot_GetDefaultFilenameAndPath(std::string& defaultFilename, std::strin
 {
 	// Attempt to get a default filename/path based on harddisk plugged-in or floppy disk inserted
 	// . Priority given to harddisk over floppy images
-	HD_GetFilenameAndPathForSaveState(defaultFilename, defaultPath);
+
+	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).HD_GetFilenameAndPathForSaveState(defaultFilename, defaultPath);
+
 	if (defaultFilename.empty())
 		GetCardMgr().GetDisk2CardMgr().GetFilenameAndPathForSaveState(defaultFilename, defaultPath);
 }
@@ -375,11 +378,11 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			GetCardMgr().Insert(slot, type);
 			bRes = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
-		else if (card == HD_GetSnapshotCardName())
+		else if (card == HarddiskInterfaceCard::HD_GetSnapshotCardName())
 		{
 			type = CT_GenericHDD;
 			GetCardMgr().Insert(slot, type);
-			bRes = HD_LoadSnapshot(yamlLoadHelper, slot, cardVersion, g_strSaveStatePath);
+			bRes = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).HD_LoadSnapshot(yamlLoadHelper, slot, cardVersion, g_strSaveStatePath);
 		}
 		else if (card == tfe_GetSnapshotCardName())
 		{
@@ -500,9 +503,6 @@ static void Snapshot_LoadState_v2(void)
 
 		MemReset();							// Also calls CpuInitialize()
 		GetPravets().Reset();
-
-		HD_Reset();
-		HD_SetEnabled(false);				// Set disabled & also removes card from slot 7
 
 		KeybReset();
 		GetVideo().VideoResetState();
@@ -650,7 +650,7 @@ void Snapshot_SaveState(void)
 				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).SaveSnapshot(yamlSaveHelper);
 
 			if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-				HD_SaveSnapshot(yamlSaveHelper);
+				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).HD_SaveSnapshot(yamlSaveHelper);
 
 			for (UINT slot = SLOT3; slot <= SLOT5; slot++)
 			{

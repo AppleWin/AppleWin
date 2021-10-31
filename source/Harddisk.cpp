@@ -136,6 +136,12 @@ HarddiskInterfaceCard::~HarddiskInterfaceCard(void)
 {
 }
 
+void HarddiskInterfaceCard::Reset(const bool powerCycle)
+{
+	m_hardDiskDrive[HARDDISK_1].hd_error = 0;
+	m_hardDiskDrive[HARDDISK_2].hd_error = 0;
+}
+
 //===========================================================================
 
 void HarddiskInterfaceCard::HD_CleanupDrive(const int iDrive)
@@ -222,8 +228,6 @@ void HarddiskInterfaceCard::HD_SaveLastDiskImage(const int drive)
 
 //===========================================================================
 
-static const DWORD HDDRVR_SIZE = APPLE_SLOT_SIZE;
-
 bool HarddiskInterfaceCard::HD_CardIsEnabled(void)
 {
 	return g_bHD_RomLoaded && g_bHD_Enabled;
@@ -244,23 +248,6 @@ void HarddiskInterfaceCard::HD_SetEnabled(const bool bEnabled, bool updateRegist
 		GetCardMgr().Insert(SLOT7, CT_GenericHDD, updateRegistry);
 	else
 		GetCardMgr().Remove(SLOT7);
-
-#if 0
-	// FIXME: For LoadConfiguration(), g_uSlot=7 (see definition at start of file)
-	// . g_uSlot is only really setup by HD_Load_Rom(), later on
-	RegisterIoHandler(g_uSlot, HD_IO_EMUL, HD_IO_EMUL, NULL, NULL, NULL, NULL);
-
-	LPBYTE pCxRomPeripheral = MemGetCxRomPeripheral();
-	if(pCxRomPeripheral == NULL)	// This will be NULL when called after loading value from Registry
-		return;
-
-	//
-
-	if(g_bHD_Enabled)
-		HD_Load_Rom(pCxRomPeripheral, g_uSlot);
-	else
-		memset(pCxRomPeripheral + g_uSlot*256, 0, HDDRVR_SIZE);
-#endif
 }
 
 //-------------------------------------
@@ -310,28 +297,21 @@ void HarddiskInterfaceCard::HD_GetFilenameAndPathForSaveState(std::string& filen
 
 //-------------------------------------
 
-void HarddiskInterfaceCard::HD_Reset(void)
+void HarddiskInterfaceCard::Initialize(const LPBYTE pCxRomPeripheral)
 {
-	m_hardDiskDrive[HARDDISK_1].hd_error = 0;
-	m_hardDiskDrive[HARDDISK_2].hd_error = 0;
-}
+	const DWORD HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
 
-//-------------------------------------
-
-void HarddiskInterfaceCard::HD_Load_Rom(const LPBYTE pCxRomPeripheral, const UINT uSlot)
-{
-	if(!g_bHD_Enabled)
+	if (!g_bHD_Enabled)
 		return;
 
-	BYTE* pData = GetFrame().GetResource(IDR_HDDRVR_FW, "FIRMWARE", HDDRVR_SIZE);
-	if(pData == NULL)
+	BYTE* pData = GetFrame().GetResource(IDR_HDDRVR_FW, "FIRMWARE", HARDDISK_FW_SIZE);
+	if (pData == NULL)
 		return;
 
-	m_slot = uSlot;
-	memcpy(pCxRomPeripheral + uSlot*256, pData, HDDRVR_SIZE);
+	memcpy(pCxRomPeripheral + m_slot * APPLE_SLOT_SIZE, pData, HARDDISK_FW_SIZE);
 	g_bHD_RomLoaded = true;
 
-	RegisterIoHandler(uSlot, IORead, IOWrite, NULL, NULL, this, NULL);
+	RegisterIoHandler(m_slot, IORead, IOWrite, NULL, NULL, this, NULL);
 }
 
 void HarddiskInterfaceCard::HD_Destroy(void)
@@ -469,8 +449,8 @@ bool HarddiskInterfaceCard::HD_IsDriveUnplugged(const int iDrive)
 
 BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	UINT uSlot = ((addr & 0xff) >> 4) - 8;
-	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(uSlot);
+	const UINT slot = ((addr & 0xff) >> 4) - 8;
+	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
 
 	BYTE r = DEVICE_OK;
 	if (!pCard->HD_CardIsEnabled())
@@ -615,7 +595,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 #if HD_LED
 		pHDD->hd_status_next = DISK_STATUS_OFF;
 #endif
-		return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+		r = IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 #if HD_LED
@@ -632,8 +612,8 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 
 BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	UINT uSlot = ((addr & 0xff) >> 4) - 8;
-	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(uSlot);
+	const UINT slot = ((addr & 0xff) >> 4) - 8;
+	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
 
 	BYTE r = DEVICE_OK;
 	if (!pCard->HD_CardIsEnabled())
@@ -671,7 +651,7 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 #if HD_LED
 		pHDD->hd_status_next = DISK_STATUS_OFF;
 #endif
-		return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
+		r = IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 #if HD_LED
