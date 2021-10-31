@@ -330,10 +330,8 @@ BOOL HarddiskInterfaceCard::Insert(const int iDrive, const std::string& pathname
 
 	m_hardDiskDrive[iDrive].m_imageloaded = (Error == eIMAGE_ERROR_NONE);
 
-#if HD_LED
 	m_hardDiskDrive[iDrive].m_status_next = DISK_STATUS_OFF;
 	m_hardDiskDrive[iDrive].m_status_prev = DISK_STATUS_OFF;
-#endif
 
 	if (Error == eIMAGE_ERROR_NONE)
 	{
@@ -426,10 +424,8 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->m_unitNum >> 7]);	// bit7 = drive select
 
 	BYTE r = DEVICE_OK;
-
-#if HD_LED
 	pHDD->m_status_next = DISK_STATUS_READ;
-#endif
+
 	switch (addr & 0xF)
 	{
 		case 0x0:
@@ -471,9 +467,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 						break;
 					case 0x02: //write
 						{
-#if HD_LED
 							pHDD->m_status_next = DISK_STATUS_WRITE;
-#endif
 							bool bRes = true;
 							const bool bAppendBlocks = (pHDD->m_diskblock * HD_BLOCK_SIZE) >= ImageGetImageSize(pHDD->m_imagehandle);
 
@@ -510,25 +504,19 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 						}
 						break;
 					case 0x03: //format
-#if HD_LED
 						pHDD->m_status_next = DISK_STATUS_WRITE;
-#endif
 						break;
 				}
 			}
 			else
 			{
-#if HD_LED
 				pHDD->m_status_next = DISK_STATUS_OFF;
-#endif
 				pHDD->m_error = 1;
 				r = DEVICE_UNKNOWN_ERROR;
 			}
 		break;
 	case 0x1: // m_error
-#if HD_LED
 		pHDD->m_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
-#endif
 		if (pHDD->m_error)
 		{
 			_ASSERT(pHDD->m_error & 1);
@@ -561,20 +549,11 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 			pHDD->m_buf_ptr++;
 		break;
 	default:
-#if HD_LED
 		pHDD->m_status_next = DISK_STATUS_OFF;
-#endif
 		r = IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
-#if HD_LED
-	if( pHDD->m_status_prev != pHDD->m_status_next ) // Update LEDs if state changes
-	{
-		pHDD->m_status_prev = pHDD->m_status_next;
-		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
-	}
-#endif
-
+	pCard->UpdateLightStatus(pHDD);
 	return r;
 }
 
@@ -587,10 +566,8 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->m_unitNum >> 7]);	// bit7 = drive select
 
 	BYTE r = DEVICE_OK;
-
-#if HD_LED
 	pHDD->m_status_next = DISK_STATUS_PROT; // TODO: FIXME: If we ever enable write-protect on HD then need to change to something else ...
-#endif
+
 	switch (addr & 0xF)
 	{
 	case 0x2:
@@ -615,24 +592,24 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 		pHDD->m_diskblock = (pHDD->m_diskblock & 0x00FF) | (d << 8);
 		break;
 	default:
-#if HD_LED
 		pHDD->m_status_next = DISK_STATUS_OFF;
-#endif
 		r = IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
-#if HD_LED
+	pCard->UpdateLightStatus(pHDD);
+	return r;
+}
+
+//===========================================================================
+
+void HarddiskInterfaceCard::UpdateLightStatus(HardDiskDrive* pHDD)
+{
 	if (pHDD->m_status_prev != pHDD->m_status_next) // Update LEDs if state changes
 	{
 		pHDD->m_status_prev = pHDD->m_status_next;
 		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 	}
-#endif
-
-	return r;
 }
-
-//===========================================================================
 
 void HarddiskInterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status)
 {

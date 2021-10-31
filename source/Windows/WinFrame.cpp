@@ -741,12 +741,9 @@ void Win32Frame::DrawStatusArea (HDC passdc, int drawflags)
 	int  y      = buttony+BUTTONS*BUTTONCY+1;
 	const bool bCaps = KeybGetCapsStatus();
 
-#if HD_LED
-	// 1.19.0.0 Hard Disk Status/Indicator Light
 	Disk_Status_e eHardDriveStatus = DISK_STATUS_OFF;
 	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
 		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).GetLightStatus(&eHardDriveStatus);
-#endif
 
 	if (g_bIsFullScreen)
 	{
@@ -765,11 +762,9 @@ void Win32Frame::DrawStatusArea (HDC passdc, int drawflags)
 				FrameDrawDiskStatus(dc);
 			}
 
-#if HD_LED
 			SetTextAlign(dc, TA_RIGHT | TA_TOP);
 			SetTextColor(dc, g_aDiskFullScreenColorsLED[ eHardDriveStatus ] );
 			TextOut(dc,x+23,y+2,TEXT("H"),1);
-#endif
 
 			if (!IS_APPLE2)
 			{
@@ -850,11 +845,8 @@ void Win32Frame::DrawStatusArea (HDC passdc, int drawflags)
 					case A2TYPE_PRAVETS8A     : DrawBitmapRect(dc,x+31,y+17,&rCapsLed,g_hCapsBitmapP8  [bCaps != 0]); break;
 				}
 
-#if HD_LED
-				// 1.19.0.0 Hard Disk Status/Indicator Light
 				RECT rDiskLed = {0,0,8,8};
 				DrawBitmapRect(dc,x+12,y+18,&rDiskLed,g_hDiskWindowedLED[eHardDriveStatus]);
-#endif
 			}
 		}
 

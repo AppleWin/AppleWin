@@ -27,9 +27,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskImage.h"
 #include "DiskImageHelper.h"
 
-// 1.19.0.0 Hard Disk Status/Indicator Light
-#define HD_LED 1
-
 enum HardDrive_e
 {
 	HARDDISK_1 = 0,
@@ -60,10 +57,8 @@ public:
 		m_buf_ptr = 0;
 		m_imageloaded = false;
 		memset(m_buf, 0, sizeof(m_buf));
-#if HD_LED
 		m_status_next = DISK_STATUS_OFF;
 		m_status_prev = DISK_STATUS_OFF;
-#endif
 	}
 
 	// From FloppyDisk
@@ -80,10 +75,8 @@ public:
 	bool m_imageloaded;
 	BYTE m_buf[HD_BLOCK_SIZE];
 
-#if HD_LED
 	Disk_Status_e m_status_next;
 	Disk_Status_e m_status_prev;
-#endif
 };
 
 class HarddiskInterfaceCard : public Card
@@ -122,6 +115,7 @@ private:
 	void SaveLastDiskImage(const int drive);
 	const std::string& DiskGetBaseName(const int iDrive);
 	bool SelectImage(const int drive, LPCSTR pszFilename);
+	void UpdateLightStatus(HardDiskDrive* pHDD);
 
 	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
