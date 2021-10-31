@@ -48,41 +48,41 @@ public:
 
 	void clear()
 	{
-		imagename.clear();
-		fullname.clear();
-		strFilenameInZip.clear();
-		imagehandle = NULL;
-		bWriteProtected = false;
+		m_imagename.clear();
+		m_fullname.clear();
+		m_strFilenameInZip.clear();
+		m_imagehandle = NULL;
+		m_bWriteProtected = false;
 		//
-		hd_error = 0;
-		hd_memblock = 0;
-		hd_diskblock = 0;
-		hd_buf_ptr = 0;
-		hd_imageloaded = false;
-		memset(hd_buf, 0, sizeof(hd_buf));
+		m_error = 0;
+		m_memblock = 0;
+		m_diskblock = 0;
+		m_buf_ptr = 0;
+		m_imageloaded = false;
+		memset(m_buf, 0, sizeof(m_buf));
 #if HD_LED
-		hd_status_next = DISK_STATUS_OFF;
-		hd_status_prev = DISK_STATUS_OFF;
+		m_status_next = DISK_STATUS_OFF;
+		m_status_prev = DISK_STATUS_OFF;
 #endif
 	}
 
 	// From FloppyDisk
-	std::string	imagename;	// <FILENAME> (ie. no extension)
-	std::string fullname;	// <FILENAME.EXT> or <FILENAME.zip>
-	std::string strFilenameInZip;					// ""             or <FILENAME.EXT> [not used]
-	ImageInfo* imagehandle;			// Init'd by HD_Insert() -> ImageOpen()
-	bool bWriteProtected;			// Needed for ImageOpen() [otherwise not used]
+	std::string	m_imagename;	// <FILENAME> (ie. no extension)
+	std::string m_fullname;	// <FILENAME.EXT> or <FILENAME.zip>
+	std::string m_strFilenameInZip;					// ""             or <FILENAME.EXT> [not used]
+	ImageInfo* m_imagehandle;			// Init'd by HD_Insert() -> ImageOpen()
+	bool m_bWriteProtected;			// Needed for ImageOpen() [otherwise not used]
 	//
-	BYTE hd_error;		// NB. Firmware requires that b0=0 (OK) or b0=1 (Error)
-	WORD hd_memblock;
-	UINT hd_diskblock;
-	WORD hd_buf_ptr;
-	bool hd_imageloaded;
-	BYTE hd_buf[HD_BLOCK_SIZE];
+	BYTE m_error;		// NB. Firmware requires that b0=0 (OK) or b0=1 (Error)
+	WORD m_memblock;
+	UINT m_diskblock;
+	WORD m_buf_ptr;
+	bool m_imageloaded;
+	BYTE m_buf[HD_BLOCK_SIZE];
 
 #if HD_LED
-	Disk_Status_e hd_status_next;
-	Disk_Status_e hd_status_prev;
+	Disk_Status_e m_status_next;
+	Disk_Status_e m_status_prev;
 #endif
 };
 
@@ -131,7 +131,7 @@ private:
 	BYTE m_unitNum;			// b7=unit
 	BYTE m_command;
 
-	bool m_bSaveDiskImage;	// Save the DiskImage name to Registry
+	bool m_saveDiskImage;	// Save the DiskImage name to Registry
 	UINT m_slot;
 
 	HardDiskDrive m_hardDiskDrive[NUM_HARDDISKS];
