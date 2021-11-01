@@ -714,12 +714,12 @@ namespace sa2
 
   void SDLFrame::ResetHardware()
   {
-    myHardwareConfig = CConfigNeedingRestart(GetPropertySheet().GetTheFreezesF8Rom());
+    myHardwareConfig.Reload();
   }
 
   bool SDLFrame::HardwareChanged() const
   {
-    const CConfigNeedingRestart currentConfig(GetPropertySheet().GetTheFreezesF8Rom());
+    const CConfigNeedingRestart currentConfig = CConfigNeedingRestart::Create();
     return myHardwareConfig != currentConfig;
   }
 
