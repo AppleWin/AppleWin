@@ -1012,6 +1012,12 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 	ExpansionRom[uSlot] = pExpansionRom;
 }
 
+void UnregisterIoHandler(UINT uSlot)
+{
+	RegisterIoHandler(uSlot, NULL, NULL, NULL, NULL, NULL, NULL);
+	g_SlotInfo[uSlot].bHasCard = false;
+}
+
 // From UTAIIe:5-28: Since INTCXROM==1 then state of SLOTC3ROM is not important
 static void IoHandlerCardsOut(void)
 {
@@ -1784,14 +1790,14 @@ void MemInitializeIO(void)
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 	{
-		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).Initialize(pCxRomPeripheral, SLOT5);	// $C500 : Disk][ card
+		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).Initialize(pCxRomPeripheral);	// $C500 : Disk][ card
 	}
 
 	if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
-		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Initialize(pCxRomPeripheral, SLOT6);	// $C600 : Disk][ card
+		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Initialize(pCxRomPeripheral);	// $C600 : Disk][ card
 
 	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-		HD_Load_Rom(pCxRomPeripheral, SLOT7);			// $C700 : HDD f/w
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Initialize(pCxRomPeripheral);
 }
 
 // Called by:

@@ -782,7 +782,7 @@ static void RepeatInitialization(void)
 
 			if (g_cmdLine.bSlotEmpty[SLOT7])
 			{
-				HD_SetEnabled(false);		// Disable HDD controller, and persist this to Registry/conf.ini (consistent with other '-sn empty' cmds)
+				GetCardMgr().Remove(SLOT7);	// Disable HDD controller, and persist this to Registry/conf.ini (consistent with other '-sn empty' cmds)
 				Snapshot_UpdatePath();		// If save-state's filename is a harddisk, and the floppy is in the same path, then the filename won't be updated
 			}
 		}
@@ -821,7 +821,8 @@ static void RepeatInitialization(void)
 		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call Disk2Card's Reset():
 		GetCardMgr().GetDisk2CardMgr().Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 		LogFileOutput("Main: DiskReset()\n");
-		HD_Reset();		// GH#515
+		if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
+			dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Reset(true);	// GH#515
 		LogFileOutput("Main: HDDReset()\n");
 
 		if (!g_bSysClkOK)
@@ -916,7 +917,7 @@ static void Shutdown(void)
 		CloseHandle(g_hCustomRom);
 
 	if (g_cmdLine.bSlot7EmptyOnExit)
-		UnplugHardDiskControllerCard();
+		GetCardMgr().Remove(SLOT7);
 }
 
 IPropertySheet& GetPropertySheet(void)

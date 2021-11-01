@@ -267,11 +267,6 @@ void LoadConfiguration(void)
 					tfe_init(true);
 				}
 			}
-			else if (slot == SLOT7)
-			{
-				if ((SS_CARDTYPE)dwTmp == CT_GenericHDD)	// TODO: move this to when HarddiskInterfaceCard object is instantiated
-					HD_SetEnabled(true, false);
-			}
 		}
 		else	// legacy (AppleWin 1.30.3 or earlier)
 		{
@@ -296,7 +291,7 @@ void LoadConfiguration(void)
 			else if (slot == SLOT5 && REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
 				GetCardMgr().Insert(SLOT5, (SS_CARDTYPE)dwTmp);
 			else if (slot == SLOT7 && REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
-				HD_SetEnabled(dwTmp ? true : false);
+				GetCardMgr().Insert(SLOT7, (SS_CARDTYPE)dwTmp);
 		}
 	}
 
@@ -314,8 +309,11 @@ void LoadConfiguration(void)
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
-	HD_LoadLastDiskImage(HARDDISK_1);
-	HD_LoadLastDiskImage(HARDDISK_2);
+	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
+	{
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).LoadLastDiskImage(HARDDISK_1);
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).LoadLastDiskImage(HARDDISK_2);
+	}
 
 	//
 
@@ -401,16 +399,20 @@ static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 
 static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
 {
+	_ASSERT(GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD);
+	if (GetCardMgr().QuerySlot(SLOT7) != CT_GenericHDD)
+		return false;
+
 	if (szFileName[0] == '\0')
 	{
-		HD_Unplug(nDrive);
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Unplug(nDrive);
 		return true;
 	}
 
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
-	BOOL bRes = HD_Insert(nDrive, strPathName);
+	BOOL bRes = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Insert(nDrive, strPathName);
 	bool res = (bRes == TRUE);
 	if (res)
 		SetCurrentDir(strPathName);
@@ -454,7 +456,8 @@ void InsertHardDisks(LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 	if (!szImageName_harddisk[HARDDISK_1] && !szImageName_harddisk[HARDDISK_2])
 		return;
 
-	HD_SetEnabled(true);	// Enable the Harddisk controller card
+	if (GetCardMgr().QuerySlot(SLOT7) != CT_GenericHDD)
+		GetCardMgr().Insert(SLOT7, CT_GenericHDD);	// Enable the Harddisk controller card
 
 	bool bRes = true;
 
@@ -474,11 +477,6 @@ void InsertHardDisks(LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 
 	if (!bRes)
 		GetFrame().FrameMessageBox("Failed to insert harddisk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
-}
-
-void UnplugHardDiskControllerCard(void)
-{
-	HD_SetEnabled(false);
 }
 
 void GetAppleWindowTitle()
@@ -541,7 +539,8 @@ void GetAppleWindowTitle()
 void ResetMachineState()
 {
 	GetCardMgr().GetDisk2CardMgr().Reset(true);
-	HD_Reset();
+	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Reset(true);
 	g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
 	MemReset();	// calls CpuInitialize(), CNoSlotClock.Reset()
@@ -595,7 +594,8 @@ void CtrlReset()
 
 	GetPravets().Reset();
 	GetCardMgr().GetDisk2CardMgr().Reset();
-	HD_Reset();
+	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Reset(true);
 	KeybReset();
 	if (GetCardMgr().IsSSCInstalled())
 		GetCardMgr().GetSSC()->CommReset();
