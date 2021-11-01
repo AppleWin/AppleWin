@@ -17,7 +17,7 @@ public:
 	void InitializeIO(LPBYTE pCxRomPeripheral);
 //	void Uninitialize();
 	void Reset();
-	UINT GetSlot(void) { return m_uSlot; }
+	UINT GetSlot(void) { return m_slot; }
 	static BYTE __stdcall IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 
@@ -106,7 +106,6 @@ protected:
 //	bool	m_bActive;		// Mouse h/w is active within the Apple][ VM
 	bool	m_bEnabled;		// Windows' mouse events get passed to Apple]['s mouse h/w (m_bEnabled == true implies that m_bActive == true)
 	LPBYTE	m_pSlotRom;
-	UINT	m_uSlot;
 
 	SyncEvent m_syncEvent;
 };

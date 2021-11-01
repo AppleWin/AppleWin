@@ -59,16 +59,16 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = m_pSSC = new CSuperSerialCard(slot);
 		break;
 	case CT_MockingboardC:
-		m_slot[slot] = new DummyCard(type);
+		m_slot[slot] = new DummyCard(type, slot);
 		break;
 	case CT_GenericPrinter:
-		m_slot[slot] = new DummyCard(type);
+		m_slot[slot] = new DummyCard(type, slot);
 		break;
 	case CT_GenericHDD:
 		m_slot[slot] = new HarddiskInterfaceCard(slot);
 		break;
 	case CT_GenericClock:
-		m_slot[slot] = new DummyCard(type);
+		m_slot[slot] = new DummyCard(type, slot);
 		break;
 	case CT_MouseInterface:
 		_ASSERT(m_pMouseCard == NULL);
@@ -76,19 +76,19 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = m_pMouseCard = new CMouseInterface(slot);
 		break;
 	case CT_Z80:
-		m_slot[slot] = new DummyCard(type);
+		m_slot[slot] = new DummyCard(type, slot);
 		break;
 	case CT_Phasor:
-		m_slot[slot] = new DummyCard(type);
+		m_slot[slot] = new DummyCard(type, slot);
 		break;
 	case CT_Echo:
-		m_slot[slot] = new DummyCard(type);
+		m_slot[slot] = new DummyCard(type, slot);
 		break;
 	case CT_SAM:
 		m_slot[slot] = new SAMCard(slot);
 		break;
 	case CT_Uthernet:
-		m_slot[slot] = new DummyCard(type);
+		m_slot[slot] = new DummyCard(type, slot);
 		break;
 	case CT_FourPlay:
 		m_slot[slot] = new FourPlayCard(slot);
@@ -106,7 +106,7 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 				break;
 			}
 		}
-		m_slot[slot] = new DummyCard(type);
+		m_slot[slot] = new DummyCard(type, slot);
 		break;
 
 	case CT_LanguageCardIIe:	// not a card
@@ -153,13 +153,13 @@ void CardManager::InsertAuxInternal(SS_CARDTYPE type)
 		m_aux = new EmptyCard;
 		break;
 	case CT_80Col:
-		m_aux = new DummyCard(type);
+		m_aux = new DummyCard(type, SLOT_AUX);
 		break;
 	case CT_Extended80Col:
-		m_aux = new DummyCard(type);
+		m_aux = new DummyCard(type, SLOT_AUX);
 		break;
 	case CT_RamWorksIII:
-		m_aux = new DummyCard(type);
+		m_aux = new DummyCard(type, SLOT_AUX);
 		break;
 	default:
 		_ASSERT(0);

@@ -7,8 +7,7 @@ class SNESMAXCard : public Card
 {
 public:
 	SNESMAXCard(UINT slot) :
-		Card(CT_SNESMAX),
-		m_slot(slot)
+		Card(CT_SNESMAX, slot)
 	{
 		m_buttonIndex = 0;
 		m_controller1Buttons = 0;
@@ -32,8 +31,6 @@ public:
 	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 private:
-	UINT m_slot;
-
 	UINT m_buttonIndex;
 	UINT m_controller1Buttons;
 	UINT m_controller2Buttons;

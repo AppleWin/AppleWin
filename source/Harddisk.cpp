@@ -117,8 +117,7 @@ Overview
 
 
 HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
-	Card(CT_GenericHDD),
-	m_slot(slot)
+	Card(CT_GenericHDD, slot)
 {
 	m_unitNum = HARDDISK_1 << 7;	// b7=unit
 

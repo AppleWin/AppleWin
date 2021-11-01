@@ -65,8 +65,7 @@ SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 //===========================================================================
 
 CSuperSerialCard::CSuperSerialCard(UINT slot) :
-	Card(CT_SSC),
-	m_uSlot(slot),
+	Card(CT_SSC, slot),
 	m_aySerialPortChoices(NULL),
 	m_uTCPChoiceItemIdx(0),
 	m_bCfgSupportDCD(false),
@@ -90,7 +89,7 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	//
 
 	char serialPortName[CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM];
-	std::string& regSection = RegGetConfigSlotSection(m_uSlot);
+	std::string& regSection = RegGetConfigSlotSection(m_slot);
 	RegLoadString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, TRUE, serialPortName, sizeof(serialPortName), TEXT(""));
 
 	SetSerialPortName(serialPortName);
@@ -952,7 +951,7 @@ void CSuperSerialCard::InitializeIO(LPBYTE pCxRomPeripheral)
 	if(pData == NULL)
 		return;
 
-	memcpy(pCxRomPeripheral + m_uSlot*SSC_SLOT_FW_SIZE, pData+SSC_SLOT_FW_OFFSET, SSC_SLOT_FW_SIZE);
+	memcpy(pCxRomPeripheral + m_slot*SSC_SLOT_FW_SIZE, pData+SSC_SLOT_FW_OFFSET, SSC_SLOT_FW_SIZE);
 
 	// Expansion ROM
 	if (m_pExpansionRom == NULL)
@@ -965,7 +964,7 @@ void CSuperSerialCard::InitializeIO(LPBYTE pCxRomPeripheral)
 
 	//
 
-	RegisterIoHandler(m_uSlot, &CSuperSerialCard::SSC_IORead, &CSuperSerialCard::SSC_IOWrite, NULL, NULL, this, m_pExpansionRom);
+	RegisterIoHandler(m_slot, &CSuperSerialCard::SSC_IORead, &CSuperSerialCard::SSC_IOWrite, NULL, NULL, this, m_pExpansionRom);
 }
 
 //===========================================================================
@@ -1393,7 +1392,7 @@ void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 
 void CSuperSerialCard::SetRegistrySerialPortName(void)
 {
-	std::string& regSection = RegGetConfigSlotSection(m_uSlot);
+	std::string& regSection = RegGetConfigSlotSection(m_slot);
 	RegSaveString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, TRUE, GetSerialPortName());
 }
 
@@ -1447,7 +1446,7 @@ void CSuperSerialCard::SaveSnapshotDIPSW(YamlSaveHelper& yamlSaveHelper, std::st
 
 void CSuperSerialCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_uSlot, kUNIT_VERSION);
+	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	SaveSnapshotDIPSW(yamlSaveHelper, SS_YAML_KEY_DIPSWDEFAULT, m_DIPSWDefault);

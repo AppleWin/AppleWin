@@ -6,8 +6,7 @@ class SAMCard : public Card
 {
 public:
 	SAMCard(UINT slot) :
-		Card(CT_SAM),
-		m_slot(slot)
+		Card(CT_SAM, slot)
 	{
 	}
 	virtual ~SAMCard(void) {}
@@ -24,5 +23,5 @@ public:
 	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 private:
-	UINT m_slot;
+	// no state
 };

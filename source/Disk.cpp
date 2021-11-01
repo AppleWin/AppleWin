@@ -58,8 +58,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 const BYTE Disk2InterfaceCard::m_T00S00Pattern[] = {0xD5,0xAA,0x96,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xDE};
 
 Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
-	Card(CT_Disk2),
-	m_slot(slot)
+	Card(CT_Disk2, slot)
 {
 	ResetSwitches();
 

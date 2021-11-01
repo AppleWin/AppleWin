@@ -127,7 +127,6 @@ private:
 	BYTE m_command;
 
 	bool m_saveDiskImage;	// Save the DiskImage name to Registry
-	UINT m_slot;
 
 	HardDiskDrive m_hardDiskDrive[NUM_HARDDISKS];
 };

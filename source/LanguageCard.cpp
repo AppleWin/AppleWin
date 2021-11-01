@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 const UINT LanguageCardUnit::kMemModeInitialState = MF_BANK2 | MF_WRITERAM;	// !INTCXROM
 
 LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type/*=CT_LanguageCardIIe*/) :
-	Card(type),
+	Card(type, kSlot0),
 	m_uLastRamWrite(0)
 {
 	SetMemMainLanguageCard(NULL, true);

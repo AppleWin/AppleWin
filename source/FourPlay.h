@@ -6,8 +6,7 @@ class FourPlayCard : public Card
 {
 public:
 	FourPlayCard(UINT slot) :
-		Card(CT_FourPlay),
-		m_slot(slot)
+		Card(CT_FourPlay, slot)
 	{
 	}
 	virtual ~FourPlayCard(void) {}
@@ -27,6 +26,4 @@ public:
 
 private:
 	static BYTE MyGetAsyncKeyState(int vKey);
-
-	UINT m_slot;
 };

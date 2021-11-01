@@ -141,7 +141,6 @@ private:
 	OVERLAPPED m_o;
 
 	BYTE* m_pExpansionRom;
-	UINT m_uSlot;
 
 	bool m_bCfgSupportDCD;
 	UINT m_uDTR;
