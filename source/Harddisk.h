@@ -88,7 +88,7 @@ public:
 	virtual void Init(void) {}
 	virtual void Reset(const bool powerCycle);
 
-	void Initialize(const LPBYTE pCxRomPeripheral);
+	void InitializeIO(const LPBYTE pCxRomPeripheral);
 	void Destroy(void);
 	const std::string& GetFullName(const int iDrive);
 	const std::string& HarddiskGetFullPathName(const int iDrive);

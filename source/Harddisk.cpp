@@ -130,7 +130,7 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 
 	// if created by user in Config->Disk, then MemInitializeIO() won't be called
 	if (GetCxRomPeripheral())
-		Initialize(GetCxRomPeripheral());	// During regular start-up, Initialize() will be called later by MemInitializeIO()
+		InitializeIO(GetCxRomPeripheral());	// During regular start-up, Initialize() will be called later by MemInitializeIO()
 }
 
 HarddiskInterfaceCard::~HarddiskInterfaceCard(void)
@@ -146,6 +146,21 @@ void HarddiskInterfaceCard::Reset(const bool powerCycle)
 {
 	m_hardDiskDrive[HARDDISK_1].m_error = 0;
 	m_hardDiskDrive[HARDDISK_2].m_error = 0;
+}
+
+//===========================================================================
+
+void HarddiskInterfaceCard::InitializeIO(const LPBYTE pCxRomPeripheral)
+{
+	const DWORD HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
+
+	BYTE* pData = GetFrame().GetResource(IDR_HDDRVR_FW, "FIRMWARE", HARDDISK_FW_SIZE);
+	if (pData == NULL)
+		return;
+
+	memcpy(pCxRomPeripheral + m_slot * APPLE_SLOT_SIZE, pData, HARDDISK_FW_SIZE);
+
+	RegisterIoHandler(m_slot, IORead, IOWrite, NULL, NULL, this, NULL);
 }
 
 //===========================================================================
@@ -277,21 +292,6 @@ void HarddiskInterfaceCard::GetFilenameAndPathForSaveState(std::string& filename
 		_ASSERT(0);
 		break;
 	}
-}
-
-//===========================================================================
-
-void HarddiskInterfaceCard::Initialize(const LPBYTE pCxRomPeripheral)
-{
-	const DWORD HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
-
-	BYTE* pData = GetFrame().GetResource(IDR_HDDRVR_FW, "FIRMWARE", HARDDISK_FW_SIZE);
-	if (pData == NULL)
-		return;
-
-	memcpy(pCxRomPeripheral + m_slot * APPLE_SLOT_SIZE, pData, HARDDISK_FW_SIZE);
-
-	RegisterIoHandler(m_slot, IORead, IOWrite, NULL, NULL, this, NULL);
 }
 
 //===========================================================================

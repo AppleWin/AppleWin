@@ -87,9 +87,9 @@ BYTE __stdcall SAMCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG n
 	return res;
 }
 
-void SAMCard::InitializeIO(LPBYTE pCxRomPeripheral, UINT slot)
+void SAMCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-	RegisterIoHandler(slot, IO_Null, IOWrite, IO_Null, IO_Null, NULL, NULL);
+	RegisterIoHandler(m_slot, IO_Null, IOWrite, IO_Null, IO_Null, NULL, NULL);
 }
 
 //===========================================================================

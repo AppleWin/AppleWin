@@ -15,7 +15,7 @@
 // Emula a CPU Z80
 
 // Protótipos
-void ConfigureSoftcard(LPBYTE pCxRomPeripheral, UINT uSlot);
+void Z80_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot);
 
 // NB. These are in z80.cpp:
 std::string Z80_GetSnapshotCardName(void);

@@ -942,7 +942,7 @@ BYTE __stdcall CSuperSerialCard::CommDipSw(WORD, WORD addr, BYTE, BYTE, ULONG)
 
 //===========================================================================
 
-void CSuperSerialCard::CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+void CSuperSerialCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	const UINT SSC_FW_SIZE = 2*1024;
 	const UINT SSC_SLOT_FW_SIZE = 256;
@@ -952,8 +952,7 @@ void CSuperSerialCard::CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 	if(pData == NULL)
 		return;
 
-	_ASSERT(m_uSlot == uSlot);
-	memcpy(pCxRomPeripheral + uSlot*256, pData+SSC_SLOT_FW_OFFSET, SSC_SLOT_FW_SIZE);
+	memcpy(pCxRomPeripheral + m_uSlot*SSC_SLOT_FW_SIZE, pData+SSC_SLOT_FW_OFFSET, SSC_SLOT_FW_SIZE);
 
 	// Expansion ROM
 	if (m_pExpansionRom == NULL)
@@ -966,7 +965,7 @@ void CSuperSerialCard::CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 
 	//
 
-	RegisterIoHandler(uSlot, &CSuperSerialCard::SSC_IORead, &CSuperSerialCard::SSC_IOWrite, NULL, NULL, this, m_pExpansionRom);
+	RegisterIoHandler(m_uSlot, &CSuperSerialCard::SSC_IORead, &CSuperSerialCard::SSC_IOWrite, NULL, NULL, this, m_pExpansionRom);
 }
 
 //===========================================================================

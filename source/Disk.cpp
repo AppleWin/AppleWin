@@ -74,7 +74,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 
 	// if created by user in Config->Disk, then MemInitializeIO() won't be called
 	if (GetCxRomPeripheral())
-		Initialize(GetCxRomPeripheral());	// During regular start-up, Initialize() will be called later by MemInitializeIO()
+		InitializeIO(GetCxRomPeripheral());	// During regular start-up, Initialize() will be called later by MemInitializeIO()
 
 	// Debug:
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
@@ -1798,7 +1798,7 @@ void Disk2InterfaceCard::InitFirmware(LPBYTE pCxRomPeripheral)
 		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_16SectorFirmware, DISK2_FW_SIZE);
 }
 
-void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral)
+void Disk2InterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	bool res = GetFirmware(IDR_DISK2_13SECTOR_FW, m_13SectorFirmware);
 	_ASSERT(res);

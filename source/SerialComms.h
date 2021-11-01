@@ -31,7 +31,7 @@ public:
 	virtual void Init(void) {};
 	virtual void Reset(const bool powerCycle) {};
 
-	void	CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot);
+	void	InitializeIO(LPBYTE pCxRomPeripheral);
 	void    CommReset();
 	void    CommDestroy();
 	void    CommSetSerialPort(DWORD dwNewSerialPortItem);

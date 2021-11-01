@@ -172,13 +172,12 @@ void CMouseInterface::InitializeROM(void)
 	memcpy(m_pSlotRom, pData, FW_SIZE);
 }
 
-void CMouseInterface::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+void CMouseInterface::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 //	m_bActive = true;
 	m_bEnabled = true;
-	_ASSERT(m_uSlot == uSlot);
 	SetSlotRom();	// Pre: m_bActive == true
-	RegisterIoHandler(uSlot, &CMouseInterface::IORead, &CMouseInterface::IOWrite, NULL, NULL, this, NULL);
+	RegisterIoHandler(m_uSlot, &CMouseInterface::IORead, &CMouseInterface::IOWrite, NULL, NULL, this, NULL);
 
 	if (m_syncEvent.m_active) g_SynchronousEventMgr.Remove(m_syncEvent.m_id);
 	m_syncEvent.m_cyclesRemaining = NTSC_GetCyclesUntilVBlank(0);
