@@ -72,6 +72,10 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 
 	ResetLogicStateSequencer();
 
+	// if created by user in Config->Disk, then MemInitializeIO() won't be called
+	if (GetCxRomPeripheral())
+		Initialize(GetCxRomPeripheral());	// During regular start-up, Initialize() will be called later by MemInitializeIO()
+
 	// Debug:
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
 	m_bLogDisk_NibblesRW = false;
@@ -86,6 +90,9 @@ Disk2InterfaceCard::~Disk2InterfaceCard(void)
 {
 	EjectDiskInternal(DRIVE_1);
 	EjectDiskInternal(DRIVE_2);
+
+	// if destroyed by user in Config->Disk, then ensure that old object's reference is removed
+	UnregisterIoHandler(m_slot);
 }
 
 bool Disk2InterfaceCard::GetEnhanceDisk(void) { return m_enhanceDisk; }
@@ -1791,8 +1798,7 @@ void Disk2InterfaceCard::InitFirmware(LPBYTE pCxRomPeripheral)
 		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_16SectorFirmware, DISK2_FW_SIZE);
 }
 
-// TODO: LoadRom_Disk_Floppy()
-void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral)
 {
 	bool res = GetFirmware(IDR_DISK2_13SECTOR_FW, m_13SectorFirmware);
 	_ASSERT(res);
@@ -1807,10 +1813,7 @@ void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 	// . Patching the firmware breaks the ADC checksum used by "The CIA Files" (Tricky Dick)
 	// . In this case we can patch to compensate for an ADC or EOR checksum but not both (nickw)
 
-	_ASSERT(m_slot == uSlot);
-	RegisterIoHandler(uSlot, &Disk2InterfaceCard::IORead, &Disk2InterfaceCard::IOWrite, NULL, NULL, this, NULL);
-
-	m_slot = uSlot;
+	RegisterIoHandler(m_slot, &Disk2InterfaceCard::IORead, &Disk2InterfaceCard::IOWrite, NULL, NULL, this, NULL);
 
 	InitFirmware(pCxRomPeripheral);
 }

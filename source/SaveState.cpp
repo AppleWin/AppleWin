@@ -578,9 +578,6 @@ void Snapshot_LoadState()
 
 //-----------------------------------------------------------------------------
 
-// todo:
-// . Uthernet card
-
 void Snapshot_SaveState(void)
 {
 	try
