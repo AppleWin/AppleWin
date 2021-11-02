@@ -58,8 +58,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 const BYTE Disk2InterfaceCard::m_T00S00Pattern[] = {0xD5,0xAA,0x96,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xDE};
 
 Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
-	Card(CT_Disk2),
-	m_slot(slot)
+	Card(CT_Disk2, slot)
 {
 	ResetSwitches();
 
@@ -71,6 +70,10 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	m_is13SectorFirmware = false;
 
 	ResetLogicStateSequencer();
+
+	// if created by user in Config->Disk, then MemInitializeIO() won't be called
+	if (GetCxRomPeripheral())
+		InitializeIO(GetCxRomPeripheral());	// During regular start-up, Initialize() will be called later by MemInitializeIO()
 
 	// Debug:
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
@@ -86,6 +89,9 @@ Disk2InterfaceCard::~Disk2InterfaceCard(void)
 {
 	EjectDiskInternal(DRIVE_1);
 	EjectDiskInternal(DRIVE_2);
+
+	// if destroyed by user in Config->Disk, then ensure that old object's reference is removed
+	UnregisterIoHandler(m_slot);
 }
 
 bool Disk2InterfaceCard::GetEnhanceDisk(void) { return m_enhanceDisk; }
@@ -1791,8 +1797,7 @@ void Disk2InterfaceCard::InitFirmware(LPBYTE pCxRomPeripheral)
 		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_16SectorFirmware, DISK2_FW_SIZE);
 }
 
-// TODO: LoadRom_Disk_Floppy()
-void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+void Disk2InterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	bool res = GetFirmware(IDR_DISK2_13SECTOR_FW, m_13SectorFirmware);
 	_ASSERT(res);
@@ -1807,10 +1812,7 @@ void Disk2InterfaceCard::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
 	// . Patching the firmware breaks the ADC checksum used by "The CIA Files" (Tricky Dick)
 	// . In this case we can patch to compensate for an ADC or EOR checksum but not both (nickw)
 
-	_ASSERT(m_slot == uSlot);
-	RegisterIoHandler(uSlot, &Disk2InterfaceCard::IORead, &Disk2InterfaceCard::IOWrite, NULL, NULL, this, NULL);
-
-	m_slot = uSlot;
+	RegisterIoHandler(m_slot, &Disk2InterfaceCard::IORead, &Disk2InterfaceCard::IOWrite, NULL, NULL, this, NULL);
 
 	InitFirmware(pCxRomPeripheral);
 }

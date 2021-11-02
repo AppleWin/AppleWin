@@ -202,9 +202,9 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 	return 0;
 }
 
-void SNESMAXCard::InitializeIO(LPBYTE pCxRomPeripheral, UINT slot)
+void SNESMAXCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-	RegisterIoHandler(slot, &SNESMAXCard::IORead, &SNESMAXCard::IOWrite, IO_Null, IO_Null, this, NULL);
+	RegisterIoHandler(m_slot, &SNESMAXCard::IORead, &SNESMAXCard::IOWrite, IO_Null, IO_Null, this, NULL);
 }
 
 //===========================================================================

@@ -31,7 +31,7 @@ public:
 	virtual void Init(void) {};
 	virtual void Reset(const bool powerCycle) {};
 
-	void	CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot);
+	void	InitializeIO(LPBYTE pCxRomPeripheral);
 	void    CommReset();
 	void    CommDestroy();
 	void    CommSetSerialPort(DWORD dwNewSerialPortItem);
@@ -141,7 +141,6 @@ private:
 	OVERLAPPED m_o;
 
 	BYTE* m_pExpansionRom;
-	UINT m_uSlot;
 
 	bool m_bCfgSupportDCD;
 	UINT m_uDTR;

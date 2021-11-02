@@ -31,13 +31,16 @@ enum SLOTS { SLOT0=0, SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6, SLOT7, NUM_SLOTS
 class Card
 {
 public:
-	Card(void) : m_type(CT_Empty) {}
-	Card(SS_CARDTYPE type) : m_type(type) {}
+	Card(void) : m_type(CT_Empty), m_slot(SLOT0) {}
+	Card(SS_CARDTYPE type, UINT slot) : m_type(type), m_slot(slot) {}
 	virtual ~Card(void) {}
 
 	virtual void Init(void) = 0;
 	virtual void Reset(const bool powerCycle) = 0;
 	SS_CARDTYPE QueryType(void) { return m_type; }
+
+protected:
+	UINT m_slot;
 
 private:
 	SS_CARDTYPE m_type;
@@ -60,7 +63,7 @@ public:
 class DummyCard : public Card	// For cards that currently can't be instantiated (ie. don't exist as a class)
 {
 public:
-	DummyCard(SS_CARDTYPE type) : Card(type) {}
+	DummyCard(SS_CARDTYPE type, UINT slot) : Card(type, slot) {}
 	virtual ~DummyCard(void) {}
 
 	virtual void Init(void) {};

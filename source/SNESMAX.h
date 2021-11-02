@@ -7,8 +7,7 @@ class SNESMAXCard : public Card
 {
 public:
 	SNESMAXCard(UINT slot) :
-		Card(CT_SNESMAX),
-		m_slot(slot)
+		Card(CT_SNESMAX, slot)
 	{
 		m_buttonIndex = 0;
 		m_controller1Buttons = 0;
@@ -22,7 +21,7 @@ public:
 	virtual void Init(void) {};
 	virtual void Reset(const bool powerCycle) {};
 
-	void InitializeIO(LPBYTE pCxRomPeripheral, UINT slot);
+	void InitializeIO(LPBYTE pCxRomPeripheral);
 
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
@@ -32,8 +31,6 @@ public:
 	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 private:
-	UINT m_slot;
-
 	UINT m_buttonIndex;
 	UINT m_controller1Buttons;
 	UINT m_controller2Buttons;

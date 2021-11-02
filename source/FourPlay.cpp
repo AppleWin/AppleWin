@@ -123,9 +123,9 @@ BYTE FourPlayCard::MyGetAsyncKeyState(int vKey)
 	return GetAsyncKeyState(vKey) < 0 ? 1 : 0;
 }
 
-void FourPlayCard::InitializeIO(LPBYTE pCxRomPeripheral, UINT slot)
+void FourPlayCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-	RegisterIoHandler(slot, &FourPlayCard::IORead, IO_Null, IO_Null, IO_Null, this, NULL);
+	RegisterIoHandler(m_slot, &FourPlayCard::IORead, IO_Null, IO_Null, IO_Null, this, NULL);
 }
 
 //===========================================================================

@@ -134,9 +134,8 @@ void M6821_Listener_A( void* objTo, BYTE byData )
 //===========================================================================
 
 CMouseInterface::CMouseInterface(UINT slot) :
-	Card(CT_MouseInterface),
+	Card(CT_MouseInterface, slot),
 	m_pSlotRom(NULL),
-	m_uSlot(slot),
 	m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for MouseInterfaces
 {
 	m_6821.SetListenerB( this, M6821_Listener_B );
@@ -172,13 +171,12 @@ void CMouseInterface::InitializeROM(void)
 	memcpy(m_pSlotRom, pData, FW_SIZE);
 }
 
-void CMouseInterface::Initialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+void CMouseInterface::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 //	m_bActive = true;
 	m_bEnabled = true;
-	_ASSERT(m_uSlot == uSlot);
 	SetSlotRom();	// Pre: m_bActive == true
-	RegisterIoHandler(uSlot, &CMouseInterface::IORead, &CMouseInterface::IOWrite, NULL, NULL, this, NULL);
+	RegisterIoHandler(m_slot, &CMouseInterface::IORead, &CMouseInterface::IOWrite, NULL, NULL, this, NULL);
 
 	if (m_syncEvent.m_active) g_SynchronousEventMgr.Remove(m_syncEvent.m_id);
 	m_syncEvent.m_cyclesRemaining = NTSC_GetCyclesUntilVBlank(0);
@@ -234,9 +232,9 @@ void CMouseInterface::SetSlotRom()
 		return;
 
 	UINT uOffset = (m_by6821B << 7) & 0x0700;
-	memcpy(pCxRomPeripheral+m_uSlot*256, m_pSlotRom+uOffset, 256);
+	memcpy(pCxRomPeripheral+m_slot*256, m_pSlotRom+uOffset, 256);
 	if (mem)
-		memcpy(mem+0xC000+m_uSlot*256, m_pSlotRom+uOffset, 256);
+		memcpy(mem+0xC000+m_slot*256, m_pSlotRom+uOffset, 256);
 }
 
 //===========================================================================
@@ -658,7 +656,7 @@ void CMouseInterface::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 //	if (!m_bActive)
 //		return;
 
-	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_uSlot, 1);
+	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, 1);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	SaveSnapshotMC6821(yamlSaveHelper, SS_YAML_KEY_MC6821);

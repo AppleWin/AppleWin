@@ -6,8 +6,7 @@ class SAMCard : public Card
 {
 public:
 	SAMCard(UINT slot) :
-		Card(CT_SAM),
-		m_slot(slot)
+		Card(CT_SAM, slot)
 	{
 	}
 	virtual ~SAMCard(void) {}
@@ -15,7 +14,7 @@ public:
 	virtual void Init(void) {};
 	virtual void Reset(const bool powerCycle) {};
 
-	void InitializeIO(LPBYTE pCxRomPeripheral, UINT slot);
+	void InitializeIO(LPBYTE pCxRomPeripheral);
 
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
@@ -24,5 +23,5 @@ public:
 	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 private:
-	UINT m_slot;
+	// no state
 };

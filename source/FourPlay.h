@@ -6,8 +6,7 @@ class FourPlayCard : public Card
 {
 public:
 	FourPlayCard(UINT slot) :
-		Card(CT_FourPlay),
-		m_slot(slot)
+		Card(CT_FourPlay, slot)
 	{
 	}
 	virtual ~FourPlayCard(void) {}
@@ -15,7 +14,7 @@ public:
 	virtual void Init(void) {};
 	virtual void Reset(const bool powerCycle) {};
 
-	void InitializeIO(LPBYTE pCxRomPeripheral, UINT slot);
+	void InitializeIO(LPBYTE pCxRomPeripheral);
 
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
@@ -27,6 +26,4 @@ public:
 
 private:
 	static BYTE MyGetAsyncKeyState(int vKey);
-
-	UINT m_slot;
 };

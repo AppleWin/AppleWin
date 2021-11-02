@@ -393,7 +393,7 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	SetSlot(SLOT3, m_ConfigOld.m_Slot[SLOT3]);
 	SetSlot(SLOT4, m_ConfigOld.m_Slot[SLOT4]);
 	SetSlot(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
-	HD_SetEnabled(m_ConfigOld.m_Slot[SLOT7] == CT_GenericHDD);
+	SetSlot(SLOT7, m_ConfigOld.m_Slot[SLOT7]);
 	GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
 }
 

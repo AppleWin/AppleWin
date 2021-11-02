@@ -1012,6 +1012,12 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 	ExpansionRom[uSlot] = pExpansionRom;
 }
 
+void UnregisterIoHandler(UINT uSlot)
+{
+	RegisterIoHandler(uSlot, NULL, NULL, NULL, NULL, NULL, NULL);
+	g_SlotInfo[uSlot].bHasCard = false;
+}
+
 // From UTAIIe:5-28: Since INTCXROM==1 then state of SLOTC3ROM is not important
 static void IoHandlerCardsOut(void)
 {
@@ -1722,7 +1728,7 @@ void MemInitializeIO(void)
 		PrintLoadRom(pCxRomPeripheral, SLOT1);				// $C100 : Parallel printer f/w
 
 	if (GetCardMgr().QuerySlot(SLOT2) == CT_SSC)
-		dynamic_cast<CSuperSerialCard&>(GetCardMgr().GetRef(SLOT2)).CommInitialize(pCxRomPeripheral, SLOT2);	// $C200 : SSC
+		dynamic_cast<CSuperSerialCard&>(GetCardMgr().GetRef(SLOT2)).InitializeIO(pCxRomPeripheral);	// $C200 : SSC
 
 	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
 	{
@@ -1732,18 +1738,18 @@ void MemInitializeIO(void)
 	}
 	else if (GetCardMgr().QuerySlot(SLOT3) == CT_FourPlay)
 	{
-		dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(SLOT3)).InitializeIO(pCxRomPeripheral, SLOT3);
+		dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(SLOT3)).InitializeIO(pCxRomPeripheral);
 	}
 	else if (GetCardMgr().QuerySlot(SLOT3) == CT_SNESMAX)
 	{
-		dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(SLOT3)).InitializeIO(pCxRomPeripheral, SLOT3);
+		dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(SLOT3)).InitializeIO(pCxRomPeripheral);
 	}
 
 	// Apple//e: Auxiliary slot contains Extended 80 Column card or RamWorksIII card
 
 	if (GetCardMgr().QuerySlot(SLOT4) == CT_MouseInterface)
 	{
-		dynamic_cast<CMouseInterface&>(GetCardMgr().GetRef(SLOT4)).Initialize(pCxRomPeripheral, SLOT4);	// $C400 : Mouse f/w
+		dynamic_cast<CMouseInterface&>(GetCardMgr().GetRef(SLOT4)).InitializeIO(pCxRomPeripheral);	// $C400 : Mouse f/w
 	}
 	else if (GetCardMgr().QuerySlot(SLOT4) == CT_MockingboardC || GetCardMgr().QuerySlot(SLOT4) == CT_Phasor)
 	{
@@ -1751,7 +1757,7 @@ void MemInitializeIO(void)
 	}
 	else if (GetCardMgr().QuerySlot(SLOT4) == CT_Z80)
 	{
-		ConfigureSoftcard(pCxRomPeripheral, SLOT4);		// $C400 : Z80 card
+		Z80_InitializeIO(pCxRomPeripheral, SLOT4);		// $C400 : Z80 card
 	}
 //	else if (GetCardMgr().QuerySlot(SLOT4) == CT_GenericClock)
 //	{
@@ -1759,39 +1765,39 @@ void MemInitializeIO(void)
 //	}
 	else if (GetCardMgr().QuerySlot(SLOT4) == CT_FourPlay)
 	{
-		dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(SLOT4)).InitializeIO(pCxRomPeripheral, SLOT4);
+		dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(SLOT4)).InitializeIO(pCxRomPeripheral);
 	}
 	else if (GetCardMgr().QuerySlot(SLOT4) == CT_SNESMAX)
 	{
-		dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(SLOT4)).InitializeIO(pCxRomPeripheral, SLOT4);
+		dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(SLOT4)).InitializeIO(pCxRomPeripheral);
 	}
 
 	if (GetCardMgr().QuerySlot(SLOT5) == CT_Z80)
 	{
-		ConfigureSoftcard(pCxRomPeripheral, SLOT5);		// $C500 : Z80 card
+		Z80_InitializeIO(pCxRomPeripheral, SLOT5);		// $C500 : Z80 card
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_SAM)
 	{
-		dynamic_cast<SAMCard&>(GetCardMgr().GetRef(SLOT5)).InitializeIO(pCxRomPeripheral, SLOT5);
+		dynamic_cast<SAMCard&>(GetCardMgr().GetRef(SLOT5)).InitializeIO(pCxRomPeripheral);
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_FourPlay)
 	{
-		dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(SLOT5)).InitializeIO(pCxRomPeripheral, SLOT5);
+		dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(SLOT5)).InitializeIO(pCxRomPeripheral);
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_SNESMAX)
 	{
-		dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(SLOT5)).InitializeIO(pCxRomPeripheral, SLOT5);
+		dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(SLOT5)).InitializeIO(pCxRomPeripheral);
 	}
 	else if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 	{
-		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).Initialize(pCxRomPeripheral, SLOT5);	// $C500 : Disk][ card
+		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).InitializeIO(pCxRomPeripheral);	// $C500 : Disk][ card
 	}
 
 	if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
-		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Initialize(pCxRomPeripheral, SLOT6);	// $C600 : Disk][ card
+		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).InitializeIO(pCxRomPeripheral);	// $C600 : Disk][ card
 
 	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-		HD_Load_Rom(pCxRomPeripheral, SLOT7);			// $C700 : HDD f/w
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).InitializeIO(pCxRomPeripheral);
 }
 
 // Called by:

@@ -37,7 +37,7 @@ BYTE __stdcall CPMZ80_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 
 //===========================================================================
 
-void ConfigureSoftcard(LPBYTE pCxRomPeripheral, UINT uSlot)
+void Z80_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot)
 {	
 	memset(pCxRomPeripheral + (uSlot << 8), 0xFF, APPLE_SLOT_SIZE);
 	
