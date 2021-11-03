@@ -19,6 +19,8 @@ public:
 
 private:
     QSettings mySettings;
+
+    QVariant getVariant(const std::string & section, const std::string & key) const;
 };
 
 #endif // REGISTRY_H
