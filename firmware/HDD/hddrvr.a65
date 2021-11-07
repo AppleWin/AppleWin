@@ -140,7 +140,7 @@ SmartPort		; SmartPort -> GetSlotInX -> cmdproc
  pha
  iny
 
- bne SmartPort3
+ bne SmartPort2
 
 ;======================================
 ; 2 unused bytes
@@ -217,7 +217,7 @@ hdboot2
 
 ;======================================
 
-SmartPort3
+SmartPort2
  lda ($45),y	; diskblock_h
  sta $47
 
@@ -233,7 +233,7 @@ SmartPort3
 
 ; Pre:
 ;	C=0 => via Bootstrap
-;	C=1 => via Entrypoint / SmartPort3
+;	C=1 => via Entrypoint / SmartPort2
 ; Post:
 ;	X = Slot# << 4
 GetSlotInX
@@ -269,7 +269,7 @@ GetSlotInX
 
 ; Pre:
 ;	C=0 => via Bootstrap (hdboot)
-;	C=1 => via GetSlotInX (eg. Entrypoint / SmartPort3)
+;	C=1 => via GetSlotInX (eg. Entrypoint / SmartPort2)
 ;	X = Slot# << 4
 ; Post:
 ; 	C = hd_error.b0
