@@ -34,7 +34,7 @@
 ; . GH#370 (Robert Hoem, 27 Oct 2016):
 ;   . Added a check against open-apple during boot to route boot to slot 6
 ;   . This happens after the first two blocks are loaded from the HD.
-; . GH#319: smartport return address wrong when crossing page
+; . GH#319: SmartPort return address wrong when crossing page
 ; . GH#996: Make code slot-independent (so HDD controller card can go into any slot)
 ; . Moved the 512-byte block read into AppleWin's HDD emulation (to mirror the block write command)
 ; TODO:
@@ -49,7 +49,7 @@
 
 ; constants
 hd_execute = $c080
-hd_error = $c081
+hd_error = $c081		; b7=busy, b0=error
 hd_command = $c082
 hd_unitnum = $c083
 hd_memblock  = $c084
@@ -308,6 +308,9 @@ cmdproc
  sta hd_diskblock+1,x
  lda hd_execute,x	; A = result of hd_execute (NB. instantaneous 512 byte r/w!)
 
+-	rol hd_error,x	; b7=busy doing DMA?
+	bcs -
+
  plp			; restore C from start of cmdproc
  bcs done
  ror hd_error,x	; Post: C=0 or 1
@@ -320,7 +323,7 @@ done
 
 ;======================================
 
-; 39 unused bytes
+; 34 unused bytes
 
 !zone data
 

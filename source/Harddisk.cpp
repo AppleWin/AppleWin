@@ -125,6 +125,9 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	// . ProDOS will write to Command before switching drives
 	m_command = 0;
 
+	// Interface busy doing DMA for r/w when current cycle is earlier than this cycle
+	m_notBusyCycle = 0;
+
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
 
 	// if created by user in Config->Disk, then MemInitializeIO() won't be called
@@ -190,7 +193,20 @@ void HarddiskInterfaceCard::CleanupDrive(const int iDrive)
 
 void HarddiskInterfaceCard::NotifyInvalidImage(TCHAR* pszImageFilename)
 {
-	// TC: TO DO
+	// TC: TO DO - see Disk2InterfaceCard::NotifyInvalidImage()
+
+	char szBuffer[MAX_PATH + 128];
+
+	StringCbPrintf(
+		szBuffer,
+		MAX_PATH + 128,
+		TEXT("Unable to open the file %s."),
+		pszImageFilename);
+
+	GetFrame().FrameMessageBox(
+		szBuffer,
+		g_pAppTitle.c_str(),
+		MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 }
 
 //===========================================================================
@@ -206,11 +222,17 @@ void HarddiskInterfaceCard::LoadLastDiskImage(const int drive)
 	char pathname[MAX_PATH];
 
 	std::string& regSection = RegGetConfigSlotSection(m_slot);
-	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")))
+	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")) && (pathname[0] != 0))
 	{
 		m_saveDiskImage = false;
-		Insert(drive, pathname);
+		bool res = Insert(drive, pathname);
 		m_saveDiskImage = true;
+
+		if (!res)
+		{
+			NotifyInvalidImage(pathname);
+			CleanupDrive(drive);
+		}
 	}
 }
 
@@ -309,10 +331,10 @@ void HarddiskInterfaceCard::Destroy(void)
 //===========================================================================
 
 // Pre: pathname likely to include path (but can also just be filename)
-BOOL HarddiskInterfaceCard::Insert(const int iDrive, const std::string& pathname)
+bool HarddiskInterfaceCard::Insert(const int iDrive, const std::string& pathname)
 {
 	if (pathname.empty())
-		return FALSE;
+		return false;
 
 	if (m_hardDiskDrive[iDrive].m_imageloaded)
 		Unplug(iDrive);
@@ -431,13 +453,15 @@ bool HarddiskInterfaceCard::IsDriveUnplugged(const int iDrive)
 #define DEVICE_OK				0x00
 #define DEVICE_IO_ERROR			0x27
 #define DEVICE_NOT_CONNECTED	0x28	// No device detected/connected
-#define DEVICE_BUSY				0x29	// "GS/OS driver is busy" (there is no ProDOS8 $29 error code)
 
 BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
 	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->m_unitNum >> 7]);	// bit7 = drive select
+
+	CpuCalcCycles(nExecutedCycles);
+	const UINT CYCLES_FOR_DMA_RW_BLOCK = HD_BLOCK_SIZE;
 
 	BYTE r = DEVICE_OK;
 	pHDD->m_status_next = DISK_STATUS_READ;
@@ -467,6 +491,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 							{
 								pHDD->m_error = 0;
 								r = 0;
+								pCard->m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
 								pHDD->m_buf_ptr = 0;
 
 								// Apple II's MMU could be setup so that read & write memory is different,
@@ -483,7 +508,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 
 									// handle both page-aligned & non-page aligned destinations
 									UINT size = PAGE_SIZE - (dstAddr & 0xff);
-									if (size > remaining) size = remaining;	// clip for last memcpy of the unaligned case
+									if (size > remaining) size = remaining;	// clip the last memcpy for the unaligned case
 
 									memcpy(page + (dstAddr & 0xff), pSrc, size);
 									pSrc += size;
@@ -491,7 +516,6 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 
 									remaining -= size;
 								}
-
 							}
 							else
 							{
@@ -535,6 +559,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 							{
 								pHDD->m_error = 0;
 								r = 0;
+								pCard->m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
 							}
 							else
 							{
@@ -556,12 +581,15 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 			}
 		break;
 	case 0x1: // m_error
-		pHDD->m_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
-		if (pHDD->m_error)
-		{
-			_ASSERT(pHDD->m_error & 1);
-			pHDD->m_error |= 1;	// Firmware requires that b0=1 for an error
-		}
+		if (pHDD->m_error & 0x7f)
+			pHDD->m_error = 1;		// Firmware requires that b0=1 for an error
+		else
+			pHDD->m_error = 0;
+
+		if (g_nCumulativeCycles <= pCard->m_notBusyCycle)
+			pHDD->m_error |= 0x80;	// Firmware requires that b7=1 for busy (eg. busy doing r/w DMA operation)
+		else
+			pHDD->m_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
 
 		r = pHDD->m_error;
 		break;
@@ -676,6 +704,7 @@ bool HarddiskInterfaceCard::ImageSwap(void)
 // Unit version history:
 // 2: Updated $C7nn firmware to fix GH#319
 // 3: Updated $Csnn firmware to fix GH#996 (now slot-independent code)
+//    Added: Not Busy Cycle
 static const UINT kUNIT_VERSION = 3;
 
 #define SS_YAML_VALUE_CARD_HDD "Generic HDD"
@@ -693,6 +722,7 @@ static const UINT kUNIT_VERSION = 3;
 #define SS_YAML_KEY_STATUS_PREV "Status Prev"
 #define SS_YAML_KEY_BUF_PTR "Buffer Offset"
 #define SS_YAML_KEY_BUF "Buffer"
+#define SS_YAML_KEY_NOT_BUSY_CYCLE "Not Busy Cycle"
 
 std::string HarddiskInterfaceCard::GetSnapshotCardName(void)
 {
@@ -726,6 +756,7 @@ void HarddiskInterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	yamlSaveHelper.Save("%s: %d # b7=unit\n", SS_YAML_KEY_CURRENT_UNIT, m_unitNum);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_COMMAND, m_command);
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_NOT_BUSY_CYCLE, m_notBusyCycle);
 
 	SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_1);
 	SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_2);
@@ -808,6 +839,9 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT sl
 
 	m_unitNum = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_UNIT);	// b7=unit
 	m_command = yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);
+
+	if (version >= 3)
+		m_notBusyCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_NOT_BUSY_CYCLE);
 
 	// Unplug all HDDs first in case HDD-2 is to be plugged in as HDD-1
 	for (UINT i=0; i<NUM_HARDDISKS; i++)
