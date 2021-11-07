@@ -259,7 +259,12 @@ SmartPort3
 ;	X = Slot# << 4
 GetSlotInX
  php
+ sei			; disable ints, in case an int handler races our $0000 and stack accesses!
 
+ ; NB. need RAM that's guaranteed to be both read & writeable:
+ ; . can't use $0200-$BFFF, due to eg. RAMRD=0/RAMWRT=1 combination
+ ; . can't use LC as ROM might be enabled.
+ ; So use ZP (specifically $0000) as whatever the state of ALTZP, both read & write will be to the same physical memory location.
  lda $00		; save $00
  ldx #$60		; opcode RTS
  stx $00
@@ -273,7 +278,7 @@ GetSlotInX
  asl
  tax			; X=$n0
 
- plp
+ plp			; + restore int status
  bcc Bootstrap_trampoline
  ; otherwise fall through for Entrypoint / SmartPort...
 
@@ -323,7 +328,7 @@ done
 
 ;======================================
 
-; 34 unused bytes
+; 33 unused bytes
 
 !zone data
 
