@@ -93,8 +93,9 @@ Entrypoint_SmartPort	; $c70d - SmartPort entrypoint
  clc
 
 Entrypoint				; $c70e - entrypoint?
- ; NB. could pad with 6x NOPs to remove the trampoline!
- bcs GetSlotInX_trampoline	; C=1: GetSlotInX -> cmdproc
+ bcs GetSlotInX			; C=1: GetSlotInX -> cmdproc
+
+ ; C=0: fall through to SmartPort...
 
 ;======================================
 
@@ -127,14 +128,22 @@ SmartPort		; SmartPort -> GetSlotInX -> cmdproc
  lda ($45),y	; unit
  sta $43
  iny
+
  lda ($45),y	; memblock_l
  sta $44
+ iny
+ lda ($45),y	; memblock_h
+ pha
+ iny
+
+ lda ($45),y	; diskblock_l
+ pha
  iny
 
  bne SmartPort3
 
 ;======================================
-; 10 unused bytes
+; 2 unused bytes
 
 @checkC746
 *= $c746	; org $c746
@@ -145,7 +154,7 @@ Entrypoint_C746	; Old f/w 'cmdproc' entrypoint
 				; DOSMaster hardcodes the entrypoint addr into its bootstrapping code:
 				; - So DOSMaster images are tied to the HDD's controller's f/w
  sec
- bcs Entrypoint	; or directly to GetSlotInX_trampoline
+ bcs Entrypoint	; or directly to GetSlotInX
 
 ;======================================
 
@@ -167,12 +176,7 @@ BootSlot6
  jmp slot6
 
 ;======================================
-
-GetSlotInX_trampoline
- bcs GetSlotInX
-
-;======================================
-; 0 unused byte
+; 2 unused bytes
  
 @checkC761
 *= $c761	; org $c761
@@ -183,7 +187,7 @@ Entrypoint_C761	; Apple Oasis HDD controller entrypoint
 				; DOSMaster hardcodes the entrypoint addr into its bootstrapping code:
 				; - So DOSMaster images are tied to the HDD's controller's f/w
  sec
- bcs Entrypoint	; or directly to GetSlotInX_trampoline
+ bcs Entrypoint	; or directly to GetSlotInX
 
 ;======================================
 
@@ -214,12 +218,6 @@ hdboot2
 ;======================================
 
 SmartPort3
- lda ($45),y	; memblock_h
- pha
- iny
- lda ($45),y	; diskblock_l
- pha
- iny
  lda ($45),y	; diskblock_h
  sta $47
 
@@ -249,7 +247,7 @@ GetSlotInX
  lda $00		; save $00
  ldx #$60		; opcode RTS
  stx $00
- jsr $0000		; RTS immediately (NB. can't use $FF58, since RAM may be switched in)
+ jsr $0000		; RTS immediately (NB. can't use $FF58, since LC RAM may be switched in)
  sta $00		; restore $00
  tsx
  lda $0100,x	; $Cn
@@ -309,7 +307,7 @@ done
 
 ;======================================
 
-; 25 unused bytes
+; 33 unused bytes
 
 !zone data
 
