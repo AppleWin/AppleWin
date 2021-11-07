@@ -33,18 +33,32 @@ namespace
       return false;
     }
 
-    Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
-    const ImageError_e error = disk2Card.InsertDisk(DRIVE_1, filename.c_str(), IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE);
+    CardManager & cardManager = GetCardMgr();
 
-    if (error == eIMAGE_ERROR_NONE)
+    Disk2InterfaceCard * disk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
+    if (disk2Card)
     {
-      return true;
+      const ImageError_e error = disk2Card->InsertDisk(DRIVE_1, filename.c_str(), IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE);
+
+      if (error == eIMAGE_ERROR_NONE)
+      {
+        return true;
+      }
     }
 
-    // try a hard disk
-    HD_SetEnabled(true);
-    BOOL bRes = HD_Insert(HARDDISK_1, filename);
-    return bRes == TRUE;
+    if (cardManager.QuerySlot(SLOT7) != CT_GenericHDD)
+    {
+      cardManager.Insert(SLOT7, CT_GenericHDD);
+    }
+
+    HarddiskInterfaceCard * harddiskCard = dynamic_cast<HarddiskInterfaceCard*>(cardManager.GetObj(SLOT7));
+    if (harddiskCard)
+    {
+      BOOL bRes = harddiskCard->Insert(HARDDISK_1, filename);
+      return bRes == TRUE;
+    }
+
+    return false;
   }
 
 }

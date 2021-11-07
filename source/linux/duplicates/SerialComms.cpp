@@ -6,7 +6,7 @@
 
 
 CSuperSerialCard::CSuperSerialCard(UINT slot) :
-  Card(CT_SSC), m_uSlot(slot)
+  Card(CT_SSC, slot)
 {
 }
 
@@ -22,7 +22,7 @@ void CSuperSerialCard::CommReset()
 {
 }
 
-void CSuperSerialCard::CommInitialize(LPBYTE pCxRomPeripheral, UINT uSlot)
+void CSuperSerialCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 }
 

@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "FourPlay.h"
 
-void FourPlayCard::InitializeIO(LPBYTE pCxRomPeripheral, UINT slot)
+void FourPlayCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 }
 

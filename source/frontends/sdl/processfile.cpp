@@ -31,7 +31,8 @@ namespace
       }
       case CT_GenericHDD:
       {
-        if (!HD_Insert(dragAndDropDrive, filename))
+        HarddiskInterfaceCard * harddiskCard = dynamic_cast<HarddiskInterfaceCard*>(cardManager.GetObj(dragAndDropSlot));
+        if (!harddiskCard->Insert(dragAndDropDrive, filename))
         {
           frame->FrameMessageBox("Invalid HD image", "ERROR", MB_OK);
         }

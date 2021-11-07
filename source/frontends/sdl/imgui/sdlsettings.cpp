@@ -477,11 +477,12 @@ namespace sa2
               ImGui::PopID();
             }
 
-            if (HD_CardIsEnabled())
+            HarddiskInterfaceCard* pHarddiskCard = dynamic_cast<HarddiskInterfaceCard*>(cardManager.GetObj(SLOT7));
+            if (pHarddiskCard)
             {
               ImGui::PushID(7);
               Disk_Status_e disk1Status_;
-              HD_GetLightStatus(&disk1Status_);
+              pHarddiskCard->GetLightStatus(&disk1Status_);
               for (size_t drive = HARDDISK_1; drive < NUM_HARDDISKS; ++drive)
               {
                 ImGui::PushID(drive);
@@ -501,12 +502,12 @@ namespace sa2
                 ImGui::TableNextColumn();
                 if (ImGui::SmallButton("Eject"))
                 {
-                  HD_Unplug(drive);
+                  pHarddiskCard->Unplug(drive);
                 }
                 ImGui::TableNextColumn();
                 if (ImGui::SmallButton("Swap"))
                 {
-                  HD_ImageSwap();
+                  pHarddiskCard->ImageSwap();
                 }
                 ImGui::TableNextColumn();
                 if (ImGui::RadioButton("", (dragAndDropSlot == SLOT7) && (dragAndDropDrive == drive)))
@@ -515,7 +516,7 @@ namespace sa2
                 }
 
                 ImGui::TableNextColumn();
-                ImGui::TextUnformatted(HD_GetFullName(drive).c_str());
+                ImGui::TextUnformatted(pHarddiskCard->GetFullName(drive).c_str());
                 ImGui::PopID();
               }
               ImGui::PopID();

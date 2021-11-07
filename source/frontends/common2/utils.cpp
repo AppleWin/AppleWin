@@ -102,8 +102,12 @@ namespace common2
 
     MemInitialize();
 
-    GetCardMgr().GetDisk2CardMgr().Reset();
-    HD_Reset();
+    CardManager & cardManager = GetCardMgr();
+    cardManager.GetDisk2CardMgr().Reset();
+    if (cardManager.QuerySlot(SLOT7) == CT_GenericHDD)
+    {
+        dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(SLOT7)).Reset(true);
+    }
 
     Snapshot_Startup();
 
@@ -112,8 +116,10 @@ namespace common2
 
   void DestroyEmulator()
   {
+    CardManager & cardManager = GetCardMgr();
+
     Snapshot_Shutdown();
-    CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
+    CMouseInterface* pMouseCard = cardManager.GetMouseCard();
     if (pMouseCard)
     {
       pMouseCard->Reset();
@@ -126,7 +132,12 @@ namespace common2
 
     unRegisterUthernet2();
     tfe_shutdown();
-    HD_Destroy();
+
+    if (cardManager.QuerySlot(SLOT7) == CT_GenericHDD)
+    {
+        dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(SLOT7)).Destroy();
+    }
+
     PrintDestroy();
     CpuDestroy();
     DebugDestroy();

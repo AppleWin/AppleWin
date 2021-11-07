@@ -37,11 +37,8 @@ namespace
     const QString REG_TIMER = QString::fromUtf8("QApple/Emulator/Timer");
     const QString REG_FULL_SPEED = QString::fromUtf8("QApple/Emulator/Full Speed");
 
-    void insertDisk(const QString & filename, const int disk)
+    void insertDisk(Disk2InterfaceCard* pDisk2Card, const QString & filename, const int disk)
     {
-        CardManager & cardManager = GetCardMgr();
-        Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
-
         if (!pDisk2Card)
             return;
 
@@ -61,15 +58,15 @@ namespace
         }
     }
 
-    void insertHD(const QString & filename, const int disk)
+    void insertHD(HarddiskInterfaceCard * pHarddiskCard, const QString & filename, const int disk)
     {
         if (filename.isEmpty())
         {
-            HD_Unplug(disk);
+            pHarddiskCard->Unplug(disk);
         }
         else
         {
-            if (!HD_Insert(disk, filename.toStdString()))
+            if (!pHarddiskCard->Insert(disk, filename.toStdString()))
             {
                 const QString message = QString("Error inserting '%1'").arg(filename);
                 QMessageBox::warning(nullptr, "Hard Disk error", message);
@@ -90,9 +87,6 @@ namespace
         // 2) Snapshot_LoadState_v2(): card already inserted
         if (cardManager.QuerySlot(slot) != newCardType)
             cardManager.Insert(slot, newCardType);
-
-        std::string& regSection = RegGetConfigSlotSection(slot);
-        RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, CT_Disk2);
     }
 
 }
@@ -175,8 +169,8 @@ void getAppleWinPreferences(PreferenceData & data)
 {
     CardManager & cardManager = GetCardMgr();
 
-    Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
     data.disks.resize(diskIDs.size());
+    Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
 
     if (pDisk2Card)
     {
@@ -191,19 +185,24 @@ void getAppleWinPreferences(PreferenceData & data)
     }
 
     data.hds.resize(hdIDs.size());
-    for (size_t i = 0; i < hdIDs.size(); ++i)
+    HarddiskInterfaceCard* pHarddiskCard = dynamic_cast<HarddiskInterfaceCard*>(cardManager.GetObj(SLOT7));
+
+    if (pHarddiskCard)
     {
-        const std::string & diskName = HD_GetFullName(hdIDs[i]);
-        if (!diskName.empty())
+        for (size_t i = 0; i < hdIDs.size(); ++i)
         {
-            data.hds[i] = QString::fromStdString(diskName);
+            const std::string & diskName = pHarddiskCard->GetFullName(hdIDs[i]);
+            if (!diskName.empty())
+            {
+                data.hds[i] = QString::fromStdString(diskName);
+            }
         }
     }
 
     data.enhancedSpeed = pDisk2Card && pDisk2Card->GetEnhanceDisk();
     data.cardInSlot4 = cardManager.QuerySlot(SLOT4);
     data.cardInSlot5 = cardManager.QuerySlot(SLOT5);
-    data.hdInSlot7 = HD_CardIsEnabled();
+    data.hdInSlot7 = pHarddiskCard;
 
     data.apple2Type = GetApple2Type();
 
@@ -236,6 +235,7 @@ void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const Prefer
 {
     CardManager & cardManager = GetCardMgr();
     Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
+    HarddiskInterfaceCard* pHarddiskCard = dynamic_cast<HarddiskInterfaceCard*>(cardManager.GetObj(SLOT7));
 
     if (currentData.speakerVolume != newData.speakerVolume)
     {
@@ -267,8 +267,7 @@ void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const Prefer
     }
     if (currentData.hdInSlot7 != newData.hdInSlot7)
     {
-        REGSAVE(TEXT(REGVALUE_HDD_ENABLED), newData.hdInSlot7 ? 1 : 0);
-        HD_SetEnabled(newData.hdInSlot7);
+        SetSlot(SLOT7, newData.hdInSlot7 ? CT_GenericHDD : CT_Empty);
     }
 
     if (pDisk2Card && (currentData.enhancedSpeed != newData.enhancedSpeed))
@@ -281,7 +280,7 @@ void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const Prefer
     {
         if (currentData.disks[i] != newData.disks[i])
         {
-            insertDisk(newData.disks[i], diskIDs[i]);
+            insertDisk(pDisk2Card, newData.disks[i], diskIDs[i]);
         }
     }
 
@@ -289,7 +288,7 @@ void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const Prefer
     {
         if (currentData.hds[i] != newData.hds[i])
         {
-            insertHD(newData.hds[i], hdIDs[i]);
+            insertHD(pHarddiskCard, newData.hds[i], hdIDs[i]);
         }
     }
 

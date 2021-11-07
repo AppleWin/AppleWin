@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "SNESMAX.h"
 
-void SNESMAXCard::InitializeIO(LPBYTE pCxRomPeripheral, UINT slot)
+void SNESMAXCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 }
 

@@ -180,13 +180,6 @@ namespace sa2
         }
         break;
       }
-      case 7:
-      {
-        const bool enabled = card == CT_GenericHDD;
-        REGSAVE(REGVALUE_HDD_ENABLED, enabled);
-        HD_SetEnabled(enabled);
-        break;
-      }
     };
 
     if (card == CT_Uthernet2)

@@ -103,8 +103,12 @@ namespace
         MemInitialize();
         frame->Initialize();
 
-        GetCardMgr().GetDisk2CardMgr().Reset();
-        HD_Reset();
+        CardManager & cardManager = GetCardMgr();
+        cardManager.GetDisk2CardMgr().Reset();
+        if (cardManager.QuerySlot(SLOT7) == CT_GenericHDD)
+        {
+            dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(SLOT7)).Reset(true);
+        }
     }
 
     void unloadEmulator(const std::shared_ptr<QtFrame> & frame)
@@ -116,7 +120,10 @@ namespace
         {
             pMouseCard->Reset();
         }
-        HD_Destroy();
+        if (cardManager.QuerySlot(SLOT7) == CT_GenericHDD)
+        {
+            dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(SLOT7)).Destroy();
+        }
         PrintDestroy();
         MemDestroy();
         SpkrDestroy();
