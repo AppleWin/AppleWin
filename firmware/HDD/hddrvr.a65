@@ -26,7 +26,7 @@
 ;
 
 ; Modified by Tom Charlesworth:
-; . Updated so it can be assembled by ACME 0.96.4
+; . Updated so it can be assembled by ACME 0.97
 ; . Fixed so that ProDOS entrypoint is $c70a (26 Dev 2007) (Bug #12723)
 ; . Modified to support Apple Oasis' entrypoint: $c761 (8 Sept 2012) (Feature #5557)
 ; . Added support for SmartPort entrypoint (20 Oct 2012)
@@ -93,8 +93,59 @@ Entrypoint_SmartPort	; $c70d - SmartPort entrypoint
  clc
 
 Entrypoint				; $c70e - entrypoint?
- bcc SmartPort			;      SmartPort -> GetSlotInX -> cmdproc
- bcs GetSlotInX			; C=1:              GetSlotInX -> cmdproc
+ ; NB. could pad with 6x NOPs to remove the trampoline!
+ bcs GetSlotInX_trampoline	; C=1: GetSlotInX -> cmdproc
+
+;======================================
+
+; TODO: Is it OK to trash Y and $42,..,$47 ?
+; Pre: C=0, X = Slot# << 4
+SmartPort		; SmartPort -> GetSlotInX -> cmdproc
+ pla
+ sta $46
+ adc #3         ; Pre: C=0, Post: C=0 or 1
+ tay
+ pla
+ sta $47        ; ($46) = &cmd_hdr
+ adc #0
+ pha
+ tya
+ pha            ; (sp).w += 3
+
+ ldy #1
+ lda ($46),y	; cmd
+ sta $42
+ iny
+
+ lda ($46),y	; param_l
+ sta $45
+ iny
+ lda ($46),y	; param_h
+ sta $46
+
+ ldy #1			; skip paramLength (assume it's #$03)
+ lda ($45),y	; unit
+ sta $43
+ iny
+ lda ($45),y	; memblock_l
+ sta $44
+ iny
+
+ bne SmartPort3
+
+;======================================
+; 10 unused bytes
+
+@checkC746
+*= $c746	; org $c746
+!warn "C746 padding = ", * - @checkC746
+
+Entrypoint_C746	; Old f/w 'cmdproc' entrypoint
+				; Keep this for any DOSMaster HDD images created with old AppleWin HDD f/w.
+				; DOSMaster hardcodes the entrypoint addr into its bootstrapping code:
+				; - So DOSMaster images are tied to the HDD's controller's f/w
+ sec
+ bcs Entrypoint	; or directly to GetSlotInX_trampoline
 
 ;======================================
 
@@ -117,65 +168,11 @@ BootSlot6
 
 ;======================================
 
-; TODO: Is it OK to trash Y and $42,..,$47 ?
-; Pre: C=0, X = Slot# << 4
-SmartPort
- pla
- sta $46
- adc #3         ; Pre: C=0, Post: C=0 or 1
- tay
- pla
- sta $47        ; ($46) = &cmd_hdr
- adc #0
- pha
- tya
- pha            ; (sp).w += 3
-
- ldy #1
- lda ($46),y	; cmd
- sta $42
- iny
-
-!if 0{
- bne SmartPort2
+GetSlotInX_trampoline
+ bcs GetSlotInX
 
 ;======================================
-; 0 unused bytes
-
-@checkC746
-*= $c746	; org $c746
-!warn "C746 padding = ", * - @checkC746
-
-Entrypoint_C746	; Old f/w 'cmdproc' entrypoint
-				; Keep this for any DOSMaster HDD images created with old AppleWin HDD f/w.
-				; DOSMaster hardcodes the entrypoint addr into its bootstrapping code:
-				; - So DOSMaster images are tied to the HDD's controller's f/w
- sec
- bcs Entrypoint
-}
-;======================================
-
-; Pre: Y=2
-SmartPort2
- lda ($46),y	; param_l
- sta $45
- iny
- lda ($46),y	; param_h
- sta $46
-
- ldy #1			; skip paramLength (assume it's #$03)
- lda ($45),y	; unit
- sta $43
- iny
- lda ($45),y	; memblock_l
- sta $44
- iny
-
- bne SmartPort_trampoline
-
-!if 0{
-;======================================
-; 1 unused byte
+; 0 unused byte
  
 @checkC761
 *= $c761	; org $c761
@@ -186,18 +183,7 @@ Entrypoint_C761	; Apple Oasis HDD controller entrypoint
 				; DOSMaster hardcodes the entrypoint addr into its bootstrapping code:
 				; - So DOSMaster images are tied to the HDD's controller's f/w
  sec
- bcs Entrypoint
-}
-;======================================
-
-cmdproc_trampoline
- bcs cmdproc
-
-Bootstrap_trampoline
- bcc Bootstrap2
-
-SmartPort_trampoline
- bne SmartPort3
+ bcs Entrypoint	; or directly to GetSlotInX_trampoline
 
 ;======================================
 
@@ -224,11 +210,6 @@ hdboot2
 
 ; Pre: X = Slot# << 4
  jmp OS
-
-;--------------------------------------
-
-hdboot_trampoline
- beq hdboot2
 
 ;======================================
 
@@ -279,7 +260,7 @@ GetSlotInX
  tax			; X=$n0
 
  plp			; + restore int status
- bcc Bootstrap_trampoline
+ bcc Bootstrap2
  ; otherwise fall through for Entrypoint / SmartPort...
 
 ;--------------------------------------
@@ -320,7 +301,7 @@ cmdproc
  bcs done
  ror hd_error,x	; Post: C=0 or 1
  lda #0
- beq hdboot_trampoline
+ beq hdboot2
 
 done
  ror hd_error,x	; Post: C=0 or 1
@@ -328,7 +309,7 @@ done
 
 ;======================================
 
-; 33 unused bytes
+; 25 unused bytes
 
 !zone data
 
