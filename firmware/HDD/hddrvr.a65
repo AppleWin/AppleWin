@@ -54,14 +54,14 @@ hd_command = $c082
 hd_unitnum = $c083
 hd_memblock  = $c084
 hd_diskblock = $c086
-hd_nextbyte = $c088
+;hd_nextbyte = $c088	; legacy read-only port (still supported by AppleWin)
 
 command = $42
 unitnum = $43
 memblock = $44
 diskblock = $46
 
-slot6   = $c600
+slot6   = $C600
 OS      = $0801
 BUTTON0 = $C061
 
@@ -69,7 +69,7 @@ BUTTON0 = $C061
 
 !zone code
 
-*= $c700	; org $c700
+*= $C000	; org $C000 - position-independent code, so doesn't matter (but the other fixed org positions need to be on the same page)
 
 ; The Autoboot rom will call this.
 ; This is also the entry point for such things as IN#7 and PR#7
@@ -85,14 +85,14 @@ start
  lda #$3C
  bne Bootstrap
 
-Entrypoint_ProDOS		; $c70a - ProDOS entrypoint
+Entrypoint_ProDOS		; $Cn0A - ProDOS entrypoint
  sec
  bcs Entrypoint
 
-Entrypoint_SmartPort	; $c70d - SmartPort entrypoint
+Entrypoint_SmartPort	; $Cn0D - SmartPort entrypoint
  clc
 
-Entrypoint				; $c70e - entrypoint?
+Entrypoint				; $Cn0E - entrypoint?
  bcs GetSlotInX			; C=1: GetSlotInX -> cmdproc
 
  ; C=0: fall through to SmartPort...
@@ -146,7 +146,7 @@ SmartPort		; SmartPort -> GetSlotInX -> cmdproc
 ; 2 unused bytes
 
 @checkC746
-*= $c746	; org $c746
+*= $C046	; org $C046
 !warn "C746 padding = ", * - @checkC746
 
 Entrypoint_C746	; Old f/w 'cmdproc' entrypoint
@@ -179,7 +179,7 @@ BootSlot6
 ; 2 unused bytes
  
 @checkC761
-*= $c761	; org $c761
+*= $C061	; org $C061
 !warn "C761 padding = ", * - @checkC761
 
 Entrypoint_C761	; Apple Oasis HDD controller entrypoint
@@ -327,7 +327,7 @@ done
 ; datablock.  This starts near the end of the firmware (at offset $FC)
 ;; data
 @checkC7FC
-*= $c7fc	; org $c7fc
+*= $C0FC	; org $C0FC
 !warn "C7FC padding = ", * - @checkC7FC
 
  !word $7fff ; how many blocks are on the device.
