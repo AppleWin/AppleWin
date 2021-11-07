@@ -429,8 +429,9 @@ bool HarddiskInterfaceCard::IsDriveUnplugged(const int iDrive)
 //===========================================================================
 
 #define DEVICE_OK				0x00
-#define DEVICE_UNKNOWN_ERROR	0x28
 #define DEVICE_IO_ERROR			0x27
+#define DEVICE_NOT_CONNECTED	0x28	// No device detected/connected
+#define DEVICE_BUSY				0x29	// "GS/OS driver is busy" (there is no ProDOS8 $29 error code)
 
 BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
@@ -467,6 +468,30 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 								pHDD->m_error = 0;
 								r = 0;
 								pHDD->m_buf_ptr = 0;
+
+								// Apple II's MMU could be setup so that read & write memory is different,
+								// so can't use 'mem' (like we can for HDD block writes)
+								const UINT PAGE_SIZE = 256;
+								WORD dstAddr = pHDD->m_memblock;
+								UINT remaining = HD_BLOCK_SIZE;
+								BYTE* pSrc = pHDD->m_buf;
+
+								while (remaining)
+								{
+									memdirty[dstAddr >> 8] = 0xFF;
+									LPBYTE page = memwrite[dstAddr >> 8];
+
+									// handle both page-aligned & non-page aligned destinations
+									UINT size = PAGE_SIZE - (dstAddr & 0xff);
+									if (size > remaining) size = remaining;	// clip for last memcpy of the unaligned case
+
+									memcpy(page + (dstAddr & 0xff), pSrc, size);
+									pSrc += size;
+									dstAddr += size;
+
+									remaining -= size;
+								}
+
 							}
 							else
 							{
@@ -501,7 +526,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 								}
 							}
 
-							memmove(pHDD->m_buf, mem+pHDD->m_memblock, HD_BLOCK_SIZE);
+							memcpy(pHDD->m_buf, mem + pHDD->m_memblock, HD_BLOCK_SIZE);
 
 							if (bRes)
 								bRes = ImageWriteBlock(pHDD->m_imagehandle, pHDD->m_diskblock, pHDD->m_buf);
@@ -527,7 +552,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 			{
 				pHDD->m_status_next = DISK_STATUS_OFF;
 				pHDD->m_error = 1;
-				r = DEVICE_UNKNOWN_ERROR;
+				r = DEVICE_NOT_CONNECTED;	// GH#452
 			}
 		break;
 	case 0x1: // m_error
@@ -558,7 +583,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 	case 0x7:
 		r = (BYTE)(pHDD->m_diskblock & 0xFF00 >> 8);
 		break;
-	case 0x8:
+	case 0x8:	// Legacy: continue to support this I/O port for old HDD firmware
 		r = pHDD->m_buf[pHDD->m_buf_ptr];
 		if (pHDD->m_buf_ptr < sizeof(pHDD->m_buf)-1)
 			pHDD->m_buf_ptr++;
@@ -649,8 +674,9 @@ bool HarddiskInterfaceCard::ImageSwap(void)
 //===========================================================================
 
 // Unit version history:
-// 2: Updated $Csnn firmware to fix GH#319
-static const UINT kUNIT_VERSION = 2;
+// 2: Updated $C7nn firmware to fix GH#319
+// 3: Updated $Csnn firmware to fix GH#996 (now slot-independent code)
+static const UINT kUNIT_VERSION = 3;
 
 #define SS_YAML_VALUE_CARD_HDD "Generic HDD"
 
@@ -777,7 +803,7 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT sl
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
-	if (version == 1 && (regs.pc >> 8) == (0xC0|slot))
+	if (version <= 2 && (regs.pc >> 8) == (0xC0|slot))
 		throw std::string("HDD card: 6502 is running old HDD firmware");
 
 	m_unitNum = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_UNIT);	// b7=unit

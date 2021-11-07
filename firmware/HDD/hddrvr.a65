@@ -35,8 +35,9 @@
 ;   . Added a check against open-apple during boot to route boot to slot 6
 ;   . This happens after the first two blocks are loaded from the HD.
 ; . GH#319: smartport return address wrong when crossing page
+; . GH#996: Make code slot-independent (so HDD controller card can go into any slot)
+; . Moved the 512-byte block read into AppleWin's HDD emulation (to mirror the block write command)
 ; TODO:
-; . Make code relocatable (so HDD controller card can go into any slot)
 ; . Remove support for Entrypoint_C746 (old AppleWin) & Entrypoint_C761 (Apple Oasis)
 ;   - provide a utility to convert these to use Entrypoint_ProDOS
 ; . Check SmartPort: Is it OK to trash Y and $42,..,$47 ?
@@ -95,22 +96,18 @@ Entrypoint				; $c70e - entrypoint?
  bcc SmartPort			;      SmartPort -> GetSlotInX -> cmdproc
  bcs GetSlotInX			; C=1:              GetSlotInX -> cmdproc
 
-;;
+;======================================
 
 Bootstrap
 ; Lets check to see if there's an image ready
 ; Slot n, disk 1
  clc
- bcc GetSlotInX			; Post: A,X = Slot# << 4
+ bcc GetSlotInX			; Post: X = Slot# << 4
 Bootstrap2
  lda #$00
  sta hd_unitnum,x		; b7=0 => disk 1
  sta hd_command,x
  lda hd_execute,x
-
-; error capturing code.  Applewin is picky
-; about code assigning data to registers and
-; memory.  The safest method is via I/O port
  ror hd_error,x	; Post: C=0 or 1
  bcc hdboot
 
@@ -225,7 +222,7 @@ hdboot2
  bit BUTTON0	; button 0 pressed?
  bmi BootSlot6
 
-; Pre: X=Slot# << 4
+; Pre: X = Slot# << 4
  jmp OS
 
 ;--------------------------------------
@@ -309,48 +306,8 @@ cmdproc
  sta hd_diskblock,x
  lda diskblock+1
  sta hd_diskblock+1,x
- lda hd_execute,x
+ lda hd_execute,x	; A = result of hd_execute (NB. instantaneous 512 byte r/w!)
 
- pha			; save A (result of hd_execute)
- lda command
- cmp #1
- bne skipSread
-
-;--------------------------------------
-; if there's no error, then lets read the block into memory
-; because Applewin is picky about memory management, here's what I did:
-; on read, hd_nextbyte = buffer[0], therefore we'll read that byte 256 times (in which
-; the emulated code increments the buffer by 1 on each read) to (memblock),y
-; increment memblock+1 and read the second 256 bytes via hd_nextbyte.
-;
-; if I could figure out how to consistently get applewin to update it's memory regions all
-; this code can be moved into the emulation code (although, this is how I'd build the hardware
-; anyway...)
-
-; Pre/Post:
-;	X = Slot# << 4
-;sread
- tya			; save Y
- pha
- ldy #0
-loop1
- lda hd_nextbyte,x
- sta (memblock),y
- iny
- bne loop1
- inc memblock+1
-loop2
- lda hd_nextbyte,x
- sta (memblock),y
- iny
- bne loop2
- dec memblock+1	; restore memblock+1 ($45) to original value (for Epyx's California Games)
- pla
- tay			; restore Y
-
-;--------------------------------------
-skipSread
- pla			; restore A (result of hd_execute)
  plp			; restore C from start of cmdproc
  bcs done
  ror hd_error,x	; Post: C=0 or 1
@@ -363,7 +320,7 @@ done
 
 ;======================================
 
-; 5 unused bytes
+; 39 unused bytes
 
 !zone data
 
