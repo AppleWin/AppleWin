@@ -10,28 +10,36 @@ namespace
     }
 }
 
-std::string Configuration::getString(const std::string & section, const std::string & key) const
+QVariant Configuration::getVariant(const std::string & section, const std::string & key) const
 {
     const QString qkey = getKey(section, key);
     const QVariant value = mySettings.value(qkey);
-    const std::string s = value.toString().toStdString();
-    return s;
+    if (value.isNull())
+    {
+        throw std::runtime_error("Missing " + qkey.toStdString());
+    }
+    return value;
+}
+
+std::string Configuration::getString(const std::string & section, const std::string & key) const
+{
+    const QVariant value = getVariant(section, key);
+    const std::string res = value.toString().toStdString();
+    return res;
 }
 
 DWORD Configuration::getDWord(const std::string & section, const std::string & key) const
 {
-    const QString qkey = getKey(section, key);
-    const QVariant v = mySettings.value(qkey);
-    const uint value = v.toUInt();
-    return value;
+    const QVariant value = getVariant(section, key);
+    const uint res = value.toUInt();
+    return res;
 }
 
 bool Configuration::getBool(const std::string & section, const std::string & key) const
 {
-    const QString qkey = getKey(section, key);
-    const QVariant v = mySettings.value(qkey);
-    const bool value = v.toBool();
-    return value;
+    const QVariant value = getVariant(section, key);
+    const bool res = value.toBool();
+    return res;
 }
 
 void Configuration::putString(const std::string & section, const std::string & key, const std::string & value)

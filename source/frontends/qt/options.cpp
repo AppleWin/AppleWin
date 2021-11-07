@@ -40,10 +40,11 @@ namespace
     void insertDisk(const QString & filename, const int disk)
     {
         CardManager & cardManager = GetCardMgr();
-        if (cardManager.QuerySlot(SLOT6) != CT_Disk2)
+        Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
+
+        if (!pDisk2Card)
             return;
 
-        Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
         if (filename.isEmpty())
         {
             pDisk2Card->EjectDisk(disk);
@@ -175,14 +176,17 @@ void getAppleWinPreferences(PreferenceData & data)
     CardManager & cardManager = GetCardMgr();
 
     Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
-
     data.disks.resize(diskIDs.size());
-    for (size_t i = 0; i < diskIDs.size(); ++i)
+
+    if (pDisk2Card)
     {
-        const std::string & diskName = pDisk2Card->GetFullName(diskIDs[i]);
-        if (!diskName.empty())
+        for (size_t i = 0; i < diskIDs.size(); ++i)
         {
-            data.disks[i] = QString::fromStdString(diskName);
+            const std::string & diskName = pDisk2Card->GetFullName(diskIDs[i]);
+            if (!diskName.empty())
+            {
+                data.disks[i] = QString::fromStdString(diskName);
+            }
         }
     }
 
@@ -196,7 +200,7 @@ void getAppleWinPreferences(PreferenceData & data)
         }
     }
 
-    data.enhancedSpeed = pDisk2Card->GetEnhanceDisk();
+    data.enhancedSpeed = pDisk2Card && pDisk2Card->GetEnhanceDisk();
     data.cardInSlot4 = cardManager.QuerySlot(SLOT4);
     data.cardInSlot5 = cardManager.QuerySlot(SLOT5);
     data.hdInSlot7 = HD_CardIsEnabled();
@@ -267,7 +271,7 @@ void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const Prefer
         HD_SetEnabled(newData.hdInSlot7);
     }
 
-    if (currentData.enhancedSpeed != newData.enhancedSpeed)
+    if (pDisk2Card && (currentData.enhancedSpeed != newData.enhancedSpeed))
     {
         REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), newData.enhancedSpeed ? 1 : 0);
         pDisk2Card->SetEnhanceDisk(newData.enhancedSpeed);
