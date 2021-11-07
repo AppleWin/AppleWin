@@ -70,14 +70,14 @@ The joystick uses evdev (``--device-name /dev/input/by-id/id_of_device``).
 This is based on Qt.
 
 * keyboard shortcuts are listed in the menu entries
-* graphics: runs the native NTSC code
 * joystick: it uses QtGamepad
 * emulator runs in the main UI thread
 * Qt timers are very coarse: the emulator needs to dynamically adapt the cycles to execute
 * the app runs at 60FPS with correction for uneven timer deltas.
 * full speed when disk spins execute up to 5 ms real wall clock of emulator code (then returns to Qt)
-* (standard) audio is supported and there are a few configuration options to tune the latency (default very conservative 200ms)
+* audio is supported and there are a few configuration options to tune the latency (default very conservative 200ms)
 * Open Apple and Solid Apple can be emulated using AltGr and Menu (unfortunately, Alt does not work well)
+* ``yaml`` files can be dropped to restore a saved state
 
 ### ra2
 

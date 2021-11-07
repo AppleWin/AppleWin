@@ -44,6 +44,9 @@
 #include <QSettings>
 #include <QAudioOutput>
 #include <QLabel>
+#include <QMimeData>
+#include <QDropEvent>
+#include <QDragEnterEvent>
 
 #include <algorithm>
 
@@ -204,6 +207,8 @@ QApple::QApple(QWidget *parent) :
     on_actionPause_triggered();
     initialiseEmulator();
     loadEmulator(myFrame, myOptions);
+
+    setAcceptDrops(true);
 }
 
 QApple::~QApple()
@@ -553,4 +558,33 @@ void QApple::loadStateFile(const QString & filename)
 void QApple::on_actionQuit_triggered()
 {
     this->close();
+}
+
+void QApple::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasUrls())
+    {
+        event->acceptProposedAction();
+    }
+}
+
+void QApple::dropEvent(QDropEvent *event)
+{
+    const QMimeData* mimeData = event->mimeData();
+
+    if (mimeData->hasUrls())
+    {
+        const QList<QUrl> urlList = mimeData->urls();
+
+        if (!urlList.isEmpty())
+        {
+            // just use first file
+            const QString file = urlList.first().toLocalFile();
+            if (!file.isEmpty())
+            {
+                event->acceptProposedAction();
+                loadStateFile(file);
+            }
+        }
+   }
 }
