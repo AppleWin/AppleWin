@@ -658,6 +658,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\source\Card.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Card.h"
 					>
 				</File>

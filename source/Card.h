@@ -34,6 +34,7 @@ public:
 	Card(SS_CARDTYPE type, UINT slot) : m_type(type), m_slot(slot) {}
 	virtual ~Card(void) {}
 
+	virtual void InitializeIO(LPBYTE pCxRomPeripheral) = 0;
 	virtual void Init(void) = 0;
 	virtual void Reset(const bool powerCycle) = 0;
 	SS_CARDTYPE QueryType(void) { return m_type; }
@@ -53,8 +54,9 @@ public:
 	EmptyCard(void) {}
 	virtual ~EmptyCard(void) {}
 
-	virtual void Init(void) {};
-	virtual void Reset(const bool powerCycle) {};
+	virtual void InitializeIO(LPBYTE pCxRomPeripheral) {}
+	virtual void Init(void) {}
+	virtual void Reset(const bool powerCycle) {}
 };
 
 //
@@ -65,6 +67,7 @@ public:
 	DummyCard(SS_CARDTYPE type, UINT slot) : Card(type, slot) {}
 	virtual ~DummyCard(void) {}
 
-	virtual void Init(void) {};
-	virtual void Reset(const bool powerCycle) {};
+	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
+	virtual void Init(void) {}
+	virtual void Reset(const bool powerCycle) {}
 };

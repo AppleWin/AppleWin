@@ -188,3 +188,14 @@ void CardManager::RemoveAux(void)
 {
 	InsertAux(CT_Empty);
 }
+
+void CardManager::InitializeIO(LPBYTE pCxRomPeripheral)
+{
+	for (UINT i = 0; i < NUM_SLOTS; ++i)
+	{
+		if (m_slot[i])
+		{
+			m_slot[i]->InitializeIO(pCxRomPeripheral);
+		}
+	}
+}

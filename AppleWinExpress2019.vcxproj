@@ -144,6 +144,7 @@
   <ItemGroup>
     <ClCompile Include="source\6821.cpp" />
     <ClCompile Include="source\AY8910.cpp" />
+    <ClCompile Include="source\Card.cpp" />
     <ClCompile Include="source\CardManager.cpp" />
     <ClCompile Include="source\CmdLine.cpp" />
     <ClCompile Include="source\Configuration\About.cpp" />
