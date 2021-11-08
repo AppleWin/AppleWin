@@ -30,7 +30,6 @@ enum SLOTS { SLOT0=0, SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6, SLOT7, NUM_SLOTS
 class Card
 {
 public:
-	Card(void) : m_type(CT_Empty), m_slot(SLOT0) {}
 	Card(SS_CARDTYPE type, UINT slot) : m_type(type), m_slot(slot) {}
 	virtual ~Card(void) {}
 
@@ -51,7 +50,7 @@ private:
 class EmptyCard : public Card
 {
 public:
-	EmptyCard(void) {}
+	EmptyCard(UINT slot) : Card(CT_Empty, slot) {}
 	virtual ~EmptyCard(void) {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral) {}

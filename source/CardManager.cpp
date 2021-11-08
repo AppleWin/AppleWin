@@ -48,7 +48,7 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 	switch (type)
 	{
 	case CT_Empty:
-		m_slot[slot] = new EmptyCard;
+		m_slot[slot] = new EmptyCard(slot);
 		break;
 	case CT_Disk2:
 		m_slot[slot] = new Disk2InterfaceCard(slot);
@@ -150,7 +150,7 @@ void CardManager::InsertAuxInternal(SS_CARDTYPE type)
 	switch (type)
 	{
 	case CT_Empty:
-		m_aux = new EmptyCard;
+		m_aux = new EmptyCard(SLOT_AUX);
 		break;
 	case CT_80Col:
 		m_aux = new DummyCard(type, SLOT_AUX);
