@@ -38,7 +38,7 @@
 ; . GH#996: Make code slot-independent (so HDD controller card can go into any slot)
 ; . Moved the 512-byte block read into AppleWin's HDD emulation (to mirror the block write command)
 ; TODO:
-; . Remove support for Entrypoint_C746 (old AppleWin) & Entrypoint_C761 (Apple Oasis)
+; . Remove support for Entrypoint_Cs46 (old AppleWin) & Entrypoint_Cs61 (Apple Oasis)
 ;   - provide a utility to convert these to use Entrypoint_ProDOS
 ; . Check SmartPort: Is it OK to trash Y and $42,..,$47 ?
 ;
