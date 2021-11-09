@@ -69,7 +69,7 @@ BUTTON0 = $C061
 
 !zone code
 
-*= $C000	; org $C000 - position-independent code, so doesn't matter (but the other fixed org positions need to be on the same page)
+*= $0000	; org $0000 - position-independent code, so doesn't matter (but the other fixed org positions need to be on the same page)
 
 ; The Autoboot rom will call this.
 ; This is also the entry point for such things as IN#7 and PR#7
@@ -145,11 +145,11 @@ SmartPort		; SmartPort -> GetSlotInX -> cmdproc
 ;======================================
 ; 2 unused bytes
 
-@checkC746
-*= $C046	; org $C046
-!warn "C746 padding = ", * - @checkC746
+@checkCs46
+*= $0046	; org $0046
+!warn "Cs46 padding = ", * - @checkCs46
 
-Entrypoint_C746	; Old f/w 'cmdproc' entrypoint
+Entrypoint_Cs46	; Old f/w 'cmdproc' entrypoint
 				; Keep this for any DOSMaster HDD images created with old AppleWin HDD f/w.
 				; DOSMaster hardcodes the entrypoint addr into its bootstrapping code:
 				; - So DOSMaster images are tied to the HDD's controller's f/w
@@ -178,11 +178,11 @@ BootSlot6
 ;======================================
 ; 2 unused bytes
  
-@checkC761
-*= $C061	; org $C061
-!warn "C761 padding = ", * - @checkC761
+@checkCs61
+*= $0061	; org $0061
+!warn "Cs61 padding = ", * - @checkCs61
 
-Entrypoint_C761	; Apple Oasis HDD controller entrypoint
+Entrypoint_Cs61	; Apple Oasis HDD controller entrypoint
 				; Keep this for any DOSMaster HDD images created with Apple Oasis HDD f/w.
 				; DOSMaster hardcodes the entrypoint addr into its bootstrapping code:
 				; - So DOSMaster images are tied to the HDD's controller's f/w
@@ -238,7 +238,7 @@ SmartPort2
 ;	X = Slot# << 4
 GetSlotInX
  php
- sei			; disable ints, in case an int handler races our $0000 and stack accesses!
+ sei			; disable ints, in case an int handler races our $0000/RTS and stack accesses!
 
  ; NB. need RAM that's guaranteed to be both read & writeable:
  ; . can't use $0200-$BFFF, due to eg. RAMRD=0/RAMWRT=1 combination
@@ -326,9 +326,9 @@ done
 
 ; datablock.  This starts near the end of the firmware (at offset $FC)
 ;; data
-@checkC7FC
-*= $C0FC	; org $C0FC
-!warn "C7FC padding = ", * - @checkC7FC
+@checkCsFC
+*= $00FC	; org $00FC
+!warn "CsFC padding = ", * - @checkCsFC
 
  !word $7fff ; how many blocks are on the device.
  !byte $D7 ; specifics about the device (number of drives, read/write/format capability, etc)
