@@ -49,12 +49,18 @@
 
 ; constants
 hd_execute = $c080
-hd_error = $c081		; b7=busy, b0=error
+hd_status = $c081		; b7=busy, b0=error
 hd_command = $c082
 hd_unitnum = $c083
 hd_memblock  = $c084
 hd_diskblock = $c086
 ;hd_nextbyte = $c088	; legacy read-only port (still supported by AppleWin)
+
+; Notes on accesses to I/O registers:
+; . ROR ABS16,X and ROL ABS16,X - only used for $C081+s*$10 STATUS register:
+;     6502:  double read (old data), write (old data), write (new data). The writes are harmless as writes are ignored to STATUS.
+;     65C02: double read (old data), write (new data). The write is harmless as writes are ignored to STATUS.
+; . STA ABS16,X does a false-read. This is harmless for writable I/O registers, since the false-read has no side effect.
 
 command = $42
 unitnum = $43
@@ -168,7 +174,7 @@ Bootstrap2
  sta hd_unitnum,x		; b7=0 => disk 1
  sta hd_command,x
  lda hd_execute,x
- ror hd_error,x	; Post: C=0 or 1
+ ror hd_status,x	; Post: C=0 or 1
  bcc hdboot
 
 ; no image ready, boot diskette image instead
@@ -272,7 +278,7 @@ GetSlotInX
 ;	C=1 => via GetSlotInX (eg. Entrypoint / SmartPort2)
 ;	X = Slot# << 4
 ; Post:
-; 	C = hd_error.b0
+; 	C = hd_status.b0
 ;	A = result of hd_execute
 ;	X = Slot# << 4
 cmdproc
@@ -292,17 +298,17 @@ cmdproc
  sta hd_diskblock+1,x
  lda hd_execute,x	; A = result of hd_execute (NB. instantaneous 512 byte r/w!)
 
--	rol hd_error,x	; b7=busy doing DMA?
+-	rol hd_status,x	; b7=busy doing DMA?
 	bcs -
 
  plp			; restore C from start of cmdproc
  bcs done
- ror hd_error,x	; Post: C=0 or 1
+ ror hd_status,x	; Post: C=0 or 1
  lda #0
  beq hdboot2
 
 done
- ror hd_error,x	; Post: C=0 or 1
+ ror hd_status,x	; Post: C=0 or 1
  rts
 
 ;======================================

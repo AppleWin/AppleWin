@@ -42,54 +42,64 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../resource/resource.h"
 
 /*
-Memory map:
+Memory map (for slot 7):
 
     C0F0	(r)   EXECUTE AND RETURN STATUS
-	C0F1	(r)   STATUS (or ERROR)
+	C0F1	(r)   STATUS (or ERROR): b7=busy, b0=error
 	C0F2	(r/w) COMMAND
 	C0F3	(r/w) UNIT NUMBER
 	C0F4	(r/w) LOW BYTE OF MEMORY BUFFER
 	C0F5	(r/w) HIGH BYTE OF MEMORY BUFFER
 	C0F6	(r/w) LOW BYTE OF BLOCK NUMBER
 	C0F7	(r/w) HIGH BYTE OF BLOCK NUMBER
-	C0F8    (r)   NEXT BYTE
+	C0F8    (r)   NEXT BYTE (legacy read-only port - still supported)
+
+Firmware notes:
+. ROR ABS16,X and ROL ABS16,X - only used for $C081+s*$10 STATUS register:
+    6502:  double read (old data), write (old data), write (new data). The writes are harmless as writes to STATUS are ignored.
+    65C02: double read (old data), write (new data). The write is harmless as writes to STATUS are ignored.
+. STA ABS16,X does a false-read. This is harmless for writable I/O registers, since the false-read has no side effect.
+
 */
 
 /*
-Hard drive emulation in Applewin.
+Hard drive emulation in AppleWin.
 
 Concept
-    To emulate a 32mb hard drive connected to an Apple IIe via Applewin.
+    To emulate a 32mb hard drive connected to an Apple IIe via AppleWin.
     Designed to work with Autoboot Rom and Prodos.
 
 Overview
   1. Hard drive image file
       The hard drive image file (.HDV) will be formatted into blocks of 512
       bytes, in a linear fashion. The internal formatting and meaning of each
-      block to be decided by the Apple's operating system (ProDos). To create
-      an empty .HDV file, just create a 0 byte file (I prefer the debug method).
-  
+      block to be decided by the Apple's operating system (ProDOS). To create
+      an empty .HDV file, just create a 0 byte file.
+
   2. Emulation code
-      There are 4 commands Prodos will send to a block device.
+      There are 4 commands ProDOS will send to a block device.
       Listed below are each command and how it's handled:
 
       1. STATUS
-          In the emulation's case, returns only a DEVICE OK (0) or DEVICE I/O ERROR (8).
-          DEVICE I/O ERROR only returned if no HDV file is selected.
+          In the emulation's case, returns only a DEVICE OK (0), DEVICE I/O ERROR ($27) or DEVICE NOT CONNECTED ($28)
+          DEVICE NOT CONNECTED only returned if no HDV file is selected.
 
       2. READ
           Loads requested block into a 512 byte buffer by attempting to seek to
             location in HDV file.
-          If seek fails, returns a DEVICE I/O ERROR.  Resets hd_buf_ptr used by HD_NEXTBYTE
+          If seek fails, returns a DEVICE I/O ERROR.  Resets m_buf_ptr used by legacy HD_NEXTBYTE
+          Copies requested block from a 512 byte buffer to the Apple's memory.
+          Sets STATUS.busy=1 until the DMA operation completes.
           Returns a DEVICE OK if read was successful, or a DEVICE I/O ERROR otherwise.
 
       3. WRITE
           Copies requested block from the Apple's memory to a 512 byte buffer
             then attempts to seek to requested block.
           If the seek fails (usually because the seek is beyond the EOF for the
-            HDV file), the Emulation will attempt to "grow" the HDV file to accomodate.
-            Once the file can accomodate, or if the seek did not fail, the buffer is
+            HDV file), the emulation will attempt to "grow" the HDV file to accommodate.
+            Once the file can accommodate, or if the seek did not fail, the buffer is
             written to the HDV file.  NOTE: A2PC will grow *AND* shrink the HDV file.
+		  Sets STATUS.busy=1 until the DMA operation completes.
           I didn't see the point in shrinking the file as this behaviour would require
             patching prodos (to detect DELETE FILE calls).
 
@@ -99,9 +109,9 @@ Overview
 
   3. Bugs
       The only thing I've noticed is that Copy II+ 7.1 seems to crash or stall
-      occasionally when trying to calculate how many free block are available
+      occasionally when trying to calculate how many free blocks are available
       when running a catalog.  This might be due to the great number of blocks
-      available.  Also, DDD pro will not optimise the disk correctally (it's
+      available.  Also, DDD pro will not optimise the disk correctly (it's
       doing a disk defragment of some sort, and when it requests a block outside
       the range of the image file, it starts getting I/O errors), so don't
       bother.  Any program that preforms a read before write to an "unwritten"
