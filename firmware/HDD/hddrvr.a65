@@ -58,8 +58,8 @@ hd_diskblock = $c086
 
 ; Notes on accesses to I/O registers:
 ; . ROR ABS16,X and ROL ABS16,X - only used for $C081+s*$10 STATUS register:
-;     6502:  double read (old data), write (old data), write (new data). The writes are harmless as writes are ignored to STATUS.
-;     65C02: double read (old data), write (new data). The write is harmless as writes are ignored to STATUS.
+;     6502:  double read (old data), write (old data), write (new data). The writes are harmless as writes to STATUS are ignored.
+;     65C02: double read (old data), write (new data). The write is harmless as writes to STATUS are ignored.
 ; . STA ABS16,X does a false-read. This is harmless for writable I/O registers, since the false-read has no side effect.
 
 command = $42
