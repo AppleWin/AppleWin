@@ -50,7 +50,7 @@ LanguageCardUnit::~LanguageCardUnit(void)
 	SetMemMainLanguageCard(NULL);
 }
 
-void LanguageCardUnit::InitializeIO(void)
+void LanguageCardUnit::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	RegisterIoHandler(kSlot0, &LanguageCardUnit::IO, &LanguageCardUnit::IO, NULL, NULL, this, NULL);
 }
@@ -276,7 +276,7 @@ UINT Saturn128K::GetActiveBank(void)
 	return m_uSaturnActiveBank;
 }
 
-void Saturn128K::InitializeIO(void)
+void Saturn128K::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	RegisterIoHandler(kSlot0, &Saturn128K::IO, &Saturn128K::IO, NULL, NULL, this, NULL);
 }

@@ -48,7 +48,7 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 	switch (type)
 	{
 	case CT_Empty:
-		m_slot[slot] = new EmptyCard;
+		m_slot[slot] = new EmptyCard(slot);
 		break;
 	case CT_Disk2:
 		m_slot[slot] = new Disk2InterfaceCard(slot);
@@ -150,7 +150,7 @@ void CardManager::InsertAuxInternal(SS_CARDTYPE type)
 	switch (type)
 	{
 	case CT_Empty:
-		m_aux = new EmptyCard;
+		m_aux = new EmptyCard(SLOT_AUX);
 		break;
 	case CT_80Col:
 		m_aux = new DummyCard(type, SLOT_AUX);
@@ -187,4 +187,15 @@ void CardManager::RemoveAuxInternal()
 void CardManager::RemoveAux(void)
 {
 	InsertAux(CT_Empty);
+}
+
+void CardManager::InitializeIO(LPBYTE pCxRomPeripheral)
+{
+	for (UINT i = 0; i < NUM_SLOTS; ++i)
+	{
+		if (m_slot[i])
+		{
+			m_slot[i]->InitializeIO(pCxRomPeripheral);
+		}
+	}
 }

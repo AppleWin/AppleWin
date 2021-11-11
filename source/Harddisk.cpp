@@ -162,7 +162,7 @@ void HarddiskInterfaceCard::Reset(const bool powerCycle)
 
 //===========================================================================
 
-void HarddiskInterfaceCard::InitializeIO(const LPBYTE pCxRomPeripheral)
+void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	const DWORD HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
 

@@ -14,7 +14,7 @@ public:
 	virtual void Init(void) {};
 	virtual void Reset(const bool powerCycle) {};
 
-	void InitializeIO(LPBYTE pCxRomPeripheral);
+	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 //	void Uninitialize();
 	void Reset();
 	UINT GetSlot(void) { return m_slot; }
