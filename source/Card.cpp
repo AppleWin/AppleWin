@@ -52,3 +52,21 @@ void DummyCard::InitializeIO(LPBYTE pCxRomPeripheral)
 		break;
 	}
 }
+
+void DummyCard::Update(const ULONG nExecutedCycles)
+{
+	switch (QueryType())
+	{
+	case CT_GenericPrinter:
+		PrintUpdate(nExecutedCycles);
+		break;
+	case CT_MockingboardC:
+	case CT_Phasor:
+		// only in slot 4
+		if (m_slot == SLOT4)
+		{
+			MB_PeriodicUpdate(nExecutedCycles);
+		}
+		break;
+	}
+}

@@ -7,7 +7,7 @@ public:
 	~Disk2CardManager(void) {}
 
 	bool IsConditionForFullSpeed(void);
-	void UpdateDriveState(UINT cycles);
+	void Update(const ULONG nExecutedCycles);
 	void Reset(const bool powerCycle = false);
 	bool GetEnhanceDisk(void);
 	void SetEnhanceDisk(bool enhanceDisk);

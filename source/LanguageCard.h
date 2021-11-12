@@ -12,8 +12,10 @@ public:
 	LanguageCardUnit(SS_CARDTYPE type = CT_LanguageCardIIe);
 	virtual ~LanguageCardUnit(void);
 
-	virtual void Init(void) {};
-	virtual void Reset(const bool powerCycle) {};
+	virtual void Init(void) {}
+	virtual void Reset(const bool powerCycle) {}
+	virtual void Update(const ULONG nExecutedCycles) {}
+
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void SetMemorySize(UINT banks) {}		// No-op for //e and slot-0 16K LC

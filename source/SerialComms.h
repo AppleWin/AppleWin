@@ -28,8 +28,9 @@ public:
 	CSuperSerialCard(UINT slot);
 	virtual ~CSuperSerialCard();
 
-	virtual void Init(void) {};
-	virtual void Reset(const bool powerCycle) {};
+	virtual void Init(void) {}
+	virtual void Reset(const bool powerCycle) {}
+	virtual void Update(const ULONG nExecutedCycles) {}
 
 	void	InitializeIO(LPBYTE pCxRomPeripheral);
 	void    CommReset();

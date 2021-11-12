@@ -58,6 +58,7 @@ public:
 	bool IsSSCInstalled(void) { return m_pSSC != NULL; }
 
 	void InitializeIO(LPBYTE pCxRomPeripheral);
+	void Update(const ULONG nExecutedCycles);
 
 private:
 	void InsertInternal(UINT slot, SS_CARDTYPE type);

@@ -217,10 +217,8 @@ static void ContinueExecution(void)
 	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-	GetCardMgr().GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
+	GetCardMgr().Update(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
-	PrintUpdate(uActualCyclesExecuted);
-	MB_PeriodicUpdate(uActualCyclesExecuted);
 
 	//
 

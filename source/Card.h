@@ -36,6 +36,7 @@ public:
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral) = 0;
 	virtual void Init(void) = 0;
 	virtual void Reset(const bool powerCycle) = 0;
+	virtual void Update(const ULONG nExecutedCycles) = 0;
 	SS_CARDTYPE QueryType(void) { return m_type; }
 
 protected:
@@ -56,6 +57,7 @@ public:
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral) {}
 	virtual void Init(void) {}
 	virtual void Reset(const bool powerCycle) {}
+	virtual void Update(const ULONG nExecutedCycles) {}
 };
 
 //
@@ -69,4 +71,5 @@ public:
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void Init(void) {}
 	virtual void Reset(const bool powerCycle) {}
+	virtual void Update(const ULONG nExecutedCycles);
 };

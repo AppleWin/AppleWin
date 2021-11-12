@@ -48,13 +48,13 @@ bool Disk2CardManager::IsConditionForFullSpeed(void)
 	return false;
 }
 
-void Disk2CardManager::UpdateDriveState(UINT cycles)
+void Disk2CardManager::Update(const ULONG nExecutedCycles)
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{
 		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).UpdateDriveState(cycles);
+			GetCardMgr().GetRef(i).Update(nExecutedCycles);
 		}
 	}
 }
