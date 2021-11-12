@@ -65,7 +65,7 @@ void Disk2CardManager::Reset(const bool powerCycle /*=false*/)
 	{
 		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
 		{
-			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).Reset(powerCycle);
+			GetCardMgr().GetRef(i).Reset(powerCycle);
 		}
 	}
 }
