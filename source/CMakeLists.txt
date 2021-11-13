@@ -72,6 +72,7 @@ set(SOURCE_FILES
   RGBMonitor.cpp
   NTSC.cpp
   NTSC_CharSet.cpp
+  Card.cpp
   CardManager.cpp
   Disk2CardManager.cpp
   Riff.cpp
@@ -154,6 +155,7 @@ set(HEADER_FILES
   RGBMonitor.h
   NTSC.h
   NTSC_CharSet.h
+  Card.h
   CardManager.h
   Disk2CardManager.h
   Riff.h
