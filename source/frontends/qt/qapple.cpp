@@ -290,8 +290,7 @@ void QApple::on_timer()
     {
         const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
         g_dwCyclesThisFrame += uActualCyclesExecuted;
-        cardManager.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
-        MB_PeriodicUpdate(uActualCyclesExecuted);
+        cardManager.Update(uActualCyclesExecuted);
         SpkrUpdate(uActualCyclesExecuted);
 
         // in case we run more than 1 frame

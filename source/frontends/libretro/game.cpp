@@ -117,8 +117,7 @@ namespace ra2
       const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
 
       g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
-      GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
-      MB_PeriodicUpdate(executedCycles);
+      GetCardMgr().Update(executedCycles);
       SpkrUpdate(executedCycles);
     }
   }

@@ -51,7 +51,7 @@ namespace
 
     CardManager & cardManager = GetCardMgr();
 
-    cardManager.GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
+    cardManager.Update(uActualCyclesExecuted);
 
     const int key = ProcessKeyboard(frame);
 

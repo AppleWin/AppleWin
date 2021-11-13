@@ -580,8 +580,7 @@ namespace sa2
       const DWORD executedCycles = CpuExecute(thisCyclesToExecute, bVideoUpdate);
       totalCyclesExecuted += executedCycles;
 
-      GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedCycles);
-      MB_PeriodicUpdate(executedCycles);
+      GetCardMgr().Update(executedCycles);
       SpkrUpdate(executedCycles);
 
       g_dwCyclesThisFrame += executedCycles;

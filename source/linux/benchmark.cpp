@@ -140,7 +140,7 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
     const DWORD executedcycles = CpuExecute(cyclesPerMs, true);
     cyclesThisFrame += executedcycles;
     // every ms disk and joystick are updated
-    GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedcycles);
+    GetCardMgr().GetDisk2CardMgr().Update(executedcycles);
 #if 0
     JoyUpdateButtonLatch(executedcycles);
 #endif
