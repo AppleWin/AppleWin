@@ -15,7 +15,7 @@ public:
 	virtual void Init(void) {};
 	virtual void Reset(const bool powerCycle) {};
 
-	virtual void InitializeIO(void);
+	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void SetMemorySize(UINT banks) {}		// No-op for //e and slot-0 16K LC
 	virtual UINT GetActiveBank(void) { return 0; }	// Always 0 as only 1x 16K bank
 	virtual void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper) { _ASSERT(0); } // Not used for //e
@@ -71,7 +71,7 @@ public:
 	Saturn128K(UINT banks);
 	virtual ~Saturn128K(void);
 
-	virtual void InitializeIO(void);
+	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void SetMemorySize(UINT banks);
 	virtual UINT GetActiveBank(void);
 	virtual void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);

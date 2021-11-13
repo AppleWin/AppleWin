@@ -42,54 +42,64 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../resource/resource.h"
 
 /*
-Memory map:
+Memory map (for slot 7):
 
     C0F0	(r)   EXECUTE AND RETURN STATUS
-	C0F1	(r)   STATUS (or ERROR)
+	C0F1	(r)   STATUS (or ERROR): b7=busy, b0=error
 	C0F2	(r/w) COMMAND
 	C0F3	(r/w) UNIT NUMBER
 	C0F4	(r/w) LOW BYTE OF MEMORY BUFFER
 	C0F5	(r/w) HIGH BYTE OF MEMORY BUFFER
 	C0F6	(r/w) LOW BYTE OF BLOCK NUMBER
 	C0F7	(r/w) HIGH BYTE OF BLOCK NUMBER
-	C0F8    (r)   NEXT BYTE
+	C0F8    (r)   NEXT BYTE (legacy read-only port - still supported)
+
+Firmware notes:
+. ROR ABS16,X and ROL ABS16,X - only used for $C081+s*$10 STATUS register:
+    6502:  double read (old data), write (old data), write (new data). The writes are harmless as writes to STATUS are ignored.
+    65C02: double read (old data), write (new data). The write is harmless as writes to STATUS are ignored.
+. STA ABS16,X does a false-read. This is harmless for writable I/O registers, since the false-read has no side effect.
+
 */
 
 /*
-Hard drive emulation in Applewin.
+Hard drive emulation in AppleWin.
 
 Concept
-    To emulate a 32mb hard drive connected to an Apple IIe via Applewin.
+    To emulate a 32mb hard drive connected to an Apple IIe via AppleWin.
     Designed to work with Autoboot Rom and Prodos.
 
 Overview
   1. Hard drive image file
       The hard drive image file (.HDV) will be formatted into blocks of 512
       bytes, in a linear fashion. The internal formatting and meaning of each
-      block to be decided by the Apple's operating system (ProDos). To create
-      an empty .HDV file, just create a 0 byte file (I prefer the debug method).
-  
+      block to be decided by the Apple's operating system (ProDOS). To create
+      an empty .HDV file, just create a 0 byte file.
+
   2. Emulation code
-      There are 4 commands Prodos will send to a block device.
+      There are 4 commands ProDOS will send to a block device.
       Listed below are each command and how it's handled:
 
       1. STATUS
-          In the emulation's case, returns only a DEVICE OK (0) or DEVICE I/O ERROR (8).
-          DEVICE I/O ERROR only returned if no HDV file is selected.
+          In the emulation's case, returns only a DEVICE OK (0), DEVICE I/O ERROR ($27) or DEVICE NOT CONNECTED ($28)
+          DEVICE NOT CONNECTED only returned if no HDV file is selected.
 
       2. READ
           Loads requested block into a 512 byte buffer by attempting to seek to
             location in HDV file.
-          If seek fails, returns a DEVICE I/O ERROR.  Resets hd_buf_ptr used by HD_NEXTBYTE
+          If seek fails, returns a DEVICE I/O ERROR.  Resets m_buf_ptr used by legacy HD_NEXTBYTE
+          Copies requested block from a 512 byte buffer to the Apple's memory.
+          Sets STATUS.busy=1 until the DMA operation completes.
           Returns a DEVICE OK if read was successful, or a DEVICE I/O ERROR otherwise.
 
       3. WRITE
           Copies requested block from the Apple's memory to a 512 byte buffer
             then attempts to seek to requested block.
           If the seek fails (usually because the seek is beyond the EOF for the
-            HDV file), the Emulation will attempt to "grow" the HDV file to accomodate.
-            Once the file can accomodate, or if the seek did not fail, the buffer is
+            HDV file), the emulation will attempt to "grow" the HDV file to accommodate.
+            Once the file can accommodate, or if the seek did not fail, the buffer is
             written to the HDV file.  NOTE: A2PC will grow *AND* shrink the HDV file.
+		  Sets STATUS.busy=1 until the DMA operation completes.
           I didn't see the point in shrinking the file as this behaviour would require
             patching prodos (to detect DELETE FILE calls).
 
@@ -99,9 +109,9 @@ Overview
 
   3. Bugs
       The only thing I've noticed is that Copy II+ 7.1 seems to crash or stall
-      occasionally when trying to calculate how many free block are available
+      occasionally when trying to calculate how many free blocks are available
       when running a catalog.  This might be due to the great number of blocks
-      available.  Also, DDD pro will not optimise the disk correctally (it's
+      available.  Also, DDD pro will not optimise the disk correctly (it's
       doing a disk defragment of some sort, and when it requests a block outside
       the range of the image file, it starts getting I/O errors), so don't
       bother.  Any program that preforms a read before write to an "unwritten"
@@ -124,6 +134,9 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	// The HDD interface has a single Command register for both drives:
 	// . ProDOS will write to Command before switching drives
 	m_command = 0;
+
+	// Interface busy doing DMA for r/w when current cycle is earlier than this cycle
+	m_notBusyCycle = 0;
 
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
 
@@ -149,7 +162,7 @@ void HarddiskInterfaceCard::Reset(const bool powerCycle)
 
 //===========================================================================
 
-void HarddiskInterfaceCard::InitializeIO(const LPBYTE pCxRomPeripheral)
+void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	const DWORD HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
 
@@ -190,7 +203,20 @@ void HarddiskInterfaceCard::CleanupDrive(const int iDrive)
 
 void HarddiskInterfaceCard::NotifyInvalidImage(TCHAR* pszImageFilename)
 {
-	// TC: TO DO
+	// TC: TO DO - see Disk2InterfaceCard::NotifyInvalidImage()
+
+	char szBuffer[MAX_PATH + 128];
+
+	StringCbPrintf(
+		szBuffer,
+		MAX_PATH + 128,
+		TEXT("Unable to open the file %s."),
+		pszImageFilename);
+
+	GetFrame().FrameMessageBox(
+		szBuffer,
+		g_pAppTitle.c_str(),
+		MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 }
 
 //===========================================================================
@@ -206,11 +232,17 @@ void HarddiskInterfaceCard::LoadLastDiskImage(const int drive)
 	char pathname[MAX_PATH];
 
 	std::string& regSection = RegGetConfigSlotSection(m_slot);
-	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")))
+	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")) && (pathname[0] != 0))
 	{
 		m_saveDiskImage = false;
-		Insert(drive, pathname);
+		bool res = Insert(drive, pathname);
 		m_saveDiskImage = true;
+
+		if (!res)
+		{
+			NotifyInvalidImage(pathname);
+			CleanupDrive(drive);
+		}
 	}
 }
 
@@ -309,10 +341,10 @@ void HarddiskInterfaceCard::Destroy(void)
 //===========================================================================
 
 // Pre: pathname likely to include path (but can also just be filename)
-BOOL HarddiskInterfaceCard::Insert(const int iDrive, const std::string& pathname)
+bool HarddiskInterfaceCard::Insert(const int iDrive, const std::string& pathname)
 {
 	if (pathname.empty())
-		return FALSE;
+		return false;
 
 	if (m_hardDiskDrive[iDrive].m_imageloaded)
 		Unplug(iDrive);
@@ -429,14 +461,17 @@ bool HarddiskInterfaceCard::IsDriveUnplugged(const int iDrive)
 //===========================================================================
 
 #define DEVICE_OK				0x00
-#define DEVICE_UNKNOWN_ERROR	0x28
 #define DEVICE_IO_ERROR			0x27
+#define DEVICE_NOT_CONNECTED	0x28	// No device detected/connected
 
 BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
 	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->m_unitNum >> 7]);	// bit7 = drive select
+
+	CpuCalcCycles(nExecutedCycles);
+	const UINT CYCLES_FOR_DMA_RW_BLOCK = HD_BLOCK_SIZE;
 
 	BYTE r = DEVICE_OK;
 	pHDD->m_status_next = DISK_STATUS_READ;
@@ -466,7 +501,31 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 							{
 								pHDD->m_error = 0;
 								r = 0;
+								pCard->m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
 								pHDD->m_buf_ptr = 0;
+
+								// Apple II's MMU could be setup so that read & write memory is different,
+								// so can't use 'mem' (like we can for HDD block writes)
+								const UINT PAGE_SIZE = 256;
+								WORD dstAddr = pHDD->m_memblock;
+								UINT remaining = HD_BLOCK_SIZE;
+								BYTE* pSrc = pHDD->m_buf;
+
+								while (remaining)
+								{
+									memdirty[dstAddr >> 8] = 0xFF;
+									LPBYTE page = memwrite[dstAddr >> 8];
+
+									// handle both page-aligned & non-page aligned destinations
+									UINT size = PAGE_SIZE - (dstAddr & 0xff);
+									if (size > remaining) size = remaining;	// clip the last memcpy for the unaligned case
+
+									memcpy(page + (dstAddr & 0xff), pSrc, size);
+									pSrc += size;
+									dstAddr += size;
+
+									remaining -= size;
+								}
 							}
 							else
 							{
@@ -501,7 +560,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 								}
 							}
 
-							memmove(pHDD->m_buf, mem+pHDD->m_memblock, HD_BLOCK_SIZE);
+							memcpy(pHDD->m_buf, mem + pHDD->m_memblock, HD_BLOCK_SIZE);
 
 							if (bRes)
 								bRes = ImageWriteBlock(pHDD->m_imagehandle, pHDD->m_diskblock, pHDD->m_buf);
@@ -510,6 +569,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 							{
 								pHDD->m_error = 0;
 								r = 0;
+								pCard->m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
 							}
 							else
 							{
@@ -527,16 +587,19 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 			{
 				pHDD->m_status_next = DISK_STATUS_OFF;
 				pHDD->m_error = 1;
-				r = DEVICE_UNKNOWN_ERROR;
+				r = DEVICE_NOT_CONNECTED;	// GH#452
 			}
 		break;
 	case 0x1: // m_error
-		pHDD->m_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
-		if (pHDD->m_error)
-		{
-			_ASSERT(pHDD->m_error & 1);
-			pHDD->m_error |= 1;	// Firmware requires that b0=1 for an error
-		}
+		if (pHDD->m_error & 0x7f)
+			pHDD->m_error = 1;		// Firmware requires that b0=1 for an error
+		else
+			pHDD->m_error = 0;
+
+		if (g_nCumulativeCycles <= pCard->m_notBusyCycle)
+			pHDD->m_error |= 0x80;	// Firmware requires that b7=1 for busy (eg. busy doing r/w DMA operation)
+		else
+			pHDD->m_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
 
 		r = pHDD->m_error;
 		break;
@@ -558,7 +621,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 	case 0x7:
 		r = (BYTE)(pHDD->m_diskblock & 0xFF00 >> 8);
 		break;
-	case 0x8:
+	case 0x8:	// Legacy: continue to support this I/O port for old HDD firmware
 		r = pHDD->m_buf[pHDD->m_buf_ptr];
 		if (pHDD->m_buf_ptr < sizeof(pHDD->m_buf)-1)
 			pHDD->m_buf_ptr++;
@@ -649,8 +712,10 @@ bool HarddiskInterfaceCard::ImageSwap(void)
 //===========================================================================
 
 // Unit version history:
-// 2: Updated $Csnn firmware to fix GH#319
-static const UINT kUNIT_VERSION = 2;
+// 2: Updated $C7nn firmware to fix GH#319
+// 3: Updated $Csnn firmware to fix GH#996 (now slot-independent code)
+//    Added: Not Busy Cycle
+static const UINT kUNIT_VERSION = 3;
 
 #define SS_YAML_VALUE_CARD_HDD "Generic HDD"
 
@@ -667,6 +732,7 @@ static const UINT kUNIT_VERSION = 2;
 #define SS_YAML_KEY_STATUS_PREV "Status Prev"
 #define SS_YAML_KEY_BUF_PTR "Buffer Offset"
 #define SS_YAML_KEY_BUF "Buffer"
+#define SS_YAML_KEY_NOT_BUSY_CYCLE "Not Busy Cycle"
 
 std::string HarddiskInterfaceCard::GetSnapshotCardName(void)
 {
@@ -700,6 +766,7 @@ void HarddiskInterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	yamlSaveHelper.Save("%s: %d # b7=unit\n", SS_YAML_KEY_CURRENT_UNIT, m_unitNum);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_COMMAND, m_command);
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_NOT_BUSY_CYCLE, m_notBusyCycle);
 
 	SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_1);
 	SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_2);
@@ -777,11 +844,14 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT sl
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
-	if (version == 1 && (regs.pc >> 8) == (0xC0|slot))
+	if (version <= 2 && (regs.pc >> 8) == (0xC0|slot))
 		throw std::string("HDD card: 6502 is running old HDD firmware");
 
 	m_unitNum = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_UNIT);	// b7=unit
 	m_command = yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);
+
+	if (version >= 3)
+		m_notBusyCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_NOT_BUSY_CYCLE);
 
 	// Unplug all HDDs first in case HDD-2 is to be plugged in as HDD-1
 	for (UINT i=0; i<NUM_HARDDISKS; i++)

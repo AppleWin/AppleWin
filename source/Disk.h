@@ -130,7 +130,7 @@ public:
 	virtual void Init(void) {};
 	virtual void Reset(const bool powerCycle);
 
-	void InitializeIO(LPBYTE pCxRomPeripheral);
+	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	void Destroy(void);		// no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
 
 	void Boot(void);

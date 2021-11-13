@@ -26,7 +26,7 @@
 ;
 
 ; Modified by Tom Charlesworth:
-; . Updated so it can be assembled by ACME 0.96.4
+; . Updated so it can be assembled by ACME 0.97
 ; . Fixed so that ProDOS entrypoint is $c70a (26 Dev 2007) (Bug #12723)
 ; . Modified to support Apple Oasis' entrypoint: $c761 (8 Sept 2012) (Feature #5557)
 ; . Added support for SmartPort entrypoint (20 Oct 2012)
@@ -34,10 +34,11 @@
 ; . GH#370 (Robert Hoem, 27 Oct 2016):
 ;   . Added a check against open-apple during boot to route boot to slot 6
 ;   . This happens after the first two blocks are loaded from the HD.
-; . GH#319: smartport return address wrong when crossing page
+; . GH#319: SmartPort return address wrong when crossing page
+; . GH#996: Make code slot-independent (so HDD controller card can go into any slot)
+; . Moved the 512-byte block read into AppleWin's HDD emulation (to mirror the block write command)
 ; TODO:
-; . Make code relocatable (so HDD controller card can go into any slot)
-; . Remove support for Entrypoint_C746 (old AppleWin) & Entrypoint_C761 (Apple Oasis)
+; . Remove support for Entrypoint_Cs46 (old AppleWin) & Entrypoint_Cs61 (Apple Oasis)
 ;   - provide a utility to convert these to use Entrypoint_ProDOS
 ; . Check SmartPort: Is it OK to trash Y and $42,..,$47 ?
 ;
@@ -47,30 +48,37 @@
 !sl "hddrvr.labels"
 
 ; constants
-hd_execute = $c0f0
-hd_error = $c0f1
-hd_command = $c0f2
-hd_unitnum = $c0f3
-hd_memblock  = $c0f4
-hd_diskblock = $c0f6
-hd_nextbyte = $c0f8
+hd_execute = $c080
+hd_status = $c081		; b7=busy, b0=error
+hd_command = $c082
+hd_unitnum = $c083
+hd_memblock  = $c084
+hd_diskblock = $c086
+;hd_nextbyte = $c088	; legacy read-only port (still supported by AppleWin)
+
+; Notes on accesses to I/O registers:
+; . ROR ABS16,X and ROL ABS16,X - only used for $C081+s*$10 STATUS register:
+;     6502:  double read (old data), write (old data), write (new data). The writes are harmless as writes to STATUS are ignored.
+;     65C02: double read (old data), write (new data). The write is harmless as writes to STATUS are ignored.
+; . STA ABS16,X does a false-read. This is harmless for writable I/O registers, since the false-read has no side effect.
 
 command = $42
 unitnum = $43
 memblock = $44
 diskblock = $46
 
-slot6   = $c600
+slot6   = $C600
 OS      = $0801
 BUTTON0 = $C061
 
-; The Autoboot rom will call this.
-; This is also the entry point for such things as IN#7 and PR#7
-
-;; code
-*= $c700	; org $c700
+;======================================
 
 !zone code
+
+*= $0000	; org $0000 - position-independent code, so doesn't matter (but the other fixed org positions need to be on the same page)
+
+; The Autoboot rom will call this.
+; This is also the entry point for such things as IN#7 and PR#7
 
 start
 
@@ -83,44 +91,23 @@ start
  lda #$3C
  bne Bootstrap
 
-Entrypoint_ProDOS		; $c70a - ProDOS entrypoint
+Entrypoint_ProDOS		; $Cn0A - ProDOS entrypoint
  sec
  bcs Entrypoint
 
-Entrypoint_SmartPort	; $c70d - SmartPort entrypoint
+Entrypoint_SmartPort	; $Cn0D - SmartPort entrypoint
  clc
- 
-Entrypoint				; $c70e - entrypoint?
- bcs cmdproc
- bcc SmartPort
 
-;;
+Entrypoint				; $Cn0E - entrypoint?
+ bcs GetSlotInX			; C=1: GetSlotInX -> cmdproc
 
-Bootstrap
-; Lets check to see if there's an image ready
- lda #$00
- sta hd_command
-
-; Slot 7, disk 1
- lda #$70	; Slot# << 4
- sta hd_unitnum
- lda hd_execute
-
-; error capturing code.  Applewin is picky
-; about code assigning data to registers and
-; memory.  The safest method is via I/O port
- ror hd_error	; Post: C=0 or 1
- bcc hdboot
-
-; no image ready, boot diskette image instead
-BootSlot6
- jmp slot6
+ ; C=0: fall through to SmartPort...
 
 ;======================================
 
 ; TODO: Is it OK to trash Y and $42,..,$47 ?
-; Pre: C=0
-SmartPort
+; Pre: C=0, X = Slot# << 4
+SmartPort		; SmartPort -> GetSlotInX -> cmdproc
  pla
  sta $46
  adc #3         ; Pre: C=0, Post: C=0 or 1
@@ -136,24 +123,7 @@ SmartPort
  lda ($46),y	; cmd
  sta $42
  iny
- bne SmartPort2
 
-;======================================
-; 8 unused bytes
-
-*= $c746	; org $c746
-
-Entrypoint_C746	; Old f/w 'cmdproc' entrypoint
-				; Keep this for any DOSMaster HDD images created with old AppleWin HDD f/w.
-				; DOSMaster hardcodes the entrypoint addr into its bootstrapping code:
-				; - So DOSMaster images are tied to the HDD's controller's f/w
- sec
- bcs Entrypoint
-
-;======================================
-
-; Pre: Y=2
-SmartPort2
  lda ($46),y	; param_l
  sta $45
  iny
@@ -164,31 +134,76 @@ SmartPort2
  lda ($45),y	; unit
  sta $43
  iny
+
  lda ($45),y	; memblock_l
  sta $44
  iny
- bne SmartPort3
+ lda ($45),y	; memblock_h
+ pha
+ iny
+
+ lda ($45),y	; diskblock_l
+ pha
+ iny
+
+ bne SmartPort2
 
 ;======================================
-; 1 unused byte
- 
-*= $c761	; org $c761
+; 2 unused bytes
 
-Entrypoint_C761	; Apple Oasis HDD controller entrypoint
+@checkCs46
+*= $0046	; org $0046
+!warn "Cs46 padding = ", * - @checkCs46
+
+Entrypoint_Cs46	; Old f/w 'cmdproc' entrypoint
+				; Keep this for any DOSMaster HDD images created with old AppleWin HDD f/w.
+				; DOSMaster hardcodes the entrypoint addr into its bootstrapping code:
+				; - So DOSMaster images are tied to the HDD's controller's f/w
+ sec
+ bcs Entrypoint	; or directly to GetSlotInX
+
+;======================================
+
+Bootstrap
+; Lets check to see if there's an image ready
+; Slot n, disk 1
+ clc
+ bcc GetSlotInX			; Post: X = Slot# << 4
+Bootstrap2
+ lda #$00
+ sta hd_unitnum,x		; b7=0 => disk 1
+ sta hd_command,x
+ lda hd_execute,x
+ ror hd_status,x	; Post: C=0 or 1
+ bcc hdboot
+
+; no image ready, boot diskette image instead
+BootSlot6
+ jmp slot6
+
+;======================================
+; 2 unused bytes
+ 
+@checkCs61
+*= $0061	; org $0061
+!warn "Cs61 padding = ", * - @checkCs61
+
+Entrypoint_Cs61	; Apple Oasis HDD controller entrypoint
 				; Keep this for any DOSMaster HDD images created with Apple Oasis HDD f/w.
 				; DOSMaster hardcodes the entrypoint addr into its bootstrapping code:
 				; - So DOSMaster images are tied to the HDD's controller's f/w
  sec
- bcs Entrypoint
+ bcs Entrypoint	; or directly to GetSlotInX
 
 ;======================================
 
 ; image ready.  Lets boot from it.
-; we want to load block 1 from s7,d1 to $800 then jump there
+; we want to load block 1 from disk 1 to $800 then jump there
+; Pre: X = Slot# << 4
+;	C = 0
 hdboot
- lda #$70	; Slot# << 4
- sta unitnum
  lda #$0
+ sta unitnum	; b7=0 => disk 1
  sta memblock
  sta diskblock
  sta diskblock+1
@@ -196,101 +211,109 @@ hdboot
  sta memblock+1
  lda #$1
  sta command
- jsr cmdproc
+ bne cmdproc
+hdboot2
  bcs BootSlot6
 
-goload
- bit BUTTON0   ; button 0 pressed?
+ bit BUTTON0	; button 0 pressed?
  bmi BootSlot6
 
-; X=device
- ldx #$70	; Slot# << 4
+; Pre: X = Slot# << 4
  jmp OS
-
-; entry point for ProDOS' block driver
-; simple really. Copy the command from $42..$47
-; to our I/O ports then execute command
-cmdproc
- clc
- lda $42
- sta hd_command
- lda $43
- sta hd_unitnum
- lda $44
- sta hd_memblock
- lda $45
- sta hd_memblock+1
- lda $46
- sta hd_diskblock
- lda $47
- sta hd_diskblock+1
- lda hd_execute
-
-; check for error
- pha
- lda command
- cmp #1
- bne skipSread
- jsr sread
-skipSread
- ror hd_error	; Post: C=0 or 1
- pla
- rts
-
-
-; if there's no error, then lets read the block into memory
-; because Applewin is picky about memory management, here's what I did:
-; on read, hd_nextbyte = buffer[0], therefore we'll read that byte 256 times (in which
-; the emulated code increments the buffer by 1 on each read) to (memblock),y
-; increment memblock+1 and read the second 256 bytes via hd_nextbyte.
-;
-; if I could figure out how to consistently get applewin to update it's memory regions all
-; this code can be moved into the emulation code (although, this is how I'd build the hardware
-; anyway...)
-
-sread
- tya
- pha
- ldy #0
-loop1
- lda hd_nextbyte
- sta (memblock),y
- iny
- bne loop1
- inc memblock+1
- ldy #0
-loop2
- lda hd_nextbyte
- sta (memblock),y
- iny
- bne loop2
- dec memblock+1		; restore memblock+1 ($45) to original value (for Epyx's California Games)
- pla
- tay
- rts
 
 ;======================================
 
-SmartPort3
- lda ($45),y	; memblock_h
- pha
- iny
- lda ($45),y	; diskblock_l
- pha
- iny
+SmartPort2
  lda ($45),y	; diskblock_h
  sta $47
- 
+
  pla
  sta $46
  pla
  sta $45
- 
- iny
- bne cmdproc
+
+ sec
+ ; fall through...
 
 ;======================================
-; 18 unused bytes
+
+; Pre:
+;	C=0 => via Bootstrap
+;	C=1 => via Entrypoint / SmartPort2
+; Post:
+;	X = Slot# << 4
+GetSlotInX
+ php
+ sei			; disable ints, in case an int handler races our $0000/RTS and stack accesses!
+
+ ; NB. need RAM that's guaranteed to be both read & writeable:
+ ; . can't use $0200-$BFFF, due to eg. RAMRD=0/RAMWRT=1 combination
+ ; . can't use LC as ROM might be enabled.
+ ; So use ZP (specifically $0000) as whatever the state of ALTZP, both read & write will be to the same physical memory location.
+ lda $00		; save $00
+ ldx #$60		; opcode RTS
+ stx $00
+ jsr $0000		; RTS immediately (NB. can't use $FF58, since LC RAM may be switched in)
+ sta $00		; restore $00
+ tsx
+ lda $0100,x	; $Cn
+ asl
+ asl
+ asl
+ asl
+ tax			; X=$n0
+
+ plp			; + restore int status
+ bcc Bootstrap2
+ ; otherwise fall through for Entrypoint / SmartPort...
+
+;--------------------------------------
+
+; entry point for ProDOS' block driver
+; simple really. Copy the command from $42..$47
+; to our I/O ports then execute command
+
+; Pre:
+;	C=0 => via Bootstrap (hdboot)
+;	C=1 => via GetSlotInX (eg. Entrypoint / SmartPort2)
+;	X = Slot# << 4
+; Post:
+; 	C = hd_status.b0
+;	A = result of hd_execute
+;	X = Slot# << 4
+cmdproc
+ php
+
+ lda command
+ sta hd_command,x
+ lda unitnum
+ sta hd_unitnum,x
+ lda memblock
+ sta hd_memblock,x
+ lda memblock+1
+ sta hd_memblock+1,x
+ lda diskblock
+ sta hd_diskblock,x
+ lda diskblock+1
+ sta hd_diskblock+1,x
+ lda hd_execute,x	; A = result of hd_execute (NB. instantaneous 512 byte r/w!)
+
+-	rol hd_status,x	; b7=busy doing DMA?
+	bcs -
+
+ plp			; restore C from start of cmdproc
+ bcs done
+ ror hd_status,x	; Post: C=0 or 1
+ lda #0
+ beq hdboot2
+
+done
+ ror hd_status,x	; Post: C=0 or 1
+ rts
+
+;======================================
+
+; 33 unused bytes
 
 !zone data
 
@@ -309,7 +332,10 @@ SmartPort3
 
 ; datablock.  This starts near the end of the firmware (at offset $FC)
 ;; data
-*= $c7fc	; org $c7fc
+@checkCsFC
+*= $00FC	; org $00FC
+!warn "CsFC padding = ", * - @checkCsFC
+
  !word $7fff ; how many blocks are on the device.
  !byte $D7 ; specifics about the device (number of drives, read/write/format capability, etc)
  !byte <Entrypoint_ProDOS ; entry point offset for ProDOS (must be $0a)

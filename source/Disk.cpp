@@ -178,11 +178,17 @@ void Disk2InterfaceCard::LoadLastDiskImage(const int drive)
 	char pathname[MAX_PATH];
 
 	std::string& regSection = RegGetConfigSlotSection(m_slot);
-	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")))
+	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")) && (pathname[0] != 0))
 	{
 		m_saveDiskImage = false;
-		InsertDisk(drive, pathname, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+		ImageError_e error = InsertDisk(drive, pathname, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 		m_saveDiskImage = true;
+
+		if (error != eIMAGE_ERROR_NONE)
+		{
+			NotifyInvalidImage(drive, pathname, error);
+			EjectDisk(drive);
+		}
 	}
 }
 

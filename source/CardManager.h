@@ -57,6 +57,8 @@ public:
 	class CSuperSerialCard* GetSSC(void) { return m_pSSC; }
 	bool IsSSCInstalled(void) { return m_pSSC != NULL; }
 
+	void InitializeIO(LPBYTE pCxRomPeripheral);
+
 private:
 	void InsertInternal(UINT slot, SS_CARDTYPE type);
 	void InsertAuxInternal(SS_CARDTYPE type);

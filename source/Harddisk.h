@@ -88,13 +88,13 @@ public:
 	virtual void Init(void) {}
 	virtual void Reset(const bool powerCycle);
 
-	void InitializeIO(const LPBYTE pCxRomPeripheral);
+	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	void Destroy(void);
 	const std::string& GetFullName(const int iDrive);
 	const std::string& HarddiskGetFullPathName(const int iDrive);
 	void GetFilenameAndPathForSaveState(std::string& filename, std::string& path);
 	bool Select(const int iDrive);
-	BOOL Insert(const int iDrive, const std::string& pathname);
+	bool Insert(const int iDrive, const std::string& pathname);
 	void Unplug(const int iDrive);
 	bool IsDriveUnplugged(const int iDrive);
 	void LoadLastDiskImage(const int iDrive);
@@ -125,6 +125,7 @@ private:
 
 	BYTE m_unitNum;			// b7=unit
 	BYTE m_command;
+	UINT64 m_notBusyCycle;
 
 	bool m_saveDiskImage;	// Save the DiskImage name to Registry
 
