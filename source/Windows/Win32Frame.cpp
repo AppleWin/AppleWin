@@ -296,7 +296,7 @@ void Win32Frame::Benchmark(void)
 			while (cycles > 0) {
 				DWORD executedcycles = CpuExecute(103, true);
 				cycles -= executedcycles;
-				GetCardMgr().GetDisk2CardMgr().UpdateDriveState(executedcycles);
+				GetCardMgr().GetDisk2CardMgr().Update(executedcycles);
 				JoyUpdateButtonLatch(executedcycles);
 			}
 		}

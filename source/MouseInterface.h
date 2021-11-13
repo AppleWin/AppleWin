@@ -11,8 +11,9 @@ public:
 	CMouseInterface(UINT slot);
 	virtual ~CMouseInterface();
 
-	virtual void Init(void) {};
-	virtual void Reset(const bool powerCycle) {};
+	virtual void Init(void) {}
+	virtual void Reset(const bool powerCycle) {}
+	virtual void Update(const ULONG nExecutedCycles) {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 //	void Uninitialize();

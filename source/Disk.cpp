@@ -1691,7 +1691,7 @@ void __stdcall Disk2InterfaceCard::SetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uE
 
 //===========================================================================
 
-void Disk2InterfaceCard::UpdateDriveState(DWORD cycles)
+void Disk2InterfaceCard::Update(const ULONG cycles)
 {
 	int loop = NUM_DRIVES;
 	while (loop--)

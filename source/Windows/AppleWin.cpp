@@ -217,10 +217,8 @@ static void ContinueExecution(void)
 	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
-	GetCardMgr().GetDisk2CardMgr().UpdateDriveState(uActualCyclesExecuted);
+	GetCardMgr().Update(uActualCyclesExecuted);
 	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
-	PrintUpdate(uActualCyclesExecuted);
-	MB_PeriodicUpdate(uActualCyclesExecuted);
 
 	//
 
@@ -822,7 +820,7 @@ static void RepeatInitialization(void)
 		GetCardMgr().GetDisk2CardMgr().Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
 		LogFileOutput("Main: DiskReset()\n");
 		if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-			dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Reset(true);	// GH#515
+			GetCardMgr().GetRef(SLOT7).Reset(true);	// GH#515
 		LogFileOutput("Main: HDDReset()\n");
 
 		if (!g_bSysClkOK)
