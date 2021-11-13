@@ -87,6 +87,7 @@ public:
 
 	virtual void Init(void) {}
 	virtual void Reset(const bool powerCycle);
+	virtual void Update(const ULONG nExecutedCycles) {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	void Destroy(void);

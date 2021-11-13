@@ -202,3 +202,14 @@ void CardManager::InitializeIO(LPBYTE pCxRomPeripheral)
 		}
 	}
 }
+
+void CardManager::Update(const ULONG nExecutedCycles)
+{
+    for (UINT i = 0; i < NUM_SLOTS; ++i)
+    {
+        if (m_slot[i])
+        {
+            m_slot[i]->Update(nExecutedCycles);
+        }
+    }
+}

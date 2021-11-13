@@ -131,6 +131,8 @@ public:
 	virtual void Reset(const bool powerCycle);
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
+	virtual void Update(const ULONG nExecutedCycles);
+
 	void Destroy(void);		// no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
 
 	void Boot(void);
@@ -160,7 +162,6 @@ public:
 	std::string GetCurrentPhaseString(void);
 	LPCTSTR GetCurrentState(void);
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
-	void UpdateDriveState(DWORD cycles);
 	bool DriveSwap(void);
 	bool IsDriveConnected(int drive) { return m_floppyDrive[drive].m_isConnected; }
 
