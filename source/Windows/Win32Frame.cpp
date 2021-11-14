@@ -297,7 +297,6 @@ void Win32Frame::Benchmark(void)
 				DWORD executedcycles = CpuExecute(103, true);
 				cycles -= executedcycles;
 				GetCardMgr().GetDisk2CardMgr().Update(executedcycles);
-				JoyUpdateButtonLatch(executedcycles);
 			}
 		}
 		if (cycle & 1)

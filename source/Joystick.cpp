@@ -48,8 +48,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Configuration/PropertySheet.h"
 
-#define BUTTONTIME	5000	// This is the latch (debounce) time in usecs for the joystick buttons
-
 enum {DEVICE_NONE=0, DEVICE_JOYSTICK, DEVICE_KEYBOARD, DEVICE_MOUSE, DEVICE_JOYSTICK_THUMBSTICK2};
 
 // Indexed by joytype[n]
@@ -86,7 +84,6 @@ static POINT keyvalue[9] = {{PDL_MIN,PDL_MAX},    {PDL_CENTRAL,PDL_MAX},    {PDL
                             {PDL_MIN,PDL_CENTRAL},{PDL_CENTRAL,PDL_CENTRAL},{PDL_MAX,PDL_CENTRAL},
                             {PDL_MIN,PDL_MIN},    {PDL_CENTRAL,PDL_MIN},    {PDL_MAX,PDL_MIN}};
 
-static int   buttonlatch[3] = {0,0,0};
 static BOOL  joybutton[3]   = {0,0,0};
 
 static int   joyshrx[2]     = {8,8};
@@ -133,12 +130,6 @@ void CheckJoystick0()
     JOYINFO info;
     if (joyGetPos(JOYSTICKID1,&info) == JOYERR_NOERROR)
 	{
-      if ((info.wButtons & JOY_BUTTON1) && !joybutton[0])
-        buttonlatch[0] = BUTTONTIME;
-      if ((info.wButtons & JOY_BUTTON2) && !joybutton[1] &&
-          (joyinfo[joytype[1]] == DEVICE_NONE)	// Only consider 2nd button if NOT emulating a 2nd Apple joystick
-         )
-		   buttonlatch[1] = BUTTONTIME;
       joybutton[0] = ((info.wButtons & JOY_BUTTON1) != 0);
       if (joyinfo[joytype[1]] == DEVICE_NONE)	// Only consider 2nd button if NOT emulating a 2nd Apple joystick
         joybutton[1] = ((info.wButtons & JOY_BUTTON2) != 0);
@@ -180,13 +171,6 @@ void CheckJoystick1()
       result = joyGetPos(JOYSTICKID2, &info);
     if (result == JOYERR_NOERROR)
 	{
-      if ((info.wButtons & JOY_BUTTON1) && !joybutton[2])
-	  {
-        buttonlatch[2] = BUTTONTIME;
-        if(joyinfo[joytype[1]] != DEVICE_NONE)
-          buttonlatch[1] = BUTTONTIME;	// Re-map this button when emulating a 2nd Apple joystick
-	  }
-
       joybutton[2] = ((info.wButtons & JOY_BUTTON1) != 0);
       if(joyinfo[joytype[1]] != DEVICE_NONE)
         joybutton[1] = ((info.wButtons & JOY_BUTTON1) != 0);	// Re-map this button when emulating a 2nd Apple joystick
@@ -412,30 +396,7 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 
 	//
 
-	if (virtkey == VK_NUMPAD0)
-	{
-		if(down)
-		{
-			if(joyinfo[joytype[1]] != DEVICE_KEYBOARD)
-			{
-				buttonlatch[0] = BUTTONTIME;
-			}
-			else if(joyinfo[joytype[1]] != DEVICE_NONE)
-			{
-				buttonlatch[2] = BUTTONTIME;
-				buttonlatch[1] = BUTTONTIME;	// Re-map this button when emulating a 2nd Apple joystick
-			}
-		}
-	}
-	else if (virtkey == VK_DECIMAL)
-	{
-		if(down)
-		{
-			if(joyinfo[joytype[1]] != DEVICE_KEYBOARD)
-				buttonlatch[1] = BUTTONTIME;
-		}
-	}
-	else if ((down && !autorep) || (GetPropertySheet().GetJoystickCenteringControl() == JOYSTICK_MODE_CENTERING))
+	if ((down && !autorep) || (GetPropertySheet().GetJoystickCenteringControl() == JOYSTICK_MODE_CENTERING))
 	{
 		int xkeys  = 0;
 		int ykeys  = 0;
@@ -524,10 +485,9 @@ BYTE __stdcall JoyportReadButton(WORD address, ULONG nExecutedCycles)
 		switch (address)
 		{
 			case 0x61:
-				pressed = (buttonlatch[0] || joybutton[0] || setbutton[0] /*|| keydown[JK_OPENAPPLE]*/);
+				pressed = (joybutton[0] || setbutton[0] /*|| keydown[JK_OPENAPPLE]*/);
 				if(joyinfo[joytype[1]] != DEVICE_KEYBOARD)	// BUG? joytype[1] should be [0] ?
 					pressed = (pressed || keydown[JK_BUTTON0]);
-				buttonlatch[0] = 0;
 				break;
 
 			case 0x62:	// Left or Up
@@ -568,8 +528,7 @@ BYTE __stdcall JoyportReadButton(WORD address, ULONG nExecutedCycles)
 
 static BOOL CheckButton0Pressed(void)
 {
-	BOOL pressed =	buttonlatch[0] ||
-					joybutton[0] ||
+	BOOL pressed =	joybutton[0] ||
 					setbutton[0] ||
 					keydown[JK_OPENAPPLE];
 
@@ -581,8 +540,7 @@ static BOOL CheckButton0Pressed(void)
 
 static BOOL CheckButton1Pressed(void)
 {
-	BOOL pressed =	buttonlatch[1] ||
-					joybutton[1] ||
+	BOOL pressed =	joybutton[1] ||
 					setbutton[1] ||
 					keydown[JK_CLOSEDAPPLE];
 
@@ -617,7 +575,6 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedC
 			{
 				pressed = !swapButtons0and1 ? CheckButton0Pressed() : CheckButton1Pressed();
 				const UINT button0 = !swapButtons0and1 ? 0 : 1;
-				buttonlatch[button0] = 0;
 				DoAutofire(button0, pressed);
 			}
 			break;
@@ -626,7 +583,6 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedC
 			{
 				pressed = !swapButtons0and1 ? CheckButton1Pressed() : CheckButton0Pressed();
 				const UINT button1 = !swapButtons0and1 ? 1 : 0;
-				buttonlatch[button1] = 0;
 				DoAutofire(button1, pressed);
 			}
 			break;
@@ -640,10 +596,9 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedC
 			}
 			else
 			{
-				pressed = (buttonlatch[2] || joybutton[2] || setbutton[2]);
+				pressed = (joybutton[2] || setbutton[2]);
 				DoAutofire(2, pressed);
 			}
-			buttonlatch[2] = 0;
 			break;
 	}
 
@@ -737,9 +692,6 @@ void JoySetButton(eBUTTON number, eBUTTONSTATE down)
   }
 
   setbutton[number] = down;
-
-  if (down)
-    buttonlatch[number] = BUTTONTIME;
 }
 
 //===========================================================================
@@ -834,22 +786,6 @@ void JoySetPosition(int xvalue, int xrange, int yvalue, int yrange)
   ypos[nJoyNum] = (yvalue*255)/yrange;
 }
  
-//===========================================================================
-
-// Update the latch (debounce) time for each button
-void JoyUpdateButtonLatch(const UINT nExecutionPeriodUsec)
-{
-	for (UINT i=0; i<3; i++)
-	{
-		if (buttonlatch[i])
-		{
-			buttonlatch[i] -= nExecutionPeriodUsec;
-			if (buttonlatch[i] < 0)
-				buttonlatch[i] = 0;
-		}
-	}
-}
-
 //===========================================================================
 
 BOOL JoyUsingMouse()
