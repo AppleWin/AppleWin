@@ -92,3 +92,21 @@ void DummyCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		break;
 	}
 }
+
+bool DummyCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+{
+	switch (QueryType())
+	{
+	case CT_GenericPrinter:
+		return Printer_LoadSnapshot(yamlLoadHelper, slot, version);
+	case CT_MockingboardC:
+		return MB_LoadSnapshot(yamlLoadHelper, slot, version);
+	case CT_Phasor:
+		return Phasor_LoadSnapshot(yamlLoadHelper, slot, version);
+	case CT_Z80:
+		return Z80_LoadSnapshot(yamlLoadHelper, slot, version);
+	case CT_Uthernet:
+		return tfe_LoadSnapshot(yamlLoadHelper, slot, version);
+	}
+	return false;
+}

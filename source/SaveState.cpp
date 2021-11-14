@@ -328,92 +328,74 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		if (card == Printer_GetSnapshotCardName())
 		{
 			type = CT_GenericPrinter;
-			GetCardMgr().Insert(slot, type);
-			bRes = Printer_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == CSuperSerialCard::GetSnapshotCardName())
 		{
 			type = CT_SSC;
-			GetCardMgr().Insert(slot, type);
-			bRes = dynamic_cast<CSuperSerialCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == CMouseInterface::GetSnapshotCardName())
 		{
 			type = CT_MouseInterface;
-			GetCardMgr().Insert(slot, type);
-			bRes = dynamic_cast<CMouseInterface&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == Z80_GetSnapshotCardName())
 		{
 			type = CT_Z80;
-			GetCardMgr().Insert(slot, type);
-			bRes = Z80_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == MB_GetSnapshotCardName())
 		{
 			type = CT_MockingboardC;
-			GetCardMgr().Insert(slot, type);
-			bRes = MB_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == Phasor_GetSnapshotCardName())
 		{
 			type = CT_Phasor;
-			GetCardMgr().Insert(slot, type);
-			bRes = Phasor_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == SAMCard::GetSnapshotCardName())
 		{
 			type = CT_SAM;
-			GetCardMgr().Insert(slot, type);
-			bRes = dynamic_cast<SAMCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == Disk2InterfaceCard::GetSnapshotCardName())
 		{
 			type = CT_Disk2;
-			GetCardMgr().Insert(slot, type);
-			bRes = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == HarddiskInterfaceCard::GetSnapshotCardName())
 		{
 			type = CT_GenericHDD;
-			GetCardMgr().Insert(slot, type);
-			bRes = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion, g_strSaveStatePath);
 		}
 		else if (card == tfe_GetSnapshotCardName())
 		{
 			type = CT_Uthernet;
-			GetCardMgr().Insert(slot, type);
-			tfe_LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == LanguageCardSlot0::GetSnapshotCardName())
 		{
 			type = CT_LanguageCard;
-			SetExpansionMemType(type);	// calls GetCardMgr().Insert() & InsertAux()
-			CreateLanguageCard();
-			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == Saturn128K::GetSnapshotCardName())
 		{
 			type = CT_Saturn128K;
-			SetExpansionMemType(type);	// calls GetCardMgr().Insert() & InsertAux()
-			CreateLanguageCard();
-			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == FourPlayCard::GetSnapshotCardName())
 		{
 			type = CT_FourPlay;
-			GetCardMgr().Insert(slot, type);
-			bRes = dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else if (card == SNESMAXCard::GetSnapshotCardName())
 		{
 			type = CT_SNESMAX;
-			GetCardMgr().Insert(slot, type);
-			bRes = dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else
 		{
 			throw std::string("Slots: Unknown card: " + card);	// todo: don't throw - just ignore & continue
+		}
+
+		if (slot == 0)
+		{
+			SetExpansionMemType(type);	// calls GetCardMgr().Insert() & InsertAux()
+			CreateLanguageCard();
+			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+		}
+		else
+		{
+			GetCardMgr().Insert(slot, type);
+			bRes = GetCardMgr().GetRef(slot).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 
 		cardInserted[slot] = true;

@@ -167,7 +167,7 @@ public:
 
 	static std::string GetSnapshotCardName(void);
 	virtual void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+	virtual bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 	void LoadLastDiskImage(const int drive);
 	void SaveLastDiskImage(const int drive);
