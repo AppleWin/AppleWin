@@ -331,6 +331,8 @@ namespace sa2
                 if (ImGui::Selectable(getCardName(card).c_str(), isSelected))
                 {
                   SetExpansionMemType(card);
+                  CreateLanguageCard();
+                  MemInitializeIO();
                 }
                 if (isSelected)
                 {

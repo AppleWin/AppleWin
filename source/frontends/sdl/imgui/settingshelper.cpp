@@ -184,6 +184,10 @@ namespace sa2
     };
 
     cardManager.Insert(slot, card);
+
+    // keep everything consistent
+    // a bit of a heavy call, but nothing simpler is available now
+    MemInitializeIO();
   }
 
   void setVideoStyle(Video & video, const VideoStyle_e style, const bool enabled)
