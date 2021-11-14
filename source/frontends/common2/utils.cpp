@@ -2,8 +2,6 @@
 #include "frontends/common2/utils.h"
 #include "frontends/common2/programoptions.h"
 
-#include "linux/network/uthernet2.h"
-
 #include "SaveState.h"
 
 #include "Common.h"
@@ -62,20 +60,6 @@ namespace common2
     }
   }
 
-  void LoadUthernet2()
-  {
-    CardManager & cardManager = GetCardMgr();
-    for (UINT slot = SLOT1; slot < NUM_SLOTS; slot++)
-    {
-      if (cardManager.QuerySlot(slot) == CT_Uthernet2)
-      {
-        // AppleWin does not know anything about this
-        registerUthernet2(slot);
-        break;
-      }
-    }
-  }
-
   void InitialiseEmulator()
   {
 #ifdef RIFF_SPKR
@@ -91,7 +75,6 @@ namespace common2
     g_bFullSpeed = false;
 
     LoadConfiguration();
-    LoadUthernet2();
     SetCurrentCLK6502();
     GetAppleWindowTitle();
     GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
@@ -130,7 +113,6 @@ namespace common2
     MB_Destroy();
     DSUninit();
 
-    unRegisterUthernet2();
     tfe_shutdown();
 
     if (cardManager.QuerySlot(SLOT7) == CT_GenericHDD)

@@ -3,6 +3,7 @@
 #include "Registry.h"
 #include "Harddisk.h"
 #include "Core.h"
+#include "Memory.h"
 #include "Debugger/Debug.h"
 
 #include "Tfe/tfe.h"
@@ -101,8 +102,8 @@ namespace
       {3, {CT_Empty, CT_Uthernet, CT_Uthernet2}},
       {4, {CT_Empty, CT_MockingboardC, CT_MouseInterface, CT_Phasor, CT_Uthernet2}},
       {5, {CT_Empty, CT_MockingboardC, CT_Z80, CT_SAM, CT_Disk2, CT_FourPlay, CT_SNESMAX, CT_Uthernet2}},
-      {6, {CT_Empty, CT_Disk2}},
-      {7, {CT_Empty, CT_GenericHDD}},
+      {6, {CT_Empty, CT_Disk2, CT_Uthernet2}},
+      {7, {CT_Empty, CT_GenericHDD, CT_Uthernet2}},
     };
 
     const std::vector<SS_CARDTYPE> expansionCards =
@@ -181,18 +182,6 @@ namespace sa2
         break;
       }
     };
-
-    if (card == CT_Uthernet2)
-    {
-      // only 1 Uthernet2 allowed
-      for (size_t s = SLOT1; s < NUM_SLOTS; ++s)
-      {
-        if (cardManager.QuerySlot(s) == card)
-        {
-          cardManager.Insert(s, CT_Empty);
-        }
-      }
-    }
 
     cardManager.Insert(slot, card);
   }
