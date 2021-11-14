@@ -59,6 +59,7 @@ public:
 
 	void InitializeIO(LPBYTE pCxRomPeripheral);
 	void Update(const ULONG nExecutedCycles);
+	void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);  // It DOES NOT save SLOT0
 
 private:
 	void InsertInternal(UINT slot, SS_CARDTYPE type);

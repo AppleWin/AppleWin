@@ -20,7 +20,7 @@ public:
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
 	static std::string GetSnapshotCardName(void);
-	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+	virtual void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 	static const UINT JOYSTICKSTATIONARY = 0x20;

@@ -606,52 +606,7 @@ void Snapshot_SaveState(void)
 			if (GetCardMgr().QuerySlot(SLOT0) != CT_Empty && IsApple2PlusOrClone(GetApple2Type()))
 				GetLanguageCard()->SaveSnapshot(yamlSaveHelper);	// Language Card or Saturn 128K
 
-			if (GetCardMgr().QuerySlot(SLOT1) == CT_GenericPrinter)
-				Printer_SaveSnapshot(yamlSaveHelper);
-
-			if (GetCardMgr().QuerySlot(SLOT2) == CT_SSC)
-				dynamic_cast<CSuperSerialCard&>(GetCardMgr().GetRef(SLOT2)).SaveSnapshot(yamlSaveHelper);
-
-			if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
-				tfe_SaveSnapshot(yamlSaveHelper);
-
-			if (GetCardMgr().QuerySlot(SLOT4) == CT_MouseInterface)
-				dynamic_cast<CMouseInterface&>(GetCardMgr().GetRef(SLOT4)).SaveSnapshot(yamlSaveHelper);
-
-			if (GetCardMgr().QuerySlot(SLOT4) == CT_Z80)
-				Z80_SaveSnapshot(yamlSaveHelper, SLOT4);
-
-			if (GetCardMgr().QuerySlot(SLOT5) == CT_Z80)
-				Z80_SaveSnapshot(yamlSaveHelper, SLOT5);
-
-			if (GetCardMgr().QuerySlot(SLOT4) == CT_MockingboardC)
-				MB_SaveSnapshot(yamlSaveHelper, SLOT4);
-
-			if (GetCardMgr().QuerySlot(SLOT5) == CT_MockingboardC)
-				MB_SaveSnapshot(yamlSaveHelper, SLOT5);
-
-			if (GetCardMgr().QuerySlot(SLOT4) == CT_Phasor)
-				Phasor_SaveSnapshot(yamlSaveHelper, SLOT4);
-
-			if (GetCardMgr().QuerySlot(SLOT5) == CT_SAM)
-				dynamic_cast<SAMCard&>(GetCardMgr().GetRef(SLOT5)).SaveSnapshot(yamlSaveHelper);
-
-			if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
-				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).SaveSnapshot(yamlSaveHelper);
-
-			if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
-				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).SaveSnapshot(yamlSaveHelper);
-
-			if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).SaveSnapshot(yamlSaveHelper);
-
-			for (UINT slot = SLOT3; slot <= SLOT5; slot++)
-			{
-				if (GetCardMgr().QuerySlot(slot) == CT_FourPlay)
-					dynamic_cast<FourPlayCard&>(GetCardMgr().GetRef(slot)).SaveSnapshot(yamlSaveHelper);
-				else if (GetCardMgr().QuerySlot(slot) == CT_SNESMAX)
-					dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(slot)).SaveSnapshot(yamlSaveHelper);
-			}
+			GetCardMgr().SaveSnapshot(yamlSaveHelper);
 		}
 
 		// Miscellaneous

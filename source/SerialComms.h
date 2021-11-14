@@ -37,7 +37,7 @@ public:
 	void    CommDestroy();
 	void    CommSetSerialPort(DWORD dwNewSerialPortItem);
 	static std::string GetSnapshotCardName(void);
-	void	SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+	virtual void	SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	bool	LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 	char*	GetSerialPortChoices();

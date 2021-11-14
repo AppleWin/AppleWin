@@ -50,8 +50,6 @@ bool g_bFilterUnprintable = true;
 bool g_bPrinterAppend = false;
 bool g_bEnableDumpToRealPrinter = false;
 
-static UINT g_uSlot = 0;
-
 //===========================================================================
 
 static BYTE __stdcall PrintStatus(WORD, WORD, BYTE, BYTE, ULONG);
@@ -71,8 +69,6 @@ VOID PrintLoadRom(LPBYTE pCxRomPeripheral, const UINT uSlot)
 	//
 
 	RegisterIoHandler(uSlot, PrintStatus, PrintTransmit, NULL, NULL, NULL, NULL);
-
-	g_uSlot = uSlot;
 }
 
 //===========================================================================
@@ -215,9 +211,9 @@ std::string Printer_GetSnapshotCardName(void)
 	return name;
 }
 
-void Printer_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
+void Printer_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 {
-	YamlSaveHelper::Slot slot(yamlSaveHelper, Printer_GetSnapshotCardName(), g_uSlot, 1);
+	YamlSaveHelper::Slot slot(yamlSaveHelper, Printer_GetSnapshotCardName(), uSlot, 1);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_INACTIVITY, inactivity);
