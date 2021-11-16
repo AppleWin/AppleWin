@@ -52,12 +52,13 @@ LanguageCardUnit::~LanguageCardUnit(void)
 
 void LanguageCardUnit::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-	RegisterIoHandler(kSlot0, &LanguageCardUnit::IO, &LanguageCardUnit::IO, NULL, NULL, this, NULL);
+	RegisterIoHandler(m_slot, &LanguageCardUnit::IO, &LanguageCardUnit::IO, NULL, NULL, this, NULL);
 }
 
 BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
 {
-	LanguageCardUnit* pLC = (LanguageCardUnit*) MemGetSlotParameters(kSlot0);
+	UINT uSlot = ((uAddr & 0xff) >> 4) - 8;
+	LanguageCardUnit* pLC = (LanguageCardUnit*) MemGetSlotParameters(uSlot);
 
 	DWORD memmode = GetMemMode();
 	DWORD lastmemmode = memmode;
@@ -277,7 +278,7 @@ UINT Saturn128K::GetActiveBank(void)
 
 void Saturn128K::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-	RegisterIoHandler(kSlot0, &Saturn128K::IO, &Saturn128K::IO, NULL, NULL, this, NULL);
+	RegisterIoHandler(m_slot, &Saturn128K::IO, &Saturn128K::IO, NULL, NULL, this, NULL);
 }
 
 BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
@@ -301,7 +302,8 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 	1110  $C0NE select 16K Bank 7
 	1111  $C0NF select 16K Bank 8
 */
-	Saturn128K* pLC = (Saturn128K*) MemGetSlotParameters(kSlot0);
+	UINT uSlot = ((uAddr & 0xff) >> 4) - 8;
+	Saturn128K* pLC = (Saturn128K*) MemGetSlotParameters(uSlot);
 
 	_ASSERT(pLC->m_uSaturnTotalBanks);
 	if (!pLC->m_uSaturnTotalBanks)
