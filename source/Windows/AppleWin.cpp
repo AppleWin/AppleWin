@@ -753,6 +753,11 @@ static void RepeatInitialization(void)
 		if (g_cmdLine.bSlotEmpty[SLOT6])
 			GetCardMgr().Remove(SLOT6);
 
+		if (g_cmdLine.slotInsert[SLOT3] != CT_Empty && g_cmdLine.slotInsert[SLOT3] == CT_VidHD)	// For now just support VidHD in slot 3
+		{
+			GetCardMgr().Insert(SLOT3, g_cmdLine.slotInsert[SLOT3]);
+		}
+
 		if (g_cmdLine.slotInsert[SLOT5] != CT_Empty)
 		{
 			if (GetCardMgr().QuerySlot(SLOT4) == CT_MockingboardC && g_cmdLine.slotInsert[SLOT5] != CT_MockingboardC)	// Currently MB occupies slot4+5 when enabled
