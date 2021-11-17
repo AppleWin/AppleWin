@@ -44,6 +44,33 @@ BYTE __stdcall VidHDCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, UL
 	return IO_Null(pc, addr, bWrite, value, nExecutedCycles);
 }
 
+BYTE VidHDCard::VideoIORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
+{
+	// to do: does VidHD even put the result onto the data bus?
+	return 0;
+}
+
+void VidHDCard::VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
+{
+	switch (addr & 0xff)
+	{
+	case 0x22:	// SCREENCOLOR
+		m_SCREENCOLOR = value;
+		break;
+	case 0x29:	// NEWVIDEO
+		m_NEWVIDEO = value;
+		break;
+	case 0x34:	// BORDERCOLOR
+		m_BORDERCOLOR = value;
+		break;
+	case 0x35:	// SHADOW
+		m_SHADOW = value;
+		break;
+	default:
+		_ASSERT(0);
+	}
+}
+
 //===========================================================================
 
 static const UINT kUNIT_VERSION = 1;
