@@ -17,7 +17,6 @@ namespace ra2
   {
   public:
     Game();
-    ~Game();
 
     bool loadGame(const std::string & path);
     bool loadSnapshot(const std::string & path);
@@ -35,8 +34,11 @@ namespace ra2
     static retro_usec_t ourFrameTime;
 
   private:
-    const LoggerContext myLoggerContext;
-    const std::shared_ptr<RetroFrame> myFrame;
+    // keep them in this order!
+    std::shared_ptr<LoggerContext> myLoggerContext;
+    std::shared_ptr<RegistryContext> myRegistryContext;
+    std::shared_ptr<RetroFrame> myFrame;
+    std::shared_ptr<Initialisation> myInitialisation;
 
     common2::Speed mySpeed;  // fixed speed
 

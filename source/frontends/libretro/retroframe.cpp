@@ -108,7 +108,7 @@ namespace ra2
 
   void RetroFrame::Initialize()
   {
-    LinuxFrame::Initialize();
+    CommonFrame::Initialize();
     FrameRefreshStatus(DRAW_TITLE);
 
     Video & video = GetVideo();
@@ -131,7 +131,7 @@ namespace ra2
 
   void RetroFrame::Destroy()
   {
-    LinuxFrame::Destroy();
+    CommonFrame::Destroy();
     myFrameBuffer = nullptr;
     myVideoBuffer.clear();
   }

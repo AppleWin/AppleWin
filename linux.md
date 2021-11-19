@@ -98,10 +98,10 @@ Video works, but the vertical flip is done in software.
 Audio (speaker) works.
 
 Must be manually configured:
-``cmake -DLIBRETRO_PATH=/path/to/libretro-common``
+``cmake -DLIBRETRO_COMMON_PATH=/path/to/libretro-common``
 
 Easiest way to run from the ``build`` folder:
-``retroarch -L source/frontends/libretro/libra2.so ../Disks/NoSlotClockTest.dsk``
+``retroarch -L source/frontends/libretro/applewin_libretro.so ../bin/MASTER.DSK``
 
 ## Build
 
