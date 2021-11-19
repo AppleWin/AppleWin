@@ -196,8 +196,9 @@ namespace ra2
       const int diff = std::abs(int(lastOccupancy) - int(occupancy));
       if (diff >= 5)
       {
-	log_cb(RETRO_LOG_INFO, "RA2: %s occupancy = %d, underrun_likely = %d\n", __FUNCTION__, occupancy, underrun_likely);
-	lastOccupancy = occupancy;
+        // this is very verbose
+        // log_cb(RETRO_LOG_INFO, "RA2: %s occupancy = %d, underrun_likely = %d\n", __FUNCTION__, occupancy, underrun_likely);
+        lastOccupancy = occupancy;
       }
     }
   }

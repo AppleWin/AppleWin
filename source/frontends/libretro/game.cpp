@@ -69,39 +69,32 @@ namespace ra2
   unsigned Game::ourInputDevices[MAX_PADS] = {RETRO_DEVICE_NONE};
 
   Game::Game()
-    : myLoggerContext(true)
-    , myFrame(new ra2::RetroFrame())
-    , mySpeed(true)
+    : mySpeed(true)  // fixed speed
     , myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
   {
-    Registry::instance = CreateRetroRegistry();
-    SetFrame(myFrame);
-    myFrame->Initialize();
+    myLoggerContext.reset(new LoggerContext(true));
+    myRegistryContext.reset(new RegistryContext(CreateRetroRegistry()));
+    myFrame.reset(new ra2::RetroFrame());
 
+    std::shared_ptr<Paddle> paddle;
     switch (ourInputDevices[0])
     {
     case RETRO_DEVICE_NONE:
-      Paddle::instance.reset();
       break;
     case RETRO_DEVICE_JOYPAD:
-      Paddle::instance.reset(new Joypad);
+      paddle.reset(new Joypad);
       Paddle::setSquaring(false);
       break;
     case RETRO_DEVICE_ANALOG:
-      Paddle::instance.reset(new Analog);
+      paddle.reset(new Analog);
       Paddle::setSquaring(true);
       break;
     default:
       break;
     }
-  }
 
-  Game::~Game()
-  {
-    myFrame->Destroy();
-    SetFrame(std::shared_ptr<FrameBase>());
-    Paddle::instance.reset();
-    Registry::instance.reset();
+    myInitialisation.reset(new Initialisation(myFrame, paddle));
+    myFrame->Initialize();
   }
 
   retro_usec_t Game::ourFrameTime = 0;
