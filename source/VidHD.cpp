@@ -74,10 +74,10 @@ void VidHDCard::VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG 
 #pragma pack(1)	// Ensure struct is packed
 struct Color
 {
-	BYTE green : 4;
 	BYTE blue : 4;
-	BYTE reserved : 4;
+	BYTE green : 4;
 	BYTE red : 4;
+	BYTE reserved : 4;
 };
 #pragma pack(pop)
 
@@ -97,7 +97,7 @@ void VidHDCard::UpdateSHRCell(bool is640Mode, bool isColorFillMode, uint16_t add
 
 	Color* palette = (Color*) MemGetAuxPtr(addrPalette);
 
-	for (int p = 0; p < 4; p++)
+	for (UINT i = 0; i < 4; i++)
 	{
 		BYTE pixel1 = (a >> 4) & 0xf;
 		bgra_t color1 = ConvertIIgs2RGB(palette[pixel1]);

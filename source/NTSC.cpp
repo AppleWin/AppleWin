@@ -788,15 +788,6 @@ INLINE uint16_t getVideoScannerAddressHGR()
 		APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nHiresPage * 0x2000));
 }
 
-//===========================================================================
-INLINE uint16_t getVideoScannerAddressSHR(void)
-{
-	// 2 pixels per byte in 320-pixel mode = 160 bytes/scanline
-	// 4 pixels per byte in 640-pixel mode = 160 bytes/scanline
-	const UINT kBytesPerScanline = 160;
-	return 0x2000 + kBytesPerScanline * g_nVideoClockVert + g_nVideoClockHorz;
-}
-
 // Non-Inline _________________________________________________________
 
 // Build the 4 phase chroma lookup table
@@ -1748,10 +1739,14 @@ void updateScreenText80RGB(long cycles6502)
 //===========================================================================
 void updateScreenSHR(long cycles6502)
 {
-	uint16_t addr = getVideoScannerAddressSHR();
-
 	for (; cycles6502 > 0; --cycles6502)
 	{
+		// 2 pixels per byte in 320-pixel mode = 160 bytes/scanline
+		// 4 pixels per byte in 640-pixel mode = 160 bytes/scanline
+		const UINT kBytesPerScanline = 160;
+		const UINT kBytesPerCycle = 4;
+		uint16_t addr = 0x2000 + kBytesPerScanline * g_nVideoClockVert + kBytesPerCycle * (g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START);
+
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY_IIGS)
 		{
 			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
@@ -1770,11 +1765,10 @@ void updateScreenSHR(long cycles6502)
 				uint16_t addrPalette = 0x9E00 + paletteSelectCode * kColorsPerPalette * kColorSize;
 
 				VidHDCard::UpdateSHRCell(is640Mode, isColorFillMode, addrPalette, g_pVideoAddress, a);
-				g_pVideoAddress += 8;
+				g_pVideoAddress += 16;
 			}
 		}
 		updateVideoScannerHorzEOL_SHR();
-		addr++;		// linear address
 	}
 }
 
