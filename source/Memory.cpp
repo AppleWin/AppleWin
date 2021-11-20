@@ -56,7 +56,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tape.h"
 #include "Tfe/tfe.h"
 #include "RGBMonitor.h"
-#include "VidHD.h"
 
 #include "z80emu.h"
 #include "Z80VICE/z80.h"
@@ -470,12 +469,6 @@ static BYTE __stdcall IOWrite_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 
 static BYTE __stdcall IORead_C02x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
-	{
-		if (addr == 0xC022 || addr == 0xC029)
-			return dynamic_cast<VidHDCard&>(GetCardMgr().GetRef(SLOT3)).VideoIORead(pc, addr, bWrite, d, nExecutedCycles);	// to do: ignore read result?
-	}
-
 	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 }
 
@@ -484,7 +477,7 @@ static BYTE __stdcall IOWrite_C02x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
 	{
 		if (addr == 0xC022 || addr == 0xC029)
-			dynamic_cast<VidHDCard&>(GetCardMgr().GetRef(SLOT3)).VideoIOWrite(pc, addr, bWrite, d, nExecutedCycles);
+			GetVideo().VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 	return TapeWrite(pc, addr, bWrite, d, nExecutedCycles);	// $C020 TAPEOUT
@@ -494,12 +487,6 @@ static BYTE __stdcall IOWrite_C02x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 
 static BYTE __stdcall IORead_C03x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
-	{
-		if (addr == 0xC034 || addr == 0xC035)
-			dynamic_cast<VidHDCard&>(GetCardMgr().GetRef(SLOT3)).VideoIORead(pc, addr, bWrite, d, nExecutedCycles);	// to do: ignore read result?
-	}
-
 	return SpkrToggle(pc, addr, bWrite, d, nExecutedCycles);
 }
 
@@ -507,9 +494,9 @@ static BYTE __stdcall IOWrite_C03x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 {
 	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
 	{
-		// NB. Writes to $C03x addresses will still toggle the speaker with a VidHD present
+		// NB. Writes to $C03x addresses will still toggle the speaker, even with a VidHD present
 		if (addr == 0xC034 || addr == 0xC035)
-			dynamic_cast<VidHDCard&>(GetCardMgr().GetRef(SLOT3)).VideoIOWrite(pc, addr, bWrite, d, nExecutedCycles);
+			GetVideo().VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 	return SpkrToggle(pc, addr, bWrite, d, nExecutedCycles);

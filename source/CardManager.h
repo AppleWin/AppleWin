@@ -34,13 +34,13 @@ public:
 	Card& GetRef(UINT slot)
 	{
 		SS_CARDTYPE t=QuerySlot(slot);
-		_ASSERT((t==CT_GenericHDD || t==CT_SSC || t==CT_MouseInterface || t==CT_Disk2 || t == CT_FourPlay || t == CT_SNESMAX || t == CT_SAM) && m_slot[slot]);
+		_ASSERT((t==CT_GenericHDD || t==CT_SSC || t==CT_MouseInterface || t==CT_Disk2 || t == CT_FourPlay || t == CT_SNESMAX || t == CT_SAM || t == CT_VidHD) && m_slot[slot]);
 		return *m_slot[slot];
 	}
 	Card* GetObj(UINT slot)
 	{
 		SS_CARDTYPE t=QuerySlot(slot);
-		_ASSERT(t == CT_GenericHDD || t==CT_SSC || t==CT_MouseInterface || t==CT_Disk2 || t == CT_FourPlay || t == CT_SNESMAX || t == CT_SAM);
+		_ASSERT(t == CT_GenericHDD || t==CT_SSC || t==CT_MouseInterface || t==CT_Disk2 || t == CT_FourPlay || t == CT_SNESMAX || t == CT_SAM || t == CT_VidHD);
 		return m_slot[slot];
 	}
 

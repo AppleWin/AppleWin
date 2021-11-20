@@ -23,11 +23,12 @@ public:
 
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
-	BYTE VideoIORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 	void VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
 	bool IsSHR(void) { return m_NEWVIDEO == 0xC1 && m_SHADOW == 0x00; }	// 11000001 = Enable SHR(b7) | Linearize SHR video memory(b6) | Enable bank latch(b0)
 	bool IsDHGRBlackAndWhite(void) { return (m_NEWVIDEO & (1 << 5)) ? true : false; }
+
+	static void UpdateSHRCell(bool is640Mode, bool isColorFillMode, uint16_t addrPalette, bgra_t* pVideoAddress, uint32_t a);
 
 	static std::string GetSnapshotCardName(void);
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);

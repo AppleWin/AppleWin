@@ -24,6 +24,8 @@
 #include "StdAfx.h"
 
 #include "Memory.h"
+#include "NTSC.h"
+#include "Video.h"
 #include "VidHD.h"
 #include "YamlHelper.h"
 
@@ -44,12 +46,7 @@ BYTE __stdcall VidHDCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, UL
 	return IO_Null(pc, addr, bWrite, value, nExecutedCycles);
 }
 
-BYTE VidHDCard::VideoIORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
-{
-	// to do: does VidHD even put the result onto the data bus?
-	return 0;
-}
-
+// NB. VidHD has no support for reading the IIgs video registers from an earlier Apple II
 void VidHDCard::VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
 {
 	switch (addr & 0xff)
@@ -68,6 +65,51 @@ void VidHDCard::VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG 
 		break;
 	default:
 		_ASSERT(0);
+	}
+}
+
+//===========================================================================
+
+#pragma pack(push)
+#pragma pack(1)	// Ensure struct is packed
+struct Color
+{
+	BYTE green : 4;
+	BYTE blue : 4;
+	BYTE reserved : 4;
+	BYTE red : 4;
+};
+#pragma pack(pop)
+
+bgra_t ConvertIIgs2RGB(Color color)
+{
+	bgra_t rgb = { 0 };
+	rgb.r = color.red * 16;
+	rgb.g = color.green * 16;
+	rgb.b = color.blue * 16;
+	return rgb;
+}
+
+void VidHDCard::UpdateSHRCell(bool is640Mode, bool isColorFillMode, uint16_t addrPalette, bgra_t* pVideoAddress, uint32_t a)
+{
+	_ASSERT(!is640Mode);
+	_ASSERT(!isColorFillMode);
+
+	Color* palette = (Color*) MemGetAuxPtr(addrPalette);
+
+	for (int p = 0; p < 4; p++)
+	{
+		BYTE pixel1 = (a >> 4) & 0xf;
+		bgra_t color1 = ConvertIIgs2RGB(palette[pixel1]);
+		*pVideoAddress++ = color1;
+		*pVideoAddress++ = color1;
+
+		BYTE pixel2 = a & 0xf;
+		bgra_t color2 = ConvertIIgs2RGB(palette[pixel2]);
+		*pVideoAddress++ = color2;
+		*pVideoAddress++ = color2;
+
+		a >>= 8;
 	}
 }
 

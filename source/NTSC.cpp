@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#include "Memory.h" // MemGetMainPtr(), MemGetAuxPtr(), MemGetAnnunciator()
 	#include "Interface.h"  // GetFrameBuffer()
 	#include "RGBMonitor.h"
+	#include "VidHD.h"
 
 	#include "NTSC_CharSet.h"
 
@@ -100,10 +101,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#define VIDEO_SCANNER_HORZ_START 25 // first displayable horz scanner index
 	#define VIDEO_SCANNER_Y_MIXED   160 // num scanlins for mixed graphics + text
 	#define VIDEO_SCANNER_Y_DISPLAY 192 // max displayable scanlines
+	#define VIDEO_SCANNER_Y_DISPLAY_IIGS 200
 
 	// these are initialized in NTSC_VideoInit
 	static bgra_t* g_pVideoAddress = 0;
-	static bgra_t *g_pScanLines[VIDEO_SCANNER_Y_DISPLAY*2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
+//	static bgra_t *g_pScanLines[VIDEO_SCANNER_Y_DISPLAY*2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
+	static bgra_t* g_pScanLines[VIDEO_SCANNER_Y_DISPLAY_IIGS * 2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
 	static UINT g_kFrameBufferWidth;
 
 	static unsigned short (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
@@ -348,6 +351,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static void updateScreenText80RGB    ( long cycles6502 );
 	static void updateScreenDoubleHires80Simplified(long cycles6502);
 	static void updateScreenDoubleHires80RGB(long cycles6502);
+	static void updateScreenSHR(long cycles6502);
 
 //===========================================================================
 static void set_csbits()
@@ -712,13 +716,37 @@ inline void updateVideoScannerHorzEOL()
 	}
 }
 
+inline void updateVideoScannerHorzEOL_SHR()
+{
+	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
+	{
+		g_nVideoClockHorz = 0;
+
+		if (++g_nVideoClockVert == g_videoScannerMaxVert)
+		{
+			g_nVideoClockVert = 0;
+		}
+
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY_IIGS)
+		{
+			updateVideoScannerAddress();
+		}
+	}
+}
+
 //===========================================================================
 inline void updateVideoScannerAddress()
 {
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && GetVideo().GetVideoRefreshRate() == VR_50HZ)	// GH#763
 		g_nColorBurstPixels = 0;	// instantaneously kill color-burst!
 
-	g_pVideoAddress = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2*g_nVideoClockVert] : g_pScanLines[0];
+	if (g_pFuncUpdateGraphicsScreen == updateScreenSHR)
+	{
+		g_pVideoAddress = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY_IIGS ? g_pScanLines[2 * g_nVideoClockVert] : g_pScanLines[0];
+		return;
+	}
+
+	g_pVideoAddress = g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY ? g_pScanLines[2 * g_nVideoClockVert] : g_pScanLines[0];
 
 	// Adjust, as these video styles have 2x 14M pixels of pre-render
 	// NB. For VT_COLOR_MONITOR_NTSC, also check color-burst so that TEXT and MIXED(HGR+TEXT) render the TEXT at the same offset (GH#341)
@@ -760,6 +788,14 @@ INLINE uint16_t getVideoScannerAddressHGR()
 		APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nHiresPage * 0x2000));
 }
 
+//===========================================================================
+INLINE uint16_t getVideoScannerAddressSHR(void)
+{
+	// 2 pixels per byte in 320-pixel mode = 160 bytes/scanline
+	// 4 pixels per byte in 640-pixel mode = 160 bytes/scanline
+	const UINT kBytesPerScanline = 160;
+	return 0x2000 + kBytesPerScanline * g_nVideoClockVert + g_nVideoClockHorz;
+}
 
 // Non-Inline _________________________________________________________
 
@@ -1709,6 +1745,39 @@ void updateScreenText80RGB(long cycles6502)
 	}
 }
 
+//===========================================================================
+void updateScreenSHR(long cycles6502)
+{
+	uint16_t addr = getVideoScannerAddressSHR();
+
+	for (; cycles6502 > 0; --cycles6502)
+	{
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY_IIGS)
+		{
+			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
+			{
+				uint32_t* pAux = (uint32_t*) MemGetAuxPtr(addr);	// 8 pixels (320 mode) / 16 pixels (640 mode)
+				uint32_t a = pAux[0];
+
+				uint8_t* pControl = MemGetAuxPtr(0x9D00 + g_nVideoClockVert);	// scan-line control byte
+				uint8_t c = pControl[0];
+
+				bool is640Mode = c & 0x80;
+				bool isColorFillMode = c & 0x20;
+				UINT paletteSelectCode = c & 0xf;
+				const UINT kColorsPerPalette = 16;
+				const UINT kColorSize = 2;
+				uint16_t addrPalette = 0x9E00 + paletteSelectCode * kColorsPerPalette * kColorSize;
+
+				VidHDCard::UpdateSHRCell(is640Mode, isColorFillMode, addrPalette, g_pVideoAddress, a);
+				g_pVideoAddress += 8;
+			}
+		}
+		updateVideoScannerHorzEOL_SHR();
+		addr++;		// linear address
+	}
+}
+
 // Functions (Public) _____________________________________________________________________________
 
 //===========================================================================
@@ -1988,6 +2057,14 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 //===========================================================================
 
+void NTSC_SetVideoModeIIgs(void)
+{
+	g_pFuncUpdateGraphicsScreen = updateScreenSHR;
+	g_pFuncUpdateTextScreen = updateScreenSHR;
+}
+
+//===========================================================================
+
 void NTSC_SetVideoStyle(void)
 {
 	const bool half = GetVideo().IsVideoStyle(VS_HALF_SCANLINES);
@@ -2104,7 +2181,8 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 
 	g_kFrameBufferWidth = GetVideo().GetFrameBufferWidth();
 
-	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
+//	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
+	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY_IIGS*2); y++)
 	{
 		uint32_t offset = sizeof(bgra_t) * GetVideo().GetFrameBufferWidth()
 			* ((GetVideo().GetFrameBufferHeight() - 1) - y - GetVideo().GetFrameBufferBorderHeight())
