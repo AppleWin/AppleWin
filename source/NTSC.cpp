@@ -1866,6 +1866,18 @@ void NTSC_SetVideoTextMode( int cols )
 //===========================================================================
 void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 {
+	if (g_pFuncUpdateGraphicsScreen == updateScreenSHR)
+	{
+		// Was SHR mode, so clear the screen
+		for (UINT y = 0; y < (VIDEO_SCANNER_Y_DISPLAY_IIGS * 2); y++)
+		{
+			UINT32* p = (UINT32*) g_pScanLines[y];
+			const UINT MAX_X = GetVideo().GetFrameBufferBorderlessWidth();
+			for (UINT x = 0; x < MAX_X; x++)
+				p[x] = 0;
+		}
+	}
+
 	if (bDelay && !g_bFullSpeed)
 	{
 		// (GH#670) NB. if g_bFullSpeed then NTSC_VideoUpdateCycles() won't be called on the next 6502 opcode.
@@ -1874,7 +1886,6 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		g_uNewVideoModeFlags = uVideoModeFlags;
 		return;
 	}
-
 
 	g_nVideoMixed   = uVideoModeFlags & VF_MIXED;
 	g_nVideoCharSet = GetVideo().VideoGetSWAltCharSet() ? 1 : 0;
