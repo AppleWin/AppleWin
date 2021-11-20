@@ -74,10 +74,10 @@ void VidHDCard::VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG 
 #pragma pack(1)	// Ensure struct is packed
 struct Color
 {
-	BYTE blue : 4;
-	BYTE green : 4;
-	BYTE red : 4;
-	BYTE reserved : 4;
+	USHORT blue : 4;
+	USHORT green : 4;
+	USHORT red : 4;
+	USHORT reserved : 4;
 };
 #pragma pack(pop)
 
@@ -92,22 +92,43 @@ bgra_t ConvertIIgs2RGB(Color color)
 
 void VidHDCard::UpdateSHRCell(bool is640Mode, bool isColorFillMode, uint16_t addrPalette, bgra_t* pVideoAddress, uint32_t a)
 {
-	_ASSERT(!is640Mode);
-	_ASSERT(!isColorFillMode);
+	_ASSERT(!is640Mode);		// to do: test this mode
+	_ASSERT(!isColorFillMode);	// to do: test this mode
 
 	Color* palette = (Color*) MemGetAuxPtr(addrPalette);
 
 	for (UINT i = 0; i < 4; i++)
 	{
-		BYTE pixel1 = (a >> 4) & 0xf;
-		bgra_t color1 = ConvertIIgs2RGB(palette[pixel1]);
-		*pVideoAddress++ = color1;
-		*pVideoAddress++ = color1;
+		if (!is640Mode) // 320 mode
+		{
+			BYTE pixel1 = (a >> 4) & 0xf;
+			bgra_t color1 = ConvertIIgs2RGB(palette[pixel1]);
+			*pVideoAddress++ = color1;
+			*pVideoAddress++ = color1;
 
-		BYTE pixel2 = a & 0xf;
-		bgra_t color2 = ConvertIIgs2RGB(palette[pixel2]);
-		*pVideoAddress++ = color2;
-		*pVideoAddress++ = color2;
+			BYTE pixel2 = a & 0xf;
+			bgra_t color2 = ConvertIIgs2RGB(palette[pixel2]);
+			*pVideoAddress++ = color2;
+			*pVideoAddress++ = color2;
+		}
+		else // 640 mode - see IIgs Hardware Ref, Pg.96, Table4-21 'Color Selection in 640 mode'
+		{
+			BYTE pixel1 = (a >> 6) & 0x3;
+			bgra_t color1 = ConvertIIgs2RGB(palette[0x8 + pixel1]);
+			*pVideoAddress++ = color1;
+
+			BYTE pixel2 = (a >> 4) & 0x3;
+			bgra_t color2 = ConvertIIgs2RGB(palette[0xC + pixel2]);
+			*pVideoAddress++ = color2;
+
+			BYTE pixel3 = (a >> 2) & 0x3;
+			bgra_t color3 = ConvertIIgs2RGB(palette[0x0 + pixel3]);
+			*pVideoAddress++ = color3;
+
+			BYTE pixel4 = a & 0x3;
+			bgra_t color4 = ConvertIIgs2RGB(palette[0x4 + pixel4]);
+			*pVideoAddress++ = color4;
+		}
 
 		a >>= 8;
 	}
