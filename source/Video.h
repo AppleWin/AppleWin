@@ -208,6 +208,7 @@ public:
 	UINT GetFrameBufferBorderHeight(void);
 	UINT GetFrameBufferWidth(void);
 	UINT GetFrameBufferHeight(void);
+	int GetFrameBufferCentringValue(void);
 
 	COLORREF GetMonochromeRGB(void) { return g_nMonochromeRGB; }
 	void SetMonochromeRGB(COLORREF colorRef) { g_nMonochromeRGB = colorRef; }
@@ -277,7 +278,6 @@ protected:
 	uint8_t *g_pFramebufferbits;
 
 private:
-
 	void SetFrameBuffer(uint8_t* frameBuffer) { g_pFramebufferbits = frameBuffer; }
 	std::string VideoGetSnapshotStructName(void);
 
@@ -311,4 +311,10 @@ private:
 	static const char m_szModeDesc7[];
 	static const char m_szModeDesc8[];
 	static const char* const g_apVideoModeDesc[NUM_VIDEO_MODES];
+
+	static const UINT kVideoHeightII = 192;
+	static const UINT kVideoHeightIIgs = 200;
+
+	static const UINT kVideoWidthII = 560;
+	static const UINT kVideoWidthIIgs = 640;
 };

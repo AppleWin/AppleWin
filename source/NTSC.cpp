@@ -768,6 +768,9 @@ inline void updateVideoScannerAddress()
 		g_pVideoAddress -= 1;
 	}
 
+	// Centre the older //e video modes when running with a VidHD
+	g_pVideoAddress += GetVideo().GetFrameBufferCentringValue();
+
 	g_nColorPhaseNTSC      = INITIAL_COLOR_PHASE;
 	g_nLastColumnPixelNTSC = 0;
 	g_nSignalBitsNTSC      = 0;

@@ -127,6 +127,19 @@ UINT Video::GetFrameBufferHeight(void)
 	return GetFrameBufferBorderlessHeight() + 2 * GetFrameBufferBorderHeight();
 }
 
+int Video::GetFrameBufferCentringValue(void)
+{
+	int value = 0;
+
+	if (GetFrameBufferBorderlessWidth() == kVideoWidthIIgs)
+	{
+		value -= (kVideoHeightIIgs*2 - kVideoHeightII*2) / 2 * GetFrameBufferWidth();
+		value += (kVideoWidthIIgs - kVideoWidthII) / 2;
+	}
+
+	return value;
+}
+
 //===========================================================================
 
 void Video::VideoReinitialize(bool bInitVideoScannerAddress)
