@@ -2,6 +2,19 @@ cmake_minimum_required(VERSION 3.13)
 
 project(applewin HOMEPAGE_URL "https://github.com/audetto/AppleWin")
 
+option(BUILD_APPLEN   "build ncurses frontend")
+option(BUILD_QAPPLE   "build Qt5 frontend")
+option(BUILD_SA2      "build SDL2 frontend")
+option(BUILD_LIBRETRO "build libretro core")
+
+if (NOT (BUILD_APPLEN OR BUILD_QAPPLE OR BUILD_SA2 OR BUILD_LIBRETRO))
+  message(NOTICE "Building everything by default")
+  set(BUILD_APPLEN ON)
+  set(BUILD_QAPPLE ON)
+  set(BUILD_SA2 ON)
+  set(BUILD_LIBRETRO ON)
+endif()
+
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -29,7 +42,7 @@ execute_process(COMMAND uname -n
 if(${UNAME} STREQUAL raspberrypi)
   # it is too slow and might cause out of memory issues
   # more forensic is required
-  MESSAGE("Raspberry Pi detected: IPO disabled")
+  MESSAGE(NOTICE "Raspberry Pi detected: IPO disabled")
 else()
   include(CheckIPOSupported)
   check_ipo_supported()
@@ -39,12 +52,27 @@ endif()
 include_directories(source)
 
 add_subdirectory(source)
-add_subdirectory(source/frontends/common2)
-add_subdirectory(source/frontends/ncurses)
-add_subdirectory(source/frontends/qt)
-add_subdirectory(source/frontends/sdl)
-add_subdirectory(source/frontends/libretro)
 add_subdirectory(test/TestCPU6502)
+
+if (BUILD_LIBRETRO OR BUILD_APPLEN OR BUILD_SA2)
+  add_subdirectory(source/frontends/common2)
+endif()
+
+if (BUILD_APPLEN)
+  add_subdirectory(source/frontends/ncurses)
+endif()
+
+if (BUILD_QAPPLE)
+  add_subdirectory(source/frontends/qt)
+endif()
+
+if (BUILD_SA2)
+  add_subdirectory(source/frontends/sdl)
+endif()
+
+if (BUILD_LIBRETRO)
+  add_subdirectory(source/frontends/libretro)
+endif()
 
 set(CPACK_PACKAGE_VERSION "1.30.6.0")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Apple ][ emulator for Linux")
