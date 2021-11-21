@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  SW_MIXED         (g_uVideoMode & VF_MIXED)
 #define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
 #define  SW_TEXT          (g_uVideoMode & VF_TEXT)
+#define  SW_SHR           (g_uVideoMode & VF_SHR)
 
 //-------------------------------------
 
@@ -186,6 +187,11 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
 	}
 
+	if (vidHD && vidHD->IsSHR())
+		g_uVideoMode |= VF_SHR;
+	else
+		g_uVideoMode &= ~VF_SHR;
+
 	if (!IS_APPLE2)
 		RGB_SetVideoMode(address);
 
@@ -194,10 +200,7 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 	if ((oldVideoMode ^ g_uVideoMode) & (VF_TEXT|VF_MIXED))
 		delay = true;
 
-	if (vidHD && vidHD->IsSHR())
-		NTSC_SetVideoModeIIgs();
-	else
-		NTSC_SetVideoMode(g_uVideoMode, delay);
+	NTSC_SetVideoMode(g_uVideoMode, delay);
 
 	return MemReadFloatingBus(uExecutedCycles);
 }

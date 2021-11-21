@@ -55,7 +55,8 @@ enum VideoFlag_e
 	VF_80STORE= 0x00000008,
 	VF_MIXED  = 0x00000010,
 	VF_PAGE2  = 0x00000020,
-	VF_TEXT   = 0x00000040
+	VF_TEXT   = 0x00000040,
+	VF_SHR    = 0x00000080		// For VidHD's support for IIgs SHR video modes
 };
 
 enum AppleFont_e

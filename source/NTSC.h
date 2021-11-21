@@ -9,7 +9,6 @@ extern uint32_t g_nChromaSize;
 
 // Prototypes (Public) ________________________________________________
 void NTSC_SetVideoMode(uint32_t uVideoModeFlags, bool bDelay=false);
-void NTSC_SetVideoModeIIgs(void);
 void NTSC_SetVideoStyle(void);
 void NTSC_SetVideoTextMode(int cols);
 uint32_t* NTSC_VideoGetChromaTable(bool bHueTypeMonochrome, bool bMonitorTypeColorTV);

@@ -1866,9 +1866,16 @@ void NTSC_SetVideoTextMode( int cols )
 //===========================================================================
 void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 {
-	if (g_pFuncUpdateGraphicsScreen == updateScreenSHR)
+	if (uVideoModeFlags & VF_SHR)
 	{
-		// Was SHR mode, so clear the screen
+		g_pFuncUpdateGraphicsScreen = updateScreenSHR;
+		g_pFuncUpdateTextScreen = updateScreenSHR;
+		return;
+	}
+
+	if (g_pFuncUpdateGraphicsScreen == updateScreenSHR && !(uVideoModeFlags & VF_SHR))
+	{
+		// Was SHR mode, so clear the screen to remove any SHR residue in the borders
 		GetVideo().ClearFrameBuffer();
 	}
 
@@ -2052,14 +2059,6 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 				g_pFuncUpdateGraphicsScreen = updateScreenSingleLores40;
 		}
 	}
-}
-
-//===========================================================================
-
-void NTSC_SetVideoModeIIgs(void)
-{
-	g_pFuncUpdateGraphicsScreen = updateScreenSHR;
-	g_pFuncUpdateTextScreen = updateScreenSHR;
 }
 
 //===========================================================================
