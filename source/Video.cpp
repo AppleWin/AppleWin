@@ -127,14 +127,24 @@ UINT Video::GetFrameBufferHeight(void)
 	return GetFrameBufferBorderlessHeight() + 2 * GetFrameBufferBorderHeight();
 }
 
+UINT Video::GetFrameBufferCentringOffsetX(void)
+{
+	return (kVideoWidthIIgs - kVideoWidthII) / 2;
+}
+
+UINT Video::GetFrameBufferCentringOffsetY(void)
+{
+	return (kVideoHeightIIgs * 2 - kVideoHeightII * 2) / 2;
+}
+
 int Video::GetFrameBufferCentringValue(void)
 {
 	int value = 0;
 
 	if (GetFrameBufferBorderlessWidth() == kVideoWidthIIgs)
 	{
-		value -= (kVideoHeightIIgs*2 - kVideoHeightII*2) / 2 * GetFrameBufferWidth();
-		value += (kVideoWidthIIgs - kVideoWidthII) / 2;
+		value -= GetFrameBufferCentringOffsetY() * GetFrameBufferWidth();
+		value += GetFrameBufferCentringOffsetX();
 	}
 
 	return value;

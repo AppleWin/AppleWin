@@ -208,6 +208,8 @@ public:
 	UINT GetFrameBufferBorderHeight(void);
 	UINT GetFrameBufferWidth(void);
 	UINT GetFrameBufferHeight(void);
+	UINT GetFrameBufferCentringOffsetX(void);
+	UINT GetFrameBufferCentringOffsetY(void);
 	int GetFrameBufferCentringValue(void);
 
 	COLORREF GetMonochromeRGB(void) { return g_nMonochromeRGB; }
