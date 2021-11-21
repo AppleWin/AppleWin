@@ -97,9 +97,6 @@ Video works, but the vertical flip is done in software.
 
 Audio (speaker) works.
 
-Must be manually configured:
-``cmake -DLIBRETRO_COMMON_PATH=/path/to/libretro-common``
-
 Easiest way to run from the ``build`` folder:
 ``retroarch -L source/frontends/libretro/applewin_libretro.so ../bin/MASTER.DSK``
 
@@ -119,6 +116,18 @@ cd build
 cmake -DCMAKE_BUILD_TYPE=RELEASE ..
 make
 ```
+
+### Frontend selection
+
+There are 4 `cmake` variables to selectively enable frontends: `BUILD_APPLEN`, `BUILD_QAPPLE`, `BUILD_SA2` and `BUILD_LIBRETRO`.
+
+Usage:
+
+```
+cmake -DBUILD_SA2=ON -DBUILD_LIBRETRO=ON ..
+```
+
+or use `cmake-gui` (if none is selected, they are all built).
 
 ### Fedora
 
