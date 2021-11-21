@@ -775,7 +775,7 @@ void Video::Initialize(uint8_t* frameBuffer)
 	VideoResetState();
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	memset(GetFrameBuffer(), 0, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
+	ClearFrameBuffer();
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	NTSC_VideoInit(GetFrameBuffer());
@@ -807,4 +807,9 @@ void Video::VideoRefreshBuffer(uint32_t uRedrawWholeScreenVideoMode, bool bRedra
 		if (g_nAppMode == MODE_DEBUG || g_nAppMode == MODE_PAUSED)
 			NTSC_VideoRedrawWholeScreen();
 	}
+}
+
+void Video::ClearFrameBuffer(void)
+{
+	memset(GetFrameBuffer(), 0, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
 }

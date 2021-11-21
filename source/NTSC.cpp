@@ -1869,13 +1869,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	if (g_pFuncUpdateGraphicsScreen == updateScreenSHR)
 	{
 		// Was SHR mode, so clear the screen
-		for (UINT y = 0; y < (VIDEO_SCANNER_Y_DISPLAY_IIGS * 2); y++)
-		{
-			UINT32* p = (UINT32*) g_pScanLines[y];
-			const UINT MAX_X = GetVideo().GetFrameBufferBorderlessWidth();
-			for (UINT x = 0; x < MAX_X; x++)
-				p[x] = 0;
-		}
+		GetVideo().ClearFrameBuffer();
 	}
 
 	if (bDelay && !g_bFullSpeed)
