@@ -14,6 +14,8 @@
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/rdirectsound.h"
 #include "frontends/libretro/retroregistry.h"
+#include "frontends/libretro/joypad.h"
+#include "frontends/libretro/analog.h"
 
 namespace
 {
@@ -58,6 +60,22 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
   if (port == 0)
   {
     ra2::Game::ourInputDevices[port] = device;
+
+    switch (device)
+    {
+    case RETRO_DEVICE_NONE:
+      break;
+    case RETRO_DEVICE_JOYPAD:
+      Paddle::instance.reset(new ra2::Joypad);
+      Paddle::setSquaring(false);
+      break;
+    case RETRO_DEVICE_ANALOG:
+      Paddle::instance.reset(new ra2::Analog);
+      Paddle::setSquaring(true);
+      break;
+    default:
+      break;
+    }
   }
 }
 

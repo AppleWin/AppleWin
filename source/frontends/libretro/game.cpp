@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "frontends/libretro/game.h"
 #include "frontends/libretro/retroregistry.h"
-#include "frontends/libretro/joypad.h"
-#include "frontends/libretro/analog.h"
 #include "frontends/libretro/retroframe.h"
 
 #include "Common.h"
@@ -76,25 +74,15 @@ namespace ra2
     myRegistryContext.reset(new RegistryContext(CreateRetroRegistry()));
     myFrame.reset(new ra2::RetroFrame());
 
-    std::shared_ptr<Paddle> paddle;
-    switch (ourInputDevices[0])
-    {
-    case RETRO_DEVICE_NONE:
-      break;
-    case RETRO_DEVICE_JOYPAD:
-      paddle.reset(new Joypad);
-      Paddle::setSquaring(false);
-      break;
-    case RETRO_DEVICE_ANALOG:
-      paddle.reset(new Analog);
-      Paddle::setSquaring(true);
-      break;
-    default:
-      break;
-    }
-
-    myInitialisation.reset(new Initialisation(myFrame, paddle));
+    SetFrame(myFrame);
     myFrame->Initialize();
+  }
+
+  Game::~Game()
+  {
+    myFrame->Destroy();
+    myFrame.reset();
+    SetFrame(myFrame);
   }
 
   retro_usec_t Game::ourFrameTime = 0;
