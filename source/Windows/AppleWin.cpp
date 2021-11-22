@@ -218,7 +218,6 @@ static void ContinueExecution(void)
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
 	GetCardMgr().Update(uActualCyclesExecuted);
-	JoyUpdateButtonLatch(nExecutionPeriodUsec);	// Button latch time is independent of CPU clock frequency
 
 	//
 

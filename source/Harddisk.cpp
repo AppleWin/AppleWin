@@ -792,6 +792,8 @@ bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, 
 	Disk_Status_e diskStatusNext = (Disk_Status_e) yamlLoadHelper.LoadUint(SS_YAML_KEY_STATUS_NEXT);
 	Disk_Status_e diskStatusPrev = (Disk_Status_e) yamlLoadHelper.LoadUint(SS_YAML_KEY_STATUS_PREV);
 	m_hardDiskDrive[unit].m_buf_ptr = yamlLoadHelper.LoadUint(SS_YAML_KEY_BUF_PTR);
+	if (m_hardDiskDrive[unit].m_buf_ptr >= sizeof(m_hardDiskDrive[unit].m_buf))	// pre-v3 save-states would leave m_buf_ptr==0x200 after reading a block
+		m_hardDiskDrive[unit].m_buf_ptr = sizeof(m_hardDiskDrive[unit].m_buf) - 1;
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_BUF))
 		throw hddUnitName + std::string(": Missing: ") + std::string(SS_YAML_KEY_BUF);
