@@ -639,8 +639,8 @@ void StretchBltMemToFrameDC(void)
 	int nViewportCX, nViewportCY;
 	win32Frame.GetViewportCXCY(nViewportCX, nViewportCY);
 
-	int xdest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetX() : GetVideo().GetFrameBufferCentringOffsetX();
-	int ydest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetY() : GetVideo().GetFrameBufferCentringOffsetY();
+	int xdest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetX() : GetVideo().GetFrameBufferCentringOffsetX() * win32Frame.GetViewportScale();
+	int ydest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetY() : GetVideo().GetFrameBufferCentringOffsetY() * win32Frame.GetViewportScale();
 	int wdest = nViewportCX;
 	int hdest = nViewportCY;
 

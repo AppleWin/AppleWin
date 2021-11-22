@@ -194,7 +194,10 @@ public:
 		g_nMonochromeRGB = RGB(0xC0,0xC0,0xC0);
 		g_videoRomSize = 0;
 		g_videoRomRockerSwitch = false;
+		m_hasVidHD = false;
 	}
+
+	~Video(void){}
 
 	void Initialize(uint8_t* frameBuffer); // Do not call directly. Call FrameBase::Initialize()
 	void Destroy(void); // Call FrameBase::Destroy()
@@ -273,6 +276,9 @@ public:
 	const char* VideoGetAppWindowTitle(void);
 	const char* GetVideoChoices(void) { return g_aVideoChoices; }
 
+	bool HasVidHD(void) { return m_hasVidHD; }
+	void SetVidHD(bool hasVidHD) { m_hasVidHD = hasVidHD; }
+
 	static const UINT kVideoRomSize2K = 1024*2;
 	static const UINT kVideoRomSize4K = kVideoRomSize2K*2;
 
@@ -289,6 +295,7 @@ private:
 	VideoStyle_e g_eVideoStyle;
 	bool g_bVideoScannerNTSC;	// NTSC video scanning (or PAL)
 	COLORREF g_nMonochromeRGB;	// saved to Registry
+	bool m_hasVidHD;
 
 	WinBmpHeader_t g_tBmpHeader;
 
@@ -314,9 +321,9 @@ private:
 	static const char m_szModeDesc8[];
 	static const char* const g_apVideoModeDesc[NUM_VIDEO_MODES];
 
-	static const UINT kVideoHeightII = 192;
-	static const UINT kVideoHeightIIgs = 200;
+	static const UINT kVideoHeightII = 192*2;
+	static const UINT kVideoHeightIIgs = 200*2;
 
-	static const UINT kVideoWidthII = 560;
-	static const UINT kVideoWidthIIgs = 640;
+	static const UINT kVideoWidthII = 280*2;
+	static const UINT kVideoWidthIIgs = 320*2;
 };

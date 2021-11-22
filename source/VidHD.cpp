@@ -36,7 +36,7 @@ void VidHDCard::InitializeIO(LPBYTE pCxRomPeripheral)
 
 BYTE __stdcall VidHDCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
 {
-	// Return magic bytes for VidHD detection
+	// Return magic bytes (from the VidHD firmware) for VidHD detection
 	switch (addr & 0xff)
 	{
 	case 0: return 0x24;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Card.h"
+#include "Interface.h"
 
 class VidHDCard : public Card
 {
@@ -12,6 +13,8 @@ public:
 		m_NEWVIDEO = 0;
 		m_BORDERCOLOR = 0;
 		m_SHADOW = 0;
+
+		GetVideo().SetVidHD(true);
 	}
 	virtual ~VidHDCard(void) {}
 

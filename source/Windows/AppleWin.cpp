@@ -731,13 +731,6 @@ static void RepeatInitialization(void)
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
-		GetFrame().Initialize(); // g_pFramebufferinfo been created now & COM init'ed
-		LogFileOutput("Main: VideoInitialize()\n");
-
-		LogFileOutput("Main: FrameCreateWindow() - pre\n");
-		Win32Frame::GetWin32Frame().FrameCreateWindow();	// GetFrame().g_hFrameWindow is now valid
-		LogFileOutput("Main: FrameCreateWindow() - post\n");
-
 		// Init palette color
 		VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
 
@@ -767,6 +760,18 @@ static void RepeatInitialization(void)
 			}
 
 			GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
+		}
+
+		// Create window after inserting VidHD card (as it affects width & height)
+		{
+			Win32Frame::GetWin32Frame().SetViewportScale(Win32Frame::GetWin32Frame().GetViewportScale(), true);
+
+			GetFrame().Initialize(); // g_pFramebufferinfo been created now & COM init'ed
+			LogFileOutput("Main: VideoInitialize()\n");
+
+			LogFileOutput("Main: FrameCreateWindow() - pre\n");
+			Win32Frame::GetWin32Frame().FrameCreateWindow();	// GetFrame().g_hFrameWindow is now valid
+			LogFileOutput("Main: FrameCreateWindow() - post\n");
 		}
 
 		// Pre: may need g_hFrameWindow for MessageBox errors

@@ -25,7 +25,8 @@ class Video;
 class Win32Frame : public FrameBase
 {
 public:
-	Win32Frame();
+	Win32Frame(void);
+	virtual ~Win32Frame(void){}
 
 	static Win32Frame& GetWin32Frame();
 	static LRESULT CALLBACK FrameWndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);

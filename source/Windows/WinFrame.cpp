@@ -2249,6 +2249,9 @@ int Win32Frame::SetViewportScale(int nNewScale, bool bForce /*=false*/)
 	g_nViewportCX = g_nViewportScale * GetVideo().GetFrameBufferBorderlessWidth();
 	g_nViewportCY = g_nViewportScale * GetVideo().GetFrameBufferBorderlessHeight();
 
+	buttonx = BUTTONX;	// NB. macro uses g_nViewportCX
+	buttony = BUTTONY;
+
 	return nNewScale;
 }
 

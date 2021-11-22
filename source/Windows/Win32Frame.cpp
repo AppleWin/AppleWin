@@ -40,9 +40,6 @@ Win32Frame::Win32Frame()
 	m_bestHeightForFullScreen = 0;
 	m_changedDisplaySettings = false;
 
-	g_nViewportCX = GetVideo().GetFrameBufferBorderlessWidth() * kDEFAULT_VIEWPORT_SCALE;
-	g_nViewportCY = GetVideo().GetFrameBufferBorderlessHeight() * kDEFAULT_VIEWPORT_SCALE;
-	g_nViewportScale = kDEFAULT_VIEWPORT_SCALE; // saved REGSAVE
 	g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Windowed mode with borders, buttons etc (full-screen may be +1)
 
 	btnfacebrush = (HBRUSH)0;
@@ -52,8 +49,6 @@ Win32Frame::Win32Frame()
 	buttonactive = -1;
 	buttondown = -1;
 	buttonover = -1;
-	buttonx = BUTTONX;	// NB. macro uses g_nViewportCX
-	buttony = BUTTONY;
 	g_hFrameDC = (HDC)0;
 	memset(&framerect, 0, sizeof(framerect));
 
@@ -76,6 +71,9 @@ Win32Frame::Win32Frame()
 
 	g_eStatusDrive1 = DISK_STATUS_OFF;
 	g_eStatusDrive2 = DISK_STATUS_OFF;
+
+	// Set g_nViewportScale, g_nViewportCX, g_nViewportCY & buttonx, buttony
+	SetViewportScale(kDEFAULT_VIEWPORT_SCALE, true);
 }
 
 void Win32Frame::videoCreateDIBSection(Video & video)

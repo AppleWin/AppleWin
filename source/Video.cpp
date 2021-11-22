@@ -94,14 +94,12 @@ const char* const Video::g_apVideoModeDesc[NUM_VIDEO_MODES] =
 
 UINT Video::GetFrameBufferBorderlessWidth(void)
 {
-	static const UINT uFrameBufferBorderlessW = 640;	// 560;	// 560 = Double Hi-Res
-	return uFrameBufferBorderlessW;
+	return HasVidHD() ? kVideoWidthIIgs : kVideoWidthII;
 }
 
 UINT Video::GetFrameBufferBorderlessHeight(void)
 {
-	static const UINT uFrameBufferBorderlessH = 400;	// 384;	// 384 = Double Scan Line
-	return uFrameBufferBorderlessH;
+	return HasVidHD() ? kVideoHeightIIgs : kVideoHeightII;
 }
 
 // NB. These border areas are not visible (... and these border areas are unrelated to the 3D border below)
@@ -129,19 +127,19 @@ UINT Video::GetFrameBufferHeight(void)
 
 UINT Video::GetFrameBufferCentringOffsetX(void)
 {
-	return (kVideoWidthIIgs - kVideoWidthII) / 2;
+	return HasVidHD() ? ((kVideoWidthIIgs - kVideoWidthII) / 2) : 0;
 }
 
 UINT Video::GetFrameBufferCentringOffsetY(void)
 {
-	return (kVideoHeightIIgs * 2 - kVideoHeightII * 2) / 2;
+	return HasVidHD() ? ((kVideoHeightIIgs - kVideoHeightII) / 2) : 0;
 }
 
 int Video::GetFrameBufferCentringValue(void)
 {
 	int value = 0;
 
-	if (GetFrameBufferBorderlessWidth() == kVideoWidthIIgs)
+	if (HasVidHD())
 	{
 		value -= GetFrameBufferCentringOffsetY() * GetFrameBufferWidth();
 		value += GetFrameBufferCentringOffsetX();
