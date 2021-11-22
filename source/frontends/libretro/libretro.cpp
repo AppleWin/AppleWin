@@ -45,6 +45,7 @@ void retro_init(void)
 
 void retro_deinit(void)
 {
+  ourGame.reset();
   ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 }
 
@@ -217,9 +218,9 @@ bool retro_load_game(const retro_game_info *info)
     if (ok)
     {
       ra2::display_message("Enable Game Focus Mode for better keyboard handling");
+      std::swap(ourGame, game);
     }
 
-    std::swap(ourGame, game);
     return ok;
   }
   catch (const std::exception & e)
