@@ -463,11 +463,20 @@ void Win32Frame::DrawFrameWindow (bool bPaintingWindow/*=false*/)
 			DrawButton(dc,iButton);
 		}
 
-		if (g_nViewportScale == 2)
+		if (g_nViewportScale == 2 || GetVideo().HasVidHD())
 		{
-			int x  = buttonx + 1;
-			int y  = buttony + BUTTONS*BUTTONCY + 36;	// 36 = height of StatusArea
-			RECT rect = {x, y, x+45, y+BUTTONS*BUTTONCY+22};
+			const int x = buttonx + 1;
+			const int y = buttony + BUTTONS * BUTTONCY + 36;	// 36 = height of StatusArea
+			RECT rect = { x, y, x + BUTTONCX, y + BUTTONS * BUTTONCY + 22 };
+
+			if (GetVideo().HasVidHD())
+			{
+				if (g_nViewportScale == 1)
+					rect.bottom += 14;
+				else
+					rect.bottom += 32;
+			}
+
 			int res = FillRect(dc, &rect, btnfacebrush);
 		}
 	}
