@@ -390,12 +390,12 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		{
 			SetExpansionMemType(type);	// calls GetCardMgr().Insert() & InsertAux()
 			CreateLanguageCard();
-			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, cardVersion);
 		}
 		else
 		{
 			GetCardMgr().Insert(slot, type);
-			bRes = GetCardMgr().GetRef(slot).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+			bRes = GetCardMgr().GetRef(slot).LoadSnapshot(yamlLoadHelper, cardVersion);
 		}
 
 		cardInserted[slot] = true;

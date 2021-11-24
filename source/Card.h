@@ -41,7 +41,7 @@ public:
 	virtual void Reset(const bool powerCycle) = 0;
 	virtual void Update(const ULONG nExecutedCycles) = 0;
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) = 0;
-	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version) = 0;
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) = 0;
 
 	SS_CARDTYPE QueryType(void) { return m_type; }
 
@@ -65,7 +65,7 @@ public:
 	virtual void Reset(const bool powerCycle) {}
 	virtual void Update(const ULONG nExecutedCycles) {}
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) {}
-	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version) { _ASSERT(0); return false; }
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) { _ASSERT(0); return false; }
 };
 
 //
@@ -81,5 +81,5 @@ public:
 	virtual void Reset(const bool powerCycle) {}
 	virtual void Update(const ULONG nExecutedCycles);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
-	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 };

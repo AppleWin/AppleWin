@@ -20,8 +20,8 @@ public:
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void SetMemorySize(UINT banks) {}		// No-op for //e and slot-0 16K LC
 	virtual UINT GetActiveBank(void) { return 0; }	// Always 0 as only 1x 16K bank
-	virtual void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper) { _ASSERT(0); } // Not used for //e
-	virtual bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version) { _ASSERT(0); return false; } // Not used for //e
+	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) { _ASSERT(0); } // Not used for //e
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) { _ASSERT(0); return false; } // Not used for //e
 
 	BOOL GetLastRamWrite(void) { return m_uLastRamWrite; }
 	void SetLastRamWrite(BOOL count) { m_uLastRamWrite = count; }
@@ -47,8 +47,8 @@ public:
 	LanguageCardSlot0(SS_CARDTYPE = CT_LanguageCard);
 	virtual ~LanguageCardSlot0(void);
 
-	virtual void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-	virtual bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 	static const UINT kMemBankSize = 16*1024;
 	static std::string GetSnapshotCardName(void);
@@ -76,8 +76,8 @@ public:
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void SetMemorySize(UINT banks);
 	virtual UINT GetActiveBank(void);
-	virtual void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-	virtual bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 	static BYTE __stdcall IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 

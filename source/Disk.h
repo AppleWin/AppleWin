@@ -166,8 +166,8 @@ public:
 	bool IsDriveConnected(int drive) { return m_floppyDrive[drive].m_isConnected; }
 
 	static std::string GetSnapshotCardName(void);
-	virtual void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-	virtual bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 	void LoadLastDiskImage(const int drive);
 	void SaveLastDiskImage(const int drive);
