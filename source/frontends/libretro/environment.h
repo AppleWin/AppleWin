@@ -5,9 +5,9 @@
 namespace ra2
 {
 
-  void fallback_log(enum retro_log_level level, const char *fmt, ...);
+  void fallback_log(enum retro_log_level level, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
   extern retro_log_callback logging;
-  extern retro_log_printf_t log_cb;
+  extern retro_log_printf_t log_cb __attribute__((format(printf, 2, 3)));
   extern retro_input_poll_t input_poll_cb;
   extern retro_input_state_t input_state_cb;
   extern retro_environment_t environ_cb;
