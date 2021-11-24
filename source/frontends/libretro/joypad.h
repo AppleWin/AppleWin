@@ -11,7 +11,7 @@ namespace ra2
   class Joypad : public JoypadBase
   {
   public:
-    Joypad();
+    Joypad(unsigned device);
 
     double getAxis(int i) const override;
 

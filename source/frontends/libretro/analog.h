@@ -10,7 +10,7 @@ namespace ra2
   class Analog : public JoypadBase
   {
   public:
-    Analog();
+    Analog(unsigned device);
 
     double getAxis(int i) const override;
 

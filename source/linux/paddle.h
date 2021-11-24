@@ -11,7 +11,7 @@ public:
   virtual ~Paddle();
 
   virtual bool getButton(int i) const;
-  virtual double getAxis(int i) const;
+  virtual double getAxis(int i) const;  // -> [-1, 1]
 
   int getAxisValue(int i) const;
 

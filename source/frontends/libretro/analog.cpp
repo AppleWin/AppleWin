@@ -9,8 +9,9 @@
 namespace ra2
 {
 
-  Analog::Analog()
-    : myAxisCodes(2)
+  Analog::Analog(unsigned device)
+    : JoypadBase(device)
+    , myAxisCodes(2)
   {
     myAxisCodes[0] = std::make_pair(RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X);
     myAxisCodes[1] = std::make_pair(RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y);
@@ -19,7 +20,7 @@ namespace ra2
   double Analog::getAxis(int i) const
   {
     const auto & code = myAxisCodes[i];
-    const int value = input_state_cb(0, RETRO_DEVICE_ANALOG, code.first, code.second);
+    const int value = input_state_cb(0, myDevice, code.first, code.second);
     const double axis = 2.0 * double(value - AXIS_MIN) / double(AXIS_MAX - AXIS_MIN) - 1.0;
     return axis;
   }

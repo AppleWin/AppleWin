@@ -12,6 +12,7 @@
 #include "CPU.h"
 #include "NTSC.h"
 #include "Utilities.h"
+#include "Interface.h"
 
 #include "linux/keyboard.h"
 #include "linux/registry.h"
@@ -76,6 +77,11 @@ namespace ra2
 
     SetFrame(myFrame);
     myFrame->Initialize();
+
+    Video & video = GetVideo();
+    // should the user be allowed to tweak 0.75
+    myMouse[0] = {0.0, 0.75 / video.GetFrameBufferBorderlessWidth(), RETRO_DEVICE_ID_MOUSE_X};
+    myMouse[1] = {0.0, 0.75 / video.GetFrameBufferBorderlessHeight(), RETRO_DEVICE_ID_MOUSE_Y};
   }
 
   Game::~Game()
@@ -107,6 +113,7 @@ namespace ra2
   {
     input_poll_cb();
     keyboardEmulation();
+    mouseEmulation();
   }
 
   void Game::keyboardCallback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers)
@@ -274,6 +281,21 @@ namespace ra2
     {
       std::fill(myButtonStates.begin(), myButtonStates.end(), 0);
     }
+  }
+
+  void Game::mouseEmulation()
+  {
+    for (auto & mouse : myMouse)
+    {
+      const int16_t x = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, mouse.id);
+      mouse.position += x * mouse.multiplier;
+      mouse.position = std::min(1.0, std::max(mouse.position, -1.0));
+    }
+  }
+
+  double Game::getMousePosition(int i) const
+  {
+    return myMouse[i].position;
   }
 
   bool Game::loadGame(const std::string & path)

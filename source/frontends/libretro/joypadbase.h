@@ -8,15 +8,25 @@
 namespace ra2
 {
 
-  class JoypadBase : public Paddle
+  class ControllerBase : public Paddle
   {
   public:
-    JoypadBase();
+    ControllerBase(unsigned device, const std::vector<unsigned> & buttonCodes);
 
     bool getButton(int i) const override;
 
+  protected:
+    const unsigned myDevice;
+
   private:
-    std::vector<unsigned> myButtonCodes;
+    const std::vector<unsigned> myButtonCodes;
   };
+
+  class JoypadBase : public ControllerBase
+  {
+  public:
+    JoypadBase(unsigned device);
+  };
+
 
 }

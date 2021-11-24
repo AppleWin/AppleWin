@@ -6,17 +6,20 @@
 namespace ra2
 {
 
-  JoypadBase::JoypadBase()
-    : myButtonCodes(2)
+  ControllerBase::ControllerBase(unsigned device, const std::vector<unsigned> & buttonCodes)
+    : myDevice(device), myButtonCodes(buttonCodes)
   {
-    myButtonCodes[0] = RETRO_DEVICE_ID_JOYPAD_A;
-    myButtonCodes[1] = RETRO_DEVICE_ID_JOYPAD_B;
   }
 
-  bool JoypadBase::getButton(int i) const
+  bool ControllerBase::getButton(int i) const
   {
-    const int value = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, myButtonCodes[i]);
+    const int value = input_state_cb(0, myDevice, 0, myButtonCodes[i]);
     return value != 0;
+  }
+
+  JoypadBase::JoypadBase(unsigned device) : ControllerBase(device, {RETRO_DEVICE_ID_JOYPAD_A, RETRO_DEVICE_ID_JOYPAD_B})
+  {
+
   }
 
 }

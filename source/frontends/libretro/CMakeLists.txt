@@ -5,6 +5,7 @@ set(SOURCE_FILES
   game.cpp
   joypadbase.cpp
   joypad.cpp
+  mouse.cpp
   analog.cpp
   rdirectsound.cpp
   retroregistry.cpp
@@ -17,6 +18,7 @@ set(HEADER_FILES
   game.h
   joypadbase.h
   joypad.h
+  mouse.h
   analog.h
   rdirectsound.h
   retroregistry.h

@@ -18,6 +18,7 @@
 #include "frontends/libretro/retroregistry.h"
 #include "frontends/libretro/joypad.h"
 #include "frontends/libretro/analog.h"
+#include "frontends/libretro/mouse.h"
 
 namespace
 {
@@ -67,14 +68,19 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
     switch (device)
     {
     case RETRO_DEVICE_NONE:
+      Paddle::instance.reset();
       break;
     case RETRO_DEVICE_JOYPAD:
-      Paddle::instance.reset(new ra2::Joypad);
+      Paddle::instance.reset(new ra2::Joypad(device));
       Paddle::setSquaring(false);
       break;
     case RETRO_DEVICE_ANALOG:
-      Paddle::instance.reset(new ra2::Analog);
+      Paddle::instance.reset(new ra2::Analog(device));
       Paddle::setSquaring(true);
+      break;
+    case RETRO_DEVICE_MOUSE:
+      Paddle::instance.reset(new ra2::Mouse(device, &ourGame));
+      Paddle::setSquaring(false);
       break;
     default:
       break;
@@ -124,7 +130,8 @@ void retro_set_environment(retro_environment_t cb)
   static const struct retro_controller_description controllers[] =
     {
      { "Standard Joypad", RETRO_DEVICE_JOYPAD },
-     { "Analog Joypad", RETRO_DEVICE_ANALOG }
+     { "Analog Joypad", RETRO_DEVICE_ANALOG },
+     { "Mouse", RETRO_DEVICE_MOUSE },
     };
 
   static const struct retro_controller_info ports[] =
