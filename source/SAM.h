@@ -20,8 +20,8 @@ public:
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
 	static std::string GetSnapshotCardName(void);
-	void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
-	bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
+	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 private:
 	// no state

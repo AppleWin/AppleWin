@@ -44,8 +44,8 @@ public:
 	}
 
 	static std::string GetSnapshotCardName(void);
-	void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
-	bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
+	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 protected:
 	void InitializeROM(void);
