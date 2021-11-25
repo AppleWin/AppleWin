@@ -129,6 +129,9 @@ Overview
 HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	Card(CT_GenericHDD, slot)
 {
+	if (m_slot != SLOT7)	// fixme
+		throw std::string("Card: wrong slot");
+
 	m_unitNum = HARDDISK_1 << 7;	// b7=unit
 
 	// The HDD interface has a single Command register for both drives:
@@ -838,15 +841,12 @@ bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, 
 	return bResSelectImage;
 }
 
-bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version, const std::string& strSaveStatePath)
+bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (slot != SLOT7)	// fixme
-		throw std::string("Card: wrong slot");
-
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
-	if (version <= 2 && (regs.pc >> 8) == (0xC0|slot))
+	if (version <= 2 && (regs.pc >> 8) == (0xC0|m_slot))
 		throw std::string("HDD card: 6502 is running old HDD firmware");
 
 	m_unitNum = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_UNIT);	// b7=unit
@@ -866,7 +866,7 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT sl
 	bool bResSelectImage2 = LoadSnapshotHDDUnit(yamlLoadHelper, HARDDISK_2);
 
 	if (!bResSelectImage1 && !bResSelectImage2)
-		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, strSaveStatePath);
+		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, Snapshot_GetPath());
 
 	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 

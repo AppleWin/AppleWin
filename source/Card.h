@@ -27,6 +27,9 @@ enum SS_CARDTYPE
 
 enum SLOTS { SLOT0=0, SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6, SLOT7, NUM_SLOTS, SLOT_AUX };
 
+class YamlSaveHelper;
+class YamlLoadHelper;
+
 class Card
 {
 public:
@@ -37,6 +40,9 @@ public:
 	virtual void Init(void) = 0;
 	virtual void Reset(const bool powerCycle) = 0;
 	virtual void Update(const ULONG nExecutedCycles) = 0;
+	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) = 0;
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) = 0;
+
 	SS_CARDTYPE QueryType(void) { return m_type; }
 
 protected:
@@ -58,6 +64,8 @@ public:
 	virtual void Init(void) {}
 	virtual void Reset(const bool powerCycle) {}
 	virtual void Update(const ULONG nExecutedCycles) {}
+	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) {}
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) { _ASSERT(0); return false; }
 };
 
 //
@@ -72,4 +80,6 @@ public:
 	virtual void Init(void) {}
 	virtual void Reset(const bool powerCycle) {}
 	virtual void Update(const ULONG nExecutedCycles);
+	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 };
