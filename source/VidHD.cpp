@@ -93,7 +93,6 @@ bgra_t ConvertIIgs2RGB(Color color)
 void VidHDCard::UpdateSHRCell(bool is640Mode, bool isColorFillMode, uint16_t addrPalette, bgra_t* pVideoAddress, uint32_t a)
 {
 	_ASSERT(!is640Mode);		// to do: test this mode
-	_ASSERT(!isColorFillMode);	// to do: test this mode
 
 	Color* palette = (Color*) MemGetAuxPtr(addrPalette);
 
@@ -103,11 +102,13 @@ void VidHDCard::UpdateSHRCell(bool is640Mode, bool isColorFillMode, uint16_t add
 		{
 			BYTE pixel1 = (a >> 4) & 0xf;
 			bgra_t color1 = ConvertIIgs2RGB(palette[pixel1]);
+			if (isColorFillMode && pixel1 == 0) color1 = *(pVideoAddress - 1);
 			*pVideoAddress++ = color1;
 			*pVideoAddress++ = color1;
 
 			BYTE pixel2 = a & 0xf;
 			bgra_t color2 = ConvertIIgs2RGB(palette[pixel2]);
+			if (isColorFillMode && pixel2 == 0) color2 = color1;
 			*pVideoAddress++ = color2;
 			*pVideoAddress++ = color2;
 		}
