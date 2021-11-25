@@ -139,6 +139,11 @@ void VidHDCard::UpdateSHRCell(bool is640Mode, bool isColorFillMode, uint16_t add
 
 static const UINT kUNIT_VERSION = 1;
 
+#define SS_YAML_KEY_SCREEN_COLOR "Screen Color"
+#define SS_YAML_KEY_NEW_VIDEO "New Video"
+#define SS_YAML_KEY_BORDER_COLOR "Border Color"
+#define SS_YAML_KEY_SHADOW "Shadow"
+
 std::string VidHDCard::GetSnapshotCardName(void)
 {
 	static const std::string name("VidHD");
@@ -147,10 +152,24 @@ std::string VidHDCard::GetSnapshotCardName(void)
 
 void VidHDCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 {
+	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
+	YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SCREEN_COLOR, m_SCREENCOLOR);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_NEW_VIDEO, m_NEWVIDEO);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_BORDER_COLOR, m_BORDERCOLOR);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SHADOW, m_SHADOW);
 }
 
 bool VidHDCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 {
-	return false;
+	if (version < 1 || version > kUNIT_VERSION)
+		throw std::string("Card: wrong version");
+
+	m_SCREENCOLOR = yamlLoadHelper.LoadUint(SS_YAML_KEY_SCREEN_COLOR);
+	m_NEWVIDEO = yamlLoadHelper.LoadUint(SS_YAML_KEY_NEW_VIDEO);
+	m_BORDERCOLOR = yamlLoadHelper.LoadUint(SS_YAML_KEY_BORDER_COLOR);
+	m_SHADOW = yamlLoadHelper.LoadUint(SS_YAML_KEY_SHADOW);
+
+	return true;
 }
