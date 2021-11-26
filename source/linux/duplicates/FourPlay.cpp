@@ -19,7 +19,7 @@ void FourPlayCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 }
 
-bool FourPlayCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+bool FourPlayCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");

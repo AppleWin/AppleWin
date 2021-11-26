@@ -21,7 +21,7 @@ void SNESMAXCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 }
 
-bool SNESMAXCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+bool SNESMAXCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");

@@ -70,11 +70,8 @@ void CSuperSerialCard::LoadSnapshotDIPSW(YamlLoadHelper& yamlLoadHelper, std::st
   yamlLoadHelper.PopMap();
 }
 
-bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-  if (slot != 2)	// fixme
-    throw std::string("Card: wrong slot");
-
   if (version < 1 || version > kUNIT_VERSION)
     throw std::string("Card: wrong version");
 
