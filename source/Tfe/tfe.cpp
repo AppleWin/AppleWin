@@ -48,8 +48,6 @@ typedef unsigned int UINT;
 #include "../Registry.h"
 #include "../YamlHelper.h"
 
-static UINT g_slot = SLOT3;
-
 /**/
 /** #define TFE_DEBUG_DUMP 1 **/
 
@@ -1430,7 +1428,6 @@ return ret;
 
 void tfe_InitializeIO(LPBYTE pCxRomPeripheral, UINT slot)
 {
-    g_slot = slot;
     RegisterIoHandler(slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, NULL, NULL);
 }
 
@@ -1481,9 +1478,9 @@ std::string tfe_GetSnapshotCardName(void)
     return name;
 }
 
-void tfe_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
+void tfe_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 {
-    YamlSaveHelper::Slot slot(yamlSaveHelper, tfe_GetSnapshotCardName(), g_slot, kUNIT_VERSION);
+    YamlSaveHelper::Slot slot(yamlSaveHelper, tfe_GetSnapshotCardName(), uSlot, kUNIT_VERSION);
 
     YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 

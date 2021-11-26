@@ -71,6 +71,9 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	m_bCfgSupportDCD(false),
 	m_pExpansionRom(NULL)
 {
+	if (m_slot != 2)	// fixme
+		throw std::string("Card: wrong slot");
+
 	m_dwSerialPortItem = 0;
 
 	m_hCommHandle = INVALID_HANDLE_VALUE;
@@ -1476,11 +1479,8 @@ void CSuperSerialCard::LoadSnapshotDIPSW(YamlLoadHelper& yamlLoadHelper, std::st
 	yamlLoadHelper.PopMap();
 }
 
-bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (slot != 2)	// fixme
-		throw std::string("Card: wrong slot");
-
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 

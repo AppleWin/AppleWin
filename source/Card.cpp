@@ -70,3 +70,43 @@ void DummyCard::Update(const ULONG nExecutedCycles)
 		break;
 	}
 }
+
+void DummyCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	switch (QueryType())
+	{
+	case CT_GenericPrinter:
+		Printer_SaveSnapshot(yamlSaveHelper, m_slot);
+		break;
+	case CT_MockingboardC:
+		MB_SaveSnapshot(yamlSaveHelper, m_slot);
+		break;
+	case CT_Phasor:
+		Phasor_SaveSnapshot(yamlSaveHelper, m_slot);
+		break;
+	case CT_Z80:
+		Z80_SaveSnapshot(yamlSaveHelper, m_slot);
+		break;
+	case CT_Uthernet:
+		tfe_SaveSnapshot(yamlSaveHelper, m_slot);
+		break;
+	}
+}
+
+bool DummyCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
+{
+	switch (QueryType())
+	{
+	case CT_GenericPrinter:
+		return Printer_LoadSnapshot(yamlLoadHelper, m_slot, version);
+	case CT_MockingboardC:
+		return MB_LoadSnapshot(yamlLoadHelper, m_slot, version);
+	case CT_Phasor:
+		return Phasor_LoadSnapshot(yamlLoadHelper, m_slot, version);
+	case CT_Z80:
+		return Z80_LoadSnapshot(yamlLoadHelper, m_slot, version);
+	case CT_Uthernet:
+		return tfe_LoadSnapshot(yamlLoadHelper, m_slot, version);
+	}
+	return false;
+}

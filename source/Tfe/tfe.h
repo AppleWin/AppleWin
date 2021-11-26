@@ -52,7 +52,7 @@ void tfe_InitializeIO(LPBYTE pCxRomPeripheral, UINT slot);
 void tfe_SetRegistryInterface(UINT slot, const std::string& name);
 
 std::string tfe_GetSnapshotCardName(void);
-void tfe_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+void tfe_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
 bool tfe_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
 /*
