@@ -2326,11 +2326,6 @@ void Win32Frame::FrameResizeWindow(int nNewScale)
 	int nXPos = framerect.left;
 	int nYPos = framerect.top;
 
-	//
-
-	buttonx = g_nViewportCX + VIEWPORTX*2;
-	buttony = 0;
-
 	// Invalidate old rect region
 	{
 		RECT irect;
