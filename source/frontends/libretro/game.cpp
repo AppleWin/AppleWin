@@ -226,7 +226,7 @@ namespace ra2
     if (ch)
     {
       addKeyToBuffer(ch);
-      log_cb(RETRO_LOG_INFO, "RA2: %s - %02x\n", __FUNCTION__, ch);
+      // log_cb(RETRO_LOG_INFO, "RA2: %s - %02x\n", __FUNCTION__, ch);
     }
   }
 
