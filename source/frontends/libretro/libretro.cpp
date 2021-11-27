@@ -80,6 +80,25 @@ namespace
     return ourGame->getDiskControl().addImageIndex();
   }
 
+  bool retro_set_initial_image(unsigned index, const char *path)
+  {
+    ra2::log_cb(RETRO_LOG_INFO, "RA2: %s (%d) = %s\n", __FUNCTION__, index, path);
+    // I have not been able to trigger this yet.
+    return false;
+  }
+
+  bool retro_get_image_path(unsigned index, char *path, size_t len)
+  {
+    ra2::log_cb(RETRO_LOG_INFO, "RA2: %s (%d)\n", __FUNCTION__, index);
+    return ourGame->getDiskControl().getImagePath(index, path, len);
+  }
+
+  bool retro_get_image_label(unsigned index, char *label, size_t len)
+  {
+    ra2::log_cb(RETRO_LOG_INFO, "RA2: %s (%d)\n", __FUNCTION__, index);
+    return ourGame->getDiskControl().getImageLabel(index, label, len);
+  }
+
 }
 
 void retro_init(void)
@@ -201,10 +220,28 @@ void retro_set_environment(retro_environment_t cb)
   bool achievements = true;
   cb(RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS, &achievements);
 
-  static retro_disk_control_callback diskControlCallback = {
-    &retro_set_eject_state, &retro_get_eject_state, &retro_get_image_index, &retro_set_image_index, &retro_get_num_images, &retro_replace_image_index, &retro_add_image_index
-  };
-  cb(RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE, &diskControlCallback);
+  unsigned dciVersion = 0;
+  if (cb(RETRO_ENVIRONMENT_GET_DISK_CONTROL_INTERFACE_VERSION, &dciVersion) && (dciVersion >= 1))
+  {
+    retro_disk_control_ext_callback diskControlExtCallback = {
+      &retro_set_eject_state, &retro_get_eject_state,
+      &retro_get_image_index, &retro_set_image_index,
+      &retro_get_num_images, &retro_replace_image_index,
+      &retro_add_image_index, &retro_set_initial_image,
+      &retro_get_image_path, &retro_get_image_label
+    };
+    cb(RETRO_ENVIRONMENT_SET_DISK_CONTROL_EXT_INTERFACE, &diskControlExtCallback);
+  }
+  else
+  {
+    retro_disk_control_callback diskControlCallback = {
+      &retro_set_eject_state, &retro_get_eject_state,
+      &retro_get_image_index, &retro_set_image_index,
+      &retro_get_num_images, &retro_replace_image_index,
+      &retro_add_image_index
+    };
+    cb(RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE, &diskControlCallback);
+  }
 
   ra2::SetupRetroVariables();
 }

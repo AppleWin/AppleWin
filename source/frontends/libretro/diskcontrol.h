@@ -23,6 +23,9 @@ namespace ra2
 
     bool insertDisk(const std::string & filename);
 
+    bool getImagePath(unsigned index, char *path, size_t len) const;
+    bool getImageLabel(unsigned index, char *label, size_t len) const;
+
   private:
     std::vector<std::string> myImages;
 

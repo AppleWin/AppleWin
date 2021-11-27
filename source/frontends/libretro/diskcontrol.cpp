@@ -80,7 +80,7 @@ namespace ra2
   {
     if (myEjected == ejected)
     {
-      return true;
+      return true; // or false?
     }
 
     CardManager & cardManager = GetCardMgr();
@@ -151,7 +151,7 @@ namespace ra2
     if (myIndex < myImages.size())
     {
       myImages.erase(myImages.begin() + index);
-      if (myIndex == index)
+      if (myImages.empty() || myIndex == index)
       {
         myIndex = myImages.size();
       }
@@ -171,6 +171,39 @@ namespace ra2
   {
     myImages.push_back(std::string());
     return true;
+  }
+
+  bool DiskControl::getImagePath(unsigned index, char *path, size_t len) const
+  {
+    if (index < myImages.size())
+    {
+      strncpy(path, myImages[index].c_str(), len);
+      path[len - 1] = 0;
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+  bool DiskControl::getImageLabel(unsigned index, char *label, size_t len) const
+  {
+    if (index < myImages.size())
+    {
+      size_t pos = myImages[index].rfind('/');
+      if (pos == std::string::npos)
+      {
+        pos = 0;
+      }
+      strncpy(label, myImages[index].c_str() + pos + 1, len);
+      label[len - 1] = 0;
+      return true;
+    }
+    else
+    {
+      return false;
+    }
   }
 
 }
