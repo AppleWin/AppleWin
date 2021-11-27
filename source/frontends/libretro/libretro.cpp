@@ -19,6 +19,7 @@
 #include "frontends/libretro/joypad.h"
 #include "frontends/libretro/analog.h"
 #include "frontends/libretro/mouse.h"
+#include "frontends/libretro/serialisation.h"
 
 namespace
 {
@@ -362,19 +363,22 @@ bool retro_load_game_special(unsigned type, const struct retro_game_info *info, 
 size_t retro_serialize_size(void)
 {
   ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  return 0;
+  const size_t size = ra2::RetroSerialisation::getSize();
+  // we cannot guarantee exact file size, so we allow for a small grace buffer
+  const size_t buffer = 4096;
+  return size + buffer;
 }
 
 bool retro_serialize(void *data, size_t size)
 {
   ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  return false;
+  return ra2::RetroSerialisation::serialise(static_cast<char *>(data), size);
 }
 
 bool retro_unserialize(const void *data, size_t size)
 {
   ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  return false;
+  return ra2::RetroSerialisation::deserialise(static_cast<const char *>(data), size);
 }
 
 void retro_cheat_reset(void)

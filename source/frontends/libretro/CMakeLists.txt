@@ -11,9 +11,11 @@ set(SOURCE_FILES
   retroregistry.cpp
   retroframe.cpp
   diskcontrol.cpp
+  serialisation.cpp
   )
 
 set(HEADER_FILES
+  libretro-common/include/libretro.h
   environment.h
   rdirectsound.h
   game.h
@@ -25,7 +27,7 @@ set(HEADER_FILES
   retroregistry.h
   retroframe.h
   diskcontrol.h
-  libretro-common/include/libretro.h
+  serialisation.h
   )
 
 add_library(applewin_libretro SHARED
