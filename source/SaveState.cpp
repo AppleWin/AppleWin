@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SNESMAX.h"
 #include "Speaker.h"
 #include "Speech.h"
+#include "VidHD.h"
 #include "z80emu.h"
 
 #include "Configuration/Config.h"
@@ -410,6 +411,12 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			type = CT_SNESMAX;
 			GetCardMgr().Insert(slot, type);
 			bRes = dynamic_cast<SNESMAXCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
+		}
+		else if (card == VidHDCard::GetSnapshotCardName())
+		{
+			type = CT_VidHD;
+			GetCardMgr().Insert(slot, type);
+			bRes = dynamic_cast<VidHDCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else
 		{
