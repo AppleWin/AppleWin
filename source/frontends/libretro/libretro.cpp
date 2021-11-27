@@ -151,6 +151,7 @@ void retro_set_environment(retro_environment_t cb)
   retro_frame_time_callback timeCallback = {&ra2::Game::frameTimeCallback, 1000000 / ra2::Game::FPS};
   cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &timeCallback);
 
+  // see retro_get_memory_data() below
   bool achievements = true;
   cb(RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS, &achievements);
 
@@ -301,11 +302,23 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code)
 void *retro_get_memory_data(unsigned id)
 {
   ra2::log_cb(RETRO_LOG_INFO, "RA2: %s (%d)\n", __FUNCTION__, id);
-  return MemGetBankPtr(id);
+  switch (id & RETRO_MEMORY_MASK)
+  {
+  case RETRO_MEMORY_SYSTEM_RAM:
+    return MemGetBankPtr(0);
+  default:
+    return nullptr;
+  };
 }
 
 size_t retro_get_memory_size(unsigned id)
 {
   ra2::log_cb(RETRO_LOG_INFO, "RA2: %s (%d)\n", __FUNCTION__, id);
-  return MemGetBankPtr(id) ? _6502_MEM_LEN : 0;
+  switch (id & RETRO_MEMORY_MASK)
+  {
+  case RETRO_MEMORY_SYSTEM_RAM:
+    return _6502_MEM_LEN;
+  default:
+    return 0;
+  };
 }
