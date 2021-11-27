@@ -2315,6 +2315,12 @@ void Win32Frame::GetWidthHeight(int& nWidth, int& nHeight)
 #endif
 }
 
+// Window frame's border size has changed (eg. VidHD added/removed)
+void Win32Frame::ResizeWindow(void)
+{
+	FrameResizeWindow(GetViewportScale());
+}
+
 void Win32Frame::FrameResizeWindow(int nNewScale)
 {
 	int nOldWidth, nOldHeight;

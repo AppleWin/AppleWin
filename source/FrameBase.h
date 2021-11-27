@@ -33,6 +33,7 @@ public:
 	virtual void SetLoadedSaveStateFlag(const bool bFlag) = 0;
 
 	virtual void VideoPresentScreen(void) = 0;
+	virtual void ResizeWindow(void) = 0;
 
 	// this function has the same interface as MessageBox in windows.h
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) = 0;

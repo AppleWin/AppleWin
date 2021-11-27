@@ -48,6 +48,7 @@ public:
 	virtual void Initialize(void);
 	virtual void Destroy(void);
 	virtual void VideoPresentScreen(void);
+	virtual void ResizeWindow(void);
 
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
 	virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);

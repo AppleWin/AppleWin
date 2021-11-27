@@ -500,6 +500,7 @@ static void Snapshot_LoadState_v2(void)
 		GetPravets().Reset();
 
 		KeybReset();
+		GetVideo().SetVidHD(false);			// Set true later only if VidHDCard is instantiated
 		GetVideo().VideoResetState();
 		GetVideo().SetVideoRefreshRate(VR_60HZ);	// Default to 60Hz as older save-states won't contain refresh rate
 		MB_InitializeForLoadingSnapshot();	// GH#609
@@ -538,6 +539,8 @@ static void Snapshot_LoadState_v2(void)
 		DebugReset();
 		if (g_nAppMode == MODE_DEBUG)
 			DebugDisplay(TRUE);
+
+		GetFrame().ResizeWindow();
 	}
 	catch(std::string szMessage)
 	{
