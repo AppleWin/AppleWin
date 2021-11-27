@@ -89,18 +89,18 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 		switch (LOWORD(wparam))
 		{
 		case IDC_AUTHENTIC_SPEED:	// Authentic Machine Speed
-			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETPOS,1,SPEED_NORMAL);
-			EnableTrackbar(hWnd,0);
+			SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETPOS, 1, SPEED_NORMAL);
+			EnableTrackbar(hWnd, 0);
 			break;
 
 		case IDC_CUSTOM_SPEED:		// Select Custom Speed
-			SetFocus(GetDlgItem(hWnd,IDC_SLIDER_CPU_SPEED));
-			EnableTrackbar(hWnd,1);
+			SetFocus(GetDlgItem(hWnd, IDC_SLIDER_CPU_SPEED));
+			EnableTrackbar(hWnd, 1);
 			break;
 
 		case IDC_SLIDER_CPU_SPEED:	// CPU speed slider
-			CheckRadioButton(hWnd,IDC_AUTHENTIC_SPEED,IDC_CUSTOM_SPEED,IDC_CUSTOM_SPEED);
-			EnableTrackbar(hWnd,1);
+			CheckRadioButton(hWnd, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, IDC_CUSTOM_SPEED);
+			EnableTrackbar(hWnd, 1);
 			break;
 
 		case IDC_BENCHMARK:
@@ -113,6 +113,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 		case IDC_ETHERNET:
 			ui_tfe_settings_dialog(hWnd);
 			m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = m_PageConfigTfe.m_tfe_enabled ? CT_Uthernet : CT_Empty;
+			InitOptions(hWnd);
 			break;
 
 		case IDC_MONOCOLOR:
@@ -125,6 +126,14 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 		case IDC_CHECK_FS_SHOW_SUBUNIT_STATUS:
 		case IDC_CHECK_50HZ_VIDEO:
 			// Checked in DlgOK()
+			break;
+
+		case IDC_CHECK_VIDHD_IN_SLOT3:
+			{
+				const UINT newState = IsDlgButtonChecked(hWnd, IDC_CHECK_VIDHD_IN_SLOT3) ? 1 : 0;
+				m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = newState ? CT_VidHD : CT_Empty;
+				InitOptions(hWnd);
+		}
 			break;
 
 		case IDC_COMPUTER:
@@ -374,6 +383,11 @@ void CPageConfig::InitOptions(HWND hWnd)
 	const SS_CARDTYPE slot3 = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3];
 	const BOOL enableUthernetDialog = slot3 == CT_Empty || slot3 == CT_Uthernet;
 	EnableWindow(GetDlgItem(hWnd, IDC_ETHERNET), enableUthernetDialog);
+
+	const bool bIsSlot3VidHD = slot3 == CT_VidHD;
+	CheckDlgButton(hWnd, IDC_CHECK_VIDHD_IN_SLOT3, bIsSlot3VidHD ? BST_CHECKED : BST_UNCHECKED);
+	const BOOL enableVidHD = slot3 == CT_Empty || bIsSlot3VidHD;
+	EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VIDHD_IN_SLOT3), enableVidHD);
 }
 
 // Config->Computer: Menu item to eApple2Type
