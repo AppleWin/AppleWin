@@ -2,6 +2,7 @@
 
 #include "frontends/common2/speed.h"
 #include "frontends/libretro/environment.h"
+#include "frontends/libretro/diskcontrol.h"
 
 #include "linux/context.h"
 
@@ -29,6 +30,8 @@ namespace ra2
 
     double getMousePosition(int i) const;
 
+    DiskControl & getDiskControl();
+
     static void keyboardCallback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers);
 
     static void frameTimeCallback(retro_usec_t usec);
@@ -54,6 +57,8 @@ namespace ra2
     };
 
     MousePosition_t myMouse[2];
+
+    DiskControl myDiskControl;
 
     bool checkButtonPressed(unsigned id);
     void keyboardEmulation();

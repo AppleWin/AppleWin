@@ -34,6 +34,52 @@ namespace
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
   }
 
+  bool retro_set_eject_state(bool ejected)
+  {
+    ra2::log_cb(RETRO_LOG_INFO, "RA2: %s (%d)\n", __FUNCTION__, ejected);
+    return ourGame->getDiskControl().setEjectedState(ejected);
+  }
+
+  bool retro_get_eject_state()
+  {
+    return ourGame->getDiskControl().getEjectedState();
+  }
+
+  unsigned retro_get_image_index()
+  {
+    return ourGame->getDiskControl().getImageIndex();
+  }
+
+  bool retro_set_image_index(unsigned index)
+  {
+    ra2::log_cb(RETRO_LOG_INFO, "RA2: %s (%d)\n", __FUNCTION__, index);
+    return ourGame->getDiskControl().setImageIndex(index);
+  }
+
+  unsigned retro_get_num_images()
+  {
+    return ourGame->getDiskControl().getNumImages();
+  }
+
+  bool retro_replace_image_index(unsigned index, const struct retro_game_info *info)
+  {
+    ra2::log_cb(RETRO_LOG_INFO, "RA2: %s (%s)\n", __FUNCTION__, info->path);
+    if (info->path)
+    {
+      return ourGame->getDiskControl().replaceImageIndex(index, info->path);
+    }
+    else
+    {
+      return ourGame->getDiskControl().removeImageIndex(index);
+    }
+  }
+
+  bool retro_add_image_index()
+  {
+    ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+    return ourGame->getDiskControl().addImageIndex();
+  }
+
 }
 
 void retro_init(void)
@@ -155,6 +201,11 @@ void retro_set_environment(retro_environment_t cb)
   bool achievements = true;
   cb(RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS, &achievements);
 
+  static retro_disk_control_callback diskControlCallback = {
+    &retro_set_eject_state, &retro_get_eject_state, &retro_get_image_index, &retro_set_image_index, &retro_get_num_images, &retro_replace_image_index, &retro_add_image_index
+  };
+  cb(RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE, &diskControlCallback);
+
   ra2::SetupRetroVariables();
 }
 
@@ -226,7 +277,7 @@ bool retro_load_game(const retro_game_info *info)
       ok = game->loadGame(gamePath);
     }
 
-    ra2::log_cb(RETRO_LOG_INFO, "Game path: %s:%d\n", info->path, ok);
+    ra2::log_cb(RETRO_LOG_INFO, "Game path: %s -> %d\n", info->path, ok);
 
     if (ok)
     {

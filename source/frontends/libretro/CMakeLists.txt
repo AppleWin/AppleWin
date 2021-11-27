@@ -10,6 +10,7 @@ set(SOURCE_FILES
   rdirectsound.cpp
   retroregistry.cpp
   retroframe.cpp
+  diskcontrol.cpp
   )
 
 set(HEADER_FILES
@@ -23,6 +24,7 @@ set(HEADER_FILES
   rdirectsound.h
   retroregistry.h
   retroframe.h
+  diskcontrol.h
   libretro-common/include/libretro.h
   )
 

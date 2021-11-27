@@ -22,46 +22,6 @@
 
 #include "libretro.h"
 
-namespace
-{
-
-  bool insertDisk(const std::string & filename)
-  {
-    if (filename.empty())
-    {
-      return false;
-    }
-
-    CardManager & cardManager = GetCardMgr();
-
-    Disk2InterfaceCard * disk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
-    if (disk2Card)
-    {
-      const ImageError_e error = disk2Card->InsertDisk(DRIVE_1, filename.c_str(), IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE);
-
-      if (error == eIMAGE_ERROR_NONE)
-      {
-        return true;
-      }
-    }
-
-    if (cardManager.QuerySlot(SLOT7) != CT_GenericHDD)
-    {
-      cardManager.Insert(SLOT7, CT_GenericHDD);
-    }
-
-    HarddiskInterfaceCard * harddiskCard = dynamic_cast<HarddiskInterfaceCard*>(cardManager.GetObj(SLOT7));
-    if (harddiskCard)
-    {
-      BOOL bRes = harddiskCard->Insert(HARDDISK_1, filename);
-      return bRes == TRUE;
-    }
-
-    return false;
-  }
-
-}
-
 namespace ra2
 {
 
@@ -300,7 +260,7 @@ namespace ra2
 
   bool Game::loadGame(const std::string & path)
   {
-    const bool ok = insertDisk(path);
+    const bool ok = myDiskControl.insertDisk(path);
     return ok;
   }
 
@@ -308,6 +268,11 @@ namespace ra2
   {
     common2::setSnapshotFilename(path, true);
     return true;
+  }
+
+  DiskControl & Game::getDiskControl()
+  {
+    return myDiskControl;
   }
 
 }
