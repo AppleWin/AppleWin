@@ -1,5 +1,6 @@
 #include <vector>
 #include <string>
+#include <filesystem>
 
 namespace ra2
 {
@@ -31,7 +32,7 @@ namespace ra2
     static void setInitialPath(unsigned index, const char *path);
 
   private:
-    std::vector<std::string> myImages;
+    std::vector<std::filesystem::path> myImages;
 
     bool myEjected;
     size_t myIndex;

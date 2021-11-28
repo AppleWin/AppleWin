@@ -106,11 +106,6 @@ namespace
 void retro_init(void)
 {
   ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  const char *dir = NULL;
-  if (ra2::environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &dir) && dir)
-  {
-    ra2::retro_base_directory = dir;
-  }
 }
 
 void retro_deinit(void)

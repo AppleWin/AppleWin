@@ -33,13 +33,15 @@ namespace ra2
 
   bool DiskControl::insertPlaylist(const std::string & filename)
   {
-    std::ifstream playlist(filename);
+    const std::filesystem::path path(filename);
+    std::ifstream playlist(path);
     if (!playlist)
     {
       return false;
     }
 
     myImages.clear();
+    const std::filesystem::path parent = path.parent_path();
 
     std::string line;
     while (std::getline(playlist, line))
@@ -47,7 +49,12 @@ namespace ra2
       // should we trim initial spaces?
       if (!line.empty() && line[0] != '#')
       {
-        myImages.push_back(line);
+        std::filesystem::path image(line);
+        if (image.is_relative())
+        {
+          image = parent / image;
+        }
+        myImages.push_back(image);
       }
     }
 
@@ -227,12 +234,8 @@ namespace ra2
   {
     if (index < myImages.size())
     {
-      size_t pos = myImages[index].rfind('/');
-      if (pos == std::string::npos)
-      {
-        pos = 0;
-      }
-      strncpy(label, myImages[index].c_str() + pos + 1, len);
+      const std::string filename = myImages[index].filename();
+      strncpy(label, filename.c_str(), len);
       label[len - 1] = 0;
       return true;
     }
