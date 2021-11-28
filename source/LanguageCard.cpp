@@ -139,6 +139,9 @@ bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 LanguageCardSlot0::LanguageCardSlot0(SS_CARDTYPE type/*=CT_LanguageCard*/)
 	: LanguageCardUnit(type)
 {
+	if (m_slot != LanguageCardUnit::kSlot0)
+		throw std::string("Card: wrong slot");
+
 	m_pMemory = new BYTE[kMemBankSize];
 	SetMemMainLanguageCard(m_pMemory);
 }
@@ -152,7 +155,6 @@ LanguageCardSlot0::~LanguageCardSlot0(void)
 //
 
 static const UINT kUNIT_LANGUAGECARD_VER = 1;
-static const UINT kSLOT_LANGUAGECARD = LanguageCardUnit::kSlot0;
 
 #define SS_YAML_VALUE_CARD_LANGUAGECARD "Language Card"
 
@@ -194,7 +196,7 @@ void LanguageCardSlot0::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		return;	// No Language Card support for //e and above
 	}
 
-	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), kSLOT_LANGUAGECARD, kUNIT_LANGUAGECARD_VER);
+	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_LANGUAGECARD_VER);
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
 	SaveLCState(yamlSaveHelper);
@@ -205,11 +207,8 @@ void LanguageCardSlot0::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	}
 }
 
-bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (slot != kSLOT_LANGUAGECARD)
-		throw std::string("Card: wrong slot");
-
 	if (version != kUNIT_LANGUAGECARD_VER)
 		throw std::string("Card: wrong version");
 
@@ -365,7 +364,6 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 //
 
 static const UINT kUNIT_SATURN_VER = 1;
-static const UINT kSLOT_SATURN = LanguageCardUnit::kSlot0;
 
 #define SS_YAML_VALUE_CARD_SATURN128 "Saturn 128"
 
@@ -393,7 +391,7 @@ void Saturn128K::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		return;	// No Saturn support for //e and above
 	}
 
-	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), kSLOT_SATURN, kUNIT_SATURN_VER);
+	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_SATURN_VER);
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
 	SaveLCState(yamlSaveHelper);
@@ -409,11 +407,8 @@ void Saturn128K::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	}
 }
 
-bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (slot != kSLOT_SATURN)	// fixme
-		throw std::string("Card: wrong slot");
-
 	if (version != kUNIT_SATURN_VER)
 		throw std::string("Card: wrong version");
 

@@ -214,3 +214,14 @@ void CardManager::Update(const ULONG nExecutedCycles)
         }
     }
 }
+
+void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	for (UINT i = 1; i < NUM_SLOTS; ++i)
+	{
+		if (m_slot[i])
+		{
+			m_slot[i]->SaveSnapshot(yamlSaveHelper);
+		}
+	}
+}

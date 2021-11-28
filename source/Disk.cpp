@@ -60,6 +60,9 @@ const BYTE Disk2InterfaceCard::m_T00S00Pattern[] = {0xD5,0xAA,0x96,0xAA,0xAA,0xA
 Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	Card(CT_Disk2, slot)
 {
+	if (m_slot != 5 && m_slot != 6)	// fixme
+		throw std::string("Card: wrong slot");
+
 	ResetSwitches();
 
 	m_floppyLatch = 0;
@@ -2027,7 +2030,7 @@ void Disk2InterfaceCard::SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, U
 	SaveSnapshotFloppy(yamlSaveHelper, unit);
 }
 
-void Disk2InterfaceCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
+void Disk2InterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
@@ -2193,11 +2196,8 @@ void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, U
 	}
 }
 
-bool Disk2InterfaceCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+bool Disk2InterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (slot != 5 && slot != 6)	// fixme
-		throw std::string("Card: wrong slot");
-
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
