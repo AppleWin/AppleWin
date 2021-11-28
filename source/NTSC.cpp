@@ -103,11 +103,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	#define VIDEO_SCANNER_Y_DISPLAY 192 // max displayable scanlines
 	#define VIDEO_SCANNER_Y_DISPLAY_IIGS 200
 
-	// these are initialized in NTSC_VideoInit
+	// These 3 vars are initialized in NTSC_VideoInit()
 	static bgra_t* g_pVideoAddress = 0;
-//	static bgra_t *g_pScanLines[VIDEO_SCANNER_Y_DISPLAY*2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
-	static bgra_t* g_pScanLines[VIDEO_SCANNER_Y_DISPLAY_IIGS * 2];  // To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
-	static UINT g_kFrameBufferWidth;
+	// To maintain the 280x192 aspect ratio for 560px width, we double every scan line -> 560x384
+	// NB. For IIgs SHR, the 320x200 is again doubled (to 640x400), but this gives a ~16:9 ratio, when 4:3 is probably required (ie. stretch height from 200 to 240)
+	static bgra_t* g_pScanLines[VIDEO_SCANNER_Y_DISPLAY_IIGS * 2];
+	static UINT g_kFrameBufferWidth = 0;
 
 	static unsigned short (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
 
@@ -2182,7 +2183,6 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 
 	g_kFrameBufferWidth = GetVideo().GetFrameBufferWidth();
 
-//	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY*2); y++)
 	for (int y = 0; y < (VIDEO_SCANNER_Y_DISPLAY_IIGS*2); y++)
 	{
 		uint32_t offset = sizeof(bgra_t) * GetVideo().GetFrameBufferWidth()
