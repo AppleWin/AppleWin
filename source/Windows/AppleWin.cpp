@@ -767,7 +767,7 @@ static void RepeatInitialization(void)
 		{
 			Win32Frame::GetWin32Frame().SetViewportScale(Win32Frame::GetWin32Frame().GetViewportScale(), true);
 
-			GetFrame().Initialize(); // g_pFramebufferinfo been created now & COM init'ed
+			GetFrame().Initialize(true); // g_pFramebufferinfo been created now & COM init'ed
 			LogFileOutput("Main: VideoInitialize()\n");
 
 			LogFileOutput("Main: FrameCreateWindow() - pre\n");

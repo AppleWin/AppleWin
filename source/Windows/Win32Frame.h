@@ -45,7 +45,7 @@ public:
 
 	virtual void SetLoadedSaveStateFlag(const bool bFlag);
 
-	virtual void Initialize(void);
+	virtual void Initialize(bool resetVideoState);
 	virtual void Destroy(void);
 	virtual void VideoPresentScreen(void);
 	virtual void ResizeWindow(void);
@@ -78,7 +78,7 @@ private:
 	static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName, LPVOID lpContext);
 	LRESULT WndProc(HWND   window, UINT   message, WPARAM wparam, LPARAM lparam);
 
-	void videoCreateDIBSection(Video& video);
+	void VideoCreateDIBSection(bool resetVideoState);
 	void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
 	bool DDInit(void);
 	void DDUninit(void);

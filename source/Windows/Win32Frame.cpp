@@ -76,7 +76,7 @@ Win32Frame::Win32Frame()
 	SetViewportScale(kDEFAULT_VIEWPORT_SCALE, true);
 }
 
-void Win32Frame::videoCreateDIBSection(Video & video)
+void Win32Frame::VideoCreateDIBSection(bool resetVideoState)
 {
 	// CREATE THE DEVICE CONTEXT
 	HWND window = GetDesktopWindow();
@@ -89,7 +89,10 @@ void Win32Frame::videoCreateDIBSection(Video & video)
 
 	// CREATE THE FRAME BUFFER DIB SECTION
 	if (g_hDeviceBitmap)
+	{
 		DeleteObject(g_hDeviceBitmap);
+		GetVideo().Destroy();
+	}
 
 	uint8_t* pFramebufferbits;
 
@@ -100,29 +103,33 @@ void Win32Frame::videoCreateDIBSection(Video & video)
 		(LPVOID*)&pFramebufferbits, 0, 0
 	);
 	SelectObject(g_hDeviceDC, g_hDeviceBitmap);
-	video.Initialize(pFramebufferbits);
+	GetVideo().Initialize(pFramebufferbits, resetVideoState);
 }
 
-void Win32Frame::Initialize(void)
+void Win32Frame::Initialize(bool resetVideoState)
 {
-	// LOAD THE LOGO
-	g_hLogoBitmap = LoadBitmap(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN));
+	if (g_hLogoBitmap == NULL)
+	{
+		// LOAD THE LOGO
+		g_hLogoBitmap = LoadBitmap(g_hInstance, MAKEINTRESOURCE(IDB_APPLEWIN));
+	}
+
+	if (g_pFramebufferinfo)
+		delete[] g_pFramebufferinfo;
 
 	// CREATE A BITMAPINFO STRUCTURE FOR THE FRAME BUFFER
 	g_pFramebufferinfo = (LPBITMAPINFO) new BYTE[sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)];
 
-	Video & video = GetVideo();
-
 	memset(g_pFramebufferinfo, 0, sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD));
 	g_pFramebufferinfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	g_pFramebufferinfo->bmiHeader.biWidth = video.GetFrameBufferWidth();
-	g_pFramebufferinfo->bmiHeader.biHeight = video.GetFrameBufferHeight();
+	g_pFramebufferinfo->bmiHeader.biWidth = GetVideo().GetFrameBufferWidth();
+	g_pFramebufferinfo->bmiHeader.biHeight = GetVideo().GetFrameBufferHeight();
 	g_pFramebufferinfo->bmiHeader.biPlanes = 1;
 	g_pFramebufferinfo->bmiHeader.biBitCount = 32;
 	g_pFramebufferinfo->bmiHeader.biCompression = BI_RGB;
 	g_pFramebufferinfo->bmiHeader.biClrUsed = 0;
 
-	videoCreateDIBSection(video);
+	VideoCreateDIBSection(resetVideoState);
 
 #if 0
 	DDInit();	// For WaitForVerticalBlank()

@@ -790,13 +790,15 @@ const char* Video::VideoGetAppWindowTitle(void)
 		return apVideoMonitorModeDesc[ GetVideoRefreshRate() == VR_60HZ ? 0 : 1 ];	// NTSC or PAL
 }
 
-
-void Video::Initialize(uint8_t* frameBuffer)
+void Video::Initialize(uint8_t* frameBuffer, bool resetState)
 {
 	SetFrameBuffer(frameBuffer);
 
-	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
-	VideoResetState();
+	if (resetState)
+	{
+		// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
+		VideoResetState();
+	}
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
 	ClearFrameBuffer();

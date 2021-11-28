@@ -199,7 +199,7 @@ public:
 
 	~Video(void){}
 
-	void Initialize(uint8_t* frameBuffer); // Do not call directly. Call FrameBase::Initialize()
+	void Initialize(uint8_t* frameBuffer, bool resetState); // Do not call directly. Call FrameBase::Initialize()
 	void Destroy(void); // Call FrameBase::Destroy()
 
 	uint8_t* GetFrameBuffer(void) { return g_pFramebufferbits; }

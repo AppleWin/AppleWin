@@ -15,7 +15,7 @@ public:
 	BOOL       g_bMultiMon;
 	bool       g_bFreshReset;
 
-	virtual void Initialize(void) = 0;
+	virtual void Initialize(bool resetVideoState) = 0;
 	virtual void Destroy(void) = 0;
 
 	virtual void FrameDrawDiskLEDS() = 0;
