@@ -1942,6 +1942,7 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		}
 		else	// MODE_RUNNING, MODE_LOGO, MODE_PAUSED
 		{
+			GetVideo().ClearSHRResidue();	// Clear the framebuffer to remove any SHR residue in the borders
 			DebugBegin();
 		}
       break;

@@ -1878,7 +1878,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 	if (g_pFuncUpdateGraphicsScreen == updateScreenSHR && !(uVideoModeFlags & VF_SHR))
 	{
-		// Was SHR mode, so clear the screen to remove any SHR residue in the borders
+		// Was SHR mode, so clear the framebuffer to remove any SHR residue in the borders
 		GetVideo().ClearFrameBuffer();
 	}
 

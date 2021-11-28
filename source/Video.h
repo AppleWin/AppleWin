@@ -222,6 +222,7 @@ public:
 	void VideoResetState(void);
 	void VideoRefreshBuffer(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
 	void ClearFrameBuffer(void);
+	void ClearSHRResidue(void);
 
 	enum VideoScanner_e {VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH};
 	WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr = VS_FullAddr);

@@ -839,3 +839,10 @@ void Video::ClearFrameBuffer(void)
 {
 	memset(GetFrameBuffer(), 0, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
 }
+
+// Called when entering debugger, and after viewing Apple II video screen from debugger
+void Video::ClearSHRResidue(void)
+{
+	ClearFrameBuffer();
+	GetFrame().VideoPresentScreen();
+}
