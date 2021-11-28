@@ -7,6 +7,7 @@
 #include "Video.h"
 #include "Interface.h"
 #include "Memory.h"
+#include "Utilities.h"
 #include "Debugger/DebugDefs.h"
 
 #include "linux/version.h"
@@ -352,6 +353,7 @@ unsigned retro_get_region(void)
 void retro_reset(void)
 {
   ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
+  ResetMachineState();
 }
 
 bool retro_load_game_special(unsigned type, const struct retro_game_info *info, size_t num)
