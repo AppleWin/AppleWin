@@ -163,7 +163,7 @@ void retro_get_system_info(retro_system_info *info)
   info->library_name     = "AppleWin";
   info->library_version  = version.c_str();
   info->need_fullpath    = true;
-  info->valid_extensions = "bin|do|dsk|nib|po|gz|woz|zip|2mg|2img|iie|apl|hdv|yaml";
+  info->valid_extensions = "bin|do|dsk|nib|po|gz|woz|zip|2mg|2img|iie|apl|hdv|yaml|m3u";
 }
 
 void retro_get_system_av_info(retro_system_av_info *info)
