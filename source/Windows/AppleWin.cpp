@@ -763,7 +763,7 @@ static void RepeatInitialization(void)
 			GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
 		}
 
-		// Create window after inserting VidHD card (as it affects width & height)
+		// Create window after inserting/removing VidHD card (as it affects width & height)
 		{
 			Win32Frame::GetWin32Frame().SetViewportScale(Win32Frame::GetWin32Frame().GetViewportScale(), true);
 
@@ -773,6 +773,23 @@ static void RepeatInitialization(void)
 			LogFileOutput("Main: FrameCreateWindow() - pre\n");
 			Win32Frame::GetWin32Frame().FrameCreateWindow();	// GetFrame().g_hFrameWindow is now valid
 			LogFileOutput("Main: FrameCreateWindow() - post\n");
+		}
+
+		// Set best W,H resolution after inserting/removing VidHD card
+		if (g_cmdLine.bestFullScreenResolution || g_cmdLine.userSpecifiedWidth || g_cmdLine.userSpecifiedHeight)
+		{
+			bool res = false;
+			UINT bestWidth = 0, bestHeight = 0;
+
+			if (g_cmdLine.bestFullScreenResolution)
+				res = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight);
+			else
+				res = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight, g_cmdLine.userSpecifiedWidth, g_cmdLine.userSpecifiedHeight);
+
+			if (res)
+				LogFileOutput("Best resolution for -fs-height/height=x switch(es): Width=%d, Height=%d\n", bestWidth, bestHeight);
+			else
+				LogFileOutput("Failed to set parameter for -fs-width/height=x switch(es)\n");
 		}
 
 		// Pre: may need g_hFrameWindow for MessageBox errors

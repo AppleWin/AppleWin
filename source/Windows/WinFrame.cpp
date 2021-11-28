@@ -2159,13 +2159,14 @@ void Win32Frame::SetFullScreenMode(void)
 	scalex = width  / GetVideo().GetFrameBufferBorderlessWidth();
 	scaley = height / GetVideo().GetFrameBufferBorderlessHeight();
 
-	g_win_fullscreen_scale = (scalex <= scaley) ? scalex : scaley;
-	g_win_fullscreen_offsetx = ((int)width  - (int)(g_win_fullscreen_scale * GetVideo().GetFrameBufferBorderlessWidth())) / 2;
-	g_win_fullscreen_offsety = ((int)height - (int)(g_win_fullscreen_scale * GetVideo().GetFrameBufferBorderlessHeight())) / 2;
+	// NB. Separate x,y scaling is OK in full-screen mode
+	// . eg. SHR 640x400 (scalex=2, scaley=3) => 1280x1200, which roughly gives a 4:3 aspect ratio for a resolution of 1600x1200
+	g_win_fullscreen_offsetx = ((int)width - (int)(scalex * GetVideo().GetFrameBufferBorderlessWidth())) / 2;
+	g_win_fullscreen_offsety = ((int)height - (int)(scaley * GetVideo().GetFrameBufferBorderlessHeight())) / 2;
 	SetWindowPos(g_hFrameWindow, NULL, left, top, (int)width, (int)height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 	g_bIsFullScreen = true;
 
-	SetViewportScale(g_win_fullscreen_scale, true);
+	SetFullScreenViewportScale(scalex, scaley);
 
 	buttonx    = GetFullScreenOffsetX() + g_nViewportCX + VIEWPORTX*2;
 	buttony    = GetFullScreenOffsetY();
@@ -2197,7 +2198,6 @@ void Win32Frame::SetNormalMode(void)
 
 	g_win_fullscreen_offsetx = 0;
 	g_win_fullscreen_offsety = 0;
-	g_win_fullscreen_scale = 1;
 	SetWindowLong(g_hFrameWindow, GWL_STYLE, g_main_window_saved_style);
 	SetWindowLong(g_hFrameWindow, GWL_EXSTYLE, g_main_window_saved_exstyle);
 	SetWindowPos(g_hFrameWindow, NULL,
@@ -2263,6 +2263,16 @@ int Win32Frame::SetViewportScale(int nNewScale, bool bForce /*=false*/)
 	buttony = BUTTONY;
 
 	return nNewScale;
+}
+
+void Win32Frame::SetFullScreenViewportScale(int nNewXScale, int nNewYScale)
+{
+	g_nViewportScale = MIN(nNewXScale, nNewYScale);	// Not needed in FS mode
+	g_nViewportCX = nNewXScale * GetVideo().GetFrameBufferBorderlessWidth();
+	g_nViewportCY = nNewYScale * GetVideo().GetFrameBufferBorderlessHeight();
+
+	buttonx = BUTTONX;	// NB. macro uses g_nViewportCX
+	buttony = BUTTONY;
 }
 
 void Win32Frame::SetupTooltipControls(void)
@@ -2711,7 +2721,7 @@ void Win32Frame::FrameUpdateApple2Type(void)
 	DrawFrameWindow();
 }
 
-bool Win32Frame::GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight /*= 0*/)
+bool Win32Frame::GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth/*=0*/, UINT userSpecifiedHeight/*=0*/)
 {
 	m_bestWidthForFullScreen = 0;
 	m_bestHeightForFullScreen = 0;
@@ -2748,10 +2758,17 @@ bool Win32Frame::GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& be
 		if (vecDisplayResolutions.size() == 0)
 			return false;
 
-		// Pick least width (such that it's wide enough to scale)
+		// Pick user-specific width if it exists
+		// Else pick least width (such that it's wide enough to scale)
 		UINT width = (UINT)-1;
 		for (VEC_PAIR::iterator it = vecDisplayResolutions.begin(); it!= vecDisplayResolutions.end(); ++it)
 		{
+			if (it->first == userSpecifiedWidth)
+			{
+				width = userSpecifiedWidth;
+				break;
+			}
+
 			if (width > it->first)
 			{
 				UINT scaleFactor = it->second / GetVideo().GetFrameBufferBorderlessHeight();

@@ -39,7 +39,7 @@ public:
 	virtual void FrameSetCursorPosByMousePos();
 
 	virtual void SetFullScreenShowSubunitStatus(bool bShow);
-	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight = 0);
+	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth=0, UINT userSpecifiedHeight=0);
 	virtual int SetViewportScale(int nNewScale, bool bForce = false);
 	virtual void SetAltEnterToggleFullScreen(bool mode);
 
@@ -66,6 +66,7 @@ public:
 	UINT Get3DBorderHeight(void);
 	int GetViewportScale(void);
 	void GetViewportCXCY(int& nViewportCX, int& nViewportCY);
+	void SetFullScreenViewportScale(int nNewXScale, int nNewYScale);
 
 	void ApplyVideoModeChange(void);
 
@@ -131,7 +132,6 @@ private:
 	bool g_windowMinimized;
 	std::string driveTooltip;
 	bool g_bFullScreen_ShowSubunitStatus;
-	FULLSCREEN_SCALE_TYPE	g_win_fullscreen_scale;
 	int						g_win_fullscreen_offsetx;
 	int						g_win_fullscreen_offsety;
 	UINT m_bestWidthForFullScreen;
