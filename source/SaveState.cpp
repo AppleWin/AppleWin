@@ -546,9 +546,8 @@ static void Snapshot_LoadState_v2(void)
 		frame.Initialize(false);	// don't reset the video state
 		frame.ResizeWindow();
 
-		// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)
-		GetVideo().VideoReinitialize(true);	// g_CharsetType changed
-		frame.FrameUpdateApple2Type();	// Calls VideoRedrawScreen() before the aux mem has been loaded (so if DHGR is enabled, then aux mem will be zeros at this stage)
+		// g_Apple2Type may've changed: so reload button bitmaps & redraw frame (title, buttons, leds, etc)
+		frame.FrameUpdateApple2Type();	// NB. Calls VideoRedrawScreen()
 	}
 	catch(std::string szMessage)
 	{
