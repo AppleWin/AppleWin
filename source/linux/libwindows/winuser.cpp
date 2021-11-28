@@ -1,4 +1,4 @@
-#include "linux/windows/winuser.h"
+#include "winuser.h"
 
 HCURSOR LoadCursor(HINSTANCE hInstance, LPCSTR lpCursorName)
 {

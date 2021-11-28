@@ -59,6 +59,7 @@ target_link_libraries(sa2 PRIVATE
   ${GLES2_LIBRARIES}
   appleii
   common2
+  windows
   )
 
 target_link_directories(sa2 PRIVATE

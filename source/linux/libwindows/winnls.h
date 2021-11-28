@@ -1,6 +1,6 @@
 #pragma once
 
-#include "linux/windows/wincompat.h"
+#include "wincompat.h"
 
 #define CP_ACP        0
 #define CP_UTF8       65001

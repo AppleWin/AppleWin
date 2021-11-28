@@ -1,4 +1,4 @@
-#include "linux/windows/winnls.h"
+#include "winnls.h"
 
 #include <cstdlib>
 #include <cstring>

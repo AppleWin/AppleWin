@@ -52,6 +52,7 @@ endif()
 include_directories(source)
 
 add_subdirectory(source)
+add_subdirectory(source/linux/libwindows)
 add_subdirectory(test/TestCPU6502)
 
 if (BUILD_LIBRETRO OR BUILD_APPLEN OR BUILD_SA2)

@@ -28,7 +28,7 @@ typedef UINT64 uint64_t;
 
 #include <cstring>
 #include <cstdlib>
-#include <linux/win.h>
+#include "windows.h"
 #include <string>
 
 #endif

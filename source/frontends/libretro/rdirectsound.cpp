@@ -1,7 +1,7 @@
 #include "frontends/libretro/rdirectsound.h"
 #include "frontends/libretro/environment.h"
 
-#include "linux/windows/dsound.h"
+#include "windows.h"
 #include "linux/linuxinterface.h"
 
 #include <unordered_map>

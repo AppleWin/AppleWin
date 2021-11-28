@@ -1,4 +1,4 @@
-#include "linux/windows/handles.h"
+#include "winhandles.h"
 
 BOOL CloseHandle(HANDLE hObject)
 {

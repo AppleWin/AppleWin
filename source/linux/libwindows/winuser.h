@@ -1,6 +1,6 @@
 #pragma once
 
-#include "linux/windows/handles.h"
+#include "winhandles.h"
 
 typedef void * HCURSOR;
 

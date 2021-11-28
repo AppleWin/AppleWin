@@ -1,7 +1,7 @@
 #pragma once
 
-#include "linux/windows/wincompat.h"
-#include "linux/windows/handles.h"
+#include "wincompat.h"
+#include "winhandles.h"
 
 #include <cstddef>
 

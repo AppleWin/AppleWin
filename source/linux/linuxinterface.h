@@ -1,7 +1,6 @@
 #pragma once
 
-#include "linux/windows/wincompat.h"
-#include "linux/windows/dsound.h"
+class IDirectSoundBuffer;
 
 // Sound
 void registerSoundBuffer(IDirectSoundBuffer * buffer);

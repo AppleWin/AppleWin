@@ -54,6 +54,7 @@ target_link_libraries(qapple PRIVATE
   Qt5::Multimedia
   appleii
   qhexview-lib
+  windows
   )
 
 install(TARGETS qapple

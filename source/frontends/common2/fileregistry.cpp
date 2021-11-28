@@ -5,7 +5,7 @@
 #include "frontends/common2/programoptions.h"
 
 #include "Log.h"
-#include "linux/windows/files.h"
+#include "windows.h"
 #include "frontends/qt/applicationname.h"
 
 #include <boost/property_tree/ini_parser.hpp>

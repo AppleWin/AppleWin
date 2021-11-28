@@ -1,9 +1,9 @@
 #pragma once
 
-#include "linux/windows/winbase.h"
-#include "linux/windows/winerror.h"
-#include "linux/windows/mmreg.h"
-#include "linux/windows/guiddef.h"
+#include "winbase.h"
+#include "winerror.h"
+#include "mmreg.h"
+#include "guiddef.h"
 
 #include <vector>
 #include <memory>

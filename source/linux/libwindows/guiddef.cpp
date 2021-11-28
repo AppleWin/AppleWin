@@ -1,5 +1,5 @@
-#include "linux/windows/guiddef.h"
-#include "linux/windows/winerror.h"
+#include "guiddef.h"
+#include "winerror.h"
 
 IUnknown::~IUnknown()
 {

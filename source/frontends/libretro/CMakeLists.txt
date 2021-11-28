@@ -42,6 +42,7 @@ target_include_directories(applewin_libretro PRIVATE
 target_link_libraries(applewin_libretro PRIVATE
   appleii
   common2
+  windows
   )
 
 # just call it "applewin_libretro.so" as per libretro standard

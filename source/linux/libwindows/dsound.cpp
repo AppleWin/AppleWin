@@ -1,5 +1,4 @@
-#include "linux/windows/dsound.h"
-#include "linux/windows/winerror.h"
+#include "windows.h"
 #include "linux/linuxinterface.h"
 
 #include <cstring>

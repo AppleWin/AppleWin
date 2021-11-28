@@ -1,8 +1,8 @@
 #pragma once
 
-#include "linux/windows/winbase.h"
-#include "linux/windows/handles.h"
-#include "linux/windows/guiddef.h"
+#include "winbase.h"
+#include "winhandles.h"
+#include "guiddef.h"
 
 typedef LONGLONG REFERENCE_TIME;
 struct IReferenceClock : public IUnknown

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "linux/windows/wincompat.h"
+#include "wincompat.h"
 
 #define FAILED(stat) ((HRESULT)(stat)<0)
 #define E_NOINTERFACE HRESULT(0x80004002)

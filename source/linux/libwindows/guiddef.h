@@ -1,6 +1,6 @@
 #pragma once
 
-#include "linux/windows/wincompat.h"
+#include "wincompat.h"
 
 typedef int GUID;
 typedef GUID *LPGUID;

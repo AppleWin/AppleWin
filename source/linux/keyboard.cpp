@@ -1,6 +1,6 @@
+#include "StdAfx.h"
 #include "linux/keyboard.h"
 
-#include "StdAfx.h"
 #include "Core.h"
 #include "YamlHelper.h"
 

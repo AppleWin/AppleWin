@@ -1,6 +1,5 @@
-#include "linux/windows/stringcb.h"
 #include "linux/registry.h"
-
+#include "windows.h"
 #include "Log.h"
 
 Registry::~Registry()

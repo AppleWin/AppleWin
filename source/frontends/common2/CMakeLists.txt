@@ -37,6 +37,7 @@ target_include_directories(common2 PRIVATE
 target_link_libraries(common2 PRIVATE
   Boost::program_options
   appleii
+  windows
 )
 
 file(RELATIVE_PATH ROOT_PATH ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})

@@ -1,4 +1,4 @@
-#include "linux/windows/strings.h"
+#include "winstrings.h"
 
 #include <cstring>
 #include <cstdio>

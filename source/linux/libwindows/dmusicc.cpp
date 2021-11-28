@@ -1,5 +1,5 @@
-#include "linux/windows/dmusicc.h"
-#include "linux/windows/winerror.h"
+#include "dmusicc.h"
+#include "winerror.h"
 
 HRESULT IReferenceClock::GetTime(REFERENCE_TIME *pTime)
 {

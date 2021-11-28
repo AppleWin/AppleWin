@@ -86,19 +86,6 @@ set(SOURCE_FILES
 
   Configuration/PropertySheetHelper.cpp
 
-  linux/windows/handles.cpp
-  linux/windows/files.cpp
-  linux/windows/time.cpp
-  linux/windows/stringcb.cpp
-  linux/windows/strings.cpp
-  linux/windows/misc.cpp
-  linux/windows/winbase.cpp
-  linux/windows/winuser.cpp
-  linux/windows/dsound.cpp
-  linux/windows/guiddef.cpp
-  linux/windows/dmusicc.cpp
-  linux/windows/winnls.cpp
-
   linux/resources.cpp
   linux/benchmark.cpp
   linux/paddle.cpp
@@ -193,23 +180,6 @@ set(HEADER_FILES
 
   Configuration/PropertySheetHelper.h
 
-  linux/windows/handles.h
-  linux/windows/files.h
-  linux/windows/bitmap.h
-  linux/windows/time.h
-  linux/windows/stringcb.h
-  linux/windows/strings.h
-  linux/windows/misc.h
-  linux/windows/winbase.h
-  linux/windows/winuser.h
-  linux/windows/dsound.h
-  linux/windows/guiddef.h
-  linux/windows/dmusicc.h
-  linux/windows/winnls.h
-  linux/windows/gdi.h
-  linux/windows/mmreg.h
-  linux/windows/mmsystem.h
-
   linux/resources.h
   linux/linuxinterface.h
   linux/benchmark.h
@@ -223,7 +193,6 @@ set(HEADER_FILES
   linux/network/tfe2.h
   linux/network/slirp2.h
   linux/network/registers.h
-  linux/win.h
 
   Z80VICE/z80.h
   Z80VICE/z80mem.h
@@ -266,6 +235,10 @@ target_link_libraries(appleii PRIVATE
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}
   ${ZLIB_LIBRARIES}
+  )
+
+target_link_libraries(appleii PUBLIC
+  windows
   )
 
 target_link_directories(appleii PRIVATE

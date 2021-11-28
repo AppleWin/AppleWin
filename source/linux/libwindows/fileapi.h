@@ -1,7 +1,7 @@
 #pragma once
 
-#include "linux/windows/wincompat.h"
-#include "linux/windows/handles.h"
+#include "wincompat.h"
+#include "winhandles.h"
 
 #define INVALID_FILE_ATTRIBUTES  (~0u)
 #define INVALID_SET_FILE_POINTER (~0u)
