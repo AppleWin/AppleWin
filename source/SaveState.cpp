@@ -381,8 +381,6 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		else if (card == VidHDCard::GetSnapshotCardName())
 		{
 			type = CT_VidHD;
-			GetCardMgr().Insert(slot, type);
-			bRes = dynamic_cast<VidHDCard&>(GetCardMgr().GetRef(slot)).LoadSnapshot(yamlLoadHelper, slot, cardVersion);
 		}
 		else
 		{

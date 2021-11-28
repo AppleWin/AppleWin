@@ -150,7 +150,7 @@ std::string VidHDCard::GetSnapshotCardName(void)
 	return name;
 }
 
-void VidHDCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
+void VidHDCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
@@ -161,7 +161,7 @@ void VidHDCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SHADOW, m_SHADOW);
 }
 
-bool VidHDCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+bool VidHDCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
