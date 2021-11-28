@@ -387,13 +387,13 @@ size_t retro_serialize_size(void)
 bool retro_serialize(void *data, size_t size)
 {
   ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  return ra2::RetroSerialisation::serialise(static_cast<char *>(data), size);
+  return ra2::RetroSerialisation::serialise(data, size);
 }
 
 bool retro_unserialize(const void *data, size_t size)
 {
   ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  return ra2::RetroSerialisation::deserialise(static_cast<const char *>(data), size);
+  return ra2::RetroSerialisation::deserialise(data, size);
 }
 
 void retro_cheat_reset(void)

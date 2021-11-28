@@ -49,6 +49,12 @@ namespace
     Snapshot_SaveState();
   }
 
+  struct SerialisationFormat_t
+  {
+    uint32_t size;
+    char data[];  // zero-length array, containing the AW's yaml format
+  };
+
 }
 
 namespace ra2
@@ -70,7 +76,7 @@ namespace ra2
     return sizeof(uint32_t) + fileSize;
   }
 
-  bool RetroSerialisation::serialise(char * data, size_t size)
+  bool RetroSerialisation::serialise(void * data, size_t size)
   {
     AutoFile autoFile;
     if (!autoFile)
@@ -89,19 +95,17 @@ namespace ra2
     }
     else
     {
-      uint32_t * sizePtr = reinterpret_cast<uint32_t *>(data);
-      *sizePtr = fileSize;
-
-      char * dataPtr = data + sizeof(uint32_t);
+      SerialisationFormat_t * serialised = reinterpret_cast<SerialisationFormat_t *>(data);
+      serialised->size = fileSize;
 
       ifs.seekg(0, std::ios::beg);
-      ifs.read(dataPtr, fileSize);
+      ifs.read(serialised->data, serialised->size);
 
       return true;
     }
   }
 
-  bool RetroSerialisation::deserialise(const char * data, size_t size)
+  bool RetroSerialisation::deserialise(const void * data, size_t size)
   {
     AutoFile autoFile;
     if (!autoFile)
@@ -109,22 +113,19 @@ namespace ra2
       return false;
     }
 
-    const uint32_t * sizePtr = reinterpret_cast<const uint32_t *>(data);
-    const size_t fileSize = *sizePtr;
+    const SerialisationFormat_t * serialised = reinterpret_cast<const SerialisationFormat_t *>(data);
 
-    if (sizeof(uint32_t) + fileSize > size)
+    if (sizeof(uint32_t) + serialised->size > size)
     {
       return false;
     }
     else
     {
-      const char * dataPtr = data + sizeof(uint32_t);
-
       const std::string filename = autoFile.getFilename();
       // do not remove the {} scope below!
       {
         std::ofstream ofs(filename, std::ios::binary);
-        ofs.write(dataPtr, fileSize);
+        ofs.write(serialised->data, serialised->size);
       }
 
       Snapshot_SetFilename(filename);

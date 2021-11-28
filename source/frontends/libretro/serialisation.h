@@ -7,8 +7,8 @@ namespace ra2
   {
   public:
     static size_t getSize();
-    static bool serialise(char * data, size_t size);
-    static bool deserialise(const char * data, size_t size);
+    static bool serialise(void * data, size_t size);
+    static bool deserialise(const void * data, size_t size);
   };
 
 }
