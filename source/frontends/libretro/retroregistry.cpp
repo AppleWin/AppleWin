@@ -96,7 +96,7 @@ namespace
     {
       if (i > 0)
       {
-	ss << "|";
+        ss << "|";
       }
       ss << var.values[i].first;
     }

@@ -121,7 +121,6 @@ void retro_deinit(void)
 
 unsigned retro_api_version(void)
 {
-  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   return RETRO_API_VERSION;
 }
 
@@ -166,7 +165,6 @@ void retro_get_system_info(retro_system_info *info)
   info->need_fullpath    = true;
   info->valid_extensions = "bin|do|dsk|nib|po|gz|woz|zip|2mg|2img|iie|apl|hdv|yaml";
 }
-
 
 void retro_get_system_av_info(retro_system_av_info *info)
 {
@@ -250,31 +248,26 @@ void retro_set_environment(retro_environment_t cb)
 
 void retro_set_audio_sample(retro_audio_sample_t cb)
 {
-  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   ra2::audio_cb = cb;
 }
 
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb)
 {
-  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   ra2::audio_batch_cb = cb;
 }
 
 void retro_set_input_poll(retro_input_poll_t cb)
 {
-  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   ra2::input_poll_cb = cb;
 }
 
 void retro_set_input_state(retro_input_state_t cb)
 {
-  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   ra2::input_state_cb = cb;
 }
 
 void retro_set_video_refresh(retro_video_refresh_t cb)
 {
-  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   ra2::video_cb = cb;
 }
 
@@ -359,7 +352,6 @@ void retro_unload_game(void)
 
 unsigned retro_get_region(void)
 {
-  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
   return RETRO_REGION_NTSC;
 }
 
