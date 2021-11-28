@@ -40,8 +40,6 @@ namespace ra2
     bool insertFloppyDisk(const std::string & filename) const;
     bool insertHardDisk(const std::string & filename) const;
 
-    void checkState() const;
-
     static unsigned ourInitialIndex;
     static std::string ourInitialPath;
   };

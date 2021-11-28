@@ -155,20 +155,17 @@ namespace ra2
     return myIndex;
   }
 
-  void DiskControl::checkState() const
-  {
-    if (!myEjected)
-    {
-      // this should not happen
-      ra2::log_cb(RETRO_LOG_INFO, "WTF\n");
-    }
-  }
-
   bool DiskControl::setImageIndex(size_t index)
   {
-    checkState();
-    myIndex = index;
-    return true;
+    if (myEjected)
+    {
+      myIndex = index;
+      return true;
+    }
+    else
+    {
+      return false;
+    }
   }
 
   size_t DiskControl::getNumImages() const
@@ -178,7 +175,7 @@ namespace ra2
 
   bool DiskControl::replaceImageIndex(size_t index, const std::string & path)
   {
-    if (myIndex < myImages.size())
+    if (myEjected && myIndex < myImages.size())
     {
       myImages[index] = path;
       return true;
@@ -191,7 +188,7 @@ namespace ra2
 
   bool DiskControl::removeImageIndex(size_t index)
   {
-    if (myIndex < myImages.size())
+    if (myEjected && myIndex < myImages.size())
     {
       myImages.erase(myImages.begin() + index);
       if (myImages.empty() || myIndex == index)
