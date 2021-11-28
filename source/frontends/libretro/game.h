@@ -20,7 +20,6 @@ namespace ra2
     Game();
     ~Game();
 
-    bool loadGame(const std::string & path);
     bool loadSnapshot(const std::string & path);
 
     void executeOneFrame();

@@ -21,10 +21,14 @@ namespace ra2
     bool removeImageIndex(size_t index);
     bool addImageIndex();
 
+    // these 2 functions update the images for the Disc Control Interface
     bool insertDisk(const std::string & filename);
+    bool insertPlaylist(const std::string & filename);
 
     bool getImagePath(unsigned index, char *path, size_t len) const;
     bool getImageLabel(unsigned index, char *label, size_t len) const;
+
+    static void setInitialPath(unsigned index, const char *path);
 
   private:
     std::vector<std::string> myImages;
@@ -36,6 +40,9 @@ namespace ra2
     bool insertHardDisk(const std::string & filename) const;
 
     void checkState() const;
+
+    static unsigned ourInitialIndex;
+    static std::string ourInitialPath;
   };
 
 }

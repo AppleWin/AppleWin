@@ -7,6 +7,8 @@
 #include "Disk.h"
 #include "Harddisk.h"
 
+#include <fstream>
+
 namespace ra2
 {
 
@@ -17,11 +19,6 @@ namespace ra2
 
   bool DiskControl::insertDisk(const std::string & filename)
   {
-    if (filename.empty())
-    {
-      return false;
-    }
-
     if (insertFloppyDisk(filename))
     {
       myIndex = 0;
@@ -32,6 +29,45 @@ namespace ra2
     }
 
     return insertHardDisk(filename);
+  }
+
+  bool DiskControl::insertPlaylist(const std::string & filename)
+  {
+    std::ifstream playlist(filename);
+    if (!playlist)
+    {
+      return false;
+    }
+
+    myImages.clear();
+
+    std::string line;
+    while (std::getline(playlist, line))
+    {
+      // should we trim initial spaces?
+      if (!line.empty() && line[0] != '#')
+      {
+        myImages.push_back(line);
+      }
+    }
+
+    // if we have an initial disk image, let's try to honour it
+    if (!ourInitialPath.empty() && ourInitialIndex < myImages.size() && myImages[ourInitialIndex] == ourInitialPath)
+    {
+      myIndex = ourInitialIndex;
+      // do we need to reset for next time?
+      ourInitialPath.clear();
+      ourInitialIndex = 0;
+    }
+    else
+    {
+      // insert the first image
+      myIndex = 0;
+    }
+
+    // this is safe even if myImages is empty
+    myEjected = true;
+    return setEjectedState(false);
   }
 
   bool DiskControl::insertFloppyDisk(const std::string & filename) const
@@ -203,6 +239,17 @@ namespace ra2
     else
     {
       return false;
+    }
+  }
+
+  unsigned DiskControl::ourInitialIndex = 0;
+  std::string DiskControl::ourInitialPath;
+  void DiskControl::setInitialPath(unsigned index, const char *path)
+  {
+    if (path && *path)
+    {
+      ourInitialIndex = index;
+      ourInitialPath = path;
     }
   }
 

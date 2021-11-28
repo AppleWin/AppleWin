@@ -85,8 +85,8 @@ namespace
   bool retro_set_initial_image(unsigned index, const char *path)
   {
     ra2::log_cb(RETRO_LOG_INFO, "RA2: %s (%d) = %s\n", __FUNCTION__, index, path);
-    // I have not been able to trigger this yet.
-    return false;
+    ra2::DiskControl::setInitialPath(index, path);
+    return true;
   }
 
   bool retro_get_image_path(unsigned index, char *path, size_t len)
@@ -304,16 +304,29 @@ bool retro_load_game(const retro_game_info *info)
     std::unique_ptr<ra2::Game> game(new ra2::Game());
 
     const std::string snapshotEnding = ".aws.yaml";
-    const std::string gamePath = info->path;
+    const std::string playlistEnding = ".m3u";
 
     bool ok;
-    if (endsWith(gamePath, snapshotEnding))
+
+    if (info->path && *info->path)
     {
-      ok = game->loadSnapshot(gamePath);
+      const std::string gamePath = info->path;
+      if (endsWith(gamePath, snapshotEnding))
+      {
+        ok = game->loadSnapshot(gamePath);
+      }
+      else if (endsWith(gamePath, playlistEnding))
+      {
+        ok = game->getDiskControl().insertPlaylist(gamePath);
+      }
+      else
+      {
+        ok = game->getDiskControl().insertDisk(gamePath);
+      }
     }
     else
     {
-      ok = game->loadGame(gamePath);
+      ok = false;
     }
 
     ra2::log_cb(RETRO_LOG_INFO, "Game path: %s -> %d\n", info->path, ok);

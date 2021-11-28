@@ -258,12 +258,6 @@ namespace ra2
     return myMouse[i].position;
   }
 
-  bool Game::loadGame(const std::string & path)
-  {
-    const bool ok = myDiskControl.insertDisk(path);
-    return ok;
-  }
-
   bool Game::loadSnapshot(const std::string & path)
   {
     common2::setSnapshotFilename(path, true);
