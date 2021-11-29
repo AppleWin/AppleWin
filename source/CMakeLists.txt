@@ -200,16 +200,8 @@ set(HEADER_FILES
   Z80VICE/daa.h
   )
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-# Applle's linker does not like the link-time interface of libappleii
-# we need link everything at once
-  message("Mac OS X detected, libappleii as static library")
-  set(LIBRARY_TYPE "STATIC")
-else()
-  set(LIBRARY_TYPE "SHARED")
-endif()
-
-add_library(appleii "${LIBRARY_TYPE}"
+# we used to generate a shared object, but it turns out there are more cons than pros
+add_library(appleii STATIC
   ${SOURCE_FILES}
   ${HEADER_FILES}
   )
@@ -259,6 +251,3 @@ add_custom_command(
   )
 
 configure_file(linux/config.h.in linux/config.h)
-
-install(TARGETS appleii
-  DESTINATION lib)

@@ -8,15 +8,15 @@ set(IMGUI_CLUB_PATH "imgui/imgui_club")
 find_package(SDL2 REQUIRED)
 pkg_search_module(SDL2_IMAGE REQUIRED SDL2_image)
 
-# the default is to use GLES
-set (SA2_USE_OPENGL 0)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set (SA2_USE_OPENGL 1)
+  # only OpenGL supported on MacOS
+  set (SA2_OPENGL ON)
+else()
+  option(SA2_OPENGL "Prefer OpenGL over OpenGL ES" OFF)
 endif()
 
-
-if (${SA2_USE_OPENGL})
+if (SA2_OPENGL)
   pkg_search_module(GLES2 REQUIRED opengl)
 else()
   pkg_search_module(GLES2 REQUIRED glesv2)
