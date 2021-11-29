@@ -20,6 +20,14 @@
   along with AppleWin; if not, write to the Free Software
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
+/*
+  Emulate a VidHD card (Blue Shift Inc)
+
+  Allows any Apple II to support the IIgs' 320x200 and 640x200 256-colour Super High-Res video modes.
+  Currently only a //e with 64K aux memory supports SHR mode.
+
+  NB. The extended text modes 80x45, 120x67, 240x135 (and setting FG/BG colours) are not supported yet.
+*/
 
 #include "StdAfx.h"
 
@@ -46,7 +54,7 @@ BYTE __stdcall VidHDCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, UL
 	return IO_Null(pc, addr, bWrite, value, nExecutedCycles);
 }
 
-// NB. VidHD has no support for reading the IIgs video registers from an earlier Apple II
+// NB. VidHD has no support for reading the IIgs video registers (from an earlier Apple II)
 void VidHDCard::VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
 {
 	switch (addr & 0xff)
