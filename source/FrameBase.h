@@ -15,7 +15,7 @@ public:
 	BOOL       g_bMultiMon;
 	bool       g_bFreshReset;
 
-	virtual void Initialize(void) = 0;
+	virtual void Initialize(bool resetVideoState) = 0;
 	virtual void Destroy(void) = 0;
 
 	virtual void FrameDrawDiskLEDS() = 0;
@@ -26,13 +26,14 @@ public:
 	virtual void FrameSetCursorPosByMousePos() = 0;
 
 	virtual void SetFullScreenShowSubunitStatus(bool bShow) = 0;
-	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight = 0) = 0;
+	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth=0, UINT userSpecifiedHeight=0) = 0;
 	virtual int SetViewportScale(int nNewScale, bool bForce = false) = 0;
 	virtual void SetAltEnterToggleFullScreen(bool mode) = 0;
 
 	virtual void SetLoadedSaveStateFlag(const bool bFlag) = 0;
 
 	virtual void VideoPresentScreen(void) = 0;
+	virtual void ResizeWindow(void) = 0;
 
 	// this function has the same interface as MessageBox in windows.h
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) = 0;

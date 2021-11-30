@@ -55,7 +55,8 @@ enum VideoFlag_e
 	VF_80STORE= 0x00000008,
 	VF_MIXED  = 0x00000010,
 	VF_PAGE2  = 0x00000020,
-	VF_TEXT   = 0x00000040
+	VF_TEXT   = 0x00000040,
+	VF_SHR    = 0x00000080		// For VidHD's support for IIgs SHR video modes
 };
 
 enum AppleFont_e
@@ -193,9 +194,12 @@ public:
 		g_nMonochromeRGB = RGB(0xC0,0xC0,0xC0);
 		g_videoRomSize = 0;
 		g_videoRomRockerSwitch = false;
+		m_hasVidHD = false;
 	}
 
-	void Initialize(uint8_t* frameBuffer); // Do not call directly. Call FrameBase::Initialize()
+	~Video(void){}
+
+	void Initialize(uint8_t* frameBuffer, bool resetState); // Do not call directly. Call FrameBase::Initialize()
 	void Destroy(void); // Call FrameBase::Destroy()
 
 	uint8_t* GetFrameBuffer(void) { return g_pFramebufferbits; }
@@ -207,6 +211,9 @@ public:
 	UINT GetFrameBufferBorderHeight(void);
 	UINT GetFrameBufferWidth(void);
 	UINT GetFrameBufferHeight(void);
+	UINT GetFrameBufferCentringOffsetX(void);
+	UINT GetFrameBufferCentringOffsetY(void);
+	int GetFrameBufferCentringValue(void);
 
 	COLORREF GetMonochromeRGB(void) { return g_nMonochromeRGB; }
 	void SetMonochromeRGB(COLORREF colorRef) { g_nMonochromeRGB = colorRef; }
@@ -214,6 +221,8 @@ public:
 	void VideoReinitialize(bool bInitVideoScannerAddress);
 	void VideoResetState(void);
 	void VideoRefreshBuffer(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
+	void ClearFrameBuffer(void);
+	void ClearSHRResidue(void);
 
 	enum VideoScanner_e {VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH};
 	WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr = VS_FullAddr);
@@ -268,6 +277,9 @@ public:
 	const char* VideoGetAppWindowTitle(void);
 	const char* GetVideoChoices(void) { return g_aVideoChoices; }
 
+	bool HasVidHD(void) { return m_hasVidHD; }
+	void SetVidHD(bool hasVidHD) { m_hasVidHD = hasVidHD; }
+
 	static const UINT kVideoRomSize2K = 1024*2;
 	static const UINT kVideoRomSize4K = kVideoRomSize2K*2;
 
@@ -275,7 +287,6 @@ protected:
 	uint8_t *g_pFramebufferbits;
 
 private:
-
 	void SetFrameBuffer(uint8_t* frameBuffer) { g_pFramebufferbits = frameBuffer; }
 	std::string VideoGetSnapshotStructName(void);
 
@@ -285,6 +296,7 @@ private:
 	VideoStyle_e g_eVideoStyle;
 	bool g_bVideoScannerNTSC;	// NTSC video scanning (or PAL)
 	COLORREF g_nMonochromeRGB;	// saved to Registry
+	bool m_hasVidHD;
 
 	WinBmpHeader_t g_tBmpHeader;
 
@@ -309,4 +321,10 @@ private:
 	static const char m_szModeDesc7[];
 	static const char m_szModeDesc8[];
 	static const char* const g_apVideoModeDesc[NUM_VIDEO_MODES];
+
+	static const UINT kVideoHeightII = 192*2;
+	static const UINT kVideoHeightIIgs = 200*2;
+
+	static const UINT kVideoWidthII = 280*2;
+	static const UINT kVideoWidthIIgs = 320*2;
 };

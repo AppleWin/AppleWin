@@ -169,6 +169,13 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					g_cmdLine.bSlotEmpty[slot] = true;
 				if (strcmp(lpCmdLine, "diskii") == 0)
 					g_cmdLine.slotInsert[slot] = CT_Disk2;
+				if (strcmp(lpCmdLine, "vidhd") == 0)
+				{
+					if (slot == SLOT3)
+						g_cmdLine.slotInsert[slot] = CT_VidHD;
+					else
+						LogFileOutput("VidHD currently only supported in slot 3\n");
+				}
 			}
 			else if (lpCmdLine[3] == 'd' && (lpCmdLine[4] == '1' || lpCmdLine[4] == '2'))	// -s[1..7]d[1|2] <dsk-image>
 			{
@@ -208,6 +215,19 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.setFullScreen = 0;
 		}
+#define CMD_FS_WIDTH "-fs-width="
+		else if (strncmp(lpCmdLine, CMD_FS_WIDTH, sizeof(CMD_FS_WIDTH)-1) == 0)
+		{
+			if (g_cmdLine.setFullScreen < 0)	// Not yet been specified on cmd line?
+				g_cmdLine.setFullScreen = 1;	// Implicity set full-screen. NB. Can be overridden by "-no-full-screen"
+
+			LPSTR lpTmp = lpCmdLine + sizeof(CMD_FS_WIDTH)-1;
+			{
+				g_cmdLine.userSpecifiedWidth = atoi(lpTmp);
+				if (!g_cmdLine.userSpecifiedWidth)
+					LogFileOutput("Invalid cmd-line parameter for -fs-width=x switch\n");
+			}
+		}
 #define CMD_FS_HEIGHT "-fs-height="
 		else if (strncmp(lpCmdLine, CMD_FS_HEIGHT, sizeof(CMD_FS_HEIGHT)-1) == 0)
 		{
@@ -215,24 +235,16 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 				g_cmdLine.setFullScreen = 1;	// Implicity set full-screen. NB. Can be overridden by "-no-full-screen"
 
 			LPSTR lpTmp = lpCmdLine + sizeof(CMD_FS_HEIGHT)-1;
-			bool bRes = false;
-			UINT bestWidth=0, bestHeight=0;
 			if (strcmp(lpTmp, "best") == 0)
 			{
-				bRes = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight);
+				g_cmdLine.bestFullScreenResolution = true;
 			}
 			else
 			{
-				UINT userSpecifiedHeight = atoi(lpTmp);
-				if (userSpecifiedHeight)
-					bRes = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight, userSpecifiedHeight);
-				else
+				g_cmdLine.userSpecifiedHeight = atoi(lpTmp);
+				if (!g_cmdLine.userSpecifiedHeight)
 					LogFileOutput("Invalid cmd-line parameter for -fs-height=x switch\n");
 			}
-			if (bRes)
-				LogFileOutput("Best resolution for -fs-height=x switch: Width=%d, Height=%d\n", bestWidth, bestHeight);
-			else
-				LogFileOutput("Failed to set parameter for -fs-height=x switch\n");
 		}
 		else if (strcmp(lpCmdLine, "-no-di") == 0)
 		{

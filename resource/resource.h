@@ -70,7 +70,6 @@
 #define IDC_PHASOR_ENABLE               1029
 #define IDC_SAM_ENABLE                  1030
 #define IDC_SOUNDCARD_DISABLE           1031
-
 #define IDC_TFE_SETTINGS_ENABLE_T       1032
 #define IDC_TFE_SETTINGS_ENABLE         1033
 #define IDC_TFE_SETTINGS_INTERFACE_T    1034
@@ -99,7 +98,6 @@
 #define IDC_PRINTER_FILTER_UNPRINTABLE  1057
 #define IDC_PRINTER_APPEND              1058
 #define IDC_SPIN_PRINTER_IDLE           1059
-
 #define IDC_CHECK_HALF_SCAN_LINES       1060
 #define IDC_GPL_TEXT                    1061
 #define IDC_GPL_BORDER                  1063
@@ -120,6 +118,7 @@
 #define IDC_COMBO_DISK2_SLOT5           1086
 #define IDC_FOURPLAY_CONFIG             1087
 #define IDC_SNESMAX_CONFIG              1088
+#define IDC_CHECK_VIDHD_IN_SLOT3        1089
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003

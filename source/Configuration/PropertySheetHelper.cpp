@@ -548,6 +548,8 @@ std::string CPropertySheetHelper::GetCardName(const SS_CARDTYPE CardType)
 		return "4Play";
 	case CT_SNESMAX:
 		return "SNES MAX";
+	case CT_VidHD:
+		return "VidHD";
 	default:
 		return "Unknown";
 	}

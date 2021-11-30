@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SNESMAX.h"
 #include "Speaker.h"
 #include "Speech.h"
+#include "VidHD.h"
 #include "z80emu.h"
 
 #include "Configuration/Config.h"
@@ -288,10 +289,6 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	SpkrLoadSnapshot(yamlLoadHelper);
 	GetVideo().VideoLoadSnapshot(yamlLoadHelper, version);
 	MemLoadSnapshot(yamlLoadHelper, version);
-
-	// g_Apple2Type may've changed: so redraw frame (title, buttons, leds, etc)
-	GetVideo().VideoReinitialize(true);	// g_CharsetType changed
-	GetFrame().FrameUpdateApple2Type();	// Calls VideoRedrawScreen() before the aux mem has been loaded (so if DHGR is enabled, then aux mem will be zeros at this stage)
 }
 
 //---
@@ -380,6 +377,10 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		else if (card == SNESMAXCard::GetSnapshotCardName())
 		{
 			type = CT_SNESMAX;
+		}
+		else if (card == VidHDCard::GetSnapshotCardName())
+		{
+			type = CT_VidHD;
 		}
 		else
 		{
@@ -482,6 +483,7 @@ static void Snapshot_LoadState_v2(void)
 		GetPravets().Reset();
 
 		KeybReset();
+		GetVideo().SetVidHD(false);			// Set true later only if VidHDCard is instantiated
 		GetVideo().VideoResetState();
 		GetVideo().SetVideoRefreshRate(VR_60HZ);	// Default to 60Hz as older save-states won't contain refresh rate
 		MB_InitializeForLoadingSnapshot();	// GH#609
@@ -520,6 +522,12 @@ static void Snapshot_LoadState_v2(void)
 		DebugReset();
 		if (g_nAppMode == MODE_DEBUG)
 			DebugDisplay(TRUE);
+
+		frame.Initialize(false);	// don't reset the video state
+		frame.ResizeWindow();
+
+		// g_Apple2Type may've changed: so reload button bitmaps & redraw frame (title, buttons, leds, etc)
+		frame.FrameUpdateApple2Type();	// NB. Calls VideoRedrawScreen()
 	}
 	catch(std::string szMessage)
 	{
