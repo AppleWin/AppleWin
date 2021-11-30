@@ -37,6 +37,12 @@
 #include "VidHD.h"
 #include "YamlHelper.h"
 
+void VidHDCard::Reset(const bool powerCycle)
+{
+	m_NEWVIDEO = 0;
+	GetVideo().SetVideoMode(GetVideo().GetVideoMode() & ~VF_SHR);
+}
+
 void VidHDCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	RegisterIoHandler(m_slot, IO_Null, IO_Null, &VidHDCard::IORead, IO_Null, this, NULL);

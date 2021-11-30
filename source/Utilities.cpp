@@ -541,6 +541,8 @@ void ResetMachineState()
 	GetCardMgr().GetDisk2CardMgr().Reset(true);
 	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
 		GetCardMgr().GetRef(SLOT7).Reset(true);
+	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
+		GetCardMgr().GetRef(SLOT3).Reset(true);
 	g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
 	MemReset();	// calls CpuInitialize(), CNoSlotClock.Reset()
@@ -595,7 +597,9 @@ void CtrlReset()
 	GetPravets().Reset();
 	GetCardMgr().GetDisk2CardMgr().Reset();
 	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-		GetCardMgr().GetRef(SLOT7).Reset(true);
+		GetCardMgr().GetRef(SLOT7).Reset(false);
+	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
+		GetCardMgr().GetRef(SLOT3).Reset(false);
 	KeybReset();
 	if (GetCardMgr().IsSSCInstalled())
 		GetCardMgr().GetSSC()->CommReset();
