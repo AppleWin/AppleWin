@@ -518,6 +518,11 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 								{
 									memdirty[dstAddr >> 8] = 0xFF;
 									LPBYTE page = memwrite[dstAddr >> 8];
+									if (!page)
+									{
+										_ASSERT(0);
+										break;
+									}
 
 									// handle both page-aligned & non-page aligned destinations
 									UINT size = PAGE_SIZE - (dstAddr & 0xff);
