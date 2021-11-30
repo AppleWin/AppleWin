@@ -242,6 +242,39 @@ namespace ra2
     }
   }
 
+  void DiskControl::serialise(Buffer<char> & buffer) const
+  {
+    buffer.get<bool>() = myEjected;
+    buffer.get<size_t>() = myIndex;
+    buffer.get<size_t>() = myImages.size();
+
+    for (std::string const & image : myImages)
+    {
+      size_t const size = image.size();
+      buffer.get<size_t>() = size;
+      char * begin, * end;
+      buffer.get(size, begin, end);
+      memcpy(begin, image.data(), end - begin);
+    }
+  }
+
+  void DiskControl::deserialise(Buffer<char const> & buffer)
+  {
+    myEjected = buffer.get<bool const>();
+    myIndex = buffer.get<size_t const>();
+    size_t const numberOfImages = buffer.get<size_t const>();
+    myImages.clear();
+    myImages.resize(numberOfImages);
+
+    for (size_t i = 0; i < numberOfImages; ++i)
+    {
+      size_t const size = buffer.get<size_t const>();
+      char const * begin, * end;
+      buffer.get(size, begin, end);
+      myImages[i].assign(begin, end);
+    }
+  }
+
   unsigned DiskControl::ourInitialIndex = 0;
   std::string DiskControl::ourInitialPath;
   void DiskControl::setInitialPath(unsigned index, const char *path)

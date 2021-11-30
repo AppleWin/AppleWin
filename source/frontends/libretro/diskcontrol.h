@@ -1,3 +1,4 @@
+#include "frontends/libretro/buffer.h"
 #include <vector>
 #include <string>
 #include <filesystem>
@@ -30,6 +31,9 @@ namespace ra2
     bool getImageLabel(unsigned index, char *label, size_t len) const;
 
     static void setInitialPath(unsigned index, const char *path);
+
+    void serialise(Buffer<char> & buffer) const;
+    void deserialise(Buffer<char const> & buffer);
 
   private:
     std::vector<std::filesystem::path> myImages;

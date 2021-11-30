@@ -3,6 +3,7 @@
 
 #include "frontends/libretro/serialisation.h"
 #include "frontends/libretro/environment.h"
+#include "frontends/libretro/diskcontrol.h"
 
 #include <cstdio>
 #include <fstream>
@@ -15,30 +16,29 @@ namespace
     AutoFile();
     ~AutoFile();
 
-    std::string getFilename() const;  // only if true
+    const std::string & getFilename() const;  // only if true
 
-    operator bool() const;
   protected:
-    const char * myFilename;
+    std::string myFilename;
   };
 
   AutoFile::AutoFile()
   {
     // massive race condition, but without changes to AW, little can we do here
-    myFilename = std::tmpnam(nullptr);
+    const char * tmp = std::tmpnam(nullptr);
+    if (!tmp)
+    {
+      throw std::runtime_error("Cannot create temporary file");
+    }
+    myFilename = tmp;
   }
 
   AutoFile::~AutoFile()
   {
-    std::remove(myFilename);
+    std::remove(myFilename.c_str());
   }
 
-  AutoFile::operator bool() const
-  {
-    return myFilename;
-  }
-
-  std::string AutoFile::getFilename() const
+  const std::string & AutoFile::getFilename() const
   {
     return myFilename;
   }
@@ -49,12 +49,6 @@ namespace
     Snapshot_SaveState();
   }
 
-  struct SerialisationFormat_t
-  {
-    uint32_t size;
-    char data[];  // zero-length array, containing the AW's yaml format
-  };
-
 }
 
 namespace ra2
@@ -63,75 +57,58 @@ namespace ra2
   size_t RetroSerialisation::getSize()
   {
     AutoFile autoFile;
-    if (!autoFile)
-    {
-      return 0;
-    }
-
-    const std::string filename = autoFile.getFilename();
+    std::string const & filename = autoFile.getFilename();
     saveToFile(filename);
     std::ifstream ifs(filename, std::ios::binary | std::ios::ate);
 
-    const std::ifstream::pos_type fileSize = ifs.tellg();
-    return sizeof(uint32_t) + fileSize;
+    const size_t fileSize = ifs.tellg();
+    // we add a buffer to include a few things
+    // DiscControl images
+    // various sizes
+    // small variations in AW yaml format
+    const size_t buffer = 4096;
+    return fileSize + buffer;
   }
 
-  bool RetroSerialisation::serialise(void * data, size_t size)
+  void RetroSerialisation::serialise(void * data, size_t size, const DiskControl & diskControl)
   {
-    AutoFile autoFile;
-    if (!autoFile)
-    {
-      return 0;
-    }
+    Buffer buffer(reinterpret_cast<char *>(data), size);
+    diskControl.serialise(buffer);
 
-    const std::string filename = autoFile.getFilename();
+    AutoFile autoFile;
+    std::string const & filename = autoFile.getFilename();
     saveToFile(filename);
     std::ifstream ifs(filename, std::ios::binary | std::ios::ate);
 
-    const std::ifstream::pos_type fileSize = ifs.tellg();
-    if (sizeof(uint32_t) + fileSize > size)
-    {
-      return false;
-    }
-    else
-    {
-      SerialisationFormat_t * serialised = reinterpret_cast<SerialisationFormat_t *>(data);
-      serialised->size = fileSize;
+    size_t const fileSize = ifs.tellg();
+    buffer.get<size_t>() = fileSize;
 
-      ifs.seekg(0, std::ios::beg);
-      ifs.read(serialised->data, serialised->size);
+    char * begin, * end;
+    buffer.get(fileSize, begin, end);
 
-      return true;
-    }
+    ifs.seekg(0, std::ios::beg);
+    ifs.read(begin, end - begin);
   }
 
-  bool RetroSerialisation::deserialise(const void * data, size_t size)
+  void RetroSerialisation::deserialise(const void * data, size_t size, DiskControl & diskControl)
   {
+    Buffer buffer(reinterpret_cast<const char *>(data), size);
+    diskControl.deserialise(buffer);
+
+    const size_t fileSize = buffer.get<size_t const>();
+
     AutoFile autoFile;
-    if (!autoFile)
+    std::string const & filename = autoFile.getFilename();
+    // do not remove the {} scope below! it ensures the file is flushed
     {
-      return false;
+      char const * begin, * end;
+      buffer.get(fileSize, begin, end);
+      std::ofstream ofs(filename, std::ios::binary);
+      ofs.write(begin, end - begin);
     }
 
-    const SerialisationFormat_t * serialised = reinterpret_cast<const SerialisationFormat_t *>(data);
-
-    if (sizeof(uint32_t) + serialised->size > size)
-    {
-      return false;
-    }
-    else
-    {
-      const std::string filename = autoFile.getFilename();
-      // do not remove the {} scope below!
-      {
-        std::ofstream ofs(filename, std::ios::binary);
-        ofs.write(serialised->data, serialised->size);
-      }
-
-      Snapshot_SetFilename(filename);
-      Snapshot_LoadState();
-      return true;
-    }
+    Snapshot_SetFilename(filename);
+    Snapshot_LoadState();
   }
 
 }

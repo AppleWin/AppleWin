@@ -367,23 +367,44 @@ bool retro_load_game_special(unsigned type, const struct retro_game_info *info, 
 
 size_t retro_serialize_size(void)
 {
-  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  const size_t size = ra2::RetroSerialisation::getSize();
-  // we cannot guarantee exact file size, so we allow for a small grace buffer
-  const size_t buffer = 4096;
-  return size + buffer;
+  try
+  {
+    const size_t size = ra2::RetroSerialisation::getSize();
+    return size;
+  }
+  catch(const std::exception& e)
+  {
+    ra2::log_cb(RETRO_LOG_INFO, "RA2: %s - %s\n", __FUNCTION__, e.what());
+    return 0;
+  }
 }
 
 bool retro_serialize(void *data, size_t size)
 {
-  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  return ra2::RetroSerialisation::serialise(data, size);
+  try
+  {
+    ra2::RetroSerialisation::serialise(data, size, ourGame->getDiskControl());
+    return true;
+  }
+  catch(const std::exception& e)
+  {
+    ra2::log_cb(RETRO_LOG_INFO, "RA2: %s - %s\n", __FUNCTION__, e.what());
+    return false;
+  }
 }
 
 bool retro_unserialize(const void *data, size_t size)
 {
-  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  return ra2::RetroSerialisation::deserialise(data, size);
+  try
+  {
+    ra2::RetroSerialisation::deserialise(data, size, ourGame->getDiskControl());
+    return true;
+  }
+  catch(const std::exception& e)
+  {
+    ra2::log_cb(RETRO_LOG_INFO, "RA2: %s - %s\n", __FUNCTION__, e.what());
+    return false;
+  }
 }
 
 void retro_cheat_reset(void)
