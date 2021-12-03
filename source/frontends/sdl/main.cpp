@@ -7,7 +7,6 @@
 #include "StdAfx.h"
 #include "linux/benchmark.h"
 #include "linux/context.h"
-#include "linux/network/uthernet2.h"
 
 #include "frontends/common2/fileregistry.h"
 #include "frontends/common2/utils.h"
@@ -143,7 +142,6 @@ void run_sdl(int argc, const char * argv [])
 
       eventTimer.tic();
       sa2::writeAudio();
-      processEventsUthernet2(5);
       frame->ProcessEvents(quit);
       eventTimer.toc();
 
