@@ -35,6 +35,9 @@ struct CmdLine
 		rgbCard = RGB_Videocard_e::Apple;
 		rgbCardForegroundColor = 15;
 		rgbCardBackgroundColor = 0;
+		bestFullScreenResolution = false;
+		userSpecifiedWidth = 0;
+		userSpecifiedHeight = 0;
 
 		for (UINT i = 0; i < NUM_SLOTS; i++)
 		{
@@ -74,6 +77,9 @@ struct CmdLine
 	int rgbCardForegroundColor;
 	int rgbCardBackgroundColor;
 	std::string strCurrentDir;
+	bool bestFullScreenResolution;
+	UINT userSpecifiedWidth;
+	UINT userSpecifiedHeight;
 };
 
 bool ProcessCmdLine(LPSTR lpCmdLine);

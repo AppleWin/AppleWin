@@ -6545,6 +6545,11 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 	{
 		return _ViewOutput( VIEW_PAGE_2, VF_HIRES | VF_DHIRES | VF_80COL );
 	}
+// Super Hi-Res
+	Update_t CmdViewOutput_SHR(int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_1, VF_SHR );
+	}
 
 // Watches ________________________________________________________________________________________
 
@@ -8744,6 +8749,9 @@ void DebuggerProcessKey( int keycode )
 		// Normally any key press takes us out of "Viewing Apple Output" g_nAppMode
 		// VK_F# are already processed, so we can't use them to cycle next video g_nAppMode
 //		    if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
+
+		GetVideo().ClearSHRResidue();	// Clear the framebuffer to remove any SHR residue in the borders
+
 		DebugVideoMode::Instance().Reset();
 		UpdateDisplay( UPDATE_ALL ); // 1
 		return;

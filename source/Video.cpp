@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Video.h"
+#include "CardManager.h"
 #include "Core.h"
 #include "CPU.h"
 #include "Log.h"
@@ -36,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Registry.h"
 #include "NTSC.h"
 #include "RGBMonitor.h"
+#include "VidHD.h"
 #include "YamlHelper.h"
 
 #define  SW_80COL         (g_uVideoMode & VF_80COL)
@@ -45,6 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define  SW_MIXED         (g_uVideoMode & VF_MIXED)
 #define  SW_PAGE2         (g_uVideoMode & VF_PAGE2)
 #define  SW_TEXT          (g_uVideoMode & VF_TEXT)
+#define  SW_SHR           (g_uVideoMode & VF_SHR)
 
 //-------------------------------------
 
@@ -91,14 +94,12 @@ const char* const Video::g_apVideoModeDesc[NUM_VIDEO_MODES] =
 
 UINT Video::GetFrameBufferBorderlessWidth(void)
 {
-	static const UINT uFrameBufferBorderlessW = 560;	// 560 = Double Hi-Res
-	return uFrameBufferBorderlessW;
+	return HasVidHD() ? kVideoWidthIIgs : kVideoWidthII;
 }
 
 UINT Video::GetFrameBufferBorderlessHeight(void)
 {
-	static const UINT uFrameBufferBorderlessH = 384;	// 384 = Double Scan Line
-	return uFrameBufferBorderlessH;
+	return HasVidHD() ? kVideoHeightIIgs : kVideoHeightII;
 }
 
 // NB. These border areas are not visible (... and these border areas are unrelated to the 3D border below)
@@ -122,6 +123,29 @@ UINT Video::GetFrameBufferWidth(void)
 UINT Video::GetFrameBufferHeight(void)
 {
 	return GetFrameBufferBorderlessHeight() + 2 * GetFrameBufferBorderHeight();
+}
+
+UINT Video::GetFrameBufferCentringOffsetX(void)
+{
+	return HasVidHD() ? ((kVideoWidthIIgs - kVideoWidthII) / 2) : 0;
+}
+
+UINT Video::GetFrameBufferCentringOffsetY(void)
+{
+	return HasVidHD() ? ((kVideoHeightIIgs - kVideoHeightII) / 2) : 0;
+}
+
+int Video::GetFrameBufferCentringValue(void)
+{
+	int value = 0;
+
+	if (HasVidHD())
+	{
+		value -= GetFrameBufferCentringOffsetY() * GetFrameBufferWidth();
+		value += GetFrameBufferCentringOffsetX();
+	}
+
+	return value;
 }
 
 //===========================================================================
@@ -151,12 +175,15 @@ void Video::VideoResetState(void)
 
 //===========================================================================
 
-BYTE Video::VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCycles)
+BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecutedCycles)
 {
-	address &= 0xFF;
-
 	const uint32_t oldVideoMode = g_uVideoMode;
 
+	VidHDCard* vidHD = NULL;
+	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
+		vidHD = dynamic_cast<VidHDCard*>(GetCardMgr().GetObj(SLOT3));
+
+	address &= 0xFF;
 	switch (address)
 	{
 		case 0x00:                 g_uVideoMode &= ~VF_80STORE;                            break;
@@ -165,6 +192,10 @@ BYTE Video::VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCy
 		case 0x0D: if (!IS_APPLE2){g_uVideoMode |=  VF_80COL; NTSC_SetVideoTextMode(80);}; break;
 		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
 		case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
+		case 0x22: if (vidHD) vidHD->VideoIOWrite(pc, address, write, d, uExecutedCycles); break;	// VidHD IIgs video mode register
+		case 0x29: if (vidHD) vidHD->VideoIOWrite(pc, address, write, d, uExecutedCycles); break;	// VidHD IIgs video mode register
+		case 0x34: if (vidHD) vidHD->VideoIOWrite(pc, address, write, d, uExecutedCycles); break;	// VidHD IIgs video mode register
+		case 0x35: if (vidHD) vidHD->VideoIOWrite(pc, address, write, d, uExecutedCycles); break;	// VidHD IIgs video mode register
 		case 0x50: g_uVideoMode &= ~VF_TEXT;    break;
 		case 0x51: g_uVideoMode |=  VF_TEXT;    break;
 		case 0x52: g_uVideoMode &= ~VF_MIXED;   break;
@@ -177,6 +208,11 @@ BYTE Video::VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCy
 		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
 	}
 
+	if (vidHD && vidHD->IsSHR())
+		g_uVideoMode |= VF_SHR;
+	else
+		g_uVideoMode &= ~VF_SHR;
+
 	if (!IS_APPLE2)
 		RGB_SetVideoMode(address);
 
@@ -185,7 +221,7 @@ BYTE Video::VideoSetMode(WORD, WORD address, BYTE write, BYTE, ULONG uExecutedCy
 	if ((oldVideoMode ^ g_uVideoMode) & (VF_TEXT|VF_MIXED))
 		delay = true;
 
-	NTSC_SetVideoMode( g_uVideoMode, delay );
+	NTSC_SetVideoMode(g_uVideoMode, delay);
 
 	return MemReadFloatingBus(uExecutedCycles);
 }
@@ -754,16 +790,18 @@ const char* Video::VideoGetAppWindowTitle(void)
 		return apVideoMonitorModeDesc[ GetVideoRefreshRate() == VR_60HZ ? 0 : 1 ];	// NTSC or PAL
 }
 
-
-void Video::Initialize(uint8_t* frameBuffer)
+void Video::Initialize(uint8_t* frameBuffer, bool resetState)
 {
 	SetFrameBuffer(frameBuffer);
 
-	// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
-	VideoResetState();
+	if (resetState)
+	{
+		// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
+		VideoResetState();
+	}
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
-	memset(GetFrameBuffer(), 0, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
+	ClearFrameBuffer();
 
 	// CREATE THE OFFSET TABLE FOR EACH SCAN LINE IN THE FRAME BUFFER
 	NTSC_VideoInit(GetFrameBuffer());
@@ -795,4 +833,16 @@ void Video::VideoRefreshBuffer(uint32_t uRedrawWholeScreenVideoMode, bool bRedra
 		if (g_nAppMode == MODE_DEBUG || g_nAppMode == MODE_PAUSED)
 			NTSC_VideoRedrawWholeScreen();
 	}
+}
+
+void Video::ClearFrameBuffer(void)
+{
+	memset(GetFrameBuffer(), 0, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
+}
+
+// Called when entering debugger, and after viewing Apple II video screen from debugger
+void Video::ClearSHRResidue(void)
+{
+	ClearFrameBuffer();
+	GetFrame().VideoPresentScreen();
 }

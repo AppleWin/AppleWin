@@ -509,6 +509,7 @@
 		, CMD_VIEW_DHGRX
 		, CMD_VIEW_DHGR1
 		, CMD_VIEW_DHGR2
+		, CMD_VIEW_SHR
 // Watch
 		, CMD_WATCH // TODO: Deprecated ?
 		, CMD_WATCH_ADD
@@ -770,6 +771,7 @@
 	Update_t CmdViewOutput_DHGRX   (int nArgs);
 	Update_t CmdViewOutput_DHGR1   (int nArgs);
 	Update_t CmdViewOutput_DHGR2   (int nArgs);
+	Update_t CmdViewOutput_SHR     (int nArgs);
 // Watch
 	Update_t CmdWatch              (int nArgs);
 	Update_t CmdWatchAdd           (int nArgs);
