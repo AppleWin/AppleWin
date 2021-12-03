@@ -95,7 +95,7 @@ void run_sdl(int argc, const char * argv [])
   std::shared_ptr<Paddle> paddle(new sa2::Gamepad(0));
   const Initialisation init(frame, paddle);
   applyOptions(options);
-  frame->Initialize();
+  frame->Initialize(true);
 
   std::cerr << "Default GL swap interval: " << SDL_GL_GetSwapInterval() << std::endl;
 

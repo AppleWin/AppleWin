@@ -104,7 +104,7 @@ namespace
         MB_Initialize();
         SpkrInitialize();
         MemInitialize();
-        frame->Initialize();
+        frame->Initialize(true);
 
         CardManager & cardManager = GetCardMgr();
         cardManager.GetDisk2CardMgr().Reset();

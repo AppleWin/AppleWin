@@ -7,7 +7,7 @@ class LinuxFrame : public FrameBase
 {
 public:
 
-  void Initialize() override;
+  void Initialize(bool resetVideoState) override;
   void Destroy() override;
 
   void FrameDrawDiskLEDS() override;
@@ -15,9 +15,10 @@ public:
   void FrameRefreshStatus(int drawflags) override;
   void FrameUpdateApple2Type() override;
   void FrameSetCursorPosByMousePos() override;
+  void ResizeWindow() override;
 
   void SetFullScreenShowSubunitStatus(bool bShow) override;
-  bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight = 0) override;
+  bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth = 0, UINT userSpecifiedHeight = 0) override;
   int SetViewportScale(int nNewScale, bool bForce = false) override;
   void SetAltEnterToggleFullScreen(bool mode) override;
 

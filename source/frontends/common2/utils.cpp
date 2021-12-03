@@ -90,6 +90,7 @@ namespace common2
 
     g_bFullSpeed = false;
 
+    GetVideo().SetVidHD(false);
     LoadConfiguration();
     LoadUthernet2();
     SetCurrentCLK6502();

@@ -28,7 +28,7 @@ void LinuxFrame::SetFullScreenShowSubunitStatus(bool /* bShow */)
 {
 }
 
-bool LinuxFrame::GetBestDisplayResolutionForFullScreen(UINT& /* bestWidth */, UINT& /* bestHeight */ , UINT /* userSpecifiedHeight */)
+bool LinuxFrame::GetBestDisplayResolutionForFullScreen(UINT& /* bestWidth */, UINT& /* bestHeight */, UINT /* userSpecifiedWidth */, UINT /* userSpecifiedHeight */)
 {
   return false;
 }
@@ -46,15 +46,21 @@ void LinuxFrame::SetLoadedSaveStateFlag(const bool /* bFlag */)
 {
 }
 
-void LinuxFrame::Initialize()
+void LinuxFrame::ResizeWindow()
 {
-  static_assert(sizeof(bgra_t) == 4, "Invalid size of bgra_t");
+}
+
+void LinuxFrame::Initialize(bool resetVideoState)
+{
   Video & video = GetVideo();
 
   const size_t numberOfPixels = video.GetFrameBufferWidth() * video.GetFrameBufferHeight();
+
+  static_assert(sizeof(bgra_t) == 4, "Invalid size of bgra_t");
   const size_t numberOfBytes = sizeof(bgra_t) * numberOfPixels;
+
   myFramebuffer.resize(numberOfBytes);
-  video.Initialize(myFramebuffer.data());
+  video.Initialize(myFramebuffer.data(), resetVideoState);
   LogFileTimeUntilFirstKeyReadReset();
 }
 

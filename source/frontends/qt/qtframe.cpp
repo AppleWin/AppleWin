@@ -36,9 +36,9 @@ void QtFrame::FrameRefreshStatus(int drawflags)
     }
 }
 
-void QtFrame::Initialize()
+void QtFrame::Initialize(bool resetVideoState)
 {
-    LinuxFrame::Initialize();
+    LinuxFrame::Initialize(resetVideoState);
     FrameRefreshStatus(DRAW_TITLE);
     myEmulator->loadVideoSettings();
     myEmulator->displayLogo();

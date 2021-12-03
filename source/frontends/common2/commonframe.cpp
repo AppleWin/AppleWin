@@ -77,10 +77,10 @@ namespace common2
     g_sProgramDir = getResourcePath("/bin/");
   }
 
-  void CommonFrame::Initialize()
+  void CommonFrame::Initialize(bool resetVideoState)
   {
     InitialiseEmulator();
-    LinuxFrame::Initialize();
+    LinuxFrame::Initialize(resetVideoState);
   }
 
   void CommonFrame::Destroy()
@@ -93,7 +93,7 @@ namespace common2
   void CommonFrame::Restart()
   {
     Destroy();
-    Initialize();
+    Initialize(false);
   }
 
   BYTE* CommonFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)

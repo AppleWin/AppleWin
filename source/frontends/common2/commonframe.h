@@ -12,7 +12,7 @@ namespace common2
   public:
     CommonFrame();
 
-    void Initialize() override;
+    void Initialize(bool resetVideoState) override;
     void Destroy() override;
     void Restart() override;
 

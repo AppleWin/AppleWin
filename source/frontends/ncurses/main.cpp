@@ -152,7 +152,7 @@ namespace
 
     const Initialisation init(frame, paddle);
     applyOptions(options);
-    frame->Initialize();
+    frame->Initialize(true);
 
     na2::SetCtrlCHandler(options.headless);
 

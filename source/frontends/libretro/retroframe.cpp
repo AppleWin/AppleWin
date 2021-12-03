@@ -106,9 +106,9 @@ namespace ra2
     video_cb(myVideoBuffer.data() + myOffset, myBorderlessWidth, myBorderlessHeight, myPitch);
   }
 
-  void RetroFrame::Initialize()
+  void RetroFrame::Initialize(bool resetVideoState)
   {
-    CommonFrame::Initialize();
+    CommonFrame::Initialize(resetVideoState);
     FrameRefreshStatus(DRAW_TITLE);
 
     Video & video = GetVideo();

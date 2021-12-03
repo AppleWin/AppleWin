@@ -21,7 +21,7 @@ namespace na2
     WINDOW * GetWindow();
     WINDOW * GetStatus();
 
-    void Initialize() override;
+    void Initialize(bool resetVideoState) override;
     void Destroy() override;
     void VideoPresentScreen() override;
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;

@@ -19,7 +19,7 @@ namespace sa2
   public:
     SDLFrame(const common2::EmulatorOptions & options);
 
-    void Initialize() override;
+    void Initialize(bool resetVideoState) override;
     void Destroy() override;
 
     void FrameRefreshStatus(int drawflags) override;

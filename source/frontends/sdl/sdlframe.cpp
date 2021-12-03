@@ -159,9 +159,9 @@ namespace sa2
     }
   }
 
-  void SDLFrame::Initialize()
+  void SDLFrame::Initialize(bool resetVideoState)
   {
-    CommonFrame::Initialize();
+    CommonFrame::Initialize(resetVideoState);
     mySpeed.reset();
     setGLSwapInterval(myTargetGLSwap);
     ResetHardware();

@@ -36,7 +36,7 @@ namespace ra2
     myFrame.reset(new ra2::RetroFrame());
 
     SetFrame(myFrame);
-    myFrame->Initialize();
+    myFrame->Initialize(true);
 
     Video & video = GetVideo();
     // should the user be allowed to tweak 0.75
