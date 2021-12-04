@@ -4,6 +4,7 @@
 #include "Harddisk.h"
 #include "Core.h"
 #include "Memory.h"
+#include "Interface.h"
 #include "Debugger/Debug.h"
 
 #include "Tfe/tfe.h"
@@ -160,11 +161,23 @@ namespace sa2
     return statuses.at(status);
   }
 
-  void insertCard(size_t slot, SS_CARDTYPE card)
+  void insertCard(size_t slot, SS_CARDTYPE card, FrameBase * frame)
   {
     CardManager & cardManager = GetCardMgr();
+    Video & video = GetVideo();
+    const bool oldHasVid = video.HasVidHD();
     switch (slot)
     {
+      case 3:
+      {
+        if (cardManager.QuerySlot(slot) == CT_VidHD)
+        {
+          // the old card was a VidHD, which will be removed
+          // reset it
+          video.SetVidHD(false);
+        }
+        break;
+      }
       case 4:
       case 5:
       {
@@ -174,7 +187,6 @@ namespace sa2
         }
         else
         {
-          CardManager & cardManager = GetCardMgr();
           if (cardManager.QuerySlot(slot) == CT_MockingboardC)
           {
             cardManager.Insert(9 - slot, CT_Empty);  // the other
@@ -189,6 +201,12 @@ namespace sa2
     // keep everything consistent
     // a bit of a heavy call, but nothing simpler is available now
     MemInitializeIO();
+
+    if (oldHasVid != video.HasVidHD())
+    {
+      frame->Destroy();
+      frame->Initialize(true);
+    }
   }
 
   void setVideoStyle(Video & video, const VideoStyle_e style, const bool enabled)
