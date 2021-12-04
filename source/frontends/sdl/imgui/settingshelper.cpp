@@ -209,6 +209,13 @@ namespace sa2
     }
   }
 
+  void setExpansionCard(SS_CARDTYPE card)
+  {
+    SetExpansionMemType(card);
+    CreateLanguageCard();
+    MemInitializeIO();
+  }
+
   void setVideoStyle(Video & video, const VideoStyle_e style, const bool enabled)
   {
     VideoStyle_e currentVideoStyle = video.GetVideoStyle();

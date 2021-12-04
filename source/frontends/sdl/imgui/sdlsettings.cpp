@@ -330,9 +330,7 @@ namespace sa2
                 const bool isSelected = card == expansion;
                 if (ImGui::Selectable(getCardName(card).c_str(), isSelected))
                 {
-                  SetExpansionMemType(card);
-                  CreateLanguageCard();
-                  MemInitializeIO();
+                  setExpansionCard(card);
                 }
                 if (isSelected)
                 {
