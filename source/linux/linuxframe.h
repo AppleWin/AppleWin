@@ -24,13 +24,19 @@ public:
 
   void SetLoadedSaveStateFlag(const bool bFlag) override;
 
-  void Restart() override;
+  void Restart() override; // calls End() - Begin()
   void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
 
   void CycleVideoType();
   void Cycle50ScanLines();
 
   void ApplyVideoModeChange();
+
+  // these are wrappers around Initialize / Destroy that take care of initialising the emulator components
+  // FrameBase::Initialize and ::Destroy only deal with the video part of the Frame, not the emulator
+  // in AppleWin this happens in AppleWin.cpp, but it is useful to share it
+  void Begin();
+  void End();
 
 protected:
   std::vector<uint8_t> myFramebuffer;

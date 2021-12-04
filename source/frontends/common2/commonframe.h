@@ -12,10 +12,6 @@ namespace common2
   public:
     CommonFrame();
 
-    void Initialize(bool resetVideoState) override;
-    void Destroy() override;
-    void Restart() override;
-
     BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) override;
 
   protected:

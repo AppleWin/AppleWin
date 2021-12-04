@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "linux/linuxframe.h"
+#include "linux/context.h"
 #include "Interface.h"
 #include "Log.h"
 #include "Core.h"
@@ -103,15 +104,28 @@ void LinuxFrame::Cycle50ScanLines()
   ApplyVideoModeChange();
 }
 
-void LinuxFrame::Restart()
-{
-  LogFileOutput("Restart: not implemented\n");
-}
-
 void LinuxFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
 {
   LogFileOutput("LoadBitmap: could not load resource %s\n", lpBitmapName);
   memset(lpvBits, 0, cb);
+}
+
+void LinuxFrame::Begin()
+{
+  InitialiseEmulator();
+  Initialize(true);
+}
+
+void LinuxFrame::End()
+{
+  Destroy();
+  DestroyEmulator();
+}
+
+void LinuxFrame::Restart()
+{
+  End();
+  Begin();
 }
 
 int MessageBox(HWND, LPCSTR lpText, LPCSTR lpCaption, UINT uType)

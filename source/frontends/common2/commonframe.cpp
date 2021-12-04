@@ -2,6 +2,7 @@
 #include "frontends/common2/commonframe.h"
 #include "frontends/common2/utils.h"
 #include "linux/resources.h"
+#include "linux/context.h"
 
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -75,25 +76,6 @@ namespace common2
   {
     // should this go down to LinuxFrame (maybe Initialisation?)
     g_sProgramDir = getResourcePath("/bin/");
-  }
-
-  void CommonFrame::Initialize(bool resetVideoState)
-  {
-    InitialiseEmulator();
-    LinuxFrame::Initialize(resetVideoState);
-  }
-
-  void CommonFrame::Destroy()
-  {
-    LinuxFrame::Destroy();
-    myResource.clear();
-    DestroyEmulator();
-  }
-
-  void CommonFrame::Restart()
-  {
-    Destroy();
-    Initialize(false);
   }
 
   BYTE* CommonFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)

@@ -152,7 +152,7 @@ namespace
 
     const Initialisation init(frame, paddle);
     applyOptions(options);
-    frame->Initialize(true);
+    frame->Begin();
 
     na2::SetCtrlCHandler(options.headless);
 
@@ -165,6 +165,7 @@ namespace
     {
       EnterMessageLoop(options, frame);
     }
+    frame->End();
 
     return 0;
   }

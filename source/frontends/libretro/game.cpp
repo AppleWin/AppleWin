@@ -36,7 +36,7 @@ namespace ra2
     myFrame.reset(new ra2::RetroFrame());
 
     SetFrame(myFrame);
-    myFrame->Initialize(true);
+    myFrame->Begin();
 
     Video & video = GetVideo();
     // should the user be allowed to tweak 0.75
@@ -46,7 +46,7 @@ namespace ra2
 
   Game::~Game()
   {
-    myFrame->Destroy();
+    myFrame->End();
     myFrame.reset();
     SetFrame(myFrame);
   }

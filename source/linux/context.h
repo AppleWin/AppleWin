@@ -8,6 +8,9 @@ class Registry;
 
 void SetFrame(const std::shared_ptr<FrameBase> & frame);
 
+void InitialiseEmulator();
+void DestroyEmulator();
+
 // RAII around Frame Registry and Paddle
 class Initialisation
 {
