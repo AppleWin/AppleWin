@@ -268,11 +268,6 @@ Saturn128K::~Saturn128K(void)
 	}
 }
 
-void Saturn128K::SetMemorySize(UINT banks)
-{
-	m_uSaturnTotalBanks = banks;
-}
-
 UINT Saturn128K::GetActiveBank(void)
 {
 	return m_uSaturnActiveBank;

@@ -18,7 +18,6 @@ public:
 
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
-	virtual void SetMemorySize(UINT banks) {}		// No-op for //e and slot-0 16K LC
 	virtual UINT GetActiveBank(void) { return 0; }	// Always 0 as only 1x 16K bank
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) { _ASSERT(0); } // Not used for //e
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) { _ASSERT(0); return false; } // Not used for //e
@@ -74,7 +73,6 @@ public:
 	virtual ~Saturn128K(void);
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
-	virtual void SetMemorySize(UINT banks);
 	virtual UINT GetActiveBank(void);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
