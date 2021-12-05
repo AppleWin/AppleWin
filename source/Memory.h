@@ -109,9 +109,7 @@ void	SetExpansionMemType(const SS_CARDTYPE type);
 SS_CARDTYPE GetCurrentExpansionMemType(void);
 
 void	SetRamWorksMemorySize(UINT pages);
-UINT	GetSaturnMemorySize();
 UINT	GetRamWorksActiveBank(void);
-void	SetSaturnMemorySize(UINT banks);
 void	SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain=false);
 
 LPBYTE GetCxRomPeripheral(void);

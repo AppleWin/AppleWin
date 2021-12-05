@@ -107,7 +107,7 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = m_pLanguageCard = new LanguageCardSlot0();
 		break;
 	case CT_Saturn128K:
-		m_slot[slot] = m_pLanguageCard = new Saturn128K(GetSaturnMemorySize());
+		m_slot[slot] = m_pLanguageCard = new Saturn128K(Saturn128K::GetSaturnMemorySize());
 		break;
 
 	case CT_LanguageCardIIe:	// not a card

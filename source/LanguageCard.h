@@ -79,6 +79,9 @@ public:
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
+	static UINT	GetSaturnMemorySize();
+	static void	SetSaturnMemorySize(UINT banks);
+
 	static BYTE __stdcall IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 
 	// "The boards consist of 16K banks of memory (4 banks for the 64K board, 8 banks for the 128K), accessed one at a time" - Ref: "64K/128K RAM BOARD", Saturn Systems, Ch.1 Introduction(pg-5)
@@ -87,6 +90,8 @@ public:
 
 private:
 	std::string GetSnapshotMemStructName(void);
+
+	static UINT g_uSaturnBanksFromCmdLine;
 
 	UINT m_uSaturnTotalBanks;	// Will be > 0 if Saturn card is installed
 	UINT m_uSaturnActiveBank;	// Saturn 128K Language Card Bank 0 .. 7

@@ -258,7 +258,6 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 static SS_CARDTYPE g_MemTypeAppleII = CT_Empty;
 static SS_CARDTYPE g_MemTypeAppleIIPlus = CT_LanguageCard;	// Keep a copy so it's not lost if machine type changes, eg: A][ -> A//e -> A][
 static SS_CARDTYPE g_MemTypeAppleIIe = CT_Extended80Col;	// Keep a copy so it's not lost if machine type changes, eg: A//e -> A][ -> A//e
-static UINT g_uSaturnBanksFromCmdLine = 0;
 
 
 const UINT CxRomSize = 4 * 1024;
@@ -375,15 +374,6 @@ UINT GetRamWorksActiveBank(void)
 	return g_uActiveBank;
 }
 
-void SetSaturnMemorySize(UINT banks)
-{
-	g_uSaturnBanksFromCmdLine = banks;
-}
-
-UINT GetSaturnMemorySize()
-{
-	return g_uSaturnBanksFromCmdLine;
-}
 //
 
 static BOOL GetLastRamWrite(void)

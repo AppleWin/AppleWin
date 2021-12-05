@@ -235,6 +235,8 @@ bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versio
 
 //-------------------------------------
 
+UINT Saturn128K::g_uSaturnBanksFromCmdLine = 0;
+
 Saturn128K::Saturn128K(UINT banks)
 	: LanguageCardSlot0(CT_Saturn128K)
 {
@@ -453,4 +455,14 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
 
 	return true;
+}
+
+void Saturn128K::SetSaturnMemorySize(UINT banks)
+{
+	g_uSaturnBanksFromCmdLine = banks;
+}
+
+UINT Saturn128K::GetSaturnMemorySize()
+{
+	return g_uSaturnBanksFromCmdLine;
 }
