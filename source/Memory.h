@@ -104,7 +104,6 @@ BYTE __stdcall MemSetPaging(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExec
 
 BYTE __stdcall IO_F8xx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
-enum SS_CARDTYPE;
 void	SetExpansionMemType(const SS_CARDTYPE type);
 SS_CARDTYPE GetCurrentExpansionMemType(void);
 
