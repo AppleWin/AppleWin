@@ -239,7 +239,6 @@ static BOOL    modechanging = 0;				// An Optimisation: means delay calling Upda
 static UINT    memrompages = 1;
 
 static CNoSlotClock* g_NoSlotClock = new CNoSlotClock;
-static LanguageCardUnit* g_pLanguageCard = NULL;	// For all Apple II, //e and above
 
 #ifdef RAMWORKS
 static UINT		g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
@@ -307,7 +306,7 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 	}
 	else	// Apple //e or above
 	{
-		newSlot0Card = CT_Empty;		// NB. No slot0 for //e
+		newSlot0Card = CT_LanguageCardIIe;		// NB. No slot0 for //e
 		newSlotAuxCard = CT_Extended80Col;
 	}
 
@@ -335,21 +334,24 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 
 void CreateLanguageCard(void)
 {
-	delete g_pLanguageCard;
-	g_pLanguageCard = NULL;
-
+	SS_CARDTYPE slot0CardType = GetCardMgr().QuerySlot(SLOT0);
 	if (IsApple2PlusOrClone(GetApple2Type()))
 	{
-		if (GetCardMgr().QuerySlot(SLOT0) == CT_Saturn128K)
-			g_pLanguageCard = new Saturn128K(g_uSaturnBanksFromCmdLine);
-		else if (GetCardMgr().QuerySlot(SLOT0) == CT_LanguageCard)
-			g_pLanguageCard = new LanguageCardSlot0;
-		else
-			g_pLanguageCard = NULL;
+		switch (slot0CardType) {
+		case CT_Empty:        // OK
+		case CT_Saturn128K:   // OK
+		case CT_LanguageCard: // OK
+			break;
+		default:              // Anything else is invalid
+			GetCardMgr().Remove(SLOT0);
+			break;
+		}
 	}
 	else
 	{
-		g_pLanguageCard = new LanguageCardUnit;
+		// only ever a CT_LanguageCardIIe for a //e
+		if (slot0CardType != CT_LanguageCardIIe)
+			GetCardMgr().Insert(SLOT0, CT_LanguageCardIIe);
 	}
 }
 
@@ -378,19 +380,23 @@ void SetSaturnMemorySize(UINT banks)
 	g_uSaturnBanksFromCmdLine = banks;
 }
 
+UINT GetSaturnMemorySize()
+{
+	return g_uSaturnBanksFromCmdLine;
+}
 //
 
 static BOOL GetLastRamWrite(void)
 {
-	if (g_pLanguageCard)
-		return g_pLanguageCard->GetLastRamWrite();
+	if (GetCardMgr().GetLanguageCard())
+		return GetCardMgr().GetLanguageCard()->GetLastRamWrite();
 	return 0;
 }
 
 static void SetLastRamWrite(BOOL count)
 {
-	if (g_pLanguageCard)
-		g_pLanguageCard->SetLastRamWrite(count);
+	if (GetCardMgr().GetLanguageCard())
+		GetCardMgr().GetLanguageCard()->SetLastRamWrite(count);
 }
 
 //
@@ -401,12 +407,6 @@ void SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain /*=false*/)
 		g_pMemMainLanguageCard = memmain+0xC000;
 	else
 		g_pMemMainLanguageCard = ptr;
-}
-
-LanguageCardUnit* GetLanguageCard(void)
-{
-	_ASSERT(g_pLanguageCard);
-	return g_pLanguageCard;
 }
 
 LPBYTE GetCxRomPeripheral(void)
@@ -1305,9 +1305,6 @@ void MemDestroy()
 	RWpages[0]=NULL;
 #endif
 
-	delete g_pLanguageCard;
-	g_pLanguageCard = NULL;
-
 	memaux   = NULL;
 	memmain  = NULL;
 	memdirty = NULL;
@@ -1735,11 +1732,6 @@ void MemInitializeCustomROM(void)
 void MemInitializeIO(void)
 {
 	InitIoHandlers();
-
-	if (g_pLanguageCard)
-		g_pLanguageCard->InitializeIO(NULL);
-	else
-		RegisterIoHandler(LanguageCardUnit::kSlot0, IO_Null, IO_Null, NULL, NULL, NULL, NULL);
 
 	GetCardMgr().InitializeIO(pCxRomPeripheral);
 }
@@ -2436,7 +2428,6 @@ static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::
 		yamlLoadHelper.PopMap();
 	}
 
-	GetCardMgr().Remove(SLOT0);
 	GetCardMgr().InsertAux(type);
 
 	memaux = RWpages[g_uActiveBank];

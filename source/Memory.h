@@ -107,12 +107,11 @@ BYTE __stdcall IO_F8xx(WORD programcounter, WORD address, BYTE write, BYTE value
 enum SS_CARDTYPE;
 void	SetExpansionMemType(const SS_CARDTYPE type);
 SS_CARDTYPE GetCurrentExpansionMemType(void);
-void	CreateLanguageCard(void);
 
 void	SetRamWorksMemorySize(UINT pages);
+UINT	GetSaturnMemorySize();
 UINT	GetRamWorksActiveBank(void);
 void	SetSaturnMemorySize(UINT banks);
 void	SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain=false);
-class LanguageCardUnit* GetLanguageCard(void);
 
 LPBYTE GetCxRomPeripheral(void);

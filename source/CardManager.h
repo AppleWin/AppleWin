@@ -9,7 +9,8 @@ class CardManager
 public:
 	CardManager(void) :
 		m_pMouseCard(NULL),
-		m_pSSC(NULL)
+		m_pSSC(NULL),
+		m_pLanguageCard(NULL)
 	{
 		InsertInternal(SLOT0, CT_Empty);
 		InsertInternal(SLOT1, CT_GenericPrinter);
@@ -54,9 +55,11 @@ public:
 	class CSuperSerialCard* GetSSC(void) { return m_pSSC; }
 	bool IsSSCInstalled(void) { return m_pSSC != NULL; }
 
+	class LanguageCardUnit* GetLanguageCard(void) { return m_pLanguageCard; }
+
 	void InitializeIO(LPBYTE pCxRomPeripheral);
 	void Update(const ULONG nExecutedCycles);
-	void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);  // It DOES NOT save SLOT0
+	void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 
 private:
 	void InsertInternal(UINT slot, SS_CARDTYPE type);
@@ -69,4 +72,5 @@ private:
 	Disk2CardManager m_disk2CardMgr;
 	class CMouseInterface* m_pMouseCard;
 	class CSuperSerialCard* m_pSSC;
+	class LanguageCardUnit* m_pLanguageCard;
 };

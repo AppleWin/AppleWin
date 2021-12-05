@@ -41,6 +41,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SerialComms.h"
 #include "SNESMAX.h"
 #include "VidHD.h"
+#include "LanguageCard.h"
+#include "Memory.h"
 
 void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 {
@@ -102,18 +104,16 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		break;
 
 	case CT_LanguageCard:
+		m_slot[slot] = m_pLanguageCard = new LanguageCardSlot0();
+		break;
 	case CT_Saturn128K:
-		{
-			if (slot != 0)
-			{
-				_ASSERT(0);
-				break;
-			}
-		}
-		m_slot[slot] = new DummyCard(type, slot);
+		m_slot[slot] = m_pLanguageCard = new Saturn128K(GetSaturnMemorySize());
 		break;
 
 	case CT_LanguageCardIIe:	// not a card
+		m_slot[slot] = m_pLanguageCard = new LanguageCardUnit();
+		break;
+
 	default:
 		_ASSERT(0);
 		break;
@@ -137,6 +137,9 @@ void CardManager::RemoveInternal(UINT slot)
 
 	if (m_slot[slot] && m_slot[slot]->QueryType() == CT_SSC)
 		m_pSSC = NULL;			// NB. object deleted below: delete m_slot[slot]
+
+	if (slot == 0)
+		m_pLanguageCard = NULL;
 
 	delete m_slot[slot];
 	m_slot[slot] = NULL;
@@ -195,6 +198,9 @@ void CardManager::RemoveAux(void)
 
 void CardManager::InitializeIO(LPBYTE pCxRomPeripheral)
 {
+	// if it is a //e then SLOT0 must be CT_LanguageCardIIe (and the other way round)
+	_ASSERT(IsApple2PlusOrClone(GetApple2Type()) != (m_slot[SLOT0]->QueryType() == CT_LanguageCardIIe));
+
 	for (UINT i = 0; i < NUM_SLOTS; ++i)
 	{
 		if (m_slot[i])
@@ -217,7 +223,7 @@ void CardManager::Update(const ULONG nExecutedCycles)
 
 void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	for (UINT i = 1; i < NUM_SLOTS; ++i)
+	for (UINT i = 0; i < NUM_SLOTS; ++i)
 	{
 		if (m_slot[i])
 		{

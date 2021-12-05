@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../CPU.h"
 #include "../Windows/Win32Frame.h"
 #include "../LanguageCard.h"
+#include "../CardManager.h"
 #include "../Memory.h"
 #include "../Mockingboard.h"
 #include "../NTSC.h"
@@ -2408,7 +2409,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, const int iBankDisplay, int b
 		int iActiveBank = -1;
 		char sText[ 4 ] = "?"; // Default to RAMWORKS
 		if (GetCurrentExpansionMemType() == CT_RamWorksIII) { sText[0] = 'r'; iActiveBank = GetRamWorksActiveBank(); }
-		if (GetCurrentExpansionMemType() == CT_Saturn128K)  { sText[0] = 's'; iActiveBank = GetLanguageCard()->GetActiveBank(); }
+		if (GetCurrentExpansionMemType() == CT_Saturn128K)  { sText[0] = 's'; iActiveBank = GetCardMgr().GetLanguageCard()->GetActiveBank(); }
 
 		if (iActiveBank >= 0)
 		{
