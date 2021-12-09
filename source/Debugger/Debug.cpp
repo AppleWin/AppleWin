@@ -68,6 +68,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int  g_nDebugBreakOnInvalid  = 0; // Bit Flags of Invalid Opcode to break on: // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
 	int  g_iDebugBreakOnOpcode   = 0;
 	bool g_bDebugBreakOnInterrupt = false;
+	static int g_iDebugBreakOnDmaToOrFromIoMemory = 0;
+	static WORD g_uDebugBreakOnDmaIoMemoryAddr = 0;
 
 	static int  g_bDebugBreakpointHit = 0;	// See: BreakpointHit_t
 
@@ -1249,6 +1251,20 @@ void ClearTempBreakpoints ()
 		if (pBP->bTemp)
 			_BWZ_Clear(pBP, iBreakpoint);
 	}
+}
+
+//===========================================================================
+static int CheckBreakpointsDmaToOrFromIoMemory(void)
+{
+	int res = g_iDebugBreakOnDmaToOrFromIoMemory;
+	g_iDebugBreakOnDmaToOrFromIoMemory = 0;
+	return res;
+}
+
+void DebuggerBreakOnDmaToOrFromIoMemory(WORD addr, bool isDmaToMemory)
+{
+	g_iDebugBreakOnDmaToOrFromIoMemory = isDmaToMemory ? BP_DMA_TO_IO_MEM : BP_DMA_FROM_IO_MEM;
+	g_uDebugBreakOnDmaIoMemoryAddr = addr;
 }
 
 //===========================================================================
@@ -8307,7 +8323,7 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 					g_bDebugBreakpointHit |= BP_HIT_INTERRUPT;
 			}
 
-			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg();
+			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg() | CheckBreakpointsDmaToOrFromIoMemory();
 		}
 
 		if (regs.pc == g_nDebugStepUntil || g_bDebugBreakpointHit)
@@ -8334,6 +8350,10 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 				pszStopReason = TEXT("PC reads from floating bus or I/O memory");
 			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
 				sprintf_s(szStopMessage, sizeof(szStopMessage), "Interrupt occurred at $%04X", g_LBR);
+			else if (g_bDebugBreakpointHit & BP_DMA_TO_IO_MEM)
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "HDD DMA to I/O memory $%04X", g_uDebugBreakOnDmaIoMemoryAddr);
+			else if (g_bDebugBreakpointHit & BP_DMA_FROM_IO_MEM)
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "HDD DMA from I/O memory $%04X", g_uDebugBreakOnDmaIoMemoryAddr);
 			else
 				pszStopReason = TEXT("Unknown!");
 
