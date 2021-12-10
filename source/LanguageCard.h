@@ -9,7 +9,8 @@
 class LanguageCardUnit : public Card
 {
 public:
-	LanguageCardUnit(SS_CARDTYPE type, UINT slot);
+	LanguageCardUnit(UINT slot);
+
 	virtual ~LanguageCardUnit(void);
 
 	virtual void Init(void) {}
@@ -32,6 +33,9 @@ public:
 	static const UINT kMemModeInitialState;
 	static const UINT kSlot0 = SLOT0;
 
+protected:
+	LanguageCardUnit(SS_CARDTYPE type, UINT slot);
+
 private:
 	UINT m_uLastRamWrite;
 };
@@ -43,7 +47,7 @@ private:
 class LanguageCardSlot0 : public LanguageCardUnit
 {
 public:
-	LanguageCardSlot0(SS_CARDTYPE type, UINT slot);
+	LanguageCardSlot0(UINT slot);
 	virtual ~LanguageCardSlot0(void);
 
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
@@ -53,6 +57,7 @@ public:
 	static std::string GetSnapshotCardName(void);
 
 protected:
+	LanguageCardSlot0(SS_CARDTYPE type, UINT slot);
 	void SaveLCState(class YamlSaveHelper& yamlSaveHelper);
 	void LoadLCState(class YamlLoadHelper& yamlLoadHelper);
 
@@ -69,7 +74,7 @@ private:
 class Saturn128K : public LanguageCardSlot0
 {
 public:
-	Saturn128K(SS_CARDTYPE type, UINT slot, UINT banks);
+	Saturn128K(UINT slot, UINT banks);
 	virtual ~Saturn128K(void);
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
