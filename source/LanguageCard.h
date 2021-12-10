@@ -9,7 +9,7 @@
 class LanguageCardUnit : public Card
 {
 public:
-	LanguageCardUnit(SS_CARDTYPE type = CT_LanguageCardIIe);
+	LanguageCardUnit(SS_CARDTYPE type, UINT slot);
 	virtual ~LanguageCardUnit(void);
 
 	virtual void Init(void) {}
@@ -43,7 +43,7 @@ private:
 class LanguageCardSlot0 : public LanguageCardUnit
 {
 public:
-	LanguageCardSlot0(SS_CARDTYPE = CT_LanguageCard);
+	LanguageCardSlot0(SS_CARDTYPE type, UINT slot);
 	virtual ~LanguageCardSlot0(void);
 
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
@@ -69,7 +69,7 @@ private:
 class Saturn128K : public LanguageCardSlot0
 {
 public:
-	Saturn128K(UINT banks);
+	Saturn128K(SS_CARDTYPE type, UINT slot, UINT banks);
 	virtual ~Saturn128K(void);
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);

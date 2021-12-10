@@ -104,14 +104,19 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		break;
 
 	case CT_LanguageCard:
-		m_slot[slot] = m_pLanguageCard = new LanguageCardSlot0();
+		_ASSERT(m_pLanguageCard == NULL);
+		if (m_pLanguageCard) break;	// Only support one language card
+		m_slot[slot] = m_pLanguageCard = new LanguageCardSlot0(type, slot);
 		break;
 	case CT_Saturn128K:
-		m_slot[slot] = m_pLanguageCard = new Saturn128K(Saturn128K::GetSaturnMemorySize());
+		_ASSERT(m_pLanguageCard == NULL);
+		if (m_pLanguageCard) break;	// Only support one language card
+		m_slot[slot] = m_pLanguageCard = new Saturn128K(type, slot, Saturn128K::GetSaturnMemorySize());
 		break;
-
-	case CT_LanguageCardIIe:	// not a card
-		m_slot[slot] = m_pLanguageCard = new LanguageCardUnit();
+	case CT_LanguageCardIIe:
+		_ASSERT(m_pLanguageCard == NULL);
+		if (m_pLanguageCard) break;	// Only support one language card
+		m_slot[slot] = m_pLanguageCard = new LanguageCardUnit(type, slot);
 		break;
 
 	default:
@@ -132,17 +137,27 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type, bool updateRegistry/*=true
 
 void CardManager::RemoveInternal(UINT slot)
 {
-	if (m_slot[slot] && m_slot[slot]->QueryType() == CT_MouseInterface)
-		m_pMouseCard = NULL;	// NB. object deleted below: delete m_slot[slot]
+	if (m_slot[slot])
+	{
+		// NB. object deleted below: delete m_slot[slot]
+		switch (m_slot[slot]->QueryType())
+		{
+		case CT_MouseInterface:
+			m_pMouseCard = NULL;
+			break;
+		case CT_SSC:
+			m_pSSC = NULL;
+			break;
+		case CT_LanguageCard:
+		case CT_Saturn128K:
+		case CT_LanguageCardIIe:
+			m_pLanguageCard = NULL;
+			break;
+		}
 
-	if (m_slot[slot] && m_slot[slot]->QueryType() == CT_SSC)
-		m_pSSC = NULL;			// NB. object deleted below: delete m_slot[slot]
-
-	if (slot == 0)
-		m_pLanguageCard = NULL;
-
-	delete m_slot[slot];
-	m_slot[slot] = NULL;
+		delete m_slot[slot];
+		m_slot[slot] = NULL;
+	}
 }
 
 void CardManager::Remove(UINT slot, bool updateRegistry/*=true*/)

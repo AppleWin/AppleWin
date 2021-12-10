@@ -38,10 +38,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 const UINT LanguageCardUnit::kMemModeInitialState = MF_BANK2 | MF_WRITERAM;	// !INTCXROM
 
-LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type/*=CT_LanguageCardIIe*/) :
-	Card(type, kSlot0),
+LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
+	Card(type, slot),
 	m_uLastRamWrite(0)
 {
+	if (m_slot != LanguageCardUnit::kSlot0)
+		throw std::string("Card: wrong slot");
+
 	SetMemMainLanguageCard(NULL, true);
 }
 
@@ -137,12 +140,9 @@ bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 
 //-------------------------------------
 
-LanguageCardSlot0::LanguageCardSlot0(SS_CARDTYPE type/*=CT_LanguageCard*/)
-	: LanguageCardUnit(type)
+LanguageCardSlot0::LanguageCardSlot0(SS_CARDTYPE type, UINT slot)
+	: LanguageCardUnit(type, slot)
 {
-	if (m_slot != LanguageCardUnit::kSlot0)
-		throw std::string("Card: wrong slot");
-
 	m_pMemory = new BYTE[kMemBankSize];
 	SetMemMainLanguageCard(m_pMemory);
 }
@@ -237,8 +237,8 @@ bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versio
 
 UINT Saturn128K::g_uSaturnBanksFromCmdLine = 0;
 
-Saturn128K::Saturn128K(UINT banks)
-	: LanguageCardSlot0(CT_Saturn128K)
+Saturn128K::Saturn128K(SS_CARDTYPE type, UINT slot, UINT banks)
+	: LanguageCardSlot0(type, slot)
 {
 	m_uSaturnTotalBanks = (banks == 0) ? kMaxSaturnBanks : banks;
 	m_uSaturnActiveBank = 0;
