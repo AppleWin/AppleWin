@@ -522,7 +522,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 									if (!page)
 									{
 										if (g_nAppMode == MODE_STEPPING)
-											DebuggerBreakOnDmaToOrFromIoMemory(dstAddr, true);
+											DebuggerBreakOnDmaToOrFromIoMemory(dstAddr, true);	//  GH#1007
 										//else // Show MessageBox?
 
 										pCard->m_notBusyCycle = 0;	// DMA complete
@@ -575,11 +575,11 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 								}
 							}
 
-							// Trap and error on any accesses that overlap with I/O memory
-							if ((pHDD->m_memblock < 0xC000 && ((pHDD->m_memblock + HD_BLOCK_SIZE - 1) >= 0xC000))	// 1) Starts before I/O, but ends in I/O memory
-								|| ((pHDD->m_memblock >> 12) == 0xC))												// 2) Starts in I/O memory
+							// Trap and error on any accesses that overlap with I/O memory (GH#1007)
+							if ((pHDD->m_memblock < APPLE_IO_BEGIN && ((pHDD->m_memblock + HD_BLOCK_SIZE - 1) >= APPLE_IO_BEGIN))	// 1) Starts before I/O, but ends in I/O memory
+								|| ((pHDD->m_memblock >> 12) == (APPLE_IO_BEGIN >> 12)))											// 2) Starts in I/O memory
 							{
-								WORD dstAddr = ((pHDD->m_memblock >> 12) == 0xC) ? pHDD->m_memblock : 0xC000;
+								WORD dstAddr = ((pHDD->m_memblock >> 12) == (APPLE_IO_BEGIN >> 12)) ? pHDD->m_memblock : APPLE_IO_BEGIN;
 
 								if (g_nAppMode == MODE_STEPPING)
 									DebuggerBreakOnDmaToOrFromIoMemory(dstAddr, false);
@@ -590,13 +590,13 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 							}
 							else
 							{
-								if (pHDD->m_memblock <= 0xFE00)
+								if (pHDD->m_memblock <= (MEMORY_LENGTH - HD_BLOCK_SIZE))
 								{
 									memcpy(pHDD->m_buf, mem + pHDD->m_memblock, HD_BLOCK_SIZE);
 								}
-								else // wraps on 64KiB boundary
+								else // wraps on 64KiB boundary (GH#1007)
 								{
-									const UINT size = 0x10000 - pHDD->m_memblock;
+									const UINT size = MEMORY_LENGTH - pHDD->m_memblock;
 									memcpy(pHDD->m_buf, mem + pHDD->m_memblock, size);
 									memcpy(pHDD->m_buf + size, mem, HD_BLOCK_SIZE - size);
 								}
