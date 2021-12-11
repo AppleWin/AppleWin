@@ -38,8 +38,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 const UINT LanguageCardUnit::kMemModeInitialState = MF_BANK2 | MF_WRITERAM;	// !INTCXROM
 
-LanguageCardUnit::LanguageCardUnit(UINT slot) : LanguageCardUnit(CT_LanguageCardIIe, slot)
+LanguageCardUnit * LanguageCardUnit::create(UINT slot)
 {
+	return new LanguageCardUnit(CT_LanguageCardIIe, slot);
 }
 
 LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
@@ -144,10 +145,10 @@ bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 
 //-------------------------------------
 
-LanguageCardSlot0::LanguageCardSlot0(UINT slot) : LanguageCardSlot0(CT_LanguageCard, slot)
+LanguageCardSlot0 * LanguageCardSlot0::create(UINT slot)
 {
+	return new LanguageCardSlot0(CT_LanguageCard, slot);
 }
-
 
 LanguageCardSlot0::LanguageCardSlot0(SS_CARDTYPE type, UINT slot)
 	: LanguageCardUnit(type, slot)

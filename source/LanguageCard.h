@@ -9,7 +9,8 @@
 class LanguageCardUnit : public Card
 {
 public:
-	LanguageCardUnit(UINT slot);
+	// in modern C++ this could be a 2nd constructor
+	static LanguageCardUnit * create(UINT slot);
 
 	virtual ~LanguageCardUnit(void);
 
@@ -47,7 +48,9 @@ private:
 class LanguageCardSlot0 : public LanguageCardUnit
 {
 public:
-	LanguageCardSlot0(UINT slot);
+	// in modern C++ this could be a 2nd constructor
+	static LanguageCardSlot0 * create(UINT slot);
+
 	virtual ~LanguageCardSlot0(void);
 
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);

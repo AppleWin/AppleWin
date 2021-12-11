@@ -106,7 +106,7 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 	case CT_LanguageCard:
 		_ASSERT(m_pLanguageCard == NULL);
 		if (m_pLanguageCard) break;	// Only support one language card
-		m_slot[slot] = m_pLanguageCard = new LanguageCardSlot0(slot);
+		m_slot[slot] = m_pLanguageCard = LanguageCardSlot0::create(slot);
 		break;
 	case CT_Saturn128K:
 		_ASSERT(m_pLanguageCard == NULL);
@@ -116,7 +116,7 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 	case CT_LanguageCardIIe:
 		_ASSERT(m_pLanguageCard == NULL);
 		if (m_pLanguageCard) break;	// Only support one language card
-		m_slot[slot] = m_pLanguageCard = new LanguageCardUnit(slot);
+		m_slot[slot] = m_pLanguageCard = LanguageCardUnit::create(slot);
 		break;
 
 	default:
