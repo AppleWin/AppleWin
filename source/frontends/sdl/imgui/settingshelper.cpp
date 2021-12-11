@@ -13,6 +13,7 @@
 #include "frontends/sdl/imgui/glselector.h"
 #include "imgui_internal.h"
 
+void CreateLanguageCard(void);
 
 namespace
 {

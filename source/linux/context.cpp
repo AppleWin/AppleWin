@@ -108,7 +108,7 @@ void InitialiseEmulator()
   g_bFullSpeed = false;
 
   GetVideo().SetVidHD(false);
-  LoadConfiguration();
+  LoadConfiguration(true);
   SetCurrentCLK6502();
   GetAppleWindowTitle();
   GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
