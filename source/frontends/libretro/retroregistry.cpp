@@ -47,10 +47,20 @@ namespace
       }
      },
      {
+      "slot3",
+      "Card in slot 3",
+      "Configuration\\Slot 3",
+      REGVALUE_CARD_TYPE,
+      {
+       {"Empty", CT_Empty},
+       {"Video HD", CT_VidHD},
+      }
+     },
+     {
       "slot4",
       "Card in slot 4",
-      REG_CONFIG,
-      REGVALUE_SLOT4,
+      "Configuration\\Slot 4",
+      REGVALUE_CARD_TYPE,
       {
        {"Empty", CT_Empty},
        {"Mouse", CT_MouseInterface},
@@ -61,8 +71,8 @@ namespace
      {
       "slot5",
       "Card in slot 5",
-      REG_CONFIG,
-      REGVALUE_SLOT5,
+      "Configuration\\Slot 5",
+      REGVALUE_CARD_TYPE,
       {
        {"Empty", CT_Empty},
        {"CP/M", CT_Z80},
