@@ -39,6 +39,8 @@
 		, BP_HIT_MEMW = (1 << 5)
 		, BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM = (1 << 6)
 		, BP_HIT_INTERRUPT = (1 << 7)
+		, BP_DMA_TO_IO_MEM = (1 << 8)
+		, BP_DMA_FROM_IO_MEM = (1 << 9)
 	};
 
 	extern int          g_nBreakpoints;
@@ -181,3 +183,4 @@
 	void	DebuggerMouseClick( int x, int y );
 
 	bool	IsDebugSteppingAtFullSpeed(void);
+	void	DebuggerBreakOnDmaToOrFromIoMemory(WORD addr, bool isDmaToMemory);

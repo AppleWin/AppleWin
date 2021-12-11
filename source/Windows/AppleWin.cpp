@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SaveState.h"
 #include "SoundCore.h"
 #include "Speaker.h"
+#include "LanguageCard.h"
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
@@ -673,8 +674,11 @@ static void RepeatInitialization(void)
 		// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
 		const bool bShowAboutDlg = CheckOldAppleWinVersion();	// Post: g_OldAppleWinVersion
 
-		LoadConfiguration();
-		LogFileOutput("Main: LoadConfiguration()\n");
+		{
+			bool loadImages = g_cmdLine.szSnapshotName == NULL;	// don't load floppy/harddisk images if a snapshot is to be loaded later on
+			LoadConfiguration(loadImages);
+			LogFileOutput("Main: LoadConfiguration()\n");
+		}
 
 		if (g_cmdLine.model != A2TYPE_MAX)
 			SetApple2Type(g_cmdLine.model);
@@ -709,7 +713,7 @@ static void RepeatInitialization(void)
 #endif
 		if (g_cmdLine.uSaturnBanks)
 		{
-			SetSaturnMemorySize(g_cmdLine.uSaturnBanks);	// Set number of banks before constructing Saturn card
+			Saturn128K::SetSaturnMemorySize(g_cmdLine.uSaturnBanks);	// Set number of banks before constructing Saturn card
 			SetExpansionMemType(CT_Saturn128K);
 			g_cmdLine.uSaturnBanks = 0;		// Don't reapply after a restart
 		}

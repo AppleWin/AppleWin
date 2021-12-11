@@ -984,7 +984,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 	// Breakpoints
 		case CMD_BREAK_INVALID:
-			ConsoleColorizePrintFormat( sTemp, sText, TEXT(" Usage: [%s%s | %s%s] | [ # | # %s%s | # %s%s ]")
+			ConsoleColorizePrintFormat( sTemp, sText, TEXT(" Usage: [%s%s | %s%s] | [# | # %s%s | # %s%s]")
 				, CHC_COMMAND
 				, g_aParameters[ PARAM_ON  ].m_sName
 				, CHC_COMMAND
@@ -993,6 +993,16 @@ Update_t CmdHelpSpecific (int nArgs)
 				, g_aParameters[ PARAM_ON  ].m_sName
 				, CHC_COMMAND
 				, g_aParameters[ PARAM_OFF  ].m_sName
+			);
+			ConsoleColorizePrintFormat(sTemp, sText, TEXT(" Usage: [%s%s %s%s | %s%s %s%s]")
+				, CHC_COMMAND
+				, g_aParameters[PARAM_ALL].m_sName
+				, CHC_COMMAND
+				, g_aParameters[PARAM_ON].m_sName
+				, CHC_COMMAND
+				, g_aParameters[PARAM_ALL].m_sName
+				, CHC_COMMAND
+				, g_aParameters[PARAM_OFF].m_sName
 			);
 			ConsoleColorizePrint( sTemp, TEXT("Where: # is 0=BRK, 1=Invalid Opcode_1, 2=Invalid Opcode_2, 3=Invalid Opcode_3"));
 			break;

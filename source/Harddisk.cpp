@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SaveState.h"
 #include "YamlHelper.h"
 
+#include "Debugger/Debug.h"
 #include "../resource/resource.h"
 
 /*
@@ -518,9 +519,14 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 								{
 									memdirty[dstAddr >> 8] = 0xFF;
 									LPBYTE page = memwrite[dstAddr >> 8];
-									if (!page)
+									if (!page)	// I/O space or ROM
 									{
-										_ASSERT(0);
+										if (g_nAppMode == MODE_STEPPING)
+											DebuggerBreakOnDmaToOrFromIoMemory(dstAddr, true);	//  GH#1007
+										//else // Show MessageBox?
+
+										pCard->m_notBusyCycle = 0;	// DMA complete
+										bRes = false;
 										break;
 									}
 
@@ -535,7 +541,8 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 									remaining -= size;
 								}
 							}
-							else
+
+							if (!bRes)
 							{
 								pHDD->m_error = 1;
 								r = DEVICE_IO_ERROR;
@@ -568,7 +575,32 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 								}
 							}
 
-							memcpy(pHDD->m_buf, mem + pHDD->m_memblock, HD_BLOCK_SIZE);
+							// Trap and error on any accesses that overlap with I/O memory (GH#1007)
+							if ((pHDD->m_memblock < APPLE_IO_BEGIN && ((pHDD->m_memblock + HD_BLOCK_SIZE - 1) >= APPLE_IO_BEGIN))	// 1) Starts before I/O, but ends in I/O memory
+								|| ((pHDD->m_memblock >> 12) == (APPLE_IO_BEGIN >> 12)))											// 2) Starts in I/O memory
+							{
+								WORD dstAddr = ((pHDD->m_memblock >> 12) == (APPLE_IO_BEGIN >> 12)) ? pHDD->m_memblock : APPLE_IO_BEGIN;
+
+								if (g_nAppMode == MODE_STEPPING)
+									DebuggerBreakOnDmaToOrFromIoMemory(dstAddr, false);
+								//else // Show MessageBox?
+
+								pCard->m_notBusyCycle = 0;	// DMA complete
+								bRes = false;
+							}
+							else
+							{
+								if (pHDD->m_memblock <= (MEMORY_LENGTH - HD_BLOCK_SIZE))
+								{
+									memcpy(pHDD->m_buf, mem + pHDD->m_memblock, HD_BLOCK_SIZE);
+								}
+								else // wraps on 64KiB boundary (GH#1007)
+								{
+									const UINT size = MEMORY_LENGTH - pHDD->m_memblock;
+									memcpy(pHDD->m_buf, mem + pHDD->m_memblock, size);
+									memcpy(pHDD->m_buf + size, mem, HD_BLOCK_SIZE - size);
+								}
+							}
 
 							if (bRes)
 								bRes = ImageWriteBlock(pHDD->m_imagehandle, pHDD->m_diskblock, pHDD->m_buf);

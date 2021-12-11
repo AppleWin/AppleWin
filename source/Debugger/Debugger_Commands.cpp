@@ -456,6 +456,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("SAVE")       , NULL, PARAM_SAVE           },
 		{TEXT("START")      , NULL, PARAM_START          }, // benchmark
 		{TEXT("STOP")       , NULL, PARAM_STOP           }, // benchmark
+		{TEXT("ALL")        , NULL, PARAM_ALL            },
 // Help Categories
 		{"*"           , NULL, PARAM_WILDSTAR        },
 		{"BOOKMARKS"   , NULL, PARAM_CAT_BOOKMARKS   },

@@ -2404,7 +2404,6 @@ static bool CheckVideoTables2( eApple2Type type, uint32_t mode )
 
 	GetVideo().SetVideoMode(mode);
 
-	g_dwCyclesThisFrame = 0;
 	g_nVideoClockHorz = g_nVideoClockVert = 0;
 
 	for (DWORD cycles=0; cycles<VIDEO_SCANNER_MAX_VERT*VIDEO_SCANNER_MAX_HORZ; cycles++)

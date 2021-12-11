@@ -548,7 +548,7 @@ void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 	{
 		pSrc += GetFrameBufferWidth();	// Start on odd scanline (otherwise for 50% scanline mode get an all black image!)
 
-		uint32_t  aScanLine[ 280 ];
+		uint32_t  aScanLine[kVideoWidthIIgs / 2];	// Big enough to contain both a 280 or 320 line
 		uint32_t *pDst;
 
 		// 50% Half Scan Line clears every odd scanline.

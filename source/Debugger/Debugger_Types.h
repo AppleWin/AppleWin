@@ -1405,6 +1405,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		, PARAM_SAVE
 		, PARAM_START
 		, PARAM_STOP
+		, PARAM_ALL
 	, _PARAM_GENERAL_END
 	,  PARAM_GENERAL_NUM = _PARAM_GENERAL_END - _PARAM_GENERAL_BEGIN
 
