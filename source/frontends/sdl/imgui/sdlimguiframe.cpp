@@ -96,9 +96,25 @@ namespace sa2
     ImGui::StyleColorsDark();
 
     ImGui_ImplSDL2_InitForOpenGL(myWindow.get(), myGLContext);
-
     ImGui_ImplOpenGL3_Init();
 
+    myDeadTopZone = 0;
+    myTexture = 0;
+  }
+
+  SDLImGuiFrame::~SDLImGuiFrame()
+  {
+    glDeleteTextures(1, &myTexture);
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+    SDL_GL_DeleteContext(myGLContext);
+  }
+
+  void SDLImGuiFrame::Initialize(bool resetVideoState)
+  {
+    SDLFrame::Initialize(resetVideoState);
+    glDeleteTextures(1, &myTexture);
     glGenTextures(1, &myTexture);
 
     Video & video = GetVideo();
@@ -114,17 +130,6 @@ namespace sa2
     myOffset = (width * borderHeight + borderWidth) * sizeof(bgra_t);
 
     allocateTexture(myTexture, myBorderlessWidth, myBorderlessHeight);
-
-    myDeadTopZone = 0;
-  }
-
-  SDLImGuiFrame::~SDLImGuiFrame()
-  {
-    glDeleteTextures(1, &myTexture);
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
-    SDL_GL_DeleteContext(myGLContext);
   }
 
   void SDLImGuiFrame::UpdateTexture()

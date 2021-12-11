@@ -47,9 +47,9 @@ namespace na2
     // so we can run headless
   }
 
-  void NFrame::Initialize()
+  void NFrame::Initialize(bool resetVideoState)
   {
-    CommonFrame::Initialize();
+    CommonFrame::Initialize(resetVideoState);
     myTextFlashCounter = 0;
     myTextFlashState = 0;
     myAsciiArt.reset(new ASCIIArt());

@@ -7,7 +7,6 @@
 #include "StdAfx.h"
 #include "linux/benchmark.h"
 #include "linux/context.h"
-#include "linux/network/uthernet2.h"
 
 #include "frontends/common2/fileregistry.h"
 #include "frontends/common2/utils.h"
@@ -95,7 +94,7 @@ void run_sdl(int argc, const char * argv [])
   std::shared_ptr<Paddle> paddle(new sa2::Gamepad(0));
   const Initialisation init(frame, paddle);
   applyOptions(options);
-  frame->Initialize();
+  frame->Begin();
 
   std::cerr << "Default GL swap interval: " << SDL_GL_GetSwapInterval() << std::endl;
 
@@ -143,7 +142,6 @@ void run_sdl(int argc, const char * argv [])
 
       eventTimer.tic();
       sa2::writeAudio();
-      processEventsUthernet2(5);
       frame->ProcessEvents(quit);
       eventTimer.toc();
 
@@ -174,6 +172,7 @@ void run_sdl(int argc, const char * argv [])
     std::cerr << "Actual clock:   " << actualClock << " Hz, " << timeInSeconds << " s" << std::endl;
     sa2::stopAudio();
   }
+  frame->End();
 #endif
 }
 

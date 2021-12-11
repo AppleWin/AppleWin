@@ -16,7 +16,7 @@ public:
 
     void VideoPresentScreen() override;
     void FrameRefreshStatus(int drawflags) override;
-    void Initialize() override;
+    void Initialize(bool resetVideoState) override;
     void Destroy() override;
 
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;

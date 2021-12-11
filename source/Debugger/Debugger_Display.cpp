@@ -639,8 +639,8 @@ void StretchBltMemToFrameDC(void)
 	int nViewportCX, nViewportCY;
 	win32Frame.GetViewportCXCY(nViewportCX, nViewportCY);
 
-	int xdest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetX() : 0;
-	int ydest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetY() : 0;
+	int xdest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetX() : GetVideo().GetFrameBufferCentringOffsetX() * win32Frame.GetViewportScale();
+	int ydest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetY() : GetVideo().GetFrameBufferCentringOffsetY() * win32Frame.GetViewportScale();
 	int wdest = nViewportCX;
 	int hdest = nViewportCY;
 
@@ -738,6 +738,7 @@ static void PrintGlyph( const int xDst, const int yDst, const int glyph )
 	// Manual print of character. A lot faster than BitBlt, which must be avoided.
 	int index_src = (CONSOLE_FONT_BITMAP_HEIGHT - 1 - ySrc) * CONSOLE_FONT_NUM_CHARS_PER_ROW * CONSOLE_FONT_GRID_X + xSrc;   // font bitmap
 	int index_dst = (DISPLAY_HEIGHT - 1 - yDst) * DEBUG_VIRTUAL_TEXT_WIDTH * CONSOLE_FONT_GRID_X + xDst;   // debugger bitmap
+
 	for (int yy = 0; yy < CONSOLE_FONT_GRID_Y; yy++)
 	{
 		for (int xx = 0; xx < CONSOLE_FONT_GRID_X; xx++)

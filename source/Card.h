@@ -23,6 +23,7 @@ enum SS_CARDTYPE
 	CT_Saturn128K,		// Saturn 128K (but may be populated with less RAM, in multiples of 16K)
 	CT_FourPlay,		// 4 port Atari 2600 style digital joystick card
 	CT_SNESMAX,			// 2 port Nintendo NES/SNES controller serial interface card
+	CT_VidHD,
 	CT_Uthernet2,
 };
 

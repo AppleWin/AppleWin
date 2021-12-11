@@ -667,6 +667,7 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 // DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
 static void RepeatInitialization(void)
 {
+		GetVideo().SetVidHD(false);	// Set true later only if VidHDCard is instantiated
 		ResetToLogoMode();
 
 		// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
@@ -731,13 +732,6 @@ static void RepeatInitialization(void)
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
-		GetFrame().Initialize(); // g_pFramebufferinfo been created now & COM init'ed
-		LogFileOutput("Main: VideoInitialize()\n");
-
-		LogFileOutput("Main: FrameCreateWindow() - pre\n");
-		Win32Frame::GetWin32Frame().FrameCreateWindow();	// GetFrame().g_hFrameWindow is now valid
-		LogFileOutput("Main: FrameCreateWindow() - post\n");
-
 		// Init palette color
 		VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
 
@@ -753,6 +747,11 @@ static void RepeatInitialization(void)
 		if (g_cmdLine.bSlotEmpty[SLOT6])
 			GetCardMgr().Remove(SLOT6);
 
+		if (g_cmdLine.slotInsert[SLOT3] != CT_Empty && g_cmdLine.slotInsert[SLOT3] == CT_VidHD)	// For now just support VidHD in slot 3
+		{
+			GetCardMgr().Insert(SLOT3, g_cmdLine.slotInsert[SLOT3]);
+		}
+
 		if (g_cmdLine.slotInsert[SLOT5] != CT_Empty)
 		{
 			if (GetCardMgr().QuerySlot(SLOT4) == CT_MockingboardC && g_cmdLine.slotInsert[SLOT5] != CT_MockingboardC)	// Currently MB occupies slot4+5 when enabled
@@ -762,6 +761,35 @@ static void RepeatInitialization(void)
 			}
 
 			GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
+		}
+
+		// Create window after inserting/removing VidHD card (as it affects width & height)
+		{
+			Win32Frame::GetWin32Frame().SetViewportScale(Win32Frame::GetWin32Frame().GetViewportScale(), true);
+
+			GetFrame().Initialize(true); // g_pFramebufferinfo been created now & COM init'ed
+			LogFileOutput("Main: VideoInitialize()\n");
+
+			LogFileOutput("Main: FrameCreateWindow() - pre\n");
+			Win32Frame::GetWin32Frame().FrameCreateWindow();	// GetFrame().g_hFrameWindow is now valid
+			LogFileOutput("Main: FrameCreateWindow() - post\n");
+		}
+
+		// Set best W,H resolution after inserting/removing VidHD card
+		if (g_cmdLine.bestFullScreenResolution || g_cmdLine.userSpecifiedWidth || g_cmdLine.userSpecifiedHeight)
+		{
+			bool res = false;
+			UINT bestWidth = 0, bestHeight = 0;
+
+			if (g_cmdLine.bestFullScreenResolution)
+				res = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight);
+			else
+				res = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight, g_cmdLine.userSpecifiedWidth, g_cmdLine.userSpecifiedHeight);
+
+			if (res)
+				LogFileOutput("Best resolution for -fs-height/height=x switch(es): Width=%d, Height=%d\n", bestWidth, bestHeight);
+			else
+				LogFileOutput("Failed to set parameter for -fs-width/height=x switch(es)\n");
 		}
 
 		// Pre: may need g_hFrameWindow for MessageBox errors

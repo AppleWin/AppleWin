@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "linux/linuxframe.h"
+#include "linux/context.h"
 #include "Interface.h"
 #include "Log.h"
 #include "Core.h"
@@ -28,7 +29,7 @@ void LinuxFrame::SetFullScreenShowSubunitStatus(bool /* bShow */)
 {
 }
 
-bool LinuxFrame::GetBestDisplayResolutionForFullScreen(UINT& /* bestWidth */, UINT& /* bestHeight */ , UINT /* userSpecifiedHeight */)
+bool LinuxFrame::GetBestDisplayResolutionForFullScreen(UINT& /* bestWidth */, UINT& /* bestHeight */, UINT /* userSpecifiedWidth */, UINT /* userSpecifiedHeight */)
 {
   return false;
 }
@@ -46,15 +47,21 @@ void LinuxFrame::SetLoadedSaveStateFlag(const bool /* bFlag */)
 {
 }
 
-void LinuxFrame::Initialize()
+void LinuxFrame::ResizeWindow()
 {
-  static_assert(sizeof(bgra_t) == 4, "Invalid size of bgra_t");
+}
+
+void LinuxFrame::Initialize(bool resetVideoState)
+{
   Video & video = GetVideo();
 
   const size_t numberOfPixels = video.GetFrameBufferWidth() * video.GetFrameBufferHeight();
+
+  static_assert(sizeof(bgra_t) == 4, "Invalid size of bgra_t");
   const size_t numberOfBytes = sizeof(bgra_t) * numberOfPixels;
+
   myFramebuffer.resize(numberOfBytes);
-  video.Initialize(myFramebuffer.data());
+  video.Initialize(myFramebuffer.data(), resetVideoState);
   LogFileTimeUntilFirstKeyReadReset();
 }
 
@@ -97,15 +104,28 @@ void LinuxFrame::Cycle50ScanLines()
   ApplyVideoModeChange();
 }
 
-void LinuxFrame::Restart()
-{
-  LogFileOutput("Restart: not implemented\n");
-}
-
 void LinuxFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
 {
   LogFileOutput("LoadBitmap: could not load resource %s\n", lpBitmapName);
   memset(lpvBits, 0, cb);
+}
+
+void LinuxFrame::Begin()
+{
+  InitialiseEmulator();
+  Initialize(true);
+}
+
+void LinuxFrame::End()
+{
+  Destroy();
+  DestroyEmulator();
+}
+
+void LinuxFrame::Restart()
+{
+  End();
+  Begin();
 }
 
 int MessageBox(HWND, LPCSTR lpText, LPCSTR lpCaption, UINT uType)

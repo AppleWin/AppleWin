@@ -306,7 +306,7 @@ namespace sa2
                 const bool isSelected = card == current;
                 if (ImGui::Selectable(getCardName(card).c_str(), isSelected))
                 {
-                  insertCard(slot, card);
+                  insertCard(slot, card, frame);
                 }
                 if (isSelected)
                 {
@@ -330,7 +330,7 @@ namespace sa2
                 const bool isSelected = card == expansion;
                 if (ImGui::Selectable(getCardName(card).c_str(), isSelected))
                 {
-                  SetExpansionMemType(card);
+                  setExpansionCard(card);
                 }
                 if (isSelected)
                 {

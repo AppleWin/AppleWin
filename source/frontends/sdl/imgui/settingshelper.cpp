@@ -3,6 +3,8 @@
 #include "Registry.h"
 #include "Harddisk.h"
 #include "Core.h"
+#include "Memory.h"
+#include "Interface.h"
 #include "Debugger/Debug.h"
 
 #include "Tfe/tfe.h"
@@ -16,60 +18,61 @@ namespace
 {
   const std::map<SS_CARDTYPE, std::string> cards =
     {
-     {CT_Empty, "CT_Empty"},
-     {CT_Disk2, "CT_Disk2"},
-     {CT_SSC, "CT_SSC"},
-     {CT_MockingboardC, "CT_MockingboardC"},
-     {CT_GenericPrinter, "CT_GenericPrinter"},
-     {CT_GenericHDD, "CT_GenericHDD"},
-     {CT_GenericClock, "CT_GenericClock"},
-     {CT_MouseInterface, "CT_MouseInterface"},
-     {CT_Z80, "CT_Z80"},
-     {CT_Phasor, "CT_Phasor"},
-     {CT_Echo, "CT_Echo"},
-     {CT_SAM, "CT_SAM"},
-     {CT_80Col, "CT_80Col"},
-     {CT_Extended80Col, "CT_Extended80Col"},
-     {CT_RamWorksIII, "CT_RamWorksIII"},
-     {CT_Uthernet, "CT_Uthernet"},
-     {CT_LanguageCard, "CT_LanguageCard"},
-     {CT_LanguageCardIIe, "CT_LanguageCardIIe"},
-     {CT_Saturn128K, "CT_Saturn128K"},
-     {CT_FourPlay, "CT_FourPlay"},
-     {CT_SNESMAX, "CT_SNESMAX"},
-     {CT_Uthernet2, "CT_Uthernet2"},
+     {CT_Empty, "Empty"},
+     {CT_Disk2, "Disk2"},
+     {CT_SSC, "SSC"},
+     {CT_MockingboardC, "MockingboardC"},
+     {CT_GenericPrinter, "GenericPrinter"},
+     {CT_GenericHDD, "GenericHDD"},
+     {CT_GenericClock, "GenericClock"},
+     {CT_MouseInterface, "MouseInterface"},
+     {CT_Z80, "Z80"},
+     {CT_Phasor, "Phasor"},
+     {CT_Echo, "Echo"},
+     {CT_SAM, "SAM"},
+     {CT_80Col, "80Col"},
+     {CT_Extended80Col, "Extended80Col"},
+     {CT_RamWorksIII, "RamWorksIII"},
+     {CT_Uthernet, "Uthernet"},
+     {CT_LanguageCard, "LanguageCard"},
+     {CT_LanguageCardIIe, "LanguageCardIIe"},
+     {CT_Saturn128K, "Saturn128K"},
+     {CT_FourPlay, "FourPlay"},
+     {CT_SNESMAX, "SNESMAX"},
+     {CT_VidHD, "VidHD"},
+     {CT_Uthernet2, "Uthernet2"},
     };
 
   const std::map<eApple2Type, std::string> apple2Types =
     {
-     {A2TYPE_APPLE2, "A2TYPE_APPLE2"},
-     {A2TYPE_APPLE2PLUS, "A2TYPE_APPLE2PLUS"},
-     {A2TYPE_APPLE2JPLUS, "A2TYPE_APPLE2JPLUS"},
-     {A2TYPE_APPLE2E, "A2TYPE_APPLE2E"},
-     {A2TYPE_APPLE2EENHANCED, "A2TYPE_APPLE2EENHANCED"},
-     {A2TYPE_APPLE2C, "A2TYPE_APPLE2C"},
-     {A2TYPE_PRAVETS8M, "A2TYPE_PRAVETS8M"},
-     {A2TYPE_PRAVETS82, "A2TYPE_PRAVETS82"},
-     {A2TYPE_BASE64A, "A2TYPE_BASE64A"},
-     {A2TYPE_PRAVETS8A, "A2TYPE_PRAVETS8A"},
-     {A2TYPE_TK30002E, "A2TYPE_TK30002E"},
+     {A2TYPE_APPLE2, "APPLE2"},
+     {A2TYPE_APPLE2PLUS, "APPLE2PLUS"},
+     {A2TYPE_APPLE2JPLUS, "APPLE2JPLUS"},
+     {A2TYPE_APPLE2E, "APPLE2E"},
+     {A2TYPE_APPLE2EENHANCED, "APPLE2EENHANCED"},
+     {A2TYPE_APPLE2C, "APPLE2C"},
+     {A2TYPE_PRAVETS8M, "PRAVETS8M"},
+     {A2TYPE_PRAVETS82, "PRAVETS82"},
+     {A2TYPE_BASE64A, "BASE64A"},
+     {A2TYPE_PRAVETS8A, "PRAVETS8A"},
+     {A2TYPE_TK30002E, "TK30002E"},
     };
 
   const std::map<eCpuType, std::string> cpuTypes =
     {
-     {CPU_6502, "CPU_6502"},
-     {CPU_65C02, "CPU_65C02"},
-     {CPU_Z80, "CPU_Z80"},
+     {CPU_6502, "6502"},
+     {CPU_65C02, "65C02"},
+     {CPU_Z80, "Z80"},
     };
 
   const std::map<AppMode_e, std::string> appModes =
     {
-     {MODE_LOGO, "MODE_LOGO"},
-     {MODE_PAUSED, "MODE_PAUSED"},
-     {MODE_RUNNING, "MODE_RUNNING"},
-     {MODE_DEBUG, "MODE_DEBUG"},
-     {MODE_STEPPING, "MODE_STEPPING"},
-     {MODE_BENCHMARK, "MODE_BENCHMARCK"},
+     {MODE_LOGO, "LOGO"},
+     {MODE_PAUSED, "PAUSED"},
+     {MODE_RUNNING, "RUNNING"},
+     {MODE_DEBUG, "DEBUG"},
+     {MODE_STEPPING, "STEPPING"},
+     {MODE_BENCHMARK, "BENCHMARCK"},
     };
 
   const std::map<Disk_Status_e, std::string> statuses =
@@ -98,11 +101,11 @@ namespace
       {0, {CT_Empty, CT_LanguageCard, CT_Saturn128K}},
       {1, {CT_Empty, CT_GenericPrinter, CT_Uthernet2}},
       {2, {CT_Empty, CT_SSC, CT_Uthernet2}},
-      {3, {CT_Empty, CT_Uthernet, CT_Uthernet2}},
+      {3, {CT_Empty, CT_Uthernet, CT_Uthernet2, CT_VidHD}},
       {4, {CT_Empty, CT_MockingboardC, CT_MouseInterface, CT_Phasor, CT_Uthernet2}},
       {5, {CT_Empty, CT_MockingboardC, CT_Z80, CT_SAM, CT_Disk2, CT_FourPlay, CT_SNESMAX, CT_Uthernet2}},
-      {6, {CT_Empty, CT_Disk2}},
-      {7, {CT_Empty, CT_GenericHDD}},
+      {6, {CT_Empty, CT_Disk2, CT_Uthernet2}},
+      {7, {CT_Empty, CT_GenericHDD, CT_Uthernet2}},
     };
 
     const std::vector<SS_CARDTYPE> expansionCards =
@@ -158,11 +161,23 @@ namespace sa2
     return statuses.at(status);
   }
 
-  void insertCard(size_t slot, SS_CARDTYPE card)
+  void insertCard(size_t slot, SS_CARDTYPE card, FrameBase * frame)
   {
     CardManager & cardManager = GetCardMgr();
+    Video & video = GetVideo();
+    const bool oldHasVid = video.HasVidHD();
     switch (slot)
     {
+      case 3:
+      {
+        if (cardManager.QuerySlot(slot) == CT_VidHD)
+        {
+          // the old card was a VidHD, which will be removed
+          // reset it
+          video.SetVidHD(false);
+        }
+        break;
+      }
       case 4:
       case 5:
       {
@@ -172,7 +187,6 @@ namespace sa2
         }
         else
         {
-          CardManager & cardManager = GetCardMgr();
           if (cardManager.QuerySlot(slot) == CT_MockingboardC)
           {
             cardManager.Insert(9 - slot, CT_Empty);  // the other
@@ -182,19 +196,24 @@ namespace sa2
       }
     };
 
-    if (card == CT_Uthernet2)
-    {
-      // only 1 Uthernet2 allowed
-      for (size_t s = SLOT1; s < NUM_SLOTS; ++s)
-      {
-        if (cardManager.QuerySlot(s) == card)
-        {
-          cardManager.Insert(s, CT_Empty);
-        }
-      }
-    }
-
     cardManager.Insert(slot, card);
+
+    // keep everything consistent
+    // a bit of a heavy call, but nothing simpler is available now
+    MemInitializeIO();
+
+    if (oldHasVid != video.HasVidHD())
+    {
+      frame->Destroy();
+      frame->Initialize(true);
+    }
+  }
+
+  void setExpansionCard(SS_CARDTYPE card)
+  {
+    SetExpansionMemType(card);
+    CreateLanguageCard();
+    MemInitializeIO();
   }
 
   void setVideoStyle(Video & video, const VideoStyle_e style, const bool enabled)

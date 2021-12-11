@@ -25,7 +25,8 @@ class Video;
 class Win32Frame : public FrameBase
 {
 public:
-	Win32Frame();
+	Win32Frame(void);
+	virtual ~Win32Frame(void){}
 
 	static Win32Frame& GetWin32Frame();
 	static LRESULT CALLBACK FrameWndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
@@ -38,15 +39,16 @@ public:
 	virtual void FrameSetCursorPosByMousePos();
 
 	virtual void SetFullScreenShowSubunitStatus(bool bShow);
-	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedHeight = 0);
+	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth=0, UINT userSpecifiedHeight=0);
 	virtual int SetViewportScale(int nNewScale, bool bForce = false);
 	virtual void SetAltEnterToggleFullScreen(bool mode);
 
 	virtual void SetLoadedSaveStateFlag(const bool bFlag);
 
-	virtual void Initialize(void);
+	virtual void Initialize(bool resetVideoState);
 	virtual void Destroy(void);
 	virtual void VideoPresentScreen(void);
+	virtual void ResizeWindow(void);
 
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
 	virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
@@ -64,6 +66,7 @@ public:
 	UINT Get3DBorderHeight(void);
 	int GetViewportScale(void);
 	void GetViewportCXCY(int& nViewportCX, int& nViewportCY);
+	void SetFullScreenViewportScale(int nNewXScale, int nNewYScale);
 
 	void ApplyVideoModeChange(void);
 
@@ -76,7 +79,7 @@ private:
 	static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName, LPVOID lpContext);
 	LRESULT WndProc(HWND   window, UINT   message, WPARAM wparam, LPARAM lparam);
 
-	void videoCreateDIBSection(Video& video);
+	void VideoCreateDIBSection(bool resetVideoState);
 	void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
 	bool DDInit(void);
 	void DDUninit(void);
@@ -129,7 +132,6 @@ private:
 	bool g_windowMinimized;
 	std::string driveTooltip;
 	bool g_bFullScreen_ShowSubunitStatus;
-	FULLSCREEN_SCALE_TYPE	g_win_fullscreen_scale;
 	int						g_win_fullscreen_offsetx;
 	int						g_win_fullscreen_offsety;
 	UINT m_bestWidthForFullScreen;

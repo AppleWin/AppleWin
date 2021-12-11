@@ -136,8 +136,9 @@ namespace sa2
   {
   }
 
-  void SDLFrame::Destroy()
+  void SDLFrame::End()
   {
+    CommonFrame::End();
     if (!myFullscreen)
     {
       common2::Geometry geometry;
@@ -145,7 +146,6 @@ namespace sa2
       SDL_GetWindowSize(myWindow.get(), &geometry.width, &geometry.height);
       saveGeometryToRegistry("sa2", geometry);
     }
-    common2::CommonFrame::Destroy();
   }
 
   void SDLFrame::setGLSwapInterval(const int interval)
@@ -159,9 +159,9 @@ namespace sa2
     }
   }
 
-  void SDLFrame::Initialize()
+  void SDLFrame::Begin()
   {
-    CommonFrame::Initialize();
+    CommonFrame::Begin();
     mySpeed.reset();
     setGLSwapInterval(myTargetGLSwap);
     ResetHardware();

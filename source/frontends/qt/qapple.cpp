@@ -10,19 +10,13 @@
 #include "Harddisk.h"
 #include "Log.h"
 #include "CPU.h"
-#include "Memory.h"
 #include "LanguageCard.h"
-#include "Mockingboard.h"
-#include "MouseInterface.h"
-#include "ParallelPrinter.h"
 #include "Video.h"
-#include "SoundCore.h"
 #include "NTSC.h"
 #include "SaveState.h"
 #include "Speaker.h"
 #include "Riff.h"
 #include "RGBMonitor.h"
-#include "Utilities.h"
 
 #include "linux/benchmark.h"
 #include "linux/version.h"
@@ -75,72 +69,6 @@ namespace
      * Here we implement something similar to 1)
      *
      */
-
-    void loadEmulator(const std::shared_ptr<QtFrame> & frame, const GlobalOptions & options)
-    {
-        LoadConfiguration();
-
-        // ResetDefaultMachineMemTypes();
-
-        switch (options.slot0Card) {
-        case 1: // Language Card
-            SetExpansionMemType(CT_LanguageCard);
-            break;
-        case 2: // Saturn 64
-            SetSaturnMemorySize(Saturn128K::kMaxSaturnBanks / 2);
-            SetExpansionMemType(CT_Saturn128K);
-            break;
-        case 3: // Saturn 128
-            SetSaturnMemorySize(Saturn128K::kMaxSaturnBanks);
-            SetExpansionMemType(CT_Saturn128K);
-            break;
-        case 4: // RamWorks
-            SetRamWorksMemorySize(options.ramWorksMemorySize);
-            SetExpansionMemType(CT_RamWorksIII);
-            break;
-        }
-
-        DSInit();
-        MB_Initialize();
-        SpkrInitialize();
-        MemInitialize();
-        frame->Initialize();
-
-        CardManager & cardManager = GetCardMgr();
-        cardManager.GetDisk2CardMgr().Reset();
-        if (cardManager.QuerySlot(SLOT7) == CT_GenericHDD)
-        {
-            dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(SLOT7)).Reset(true);
-        }
-    }
-
-    void unloadEmulator(const std::shared_ptr<QtFrame> & frame)
-    {
-        CardManager & cardManager = GetCardMgr();
-
-        CMouseInterface* pMouseCard = cardManager.GetMouseCard();
-        if (pMouseCard)
-        {
-            pMouseCard->Reset();
-        }
-        if (cardManager.QuerySlot(SLOT7) == CT_GenericHDD)
-        {
-            dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(SLOT7)).Destroy();
-        }
-        PrintDestroy();
-        MemDestroy();
-        SpkrDestroy();
-        frame->Destroy();
-        MB_Destroy();
-        DSUninit();
-        CpuDestroy();
-
-        cardManager.GetDisk2CardMgr().Destroy();
-        LogDone();
-        RiffFinishWriteFile();
-
-        QDirectSound::stop();
-    }
 
     qint64 emulatorTimeInMS()
     {
@@ -206,7 +134,7 @@ QApple::QApple(QWidget *parent) :
 
     on_actionPause_triggered();
     initialiseEmulator();
-    loadEmulator(myFrame, myOptions);
+    myFrame->Begin();
 
     setAcceptDrops(true);
 }
@@ -219,7 +147,8 @@ QApple::~QApple()
 void QApple::closeEvent(QCloseEvent * event)
 {
     stopTimer();
-    unloadEmulator(myFrame);
+    myFrame->End();
+    QDirectSound::stop();
 
     QSettings settings;
     settings.setValue("QApple/window/geometry", saveGeometry().toBase64());
@@ -367,8 +296,7 @@ void QApple::on_actionReboot_triggered()
 
     emit endEmulator();
     mySaveStateLabel->clear();
-    unloadEmulator(myFrame);
-    loadEmulator(myFrame, myOptions);
+    myFrame->Restart();
     myFrame->VideoPresentScreen();
 }
 

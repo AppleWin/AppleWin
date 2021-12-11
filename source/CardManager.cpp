@@ -40,6 +40,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SAM.h"
 #include "SerialComms.h"
 #include "SNESMAX.h"
+#include "VidHD.h"
+#include "linux/network/uthernet2.h"
 
 void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 {
@@ -91,13 +93,16 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = new DummyCard(type, slot);
 		break;
 	case CT_Uthernet2:
-		m_slot[slot] = new DummyCard(type, slot);
+		m_slot[slot] = new Uthernet2(slot);
 		break;
 	case CT_FourPlay:
 		m_slot[slot] = new FourPlayCard(slot);
 		break;
 	case CT_SNESMAX:
 		m_slot[slot] = new SNESMAXCard(slot);
+		break;
+	case CT_VidHD:
+		m_slot[slot] = new VidHDCard(slot);
 		break;
 
 	case CT_LanguageCard:

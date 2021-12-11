@@ -122,6 +122,10 @@ VIDEO SOFT SWITCHES
  $C00D   W       80COLON         Turn on 80 column display
  $C00E   W       ALTCHARSETOFF   Turn off alternate characters
  $C00F   W       ALTCHARSETON    Turn on alternate characters
+ $C022   R/W     SCREENCOLOR     [IIgs] text foreground and background colors (also VidHD)
+ $C029   R/W     NEWVIDEO        [IIgs] Select new video modes (also VidHD)
+ $C034   R/W     BORDERCOLOR     [IIgs] b3:0 are border color (also VidHD)
+ $C035   R/W     SHADOW          [IIgs] auxmem-to-bank-E1 shadowing (also VidHD)
  $C050   R/W     TEXTOFF         Select graphics mode
  $C051   R/W     TEXTON          Select text mode
  $C052   R/W     MIXEDOFF        Use full screen for graphics
@@ -470,6 +474,12 @@ static BYTE __stdcall IORead_C02x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 
 static BYTE __stdcall IOWrite_C02x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
+	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
+	{
+		if (addr == 0xC022 || addr == 0xC029)
+			GetVideo().VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	}
+
 	return TapeWrite(pc, addr, bWrite, d, nExecutedCycles);	// $C020 TAPEOUT
 }
 
@@ -482,6 +492,13 @@ static BYTE __stdcall IORead_C03x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 
 static BYTE __stdcall IOWrite_C03x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
+	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
+	{
+		// NB. Writes to $C03x addresses will still toggle the speaker, even with a VidHD present
+		if (addr == 0xC034 || addr == 0xC035)
+			GetVideo().VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
+	}
+
 	return SpkrToggle(pc, addr, bWrite, d, nExecutedCycles);
 }
 

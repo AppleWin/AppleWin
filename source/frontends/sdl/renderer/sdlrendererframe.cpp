@@ -30,9 +30,12 @@ namespace sa2
       throw std::runtime_error(SDL_GetError());
     }
 
-    const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
-    printRendererInfo(std::cerr, myRenderer, format, options.sdlDriver);
+    printRendererInfo(std::cerr, myRenderer, ourFormat, options.sdlDriver);
+  }
 
+  void SDLRendererFrame::Initialize(bool resetVideoState)
+  {
+    SDLFrame::Initialize(resetVideoState);
     Video & video = GetVideo();
 
     const int width = video.GetFrameBufferWidth();
@@ -40,7 +43,7 @@ namespace sa2
     const int sw = video.GetFrameBufferBorderlessWidth();
     const int sh = video.GetFrameBufferBorderlessHeight();
 
-    myTexture.reset(SDL_CreateTexture(myRenderer.get(), format, SDL_TEXTUREACCESS_STATIC, width, height), SDL_DestroyTexture);
+    myTexture.reset(SDL_CreateTexture(myRenderer.get(), ourFormat, SDL_TEXTUREACCESS_STATIC, width, height), SDL_DestroyTexture);
 
     myRect.x = video.GetFrameBufferBorderWidth();
     myRect.y = video.GetFrameBufferBorderHeight();

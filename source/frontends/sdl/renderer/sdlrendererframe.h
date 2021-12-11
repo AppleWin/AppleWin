@@ -16,11 +16,15 @@ namespace sa2
     SDLRendererFrame(const common2::EmulatorOptions & options);
 
     void VideoPresentScreen() override;
+    void Initialize(bool resetVideoState) override;
 
   protected:
     void GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, double & x, double & y) const override;
 
   private:
+
+    static constexpr Uint32 ourFormat = SDL_PIXELFORMAT_ARGB8888;
+
     SDL_Rect myRect;
     int myPitch;
 

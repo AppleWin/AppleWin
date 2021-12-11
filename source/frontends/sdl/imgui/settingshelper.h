@@ -10,6 +10,8 @@
 #include <vector>
 #include <map>
 
+class FrameBase;
+
 namespace sa2
 {
 
@@ -24,8 +26,8 @@ namespace sa2
   const std::vector<SS_CARDTYPE> & getExpansionCards();
   const std::map<eApple2Type, std::string> & getAapple2Types();
 
-  void insertCard(size_t slot, SS_CARDTYPE card);
-
+  void insertCard(size_t slot, SS_CARDTYPE card, FrameBase * frame);
+  void setExpansionCard(SS_CARDTYPE card);
   void setVideoStyle(Video & video, const VideoStyle_e style, const bool enabled);
 
   void saveTFEEnabled(const int enabled);

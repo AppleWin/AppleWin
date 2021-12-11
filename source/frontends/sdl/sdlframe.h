@@ -19,8 +19,8 @@ namespace sa2
   public:
     SDLFrame(const common2::EmulatorOptions & options);
 
-    void Initialize() override;
-    void Destroy() override;
+    void Begin() override;
+    void End() override;
 
     void FrameRefreshStatus(int drawflags) override;
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;

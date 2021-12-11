@@ -21,6 +21,7 @@ namespace sa2
 
     void VideoPresentScreen() override;
     void ResetSpeed() override;
+    void Initialize(bool resetVideoState) override;
 
   protected:
 
