@@ -8391,7 +8391,7 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
 				sprintf_s(szStopMessage, sizeof(szStopMessage), "Interrupt occurred at $%04X", g_LBR);
 			else if (g_bDebugBreakpointHit & BP_DMA_TO_IO_MEM)
-				sprintf_s(szStopMessage, sizeof(szStopMessage), "HDD DMA to I/O memory $%04X", g_uDebugBreakOnDmaIoMemoryAddr);
+				sprintf_s(szStopMessage, sizeof(szStopMessage), "HDD DMA to I/O memory or ROM $%04X", g_uDebugBreakOnDmaIoMemoryAddr);
 			else if (g_bDebugBreakpointHit & BP_DMA_FROM_IO_MEM)
 				sprintf_s(szStopMessage, sizeof(szStopMessage), "HDD DMA from I/O memory $%04X", g_uDebugBreakOnDmaIoMemoryAddr);
 			else

@@ -519,7 +519,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 								{
 									memdirty[dstAddr >> 8] = 0xFF;
 									LPBYTE page = memwrite[dstAddr >> 8];
-									if (!page)
+									if (!page)	// I/O space or ROM
 									{
 										if (g_nAppMode == MODE_STEPPING)
 											DebuggerBreakOnDmaToOrFromIoMemory(dstAddr, true);	//  GH#1007
