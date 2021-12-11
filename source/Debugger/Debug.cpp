@@ -839,10 +839,9 @@ _Help:
 //===========================================================================
 
 // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
-static int IsDebugBreakOnInvalid( int iOpcodeType )
+static bool IsDebugBreakOnInvalid(int iOpcodeType)
 {
-	g_bDebugBreakpointHit |= ((g_nDebugBreakOnInvalid >> iOpcodeType) & 1) ? BP_HIT_INVALID : 0;
-	return g_bDebugBreakpointHit;
+	return ((g_nDebugBreakOnInvalid >> iOpcodeType) & 1) ? true : false;
 }
 
 // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
@@ -875,14 +874,15 @@ Update_t CmdBreakInvalid (int nArgs) // Breakpoint IFF Full-speed!
 	// Cases:
 	// 0.  CMD            // display
 	// 1a. CMD #          // display
-	// 1b. CMD ON | OFF   //set      
+	// 1b. CMD ON | OFF   // set
 	// 1c. CMD ?          // error
 	// 2a. CMD # ON | OFF // set
-	// 2b. CMD # ?        // error
+	// 2b. CMD ALL ON | OFF // set all
+	// 2c. CMD # ?        // error
 	TCHAR sText[ CONSOLE_WIDTH ];
 	bool bValidParam = true;
 
-	int iParamArg = nArgs;
+	int iParamArg = nArgs;	// last arg is the 'ON' / 'OFF' param
 	int iParam;
 	int nFound = FindParam( g_aArgs[ iParamArg ].sArg, MATCH_EXACT, iParam, _PARAM_GENERAL_BEGIN, _PARAM_GENERAL_END );
 
@@ -894,14 +894,17 @@ Update_t CmdBreakInvalid (int nArgs) // Breakpoint IFF Full-speed!
 		if (iParam == PARAM_OFF)
 			nActive = 0;
 		else
+		{
 			bValidParam = false;
+			nFound = 0;
+		}
 	}
 	else
 		bValidParam = false;
 
 	if (nArgs == 1)
 	{
-		if (! nFound) // bValidParam) // case 1a or 1c
+		if (! nFound)
 		{
 			if ((iType < AM_IMPLIED) || (iType > AM_3))
 				goto _Help;
@@ -922,14 +925,22 @@ Update_t CmdBreakInvalid (int nArgs) // Breakpoint IFF Full-speed!
 			ConsoleBufferPushFormat( sText, TEXT("Enter debugger on INVALID %1X opcode: %s"), iType, g_aParameters[ iParam ].m_sName );
 		return ConsoleUpdate();
  	}
-	else	
+	else
 	if (nArgs == 2)
 	{
-		if (! bValidParam) // case 2b
+		int iParam1;
+		if (FindParam(g_aArgs[1].sArg, MATCH_EXACT, iParam1, PARAM_ALL, PARAM_ALL)) // case 2b
+		{
+			for (iType = 0; iType <= AM_3; iType++)
+				SetDebugBreakOnInvalid(iType, nActive);
+			ConsoleBufferPushFormat(sText, TEXT("Enter debugger on BRK opcode and INVALID opcodes: %s"), g_aParameters[iParam].m_sName);
+			return ConsoleUpdate();
+		}
+		else if (! bValidParam) // case 2c
 		{
 			goto _Help;
 		}
-		else // case 2a (or not 2b ;-)
+		else // case 2a
 		{
 			if ((iType < 0) || (iType > AM_3))
 				goto _Help;
@@ -8203,12 +8214,41 @@ void DebugExitDebugger ()
 static void CheckBreakOpcode( int iOpcode )
 {
 	if (iOpcode == 0x00)	// BRK
-		IsDebugBreakOnInvalid( AM_IMPLIED );
+		g_bDebugBreakpointHit |= IsDebugBreakOnInvalid(AM_IMPLIED) ? BP_HIT_INVALID : 0;
 
 	if (g_aOpcodes[iOpcode].sMnemonic[0] >= 'a')	// All 6502/65C02 undocumented opcodes mnemonics are lowercase strings!
 	{
-		// TODO: Translate g_aOpcodes[iOpcode].nAddressMode into {AM_1, AM_2, AM_3}
-		IsDebugBreakOnInvalid( AM_1 );
+		// Translate g_aOpcodes[iOpcode].nAddressMode into {AM_1, AM_2, AM_3}
+		int iOpcodeType = AM_1;
+		switch (g_aOpcodes[iOpcode].nAddressMode)
+		{
+		case AM_1:    //    Invalid 1 Byte
+		case AM_IMPLIED:
+			iOpcodeType = AM_1;
+			break;
+		case AM_2:    //    Invalid 2 Bytes
+		case AM_M:    //  4 #Immediate
+		case AM_Z:    //  6 Zeropage
+		case AM_ZX:   //  9 Zeropage, X
+		case AM_ZY:   // 10 Zeropage, Y
+		case AM_R:    // 11 Relative
+		case AM_IZX:  // 12 Indexed (Zeropage Indirect, X)
+		case AM_NZY:  // 14 Indirect (Zeropage) Indexed, Y
+		case AM_NZ:   // 15 Indirect (Zeropage)
+			iOpcodeType = AM_2;
+			break;
+		case AM_3:    //    Invalid 3 Bytes
+		case AM_A:    //  5 $Absolute
+		case AM_AX:   //  7 Absolute, X
+		case AM_AY:   //  8 Absolute, Y
+		case AM_IAX:  // 13 Indexed (Absolute Indirect, X)
+		case AM_NA:   // 16 Indirect (Absolute) i.e. JMP
+			iOpcodeType = AM_3;
+			break;
+		default:
+			_ASSERT(0);
+		}
+		g_bDebugBreakpointHit |= IsDebugBreakOnInvalid(iOpcodeType) ? BP_HIT_INVALID : 0;
 	}
 
 	// User wants to enter debugger on specific opcode? (NB. Can't be BRK)
