@@ -41,6 +41,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SerialComms.h"
 #include "SNESMAX.h"
 #include "VidHD.h"
+#include "LanguageCard.h"
+#include "Memory.h"
 
 void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 {
@@ -102,18 +104,21 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		break;
 
 	case CT_LanguageCard:
+		_ASSERT(m_pLanguageCard == NULL);
+		if (m_pLanguageCard) break;	// Only support one language card
+		m_slot[slot] = m_pLanguageCard = LanguageCardSlot0::create(slot);
+		break;
 	case CT_Saturn128K:
-		{
-			if (slot != 0)
-			{
-				_ASSERT(0);
-				break;
-			}
-		}
-		m_slot[slot] = new DummyCard(type, slot);
+		_ASSERT(m_pLanguageCard == NULL);
+		if (m_pLanguageCard) break;	// Only support one language card
+		m_slot[slot] = m_pLanguageCard = new Saturn128K(slot, Saturn128K::GetSaturnMemorySize());
+		break;
+	case CT_LanguageCardIIe:
+		_ASSERT(m_pLanguageCard == NULL);
+		if (m_pLanguageCard) break;	// Only support one language card
+		m_slot[slot] = m_pLanguageCard = LanguageCardUnit::create(slot);
 		break;
 
-	case CT_LanguageCardIIe:	// not a card
 	default:
 		_ASSERT(0);
 		break;
@@ -132,14 +137,27 @@ void CardManager::Insert(UINT slot, SS_CARDTYPE type, bool updateRegistry/*=true
 
 void CardManager::RemoveInternal(UINT slot)
 {
-	if (m_slot[slot] && m_slot[slot]->QueryType() == CT_MouseInterface)
-		m_pMouseCard = NULL;	// NB. object deleted below: delete m_slot[slot]
+	if (m_slot[slot])
+	{
+		// NB. object deleted below: delete m_slot[slot]
+		switch (m_slot[slot]->QueryType())
+		{
+		case CT_MouseInterface:
+			m_pMouseCard = NULL;
+			break;
+		case CT_SSC:
+			m_pSSC = NULL;
+			break;
+		case CT_LanguageCard:
+		case CT_Saturn128K:
+		case CT_LanguageCardIIe:
+			m_pLanguageCard = NULL;
+			break;
+		}
 
-	if (m_slot[slot] && m_slot[slot]->QueryType() == CT_SSC)
-		m_pSSC = NULL;			// NB. object deleted below: delete m_slot[slot]
-
-	delete m_slot[slot];
-	m_slot[slot] = NULL;
+		delete m_slot[slot];
+		m_slot[slot] = NULL;
+	}
 }
 
 void CardManager::Remove(UINT slot, bool updateRegistry/*=true*/)
@@ -195,6 +213,9 @@ void CardManager::RemoveAux(void)
 
 void CardManager::InitializeIO(LPBYTE pCxRomPeripheral)
 {
+	// if it is a //e then SLOT0 must be CT_LanguageCardIIe (and the other way round)
+	_ASSERT(IsApple2PlusOrClone(GetApple2Type()) != (m_slot[SLOT0]->QueryType() == CT_LanguageCardIIe));
+
 	for (UINT i = 0; i < NUM_SLOTS; ++i)
 	{
 		if (m_slot[i])
@@ -217,7 +238,7 @@ void CardManager::Update(const ULONG nExecutedCycles)
 
 void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	for (UINT i = 1; i < NUM_SLOTS; ++i)
+	for (UINT i = 0; i < NUM_SLOTS; ++i)
 	{
 		if (m_slot[i])
 		{

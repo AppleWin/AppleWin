@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SaveState.h"
 #include "SoundCore.h"
 #include "Speaker.h"
+#include "LanguageCard.h"
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
@@ -709,7 +710,7 @@ static void RepeatInitialization(void)
 #endif
 		if (g_cmdLine.uSaturnBanks)
 		{
-			SetSaturnMemorySize(g_cmdLine.uSaturnBanks);	// Set number of banks before constructing Saturn card
+			Saturn128K::SetSaturnMemorySize(g_cmdLine.uSaturnBanks);	// Set number of banks before constructing Saturn card
 			SetExpansionMemType(CT_Saturn128K);
 			g_cmdLine.uSaturnBanks = 0;		// Don't reapply after a restart
 		}

@@ -298,8 +298,6 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 	if (unitVersion != UNIT_SLOTS_VER)
 		throw std::string(SS_YAML_KEY_UNIT ": Slots: Version mismatch");
 
-	bool cardInserted[NUM_SLOTS] = {};
-
 	while (1)
 	{
 		std::string scalar = yamlLoadHelper.GetMapNextSlotNumber();
@@ -390,28 +388,18 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		if (slot == 0)
 		{
 			SetExpansionMemType(type);	// calls GetCardMgr().Insert() & InsertAux()
-			CreateLanguageCard();
-			bRes = GetLanguageCard()->LoadSnapshot(yamlLoadHelper, cardVersion);
 		}
 		else
 		{
 			GetCardMgr().Insert(slot, type);
-			bRes = GetCardMgr().GetRef(slot).LoadSnapshot(yamlLoadHelper, cardVersion);
 		}
 
-		cardInserted[slot] = true;
+		bRes = GetCardMgr().GetRef(slot).LoadSnapshot(yamlLoadHelper, cardVersion);
 
 		yamlLoadHelper.PopMap();
 		yamlLoadHelper.PopMap();
 	}
 
-	// Save-state may not contain any info about empty slots, so ensure they are set to empty
-	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
-	{
-		if (cardInserted[slot])
-			continue;
-		GetCardMgr().Remove(slot);
-	}
 }
 
 //---
@@ -592,9 +580,6 @@ void Snapshot_SaveState(void)
 		{
 			yamlSaveHelper.UnitHdr(GetSnapshotUnitSlotsName(), UNIT_SLOTS_VER);
 			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
-
-			if (GetCardMgr().QuerySlot(SLOT0) != CT_Empty && IsApple2PlusOrClone(GetApple2Type()))
-				GetLanguageCard()->SaveSnapshot(yamlSaveHelper);	// Language Card or Saturn 128K
 
 			GetCardMgr().SaveSnapshot(yamlSaveHelper);
 		}

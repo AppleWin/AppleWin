@@ -38,10 +38,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 const UINT LanguageCardUnit::kMemModeInitialState = MF_BANK2 | MF_WRITERAM;	// !INTCXROM
 
-LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type/*=CT_LanguageCardIIe*/) :
-	Card(type, kSlot0),
+LanguageCardUnit * LanguageCardUnit::create(UINT slot)
+{
+	return new LanguageCardUnit(CT_LanguageCardIIe, slot);
+}
+
+LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
+	Card(type, slot),
 	m_uLastRamWrite(0)
 {
+	if (m_slot != LanguageCardUnit::kSlot0)
+		throw std::string("Card: wrong slot");
+
 	SetMemMainLanguageCard(NULL, true);
 }
 
@@ -52,12 +60,13 @@ LanguageCardUnit::~LanguageCardUnit(void)
 
 void LanguageCardUnit::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-	RegisterIoHandler(kSlot0, &LanguageCardUnit::IO, &LanguageCardUnit::IO, NULL, NULL, this, NULL);
+	RegisterIoHandler(m_slot, &LanguageCardUnit::IO, &LanguageCardUnit::IO, NULL, NULL, this, NULL);
 }
 
 BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
 {
-	LanguageCardUnit* pLC = (LanguageCardUnit*) MemGetSlotParameters(kSlot0);
+	UINT uSlot = ((uAddr & 0xff) >> 4) - 8;
+	LanguageCardUnit* pLC = (LanguageCardUnit*) MemGetSlotParameters(uSlot);
 
 	DWORD memmode = GetMemMode();
 	DWORD lastmemmode = memmode;
@@ -136,12 +145,14 @@ bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 
 //-------------------------------------
 
-LanguageCardSlot0::LanguageCardSlot0(SS_CARDTYPE type/*=CT_LanguageCard*/)
-	: LanguageCardUnit(type)
+LanguageCardSlot0 * LanguageCardSlot0::create(UINT slot)
 {
-	if (m_slot != LanguageCardUnit::kSlot0)
-		throw std::string("Card: wrong slot");
+	return new LanguageCardSlot0(CT_LanguageCard, slot);
+}
 
+LanguageCardSlot0::LanguageCardSlot0(SS_CARDTYPE type, UINT slot)
+	: LanguageCardUnit(type, slot)
+{
 	m_pMemory = new BYTE[kMemBankSize];
 	SetMemMainLanguageCard(m_pMemory);
 }
@@ -234,8 +245,10 @@ bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versio
 
 //-------------------------------------
 
-Saturn128K::Saturn128K(UINT banks)
-	: LanguageCardSlot0(CT_Saturn128K)
+UINT Saturn128K::g_uSaturnBanksFromCmdLine = 0;
+
+Saturn128K::Saturn128K(UINT slot, UINT banks)
+	: LanguageCardSlot0(CT_Saturn128K, slot)
 {
 	m_uSaturnTotalBanks = (banks == 0) ? kMaxSaturnBanks : banks;
 	m_uSaturnActiveBank = 0;
@@ -265,11 +278,6 @@ Saturn128K::~Saturn128K(void)
 	}
 }
 
-void Saturn128K::SetMemorySize(UINT banks)
-{
-	m_uSaturnTotalBanks = banks;
-}
-
 UINT Saturn128K::GetActiveBank(void)
 {
 	return m_uSaturnActiveBank;
@@ -277,7 +285,7 @@ UINT Saturn128K::GetActiveBank(void)
 
 void Saturn128K::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-	RegisterIoHandler(kSlot0, &Saturn128K::IO, &Saturn128K::IO, NULL, NULL, this, NULL);
+	RegisterIoHandler(m_slot, &Saturn128K::IO, &Saturn128K::IO, NULL, NULL, this, NULL);
 }
 
 BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
@@ -301,7 +309,8 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 	1110  $C0NE select 16K Bank 7
 	1111  $C0NF select 16K Bank 8
 */
-	Saturn128K* pLC = (Saturn128K*) MemGetSlotParameters(kSlot0);
+	UINT uSlot = ((uAddr & 0xff) >> 4) - 8;
+	Saturn128K* pLC = (Saturn128K*) MemGetSlotParameters(uSlot);
 
 	_ASSERT(pLC->m_uSaturnTotalBanks);
 	if (!pLC->m_uSaturnTotalBanks)
@@ -451,4 +460,14 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
 
 	return true;
+}
+
+void Saturn128K::SetSaturnMemorySize(UINT banks)
+{
+	g_uSaturnBanksFromCmdLine = banks;
+}
+
+UINT Saturn128K::GetSaturnMemorySize()
+{
+	return g_uSaturnBanksFromCmdLine;
 }
