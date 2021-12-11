@@ -674,8 +674,11 @@ static void RepeatInitialization(void)
 		// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
 		const bool bShowAboutDlg = CheckOldAppleWinVersion();	// Post: g_OldAppleWinVersion
 
-		LoadConfiguration();
-		LogFileOutput("Main: LoadConfiguration()\n");
+		{
+			bool loadImages = g_cmdLine.szSnapshotName == NULL;	// don't load floppy/harddisk images if a snapshot is to be loaded later on
+			LoadConfiguration(loadImages);
+			LogFileOutput("Main: LoadConfiguration()\n");
+		}
 
 		if (g_cmdLine.model != A2TYPE_MAX)
 			SetApple2Type(g_cmdLine.model);

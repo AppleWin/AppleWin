@@ -88,8 +88,11 @@ static void LoadConfigOldJoystick_v1(const UINT uJoyNum)
 	JoySetJoyType(uJoyNum, uNewJoyType);
 }
 
-//Reads configuration from the registry entries
-void LoadConfiguration(void)
+// Reads configuration from the registry entries
+//
+// NB. loadImages=false if loading a save-state from cmd-line afterwards
+// - Registry images may have been deleted from disk, so avoid the MessageBox
+void LoadConfiguration(bool loadImages)
 {
 	DWORD dwComputerType = 0;
 	eApple2Type apple2Type = A2TYPE_APPLE2EENHANCED;
@@ -309,7 +312,7 @@ void LoadConfiguration(void)
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
-	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
+	if (loadImages && GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
 	{
 		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).LoadLastDiskImage(HARDDISK_1);
 		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).LoadLastDiskImage(HARDDISK_2);
@@ -323,7 +326,8 @@ void LoadConfiguration(void)
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
-	GetCardMgr().GetDisk2CardMgr().LoadLastDiskImage();
+	if (loadImages)
+		GetCardMgr().GetDisk2CardMgr().LoadLastDiskImage();
 
 	// Do this after populating the slots with Disk II controller(s)
 	DWORD dwEnhanceDisk;
