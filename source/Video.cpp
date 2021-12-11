@@ -837,7 +837,8 @@ void Video::VideoRefreshBuffer(uint32_t uRedrawWholeScreenVideoMode, bool bRedra
 
 void Video::ClearFrameBuffer(void)
 {
-	memset(GetFrameBuffer(), 0, GetFrameBufferWidth() * GetFrameBufferHeight() * sizeof(bgra_t));
+	UINT32* frameBuffer = (UINT32*)GetFrameBuffer();
+	std::fill(frameBuffer, frameBuffer + GetFrameBufferWidth() * GetFrameBufferHeight(), OPAQUE_BLACK);
 }
 
 // Called when entering debugger, and after viewing Apple II video screen from debugger

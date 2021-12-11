@@ -101,6 +101,7 @@ bgra_t ConvertIIgs2RGB(Color color)
 	rgb.r = color.red * 16;
 	rgb.g = color.green * 16;
 	rgb.b = color.blue * 16;
+	rgb.a = ALPHA;
 	return rgb;
 }
 
