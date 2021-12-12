@@ -32,6 +32,7 @@ struct PreferenceData
     GlobalOptions options;
 
     eApple2Type apple2Type;
+    SS_CARDTYPE cardInSlot3;
     SS_CARDTYPE cardInSlot4;
     SS_CARDTYPE cardInSlot5;
     bool hdInSlot7;

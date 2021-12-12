@@ -52,6 +52,8 @@ LIBS += -L$$PWD/../../../build/source/frontends/qt/QHexView -lqhexview-lib
 LIBS += -levdev
 
 INCLUDEPATH += $$PWD/../../../source
+INCLUDEPATH += $$PWD/../../../source/linux/libwindows
 INCLUDEPATH += $$PWD/QHexView
+INCLUDEPATH += /usr/include/minizip
 
 QMAKE_RPATHDIR += $ORIGIN/../..

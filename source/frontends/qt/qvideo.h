@@ -41,6 +41,9 @@ private:
     int myWidth;
     int myHeight;
 
+    int myLogoX;
+    int myLogoY;
+
     quint8 * myFrameBuffer;
 
     QImage getScreenImage() const;

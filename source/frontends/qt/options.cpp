@@ -60,6 +60,9 @@ namespace
 
     void insertHD(HarddiskInterfaceCard * pHarddiskCard, const QString & filename, const int disk)
     {
+        if (!pHarddiskCard)
+            return;
+
         if (filename.isEmpty())
         {
             pHarddiskCard->Unplug(disk);
@@ -200,6 +203,7 @@ void getAppleWinPreferences(PreferenceData & data)
     }
 
     data.enhancedSpeed = pDisk2Card && pDisk2Card->GetEnhanceDisk();
+    data.cardInSlot3 = cardManager.QuerySlot(SLOT3);
     data.cardInSlot4 = cardManager.QuerySlot(SLOT4);
     data.cardInSlot5 = cardManager.QuerySlot(SLOT5);
     data.hdInSlot7 = pHarddiskCard;
@@ -256,6 +260,10 @@ void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const Prefer
         const eCpuType cpu = ProbeMainCpuDefault(newData.apple2Type);
         SetMainCpu(cpu);
         REGSAVE(TEXT(REGVALUE_CPU_TYPE), cpu);
+    }
+    if (currentData.cardInSlot3 != newData.cardInSlot3)
+    {
+        SetSlot(SLOT3, newData.cardInSlot3);
     }
     if (currentData.cardInSlot4 != newData.cardInSlot4)
     {

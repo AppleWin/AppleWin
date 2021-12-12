@@ -31,6 +31,9 @@ void QVideo::loadVideoSettings()
     myWidth = video.GetFrameBufferWidth();
     myHeight = video.GetFrameBufferHeight();
 
+    myLogoX = mySX + video.GetFrameBufferCentringOffsetX();
+    myLogoY = mySY + video.GetFrameBufferCentringOffsetY();
+
     myFrameBuffer = video.GetFrameBuffer();
 }
 
@@ -58,7 +61,7 @@ void QVideo::displayLogo()
     QImage frameBuffer = getScreenImage();
 
     QPainter painter(&frameBuffer);
-    painter.drawImage(mySX, mySY, myLogo);
+    painter.drawImage(myLogoX, myLogoY, myLogo);
 }
 
 void QVideo::paintEvent(QPaintEvent *)
