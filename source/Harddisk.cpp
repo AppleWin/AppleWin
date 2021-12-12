@@ -556,7 +556,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 						break;
 					case 0x02: //write
 						{
-							pHDD->m_status_next = DISK_STATUS_WRITE;
+							pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
 							bool bRes = true;
 							const bool bAppendBlocks = (pHDD->m_diskblock * HD_BLOCK_SIZE) >= ImageGetImageSize(pHDD->m_imagehandle);
 
@@ -619,7 +619,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 						}
 						break;
 					case 0x03: //format
-						pHDD->m_status_next = DISK_STATUS_WRITE;
+						pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
 						break;
 				}
 			}
@@ -684,10 +684,17 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->m_unitNum >> 7]);	// bit7 = drive select
 
 	BYTE r = DEVICE_OK;
-	pHDD->m_status_next = DISK_STATUS_PROT; // TODO: FIXME: If we ever enable write-protect on HD then need to change to something else ...
 
 	switch (addr & 0xF)
 	{
+	case 0x0:	// r/o: status
+	case 0x1:	// r/o: execute
+	case 0x8:	// r/o: legacy next-data port
+		// Writing to these 3 read-only registers is a no-op.
+		// NB. Don't change m_status_next, as UpdateLightStatus() has a huge performance cost!
+		// Firmware has a busy-wait loop doing "rol hd_status,x"
+		// - this RMW opcode does an IORead() then an IOWrite(), and the loop iterates ~100 times!
+		break;
 	case 0x2:
 		pCard->m_command = d;
 		break;
