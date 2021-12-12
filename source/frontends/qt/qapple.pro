@@ -48,8 +48,9 @@ RESOURCES += \
 
 LIBS += -L$$PWD/../../../build/source -lappleii
 LIBS += -L$$PWD/../../../build/source/frontends/common2 -lcommon2
+LIBS += -L$$PWD/../../../build/source/linux/libwindows -lwindows
 LIBS += -L$$PWD/../../../build/source/frontends/qt/QHexView -lqhexview-lib
-LIBS += -levdev
+LIBS += -levdev -lminizip -lz -lyaml -lslirp -lpcap
 
 INCLUDEPATH += $$PWD/../../../source
 INCLUDEPATH += $$PWD/../../../source/linux/libwindows
