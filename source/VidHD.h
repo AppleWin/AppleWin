@@ -9,6 +9,7 @@ public:
 	VidHDCard(UINT slot) :
 		Card(CT_VidHD, slot)
 	{
+		m_memMode = 0;
 		m_SCREENCOLOR = 0;
 		m_NEWVIDEO = 0;
 		m_BORDERCOLOR = 0;
@@ -29,6 +30,7 @@ public:
 
 	bool IsSHR(void) { return (m_NEWVIDEO & 0xC0) == 0xC0; }	// 11000001 = Enable SHR(b7) | Linearize SHR video memory(b6)
 	bool IsDHGRBlackAndWhite(void) { return (m_NEWVIDEO & (1 << 5)) ? true : false; }
+	bool IsWriteAux(void);
 
 	static void UpdateSHRCell(bool is640Mode, bool isColorFillMode, uint16_t addrPalette, bgra_t* pVideoAddress, uint32_t a);
 
@@ -37,6 +39,7 @@ public:
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 private:
+	UINT m_memMode;
 	BYTE m_SCREENCOLOR;
 	BYTE m_NEWVIDEO;
 	BYTE m_BORDERCOLOR;

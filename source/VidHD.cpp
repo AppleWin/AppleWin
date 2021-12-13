@@ -65,21 +65,26 @@ void VidHDCard::VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG 
 {
 	switch (addr & 0xff)
 	{
-	case 0x22:	// SCREENCOLOR
-		m_SCREENCOLOR = value;
-		break;
-	case 0x29:	// NEWVIDEO
-		m_NEWVIDEO = value;
-		break;
-	case 0x34:	// BORDERCOLOR
-		m_BORDERCOLOR = value;
-		break;
-	case 0x35:	// SHADOW
-		m_SHADOW = value;
-		break;
-	default:
-		_ASSERT(0);
+	case 0x00: m_memMode &= ~MF_80STORE;	break;
+	case 0x01: m_memMode |= MF_80STORE;		break;
+	case 0x02: m_memMode &= ~MF_AUXREAD;	break;
+	case 0x03: m_memMode |= MF_AUXREAD;		break;
+	case 0x04: m_memMode &= ~MF_AUXWRITE;	break;
+	case 0x05: m_memMode |= MF_AUXWRITE;	break;
+	case 0x54: m_memMode &= ~MF_PAGE2;		break;
+	case 0x55: m_memMode |= MF_PAGE2;		break;
+	// IIgs registers
+	case 0x22: m_SCREENCOLOR = value;		break;
+	case 0x29: m_NEWVIDEO = value;			break;
+	case 0x34: m_BORDERCOLOR = value;		break;
+	case 0x35: m_SHADOW = value;			break;
 	}
+}
+
+bool VidHDCard::IsWriteAux(void)
+{
+	return (m_memMode & MF_AUXWRITE) ||							// Write to aux: $200-$BFFF
+		((m_memMode & MF_80STORE) && (m_memMode & MF_PAGE2));	// Write to aux: $400-$7FF and $2000-$3FFF
 }
 
 //===========================================================================
@@ -154,6 +159,7 @@ void VidHDCard::UpdateSHRCell(bool is640Mode, bool isColorFillMode, uint16_t add
 
 static const UINT kUNIT_VERSION = 1;
 
+#define SS_YAML_KEY_MEMORYMODE "Memory Mode"
 #define SS_YAML_KEY_SCREEN_COLOR "Screen Color"
 #define SS_YAML_KEY_NEW_VIDEO "New Video"
 #define SS_YAML_KEY_BORDER_COLOR "Border Color"
@@ -170,6 +176,7 @@ void VidHDCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, m_memMode);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SCREEN_COLOR, m_SCREENCOLOR);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_NEW_VIDEO, m_NEWVIDEO);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_BORDER_COLOR, m_BORDERCOLOR);
@@ -181,6 +188,7 @@ bool VidHDCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::string("Card: wrong version");
 
+	m_memMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE);
 	m_SCREENCOLOR = yamlLoadHelper.LoadUint(SS_YAML_KEY_SCREEN_COLOR);
 	m_NEWVIDEO = yamlLoadHelper.LoadUint(SS_YAML_KEY_NEW_VIDEO);
 	m_BORDERCOLOR = yamlLoadHelper.LoadUint(SS_YAML_KEY_BORDER_COLOR);
