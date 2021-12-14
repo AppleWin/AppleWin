@@ -48,7 +48,7 @@ LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
 	m_uLastRamWrite(0)
 {
 	if (m_slot != LanguageCardUnit::kSlot0)
-		throw std::string("Language Card: wrong slot");		// throws to the top-level catch-handler, and shuts down
+		throw std::runtime_error("Language Card: wrong slot");		// throws to the top-level catch-handler, and shuts down
 
 	SetMemMainLanguageCard(NULL, true);
 }
@@ -221,7 +221,7 @@ void LanguageCardSlot0::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version != kUNIT_LANGUAGECARD_VER)
-		throw std::string("Card: wrong version");
+		throw std::runtime_error("Card: wrong version");
 
 	// "State"
 	LoadLCState(yamlLoadHelper);
@@ -232,7 +232,7 @@ bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versio
 	}
 
 	if (!yamlLoadHelper.GetSubMap(GetSnapshotMemStructName()))
-		throw std::string("Memory: Missing map name: " + GetSnapshotMemStructName());
+		throw std::runtime_error("Memory: Missing map name: " + GetSnapshotMemStructName());
 
 	yamlLoadHelper.LoadMemory(m_pMemory, kMemBankSize);
 
@@ -419,7 +419,7 @@ void Saturn128K::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version != kUNIT_SATURN_VER)
-		throw std::string("Card: wrong version");
+		throw std::runtime_error("Card: wrong version");
 
 	// "State"
 	LoadLCState(yamlLoadHelper);
@@ -428,7 +428,7 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	UINT activeBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVE_SATURN_BANK);
 
 	if (numBanks < 1 || numBanks > kMaxSaturnBanks || activeBank >= numBanks)
-		throw std::string(SS_YAML_KEY_UNIT ": Bad Saturn card state");
+		throw std::runtime_error(SS_YAML_KEY_UNIT ": Bad Saturn card state");
 
 	m_uSaturnTotalBanks = numBanks;
 	m_uSaturnActiveBank = activeBank;
@@ -448,7 +448,7 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 		std::string memName = GetSnapshotMemStructName() + szBank;
 
 		if (!yamlLoadHelper.GetSubMap(memName))
-			throw std::string("Memory: Missing map name: " + memName);
+			throw std::runtime_error("Memory: Missing map name: " + memName);
 
 		yamlLoadHelper.LoadMemory(m_aSaturnBanks[uBank], kMemBankSize);
 

@@ -109,7 +109,7 @@ void YamlHelper::GetMapStartEvent(void)
 	if (m_newEvent.type != YAML_MAPPING_START_EVENT)
 	{
 		//printf("Unexpected yaml event (%d)\n", m_newEvent.type);
-		throw std::string("Unexpected yaml event");
+		throw std::runtime_error("Unexpected yaml event");
 	}
 }
 
@@ -142,7 +142,7 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 				mapYaml[pKey] = mapValue;
 				res = ParseMap(*mapValue.subMap);
 				if (!res)
-					throw std::string("ParseMap: premature end of file during map parsing");
+					throw std::runtime_error("ParseMap: premature end of file during map parsing");
 				bKey = true;	// possibly more key,value pairs in this map
 			}
 			break;
@@ -168,7 +168,7 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 			break;
 		case YAML_SEQUENCE_START_EVENT:
 		case YAML_SEQUENCE_END_EVENT:
-			throw std::string("ParseMap: Sequence event unsupported");
+			throw std::runtime_error("ParseMap: Sequence event unsupported");
 		}
 	}
 
@@ -250,28 +250,28 @@ UINT YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_
 		const char* pKey = it->first.c_str();
 		UINT addr = strtoul(pKey, NULL, 16);
 		if (addr >= kAddrSpaceSize)
-			throw std::string("Memory: line address too big: " + it->first);
+			throw std::runtime_error("Memory: line address too big: " + it->first);
 
 		LPBYTE pDst = (LPBYTE) (pMemBase + addr);
 		const LPBYTE pDstEnd = (LPBYTE) (pMemBase + kAddrSpaceSize);
 
 		if (it->second.subMap)
-			throw std::string("Memory: unexpected sub-map");
+			throw std::runtime_error("Memory: unexpected sub-map");
 
 		const char* pValue = it->second.value.c_str();
 		size_t len = strlen(pValue);
 		if (len & 1)
-			throw std::string("Memory: hex data must be an even number of nibbles on line address: " + it->first);
+			throw std::runtime_error("Memory: hex data must be an even number of nibbles on line address: " + it->first);
 
 		for (UINT i = 0; i<len; i+=2)
 		{
 			if (pDst >= pDstEnd)
-				throw std::string("Memory: hex data overflowed address space on line address: " + it->first);
+				throw std::runtime_error("Memory: hex data overflowed address space on line address: " + it->first);
 
 			BYTE ah = m_AsciiToHex[ (BYTE)(*pValue++) ];
 			BYTE al = m_AsciiToHex[ (BYTE)(*pValue++) ];
 			if ((ah | al) & 0x80)
-				throw std::string("Memory: hex data contains illegal character on line address: " + it->first);
+				throw std::runtime_error("Memory: hex data contains illegal character on line address: " + it->first);
 
 			*pDst++ = (ah<<4) | al;
 			bytes++;
@@ -292,7 +292,7 @@ INT YamlLoadHelper::LoadInt(const std::string key)
 	if (value == "")
 	{
 		m_bDoGetMapRemainder = false;
-		throw std::string(m_currentMapName + ": Missing: " + key);
+		throw std::runtime_error(m_currentMapName + ": Missing: " + key);
 	}
 	return strtol(value.c_str(), NULL, 0);
 }
@@ -304,7 +304,7 @@ UINT YamlLoadHelper::LoadUint(const std::string key)
 	if (value == "")
 	{
 		m_bDoGetMapRemainder = false;
-		throw std::string(m_currentMapName + ": Missing: " + key);
+		throw std::runtime_error(m_currentMapName + ": Missing: " + key);
 	}
 	return strtoul(value.c_str(), NULL, 0);
 }
@@ -316,7 +316,7 @@ UINT64 YamlLoadHelper::LoadUint64(const std::string key)
 	if (value == "")
 	{
 		m_bDoGetMapRemainder = false;
-		throw std::string(m_currentMapName + ": Missing: " + key);
+		throw std::runtime_error(m_currentMapName + ": Missing: " + key);
 	}
 	return _strtoui64(value.c_str(), NULL, 0);
 }
@@ -330,7 +330,7 @@ bool YamlLoadHelper::LoadBool(const std::string key)
 	else if (value == "false")
 		return false;
 	m_bDoGetMapRemainder = false;
-	throw std::string(m_currentMapName + ": Missing: " + key);
+	throw std::runtime_error(m_currentMapName + ": Missing: " + key);
 }
 
 std::string YamlLoadHelper::LoadString_NoThrow(const std::string& key, bool& bFound)
@@ -346,7 +346,7 @@ std::string YamlLoadHelper::LoadString(const std::string& key)
 	if (!bFound)
 	{
 		m_bDoGetMapRemainder = false;
-		throw std::string(m_currentMapName + ": Missing: " + key);
+		throw std::runtime_error(m_currentMapName + ": Missing: " + key);
 	}
 	return value;
 }
@@ -358,7 +358,7 @@ float YamlLoadHelper::LoadFloat(const std::string& key)
 	if (value == "")
 	{
 		m_bDoGetMapRemainder = false;
-		throw std::string(m_currentMapName + ": Missing: " + key);
+		throw std::runtime_error(m_currentMapName + ": Missing: " + key);
 	}
 #if (_MSC_VER >= 1900)
 	return strtof(value.c_str(), NULL);			// MSVC++ 14.0  _MSC_VER == 1900 (Visual Studio 2015 version 14.0)
@@ -374,7 +374,7 @@ double YamlLoadHelper::LoadDouble(const std::string& key)
 	if (value == "")
 	{
 		m_bDoGetMapRemainder = false;
-		throw std::string(m_currentMapName + ": Missing: " + key);
+		throw std::runtime_error(m_currentMapName + ": Missing: " + key);
 	}
 	return strtod(value.c_str(), NULL);
 }
@@ -465,7 +465,7 @@ void YamlSaveHelper::SaveString(const char* key,  const char* value)
 	{
 		int size = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, value, -1, NULL, 0);
 		if (size == 0)
-			throw std::string("Unable to convert to unicode: ") + std::string(value);
+			throw std::runtime_error("Unable to convert to unicode: " + std::string(value));
 		if (size > m_wcStrSize)
 		{
 			delete[] m_pWcStr;
@@ -474,7 +474,7 @@ void YamlSaveHelper::SaveString(const char* key,  const char* value)
 		}
 		int res = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, value, -1, m_pWcStr, m_wcStrSize);
 		if (!res)
-			throw std::string("Unable to convert to unicode: ") + std::string(value);
+			throw std::runtime_error("Unable to convert to unicode: " + std::string(value));
 	}
 
 	// 2) unicode -> UTF-8
@@ -482,7 +482,7 @@ void YamlSaveHelper::SaveString(const char* key,  const char* value)
 		// NB. WC_ERR_INVALID_CHARS only defined when WIN_VER >= 0x600 - but stdafx.h defines it as 0x500
 		int size = WideCharToMultiByte(CP_UTF8, 0/*WC_ERR_INVALID_CHARS*/, m_pWcStr, -1, NULL, 0, NULL, NULL);
 		if (size == 0)
-			throw std::string("Unable to convert to UTF-8: ") + std::string(value);
+			throw std::runtime_error("Unable to convert to UTF-8: " + std::string(value));
 		if (size > m_mbStrSize)
 		{
 			delete[] m_pMbStr;
@@ -491,7 +491,7 @@ void YamlSaveHelper::SaveString(const char* key,  const char* value)
 		}
 		int res = WideCharToMultiByte(CP_UTF8, 0/*WC_ERR_INVALID_CHARS*/, m_pWcStr, -1, m_pMbStr, m_mbStrSize, NULL, NULL);
 		if (!res)
-			throw std::string("Unable to convert to UTF-8: ") + std::string(value);
+			throw std::runtime_error("Unable to convert to UTF-8: " + std::string(value));
 	}
 
 	Save("%s: %s\n", key, m_pMbStr);
@@ -516,7 +516,7 @@ void YamlSaveHelper::SaveDouble(const char* key, double value)
 void YamlSaveHelper::SaveMemory(const LPBYTE pMemBase, const UINT uMemSize)
 {
 	if (uMemSize & 7)
-		throw std::string("Memory: size must be multiple of 8");
+		throw std::runtime_error("Memory: size must be multiple of 8");
 
 	const UINT kIndent = m_indent;
 
