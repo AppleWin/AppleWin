@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "YamlHelper.h"
 #include "Log.h"
 
+#include <sstream>
+
 int YamlHelper::InitParser(const char* pPathname)
 {
 	m_hFile = fopen(pPathname, "r");
@@ -61,10 +63,14 @@ void YamlHelper::GetNextEvent(void)
 	yaml_event_delete(&m_newEvent);
 	if (!yaml_parser_parse(&m_parser, &m_newEvent))
 	{
-		std::string error = std::string("Save-state parser error: ");
-		if (m_parser.problem != NULL) error += std::string(m_parser.problem);
-		else error += std::string("unknown");
-		throw error;
+		std::ostringstream error("Save-state parser error: ");
+		if (m_parser.problem != NULL)
+			error << m_parser.problem;
+		else
+			error << "unknown";
+		error << " @ " << m_parser.problem_mark.line << ":" << m_parser.problem_mark.column;
+
+		throw std::runtime_error(error.str());
 	}
 }
 
