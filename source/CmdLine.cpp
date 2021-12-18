@@ -78,7 +78,7 @@ static LPSTR GetNextArg(LPSTR lpCmdLine)
 		{
 			*lpCmdLine++ = 0x00;
 
-			while ((*lpCmdLine == ' '))	// Skip multiple spaces between args
+			while (*lpCmdLine == ' ')	// Skip multiple spaces between args
 				lpCmdLine++;
 			break;
 		}
