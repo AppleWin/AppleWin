@@ -50,7 +50,7 @@ private:
 	int ParseMap(MapYaml& mapYaml);
 	std::string GetMapValue(MapYaml& mapYaml, const std::string &key, bool& bFound);
 	UINT LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize, const UINT offset);
-	bool GetSubMap(MapYaml** mapYaml, const std::string &key, const bool canBeNull /*= false*/);
+	bool GetSubMap(MapYaml** mapYaml, const std::string &key, const bool canBeNull=false);
 	void GetMapRemainder(std::string& mapName, MapYaml& mapYaml);
 
 	void MakeAsciiToHexTable(void);
@@ -101,7 +101,7 @@ public:
 	float LoadFloat(const std::string & key);
 	double LoadDouble(const std::string & key);
 	void LoadMemory(const LPBYTE pMemBase, const size_t size, const UINT offset=0);
-	void LoadMemory(std::vector<BYTE>& memory, const size_t size, const UINT offset = 0);
+	void LoadMemory(std::vector<BYTE>& memory, const size_t size, const UINT offset=0);
 
 	bool GetSubMap(const std::string & key, const bool canBeNull=false)
 	{

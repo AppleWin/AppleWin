@@ -198,7 +198,7 @@ std::string YamlHelper::GetMapValue(MapYaml& mapYaml, const std::string& key, bo
 	return value;
 }
 
-bool YamlHelper::GetSubMap(MapYaml** mapYaml, const std::string& key, const bool canBeNull = false)
+bool YamlHelper::GetSubMap(MapYaml** mapYaml, const std::string& key, const bool canBeNull/*=false*/)
 {
 	MapYaml::const_iterator iter = (*mapYaml)->find(key);
 	if (iter == (*mapYaml)->end() || (!canBeNull && iter->second.subMap == NULL))
@@ -247,7 +247,7 @@ void YamlHelper::MakeAsciiToHexTable(void)
 		m_AsciiToHex[i] = i - 'a' + 0xA;
 }
 
-UINT YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize, const UINT offset/*=0*/)
+UINT YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize, const UINT offset)
 {
 	UINT bytes = 0;
 
