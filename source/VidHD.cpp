@@ -192,8 +192,9 @@ void VidHDCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	if (IsApple2PlusOrClone(GetApple2Type()))	// Save aux mem for II/II+
 	{
 		// Save [$400-$BFFF]
-		LPBYTE pMemBase = MemGetBankPtr(1) + TEXT_PAGE1_BEGIN;
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotAuxMemStructName().c_str());
+
+		LPBYTE pMemBase = MemGetBankPtr(1);
 		yamlSaveHelper.SaveMemory(pMemBase, APPLE_IO_BEGIN - TEXT_PAGE1_BEGIN, TEXT_PAGE1_BEGIN);
 	}
 }
@@ -211,13 +212,12 @@ bool VidHDCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	if (IsApple2PlusOrClone(GetApple2Type()))	// Load aux mem for II/II+
 	{
-		LPBYTE pMemBase = MemGetBankPtr(1) + TEXT_PAGE1_BEGIN;
-
-		if (!yamlLoadHelper.GetSubMap(MemGetSnapshotAuxMemStructName()))
-			throw std::string("Memory: Missing map name: " + MemGetSnapshotAuxMemStructName());
-
 		// Load [$400-$BFFF]
-		yamlLoadHelper.LoadMemory(pMemBase, APPLE_IO_BEGIN - TEXT_PAGE1_BEGIN);
+		if (!yamlLoadHelper.GetSubMap(MemGetSnapshotAuxMemStructName()))
+			throw std::runtime_error("Memory: Missing map name: " + MemGetSnapshotAuxMemStructName());
+
+		LPBYTE pMemBase = MemGetBankPtr(1);
+		yamlLoadHelper.LoadMemory(pMemBase, APPLE_IO_BEGIN - TEXT_PAGE1_BEGIN, TEXT_PAGE1_BEGIN);
 
 		yamlLoadHelper.PopMap();
 	}

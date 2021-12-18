@@ -241,7 +241,7 @@ void YamlHelper::MakeAsciiToHexTable(void)
 		m_AsciiToHex[i] = i - 'a' + 0xA;
 }
 
-UINT YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize)
+UINT YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize, const UINT offset/*=0*/)
 {
 	UINT bytes = 0;
 
@@ -249,11 +249,11 @@ UINT YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_
 	{
 		const char* pKey = it->first.c_str();
 		UINT addr = strtoul(pKey, NULL, 16);
-		if (addr >= kAddrSpaceSize)
+		if (addr >= (kAddrSpaceSize + offset))
 			throw std::string("Memory: line address too big: " + it->first);
 
 		LPBYTE pDst = (LPBYTE) (pMemBase + addr);
-		const LPBYTE pDstEnd = (LPBYTE) (pMemBase + kAddrSpaceSize);
+		const LPBYTE pDstEnd = (LPBYTE) (pMemBase + kAddrSpaceSize + offset);
 
 		if (it->second.subMap)
 			throw std::string("Memory: unexpected sub-map");
@@ -379,15 +379,15 @@ double YamlLoadHelper::LoadDouble(const std::string& key)
 	return strtod(value.c_str(), NULL);
 }
 
-void YamlLoadHelper::LoadMemory(const LPBYTE pMemBase, const size_t size)
+void YamlLoadHelper::LoadMemory(const LPBYTE pMemBase, const size_t size, const UINT offset/*=0*/)
 {
-	m_yamlHelper.LoadMemory(*m_pMapYaml, pMemBase, size);
+	m_yamlHelper.LoadMemory(*m_pMapYaml, pMemBase, size, offset);
 }
 
-void YamlLoadHelper::LoadMemory(std::vector<BYTE>& memory, const size_t size)
+void YamlLoadHelper::LoadMemory(std::vector<BYTE>& memory, const size_t size, const UINT offset/*=0*/)
 {
 	memory.reserve(size);	// expand (but don't shrink) vector's capacity (NB. vector's size doesn't change)
-	const UINT bytes = m_yamlHelper.LoadMemory(*m_pMapYaml, &memory[0], size);
+	const UINT bytes = m_yamlHelper.LoadMemory(*m_pMapYaml, &memory[0], size, offset);
 	memory.resize(bytes);	// resize so that vector contains /bytes/ elements - so that size() gives correct value.
 }
 
@@ -526,7 +526,7 @@ void YamlSaveHelper::SaveMemory(const LPBYTE pMemBase, const UINT uMemSize, cons
 	size_t lineSize = kIndent+6+2*kStride+2;	// "AAAA: 00010203...3F\n\00" = 6+ 2*64 +2
 	char* const pLine = new char [lineSize];
 
-	for(DWORD addr = offset; (addr-offset) < uMemSize; addr+=kStride)
+	for (DWORD addr = offset; addr < (uMemSize + offset); addr += kStride)
 	{
 		char* pDst = pLine;
 		for (UINT i=0; i<kIndent; i++)
@@ -542,7 +542,7 @@ void YamlSaveHelper::SaveMemory(const LPBYTE pMemBase, const UINT uMemSize, cons
 
 		for (UINT i=0; i<kStride; i+=8)
 		{
-			if (addr + i >= uMemSize)	// Support short final line (still multiple of 8 bytes)
+			if (addr + i >= (uMemSize + offset))	// Support short final line (still multiple of 8 bytes)
 			{
 				lineSize = lineSize - 2*kStride + 2*i;
 				break;
