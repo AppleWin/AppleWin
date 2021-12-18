@@ -31,6 +31,7 @@
 
 #include "StdAfx.h"
 
+#include "Core.h"
 #include "Memory.h"
 #include "NTSC.h"
 #include "Video.h"
@@ -171,6 +172,12 @@ std::string VidHDCard::GetSnapshotCardName(void)
 	return name;
 }
 
+static std::string MemGetSnapshotAuxMemStructName(void)
+{
+	static const std::string name("Auxiliary Memory Bank");
+	return name;
+}
+
 void VidHDCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
@@ -181,6 +188,14 @@ void VidHDCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_NEW_VIDEO, m_NEWVIDEO);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_BORDER_COLOR, m_BORDERCOLOR);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SHADOW, m_SHADOW);
+
+	if (IsApple2PlusOrClone(GetApple2Type()))	// Save aux mem for II/II+
+	{
+		// Save [$400-$BFFF]
+		LPBYTE pMemBase = MemGetBankPtr(1) + TEXT_PAGE1_BEGIN;
+		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotAuxMemStructName().c_str());
+		yamlSaveHelper.SaveMemory(pMemBase, APPLE_IO_BEGIN - TEXT_PAGE1_BEGIN, TEXT_PAGE1_BEGIN);
+	}
 }
 
 bool VidHDCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
@@ -193,6 +208,19 @@ bool VidHDCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	m_NEWVIDEO = yamlLoadHelper.LoadUint(SS_YAML_KEY_NEW_VIDEO);
 	m_BORDERCOLOR = yamlLoadHelper.LoadUint(SS_YAML_KEY_BORDER_COLOR);
 	m_SHADOW = yamlLoadHelper.LoadUint(SS_YAML_KEY_SHADOW);
+
+	if (IsApple2PlusOrClone(GetApple2Type()))	// Load aux mem for II/II+
+	{
+		LPBYTE pMemBase = MemGetBankPtr(1) + TEXT_PAGE1_BEGIN;
+
+		if (!yamlLoadHelper.GetSubMap(MemGetSnapshotAuxMemStructName()))
+			throw std::string("Memory: Missing map name: " + MemGetSnapshotAuxMemStructName());
+
+		// Load [$400-$BFFF]
+		yamlLoadHelper.LoadMemory(pMemBase, APPLE_IO_BEGIN - TEXT_PAGE1_BEGIN);
+
+		yamlLoadHelper.PopMap();
+	}
 
 	return true;
 }

@@ -513,7 +513,7 @@ void YamlSaveHelper::SaveDouble(const char* key, double value)
 }
 
 // Pre: uMemSize must be multiple of 8
-void YamlSaveHelper::SaveMemory(const LPBYTE pMemBase, const UINT uMemSize)
+void YamlSaveHelper::SaveMemory(const LPBYTE pMemBase, const UINT uMemSize, const UINT offset/*=0*/)
 {
 	if (uMemSize & 7)
 		throw std::string("Memory: size must be multiple of 8");
@@ -526,23 +526,23 @@ void YamlSaveHelper::SaveMemory(const LPBYTE pMemBase, const UINT uMemSize)
 	size_t lineSize = kIndent+6+2*kStride+2;	// "AAAA: 00010203...3F\n\00" = 6+ 2*64 +2
 	char* const pLine = new char [lineSize];
 
-	for(DWORD dwOffset = 0x0000; dwOffset < uMemSize; dwOffset+=kStride)
+	for(DWORD addr = offset; (addr-offset) < uMemSize; addr+=kStride)
 	{
 		char* pDst = pLine;
 		for (UINT i=0; i<kIndent; i++)
 			*pDst++ = ' ';
-		*pDst++ = szHex[ (dwOffset>>12)&0xf ];
-		*pDst++ = szHex[ (dwOffset>>8)&0xf ];
-		*pDst++ = szHex[ (dwOffset>>4)&0xf ];
-		*pDst++ = szHex[  dwOffset&0xf ];
+		*pDst++ = szHex[ (addr>>12)&0xf ];
+		*pDst++ = szHex[ (addr>>8)&0xf ];
+		*pDst++ = szHex[ (addr>>4)&0xf ];
+		*pDst++ = szHex[  addr&0xf ];
 		*pDst++ = ':';
 		*pDst++ = ' ';
 
-		LPBYTE pMem = pMemBase + dwOffset;
+		LPBYTE pMem = pMemBase + addr;
 
 		for (UINT i=0; i<kStride; i+=8)
 		{
-			if (dwOffset + i >= uMemSize)	// Support short final line (still multiple of 8 bytes)
+			if (addr + i >= uMemSize)	// Support short final line (still multiple of 8 bytes)
 			{
 				lineSize = lineSize - 2*kStride + 2*i;
 				break;

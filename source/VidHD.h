@@ -39,7 +39,7 @@ public:
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 private:
-	UINT m_memMode;
+	UINT m_memMode;	// Only used by II/II+
 	BYTE m_SCREENCOLOR;
 	BYTE m_NEWVIDEO;
 	BYTE m_BORDERCOLOR;
