@@ -367,11 +367,11 @@ void Uthernet2::receiveOnePacketMacRaw(const size_t i)
   {
     BYTE buffer[MAX_RXLENGTH];
     int len;
-    if (tfeReceiveOnePacket(memory.data() + SHAR0, sizeof(buffer), buffer, len))
+    if (tfeReceiveOnePacket(myMemory.data() + SHAR0, sizeof(buffer), buffer, len))
     {
-      if (isThereRoomFor(i, len, sizeof(uint16_t)))
+      if (socket.isThereRoomFor(len, sizeof(uint16_t)))
       {
-        writeDataMacRaw(i, buffer, len);
+        writeDataMacRaw(socket, myMemory, buffer, len);
 #ifdef U2_LOG_TRAFFIC
         LogFileOutput("U2: READ MACRAW[%d]: +%d -> %d bytes\n", i, len, socket.sn_rx_rsr);
 #endif

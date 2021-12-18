@@ -21,7 +21,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options(-Werror=return-type)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  add_compile_options(-Werror=format -Wno-error=format-overflow -Wno-error=format-truncation)
+  add_compile_options(-Werror=format -Wno-error=format-overflow -Wno-error=format-truncation -Wno-psabi)
 endif()
 
 MESSAGE("CMAKE_BUILD_TYPE:                ${CMAKE_BUILD_TYPE}")
