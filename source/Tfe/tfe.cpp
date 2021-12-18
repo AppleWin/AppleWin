@@ -1507,10 +1507,10 @@ void tfe_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 bool tfe_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 {
     if (slot != SLOT3)	// fixme
-        throw std::string("Card: wrong slot");
+        throw std::runtime_error("Card: wrong slot");
 
     if (version < 1 || version > kUNIT_VERSION)
-        throw std::string("Card: wrong version");
+        throw std::runtime_error("Card: wrong version");
 
     tfe_enabled = yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED) ? true : false;
     set_tfe_interface(yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE));
@@ -1522,14 +1522,14 @@ bool tfe_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
     rx_buffer = yamlLoadHelper.LoadUint(SS_YAML_KEY_RX_BUFFER);
 
     if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_CS8900A_REGS))
-        throw std::string("Card: Expected key: ") + SS_YAML_KEY_CS8900A_REGS;
+        throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_CS8900A_REGS);
 
     memset(tfe, 0, TFE_COUNT_IO_REGISTER);
     yamlLoadHelper.LoadMemory(tfe, TFE_COUNT_IO_REGISTER);
     yamlLoadHelper.PopMap();
 
     if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_PACKETPAGE_REGS))
-        throw std::string("Card: Expected key: ") + SS_YAML_KEY_PACKETPAGE_REGS;
+        throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_PACKETPAGE_REGS);
 
     memset(tfe_packetpage, 0, MAX_PACKETPAGE_ARRAY);
     yamlLoadHelper.LoadMemory(tfe_packetpage, MAX_PACKETPAGE_ARRAY);

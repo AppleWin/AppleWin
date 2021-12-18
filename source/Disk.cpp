@@ -61,7 +61,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	Card(CT_Disk2, slot)
 {
 	if (m_slot != 5 && m_slot != 6)	// fixme
-		throw std::string("Card: wrong slot");
+		throw std::runtime_error("Card: wrong slot");
 
 	ResetSwitches();
 
@@ -2095,7 +2095,7 @@ bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT
 		m_floppyDrive[unit].m_disk.m_extraCycles = yamlLoadHelper.LoadDouble(SS_YAML_KEY_EXTRA_CYCLES);
 
 		if (m_floppyDrive[unit].m_disk.m_bitCount && (m_floppyDrive[unit].m_disk.m_bitOffset >= m_floppyDrive[unit].m_disk.m_bitCount))
-			throw std::string("Disk image: bitOffset >= bitCount");
+			throw std::runtime_error("Disk image: bitOffset >= bitCount");
 
 		if (ImageIsWOZ(m_floppyDrive[unit].m_disk.m_imagehandle))
 			UpdateBitStreamOffsets(m_floppyDrive[unit].m_disk);	// overwrites m_byte, inits m_bitMask
@@ -2116,7 +2116,7 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv3(YamlLoadHelper& yamlLoadHelper,
 
 	std::string disk2UnitName = std::string(SS_YAML_KEY_DISK2UNIT) + (unit == DRIVE_1 ? std::string("0") : std::string("1"));
 	if (!yamlLoadHelper.GetSubMap(disk2UnitName))
-		throw std::string("Card: Expected key: ") + disk2UnitName;
+		throw std::runtime_error("Card: Expected key: " + disk2UnitName);
 
 	bool bImageError = LoadSnapshotFloppy(yamlLoadHelper, unit, version, track);
 
@@ -2137,10 +2137,10 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv4(YamlLoadHelper& yamlLoadHelper,
 
 	std::string disk2UnitName = std::string(SS_YAML_KEY_DISK2UNIT) + (unit == DRIVE_1 ? std::string("0") : std::string("1"));
 	if (!yamlLoadHelper.GetSubMap(disk2UnitName))
-		throw std::string("Card: Expected key: ") + disk2UnitName;
+		throw std::runtime_error("Card: Expected key: " + disk2UnitName);
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_FLOPPY))
-		throw std::string("Card: Expected key: ") + SS_YAML_KEY_FLOPPY;
+		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_FLOPPY);
 
 	bool bImageError = LoadSnapshotFloppy(yamlLoadHelper, unit, version, track);
 
@@ -2199,7 +2199,7 @@ void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, U
 bool Disk2InterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version < 1 || version > kUNIT_VERSION)
-		throw std::string("Card: wrong version");
+		throw std::runtime_error("Card: wrong version");
 
 	m_currDrive = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_DRIVE);
 	m_magnetStates		= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASES);

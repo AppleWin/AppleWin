@@ -868,7 +868,7 @@ void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT device, PHASOR_MODE mode, UINT version)
 {
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263))
-		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_SSI263);
+		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_SSI263);
 
 	m_durationPhoneme = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_DUR_PHON);
 	m_inflection      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_INF);

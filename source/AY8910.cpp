@@ -1105,7 +1105,7 @@ bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, const std::string& su
 {
 	std::string unit = std::string(SS_YAML_KEY_AY8910) + suffix;
 	if (!yamlLoadHelper.GetSubMap(unit))
-		throw std::string("Card: Expected key: ") + unit;
+		throw std::runtime_error("Card: Expected key: " + unit);
 
 	ay_tone_tick[0] = yamlLoadHelper.LoadUint(SS_YAML_KEY_TONE0_TICK);
 	ay_tone_tick[1] = yamlLoadHelper.LoadUint(SS_YAML_KEY_TONE1_TICK);
@@ -1130,7 +1130,7 @@ bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, const std::string& su
 	env_counter = yamlLoadHelper.LoadUint(SS_YAML_KEY_ENV_COUNTER);
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_REGISTERS))
-		throw std::string("Card: Expected key: ") + SS_YAML_KEY_REGISTERS;
+		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_REGISTERS);
 
 	USHORT period = (USHORT) yamlLoadHelper.LoadUint(SS_YAML_KEY_REG_TONE0_PERIOD);
 	sound_ay_registers[0] = period & 0xff;
@@ -1174,7 +1174,7 @@ bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, const std::string& su
 			unsigned int _val = 0;
 			if(4 != sscanf_s(value.c_str(), SS_YAML_VALUE_CHANGE_FORMAT,
 				&_tstates, &_ofs, &_reg, &_val))
-				throw std::string("Card: AY8910: Failed to scanf change list");
+				throw std::runtime_error("Card: AY8910: Failed to scanf change list");
 
 			ay_change[ay_change_count].tstates = _tstates;
 			ay_change[ay_change_count].ofs = _ofs;
@@ -1183,7 +1183,7 @@ bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, const std::string& su
 
 			ay_change_count++;
 			if (ay_change_count > AY_CHANGE_MAX)
-				throw std::string("Card: AY8910: Too many changes");
+				throw std::runtime_error("Card: AY8910: Too many changes");
 		}
 
 		yamlLoadHelper.PopMap();

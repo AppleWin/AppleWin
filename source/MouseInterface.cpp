@@ -139,7 +139,7 @@ CMouseInterface::CMouseInterface(UINT slot) :
 	m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for MouseInterfaces
 {
 	if (m_slot != 4)	// fixme
-		throw std::string("Card: wrong slot");
+		throw std::runtime_error("Card: wrong slot");
 
 	m_6821.SetListenerB( this, M6821_Listener_B );
 	m_6821.SetListenerA( this, M6821_Listener_A );
@@ -695,7 +695,7 @@ void CMouseInterface::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 void CMouseInterface::LoadSnapshotMC6821(YamlLoadHelper& yamlLoadHelper, std::string key)
 {
 	if (!yamlLoadHelper.GetSubMap(key))
-		throw std::string("Card: Expected key: ") + key;
+		throw std::runtime_error("Card: Expected key: " + key);
 
 	mc6821_t mc6821;
 	mc6821.pra  = yamlLoadHelper.LoadUint(SS_YAML_KEY_PRA);
@@ -716,7 +716,7 @@ void CMouseInterface::LoadSnapshotMC6821(YamlLoadHelper& yamlLoadHelper, std::st
 bool CMouseInterface::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version != 1)
-		throw std::string("Card: wrong version");
+		throw std::runtime_error("Card: wrong version");
 
 	LoadSnapshotMC6821(yamlLoadHelper, SS_YAML_KEY_MC6821);
 
@@ -726,7 +726,7 @@ bool CMouseInterface::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	m_by6821A = yamlLoadHelper.LoadUint(SS_YAML_KEY_6821A);
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_BUFF))
-		throw std::string("Card: Expected key: " SS_YAML_KEY_BUFF);
+		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_BUFF);
 	yamlLoadHelper.LoadMemory(m_byBuff, sizeof(m_byBuff));
 	yamlLoadHelper.PopMap();
 

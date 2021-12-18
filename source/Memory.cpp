@@ -2305,7 +2305,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 	//
 
 	if (!yamlLoadHelper.GetSubMap( MemGetSnapshotMainMemStructName() ))
-		throw std::string("Card: Expected key: ") + MemGetSnapshotMainMemStructName();
+		throw std::runtime_error("Card: Expected key: " + MemGetSnapshotMainMemStructName());
 
 	memset(memmain+0xC000, 0, LanguageCardSlot0::kMemBankSize);	// Clear it, as high 16K may not be in the save-state's "Main Memory" (eg. the case of II+ Saturn replacing //e LC)
 
@@ -2383,25 +2383,25 @@ static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::
 	{
 		type = CT_80Col;
 		if (numAuxBanks != 0 || activeAuxBank != 0)
-			throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
+			throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
 	}
 	else if (card == SS_YAML_VALUE_CARD_EXTENDED80COL)
 	{
 		type = CT_Extended80Col;
 		if (numAuxBanks != 1 || activeAuxBank != 0)
-			throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
+			throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
 	}
 	else if (card == SS_YAML_VALUE_CARD_RAMWORKSIII)
 	{
 		type = CT_RamWorksIII;
 		if (numAuxBanks < 2 || numAuxBanks > 0x7F || (activeAuxBank+1) > numAuxBanks)
-			throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
+			throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
 	}
 	else
 	{
 		// todo: support empty slot
 		type = CT_Empty;
-		throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Unknown card: " + card);
+		throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Unknown card: " + card);
 	}
 
 	g_uMaxExPages = numAuxBanks;
@@ -2423,7 +2423,7 @@ static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::
 		std::string auxMemName = MemGetSnapshotAuxMemStructName() + szBank;
 
 		if (!yamlLoadHelper.GetSubMap(auxMemName))
-			throw std::string("Memory: Missing map name: " + auxMemName);
+			throw std::runtime_error("Memory: Missing map name: " + auxMemName);
 
 		yamlLoadHelper.LoadMemory(pBank, _6502_MEM_LEN);
 
@@ -2448,7 +2448,7 @@ static void MemLoadSnapshotAuxVer2(YamlLoadHelper& yamlLoadHelper)
 	UINT cardVersion = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 
 	if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
-		throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
+		throw std::runtime_error(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
 
 	MemLoadSnapshotAuxCommon(yamlLoadHelper, card);
 
@@ -2458,7 +2458,7 @@ static void MemLoadSnapshotAuxVer2(YamlLoadHelper& yamlLoadHelper)
 bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 {
 	if (unitVersion < 1 || unitVersion > kUNIT_AUXSLOT_VER)
-		throw std::string(SS_YAML_KEY_UNIT ": AuxSlot: Version mismatch");
+		throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Version mismatch");
 
 	if (unitVersion == 1)
 		MemLoadSnapshotAuxVer1(yamlLoadHelper);

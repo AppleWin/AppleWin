@@ -1930,7 +1930,7 @@ void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 static void LoadSnapshotSY6522(YamlLoadHelper& yamlLoadHelper, SY6522& sy6522, UINT version)
 {
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SY6522))
-		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_SY6522);
+		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_SY6522);
 
 	sy6522.ORB  = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_ORB);
 	sy6522.ORA  = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_ORA);
@@ -1968,10 +1968,10 @@ static void LoadSnapshotSY6522(YamlLoadHelper& yamlLoadHelper, SY6522& sy6522, U
 bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 {
 	if (slot != 4 && slot != 5)	// fixme
-		throw std::string("Card: wrong slot");
+		throw std::runtime_error("Card: wrong slot");
 
 	if (version < 1 || version > kUNIT_VERSION)
-		throw std::string("Card: wrong version");
+		throw std::runtime_error("Card: wrong version");
 
 	AY8910UpdateSetCycles();
 
@@ -1987,7 +1987,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 		char szNum[2] = {char('0' + i), 0};
 		std::string unit = std::string(SS_YAML_KEY_MB_UNIT) + std::string(szNum);
 		if (!yamlLoadHelper.GetSubMap(unit))
-			throw std::string("Card: Expected key: ") + std::string(unit);
+			throw std::runtime_error("Card: Expected key: " + unit);
 
 		LoadSnapshotSY6522(yamlLoadHelper, pMB->sy6522, version);
 		UpdateIFR(pMB, 0, pMB->sy6522.IFR);					// Assert any pending IRQs (GH#677)
@@ -2053,7 +2053,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 {
 	if (uSlot != 4)
-		throw std::string("Card: Phasor only supported in slot-4");
+		throw std::runtime_error("Card: Phasor only supported in slot-4");
 
 	UINT nDeviceNum = 0;
 	SY6522_AY8910* pMB = &g_MB[0];	// fixme: Phasor uses MB's slot4(2x6522), slot4(2xSSI263), but slot4+5(4xAY8910)
@@ -2091,10 +2091,10 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 {
 	if (slot != 4)	// fixme
-		throw std::string("Card: wrong slot");
+		throw std::runtime_error("Card: wrong slot");
 
 	if (version < 1 || version > kUNIT_VERSION)
-		throw std::string("Card: wrong version");
+		throw std::runtime_error("Card: wrong version");
 
 	if (version < 6)
 		yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR);	// Consume redundant data
@@ -2123,7 +2123,7 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 		char szNum[2] = {char('0' + i), 0};
 		std::string unit = std::string(SS_YAML_KEY_MB_UNIT) + std::string(szNum);
 		if (!yamlLoadHelper.GetSubMap(unit))
-			throw std::string("Card: Expected key: ") + std::string(unit);
+			throw std::runtime_error("Card: Expected key: " + unit);
 
 		LoadSnapshotSY6522(yamlLoadHelper, pMB->sy6522, version);
 		UpdateIFR(pMB, 0, pMB->sy6522.IFR);					// Assert any pending IRQs (GH#677)

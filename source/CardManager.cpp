@@ -216,7 +216,7 @@ void CardManager::InitializeIO(LPBYTE pCxRomPeripheral)
 	// if it is a //e then SLOT0 must be CT_LanguageCardIIe (and the other way round)
 	_ASSERT(IsApple2PlusOrClone(GetApple2Type()) != (m_slot[SLOT0]->QueryType() == CT_LanguageCardIIe));
 
-	for (UINT i = 0; i < NUM_SLOTS; ++i)
+	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
 	{
 		if (m_slot[i])
 		{
@@ -227,18 +227,18 @@ void CardManager::InitializeIO(LPBYTE pCxRomPeripheral)
 
 void CardManager::Update(const ULONG nExecutedCycles)
 {
-    for (UINT i = 0; i < NUM_SLOTS; ++i)
-    {
-        if (m_slot[i])
-        {
-            m_slot[i]->Update(nExecutedCycles);
-        }
-    }
+	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
+	{
+		if (m_slot[i])
+		{
+			m_slot[i]->Update(nExecutedCycles);
+		}
+	}
 }
 
 void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	for (UINT i = 0; i < NUM_SLOTS; ++i)
+	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
 	{
 		if (m_slot[i])
 		{

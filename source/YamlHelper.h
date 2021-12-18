@@ -82,7 +82,7 @@ public:
 		if (!m_yamlHelper.ParseMap(yamlHelper.m_mapYaml))
 		{
 			m_bDoGetMapRemainder = false;
-			throw std::string(m_currentMapName + ": Failed to parse map");
+			throw std::runtime_error(m_currentMapName + ": Failed to parse map");
 		}
 	}
 
@@ -184,7 +184,7 @@ public:
 		// - at this point any old file will have been truncated to zero
 
 		if(m_hFile == NULL)
-			throw std::string("Save error");
+			throw std::runtime_error("Save error");
 
 		_tzset();
 		time_t ltime;
