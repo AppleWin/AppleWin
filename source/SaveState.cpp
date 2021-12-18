@@ -222,7 +222,7 @@ static eApple2Type ParseApple2Type(std::string type)
 	else if (type == SS_YAML_VALUE_TK30002E)		return A2TYPE_TK30002E;
 	else if (type == SS_YAML_VALUE_BASE64A)			return A2TYPE_BASE64A;
 
-	throw std::string("Load: Unknown Apple2 type");
+	throw std::runtime_error("Load: Unknown Apple2 type");
 }
 
 static std::string GetApple2TypeAsString(void)
@@ -241,7 +241,7 @@ static std::string GetApple2TypeAsString(void)
 		case A2TYPE_TK30002E:		return SS_YAML_VALUE_TK30002E;
 		case A2TYPE_BASE64A:		return SS_YAML_VALUE_BASE64A;
 		default:
-			throw std::string("Save: Unknown Apple2 type");
+			throw std::runtime_error("Save: Unknown Apple2 type");
 	}
 }
 
@@ -251,10 +251,10 @@ static UINT ParseFileHdr(void)
 {
 	std::string scalar;
 	if (!yamlHelper.GetScalar(scalar))
-		throw std::string(SS_YAML_KEY_FILEHDR ": Failed to find scalar");
+		throw std::runtime_error(SS_YAML_KEY_FILEHDR ": Failed to find scalar");
 
 	if (scalar != SS_YAML_KEY_FILEHDR)
-		throw std::string("Failed to find file header");
+		throw std::runtime_error("Failed to find file header");
 
 	yamlHelper.GetMapStartEvent();
 
@@ -266,7 +266,7 @@ static UINT ParseFileHdr(void)
 	if (value != SS_YAML_VALUE_AWSS)
 	{
 		//printf("%s: Bad tag (%s) - expected %s\n", SS_YAML_KEY_FILEHDR, value.c_str(), SS_YAML_VALUE_AWSS);
-		throw std::string(SS_YAML_KEY_FILEHDR ": Bad tag");
+		throw std::runtime_error(SS_YAML_KEY_FILEHDR ": Bad tag");
 	}
 
 	return yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
@@ -277,7 +277,7 @@ static UINT ParseFileHdr(void)
 static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version == 0 || version > UNIT_APPLE2_VER)
-		throw std::string(SS_YAML_KEY_UNIT ": Apple2: Version mismatch");
+		throw std::runtime_error(SS_YAML_KEY_UNIT ": Apple2: Version mismatch");
 
 	std::string model = yamlLoadHelper.LoadString(SS_YAML_KEY_MODEL);
 	SetApple2Type( ParseApple2Type(model) );	// NB. Sets default main CPU type
@@ -296,7 +296,7 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 {
 	if (unitVersion != UNIT_SLOTS_VER)
-		throw std::string(SS_YAML_KEY_UNIT ": Slots: Version mismatch");
+		throw std::runtime_error(SS_YAML_KEY_UNIT ": Slots: Version mismatch");
 
 	while (1)
 	{
@@ -307,7 +307,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		const int slot = strtoul(scalar.c_str(), NULL, 10);	// NB. aux slot supported as a different "unit"
 															// NB. slot-0 only supported for Apple II or II+ (or similar clones)
 		if (slot < SLOT0 || slot > SLOT7)
-			throw std::string("Slots: Invalid slot #: ") + scalar;
+			throw std::runtime_error("Slots: Invalid slot #: " + scalar);
 
 		yamlLoadHelper.GetSubMap(scalar);
 
@@ -315,7 +315,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		UINT cardVersion = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 
 		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE), true))	// NB. For some cards, State can be null
-			throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
+			throw std::runtime_error(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
 
 		SS_CARDTYPE type = CT_Empty;
 		bool bRes = false;
@@ -382,7 +382,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		}
 		else
 		{
-			throw std::string("Slots: Unknown card: " + card);	// todo: don't throw - just ignore & continue
+			throw std::runtime_error("Slots: Unknown card: " + card);	// todo: don't throw - just ignore & continue
 		}
 
 		if (slot == 0)
@@ -414,7 +414,7 @@ static void ParseUnit(void)
 	UINT unitVersion = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 
 	if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
-		throw std::string(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
+		throw std::runtime_error(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
 
 	if (unit == GetSnapshotUnitApple2Name())
 	{
@@ -438,7 +438,7 @@ static void ParseUnit(void)
 	}
 	else
 	{
-		throw std::string(SS_YAML_KEY_UNIT ": Unknown type: " ) + unit;
+		throw std::runtime_error(SS_YAML_KEY_UNIT ": Unknown type: " + unit);
 	}
 }
 
@@ -452,10 +452,10 @@ static void Snapshot_LoadState_v2(void)
 	try
 	{
 		if (!yamlHelper.InitParser( g_strSaveStatePathname.c_str() ))
-			throw std::string("Failed to initialize parser or open file");
+			throw std::runtime_error("Failed to initialize parser or open file");
 
 		if (ParseFileHdr() != SS_FILE_VER)
-			throw std::string("Version mismatch");
+			throw std::runtime_error("Version mismatch");
 
 		//
 
@@ -485,7 +485,7 @@ static void Snapshot_LoadState_v2(void)
 			if (scalar == SS_YAML_KEY_UNIT)
 				ParseUnit();
 			else
-				throw std::string("Unknown top-level scalar: " + scalar);
+				throw std::runtime_error("Unknown top-level scalar: " + scalar);
 		}
 
 		MB_SetCumulativeCycles();
@@ -517,10 +517,10 @@ static void Snapshot_LoadState_v2(void)
 		// g_Apple2Type may've changed: so reload button bitmaps & redraw frame (title, buttons, leds, etc)
 		frame.FrameUpdateApple2Type();	// NB. Calls VideoRedrawScreen()
 	}
-	catch(std::string szMessage)
+	catch(const std::exception & szMessage)
 	{
 		frame.FrameMessageBox(
-					szMessage.c_str(),
+					szMessage.what(),
 					TEXT("Load State"),
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
@@ -593,10 +593,10 @@ void Snapshot_SaveState(void)
 			NoSlotClockSaveSnapshot(yamlSaveHelper);
 		}
 	}
-	catch(std::string szMessage)
+	catch(const std::exception & szMessage)
 	{
 		GetFrame().FrameMessageBox(
-					szMessage.c_str(),
+					szMessage.what(),
 					TEXT("Save State"),
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 	}

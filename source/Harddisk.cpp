@@ -131,7 +131,7 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	Card(CT_GenericHDD, slot)
 {
 	if (m_slot != SLOT7)	// fixme
-		throw std::string("Card: wrong slot");
+		throw std::runtime_error("Card: wrong slot");
 
 	m_unitNum = HARDDISK_1 << 7;	// b7=unit
 
@@ -823,7 +823,7 @@ bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, 
 {
 	std::string hddUnitName = std::string(SS_YAML_KEY_HDDUNIT) + (unit == HARDDISK_1 ? std::string("0") : std::string("1"));
 	if (!yamlLoadHelper.GetSubMap(hddUnitName))
-		throw std::string("Card: Expected key: ") + hddUnitName;
+		throw std::runtime_error("Card: Expected key: " + hddUnitName);
 
 	m_hardDiskDrive[unit].m_fullname.clear();
 	m_hardDiskDrive[unit].m_imagename.clear();
@@ -843,7 +843,7 @@ bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, 
 		m_hardDiskDrive[unit].m_buf_ptr = sizeof(m_hardDiskDrive[unit].m_buf) - 1;
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_BUF))
-		throw hddUnitName + std::string(": Missing: ") + std::string(SS_YAML_KEY_BUF);
+		throw std::runtime_error(hddUnitName + ": Missing: " + SS_YAML_KEY_BUF);
 	yamlLoadHelper.LoadMemory(m_hardDiskDrive[unit].m_buf, HD_BLOCK_SIZE);
 
 	yamlLoadHelper.PopMap();
@@ -888,10 +888,10 @@ bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, 
 bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version < 1 || version > kUNIT_VERSION)
-		throw std::string("Card: wrong version");
+		throw std::runtime_error("Card: wrong version");
 
 	if (version <= 2 && (regs.pc >> 8) == (0xC0|m_slot))
-		throw std::string("HDD card: 6502 is running old HDD firmware");
+		throw std::runtime_error("HDD card: 6502 is running old HDD firmware");
 
 	m_unitNum = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_UNIT);	// b7=unit
 	m_command = yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);

@@ -810,7 +810,7 @@ void CpuLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	eCpuType cpu;
 	if (cpuType == SS_YAML_VALUE_6502) cpu = CPU_6502;
 	else if (cpuType == SS_YAML_VALUE_65C02) cpu = CPU_65C02;
-	else throw std::string("Load: Unknown main CPU type");
+	else throw std::runtime_error("Load: Unknown main CPU type");
 	SetMainCpu(cpu);
 
 	regs.a  = (BYTE)     yamlLoadHelper.LoadUint(SS_YAML_KEY_REGA);

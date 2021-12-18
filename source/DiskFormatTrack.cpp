@@ -357,7 +357,7 @@ void FormatTrack::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 void FormatTrack::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper)
 {
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_FORMAT_TRACK))
-		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_FORMAT_TRACK);
+		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_FORMAT_TRACK);
 
 	m_bmWrittenSectorAddrFields   = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITTEN_SECTOR_ADDR_FIELDS);
 	m_WriteTrackStartIndex        = yamlLoadHelper.LoadUint(SS_YAML_KEY_WRITE_TRACK_START_IDX);

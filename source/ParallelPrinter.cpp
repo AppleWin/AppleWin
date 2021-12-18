@@ -230,10 +230,10 @@ void Printer_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot
 bool Printer_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 {
 	if (slot != 1)	// fixme
-		throw std::string("Card: wrong slot");
+		throw std::runtime_error("Card: wrong slot");
 
 	if (version != 1)
-		throw std::string("Card: wrong version");
+		throw std::runtime_error("Card: wrong version");
 
 	inactivity					= yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);
 	g_PrinterIdleLimit			= yamlLoadHelper.LoadUint(SS_YAML_KEY_IDLELIMIT);
@@ -245,7 +245,7 @@ bool Printer_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT 
 		g_bPrinterAppend = true;	// Re-open print-file in append mode
 		BOOL bRes = CheckPrint();
 		if (!bRes)
-			throw std::string("Printer Card: Unable to resume printing to file");
+			throw std::runtime_error("Printer Card: Unable to resume printing to file");
 	}
 	else
 	{

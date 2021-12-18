@@ -1311,7 +1311,7 @@ void RGB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
 {
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_RGB_CARD))
-		throw std::string("Card: Expected key: ") + std::string(SS_YAML_KEY_RGB_CARD);
+		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_RGB_CARD);
 
 	g_rgbFlags = yamlLoadHelper.LoadUint(SS_YAML_KEY_RGB_FLAGS);
 	g_rgbMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_RGB_MODE);
