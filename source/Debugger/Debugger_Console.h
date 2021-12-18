@@ -257,11 +257,17 @@
 	// Buffered
 	bool ConsolePrint( const char * pText );
 	bool ConsolePrintVa( char* buf, size_t bufsz, const char* pFormat, va_list va );
+
 	template<size_t _BufSz>
 	inline bool ConsolePrintVa( char (&buf)[_BufSz], const char* pFormat, va_list va )
 	{
 		return ConsolePrintVa(buf, _BufSz, pFormat, va);
 	}
+
+#ifndef _MSC_VER
+	inline bool ConsolePrintFormat( char* buf, size_t bufsz, const char* pFormat, ... ) __attribute__ ((format (printf, 3, 4)));
+#endif
+
 	inline bool ConsolePrintFormat( char* buf, size_t bufsz, const char* pFormat, ... )
 	{
 		va_list va;
@@ -270,6 +276,12 @@
 		va_end(va);
 		return r;
 	}
+
+#ifndef _MSC_VER
+	template<size_t _BufSz>
+	inline bool ConsolePrintFormat( char(&buf)[_BufSz], const char* pFormat, ... ) __attribute__ ((format (printf, 2, 3)));
+#endif
+
 	template<size_t _BufSz>
 	inline bool ConsolePrintFormat( char(&buf)[_BufSz], const char* pFormat, ... )
 	{
@@ -286,11 +298,17 @@
 
 	bool ConsoleBufferPush( const char * pString );
 	bool ConsoleBufferPushVa( char* buf, size_t bufsz, const char* pFormat, va_list va );
+
 	template<size_t _BufSz>
 	inline bool ConsoleBufferPushVa( char (&buf)[_BufSz], const char* pFormat, va_list va )
 	{
 		return ConsoleBufferPushVa(buf, _BufSz, pFormat, va);
 	}
+
+#ifndef _MSC_VER
+	inline bool ConsoleBufferPushFormat( char* buf, size_t bufsz, const char* pFormat, ... ) __attribute__ ((format (printf, 3, 4)));
+#endif
+
 	inline bool ConsoleBufferPushFormat( char* buf, size_t bufsz, const char* pFormat, ... )
 	{
 		va_list va;
@@ -299,6 +317,12 @@
 		va_end(va);
 		return r;
 	}
+
+#ifndef _MSC_VER
+	template<size_t _BufSz>
+	inline bool ConsoleBufferPushFormat( char(&buf)[_BufSz], const char* pFormat, ... ) __attribute__ ((format (printf, 2, 3)));
+#endif
+
 	template<size_t _BufSz>
 	inline bool ConsoleBufferPushFormat( char(&buf)[_BufSz], const char* pFormat, ... )
 	{

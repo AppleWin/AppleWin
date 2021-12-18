@@ -1626,10 +1626,10 @@ Update_t CmdVersion (int nArgs)
 			if ((! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
 				(! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
 			{
-				ConsoleBufferPushFormat( sText, "  Arg: %d bytes * %d = %d bytes",
+				ConsoleBufferPushFormat( sText, "  Arg: %zu bytes * %d = %zu bytes",
 					sizeof(Arg_t), MAX_ARGS, sizeof(g_aArgs) );
 
-				ConsoleBufferPushFormat( sText, "  Console: %d bytes * %d height = %d bytes",
+				ConsoleBufferPushFormat( sText, "  Console: %zu bytes * %d height = %zu bytes",
 					sizeof( g_aConsoleDisplay[0] ), CONSOLE_HEIGHT, sizeof(g_aConsoleDisplay) );
 
 				ConsoleBufferPushFormat( sText, "  Commands: %d   (Aliased: %d)   Params: %d",
