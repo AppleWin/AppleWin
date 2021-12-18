@@ -57,7 +57,7 @@ static const UINT kUNIT_VERSION = 2;
 void CSuperSerialCard::LoadSnapshotDIPSW(YamlLoadHelper& yamlLoadHelper, std::string key, SSC_DIPSW& dipsw)
 {
   if (!yamlLoadHelper.GetSubMap(key))
-    throw std::string("Card: Expected key: " + key);
+    throw std::runtime_error("Card: Expected key: " + key);
 
   yamlLoadHelper.LoadUint(SS_YAML_KEY_BAUDRATE);
   yamlLoadHelper.LoadUint(SS_YAML_KEY_FWMODE);
@@ -73,7 +73,7 @@ void CSuperSerialCard::LoadSnapshotDIPSW(YamlLoadHelper& yamlLoadHelper, std::st
 bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
   if (version < 1 || version > kUNIT_VERSION)
-    throw std::string("Card: wrong version");
+    throw std::runtime_error("Card: wrong version");
 
   SSC_DIPSW dipsw;
   LoadSnapshotDIPSW(yamlLoadHelper, SS_YAML_KEY_DIPSWDEFAULT, dipsw);

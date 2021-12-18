@@ -183,14 +183,4 @@ int main(int argc, const char * argv [])
     std::cerr << e.what() << std::endl;
     return 1;
   }
-  catch (const std::string & e)
-  {
-    std::cerr << e << std::endl;
-    return 1;
-  }
-  catch (int e)
-  {
-    std::cerr << "Exit process called: " << e << std::endl;
-    return e;
-  }
 }

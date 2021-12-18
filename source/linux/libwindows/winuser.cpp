@@ -1,5 +1,7 @@
 #include "winuser.h"
 
+#include <sstream>
+
 HCURSOR LoadCursor(HINSTANCE hInstance, LPCSTR lpCursorName)
 {
   return nullptr;
@@ -32,5 +34,8 @@ LRESULT     WINAPI SendMessage(HWND,UINT,WPARAM,LPARAM)
 
 void        WINAPI PostQuitMessage(INT status)
 {
-  throw status;
+  std::ostringstream buffer("PostQuitMessage: ");
+  buffer << status;
+
+  throw std::runtime_error(buffer.str());
 }

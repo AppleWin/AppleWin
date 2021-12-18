@@ -5,6 +5,7 @@
 #include <chrono>
 #include <thread>
 #include <unistd.h>
+#include <sstream>
 
 
 DWORD       WINAPI GetLastError(void)
@@ -42,7 +43,10 @@ void OutputDebugString(const char * str)
 
 void ExitProcess(int status)
 {
-  throw status;
+  std::ostringstream buffer("ExitProcess: ");
+  buffer << status;
+
+  throw std::runtime_error(buffer.str());
 }
 
 DWORD       WINAPI WaitForMultipleObjects(DWORD,const HANDLE*,BOOL,DWORD)

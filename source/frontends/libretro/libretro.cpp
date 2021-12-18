@@ -334,10 +334,6 @@ bool retro_load_game(const retro_game_info *info)
   {
     ra2::log_cb(RETRO_LOG_INFO, "Exception: %s\n", e.what());
   }
-  catch (const std::string & s)
-  {
-    ra2::log_cb(RETRO_LOG_INFO, "Exception: %s\n", s.c_str());
-  }
 
   return false;
 }
