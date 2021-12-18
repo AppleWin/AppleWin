@@ -344,11 +344,10 @@
 	void     ConsoleFlush        ();
 
 	// Input
-	void     ConsoleInputToDisplay ();
 	const char *ConsoleInputPeek      ();
 	bool     ConsoleInputClear     ();
 	bool     ConsoleInputBackSpace ();
-	bool     ConsoleInputChar      ( TCHAR ch );
+	bool     ConsoleInputChar      ( const char ch );
 	void     ConsoleInputReset     ();
 	int      ConsoleInputTabCompletion ();
 
