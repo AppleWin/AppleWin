@@ -28,7 +28,7 @@ public:
 
 	void VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
-	bool IsSHR(void) { return (m_NEWVIDEO & 0xC0) == 0xC0; }	// 11000001 = Enable SHR(b7) | Linearize SHR video memory(b6)
+	bool IsSHR(void) { return (m_NEWVIDEO & 0xC0) == 0xC0; }	// 11000000 = Enable SHR(b7) | Linearize SHR video memory(b6)
 	bool IsDHGRBlackAndWhite(void) { return (m_NEWVIDEO & (1 << 5)) ? true : false; }
 	bool IsWriteAux(void);
 
@@ -39,6 +39,7 @@ public:
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 private:
+	const UINT SHR_MEMORY_END = 0x9FFF;
 	UINT m_memMode;	// Only used by II/II+
 	BYTE m_SCREENCOLOR;
 	BYTE m_NEWVIDEO;
