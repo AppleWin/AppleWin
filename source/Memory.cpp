@@ -56,6 +56,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tape.h"
 #include "Tfe/tfe.h"
 #include "RGBMonitor.h"
+#include "VidHD.h"
 
 #include "z80emu.h"
 #include "Z80VICE/z80.h"
@@ -142,7 +143,7 @@ SOFT SWITCH STATUS FLAGS
  $C011   R7      BSRBANK2        1=bank2 available    0=bank1 available
  $C012   R7      BSRREADRAM      1=BSR active for read   0=$D000-$FFFF active (BSR = Bank Switch RAM)
  $C013   R7      RAMRD           0=main $0200-$BFFF active reads  1=aux active
- $C014   R7      RAMWRT          0=main $0200-$BFFF active writes 1=aux writes
+ $C014   R7      RAMWRT          0=main $0200-$BFFF active writes 1=aux active
  $C015   R7      INTCXROM        1=main $C100-$CFFF ROM active   0=slot active
  $C016   R7      ALTZP           1=aux $0000-$1FF+auxBSR    0=main available
  $C017   R7      SLOTC3ROM       1=slot $C3 ROM active   0=main $C3 ROM active
@@ -237,6 +238,8 @@ static DWORD   memmode      = LanguageCardUnit::kMemModeInitialState;
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
 
 static UINT    memrompages = 1;
+
+LPBYTE  memVidHD = NULL;	// For Apple II/II+ writes to aux mem (on VidHD card). memVidHD = memaux or NULL (depends on //e soft-switches)
 
 static CNoSlotClock* g_NoSlotClock = new CNoSlotClock;
 
@@ -1494,7 +1497,7 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 void MemInitialize()
 {
 	// ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
-	memaux   = ALIGNED_ALLOC(_6502_MEM_LEN);
+	memaux   = ALIGNED_ALLOC(_6502_MEM_LEN);	// NB. alloc even if model is Apple II/II+, since it's used by VidHD card
 	memmain  = ALIGNED_ALLOC(_6502_MEM_LEN);
 	memimage = ALIGNED_ALLOC(_6502_MEM_LEN);
 
@@ -1973,7 +1976,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 #endif
 
 	// DETERMINE THE NEW MEMORY PAGING MODE.
-	if (!IS_APPLE2)
+	if (IsAppleIIeOrAbove(GetApple2Type()))
 	{
 		switch (address)
 		{
@@ -2004,6 +2007,15 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 				}
 				break;
 #endif
+		}
+	}
+	else // Apple ][,][+,][J-Plus or clone ][,][+
+	{
+		if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
+		{
+			VidHDCard* vidHD = dynamic_cast<VidHDCard*>(GetCardMgr().GetObj(SLOT3));
+			vidHD->VideoIOWrite(programcounter, address, write, value, nExecutedCycles);
+			memVidHD = vidHD->IsWriteAux() ? memaux : NULL;
 		}
 	}
 

@@ -22,15 +22,33 @@
 */
 /*
   Emulate a VidHD card (Blue Shift Inc)
+  * Partial support only *
 
   Allows any Apple II to support the IIgs' 320x200 and 640x200 256-colour Super High-Res video modes.
-  Currently only a //e with 64K aux memory supports SHR mode.
 
-  NB. The extended text modes 80x45, 120x67, 240x135 (and setting FG/BG colours) are not supported yet.
+  NB. Not supported yet:
+  . Apple II/II+ support for //e video modes (TEXT80, DGR, DHGR).
+  . IIgs SCREEN & BORDER COLOR.
+  . IIgs B&W DHGR.
+  . The VidHD extended text modes 80x45, 120x67, 240x135 (and setting FG/BG colours).
+  . Enable/disable VidHD soft-switch.
+
+  Implementation notes:
+  . II/II+
+    . Mirrors the 80STORE/PAGE2/AUXREAD/AUXWRITE switches to VidHD.
+    . Reuses 'memaux' that's for the //e models.
+    . AUXWRITE=1: writes occur to both main & memaux.
+    . 80STORE=1 && PAGE2=1: same as AUXWRITE=1 (but should be changed to *only* allow writes to aux's TEXT1 & HGR2 areas).
+    . Only 6502 (not 65C02) emulation supports this dual write to main & memaux (via the 'memVidHD' pointer):
+      - So a II/II+ with a 65C02 won't correctly support VidHD cards.
+      - And a //e with a 6502 will incur a slight overhead to test 'memVidHD' pointer (which is always NULL for //e's).
+    . VidHD card's save-state includes VidHD's aux mem ($400-$9FFF).
+  . //e with 1KiB 80-Col card: AppleWin doesn't support this - so currently out of scope.
 */
 
 #include "StdAfx.h"
 
+#include "Core.h"
 #include "Memory.h"
 #include "NTSC.h"
 #include "Video.h"
@@ -65,21 +83,26 @@ void VidHDCard::VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG 
 {
 	switch (addr & 0xff)
 	{
-	case 0x22:	// SCREENCOLOR
-		m_SCREENCOLOR = value;
-		break;
-	case 0x29:	// NEWVIDEO
-		m_NEWVIDEO = value;
-		break;
-	case 0x34:	// BORDERCOLOR
-		m_BORDERCOLOR = value;
-		break;
-	case 0x35:	// SHADOW
-		m_SHADOW = value;
-		break;
-	default:
-		_ASSERT(0);
+	case 0x00: m_memMode &= ~MF_80STORE;	break;
+	case 0x01: m_memMode |= MF_80STORE;		break;
+	case 0x02: m_memMode &= ~MF_AUXREAD;	break;
+	case 0x03: m_memMode |= MF_AUXREAD;		break;
+	case 0x04: m_memMode &= ~MF_AUXWRITE;	break;
+	case 0x05: m_memMode |= MF_AUXWRITE;	break;
+	case 0x54: m_memMode &= ~MF_PAGE2;		break;
+	case 0x55: m_memMode |= MF_PAGE2;		break;
+	// IIgs registers
+	case 0x22: m_SCREENCOLOR = value;		break;
+	case 0x29: m_NEWVIDEO = value;			break;
+	case 0x34: m_BORDERCOLOR = value;		break;
+	case 0x35: m_SHADOW = value;			break;
 	}
+}
+
+bool VidHDCard::IsWriteAux(void)
+{
+	return (m_memMode & MF_AUXWRITE) ||							// Write to aux: $200-$BFFF
+		((m_memMode & MF_80STORE) && (m_memMode & MF_PAGE2));	// Write to aux: $400-$7FF and $2000-$3FFF
 }
 
 //===========================================================================
@@ -154,6 +177,7 @@ void VidHDCard::UpdateSHRCell(bool is640Mode, bool isColorFillMode, uint16_t add
 
 static const UINT kUNIT_VERSION = 1;
 
+#define SS_YAML_KEY_MEMORYMODE "Memory Mode"
 #define SS_YAML_KEY_SCREEN_COLOR "Screen Color"
 #define SS_YAML_KEY_NEW_VIDEO "New Video"
 #define SS_YAML_KEY_BORDER_COLOR "Border Color"
@@ -165,15 +189,31 @@ std::string VidHDCard::GetSnapshotCardName(void)
 	return name;
 }
 
+static std::string MemGetSnapshotAuxMemStructName(void)
+{
+	static const std::string name("Auxiliary Memory Bank");
+	return name;
+}
+
 void VidHDCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, m_memMode);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SCREEN_COLOR, m_SCREENCOLOR);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_NEW_VIDEO, m_NEWVIDEO);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_BORDER_COLOR, m_BORDERCOLOR);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SHADOW, m_SHADOW);
+
+	if (IsApple2PlusOrClone(GetApple2Type()))	// Save aux mem for II/II+
+	{
+		// Save [$400-$9FFF]
+		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotAuxMemStructName().c_str());
+
+		LPBYTE pMemBase = MemGetBankPtr(1);
+		yamlSaveHelper.SaveMemory(pMemBase, (SHR_MEMORY_END + 1) - TEXT_PAGE1_BEGIN, TEXT_PAGE1_BEGIN);
+	}
 }
 
 bool VidHDCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
@@ -181,10 +221,23 @@ bool VidHDCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::runtime_error("Card: wrong version");
 
+	m_memMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE);
 	m_SCREENCOLOR = yamlLoadHelper.LoadUint(SS_YAML_KEY_SCREEN_COLOR);
 	m_NEWVIDEO = yamlLoadHelper.LoadUint(SS_YAML_KEY_NEW_VIDEO);
 	m_BORDERCOLOR = yamlLoadHelper.LoadUint(SS_YAML_KEY_BORDER_COLOR);
 	m_SHADOW = yamlLoadHelper.LoadUint(SS_YAML_KEY_SHADOW);
+
+	if (IsApple2PlusOrClone(GetApple2Type()))	// Load aux mem for II/II+
+	{
+		// Load [$400-$9FFF]
+		if (!yamlLoadHelper.GetSubMap(MemGetSnapshotAuxMemStructName()))
+			throw std::runtime_error("Memory: Missing map name: " + MemGetSnapshotAuxMemStructName());
+
+		LPBYTE pMemBase = MemGetBankPtr(1);
+		yamlLoadHelper.LoadMemory(pMemBase, (SHR_MEMORY_END + 1) - TEXT_PAGE1_BEGIN, TEXT_PAGE1_BEGIN);
+
+		yamlLoadHelper.PopMap();
+	}
 
 	return true;
 }

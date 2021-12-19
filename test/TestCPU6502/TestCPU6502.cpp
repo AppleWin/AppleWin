@@ -14,6 +14,7 @@ SynchronousEventManager g_SynchronousEventMgr;
 LPBYTE         memwrite[0x100];		// TODO: Init
 LPBYTE         mem          = NULL;	// TODO: Init
 LPBYTE         memdirty     = NULL;	// TODO: Init
+LPBYTE         memVidHD     = NULL;	// TODO: Init
 iofunction		IORead[256] = {0};	// TODO: Init
 iofunction		IOWrite[256] = {0};	// TODO: Init
 

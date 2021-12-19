@@ -21,7 +21,7 @@ public:
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual UINT GetActiveBank(void) { return 0; }	// Always 0 as only 1x 16K bank
-	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) { _ASSERT(0); } // Not used for //e
+	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) { } // A no-op for //e - called from CardManager::SaveSnapshot()
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) { _ASSERT(0); return false; } // Not used for //e
 
 	BOOL GetLastRamWrite(void) { return m_uLastRamWrite; }
