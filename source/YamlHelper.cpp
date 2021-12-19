@@ -198,7 +198,7 @@ std::string YamlHelper::GetMapValue(MapYaml& mapYaml, const std::string& key, bo
 	return value;
 }
 
-bool YamlHelper::GetSubMap(MapYaml** mapYaml, const std::string& key, const bool canBeNull = false)
+bool YamlHelper::GetSubMap(MapYaml** mapYaml, const std::string& key, const bool canBeNull/*=false*/)
 {
 	MapYaml::const_iterator iter = (*mapYaml)->find(key);
 	if (iter == (*mapYaml)->end() || (!canBeNull && iter->second.subMap == NULL))
@@ -247,7 +247,7 @@ void YamlHelper::MakeAsciiToHexTable(void)
 		m_AsciiToHex[i] = i - 'a' + 0xA;
 }
 
-UINT YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize)
+UINT YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize, const UINT offset)
 {
 	UINT bytes = 0;
 
@@ -255,11 +255,11 @@ UINT YamlHelper::LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_
 	{
 		const char* pKey = it->first.c_str();
 		UINT addr = strtoul(pKey, NULL, 16);
-		if (addr >= kAddrSpaceSize)
+		if (addr >= (kAddrSpaceSize + offset))
 			throw std::runtime_error("Memory: line address too big: " + it->first);
 
 		LPBYTE pDst = (LPBYTE) (pMemBase + addr);
-		const LPBYTE pDstEnd = (LPBYTE) (pMemBase + kAddrSpaceSize);
+		const LPBYTE pDstEnd = (LPBYTE) (pMemBase + kAddrSpaceSize + offset);
 
 		if (it->second.subMap)
 			throw std::runtime_error("Memory: unexpected sub-map");
@@ -385,15 +385,15 @@ double YamlLoadHelper::LoadDouble(const std::string& key)
 	return strtod(value.c_str(), NULL);
 }
 
-void YamlLoadHelper::LoadMemory(const LPBYTE pMemBase, const size_t size)
+void YamlLoadHelper::LoadMemory(const LPBYTE pMemBase, const size_t size, const UINT offset/*=0*/)
 {
-	m_yamlHelper.LoadMemory(*m_pMapYaml, pMemBase, size);
+	m_yamlHelper.LoadMemory(*m_pMapYaml, pMemBase, size, offset);
 }
 
-void YamlLoadHelper::LoadMemory(std::vector<BYTE>& memory, const size_t size)
+void YamlLoadHelper::LoadMemory(std::vector<BYTE>& memory, const size_t size, const UINT offset/*=0*/)
 {
 	memory.reserve(size);	// expand (but don't shrink) vector's capacity (NB. vector's size doesn't change)
-	const UINT bytes = m_yamlHelper.LoadMemory(*m_pMapYaml, &memory[0], size);
+	const UINT bytes = m_yamlHelper.LoadMemory(*m_pMapYaml, &memory[0], size, offset);
 	memory.resize(bytes);	// resize so that vector contains /bytes/ elements - so that size() gives correct value.
 }
 
@@ -519,7 +519,7 @@ void YamlSaveHelper::SaveDouble(const char* key, double value)
 }
 
 // Pre: uMemSize must be multiple of 8
-void YamlSaveHelper::SaveMemory(const LPBYTE pMemBase, const UINT uMemSize)
+void YamlSaveHelper::SaveMemory(const LPBYTE pMemBase, const UINT uMemSize, const UINT offset/*=0*/)
 {
 	if (uMemSize & 7)
 		throw std::runtime_error("Memory: size must be multiple of 8");
@@ -532,23 +532,23 @@ void YamlSaveHelper::SaveMemory(const LPBYTE pMemBase, const UINT uMemSize)
 	size_t lineSize = kIndent+6+2*kStride+2;	// "AAAA: 00010203...3F\n\00" = 6+ 2*64 +2
 	char* const pLine = new char [lineSize];
 
-	for(DWORD dwOffset = 0x0000; dwOffset < uMemSize; dwOffset+=kStride)
+	for (DWORD addr = offset; addr < (uMemSize + offset); addr += kStride)
 	{
 		char* pDst = pLine;
 		for (UINT i=0; i<kIndent; i++)
 			*pDst++ = ' ';
-		*pDst++ = szHex[ (dwOffset>>12)&0xf ];
-		*pDst++ = szHex[ (dwOffset>>8)&0xf ];
-		*pDst++ = szHex[ (dwOffset>>4)&0xf ];
-		*pDst++ = szHex[  dwOffset&0xf ];
+		*pDst++ = szHex[ (addr>>12)&0xf ];
+		*pDst++ = szHex[ (addr>>8)&0xf ];
+		*pDst++ = szHex[ (addr>>4)&0xf ];
+		*pDst++ = szHex[  addr&0xf ];
 		*pDst++ = ':';
 		*pDst++ = ' ';
 
-		LPBYTE pMem = pMemBase + dwOffset;
+		LPBYTE pMem = pMemBase + addr;
 
 		for (UINT i=0; i<kStride; i+=8)
 		{
-			if (dwOffset + i >= uMemSize)	// Support short final line (still multiple of 8 bytes)
+			if (addr + i >= (uMemSize + offset))	// Support short final line (still multiple of 8 bytes)
 			{
 				lineSize = lineSize - 2*kStride + 2*i;
 				break;

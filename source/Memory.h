@@ -25,6 +25,8 @@
 enum
 {
 	// Note: All are in bytes!
+	TEXT_PAGE1_BEGIN         = 0x0400,
+
 	APPLE_SLOT_SIZE          = 0x0100, // 1 page  = $Cx00 .. $CxFF (slot 1 .. 7)
 	APPLE_IO_BEGIN           = 0xC000,
 	APPLE_SLOT_BEGIN         = 0xC100, // each slot has 1 page reserved for it
@@ -57,6 +59,7 @@ extern iofunction IOWrite[256];
 extern LPBYTE     memwrite[0x100];
 extern LPBYTE     mem;
 extern LPBYTE     memdirty;
+extern LPBYTE     memVidHD;
 
 #ifdef RAMWORKS
 const UINT kMaxExMemoryBanks = 127;	// 127 * aux mem(64K) + main mem(64K) = 8MB
