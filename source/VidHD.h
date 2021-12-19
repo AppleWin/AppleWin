@@ -39,7 +39,7 @@ public:
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 private:
-	const UINT SHR_MEMORY_END = 0x9FFF;
+	static const UINT SHR_MEMORY_END = 0x9FFF;
 	UINT m_memMode;	// Only used by II/II+
 	BYTE m_SCREENCOLOR;
 	BYTE m_NEWVIDEO;

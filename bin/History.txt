@@ -8,6 +8,23 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.30.7.0 - 19 Dec 2021
+----------------------
+. [Bug #997] Support VidHD card for IIgs Super Hi-Res (SHR) video modes, eg. for Total Replay box art.
+	- Support VidHD in slot 3 (via Config GUI or '-s3 vidhd').
+	- Only partial VidHD support - ie. just for SHR video modes, but SHR is supported for all Apple II models.
+	- NB. AppleWin's window is slightly enlarged when VidHD card is inserted.
+	- Command line: Allow user to specify width & height (for full-screen); and allow separate x,y scaling in full-screen mode.
+	  - eg. for 4:3 aspect ratio on monitors that support it: -no-full-screen -fs-width=1600 -fs-height=1200
+	- Debugger: add 'shr' command to view video.
+. [Change #1007] HDD: Fail if r/w access touches $Cnnn I/O space
+	- Debugger: On a HDD r/w failure, execution will break, and the debugger will show a stop reason message.
+	- Also fix HDD write wrapping at 64KiB boundary.
+. [Change #996] Adapt HDD firmware to be slot-independent.
+	- Internal only, since currently no support to specify HDD Controller card in another slot.
+. Debugger: Add 'brk all <on|off>' command to break on any BRK or invalid opcode.
+
+
 1.30.6.0 - 30 Oct 2021
 ----------------------
 . [Bug #993] Fix Mousecard not persisting after a machine's hardware changes. (Regression at 1.30.5.0)
