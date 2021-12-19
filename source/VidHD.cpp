@@ -22,11 +22,25 @@
 */
 /*
   Emulate a VidHD card (Blue Shift Inc)
+  * Partial support only *
 
   Allows any Apple II to support the IIgs' 320x200 and 640x200 256-colour Super High-Res video modes.
-  Currently only a //e with 64K aux memory supports SHR mode.
 
-  NB. The extended text modes 80x45, 120x67, 240x135 (and setting FG/BG colours) are not supported yet.
+  NB. Not supported yet:
+  . Apple II/II+ support for //e video modes (TEXT80, DGR, DHGR).
+  . IIgs SCREEN & BORDER COLOR.
+  . IIgs B&W DHGR.
+  . The VidHD extended text modes 80x45, 120x67, 240x135 (and setting FG/BG colours).
+  . Enable/disable VidHD soft-switch.
+
+  Implemenation notes:
+  . II/II+
+    . Mirrors the 80STORE/PAGE2/AUXREAD/AUXWRITE switches to VidHD.
+    . Reuses 'memaux' that's for the //e models.
+    . AUXWRITE=1: writes occur to both main & memaux.
+    . 80STORE=1 && PAGE2=1: same as AUXWRITE=1 (but should be changed to *only* allow writes to aux's TEXT1 & HGR2 areas).
+    . VidHD card's save-state includes VidHD's aux mem ($400-$9FFF).
+  . //e with 1KiB 80-Col card: AppleWin doesn't support this - so currently out of scope.
 */
 
 #include "StdAfx.h"
