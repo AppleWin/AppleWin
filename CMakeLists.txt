@@ -75,7 +75,7 @@ if (BUILD_LIBRETRO)
   add_subdirectory(source/frontends/libretro)
 endif()
 
-set(CPACK_PACKAGE_VERSION "1.30.6.0")
+set(CPACK_PACKAGE_VERSION "1.30.7.0")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Apple ][ emulator for Linux")
 set(CPACK_PACKAGE_CONTACT "audetto <mariofutire@gmail.com>")
 
