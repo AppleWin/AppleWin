@@ -33,12 +33,15 @@
   . The VidHD extended text modes 80x45, 120x67, 240x135 (and setting FG/BG colours).
   . Enable/disable VidHD soft-switch.
 
-  Implemenation notes:
+  Implementation notes:
   . II/II+
     . Mirrors the 80STORE/PAGE2/AUXREAD/AUXWRITE switches to VidHD.
     . Reuses 'memaux' that's for the //e models.
     . AUXWRITE=1: writes occur to both main & memaux.
     . 80STORE=1 && PAGE2=1: same as AUXWRITE=1 (but should be changed to *only* allow writes to aux's TEXT1 & HGR2 areas).
+    . Only 6502 (not 65C02) emulation supports this dual write to main & memaux (via the 'memVidHD' pointer):
+      - So a II/II+ with a 65C02 won't correctly support VidHD cards.
+      - And a //e with a 6502 will incur a slight overhead to test 'memVidHD' pointer (which is always NULL for //e's).
     . VidHD card's save-state includes VidHD's aux mem ($400-$9FFF).
   . //e with 1KiB 80-Col card: AppleWin doesn't support this - so currently out of scope.
 */
