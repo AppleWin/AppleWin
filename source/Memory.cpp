@@ -1731,8 +1731,17 @@ void MemInitializeIO(void)
 
 // Called by:
 // . Snapshot_LoadState_v2()
-void MemInitializeCardSlotAndExpansionRomFromSnapshot(void)
+void MemInitializeFromSnapshot(void)
 {
+	MemInitializeROM();
+	MemInitializeCustomROM();
+	MemInitializeCustomF8ROM();
+	MemInitializeIO();
+
+	//
+	// Card and Expansion ROM
+	//
+
 	// Remove all the cards' ROMs at $Csnn if internal ROM is enabled
 	if (IsAppleIIeOrAbove(GetApple2Type()) && SW_INTCXROM)
 		IoHandlerCardsOut();
@@ -1740,13 +1749,27 @@ void MemInitializeCardSlotAndExpansionRomFromSnapshot(void)
 	// Potentially init a card's expansion ROM
 	const UINT uSlot = g_uPeripheralRomSlot;
 
-	if (ExpansionRom[uSlot] == NULL)
-		return;
+	if (ExpansionRom[uSlot] != NULL)
+	{
+		_ASSERT(g_eExpansionRomType == eExpRomPeripheral);
 
-	_ASSERT(g_eExpansionRomType == eExpRomPeripheral);
+		memcpy(pCxRomPeripheral + 0x800, ExpansionRom[uSlot], FIRMWARE_EXPANSION_SIZE);
+		// NB. Copied to /mem/ by UpdatePaging(TRUE)
+	}
 
-	memcpy(pCxRomPeripheral+0x800, ExpansionRom[uSlot], FIRMWARE_EXPANSION_SIZE);
-	// NB. Copied to /mem/ by UpdatePaging(TRUE)
+	MemUpdatePaging(TRUE);
+
+	//
+	// VidHD
+	//
+
+	memVidHD = NULL;
+
+	if (IsApple2PlusOrClone(GetApple2Type()) && (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD))
+	{
+		VidHDCard* vidHD = dynamic_cast<VidHDCard*>(GetCardMgr().GetObj(SLOT3));
+		memVidHD = vidHD->IsWriteAux() ? memaux : NULL;
+	}
 }
 
 inline DWORD getRandomTime()
@@ -1777,6 +1800,8 @@ void MemReset()
 	g_uPeripheralRomSlot = 0;
 
 	memset(memdirty, 0, 0x100);
+
+	memVidHD = NULL;
 
 	//
 

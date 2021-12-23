@@ -499,13 +499,7 @@ static void Snapshot_LoadState_v2(void)
 		const CConfigNeedingRestart configNew = CConfigNeedingRestart::Create();
 		GetPropertySheet().ApplyNewConfigFromSnapshot(configNew);	// Saves new state to Registry (not slot/cards though)
 
-		MemInitializeROM();
-		MemInitializeCustomROM();
-		MemInitializeCustomF8ROM();
-		MemInitializeIO();
-		MemInitializeCardSlotAndExpansionRomFromSnapshot();
-
-		MemUpdatePaging(TRUE);
+		MemInitializeFromSnapshot();
 
 		DebugReset();
 		if (g_nAppMode == MODE_DEBUG)
