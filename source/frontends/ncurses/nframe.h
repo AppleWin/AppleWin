@@ -25,6 +25,7 @@ namespace na2
     void Destroy() override;
     void VideoPresentScreen() override;
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
+    void FrameRefreshStatus(int drawflags);
 
     void ProcessEvDev();
 

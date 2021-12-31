@@ -6,6 +6,9 @@
 #include "Interface.h"
 #include "Memory.h"
 #include "Log.h"
+#include "Core.h"
+#include "CardManager.h"
+#include "Disk.h"
 
 #include <signal.h>
 #include <locale.h>
@@ -107,11 +110,9 @@ namespace na2
       keypad(myFrame.get(), true);
       wrefresh(myFrame.get());
 
-      myStatus.reset(newwin(4, width, 1 + myRows + 1, left), delwin);
-      box(myStatus.get(), 0 , 0);
-      wrefresh(myStatus.get());
+      myStatus.reset(newwin(8, width, 1 + myRows + 1, left), delwin);
+      FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
     }
-
   }
 
   WINDOW * NFrame::GetWindow()
@@ -194,6 +195,37 @@ namespace na2
     }
 
     wrefresh(myFrame.get());
+  }
+
+  void NFrame::FrameRefreshStatus(int drawflags)
+  {
+    werase(myStatus.get());
+    box(myStatus.get(), 0 , 0);
+
+    int row = 0;
+
+    CardManager& cardManager = GetCardMgr();
+    if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
+    {
+      Disk2InterfaceCard& disk2 = dynamic_cast<Disk2InterfaceCard&>(cardManager.GetRef(SLOT6));
+      const size_t maximumWidth = myColumns - 6;  // 6 is the width of "S6D1: "
+      for (UINT i = DRIVE_1; i <= DRIVE_2; ++i)
+      {
+        const std::string name = disk2.GetBaseName(i).substr(0, maximumWidth);
+        mvwprintw(myStatus.get(), ++row, 1, "S6D%d: %s", 1 + i, name.c_str());
+      }
+    }
+    else
+    {
+      row += DRIVE_2 - DRIVE_1 + 1;
+    }
+
+    ++row;
+
+    mvwprintw(myStatus.get(), ++row, 1, "F2: ResetMachine / Shift-F2: CtrlReset");
+    mvwprintw(myStatus.get(), ++row, 1, "F3: Exit         / F5: Swap");
+    mvwprintw(myStatus.get(), ++row, 1, "F11: Load State  / F12: Save State");
+    wrefresh(myStatus.get());
   }
 
   void NFrame::VideoUpdateFlash()
