@@ -37,8 +37,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Joystick.h"
 #include "SoundCore.h"
 #include "ParallelPrinter.h"
-#include "CardManager.h"
-#include "SerialComms.h"
 #include "Interface.h"
 
 CmdLine g_cmdLine;
@@ -408,8 +406,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if ((strcmp(lpCmdLine, "-dcd") == 0) || (strcmp(lpCmdLine, "-modem") == 0))	// GH#386
 		{
-			if (GetCardMgr().IsSSCInstalled())
-				GetCardMgr().GetSSC()->SupportDCD(true);
+			g_cmdLine.supportDCD = true;
 		}
 		else if (strcmp(lpCmdLine, "-alt-enter=toggle-full-screen") == 0)	// GH#556
 		{

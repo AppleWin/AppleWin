@@ -84,7 +84,7 @@ void    MemInitializeROM(void);
 void    MemInitializeCustomROM(void);
 void    MemInitializeCustomF8ROM(void);
 void    MemInitializeIO(void);
-void    MemInitializeCardSlotAndExpansionRomFromSnapshot(void);
+void    MemInitializeFromSnapshot(void);
 BYTE    MemReadFloatingBus(const ULONG uExecutedCycles);
 BYTE    MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles);
 void    MemReset ();

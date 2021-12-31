@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Registry.h"
 #include "Riff.h"
 #include "SaveState.h"
+#include "SerialComms.h"
 #include "SoundCore.h"
 #include "Speaker.h"
 #include "LanguageCard.h"
@@ -670,6 +671,7 @@ static void RepeatInitialization(void)
 		// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
 		const bool bShowAboutDlg = CheckOldAppleWinVersion();	// Post: g_OldAppleWinVersion
 
+		// Load configuration from Registry
 		{
 			bool loadImages = g_cmdLine.szSnapshotName == NULL;	// don't load floppy/harddisk images if a snapshot is to be loaded later on
 			LoadConfiguration(loadImages);
@@ -746,6 +748,11 @@ static void RepeatInitialization(void)
 			GetCardMgr().Remove(SLOT3);
 		if (g_cmdLine.bSlotEmpty[SLOT6])
 			GetCardMgr().Remove(SLOT6);
+
+		if (g_cmdLine.supportDCD && GetCardMgr().IsSSCInstalled())
+		{
+			GetCardMgr().GetSSC()->SupportDCD(true);
+		}
 
 		if (g_cmdLine.slotInsert[SLOT3] != CT_Empty && g_cmdLine.slotInsert[SLOT3] == CT_VidHD)	// For now just support VidHD in slot 3
 		{

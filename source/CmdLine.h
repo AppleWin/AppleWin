@@ -20,6 +20,7 @@ struct CmdLine
 		bRemoveNoSlotClock = false;
 		snesMaxAltControllerType[0] = false;
 		snesMaxAltControllerType[1] = false;
+		supportDCD = false;
 		szImageName_harddisk[HARDDISK_1] = NULL;
 		szImageName_harddisk[HARDDISK_2] = NULL;
 		szSnapshotName = NULL;
@@ -59,6 +60,7 @@ struct CmdLine
 	bool bSwapButtons0and1;
 	bool bRemoveNoSlotClock;
 	bool snesMaxAltControllerType[2];
+	bool supportDCD;
 	SS_CARDTYPE slotInsert[NUM_SLOTS];
 	LPCSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES];
 	bool driveConnected[NUM_SLOTS][NUM_DRIVES];
