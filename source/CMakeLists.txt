@@ -1,15 +1,16 @@
 include(FindPkgConfig)
+include(FindZLIB)
 
-pkg_check_modules(YAML REQUIRED yaml-0.1)
-pkg_check_modules(MINIZIP REQUIRED minizip)
-pkg_check_modules(ZLIB REQUIRED zlib)
-pkg_check_modules(SLIRP slirp)
+find_package(ZLIB REQUIRED)
+pkg_search_module(YAML REQUIRED yaml-0.1)
+pkg_search_module(MINIZIP REQUIRED minizip)
+pkg_search_module(SLIRP slirp)
 
 if ("${SLIRP_FOUND}" STREQUAL "")
   message(WARNING "'libslirp' not found. Will use 'libpcap' instead")
 endif()
 
-pkg_check_modules(PCAP libpcap)
+pkg_search_module(PCAP libpcap)
 if ("${PCAP_FOUND}" STREQUAL "")
   # old versions of pcap do not work with pkg-config
   # this is necessary on Rapsberri Pi OS
@@ -214,7 +215,6 @@ target_include_directories(appleii PRIVATE
   ${PCAP_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${SLIRP_INCLUDE_DIRS}
-  ${ZLIB_INCLUDE_DIRS}
   Debugger
   )
 
@@ -228,7 +228,7 @@ target_link_libraries(appleii PRIVATE
   ${MINIZIP_LIBRARIES}
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}
-  ${ZLIB_LIBRARIES}
+  ZLIB::ZLIB
   )
 
 target_link_libraries(appleii PUBLIC
@@ -240,7 +240,6 @@ target_link_directories(appleii PRIVATE
   ${MINIZIP_LIBRARY_DIRS}
   ${PCAP_LIBRARY_DIRS}
   ${SLIRP_LIBRARY_DIRS}
-  ${ZLIB_LIBRARY_DIRS}
   )
 
 target_compile_options(appleii PUBLIC

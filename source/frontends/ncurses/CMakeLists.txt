@@ -1,4 +1,5 @@
 include(FindPkgConfig)
+include(FindCurses)
 
 set(SOURCE_FILES
   main.cpp
@@ -22,22 +23,23 @@ add_executable(applen
   ${HEADER_FILES}
   )
 
-pkg_search_module(NCURSESW REQUIRED ncursesw)
+find_package(Curses REQUIRED)
+# pkg_search_module(NCURSESW REQUIRED ncursesw)
 pkg_search_module(LIBEVDEV REQUIRED libevdev)
 
 target_include_directories(applen PRIVATE
-  ${NCURSESW_INCLUDE_DIRS}
+  ${CURSES_INCLUDE_DIRS}
   ${LIBEVDEV_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   )
 
 target_compile_options(applen PRIVATE
-  ${NCURSESW_CFLAGS_OTHER}
+  ${CURSES_CFLAGS}
   ${LIBEVDEV_CFLAGS_OTHER}
   )
 
 target_link_libraries(applen PRIVATE
-  ${NCURSESW_LIBRARIES}
+  ${CURSES_LIBRARIES}
   ${LIBEVDEV_LIBRARIES}
   appleii
   common2
