@@ -518,8 +518,13 @@ void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 		32
 	);
 
-	char sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[ sizeof( WinBmpHeader_t ) == (14 + 40) ];
+#define EXPECTED_BMP_HEADER_SIZE (14 + 40)
+#ifdef _MSC_VER
+	char sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[ sizeof( WinBmpHeader_t ) == EXPECTED_BMP_HEADER_SIZE];
 	/**/ sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[0]=0;
+#else
+	static_assert(sizeof( WinBmpHeader_t ) == EXPECTED_BMP_HEADER_SIZE, "BadWinBmpHeaderPackingSize");
+#endif
 
 	// Write Header
 	fwrite( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
