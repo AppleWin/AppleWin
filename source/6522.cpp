@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // TODO: remove these (just including for now to allow TU to compile)
 extern UINT g_nMBTimerDevice;
 static const UINT kTIMERDEVICE_INVALID = -1;
+static const UINT kAY8910Number = 0;	// needed?
 
 void SY6522::Reset(const bool powerCycle)
 {
@@ -54,6 +55,8 @@ void SY6522::Reset(const bool powerCycle)
 
 	StopTimer1();
 	StopTimer2();
+
+	m_timer1IrqDelay = m_timer2IrqDelay = 0;
 }
 
 //---------------------------------------------------------------------------
@@ -63,9 +66,9 @@ void SY6522::StartTimer1(void)
 	m_timer1Active = true;
 
 	if (m_regs.IER & IxR_TIMER1)			// Using 6522 interrupt
-		g_nMBTimerDevice = nAY8910Number;
+		g_nMBTimerDevice = kAY8910Number;
 	else if (m_regs.ACR & ACR_RM_FREERUNNING)	// Polling 6522 IFR (GH#496)
-		g_nMBTimerDevice = nAY8910Number;
+		g_nMBTimerDevice = kAY8910Number;
 }
 
 // The assumption was that timer1 was only active if IER.TIMER1=1
@@ -76,7 +79,7 @@ void SY6522::StartTimer1_LoadStateV1(void)
 		return;
 
 	m_timer1Active = true;
-	g_nMBTimerDevice = nAY8910Number;
+	g_nMBTimerDevice = kAY8910Number;
 }
 
 void SY6522::StopTimer1(void)
@@ -144,8 +147,6 @@ void SY6522::UpdateIFR(BYTE clr_ifr, BYTE set_ifr /*= 0*/)
 
 void SY6522::Write(BYTE nReg, BYTE nValue)
 {
-	g_bMB_Active = true;
-
 	switch (nReg)
 	{
 	case 0x00:	// ORB
@@ -312,8 +313,6 @@ bool SY6522::IsTimer2Underflowed(BYTE reg)
 
 BYTE SY6522::Read(BYTE nReg)
 {
-	g_bMB_Active = true;
-
 	BYTE nValue = 0x00;
 
 	switch (nReg)

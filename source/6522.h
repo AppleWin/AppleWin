@@ -133,9 +133,5 @@ private:
 	bool m_timer1Active;
 	bool m_timer2Active;
 
-	UINT nAY8910Number;
-
-	bool g_bMB_Active;
-
 	class SyncEvent* m_syncEvent[kNumTimersPer6522];
 };
