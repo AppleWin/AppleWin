@@ -509,7 +509,7 @@ void Video::Video_SetBitmapHeader(WinBmpHeader_t *pBmp, int nWidth, int nHeight,
 
 void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShotType)
 {
-	WinBmpHeader_t *pBmp = &g_tBmpHeader;
+	WinBmpHeader_t bmp, *pBmp = &bmp;
 
 	Video_SetBitmapHeader(
 		pBmp,

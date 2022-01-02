@@ -291,8 +291,6 @@ private:
 	COLORREF g_nMonochromeRGB;	// saved to Registry
 	bool m_hasVidHD;
 
-	WinBmpHeader_t g_tBmpHeader;
-
 	static const int kVDisplayableScanLines = 192; // max displayable scanlines
 
 	static const UINT kVideoRomSize8K = kVideoRomSize4K*2;
