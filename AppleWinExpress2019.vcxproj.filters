@@ -244,6 +244,9 @@
     <ClCompile Include="Source\VidHD.cpp">
       <Filter>Source Files\Video</Filter>
     </ClCompile>
+    <ClCompile Include="source\6522.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\CommonVICE\6510core.h">
@@ -560,6 +563,9 @@
     </ClInclude>
     <ClInclude Include="Source\VidHD.h">
       <Filter>Source Files\Video</Filter>
+    </ClInclude>
+    <ClInclude Include="source\6522.h">
+      <Filter>Source Files\Emulator</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
