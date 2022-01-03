@@ -11,6 +11,7 @@
 #include <QMdiSubWindow>
 #include <QFile>
 #include <QMessageBox>
+#include <QStandardPaths>
 
 QtFrame::QtFrame(Emulator * emulator, QMdiSubWindow * window) : myEmulator(emulator), myWindow(window), myForceRepaint(false)
 {
@@ -141,6 +142,12 @@ BYTE* QtFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)
     }
 
     return reinterpret_cast<BYTE *>(myResource.data());
+}
+
+std::string QtFrame::Video_GetScreenShotFolder()
+{
+    const QString pictures = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+    return pictures.toStdString() + "/";
 }
 
 void SingleStep(bool /* bReinit */)

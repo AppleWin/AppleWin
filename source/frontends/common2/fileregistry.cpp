@@ -28,17 +28,6 @@ namespace
     std::replace(value.begin(), value.end(), '_', ' ');
   }
 
-  std::string getHomeDir()
-  {
-    const char* homeDir = getenv("HOME");
-    if (!homeDir)
-    {
-      throw std::runtime_error("${HOME} not set, cannot locate configuration file");
-    }
-
-    return std::string(homeDir);
-  }
-
   class Configuration : public common2::PTreeRegistry
   {
   public:
@@ -94,9 +83,20 @@ namespace
 namespace common2
 {
 
+  std::string GetHomeDir()
+  {
+    const char* homeDir = getenv("HOME");
+    if (!homeDir)
+    {
+      throw std::runtime_error("${HOME} not set, cannot locate configuration file");
+    }
+
+    return std::string(homeDir);
+  }
+
   std::string GetConfigFile(const std::string & filename)
   {
-    const std::string dir = getHomeDir() + "/.applewin";
+    const std::string dir = GetHomeDir() + "/.applewin";
     const int status = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     if (!status || (errno == EEXIST))
     {
@@ -112,7 +112,7 @@ namespace common2
 
   std::shared_ptr<Registry> CreateFileRegistry(const EmulatorOptions & options)
   {
-    const std::string homeDir = getHomeDir();
+    const std::string homeDir = GetHomeDir();
 
     std::string filename;
     bool saveOnExit;

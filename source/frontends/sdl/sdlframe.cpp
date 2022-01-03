@@ -512,6 +512,10 @@ namespace sa2
               SDL_SetClipboardText(pText);
             }
           }
+          else if (key.keysym.mod & KMOD_ALT)
+          {
+            Video_TakeScreenShot(Video::SCREENSHOT_560x384);
+          }
           break;
         }
       case SDLK_SCROLLLOCK:

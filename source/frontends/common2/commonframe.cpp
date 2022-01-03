@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "frontends/common2/commonframe.h"
 #include "frontends/common2/utils.h"
+#include "frontends/common2/fileregistry.h"
 #include "linux/resources.h"
 #include "linux/context.h"
 
@@ -119,6 +120,11 @@ namespace common2
     if (resource == "CHARSET8C") return "CHARSET8C.bmp";
 
     return resource;
+  }
+
+  std::string CommonFrame::Video_GetScreenShotFolder()
+  {
+    return GetHomeDir() + "/Pictures/";
   }
 
 }

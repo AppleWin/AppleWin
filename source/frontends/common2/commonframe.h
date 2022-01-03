@@ -14,6 +14,8 @@ namespace common2
 
     BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) override;
 
+    std::string Video_GetScreenShotFolder() override;
+
   protected:
     static std::string getBitmapFilename(const std::string & resource);
 
