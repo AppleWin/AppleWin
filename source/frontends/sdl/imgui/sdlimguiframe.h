@@ -3,6 +3,7 @@
 #include "frontends/sdl/sdlframe.h"
 #include "frontends/sdl/imgui/sdlsettings.h"
 #include "frontends/sdl/imgui/glselector.h"
+#include "frontends/common2/gnuframe.h"
 
 namespace common2
 {
@@ -12,7 +13,7 @@ namespace common2
 namespace sa2
 {
 
-  class SDLImGuiFrame : public SDLFrame
+  class SDLImGuiFrame : public SDLFrame, public common2::GNUFrame
   {
   public:
     SDLImGuiFrame(const common2::EmulatorOptions & options);

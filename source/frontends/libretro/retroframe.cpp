@@ -139,7 +139,7 @@ namespace ra2
   void RetroFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
   {
     const std::string filename = getBitmapFilename(lpBitmapName);
-    const std::string path = myResourcePath + filename;
+    const std::string path = getResourcePath(filename);
 
     std::vector<char> buffer;
     readFileToBuffer(path, buffer);

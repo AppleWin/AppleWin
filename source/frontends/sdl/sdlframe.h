@@ -14,7 +14,7 @@ namespace common2
 namespace sa2
 {
 
-  class SDLFrame : public common2::CommonFrame
+  class SDLFrame : public virtual common2::CommonFrame
   {
   public:
     SDLFrame(const common2::EmulatorOptions & options);
