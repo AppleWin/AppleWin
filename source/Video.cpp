@@ -509,7 +509,7 @@ void Video::Video_SetBitmapHeader(WinBmpHeader_t *pBmp, int nWidth, int nHeight,
 
 void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShotType)
 {
-	WinBmpHeader_t *pBmp = &g_tBmpHeader;
+	WinBmpHeader_t bmp, *pBmp = &bmp;
 
 	Video_SetBitmapHeader(
 		pBmp,
@@ -518,8 +518,13 @@ void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 		32
 	);
 
-	char sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[ sizeof( WinBmpHeader_t ) == (14 + 40) ];
+#define EXPECTED_BMP_HEADER_SIZE (14 + 40)
+#ifdef _MSC_VER
+	char sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[ sizeof( WinBmpHeader_t ) == EXPECTED_BMP_HEADER_SIZE];
 	/**/ sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[0]=0;
+#else
+	static_assert(sizeof( WinBmpHeader_t ) == EXPECTED_BMP_HEADER_SIZE, "BadWinBmpHeaderPackingSize");
+#endif
 
 	// Write Header
 	fwrite( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
@@ -575,6 +580,11 @@ void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 			pSrc += GetFrameBufferWidth();
 		}
 	}
+
+	// re-write the Header to include the file size (otherwise "file" does not recognise it)
+	pBmp->nSizeFile = ftell(pFile);
+	rewind(pFile);
+	fwrite( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
 }
 
 //===========================================================================

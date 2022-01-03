@@ -82,13 +82,9 @@ enum AppleFont_e
 	APPLE_FONT_Y_APPLE_40COL = 512, // ][
 };
 
-#ifdef _MSC_VER
-	// turn of MSVC struct member padding
-	#pragma pack(push,1)
-	#define PACKED
-#else
-	#define PACKED // TODO: FIXME: gcc/clang __attribute__
-#endif
+
+// turn on struct member padding
+#pragma pack(push,1)
 
 // TODO: Replace with WinGDI.h / RGBQUAD
 struct bgra_t
@@ -174,10 +170,7 @@ struct WinBmpHeader4_t
 	uint32_t nBlueGamma      ; // 0x76 0x04
 };
 
-#ifdef _MSC_VER
-	#pragma pack(pop)
-#endif
-
+#pragma pack(pop)
 //
 
 class Video
@@ -297,8 +290,6 @@ private:
 	bool g_bVideoScannerNTSC;	// NTSC video scanning (or PAL)
 	COLORREF g_nMonochromeRGB;	// saved to Registry
 	bool m_hasVidHD;
-
-	WinBmpHeader_t g_tBmpHeader;
 
 	static const int kVDisplayableScanLines = 192; // max displayable scanlines
 

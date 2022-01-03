@@ -121,9 +121,9 @@ void FrameBase::Video_SaveScreenShot(const Video::VideoScreenShot_e ScreenShotTy
 void FrameBase::Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars)
 {
 	const std::string sPrefixScreenShotFileName = "AppleWin_ScreenShot";
-	// TODO: g_sScreenshotDir
 	const std::string pPrefixFileName = !g_pLastDiskImageName.empty() ? g_pLastDiskImageName : sPrefixScreenShotFileName;
-	StringCbPrintf(pFinalFileName_, chars, TEXT("%s_%09d.bmp"), pPrefixFileName.c_str(), g_nLastScreenShot);
+	const std::string folder = Video_GetScreenShotFolder();
+	StringCbPrintf(pFinalFileName_, chars, TEXT("%s%s_%09d.bmp"), folder.c_str(), pPrefixFileName.c_str(), g_nLastScreenShot);
 }
 
 // Returns TRUE if file exists, else FALSE

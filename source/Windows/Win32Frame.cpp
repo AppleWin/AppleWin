@@ -620,3 +620,9 @@ BYTE* Win32Frame::GetResource(WORD id, LPCSTR lpType, DWORD dwExpectedSize)
 
 	return pResource;
 }
+
+std::string Win32Frame::Video_GetScreenShotFolder()
+{
+	// save in current folder
+	return "";
+}
