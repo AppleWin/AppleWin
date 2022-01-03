@@ -10,6 +10,10 @@
 #include <unistd.h>
 #include <libgen.h>
 
+#ifdef __APPLE__
+#include "mach-o/dyld.h"
+#endif
+
 #include "Log.h"
 #include "Core.h"
 #include "config.h"
@@ -36,7 +40,14 @@ namespace
     std::vector<std::string> paths;
 
     char self[1024] = {0};
+
+#ifdef __APPLE__
+    uint32_t size = sizeof(self);
+    const int ch = _NSGetExecutablePath(self, &size);
+#else
     const int ch = readlink("/proc/self/exe", self,  sizeof(self));
+#endif
+
     if (ch != -1)
     {
       const char * path = dirname(self);
