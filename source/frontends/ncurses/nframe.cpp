@@ -197,7 +197,7 @@ namespace na2
     wrefresh(myFrame.get());
   }
 
-  void NFrame::FrameRefreshStatus(int drawflags)
+  void NFrame::FrameRefreshStatus(int /* drawflags */)
   {
     werase(myStatus.get());
     box(myStatus.get(), 0 , 0);
