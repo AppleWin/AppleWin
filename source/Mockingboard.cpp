@@ -351,8 +351,8 @@ void MB_UpdateIRQ(void)
 static UINT64 g_uLastMBUpdateCycle = 0;
 
 // Called by:
-// . MB_UpdateCycles()    - when g_nMBTimerDevice == {0,1,2,3}
-// . MB_PeriodicUpdate()  - when g_nMBTimerDevice == kTIMERDEVICE_INVALID
+// . MB_SyncEventCallback() on a TIMER1 (not TIMER2) underflow - when g_nMBTimerDevice == {0,1,2,3}
+// . MB_PeriodicUpdate()                                       - when g_nMBTimerDevice == kTIMERDEVICE_INVALID
 static void MB_UpdateInt(void)
 {
 	if (!MockingboardVoice.bActive)
@@ -1128,7 +1128,7 @@ void MB_SetCumulativeCycles()
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
 }
 
-// Called by ContinueExecution() at the end of every execution period (~1000 cycles or ~3 cycle when MODE_STEPPING)
+// Called by ContinueExecution() at the end of every execution period (~1000 cycles or ~3 cycles when MODE_STEPPING)
 // NB. Required for FT's TEST LAB #1 player
 void MB_PeriodicUpdate(UINT executedCycles)
 {
@@ -1154,8 +1154,7 @@ void MB_PeriodicUpdate(UINT executedCycles)
 //-----------------------------------------------------------------------------
 
 // Called by:
-// . CpuExecute() every ~1000 cycles @ 1MHz
-// . MB_SyncEventCallback() on a TIMER1/2 underflow
+// . CpuExecute() every ~1000 cycles @ 1MHz (or ~3 cycles when MODE_STEPPING)
 // . MB_Read() / MB_Write() (for both normal & full-speed)
 void MB_UpdateCycles(ULONG uExecutedCycles)
 {
@@ -1181,18 +1180,18 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 
 //-----------------------------------------------------------------------------
 
+// Called on a 6522 TIMER1/2 underflow
 static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 {
+	// NB. No need to call MB_UpdateCycles()
+
 	SY6522_AY8910* pMB = &g_MB[id / SY6522::kNumTimersPer6522];
 
 	if ((id & 1) == 0)
 	{
 		_ASSERT(pMB->sy6522.IsTimer1Active());
-		MB_Update();
-
 		UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER1);
-
-		MB_UpdateCycles(uExecutedCycles);
+		MB_Update();
 
 		if ((pMB->sy6522.GetReg(SY6522::rACR) & SY6522::ACR_RUNMODE) == SY6522::ACR_RM_ONESHOT)
 		{
@@ -1207,6 +1206,7 @@ static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 	}
 	else
 	{
+		// NB. Since not calling MB_Update(), then AppleWin doesn't (accurately?) support AY-playback using T2 (which is one-shot only)
 		_ASSERT(pMB->sy6522.IsTimer2Active());
 		UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER2);
 

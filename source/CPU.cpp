@@ -631,9 +631,10 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 	//  >0  : Do multi-opcode emulation
 	const DWORD uExecutedCycles = InternalCpuExecute(uCycles, bVideoUpdate);
 
-	// NB. Required for normal-speed (even though 6522 is updated after every opcode), as may've finished on IRQ()
-	MB_UpdateCycles(uExecutedCycles);	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
-										// NB. Ensures that 6522 regs are up-to-date for any potential save-state
+	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
+	// . Ensures that 6522 regs are up-to-date for any potential save-state
+	// . SyncEvent will trigger the 6522 TIMER1/2 underflow on the correct cycle
+	MB_UpdateCycles(uExecutedCycles);
 
 	const UINT nRemainingCycles = uExecutedCycles - g_nCyclesExecuted;
 	g_nCumulativeCycles	+= nRemainingCycles;
