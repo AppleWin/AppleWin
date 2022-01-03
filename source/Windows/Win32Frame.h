@@ -55,6 +55,8 @@ public:
 	virtual BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize);
 	virtual void Restart();
 
+	virtual std::string Video_GetScreenShotFolder();
+
 	bool GetFullScreenShowSubunitStatus(void);
 	int GetFullScreenOffsetX(void);
 	int GetFullScreenOffsetY(void);
