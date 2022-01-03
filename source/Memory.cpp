@@ -1934,7 +1934,7 @@ void MemReset()
 
 	// INITIALIZE & RESET THE CPU
 	// . Do this after ROM has been copied back to mem[], so that PC is correctly init'ed from 6502's reset vector
-	CpuInitialize();
+	CpuInitialize(true);
 	//Sets Caps Lock = false (Pravets 8A/C only)
 
 	z80_reset();	// NB. Also called above in CpuInitialize()
