@@ -1794,11 +1794,15 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	if (line.bTargetImmediate)
 	{
 		linerect.left = (int) aTabs[ TS_IMMEDIATE ];
-		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
-		PrintTextCursorX( "#", linerect );
 
-		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SINT8 ));
-		PrintTextCursorX( line.sImmediateSignedDec, linerect);
+		if( line.nImmediate )
+		{
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
+			PrintTextCursorX( "#", linerect );
+
+			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SINT8 ));
+			PrintTextCursorX( line.sImmediateSignedDec, linerect);
+		}
 	}
 
 	// Immediate Char
