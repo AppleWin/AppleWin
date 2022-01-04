@@ -1797,6 +1797,10 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 
 		if( line.nImmediate )
 		{
+			// Right justify to target ADDR:##
+			size_t len = strlen( line.sImmediateSignedDec );
+			linerect.left += (2 + (4 - len)) * nDefaultFontWidth;
+
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 			PrintTextCursorX( "#", linerect );
 

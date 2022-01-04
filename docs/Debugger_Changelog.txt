@@ -1,5 +1,7 @@
 /*
-
+2.9.1.11 Fixed: Right justify signed decimal values.
+2.9.1.10 Fixed: Immedate #80 was not showing -128 for the signed decimal value.
+2.9.1.9 Fixed: Immediate #0 was showing '#' prefix but not showing zero for the signed decimal value. Changed to show the signed decimal value only if non zero.
 2.9.1.8 Changed: Disassembly window now lists symbol labels and symbol target address from User2 in orange.
     Example:
         U 300
