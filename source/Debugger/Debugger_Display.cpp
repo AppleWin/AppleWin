@@ -1797,6 +1797,10 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 
 		if( line.nImmediate )
 		{
+			/*
+                300:A9 80 A9 81 A9 FF A9 00 A9 01 A9 7E A9 7F
+			*/
+
 			// Right justify to target ADDR:##
 			size_t len = strlen( line.sImmediateSignedDec );
 			linerect.left += (2 + (4 - len)) * nDefaultFontWidth;

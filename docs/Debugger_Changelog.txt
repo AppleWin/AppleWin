@@ -1,5 +1,16 @@
 /*
 2.9.1.11 Fixed: Right justify signed decimal values.
+    Example:
+        U 300
+        300:A9 80 A9 81 A9 FF A9 00 A9 01 A9 7E A9 7F
+    Will display as:
+        LDA #$80         #-128
+        LDA #$81         #-127
+        LDA #$FF           #-1
+        LDA #$00
+        LDA #$01           #+1
+        LDA #$7E         #+126
+        LDA #$7F         #+127
 2.9.1.10 Fixed: Immedate #80 was not showing -128 for the signed decimal value.
 2.9.1.9 Fixed: Immediate #0 was showing '#' prefix but not showing zero for the signed decimal value. Changed to show the signed decimal value only if non zero.
 2.9.1.8 Changed: Disassembly window now lists symbol labels and symbol target address from User2 in orange.
