@@ -73,7 +73,7 @@
 	#define CHC_SYMBOL   "`2" // Symbols
 	#define CHC_ADDRESS  "`8" // Hex Address
 	#define CHC_ERROR    "`1" // Red
-	#define CHC_WARNING  "`5" // Purple
+	#define CHC_WARNING  "`8" // Orange
 	#define CHC_INFO     "`3" // Yellow
 	#define CHC_STRING   "`6" // 
 	#define CHC_EXAMPLE  "`:"

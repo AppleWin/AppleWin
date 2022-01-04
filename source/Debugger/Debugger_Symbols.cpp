@@ -273,7 +273,7 @@ Update_t CmdSymbols (int nArgs)
 //===========================================================================
 Update_t CmdSymbolsClear (int nArgs)
 {
-	SymbolTable_Index_e eSymbolTable = SYMBOLS_USER_1;	
+	SymbolTable_Index_e eSymbolTable = SYMBOLS_USER_1;
 	_CmdSymbolsClear( eSymbolTable );
 	return (UPDATE_DISASM | UPDATE_SYMBOLS);
 }
@@ -648,12 +648,17 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 			int nLen = strlen( sName );
 			if (nLen > nMaxLen)
 			{
-				ConsolePrintFormat( sText, " %sWarn.: %s%s (%d > %d)"
+				ConsolePrintFormat( sText, " %sWarn.: %s%s %s(%s%d %s> %s%d%s)"
 					, CHC_WARNING
 					, CHC_SYMBOL
 					, sName
+					, CHC_ARG_SEP
+					, CHC_NUM_DEC
 					, nLen
+					, CHC_ARG_SEP
+					, CHC_NUM_DEC
 					, nMaxLen
+					, CHC_ARG_SEP
 				);
 				ConsoleUpdate(); // Flush buffered output so we don't ask the user to pause
 			}
