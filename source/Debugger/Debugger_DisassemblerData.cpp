@@ -671,9 +671,11 @@ void Disassembly_DelData( DisasmData_t tData)
 		{
 			if (pData->iDirective != _NOP_REMOVED)
 			{
-				if ((nAddress >= pData->nStartAddress) && (nAddress < pData->nEndAddress))
+				if ((nAddress >= pData->nStartAddress) && (nAddress <= pData->nEndAddress))
 				{
 					pData->iDirective = _NOP_REMOVED;
+
+					// TODO: delete from vector?
 				}
 			}
 			pData++;
