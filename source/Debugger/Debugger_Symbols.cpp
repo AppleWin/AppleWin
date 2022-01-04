@@ -140,11 +140,17 @@ int GetSymbolTableFromCommand()
 	return (g_iCommand - CMD_SYMBOLS_ROM);
 }
 
+// @param iTable_ Which symbol table the symbol is in if any.  If none will be NUM_SYMBOL_TABLES
 //===========================================================================
 const char* FindSymbolFromAddress (WORD nAddress, int * iTable_ )
 {
 	// Bugfix/User feature: User symbols should be searched first
 	int iTable = NUM_SYMBOL_TABLES;
+	if (iTable_)
+	{
+		*iTable_ = iTable;
+	}
+
 	while (iTable-- > 0)
 	{
 		if (! g_aSymbols[iTable].size())
