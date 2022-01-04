@@ -1330,7 +1330,9 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	int iOpmode;
 	int nOpbyte;
 	DisasmLine_t line;
-	const char* pSymbol = FindSymbolFromAddress( nBaseAddress );
+
+	int         iTable    = NUM_SYMBOL_TABLES;
+	const char* pSymbol   = FindSymbolFromAddress( nBaseAddress, &iTable );
 	const char* pMnemonic = NULL;
 
 	// Data Disassembler
@@ -1557,7 +1559,12 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	if (pSymbol)
 	{
 		if (! bCursorLine)
-			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
+		{
+			if (iTable == SYMBOLS_USER_2)
+				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ) ); // Show user symbols 2 in different color for organization when reverse engineering.  Table 1 = known, Table 2 = unknown.
+			else
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
+		}
 		PrintTextCursorX( pSymbol, linerect );
 	}
 
@@ -1606,7 +1613,10 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	{
 		if (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL)
 		{
-			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
+			if (line.iTargetTable == SYMBOLS_USER_2)
+				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ) ); // Show user symbols 2 in different color for organization when reverse engineering.  Table 1 = known, Table 2 = unknown.
+			else
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
 		}
 		else
 		{

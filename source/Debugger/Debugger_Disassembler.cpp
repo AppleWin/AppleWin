@@ -275,7 +275,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 			const char* pTarget = NULL;
 			const char* pSymbol = 0;
 
-			pSymbol = FindSymbolFromAddress(nTarget);
+			pSymbol = FindSymbolFromAddress(nTarget, &line_.iTargetTable);
 
 			// Data Assembler
 			if (pData && (!pData->bSymbolLookup))
@@ -290,7 +290,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 
 			if (!(bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
 			{
-				pSymbol = FindSymbolFromAddress(nTarget - 1);
+				pSymbol = FindSymbolFromAddress(nTarget - 1, &line_.iTargetTable);
 				if (pSymbol)
 				{
 					bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
@@ -312,7 +312,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 			//    nSecondTarget = g_bDebugConfig_DisasmMatchSymbolOffsetMinus1First ? nTarget+1 : nTarget-1;
 			if (!(bDisasmFormatFlags & DISASM_FORMAT_SYMBOL) || pData)
 			{
-				pSymbol = FindSymbolFromAddress(nTarget + 1);
+				pSymbol = FindSymbolFromAddress(nTarget + 1,&line_.iTargetTable);
 				if (pSymbol)
 				{
 					bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;

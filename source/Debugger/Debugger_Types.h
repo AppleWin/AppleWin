@@ -960,6 +960,8 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		char sTargetValue  [ CHARS_FOR_ADDRESS ];
 //		char sTargetAddress[ CHARS_FOR_ADDRESS ];
 
+		int iTargetTable; // Which symbol table this appears in if any.  See: SYMBOLS_USER_2, DrawDisassemblyLine(), GetDisassemblyLine(), FindSymbolFromAddress()
+
 		char sImmediateSignedDec[ 6 ]; // "-128" .. "+127"
 		char sImmediate[ 4 ]; // 'c'
 		char nImmediate;
