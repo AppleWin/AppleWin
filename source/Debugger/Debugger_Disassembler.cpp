@@ -397,7 +397,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 					sprintf(line_.sImmediateSignedDec, "+%d" , nTarget );
 				else
 				if (nTarget >= 128)
-					sprintf(line_.sImmediateSignedDec, "-%d" , (~nTarget + 1) & 0x7F );
+					sprintf(line_.sImmediateSignedDec, "-%d" , (~nTarget + 1) & 0xFF );
 
 				bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
 				line_.nImmediate = (BYTE)nTarget;
