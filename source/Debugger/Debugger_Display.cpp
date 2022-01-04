@@ -1369,9 +1369,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 //	int X_BRANCH      = 46 * nDefaultFontWidth;
 
 	float aTabs[ _NUM_TAB_STOPS ] =
-//	{ 6, 16, 26, 41, 46, 49 }; // 6, 17, 26, 40, 46
 #if USE_APPLE_FONT
-//	{ 5, 14, 20, 40, 46, 49 };
       // xxxx:xx xx xx LABELxxxxxx MNEMONIC    'E' =
       // 0   45        14          26
 	{ 5, 14, 26, 41, 48, 49 };
