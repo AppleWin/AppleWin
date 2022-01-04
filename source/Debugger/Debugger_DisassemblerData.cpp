@@ -93,8 +93,16 @@ WORD _GetDataRange (int nArgs, int iArg, DisasmData_t& tData_)
 		}
 		else
 		{
-			if( nArgs > 1 )
-				nAddress = g_aArgs[ 2 ].nValue;
+			if (nArgs > 1)
+			{
+				// 2.9.1.1 Add: Support for equal sign, also make it optional for command DB
+				// DB FOO   300
+				// DB FOO = 300
+				if (g_aArgs[2].bType == TOKEN_EQUAL)
+					nAddress = g_aArgs[ 3 ].nValue;
+				else
+					nAddress = g_aArgs[ 2 ].nValue;
+			}
 			else
 				nAddress = g_aArgs[ 1 ].nValue;
 		}

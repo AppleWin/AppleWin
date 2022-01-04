@@ -1,5 +1,12 @@
 /*
 
+2.9.1.3 Added: DB command now optionally supports =
+    DB HGR = 2000:3FFF
+2.9.1.2 Fixed: Off by one end address when deleting DisasmData_t
+2.9.1.1 Added: X command now supports a range and will chop off the appropiate data sections.
+    DB 2000:2005
+    X  2002:2003
+Released post 1.30.7.0
 
 2.9.1.0 Added: Bookmarks now have their own indicator (a number with a box around it) and replace the ":" seperator. Updated Debug_Font.bmp
 
