@@ -1155,6 +1155,7 @@ void MB_PeriodicUpdate(UINT executedCycles)
 
 // Called by:
 // . CpuExecute() every ~1000 cycles @ 1MHz (or ~3 cycles when MODE_STEPPING)
+// . MB_SyncEventCallback() on a TIMER1/2 underflow
 // . MB_Read() / MB_Write() (for both normal & full-speed)
 void MB_UpdateCycles(ULONG uExecutedCycles)
 {
@@ -1183,7 +1184,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 // Called on a 6522 TIMER1/2 underflow
 static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 {
-	// NB. No need to call MB_UpdateCycles()
+	MB_UpdateCycles(uExecutedCycles);
 
 	SY6522_AY8910* pMB = &g_MB[id / SY6522::kNumTimersPer6522];
 
