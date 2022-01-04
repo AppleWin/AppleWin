@@ -32,6 +32,36 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // __ Debugger Interface ____________________________________________________________________________
 
+void _GetAutoSymbolName ( const Nopcode_e &nopcode, const WORD nStartAddress, char *pSymbolName )
+{
+	switch (nopcode)
+	{
+		case NOP_ADDRESS:
+			sprintf( pSymbolName, "A_%04X", nStartAddress ); // DA range
+			break;
+
+		case NOP_STRING_ASCII:
+		case NOP_STRING_APPLE:
+			sprintf( pSymbolName, "T_%04X", nStartAddress ); // ASC range
+			break;
+
+		case NOP_WORD_1:
+		case NOP_WORD_2:
+		case NOP_WORD_4:
+			sprintf( pSymbolName, "W_%04X", nStartAddress ); // DW range
+			break;
+
+		case NOP_BYTE_1:
+		case NOP_BYTE_2:
+		case NOP_BYTE_4:
+		case NOP_BYTE_8:
+		default:
+			sprintf( pSymbolName, "B_%04X", nStartAddress ); // DB range
+			break;
+	}
+}
+
+// @param tData_ Filled out with range data
 //===========================================================================
 WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 {
