@@ -68,7 +68,7 @@
 	#define CHC_ARG_MAND "`7" // < >
 	#define CHC_ARG_OPT  "`4" // [ ] 
 	#define CHC_ARG_SEP  "`9" //  |  grey
-	#define CHC_NUM_DEC  "`6" // cyan looks better then yellow (_SearchMemoryDisplay), S D000:FFFF A9 00, PROFILE, HELP BP
+	#define CHC_NUM_DEC  "`:" // Lite Blue looks better then yellow (_SearchMemoryDisplay), S D000:FFFF A9 00, PROFILE, HELP BP
 	#define CHC_NUM_HEX  "`3"
 	#define CHC_SYMBOL   "`2" // Symbols
 	#define CHC_ADDRESS  "`8" // Hex Address

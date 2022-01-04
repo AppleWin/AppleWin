@@ -390,22 +390,28 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 			if (iOpmode == AM_M)
 			{
 				//			sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, (unsigned)nTarget );
-				sprintf(line_.sTarget, "%02X", (unsigned)nTarget);
+				sprintf(line_.sTarget      , "%02X", (unsigned)nTarget);
 
-				if (iOpmode == AM_M)
-				{
-					bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
-					line_.nImmediate = (BYTE)nTarget;
-					unsigned _char = FormatCharTxtCtrl(FormatCharTxtHigh(line_.nImmediate, NULL), NULL);
+				if (nTarget == 0)
+					line_.sImmediateSignedDec[0] = 0; // nothing
+				else
+				if (nTarget < 128)
+					sprintf(line_.sImmediateSignedDec, "+%d" , nTarget );
+				else
+				if (nTarget >= 128)
+					sprintf(line_.sImmediateSignedDec, "-%d" , (~nTarget + 1) & 0x7F );
 
-					sprintf(line_.sImmediate, "%c", _char);
+				bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
+				line_.nImmediate = (BYTE)nTarget;
+				unsigned _char = FormatCharTxtCtrl(FormatCharTxtHigh(line_.nImmediate, NULL), NULL);
+
+				sprintf(line_.sImmediate, "%c", _char);
 #if OLD_CONSOLE_COLOR
-					if (ConsoleColorIsEscapeMeta(_char))
-						sprintf(line_.sImmediate, "%c%c", _char, _char);
-					else
-						sprintf(line_.sImmediate, "%c", _char);
+				if (ConsoleColorIsEscapeMeta(_char))
+					sprintf(line_.sImmediate, "%c%c", _char, _char);
+				else
+					sprintf(line_.sImmediate, "%c", _char);
 #endif
-				}
 			}
 	}
 

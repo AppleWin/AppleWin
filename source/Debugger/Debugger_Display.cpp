@@ -1515,7 +1515,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	}
 
 
-	// Address Seperator		
+	// Address Seperator
 	if (! bCursorLine)
 		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
 
@@ -1780,6 +1780,17 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 			PrintTextCursorX( line.sTargetValue, linerect );
 			PrintTextCursorX( " ", linerect );
 		}
+	}
+
+	// 2.9.1.4: Print decimal for immediate values
+	if (line.bTargetImmediate)
+	{
+		linerect.left = (int) aTabs[ TS_IMMEDIATE ];
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
+		PrintTextCursorX( "#", linerect );
+
+		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SINT8 ));
+		PrintTextCursorX( line.sImmediateSignedDec, linerect);
 	}
 
 	// Immediate Char
