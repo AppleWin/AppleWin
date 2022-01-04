@@ -243,9 +243,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 			bDisasmFormatFlags |= DISASM_FORMAT_BRANCH;
 
 			if (nTarget < nBaseAddress)
-			{
 				sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorUp[g_iConfigDisasmBranchType]);
-			}
 			else
 				if (nTarget > nBaseAddress)
 				{
@@ -258,19 +256,19 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 		}
 		// intentional re-test AM_R ...
 
-//		if ((iOpmode >= AM_A) && (iOpmode <= AM_NA))
-		if ((iOpmode == AM_A) || // Absolute
-			(iOpmode == AM_Z) || // Zeropage
-			(iOpmode == AM_AX) || // Absolute, X
-			(iOpmode == AM_AY) || // Absolute, Y
-			(iOpmode == AM_ZX) || // Zeropage, X
-			(iOpmode == AM_ZY) || // Zeropage, Y
-			(iOpmode == AM_R) || // Relative
+//		if ((iOpmode >= AM_A  ) && (iOpmode <= AM_NA))
+		if ((iOpmode == AM_A  ) || // Absolute
+			(iOpmode == AM_Z  ) || // Zeropage
+			(iOpmode == AM_AX ) || // Absolute, X
+			(iOpmode == AM_AY ) || // Absolute, Y
+			(iOpmode == AM_ZX ) || // Zeropage, X
+			(iOpmode == AM_ZY ) || // Zeropage, Y
+			(iOpmode == AM_R  ) || // Relative
 			(iOpmode == AM_IZX) || // Indexed (Zeropage Indirect, X)
 			(iOpmode == AM_IAX) || // Indexed (Absolute Indirect, X)
 			(iOpmode == AM_NZY) || // Indirect (Zeropage) Index, Y
-			(iOpmode == AM_NZ) || // Indirect (Zeropage)
-			(iOpmode == AM_NA))   //(Indirect Absolute)
+			(iOpmode == AM_NZ ) || // Indirect (Zeropage)
+			(iOpmode == AM_NA ))   //(Indirect Absolute)
 		{
 			line_.nTarget = nTarget;
 
