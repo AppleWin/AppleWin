@@ -245,14 +245,14 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 			if (nTarget < nBaseAddress)
 				sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorUp[g_iConfigDisasmBranchType]);
 			else
-				if (nTarget > nBaseAddress)
-				{
-					sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorDown[g_iConfigDisasmBranchType]);
-				}
-				else
-				{
-					sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorEqual[g_iConfigDisasmBranchType]);
-				}
+			if (nTarget > nBaseAddress)
+				sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorDown[g_iConfigDisasmBranchType]);
+			else
+				sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorEqual[g_iConfigDisasmBranchType]);
+
+			bDisasmFormatFlags |= DISASM_FORMAT_TARGET_POINTER;
+			if (g_iConfigDisasmTargets & DISASM_TARGET_ADDR)
+				sprintf(line_.sTargetPointer, "%04X", nTarget & 0xFFFF);
 		}
 		// intentional re-test AM_R ...
 

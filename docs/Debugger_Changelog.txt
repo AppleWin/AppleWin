@@ -1,5 +1,6 @@
 /*
 
+2.9.1.6 Added: Branch instructions now show target address
 2.9.1.5 Added: Disassembly window now shows signed decimal values for immediate values.
 2.9.1.4 Changed: Show symbol warnings in Orange, and length of symbols in light blue.
 2.9.1.3 Added: DB commanoptionally supports =
