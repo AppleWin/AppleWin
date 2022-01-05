@@ -780,16 +780,20 @@ inline void updateVideoScannerAddress()
 //===========================================================================
 INLINE uint16_t getVideoScannerAddressTXT()
 {
-	return (g_aClockVertOffsetsTXT[g_nVideoClockVert/8] + 
-		g_pHorzClockOffset         [g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nTextPage  *  0x400));
+	uint16_t nAddress = (g_aClockVertOffsetsTXT[g_nVideoClockVert/8]
+		 + g_pHorzClockOffset         [g_nVideoClockVert/64][g_nVideoClockHorz]
+		 + (g_nTextPage  *  0x400));
+	return nAddress;
 }
 
 //===========================================================================
 INLINE uint16_t getVideoScannerAddressHGR()
 {
 	// NB. For both A2 and //e use APPLE_IIE_HORZ_CLOCK_OFFSET - see VideoGetScannerAddress() where only TEXT mode adds $1000
-	return (g_aClockVertOffsetsHGR[g_nVideoClockVert  ] + 
-		APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nHiresPage * 0x2000));
+	uint16_t nAddress = (g_aClockVertOffsetsHGR[g_nVideoClockVert  ]
+		+ APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz]
+		+ (g_nHiresPage * 0x2000));
+	return nAddress;
 }
 
 // Non-Inline _________________________________________________________
