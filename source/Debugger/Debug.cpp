@@ -3330,6 +3330,18 @@ Update_t CmdFlag (int nArgs)
 
 
 // Disk ___________________________________________________________________________________________
+
+// Usage:
+//     DISK # EJECT                                  // Unmount disk
+//     DISK INFO
+//     DISK # PROTECT #                              // Write-protect disk on/off
+//     DISK # "<filename>"                           // Mount filename as floppy disk
+// TODO:
+//     DISK # READ  <Track> <Sector> <NumSec> <Addr>	 // Read Track/Sector(s)
+//     DISK # READ  <Track> <Sector> Addr:Addr           // Read Track/Sector(s)
+//     DISK # WRITE <Track> <Sector> Addr:Addr           // Write Track/Sector(s)
+// Examples:
+//     DISK 2 INFO
 Update_t CmdDisk ( int nArgs)
 {
 	if (! nArgs)
