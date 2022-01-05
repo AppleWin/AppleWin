@@ -3783,13 +3783,8 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 	}
 	else									// Relative
 	{
-		std::string SAME_DIR( "." );
-		SAME_DIR += PATH_SEPARATOR;
-
-		std::string UP_DIR( "..");
-		UP_DIR += PATH_SEPARATOR;
-
-		size_t       nNewPathLen = strlen( g_aArgs[1].sArg );
+		std::string SAME_DIR( "." ); SAME_DIR += PATH_SEPARATOR;
+		std::string UP_DIR  ( ".."); UP_DIR   += PATH_SEPARATOR;
 		std::string sNewPath( g_aArgs[1].sArg );
 
 		// if new path doesn't have a trailing slash, append one
