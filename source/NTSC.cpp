@@ -780,16 +780,20 @@ inline void updateVideoScannerAddress()
 //===========================================================================
 INLINE uint16_t getVideoScannerAddressTXT()
 {
-	return (g_aClockVertOffsetsTXT[g_nVideoClockVert/8] + 
-		g_pHorzClockOffset         [g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nTextPage  *  0x400));
+	uint16_t nAddress = (g_aClockVertOffsetsTXT[g_nVideoClockVert/8]
+		 + g_pHorzClockOffset         [g_nVideoClockVert/64][g_nVideoClockHorz]
+		 + (g_nTextPage  *  0x400));
+	return nAddress;
 }
 
 //===========================================================================
 INLINE uint16_t getVideoScannerAddressHGR()
 {
 	// NB. For both A2 and //e use APPLE_IIE_HORZ_CLOCK_OFFSET - see VideoGetScannerAddress() where only TEXT mode adds $1000
-	return (g_aClockVertOffsetsHGR[g_nVideoClockVert  ] + 
-		APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz] + (g_nHiresPage * 0x2000));
+	uint16_t nAddress = (g_aClockVertOffsetsHGR[g_nVideoClockVert  ]
+		+ APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz]
+		+ (g_nHiresPage * 0x2000));
+	return nAddress;
 }
 
 // Non-Inline _________________________________________________________
@@ -1908,6 +1912,26 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 			g_nTextPage  = 2;
 			g_nHiresPage = 2;
 		}
+	}
+
+	if( uVideoModeFlags & VF_PAGE0)   // Pseudo page ($0000)
+	{
+		g_nHiresPage = 0;
+	}
+
+	if( uVideoModeFlags & VF_PAGE3)   // Pseudo page ($6000)
+	{
+		g_nHiresPage = 3;
+	}
+
+	if( uVideoModeFlags & VF_PAGE4)   // Pseudo page ($8000)
+	{
+		g_nHiresPage = 4;
+	}
+
+	if( uVideoModeFlags & VF_PAGE5)   // Pseudo page ($A000)
+	{
+		g_nHiresPage = 5;
 	}
 
 	if (GetVideo().GetVideoRefreshRate() == VR_50HZ && g_pVideoAddress)	// GH#763 / NB. g_pVideoAddress==NULL when called via VideoResetState()

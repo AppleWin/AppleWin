@@ -243,41 +243,39 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 			bDisasmFormatFlags |= DISASM_FORMAT_BRANCH;
 
 			if (nTarget < nBaseAddress)
-			{
 				sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorUp[g_iConfigDisasmBranchType]);
-			}
 			else
-				if (nTarget > nBaseAddress)
-				{
-					sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorDown[g_iConfigDisasmBranchType]);
-				}
-				else
-				{
-					sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorEqual[g_iConfigDisasmBranchType]);
-				}
+			if (nTarget > nBaseAddress)
+				sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorDown[g_iConfigDisasmBranchType]);
+			else
+				sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorEqual[g_iConfigDisasmBranchType]);
+
+			bDisasmFormatFlags |= DISASM_FORMAT_TARGET_POINTER;
+			if (g_iConfigDisasmTargets & DISASM_TARGET_ADDR)
+				sprintf(line_.sTargetPointer, "%04X", nTarget & 0xFFFF);
 		}
 		// intentional re-test AM_R ...
 
-//		if ((iOpmode >= AM_A) && (iOpmode <= AM_NA))
-		if ((iOpmode == AM_A) || // Absolute
-			(iOpmode == AM_Z) || // Zeropage
-			(iOpmode == AM_AX) || // Absolute, X
-			(iOpmode == AM_AY) || // Absolute, Y
-			(iOpmode == AM_ZX) || // Zeropage, X
-			(iOpmode == AM_ZY) || // Zeropage, Y
-			(iOpmode == AM_R) || // Relative
+//		if ((iOpmode >= AM_A  ) && (iOpmode <= AM_NA))
+		if ((iOpmode == AM_A  ) || // Absolute
+			(iOpmode == AM_Z  ) || // Zeropage
+			(iOpmode == AM_AX ) || // Absolute, X
+			(iOpmode == AM_AY ) || // Absolute, Y
+			(iOpmode == AM_ZX ) || // Zeropage, X
+			(iOpmode == AM_ZY ) || // Zeropage, Y
+			(iOpmode == AM_R  ) || // Relative
 			(iOpmode == AM_IZX) || // Indexed (Zeropage Indirect, X)
 			(iOpmode == AM_IAX) || // Indexed (Absolute Indirect, X)
 			(iOpmode == AM_NZY) || // Indirect (Zeropage) Index, Y
-			(iOpmode == AM_NZ) || // Indirect (Zeropage)
-			(iOpmode == AM_NA))   //(Indirect Absolute)
+			(iOpmode == AM_NZ ) || // Indirect (Zeropage)
+			(iOpmode == AM_NA ))   //(Indirect Absolute)
 		{
 			line_.nTarget = nTarget;
 
 			const char* pTarget = NULL;
 			const char* pSymbol = 0;
 
-			pSymbol = FindSymbolFromAddress(nTarget);
+			pSymbol = FindSymbolFromAddress(nTarget, &line_.iTargetTable);
 
 			// Data Assembler
 			if (pData && (!pData->bSymbolLookup))
@@ -292,7 +290,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 
 			if (!(bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
 			{
-				pSymbol = FindSymbolFromAddress(nTarget - 1);
+				pSymbol = FindSymbolFromAddress(nTarget - 1, &line_.iTargetTable);
 				if (pSymbol)
 				{
 					bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
@@ -314,7 +312,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 			//    nSecondTarget = g_bDebugConfig_DisasmMatchSymbolOffsetMinus1First ? nTarget+1 : nTarget-1;
 			if (!(bDisasmFormatFlags & DISASM_FORMAT_SYMBOL) || pData)
 			{
-				pSymbol = FindSymbolFromAddress(nTarget + 1);
+				pSymbol = FindSymbolFromAddress(nTarget + 1,&line_.iTargetTable);
 				if (pSymbol)
 				{
 					bDisasmFormatFlags |= DISASM_FORMAT_SYMBOL;
@@ -390,22 +388,28 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 			if (iOpmode == AM_M)
 			{
 				//			sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, (unsigned)nTarget );
-				sprintf(line_.sTarget, "%02X", (unsigned)nTarget);
+				sprintf(line_.sTarget      , "%02X", (unsigned)nTarget);
 
-				if (iOpmode == AM_M)
-				{
-					bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
-					line_.nImmediate = (BYTE)nTarget;
-					unsigned _char = FormatCharTxtCtrl(FormatCharTxtHigh(line_.nImmediate, NULL), NULL);
+				if (nTarget == 0)
+					line_.sImmediateSignedDec[0] = 0; // nothing
+				else
+				if (nTarget < 128)
+					sprintf(line_.sImmediateSignedDec, "+%d" , nTarget );
+				else
+				if (nTarget >= 128)
+					sprintf(line_.sImmediateSignedDec, "-%d" , (~nTarget + 1) & 0xFF );
 
-					sprintf(line_.sImmediate, "%c", _char);
+				bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
+				line_.nImmediate = (BYTE)nTarget;
+				unsigned _char = FormatCharTxtCtrl(FormatCharTxtHigh(line_.nImmediate, NULL), NULL);
+
+				sprintf(line_.sImmediate, "%c", _char);
 #if OLD_CONSOLE_COLOR
-					if (ConsoleColorIsEscapeMeta(_char))
-						sprintf(line_.sImmediate, "%c%c", _char, _char);
-					else
-						sprintf(line_.sImmediate, "%c", _char);
+				if (ConsoleColorIsEscapeMeta(_char))
+					sprintf(line_.sImmediate, "%c%c", _char, _char);
+				else
+					sprintf(line_.sImmediate, "%c", _char);
 #endif
-				}
 			}
 	}
 

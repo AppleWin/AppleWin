@@ -1330,7 +1330,9 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	int iOpmode;
 	int nOpbyte;
 	DisasmLine_t line;
-	const char* pSymbol = FindSymbolFromAddress( nBaseAddress );
+
+	int         iTable    = NUM_SYMBOL_TABLES;
+	const char* pSymbol   = FindSymbolFromAddress( nBaseAddress, &iTable );
 	const char* pMnemonic = NULL;
 
 	// Data Disassembler
@@ -1367,9 +1369,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 //	int X_BRANCH      = 46 * nDefaultFontWidth;
 
 	float aTabs[ _NUM_TAB_STOPS ] =
-//	{ 6, 16, 26, 41, 46, 49 }; // 6, 17, 26, 40, 46
 #if USE_APPLE_FONT
-//	{ 5, 14, 20, 40, 46, 49 };
       // xxxx:xx xx xx LABELxxxxxx MNEMONIC    'E' =
       // 0   45        14          26
 	{ 5, 14, 26, 41, 48, 49 };
@@ -1515,7 +1515,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	}
 
 
-	// Address Seperator		
+	// Address Seperator
 	if (! bCursorLine)
 		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
 
@@ -1557,7 +1557,12 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	if (pSymbol)
 	{
 		if (! bCursorLine)
-			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
+		{
+			if (iTable == SYMBOLS_USER_2)
+				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ) ); // Show user symbols 2 in different color for organization when reverse engineering.  Table 1 = known, Table 2 = unknown.
+			else
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
+		}
 		PrintTextCursorX( pSymbol, linerect );
 	}
 
@@ -1606,7 +1611,10 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	{
 		if (bDisasmFormatFlags & DISASM_FORMAT_SYMBOL)
 		{
-			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
+			if (line.iTargetTable == SYMBOLS_USER_2)
+				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ) ); // Show user symbols 2 in different color for organization when reverse engineering.  Table 1 = known, Table 2 = unknown.
+			else
+				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
 		}
 		else
 		{
@@ -1779,6 +1787,29 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 
 			PrintTextCursorX( line.sTargetValue, linerect );
 			PrintTextCursorX( " ", linerect );
+		}
+	}
+
+	// 2.9.1.4: Print decimal for immediate values
+	if (line.bTargetImmediate)
+	{
+		linerect.left = (int) aTabs[ TS_IMMEDIATE ];
+
+		if( line.nImmediate )
+		{
+			/*
+                300:A9 80 A9 81 A9 FF A9 00 A9 01 A9 7E A9 7F
+			*/
+
+			// Right justify to target ADDR:##
+			size_t len = strlen( line.sImmediateSignedDec );
+			linerect.left += (2 + (4 - len)) * nDefaultFontWidth;
+
+			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
+			PrintTextCursorX( "#", linerect );
+
+			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SINT8 ));
+			PrintTextCursorX( line.sImmediateSignedDec, linerect);
 		}
 	}
 

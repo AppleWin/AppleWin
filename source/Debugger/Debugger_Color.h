@@ -89,6 +89,7 @@
 /*ZZZ*/	, FG_DISASM_SYMBOL   // Green                        HOME
 		, FG_DISASM_CHAR     // Cyan                               'c'
 		, FG_DISASM_BRANCH   // Green                                   ^ = v
+		, FG_DISASM_SINT8    // Lite Blue
 
 		, BG_INFO            // Cyan    Regs/Stack/BP/Watch/ZP
 		, BG_INFO_WATCH      // Cyan

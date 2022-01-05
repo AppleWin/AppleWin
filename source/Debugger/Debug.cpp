@@ -51,7 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,0);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,13);
 
 
 // Public _________________________________________________________________________________________
@@ -3745,7 +3745,10 @@ Update_t CmdConfigGetDebugDir (int nArgs)
 	return ConsoleUpdate();
 }
 
-// "CD"
+// Usage:
+//     CD "<dir>"
+//     CD ".."
+// Note: Subdirectory MUST be quoted with double quotes.
 //===========================================================================
 Update_t CmdConfigSetDebugDir (int nArgs)
 {
@@ -3780,8 +3783,71 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 	}
 	else									// Relative
 	{
-		// TODO: Support ".." - currently just appends (which still works)
-		sPath = g_sCurrentDir + g_aArgs[1].sArg; // TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
+		std::string SAME_DIR( "." ); SAME_DIR += PATH_SEPARATOR;
+		std::string UP_DIR  ( ".."); UP_DIR   += PATH_SEPARATOR;
+		std::string sNewPath( g_aArgs[1].sArg );
+
+		// if new path doesn't have a trailing slash, append one
+		if (*(sNewPath.rbegin()) != PATH_SEPARATOR)
+			sNewPath += PATH_SEPARATOR;
+				
+		// Support ".." and various permutations
+		//     cd "..\"
+		//     cd "abc\..\def\"
+		//
+		// 1. find next slash in newpath
+		// 2. subdir = newpath.substr()
+		// 3. if subdir == "..\"
+		//        reverse find slash in g_sCurrentDir
+		//        g_sCurrentDir = g_sCurrentDir.substr()
+		//    else
+		//        g_sCurrentDir += subdir
+		size_t iPrevSeparator = 0;
+		size_t iPathSeparator = 0;
+
+		while ((iPathSeparator = sNewPath.find( PATH_SEPARATOR, iPrevSeparator )) != std::string::npos)
+		{
+#if _DEBUG
+	char zDebug[128];
+	sprintf( zDebug, "Prev: %d\n", iPrevSeparator      ); OutputDebugStringA( zDebug );
+	sprintf( zDebug, "Next: %d\n", iPathSeparator      ); OutputDebugStringA( zDebug );
+	sprintf( zDebug, "%s\n", sNewPath.c_str()          ); OutputDebugStringA( zDebug );
+	sprintf( zDebug, "%*s%s\n", iPathSeparator, "", "^"); OutputDebugStringA( zDebug );
+#endif
+
+			std::string sSubDir = sNewPath.substr( iPrevSeparator, iPathSeparator - iPrevSeparator + 1 );
+			const size_t nSubDirLen = sSubDir.size();
+
+			if ((nSubDirLen == 2) && (sSubDir == SAME_DIR)) // Same directory ".\" in the subpath?
+			{
+				// Intentional: Nothing to do
+			}
+			else
+			if ((nSubDirLen == 3) && (sSubDir == UP_DIR))   // Up directory "..\" in the subpath?
+			{
+				size_t nCurrentLen    = g_sCurrentDir.size();
+				size_t nLastSeperator = g_sCurrentDir.rfind( '\\', nCurrentLen - 2 );
+
+				if (nLastSeperator != std::string::npos)
+				{
+#if _DEBUG
+	sprintf( zDebug, "Last: %d\n", nLastSeperator      ); OutputDebugStringA( zDebug );
+	sprintf( zDebug, "%s\n", g_sCurrentDir.c_str()     ); OutputDebugStringA( zDebug );
+	sprintf( zDebug, "%*s%s\n", nLastSeperator, "", "^"); OutputDebugStringA( zDebug );
+#endif
+					std::string sCurrentDir = g_sCurrentDir.substr( 0, nLastSeperator  + 1 ); // Path always has trailing slash so include it
+					g_sCurrentDir = sCurrentDir;
+				}
+			}
+			else
+				g_sCurrentDir += sSubDir;
+
+			iPathSeparator++; // start next search past path separator
+			iPrevSeparator = iPathSeparator;
+		}
+
+		// TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
+		sPath = g_sCurrentDir;
 	}
 
 	if ( SetCurrentImageDir( sPath ) )
@@ -6470,8 +6536,12 @@ Update_t CmdCyclesReset(int /*nArgs*/)
 enum ViewVideoPage_t
 {
 	VIEW_PAGE_X, // current page
+	VIEW_PAGE_0, // Pseudo
 	VIEW_PAGE_1,
-	VIEW_PAGE_2
+	VIEW_PAGE_2,
+	VIEW_PAGE_3, // Pseudo
+	VIEW_PAGE_4, // Pseudo
+	VIEW_PAGE_5  // Pseudo
 };
 
 Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
@@ -6482,8 +6552,12 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 			bVideoModeFlags |= !GetVideo().VideoGetSWPAGE2() ? 0 : VF_PAGE2;
 			bVideoModeFlags |= !GetVideo().VideoGetSWMIXED() ? 0 : VF_MIXED;
 			break; // Page Current & current MIXED state
-		case VIEW_PAGE_1: bVideoModeFlags |= 0; break; // Page 1
-		case VIEW_PAGE_2: bVideoModeFlags |= VF_PAGE2; break; // Page 2
+		case VIEW_PAGE_0: bVideoModeFlags |= VF_PAGE0; break; // Pseudo   Page 0 ($0000)
+		case VIEW_PAGE_1: bVideoModeFlags |= 0       ; break; // Hardware Page 1 ($2000), NOTE: VF_HIRES will be passed in
+		case VIEW_PAGE_2: bVideoModeFlags |= VF_PAGE2; break; // Hardware Page 2 ($4000)
+		case VIEW_PAGE_3: bVideoModeFlags |= VF_PAGE3; break; // Pseudo   Page 3 ($6000)
+		case VIEW_PAGE_4: bVideoModeFlags |= VF_PAGE4; break; // Pseudo   Page 4 ($8000)
+		case VIEW_PAGE_5: bVideoModeFlags |= VF_PAGE5; break; // Pseudo   Page 5 ($A000)
 		default:
 			_ASSERT(0);
 			break;
@@ -6551,6 +6625,10 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 	{
 		return _ViewOutput( VIEW_PAGE_X, VF_HIRES );
 	}
+	Update_t CmdViewOutput_HGR0 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_0, VF_HIRES ); // Pseudo page ($0000)
+	}
 	Update_t CmdViewOutput_HGR1 (int nArgs)
 	{
 		return _ViewOutput( VIEW_PAGE_1, VF_HIRES );
@@ -6558,6 +6636,18 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 	Update_t CmdViewOutput_HGR2 (int nArgs)
 	{
 		return _ViewOutput( VIEW_PAGE_2, VF_HIRES );
+	}
+	Update_t CmdViewOutput_HGR3 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_3, VF_HIRES ); // Pseudo page ($6000)
+	}
+	Update_t CmdViewOutput_HGR4 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_4, VF_HIRES ); // Pseudo page ($8000)
+	}
+	Update_t CmdViewOutput_HGR5 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_5, VF_HIRES ); // Pseudo page ($A000)
 	}
 // Double Hi-Res
 	Update_t CmdViewOutput_DHGRX (int nArgs)

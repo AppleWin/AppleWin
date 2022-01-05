@@ -295,8 +295,8 @@ void LoadConfiguration(bool loadImages)
 				GetCardMgr().Insert(SLOT4, (SS_CARDTYPE)dwTmp);
 			else if (slot == SLOT5 && REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
 				GetCardMgr().Insert(SLOT5, (SS_CARDTYPE)dwTmp);
-			else if (slot == SLOT7 && REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp))
-				GetCardMgr().Insert(SLOT7, (SS_CARDTYPE)dwTmp);
+			else if (slot == SLOT7 && REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp) && dwTmp == 1)	// GH#1015
+				GetCardMgr().Insert(SLOT7, CT_GenericHDD);
 		}
 	}
 
