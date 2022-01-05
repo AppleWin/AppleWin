@@ -1638,13 +1638,13 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	//    SYM COPY.FAC.TO.ARG.ROUNDED = EB63
 	// If opcodes aren't showing then length can be longer!
 	// FormatOpcodeBytes() uses 3 chars/MAX_OPCODES. i.e. "## "
-	int nMaxLen = MAX_TARGET_LEN;
+	int nMaxLen = DISASM_DISPLAY_MAX_TARGET_LEN;
 
 	// 2.8.0.8: Bug #227: AppleSoft symbol: COPY.FAC.TO.ARG.ROUNDED overflows into registers
 	if ( !g_bConfigDisasmAddressView )
 	    nMaxLen += 4;
 	if ( !g_bConfigDisasmOpcodesView )
-	    nMaxLen += (MAX_OPCODES*3);
+	    nMaxLen += (DISASM_DISPLAY_MAX_OPCODES*3);
 
 	// 2.9.0.9 Continuation of 2.8.0.8: Fix overflowing disassembly pane for long symbols
 	int nOverflow = 0;
