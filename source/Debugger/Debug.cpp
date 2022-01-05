@@ -51,7 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,12);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,13);
 
 
 // Public _________________________________________________________________________________________
@@ -3745,7 +3745,10 @@ Update_t CmdConfigGetDebugDir (int nArgs)
 	return ConsoleUpdate();
 }
 
-// "CD"
+// Usage:
+//     CD "<dir>"
+//     CD ".."
+// Note: Subdirectory MUST be quoted with double quotes.
 //===========================================================================
 Update_t CmdConfigSetDebugDir (int nArgs)
 {
@@ -3780,8 +3783,76 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 	}
 	else									// Relative
 	{
-		// TODO: Support ".." - currently just appends (which still works)
-		sPath = g_sCurrentDir + g_aArgs[1].sArg; // TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
+		std::string SAME_DIR( "." );
+		SAME_DIR += PATH_SEPARATOR;
+
+		std::string UP_DIR( "..");
+		UP_DIR += PATH_SEPARATOR;
+
+		size_t       nNewPathLen = strlen( g_aArgs[1].sArg );
+		std::string sNewPath( g_aArgs[1].sArg );
+
+		// if new path doesn't have a trailing slash, append one
+		if (*(sNewPath.rbegin()) != PATH_SEPARATOR)
+			sNewPath += PATH_SEPARATOR;
+				
+		// Support ".." and various permutations
+		//     cd "..\"
+		//     cd "abc\..\def\"
+		//
+		// 1. find next slash in newpath
+		// 2. subdir = newpath.substr()
+		// 3. if subdir == "..\"
+		//        reverse find slash in g_sCurrentDir
+		//        g_sCurrentDir = g_sCurrentDir.substr()
+		//    else
+		//        g_sCurrentDir += subdir
+		size_t iPrevSeparator = 0;
+		size_t iPathSeparator = 0;
+
+		while ((iPathSeparator = sNewPath.find( PATH_SEPARATOR, iPrevSeparator )) != std::string::npos)
+		{
+#if _DEBUG
+	char zDebug[128];
+	sprintf( zDebug, "Prev: %d\n", iPrevSeparator      ); OutputDebugStringA( zDebug );
+	sprintf( zDebug, "Next: %d\n", iPathSeparator      ); OutputDebugStringA( zDebug );
+	sprintf( zDebug, "%s\n", sNewPath.c_str()          ); OutputDebugStringA( zDebug );
+	sprintf( zDebug, "%*s%s\n", iPathSeparator, "", "^"); OutputDebugStringA( zDebug );
+#endif
+
+			std::string sSubDir = sNewPath.substr( iPrevSeparator, iPathSeparator - iPrevSeparator + 1 );
+			const size_t nSubDirLen = sSubDir.size();
+
+			if ((nSubDirLen == 2) && (sSubDir == SAME_DIR)) // Same directory ".\" in the subpath?
+			{
+				// Intentional: Nothing to do
+			}
+			else
+			if ((nSubDirLen == 3) && (sSubDir == UP_DIR))   // Up directory "..\" in the subpath?
+			{
+				size_t nCurrentLen    = g_sCurrentDir.size();
+				size_t nLastSeperator = g_sCurrentDir.rfind( '\\', nCurrentLen - 2 );
+
+				if (nLastSeperator != std::string::npos)
+				{
+#if _DEBUG
+	sprintf( zDebug, "Last: %d\n", nLastSeperator      ); OutputDebugStringA( zDebug );
+	sprintf( zDebug, "%s\n", g_sCurrentDir.c_str()     ); OutputDebugStringA( zDebug );
+	sprintf( zDebug, "%*s%s\n", nLastSeperator, "", "^"); OutputDebugStringA( zDebug );
+#endif
+					std::string sCurrentDir = g_sCurrentDir.substr( 0, nLastSeperator  + 1 ); // Path always has trailing slash so include it
+					g_sCurrentDir = sCurrentDir;
+				}
+			}
+			else
+				g_sCurrentDir += sSubDir;
+
+			iPathSeparator++; // start next search past path separator
+			iPrevSeparator = iPathSeparator;
+		}
+
+		// TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
+		sPath = g_sCurrentDir;
 	}
 
 	if ( SetCurrentImageDir( sPath ) )
