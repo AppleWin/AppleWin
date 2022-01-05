@@ -1910,6 +1910,26 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 	}
 
+	if( uVideoModeFlags & VF_PAGE0)   // Pseudo page ($0000)
+	{
+		g_nHiresPage = 0;
+	}
+
+	if( uVideoModeFlags & VF_PAGE3)   // Pseudo page ($6000)
+	{
+		g_nHiresPage = 3;
+	}
+
+	if( uVideoModeFlags & VF_PAGE4)   // Pseudo page ($8000)
+	{
+		g_nHiresPage = 4;
+	}
+
+	if( uVideoModeFlags & VF_PAGE5)   // Pseudo page ($A000)
+	{
+		g_nHiresPage = 5;
+	}
+
 	if (GetVideo().GetVideoRefreshRate() == VR_50HZ && g_pVideoAddress)	// GH#763 / NB. g_pVideoAddress==NULL when called via VideoResetState()
 	{
 		if (uVideoModeFlags & VF_TEXT)

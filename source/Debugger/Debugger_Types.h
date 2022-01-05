@@ -504,8 +504,12 @@
 		, CMD_VIEW_DGR1
 		, CMD_VIEW_DGR2
 		, CMD_VIEW_HGRX
+		, CMD_VIEW_HGR0
 		, CMD_VIEW_HGR1
 		, CMD_VIEW_HGR2
+		, CMD_VIEW_HGR3
+		, CMD_VIEW_HGR4
+		, CMD_VIEW_HGR5
 		, CMD_VIEW_DHGRX
 		, CMD_VIEW_DHGR1
 		, CMD_VIEW_DHGR2
@@ -766,8 +770,12 @@
 	Update_t CmdViewOutput_DGR2    (int nArgs);
 
 	Update_t CmdViewOutput_HGRX    (int nArgs);
+	Update_t CmdViewOutput_HGR0    (int nArgs);
 	Update_t CmdViewOutput_HGR1    (int nArgs);
 	Update_t CmdViewOutput_HGR2    (int nArgs);
+	Update_t CmdViewOutput_HGR3    (int nArgs);
+	Update_t CmdViewOutput_HGR4    (int nArgs);
+	Update_t CmdViewOutput_HGR5    (int nArgs);
 	Update_t CmdViewOutput_DHGRX   (int nArgs);
 	Update_t CmdViewOutput_DHGR1   (int nArgs);
 	Update_t CmdViewOutput_DHGR2   (int nArgs);

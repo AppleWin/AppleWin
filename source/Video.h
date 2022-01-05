@@ -54,9 +54,13 @@ enum VideoFlag_e
 	VF_HIRES  = 0x00000004,
 	VF_80STORE= 0x00000008,
 	VF_MIXED  = 0x00000010,
-	VF_PAGE2  = 0x00000020,
+	VF_PAGE2  = 0x00000020,		// Text or Hires
 	VF_TEXT   = 0x00000040,
-	VF_SHR    = 0x00000080		// For VidHD's support for IIgs SHR video modes
+	VF_SHR    = 0x00000080,		// For VidHD's support for IIgs SHR video modes
+	VF_PAGE0  = 0x00000100,		// Pseudo Page $00 (Poorman's heatmap)
+	VF_PAGE3  = 0x00000200,		// Pseudo Page $60 (Poorman's heatmap)
+	VF_PAGE4  = 0x00000400,		// Pseudo Page $80 (Poorman's heatmap)
+	VF_PAGE5  = 0x00000800,		// Pseudo Page $A0 (Poorman's heatmap)
 };
 
 enum AppleFont_e

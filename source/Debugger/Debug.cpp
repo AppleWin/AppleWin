@@ -51,7 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,11);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,12);
 
 
 // Public _________________________________________________________________________________________
@@ -6470,8 +6470,12 @@ Update_t CmdCyclesReset(int /*nArgs*/)
 enum ViewVideoPage_t
 {
 	VIEW_PAGE_X, // current page
+	VIEW_PAGE_0, // Pseudo
 	VIEW_PAGE_1,
-	VIEW_PAGE_2
+	VIEW_PAGE_2,
+	VIEW_PAGE_3, // Pseudo
+	VIEW_PAGE_4, // Pseudo
+	VIEW_PAGE_5  // Pseudo
 };
 
 Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
@@ -6482,8 +6486,12 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 			bVideoModeFlags |= !GetVideo().VideoGetSWPAGE2() ? 0 : VF_PAGE2;
 			bVideoModeFlags |= !GetVideo().VideoGetSWMIXED() ? 0 : VF_MIXED;
 			break; // Page Current & current MIXED state
-		case VIEW_PAGE_1: bVideoModeFlags |= 0; break; // Page 1
-		case VIEW_PAGE_2: bVideoModeFlags |= VF_PAGE2; break; // Page 2
+		case VIEW_PAGE_0: bVideoModeFlags |= VF_PAGE0; break; // Pseudo   Page 0 ($0000)
+		case VIEW_PAGE_1: bVideoModeFlags |= 0       ; break; // Hardware Page 1 ($2000), NOTE: VF_HIRES will be passed in
+		case VIEW_PAGE_2: bVideoModeFlags |= VF_PAGE2; break; // Hardware Page 2 ($4000)
+		case VIEW_PAGE_3: bVideoModeFlags |= VF_PAGE3; break; // Pseudo   Page 3 ($6000)
+		case VIEW_PAGE_4: bVideoModeFlags |= VF_PAGE4; break; // Pseudo   Page 4 ($8000)
+		case VIEW_PAGE_5: bVideoModeFlags |= VF_PAGE5; break; // Pseudo   Page 5 ($A000)
 		default:
 			_ASSERT(0);
 			break;
@@ -6551,6 +6559,10 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 	{
 		return _ViewOutput( VIEW_PAGE_X, VF_HIRES );
 	}
+	Update_t CmdViewOutput_HGR0 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_0, VF_HIRES ); // Pseudo page ($0000)
+	}
 	Update_t CmdViewOutput_HGR1 (int nArgs)
 	{
 		return _ViewOutput( VIEW_PAGE_1, VF_HIRES );
@@ -6558,6 +6570,18 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 	Update_t CmdViewOutput_HGR2 (int nArgs)
 	{
 		return _ViewOutput( VIEW_PAGE_2, VF_HIRES );
+	}
+	Update_t CmdViewOutput_HGR3 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_3, VF_HIRES ); // Pseudo page ($6000)
+	}
+	Update_t CmdViewOutput_HGR4 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_4, VF_HIRES ); // Pseudo page ($8000)
+	}
+	Update_t CmdViewOutput_HGR5 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_5, VF_HIRES ); // Pseudo page ($A000)
 	}
 // Double Hi-Res
 	Update_t CmdViewOutput_DHGRX (int nArgs)
