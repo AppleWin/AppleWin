@@ -852,20 +852,20 @@
 	enum Nopcode_e
 	{
 		_NOP_REMOVED
-		,NOP_BYTE_1 // 1 bytes/line
-		,NOP_BYTE_2 // 2 bytes/line
-		,NOP_BYTE_4 // 4 bytes/line
-		,NOP_BYTE_8 // 8 bytes/line
-		,NOP_WORD_1 // 1 words/line = 2 bytes (no symbol lookup)
-		,NOP_WORD_2 // 2 words/line = 4 bytes
-		,NOP_WORD_4 // 4 words/line = 8 bytes
-		,NOP_ADDRESS// 1 word/line  = 2 bytes (with symbol lookup)
-		,NOP_HEX    // hex string   =16 bytes
-		,NOP_CHAR   // char string // TODO: FIXME: needed??
-		,NOP_STRING_ASCII // Low Ascii
-		,NOP_STRING_APPLE // High Ascii
+		,NOP_BYTE_1           // 1 bytes/line
+		,NOP_BYTE_2           // 2 bytes/line
+		,NOP_BYTE_4           // 4 bytes/line
+		,NOP_BYTE_8           // 8 bytes/line
+		,NOP_WORD_1           // 1 words/line = 2 bytes (no symbol lookup)
+		,NOP_WORD_2           // 2 words/line = 4 bytes
+		,NOP_WORD_4           // 4 words/line = 8 bytes
+		,NOP_ADDRESS          // 1 word/line  = 2 bytes (with symbol lookup)
+		,NOP_HEX              // hex string   =16 bytes
+		,NOP_CHAR             // char string // TODO: FIXME: needed??
+		,NOP_STRING_ASCII     // Low Ascii
+		,NOP_STRING_APPLE     // High Ascii
 		,NOP_STRING_APPLESOFT // Mixed Low/High
-		,NOP_FAC
+		,NOP_FAC              // Applesoft Floating-Point Format (5 bytes), i.e. $F069 = 0x81490FDAA2 = pi/2
 		,NOP_SPRITE
 		,NUM_NOPCODE_TYPES
 	};
