@@ -140,7 +140,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("DW2")         , CmdDisasmDataDefWord2       , CMD_DEFINE_DATA_WORD2, "Define address array, display 2 words/line" },
 		{TEXT("DW4")         , CmdDisasmDataDefWord4       , CMD_DEFINE_DATA_WORD4, "Define address array, display 4 words/line" },
 		{TEXT("ASC")         , CmdDisasmDataDefString      , CMD_DEFINE_DATA_STR  , "Define text string"                         }, // 2.7.0.26 Changed: DS to ASC because DS is used as "Define Space" assembler directive
-//		{TEXT("DF")          , CmdDisasmDataDefFloat       , CMD_DEFINE_DATA_FLOAT, "Define AppleSoft (packed) Float"            },
+		{TEXT("DF")          , CmdDisasmDataDefFloat       , CMD_DEFINE_DATA_FLOAT, "Define AppleSoft (packed) Float"            },
 //		{TEXT("DFX")         , CmdDisasmDataDefFloatUnpack , CMD_DEFINE_DATA_FLOAT2,"Define AppleSoft (unpacked) Float"          },
 		// with symbol lookup
 //		{TEXT("DA<>")        , CmdDisasmDataDefAddress8HL  , CMD_DEFINE_ADDR_8_HL , "Define split array of addresses, high byte section followed by low byte section" },

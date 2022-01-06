@@ -509,6 +509,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 			case NOP_BYTE_2: nOpbyte_ = 2; iOpmode_ = AM_M; break;
 			case NOP_BYTE_4: nOpbyte_ = 4; iOpmode_ = AM_M; break;
 			case NOP_BYTE_8: nOpbyte_ = 8; iOpmode_ = AM_M; break;
+			case NOP_FAC   : nOpbyte_ = 5; iOpmode_ = AM_M; break;
 			case NOP_WORD_1: nOpbyte_ = 2; iOpmode_ = AM_M; break;
 			case NOP_WORD_2: nOpbyte_ = 4; iOpmode_ = AM_M; break;
 			case NOP_WORD_4: nOpbyte_ = 8; iOpmode_ = AM_M; break;

@@ -466,6 +466,45 @@ void FormatOpcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 	}
 }
 
+struct FAC_t
+{
+	uint8_t negative;
+	 int8_t exponent;
+	uint32_t mantissa;
+
+	bool     isZero;
+};
+
+void FAC_Unpack(WORD nAddress, FAC_t& fac_)
+{
+	BYTE e0 = *(LPBYTE)(mem + nAddress + 0);
+	BYTE m1 = *(LPBYTE)(mem + nAddress + 1);
+	BYTE m2 = *(LPBYTE)(mem + nAddress + 2);
+	BYTE m3 = *(LPBYTE)(mem + nAddress + 3);
+	BYTE m4 = *(LPBYTE)(mem + nAddress + 4);
+
+	// sign
+	//     EB82:A5 9D       SIGN  LDA FAC
+	//     EB84:F0 09             BEQ SIGN3     ; zero
+	//     EB86:A5 A2       SIGN1 LDA FAC.SIGN
+	//     EB88:2A          SIGN2 ROL
+	//     EB89:A9 FF             LDA #$FF      ; negative
+	//     EB8B:B0 02             BCS SIGN3
+	//     EB8D:A9 01             LDA #$01      ; positive
+	//     EB8F:60          SIGN3
+	
+	fac_.exponent = e0 - 0x80;
+	fac_.negative =(m1 & 0x80) >> 7;	// EBAF:46 A2       ABS   LSR FAC.SIGN
+	fac_.mantissa = 0
+		| ((m1 | 0x80) << 24) // implicit 1.0, EB12: ORA #$80, STA FAC+1
+		| ((m2       ) << 16)
+		| ((m3       ) <<  8)
+		| ((m4       ) <<  0);
+
+	fac_.isZero = (fac_.exponent == 0);
+}
+
+
 // Formats Target string with bytes,words, string, etc...
 //===========================================================================
 void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
@@ -498,6 +537,23 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 						*pDst++ = ',';
 					}
 				break;
+
+			case NOP_FAC:
+			{
+				FAC_t fac;
+				FAC_Unpack( nBaseAddress, fac );
+				const char aSign[2] = { '+', '-' };
+				if (fac.isZero)
+					sprintf( pDst, "0" );
+				else
+				{
+					double f = fac.mantissa * pow( 2.0, fac.exponent - 32 );
+					//sprintf( "s%1X m%04X e%02X", fac.negative, fac.mantissa, fac.exponent );
+					sprintf( pDst, "%c%f", aSign[ fac.negative ], f );
+				}
+				iByte += 5;
+				break;
+			}
 
 			case NOP_WORD_1:
 			case NOP_WORD_2:

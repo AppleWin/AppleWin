@@ -398,6 +398,7 @@
 		, CMD_DEFINE_DATA_WORD2
 		, CMD_DEFINE_DATA_WORD4
 		, CMD_DEFINE_DATA_STR
+		, CMD_DEFINE_DATA_FLOAT// FAC Packed
 //		, CMD_DEFINE_DATA_FACP // FAC Packed
 //		, CMD_DEFINE_DATA_FACU // FAC Unpacked
 //		, CMD_DATA_DEFINE_ADDR_BYTE_L  // DB< address symbol
@@ -589,6 +590,8 @@
 	Update_t CmdDisasmDataDefByte2    (int nArgs);
 	Update_t CmdDisasmDataDefByte4    (int nArgs);
 	Update_t CmdDisasmDataDefByte8    (int nArgs);
+
+	Update_t CmdDisasmDataDefFloat    (int nArgs);
 
 	Update_t CmdDisasmDataDefWord1    (int nArgs);
 	Update_t CmdDisasmDataDefWord2    (int nArgs);
@@ -877,7 +880,7 @@
 		char sSymbol[ MAX_SYMBOLS_LEN+1 ];
 
 		Nopcode_e eElementType ; // eElementType -> iNoptype
-		int       iDirective   ; // iDirective   -> iNopcode
+		int       iDirective   ; // iDirective   -> iNopcode  ASC DA DB DF DW etc.
 
 		WORD nStartAddress; // link to block [start,end)
 		WORD nEndAddress  ; 

@@ -40,6 +40,9 @@ void _GetAutoSymbolName ( const Nopcode_e &nopcode, const WORD nStartAddress, ch
 			sprintf( pSymbolName, "A_%04X", nStartAddress ); // DA range
 			break;
 
+		case NOP_FAC:
+			sprintf( pSymbolName, "F_%04X", nStartAddress ); // DF range
+
 		case NOP_STRING_ASCII:
 		case NOP_STRING_APPLE:
 			sprintf( pSymbolName, "T_%04X", nStartAddress ); // ASC range
@@ -159,9 +162,11 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 	// Old name: auto define D_# DB $XX
 	// Example 'DB' or 'DW' with 1 arg
 	//   DB 801
-	if( bAutoDefineName )
-	{
 		Nopcode_e nopcode = NOP_BYTE_1;
+
+		bool isFloat = (g_iCommand == CMD_DEFINE_DATA_FLOAT);
+		if( isFloat )
+			nopcode = NOP_FAC;
 
 		bool isString = (g_iCommand == CMD_DEFINE_DATA_STR);
 		if( isString )
@@ -175,6 +180,8 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 		if( isAddr )
 			nopcode = NOP_ADDRESS;
 
+	if( bAutoDefineName )
+	{
 		_GetAutoSymbolName( nopcode, tData_.nStartAddress , aSymbolName );
 		pSymbolName = aSymbolName;
 	}
@@ -184,6 +191,10 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 	SymbolUpdate( eSymbolTable, pSymbolName, nAddress, false, true );
 
 	// TODO: Note: need to call ConsoleUpdate(), as may print symbol has been updated
+	
+	// NOTE: We don't set the type here
+	//    tData_.eElementType = nopcode;
+	// As that is done by the caller.
 
 	strcpy_s( tData_.sSymbol, sizeof(tData_.sSymbol), pSymbolName );
 
@@ -359,6 +370,11 @@ Update_t CmdDisasmDataList (int nArgs)
 }
 
 // Common code
+
+
+// TODO: merge _CmdDisasmDataDefByteX() and _CmdDisasmDataDefWordX
+//       add params( iDirective, iOpcode ) to allow ASM_DEFINE_FLOAT, NOP_FAC
+
 //===========================================================================
 Update_t _CmdDisasmDataDefByteX (int nArgs)
 {
@@ -527,6 +543,14 @@ Update_t CmdDisasmDataDefByte8 ( int nArgs )
 	g_aArgs[0].nValue = NOP_BYTE_8;
 	return _CmdDisasmDataDefByteX( nArgs );	
 }
+
+// DF
+Update_t CmdDisasmDataDefFloat(int nArgs)
+{
+	g_aArgs[0].nValue = NOP_FAC;
+	return _CmdDisasmDataDefByteX( nArgs );
+}
+
 
 // DW
 Update_t CmdDisasmDataDefWord1 ( int nArgs )
