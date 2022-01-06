@@ -501,7 +501,7 @@ void FAC_Unpack(WORD nAddress, FAC_t& fac_)
 		| ((m3       ) <<  8)
 		| ((m4       ) <<  0);
 
-	fac_.isZero = (fac_.exponent == 0);
+	fac_.isZero = (e0 == 0); // TODO: need to check mantissa?
 }
 
 
