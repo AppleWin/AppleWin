@@ -485,6 +485,13 @@ Update_t CmdDisasmDataDefAddress8L (int nArgs)
 	return UPDATE_DISASM;
 }
 
+// Command: DA
+// Description: Markup data as an address (i.e. table of function pointers)
+// Usage:
+//     DA <addr>
+// Example:
+//     DA D000
+//     DA D000:D0B1
 //===========================================================================
 Update_t CmdDisasmDataDefAddress16 (int nArgs)
 {
@@ -518,54 +525,72 @@ Update_t CmdDisasmDataDefAddress16 (int nArgs)
 	return UPDATE_DISASM | ConsoleUpdate();
 }
 
-// DB
+// Command: DB
+// Usage:
+//     DB <addr>
 Update_t CmdDisasmDataDefByte1 ( int nArgs )
 {
 	g_aArgs[0].nValue = NOP_BYTE_1;
 	return _CmdDisasmDataDefByteX( nArgs );	
 }
 
-// DB2
+// Command: DB2
+// Usage:
+//     DB2 <addr>
 Update_t CmdDisasmDataDefByte2 ( int nArgs )
 {
 	g_aArgs[0].nValue = NOP_BYTE_2;
 	return _CmdDisasmDataDefByteX( nArgs );	
 }
 
+// Command: DB4
+// Usage:
+//     DB4 <addr>
 Update_t CmdDisasmDataDefByte4 ( int nArgs )
 {
 	g_aArgs[0].nValue = NOP_BYTE_4;
 	return _CmdDisasmDataDefByteX( nArgs );	
 }
 
+// Command DB8
+// Usage:
+//     DB8 <addr>
 Update_t CmdDisasmDataDefByte8 ( int nArgs )
 {
 	g_aArgs[0].nValue = NOP_BYTE_8;
 	return _CmdDisasmDataDefByteX( nArgs );	
 }
 
-// DF
+// Command: DF
+// Usage:
+//     DF <addr>
 Update_t CmdDisasmDataDefFloat(int nArgs)
 {
 	g_aArgs[0].nValue = NOP_FAC;
 	return _CmdDisasmDataDefByteX( nArgs );
 }
 
-
-// DW
+// Command: DW
+// Usage:
+//     DW  <addr>
 Update_t CmdDisasmDataDefWord1 ( int nArgs )
 {
 	g_aArgs[0].nValue = NOP_WORD_1;
 	return _CmdDisasmDataDefWordX( nArgs );	
 }
 
-// DW2
+// Command: DW2
+// Usage:
+//     DW2  <addr>
 Update_t CmdDisasmDataDefWord2 ( int nArgs )
 {
 	g_aArgs[0].nValue = NOP_WORD_2;
 	return _CmdDisasmDataDefWordX( nArgs );	
 }
 
+// Command: DW4
+// Usage:
+//     DW4  <addr>
 Update_t CmdDisasmDataDefWord4 ( int nArgs )
 {
 	g_aArgs[0].nValue = NOP_WORD_4;
@@ -573,6 +598,8 @@ Update_t CmdDisasmDataDefWord4 ( int nArgs )
 }
 
 // Command: DS
+// Usage:
+//     DS <addr>
 //		ASC range    Auto-define T_#### where # is the address
 Update_t CmdDisasmDataDefString ( int nArgs )
 {
