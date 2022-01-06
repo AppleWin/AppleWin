@@ -929,13 +929,13 @@
 		, NUM_DISASM_TARGET_TYPES
 	};
 
-	enum DisasmDisplay_e // TODO: Prefix enums with DISASM_DISPLAY_
+	enum DisasmDisplay_e
 	{
-		MAX_ADDRESS_LEN   = 40,
-		MAX_OPCODES       =  3, // only display 3 opcode bytes -- See FormatOpcodeBytes() // TODO: FIX when showing data hex
-		CHARS_FOR_ADDRESS =  8, // 4 digits + end-of-string + padding
-		MAX_IMMEDIATE_LEN = 20, // Data Disassembly
-		MAX_TARGET_LEN    = MAX_IMMEDIATE_LEN, // Debugger Display: pTarget = line.sTarget
+		DISASM_DISPLAY_MAX_ADDRESS_LEN   = 40,
+		DISASM_DISPLAY_MAX_OPCODES       =  3, // only display 3 opcode bytes -- See FormatOpcodeBytes() // TODO: FIX when showing data hex
+		DISASM_DISPLAY_CHARS_FOR_ADDRESS =  8, // 4 digits + end-of-string + padding
+		DISASM_DISPLAY_MAX_IMMEDIATE_LEN = 20, // Data Disassembly
+		DISASM_DISPLAY_MAX_TARGET_LEN    = DISASM_DISPLAY_MAX_IMMEDIATE_LEN, // Debugger Display: pTarget = line.sTarget
 	};
 
 	struct DisasmLine_t
@@ -944,8 +944,8 @@
 		short iOpmode;
 		int   nOpbyte;
 
-		char sAddress  [ CHARS_FOR_ADDRESS ];
-		char sOpCodes  [(MAX_OPCODES*3)+1];
+		char sAddress  [ DISASM_DISPLAY_CHARS_FOR_ADDRESS ];
+		char sOpCodes  [(DISASM_DISPLAY_MAX_OPCODES*3)+1];
 
 		// Added for Data Disassembler
 		char sLabel    [ MAX_SYMBOLS_LEN+1 ]; // label is a symbol
@@ -959,14 +959,13 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		//
 
 		int  nTarget; // address -> string
-		char sTarget   [ MAX_ADDRESS_LEN ];
+		char sTarget   [ DISASM_DISPLAY_MAX_ADDRESS_LEN ];
 
-		char sTargetOffset[ CHARS_FOR_ADDRESS ]; // +/- 255, realistically +/-1
+		char sTargetOffset[ DISASM_DISPLAY_CHARS_FOR_ADDRESS ]; // +/- 255, realistically +/-1
 		int  nTargetOffset;
 
-		char sTargetPointer[ CHARS_FOR_ADDRESS ];
-		char sTargetValue  [ CHARS_FOR_ADDRESS ];
-//		char sTargetAddress[ CHARS_FOR_ADDRESS ];
+		char sTargetPointer[ DISASM_DISPLAY_CHARS_FOR_ADDRESS ];
+		char sTargetValue  [ DISASM_DISPLAY_CHARS_FOR_ADDRESS ];
 
 		int iTargetTable; // Which symbol table this appears in if any.  See: SYMBOLS_USER_2, DrawDisassemblyLine(), GetDisassemblyLine(), FindSymbolFromAddress()
 

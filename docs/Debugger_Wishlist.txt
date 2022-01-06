@@ -1,6 +1,37 @@
 Requests (Wishlist):
 ====================
 
+* HOME/CLS Clear Screen
+
+* DT Define Target
+    Default disassembly:
+        D7AF:A9 13    LDA #$13
+        D7B1:A0 E9    LDY #$E9
+    Correct disassembly:
+        DT D7AF:B7B2
+        D7AF:A9 13    LDA #<CON.ONE
+        D7B1:A0 E9    LDY #>CON.ONE
+
+* DF Define FAC
+
+* Cleanup Applesoft listing
+  * DB
+  * DA
+  * DF
+
+* Read/Write Track/Sector
+    DISK 2 READ  11 F 800
+    DISK 2 WRITE 11 F 800
+
+* Save/Load memory to mounted DOS3.3 disk
+    DSAVE "LOGO.HGR",2000:3FFF,6,1
+    DLOAD "LOGO.HGR"
+
+* Save/load memory to mounted ProDOS disk/hard drive
+    PREFIX
+    PSAVE "LOGO.HGR",2000:3FFF
+    PLOAD "LOGO.HGR"
+
 * [ ] HELP BPM on read/write
   Nail down syntax:
     BPM A7 = R

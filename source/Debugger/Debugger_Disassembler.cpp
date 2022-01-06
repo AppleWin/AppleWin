@@ -205,7 +205,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 	if ((iOpmode == AM_AY) || (iOpmode == AM_ZY) || (iOpmode == AM_NZY))
 		line_.bTargetY = true; // ,Y
 
-	unsigned int nMinBytesLen = (MAX_OPCODES * (2 + g_bConfigDisasmOpcodeSpaces)); // 2 char for byte (or 3 with space)
+	unsigned int nMinBytesLen = (DISASM_DISPLAY_MAX_OPCODES * (2 + g_bConfigDisasmOpcodeSpaces)); // 2 char for byte (or 3 with space)
 
 	int bDisasmFormatFlags = 0;
 
@@ -448,8 +448,8 @@ void FormatOpcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 
 	char* pDst = line_.sOpCodes;
 	int nMaxOpBytes = nOpbyte;
-	if (nMaxOpBytes > MAX_OPCODES) // 2.8.0.0 fix // TODO: FIX: show max 8 bytes for HEX
-		nMaxOpBytes = MAX_OPCODES;
+	if (nMaxOpBytes > DISASM_DISPLAY_MAX_OPCODES) // 2.8.0.0 fix // TODO: FIX: show max 8 bytes for HEX
+		nMaxOpBytes = DISASM_DISPLAY_MAX_OPCODES;
 
 	for (int iByte = 0; iByte < nMaxOpBytes; iByte++)
 	{
@@ -522,10 +522,10 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 			iByte = line_.nOpbyte; // handle all bytes of text
 			pSrc = (const char*)mem + nStartAddress;
 
-			if (len > (MAX_IMMEDIATE_LEN - 2)) // does "text" fit?
+			if (len > (DISASM_DISPLAY_MAX_IMMEDIATE_LEN - 2)) // does "text" fit?
 			{
-				if (len > MAX_IMMEDIATE_LEN) // no; need extra characters for ellipsis?
-					len = (MAX_IMMEDIATE_LEN - 3); // ellipsis = true
+				if (len > DISASM_DISPLAY_MAX_IMMEDIATE_LEN) // no; need extra characters for ellipsis?
+					len = (DISASM_DISPLAY_MAX_IMMEDIATE_LEN - 3); // ellipsis = true
 
 				// DISPLAY: text_longer_18...
 				FormatCharCopy(pDst, pSrc, len); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
