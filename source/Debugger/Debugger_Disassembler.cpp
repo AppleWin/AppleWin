@@ -466,6 +466,45 @@ void FormatOpcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 	}
 }
 
+struct FAC_t
+{
+	uint8_t negative;
+	 int8_t exponent;
+	uint32_t mantissa;
+
+	bool     isZero;
+};
+
+void FAC_Unpack(WORD nAddress, FAC_t& fac_)
+{
+	BYTE e0 = *(LPBYTE)(mem + nAddress + 0);
+	BYTE m1 = *(LPBYTE)(mem + nAddress + 1);
+	BYTE m2 = *(LPBYTE)(mem + nAddress + 2);
+	BYTE m3 = *(LPBYTE)(mem + nAddress + 3);
+	BYTE m4 = *(LPBYTE)(mem + nAddress + 4);
+
+	// sign
+	//     EB82:A5 9D       SIGN  LDA FAC
+	//     EB84:F0 09             BEQ SIGN3     ; zero
+	//     EB86:A5 A2       SIGN1 LDA FAC.SIGN
+	//     EB88:2A          SIGN2 ROL
+	//     EB89:A9 FF             LDA #$FF      ; negative
+	//     EB8B:B0 02             BCS SIGN3
+	//     EB8D:A9 01             LDA #$01      ; positive
+	//     EB8F:60          SIGN3
+	
+	fac_.exponent = e0 - 0x80;
+	fac_.negative =(m1 & 0x80) >> 7;	// EBAF:46 A2       ABS   LSR FAC.SIGN
+	fac_.mantissa = 0
+		| ((m1 | 0x80) << 24) // implicit 1.0, EB12: ORA #$80, STA FAC+1
+		| ((m2       ) << 16)
+		| ((m3       ) <<  8)
+		| ((m4       ) <<  0);
+
+	fac_.isZero = (e0 == 0); // TODO: need to check mantissa?
+}
+
+
 // Formats Target string with bytes,words, string, etc...
 //===========================================================================
 void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
@@ -473,85 +512,106 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 	char* pDst = line_.sTarget;
 	const	char* pSrc = 0;
 	DWORD nStartAddress = line_.pDisasmData->nStartAddress;
-	DWORD nEndAddress = line_.pDisasmData->nEndAddress;
+	DWORD nEndAddress   = line_.pDisasmData->nEndAddress;
 	//		int   nDataLen      = nEndAddress - nStartAddress + 1 ;
 	int   nDisplayLen = nEndAddress - nBaseAddress + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
 	int   len = nDisplayLen;
 
 	for (int iByte = 0; iByte < line_.nOpbyte; )
 	{
-		BYTE nTarget8 = *(LPBYTE)(mem + nBaseAddress + iByte);
+		BYTE nTarget8  = *(LPBYTE)(mem + nBaseAddress + iByte);
 		WORD nTarget16 = *(LPWORD)(mem + nBaseAddress + iByte);
 
 		switch (line_.iNoptype)
 		{
-		case NOP_BYTE_1:
-		case NOP_BYTE_2:
-		case NOP_BYTE_4:
-		case NOP_BYTE_8:
-			sprintf(pDst, "%02X", nTarget8); // sBytes+strlen(sBytes)
-			pDst += 2;
-			iByte++;
-			if (line_.iNoptype == NOP_BYTE_1)
+			case NOP_BYTE_1:
+			case NOP_BYTE_2:
+			case NOP_BYTE_4:
+			case NOP_BYTE_8:
+				sprintf(pDst, "%02X", nTarget8); // sBytes+strlen(sBytes)
+				pDst += 2;
+				iByte++;
+				if (line_.iNoptype == NOP_BYTE_1)
+					if (iByte < line_.nOpbyte)
+					{
+						*pDst++ = ',';
+					}
+				break;
+
+			case NOP_FAC:
+			{
+				FAC_t fac;
+				FAC_Unpack( nBaseAddress, fac );
+				const char aSign[2] = { '+', '-' };
+				if (fac.isZero)
+					sprintf( pDst, "0" );
+				else
+				{
+					double f = fac.mantissa * pow( 2.0, fac.exponent - 32 );
+					//sprintf( "s%1X m%04X e%02X", fac.negative, fac.mantissa, fac.exponent );
+					sprintf( pDst, "%c%f", aSign[ fac.negative ], f );
+				}
+				iByte += 5;
+				break;
+			}
+
+			case NOP_WORD_1:
+			case NOP_WORD_2:
+			case NOP_WORD_4:
+				sprintf(pDst, "%04X", nTarget16); // sBytes+strlen(sBytes)
+				pDst += 4;
+				iByte += 2;
 				if (iByte < line_.nOpbyte)
 				{
 					*pDst++ = ',';
 				}
-			break;
-		case NOP_WORD_1:
-		case NOP_WORD_2:
-		case NOP_WORD_4:
-			sprintf(pDst, "%04X", nTarget16); // sBytes+strlen(sBytes)
-			pDst += 4;
-			iByte += 2;
-			if (iByte < line_.nOpbyte)
-			{
-				*pDst++ = ',';
-			}
-			break;
-		case NOP_ADDRESS:
-			// Nothing to do, already handled :-)
-			iByte += 2;
-			break;
-		case NOP_STRING_APPLESOFT:
-			iByte = line_.nOpbyte;
-			strncpy(pDst, (const char*)(mem + nBaseAddress), iByte);
-			pDst += iByte;
-			*pDst = 0;
-		case NOP_STRING_APPLE:
-			iByte = line_.nOpbyte; // handle all bytes of text
-			pSrc = (const char*)mem + nStartAddress;
+				break;
 
-			if (len > (DISASM_DISPLAY_MAX_IMMEDIATE_LEN - 2)) // does "text" fit?
-			{
-				if (len > DISASM_DISPLAY_MAX_IMMEDIATE_LEN) // no; need extra characters for ellipsis?
-					len = (DISASM_DISPLAY_MAX_IMMEDIATE_LEN - 3); // ellipsis = true
+			case NOP_ADDRESS:
+				// Nothing to do, already handled :-)
+				iByte += 2;
+				break;
 
-				// DISPLAY: text_longer_18...
-				FormatCharCopy(pDst, pSrc, len); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
+			case NOP_STRING_APPLESOFT:
+				iByte = line_.nOpbyte;
+				strncpy(pDst, (const char*)(mem + nBaseAddress), iByte);
+				pDst += iByte;
+				*pDst = 0;
+			case NOP_STRING_APPLE:
+				iByte = line_.nOpbyte; // handle all bytes of text
+				pSrc = (const char*)mem + nStartAddress;
 
-				if (nDisplayLen > len) // ellipsis
+				if (len > (DISASM_DISPLAY_MAX_IMMEDIATE_LEN - 2)) // does "text" fit?
 				{
-					*pDst++ = '.';
-					*pDst++ = '.';
-					*pDst++ = '.';
-				}
-			}
-			else { // DISPLAY: "max_18_char"
-				*pDst++ = '"';
-				pDst = FormatCharCopy(pDst, pSrc, len); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
-				*pDst++ = '"';
-			}
+					if (len > DISASM_DISPLAY_MAX_IMMEDIATE_LEN) // no; need extra characters for ellipsis?
+						len = (DISASM_DISPLAY_MAX_IMMEDIATE_LEN - 3); // ellipsis = true
 
-			*pDst = 0;
-			break;
-		default:
-#if _DEBUG // Unhandled data disassembly!
-			int* FATAL = 0;
-			*FATAL = 0xDEADC0DE;
-#endif				
-			iByte++;
-			break;
+					// DISPLAY: text_longer_18...
+					FormatCharCopy(pDst, pSrc, len); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
+
+					if (nDisplayLen > len) // ellipsis
+					{
+						*pDst++ = '.';
+						*pDst++ = '.';
+						*pDst++ = '.';
+					}
+				}
+				else { // DISPLAY: "max_18_char"
+					*pDst++ = '"';
+					pDst = FormatCharCopy(pDst, pSrc, len); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
+					*pDst++ = '"';
+				}
+
+				*pDst = 0;
+				break;
+
+			default:
+	#if _DEBUG // Unhandled data disassembly!
+				int* FATAL = 0;
+				*FATAL = 0xDEADC0DE;
+	#endif
+				iByte++;
+				break;
 		}
 	}
 }

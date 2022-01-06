@@ -3361,7 +3361,7 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs > 2)
 			return HelpLastCommand();
 
-		char buffer[200] = "";
+		char buffer[200] = ""; // HACK: Magic number TODO: Should be MAX_CONSOLE_WIDTH*2
 		ConsoleBufferPushFormat(buffer, "FW%2d: D%d at T$%s, phase $%s, offset $%X, mask $%02X, extraCycles %.2f, %s",
 			diskCard.GetCurrentFirmware(),
 			diskCard.GetCurrentDrive() + 1,

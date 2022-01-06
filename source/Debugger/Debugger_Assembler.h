@@ -100,6 +100,7 @@
 	,NUM_ASM_W_DIRECTIVES
 	};
 
+	// NOTE: Keep in sync!  AsmCustomDirective_e  g_aAssemblerDirectives
 	enum AsmCustomDirective_e
 	{
 		 ASM_DEFINE_BYTE	
