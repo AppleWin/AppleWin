@@ -585,6 +585,7 @@ void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 	pBmp->nSizeFile = ftell(pFile);
 	rewind(pFile);
 	fwrite( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
+	fseek(pFile, 0, SEEK_END);
 }
 
 //===========================================================================
