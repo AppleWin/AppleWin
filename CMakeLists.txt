@@ -75,7 +75,11 @@ if (BUILD_LIBRETRO)
   add_subdirectory(source/frontends/libretro)
 endif()
 
-set(CPACK_PACKAGE_VERSION "1.30.7.0")
+file(STRINGS resource/version.h VERSION_FILE LIMIT_COUNT 1)
+string(REGEX MATCH "#define APPLEWIN_VERSION (.*)" _ ${VERSION_FILE})
+string(REPLACE "," "." VERSION ${CMAKE_MATCH_1})
+
+set(CPACK_PACKAGE_VERSION ${VERSION})
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Apple ][ emulator for Linux")
 set(CPACK_PACKAGE_CONTACT "audetto <mariofutire@gmail.com>")
 
