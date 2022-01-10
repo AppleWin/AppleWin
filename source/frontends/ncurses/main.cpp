@@ -151,8 +151,14 @@ namespace
     const std::shared_ptr<na2::NFrame> frame(new na2::NFrame(paddle));
 
     const Initialisation init(frame, paddle);
-    applyOptions(options);
+    common2::applyOptions(options);
     frame->Begin();
+
+    common2::setSnapshotFilename(options.snapshotFilename);
+    if (options.loadSnapshot)
+    {
+      frame->LoadSnapshot();
+    }
 
     na2::SetCtrlCHandler(options.headless);
 

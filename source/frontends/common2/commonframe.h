@@ -11,6 +11,7 @@ namespace common2
   {
   public:
     BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) override;
+    virtual void LoadSnapshot();
 
   protected:
     virtual std::string getResourcePath(const std::string & filename) = 0;

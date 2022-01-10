@@ -1,5 +1,4 @@
 #include "frontends/common2/programoptions.h"
-#include "frontends/common2/utils.h"
 #include "frontends/common2/fileregistry.h"
 #include "linux/version.h"
 #include "linux/paddle.h"
@@ -226,11 +225,6 @@ namespace common2
 
     bool bBoot;
     InsertFloppyDisks(SLOT6, szImageName_drive, driveConnected, bBoot);
-
-    if (!options.snapshotFilename.empty())
-    {
-      setSnapshotFilename(options.snapshotFilename, options.loadSnapshot);
-    }
 
     if (!options.customRom.empty())
     {

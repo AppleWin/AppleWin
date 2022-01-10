@@ -89,8 +89,8 @@ namespace sa2
     const char * wav = ".wav";
     if (strlen(filename) > strlen(yaml) && !strcmp(filename + strlen(filename) - strlen(yaml), yaml))
     {
-      common2::setSnapshotFilename(filename, true);
-      frame->ResetHardware();
+      common2::setSnapshotFilename(filename);
+      frame->LoadSnapshot();
     }
     else if (strlen(filename) > strlen(wav) && !strcmp(filename + strlen(filename) - strlen(wav), wav))
     {

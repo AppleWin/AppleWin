@@ -452,7 +452,7 @@ static void Snapshot_LoadState_v2(void)
 	try
 	{
 		if (!yamlHelper.InitParser( g_strSaveStatePathname.c_str() ))
-			throw std::runtime_error("Failed to initialize parser or open file");
+			throw std::runtime_error("Failed to initialize parser or open file: " + g_strSaveStatePathname);
 
 		if (ParseFileHdr() != SS_FILE_VER)
 			throw std::runtime_error("Version mismatch");

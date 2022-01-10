@@ -36,6 +36,7 @@ void JoySetButtonVirtualKey(UINT button, UINT virtKey)
 #define SS_YAML_KEY_JOY0TRIMY "Joystick0 TrimY"
 #define SS_YAML_KEY_JOY1TRIMX "Joystick1 TrimX"
 #define SS_YAML_KEY_JOY1TRIMY "Joystick1 TrimY"
+#define SS_YAML_KEY_PDL_INACTIVE_CYCLE "Paddle%1d Inactive Cycle"
 
 static std::string JoyGetSnapshotStructName(void)
 {
@@ -43,16 +44,29 @@ static std::string JoyGetSnapshotStructName(void)
   return name;
 }
 
-void JoyLoadSnapshot(YamlLoadHelper& yamlLoadHelper, unsigned int)
+void JoyLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
   if (!yamlLoadHelper.GetSubMap(JoyGetSnapshotStructName()))
     return;
 
-  yamlLoadHelper.LoadUint64(SS_YAML_KEY_COUNTERRESETCYCLE);
   yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY0TRIMX);
   yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY0TRIMY);
-  yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY1TRIMX);	// dump value
-  yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY1TRIMY);	// dump value
+  yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY1TRIMX);
+  yamlLoadHelper.LoadInt(SS_YAML_KEY_JOY1TRIMY);
+
+  if (version >= 7)
+  {
+    for (UINT n = 0; n < 4; n++)
+    {
+      char str[sizeof(SS_YAML_KEY_PDL_INACTIVE_CYCLE) + 1];
+      sprintf_s(str, sizeof(str), SS_YAML_KEY_PDL_INACTIVE_CYCLE, n);
+      yamlLoadHelper.LoadUint64(str);
+    }
+  }
+  else
+  {
+    yamlLoadHelper.LoadUint64(SS_YAML_KEY_COUNTERRESETCYCLE);
+  }
 
   yamlLoadHelper.PopMap();
 }

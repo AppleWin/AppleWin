@@ -93,8 +93,14 @@ void run_sdl(int argc, const char * argv [])
 
   std::shared_ptr<Paddle> paddle(new sa2::Gamepad(0));
   const Initialisation init(frame, paddle);
-  applyOptions(options);
+  common2::applyOptions(options);
   frame->Begin();
+
+  common2::setSnapshotFilename(options.snapshotFilename);
+  if (options.loadSnapshot)
+  {
+    frame->LoadSnapshot();
+  }
 
   std::cerr << "Default GL swap interval: " << SDL_GL_GetSwapInterval() << std::endl;
 

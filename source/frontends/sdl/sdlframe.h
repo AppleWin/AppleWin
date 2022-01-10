@@ -34,6 +34,7 @@ namespace sa2
     void ResetHardware();
     bool HardwareChanged() const;
     virtual void ResetSpeed();
+    void LoadSnapshot() override;
 
     const std::shared_ptr<SDL_Window> & GetWindow() const;
 

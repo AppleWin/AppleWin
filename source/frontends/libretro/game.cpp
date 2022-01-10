@@ -260,7 +260,8 @@ namespace ra2
 
   bool Game::loadSnapshot(const std::string & path)
   {
-    common2::setSnapshotFilename(path, true);
+    common2::setSnapshotFilename(path);
+    myFrame->LoadSnapshot();
     return true;
   }
 
