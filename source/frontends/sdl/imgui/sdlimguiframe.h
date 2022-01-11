@@ -41,6 +41,7 @@ namespace sa2
     size_t myBorderlessHeight;
 
     int myDeadTopZone; // for mouse position
+    bool myPresenting; // VideoPresentScreen() is NOT REENTRANT
 
     SDL_GLContext myGLContext;
     ImTextureID myTexture;

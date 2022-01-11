@@ -36,6 +36,7 @@ namespace sa2
 
   SDLImGuiFrame::SDLImGuiFrame(const common2::EmulatorOptions & options)
     : SDLFrame(options)
+    , myPresenting(false)
   {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SA2_CONTEXT_FLAGS);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SA2_CONTEXT_PROFILE_MASK);
@@ -187,18 +188,25 @@ namespace sa2
 
   void SDLImGuiFrame::VideoPresentScreen()
   {
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame(myWindow.get());
-    ImGui::NewFrame();
+    // this is NOT REENTRANT
+    // the debugger (executed via mySettings.show(this)) might call it recursively
+    if (!myPresenting)
+    {
+      myPresenting = true;
+      ImGui_ImplOpenGL3_NewFrame();
+      ImGui_ImplSDL2_NewFrame();
+      ImGui::NewFrame();
 
-    // "this" is a bit circular
-    mySettings.show(this);
-    DrawAppleVideo();
+      // "this" is a bit circular
+      mySettings.show(this);
+      DrawAppleVideo();
 
-    ImGui::Render();
-    ClearBackground();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    SDL_GL_SwapWindow(myWindow.get());
+      ImGui::Render();
+      ClearBackground();
+      ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+      SDL_GL_SwapWindow(myWindow.get());
+      myPresenting = false;
+    }
   }
 
   void SDLImGuiFrame::ProcessSingleEvent(const SDL_Event & event, bool & quit)
