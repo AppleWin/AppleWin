@@ -155,8 +155,9 @@ void run_sdl(int argc, const char * argv [])
       frame->ExecuteOneFrame(oneFrame);
       cpuTimer.toc();
 
-      if (!options.headless)
+      if (!options.headless && !g_bFullSpeed)
       {
+        // in full speed VideoRedrawScreenDuringFullSpeed is called inside SDLFrame::Execute
         refreshScreenTimer.tic();
         frame->VideoPresentScreen();
         refreshScreenTimer.toc();

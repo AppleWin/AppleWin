@@ -591,8 +591,9 @@ namespace sa2
         g_dwCyclesThisFrame -= dwClksPerFrame;
         if (g_bFullSpeed)
         {
-          NTSC_VideoClockResync(g_dwCyclesThisFrame);
-          GetVideo().VideoRefreshBuffer(GetVideo().GetVideoMode(), true);
+          // only call VideoPresentScreen every 16ms
+          // hardcoded in FrameBase::VideoRedrawScreenDuringFullSpeed()
+          VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
         }
       }
     } while (totalCyclesExecuted < cyclesToExecute);
@@ -687,6 +688,7 @@ namespace sa2
         // entering full speed
         MB_Mute();
         setGLSwapInterval(0);
+        VideoRedrawScreenDuringFullSpeed(0, true);
       }
       else
       {
