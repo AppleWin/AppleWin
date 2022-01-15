@@ -15,7 +15,7 @@
 #define  MF_SLOTC3ROM  0x00000100
 #define  MF_INTCXROM   0x00000200
 #define  MF_WRITERAM   0x00000400   // Language Card RAM is Write Enabled
-#define  MF_IOUDIS     0x00000800	// Disable IOU access for addresses $C058 to $C05F; enable access to DHIRES switch (0=on) (Enhanced //e only)
+#define  MF_IOUDIS     0x00000800   // Disable IOU access for addresses $C058 to $C05F; enable access to DHIRES switch (0=on) (//c only)
 #define  MF_ALTROM0    0x00001000   // Use alternate ROM for $D000 to $FFFF. Two bits for up to 4 pages
 #define  MF_ALTROM1    0x00002000   // Use alternate ROM, second bit to have four pages
 #define  MF_IMAGEMASK  0x000003F7

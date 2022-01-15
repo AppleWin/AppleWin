@@ -509,6 +509,24 @@ static BYTE __stdcall IOWrite_C04x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 
 //-------------------------------------
 
+static BYTE __stdcall IOReadWrite_ANx(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
+{
+	// $C058..C05F
+	_ASSERT((addr & 0xf) >= 8);
+
+	if (IsAppleIIeOrAbove(GetApple2Type()))
+	{
+		if (!IsAppleIIc(GetApple2Type()) || /* IsIIc && */ SW_IOUDIS)
+			GetVideo().VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);	// Apple //e or (//c && IOUDIS)
+	}
+
+	if (IsAppleIIc(GetApple2Type()))	// No ANx lines for //c
+		return 0;
+
+	// GH#1018 - AN3 line is still present on //e (with $C05E/F also toggling DHIRES)
+	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+}
+
 static BYTE __stdcall IORead_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	switch (addr & 0xf)
@@ -521,18 +539,7 @@ static BYTE __stdcall IORead_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0x5:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x6:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x7:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x8:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x9:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xA:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xB:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xC:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xD:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xE:	// fall through...
-	case 0xF:	if (IsApple2PlusOrClone(GetApple2Type()))
-					IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-				else
-					return (!SW_IOUDIS) ? GetVideo().VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
-										: IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	default:	return IOReadWrite_ANx(pc, addr, bWrite, d, nExecutedCycles);	// $C058..C05F
 	}
 
 	return 0;
@@ -550,21 +557,8 @@ static BYTE __stdcall IOWrite_C05x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	case 0x5:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x6:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
 	case 0x7:	return MemSetPaging(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x8:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0x9:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xA:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xB:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xC:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xD:	return IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xE:	// fall through...
-	case 0xF:	if (IsApple2PlusOrClone(GetApple2Type()))
-					IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
-				else
-					return (!SW_IOUDIS) ? GetVideo().VideoSetMode(pc, addr, bWrite, d, nExecutedCycles)
-										: IO_Annunciator(pc, addr, bWrite, d, nExecutedCycles);
+	default:	return IOReadWrite_ANx(pc, addr, bWrite, d, nExecutedCycles);	// $C058..C05F
 	}
-
-	return 0;
 }
 
 //-------------------------------------
@@ -659,12 +653,12 @@ static BYTE __stdcall IOWrite_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	case 0xC:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xD:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xE:	if (IS_APPLE2C())
-					SetMemMode(memmode & ~MF_IOUDIS);	// disable IOU access for addresses $C058 to $C05F; enable access to DHIRES switch
+					SetMemMode(memmode | MF_IOUDIS);	// On: disable IOU access for addresses $C058 to $C05F; enable access to DHIRES switch
 				else
 					return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 				break;
 	case 0xF:	if (IS_APPLE2C())
-					SetMemMode(memmode | MF_IOUDIS);	// enable IOU access for addresses $C058 to $C05F; disable access to DHIRES switch
+					SetMemMode(memmode & ~MF_IOUDIS);	// Off: enable IOU access for addresses $C058 to $C05F; disable access to DHIRES switch
 				else
 					return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 				break;
@@ -725,8 +719,6 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 	// . $FA72: LDA $C05A (SETAN1) ; AN1 = TTL LO
 	// . $C2B5: LDA $C05D (CLRAN2) ;SETUP
 	// . $C2B8: LDA $C05F (CLRAN3) ; ANNUNCIATORS
-
-	// NB. AN3: For //e & //c these locations are now used to enabled/disabled DHIRES
 
 	g_Annunciator[(address>>1) & 3] = (address&1) ? true : false;
 
