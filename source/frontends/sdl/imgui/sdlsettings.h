@@ -48,8 +48,10 @@ namespace sa2
     void showAboutWindow();
 
     void drawDisassemblyTable(SDLFrame * frame);
-    void drawRegisters();
     void drawConsole();
+    void drawRegisters();
+    void drawAnnunciators();
+    void drawSwitches();
 
     void debuggerCommand(SDLFrame * frame, const char * s);
   };

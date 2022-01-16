@@ -18,6 +18,8 @@
 #include "Registry.h"
 #include "Utilities.h"
 #include "Memory.h"
+#include "ParallelPrinter.h"
+#include "SaveState.h"
 
 #include "Debugger/Debugger_Types.h"
 
@@ -46,6 +48,18 @@ namespace
       ImGui::PopTextWrapPos();
       ImGui::EndTooltip();
     }
+  }
+
+  void printBoolean(const char * label, const bool value, const char * falseValue, const char * trueValue)
+  {
+    int elem = value;
+    const char * name = value ? trueValue : falseValue;
+    ImGui::SliderInt(label, &elem, 0, 1, name);
+  }
+
+  void printOnOff(const char * label, const bool value)
+  {
+    printBoolean(label, value, "OFF", "ON");
   }
 
   char getPrintableChar(const uint8_t x)
@@ -233,6 +247,9 @@ namespace sa2
           }
           ImGui::LabelText("Clock", "%15.2f Hz", g_fCurrentCLK6502);
 
+          ImGui::Separator();
+          ImGui::LabelText("Printer", "%s", Printer_GetFilename().c_str());
+          ImGui::LabelText("Save state", "%s", Snapshot_GetPathname().c_str());
           ImGui::Separator();
 
           if (frame->HardwareChanged())
@@ -1013,6 +1030,40 @@ namespace sa2
     }
   }
 
+  void ImGuiSettings::drawAnnunciators()
+  {
+    ImGui::TextUnformatted("Annunciators");
+    ImGui::Separator();
+    ImGui::BeginDisabled();
+    for (UINT i = 0; i < 4; ++i)
+    {
+      char buffer[20];
+      sprintf(buffer, "Ann %d", i);
+      printOnOff(buffer, MemGetAnnunciator(i));
+    }
+    ImGui::EndDisabled();
+  }
+
+  void ImGuiSettings::drawSwitches()
+  {
+    Video & video = GetVideo();
+    ImGui::TextUnformatted("Switches C0xx");
+    ImGui::Separator();
+    ImGui::BeginDisabled();
+    printBoolean("50", video.VideoGetSWTEXT(), "GR", "TEXT");
+    printBoolean("52", video.VideoGetSWMIXED(), "FULL", "MIX");
+    printBoolean("54", video.VideoGetSWPAGE2(), "PAGE 1", "PAGE 2");
+    printBoolean("56", video.VideoGetSWHIRES(), "RES LO", "RES HI");
+    printBoolean("5E", !video.VideoGetSWDHIRES(), "DHGR", "HGR");
+    ImGui::Separator();
+    printBoolean("00", video.VideoGetSW80STORE(), "80sto 0", "80sto 1");
+    printBoolean("02", GetMemMode() & MF_AUXREAD, "R m", "R x");
+    printBoolean("02", GetMemMode() & MF_AUXWRITE, "W m", "R x");
+    printBoolean("0C", video.VideoGetSW80COL(), "Col 40", "Col 80");
+    printBoolean("0E", video.VideoGetSWAltCharSet(), "ASC", "MOUS");
+    ImGui::EndDisabled();
+  }
+
   void ImGuiSettings::drawConsole()
   {
     const ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
@@ -1134,7 +1185,7 @@ namespace sa2
           }
 
           // this is about right to contain the fixed-size register child
-          const ImVec2 registerTextSize = ImGui::CalcTextSize("012345678901");
+          const ImVec2 registerTextSize = ImGui::CalcTextSize("Annunciators012345");
 
           ImGui::BeginChild("Disasm", ImVec2(-registerTextSize.x, 0));
           drawDisassemblyTable(frame);
@@ -1142,8 +1193,12 @@ namespace sa2
 
           ImGui::SameLine();
 
-          ImGui::BeginChild("Registers");
+          ImGui::BeginChild("Flags");
           drawRegisters();
+          ImGui::Dummy(ImVec2(0.0f, 20.0f));
+          drawAnnunciators();
+          ImGui::Dummy(ImVec2(0.0f, 20.0f));
+          drawSwitches();
           ImGui::EndChild();
 
           ImGui::EndTabItem();
