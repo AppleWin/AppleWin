@@ -220,6 +220,11 @@ inline bool IsAppleIIeOrAbove(eApple2Type type)		// Apple //e,Enhanced//e,//c or
 	return !IsApple2PlusOrClone(type);
 }
 
+inline bool IsAppleIIc(eApple2Type type)			// Apple //c
+{
+	return (type & A2TYPE_APPLE2C) != 0;
+}
+
 extern eApple2Type g_Apple2Type;
 inline bool IsEnhancedIIE(void)
 {
