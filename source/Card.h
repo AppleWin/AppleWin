@@ -46,6 +46,10 @@ public:
 
 	SS_CARDTYPE QueryType(void) { return m_type; }
 
+	std::string GetCardName(void);
+	static std::string GetCardName(const SS_CARDTYPE cardType);
+	static SS_CARDTYPE GetCardType(const std::string & card);
+
 protected:
 	UINT m_slot;
 
