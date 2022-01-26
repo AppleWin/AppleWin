@@ -48,7 +48,7 @@ LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
 	m_uLastRamWrite(0)
 {
 	if (m_slot != LanguageCardUnit::kSlot0)
-		throw std::runtime_error("Language Card: wrong slot");		// throws to the top-level catch-handler, and shuts down
+		ThrowErrorInvalidSlot();
 
 	SetMemMainLanguageCard(NULL, true);
 }

@@ -159,6 +159,10 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 	{
 	case CT_Empty:
 		return "Empty";
+	case CT_LanguageCard:
+		return LanguageCardSlot0::GetSnapshotCardName();
+	case CT_Saturn128K:
+		return Saturn128K::GetSnapshotCardName();
 	case CT_Disk2:
 		return Disk2InterfaceCard::GetSnapshotCardName();
 	case CT_SSC:
