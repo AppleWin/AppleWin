@@ -232,9 +232,8 @@ bool Printer_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT 
 	if (slot != 1)	// fixme
 		Card::ThrowErrorInvalidSlot(CT_GenericPrinter, slot);
 
-
 	if (version != 1)
-		throw std::runtime_error("Card: wrong version");
+		Card::ThrowErrorInvalidVersion(CT_GenericPrinter, version);
 
 	inactivity					= yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);
 	g_PrinterIdleLimit			= yamlLoadHelper.LoadUint(SS_YAML_KEY_IDLELIMIT);

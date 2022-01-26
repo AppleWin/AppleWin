@@ -2199,7 +2199,7 @@ void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, U
 bool Disk2InterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version < 1 || version > kUNIT_VERSION)
-		throw std::runtime_error("Card: wrong version");
+		ThrowErrorInvalidVersion(version);
 
 	m_currDrive = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_DRIVE);
 	m_magnetStates		= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASES);

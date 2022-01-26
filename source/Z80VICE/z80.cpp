@@ -6528,7 +6528,7 @@ bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT ver
 		Card::ThrowErrorInvalidSlot(CT_Z80, uSlot);
 
 	if (version != 1)
-		throw std::runtime_error("Card: wrong version");
+		Card::ThrowErrorInvalidVersion(CT_Z80, version);
 
 	reg_a = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGA);
 	reg_b = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGB);

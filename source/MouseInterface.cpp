@@ -716,7 +716,7 @@ void CMouseInterface::LoadSnapshotMC6821(YamlLoadHelper& yamlLoadHelper, std::st
 bool CMouseInterface::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version != 1)
-		throw std::runtime_error("Card: wrong version");
+		ThrowErrorInvalidVersion(version);
 
 	LoadSnapshotMC6821(yamlLoadHelper, SS_YAML_KEY_MC6821);
 

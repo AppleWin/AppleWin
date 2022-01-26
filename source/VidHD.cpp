@@ -219,7 +219,7 @@ void VidHDCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 bool VidHDCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version < 1 || version > kUNIT_VERSION)
-		throw std::runtime_error("Card: wrong version");
+		ThrowErrorInvalidVersion(version);
 
 	m_memMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE);
 	m_SCREENCOLOR = yamlLoadHelper.LoadUint(SS_YAML_KEY_SCREEN_COLOR);

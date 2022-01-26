@@ -50,6 +50,20 @@ void Card::ThrowErrorInvalidSlot(SS_CARDTYPE type, UINT slot)
 	throw std::runtime_error(msg.str());
 }
 
+void Card::ThrowErrorInvalidVersion(UINT version)
+{
+	ThrowErrorInvalidVersion(m_type, version);
+}
+
+void Card::ThrowErrorInvalidVersion(SS_CARDTYPE type, UINT version)
+{
+	std::ostringstream msg;
+	msg << "Version " << version;
+	msg << " is not supported for card '" << GetCardName(type) << "'.";
+
+	throw std::runtime_error(msg.str());
+}
+
 void DummyCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	switch (QueryType())

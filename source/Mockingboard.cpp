@@ -1971,7 +1971,7 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 		Card::ThrowErrorInvalidSlot(CT_MockingboardC, slot);
 
 	if (version < 1 || version > kUNIT_VERSION)
-		throw std::runtime_error("Card: wrong version");
+		Card::ThrowErrorInvalidVersion(CT_MockingboardC, version);
 
 	AY8910UpdateSetCycles();
 
@@ -2093,9 +2093,8 @@ bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version
 	if (slot != 4)	// fixme
 		Card::ThrowErrorInvalidSlot(CT_Phasor, slot);
 
-
 	if (version < 1 || version > kUNIT_VERSION)
-		throw std::runtime_error("Card: wrong version");
+		Card::ThrowErrorInvalidVersion(CT_Phasor, version);
 
 	if (version < 6)
 		yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR);	// Consume redundant data

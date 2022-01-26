@@ -1510,7 +1510,7 @@ bool tfe_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
         Card::ThrowErrorInvalidSlot(CT_Uthernet, slot);
 
     if (version < 1 || version > kUNIT_VERSION)
-        throw std::runtime_error("Card: wrong version");
+		Card::ThrowErrorInvalidVersion(CT_Uthernet, version);
 
     tfe_enabled = yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED) ? true : false;
     set_tfe_interface(yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE));

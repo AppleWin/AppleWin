@@ -1482,7 +1482,7 @@ void CSuperSerialCard::LoadSnapshotDIPSW(YamlLoadHelper& yamlLoadHelper, std::st
 bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version < 1 || version > kUNIT_VERSION)
-		throw std::runtime_error("Card: wrong version");
+		ThrowErrorInvalidVersion(version);
 
 	LoadSnapshotDIPSW(yamlLoadHelper, SS_YAML_KEY_DIPSWDEFAULT, m_DIPSWDefault);
 	LoadSnapshotDIPSW(yamlLoadHelper, SS_YAML_KEY_DIPSWCURRENT, m_DIPSWCurrent);
