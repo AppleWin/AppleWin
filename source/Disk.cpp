@@ -61,7 +61,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	Card(CT_Disk2, slot)
 {
 	if (m_slot != 5 && m_slot != 6)	// fixme
-		throw std::runtime_error("Card: wrong slot");
+		ThrowErrorInvalidSlot();
 
 	ResetSwitches();
 

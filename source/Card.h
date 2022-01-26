@@ -50,8 +50,13 @@ public:
 	static std::string GetCardName(const SS_CARDTYPE cardType);
 	static SS_CARDTYPE GetCardType(const std::string & card);
 
+	// static version for non-Card cards
+	static void ThrowErrorInvalidSlot(SS_CARDTYPE type, UINT slot);
+
 protected:
 	UINT m_slot;
+
+	void ThrowErrorInvalidSlot();
 
 private:
 	SS_CARDTYPE m_type;

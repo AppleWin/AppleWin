@@ -1507,7 +1507,7 @@ void tfe_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 bool tfe_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 {
     if (slot != SLOT3)	// fixme
-        throw std::runtime_error("Card: wrong slot");
+        Card::ThrowErrorInvalidSlot(CT_Uthernet, slot);
 
     if (version < 1 || version > kUNIT_VERSION)
         throw std::runtime_error("Card: wrong version");

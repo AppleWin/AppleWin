@@ -72,7 +72,7 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	m_pExpansionRom(NULL)
 {
 	if (m_slot != 2)	// fixme
-		throw std::runtime_error("Card: wrong slot");
+		ThrowErrorInvalidSlot();
 
 	m_dwSerialPortItem = 0;
 

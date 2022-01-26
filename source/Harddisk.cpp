@@ -131,7 +131,7 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	Card(CT_GenericHDD, slot)
 {
 	if (m_slot != SLOT7)	// fixme
-		throw std::runtime_error("Card: wrong slot");
+		ThrowErrorInvalidSlot();
 
 	m_unitNum = HARDDISK_1 << 7;	// b7=unit
 

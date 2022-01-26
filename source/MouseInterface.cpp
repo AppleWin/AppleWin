@@ -139,7 +139,7 @@ CMouseInterface::CMouseInterface(UINT slot) :
 	m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for MouseInterfaces
 {
 	if (m_slot != 4)	// fixme
-		throw std::runtime_error("Card: wrong slot");
+		ThrowErrorInvalidSlot();
 
 	m_6821.SetListenerB( this, M6821_Listener_B );
 	m_6821.SetListenerA( this, M6821_Listener_A );

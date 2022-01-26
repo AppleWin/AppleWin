@@ -1968,7 +1968,7 @@ static void LoadSnapshotSY6522(YamlLoadHelper& yamlLoadHelper, SY6522& sy6522, U
 bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 {
 	if (slot != 4 && slot != 5)	// fixme
-		throw std::runtime_error("Card: wrong slot");
+		Card::ThrowErrorInvalidSlot(CT_MockingboardC, slot);
 
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::runtime_error("Card: wrong version");
@@ -2091,7 +2091,8 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 {
 	if (slot != 4)	// fixme
-		throw std::runtime_error("Card: wrong slot");
+		Card::ThrowErrorInvalidSlot(CT_Phasor, slot);
+
 
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::runtime_error("Card: wrong version");

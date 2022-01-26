@@ -34,6 +34,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SNESMAX.h"
 #include "VidHD.h"
 
+#include <sstream>
+
+void Card::ThrowErrorInvalidSlot()
+{
+	ThrowErrorInvalidSlot(m_type, m_slot);
+}
+
+void Card::ThrowErrorInvalidSlot(SS_CARDTYPE type, UINT slot)
+{
+	std::ostringstream msg;
+	msg << "The card '" << GetCardName(type);
+	msg << "' is not allowed in Slot " << slot << ".";
+
+	throw std::runtime_error(msg.str());
+}
+
 void DummyCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	switch (QueryType())
