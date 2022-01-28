@@ -142,21 +142,24 @@ static BYTE __stdcall PrintStatus(WORD, WORD, BYTE, BYTE, ULONG)
 }
 
 //===========================================================================
-static BYTE __stdcall PrintTransmit(WORD, WORD, BYTE, BYTE value, ULONG)
+static BYTE __stdcall PrintTransmit(WORD, WORD address, BYTE, BYTE value, ULONG)
 {
 	if (!CheckPrint())
 		return 0;
 
-	BYTE c = value & 0x7F;
+    if ((address & 0xF) == 0) {
+        // load output port (i.e., $C090)
+        BYTE c = value & 0x7F;
 
-	if (IsPravets(GetApple2Type()))
-	{
-		if (g_bConvertEncoding)
-			c = GetPravets().ConvertToPrinterChar(value);
-	}
+        if (IsPravets(GetApple2Type()))
+        {
+            if (g_bConvertEncoding)
+                c = GetPravets().ConvertToPrinterChar(value);
+        }
 
-	if ((g_bFilterUnprintable == false) || (c>31) || (c==13) || (c==10) || (c>0x7F)) //c>0x7F is needed for cyrillic characters
-		fwrite(&c, 1, 1, file);
+        if ((g_bFilterUnprintable == false) || (c>31) || (c==13) || (c==10) || (c>0x7F)) //c>0x7F is needed for cyrillic characters
+            fwrite(&c, 1, 1, file);
+    }
 
 	return 0;
 }
