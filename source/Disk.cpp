@@ -302,6 +302,13 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 
 	if (pFloppy->m_trackimage && pFloppy->m_imagehandle)
 	{
+		if (ImageIsWOZ(pFloppy->m_imagehandle))
+		{
+			// Update bitStream position for *current* track before re-calc'ing position for new track
+			UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
+			UpdateBitStreamPosition(*pFloppy, bitCellDelta);
+		}
+
 		const UINT32 currentPosition = pFloppy->m_byte;
 		const UINT32 currentTrackLength = pFloppy->m_nibbles;
 
@@ -568,7 +575,7 @@ void Disk2InterfaceCard::Destroy(void)
 
 //===========================================================================
 
-void __stdcall Disk2InterfaceCard::Enable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
+bool __stdcall Disk2InterfaceCard::Enable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	WORD newDrive = address & 1;
 	bool stateChanged = (newDrive != m_currDrive);
@@ -580,6 +587,8 @@ void __stdcall Disk2InterfaceCard::Enable(WORD, WORD address, BYTE, BYTE, ULONG 
 	m_floppyDrive[!m_currDrive].m_spinning   = 0;
 	m_floppyDrive[!m_currDrive].m_writelight = 0;
 	CheckSpinning(stateChanged, uExecutedCycles);
+
+	return ImageIsWOZ(m_floppyDrive[m_currDrive].m_disk.m_imagehandle);		// Drive may've changed, so image-type may've changed
 }
 
 //===========================================================================
@@ -1211,7 +1220,7 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	// Skipping forward a large amount of bitcells means the bitstream will very likely be out-of-sync.
 	// The first 1-bit will produce a latch nibble, and this 1-bit is unlikely to be the nibble's high bit.
 	// So we need to ensure we run enough bits through the sequencer to re-sync.
-	const UINT significantBitCells = 50;	// 5x 10-bit sync FF nibbles
+	const UINT significantBitCells = 100;	// eg. long stream of weak bits and/or 5x 10-bit sync FF nibbles (GH#1020)
 	UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
 
 	UINT bitCellRemainder;
@@ -1872,8 +1881,8 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	case 0x7:	pCard->ControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0x8:	pCard->ControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0x9:	pCard->ControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xA:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xB:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xA:	isWOZ = pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xB:	isWOZ = pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xC:	if (!isWOZ) pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xD:	pCard->LoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xE:	pCard->SetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
@@ -1919,8 +1928,8 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 	case 0x7:	pCard->ControlStepper(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0x8:	pCard->ControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0x9:	pCard->ControlMotor(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xA:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
-	case 0xB:	pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xA:	isWOZ = pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
+	case 0xB:	isWOZ = pCard->Enable(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xC:	if (!isWOZ) pCard->ReadWrite(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xD:	pCard->LoadWriteProtect(pc, addr, bWrite, d, nExecutedCycles); break;
 	case 0xE:	pCard->SetReadMode(pc, addr, bWrite, d, nExecutedCycles); break;
