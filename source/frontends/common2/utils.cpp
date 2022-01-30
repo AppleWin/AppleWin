@@ -15,22 +15,15 @@ namespace common2
   {
     if (!filename.empty())
     {
-      // same logic as qapple
-      // setting chdir allows to load relative disks from the snapshot file (tests?)
-      // but if the snapshot file itself is relative, it wont work after a chdir
-      // so we convert to absolute first
-      char * absPath = realpath(filename.c_str(), nullptr);
-      if (absPath)
-      {
-        char * temp = strdup(absPath);
-        const char * dir = dirname(temp);
-        // dir points inside temp!
-        chdir(dir);
-        Snapshot_SetFilename(absPath);
+      // it is unbelievably hard to convert a path to absolute
+      // unless the file exists
+      char * temp = strdup(filename.c_str());
+      const char * dir = dirname(temp);
+      // dir points inside temp!
+      chdir(dir);
+      Snapshot_SetFilename(filename);
 
-        free(temp);
-        free(absPath);
-      }
+      free(temp);
     }
   }
 

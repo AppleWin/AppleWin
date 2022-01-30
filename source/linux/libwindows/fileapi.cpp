@@ -128,6 +128,8 @@ DWORD GetFileAttributes(const char * filename)
 
 DWORD GetFullPathName(const char* filename, DWORD length, char * buffer, char ** filePart)
 {
+  // what is the filename does not exist?
+  // unfortunately realpath returns -ENOENT
   const char * result = realpath(filename, buffer);
   if (!result)
   {
