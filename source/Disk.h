@@ -219,7 +219,7 @@ private:
 
 	void __stdcall ControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
 	void __stdcall ControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
-	void __stdcall Enable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
+	bool __stdcall Enable(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles);
 	void __stdcall ReadWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles);
 	void __stdcall DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, ULONG uExecutedCycles);
 	void __stdcall LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG);
