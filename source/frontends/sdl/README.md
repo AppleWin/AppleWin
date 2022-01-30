@@ -12,7 +12,7 @@ The format of the configuration file is the same as the Windows Registry of Appl
 *Drag & drop* works for floppy disks. With ImGui it is possible to select which drive they are dropped into (``D&D``).
 If the filename ends with `.yaml`, it will be loaded as a *State* file.
 
-Individual options can be passed via arguments too: ``-c Configuration.Printer_FileName=Printer.txt``.
+Individual options can be passed via arguments too: ``-r Configuration.Printer_Filename=Printer.txt``.
 
 If you have a modern gamepad where the axes (``LEFTX`` and ``LEFTY``) move in a circle, the emulator will automatically map to a square: use ``--no-squaring`` to avoid this.
 

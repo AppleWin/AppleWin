@@ -248,7 +248,6 @@ namespace sa2
           ImGui::LabelText("Clock", "%15.2f Hz", g_fCurrentCLK6502);
 
           ImGui::Separator();
-          ImGui::LabelText("Printer", "%s", Printer_GetFilename().c_str());
           ImGui::LabelText("Save state", "%s", Snapshot_GetPathname().c_str());
           ImGui::Separator();
 
@@ -540,6 +539,21 @@ namespace sa2
             }
             ImGui::EndTable();
           }
+          ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Printer"))
+        {
+          ImGui::LabelText("Printer file", "%s", Printer_GetFilename().c_str());
+          ImGui::SameLine();
+          if (ImGui::Button("Reset"))
+          {
+            PrintReset();
+          }
+          ImGui::Separator();
+          ImGui::Checkbox("Append", &g_bPrinterAppend);
+          ImGui::Checkbox("Filter unprintable", &g_bFilterUnprintable);
+          ImGui::Checkbox("Convert encoding", &g_bConvertEncoding);
           ImGui::EndTabItem();
         }
 
