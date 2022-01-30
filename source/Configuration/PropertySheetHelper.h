@@ -48,7 +48,6 @@ private:
 	void ApplyNewConfig(void);
 	void RestoreCurrentConfig(void);
 	std::string GetSlot(const UINT uSlot);
-	std::string GetCardName(const SS_CARDTYPE CardType);
 
 	PAGETYPE m_LastPage;
 	UINT32 m_bmPages;
