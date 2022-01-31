@@ -494,63 +494,22 @@ std::string CPropertySheetHelper::GetSlot(const UINT uSlot)
 	{
 		if (NewCardType == CT_Empty)
 		{
-			strMsg += GetCardName(OldCardType);
+			strMsg += Card::GetCardName(OldCardType);
 			strMsg += " card removed\n";
 		}
 		else
 		{
-			strMsg += GetCardName(NewCardType);
+			strMsg += Card::GetCardName(NewCardType);
 			strMsg += " card added\n";
 		}
 	}
 	else
 	{
-			strMsg += GetCardName(OldCardType);
+			strMsg += Card::GetCardName(OldCardType);
 			strMsg += " card removed & ";
-			strMsg += GetCardName(NewCardType);
+			strMsg += Card::GetCardName(NewCardType);
 			strMsg += " card added\n";
 	}
 
 	return strMsg;
-}
-
-std::string CPropertySheetHelper::GetCardName(const SS_CARDTYPE CardType)
-{
-	switch (CardType)
-	{
-	case CT_Empty:
-		return "Empty";
-	case CT_Disk2:			// Apple Disk][
-		return "Disk][";
-	case CT_SSC:			// Apple Super Serial Card
-		return "Super Serial";
-	case CT_MockingboardC:	// Soundcard
-		return "Mockingboard";
-	case CT_GenericPrinter:
-		return "Printer";
-	case CT_GenericHDD:		// Hard disk
-		return "Hard Disk";
-	case CT_GenericClock:
-		return "Clock";
-	case CT_MouseInterface:
-		return "Mouse";
-	case CT_Z80:
-		return "CP/M";
-	case CT_Phasor:			// Soundcard
-		return "Phasor";
-	case CT_Echo:			// Soundcard
-		return "Echo";
-	case CT_SAM:			// Soundcard: Software Automated Mouth
-		return "SAM";
-	case CT_Uthernet:
-		return "Uthernet";
-	case CT_FourPlay:
-		return "4Play";
-	case CT_SNESMAX:
-		return "SNES MAX";
-	case CT_VidHD:
-		return "VidHD";
-	default:
-		return "Unknown";
-	}
 }

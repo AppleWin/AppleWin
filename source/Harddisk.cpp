@@ -131,7 +131,7 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	Card(CT_GenericHDD, slot)
 {
 	if (m_slot != SLOT7)	// fixme
-		throw std::runtime_error("Card: wrong slot");
+		ThrowErrorInvalidSlot();
 
 	m_unitNum = HARDDISK_1 << 7;	// b7=unit
 
@@ -888,7 +888,7 @@ bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, 
 bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version < 1 || version > kUNIT_VERSION)
-		throw std::runtime_error("Card: wrong version");
+		ThrowErrorInvalidVersion(version);
 
 	if (version <= 2 && (regs.pc >> 8) == (0xC0|m_slot))
 		throw std::runtime_error("HDD card: 6502 is running old HDD firmware");

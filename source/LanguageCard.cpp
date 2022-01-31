@@ -48,7 +48,7 @@ LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
 	m_uLastRamWrite(0)
 {
 	if (m_slot != LanguageCardUnit::kSlot0)
-		throw std::runtime_error("Language Card: wrong slot");		// throws to the top-level catch-handler, and shuts down
+		ThrowErrorInvalidSlot();
 
 	SetMemMainLanguageCard(NULL, true);
 }
@@ -221,7 +221,7 @@ void LanguageCardSlot0::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version != kUNIT_LANGUAGECARD_VER)
-		throw std::runtime_error("Card: wrong version");
+		ThrowErrorInvalidVersion(version);
 
 	// "State"
 	LoadLCState(yamlLoadHelper);
@@ -419,7 +419,7 @@ void Saturn128K::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version != kUNIT_SATURN_VER)
-		throw std::runtime_error("Card: wrong version");
+		ThrowErrorInvalidVersion(version);
 
 	// "State"
 	LoadLCState(yamlLoadHelper);

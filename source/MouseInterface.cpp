@@ -139,7 +139,7 @@ CMouseInterface::CMouseInterface(UINT slot) :
 	m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for MouseInterfaces
 {
 	if (m_slot != 4)	// fixme
-		throw std::runtime_error("Card: wrong slot");
+		ThrowErrorInvalidSlot();
 
 	m_6821.SetListenerB( this, M6821_Listener_B );
 	m_6821.SetListenerA( this, M6821_Listener_A );
@@ -716,7 +716,7 @@ void CMouseInterface::LoadSnapshotMC6821(YamlLoadHelper& yamlLoadHelper, std::st
 bool CMouseInterface::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version != 1)
-		throw std::runtime_error("Card: wrong version");
+		ThrowErrorInvalidVersion(version);
 
 	LoadSnapshotMC6821(yamlLoadHelper, SS_YAML_KEY_MC6821);
 

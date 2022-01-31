@@ -6525,10 +6525,10 @@ void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT version)
 {
 	if (uSlot != 4 && uSlot != 5)	// fixme
-		throw std::runtime_error("Card: wrong slot");
+		Card::ThrowErrorInvalidSlot(CT_Z80, uSlot);
 
 	if (version != 1)
-		throw std::runtime_error("Card: wrong version");
+		Card::ThrowErrorInvalidVersion(CT_Z80, version);
 
 	reg_a = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGA);
 	reg_b = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGB);

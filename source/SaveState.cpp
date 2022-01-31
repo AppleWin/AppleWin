@@ -33,25 +33,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Interface.h"
 #include "CardManager.h"
-#include "CPU.h"
 #include "Debug.h"
-#include "Disk.h"
-#include "FourPlay.h"
 #include "Joystick.h"
 #include "Keyboard.h"
-#include "LanguageCard.h"
 #include "Memory.h"
 #include "Mockingboard.h"
-#include "MouseInterface.h"
-#include "ParallelPrinter.h"
 #include "Pravets.h"
-#include "SAM.h"
-#include "SerialComms.h"
-#include "SNESMAX.h"
 #include "Speaker.h"
 #include "Speech.h"
-#include "VidHD.h"
-#include "z80emu.h"
 
 #include "Configuration/Config.h"
 #include "Configuration/IPropertySheet.h"
@@ -317,73 +306,8 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE), true))	// NB. For some cards, State can be null
 			throw std::runtime_error(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
 
-		SS_CARDTYPE type = CT_Empty;
+		SS_CARDTYPE type = Card::GetCardType(card);
 		bool bRes = false;
-
-		if (card == Printer_GetSnapshotCardName())
-		{
-			type = CT_GenericPrinter;
-		}
-		else if (card == CSuperSerialCard::GetSnapshotCardName())
-		{
-			type = CT_SSC;
-		}
-		else if (card == CMouseInterface::GetSnapshotCardName())
-		{
-			type = CT_MouseInterface;
-		}
-		else if (card == Z80_GetSnapshotCardName())
-		{
-			type = CT_Z80;
-		}
-		else if (card == MB_GetSnapshotCardName())
-		{
-			type = CT_MockingboardC;
-		}
-		else if (card == Phasor_GetSnapshotCardName())
-		{
-			type = CT_Phasor;
-		}
-		else if (card == SAMCard::GetSnapshotCardName())
-		{
-			type = CT_SAM;
-		}
-		else if (card == Disk2InterfaceCard::GetSnapshotCardName())
-		{
-			type = CT_Disk2;
-		}
-		else if (card == HarddiskInterfaceCard::GetSnapshotCardName())
-		{
-			type = CT_GenericHDD;
-		}
-		else if (card == tfe_GetSnapshotCardName())
-		{
-			type = CT_Uthernet;
-		}
-		else if (card == LanguageCardSlot0::GetSnapshotCardName())
-		{
-			type = CT_LanguageCard;
-		}
-		else if (card == Saturn128K::GetSnapshotCardName())
-		{
-			type = CT_Saturn128K;
-		}
-		else if (card == FourPlayCard::GetSnapshotCardName())
-		{
-			type = CT_FourPlay;
-		}
-		else if (card == SNESMAXCard::GetSnapshotCardName())
-		{
-			type = CT_SNESMAX;
-		}
-		else if (card == VidHDCard::GetSnapshotCardName())
-		{
-			type = CT_VidHD;
-		}
-		else
-		{
-			throw std::runtime_error("Slots: Unknown card: " + card);	// todo: don't throw - just ignore & continue
-		}
 
 		if (slot == 0)
 		{
