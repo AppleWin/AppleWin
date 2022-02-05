@@ -32,6 +32,8 @@ public:
 	void UpdateTimer1(USHORT clocks);
 	void UpdateTimer2(USHORT clocks);
 
+	enum { rORB = 0, rORA, rDDRB, rDDRA, rT1CL, rT1CH, rT1LL, rT1LH, rT2CL, rT2CH, rSR, rACR, rPCR, rIFR, rIER, rORA_NO_HS, SIZE_6522_REGS };
+
 	BYTE GetReg(BYTE reg)
 	{
 		switch (reg)
@@ -47,7 +49,7 @@ public:
 	}
 	USHORT GetRegT1C(void) { return m_regs.TIMER1_COUNTER.w; }
 	USHORT GetRegT2C(void) { return m_regs.TIMER2_COUNTER.w; }
-	void GetRegs(BYTE regs[16]) { memcpy(&regs[0], (BYTE*)&m_regs, 16); }	// For debugger
+	void GetRegs(BYTE regs[SIZE_6522_REGS]) { memcpy(&regs[0], (BYTE*)&m_regs, SIZE_6522_REGS); }	// For debugger
 	void SetRegORA(BYTE reg) { m_regs.ORA = reg; }
 
 	BYTE Read(BYTE nReg);
@@ -56,8 +58,6 @@ public:
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
 	void SetTimersActiveFromSnapshot(bool timer1Active, bool timer2Active, UINT version);
-
-	enum { rORB = 0, rORA, rDDRB, rDDRA, rT1CL, rT1CH, rT1LL, rT1LH, rT2CL, rT2CH, rSR, rACR, rPCR, rIFR, rIER, rORA_NO_HS };
 
 	// ACR
 	static const BYTE ACR_RUNMODE = 1 << 6;
@@ -90,6 +90,9 @@ private:
 
 	void StartTimer2(void);
 	void StartTimer1_LoadStateV1(void);
+
+#pragma pack(push)
+#pragma pack(1)	// Ensure 'struct Regs' is packed so that GetRegs() can just do a memcpy()
 
 	struct IWORD
 	{
@@ -125,6 +128,8 @@ private:
 		//
 		IWORD TIMER2_LATCH;		// Doesn't exist in 6522
 	};
+
+#pragma pack(pop)
 
 	Regs m_regs;
 

@@ -1184,7 +1184,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 // Called on a 6522 TIMER1/2 underflow
 static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 {
-	MB_UpdateCycles(uExecutedCycles);
+	MB_UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
 
 	SY6522_AY8910* pMB = &g_MB[id / SY6522::kNumTimersPer6522];
 
@@ -1194,16 +1194,17 @@ static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 		UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER1);
 		MB_Update();
 
-		if ((pMB->sy6522.GetReg(SY6522::rACR) & SY6522::ACR_RUNMODE) == SY6522::ACR_RM_ONESHOT)
+		if ((pMB->sy6522.GetReg(SY6522::rACR) & SY6522::ACR_RUNMODE) == SY6522::ACR_RM_FREERUNNING)
 		{
-			// One-shot mode
-			// - Phasor's playback code uses one-shot mode
-			pMB->sy6522.StopTimer1();
-			return 0;			// Don't repeat event
+			pMB->sy6522.StartTimer1();
+			return pMB->sy6522.GetRegT1C() + SY6522::kExtraTimerCycles;
 		}
 
-		pMB->sy6522.StartTimer1();
-		return pMB->sy6522.GetRegT1C() + SY6522::kExtraTimerCycles;
+		// One-shot mode
+		// - Phasor's playback code uses one-shot mode
+
+		pMB->sy6522.StopTimer1();
+		return 0;			// Don't repeat event
 	}
 	else
 	{
