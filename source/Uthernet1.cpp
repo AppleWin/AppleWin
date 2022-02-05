@@ -118,8 +118,7 @@ char *debug_outbuffer(const int length, const unsigned char * const buffer)
 
 #define NUMBER_PER_LINE 8
 
-static
-void tfe_debug_output_general( char *what, WORD (*getFunc)(int), int count )
+void Uthernet1::tfe_debug_output_general( const char *what, WORD (Uthernet1::*getFunc)(int), int count )
 {
     int i;
     char buffer[7+(6*NUMBER_PER_LINE)+2];
@@ -134,7 +133,7 @@ void tfe_debug_output_general( char *what, WORD (*getFunc)(int), int count )
 
         for (j=0; j<NUMBER_PER_LINE; j++)
         {
-            sprintf( p, "%04X, ", (*getFunc)(i+j+j) );
+            sprintf( p, "%04X, ", (this->*getFunc)(i+j+j) );
             p += 6;
         }
         *p = 0;
@@ -143,29 +142,25 @@ void tfe_debug_output_general( char *what, WORD (*getFunc)(int), int count )
     }
 }
 
-static
-WORD tfe_debug_output_io_getFunc( int i )
+WORD Uthernet1::tfe_debug_output_io_getFunc( int i )
 {
     return GET_TFE_16(i);
 }
 
-static
-void tfe_debug_output_io( void )
+void Uthernet1::tfe_debug_output_io( void )
 {
-    tfe_debug_output_general( "TFE I/O", tfe_debug_output_io_getFunc, TFE_COUNT_IO_REGISTER );
+    tfe_debug_output_general( "TFE I/O", &Uthernet1::tfe_debug_output_io_getFunc, TFE_COUNT_IO_REGISTER );
 }
 #define TFE_DEBUG_OUTPUT_IO() tfe_debug_output_io()
 
-static
-WORD tfe_debug_output_pp_getFunc( int i )
+WORD Uthernet1::tfe_debug_output_pp_getFunc( int i )
 {
     return GET_PP_16(i);
 }
 
-static
-void tfe_debug_output_pp( void )
+void Uthernet1::tfe_debug_output_pp( void )
 {
-    tfe_debug_output_general( "PacketPage", tfe_debug_output_pp_getFunc, 0x0160 /* MAX_PACKETPAGE_ARRAY */ );
+    tfe_debug_output_general( "PacketPage", &Uthernet1::tfe_debug_output_pp_getFunc, 0x0160 /* MAX_PACKETPAGE_ARRAY */ );
 }
 #define TFE_DEBUG_OUTPUT_PP() tfe_debug_output_pp()
 
@@ -205,9 +200,21 @@ void Uthernet1::Init(void)
     memset( tfe, 0, TFE_COUNT_IO_REGISTER );
     memset( tfe_packetpage, 0, MAX_PACKETPAGE_ARRAY );
 
-	txcollect_buffer   = TFE_PP_ADDR_TX_FRAMELOC;
-	rx_buffer          = TFE_PP_ADDR_RXSTATUS;
-    tfe_packetpage_ptr = 0;
+    txcollect_buffer     = TFE_PP_ADDR_TX_FRAMELOC;
+    rx_buffer            = TFE_PP_ADDR_RXSTATUS;
+
+    tfe_packetpage_ptr   = 0;
+
+    tfe_recv_broadcast   = 0;
+    tfe_recv_mac         = 0;
+    tfe_recv_multicast   = 0;
+    tfe_recv_correct     = 0;
+    tfe_recv_promiscuous = 0;
+    tfe_recv_hashfilter  = 0;
+
+#ifdef TFE_DEBUG_WARN
+    tfe_started_tx       = 0;
+#endif
 
     /* according to page 19 unless stated otherwise */
     SET_PP_32(TFE_PP_ADDR_PRODUCTID,      0x0700630E ); /* p.41: 0E630007 for Rev. B; reversed order! */

@@ -8,17 +8,12 @@
    WARNING: The log grows very fast!
 */
 /** #define TFE_DEBUG_FRAMES **/
-
-/**/
 /** #define TFE_DEBUG_DUMP 1 **/
-
-/* #define TFE_DEBUG_FRAMES - might be defined in TFE.H! */
 
 #define TFE_DEBUG_WARN 1 /* this should not be deactivated */
 #define TFE_DEBUG_INIT 1
 /** #define TFE_DEBUG_LOAD 1 **/
 /** #define TFE_DEBUG_STORE 1 **/
-/**/
 
 #define TFE_COUNT_IO_REGISTER 0x10 /* we have 16 I/O register */
 #define MAX_PACKETPAGE_ARRAY 0x1000 /* 4 KB */
@@ -165,6 +160,14 @@ private:
 	int tfe_should_accept(unsigned char *buffer, int length, int *phashed, int *phash_index,
                           int *pcorrect_mac, int *pbroadcast, int *pmulticast);
 
+#ifdef TFE_DEBUG_DUMP
+	void tfe_debug_output_general( const char *what, WORD (Uthernet1::*getFunc)(int), int count );
+	WORD tfe_debug_output_io_getFunc( int i );
+	WORD tfe_debug_output_pp_getFunc( int i );
+	void tfe_debug_output_io( void );
+	void tfe_debug_output_pp( void );
+#endif
+
 	pcap_t * TfePcapFP;
 
 	/* status which received packages to accept
@@ -175,16 +178,16 @@ private:
 	/* remember the value of the hash mask */
 	DWORD tfe_hash_mask[2];
 
-	int  tfe_recv_broadcast   = 0; /* broadcast */
-	int  tfe_recv_mac         = 0; /* individual address (IA) */
-	int  tfe_recv_multicast   = 0; /* multicast if address passes the hash filter */
-	int  tfe_recv_correct     = 0; /* accept correct frames */
-	int  tfe_recv_promiscuous = 0; /* promiscuous mode */
-	int  tfe_recv_hashfilter  = 0; /* accept if IA passes the hash filter */
+	int  tfe_recv_broadcast;	/* broadcast */
+	int  tfe_recv_mac;			/* individual address (IA) */
+	int  tfe_recv_multicast;	/* multicast if address passes the hash filter */
+	int  tfe_recv_correct;		/* accept correct frames */
+	int  tfe_recv_promiscuous;	/* promiscuous mode */
+	int  tfe_recv_hashfilter;	/* accept if IA passes the hash filter */
 
 	#ifdef TFE_DEBUG_WARN
 	/* remember if the TXCMD has been completed before a new one is issued */
-	int tfe_started_tx       = 0;
+	int tfe_started_tx;
 	#endif
 
 	/* TFE registers */
