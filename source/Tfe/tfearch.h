@@ -68,16 +68,10 @@ void tfe_arch_transmit(pcap_t * TfePcapFP,
 extern
 int tfe_arch_receive(pcap_t * TfePcapFP,
                      BYTE *pbuffer  ,    /* where to store a frame */
-                     int  *plen,         /* IN: maximum length of frame to copy; 
+                     int  *plen          /* IN: maximum length of frame to copy;
                                             OUT: length of received frame 
                                             OUT can be bigger than IN if received frame was
                                                 longer than supplied buffer */
-                     int  *phashed,      /* set if the dest. address is accepted by the hash filter */
-                     int  *phash_index,  /* hash table index if hashed == TRUE */   
-                     int  *prx_ok,       /* set if good CRC and valid length */
-                     int  *pcorrect_mac, /* set if dest. address is exactly our IA */
-                     int  *pbroadcast,   /* set if dest. address is a broadcast address */
-                     int  *pcrc_error    /* set if received frame had a CRC error */
                      );
 
 extern int tfe_arch_enumadapter_open(void);

@@ -865,14 +865,7 @@ WORD Uthernet1::tfe_receive(void)
     BYTE buffer[MAX_RXLENGTH];
 
     int  len;
-    int  hashed;
-    int  hash_index;
-    int  rx_ok;
-    int  correct_mac;
-    int  broadcast;
     int  multicast = 0;
-    int  crc_error;
-
     int  newframe;
 
     int  ready;
@@ -889,18 +882,21 @@ WORD Uthernet1::tfe_receive(void)
         newframe = tfe_arch_receive(
             TfePcapFP,
             buffer,       /* where to store a frame */
-            &len,         /* length of received frame */
-            &hashed,      /* set if the dest. address is accepted by the hash filter */
-            &hash_index,  /* hash table index if hashed == TRUE */
-            &rx_ok,       /* set if good CRC and valid length */
-            &correct_mac, /* set if dest. address is exactly our IA */
-            &broadcast,   /* set if dest. address is a broadcast address */
-            &crc_error    /* set if received frame had a CRC error */
+            &len          /* length of received frame */
             );
 
         assert((len&1) == 0); /* length has to be even! */
 
         if (newframe) {
+
+            int  hashed = 0;
+            int  hash_index = 0;
+            int  broadcast = 0;
+            int  correct_mac = 0;
+            int  crc_error = 0;
+
+            int  rx_ok = 1;
+
             if (hashed || correct_mac || broadcast) {
                 /* we already know the type of frame: Trust it! */
 #ifdef TFE_DEBUG_FRAMES
