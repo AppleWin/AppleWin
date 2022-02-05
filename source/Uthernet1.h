@@ -123,8 +123,7 @@ TFE_PP_ADDR_MAC_ADDR        0x0158 * # RW - 4.6., p. 71 - 5.3., p. 86 *
 #define MAX_RXLENGTH 1518
 #define MIN_RXLENGTH 64
 
-struct pcap;
-typedef struct pcap pcap_t;
+class NetworkBackend;
 
 class Uthernet1 : public Card
 {
@@ -145,11 +144,10 @@ public:
 	void tfe_store(WORD ioaddress, BYTE byte);
 
 	static std::string GetSnapshotCardName(void);
-	static std::string tfe_interface;
 
 private:
 
-	void OpenPCap();
+	void InitialiseBackend();
 
 	void tfe_sideeffects_write_pp_on_txframe(WORD ppaddress);
 	void tfe_sideeffects_write_pp(WORD ppaddress, int oddaddress);
@@ -160,6 +158,19 @@ private:
 	int tfe_should_accept(unsigned char *buffer, int length, int *phashed, int *phash_index,
                           int *pcorrect_mac, int *pbroadcast, int *pmulticast);
 
+	// this function is virtually useless
+	// it is only here to keep a record of these unused arguments
+	void tfe_transmit(
+		int force,				/* FORCE: Delete waiting frames in transmit buffer */
+		int onecoll,			/* ONECOLL: Terminate after just one collision */
+		int inhibit_crc,		/* INHIBITCRC: Do not append CRC to the transmission */
+		int tx_pad_dis,			/* TXPADDIS: Disable padding to 60 Bytes */
+		int txlength,			/* Frame length */
+		uint8_t *txframe		/* Pointer to the frame to be transmitted */
+	);
+
+	std::shared_ptr<NetworkBackend> networkBackend;
+
 #ifdef TFE_DEBUG_DUMP
 	void tfe_debug_output_general( const char *what, WORD (Uthernet1::*getFunc)(int), int count );
 	WORD tfe_debug_output_io_getFunc( int i );
@@ -167,8 +178,6 @@ private:
 	void tfe_debug_output_io( void );
 	void tfe_debug_output_pp( void );
 #endif
-
-	pcap_t * TfePcapFP;
 
 	/* status which received packages to accept
 	   This is used in tfe_should_accept().

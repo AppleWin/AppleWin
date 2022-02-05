@@ -7,6 +7,8 @@
 #include "Tfe/tfearch.h"
 #include "Tfe/tfe.h"
 #include "Tfe/tfesupp.h"
+#include "Tfe/Backend.h"
+#include "Tfe/PCapBackend.h"
 
 /* Makros for reading and writing the visible TFE register: */
 #define GET_TFE_8(  _xxx_ ) \
@@ -175,9 +177,7 @@ void Uthernet1::tfe_debug_output_pp( void )
 
 #endif
 
-std::string Uthernet1::tfe_interface;
-
-Uthernet1::Uthernet1(UINT slot) : Card(CT_Uthernet, slot), TfePcapFP(NULL)
+Uthernet1::Uthernet1(UINT slot) : Card(CT_Uthernet, slot)
 {
     if (m_slot != SLOT3)	// fixme
         ThrowErrorInvalidSlot();
@@ -189,10 +189,10 @@ Uthernet1::~Uthernet1()
     Destroy();
 }
 
-void Uthernet1::OpenPCap()
+void Uthernet1::InitialiseBackend()
 {
     Destroy();
-    TfePcapFP = TfePcapOpenAdapter(tfe_interface);
+    networkBackend = NetworkBackend::createBackend();
 }
 
 void Uthernet1::Init(void)
@@ -290,8 +290,7 @@ void Uthernet1::tfe_sideeffects_write_pp_on_txframe(WORD ppaddress)
                 );
 #endif
 
-            tfe_arch_transmit(
-                TfePcapFP,
+            tfe_transmit(
                 txcmd & 0x0100 ? 1 : 0,   /* FORCE: Delete waiting frames in transmit buffer */
                 txcmd & 0x0200 ? 1 : 0,   /* ONECOLL: Terminate after just one collision */
                 txcmd & 0x1000 ? 1 : 0,   /* INHIBITCRC: Do not append CRC to the transmission */
@@ -879,8 +878,7 @@ WORD Uthernet1::tfe_receive(void)
 
         ready = 1 ; /* assume we will find a good frame */
 
-        newframe = tfe_arch_receive(
-            TfePcapFP,
+        newframe = networkBackend->receive(
             buffer,       /* where to store a frame */
             &len          /* length of received frame */
             );
@@ -888,7 +886,6 @@ WORD Uthernet1::tfe_receive(void)
         assert((len&1) == 0); /* length has to be even! */
 
         if (newframe) {
-
             int  hashed = 0;
             int  hash_index = 0;
             int  broadcast = 0;
@@ -970,6 +967,20 @@ WORD Uthernet1::tfe_receive(void)
     return ret_val;
 }
 
+void Uthernet1::tfe_transmit(
+	int /* force */,		/* FORCE: Delete waiting frames in transmit buffer */
+	int /* onecoll */,		/* ONECOLL: Terminate after just one collision */
+	int /* inhibit_crc */,	/* INHIBITCRC: Do not append CRC to the transmission */
+	int /* tx_pad_dis */,	/* TXPADDIS: Disable padding to 60 Bytes */
+	int txlength,			/* Frame length */
+	uint8_t *txframe		/* Pointer to the frame to be transmitted */
+)
+{
+    // non eof the existing backends do anything with these flags
+	networkBackend->transmit(txlength, txframe);
+}
+
+
 // Go via TfeIoCxxx() instead of directly calling IO_Null() to include this specific (slot-3) _DEBUG check
 static BYTE __stdcall TfeIoCxxx (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
 {
@@ -1013,8 +1024,8 @@ static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE
 
 void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-    OpenPCap();
-    if (TfePcapFP)
+    InitialiseBackend();
+    if (networkBackend->isValid())
     {
         RegisterIoHandler(m_slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, this, NULL);
     }
@@ -1022,8 +1033,7 @@ void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
 
 void Uthernet1::Destroy()
 {
-    TfePcapCloseAdapter(TfePcapFP);
-    TfePcapFP = NULL;
+    networkBackend.reset();
 }
 
 void Uthernet1::Reset(const bool powerCycle)
@@ -1036,6 +1046,7 @@ void Uthernet1::Reset(const bool powerCycle)
 
 void Uthernet1::Update(const ULONG nExecutedCycles)
 {
+    networkBackend->update(nExecutedCycles);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1064,8 +1075,8 @@ void Uthernet1::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 
     YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-    yamlSaveHelper.SaveBool(SS_YAML_KEY_ENABLED, TfePcapFP ? true : false);
-    yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, tfe_interface);
+    yamlSaveHelper.SaveBool(SS_YAML_KEY_ENABLED, networkBackend->isValid() ? true : false);
+    yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, PCapBackend::tfe_interface);
 
     yamlSaveHelper.SaveBool(SS_YAML_KEY_STARTED_TX, tfe_started_tx ? true : false);
     yamlSaveHelper.SaveBool(SS_YAML_KEY_CANNOT_USE, tfe_cannot_use ? true : false);
@@ -1090,7 +1101,7 @@ bool Uthernet1::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
 		ThrowErrorInvalidVersion(version);
 
     yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED);  // FIXME: what is the point of this?
-    tfe_interface = yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE);
+    PCapBackend::tfe_interface = yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE);
 
     tfe_started_tx = yamlLoadHelper.LoadBool(SS_YAML_KEY_STARTED_TX) ? true : false;
     tfe_cannot_use = yamlLoadHelper.LoadBool(SS_YAML_KEY_CANNOT_USE) ? true : false;
@@ -1124,7 +1135,7 @@ bool Uthernet1::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
     for (UINT i = 0; i < 6; i++)
         tfe_sideeffects_write_pp((TFE_PP_ADDR_MAC_ADDR + i) & ~1, i & 1);           // set tfe_ia_mac
 
-    tfe_SetRegistryInterface(m_slot, tfe_interface);
+    tfe_SetRegistryInterface(m_slot, PCapBackend::tfe_interface);
 
     return true;
 }

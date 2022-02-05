@@ -260,7 +260,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 					break;
 				}
 
-				m_PageConfigTfe.m_tfe_interface_name = Uthernet1::tfe_interface;
+				m_PageConfigTfe.m_tfe_interface_name = PCapBackend::tfe_interface;
 			}
 
 			InitOptions(hWnd);

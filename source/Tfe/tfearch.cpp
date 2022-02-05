@@ -473,23 +473,12 @@ int tfe_arch_receive_frame(pcap_t * TfePcapFP, TFE_PCAP_INTERNAL *pinternal)
 }
 
 void tfe_arch_transmit(pcap_t * TfePcapFP,
-                       int force,       /* FORCE: Delete waiting frames in transmit buffer */
-                       int onecoll,     /* ONECOLL: Terminate after just one collision */
-                       int inhibit_crc, /* INHIBITCRC: Do not append CRC to the transmission */
-                       int tx_pad_dis,  /* TXPADDIS: Disable padding to 60 Bytes */
                        int txlength,    /* Frame length */
                        BYTE *txframe    /* Pointer to the frame to be transmitted */
                       )
 {
 #ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_transmit() called, with: "
-        "force = %s, onecoll = %s, inhibit_crc=%s, tx_pad_dis=%s, txlength=%u\n",
-        force ?       "TRUE" : "FALSE", 
-        onecoll ?     "TRUE" : "FALSE", 
-        inhibit_crc ? "TRUE" : "FALSE", 
-        tx_pad_dis ?  "TRUE" : "FALSE", 
-        txlength
-        );
+    if(g_fh) fprintf( g_fh, "tfe_arch_transmit() called, with: txlength=%u\n", txlength);
 #endif
 
 #ifdef TFE_DEBUG_PKTDUMP

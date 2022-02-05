@@ -57,10 +57,6 @@ void tfe_arch_line_ctl(int bEnableTransmitter, int bEnableReceiver);
 
 extern
 void tfe_arch_transmit(pcap_t * TfePcapFP,
-                       int force,       /* FORCE: Delete waiting frames in transmit buffer */
-                       int onecoll,     /* ONECOLL: Terminate after just one collision */
-                       int inhibit_crc, /* INHIBITCRC: Do not append CRC to the transmission */
-                       int tx_pad_dis,  /* TXPADDIS: Disable padding to 60 Bytes */
                        int txlength,    /* Frame length */
                        BYTE *txframe    /* Pointer to the frame to be transmitted */
                       );

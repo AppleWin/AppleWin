@@ -114,9 +114,11 @@
     <ClInclude Include="source\StrFormat.h" />
     <ClInclude Include="source\SynchronousEventManager.h" />
     <ClInclude Include="source\Tape.h" />
+    <ClInclude Include="source\Tfe\Backend.h" />
     <ClInclude Include="source\Tfe\Bpf.h" />
     <ClInclude Include="source\Tfe\Ip6_misc.h" />
     <ClInclude Include="source\Tfe\Pcap.h" />
+    <ClInclude Include="source\Tfe\PCapBackend.h" />
     <ClInclude Include="source\Tfe\tfe.h" />
     <ClInclude Include="source\Tfe\tfearch.h" />
     <ClInclude Include="source\Tfe\tfesupp.h" />
@@ -219,6 +221,8 @@
     <ClCompile Include="source\StrFormat.cpp" />
     <ClCompile Include="source\SynchronousEventManager.cpp" />
     <ClCompile Include="source\Tape.cpp" />
+    <ClCompile Include="source\Tfe\Backend.cpp" />
+    <ClCompile Include="source\Tfe\PCapBackend.cpp" />
     <ClCompile Include="source\Tfe\tfe.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug v141_xp|Win32'">NotUsing</PrecompiledHeader>

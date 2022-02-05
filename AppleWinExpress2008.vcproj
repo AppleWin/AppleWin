@@ -446,6 +446,14 @@
 				Name="Uthernet"
 				>
 				<File
+					RelativePath=".\source\Tfe\Backend.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\Backend.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Tfe\Bpf.h"
 					>
 				</File>
@@ -455,6 +463,14 @@
 				</File>
 				<File
 					RelativePath=".\source\Tfe\Pcap.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\PCapBackend.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\PCapBackend.cpp"
 					>
 				</File>
 				<File

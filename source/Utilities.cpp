@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SoundCore.h"
 
 #include "Configuration/IPropertySheet.h"
-#include "Uthernet1.h"
+#include "Tfe/PCapBackend.h"
 
 #ifdef USE_SPEECH_API
 #include "Speech.h"
@@ -261,7 +261,7 @@ void LoadConfiguration(bool loadImages)
 				{
 					std::string regSection = RegGetConfigSlotSection(slot);
 					if (RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, szFilename, MAX_PATH, TEXT("")))
-						Uthernet1::tfe_interface = szFilename;
+						PCapBackend::tfe_interface = szFilename;
 				}
 			}
 		}
@@ -276,7 +276,7 @@ void LoadConfiguration(bool loadImages)
 
 				// TODO: move this to when UthernetCard object is instantiated
 				RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
-				Uthernet1::tfe_interface = szFilename;
+				PCapBackend::tfe_interface = szFilename;
 			}
 			else if (slot == SLOT4 && REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
 				GetCardMgr().Insert(SLOT4, (SS_CARDTYPE)dwTmp);
