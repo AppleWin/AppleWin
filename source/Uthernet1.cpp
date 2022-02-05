@@ -181,6 +181,7 @@ Uthernet1::Uthernet1(UINT slot) : Card(CT_Uthernet, slot), TfePcapFP(NULL)
 {
     if (m_slot != SLOT3)	// fixme
         ThrowErrorInvalidSlot();
+    Init();
 }
 
 Uthernet1::~Uthernet1()
@@ -733,7 +734,7 @@ void REGPARM2 Uthernet1::tfe_store(WORD ioaddress, BYTE byte)
                 ppaddress, GET_PP_16(ppaddress) );
 #endif
             {
-                register WORD tmpIoAddr = ioaddress & ~1; /* word-align the address */
+                WORD tmpIoAddr = ioaddress & ~1; /* word-align the address */
                 SET_PP_16(ppaddress, GET_TFE_16(tmpIoAddr));
             }
 
@@ -1016,9 +1017,6 @@ static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE
 
 void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-    // Setup the npcap.dll func ptrs & open/configure the interface
-    // NB. Overrides tfe_enabled and tfe_cannot_use, which are set above
-    Init();    // reset=false
     OpenPCap();
     if (TfePcapFP)
     {
@@ -1029,10 +1027,15 @@ void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
 void Uthernet1::Destroy()
 {
     TfePcapCloseAdapter(TfePcapFP);
+    TfePcapFP = NULL;
 }
 
 void Uthernet1::Reset(const bool powerCycle)
 {
+    if (powerCycle)
+    {
+        Init();
+    }
 }
 
 void Uthernet1::Update(const ULONG nExecutedCycles)
@@ -1090,8 +1093,7 @@ bool Uthernet1::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
     if (version < 1 || version > kUNIT_VERSION)
 		ThrowErrorInvalidVersion(version);
 
-    // FIXME? wha tis the point of this?
-    yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED);
+    yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED);  // FIXME: what is the point of this?
     tfe_interface = yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE);
 
     tfe_started_tx = yamlLoadHelper.LoadBool(SS_YAML_KEY_STARTED_TX) ? true : false;

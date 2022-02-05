@@ -113,6 +113,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 		case IDC_ETHERNET:
 			ui_tfe_settings_dialog(hWnd);
 			m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = m_PageConfigTfe.m_tfe_enabled;
+			m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
 			InitOptions(hWnd);
 			break;
 
@@ -333,8 +334,6 @@ void CPageConfig::DlgOK(HWND hWnd)
 	{
 		m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = isNewVideoRate50Hz ? VR_50HZ : VR_60HZ;
 	}
-
-	m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
 
 	if (bVideoReinit)
 	{

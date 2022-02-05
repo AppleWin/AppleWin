@@ -331,12 +331,10 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 
 	UINT slot = SLOT3;
 	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-	{
 		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
-		if (ConfigNew.m_Slot[slot] == CT_Uthernet)	// TODO: move this to UthernetCard object
-			tfe_SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
-	}
+	if (CONFIG_CHANGED_LOCAL(m_tfeInterface))
+		tfe_SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
 
 	slot = SLOT4;
 	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
@@ -451,6 +449,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_Slot[SLOT3]))
 			strMsgMain += GetSlot(SLOT3);
+
+		if (CONFIG_CHANGED(m_tfeInterface))
+			strMsgMain += ". Uthernet interface has changed\n";
 
 		if (CONFIG_CHANGED(m_Slot[SLOT4]))
 			strMsgMain += GetSlot(SLOT4);

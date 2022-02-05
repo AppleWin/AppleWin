@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SaveState.h"
 #include "SerialComms.h"
 #include "SoundCore.h"
+#include "Uthernet1.h"
 #include "Speaker.h"
 #include "Utilities.h"
 #include "../resource/resource.h"
@@ -970,6 +971,8 @@ LRESULT Win32Frame::WndProc(
 		GetCardMgr().GetDisk2CardMgr().Destroy();
 		if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
 			dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Destroy();
+		if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
+			dynamic_cast<Uthernet1&>(GetCardMgr().GetRef(SLOT3)).Destroy();
       }
       PrintDestroy();
       if (GetCardMgr().IsSSCInstalled())
