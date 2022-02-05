@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "6522.h"
 #include "Core.h"
 #include "CPU.h"
 #include "Log.h"
@@ -293,7 +294,7 @@ void SSI263::Votrax_Write(BYTE value)
 	m_isVotraxPhoneme = true;
 
 	// !A/R: Acknowledge receipt of phoneme data (signal goes from high to low)
-	MB_UpdateIFR(m_device, IxR_VOTRAX, 0);
+	MB_UpdateIFR(m_device, SY6522::IxR_VOTRAX, 0);
 
 	// NB. Don't set reg0.DUR, as SC01's phoneme duration doesn't change with pitch (empirically determined from MAME's SC01 emulation)
 	//m_durationPhoneme = value;	// Set reg0.DUR = I1:0 (inflection or pitch)
@@ -720,7 +721,7 @@ void SSI263::SetSpeechIRQ(void)
 			if (m_cardMode == PH_Mockingboard)
 			{
 				if ((MB_GetPCR(m_device) & 1) == 0)			// CA1 Latch/Input = 0 (Negative active edge)
-					MB_UpdateIFR(m_device, 0, IxR_SSI263);
+					MB_UpdateIFR(m_device, 0, SY6522::IxR_SSI263);
 				if (MB_GetPCR(m_device) == 0x0C)			// CA2 Control = b#110 (Low output)
 					m_currentMode &= ~1;	// Clear SSI263's D7 pin (cleared by 6522's PCR CA1/CA2 handshake)
 
@@ -744,7 +745,7 @@ void SSI263::SetSpeechIRQ(void)
 	{
 		// !A/R: Time-out of old phoneme (signal goes from low to high)
 
-		MB_UpdateIFR(m_device, 0, IxR_VOTRAX);
+		MB_UpdateIFR(m_device, 0, SY6522::IxR_VOTRAX);
 
 		m_isVotraxPhoneme = false;
 	}

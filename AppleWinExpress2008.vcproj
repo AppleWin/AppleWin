@@ -642,6 +642,14 @@
 				Name="Emulator"
 				>
 				<File
+					RelativePath=".\source\6522.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\source\6522.h"
+					>
+				</File>
+				<File
 					RelativePath=".\source\6821.cpp"
 					>
 				</File>

@@ -557,17 +557,6 @@ void CpuWrite(USHORT addr, BYTE value, ULONG uExecutedCycles)
 
 //===========================================================================
 
-void CpuDestroy ()
-{
-	if (g_bCritSectionValid)
-	{
-  		DeleteCriticalSection(&g_CriticalSection);
-		g_bCritSectionValid = false;
-	}
-}
-
-//===========================================================================
-
 // Description:
 //	Call this when an IO-reg is accessed & accurate cycle info is needed
 //  NB. Safe to call multiple times from the same IO function handler (as 'nExecutedCycles - g_nCyclesExecuted' will be zero the 2nd time)
@@ -631,9 +620,10 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 	//  >0  : Do multi-opcode emulation
 	const DWORD uExecutedCycles = InternalCpuExecute(uCycles, bVideoUpdate);
 
-	// NB. Required for normal-speed (even though 6522 is updated after every opcode), as may've finished on IRQ()
-	MB_UpdateCycles(uExecutedCycles);	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
-										// NB. Ensures that 6522 regs are up-to-date for any potential save-state
+	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
+	// . Ensures that 6522 regs are up-to-date for any potential save-state
+	// . SyncEvent will trigger the 6522 TIMER1/2 underflow on the correct cycle
+	MB_UpdateCycles(uExecutedCycles);
 
 	const UINT nRemainingCycles = uExecutedCycles - g_nCyclesExecuted;
 	g_nCumulativeCycles	+= nRemainingCycles;
@@ -643,19 +633,56 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 
 //===========================================================================
 
-void CpuInitialize ()
+// Called from RepeatInitialization():
+// 1) FrameCreateWindow() -> WM_CREATE
+//    - done to init g_CriticalSection
+//    - but can't call CpuReset() as mem == NULL
+// 2) MemInitialize() -> MemReset()
+void CpuInitialize(bool reset)
 {
-	CpuDestroy();
-	regs.a = regs.x = regs.y = regs.ps = 0xFF;
+	regs.a = regs.x = regs.y = 0xFF;
 	regs.sp = 0x01FF;
-	CpuReset();	// Init's ps & pc. Updates sp
+	if (reset)
+		CpuReset();
 
-	InitializeCriticalSection(&g_CriticalSection);
-	g_bCritSectionValid = true;
+	if (!g_bCritSectionValid)
+	{
+		InitializeCriticalSection(&g_CriticalSection);
+		g_bCritSectionValid = true;
+	}
+
 	CpuIrqReset();
 	CpuNmiReset();
 
 	z80mem_initialize();
+	z80_reset();
+}
+
+//===========================================================================
+
+void CpuDestroy()
+{
+	if (g_bCritSectionValid)
+	{
+		DeleteCriticalSection(&g_CriticalSection);
+		g_bCritSectionValid = false;
+	}
+}
+
+//===========================================================================
+
+void CpuReset()
+{
+	// 7 cycles
+	regs.ps = (regs.ps | AF_INTERRUPT) & ~AF_DECIMAL;
+	regs.pc = *(WORD*)(mem + 0xFFFC);
+	regs.sp = 0x0100 | ((regs.sp - 3) & 0xFF);
+
+	regs.bJammed = 0;
+
+	g_irqDefer1Opcode = false;
+
+	SetActiveCpu(GetMainCpu());
 	z80_reset();
 }
 
@@ -713,6 +740,7 @@ void CpuIrqAssert(eIRQSRC Device)
 
 void CpuIrqDeassert(eIRQSRC Device)
 {
+	_ASSERT(g_bCritSectionValid);
 	if (g_bCritSectionValid) EnterCriticalSection(&g_CriticalSection);
 	g_bmIRQ &= ~(1<<Device);
 	if (g_bCritSectionValid) LeaveCriticalSection(&g_CriticalSection);
@@ -745,23 +773,6 @@ void CpuNmiDeassert(eIRQSRC Device)
 	if (g_bCritSectionValid) EnterCriticalSection(&g_CriticalSection);
 	g_bmNMI &= ~(1<<Device);
 	if (g_bCritSectionValid) LeaveCriticalSection(&g_CriticalSection);
-}
-
-//===========================================================================
-
-void CpuReset()
-{
-	// 7 cycles
-	regs.ps = (regs.ps | AF_INTERRUPT) & ~AF_DECIMAL;
-	regs.pc = * (WORD*) (mem+0xFFFC);
-	regs.sp = 0x0100 | ((regs.sp - 3) & 0xFF);
-
-	regs.bJammed = 0;
-
-	g_irqDefer1Opcode = false;
-
-	SetActiveCpu( GetMainCpu() );
-	z80_reset();
 }
 
 //===========================================================================
