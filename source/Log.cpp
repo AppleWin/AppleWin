@@ -80,7 +80,7 @@ void LogOutput(LPCTSTR format, ...)
 	va_list args;
 	va_start(args, format);
 
-	OutputDebugVa<TCHAR>(output, _TRUNCATE, format, args);
+	OutputDebugVa<TCHAR>(output, format, args);
 
 	va_end(args);
 }
@@ -92,13 +92,10 @@ void LogFileOutput(LPCTSTR format, ...)
 	if (!g_fh)
 		return;
 
-	TCHAR output[256];
-
 	va_list args;
 	va_start(args, format);
 
-	_vsntprintf_s(output, _TRUNCATE, format, args);
-	_ftprintf(g_fh, TEXT("%s"), output);
+	_vftprintf(g_fh, format, args);
 
 	va_end(args);
 }
