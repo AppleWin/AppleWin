@@ -1175,7 +1175,7 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 			}
 
 			dwWaitResult -= WAIT_OBJECT_0;			// Determine event # that signaled
-			//sprintf(szDbg, "CommThread: GotEvent1: %d\n", dwWaitResult); OutputDebugString(szDbg);
+			//OutputDebugFormat(szDbg, "CommThread: GotEvent1: %d\n", dwWaitResult);
 
 			if (dwWaitResult == (nNumEvents-1))
 				break;	// Termination event

@@ -3820,11 +3820,11 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 		while ((iPathSeparator = sNewPath.find( PATH_SEPARATOR, iPrevSeparator )) != std::string::npos)
 		{
 #if _DEBUG
-	char zDebug[128];
-	sprintf( zDebug, "Prev: %d\n", iPrevSeparator      ); OutputDebugStringA( zDebug );
-	sprintf( zDebug, "Next: %d\n", iPathSeparator      ); OutputDebugStringA( zDebug );
-	sprintf( zDebug, "%s\n", sNewPath.c_str()          ); OutputDebugStringA( zDebug );
-	sprintf( zDebug, "%*s%s\n", iPathSeparator, "", "^"); OutputDebugStringA( zDebug );
+			char zDebug[128];
+			OutputDebugFormat( zDebug, "Prev: %" SIZE_T_FMT "\n", iPrevSeparator	);
+			OutputDebugFormat( zDebug, "Next: %" SIZE_T_FMT "\n", iPathSeparator	);
+			OutputDebugFormat( zDebug, "%s\n", sNewPath.c_str()						);
+			OutputDebugFormat( zDebug, "%*s%s\n", int(iPathSeparator), "", "^"		);
 #endif
 
 			std::string sSubDir = sNewPath.substr( iPrevSeparator, iPathSeparator - iPrevSeparator + 1 );
@@ -3843,9 +3843,9 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 				if (nLastSeperator != std::string::npos)
 				{
 #if _DEBUG
-	sprintf( zDebug, "Last: %d\n", nLastSeperator      ); OutputDebugStringA( zDebug );
-	sprintf( zDebug, "%s\n", g_sCurrentDir.c_str()     ); OutputDebugStringA( zDebug );
-	sprintf( zDebug, "%*s%s\n", nLastSeperator, "", "^"); OutputDebugStringA( zDebug );
+					OutputDebugFormat( zDebug, "Last: %" SIZE_T_FMT "\n", nLastSeperator	);
+					OutputDebugFormat( zDebug, "%s\n", g_sCurrentDir.c_str()				);
+					OutputDebugFormat( zDebug, "%*s%s\n", int(nLastSeperator), "", "^"		);
 #endif
 					std::string sCurrentDir = g_sCurrentDir.substr( 0, nLastSeperator  + 1 ); // Path always has trailing slash so include it
 					g_sCurrentDir = sCurrentDir;
@@ -4741,7 +4741,7 @@ Update_t CmdNTSC (int nArgs)
 		public:
 			static void update( const char *pPrefixText )
 			{
-					TCHAR text[ CONSOLE_WIDTH*2 ] = TEXT("");
+					char text[ CONSOLE_WIDTH*2 ] = "";
 
 					size_t len1 = strlen( pPrefixText      );
 					size_t len2 = sPaletteFilePath.size();
@@ -4752,11 +4752,9 @@ Update_t CmdNTSC (int nArgs)
 						ConsoleBufferPush( pPrefixText );	// TODO: Add a ": " separator
 
 #if _DEBUG
-						sprintf( text, "Filename.length.1: %d\n", len1 );
-						OutputDebugString( text );
-						sprintf( text, "Filename.length.2: %d\n", len2 );
-						OutputDebugString( text );
-						OutputDebugString( sPaletteFilePath.c_str() );
+						OutputDebugFormat( text, "Filename.length.1: %d\n", len1 );
+						OutputDebugFormat( text, "Filename.length.2: %d\n", len2 );
+						OutputDebugStringA( sPaletteFilePath.c_str() );
 #endif
 						// File path is too long
 						// TODO: Need to split very long path names
@@ -4892,9 +4890,8 @@ Update_t CmdNTSC (int nArgs)
 						if (iDstX == 15)
 							iSrcX = 15;
 #if 0 // _DEBUG
-	char text[ 128 ];
-	sprintf( text, "[ %X ] = [ %X ]\n", iDstX, iSrcX );
-	OutputDebugStringA( text );
+						char text[ 128 ];
+						OutputDebugFormat( text, "[ %X ] = [ %X ]\n", iDstX, iSrcX );
 #endif
 						pTmp[ iDstX + 16*iPhase ] = pPhase0[ iSrcX ];
 					}
@@ -6205,11 +6202,10 @@ int FindSourceLine( WORD nAddress )
 //	iSourceLine = g_aSourceDebug.find( nAddress );
 #if 0 // _DEBUG
 	{
-		TCHAR sText[ CONSOLE_WIDTH ];
+		char sText[ CONSOLE_WIDTH ];
 		for (int i = 0; i < g_vSourceLines.size(); i++ )
 		{
-			wsprintf( sText, "%d: %s\n", i, g_vSourceLines[ i ] );
-			OutputDebugString( sText );
+			OutputDebugFormat( sText, "%d: %s\n", i, g_vSourceLines[ i ] );
 		}
 	}
 #endif
@@ -6221,9 +6217,8 @@ int FindSourceLine( WORD nAddress )
 		iLine = iSource->second;
 
 #if 0 // _DEBUG
-	TCHAR sText[ CONSOLE_WIDTH ];
-	wsprintf( sText, "%04X -> %d line\n", iAddress, iLine );
-	OutputDebugString( sText );
+		char sText[ CONSOLE_WIDTH ];
+		OutputDebugFormat( sText, "%04X -> %d line\n", iAddress, iLine );
 #endif
 
 		if (iAddress == nAddress)

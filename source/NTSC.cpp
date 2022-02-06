@@ -2439,8 +2439,7 @@ static bool CheckVideoTables2( eApple2Type type, uint32_t mode )
 		if (addr1 != addr2)
 		{
 			char str[80];
-			sprintf(str, "vpos=%04X, hpos=%02X, Video_adr=$%04X, NTSC_adr=$%04X\n", g_nVideoClockVert, g_nVideoClockHorz, addr1, addr2);
-			OutputDebugString(str);
+			OutputDebugFormat(str, "vpos=%04X, hpos=%02X, Video_adr=$%04X, NTSC_adr=$%04X\n", g_nVideoClockVert, g_nVideoClockHorz, addr1, addr2);
 			return false;
 		}
 

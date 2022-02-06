@@ -1095,7 +1095,7 @@ void SetMemMode(DWORD uNewMemMode)
 		psz += sprintf(psz, "CX=%d "   , SW_INTCXROM  ? 1 : 0);
 		psz += sprintf(psz, "WRAM=%d " , SW_WRITERAM  ? 1 : 0);
 		psz += sprintf(psz, "\n");
-		OutputDebugString(szStr);
+		OutputDebugStringA(szStr);
 	}
 #endif
 	memmode = uNewMemMode;
@@ -1979,8 +1979,7 @@ static void DebugFlip(WORD address, ULONG nExecutedCycles)
 	const double fFreq = CLK_6502 / (double)uCyclesBetweenFlips;
 
 	char szStr[100];
-	sprintf(szStr, "Cycles between flips = %d (%f Hz)\n", uCyclesBetweenFlips, fFreq);
-	OutputDebugString(szStr);
+	OutputDebugFormat(szStr, "Cycles between flips = %d (%f Hz)\n", uCyclesBetweenFlips, fFreq);
 }
 #endif
 

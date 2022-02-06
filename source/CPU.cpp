@@ -340,8 +340,7 @@ static void DebugHddEntrypoint(const USHORT PC)
 		{
 			Count++;
 			char szDebug[100];
-			sprintf(szDebug, "HDD Entrypoint: $%04X\n", PC);
-			OutputDebugString(szDebug);
+			OutputDebugFormat(szDebug, "HDD Entrypoint: $%04X\n", PC);
 		}
 
 		bOldPCAtC7xx = true;

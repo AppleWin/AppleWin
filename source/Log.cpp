@@ -80,9 +80,9 @@ void LogOutput(LPCTSTR format, ...)
 	va_list args;
 	va_start(args, format);
 
-	_vsntprintf(output, sizeof(output) - 1, format, args);
-	output[sizeof(output) - 1] = 0;
-	OutputDebugString(output);
+	OutputDebugVa<TCHAR>(output, _TRUNCATE, format, args);
+
+	va_end(args);
 }
 
 //---------------------------------------------------------------------------
@@ -97,7 +97,8 @@ void LogFileOutput(LPCTSTR format, ...)
 	va_list args;
 	va_start(args, format);
 
-	_vsntprintf(output, sizeof(output) - 1, format, args);
-	output[sizeof(output) - 1] = 0;
-	fprintf(g_fh, "%s", output);
+	_vsntprintf_s(output, _TRUNCATE, format, args);
+	_ftprintf(g_fh, TEXT("%s"), output);
+
+	va_end(args);
 }

@@ -194,8 +194,7 @@ void debug_output( const char *text, BYTE *what, int count )
     int len1 = count;
     int i;
 
-    sprintf(buffer, "\n%s: length = %u\n", text, len1);
-    OutputDebugString(buffer);
+    OutputDebugFormat(buffer, "\n%s: length = %u\n", text, len1);
     do {
         p = buffer;
         for (i=0; (i<8) && len1>0; len1--, i++) {
@@ -203,7 +202,7 @@ void debug_output( const char *text, BYTE *what, int count )
             p += 3;
         }
         *(p-1) = '\n'; *p = 0;
-        OutputDebugString(buffer);
+        OutputDebugStringA(buffer);
     } while (len1>0);
 }
 #endif // #ifdef TFE_DEBUG_PKTDUMP
