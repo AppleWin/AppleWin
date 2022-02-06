@@ -62,20 +62,7 @@ struct SS_CARD_EMPTY
 
 /////////////////////////////////////////////////////////////////////////////////
 
-struct IWORD
-{
-	union
-	{
-		struct
-		{
-			BYTE l;
-			BYTE h;
-		};
-		USHORT w;
-	};
-};
-
-struct SY6522
+struct SY6522A
 {
 	BYTE ORB;				// $00 - Port B
 	BYTE ORA;				// $01 - Port A (with handshaking)
@@ -88,10 +75,10 @@ struct SY6522
 	// $07 - Read / Write & latch (H)
 	// $08 - Read counter (L) / Write latch (L)
 	// $09 - Read counter (H) / Write latch (H)
-	IWORD TIMER1_COUNTER;
-	IWORD TIMER1_LATCH;
-	IWORD TIMER2_COUNTER;
-	IWORD TIMER2_LATCH;
+	USHORT TIMER1_COUNTER;
+	USHORT TIMER1_LATCH;
+	USHORT TIMER2_COUNTER;
+	USHORT TIMER2_LATCH;
 	int timer1IrqDelay;
 	int timer2IrqDelay;
 	//

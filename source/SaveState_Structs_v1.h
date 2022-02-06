@@ -112,7 +112,7 @@ struct SS_CARD_DISK2
 
 struct MB_Unit_v1
 {
-	SY6522		RegsSY6522;
+	SY6522A		RegsSY6522;
 	BYTE		RegsAY8910[16];
 	SSI263A		RegsSSI263;
 	BYTE		nAYCurrentRegister;

@@ -29,6 +29,7 @@
   <ItemGroup>
     <ClInclude Include="resource\resource.h" />
     <ClInclude Include="resource\winres.h" />
+    <ClInclude Include="source\6522.h" />
     <ClInclude Include="source\6821.h" />
     <ClInclude Include="source\AY8910.h" />
     <ClInclude Include="source\Card.h" />
@@ -143,6 +144,7 @@
     <Text Include="docs\Wishlist.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\6522.cpp" />
     <ClCompile Include="source\6821.cpp" />
     <ClCompile Include="source\AY8910.cpp" />
     <ClCompile Include="source\Card.cpp" />

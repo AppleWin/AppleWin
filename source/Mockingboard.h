@@ -4,13 +4,6 @@
 
 enum PHASOR_MODE {PH_Mockingboard=0, PH_UNDEF1, PH_UNDEF2, PH_UNDEF3, PH_UNDEF4, PH_Phasor/*=5*/, PH_UNDEF6, PH_EchoPlus/*=7*/};
 
-// IFR & IER:
-#define IxR_SSI263	(1<<1)
-#define IxR_VOTRAX	(1<<4)
-#define IxR_TIMER2	(1<<5)
-#define IxR_TIMER1	(1<<6)
-
-
 void	MB_Initialize();
 void	MB_Reinitialize();
 void	MB_Destroy();
@@ -32,6 +25,7 @@ DWORD   MB_GetVolume();
 void    MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 void MB_Get6522IrqDescription(std::string& desc);
 
+void MB_UpdateIRQ(void);
 UINT64 MB_GetLastCumulativeCycles(void);
 void MB_UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
 BYTE MB_GetPCR(BYTE nDevice);

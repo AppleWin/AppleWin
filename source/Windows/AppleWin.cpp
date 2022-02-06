@@ -544,9 +544,6 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 				g_cmdLine.setFullScreen = g_bRestartFullScreen ? 1 : 0;
 				g_bRestartFullScreen = false;
 
-				MB_Reset(true);
-				LogFileOutput("Main: MB_Reset()\n");
-
 				CMouseInterface* pMouseCard = GetCardMgr().GetMouseCard();
 				if (pMouseCard)
 				{

@@ -1765,8 +1765,8 @@ void updateScreenSHR(long cycles6502)
 				uint8_t* pControl = MemGetAuxPtr(0x9D00 + g_nVideoClockVert);	// scan-line control byte
 				uint8_t c = pControl[0];
 
-				bool is640Mode = c & 0x80;
-				bool isColorFillMode = c & 0x20;
+				bool is640Mode = !!(c & 0x80);
+				bool isColorFillMode = !!(c & 0x20);
 				UINT paletteSelectCode = c & 0xf;
 				const UINT kColorsPerPalette = 16;
 				const UINT kColorSize = 2;
