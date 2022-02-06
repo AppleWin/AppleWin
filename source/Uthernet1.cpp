@@ -197,14 +197,10 @@ void Uthernet1::InitialiseBackend()
 
 void Uthernet1::Init(void)
 {
-    /* initialize visible IO register and PacketPage registers */
-    memset( tfe, 0, TFE_COUNT_IO_REGISTER );
-    memset( tfe_packetpage, 0, MAX_PACKETPAGE_ARRAY );
-
-    txcollect_buffer     = TFE_PP_ADDR_TX_FRAMELOC;
-    rx_buffer            = TFE_PP_ADDR_RXSTATUS;
-
-    tfe_packetpage_ptr   = 0;
+    // Initialise all state member variables
+    // in the same order as the header file to ease maintenance
+    memset( tfe_ia_mac, 0, sizeof(tfe_ia_mac) );
+    memset( tfe_hash_mask, 0, sizeof(tfe_hash_mask) );
 
     tfe_recv_broadcast   = 0;
     tfe_recv_mac         = 0;
@@ -216,6 +212,16 @@ void Uthernet1::Init(void)
 #ifdef TFE_DEBUG_WARN
     tfe_started_tx       = 0;
 #endif
+
+    /* initialize visible IO register and PacketPage registers */
+    memset( tfe, 0, sizeof(tfe) );
+
+    txcollect_buffer     = TFE_PP_ADDR_TX_FRAMELOC;
+    rx_buffer            = TFE_PP_ADDR_RXSTATUS;
+
+    memset( tfe_packetpage, 0, sizeof(tfe_packetpage) );
+
+    tfe_packetpage_ptr   = 0;
 
     /* according to page 19 unless stated otherwise */
     SET_PP_32(TFE_PP_ADDR_PRODUCTID,      0x0700630E ); /* p.41: 0E630007 for Rev. B; reversed order! */
