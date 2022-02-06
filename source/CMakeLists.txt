@@ -48,6 +48,7 @@ set(SOURCE_FILES
   Debugger/Debugger_Commands.cpp
   Debugger/Util_MemoryTextFile.cpp
 
+  6522.cpp
   VidHD.cpp
   SSI263.cpp
   Speaker.cpp
@@ -117,7 +118,8 @@ set(SOURCE_FILES
   )
 
 set(HEADER_FILES
-  VidHD.cpp
+  6522.h
+  VidHD.h
   SSI263.h
   SSI263Phonemes.h
   Speaker.h
