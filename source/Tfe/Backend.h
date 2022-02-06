@@ -1,9 +1,5 @@
 #pragma once
 
-#include <cstdint>
-
-#include <memory>
-
 class NetworkBackend
 {
 public:
@@ -16,13 +12,14 @@ public:
 	) = 0;
 
 	// receive a single packet
-	virtual int receive(uint8_t * data, int * size) = 0;
+	virtual int receive(
+		uint8_t * data,			/* Pointer to the buffer */
+		int * size				/* IN : buffer size, OUT : frame size */
+	) = 0;
 
 	// process pending packets
 	virtual void update(const ULONG nExecutedCycles) = 0;
 
 	// if the backend is usable
 	virtual bool isValid() = 0;
-
-	static std::shared_ptr<NetworkBackend> createBackend();
 };

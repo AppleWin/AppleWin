@@ -2,6 +2,8 @@
 
 #include "Video.h"
 
+class NetworkBackend;
+
 class FrameBase
 {
 public:
@@ -40,6 +42,10 @@ public:
 
 	// this function merges LoadBitmap and GetBitmapBits from windows.h
 	virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) = 0;
+
+	// create the network backed for Uthernet 1 and 2
+	// useful to use libslirp in Linux
+	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend() = 0;
 
 	// FindResource, MAKEINTRESOURCE, SizeofResource, LoadResource, LockResource
 	// Return pointer to resource if size is correct.

@@ -4,6 +4,7 @@
 #include "YamlHelper.h"
 #include "Log.h"
 #include "Memory.h"
+#include "Interface.h"
 #include "Tfe/tfearch.h"
 #include "Tfe/tfesupp.h"
 #include "Tfe/Backend.h"
@@ -191,7 +192,7 @@ Uthernet1::~Uthernet1()
 void Uthernet1::InitialiseBackend()
 {
     Destroy();
-    networkBackend = NetworkBackend::createBackend();
+    networkBackend = GetFrame().CreateNetworkBackend();
 }
 
 void Uthernet1::Init(void)
@@ -298,7 +299,7 @@ void Uthernet1::tfe_sideeffects_write_pp_on_txframe(WORD ppaddress)
                 &tfe_packetpage[TFE_PP_ADDR_TX_FRAMELOC]
                 );
 
-        txcollect_buffer = TFE_PP_ADDR_TX_FRAMELOC;
+            txcollect_buffer = TFE_PP_ADDR_TX_FRAMELOC;
 
 #ifdef TFE_DEBUG_WARN
             /* remember that the TXCMD has been completed */
