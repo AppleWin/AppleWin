@@ -7,6 +7,7 @@ public:
 	{
 		for (UINT i = 0; i < kNumTimersPer6522; i++)
 			m_syncEvent[i] = NULL;
+		Reset(true);
 	}
 
 	~SY6522(void)
