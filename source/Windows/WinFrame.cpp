@@ -623,8 +623,7 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 #if _DEBUG && 0
 			if (nDOS33track != nDisk1Track)
 			{
-				char text[128];
-				OutputDebugFormat( text, "\n\n\nWARNING: DOS33Track: %d (%02X) != nDisk1Track: %d (%02X)\n\n\n", nDOS33track, nDOS33track, nDisk1Track, nDisk1Track );
+				LogOutput( "\n\n\nWARNING: DOS33Track: %d (%02X) != nDisk1Track: %d (%02X)\n\n\n", nDOS33track, nDOS33track, nDisk1Track, nDisk1Track );
 			}
 #endif // _DEBUG
 
@@ -1843,8 +1842,7 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 	bool bAllowFadeIn = true;
 
 #if DEBUG_DD_PALETTE
-	char _text[ 80 ];
-	OutputDebugFormat( _text, "Button: F%d  Full Screen: %d\n", button+1, g_bIsFullScreen );
+	LogOutput( "Button: F%d  Full Screen: %d\n", button+1, g_bIsFullScreen );
 #endif
 
   switch (button) {
@@ -2553,14 +2551,13 @@ void Win32Frame::FrameSetCursorPosByMousePos()
 	SetCursorPos(Point.x+iWindowX-VIEWPORTX, Point.y+iWindowY-VIEWPORTY);
 
 #if defined(_DEBUG) && 0	// OutputDebugString() when cursor position changes since last time
-	static int OldX=0, OldY=0;
-	char szDbg[200];
-	int X=Point.x+iWindowX-VIEWPORTX;
-	int Y=Point.y+iWindowY-VIEWPORTY;
+	static int OldX = 0, OldY = 0;
+	int X = Point.x + iWindowX - VIEWPORTX;
+	int Y = Point.y + iWindowY - VIEWPORTY;
 	if (X != OldX || Y != OldY)
 	{
-		OutputDebugFormat(szDbg, "[FrameSetCursorPosByMousePos] x,y=%d,%d (MaxX,Y=%d,%d)\n", X,Y, iMaxX,iMaxY);
-		OldX=X; OldY=Y;
+		LogOutput("[FrameSetCursorPosByMousePos] x,y=%d,%d (MaxX,Y=%d,%d)\n", X, Y, iMaxX, iMaxY);
+		OldX = X; OldY = Y;
 	}
 #endif
 }
@@ -2574,7 +2571,6 @@ void Win32Frame::FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool 
 	if (!GetCardMgr().IsMouseCardInstalled())
 		return;
 
-//	char szDbg[200];
 	if (!g_hFrameWindow || (g_bShowingCursor && bLeavingAppleScreen) || (!g_bShowingCursor && !bLeavingAppleScreen))
 		return;
 
@@ -2599,11 +2595,11 @@ void Win32Frame::FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool 
 		POINT Point = {viewportx+2, viewporty+2};	// top-left
 		ClientToScreen(g_hFrameWindow, &Point);
 		SetCursorPos(Point.x+iWindowX-VIEWPORTX, Point.y+iWindowY-VIEWPORTY);
-		//OutputDebugFormat(szDbg, "[MOUSE_LEAVING ] x=%d, y=%d (Scale: x,y=%f,%f; iX,iY=%d,%d)\n", iWindowX, iWindowY, fScaleX, fScaleY, iX, iY);
+		//LogOutput("[MOUSE_LEAVING ] x=%d, y=%d (Scale: x,y=%f,%f; iX,iY=%d,%d)\n", iWindowX, iWindowY, fScaleX, fScaleY, iX, iY);
 	}
 	else	// Mouse entering Apple screen area
 	{
-		//OutputDebugFormat(szDbg, "[MOUSE_ENTERING] x=%d, y=%d\n", x, y);
+		//LogOutput("[MOUSE_ENTERING] x=%d, y=%d\n", x, y);
 		if (!g_bIsFullScreen)	// GH#464
 		{
 			x -= (viewportx+2-VIEWPORTX); if (x < 0) x = 0;

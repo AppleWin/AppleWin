@@ -1449,14 +1449,13 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 	floppy.m_bitMask = 1 << remainder;
 
 	bool newLine = true;
-	char str[20];
 
 	while (1)
 	{
 		if (newLine)
 		{
 			newLine = false;
-			OutputDebugFormat(str, "%04X:", floppy.m_bitOffset & 0xffff);
+			LogOutput("%04X:", floppy.m_bitOffset & 0xffff);
 		}
 
 		BYTE n = floppy.m_trackimage[floppy.m_byte];
@@ -1482,8 +1481,8 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 		nibbleCount++;
 
 		char syncBits = zeroCount <= 9 ? '0'+zeroCount : '+';
-		if (zeroCount == 0)	OutputDebugFormat(str, "   %02X", shiftReg);
-		else				OutputDebugFormat(str, "(%c)%02X", syncBits, shiftReg);
+		if (zeroCount == 0)	LogOutput("   %02X", shiftReg);
+		else				LogOutput("(%c)%02X", syncBits, shiftReg);
 
 		formatTrack.DecodeLatchNibbleRead(shiftReg);
 
@@ -1507,13 +1506,13 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 	if (zeroCount)
 	{
 		char syncBits = zeroCount <= 9 ? '0'+zeroCount : '+';
-		OutputDebugFormat(str, "(%c)", syncBits);
+		LogOutput("(%c)", syncBits);
 	}
 
 	// Output any partial nibble
 	if (shiftReg)
 	{
-		OutputDebugFormat(str, "%02X/Partial Nibble", shiftReg);
+		LogOutput("%02X/Partial Nibble", shiftReg);
 	}
 
 	// Output any remaining "read D5AAxx detected"

@@ -194,7 +194,7 @@ void debug_output( const char *text, BYTE *what, int count )
     int len1 = count;
     int i;
 
-    OutputDebugFormat(buffer, "\n%s: length = %u\n", text, len1);
+    LogOutput("\n%s: length = %u\n", text, len1);
     do {
         p = buffer;
         for (i=0; (i<8) && len1>0; len1--, i++) {

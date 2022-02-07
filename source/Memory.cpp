@@ -1978,8 +1978,7 @@ static void DebugFlip(WORD address, ULONG nExecutedCycles)
 
 	const double fFreq = CLK_6502 / (double)uCyclesBetweenFlips;
 
-	char szStr[100];
-	OutputDebugFormat(szStr, "Cycles between flips = %d (%f Hz)\n", uCyclesBetweenFlips, fFreq);
+	LogOutput("Cycles between flips = %d (%f Hz)\n", uCyclesBetweenFlips, fFreq);
 }
 #endif
 

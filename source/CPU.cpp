@@ -339,8 +339,7 @@ static void DebugHddEntrypoint(const USHORT PC)
 		if (!bOldPCAtC7xx /*&& PC != 0xc70a*/)
 		{
 			Count++;
-			char szDebug[100];
-			OutputDebugFormat(szDebug, "HDD Entrypoint: $%04X\n", PC);
+			LogOutput("HDD Entrypoint: $%04X\n", PC);
 		}
 
 		bOldPCAtC7xx = true;
