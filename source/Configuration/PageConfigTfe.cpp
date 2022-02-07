@@ -254,12 +254,12 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 		// TC (18 Dec 2017) this vicekb URL is a broken link now, so I copied it to the AppleWin repo, here:
 		// . https://github.com/AppleWin/AppleWin/blob/master/docs/VICE%20Knowledge%20Base%20-%20Article%2013-005.htm
 		MessageBox( hwnd,
-			"TFE support is not available on your system,\n"
-			"there is some important part missing. Please have a\n"
-			"look at the VICE knowledge base support page\n"
-			"\n      http://vicekb.trikaliotis.net/13-005\n\n"
-			"for possible reasons and to activate networking with VICE.",
-			"TFE support", MB_ICONINFORMATION|MB_OK);
+			"Uthernet support is not available on your system,\n"
+			"WPCAP.DLL cannot be loaded.\n\n"
+			"Install Npcap from\n\n"
+			"      https://npcap.com\n\n"
+			"to activate networking with AppleWin.",
+			"Uthernet support", MB_ICONINFORMATION|MB_OK);
 
 		/* just quit the dialog before it is open */
 		SendMessage( hwnd, WM_COMMAND, IDCANCEL, 0);
