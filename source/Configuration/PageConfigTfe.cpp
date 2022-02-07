@@ -204,6 +204,9 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 	case CT_Uthernet:
 		active_value = 1;
 		break;
+	case CT_Uthernet2:
+		active_value = 2;
+		break;
 	default:
 		active_value = 0;
 		break;
@@ -212,6 +215,7 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 	temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_ENABLE);
 	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Disabled");
 	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Uthernet");
+	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Uthernet II");
 	SendMessage(temp_hwnd, CB_SETCURSEL, (WPARAM)active_value, 0);
 
 	if (PCapBackend::tfe_enumadapter_open())
@@ -283,6 +287,9 @@ void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 		{
 		case 1:
 			m_tfe_enabled = CT_Uthernet;
+			break;
+		case 2:
+			m_tfe_enabled = CT_Uthernet2;
 			break;
 		default:
 			m_tfe_enabled = CT_Empty;

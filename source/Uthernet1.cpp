@@ -184,11 +184,6 @@ Uthernet1::Uthernet1(UINT slot) : Card(CT_Uthernet, slot)
     Init();
 }
 
-Uthernet1::~Uthernet1()
-{
-    Destroy();
-}
-
 void Uthernet1::InitialiseBackend()
 {
     Destroy();

@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SerialComms.h"
 #include "SNESMAX.h"
 #include "Uthernet1.h"
+#include "Uthernet2.h"
 #include "VidHD.h"
 #include "LanguageCard.h"
 #include "Memory.h"
@@ -102,6 +103,9 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		break;
 	case CT_VidHD:
 		m_slot[slot] = new VidHDCard(slot);
+		break;
+	case CT_Uthernet2:
+		m_slot[slot] = new Uthernet2(slot);
 		break;
 
 	case CT_LanguageCard:

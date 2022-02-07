@@ -256,6 +256,9 @@
     <ClCompile Include="source\Tfe\PCapBackend.cpp">
       <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
+    <ClCompile Include="source\Uthernet2.cpp">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\CommonVICE\6510core.h">
@@ -583,6 +586,12 @@
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
     <ClInclude Include="source\Tfe\PCapBackend.h">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClInclude>
+    <ClInclude Include="source\W5100.h">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Uthernet2.h">
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
   </ItemGroup>

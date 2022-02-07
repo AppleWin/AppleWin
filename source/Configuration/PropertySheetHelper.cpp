@@ -333,8 +333,8 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
 		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
-	if (CONFIG_CHANGED_LOCAL(m_tfeInterface))
-		PCapBackend::tfe_SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
+	// unconditionally save it, as the previous SetSlot might have removed the setting
+	PCapBackend::tfe_SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
 
 	slot = SLOT4;
 	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))

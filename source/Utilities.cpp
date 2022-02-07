@@ -257,7 +257,7 @@ void LoadConfiguration(bool loadImages)
 
 			if (slot == SLOT3)
 			{
-				if ((SS_CARDTYPE)dwTmp == CT_Uthernet)	// TODO: move this to when UthernetCard object is instantiated
+				if ((SS_CARDTYPE)dwTmp == CT_Uthernet || (SS_CARDTYPE)dwTmp == CT_Uthernet2)	// TODO: move this to when UthernetCard object is instantiated
 				{
 					std::string regSection = RegGetConfigSlotSection(slot);
 					if (RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, szFilename, MAX_PATH, TEXT("")))
@@ -538,6 +538,8 @@ void ResetMachineState()
 		GetCardMgr().GetRef(SLOT3).Reset(true);
 	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
 		GetCardMgr().GetRef(SLOT3).Reset(true);
+	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet2)
+		GetCardMgr().GetRef(SLOT3).Reset(true);
 	g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
 	MemReset();	// calls CpuInitialize(), CNoSlotClock.Reset()
@@ -596,6 +598,8 @@ void CtrlReset()
 	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
 		GetCardMgr().GetRef(SLOT3).Reset(false);
 	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
+		GetCardMgr().GetRef(SLOT3).Reset(false);
+	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet2)
 		GetCardMgr().GetRef(SLOT3).Reset(false);
 	KeybReset();
 	if (GetCardMgr().IsSSCInstalled())

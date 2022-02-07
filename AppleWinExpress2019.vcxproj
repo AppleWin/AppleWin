@@ -123,9 +123,11 @@
     <ClInclude Include="source\Tfe\tfesupp.h" />
     <ClInclude Include="source\Tfe\Uilib.h" />
     <ClInclude Include="source\Uthernet1.h" />
+    <ClInclude Include="source\Uthernet2.h" />
     <ClInclude Include="source\Utilities.h" />
     <ClInclude Include="source\Video.h" />
     <ClInclude Include="Source\VidHD.h" />
+    <ClInclude Include="source\W5100.h" />
     <ClInclude Include="source\Windows\AppleWin.h" />
     <ClInclude Include="source\Windows\DirectInput.h" />
     <ClInclude Include="source\Windows\HookFilter.h" />
@@ -247,6 +249,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="source\Uthernet1.cpp" />
+    <ClCompile Include="source\Uthernet2.cpp" />
     <ClCompile Include="source\Utilities.cpp" />
     <ClCompile Include="source\Video.cpp" />
     <ClCompile Include="Source\VidHD.cpp" />

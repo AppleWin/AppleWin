@@ -128,7 +128,6 @@ class Uthernet1 : public Card
 {
 public:
 	Uthernet1(UINT slot);
-	virtual ~Uthernet1();
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void Init(void);
