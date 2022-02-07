@@ -295,6 +295,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\StrFormat.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\StrFormat.h"
+				>
+			</File>
+			<File
 				RelativePath=".\source\Utilities.cpp"
 				>
 			</File>
