@@ -20,40 +20,20 @@ std::string StrFormatV(const char* format, va_list va)
 #if defined(_MSC_VER) && _MSC_VER < 1900
 #pragma warning(push)
 #pragma warning(disable: 4996) // warning _vsnprintf() is unsafe.
-	// VS2013 or before, _vsnprintf() cannot return required buffer size.
+	// VS2013 or before, _vsnprintf() cannot return required buffer size in case of overflow.
 	int len = _vsnprintf(buf, _countof(buf), format, va);
-	if (len >= 0 && size_t(len) < _countof(buf))
+	if (len >= 0 && size_t(len) <= _countof(buf))
 	{
+		// _vsnprintf() can fill up the full buffer without nul termination.
 		return std::string(buf, size_t(len)); // No overflow.
 	}
 	else
 	{
-		// Overflow, need growing buffer.
-		std::string s;
-		size_t bufsz = _countof(buf);
-		// Allow buffer to grow to at most 2^ngrow times sizeof(buf).
-		int const ngrow = 4;
-		for (int i = 0; i < ngrow; ++i)
-		{
-			bufsz *= 2;
-			char *pbuf = new char[bufsz];
-			len = _vsnprintf(pbuf, bufsz, format, va);
-			bool done = false;
-			if (len >= 0 && size_t(len) < bufsz)
-			{
-				s.assign(pbuf, size_t(len));
-				done = true;
-			}
-			else if ((i+1) >= ngrow)
-			{
-				// Truncated at 2^ngrow times sizeof(buf).
-				s.assign(pbuf, bufsz - 1);
-				done = true;
-			}
-			delete[] pbuf;
-			if (done)
-				break;
-		}
+		// Overflow, need bigger buffer.
+		len = _vsnprintf(NULL, 0, format, va); // Get required buffer size.
+		std::string s(size_t(len), '\0');
+		len = _vsnprintf(&(*s.begin()), s.length() + 1, format, va);
+		assert(size_t(len) == s.length());
 		return s;
 	}
 #pragma warning(pop)
