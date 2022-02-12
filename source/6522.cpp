@@ -35,11 +35,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SynchronousEventManager.h"
 #include "YamlHelper.h"
 
-// TODO: remove these (just including for now to allow TU to compile)
-extern UINT g_nMBTimerDevice;
-static const UINT kTIMERDEVICE_INVALID = -1;
-static const UINT kAY8910Number = 0;	// needed?
-
 void SY6522::Reset(const bool powerCycle)
 {
 	if (powerCycle)
@@ -49,6 +44,7 @@ void SY6522::Reset(const bool powerCycle)
 										// . NB. if it's too small (< ~$0007) then MB detection routines will fail!
 	}
 
+	CpuCreateCriticalSection();	// Reset() called by SY6522 global ctor, so explicitly create CPU's CriticalSection
 	Write(rACR, 0x00);	// ACR = 0x00: T1 one-shot mode
 	Write(rIFR, 0x7f);	// IFR = 0x7F: de-assert any IRQs
 	Write(rIER, 0x7f);	// IER = 0x7F: disable all IRQs
@@ -64,11 +60,6 @@ void SY6522::Reset(const bool powerCycle)
 void SY6522::StartTimer1(void)
 {
 	m_timer1Active = true;
-
-	if (m_regs.IER & IxR_TIMER1)			// Using 6522 interrupt
-		g_nMBTimerDevice = kAY8910Number;
-	else if (m_regs.ACR & ACR_RM_FREERUNNING)	// Polling 6522 IFR (GH#496)
-		g_nMBTimerDevice = kAY8910Number;
 }
 
 // The assumption was that timer1 was only active if IER.TIMER1=1
@@ -79,13 +70,11 @@ void SY6522::StartTimer1_LoadStateV1(void)
 		return;
 
 	m_timer1Active = true;
-	g_nMBTimerDevice = kAY8910Number;
 }
 
 void SY6522::StopTimer1(void)
 {
 	m_timer1Active = false;
-	g_nMBTimerDevice = kTIMERDEVICE_INVALID;
 }
 
 //-----------------------------------------------------------------------------
@@ -94,8 +83,6 @@ void SY6522::StartTimer2(void)
 {
 	m_timer2Active = true;
 
-	// NB. Can't mimic StartTimer1() as that would stomp on global state
-	// TODO: Switch to per-device state
 }
 
 void SY6522::StopTimer2(void)

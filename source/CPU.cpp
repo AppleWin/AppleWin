@@ -633,6 +633,20 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 
 //===========================================================================
 
+// Called by:
+// . CpuInitialize()
+// . SY6522.Reset()
+void CpuCreateCriticalSection(void)
+{
+	if (!g_bCritSectionValid)
+	{
+		InitializeCriticalSection(&g_CriticalSection);
+		g_bCritSectionValid = true;
+	}
+}
+
+//===========================================================================
+
 // Called from RepeatInitialization():
 // 1) FrameCreateWindow() -> WM_CREATE
 //    - done to init g_CriticalSection
@@ -645,11 +659,7 @@ void CpuInitialize(bool reset)
 	if (reset)
 		CpuReset();
 
-	if (!g_bCritSectionValid)
-	{
-		InitializeCriticalSection(&g_CriticalSection);
-		g_bCritSectionValid = true;
-	}
+	CpuCreateCriticalSection();
 
 	CpuIrqReset();
 	CpuNmiReset();

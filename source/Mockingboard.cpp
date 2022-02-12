@@ -148,7 +148,6 @@ static SyncEvent* g_syncEvent[kNumSyncEvents];
 
 // Timer vars
 static const UINT kTIMERDEVICE_INVALID = -1;
-UINT g_nMBTimerDevice = kTIMERDEVICE_INVALID;	// SY6522 device# which is generating timer IRQ
 static UINT64 g_uLastCumulativeCycles = 0;
 
 static const DWORD SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
@@ -185,6 +184,16 @@ static UINT g_cyclesThisAudioFrame = 0;
 
 // Forward refs:
 static int MB_SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
+
+//---------------------------------------------------------------------------
+
+static bool IsAnyTimer1Active(void)
+{
+	bool active = false;
+	for (UINT i = 0; i < NUM_AY8910; i++)
+		active |= g_MB[i].sy6522.IsTimer1Active();
+	return active;
+}
 
 //---------------------------------------------------------------------------
 
@@ -351,8 +360,8 @@ void MB_UpdateIRQ(void)
 static UINT64 g_uLastMBUpdateCycle = 0;
 
 // Called by:
-// . MB_SyncEventCallback() on a TIMER1 (not TIMER2) underflow - when g_nMBTimerDevice == {0,1,2,3}
-// . MB_PeriodicUpdate()                                       - when g_nMBTimerDevice == kTIMERDEVICE_INVALID
+// . MB_SyncEventCallback() on a TIMER1 (not TIMER2) underflow - when IsAnyTimer1Active() == true
+// . MB_PeriodicUpdate()                                       - when IsAnyTimer1Active() == false
 static void MB_UpdateInt(void)
 {
 	if (!MockingboardVoice.bActive)
@@ -566,7 +575,7 @@ static void MB_Update(void)
 #ifdef LOG_PERF_TIMINGS
 	extern UINT64 g_timeMB_NoTimer;
 	extern UINT64 g_timeMB_Timer;
-	PerfMarker perfMarker(g_nMBTimerDevice == kTIMERDEVICE_INVALID ? g_timeMB_NoTimer : g_timeMB_Timer);
+	PerfMarker perfMarker(!IsAnyTimer1Active() ? g_timeMB_NoTimer : g_timeMB_Timer);
 #endif
 
 	MB_UpdateInt();
@@ -762,7 +771,6 @@ void MB_Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 
 	// Reset state
 	{
-		g_nMBTimerDevice = kTIMERDEVICE_INVALID;
 		MB_SetCumulativeCycles();
 
 		g_nMB_InActiveCycleCount = 0;
@@ -1138,8 +1146,10 @@ void MB_PeriodicUpdate(UINT executedCycles)
 	for (UINT i=0; i<NUM_AY8910; i++)
 		g_MB[i].ssi263.PeriodicUpdate(executedCycles);
 
-	if (g_nMBTimerDevice != kTIMERDEVICE_INVALID)
+	if (IsAnyTimer1Active())
 		return;
+
+	// No 6522 TIMER1's are active, so periodically update AY8913's here...
 
 	const UINT kCyclesPerAudioFrame = 1000;
 	g_cyclesThisAudioFrame += executedCycles;
