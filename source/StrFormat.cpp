@@ -21,6 +21,8 @@ std::string StrFormatV(const char* format, va_list va)
 #pragma warning(push)
 #pragma warning(disable: 4996) // warning _vsnprintf() is unsafe.
 	// VS2013 or before, _vsnprintf() cannot return required buffer size in case of overflow.
+	// MSVC seems fine not needing va_copy(), otherwise va_copy() may need to be called twice
+	// to be accurate. Not calling va_copy() here to keep things simpler.
 	int len = _vsnprintf(buf, sizeof(buf), format, va);
 	if (len >= 0 && size_t(len) <= sizeof(buf))
 	{
@@ -38,7 +40,13 @@ std::string StrFormatV(const char* format, va_list va)
 	}
 #pragma warning(pop)
 #else
-	int len = vsnprintf(buf, sizeof(buf), format, va);
+	// Need to call va_copy() so va can be used potentially for a second time.
+	// glibc on Linux *certainly* needs this while MSVC is fine without it though.
+	va_list va_copied;
+	va_copy(va_copied, va);
+	int len = vsnprintf(buf, sizeof(buf), format, va_copied);
+	va_end(va_copied);
+
 	if (len < 0)
 	{
 		return std::string(); // Error.
