@@ -33,7 +33,7 @@ void    CpuCalcCycles(ULONG nExecutedCycles);
 DWORD   CpuExecute(const DWORD uCycles, const bool bVideoUpdate);
 ULONG   CpuGetCyclesThisVideoFrame(ULONG nExecutedCycles);
 void    CpuCreateCriticalSection(void);
-void    CpuInitialize(bool reset);
+void    CpuInitialize(void);
 void    CpuSetupBenchmark ();
 void	CpuIrqReset();
 void	CpuIrqAssert(eIRQSRC Device);

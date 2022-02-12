@@ -636,6 +636,7 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 // Called by:
 // . CpuInitialize()
 // . SY6522.Reset()
+// . FrameCreateWindow() -> WM_CREATE
 void CpuCreateCriticalSection(void)
 {
 	if (!g_bCritSectionValid)
@@ -648,16 +649,13 @@ void CpuCreateCriticalSection(void)
 //===========================================================================
 
 // Called from RepeatInitialization():
-// 1) FrameCreateWindow() -> WM_CREATE
-//    - done to init g_CriticalSection
-//    - but can't call CpuReset() as mem == NULL
-// 2) MemInitialize() -> MemReset()
-void CpuInitialize(bool reset)
+// . MemInitialize() -> MemReset()
+void CpuInitialize(void)
 {
 	regs.a = regs.x = regs.y = 0xFF;
 	regs.sp = 0x01FF;
-	if (reset)
-		CpuReset();
+
+	CpuReset();
 
 	CpuCreateCriticalSection();
 
@@ -683,6 +681,8 @@ void CpuDestroy()
 
 void CpuReset()
 {
+	_ASSERT(mem != NULL);
+
 	// 7 cycles
 	regs.ps = (regs.ps | AF_INTERRUPT) & ~AF_DECIMAL;
 	regs.pc = *(WORD*)(mem + 0xFFFC);

@@ -1001,8 +1001,8 @@ LRESULT Win32Frame::WndProc(
 	  DIMouse::DirectInputInit(window);
       LogFileOutput("WM_CREATE: DIMouse::DirectInputInit()\n");
 
-	  CpuInitialize(false);	// NB. Creates CriticalSection that's needed by MB_Initialize()
-	  LogFileOutput("WM_CREATE: CpuInitialize()\n");
+	  CpuCreateCriticalSection();	// NB. Creates CriticalSection that's needed by MB_Initialize() -- required on a VM restart
+	  LogFileOutput("WM_CREATE: CpuCreateCriticalSection()\n");
 
 	  MB_Initialize();
       LogFileOutput("WM_CREATE: MB_Initialize()\n");
