@@ -8,6 +8,25 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+1.30.8.0 - 8 Feb 2022
+---------------------
+. [Bug #1023] WOZ support: Tweak to track sync support.
+. [Bug #1020] WOZ support: Significant bit-cells after a gap between latch access upped from 50 to 100.
+	- Fixes: What's My Logic, Forbidden Quest, The Isle of Mem.
+. [Bug #1018] Support AN3 for //e models.
+. [Bug #1015] Registry: fix support for legacy 'Harddisk Enable' key.
+. [PR #1028] Internal: Split 6522 out of MB code and into own class (bumps MB version in save-state).
+. [PR #1025] Load save-state for Cards: improve error messages. [audetto]
+. [PR #1014] Correct BMP creation. [audetto]
+. SSC: Fix for command line -dcd not being honoured. (Regression)
+. VidHD: Fix load save-state for II/II+ when VidHD's SHR is being updated.
+. Debugger: see Debugger_Changelog.txt, but including:
+	- Added: CD now detects ".." to change to the previous directory and chops the trailing sub-directory from the current path.
+	- Changed: Disassembly window now lists symbol labels and symbol target address from User2 in orange.
+	- Added: Branch instructions now show target address.
+	- Added: Disassembly window now shows signed decimal values for immediate values.
+
+
 1.30.7.0 - 19 Dec 2021
 ----------------------
 . [Bug #997] Support VidHD card for IIgs Super Hi-Res (SHR) video modes, eg. for Total Replay box art.

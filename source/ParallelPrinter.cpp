@@ -142,9 +142,13 @@ static BYTE __stdcall PrintStatus(WORD, WORD, BYTE, BYTE, ULONG)
 }
 
 //===========================================================================
-static BYTE __stdcall PrintTransmit(WORD, WORD, BYTE, BYTE value, ULONG)
+static BYTE __stdcall PrintTransmit(WORD, WORD address, BYTE, BYTE value, ULONG)
 {
 	if (!CheckPrint())
+		return 0;
+
+	// only allow writes to the load output port (i.e., $C090)
+	if ((address & 0xF) != 0)
 		return 0;
 
 	BYTE c = value & 0x7F;
