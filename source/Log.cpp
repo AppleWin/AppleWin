@@ -51,7 +51,7 @@ inline std::string GetTimeStamp()
 	time(&ltime);
 #ifdef _MSC_VER
 	char ct[32];
-	ctime_s(ct, _countof(ct), &ltime);
+	ctime_s(ct, sizeof(ct), &ltime);
 #else
 	char ctbuf[32];
 	const char* ct = ctime_r(&ltime, ctbuf);

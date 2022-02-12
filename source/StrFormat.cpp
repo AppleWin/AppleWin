@@ -21,8 +21,8 @@ std::string StrFormatV(const char* format, va_list va)
 #pragma warning(push)
 #pragma warning(disable: 4996) // warning _vsnprintf() is unsafe.
 	// VS2013 or before, _vsnprintf() cannot return required buffer size in case of overflow.
-	int len = _vsnprintf(buf, _countof(buf), format, va);
-	if (len >= 0 && size_t(len) <= _countof(buf))
+	int len = _vsnprintf(buf, sizeof(buf), format, va);
+	if (len >= 0 && size_t(len) <= sizeof(buf))
 	{
 		// _vsnprintf() can fill up the full buffer without nul termination.
 		return std::string(buf, size_t(len)); // No overflow.
@@ -38,12 +38,12 @@ std::string StrFormatV(const char* format, va_list va)
 	}
 #pragma warning(pop)
 #else
-	int len = vsnprintf(buf, _countof(buf), format, va);
+	int len = vsnprintf(buf, sizeof(buf), format, va);
 	if (len < 0)
 	{
 		return std::string(); // Error.
 	}
-	else if (size_t(len) < _countof(buf))
+	else if (size_t(len) < sizeof(buf))
 	{
 		return std::string(buf, size_t(len)); // No overflow.
 	}
