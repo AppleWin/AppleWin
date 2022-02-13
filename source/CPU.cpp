@@ -636,7 +636,6 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 // Called by:
 // . CpuInitialize()
 // . SY6522.Reset()
-// . FrameCreateWindow() -> WM_CREATE
 void CpuCreateCriticalSection(void)
 {
 	if (!g_bCritSectionValid)
