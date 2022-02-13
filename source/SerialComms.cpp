@@ -1112,14 +1112,12 @@ void CSuperSerialCard::CheckCommEvent(DWORD dwEvtMask)
 DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 {
 	CSuperSerialCard* pSSC = (CSuperSerialCard*) lpParameter;
-	char szDbg[100];
 
 	BOOL bRes = SetCommMask(pSSC->m_hCommHandle, EV_RLSD | EV_DSR | EV_CTS | EV_TXEMPTY | EV_RXCHAR);
 	if (!bRes)
 	{
-		sprintf(szDbg, "SSC: CommThread(): SetCommMask() failed\n");
-		LogOutput("%s", szDbg);
-		LogFileOutput("%s", szDbg);
+		LogOutput("SSC: CommThread(): SetCommMask() failed\n");
+		LogFileOutput("SSC: CommThread(): SetCommMask() failed\n");
 		return -1;
 	}
 
@@ -1145,11 +1143,15 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 				COMSTAT Stat;
 				ClearCommError(pSSC->m_hCommHandle, &dwErrors, &Stat);
 				if (dwErrors & CE_RXOVER)
-					sprintf(szDbg, "SSC: CommThread(): LastError=0x%08X, CommError=CE_RXOVER (0x%08X): InQueue=0x%08X\n", dwRet, dwErrors, Stat.cbInQue);
+				{
+					LogOutput("SSC: CommThread(): LastError=0x%08X, CommError=CE_RXOVER (0x%08X): InQueue=0x%08X\n", dwRet, dwErrors, Stat.cbInQue);
+					LogFileOutput("SSC: CommThread(): LastError=0x%08X, CommError=CE_RXOVER (0x%08X): InQueue=0x%08X\n", dwRet, dwErrors, Stat.cbInQue);
+				}
 				else
-					sprintf(szDbg, "SSC: CommThread(): LastError=0x%08X, CommError=Other (0x%08X): InQueue=0x%08X, OutQueue=0x%08X\n", dwRet, dwErrors, Stat.cbInQue, Stat.cbOutQue);
-				LogOutput("%s", szDbg);
-				LogFileOutput("%s", szDbg);
+				{
+					LogOutput("SSC: CommThread(): LastError=0x%08X, CommError=Other (0x%08X): InQueue=0x%08X, OutQueue=0x%08X\n", dwRet, dwErrors, Stat.cbInQue, Stat.cbOutQue);
+					LogFileOutput("SSC: CommThread(): LastError=0x%08X, CommError=Other (0x%08X): InQueue=0x%08X, OutQueue=0x%08X\n", dwRet, dwErrors, Stat.cbInQue, Stat.cbOutQue);
+				}
 				return -1;
 			}
 
@@ -1175,7 +1177,7 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 			}
 
 			dwWaitResult -= WAIT_OBJECT_0;			// Determine event # that signaled
-			//sprintf(szDbg, "CommThread: GotEvent1: %d\n", dwWaitResult); OutputDebugString(szDbg);
+			//LogOutput("CommThread: GotEvent1: %d\n", dwWaitResult);
 
 			if (dwWaitResult == (nNumEvents-1))
 				break;	// Termination event

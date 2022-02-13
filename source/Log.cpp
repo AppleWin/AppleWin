@@ -29,6 +29,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Log.h"
+
+#include <time.h>
+
 FILE* g_fh = NULL;
 
 #ifdef _MSC_VER
@@ -41,6 +44,20 @@ FILE* g_fh = NULL;
 
 
 //---------------------------------------------------------------------------
+
+inline std::string GetTimeStamp()
+{
+	time_t ltime;
+	time(&ltime);
+#ifdef _MSC_VER
+	char ct[32];
+	ctime_s(ct, sizeof(ct), &ltime);
+#else
+	char ctbuf[32];
+	const char* ct = ctime_r(&ltime, ctbuf);
+#endif
+	return std::string(ct, 24);
+}
 
 void LogInit(void)
 {
@@ -55,10 +72,8 @@ void LogInit(void)
 	}
 
 	setvbuf(g_fh, NULL, _IONBF, 0);			// No buffering (so implicit fflush after every fprintf)
-	CHAR aDateStr[80], aTimeStr[80];
-	GetDateFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aDateStr, sizeof(aDateStr));
-	GetTimeFormat(LOCALE_SYSTEM_DEFAULT, 0, NULL, NULL, (LPTSTR)aTimeStr, sizeof(aTimeStr));
-	fprintf(g_fh, "*** Logging started: %s %s\n", aDateStr, aTimeStr);
+
+	fprintf(g_fh, "*** Logging started: %s\n", GetTimeStamp().c_str());
 }
 
 void LogDone(void)
@@ -73,31 +88,27 @@ void LogDone(void)
 
 //---------------------------------------------------------------------------
 
-void LogOutput(LPCTSTR format, ...)
+void LogOutput(const char* format, ...)
 {
-	TCHAR output[256];
-
 	va_list args;
 	va_start(args, format);
 
-	_vsntprintf(output, sizeof(output) - 1, format, args);
-	output[sizeof(output) - 1] = 0;
-	OutputDebugString(output);
+	OutputDebugStringA(StrFormat(format, args).c_str());
+
+	va_end(args);
 }
 
 //---------------------------------------------------------------------------
 
-void LogFileOutput(LPCTSTR format, ...)
+void LogFileOutput(const char* format, ...)
 {
 	if (!g_fh)
 		return;
 
-	TCHAR output[256];
-
 	va_list args;
 	va_start(args, format);
 
-	_vsntprintf(output, sizeof(output) - 1, format, args);
-	output[sizeof(output) - 1] = 0;
-	fprintf(g_fh, "%s", output);
+	vfprintf(g_fh, format, args);
+
+	va_end(args);
 }

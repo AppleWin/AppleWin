@@ -325,7 +325,6 @@ void CMouseInterface::OnCommand()
 {
 #ifdef _DEBUG_SPURIOUS_IRQ
 	static UINT uSpuriousIrqCount = 0;
-	char szDbg[200];
 	BYTE byOldState = m_byState;
 #endif
 
@@ -353,7 +352,7 @@ void CMouseInterface::OnCommand()
 		m_byBuff[5] = m_byState;					// button 0/1 interrupt status
 		m_byState &= ~STAT_MOVEMENT_SINCE_READMOUSE;
 #ifdef _DEBUG_SPURIOUS_IRQ
-		sprintf(szDbg, "[MOUSE_READ] Old=%02X New=%02X\n", byOldState, m_byState); OutputDebugString(szDbg);
+		LogOutput("[MOUSE_READ] Old=%02X New=%02X\n", byOldState, m_byState);
 #endif
 		break;
 	case MOUSE_SERV:
@@ -363,11 +362,11 @@ void CMouseInterface::OnCommand()
 		if ((m_byMode & MODE_INT_ALL) && (m_byBuff[1] & MODE_INT_ALL) == 0)
 		{
 			uSpuriousIrqCount++;
-			sprintf(szDbg, "[MOUSE_SERV] 0x%04X Buff[1]=0x%02X, ***\n", uSpuriousIrqCount, m_byBuff[1]); OutputDebugString(szDbg);
+			LogOutput("[MOUSE_SERV] 0x%04X Buff[1]=0x%02X, ***\n", uSpuriousIrqCount, m_byBuff[1]);
 		}
 		else
 		{
-			sprintf(szDbg, "[MOUSE_SERV] ------ Buff[1]=0x%02X\n", m_byBuff[1]); OutputDebugString(szDbg);
+			LogOutput("[MOUSE_SERV] ------ Buff[1]=0x%02X\n", m_byBuff[1]);
 		}
 #endif
 		CpuIrqDeassert(IS_MOUSE);
@@ -472,7 +471,7 @@ void CMouseInterface::OnMouseEvent(bool bEventVBL)
 		m_byState |= byState;
 		CpuIrqAssert(IS_MOUSE);
 #ifdef _DEBUG_SPURIOUS_IRQ
-		char szDbg[200]; sprintf(szDbg, "[MOUSE EVNT] 0x%02X Mode=0x%02X\n", m_byState, m_byMode); OutputDebugString(szDbg);
+		LogOutput("[MOUSE EVNT] 0x%02X Mode=0x%02X\n", m_byState, m_byMode);
 #endif
 	}
 }

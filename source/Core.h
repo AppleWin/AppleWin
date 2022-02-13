@@ -2,6 +2,8 @@
 
 #include "Card.h"
 #include "Common.h"
+#include "StrFormat.h"
+#include "Log.h"
 
 void LogFileTimeUntilFirstKeyReadReset(void);
 void LogFileTimeUntilFirstKeyRead(void);
