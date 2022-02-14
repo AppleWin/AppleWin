@@ -1611,7 +1611,7 @@ Update_t CmdVersion (int nArgs)
 
 	ConsolePrintFormat( sText, "  Emulator:  %s%s%s    Debugger: %s%d.%d.%d.%d%s"
 		, CHC_SYMBOL
-		, VERSIONSTRING
+		, g_VERSIONSTRING.c_str()
 		, CHC_DEFAULT
 		, CHC_SYMBOL
 		, nMajor, nMinor, nFixMajor, nFixMinor

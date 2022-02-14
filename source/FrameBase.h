@@ -56,7 +56,7 @@ public:
 	void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 	void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
 
-	virtual std::string Video_GetScreenShotFolder() = 0;
+	virtual std::string Video_GetScreenShotFolder() const = 0;
 	void Video_TakeScreenShot(const Video::VideoScreenShot_e ScreenShotType);
 	void Video_SaveScreenShot(const Video::VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName);
 	void SetDisplayPrintScreenFileName(bool state) { g_bDisplayPrintScreenFileName = state; }
@@ -66,7 +66,7 @@ public:
 	void SetShowPrintScreenWarningDialog(bool state) { g_bShowPrintScreenWarningDialog = state; }
 
 private:
-	void Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars);
+	std::string Util_MakeScreenShotFileName() const;
 	bool Util_TestScreenShotFileName(const TCHAR* pFileName);
 
 	bool g_bShowPrintScreenWarningDialog;

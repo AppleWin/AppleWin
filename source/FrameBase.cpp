@@ -73,7 +73,7 @@ void FrameBase::Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename)
 
 void FrameBase::Video_TakeScreenShot(const Video::VideoScreenShot_e ScreenShotType)
 {
-	TCHAR sScreenShotFileName[MAX_PATH];
+	std::string strScreenShotFileName;
 
 	// find last screenshot filename so we don't overwrite the existing user ones
 	bool bExists = true;
@@ -81,15 +81,16 @@ void FrameBase::Video_TakeScreenShot(const Video::VideoScreenShot_e ScreenShotTy
 	{
 		if (g_nLastScreenShot > nMaxScreenShot) // Holy Crap! User has maxed the number of screenshots!?
 		{
-			TCHAR msg[512];
-			StringCbPrintf(msg, 512, "You have more then %d screenshot filenames!  They will no longer be saved.\n\nEither move some of your screenshots or increase the maximum in video.cpp\n", nMaxScreenShot);
-			FrameMessageBox(msg, "Warning", MB_OK);
+			std::string msg = StrFormat("You have more then %d screenshot filenames!  They will no longer be saved.\n\n"
+										"Either move some of your screenshots or increase the maximum in video.cpp\n",
+										nMaxScreenShot);
+			FrameMessageBox(msg.c_str(), "Warning", MB_OK);
 			g_nLastScreenShot = 0;
 			return;
 		}
 
-		Util_MakeScreenShotFileName(sScreenShotFileName, MAX_PATH);
-		bExists = Util_TestScreenShotFileName(sScreenShotFileName);
+		strScreenShotFileName = Util_MakeScreenShotFileName();
+		bExists = Util_TestScreenShotFileName(strScreenShotFileName.c_str());
 		if (!bExists)
 		{
 			break;
@@ -97,7 +98,7 @@ void FrameBase::Video_TakeScreenShot(const Video::VideoScreenShot_e ScreenShotTy
 		g_nLastScreenShot++;
 	}
 
-	Video_SaveScreenShot(ScreenShotType, sScreenShotFileName);
+	Video_SaveScreenShot(ScreenShotType, strScreenShotFileName.c_str());
 	g_nLastScreenShot++;
 }
 
@@ -118,12 +119,12 @@ void FrameBase::Video_SaveScreenShot(const Video::VideoScreenShot_e ScreenShotTy
 	}
 }
 
-void FrameBase::Util_MakeScreenShotFileName(TCHAR* pFinalFileName_, DWORD chars)
+std::string FrameBase::Util_MakeScreenShotFileName() const
 {
 	const std::string sPrefixScreenShotFileName = "AppleWin_ScreenShot";
 	const std::string pPrefixFileName = !g_pLastDiskImageName.empty() ? g_pLastDiskImageName : sPrefixScreenShotFileName;
 	const std::string folder = Video_GetScreenShotFolder();
-	StringCbPrintf(pFinalFileName_, chars, TEXT("%s%s_%09d.bmp"), folder.c_str(), pPrefixFileName.c_str(), g_nLastScreenShot);
+	return StrFormat("%s%s_%09d.bmp", folder.c_str(), pPrefixFileName.c_str(), g_nLastScreenShot);
 }
 
 // Returns TRUE if file exists, else FALSE

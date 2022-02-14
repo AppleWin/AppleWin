@@ -115,15 +115,13 @@ void LoadConfiguration(bool loadImages)
 
 		if (dwLoadedComputerType != dwComputerType)
 		{
-			char sText[100];
-			StringCbPrintf(sText, sizeof(sText), "Unsupported Apple2Type(%d). Changing to %d", dwLoadedComputerType, dwComputerType);
+			std::string strText = StrFormat("Unsupported Apple2Type(%d). Changing to %d", dwLoadedComputerType, dwComputerType);
 
-			LogFileOutput("%s\n", sText);
+			LogFileOutput("%s\n", strText.c_str());
 
-			GetFrame().FrameMessageBox(
-				sText,
-				"Load Configuration",
-				MB_ICONSTOP | MB_SETFOREGROUND);
+			GetFrame().FrameMessageBox(strText.c_str(),
+									   "Load Configuration",
+									   MB_ICONSTOP | MB_SETFOREGROUND);
 
 			GetPropertySheet().ConfigSaveApple2Type((eApple2Type)dwComputerType);
 		}

@@ -611,7 +611,7 @@ static void GetAppleWinVersion(void)
 		delete [] pVerInfoBlock;
     }
 
-	LogFileOutput("AppleWin version: %s\n",  VERSIONSTRING);
+	LogFileOutput("AppleWin version: %s\n",  g_VERSIONSTRING.c_str());
 }
 
 // DO ONE-TIME INITIALIZATION
@@ -830,9 +830,9 @@ static void RepeatInitialization(void)
 		if (bShowAboutDlg)
 		{
 			if (!AboutDlg())
-				g_cmdLine.bShutdown = true;															// Close everything down
+				g_cmdLine.bShutdown = true;											// Close everything down
 			else
-				RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, VERSIONSTRING);	// Only save version after user accepts license
+				RegSaveString(REG_CONFIG, REGVALUE_VERSION, TRUE, g_VERSIONSTRING);	// Only save version after user accepts license
 		}
 
 		if (g_bCapturePrintScreenKey)

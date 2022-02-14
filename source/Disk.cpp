@@ -728,9 +728,10 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, const std::string& 
 
 	if (Error == eIMAGE_ERROR_NONE && ImageIsMultiFileZip(pFloppy->m_imagehandle))
 	{
-		TCHAR szText[100+MAX_PATH];
-		StringCbPrintf(szText, sizeof(szText), "Only the first file in a multi-file zip is supported\nUse disk image '%s' ?", pFloppy->m_strFilenameInZip.c_str());
-		int nRes = GetFrame().FrameMessageBox(szText, TEXT("Multi-Zip Warning"), MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
+		std::string strText = StrFormat("Only the first file in a multi-file zip is supported\n"
+										"Use disk image '%s' ?",
+										pFloppy->m_strFilenameInZip.c_str());
+		int nRes = GetFrame().FrameMessageBox(strText.c_str(), "Multi-Zip Warning", MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 		{
 			EjectDisk(drive);
@@ -769,89 +770,62 @@ bool Disk2InterfaceCard::IsConditionForFullSpeed(void)
 
 void Disk2InterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error)
 {
-	TCHAR szBuffer[MAX_PATH + 128];
+	std::string strText;
 
 	switch (Error)
 	{
 	case eIMAGE_ERROR_UNABLE_TO_OPEN:
 	case eIMAGE_ERROR_UNABLE_TO_OPEN_GZ:
 	case eIMAGE_ERROR_UNABLE_TO_OPEN_ZIP:
-		StringCbPrintf(
-			szBuffer,
-			MAX_PATH + 128,
-			TEXT("Unable to open the file %s."),
-			pszImageFilename);
+		strText = StrFormat("Unable to open the file %s.",
+							pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_BAD_SIZE:
-		StringCbPrintf(
-			szBuffer,
-			MAX_PATH + 128,
-			TEXT("Unable to use the file %s\nbecause the ")
-			TEXT("disk image is an unsupported size."),
-			pszImageFilename);
+		strText = StrFormat("Unable to use the file %s\n"
+							"because the disk image is an unsupported size.",
+							pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_BAD_FILE:
-		StringCbPrintf(
-			szBuffer,
-			MAX_PATH + 128,
-			TEXT("Unable to use the file %s\nbecause the ")
-			TEXT("OS can't access it."),
-			pszImageFilename);
+		strText = StrFormat("Unable to use the file %s\n"
+							"because the OS can't access it.",
+							pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_UNSUPPORTED:
-		StringCbPrintf(
-			szBuffer,
-			MAX_PATH + 128,
-			TEXT("Unable to use the file %s\nbecause the ")
-			TEXT("disk image format is not recognized."),
-			pszImageFilename);
+		strText = StrFormat("Unable to use the file %s\n"
+							"because the disk image format is not recognized.",
+							pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_UNSUPPORTED_HDV:
-		StringCbPrintf(
-			szBuffer,
-			MAX_PATH + 128,
-			TEXT("Unable to use the file %s\n")
-			TEXT("because this UniDisk 3.5/Apple IIGS/hard-disk image is not supported.\n")
-			TEXT("Try inserting as a hard-disk image instead."),
-			pszImageFilename);
+		strText = StrFormat("Unable to use the file %s\n"
+							"because this UniDisk 3.5/Apple IIGS/hard-disk image is not supported.\n"
+							"Try inserting as a hard-disk image instead.",
+							pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_GZ:
 	case eIMAGE_ERROR_ZIP:
-		StringCbPrintf(
-			szBuffer,
-			MAX_PATH + 128,
-			TEXT("Unable to use the compressed file %s\nbecause the ")
-			TEXT("compressed disk image is corrupt/unsupported."),
-			pszImageFilename);
+		strText = StrFormat("Unable to use the compressed file %s\n"
+							"because the compressed disk image is corrupt/unsupported.",
+							pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_FAILED_TO_GET_PATHNAME:
-		StringCbPrintf(
-			szBuffer,
-			MAX_PATH + 128,
-			TEXT("Unable to GetFullPathName() for the file: %s."),
-			pszImageFilename);
+		strText = StrFormat("Unable to GetFullPathName() for the file: %s.",
+							pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_ZEROLENGTH_WRITEPROTECTED:
-		StringCbPrintf(
-			szBuffer,
-			MAX_PATH + 128,
-			TEXT("Unsupported zero-length write-protected file: %s."),
-			pszImageFilename);
+		strText = StrFormat("Unsupported zero-length write-protected file: %s.",
+							pszImageFilename);
 		break;
 
 	case eIMAGE_ERROR_FAILED_TO_INIT_ZEROLENGTH:
-		StringCbPrintf(
-			szBuffer,
-			MAX_PATH + 128,
-			TEXT("Failed to resize the zero-length file: %s."),
-			pszImageFilename);
+		strText = StrFormat("Failed to resize the zero-length file: %s.",
+							pszImageFilename);
 		break;
 
 	default:
@@ -859,10 +833,9 @@ void Disk2InterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFil
 		return;
 	}
 
-	GetFrame().FrameMessageBox(
-		szBuffer,
-		g_pAppTitle.c_str(),
-		MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+	GetFrame().FrameMessageBox(strText.c_str(),
+							   g_pAppTitle.c_str(),
+							   MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 }
 
 //===========================================================================
@@ -1578,12 +1551,11 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 
 	TCHAR directory[MAX_PATH];
 	TCHAR filename[MAX_PATH];
-	TCHAR title[40];
 
 	StringCbCopy(filename, MAX_PATH, pszFilename);
 
 	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, directory, MAX_PATH, TEXT(""));
-	StringCbPrintf(title, 40, TEXT("Select Disk Image For Drive %d"), drive + 1);
+	std::string title = StrFormat("Select Disk Image For Drive %d", drive + 1);
 
 	OPENFILENAME ofn;
 	memset(&ofn, 0, sizeof(OPENFILENAME));
@@ -1597,7 +1569,7 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 	ofn.nMaxFile        = MAX_PATH;
 	ofn.lpstrInitialDir = directory;
 	ofn.Flags           = OFN_PATHMUSTEXIST;
-	ofn.lpstrTitle      = title;
+	ofn.lpstrTitle      = title.c_str();
 
 	bool bRes = false;
 
