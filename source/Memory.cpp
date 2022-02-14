@@ -1095,7 +1095,7 @@ void SetMemMode(DWORD uNewMemMode)
 		psz += sprintf(psz, "CX=%d "   , SW_INTCXROM  ? 1 : 0);
 		psz += sprintf(psz, "WRAM=%d " , SW_WRITERAM  ? 1 : 0);
 		psz += sprintf(psz, "\n");
-		OutputDebugStringA(szStr);
+		OutputDebugString(szStr);
 	}
 #endif
 	memmode = uNewMemMode;

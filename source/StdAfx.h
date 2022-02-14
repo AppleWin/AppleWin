@@ -1,3 +1,5 @@
+#ifdef _MSC_VER
+
 #include <tchar.h>
 
 #include <crtdbg.h>
@@ -45,8 +47,7 @@ typedef UINT64 uint64_t;
 
 #define USE_SPEECH_API
 
-#if (defined(_MSC_VER) && (_MSC_VER < 1900)) || \
-    (!defined(_MSC_VER) && (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901L))
+#if _MSC_VER < 1900
 #ifdef _WIN64
 #define SIZE_T_FMT "llu"
 #define PTRDIFF_T_FMT "lld"
@@ -57,4 +58,25 @@ typedef UINT64 uint64_t;
 #else
 #define SIZE_T_FMT "zu"
 #define PTRDIFF_T_FMT "td"
+#endif
+
+#else
+
+#include <cmath>
+#include <map>
+#include <stack>
+#include <stdexcept>
+#include <cstdarg>
+#include <cstring>
+#include <algorithm>
+#include <string>
+#include <vector>
+
+#include "windows.h"
+
+//#define USE_SPEECH_API
+
+#define SIZE_T_FMT "zu"
+#define PTRDIFF_T_FMT "td"
+
 #endif

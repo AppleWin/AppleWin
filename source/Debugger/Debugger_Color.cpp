@@ -210,7 +210,7 @@ static void _SetupColorRamp(const int iPrimary, int & iColor_)
 #if DEBUG_COLOR_RAMP
 	int len = snprintf_s(sText, _TRUNCATE, " // %d%d%d\n", bB, bG, bR);
 	strRamp.append(sText, len);
-	OutputDebugStringA(strRamp.c_str());
+	OutputDebugString(strRamp.c_str());
 #endif
 }
 #endif // _DEBUG

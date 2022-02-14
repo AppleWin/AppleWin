@@ -93,7 +93,7 @@ void LogOutput(const char* format, ...)
 	va_list args;
 	va_start(args, format);
 
-	OutputDebugStringA(StrFormat(format, args).c_str());
+	OutputDebugString(StrFormat(format, args).c_str());
 
 	va_end(args);
 }

@@ -1646,9 +1646,9 @@ LRESULT Win32Frame::WndProc(
     case WM_SYSCOLORCHANGE:
 #if DEBUG_DD_PALETTE
 		if( g_bIsFullScreen )
-			OutputDebugStringA( "WM_SYSCOLORCHANGE: Full Screen\n" );
+			OutputDebugString( "WM_SYSCOLORCHANGE: Full Screen\n" );
 		else
-			OutputDebugStringA( "WM_SYSCOLORCHANGE: Windowed\n" );
+			OutputDebugString( "WM_SYSCOLORCHANGE: Windowed\n" );
 #endif
 
 		DeleteGdiObjects();
