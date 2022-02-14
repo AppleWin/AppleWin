@@ -48,6 +48,7 @@ set(SOURCE_FILES
   Debugger/Debugger_Commands.cpp
   Debugger/Util_MemoryTextFile.cpp
 
+  StrFormat.cpp
   6522.cpp
   VidHD.cpp
   SSI263.cpp

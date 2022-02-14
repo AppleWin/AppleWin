@@ -37,6 +37,7 @@ typedef UINT64 uint64_t;
 #include <vector>
 #include <memory>
 #include <stdexcept>
+#include <cstdarg>
 
 // SM_CXPADDEDBORDER is not supported on 2000 & XP:
 // http://msdn.microsoft.com/en-nz/library/windows/desktop/ms724385(v=vs.85).aspx
@@ -45,6 +46,19 @@ typedef UINT64 uint64_t;
 #endif
 
 #define USE_SPEECH_API
+
+#if _MSC_VER < 1900
+#ifdef _WIN64
+#define SIZE_T_FMT "llu"
+#define PTRDIFF_T_FMT "lld"
+#else
+#define SIZE_T_FMT "lu"
+#define PTRDIFF_T_FMT "ld"
+#endif
+#else
+#define SIZE_T_FMT "zu"
+#define PTRDIFF_T_FMT "td"
+#endif
 
 #else
 
@@ -61,5 +75,8 @@ typedef UINT64 uint64_t;
 #include "windows.h"
 
 //#define USE_SPEECH_API
+
+#define SIZE_T_FMT "zu"
+#define PTRDIFF_T_FMT "td"
 
 #endif
