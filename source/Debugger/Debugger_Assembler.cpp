@@ -911,10 +911,10 @@ void AssemblerHashOpcodes ()
 		nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 		g_aOpcodesHash[ iOpcode ] = nMnemonicHash;
 #if DEBUG_ASSEMBLER
-	   //OutputDebugString( "" );
-      char sText[ 128 ];
-      ConsolePrintFormat( sText, "%s : %08X  ", pMnemonic, nMnemonicHash );
-	   // CLC: 002B864
+		//OutputDebugString( "" );
+		char sText[ 128 ];
+		ConsolePrintFormat( sText, "%s : %08X  ", pMnemonic, nMnemonicHash );
+		// CLC: 002B864
 #endif
 	}
 	ConsoleUpdate();

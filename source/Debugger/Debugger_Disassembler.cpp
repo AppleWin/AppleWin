@@ -733,9 +733,7 @@ void DisasmCalcTopFromCurAddress(bool bUpdateTop)
 			// .20 Fixed: DisasmCalcTopFromCurAddress()
 			//if ((eMode >= AM_1) && (eMode <= AM_3))
 #if 0 // _DEBUG
-			TCHAR sText[CONSOLE_WIDTH];
-			wsprintf(sText, "%04X : %d bytes\n", iAddress, nOpbytes);
-			OutputDebugString(sText);
+			LogOutput("%04X : %d bytes\n", iAddress, nOpbytes);
 #endif
 			iAddress += nOpbytes;
 		}
