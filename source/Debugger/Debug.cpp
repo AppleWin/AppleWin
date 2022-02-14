@@ -4753,7 +4753,7 @@ Update_t CmdNTSC (int nArgs)
 #if _DEBUG
 						LogOutput( "Filename.length.1: %d\n", len1 );
 						LogOutput( "Filename.length.2: %d\n", len2 );
-						OutputDebugStringA( sPaletteFilePath.c_str() );
+						OutputDebugString( sPaletteFilePath.c_str() );
 #endif
 						// File path is too long
 						// TODO: Need to split very long path names

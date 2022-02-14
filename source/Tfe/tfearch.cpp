@@ -202,7 +202,7 @@ void debug_output( const char *text, BYTE *what, int count )
             p += 3;
         }
         *(p-1) = '\n'; *p = 0;
-        OutputDebugStringA(buffer);
+        OutputDebugString(buffer);
     } while (len1>0);
 }
 #endif // #ifdef TFE_DEBUG_PKTDUMP
