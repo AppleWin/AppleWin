@@ -139,6 +139,7 @@ public:
 	void FlushCurrentTrack(const int drive);
 
 	const std::string & GetFullDiskFilename(const int drive);
+	const std::string & DiskGetFullPathName(const int drive);
 	const std::string & GetFullName(const int drive);
 	const std::string & GetBaseName(const int drive);
 	void GetFilenameAndPathForSaveState(std::string& filename, std::string& path);
@@ -192,7 +193,6 @@ private:
 	void AllocTrack(const int drive, const UINT minSize=NIBBLES_PER_TRACK);
 	void ReadTrack(const int drive, ULONG uExecutedCycles);
 	void WriteTrack(const int drive);
-	const std::string & DiskGetFullPathName(const int drive);
 	void ResetLogicStateSequencer(void);
 	UINT GetBitCellDelta(const ULONG uExecutedCycles);
 	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
