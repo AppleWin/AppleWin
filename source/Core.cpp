@@ -44,10 +44,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 
-static const UINT VERSIONSTRING_SIZE = 16;
-static UINT16 g_OldAppleWinVersion[4] = {0};
+static UINT16 g_OldAppleWinVersion[4] = { 0 };
+
 UINT16 g_AppleWinVersion[4] = { 0 };
-TCHAR VERSIONSTRING[VERSIONSTRING_SIZE] = "xx.yy.zz.ww";
+std::string g_VERSIONSTRING = "xx.yy.zz.ww";
 
 std::string g_pAppTitle;
 
@@ -257,14 +257,15 @@ void SetAppleWinVersion(UINT16 major, UINT16 minor, UINT16 fix, UINT16 fix_minor
 	g_AppleWinVersion[1] = minor;
 	g_AppleWinVersion[2] = fix;
 	g_AppleWinVersion[3] = fix_minor;
-	StringCbPrintf(VERSIONSTRING, VERSIONSTRING_SIZE, "%d.%d.%d.%d", major, minor, fix, fix_minor);
+	g_VERSIONSTRING = StrFormat("%d.%d.%d.%d", major, minor, fix, fix_minor);
 }
 
 bool CheckOldAppleWinVersion(void)
 {
-	TCHAR szOldAppleWinVersion[VERSIONSTRING_SIZE + 1];
-	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_VERSION), 1, szOldAppleWinVersion, VERSIONSTRING_SIZE, TEXT(""));
-	const bool bShowAboutDlg = strcmp(szOldAppleWinVersion, VERSIONSTRING) != 0;
+	const int VERSIONSTRING_SIZE = 16;
+	char szOldAppleWinVersion[VERSIONSTRING_SIZE + 1];
+	RegLoadString(REG_CONFIG, REGVALUE_VERSION, TRUE, szOldAppleWinVersion, VERSIONSTRING_SIZE, "");
+	const bool bShowAboutDlg = (g_VERSIONSTRING != szOldAppleWinVersion);
 
 	// version: xx.yy.zz.ww
 	char* p0 = szOldAppleWinVersion;

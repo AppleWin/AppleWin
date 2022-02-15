@@ -2227,8 +2227,7 @@ BYTE* CWOZHelper::CreateEmptyDisk(DWORD& size)
 	pWOZ->info.v1.version = 2;
 	pWOZ->info.v1.diskType = InfoChunk::diskType5_25;
 	pWOZ->info.v1.cleaned = 1;
-	std::string creator("AppleWin v");
-	creator += std::string(VERSIONSTRING);
+	std::string creator = "AppleWin v" + g_VERSIONSTRING;
 	memset(&pWOZ->info.v1.creator[0], ' ', sizeof(pWOZ->info.v1.creator));
 	memcpy(&pWOZ->info.v1.creator[0], creator.c_str(), creator.size());	// don't include null
 	pWOZ->info.diskSides = 1;
@@ -2280,8 +2279,7 @@ BYTE* CWOZHelper::CreateEmptyDiskv1(DWORD& size)
 	pWOZ->info.version = 1;
 	pWOZ->info.diskType = InfoChunk::diskType5_25;
 	pWOZ->info.cleaned = 1;
-	std::string creator("AppleWin v");
-	creator += std::string(VERSIONSTRING);
+	std::string creator = "AppleWin v" + g_VERSIONSTRING;
 	memset(&pWOZ->info.creator[0], ' ', sizeof(pWOZ->info.creator));
 	memcpy(&pWOZ->info.creator[0], creator.c_str(), creator.size());	// don't include null
 

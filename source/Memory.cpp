@@ -1585,15 +1585,13 @@ void MemInitializeROM(void)
 			}
 		}
 
-		TCHAR sText[MAX_PATH];
-		StringCbPrintf(sText, sizeof(sText), TEXT("Unable to open the required firmware ROM data file.\n\nFile: %s"), sRomFileName);
+		std::string strText = StrFormat("Unable to open the required firmware ROM data file.\n\nFile: %s", sRomFileName);
 
-		LogFileOutput("%s\n", sText);
+		LogFileOutput("%s\n", strText.c_str());
 
-		GetFrame().FrameMessageBox(
-			sText,
-			g_pAppTitle.c_str(),
-			MB_ICONSTOP | MB_SETFOREGROUND);
+		GetFrame().FrameMessageBox(strText.c_str(),
+								   g_pAppTitle.c_str(),
+								   MB_ICONSTOP | MB_SETFOREGROUND);
 
 		ExitProcess(1);
 	}
