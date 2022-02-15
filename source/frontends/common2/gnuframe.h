@@ -11,7 +11,7 @@ namespace common2
   public:
     GNUFrame();
 
-    std::string Video_GetScreenShotFolder() override;
+    std::string Video_GetScreenShotFolder() const override;
     std::string getResourcePath(const std::string & filename) override;
 
   private:

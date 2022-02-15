@@ -91,7 +91,7 @@ namespace common2
     return myResourceFolder + filename;
   }
 
-  std::string GNUFrame::Video_GetScreenShotFolder()
+  std::string GNUFrame::Video_GetScreenShotFolder() const
   {
     return myHomeDir + "/Pictures/";
   }

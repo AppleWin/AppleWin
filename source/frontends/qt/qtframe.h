@@ -22,7 +22,7 @@ public:
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
     void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
     BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) override;
-    std::string Video_GetScreenShotFolder() override;
+    std::string Video_GetScreenShotFolder() const override;
 
     void SetForceRepaint(const bool force);
     void SetZoom(const int x);

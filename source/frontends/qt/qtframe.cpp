@@ -144,7 +144,7 @@ BYTE* QtFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)
     return reinterpret_cast<BYTE *>(myResource.data());
 }
 
-std::string QtFrame::Video_GetScreenShotFolder()
+std::string QtFrame::Video_GetScreenShotFolder() const
 {
     const QString pictures = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
     return pictures.toStdString() + "/";
