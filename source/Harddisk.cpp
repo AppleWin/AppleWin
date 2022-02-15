@@ -209,18 +209,12 @@ void HarddiskInterfaceCard::NotifyInvalidImage(TCHAR* pszImageFilename)
 {
 	// TC: TO DO - see Disk2InterfaceCard::NotifyInvalidImage()
 
-	char szBuffer[MAX_PATH + 128];
+	std::string strText = StrFormat("Unable to open the file %s.",
+									pszImageFilename);
 
-	StringCbPrintf(
-		szBuffer,
-		MAX_PATH + 128,
-		TEXT("Unable to open the file %s."),
-		pszImageFilename);
-
-	GetFrame().FrameMessageBox(
-		szBuffer,
-		g_pAppTitle.c_str(),
-		MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+	GetFrame().FrameMessageBox(strText.c_str(),
+							   g_pAppTitle.c_str(),
+							   MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 }
 
 //===========================================================================
@@ -401,12 +395,11 @@ bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
 {
 	TCHAR directory[MAX_PATH];
 	TCHAR filename[MAX_PATH];
-	TCHAR title[40];
 
 	StringCbCopy(filename, MAX_PATH, pszFilename);
 
 	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, directory, MAX_PATH, TEXT(""));
-	StringCbPrintf(title, 40, TEXT("Select HDV Image For HDD %d"), drive + 1);
+	std::string title = StrFormat("Select HDV Image For HDD %d", drive + 1);
 
 	OPENFILENAME ofn;
 	memset(&ofn, 0, sizeof(OPENFILENAME));
@@ -419,7 +412,7 @@ bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
 	ofn.nMaxFile        = MAX_PATH;
 	ofn.lpstrInitialDir = directory;
 	ofn.Flags           = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;	// Don't allow creation & hide the read-only checkbox
-	ofn.lpstrTitle      = title;
+	ofn.lpstrTitle      = title.c_str();
 
 	bool bRes = false;
 

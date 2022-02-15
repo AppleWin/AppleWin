@@ -476,7 +476,6 @@ void CPageDisk::HandleHDDSwap(HWND hWnd)
 
 UINT CPageDisk::RemovalConfirmation(UINT uCommand)
 {
-	TCHAR szText[100];
 	bool bMsgBox = true;
 
 	bool isDisk = false;
@@ -492,18 +491,19 @@ UINT CPageDisk::RemovalConfirmation(UINT uCommand)
 		drive = uCommand - IDC_COMBO_DISK1_SLOT5;
 	}
 
+	std::string strText;
 	if (isDisk)
-		StringCbPrintf(szText, sizeof(szText), "Do you really want to eject the disk in drive-%c ?", '1' + drive);
+		strText = StrFormat("Do you really want to eject the disk in drive-%c ?", '1' + drive);
 	else if (uCommand == IDC_COMBO_HDD1 || uCommand == IDC_COMBO_HDD2)
-		StringCbPrintf(szText, sizeof(szText), "Do you really want to unplug harddisk-%c ?", '1' + uCommand - IDC_COMBO_HDD1);
+		strText = StrFormat("Do you really want to unplug harddisk-%c ?", '1' + uCommand - IDC_COMBO_HDD1);
 	else if (uCommand == IDC_HDD_SWAP)
-		StringCbPrintf(szText, sizeof(szText), "Do you really want to swap the harddisk images?");
+		strText = "Do you really want to swap the harddisk images?";
 	else
 		bMsgBox = false;
 
 	if (bMsgBox)
 	{
-		int nRes = GetFrame().FrameMessageBox(szText, "Eject/Unplug Warning", MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
+		int nRes = GetFrame().FrameMessageBox(strText.c_str(), "Eject/Unplug Warning", MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 			uCommand = 0;
 	}

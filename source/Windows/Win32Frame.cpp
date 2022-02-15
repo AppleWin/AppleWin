@@ -413,16 +413,15 @@ void Win32Frame::DisplayLogo(void)
 	SetTextAlign(hFrameDC, TA_RIGHT | TA_TOP);
 	SetBkMode(hFrameDC, TRANSPARENT);
 
-	TCHAR szVersion[64];
-	StringCbPrintf(szVersion, 64, "Version %s", VERSIONSTRING);
+	std::string strVersion = "Version " + g_VERSIONSTRING;
 	int xoff = GetFullScreenOffsetX(), yoff = GetFullScreenOffsetY();
 
 #define  DRAWVERSION(x,y,c)                 \
 	SetTextColor(hFrameDC,c);               \
 	TextOut(hFrameDC,                       \
 		scale*540+x+xoff,scale*358+y+yoff,  \
-		szVersion,                          \
-		strlen(szVersion));
+		strVersion.c_str(),                 \
+		strVersion.length());
 
 	if (GetDeviceCaps(hFrameDC, PLANES) * GetDeviceCaps(hFrameDC, BITSPIXEL) <= 4) {
 		DRAWVERSION(2, 2, RGB(0x00, 0x00, 0x00));
@@ -436,7 +435,7 @@ void Win32Frame::DisplayLogo(void)
 	}
 
 #if _DEBUG
-	StringCbPrintf(szVersion, 64, "DEBUG");
+	strVersion = "DEBUG";
 	DRAWVERSION(2, -358 * scale, RGB(0x00, 0x00, 0x00));
 	DRAWVERSION(1, -357 * scale, RGB(0x00, 0x00, 0x00));
 	DRAWVERSION(0, -356 * scale, RGB(0xFF, 0x00, 0xFF));
@@ -621,8 +620,8 @@ BYTE* Win32Frame::GetResource(WORD id, LPCSTR lpType, DWORD dwExpectedSize)
 	return pResource;
 }
 
-std::string Win32Frame::Video_GetScreenShotFolder()
+std::string Win32Frame::Video_GetScreenShotFolder() const
 {
 	// save in current folder
-	return "";
+	return std::string();
 }

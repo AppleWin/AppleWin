@@ -9,7 +9,7 @@ void LogFileTimeUntilFirstKeyReadReset(void);
 void LogFileTimeUntilFirstKeyRead(void);
 
 extern const UINT16* GetOldAppleWinVersion(void);
-extern TCHAR VERSIONSTRING[];	// Constructed in WinMain()
+extern std::string g_VERSIONSTRING;	// Constructed in WinMain()
 
 void SetAppleWinVersion(UINT16 major, UINT16 minor, UINT16 fix, UINT16 fix_minor);
 bool CheckOldAppleWinVersion(void);
