@@ -876,8 +876,7 @@ Hash_t AssemblerHashMnemonic ( const TCHAR * pMnemonic )
 	static int nMaxLen = 0;
 	if (nMaxLen < nLen) {
 		nMaxLen = nLen;
-		char sText[CONSOLE_WIDTH * 3];
-		ConsolePrintFormat( sText, "New Max Len: %d  %s", nMaxLen, pMnemonic );
+		ConsolePrintFormat( "New Max Len: %d  %s", nMaxLen, pMnemonic );
 	}
 #endif
 
@@ -912,8 +911,7 @@ void AssemblerHashOpcodes ()
 		g_aOpcodesHash[ iOpcode ] = nMnemonicHash;
 #if DEBUG_ASSEMBLER
 		//OutputDebugString( "" );
-		char sText[ 128 ];
-		ConsolePrintFormat( sText, "%s : %08X  ", pMnemonic, nMnemonicHash );
+		ConsolePrintFormat( "%s : %08X  ", pMnemonic, nMnemonicHash );
 		// CLC: 002B864
 #endif
 	}
@@ -949,7 +947,6 @@ void _CmdAssembleHashDump ()
 // #if DEBUG_ASM_HASH
 	std::vector<HashOpcode_t> vHashes;
 	HashOpcode_t         tHash;
-	TCHAR                sText[ CONSOLE_WIDTH ];
 
 	int iOpcode;
 	for( iOpcode = 0; iOpcode < NUM_OPCODES; iOpcode++ )
@@ -972,7 +969,7 @@ void _CmdAssembleHashDump ()
 		int    nOpcode   = tHash.m_iOpcode;
 		int    nOpmode   = g_aOpcodes[ nOpcode ].nAddressMode;
 
-		ConsoleBufferPushFormat( sText, "%08X %02X %s %s"
+		ConsoleBufferPushFormat( "%08X %02X %s %s"
 			, iThisHash
 			, nOpcode
 			, g_aOpcodes65C02[ nOpcode ].sMnemonic
@@ -982,7 +979,7 @@ void _CmdAssembleHashDump ()
 		
 //		if (nPrevHash != iThisHash)
 //		{
-//			ConsoleBufferPushFormat( sText, "Total: %d", nThisHash );
+//			ConsoleBufferPushFormat( "Total: %d", nThisHash );
 //			nThisHash = 0;
 //		}
 	}
@@ -1000,7 +997,7 @@ int AssemblerPokeAddress( const int Opcode, const int nOpmode, const WORD nBaseA
 	int nOpbytes = g_aOpmodes[ nOpmode ].m_nBytes;
 
 	// if (nOpbytes != nBytes)
-	//	ConsoleDisplayError( TEXT(" ERROR: Input Opcode bytes differs from actual!" ) );
+	//	ConsoleDisplayError( " ERROR: Input Opcode bytes differs from actual!" );
 
 	*(memdirty + (nBaseAddress >> 8)) |= 1;
 //	*(mem + nBaseAddress) = (BYTE) nOpcode;
@@ -1477,8 +1474,7 @@ bool Assemble( int iArg, int nArgs, WORD nAddress )
 	Hash_t nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 
 #if DEBUG_ASSEMBLER
-	char sText[ CONSOLE_WIDTH * 2 ];
-	ConsolePrintFormat( sText, "%s%04X%s: %s%s%s -> %s%08X", 
+	ConsolePrintFormat( "%s%04X%s: %s%s%s -> %s%08X", 
 		CHC_ADDRESS, nAddress,
 		CHC_DEFAULT,
 		CHC_STRING, pMnemonic,

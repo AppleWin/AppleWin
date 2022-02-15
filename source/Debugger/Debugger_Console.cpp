@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Debug.h"
+#include "StrFormat.h"
 
 // Console ________________________________________________________________________________________
 
@@ -114,7 +115,7 @@ const conchar_t* ConsoleBufferPeek ()
 
 
 //===========================================================================
-bool ConsolePrint ( const char * pText )
+void ConsolePrint ( const char * pText )
 {
 	while (g_nConsoleBuffer >= CONSOLE_BUFFER_HEIGHT)
 	{
@@ -258,26 +259,12 @@ bool ConsolePrint ( const char * pText )
 	}
 	*pDst = 0;
 	g_nConsoleBuffer++;
-
-	return true;
-}
-
-bool ConsolePrintVa ( char* buf, size_t bufsz, const char * pFormat, va_list va )
-{
-	vsnprintf_s(buf, bufsz, _TRUNCATE, pFormat, va);
-	return ConsolePrint(buf);
-}
-
-bool ConsoleBufferPushVa ( char* buf, size_t bufsz, const char * pFormat, va_list va )
-{
-	vsnprintf_s(buf, bufsz, _TRUNCATE, pFormat, va);
-	return ConsoleBufferPush(buf);
 }
 
 // Add string to buffered output
 // Shifts the buffered console output lines "Up"
 //===========================================================================
-bool ConsoleBufferPush ( const char * pText )
+void ConsoleBufferPush ( const char * pText )
 {
 	while (g_nConsoleBuffer >= CONSOLE_BUFFER_HEIGHT)
 	{
@@ -318,8 +305,6 @@ bool ConsoleBufferPush ( const char * pText )
 	}
 	*pDst = 0;
 	g_nConsoleBuffer++;
-
-	return true;
 }
 
 // Shifts the buffered console output "down"
@@ -366,7 +351,7 @@ void ConsoleConvertFromText ( conchar_t * sText, const char * pText )
 }
 
 //===========================================================================
-Update_t ConsoleDisplayError ( const char * pText)
+Update_t ConsoleDisplayError ( const char * pText )
 {
 	ConsoleBufferPush( pText );
 	return ConsoleUpdate();
@@ -473,7 +458,7 @@ bool ConsoleInputClear ()
 }
 
 //===========================================================================
-bool ConsoleInputChar ( const char ch )
+bool ConsoleInputChar ( char ch )
 {
 	if (g_nConsoleInputChars < g_nConsoleDisplayWidth) // bug? include prompt?
 	{

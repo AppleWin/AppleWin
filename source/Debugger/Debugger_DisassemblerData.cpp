@@ -348,10 +348,9 @@ Update_t CmdDisasmDataList (int nArgs)
 		{
 			int nLen = strlen( pData->sSymbol );
 
-			char sText[CONSOLE_WIDTH * 2];
 			// <smbol> <type> <start>:<end>
 			// `TEST `300`:`320
-			ConsolePrintFormat( sText, "%s%s %s%*s %s%04X%s:%s%04X"
+			ConsolePrintFormat( "%s%s %s%*s %s%04X%s:%s%04X"
 				, CHC_CATEGORY
 				, g_aNopcodeTypes[ pData->eElementType ] 
 				, (nLen > 0) ? CHC_SYMBOL     : CHC_DEFAULT
