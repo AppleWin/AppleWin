@@ -175,9 +175,8 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 		//
 		{
 			bool H2L = (m_ctrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK);
-			char newMode[20];
-			sprintf_s(newMode, sizeof(newMode), "(new mode=%d)", m_durationPhoneme>>6);
-			LogOutput("CTRL  = %d->%d, ART = 0x%02X, AMP=0x%02X %s\n", m_ctrlArtAmp>>7, nValue>>7, (nValue&ARTICULATION_MASK)>>4, nValue&AMPLITUDE_MASK, H2L?newMode:"");
+			std::string newMode = StrFormat(" (new mode=%d)", m_durationPhoneme>>6);
+			LogOutput("CTRL  = %d->%d, ART = 0x%02X, AMP=0x%02X%s\n", m_ctrlArtAmp>>7, nValue>>7, (nValue&ARTICULATION_MASK)>>4, nValue&AMPLITUDE_MASK, H2L?newMode.c_str() : "");
 		}
 #endif
 #if LOG_SSI263B

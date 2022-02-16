@@ -1160,11 +1160,10 @@ bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, const std::string& su
 	{
 		while(1)
 		{
-			char szIndex[7];
-			sprintf_s(szIndex, sizeof(szIndex), "0x%04X", ay_change_count);
+			std::string strIndex = StrFormat("0x%04X", ay_change_count);
 
 			bool bFound;
-			std::string value = yamlLoadHelper.LoadString_NoThrow(szIndex, bFound);
+			std::string value = yamlLoadHelper.LoadString_NoThrow(strIndex, bFound);
 			if (!bFound)
 				break;	// done
 

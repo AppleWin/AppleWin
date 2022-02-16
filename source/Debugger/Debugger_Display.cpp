@@ -3255,17 +3255,13 @@ static void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 		else        PrintText("h:", rect);
 		rect.left += nameWidth * nFontWidth;
 
-		char sValue[8];
-		if (g_videoScannerDisplayInfo.isDecimal)
-			sprintf_s(sValue, sizeof(sValue), "%03u", nValue);
-		else
-			sprintf_s(sValue, sizeof(sValue), "%03X", nValue);
+		std::string strValue = StrFormat((g_videoScannerDisplayInfo.isDecimal) ? "%03u" : "%03X", nValue);
 
 		if (!isVisible)
 			DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_INVISIBLE));	// yellow
 		else
 			DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_VISIBLE));		// green
-		PrintText(sValue, rect);
+		PrintText(strValue.c_str(), rect);
 		rect.left += (numberWidth+gapWidth) * nFontWidth;
 	}
 }
@@ -3327,9 +3323,7 @@ static void DrawVideoScannerInfo(int line)
 	else // "part"
 		cycles = (UINT)g_videoScannerDisplayInfo.lastCumulativeCycles - (UINT)g_videoScannerDisplayInfo.savedCumulativeCycles;
 
-	char sValue[10];
-	sprintf_s(sValue, sizeof(sValue), "%08X", cycles);
-	PrintText(sValue, rect);
+	PrintText(StrFormat("%08X", cycles).c_str(), rect);
 }
 
 //===========================================================================

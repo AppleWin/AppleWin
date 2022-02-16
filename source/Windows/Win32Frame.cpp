@@ -63,10 +63,10 @@ Win32Frame::Win32Frame()
 	g_nTrackDrive2 = -1;
 	g_nSectorDrive1 = -1;
 	g_nSectorDrive2 = -1;
-	strcpy_s(g_sTrackDrive1, sizeof(g_sTrackDrive1), "??");
-	strcpy_s(g_sTrackDrive2, sizeof(g_sTrackDrive1), "??");
-	strcpy_s(g_sSectorDrive1, sizeof(g_sTrackDrive1), "??");
-	strcpy_s(g_sSectorDrive2, sizeof(g_sTrackDrive1), "??");
+	g_strTrackDrive1 = "??";
+	g_strTrackDrive2 = "??";
+	g_strSectorDrive1 = "??";
+	g_strSectorDrive2 = "??";
 
 	g_eStatusDrive1 = DISK_STATUS_OFF;
 	g_eStatusDrive2 = DISK_STATUS_OFF;
