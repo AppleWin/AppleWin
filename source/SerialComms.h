@@ -87,9 +87,6 @@ private:
 
 	//
 
-public:
-	static const UINT SIZEOF_SERIALCHOICE_ITEM = 12*sizeof(char);
-
 private:
 	std::string m_currentSerialPortName;
 	DWORD	m_dwSerialPortItem;

@@ -333,8 +333,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 				int nAbsTargetOffset = (line_.nTargetOffset > 0) ? line_.nTargetOffset : -line_.nTargetOffset;
 				sprintf(line_.sTargetOffset, "%d", nAbsTargetOffset);
 			}
-			sprintf(line_.sTarget, "%s", pTarget);
-
+			strncpy_s(line_.sTarget, pTarget, _TRUNCATE);
 
 			// Indirect / Indexed
 			int nTargetPartial;

@@ -564,16 +564,8 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 	if (pPathFileName.empty())
 		return nSymbolsLoaded;
 
-//#if _UNICODE
-//	TCHAR sFormat1[ MAX_SYMBOLS_LEN ];
-//	TCHAR sFormat2[ MAX_SYMBOLS_LEN ];
-//	wsprintf( sFormat1, "%%x %%%ds", MAX_SYMBOLS_LEN ); // i.e. "%x %13s"
-//	wsprintf( sFormat2, "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%13s %x"
-// ascii
-	char sFormat1[ MAX_SYMBOLS_LEN ];
-	char sFormat2[ MAX_SYMBOLS_LEN ];
-	sprintf( sFormat1, "%%x %%%ds", MAX_SYMBOLS_LEN ); // i.e. "%x %13s"
-	sprintf( sFormat2, "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%13s %x"
+	std::string strFormat1 = StrFormat( "%%x %%%ds", MAX_SYMBOLS_LEN ); // i.e. "%x %13s"
+	std::string strFormat2 = StrFormat( "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%13s %x"
 
 	FILE *hFile = fopen( pPathFileName.c_str(), "rt" );
 
@@ -612,7 +604,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 
 			if(strstr(szLine, "$") == NULL)
 			{
-				sscanf(szLine, sFormat1, &nAddress, sName);
+				sscanf(szLine, strFormat1.c_str(), &nAddress, sName);
 			}
 			else
 			{
@@ -631,7 +623,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 						memset(&szLine[MAX_SYMBOLS_LEN], ' ', nLen - MAX_SYMBOLS_LEN);	// sscanf fails for nAddress if string too long
 					}
 				}
-				sscanf(szLine, sFormat2, sName, &nAddress);
+				sscanf(szLine, strFormat2.c_str(), sName, &nAddress);
 			}
 
 			// SymbolOffset

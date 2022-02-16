@@ -91,7 +91,8 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 
 	//
 
-	char serialPortName[CSuperSerialCard::SIZEOF_SERIALCHOICE_ITEM];
+	const size_t SERIALCHOICE_ITEM_LENGTH = 12;
+	char serialPortName[SERIALCHOICE_ITEM_LENGTH];
 	std::string regSection = RegGetConfigSlotSection(m_slot);
 	RegLoadString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, TRUE, serialPortName, sizeof(serialPortName), TEXT(""));
 
@@ -266,16 +267,15 @@ bool CSuperSerialCard::CheckComm()
 	else if (m_dwSerialPortItem)
 	{
 		_ASSERT(m_dwSerialPortItem < m_vecSerialPortsItems.size()-1);	// size()-1 is TCP item
-		TCHAR portname[SIZEOF_SERIALCHOICE_ITEM];
-		wsprintf(portname, TEXT("\\\\.\\COM%u"), m_vecSerialPortsItems[m_dwSerialPortItem]);
+		std::string portname = StrFormat("\\\\.\\COM%u", m_vecSerialPortsItems[m_dwSerialPortItem]);
 
-		m_hCommHandle = CreateFile(portname,
-								GENERIC_READ | GENERIC_WRITE,
-								0,								// exclusive access
-								(LPSECURITY_ATTRIBUTES)NULL,	// default security attributes
-								OPEN_EXISTING,
-								FILE_FLAG_OVERLAPPED,			// required for WaitCommEvent()
-								NULL);
+		m_hCommHandle = CreateFile(portname.c_str(),
+								   GENERIC_READ | GENERIC_WRITE,
+								   0,								// exclusive access
+								   (LPSECURITY_ATTRIBUTES)NULL,		// default security attributes
+								   OPEN_EXISTING,
+								   FILE_FLAG_OVERLAPPED,			// required for WaitCommEvent()
+								   NULL);
 
 		if (m_hCommHandle != INVALID_HANDLE_VALUE)
 		{
@@ -1009,9 +1009,7 @@ void CSuperSerialCard::CommSetSerialPort(DWORD dwNewSerialPortItem)
 	}
 	else if (m_dwSerialPortItem != 0)
 	{
-		TCHAR temp[SIZEOF_SERIALCHOICE_ITEM];
-		sprintf(temp, TEXT_SERIAL_COM"%d", m_vecSerialPortsItems[m_dwSerialPortItem]);
-		m_currentSerialPortName = temp;
+		m_currentSerialPortName = StrFormat(TEXT_SERIAL_COM "%d", m_vecSerialPortsItems[m_dwSerialPortItem]);
 	}
 	else
 	{
@@ -1297,16 +1295,15 @@ void CSuperSerialCard::ScanCOMPorts()
 
 	for (UINT i=1; i<32; i++)	// Arbitrary upper limit
 	{
-		TCHAR portname[SIZEOF_SERIALCHOICE_ITEM];
-		wsprintf(portname, TEXT("\\\\.\\COM%u"), i);
+		std::string portname = StrFormat("\\\\.\\COM%u", i);
 
-		HANDLE hCommHandle = CreateFile(portname,
-								GENERIC_READ | GENERIC_WRITE,
-								0,								// exclusive access
-								(LPSECURITY_ATTRIBUTES)NULL,	// default security attributes
-								OPEN_EXISTING,
-								FILE_FLAG_OVERLAPPED,			// required for WaitCommEvent()
-								NULL);
+		HANDLE hCommHandle = CreateFile(portname.c_str(),
+										GENERIC_READ | GENERIC_WRITE,
+										0,								// exclusive access
+										(LPSECURITY_ATTRIBUTES)NULL,	// default security attributes
+										OPEN_EXISTING,
+										FILE_FLAG_OVERLAPPED,			// required for WaitCommEvent()
+										NULL);
 
 		if (hCommHandle != INVALID_HANDLE_VALUE)
 		{
@@ -1330,7 +1327,9 @@ char* CSuperSerialCard::GetSerialPortChoices()
 
 	ScanCOMPorts();				// Do this every time in case news ones available (eg. for USB COM ports)
 	delete [] m_aySerialPortChoices;
-	m_aySerialPortChoices = new TCHAR [ GetNumSerialPortChoices() * SIZEOF_SERIALCHOICE_ITEM + 1 ];	// +1 for final NULL item
+
+	const size_t SERIALCHOICE_ITEM_LENGTH = 12;
+	m_aySerialPortChoices = new TCHAR [ GetNumSerialPortChoices() * SERIALCHOICE_ITEM_LENGTH + 1 ];	// +1 for final NULL item
 
 	TCHAR* pNextSerialChoice = m_aySerialPortChoices;
 

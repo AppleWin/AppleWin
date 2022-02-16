@@ -1216,9 +1216,8 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 				else
 				{
 					// if valid hex address, don't have delayed target
-					TCHAR sAddress[ 32 ];
-					wsprintf( sAddress, "%X", m_nAsmTargetAddress);
-					if (_tcscmp( sAddress, pArg->sArg))
+					std::string strAddress = StrFormat( "%X", m_nAsmTargetAddress);
+					if (strAddress != pArg->sArg)
 					{
 						DelayedTarget_t tDelayedTarget;
 

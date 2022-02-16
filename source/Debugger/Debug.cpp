@@ -2270,9 +2270,8 @@ void _CmdColorGet( const int iScheme, const int iColor )
 	}
 	else
 	{
-		TCHAR sText[ CONSOLE_WIDTH ];
-		wsprintf( sText, "Color: %d\nOut of range!", iColor );
-		GetFrame().FrameMessageBox(sText, TEXT("ERROR"), MB_OK );
+		std::string strText = StrFormat( "Color: %d\nOut of range!", iColor );
+		GetFrame().FrameMessageBox(strText.c_str(), "ERROR", MB_OK);
 	}
 }
 
@@ -5774,7 +5773,6 @@ Update_t CmdOutputCalc (int nArgs)
 		return Help_Arg_1( CMD_OUTPUT_CALC );
 
 	WORD nAddress = g_aArgs[1].nValue;
-	TCHAR sText [ CONSOLE_WIDTH ];
 
 	bool bHi = false;
 	bool bLo = false;
@@ -5796,28 +5794,27 @@ Update_t CmdOutputCalc (int nArgs)
 	//    CHC_NUM_DEC
 	//    CHC_ARG_
 	//    CHC_STRING
-	wsprintf( sText, TEXT("$%04X  0z%08X  %5d  '%c' "),
-		nAddress, nBit, nAddress, c );
+	std::string strText = StrFormat( "$%04X  0z%08X  %5d  '%c' ", nAddress, nBit, nAddress, c );
 
 	if (bParen)
-		strcat( sText, TEXT("(") );
+		strText += '(';
 
 	if (bHi & bLo)
-		strcat( sText, TEXT("High Ctrl") );
+		strText += "High Ctrl";
 	else
 	if (bHi)
-		strcat( sText, TEXT("High") );
+		strText += "High";
 	else
 	if (bLo)
-		strcat( sText, TEXT("Ctrl") );
+		strText += "Ctrl";
 
 	if (bParen)
-		strcat( sText, TEXT(")") );
+		strText += ')';
 
-	ConsoleBufferPush( sText );
+	ConsoleBufferPush( strText.c_str() );
 
 // If we colorize then w must also guard against character ouput $60
-//	ConsolePrint( sText );
+//	ConsolePrint( strText.c_str() );
 
 	return ConsoleUpdate();
 }
