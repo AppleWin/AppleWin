@@ -1454,7 +1454,7 @@ int get_tfe_enabled(void)
 // Called by: tfe_LoadSnapshot() & ApplyNewConfig()
 void tfe_SetRegistryInterface(UINT slot, const std::string& name)
 {
-    std::string& regSection = RegGetConfigSlotSection(slot);
+    std::string regSection = RegGetConfigSlotSection(slot);
     RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, 1, name);
 }
 

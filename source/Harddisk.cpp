@@ -229,7 +229,7 @@ void HarddiskInterfaceCard::LoadLastDiskImage(const int drive)
 
 	char pathname[MAX_PATH];
 
-	std::string& regSection = RegGetConfigSlotSection(m_slot);
+	std::string regSection = RegGetConfigSlotSection(m_slot);
 	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")) && (pathname[0] != 0))
 	{
 		m_saveDiskImage = false;
@@ -253,7 +253,7 @@ void HarddiskInterfaceCard::SaveLastDiskImage(const int drive)
 	if (!m_saveDiskImage)
 		return;
 
-	std::string& regSection = RegGetConfigSlotSection(m_slot);
+	std::string regSection = RegGetConfigSlotSection(m_slot);
 	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, CT_GenericHDD);
 
 	const std::string regKey = (drive == HARDDISK_1)
