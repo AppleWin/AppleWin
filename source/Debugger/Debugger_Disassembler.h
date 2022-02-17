@@ -9,7 +9,7 @@ void FormatDisassemblyLine(const DisasmLine_t& line, char* sDisassembly_, const 
 void FormatOpcodeBytes(WORD nBaseAddress, DisasmLine_t& line_);
 void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_);
 
-const char* FormatAddress(WORD nAddress, int nBytes);
+std::string FormatAddress(WORD nAddress, int nBytes);
 char* FormatCharCopy(char* pDst, const char* pSrc, const int nLen);
 
 char  FormatCharTxtAsci(const BYTE b, bool* pWasAsci_ = NULL);

@@ -19,5 +19,5 @@
 	bool FindAddressFromSymbol(const char* pSymbol, WORD* pAddress_ = NULL, int* iTable_ = NULL);
 	WORD GetAddressFromSymbol(const char* symbol); // HACK: returns 0 if symbol not found
 	void SymbolUpdate(SymbolTable_Index_e eSymbolTable, const char* pSymbolName, WORD nAddrss, bool bRemoveSymbol, bool bUpdateSymbol);
-	const char* FindSymbolFromAddress(WORD nAdress, int* iTable_ = NULL);
-	const char* GetSymbol(WORD nAddress, int nBytes);
+	std::string const* FindSymbolFromAddress(WORD nAdress, int* iTable_ = NULL);
+	std::string const& GetSymbol(WORD nAddress, int nBytes, std::string& strAddressBuf);

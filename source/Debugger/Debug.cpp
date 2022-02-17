@@ -1700,15 +1700,9 @@ Update_t CmdBreakpointEnable (int nArgs) {
 void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool bZeroBased )
 {
 	static const char sFlags[] = "-*";
-	static       char sName[ MAX_SYMBOLS_LEN+1 ];
 
-	WORD nAddress = aBreakWatchZero[ iBWZ ].nAddress;
-	const char*  pSymbol = GetSymbol( nAddress, 2 );
-	if (! pSymbol)
-	{
-		sName[0] = 0;
-		pSymbol = sName;
-	}
+	std::string strAddressBuf;
+	std::string const& symbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, strAddressBuf);
 
 	char cBPM = aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_READ_ONLY ? 'R'
 				: aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_WRITE_ONLY ? 'W'
@@ -1717,10 +1711,10 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 	ConsoleBufferPushFormat( "  #%d %c %04X %c %s",
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
-		sFlags[ (int) aBreakWatchZero[ iBWZ ].bEnabled ],
+		sFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
 		aBreakWatchZero[ iBWZ ].nAddress,
 		cBPM,
-		pSymbol
+		symbol.c_str()
 	);
 }
 
