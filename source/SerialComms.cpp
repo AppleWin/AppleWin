@@ -66,7 +66,7 @@ SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 
 CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	Card(CT_SSC, slot),
-	m_aySerialPortChoices(NULL),
+	m_strSerialPortChoices(1, '\0'), // Combo box friendly, just in case.
 	m_uTCPChoiceItemIdx(0),
 	m_bCfgSupportDCD(false),
 	m_pExpansionRom(NULL)
@@ -126,7 +126,6 @@ void CSuperSerialCard::InternalReset()
 
 CSuperSerialCard::~CSuperSerialCard()
 {
-	delete [] m_aySerialPortChoices;
 }
 
 //===========================================================================
@@ -1318,40 +1317,28 @@ void CSuperSerialCard::ScanCOMPorts()
 	m_uTCPChoiceItemIdx = m_vecSerialPortsItems.size()-1;
 }
 
-char* CSuperSerialCard::GetSerialPortChoices()
+std::string const& CSuperSerialCard::GetSerialPortChoices()
 {
 	if (IsActive())
-		return m_aySerialPortChoices;
+		return m_strSerialPortChoices;
 
-	//
+	ScanCOMPorts();	// Do this every time in case news ones available (eg. for USB COM ports)
 
-	ScanCOMPorts();				// Do this every time in case news ones available (eg. for USB COM ports)
-	delete [] m_aySerialPortChoices;
+	m_strSerialPortChoices = "None";
+	m_strSerialPortChoices += '\0'; // NULL char for combo box selection.
 
-	const size_t SERIALCHOICE_ITEM_LENGTH = 12;
-	m_aySerialPortChoices = new TCHAR [ GetNumSerialPortChoices() * SERIALCHOICE_ITEM_LENGTH + 1 ];	// +1 for final NULL item
-
-	TCHAR* pNextSerialChoice = m_aySerialPortChoices;
-
-	//
-
-	pNextSerialChoice += wsprintf(pNextSerialChoice, TEXT("None"));
-	pNextSerialChoice++;		// Skip NULL char
-
-	for (UINT i=1; i<m_uTCPChoiceItemIdx; i++)
+	for (UINT i = 1; i < m_uTCPChoiceItemIdx; i++)
 	{
-		pNextSerialChoice += wsprintf(pNextSerialChoice, TEXT("COM%u"), m_vecSerialPortsItems[i]);
-		pNextSerialChoice++;	// Skip NULL char
+		m_strSerialPortChoices += StrFormat("COM%u", m_vecSerialPortsItems[i]);
+		m_strSerialPortChoices += '\0'; // NULL char for combo box selection.
 	}
 
-	pNextSerialChoice += wsprintf(pNextSerialChoice, TEXT("TCP"));
-	pNextSerialChoice++;		// Skip NULL char
+	m_strSerialPortChoices += "TCP";
+	m_strSerialPortChoices += '\0'; // NULL char for combo box selection.
 
-	*pNextSerialChoice = 0;
+	// std::string()'s implicit nul terminator becomes combo box end of list marker.
 
-	//
-
-	return m_aySerialPortChoices;
+	return m_strSerialPortChoices;
 }
 
 // Called by ctor & LoadSnapshot()
