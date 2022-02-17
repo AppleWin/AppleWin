@@ -5,27 +5,16 @@
 
 
 //===========================================================================
-static std::string& RegGetSlotSection(UINT slot)
+static inline std::string RegGetSlotSection(UINT slot)
 {
-	static std::string section;
-	if (slot == SLOT_AUX)
-	{
-		section = REG_CONFIG_SLOT_AUX;
-	}
-	else
-	{
-		section = REG_CONFIG_SLOT;
-		section += (char)('0' + slot);
-	}
-	return section;
+	return (slot == SLOT_AUX)
+		? std::string(REG_CONFIG_SLOT_AUX)
+		: (std::string(REG_CONFIG_SLOT) + (char)('0' + slot));
 }
 
-std::string& RegGetConfigSlotSection(UINT slot)
+std::string RegGetConfigSlotSection(UINT slot)
 {
-	static std::string section;
-	section = REG_CONFIG "\\";
-	section += RegGetSlotSection(slot);
-	return section;
+	return std::string(REG_CONFIG "\\") + RegGetSlotSection(slot);
 }
 
 void RegDeleteConfigSlotSection(UINT slot)
