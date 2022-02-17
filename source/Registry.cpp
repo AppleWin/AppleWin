@@ -153,27 +153,16 @@ void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value) {
 }
 
 //===========================================================================
-static std::string& RegGetSlotSection(UINT slot)
+static inline std::string RegGetSlotSection(UINT slot)
 {
-	static std::string section;
-	if (slot == SLOT_AUX)
-	{
-		section = REG_CONFIG_SLOT_AUX;
-	}
-	else
-	{
-		section = REG_CONFIG_SLOT;
-		section += (char)('0' + slot);
-	}
-	return section;
+	return (slot == SLOT_AUX)
+		? std::string(REG_CONFIG_SLOT_AUX)
+		: (std::string(REG_CONFIG_SLOT) + (char)('0' + slot));
 }
 
-std::string& RegGetConfigSlotSection(UINT slot)
+std::string RegGetConfigSlotSection(UINT slot)
 {
-	static std::string section;
-	section = REG_CONFIG "\\";
-	section += RegGetSlotSection(slot);
-	return section;
+	return std::string(REG_CONFIG "\\") + RegGetSlotSection(slot);
 }
 
 void RegDeleteConfigSlotSection(UINT slot)
@@ -182,7 +171,7 @@ void RegDeleteConfigSlotSection(UINT slot)
 
 	if (!g_sConfigFile.empty())
 	{
-		std::string& section = RegGetConfigSlotSection(slot);
+		std::string section = RegGetConfigSlotSection(slot);
 		return _ini::RegDeleteString(section.c_str(), peruser);
 	}
 
@@ -197,7 +186,7 @@ void RegDeleteConfigSlotSection(UINT slot)
 		&keyhandle);
 	if (status == ERROR_SUCCESS)
 	{
-		std::string& section = RegGetSlotSection(slot);
+		std::string section = RegGetSlotSection(slot);
 		LSTATUS status2 = RegDeleteKey(keyhandle, section.c_str());
 		if (status2 != ERROR_SUCCESS && status2 != ERROR_FILE_NOT_FOUND)
 			_ASSERT(0);

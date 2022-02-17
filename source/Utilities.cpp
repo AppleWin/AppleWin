@@ -251,7 +251,7 @@ void LoadConfiguration(bool loadImages)
 
 	for (UINT slot = SLOT0; slot <= SLOT7; slot++)
 	{
-		std::string& regSection = RegGetConfigSlotSection(slot);
+		std::string regSection = RegGetConfigSlotSection(slot);
 
 		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
 		{
@@ -263,7 +263,7 @@ void LoadConfiguration(bool loadImages)
 
 				if ((SS_CARDTYPE)dwTmp == CT_Uthernet)	// TODO: move this to when UthernetCard object is instantiated
 				{
-					std::string& regSection = RegGetConfigSlotSection(slot);
+					std::string regSection = RegGetConfigSlotSection(slot);
 					if (RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, szFilename, MAX_PATH, TEXT("")))
 						update_tfe_interface(szFilename);
 

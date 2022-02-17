@@ -12,6 +12,6 @@ BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD* value, DWO
 void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::string & buffer);
 void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value);
 
-std::string& RegGetConfigSlotSection(UINT slot);
+std::string RegGetConfigSlotSection(UINT slot);
 void RegDeleteConfigSlotSection(UINT slot);
 void RegSetConfigSlotNewCardType(UINT slot, enum SS_CARDTYPE type);
