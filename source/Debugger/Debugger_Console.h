@@ -3,6 +3,8 @@
 
 #include <cstdarg>
 
+#include "StrFormat.h"
+
 	enum
 	{
 		// Basic Symbol table has > 600 symbols
@@ -255,76 +257,78 @@
 // Console
 
 	// Buffered
-	bool ConsolePrint( const char * pText );
-	bool ConsolePrintVa( char* buf, size_t bufsz, const char* pFormat, va_list va );
-	template<size_t _BufSz>
-	inline bool ConsolePrintVa( char (&buf)[_BufSz], const char* pFormat, va_list va )
+	void ConsolePrint( const char * pText );
+	inline void ConsolePrintVa( const char* pFormat, va_list va )
 	{
-		return ConsolePrintVa(buf, _BufSz, pFormat, va);
+		std::string strText = StrFormatV(pFormat, va);
+		ConsolePrint(strText.c_str());
 	}
-	inline bool ConsolePrintFormat( char* buf, size_t bufsz, const char* pFormat, ... )
+	inline void ConsolePrintFormat( const char* pFormat, ... ) ATTRIBUTE_FORMAT_PRINTF(1, 2)
 	{
 		va_list va;
 		va_start(va, pFormat);
-		bool const r = ConsolePrintVa(buf, bufsz, pFormat, va);
+		ConsolePrintVa(pFormat, va);
 		va_end(va);
-		return r;
-	}
-	template<size_t _BufSz>
-	inline bool ConsolePrintFormat( char(&buf)[_BufSz], const char* pFormat, ... )
-	{
-		va_list va;
-		va_start(va, pFormat);
-		bool const r = ConsolePrintVa(buf, pFormat, va);
-		va_end(va);
-		return r;
 	}
 
-	void     ConsoleBufferToDisplay ();
-	const conchar_t* ConsoleBufferPeek ();
-	void     ConsoleBufferPop ();
+	void ConsoleBufferToDisplay();
+	const conchar_t* ConsoleBufferPeek();
+	void ConsoleBufferPop();
 
-	bool ConsoleBufferPush( const char * pString );
-	bool ConsoleBufferPushVa( char* buf, size_t bufsz, const char* pFormat, va_list va );
-	template<size_t _BufSz>
-	inline bool ConsoleBufferPushVa( char (&buf)[_BufSz], const char* pFormat, va_list va )
+	void ConsoleBufferPush( const char * pString );
+	inline void ConsoleBufferPushVa( const char* pFormat, va_list va )
 	{
-		return ConsoleBufferPushVa(buf, _BufSz, pFormat, va);
+		std::string strText = StrFormatV(pFormat, va);
+		ConsoleBufferPush(strText.c_str());
 	}
-	inline bool ConsoleBufferPushFormat( char* buf, size_t bufsz, const char* pFormat, ... )
+	inline void ConsoleBufferPushFormat( const char* pFormat, ... ) ATTRIBUTE_FORMAT_PRINTF(1, 2)
 	{
 		va_list va;
 		va_start(va, pFormat);
-		bool const r = ConsoleBufferPushVa(buf, bufsz, pFormat, va);
+		ConsoleBufferPushVa(pFormat, va);
 		va_end(va);
-		return r;
-	}
-	template<size_t _BufSz>
-	inline bool ConsoleBufferPushFormat( char(&buf)[_BufSz], const char* pFormat, ... )
-	{
-		va_list va;
-		va_start(va, pFormat);
-		bool const r = ConsoleBufferPushVa(buf, pFormat, va);
-		va_end(va);
-		return r;
 	}
 
 	void ConsoleConvertFromText( conchar_t * sText, const char * pText );
 
 	// Display
-	Update_t ConsoleDisplayError ( const char * pTextError );
-	void     ConsoleDisplayPause ();
-	void     ConsoleDisplayPush  ( const char * pText );
+	Update_t ConsoleDisplayError( const char * pTextError );
+	inline Update_t ConsoleDisplayErrorVa(const char* pFormat, va_list va)
+	{
+		std::string strText = StrFormatV(pFormat, va);
+		return ConsoleDisplayError(strText.c_str());
+	}
+	inline Update_t ConsoleDisplayErrorFormat(const char* pFormat, ...) ATTRIBUTE_FORMAT_PRINTF(1, 2)
+	{
+		va_list va;
+		va_start(va, pFormat);
+		Update_t const r = ConsoleDisplayErrorVa(pFormat, va);
+		va_end(va);
+		return r;
+	}
+	void ConsoleDisplayPause();
+	void ConsoleDisplayPush( const char * pText );
+	inline void ConsoleDisplayPushVa(const char* pFormat, va_list va)
+	{
+		std::string strText = StrFormatV(pFormat, va);
+		ConsoleDisplayPush(strText.c_str());
+	}
+	inline void ConsoleDisplayPushFormat(const char* pFormat, ...) ATTRIBUTE_FORMAT_PRINTF(1, 2)
+	{
+		va_list va;
+		va_start(va, pFormat);
+		ConsoleDisplayPushVa(pFormat, va);
+		va_end(va);
+	}
 	void     ConsoleDisplayPush  ( const conchar_t * pText );
 	Update_t ConsoleUpdate       ();
 	void     ConsoleFlush        ();
 
 	// Input
-	void     ConsoleInputToDisplay ();
 	const char *ConsoleInputPeek      ();
 	bool     ConsoleInputClear     ();
 	bool     ConsoleInputBackSpace ();
-	bool     ConsoleInputChar      ( TCHAR ch );
+	bool     ConsoleInputChar      ( char ch );
 	void     ConsoleInputReset     ();
 	int      ConsoleInputTabCompletion ();
 
