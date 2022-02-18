@@ -4163,7 +4163,7 @@ Update_t CmdMemoryLoad (int nArgs)
 
 		CmdConfigGetDebugDir( 0 );
 
-		ConsoleBufferPushFormat( "File: ", g_sMemoryLoadSaveFileName.c_str() );
+		ConsoleBufferPushFormat( "File: %s", g_sMemoryLoadSaveFileName.c_str() );
 	}
 	
 	return ConsoleUpdate();
@@ -7479,7 +7479,7 @@ int FindCommand( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 //===========================================================================
 void DisplayAmbigiousCommands( int nFound )
 {
-	ConsolePrintFormat("Ambiguous %s%d%s Commands:"
+	ConsolePrintFormat("Ambiguous %s%" SIZE_T_FMT "%s Commands:"
 		, CHC_NUM_DEC
 		, g_vPotentialCommands.size()
 		, CHC_DEFAULT

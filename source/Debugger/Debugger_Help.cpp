@@ -496,7 +496,9 @@ inline bool ConsoleColorizePrintVa( const char* format, va_list va )
 	return ConsoleColorizePrint(strText.c_str());
 }
 
-inline bool ConsoleColorizePrintFormat( const char* format, ... ) ATTRIBUTE_FORMAT_PRINTF(1, 2)
+inline bool ConsoleColorizePrintFormat( const char* format, ... ) ATTRIBUTE_FORMAT_PRINTF(1, 2);
+
+inline bool ConsoleColorizePrintFormat( const char* format, ... )
 {
 	va_list va;
 	va_start(va, format);
@@ -1071,7 +1073,7 @@ Update_t CmdHelpSpecific (int nArgs)
 		{
 			ConsoleColorizePrint( " Note: All arguments effect the disassembly view" );
 
-			ConsoleColorizePrintFormat( " Usage: [%s%s | %s | %s%s | %s%s | %s%s | %s%s]"
+			ConsoleColorizePrintFormat( " Usage: [%s%s | %s%s | %s%s | %s%s | %s%s | %s%s]"
 				, CHC_COMMAND
 				, g_aParameters[ PARAM_CONFIG_BRANCH ].m_sName
 				, CHC_COMMAND
@@ -1592,10 +1594,10 @@ Update_t CmdVersion (int nArgs)
 			if ((! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
 				(! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
 			{
-				ConsoleBufferPushFormat( "  Arg: %d bytes * %d = %d bytes",
+				ConsoleBufferPushFormat( "  Arg: %" SIZE_T_FMT " bytes * %d = %" SIZE_T_FMT " bytes",
 					sizeof(Arg_t), MAX_ARGS, sizeof(g_aArgs) );
 
-				ConsoleBufferPushFormat( "  Console: %d bytes * %d height = %d bytes",
+				ConsoleBufferPushFormat( "  Console: %" SIZE_T_FMT " bytes * %d height = %" SIZE_T_FMT " bytes",
 					sizeof( g_aConsoleDisplay[0] ), CONSOLE_HEIGHT, sizeof(g_aConsoleDisplay) );
 
 				ConsoleBufferPushFormat( "  Commands: %d   (Aliased: %d)   Params: %d",
