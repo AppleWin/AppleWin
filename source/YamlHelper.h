@@ -2,6 +2,8 @@
 
 #include "yaml.h"
 
+#include "StrFormat.h"
+
 #define SS_YAML_KEY_FILEHDR "File_hdr"
 #define SS_YAML_KEY_TAG "Tag"
 #define SS_YAML_KEY_VERSION "Version"
@@ -212,7 +214,7 @@ public:
 		delete[] m_pMbStr;
 	}
 
-	void Save(const char* format, ...);
+	void Save(const char* format, ...) ATTRIBUTE_FORMAT_PRINTF(1, 2);
 
 	void SaveInt(const char* key, int value);
 	void SaveUint(const char* key, UINT value);
@@ -233,7 +235,7 @@ public:
 	class Label
 	{
 	public:
-		Label(YamlSaveHelper& rYamlSaveHelper, const char* format, ...) :
+		Label(YamlSaveHelper& rYamlSaveHelper, const char* format, ...)  ATTRIBUTE_FORMAT_PRINTF(2, 3) :
 			yamlSaveHelper(rYamlSaveHelper)
 		{
 			fwrite(yamlSaveHelper.m_szIndent, 1, yamlSaveHelper.m_indent, yamlSaveHelper.m_hFile);

@@ -54,14 +54,8 @@ Update_t ConsoleUpdate ()
 	return 0;
 }
 
-bool ConsoleBufferPush ( const char * pText )
+void ConsoleBufferPush ( const char * pText )
 {
-	return false;
-}
-
-bool ConsoleBufferPushVa ( char* buf, size_t bufsz, const char * pFormat, va_list va )
-{
-	return false;
 }
 
 // From Debugger_DisassemblerData.cpp

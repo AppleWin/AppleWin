@@ -96,7 +96,7 @@ Update_t _PrintSymbolInvalidTable()
 	// TODO: display the user specified file name
 	ConsoleBufferPush( "Invalid symbol table." );
 
-	ConsolePrintFormat( sText, "Only %s%d%s symbol tables are supported:"
+	ConsolePrintFormat( "Only %s%d%s symbol tables are supported:"
 		, CHC_NUM_DEC, NUM_SYMBOL_TABLES
 		, CHC_DEFAULT
 	);
@@ -360,13 +360,11 @@ Update_t CmdSymbolsInfo (int nArgs)
 //===========================================================================
 void _CmdPrintSymbol( LPCTSTR pSymbol, WORD nAddress, int iTable )
 {
-	char   sText[ CONSOLE_WIDTH * 2 ];
-
 	// 2.6.2.19 Color for name of symbol table: _CmdPrintSymbol() "SYM HOME" _CmdSymbolsInfoHeader "SYM"
 	// CHC_STRING and CHC_NUM_DEC are both cyan, using CHC_USAGE instead of CHC_STRING
 
 	// 2.6.2.20 Changed: Output of found symbol more table friendly.  Symbol table name displayed first.
-	ConsolePrintFormat( sText, "  %s%s%s: $%s%04X %s%s"
+	ConsolePrintFormat( "  %s%s%s: $%s%04X %s%s"
 		, CHC_USAGE, g_aSymbolTableNames[ iTable ]
 		, CHC_ARG_SEP
 		, CHC_ADDRESS, nAddress
@@ -522,8 +520,7 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 				// nope, ok, try as address
 				if (! _CmdSymbolList_Address2Symbol( nAddress, bSymbolTables))
 				{
-					ConsolePrintFormat( sText
-						, TEXT(" Address not found: %s$%s%04X%s" )
+					ConsolePrintFormat( " Address not found: %s$%s%04X%s"
 						, CHC_ARG_SEP
 						, CHC_ADDRESS, nAddress, CHC_DEFAULT );
 				}
@@ -537,16 +534,14 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 				{
 					if (! _CmdSymbolList_Address2Symbol( nAddress, bSymbolTables ))
 					{
-						ConsolePrintFormat( sText
-							, TEXT(" %sSymbol not found: %s%s%s")
+						ConsolePrintFormat( " %sSymbol not found: %s%s%s"
 							, CHC_ERROR, CHC_SYMBOL, pSymbol, CHC_DEFAULT
 						);
 					}
 				}
 				else
 				{
-					ConsolePrintFormat( sText
-						, TEXT(" %sSymbol not found: %s%s%s")
+					ConsolePrintFormat( " %sSymbol not found: %s%s%s"
 						, CHC_ERROR, CHC_SYMBOL, pSymbol, CHC_DEFAULT
 					);
 				}
@@ -560,7 +555,6 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 //===========================================================================
 int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSymbolTableWrite, int nSymbolOffset )
 {
-	char sText[ CONSOLE_WIDTH * 3 ];
 	bool bFileDisplayed = false;
 
 	const int nMaxLen = MIN(DISASM_DISPLAY_MAX_TARGET_LEN, MAX_SYMBOLS_LEN);
@@ -654,7 +648,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 			int nLen = strlen( sName );
 			if (nLen > nMaxLen)
 			{
-				ConsolePrintFormat( sText, " %sWarn.: %s%s %s(%s%d %s> %s%d%s)"
+				ConsolePrintFormat( " %sWarn.: %s%s %s(%s%d %s> %s%d%s)"
 					, CHC_WARNING
 					, CHC_SYMBOL
 					, sName
@@ -678,13 +672,13 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 					bFileDisplayed = true;
 
 					// TODO: Must check for buffer overflow !
-					ConsolePrintFormat( sText, "%s%s"
+					ConsolePrintFormat( "%s%s"
 						, CHC_PATH
 						, pPathFileName.c_str()
 					);
 				}
 
-				ConsolePrintFormat( sText, " %sInfo.: %s%-16s %saliases %s$%s%04X %s%-12s%s (%s%s%s)" // MAGIC NUMBER: -MAX_SYMBOLS_LEN
+				ConsolePrintFormat( " %sInfo.: %s%-16s %saliases %s$%s%04X %s%-12s%s (%s%s%s)" // MAGIC NUMBER: -MAX_SYMBOLS_LEN
 					, CHC_INFO // 2.9.0.10 was CHC_WARNING, see #479
 					, CHC_SYMBOL
 					, sName
@@ -702,7 +696,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 
 				ConsoleUpdate(); // Flush buffered output so we don't ask the user to pause
 /*
-				ConsolePrintFormat( sText, " %sWarning: %sAddress already has symbol Name%s (%s%s%s): %s%s"
+				ConsolePrintFormat( " %sWarning: %sAddress already has symbol Name%s (%s%s%s): %s%s"
 					, CHC_WARNING
 					, CHC_INFO
 					, CHC_ARG_SEP
@@ -713,7 +707,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 					, pSymbolPrev
 				);
 
-				ConsolePrintFormat( sText, "  %s$%s%04X %s%-31s%s"
+				ConsolePrintFormat( "  %s$%s%04X %s%-31s%s"
 					, CHC_ARG_SEP
 					, CHC_ADDRESS
 					, nAddress
@@ -730,7 +724,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 				if( !bDupSymbolHeader )
 				{
 					bDupSymbolHeader = true;
-					ConsolePrintFormat( sText, " %sDup Symbol Name%s (%s%s%s) %s"
+					ConsolePrintFormat( " %sDup Symbol Name%s (%s%s%s) %s"
 						, CHC_ERROR
 						, CHC_DEFAULT
 						, CHC_STRING
@@ -740,7 +734,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 					);
 				}
 
-				ConsolePrintFormat( sText, "  %s$%s%04X %s%-31s%s"
+				ConsolePrintFormat( "  %s$%s%04X %s%-31s%s"
 					, CHC_ARG_SEP
 					, CHC_ADDRESS
 					, nAddress
@@ -868,8 +862,7 @@ void SymbolUpdate( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, WO
 
 				if (bUpdateSymbol)
 				{
-					char sText[ CONSOLE_WIDTH * 2 ];
-					ConsolePrintFormat( sText, " Updating %s%s%s from %s$%s%04X%s to %s$%s%04X%s"
+					ConsolePrintFormat( " Updating %s%s%s from %s$%s%04X%s to %s$%s%04X%s"
 						, CHC_SYMBOL, pSymbolName, CHC_DEFAULT
 						, CHC_ARG_SEP					
 						, CHC_ADDRESS, nAddressPrev, CHC_DEFAULT
@@ -899,8 +892,7 @@ void SymbolUpdate( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, WO
 			g_aSymbols[ eSymbolTable ][ nAddress ] = pSymbolName;
 
 			// Tell user symbol was added
-			char sText[ CONSOLE_WIDTH * 2 ];
-			ConsolePrintFormat( sText, " Added symbol: %s%s%s %s$%s%04X%s"
+			ConsolePrintFormat( " Added symbol: %s%s%s %s$%s%04X%s"
 				, CHC_SYMBOL, pSymbolName, CHC_DEFAULT
 				, CHC_ARG_SEP					
 				, CHC_ADDRESS, nAddress, CHC_DEFAULT
@@ -984,7 +976,7 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				if (iTable != NUM_SYMBOL_TABLES)
 				{
 					Update_t iUpdate = _CmdSymbolsClear( (SymbolTable_Index_e) iTable );
-					ConsolePrintFormat( sText, TEXT(" Cleared symbol table: %s%s")
+					ConsolePrintFormat( " Cleared symbol table: %s%s"
 						, CHC_STRING, g_aSymbolTableNames[ iTable ]
 					 );
 					iUpdate |= ConsoleUpdate();
