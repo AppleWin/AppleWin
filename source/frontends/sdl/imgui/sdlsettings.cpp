@@ -1179,7 +1179,7 @@ namespace sa2
             frame->ChangeMode(MODE_RUNNING);
           }
           ImGui::SameLine();
-          ImGui::Text("%016" PRIu64 " - %04X", g_nCumulativeCycles, regs.pc);
+          ImGui::Text("%016llu - %04X", g_nCumulativeCycles, regs.pc);
 
           if (!mySyncCPU)
           {

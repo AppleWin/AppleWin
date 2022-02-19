@@ -35,16 +35,20 @@ typedef char *PSZ;
 typedef int16_t INT16;
 typedef uint16_t UINT16;
 
-#if __WORDSIZE == 64
-#define __int64 long int
-#else
+// in Visual Studio, __int64 is *always* the same as long long int
+// in 32 *and* 64 bit
+// static_assert(std::is_same<__int64, long long int>::value);
+//
+// wine defines it as long (64 bit) or long long (32 bit)
+//
+// we stick to VS's definition
+// this is important when selecting the correct printf format specifier
 #define __int64 long long int
-#endif
 
 typedef intptr_t INT_PTR;
 typedef uintptr_t UINT_PTR;
 
-typedef int64_t LONGLONG;
+typedef __int64 LONGLONG;
 
 typedef uint32_t UINT32;
 typedef uint8_t UINT8;
@@ -147,7 +151,7 @@ typedef LONG_PTR        LRESULT;
 
 typedef DWORD           LCID,       *PLCID;
 
-typedef uint64_t UINT64, *PUINT64;
+typedef unsigned __int64 UINT64, *PUINT64;
 
 //
 // ANSI (Multi-byte Character) types
