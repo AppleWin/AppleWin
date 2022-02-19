@@ -200,27 +200,27 @@ void Uthernet2::setSocketModeRegister(const size_t i, const uint16_t address, co
   {
     case SN_MR_CLOSED:
 #ifdef U2_LOG_STATE
-      LogFileOutput("U2: Mode[%d]: CLOSED\n", i);
+      LogFileOutput("U2: Mode[%" SIZE_T_FMT "]: CLOSED\n", i);
 #endif
       break;
     case SN_MR_TCP:
 #ifdef U2_LOG_STATE
-      LogFileOutput("U2: Mode[%d]: TCP\n", i);
+      LogFileOutput("U2: Mode[%" SIZE_T_FMT "]: TCP\n", i);
 #endif
       break;
     case SN_MR_UDP:
 #ifdef U2_LOG_STATE
-      LogFileOutput("U2: Mode[%d]: UDP\n", i);
+      LogFileOutput("U2: Mode[%" SIZE_T_FMT "]: UDP\n", i);
 #endif
       break;
     case SN_MR_IPRAW:
 #ifdef U2_LOG_STATE
-      LogFileOutput("U2: Mode[%d]: IPRAW\n", i);
+      LogFileOutput("U2: Mode[%" SIZE_T_FMT "]: IPRAW\n", i);
 #endif
       break;
     case SN_MR_MACRAW:
 #ifdef U2_LOG_STATE
-      LogFileOutput("U2: Mode[%d]: MACRAW\n", i);
+      LogFileOutput("U2: Mode[%" SIZE_T_FMT "]: MACRAW\n", i);
 #endif
       break;
 #ifdef U2_LOG_UNKNOWN
@@ -332,7 +332,7 @@ void Uthernet2::updateRSR(const size_t i)
 #ifdef U2_LOG_TRAFFIC
   if (socket.sn_rx_rsr != dataPresent)
   {
-    LogFileOutput("U2: RECV[%d]: %d -> %d bytes\n", i, socket.sn_rx_rsr, dataPresent);
+    LogFileOutput("U2: RECV[%" SIZE_T_FMT "]: %d -> %d bytes\n", i, socket.sn_rx_rsr, dataPresent);
   }
 #endif
   socket.sn_rx_rsr = dataPresent;
@@ -354,7 +354,7 @@ void Uthernet2::receiveOnePacketMacRaw(const size_t i)
         writeDataMacRaw(socket, myMemory, packet.data(), packet.size());
         queue.pop();
 #ifdef U2_LOG_TRAFFIC
-        LogFileOutput("U2: READ MACRAW[%d]: +%d -> %d bytes (%04x)\n", i, packet.size(), socket.sn_rx_rsr, socket.sn_rx_wr);
+        LogFileOutput("U2: READ MACRAW[%" SIZE_T_FMT "]: +%" SIZE_T_FMT " -> %d bytes (%04x)\n", i, packet.size(), socket.sn_rx_rsr, socket.sn_rx_wr);
 #endif
       }
       else
@@ -373,14 +373,14 @@ void Uthernet2::receiveOnePacketMacRaw(const size_t i)
       {
         writeDataMacRaw(socket, myMemory, buffer, len);
 #ifdef U2_LOG_TRAFFIC
-        LogFileOutput("U2: READ MACRAW[%d]: +%d -> %d bytes\n", i, len, socket.sn_rx_rsr);
+        LogFileOutput("U2: READ MACRAW[%" SIZE_T_FMT "]: +%d -> %d bytes\n", i, len, socket.sn_rx_rsr);
 #endif
       }
       else
       {
         // drop it
 #ifdef U2_LOG_TRAFFIC
-        LogFileOutput("U2: SKIP MACRAW[%d]: %d bytes\n", i, len);
+        LogFileOutput("U2: SKIP MACRAW[%" SIZE_T_FMT "]: %d bytes\n", i, len);
 #endif
       }
     }
@@ -408,7 +408,7 @@ void Uthernet2::receiveOnePacketFromSocket(const size_t i)
       {
         writeDataForProtocol(socket, myMemory, buffer.data(), data, source);
 #ifdef U2_LOG_TRAFFIC
-        LogFileOutput("U2: READ %s[%d]: +%d -> %d bytes\n", proto, i, data, socket.sn_rx_rsr);
+        LogFileOutput("U2: READ %s[%" SIZE_T_FMT "]: +%" SIZE_T_FMT " -> %d bytes\n", proto, i, data, socket.sn_rx_rsr);
 #endif
       }
       else if (data == 0)
@@ -422,7 +422,7 @@ void Uthernet2::receiveOnePacketFromSocket(const size_t i)
         if (error != EAGAIN && error != EWOULDBLOCK)
         {
 #ifdef U2_LOG_TRAFFIC
-          LogFileOutput("U2: ERROR %s[%d]: %d\n", proto, i, error);
+          LogFileOutput("U2: ERROR %s[%" SIZE_T_FMT "]: %d\n", proto, i, error);
 #endif
           socket.clearFD();
         }
@@ -447,7 +447,7 @@ void Uthernet2::receiveOnePacket(const size_t i)
       break;  // nothing to do
 #ifdef U2_LOG_UNKNOWN
     default:
-      LogFileOutput("U2: READ[%d]: unknown mode: %02x\n", i, socket.sn_sr);
+      LogFileOutput("U2: READ[%" SIZE_T_FMT "]: unknown mode: %02x\n", i, socket.sn_sr);
 #endif
   };
 }
@@ -455,7 +455,7 @@ void Uthernet2::receiveOnePacket(const size_t i)
 void Uthernet2::sendDataMacRaw(const size_t i, const std::vector<uint8_t> & data) const
 {
 #ifdef U2_LOG_TRAFFIC
-  LogFileOutput("U2: SEND MACRAW[%d]: %d bytes\n", i, data.size());
+  LogFileOutput("U2: SEND MACRAW[%" SIZE_T_FMT "]: %" SIZE_T_FMT " bytes\n", i, data.size());
 #endif
 #ifdef U2_USE_SLIRP
   mySlirp->sendFromGuest(data.data(), data.size());
@@ -481,7 +481,7 @@ void Uthernet2::sendDataToSocket(const size_t i, std::vector<uint8_t> & data)
     const ssize_t res = sendto(socket.myFD, data.data(), data.size(), 0, (const struct sockaddr *) &destination, sizeof(destination));
 #ifdef U2_LOG_TRAFFIC
     const char * proto = socket.sn_sr == SN_SR_SOCK_UDP ? "UDP" : "TCP";
-    LogFileOutput("U2: SEND %s[%d]: %d of %d bytes\n", proto, i, res, data.size());
+    LogFileOutput("U2: SEND %s[%" SIZE_T_FMT "]: %" SIZE_T_FMT " of %" SIZE_T_FMT " bytes\n", proto, i, res, data.size());
 #endif
     if (res < 0)
     {
@@ -489,7 +489,7 @@ void Uthernet2::sendDataToSocket(const size_t i, std::vector<uint8_t> & data)
       if (error != EAGAIN && error != EWOULDBLOCK)
       {
 #ifdef U2_LOG_TRAFFIC
-        LogFileOutput("U2: ERROR %s[%d]: %d\n", proto, i, error);
+        LogFileOutput("U2: ERROR %s[%" SIZE_T_FMT "]: %d\n", proto, i, error);
 #endif
         socket.clearFD();
       }
@@ -537,7 +537,7 @@ void Uthernet2::sendData(const size_t i)
       break;
 #ifdef U2_LOG_UNKNOWN
     default:
-      LogFileOutput("U2: SEND[%d]: unknown mode: %02x\n", i, socket.sn_sr);
+      LogFileOutput("U2: SEND[%" SIZE_T_FMT "]: unknown mode: %02x\n", i, socket.sn_sr);
 #endif
   }
 }
@@ -563,7 +563,7 @@ void Uthernet2::openSystemSocket(const size_t i, const int type, const int proto
   {
 #ifdef U2_LOG_STATE
     const char * proto = state == SN_SR_SOCK_UDP ? "UDP" : "TCP";
-    LogFileOutput("U2: %s[%d]: %s\n", proto, i, strerror(errno));
+    LogFileOutput("U2: %s[%" SIZE_T_FMT "]: %s\n", proto, i, strerror(errno));
 #endif
     s.clearFD();
   }
@@ -595,12 +595,12 @@ void Uthernet2::openSocket(const size_t i)
       break;
 #ifdef U2_LOG_UNKNOWN
     default:
-      LogFileOutput("U2: OPEN[%d]: unknown mode: %02x\n", i, mr);
+      LogFileOutput("U2: OPEN[%" SIZE_T_FMT "]: unknown mode: %02x\n", i, mr);
 #endif
   }
   resetRXTXBuffers(i); // needed?
 #ifdef U2_LOG_STATE
-  LogFileOutput("U2: OPEN[%d]: %02x\n", i, sr);
+  LogFileOutput("U2: OPEN[%" SIZE_T_FMT "]: %02x\n", i, sr);
 #endif
 }
 
@@ -609,7 +609,7 @@ void Uthernet2::closeSocket(const size_t i)
   Socket & socket = mySockets[i];
   socket.clearFD();
 #ifdef U2_LOG_STATE
-  LogFileOutput("U2: CLOSE[%d]\n", i);
+  LogFileOutput("U2: CLOSE[%" SIZE_T_FMT "]\n", i);
 #endif
 }
 
@@ -632,8 +632,8 @@ void Uthernet2::connectSocket(const size_t i)
     socket.sn_sr = SN_SR_ESTABLISHED;
     socket.myErrno = 0;
 #ifdef U2_LOG_STATE
-    const uint16_t port = readNetworkWord(memory.data() + socket.registers + SN_DPORT0);
-    LogFileOutput("U2: TCP[%d]: CONNECT to %d.%d.%d.%d:%d\n", i, dest[0], dest[1], dest[2], dest[3], port);
+    const uint16_t port = readNetworkWord(myMemory.data() + socket.registers + SN_DPORT0);
+    LogFileOutput("U2: TCP[%" SIZE_T_FMT "]: CONNECT to %d.%d.%d.%d:%d\n", i, dest[0], dest[1], dest[2], dest[3], port);
 #endif
   }
   else
@@ -644,7 +644,7 @@ void Uthernet2::connectSocket(const size_t i)
       socket.myErrno = error;
     }
 #ifdef U2_LOG_STATE
-    LogFileOutput("U2: TCP[%d]: connect: %s\n", i, strerror(error));
+    LogFileOutput("U2: TCP[%" SIZE_T_FMT "]: connect: %s\n", i, strerror(error));
 #endif
   }
 }
@@ -671,7 +671,7 @@ void Uthernet2::setCommandRegister(const size_t i, const uint8_t value)
       break;
 #ifdef U2_LOG_UNKNOWN
     default:
-      LogFileOutput("U2: Unknown command[%d]: %02x\n", i, value);
+      LogFileOutput("U2: Unknown command[%" SIZE_T_FMT "]: %02x\n", i, value);
 #endif
   }
 }
@@ -783,7 +783,7 @@ void Uthernet2::setIPProtocol(const size_t i, const uint16_t address, const uint
 {
   myMemory[address] = value;
 #ifdef U2_LOG_STATE
-  LogFileOutput("U2: IP PROTO[%d] = %d\n", i, value);
+  LogFileOutput("U2: IP PROTO[%" SIZE_T_FMT "] = %d\n", i, value);
 #endif
 }
 
@@ -791,7 +791,7 @@ void Uthernet2::setIPTypeOfService(const size_t i, const uint16_t address, const
 {
   myMemory[address] = value;
 #ifdef U2_LOG_STATE
-  LogFileOutput("U2: IP TOS[%d] = %d\n", i, value);
+  LogFileOutput("U2: IP TOS[%" SIZE_T_FMT "] = %d\n", i, value);
 #endif
 }
 
@@ -799,7 +799,7 @@ void Uthernet2::setIPTTL(const size_t i, const uint16_t address, const uint8_t v
 {
   myMemory[address] = value;
 #ifdef U2_LOG_STATE
-  LogFileOutput("U2: IP TTL[%d] = %d\n", i, value);
+  LogFileOutput("U2: IP TTL[%" SIZE_T_FMT "] = %d\n", i, value);
 #endif
 }
 
@@ -956,7 +956,7 @@ BYTE Uthernet2::IO_C0(WORD programcounter, WORD address, BYTE write, BYTE value,
   BYTE res = write ? 0 : MemReadFloatingBus(nCycles);
 
 #ifdef U2_LOG_VERBOSE
-  const uint16_t oldAddress = dataAddress;
+  const uint16_t oldAddress = myDataAddress;
 #endif
 
   const uint8_t loc = address & 0x0F;
@@ -1001,7 +1001,7 @@ BYTE Uthernet2::IO_C0(WORD programcounter, WORD address, BYTE write, BYTE value,
 #ifdef U2_LOG_VERBOSE
   const char * mode = write ? "WRITE " : "READ  ";
   const char c = std::isprint(res) ? res : '.';
-  LogFileOutput("U2: %04x: %s %04x[%04x] %02x = %02x, %c [%d = %d]\n", programcounter, mode, address, oldAddress, value, res, c, value, res);
+  LogFileOutput("U2: %04x: %s %04x[%04x] %02x = %02x, %c [%3d = %3d]\n", programcounter, mode, address, oldAddress, value, res, c, value, res);
 #endif
 
   return res;
