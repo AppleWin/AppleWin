@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SAM.h"
 #include "SerialComms.h"
 #include "SNESMAX.h"
+#include "Uthernet1.h"
 #include "VidHD.h"
 #include "LanguageCard.h"
 #include "Memory.h"
@@ -91,7 +92,7 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = new SAMCard(slot);
 		break;
 	case CT_Uthernet:
-		m_slot[slot] = new DummyCard(type, slot);
+		m_slot[slot] = new Uthernet1(slot);
 		break;
 	case CT_FourPlay:
 		m_slot[slot] = new FourPlayCard(slot);

@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SoundCore.h"
 
 #include "Configuration/IPropertySheet.h"
-#include "Tfe/tfe.h"
+#include "Uthernet1.h"
 
 #ifdef USE_SPEECH_API
 #include "Speech.h"
@@ -257,15 +257,11 @@ void LoadConfiguration(bool loadImages)
 
 			if (slot == SLOT3)
 			{
-				tfe_enabled = 0;
-
 				if ((SS_CARDTYPE)dwTmp == CT_Uthernet)	// TODO: move this to when UthernetCard object is instantiated
 				{
 					std::string regSection = RegGetConfigSlotSection(slot);
 					if (RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, szFilename, MAX_PATH, TEXT("")))
-						update_tfe_interface(szFilename);
-
-					tfe_init(true);
+						Uthernet1::tfe_interface = szFilename;
 				}
 			}
 		}
@@ -273,19 +269,14 @@ void LoadConfiguration(bool loadImages)
 		{
 			if (slot == SLOT3)
 			{
-				tfe_enabled = 0;
-
 				DWORD tfeEnabled;
 				REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &tfeEnabled, 0);
 
-				GetCardMgr().Insert(SLOT3, get_tfe_enabled() ? CT_Uthernet : CT_Empty);
+				GetCardMgr().Insert(SLOT3, tfeEnabled ? CT_Uthernet : CT_Empty);
 
 				// TODO: move this to when UthernetCard object is instantiated
 				RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
-				update_tfe_interface(szFilename);
-
-				if (tfeEnabled)
-					tfe_init(true);
+				Uthernet1::tfe_interface = szFilename;
 			}
 			else if (slot == SLOT4 && REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
 				GetCardMgr().Insert(SLOT4, (SS_CARDTYPE)dwTmp);

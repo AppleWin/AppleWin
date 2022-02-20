@@ -932,9 +932,6 @@ static void Shutdown(void)
 	CoUninitialize();
 	LogFileOutput("Exit: CoUninitialize()\n");
 
-	tfe_shutdown();
-	LogFileOutput("Exit: tfe_shutdown()\n");
-
 	LogDone();
 
 	RiffFinishWriteFile();

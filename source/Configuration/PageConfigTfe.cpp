@@ -199,7 +199,15 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 	uilib_adjust_group_width(hwnd, ms_leftgroup);
 	uilib_move_group(hwnd, ms_rightgroup, xsize + 30);
 
-	active_value = (m_tfe_enabled > 0 ? 1 : 0);
+	switch (m_tfe_enabled)
+	{
+	case CT_Uthernet:
+		active_value = 1;
+		break;
+	default:
+		active_value = 0;
+		break;
+	}
 
 	temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_ENABLE);
 	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Disabled");
@@ -271,11 +279,19 @@ void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 	{
 		m_tfe_interface_name = buffer;
 		active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
-		m_tfe_enabled = active_value > 0 ? 1 : 0;
+		switch (active_value)
+		{
+		case 1:
+			m_tfe_enabled = CT_Uthernet;
+			break;
+		default:
+			m_tfe_enabled = CT_Empty;
+			break;
+		}
 	}
 	else
 	{
-		m_tfe_enabled = 0;
+		m_tfe_enabled = CT_Empty;
 		m_tfe_interface_name.clear();
 	}
 }

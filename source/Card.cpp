@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 #include "Card.h"
 
-#include "Tfe/tfe.h"
+#include "Uthernet1.h"
 #include "Mockingboard.h"
 #include "ParallelPrinter.h"
 #include "z80emu.h"
@@ -70,9 +70,6 @@ void DummyCard::InitializeIO(LPBYTE pCxRomPeripheral)
 	{
 	case CT_GenericPrinter:
 		PrintLoadRom(pCxRomPeripheral, m_slot);
-		break;
-	case CT_Uthernet:
-		tfe_InitializeIO(pCxRomPeripheral, m_slot);
 		break;
 	case CT_GenericClock:
 		break; // nothing to do
@@ -124,9 +121,6 @@ void DummyCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	case CT_Z80:
 		Z80_SaveSnapshot(yamlSaveHelper, m_slot);
 		break;
-	case CT_Uthernet:
-		tfe_SaveSnapshot(yamlSaveHelper, m_slot);
-		break;
 	}
 }
 
@@ -142,8 +136,6 @@ bool DummyCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 		return Phasor_LoadSnapshot(yamlLoadHelper, m_slot, version);
 	case CT_Z80:
 		return Z80_LoadSnapshot(yamlLoadHelper, m_slot, version);
-	case CT_Uthernet:
-		return tfe_LoadSnapshot(yamlLoadHelper, m_slot, version);
 	}
 	return false;
 }
@@ -186,7 +178,7 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 	case CT_SAM:
 		return SAMCard::GetSnapshotCardName();
 	case CT_Uthernet:
-		return tfe_GetSnapshotCardName();
+		return Uthernet1::GetSnapshotCardName();
 	case CT_FourPlay:
 		return FourPlayCard::GetSnapshotCardName();
 	case CT_SNESMAX:
@@ -236,7 +228,7 @@ SS_CARDTYPE Card::GetCardType(const std::string & card)
 	{
 		return CT_GenericHDD;
 	}
-	else if (card == tfe_GetSnapshotCardName())
+	else if (card == Uthernet1::GetSnapshotCardName())
 	{
 		return CT_Uthernet;
 	}

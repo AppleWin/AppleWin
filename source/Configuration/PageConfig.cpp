@@ -112,7 +112,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 
 		case IDC_ETHERNET:
 			ui_tfe_settings_dialog(hWnd);
-			m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = m_PageConfigTfe.m_tfe_enabled ? CT_Uthernet : CT_Empty;
+			m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = m_PageConfigTfe.m_tfe_enabled;
 			InitOptions(hWnd);
 			break;
 
@@ -249,8 +249,17 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			}
 
 			{
-				m_PageConfigTfe.m_tfe_enabled = get_tfe_enabled();
-				m_PageConfigTfe.m_tfe_interface_name = get_tfe_interface();
+				SS_CARDTYPE cardInSlot3 = GetCardMgr().QuerySlot(SLOT3);
+				switch (cardInSlot3) {
+				case CT_Uthernet:
+					m_PageConfigTfe.m_tfe_enabled = cardInSlot3;
+					break;
+				default:
+					m_PageConfigTfe.m_tfe_enabled = CT_Empty;
+					break;
+				}
+
+				m_PageConfigTfe.m_tfe_interface_name = Uthernet1::tfe_interface;
 			}
 
 			InitOptions(hWnd);

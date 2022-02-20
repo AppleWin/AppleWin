@@ -53,6 +53,8 @@
 
 #define TFE_DEBUG_WARN 1 /* this should not be deactivated */
 
+int tfe_cannot_use = 0;
+
 #ifdef _MSC_VER
 
 typedef pcap_t	*(*pcap_open_live_t)(const char *, int, int, int, char *);
@@ -121,6 +123,7 @@ BOOL TfePcapLoadLibrary(void)
         pcap_library = LoadLibrary("wpcap.dll");
 
         if (!pcap_library) {
+            tfe_cannot_use = 1;
             if(g_fh) fprintf(g_fh, "LoadLibrary WPCAP.DLL failed!\n" );
             return FALSE;
         }
@@ -179,7 +182,6 @@ static BOOL TfePcapLoadLibrary(void)
 
 static pcap_if_t *TfePcapNextDev = NULL;
 static pcap_if_t *TfePcapAlldevs = NULL;
-static pcap_t *TfePcapFP = NULL;
 
 static char TfePcapErrbuf[PCAP_ERRBUF_SIZE];
 
@@ -284,13 +286,13 @@ int tfe_arch_enumadapter_close(void)
     return 1;
 }
 
-static
-BOOL TfePcapOpenAdapter(const std::string & interface_name)
+
+pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
 {
     pcap_if_t *TfePcapDevice = NULL;
 
     if (!tfe_enumadapter_open()) {
-        return FALSE;
+        return NULL;
     }
     else {
         /* look if we can find the specified adapter */
@@ -319,12 +321,12 @@ BOOL TfePcapOpenAdapter(const std::string & interface_name)
         }
     }
 
-    TfePcapFP = (*p_pcap_open_live)(TfePcapDevice->name, 1700, 1, 20, TfePcapErrbuf);
+    pcap_t * TfePcapFP = (*p_pcap_open_live)(TfePcapDevice->name, 1700, 1, 20, TfePcapErrbuf);
     if ( TfePcapFP == NULL)
     {
         if(g_fh) fprintf(g_fh, "ERROR opening adapter: '%s'\n", TfePcapErrbuf);
         tfe_enumadapter_close();
-        return FALSE;
+        return NULL;
     }
 
     if ((*p_pcap_setnonblock)(TfePcapFP, 1, TfePcapErrbuf)<0)
@@ -339,64 +341,23 @@ BOOL TfePcapOpenAdapter(const std::string & interface_name)
 		tfe_enumadapter_close();
         (*p_pcap_close)(TfePcapFP);
         TfePcapFP = NULL;
-        return FALSE;
+        return NULL;
 	}
 	
     tfe_enumadapter_close();
-    return TRUE;
+    return TfePcapFP;
 }
 
+void TfePcapCloseAdapter(pcap_t * TfePcapFP)
+{
+    if (TfePcapFP)
+    {
+        (*p_pcap_close)(TfePcapFP);
+    }
+}
 
 /* ------------------------------------------------------------------------- */
 /*    the architecture-dependend functions                                   */
-
-
-int tfe_arch_init(void)
-{
- //   g_fh = log_open("TFEARCH");
-
-    if (!TfePcapLoadLibrary()) {
-        return 0;
-    }
-
-    return 1;
-}
-
-void tfe_arch_pre_reset( void )
-{
-#ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_pre_reset().\n" );
-#endif
-}
-
-void tfe_arch_post_reset( void )
-{
-#ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_post_reset().\n" );
-#endif
-}
-
-int tfe_arch_activate(const std::string & interface_name)
-{
-#ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_activate().\n" );
-#endif
-    if (!TfePcapOpenAdapter(interface_name)) {
-        return 0;
-    }
-    return 1;
-}
-
-void tfe_arch_deactivate( void )
-{
-#ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_deactivate().\n" );
-#endif
-    if (TfePcapFP) {
-        (*p_pcap_close)(TfePcapFP);
-        TfePcapFP = NULL;
-    }
-}
 
 void tfe_arch_set_mac( const BYTE mac[6] )
 {
@@ -493,7 +454,7 @@ void TfePcapPacketHandler(u_char *param, const struct pcap_pkthdr *header, const
    At most 'len' bytes are copied.
 */
 static 
-int tfe_arch_receive_frame(TFE_PCAP_INTERNAL *pinternal)
+int tfe_arch_receive_frame(pcap_t * TfePcapFP, TFE_PCAP_INTERNAL *pinternal)
 {
     int ret = -1;
 
@@ -511,7 +472,8 @@ int tfe_arch_receive_frame(TFE_PCAP_INTERNAL *pinternal)
     return ret;
 }
 
-void tfe_arch_transmit(int force,       /* FORCE: Delete waiting frames in transmit buffer */
+void tfe_arch_transmit(pcap_t * TfePcapFP,
+                       int force,       /* FORCE: Delete waiting frames in transmit buffer */
                        int onecoll,     /* ONECOLL: Terminate after just one collision */
                        int inhibit_crc, /* INHIBITCRC: Do not append CRC to the transmission */
                        int tx_pad_dis,  /* TXPADDIS: Disable padding to 60 Bytes */
@@ -564,7 +526,8 @@ void tfe_arch_transmit(int force,       /* FORCE: Delete waiting frames in trans
     *pbroadcast is set, else cleared.
   - if the received frame had a crc error, *pcrc_error is set, else cleared
 */
-int tfe_arch_receive(BYTE *pbuffer  ,    /* where to store a frame */
+int tfe_arch_receive(pcap_t * TfePcapFP,
+                     BYTE *pbuffer  ,    /* where to store a frame */
                      int  *plen,         /* IN: maximum length of frame to copy; 
                                             OUT: length of received frame 
                                             OUT can be bigger than IN if received frame was
@@ -588,7 +551,7 @@ int tfe_arch_receive(BYTE *pbuffer  ,    /* where to store a frame */
 
     assert((*plen&1)==0);
 
-    len = tfe_arch_receive_frame(&internal);
+    len = tfe_arch_receive_frame(TfePcapFP, &internal);
 
     if (len!=-1) {
 

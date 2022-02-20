@@ -303,6 +303,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\Uthernet1.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\Uthernet1.h"
+				>
+			</File>
+			<File
 				RelativePath=".\source\Utilities.cpp"
 				>
 			</File>

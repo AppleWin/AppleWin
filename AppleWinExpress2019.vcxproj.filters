@@ -250,6 +250,9 @@
     <ClCompile Include="source\StrFormat.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\Uthernet1.cpp">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\CommonVICE\6510core.h">
@@ -572,6 +575,9 @@
     </ClInclude>
     <ClInclude Include="source\StrFormat.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Uthernet1.h">
+      <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

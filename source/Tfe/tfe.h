@@ -31,29 +31,8 @@
 #include <stdio.h>
 #include <string>
 
-/* define this only if VICE should write each and every frame received
-   and send into the VICE log
-   WARNING: The log grows very fast!
-*/
-/** #define TFE_DEBUG_FRAMES **/
-
-extern int tfe_enabled;
-
-extern void tfe_init(bool reset);
-extern int tfe_resources_init(void);
-extern int tfe_cmdline_options_init(void);
-extern int update_tfe_interface(const std::string & name);
-void get_disabled_state(int * param);
-
-extern void tfe_shutdown(void);
-extern BYTE REGPARM1 tfe_read(WORD addr);
-extern void REGPARM2 tfe_store(WORD addr, BYTE byte);
-void tfe_InitializeIO(LPBYTE pCxRomPeripheral, UINT slot);
-void tfe_SetRegistryInterface(UINT slot, const std::string& name);
-
-std::string tfe_GetSnapshotCardName(void);
-void tfe_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
-bool tfe_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+extern void get_disabled_state(int * param);
+extern void tfe_SetRegistryInterface(UINT slot, const std::string& name);
 
 /*
  These functions let the UI enumerate the available interfaces.
@@ -78,10 +57,5 @@ bool tfe_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT vers
 extern int tfe_enumadapter_open(void);
 extern int tfe_enumadapter(char **ppname, char **ppdescription);
 extern int tfe_enumadapter_close(void);
-
-extern int get_tfe_enabled(void);
-extern const std::string & get_tfe_interface(void);
-
-extern FILE*      g_fh;				// Filehandle for log file
 
 #endif
