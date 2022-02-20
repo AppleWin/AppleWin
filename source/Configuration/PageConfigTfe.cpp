@@ -199,7 +199,7 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 	uilib_adjust_group_width(hwnd, ms_leftgroup);
 	uilib_move_group(hwnd, ms_rightgroup, xsize + 30);
 
-	switch (m_tfe_enabled)
+	switch (m_tfe_selected)
 	{
 	case CT_Uthernet:
 		active_value = 1;
@@ -286,19 +286,19 @@ void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 		switch (active_value)
 		{
 		case 1:
-			m_tfe_enabled = CT_Uthernet;
+			m_tfe_selected = CT_Uthernet;
 			break;
 		case 2:
-			m_tfe_enabled = CT_Uthernet2;
+			m_tfe_selected = CT_Uthernet2;
 			break;
 		default:
-			m_tfe_enabled = CT_Empty;
+			m_tfe_selected = CT_Empty;
 			break;
 		}
 	}
 	else
 	{
-		m_tfe_enabled = CT_Empty;
+		m_tfe_selected = CT_Empty;
 		m_tfe_interface_name.clear();
 	}
 }

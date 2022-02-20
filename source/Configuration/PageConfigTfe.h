@@ -12,13 +12,13 @@ public:
 	CPageConfigTfe()
 	{
 		CPageConfigTfe::ms_this = this;
-		m_tfe_enabled = CT_Empty;
+		m_tfe_selected = CT_Empty;
 	}
 	virtual ~CPageConfigTfe(){}
 
 	static INT_PTR CALLBACK DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
 
-	SS_CARDTYPE m_tfe_enabled;
+	SS_CARDTYPE m_tfe_selected;
 	std::string m_tfe_interface_name;
 
 protected:
