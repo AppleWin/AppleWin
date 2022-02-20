@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Log.h"
 #include "../Registry.h"
 #include "../SaveState.h"
-#include "../Tfe/tfe.h"
+#include "../Tfe/PCapBackend.h"
 
 /*
 Config causing AfterClose msgs:
@@ -334,7 +334,7 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
 	if (CONFIG_CHANGED_LOCAL(m_tfeInterface))
-		tfe_SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
+		PCapBackend::tfe_SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
 
 	slot = SLOT4;
 	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))

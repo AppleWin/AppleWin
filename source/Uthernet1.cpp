@@ -5,7 +5,6 @@
 #include "Log.h"
 #include "Memory.h"
 #include "Tfe/tfearch.h"
-#include "Tfe/tfe.h"
 #include "Tfe/tfesupp.h"
 #include "Tfe/Backend.h"
 #include "Tfe/PCapBackend.h"
@@ -1135,7 +1134,7 @@ bool Uthernet1::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
     for (UINT i = 0; i < 6; i++)
         tfe_sideeffects_write_pp((TFE_PP_ADDR_MAC_ADDR + i) & ~1, i & 1);           // set tfe_ia_mac
 
-    tfe_SetRegistryInterface(m_slot, PCapBackend::tfe_interface);
+    PCapBackend::tfe_SetRegistryInterface(m_slot, PCapBackend::tfe_interface);
 
     return true;
 }

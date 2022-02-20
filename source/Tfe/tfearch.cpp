@@ -40,7 +40,6 @@
 #include <string.h>
 
 #include <StdAfx.h> // this is necessary in linux, but in MSVC windows.h MUST come after winsock2.h (from pcap.h above)
-#include "tfe.h"
 #include "tfearch.h"
 #include "tfesupp.h"
 #include "../Log.h"
@@ -291,7 +290,7 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
 {
     pcap_if_t *TfePcapDevice = NULL;
 
-    if (!tfe_enumadapter_open()) {
+    if (!tfe_arch_enumadapter_open()) {
         return NULL;
     }
     else {
@@ -304,7 +303,7 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
             /* we have an interface name, try it */
             TfePcapDevice = TfePcapAlldevs;
 
-            while (tfe_enumadapter(&pname, &pdescription)) {
+            while (tfe_arch_enumadapter(&pname, &pdescription)) {
                 if (strcmp(pname, interface_name.c_str())==0) {
                     found = TRUE;
                 }
@@ -325,7 +324,7 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
     if ( TfePcapFP == NULL)
     {
         if(g_fh) fprintf(g_fh, "ERROR opening adapter: '%s'\n", TfePcapErrbuf);
-        tfe_enumadapter_close();
+        tfe_arch_enumadapter_close();
         return NULL;
     }
 
@@ -338,13 +337,13 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
 	if((*p_pcap_datalink)(TfePcapFP) != DLT_EN10MB)
 	{
 		if(g_fh) fprintf(g_fh, "ERROR: TFE works only on Ethernet networks.\n");
-		tfe_enumadapter_close();
+		tfe_arch_enumadapter_close();
         (*p_pcap_close)(TfePcapFP);
         TfePcapFP = NULL;
         return NULL;
 	}
 	
-    tfe_enumadapter_close();
+    tfe_arch_enumadapter_close();
     return TfePcapFP;
 }
 

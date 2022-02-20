@@ -474,30 +474,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\Tfe\tfe.cpp"
-					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							UsePrecompiledHeader="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							UsePrecompiledHeader="0"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath=".\source\Tfe\tfe.h"
-					>
-				</File>
-				<File
 					RelativePath=".\source\Tfe\tfearch.cpp"
 					>
 					<FileConfiguration

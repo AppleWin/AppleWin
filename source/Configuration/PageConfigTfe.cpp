@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Common.h"
 #include "../Registry.h"
 #include "../resource/resource.h"
-#include "../Tfe/tfe.h"
+#include "../Tfe/PCapBackend.h"
 #include "../Tfe/tfesupp.h"
 
 CPageConfigTfe* CPageConfigTfe::ms_this = 0;	// reinit'd in ctor
@@ -111,29 +111,29 @@ void CPageConfigTfe::DlgCANCEL(HWND window)
 
 BOOL CPageConfigTfe::get_tfename(int number, char **ppname, char **ppdescription)
 {
-	if (tfe_enumadapter_open())
+	if (PCapBackend::tfe_enumadapter_open())
 	{
 		char *pname = NULL;
 		char *pdescription = NULL;
 
 		while (number--)
 		{
-			if (!tfe_enumadapter(&pname, &pdescription))
+			if (!PCapBackend::tfe_enumadapter(&pname, &pdescription))
 				break;
 
 			lib_free(pname);
 			lib_free(pdescription);
 		}
 
-		if (tfe_enumadapter(&pname, &pdescription))
+		if (PCapBackend::tfe_enumadapter(&pname, &pdescription))
 		{
 			*ppname = pname;
 			*ppdescription = pdescription;
-			tfe_enumadapter_close();
+			PCapBackend::tfe_enumadapter_close();
 			return TRUE;
 		}
 
-		tfe_enumadapter_close();
+		PCapBackend::tfe_enumadapter_close();
 	}
 
 	return FALSE;
@@ -145,7 +145,7 @@ int CPageConfigTfe::gray_ungray_items(HWND hwnd)
 	int number;
 
 	int disabled = 0;
-	get_disabled_state(&disabled);
+	PCapBackend::get_disabled_state(&disabled);
 
 	if (disabled)
 	{
@@ -214,7 +214,7 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Uthernet");
 	SendMessage(temp_hwnd, CB_SETCURSEL, (WPARAM)active_value, 0);
 
-	if (tfe_enumadapter_open())
+	if (PCapBackend::tfe_enumadapter_open())
 	{
 		int cnt = 0;
 
@@ -223,7 +223,7 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 
 		temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_INTERFACE);
 
-		for (cnt = 0; tfe_enumadapter(&pname, &pdescription); cnt++)
+		for (cnt = 0; PCapBackend::tfe_enumadapter(&pname, &pdescription); cnt++)
 		{
 			BOOL this_entry = FALSE;
 
@@ -245,7 +245,7 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 			}
 		}
 
-		tfe_enumadapter_close();
+		PCapBackend::tfe_enumadapter_close();
 	}
 
 	if (gray_ungray_items(hwnd))

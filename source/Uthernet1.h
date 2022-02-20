@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Card.h"
-#include "CommonVICE/types.h"
 
 /* define this only if VICE should write each and every frame received
    and send into the VICE log
@@ -194,10 +193,10 @@ private:
 	int  tfe_recv_promiscuous;	/* promiscuous mode */
 	int  tfe_recv_hashfilter;	/* accept if IA passes the hash filter */
 
-	#ifdef TFE_DEBUG_WARN
+#ifdef TFE_DEBUG_WARN
 	/* remember if the TXCMD has been completed before a new one is issued */
 	int tfe_started_tx;
-	#endif
+#endif
 
 	/* TFE registers */
 	/* these are the 8 16-bit-ports for "I/O space configuration"
