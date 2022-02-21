@@ -16,12 +16,12 @@ public:
 
 	// transmit a packet
 	virtual void transmit(
-		int txlength,			/* Frame length */
+		const int txlength,		/* Frame length */
 		uint8_t *txframe		/* Pointer to the frame to be transmitted */
 	);
 
-	// receive a single packet
-	virtual int receive(uint8_t * data, int * size);
+	// receive a single packet, return size (>0) or missing (-1)
+	virtual int receive(const int size, uint8_t * rxframe);
 
 	// receive all pending packets (to the queue)
 	virtual void update(const ULONG nExecutedCycles);

@@ -1,5 +1,11 @@
 #pragma once
 
+#define MAX_TXLENGTH 1518
+#define MIN_TXLENGTH 4
+
+#define MAX_RXLENGTH 1518
+#define MIN_RXLENGTH 64
+
 class NetworkBackend
 {
 public:
@@ -7,14 +13,14 @@ public:
 
 	// transmit a packet
 	virtual void transmit(
-		int txlength,			/* Frame length */
+		const int txlength,		/* Frame length */
 		uint8_t *txframe		/* Pointer to the frame to be transmitted */
 	) = 0;
 
-	// receive a single packet
+	// receive a single packet, return size (>0) or missing (-1)
 	virtual int receive(
-		uint8_t * data,			/* Pointer to the buffer */
-		int * size				/* IN : buffer size, OUT : frame size */
+		const int size,			/* Buffer size */
+		uint8_t * rxframe		/* Pointer to the buffer */
 	) = 0;
 
 	// process pending packets

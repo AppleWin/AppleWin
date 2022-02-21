@@ -864,9 +864,7 @@ WORD Uthernet1::tfe_receive(void)
 
     BYTE buffer[MAX_RXLENGTH];
 
-    int  len;
     int  multicast = 0;
-    int  newframe;
 
     int  ready;
 
@@ -875,18 +873,16 @@ WORD Uthernet1::tfe_receive(void)
 #endif
 
     do {
-        len = MAX_RXLENGTH;
-
         ready = 1 ; /* assume we will find a good frame */
 
-        newframe = networkBackend->receive(
-            buffer,       /* where to store a frame */
-            &len          /* length of received frame */
+        int len = networkBackend->receive(
+            sizeof(buffer), /* size of buffer */
+            buffer          /* where to store a frame */
             );
 
-        assert((len&1) == 0); /* length has to be even! */
+        if (len > 0) {
+            assert((len&1) == 0); /* length has to be even! */
 
-        if (newframe) {
             int  hashed = 0;
             int  hash_index = 0;
             int  broadcast = 0;
@@ -895,25 +891,15 @@ WORD Uthernet1::tfe_receive(void)
 
             int  rx_ok = 1;
 
-            if (hashed || correct_mac || broadcast) {
-                /* we already know the type of frame: Trust it! */
-#ifdef TFE_DEBUG_FRAMES
-                if(g_fh) fprintf( g_fh, "+++ tfe_receive(): *** hashed=%u, correct_mac=%u, "
-                    "broadcast=%u", hashed, correct_mac, broadcast);
-#endif
-            }
-            else {
-                /* determine ourself the type of frame */
-                if (!tfe_should_accept(buffer,
-                    len, &hashed, &hash_index, &correct_mac, &broadcast, &multicast)) {
+            /* determine ourself the type of frame */
+            if (!tfe_should_accept(buffer,
+                len, &hashed, &hash_index, &correct_mac, &broadcast, &multicast)) {
 
-                    /* if we should not accept this frame, just do nothing
-                     * now, look for another one */
-                    ready = 0; /* try another frame */
-                    continue;
-                }
+                /* if we should not accept this frame, just do nothing
+                    * now, look for another one */
+                ready = 0; /* try another frame */
+                continue;
             }
-
 
             /* we did receive a frame, return that status */
             ret_val |= rx_ok     ? 0x0100 : 0;

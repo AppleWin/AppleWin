@@ -63,12 +63,9 @@ void tfe_arch_transmit(pcap_t * TfePcapFP,
 
 extern
 int tfe_arch_receive(pcap_t * TfePcapFP,
-                     BYTE *pbuffer  ,    /* where to store a frame */
-                     int  *plen          /* IN: maximum length of frame to copy;
-                                            OUT: length of received frame 
-                                            OUT can be bigger than IN if received frame was
-                                                longer than supplied buffer */
-                     );
+                     const int size ,    /* Size of buffer */
+                     BYTE *pbuffer       /* where to store a frame */
+                    );
 
 extern int tfe_arch_enumadapter_open(void);
 extern int tfe_arch_enumadapter(char **ppname, char **ppdescription);

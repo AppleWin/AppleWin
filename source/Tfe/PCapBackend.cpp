@@ -19,7 +19,7 @@ PCapBackend::~PCapBackend()
 }
 
 void PCapBackend::transmit(
-    int txlength,			/* Frame length */
+    const int txlength,	    /* Frame length */
     uint8_t *txframe        /* Pointer to the frame to be transmitted */
 )
 {
@@ -29,15 +29,15 @@ void PCapBackend::transmit(
     }
 }
 
-int PCapBackend::receive(uint8_t * data, int * size)
+int PCapBackend::receive(const int size, uint8_t * rxframe)
 {
     if (tfePcapFP)
     {
-        return tfe_arch_receive(tfePcapFP, data, size);
+        return tfe_arch_receive(tfePcapFP, size, rxframe);
     }
     else
     {
-        return 0;
+        return -1;
     }
 }
 

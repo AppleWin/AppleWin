@@ -1,6 +1,5 @@
 #include <StdAfx.h>
 #include "YamlHelper.h"
-#include "Uthernet1.h"
 #include "Uthernet2.h"
 #include "Interface.h"
 #include "Tfe/Backend.h"
@@ -383,20 +382,23 @@ void Uthernet2::updateRSR(const size_t i)
     socket.sn_rx_rsr = dataPresent;
 }
 
-bool Uthernet2::receiveForMacAddress(const bool acceptAll, uint8_t * data, int * size)
+int Uthernet2::receiveForMacAddress(const bool acceptAll, const int size, uint8_t * data)
 {
     const uint8_t * mac = myMemory.data() + SHAR0;
-    const int sizeOfBuffer = *size;
 
     // loop until we receive a valid frame, or there is nothing to receive
-    while (myNetworkBackend->receive(data, size))
+    int len;
+    while ((len = myNetworkBackend->receive(size, data)) > 0)
     {
-        if (acceptAll)
+        // minimum valid Ethernet frame is actually 64 bytes
+        // 12 is the minimum to ensure valid MAC Address logging later
+        if (len >= 12)
         {
-            return true;
-        }
-        else if (*size > 6)
-        {
+            if (acceptAll)
+            {
+                return len;
+            }
+
             if (data[0] == mac[0] &&
                 data[1] == mac[1] &&
                 data[2] == mac[2] &&
@@ -404,7 +406,7 @@ bool Uthernet2::receiveForMacAddress(const bool acceptAll, uint8_t * data, int *
                 data[4] == mac[4] &&
                 data[5] == mac[5])
             {
-                return true;
+                return len;
             }
 
             if (data[0] == 0xFF &&
@@ -414,14 +416,13 @@ bool Uthernet2::receiveForMacAddress(const bool acceptAll, uint8_t * data, int *
                 data[4] == 0xFF &&
                 data[5] == 0xFF)
             {
-                return true;
+                return len;
             }
         }
-        // reset size for next iteration
-        *size = sizeOfBuffer;
+        // skip this frame and try with another one
     }
     // no frames available to process
-    return false;
+    return len;
 }
 
 void Uthernet2::receiveOnePacketMacRaw(const size_t i)
@@ -429,13 +430,14 @@ void Uthernet2::receiveOnePacketMacRaw(const size_t i)
     Socket &socket = mySockets[i];
 
     uint8_t buffer[MAX_RXLENGTH];
-    int len = MAX_RXLENGTH;
 
     const uint8_t mr = myMemory[socket.registers + SN_MR];
     const bool filterMAC = mr & SN_MR_MF;
 
-    if (receiveForMacAddress(!filterMAC, buffer, &len))
+    const int len = receiveForMacAddress(!filterMAC, sizeof(buffer), buffer);
+    if (len > 0)
     {
+        // we know the packet is at least 12 bytes, and logging is ok
         if (socket.isThereRoomFor(len, sizeof(uint16_t)))
         {
             writeDataMacRaw(socket, myMemory, buffer, len);

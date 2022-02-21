@@ -81,7 +81,7 @@ private:
     void receiveOnePacketMacRaw(const size_t i);
     void receiveOnePacketFromSocket(const size_t i);
     void receiveOnePacket(const size_t i);
-    bool receiveForMacAddress(const bool acceptAll, uint8_t * data, int * size);
+    int receiveForMacAddress(const bool acceptAll, const int size, uint8_t * data);
 
     void sendDataMacRaw(const size_t i, std::vector<uint8_t> &data) const;
     void sendDataToSocket(const size_t i, std::vector<uint8_t> &data);

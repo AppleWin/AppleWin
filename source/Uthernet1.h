@@ -116,12 +116,6 @@ TFE_PP_ADDR_MAC_ADDR        0x0158 * # RW - 4.6., p. 71 - 5.3., p. 86 *
 /* ------------------------------------------------------------------------- */
 /*    some parameter definitions                                             */
 
-#define MAX_TXLENGTH 1518
-#define MIN_TXLENGTH 4
-
-#define MAX_RXLENGTH 1518
-#define MIN_RXLENGTH 64
-
 class NetworkBackend;
 
 class Uthernet1 : public Card

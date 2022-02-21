@@ -422,9 +422,9 @@ void tfe_arch_line_ctl(int bEnableTransmitter, int bEnableReceiver )
 
 
 typedef struct TFE_PCAP_INTERNAL_tag {
-
-    unsigned int len;
+    const unsigned int size;
     BYTE *buffer;
+    unsigned int rxlength;
 
 } TFE_PCAP_INTERNAL;
 
@@ -438,10 +438,9 @@ void TfePcapPacketHandler(u_char *param, const struct pcap_pkthdr *header, const
     /* determine the count of bytes which has been returned, 
      * but make sure not to overrun the buffer 
      */
-    if (header->caplen < pinternal->len)
-        pinternal->len = header->caplen;
+    pinternal->rxlength = min(pinternal->size, header->caplen);
 
-    memcpy(pinternal->buffer, pkt_data, pinternal->len);
+    memcpy(pinternal->buffer, pkt_data, pinternal->rxlength);
 }
 
 /* the following function receives a frame.
@@ -463,7 +462,7 @@ int tfe_arch_receive_frame(pcap_t * TfePcapFP, TFE_PCAP_INTERNAL *pinternal)
 	/* RGJ changed from void to u_char for AppleWin */
 	if ((*p_pcap_dispatch)(TfePcapFP, 1, TfePcapPacketHandler, (u_char *)pinternal)!=0) {
         /* Something has been received */
-        ret = pinternal->len;
+        ret = pinternal->rxlength;
     }
 
 #ifdef TFE_DEBUG_ARCH
@@ -495,7 +494,7 @@ void tfe_arch_transmit(pcap_t * TfePcapFP,
   tfe_arch_receive()
 
   This function checks if there was a frame received.
-  If so, it returns 1, else 0.
+  If so, it returns its size, else -1.
 
   If there was no frame, none of the parameters is changed!
 
@@ -517,25 +516,19 @@ void tfe_arch_transmit(pcap_t * TfePcapFP,
   - if the received frame had a crc error, *pcrc_error is set, else cleared
 */
 int tfe_arch_receive(pcap_t * TfePcapFP,
-                     BYTE *pbuffer  ,    /* where to store a frame */
-                     int  *plen          /* IN: maximum length of frame to copy;
-                                            OUT: length of received frame 
-                                            OUT can be bigger than IN if received frame was
-                                                longer than supplied buffer */
+                     const int size ,    /* Size of buffer */
+                     BYTE *pbuffer       /* where to store a frame */
                     )
 {
-    int len;
-
-    TFE_PCAP_INTERNAL internal = { static_cast<unsigned int>(*plen), pbuffer };
-
+    TFE_PCAP_INTERNAL internal = { static_cast<unsigned int>(size), pbuffer, 0 };
 
 #ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_receive() called, with *plen=%u.\n", *plen );
+    if(g_fh) fprintf( g_fh, "tfe_arch_receive() called, with size=%u.\n", size );
 #endif
 
-    assert((*plen&1)==0);
+    assert((size & 1)==0);
 
-    len = tfe_arch_receive_frame(TfePcapFP, &internal);
+    int len = tfe_arch_receive_frame(TfePcapFP, &internal);
 
     if (len!=-1) {
 
@@ -546,12 +539,10 @@ int tfe_arch_receive(pcap_t * TfePcapFP,
         if (len&1)
             ++len;
 
-        *plen = len;
-
-        return 1;
+        return len;
     }
 
-    return 0;
+    return -1;
 }
 
 //#endif /* #ifdef HAVE_TFE */
