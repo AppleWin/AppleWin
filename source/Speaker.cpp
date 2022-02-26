@@ -98,15 +98,12 @@ static void DisplayBenchmarkResults ()
 {
   DWORD totaltime = GetTickCount()-extbench;
   GetFrame().VideoRedrawScreen();
-  TCHAR buffer[64];
-  wsprintf(buffer,
-           TEXT("This benchmark took %u.%02u seconds."),
-           (unsigned)(totaltime / 1000),
-           (unsigned)((totaltime / 10) % 100));
-  GetFrame().FrameMessageBox(
-             buffer,
-             TEXT("Benchmark Results"),
-             MB_ICONINFORMATION | MB_SETFOREGROUND);
+  std::string strText = StrFormat("This benchmark took %u.%02u seconds.",
+								  (unsigned)(totaltime / 1000),
+								  (unsigned)((totaltime / 10) % 100));
+  GetFrame().FrameMessageBox(strText.c_str(),
+							 "Benchmark Results",
+							 MB_ICONINFORMATION | MB_SETFOREGROUND);
 }
 
 //=============================================================================

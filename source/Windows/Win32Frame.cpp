@@ -63,10 +63,10 @@ Win32Frame::Win32Frame()
 	g_nTrackDrive2 = -1;
 	g_nSectorDrive1 = -1;
 	g_nSectorDrive2 = -1;
-	strcpy_s(g_sTrackDrive1, sizeof(g_sTrackDrive1), "??");
-	strcpy_s(g_sTrackDrive2, sizeof(g_sTrackDrive1), "??");
-	strcpy_s(g_sSectorDrive1, sizeof(g_sTrackDrive1), "??");
-	strcpy_s(g_sSectorDrive2, sizeof(g_sTrackDrive1), "??");
+	g_strTrackDrive1 = "??";
+	g_strTrackDrive2 = "??";
+	g_strSectorDrive1 = "??";
+	g_strSectorDrive2 = "??";
 
 	g_eStatusDrive1 = DISK_STATUS_OFF;
 	g_eStatusDrive2 = DISK_STATUS_OFF;
@@ -259,28 +259,27 @@ void Win32Frame::Benchmark(void)
 				}
 			}
 			if (error) {
-				TCHAR outstr[256];
-				wsprintf(outstr,
-					TEXT("The emulator experienced an error %u clock cycles ")
-					TEXT("into the CPU benchmark.  Prior to the error, the ")
-					TEXT("program counter was at $%04X.  After the error, it ")
-					TEXT("had jumped to $%04X."),
+				std::string strText = StrFormat(
+					"The emulator experienced an error %u clock cycles "
+					"into the CPU benchmark.  Prior to the error, the "
+					"program counter was at $%04X.  After the error, it "
+					"had jumped to $%04X.",
 					(unsigned)loop,
 					(unsigned)lastpc,
 					(unsigned)regs.pc);
 				FrameMessageBox(
-					outstr,
-					TEXT("Benchmarks"),
+					strText.c_str(),
+					"Benchmarks",
 					MB_ICONINFORMATION | MB_SETFOREGROUND);
 			}
 			else
 				FrameMessageBox(
-					TEXT("The emulator was unable to locate the exact ")
-					TEXT("point of the error.  This probably means that ")
-					TEXT("the problem is external to the emulator, ")
-					TEXT("happening asynchronously, such as a problem in ")
-					TEXT("a timer interrupt handler."),
-					TEXT("Benchmarks"),
+					"The emulator was unable to locate the exact "
+					"point of the error.  This probably means that "
+					"the problem is external to the emulator, "
+					"happening asynchronously, such as a problem in "
+					"a timer interrupt handler.",
+					"Benchmarks",
 					MB_ICONINFORMATION | MB_SETFOREGROUND);
 		}
 
@@ -315,21 +314,20 @@ void Win32Frame::Benchmark(void)
 
 	// DISPLAY THE RESULTS
 	DisplayLogo();
-	TCHAR outstr[256];
-	wsprintf(outstr,
-		TEXT("Pure Video FPS:\t%u hires, %u text\n")
-		TEXT("Pure CPU MHz:\t%u.%u%s (video update)\n")
-		TEXT("Pure CPU MHz:\t%u.%u%s (full-speed)\n\n")
-		TEXT("EXPECTED AVERAGE VIDEO GAME\n")
-		TEXT("PERFORMANCE: %u FPS"),
+	std::string strText = StrFormat(
+		"Pure Video FPS:\t%u hires, %u text\n"
+		"Pure CPU MHz:\t%u.%u%s (video update)\n"
+		"Pure CPU MHz:\t%u.%u%s (full-speed)\n\n"
+		"EXPECTED AVERAGE VIDEO GAME\n"
+		"PERFORMANCE: %u FPS",
 		(unsigned)totalhiresfps,
 		(unsigned)totaltextfps,
-		(unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
-		(unsigned)(totalmhz10[1] / 10), (unsigned)(totalmhz10[1] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
+		(unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? " (6502)" : ""),
+		(unsigned)(totalmhz10[1] / 10), (unsigned)(totalmhz10[1] % 10), (LPCTSTR)(IS_APPLE2 ? " (6502)" : ""),
 		(unsigned)realisticfps);
 	FrameMessageBox(
-		outstr,
-		TEXT("Benchmarks"),
+		strText.c_str(),
+		"Benchmarks",
 		MB_ICONINFORMATION | MB_SETFOREGROUND);
 }
 

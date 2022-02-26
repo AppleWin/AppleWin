@@ -661,13 +661,11 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 		else                    g_nSectorDrive2 = -1;
 	}
 
-	sprintf_s( g_sTrackDrive1 , sizeof(g_sTrackDrive1 ), "%2d", g_nTrackDrive1 );
-	if (g_nSectorDrive1 < 0) sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "??" );
-	else                     sprintf_s( g_sSectorDrive1, sizeof(g_sSectorDrive1), "%2d", g_nSectorDrive1 ); 
+	g_strTrackDrive1 = StrFormat( "%2d", g_nTrackDrive1 );
+	g_strSectorDrive1 = (g_nSectorDrive1 < 0) ? "??" : StrFormat( "%2d", g_nSectorDrive1 );
 
-	sprintf_s( g_sTrackDrive2 , sizeof(g_sTrackDrive2),  "%2d", g_nTrackDrive2 );
-	if (g_nSectorDrive2 < 0) sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "??" );
-	else                     sprintf_s( g_sSectorDrive2, sizeof(g_sSectorDrive2), "%2d", g_nSectorDrive2 );
+	g_strTrackDrive2 = StrFormat( "%2d", g_nTrackDrive2 );
+	g_strSectorDrive2 = (g_nSectorDrive2 < 0) ? "??" : StrFormat( "%2d", g_nSectorDrive2 );
 
 	// Draw Track/Sector
 	FrameReleaseDC();
@@ -681,8 +679,6 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 	SetBkColor(dc,RGB(0,0,0));
 	SetTextAlign(dc,TA_LEFT | TA_TOP);
 
-	char text[ 16 ];
-
 	if (g_bIsFullScreen)
 	{
 		// GH#57 - drive lights in full screen mode
@@ -690,20 +686,19 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 		if (!g_bFullScreen_ShowSubunitStatus)
 			return;
 
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ g_eStatusDrive1 ] );
-		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ g_eStatusDrive1 ]);
+		TextOut(dc, x+ 3, y+2, TEXT("1"), 1);
 
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ g_eStatusDrive2 ] );
-		TextOut(dc,x+13,y+2,TEXT("2"),1);
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[ g_eStatusDrive2 ]);
+		TextOut(dc, x+13, y+2, TEXT("2"), 1);
 
 		int dx = 0;
-		if( nActiveFloppy == 0 )
-			sprintf( text, "%s/%s    ", g_sTrackDrive1, g_sSectorDrive1 );
-		else
-			sprintf( text, "%s/%s    ", g_sTrackDrive2, g_sSectorDrive2 );
+		std::string text = ( nActiveFloppy == 0 )
+			? StrFormat( "%s/%s    ", g_strTrackDrive1.c_str(), g_strSectorDrive1.c_str() )
+			: StrFormat( "%s/%s    ", g_strTrackDrive2.c_str(), g_strSectorDrive2.c_str() );
 
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ DISK_STATUS_READ ] );
-		TextOut(dc,x+dx,y-12,text, strlen(text) ); // original: y+2; y-12 puts status in the Configuration Button Icon
+		TextOut(dc, x+dx, y-12, text.c_str(), text.length()); // original: y+2; y-12 puts status in the Configuration Button Icon
 	}
 	else
 	{
@@ -712,22 +707,23 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 			return;
 
 		// Erase background
-		SelectObject(dc,GetStockObject(NULL_PEN));
-		SelectObject(dc,btnfacebrush);
-		Rectangle(dc,x+4,y+32,x+BUTTONCX+1,y+56); // y+35 -> 44 -> 56
+		SelectObject(dc, GetStockObject(NULL_PEN));
+		SelectObject(dc, btnfacebrush);
+		Rectangle(dc, x+4, y+32, x+BUTTONCX+1, y+56); // y+35 -> 44 -> 56
 
-		SetTextColor(dc,RGB(0,0,0));
-		SetBkMode(dc,TRANSPARENT);
+		SetTextColor(dc, RGB(0,0,0));
+		SetBkMode(dc, TRANSPARENT);
 
-		sprintf( text, "T%s", g_sTrackDrive1 );
-		TextOut(dc,x+6, y+32, text, strlen(text) );
-		sprintf( text, "S%s", g_sSectorDrive1 );
-		TextOut(dc,x+6, y+42, text, strlen(text) );
+		std::string text;
+		text = "T" + g_strTrackDrive1;
+		TextOut(dc, x+6, y+32, text.c_str(), text.length());
+		text = "S" + g_strSectorDrive1;
+		TextOut(dc, x+6, y+42, text.c_str(), text.length());
 
-		sprintf( text, "T%s", g_sTrackDrive2 );
-		TextOut(dc,x+26,y+32, text, strlen(text) );
-		sprintf( text, "S%s", g_sSectorDrive2 );
-		TextOut(dc,x+26,y+42, text, strlen(text) );
+		text = "T" + g_strTrackDrive2;
+		TextOut(dc, x+26, y+32, text.c_str(), text.length());
+		text = "S" + g_strSectorDrive2;
+		TextOut(dc, x+26, y+42, text.c_str(), text.length());
 	}
 }
 

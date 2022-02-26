@@ -28,18 +28,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Memory.h"
 
 //===========================================================================
-const char* FormatAddress(WORD nAddress, int nBytes)
+std::string FormatAddress(WORD nAddress, int nBytes)
 {
-	// There is no symbol for this nAddress
-	static TCHAR sSymbol[8] = TEXT("");
 	switch (nBytes)
 	{
-	case  2:	wsprintf(sSymbol, TEXT("$%02X"), (unsigned)nAddress);  break;
-	case  3:	wsprintf(sSymbol, TEXT("$%04X"), (unsigned)nAddress);  break;
-		// TODO: FIXME: Can we get called with nBytes == 16 ??
-	default:	sSymbol[0] = 0; break; // clear since is static
+	case  2:	return StrFormat("$%02X", (unsigned)nAddress); break;
+	case  3:	return StrFormat("$%04X", (unsigned)nAddress); break;
+	// TODO: FIXME: Can we get called with nBytes == 16 ??
+	default:	break; // clear since is static
 	}
-	return sSymbol;
+	// There is no symbol for this nAddress
+	return std::string();
 }
 
 //===========================================================================
@@ -272,14 +271,13 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 		{
 			line_.nTarget = nTarget;
 
-			const char* pTarget = NULL;
-			const char* pSymbol = 0;
-
-			pSymbol = FindSymbolFromAddress(nTarget, &line_.iTargetTable);
+			std::string const* pTarget = NULL;
+			std::string const* pSymbol = FindSymbolFromAddress(nTarget, &line_.iTargetTable);
+			std::string strAddressBuf;
 
 			// Data Assembler
 			if (pData && (!pData->bSymbolLookup))
-				pSymbol = 0;
+				pSymbol = NULL;
 
 			// Try exact match first
 			if (pSymbol)
@@ -324,7 +322,8 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 
 			if (!(bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
 			{
-				pTarget = FormatAddress(nTarget, (iOpmode != AM_R) ? nOpbyte : 3);	// GH#587: For Bcc opcodes, pretend it's a 3-byte opcode to print a 16-bit target addr
+				strAddressBuf = FormatAddress(nTarget, (iOpmode != AM_R) ? nOpbyte : 3);	// GH#587: For Bcc opcodes, pretend it's a 3-byte opcode to print a 16-bit target addr
+				pTarget = &strAddressBuf;
 			}
 
 			//			sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, pTarget );
@@ -333,8 +332,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 				int nAbsTargetOffset = (line_.nTargetOffset > 0) ? line_.nTargetOffset : -line_.nTargetOffset;
 				sprintf(line_.sTargetOffset, "%d", nAbsTargetOffset);
 			}
-			sprintf(line_.sTarget, "%s", pTarget);
-
+			strncpy_s(line_.sTarget, pTarget->c_str(), _TRUNCATE);
 
 			// Indirect / Indexed
 			int nTargetPartial;

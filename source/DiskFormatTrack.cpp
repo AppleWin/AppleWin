@@ -269,9 +269,8 @@ void FormatTrack::DecodeLatchNibble(BYTE floppylatch, bool bIsWrite, bool bIsSyn
 			if (!bIsWrite)
 			{
 				BYTE addrPrologue = m_bAddressPrologueIsDOS3_2 ? (BYTE)kADDR_PROLOGUE_DOS3_2 : (BYTE)kADDR_PROLOGUE_DOS3_3;
-				char str[100];
-				sprintf_s(str, sizeof(str), "read D5AA%02X detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X %s", addrPrologue, m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3], chk?"":"(bad)");
-				m_strReadD5AAxxDetected = str;
+				m_strReadD5AAxxDetected = StrFormat("read D5AA%02X detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X %s",
+					addrPrologue, m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3], chk?"":"(bad)");
 				if (!m_bSuppressReadD5AAxxDetected)
 				{
 					LOG_DISK("%s\r\n", str);

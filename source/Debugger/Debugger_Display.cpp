@@ -1331,8 +1331,8 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	int nOpbyte;
 	DisasmLine_t line;
 
-	int         iTable    = NUM_SYMBOL_TABLES;
-	const char* pSymbol   = FindSymbolFromAddress( nBaseAddress, &iTable );
+	int iTable = NUM_SYMBOL_TABLES;
+	std::string const* pSymbol = FindSymbolFromAddress( nBaseAddress, &iTable );
 	const char* pMnemonic = NULL;
 
 	// Data Disassembler
@@ -1563,7 +1563,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 			else
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
 		}
-		PrintTextCursorX( pSymbol, linerect );
+		PrintTextCursorX( pSymbol->c_str(), linerect );
 	}
 
 	// Instruction / Mnemonic
@@ -2941,33 +2941,30 @@ void DrawZeroPagePointers ( int line )
 			BYTE nZPAddr1 = (g_aZeroPagePointers[iZP].nAddress  ) & 0xFF; // +MJP missig: "& 0xFF", or "(BYTE) ..."
 			BYTE nZPAddr2 = (g_aZeroPagePointers[iZP].nAddress+1) & 0xFF;
 
-			// Get nZPAddr1 last (for when neither symbol is not found - GetSymbol() return ptr to static buffer)
-			const char* pSymbol2 = GetSymbol(nZPAddr2, 2);		// 2:8-bit value (if symbol not found)
-			const char* pSymbol1 = GetSymbol(nZPAddr1, 2);		// 2:8-bit value (if symbol not found)
+			std::string strAddressBuf1;
+			std::string strAddressBuf2;
+			std::string const& symbol1 = GetSymbol(nZPAddr1, 2, strAddressBuf1);	// 2:8-bit value (if symbol not found)
+			std::string const& symbol2 = GetSymbol(nZPAddr2, 2, strAddressBuf2);	// 2:8-bit value (if symbol not found)
 
-			int nLen1 = strlen( pSymbol1 );
-			int nLen2 = strlen( pSymbol2 );
-
-
-//			if ((nLen1 == 1) && (nLen2 == 1))
-//				sprintf( sText, "%s%s", pszSymbol1, pszSymbol2);
+//			if ((symbol1.length() == 1) && (symbol2.length() == 1))
+//				sprintf( sText, "%s%s", symbol1.c_str(), symbol2.c_str());
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 
-			int x;
-			for( x = 0; x < nMaxSymbolLen; x++ )
+			for( int x = 0; x < nMaxSymbolLen; x++ )
 			{
 				sText[ x ] = CHAR_SPACE;
 			}
+
 			sText[nMaxSymbolLen] = 0;
 			
-			if ((nLen1) && (pSymbol1[0] == '$'))
+			if (!symbol1.empty() && symbol1[0] == '$')
 			{
 //				sprintf( sText, "%s%s", pSymbol1 );
 //				sprintf( sText, "%04X", nZPAddr1 );
 			}
 			else
-			if ((nLen2) && (pSymbol2[0] == '$'))
+			if (!symbol2.empty() && symbol2[0] == '$')
 			{
 //				sprintf( sText, "%s%s", pSymbol2 );
 //				sprintf( sText, "%04X", nZPAddr2 );
@@ -2975,8 +2972,8 @@ void DrawZeroPagePointers ( int line )
 			}
 			else
 			{
-				int nMin = MIN( nLen1, nMaxSymbolLen );
-				memcpy(sText, pSymbol1, nMin);
+				int nMin = MIN( symbol1.length(), nMaxSymbolLen );
+				memcpy(sText, symbol1.c_str(), nMin);
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
 			}
 //			DrawRegister( line+iZP, szZP, 2, nTarget16);
@@ -3255,17 +3252,13 @@ static void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 		else        PrintText("h:", rect);
 		rect.left += nameWidth * nFontWidth;
 
-		char sValue[8];
-		if (g_videoScannerDisplayInfo.isDecimal)
-			sprintf_s(sValue, sizeof(sValue), "%03u", nValue);
-		else
-			sprintf_s(sValue, sizeof(sValue), "%03X", nValue);
+		std::string strValue = StrFormat((g_videoScannerDisplayInfo.isDecimal) ? "%03u" : "%03X", nValue);
 
 		if (!isVisible)
 			DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_INVISIBLE));	// yellow
 		else
 			DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_VISIBLE));		// green
-		PrintText(sValue, rect);
+		PrintText(strValue.c_str(), rect);
 		rect.left += (numberWidth+gapWidth) * nFontWidth;
 	}
 }
@@ -3327,9 +3320,7 @@ static void DrawVideoScannerInfo(int line)
 	else // "part"
 		cycles = (UINT)g_videoScannerDisplayInfo.lastCumulativeCycles - (UINT)g_videoScannerDisplayInfo.savedCumulativeCycles;
 
-	char sValue[10];
-	sprintf_s(sValue, sizeof(sValue), "%08X", cycles);
-	PrintText(sValue, rect);
+	PrintText(StrFormat("%08X", cycles).c_str(), rect);
 }
 
 //===========================================================================
