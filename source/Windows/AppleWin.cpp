@@ -565,13 +565,14 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			}
 		}
 		while (g_bRestart);
+
+		Shutdown();
 	}
-	catch(const std::exception & exception)
+	catch (const std::exception& exception)
 	{
 		ExceptionHandler(exception.what());
 	}
 
-	Shutdown();
 	return 0;
 }
 

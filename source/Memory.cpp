@@ -1757,8 +1757,8 @@ void MemInitializeFromSnapshot(void)
 
 	if (IsApple2PlusOrClone(GetApple2Type()) && (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD))
 	{
-		VidHDCard* vidHD = dynamic_cast<VidHDCard*>(GetCardMgr().GetObj(SLOT3));
-		memVidHD = vidHD->IsWriteAux() ? memaux : NULL;
+		VidHDCard& vidHD = dynamic_cast<VidHDCard&>(GetCardMgr().GetRef(SLOT3));
+		memVidHD = vidHD.IsWriteAux() ? memaux : NULL;
 	}
 }
 
@@ -2026,9 +2026,9 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	{
 		if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
 		{
-			VidHDCard* vidHD = dynamic_cast<VidHDCard*>(GetCardMgr().GetObj(SLOT3));
-			vidHD->VideoIOWrite(programcounter, address, write, value, nExecutedCycles);
-			memVidHD = vidHD->IsWriteAux() ? memaux : NULL;
+			VidHDCard& vidHD = dynamic_cast<VidHDCard&>(GetCardMgr().GetRef(SLOT3));
+			vidHD.VideoIOWrite(programcounter, address, write, value, nExecutedCycles);
+			memVidHD = vidHD.IsWriteAux() ? memaux : NULL;
 		}
 	}
 
