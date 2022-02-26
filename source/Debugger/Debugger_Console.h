@@ -263,7 +263,8 @@
 		std::string strText = StrFormatV(pFormat, va);
 		ConsolePrint(strText.c_str());
 	}
-	inline void ConsolePrintFormat( const char* pFormat, ... ) ATTRIBUTE_FORMAT_PRINTF(1, 2)
+	inline void ConsolePrintFormat( const char* pFormat, ... ) ATTRIBUTE_FORMAT_PRINTF(1, 2);
+	inline void ConsolePrintFormat( const char* pFormat, ... )
 	{
 		va_list va;
 		va_start(va, pFormat);
@@ -281,7 +282,8 @@
 		std::string strText = StrFormatV(pFormat, va);
 		ConsoleBufferPush(strText.c_str());
 	}
-	inline void ConsoleBufferPushFormat( const char* pFormat, ... ) ATTRIBUTE_FORMAT_PRINTF(1, 2)
+	inline void ConsoleBufferPushFormat( const char* pFormat, ... ) ATTRIBUTE_FORMAT_PRINTF(1, 2);
+	inline void ConsoleBufferPushFormat( const char* pFormat, ... )
 	{
 		va_list va;
 		va_start(va, pFormat);
@@ -298,7 +300,8 @@
 		std::string strText = StrFormatV(pFormat, va);
 		return ConsoleDisplayError(strText.c_str());
 	}
-	inline Update_t ConsoleDisplayErrorFormat(const char* pFormat, ...) ATTRIBUTE_FORMAT_PRINTF(1, 2)
+	inline Update_t ConsoleDisplayErrorFormat(const char* pFormat, ...) ATTRIBUTE_FORMAT_PRINTF(1, 2);
+	inline Update_t ConsoleDisplayErrorFormat(const char* pFormat, ...)
 	{
 		va_list va;
 		va_start(va, pFormat);
@@ -313,7 +316,8 @@
 		std::string strText = StrFormatV(pFormat, va);
 		ConsoleDisplayPush(strText.c_str());
 	}
-	inline void ConsoleDisplayPushFormat(const char* pFormat, ...) ATTRIBUTE_FORMAT_PRINTF(1, 2)
+	inline void ConsoleDisplayPushFormat(const char* pFormat, ...) ATTRIBUTE_FORMAT_PRINTF(1, 2);
+	inline void ConsoleDisplayPushFormat(const char* pFormat, ...)
 	{
 		va_list va;
 		va_start(va, pFormat);

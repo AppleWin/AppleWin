@@ -214,7 +214,7 @@ public:
 		delete[] m_pMbStr;
 	}
 
-	void Save(const char* format, ...) ATTRIBUTE_FORMAT_PRINTF(1, 2);
+	void Save(const char* format, ...) ATTRIBUTE_FORMAT_PRINTF(2, 3); // 1 is "this"
 
 	void SaveInt(const char* key, int value);
 	void SaveUint(const char* key, UINT value);
@@ -235,7 +235,7 @@ public:
 	class Label
 	{
 	public:
-		Label(YamlSaveHelper& rYamlSaveHelper, const char* format, ...)  ATTRIBUTE_FORMAT_PRINTF(2, 3) :
+		Label(YamlSaveHelper& rYamlSaveHelper, const char* format, ...)  ATTRIBUTE_FORMAT_PRINTF(3, 4) :  // 1 is "this"
 			yamlSaveHelper(rYamlSaveHelper)
 		{
 			fwrite(yamlSaveHelper.m_szIndent, 1, yamlSaveHelper.m_indent, yamlSaveHelper.m_hFile);
