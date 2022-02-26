@@ -292,8 +292,10 @@ bool SY6522::IsTimer1Underflowed(BYTE reg)
 
 bool SY6522::IsTimer2Underflowed(BYTE reg)
 {
-	// FIXME: "m_regs.TIMER2_COUNTER.w >= 0" is always true! So function returns true when GetTimer2Counter() returns with b15==1
-	return m_regs.TIMER2_COUNTER.w >= 0 && (short)GetTimer2Counter(reg) < 0;
+	USHORT counter = m_regs.TIMER2_COUNTER.w;	// NB. don't update the real T2C
+	int timerIrqDelay = m_timer2IrqDelay;		// NB. don't update the real timer2IrqDelay
+	const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(reg);	// to compensate for the 4/5/6 cycle read opcode
+	return CheckTimerUnderflow(counter, timerIrqDelay, opcodeCycleAdjust);
 }
 
 //-----------------------------------------------------------------------------
