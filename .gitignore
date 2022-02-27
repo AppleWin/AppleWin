@@ -245,3 +245,6 @@ target_wrapper.*
 
 # QtCtreator CMake
 CMakeLists.txt.user*
+
+# VSCode
+.vscode
