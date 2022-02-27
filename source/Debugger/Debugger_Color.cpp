@@ -184,9 +184,6 @@ bool DebuggerSetColor( const int iScheme, const int iColor, const COLORREF nColo
 static void _SetupColorRamp(const int iPrimary, int & iColor_)
 {
 	std::string strRamp;
-#if DEBUG_COLOR_RAMP
-	char sText[CONSOLE_WIDTH];
-#endif
 
 	bool bR = (iPrimary & 1) ? true : false;
 	bool bG = (iPrimary & 2) ? true : false;
@@ -202,14 +199,12 @@ static void _SetupColorRamp(const int iPrimary, int & iColor_)
 		DWORD nColor = RGB(nR, nG, nB);
 		g_aColorPalette[iColor_] = nColor;
 #if DEBUG_COLOR_RAMP
-		int len = snprintf_s(sText, _TRUNCATE, "RGB(%3d,%3d,%3d), ", nR, nG, nB);
-		strRamp.append(sText, len);
+		strRamp += StrFormat("RGB(%3d,%3d,%3d), ", nR, nG, nB);
 #endif
 		iColor_++;
 	}
 #if DEBUG_COLOR_RAMP
-	int len = snprintf_s(sText, _TRUNCATE, " // %d%d%d\n", bB, bG, bR);
-	strRamp.append(sText, len);
+	strRamp += StrFormat(" // %d%d%d\n", bB, bG, bR);
 	OutputDebugString(strRamp.c_str());
 #endif
 }

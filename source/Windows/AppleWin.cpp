@@ -357,18 +357,17 @@ static void GetProgramDirectory(void)
 
 void RegisterExtensions(void)
 {
-	TCHAR szCommandTmp[MAX_PATH];
-	GetModuleFileName((HMODULE)0,szCommandTmp,MAX_PATH);
+	char szModuleFileName[MAX_PATH];
+	GetModuleFileName(static_cast<HMODULE>(NULL), szModuleFileName, sizeof(szModuleFileName));
 
-	TCHAR command[MAX_PATH];
-	wsprintf(command, "\"%s\"",	szCommandTmp);	// Wrap	path & filename	in quotes &	null terminate
+	// Wrap	path & filename	in quotes &	null terminate
+	std::string command = std::string("\"") + szModuleFileName + '"';
 
-	TCHAR icon[MAX_PATH];
-	wsprintf(icon,TEXT("%s,1"),(LPCTSTR)command);
+	std::string const icon = command + ",1";
 
-	strcat(command,TEXT(" \"%1\""));			// Append "%1"
-//	strcat(command,TEXT("-d1 %1\""));			// Append "%1"
-//	sprintf(command, "\"%s\" \"-d1 %%1\"", szCommandTmp);	// Wrap	path & filename	in quotes &	null terminate
+	command += " \"%1\"";			// Append ' "%1"'
+//	command += " -d1 \"%1\"";		// Append ' -d1 "%1"'
+//	command += " \"-d1 %1\"";		// Append ' "-d1 %1"'
 
 	// NB. Registry access to HKLM typically results in ErrorCode 5(ACCESS DENIED), as UAC requires elevated permissions (Run as administrator).
 	// . HKEY_CLASSES_ROOT\CLSID is a merged view of HKLM\SOFTWARE\Classes and HKCU\SOFTWARE\Classes
@@ -408,13 +407,13 @@ void RegisterExtensions(void)
 	pValueName = "DiskImage";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ,"Disk Image",0);
+				REG_SZ, "Disk Image", 0);
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
 	pValueName = "DiskImage\\DefaultIcon";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ,icon,0);
+				REG_SZ, icon.c_str(), 0);
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
 // This key can interfere....
@@ -423,26 +422,26 @@ void RegisterExtensions(void)
 	pValueName = "DiskImage\\shell\\open\\command";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ,command,_tcslen(command)+1);
+				REG_SZ, command.c_str(), command.length() + 1);
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
 	pValueName = "DiskImage\\shell\\open\\ddeexec";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ,"%1",3);
+				REG_SZ, "%1", 3);
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
 	pValueName = "DiskImage\\shell\\open\\ddeexec\\application";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ,"applewin",_tcslen("applewin")+1);
-//				REG_SZ,szCommandTmp,_tcslen(szCommandTmp)+1);
+				REG_SZ, "applewin", strlen("applewin") + 1);
+//				REG_SZ, szModuleFileName, strlen(szModuleFileName)+1);
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
 	pValueName = "DiskImage\\shell\\open\\ddeexec\\topic";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ,"system",_tcslen("system")+1);
+				REG_SZ, "system", strlen("system") + 1);
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 }
 
@@ -566,13 +565,14 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			}
 		}
 		while (g_bRestart);
+
+		Shutdown();
 	}
-	catch(const std::exception & exception)
+	catch (const std::exception& exception)
 	{
 		ExceptionHandler(exception.what());
 	}
 
-	Shutdown();
 	return 0;
 }
 

@@ -127,7 +127,7 @@ Update_t Help_Arg_1( int iCommandHelp )
 {
 	_Arg_1( iCommandHelp );
 
-	wsprintf( g_aArgs[ 1 ].sArg, "%s", g_aCommands[ iCommandHelp ].m_sName ); // .3 Fixed: Help_Arg_1() now copies command name into arg.name
+	strncpy_s(g_aArgs[1].sArg, g_aCommands[iCommandHelp].m_sName, _TRUNCATE); // .3 Fixed: Help_Arg_1() now copies command name into arg.name
 
 	return CmdHelpSpecific( 1 );
 }
@@ -544,8 +544,6 @@ Update_t CmdMOTD( int nArgs )	// Message Of The Day
 Update_t CmdHelpSpecific (int nArgs)
 {
 	int iArg;
-	char sText[ CONSOLE_WIDTH * 2 ];
-	memset( sText, 0, CONSOLE_WIDTH*2 );
 
 	if (! nArgs)
 	{
@@ -737,96 +735,78 @@ Update_t CmdHelpSpecific (int nArgs)
 //		if (nFound && (! bAllCommands) && (! bCategory))
 		if (nFound && (! bAllCommands) && bDisplayCategory)
 		{
-			char sCategory[ CONSOLE_WIDTH ];
+			const char* pszCategory = "";
 			int iCmd = g_aCommands[ iCommand ].iCommand; // Unaliased command
 
 			// HACK: Major kludge to display category!!!
 			if (iCmd <= CMD_UNASSEMBLE)
-				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_CPU ].m_sName );
+				pszCategory = g_aParameters[ PARAM_CAT_CPU ].m_sName;
 			else
 			if (iCmd <= CMD_BOOKMARK_SAVE)
-				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_BOOKMARKS ].m_sName );
+				pszCategory = g_aParameters[ PARAM_CAT_BOOKMARKS ].m_sName;
 			else
 			if (iCmd <= CMD_BREAKPOINT_SAVE)
-				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_BREAKPOINTS ].m_sName );
+				pszCategory = g_aParameters[ PARAM_CAT_BREAKPOINTS ].m_sName;
 			else
 			if (iCmd <= CMD_CONFIG_SET_DEBUG_DIR)
-				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_CONFIG ].m_sName );
+				pszCategory = g_aParameters[ PARAM_CAT_CONFIG ].m_sName;
 			else
 			if (iCmd <= CMD_CURSOR_PAGE_DOWN_4K)
-				wsprintf( sCategory, "Scrolling" );
+				pszCategory = "Scrolling";
 			else
 			if (iCmd <= CMD_FLAG_SET_N)
-				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_FLAGS ].m_sName );
+				pszCategory = g_aParameters[ PARAM_CAT_FLAGS ].m_sName;
 			else
 			if (iCmd <= CMD_MOTD)
-				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_HELP ].m_sName );
+				pszCategory = g_aParameters[ PARAM_CAT_HELP ].m_sName;
 			else
 			if (iCmd <= CMD_MEMORY_FILL)
-				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_MEMORY ].m_sName );
+				pszCategory = g_aParameters[ PARAM_CAT_MEMORY ].m_sName;
 			else
 			if (iCmd <= CMD_OUTPUT_RUN)
-				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_OUTPUT ].m_sName );
+				pszCategory = g_aParameters[ PARAM_CAT_OUTPUT ].m_sName;
 			else
 			if (iCmd <= CMD_SYNC)
-				wsprintf( sCategory, "Source" );
+				pszCategory = "Source";
 			else
 			if (iCmd <= CMD_SYMBOLS_LIST)
-				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_SYMBOLS ].m_sName );
+				pszCategory = g_aParameters[ PARAM_CAT_SYMBOLS ].m_sName;
 			else
 			if (iCmd <= CMD_VIEW_DHGR2)
-				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_VIEW ].m_sName );
+				pszCategory = g_aParameters[ PARAM_CAT_VIEW ].m_sName;
 			else
 			if (iCmd <= CMD_WATCH_SAVE)
-				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_WATCHES ].m_sName );
+				pszCategory = g_aParameters[ PARAM_CAT_WATCHES ].m_sName;
 			else
 			if (iCmd <= CMD_WINDOW_OUTPUT)
-				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_WINDOW ].m_sName );
+				pszCategory = g_aParameters[ PARAM_CAT_WINDOW ].m_sName;
 			else
 			if (iCmd <= CMD_ZEROPAGE_POINTER_SAVE)
-				wsprintf( sCategory, "%s", g_aParameters[ PARAM_CAT_ZEROPAGE ].m_sName );
+				pszCategory = g_aParameters[ PARAM_CAT_ZEROPAGE ].m_sName;
 			else
-				wsprintf( sCategory, "Unknown!" );
+				pszCategory = "Unknown!";
 
 			ConsolePrintFormat( "%sCategory%s: %s%s"
 				, CHC_USAGE
 				, CHC_DEFAULT
 				, CHC_CATEGORY
-				, sCategory );
+				, pszCategory );
 
 			if (bCategory)
-				if (bDisplayCategory)
-					bDisplayCategory = false;
+				bDisplayCategory = false;
 		}
 		
 		if (pCommand)
 		{
-			const char *pHelp = pCommand->pHelpSummary;
+			const char *const pHelp = pCommand->pHelpSummary;
 			if (pHelp)
 			{
-				if (bCategory)
-					sprintf( sText, "%s%8s%s, "
-						, CHC_COMMAND
-						, pCommand->m_sName
-						, CHC_ARG_SEP
-					);
-				else
-					sprintf( sText, "%s%s%s, "
-						, CHC_COMMAND
-						, pCommand->m_sName
-						, CHC_ARG_SEP
-					);
-
-//				if (! TryStringCat( sText, pHelp, g_nConsoleDisplayWidth ))
-//				{
-//					if (! TryStringCat( sText, pHelp, CONSOLE_WIDTH-1 ))
-//					{
-						strncat( sText, CHC_DEFAULT, CONSOLE_WIDTH );
-						strncat( sText, pHelp      , CONSOLE_WIDTH );
-//						ConsoleBufferPush( sText );
-//					}
-//				}
-				ConsolePrint( sText );
+				std::string strText = StrFormat((bCategory) ? "%s%8s%s%s%s, "
+														    : "%s%s%s%s%s, ",
+												CHC_COMMAND, pCommand->m_sName, CHC_ARG_SEP,
+												CHC_DEFAULT, pHelp);
+				//ConsoleBufferPush( strText.c_str() );
+				ConsolePrint( strText.c_str() );
 			}
 			else
 			{
