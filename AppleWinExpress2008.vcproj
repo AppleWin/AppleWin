@@ -454,11 +454,11 @@
 				Name="Uthernet"
 				>
 				<File
-					RelativePath=".\source\Tfe\Backend.h"
+					RelativePath=".\source\Tfe\NetworkBackend.h"
 					>
 				</File>
 				<File
-					RelativePath=".\source\Tfe\Backend.cpp"
+					RelativePath=".\source\Tfe\NetworkBackend.cpp"
 					>
 				</File>
 				<File

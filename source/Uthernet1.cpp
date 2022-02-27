@@ -1,3 +1,31 @@
+/*
+ * tfe.h - TFE ("The final ethernet" emulation.
+ *
+ * Written by
+ *  Spiro Trikaliotis <Spiro.Trikaliotis@gmx.de>
+ *
+ * This file is part of VICE, the Versatile Commodore Emulator.
+ * See README for copyright notice.
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *  02111-1307  USA.
+ *
+ */
+
+/* Emulate a Uthernet 1 card (adapted from VICE's TFE support) */
+
 #include "StdAfx.h"
 
 #include "Uthernet1.h"
@@ -7,7 +35,7 @@
 #include "Interface.h"
 #include "Tfe/tfearch.h"
 #include "Tfe/tfesupp.h"
-#include "Tfe/Backend.h"
+#include "Tfe/NetworkBackend.h"
 #include "Tfe/PCapBackend.h"
 
 /* Makros for reading and writing the visible TFE register: */

@@ -250,7 +250,7 @@
     <ClCompile Include="source\Uthernet1.cpp">
       <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
-    <ClCompile Include="source\Tfe\Backend.cpp">
+    <ClCompile Include="source\Tfe\NetworkBackend.cpp">
       <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
     <ClCompile Include="source\Tfe\PCapBackend.cpp">
@@ -582,7 +582,7 @@
     <ClInclude Include="source\Uthernet1.h">
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
-    <ClInclude Include="source\Tfe\Backend.h">
+    <ClInclude Include="source\Tfe\NetworkBackend.h">
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
     <ClInclude Include="source\Tfe\PCapBackend.h">
