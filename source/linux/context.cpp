@@ -6,6 +6,8 @@
 #include "linux/paddle.h"
 #include "linux/duplicates/PropertySheet.h"
 
+#include "Debugger/Debug.h"
+
 #include "Interface.h"
 #include "Log.h"
 #include "Utilities.h"
@@ -17,8 +19,9 @@
 #include "Memory.h"
 #include "Speaker.h"
 #include "MouseInterface.h"
-#include "Debugger/Debug.h"
 #include "Mockingboard.h"
+#include "Uthernet1.h"
+#include "Uthernet2.h"
 
 
 namespace
@@ -147,11 +150,20 @@ void DestroyEmulator()
   MB_Destroy();
   DSUninit();
 
-  tfe_shutdown();
-
-  if (cardManager.QuerySlot(SLOT7) == CT_GenericHDD)
+  for (UINT i = 0; i < NUM_SLOTS; ++i)
   {
-      dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(SLOT7)).Destroy();
+    switch (cardManager.QuerySlot(i))
+    {
+      case CT_GenericHDD:
+        dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(i)).Destroy();
+        break;
+      case CT_Uthernet:
+        dynamic_cast<Uthernet1&>(cardManager.GetRef(i)).Destroy();
+        break;
+      case CT_Uthernet2:
+        dynamic_cast<Uthernet2&>(cardManager.GetRef(i)).Destroy();
+        break;
+    }
   }
 
   PrintDestroy();

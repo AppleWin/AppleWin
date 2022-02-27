@@ -31,9 +31,10 @@ endif()
 find_package(Boost REQUIRED)
 
 set(SOURCE_FILES
-  Tfe/tfe.cpp
   Tfe/tfearch.cpp
   Tfe/tfesupp.cpp
+  Tfe/NetworkBackend.cpp
+  Tfe/PCapBackend.cpp
 
   Debugger/Debug.cpp
   Debugger/Debugger_Help.cpp
@@ -48,6 +49,8 @@ set(SOURCE_FILES
   Debugger/Debugger_Commands.cpp
   Debugger/Util_MemoryTextFile.cpp
 
+  Uthernet1.cpp
+  Uthernet2.cpp
   StrFormat.cpp
   6522.cpp
   VidHD.cpp
@@ -99,8 +102,6 @@ set(SOURCE_FILES
   linux/linuxframe.cpp
   linux/context.cpp
   linux/tape.cpp
-  linux/network/uthernet2.cpp
-  linux/network/tfe2.cpp
   linux/network/slirp2.cpp
 
   linux/duplicates/Debugger_Display.cpp
@@ -119,6 +120,14 @@ set(SOURCE_FILES
   )
 
 set(HEADER_FILES
+  Tfe/tfearch.h
+  Tfe/tfesupp.h
+  Tfe/NetworkBackend.h
+  Tfe/PCapBackend.h
+
+  Uthernet1.h
+  Uthernet2.h
+  W5100.h
   6522.h
   VidHD.h
   SSI263.h
@@ -195,10 +204,7 @@ set(HEADER_FILES
   linux/keyboard.h
   linux/linuxframe.h
   linux/tape.h
-  linux/network/uthernet2.h
-  linux/network/tfe2.h
   linux/network/slirp2.h
-  linux/network/registers.h
 
   Z80VICE/z80.h
   Z80VICE/z80mem.h

@@ -71,6 +71,7 @@ typedef UINT64 uint64_t;
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <cassert>
 
 #include "windows.h"
 

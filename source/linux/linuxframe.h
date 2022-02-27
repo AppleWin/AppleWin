@@ -27,6 +27,8 @@ public:
   void Restart() override; // calls End() - Begin()
   void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
 
+  std::shared_ptr<NetworkBackend> CreateNetworkBackend() override;
+
   void CycleVideoType();
   void Cycle50ScanLines();
 

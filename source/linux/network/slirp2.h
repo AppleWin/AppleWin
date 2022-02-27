@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Tfe/NetworkBackend.h"
+
 #include "linux/config.h"
 
 #ifdef SLIRP_FOUND
@@ -17,19 +19,21 @@
 
 struct Slirp;
 
-class SlirpNet
+class SlirpBackend : public NetworkBackend
 {
 public:
-  SlirpNet();
-  void sendFromGuest(const uint8_t *pkt, int pkt_len);
+  SlirpBackend();
+
+  void transmit(const int txlength,	uint8_t *txframe) override;
+  int receive(const int size,	uint8_t * rxframe) override;
+
+  void update(const ULONG nExecutedCycles) override;
+  bool isValid() override;
+
   void sendToGuest(const uint8_t *pkt, int pkt_len);
 
-  void process(const uint32_t timeout);
   int addPoll(const int fd, const int events);
   int getREvents(const int idx) const;
-
-  std::queue<std::vector<uint8_t>> & getQueue();
-  void clearQueue();
 private:
 
   static constexpr size_t ourQueueSize = 10;

@@ -39,7 +39,7 @@ namespace
 
   ssize_t net_slirp_send_packet(const void *buf, size_t len, void *opaque)
   {
-    SlirpNet * slirp = reinterpret_cast<SlirpNet *>(opaque);
+    SlirpBackend * slirp = reinterpret_cast<SlirpBackend *>(opaque);
     slirp->sendToGuest(reinterpret_cast<const uint8_t *>(buf), len);
     return len;
   }
@@ -88,19 +88,19 @@ namespace
 
   int net_slirp_add_poll(int fd, int events, void *opaque)
   {
-    SlirpNet * slirp = reinterpret_cast<SlirpNet *>(opaque);
+    SlirpBackend * slirp = reinterpret_cast<SlirpBackend *>(opaque);
     return slirp->addPoll(fd, events);
   }
 
   int net_slirp_get_revents(int idx, void *opaque)
   {
-    const SlirpNet * slirp = reinterpret_cast<SlirpNet *>(opaque);
+    const SlirpBackend * slirp = reinterpret_cast<SlirpBackend *>(opaque);
 	  return slirp->getREvents(idx);
   }
 
 }
 
-SlirpNet::SlirpNet()
+SlirpBackend::SlirpBackend()
 {
   const SlirpConfig cfg =
   {
@@ -128,12 +128,33 @@ SlirpNet::SlirpNet()
   mySlirp.reset(slirp, slirp_cleanup);
 }
 
-void SlirpNet::sendFromGuest(const uint8_t *pkt, const int pkt_len)
+void SlirpBackend::transmit(const int txlength,	uint8_t *txframe)
 {
-  slirp_input(mySlirp.get(), pkt, pkt_len);
+  slirp_input(mySlirp.get(), txframe, txlength);
 }
 
-void SlirpNet::sendToGuest(const uint8_t *pkt, int pkt_len)
+int SlirpBackend::receive(const int size,	uint8_t * rxframe)
+{
+  if (!myQueue.empty())
+  {
+    const std::vector<uint8_t> & packet = myQueue.front();
+    int received = std::min(static_cast<int>(packet.size()), size);
+    memcpy(rxframe, packet.data(), received);
+    if (received & 1)
+    {
+      rxframe[received] = 0;
+      ++received;
+    }
+    myQueue.pop();
+    return received;
+  }
+  else
+  {
+    return -1;
+  }
+}
+
+void SlirpBackend::sendToGuest(const uint8_t *pkt, int pkt_len)
 {
   if (myQueue.size() < ourQueueSize)
   {
@@ -145,8 +166,9 @@ void SlirpNet::sendToGuest(const uint8_t *pkt, int pkt_len)
   }
 }
 
-void SlirpNet::process(uint32_t timeout)
+void SlirpBackend::update(const ULONG /* nExecutedCycles */)
 {
+  uint32_t timeout = 0;
   myFDs.clear();
   slirp_pollfds_fill(mySlirp.get(), &timeout, net_slirp_add_poll, this);
   int pollout;
@@ -161,26 +183,21 @@ void SlirpNet::process(uint32_t timeout)
   slirp_pollfds_poll(mySlirp.get(), (pollout <= 0), net_slirp_get_revents, this);
 }
 
-int SlirpNet::addPoll(const int fd, const int events)
+int SlirpBackend::addPoll(const int fd, const int events)
 {
   const pollfd ff = { .fd = fd, .events = vdeslirp_slirp_to_poll(events) };
   myFDs.push_back(ff);
   return myFDs.size() - 1;
 }
 
-int SlirpNet::getREvents(const int idx) const
+int SlirpBackend::getREvents(const int idx) const
 {
   return vdeslirp_poll_to_slirp(myFDs[idx].revents);
 }
 
-std::queue<std::vector<uint8_t>> & SlirpNet::getQueue()
+bool SlirpBackend::isValid()
 {
-  return myQueue;
-}
-
-void SlirpNet::clearQueue()
-{
-  std::queue<std::vector<uint8_t>>().swap(myQueue);
+  return true;
 }
 
 #endif

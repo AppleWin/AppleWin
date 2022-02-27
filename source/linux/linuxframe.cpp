@@ -1,6 +1,8 @@
 #include "StdAfx.h"
 #include "linux/linuxframe.h"
 #include "linux/context.h"
+#include "linux/network/slirp2.h"
+#include "Tfe/PCapBackend.h"
 #include "Interface.h"
 #include "Log.h"
 #include "Core.h"
@@ -126,6 +128,15 @@ void LinuxFrame::Restart()
 {
   End();
   Begin();
+}
+
+std::shared_ptr<NetworkBackend> LinuxFrame::CreateNetworkBackend()
+{
+#ifdef U2_USE_SLIRP
+  return std::make_shared<SlirpBackend>();
+#else
+  return std::make_shared<PCapBackend>(PCapBackend::tfe_interface);
+#endif
 }
 
 int MessageBox(HWND, LPCSTR lpText, LPCSTR lpCaption, UINT uType)

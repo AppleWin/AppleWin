@@ -7,7 +7,6 @@
 #include "Interface.h"
 #include "Debugger/Debug.h"
 
-#include "Tfe/tfe.h"
 #include "frontends/sdl/imgui/settingshelper.h"
 
 #include "frontends/sdl/imgui/glselector.h"
