@@ -112,7 +112,8 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 
 		case IDC_ETHERNET:
 			ui_tfe_settings_dialog(hWnd);
-			m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = m_PageConfigTfe.m_tfe_enabled ? CT_Uthernet : CT_Empty;
+			m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = m_PageConfigTfe.m_tfe_selected;
+			m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
 			InitOptions(hWnd);
 			break;
 
@@ -249,8 +250,18 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			}
 
 			{
-				m_PageConfigTfe.m_tfe_enabled = get_tfe_enabled();
-				m_PageConfigTfe.m_tfe_interface_name = get_tfe_interface();
+				SS_CARDTYPE cardInSlot3 = GetCardMgr().QuerySlot(SLOT3);
+				switch (cardInSlot3) {
+				case CT_Uthernet:
+				case CT_Uthernet2:
+					m_PageConfigTfe.m_tfe_selected = cardInSlot3;
+					break;
+				default:
+					m_PageConfigTfe.m_tfe_selected = CT_Empty;
+					break;
+				}
+
+				m_PageConfigTfe.m_tfe_interface_name = PCapBackend::tfe_interface;
 			}
 
 			InitOptions(hWnd);
@@ -325,8 +336,6 @@ void CPageConfig::DlgOK(HWND hWnd)
 		m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = isNewVideoRate50Hz ? VR_50HZ : VR_60HZ;
 	}
 
-	m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
-
 	if (bVideoReinit)
 	{
 		win32Frame.FrameRefreshStatus(DRAW_TITLE);
@@ -381,7 +390,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 void CPageConfig::InitOptions(HWND hWnd)
 {
 	const SS_CARDTYPE slot3 = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3];
-	const BOOL enableUthernetDialog = slot3 == CT_Empty || slot3 == CT_Uthernet;
+	const BOOL enableUthernetDialog = slot3 == CT_Empty || slot3 == CT_Uthernet || slot3 == CT_Uthernet2;
 	EnableWindow(GetDlgItem(hWnd, IDC_ETHERNET), enableUthernetDialog);
 
 	const bool bIsSlot3VidHD = slot3 == CT_VidHD;

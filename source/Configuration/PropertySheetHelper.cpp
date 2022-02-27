@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Log.h"
 #include "../Registry.h"
 #include "../SaveState.h"
+#include "../Tfe/PCapBackend.h"
 
 /*
 Config causing AfterClose msgs:
@@ -330,12 +331,10 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 
 	UINT slot = SLOT3;
 	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-	{
 		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
-		if (ConfigNew.m_Slot[slot] == CT_Uthernet)	// TODO: move this to UthernetCard object
-			tfe_SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
-	}
+	// unconditionally save it, as the previous SetSlot might have removed the setting
+	PCapBackend::tfe_SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
 
 	slot = SLOT4;
 	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
@@ -450,6 +449,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_Slot[SLOT3]))
 			strMsgMain += GetSlot(SLOT3);
+
+		if (CONFIG_CHANGED(m_tfeInterface))
+			strMsgMain += ". Uthernet interface has changed\n";
 
 		if (CONFIG_CHANGED(m_Slot[SLOT4]))
 			strMsgMain += GetSlot(SLOT4);

@@ -6,7 +6,7 @@
 #include "../DiskImage.h"	// Disk_Status_e
 #include "../Harddisk.h"
 #include "../Interface.h"	// VideoRefreshRate_e, GetVideoRefreshRate()
-#include "../Tfe/tfe.h"
+#include "../Tfe/PCapBackend.h"
 
 class CConfigNeedingRestart
 {
@@ -40,7 +40,7 @@ public:
 		for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 			m_Slot[slot] = cardManager.QuerySlot(slot);
 		m_SlotAux = cardManager.QueryAux();
-		m_tfeInterface = get_tfe_interface();
+		m_tfeInterface = PCapBackend::tfe_interface;
 		m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 		m_uSaveLoadStateMsg = 0;
 		m_videoRefreshRate = GetVideo().GetVideoRefreshRate();

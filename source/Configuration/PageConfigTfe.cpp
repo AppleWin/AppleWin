@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Common.h"
 #include "../Registry.h"
 #include "../resource/resource.h"
-#include "../Tfe/tfe.h"
+#include "../Tfe/PCapBackend.h"
 #include "../Tfe/tfesupp.h"
 
 CPageConfigTfe* CPageConfigTfe::ms_this = 0;	// reinit'd in ctor
@@ -111,29 +111,29 @@ void CPageConfigTfe::DlgCANCEL(HWND window)
 
 BOOL CPageConfigTfe::get_tfename(int number, char **ppname, char **ppdescription)
 {
-	if (tfe_enumadapter_open())
+	if (PCapBackend::tfe_enumadapter_open())
 	{
 		char *pname = NULL;
 		char *pdescription = NULL;
 
 		while (number--)
 		{
-			if (!tfe_enumadapter(&pname, &pdescription))
+			if (!PCapBackend::tfe_enumadapter(&pname, &pdescription))
 				break;
 
 			lib_free(pname);
 			lib_free(pdescription);
 		}
 
-		if (tfe_enumadapter(&pname, &pdescription))
+		if (PCapBackend::tfe_enumadapter(&pname, &pdescription))
 		{
 			*ppname = pname;
 			*ppdescription = pdescription;
-			tfe_enumadapter_close();
+			PCapBackend::tfe_enumadapter_close();
 			return TRUE;
 		}
 
-		tfe_enumadapter_close();
+		PCapBackend::tfe_enumadapter_close();
 	}
 
 	return FALSE;
@@ -145,7 +145,7 @@ int CPageConfigTfe::gray_ungray_items(HWND hwnd)
 	int number;
 
 	int disabled = 0;
-	get_disabled_state(&disabled);
+	PCapBackend::get_disabled_state(&disabled);
 
 	if (disabled)
 	{
@@ -199,14 +199,26 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 	uilib_adjust_group_width(hwnd, ms_leftgroup);
 	uilib_move_group(hwnd, ms_rightgroup, xsize + 30);
 
-	active_value = (m_tfe_enabled > 0 ? 1 : 0);
+	switch (m_tfe_selected)
+	{
+	case CT_Uthernet:
+		active_value = 1;
+		break;
+	case CT_Uthernet2:
+		active_value = 2;
+		break;
+	default:
+		active_value = 0;
+		break;
+	}
 
 	temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_ENABLE);
 	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Disabled");
 	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Uthernet");
+	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Uthernet II");
 	SendMessage(temp_hwnd, CB_SETCURSEL, (WPARAM)active_value, 0);
 
-	if (tfe_enumadapter_open())
+	if (PCapBackend::tfe_enumadapter_open())
 	{
 		int cnt = 0;
 
@@ -215,7 +227,7 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 
 		temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_INTERFACE);
 
-		for (cnt = 0; tfe_enumadapter(&pname, &pdescription); cnt++)
+		for (cnt = 0; PCapBackend::tfe_enumadapter(&pname, &pdescription); cnt++)
 		{
 			BOOL this_entry = FALSE;
 
@@ -237,7 +249,7 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 			}
 		}
 
-		tfe_enumadapter_close();
+		PCapBackend::tfe_enumadapter_close();
 	}
 
 	if (gray_ungray_items(hwnd))
@@ -246,12 +258,12 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 		// TC (18 Dec 2017) this vicekb URL is a broken link now, so I copied it to the AppleWin repo, here:
 		// . https://github.com/AppleWin/AppleWin/blob/master/docs/VICE%20Knowledge%20Base%20-%20Article%2013-005.htm
 		MessageBox( hwnd,
-			"TFE support is not available on your system,\n"
-			"there is some important part missing. Please have a\n"
-			"look at the VICE knowledge base support page\n"
-			"\n      http://vicekb.trikaliotis.net/13-005\n\n"
-			"for possible reasons and to activate networking with VICE.",
-			"TFE support", MB_ICONINFORMATION|MB_OK);
+			"Uthernet support is not available on your system,\n"
+			"WPCAP.DLL cannot be loaded.\n\n"
+			"Install Npcap from\n\n"
+			"      https://npcap.com\n\n"
+			"to activate networking with AppleWin.",
+			"Uthernet support", MB_ICONINFORMATION|MB_OK);
 
 		/* just quit the dialog before it is open */
 		SendMessage( hwnd, WM_COMMAND, IDCANCEL, 0);
@@ -271,11 +283,22 @@ void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 	{
 		m_tfe_interface_name = buffer;
 		active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
-		m_tfe_enabled = active_value > 0 ? 1 : 0;
+		switch (active_value)
+		{
+		case 1:
+			m_tfe_selected = CT_Uthernet;
+			break;
+		case 2:
+			m_tfe_selected = CT_Uthernet2;
+			break;
+		default:
+			m_tfe_selected = CT_Empty;
+			break;
+		}
 	}
 	else
 	{
-		m_tfe_enabled = 0;
+		m_tfe_selected = CT_Empty;
 		m_tfe_interface_name.clear();
 	}
 }

@@ -9,6 +9,7 @@
 #include "Memory.h"
 #include "CardManager.h"
 #include "Debugger/Debug.h"
+#include "Tfe/PCapBackend.h"
 #include "../resource/resource.h"
 
 // Win32Frame methods are implemented in AppleWin, WinFrame and WinVideo.
@@ -622,4 +623,10 @@ std::string Win32Frame::Video_GetScreenShotFolder() const
 {
 	// save in current folder
 	return std::string();
+}
+
+std::shared_ptr<NetworkBackend> Win32Frame::CreateNetworkBackend()
+{
+	std::shared_ptr<NetworkBackend> backend(new PCapBackend(PCapBackend::tfe_interface));
+	return backend;
 }

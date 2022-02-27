@@ -142,9 +142,6 @@
     <ClCompile Include="source\Tape.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
-    <ClCompile Include="source\Tfe\tfe.cpp">
-      <Filter>Source Files\Uthernet</Filter>
-    </ClCompile>
     <ClCompile Include="source\Tfe\tfearch.cpp">
       <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
@@ -249,6 +246,18 @@
     </ClCompile>
     <ClCompile Include="source\StrFormat.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Uthernet1.cpp">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Tfe\NetworkBackend.cpp">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Tfe\PCapBackend.cpp">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Uthernet2.cpp">
+      <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -444,9 +453,6 @@
     <ClInclude Include="source\Tape.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
-    <ClInclude Include="source\Tfe\tfe.h">
-      <Filter>Source Files\Uthernet</Filter>
-    </ClInclude>
     <ClInclude Include="source\Tfe\tfearch.h">
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
@@ -572,6 +578,21 @@
     </ClInclude>
     <ClInclude Include="source\StrFormat.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Uthernet1.h">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Tfe\NetworkBackend.h">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Tfe\PCapBackend.h">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClInclude>
+    <ClInclude Include="source\W5100.h">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Uthernet2.h">
+      <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

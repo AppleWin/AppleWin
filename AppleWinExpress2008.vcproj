@@ -303,6 +303,22 @@
 				>
 			</File>
 			<File
+				RelativePath=".\source\Uthernet1.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\Uthernet1.h"
+				>
+			</File>
+			<File
+				RelativePath=".\source\Uthernet2.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\source\Uthernet2.h"
+				>
+			</File>
+			<File
 				RelativePath=".\source\Utilities.cpp"
 				>
 			</File>
@@ -438,6 +454,14 @@
 				Name="Uthernet"
 				>
 				<File
+					RelativePath=".\source\Tfe\NetworkBackend.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\Tfe\NetworkBackend.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\source\Tfe\Bpf.h"
 					>
 				</File>
@@ -450,27 +474,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\source\Tfe\tfe.cpp"
+					RelativePath=".\source\Tfe\PCapBackend.h"
 					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							UsePrecompiledHeader="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							UsePrecompiledHeader="0"
-						/>
-					</FileConfiguration>
 				</File>
 				<File
-					RelativePath=".\source\Tfe\tfe.h"
+					RelativePath=".\source\Tfe\PCapBackend.cpp"
 					>
 				</File>
 				<File
@@ -1023,6 +1031,10 @@
 				</File>
 				<File
 					RelativePath=".\source\VidHD.h"
+					>
+				</File>
+				<File
+					RelativePath=".\source\W5100.h"
 					>
 				</File>
 			</Filter>
