@@ -172,13 +172,13 @@ static const UINT kUNIT_LANGUAGECARD_VER = 1;
 #define SS_YAML_KEY_MEMORYMODE "Memory Mode"
 #define SS_YAML_KEY_LASTRAMWRITE "Last RAM Write"
 
-std::string LanguageCardSlot0::GetSnapshotMemStructName(void)
+const std::string& LanguageCardSlot0::GetSnapshotMemStructName(void)
 {
 	static const std::string name("Memory Bank");
 	return name;
 }
 
-std::string LanguageCardSlot0::GetSnapshotCardName(void)
+const std::string& LanguageCardSlot0::GetSnapshotCardName(void)
 {
 	static const std::string name(SS_YAML_VALUE_CARD_LANGUAGECARD);
 	return name;
@@ -379,13 +379,13 @@ static const UINT kUNIT_SATURN_VER = 1;
 #define SS_YAML_KEY_NUM_SATURN_BANKS "Num Saturn Banks"
 #define SS_YAML_KEY_ACTIVE_SATURN_BANK "Active Saturn Bank"
 
-std::string Saturn128K::GetSnapshotMemStructName(void)
+const std::string& Saturn128K::GetSnapshotMemStructName(void)
 {
 	static const std::string name("Memory Bank");
 	return name;
 }
 
-std::string Saturn128K::GetSnapshotCardName(void)
+const std::string& Saturn128K::GetSnapshotCardName(void)
 {
 	static const std::string name(SS_YAML_VALUE_CARD_SATURN128);
 	return name;

@@ -952,7 +952,7 @@ static void Spkr_DSUninit()
 
 #define SS_YAML_KEY_LASTCYCLE "Last Cycle"
 
-static std::string SpkrGetSnapshotStructName(void)
+static const std::string& SpkrGetSnapshotStructName(void)
 {
 	static const std::string name("Speaker");
 	return name;

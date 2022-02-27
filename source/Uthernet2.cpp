@@ -239,7 +239,7 @@ uint16_t Socket::getFreeRoom() const
     return size - rsr;
 }
 
-std::string Uthernet2::GetSnapshotCardName()
+const std::string& Uthernet2::GetSnapshotCardName()
 {
     static const std::string name("Uthernet2");
     return name;

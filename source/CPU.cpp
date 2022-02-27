@@ -797,7 +797,7 @@ void CpuNmiDeassert(eIRQSRC Device)
 #define SS_YAML_VALUE_6502 "6502"
 #define SS_YAML_VALUE_65C02 "65C02"
 
-static std::string CpuGetSnapshotStructName(void)
+static const std::string& CpuGetSnapshotStructName(void)
 {
 	static const std::string name("CPU");
 	return name;

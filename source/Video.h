@@ -285,7 +285,7 @@ protected:
 
 private:
 	void SetFrameBuffer(uint8_t* frameBuffer) { g_pFramebufferbits = frameBuffer; }
-	std::string VideoGetSnapshotStructName(void);
+	const std::string& VideoGetSnapshotStructName(void);
 
 	int g_nAltCharSetOffset;
 	uint32_t g_uVideoMode;		// Current Video Mode (this is the last set one as it may change mid-scan line!)

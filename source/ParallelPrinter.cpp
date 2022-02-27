@@ -209,7 +209,7 @@ void Printer_SetIdleLimit(unsigned int Duration)
 #define SS_YAML_KEY_APPEND "Printer Append"
 #define SS_YAML_KEY_DUMPTOREALPRINTER "Enable Dump To Real Printer"
 
-std::string Printer_GetSnapshotCardName(void)
+const std::string& Printer_GetSnapshotCardName(void)
 {
 	static const std::string name(SS_YAML_VALUE_CARD_PRINTER);
 	return name;

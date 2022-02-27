@@ -213,7 +213,7 @@ static const UINT kUNIT_VERSION = 1;
 
 #define SS_YAML_KEY_BUTTON_INDEX "Button Index"
 
-std::string SNESMAXCard::GetSnapshotCardName(void)
+const std::string& SNESMAXCard::GetSnapshotCardName(void)
 {
 	static const std::string name("SNES MAX");
 	return name;

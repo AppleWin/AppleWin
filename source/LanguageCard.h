@@ -57,7 +57,7 @@ public:
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 	static const UINT kMemBankSize = 16*1024;
-	static std::string GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardName(void);
 
 protected:
 	LanguageCardSlot0(SS_CARDTYPE type, UINT slot);
@@ -67,7 +67,7 @@ protected:
 	LPBYTE m_pMemory;
 
 private:
-	std::string GetSnapshotMemStructName(void);
+	const std::string& GetSnapshotMemStructName(void);
 };
 
 //
@@ -92,10 +92,10 @@ public:
 
 	// "The boards consist of 16K banks of memory (4 banks for the 64K board, 8 banks for the 128K), accessed one at a time" - Ref: "64K/128K RAM BOARD", Saturn Systems, Ch.1 Introduction(pg-5)
 	static const UINT kMaxSaturnBanks = 8;		// 8 * 16K = 128K
-	static std::string GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardName(void);
 
 private:
-	std::string GetSnapshotMemStructName(void);
+	const std::string& GetSnapshotMemStructName(void);
 
 	static UINT g_uSaturnBanksFromCmdLine;
 

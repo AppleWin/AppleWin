@@ -2196,25 +2196,25 @@ static const UINT kUNIT_CARD_VER = 3;
 #define SS_YAML_KEY_NUMAUXBANKS "Num Aux Banks"
 #define SS_YAML_KEY_ACTIVEAUXBANK "Active Aux Bank"
 
-static std::string MemGetSnapshotStructName(void)
+static const std::string& MemGetSnapshotStructName(void)
 {
 	static const std::string name("Memory");
 	return name;
 }
 
-std::string MemGetSnapshotUnitAuxSlotName(void)
+const std::string& MemGetSnapshotUnitAuxSlotName(void)
 {
 	static const std::string name("Auxiliary Slot");
 	return name;
 }
 
-static std::string MemGetSnapshotMainMemStructName(void)
+static const std::string& MemGetSnapshotMainMemStructName(void)
 {
 	static const std::string name("Main Memory");
 	return name;
 }
 
-static std::string MemGetSnapshotAuxMemStructName(void)
+static const std::string& MemGetSnapshotAuxMemStructName(void)
 {
 	static const std::string name("Auxiliary Memory Bank");
 	return name;

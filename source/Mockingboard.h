@@ -31,10 +31,10 @@ void MB_UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
 BYTE MB_GetPCR(BYTE nDevice);
 
 void    MB_GetSnapshot_v1(struct SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot);	// For debugger
-std::string MB_GetSnapshotCardName(void);
+const std::string& MB_GetSnapshotCardName(void);
 void    MB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
 bool    MB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
-std::string Phasor_GetSnapshotCardName(void);
+const std::string& Phasor_GetSnapshotCardName(void);
 void Phasor_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
 bool Phasor_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);

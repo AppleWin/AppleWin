@@ -27,7 +27,7 @@ public:
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
-	static std::string GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardName(void);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
