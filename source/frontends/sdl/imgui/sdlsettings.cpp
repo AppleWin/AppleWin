@@ -915,7 +915,7 @@ namespace sa2
         {
           ImGui::PushID(nAddress);
           DisasmLine_t line;
-          const char* pSymbol = FindSymbolFromAddress(nAddress);
+          std::string const* pSymbol = FindSymbolFromAddress(nAddress);
           const int bDisasmFormatFlags = GetDisassemblyLine(nAddress, line);
 
           ImGui::TableNextRow();
@@ -979,7 +979,7 @@ namespace sa2
           ImGui::TableNextColumn();
           if (pSymbol)
           {
-            debuggerTextColored(FG_DISASM_SYMBOL, pSymbol);
+            debuggerTextColored(FG_DISASM_SYMBOL, pSymbol->c_str());
           }
 
           ImGui::TableNextColumn();

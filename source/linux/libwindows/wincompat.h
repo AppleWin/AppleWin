@@ -206,6 +206,8 @@ typedef void * HWND;
 typedef LONG_PTR LPARAM;
 typedef UINT_PTR WPARAM;
 
+typedef int errno_t;
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "wincompat.h"
+#include "misc.h"
 
 #include <cstddef>
 #include <ctype.h>
@@ -17,8 +18,6 @@ int vsnprintf_s(
 );
 
 #define _TRUNCATE ((size_t)-1)
-
-#define sprintf_s snprintf
 
 #define _strdup strdup
 #define _strtoui64 strtoull
@@ -51,3 +50,34 @@ inline bool IsCharUpper(char ch) {
 DWORD CharLowerBuff(LPTSTR lpsz, DWORD cchLength);
 
 LPSTR _strupr( LPSTR str );
+
+// copied from
+// https://github.com/wine-mirror/wine/blob/1d178982ae5a73b18f367026c8689b56789c39fd/dlls/msvcrt/heap.c#L833
+template <size_t size>
+errno_t strncpy_s(char (&dest)[size], const char *src, size_t count)
+{
+  size_t end;
+  if (count != _TRUNCATE && count < size)
+  {
+    end = count;
+  }
+  else
+  {
+    end = size - 1;
+  }
+
+  size_t i;
+  for (i = 0; i < end && src[i]; i++)
+  {
+    dest[i] = src[i];
+  }
+
+  if (!src[i] || end == count || count == _TRUNCATE)
+  {
+    dest[i] = '\0';
+    return 0;
+  }
+
+  dest[0] = '\0';
+  return EINVAL;
+}

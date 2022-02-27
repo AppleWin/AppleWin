@@ -4,8 +4,6 @@
 
 #include <ctime>
 
-typedef int errno_t;
-
 #define _tzset tzset
 errno_t ctime_s(char * buf, size_t size, const time_t *time);
 
