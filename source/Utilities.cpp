@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SoundCore.h"
 
 #include "Configuration/IPropertySheet.h"
-#include "Tfe/tfe.h"
+#include "Tfe/PCapBackend.h"
 
 #ifdef USE_SPEECH_API
 #include "Speech.h"
@@ -255,39 +255,31 @@ void LoadConfiguration(bool loadImages)
 
 		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
 		{
-			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
-
 			if (slot == SLOT3)
 			{
-				tfe_enabled = 0;
-
-				if ((SS_CARDTYPE)dwTmp == CT_Uthernet)	// TODO: move this to when UthernetCard object is instantiated
+				// this must happen before the card is instantitated
+				// TODO move to the card
+				if ((SS_CARDTYPE)dwTmp == CT_Uthernet || (SS_CARDTYPE)dwTmp == CT_Uthernet2)	// TODO: move this to when UthernetCard object is instantiated
 				{
 					std::string regSection = RegGetConfigSlotSection(slot);
 					if (RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, szFilename, MAX_PATH, TEXT("")))
-						update_tfe_interface(szFilename);
-
-					tfe_init(true);
+						PCapBackend::tfe_interface = szFilename;
 				}
 			}
+
+			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
 		}
 		else	// legacy (AppleWin 1.30.3 or earlier)
 		{
 			if (slot == SLOT3)
 			{
-				tfe_enabled = 0;
+				// TODO: move this to when UthernetCard object is instantiated
+				RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
+				PCapBackend::tfe_interface = szFilename;
 
 				DWORD tfeEnabled;
 				REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &tfeEnabled, 0);
-
-				GetCardMgr().Insert(SLOT3, get_tfe_enabled() ? CT_Uthernet : CT_Empty);
-
-				// TODO: move this to when UthernetCard object is instantiated
-				RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
-				update_tfe_interface(szFilename);
-
-				if (tfeEnabled)
-					tfe_init(true);
+				GetCardMgr().Insert(SLOT3, tfeEnabled ? CT_Uthernet : CT_Empty);
 			}
 			else if (slot == SLOT4 && REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
 				GetCardMgr().Insert(SLOT4, (SS_CARDTYPE)dwTmp);
@@ -547,6 +539,10 @@ void ResetMachineState()
 		GetCardMgr().GetRef(SLOT7).Reset(true);
 	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
 		GetCardMgr().GetRef(SLOT3).Reset(true);
+	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
+		GetCardMgr().GetRef(SLOT3).Reset(true);
+	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet2)
+		GetCardMgr().GetRef(SLOT3).Reset(true);
 	g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
 	MemReset();	// calls CpuInitialize(), CNoSlotClock.Reset()
@@ -603,6 +599,10 @@ void CtrlReset()
 	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
 		GetCardMgr().GetRef(SLOT7).Reset(false);
 	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
+		GetCardMgr().GetRef(SLOT3).Reset(false);
+	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
+		GetCardMgr().GetRef(SLOT3).Reset(false);
+	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet2)
 		GetCardMgr().GetRef(SLOT3).Reset(false);
 	KeybReset();
 	if (GetCardMgr().IsSSCInstalled())

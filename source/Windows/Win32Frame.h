@@ -57,6 +57,8 @@ public:
 
 	virtual std::string Video_GetScreenShotFolder() const;
 
+	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend();
+
 	bool GetFullScreenShowSubunitStatus(void);
 	int GetFullScreenOffsetX(void);
 	int GetFullScreenOffsetY(void);

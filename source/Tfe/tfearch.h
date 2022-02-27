@@ -31,13 +31,17 @@
 #include "../CommonVICE/types.h"
 #include <string>
 
-extern int  tfe_arch_init(void);
-extern void tfe_arch_pre_reset(void);
-extern void tfe_arch_post_reset(void);
-extern int  tfe_arch_activate(const std::string & interface_name);
-extern void tfe_arch_deactivate(void);
 extern void tfe_arch_set_mac(const BYTE mac[6]);
 extern void tfe_arch_set_hashfilter(const DWORD hash_mask[2]);
+
+/* Flag: Can we even use TFE, or is the hardware not available? */
+extern int tfe_cannot_use;
+
+struct pcap;
+typedef struct pcap pcap_t;
+
+pcap_t * TfePcapOpenAdapter(const std::string & interface_name);
+void TfePcapCloseAdapter(pcap_t * TfePcapFP);
 
 extern
 void tfe_arch_recv_ctl( int bBroadcast,   /* broadcast */
@@ -52,38 +56,16 @@ extern
 void tfe_arch_line_ctl(int bEnableTransmitter, int bEnableReceiver);
 
 extern
-void tfe_arch_transmit(int force,       /* FORCE: Delete waiting frames in transmit buffer */
-                       int onecoll,     /* ONECOLL: Terminate after just one collision */
-                       int inhibit_crc, /* INHIBITCRC: Do not append CRC to the transmission */
-                       int tx_pad_dis,  /* TXPADDIS: Disable padding to 60 Bytes */
+void tfe_arch_transmit(pcap_t * TfePcapFP,
                        int txlength,    /* Frame length */
                        BYTE *txframe    /* Pointer to the frame to be transmitted */
                       );
 
 extern
-int tfe_arch_receive(BYTE *pbuffer  ,    /* where to store a frame */
-                     int  *plen,         /* IN: maximum length of frame to copy; 
-                                            OUT: length of received frame 
-                                            OUT can be bigger than IN if received frame was
-                                                longer than supplied buffer */
-                     int  *phashed,      /* set if the dest. address is accepted by the hash filter */
-                     int  *phash_index,  /* hash table index if hashed == TRUE */   
-                     int  *prx_ok,       /* set if good CRC and valid length */
-                     int  *pcorrect_mac, /* set if dest. address is exactly our IA */
-                     int  *pbroadcast,   /* set if dest. address is a broadcast address */
-                     int  *pcrc_error    /* set if received frame had a CRC error */
-                     );
-
-/*
- This is a helper for tfe_receive() to determine if the received frame should be accepted
- according to the settings.
-
- This function is even allowed to be called in tfearch.c from tfe_arch_receive() if 
- necessary, which is the reason why its prototype is included here in tfearch.h.
-*/
-extern 
-int tfe_should_accept(unsigned char *buffer, int length, int *phashed, int *phash_index, 
-                      int *pcorrect_mac, int *pbroadcast, int *pmulticast);
+int tfe_arch_receive(pcap_t * TfePcapFP,
+                     const int size ,    /* Size of buffer */
+                     BYTE *pbuffer       /* where to store a frame */
+                    );
 
 extern int tfe_arch_enumadapter_open(void);
 extern int tfe_arch_enumadapter(char **ppname, char **ppdescription);

@@ -114,16 +114,20 @@
     <ClInclude Include="source\StrFormat.h" />
     <ClInclude Include="source\SynchronousEventManager.h" />
     <ClInclude Include="source\Tape.h" />
+    <ClInclude Include="source\Tfe\NetworkBackend.h" />
     <ClInclude Include="source\Tfe\Bpf.h" />
     <ClInclude Include="source\Tfe\Ip6_misc.h" />
     <ClInclude Include="source\Tfe\Pcap.h" />
-    <ClInclude Include="source\Tfe\tfe.h" />
+    <ClInclude Include="source\Tfe\PCapBackend.h" />
     <ClInclude Include="source\Tfe\tfearch.h" />
     <ClInclude Include="source\Tfe\tfesupp.h" />
     <ClInclude Include="source\Tfe\Uilib.h" />
+    <ClInclude Include="source\Uthernet1.h" />
+    <ClInclude Include="source\Uthernet2.h" />
     <ClInclude Include="source\Utilities.h" />
     <ClInclude Include="source\Video.h" />
     <ClInclude Include="Source\VidHD.h" />
+    <ClInclude Include="source\W5100.h" />
     <ClInclude Include="source\Windows\AppleWin.h" />
     <ClInclude Include="source\Windows\DirectInput.h" />
     <ClInclude Include="source\Windows\HookFilter.h" />
@@ -218,14 +222,8 @@
     <ClCompile Include="source\StrFormat.cpp" />
     <ClCompile Include="source\SynchronousEventManager.cpp" />
     <ClCompile Include="source\Tape.cpp" />
-    <ClCompile Include="source\Tfe\tfe.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug v141_xp|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug NoDX|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release v141_xp|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
+    <ClCompile Include="source\Tfe\NetworkBackend.cpp" />
+    <ClCompile Include="source\Tfe\PCapBackend.cpp" />
     <ClCompile Include="source\Tfe\tfearch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug v141_xp|Win32'">NotUsing</PrecompiledHeader>
@@ -250,6 +248,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release v141_xp|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="source\Uthernet1.cpp" />
+    <ClCompile Include="source\Uthernet2.cpp" />
     <ClCompile Include="source\Utilities.cpp" />
     <ClCompile Include="source\Video.cpp" />
     <ClCompile Include="Source\VidHD.cpp" />

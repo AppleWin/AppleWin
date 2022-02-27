@@ -55,7 +55,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Configuration/About.h"
 #include "Configuration/PropertySheet.h"
-#include "Tfe/tfe.h"
 
 //=================================================
 
@@ -931,9 +930,6 @@ static void Shutdown(void)
 
 	CoUninitialize();
 	LogFileOutput("Exit: CoUninitialize()\n");
-
-	tfe_shutdown();
-	LogFileOutput("Exit: tfe_shutdown()\n");
 
 	LogDone();
 

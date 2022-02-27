@@ -40,7 +40,6 @@
 #include <string.h>
 
 #include <StdAfx.h> // this is necessary in linux, but in MSVC windows.h MUST come after winsock2.h (from pcap.h above)
-#include "tfe.h"
 #include "tfearch.h"
 #include "tfesupp.h"
 #include "../Log.h"
@@ -52,6 +51,8 @@
 /* #define TFE_DEBUG_FRAMES - might be defined in TFE.H! */
 
 #define TFE_DEBUG_WARN 1 /* this should not be deactivated */
+
+int tfe_cannot_use = 0;
 
 #ifdef _MSC_VER
 
@@ -121,6 +122,7 @@ BOOL TfePcapLoadLibrary(void)
         pcap_library = LoadLibrary("wpcap.dll");
 
         if (!pcap_library) {
+            tfe_cannot_use = 1;
             if(g_fh) fprintf(g_fh, "LoadLibrary WPCAP.DLL failed!\n" );
             return FALSE;
         }
@@ -179,7 +181,6 @@ static BOOL TfePcapLoadLibrary(void)
 
 static pcap_if_t *TfePcapNextDev = NULL;
 static pcap_if_t *TfePcapAlldevs = NULL;
-static pcap_t *TfePcapFP = NULL;
 
 static char TfePcapErrbuf[PCAP_ERRBUF_SIZE];
 
@@ -284,13 +285,13 @@ int tfe_arch_enumadapter_close(void)
     return 1;
 }
 
-static
-BOOL TfePcapOpenAdapter(const std::string & interface_name)
+
+pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
 {
     pcap_if_t *TfePcapDevice = NULL;
 
-    if (!tfe_enumadapter_open()) {
-        return FALSE;
+    if (!tfe_arch_enumadapter_open()) {
+        return NULL;
     }
     else {
         /* look if we can find the specified adapter */
@@ -302,7 +303,7 @@ BOOL TfePcapOpenAdapter(const std::string & interface_name)
             /* we have an interface name, try it */
             TfePcapDevice = TfePcapAlldevs;
 
-            while (tfe_enumadapter(&pname, &pdescription)) {
+            while (tfe_arch_enumadapter(&pname, &pdescription)) {
                 if (strcmp(pname, interface_name.c_str())==0) {
                     found = TRUE;
                 }
@@ -319,12 +320,12 @@ BOOL TfePcapOpenAdapter(const std::string & interface_name)
         }
     }
 
-    TfePcapFP = (*p_pcap_open_live)(TfePcapDevice->name, 1700, 1, 20, TfePcapErrbuf);
+    pcap_t * TfePcapFP = (*p_pcap_open_live)(TfePcapDevice->name, 1700, 1, 20, TfePcapErrbuf);
     if ( TfePcapFP == NULL)
     {
         if(g_fh) fprintf(g_fh, "ERROR opening adapter: '%s'\n", TfePcapErrbuf);
-        tfe_enumadapter_close();
-        return FALSE;
+        tfe_arch_enumadapter_close();
+        return NULL;
     }
 
     if ((*p_pcap_setnonblock)(TfePcapFP, 1, TfePcapErrbuf)<0)
@@ -336,67 +337,28 @@ BOOL TfePcapOpenAdapter(const std::string & interface_name)
 	if((*p_pcap_datalink)(TfePcapFP) != DLT_EN10MB)
 	{
 		if(g_fh) fprintf(g_fh, "ERROR: TFE works only on Ethernet networks.\n");
-		tfe_enumadapter_close();
+		tfe_arch_enumadapter_close();
         (*p_pcap_close)(TfePcapFP);
         TfePcapFP = NULL;
-        return FALSE;
+        return NULL;
 	}
-	
-    tfe_enumadapter_close();
-    return TRUE;
+
+    if(g_fh) fprintf(g_fh, "PCAP: Succesfully opened adapter: '%s'\n", TfePcapDevice->name);
+
+    tfe_arch_enumadapter_close();
+    return TfePcapFP;
 }
 
+void TfePcapCloseAdapter(pcap_t * TfePcapFP)
+{
+    if (TfePcapFP)
+    {
+        (*p_pcap_close)(TfePcapFP);
+    }
+}
 
 /* ------------------------------------------------------------------------- */
 /*    the architecture-dependend functions                                   */
-
-
-int tfe_arch_init(void)
-{
- //   g_fh = log_open("TFEARCH");
-
-    if (!TfePcapLoadLibrary()) {
-        return 0;
-    }
-
-    return 1;
-}
-
-void tfe_arch_pre_reset( void )
-{
-#ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_pre_reset().\n" );
-#endif
-}
-
-void tfe_arch_post_reset( void )
-{
-#ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_post_reset().\n" );
-#endif
-}
-
-int tfe_arch_activate(const std::string & interface_name)
-{
-#ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_activate().\n" );
-#endif
-    if (!TfePcapOpenAdapter(interface_name)) {
-        return 0;
-    }
-    return 1;
-}
-
-void tfe_arch_deactivate( void )
-{
-#ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_deactivate().\n" );
-#endif
-    if (TfePcapFP) {
-        (*p_pcap_close)(TfePcapFP);
-        TfePcapFP = NULL;
-    }
-}
 
 void tfe_arch_set_mac( const BYTE mac[6] )
 {
@@ -460,9 +422,9 @@ void tfe_arch_line_ctl(int bEnableTransmitter, int bEnableReceiver )
 
 
 typedef struct TFE_PCAP_INTERNAL_tag {
-
-    unsigned int len;
+    const unsigned int size;
     BYTE *buffer;
+    unsigned int rxlength;
 
 } TFE_PCAP_INTERNAL;
 
@@ -476,10 +438,9 @@ void TfePcapPacketHandler(u_char *param, const struct pcap_pkthdr *header, const
     /* determine the count of bytes which has been returned, 
      * but make sure not to overrun the buffer 
      */
-    if (header->caplen < pinternal->len)
-        pinternal->len = header->caplen;
+    pinternal->rxlength = min(pinternal->size, header->caplen);
 
-    memcpy(pinternal->buffer, pkt_data, pinternal->len);
+    memcpy(pinternal->buffer, pkt_data, pinternal->rxlength);
 }
 
 /* the following function receives a frame.
@@ -493,7 +454,7 @@ void TfePcapPacketHandler(u_char *param, const struct pcap_pkthdr *header, const
    At most 'len' bytes are copied.
 */
 static 
-int tfe_arch_receive_frame(TFE_PCAP_INTERNAL *pinternal)
+int tfe_arch_receive_frame(pcap_t * TfePcapFP, TFE_PCAP_INTERNAL *pinternal)
 {
     int ret = -1;
 
@@ -501,7 +462,7 @@ int tfe_arch_receive_frame(TFE_PCAP_INTERNAL *pinternal)
 	/* RGJ changed from void to u_char for AppleWin */
 	if ((*p_pcap_dispatch)(TfePcapFP, 1, TfePcapPacketHandler, (u_char *)pinternal)!=0) {
         /* Something has been received */
-        ret = pinternal->len;
+        ret = pinternal->rxlength;
     }
 
 #ifdef TFE_DEBUG_ARCH
@@ -511,23 +472,13 @@ int tfe_arch_receive_frame(TFE_PCAP_INTERNAL *pinternal)
     return ret;
 }
 
-void tfe_arch_transmit(int force,       /* FORCE: Delete waiting frames in transmit buffer */
-                       int onecoll,     /* ONECOLL: Terminate after just one collision */
-                       int inhibit_crc, /* INHIBITCRC: Do not append CRC to the transmission */
-                       int tx_pad_dis,  /* TXPADDIS: Disable padding to 60 Bytes */
+void tfe_arch_transmit(pcap_t * TfePcapFP,
                        int txlength,    /* Frame length */
                        BYTE *txframe    /* Pointer to the frame to be transmitted */
                       )
 {
 #ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_transmit() called, with: "
-        "force = %s, onecoll = %s, inhibit_crc=%s, tx_pad_dis=%s, txlength=%u\n",
-        force ?       "TRUE" : "FALSE", 
-        onecoll ?     "TRUE" : "FALSE", 
-        inhibit_crc ? "TRUE" : "FALSE", 
-        tx_pad_dis ?  "TRUE" : "FALSE", 
-        txlength
-        );
+    if(g_fh) fprintf( g_fh, "tfe_arch_transmit() called, with: txlength=%u\n", txlength);
 #endif
 
 #ifdef TFE_DEBUG_PKTDUMP
@@ -543,7 +494,7 @@ void tfe_arch_transmit(int force,       /* FORCE: Delete waiting frames in trans
   tfe_arch_receive()
 
   This function checks if there was a frame received.
-  If so, it returns 1, else 0.
+  If so, it returns its size, else -1.
 
   If there was no frame, none of the parameters is changed!
 
@@ -564,31 +515,20 @@ void tfe_arch_transmit(int force,       /* FORCE: Delete waiting frames in trans
     *pbroadcast is set, else cleared.
   - if the received frame had a crc error, *pcrc_error is set, else cleared
 */
-int tfe_arch_receive(BYTE *pbuffer  ,    /* where to store a frame */
-                     int  *plen,         /* IN: maximum length of frame to copy; 
-                                            OUT: length of received frame 
-                                            OUT can be bigger than IN if received frame was
-                                                longer than supplied buffer */
-                     int  *phashed,      /* set if the dest. address is accepted by the hash filter */
-                     int  *phash_index,  /* hash table index if hashed == TRUE */   
-                     int  *prx_ok,       /* set if good CRC and valid length */
-                     int  *pcorrect_mac, /* set if dest. address is exactly our IA */
-                     int  *pbroadcast,   /* set if dest. address is a broadcast address */
-                     int  *pcrc_error    /* set if received frame had a CRC error */
+int tfe_arch_receive(pcap_t * TfePcapFP,
+                     const int size ,    /* Size of buffer */
+                     BYTE *pbuffer       /* where to store a frame */
                     )
 {
-    int len;
-
-    TFE_PCAP_INTERNAL internal = { static_cast<unsigned int>(*plen), pbuffer };
-
+    TFE_PCAP_INTERNAL internal = { static_cast<unsigned int>(size), pbuffer, 0 };
 
 #ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_receive() called, with *plen=%u.\n", *plen );
+    if(g_fh) fprintf( g_fh, "tfe_arch_receive() called, with size=%u.\n", size );
 #endif
 
-    assert((*plen&1)==0);
+    assert((size & 1)==0);
 
-    len = tfe_arch_receive_frame(&internal);
+    int len = tfe_arch_receive_frame(TfePcapFP, &internal);
 
     if (len!=-1) {
 
@@ -599,25 +539,10 @@ int tfe_arch_receive(BYTE *pbuffer  ,    /* where to store a frame */
         if (len&1)
             ++len;
 
-        *plen = len;
-
-        /* we don't decide if this frame fits the needs;
-         * by setting all zero, we let tfe.c do the work
-         * for us
-         */
-        *phashed =
-        *phash_index =
-        *pbroadcast = 
-        *pcorrect_mac =
-        *pcrc_error = 0;
-
-        /* this frame has been received correctly */
-        *prx_ok = 1;
-
-        return 1;
+        return len;
     }
 
-    return 0;
+    return -1;
 }
 
 //#endif /* #ifdef HAVE_TFE */
