@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Card.h"
+#include "Tfe/NetworkBackend.h"
 
 /* define this only if VICE should write each and every frame received
    and send into the VICE log
@@ -161,7 +162,7 @@ private:
 		uint8_t *txframe		/* Pointer to the frame to be transmitted */
 	);
 
-	std::shared_ptr<NetworkBackend> networkBackend;
+	NetworkBackendSharedPtr networkBackend;
 
 #ifdef TFE_DEBUG_DUMP
 	void tfe_debug_output_general( const char *what, WORD (Uthernet1::*getFunc)(int), int count );

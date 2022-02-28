@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #define MAX_TXLENGTH 1518
 #define MIN_TXLENGTH 4
 
@@ -29,3 +31,9 @@ public:
 	// if the backend is usable
 	virtual bool isValid() = 0;
 };
+
+#if defined(_MSC_VER) && _MSC_VER < 1600
+typedef std::tr1::shared_ptr<NetworkBackend> NetworkBackendSharedPtr;
+#else
+typedef std::shared_ptr<NetworkBackend> NetworkBackendSharedPtr;
+#endif

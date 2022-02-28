@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Card.h"
+#include "Tfe/NetworkBackend.h"
 
 #include <vector>
 
@@ -69,7 +70,7 @@ private:
     std::vector<Socket> mySockets;
     uint8_t myModeRegister;
     uint16_t myDataAddress;
-    std::shared_ptr<NetworkBackend> myNetworkBackend;
+	NetworkBackendSharedPtr myNetworkBackend;
 
     void setSocketModeRegister(const size_t i, const uint16_t address, const uint8_t value);
     void setTXSizes(const uint16_t address, uint8_t value);

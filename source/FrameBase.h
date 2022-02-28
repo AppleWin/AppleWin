@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Video.h"
+#include "Tfe/NetworkBackend.h"
 
 class NetworkBackend;
 
@@ -45,7 +46,7 @@ public:
 
 	// create the network backed for Uthernet 1 and 2
 	// useful to use libslirp in Linux
-	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend() = 0;
+	virtual NetworkBackendSharedPtr CreateNetworkBackend() = 0;
 
 	// FindResource, MAKEINTRESOURCE, SizeofResource, LoadResource, LockResource
 	// Return pointer to resource if size is correct.

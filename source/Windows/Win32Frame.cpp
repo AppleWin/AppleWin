@@ -625,8 +625,8 @@ std::string Win32Frame::Video_GetScreenShotFolder() const
 	return std::string();
 }
 
-std::shared_ptr<NetworkBackend> Win32Frame::CreateNetworkBackend()
+NetworkBackendSharedPtr Win32Frame::CreateNetworkBackend()
 {
-	std::shared_ptr<NetworkBackend> backend(new PCapBackend(PCapBackend::tfe_interface));
+	NetworkBackendSharedPtr backend(new PCapBackend(PCapBackend::tfe_interface));
 	return backend;
 }

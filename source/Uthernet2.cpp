@@ -26,7 +26,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tfe/PCapBackend.h"
 #include "W5100.h"
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#else
 #include <cstdint>
+#endif
 
 // Linux uses EINPROGRESS while Windows returns WSAEWOULDBLOCK
 // when the connect() calls is ongoing
@@ -89,6 +92,24 @@ typedef int socklen_t;
 
 namespace
 {
+	template<typename _T>
+	inline _T* _get_data(std::vector<_T>& v)
+	{
+#if defined(_MSC_VER) && _MSC_VER < 1600
+		return &v.front();
+#else
+		return v.data();
+#endif
+	}
+	template<typename _T>
+	inline const _T* _get_data(const std::vector<_T>& v)
+	{
+#if defined(_MSC_VER) && _MSC_VER < 1600
+		return &v.front();
+#else
+		return v.data();
+#endif
+	}
 
     uint16_t readNetworkWord(const uint8_t *address)
     {
@@ -299,8 +320,9 @@ void Uthernet2::setTXSizes(const uint16_t address, uint8_t value)
     myMemory[address] = value;
     uint16_t base = TX_BASE;
     const uint16_t end = RX_BASE;
-    for (Socket &socket : mySockets)
+	for (std::vector<Socket>::iterator it = mySockets.begin(), itend = mySockets.end(); it != itend; ++it)
     {
+        Socket& socket = *it;
         socket.transmitBase = base;
 
         const uint8_t bits = value & 0x03;
@@ -322,8 +344,9 @@ void Uthernet2::setRXSizes(const uint16_t address, uint8_t value)
     myMemory[address] = value;
     uint16_t base = RX_BASE;
     const uint16_t end = MEM_SIZE;
-    for (Socket &socket : mySockets)
+    for (std::vector<Socket>::iterator it = mySockets.begin(), itend = mySockets.end(); it != itend; ++it)
     {
+        Socket& socket = *it;
         socket.receiveBase = base;
 
         const uint8_t bits = value & 0x03;
@@ -346,8 +369,8 @@ uint16_t Uthernet2::getTXDataSize(const size_t i) const
     const uint16_t size = socket.transmitSize;
     const uint16_t mask = size - 1;
 
-    const int sn_tx_rd = readNetworkWord(myMemory.data() + socket.registers + SN_TX_RD0) & mask;
-    const int sn_tx_wr = readNetworkWord(myMemory.data() + socket.registers + SN_TX_WR0) & mask;
+    const int sn_tx_rd = readNetworkWord(_get_data(myMemory) + socket.registers + SN_TX_RD0) & mask;
+    const int sn_tx_wr = readNetworkWord(_get_data(myMemory) + socket.registers + SN_TX_WR0) & mask;
 
     int dataPresent = sn_tx_wr - sn_tx_rd;
     if (dataPresent < 0)
@@ -380,7 +403,7 @@ void Uthernet2::updateRSR(const size_t i)
     const int size = socket.receiveSize;
     const uint16_t mask = size - 1;
 
-    const int sn_rx_rd = readNetworkWord(myMemory.data() + socket.registers + SN_RX_RD0) & mask;
+    const int sn_rx_rd = readNetworkWord(_get_data(myMemory) + socket.registers + SN_RX_RD0) & mask;
     const int sn_rx_wr = socket.sn_rx_wr & mask;
     int dataPresent = sn_rx_wr - sn_rx_rd;
     if (dataPresent < 0)
@@ -404,7 +427,7 @@ void Uthernet2::updateRSR(const size_t i)
 
 int Uthernet2::receiveForMacAddress(const bool acceptAll, const int size, uint8_t * data)
 {
-    const uint8_t * mac = myMemory.data() + SHAR0;
+    const uint8_t * mac = _get_data(myMemory) + SHAR0;
 
     // loop until we receive a valid frame, or there is nothing to receive
     int len;
@@ -452,7 +475,7 @@ void Uthernet2::receiveOnePacketMacRaw(const size_t i)
     uint8_t buffer[MAX_RXLENGTH];
 
     const uint8_t mr = myMemory[socket.registers + SN_MR];
-    const bool filterMAC = mr & SN_MR_MF;
+    const bool filterMAC = !!(mr & SN_MR_MF);
 
     const int len = receiveForMacAddress(!filterMAC, sizeof(buffer), buffer);
     if (len > 0)
@@ -488,13 +511,13 @@ void Uthernet2::receiveOnePacketFromSocket(const size_t i)
             std::vector<uint8_t> buffer(freeRoom - 1); // do not fill the buffer completely
             sockaddr_in source = {0};
             socklen_t len = sizeof(sockaddr_in);
-            const ssize_t data = recvfrom(socket.myFD, reinterpret_cast<char *>(buffer.data()), buffer.size(), 0, (struct sockaddr *)&source, &len);
+            const ssize_t data = recvfrom(socket.myFD, reinterpret_cast<char *>(_get_data(buffer)), buffer.size(), 0, (struct sockaddr *)&source, &len);
 #ifdef U2_LOG_TRAFFIC
             const char *proto = socket.sn_sr == SN_SR_SOCK_UDP ? "UDP" : "TCP";
 #endif
             if (data > 0)
             {
-                writeDataForProtocol(socket, myMemory, buffer.data(), data, source);
+                writeDataForProtocol(socket, myMemory, _get_data(buffer), data, source);
 #ifdef U2_LOG_TRAFFIC
                 LogFileOutput("U2: Read %s[%" SIZE_T_FMT "]: +%" SIZE_T_FMT " -> %d bytes\n", proto, i, data, socket.sn_rx_rsr);
 #endif
@@ -554,7 +577,7 @@ void Uthernet2::sendDataMacRaw(const size_t i, std::vector<uint8_t> &packet) con
         LogFileOutput("U2: Send MACRAW[%" SIZE_T_FMT "]: XX:XX:XX:XX:XX:XX -> XX:XX:XX:XX:XX:XX: %" SIZE_T_FMT " bytes\n", i, packet.size());
     }
 #endif
-    myNetworkBackend->transmit(packet.size(), packet.data());
+    myNetworkBackend->transmit(packet.size(), _get_data(packet));
 }
 
 void Uthernet2::sendDataToSocket(const size_t i, std::vector<uint8_t> &data)
@@ -567,11 +590,11 @@ void Uthernet2::sendDataToSocket(const size_t i, std::vector<uint8_t> &data)
 
         // already in network order
         // this seems to be ignored for TCP, and so we reuse the same code
-        const uint8_t *dest = myMemory.data() + socket.registers + SN_DIPR0;
+        const uint8_t *dest = _get_data(myMemory) + socket.registers + SN_DIPR0;
         destination.sin_addr.s_addr = *reinterpret_cast<const uint32_t *>(dest);
-        destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registers + SN_DPORT0);
+        destination.sin_port = *reinterpret_cast<const uint16_t *>(_get_data(myMemory) + socket.registers + SN_DPORT0);
 
-        const ssize_t res = sendto(socket.myFD, reinterpret_cast<const char *>(data.data()), data.size(), 0, (const struct sockaddr *)&destination, sizeof(destination));
+        const ssize_t res = sendto(socket.myFD, reinterpret_cast<const char *>(_get_data(data)), data.size(), 0, (const struct sockaddr *)&destination, sizeof(destination));
 #ifdef U2_LOG_TRAFFIC
         const char *proto = socket.sn_sr == SN_SR_SOCK_UDP ? "UDP" : "TCP";
         LogFileOutput("U2: Send %s[%" SIZE_T_FMT "]: %" SIZE_T_FMT " of %" SIZE_T_FMT " bytes\n", proto, i, res, data.size());
@@ -596,8 +619,8 @@ void Uthernet2::sendData(const size_t i)
     const uint16_t size = socket.transmitSize;
     const uint16_t mask = size - 1;
 
-    const int sn_tx_rr = readNetworkWord(myMemory.data() + socket.registers + SN_TX_RD0) & mask;
-    const int sn_tx_wr = readNetworkWord(myMemory.data() + socket.registers + SN_TX_WR0) & mask;
+    const int sn_tx_rr = readNetworkWord(_get_data(myMemory) + socket.registers + SN_TX_RD0) & mask;
+    const int sn_tx_wr = readNetworkWord(_get_data(myMemory) + socket.registers + SN_TX_WR0) & mask;
 
     const uint16_t base = socket.transmitBase;
     const uint16_t rr_address = base + sn_tx_rr;
@@ -717,13 +740,13 @@ void Uthernet2::closeSocket(const size_t i)
 void Uthernet2::connectSocket(const size_t i)
 {
     Socket &socket = mySockets[i];
-    const uint8_t *dest = myMemory.data() + socket.registers + SN_DIPR0;
+    const uint8_t *dest = _get_data(myMemory) + socket.registers + SN_DIPR0;
 
     sockaddr_in destination = {};
     destination.sin_family = AF_INET;
 
     // already in network order
-    destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registers + SN_DPORT0);
+    destination.sin_port = *reinterpret_cast<const uint16_t *>(_get_data(myMemory) + socket.registers + SN_DPORT0);
     destination.sin_addr.s_addr = *reinterpret_cast<const uint32_t *>(dest);
 
     const int res = connect(socket.myFD, (struct sockaddr *)&destination, sizeof(destination));
@@ -1124,7 +1147,7 @@ BYTE __stdcall u2_C0(WORD programcounter, WORD address, BYTE write, BYTE value, 
 
 void Uthernet2::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-    RegisterIoHandler(m_slot, u2_C0, u2_C0, nullptr, nullptr, this, nullptr);
+    RegisterIoHandler(m_slot, u2_C0, u2_C0, NULL, NULL, this, NULL);
 }
 
 void Uthernet2::Init()
@@ -1134,9 +1157,9 @@ void Uthernet2::Init()
 void Uthernet2::Update(const ULONG nExecutedCycles)
 {
     myNetworkBackend->update(nExecutedCycles);
-    for (Socket &socket : mySockets)
+    for (std::vector<Socket>::iterator it = mySockets.begin(), itend = mySockets.end(); it != itend; ++it)
     {
-        socket.process();
+        it->process();
     }
 }
 
