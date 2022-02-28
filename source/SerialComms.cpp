@@ -1417,7 +1417,7 @@ static const UINT kUNIT_VERSION = 2;
 #define SS_YAML_KEY_SERIALPORTNAME "Serial Port Name"
 #define SS_YAML_KEY_SUPPORT_DCD "Support DCD"
 
-std::string CSuperSerialCard::GetSnapshotCardName(void)
+const std::string& CSuperSerialCard::GetSnapshotCardName(void)
 {
 	static const std::string name(SS_YAML_VALUE_CARD_SSC);
 	return name;

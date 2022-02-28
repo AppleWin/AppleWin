@@ -275,7 +275,7 @@ bool Video::VideoGetSWAltCharSet(void)
 #define SS_YAML_KEY_CYCLES_THIS_FRAME "Cycles This Frame"
 #define SS_YAML_KEY_VIDEO_REFRESH_RATE "Video Refresh Rate"
 
-std::string Video::VideoGetSnapshotStructName(void)
+const std::string& Video::VideoGetSnapshotStructName(void)
 {
 	static const std::string name("Video");
 	return name;

@@ -6465,7 +6465,7 @@ void z80_WRMEM(WORD Addr, BYTE Value)
 #define SS_YAML_KEY_REGL2 "L'"
 #define SS_YAML_KEY_ACTIVE "Active"
 
-std::string Z80_GetSnapshotCardName(void)
+const std::string& Z80_GetSnapshotCardName(void)
 {
 	static const std::string name(SS_YAML_VALUE_CARD_Z80);
 	return name;

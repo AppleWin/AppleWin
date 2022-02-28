@@ -96,7 +96,7 @@ bool    MemGetAnnunciator(UINT annunciator);
 bool    MemHasNoSlotClock(void);
 void    MemInsertNoSlotClock(void);
 void    MemRemoveNoSlotClock(void);
-std::string MemGetSnapshotUnitAuxSlotName(void);
+const std::string& MemGetSnapshotUnitAuxSlotName(void);
 void    MemSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 bool    MemLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT unitVersion);
 void    MemSaveSnapshotAux(class YamlSaveHelper& yamlSaveHelper);

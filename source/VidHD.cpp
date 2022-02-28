@@ -183,13 +183,13 @@ static const UINT kUNIT_VERSION = 1;
 #define SS_YAML_KEY_BORDER_COLOR "Border Color"
 #define SS_YAML_KEY_SHADOW "Shadow"
 
-std::string VidHDCard::GetSnapshotCardName(void)
+const std::string& VidHDCard::GetSnapshotCardName(void)
 {
 	static const std::string name("VidHD");
 	return name;
 }
 
-static std::string MemGetSnapshotAuxMemStructName(void)
+static const std::string& MemGetSnapshotAuxMemStructName(void)
 {
 	static const std::string name("Auxiliary Memory Bank");
 	return name;
