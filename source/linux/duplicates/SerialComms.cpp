@@ -73,7 +73,7 @@ void CSuperSerialCard::LoadSnapshotDIPSW(YamlLoadHelper& yamlLoadHelper, std::st
 bool CSuperSerialCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
   if (version < 1 || version > kUNIT_VERSION)
-    throw std::runtime_error("Card: wrong version");
+    ThrowErrorInvalidVersion(version);
 
   SSC_DIPSW dipsw;
   LoadSnapshotDIPSW(yamlLoadHelper, SS_YAML_KEY_DIPSWDEFAULT, dipsw);
@@ -112,7 +112,8 @@ void CSuperSerialCard::SaveSnapshot(YamlSaveHelper&)
 {
 }
 
-std::string CSuperSerialCard::GetSnapshotCardName()
+const std::string & CSuperSerialCard::GetSnapshotCardName()
 {
-  return "Super Serial Card";
+  static const std::string name(SS_YAML_VALUE_CARD_SSC);
+  return name;
 }
