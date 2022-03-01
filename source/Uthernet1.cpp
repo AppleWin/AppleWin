@@ -1078,7 +1078,7 @@ void Uthernet1::Update(const ULONG nExecutedCycles)
 
 static const UINT kUNIT_VERSION = 1;
 
-std::string Uthernet1::GetSnapshotCardName(void)
+const std::string& Uthernet1::GetSnapshotCardName(void)
 {
     static const std::string name("Uthernet");
     return name;

@@ -628,7 +628,7 @@ void CMouseInterface::SetButton(eBUTTON Button, eBUTTONSTATE State)
 #define SS_YAML_KEY_BUTTON1 "Button1"
 #define SS_YAML_KEY_ENABLED "Enabled"
 
-std::string CMouseInterface::GetSnapshotCardName(void)
+const std::string& CMouseInterface::GetSnapshotCardName(void)
 {
 	static const std::string name(SS_YAML_VALUE_CARD_MOUSE);
 	return name;

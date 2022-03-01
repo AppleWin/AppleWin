@@ -165,19 +165,19 @@ void Snapshot_UpdatePath(void)
 
 //-----------------------------------------------------------------------------
 
-static std::string GetSnapshotUnitApple2Name(void)
+static const std::string& GetSnapshotUnitApple2Name(void)
 {
 	static const std::string name("Apple2");
 	return name;
 }
 
-static std::string GetSnapshotUnitSlotsName(void)
+static const std::string& GetSnapshotUnitSlotsName(void)
 {
 	static const std::string name("Slots");
 	return name;
 }
 
-static std::string GetSnapshotUnitMiscName(void)
+static const std::string& GetSnapshotUnitMiscName(void)
 {
 	static const std::string name("Miscellaneous");
 	return name;

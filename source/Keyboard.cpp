@@ -457,7 +457,7 @@ void KeybToggleCapsLock ()
 #define SS_YAML_KEY_LASTKEY "Last Key"
 #define SS_YAML_KEY_KEYWAITING "Key Waiting"
 
-static std::string KeybGetSnapshotStructName(void)
+static const std::string& KeybGetSnapshotStructName(void)
 {
 	static const std::string name("Keyboard");
 	return name;

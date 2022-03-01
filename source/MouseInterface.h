@@ -43,7 +43,7 @@ public:
 		m_iY = iY;
 	}
 
-	static std::string GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardName(void);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 

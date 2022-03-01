@@ -68,7 +68,7 @@ private:
 	bool Read(int address, BYTE& data);
 	void Write(int address);
 	void PopulateClockRegister();
-	std::string GetSnapshotStructName(void);
+	const std::string& GetSnapshotStructName(void);
 
 	static const UINT64 kClockInitSequence = 0x5CA33AC55CA33AC5;
 };

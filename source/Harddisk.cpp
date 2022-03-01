@@ -774,7 +774,7 @@ static const UINT kUNIT_VERSION = 3;
 #define SS_YAML_KEY_BUF "Buffer"
 #define SS_YAML_KEY_NOT_BUSY_CYCLE "Not Busy Cycle"
 
-std::string HarddiskInterfaceCard::GetSnapshotCardName(void)
+const std::string& HarddiskInterfaceCard::GetSnapshotCardName(void)
 {
 	static const std::string name(SS_YAML_VALUE_CARD_HDD);
 	return name;

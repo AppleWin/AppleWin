@@ -135,7 +135,7 @@ public:
 	BYTE tfe_read(WORD ioaddress);
 	void tfe_store(WORD ioaddress, BYTE byte);
 
-	static std::string GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardName(void);
 
 private:
 

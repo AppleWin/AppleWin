@@ -49,7 +49,7 @@ struct Socket
 class Uthernet2 : public Card
 {
 public:
-    static std::string GetSnapshotCardName();
+    static const std::string& GetSnapshotCardName();
 
     Uthernet2(UINT slot);
 

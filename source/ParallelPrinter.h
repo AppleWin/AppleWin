@@ -9,7 +9,7 @@ const std::string &	Printer_GetFilename();
 void			Printer_SetIdleLimit(unsigned int Duration);
 unsigned int	Printer_GetIdleLimit();
 
-std::string Printer_GetSnapshotCardName(void);
+const std::string& Printer_GetSnapshotCardName(void);
 void Printer_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
 bool Printer_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 

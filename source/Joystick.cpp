@@ -936,7 +936,7 @@ void JoyportControl(const UINT uControl)
 #define SS_YAML_KEY_JOY1TRIMY "Joystick1 TrimY"
 #define SS_YAML_KEY_PDL_INACTIVE_CYCLE "Paddle%1d Inactive Cycle"
 
-static std::string JoyGetSnapshotStructName(void)
+static const std::string& JoyGetSnapshotStructName(void)
 {
 	static const std::string name("Joystick");
 	return name;

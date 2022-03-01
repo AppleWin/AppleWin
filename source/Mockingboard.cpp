@@ -1355,13 +1355,13 @@ const UINT NUM_PHASOR_UNITS = 2;
 
 #define SS_YAML_KEY_VOTRAX_PHONEME "Votrax Phoneme"
 
-std::string MB_GetSnapshotCardName(void)
+const std::string& MB_GetSnapshotCardName(void)
 {
 	static const std::string name("Mockingboard C");
 	return name;
 }
 
-std::string Phasor_GetSnapshotCardName(void)
+const std::string& Phasor_GetSnapshotCardName(void)
 {
 	static const std::string name("Phasor");
 	return name;
