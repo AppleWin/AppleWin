@@ -108,33 +108,24 @@ BYTE Disk2InterfaceCard::GetCurrentLSSBitMask(void) { return m_floppyDrive[m_cur
 double Disk2InterfaceCard::GetCurrentExtraCycles(void) { return m_floppyDrive[m_currDrive].m_disk.m_extraCycles; }
 int Disk2InterfaceCard::GetTrack(const int drive)  { return ImagePhaseToTrack(m_floppyDrive[drive].m_disk.m_imagehandle, m_floppyDrive[drive].m_phasePrecise, false); }
 
+std::string Disk2InterfaceCard::FormatPhaseString(float phase)
+{
+	const UINT phaseInt = (UINT)phase;
+	const UINT phaseFrac = (UINT)((phase - (float)phaseInt) * 100 + 0.5);
+
+	return StrFormat("%02X.%2d", phaseInt, phaseFrac);	// "$NN.nn"
+}
+
 std::string Disk2InterfaceCard::GetCurrentTrackString(void)
 {
-	const UINT trackInt = (UINT)(m_floppyDrive[m_currDrive].m_phasePrecise / 2);
-	const float trackFrac = (m_floppyDrive[m_currDrive].m_phasePrecise / 2) - (float)trackInt;
-
-	char szInt[8] = "";
-	sprintf(szInt, "%02X", trackInt);		// "$NN"
-
-	char szFrac[8] = "";
-	sprintf(szFrac, "%.02f", trackFrac);	// "0.nn"
-
-	return std::string(szInt) + std::string(szFrac+1);
+	return FormatPhaseString(m_floppyDrive[m_currDrive].m_phasePrecise / 2);
 }
 
 std::string Disk2InterfaceCard::GetCurrentPhaseString(void)
 {
-	const UINT phaseInt = (UINT)(m_floppyDrive[m_currDrive].m_phasePrecise);
-	const float phaseFrac = m_floppyDrive[m_currDrive].m_phasePrecise - (float)phaseInt;
-
-	char szInt[8] = "";
-	sprintf(szInt, "%02X", phaseInt);		// "$NN"
-
-	char szFrac[8] = "";
-	sprintf(szFrac, "%.02f", phaseFrac);	// "0.nn"
-
-	return std::string(szInt) + std::string(szFrac+1);
+	return FormatPhaseString(m_floppyDrive[m_currDrive].m_phasePrecise);
 }
+
 LPCTSTR Disk2InterfaceCard::GetCurrentState(void)
 {
 	if (m_floppyDrive[m_currDrive].m_disk.m_imagehandle == NULL)

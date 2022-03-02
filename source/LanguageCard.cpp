@@ -443,9 +443,7 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 		}
 
 		// "Memory Bankxx"
-		char szBank[3];
-		sprintf(szBank, "%02X", uBank);
-		std::string memName = GetSnapshotMemStructName() + szBank;
+		std::string memName = GetSnapshotMemStructName() + StrFormat("%02X", uBank);
 
 		if (!yamlLoadHelper.GetSubMap(memName))
 			throw std::runtime_error("Memory: Missing map name: " + memName);

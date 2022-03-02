@@ -1079,22 +1079,34 @@ void SetMemMode(DWORD uNewMemMode)
 	if (dwOldDiff != dwDiff)
 	{
 		dwOldDiff = dwDiff;
-		char szStr[100];
-		char* psz = szStr;
-		psz += sprintf(psz, "diff = %08X ", dwDiff);
-		psz += sprintf(psz, "80=%d "   , SW_80STORE   ? 1 : 0);
-		psz += sprintf(psz, "ALTZP=%d ", SW_ALTZP     ? 1 : 0);
-		psz += sprintf(psz, "AUXR=%d " , SW_AUXREAD   ? 1 : 0);
-		psz += sprintf(psz, "AUXW=%d " , SW_AUXWRITE  ? 1 : 0);
-		psz += sprintf(psz, "BANK2=%d ", SW_BANK2     ? 1 : 0);
-		psz += sprintf(psz, "HIRAM=%d ", SW_HIGHRAM   ? 1 : 0);
-		psz += sprintf(psz, "HIRES=%d ", SW_HIRES     ? 1 : 0);
-		psz += sprintf(psz, "PAGE2=%d ", SW_PAGE2     ? 1 : 0);
-		psz += sprintf(psz, "C3=%d "   , SW_SLOTC3ROM ? 1 : 0);
-		psz += sprintf(psz, "CX=%d "   , SW_INTCXROM  ? 1 : 0);
-		psz += sprintf(psz, "WRAM=%d " , SW_WRITERAM  ? 1 : 0);
-		psz += sprintf(psz, "\n");
-		OutputDebugString(szStr);
+		std::string str = StrFormat(
+			/*01*/ "diff = %08X "
+			/*02*/ "80=%d "
+			/*03*/ "ALTZP=%d "
+			/*04*/ "AUXR=%d "
+			/*05*/ "AUXW=%d "
+			/*06*/ "BANK2=%d "
+			/*07*/ "HIRAM=%d "
+			/*08*/ "HIRES=%d "
+			/*09*/ "PAGE2=%d "
+			/*10*/ "C3=%d "
+			/*11*/ "CX=%d "
+			/*12*/ "WRAM=%d "
+			"\n",
+			/*01*/ dwDiff,
+			/*02*/ SW_80STORE   ? 1 : 0,
+			/*03*/ SW_ALTZP     ? 1 : 0,
+			/*04*/ SW_AUXREAD   ? 1 : 0,
+			/*05*/ SW_AUXWRITE  ? 1 : 0,
+			/*06*/ SW_BANK2     ? 1 : 0,
+			/*07*/ SW_HIGHRAM   ? 1 : 0,
+			/*08*/ SW_HIRES     ? 1 : 0,
+			/*09*/ SW_PAGE2     ? 1 : 0,
+			/*10*/ SW_SLOTC3ROM ? 1 : 0,
+			/*11*/ SW_INTCXROM  ? 1 : 0,
+			/*12*/ SW_WRITERAM  ? 1 : 0
+			);
+		OutputDebugString(str.c_str());
 	}
 #endif
 	memmode = uNewMemMode;
@@ -2430,9 +2442,7 @@ static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::
 		}
 
 		// "Auxiliary Memory Bankxx"
-		char szBank[3];
-		sprintf(szBank, "%02X", uBank-1);
-		std::string auxMemName = MemGetSnapshotAuxMemStructName() + szBank;
+		std::string auxMemName = MemGetSnapshotAuxMemStructName() + StrFormat("%02X", uBank-1);
 
 		if (!yamlLoadHelper.GetSubMap(auxMemName))
 			throw std::runtime_error("Memory: Missing map name: " + auxMemName);
