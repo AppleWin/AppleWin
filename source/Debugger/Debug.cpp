@@ -8411,35 +8411,32 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 
 		if (regs.pc == g_nDebugStepUntil || g_bDebugBreakpointHit)
 		{
-			std::string strStopMessage;
-			const char* pszStopReason = "";
+			std::string stopReason = "Unknown!";
 
 			if (regs.pc == g_nDebugStepUntil)
-				pszStopReason = "PC matches 'Go until' address";
+				stopReason = "PC matches 'Go until' address";
 			else if (g_bDebugBreakpointHit & BP_HIT_INVALID)
-				pszStopReason = "Invalid opcode";
+				stopReason = "Invalid opcode";
 			else if (g_bDebugBreakpointHit & BP_HIT_OPCODE)
-				pszStopReason = "Opcode match";
+				stopReason = "Opcode match";
 			else if (g_bDebugBreakpointHit & BP_HIT_REG)
-				pszStopReason = "Register matches value";
+				stopReason = "Register matches value";
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
-				pszStopReason = (strStopMessage = StrFormat("Memory access at $%04X", g_uBreakMemoryAddress)).c_str();
+				stopReason = StrFormat("Memory access at $%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMW)
-				pszStopReason = (strStopMessage = StrFormat("Write access at $%04X", g_uBreakMemoryAddress)).c_str();
+				stopReason = StrFormat("Write access at $%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMR)
-				pszStopReason = (strStopMessage = StrFormat("Read access at $%04X", g_uBreakMemoryAddress)).c_str();
+				stopReason = StrFormat("Read access at $%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
-				pszStopReason = "PC reads from floating bus or I/O memory";
+				stopReason = "PC reads from floating bus or I/O memory";
 			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
-				pszStopReason = (strStopMessage = StrFormat("Interrupt occurred at $%04X", g_LBR)).c_str();
+				stopReason = StrFormat("Interrupt occurred at $%04X", g_LBR);
 			else if (g_bDebugBreakpointHit & BP_DMA_TO_IO_MEM)
-				pszStopReason = (strStopMessage = StrFormat("HDD DMA to I/O memory or ROM $%04X", g_uDebugBreakOnDmaIoMemoryAddr)).c_str();
+				stopReason = StrFormat("HDD DMA to I/O memory or ROM $%04X", g_uDebugBreakOnDmaIoMemoryAddr);
 			else if (g_bDebugBreakpointHit & BP_DMA_FROM_IO_MEM)
-				pszStopReason = (strStopMessage = StrFormat("HDD DMA from I/O memory $%04X", g_uDebugBreakOnDmaIoMemoryAddr)).c_str();
-			else
-				pszStopReason = "Unknown!";
+				stopReason = StrFormat("HDD DMA from I/O memory $%04X", g_uDebugBreakOnDmaIoMemoryAddr);
 
-			ConsoleBufferPushFormat( "Stop reason: %s", pszStopReason );
+			ConsoleBufferPushFormat( "Stop reason: %s", stopReason.c_str() );
 			ConsoleUpdate();
 
 			g_nDebugSteps = 0;

@@ -84,11 +84,10 @@ void SSI_Output(void)
 	int ssi2 = ssiRegs[SSI_RATEINF];
 
 	LogOutput("SSI: ");
-	for (int i=0; i<=4; i++)
+	for (int i = 0; i <= 4; i++)
 	{
-		char r[3]="--";
-		if (ssiRegs[i]>=0) sprintf(r,"%02X",ssiRegs[i]);
-		LogOutput("%s ", r);
+		std::string r = (ssiRegs[i] >= 0) ? StrFormat("%02X", ssiRegs[i]) : "--";
+		LogOutput("%s ", r.c_str());
 		ssiRegs[i] = -1;
 	}
 

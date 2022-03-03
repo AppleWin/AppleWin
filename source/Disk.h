@@ -159,6 +159,7 @@ public:
 	BYTE GetCurrentLSSBitMask(void);
 	double GetCurrentExtraCycles(void);
 	int GetTrack(const int drive);
+	static std::string FormatPhaseString(float phase);
 	std::string GetCurrentTrackString(void);
 	std::string GetCurrentPhaseString(void);
 	LPCTSTR GetCurrentState(void);

@@ -115,32 +115,17 @@
 /*    debugging functions                                                    */
 
 #ifdef TFE_DEBUG_FRAMES
-
-static int TfeDebugMaxFrameLengthToDump = 150;
-
-char *debug_outbuffer(const int length, const unsigned char * const buffer)
+std::string debug_outbuffer(size_t length, const unsigned char* buffer)
 {
-#define MAXLEN_DEBUG 1600
-
-    int i;
-    static char outbuffer[MAXLEN_DEBUG*4+1];
-    char *p = outbuffer;
-
-    assert( TfeDebugMaxFrameLengthToDump <= MAXLEN_DEBUG );
-
-    *p = 0;
-
-    for (i=0; i<TfeDebugMaxFrameLengthToDump; i++) {
-        if (i>=length)
-            break;
-
-        sprintf( p, "%02X%c", buffer[i], ((i+1)%16==0)?'*':(((i+1)%8==0)?'-':' '));
-        p+=3;
-    }
-
-    return outbuffer;
+	std::string outbuffer;
+	outbuffer.reserve(length * 3);
+	for (size_t i = 0; i < length; i++)
+	{
+		StrAppendByteAsHex(outbuffer, buffer[i]);
+		outbuffer += ((i+1)%16==0)?'*':(((i+1)%8==0)?'-':' ');
+	}
+	return outbuffer;
 }
-
 #endif
 
 
@@ -150,26 +135,17 @@ char *debug_outbuffer(const int length, const unsigned char * const buffer)
 
 void Uthernet1::tfe_debug_output_general( const char *what, WORD (Uthernet1::*getFunc)(int), int count )
 {
-    int i;
-    char buffer[7+(6*NUMBER_PER_LINE)+2];
-
-    if(g_fh) fprintf(g_fh, "%s contents:", what );
-    for (i=0; i<count; i += 2*NUMBER_PER_LINE )
-    {
-        int j;
-        char *p = buffer + 7;
-
-        sprintf( buffer, "%04X:  ", i );
-
-        for (j=0; j<NUMBER_PER_LINE; j++)
-        {
-            sprintf( p, "%04X, ", (this->*getFunc)(i+j+j) );
-            p += 6;
-        }
-        *p = 0;
-
-        if(g_fh) fprintf(g_fh, "%s", buffer );
-    }
+	if (!g_fh) return;
+	fprintf(g_fh, "%s contents:\n", what);
+	for (int i = 0; i < count; i += 2*NUMBER_PER_LINE)
+	{
+		fprintf(g_fh, "%04X:  ", i);
+		for (int j = 0; j < NUMBER_PER_LINE; j++) 
+		{
+			fprintf(g_fh, "%04X, ", (this->*getFunc)(i+j+j));
+		}
+		fputc('\n', g_fh);
+	}
 }
 
 WORD Uthernet1::tfe_debug_output_io_getFunc( int i )
@@ -315,7 +291,7 @@ void Uthernet1::tfe_sideeffects_write_pp_on_txframe(WORD ppaddress)
 #ifdef TFE_DEBUG_FRAMES
             if(g_fh) fprintf(g_fh, "tfe_arch_transmit() called with:                 "
                 "length=%4u and buffer %s", txlen,
-                debug_outbuffer(txlen, &tfe_packetpage[TFE_PP_ADDR_TX_FRAMELOC])
+                debug_outbuffer(txlen, &tfe_packetpage[TFE_PP_ADDR_TX_FRAMELOC]).c_str()
                 );
 #endif
 
@@ -819,7 +795,7 @@ int Uthernet1::tfe_should_accept(unsigned char *buffer, int length, int *phashed
         tfe_ia_mac[0], tfe_ia_mac[1], tfe_ia_mac[2],
         tfe_ia_mac[3], tfe_ia_mac[4], tfe_ia_mac[5],
         length,
-        debug_outbuffer(length, buffer)
+        debug_outbuffer(length, buffer).c_str()
         );
 #endif
 

@@ -185,26 +185,24 @@ static pcap_if_t *TfePcapAlldevs = NULL;
 static char TfePcapErrbuf[PCAP_ERRBUF_SIZE];
 
 #ifdef TFE_DEBUG_PKTDUMP
-
 static
-void debug_output( const char *text, BYTE *what, int count )
+void debug_output( const char *text, const BYTE *what, int count )
 {
-    char buffer[256];
-    char *p = buffer;
-    char *pbuffer1 = what;
-    int len1 = count;
-    int i;
-
-    LogOutput("\n%s: length = %u\n", text, len1);
-    do {
-        p = buffer;
-        for (i=0; (i<8) && len1>0; len1--, i++) {
-            sprintf( p, "%02x ", (unsigned int)(unsigned char)*pbuffer1++);
-            p += 3;
-        }
-        *(p-1) = '\n'; *p = 0;
-        OutputDebugString(buffer);
-    } while (len1>0);
+	std::string buffer;
+	buffer.reserve(8 * 3 + 1);
+	int len1 = count;
+	const BYTE *pb = what;
+	LogOutput("\n%s: length = %u\n", text, len1);
+	do {
+		buffer.clear();
+		for (int i = 0; i < 8 && len1 > 0; ++i, --len1, ++pb)
+		{
+			StrAppendByteAsHex(buffer, *pb);
+			buffer += ' ';
+		}
+		buffer += '\n';
+		OutputDebugString(buffer.c_str());
+	} while (len1 > 0);
 }
 #endif // #ifdef TFE_DEBUG_PKTDUMP
 
