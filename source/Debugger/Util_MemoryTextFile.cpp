@@ -79,7 +79,7 @@ void MemoryTextFile_t::GetLinePointers()
 	if (! m_bDirty)
 		return;
 
-	m_vLines.erase( m_vLines.begin(), m_vLines.end() );
+	m_vLines.clear();
 	char *pBegin = & m_vBuffer[ 0 ];
 	char *pLast  = & m_vBuffer[ m_vBuffer.size()-1 ];
 
