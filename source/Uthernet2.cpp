@@ -263,6 +263,14 @@ bool Socket::LoadSnapshot(YamlLoadHelper &yamlLoadHelper)
     sn_rx_wr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_RX_WRITE_REGISTER);
     sn_rx_rsr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_RX_SIZE_REGISTER);
     sn_sr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_REGISTER);
+
+    if (sn_sr != W5100_SN_SR_SOCK_MACRAW)
+    {
+        // no point in restoring a broken UDP or TCP connection
+        // just reset the socket
+        sn_sr = W5100_SN_SR_CLOSED;
+    }
+
     return true;
 }
 
