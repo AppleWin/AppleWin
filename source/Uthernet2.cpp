@@ -26,8 +26,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tfe/PCapBackend.h"
 #include "W5100.h"
 
-#include <cstdint>
-
 // Linux uses EINPROGRESS while Windows returns WSAEWOULDBLOCK
 // when the connect() calls is ongoing
 //
@@ -248,9 +246,29 @@ uint16_t Socket::getFreeRoom() const
     return size - rsr;
 }
 
+#define SS_YAML_KEY_SOCKET_RX_WRITE_REGISTER "RX Write Register"
+#define SS_YAML_KEY_SOCKET_RX_SIZE_REGISTER "RX Size Register"
+
+#define SS_YAML_KEY_SOCKET_REGISTER "Socket Register"
+
+void Socket::SaveSnapshot(YamlSaveHelper &yamlSaveHelper)
+{
+    yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SOCKET_RX_WRITE_REGISTER, sn_rx_wr);
+    yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SOCKET_RX_SIZE_REGISTER, sn_rx_rsr);
+    yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SOCKET_REGISTER, sn_sr);
+}
+
+bool Socket::LoadSnapshot(YamlLoadHelper &yamlLoadHelper)
+{
+    sn_rx_wr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_RX_WRITE_REGISTER);
+    sn_rx_rsr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_RX_SIZE_REGISTER);
+    sn_sr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_REGISTER);
+    return true;
+}
+
 const std::string& Uthernet2::GetSnapshotCardName()
 {
-    static const std::string name("Uthernet2");
+    static const std::string name("Uthernet II");
     return name;
 }
 
@@ -1156,24 +1174,110 @@ static const UINT kUNIT_VERSION = 1;
 #define SS_YAML_KEY_ENABLED "Enabled"
 #define SS_YAML_KEY_NETWORK_INTERFACE "Network Interface"
 
+#define SS_YAML_KEY_COMMON_REGISTERS "Common Registers"
+#define SS_YAML_KEY_MODE_REGISTER "Mode Register"
+#define SS_YAML_KEY_DATA_ADDRESS "Data Address"
+
+#define SS_YAML_KEY_SOCKETS_REGISTERS "Socket Registers"
+#define SS_YAML_KEY_SOCKET "Socket"
+
+#define SS_YAML_KEY_TX_MEMORY "TX Memory"
+#define SS_YAML_KEY_RX_MEMORY "RX Memory"
+
 void Uthernet2::SaveSnapshot(YamlSaveHelper &yamlSaveHelper)
 {
     YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
     YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
-    yamlSaveHelper.SaveBool(SS_YAML_KEY_ENABLED, myNetworkBackend->isValid() ? true : false);
+    yamlSaveHelper.SaveBool(SS_YAML_KEY_ENABLED, myNetworkBackend->isValid());
     yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, PCapBackend::tfe_interface);
+    yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_MODE_REGISTER, myModeRegister);
+    yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_DATA_ADDRESS, myDataAddress);
+
+    // we skip the reserved areas as seen @ P.14 2.MemoryMap of the W5100 Manual
+
+    {
+        YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_COMMON_REGISTERS);
+        yamlSaveHelper.SaveMemory(myMemory.data(), W5100_UPORT1 + 1);
+    }
+
+    // 0x0030 to 0x0400 RESERVED
+
+    {
+        YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SOCKETS_REGISTERS);
+        yamlSaveHelper.SaveMemory(myMemory.data() + W5100_S0_BASE, (W5100_S3_MAX + 1) - W5100_S0_BASE);
+    }
+
+    // 0x0800 to 0x4000 RESERVED
+
+    {
+        YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_TX_MEMORY);
+        yamlSaveHelper.SaveMemory(myMemory.data() + W5100_TX_BASE, W5100_RX_BASE - W5100_TX_BASE);
+    }
+
+    {
+        YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_RX_MEMORY);
+        yamlSaveHelper.SaveMemory(myMemory.data() + W5100_RX_BASE, W5100_MEM_SIZE - W5100_RX_BASE);
+    }
+
+    for (size_t i = 0; i < mySockets.size(); ++i)
+    {
+        YamlSaveHelper::Label state(yamlSaveHelper, "%s %" SIZE_T_FMT ":\n", SS_YAML_KEY_SOCKET, i);
+        mySockets[i].SaveSnapshot(yamlSaveHelper);
+    }
+
 }
 
 bool Uthernet2::LoadSnapshot(YamlLoadHelper &yamlLoadHelper, UINT version)
 {
     if (version < 1 || version > kUNIT_VERSION)
-        throw std::runtime_error("Card: wrong version");
+        ThrowErrorInvalidVersion(version);
 
     yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED); // FIXME: what is the point of this?
     PCapBackend::tfe_interface = yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE);
-
     PCapBackend::tfe_SetRegistryInterface(m_slot, PCapBackend::tfe_interface);
+
+    Reset(true); // AFTER the interface name has been restored
+
+    myModeRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_MODE_REGISTER);
+    myDataAddress = yamlLoadHelper.LoadUint(SS_YAML_KEY_DATA_ADDRESS);
+
+    if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_COMMON_REGISTERS))
+    {
+        yamlLoadHelper.LoadMemory(myMemory.data(), W5100_UPORT1 + 1);
+        yamlLoadHelper.PopMap();
+    }
+
+    if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_SOCKETS_REGISTERS))
+    {
+        yamlLoadHelper.LoadMemory(myMemory.data() + W5100_S0_BASE, (W5100_S3_MAX + 1) - W5100_S0_BASE);
+        yamlLoadHelper.PopMap();
+    }
+
+    if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_TX_MEMORY))
+    {
+        yamlLoadHelper.LoadMemory(myMemory.data() + W5100_TX_BASE, W5100_RX_BASE - W5100_TX_BASE);
+        yamlLoadHelper.PopMap();
+    }
+
+    if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_RX_MEMORY))
+    {
+        yamlLoadHelper.LoadMemory(myMemory.data() + W5100_RX_BASE, W5100_MEM_SIZE - W5100_RX_BASE);
+        yamlLoadHelper.PopMap();
+    }
+
+    setRXSizes(W5100_RMSR, myMemory[W5100_RMSR]);
+    setTXSizes(W5100_TMSR, myMemory[W5100_TMSR]);
+
+    for (size_t i = 0; i < mySockets.size(); ++i)
+    {
+        const std::string key = StrFormat("%s %" SIZE_T_FMT, SS_YAML_KEY_SOCKET, i);
+        if (yamlLoadHelper.GetSubMap(key))
+        {
+            mySockets[i].LoadSnapshot(yamlLoadHelper);
+            yamlLoadHelper.PopMap();
+        }
+    }
 
     return true;
 }

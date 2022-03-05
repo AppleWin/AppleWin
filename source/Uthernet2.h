@@ -35,6 +35,9 @@ struct Socket
     bool isThereRoomFor(const size_t len, const size_t header) const;
     uint16_t getFreeRoom() const;
 
+    void SaveSnapshot(YamlSaveHelper &yamlSaveHelper);
+    bool LoadSnapshot(YamlLoadHelper &yamlLoadHelper);
+
     Socket();
 
     ~Socket();
