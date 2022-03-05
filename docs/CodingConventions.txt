@@ -2,6 +2,10 @@ Coding Conventions for AppleWin
 ===============================
 
 History:
+v4 - 05-Mar-2022 (TC)
+. #1050: Added info about Platform Toolset v141_xp
+	. Use of C++11/14/17
+	. Use StrFormat() instead of sprintf() etc.
 v3 - 14-Nov-2020 (TC)
 . #868: Reduced Hungarian notation
 v2 - 16-Feb-2006 (TC)
@@ -38,7 +42,7 @@ Obviously not for global funcs or vars.
 the header file for that module.
 EG. For Debug.cpp:
 #include "stdafx.h"
-#include "Debug."
+#include "Debug.h"
 
 This ensures that this header file can be included in any order in another module,
 and therefore by extension all header files can be included in any order.
@@ -47,11 +51,14 @@ and therefore by extension all header files can be included in any order.
 
 2) Coding Style:
 
+As a general rule and for consistency, adopt the coding convention/style of any module (or function) you are modifying.
+
 2.1: Naming
 For functions use upper camel case.
 
 For variables use lower camel case.
-And if applicable, the following simplied prefix (Hungarian) style must be used:
+
+And only if applicable, the following simplified prefix (Hungarian) style can be used:
 
 Prefixes:
 g_	: global
@@ -62,21 +69,7 @@ Tags:
 _e	: named enum definitions
 _t	: struct/typedef
 
-Legacy:
-dw	: DWORD
-sz	: string (null-terminated)
-a	: array
-b	: bool
-e	: enum variable
-h	: handle
-i	: iterator (eg. UINT, STL-iterator)
-m	: STL map
-n	: int
-r	: reference
-s	: string
-sg_p	: singleton
-u	: unsigned int
-v	: STL vector
+Also see: "Appendix: Legacy Hungarian notation"
 
 EG:
 	enum MODE_e {MODE1, MODE2, MODE2};
@@ -127,4 +120,42 @@ It is recommended (but not mandatory):
 Eg:
 . Prefer: z = ((a + b) + 1) instead of: z=((a+b)+1)
 
-2.8: For consistency, adopt the coding convention of any module (or function) you are modifying.
+-------------------------------------------------------------------------------
+
+3) Use of sprintf() etc.
+
+Do not use sprintf(), StringCbPrintf(), wsprintf(), etc. - instead use StrFormat().
+
+-------------------------------------------------------------------------------
+
+4) Use of C++
+
+VS2019's Platform Toolset "Visual Studio 2017 - Windows XP(v141_xp)" is used for building releases.
+This is VS2017 v15.0, which includes support for C++11, C++14 and some C++17 core language support[1].
+
+[1] https://docs.microsoft.com/en-us/cpp/overview/visual-cpp-language-conformance?view=msvc-170
+
+4.1: Type deduction (including auto)
+
+Use type deduction only if it makes the code clearer to readers who aren't familiar with the project,
+or if it makes the code safer. Do not use it merely to avoid the inconvenience of writing an explicit type.
+(Ref: https://google.github.io/styleguide/cppguide.html#Type_deduction)
+
+-------------------------------------------------------------------------------
+
+Appendix: Legacy Hungarian notation
+
+dw	: DWORD
+sz	: string (null-terminated)
+a	: array
+b	: bool
+e	: enum variable
+h	: handle
+i	: iterator (eg. UINT, STL-iterator)
+m	: STL map
+n	: int
+r	: reference
+s	: string
+sg_p	: singleton
+u	: unsigned int
+v	: STL vector
