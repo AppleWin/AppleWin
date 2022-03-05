@@ -672,8 +672,6 @@ Update_t CmdBookmarkLoad (int nArgs)
 //===========================================================================
 Update_t CmdBookmarkSave (int nArgs)
 {
-	TCHAR sText[ CONSOLE_WIDTH ];
-
 	g_ConfigState.Reset();
 
 	ConfigSave_PrepareHeader( PARAM_CAT_BOOKMARKS, CMD_BOOKMARK_CLEAR );
@@ -683,12 +681,11 @@ Update_t CmdBookmarkSave (int nArgs)
 	{
 		if (g_aBookmarks[ iBookmark ].bSet)
 		{
-			sprintf( sText, "%s %x %04X\n"
+			g_ConfigState.PushLineFormat( "%s %x %04X\n"
 				, g_aCommands[ CMD_BOOKMARK_ADD ].m_sName
 				, iBookmark
 				, g_aBookmarks[ iBookmark ].nAddress
 			);
-			g_ConfigState.PushLine( sText );
 		}
 		iBookmark++;
 	}
@@ -1768,8 +1765,6 @@ Update_t CmdBreakpointLoad (int nArgs)
 //===========================================================================
 Update_t CmdBreakpointSave (int nArgs)
 {
-	TCHAR sText[ CONSOLE_WIDTH ];
-
 	g_ConfigState.Reset();
 
 	ConfigSave_PrepareHeader( PARAM_CAT_BREAKPOINTS, CMD_BREAKPOINT_CLEAR );
@@ -1779,21 +1774,19 @@ Update_t CmdBreakpointSave (int nArgs)
 	{
 		if (g_aBreakpoints[ iBreakpoint ].bSet)
 		{
-			sprintf( sText, "%s %x %04X,%04X\n"
+			g_ConfigState.PushLineFormat( "%s %x %04X,%04X\n"
 				, g_aCommands[ CMD_BREAKPOINT_ADD_REG ].m_sName
 				, iBreakpoint
 				, g_aBreakpoints[ iBreakpoint ].nAddress
 				, g_aBreakpoints[ iBreakpoint ].nLength
 			);
-			g_ConfigState.PushLine( sText );
 		}
 		if (! g_aBreakpoints[ iBreakpoint ].bEnabled)
 		{
-			sprintf( sText, "%s %x\n"
+			g_ConfigState.PushLineFormat( "%s %x\n"
 				, g_aCommands[ CMD_BREAKPOINT_DISABLE ].m_sName
 				, iBreakpoint
 			);
-			g_ConfigState.PushLine( sText );
 		}
 		
 		iBreakpoint++;
@@ -2435,20 +2428,16 @@ bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave )
 //===========================================================================
 void ConfigSave_PrepareHeader ( const Parameters_e eCategory, const Commands_e eCommandClear )
 {
-	char sText[ CONSOLE_WIDTH ];
-
-	sprintf( sText, "%s %s = %s\n"
+	g_ConfigState.PushLineFormat( "%s %s = %s\n"
 		, g_aTokens[ TOKEN_COMMENT_EOL  ].sToken
 		, g_aParameters[ PARAM_CATEGORY ].m_sName
 		, g_aParameters[ eCategory ].m_sName
 		);
-	g_ConfigState.PushLine( sText );
 
-	sprintf( sText, "%s %s\n"
+	g_ConfigState.PushLineFormat( "%s %s\n"
 		, g_aCommands[ eCommandClear ].m_sName
 		, g_aParameters[ PARAM_WILDSTAR ].m_sName
 	);
-	g_ConfigState.PushLine( sText );
 }
 
 
