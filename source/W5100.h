@@ -67,16 +67,18 @@
 #define W5100_SN_PROTO            0x14
 #define W5100_SN_TOS              0x15
 #define W5100_SN_TTL              0x16
-#define W5100_SN_TX_FSR0          0x20
-#define W5100_SN_TX_FSR1          0x21
-#define W5100_SN_TX_RD0           0x22
-#define W5100_SN_TX_RD1           0x23
-#define W5100_SN_TX_WR0           0x24
-#define W5100_SN_TX_WR1           0x25
-#define W5100_SN_RX_RSR0          0x26
-#define W5100_SN_RX_RSR1          0x27
-#define W5100_SN_RX_RD0           0x28
-#define W5100_SN_RX_RD1           0x29
+
+#define W5100_SN_TX_FSR0          0x20  // TX Free Size
+#define W5100_SN_TX_FSR1          0x21  // TX Free Size
+#define W5100_SN_TX_RD0           0x22  // TX Read Pointer
+#define W5100_SN_TX_RD1           0x23  // TX Read Pointer
+#define W5100_SN_TX_WR0           0x24  // TX Write Pointer
+#define W5100_SN_TX_WR1           0x25  // TX Write Pointer
+
+#define W5100_SN_RX_RSR0          0x26  // RX Receive Size
+#define W5100_SN_RX_RSR1          0x27  // RX Receive Size
+#define W5100_SN_RX_RD0           0x28  // RX Read Pointer
+#define W5100_SN_RX_RD1           0x29  // RX Read Pointer
 
 #define W5100_SN_SR_CLOSED        0x00
 #define W5100_SN_SR_SOCK_INIT     0x13

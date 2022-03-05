@@ -346,8 +346,8 @@ uint16_t Uthernet2::getTXDataSize(const size_t i) const
     const uint16_t size = socket.transmitSize;
     const uint16_t mask = size - 1;
 
-    const int sn_tx_rd = readNetworkWord(myMemory.data() + socket.registers + W5100_SN_TX_RD0) & mask;
-    const int sn_tx_wr = readNetworkWord(myMemory.data() + socket.registers + W5100_SN_TX_WR0) & mask;
+    const int sn_tx_rd = readNetworkWord(myMemory.data() + socket.registerAddress + W5100_SN_TX_RD0) & mask;
+    const int sn_tx_wr = readNetworkWord(myMemory.data() + socket.registerAddress + W5100_SN_TX_WR0) & mask;
 
     int dataPresent = sn_tx_wr - sn_tx_rd;
     if (dataPresent < 0)
@@ -380,7 +380,7 @@ void Uthernet2::updateRSR(const size_t i)
     const int size = socket.receiveSize;
     const uint16_t mask = size - 1;
 
-    const int sn_rx_rd = readNetworkWord(myMemory.data() + socket.registers + W5100_SN_RX_RD0) & mask;
+    const int sn_rx_rd = readNetworkWord(myMemory.data() + socket.registerAddress + W5100_SN_RX_RD0) & mask;
     const int sn_rx_wr = socket.sn_rx_wr & mask;
     int dataPresent = sn_rx_wr - sn_rx_rd;
     if (dataPresent < 0)
@@ -451,7 +451,7 @@ void Uthernet2::receiveOnePacketMacRaw(const size_t i)
 
     uint8_t buffer[MAX_RXLENGTH];
 
-    const uint8_t mr = myMemory[socket.registers + W5100_SN_MR];
+    const uint8_t mr = myMemory[socket.registerAddress + W5100_SN_MR];
     const bool filterMAC = mr & W5100_SN_MR_MF;
 
     const int len = receiveForMacAddress(!filterMAC, sizeof(buffer), buffer);
@@ -567,9 +567,9 @@ void Uthernet2::sendDataToSocket(const size_t i, std::vector<uint8_t> &data)
 
         // already in network order
         // this seems to be ignored for TCP, and so we reuse the same code
-        const uint8_t *dest = myMemory.data() + socket.registers + W5100_SN_DIPR0;
+        const uint8_t *dest = myMemory.data() + socket.registerAddress + W5100_SN_DIPR0;
         destination.sin_addr.s_addr = *reinterpret_cast<const uint32_t *>(dest);
-        destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registers + W5100_SN_DPORT0);
+        destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
 
         const ssize_t res = sendto(socket.myFD, reinterpret_cast<const char *>(data.data()), data.size(), 0, (const struct sockaddr *)&destination, sizeof(destination));
 #ifdef U2_LOG_TRAFFIC
@@ -596,8 +596,8 @@ void Uthernet2::sendData(const size_t i)
     const uint16_t size = socket.transmitSize;
     const uint16_t mask = size - 1;
 
-    const int sn_tx_rr = readNetworkWord(myMemory.data() + socket.registers + W5100_SN_TX_RD0) & mask;
-    const int sn_tx_wr = readNetworkWord(myMemory.data() + socket.registers + W5100_SN_TX_WR0) & mask;
+    const int sn_tx_rr = readNetworkWord(myMemory.data() + socket.registerAddress + W5100_SN_TX_RD0) & mask;
+    const int sn_tx_wr = readNetworkWord(myMemory.data() + socket.registerAddress + W5100_SN_TX_WR0) & mask;
 
     const uint16_t base = socket.transmitBase;
     const uint16_t rr_address = base + sn_tx_rr;
@@ -616,8 +616,8 @@ void Uthernet2::sendData(const size_t i)
     }
 
     // move read pointer to writer
-    myMemory[socket.registers + W5100_SN_TX_RD0] = getIByte(sn_tx_wr, 8);
-    myMemory[socket.registers + W5100_SN_TX_RD1] = getIByte(sn_tx_wr, 0);
+    myMemory[socket.registerAddress + W5100_SN_TX_RD0] = getIByte(sn_tx_wr, 8);
+    myMemory[socket.registerAddress + W5100_SN_TX_RD1] = getIByte(sn_tx_wr, 0);
 
     switch (socket.sn_sr)
     {
@@ -640,12 +640,12 @@ void Uthernet2::resetRXTXBuffers(const size_t i)
     Socket &socket = mySockets[i];
     socket.sn_rx_wr = 0x00;
     socket.sn_rx_rsr = 0x00;
-    myMemory[socket.registers + W5100_SN_TX_RD0] = 0x00;
-    myMemory[socket.registers + W5100_SN_TX_RD1] = 0x00;
-    myMemory[socket.registers + W5100_SN_TX_WR0] = 0x00;
-    myMemory[socket.registers + W5100_SN_TX_WR1] = 0x00;
-    myMemory[socket.registers + W5100_SN_RX_RD0] = 0x00;
-    myMemory[socket.registers + W5100_SN_RX_RD1] = 0x00;
+    myMemory[socket.registerAddress + W5100_SN_TX_RD0] = 0x00;
+    myMemory[socket.registerAddress + W5100_SN_TX_RD1] = 0x00;
+    myMemory[socket.registerAddress + W5100_SN_TX_WR0] = 0x00;
+    myMemory[socket.registerAddress + W5100_SN_TX_WR1] = 0x00;
+    myMemory[socket.registerAddress + W5100_SN_RX_RD0] = 0x00;
+    myMemory[socket.registerAddress + W5100_SN_RX_RD1] = 0x00;
 }
 
 void Uthernet2::openSystemSocket(const size_t i, const int type, const int protocol, const int state)
@@ -677,7 +677,7 @@ void Uthernet2::openSystemSocket(const size_t i, const int type, const int proto
 void Uthernet2::openSocket(const size_t i)
 {
     Socket &socket = mySockets[i];
-    const uint8_t mr = myMemory[socket.registers + W5100_SN_MR];
+    const uint8_t mr = myMemory[socket.registerAddress + W5100_SN_MR];
     const uint8_t protocol = mr & W5100_SN_MR_PROTO_MASK;
     uint8_t &sr = socket.sn_sr;
     switch (protocol)
@@ -717,13 +717,13 @@ void Uthernet2::closeSocket(const size_t i)
 void Uthernet2::connectSocket(const size_t i)
 {
     Socket &socket = mySockets[i];
-    const uint8_t *dest = myMemory.data() + socket.registers + W5100_SN_DIPR0;
+    const uint8_t *dest = myMemory.data() + socket.registerAddress + W5100_SN_DIPR0;
 
     sockaddr_in destination = {};
     destination.sin_family = AF_INET;
 
     // already in network order
-    destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registers + W5100_SN_DPORT0);
+    destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
     destination.sin_addr.s_addr = *reinterpret_cast<const uint32_t *>(dest);
 
     const int res = connect(socket.myFD, (struct sockaddr *)&destination, sizeof(destination));
@@ -733,7 +733,7 @@ void Uthernet2::connectSocket(const size_t i)
         socket.sn_sr = W5100_SN_SR_ESTABLISHED;
         socket.myErrno = 0;
 #ifdef U2_LOG_STATE
-        const uint16_t port = readNetworkWord(myMemory.data() + socket.registers + W5100_SN_DPORT0);
+        const uint16_t port = readNetworkWord(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
         LogFileOutput("U2: TCP[%" SIZE_T_FMT "]: CONNECT to %d.%d.%d.%d:%d\n", i, dest[0], dest[1], dest[2], dest[3], port);
 #endif
     }
@@ -1049,7 +1049,7 @@ void Uthernet2::Reset(const bool powerCycle)
     for (size_t i = 0; i < mySockets.size(); ++i)
     {
         mySockets[i].clearFD();
-        mySockets[i].registers = static_cast<uint16_t>(W5100_S0_BASE + (i << 8));
+        mySockets[i].registerAddress = static_cast<uint16_t>(W5100_S0_BASE + (i << 8));
     }
 
     // initial values

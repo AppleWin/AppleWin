@@ -18,7 +18,7 @@ struct Socket
     uint16_t transmitSize;
     uint16_t receiveBase;
     uint16_t receiveSize;
-    uint16_t registers;
+    uint16_t registerAddress;
 
     uint16_t sn_rx_wr;
     uint16_t sn_rx_rsr;
