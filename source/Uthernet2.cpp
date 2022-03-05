@@ -161,7 +161,16 @@ namespace
 }
 
 Socket::Socket()
-    : sn_sr(W5100_SN_SR_CLOSED), myFD(INVALID_SOCKET), myErrno(0)
+    : transmitBase(0)
+    , transmitSize(0)
+    , receiveBase(0)
+    , receiveSize(0)
+    , registerAddress(0)
+    , sn_rx_wr(0)
+    , sn_rx_rsr(0)
+    , sn_sr(W5100_SN_SR_CLOSED)
+    , myFD(INVALID_SOCKET)
+    , myErrno(0)
 {
 }
 
@@ -247,7 +256,6 @@ const std::string& Uthernet2::GetSnapshotCardName()
 
 Uthernet2::Uthernet2(UINT slot) : Card(CT_Uthernet2, slot)
 {
-    myNetworkBackend = GetFrame().CreateNetworkBackend();
     Reset(true);
 }
 
@@ -1040,14 +1048,18 @@ void Uthernet2::Reset(const bool powerCycle)
     {
         // dataAddress is NOT reset, see page 10 of Uthernet II
         myDataAddress = 0;
+        myNetworkBackend.reset();
+        myNetworkBackend = GetFrame().CreateNetworkBackend();
     }
 
+    mySockets.clear();
     mySockets.resize(4);
     myMemory.clear();
     myMemory.resize(W5100_MEM_SIZE, 0);
 
     for (size_t i = 0; i < mySockets.size(); ++i)
     {
+        resetRXTXBuffers(i);
         mySockets[i].clearFD();
         mySockets[i].registerAddress = static_cast<uint16_t>(W5100_S0_BASE + (i << 8));
     }
