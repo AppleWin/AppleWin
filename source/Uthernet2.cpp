@@ -452,7 +452,7 @@ void Uthernet2::receiveOnePacketMacRaw(const size_t i)
     uint8_t buffer[MAX_RXLENGTH];
 
     const uint8_t mr = myMemory[socket.registers + SN_MR];
-    const bool filterMAC = mr & SN_MR_MF;
+    const bool filterMAC = !!(mr & SN_MR_MF);
 
     const int len = receiveForMacAddress(!filterMAC, sizeof(buffer), buffer);
     if (len > 0)

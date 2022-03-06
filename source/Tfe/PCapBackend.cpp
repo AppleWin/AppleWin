@@ -63,7 +63,7 @@ int PCapBackend::receive(const int size, uint8_t * rxframe)
 
 bool PCapBackend::isValid()
 {
-    return tfePcapFP;
+    return !!tfePcapFP;
 }
 
 void PCapBackend::update(const ULONG /* nExecutedCycles */)
