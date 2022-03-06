@@ -716,7 +716,7 @@ static void PrintGlyph( const int xDst, const int yDst, const int glyph )
 	_ASSERT(ySrc < CONSOLE_FONT_BITMAP_HEIGHT);
 
 	// BUG #239 - (Debugger) Save debugger "text screen" to clipboard / file
-	//	if( g_bDebuggerVirtualTextCapture )
+	//	if ( g_bDebuggerVirtualTextCapture )
 	// 
 	{
 #if _DEBUG
@@ -726,8 +726,8 @@ static void PrintGlyph( const int xDst, const int yDst, const int glyph )
 		int col = xDst / CONSOLE_FONT_WIDTH ;
 		int row = yDst / CONSOLE_FONT_HEIGHT;
 		
-		// if( !g_bDebuggerCopyInfoPane )
-		//    if( col < 50
+		// if ( !g_bDebuggerCopyInfoPane )
+		//    if ( col < 50
 		if (xDst > DISPLAY_DISASM_RIGHT) // INFO_COL_2 // DISPLAY_CPU_INFO_LEFT_COLUMN
 			col++;
 
@@ -787,7 +787,7 @@ void DebuggerPrintColor( int x, int y, const conchar_t * pText )
 	conchar_t g;
 	const conchar_t *pSrc = pText;
 
-	if( !pText)
+	if ( !pText)
 		return;
 
 	while ((g = (*pSrc)))
@@ -1509,7 +1509,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 //		DebuggerSetColorFG( GetDebuggerMemDC(), DebuggerGetColor( BG_DISASM_BOOKMARK ) ); // swapped
 //	}
 
-	if( g_bConfigDisasmAddressView )
+	if ( g_bConfigDisasmAddressView )
 	{
 		PrintTextCursorX( (LPCTSTR) line.sAddress, linerect );
 	}
@@ -1571,7 +1571,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 
 	if (! bCursorLine)
 	{
-		if( pData ) // Assembler Data Directive / Data Disassembler
+		if ( pData ) // Assembler Data Directive / Data Disassembler
 			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_DIRECTIVE ) ); // TODO: FIXME: HACK? Is the color fine?
 		else
 			DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
@@ -1759,7 +1759,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	}
 
 	// BUGFIX: 2.6.2.30:  DA $target --> show right paren
-	if( pData )
+	if ( pData )
 	{
 		return nOpbyte;
 	}
@@ -1795,7 +1795,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	{
 		linerect.left = (int) aTabs[ TS_IMMEDIATE ];
 
-		if( line.nImmediate )
+		if ( line.nImmediate )
 		{
 			/*
                 300:A9 80 A9 81 A9 FF A9 00 A9 01 A9 7E A9 7F
@@ -1967,7 +1967,7 @@ void DrawMemory ( int line, int iMemDump )
 #if DEBUG_FORCE_DISPLAY
 	bActive = true;
 #endif
-	if( !bActive )
+	if ( !bActive )
 		return;
 
 	USHORT       nAddr   = pMD->nAddress;
@@ -2003,7 +2003,7 @@ void DrawMemory ( int line, int iMemDump )
 //		sprintf(sData,"Mem at SY#%d", nAddr);
 		sprintf( sAddress,"SY#%d", nAddr );
 	}
-	else if(eDevice == DEV_AY8910)
+	else if (eDevice == DEV_AY8910)
 	{
 //		sprintf(sData,"Mem at AY#%d", nAddr);
 		sprintf( sAddress,"AY#%d", nAddr );
@@ -2289,7 +2289,7 @@ void _DrawSoftSwitch( RECT & rect, int nAddress, bool bSet, const char *sPrefix,
 
 	_DrawSoftSwitchAddress( temp, nAddress, bg_default );
 
-	if( sPrefix )
+	if ( sPrefix )
 	{
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG )); // light blue
 		PrintTextCursorX( sPrefix, temp );
@@ -2331,7 +2331,7 @@ void _DrawTriStateSoftSwitch( RECT & rect, int nAddress, const int iBankDisplay,
 		// TODO: Q. Show which bank we are writing to in red?
 		//       A. No, since we highlight bank 2 or 1, along with R/W
 		DebuggerSetColorBG( DebuggerGetColor( bg_default    ));
-		if( bDisabled )
+		if ( bDisabled )
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE  ) );
 		else
 			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
@@ -2874,7 +2874,7 @@ void DrawWatches (int line)
 			rect2 = rect;
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
-			for( int iByte = 0; iByte < 8; iByte++ )
+			for ( int iByte = 0; iByte < 8; iByte++ )
 			{
 				if  ((iByte & 3) == 0) {
 					DebuggerSetColorBG( DebuggerGetColor( BG_INFO_WATCH ));
@@ -2916,7 +2916,7 @@ void DrawZeroPagePointers ( int line )
 	const int nMaxSymbolLen = 7;
 	char sText[nMaxSymbolLen+1] = "";
 
-	for(int iZP = 0; iZP < MAX_ZEROPAGE_POINTERS; iZP++)
+	for (int iZP = 0; iZP < MAX_ZEROPAGE_POINTERS; iZP++)
 	{
 		RECT rect2 = rect;
 
@@ -2951,7 +2951,7 @@ void DrawZeroPagePointers ( int line )
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 
-			for( int x = 0; x < nMaxSymbolLen; x++ )
+			for ( int x = 0; x < nMaxSymbolLen; x++ )
 			{
 				sText[ x ] = CHAR_SPACE;
 			}
@@ -3457,7 +3457,7 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 			iSourceLine = 0;
 	}
 
-	for( int iLine = 0; iLine < nLines; iLine++ )
+	for ( int iLine = 0; iLine < nLines; iLine++ )
 	{
 		if (iLine != iSourceCursor)
 		{
@@ -3635,7 +3635,7 @@ void UpdateDisplay (Update_t bUpdate)
 		}
 	}
 	
-	switch( g_iWindowThis )
+	switch ( g_iWindowThis )
 	{
 		case WINDOW_CODE:
 			DrawWindow_Code( bUpdate );

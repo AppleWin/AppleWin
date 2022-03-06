@@ -113,9 +113,9 @@ WORD _GetDataRange (int nArgs, int iArg, DisasmData_t& tData_)
 
 	// 2.7.0.35 DW address -- round the length up to even number for convenience.
 	// Example: 'DW 6062' is equivalent to: 'DW 6062:6063'
-	if( g_iCommand == CMD_DEFINE_DATA_WORD1 )
+	if ( g_iCommand == CMD_DEFINE_DATA_WORD1 )
 	{
-		if( ~nLen & 1 )
+		if ( ~nLen & 1 )
 			nLen++;
 	}
 
@@ -141,9 +141,9 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 	SymbolTable_Index_e eSymbolTable = SYMBOLS_ASSEMBLY;
 	bool bAutoDefineName = false; // 2.7.0.34
 
-	if( nArgs > 1 )
+	if ( nArgs > 1 )
 	{
-		if( g_aArgs[ 2 ].eToken == TOKEN_COLON ) // 2.7.0.31 Bug fix: DB range, i.e. DB 174E:174F
+		if ( g_aArgs[ 2 ].eToken == TOKEN_COLON ) // 2.7.0.31 Bug fix: DB range, i.e. DB 174E:174F
 		{
 			bAutoDefineName = true;
 		}
@@ -165,22 +165,22 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 		Nopcode_e nopcode = NOP_BYTE_1;
 
 		bool isFloat = (g_iCommand == CMD_DEFINE_DATA_FLOAT);
-		if( isFloat )
+		if ( isFloat )
 			nopcode = NOP_FAC;
 
 		bool isString = (g_iCommand == CMD_DEFINE_DATA_STR);
-		if( isString )
+		if ( isString )
 			nopcode = NOP_STRING_ASCII;
 
 		bool isWord1 = (g_iCommand == CMD_DEFINE_DATA_WORD1);
-		if( isWord1 )
+		if ( isWord1 )
 			nopcode = NOP_WORD_1;
 
 		bool isAddr = (g_iCommand == CMD_DEFINE_ADDR_WORD);
-		if( isAddr )
+		if ( isAddr )
 			nopcode = NOP_ADDRESS;
 
-	if( bAutoDefineName )
+	if ( bAutoDefineName )
 	{
 		_GetAutoSymbolName( nopcode, tData_.nStartAddress , aSymbolName );
 		pSymbolName = aSymbolName;
@@ -264,7 +264,7 @@ Update_t CmdDisasmDataDefCode (int nArgs)
 	while (nAddress <= tData.nEndAddress)
 	{
 		DisasmData_t *pData = Disassembly_IsDataAddress( nAddress );
-		if( pData )
+		if ( pData )
 		{
 			if ((      nAddress    <= pData->nStartAddress)
 			&&  (tData.nEndAddress >= pData->nEndAddress  ))
@@ -342,7 +342,7 @@ Update_t CmdDisasmDataList (int nArgs)
 	// Need to iterate through all blocks
 	DisasmData_t* pData = NULL;
 
-	while( (pData = Disassembly_Enumerate( pData )) )
+	while ( (pData = Disassembly_Enumerate( pData )) )
 	{
 		if (pData->iDirective != _NOP_REMOVED)
 		{
@@ -411,7 +411,7 @@ Update_t _CmdDisasmDataDefByteX (int nArgs)
 
 	// Already exists, so update
 	DisasmData_t *pData = Disassembly_IsDataAddress( nAddress );
-	if( pData )
+	if ( pData )
 	{
 		*pData = tData;
 	}
@@ -462,7 +462,7 @@ Update_t _CmdDisasmDataDefWordX (int nArgs)
 
 	// Already exists, so update
 	DisasmData_t *pData = Disassembly_IsDataAddress( nAddress );
-	if( pData )
+	if ( pData )
 	{
 		*pData = tData;
 	}
@@ -514,7 +514,7 @@ Update_t CmdDisasmDataDefAddress16 (int nArgs)
 
 	// Already exists, so update
 	DisasmData_t *pData = Disassembly_IsDataAddress( nAddress );
-	if( pData )
+	if ( pData )
 	{
 		*pData = tData;
 	}
@@ -629,7 +629,7 @@ Update_t CmdDisasmDataDefString ( int nArgs )
 
 	// Already exists, so update
 	DisasmData_t *pData = Disassembly_IsDataAddress( nAddress );
-	if( pData )
+	if ( pData )
 	{
 		*pData = tData;
 	}
@@ -648,12 +648,12 @@ DisasmData_t* Disassembly_Enumerate( DisasmData_t *pCurrent )
 	DisasmData_t *pData = NULL; // bIsNopcode = false
 	int nDataTargets = g_aDisassemblerData.size();
 
-	if( nDataTargets )
+	if ( nDataTargets )
 	{
 		DisasmData_t *pBegin = & g_aDisassemblerData[ 0 ];
 		DisasmData_t *pEnd   = & g_aDisassemblerData[ nDataTargets - 1 ];
 
-		if( pCurrent )
+		if ( pCurrent )
 		{
 			pCurrent++;
 			if (pCurrent <= pEnd)
@@ -672,15 +672,15 @@ DisasmData_t* Disassembly_IsDataAddress ( WORD nAddress )
 	DisasmData_t *pData = NULL; // bIsNopcode = false
 	int nDataTargets = g_aDisassemblerData.size();
 
-	if( nDataTargets )
+	if ( nDataTargets )
 	{
 		// TODO: Replace with binary search -- should store data in sorted order, via start address
 		pData = & g_aDisassemblerData[ 0 ];
-		for( int iTarget = 0; iTarget < nDataTargets; iTarget++ )
+		for ( int iTarget = 0; iTarget < nDataTargets; iTarget++ )
 		{
-			if( pData->iDirective != _NOP_REMOVED )
+			if ( pData->iDirective != _NOP_REMOVED )
 			{
-				if( (nAddress >= pData->nStartAddress) && (nAddress <= pData->nEndAddress) )
+				if ( (nAddress >= pData->nStartAddress) && (nAddress <= pData->nEndAddress) )
 				{
 					return pData;
 				}
@@ -703,7 +703,7 @@ void Disassembly_AddData( DisasmData_t tData)
 //===========================================================================
 void Disassembly_GetData ( WORD nBaseAddress, const DisasmData_t *pData, DisasmLine_t & line_ )
 {
-	if( !pData )
+	if ( !pData )
 	{
 #if _DEBUG
 		ConsoleDisplayError( "Disassembly_GetData() but we don't have a valid DisasmData_t *" );
@@ -721,11 +721,11 @@ void Disassembly_DelData( DisasmData_t tData)
 	DisasmData_t *pData = NULL; // bIsNopcode = false
 	int nDataTargets = g_aDisassemblerData.size();
 
-	if( nDataTargets )
+	if ( nDataTargets )
 	{
 		// TODO: Replace with binary search -- should store data in sorted order, via start address
 		pData = & g_aDisassemblerData[ 0 ];
-		for( int iTarget = 0; iTarget < nDataTargets; iTarget++ )
+		for ( int iTarget = 0; iTarget < nDataTargets; iTarget++ )
 		{
 			if (pData->iDirective != _NOP_REMOVED)
 			{
