@@ -617,7 +617,7 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 //===========================================================================
 void FormatDisassemblyLine(const DisasmLine_t& line, char* sDisassembly, const int nBufferSize)
 {
-	//> Address Seperator Opcodes   Label Mnemonic Target [Immediate] [Branch]
+	//> Address Separator Opcodes   Label Mnemonic Target [Immediate] [Branch]
 	//
 	// Data Disassembler
 	//                              Label Directive       [Immediate]

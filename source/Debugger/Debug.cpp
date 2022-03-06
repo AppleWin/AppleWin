@@ -3798,16 +3798,16 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 			if ((nSubDirLen == 3) && (sSubDir == UP_DIR))   // Up directory "..\" in the subpath?
 			{
 				size_t nCurrentLen    = g_sCurrentDir.size();
-				size_t nLastSeperator = g_sCurrentDir.rfind( '\\', nCurrentLen - 2 );
+				size_t nLastSeparator = g_sCurrentDir.rfind( '\\', nCurrentLen - 2 );
 
-				if (nLastSeperator != std::string::npos)
+				if (nLastSeparator != std::string::npos)
 				{
 #if _DEBUG
-					LogOutput( "Last: %" SIZE_T_FMT "\n", nLastSeperator	);
+					LogOutput( "Last: %" SIZE_T_FMT "\n", nLastSeparator	);
 					LogOutput( "%s\n", g_sCurrentDir.c_str()				);
-					LogOutput( "%*s%s\n", int(nLastSeperator), "", "^"		);
+					LogOutput( "%*s%s\n", int(nLastSeparator), "", "^"		);
 #endif
-					std::string sCurrentDir = g_sCurrentDir.substr( 0, nLastSeperator  + 1 ); // Path always has trailing slash so include it
+					std::string sCurrentDir = g_sCurrentDir.substr( 0, nLastSeparator  + 1 ); // Path always has trailing slash so include it
 					g_sCurrentDir = sCurrentDir;
 				}
 			}
@@ -5509,7 +5509,7 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 
 //	if (eRange == RANGE_MISSING_ARG_2)
 	if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen))
-		return ConsoleDisplayError( "Error: Missing address seperator (comma or colon)" );
+		return ConsoleDisplayError( "Error: Missing address separator (comma or colon)" );
 
 	int iArgFirstByte = 4;
 	int iArg;
@@ -7812,7 +7812,7 @@ int ParseInput ( LPTSTR pConsoleInput, bool bCook )
 {
 	int nArg = 0;
 
-	// TODO: need to check for non-quoted command seperator ';', and buffer input
+	// TODO: need to check for non-quoted command separator ';', and buffer input
 	RemoveWhiteSpaceReverse( pConsoleInput );
 
 	ArgsClear();
@@ -7871,24 +7871,24 @@ void ProfileLineReset()
 //===========================================================================
 void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 {
-	char sSeperator7[ 32 ] = "\t";
-	char sSeperator2[ 32 ] = "\t";
-	char sSeperator1[ 32 ] = "\t";
+	char sSeparator7[ 32 ] = "\t";
+	char sSeparator2[ 32 ] = "\t";
+	char sSeparator1[ 32 ] = "\t";
 	char sOpcode [ 8 ]; // 2 chars for opcode in hex, plus quotes on either side
 	char sAddress[MAX_OPMODE_NAME];
 
 	if (eFormatMode == PROFILE_FORMAT_COMMA)
 	{
-		sSeperator7[0] = ',';
-		sSeperator2[0] = ',';
-		sSeperator1[0] = ',';
+		sSeparator7[0] = ',';
+		sSeparator2[0] = ',';
+		sSeparator1[0] = ',';
 	}
 	else
 	if (eFormatMode == PROFILE_FORMAT_SPACE)
 	{
-		sprintf( sSeperator7, "       " ); // 7
-		sprintf( sSeperator2, "  "      ); // 2
-		sprintf( sSeperator1, " "       ); // 1
+		sprintf( sSeparator7, "       " ); // 7
+		sprintf( sSeparator2, "  "      ); // 2
+		sprintf( sSeparator1, " "       ); // 1
 	}
 
 	ProfileLineReset();
@@ -7946,11 +7946,11 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 	if (bExport) // Export = SeperateColumns
 		sprintf( pText
 			, "\"Percent\"" DELIM "\"Count\"" DELIM "\"Opcode\"" DELIM "\"Mnemonic\"" DELIM "\"Addressing Mode\"\n"
-			, sSeperator7, sSeperator2, sSeperator1, sSeperator1 );
+			, sSeparator7, sSeparator2, sSeparator1, sSeparator1 );
 	else
 		sprintf( pText
 			, "Percent" DELIM "Count" DELIM "Mnemonic" DELIM "Addressing Mode\n"
-			, sSeperator7, sSeperator2, sSeperator1 );
+			, sSeparator7, sSeparator2, sSeparator1 );
 
 	pText = ProfileLinePush();
 			
@@ -7998,13 +7998,13 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 			, pColorNumber
 			, nPercent
 			, pColorOperator
-			, sSeperator2
+			, sSeparator2
 			, pColorNumber
-			, static_cast<unsigned int>(nCount), sSeperator2
+			, static_cast<unsigned int>(nCount), sSeparator2
 			, pColorOpcode
-			, sOpcode, sSeperator2
+			, sOpcode, sSeparator2
 			, pColorMnemonic
-			, g_aOpcodes[ nOpcode ].sMnemonic, sSeperator2
+			, g_aOpcodes[ nOpcode ].sMnemonic, sSeparator2
 			, pColorOpmode
 			, sAddress
 		);
@@ -8016,7 +8016,7 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 
 	sprintf( pText
 		, "Total:  " DELIM "%s%9u\n"
-		, sSeperator2
+		, sSeparator2
 		, pColorTotal
 		, static_cast<unsigned int>(nOpcodeTotal) );
 	pText = ProfileLinePush();
@@ -8030,12 +8030,12 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		// Note: 2 extra dummy columns are inserted to keep Addressing Mode in same column
 		sprintf( pText
 			, "\"Percent\"" DELIM "\"Count\"" DELIM DELIM DELIM "\"Addressing Mode\"\n"
-			, sSeperator7, sSeperator2, sSeperator2, sSeperator2 );
+			, sSeparator7, sSeparator2, sSeparator2, sSeparator2 );
 	else
 	{
 		sprintf( pText
 			, "Percent" DELIM "Count" DELIM "Addressing Mode\n"
-			, sSeperator7, sSeperator2 );
+			, sSeparator7, sSeparator2 );
 	}
 	pText = ProfileLinePush();
 
@@ -8060,7 +8060,7 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		if (bExport)
 		{
 			// Note: 2 extra dummy columns are inserted to keep Addressing Mode in same column
-			sprintf( sAddress, "%s%s\"%s\"", sSeperator1, sSeperator1, g_aOpmodes[ nOpmode ].m_sName );
+			sprintf( sAddress, "%s%s\"%s\"", sSeparator1, sSeparator1, g_aOpmodes[ nOpmode ].m_sName );
 		}
 		else // not qouted if dumping to console
 		{
@@ -8073,9 +8073,9 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 			, pColorNumber
 			, nPercent
 			, pColorOperator
-			, sSeperator2
+			, sSeparator2
 			, pColorNumber
-			, static_cast<unsigned int>(nCount), sSeperator2
+			, static_cast<unsigned int>(nCount), sSeparator2
 			, pColorOpmode
 			, sAddress
 		);
@@ -8087,7 +8087,7 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 
 	sprintf( pText
 		, "Total:  " DELIM "%s%9u\n"
-		, sSeperator2 
+		, sSeparator2 
 		, pColorTotal
 		, static_cast<unsigned int>(nOpmodeTotal) );
 	pText = ProfileLinePush();
@@ -8098,7 +8098,7 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 	unsigned int cycles = static_cast<unsigned int>(g_nCumulativeCycles - g_nProfileBeginCycles);
 	sprintf( pText
 		, "Cycles: " DELIM "%s%9u\n"
-		, sSeperator2
+		, sSeparator2
 		, pColorNumber
 		, cycles );
 	pText = ProfileLinePush();
