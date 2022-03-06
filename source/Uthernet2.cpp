@@ -264,11 +264,14 @@ bool Socket::LoadSnapshot(YamlLoadHelper &yamlLoadHelper)
     sn_rx_rsr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_RX_SIZE_REGISTER);
     sn_sr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_REGISTER);
 
+    // transmit and receive sizes are restored from the card common registers
+
     if (sn_sr != W5100_SN_SR_SOCK_MACRAW)
     {
         // no point in restoring a broken UDP or TCP connection
         // just reset the socket
         sn_sr = W5100_SN_SR_CLOSED;
+        // for the same reason there is no point in saving myFD and myErrno
     }
 
     return true;
@@ -1179,7 +1182,6 @@ void Uthernet2::Update(const ULONG nExecutedCycles)
 }
 
 static const UINT kUNIT_VERSION = 1;
-#define SS_YAML_KEY_ENABLED "Enabled"
 #define SS_YAML_KEY_NETWORK_INTERFACE "Network Interface"
 
 #define SS_YAML_KEY_COMMON_REGISTERS "Common Registers"
@@ -1197,7 +1199,6 @@ void Uthernet2::SaveSnapshot(YamlSaveHelper &yamlSaveHelper)
     YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
     YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
-    yamlSaveHelper.SaveBool(SS_YAML_KEY_ENABLED, myNetworkBackend->isValid());
     yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, PCapBackend::tfe_interface);
     yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_MODE_REGISTER, myModeRegister);
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_DATA_ADDRESS, myDataAddress);
@@ -1241,7 +1242,6 @@ bool Uthernet2::LoadSnapshot(YamlLoadHelper &yamlLoadHelper, UINT version)
     if (version < 1 || version > kUNIT_VERSION)
         ThrowErrorInvalidVersion(version);
 
-    yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED); // FIXME: what is the point of this?
     PCapBackend::tfe_interface = yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE);
     PCapBackend::tfe_SetRegistryInterface(m_slot, PCapBackend::tfe_interface);
 
