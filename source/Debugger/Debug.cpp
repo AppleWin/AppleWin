@@ -786,7 +786,6 @@ Update_t CmdProfile (int nArgs)
 			// Dump to console
 			if (iParam == PARAM_LIST)
 			{
-
 				char *pText;
 				char  sText[ CONSOLE_WIDTH ];
 
@@ -5061,11 +5060,11 @@ Update_t CmdNTSC (int nArgs)
 	uint32_t* pChromaTable = NTSC_VideoGetChromaTable( false, bColorTV );
 	char aStatusText[ CONSOLE_WIDTH*2 ] = "Loaded";
 
-//uint8_t* pTmp = (uint8_t*) pChromaTable; 
-//*pTmp++  = 0xFF; // b
-//*pTmp++ = 0x00; // g
-//*pTmp++ = 0x00; // r
-//*pTmp++ = 0xFF; // a
+	//uint8_t* pTmp = (uint8_t*) pChromaTable;
+	//*pTmp++ = 0xFF; // b
+	//*pTmp++ = 0x00; // g
+	//*pTmp++ = 0x00; // r
+	//*pTmp++ = 0xFF; // a
 
 	if (nFound)
 	{
@@ -5168,8 +5167,8 @@ Update_t CmdNTSC (int nArgs)
 						if ( pBmp->nCompression == 3 ) // BI_BITFIELDS
 						{
 							if ((pBmp->nRedMask   == 0xFF000000 ) // Gimp writes in ABGR order
-							&& (pBmp->nGreenMask == 0x00FF0000 )
-							&& (pBmp->nBlueMask  == 0x0000FF00 ))
+							&&  (pBmp->nGreenMask == 0x00FF0000 )
+							&&  (pBmp->nBlueMask  == 0x0000FF00 ))
 								bSwizzle = true;
 						}
 					}
@@ -5252,7 +5251,7 @@ int CmdTextSave (int nArgs)
 	if (g_aArgs[1].bType & TYPE_QUOTED_2)
 		bHaveFileName = true;
 
-	char  *pText;
+	char *pText;
 	size_t nSize = Util_GetTextScreen( pText );
 
 	std::string sLoadSaveFilePath = g_sCurrentDir; // g_sProgramDir
@@ -5317,7 +5316,7 @@ int _SearchMemoryFind(
 		WORD nAddress2 = nAddress;
 
 		int nMemBlocks = vMemorySearchValues.size();
-		for (int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
+		for ( int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
 		{
 			MemorySearch_t ms = vMemorySearchValues.at( iBlock );
 			ms.m_bFound = false;
@@ -5952,84 +5951,84 @@ Update_t CmdOutputPrintf (int nArgs)
 				TCHAR c = g_aArgs[ iArg ].sArg[ iChar ];
 				switch ( eThis )
 				{
-					case PS_LITERAL:
-						switch ( c )
-						{
-							case '\\':
-								eThis = PS_ESCAPE;
-								break;
-							case '%':
-								eThis = PS_TYPE;
-								break;
-							default:
-								sText[ nLen++ ] = c;
-								break;
-						}
+				case PS_LITERAL:
+					switch ( c )
+					{
+					case '\\':
+						eThis = PS_ESCAPE;
 						break;
-					case PS_ESCAPE:
-						switch ( c )
-						{
-							case 'n':
-							case 'r':
-								eThis = PS_LITERAL;
-								sText[ nLen++ ] = '\n';
-								break;
-						}
-						break;
-					case PS_TYPE:
-						if (iValue >= nParamValues)
-						{
-							ConsoleBufferPushFormat( "Error: Missing value arg: %d", iValue + 1 );
-							return ConsoleUpdate();
-						}
-						switch ( c )
-						{
-							case 'X':
-							case 'x': // PS_NEXT_ARG_HEX
-								nValue = aValues[ iValue ].nValue;
-								sprintf( &sText[ nLen ], "%04X", nValue );
-								iValue++;
-								break;
-							case 'D':
-							case 'd': // PS_NEXT_ARG_DEC
-								nValue = aValues[ iValue ].nValue;
-								sprintf( &sText[ nLen ], "%d", nValue );
-								iValue++;
-								break;
-							break;
-							case 'Z':
-							case 'z':
-							{
-								nValue = aValues[ iValue ].nValue;
-								if (!nWidth)
-									nWidth = 8;
-								int nBits = nWidth;
-								while (nBits-- > 0)
-								{
-									if ((nValue >> nBits) & 1)
-										sText[ nLen++ ] = '1';
-									else
-										sText[ nLen++ ] = '0';
-								}
-								iValue++;
-								break;
-							}
-							case 'c': // PS_NEXT_ARG_CHR;
-								nValue = aValues[ iValue ].nValue;
-								sprintf( &sText[ nLen ], "%c", nValue );
-								iValue++;
-								break;
-							case '%':
-							default:
-								sText[ nLen++ ] = c;
-								break;
-						}
-						while (sText[ nLen ])
-							nLen++;
-						eThis = PS_LITERAL;
+					case '%':
+						eThis = PS_TYPE;
 						break;
 					default:
+						sText[ nLen++ ] = c;
 						break;
+					}
+					break;
+				case PS_ESCAPE:
+					switch ( c )
+					{
+					case 'n':
+					case 'r':
+						eThis = PS_LITERAL;
+						sText[ nLen++ ] = '\n';
+						break;
+					}
+					break;
+				case PS_TYPE:
+					if (iValue >= nParamValues)
+					{
+						ConsoleBufferPushFormat( "Error: Missing value arg: %d", iValue + 1 );
+						return ConsoleUpdate();
+					}
+					switch ( c )
+					{
+					case 'X':
+					case 'x': // PS_NEXT_ARG_HEX
+						nValue = aValues[ iValue ].nValue;
+						sprintf( &sText[ nLen ], "%04X", nValue );
+						iValue++;
+						break;
+					case 'D':
+					case 'd': // PS_NEXT_ARG_DEC
+						nValue = aValues[ iValue ].nValue;
+						sprintf( &sText[ nLen ], "%d", nValue );
+						iValue++;
+						break;
+					break;
+					case 'Z':
+					case 'z':
+					{
+						nValue = aValues[ iValue ].nValue;
+						if (!nWidth)
+							nWidth = 8;
+						int nBits = nWidth;
+						while (nBits-- > 0)
+						{
+							if ((nValue >> nBits) & 1)
+								sText[ nLen++ ] = '1';
+							else
+								sText[ nLen++ ] = '0';
+						}
+						iValue++;
+						break;
+					}
+					case 'c': // PS_NEXT_ARG_CHR;
+						nValue = aValues[ iValue ].nValue;
+						sprintf( &sText[ nLen ], "%c", nValue );
+						iValue++;
+						break;
+					case '%':
+					default:
+						sText[ nLen++ ] = c;
+						break;
+					}
+					while (sText[ nLen ])
+						nLen++;
+					eThis = PS_LITERAL;
+					break;
+				default:
+					break;
 				}
 			}
 		}
@@ -7940,9 +7939,9 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		pColorMnemonic = CHC_COMMAND; // green
 		pColorOpmode   = CHC_USAGE  ; // yellow
 		pColorTotal    = CHC_DEFAULT; // white
-	}	
+	}
 	
-// Opcode
+	// Opcode
 	if (bExport) // Export = SeperateColumns
 		sprintf( pText
 			, "\"Percent\"" DELIM "\"Count\"" DELIM "\"Opcode\"" DELIM "\"Mnemonic\"" DELIM "\"Addressing Mode\"\n"
@@ -8659,7 +8658,7 @@ void DebugInitialize ()
 	}
 	
 #if _DEBUG
-//g_bConsoleBufferPaused = true;
+	//g_bConsoleBufferPaused = true;
 #endif
 
 	_Bookmark_Reset();
