@@ -28,6 +28,8 @@ The process described here has several goals:
 - Maintain AppleWin's quality
 - Enforce a workable solution for AppleWin maintainers to review contributions
 
+Please review the simple [Coding Conventions](https://github.com/AppleWin/AppleWin/blob/master/docs/CodingConventions.txt).
+
 Smaller PRs are highly desirable, as they should be simpler to review and approve. Large changes are likely to be rejected or not get looked at (resulting in them going stale, and ultimately diverging further from the mainline repo).
 
 For large changes being submitted for review, then it's HIGHLY recommended to split the large PR into smaller PRs, and submit them piece by piece. This means that no dependencies can exist between each smaller PR.
