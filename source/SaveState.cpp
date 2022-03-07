@@ -465,6 +465,7 @@ void Snapshot_LoadState()
 		return;
 	}
 
+	LogFileOutput("Loading Save-State from %s\n", g_strSaveStatePathname.c_str());
 	Snapshot_LoadState_v2();
 }
 
@@ -472,6 +473,7 @@ void Snapshot_LoadState()
 
 void Snapshot_SaveState(void)
 {
+	LogFileOutput("Saving Save-State to %s\n", g_strSaveStatePathname.c_str());
 	try
 	{
 		YamlSaveHelper yamlSaveHelper(g_strSaveStatePathname);
