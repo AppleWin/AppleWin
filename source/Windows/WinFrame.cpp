@@ -965,17 +965,9 @@ LRESULT Win32Frame::WndProc(
 		Snapshot_Shutdown();
       DebugDestroy();
       if (!g_bRestart) {
-		GetCardMgr().GetDisk2CardMgr().Destroy();
-		if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-			dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Destroy();
-		if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
-			dynamic_cast<Uthernet1&>(GetCardMgr().GetRef(SLOT3)).Destroy();
-		if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet2)
-			dynamic_cast<Uthernet2&>(GetCardMgr().GetRef(SLOT3)).Destroy();
+		GetCardMgr().Destroy();
       }
       PrintDestroy();
-      if (GetCardMgr().IsSSCInstalled())
-		GetCardMgr().GetSSC()->CommDestroy();
       CpuDestroy();
       MemDestroy();
       SpkrDestroy();

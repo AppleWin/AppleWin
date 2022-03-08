@@ -56,10 +56,8 @@ public:
 
     Uthernet2(UINT slot);
 
-    void Destroy();
-
+	virtual void Destroy(void) {}
     virtual void InitializeIO(LPBYTE pCxRomPeripheral);
-    virtual void Init();
     virtual void Reset(const bool powerCycle);
     virtual void Update(const ULONG nExecutedCycles);
     virtual void SaveSnapshot(YamlSaveHelper &yamlSaveHelper);

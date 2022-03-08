@@ -251,3 +251,25 @@ void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		}
 	}
 }
+
+void CardManager::Reset(const bool powerCycle)
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
+	{
+		if (m_slot[i])
+		{
+			m_slot[i]->Reset(powerCycle);
+		}
+	}
+}
+
+void CardManager::Destroy()
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
+	{
+		if (m_slot[i])
+		{
+			m_slot[i]->Destroy();
+		}
+	}
+}

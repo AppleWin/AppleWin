@@ -27,18 +27,15 @@ class CSuperSerialCard : public Card
 public:
 	CSuperSerialCard(UINT slot);
 	virtual ~CSuperSerialCard();
-
-	virtual void Init(void) {}
-	virtual void Reset(const bool powerCycle) {}
 	virtual void Update(const ULONG nExecutedCycles) {}
-
-	void	InitializeIO(LPBYTE pCxRomPeripheral);
-	void    CommReset();
-	void    CommDestroy();
-	void    CommSetSerialPort(DWORD dwNewSerialPortItem);
+	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
+	virtual void Reset(const bool powerCycle);
+	virtual void Destroy() {}
 	static const std::string& GetSnapshotCardName(void);
 	virtual void	SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool	LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
+
+	void    CommSetSerialPort(DWORD dwNewSerialPortItem);
 
 	std::string const& GetSerialPortChoices();
 	DWORD	GetSerialPort() { return m_dwSerialPortItem; }	// Drop-down list item

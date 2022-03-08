@@ -146,7 +146,7 @@ CMouseInterface::CMouseInterface(UINT slot) :
 
 //	Uninitialize();
 	InitializeROM();
-	Reset();
+	Reset(true);
 }
 
 CMouseInterface::~CMouseInterface()
@@ -193,7 +193,7 @@ void CMouseInterface::Uninitialize()
 }
 #endif
 
-void CMouseInterface::Reset()
+void CMouseInterface::Reset(const bool /* powerCycle */)
 {
 	m_by6821A = 0;
 	m_by6821B = 0x40;		// Set PB6

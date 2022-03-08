@@ -18,7 +18,7 @@ public:
 	}
 	virtual ~SNESMAXCard(void) {}
 
-	virtual void Init(void) {}
+	virtual void Destroy(void) {}
 	virtual void Reset(const bool powerCycle) {}
 	virtual void Update(const ULONG nExecutedCycles) {}
 

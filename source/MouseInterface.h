@@ -11,13 +11,12 @@ public:
 	CMouseInterface(UINT slot);
 	virtual ~CMouseInterface();
 
-	virtual void Init(void) {}
-	virtual void Reset(const bool powerCycle) {}
+	virtual void Destroy() {}
+	virtual void Reset(const bool powerCycle);
 	virtual void Update(const ULONG nExecutedCycles) {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 //	void Uninitialize();
-	void Reset();
 	UINT GetSlot(void) { return m_slot; }
 	static BYTE __stdcall IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
