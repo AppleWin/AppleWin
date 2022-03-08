@@ -18,7 +18,7 @@ struct Socket
     uint16_t transmitSize;
     uint16_t receiveBase;
     uint16_t receiveSize;
-    uint16_t registers;
+    uint16_t registerAddress;
 
     uint16_t sn_rx_wr;
     uint16_t sn_rx_rsr;
@@ -34,6 +34,9 @@ struct Socket
 
     bool isThereRoomFor(const size_t len, const size_t header) const;
     uint16_t getFreeRoom() const;
+
+    void SaveSnapshot(YamlSaveHelper &yamlSaveHelper);
+    bool LoadSnapshot(YamlLoadHelper &yamlLoadHelper);
 
     Socket();
 
