@@ -288,11 +288,6 @@ Uthernet2::Uthernet2(UINT slot) : Card(CT_Uthernet2, slot)
     Reset(true);
 }
 
-void Uthernet2::Destroy()
-{
-    myNetworkBackend.reset();
-}
-
 void Uthernet2::setSocketModeRegister(const size_t i, const uint16_t address, const uint8_t value)
 {
     myMemory[address] = value;
@@ -1077,7 +1072,6 @@ void Uthernet2::Reset(const bool powerCycle)
     {
         // dataAddress is NOT reset, see page 10 of Uthernet II
         myDataAddress = 0;
-        myNetworkBackend.reset();
         myNetworkBackend = GetFrame().CreateNetworkBackend();
     }
 
@@ -1166,10 +1160,6 @@ BYTE __stdcall u2_C0(WORD programcounter, WORD address, BYTE write, BYTE value, 
 void Uthernet2::InitializeIO(LPBYTE pCxRomPeripheral)
 {
     RegisterIoHandler(m_slot, u2_C0, u2_C0, nullptr, nullptr, this, nullptr);
-}
-
-void Uthernet2::Init()
-{
 }
 
 void Uthernet2::Update(const ULONG nExecutedCycles)

@@ -85,12 +85,11 @@ public:
 	HarddiskInterfaceCard(UINT slot);
 	virtual ~HarddiskInterfaceCard(void);
 
-	virtual void Init(void) {}
 	virtual void Reset(const bool powerCycle);
 	virtual void Update(const ULONG nExecutedCycles) {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
-	void Destroy(void);
+	virtual void Destroy(void);
 	const std::string& GetFullName(const int iDrive);
 	const std::string& HarddiskGetFullPathName(const int iDrive);
 	void GetFilenameAndPathForSaveState(std::string& filename, std::string& path);

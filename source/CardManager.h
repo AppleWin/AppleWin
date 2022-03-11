@@ -58,6 +58,8 @@ public:
 	class LanguageCardUnit* GetLanguageCard(void) { return m_pLanguageCard; }
 
 	void InitializeIO(LPBYTE pCxRomPeripheral);
+	void Reset(const bool powerCycle);
+	void Destroy();
 	void Update(const ULONG nExecutedCycles);
 	void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 

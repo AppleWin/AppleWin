@@ -126,6 +126,10 @@ void CSuperSerialCard::InternalReset()
 
 CSuperSerialCard::~CSuperSerialCard()
 {
+	CloseComm();
+
+	delete [] m_pExpansionRom;
+	m_pExpansionRom = NULL;
 }
 
 //===========================================================================
@@ -959,33 +963,19 @@ void CSuperSerialCard::InitializeIO(LPBYTE pCxRomPeripheral)
 	if (m_pExpansionRom == NULL)
 	{
 		m_pExpansionRom = new BYTE [SSC_FW_SIZE];
-
-		if (m_pExpansionRom)
-			memcpy(m_pExpansionRom, pData, SSC_FW_SIZE);
+		memcpy(m_pExpansionRom, pData, SSC_FW_SIZE);
 	}
-
-	//
 
 	RegisterIoHandler(m_slot, &CSuperSerialCard::SSC_IORead, &CSuperSerialCard::SSC_IOWrite, NULL, NULL, this, m_pExpansionRom);
 }
 
 //===========================================================================
 
-void CSuperSerialCard::CommReset()
+void CSuperSerialCard::Reset(const bool /* powerCycle */)
 {
 	CloseComm();
 
 	InternalReset();
-}
-
-//===========================================================================
-
-void CSuperSerialCard::CommDestroy()
-{
-	CommReset();
-
-	delete [] m_pExpansionRom;
-	m_pExpansionRom = NULL;
 }
 
 //===========================================================================

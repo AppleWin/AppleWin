@@ -188,12 +188,6 @@ Uthernet1::Uthernet1(UINT slot) : Card(CT_Uthernet, slot)
     Init();
 }
 
-void Uthernet1::InitialiseBackend()
-{
-    Destroy();
-    networkBackend = GetFrame().CreateNetworkBackend();
-}
-
 void Uthernet1::Init(void)
 {
     // Initialise all state member variables
@@ -1015,16 +1009,11 @@ static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE
 
 void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-    InitialiseBackend();
+    networkBackend = GetFrame().CreateNetworkBackend();
     if (networkBackend->isValid())
     {
         RegisterIoHandler(m_slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, this, NULL);
     }
-}
-
-void Uthernet1::Destroy()
-{
-    networkBackend.reset();
 }
 
 void Uthernet1::Reset(const bool powerCycle)
