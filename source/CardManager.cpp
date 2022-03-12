@@ -160,6 +160,7 @@ void CardManager::RemoveInternal(UINT slot)
 			break;
 		}
 
+		UnregisterIoHandler(slot);
 		delete m_slot[slot];
 		m_slot[slot] = NULL;
 	}
