@@ -638,7 +638,7 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 	if (!g_bDSAvailable)
 		return;
 
-	for (int i=0; i<NUM_AY8913; i++)
+	for (int i=0; i<NUM_SY6522; i++)
 	{
 		g_MB[i].sy6522.Reset(powerCycle);
 
@@ -916,7 +916,7 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 
 	AY8910_InitClock((int)(Get6502BaseClock() * g_PhasorClockScaleFactor));
 
-	for (UINT i=0; i<NUM_AY8913; i++)
+	for (UINT i=0; i<NUM_SSI263; i++)
 		g_MB[i].ssi263.SetCardMode(g_phasorMode);
 
 	return MemReadFloatingBus(nExecutedCycles);
@@ -955,7 +955,7 @@ void MockingboardCard::MuteControl(bool mute)
 			MockingboardVoice.bMute = true;
 		}
 
-		for (UINT i = 0; i < NUM_AY8913; i++)
+		for (UINT i = 0; i < NUM_SSI263; i++)
 			g_MB[i].ssi263.Mute();
 	}
 	else
@@ -966,7 +966,7 @@ void MockingboardCard::MuteControl(bool mute)
 			MockingboardVoice.bMute = false;
 		}
 
-		for (UINT i = 0; i < NUM_AY8913; i++)
+		for (UINT i = 0; i < NUM_SSI263; i++)
 			g_MB[i].ssi263.Unmute();
 	}
 }
@@ -991,7 +991,7 @@ void MockingboardCard::SetCumulativeCycles(void)
 // NB. Required for FT's TEST LAB #1 player
 void MockingboardCard::Update(const ULONG executedCycles)
 {
-	for (UINT i=0; i<NUM_AY8913; i++)
+	for (UINT i=0; i<NUM_SSI263; i++)
 		g_MB[i].ssi263.PeriodicUpdate(executedCycles);
 
 	if (IsAnyTimer1Active())
