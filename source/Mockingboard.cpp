@@ -70,7 +70,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 bool MockingboardCard::IsAnyTimer1Active(void)
 {
 	bool active = false;
-	for (UINT i = 0; i < NUM_AY8910; i++)
+	for (UINT i = 0; i < NUM_AY8913; i++)
 		active |= g_MB[i].sy6522.IsTimer1Active();
 	return active;
 }
@@ -79,7 +79,7 @@ bool MockingboardCard::IsAnyTimer1Active(void)
 
 void MockingboardCard::Get6522IrqDescription(std::string& desc)
 {
-	for (UINT i=0; i<NUM_AY8910; i++)
+	for (UINT i=0; i<NUM_AY8913; i++)
 	{
 		if (g_MB[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IFR_IRQ)
 		{
@@ -314,8 +314,8 @@ void MockingboardCard::MB_UpdateInternal(void)
 		nNumSamples = MAX_SAMPLES;	// Clamp to prevent buffer overflow
 
 	if (nNumSamples)
-		for (int nChip=0; nChip<NUM_AY8910; nChip++)
-			AY8910Update(nChip, &ppAYVoiceBuffer[nChip*NUM_VOICES_PER_AY8910], nNumSamples);
+		for (int nChip=0; nChip<NUM_AY8913; nChip++)
+			AY8910Update(nChip, &ppAYVoiceBuffer[nChip*NUM_VOICES_PER_AY8913], nNumSamples);
 
 	//
 
@@ -394,15 +394,15 @@ void MockingboardCard::MB_UpdateInternal(void)
 		// L = Address.b7=0, R = Address.b7=1
 		int nDataL = 0, nDataR = 0;
 
-		for (UINT j=0; j<NUM_VOICES_PER_AY8910; j++)
+		for (UINT j=0; j<NUM_VOICES_PER_AY8913; j++)
 		{
 			// Slot4
-			nDataL += (int) ((double)ppAYVoiceBuffer[0*NUM_VOICES_PER_AY8910+j][i] * fAttenuation);
-			nDataR += (int) ((double)ppAYVoiceBuffer[1*NUM_VOICES_PER_AY8910+j][i] * fAttenuation);
+			nDataL += (int) ((double)ppAYVoiceBuffer[0*NUM_VOICES_PER_AY8913+j][i] * fAttenuation);
+			nDataR += (int) ((double)ppAYVoiceBuffer[1*NUM_VOICES_PER_AY8913+j][i] * fAttenuation);
 
 			// Slot5
-			nDataL += (int) ((double)ppAYVoiceBuffer[2*NUM_VOICES_PER_AY8910+j][i] * fAttenuation);
-			nDataR += (int) ((double)ppAYVoiceBuffer[3*NUM_VOICES_PER_AY8910+j][i] * fAttenuation);
+			nDataL += (int) ((double)ppAYVoiceBuffer[2*NUM_VOICES_PER_AY8913+j][i] * fAttenuation);
+			nDataR += (int) ((double)ppAYVoiceBuffer[3*NUM_VOICES_PER_AY8913+j][i] * fAttenuation);
 		}
 
 		// Cap the superpositioned output
@@ -500,7 +500,7 @@ bool MockingboardCard::MB_DSInit(void)
 
 	//---------------------------------
 
-	for (UINT i=0; i<NUM_AY8910; i++)
+	for (UINT i=0; i<NUM_AY8913; i++)
 	{
 		if (!g_MB[i].ssi263.DSInit())
 			return false;
@@ -520,7 +520,7 @@ void MockingboardCard::MB_DSUninit(void)
 
 	//
 
-	for (UINT i=0; i<NUM_AY8910; i++)
+	for (UINT i=0; i<NUM_AY8913; i++)
 		g_MB[i].ssi263.DSUninit();
 }
 
@@ -528,7 +528,8 @@ void MockingboardCard::MB_Initialize(void)
 {
 	for (int id = 0; id < kNumSyncEvents; id++)
 	{
-		g_syncEvent[id] = new SyncEvent(id, 0, MB_SyncEventCallback);
+		int syncId = ((m_slot << 4) + id);	// NB. Encode the slot# into the id - used by MB_SyncEventCallback()
+		g_syncEvent[id] = new SyncEvent(syncId, 0, MB_SyncEventCallback);
 	}
 
 	LogFileOutput("MB_Initialize: g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
@@ -544,7 +545,7 @@ void MockingboardCard::MB_Initialize(void)
 		AY8910_InitAll((int)g_fCurrentCLK6502, SAMPLE_RATE);
 		LogFileOutput("MB_Initialize: AY8910_InitAll()\n");
 
-		for (UINT i=0; i<NUM_AY8910; i++)
+		for (UINT i=0; i<NUM_SY6522; i++)
 		{
 			g_MB[i] = SY6522_AY8910();
 			g_MB[i].nAY8910Number = i;
@@ -590,7 +591,7 @@ void MockingboardCard::MB_Reinitialize(void)
 
 //-----------------------------------------------------------------------------
 
-void MockingboardCard::MB_Destroy(void)
+void MockingboardCard::Destroy(void)
 {
 	MB_DSUninit();
 
@@ -614,7 +615,7 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 	if (!g_bDSAvailable)
 		return;
 
-	for (int i=0; i<NUM_AY8910; i++)
+	for (int i=0; i<NUM_AY8913; i++)
 	{
 		g_MB[i].sy6522.Reset(powerCycle);
 
@@ -889,7 +890,7 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 
 	AY8910_InitClock((int)(Get6502BaseClock() * g_PhasorClockScaleFactor));
 
-	for (UINT i=0; i<NUM_AY8910; i++)
+	for (UINT i=0; i<NUM_AY8913; i++)
 		g_MB[i].ssi263.SetCardMode(g_phasorMode);
 
 	return MemReadFloatingBus(nExecutedCycles);
@@ -926,7 +927,7 @@ void MockingboardCard::MB_Mute(void)
 		MockingboardVoice.bMute = true;
 	}
 
-	for (UINT i=0; i<NUM_AY8910; i++)
+	for (UINT i=0; i<NUM_AY8913; i++)
 		g_MB[i].ssi263.Mute();
 }
 
@@ -940,7 +941,7 @@ void MockingboardCard::MB_Unmute(void)
 		MockingboardVoice.bMute = false;
 	}
 
-	for (UINT i=0; i<NUM_AY8910; i++)
+	for (UINT i=0; i<NUM_AY8913; i++)
 		g_MB[i].ssi263.Unmute();
 }
 
@@ -964,7 +965,7 @@ void MockingboardCard::MB_SetCumulativeCycles(void)
 // NB. Required for FT's TEST LAB #1 player
 void MockingboardCard::Update(const ULONG executedCycles)
 {
-	for (UINT i=0; i<NUM_AY8910; i++)
+	for (UINT i=0; i<NUM_AY8913; i++)
 		g_MB[i].ssi263.PeriodicUpdate(executedCycles);
 
 	if (IsAnyTimer1Active())
@@ -1012,7 +1013,7 @@ void MockingboardCard::MB_UpdateCycles(ULONG uExecutedCycles)
 // Called on a 6522 TIMER1/2 underflow
 int MockingboardCard::MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 {
-	UINT slot = id;	// FIXME
+	UINT slot = (id >> 4);
 	MockingboardCard* pCard = (MockingboardCard*)MemGetSlotParameters(slot);
 	return pCard->MB_SyncEventCallbackInternal(id, 0, uExecutedCycles);
 }
@@ -1021,7 +1022,7 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 {
 	MB_UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
 
-	SY6522_AY8910* pMB = &g_MB[id / SY6522::kNumTimersPer6522];	// FIXME
+	SY6522_AY8910* pMB = &g_MB[(id & 0xf) / SY6522::kNumTimersPer6522];
 
 	if ((id & 1) == 0)
 	{
@@ -1060,7 +1061,7 @@ bool MockingboardCard::MB_IsActive(void)
 		return false;
 
 	bool isSSI263Active = false;
-	for (UINT i=0; i<NUM_AY8910; i++)
+	for (UINT i=0; i<NUM_AY8913; i++)
 		isSSI263Active |= g_MB[i].ssi263.IsPhonemeActive();
 
 	return g_bMB_Active || isSSI263Active;
@@ -1084,7 +1085,7 @@ void MockingboardCard::MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 
 	//
 
-	for (UINT i=0; i<NUM_AY8910; i++)
+	for (UINT i=0; i<NUM_AY8913; i++)
 		g_MB[i].ssi263.SetVolume(dwVolume, dwVolumeMax);
 }
 

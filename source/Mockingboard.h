@@ -30,10 +30,10 @@ public:
 
 		g_uLastMBUpdateCycle = 0;
 	}
-	virtual ~MockingboardCard(void);
+	virtual ~MockingboardCard(void) {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
-	virtual void Init(void);
+	virtual void Destroy();
 	virtual void Reset(const bool powerCycle);
 	virtual void Update(const ULONG executedCycles);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
@@ -52,7 +52,6 @@ public:
 	void MB_Initialize(void);
 	void MB_InitializeForLoadingSnapshot(void);
 	void MB_Reinitialize(void);
-	void MB_Destroy(void);
 	void MB_Mute(void);
 	void MB_Unmute(void);
 #ifdef _DEBUG
@@ -92,7 +91,7 @@ private:
 			nAYCurrentRegister = 0;
 			state = AY_NOP0;
 			stateB = AY_NOP0;
-			// r6522 & ssi263 have already been default constructed
+			// sy6522 & ssi263 have already been default constructed
 		}
 	};
 
@@ -115,22 +114,20 @@ private:
 	static const UINT SY6522_DEVICE_A = 0;
 	static const UINT SY6522_DEVICE_B = 1;
 
-	static const UINT NUM_MB = 2;
-	static const UINT NUM_DEVS_PER_MB = 2;
-	static const UINT NUM_AY8910 = (NUM_MB * NUM_DEVS_PER_MB);
-	static const UINT NUM_SY6522 = NUM_AY8910;
-	static const UINT NUM_VOICES_PER_AY8910 = 3;
-	static const UINT NUM_VOICES = (NUM_AY8910 * NUM_VOICES_PER_AY8910);
+	static const UINT NUM_AY8913 = 4;	// Phasor has 4, MB has 2
+	static const UINT NUM_SY6522 = 2;
+	static const UINT NUM_DEVS_PER_MB = NUM_SY6522;
+	static const UINT NUM_VOICES_PER_AY8913 = 3;
+	static const UINT NUM_VOICES = (NUM_AY8913 * NUM_VOICES_PER_AY8913);
 
-
-	// Chip offsets from card base.
+	// Chip offsets from card base:
 	static const UINT SY6522A_Offset = 0x00;
 	static const UINT SY6522B_Offset = 0x80;
 	static const UINT SSI263B_Offset = 0x20;
 	static const UINT SSI263A_Offset = 0x40;
 
-	// Support 2 MB's, each with 2x SY6522/AY8910 pairs.
-	SY6522_AY8910 g_MB[NUM_AY8910];	// FIXME - only 2 AYs in a MB-C
+	// Phasor has 2x (1x SY6522 + 2x AY8913), MB has 2x (1x SY6522 + 1x AY8913)
+	SY6522_AY8910 g_MB[NUM_SY6522];
 
 	static const UINT kNumSyncEvents = NUM_SY6522 * SY6522::kNumTimersPer6522;
 	SyncEvent* g_syncEvent[kNumSyncEvents];
@@ -190,7 +187,7 @@ private:
 
 void	MB_Initialize();
 void	MB_Reinitialize();
-void	MB_Destroy();
+//void	MB_Destroy();	-> virtual Destroy
 void    MB_Reset(const bool powerCycle);
 void	MB_InitializeForLoadingSnapshot(void);
 //void    MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5);	-> virtual InitializeIO()
