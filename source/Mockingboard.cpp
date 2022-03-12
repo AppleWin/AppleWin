@@ -500,7 +500,7 @@ bool MockingboardCard::MB_DSInit(void)
 
 	//---------------------------------
 
-	for (UINT i=0; i<NUM_AY8913; i++)
+	for (UINT i=0; i<NUM_SSI263; i++)
 	{
 		if (!g_MB[i].ssi263.DSInit())
 			return false;
@@ -520,7 +520,7 @@ void MockingboardCard::MB_DSUninit(void)
 
 	//
 
-	for (UINT i=0; i<NUM_AY8913; i++)
+	for (UINT i=0; i< NUM_SSI263; i++)
 		g_MB[i].ssi263.DSUninit();
 }
 
@@ -528,7 +528,7 @@ void MockingboardCard::MB_Initialize(void)
 {
 	for (int id = 0; id < kNumSyncEvents; id++)
 	{
-		int syncId = ((m_slot << 4) + id);	// NB. Encode the slot# into the id - used by MB_SyncEventCallback()
+		int syncId = (m_slot << 4) + id;	// NB. Encode the slot# into the id - used by MB_SyncEventCallback()
 		g_syncEvent[id] = new SyncEvent(syncId, 0, MB_SyncEventCallback);
 	}
 
@@ -645,7 +645,10 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 		for (int id = 0; id < kNumSyncEvents; id++)
 		{
 			if (g_syncEvent[id] && g_syncEvent[id]->m_active)
-				g_SynchronousEventMgr.Remove(id);
+			{
+				int syncId = (m_slot << 4) + id;
+				g_SynchronousEventMgr.Remove(syncId);
+			}
 		}
 
 		// Not these, as they don't change on a CTRL+RESET or power-cycle:

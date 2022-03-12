@@ -992,9 +992,6 @@ LRESULT Win32Frame::WndProc(
 	  DIMouse::DirectInputInit(window);
       LogFileOutput("WM_CREATE: DIMouse::DirectInputInit()\n");
 
-	  MB_Initialize();
-      LogFileOutput("WM_CREATE: MB_Initialize()\n");
-
 	  SpkrInitialize();
       LogFileOutput("WM_CREATE: SpkrInitialize()\n");
 

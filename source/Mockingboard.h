@@ -29,6 +29,8 @@ public:
 		g_cyclesThisAudioFrame = 0;
 
 		g_uLastMBUpdateCycle = 0;
+
+		MB_Initialize();
 	}
 	virtual ~MockingboardCard(void) {}
 
@@ -49,7 +51,6 @@ public:
 
 	void Get6522IrqDescription(std::string& desc);
 	void MB_UpdateIRQ(void);
-	void MB_Initialize(void);
 	void MB_InitializeForLoadingSnapshot(void);
 	void MB_Reinitialize(void);
 	void MB_Mute(void);
@@ -95,6 +96,7 @@ private:
 		}
 	};
 
+	void MB_Initialize(void);
 	bool IsAnyTimer1Active(void);
 	void AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice);
 	void WriteToORB(BYTE device);
@@ -114,8 +116,9 @@ private:
 	static const UINT SY6522_DEVICE_A = 0;
 	static const UINT SY6522_DEVICE_B = 1;
 
-	static const UINT NUM_AY8913 = 4;	// Phasor has 4, MB has 2
 	static const UINT NUM_SY6522 = 2;
+	static const UINT NUM_AY8913 = 4;	// Phasor has 4, MB has 2
+	static const UINT NUM_SSI263 = 2;
 	static const UINT NUM_DEVS_PER_MB = NUM_SY6522;
 	static const UINT NUM_VOICES_PER_AY8913 = 3;
 	static const UINT NUM_VOICES = (NUM_AY8913 * NUM_VOICES_PER_AY8913);
@@ -185,7 +188,7 @@ private:
 };
 #endif
 
-void	MB_Initialize();
+//void	MB_Initialize();	-> ctor
 void	MB_Reinitialize();
 //void	MB_Destroy();	-> virtual Destroy
 void    MB_Reset(const bool powerCycle);
