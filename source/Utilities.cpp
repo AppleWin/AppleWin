@@ -532,6 +532,8 @@ void GetAppleWindowTitle()
 // todo: consolidate CtrlReset() and ResetMachineState()
 void ResetMachineState()
 {
+	LogFileOutput("Apple II power-cycle\n");
+
 	GetCardMgr().Reset(true);
 	g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 

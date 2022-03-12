@@ -970,7 +970,9 @@ void Uthernet1::tfe_transmit(
 static BYTE __stdcall TfeIoCxxx (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
 {
 #ifdef _DEBUG
-	if (!IS_APPLE2)
+    const UINT slot = (address >> 8) & 0xf;
+
+    if (!IS_APPLE2 && slot == SLOT3)
 	{
 		// Derived from UTAIIe:5-28
 		//

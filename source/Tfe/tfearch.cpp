@@ -341,7 +341,7 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
         return NULL;
 	}
 
-    if(g_fh) fprintf(g_fh, "PCAP: Succesfully opened adapter: '%s'\n", TfePcapDevice->name);
+    if(g_fh) fprintf(g_fh, "PCAP: Successfully opened adapter: '%s'\n", TfePcapDevice->name);
 
     tfe_arch_enumadapter_close();
     return TfePcapFP;
