@@ -123,11 +123,7 @@ void InitialiseEmulator()
   MemInitialize();
 
   CardManager & cardManager = GetCardMgr();
-  cardManager.GetDisk2CardMgr().Reset();
-  if (cardManager.QuerySlot(SLOT7) == CT_GenericHDD)
-  {
-      dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(SLOT7)).Reset(true);
-  }
+  cardManager.Reset(true);
 
   Snapshot_Startup();
 
@@ -137,39 +133,15 @@ void InitialiseEmulator()
 void DestroyEmulator()
 {
   CardManager & cardManager = GetCardMgr();
+  cardManager.Destroy();
 
   Snapshot_Shutdown();
-  CMouseInterface* pMouseCard = cardManager.GetMouseCard();
-  if (pMouseCard)
-  {
-    pMouseCard->Reset();
-  }
   MemDestroy();
-
   SpkrDestroy();
   MB_Destroy();
   DSUninit();
-
-  for (UINT i = 0; i < NUM_SLOTS; ++i)
-  {
-    switch (cardManager.QuerySlot(i))
-    {
-      case CT_GenericHDD:
-        dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(i)).Destroy();
-        break;
-      case CT_Uthernet:
-        dynamic_cast<Uthernet1&>(cardManager.GetRef(i)).Destroy();
-        break;
-      case CT_Uthernet2:
-        dynamic_cast<Uthernet2&>(cardManager.GetRef(i)).Destroy();
-        break;
-    }
-  }
-
   PrintDestroy();
   CpuDestroy();
   DebugDestroy();
-
-  GetCardMgr().GetDisk2CardMgr().Destroy();
   RiffFinishWriteFile();
 }

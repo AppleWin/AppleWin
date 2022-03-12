@@ -18,7 +18,7 @@ void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 {
 }
 
-void CSuperSerialCard::CommReset()
+void CSuperSerialCard::Reset(const bool /* powerCycle */)
 {
 }
 
