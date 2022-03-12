@@ -9,6 +9,7 @@ public:
 	}
 	~MockingboardCardManager(void) {}
 
+	bool IsMockingboard(UINT slot);
 	void ReinitializeClock(void);
 	void InitializeForLoadingSnapshot(void);
 	void MuteControl(bool mute);
@@ -23,6 +24,5 @@ public:
 #endif
 
 private:
-	bool IsMockingboard(UINT slot);
 	DWORD m_userVolume;	// GUI's slide volume
 };

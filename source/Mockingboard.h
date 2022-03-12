@@ -50,7 +50,6 @@ public:
 	BYTE IOWriteInternal(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	BYTE PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles);
 
-	void MB_UpdateIRQ(void);
 	void InitializeForLoadingSnapshot(void);
 	void ReinitializeClock(void);
 	void MuteControl(bool mute);
@@ -64,11 +63,12 @@ public:
 	void Get6522IrqDescription(std::string& desc);
 #endif
 
+	void MB_UpdateIRQ(void);
 	UINT64 MB_GetLastCumulativeCycles(void);
 	void MB_UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
 	BYTE MB_GetPCR(BYTE nDevice);
 
-	void MB_GetSnapshot_v1(struct SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot);
+	void GetSnapshot_v1(struct SS_CARD_MOCKINGBOARD_v1* const pSS);
 
 	static std::string GetSnapshotCardName(void);
 	static std::string GetSnapshotCardNamePhasor(void);
@@ -204,7 +204,7 @@ private:
 //SS_CARDTYPE MB_GetSoundcardType();	// removed call from PageSound.cpp
 //bool    MB_IsActive();
 //DWORD   MB_GetVolume();
-void    MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
+//void    MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 //void MB_Get6522IrqDescription(std::string& desc);
 
 void MB_UpdateIRQ(void);										// called by 6522

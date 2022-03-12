@@ -1137,18 +1137,16 @@ BYTE MockingboardCard::MB_GetPCR(BYTE nDevice)
 #include "SaveState_Structs_v1.h"
 
 // Called by debugger - Debugger_Display.cpp
-void MockingboardCard::MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
+void MockingboardCard::GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS)
 {
 	pSS->Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_MOCKINGBOARD_v1);
 	pSS->Hdr.UnitHdr.hdr.v2.Type = UT_Card;
 	pSS->Hdr.UnitHdr.hdr.v2.Version = 1;
 
-	pSS->Hdr.Slot = dwSlot;
+	pSS->Hdr.Slot = m_slot;
 	pSS->Hdr.Type = CT_MockingboardC;
 
-	UINT nMbCardNum = dwSlot - SLOT4;
-	UINT nDeviceNum = nMbCardNum*2;
-	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
+	SY6522_AY8910* pMB = &g_MB[0];
 
 	for (UINT i=0; i<MB_UNITS_PER_CARD_v1; i++)
 	{
@@ -1158,7 +1156,7 @@ void MockingboardCard::MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, con
 		// AY8913
 		for (UINT j=0; j<16; j++)
 		{
-			pSS->Unit[i].RegsAY8910[j] = AYReadReg(nDeviceNum, j);
+			pSS->Unit[i].RegsAY8910[j] = AYReadReg(i, j);
 		}
 
 		memset(&pSS->Unit[i].RegsSSI263, 0, sizeof(SSI263A));	// Not used by debugger
@@ -1167,7 +1165,6 @@ void MockingboardCard::MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, con
 		pSS->Unit[i].bTimer2Active = pMB->sy6522.IsTimer2Active();
 		pSS->Unit[i].bSpeechIrqPending = false;
 
-		nDeviceNum++;
 		pMB++;
 	}
 }

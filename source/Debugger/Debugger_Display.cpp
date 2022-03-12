@@ -1977,7 +1977,11 @@ void DrawMemory ( int line, int iMemDump )
 	SS_CARD_MOCKINGBOARD_v1 SS_MB;
 
 	if ((eDevice == DEV_SY6522) || (eDevice == DEV_AY8910))
-		MB_GetSnapshot_v1(&SS_MB, 4+(nAddr>>1));		// Slot4 or Slot5
+	{
+		UINT slot = 4 + (nAddr >> 1);		// Slot4 or Slot5
+		if (GetCardMgr().GetMockingboardCardMgr().IsMockingboard(slot))
+			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot)).GetSnapshot_v1(&SS_MB);
+	}
 
 	RECT rect;
 	rect.left   = DISPLAY_MINIMEM_COLUMN;
