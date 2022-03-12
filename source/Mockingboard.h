@@ -63,10 +63,10 @@ public:
 	void Get6522IrqDescription(std::string& desc);
 #endif
 
-	void MB_UpdateIRQ(void);
-	UINT64 MB_GetLastCumulativeCycles(void);
-	void MB_UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
-	BYTE MB_GetPCR(BYTE nDevice);
+	void UpdateIRQ(void);
+	UINT64 GetLastCumulativeCycles(void);
+	void UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
+	BYTE GetPCR(BYTE nDevice);
 
 	void GetSnapshot_v1(struct SS_CARD_MOCKINGBOARD_v1* const pSS);
 
@@ -154,7 +154,7 @@ private:
 	PHASOR_MODE g_phasorMode;
 	UINT g_PhasorClockScaleFactor;
 
-	//-------------------------------------
+	//
 
 	static const unsigned short g_nMB_NumChannels = 2;
 	static const DWORD g_dwDSBufferSize = MAX_SAMPLES * sizeof(short) * g_nMB_NumChannels;
@@ -186,37 +186,3 @@ private:
 
 };
 #endif
-
-//void	MB_Initialize();	-> ctor
-//void	MB_Reinitialize();
-//void	MB_Destroy();	-> virtual Destroy()
-//void    MB_Reset(const bool powerCycle);	-> virtual Reset()
-//void	MB_InitializeForLoadingSnapshot(void);
-//void    MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5);	-> virtual InitializeIO()
-//void    MB_Mute();
-//void    MB_Unmute();
-#ifdef _DEBUG
-//void    MB_CheckCumulativeCycles();	// DEBUG
-#endif
-//void    MB_SetCumulativeCycles();
-//void    MB_PeriodicUpdate(UINT executedCycles);	-> virtual Update()
-//void    MB_UpdateCycles(ULONG uExecutedCycles);
-//SS_CARDTYPE MB_GetSoundcardType();	// removed call from PageSound.cpp
-//bool    MB_IsActive();
-//DWORD   MB_GetVolume();
-//void    MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
-//void MB_Get6522IrqDescription(std::string& desc);
-
-void MB_UpdateIRQ(void);										// called by 6522
-UINT64 MB_GetLastCumulativeCycles(void);						// called by SSI263
-void MB_UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);	// called by SSI263
-BYTE MB_GetPCR(BYTE nDevice);									// called by SSI263
-
-void    MB_GetSnapshot_v1(struct SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot);	// For debugger
-//std::string MB_GetSnapshotCardName(void);
-//void    MB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
-//bool    MB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
-
-//std::string Phasor_GetSnapshotCardName(void);
-//void Phasor_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
-//bool Phasor_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);

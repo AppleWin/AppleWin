@@ -19,6 +19,10 @@ public:
 		m_syncEvent[0] = event0;
 		m_syncEvent[1] = event1;
 	}
+	void SetSlot(UINT slot)
+	{
+		m_slot = slot;
+	}
 
 	void Reset(const bool powerCycle);
 
@@ -140,4 +144,5 @@ private:
 	bool m_timer2Active;
 
 	class SyncEvent* m_syncEvent[kNumTimersPer6522];
+	UINT m_slot;
 };

@@ -236,8 +236,10 @@ void MockingboardCard::UpdateIFRandIRQ(SY6522_AY8910* pMB, BYTE clr_mask, BYTE s
 	pMB->sy6522.UpdateIFR(clr_mask, set_mask);	// which calls MB_UpdateIRQ()
 }
 
+//---------------------------------------------------------------------------
+
 // Called from class SY6522
-void MockingboardCard::MB_UpdateIRQ(void)
+void MockingboardCard::UpdateIRQ(void)
 {
 	// Now update the IRQ signal from all 6522s
 	// . OR-sum of all active TIMER1, TIMER2 & SPEECH sources (from all 6522s)
@@ -255,6 +257,24 @@ void MockingboardCard::MB_UpdateIRQ(void)
 	    CpuIrqAssert(IS_6522);
 	else
 	    CpuIrqDeassert(IS_6522);
+}
+
+//---------------------------------------------------------------------------
+
+// Called from class SSI263
+UINT64 MockingboardCard::GetLastCumulativeCycles(void)
+{
+	return g_uLastCumulativeCycles;
+}
+
+void MockingboardCard::UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask)
+{
+	UpdateIFRandIRQ(&g_MB[nDevice], clr_mask, set_mask);
+}
+
+BYTE MockingboardCard::GetPCR(BYTE nDevice)
+{
+	return g_MB[nDevice].sy6522.GetReg(SY6522::rPCR);
 }
 
 //===========================================================================
@@ -575,7 +595,8 @@ void MockingboardCard::MB_Initialize(void)
 			const UINT id0 = i * SY6522::kNumTimersPer6522 + 0;	// TIMER1
 			const UINT id1 = i * SY6522::kNumTimersPer6522 + 1;	// TIMER2
 			g_MB[i].sy6522.InitSyncEvents(g_syncEvent[id0], g_syncEvent[id1]);
-			g_MB[i].ssi263.SetDevice(i);
+			g_MB[i].sy6522.SetSlot(m_slot);
+			g_MB[i].ssi263.SetSlotAndDevice(m_slot, i);
 		}
 
 		//
@@ -1112,24 +1133,6 @@ void MockingboardCard::SetVolume(DWORD volume, DWORD volumeMax)
 
 	for (UINT i=0; i<NUM_SSI263; i++)
 		g_MB[i].ssi263.SetVolume(volume, volumeMax);
-}
-
-//---------------------------------------------------------------------------
-
-// Called from class SSI263
-UINT64 MockingboardCard::MB_GetLastCumulativeCycles(void)
-{
-	return g_uLastCumulativeCycles;
-}
-
-void MockingboardCard::MB_UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask)
-{
-	UpdateIFRandIRQ(&g_MB[nDevice], clr_mask, set_mask);
-}
-
-BYTE MockingboardCard::MB_GetPCR(BYTE nDevice)
-{
-	return g_MB[nDevice].sy6522.GetReg(SY6522::rPCR);
 }
 
 //===========================================================================

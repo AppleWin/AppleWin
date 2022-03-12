@@ -1,10 +1,5 @@
 #pragma once
 
-//#include "Mockingboard.h"	// enum PHASOR_MODE + 3 other funcs
-extern UINT64 MB_GetLastCumulativeCycles(void);
-extern void MB_UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
-extern BYTE MB_GetPCR(BYTE nDevice);
-
 class SSI263
 {
 public:
@@ -62,6 +57,13 @@ public:
 		m_dbgStartTime = 0;
 	}
 
+	void SetSlotAndDevice(UINT slot, UINT device)
+	{
+		m_slot = slot;
+		m_device = device;
+	}
+	void SetCardMode(PHASOR_MODE mode) { m_cardMode = mode; }
+
 	bool DSInit(void);
 	void DSUninit(void);
 
@@ -83,9 +85,6 @@ public:
 	bool GetVotraxPhoneme(void) { return m_isVotraxPhoneme; }
 	void SetVotraxPhoneme(bool value) { m_isVotraxPhoneme = value; }
 
-	void SetCardMode(PHASOR_MODE mode) { m_cardMode = mode; }
-	void SetDevice(UINT device) { m_device = device; }
-
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT device, PHASOR_MODE mode, UINT version);
 
@@ -94,6 +93,10 @@ private:
 	void Stop(void);
 	void UpdateIRQ(void);
 	void UpdateAccurateLength(void);
+
+	UINT64 GetLastCumulativeCycles(void);
+	void UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
+	BYTE GetPCR(BYTE nDevice);
 
 	static const BYTE m_Votrax2SSI263[/*64*/];
 
@@ -104,6 +107,7 @@ private:
 
 	//
 
+	UINT m_slot;
 	BYTE m_device;	// SSI263 device# which is generating phoneme-complete IRQ (and only required whilst Mockingboard isn't a class)
 	PHASOR_MODE m_cardMode;
 	short* m_pPhonemeData00;
