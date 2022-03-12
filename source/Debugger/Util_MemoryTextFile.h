@@ -24,8 +24,8 @@
 		bool Read( const std::string & pFileName );
 		void Reset()
 		{
-			m_vBuffer.erase( m_vBuffer.begin(), m_vBuffer.end() );
-			m_vLines.erase( m_vLines.begin(), m_vLines.end() );
+			m_vBuffer.clear();
+			m_vLines.clear();
 		}
 
 inline	int  GetNumLines()

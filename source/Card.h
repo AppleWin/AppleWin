@@ -39,7 +39,7 @@ public:
 	virtual ~Card(void) {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral) = 0;
-	virtual void Init(void) = 0;
+	virtual void Destroy() = 0;
 	virtual void Reset(const bool powerCycle) = 0;
 	virtual void Update(const ULONG nExecutedCycles) = 0;
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) = 0;
@@ -74,7 +74,7 @@ public:
 	virtual ~EmptyCard(void) {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral) {}
-	virtual void Init(void) {}
+	virtual void Destroy() {}
 	virtual void Reset(const bool powerCycle) {}
 	virtual void Update(const ULONG nExecutedCycles) {}
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) {}
@@ -90,7 +90,7 @@ public:
 	virtual ~DummyCard(void) {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
-	virtual void Init(void) {}
+	virtual void Destroy() {}
 	virtual void Reset(const bool powerCycle) {}
 	virtual void Update(const ULONG nExecutedCycles);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);

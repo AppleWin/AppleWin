@@ -2906,9 +2906,8 @@ Update_t CmdCursorLineUp (int nArgs)
 		static std::vector<LookAhead_t> aTopCandidates;
 		LookAhead_t tCandidate;
 
-//		if (! aBestTop.capacity() )
+		aTopCandidates.clear();
 		aTopCandidates.reserve( MAX_LOOK_AHEAD );
-		aTopCandidates.erase( aTopCandidates.begin(), aTopCandidates.end() );
 
 		WORD nTop = g_nDisasmTopAddress;
 		WORD iTop = 0;
@@ -5316,8 +5315,9 @@ int _SearchMemoryFind(
 	WORD nAddressStart,
 	WORD nAddressEnd )
 {
-	int   nFound = 0;
-	g_vMemorySearchResults.erase( g_vMemorySearchResults.begin(), g_vMemorySearchResults.end() );
+	int nFound = 0;
+
+	g_vMemorySearchResults.clear();
 	g_vMemorySearchResults.push_back( NO_6502_TARGET );
 
 	WORD nAddress;
@@ -5614,7 +5614,7 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 				// must be numeric .. make sure not too big
 				if (pArg->nArgLen > 2)
 				{
-					vMemorySearchValues.erase( vMemorySearchValues.begin(), vMemorySearchValues.end() );
+					vMemorySearchValues.clear();
 					return HelpLastCommand();
 				}
 
@@ -5661,7 +5661,7 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 	}
 
 	_SearchMemoryFind( vMemorySearchValues, nAddressStart, nAddressEnd );
-	vMemorySearchValues.erase( vMemorySearchValues.begin(), vMemorySearchValues.end() );
+	vMemorySearchValues.clear();
 
 	return _SearchMemoryDisplay();
 }
@@ -7411,7 +7411,7 @@ int FindParam(LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegi
 //===========================================================================
 int FindCommand( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 {
-	g_vPotentialCommands.erase( g_vPotentialCommands.begin(), g_vPotentialCommands.end() );
+	g_vPotentialCommands.clear();
 
 	int nFound   = 0;
 	int nLen     = _tcslen( pName );
@@ -7450,7 +7450,7 @@ int FindCommand( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 	//						*iCommand_ = iCommand;
 
 						nFound = 1; // Exact match takes precidence over fuzzy matches
-						g_vPotentialCommands.erase( g_vPotentialCommands.begin(), g_vPotentialCommands.end() );
+						g_vPotentialCommands.clear();
 						break;
 					}
 				}
@@ -8513,7 +8513,7 @@ static void DebugEnd ()
 		g_hTraceFile = NULL;
 	}
 
-	g_vMemorySearchResults.erase( g_vMemorySearchResults.begin(), g_vMemorySearchResults.end() );
+	g_vMemorySearchResults.clear();
 
 	g_nAppMode = MODE_RUNNING;
 

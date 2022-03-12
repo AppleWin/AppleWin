@@ -188,12 +188,6 @@ Uthernet1::Uthernet1(UINT slot) : Card(CT_Uthernet, slot)
     Init();
 }
 
-void Uthernet1::InitialiseBackend()
-{
-    Destroy();
-    networkBackend = GetFrame().CreateNetworkBackend();
-}
-
 void Uthernet1::Init(void)
 {
     // Initialise all state member variables
@@ -976,7 +970,9 @@ void Uthernet1::tfe_transmit(
 static BYTE __stdcall TfeIoCxxx (WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
 {
 #ifdef _DEBUG
-	if (!IS_APPLE2)
+    const UINT slot = (address >> 8) & 0xf;
+
+    if (!IS_APPLE2 && slot == SLOT3)
 	{
 		// Derived from UTAIIe:5-28
 		//
@@ -1015,16 +1011,11 @@ static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE
 
 void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-    InitialiseBackend();
+    networkBackend = GetFrame().CreateNetworkBackend();
     if (networkBackend->isValid())
     {
         RegisterIoHandler(m_slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, this, NULL);
     }
-}
-
-void Uthernet1::Destroy()
-{
-    networkBackend.reset();
 }
 
 void Uthernet1::Reset(const bool powerCycle)

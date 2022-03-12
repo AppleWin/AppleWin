@@ -127,13 +127,12 @@ public:
 	Disk2InterfaceCard(UINT slot);
 	virtual ~Disk2InterfaceCard(void);
 
-	virtual void Init(void) {};
 	virtual void Reset(const bool powerCycle);
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void Update(const ULONG nExecutedCycles);
 
-	void Destroy(void);		// no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
+	virtual void Destroy(void);		// no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
 
 	void Boot(void);
 	void FlushCurrentTrack(const int drive);

@@ -123,14 +123,12 @@ class Uthernet1 : public Card
 public:
 	Uthernet1(UINT slot);
 
+	virtual void Destroy(void) {}
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
-	virtual void Init(void);
 	virtual void Reset(const bool powerCycle);
 	virtual void Update(const ULONG nExecutedCycles);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
-
-	void Destroy();
 
 	BYTE tfe_read(WORD ioaddress);
 	void tfe_store(WORD ioaddress, BYTE byte);
@@ -139,7 +137,7 @@ public:
 
 private:
 
-	void InitialiseBackend();
+	void Init();
 
 	void tfe_sideeffects_write_pp_on_txframe(WORD ppaddress);
 	void tfe_sideeffects_write_pp(WORD ppaddress, int oddaddress);

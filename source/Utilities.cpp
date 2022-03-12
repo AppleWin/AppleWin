@@ -534,15 +534,9 @@ void GetAppleWindowTitle()
 // todo: consolidate CtrlReset() and ResetMachineState()
 void ResetMachineState()
 {
-	GetCardMgr().GetDisk2CardMgr().Reset(true);
-	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-		GetCardMgr().GetRef(SLOT7).Reset(true);
-	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
-		GetCardMgr().GetRef(SLOT3).Reset(true);
-	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
-		GetCardMgr().GetRef(SLOT3).Reset(true);
-	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet2)
-		GetCardMgr().GetRef(SLOT3).Reset(true);
+	LogFileOutput("Apple II power-cycle\n");
+
+	GetCardMgr().Reset(true);
 	g_bFullSpeed = 0;	// Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
 	MemReset();	// calls CpuInitialize(), CNoSlotClock.Reset()
@@ -551,14 +545,10 @@ void ResetMachineState()
 		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
 	GetVideo().VideoResetState();
 	KeybReset();
-	if (GetCardMgr().IsSSCInstalled())
-		GetCardMgr().GetSSC()->CommReset();
 	PrintReset();
 	JoyReset();
 	MB_Reset(true);
 	SpkrReset();
-	if (GetCardMgr().IsMouseCardInstalled())
-		GetCardMgr().GetMouseCard()->Reset();
 	SetActiveCpu(GetMainCpu());
 #ifdef USE_SPEECH_API
 	g_Speech.Reset();
@@ -595,21 +585,9 @@ void CtrlReset()
 	}
 
 	GetPravets().Reset();
-	GetCardMgr().GetDisk2CardMgr().Reset();
-	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-		GetCardMgr().GetRef(SLOT7).Reset(false);
-	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
-		GetCardMgr().GetRef(SLOT3).Reset(false);
-	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet)
-		GetCardMgr().GetRef(SLOT3).Reset(false);
-	if (GetCardMgr().QuerySlot(SLOT3) == CT_Uthernet2)
-		GetCardMgr().GetRef(SLOT3).Reset(false);
+	GetCardMgr().Reset(false);
 	KeybReset();
-	if (GetCardMgr().IsSSCInstalled())
-		GetCardMgr().GetSSC()->CommReset();
 	MB_Reset(false);
-	if (GetCardMgr().IsMouseCardInstalled())
-		GetCardMgr().GetMouseCard()->Reset();		// Deassert any pending IRQs - GH#514
 #ifdef USE_SPEECH_API
 	g_Speech.Reset();
 #endif
