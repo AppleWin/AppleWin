@@ -545,7 +545,6 @@ void ResetMachineState()
 	KeybReset();
 	PrintReset();
 	JoyReset();
-	MB_Reset(true);
 	SpkrReset();
 	SetActiveCpu(GetMainCpu());
 #ifdef USE_SPEECH_API
@@ -585,7 +584,6 @@ void CtrlReset()
 	GetPravets().Reset();
 	GetCardMgr().Reset(false);
 	KeybReset();
-	MB_Reset(false);
 #ifdef USE_SPEECH_API
 	g_Speech.Reset();
 #endif

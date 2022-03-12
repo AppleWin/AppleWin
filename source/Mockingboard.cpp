@@ -560,8 +560,8 @@ void MockingboardCard::MB_Initialize(void)
 		g_bMBAvailable = MB_DSInit();
 		LogFileOutput("MB_Initialize: MB_DSInit(), g_bMBAvailable=%d\n", g_bMBAvailable);
 
-		MB_Reset(true);
-		LogFileOutput("MB_Initialize: MB_Reset()\n");
+		Reset(true);
+		LogFileOutput("MB_Initialize: Reset()\n");
 	}
 }
 
@@ -569,7 +569,7 @@ void MockingboardCard::MB_Initialize(void)
 // . and voice will be unmuted when dialog is closed
 void MockingboardCard::MB_InitializeForLoadingSnapshot(void)	// GH#609
 {
-	MB_Reset(true);
+	Reset(true);
 
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;
@@ -577,7 +577,7 @@ void MockingboardCard::MB_InitializeForLoadingSnapshot(void)	// GH#609
 	_ASSERT(MockingboardVoice.lpDSBvoice);
 	DSVoiceStop(&MockingboardVoice);			// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
 
-	// NB. ssi263.Stop() already done by MB_Reset()
+	// NB. ssi263.Stop() already done by Reset()
 }
 
 //-----------------------------------------------------------------------------
@@ -1184,13 +1184,13 @@ const UINT NUM_PHASOR_UNITS = 2;
 
 #define SS_YAML_KEY_VOTRAX_PHONEME "Votrax Phoneme"
 
-std::string MockingboardCard::MB_GetSnapshotCardName(void)
+std::string MockingboardCard::GetSnapshotCardName(void)
 {
 	static const std::string name("Mockingboard C");
 	return name;
 }
 
-std::string MockingboardCard::Phasor_GetSnapshotCardName(void)
+std::string MockingboardCard::GetSnapshotCardNamePhasor(void)
 {
 	static const std::string name("Phasor");
 	return name;
@@ -1207,7 +1207,7 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	UINT nDeviceNum = nMbCardNum*2;
 	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
 
-	YamlSaveHelper::Slot slot(yamlSaveHelper, MB_GetSnapshotCardName(), m_slot, kUNIT_VERSION);
+	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
@@ -1311,7 +1311,7 @@ void MockingboardCard::Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	UINT nDeviceNum = 0;
 	SY6522_AY8910* pMB = &g_MB[0];	// fixme: Phasor uses MB's slot4(2x6522), slot4(2xSSI263), but slot4+5(4xAY8910)
 
-	YamlSaveHelper::Slot slot(yamlSaveHelper, Phasor_GetSnapshotCardName(), m_slot, kUNIT_VERSION);
+	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardNamePhasor(), m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 

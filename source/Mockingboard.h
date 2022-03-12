@@ -71,8 +71,8 @@ public:
 
 	void MB_GetSnapshot_v1(struct SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot);
 
-	std::string MB_GetSnapshotCardName(void);
-	std::string Phasor_GetSnapshotCardName(void);
+	static std::string GetSnapshotCardName(void);
+	static std::string GetSnapshotCardNamePhasor(void);
 
 private:
 	enum MockingboardUnitState_e { AY_NOP0, AY_NOP1, AY_INACTIVE, AY_READ, AY_NOP4, AY_NOP5, AY_WRITE, AY_LATCH };
@@ -190,8 +190,8 @@ private:
 
 //void	MB_Initialize();	-> ctor
 void	MB_Reinitialize();
-//void	MB_Destroy();	-> virtual Destroy
-void    MB_Reset(const bool powerCycle);
+//void	MB_Destroy();	-> virtual Destroy()
+//void    MB_Reset(const bool powerCycle);	-> virtual Reset()
 void	MB_InitializeForLoadingSnapshot(void);
 //void    MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5);	-> virtual InitializeIO()
 void    MB_Mute();
@@ -215,10 +215,10 @@ void MB_UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);	// called by SSI2
 BYTE MB_GetPCR(BYTE nDevice);									// called by SSI263
 
 void    MB_GetSnapshot_v1(struct SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot);	// For debugger
-std::string MB_GetSnapshotCardName(void);
-void    MB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
-bool    MB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+//std::string MB_GetSnapshotCardName(void);
+//void    MB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
+//bool    MB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
 
-std::string Phasor_GetSnapshotCardName(void);
-void Phasor_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
-bool Phasor_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);
+//std::string Phasor_GetSnapshotCardName(void);
+//void Phasor_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
+//bool Phasor_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version);

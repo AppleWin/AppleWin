@@ -148,7 +148,7 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 	case CT_SSC:
 		return CSuperSerialCard::GetSnapshotCardName();
 	case CT_MockingboardC:
-		return MB_GetSnapshotCardName();
+		return MockingboardCard::GetSnapshotCardName();
 	case CT_GenericPrinter:
 		return Printer_GetSnapshotCardName();
 	case CT_GenericHDD:
@@ -160,7 +160,7 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 	case CT_Z80:
 		return Z80_GetSnapshotCardName();
 	case CT_Phasor:
-		return Phasor_GetSnapshotCardName();
+		return MockingboardCard::GetSnapshotCardNamePhasor();
 	case CT_Echo:
 		return "Echo";
 	case CT_SAM:
@@ -198,11 +198,11 @@ SS_CARDTYPE Card::GetCardType(const std::string & card)
 	{
 		return CT_Z80;
 	}
-	else if (card == MB_GetSnapshotCardName())
+	else if (card == MockingboardCard::GetSnapshotCardName())
 	{
 		return CT_MockingboardC;
 	}
-	else if (card == Phasor_GetSnapshotCardName())
+	else if (card == MockingboardCard::GetSnapshotCardNamePhasor())
 	{
 		return CT_Phasor;
 	}
