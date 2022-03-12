@@ -52,7 +52,7 @@ public:
 	void Get6522IrqDescription(std::string& desc);
 	void MB_UpdateIRQ(void);
 	void MB_InitializeForLoadingSnapshot(void);
-	void MB_Reinitialize(void);
+	void ReinitializeClock(void);
 	void MB_Mute(void);
 	void MB_Unmute(void);
 #ifdef _DEBUG
@@ -189,7 +189,7 @@ private:
 #endif
 
 //void	MB_Initialize();	-> ctor
-void	MB_Reinitialize();
+//void	MB_Reinitialize();
 //void	MB_Destroy();	-> virtual Destroy()
 //void    MB_Reset(const bool powerCycle);	-> virtual Reset()
 void	MB_InitializeForLoadingSnapshot(void);

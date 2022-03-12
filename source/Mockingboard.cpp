@@ -583,7 +583,7 @@ void MockingboardCard::MB_InitializeForLoadingSnapshot(void)	// GH#609
 //-----------------------------------------------------------------------------
 
 // NB. Called when /g_fCurrentCLK6502/ changes
-void MockingboardCard::MB_Reinitialize(void)
+void MockingboardCard::ReinitializeClock(void)
 {
 	AY8910_InitClock((int)g_fCurrentCLK6502);	// todo: account for g_PhasorClockScaleFactor?
 												// NB. Other calls to AY8910_InitClock() use the constant CLK_6502
@@ -656,7 +656,7 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 //		g_bPhasorEnable = false;
 	}
 
-	MB_Reinitialize();	// Reset CLK for AY8910s
+	ReinitializeClock();	// Reset CLK for AY8910s
 }
 
 //-----------------------------------------------------------------------------
