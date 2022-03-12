@@ -74,17 +74,11 @@ void DummyCard::InitializeIO(LPBYTE pCxRomPeripheral)
 		break;
 	case CT_GenericClock:
 		break; // nothing to do
-	case CT_MockingboardC:
-	case CT_Phasor:
-		// only in slot 4
-		if (m_slot == SLOT4)
-		{
-			MB_InitializeIO(pCxRomPeripheral, SLOT4, SLOT5);
-		}
-		break;
 	case CT_Z80:
 		Z80_InitializeIO(pCxRomPeripheral, m_slot);
 		break;
+	default:
+		_ASSERT(0);
 	}
 }
 
@@ -95,13 +89,12 @@ void DummyCard::Update(const ULONG nExecutedCycles)
 	case CT_GenericPrinter:
 		PrintUpdate(nExecutedCycles);
 		break;
-	case CT_MockingboardC:
-	case CT_Phasor:
-		// only in slot 4
-		if (m_slot == SLOT4)
-		{
-			MB_PeriodicUpdate(nExecutedCycles);
-		}
+	case CT_GenericClock:
+		break; // nothing to do
+	case CT_Z80:
+		break; // nothing to do
+	default:
+		_ASSERT(0);
 		break;
 	}
 }
@@ -113,14 +106,10 @@ void DummyCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	case CT_GenericPrinter:
 		Printer_SaveSnapshot(yamlSaveHelper, m_slot);
 		break;
-	case CT_MockingboardC:
-		MB_SaveSnapshot(yamlSaveHelper, m_slot);
-		break;
-	case CT_Phasor:
-		Phasor_SaveSnapshot(yamlSaveHelper, m_slot);
-		break;
 	case CT_Z80:
 		Z80_SaveSnapshot(yamlSaveHelper, m_slot);
+	default:
+		_ASSERT(0);
 		break;
 	}
 }
@@ -131,12 +120,10 @@ bool DummyCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	{
 	case CT_GenericPrinter:
 		return Printer_LoadSnapshot(yamlLoadHelper, m_slot, version);
-	case CT_MockingboardC:
-		return MB_LoadSnapshot(yamlLoadHelper, m_slot, version);
-	case CT_Phasor:
-		return Phasor_LoadSnapshot(yamlLoadHelper, m_slot, version);
 	case CT_Z80:
 		return Z80_LoadSnapshot(yamlLoadHelper, m_slot, version);
+	default:
+		_ASSERT(0);
 	}
 	return false;
 }

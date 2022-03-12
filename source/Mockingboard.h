@@ -22,7 +22,6 @@ public:
 
 		g_bMBAvailable = false;
 
-		g_SoundcardType = CT_Empty;	// Use CT_Empty to mean: no soundcard
 		g_bPhasorEnable = false;
 		g_phasorMode = PH_Mockingboard;
 		g_PhasorClockScaleFactor = 1;	// for save-state only
@@ -36,12 +35,9 @@ public:
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void Init(void);
 	virtual void Reset(const bool powerCycle);
-	virtual void Update(const ULONG nExecutedCycles);
+	virtual void Update(const ULONG executedCycles);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
-
-	void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
-	bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
@@ -57,7 +53,6 @@ public:
 	void MB_InitializeForLoadingSnapshot(void);
 	void MB_Reinitialize(void);
 	void MB_Destroy(void);
-	SS_CARDTYPE MB_GetSoundcardType(void);
 	void MB_Mute(void);
 	void MB_Unmute(void);
 #ifdef _DEBUG
@@ -110,8 +105,12 @@ private:
 	bool MB_DSInit(void);
 	void MB_DSUninit(void);
 	void InitSoundcardType(void);
-	void MB_SetSoundcardType(const SS_CARDTYPE NewSoundcardType);
+
+	void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
+	bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
+
 	static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles);
+	int MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG uExecutedCycles);
 
 	static const UINT SY6522_DEVICE_A = 0;
 	static const UINT SY6522_DEVICE_B = 1;
@@ -152,7 +151,6 @@ private:
 
 	//
 
-	SS_CARDTYPE g_SoundcardType;
 	bool g_bPhasorEnable;
 	PHASOR_MODE g_phasorMode;
 	UINT g_PhasorClockScaleFactor;
@@ -195,17 +193,17 @@ void	MB_Reinitialize();
 void	MB_Destroy();
 void    MB_Reset(const bool powerCycle);
 void	MB_InitializeForLoadingSnapshot(void);
-void    MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5);
+//void    MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5);	-> virtual InitializeIO()
 void    MB_Mute();
 void    MB_Unmute();
 #ifdef _DEBUG
 void    MB_CheckCumulativeCycles();	// DEBUG
 #endif
 void    MB_SetCumulativeCycles();
-void    MB_PeriodicUpdate(UINT executedCycles);
+//void    MB_PeriodicUpdate(UINT executedCycles);	-> virtual Update()
 void    MB_CheckIRQ();
 void    MB_UpdateCycles(ULONG uExecutedCycles);
-SS_CARDTYPE MB_GetSoundcardType();
+//SS_CARDTYPE MB_GetSoundcardType();	// removed call from PageSound.cpp
 bool    MB_IsActive();
 DWORD   MB_GetVolume();
 void    MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);

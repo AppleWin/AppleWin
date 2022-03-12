@@ -119,9 +119,16 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETPOS,1,MB_GetVolume());
 
 			if (GetCardMgr().QuerySlot(SLOT5) == CT_SAM)
+			{
 				m_NewCardType = CT_SAM;
+			}
 			else
-				m_NewCardType = MB_GetSoundcardType();	// Reinit 1st time page is activated (fires before PSN_SETACTIVE)
+			{
+				// Reinit 1st time page is activated (fires before PSN_SETACTIVE)
+				//m_NewCardType = MB_GetSoundcardType();
+				m_NewCardType = GetCardMgr().QuerySlot(SLOT4);	// FIXME: mimic the old static MB/Phasor behaviour
+																// NB. This doesn't scale for MB/Phasor in slots other than SLOT4, nor for mixed sound cards (eg. MB/s4+Phasor/s5)
+			}
 
 			InitOptions(hWnd);
 

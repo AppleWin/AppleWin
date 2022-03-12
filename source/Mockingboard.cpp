@@ -159,7 +159,7 @@ void MockingboardCard::AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice)
 					// Selecting an unused register number above 0x0f puts the AY into a state where
 					// any values written to the data/address bus are ignored, but can be read back
 					// within a few tens of thousands of cycles before they decay to zero.
-					if(pMB->sy6522.GetReg(SY6522::rORA) <= 0x0F)
+					if (pMB->sy6522.GetReg(SY6522::rORA) <= 0x0F)
 						pMB->nAYCurrentRegister = pMB->sy6522.GetReg(SY6522::rORA) & 0x0F;
 					// else Pro-Mockingboard (clone from HK)
 					break;
@@ -264,11 +264,11 @@ void MockingboardCard::MB_UpdateInternal(void)
 
 	if (!g_bMB_RegAccessedFlag)
 	{
-		if(!g_nMB_InActiveCycleCount)
+		if (!g_nMB_InActiveCycleCount)
 		{
 			g_nMB_InActiveCycleCount = g_nCumulativeCycles;
 		}
-		else if(g_nCumulativeCycles - g_nMB_InActiveCycleCount > (unsigned __int64)g_fCurrentCLK6502/10)
+		else if (g_nCumulativeCycles - g_nMB_InActiveCycleCount > (unsigned __int64)g_fCurrentCLK6502/10)
 		{
 			// After 0.1 sec of Apple time, assume MB is not active
 			g_bMB_Active = false;
@@ -305,27 +305,27 @@ void MockingboardCard::MB_UpdateInternal(void)
 
 	static int nNumSamplesError = 0;
 	int nNumSamples = nNumSamplesPerPeriod + nNumSamplesError;					// Apply correction
-	if(nNumSamples <= 0)
+	if (nNumSamples <= 0)
 		nNumSamples = 0;
-	if(nNumSamples > 2*nNumSamplesPerPeriod)
+	if (nNumSamples > 2*nNumSamplesPerPeriod)
 		nNumSamples = 2*nNumSamplesPerPeriod;
 
 	if (nNumSamples > MAX_SAMPLES)
 		nNumSamples = MAX_SAMPLES;	// Clamp to prevent buffer overflow
 
-	if(nNumSamples)
-		for(int nChip=0; nChip<NUM_AY8910; nChip++)
+	if (nNumSamples)
+		for (int nChip=0; nChip<NUM_AY8910; nChip++)
 			AY8910Update(nChip, &ppAYVoiceBuffer[nChip*NUM_VOICES_PER_AY8910], nNumSamples);
 
 	//
 
 	DWORD dwCurrentPlayCursor, dwCurrentWriteCursor;
 	HRESULT hr = MockingboardVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
-	if(FAILED(hr))
+	if (FAILED(hr))
 		return;
 
 	static DWORD dwByteOffset = (DWORD)-1;
-	if(dwByteOffset == (DWORD)-1)
+	if (dwByteOffset == (DWORD)-1)
 	{
 		// First time in this func
 
@@ -335,10 +335,10 @@ void MockingboardCard::MB_UpdateInternal(void)
 	{
 		// Check that our offset isn't between Play & Write positions
 
-		if(dwCurrentWriteCursor > dwCurrentPlayCursor)
+		if (dwCurrentWriteCursor > dwCurrentPlayCursor)
 		{
 			// |-----PxxxxxW-----|
-			if((dwByteOffset > dwCurrentPlayCursor) && (dwByteOffset < dwCurrentWriteCursor))
+			if ((dwByteOffset > dwCurrentPlayCursor) && (dwByteOffset < dwCurrentWriteCursor))
 			{
 #ifdef DBG_MB_UPDATE
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
@@ -351,7 +351,7 @@ void MockingboardCard::MB_UpdateInternal(void)
 		else
 		{
 			// |xxW----------Pxxx|
-			if((dwByteOffset > dwCurrentPlayCursor) || (dwByteOffset < dwCurrentWriteCursor))
+			if ((dwByteOffset > dwCurrentPlayCursor) || (dwByteOffset < dwCurrentWriteCursor))
 			{
 #ifdef DBG_MB_UPDATE
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
@@ -364,14 +364,14 @@ void MockingboardCard::MB_UpdateInternal(void)
 	}
 
 	int nBytesRemaining = dwByteOffset - dwCurrentPlayCursor;
-	if(nBytesRemaining < 0)
+	if (nBytesRemaining < 0)
 		nBytesRemaining += g_dwDSBufferSize;
 
 	// Calc correction factor so that play-buffer doesn't under/overflow
 	const int nErrorInc = SoundCore_GetErrorInc();
-	if(nBytesRemaining < g_dwDSBufferSize / 4)
+	if (nBytesRemaining < g_dwDSBufferSize / 4)
 		nNumSamplesError += nErrorInc;				// < 0.25 of buffer remaining
-	else if(nBytesRemaining > g_dwDSBufferSize / 2)
+	else if (nBytesRemaining > g_dwDSBufferSize / 2)
 		nNumSamplesError -= nErrorInc;				// > 0.50 of buffer remaining
 	else
 		nNumSamplesError = 0;						// Acceptable amount of data in buffer
@@ -381,20 +381,20 @@ void MockingboardCard::MB_UpdateInternal(void)
 	LogOutput("%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X, NSE=%08X, Interval=%f\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset, nNumSamples, nNumSamplesError, updateInterval);
 #endif
 
-	if(nNumSamples == 0)
+	if (nNumSamples == 0)
 		return;
 
 	//
 
 	const double fAttenuation = g_bPhasorEnable ? 2.0/3.0 : 1.0;
 
-	for(int i=0; i<nNumSamples; i++)
+	for (int i=0; i<nNumSamples; i++)
 	{
 		// Mockingboard stereo (all voices on an AY8910 wire-or'ed together)
 		// L = Address.b7=0, R = Address.b7=1
 		int nDataL = 0, nDataR = 0;
 
-		for(UINT j=0; j<NUM_VOICES_PER_AY8910; j++)
+		for (UINT j=0; j<NUM_VOICES_PER_AY8910; j++)
 		{
 			// Slot4
 			nDataL += (int) ((double)ppAYVoiceBuffer[0*NUM_VOICES_PER_AY8910+j][i] * fAttenuation);
@@ -406,14 +406,14 @@ void MockingboardCard::MB_UpdateInternal(void)
 		}
 
 		// Cap the superpositioned output
-		if(nDataL < nWaveDataMin)
+		if (nDataL < nWaveDataMin)
 			nDataL = nWaveDataMin;
-		else if(nDataL > nWaveDataMax)
+		else if (nDataL > nWaveDataMax)
 			nDataL = nWaveDataMax;
 
-		if(nDataR < nWaveDataMin)
+		if (nDataR < nWaveDataMin)
 			nDataR = nWaveDataMin;
-		else if(nDataR > nWaveDataMax)
+		else if (nDataR > nWaveDataMax)
 			nDataR = nWaveDataMax;
 
 		g_nMixBuffer[i*g_nMB_NumChannels+0] = (short)nDataL;	// L
@@ -433,7 +433,7 @@ void MockingboardCard::MB_UpdateInternal(void)
 		return;
 
 	memcpy(pDSLockedBuffer0, &g_nMixBuffer[0], dwDSLockedBufferSize0);
-	if(pDSLockedBuffer1)
+	if (pDSLockedBuffer1)
 		memcpy(pDSLockedBuffer1, &g_nMixBuffer[dwDSLockedBufferSize0/sizeof(short)], dwDSLockedBufferSize1);
 
 	// Commit sound buffer
@@ -473,12 +473,12 @@ bool MockingboardCard::MB_DSInit(void)
 	// Create single Mockingboard voice
 	//
 
-	if(!g_bDSAvailable)
+	if (!g_bDSAvailable)
 		return false;
 
 	HRESULT hr = DSGetSoundBuffer(&MockingboardVoice, DSBCAPS_CTRLVOLUME, g_dwDSBufferSize, SAMPLE_RATE, g_nMB_NumChannels, "MB");
 	LogFileOutput("MB_DSInit: DSGetSoundBuffer(), hr=0x%08X\n", hr);
-	if(FAILED(hr))
+	if (FAILED(hr))
 	{
 		LogFileOutput("MB_DSInit: DSGetSoundBuffer failed (%08X)\n", hr);
 		return false;
@@ -492,7 +492,7 @@ bool MockingboardCard::MB_DSInit(void)
 	MockingboardVoice.bActive = true;
 
 	// Volume might've been setup from value in Registry
-	if(!MockingboardVoice.nVolume)
+	if (!MockingboardVoice.nVolume)
 		MockingboardVoice.nVolume = DSBVOLUME_MAX;
 
 	hr = MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
@@ -513,7 +513,7 @@ bool MockingboardCard::MB_DSInit(void)
 
 void MockingboardCard::MB_DSUninit(void)
 {
-	if(MockingboardVoice.lpDSBvoice && MockingboardVoice.bActive)
+	if (MockingboardVoice.lpDSBvoice && MockingboardVoice.bActive)
 		DSVoiceStop(&MockingboardVoice);
 
 	DSReleaseSoundBuffer(&MockingboardVoice);
@@ -524,16 +524,8 @@ void MockingboardCard::MB_DSUninit(void)
 		g_MB[i].ssi263.DSUninit();
 }
 
-void MockingboardCard::InitSoundcardType(void)
-{
-	g_SoundcardType = CT_Empty;	// Use CT_Empty to mean: no soundcard
-	g_bPhasorEnable = false;
-}
-
 void MockingboardCard::MB_Initialize(void)
 {
-	InitSoundcardType();
-
 	for (int id = 0; id < kNumSyncEvents; id++)
 	{
 		g_syncEvent[id] = new SyncEvent(id, 0, MB_SyncEventCallback);
@@ -577,7 +569,6 @@ void MockingboardCard::MB_Initialize(void)
 void MockingboardCard::MB_InitializeForLoadingSnapshot(void)	// GH#609
 {
 	MB_Reset(true);
-	InitSoundcardType();
 
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;
@@ -658,7 +649,6 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 
 		// Not these, as they don't change on a CTRL+RESET or power-cycle:
 //		g_bMBAvailable = false;
-//		g_SoundcardType = CT_Empty;	// Don't uncomment, else _ASSERT will fire in MB_Read() after an F2->MB_Reset()
 //		g_bPhasorEnable = false;
 	}
 
@@ -693,7 +683,7 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 
 	if (g_bPhasorEnable)
 	{
-		if(nMB != 0)	// Slot4 only
+		if (nMB != 0)	// Slot4 only
 			return MemReadFloatingBus(nExecutedCycles);
 
 		int CS = 0;
@@ -796,7 +786,7 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 
 	if (g_bPhasorEnable)
 	{
-		if(nMB != 0)	// Slot4 only
+		if (nMB != 0)	// Slot4 only
 			return 0;
 
 		int CS = 0;
@@ -907,48 +897,14 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 
 //-----------------------------------------------------------------------------
 
-SS_CARDTYPE MockingboardCard::MB_GetSoundcardType(void)
+void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-	return g_SoundcardType;
-}
-
-void MockingboardCard::MB_SetSoundcardType(const SS_CARDTYPE NewSoundcardType)
-{
-	if (NewSoundcardType == g_SoundcardType)
-		return;
-
-	if (NewSoundcardType == CT_Empty)
-		MB_Mute();	// Call MB_Mute() before setting g_SoundcardType = CT_Empty
-
-	g_SoundcardType = NewSoundcardType;
-
-	g_bPhasorEnable = (g_SoundcardType == CT_Phasor);
-}
-
-//-----------------------------------------------------------------------------
-
-#if 0
-void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
-{
-	// Mockingboard: Slot 4 & 5
-	// Phasor      : Slot 4
-	// <other>     : Slot 4 & 5
-
-	if (GetCardMgr().QuerySlot(SLOT4) != CT_MockingboardC && GetCardMgr().QuerySlot(SLOT4) != CT_Phasor)
-	{
-		MB_SetSoundcardType(CT_Empty);
-		return;
-	}
-
-	if (GetCardMgr().QuerySlot(SLOT4) == CT_MockingboardC)
-		RegisterIoHandler(uSlot4, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
+	if (QueryType() == CT_MockingboardC)
+		RegisterIoHandler(m_slot, IO_Null, IO_Null, IORead, IOWrite, NULL, NULL);
 	else	// Phasor
-		RegisterIoHandler(uSlot4, PhasorIO, PhasorIO, MB_Read, MB_Write, NULL, NULL);
+		RegisterIoHandler(m_slot, PhasorIO, PhasorIO, IORead, IOWrite, NULL, NULL);
 
-	if (GetCardMgr().QuerySlot(SLOT5) == CT_MockingboardC)
-		RegisterIoHandler(uSlot5, IO_Null, IO_Null, MB_Read, MB_Write, NULL, NULL);
-
-	MB_SetSoundcardType(GetCardMgr().QuerySlot(SLOT4));
+	g_bPhasorEnable = (QueryType() == CT_Phasor);
 
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;
@@ -959,16 +915,12 @@ void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT u
 	// - eg. when doing Mockingboard playback, then loading a save-state which is also doing Mockingboard playback
 	DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);
 }
-#endif
 
 //-----------------------------------------------------------------------------
 
 void MockingboardCard::MB_Mute(void)
 {
-	if(g_SoundcardType == CT_Empty)
-		return;
-
-	if(MockingboardVoice.bActive && !MockingboardVoice.bMute)
+	if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
 	{
 		MockingboardVoice.lpDSBvoice->SetVolume(DSBVOLUME_MIN);
 		MockingboardVoice.bMute = true;
@@ -982,10 +934,7 @@ void MockingboardCard::MB_Mute(void)
 
 void MockingboardCard::MB_Unmute(void)
 {
-	if(g_SoundcardType == CT_Empty)
-		return;
-
-	if(MockingboardVoice.bActive && MockingboardVoice.bMute)
+	if (MockingboardVoice.bActive && MockingboardVoice.bMute)
 	{
 		MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
 		MockingboardVoice.bMute = false;
@@ -1000,9 +949,6 @@ void MockingboardCard::MB_Unmute(void)
 #ifdef _DEBUG
 void MockingboardCard::MB_CheckCumulativeCycles(void)
 {
-	if (g_SoundcardType == CT_Empty)
-		return;
-
 	_ASSERT(g_uLastCumulativeCycles == g_nCumulativeCycles);
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
 }
@@ -1016,11 +962,8 @@ void MockingboardCard::MB_SetCumulativeCycles(void)
 
 // Called by ContinueExecution() at the end of every execution period (~1000 cycles or ~3 cycles when MODE_STEPPING)
 // NB. Required for FT's TEST LAB #1 player
-void MockingboardCard::MB_PeriodicUpdate(UINT executedCycles)
+void MockingboardCard::Update(const ULONG executedCycles)
 {
-	if (g_SoundcardType == CT_Empty)
-		return;
-
 	for (UINT i=0; i<NUM_AY8910; i++)
 		g_MB[i].ssi263.PeriodicUpdate(executedCycles);
 
@@ -1047,9 +990,6 @@ void MockingboardCard::MB_PeriodicUpdate(UINT executedCycles)
 // . MB_Read() / MB_Write() (for both normal & full-speed)
 void MockingboardCard::MB_UpdateCycles(ULONG uExecutedCycles)
 {
-	if (g_SoundcardType == CT_Empty)
-		return;
-
 	CpuCalcCycles(uExecutedCycles);
 	UINT64 uCycles = g_nCumulativeCycles - g_uLastCumulativeCycles;
 	_ASSERT(uCycles >= 0);
@@ -1074,16 +1014,20 @@ int MockingboardCard::MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecut
 {
 	UINT slot = id;	// FIXME
 	MockingboardCard* pCard = (MockingboardCard*)MemGetSlotParameters(slot);
+	return pCard->MB_SyncEventCallbackInternal(id, 0, uExecutedCycles);
+}
 
-	pCard->MB_UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
+int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG uExecutedCycles)
+{
+	MB_UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
 
-	SY6522_AY8910* pMB = &pCard->g_MB[id / SY6522::kNumTimersPer6522];	// FIXME
+	SY6522_AY8910* pMB = &g_MB[id / SY6522::kNumTimersPer6522];	// FIXME
 
 	if ((id & 1) == 0)
 	{
 		_ASSERT(pMB->sy6522.IsTimer1Active());
-		pCard->UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER1);
-		pCard->MB_Update();
+		UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER1);
+		MB_Update();
 
 		if ((pMB->sy6522.GetReg(SY6522::rACR) & SY6522::ACR_RUNMODE) == SY6522::ACR_RM_FREERUNNING)
 		{
@@ -1101,7 +1045,7 @@ int MockingboardCard::MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecut
 	{
 		// NB. Since not calling MB_Update(), then AppleWin doesn't (accurately?) support AY-playback using T2 (which is one-shot only)
 		_ASSERT(pMB->sy6522.IsTimer2Active());
-		pCard->UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER2);
+		UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER2);
 
 		pMB->sy6522.StopTimer2();	// TIMER2 only runs in one-shot mode
 		return 0;			// Don't repeat event
@@ -1250,6 +1194,11 @@ std::string MockingboardCard::Phasor_GetSnapshotCardName(void)
 
 void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
+	if (QueryType() == CT_Phasor)
+		return Phasor_SaveSnapshot(yamlSaveHelper);
+
+	//
+
 	const UINT nMbCardNum = m_slot - SLOT4;
 	UINT nDeviceNum = nMbCardNum*2;
 	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
@@ -1260,7 +1209,7 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, pMB->ssi263.GetVotraxPhoneme());
 
-	for(UINT i=0; i<NUM_MB_UNITS; i++)
+	for (UINT i=0; i<NUM_MB_UNITS; i++)
 	{
 		YamlSaveHelper::Label unit(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_MB_UNIT, i);
 
@@ -1278,6 +1227,11 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
+	if (QueryType() == CT_Phasor)
+		return Phasor_LoadSnapshot(yamlLoadHelper, version);
+
+	//
+
 	if (m_slot != 4 && m_slot != 5)	// fixme
 		throw std::runtime_error("Card: wrong slot");
 
@@ -1293,7 +1247,7 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 	bool isVotrax = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
 	pMB->ssi263.SetVotraxPhoneme(isVotrax);
 
-	for(UINT i=0; i<NUM_MB_UNITS; i++)
+	for (UINT i=0; i<NUM_MB_UNITS; i++)
 	{
 		char szNum[2] = {char('0' + i), 0};
 		std::string unit = std::string(SS_YAML_KEY_MB_UNIT) + std::string(szNum);
@@ -1340,7 +1294,7 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 
 	AY8910_InitClock((int)Get6502BaseClock());
 
-	// NB. g_SoundcardType & g_bPhasorEnable setup in MB_InitializeIO() -> MB_SetSoundcardType()
+	// NB. g_bPhasorEnable setup in InitializeIO()
 
 	return true;
 }
@@ -1360,7 +1314,7 @@ void MockingboardCard::Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASOR_MODE, g_phasorMode);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, pMB->ssi263.GetVotraxPhoneme());
 
-	for(UINT i=0; i<NUM_PHASOR_UNITS; i++)
+	for (UINT i=0; i<NUM_PHASOR_UNITS; i++)
 	{
 		YamlSaveHelper::Label unit(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_PHASOR_UNIT, i);
 
@@ -1408,7 +1362,7 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 	bool isVotrax = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
 	pMB->ssi263.SetVotraxPhoneme(isVotrax);
 
-	for(UINT i=0; i<NUM_PHASOR_UNITS; i++)
+	for (UINT i=0; i<NUM_PHASOR_UNITS; i++)
 	{
 		char szNum[2] = {char('0' + i), 0};
 		std::string unit = std::string(SS_YAML_KEY_MB_UNIT) + std::string(szNum);
@@ -1458,7 +1412,7 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 
 	AY8910_InitClock((int)(Get6502BaseClock() * g_PhasorClockScaleFactor));
 
-	// NB. g_SoundcardType & g_bPhasorEnable setup in MB_InitializeIO() -> MB_SetSoundcardType()
+	// NB. g_bPhasorEnable setup in InitializeIO()
 
 	return true;
 }
