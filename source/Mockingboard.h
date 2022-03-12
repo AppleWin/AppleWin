@@ -4,6 +4,7 @@
 #include "Card.h"
 #include "SoundCore.h"
 #include "SSI263.h"
+#include "SynchronousEventManager.h"
 
 class MockingboardCard : public Card
 {
@@ -49,19 +50,18 @@ public:
 	BYTE IOWriteInternal(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	BYTE PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles);
 
-	void Get6522IrqDescription(std::string& desc);
 	void MB_UpdateIRQ(void);
 	void InitializeForLoadingSnapshot(void);
 	void ReinitializeClock(void);
 	void MuteControl(bool mute);
-	void MB_PeriodicUpdate(UINT executedCycles);
-	void MB_UpdateCycles(ULONG uExecutedCycles);
-	bool MB_IsActive(void);
-	DWORD MB_GetVolume(void);
-	void MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
+	void UpdateCycles(ULONG executedCycles);
+	bool IsActive(void);
+//	DWORD GetVolume(void);	// Now in MockingboardCardManager
+	void SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 	void SetCumulativeCycles(void);
 #ifdef _DEBUG
 	void CheckCumulativeCycles(void);
+	void Get6522IrqDescription(std::string& desc);
 #endif
 
 	UINT64 MB_GetLastCumulativeCycles(void);
@@ -200,13 +200,12 @@ private:
 #endif
 //void    MB_SetCumulativeCycles();
 //void    MB_PeriodicUpdate(UINT executedCycles);	-> virtual Update()
-void    MB_CheckIRQ();
-void    MB_UpdateCycles(ULONG uExecutedCycles);
+//void    MB_UpdateCycles(ULONG uExecutedCycles);
 //SS_CARDTYPE MB_GetSoundcardType();	// removed call from PageSound.cpp
-bool    MB_IsActive();
-DWORD   MB_GetVolume();
+//bool    MB_IsActive();
+//DWORD   MB_GetVolume();
 void    MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
-void MB_Get6522IrqDescription(std::string& desc);
+//void MB_Get6522IrqDescription(std::string& desc);
 
 void MB_UpdateIRQ(void);										// called by 6522
 UINT64 MB_GetLastCumulativeCycles(void);						// called by SSI263

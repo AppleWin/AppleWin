@@ -116,7 +116,7 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETRANGE,1,MAKELONG(VOLUME_MIN,VOLUME_MAX));
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETPAGESIZE,0,10);
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETTICFREQ,10,0);
-			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETPOS,1,MB_GetVolume());
+			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETPOS,1, GetCardMgr().GetMockingboardCardMgr().GetVolume());
 
 			if (GetCardMgr().QuerySlot(SLOT5) == CT_SAM)
 			{
@@ -152,10 +152,10 @@ void CPageSound::DlgOK(HWND hWnd)
 
 	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence
 	SpkrSetVolume(dwSpkrVolume, VOLUME_MAX);
-	MB_SetVolume(dwMBVolume, VOLUME_MAX);
+	GetCardMgr().GetMockingboardCardMgr().SetVolume(dwMBVolume, VOLUME_MAX);
 
 	REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
-	REGSAVE(TEXT(REGVALUE_MB_VOLUME), MB_GetVolume());
+	REGSAVE(TEXT(REGVALUE_MB_VOLUME), GetCardMgr().GetMockingboardCardMgr().GetVolume());
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }

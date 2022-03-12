@@ -200,7 +200,7 @@ void LoadConfiguration(bool loadImages)
 		SpkrSetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
 	if(REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp))
-		MB_SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
+		GetCardMgr().GetMockingboardCardMgr().SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
 	if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
 		g_bSaveStateOnExit = dwTmp ? true : false;

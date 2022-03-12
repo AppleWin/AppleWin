@@ -77,9 +77,29 @@ bool MockingboardCard::IsAnyTimer1Active(void)
 
 //---------------------------------------------------------------------------
 
+#ifdef _DEBUG
 void MockingboardCard::Get6522IrqDescription(std::string& desc)
 {
-	for (UINT i=0; i<NUM_AY8913; i++)
+	bool isIRQ = false;
+	for (UINT i = 0; i < NUM_SY6522; i++)
+	{
+		if (g_MB[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IFR_IRQ)
+		{
+			isIRQ = true;
+			break;
+		}
+	}
+
+	if (!isIRQ)
+		return;
+
+	//
+
+	desc += "Slot-";
+	desc += m_slot;
+	desc += ": ";
+
+	for (UINT i=0; i<NUM_SY6522; i++)
 	{
 		if (g_MB[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IFR_IRQ)
 		{
@@ -105,7 +125,10 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 			}
 		}
 	}
+
+	desc += "\n";
 }
+#endif
 
 //-----------------------------------------------------------------------------
 
@@ -238,7 +261,7 @@ void MockingboardCard::MB_UpdateIRQ(void)
 
 // Called by:
 // . MB_SyncEventCallback() on a TIMER1 (not TIMER2) underflow - when IsAnyTimer1Active() == true
-// . MB_PeriodicUpdate()                                       - when IsAnyTimer1Active() == false
+// . Update()                                                  - when IsAnyTimer1Active() == false
 void MockingboardCard::MB_UpdateInternal(void)
 {
 	if (!MockingboardVoice.bActive)
@@ -672,7 +695,7 @@ BYTE __stdcall MockingboardCard::IORead(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 
 BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	MB_UpdateCycles(nExecutedCycles);
+	UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
 	if (!IS_APPLE2 && MemCheckINTCXROM())
@@ -745,7 +768,7 @@ BYTE __stdcall MockingboardCard::IOWrite(WORD PC, WORD nAddr, BYTE bWrite, BYTE 
 
 BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	MB_UpdateCycles(nExecutedCycles);
+	UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
 	if (!IS_APPLE2 && MemCheckINTCXROM())
@@ -992,9 +1015,9 @@ void MockingboardCard::Update(const ULONG executedCycles)
 // . CpuExecute() every ~1000 cycles @ 1MHz (or ~3 cycles when MODE_STEPPING)
 // . MB_SyncEventCallback() on a TIMER1/2 underflow
 // . MB_Read() / MB_Write() (for both normal & full-speed)
-void MockingboardCard::MB_UpdateCycles(ULONG uExecutedCycles)
+void MockingboardCard::UpdateCycles(ULONG executedCycles)
 {
-	CpuCalcCycles(uExecutedCycles);
+	CpuCalcCycles(executedCycles);
 	UINT64 uCycles = g_nCumulativeCycles - g_uLastCumulativeCycles;
 	_ASSERT(uCycles >= 0);
 	if (uCycles == 0)
@@ -1023,7 +1046,7 @@ int MockingboardCard::MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecut
 
 int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG uExecutedCycles)
 {
-	MB_UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
+	UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
 
 	SY6522_AY8910* pMB = &g_MB[(id & 0xf) / SY6522::kNumTimersPer6522];
 
@@ -1058,13 +1081,13 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 
 //-----------------------------------------------------------------------------
 
-bool MockingboardCard::MB_IsActive(void)
+bool MockingboardCard::IsActive(void)
 {
 	if (!MockingboardVoice.bActive)
 		return false;
 
 	bool isSSI263Active = false;
-	for (UINT i=0; i<NUM_AY8913; i++)
+	for (UINT i=0; i<NUM_SSI263; i++)
 		isSSI263Active |= g_MB[i].ssi263.IsPhonemeActive();
 
 	return g_bMB_Active || isSSI263Active;
@@ -1072,24 +1095,23 @@ bool MockingboardCard::MB_IsActive(void)
 
 //-----------------------------------------------------------------------------
 
+#if 0
 DWORD MockingboardCard::MB_GetVolume(void)
 {
 	return MockingboardVoice.dwUserVolume;
 }
+#endif
 
-void MockingboardCard::MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
+void MockingboardCard::SetVolume(DWORD volume, DWORD volumeMax)
 {
-	MockingboardVoice.dwUserVolume = dwVolume;
-
-	MockingboardVoice.nVolume = NewVolume(dwVolume, dwVolumeMax);
+	MockingboardVoice.dwUserVolume = volume;
+	MockingboardVoice.nVolume = NewVolume(volume, volumeMax);
 
 	if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
 		MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
 
-	//
-
-	for (UINT i=0; i<NUM_AY8913; i++)
-		g_MB[i].ssi263.SetVolume(dwVolume, dwVolumeMax);
+	for (UINT i=0; i<NUM_SSI263; i++)
+		g_MB[i].ssi263.SetVolume(volume, volumeMax);
 }
 
 //---------------------------------------------------------------------------

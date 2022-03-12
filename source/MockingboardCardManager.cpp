@@ -76,6 +76,43 @@ void MockingboardCardManager::SetCumulativeCycles(void)
 	}
 }
 
+void MockingboardCardManager::UpdateCycles(ULONG executedCycles)
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (IsMockingboard(i))
+			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).UpdateCycles(executedCycles);
+	}
+}
+
+bool MockingboardCardManager::IsActive(void)
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (IsMockingboard(i))
+			if (dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).IsActive())
+				return true;	// if any card is true then the condition for active is true
+	}
+
+	return false;
+}
+
+DWORD MockingboardCardManager::GetVolume(void)
+{
+	return m_userVolume;
+}
+
+void MockingboardCardManager::SetVolume(DWORD volume, DWORD volumeMax)
+{
+	m_userVolume = volume;
+
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (IsMockingboard(i))
+			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).SetVolume(volume, volumeMax);
+	}
+}
+
 #ifdef _DEBUG
 void MockingboardCardManager::CheckCumulativeCycles(void)
 {
@@ -83,6 +120,15 @@ void MockingboardCardManager::CheckCumulativeCycles(void)
 	{
 		if (IsMockingboard(i))
 			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).CheckCumulativeCycles();
+	}
+}
+
+void MockingboardCardManager::Get6522IrqDescription(std::string& desc)
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (IsMockingboard(i))
+			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).Get6522IrqDescription(desc);
 	}
 }
 #endif
