@@ -23,43 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Mockingboard/Phasor emulation
  *
- * Author: Copyright (c) 2002-2006, Tom Charlesworth
  */
-
-// History:
-//
-// v1.12.07.1 (30 Dec 2005)
-// - Update 6522 TIMERs after every 6502 opcode, giving more precise IRQs
-// - Minimum TIMER freq is now 0x100 cycles
-// - Added Phasor support
-//
-// v1.12.06.1 (16 July 2005)
-// - Reworked 6522's ORB -> AY8910 decoder
-// - Changed MB output so L=All voices from AY0 & AY2 & R=All voices from AY1 & AY3
-// - Added crude support for Votrax speech chip (by using SSI263 phonemes)
-//
-// v1.12.04.1 (14 Sep 2004)
-// - Switch MB output from dual-mono to stereo.
-// - Relaxed TIMER1 freq from ~62Hz (period=0x4000) to ~83Hz (period=0x3000).
-//
-// 25 Apr 2004:
-// - Added basic support for the SSI263 speech chip
-//
-// 15 Mar 2004:
-// - Switched to MAME's AY8910 emulation (includes envelope support)
-//
-// v1.12.03 (11 Jan 2004)
-// - For free-running 6522 timer1 IRQ, reload with current ACCESS_TIMER1 value.
-//   (Fixes Ultima 4/5 playback speed problem.)
-//
-// v1.12.01 (24 Nov 2002)
-// - Shaped the tone waveform more logarithmically
-// - Added support for MB ena/dis switch on Config dialog
-// - Added log file support
-//
-// v1.12.00 (17 Nov 2002)
-// - Initial version (no AY8910 envelope support)
-//
 
 // Notes on Votrax chip (on original Mockingboards):
 // From Crimewave (Penguin Software):
@@ -79,7 +43,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Mockingboard.h"
 #include "6522.h"
-//#include "SaveState_Structs_v1.h"
 
 #include "Core.h"
 #include "CardManager.h"
@@ -94,100 +57,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "AY8910.h"
 #include "SSI263.h"
 
-#define DBG_MB_SS_CARD 0	// From UI, select Mockingboard (not Phasor)
-
-#define SY6522_DEVICE_A 0
-#define SY6522_DEVICE_B 1
-
-#define NUM_MB 2
-#define NUM_DEVS_PER_MB 2
-#define NUM_AY8910 (NUM_MB*NUM_DEVS_PER_MB)
-#define NUM_SY6522 NUM_AY8910
-#define NUM_VOICES_PER_AY8910 3
-#define NUM_VOICES (NUM_AY8910*NUM_VOICES_PER_AY8910)
-
-
-// Chip offsets from card base.
-#define SY6522A_Offset	0x00
-#define SY6522B_Offset	0x80
-#define SSI263B_Offset	0x20
-#define SSI263A_Offset	0x40
+#define DBG_MB_SS_CARD 0	// NB. From UI, select Mockingboard (not Phasor)
+//#define DBG_MB_UPDATE
 
 //#define Phasor_SY6522A_CS		4
 //#define Phasor_SY6522B_CS		7
 //#define Phasor_SY6522A_Offset	(1<<Phasor_SY6522A_CS)
 //#define Phasor_SY6522B_Offset	(1<<Phasor_SY6522B_CS)
 
-enum MockingboardUnitState_e {AY_NOP0, AY_NOP1, AY_INACTIVE, AY_READ, AY_NOP4, AY_NOP5, AY_WRITE, AY_LATCH};
-
-struct SY6522_AY8910
-{
-	SY6522 sy6522;
-	SSI263 ssi263;
-	BYTE nAY8910Number;
-	BYTE nAYCurrentRegister;
-	MockingboardUnitState_e state;	// Where a unit is a 6522+AY8910 pair
-	MockingboardUnitState_e stateB;	// Phasor: 6522 & 2nd AY8910
-
-	SY6522_AY8910(void)
-	{
-		nAY8910Number = 0;
-		nAYCurrentRegister = 0;
-		state = AY_NOP0;
-		stateB = AY_NOP0;
-		// r6522 & ssi263 have already been default constructed
-	}
-};
-
-
-// Support 2 MB's, each with 2x SY6522/AY8910 pairs.
-static SY6522_AY8910 g_MB[NUM_AY8910];
-
-const UINT kNumSyncEvents = NUM_SY6522 * SY6522::kNumTimersPer6522;
-static SyncEvent* g_syncEvent[kNumSyncEvents];
-
-// Timer vars
-static const UINT kTIMERDEVICE_INVALID = -1;
-static UINT64 g_uLastCumulativeCycles = 0;
-
-static const DWORD SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
-
-static short* ppAYVoiceBuffer[NUM_VOICES] = {0};
-
-static unsigned __int64	g_nMB_InActiveCycleCount = 0;
-static bool g_bMB_RegAccessedFlag = false;
-static bool g_bMB_Active = false;
-
-static bool g_bMBAvailable = false;
-
-//
-
-static SS_CARDTYPE g_SoundcardType = CT_Empty;	// Use CT_Empty to mean: no soundcard
-static bool g_bPhasorEnable = false;
-static PHASOR_MODE g_phasorMode = PH_Mockingboard;
-static UINT g_PhasorClockScaleFactor = 1;	// for save-state only
-
-//-------------------------------------
-
-static const unsigned short g_nMB_NumChannels = 2;
-static const DWORD g_dwDSBufferSize = MAX_SAMPLES * sizeof(short) * g_nMB_NumChannels;
-
-static const SHORT nWaveDataMin = (SHORT)0x8000;
-static const SHORT nWaveDataMax = (SHORT)0x7FFF;
-
-static short g_nMixBuffer[g_dwDSBufferSize / sizeof(short)];
-static VOICE MockingboardVoice;
-
-static UINT g_cyclesThisAudioFrame = 0;
-
 //---------------------------------------------------------------------------
 
-// Forward refs:
-static int MB_SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
-
-//---------------------------------------------------------------------------
-
-static bool IsAnyTimer1Active(void)
+bool MockingboardCard::IsAnyTimer1Active(void)
 {
 	bool active = false;
 	for (UINT i = 0; i < NUM_AY8910; i++)
@@ -197,7 +77,7 @@ static bool IsAnyTimer1Active(void)
 
 //---------------------------------------------------------------------------
 
-void MB_Get6522IrqDescription(std::string& desc)
+void MockingboardCard::Get6522IrqDescription(std::string& desc)
 {
 	for (UINT i=0; i<NUM_AY8910; i++)
 	{
@@ -229,7 +109,7 @@ void MB_Get6522IrqDescription(std::string& desc)
 
 //-----------------------------------------------------------------------------
 
-static void AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice)
+void MockingboardCard::AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice)
 {
 	g_bMB_RegAccessedFlag = true;
 	SY6522_AY8910* pMB = &g_MB[nDevice];
@@ -292,7 +172,7 @@ static void AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice)
 
 //-----------------------------------------------------------------------------
 
-static void WriteToORB(BYTE device)
+void MockingboardCard::WriteToORB(BYTE device)
 {
 	BYTE value = g_MB[device].sy6522.Read(SY6522::rORB);
 
@@ -328,13 +208,13 @@ static void WriteToORB(BYTE device)
 
 //-----------------------------------------------------------------------------
 
-static void UpdateIFRandIRQ(SY6522_AY8910* pMB, BYTE clr_mask, BYTE set_mask)
+void MockingboardCard::UpdateIFRandIRQ(SY6522_AY8910* pMB, BYTE clr_mask, BYTE set_mask)
 {
 	pMB->sy6522.UpdateIFR(clr_mask, set_mask);	// which calls MB_UpdateIRQ()
 }
 
 // Called from class SY6522
-void MB_UpdateIRQ(void)
+void MockingboardCard::MB_UpdateIRQ(void)
 {
 	// Now update the IRQ signal from all 6522s
 	// . OR-sum of all active TIMER1, TIMER2 & SPEECH sources (from all 6522s)
@@ -356,13 +236,10 @@ void MB_UpdateIRQ(void)
 
 //===========================================================================
 
-//#define DBG_MB_UPDATE
-static UINT64 g_uLastMBUpdateCycle = 0;
-
 // Called by:
 // . MB_SyncEventCallback() on a TIMER1 (not TIMER2) underflow - when IsAnyTimer1Active() == true
 // . MB_PeriodicUpdate()                                       - when IsAnyTimer1Active() == false
-static void MB_UpdateInt(void)
+void MockingboardCard::MB_UpdateInternal(void)
 {
 	if (!MockingboardVoice.bActive)
 		return;
@@ -570,20 +447,20 @@ static void MB_UpdateInt(void)
 #endif
 }
 
-static void MB_Update(void)
+void MockingboardCard::MB_Update(void)
 {
 #ifdef LOG_PERF_TIMINGS
 	extern UINT64 g_timeMB_NoTimer;
 	extern UINT64 g_timeMB_Timer;
-	PerfMarker perfMarker(!IsAnyTimer1Active() ? g_timeMB_NoTimer : g_timeMB_Timer);
+	PerfMarker perfMarker(!IsAnyTimer1Active() == kTIMERDEVICE_INVALID ? g_timeMB_NoTimer : g_timeMB_Timer);
 #endif
 
-	MB_UpdateInt();
+	MB_UpdateInternal();
 }
 
 //-----------------------------------------------------------------------------
 
-static bool MB_DSInit()
+bool MockingboardCard::MB_DSInit(void)
 {
 	LogFileOutput("MB_DSInit\n");
 #ifdef NO_DIRECT_X
@@ -634,7 +511,7 @@ static bool MB_DSInit()
 #endif // NO_DIRECT_X
 }
 
-static void MB_DSUninit()
+void MockingboardCard::MB_DSUninit(void)
 {
 	if(MockingboardVoice.lpDSBvoice && MockingboardVoice.bActive)
 		DSVoiceStop(&MockingboardVoice);
@@ -647,21 +524,13 @@ static void MB_DSUninit()
 		g_MB[i].ssi263.DSUninit();
 }
 
-//=============================================================================
-
-//
-// ----- ALL GLOBALLY ACCESSIBLE FUNCTIONS ARE BELOW THIS LINE -----
-//
-
-//=============================================================================
-
-static void InitSoundcardType(void)
+void MockingboardCard::InitSoundcardType(void)
 {
 	g_SoundcardType = CT_Empty;	// Use CT_Empty to mean: no soundcard
 	g_bPhasorEnable = false;
 }
 
-void MB_Initialize()
+void MockingboardCard::MB_Initialize(void)
 {
 	InitSoundcardType();
 
@@ -703,11 +572,9 @@ void MB_Initialize()
 	}
 }
 
-static void MB_SetSoundcardType(SS_CARDTYPE NewSoundcardType);
-
 // NB. Mockingboard voice is *already* muted because showing 'Select Load State file' dialog
 // . and voice will be unmuted when dialog is closed
-void MB_InitializeForLoadingSnapshot()	// GH#609
+void MockingboardCard::MB_InitializeForLoadingSnapshot(void)	// GH#609
 {
 	MB_Reset(true);
 	InitSoundcardType();
@@ -724,7 +591,7 @@ void MB_InitializeForLoadingSnapshot()	// GH#609
 //-----------------------------------------------------------------------------
 
 // NB. Called when /g_fCurrentCLK6502/ changes
-void MB_Reinitialize()
+void MockingboardCard::MB_Reinitialize(void)
 {
 	AY8910_InitClock((int)g_fCurrentCLK6502);	// todo: account for g_PhasorClockScaleFactor?
 												// NB. Other calls to AY8910_InitClock() use the constant CLK_6502
@@ -732,7 +599,7 @@ void MB_Reinitialize()
 
 //-----------------------------------------------------------------------------
 
-void MB_Destroy()
+void MockingboardCard::MB_Destroy(void)
 {
 	MB_DSUninit();
 
@@ -751,7 +618,7 @@ void MB_Destroy()
 
 //-----------------------------------------------------------------------------
 
-void MB_Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
+void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 {
 	if (!g_bDSAvailable)
 		return;
@@ -802,7 +669,14 @@ void MB_Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 
 // Echo+ mode - Phasor's 2nd 6522 is mapped to every 16-byte offset in $Cnxx (Echo+ has a single 6522 controlling two AY-3-8913's)
 
-static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
+BYTE __stdcall MockingboardCard::IORead(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
+{
+	UINT slot = (nAddr >> 8) & 0xf;
+	MockingboardCard* pCard = (MockingboardCard*)MemGetSlotParameters(slot);
+	return pCard->IOReadInternal(PC, nAddr, bWrite, nValue, nExecutedCycles);
+}
+
+BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
 	MB_UpdateCycles(nExecutedCycles);
 
@@ -811,12 +685,6 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 	{
 		_ASSERT(0);	// Card ROM disabled, so IO_Cxxx() returns the internal ROM
 		return mem[nAddr];
-	}
-
-	if (g_SoundcardType == CT_Empty)
-	{
-		_ASSERT(0);	// Card unplugged, so IO_Cxxx() returns the floating bus
-		return MemReadFloatingBus(nExecutedCycles);
 	}
 #endif
 
@@ -874,7 +742,14 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 
 //-----------------------------------------------------------------------------
 
-static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
+BYTE __stdcall MockingboardCard::IOWrite(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
+{
+	UINT slot = (nAddr >> 8) & 0xf;
+	MockingboardCard* pCard = (MockingboardCard*)MemGetSlotParameters(slot);
+	return pCard->IOWriteInternal(PC, nAddr, bWrite, nValue, nExecutedCycles);
+}
+
+BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
 	MB_UpdateCycles(nExecutedCycles);
 
@@ -882,12 +757,6 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 	if (!IS_APPLE2 && MemCheckINTCXROM())
 	{
 		_ASSERT(0);	// Card ROM disabled, so IO_Cxxx() returns the internal ROM
-		return 0;
-	}
-
-	if (g_SoundcardType == CT_Empty)
-	{
-		_ASSERT(0);	// Card unplugged, so IO_Cxxx() returns the floating bus
 		return 0;
 	}
 #endif
@@ -917,7 +786,7 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 			if (addr16 == nAddr)	// Check we've reverse looked-up the 6502 opcode correctly
 			{
 				if ( ((nAddr&0xf) == 4) || ((nAddr&0xf) == 8) )	// Only reading 6522 reg-4 or reg-8 actually has an effect
-					MB_Read(PC, nAddr, 0, 0, nExecutedCycles);
+					IOReadInternal(PC, nAddr, 0, 0, nExecutedCycles);
 			}
 		}
 	}
@@ -1005,9 +874,16 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 // So $C0C5 seemingly results in 2 different modes.
 //
 
-static BYTE __stdcall PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
+BYTE __stdcall MockingboardCard::PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	if (!g_bPhasorEnable)
+	UINT slot = ((nAddr & 0xff) >> 4) - 8;
+	MockingboardCard* pCard = (MockingboardCard*)MemGetSlotParameters(slot);
+	return pCard->PhasorIOInternal(PC, nAddr, bWrite, nValue, nExecutedCycles);
+}
+
+BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
+{
+	if (g_bPhasorEnable)
 		return MemReadFloatingBus(nExecutedCycles);
 
 	UINT bits = (UINT) g_phasorMode;
@@ -1031,12 +907,12 @@ static BYTE __stdcall PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 
 //-----------------------------------------------------------------------------
 
-SS_CARDTYPE MB_GetSoundcardType()
+SS_CARDTYPE MockingboardCard::MB_GetSoundcardType(void)
 {
 	return g_SoundcardType;
 }
 
-static void MB_SetSoundcardType(const SS_CARDTYPE NewSoundcardType)
+void MockingboardCard::MB_SetSoundcardType(const SS_CARDTYPE NewSoundcardType)
 {
 	if (NewSoundcardType == g_SoundcardType)
 		return;
@@ -1051,7 +927,8 @@ static void MB_SetSoundcardType(const SS_CARDTYPE NewSoundcardType)
 
 //-----------------------------------------------------------------------------
 
-void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
+#if 0
+void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 {
 	// Mockingboard: Slot 4 & 5
 	// Phasor      : Slot 4
@@ -1082,10 +959,11 @@ void MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5)
 	// - eg. when doing Mockingboard playback, then loading a save-state which is also doing Mockingboard playback
 	DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);
 }
+#endif
 
 //-----------------------------------------------------------------------------
 
-void MB_Mute(void)
+void MockingboardCard::MB_Mute(void)
 {
 	if(g_SoundcardType == CT_Empty)
 		return;
@@ -1102,7 +980,7 @@ void MB_Mute(void)
 
 //-----------------------------------------------------------------------------
 
-void MB_Unmute(void)
+void MockingboardCard::MB_Unmute(void)
 {
 	if(g_SoundcardType == CT_Empty)
 		return;
@@ -1120,7 +998,7 @@ void MB_Unmute(void)
 //-----------------------------------------------------------------------------
 
 #ifdef _DEBUG
-void MB_CheckCumulativeCycles()
+void MockingboardCard::MB_CheckCumulativeCycles(void)
 {
 	if (g_SoundcardType == CT_Empty)
 		return;
@@ -1131,14 +1009,14 @@ void MB_CheckCumulativeCycles()
 #endif
 
 // Called by: ResetState() and Snapshot_LoadState_v2()
-void MB_SetCumulativeCycles()
+void MockingboardCard::MB_SetCumulativeCycles(void)
 {
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
 }
 
 // Called by ContinueExecution() at the end of every execution period (~1000 cycles or ~3 cycles when MODE_STEPPING)
 // NB. Required for FT's TEST LAB #1 player
-void MB_PeriodicUpdate(UINT executedCycles)
+void MockingboardCard::MB_PeriodicUpdate(UINT executedCycles)
 {
 	if (g_SoundcardType == CT_Empty)
 		return;
@@ -1167,7 +1045,7 @@ void MB_PeriodicUpdate(UINT executedCycles)
 // . CpuExecute() every ~1000 cycles @ 1MHz (or ~3 cycles when MODE_STEPPING)
 // . MB_SyncEventCallback() on a TIMER1/2 underflow
 // . MB_Read() / MB_Write() (for both normal & full-speed)
-void MB_UpdateCycles(ULONG uExecutedCycles)
+void MockingboardCard::MB_UpdateCycles(ULONG uExecutedCycles)
 {
 	if (g_SoundcardType == CT_Empty)
 		return;
@@ -1192,17 +1070,20 @@ void MB_UpdateCycles(ULONG uExecutedCycles)
 //-----------------------------------------------------------------------------
 
 // Called on a 6522 TIMER1/2 underflow
-static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
+int MockingboardCard::MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 {
-	MB_UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
+	UINT slot = id;	// FIXME
+	MockingboardCard* pCard = (MockingboardCard*)MemGetSlotParameters(slot);
 
-	SY6522_AY8910* pMB = &g_MB[id / SY6522::kNumTimersPer6522];
+	pCard->MB_UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
+
+	SY6522_AY8910* pMB = &pCard->g_MB[id / SY6522::kNumTimersPer6522];	// FIXME
 
 	if ((id & 1) == 0)
 	{
 		_ASSERT(pMB->sy6522.IsTimer1Active());
-		UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER1);
-		MB_Update();
+		pCard->UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER1);
+		pCard->MB_Update();
 
 		if ((pMB->sy6522.GetReg(SY6522::rACR) & SY6522::ACR_RUNMODE) == SY6522::ACR_RM_FREERUNNING)
 		{
@@ -1220,7 +1101,7 @@ static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 	{
 		// NB. Since not calling MB_Update(), then AppleWin doesn't (accurately?) support AY-playback using T2 (which is one-shot only)
 		_ASSERT(pMB->sy6522.IsTimer2Active());
-		UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER2);
+		pCard->UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER2);
 
 		pMB->sy6522.StopTimer2();	// TIMER2 only runs in one-shot mode
 		return 0;			// Don't repeat event
@@ -1229,7 +1110,7 @@ static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles)
 
 //-----------------------------------------------------------------------------
 
-bool MB_IsActive()
+bool MockingboardCard::MB_IsActive(void)
 {
 	if (!MockingboardVoice.bActive)
 		return false;
@@ -1243,12 +1124,12 @@ bool MB_IsActive()
 
 //-----------------------------------------------------------------------------
 
-DWORD MB_GetVolume()
+DWORD MockingboardCard::MB_GetVolume(void)
 {
 	return MockingboardVoice.dwUserVolume;
 }
 
-void MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
+void MockingboardCard::MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 {
 	MockingboardVoice.dwUserVolume = dwVolume;
 
@@ -1266,17 +1147,17 @@ void MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 //---------------------------------------------------------------------------
 
 // Called from class SSI263
-UINT64 MB_GetLastCumulativeCycles(void)
+UINT64 MockingboardCard::MB_GetLastCumulativeCycles(void)
 {
 	return g_uLastCumulativeCycles;
 }
 
-void MB_UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask)
+void MockingboardCard::MB_UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask)
 {
 	UpdateIFRandIRQ(&g_MB[nDevice], clr_mask, set_mask);
 }
 
-BYTE MB_GetPCR(BYTE nDevice)
+BYTE MockingboardCard::MB_GetPCR(BYTE nDevice)
 {
 	return g_MB[nDevice].sy6522.GetReg(SY6522::rPCR);
 }
@@ -1286,7 +1167,7 @@ BYTE MB_GetPCR(BYTE nDevice)
 #include "SaveState_Structs_v1.h"
 
 // Called by debugger - Debugger_Display.cpp
-void MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
+void MockingboardCard::MB_GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS, const DWORD dwSlot)
 {
 	pSS->Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_MOCKINGBOARD_v1);
 	pSS->Hdr.UnitHdr.hdr.v2.Type = UT_Card;
@@ -1355,25 +1236,25 @@ const UINT NUM_PHASOR_UNITS = 2;
 
 #define SS_YAML_KEY_VOTRAX_PHONEME "Votrax Phoneme"
 
-const std::string& MB_GetSnapshotCardName(void)
+std::string MockingboardCard::MB_GetSnapshotCardName(void)
 {
 	static const std::string name("Mockingboard C");
 	return name;
 }
 
-const std::string& Phasor_GetSnapshotCardName(void)
+std::string MockingboardCard::Phasor_GetSnapshotCardName(void)
 {
 	static const std::string name("Phasor");
 	return name;
 }
 
-void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
+void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	const UINT nMbCardNum = uSlot - SLOT4;
+	const UINT nMbCardNum = m_slot - SLOT4;
 	UINT nDeviceNum = nMbCardNum*2;
 	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
 
-	YamlSaveHelper::Slot slot(yamlSaveHelper, MB_GetSnapshotCardName(), uSlot, kUNIT_VERSION);	// fixme: object should be just 1 Mockingboard card & it will know its slot
+	YamlSaveHelper::Slot slot(yamlSaveHelper, MB_GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
@@ -1395,17 +1276,17 @@ void MB_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 	}
 }
 
-bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (slot != 4 && slot != 5)	// fixme
-		Card::ThrowErrorInvalidSlot(CT_MockingboardC, slot);
+	if (m_slot != 4 && m_slot != 5)	// fixme
+		throw std::runtime_error("Card: wrong slot");
 
 	if (version < 1 || version > kUNIT_VERSION)
-		Card::ThrowErrorInvalidVersion(CT_MockingboardC, version);
+		throw std::runtime_error("Card: wrong version");
 
 	AY8910UpdateSetCycles();
 
-	const UINT nMbCardNum = slot - SLOT4;
+	const UINT nMbCardNum = m_slot - SLOT4;	// FIXME
 	UINT nDeviceNum = nMbCardNum*2;
 	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
 
@@ -1464,15 +1345,15 @@ bool MB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
 	return true;
 }
 
-void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
+void MockingboardCard::Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	if (uSlot != 4)
+	if (m_slot != 4)
 		throw std::runtime_error("Card: Phasor only supported in slot-4");
 
 	UINT nDeviceNum = 0;
 	SY6522_AY8910* pMB = &g_MB[0];	// fixme: Phasor uses MB's slot4(2x6522), slot4(2xSSI263), but slot4+5(4xAY8910)
 
-	YamlSaveHelper::Slot slot(yamlSaveHelper, Phasor_GetSnapshotCardName(), uSlot, kUNIT_VERSION);	// fixme: object should be just 1 Mockingboard card & it will know its slot
+	YamlSaveHelper::Slot slot(yamlSaveHelper, Phasor_GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
@@ -1497,13 +1378,13 @@ void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 	}
 }
 
-bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (slot != 4)	// fixme
-		Card::ThrowErrorInvalidSlot(CT_Phasor, slot);
+	if (m_slot != 4)	// fixme
+		throw std::runtime_error("Card: wrong slot");
 
 	if (version < 1 || version > kUNIT_VERSION)
-		Card::ThrowErrorInvalidVersion(CT_Phasor, version);
+		throw std::runtime_error("Card: wrong version");
 
 	if (version < 6)
 		yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR);	// Consume redundant data

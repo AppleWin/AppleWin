@@ -1,6 +1,9 @@
 #pragma once
 
-#include "Mockingboard.h"	// enum PHASOR_MODE
+//#include "Mockingboard.h"	// enum PHASOR_MODE + 3 other funcs
+extern UINT64 MB_GetLastCumulativeCycles(void);
+extern void MB_UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
+extern BYTE MB_GetPCR(BYTE nDevice);
 
 class SSI263
 {
