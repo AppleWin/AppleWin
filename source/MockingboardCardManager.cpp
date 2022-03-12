@@ -34,11 +34,55 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CardManager.h"
 #include "Mockingboard.h"
 
+bool MockingboardCardManager::IsMockingboard(UINT slot)
+{
+	SS_CARDTYPE type = GetCardMgr().QuerySlot(slot);
+	return type == CT_MockingboardC || type == CT_Phasor;
+}
+
 void MockingboardCardManager::ReinitializeClock(void)
 {
-	for (UINT i = 0; i < NUM_SLOTS; i++)
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
-		if (GetCardMgr().QuerySlot(i) == CT_MockingboardC || GetCardMgr().QuerySlot(i) == CT_Phasor)
+		if (IsMockingboard(i))
 			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).ReinitializeClock();
 	}
 }
+
+void MockingboardCardManager::InitializeForLoadingSnapshot(void)
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (IsMockingboard(i))
+			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).InitializeForLoadingSnapshot();
+	}
+}
+
+void MockingboardCardManager::MuteControl(bool mute)
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (IsMockingboard(i))
+			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).MuteControl(mute);
+	}
+}
+
+void MockingboardCardManager::SetCumulativeCycles(void)
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (IsMockingboard(i))
+			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).SetCumulativeCycles();
+	}
+}
+
+#ifdef _DEBUG
+void MockingboardCardManager::CheckCumulativeCycles(void)
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (IsMockingboard(i))
+			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).CheckCumulativeCycles();
+	}
+}
+#endif

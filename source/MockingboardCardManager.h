@@ -7,4 +7,13 @@ public:
 	~MockingboardCardManager(void) {}
 
 	void ReinitializeClock(void);
+	void InitializeForLoadingSnapshot(void);
+	void MuteControl(bool mute);
+	void SetCumulativeCycles(void);
+#ifdef _DEBUG
+	void CheckCumulativeCycles(void);
+#endif
+
+private:
+	bool IsMockingboard(UINT slot);
 };

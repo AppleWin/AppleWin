@@ -51,19 +51,18 @@ public:
 
 	void Get6522IrqDescription(std::string& desc);
 	void MB_UpdateIRQ(void);
-	void MB_InitializeForLoadingSnapshot(void);
+	void InitializeForLoadingSnapshot(void);
 	void ReinitializeClock(void);
-	void MB_Mute(void);
-	void MB_Unmute(void);
-#ifdef _DEBUG
-	void MB_CheckCumulativeCycles(void);
-#endif
-	void MB_SetCumulativeCycles(void);
+	void MuteControl(bool mute);
 	void MB_PeriodicUpdate(UINT executedCycles);
 	void MB_UpdateCycles(ULONG uExecutedCycles);
 	bool MB_IsActive(void);
 	DWORD MB_GetVolume(void);
 	void MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
+	void SetCumulativeCycles(void);
+#ifdef _DEBUG
+	void CheckCumulativeCycles(void);
+#endif
 
 	UINT64 MB_GetLastCumulativeCycles(void);
 	void MB_UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
@@ -192,14 +191,14 @@ private:
 //void	MB_Reinitialize();
 //void	MB_Destroy();	-> virtual Destroy()
 //void    MB_Reset(const bool powerCycle);	-> virtual Reset()
-void	MB_InitializeForLoadingSnapshot(void);
+//void	MB_InitializeForLoadingSnapshot(void);
 //void    MB_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot4, UINT uSlot5);	-> virtual InitializeIO()
-void    MB_Mute();
-void    MB_Unmute();
+//void    MB_Mute();
+//void    MB_Unmute();
 #ifdef _DEBUG
-void    MB_CheckCumulativeCycles();	// DEBUG
+//void    MB_CheckCumulativeCycles();	// DEBUG
 #endif
-void    MB_SetCumulativeCycles();
+//void    MB_SetCumulativeCycles();
 //void    MB_PeriodicUpdate(UINT executedCycles);	-> virtual Update()
 void    MB_CheckIRQ();
 void    MB_UpdateCycles(ULONG uExecutedCycles);

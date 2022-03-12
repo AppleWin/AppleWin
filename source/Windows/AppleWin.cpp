@@ -180,7 +180,7 @@ static void ContinueExecution(void)
 			GetFrame().VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
 
 		// Don't call Spkr_Mute() - will get speaker clicks
-		MB_Mute();
+		GetCardMgr().GetMockingboardCardMgr().MuteControl(true);
 		SysClk_StopTimer();
 #ifdef USE_SPEECH_API
 		g_Speech.Reset();			// TODO: Put this on a timer (in emulated cycles)... otherwise CATALOG cuts out
@@ -198,7 +198,7 @@ static void ContinueExecution(void)
 			GetFrame().VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
 
 		// Don't call Spkr_Unmute()
-		MB_Unmute();
+		GetCardMgr().GetMockingboardCardMgr().MuteControl(false);
 		SysClk_StartTimerUsec(nExecutionPeriodUsec);
 
 		// Switch to higher priority, eg. for audio (BUG #015394)

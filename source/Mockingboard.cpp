@@ -567,7 +567,7 @@ void MockingboardCard::MB_Initialize(void)
 
 // NB. Mockingboard voice is *already* muted because showing 'Select Load State file' dialog
 // . and voice will be unmuted when dialog is closed
-void MockingboardCard::MB_InitializeForLoadingSnapshot(void)	// GH#609
+void MockingboardCard::InitializeForLoadingSnapshot(void)	// GH#609
 {
 	Reset(true);
 
@@ -630,7 +630,7 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 
 	// Reset state
 	{
-		MB_SetCumulativeCycles();
+		SetCumulativeCycles();
 
 		g_nMB_InActiveCycleCount = 0;
 		g_bMB_RegAccessedFlag = false;
@@ -922,36 +922,36 @@ void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral)
 
 //-----------------------------------------------------------------------------
 
-void MockingboardCard::MB_Mute(void)
+void MockingboardCard::MuteControl(bool mute)
 {
-	if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
+	if (mute)
 	{
-		MockingboardVoice.lpDSBvoice->SetVolume(DSBVOLUME_MIN);
-		MockingboardVoice.bMute = true;
+		if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
+		{
+			MockingboardVoice.lpDSBvoice->SetVolume(DSBVOLUME_MIN);
+			MockingboardVoice.bMute = true;
+		}
+
+		for (UINT i = 0; i < NUM_AY8913; i++)
+			g_MB[i].ssi263.Mute();
 	}
-
-	for (UINT i=0; i<NUM_AY8913; i++)
-		g_MB[i].ssi263.Mute();
-}
-
-//-----------------------------------------------------------------------------
-
-void MockingboardCard::MB_Unmute(void)
-{
-	if (MockingboardVoice.bActive && MockingboardVoice.bMute)
+	else
 	{
-		MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
-		MockingboardVoice.bMute = false;
-	}
+		if (MockingboardVoice.bActive && MockingboardVoice.bMute)
+		{
+			MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
+			MockingboardVoice.bMute = false;
+		}
 
-	for (UINT i=0; i<NUM_AY8913; i++)
-		g_MB[i].ssi263.Unmute();
+		for (UINT i = 0; i < NUM_AY8913; i++)
+			g_MB[i].ssi263.Unmute();
+	}
 }
 
 //-----------------------------------------------------------------------------
 
 #ifdef _DEBUG
-void MockingboardCard::MB_CheckCumulativeCycles(void)
+void MockingboardCard::CheckCumulativeCycles(void)
 {
 	_ASSERT(g_uLastCumulativeCycles == g_nCumulativeCycles);
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
@@ -959,7 +959,7 @@ void MockingboardCard::MB_CheckCumulativeCycles(void)
 #endif
 
 // Called by: ResetState() and Snapshot_LoadState_v2()
-void MockingboardCard::MB_SetCumulativeCycles(void)
+void MockingboardCard::SetCumulativeCycles(void)
 {
 	g_uLastCumulativeCycles = g_nCumulativeCycles;
 }

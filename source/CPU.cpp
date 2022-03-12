@@ -610,7 +610,7 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 	g_interruptInLastExecutionBatch = false;
 
 #ifdef _DEBUG
-	MB_CheckCumulativeCycles();
+	GetCardMgr().GetMockingboardCardMgr().CheckCumulativeCycles();
 #endif
 
 	// uCycles:
