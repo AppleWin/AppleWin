@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "../Windows/AppleWin.h"	// g_nAppMode, g_uScrollLockToggle, sg_PropertySheet
 #include "../CardManager.h"
+#include "../Memory.h"
 #include "../Disk.h"
 #include "../Log.h"
 #include "../Registry.h"
@@ -130,6 +131,7 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 		return;
 
 	GetCardMgr().Insert(slot, newCardType);
+	GetCardMgr().GetRef(slot).InitializeIO(GetCxRomPeripheral());
 }
 
 // Used by:
