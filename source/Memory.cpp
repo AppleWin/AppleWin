@@ -744,7 +744,7 @@ inline bool IsPotentialNoSlotClockAccess(const WORD address)
 			  (SW_INTCXROM && (AddrHi == 0xC8)) );						// Internal ROM at [$C100-CFFF]               && AddrHi == $C8
 }
 
-static bool IsCardInSlot(const UINT uSlot);
+static bool IsCardInSlot(UINT slot);
 
 // Enabling expansion ROM ($C800..$CFFF]:
 // . Enable if: Enable1 && Enable2
@@ -944,7 +944,6 @@ BYTE __stdcall IO_F8xx(WORD programcounter, WORD address, BYTE write, BYTE value
 
 static struct SlotInfo
 {
-	bool bHasCard;
 	iofunction IOReadCx;
 	iofunction IOWriteCx;
 } g_SlotInfo[NUM_SLOTS] = {0};
@@ -977,7 +976,6 @@ static void InitIoHandlers()
 
 	for (i=0; i<NUM_SLOTS; i++)
 	{
-		g_SlotInfo[i].bHasCard = false;
 		g_SlotInfo[i].IOReadCx = IO_Cxxx;
 		g_SlotInfo[i].IOWriteCx = IO_Cxxx;
 		ExpansionRom[i] = NULL;
@@ -990,11 +988,16 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 	_ASSERT(uSlot < NUM_SLOTS);
 	SlotParameters[uSlot] = lpSlotParameter;
 
+	if (IOReadC0 == NULL)	IOReadC0 = IO_Null;
+	if (IOWriteC0 == NULL)	IOWriteC0 = IO_Null;
+
 	IORead[uSlot+8]		= IOReadC0;
 	IOWrite[uSlot+8]	= IOWriteC0;
 
 	if (uSlot == 0)		// Don't trash C0xx handlers
 		return;
+
+	//
 
 	if (IOReadCx == NULL)	IOReadCx = IO_Cxxx;
 	if (IOWriteCx == NULL)	IOWriteCx = IO_Cxxx;
@@ -1005,7 +1008,6 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 		IOWrite[uSlot*16+i]	= IOWriteCx;
 	}
 
-	g_SlotInfo[uSlot].bHasCard = true;
 	g_SlotInfo[uSlot].IOReadCx = IOReadCx;
 	g_SlotInfo[uSlot].IOWriteCx = IOWriteCx;
 
@@ -1016,7 +1018,6 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 void UnregisterIoHandler(UINT uSlot)
 {
 	RegisterIoHandler(uSlot, NULL, NULL, NULL, NULL, NULL, NULL);
-	g_SlotInfo[uSlot].bHasCard = false;
 }
 
 // From UTAIIe:5-28: Since INTCXROM==1 then state of SLOTC3ROM is not important
@@ -1058,9 +1059,9 @@ static void IoHandlerCardsIn(void)
 	}
 }
 
-static bool IsCardInSlot(const UINT uSlot)
+static bool IsCardInSlot(UINT slot)
 {
-	return g_SlotInfo[uSlot].bHasCard;
+	return GetCardMgr().QuerySlot(slot) != CT_Empty;
 }
 
 //===========================================================================
@@ -1478,8 +1479,8 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 
 	if (addr <= APPLE_SLOT_END)			// [$C100..C7FF]
 	{
-		const UINT uSlot = (addr >> 8) & 0x7;
-		return IsCardInSlot(uSlot);
+		UINT slot = (addr >> 8) & 0x7;
+		return IsCardInSlot(slot);
 	}
 
 	// [$C800..CFFF]
