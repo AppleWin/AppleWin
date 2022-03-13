@@ -667,7 +667,7 @@ static void RepeatInitialization(void)
 		// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
 		const bool bShowAboutDlg = CheckOldAppleWinVersion();	// Post: g_OldAppleWinVersion
 
-		// Load configuration from Registry
+		// Load configuration from Registry (+ will insert cards)
 		{
 			bool loadImages = g_cmdLine.szSnapshotName == NULL;	// don't load floppy/harddisk images if a snapshot is to be loaded later on
 			LoadConfiguration(loadImages);
@@ -821,6 +821,8 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.bRemoveNoSlotClock)
 			MemRemoveNoSlotClock();
+
+		GetCardMgr().GetMockingboardCardMgr().InitializePostWindowCreate();
 
 		MemInitialize();
 		LogFileOutput("Main: MemInitialize()\n");

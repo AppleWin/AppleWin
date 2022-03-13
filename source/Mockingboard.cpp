@@ -70,7 +70,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 bool MockingboardCard::IsAnyTimer1Active(void)
 {
 	bool active = false;
-	for (UINT i = 0; i < NUM_AY8913; i++)
+	for (UINT i = 0; i < NUM_SY6522; i++)
 		active |= g_MB[i].sy6522.IsTimer1Active();
 	return active;
 }
@@ -527,7 +527,7 @@ bool MockingboardCard::MB_DSInit(void)
 		return false;
 	}
 
-	bool bRes = DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);
+	bool bRes = DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);	// ... and Play()
 	LogFileOutput("MB_DSInit: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
 	if (!bRes)
 		return false;
@@ -600,9 +600,6 @@ void MockingboardCard::MB_Initialize(void)
 
 		//
 
-		g_bMBAvailable = MB_DSInit();
-		LogFileOutput("MB_Initialize: MB_DSInit(), g_bMBAvailable=%d\n", g_bMBAvailable);
-
 		Reset(true);
 		LogFileOutput("MB_Initialize: Reset()\n");
 	}
@@ -655,9 +652,6 @@ void MockingboardCard::Destroy(void)
 
 void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 {
-	if (!g_bDSAvailable)
-		return;
-
 	for (int i=0; i<NUM_SY6522; i++)
 	{
 		g_MB[i].sy6522.Reset(powerCycle);
@@ -694,8 +688,7 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 			}
 		}
 
-		// Not these, as they don't change on a CTRL+RESET or power-cycle:
-//		g_bMBAvailable = false;
+		// Not this, since no change on a CTRL+RESET or power-cycle:
 //		g_bPhasorEnable = false;
 	}
 

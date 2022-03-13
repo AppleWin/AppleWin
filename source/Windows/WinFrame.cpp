@@ -986,7 +986,7 @@ LRESULT Win32Frame::WndProc(
       CreateGdiObjects();
       LogFileOutput("WM_CREATE: CreateGdiObjects()\n");
 
-	  DSInit();
+	  DSInit();					// NB. Need g_hFrameWindow for IDirectSound::SetCooperativeLevel()
       LogFileOutput("WM_CREATE: DSInit()\n");
 
 	  DIMouse::DirectInputInit(window);

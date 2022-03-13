@@ -25,8 +25,6 @@ public:
 		g_bMB_RegAccessedFlag = false;
 		g_bMB_Active = false;
 
-		g_bMBAvailable = false;
-
 		g_bPhasorEnable = false;
 		g_phasorMode = PH_Mockingboard;
 		g_PhasorClockScaleFactor = 1;	// for save-state only
@@ -68,6 +66,7 @@ public:
 //	DWORD GetVolume(void);	// Now in MockingboardCardManager
 	void SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 	void SetCumulativeCycles(void);
+	bool MB_DSInit(void);
 #ifdef _DEBUG
 	void CheckCumulativeCycles(void);
 	void Get6522IrqDescription(std::string& desc);
@@ -112,7 +111,6 @@ private:
 	void UpdateIFRandIRQ(SY6522_AY8910* pMB, BYTE clr_mask, BYTE set_mask);
 	void MB_UpdateInternal(void);
 	void MB_Update(void);
-	bool MB_DSInit(void);
 	void MB_DSUninit(void);
 	void InitSoundcardType(void);
 
@@ -155,8 +153,6 @@ private:
 	UINT64 g_nMB_InActiveCycleCount;
 	bool g_bMB_RegAccessedFlag;
 	bool g_bMB_Active;
-
-	bool g_bMBAvailable;
 
 	//
 
