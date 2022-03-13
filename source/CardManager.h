@@ -15,7 +15,7 @@ public:
 		InsertInternal(SLOT0, CT_Empty);
 		InsertInternal(SLOT1, CT_GenericPrinter);
 		InsertInternal(SLOT2, CT_SSC);
-		InsertInternal(SLOT3, CT_Uthernet);
+		InsertInternal(SLOT3, CT_Empty);
 		InsertInternal(SLOT4, CT_Empty);
 		InsertInternal(SLOT5, CT_Empty);
 		InsertInternal(SLOT6, CT_Disk2);
