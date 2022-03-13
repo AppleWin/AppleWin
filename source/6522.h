@@ -3,7 +3,7 @@
 class SY6522
 {
 public:
-	SY6522(void)
+	SY6522(UINT slot) : m_slot(slot)
 	{
 		for (UINT i = 0; i < kNumTimersPer6522; i++)
 			m_syncEvent[i] = NULL;
@@ -18,10 +18,6 @@ public:
 	{
 		m_syncEvent[0] = event0;
 		m_syncEvent[1] = event1;
-	}
-	void SetSlot(UINT slot)
-	{
-		m_slot = slot;
 	}
 
 	void Reset(const bool powerCycle);

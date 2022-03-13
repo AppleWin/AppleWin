@@ -3,7 +3,7 @@
 class SSI263
 {
 public:
-	SSI263(void)
+	SSI263(UINT slot) : m_slot(slot)
 	{
 		m_device = -1;	// undefined
 		m_cardMode = PH_Mockingboard;
@@ -57,11 +57,7 @@ public:
 		m_dbgStartTime = 0;
 	}
 
-	void SetSlotAndDevice(UINT slot, UINT device)
-	{
-		m_slot = slot;
-		m_device = device;
-	}
+	void SetDevice(UINT device) { m_device = device; }
 	void SetCardMode(PHASOR_MODE mode) { m_cardMode = mode; }
 
 	bool DSInit(void);

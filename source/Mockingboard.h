@@ -9,13 +9,17 @@
 class MockingboardCard : public Card
 {
 public:
-	MockingboardCard(UINT slot) :
-		Card(CT_MockingboardC, slot)
+	MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slot)
 	{
 		g_uLastCumulativeCycles = 0;
 
 		for (UINT i = 0; i < NUM_VOICES; i++)
 			ppAYVoiceBuffer[NUM_VOICES] = NULL;
+
+		// Construct via placement new, so that it is an array of 'SY6522_AY8910' objects
+		g_MB = (SY6522_AY8910*) new BYTE[sizeof(SY6522_AY8910) * NUM_SY6522];
+		for (UINT i=0; i< NUM_SY6522; i++)
+			new (&g_MB[i]) SY6522_AY8910(m_slot);
 
 		g_nMB_InActiveCycleCount = 0;
 		g_bMB_RegAccessedFlag = false;
@@ -33,7 +37,13 @@ public:
 
 		MB_Initialize();
 	}
-	virtual ~MockingboardCard(void) {}
+
+	virtual ~MockingboardCard(void)
+	{
+		for (UINT i = 0; i < NUM_SY6522; i++)
+			g_MB[i].~SY6522_AY8910();
+		delete[] (BYTE*) g_MB;
+	}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void Destroy();
@@ -85,7 +95,7 @@ private:
 		MockingboardUnitState_e state;	// Where a unit is a 6522+AY8910 pair
 		MockingboardUnitState_e stateB;	// Phasor: 6522 & 2nd AY8910
 
-		SY6522_AY8910(void)
+		SY6522_AY8910(UINT slot) : sy6522(slot), ssi263(slot)
 		{
 			nAY8910Number = 0;
 			nAYCurrentRegister = 0;
@@ -129,7 +139,7 @@ private:
 	static const UINT SSI263A_Offset = 0x40;
 
 	// Phasor has 2x (1x SY6522 + 2x AY8913), MB has 2x (1x SY6522 + 1x AY8913)
-	SY6522_AY8910 g_MB[NUM_SY6522];
+	SY6522_AY8910* g_MB;	// NB. In ctor this becomes g_MB[NUM_SY6522]
 
 	static const UINT kNumSyncEvents = NUM_SY6522 * SY6522::kNumTimersPer6522;
 	SyncEvent* g_syncEvent[kNumSyncEvents];

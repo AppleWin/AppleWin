@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Disk.h"
 #include "FourPlay.h"
 #include "Harddisk.h"
+#include "Mockingboard.h"
 #include "MouseInterface.h"
 #include "SAM.h"
 #include "SerialComms.h"
@@ -64,7 +65,7 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = m_pSSC = new CSuperSerialCard(slot);
 		break;
 	case CT_MockingboardC:
-		m_slot[slot] = new DummyCard(type, slot);
+		m_slot[slot] = new MockingboardCard(slot, type);
 		break;
 	case CT_GenericPrinter:
 		m_slot[slot] = new DummyCard(type, slot);
@@ -84,7 +85,7 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = new DummyCard(type, slot);
 		break;
 	case CT_Phasor:
-		m_slot[slot] = new DummyCard(type, slot);
+		m_slot[slot] = new MockingboardCard(slot, type);
 		break;
 	case CT_Echo:
 		m_slot[slot] = new DummyCard(type, slot);

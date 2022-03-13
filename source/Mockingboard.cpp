@@ -590,13 +590,12 @@ void MockingboardCard::MB_Initialize(void)
 
 		for (UINT i=0; i<NUM_SY6522; i++)
 		{
-			g_MB[i] = SY6522_AY8910();
+			g_MB[i] = SY6522_AY8910(m_slot);
 			g_MB[i].nAY8910Number = i;
 			const UINT id0 = i * SY6522::kNumTimersPer6522 + 0;	// TIMER1
 			const UINT id1 = i * SY6522::kNumTimersPer6522 + 1;	// TIMER2
 			g_MB[i].sy6522.InitSyncEvents(g_syncEvent[id0], g_syncEvent[id1]);
-			g_MB[i].sy6522.SetSlot(m_slot);
-			g_MB[i].ssi263.SetSlotAndDevice(m_slot, i);
+			g_MB[i].ssi263.SetDevice(i);
 		}
 
 		//
