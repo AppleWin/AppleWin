@@ -989,6 +989,8 @@ LRESULT Win32Frame::WndProc(
 	  DSInit();					// NB. Need g_hFrameWindow for IDirectSound::SetCooperativeLevel()
       LogFileOutput("WM_CREATE: DSInit()\n");
 
+	  GetCardMgr().GetMockingboardCardMgr().InitializePostWindowCreate();
+
 	  DIMouse::DirectInputInit(window);
       LogFileOutput("WM_CREATE: DIMouse::DirectInputInit()\n");
 

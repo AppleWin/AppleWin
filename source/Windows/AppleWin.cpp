@@ -822,8 +822,6 @@ static void RepeatInitialization(void)
 		if (g_cmdLine.bRemoveNoSlotClock)
 			MemRemoveNoSlotClock();
 
-		GetCardMgr().GetMockingboardCardMgr().InitializePostWindowCreate();
-
 		MemInitialize();
 		LogFileOutput("Main: MemInitialize()\n");
 

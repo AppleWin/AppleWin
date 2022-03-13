@@ -913,7 +913,7 @@ BYTE __stdcall MockingboardCard::PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE
 
 BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	if (g_bPhasorEnable)
+	if (!g_bPhasorEnable)
 		return MemReadFloatingBus(nExecutedCycles);
 
 	UINT bits = (UINT) g_phasorMode;
@@ -940,11 +940,9 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	if (QueryType() == CT_MockingboardC)
-		RegisterIoHandler(m_slot, IO_Null, IO_Null, IORead, IOWrite, NULL, NULL);
+		RegisterIoHandler(m_slot, IO_Null, IO_Null, IORead, IOWrite, this, NULL);
 	else	// Phasor
-		RegisterIoHandler(m_slot, PhasorIO, PhasorIO, IORead, IOWrite, NULL, NULL);
-
-	g_bPhasorEnable = (QueryType() == CT_Phasor);
+		RegisterIoHandler(m_slot, PhasorIO, PhasorIO, IORead, IOWrite, this, NULL);
 
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;
@@ -1312,7 +1310,7 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 
 	AY8910_InitClock((int)Get6502BaseClock());
 
-	// NB. g_bPhasorEnable setup in InitializeIO()
+	// NB. g_bPhasorEnable setup in ctor
 
 	return true;
 }
@@ -1430,7 +1428,7 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 
 	AY8910_InitClock((int)(Get6502BaseClock() * g_PhasorClockScaleFactor));
 
-	// NB. g_bPhasorEnable setup in InitializeIO()
+	// NB. g_bPhasorEnable setup in ctor
 
 	return true;
 }

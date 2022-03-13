@@ -25,7 +25,7 @@ public:
 		g_bMB_RegAccessedFlag = false;
 		g_bMB_Active = false;
 
-		g_bPhasorEnable = false;
+		g_bPhasorEnable = (QueryType() == CT_Phasor);
 		g_phasorMode = PH_Mockingboard;
 		g_PhasorClockScaleFactor = 1;	// for save-state only
 
