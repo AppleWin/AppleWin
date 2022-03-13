@@ -641,7 +641,7 @@ void MockingboardCard::Destroy(void)
 	for (int id=0; id<kNumSyncEvents; id++)
 	{
 		if (g_syncEvent[id] && g_syncEvent[id]->m_active)
-			g_SynchronousEventMgr.Remove(id);
+			g_SynchronousEventMgr.Remove(g_syncEvent[id]->m_id);
 
 		delete g_syncEvent[id];
 		g_syncEvent[id] = NULL;
