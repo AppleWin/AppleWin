@@ -74,10 +74,6 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 
 	ResetLogicStateSequencer();
 
-	// if created by user in Config->Disk, then MemInitializeIO() won't be called
-	if (GetCxRomPeripheral())
-		InitializeIO(GetCxRomPeripheral());	// During regular start-up, Initialize() will be called later by MemInitializeIO()
-
 	// Debug:
 #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
 	m_bLogDisk_NibblesRW = false;
@@ -92,9 +88,6 @@ Disk2InterfaceCard::~Disk2InterfaceCard(void)
 {
 	EjectDiskInternal(DRIVE_1);
 	EjectDiskInternal(DRIVE_2);
-
-	// if destroyed by user in Config->Disk, then ensure that old object's reference is removed
-	UnregisterIoHandler(m_slot);
 }
 
 bool Disk2InterfaceCard::GetEnhanceDisk(void) { return m_enhanceDisk; }
