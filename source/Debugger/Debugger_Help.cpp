@@ -801,8 +801,8 @@ Update_t CmdHelpSpecific (int nArgs)
 			const char *const pHelp = pCommand->pHelpSummary;
 			if (pHelp)
 			{
-				std::string strText = StrFormat((bCategory) ? "%s%8s%s%s%s, "
-														    : "%s%s%s%s%s, ",
+				std::string strText = StrFormat((bCategory) ? "%s%8s%s, %s%s"
+														    : "%s%s%s, %s%s",
 												CHC_COMMAND, pCommand->m_sName, CHC_ARG_SEP,
 												CHC_DEFAULT, pHelp);
 				//ConsoleBufferPush( strText.c_str() );
@@ -937,15 +937,17 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 	// Breakpoints
 		case CMD_BREAK_INVALID:
-			ConsoleColorizePrintFormat( " Usage: [%s%s | %s%s] | [# | # %s%s | # %s%s]"
+			ConsoleColorizePrintFormat( " Usage: [%s%s | %s%s]"
 				, CHC_COMMAND
-				, g_aParameters[ PARAM_ON  ].m_sName
+				, g_aParameters[PARAM_ON].m_sName
 				, CHC_COMMAND
-				, g_aParameters[ PARAM_OFF  ].m_sName
+				, g_aParameters[PARAM_OFF].m_sName
+			);
+			ConsoleColorizePrintFormat(" Usage: [# | # %s%s | # %s%s]"
 				, CHC_COMMAND
-				, g_aParameters[ PARAM_ON  ].m_sName
+				, g_aParameters[PARAM_ON].m_sName
 				, CHC_COMMAND
-				, g_aParameters[ PARAM_OFF  ].m_sName
+				, g_aParameters[PARAM_OFF].m_sName
 			);
 			ConsoleColorizePrintFormat( " Usage: [%s%s %s%s | %s%s %s%s]"
 				, CHC_COMMAND
