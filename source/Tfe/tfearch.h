@@ -68,7 +68,7 @@ int tfe_arch_receive(pcap_t * TfePcapFP,
                     );
 
 extern int tfe_arch_enumadapter_open(void);
-extern int tfe_arch_enumadapter(char **ppname, char **ppdescription);
+extern int tfe_arch_enumadapter(std::string & name, std::string & description);
 extern int tfe_arch_enumadapter_close(void);
 
 #endif

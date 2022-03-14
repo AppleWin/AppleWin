@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Registry.h"
 #include "../resource/resource.h"
 #include "../Tfe/PCapBackend.h"
-#include "../Tfe/tfesupp.h"
 
 CPageConfigTfe* CPageConfigTfe::ms_this = 0;	// reinit'd in ctor
 
@@ -109,26 +108,23 @@ void CPageConfigTfe::DlgCANCEL(HWND window)
 	EndDialog(window, 0);
 }
 
-BOOL CPageConfigTfe::get_tfename(int number, char **ppname, char **ppdescription)
+BOOL CPageConfigTfe::get_tfename(int number, std::string & name, std::string & description)
 {
 	if (PCapBackend::tfe_enumadapter_open())
 	{
-		char *pname = NULL;
-		char *pdescription = NULL;
+		std::string adapterName;
+		std::string adapterDescription;
 
 		while (number--)
 		{
-			if (!PCapBackend::tfe_enumadapter(&pname, &pdescription))
+			if (!PCapBackend::tfe_enumadapter(adapterName, adapterDescription))
 				break;
-
-			lib_free(pname);
-			lib_free(pdescription);
 		}
 
-		if (PCapBackend::tfe_enumadapter(&pname, &pdescription))
+		if (PCapBackend::tfe_enumadapter(adapterName, adapterDescription))
 		{
-			*ppname = pname;
-			*ppdescription = pdescription;
+			name = adapterName;
+			description = adapterDescription;
 			PCapBackend::tfe_enumadapter_close();
 			return TRUE;
 		}
@@ -166,17 +162,15 @@ int CPageConfigTfe::gray_ungray_items(HWND hwnd)
 
 	if (enable)
 	{
-		char *pname = NULL;
-		char *pdescription = NULL;
+		std::string name;
+		std::string description;
 
 		number = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), CB_GETCURSEL, 0, 0);
 
-		if (get_tfename(number, &pname, &pdescription))
+		if (get_tfename(number, name, description))
 		{
-			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), pname);
-			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), pdescription);
-			lib_free(pname);
-			lib_free(pdescription);
+			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), name.c_str());
+			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), description.c_str());
 		}
 	}
 	else
@@ -222,25 +216,23 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 	{
 		int cnt = 0;
 
-		char *pname;
-		char *pdescription;
+		std::string name;
+		std::string description;
 
 		temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_INTERFACE);
 
-		for (cnt = 0; PCapBackend::tfe_enumadapter(&pname, &pdescription); cnt++)
+		for (cnt = 0; PCapBackend::tfe_enumadapter(name, description); cnt++)
 		{
 			BOOL this_entry = FALSE;
 
-			if (strcmp(pname, m_tfe_interface_name.c_str()) == 0)
+			if (name == m_tfe_interface_name)
 			{
 				this_entry = TRUE;
 			}
 
-			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), pname);
-			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), pdescription);
-			SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)pname);
-			lib_free(pname);
-			lib_free(pdescription);
+			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), name.c_str());
+			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), description.c_str());
+			SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)name.c_str());
 
 			if (this_entry)
 			{

@@ -54,7 +54,7 @@ public:
 	*/
 
 	static int tfe_enumadapter_open(void);
-	static int tfe_enumadapter(char **ppname, char **ppdescription);
+	static int tfe_enumadapter(std::string & name, std::string & description);
 	static int tfe_enumadapter_close(void);
 
 	static std::string tfe_interface;
