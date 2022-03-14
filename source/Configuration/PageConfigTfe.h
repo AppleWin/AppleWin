@@ -28,7 +28,7 @@ protected:
 	virtual void DlgCANCEL(HWND window);
 
 private:
-	BOOL get_tfename(int number, char **ppname, char **ppdescription);
+	BOOL get_tfename(int number, std::string & name, std::string & description);
 	int gray_ungray_items(HWND hwnd);
 	void init_tfe_dialog(HWND hwnd);
 	void save_tfe_dialog(HWND hwnd);
