@@ -363,23 +363,22 @@ namespace sa2
 
           if (ImGui::BeginCombo("pcap", current_interface.c_str()))
           {
-            std::vector<char *> ifaces;
+            std::vector<std::string> ifaces;
             if (PCapBackend::tfe_enumadapter_open())
             {
-              char *pname;
-              char *pdescription;
+              std::string name;
+              std::string description;
 
-              while (PCapBackend::tfe_enumadapter(&pname, &pdescription))
+              while (PCapBackend::tfe_enumadapter(name, description))
               {
-                ifaces.push_back(pname);
-                lib_free(pdescription);
+                ifaces.push_back(name);
               }
               PCapBackend::tfe_enumadapter_close();
 
               for (const auto & iface : ifaces)
               {
-                const bool isSelected = strcmp(iface, current_interface.c_str()) == 0;
-                if (ImGui::Selectable(iface, isSelected))
+                const bool isSelected = iface == current_interface;
+                if (ImGui::Selectable(iface.c_str(), isSelected))
                 {
                   // the following line interacts with tfe_enumadapter, so we must run it outside the above loop
                   PCapBackend::tfe_interface = iface;
@@ -389,7 +388,6 @@ namespace sa2
                 {
                   ImGui::SetItemDefaultFocus();
                 }
-                lib_free(iface);
               }
             }
             ImGui::EndCombo();
