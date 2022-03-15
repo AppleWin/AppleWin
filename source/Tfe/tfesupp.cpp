@@ -33,121 +33,11 @@
  *
  */
 
-#include <stdlib.h>
-#include <string.h>
-
-// Lib Stuff
-/* #define LIB_DEBUG*/
-
-
-#ifdef LIB_DEBUG
-#define LIB_DEBUG_SIZE  0x10000
-#define LIB_DEBUG_GUARD 0x1000
-#endif
+#include "tfesupp.h"
 
 #define CRC32_POLY  0xedb88320
 static unsigned long crc32_table[256];
 static int crc32_is_initialized = 0;
-
-void lib_free(void *ptr)
-{
-#ifdef LIB_DEBUG
-    lib_debug_free(ptr, 1, 1);
-#endif
-
-#ifdef LIB_DEBUG
-    lib_debug_libc_free(ptr);
-#else
-    free(ptr);
-#endif
-}
-
-void *lib_malloc(size_t size)
-{
-#ifdef LIB_DEBUG
-    void *ptr = lib_debug_libc_malloc(size);
-#else
-    void *ptr = malloc(size);
-#endif
-
-#ifndef __OS2__
-    if (ptr == NULL && size > 0)
-        exit(-1);
-#endif
-#ifdef LIB_DEBUG
-    lib_debug_alloc(ptr, size, 3);
-#endif
-
-    return ptr;
-}
-
-/*-----------------------------------------------------------------------*/
-
-/* Malloc enough space for `str', copy `str' into it and return its
-   address.  */
-char *lib_stralloc(const char *str)
-{
-    size_t size;
-    char *ptr;
-
-    if (str == NULL)
-        exit(-1);
-
-    size = strlen(str) + 1;
-    ptr = (char *)lib_malloc(size);
-
-    memcpy(ptr, str, size);
-    return ptr;
-}
-
-
-
-/* Like realloc, but abort if not enough memory is available.  */
-void *lib_realloc(void *ptr, size_t size)
-{
-#ifdef LIB_DEBUG
-    void *new_ptr = lib_debug_libc_realloc(ptr, size);
-#else
-    void *new_ptr = realloc(ptr, size);
-#endif
-
-#ifndef __OS2__
-    if (new_ptr == NULL)
-        exit(-1);
-#endif
-#ifdef LIB_DEBUG
-    lib_debug_free(ptr, 1, 0);
-    lib_debug_alloc(new_ptr, size, 1);
-#endif
-
-    return new_ptr;
-}
-
-// Util Stuff
-
-/* Set a new value to the dynamically allocated string *str.
-   Returns `-1' if nothing has to be done.  */
-int util_string_set(char **str, const char *new_value)
-{
-    if (*str == NULL) {
-        if (new_value != NULL)
-            *str = lib_stralloc(new_value);
-    } else {
-        if (new_value == NULL) {
-            lib_free(*str);
-            *str = NULL;
-        } else {
-            /* Skip copy if src and dest are already the same.  */
-            if (strcmp(*str, new_value) == 0)
-                return -1;
-
-            *str = (char *)lib_realloc(*str, strlen(new_value) + 1);
-            strcpy(*str, new_value);
-        }
-    }
-    return 0;
-}
-
 
 // crc32 Stuff
 
@@ -173,4 +63,3 @@ unsigned long crc32_buf(const char *buffer, unsigned int len)
     
     return ~crc;
 }
-

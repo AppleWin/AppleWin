@@ -41,7 +41,6 @@
 
 #include <StdAfx.h> // this is necessary in linux, but in MSVC windows.h MUST come after winsock2.h (from pcap.h above)
 #include "tfearch.h"
-#include "tfesupp.h"
 #include "../Log.h"
 
 
@@ -258,16 +257,16 @@ int tfe_arch_enumadapter_open(void)
     return 1;
 }
 
-int tfe_arch_enumadapter(char **ppname, char **ppdescription)
+int tfe_arch_enumadapter(std::string & name, std::string & description)
 {
     if (!TfePcapNextDev)
         return 0;
 
-    *ppname = lib_stralloc(TfePcapNextDev->name);
+    name = TfePcapNextDev->name;
     if (TfePcapNextDev->description)
-        *ppdescription = lib_stralloc(TfePcapNextDev->description);
+        description = TfePcapNextDev->description;
     else
-        *ppdescription = lib_stralloc(TfePcapNextDev->name);
+        description = TfePcapNextDev->name;
 
     TfePcapNextDev = TfePcapNextDev->next;
 
@@ -293,20 +292,18 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
     }
     else {
         /* look if we can find the specified adapter */
-        char *pname;
-        char *pdescription;
+        std::string name;
+        std::string description;
         BOOL  found = FALSE;
 
         if (!interface_name.empty()) {
             /* we have an interface name, try it */
             TfePcapDevice = TfePcapAlldevs;
 
-            while (tfe_arch_enumadapter(&pname, &pdescription)) {
-                if (strcmp(pname, interface_name.c_str())==0) {
+            while (tfe_arch_enumadapter(name, description)) {
+                if (name == interface_name) {
                     found = TRUE;
                 }
-                lib_free(pname);
-                lib_free(pdescription);
                 if (found) break;
                 TfePcapDevice = TfePcapNextDev;
             }
