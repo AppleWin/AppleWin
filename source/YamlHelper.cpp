@@ -500,7 +500,10 @@ void YamlSaveHelper::SaveString(const char* key,  const char* value)
 			throw std::runtime_error("Unable to convert to UTF-8: " + std::string(value));
 	}
 
-	Save("%s: %s\n", key, m_pMbStr);
+	if (std::string(m_pMbStr).find("#") == std::string::npos)
+		Save("%s: %s\n", key, m_pMbStr);
+	else
+		Save("%s: \"%s\"\n", key, m_pMbStr);	// Wrap the string in quotes when it contains the comment character "#" (GH#1066)
 }
 
 void YamlSaveHelper::SaveString(const char* key, const std::string & value)
