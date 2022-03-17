@@ -9,15 +9,15 @@ public:
 	ParallelPrinterCard(UINT slot) :
 		Card(CT_GenericPrinter, slot)
 	{
-		inactivity = 0;
-		g_PrinterIdleLimit = 10;
-		file = NULL;
+		m_inactivity = 0;
+		m_printerIdleLimit = 10;
+		m_file = NULL;
 
-		g_bDumpToPrinter = false;
-		g_bConvertEncoding = false;
-		g_bFilterUnprintable = false;
-		g_bPrinterAppend = false;
-		g_bEnableDumpToRealPrinter = false;
+		m_bDumpToPrinter = false;
+		m_bConvertEncoding = false;
+		m_bFilterUnprintable = false;
+		m_bPrinterAppend = false;
+		m_bEnableDumpToRealPrinter = false;
 	}
 	virtual ~ParallelPrinterCard(void) {}
 
@@ -38,16 +38,16 @@ public:
 	UINT GetIdleLimit(void);
 	void SetIdleLimit(UINT Duration);
 
-	bool GetDumpToPrinter(void) { return g_bDumpToPrinter; }
-	void SetDumpToPrinter(bool value) { g_bDumpToPrinter = value; }
-	bool GetConvertEncoding(void) { return g_bConvertEncoding; }
-	void SetConvertEncoding(bool value) { g_bConvertEncoding = value; }
-	bool GetFilterUnprintable(void) { return g_bFilterUnprintable; }
-	void SetFilterUnprintable(bool value) { g_bFilterUnprintable = value; }
-	bool GetPrinterAppend(void) { return g_bPrinterAppend; }
-	void SetPrinterAppend(bool value) { g_bPrinterAppend = value; }
-	bool GetEnableDumpToRealPrinter(void) { return g_bEnableDumpToRealPrinter; }
-	void SetEnableDumpToRealPrinter(bool value) { g_bEnableDumpToRealPrinter = value; }
+	bool GetDumpToPrinter(void) { return m_bDumpToPrinter; }
+	void SetDumpToPrinter(bool value) { m_bDumpToPrinter = value; }
+	bool GetConvertEncoding(void) { return m_bConvertEncoding; }
+	void SetConvertEncoding(bool value) { m_bConvertEncoding = value; }
+	bool GetFilterUnprintable(void) { return m_bFilterUnprintable; }
+	void SetFilterUnprintable(bool value) { m_bFilterUnprintable = value; }
+	bool GetPrinterAppend(void) { return m_bPrinterAppend; }
+	void SetPrinterAppend(bool value) { m_bPrinterAppend = value; }
+	bool GetEnableDumpToRealPrinter(void) { return m_bEnableDumpToRealPrinter; }
+	void SetEnableDumpToRealPrinter(bool value) { m_bEnableDumpToRealPrinter = value; }
 
 	void SetRegistryConfig(void);
 
@@ -55,15 +55,15 @@ private:
 	bool CheckPrint(void);
 	void ClosePrint(void);
 
-	DWORD inactivity;
-	UINT g_PrinterIdleLimit;
-	FILE* file;
+	DWORD m_inactivity;
+	UINT m_printerIdleLimit;
+	FILE* m_file;
 	static const DWORD PRINTDRVR_SIZE = APPLE_SLOT_SIZE;
-	std::string g_szPrintFilename;
+	std::string m_szPrintFilename;
 
-	bool g_bDumpToPrinter;
-	bool g_bConvertEncoding;
-	bool g_bFilterUnprintable;
-	bool g_bPrinterAppend;
-	bool g_bEnableDumpToRealPrinter;	// Set by cmd-line: -printer-real
+	bool m_bDumpToPrinter;
+	bool m_bConvertEncoding;
+	bool m_bFilterUnprintable;
+	bool m_bPrinterAppend;
+	bool m_bEnableDumpToRealPrinter;	// Set by cmd-line: -printer-real
 };

@@ -54,64 +54,63 @@ void ParallelPrinterCard::InitializeIO(LPBYTE pCxRomPeripheral)
 //===========================================================================
 bool ParallelPrinterCard::CheckPrint(void)
 {
-    inactivity = 0;
-    if (file == NULL)
-    {
+	m_inactivity = 0;
+	if (m_file == NULL)
+	{
 		//TCHAR filepath[MAX_PATH * 2];
 		//_tcsncpy(filepath, g_sProgramDir, MAX_PATH);
-        //_tcsncat(filepath, _T("Printer.txt"), MAX_PATH);
+		//_tcsncat(filepath, _T("Printer.txt"), MAX_PATH);
 		//file = fopen(filepath, "wb");
-		if (g_bPrinterAppend )
-			file = fopen(ParallelPrinterCard::GetFilename().c_str(), "ab");
+		if (m_bPrinterAppend )
+			m_file = fopen(ParallelPrinterCard::GetFilename().c_str(), "ab");
 		else
-			file = fopen(ParallelPrinterCard::GetFilename().c_str(), "wb");
-    }
-    return (file != NULL);
+			m_file = fopen(ParallelPrinterCard::GetFilename().c_str(), "wb");
+	}
+	return (m_file != NULL);
 }
 
 //===========================================================================
 void ParallelPrinterCard::ClosePrint(void)
 {
-    if (file != NULL)
-    {
-        fclose(file);
-        file = NULL;
+	if (m_file != NULL)
+	{
+		fclose(m_file);
+		m_file = NULL;
 		std::string ExtendedFileName = "copy \"";
 		ExtendedFileName.append (ParallelPrinterCard::GetFilename());
 		ExtendedFileName.append ("\" prn");
 		//if (g_bDumpToPrinter) ShellExecute(NULL, "print", Printer_GetFilename(), NULL, NULL, 0); //Print through Notepad
-		if (g_bDumpToPrinter) 
+		if (m_bDumpToPrinter)
 			system (ExtendedFileName.c_str ()); //Print through console. This is supposed to be the better way, because it shall print images (with older printers only).
 			
-    }
-    inactivity = 0;
+	}
+	m_inactivity = 0;
 }
 
 //===========================================================================
 void ParallelPrinterCard::Destroy(void)
 {
-    ClosePrint();
+	ClosePrint();
 }
 
 //===========================================================================
 void ParallelPrinterCard::Update(const ULONG nExecutedCycles)
 {
-    if (file == NULL)
-    {
-        return;
-    }
-//    if ((inactivity += totalcycles) > (Printer_GetIdleLimit () * 1000 * 1000))  //This line seems to give a very big deviation
-	if ((inactivity += nExecutedCycles) > (ParallelPrinterCard::GetIdleLimit () * 710000))
-    {
-        // inactive, so close the file (next print will overwrite or append to it, according to the settings made)
-        ClosePrint();
-    }
+	if (m_file == NULL)
+		return;
+
+//	if ((inactivity += totalcycles) > (Printer_GetIdleLimit () * 1000 * 1000))  //This line seems to give a very big deviation
+	if ((m_inactivity += nExecutedCycles) > (ParallelPrinterCard::GetIdleLimit () * 710000))
+	{
+		// inactive, so close the file (next print will overwrite or append to it, according to the settings made)
+		ClosePrint();
+	}
 }
 
 //===========================================================================
 void ParallelPrinterCard::Reset(const bool powerCycle)
 {
-    ClosePrint();
+	ClosePrint();
 }
 
 //===========================================================================
@@ -121,7 +120,7 @@ BYTE __stdcall ParallelPrinterCard::IORead(WORD, WORD address, BYTE, BYTE, ULONG
 	ParallelPrinterCard* card = (ParallelPrinterCard*)MemGetSlotParameters(slot);
 
 	card->CheckPrint();
-    return 0xFF; // status - TODO?
+	return 0xFF; // status - TODO?
 }
 
 //===========================================================================
@@ -141,12 +140,12 @@ BYTE __stdcall ParallelPrinterCard::IOWrite(WORD, WORD address, BYTE, BYTE value
 
 	if (IsPravets(GetApple2Type()))
 	{
-		if (card->g_bConvertEncoding)
+		if (card->m_bConvertEncoding)
 			c = GetPravets().ConvertToPrinterChar(value);
 	}
 
-	if ((card->g_bFilterUnprintable == false) || (c>31) || (c==13) || (c==10) || (c>0x7F)) //c>0x7F is needed for cyrillic characters
-		fwrite(&c, 1, 1, card->file);
+	if ((card->m_bFilterUnprintable == false) || (c>31) || (c==13) || (c==10) || (c>0x7F)) //c>0x7F is needed for cyrillic characters
+		fwrite(&c, 1, 1, card->m_file);
 
 	return 0;
 }
@@ -155,7 +154,7 @@ BYTE __stdcall ParallelPrinterCard::IOWrite(WORD, WORD address, BYTE, BYTE value
 
 const std::string& ParallelPrinterCard::GetFilename(void)
 {
-	return g_szPrintFilename;
+	return m_szPrintFilename;
 }
 
 #define DEFAULT_PRINT_FILENAME "Printer.txt"
@@ -164,23 +163,23 @@ void ParallelPrinterCard::SetFilename(const std::string& prtFilename)
 {
 	if (!prtFilename.empty())
 	{
-		g_szPrintFilename = prtFilename;
+		m_szPrintFilename = prtFilename;
 	}
 	else  //No registry entry is available
 	{
-		g_szPrintFilename = g_sProgramDir + DEFAULT_PRINT_FILENAME;
-		RegSaveString(REG_CONFIG, REGVALUE_PRINTER_FILENAME, 1, g_szPrintFilename);
+		m_szPrintFilename = g_sProgramDir + DEFAULT_PRINT_FILENAME;
+		RegSaveString(REG_CONFIG, REGVALUE_PRINTER_FILENAME, 1, m_szPrintFilename);
 	}
 }
 
 UINT ParallelPrinterCard::GetIdleLimit(void)
 {
-	return g_PrinterIdleLimit;
+	return m_printerIdleLimit;
 }
 
 void ParallelPrinterCard::SetIdleLimit(UINT Duration)
 {	
-	g_PrinterIdleLimit = Duration;
+	m_printerIdleLimit = Duration;
 }
 
 //===========================================================================
@@ -221,15 +220,15 @@ void ParallelPrinterCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Slot slot(yamlSaveHelper, ParallelPrinterCard::GetSnapshotCardName(), m_slot, 1);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_INACTIVITY, inactivity);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_IDLELIMIT, g_PrinterIdleLimit);
-	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, g_szPrintFilename);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_FILEOPEN, (file != NULL) ? true : false);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_DUMPTOPRINTER, g_bDumpToPrinter);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_CONVERTENCODING, g_bConvertEncoding);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_FILTERUNPRINTABLE, g_bFilterUnprintable);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_APPEND, g_bPrinterAppend);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_DUMPTOREALPRINTER, g_bEnableDumpToRealPrinter);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_INACTIVITY, m_inactivity);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_IDLELIMIT, m_printerIdleLimit);
+	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, m_szPrintFilename);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_FILEOPEN, (m_file != NULL) ? true : false);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_DUMPTOPRINTER, m_bDumpToPrinter);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_CONVERTENCODING, m_bConvertEncoding);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_FILTERUNPRINTABLE, m_bFilterUnprintable);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_APPEND, m_bPrinterAppend);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_DUMPTOREALPRINTER, m_bEnableDumpToRealPrinter);
 }
 
 bool ParallelPrinterCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
@@ -240,27 +239,27 @@ bool ParallelPrinterCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UIN
 	if (version != 1)
 		Card::ThrowErrorInvalidVersion(CT_GenericPrinter, version);
 
-	inactivity					= yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);
-	g_PrinterIdleLimit			= yamlLoadHelper.LoadUint(SS_YAML_KEY_IDLELIMIT);
-	g_szPrintFilename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
+	m_inactivity				= yamlLoadHelper.LoadUint(SS_YAML_KEY_INACTIVITY);
+	m_printerIdleLimit			= yamlLoadHelper.LoadUint(SS_YAML_KEY_IDLELIMIT);
+	m_szPrintFilename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
 
 	if (yamlLoadHelper.LoadBool(SS_YAML_KEY_FILEOPEN))
 	{
 		yamlLoadHelper.LoadBool(SS_YAML_KEY_APPEND);	// Consume
-		g_bPrinterAppend = true;	// Re-open print-file in append mode
+		m_bPrinterAppend = true;	// Re-open print-file in append mode
 		BOOL bRes = CheckPrint();
 		if (!bRes)
 			throw std::runtime_error("Printer Card: Unable to resume printing to file");
 	}
 	else
 	{
-		g_bPrinterAppend = yamlLoadHelper.LoadBool(SS_YAML_KEY_APPEND);
+		m_bPrinterAppend = yamlLoadHelper.LoadBool(SS_YAML_KEY_APPEND);
 	}
 
-	g_bDumpToPrinter			= yamlLoadHelper.LoadBool(SS_YAML_KEY_DUMPTOPRINTER);
-	g_bConvertEncoding			= yamlLoadHelper.LoadBool(SS_YAML_KEY_CONVERTENCODING);
-	g_bFilterUnprintable		= yamlLoadHelper.LoadBool(SS_YAML_KEY_FILTERUNPRINTABLE);
-	g_bEnableDumpToRealPrinter	= yamlLoadHelper.LoadBool(SS_YAML_KEY_DUMPTOREALPRINTER);
+	m_bDumpToPrinter			= yamlLoadHelper.LoadBool(SS_YAML_KEY_DUMPTOPRINTER);
+	m_bConvertEncoding			= yamlLoadHelper.LoadBool(SS_YAML_KEY_CONVERTENCODING);
+	m_bFilterUnprintable		= yamlLoadHelper.LoadBool(SS_YAML_KEY_FILTERUNPRINTABLE);
+	m_bEnableDumpToRealPrinter	= yamlLoadHelper.LoadBool(SS_YAML_KEY_DUMPTOREALPRINTER);
 
 	return true;
 }
