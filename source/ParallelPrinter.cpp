@@ -42,11 +42,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 void ParallelPrinterCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
+	const DWORD PRINTDRVR_SIZE = APPLE_SLOT_SIZE;
 	BYTE* pData = GetFrame().GetResource(IDR_PRINTDRVR_FW, "FIRMWARE", PRINTDRVR_SIZE);
 	if(pData == NULL)
 		return;
 
-	memcpy(pCxRomPeripheral + m_slot*256, pData, PRINTDRVR_SIZE);
+	memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, pData, PRINTDRVR_SIZE);
 
 	RegisterIoHandler(m_slot, IORead, IOWrite, NULL, NULL, this, NULL);
 }

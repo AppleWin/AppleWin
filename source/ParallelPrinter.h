@@ -59,7 +59,6 @@ private:
 	DWORD m_inactivity;
 	UINT m_printerIdleLimit;
 	FILE* m_file;
-	static const DWORD PRINTDRVR_SIZE = APPLE_SLOT_SIZE;
 	std::string m_szPrintFilename;
 
 	bool m_bDumpToPrinter;
