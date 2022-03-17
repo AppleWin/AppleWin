@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "FourPlay.h"
 #include "Harddisk.h"
 #include "MouseInterface.h"
+#include "ParallelPrinter.h"
 #include "SAM.h"
 #include "SerialComms.h"
 #include "SNESMAX.h"
@@ -67,7 +68,9 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = new DummyCard(type, slot);
 		break;
 	case CT_GenericPrinter:
-		m_slot[slot] = new DummyCard(type, slot);
+		_ASSERT(m_pParallelPrinterCard == NULL);
+		if (m_pParallelPrinterCard) break;	// Only support one Printer card
+		m_slot[slot] = m_pParallelPrinterCard = new ParallelPrinterCard(slot);
 		break;
 	case CT_GenericHDD:
 		m_slot[slot] = new HarddiskInterfaceCard(slot);
@@ -152,6 +155,9 @@ void CardManager::RemoveInternal(UINT slot)
 			break;
 		case CT_SSC:
 			m_pSSC = NULL;
+			break;
+		case CT_GenericPrinter:
+			m_pParallelPrinterCard = NULL;
 			break;
 		case CT_LanguageCard:
 		case CT_Saturn128K:
