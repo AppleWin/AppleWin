@@ -184,14 +184,40 @@ void ParallelPrinterCard::SetIdleLimit(UINT Duration)
 
 //===========================================================================
 
+void ParallelPrinterCard::GetRegistryConfig(void)
+{
+	std::string regSection = RegGetConfigSlotSection(m_slot);
+
+	DWORD dwTmp;
+	char szFilename[MAX_PATH];
+
+	if (RegLoadValue(regSection.c_str(), REGVALUE_DUMP_TO_PRINTER, TRUE, &dwTmp))
+		SetDumpToPrinter(dwTmp ? true : false);
+
+	if (RegLoadValue(regSection.c_str(), REGVALUE_CONVERT_ENCODING, TRUE, &dwTmp))
+		SetConvertEncoding(dwTmp ? true : false);
+
+	if (RegLoadValue(regSection.c_str(), REGVALUE_FILTER_UNPRINTABLE, TRUE, &dwTmp))
+		SetFilterUnprintable(dwTmp ? true : false);
+
+	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_APPEND, TRUE, &dwTmp))
+		SetPrinterAppend(dwTmp ? true : false);
+
+	if (RegLoadString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, 1, szFilename, MAX_PATH, TEXT("")))
+		SetFilename(szFilename);
+
+	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_IDLE_LIMIT, TRUE, &dwTmp))
+		SetIdleLimit(dwTmp);
+}
+
 void ParallelPrinterCard::SetRegistryConfig(void)
 {
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegSaveString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, TRUE, GetFilename());
 	RegSaveValue(regSection.c_str(), REGVALUE_DUMP_TO_PRINTER, TRUE, GetDumpToPrinter() ? 1 : 0);
 	RegSaveValue(regSection.c_str(), REGVALUE_CONVERT_ENCODING, TRUE, GetConvertEncoding() ? 1 : 0);
 	RegSaveValue(regSection.c_str(), REGVALUE_FILTER_UNPRINTABLE, TRUE, GetFilterUnprintable() ? 1 : 0);
 	RegSaveValue(regSection.c_str(), REGVALUE_PRINTER_APPEND, TRUE, GetPrinterAppend() ? 1 : 0);
+	RegSaveString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, TRUE, GetFilename());
 	RegSaveValue(regSection.c_str(), REGVALUE_PRINTER_IDLE_LIMIT, TRUE, GetIdleLimit());
 }
 

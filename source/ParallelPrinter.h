@@ -49,6 +49,7 @@ public:
 	bool GetEnableDumpToRealPrinter(void) { return m_bEnableDumpToRealPrinter; }
 	void SetEnableDumpToRealPrinter(bool value) { m_bEnableDumpToRealPrinter = value; }
 
+	void GetRegistryConfig(void);
 	void SetRegistryConfig(void);
 
 private:

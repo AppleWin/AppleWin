@@ -313,27 +313,7 @@ void LoadConfiguration(bool loadImages)
 	//
 
 	if (GetCardMgr().IsParallelPrinterCardInstalled())
-	{
-		ParallelPrinterCard* card = GetCardMgr().GetParallelPrinterCard();
-
-		if (REGLOAD(TEXT(REGVALUE_DUMP_TO_PRINTER), &dwTmp))
-			card->SetDumpToPrinter(dwTmp ? true : false);
-
-		if (REGLOAD(TEXT(REGVALUE_CONVERT_ENCODING), &dwTmp))
-			card->SetConvertEncoding(dwTmp ? true : false);
-
-		if (REGLOAD(TEXT(REGVALUE_FILTER_UNPRINTABLE), &dwTmp))
-			card->SetFilterUnprintable(dwTmp ? true : false);
-
-		if (REGLOAD(TEXT(REGVALUE_PRINTER_APPEND), &dwTmp))
-			card->SetPrinterAppend(dwTmp ? true : false);
-
-		RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_PRINTER_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));
-		card->SetFilename(szFilename);	// If not in Registry than default will be used
-
-		REGLOAD_DEFAULT(TEXT(REGVALUE_PRINTER_IDLE_LIMIT), &dwTmp, 10);
-		card->SetIdleLimit(dwTmp);
-	}
+		GetCardMgr().GetParallelPrinterCard()->GetRegistryConfig();
 
 	//
 
