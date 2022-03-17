@@ -967,7 +967,6 @@ LRESULT Win32Frame::WndProc(
       if (!g_bRestart) {
 		GetCardMgr().Destroy();
       }
-      PrintDestroy();
       CpuDestroy();
       MemDestroy();
       SpkrDestroy();
