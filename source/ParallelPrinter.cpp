@@ -38,41 +38,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "../resource/resource.h"
 
-static DWORD inactivity = 0;
-static unsigned int g_PrinterIdleLimit = 10;
-static FILE* file = NULL;
-DWORD const PRINTDRVR_SIZE = APPLE_SLOT_SIZE;
-#define DEFAULT_PRINT_FILENAME "Printer.txt"
-static std::string g_szPrintFilename;
-bool g_bDumpToPrinter = false;
-bool g_bConvertEncoding = true;
-bool g_bFilterUnprintable = true;
-bool g_bPrinterAppend = false;
-bool g_bEnableDumpToRealPrinter = false;
-
 //===========================================================================
 
-static BYTE __stdcall PrintStatus(WORD, WORD, BYTE, BYTE, ULONG);
-static BYTE __stdcall PrintTransmit(WORD, WORD, BYTE, BYTE value, ULONG);
-
-
-
-
-VOID PrintLoadRom(LPBYTE pCxRomPeripheral, const UINT uSlot)
+void ParallelPrinterCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	BYTE* pData = GetFrame().GetResource(IDR_PRINTDRVR_FW, "FIRMWARE", PRINTDRVR_SIZE);
 	if(pData == NULL)
 		return;
 
-	memcpy(pCxRomPeripheral + uSlot*256, pData, PRINTDRVR_SIZE);
+	memcpy(pCxRomPeripheral + m_slot*256, pData, PRINTDRVR_SIZE);
 
-	//
-
-	RegisterIoHandler(uSlot, PrintStatus, PrintTransmit, NULL, NULL, NULL, NULL);
+	RegisterIoHandler(m_slot, IORead, IOWrite, NULL, NULL, this, NULL);
 }
 
 //===========================================================================
-static BOOL CheckPrint()
+bool ParallelPrinterCard::CheckPrint(void)
 {
     inactivity = 0;
     if (file == NULL)
@@ -82,22 +62,22 @@ static BOOL CheckPrint()
         //_tcsncat(filepath, _T("Printer.txt"), MAX_PATH);
 		//file = fopen(filepath, "wb");
 		if (g_bPrinterAppend )
-			file = fopen(Printer_GetFilename().c_str(), "ab");
+			file = fopen(ParallelPrinterCard::GetFilename().c_str(), "ab");
 		else
-			file = fopen(Printer_GetFilename().c_str(), "wb");
+			file = fopen(ParallelPrinterCard::GetFilename().c_str(), "wb");
     }
     return (file != NULL);
 }
 
 //===========================================================================
-static void ClosePrint()
+void ParallelPrinterCard::ClosePrint(void)
 {
     if (file != NULL)
     {
         fclose(file);
         file = NULL;
 		std::string ExtendedFileName = "copy \"";
-		ExtendedFileName.append (Printer_GetFilename());
+		ExtendedFileName.append (ParallelPrinterCard::GetFilename());
 		ExtendedFileName.append ("\" prn");
 		//if (g_bDumpToPrinter) ShellExecute(NULL, "print", Printer_GetFilename(), NULL, NULL, 0); //Print through Notepad
 		if (g_bDumpToPrinter) 
@@ -108,20 +88,20 @@ static void ClosePrint()
 }
 
 //===========================================================================
-void PrintDestroy()
+void ParallelPrinterCard::Destroy(void)
 {
     ClosePrint();
 }
 
 //===========================================================================
-void PrintUpdate(DWORD totalcycles)
+void ParallelPrinterCard::Update(const ULONG nExecutedCycles)
 {
     if (file == NULL)
     {
         return;
     }
 //    if ((inactivity += totalcycles) > (Printer_GetIdleLimit () * 1000 * 1000))  //This line seems to give a very big deviation
-	if ((inactivity += totalcycles) > (Printer_GetIdleLimit () * 710000)) 
+	if ((inactivity += nExecutedCycles) > (ParallelPrinterCard::GetIdleLimit () * 710000))
     {
         // inactive, so close the file (next print will overwrite or append to it, according to the settings made)
         ClosePrint();
@@ -129,22 +109,28 @@ void PrintUpdate(DWORD totalcycles)
 }
 
 //===========================================================================
-void PrintReset()
+void ParallelPrinterCard::Reset(const bool powerCycle)
 {
     ClosePrint();
 }
 
 //===========================================================================
-static BYTE __stdcall PrintStatus(WORD, WORD, BYTE, BYTE, ULONG)
+BYTE __stdcall ParallelPrinterCard::IORead(WORD, WORD address, BYTE, BYTE, ULONG)
 {
-    CheckPrint();
+	UINT slot = ((address & 0xff) >> 4) - 8;
+	ParallelPrinterCard* card = (ParallelPrinterCard*)MemGetSlotParameters(slot);
+
+	card->CheckPrint();
     return 0xFF; // status - TODO?
 }
 
 //===========================================================================
-static BYTE __stdcall PrintTransmit(WORD, WORD address, BYTE, BYTE value, ULONG)
+BYTE __stdcall ParallelPrinterCard::IOWrite(WORD, WORD address, BYTE, BYTE value, ULONG)
 {
-	if (!CheckPrint())
+	UINT slot = ((address & 0xff) >> 4) - 8;
+	ParallelPrinterCard* card = (ParallelPrinterCard*)MemGetSlotParameters(slot);
+
+	if (!card->CheckPrint())
 		return 0;
 
 	// only allow writes to the load output port (i.e., $C090)
@@ -155,24 +141,26 @@ static BYTE __stdcall PrintTransmit(WORD, WORD address, BYTE, BYTE value, ULONG)
 
 	if (IsPravets(GetApple2Type()))
 	{
-		if (g_bConvertEncoding)
+		if (card->g_bConvertEncoding)
 			c = GetPravets().ConvertToPrinterChar(value);
 	}
 
-	if ((g_bFilterUnprintable == false) || (c>31) || (c==13) || (c==10) || (c>0x7F)) //c>0x7F is needed for cyrillic characters
-		fwrite(&c, 1, 1, file);
+	if ((card->g_bFilterUnprintable == false) || (c>31) || (c==13) || (c==10) || (c>0x7F)) //c>0x7F is needed for cyrillic characters
+		fwrite(&c, 1, 1, card->file);
 
 	return 0;
 }
 
 //===========================================================================
 
-const std::string & Printer_GetFilename()
+const std::string& ParallelPrinterCard::GetFilename(void)
 {
 	return g_szPrintFilename;
 }
 
-void Printer_SetFilename(const std::string & prtFilename)
+#define DEFAULT_PRINT_FILENAME "Printer.txt"
+
+void ParallelPrinterCard::SetFilename(const std::string& prtFilename)
 {
 	if (!prtFilename.empty())
 	{
@@ -185,12 +173,12 @@ void Printer_SetFilename(const std::string & prtFilename)
 	}
 }
 
-unsigned int Printer_GetIdleLimit()
+UINT ParallelPrinterCard::GetIdleLimit(void)
 {
 	return g_PrinterIdleLimit;
 }
 
-void Printer_SetIdleLimit(unsigned int Duration)
+void ParallelPrinterCard::SetIdleLimit(UINT Duration)
 {	
 	g_PrinterIdleLimit = Duration;
 }
@@ -209,15 +197,15 @@ void Printer_SetIdleLimit(unsigned int Duration)
 #define SS_YAML_KEY_APPEND "Printer Append"
 #define SS_YAML_KEY_DUMPTOREALPRINTER "Enable Dump To Real Printer"
 
-const std::string& Printer_GetSnapshotCardName(void)
+const std::string& ParallelPrinterCard::GetSnapshotCardName(void)
 {
 	static const std::string name(SS_YAML_VALUE_CARD_PRINTER);
 	return name;
 }
 
-void Printer_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
+void ParallelPrinterCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 {
-	YamlSaveHelper::Slot slot(yamlSaveHelper, Printer_GetSnapshotCardName(), uSlot, 1);
+	YamlSaveHelper::Slot slot(yamlSaveHelper, ParallelPrinterCard::GetSnapshotCardName(), m_slot, 1);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_INACTIVITY, inactivity);
@@ -231,10 +219,10 @@ void Printer_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_DUMPTOREALPRINTER, g_bEnableDumpToRealPrinter);
 }
 
-bool Printer_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT slot, UINT version)
+bool ParallelPrinterCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (slot != 1)	// fixme
-		Card::ThrowErrorInvalidSlot(CT_GenericPrinter, slot);
+	if (m_slot != SLOT1)	// fixme
+		Card::ThrowErrorInvalidSlot(CT_GenericPrinter, m_slot);
 
 	if (version != 1)
 		Card::ThrowErrorInvalidVersion(CT_GenericPrinter, version);
