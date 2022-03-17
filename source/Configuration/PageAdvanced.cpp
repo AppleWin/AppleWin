@@ -131,18 +131,33 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 			SendDlgItemMessage(hWnd,IDC_SAVESTATE_FILENAME,WM_SETTEXT,0,(LPARAM)Snapshot_GetFilename().c_str());
 
 			CheckDlgButton(hWnd, IDC_SAVESTATE_ON_EXIT, g_bSaveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_DUMPTOPRINTER, g_bDumpToPrinter ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_PRINTER_CONVERT_ENCODING, g_bConvertEncoding ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE, g_bFilterUnprintable ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_PRINTER_APPEND, g_bPrinterAppend ? BST_CHECKED : BST_UNCHECKED);
-			SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_SETRANGE, 0, MAKELONG(999,0));
-			SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_SETPOS, 0, MAKELONG(Printer_GetIdleLimit (),0));
-			SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)Printer_GetFilename().c_str());
+
+			if (GetCardMgr().IsParallelPrinterCardInstalled())
+			{
+				ParallelPrinterCard* card = GetCardMgr().GetParallelPrinterCard();
+
+				CheckDlgButton(hWnd, IDC_DUMPTOPRINTER, card->GetDumpToPrinter() ? BST_CHECKED : BST_UNCHECKED);
+				CheckDlgButton(hWnd, IDC_PRINTER_CONVERT_ENCODING, card->GetConvertEncoding() ? BST_CHECKED : BST_UNCHECKED);
+				CheckDlgButton(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE, card->GetFilterUnprintable() ? BST_CHECKED : BST_UNCHECKED);
+				CheckDlgButton(hWnd, IDC_PRINTER_APPEND, card->GetPrinterAppend() ? BST_CHECKED : BST_UNCHECKED);
+				SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_SETRANGE, 0, MAKELONG(999, 0));
+				SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_SETPOS, 0, MAKELONG(card->GetIdleLimit(), 0));
+				SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)card->GetFilename().c_str());
+
+				// Need to specify cmd-line switch: -printer-real to enable this control
+				EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), card->GetEnableDumpToRealPrinter() ? TRUE : FALSE);
+			}
+			else
+			{
+				EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_PRINTER_CONVERT_ENCODING), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_PRINTER_APPEND), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_SPIN_PRINTER_IDLE), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_PRINTER_DUMP_FILENAME), FALSE);
+			}
 
 			InitOptions(hWnd);
-
-			// Need to specify cmd-line switch: -printer-real to enable this control
-			EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), g_bEnableDumpToRealPrinter ? TRUE : FALSE);
 
 			break;
 		}
@@ -160,42 +175,39 @@ void CPageAdvanced::DlgOK(HWND hWnd)
 		m_PropertySheetHelper.SaveStateUpdate();
 	}
 
-	// Update printer dump filename
-	{
-		char szFilename[MAX_PATH];
-		memset(szFilename, 0, sizeof(szFilename));
-		* (USHORT*) szFilename = sizeof(szFilename);
-
-		UINT nLineLength = SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, EM_LINELENGTH, 0, 0);
-
-		SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, EM_GETLINE, 0, (LPARAM)szFilename);
-
-		nLineLength = nLineLength > sizeof(szFilename)-1 ? sizeof(szFilename)-1 : nLineLength;
-		szFilename[nLineLength] = 0x00;
-
-		Printer_SetFilename(szFilename);
-		RegSaveString(TEXT(REG_CONFIG), REGVALUE_PRINTER_FILENAME, 1, Printer_GetFilename());
-	}
-
 	g_bSaveStateOnExit = IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT) ? true : false;
 	REGSAVE(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), g_bSaveStateOnExit ? 1 : 0);
 
-	g_bDumpToPrinter = IsDlgButtonChecked(hWnd, IDC_DUMPTOPRINTER ) ? true : false;
-	REGSAVE(TEXT(REGVALUE_DUMP_TO_PRINTER), g_bDumpToPrinter ? 1 : 0);
+	if (GetCardMgr().IsParallelPrinterCardInstalled())
+	{
+		ParallelPrinterCard* card = GetCardMgr().GetParallelPrinterCard();
 
-	g_bConvertEncoding = IsDlgButtonChecked(hWnd, IDC_PRINTER_CONVERT_ENCODING ) ? true : false;
-	REGSAVE(TEXT(REGVALUE_CONVERT_ENCODING), g_bConvertEncoding ? 1 : 0);
+		// Update printer dump filename
+		{
+			char szFilename[MAX_PATH];
+			memset(szFilename, 0, sizeof(szFilename));
+			*(USHORT*)szFilename = sizeof(szFilename);
 
-	g_bFilterUnprintable = IsDlgButtonChecked(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE ) ? true : false;
-	REGSAVE(TEXT(REGVALUE_FILTER_UNPRINTABLE), g_bFilterUnprintable ? 1 : 0);
+			UINT nLineLength = SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, EM_LINELENGTH, 0, 0);
 
-	g_bPrinterAppend = IsDlgButtonChecked(hWnd, IDC_PRINTER_APPEND) ? true : false;
-	REGSAVE(TEXT(REGVALUE_PRINTER_APPEND), g_bPrinterAppend ? 1 : 0);
+			SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, EM_GETLINE, 0, (LPARAM)szFilename);
 
-	//
+			nLineLength = nLineLength > sizeof(szFilename) - 1 ? sizeof(szFilename) - 1 : nLineLength;
+			szFilename[nLineLength] = 0x00;
 
-    Printer_SetIdleLimit((short)SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE , UDM_GETPOS, 0, 0));
-	REGSAVE(TEXT(REGVALUE_PRINTER_IDLE_LIMIT),Printer_GetIdleLimit());
+			card->SetFilename(szFilename);
+		}
+
+		card->SetDumpToPrinter(IsDlgButtonChecked(hWnd, IDC_DUMPTOPRINTER) ? true : false);
+		card->SetConvertEncoding(IsDlgButtonChecked(hWnd, IDC_PRINTER_CONVERT_ENCODING) ? true : false);
+		card->SetFilterUnprintable(IsDlgButtonChecked(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE) ? true : false);
+		card->SetPrinterAppend(IsDlgButtonChecked(hWnd, IDC_PRINTER_APPEND) ? true : false);
+
+		card->SetIdleLimit((short)SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_GETPOS, 0, 0));
+
+		// Now save all the above to Registry
+		card->SetRegistryConfig();
+	}
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }

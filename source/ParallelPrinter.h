@@ -38,11 +38,18 @@ public:
 	UINT GetIdleLimit(void);
 	void SetIdleLimit(UINT Duration);
 
+	bool GetDumpToPrinter(void) { return g_bDumpToPrinter; }
 	void SetDumpToPrinter(bool value) { g_bDumpToPrinter = value; }
+	bool GetConvertEncoding(void) { return g_bConvertEncoding; }
 	void SetConvertEncoding(bool value) { g_bConvertEncoding = value; }
+	bool GetFilterUnprintable(void) { return g_bFilterUnprintable; }
 	void SetFilterUnprintable(bool value) { g_bFilterUnprintable = value; }
+	bool GetPrinterAppend(void) { return g_bPrinterAppend; }
 	void SetPrinterAppend(bool value) { g_bPrinterAppend = value; }
+	bool GetEnableDumpToRealPrinter(void) { return g_bEnableDumpToRealPrinter; }
 	void SetEnableDumpToRealPrinter(bool value) { g_bEnableDumpToRealPrinter = value; }
+
+	void SetRegistryConfig(void);
 
 private:
 	bool CheckPrint(void);

@@ -185,6 +185,19 @@ void ParallelPrinterCard::SetIdleLimit(UINT Duration)
 
 //===========================================================================
 
+void ParallelPrinterCard::SetRegistryConfig(void)
+{
+	std::string regSection = RegGetConfigSlotSection(m_slot);
+	RegSaveString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, TRUE, GetFilename());
+	RegSaveValue(regSection.c_str(), REGVALUE_DUMP_TO_PRINTER, TRUE, GetDumpToPrinter() ? 1 : 0);
+	RegSaveValue(regSection.c_str(), REGVALUE_CONVERT_ENCODING, TRUE, GetConvertEncoding() ? 1 : 0);
+	RegSaveValue(regSection.c_str(), REGVALUE_FILTER_UNPRINTABLE, TRUE, GetFilterUnprintable() ? 1 : 0);
+	RegSaveValue(regSection.c_str(), REGVALUE_PRINTER_APPEND, TRUE, GetPrinterAppend() ? 1 : 0);
+	RegSaveValue(regSection.c_str(), REGVALUE_PRINTER_IDLE_LIMIT, TRUE, GetIdleLimit());
+}
+
+//===========================================================================
+
 #define SS_YAML_VALUE_CARD_PRINTER "Generic Printer"
 
 #define SS_YAML_KEY_INACTIVITY "Inactivity"
