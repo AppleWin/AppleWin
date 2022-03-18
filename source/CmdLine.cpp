@@ -401,7 +401,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-use-real-printer") == 0)	// Enable control in Advanced config to allow dumping to a real printer
 		{
-			g_cmdLine.bEnableDumpToRealPrinter = true;
+			g_cmdLine.enableDumpToRealPrinter = true;
 		}
 		else if (strcmp(lpCmdLine, "-speech") == 0)
 		{

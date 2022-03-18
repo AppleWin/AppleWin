@@ -755,7 +755,7 @@ static void RepeatInitialization(void)
 			GetCardMgr().Insert(SLOT1, g_cmdLine.slotInsert[SLOT1]);
 		}
 
-		if (g_cmdLine.bEnableDumpToRealPrinter && GetCardMgr().IsParallelPrinterCardInstalled())
+		if (g_cmdLine.enableDumpToRealPrinter && GetCardMgr().IsParallelPrinterCardInstalled())
 		{
 			GetCardMgr().GetParallelPrinterCard()->SetEnableDumpToRealPrinter(true);
 		}
