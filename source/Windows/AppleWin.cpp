@@ -750,6 +750,11 @@ static void RepeatInitialization(void)
 			GetCardMgr().GetSSC()->SupportDCD(true);
 		}
 
+		if (g_cmdLine.slotInsert[SLOT1] != CT_Empty && g_cmdLine.slotInsert[SLOT1] == CT_GenericPrinter)	// For now just support Printer card in slot 1
+		{
+			GetCardMgr().Insert(SLOT1, g_cmdLine.slotInsert[SLOT1]);
+		}
+
 		if (g_cmdLine.bEnableDumpToRealPrinter && GetCardMgr().IsParallelPrinterCardInstalled())
 		{
 			GetCardMgr().GetParallelPrinterCard()->SetEnableDumpToRealPrinter(true);
