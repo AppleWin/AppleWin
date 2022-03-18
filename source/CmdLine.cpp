@@ -167,6 +167,13 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					g_cmdLine.bSlotEmpty[slot] = true;
 				if (strcmp(lpCmdLine, "diskii") == 0)
 					g_cmdLine.slotInsert[slot] = CT_Disk2;
+				if (strcmp(lpCmdLine, "parallel") == 0)
+				{
+					if (slot == SLOT1)
+						g_cmdLine.slotInsert[slot] = CT_GenericPrinter;
+					else
+						LogFileOutput("Parallel Printer card currently only supported in slot 1\n");
+				}
 				if (strcmp(lpCmdLine, "vidhd") == 0)
 				{
 					if (slot == SLOT3)
@@ -394,7 +401,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-use-real-printer") == 0)	// Enable control in Advanced config to allow dumping to a real printer
 		{
-			g_bEnableDumpToRealPrinter = true;
+			g_cmdLine.enableDumpToRealPrinter = true;
 		}
 		else if (strcmp(lpCmdLine, "-speech") == 0)
 		{
