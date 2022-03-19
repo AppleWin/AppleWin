@@ -10,7 +10,8 @@ public:
 	CardManager(void) :
 		m_pMouseCard(NULL),
 		m_pSSC(NULL),
-		m_pLanguageCard(NULL)
+		m_pLanguageCard(NULL),
+		m_pParallelPrinterCard(NULL)
 	{
 		InsertInternal(SLOT0, CT_Empty);
 		InsertInternal(SLOT1, CT_GenericPrinter);
@@ -54,6 +55,8 @@ public:
 	bool IsMouseCardInstalled(void) { return m_pMouseCard != NULL; }
 	class CSuperSerialCard* GetSSC(void) { return m_pSSC; }
 	bool IsSSCInstalled(void) { return m_pSSC != NULL; }
+	class ParallelPrinterCard* GetParallelPrinterCard(void) { return m_pParallelPrinterCard; }
+	bool IsParallelPrinterCardInstalled(void) { return m_pParallelPrinterCard != NULL; }
 
 	class LanguageCardUnit* GetLanguageCard(void) { return m_pLanguageCard; }
 
@@ -75,4 +78,5 @@ private:
 	class CMouseInterface* m_pMouseCard;
 	class CSuperSerialCard* m_pSSC;
 	class LanguageCardUnit* m_pLanguageCard;
+	class ParallelPrinterCard* m_pParallelPrinterCard;
 };

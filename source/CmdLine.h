@@ -21,6 +21,7 @@ struct CmdLine
 		snesMaxAltControllerType[0] = false;
 		snesMaxAltControllerType[1] = false;
 		supportDCD = false;
+		enableDumpToRealPrinter = false;
 		szImageName_harddisk[HARDDISK_1] = NULL;
 		szImageName_harddisk[HARDDISK_2] = NULL;
 		szSnapshotName = NULL;
@@ -61,6 +62,7 @@ struct CmdLine
 	bool bRemoveNoSlotClock;
 	bool snesMaxAltControllerType[2];
 	bool supportDCD;
+	bool enableDumpToRealPrinter;
 	SS_CARDTYPE slotInsert[NUM_SLOTS];
 	LPCSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES];
 	bool driveConnected[NUM_SLOTS][NUM_DRIVES];

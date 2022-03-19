@@ -207,20 +207,6 @@ void LoadConfiguration(bool loadImages)
 	if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
 		g_bSaveStateOnExit = dwTmp ? true : false;
 
-
-	if(REGLOAD(TEXT(REGVALUE_DUMP_TO_PRINTER), &dwTmp))
-		g_bDumpToPrinter = dwTmp ? true : false;
-
-	if(REGLOAD(TEXT(REGVALUE_CONVERT_ENCODING), &dwTmp))
-		g_bConvertEncoding = dwTmp ? true : false;
-
-	if(REGLOAD(TEXT(REGVALUE_FILTER_UNPRINTABLE), &dwTmp))
-		g_bFilterUnprintable = dwTmp ? true : false;
-
-	if(REGLOAD(TEXT(REGVALUE_PRINTER_APPEND), &dwTmp))
-		g_bPrinterAppend = dwTmp ? true : false;
-
-
 	if(REGLOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
 		JoySetTrim((short)dwTmp, true);
 	if(REGLOAD(TEXT(REGVALUE_PDL_YTRIM), &dwTmp))
@@ -328,11 +314,10 @@ void LoadConfiguration(bool loadImages)
 
 	//
 
-	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_PRINTER_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));
-	Printer_SetFilename(szFilename);	// If not in Registry than default will be used
+	if (GetCardMgr().IsParallelPrinterCardInstalled())
+		GetCardMgr().GetParallelPrinterCard()->GetRegistryConfig();
 
-	REGLOAD_DEFAULT(TEXT(REGVALUE_PRINTER_IDLE_LIMIT), &dwTmp, 10);
-	Printer_SetIdleLimit(dwTmp);
+	//
 
 	if (REGLOAD(TEXT(REGVALUE_WINDOW_SCALE), &dwTmp))
 		GetFrame().SetViewportScale(dwTmp);
@@ -545,7 +530,6 @@ void ResetMachineState()
 		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
 	GetVideo().VideoResetState();
 	KeybReset();
-	PrintReset();
 	JoyReset();
 	MB_Reset(true);
 	SpkrReset();

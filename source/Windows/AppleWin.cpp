@@ -750,6 +750,16 @@ static void RepeatInitialization(void)
 			GetCardMgr().GetSSC()->SupportDCD(true);
 		}
 
+		if (g_cmdLine.slotInsert[SLOT1] != CT_Empty && g_cmdLine.slotInsert[SLOT1] == CT_GenericPrinter)	// For now just support Printer card in slot 1
+		{
+			GetCardMgr().Insert(SLOT1, g_cmdLine.slotInsert[SLOT1]);
+		}
+
+		if (g_cmdLine.enableDumpToRealPrinter && GetCardMgr().IsParallelPrinterCardInstalled())
+		{
+			GetCardMgr().GetParallelPrinterCard()->SetEnableDumpToRealPrinter(true);
+		}
+
 		if (g_cmdLine.slotInsert[SLOT3] != CT_Empty && g_cmdLine.slotInsert[SLOT3] == CT_VidHD)	// For now just support VidHD in slot 3
 		{
 			GetCardMgr().Insert(SLOT3, g_cmdLine.slotInsert[SLOT3]);
