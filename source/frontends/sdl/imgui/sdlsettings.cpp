@@ -212,6 +212,8 @@ namespace sa2
   {
     if (ImGui::Begin("Settings", &myShowSettings))
     {
+      CardManager & cardManager = GetCardMgr();
+
       if (ImGui::BeginTabBar("Settings"))
       {
         if (ImGui::BeginTabItem("General"))
@@ -310,10 +312,9 @@ namespace sa2
           ImGui::Separator();
 
           ImGui::LabelText("Slot", "Card");
-          CardManager & manager = GetCardMgr();
           for (size_t slot = SLOT1; slot < NUM_SLOTS; ++slot)
           {
-            const SS_CARDTYPE current = manager.QuerySlot(slot);
+            const SS_CARDTYPE current = cardManager.QuerySlot(slot);
             if (ImGui::BeginCombo(std::to_string(slot).c_str(), getCardName(current).c_str()))
             {
               const std::vector<SS_CARDTYPE> & cards = getCardsForSlot(slot);
@@ -398,8 +399,6 @@ namespace sa2
 
         if (ImGui::BeginTabItem("Disks"))
         {
-          CardManager & cardManager = GetCardMgr();
-
           bool enhancedSpeed = cardManager.GetDisk2CardMgr().GetEnhanceDisk();
           if (ImGui::Checkbox("Enhanced speed", &enhancedSpeed))
           {
@@ -542,16 +541,35 @@ namespace sa2
 
         if (ImGui::BeginTabItem("Printer"))
         {
-          ImGui::LabelText("Printer file", "%s", Printer_GetFilename().c_str());
-          ImGui::SameLine();
-          if (ImGui::Button("Reset"))
+          if (cardManager.IsParallelPrinterCardInstalled())
           {
-            PrintReset();
+            ParallelPrinterCard* card = cardManager.GetParallelPrinterCard();
+            ImGui::LabelText("Printer file", "%s", card->GetFilename().c_str());
+            ImGui::SameLine();
+            if (ImGui::Button("Reset"))
+            {
+              card->Reset(true);
+            }
+            ImGui::Separator();
+            bool printerAppend = card->GetPrinterAppend();
+            if (ImGui::Checkbox("Append", &printerAppend))
+            {
+              card->SetPrinterAppend(printerAppend);
+            }
+
+            bool filterUnprintable = card->GetFilterUnprintable();
+            if (ImGui::Checkbox("Filter unprintable", &filterUnprintable))
+            {
+              card->SetFilterUnprintable(filterUnprintable);
+            }
+
+            bool convertEncoding = card->GetConvertEncoding();
+            if (ImGui::Checkbox("Convert encoding", &convertEncoding))
+            {
+              card->SetConvertEncoding(convertEncoding);
+            }
           }
-          ImGui::Separator();
-          ImGui::Checkbox("Append", &g_bPrinterAppend);
-          ImGui::Checkbox("Filter unprintable", &g_bFilterUnprintable);
-          ImGui::Checkbox("Convert encoding", &g_bConvertEncoding);
+
           ImGui::EndTabItem();
         }
 

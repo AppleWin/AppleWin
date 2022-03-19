@@ -227,12 +227,15 @@ void getAppleWinPreferences(PreferenceData & data)
     data.hz50 = video.GetVideoRefreshRate() == VR_50HZ;
     data.monochromeColor.setRgb(video.GetMonochromeRGB());
 
-    const std::string & printerFilename = Printer_GetFilename();
-    if (!printerFilename.empty())
+    if (cardManager.IsParallelPrinterCardInstalled())
     {
-        data.printerFilename = QString::fromStdString(printerFilename);
+        ParallelPrinterCard* card = GetCardMgr().GetParallelPrinterCard();
+        const std::string & printerFilename = card->GetFilename();
+        if (!printerFilename.empty())
+        {
+            data.printerFilename = QString::fromStdString(printerFilename);
+        }
     }
-
 }
 
 void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const PreferenceData & currentData, const PreferenceData & newData)
@@ -309,9 +312,13 @@ void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const Prefer
 
     if (currentData.printerFilename != newData.printerFilename)
     {
-        const std::string name = newData.printerFilename.toStdString();
-        Printer_SetFilename(name);
-        RegSaveString(TEXT(REG_CONFIG), REGVALUE_PRINTER_FILENAME, 1, name);
+        if (cardManager.IsParallelPrinterCardInstalled())
+        {
+            ParallelPrinterCard* card = cardManager.GetParallelPrinterCard();
+            const std::string name = newData.printerFilename.toStdString();
+            card->SetFilename(name);
+            RegSaveString(TEXT(REG_CONFIG), REGVALUE_PRINTER_FILENAME, 1, name);
+        }
     }
 
     if (currentData.videoType != newData.videoType || currentData.scanLines != newData.scanLines || currentData.verticalBlend != newData.verticalBlend

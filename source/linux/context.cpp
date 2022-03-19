@@ -13,7 +13,6 @@
 #include "Utilities.h"
 #include "SoundCore.h"
 #include "CPU.h"
-#include "ParallelPrinter.h"
 #include "Riff.h"
 #include "SaveState.h"
 #include "Memory.h"
@@ -140,7 +139,6 @@ void DestroyEmulator()
   SpkrDestroy();
   MB_Destroy();
   DSUninit();
-  PrintDestroy();
   CpuDestroy();
   DebugDestroy();
   RiffFinishWriteFile();
