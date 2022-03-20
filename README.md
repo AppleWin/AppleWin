@@ -5,7 +5,7 @@ AppleWin
 
 AppleWin is a fully-featured emulator supporting different Apple II models and clones. A variety of peripheral cards and video display modes are supported (eg. NTSC, RGB); and there's an extensive built-in symbolic debugger.
 
-Peripheral cards supported:
+Peripheral cards and add-on hardware supported:
 - Mockingboard, Phasor and SAM sound cards
 - Disk II interface for floppy disk drives
 - Hard disk controller
@@ -17,6 +17,8 @@ Peripheral cards supported:
 - CP/M SoftCard
 - Uthernet I (ethernet card)
 - Language Card and Saturn 64/128K for Apple II/II+
+- 4Play and SNES MAX joystick cards
+- VidHD card (functionality limited to IIgs' Super Hi-Res video modes)
 - No Slot Clock (NSC)
 
 
