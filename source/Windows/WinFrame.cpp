@@ -964,7 +964,7 @@ LRESULT Win32Frame::WndProc(
 	  if (!g_bRestart)	// GH#564: Only save-state on shutdown (not on a restart)
 		Snapshot_Shutdown();
       DebugDestroy();
-      if (!g_bRestart) {
+      if (!g_bRestart) {	// TODO: why only done for !g_bRestart, ie. why only done when exiting the app ?
 		GetCardMgr().Destroy();
       }
       PrintDestroy();
@@ -989,7 +989,7 @@ LRESULT Win32Frame::WndProc(
 	  DSInit();					// NB. Need g_hFrameWindow for IDirectSound::SetCooperativeLevel()
       LogFileOutput("WM_CREATE: DSInit()\n");
 
-	  GetCardMgr().GetMockingboardCardMgr().InitializePostWindowCreate();
+//	  GetCardMgr().GetMockingboardCardMgr().InitializePostWindowCreate();	// INFO: Moved to MockingboardCard::InitializeIO(), so that loading save-state works
 
 	  DIMouse::DirectInputInit(window);
       LogFileOutput("WM_CREATE: DIMouse::DirectInputInit()\n");

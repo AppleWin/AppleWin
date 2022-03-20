@@ -34,6 +34,8 @@ struct VOICE
 		bRecentlyActive = false;
 		name = "";
 	}
+
+	~VOICE(void);
 };
 
 typedef VOICE* PVOICE;

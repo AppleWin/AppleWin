@@ -137,6 +137,9 @@ void MockingboardCard::AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice)
 	g_bMB_RegAccessedFlag = true;
 	SY6522_AY8910* pMB = &g_MB[nDevice];
 
+	if (!g_bPhasorEnable)
+		nDevice += (m_slot - SLOT4) * 2;	// FIXME!
+
 	if ((nValue & 4) == 0)
 	{
 		// RESET: Reset AY8910 only
@@ -286,6 +289,7 @@ void MockingboardCard::MB_UpdateInternal(void)
 {
 	if (!MockingboardVoice.bActive)
 		return;
+//	if (m_slot == 4) return;		// HACK!
 
 	if (g_bFullSpeed)
 	{
@@ -600,6 +604,8 @@ void MockingboardCard::MB_Initialize(void)
 
 		//
 
+		// INFO: NB. Used to call MB_DSInit() here; but can't now, since MB_Initialize() is called by ctor (and MB_Initialize() was called from WM_CREATE)
+
 		Reset(true);
 		LogFileOutput("MB_Initialize: Reset()\n");
 	}
@@ -718,7 +724,7 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 	}
 #endif
 
-	BYTE nMB = (nAddr>>8)&0xf - SLOT4;
+	BYTE nMB = 0;	// (nAddr >> 8) & 0xf - SLOT4;
 	BYTE nOffset = nAddr&0xff;
 
 	if (g_bPhasorEnable)
@@ -821,7 +827,7 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 		}
 	}
 
-	BYTE nMB = ((nAddr>>8)&0xf) - SLOT4;
+	BYTE nMB = 0;	// ((nAddr >> 8) & 0xf) - SLOT4;
 	BYTE nOffset = nAddr&0xff;
 
 	if (g_bPhasorEnable)
@@ -946,6 +952,8 @@ void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral)
 
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;
+
+	MB_DSInit();
 
 	// Sound buffer may have been stopped by MB_InitializeForLoadingSnapshot().
 	// NB. DSZeroVoiceBuffer() also zeros the sound buffer, so it's better than directly calling IDirectSoundBuffer::Play():
@@ -1258,7 +1266,7 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 
 	const UINT nMbCardNum = m_slot - SLOT4;	// FIXME
 	UINT nDeviceNum = nMbCardNum*2;
-	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
+	SY6522_AY8910* pMB = &g_MB[0];
 
 	bool isVotrax = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
 	pMB->ssi263.SetVotraxPhoneme(isVotrax);

@@ -48,7 +48,7 @@ static LPDIRECTSOUND g_lpDS = NULL;
 
 // Used for muting & fading:
 
-static const UINT uMAX_VOICES = 6;	// 4x SSI263 + spkr + mockingboard
+static const UINT uMAX_VOICES = 7;	// 4x SSI263 + spkr + 2x mockingboard
 static UINT g_uNumVoices = 0;
 static VOICE* g_pVoices[uMAX_VOICES] = {NULL};
 
@@ -57,6 +57,21 @@ static VOICE* g_pSpeakerVoice = NULL;
 //-------------------------------------
 
 bool g_bDSAvailable = false;
+
+//-----------------------------------------------------------------------------
+
+// NB. Also similar is done by: MockingboardCard::MB_DSUninit()
+// - which is called by MockingboardCard::Destroy() - from WM_DESTROY when !g_bRestart (ie. when exiting the app)
+
+VOICE::~VOICE(void)
+{
+	if (lpDSBvoice)
+	{
+		DSVoiceStop(this);
+		DSReleaseSoundBuffer(this);
+	}
+}
+
 
 //-----------------------------------------------------------------------------
 
