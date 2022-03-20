@@ -1084,14 +1084,25 @@ void Uthernet2::Reset(const bool powerCycle)
     {
         resetRXTXBuffers(i);
         mySockets[i].clearFD();
-        mySockets[i].registerAddress = static_cast<uint16_t>(W5100_S0_BASE + (i << 8));
+        const uint16_t registerAddress = static_cast<uint16_t>(W5100_S0_BASE + (i << 8));
+        mySockets[i].registerAddress = registerAddress;
+
+        myMemory[registerAddress + W5100_SN_DHAR0] = 0xFF;
+        myMemory[registerAddress + W5100_SN_DHAR1] = 0xFF;
+        myMemory[registerAddress + W5100_SN_DHAR2] = 0xFF;
+        myMemory[registerAddress + W5100_SN_DHAR3] = 0xFF;
+        myMemory[registerAddress + W5100_SN_DHAR4] = 0xFF;
+        myMemory[registerAddress + W5100_SN_DHAR5] = 0xFF;
+        myMemory[registerAddress + W5100_SN_TTL]   = 0x80;
     }
 
     // initial values
-    myMemory[W5100_RTR0] = 0x07;
-    myMemory[W5100_RTR1] = 0xD0;
+    myMemory[W5100_RTR0]    = 0x07;
+    myMemory[W5100_RTR1]    = 0xD0;
+    myMemory[W5100_RCR]     = 0x08;
     setRXSizes(W5100_RMSR, 0x55);
     setTXSizes(W5100_TMSR, 0x55);
+    myMemory[W5100_PTIMER]  = 0x28;
 }
 
 BYTE Uthernet2::IO_C0(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
