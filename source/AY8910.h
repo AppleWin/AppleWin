@@ -47,6 +47,8 @@ public:
 	void sound_ay_reset( void );
 	void sound_frame( void );
 	BYTE* GetAYRegsPtr( void ) { return &sound_ay_registers[0]; }
+	void SetFramesize(int frameSize) { sound_generator_framesiz = frameSize; }
+	void SetSoundBuffers(INT16** buffers) { ppSoundBuffers = buffers; }
 	static void SetCLK( double CLK ) { m_fCurrentCLK_AY8910 = CLK; }
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const std::string& suffix);
 	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, const std::string& suffix);
@@ -85,6 +87,12 @@ private:
 	int rng;
 	int noise_toggle;
 	int env_first, env_rev, env_counter;
+
+	// Vars
+	libspectrum_signed_word** ppSoundBuffers;	// Used to pass param to sound_ay_overlay()
+	int sound_generator_framesiz;
+	int sound_generator_freq;
+	unsigned int ay_tone_levels[16];
 
 	// Vars shared between all AY's
 	static double m_fCurrentCLK_AY8910;

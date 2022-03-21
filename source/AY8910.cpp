@@ -42,7 +42,7 @@
  * very high at all. And I speak as a Cyrix owner. :-)
  */
 
-libspectrum_signed_word** g_ppSoundBuffers;	// Used to pass param to sound_ay_overlay()
+//libspectrum_signed_word** g_ppSoundBuffers;	// Used to pass param to sound_ay_overlay() // Moved to CAY8910
 
 /* configuration */
 //int sound_enabled = 0;		/* Are we currently using the sound card */
@@ -78,14 +78,14 @@ libspectrum_signed_word** g_ppSoundBuffers;	// Used to pass param to sound_ay_ov
 static SRC_STATE *src_state;
 #endif /* #ifdef HAVE_SAMPLERATE */
 
-int sound_generator_framesiz;
-int sound_framesiz;
+//static int sound_generator_framesiz;	// Moved to CAY8910
+//int sound_framesiz;	// unused
 
-static int sound_generator_freq;
+//static int sound_generator_freq;	// Moved to CAY8910
 
-static int sound_channels;
+//static int sound_channels;	// unused
 
-static unsigned int ay_tone_levels[16];
+//static unsigned int ay_tone_levels[16];	// Moved to CAY8910
 
 //static libspectrum_signed_word *sound_buf, *tape_buf;
 //static float *convert_input_buffer, *convert_output_buffer;
@@ -202,7 +202,7 @@ void CAY8910::sound_init( const char *device )
 
   sound_channels = ( sound_stereo ? 2 : 1 );
 #endif
-  sound_channels = 3;	// 3 mono channels: ABC
+//  sound_channels = 3;	// 3 mono channels: ABC
 
 //  hz = ( float ) machine_current->timings.processor_speed /
 //    machine_current->timings.tstates_per_frame;
@@ -230,7 +230,7 @@ void CAY8910::sound_init( const char *device )
 #endif
 
 //  sound_framesiz = ( float ) settings_current.sound_freq / hz;
-  sound_framesiz = sound_generator_freq / (int)hz;
+//  sound_framesiz = sound_generator_freq / (int)hz;
 
 #ifdef HAVE_SAMPLERATE
   if( settings_current.sound_hifi ) {
@@ -511,9 +511,9 @@ void CAY8910::sound_ay_overlay( void )
   }
 #endif
 
-  libspectrum_signed_word* pBuf1 = g_ppSoundBuffers[0];
-  libspectrum_signed_word* pBuf2 = g_ppSoundBuffers[1];
-  libspectrum_signed_word* pBuf3 = g_ppSoundBuffers[2];
+  libspectrum_signed_word* pBuf1 = ppSoundBuffers[0];
+  libspectrum_signed_word* pBuf2 = ppSoundBuffers[1];
+  libspectrum_signed_word* pBuf3 = ppSoundBuffers[2];
 
 //  for( f = 0, ptr = sound_buf; f < sound_generator_framesiz; f++ ) {
   for( f = 0; f < sound_generator_framesiz; f++ ) {
@@ -1228,8 +1228,8 @@ void AY8910Update(int chip, INT16** buffer, int nNumSamples)
 {
 	AY8910UpdateSetCycles();
 
-	sound_generator_framesiz = nNumSamples;
-	g_ppSoundBuffers = buffer;
+	g_AY8910[chip].SetFramesize(nNumSamples);
+	g_AY8910[chip].SetSoundBuffers(buffer);
 	g_AY8910[chip].sound_frame();
 }
 
