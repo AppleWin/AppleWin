@@ -360,9 +360,12 @@ void MockingboardCard::MB_UpdateInternal(void)
 	if (nNumSamples > MAX_SAMPLES)
 		nNumSamples = MAX_SAMPLES;	// Clamp to prevent buffer overflow
 
+//	if (nNumSamples)
+//		for (int nChip=0; nChip<NUM_AY8913; nChip++)
+//			AY8910Update(nChip, &ppAYVoiceBuffer[nChip*NUM_VOICES_PER_AY8913], nNumSamples);
 	if (nNumSamples)
-		for (int nChip=0; nChip<NUM_AY8913; nChip++)
-			AY8910Update(nChip, &ppAYVoiceBuffer[nChip*NUM_VOICES_PER_AY8913], nNumSamples);
+		for (int nChip = 0; nChip < 2; nChip++)		// HACK!
+			AY8910Update(nChip, &ppAYVoiceBuffer[nChip * NUM_VOICES_PER_AY8913], nNumSamples);
 
 	//
 
@@ -1168,6 +1171,124 @@ void MockingboardCard::GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS)
 
 		pMB++;
 	}
+}
+
+//=============================================================================
+
+// AY8913 interface
+#define MAX_8910 4
+
+//static AY8913 g_AY8910[MAX_8910];
+//static unsigned __int64 g_uLastCumulativeCycles2 = 0;
+
+BYTE MockingboardCard::AYReadReg(int chip, int r)
+{
+	const UINT unit = chip / 2;
+	return g_MB[unit].ay8913[chip & 1].sound_ay_read(r);
+//	return g_AY8910[chip].sound_ay_read(r);
+}
+
+void MockingboardCard::_AYWriteReg(int chip, int r, int v)
+{
+	libspectrum_dword uOffset = (libspectrum_dword)(g_nCumulativeCycles - g_uLastCumulativeCycles2);
+	const UINT unit = chip / 2;
+	g_MB[unit].ay8913[chip & 1].sound_ay_write(r, v, uOffset);
+//	g_AY8910[chip].sound_ay_write(r, v, uOffset);
+}
+
+void MockingboardCard::AY8910_reset(int chip)
+{
+	// Don't reset the AY CLK, as this is a property of the card (MB/Phasor), not the AY chip
+	const UINT unit = chip / 2;
+	g_MB[unit].ay8913[chip & 1].sound_ay_reset();	// Calls: sound_ay_init();
+//	g_AY8910[chip].sound_ay_reset();	// Calls: sound_ay_init();
+}
+
+void MockingboardCard::AY8910UpdateSetCycles()
+{
+	g_uLastCumulativeCycles2 = g_nCumulativeCycles;
+}
+
+void MockingboardCard::AY8910Update(int chip, INT16** buffer, int nNumSamples)
+{
+	AY8910UpdateSetCycles();
+
+	const UINT unit = chip / 2;
+	g_MB[unit].ay8913[chip & 1].SetFramesize(nNumSamples);
+	g_MB[unit].ay8913[chip & 1].SetSoundBuffers(buffer);
+	g_MB[unit].ay8913[chip & 1].sound_frame();
+
+//	g_AY8910[chip].SetFramesize(nNumSamples);
+//	g_AY8910[chip].SetSoundBuffers(buffer);
+//	g_AY8910[chip].sound_frame();
+}
+
+void MockingboardCard::AY8910_InitAll(int nClock, int nSampleRate)
+{
+	for (UINT unit = 0; unit < 2; unit++)
+	{
+		for (UINT ay = 0; ay < 2; ay++)
+		{
+			g_MB[unit].ay8913[ay].sound_init(NULL);	// Inits mainly static members (except ay_tick_incr)
+			g_MB[unit].ay8913[ay].sound_ay_init();
+		}
+	}
+
+//	for (UINT i = 0; i < MAX_8910; i++)
+//	{
+//		g_AY8910[i].sound_init(NULL);	// Inits mainly static members (except ay_tick_incr)
+//		g_AY8910[i].sound_ay_init();
+//	}
+}
+
+void MockingboardCard::AY8910_InitClock(int nClock)
+{
+	AY8913::SetCLK((double)nClock);
+
+	for (UINT unit = 0; unit < 2; unit++)
+	{
+		for (UINT ay = 0; ay < 2; ay++)
+		{
+			g_MB[unit].ay8913[ay].sound_init(NULL);	// Inits mainly static members (except ay_tick_incr)
+		}
+	}
+
+//	for (UINT i = 0; i < MAX_8910; i++)
+//	{
+//		g_AY8910[i].sound_init(NULL);	// ay_tick_incr is dependent on AY_CLK
+//	}
+}
+
+BYTE* MockingboardCard::AY8910_GetRegsPtr(UINT chip)
+{
+	if (chip >= MAX_8910)
+		return NULL;
+
+	const UINT unit = chip / 2;
+	return g_MB[unit].ay8913[chip & 1].GetAYRegsPtr();
+//	return g_AY8910[uChip].GetAYRegsPtr();
+}
+
+UINT MockingboardCard::AY8910_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT chip, const std::string& suffix)
+{
+	if (chip >= MAX_8910)
+		return 0;
+
+	const UINT unit = chip / 2;
+	g_MB[unit].ay8913[chip & 1].SaveSnapshot(yamlSaveHelper, suffix);
+	return 1;
+//	g_AY8910[uChip].SaveSnapshot(yamlSaveHelper, suffix);
+//	return 1;
+}
+
+UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT chip, const std::string& suffix)
+{
+	if (chip >= MAX_8910)
+		return 0;
+
+	const UINT unit = chip / 2;
+	return g_MB[unit].ay8913[chip & 1].LoadSnapshot(yamlLoadHelper, suffix) ? 1 : 0;
+//	return g_AY8910[uChip].LoadSnapshot(yamlLoadHelper, suffix) ? 1 : 0;
 }
 
 //=============================================================================

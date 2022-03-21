@@ -1,6 +1,7 @@
 #pragma once
 
 #include "6522.h"
+#include "AY8910.h"
 #include "Card.h"
 #include "SoundCore.h"
 #include "SSI263.h"
@@ -12,6 +13,7 @@ public:
 	MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slot)
 	{
 		g_uLastCumulativeCycles = 0;
+		g_uLastCumulativeCycles2 = 0;	// TODO: Is this needed?
 
 		for (UINT i = 0; i < NUM_VOICES; i++)
 			ppAYVoiceBuffer[NUM_VOICES] = NULL;
@@ -88,6 +90,7 @@ private:
 	struct SY6522_AY8910
 	{
 		SY6522 sy6522;
+		AY8913 ay8913[2];				// Phasor has 2x AY per 6522
 		SSI263 ssi263;
 		BYTE nAY8910Number;
 		BYTE nAYCurrentRegister;
@@ -120,6 +123,25 @@ private:
 	static int MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecutedCycles);
 	int MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG uExecutedCycles);
 
+	//-------------------------------------
+	// MAME interface
+	BYTE AYReadReg(int chip, int r);
+	void _AYWriteReg(int chip, int r, int v);
+	void AY8910_reset(int chip);
+	void AY8910Update(int chip, INT16** buffer, int nNumSamples);
+
+	void AY8910_InitAll(int nClock, int nSampleRate);
+	void AY8910_InitClock(int nClock);
+	BYTE* AY8910_GetRegsPtr(UINT uChip);
+
+	void AY8910UpdateSetCycles();
+
+	UINT AY8910_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, UINT uChip, const std::string& suffix);
+	UINT AY8910_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uChip, const std::string& suffix);
+
+	UINT64 g_uLastCumulativeCycles2;	// TODO: Is this needed?
+	//-------------------------------------
+
 	static const UINT SY6522_DEVICE_A = 0;
 	static const UINT SY6522_DEVICE_B = 1;
 
@@ -136,7 +158,7 @@ private:
 	static const UINT SSI263B_Offset = 0x20;
 	static const UINT SSI263A_Offset = 0x40;
 
-	// Phasor has 2x (1x SY6522 + 2x AY8913), MB has 2x (1x SY6522 + 1x AY8913)
+	// MB has 2x (1x SY6522 + 1x AY8913), Phasor has 2x (1x SY6522 + 2x AY8913)
 	SY6522_AY8910* g_MB;	// NB. In ctor this becomes g_MB[NUM_SY6522]
 
 	static const UINT kNumSyncEvents = NUM_SY6522 * SY6522::kNumTimersPer6522;

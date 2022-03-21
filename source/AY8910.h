@@ -1,26 +1,5 @@
 #pragma once
 
-#define MAX_8910 4
-
-BYTE AYReadReg(int chip, int r);	// TC
-
-//-------------------------------------
-// MAME interface
-
-void _AYWriteReg(int chip, int r, int v);
-//void AY8910_write_ym(int chip, int addr, int data);
-void AY8910_reset(int chip);
-void AY8910Update(int chip, INT16** buffer, int nNumSamples);
-
-void AY8910_InitAll(int nClock, int nSampleRate);
-void AY8910_InitClock(int nClock);
-BYTE* AY8910_GetRegsPtr(UINT uChip);
-
-void AY8910UpdateSetCycles();
-
-UINT AY8910_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, UINT uChip, const std::string& suffix);
-UINT AY8910_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uChip, const std::string& suffix);
-
 //-------------------------------------
 // FUSE stuff
 
@@ -37,8 +16,8 @@ typedef SHORT libspectrum_signed_word;
 class AY8913
 {
 public:
-	AY8913();
-	virtual ~AY8913() {};
+	AY8913(void);
+	~AY8913(void) {};
 
 	void sound_ay_init( void );
 	void sound_init( const char *device );
