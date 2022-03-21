@@ -34,11 +34,11 @@ typedef SHORT libspectrum_signed_word;
  */
 #define AY_CHANGE_MAX		8000
 
-class CAY8910
+class AY8913
 {
 public:
-	CAY8910();
-	virtual ~CAY8910() {};
+	AY8913();
+	virtual ~AY8913() {};
 
 	void sound_ay_init( void );
 	void sound_init( const char *device );

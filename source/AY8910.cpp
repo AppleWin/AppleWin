@@ -42,7 +42,7 @@
  * very high at all. And I speak as a Cyrix owner. :-)
  */
 
-//libspectrum_signed_word** g_ppSoundBuffers;	// Used to pass param to sound_ay_overlay() // Moved to CAY8910
+//libspectrum_signed_word** g_ppSoundBuffers;	// Used to pass param to sound_ay_overlay() // Moved to class AY8913
 
 /* configuration */
 //int sound_enabled = 0;		/* Are we currently using the sound card */
@@ -69,7 +69,7 @@
  * given the number of port writes theoretically possible in a
  * 50th I think this should be plenty.
  */
-//#define AY_CHANGE_MAX		8000	// [TC] Moved into AY8910.h
+//#define AY_CHANGE_MAX		8000	// [TC] Moved into class AY8910.h
 
 ///* frequency to generate sound at for hifi sound */
 //#define HIFI_FREQ              88200
@@ -78,14 +78,14 @@
 static SRC_STATE *src_state;
 #endif /* #ifdef HAVE_SAMPLERATE */
 
-//static int sound_generator_framesiz;	// Moved to CAY8910
+//static int sound_generator_framesiz;	// Moved to class AY8913
 //int sound_framesiz;	// unused
 
-//static int sound_generator_freq;	// Moved to CAY8910
+//static int sound_generator_freq;	// Moved to class AY8913
 
 //static int sound_channels;	// unused
 
-//static unsigned int ay_tone_levels[16];	// Moved to CAY8910
+//static unsigned int ay_tone_levels[16];	// Moved to class AY8913
 
 //static libspectrum_signed_word *sound_buf, *tape_buf;
 //static float *convert_input_buffer, *convert_output_buffer;
@@ -108,10 +108,10 @@ static int rstereopos, rchan1pos, rchan2pos, rchan3pos;
 
 
 // Statics:
-double CAY8910::m_fCurrentCLK_AY8910 = 0.0;
+double AY8913::m_fCurrentCLK_AY8910 = 0.0;
 
 
-void CAY8910::init(void)
+void AY8913::init(void)
 {
 	// Init the statics that were in sound_ay_overlay()
 	rng = 1;
@@ -119,14 +119,14 @@ void CAY8910::init(void)
 	env_first = 1; env_rev = 0; env_counter = 15;
 }
 
-CAY8910::CAY8910(void)
+AY8913::AY8913(void)
 {
 	init();
 	m_fCurrentCLK_AY8910 = g_fCurrentCLK6502;
 };
 
 
-void CAY8910::sound_ay_init( void )
+void AY8913::sound_ay_init( void )
 {
 	/* AY output doesn't match the claimed levels; these levels are based
 	* on the measurements posted to comp.sys.sinclair in Dec 2001 by
@@ -155,7 +155,7 @@ void CAY8910::sound_ay_init( void )
 }
 
 
-void CAY8910::sound_init( const char *device )
+void AY8913::sound_init( const char *device )
 {
 //  static int first_init = 1;
 //  int f, ret;
@@ -338,7 +338,7 @@ sound_unpause( void )
 #endif
 
 
-void CAY8910::sound_end( void )
+void AY8913::sound_end( void )
 {
 #if 0
   if( sound_enabled ) {
@@ -470,7 +470,7 @@ sound_write_buf_pstereo( libspectrum_signed_word * out, int c )
 #define HZ_COMMON_DENOMINATOR 50
 #include "Log.h"
 
-void CAY8910::sound_ay_overlay( void )
+void AY8913::sound_ay_overlay( void )
 {
   int tone_level[3];
   int mixer, envshape;
@@ -725,7 +725,7 @@ void CAY8910::sound_ay_overlay( void )
   }
 }
 
-BYTE CAY8910::sound_ay_read( int reg )
+BYTE AY8913::sound_ay_read( int reg )
 {
 	reg &= 15;
 
@@ -773,7 +773,7 @@ BYTE CAY8910::sound_ay_read( int reg )
 /* don't make the change immediately; record it for later,
  * to be made by sound_frame() (via sound_ay_overlay()).
  */
-void CAY8910::sound_ay_write( int reg, int val, libspectrum_dword now )
+void AY8913::sound_ay_write( int reg, int val, libspectrum_dword now )
 {
   if( ay_change_count < AY_CHANGE_MAX ) {
     ay_change[ ay_change_count ].tstates = now;
@@ -787,7 +787,7 @@ void CAY8910::sound_ay_write( int reg, int val, libspectrum_dword now )
 /* no need to call this initially, but should be called
  * on reset otherwise.
  */
-void CAY8910::sound_ay_reset( void )
+void AY8913::sound_ay_reset( void )
 {
   int f;
 
@@ -868,7 +868,7 @@ sound_resample( void )
 }
 #endif /* #ifdef HAVE_SAMPLERATE */
 
-void CAY8910::sound_frame( void )
+void AY8913::sound_frame( void )
 {
 #if 0
   libspectrum_signed_word *ptr, *tptr;
@@ -1046,7 +1046,7 @@ sound_beeper( int is_tape, int on )
 #define SS_YAML_KEY_CHANGE "Change"
 #define SS_YAML_VALUE_CHANGE_FORMAT "%d, %d, 0x%1X, 0x%02X"
 
-void CAY8910::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const std::string& suffix)
+void AY8913::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const std::string& suffix)
 {
 	std::string unit = std::string(SS_YAML_KEY_AY8910) + suffix;
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", unit.c_str());
@@ -1101,7 +1101,7 @@ void CAY8910::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, const std::string& su
 	}
 }
 
-bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, const std::string& suffix)
+bool AY8913::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, const std::string& suffix)
 {
 	std::string unit = std::string(SS_YAML_KEY_AY8910) + suffix;
 	if (!yamlLoadHelper.GetSubMap(unit))
@@ -1199,7 +1199,7 @@ bool CAY8910::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, const std::string& su
 
 #include "CPU.h"	// For g_nCumulativeCycles
 
-static CAY8910 g_AY8910[MAX_8910];
+static AY8913 g_AY8910[MAX_8910];
 static unsigned __int64 g_uLastCumulativeCycles = 0;
 
 BYTE AYReadReg(int chip, int r)
@@ -1244,7 +1244,7 @@ void AY8910_InitAll(int nClock, int nSampleRate)
 
 void AY8910_InitClock(int nClock)
 {
-	CAY8910::SetCLK( (double)nClock );
+	AY8913::SetCLK( (double)nClock );
 	for (UINT i=0; i<MAX_8910; i++)
 	{
 		g_AY8910[i].sound_init(NULL);	// ay_tick_incr is dependent on AY_CLK
