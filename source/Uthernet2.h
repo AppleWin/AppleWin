@@ -28,6 +28,7 @@ struct Socket
     socket_t myFD;
     int myErrno;
 
+    bool isOpen() const;
     void clearFD();
     void setFD(const socket_t fd, const int status);
     void process();
@@ -91,7 +92,7 @@ private:
     void resetRXTXBuffers(const size_t i);
     void updateRSR(const size_t i);
 
-    void openSystemSocket(const size_t i, const int type, const int protocol, const int state);
+    void openSystemSocket(const size_t i, const int type, const int protocol, const int status);
     void openSocket(const size_t i);
     void closeSocket(const size_t i);
     void connectSocket(const size_t i);
