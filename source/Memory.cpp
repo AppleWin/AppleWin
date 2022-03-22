@@ -2443,7 +2443,7 @@ static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::
 		}
 
 		// "Auxiliary Memory Bankxx"
-		std::string auxMemName = MemGetSnapshotAuxMemStructName() + StrFormat("%02X", uBank-1);
+		std::string auxMemName = MemGetSnapshotAuxMemStructName() + ByteToHexStr(uBank-1);
 
 		if (!yamlLoadHelper.GetSubMap(auxMemName))
 			throw std::runtime_error("Memory: Missing map name: " + auxMemName);
