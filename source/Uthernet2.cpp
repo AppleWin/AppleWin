@@ -216,31 +216,46 @@ Socket::~Socket()
     clearFD();
 }
 
+bool Socket::isOpen() const
+{
+    return (myFD != INVALID_SOCKET) &&
+        ((sn_sr == W5100_SN_SR_ESTABLISHED) || (sn_sr == W5100_SN_SR_SOCK_UDP));
+}
+
 void Socket::process()
 {
     if (myFD != INVALID_SOCKET && sn_sr == W5100_SN_SR_SOCK_INIT && (myErrno == SOCK_EINPROGRESS || myErrno == SOCK_EWOULDBLOCK))
     {
 #ifdef _MSC_VER
-        FD_SET writefds;
+        FD_SET writefds, exceptfds;
         FD_ZERO(&writefds);
+        FD_ZERO(&exceptfds);
         FD_SET(myFD, &writefds);
+        FD_SET(myFD, &exceptfds);
         const timeval timeout = {0, 0};
-        if (select(0, NULL, &writefds, NULL, &timeout) > 0)
+        if (select(0, NULL, &writefds, &exceptfds, &timeout) > 0)
 #else
         pollfd pfd = {.fd = myFD, .events = POLLOUT};
         if (poll(&pfd, 1, 0) > 0)
 #endif
         {
             int err = 0;
-            socklen_t elen = sizeof err;
-            getsockopt(myFD, SOL_SOCKET, SO_ERROR, reinterpret_cast<char *>(&err), &elen);
+            socklen_t elen = sizeof(err);
+            const int res = getsockopt(myFD, SOL_SOCKET, SO_ERROR, reinterpret_cast<char *>(&err), &elen);
 
-            if (err == 0)
+            if (res == 0 && err == 0)
             {
                 myErrno = 0;
                 sn_sr = W5100_SN_SR_ESTABLISHED;
 #ifdef U2_LOG_STATE
                 LogFileOutput("U2: TCP[]: Connected\n");
+#endif
+            }
+            else
+            {
+                clearFD();
+#ifdef U2_LOG_STATE
+                LogFileOutput("U2: TCP[]: Connection error: %d - %" ERROR_FMT "\n", res, STRERROR(err));
 #endif
             }
         }
@@ -614,7 +629,7 @@ void Uthernet2::receiveOnePacketIPRaw(const size_t i, const size_t lengthOfPaylo
 void Uthernet2::receiveOnePacketFromSocket(const size_t i)
 {
     Socket &socket = mySockets[i];
-    if (socket.myFD != INVALID_SOCKET)
+    if (socket.isOpen())
     {
         const uint16_t freeRoom = socket.getFreeRoom();
         if (freeRoom > 32) // avoid meaningless reads
@@ -718,7 +733,7 @@ void Uthernet2::sendDataMacRaw(const size_t i, std::vector<uint8_t> &packet) con
 void Uthernet2::sendDataToSocket(const size_t i, std::vector<uint8_t> &data)
 {
     Socket &socket = mySockets[i];
-    if (socket.myFD != INVALID_SOCKET)
+    if (socket.isOpen())
     {
         sockaddr_in destination = {};
         destination.sin_family = AF_INET;
@@ -809,7 +824,7 @@ void Uthernet2::resetRXTXBuffers(const size_t i)
     myMemory[socket.registerAddress + W5100_SN_RX_RD1] = 0x00;
 }
 
-void Uthernet2::openSystemSocket(const size_t i, const int type, const int protocol, const int state)
+void Uthernet2::openSystemSocket(const size_t i, const int type, const int protocol, const int status)
 {
     Socket &s = mySockets[i];
 #ifdef _MSC_VER
@@ -820,7 +835,7 @@ void Uthernet2::openSystemSocket(const size_t i, const int type, const int proto
     if (fd == INVALID_SOCKET)
     {
 #ifdef U2_LOG_STATE
-        const char *proto = state == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
+        const char *proto = (status == W5100_SN_SR_SOCK_UDP) ? "UDP" : "TCP";
         LogFileOutput("U2: %s[%" SIZE_T_FMT "]: socket error: %" ERROR_FMT "\n", proto, i, STRERROR(sock_error()));
 #endif
         s.clearFD();
@@ -831,7 +846,7 @@ void Uthernet2::openSystemSocket(const size_t i, const int type, const int proto
         u_long on = 1;
         ioctlsocket(fd, FIONBIO, &on);
 #endif
-        s.setFD(fd, state);
+        s.setFD(fd, status);
     }
 }
 
