@@ -20,8 +20,10 @@
 #define W5100_SIPR3             0x0012
 #define W5100_RTR0              0x0017
 #define W5100_RTR1              0x0018
+#define W5100_RCR               0x0019
 #define W5100_RMSR              0x001A
 #define W5100_TMSR              0x001B
+#define W5100_PTIMER            0x0028
 #define W5100_UPORT1            0x002F
 #define W5100_S0_BASE           0x0400
 #define W5100_S3_MAX            0x07FF
@@ -58,6 +60,12 @@
 #define W5100_SN_SR               0x03
 #define W5100_SN_PORT0            0x04
 #define W5100_SN_PORT1            0x05
+#define W5100_SN_DHAR0            0x06
+#define W5100_SN_DHAR1            0x07
+#define W5100_SN_DHAR2            0x08
+#define W5100_SN_DHAR3            0x09
+#define W5100_SN_DHAR4            0x0A
+#define W5100_SN_DHAR5            0x0B
 #define W5100_SN_DIPR0            0x0C
 #define W5100_SN_DIPR1            0x0D
 #define W5100_SN_DIPR2            0x0E

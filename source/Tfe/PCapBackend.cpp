@@ -25,6 +25,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Common.h"
 #include "../Registry.h"
 
+#ifdef _MSC_VER
+#include <iphlpapi.h>
+#endif
+
 std::string PCapBackend::tfe_interface;
 
 PCapBackend::PCapBackend(const std::string & pcapInterface)
@@ -69,6 +73,16 @@ bool PCapBackend::isValid()
 void PCapBackend::update(const ULONG /* nExecutedCycles */)
 {
     // nothing to do
+}
+
+void PCapBackend::getMACAddress(const uint32_t address, MACAddress & mac)
+{
+    // this is only expected to be called for IP addresses on the same network
+#ifdef _MSC_VER
+    const DWORD dwSourceAddress = INADDR_ANY;
+    ULONG len = sizeof(MACAddress::address);
+    SendARP(address, dwSourceAddress, mac.address, &len);
+#endif
 }
 
 int PCapBackend::tfe_enumadapter_open(void)

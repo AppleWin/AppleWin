@@ -29,6 +29,9 @@ public:
 	// process pending packets
 	virtual bool isValid();
 
+	// get MAC for IPRAW (it is only supposed to handle addresses on the local network)
+	virtual void getMACAddress(const uint32_t address, MACAddress & mac);
+
 	static void tfe_SetRegistryInterface(UINT slot, const std::string& name);
 	static void get_disabled_state(int * param);
 
