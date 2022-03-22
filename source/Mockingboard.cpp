@@ -289,7 +289,7 @@ void MockingboardCard::MB_UpdateInternal(void)
 {
 	if (!MockingboardVoice.bActive)
 		return;
-//	if (m_slot == 4) return;		// HACK!
+	if (m_slot == 5) return;		// HACK!
 
 	if (g_bFullSpeed)
 	{
@@ -360,12 +360,9 @@ void MockingboardCard::MB_UpdateInternal(void)
 	if (nNumSamples > MAX_SAMPLES)
 		nNumSamples = MAX_SAMPLES;	// Clamp to prevent buffer overflow
 
-//	if (nNumSamples)
-//		for (int nChip=0; nChip<NUM_AY8913; nChip++)
-//			AY8910Update(nChip, &ppAYVoiceBuffer[nChip*NUM_VOICES_PER_AY8913], nNumSamples);
 	if (nNumSamples)
-		for (int nChip = 0; nChip < 2; nChip++)		// HACK!
-			AY8910Update(nChip, &ppAYVoiceBuffer[nChip * NUM_VOICES_PER_AY8913], nNumSamples);
+		for (int nChip=0; nChip<NUM_AY8913; nChip++)
+			AY8910Update(nChip, &ppAYVoiceBuffer[nChip*NUM_VOICES_PER_AY8913], nNumSamples);
 
 	//
 
@@ -592,9 +589,6 @@ void MockingboardCard::MB_Initialize(void)
 		for (UINT i=0; i<NUM_VOICES; i++)
 			ppAYVoiceBuffer[i] = new short [MAX_SAMPLES];	// Buffer can hold a max of 0.37 seconds worth of samples (16384/44100)
 
-		AY8910_InitAll((int)g_fCurrentCLK6502, SAMPLE_RATE);
-		LogFileOutput("MB_Initialize: AY8910_InitAll()\n");
-
 		for (UINT i=0; i<NUM_SY6522; i++)
 		{
 			g_MB[i] = SY6522_AY8910(m_slot);
@@ -604,6 +598,9 @@ void MockingboardCard::MB_Initialize(void)
 			g_MB[i].sy6522.InitSyncEvents(g_syncEvent[id0], g_syncEvent[id1]);
 			g_MB[i].ssi263.SetDevice(i);
 		}
+
+		AY8910_InitAll((int)g_fCurrentCLK6502, SAMPLE_RATE);
+		LogFileOutput("MB_Initialize: AY8910_InitAll()\n");
 
 		//
 
@@ -665,7 +662,8 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 	{
 		g_MB[i].sy6522.Reset(powerCycle);
 
-		AY8910_reset(i);
+		AY8910_reset(i * NUM_DEVS_PER_MB + 0);
+		AY8910_reset(i * NUM_DEVS_PER_MB + 1);
 		g_MB[i].nAYCurrentRegister = 0;
 		g_MB[i].state = AY_INACTIVE;
 		g_MB[i].stateB = AY_INACTIVE;
@@ -1183,7 +1181,7 @@ void MockingboardCard::GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS)
 
 BYTE MockingboardCard::AYReadReg(int chip, int r)
 {
-	const UINT unit = chip / 2;
+	const UINT unit = chip / NUM_DEVS_PER_MB;
 	return g_MB[unit].ay8913[chip & 1].sound_ay_read(r);
 //	return g_AY8910[chip].sound_ay_read(r);
 }
@@ -1191,7 +1189,7 @@ BYTE MockingboardCard::AYReadReg(int chip, int r)
 void MockingboardCard::_AYWriteReg(int chip, int r, int v)
 {
 	libspectrum_dword uOffset = (libspectrum_dword)(g_nCumulativeCycles - g_uLastCumulativeCycles2);
-	const UINT unit = chip / 2;
+	const UINT unit = chip / NUM_DEVS_PER_MB;
 	g_MB[unit].ay8913[chip & 1].sound_ay_write(r, v, uOffset);
 //	g_AY8910[chip].sound_ay_write(r, v, uOffset);
 }
@@ -1199,7 +1197,7 @@ void MockingboardCard::_AYWriteReg(int chip, int r, int v)
 void MockingboardCard::AY8910_reset(int chip)
 {
 	// Don't reset the AY CLK, as this is a property of the card (MB/Phasor), not the AY chip
-	const UINT unit = chip / 2;
+	const UINT unit = chip / NUM_DEVS_PER_MB;
 	g_MB[unit].ay8913[chip & 1].sound_ay_reset();	// Calls: sound_ay_init();
 //	g_AY8910[chip].sound_ay_reset();	// Calls: sound_ay_init();
 }
@@ -1213,7 +1211,7 @@ void MockingboardCard::AY8910Update(int chip, INT16** buffer, int nNumSamples)
 {
 	AY8910UpdateSetCycles();
 
-	const UINT unit = chip / 2;
+	const UINT unit = chip / NUM_DEVS_PER_MB;
 	g_MB[unit].ay8913[chip & 1].SetFramesize(nNumSamples);
 	g_MB[unit].ay8913[chip & 1].SetSoundBuffers(buffer);
 	g_MB[unit].ay8913[chip & 1].sound_frame();
@@ -1225,7 +1223,7 @@ void MockingboardCard::AY8910Update(int chip, INT16** buffer, int nNumSamples)
 
 void MockingboardCard::AY8910_InitAll(int nClock, int nSampleRate)
 {
-	for (UINT unit = 0; unit < 2; unit++)
+	for (UINT unit = 0; unit < NUM_DEVS_PER_MB; unit++)
 	{
 		for (UINT ay = 0; ay < 2; ay++)
 		{
@@ -1245,7 +1243,7 @@ void MockingboardCard::AY8910_InitClock(int nClock)
 {
 	AY8913::SetCLK((double)nClock);
 
-	for (UINT unit = 0; unit < 2; unit++)
+	for (UINT unit = 0; unit < NUM_DEVS_PER_MB; unit++)
 	{
 		for (UINT ay = 0; ay < 2; ay++)
 		{
@@ -1264,7 +1262,7 @@ BYTE* MockingboardCard::AY8910_GetRegsPtr(UINT chip)
 	if (chip >= MAX_8910)
 		return NULL;
 
-	const UINT unit = chip / 2;
+	const UINT unit = chip / NUM_DEVS_PER_MB;
 	return g_MB[unit].ay8913[chip & 1].GetAYRegsPtr();
 //	return g_AY8910[uChip].GetAYRegsPtr();
 }
@@ -1274,7 +1272,7 @@ UINT MockingboardCard::AY8910_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT 
 	if (chip >= MAX_8910)
 		return 0;
 
-	const UINT unit = chip / 2;
+	const UINT unit = chip / NUM_DEVS_PER_MB;
 	g_MB[unit].ay8913[chip & 1].SaveSnapshot(yamlSaveHelper, suffix);
 	return 1;
 //	g_AY8910[uChip].SaveSnapshot(yamlSaveHelper, suffix);
@@ -1286,7 +1284,7 @@ UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 	if (chip >= MAX_8910)
 		return 0;
 
-	const UINT unit = chip / 2;
+	const UINT unit = chip / NUM_DEVS_PER_MB;
 	return g_MB[unit].ay8913[chip & 1].LoadSnapshot(yamlLoadHelper, suffix) ? 1 : 0;
 //	return g_AY8910[uChip].LoadSnapshot(yamlLoadHelper, suffix) ? 1 : 0;
 }
