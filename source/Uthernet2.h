@@ -3,8 +3,10 @@
 #include "Card.h"
 
 #include <vector>
+#include <map>
 
 class NetworkBackend;
+struct MACAddress;
 
 struct Socket
 {
@@ -28,6 +30,7 @@ struct Socket
     socket_t myFD;
     int myErrno;
 
+    bool isOpen() const;
     void clearFD();
     void setFD(const socket_t fd, const int status);
     void process();
@@ -47,12 +50,15 @@ struct Socket
 * Documentation from
 *   http://dserver.macgui.com/Uthernet%20II%20manual%2017%20Nov%2018.pdf
 *   https://www.wiznet.io/wp-content/uploads/wiznethome/Chip/W5100/Document/W5100_DS_V128E.pdf
+*   https://www.wiznet.io/wp-content/uploads/wiznethome/Chip/W5100/Document/3150Aplus_5100_ES_V260E.pdf
 */
 
 class Uthernet2 : public Card
 {
 public:
     static const std::string& GetSnapshotCardName();
+
+    enum PacketDestination { HOST, BROADCAST, OTHER };
 
     Uthernet2(UINT slot);
 
@@ -72,6 +78,13 @@ private:
     uint16_t myDataAddress;
     std::shared_ptr<NetworkBackend> myNetworkBackend;
 
+    // the real Uthernet II card does not have a ARP Cache
+    // but in the interest of speeding up the emulator
+    // we introduce one
+    std::map<uint32_t, MACAddress> myARPCache;
+
+    void getMACAddress(const uint32_t address, const MACAddress * & mac);
+
     void setSocketModeRegister(const size_t i, const uint16_t address, const uint8_t value);
     void setTXSizes(const uint16_t address, uint8_t value);
     void setRXSizes(const uint16_t address, uint8_t value);
@@ -79,11 +92,14 @@ private:
     uint8_t getTXFreeSizeRegister(const size_t i, const size_t shift) const;
     uint8_t getRXDataSizeRegister(const size_t i, const size_t shift) const;
 
-    void receiveOnePacketMacRaw(const size_t i);
+    void receiveOnePacketRaw();
+    void receiveOnePacketIPRaw(const size_t i, const size_t lengthOfPayload, const uint8_t * payload, const uint32_t destination, const uint8_t protocol, const int len);
+    void receiveOnePacketMacRaw(const size_t i, const int size, uint8_t * data);
     void receiveOnePacketFromSocket(const size_t i);
     void receiveOnePacket(const size_t i);
-    int receiveForMacAddress(const bool acceptAll, const int size, uint8_t * data);
+    int receiveForMacAddress(const bool acceptAll, const int size, uint8_t * data, PacketDestination & packetDestination);
 
+    void sendDataIPRaw(const size_t i, std::vector<uint8_t> &data);
     void sendDataMacRaw(const size_t i, std::vector<uint8_t> &data) const;
     void sendDataToSocket(const size_t i, std::vector<uint8_t> &data);
     void sendData(const size_t i);
@@ -91,7 +107,7 @@ private:
     void resetRXTXBuffers(const size_t i);
     void updateRSR(const size_t i);
 
-    void openSystemSocket(const size_t i, const int type, const int protocol, const int state);
+    void openSystemSocket(const size_t i, const int type, const int protocol, const int status);
     void openSocket(const size_t i);
     void closeSocket(const size_t i);
     void connectSocket(const size_t i);

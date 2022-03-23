@@ -1,22 +1,23 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 	<head>
-		<title>Uthernet network card</title>
+		<title>Uthernet network cards</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 	</head>
 	<body style="FONT-FAMILY: verdana; BACKGROUND-COLOR: rgb(255,255,255)" alink="#008000"
 		link="#008000" vlink="#008000">
-		<h2 style="COLOR: rgb(0,128,0)">Uthernet network card</h2>
+		<h2 style="COLOR: rgb(0,128,0)">Uthernet network cards</h2>
 		<hr size="4">
 		<p style="FONT-WEIGHT: bold">Overview:
 		</p>
-		<P>The Uthernet network card coupled with the Contiki OS allows you to browse the 
+		<P>The Uthernet network cards coupled with the Contiki OS allow you to browse the
 			internet on your Apple.</P>
 		<P style="FONT-WEIGHT: bold">Acknowledgment:
 		</P>
-		<P>Uthernet (TFE) support in Applewin was made possible by implementing the GPL 
+		<P>Uthernet (TFE) support in AppleWin was made possible by implementing the GPL
 			source written by Spiro Trikaliotis for the Vice emulator - <A href="http://vice-emu.sourceforge.net/index.html#developers">
 				http://vice-emu.sourceforge.net/index.html#developers</A></P>
+		<P><A href="https://a2retrosystems.com/">Uthernet II</A> support in AppleWin has been contributed by Andrea (audetto) Odetti.</P>
 		<P style="FONT-WEIGHT: bold">Details:
 		</P>
 		<P>To enable ethernet support in AppleWin you must first download and install 
@@ -35,15 +36,15 @@
 		<P>After AppleWin starts, select the settings icon and then select the ethernet 
 			settings button.
 		</P>
-		<P>Uthernet will be disabled. Select Uthernet from the list of available ethernet 
-			emulations (currently the only one).
+		<P>Uthernet will be disabled. Select Uthernet or Uthernet II from the list of available ethernet
+			emulations.
 		</P>
 		<P>Select the ethernet interface you want to work with. This must be a physical 
 			ethernet interface.
 		</P>
 		<P>If you have more than one interface you may need to select them in turn in order 
 			to get the text description for each interface vs what Npcap likes to use for 
-			a reference. Select Ok. and then close AppleWin.
+			a reference.
 		</P>
 		<P><span style="font-weight: bold;">Note:</span> Wireless does not work 
 			with WinPcap (but see <A href="uthernet-wifi-workaround.html">WiFi Workaround</A>).
@@ -56,7 +57,7 @@
 			also grab a copy of the Uthernet/Contiki getting started guide <A href="http://www.a2retrosystems.com/a2UtherManual.pdf">
 				http://www.a2retrosystems.com/a2UtherManual.pdf</A>
 		</P>
-		<P>When you run AppleWin again, select the contiki80pri.dsk image. Boot AppleWin.
+		<P>Select the contiki80pri.dsk image. Boot AppleWin.
 		</P>
 		<P>Once Contiki is loaded then press Enter to clear the welcome screen and press 
 			ESC for a menu.
@@ -87,5 +88,14 @@
 			if you are still having difficulty then you should refer to the VICE network 
 			support page for additional information - <A href="http://vicekb.trikaliotis.net/13-005.shtml">
 			http://vicekb.trikaliotis.net/13-005.shtml</A></P>
-	</body>
+		<P style="FONT-WEIGHT: bold">Uthernet II:
+		</P>
+		<P>Most features of the Uthernet II are emulated, with the following caveats:
+			<ul>
+				<li>PPPoE, interrupts and SPI are not implemented</li>
+				<li>server side is not well tested</li>
+				<li>after loading a save-state file, TCP and UDP sockets are closed</li>
+			</ul>
+		</P>
+		</body>
 </html>

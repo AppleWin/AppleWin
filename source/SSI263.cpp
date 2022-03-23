@@ -86,7 +86,7 @@ void SSI_Output(void)
 	LogOutput("SSI: ");
 	for (int i = 0; i <= 4; i++)
 	{
-		std::string r = (ssiRegs[i] >= 0) ? StrFormat("%02X", ssiRegs[i]) : "--";
+		std::string r = (ssiRegs[i] >= 0) ? ByteToHexStr(ssiRegs[i]) : "--";
 		LogOutput("%s ", r.c_str());
 		ssiRegs[i] = -1;
 	}
