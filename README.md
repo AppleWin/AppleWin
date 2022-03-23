@@ -15,7 +15,7 @@ Peripheral cards and add-on hardware supported:
 - Apple IIe Extended 80-Column Text Card and RamWorks III (8MB)
 - RGB cards: Apple's Extended 80-Column Text/AppleColor Adaptor Card, 'Le Chat Mauve' Féline and Eve.
 - CP/M SoftCard
-- Uthernet I (ethernet card)
+- Uthernet I and II (ethernet cards)
 - Language Card and Saturn 64/128K for Apple II/II+
 - 4Play and SNES MAX joystick cards
 - VidHD card (functionality limited to IIgs' Super Hi-Res video modes)
