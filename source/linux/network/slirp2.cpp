@@ -200,4 +200,15 @@ bool SlirpBackend::isValid()
   return true;
 }
 
+void SlirpBackend::getMACAddress(const uint32_t address, MACAddress & mac)
+{
+  // a bit of a hack, I've found out that slirp uses
+  /* emulated hosts use the MAC addr 52:55:IP:IP:IP:IP */
+  // https://gitlab.freedesktop.org/slirp/libslirp/-/blob/bf917b89d64f57d9302aba4b2f027ea68fb78c13/src/slirp.c#L78
+  mac.address[0] = 0x52;
+  mac.address[1] = 0x55;
+  uint32_t * ptr = reinterpret_cast<uint32_t *>(mac.address + 2);
+  *ptr = address;
+}
+
 #endif

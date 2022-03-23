@@ -35,6 +35,7 @@ set(SOURCE_FILES
   Tfe/tfesupp.cpp
   Tfe/NetworkBackend.cpp
   Tfe/PCapBackend.cpp
+  Tfe/IPRaw.cpp
 
   Debugger/Debug.cpp
   Debugger/Debugger_Help.cpp
@@ -124,6 +125,7 @@ set(HEADER_FILES
   Tfe/tfesupp.h
   Tfe/NetworkBackend.h
   Tfe/PCapBackend.h
+  Tfe/IPRaw.h
 
   Uthernet1.h
   Uthernet2.h
