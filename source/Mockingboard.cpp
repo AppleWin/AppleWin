@@ -282,6 +282,88 @@ BYTE MockingboardCard::GetPCR(BYTE nDevice)
 
 //===========================================================================
 
+UINT MockingboardCard::MB_UpdateInternal1(void)
+{
+	if (!MockingboardVoice.bActive)
+		return 0;
+
+	if (g_bFullSpeed)
+	{
+		// Keep AY reg writes relative to the current 'frame'
+		// - Required for Ultima3:
+		//   . Tune ends
+		//   . g_bFullSpeed:=true (disk-spinning) for ~50 frames
+		//   . U3 sets AY_ENABLE:=0xFF (as a side-effect, this sets g_bFullSpeed:=false)
+		//   o Without this, the write to AY_ENABLE gets ignored (since AY8910's /g_uLastCumulativeCycles/ was last set 50 frame ago)
+		AY8910UpdateSetCycles();
+
+		// TODO:
+		// If any AY regs have changed then push them out to the AY chip
+
+		return 0;
+	}
+
+	//
+
+	if (!g_bMB_RegAccessedFlag)
+	{
+		if (!g_nMB_InActiveCycleCount)
+		{
+			g_nMB_InActiveCycleCount = g_nCumulativeCycles;
+		}
+		else if (g_nCumulativeCycles - g_nMB_InActiveCycleCount > (unsigned __int64)g_fCurrentCLK6502 / 10)
+		{
+			// After 0.1 sec of Apple time, assume MB is not active
+			g_bMB_Active = false;
+		}
+	}
+	else
+	{
+		g_nMB_InActiveCycleCount = 0;
+		g_bMB_RegAccessedFlag = false;
+		g_bMB_Active = true;
+	}
+
+	//
+
+	// For small timer periods, wait for a period of 500cy before updating DirectSound ring-buffer.
+	// NB. A timer period of less than 24cy will yield nNumSamplesPerPeriod=0.
+	const double kMinimumUpdateInterval = 500.0;	// Arbitary (500 cycles = 21 samples)
+	const double kMaximumUpdateInterval = (double)(0xFFFF + 2);	// Max 6522 timer interval (2756 samples)
+
+	if (g_uLastMBUpdateCycle == 0)
+		g_uLastMBUpdateCycle = g_uLastCumulativeCycles;		// Initial call to MB_Update() after reset/power-cycle
+
+	_ASSERT(g_uLastCumulativeCycles >= g_uLastMBUpdateCycle);
+	double updateInterval = (double)(g_uLastCumulativeCycles - g_uLastMBUpdateCycle);
+	if (updateInterval < kMinimumUpdateInterval)
+		return 0;
+	if (updateInterval > kMaximumUpdateInterval)
+		updateInterval = kMaximumUpdateInterval;
+
+	g_uLastMBUpdateCycle = g_uLastCumulativeCycles;
+
+	const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
+	const int nNumSamplesPerPeriod = (int)((double)SAMPLE_RATE / nIrqFreq);	// Eg. For 60Hz this is 735
+
+	//static int nNumSamplesError = 0;	// INFO-TC: moved to class
+	int nNumSamples = nNumSamplesPerPeriod + nNumSamplesError;					// Apply correction
+	if (nNumSamples <= 0)
+		nNumSamples = 0;
+	if (nNumSamples > 2 * nNumSamplesPerPeriod)
+		nNumSamples = 2 * nNumSamplesPerPeriod;
+
+	if (nNumSamples > MAX_SAMPLES)
+		nNumSamples = MAX_SAMPLES;	// Clamp to prevent buffer overflow
+
+	if (nNumSamples)
+		for (int nChip = 0; nChip < NUM_AY8913; nChip++)
+			AY8910Update(nChip, &ppAYVoiceBuffer[nChip * NUM_VOICES_PER_AY8913], nNumSamples);
+
+	return (UINT) nNumSamples;
+}
+
+#if 0
 // Called by:
 // . MB_SyncEventCallback() on a TIMER1 (not TIMER2) underflow - when IsAnyTimer1Active() == true
 // . Update()                                                  - when IsAnyTimer1Active() == false
@@ -289,7 +371,7 @@ void MockingboardCard::MB_UpdateInternal(void)
 {
 	if (!MockingboardVoice.bActive)
 		return;
-	if (m_slot == 5) return;		// HACK!
+//	if (m_slot == 4) return;		// HACK!
 
 	if (g_bFullSpeed)
 	{
@@ -504,6 +586,7 @@ void MockingboardCard::MB_Update(void)
 
 	MB_UpdateInternal();
 }
+#endif
 
 //-----------------------------------------------------------------------------
 
@@ -1011,6 +1094,8 @@ void MockingboardCard::SetCumulativeCycles(void)
 // NB. Required for FT's TEST LAB #1 player
 void MockingboardCard::Update(const ULONG executedCycles)
 {
+#if 1
+#else
 	for (UINT i=0; i<NUM_SSI263; i++)
 		g_MB[i].ssi263.PeriodicUpdate(executedCycles);
 
@@ -1027,6 +1112,7 @@ void MockingboardCard::Update(const ULONG executedCycles)
 	g_cyclesThisAudioFrame %= kCyclesPerAudioFrame;
 
 	MB_Update();
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1074,7 +1160,8 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 	{
 		_ASSERT(pMB->sy6522.IsTimer1Active());
 		UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER1);
-		MB_Update();
+		//MB_Update();
+		GetCardMgr().GetMockingboardCardMgr().Update();
 
 		if ((pMB->sy6522.GetReg(SY6522::rACR) & SY6522::ACR_RUNMODE) == SY6522::ACR_RM_FREERUNNING)
 		{

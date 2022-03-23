@@ -34,6 +34,7 @@ public:
 		g_cyclesThisAudioFrame = 0;
 
 		g_uLastMBUpdateCycle = 0;
+		nNumSamplesError = 0;
 
 		MB_Initialize();
 	}
@@ -69,6 +70,10 @@ public:
 	void SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 	void SetCumulativeCycles(void);
 	bool MB_DSInit(void);
+	UINT MB_UpdateInternal1(void);
+	short** GetVoiceBuffers(void) { return ppAYVoiceBuffer; }
+	int GetNumSamplesError(void) { return nNumSamplesError; }
+	void SetNumSamplesError(int numSamplesError) { nNumSamplesError = numSamplesError; }
 #ifdef _DEBUG
 	void CheckCumulativeCycles(void);
 	void Get6522IrqDescription(std::string& desc);
@@ -196,6 +201,7 @@ private:
 	UINT g_cyclesThisAudioFrame;
 
 	UINT64 g_uLastMBUpdateCycle;
+	int nNumSamplesError;
 };
 
 #if 0

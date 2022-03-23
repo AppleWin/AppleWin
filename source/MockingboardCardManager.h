@@ -1,13 +1,18 @@
 #pragma once
 
+#include "SoundCore.h"
+
 class MockingboardCardManager
 {
 public:
 	MockingboardCardManager(void)
 	{
 		m_userVolume = 0;
+		nNumSamplesError = 0;
+		dwByteOffset = (DWORD)-1;
 	}
-	~MockingboardCardManager(void) {}
+	~MockingboardCardManager(void)
+	{}
 
 	bool IsMockingboard(UINT slot);
 	void InitializePostWindowCreate(void);
@@ -19,6 +24,12 @@ public:
 	bool IsActive(void);
 	DWORD GetVolume(void);
 	void SetVolume(DWORD volume, DWORD volumeMax);
+
+	void Update(void);
+	bool Init(void);
+	UINT MB_UpdateInternal1(void);
+	void MB_UpdateInternal2(int nNumSamples);
+
 #ifdef _DEBUG
 	void CheckCumulativeCycles(void);
 	void Get6522IrqDescription(std::string& desc);
@@ -26,4 +37,27 @@ public:
 
 private:
 	DWORD m_userVolume;	// GUI's slide volume
+
+	//
+
+	static const UINT NUM_SY6522 = 2;
+	static const UINT NUM_AY8913 = 4;	// Phasor has 4, MB has 2
+//	static const UINT NUM_SSI263 = 2;
+	static const UINT NUM_DEVS_PER_MB = NUM_SY6522;
+	static const UINT NUM_VOICES_PER_AY8913 = 3;
+	static const UINT NUM_VOICES = (NUM_AY8913 * NUM_VOICES_PER_AY8913);
+
+	static const unsigned short g_nMB_NumChannels = 2;
+	static const DWORD g_dwDSBufferSize = MAX_SAMPLES * sizeof(short) * g_nMB_NumChannels;
+
+	static const SHORT nWaveDataMin = (SHORT)0x8000;
+	static const SHORT nWaveDataMax = (SHORT)0x7FFF;
+
+	short g_nMixBuffer[g_dwDSBufferSize / sizeof(short)];
+	VOICE MockingboardVoice;
+
+	//
+
+	int nNumSamplesError;
+	DWORD dwByteOffset;
 };
