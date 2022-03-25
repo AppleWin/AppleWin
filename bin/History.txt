@@ -8,6 +8,19 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+
+1.30.9.0 - 23 Mar 2022
+----------------------
+. [Change #518] Support Uthernet II card in slot 3. [audetto]
+	- EG. Use with Contiki, A2osX, ii-vision, a2stream etc.
+	- Support for W5100 modes: TCP, UDP, IPRAW and MACRAW (no support for PPPoE mode, interrupts and SPI).
+. [Bug #1066] Fix for save-states where (eg) disk image name contains '#' character.
+. [Bug #1017] Fix for printer interface where character got output twice.
+. [PR #1031 + others] Internal: refactor string output handling. [kiyolee]
+. Change: default install of AppleWin now sets slot 3 as empty (was Uthernet I card)
+. Fix 6522 bug: IFR.T2 was always set when counter.b15=1
+
+
 1.30.8.0 - 8 Feb 2022
 ---------------------
 . [Bug #1023] WOZ support: Tweak to track sync support.
