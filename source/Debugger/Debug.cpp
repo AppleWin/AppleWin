@@ -5782,7 +5782,7 @@ Update_t CmdOutputCalc (int nArgs)
 	if (bParen)
 		strText += '(';
 
-	if (bHi & bLo)
+	if (bHi && bLo)
 		strText += "High Ctrl";
 	else
 	if (bHi)
