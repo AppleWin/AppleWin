@@ -35,7 +35,7 @@
     X  2002:2003
 Released post 1.30.7.0
 
-2.9.1.0 Added: Bookmarks now have their own indicator (a number with a box around it) and replace the ":" seperator. Updated Debug_Font.bmp
+2.9.1.0 Added: Bookmarks now have their own indicator (a number with a box around it) and replace the ":" separator. Updated Debug_Font.bmp
 
 .18 Fixed: Resetting bookmarks wasn't setting the total bookmarks back to zero.
 .17 Fixed: If all bookmarks were used then setting a new one wouldn't update an existing one to the new address.

@@ -1271,7 +1271,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		, TOKEN_PLUS         // + Delta  Argument1 += Argument2
 		, TOKEN_QUOTE_SINGLE // '
 		, TOKEN_QUOTE_DOUBLE // "
-		, TOKEN_SEMI         // ; Command Seperator
+		, TOKEN_SEMI         // ; Command Separator
 		, TOKEN_SPACE        //   Token Delimiter
 		, TOKEN_STAR         // *
 //		, TOKEN_TAB          // '\t'

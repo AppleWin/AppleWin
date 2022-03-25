@@ -1344,7 +1344,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	nOpbyte = line.nOpbyte;
 
 	// sAddress, sOpcodes, sTarget, sTargetOffset, nTargetOffset, sTargetPointer, sTargetValue, sImmediate, nImmediate, sBranch );
-	//> Address Seperator Opcodes   Label Mnemonic Target [Immediate] [Branch]
+	//> Address Separator Opcodes   Label Mnemonic Target [Immediate] [Branch]
 	//
 	//> xxxx: xx xx xx   LABEL    MNEMONIC    'E' =
 	//>       ^          ^        ^           ^   ^
@@ -1515,7 +1515,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	}
 
 
-	// Address Seperator
+	// Address Separator
 	if (! bCursorLine)
 		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
 
