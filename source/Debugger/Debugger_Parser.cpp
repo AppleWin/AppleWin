@@ -286,7 +286,7 @@ int	ArgsGet ( TCHAR * pInput )
 
 			if (iTokenSrc == TOKEN_SEMI)
 			{
-				// TODO - command seperator, must handle non-quoted though!
+				// TODO - command separator, must handle non-quoted though!
 			}
 
 			if (iTokenSrc == TOKEN_QUOTE_DOUBLE)

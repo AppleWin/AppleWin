@@ -249,8 +249,8 @@ void Help_Operators()
 	ConsolePrintFormat( "    %s#%s   Designate number in hex"             , CHC_USAGE, CHC_DEFAULT );
 //	ConsoleBufferPush( "  Operators: (Range)"                            );
 	ConsolePrintFormat( "  Operators: (%sRange%s)"                        , CHC_USAGE, CHC_DEFAULT );
-	ConsolePrintFormat( "    %s,%s   range seperator (2nd address is relative)", CHC_USAGE, CHC_DEFAULT );
-	ConsolePrintFormat( "    %s:%s   range seperator (2nd address is absolute)", CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( "    %s,%s   range separator (2nd address is relative)", CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( "    %s:%s   range separator (2nd address is absolute)", CHC_USAGE, CHC_DEFAULT );
 //	ConsolePrintFormat( "  Operators: (Misc)"                             );
 	ConsolePrintFormat( "  Operators: (%sMisc%s)"                         , CHC_USAGE, CHC_DEFAULT );
 	ConsolePrintFormat( "    %s//%s  comment until end of line"           , CHC_USAGE, CHC_DEFAULT );
