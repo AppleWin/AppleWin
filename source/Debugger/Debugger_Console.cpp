@@ -578,7 +578,7 @@ Update_t ConsoleScrollPageDn ()
 //===========================================================================
 Update_t ConsoleBufferTryUnpause (int nLines)
 {
-	for( int y = 0; y < nLines; y++ )
+	for ( int y = 0; y < nLines; y++ )
 	{
 		ConsoleBufferToDisplay();
 	}
