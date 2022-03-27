@@ -215,7 +215,7 @@ namespace common2
 
     if (!options.disk1.empty())
     {
-      szImageName_drive[DRIVE_2] = options.disk1.c_str();
+      szImageName_drive[DRIVE_1] = options.disk1.c_str();
     }
 
     if (!options.disk2.empty())
