@@ -261,7 +261,7 @@ void Help_Operators()
 	_tcscpy( sText, "    " );
 	strcat( sText, CHC_USAGE );
 	int iBreakOp = 0;
-	for( iBreakOp = 0; iBreakOp < NUM_BREAKPOINT_OPERATORS; iBreakOp++ )
+	for ( iBreakOp = 0; iBreakOp < NUM_BREAKPOINT_OPERATORS; iBreakOp++ )
 	{
 		if ((iBreakOp >= PARAM_BP_LESS_EQUAL) &&
 			(iBreakOp <= PARAM_BP_GREATER_EQUAL))
@@ -452,7 +452,7 @@ bool Colorize( char * pDst, size_t /*nDstSz*/, const char* pSrc)
 			const char *start = pSrc;
 			const char *end   = pSrc;
 
-			while( isHexDigit( *end ) )
+			while ( isHexDigit( *end ) )
 				end++;
 
 			size_t nDigits = end - start;
@@ -580,11 +580,11 @@ Update_t CmdHelpSpecific (int nArgs)
 		{
 	//		int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_EXACT, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
 			int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_FUZZY, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
-			if( nFoundCategory )
+			if ( nFoundCategory )
 				bCategory = true;
 			else
 				bCategory = false;
-			switch( iParam )
+			switch ( iParam )
 			{
 				case PARAM_CAT_BOOKMARKS  : iCmdBegin = CMD_BOOKMARK        ; iCmdEnd = CMD_BOOKMARK_SAVE        ; break;
 				case PARAM_CAT_BREAKPOINTS: iCmdBegin = CMD_BREAK_INVALID   ; iCmdEnd = CMD_BREAKPOINT_SAVE      ; break;
@@ -646,7 +646,7 @@ Update_t CmdHelpSpecific (int nArgs)
 					if (nFound) {
 						bCategory = false; 
 					} else  // 2.7.0.17: HELP <category> wasn't displaying when category was one of: FLAGS, OUTPUT, WATCHES
-						if( nFoundCategory )
+						if ( nFoundCategory )
 						{
 							iCmdBegin = CMD_WATCH_ADD       ; iCmdEnd = CMD_WATCH_LIST           ;
 						}
@@ -1513,7 +1513,7 @@ Update_t CmdHelpList (int nArgs)
 		        StringCat( sText, CHC_DEFAULT, nBuf );
 		nLen += StringCat( sText, ": " , nBuf );
 
-	for( iCommand = 0; iCommand < NUM_COMMANDS_WITH_ALIASES; iCommand++ ) // aliases are not printed
+	for ( iCommand = 0; iCommand < NUM_COMMANDS_WITH_ALIASES; iCommand++ ) // aliases are not printed
 	{
 		Command_t *pCommand = & g_vSortedCommands.at( iCommand );
 //		Command_t *pCommand = & g_aCommands[ iCommand ];

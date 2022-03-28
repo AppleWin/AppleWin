@@ -103,7 +103,7 @@ Update_t _PrintSymbolInvalidTable()
 
 	// Similar to _CmdSymbolsInfoHeader()
 	sText[0] = 0;
-	for( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
+	for ( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
 	{
 		sprintf( sTemp, "%s%s%s%c " // %s"
 			, CHC_USAGE, g_aSymbolTableNames[ iTable ]
@@ -160,7 +160,7 @@ std::string const* FindSymbolFromAddress (WORD nAddress, int * iTable_ )
 			continue;
 
 		std::map<WORD, std::string>::iterator iSymbols = g_aSymbols[iTable].find(nAddress);
-		if(g_aSymbols[iTable].find(nAddress) != g_aSymbols[iTable].end())
+		if (g_aSymbols[iTable].find(nAddress) != g_aSymbols[iTable].end())
 		{
 			if (iTable_)
 			{
@@ -335,16 +335,16 @@ Update_t CmdSymbolsInfo (int nArgs)
 
 	int bTable = 1;
 	int iTable = 0;
-	for( ; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 )
+	for ( ; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 )
 	{
-		if( bDisplaySymbolTables & bTable )
+		if ( bDisplaySymbolTables & bTable )
 		{
 			_CmdSymbolsInfoHeader( iTable, sTemp ); // 15 chars per table
 
 			// 2.8.0.4 BUGFIX: Check for buffer overflow and wrap text
 			int nLen = ConsoleColor_StringLength( sTemp );
 			int nDst = ConsoleColor_StringLength( sText );
-			if((nDst + nLen) > CONSOLE_WIDTH )
+			if ((nDst + nLen) > CONSOLE_WIDTH )
 			{
 				ConsolePrint( sText );
 				strcpy( sText, sIndent ); // Indent new line
@@ -381,7 +381,7 @@ bool _FindSymbolTable( int bSymbolTables, int iTable )
 	// iTable is enumeration
 	// bSymbolTables is bit-flags of enabled tables to search
 
-	if( bSymbolTables & (1 << iTable) )
+	if ( bSymbolTables & (1 << iTable) )
 	{
 		return true;
 	}
@@ -396,9 +396,9 @@ int _GetSymbolTableFromFlag( int bSymbolTables )
 	int iTable = 0;
 	int bTable = 1;
 
-	for( ; bTable <= bSymbolTables; iTable++, bTable <<= 1 )
+	for ( ; bTable <= bSymbolTables; iTable++, bTable <<= 1 )
 	{
-		if( bTable & bSymbolTables )
+		if ( bTable & bSymbolTables )
 			break;
 	}
 
@@ -478,22 +478,22 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 		
 	TCHAR sText[ CONSOLE_WIDTH ] = "";
 
-	for( int iArgs = 1; iArgs <= nArgs; iArgs++ )
+	for ( int iArgs = 1; iArgs <= nArgs; iArgs++ )
 	{
 		WORD nAddress = g_aArgs[iArgs].nValue;
 		LPCTSTR pSymbol = g_aArgs[iArgs].sArg;
 
 		// Dump all symbols for this table
-		if( g_aArgRaw[iArgs].eToken == TOKEN_STAR)
+		if ( g_aArgRaw[iArgs].eToken == TOKEN_STAR)
 		{
 	//		int iWhichTable = (g_iCommand - CMD_SYMBOLS_MAIN);
 	//		bDisplaySymbolTables = (1 << iWhichTable);
 
 			int iTable = 0;
 			int bTable = 1;
-			for( ; bTable <= bSymbolTables; iTable++, bTable <<= 1 )
+			for ( ; bTable <= bSymbolTables; iTable++, bTable <<= 1 )
 			{
-				if( bTable & bSymbolTables )
+				if ( bTable & bSymbolTables )
 				{
 					int nSymbols = g_aSymbols[iTable].size();
 					if (nSymbols)
@@ -569,7 +569,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 
 	FILE *hFile = fopen( pPathFileName.c_str(), "rt" );
 
-	if( !hFile && g_bSymbolsDisplayMissingFile )
+	if ( !hFile && g_bSymbolsDisplayMissingFile )
 	{
 		// TODO: print filename! Bug #242 Help file (.chm) description for "Symbols" #242
 		ConsoleDisplayError( "Symbol File not found:" );
@@ -578,9 +578,9 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 	}
 	
 	bool bDupSymbolHeader = false;
-	if( hFile )
+	if ( hFile )
 	{
-		while( !feof(hFile) )
+		while ( !feof(hFile) )
 		{
 			// Support 2 types of symbols files:
 			// 1) AppleWin:
@@ -596,24 +596,24 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 			const int MAX_LINE = 256;
 			char  szLine[ MAX_LINE ] = "";
 
-			if( !fgets(szLine, MAX_LINE-1, hFile) )	// Get next line
+			if ( !fgets(szLine, MAX_LINE-1, hFile) )	// Get next line
 			{
 				//ConsolePrint("<<EOF");
 				break;
 			}
 
-			if(strstr(szLine, "$") == NULL)
+			if (strstr(szLine, "$") == NULL)
 			{
 				sscanf(szLine, strFormat1.c_str(), &nAddress, sName);
 			}
 			else
 			{
 				char* p = strstr(szLine, "=");	// Optional
-				if(p) *p = ' ';
+				if (p) *p = ' ';
 				p = strstr(szLine, "$");
-				if(p) *p = ' ';
+				if (p) *p = ' ';
 				p = strstr(szLine, ";");		// Optional
-				if(p) *p = 0;
+				if (p) *p = 0;
 				p = strstr(szLine, " ");		// 1st space between name & value
 				if (p)
 				{
@@ -629,7 +629,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 			// SymbolOffset
 			nAddress += nSymbolOffset;
 
-			if( (nAddress > _6502_MEM_END) || (sName[0] == 0) )
+			if ( (nAddress > _6502_MEM_END) || (sName[0] == 0) )
 				continue;
 
 			// 2.9.0.11 Bug #479
@@ -655,9 +655,9 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 
 			// 2.8.0.5 Bug #244 (Debugger) Duplicate symbols for identical memory addresses in APPLE2E.SYM
 			std::string const* pSymbolPrev = FindSymbolFromAddress( (WORD)nAddress, &iTable ); // don't care which table it is in
-			if( pSymbolPrev )
+			if ( pSymbolPrev )
 			{
-				if( !bFileDisplayed )
+				if ( !bFileDisplayed )
 				{
 					bFileDisplayed = true;
 
@@ -712,9 +712,9 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 			WORD nAddressPrev = 0;
 
 			bool bExists  = FindAddressFromSymbol( sName, &nAddressPrev, &iTable );
-			if( bExists )
+			if ( bExists )
 			{
-				if( !bDupSymbolHeader )
+				if ( !bDupSymbolHeader )
 				{
 					bDupSymbolHeader = true;
 					ConsolePrintFormat( " %sDup Symbol Name%s (%s%s%s) %s"
@@ -773,7 +773,7 @@ Update_t CmdSymbolsLoad (int nArgs)
 	{
 		std::string pFileName;
 		
-		if( g_aArgs[ iArg ].bType & TYPE_QUOTED_2 )
+		if ( g_aArgs[ iArg ].bType & TYPE_QUOTED_2 )
 		{
 			pFileName = g_aArgs[ iArg ].sArg;
 
@@ -788,15 +788,15 @@ Update_t CmdSymbolsLoad (int nArgs)
 		unsigned int nOffsetAddr = 0;
 
 		iArg++;
-		if( iArg <= nArgs)
+		if ( iArg <= nArgs)
 		{
 			if (g_aArgs[ iArg ].eToken == TOKEN_COMMA)
 			{
 				iArg++;
-				if( iArg <= nArgs )
+				if ( iArg <= nArgs )
 				{
 					nOffsetAddr = g_aArgs[ iArg ].nValue;
-					if( (nOffsetAddr < _6502_MEM_BEGIN) || (nOffsetAddr > _6502_MEM_END) )
+					if ( (nOffsetAddr < _6502_MEM_BEGIN) || (nOffsetAddr > _6502_MEM_END) )
 					{
 						nOffsetAddr = 0;
 					}
@@ -804,13 +804,13 @@ Update_t CmdSymbolsLoad (int nArgs)
 			}
 		}
 
-		if( !pFileName.empty() )
+		if ( !pFileName.empty() )
 		{
 			nSymbols = ParseSymbolTable( sFileName, (SymbolTable_Index_e) iSymbolTable, nOffsetAddr );
 		}
 	}
 
-	if( nSymbols > 0 )
+	if ( nSymbols > 0 )
 	{
 		g_nSymbolsLoaded = nSymbols;
 	}
@@ -992,7 +992,7 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				int iTable = _GetSymbolTableFromFlag( bSymbolTables );
 				if (iTable != NUM_SYMBOL_TABLES)
 				{
-					if( bUpdate & UPDATE_SYMBOLS )
+					if ( bUpdate & UPDATE_SYMBOLS )
 					{
 						//sprintf( sText, "  Symbol Table: %s%s%s, %sloaded symbols: %s%d"
 						//	, CHC_STRING, g_aSymbolTableNames[ iTable ]

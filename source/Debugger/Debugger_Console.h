@@ -196,11 +196,11 @@
 		const char *pSrc = pText;
 		/* */ int   nLen = 0;
 
-		if( pText )
+		if ( pText )
 		{
-			while( *pSrc )
+			while ( *pSrc )
 			{
-				if( ConsoleColor_IsCharMeta( *pSrc ) )
+				if ( ConsoleColor_IsCharMeta( *pSrc ) )
 					pSrc++;
 				else
 					nLen++;
