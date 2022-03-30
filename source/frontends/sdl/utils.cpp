@@ -71,4 +71,9 @@ namespace sa2
     return buttonid == 0;
   }
 
+  std::string decorateSDLError(const std::string & prefix)
+  {
+    return prefix + ": " + SDL_GetError();
+  }
+
 }

@@ -155,7 +155,7 @@ namespace sa2
     // SDL_GL_SetSwapInterval() always fails
     if (interval != current && SDL_GL_SetSwapInterval(interval))
     {
-      throw std::runtime_error(std::string("SDL_GL_SetSwapInterval: ") + SDL_GetError());
+      throw std::runtime_error(decorateSDLError("SDL_GL_SetSwapInterval"));
     }
   }
 

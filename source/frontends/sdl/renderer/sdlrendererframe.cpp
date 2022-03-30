@@ -19,7 +19,7 @@ namespace sa2
     myWindow.reset(SDL_CreateWindow(g_pAppTitle.c_str(), geometry.x, geometry.y, geometry.width, geometry.height, SDL_WINDOW_RESIZABLE), SDL_DestroyWindow);
     if (!myWindow)
     {
-      throw std::runtime_error(SDL_GetError());
+      throw std::runtime_error(decorateSDLError("SDL_CreateWindow"));
     }
 
     SetApplicationIcon();
@@ -27,7 +27,7 @@ namespace sa2
     myRenderer.reset(SDL_CreateRenderer(myWindow.get(), options.sdlDriver, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC), SDL_DestroyRenderer);
     if (!myRenderer)
     {
-      throw std::runtime_error(SDL_GetError());
+      throw std::runtime_error(decorateSDLError("SDL_CreateRenderer"));
     }
 
     printRendererInfo(std::cerr, myRenderer, ourFormat, options.sdlDriver);

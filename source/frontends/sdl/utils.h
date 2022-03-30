@@ -17,4 +17,5 @@ namespace sa2
                           const std::string & title,
                           const std::string & text);
 
+  std::string decorateSDLError(const std::string & prefix);
 }

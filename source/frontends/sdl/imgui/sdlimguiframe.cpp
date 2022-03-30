@@ -54,7 +54,7 @@ namespace sa2
     myWindow.reset(SDL_CreateWindow(g_pAppTitle.c_str(), geometry.x, geometry.y, geometry.width, geometry.height, windowFlags), SDL_DestroyWindow);
     if (!myWindow)
     {
-      throw std::runtime_error(SDL_GetError());
+      throw std::runtime_error(decorateSDLError("SDL_CreateWindow"));
     }
 
     SetApplicationIcon();
@@ -62,7 +62,7 @@ namespace sa2
     myGLContext = SDL_GL_CreateContext(myWindow.get());
     if (!myGLContext)
     {
-      throw std::runtime_error(SDL_GetError());
+      throw std::runtime_error(decorateSDLError("SDL_GL_CreateContext"));
     }
 
     SDL_GL_MakeCurrent(myWindow.get(), myGLContext);

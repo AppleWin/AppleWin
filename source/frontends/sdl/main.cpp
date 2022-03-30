@@ -41,7 +41,7 @@ namespace
 
     if (should_be_zero)
     {
-      throw std::runtime_error(SDL_GetError());
+      throw std::runtime_error(sa2::decorateSDLError("SDL_GetCurrentDisplayMode"));
     }
 
     return current.refresh_rate;
