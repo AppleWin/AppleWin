@@ -60,7 +60,7 @@ namespace common2
       ("help,h", "Print this help message")
       ;
 
-    po::options_description configDesc("configuration");
+    po::options_description configDesc("Configuration");
     configDesc.add_options()
       ("conf", po::value<std::string>()->default_value(options.configurationFile), "Select configuration file")
       ("registry,r", po::value<std::vector<std::string>>(), "Registry options section.path=value")
