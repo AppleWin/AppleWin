@@ -735,62 +735,62 @@ Update_t CmdHelpSpecific (int nArgs)
 //		if (nFound && (! bAllCommands) && (! bCategory))
 		if (nFound && (! bAllCommands) && bDisplayCategory)
 		{
-			const char* pszCategory = "";
+			const char* pCategory = "";
 			int iCmd = g_aCommands[ iCommand ].iCommand; // Unaliased command
 
 			// HACK: Major kludge to display category!!!
 			if (iCmd <= CMD_UNASSEMBLE)
-				pszCategory = g_aParameters[ PARAM_CAT_CPU ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_CPU ].m_sName;
 			else
 			if (iCmd <= CMD_BOOKMARK_SAVE)
-				pszCategory = g_aParameters[ PARAM_CAT_BOOKMARKS ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_BOOKMARKS ].m_sName;
 			else
 			if (iCmd <= CMD_BREAKPOINT_SAVE)
-				pszCategory = g_aParameters[ PARAM_CAT_BREAKPOINTS ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_BREAKPOINTS ].m_sName;
 			else
 			if (iCmd <= CMD_CONFIG_SET_DEBUG_DIR)
-				pszCategory = g_aParameters[ PARAM_CAT_CONFIG ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_CONFIG ].m_sName;
 			else
 			if (iCmd <= CMD_CURSOR_PAGE_DOWN_4K)
-				pszCategory = "Scrolling";
+				pCategory = "Scrolling";
 			else
 			if (iCmd <= CMD_FLAG_SET_N)
-				pszCategory = g_aParameters[ PARAM_CAT_FLAGS ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_FLAGS ].m_sName;
 			else
 			if (iCmd <= CMD_MOTD)
-				pszCategory = g_aParameters[ PARAM_CAT_HELP ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_HELP ].m_sName;
 			else
 			if (iCmd <= CMD_MEMORY_FILL)
-				pszCategory = g_aParameters[ PARAM_CAT_MEMORY ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_MEMORY ].m_sName;
 			else
 			if (iCmd <= CMD_OUTPUT_RUN)
-				pszCategory = g_aParameters[ PARAM_CAT_OUTPUT ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_OUTPUT ].m_sName;
 			else
 			if (iCmd <= CMD_SYNC)
-				pszCategory = "Source";
+				pCategory = "Source";
 			else
 			if (iCmd <= CMD_SYMBOLS_LIST)
-				pszCategory = g_aParameters[ PARAM_CAT_SYMBOLS ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_SYMBOLS ].m_sName;
 			else
 			if (iCmd <= CMD_VIEW_DHGR2)
-				pszCategory = g_aParameters[ PARAM_CAT_VIEW ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_VIEW ].m_sName;
 			else
 			if (iCmd <= CMD_WATCH_SAVE)
-				pszCategory = g_aParameters[ PARAM_CAT_WATCHES ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_WATCHES ].m_sName;
 			else
 			if (iCmd <= CMD_WINDOW_OUTPUT)
-				pszCategory = g_aParameters[ PARAM_CAT_WINDOW ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_WINDOW ].m_sName;
 			else
 			if (iCmd <= CMD_ZEROPAGE_POINTER_SAVE)
-				pszCategory = g_aParameters[ PARAM_CAT_ZEROPAGE ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_ZEROPAGE ].m_sName;
 			else
-				pszCategory = "Unknown!";
+				pCategory = "Unknown!";
 
 			ConsolePrintFormat( "%sCategory%s: %s%s"
 				, CHC_USAGE
 				, CHC_DEFAULT
 				, CHC_CATEGORY
-				, pszCategory );
+				, pCategory );
 
 			if (bCategory)
 				bDisplayCategory = false;
