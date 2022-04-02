@@ -1697,8 +1697,8 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 {
 	static const char sFlags[] = "-*";
 
-	std::string strAddressBuf;
-	std::string const& symbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, strAddressBuf);
+	std::string sAddressBuf;
+	std::string const& sSymbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, sAddressBuf);
 
 	char cBPM = aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_READ_ONLY ? 'R'
 				: aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_WRITE_ONLY ? 'W'
@@ -1710,7 +1710,7 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 		sFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
 		aBreakWatchZero[ iBWZ ].nAddress,
 		cBPM,
-		symbol.c_str()
+		sSymbol.c_str()
 	);
 }
 
@@ -2256,8 +2256,8 @@ void _CmdColorGet( const int iScheme, const int iColor )
 	}
 	else
 	{
-		std::string strText = StrFormat( "Color: %d\nOut of range!", iColor );
-		GetFrame().FrameMessageBox(strText.c_str(), "ERROR", MB_OK);
+		std::string sText = StrFormat( "Color: %d\nOut of range!", iColor );
+		GetFrame().FrameMessageBox(sText.c_str(), "ERROR", MB_OK);
 	}
 }
 
@@ -5776,27 +5776,27 @@ Update_t CmdOutputCalc (int nArgs)
 	//    CHC_NUM_DEC
 	//    CHC_ARG_
 	//    CHC_STRING
-	std::string strText = StrFormat( "$%04X  0z%08X  %5d  '%c' ", nAddress, nBit, nAddress, c );
+	std::string sText = StrFormat( "$%04X  0z%08X  %5d  '%c' ", nAddress, nBit, nAddress, c );
 
 	if (bParen)
-		strText += '(';
+		sText += '(';
 
 	if (bHi && bLo)
-		strText += "High Ctrl";
+		sText += "High Ctrl";
 	else
 	if (bHi)
-		strText += "High";
+		sText += "High";
 	else
 	if (bLo)
-		strText += "Ctrl";
+		sText += "Ctrl";
 
 	if (bParen)
-		strText += ')';
+		sText += ')';
 
-	ConsoleBufferPush( strText.c_str() );
+	ConsoleBufferPush( sText.c_str() );
 
 // If we colorize then w must also guard against character ouput $60
-//	ConsolePrint( strText.c_str() );
+//	ConsolePrint( sText.c_str() );
 
 	return ConsoleUpdate();
 }

@@ -273,7 +273,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 
 			std::string const* pTarget = NULL;
 			std::string const* pSymbol = FindSymbolFromAddress(nTarget, &line_.iTargetTable);
-			std::string strAddressBuf;
+			std::string sAddressBuf;
 
 			// Data Assembler
 			if (pData && (!pData->bSymbolLookup))
@@ -322,8 +322,8 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 
 			if (!(bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
 			{
-				strAddressBuf = FormatAddress(nTarget, (iOpmode != AM_R) ? nOpbyte : 3);	// GH#587: For Bcc opcodes, pretend it's a 3-byte opcode to print a 16-bit target addr
-				pTarget = &strAddressBuf;
+				sAddressBuf = FormatAddress(nTarget, (iOpmode != AM_R) ? nOpbyte : 3);	// GH#587: For Bcc opcodes, pretend it's a 3-byte opcode to print a 16-bit target addr
+				pTarget = &sAddressBuf;
 			}
 
 			//sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, pTarget );

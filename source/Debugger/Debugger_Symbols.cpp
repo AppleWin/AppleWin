@@ -125,13 +125,13 @@ Update_t _PrintSymbolInvalidTable()
 
 
 //===========================================================================
-std::string const& GetSymbol (WORD nAddress, int nBytes, std::string& strAddressBuf)
+std::string const& GetSymbol (WORD nAddress, int nBytes, std::string& sAddressBuf)
 {
 	std::string const* pSymbol = FindSymbolFromAddress( nAddress );
 	if (pSymbol)
 		return *pSymbol;
 
-	return strAddressBuf = FormatAddress( nAddress, nBytes );
+	return sAddressBuf = FormatAddress( nAddress, nBytes );
 }
 
 //===========================================================================
@@ -564,8 +564,8 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 	if (pPathFileName.empty())
 		return nSymbolsLoaded;
 
-	std::string strFormat1 = StrFormat( "%%x %%%ds", MAX_SYMBOLS_LEN ); // i.e. "%x %13s"
-	std::string strFormat2 = StrFormat( "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%13s %x"
+	std::string sFormat1 = StrFormat( "%%x %%%ds", MAX_SYMBOLS_LEN ); // i.e. "%x %13s"
+	std::string sFormat2 = StrFormat( "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%13s %x"
 
 	FILE *hFile = fopen( pPathFileName.c_str(), "rt" );
 
@@ -604,7 +604,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 
 			if (strstr(szLine, "$") == NULL)
 			{
-				sscanf(szLine, strFormat1.c_str(), &nAddress, sName);
+				sscanf(szLine, sFormat1.c_str(), &nAddress, sName);
 			}
 			else
 			{
@@ -623,7 +623,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 						memset(&szLine[MAX_SYMBOLS_LEN], ' ', nLen - MAX_SYMBOLS_LEN);	// sscanf fails for nAddress if string too long
 					}
 				}
-				sscanf(szLine, strFormat2.c_str(), sName, &nAddress);
+				sscanf(szLine, sFormat2.c_str(), sName, &nAddress);
 			}
 
 			// SymbolOffset
