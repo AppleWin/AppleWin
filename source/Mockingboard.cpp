@@ -798,7 +798,8 @@ BYTE __stdcall MockingboardCard::IORead(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 
 BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	UpdateCycles(nExecutedCycles);
+	//UpdateCycles(nExecutedCycles);
+	GetCardMgr().GetMockingboardCardMgr().UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
 	if (!IS_APPLE2 && MemCheckINTCXROM())
@@ -871,7 +872,8 @@ BYTE __stdcall MockingboardCard::IOWrite(WORD PC, WORD nAddr, BYTE bWrite, BYTE 
 
 BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	UpdateCycles(nExecutedCycles);
+	//UpdateCycles(nExecutedCycles);
+	GetCardMgr().GetMockingboardCardMgr().UpdateCycles(nExecutedCycles);
 
 #ifdef _DEBUG
 	if (!IS_APPLE2 && MemCheckINTCXROM())
@@ -1152,7 +1154,9 @@ int MockingboardCard::MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecut
 
 int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG uExecutedCycles)
 {
-	UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
+	//UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
+	// Update all MBs, so that g_uLastCumulativeCycles remains in sync for all
+	GetCardMgr().GetMockingboardCardMgr().UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
 
 	SY6522_AY8910* pMB = &g_MB[(id & 0xf) / SY6522::kNumTimersPer6522];
 
