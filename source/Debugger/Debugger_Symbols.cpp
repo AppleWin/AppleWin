@@ -42,7 +42,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Symbols ________________________________________________________________________________________
 
-	const char*     g_sFileNameSymbols[ NUM_SYMBOL_TABLES ] = {
+	// TODO: Does this order need to match CMD_SYMBOLS_ROM ?
+	const char* g_sFileNameSymbols[ NUM_SYMBOL_TABLES ] =
+	{
 		 "APPLE2E.SYM"
 		,"A2_BASIC.SYM"
 		,"A2_ASM.SYM"
@@ -53,6 +55,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		,"A2_DOS33.SYM"
 		,"A2_PRODOS.SYM"
 	};
+
+	const char* g_sFileNameScripts[ NUM_SYMBOL_TABLES ] =
+	{
+		  NULL           // SYMBOLS_MAIN
+		, "A2_BASIC.A2D" // SYMBOLS_APPLESOFT
+		, NULL           // SYMBOLS_ASSEMBLY
+		, NULL           // SYMBOLS_USER_1
+		, NULL           // SYMBOLS_USER_2
+		, NULL           // SYMBOLS_SRC_1
+		, NULL           // SYMBOLS_SRC_2
+		, NULL           // SYMBOLS_DOS33
+		, NULL           // SYMBOLS_PRODOS
+	};
+
 	std::string  g_sFileNameSymbolsUser;
 
 	const char * g_aSymbolTableNames[ NUM_SYMBOL_TABLES ] =
@@ -774,7 +790,7 @@ Update_t CmdSymbolsLoad (int nArgs)
 
 	int nSymbols = 0;
 
-	// Debugger will call us with 0 args on startup as a way to pre-load symbol tables
+	// Debugger Startup: Debugger will call us with 0 args on startup as a way to pre-load symbol tables
 	if (! nArgs)
 	{
 		sFileName += g_sFileNameSymbols[ iSymbolTable ];

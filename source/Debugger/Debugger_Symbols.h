@@ -1,6 +1,7 @@
 
 // Variables
 	extern 	SymbolTable_t g_aSymbols[ NUM_SYMBOL_TABLES ];
+	extern const char* g_sFileNameScripts[ NUM_SYMBOL_TABLES ];
 	extern bool g_bSymbolsDisplayMissingFile;
 
 // Prototypes

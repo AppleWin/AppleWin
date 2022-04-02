@@ -6110,6 +6110,11 @@ _Help:
 //===========================================================================
 Update_t CmdOutputRun (int nArgs)
 {
+	if (g_iCommand == CMD_SYMBOLS_APPLESOFT)	//  Debugger Startup: Run at debugger startup
+	{
+		nArgs = 1;
+	}
+
 	if (! nArgs)
 		return Help_Arg_1( CMD_OUTPUT_RUN );
 
@@ -6134,13 +6139,21 @@ Update_t CmdOutputRun (int nArgs)
 	sMiniFileName = pFileName.substr(0, MIN(pFileName.size(), CONSOLE_WIDTH));
 //	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
-	if (pFileName[0] == PATH_SEPARATOR || pFileName[1] == ':')	// NB. Any prefix quote has already been stripped
+	size_t nFileName = pFileName.length();
+	if (nFileName && (pFileName[0] == PATH_SEPARATOR || pFileName[1] == ':'))	// NB. Any prefix quote has already been stripped
 	{
 		// Abs pathname
 		sFileName = sMiniFileName;
 	}
 	else
 	{
+		// Debugger Startup: HACK
+		if (g_iCommand == CMD_SYMBOLS_APPLESOFT)
+		{
+			int iSymbolTable = CMD_SYMBOLS_APPLESOFT - CMD_SYMBOLS_ROM;
+			sFileName = g_sProgramDir + g_sFileNameScripts[ iSymbolTable ];
+		}
+		else
 		// Rel pathname
 		sFileName = g_sCurrentDir + sMiniFileName;
 	}
@@ -8640,6 +8653,8 @@ void DebugInitialize ()
 
 	g_iCommand = CMD_SYMBOLS_APPLESOFT;
 	CmdSymbolsLoad(0);
+
+	CmdOutputRun(0); // Load g_sFileNameScripts[] "A2_BASIC.A2D"
 
 	// ,0x7,0xFF // Treat zero-page as data
 	// $00 GOWARM   JSR ...
