@@ -64,11 +64,10 @@ public:
 	void MuteControl(bool mute);
 	void UpdateCycles(ULONG executedCycles);
 	bool IsActive(void);
-//	DWORD GetVolume(void);	// Now in MockingboardCardManager
 	void SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 	void SetCumulativeCycles(void);
 	bool MB_DSInit(void);
-	UINT MB_UpdateInternal1(void);
+	UINT MB_Update(void);
 	short** GetVoiceBuffers(void) { return ppAYVoiceBuffer; }
 	int GetNumSamplesError(void) { return nNumSamplesError; }
 	void SetNumSamplesError(int numSamplesError) { nNumSamplesError = numSamplesError; }
@@ -115,8 +114,6 @@ private:
 	void AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice);
 	void WriteToORB(BYTE device);
 	void UpdateIFRandIRQ(SY6522_AY8910* pMB, BYTE clr_mask, BYTE set_mask);
-	void MB_UpdateInternal(void);
-	void MB_Update(void);
 	void InitSoundcardType(void);
 
 	void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);

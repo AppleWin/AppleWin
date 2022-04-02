@@ -273,7 +273,7 @@ UINT MockingboardCardManager::GenerateAllSoundData(void)
 		MockingboardCard& MB = dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot));
 
 		MB.SetNumSamplesError(nNumSamplesError);
-		nNumSamples = MB.MB_UpdateInternal1();
+		nNumSamples = MB.MB_Update();
 		nNumSamplesError = MB.GetNumSamplesError();
 
 #if 1 // debug

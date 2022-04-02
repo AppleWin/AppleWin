@@ -235,7 +235,7 @@ void MockingboardCard::WriteToORB(BYTE device)
 
 void MockingboardCard::UpdateIFRandIRQ(SY6522_AY8910* pMB, BYTE clr_mask, BYTE set_mask)
 {
-	pMB->sy6522.UpdateIFR(clr_mask, set_mask);	// which calls MB_UpdateIRQ()
+	pMB->sy6522.UpdateIFR(clr_mask, set_mask);	// which calls UpdateIRQ()
 }
 
 //---------------------------------------------------------------------------
@@ -282,13 +282,10 @@ BYTE MockingboardCard::GetPCR(BYTE nDevice)
 //===========================================================================
 
 // Called by:
-// . MB_SyncEventCallback() on a TIMER1 (not TIMER2) underflow - when IsAnyTimer1Active() == true
-// . Update()                                                  - when IsAnyTimer1Active() == false
-UINT MockingboardCard::MB_UpdateInternal1(void)
+// . MB_SyncEventCallback() -> MockingboardCardManager::UpdateSoundBuffer() on a TIMER1 (not TIMER2) underflow - when IsAnyTimer1Active() == true (for any MB)
+// . MockingboardCardManager::Update()                                                                         - when IsAnyTimer1Active() == false (for all MB's)
+UINT MockingboardCard::MB_Update(void)
 {
-//	if (!MockingboardVoice.bActive)
-//		return 0;
-
 	if (g_bFullSpeed)
 	{
 		// Keep AY reg writes relative to the current 'frame'
@@ -910,13 +907,6 @@ bool MockingboardCard::IsActive(void)
 }
 
 //-----------------------------------------------------------------------------
-
-#if 0
-DWORD MockingboardCard::MB_GetVolume(void)
-{
-	return MockingboardVoice.dwUserVolume;
-}
-#endif
 
 void MockingboardCard::SetVolume(DWORD volume, DWORD volumeMax)
 {
