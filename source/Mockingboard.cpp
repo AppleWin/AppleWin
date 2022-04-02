@@ -58,7 +58,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SSI263.h"
 
 #define DBG_MB_SS_CARD 0	// NB. From UI, select Mockingboard (not Phasor)
-//#define DBG_MB_UPDATE
 
 //#define Phasor_SY6522A_CS		4
 //#define Phasor_SY6522B_CS		7
@@ -874,7 +873,6 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 	{
 		_ASSERT(pMB->sy6522.IsTimer1Active());
 		UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER1);
-		//MB_Update();
 		GetCardMgr().GetMockingboardCardMgr().UpdateSoundBuffer();
 
 		if ((pMB->sy6522.GetReg(SY6522::rACR) & SY6522::ACR_RUNMODE) == SY6522::ACR_RM_FREERUNNING)
@@ -891,7 +889,7 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 	}
 	else
 	{
-		// NB. Since not calling MB_Update(), then AppleWin doesn't (accurately?) support AY-playback using T2 (which is one-shot only)
+		// NB. Since not calling UpdateSoundBuffer(), then AppleWin doesn't (accurately?) support AY-playback using T2 (which is one-shot only)
 		_ASSERT(pMB->sy6522.IsTimer2Active());
 		UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER2);
 

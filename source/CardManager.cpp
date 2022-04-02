@@ -231,6 +231,32 @@ void CardManager::InitializeIO(LPBYTE pCxRomPeripheral)
 	}
 }
 
+void CardManager::Destroy()
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
+	{
+		if (m_slot[i])
+		{
+			m_slot[i]->Destroy();
+		}
+	}
+
+	GetCardMgr().GetMockingboardCardMgr().Destroy();
+}
+
+void CardManager::Reset(const bool powerCycle)
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
+	{
+		if (m_slot[i])
+		{
+			m_slot[i]->Reset(powerCycle);
+		}
+	}
+
+	GetCardMgr().GetMockingboardCardMgr().Reset(powerCycle);
+}
+
 void CardManager::Update(const ULONG nExecutedCycles)
 {
 	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
@@ -253,30 +279,4 @@ void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 			m_slot[i]->SaveSnapshot(yamlSaveHelper);
 		}
 	}
-}
-
-void CardManager::Reset(const bool powerCycle)
-{
-	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
-	{
-		if (m_slot[i])
-		{
-			m_slot[i]->Reset(powerCycle);
-		}
-	}
-
-	GetCardMgr().GetMockingboardCardMgr().Reset(powerCycle);
-}
-
-void CardManager::Destroy()
-{
-	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
-	{
-		if (m_slot[i])
-		{
-			m_slot[i]->Destroy();
-		}
-	}
-
-	GetCardMgr().GetMockingboardCardMgr().Destroy();
 }
