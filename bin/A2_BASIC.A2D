@@ -1,0 +1,149 @@
+// Apple 2 Applesoft AppleWin Debugger Data Script
+
+// NOTE: We can't use a range with DA such as DA D000:D0B1 (Yet)
+// ALSO: There are some bugs with DA
+// Applesoft Token Address Table
+da  D000 //  END    -1  // = $D86F [$80] 128
+da  D002 //  FOR    -1  // = $D765 [$81] 129
+da 0D004 //  NEXT   -1  // = $DCF8 [$82] 130  NOTE: Work around BUG: da d004 -> A_D004
+da 0D006 //  DATA   -1  // = $D994 [$83] 131  NOTE: Work around BUG: da d006 -> A_D006
+da 0D008 //  INPUT  -1  // = $DBB1 [$84] 132
+da  D00A //  DEL    -1  // = $F303 [$85] 133
+da  D00C //  DIM    -1  // = $DFD8 [$86] 134
+da  D00E //A.READ   -1  // = $DBE1 [$87] 135  NOTE: F8 ROM: READ = $FEFD
+da  D010 //  GR     -1  // = $F38F [$88] 136
+da  D012 //  TEXT   -1  // = $F398 [$89] 137
+da  D014 //  PR.NUM -1  // = $F1E4 [$8A] 138 PR#0 .. PR#9
+da  D016 //  IN.NUM -1  // = $F1DD [$8B] 139 IN#0 .. IN#9
+da  D018 //  CALL   -1  // = $F1D4 [$8C] 140
+da  D01A //  PLOT   -1  // = $F224 [$8D] 141
+da  D01C //  HLIN   -1  // = $F231 [$8E] 142
+da  D01E //  VLIN   -1  // = $F240 [$8F] 143
+da  D020 //  HGR2   -1  // = $F3D7 [$90] 144
+da  D022 //  HGR    -1  // = $F3E1 [$91] 145
+da  D024 //  HCOLOR -1  // = $F6E8 [$92] 146
+da  D026 //  HPLOT  -1  // = $F6FD [$93] 147
+da  D028 //  DRAW   -1  // = $F768 [$94] 148
+da  D02A //  XDRAW  -1  // = $F76E [$95] 149
+da  D02C //  HTAB   -1  // = $F7E6 [$96] 150
+da  D02E //  HOME   -1  // = $FC57 [$97] 151  NOTE: F8 ROM
+da  D030 //  ROT    -1  // = $F720 [$98] 152
+da  D032 //  SCALE  -1  // = $F726 [$99] 153
+da  D034 //  SHLOAD -1  // = $F774 [$9A] 154
+da  D036 //A.TRACE  -1  // = $F26C [$9B] 155  NOTE: F8 ROM: TRACE = $FEC2
+da  D038 //  NOTRACE-1  // = $F26E [$9C] 156
+da  D03A //  NORMAL -1  // = $F272 [$9D] 157
+da  D03C //  INVERSE-1  // = $F276 [$9E] 158
+da  D03E //  FLASH  -1  // = $F27F [$9F] 159
+da  D040 //A.COLOR  -1  // = $F24E [$A0] 160
+
+// Floating Point Constants
+// ~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Numeric values were verified via:
+// 1. Asm:
+//    300:A0 ED A9 0A 20 F9 EA 20 BE DE 20 E3 DF AA 20 2B EB 60      
+// 2. Applesoft:
+//    10 CALL 768,X:PRINT X
+//
+// Microsoft BASIC on the Vic-20 has the same constants
+//   https://github.com/franckverrot/EmulationResources/blob/master/consoles/commodore/Vic20%20ROM%20Map.txt
+//
+// Microsoft BASIC on the C128 has the same constants
+//   http://www.zimmers.net/anonftp/pub/cbm/maps/C128rom.txt
+//
+// Microsoft's Binary Format "9-digit"
+//   https://en.wikipedia.org/wiki/Microsoft_Binary_Format
+//
+// Total of 48 floating point constants
+//
+// Format
+//  Symbol Name    Addr     Hex digits  Symbolic      = Numeric
+df  CON.99999999.9 ED0A  // 9B3EBC1FFD  10^10/10      = 99999999.9
+df  CON.999999999  ED0F  // 9E6E6B27FD  10^10-1       = 999999999
+df  CON.BILLION    ED14  // 9E6E6B2800  10^10         = 1000000000
+df  CON.HALF       EE64  // 8000000000  1/2           = 0.5
+df  CON.LOG.E      EEDB  // 8138AA3B29  log(e)/log(2) = 1.44269504
+df  CON.LOG.TWO    E93C  // 80317217F8  ln(2)         = 0.693147181
+
+df  CON.NEG.32768  E0FE  // 9080000000  -(2^15)       = -32768
+df  CON.NEG.HALF   E937  // 8080000000  -1/2          = -0.5
+
+// NOTE: Wastes 5 bytes, could re-use $EF04 CON.POLYEXP8 
+df  CON.ONE        E913  // 8100000000  +1            = 1.0
+// NOTE: Wastes 5 bytes, could re-use $F08F CON.POLYSIN6
+df  CON.PI.TWO     F06B  // 83490FDAA2  pi*2          = 6.238318531
+
+df  CON.PI.HALF    F066  // 81490FDAA2  pi/2          =   1.57079633
+
+// Taylor Polynomials evaluated via Horner's Rule
+df  CON.POLYATN1   F0CF  // 76B383BDD3  ???           =  -6.84793912e-04
+df  CON.POLYATN2   F0D4  // 791EF4A6F5  ???           =   4.85094216e-03
+df  CON.POLYATN3   F0D9  // 7B83FCB010  ???           =  -0.0161117018
+df  CON.POLYATN4   F0DE  // 7C0C1F67CA  ???           =   0.034209638
+df  CON.POLYATN5   F0E3  // 7CDE53CBC1  ???           =  -0.0542791328
+df  CON.POLYATN6   F0E8  // 7D1464704C  ???           =   0.0724571965
+df  CON.POLYATN7   F0ED  // 7DB7EA517A  ???           =  -0.0898023954
+df  CON.POLYATN8   F0F2  // 7D6330887E  ???           =   0.0110932413
+df  CON.POLYATN9   F0F7  // 7E9244993A                =  -0.142839808
+df  CON.POLYATNA   F0FC  // 7E4CCC91C7  0.2???        =   0.199999120
+df  CON.POLYATNB   F101  // 7FAAAAAA13  -1/3???       =  -0.333333316
+df  CON.POLYATNC   F106  // 8100000000  +1            =   1.0
+df  CON.POLYEXP1   EEE1  // 7134583E56  (LOG(2)^7)/8! =   2.14987637e-05
+df  CON.POLYEXP2   EEE6  // 74167EB31B  (LOG(2)^6)/7! =   1.43523140e-04
+df  CON.POLYEXP3   EEEB  // 772FEEE385  (LOG(2)^5)/6! =   1.34226348e-03
+df  CON.POLYEXP4   EEF0  // 7A1D841C2A  (LOG(2)^4)/5! =   0.009614
+df  CON.POLYEXP5   EEF5  // 7C6359580A  (LOG(2)^3)/4! =   0.055505
+df  CON.POLYEXP6   EEFA  // 7E75FDE7C6  (LOG(2)^2)/3! =   0.240226
+df  CON.POLYEXP7   EEFF  // 8031721810  (LOG(2)^1)/2! =   0.693147
+df  CON.POLYEXP8   EF04  // 8100000000  (LOG(2)^0)/1! =   1.0
+df  CON.POLYLOG1   E919  // 7F5E56CB79  ???           =   0.434255942
+df  CON.POLYLOG2   E91E  // 80139B0B64  ???           =   0.576584541
+df  CON.POLYLOG3   E923  // 8076389316  ???           =   0.961800759
+df  CON.POLYLOG4   E928  // 8238AA3B20  ???           =   2.88539007
+df  CON.POLYSIN1   F076  // 84E61A2D1B  -(2PI)^11/11! = -14.3813907
+df  CON.POLYSIN2   F07B  // 862807FBF8   (2PI)^9/9!   =  42.0077971
+df  CON.POLYSIN3   F080  // 8799688901  -(2PI)^7/7!   = -76.7041703
+df  CON.POLYSIN4   F085  // 872335DFE1   (2PI)^5/5!   =  81.6052237
+df  CON.POLYSIN5   F08A  // 86A55DE728  -(2PI)^3/3!   = -41.3417021
+df  CON.POLYSIN6   F08F  // 83490FDAA2   (2PI)^2/1!   =   6.28318531
+df  CON.QUARTER    F070  // 7F00000000  1/4           =   0.25
+
+// NOTE: This is a float but is SHORT one byte!  It overlaps $EFAA CON.RND.2 by one byte
+//                 min   // 300:98 35 44 7A 00        = 11879546.0
+df  CON.RND.1      EFA6  // 305:98 35 44 7A 68        = 11879546.4
+//                 half  // 30A:98 35 44 7A 80        = 11879546.5
+//                 max   // 30F:98 35 44 7A FF        = 11879547.0
+
+// NOTE: This is a float but is SHORT one byte!  It overlaps $EFAE RND() by one byte
+//                 min   // 300:68 28 B1 46 00        = 3.92767774e-08
+df  CON.RND.2      EFAA  // 305:68 28 B1 46 20        = 3.92767778e-08
+//                 half  // 30A:68 28 B1 46 80        = 3.92767792e-08
+//                 max   // 30F:68 28 B1 46 FF        = 3.92767809e-08
+
+// NOTE: Last byte not copied @ F150 due to off-by-one bug!
+df  CON.RNDSEED    F123  // 804FC75258  ???           = 0.811635157 
+
+df  CON.SQR.HALF   E92D  // 803504F334  sqrt(2)/2     = 0.707106781  
+df  CON.SQR.TWO    E932  // 813504F334  sqrt(2)       = 1.41421356
+df  CON.TEN        EA50  // 8420000000  10.0
+
+db  POLY.ATN       F0CE  // see CON.POLYATN#
+db  POLY.EXP       EEE0  // see CON.POLYEXP#
+db  POLY.LOG       E918  // see CON.POLYLOG#
+db  POLY.SIN       F075  // see CON.POLYSIN#
+
+// int32 Decimal Table: -1^i * 10^i
+// TODO: Until dq, Define Quad, is implemented use db4
+db4 S32.NEG.TEN8   EE69 //-100000000  //   dq S32.NEG.TEN8    EE69  //-100000000
+db4 S32.POS.TEN7   EE6D //  10000000  //   dq S32.POS.TEN7    EE6D  //  10000000
+db4 S32.NEG.TEN6   EE71 //  -1000000  //   dq S32.NEG.TEN6    EE71  //  -1000000
+db4 S32.POS.TEN5   EE75 //    100000  //   dq S32.POS.TEN5    EE75  //    100000
+db4 S32.NEG.TEN4   EE79 //    -10000  //   dq S32.NEG.TEN4    EE79  //    -10000
+db4 S32.POS.TEN3   EE7D //      1000  //   dq S32.POS.TEN3    EE7D  //      1000
+db4 S32.NEG.TEN2   EE81 //      -100  //   dq S32.NEG.TEN2    EE81  //      -100
+db4 S32.POS.TEN1   EE85 //        10  //   dq S32.POS.TEN1    EE85  //        10
+db4 S32.NEG.TEN0   EE89 //        -1  //   dq S32.NEG.TEN0    EE89  //        -1
+
+// TODO: dx 87 F094:F09D
+db  MICROSOFTx87   F094:F09D  // EOR #$87
