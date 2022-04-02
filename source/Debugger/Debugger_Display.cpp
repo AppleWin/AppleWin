@@ -3086,13 +3086,11 @@ void DrawSubWindow_Data (Update_t bUpdate)
 	RECT rect;
 	rect.top = 0 + 0;
 
-	int  iByte;
 	WORD iAddress = nAddress;
 
-	int iLine;
-	int nLines = g_nDisasmWinHeight;
+	const int nLines = g_nDisasmWinHeight;
 
-	for (iLine = 0; iLine < nLines; iLine++ )
+	for ( int iLine = 0; iLine < nLines; iLine++ )
 	{
 		iAddress = nAddress;
 
@@ -3100,7 +3098,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		sprintf( sAddress, "%04X", iAddress );
 
 		sOpcodes[0] = 0;
-		for ( iByte = 0; iByte < nMaxOpcodes; iByte++ )
+		for ( int iByte = 0; iByte < nMaxOpcodes; iByte++ )
 		{
 			BYTE nData = (unsigned)*(LPBYTE)(mem + iAddress + iByte);
 			sprintf( &sOpcodes[ iByte * 3 ], "%02X ", nData );
@@ -3151,7 +3149,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 			eView = MEM_VIEW_ASCII;
 
 		iAddress = nAddress;
-		for (iByte = 0; iByte < nMaxOpcodes; iByte++ )
+		for ( int iByte = 0; iByte < nMaxOpcodes; iByte++ )
 		{
 			BYTE nImmediate = (unsigned)*(LPBYTE)(mem + iAddress);
 			/*int iTextBackground = iBackground;
@@ -3168,7 +3166,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 /*
 	// Colorized Text
 		iAddress = nAddress;
-		for (iByte = 0; iByte < nMaxOpcodes; iByte++ )
+		for ( int iByte = 0; iByte < nMaxOpcodes; iByte++ )
 		{
 			BYTE nImmediate = (unsigned)*(LPBYTE)(membank + iAddress);
 			int iTextBackground = iBackground; // BG_INFO_CHAR;
@@ -3416,7 +3414,7 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 
 	DebuggerSetColorFG( DebuggerGetColor( FG_SOURCE ));
 
-	int nLines  = g_nDisasmWinHeight;
+	const int nLines  = g_nDisasmWinHeight;
 
 	int y = g_nDisasmWinHeight;
 	int nHeight = g_nDisasmWinHeight;

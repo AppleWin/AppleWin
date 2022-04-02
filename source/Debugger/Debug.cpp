@@ -786,17 +786,14 @@ Update_t CmdProfile (int nArgs)
 			// Dump to console
 			if (iParam == PARAM_LIST)
 			{
-				char *pText;
-				char  sText[ CONSOLE_WIDTH ];
+				const int nLine = g_nProfileLine;
 
-				int   nLine = g_nProfileLine;
-				int   iLine;
-				
-				for ( iLine = 0; iLine < nLine; iLine++ )
+				for ( int iLine = 0; iLine < nLine; iLine++ )
 				{
-					pText = ProfileLinePeek( iLine );
+					const char *pText = ProfileLinePeek( iLine );
 					if (pText)
 					{
+						char sText[ CONSOLE_WIDTH ];
 						TextConvertTabsToSpaces( sText, pText, CONSOLE_WIDTH, 4 );
 						// ConsoleBufferPush( sText );
 						ConsolePrint( sText );
@@ -2400,13 +2397,11 @@ bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave )
 
 	if (hFile)
 	{
-		char *pText;
-		int   nLine = g_ConfigState.GetNumLines();
-		int   iLine;
+		const int nLine = g_ConfigState.GetNumLines();
 		
-		for ( iLine = 0; iLine < nLine; iLine++ )
+		for ( int iLine = 0; iLine < nLine; iLine++ )
 		{
-			pText = g_ConfigState.GetLine( iLine );
+			const char *pText = g_ConfigState.GetLine( iLine );
 			if ( pText )
 			{
 				fputs( pText, hFile );
@@ -2415,9 +2410,6 @@ bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave )
 		
 		fclose( hFile );
 		bStatus = true;
-	}
-	else
-	{
 	}
 
 	return bStatus;
@@ -3922,8 +3914,7 @@ Update_t CmdMemoryLoad (int nArgs)
 			size_t nRead = fread( pMemory, nAddressLen, 1, hFile );
 			if (nRead == 1) // (size_t)nLen)
 			{
-				int iByte;
-				for ( iByte = 0; iByte < nAddressLen; iByte++ )
+				for ( int iByte = 0; iByte < nAddressLen; iByte++ )
 				{
 					*pDst++ = *pSrc++;
 				}
@@ -4287,8 +4278,7 @@ Update_t CmdMemorySave (int nArgs)
 				BYTE *pSrc = mem + nAddressStart;
 				
 				// memcpy -- copy out of active memory bank
-				int iByte;
-				for ( iByte = 0; iByte < nAddressLen; iByte++ )
+				for ( int iByte = 0; iByte < nAddressLen; iByte++ )
 				{
 					*pDst++ = *pSrc++;
 				}
@@ -5848,19 +5838,15 @@ Update_t CmdOutputPrint (int nArgs)
 	TCHAR sText[ CONSOLE_WIDTH ] = TEXT("");
 	int nLen = 0;
 
-	int nValue;
-
 	if (! nArgs)
 		goto _Help;
 
-	int iArg;
-	for (iArg = 1; iArg <= nArgs; iArg++ )
+	for ( int iArg = 1; iArg <= nArgs; iArg++ )
 	{
 		if (g_aArgs[ iArg ].bType & TYPE_QUOTED_2)
 		{
-			int iChar;
-			int nChar = _tcslen( g_aArgs[ iArg ].sArg );
-			for ( iChar = 0; iChar < nChar; iChar++ )
+			const int nChar = _tcslen( g_aArgs[ iArg ].sArg );
+			for ( int iChar = 0; iChar < nChar; iChar++ )
 			{
 				TCHAR c = g_aArgs[ iArg ].sArg[ iChar ];
 				sText[ nLen++ ] = c;
@@ -5875,7 +5861,7 @@ Update_t CmdOutputPrint (int nArgs)
 		}
 		else
 		{			
-			nValue = g_aArgs[ iArg ].nValue;
+			const int nValue = g_aArgs[ iArg ].nValue;
 			sprintf( &sText[ nLen ], "%04X", nValue );
 
 			while (sText[ nLen ])
@@ -5885,12 +5871,12 @@ Update_t CmdOutputPrint (int nArgs)
 			if (iArg <= nArgs)
 				if (g_aArgs[ iArg ].eToken != TOKEN_COMMA)
 					goto _Help;
-		}		
 #if 0
-		sprintf( &sText[ nLen ], "%04X", nValue );
-		sprintf( &sText[ nLen ], "%d", nValue );
-		sprintf( &sText[ nLen ], "%c", nValue );
+			sprintf( &sText[ nLen ], "%04X", nValue );
+			sprintf( &sText[ nLen ], "%d", nValue );
+			sprintf( &sText[ nLen ], "%c", nValue );
 #endif
+		}
 	}
 
 	if (nLen)
@@ -5909,24 +5895,12 @@ Update_t CmdOutputPrintf (int nArgs)
 	// PRINTF "A:%d X:%d",A,X
 	// PRINTF "Hex:%x  Dec:%d  Bin:%z",A,A,A
 
-	TCHAR sText[ CONSOLE_WIDTH ] = TEXT("");
-
-	std::vector<Arg_t> aValues;
-	Arg_t entry;
-	int iValue = 0;
-	int nValue = 0;
-
 	if (! nArgs)
 		return Help_Arg_1( CMD_OUTPUT_PRINTF );
 
-	int nLen = 0;
+	std::vector<Arg_t> aValues;
 
-	PrintState_e eThis = PS_LITERAL;
-
-	int nWidth = 0;
-
-	int iArg;
-	for (iArg = 1; iArg <= nArgs; iArg++ )
+	for ( int iArg = 1; iArg <= nArgs; iArg++ )
 	{
 		if (g_aArgs[ iArg ].bType & TYPE_QUOTED_2)
 			continue;
@@ -5935,19 +5909,27 @@ Update_t CmdOutputPrintf (int nArgs)
 			continue;
 		else
 		{
+			Arg_t entry;
 			entry.nValue = g_aArgs[ iArg ].nValue;
 			aValues.push_back( entry );
 		}
 	}
-	const int nParamValues = (int) aValues.size();
 
-	for (iArg = 1; iArg <= nArgs; iArg++ )
+	TCHAR sText[ CONSOLE_WIDTH ] = TEXT("");
+	int nLen = 0;
+
+	PrintState_e eThis = PS_LITERAL;
+	int nWidth = 0;
+
+	const size_t nParamValues = aValues.size();
+	size_t iValue = 0;
+
+	for ( int iArg = 1; iArg <= nArgs; iArg++ )
 	{
 		if (g_aArgs[ iArg ].bType & TYPE_QUOTED_2)
 		{
-			int iChar;
-			int nChar = _tcslen( g_aArgs[ iArg ].sArg );
-			for ( iChar = 0; iChar < nChar; iChar++ )
+			const int nChar = _tcslen( g_aArgs[ iArg ].sArg );
+			for ( int iChar = 0; iChar < nChar; iChar++ )
 			{
 				TCHAR c = g_aArgs[ iArg ].sArg[ iChar ];
 				switch ( eThis )
@@ -5979,44 +5961,38 @@ Update_t CmdOutputPrintf (int nArgs)
 					case PS_TYPE:
 						if (iValue >= nParamValues)
 						{
-							ConsoleBufferPushFormat( "Error: Missing value arg: %d", iValue + 1 );
+							ConsoleBufferPushFormat( "Error: Missing value arg: %" SIZE_T_FMT, iValue + 1 );
 							return ConsoleUpdate();
 						}
 						switch ( c )
 						{
 							case 'X':
 							case 'x': // PS_NEXT_ARG_HEX
-								nValue = aValues[ iValue ].nValue;
-								sprintf( &sText[ nLen ], "%04X", nValue );
+								sprintf( &sText[ nLen ], "%04X", aValues[ iValue ].nValue );
 								iValue++;
 								break;
 							case 'D':
 							case 'd': // PS_NEXT_ARG_DEC
-								nValue = aValues[ iValue ].nValue;
-								sprintf( &sText[ nLen ], "%d", nValue );
+								sprintf( &sText[ nLen ], "%d", aValues[ iValue ].nValue );
 								iValue++;
 								break;
 							break;
 							case 'Z':
 							case 'z':
 							{
-								nValue = aValues[ iValue ].nValue;
+								const int nValue = aValues[ iValue ].nValue;
 								if (!nWidth)
 									nWidth = 8;
 								int nBits = nWidth;
 								while (nBits-- > 0)
 								{
-									if ((nValue >> nBits) & 1)
-										sText[ nLen++ ] = '1';
-									else
-										sText[ nLen++ ] = '0';
+									sText[ nLen++ ] = ((nValue >> nBits) & 1) ? '1' : '0';
 								}
 								iValue++;
 								break;
 							}
 							case 'c': // PS_NEXT_ARG_CHR;
-								nValue = aValues[ iValue ].nValue;
-								sprintf( &sText[ nLen ], "%c", nValue );
+								sprintf( &sText[ nLen ], "%c", aValues[ iValue ].nValue );
 								iValue++;
 								break;
 							case '%':
@@ -7892,10 +7868,6 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 	}
 
 	ProfileLineReset();
-	char *pText = ProfileLinePeek( 0 );
-
-	int iOpcode;
-	int iOpmode;
 
 	bool bOpcodeGood = true;
 	bool bOpmodeGood = true;
@@ -7910,12 +7882,12 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 	Profile_t nOpcodeTotal = 0;
 	Profile_t nOpmodeTotal = 0;
 
-	for (iOpcode = 0; iOpcode < NUM_OPCODES; ++iOpcode )
+	for ( int iOpcode = 0; iOpcode < NUM_OPCODES; ++iOpcode )
 	{
 		nOpcodeTotal += vProfileOpcode[ iOpcode ].m_nCount;
 	}
 
-	for (iOpmode = 0; iOpmode < NUM_OPMODES; ++iOpmode )
+	for ( int iOpmode = 0; iOpmode < NUM_OPMODES; ++iOpmode )
 	{
 		nOpmodeTotal += vProfileOpmode[ iOpmode ].m_nCount;
 	}
@@ -7942,6 +7914,8 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		pColorTotal    = CHC_DEFAULT; // white
 	}
 	
+	char *pText = ProfileLinePeek( 0 );
+
 	// Opcode
 	if (bExport) // Export = SeperateColumns
 		sprintf( pText
@@ -7951,10 +7925,9 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		sprintf( pText
 			, "Percent" DELIM "Count" DELIM "Mnemonic" DELIM "Addressing Mode\n"
 			, sSeparator7, sSeparator2, sSeparator1 );
-
 	pText = ProfileLinePush();
 			
-	for (iOpcode = 0; iOpcode < NUM_OPCODES; ++iOpcode )
+	for ( int iOpcode = 0; iOpcode < NUM_OPCODES; ++iOpcode )
 	{
 		ProfileOpcode_t tProfileOpcode = vProfileOpcode.at( iOpcode );
 
@@ -8032,11 +8005,9 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 			, "\"Percent\"" DELIM "\"Count\"" DELIM DELIM DELIM "\"Addressing Mode\"\n"
 			, sSeparator7, sSeparator2, sSeparator2, sSeparator2 );
 	else
-	{
 		sprintf( pText
 			, "Percent" DELIM "Count" DELIM "Addressing Mode\n"
 			, sSeparator7, sSeparator2 );
-	}
 	pText = ProfileLinePush();
 
 	if (nOpmodeTotal < 1)
@@ -8045,7 +8016,7 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		bOpmodeGood = false;
 	}
 
-	for (iOpmode = 0; iOpmode < NUM_OPMODES; ++iOpmode )
+	for ( int iOpmode = 0; iOpmode < NUM_OPMODES; ++iOpmode )
 	{
 		ProfileOpmode_t tProfileOpmode = vProfileOpmode.at( iOpmode );
 		Profile_t nCount  = tProfileOpmode.m_nCount;
@@ -8109,16 +8080,13 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 //===========================================================================
 void ProfileReset()
 {
-	int iOpcode;
-	int iOpmode;
-
-	for (iOpcode = 0; iOpcode < NUM_OPCODES; iOpcode++ )
+	for ( int iOpcode = 0; iOpcode < NUM_OPCODES; iOpcode++ )
 	{
 		g_aProfileOpcodes[ iOpcode ].m_iOpcode = iOpcode;
 		g_aProfileOpcodes[ iOpcode ].m_nCount = 0;
 	}
 
-	for (iOpmode = 0; iOpmode < NUM_OPMODES; iOpmode++ )
+	for ( int iOpmode = 0; iOpmode < NUM_OPMODES; iOpmode++ )
 	{
 		g_aProfileOpmodes[ iOpmode ].m_iOpmode = iOpmode;
 		g_aProfileOpmodes[ iOpmode ].m_nCount = 0;
@@ -8139,13 +8107,11 @@ bool ProfileSave()
 
 	if (hFile)
 	{
-		char *pText;
-		int   nLine = g_nProfileLine;
-		int   iLine;
-		
-		for ( iLine = 0; iLine < nLine; iLine++ )
+		const int nLine = g_nProfileLine;
+
+		for ( int iLine = 0; iLine < nLine; iLine++ )
 		{
-			pText = ProfileLinePeek( iLine );
+			const char *pText = ProfileLinePeek( iLine );
 			if ( pText )
 			{
 				fputs( pText, hFile );
