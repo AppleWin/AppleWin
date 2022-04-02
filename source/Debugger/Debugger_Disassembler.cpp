@@ -547,9 +547,15 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 					sprintf( pDst, "0" );
 				else
 				{
-					double f = fac.mantissa * pow( 2.0, fac.exponent - 32 );
-					//sprintf( "s%1X m%04X e%02X", fac.negative, fac.mantissa, fac.exponent );
-					sprintf( pDst, "%c%f", aSign[ fac.negative ], f );
+					double f = fac.mantissa * pow( 2.0, fac.exponent - 32.0 );
+#if DEBUG_FAC
+					sprintf( "s%1X m%04X e%02X", fac.negative, fac.mantissa, fac.exponent );
+#else
+					//sprintf( pDst, "%c%12.11e", aSign[ fac.negative ], f ); // HACK: Magic Number 12, should be DISASM_DISPLAY_MAX_IMMEDIATE_LEN ??
+					//     = 32-bit mantissa * log(2)
+					//     = 9.6 digits of precision
+					sprintf( pDst, "%c%9.8e" , aSign[ fac.negative ], f );
+#endif
 				}
 				iByte += 5;
 				break;

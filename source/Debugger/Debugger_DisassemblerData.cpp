@@ -495,9 +495,10 @@ Update_t CmdDisasmDataDefAddress8L (int nArgs)
 //===========================================================================
 Update_t CmdDisasmDataDefAddress16 (int nArgs)
 {
-	int iCmd = NOP_WORD_1 - g_aArgs[0].nValue;
+	int iCmd = g_aArgs[0].nValue; // delta command: NOP_WORD_1 == 0
 
-	if (! ((nArgs <= 2) || (nArgs == 4)))
+	//if (! ((nArgs <= 2) || (nArgs == 4)))
+	if (nArgs > 4) // 2.9.1.14 DA D000:D007
 	{
 		return Help_Arg_1( CMD_DEFINE_DATA_WORD1 + iCmd );
 	}
