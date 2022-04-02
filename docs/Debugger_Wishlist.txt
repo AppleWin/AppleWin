@@ -1,6 +1,8 @@
 Requests (Wishlist):
 ====================
 
+* BSAVE show address and length in hex and dec: A$###,L$### (A###,L###)
+
 * HOME/CLS Clear Screen
 
 * DT Define Target
@@ -14,7 +16,7 @@ Requests (Wishlist):
 
 * DF Define FAC
 
-* Cleanup Applesoft listing
+* Cleanup Applesoft listing.  Can't use symbol table becase we need data; use new file: A2_BASIC.A2D
   * DB
   * DA
   * DF
