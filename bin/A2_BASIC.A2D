@@ -1,8 +1,10 @@
 // Apple 2 Applesoft AppleWin Debugger Data Script
 
+// Applesoft Token Address Table
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// 
 // NOTE: We can't use a range with DA such as DA D000:D0B1 (Yet)
 // ALSO: There are some bugs with DA
-// Applesoft Token Address Table
 da  D000 //  END    -1  // = $D86F [$80] 128
 da  D002 //  FOR    -1  // = $D765 [$81] 129
 da 0D004 //  NEXT   -1  // = $DCF8 [$82] 130  NOTE: Work around BUG: da d004 -> A_D004
@@ -133,6 +135,9 @@ db  POLY.EXP       EEE0  // see CON.POLYEXP#
 db  POLY.LOG       E918  // see CON.POLYLOG#
 db  POLY.SIN       F075  // see CON.POLYSIN#
 
+// Integer Constants
+// ~~~~~~~~~~~~~~~~~
+//
 // int32 Decimal Table: -1^i * 10^i
 // TODO: Until dq, Define Quad, is implemented use db4
 db4 S32.NEG.TEN8   EE69 //-100000000  //   dq S32.NEG.TEN8    EE69  //-100000000
@@ -145,5 +150,8 @@ db4 S32.NEG.TEN2   EE81 //      -100  //   dq S32.NEG.TEN2    EE81  //      -100
 db4 S32.POS.TEN1   EE85 //        10  //   dq S32.POS.TEN1    EE85  //        10
 db4 S32.NEG.TEN0   EE89 //        -1  //   dq S32.NEG.TEN0    EE89  //        -1
 
+// Encrypted Strings
+// ~~~~~~~~~~~~~~~~~
+//
 // TODO: dx 87 F094:F09D
 db  MICROSOFTx87   F094:F09D  // EOR #$87
