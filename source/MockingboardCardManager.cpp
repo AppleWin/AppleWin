@@ -184,16 +184,34 @@ UINT MockingboardCardManager::MB_UpdateInternal1(void)
 {
 	UINT nNumSamples = 0;
 
+	UINT numSamples0 = (UINT)-1;
+	int numSamplesError0 = -1;
+	int numSamplesErrorPre = -1;
+
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
-		if (IsMockingboard(slot))
-		{
-			MockingboardCard& MB = dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot));
+		if (!IsMockingboard(slot))
+			continue;
 
-			MB.SetNumSamplesError(nNumSamplesError);
-			nNumSamples = MB.MB_UpdateInternal1();
-			nNumSamplesError = MB.GetNumSamplesError();
+		MockingboardCard& MB = dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot));
+
+		if (numSamplesErrorPre == -1)
+			numSamplesErrorPre = nNumSamplesError;
+
+		MB.SetNumSamplesError(nNumSamplesError);
+		nNumSamples = MB.MB_UpdateInternal1();
+		nNumSamplesError = MB.GetNumSamplesError();
+
+#if 1 // debug
+		if (numSamples0 == (UINT)-1)
+		{
+			numSamples0 = nNumSamples;
+			numSamplesError0 = nNumSamplesError;
 		}
+
+		_ASSERT(numSamples0 == nNumSamples);
+		_ASSERT(numSamplesError0 == nNumSamplesError);
+#endif
 	}
 
 	//
@@ -268,22 +286,29 @@ void MockingboardCardManager::MB_UpdateInternal2(int nNumSamples)
 //	const double fAttenuation = g_bPhasorEnable ? 2.0 / 3.0 : 1.0;
 	const double fAttenuation = true ? 2.0 / 3.0 : 1.0;
 
+	short** slotAYVoiceBuffers[NUM_SLOTS] = {0};
+
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
-		if (!IsMockingboard(slot))
-			continue;
+		if (IsMockingboard(slot))
+			slotAYVoiceBuffers[slot] = dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot)).GetVoiceBuffers();
+	}
 
-		MockingboardCard& MB = dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot));
-		short** ppAYVoiceBuffer = MB.GetVoiceBuffers();
+	for (int i = 0; i < nNumSamples; i++)
+	{
+		// Mockingboard stereo (all voices on an AY8910 wire-or'ed together)
+		// L = Address.b7=0, R = Address.b7=1
+		int nDataL = 0, nDataR = 0;
 
-		for (int i = 0; i < nNumSamples; i++)
+		for (UINT j = 0; j < NUM_VOICES_PER_AY8913; j++)
 		{
-			// Mockingboard stereo (all voices on an AY8910 wire-or'ed together)
-			// L = Address.b7=0, R = Address.b7=1
-			int nDataL = 0, nDataR = 0;
-
-			for (UINT j = 0; j < NUM_VOICES_PER_AY8913; j++)
+			for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 			{
+				if (!slotAYVoiceBuffers[slot])
+					continue;
+
+				short** ppAYVoiceBuffer = slotAYVoiceBuffers[slot];
+
 				// Regular MB-C AY's
 				nDataL += (int)((double)ppAYVoiceBuffer[0 * NUM_VOICES_PER_AY8913 + j][i] * fAttenuation);
 				nDataR += (int)((double)ppAYVoiceBuffer[1 * NUM_VOICES_PER_AY8913 + j][i] * fAttenuation);
@@ -292,21 +317,21 @@ void MockingboardCardManager::MB_UpdateInternal2(int nNumSamples)
 				nDataL += (int)((double)ppAYVoiceBuffer[2 * NUM_VOICES_PER_AY8913 + j][i] * fAttenuation);
 				nDataR += (int)((double)ppAYVoiceBuffer[3 * NUM_VOICES_PER_AY8913 + j][i] * fAttenuation);
 			}
-
-			// Cap the superpositioned output
-			if (nDataL < nWaveDataMin)
-				nDataL = nWaveDataMin;
-			else if (nDataL > nWaveDataMax)
-				nDataL = nWaveDataMax;
-
-			if (nDataR < nWaveDataMin)
-				nDataR = nWaveDataMin;
-			else if (nDataR > nWaveDataMax)
-				nDataR = nWaveDataMax;
-
-			g_nMixBuffer[i * g_nMB_NumChannels + 0] = (short)nDataL;	// L
-			g_nMixBuffer[i * g_nMB_NumChannels + 1] = (short)nDataR;	// R
 		}
+
+		// Cap the superpositioned output
+		if (nDataL < nWaveDataMin)
+			nDataL = nWaveDataMin;
+		else if (nDataL > nWaveDataMax)
+			nDataL = nWaveDataMax;
+
+		if (nDataR < nWaveDataMin)
+			nDataR = nWaveDataMin;
+		else if (nDataR > nWaveDataMax)
+			nDataR = nWaveDataMax;
+
+		g_nMixBuffer[i * g_nMB_NumChannels + 0] = (short)nDataL;	// L
+		g_nMixBuffer[i * g_nMB_NumChannels + 1] = (short)nDataR;	// R
 	}
 
 	//
