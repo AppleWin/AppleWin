@@ -273,4 +273,6 @@ void CardManager::Destroy()
 			m_slot[i]->Destroy();
 		}
 	}
+
+	GetCardMgr().GetMockingboardCardMgr().Destroy();
 }

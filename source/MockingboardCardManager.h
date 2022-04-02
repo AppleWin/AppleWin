@@ -25,10 +25,8 @@ public:
 	DWORD GetVolume(void);
 	void SetVolume(DWORD volume, DWORD volumeMax);
 
+	void Destroy(void);
 	void Update(void);
-	bool Init(void);
-	UINT GenerateAllSoundData(void);
-	void MixAllAndCopyToRingBuffer(UINT nNumSamples);
 
 #ifdef _DEBUG
 	void CheckCumulativeCycles(void);
@@ -36,9 +34,9 @@ public:
 #endif
 
 private:
-	DWORD m_userVolume;	// GUI's slide volume
-
-	//
+	bool Init(void);
+	UINT GenerateAllSoundData(void);
+	void MixAllAndCopyToRingBuffer(UINT nNumSamples);
 
 	static const UINT NUM_SY6522 = 2;
 	static const UINT NUM_AY8913 = 4;	// Phasor has 4, MB has 2
@@ -60,4 +58,6 @@ private:
 
 	int nNumSamplesError;
 	DWORD dwByteOffset;
+
+	DWORD m_userVolume;	// GUI's slide volume
 };

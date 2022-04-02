@@ -74,6 +74,23 @@ void MockingboardCardManager::MuteControl(bool mute)
 		if (IsMockingboard(i))
 			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).MuteControl(mute);
 	}
+
+	if (mute)
+	{
+		if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
+		{
+			MockingboardVoice.lpDSBvoice->SetVolume(DSBVOLUME_MIN);
+			MockingboardVoice.bMute = true;
+		}
+	}
+	else
+	{
+		if (MockingboardVoice.bActive && MockingboardVoice.bMute)
+		{
+			MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
+			MockingboardVoice.bMute = false;
+		}
+	}
 }
 
 void MockingboardCardManager::SetCumulativeCycles(void)
@@ -96,6 +113,9 @@ void MockingboardCardManager::UpdateCycles(ULONG executedCycles)
 
 bool MockingboardCardManager::IsActive(void)
 {
+	if (!MockingboardVoice.bActive)
+		return false;
+
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
 		if (IsMockingboard(i))
@@ -114,6 +134,12 @@ DWORD MockingboardCardManager::GetVolume(void)
 void MockingboardCardManager::SetVolume(DWORD volume, DWORD volumeMax)
 {
 	m_userVolume = volume;
+
+	MockingboardVoice.dwUserVolume = volume;
+	MockingboardVoice.nVolume = NewVolume(volume, volumeMax);
+
+	if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
+		MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
 
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
@@ -142,6 +168,18 @@ void MockingboardCardManager::Get6522IrqDescription(std::string& desc)
 }
 #endif
 
+// Called by CardManager::Destroy()
+void MockingboardCardManager::Destroy(void)
+{
+	if (MockingboardVoice.lpDSBvoice && MockingboardVoice.bActive)
+		DSVoiceStop(&MockingboardVoice);
+
+	DSReleaseSoundBuffer(&MockingboardVoice);
+}
+
+// Called by:
+// . MB_SyncEventCallback() on a TIMER1 (not TIMER2) underflow - when IsAnyTimer1Active() == true
+// . Update()                                                  - when IsAnyTimer1Active() == false
 void MockingboardCardManager::Update(void)
 {
 #ifdef LOG_PERF_TIMINGS
@@ -151,7 +189,10 @@ void MockingboardCardManager::Update(void)
 #endif
 
 	if (!MockingboardVoice.lpDSBvoice)
-		Init();
+	{
+		if (!Init())
+			return;
+	}
 
 	UINT numSamples = GenerateAllSoundData();
 	if (numSamples)
@@ -160,18 +201,21 @@ void MockingboardCardManager::Update(void)
 
 bool MockingboardCardManager::Init(void)
 {
+	if (!g_bDSAvailable)
+		return false;
+
 	const DWORD SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 
 	HRESULT hr = DSGetSoundBuffer(&MockingboardVoice, DSBCAPS_CTRLVOLUME, g_dwDSBufferSize, SAMPLE_RATE, g_nMB_NumChannels, "MB");
-	LogFileOutput("MB_DSInit: DSGetSoundBuffer(), hr=0x%08X\n", hr);
+	LogFileOutput("MBCardMgr: DSGetSoundBuffer(), hr=0x%08X\n", hr);
 	if (FAILED(hr))
 	{
-		LogFileOutput("MB_DSInit: DSGetSoundBuffer failed (%08X)\n", hr);
+		LogFileOutput("MBCardMgr: DSGetSoundBuffer failed (%08X)\n", hr);
 		return false;
 	}
 
 	bool bRes = DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);	// ... and Play()
-	LogFileOutput("MB_DSInit: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
+	LogFileOutput("MBCardMgr: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
 	if (!bRes)
 		return false;
 
@@ -182,7 +226,7 @@ bool MockingboardCardManager::Init(void)
 		MockingboardVoice.nVolume = DSBVOLUME_MAX;
 
 	hr = MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
-	LogFileOutput("MB_DSInit: SetVolume(), hr=0x%08X\n", hr);
+	LogFileOutput("MBCardMgr: SetVolume(), hr=0x%08X\n", hr);
 	return true;
 }
 

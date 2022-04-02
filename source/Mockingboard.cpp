@@ -287,8 +287,8 @@ BYTE MockingboardCard::GetPCR(BYTE nDevice)
 // . Update()                                                  - when IsAnyTimer1Active() == false
 UINT MockingboardCard::MB_UpdateInternal1(void)
 {
-	if (!MockingboardVoice.bActive)
-		return 0;
+//	if (!MockingboardVoice.bActive)
+//		return 0;
 
 	if (g_bFullSpeed)
 	{
@@ -377,38 +377,7 @@ bool MockingboardCard::MB_DSInit(void)
 
 #else // NO_DIRECT_X
 
-	//
-	// Create single Mockingboard voice
-	//
-
-	if (!g_bDSAvailable)
-		return false;
-
-	HRESULT hr = DSGetSoundBuffer(&MockingboardVoice, DSBCAPS_CTRLVOLUME, g_dwDSBufferSize, SAMPLE_RATE, g_nMB_NumChannels, "MB");
-	LogFileOutput("MB_DSInit: DSGetSoundBuffer(), hr=0x%08X\n", hr);
-	if (FAILED(hr))
-	{
-		LogFileOutput("MB_DSInit: DSGetSoundBuffer failed (%08X)\n", hr);
-		return false;
-	}
-
-	bool bRes = DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);	// ... and Play()
-	LogFileOutput("MB_DSInit: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
-	if (!bRes)
-		return false;
-
-	MockingboardVoice.bActive = true;
-
-	// Volume might've been setup from value in Registry
-	if (!MockingboardVoice.nVolume)
-		MockingboardVoice.nVolume = DSBVOLUME_MAX;
-
-	hr = MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
-	LogFileOutput("MB_DSInit: SetVolume(), hr=0x%08X\n", hr);
-
-	//---------------------------------
-
-	for (UINT i=0; i<NUM_SSI263; i++)
+	for (UINT i = 0; i < NUM_SSI263; i++)
 	{
 		if (!g_MB[i].ssi263.DSInit())
 			return false;
@@ -417,19 +386,6 @@ bool MockingboardCard::MB_DSInit(void)
 	return true;
 
 #endif // NO_DIRECT_X
-}
-
-void MockingboardCard::MB_DSUninit(void)
-{
-	if (MockingboardVoice.lpDSBvoice && MockingboardVoice.bActive)
-		DSVoiceStop(&MockingboardVoice);
-
-	DSReleaseSoundBuffer(&MockingboardVoice);
-
-	//
-
-	for (UINT i=0; i< NUM_SSI263; i++)
-		g_MB[i].ssi263.DSUninit();
 }
 
 void MockingboardCard::MB_Initialize(void)
@@ -443,7 +399,7 @@ void MockingboardCard::MB_Initialize(void)
 	LogFileOutput("MB_Initialize: g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 	{
-		MockingboardVoice.bMute = true;
+//		MockingboardVoice.bMute = true;	// TODO-TC: move to class MockingboardCardManager
 	}
 	else
 	{
@@ -478,11 +434,14 @@ void MockingboardCard::InitializeForLoadingSnapshot(void)	// GH#609
 {
 	Reset(true);
 
-	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
-		return;
-
-	_ASSERT(MockingboardVoice.lpDSBvoice);
-	DSVoiceStop(&MockingboardVoice);			// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
+	//
+	// TODO-TC: move to class MockingboardCardManager
+	//
+//	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
+//		return;
+//
+//	_ASSERT(MockingboardVoice.lpDSBvoice);
+//	DSVoiceStop(&MockingboardVoice);			// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
 
 	// NB. ssi263.Stop() already done by Reset()
 }
@@ -500,12 +459,13 @@ void MockingboardCard::ReinitializeClock(void)
 
 void MockingboardCard::Destroy(void)
 {
-	MB_DSUninit();
+	for (UINT i = 0; i < NUM_SSI263; i++)
+		g_MB[i].ssi263.DSUninit();
 
-	for (int i=0; i<NUM_VOICES; i++)
-		delete [] ppAYVoiceBuffer[i];
+	for (UINT i = 0; i < NUM_VOICES; i++)
+		delete[] ppAYVoiceBuffer[i];
 
-	for (int id=0; id<kNumSyncEvents; id++)
+	for (UINT id = 0; id < kNumSyncEvents; id++)
 	{
 		if (g_syncEvent[id] && g_syncEvent[id]->m_active)
 			g_SynchronousEventMgr.Remove(g_syncEvent[id]->m_id);
@@ -819,11 +779,14 @@ void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral)
 
 	MB_DSInit();
 
+	//
+	// TODO-TC: move to class MockingboardCardManager
+	//
 	// Sound buffer may have been stopped by MB_InitializeForLoadingSnapshot().
 	// NB. DSZeroVoiceBuffer() also zeros the sound buffer, so it's better than directly calling IDirectSoundBuffer::Play():
 	// - without zeroing, then the previous sound buffer can be heard for a fraction of a second
 	// - eg. when doing Mockingboard playback, then loading a save-state which is also doing Mockingboard playback
-	DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);
+//	DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);
 }
 
 //-----------------------------------------------------------------------------
@@ -832,23 +795,11 @@ void MockingboardCard::MuteControl(bool mute)
 {
 	if (mute)
 	{
-		if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
-		{
-			MockingboardVoice.lpDSBvoice->SetVolume(DSBVOLUME_MIN);
-			MockingboardVoice.bMute = true;
-		}
-
 		for (UINT i = 0; i < NUM_SSI263; i++)
 			g_MB[i].ssi263.Mute();
 	}
 	else
 	{
-		if (MockingboardVoice.bActive && MockingboardVoice.bMute)
-		{
-			MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
-			MockingboardVoice.bMute = false;
-		}
-
 		for (UINT i = 0; i < NUM_SSI263; i++)
 			g_MB[i].ssi263.Unmute();
 	}
@@ -972,9 +923,6 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 
 bool MockingboardCard::IsActive(void)
 {
-	if (!MockingboardVoice.bActive)
-		return false;
-
 	bool isSSI263Active = false;
 	for (UINT i=0; i<NUM_SSI263; i++)
 		isSSI263Active |= g_MB[i].ssi263.IsPhonemeActive();
@@ -993,12 +941,6 @@ DWORD MockingboardCard::MB_GetVolume(void)
 
 void MockingboardCard::SetVolume(DWORD volume, DWORD volumeMax)
 {
-	MockingboardVoice.dwUserVolume = volume;
-	MockingboardVoice.nVolume = NewVolume(volume, volumeMax);
-
-	if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
-		MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
-
 	for (UINT i=0; i<NUM_SSI263; i++)
 		g_MB[i].ssi263.SetVolume(volume, volumeMax);
 }

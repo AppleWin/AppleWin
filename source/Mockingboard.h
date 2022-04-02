@@ -119,7 +119,6 @@ private:
 	void UpdateIFRandIRQ(SY6522_AY8910* pMB, BYTE clr_mask, BYTE set_mask);
 	void MB_UpdateInternal(void);
 	void MB_Update(void);
-	void MB_DSUninit(void);
 	void InitSoundcardType(void);
 
 	void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
@@ -189,14 +188,14 @@ private:
 
 	//
 
-	static const unsigned short g_nMB_NumChannels = 2;
-	static const DWORD g_dwDSBufferSize = MAX_SAMPLES * sizeof(short) * g_nMB_NumChannels;
-
-	static const SHORT nWaveDataMin = (SHORT)0x8000;
-	static const SHORT nWaveDataMax = (SHORT)0x7FFF;
-
-	short g_nMixBuffer[g_dwDSBufferSize / sizeof(short)];
-	VOICE MockingboardVoice;
+//	static const unsigned short g_nMB_NumChannels = 2;
+//	static const DWORD g_dwDSBufferSize = MAX_SAMPLES * sizeof(short) * g_nMB_NumChannels;
+//
+//	static const SHORT nWaveDataMin = (SHORT)0x8000;
+//	static const SHORT nWaveDataMax = (SHORT)0x7FFF;
+//
+//	short g_nMixBuffer[g_dwDSBufferSize / sizeof(short)];
+//	VOICE MockingboardVoice;
 
 	UINT g_cyclesThisAudioFrame;
 
