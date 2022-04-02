@@ -468,10 +468,11 @@ void FormatOpcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 
 struct FAC_t
 {
-	uint8_t		negative;
-	int8_t		exponent;
-	uint32_t	mantissa;
-	bool		isZero;
+	uint8_t  negative;
+	 int8_t  exponent;
+	uint32_t mantissa;
+
+	bool     isZero;
 };
 
 void FAC_Unpack(WORD nAddress, FAC_t& fac_)
@@ -523,11 +524,10 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 
 		switch (line_.iNoptype)
 		{
-		case NOP_BYTE_1:
-		case NOP_BYTE_2:
-		case NOP_BYTE_4:
-		case NOP_BYTE_8:
-			{
+			case NOP_BYTE_1:
+			case NOP_BYTE_2:
+			case NOP_BYTE_4:
+			case NOP_BYTE_8:
 				sprintf(pDst, "%02X", nTarget8); // sBytes+strlen(sBytes)
 				pDst += 2;
 				iByte++;
@@ -536,10 +536,9 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 					{
 						*pDst++ = ',';
 					}
-			}
-			break;
+				break;
 
-		case NOP_FAC:
+			case NOP_FAC:
 			{
 				FAC_t fac;
 				FAC_Unpack( nBaseAddress, fac );
@@ -553,13 +552,12 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 					sprintf( pDst, "%c%f", aSign[ fac.negative ], f );
 				}
 				iByte += 5;
+				break;
 			}
-			break;
 
-		case NOP_WORD_1:
-		case NOP_WORD_2:
-		case NOP_WORD_4:
-			{
+			case NOP_WORD_1:
+			case NOP_WORD_2:
+			case NOP_WORD_4:
 				sprintf(pDst, "%04X", nTarget16); // sBytes+strlen(sBytes)
 				pDst += 4;
 				iByte += 2;
@@ -567,24 +565,20 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 				{
 					*pDst++ = ',';
 				}
-			}
-			break;
+				break;
 
-		case NOP_ADDRESS:
-			// Nothing to do, already handled :-)
-			iByte += 2;
-			break;
+			case NOP_ADDRESS:
+				// Nothing to do, already handled :-)
+				iByte += 2;
+				break;
 
-		case NOP_STRING_APPLESOFT:
-			{
+			case NOP_STRING_APPLESOFT:
 				iByte = line_.nOpbyte;
 				strncpy(pDst, (const char*)(mem + nBaseAddress), iByte);
 				pDst += iByte;
 				*pDst = 0;
-			}
-			// Intentional fall through. // REVIEW??
-		case NOP_STRING_APPLE:
-			{
+				// Intentional fall through. // REVIEW??
+			case NOP_STRING_APPLE:
 				iByte = line_.nOpbyte; // handle all bytes of text
 				pSrc = (const char*)mem + nStartAddress;
 
@@ -610,16 +604,15 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 				}
 
 				*pDst = 0;
-			}
-			break;
+				break;
 
-		default:
+			default:
 #if _DEBUG // Unhandled data disassembly!
-			int* FATAL = 0;
-			*FATAL = 0xDEADC0DE;
+				int* FATAL = 0;
+				*FATAL = 0xDEADC0DE;
 #endif
-			iByte++;
-			break;
+				iByte++;
+				break;
 		}
 	}
 }

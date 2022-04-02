@@ -5191,7 +5191,7 @@ Update_t CmdNTSC (int nArgs)
 						uint8_t *pTemp64x256 = new uint8_t[ 64 * 256 * 4 ];
 						memset( pTemp64x256, 0, g_nChromaSize );
 
-//Transpose16x1::transposeFrom16x1( pSwizzled, (uint8_t*) pChromaTable );
+						//Transpose16x1::transposeFrom16x1( pSwizzled, (uint8_t*) pChromaTable );
 
 						if (pBmp->nWidthPixels == 16)
 						{
@@ -5251,7 +5251,7 @@ int CmdTextSave (int nArgs)
 	if (g_aArgs[1].bType & TYPE_QUOTED_2)
 		bHaveFileName = true;
 
-	char *pText;
+	char  *pText;
 	size_t nSize = Util_GetTextScreen( pText );
 
 	std::string sLoadSaveFilePath = g_sCurrentDir; // g_sProgramDir
@@ -5951,84 +5951,84 @@ Update_t CmdOutputPrintf (int nArgs)
 				TCHAR c = g_aArgs[ iArg ].sArg[ iChar ];
 				switch ( eThis )
 				{
-				case PS_LITERAL:
-					switch ( c )
-					{
-					case '\\':
-						eThis = PS_ESCAPE;
-						break;
-					case '%':
-						eThis = PS_TYPE;
-						break;
-					default:
-						sText[ nLen++ ] = c;
-						break;
-					}
-					break;
-				case PS_ESCAPE:
-					switch ( c )
-					{
-					case 'n':
-					case 'r':
-						eThis = PS_LITERAL;
-						sText[ nLen++ ] = '\n';
-						break;
-					}
-					break;
-				case PS_TYPE:
-					if (iValue >= nParamValues)
-					{
-						ConsoleBufferPushFormat( "Error: Missing value arg: %d", iValue + 1 );
-						return ConsoleUpdate();
-					}
-					switch ( c )
-					{
-					case 'X':
-					case 'x': // PS_NEXT_ARG_HEX
-						nValue = aValues[ iValue ].nValue;
-						sprintf( &sText[ nLen ], "%04X", nValue );
-						iValue++;
-						break;
-					case 'D':
-					case 'd': // PS_NEXT_ARG_DEC
-						nValue = aValues[ iValue ].nValue;
-						sprintf( &sText[ nLen ], "%d", nValue );
-						iValue++;
-						break;
-					break;
-					case 'Z':
-					case 'z':
-					{
-						nValue = aValues[ iValue ].nValue;
-						if (!nWidth)
-							nWidth = 8;
-						int nBits = nWidth;
-						while (nBits-- > 0)
+					case PS_LITERAL:
+						switch ( c )
 						{
-							if ((nValue >> nBits) & 1)
-								sText[ nLen++ ] = '1';
-							else
-								sText[ nLen++ ] = '0';
+							case '\\':
+								eThis = PS_ESCAPE;
+								break;
+							case '%':
+								eThis = PS_TYPE;
+								break;
+							default:
+								sText[ nLen++ ] = c;
+								break;
 						}
-						iValue++;
 						break;
-					}
-					case 'c': // PS_NEXT_ARG_CHR;
-						nValue = aValues[ iValue ].nValue;
-						sprintf( &sText[ nLen ], "%c", nValue );
-						iValue++;
+					case PS_ESCAPE:
+						switch ( c )
+						{
+							case 'n':
+							case 'r':
+								eThis = PS_LITERAL;
+								sText[ nLen++ ] = '\n';
+								break;
+						}
 						break;
-					case '%':
+					case PS_TYPE:
+						if (iValue >= nParamValues)
+						{
+							ConsoleBufferPushFormat( "Error: Missing value arg: %d", iValue + 1 );
+							return ConsoleUpdate();
+						}
+						switch ( c )
+						{
+							case 'X':
+							case 'x': // PS_NEXT_ARG_HEX
+								nValue = aValues[ iValue ].nValue;
+								sprintf( &sText[ nLen ], "%04X", nValue );
+								iValue++;
+								break;
+							case 'D':
+							case 'd': // PS_NEXT_ARG_DEC
+								nValue = aValues[ iValue ].nValue;
+								sprintf( &sText[ nLen ], "%d", nValue );
+								iValue++;
+								break;
+							break;
+							case 'Z':
+							case 'z':
+							{
+								nValue = aValues[ iValue ].nValue;
+								if (!nWidth)
+									nWidth = 8;
+								int nBits = nWidth;
+								while (nBits-- > 0)
+								{
+									if ((nValue >> nBits) & 1)
+										sText[ nLen++ ] = '1';
+									else
+										sText[ nLen++ ] = '0';
+								}
+								iValue++;
+								break;
+							}
+							case 'c': // PS_NEXT_ARG_CHR;
+								nValue = aValues[ iValue ].nValue;
+								sprintf( &sText[ nLen ], "%c", nValue );
+								iValue++;
+								break;
+							case '%':
+							default:
+								sText[ nLen++ ] = c;
+								break;
+						}
+						while (sText[ nLen ])
+							nLen++;
+						eThis = PS_LITERAL;
+						break;
 					default:
-						sText[ nLen++ ] = c;
 						break;
-					}
-					while (sText[ nLen ])
-						nLen++;
-					eThis = PS_LITERAL;
-					break;
-				default:
-					break;
 				}
 			}
 		}
