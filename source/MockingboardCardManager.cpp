@@ -144,12 +144,18 @@ void MockingboardCardManager::Get6522IrqDescription(std::string& desc)
 
 void MockingboardCardManager::Update(void)
 {
+#ifdef LOG_PERF_TIMINGS
+	extern UINT64 g_timeMB_NoTimer;
+	extern UINT64 g_timeMB_Timer;
+	PerfMarker perfMarker(!IsAnyTimer1Active() == kTIMERDEVICE_INVALID ? g_timeMB_NoTimer : g_timeMB_Timer);
+#endif
+
 	if (!MockingboardVoice.lpDSBvoice)
 		Init();
 
-	UINT numSamples = MB_UpdateInternal1();
+	UINT numSamples = GenerateAllSoundData();
 	if (numSamples)
-		MB_UpdateInternal2(numSamples);
+		MixAllAndCopyToRingBuffer(numSamples);
 }
 
 bool MockingboardCardManager::Init(void)
@@ -180,13 +186,12 @@ bool MockingboardCardManager::Init(void)
 	return true;
 }
 
-UINT MockingboardCardManager::MB_UpdateInternal1(void)
+UINT MockingboardCardManager::GenerateAllSoundData(void)
 {
 	UINT nNumSamples = 0;
 
 	UINT numSamples0 = (UINT)-1;
 	int numSamplesError0 = -1;
-	int numSamplesErrorPre = -1;
 
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
@@ -194,9 +199,6 @@ UINT MockingboardCardManager::MB_UpdateInternal1(void)
 			continue;
 
 		MockingboardCard& MB = dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot));
-
-		if (numSamplesErrorPre == -1)
-			numSamplesErrorPre = nNumSamplesError;
 
 		MB.SetNumSamplesError(nNumSamplesError);
 		nNumSamples = MB.MB_UpdateInternal1();
@@ -281,7 +283,7 @@ UINT MockingboardCardManager::MB_UpdateInternal1(void)
 	return nNumSamples;
 }
 
-void MockingboardCardManager::MB_UpdateInternal2(int nNumSamples)
+void MockingboardCardManager::MixAllAndCopyToRingBuffer(UINT nNumSamples)
 {
 //	const double fAttenuation = g_bPhasorEnable ? 2.0 / 3.0 : 1.0;
 	const double fAttenuation = true ? 2.0 / 3.0 : 1.0;
@@ -294,19 +296,19 @@ void MockingboardCardManager::MB_UpdateInternal2(int nNumSamples)
 			slotAYVoiceBuffers[slot] = dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot)).GetVoiceBuffers();
 	}
 
-	for (int i = 0; i < nNumSamples; i++)
+	for (UINT i = 0; i < nNumSamples; i++)
 	{
 		// Mockingboard stereo (all voices on an AY8910 wire-or'ed together)
 		// L = Address.b7=0, R = Address.b7=1
 		int nDataL = 0, nDataR = 0;
 
-		for (UINT j = 0; j < NUM_VOICES_PER_AY8913; j++)
+		for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 		{
-			for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
-			{
-				if (!slotAYVoiceBuffers[slot])
-					continue;
+			if (!slotAYVoiceBuffers[slot])
+				continue;
 
+			for (UINT j = 0; j < NUM_VOICES_PER_AY8913; j++)
+			{
 				short** ppAYVoiceBuffer = slotAYVoiceBuffers[slot];
 
 				// Regular MB-C AY's

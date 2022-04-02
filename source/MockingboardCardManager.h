@@ -27,8 +27,8 @@ public:
 
 	void Update(void);
 	bool Init(void);
-	UINT MB_UpdateInternal1(void);
-	void MB_UpdateInternal2(int nNumSamples);
+	UINT GenerateAllSoundData(void);
+	void MixAllAndCopyToRingBuffer(UINT nNumSamples);
 
 #ifdef _DEBUG
 	void CheckCumulativeCycles(void);
