@@ -577,7 +577,8 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 				strncpy(pDst, (const char*)(mem + nBaseAddress), iByte);
 				pDst += iByte;
 				*pDst = 0;
-				// Intentional fall through. // REVIEW??
+				break;
+
 			case NOP_STRING_APPLE:
 				iByte = line_.nOpbyte; // handle all bytes of text
 				pSrc = (const char*)mem + nStartAddress;
