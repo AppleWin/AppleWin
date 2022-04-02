@@ -219,7 +219,6 @@ static void ContinueExecution(void)
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
 	GetCardMgr().Update(uActualCyclesExecuted);
-	//GetCardMgr().GetMockingboardCardMgr().Update();
 
 	//
 

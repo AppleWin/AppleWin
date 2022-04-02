@@ -177,10 +177,36 @@ void MockingboardCardManager::Destroy(void)
 	DSReleaseSoundBuffer(&MockingboardVoice);
 }
 
+// Called by ContinueExecution() at the end of every execution period (~1000 cycles or ~3 cycles when MODE_STEPPING)
+// NB. Required for FT's TEST LAB #1 player
+void MockingboardCardManager::Update(const ULONG executedCycles)
+{
+	bool active = false;
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (IsMockingboard(i))
+			active |= dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).IsAnyTimer1Active();
+	}
+
+	if (active)
+		return;
+
+	// No 6522 TIMER1's are active, so periodically update AY8913's here...
+
+	const UINT kCyclesPerAudioFrame = 1000;
+	g_cyclesThisAudioFrame += executedCycles;
+	if (g_cyclesThisAudioFrame < kCyclesPerAudioFrame)
+		return;
+
+	g_cyclesThisAudioFrame %= kCyclesPerAudioFrame;
+
+	UpdateSoundBuffer();
+}
+
 // Called by:
 // . MB_SyncEventCallback() on a TIMER1 (not TIMER2) underflow - when IsAnyTimer1Active() == true
 // . Update()                                                  - when IsAnyTimer1Active() == false
-void MockingboardCardManager::Update(void)
+void MockingboardCardManager::UpdateSoundBuffer(void)
 {
 #ifdef LOG_PERF_TIMINGS
 	extern UINT64 g_timeMB_NoTimer;

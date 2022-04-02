@@ -31,8 +31,6 @@ public:
 		g_phasorMode = PH_Mockingboard;
 		g_PhasorClockScaleFactor = 1;	// for save-state only
 
-		g_cyclesThisAudioFrame = 0;
-
 		g_uLastMBUpdateCycle = 0;
 		nNumSamplesError = 0;
 
@@ -83,6 +81,7 @@ public:
 	UINT64 GetLastCumulativeCycles(void);
 	void UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
 	BYTE GetPCR(BYTE nDevice);
+	bool IsAnyTimer1Active(void);
 
 	void GetSnapshot_v1(struct SS_CARD_MOCKINGBOARD_v1* const pSS);
 
@@ -113,7 +112,6 @@ private:
 	};
 
 	void MB_Initialize(void);
-	bool IsAnyTimer1Active(void);
 	void AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice);
 	void WriteToORB(BYTE device);
 	void UpdateIFRandIRQ(SY6522_AY8910* pMB, BYTE clr_mask, BYTE set_mask);
@@ -187,17 +185,6 @@ private:
 	UINT g_PhasorClockScaleFactor;
 
 	//
-
-//	static const unsigned short g_nMB_NumChannels = 2;
-//	static const DWORD g_dwDSBufferSize = MAX_SAMPLES * sizeof(short) * g_nMB_NumChannels;
-//
-//	static const SHORT nWaveDataMin = (SHORT)0x8000;
-//	static const SHORT nWaveDataMax = (SHORT)0x7FFF;
-//
-//	short g_nMixBuffer[g_dwDSBufferSize / sizeof(short)];
-//	VOICE MockingboardVoice;
-
-	UINT g_cyclesThisAudioFrame;
 
 	UINT64 g_uLastMBUpdateCycle;
 	int nNumSamplesError;

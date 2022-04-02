@@ -7,9 +7,10 @@ class MockingboardCardManager
 public:
 	MockingboardCardManager(void)
 	{
-		m_userVolume = 0;
 		nNumSamplesError = 0;
 		dwByteOffset = (DWORD)-1;
+		g_cyclesThisAudioFrame = 0;
+		m_userVolume = 0;
 	}
 	~MockingboardCardManager(void)
 	{}
@@ -26,7 +27,12 @@ public:
 	void SetVolume(DWORD volume, DWORD volumeMax);
 
 	void Destroy(void);
-	void Update(void);
+	void Reset(const bool powerCycle)
+	{
+		g_cyclesThisAudioFrame = 0;
+	}
+	void Update(const ULONG executedCycles);
+	void UpdateSoundBuffer(void);
 
 #ifdef _DEBUG
 	void CheckCumulativeCycles(void);
@@ -58,6 +64,8 @@ private:
 
 	int nNumSamplesError;
 	DWORD dwByteOffset;
+
+	UINT g_cyclesThisAudioFrame;
 
 	DWORD m_userVolume;	// GUI's slide volume
 };

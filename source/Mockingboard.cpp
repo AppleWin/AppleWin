@@ -505,7 +505,6 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 		g_PhasorClockScaleFactor = 1;
 
 		g_uLastMBUpdateCycle = 0;
-		g_cyclesThisAudioFrame = 0;
 
 		for (int id = 0; id < kNumSyncEvents; id++)
 		{
@@ -822,28 +821,10 @@ void MockingboardCard::SetCumulativeCycles(void)
 }
 
 // Called by ContinueExecution() at the end of every execution period (~1000 cycles or ~3 cycles when MODE_STEPPING)
-// NB. Required for FT's TEST LAB #1 player
 void MockingboardCard::Update(const ULONG executedCycles)
 {
-#if 1
-#else
-	for (UINT i=0; i<NUM_SSI263; i++)
+	for (UINT i = 0; i < NUM_SSI263; i++)
 		g_MB[i].ssi263.PeriodicUpdate(executedCycles);
-
-	if (IsAnyTimer1Active())
-		return;
-
-	// No 6522 TIMER1's are active, so periodically update AY8913's here...
-
-	const UINT kCyclesPerAudioFrame = 1000;
-	g_cyclesThisAudioFrame += executedCycles;
-	if (g_cyclesThisAudioFrame < kCyclesPerAudioFrame)
-		return;
-
-	g_cyclesThisAudioFrame %= kCyclesPerAudioFrame;
-
-	MB_Update();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -894,7 +875,7 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 		_ASSERT(pMB->sy6522.IsTimer1Active());
 		UpdateIFRandIRQ(pMB, 0, SY6522::IxR_TIMER1);
 		//MB_Update();
-		GetCardMgr().GetMockingboardCardMgr().Update();
+		GetCardMgr().GetMockingboardCardMgr().UpdateSoundBuffer();
 
 		if ((pMB->sy6522.GetReg(SY6522::rACR) & SY6522::ACR_RUNMODE) == SY6522::ACR_RM_FREERUNNING)
 		{

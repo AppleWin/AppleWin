@@ -240,6 +240,8 @@ void CardManager::Update(const ULONG nExecutedCycles)
 			m_slot[i]->Update(nExecutedCycles);
 		}
 	}
+
+	GetCardMgr().GetMockingboardCardMgr().Update(nExecutedCycles);
 }
 
 void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
@@ -262,6 +264,8 @@ void CardManager::Reset(const bool powerCycle)
 			m_slot[i]->Reset(powerCycle);
 		}
 	}
+
+	GetCardMgr().GetMockingboardCardMgr().Reset(powerCycle);
 }
 
 void CardManager::Destroy()
