@@ -1,4 +1,5 @@
 /*
+2.9.1.14 Fixed: DA D000:D0CF not marking up range
 2.9.1.13 Added: CD now detects ".." to change to the previous directory and chops the trailing sub-directory from the current path.
          It worked before but would clutter up the current directory with a trailing "..\".
 2.9.1.12 Added: New commands HGR0, HGR3, HGR4, HGR5 to see pseudo pages $00, $60, $80, $A0 respectively.
