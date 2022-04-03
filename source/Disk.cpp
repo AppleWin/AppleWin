@@ -106,7 +106,7 @@ std::string Disk2InterfaceCard::FormatPhaseString(float phase)
 	const UINT phaseInt = (UINT)phase;
 	const UINT phaseFrac = (UINT)((phase - (float)phaseInt) * 100 + 0.5);
 
-	return StrFormat("%02X.%2d", phaseInt, phaseFrac);	// "$NN.nn"
+	return StrFormat("%02X.%02d", phaseInt, phaseFrac);	// "$NN.nn"
 }
 
 std::string Disk2InterfaceCard::GetCurrentTrackString(void)
