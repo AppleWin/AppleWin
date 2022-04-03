@@ -786,7 +786,6 @@ Update_t CmdProfile (int nArgs)
 			// Dump to console
 			if (iParam == PARAM_LIST)
 			{
-
 				char *pText;
 				char  sText[ CONSOLE_WIDTH ];
 
@@ -5061,11 +5060,11 @@ Update_t CmdNTSC (int nArgs)
 	uint32_t* pChromaTable = NTSC_VideoGetChromaTable( false, bColorTV );
 	char aStatusText[ CONSOLE_WIDTH*2 ] = "Loaded";
 
-//uint8_t* pTmp = (uint8_t*) pChromaTable; 
-//*pTmp++  = 0xFF; // b
-//*pTmp++ = 0x00; // g
-//*pTmp++ = 0x00; // r
-//*pTmp++ = 0xFF; // a
+	//uint8_t* pTmp = (uint8_t*) pChromaTable;
+	//*pTmp++ = 0xFF; // b
+	//*pTmp++ = 0x00; // g
+	//*pTmp++ = 0x00; // r
+	//*pTmp++ = 0xFF; // a
 
 	if (nFound)
 	{
@@ -5168,8 +5167,8 @@ Update_t CmdNTSC (int nArgs)
 						if ( pBmp->nCompression == 3 ) // BI_BITFIELDS
 						{
 							if ((pBmp->nRedMask   == 0xFF000000 ) // Gimp writes in ABGR order
-							&& (pBmp->nGreenMask == 0x00FF0000 )
-							&& (pBmp->nBlueMask  == 0x0000FF00 ))
+							&&  (pBmp->nGreenMask == 0x00FF0000 )
+							&&  (pBmp->nBlueMask  == 0x0000FF00 ))
 								bSwizzle = true;
 						}
 					}
@@ -5192,7 +5191,7 @@ Update_t CmdNTSC (int nArgs)
 						uint8_t *pTemp64x256 = new uint8_t[ 64 * 256 * 4 ];
 						memset( pTemp64x256, 0, g_nChromaSize );
 
-//Transpose16x1::transposeFrom16x1( pSwizzled, (uint8_t*) pChromaTable );
+						//Transpose16x1::transposeFrom16x1( pSwizzled, (uint8_t*) pChromaTable );
 
 						if (pBmp->nWidthPixels == 16)
 						{
@@ -5317,7 +5316,7 @@ int _SearchMemoryFind(
 		WORD nAddress2 = nAddress;
 
 		int nMemBlocks = vMemorySearchValues.size();
-		for (int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
+		for ( int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
 		{
 			MemorySearch_t ms = vMemorySearchValues.at( iBlock );
 			ms.m_bFound = false;
@@ -7940,9 +7939,9 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		pColorMnemonic = CHC_COMMAND; // green
 		pColorOpmode   = CHC_USAGE  ; // yellow
 		pColorTotal    = CHC_DEFAULT; // white
-	}	
+	}
 	
-// Opcode
+	// Opcode
 	if (bExport) // Export = SeperateColumns
 		sprintf( pText
 			, "\"Percent\"" DELIM "\"Count\"" DELIM "\"Opcode\"" DELIM "\"Mnemonic\"" DELIM "\"Addressing Mode\"\n"
@@ -8659,7 +8658,7 @@ void DebugInitialize ()
 	}
 	
 #if _DEBUG
-//g_bConsoleBufferPaused = true;
+	//g_bConsoleBufferPaused = true;
 #endif
 
 	_Bookmark_Reset();
