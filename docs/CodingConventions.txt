@@ -2,6 +2,8 @@ Coding Conventions for AppleWin
 ===============================
 
 History:
+v5 - 03-Apr-2022 (TC)
+. #1072: Add a space after keywords.
 v4 - 05-Mar-2022 (TC)
 . #1050: Added info about Platform Toolset v141_xp
 	. Use of C++11/14/17
@@ -117,8 +119,16 @@ It is recommended (but not mandatory):
 . to have/use explicit parenthesis
 . to have spaces between operators
 
-Eg:
+EG:
 . Prefer: z = ((a + b) + 1) instead of: z=((a+b)+1)
+
+2.8: Add a space after keywords (if, for, switch, while, etc).
+
+EG:
+	for (int i=0; i<10; i++)
+
+Not:
+	for(int i=0; i<10; i++)
 
 -------------------------------------------------------------------------------
 
