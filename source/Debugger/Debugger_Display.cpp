@@ -2941,13 +2941,13 @@ void DrawZeroPagePointers ( int line )
 			BYTE nZPAddr1 = (g_aZeroPagePointers[iZP].nAddress  ) & 0xFF; // +MJP missig: "& 0xFF", or "(BYTE) ..."
 			BYTE nZPAddr2 = (g_aZeroPagePointers[iZP].nAddress+1) & 0xFF;
 
-			std::string strAddressBuf1;
-			std::string strAddressBuf2;
-			std::string const& symbol1 = GetSymbol(nZPAddr1, 2, strAddressBuf1);	// 2:8-bit value (if symbol not found)
-			std::string const& symbol2 = GetSymbol(nZPAddr2, 2, strAddressBuf2);	// 2:8-bit value (if symbol not found)
+			std::string sAddressBuf1;
+			std::string sAddressBuf2;
+			std::string const& sSymbol1 = GetSymbol(nZPAddr1, 2, sAddressBuf1);	// 2:8-bit value (if symbol not found)
+			std::string const& sSymbol2 = GetSymbol(nZPAddr2, 2, sAddressBuf2);	// 2:8-bit value (if symbol not found)
 
-//			if ((symbol1.length() == 1) && (symbol2.length() == 1))
-//				sprintf( sText, "%s%s", symbol1.c_str(), symbol2.c_str());
+//			if ((sSymbol1.length() == 1) && (sSymbol2.length() == 1))
+//				sprintf( sText, "%s%s", sSymbol1.c_str(), sSymbol2.c_str());
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 
@@ -2958,22 +2958,22 @@ void DrawZeroPagePointers ( int line )
 
 			sText[nMaxSymbolLen] = 0;
 			
-			if (!symbol1.empty() && symbol1[0] == '$')
+			if (!sSymbol1.empty() && sSymbol1[0] == '$')
 			{
-//				sprintf( sText, "%s%s", pSymbol1 );
+//				sprintf( sText, "%s%s", sSymbol1 );
 //				sprintf( sText, "%04X", nZPAddr1 );
 			}
 			else
-			if (!symbol2.empty() && symbol2[0] == '$')
+			if (!sSymbol2.empty() && sSymbol2[0] == '$')
 			{
-//				sprintf( sText, "%s%s", pSymbol2 );
+//				sprintf( sText, "%s%s", sSymbol2 );
 //				sprintf( sText, "%04X", nZPAddr2 );
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 			}
 			else
 			{
-				int nMin = MIN( symbol1.length(), nMaxSymbolLen );
-				memcpy(sText, symbol1.c_str(), nMin);
+				int nMin = MIN( sSymbol1.length(), nMaxSymbolLen );
+				memcpy(sText, sSymbol1.c_str(), nMin);
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
 			}
 //			DrawRegister( line+iZP, szZP, 2, nTarget16);
@@ -3252,13 +3252,13 @@ static void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 		else        PrintText("h:", rect);
 		rect.left += nameWidth * nFontWidth;
 
-		std::string strValue = StrFormat((g_videoScannerDisplayInfo.isDecimal) ? "%03u" : "%03X", nValue);
+		std::string sValue = StrFormat((g_videoScannerDisplayInfo.isDecimal) ? "%03u" : "%03X", nValue);
 
 		if (!isVisible)
 			DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_INVISIBLE));	// yellow
 		else
 			DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_VISIBLE));		// green
-		PrintText(strValue.c_str(), rect);
+		PrintText(sValue.c_str(), rect);
 		rect.left += (numberWidth+gapWidth) * nFontWidth;
 	}
 }
