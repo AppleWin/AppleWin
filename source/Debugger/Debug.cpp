@@ -751,7 +751,7 @@ Update_t CmdProfile (int nArgs)
 {
 	if (! nArgs)
 	{
-		sprintf( g_aArgs[ 1 ].sArg, "%s", g_aParameters[ PARAM_RESET ].m_sName );
+		strncpy_s( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_RESET ].m_sName, _TRUNCATE );
 		nArgs = 1;
 	}
 
@@ -811,7 +811,7 @@ Update_t CmdProfile (int nArgs)
 					ConsoleBufferPushFormat( " Saved: %s", g_FileNameProfile.c_str() );
 				}
 				else
-					ConsoleBufferPush( TEXT(" ERROR: Couldn't save file. (In use?)" ) );
+					ConsoleBufferPush( " ERROR: Couldn't save file. (In use?)" );
 			}
 		}
 	}
@@ -3454,7 +3454,7 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 	if (bUpdate)
 	{
 		pArg->nValue = nAddress;
-		sprintf( pArg->sArg, "%04X", nAddress );
+		strncpy_s( pArg->sArg, WordToHexStr(nAddress).c_str(), _TRUNCATE );
 	}
 
 	if (pAddress_)
@@ -3871,8 +3871,7 @@ Update_t CmdMemoryLoad (int nArgs)
 		if (g_aArgs[ iArgComma1 ].eToken != TOKEN_COMMA)
 			return Help_Arg_1( CMD_MEMORY_SAVE );
 
-		TCHAR sLoadSaveFilePath[ MAX_PATH ];
-		_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // TODO: g_sDebugDir
+		std::string sLoadSaveFilePath = g_sCurrentDir; // TODO: g_sDebugDir
 
 		WORD nAddressStart;
 		WORD nAddress2   = 0;
@@ -3901,11 +3900,11 @@ Update_t CmdMemoryLoad (int nArgs)
 
 		if (bHaveFileName)
 		{
-			_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
+			g_sMemoryLoadSaveFileName = g_aArgs[ 1 ].sArg;
 		}
-		strcat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
+		sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
 		
-		FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
+		FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 		if (hFile)
 		{
 			int nFileBytes = _GetFileSize( hFile );
@@ -3937,7 +3936,7 @@ Update_t CmdMemoryLoad (int nArgs)
 
 			CmdConfigGetDebugDir( 0 );
 
-			ConsoleBufferPushFormat( "File: %s", g_sMemoryLoadSaveFileName );
+			ConsoleBufferPushFormat( "File: %s", g_sMemoryLoadSaveFileName.c_str() );
 		}
 		
 		delete [] pMemory;
@@ -4029,9 +4028,9 @@ Update_t CmdMemoryLoad (int nArgs)
 	const int              nFileTypes = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
 	const KnownFileType_t *pFileType = NULL;
 
-	char *pFileName = g_aArgs[ 1 ].sArg;
+	const char *pFileName = g_aArgs[ 1 ].sArg;
 	int   nLen = strlen( pFileName );
-	char *pEnd = pFileName + nLen - 1;
+	const char *pEnd = pFileName + nLen - 1;
 	while ( pEnd > pFileName )
 	{
 		if ( *pEnd == '.' )
@@ -4272,11 +4271,11 @@ Update_t CmdMemorySave (int nArgs)
 		{
 			if (! bHaveFileName)
 			{
-				sprintf( g_sMemoryLoadSaveFileName, "%04X.%04X.bin", nAddressStart, nAddressLen ); // nAddressEnd );
+				g_sMemoryLoadSaveFileName = StrFormat( "%04X.%04X.bin", nAddressStart, nAddressLen ); // nAddressEnd );
 			}
 			else
 			{
-				_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
+				g_sMemoryLoadSaveFileName = g_aArgs[ 1 ].sArg;
 			}
 			strcat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
 
@@ -4423,12 +4422,9 @@ Update_t CmdMemorySave (int nArgs)
 		{
 			if (! bHaveFileName)
 			{
-				TCHAR sMemoryLoadSaveFileName[MAX_PATH];
-				if (! bBankSpecified)
-					sprintf( sMemoryLoadSaveFileName, "%04X.%04X.bin", nAddressStart, nAddressLen );
-				else
-					sprintf( sMemoryLoadSaveFileName, "%04X.%04X.bank%02X.bin", nAddressStart, nAddressLen, nBank );
-				g_sMemoryLoadSaveFileName = sMemoryLoadSaveFileName;
+				g_sMemoryLoadSaveFileName = (bBankSpecified)
+					? StrFormat( "%04X.%04X.bank%02X.bin", nAddressStart, nAddressLen, nBank )
+					: StrFormat( "%04X.%04X.bin", nAddressStart, nAddressLen );
 			}
 			else
 			{
@@ -5058,7 +5054,6 @@ Update_t CmdNTSC (int nArgs)
 	bool bColorTV = (GetVideo().GetVideoType() == VT_COLOR_TV);
 
 	uint32_t* pChromaTable = NTSC_VideoGetChromaTable( false, bColorTV );
-	char aStatusText[ CONSOLE_WIDTH*2 ] = "Loaded";
 
 	//uint8_t* pTmp = (uint8_t*) pChromaTable;
 	//*pTmp++ = 0xFF; // b
@@ -5119,10 +5114,12 @@ Update_t CmdNTSC (int nArgs)
 		else
 		if (iParam == PARAM_LOAD)
 		{
+			std::string sStatusText;
+
 			FILE *pFile = fopen( sPaletteFilePath.c_str(), "rb" );
 			if ( pFile )
 			{
-				strcpy( aStatusText, "Loaded" );
+				sStatusText = "Loaded";
 
 				// Get File Size
 				size_t  nFileSize  = _GetFileSize( pFile );
@@ -5138,13 +5135,13 @@ Update_t CmdNTSC (int nArgs)
 
 					if (bmp.nBitsPerPixel != 32)
 					{
-						strcpy( aStatusText, "Bitmap not 32-bit RGBA" );
+						sStatusText = "Bitmap not 32-bit RGBA";
 						goto _error;
 					}
 
 					if (bmp.nOffsetData > nFileSize)
 					{
-						strcpy( aStatusText, "Bad BITMAP: Data > file size !?" );
+						sStatusText = "Bad BITMAP: Data > file size !?";
 						goto _error;
 					}
 
@@ -5154,7 +5151,7 @@ Update_t CmdNTSC (int nArgs)
 					|| ((bmp.nWidthPixels  == 16 ) && (bmp.nHeightPixels == 1))
 					))
 					{
-						strcpy( aStatusText, "Bitmap not 64x256, 64x1, or 16x1" );
+						sStatusText = "Bitmap not 64x256, 64x1, or 16x1";
 						goto _error;
 					}
 
@@ -5177,7 +5174,7 @@ Update_t CmdNTSC (int nArgs)
 				else
 					if ( nFileSize != g_nChromaSize )
 					{
-						sprintf( aStatusText, "Raw size != %d", 64*256*4 );
+						sStatusText = StrFormat( "Raw size != %d", 64 * 256 * 4 );
 						goto _error;
 					}
 
@@ -5222,11 +5219,11 @@ _error:
 			}
 			else
 			{
-				strcpy( aStatusText, "File: " );
-				ConsoleBufferPush( TEXT( "Error couldn't open file for reading." ) );
+				sStatusText = "File: ";
+				ConsoleBufferPush( "Error couldn't open file for reading." );
 			}
 
-			ConsoleFilename::update( aStatusText );
+			ConsoleFilename::update( sStatusText.c_str() );
 		}
 		else
 			return HelpLastCommand();
@@ -8669,7 +8666,7 @@ void DebugInitialize ()
 	{
 		doneAutoRun = true;
 		std::string pathname = g_sProgramDir + "DebuggerAutoRun.txt";
-		strcpy_s(g_aArgs[1].sArg, MAX_ARG_LEN, pathname.c_str());
+		strncpy_s(g_aArgs[1].sArg, MAX_ARG_LEN, pathname.c_str(), _TRUNCATE);
 		CmdOutputRun(1);
 	}
 
