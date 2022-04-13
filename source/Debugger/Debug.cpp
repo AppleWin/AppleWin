@@ -786,7 +786,6 @@ Update_t CmdProfile (int nArgs)
 			// Dump to console
 			if (iParam == PARAM_LIST)
 			{
-
 				char *pText;
 				char  sText[ CONSOLE_WIDTH ];
 
@@ -1698,8 +1697,8 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 {
 	static const char sFlags[] = "-*";
 
-	std::string strAddressBuf;
-	std::string const& symbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, strAddressBuf);
+	std::string sAddressBuf;
+	std::string const& sSymbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, sAddressBuf);
 
 	char cBPM = aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_READ_ONLY ? 'R'
 				: aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_WRITE_ONLY ? 'W'
@@ -1711,7 +1710,7 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 		sFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
 		aBreakWatchZero[ iBWZ ].nAddress,
 		cBPM,
-		symbol.c_str()
+		sSymbol.c_str()
 	);
 }
 
@@ -2257,8 +2256,8 @@ void _CmdColorGet( const int iScheme, const int iColor )
 	}
 	else
 	{
-		std::string strText = StrFormat( "Color: %d\nOut of range!", iColor );
-		GetFrame().FrameMessageBox(strText.c_str(), "ERROR", MB_OK);
+		std::string sText = StrFormat( "Color: %d\nOut of range!", iColor );
+		GetFrame().FrameMessageBox(sText.c_str(), "ERROR", MB_OK);
 	}
 }
 
@@ -5061,11 +5060,11 @@ Update_t CmdNTSC (int nArgs)
 	uint32_t* pChromaTable = NTSC_VideoGetChromaTable( false, bColorTV );
 	char aStatusText[ CONSOLE_WIDTH*2 ] = "Loaded";
 
-//uint8_t* pTmp = (uint8_t*) pChromaTable; 
-//*pTmp++  = 0xFF; // b
-//*pTmp++ = 0x00; // g
-//*pTmp++ = 0x00; // r
-//*pTmp++ = 0xFF; // a
+	//uint8_t* pTmp = (uint8_t*) pChromaTable;
+	//*pTmp++ = 0xFF; // b
+	//*pTmp++ = 0x00; // g
+	//*pTmp++ = 0x00; // r
+	//*pTmp++ = 0xFF; // a
 
 	if (nFound)
 	{
@@ -5130,46 +5129,47 @@ Update_t CmdNTSC (int nArgs)
 				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
 				bool     bSwizzle  = true;
 
-				WinBmpHeader4_t bmp, *pBmp = &bmp;
+				WinBmpHeader4_t bmp = { 0 };
+
 				if ( iFileType == TYPE_BMP )
 				{
-					fread( pBmp, sizeof( WinBmpHeader4_t ), 1, pFile );
-					fseek( pFile, pBmp->nOffsetData, SEEK_SET );
+					fread( &bmp, sizeof( WinBmpHeader4_t ), 1, pFile );
+					fseek( pFile, bmp.nOffsetData, SEEK_SET );
 
-					if (pBmp->nBitsPerPixel != 32)
+					if (bmp.nBitsPerPixel != 32)
 					{
 						strcpy( aStatusText, "Bitmap not 32-bit RGBA" );
 						goto _error;
 					}
 
-					if (pBmp->nOffsetData > nFileSize)
+					if (bmp.nOffsetData > nFileSize)
 					{
 						strcpy( aStatusText, "Bad BITMAP: Data > file size !?" );
 						goto _error;
 					}
 
 					if ( !
-					(  ((pBmp->nWidthPixels  == 64 ) && (pBmp->nHeightPixels == 256))
-					|| ((pBmp->nWidthPixels  == 64 ) && (pBmp->nHeightPixels == 1))
-					|| ((pBmp->nWidthPixels  == 16 ) && (pBmp->nHeightPixels == 1))
+					(  ((bmp.nWidthPixels  == 64 ) && (bmp.nHeightPixels == 256))
+					|| ((bmp.nWidthPixels  == 64 ) && (bmp.nHeightPixels == 1))
+					|| ((bmp.nWidthPixels  == 16 ) && (bmp.nHeightPixels == 1))
 					))
 					{
 						strcpy( aStatusText, "Bitmap not 64x256, 64x1, or 16x1" );
 						goto _error;
 					}
 
-					if (pBmp->nStructSize == 0x28)
+					if (bmp.nStructSize == 0x28)
 					{
-						if ( pBmp->nCompression == 0) // BI_RGB mode
+						if ( bmp.nCompression == 0) // BI_RGB mode
 							bSwizzle = false;
 					}
 					else // 0x7C version4 bitmap
 					{
-						if ( pBmp->nCompression == 3 ) // BI_BITFIELDS
+						if ( bmp.nCompression == 3 ) // BI_BITFIELDS
 						{
-							if ((pBmp->nRedMask   == 0xFF000000 ) // Gimp writes in ABGR order
-							&& (pBmp->nGreenMask == 0x00FF0000 )
-							&& (pBmp->nBlueMask  == 0x0000FF00 ))
+							if ((bmp.nRedMask   == 0xFF000000 ) // Gimp writes in ABGR order
+							&&  (bmp.nGreenMask == 0x00FF0000 )
+							&&  (bmp.nBlueMask  == 0x0000FF00 ))
 								bSwizzle = true;
 						}
 					}
@@ -5187,20 +5187,20 @@ Update_t CmdNTSC (int nArgs)
 				if ( iFileType == TYPE_BMP )
 				{
 
-					if (pBmp->nHeightPixels == 1)
+					if (bmp.nHeightPixels == 1)
 					{
 						uint8_t *pTemp64x256 = new uint8_t[ 64 * 256 * 4 ];
 						memset( pTemp64x256, 0, g_nChromaSize );
 
-//Transpose16x1::transposeFrom16x1( pSwizzled, (uint8_t*) pChromaTable );
+						//Transpose16x1::transposeFrom16x1( pSwizzled, (uint8_t*) pChromaTable );
 
-						if (pBmp->nWidthPixels == 16)
+						if (bmp.nWidthPixels == 16)
 						{
 							Transpose16x1::transposeTo64x1( pSwizzled, pTemp64x256 );
 							Transpose64x1::transposeTo64x256( pTemp64x256, pTemp64x256 );
 						}
 						else
-						if (pBmp->nWidthPixels == 64)
+						if (bmp.nWidthPixels == 64)
 							Transpose64x1::transposeTo64x256( pSwizzled, pTemp64x256 );
 
 						Transpose4096x4::transposeFrom64x256( pTemp64x256, (uint8_t*) pChromaTable );
@@ -5317,7 +5317,7 @@ int _SearchMemoryFind(
 		WORD nAddress2 = nAddress;
 
 		int nMemBlocks = vMemorySearchValues.size();
-		for (int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
+		for ( int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
 		{
 			MemorySearch_t ms = vMemorySearchValues.at( iBlock );
 			ms.m_bFound = false;
@@ -5777,27 +5777,27 @@ Update_t CmdOutputCalc (int nArgs)
 	//    CHC_NUM_DEC
 	//    CHC_ARG_
 	//    CHC_STRING
-	std::string strText = StrFormat( "$%04X  0z%08X  %5d  '%c' ", nAddress, nBit, nAddress, c );
+	std::string sText = StrFormat( "$%04X  0z%08X  %5d  '%c' ", nAddress, nBit, nAddress, c );
 
 	if (bParen)
-		strText += '(';
+		sText += '(';
 
 	if (bHi && bLo)
-		strText += "High Ctrl";
+		sText += "High Ctrl";
 	else
 	if (bHi)
-		strText += "High";
+		sText += "High";
 	else
 	if (bLo)
-		strText += "Ctrl";
+		sText += "Ctrl";
 
 	if (bParen)
-		strText += ')';
+		sText += ')';
 
-	ConsoleBufferPush( strText.c_str() );
+	ConsoleBufferPush( sText.c_str() );
 
 // If we colorize then w must also guard against character ouput $60
-//	ConsolePrint( strText.c_str() );
+//	ConsolePrint( sText.c_str() );
 
 	return ConsoleUpdate();
 }
@@ -7940,9 +7940,9 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		pColorMnemonic = CHC_COMMAND; // green
 		pColorOpmode   = CHC_USAGE  ; // yellow
 		pColorTotal    = CHC_DEFAULT; // white
-	}	
+	}
 	
-// Opcode
+	// Opcode
 	if (bExport) // Export = SeperateColumns
 		sprintf( pText
 			, "\"Percent\"" DELIM "\"Count\"" DELIM "\"Opcode\"" DELIM "\"Mnemonic\"" DELIM "\"Addressing Mode\"\n"
@@ -8659,7 +8659,7 @@ void DebugInitialize ()
 	}
 	
 #if _DEBUG
-//g_bConsoleBufferPaused = true;
+	//g_bConsoleBufferPaused = true;
 #endif
 
 	_Bookmark_Reset();

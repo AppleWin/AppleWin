@@ -162,23 +162,23 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 	// Old name: auto define D_# DB $XX
 	// Example 'DB' or 'DW' with 1 arg
 	//   DB 801
-		Nopcode_e nopcode = NOP_BYTE_1;
+	Nopcode_e nopcode = NOP_BYTE_1;
 
-		bool isFloat = (g_iCommand == CMD_DEFINE_DATA_FLOAT);
-		if ( isFloat )
-			nopcode = NOP_FAC;
+	bool isFloat = (g_iCommand == CMD_DEFINE_DATA_FLOAT);
+	if ( isFloat )
+		nopcode = NOP_FAC;
 
-		bool isString = (g_iCommand == CMD_DEFINE_DATA_STR);
-		if ( isString )
-			nopcode = NOP_STRING_ASCII;
+	bool isString = (g_iCommand == CMD_DEFINE_DATA_STR);
+	if ( isString )
+		nopcode = NOP_STRING_ASCII;
 
-		bool isWord1 = (g_iCommand == CMD_DEFINE_DATA_WORD1);
-		if ( isWord1 )
-			nopcode = NOP_WORD_1;
+	bool isWord1 = (g_iCommand == CMD_DEFINE_DATA_WORD1);
+	if ( isWord1 )
+		nopcode = NOP_WORD_1;
 
-		bool isAddr = (g_iCommand == CMD_DEFINE_ADDR_WORD);
-		if ( isAddr )
-			nopcode = NOP_ADDRESS;
+	bool isAddr = (g_iCommand == CMD_DEFINE_ADDR_WORD);
+	if ( isAddr )
+		nopcode = NOP_ADDRESS;
 
 	if ( bAutoDefineName )
 	{

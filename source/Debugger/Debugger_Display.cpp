@@ -2523,125 +2523,125 @@ void DrawSoftSwitches( int iSoftSwitch )
 	RECT temp;
 	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 
-		rect.left   = DISPLAY_SOFTSWITCH_COLUMN;
-		rect.top    = iSoftSwitch * g_nFontHeight;
-		rect.right = rect.left + (10 * nFontWidth) + 1;
-		rect.bottom = rect.top + g_nFontHeight;
-		temp = rect;
+	rect.left   = DISPLAY_SOFTSWITCH_COLUMN;
+	rect.top    = iSoftSwitch * g_nFontHeight;
+	rect.right = rect.left + (10 * nFontWidth) + 1;
+	rect.bottom = rect.top + g_nFontHeight;
+	temp = rect;
 
-		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
-		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
-		
+	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
+	
 #if SOFTSWITCH_OLD
-		char sText[16] = "";
-		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
-		// GR  / TEXT
-		// GRAPH/TEXT
-		// TEXT ON/OFF
-		sprintf( sText, !VideoGetSWTEXT() ? "GR  / ----" : "--  / TEXT" );
-		PrintTextCursorY( sText, rect );
+	char sText[16] = "";
+	// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
+	// GR  / TEXT
+	// GRAPH/TEXT
+	// TEXT ON/OFF
+	sprintf( sText, !VideoGetSWTEXT() ? "GR  / ----" : "--  / TEXT" );
+	PrintTextCursorY( sText, rect );
 
-		// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
-		// FULL/MIXED
-		// MIX OFF/ON
-		sprintf( sText, !VideoGetSWMIXED() ? "FULL/-----" : "----/MIXED" );
-		PrintTextCursorY( sText, rect );
+	// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
+	// FULL/MIXED
+	// MIX OFF/ON
+	sprintf( sText, !VideoGetSWMIXED() ? "FULL/-----" : "----/MIXED" );
+	PrintTextCursorY( sText, rect );
 
-		// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
-		// PAGE 1 / 2
-		sprintf( sText, !VideoGetSWPAGE2() ? "PAGE 1 / -" : "PAGE - / 2" );
-		PrintTextCursorY( sText, rect );
-		
-		// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
-		// LO / HIRES
-		// LO / -----
-		// -- / HIRES
-		sprintf( sText, !VideoGetSWHIRES() ? "LO /-- RES" : "---/HI RES" );
-		PrintTextCursorY( sText, rect );
+	// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
+	// PAGE 1 / 2
+	sprintf( sText, !VideoGetSWPAGE2() ? "PAGE 1 / -" : "PAGE - / 2" );
+	PrintTextCursorY( sText, rect );
+	
+	// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
+	// LO / HIRES
+	// LO / -----
+	// -- / HIRES
+	sprintf( sText, !VideoGetSWHIRES() ? "LO /-- RES" : "---/HI RES" );
+	PrintTextCursorY( sText, rect );
 
-		PrintTextCursorY( "", rect );
+	PrintTextCursorY( "", rect );
 
-		// Extended soft switches
-		sprintf( sText, !VideoGetSW80COL() ? "40 / -- COL" : "-- / 80 COL" );
-		PrintTextCursorY( sText, rect );
+	// Extended soft switches
+	sprintf( sText, !VideoGetSW80COL() ? "40 / -- COL" : "-- / 80 COL" );
+	PrintTextCursorY( sText, rect );
 
-		sprintf(sText, VideoGetSWAltCharSet() ? "ASCII/-----" : "-----/MOUSE" );
-		PrintTextCursorY( sText, rect );
+	sprintf(sText, VideoGetSWAltCharSet() ? "ASCII/-----" : "-----/MOUSE" );
+	PrintTextCursorY( sText, rect );
 
-		// 280/560 HGR
-		sprintf(sText, !VideoGetSWDHIRES() ? "HGR / ----" : "--- / DHGR" );
-		PrintTextCursorY( sText, rect );
+	// 280/560 HGR
+	sprintf(sText, !VideoGetSWDHIRES() ? "HGR / ----" : "--- / DHGR" );
+	PrintTextCursorY( sText, rect );
 #else //SOFTSWITCH_OLD
-		// See: VideoSetMode()
+	// See: VideoSetMode()
 
-		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
-		// GR  / TEXT
-		// GRAPH/TEXT
-		// TEXT ON/OFF
-		bool bSet;
+	// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
+	// GR  / TEXT
+	// GRAPH/TEXT
+	// TEXT ON/OFF
+	bool bSet;
 
-		// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
-		bSet = !GetVideo().VideoGetSWTEXT();
-		_DrawSoftSwitch( rect, 0xC050, bSet, NULL, "GR.", "TEXT" );
+	// $C050 / $C051 = TEXTOFF/TEXTON = SW.TXTCLR/SW.TXTSET
+	bSet = !GetVideo().VideoGetSWTEXT();
+	_DrawSoftSwitch( rect, 0xC050, bSet, NULL, "GR.", "TEXT" );
 
-		// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
-		// FULL/MIXED
-		// MIX OFF/ON
-		bSet = !GetVideo().VideoGetSWMIXED();
-		_DrawSoftSwitch( rect, 0xC052, bSet, NULL, "FULL", "MIX" );
+	// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
+	// FULL/MIXED
+	// MIX OFF/ON
+	bSet = !GetVideo().VideoGetSWMIXED();
+	_DrawSoftSwitch( rect, 0xC052, bSet, NULL, "FULL", "MIX" );
 
-		// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
-		// PAGE 1 / 2
-		bSet = !GetVideo().VideoGetSWPAGE2();
-		_DrawSoftSwitch( rect, 0xC054, bSet, "PAGE ", "1", "2" );
-		
-		// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
-		// LO / HIRES
-		// LO / -----
-		// -- / HIRES
-		bSet = !GetVideo().VideoGetSWHIRES();
-		_DrawSoftSwitch( rect, 0xC056, bSet, NULL, "LO", "HI", "RES" );
+	// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
+	// PAGE 1 / 2
+	bSet = !GetVideo().VideoGetSWPAGE2();
+	_DrawSoftSwitch( rect, 0xC054, bSet, "PAGE ", "1", "2" );
+	
+	// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
+	// LO / HIRES
+	// LO / -----
+	// -- / HIRES
+	bSet = !GetVideo().VideoGetSWHIRES();
+	_DrawSoftSwitch( rect, 0xC056, bSet, NULL, "LO", "HI", "RES" );
 
-		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
-		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
+	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 
-		// 280/560 HGR
-		// C05E = ON, C05F = OFF
-		bSet = GetVideo().VideoGetSWDHIRES();
-		_DrawSoftSwitch( rect, 0xC05E, bSet, NULL, "DHGR", "HGR" );
+	// 280/560 HGR
+	// C05E = ON, C05F = OFF
+	bSet = GetVideo().VideoGetSWDHIRES();
+	_DrawSoftSwitch( rect, 0xC05E, bSet, NULL, "DHGR", "HGR" );
 
 
-		// Extended soft switches
-		int bgMemory = BG_DATA_2;
+	// Extended soft switches
+	int bgMemory = BG_DATA_2;
 
-		// C000 = 80STOREOFF, C001 = 80STOREON
-		bSet = !GetVideo().VideoGetSW80STORE();
-		_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1", NULL, bgMemory );
+	// C000 = 80STOREOFF, C001 = 80STOREON
+	bSet = !GetVideo().VideoGetSW80STORE();
+	_DrawSoftSwitch( rect, 0xC000, bSet, "80Sto", "0", "1", NULL, bgMemory );
 
-		// C002 .. C005
-		_DrawSoftSwitchMainAuxBanks( rect, bgMemory );
+	// C002 .. C005
+	_DrawSoftSwitchMainAuxBanks( rect, bgMemory );
 
-		// C00C = off, C00D = on
-		bSet = !GetVideo().VideoGetSW80COL();
-		_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80", NULL, bgMemory );
+	// C00C = off, C00D = on
+	bSet = !GetVideo().VideoGetSW80COL();
+	_DrawSoftSwitch( rect, 0xC00C, bSet, "Col", "40", "80", NULL, bgMemory );
 
-		// C00E = off, C00F = on
-		bSet = !GetVideo().VideoGetSWAltCharSet();
-		_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS", NULL, bgMemory ); // ASCII/MouseText
+	// C00E = off, C00F = on
+	bSet = !GetVideo().VideoGetSWAltCharSet();
+	_DrawSoftSwitch( rect, 0xC00E, bSet, NULL, "ASC", "MOUS", NULL, bgMemory ); // ASCII/MouseText
 
 #if SOFTSWITCH_LANGCARD
-		// GH#406 https://github.com/AppleWin/AppleWin/issues/406
-		// 2.9.0.4
-		// Language Card Bank 1/2
-		// See: MemSetPaging()
+	// GH#406 https://github.com/AppleWin/AppleWin/issues/406
+	// 2.9.0.4
+	// Language Card Bank 1/2
+	// See: MemSetPaging()
 
 // LC2 & C008/C009 (ALTZP & ALT-LC)
-		DebuggerSetColorBG( DebuggerGetColor( bgMemory )); // BG_INFO_2 -> BG_DATA_2
-		_DrawSoftSwitchLanguageCardBank( rect, 2, bgMemory );
+	DebuggerSetColorBG( DebuggerGetColor( bgMemory )); // BG_INFO_2 -> BG_DATA_2
+	_DrawSoftSwitchLanguageCardBank( rect, 2, bgMemory );
 
 // LC1
-		rect.left = DISPLAY_SOFTSWITCH_COLUMN; // INFO_COL_2;
-		_DrawSoftSwitchLanguageCardBank( rect, 1, bgMemory );
+	rect.left = DISPLAY_SOFTSWITCH_COLUMN; // INFO_COL_2;
+	_DrawSoftSwitchLanguageCardBank( rect, 1, bgMemory );
 #endif
 
 #endif // SOFTSWITCH_OLD
@@ -2941,13 +2941,13 @@ void DrawZeroPagePointers ( int line )
 			BYTE nZPAddr1 = (g_aZeroPagePointers[iZP].nAddress  ) & 0xFF; // +MJP missig: "& 0xFF", or "(BYTE) ..."
 			BYTE nZPAddr2 = (g_aZeroPagePointers[iZP].nAddress+1) & 0xFF;
 
-			std::string strAddressBuf1;
-			std::string strAddressBuf2;
-			std::string const& symbol1 = GetSymbol(nZPAddr1, 2, strAddressBuf1);	// 2:8-bit value (if symbol not found)
-			std::string const& symbol2 = GetSymbol(nZPAddr2, 2, strAddressBuf2);	// 2:8-bit value (if symbol not found)
+			std::string sAddressBuf1;
+			std::string sAddressBuf2;
+			std::string const& sSymbol1 = GetSymbol(nZPAddr1, 2, sAddressBuf1);	// 2:8-bit value (if symbol not found)
+			std::string const& sSymbol2 = GetSymbol(nZPAddr2, 2, sAddressBuf2);	// 2:8-bit value (if symbol not found)
 
-//			if ((symbol1.length() == 1) && (symbol2.length() == 1))
-//				sprintf( sText, "%s%s", symbol1.c_str(), symbol2.c_str());
+//			if ((sSymbol1.length() == 1) && (sSymbol2.length() == 1))
+//				sprintf( sText, "%s%s", sSymbol1.c_str(), sSymbol2.c_str());
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 
@@ -2958,22 +2958,22 @@ void DrawZeroPagePointers ( int line )
 
 			sText[nMaxSymbolLen] = 0;
 			
-			if (!symbol1.empty() && symbol1[0] == '$')
+			if (!sSymbol1.empty() && sSymbol1[0] == '$')
 			{
-//				sprintf( sText, "%s%s", pSymbol1 );
+//				sprintf( sText, "%s%s", sSymbol1 );
 //				sprintf( sText, "%04X", nZPAddr1 );
 			}
 			else
-			if (!symbol2.empty() && symbol2[0] == '$')
+			if (!sSymbol2.empty() && sSymbol2[0] == '$')
 			{
-//				sprintf( sText, "%s%s", pSymbol2 );
+//				sprintf( sText, "%s%s", sSymbol2 );
 //				sprintf( sText, "%04X", nZPAddr2 );
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 			}
 			else
 			{
-				int nMin = MIN( symbol1.length(), nMaxSymbolLen );
-				memcpy(sText, symbol1.c_str(), nMin);
+				int nMin = MIN( sSymbol1.length(), nMaxSymbolLen );
+				memcpy(sText, sSymbol1.c_str(), nMin);
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
 			}
 //			DrawRegister( line+iZP, szZP, 2, nTarget16);
@@ -3192,7 +3192,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 
 		nAddress += nMaxOpcodes;
 
-		rect.top    += nFontHeight;
+		rect.top += nFontHeight;
 	}
 }
 
@@ -3252,13 +3252,13 @@ static void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 		else        PrintText("h:", rect);
 		rect.left += nameWidth * nFontWidth;
 
-		std::string strValue = StrFormat((g_videoScannerDisplayInfo.isDecimal) ? "%03u" : "%03X", nValue);
+		std::string sValue = StrFormat((g_videoScannerDisplayInfo.isDecimal) ? "%03u" : "%03X", nValue);
 
 		if (!isVisible)
 			DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_INVISIBLE));	// yellow
 		else
 			DebuggerSetColorFG(DebuggerGetColor(FG_VIDEOSCANNER_VISIBLE));		// green
-		PrintText(strValue.c_str(), rect);
+		PrintText(sValue.c_str(), rect);
 		rect.left += (numberWidth+gapWidth) * nFontWidth;
 	}
 }

@@ -273,7 +273,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 
 			std::string const* pTarget = NULL;
 			std::string const* pSymbol = FindSymbolFromAddress(nTarget, &line_.iTargetTable);
-			std::string strAddressBuf;
+			std::string sAddressBuf;
 
 			// Data Assembler
 			if (pData && (!pData->bSymbolLookup))
@@ -322,11 +322,11 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 
 			if (!(bDisasmFormatFlags & DISASM_FORMAT_SYMBOL))
 			{
-				strAddressBuf = FormatAddress(nTarget, (iOpmode != AM_R) ? nOpbyte : 3);	// GH#587: For Bcc opcodes, pretend it's a 3-byte opcode to print a 16-bit target addr
-				pTarget = &strAddressBuf;
+				sAddressBuf = FormatAddress(nTarget, (iOpmode != AM_R) ? nOpbyte : 3);	// GH#587: For Bcc opcodes, pretend it's a 3-byte opcode to print a 16-bit target addr
+				pTarget = &sAddressBuf;
 			}
 
-			//			sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, pTarget );
+			//sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, pTarget );
 			if (bDisasmFormatFlags & DISASM_FORMAT_OFFSET)
 			{
 				int nAbsTargetOffset = (line_.nTargetOffset > 0) ? line_.nTargetOffset : -line_.nTargetOffset;
@@ -348,8 +348,8 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 
 				nTargetValue = *(mem + nTargetPointer) | (*(mem + ((nTargetPointer + 1) & 0xffff)) << 8);
 
-				//				if (((iOpmode >= AM_A) && (iOpmode <= AM_NZ)) && (iOpmode != AM_R))
-				//					sprintf( sTargetValue_, "%04X", nTargetValue ); // & 0xFFFF
+				//if (((iOpmode >= AM_A) && (iOpmode <= AM_NZ)) && (iOpmode != AM_R))
+				//	sprintf( sTargetValue_, "%04X", nTargetValue ); // & 0xFFFF
 
 				if (g_iConfigDisasmTargets & DISASM_TARGET_ADDR)
 					sprintf(line_.sTargetPointer, "%04X", nTargetPointer & 0xFFFF);
@@ -366,7 +366,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 					unsigned _char = FormatCharTxtCtrl(FormatCharTxtHigh(line_.nImmediate, NULL), NULL);
 					sprintf(line_.sImmediate, "%c", _char);
 
-					//					if (ConsoleColorIsEscapeMeta( nImmediate_ ))
+					//if (ConsoleColorIsEscapeMeta( nImmediate_ ))
 #if OLD_CONSOLE_COLOR
 					if (ConsoleColorIsEscapeMeta(_char))
 						sprintf(line_.sImmediate, "%c%c", _char, _char);
@@ -375,17 +375,18 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 #endif
 				}
 
-				//				if (iOpmode == AM_NA ) // Indirect Absolute
-				//					sprintf( sTargetValue_, "%04X", nTargetPointer & 0xFFFF );
-				//				else
-				// //					sprintf( sTargetValue_, "%02X", nTargetValue & 0xFF );
-				//					sprintf( sTargetValue_, "%04X:%02X", nTargetPointer & 0xFFFF, nTargetValue & 0xFF );
+				//if (iOpmode == AM_NA ) // Indirect Absolute
+				//	sprintf( sTargetValue_, "%04X", nTargetPointer & 0xFFFF );
+				//else
+				//	//sprintf( sTargetValue_, "%02X", nTargetValue & 0xFF );
+				//	sprintf( sTargetValue_, "%04X:%02X", nTargetPointer & 0xFFFF, nTargetValue & 0xFF );
 			}
 		}
 		else
+		{
 			if (iOpmode == AM_M)
 			{
-				//			sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, (unsigned)nTarget );
+				//sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, (unsigned)nTarget );
 				sprintf(line_.sTarget      , "%02X", (unsigned)nTarget);
 
 				if (nTarget == 0)
@@ -399,8 +400,8 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 
 				bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
 				line_.nImmediate = (BYTE)nTarget;
-				unsigned _char = FormatCharTxtCtrl(FormatCharTxtHigh(line_.nImmediate, NULL), NULL);
 
+				unsigned _char = FormatCharTxtCtrl(FormatCharTxtHigh(line_.nImmediate, NULL), NULL);
 				sprintf(line_.sImmediate, "%c", _char);
 #if OLD_CONSOLE_COLOR
 				if (ConsoleColorIsEscapeMeta(_char))
@@ -409,6 +410,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 					sprintf(line_.sImmediate, "%c", _char);
 #endif
 			}
+		}
 	}
 
 	sprintf(line_.sAddress, "%04X", nBaseAddress);
@@ -466,8 +468,8 @@ void FormatOpcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 
 struct FAC_t
 {
-	uint8_t negative;
-	 int8_t exponent;
+	uint8_t  negative;
+	 int8_t  exponent;
 	uint32_t mantissa;
 
 	bool     isZero;
@@ -575,6 +577,8 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 				strncpy(pDst, (const char*)(mem + nBaseAddress), iByte);
 				pDst += iByte;
 				*pDst = 0;
+				break;
+
 			case NOP_STRING_APPLE:
 				iByte = line_.nOpbyte; // handle all bytes of text
 				pSrc = (const char*)mem + nStartAddress;
@@ -604,10 +608,10 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 				break;
 
 			default:
-	#if _DEBUG // Unhandled data disassembly!
+#if _DEBUG // Unhandled data disassembly!
 				int* FATAL = 0;
 				*FATAL = 0xDEADC0DE;
-	#endif
+#endif
 				iByte++;
 				break;
 		}
@@ -630,43 +634,47 @@ void FormatDisassemblyLine(const DisasmLine_t& line, char* sDisassembly, const i
 	);
 
 	/*
-		if (line.bTargetIndexed || line.bTargetIndirect)
-		{
-			strcat( sDisassembly, "(" );
-		}
+	if (line.bTargetIndexed || line.bTargetIndirect)
+	{
+		strcat( sDisassembly, "(" );
+	}
 
-		if (line.bTargetImmediate)
-			strcat( sDisassembly, "#$" );
+	if (line.bTargetImmediate)
+		strcat( sDisassembly, "#$" );
 
-		if (line.bTargetValue)
-			strcat( sDisassembly, line.sTarget );
+	if (line.bTargetValue)
+		strcat( sDisassembly, line.sTarget );
 
-		if (line.bTargetIndirect)
-		{
-			if (line.bTargetX)
-				strcat( sDisassembly, ", X" );
-			if (line.bTargetY)
-				strcat( sDisassembly, ", Y" );
-		}
+	if (line.bTargetIndirect)
+	{
+		if (line.bTargetX)
+			strcat( sDisassembly, ", X" );
+		if (line.bTargetY)
+			strcat( sDisassembly, ", Y" );
+	}
 
-		if (line.bTargetIndexed || line.bTargetIndirect)
-		{
-			strcat( sDisassembly, ")" );
-		}
+	if (line.bTargetIndexed || line.bTargetIndirect)
+	{
+		strcat( sDisassembly, ")" );
+	}
 
-		if (line.bTargetIndirect)
-		{
-			if (line.bTargetY)
-				strcat( sDisassembly, ", Y" );
-		}
+	if (line.bTargetIndirect)
+	{
+		if (line.bTargetY)
+			strcat( sDisassembly, ", Y" );
+	}
 	*/
+
 	char sTarget[32];
 
 	if (line.bTargetValue || line.bTargetRelative || line.bTargetImmediate)
 	{
 		if (line.bTargetRelative)
+		{
 			strcpy(sTarget, line.sTargetValue);
+		}
 		else
+		{
 			if (line.bTargetImmediate)
 			{
 				strcat(sDisassembly, "#");
@@ -675,6 +683,7 @@ void FormatDisassemblyLine(const DisasmLine_t& line, char* sDisassembly, const i
 			}
 			else
 				sprintf(sTarget, g_aOpmodes[line.iOpmode].m_sFormat, line.nTarget);
+		}
 
 		strcat(sDisassembly, "$");
 		strcat(sDisassembly, sTarget);

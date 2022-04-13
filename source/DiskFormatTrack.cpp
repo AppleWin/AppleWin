@@ -273,7 +273,7 @@ void FormatTrack::DecodeLatchNibble(BYTE floppylatch, bool bIsWrite, bool bIsSyn
 					addrPrologue, m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3], chk?"":"(bad)");
 				if (!m_bSuppressReadD5AAxxDetected)
 				{
-					LOG_DISK("%s\r\n", str);
+					LOG_DISK("%s\r\n", m_strReadD5AAxxDetected.c_str());
 				}
 			}
 #endif

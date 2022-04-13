@@ -292,7 +292,8 @@ void ConsoleBufferPush ( const char * pText )
 			{
 				g_nConsoleBuffer++;
 			}
-			pSrc++;
+			if (c == '\n')
+				pSrc++;
 			pDst = & g_aConsoleBuffer[ g_nConsoleBuffer ][ 0 ];
 		}
 		else
