@@ -262,6 +262,9 @@
     <ClCompile Include="source\Tfe\IPRaw.cpp">
       <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
+    <ClCompile Include="source\Tfe\DNS.cpp">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\CommonVICE\6510core.h">
@@ -598,6 +601,9 @@
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
     <ClInclude Include="source\Tfe\IPRaw.h">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Tfe\DNS.h">
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
   </ItemGroup>

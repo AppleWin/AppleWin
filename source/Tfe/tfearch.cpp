@@ -28,6 +28,11 @@
 /* #define WPCAP */
 
 #ifdef _MSC_VER
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include "pcap.h"
 #else
 // on Linux and Mac OS X, we use system's pcap.h, which needs to be included as <>

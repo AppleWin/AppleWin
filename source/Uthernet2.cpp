@@ -25,7 +25,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tfe/NetworkBackend.h"
 #include "Tfe/PCapBackend.h"
 #include "Tfe/IPRaw.h"
+#include "Tfe/DNS.h"
 #include "W5100.h"
+
+#define U2_AUTO_DNS
+// U2_AUTO_DNS is an extension to the W5100
+// it enables DNS resulution by setting P3 = 1 for IP / TCP and UDP
+// the length - prefixed hostname is in 0x2A-0xFF is each socket memory
+// it can be identified with PTIMER = 0.
+// this means, one can use TCP & UDP without a NetworkBackend.
 
 // Linux uses EINPROGRESS while Windows returns WSAEWOULDBLOCK
 // when the connect() calls is ongoing
@@ -184,6 +192,7 @@ Socket::Socket()
     , sn_rx_wr(0)
     , sn_rx_rsr(0)
     , sn_sr(W5100_SN_SR_CLOSED)
+    , auto_dns(false)
     , myFD(INVALID_SOCKET)
     , myErrno(0)
 {
@@ -201,6 +210,7 @@ void Socket::clearFD()
     }
     myFD = INVALID_SOCKET;
     sn_sr = W5100_SN_SR_CLOSED;
+    auto_dns = false;
 }
 
 void Socket::setFD(const socket_t fd, const int status)
@@ -282,12 +292,14 @@ uint16_t Socket::getFreeRoom() const
 #define SS_YAML_KEY_SOCKET_RX_SIZE_REGISTER "RX Size Register"
 
 #define SS_YAML_KEY_SOCKET_REGISTER "Socket Register"
+#define SS_YAML_KEY_SOCKET_AUTO_DNS "Socket Auto DNS"
 
 void Socket::SaveSnapshot(YamlSaveHelper &yamlSaveHelper)
 {
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SOCKET_RX_WRITE_REGISTER, sn_rx_wr);
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SOCKET_RX_SIZE_REGISTER, sn_rx_rsr);
     yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SOCKET_REGISTER, sn_sr);
+    yamlSaveHelper.SaveBool(SS_YAML_KEY_SOCKET_AUTO_DNS, auto_dns);
 }
 
 bool Socket::LoadSnapshot(YamlLoadHelper &yamlLoadHelper)
@@ -295,9 +307,9 @@ bool Socket::LoadSnapshot(YamlLoadHelper &yamlLoadHelper)
     sn_rx_wr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_RX_WRITE_REGISTER);
     sn_rx_rsr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_RX_SIZE_REGISTER);
     sn_sr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_REGISTER);
+    auto_dns = yamlLoadHelper.LoadBool(SS_YAML_KEY_SOCKET_AUTO_DNS);
 
     // transmit and receive sizes are restored from the card common registers
-
     switch (sn_sr)
     {
     case W5100_SN_SR_SOCK_MACRAW:
@@ -338,16 +350,19 @@ void Uthernet2::setSocketModeRegister(const size_t i, const uint16_t address, co
 #endif
         break;
     case W5100_SN_MR_TCP:
+    case W5100_SN_MR_TCP_DNS:
 #ifdef U2_LOG_STATE
         LogFileOutput("U2: Mode[%" SIZE_T_FMT "]: TCP\n", i);
 #endif
         break;
     case W5100_SN_MR_UDP:
+    case W5100_SN_MR_UDP_DNS:
 #ifdef U2_LOG_STATE
         LogFileOutput("U2: Mode[%" SIZE_T_FMT "]: UDP\n", i);
 #endif
         break;
     case W5100_SN_MR_IPRAW:
+    case W5100_SN_MR_IPRAW_DNS:
 #ifdef U2_LOG_STATE
         LogFileOutput("U2: Mode[%" SIZE_T_FMT "]: IPRAW\n", i);
 #endif
@@ -698,13 +713,14 @@ void Uthernet2::sendDataIPRaw(const size_t i, std::vector<uint8_t> &payload)
     const uint8_t tos = myMemory[socket.registerAddress + W5100_SN_TOS];
     const uint8_t protocol = myMemory[socket.registerAddress + W5100_SN_PROTO];
     const uint32_t source = readAddress(myMemory.data() + W5100_SIPR0);
-    const uint32_t destination = readAddress(myMemory.data() + socket.registerAddress + W5100_SN_DIPR0);
+
+    const uint32_t dest = resolveIP(i);
 
     const MACAddress * sourceMac = reinterpret_cast<const MACAddress *>(myMemory.data() + W5100_SHAR0);
     const MACAddress * destinationMac;
-    getMACAddress(destination, destinationMac);
+    getMACAddress(dest, destinationMac);
 
-    std::vector<uint8_t> packet = createETH2Frame(payload, sourceMac, destinationMac, ttl, tos, protocol, source, destination);
+    std::vector<uint8_t> packet = createETH2Frame(payload, sourceMac, destinationMac, ttl, tos, protocol, source, dest);
 
 #ifdef U2_LOG_TRAFFIC
     LogFileOutput("U2: Send IPRAW[%" SIZE_T_FMT "]: %" SIZE_T_FMT " (%" SIZE_T_FMT ") bytes\n", i, payload.size(), packet.size());
@@ -738,10 +754,9 @@ void Uthernet2::sendDataToSocket(const size_t i, std::vector<uint8_t> &data)
         sockaddr_in destination = {};
         destination.sin_family = AF_INET;
 
-        // already in network order
         // this seems to be ignored for TCP, and so we reuse the same code
-        const uint8_t *dest = myMemory.data() + socket.registerAddress + W5100_SN_DIPR0;
-        destination.sin_addr.s_addr = *reinterpret_cast<const uint32_t *>(dest);
+        const uint32_t dest = resolveIP(i);
+        destination.sin_addr.s_addr = dest;
         destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
 
         const ssize_t res = sendto(socket.myFD, reinterpret_cast<const char *>(data.data()), data.size(), 0, (const struct sockaddr *)&destination, sizeof(destination));
@@ -855,20 +870,29 @@ void Uthernet2::openSocket(const size_t i)
     Socket &socket = mySockets[i];
     const uint8_t mr = myMemory[socket.registerAddress + W5100_SN_MR];
     const uint8_t protocol = mr & W5100_SN_MR_PROTO_MASK;
+
     uint8_t &sr = socket.sn_sr;
+    bool &auto_dns = socket.auto_dns;
+
     switch (protocol)
     {
     case W5100_SN_MR_IPRAW:
+    case W5100_SN_MR_IPRAW_DNS:
         sr = W5100_SN_SR_SOCK_IPRAW;
+        auto_dns = protocol & W5100_SN_AUTO_DNS;
         break;
     case W5100_SN_MR_MACRAW:
         sr = W5100_SN_SR_SOCK_MACRAW;
         break;
     case W5100_SN_MR_TCP:
+    case W5100_SN_MR_TCP_DNS:
         openSystemSocket(i, SOCK_STREAM, IPPROTO_TCP, W5100_SN_SR_SOCK_INIT);
+        auto_dns = protocol & W5100_SN_AUTO_DNS;
         break;
     case W5100_SN_MR_UDP:
+    case W5100_SN_MR_UDP_DNS:
         openSystemSocket(i, SOCK_DGRAM, IPPROTO_UDP, W5100_SN_SR_SOCK_UDP);
+        auto_dns = protocol & W5100_SN_AUTO_DNS;
         break;
 #ifdef U2_LOG_UNKNOWN
     default:
@@ -890,17 +914,56 @@ void Uthernet2::closeSocket(const size_t i)
 #endif
 }
 
+uint32_t Uthernet2::resolveIP(const size_t i)
+{
+    Socket &socket = mySockets[i];
+    uint32_t *dest = reinterpret_cast<uint32_t *>(myMemory.data() + socket.registerAddress + W5100_SN_DIPR0);
+
+#ifdef U2_AUTO_DNS
+    if (socket.auto_dns)
+    {
+        const uint8_t length = myMemory[socket.registerAddress + W5100_SN_DNS_NAME_LEN];
+        if (length <= W5100_SN_DNS_NAME_CPTY)
+        {
+            const uint8_t * start = myMemory.data() + socket.registerAddress + W5100_SN_DNS_NAME_BEGIN;
+            const std::string name(start, start + length);
+            const std::map<std::string, uint32_t>::iterator it = myDNSCache.find(name);
+            if (it != myDNSCache.end())
+            {
+                *dest = it->second;
+            }
+            else
+            {
+                *dest = getHostByName(name);
+                myDNSCache[name] = *dest;
+#ifdef U2_LOG_STATE
+                LogFileOutput("U2: DNS[%" SIZE_T_FMT "]: %s = %s\n", i, name.c_str(), formatIP(*dest));
+#endif
+            }
+        }
+        else
+        {
+#ifdef U2_LOG_STATE
+            LogFileOutput("U2: DNS[%" SIZE_T_FMT "]: Invalid length = %d\n", i, length);
+#endif
+        }
+    }
+#endif
+
+    return *dest;
+}
+
 void Uthernet2::connectSocket(const size_t i)
 {
     Socket &socket = mySockets[i];
-    const uint8_t *dest = myMemory.data() + socket.registerAddress + W5100_SN_DIPR0;
+    const uint32_t dest = resolveIP(i);
 
     sockaddr_in destination = {};
     destination.sin_family = AF_INET;
 
     // already in network order
     destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
-    destination.sin_addr.s_addr = *reinterpret_cast<const uint32_t *>(dest);
+    destination.sin_addr.s_addr = dest;
 
     const int res = connect(socket.myFD, (struct sockaddr *)&destination, sizeof(destination));
 
@@ -910,7 +973,7 @@ void Uthernet2::connectSocket(const size_t i)
         socket.myErrno = 0;
 #ifdef U2_LOG_STATE
         const uint16_t port = readNetworkWord(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
-        LogFileOutput("U2: TCP[%" SIZE_T_FMT "]: CONNECT to %d.%d.%d.%d:%d\n", i, dest[0], dest[1], dest[2], dest[3], port);
+        LogFileOutput("U2: TCP[%" SIZE_T_FMT "]: CONNECT to %s:%d\n", i, formatIP(dest), port);
 #endif
     }
     else
@@ -1130,11 +1193,17 @@ void Uthernet2::writeSocketRegister(const uint16_t address, const uint8_t value)
     case W5100_SN_RX_RD1:
         myMemory[address] = value;
         break;
-#ifdef U2_LOG_UNKNOWN
     default:
-        LogFileOutput("U2: Set unknown socket register[%d]: %04x\n", i, address);
-        break;
+#ifdef U2_AUTO_DNS
+        if (loc >= W5100_SN_DNS_NAME_LEN)
+        {
+            myMemory[address] = value;
+        }
 #endif
+#ifdef U2_LOG_UNKNOWN
+        LogFileOutput("U2: Set unknown socket register[%d]: %04x\n", i, address);
+#endif
+        break;
     };
 }
 
@@ -1218,6 +1287,7 @@ void Uthernet2::Reset(const bool powerCycle)
         myDataAddress = 0;
         myNetworkBackend = GetFrame().CreateNetworkBackend();
         myARPCache.clear();
+        myDNSCache.clear();
     }
 
     mySockets.clear();
@@ -1247,7 +1317,10 @@ void Uthernet2::Reset(const bool powerCycle)
     myMemory[W5100_RCR]     = 0x08;
     setRXSizes(W5100_RMSR, 0x55);
     setTXSizes(W5100_TMSR, 0x55);
+#ifndef U2_AUTO_DNS
+    // this is 0 if we support Auto DNS
     myMemory[W5100_PTIMER]  = 0x28;
+#endif
 }
 
 BYTE Uthernet2::IO_C0(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
