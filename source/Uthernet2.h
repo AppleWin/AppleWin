@@ -26,7 +26,6 @@ struct Socket
     uint16_t sn_rx_rsr;
 
     uint8_t sn_sr;
-    bool auto_dns;
 
     socket_t myFD;
     int myErrno;
@@ -86,7 +85,7 @@ private:
     std::map<std::string, uint32_t> myDNSCache;
 
     void getMACAddress(const uint32_t address, const MACAddress * & mac);
-    uint32_t resolveIP(const size_t i);
+    void resolveDNS(const size_t i);
 
     void setSocketModeRegister(const size_t i, const uint16_t address, const uint8_t value);
     void setTXSizes(const uint16_t address, uint8_t value);

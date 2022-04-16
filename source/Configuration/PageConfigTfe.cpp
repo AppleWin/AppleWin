@@ -141,7 +141,8 @@ int CPageConfigTfe::gray_ungray_items(HWND hwnd)
 	int number;
 
 	int disabled = 0;
-	PCapBackend::get_disabled_state(&disabled);
+	// Let it run even if libpcap cannot be loaded
+	// PCapBackend::get_disabled_state(&disabled);
 
 	if (disabled)
 	{
@@ -270,27 +271,19 @@ void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 	buffer[255] = 0;
 	GetDlgItemText(hwnd, IDC_TFE_SETTINGS_INTERFACE, buffer, sizeof(buffer)-1);
 
-	// RGJ - Added check for NULL interface so we don't set it active without a valid interface selected
-	if (strlen(buffer) > 0)
+	m_tfe_interface_name = buffer;
+
+	active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
+	switch (active_value)
 	{
-		m_tfe_interface_name = buffer;
-		active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
-		switch (active_value)
-		{
-		case 1:
-			m_tfe_selected = CT_Uthernet;
-			break;
-		case 2:
-			m_tfe_selected = CT_Uthernet2;
-			break;
-		default:
-			m_tfe_selected = CT_Empty;
-			break;
-		}
-	}
-	else
-	{
+	case 1:
+		m_tfe_selected = CT_Uthernet;
+		break;
+	case 2:
+		m_tfe_selected = CT_Uthernet2;
+		break;
+	default:
 		m_tfe_selected = CT_Empty;
-		m_tfe_interface_name.clear();
+		break;
 	}
 }
