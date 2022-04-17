@@ -519,30 +519,25 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 void VerifyDebuggerCommandTable()
 {
-	char sText[ CONSOLE_WIDTH * 2 ];
-
 	for (int iCmd = 0; iCmd < NUM_COMMANDS; iCmd++ )
 	{
 		if ( g_aCommands[ iCmd ].iCommand != iCmd)
 		{
-			sprintf( sText, "*** ERROR *** Enumerated Commands mis-matched at #%d!", iCmd );
-			GetFrame().FrameMessageBox(sText, TEXT("ERROR"), MB_OK );
+			std::string sText = StrFormat( "*** ERROR *** Enumerated Commands mis-matched at #%d!", iCmd );
+			GetFrame().FrameMessageBox(sText.c_str(), "ERROR", MB_OK);
 			PostQuitMessage( 1 );
 		}
 	}
 
-	// _tcscmp
 	if (strcmp( g_aCommands[ NUM_COMMANDS ].m_sName, DEBUGGER__COMMANDS_VERIFY_TXT__))
 	{
-		sprintf( sText, "*** ERROR *** Total Commands mis-matched!" );
-		GetFrame().FrameMessageBox(sText, TEXT("ERROR"), MB_OK );
+		GetFrame().FrameMessageBox("*** ERROR *** Total Commands mis-matched!", "ERROR", MB_OK);
 		PostQuitMessage( 1 );
 	}
 
 	if (strcmp( g_aParameters[ NUM_PARAMS ].m_sName, DEBUGGER__PARAMS_VERIFY_TXT__))
 	{
-		sprintf( sText, "*** ERROR *** Total Parameters mis-matched!" );
-		GetFrame().FrameMessageBox(sText, TEXT("ERROR"), MB_OK );
+		GetFrame().FrameMessageBox("*** ERROR *** Total Parameters mis-matched!", "ERROR", MB_OK);
 		PostQuitMessage( 2 );
 	}
 }

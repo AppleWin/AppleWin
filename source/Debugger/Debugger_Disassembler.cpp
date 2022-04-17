@@ -767,13 +767,12 @@ void DisasmCalcTopFromCurAddress(bool bUpdateTop)
 		// Moving the cursor line around is not really a good idea, since we're breaking consistency paradigm for the user.
 		// g_nDisasmCurLine = 0;
 #if 0 // _DEBUG
-		TCHAR sText[CONSOLE_WIDTH * 2];
-		sprintf(sText, TEXT("DisasmCalcTopFromCurAddress()\n"
-			"\tTop: %04X\n"
-			"\tLen: %04X\n"
-			"\tMissed: %04X"),
+		std::string sText = StrFormat("DisasmCalcTopFromCurAddress()\n"
+										"\tTop: %04X\n"
+										"\tLen: %04X\n"
+										"\tMissed: %04X",
 			g_nDisasmCurAddress - nLen, nLen, g_nDisasmCurAddress);
-		GetFrame().FrameMessageBox(sText, "ERROR", MB_OK);
+		GetFrame().FrameMessageBox(sText.c_str(), "ERROR", MB_OK);
 #endif
 	}
 }
