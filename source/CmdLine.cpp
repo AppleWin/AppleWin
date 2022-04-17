@@ -537,6 +537,18 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.snesMaxAltControllerType[1] = true;
 		}
+		else if (strcmp(lpCmdLine, "-wav-speaker") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			g_cmdLine.wavFileSpeaker = lpCmdLine;
+		}
+		else if (strcmp(lpCmdLine, "-wav-mockingboard") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			g_cmdLine.wavFileMockingboard = lpCmdLine;
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);

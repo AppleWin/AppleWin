@@ -24,6 +24,7 @@ bool    MB_IsActive();
 DWORD   MB_GetVolume();
 void    MB_SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 void MB_Get6522IrqDescription(std::string& desc);
+void MB_OutputToRiff(void);
 
 void MB_UpdateIRQ(void);
 UINT64 MB_GetLastCumulativeCycles(void);
