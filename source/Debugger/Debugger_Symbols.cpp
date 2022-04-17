@@ -333,9 +333,7 @@ Update_t CmdSymbolsInfo (int nArgs)
 	//sprintf( sText, "  Symbols  Main: %s%d%s  User: %s%d%s   Source: %s%d%s"
 	// "Main:# Basic:# Asm:# User1:# User2:# Src1:# Src2:# Dos:# Prodos:#
 
-	int bTable = 1;
-	int iTable = 0;
-	for ( ; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 )
+	for ( int iTable = 0, bTable = 1; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 )
 	{
 		if ( bDisplaySymbolTables & bTable )
 		{
