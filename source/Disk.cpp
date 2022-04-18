@@ -1595,13 +1595,14 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 	// . write mode doesn't prevent reading write protect (GH#537):
 	//   "If for some reason the above write protect check were entered with the READ/WRITE switch in WRITE, 
 	//    the write protect switch would still be read correctly" (UTAIIe page 9-21)
-	// . Sequencer "SR" (Shift Right) command only loads QA (bit7) of data register (UTAIIe page 9-21)
+	// . Sequencer "SR" (Shift Right) command shifts the data register right and loads QA (bit7) with write protect (UTAIIe page 9-21)
 	// . A read or write will shift 'write protect' in QA.
+	// . The LSS saturates the data register before the CPU can read an intermediate value: so set to 0xFF or 0x00 (GH#1078)
 	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
 	if (floppy.m_bWriteProtected)
-		m_floppyLatch |= 0x80;
+		m_floppyLatch = 0xFF;
 	else
-		m_floppyLatch &= 0x7F;
+		m_floppyLatch = 0x00;
 
 	if (m_writeStarted)	// Prevent ResetLogicStateSequencer() from resetting m_writeStarted
 		return;
@@ -1618,6 +1619,8 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 		// UpdateBitStreamPosition() must be done before ResetLSS, as the former clears m_resetSequencer (and the latter sets it).
 		// . Commando.woz is sensitive to this. EG. It can crash after pressing 'J' (1 failure in 20 reboot repeats)
 		ResetLogicStateSequencer();	// reset sequencer (UTAIIe page 9-21)
+
+		m_shiftReg = m_floppyLatch;
 	}
 }
 
