@@ -438,11 +438,11 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 		strcpy(line_.sMnemonic, g_aOpcodes[line_.iOpcode].sMnemonic);
 	}
 
-	int nSpaces = strlen(line_.sOpCodes);
-	while (nSpaces < (int)nMinBytesLen)
+	const size_t nOpCodesLen = strlen(line_.sOpCodes);
+	if (nOpCodesLen < nMinBytesLen)
 	{
-		strcat(line_.sOpCodes, " ");
-		nSpaces++;
+		memset(line_.sOpCodes + nOpCodesLen, ' ', nMinBytesLen - nOpCodesLen);
+		line_.sOpCodes[nMinBytesLen] = '\0';
 	}
 
 	return bDisasmFormatFlags;
