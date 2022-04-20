@@ -7701,8 +7701,8 @@ void OutputTraceLine ()
 	DisasmLine_t line;
 	GetDisassemblyLine( regs.pc, line );
 
-	char sDisassembly[ CONSOLE_WIDTH ]; // DrawDisassemblyLine( 0,regs.pc, sDisassembly); // Get Disasm String
-	FormatDisassemblyLine( line, sDisassembly, CONSOLE_WIDTH );
+	// DrawDisassemblyLine( 0,regs.pc, sDisassembly); // Get Disasm String
+	std::string sDisassembly = FormatDisassemblyLine( line );
 
 	char sFlags[] = "........";
 	WORD nRegFlags = regs.ps;
@@ -7758,9 +7758,9 @@ void OutputTraceLine ()
 			(unsigned)regs.x,
 			(unsigned)regs.y,
 			(unsigned)regs.sp,
-			(char*) sFlags
-			, sDisassembly
-			//, sTarget // TODO: Show target?
+			sFlags
+			, sDisassembly.c_str()
+			//, sTarget.c_str() // TODO: Show target?
 		);
 	}
 	else
@@ -7773,9 +7773,9 @@ void OutputTraceLine ()
 			(unsigned)regs.x,
 			(unsigned)regs.y,
 			(unsigned)regs.sp,
-			(char*) sFlags
-			, sDisassembly
-			//, sTarget // TODO: Show target?
+			sFlags
+			, sDisassembly.c_str()
+			//, sTarget.c_str() // TODO: Show target?
 		);
 	}
 }
