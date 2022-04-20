@@ -76,8 +76,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Utils _ ________________________________________________________________________________________
 
 	std::string _CmdSymbolsInfoHeader( int iTable, int nDisplaySize = 0 );
-	void      _PrintCurrentPath();
-	Update_t  _PrintSymbolInvalidTable();
+	void        _PrintCurrentPath();
+	Update_t    _PrintSymbolInvalidTable();
 
 
 // Private ________________________________________________________________________________________
@@ -317,8 +317,11 @@ Update_t CmdSymbolsInfo (int nArgs)
 		bDisplaySymbolTables = (1 << iWhichTable);
 	}
 
+	//sprintf( sText, "  Symbols  Main: %s%d%s  User: %s%d%s   Source: %s%d%s"
+	// "Main:# Basic:# Asm:# User1:# User2:# Src1:# Src2:# Dos:# Prodos:#
+
 	std::string const sIndent = "  ";
-	std::string sText = sIndent; // Indent new line
+	std::string       sText   = sIndent; // Indent new line
 
 	for ( int iTable = 0, bTable = 1; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 )
 	{
