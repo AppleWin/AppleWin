@@ -941,7 +941,7 @@ void SetupColorsHiLoBits ( bool bHighBit, bool bCtrlBit,
 // To flush out color bugs... swap: iAsciBackground & iHighBackground
 //===========================================================================
 static std::string ColorizeSpecialChar( BYTE nData, const MemoryView_e iView,
-	const int iTextBackground = BG_INFO, const int iTextForeground = FG_DISASM_CHAR,
+	const int iTextBackground = BG_INFO     , const int iTextForeground = FG_DISASM_CHAR,
 	const int iHighBackground = BG_INFO_CHAR, const int iHighForeground = FG_INFO_CHAR_HI,
 	const int iCtrlBackground = BG_INFO_CHAR, const int iCtrlForeground = FG_INFO_CHAR_LO )
 {
@@ -2409,15 +2409,15 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, const int iBankDisplay, int b
 		rect.right  += 4*w;
 
 		int iActiveBank = -1;
-		char chMemType = '?'; // Default to RAMWORKS
-		if (GetCurrentExpansionMemType() == CT_RamWorksIII) { chMemType = 'r'; iActiveBank = GetRamWorksActiveBank(); }
-		if (GetCurrentExpansionMemType() == CT_Saturn128K)  { chMemType = 's'; iActiveBank = GetCardMgr().GetLanguageCard()->GetActiveBank(); }
+		char cMemType = '?'; // Default to RAMWORKS
+		if (GetCurrentExpansionMemType() == CT_RamWorksIII) { cMemType = 'r'; iActiveBank = GetRamWorksActiveBank(); }
+		if (GetCurrentExpansionMemType() == CT_Saturn128K)  { cMemType = 's'; iActiveBank = GetCardMgr().GetLanguageCard()->GetActiveBank(); }
 
 		if (iActiveBank >= 0)
 		{
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG )); // light blue
-			const char szMemType[2] = { chMemType, '\0' };
-			PrintTextCursorX( szMemType, rect );
+			const char sMemType[2] = { cMemType, '\0' };
+			PrintTextCursorX( sMemType, rect );
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));	// orange
 			PrintTextCursorX( ByteToHexStr( iActiveBank & 0x7F ).c_str(), rect );
@@ -2524,17 +2524,10 @@ void DrawSoftSwitches( int iSoftSwitch )
 	// LO / HIRES
 	// LO / -----
 	// -- / HIRES
-	PrintTextCursorY( !VideoGetSWHIRES() ? "LO /-- RES" : "---/HI RES", rect );
-
-	PrintTextCursorY( "", rect );
-
-	// Extended soft switches
-	PrintTextCursorY( !VideoGetSW80COL() ? "40 / -- COL" : "-- / 80 COL", rect );
-
+	PrintTextCursorY( !VideoGetSWHIRES()     ? "LO /-- RES"  : "-- /HI RES" , rect ); PrintTextCursorY( "", rect );
+	PrintTextCursorY( !VideoGetSW80COL()     ? "40 / -- COL" : "-- / 80 COL", rect ); // Extended soft switches
 	PrintTextCursorY( VideoGetSWAltCharSet() ? "ASCII/-----" : "-----/MOUSE", rect );
-
-	// 280/560 HGR
-	PrintTextCursorY( !VideoGetSWDHIRES() ? "HGR / ----" : "--- / DHGR", rect );
+	PrintTextCursorY( !VideoGetSWDHIRES()    ? "HGR / ----"  : "--- / DHGR" , rect ); // 280/560 HGR
 #else //SOFTSWITCH_OLD
 	// See: VideoSetMode()
 
@@ -3007,9 +3000,9 @@ void DrawSubWindow_Data (Update_t bUpdate)
 
 	_ASSERT( CONSOLE_WIDTH > (WINDOW_DATA_BYTES_PER_LINE * 3));
 
-	const int nDefaultFontWidth	= 7; // g_aFontConfig[FONT_DISASM_DEFAULT]._nFontWidth or g_nFontWidthAvg
-	const int X_OPCODE			=  6                    * nDefaultFontWidth;
-	const int X_CHAR			= (6 + (nMaxOpcodes*3)) * nDefaultFontWidth;
+	const int nDefaultFontWidth = 7; // g_aFontConfig[FONT_DISASM_DEFAULT]._nFontWidth or g_nFontWidthAvg
+	const int X_OPCODE          =  6                    * nDefaultFontWidth;
+	const int X_CHAR            = (6 + (nMaxOpcodes*3)) * nDefaultFontWidth;
 
 	int iMemDump = 0;
 
