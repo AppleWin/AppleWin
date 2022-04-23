@@ -1845,7 +1845,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 
 
 //===========================================================================
-static void DrawFlags ( int line, WORD nRegFlags )
+static void DrawFlags ( int line, BYTE nRegFlags )
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
@@ -2165,7 +2165,7 @@ void DrawRegister ( int line, LPCTSTR name, const int nBytes, const WORD nValue,
 
 		// ## = Stack Depth (in bytes)
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR )); // FG_INFO_OPCODE, FG_INFO_TITLE
-		PrintText( ByteToHexStr( nStackDepth ).c_str(), rect );
+		PrintText( (nStackDepth < 256) ? ByteToHexStr( uint8_t(nStackDepth) ).c_str() : "**", rect );
 	}
 
 	std::string sValue;
