@@ -2154,28 +2154,28 @@ void DrawRegister ( int line, LPCTSTR name, const int nBytes, const WORD nValue,
 	DebuggerSetColorBG( DebuggerGetColor( iBackground ));
 	PrintText( name, rect );
 
-	unsigned int nData = nValue;
-	int nOffset = 6;
-
 	if (PARAM_REG_SP == iSource)
 	{
-		WORD nStackDepth = _6502_STACK_END - nValue;
+		BYTE nStackDepth = _6502_STACK_END - (_6502_STACK_BEGIN + (nValue & 0xFF));
 		int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 		rect.left += (2 * nFontWidth) + (nFontWidth >> 1); // 2.5 looks a tad nicer then 2
 
 		// ## = Stack Depth (in bytes)
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR )); // FG_INFO_OPCODE, FG_INFO_TITLE
-		PrintText( (nStackDepth < 256) ? ByteToHexStr( uint8_t(nStackDepth) ).c_str() : "**", rect );
+		PrintText( ByteToHexStr( nStackDepth ).c_str(), rect );
 	}
 
 	std::string sValue;
 
 	if (nBytes == 2)
 	{
-		sValue = WordToHexStr( nData );
+		sValue = WordToHexStr( nValue );
 	}
 	else
 	{
+		assert(nBytes == 1 && nValue < 256); // Ensure the following downsizing is legal.
+		const BYTE nData = BYTE(nValue);
+
 		rect.left  = DISPLAY_REGS_COLUMN + (3 * nFontWidth);
 //		rect.right = SCREENSPLIT2;
 
@@ -2190,10 +2190,11 @@ void DrawRegister ( int line, LPCTSTR name, const int nBytes, const WORD nValue,
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 		PrintTextCursorX( "'", rect ); // PrintTextCursorX()
 
-		sValue = StrFormat( "  %02X", nData );
+		sValue = "  " + ByteToHexStr( nData );
 	}
 
 	// Needs to be far enough over, since 4 chars of ZeroPage symbol also calls us
+	const int nOffset = 6;
 	rect.left  = DISPLAY_REGS_COLUMN + (nOffset * nFontWidth);
 
 	if ((PARAM_REG_PC == iSource) || (PARAM_REG_SP == iSource)) // Stack Pointer is target address, but doesn't look as good.
