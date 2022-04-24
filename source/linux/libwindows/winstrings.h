@@ -51,33 +51,10 @@ DWORD CharLowerBuff(LPTSTR lpsz, DWORD cchLength);
 
 LPSTR _strupr( LPSTR str );
 
-// copied from
-// https://github.com/wine-mirror/wine/blob/1d178982ae5a73b18f367026c8689b56789c39fd/dlls/msvcrt/heap.c#L833
+errno_t strncpy_s(char * dest, size_t numberOfElements, const char *src, size_t count);
+
 template <size_t size>
 errno_t strncpy_s(char (&dest)[size], const char *src, size_t count)
 {
-  size_t end;
-  if (count != _TRUNCATE && count < size)
-  {
-    end = count;
-  }
-  else
-  {
-    end = size - 1;
-  }
-
-  size_t i;
-  for (i = 0; i < end && src[i]; i++)
-  {
-    dest[i] = src[i];
-  }
-
-  if (!src[i] || end == count || count == _TRUNCATE)
-  {
-    dest[i] = '\0';
-    return 0;
-  }
-
-  dest[0] = '\0';
-  return EINVAL;
+  return strncpy_s(dest, size, src, count);
 }
