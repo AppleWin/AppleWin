@@ -616,14 +616,17 @@ static void GetAppleWinVersion(void)
 // DO ONE-TIME INITIALIZATION
 static void OneTimeInitialization(HINSTANCE passinstance)
 {
-#if 0
-#ifdef RIFF_SPKR
-	RiffInitWriteFile("Spkr.wav", SPKR_SAMPLE_RATE, 1);
-#endif
-#ifdef RIFF_MB
-	RiffInitWriteFile("Mockingboard.wav", 44100, 2);
-#endif
-#endif
+	// Currently only support one RIFF file
+	if (!g_cmdLine.wavFileSpeaker.empty())
+	{
+		if (RiffInitWriteFile(g_cmdLine.wavFileSpeaker.c_str(), SPKR_SAMPLE_RATE, 1))
+			Spkr_OutputToRiff();
+	}
+	else if (!g_cmdLine.wavFileMockingboard.empty())
+	{
+		if (RiffInitWriteFile(g_cmdLine.wavFileMockingboard.c_str(), 44100, 2))
+			MB_OutputToRiff();
+	}
 
 	// Initialize COM - so we can use CoCreateInstance
 	// . DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)

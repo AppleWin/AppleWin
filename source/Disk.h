@@ -201,7 +201,7 @@ private:
 	void DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCycles);
-	void SetSequencerFunction(WORD addr);
+	void SetSequencerFunction(WORD addr, ULONG executedCycles);
 	void DumpTrackWOZ(FloppyDisk floppy);
 	bool GetFirmware(WORD lpNameId, BYTE* pDst);
 	void InitFirmware(LPBYTE pCxRomPeripheral);
@@ -259,7 +259,6 @@ private:
 	// Logic State Sequencer (for WOZ):
 	BYTE m_shiftReg;
 	int m_latchDelay;
-	bool m_resetSequencer;
 	bool m_writeStarted;
 
 	enum SEQFUNC {readSequencing=0, dataShiftWrite, checkWriteProtAndInitWrite, dataLoadWrite};	// UTAIIe 9-14

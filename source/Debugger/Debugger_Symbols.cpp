@@ -75,9 +75,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Utils _ ________________________________________________________________________________________
 
-	void      _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize = 0 );
-	void      _PrintCurrentPath();
-	Update_t  _PrintSymbolInvalidTable();
+	std::string _CmdSymbolsInfoHeader( int iTable, int nDisplaySize = 0 );
+	void        _PrintCurrentPath();
+	Update_t    _PrintSymbolInvalidTable();
 
 
 // Private ________________________________________________________________________________________
@@ -90,33 +90,28 @@ void _PrintCurrentPath()
 
 Update_t _PrintSymbolInvalidTable()
 {
-	char sText[ CONSOLE_WIDTH * 2 ];
-	char sTemp[ CONSOLE_WIDTH * 2 ];
-
 	// TODO: display the user specified file name
 	ConsoleBufferPush( "Invalid symbol table." );
 
-	ConsolePrintFormat( "Only %s%d%s symbol tables are supported:"
-		, CHC_NUM_DEC, NUM_SYMBOL_TABLES
-		, CHC_DEFAULT
+	ConsolePrintFormat( "Only " CHC_NUM_DEC "%d" CHC_DEFAULT " symbol tables are supported:"
+		, NUM_SYMBOL_TABLES
 	);
 
+	std::string sText;
+
 	// Similar to _CmdSymbolsInfoHeader()
-	sText[0] = 0;
 	for ( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
 	{
-		sprintf( sTemp, "%s%s%s%c " // %s"
-			, CHC_USAGE, g_aSymbolTableNames[ iTable ]
-			, CHC_ARG_SEP
+		sText += StrFormat( CHC_USAGE "%s" CHC_ARG_SEP "%c "
+			, g_aSymbolTableNames[ iTable ]
 			, (iTable != (NUM_SYMBOL_TABLES-1))
 				? ','
 				: '.'
 		);
-		strcat( sText, sTemp );
 	}
 
-//	return ConsoleDisplayError( sText );
-	ConsolePrint( sText );
+//	return ConsoleDisplayError( sText.c_str() );
+	ConsolePrint( sText.c_str() );
 	return ConsoleUpdate();
 }
 
@@ -286,7 +281,7 @@ Update_t CmdSymbolsClear (int nArgs)
 
 // Format the summary of the specified symbol table
 //===========================================================================
-void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize /* = 0 */ )
+std::string _CmdSymbolsInfoHeader( int iTable, int nDisplaySize /* = 0 */ )
 {
 	// Common case is to use/calc the table size
 	bool bActive = (g_bDisplaySymbolTables & (1 << iTable)) ? true : false;
@@ -295,24 +290,16 @@ void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize /* = 0 */
 	// Short Desc: `MAIN`: `1000`
 	// // 2.6.2.19 Color for name of symbol table: _CmdPrintSymbol() "SYM HOME" _CmdSymbolsInfoHeader "SYM"
 	// CHC_STRING and CHC_NUM_DEC are both cyan, using CHC_USAGE instead of CHC_STRING
-	sprintf( pText, "%s%s%s:%s%d " // %s"
-		, CHC_USAGE, g_aSymbolTableNames[ iTable ]
-		, CHC_ARG_SEP
+	return StrFormat(CHC_USAGE "%s" CHC_ARG_SEP ":%s%d " // CHC_DEFAULT
+		, g_aSymbolTableNames[ iTable ]
 		, bActive ? CHC_NUM_DEC : CHC_WARNING, nSymbols
-//		, CHC_DEFAULT
 	);
 }
 
 //===========================================================================
 Update_t CmdSymbolsInfo (int nArgs)
 {
-	const char sIndent[] = "  ";
-	char sText[ CONSOLE_WIDTH * 4 ] = "";
-	char sTemp[ CONSOLE_WIDTH * 2 ] = "";
-
 	int bDisplaySymbolTables = 0;
-
-	strcpy( sText, sIndent ); // Indent new line
 
 	if (! nArgs)
 	{
@@ -333,26 +320,27 @@ Update_t CmdSymbolsInfo (int nArgs)
 	//sprintf( sText, "  Symbols  Main: %s%d%s  User: %s%d%s   Source: %s%d%s"
 	// "Main:# Basic:# Asm:# User1:# User2:# Src1:# Src2:# Dos:# Prodos:#
 
-	int bTable = 1;
-	int iTable = 0;
-	for ( ; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 )
+	std::string const sIndent = "  ";
+	std::string       sText   = sIndent; // Indent new line
+
+	for ( int iTable = 0, bTable = 1; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 )
 	{
-		if ( bDisplaySymbolTables & bTable )
+		if ( !!(bDisplaySymbolTables & bTable) )
 		{
-			_CmdSymbolsInfoHeader( iTable, sTemp ); // 15 chars per table
+			std::string hdr = _CmdSymbolsInfoHeader( iTable ); // 15 chars per table
 
 			// 2.8.0.4 BUGFIX: Check for buffer overflow and wrap text
-			int nLen = ConsoleColor_StringLength( sTemp );
-			int nDst = ConsoleColor_StringLength( sText );
-			if ((nDst + nLen) > CONSOLE_WIDTH )
+			int nLen = ConsoleColor_StringLength( hdr.c_str() );
+			int nDst = ConsoleColor_StringLength( sText.c_str() );
+			if ( (nDst + nLen) > CONSOLE_WIDTH )
 			{
-				ConsolePrint( sText );
-				strcpy( sText, sIndent ); // Indent new line
+				ConsolePrint( sText.c_str() );
+				sText = sIndent; // Indent new line
 			}
-			strcat( sText, sTemp );
+			sText += hdr;
 		}
 	}
-	ConsolePrint( sText );
+	ConsolePrint( sText.c_str() );
 
 	return ConsoleUpdate();
 }
@@ -475,8 +463,6 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 		SYMBOL B = $2000
 		SYM B
 	*/
-		
-	TCHAR sText[ CONSOLE_WIDTH ] = "";
 
 	for ( int iArgs = 1; iArgs <= nArgs; iArgs++ )
 	{
@@ -507,8 +493,7 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 							++iSymbol;
 						}
 					}
-					_CmdSymbolsInfoHeader( iTable, sText );
-					ConsolePrint( sText );
+					ConsolePrint(_CmdSymbolsInfoHeader(iTable).c_str() );
 				}
 			}
 		}
@@ -926,7 +911,7 @@ Update_t _CmdSymbolsUpdate( int nArgs, int bSymbolTables )
 			bSymbolTables =  SYMBOL_TABLE_USER_2; // Autogenerated symbol names go in table 2 for organization when reverse engineering.  Table 1 = known, Table 2 = unknown.
 
 		nAddress = g_aArgs[2].nValue;
-		sprintf( g_aArgs[1].sArg, "_%04X", nAddress ); // Autogenerated symbol name
+		strncpy_s( g_aArgs[1].sArg, StrFormat("_%04X", nAddress).c_str(), _TRUNCATE ); // Autogenerated symbol name
 
 		bUpdateSymbol = true;
 	}
@@ -953,8 +938,6 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 	Update_t iUpdate = _CmdSymbolsUpdate( nArgs, bSymbolTables );
 	if (iUpdate != UPDATE_NOTHING)
 		return iUpdate;
-
-	TCHAR sText[ CONSOLE_WIDTH ];
 
 	int iArg = 0;
 	while (iArg++ <= nArgs)
@@ -994,13 +977,7 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				{
 					if ( bUpdate & UPDATE_SYMBOLS )
 					{
-						//sprintf( sText, "  Symbol Table: %s%s%s, %sloaded symbols: %s%d"
-						//	, CHC_STRING, g_aSymbolTableNames[ iTable ]
-						//	, CHC_DEFAULT, CHC_DEFAULT
-						//	, CHC_NUM_DEC, g_nSymbolsLoaded
-						//);
-						_CmdSymbolsInfoHeader( iTable, sText, g_nSymbolsLoaded );
-						ConsolePrint( sText );
+						ConsolePrint( _CmdSymbolsInfoHeader( iTable, g_nSymbolsLoaded ).c_str() );
 					}
 				}
 				else
@@ -1022,8 +999,7 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				int iTable = _GetSymbolTableFromFlag( bSymbolTables );
 				if (iTable != NUM_SYMBOL_TABLES)
 				{
-					_CmdSymbolsInfoHeader( iTable, sText );
-					ConsolePrint( sText );
+					ConsolePrint( _CmdSymbolsInfoHeader( iTable ).c_str() );
 				}
 				return ConsoleUpdate() | UPDATE_DISASM;
 			}
@@ -1034,8 +1010,7 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				int iTable = _GetSymbolTableFromFlag( bSymbolTables );
 				if (iTable != NUM_SYMBOL_TABLES)
 				{
-					_CmdSymbolsInfoHeader( iTable, sText );
-					ConsolePrint( sText );
+					ConsolePrint( _CmdSymbolsInfoHeader( iTable ).c_str() );
 				}
 				return ConsoleUpdate() | UPDATE_DISASM;
 			}

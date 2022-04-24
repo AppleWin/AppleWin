@@ -1028,7 +1028,6 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 {
 	m_shiftReg = 0;
 	m_latchDelay = 0;
-	m_resetSequencer = true;
 	m_writeStarted = false;
 	m_dbgLatchDelayedCnt = 0;
 
@@ -1080,8 +1079,6 @@ void Disk2InterfaceCard::UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG
 		floppy.m_bitOffset %= floppy.m_bitCount;
 
 	UpdateBitStreamOffsets(floppy);
-
-	m_resetSequencer = false;
 }
 
 void Disk2InterfaceCard::UpdateBitStreamOffsets(FloppyDisk& floppy)
@@ -1252,14 +1249,6 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 													: (rand() < RAND_THRESHOLD(3, 10)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
 
 		IncBitStream(floppy);
-
-		if (m_resetSequencer)
-		{
-			m_resetSequencer = false;	// LSS takes some cycles to reset (ref?)
-			continue;
-		}
-
-		//
 
 		m_shiftReg <<= 1;
 		m_shiftReg |= outputBit;
@@ -1580,10 +1569,6 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 
 void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG uExecutedCycles)
 {
-	// NB. Only reads in LOAD mode can issue the SR (shift write-protect) operation - UTAIIe page 9-20, fig 9.11
-	// But STA $C08D,X (no PX) does a read from $C08D+X, followed by the write to $C08D+X
-	// So just want to ignore: STA $C0ED or eg. STA $BFFF,X (PX, X=$EE)
-
 	// Don't change latch if drive off after 1 second drive-off delay (UTAIIe page 9-13)
 	// "DRIVES OFF forces the data register to hold its present state." (UTAIIe page 9-12)
 	// Note: Gemstone Warrior sets load mode with the drive off.
@@ -1591,17 +1576,19 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 		return;
 
 	// Notes:
+	// . Only READ-LOAD mode ($C08E,X & $C08D,X) can issue the SR (shift write-protect) operation - UTAIIe page 9-20, fig 9.11
 	// . Phase 1 on also forces write protect in the Disk II drive (UTAIIe page 9-7) but we don't implement that.
 	// . write mode doesn't prevent reading write protect (GH#537):
 	//   "If for some reason the above write protect check were entered with the READ/WRITE switch in WRITE, 
 	//    the write protect switch would still be read correctly" (UTAIIe page 9-21)
-	// . Sequencer "SR" (Shift Right) command only loads QA (bit7) of data register (UTAIIe page 9-21)
+	// . Sequencer "SR" (Shift Right) command shifts the data register right and loads QA (bit7) with write protect (UTAIIe page 9-21)
 	// . A read or write will shift 'write protect' in QA.
+	// . The LSS saturates the data register before the CPU can read an intermediate value: so set to 0xFF or 0x00 (GH#1078)
 	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
 	if (floppy.m_bWriteProtected)
-		m_floppyLatch |= 0x80;
+		m_floppyLatch = 0xFF;
 	else
-		m_floppyLatch &= 0x7F;
+		m_floppyLatch = 0x00;
 
 	if (m_writeStarted)	// Prevent ResetLogicStateSequencer() from resetting m_writeStarted
 		return;
@@ -1615,9 +1602,7 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 		const UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
 		UpdateBitStreamPosition(floppy, bitCellDelta);	// Fix E7-copy protection
 
-		// UpdateBitStreamPosition() must be done before ResetLSS, as the former clears m_resetSequencer (and the latter sets it).
-		// . Commando.woz is sensitive to this. EG. It can crash after pressing 'J' (1 failure in 20 reboot repeats)
-		ResetLogicStateSequencer();	// reset sequencer (UTAIIe page 9-21)
+		ResetLogicStateSequencer();	// "Set the sequencer to State 0" (UTAIIe page 9-21)
 	}
 }
 
@@ -1788,21 +1773,35 @@ void Disk2InterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 
 //===========================================================================
 
-void Disk2InterfaceCard::SetSequencerFunction(WORD addr)
+void Disk2InterfaceCard::SetSequencerFunction(WORD addr, ULONG executedCycles)
 {
 	if ((addr & 0xf) < 0xc)
 		return;
 
+	const SEQFUNC oldSeqFunc = m_seqFunc.function;
+
 	switch ((addr & 3) ^ 2)
 	{
-	case 0: m_seqFunc.writeMode = 0; break;	// $C08E,X (sequence addr A2 input)
-	case 1: m_seqFunc.writeMode = 1; break;	// $C08F,X (sequence addr A2 input)
-	case 2: m_seqFunc.loadMode = 0; break;	// $C08C,X (sequence addr A3 input)
-	case 3: m_seqFunc.loadMode = 1; break;	// $C08D,X (sequence addr A3 input)
+	case 0: m_seqFunc.writeMode = 0; break;	// $C08E,X (sequence addr A3 input)
+	case 1: m_seqFunc.writeMode = 1; break;	// $C08F,X (sequence addr A3 input)
+	case 2: m_seqFunc.loadMode = 0; break;	// $C08C,X (sequence addr A2 input)
+	case 3: m_seqFunc.loadMode = 1; break;	// $C08D,X (sequence addr A2 input)
 	}
 
 	if (!m_seqFunc.writeMode)
 		m_writeStarted = false;
+
+	if (oldSeqFunc == checkWriteProtAndInitWrite && m_seqFunc.function != checkWriteProtAndInitWrite)
+	{
+		// Use up remaining cycles before switching out of "checkWriteProtAndInitWrite" mode
+		// Done when checking write-protect, but also for bit-slip (eg. E7) copy-protections
+		FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
+		if (ImageIsWOZ(floppy.m_imagehandle))
+		{
+			const UINT bitCellDelta = GetBitCellDelta(executedCycles);
+			UpdateBitStreamPosition(floppy, bitCellDelta);
+		}
+	}
 }
 
 BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
@@ -1818,7 +1817,7 @@ BYTE __stdcall Disk2InterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE 
 	if (isWOZ && pCard->m_seqFunc.function == dataShiftWrite)	// Occurs at end of sector write ($C0EE)
 		pCard->DataShiftWriteWOZ(pc, addr, nExecutedCycles);	// Finish any previous write
 
-	pCard->SetSequencerFunction(addr);
+	pCard->SetSequencerFunction(addr, nExecutedCycles);
 
 	switch (addr & 0xF)
 	{
@@ -1865,7 +1864,7 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 	if (isWOZ && pCard->m_seqFunc.function == dataShiftWrite)
 		pCard->DataShiftWriteWOZ(pc, addr, nExecutedCycles);	// Finish any previous write
 
-	pCard->SetSequencerFunction(addr);
+	pCard->SetSequencerFunction(addr, nExecutedCycles);
 
 	switch (addr & 0xF)
 	{
@@ -1908,13 +1907,14 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 //    Split up 'Unit' putting some state into a new 'Floppy'
 // 5: Added: Sequencer Function
 // 6: Added: Drive Connected & Motor On Cycle
-static const UINT kUNIT_VERSION = 6;
+// 7: Deprecated SS_YAML_KEY_LSS_RESET_SEQUENCER, SS_YAML_KEY_DISK_ACCESSED
+static const UINT kUNIT_VERSION = 7;
 
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
 
 #define SS_YAML_KEY_PHASES "Phases"
 #define SS_YAML_KEY_CURRENT_DRIVE "Current Drive"
-#define SS_YAML_KEY_DISK_ACCESSED "Disk Accessed"
+#define SS_YAML_KEY_DISK_ACCESSED "Disk Accessed"	// deprecated at v7
 #define SS_YAML_KEY_ENHANCE_DISK "Enhance Disk"
 #define SS_YAML_KEY_FLOPPY_LATCH "Floppy Latch"
 #define SS_YAML_KEY_FLOPPY_MOTOR_ON "Floppy Motor On"
@@ -1923,7 +1923,7 @@ static const UINT kUNIT_VERSION = 6;
 #define SS_YAML_KEY_LAST_READ_LATCH_CYCLE "Last Read Latch Cycle"
 #define SS_YAML_KEY_LSS_SHIFT_REG "LSS Shift Reg"
 #define SS_YAML_KEY_LSS_LATCH_DELAY "LSS Latch Delay"
-#define SS_YAML_KEY_LSS_RESET_SEQUENCER "LSS Reset Sequencer"
+#define SS_YAML_KEY_LSS_RESET_SEQUENCER "LSS Reset Sequencer"	// deprecated at v7
 #define SS_YAML_KEY_LSS_SEQUENCER_FUNCTION "LSS Sequencer Function"
 
 #define SS_YAML_KEY_DISK2UNIT "Unit"
@@ -1997,7 +1997,6 @@ void Disk2InterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_CURRENT_DRIVE, m_currDrive);
 	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_PHASES, m_magnetStates);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_DISK_ACCESSED, false);	// deprecated
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_ENHANCE_DISK, m_enhanceDisk);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_FLOPPY_LATCH, m_floppyLatch);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_MOTOR_ON, m_floppyMotorOn == TRUE);
@@ -2005,7 +2004,6 @@ void Disk2InterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_READ_LATCH_CYCLE, m_diskLastReadLatchCycle);	// v3
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_LSS_SHIFT_REG, m_shiftReg);			// v4
 	yamlSaveHelper.SaveInt(SS_YAML_KEY_LSS_LATCH_DELAY, m_latchDelay);			// v4
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_LSS_RESET_SEQUENCER, m_resetSequencer);	// v4
 	yamlSaveHelper.SaveInt(SS_YAML_KEY_LSS_SEQUENCER_FUNCTION, m_seqFunc.function);	// v5
 	m_formatTrack.SaveSnapshot(yamlSaveHelper);	// v2
 
@@ -2163,7 +2161,6 @@ bool Disk2InterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versi
 
 	m_currDrive = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_DRIVE);
 	m_magnetStates		= yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASES);
-	(void)				  yamlLoadHelper.LoadBool(SS_YAML_KEY_DISK_ACCESSED);	// deprecated - but retrieve the value to avoid the "State: Unknown key (Disk Accessed)" warning
 	m_enhanceDisk		= yamlLoadHelper.LoadBool(SS_YAML_KEY_ENHANCE_DISK);
 	m_floppyLatch		= yamlLoadHelper.LoadUint(SS_YAML_KEY_FLOPPY_LATCH);
 	m_floppyMotorOn		= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_MOTOR_ON);
@@ -2183,7 +2180,11 @@ bool Disk2InterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versi
 	{
 		m_shiftReg			= yamlLoadHelper.LoadUint(SS_YAML_KEY_LSS_SHIFT_REG) & 0xff;
 		m_latchDelay		= yamlLoadHelper.LoadInt(SS_YAML_KEY_LSS_LATCH_DELAY);
-		m_resetSequencer	= yamlLoadHelper.LoadBool(SS_YAML_KEY_LSS_RESET_SEQUENCER);
+	}
+
+	if (version >= 4 && version <= 6)
+	{
+		(void) yamlLoadHelper.LoadBool(SS_YAML_KEY_LSS_RESET_SEQUENCER);	// deprecated
 	}
 
 	if (version >= 5)
@@ -2194,6 +2195,11 @@ bool Disk2InterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versi
 	{
 		m_seqFunc.writeMode	= yamlLoadHelper.LoadBool(SS_YAML_KEY_FLOPPY_WRITE_MODE) ? 1 : 0;
 		m_seqFunc.loadMode = 0;	// Wasn't saved until v5
+	}
+
+	if (version <= 6)
+	{
+		(void) yamlLoadHelper.LoadBool(SS_YAML_KEY_DISK_ACCESSED);	// deprecated - but retrieve the value to avoid the "State: Unknown key (Disk Accessed)" warning
 	}
 
 	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1

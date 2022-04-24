@@ -180,11 +180,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 		VideoScannerDisplayInfo g_videoScannerDisplayInfo;
 
-static char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iView,
-			const int iTxtBackground  = BG_INFO     , const int iTxtForeground  = FG_DISASM_CHAR,
-			const int iHighBackground = BG_INFO_CHAR, const int iHighForeground = FG_INFO_CHAR_HI,
-			const int iLowBackground  = BG_INFO_CHAR, const int iLowForeground  = FG_INFO_CHAR_LO );
-
 	char  FormatCharTxtAsci ( const BYTE b, bool * pWasAsci_ );
 
 	void DrawSubWindow_Code ( int iWindow );
@@ -945,15 +940,15 @@ void SetupColorsHiLoBits ( bool bHighBit, bool bCtrlBit,
 
 // To flush out color bugs... swap: iAsciBackground & iHighBackground
 //===========================================================================
-char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iView,
-		const int iAsciBackground /*= 0           */, const int iTextForeground /*= FG_DISASM_CHAR */,
-		const int iHighBackground /*= BG_INFO_CHAR*/, const int iHighForeground /*= FG_INFO_CHAR_HI*/,
-		const int iCtrlBackground /*= BG_INFO_CHAR*/, const int iCtrlForeground /*= FG_INFO_CHAR_LO*/ )
+static std::string ColorizeSpecialChar( BYTE nData, const MemoryView_e iView,
+	const int iTextBackground = BG_INFO     , const int iTextForeground = FG_DISASM_CHAR,
+	const int iHighBackground = BG_INFO_CHAR, const int iHighForeground = FG_INFO_CHAR_HI,
+	const int iCtrlBackground = BG_INFO_CHAR, const int iCtrlForeground = FG_INFO_CHAR_LO )
 {
 	bool bHighBit = false;
 	bool bCtrlBit = false;
 
-	int iTextBG = iAsciBackground;
+	int iTextBG = iTextBackground;
 	int iHighBG = iHighBackground;
 	int iCtrlBG = iCtrlBackground;
 	int iTextFG = iTextForeground;
@@ -989,19 +984,6 @@ char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iView,
 		default: break;
 	}
 
-	if (sText)
-		sprintf( sText, "%c", nChar );
-
-#if OLD_CONSOLE_COLOR
-	if (sText)
-	{	
-		if (ConsoleColor_IsEscapeMeta( nChar ))
-			sprintf( sText, "%c%c", nChar, nChar );
-		else
-			sprintf( sText, "%c", nChar );
-	}
-#endif
-	
 //	if (hDC)
 	{
 		SetupColorsHiLoBits( bHighBit, bCtrlBit
@@ -1010,7 +992,13 @@ char ColorizeSpecialChar( char * sText, BYTE nData, const MemoryView_e iView,
 			, iCtrlBG, iCtrlFG // FG_DISASM_OPCODE 
 		);
 	}
-	return nChar;
+
+#if OLD_CONSOLE_COLOR
+	if (ConsoleColorIsEscapeMeta( nChar ))
+		return std::string( 2, nChar );
+#endif
+
+	return std::string( 1, nChar );
 }
 
 void ColorizeFlags( bool bSet, int bg_default = BG_INFO, int fg_default = FG_INFO_TITLE )
@@ -1043,12 +1031,10 @@ void DrawBreakpoints ( int line )
 	rect.right  = DISPLAY_WIDTH;
 	rect.bottom = rect.top + g_nFontHeight;
 
-	char sText[16] = "Breakpoints"; // TODO: Move to BP1
-
 #if DISPLAY_BREAKPOINT_TITLE
 	DebuggerSetColorBG( DebuggerGetColor( BG_INFO )); // COLOR_BG_DATA
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE )); //COLOR_STATIC
-	PrintText( sText, rect );
+	PrintText("Breakpoints", rect );
 	rect.top    += g_nFontHeight;
 	rect.bottom += g_nFontHeight;
 #endif
@@ -1088,17 +1074,14 @@ void DrawBreakpoints ( int line )
 			
 			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ) );
-			sprintf( sText, "B" );
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( "B", rect2 );
 
 			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BULLET ) );
-			sprintf( sText, "%X ", iBreakpoint );
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( StrFormat("%X ", iBreakpoint).c_str(), rect2);
 
 //			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ) );
-//			strcpy( sText, "." );
-//			PrintTextCursorX( sText, rect2 );
+//			PrintTextCursorX( ".", rect2 );
 
 #if DEBUG_FORCE_DISPLAY
 	pBP->eSource = (BreakpointSource_t) iBreakpoint;
@@ -1157,8 +1140,7 @@ void DrawBreakpoints ( int line )
 	DebuggerSetColorFG( nColor );
 #endif
 
-			sprintf( sText, "%04X", nAddress1 );
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( WordToHexStr( nAddress1 ).c_str(), rect2);
 
 			if (nLength == 1)
 			{
@@ -1198,8 +1180,7 @@ void DrawBreakpoints ( int line )
 	}
 	DebuggerSetColorFG( nColor );
 #endif
-				sprintf( sText, "%04X", nAddress2 );
-				PrintTextCursorX( sText, rect2 );
+				PrintTextCursorX( WordToHexStr( nAddress2 ).c_str(), rect2);
 
 				if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
 					PrintTextCursorX("R", rect2);
@@ -1825,7 +1806,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 
 		if (! bCursorLine)
 		{
-			ColorizeSpecialChar( NULL, line.nImmediate, MEM_VIEW_ASCII, iBackground );
+			ColorizeSpecialChar( line.nImmediate, MEM_VIEW_ASCII, iBackground );
 		}
 		PrintTextCursorX( line.sImmediate, linerect );
 
@@ -1869,7 +1850,6 @@ static void DrawFlags ( int line, WORD nRegFlags )
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
 
-	char sText[4] = "?";
 	RECT rect;
 
 	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
@@ -1901,15 +1881,12 @@ static void DrawFlags ( int line, WORD nRegFlags )
 	rect.top    += g_nFontHeight;
 	rect.bottom += g_nFontHeight;
 
-	sprintf( sText, "%02X", nRegFlags );
-
 	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
-	PrintText( sText, rect );
+	PrintText( ByteToHexStr( nRegFlags ).c_str(), rect);
 
 	rect.top    -= g_nFontHeight;
 	rect.bottom -= g_nFontHeight;
-	sText[1] = 0;
 
 	rect.left += ((2 + _6502_NUM_FLAGS) * nSpacerWidth);
 	rect.right = rect.left + nFontWidth;
@@ -1924,7 +1901,6 @@ static void DrawFlags ( int line, WORD nRegFlags )
 
 		bool bSet = (nRegFlags & 1);
 
-		sText[0] = g_aBreakpointSource[ BP_SRC_FLAG_C + iFlag ][0];
 
 		if (bSet)
 		{
@@ -1939,7 +1915,8 @@ static void DrawFlags ( int line, WORD nRegFlags )
 
 		rect.left  -= nSpacerWidth;
 		rect.right -= nSpacerWidth;
-		PrintText( sText, rect );
+		const char szBpSrc[2] = { g_aBreakpointSource[ BP_SRC_FLAG_C + iFlag ][0], '\0' };
+		PrintText( szBpSrc, rect );
 
 		// Print Binary value
 		rect.top    += g_nFontHeight;
@@ -1947,8 +1924,8 @@ static void DrawFlags ( int line, WORD nRegFlags )
 		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 
-		sText[0] = '0' + static_cast<int>(bSet);
-		PrintText( sText, rect );
+		const char szSet[2] = { '0' + static_cast<int>(bSet), '\0' };
+		PrintText( szSet, rect );
 		rect.top    -= g_nFontHeight;
 		rect.bottom -= g_nFontHeight;
 
@@ -1979,20 +1956,18 @@ void DrawMemory ( int line, int iMemDump )
 	if ((eDevice == DEV_SY6522) || (eDevice == DEV_AY8910))
 		MB_GetSnapshot_v1(&SS_MB, 4+(nAddr>>1));		// Slot4 or Slot5
 
-	RECT rect;
+	RECT rect = { 0 };
 	rect.left   = DISPLAY_MINIMEM_COLUMN;
 	rect.top    = (line * g_nFontHeight);
 	rect.right  = DISPLAY_WIDTH;
 	rect.bottom = rect.top + g_nFontHeight;
 
-	RECT rect2;
-	rect2 = rect;
+	RECT rect2 = rect;
 
 	const int MAX_MEM_VIEW_TXT = 16;
-	char sText[ MAX_MEM_VIEW_TXT * 2 ];
 
-	char sType   [ 6 ] = "Mem";
-	char sAddress[ 8 ] = "";
+	const char* pType = "Mem";
+	std::string sAddress;
 
 	int iForeground = FG_INFO_OPCODE;
 	int iBackground = BG_INFO;
@@ -2000,37 +1975,37 @@ void DrawMemory ( int line, int iMemDump )
 #if DISPLAY_MEMORY_TITLE
 	if (eDevice == DEV_SY6522)
 	{
-//		sprintf(sData,"Mem at SY#%d", nAddr);
-		sprintf( sAddress,"SY#%d", nAddr );
+//		sData = StrFormat("Mem at SY#%d", nAddr);
+		sAddress = StrFormat( "SY#%d", nAddr );
 	}
 	else if (eDevice == DEV_AY8910)
 	{
-//		sprintf(sData,"Mem at AY#%d", nAddr);
-		sprintf( sAddress,"AY#%d", nAddr );
+//		sData = StrFormat("Mem at AY#%d", nAddr);
+		sAddress = StrFormat( "AY#%d", nAddr );
 	}
 	else
 	{
-		sprintf( sAddress,"%04X",(unsigned)nAddr);
+		sAddress = WordToHexStr( nAddr );
 
 		if (iView == MEM_VIEW_HEX)
-			sprintf( sType, "HEX" );
+			pType = "HEX";
 		else
 		if (iView == MEM_VIEW_ASCII)
-			sprintf( sType, "ASCII" );
+			pType = "ASCII";
 		else
-			sprintf( sType, "TEXT" );
+			pType = "TEXT";
 	}
 
 	rect2 = rect;	
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
-	PrintTextCursorX( sType, rect2 );
+	PrintTextCursorX( pType, rect2 );
 
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 	PrintTextCursorX( " at ", rect2 );
 
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
-	PrintTextCursorY( sAddress, rect2 );
+	PrintTextCursorY( sAddress.c_str(), rect2);
 #endif
 
 	rect.top    = rect2.top;
@@ -2062,9 +2037,8 @@ void DrawMemory ( int line, int iMemDump )
 
 		if (iView == MEM_VIEW_HEX)
 		{
-			sprintf( sText, "%04X", iAddress );
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( WordToHexStr( iAddress ).c_str(), rect2);
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 			PrintTextCursorX( ":", rect2 );
@@ -2075,15 +2049,17 @@ void DrawMemory ( int line, int iMemDump )
 			DebuggerSetColorBG( DebuggerGetColor( iBackground ));
 			DebuggerSetColorFG( DebuggerGetColor( iForeground ));
 
+			std::string sText;
+
 // .12 Bugfix: DrawMemory() should draw memory byte for IO address: ML1 C000
 //			if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
 //			{
-//				sprintf( sText, "IO " );
+//				sText = "IO ";
 //			}
 //			else
 			if (eDevice == DEV_SY6522)
 			{
-				sprintf( sText, "%02X ", (unsigned) ((BYTE*)&SS_MB.Unit[nAddr & 1].RegsSY6522)[iAddress] );
+				sText = StrFormat( "%02X ", (unsigned)((BYTE*)&SS_MB.Unit[nAddr & 1].RegsSY6522)[iAddress] );
 				if (SS_MB.Unit[nAddr & 1].bTimer1Active && (iAddress == 4 || iAddress == 5))		// T1C
 				{
 					DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));							// if timer1 active then draw in white
@@ -2103,7 +2079,7 @@ void DrawMemory ( int line, int iMemDump )
 			else
 			if (eDevice == DEV_AY8910)
 			{
-				sprintf( sText, "%02X ", (unsigned)SS_MB.Unit[nAddr & 1].RegsAY8910[iAddress] );
+				sText = StrFormat( "%02X ", (unsigned)SS_MB.Unit[nAddr & 1].RegsAY8910[iAddress] );
 				if (iCol & 1)
 					DebuggerSetColorFG( DebuggerGetColor( iForeground ));
 				else
@@ -2112,7 +2088,6 @@ void DrawMemory ( int line, int iMemDump )
 			else
 			{
 				BYTE nData = (unsigned)*(LPBYTE)(mem+iAddress);
-				sText[0] = 0;
 
 				if (iView == MEM_VIEW_HEX)
 				{
@@ -2121,7 +2096,7 @@ void DrawMemory ( int line, int iMemDump )
 						DebuggerSetColorFG( DebuggerGetColor( FG_INFO_IO_BYTE ));
 					}
 
-					sprintf(sText, "%02X ", nData );
+					sText = StrFormat( "%02X ", nData );
 				}
 				else
 				{
@@ -2129,10 +2104,10 @@ void DrawMemory ( int line, int iMemDump )
 					if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
 						iBackground = BG_INFO_IO_BYTE;
 
-					ColorizeSpecialChar( sText, nData, iView, iBackground );
+					sText = ColorizeSpecialChar( nData, iView, iBackground );
 				}
 			}
-			PrintTextCursorX( sText, rect2 ); // PrintTextCursorX()
+			PrintTextCursorX( sText.c_str(), rect2); // PrintTextCursorX()
 			iAddress++;
 		}
 		// Windows HACK: Bugfix: Rest of line is still background color
@@ -2182,23 +2157,22 @@ void DrawRegister ( int line, LPCTSTR name, const int nBytes, const WORD nValue,
 	unsigned int nData = nValue;
 	int nOffset = 6;
 
-	char sValue[8];
-
 	if (PARAM_REG_SP == iSource)
 	{
 		WORD nStackDepth = _6502_STACK_END - nValue;
-		sprintf( sValue, "%02X", nStackDepth );
 		int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
 		rect.left += (2 * nFontWidth) + (nFontWidth >> 1); // 2.5 looks a tad nicer then 2
 
 		// ## = Stack Depth (in bytes)
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR )); // FG_INFO_OPCODE, FG_INFO_TITLE
-		PrintText( sValue, rect );
+		PrintText( ByteToHexStr( nStackDepth ).c_str(), rect );
 	}
+
+	std::string sValue;
 
 	if (nBytes == 2)
 	{
-		sprintf(sValue,"%04X", nData);
+		sValue = WordToHexStr( nData );
 	}
 	else
 	{
@@ -2208,15 +2182,15 @@ void DrawRegister ( int line, LPCTSTR name, const int nBytes, const WORD nValue,
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 		PrintTextCursorX( "'", rect ); // PrintTextCursorX
 
-		ColorizeSpecialChar( sValue, nData, MEM_VIEW_ASCII ); // MEM_VIEW_APPLE for inverse background little hard on the eyes
+		sValue = ColorizeSpecialChar( nData, MEM_VIEW_ASCII ); // MEM_VIEW_APPLE for inverse background little hard on the eyes
 
 		DebuggerSetColorBG( DebuggerGetColor( iBackground ));
-		PrintTextCursorX( sValue, rect ); // PrintTextCursorX()
+		PrintTextCursorX( sValue.c_str(), rect); // PrintTextCursorX()
 
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 		PrintTextCursorX( "'", rect ); // PrintTextCursorX()
 
-		sprintf(sValue,"  %02X", nData );
+		sValue = StrFormat( "  %02X", nData );
 	}
 
 	// Needs to be far enough over, since 4 chars of ZeroPage symbol also calls us
@@ -2230,7 +2204,7 @@ void DrawRegister ( int line, LPCTSTR name, const int nBytes, const WORD nValue,
 	{
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // FG_DISASM_OPCODE
 	}
-	PrintText( sValue, rect );
+	PrintText( sValue.c_str(), rect );
 }
 
 //===========================================================================
@@ -2270,12 +2244,9 @@ void _DrawSoftSwitchHighlight( RECT & temp, bool bSet, const char *sOn, const ch
 //===========================================================================
 void _DrawSoftSwitchAddress( RECT & rect, int nAddress, int bg_default = BG_INFO )
 {
-	char sText[ 4 ] = "";
-
 	DebuggerSetColorBG( DebuggerGetColor( bg_default ));
 	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_TARGET ));
-	sprintf( sText, "%02X", (nAddress & 0xFF) );
-	PrintTextCursorX( sText, rect );
+	PrintTextCursorX( ByteToHexStr( nAddress & 0xFF ).c_str(), rect );
 
 	DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
 	PrintTextCursorX( ":", rect );
@@ -2438,18 +2409,18 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, const int iBankDisplay, int b
 		rect.right  += 4*w;
 
 		int iActiveBank = -1;
-		char sText[ 4 ] = "?"; // Default to RAMWORKS
-		if (GetCurrentExpansionMemType() == CT_RamWorksIII) { sText[0] = 'r'; iActiveBank = GetRamWorksActiveBank(); }
-		if (GetCurrentExpansionMemType() == CT_Saturn128K)  { sText[0] = 's'; iActiveBank = GetCardMgr().GetLanguageCard()->GetActiveBank(); }
+		char cMemType = '?'; // Default to RAMWORKS
+		if (GetCurrentExpansionMemType() == CT_RamWorksIII) { cMemType = 'r'; iActiveBank = GetRamWorksActiveBank(); }
+		if (GetCurrentExpansionMemType() == CT_Saturn128K)  { cMemType = 's'; iActiveBank = GetCardMgr().GetLanguageCard()->GetActiveBank(); }
 
 		if (iActiveBank >= 0)
 		{
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_REG )); // light blue
-			PrintTextCursorX( sText, rect );
+			const char sMemType[2] = { cMemType, '\0' };
+			PrintTextCursorX( sMemType, rect );
 
-			sprintf( sText, "%02X", (iActiveBank & 0x7F) );
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));	// orange
-			PrintTextCursorX( sText, rect );
+			PrintTextCursorX( ByteToHexStr( iActiveBank & 0x7F ).c_str(), rect );
 		}
 		else
 		{
@@ -2538,39 +2509,25 @@ void DrawSoftSwitches( int iSoftSwitch )
 	// GR  / TEXT
 	// GRAPH/TEXT
 	// TEXT ON/OFF
-	sprintf( sText, !VideoGetSWTEXT() ? "GR  / ----" : "--  / TEXT" );
-	PrintTextCursorY( sText, rect );
+	PrintTextCursorY( !VideoGetSWTEXT() ? "GR  / ----" : "--  / TEXT", rect );
 
 	// $C052 / $C053 = MIXEDOFF/MIXEDON = SW.MIXCLR/SW.MIXSET
 	// FULL/MIXED
 	// MIX OFF/ON
-	sprintf( sText, !VideoGetSWMIXED() ? "FULL/-----" : "----/MIXED" );
-	PrintTextCursorY( sText, rect );
+	PrintTextCursorY( !VideoGetSWMIXED() ? "FULL/-----" : "----/MIXED", rect );
 
 	// $C054 / $C055 = PAGE1/PAGE2 = PAGE2OFF/PAGE2ON = SW.LOWSCR/SW.HISCR
 	// PAGE 1 / 2
-	sprintf( sText, !VideoGetSWPAGE2() ? "PAGE 1 / -" : "PAGE - / 2" );
-	PrintTextCursorY( sText, rect );
+	PrintTextCursorY( !VideoGetSWPAGE2() ? "PAGE 1 / -" : "PAGE - / 2", rect );
 	
 	// $C056 / $C057 LORES/HIRES = HIRESOFF/HIRESON = SW.LORES/SW.HIRES
 	// LO / HIRES
 	// LO / -----
 	// -- / HIRES
-	sprintf( sText, !VideoGetSWHIRES() ? "LO /-- RES" : "---/HI RES" );
-	PrintTextCursorY( sText, rect );
-
-	PrintTextCursorY( "", rect );
-
-	// Extended soft switches
-	sprintf( sText, !VideoGetSW80COL() ? "40 / -- COL" : "-- / 80 COL" );
-	PrintTextCursorY( sText, rect );
-
-	sprintf(sText, VideoGetSWAltCharSet() ? "ASCII/-----" : "-----/MOUSE" );
-	PrintTextCursorY( sText, rect );
-
-	// 280/560 HGR
-	sprintf(sText, !VideoGetSWDHIRES() ? "HGR / ----" : "--- / DHGR" );
-	PrintTextCursorY( sText, rect );
+	PrintTextCursorY( !VideoGetSWHIRES()     ? "LO /-- RES"  : "-- /HI RES" , rect ); PrintTextCursorY( "", rect );
+	PrintTextCursorY( !VideoGetSW80COL()     ? "40 / -- COL" : "-- / 80 COL", rect ); // Extended soft switches
+	PrintTextCursorY( VideoGetSWAltCharSet() ? "ASCII/-----" : "-----/MOUSE", rect );
+	PrintTextCursorY( !VideoGetSWDHIRES()    ? "HGR / ----"  : "--- / DHGR" , rect ); // 280/560 HGR
 #else //SOFTSWITCH_OLD
 	// See: VideoSetMode()
 
@@ -2705,18 +2662,15 @@ void DrawStack ( int line)
 
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE )); // [COLOR_STATIC
 
-		char sText[8] = "";
 		if (nAddress <= _6502_STACK_END)
 		{
-			sprintf( sText,"%04X: ", nAddress );
-			PrintTextCursorX( sText, rect );
+			PrintTextCursorX( StrFormat( "%04X: ", nAddress ).c_str(), rect );
 		}
 
 		if (nAddress <= _6502_STACK_END)
 		{
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // COLOR_FG_DATA_TEXT
-			sprintf(sText, "  %02X",(unsigned)*(LPBYTE)(mem+nAddress));
-			PrintTextCursorX( sText, rect );
+			PrintTextCursorX( StrFormat( "  %02X", (unsigned)*(LPBYTE)(mem+nAddress) ).c_str(), rect );
 		}
 		iStack++;
 	}
@@ -2745,8 +2699,8 @@ void DrawTargets ( int line)
 //		if ((aTarget[iAddress] >= _6502_IO_BEGIN) && (aTarget[iAddress] <= _6502_IO_END))
 //			aTarget[iAddress] = NO_6502_TARGET;
 
-		char sAddress[8] = "-none-";
-		char sData[8]    = "";
+		std::string sAddress = "-none-";
+		std::string sData;
 
 #if DEBUG_FORCE_DISPLAY // Targets
 		if (aTarget[iAddress] == NO_6502_TARGET)
@@ -2754,11 +2708,11 @@ void DrawTargets ( int line)
 #endif
 		if (aTarget[iAddress] != NO_6502_TARGET)
 		{
-			sprintf(sAddress,"%04X",aTarget[iAddress]);
+			sAddress = WordToHexStr(aTarget[iAddress]);
 			if (iAddress)
-				sprintf(sData,"%02X",*(LPBYTE)(mem+aTarget[iAddress]));
+				sData = ByteToHexStr(*(LPBYTE)(mem+aTarget[iAddress]));
 			else
-				sprintf(sData,"%04X",*(LPWORD)(mem+aTarget[iAddress]));
+				sData = WordToHexStr(*(LPWORD)(mem+aTarget[iAddress]));
 		}
 
 		rect.left   = DISPLAY_TARGETS_COLUMN;
@@ -2773,7 +2727,7 @@ void DrawTargets ( int line)
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS )); // Target Address
 
 		DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
-		PrintText( sAddress, rect );
+		PrintText( sAddress.c_str(), rect );
 
 		rect.left  = nColumn;
 		rect.right = rect.left + (10 * nFontWidth); // SCREENSPLIT2
@@ -2783,7 +2737,7 @@ void DrawTargets ( int line)
 		else
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // Target Bytes
 
-		PrintText( sData, rect );
+		PrintText( sData.c_str(), rect );
 	}
 }
 
@@ -2799,13 +2753,11 @@ void DrawWatches (int line)
 	rect.right  = DISPLAY_WIDTH;
 	rect.bottom = rect.top + g_nFontHeight;
 
-	char sText[16] = "Watches";
-
 	DebuggerSetColorBG(DebuggerGetColor( BG_INFO_WATCH ));
 
 #if DISPLAY_WATCH_TITLE
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
-	PrintTextCursorY( sText, rect );
+	PrintTextCursorY("Watches", rect );
 #endif
 
 	int iWatch;
@@ -2823,16 +2775,14 @@ void DrawWatches (int line)
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ) );
 			PrintTextCursorX( "W", rect2 );
 
-			sprintf( sText, "%X ",iWatch );
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BULLET ));
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( StrFormat( "%X ", iWatch ).c_str(), rect2 );
 			
 //			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 //			PrintTextCursorX( ".", rect2 );
 
-			sprintf( sText,"%04X", g_aWatches[iWatch].nAddress );
 			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( WordToHexStr( g_aWatches[iWatch].nAddress ).c_str(), rect2 );
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 			PrintTextCursorX( ":", rect2 );
@@ -2840,32 +2790,27 @@ void DrawWatches (int line)
 			BYTE nTarget8 = 0;
 
 			nTarget8 = (unsigned)*(LPBYTE)(mem+g_aWatches[iWatch].nAddress);
-			sprintf(sText,"%02X", nTarget8 );
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( ByteToHexStr( nTarget8 ).c_str(), rect2 );
 
 			nTarget8 = (unsigned)*(LPBYTE)(mem+g_aWatches[iWatch].nAddress + 1);
-			sprintf(sText,"%02X", nTarget8 );
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( ByteToHexStr( nTarget8 ).c_str(), rect2 );
 
-			sprintf( sText,"(" );
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( "(", rect2 );
 
 			WORD nTarget16 = (unsigned)*(LPWORD)(mem+g_aWatches[iWatch].nAddress);
-			sprintf( sText,"%04X", nTarget16 );
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( WordToHexStr( nTarget16 ).c_str(), rect2 );
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 //			PrintTextCursorX( ":", rect2 );
 			PrintTextCursorX( ")", rect2 );
 
-//			BYTE nValue8 = (unsigned)*(LPBYTE)(mem + nTarget16);
-//			sprintf(sText,"%02X", nValue8 );
+//			BYTE nValue8 = *(LPBYTE)(mem + nTarget16);
 //			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
-//			PrintTextCursorX( sText, rect2 );
+//			PrintTextCursorX( ByteToHexStr( nValue8 ).c_str(), rect2 );
 
 			rect.top    += g_nFontHeight;
 			rect.bottom += g_nFontHeight;
@@ -2887,8 +2832,7 @@ void DrawWatches (int line)
 					DebuggerSetColorBG( DebuggerGetColor( BG_DATA_2 ));
 
 				BYTE nValue8 = mem[ (nTarget16 + iByte) & 0xffff ];
-				sprintf(sText,"%02X", nValue8 );
-				PrintTextCursorX( sText, rect2 );
+				PrintTextCursorX( ByteToHexStr( nValue8 ).c_str(), rect2 );
 			}
 		}
 		rect.top    += g_nFontHeight;
@@ -2914,7 +2858,6 @@ void DrawZeroPagePointers ( int line )
 	DebuggerSetColorBG( DebuggerGetColor( BG_INFO_ZEROPAGE ));
 
 	const int nMaxSymbolLen = 7;
-	char sText[nMaxSymbolLen+1] = "";
 
 	for (int iZP = 0; iZP < MAX_ZEROPAGE_POINTERS; iZP++)
 	{
@@ -2931,9 +2874,8 @@ void DrawZeroPagePointers ( int line )
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ) );
 			PrintTextCursorX( "Z", rect2 );
 
-			sprintf( sText, "%X ", iZP );
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BULLET ));
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( StrFormat( "%X ", iZP ).c_str(), rect2 );
 
 //			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 //			PrintTextCursorX( " ", rect2 );
@@ -2946,63 +2888,57 @@ void DrawZeroPagePointers ( int line )
 			std::string const& sSymbol1 = GetSymbol(nZPAddr1, 2, sAddressBuf1);	// 2:8-bit value (if symbol not found)
 			std::string const& sSymbol2 = GetSymbol(nZPAddr2, 2, sAddressBuf2);	// 2:8-bit value (if symbol not found)
 
+			std::string sText;
+
 //			if ((sSymbol1.length() == 1) && (sSymbol2.length() == 1))
-//				sprintf( sText, "%s%s", sSymbol1.c_str(), sSymbol2.c_str());
+//				sText = sSymbol1 + sSymbol2;
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 
-			for ( int x = 0; x < nMaxSymbolLen; x++ )
-			{
-				sText[ x ] = CHAR_SPACE;
-			}
-
-			sText[nMaxSymbolLen] = 0;
-			
 			if (!sSymbol1.empty() && sSymbol1[0] == '$')
 			{
-//				sprintf( sText, "%s%s", sSymbol1 );
-//				sprintf( sText, "%04X", nZPAddr1 );
+//				sText = pSymbol1;
+//				sZPAddr = WordToHexStr( nZPAddr1 );
 			}
 			else
 			if (!sSymbol2.empty() && sSymbol2[0] == '$')
 			{
-//				sprintf( sText, "%s%s", sSymbol2 );
-//				sprintf( sText, "%04X", nZPAddr2 );
+//				sText = pSymbol2;
+//				sZPAddr = WordToHexStr( nZPAddr2 );
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 			}
 			else
 			{
-				int nMin = MIN( sSymbol1.length(), nMaxSymbolLen );
-				memcpy(sText, sSymbol1.c_str(), nMin);
+				size_t nMin = MIN( sSymbol1.length(), size_t(nMaxSymbolLen) );
+				sText.assign(sSymbol1.c_str(), nMin);
 				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_SYMBOL ) );
 			}
 //			DrawRegister( line+iZP, szZP, 2, nTarget16);
 //			PrintText( szZP, rect2 );
-			PrintText( sText, rect2);
+			if (sText.length() < nMaxSymbolLen)
+				sText.resize(nMaxSymbolLen, CHAR_SPACE);
+			PrintText( sText.c_str(), rect2);
 
 			rect2.left    = rect.left;
 			rect2.top    += g_nFontHeight;
 			rect2.bottom += g_nFontHeight;
 
-			sprintf( sText, "%02X", nZPAddr1 );
 			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( ByteToHexStr( nZPAddr1 ).c_str(), rect2 );
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 			PrintTextCursorX( ":", rect2 );
 
 			WORD nTarget16 = (WORD)mem[ nZPAddr1 ] | ((WORD)mem[ nZPAddr2 ]<< 8);
-			sprintf( sText, "%04X", nTarget16 );
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( WordToHexStr( nTarget16 ).c_str(), rect2 );
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 			PrintTextCursorX( ":", rect2 );
 
 			BYTE nValue8 = (unsigned)*(LPBYTE)(mem + nTarget16);
-			sprintf(sText, "%02X", nValue8 );
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
-			PrintTextCursorX( sText, rect2 );
+			PrintTextCursorX( ByteToHexStr( nValue8 ).c_str(), rect2 );
 		}
 		rect.top    += (g_nFontHeight * 2);
 		rect.bottom += (g_nFontHeight * 2);
@@ -3061,16 +2997,12 @@ void DrawSubWindow_Data (Update_t bUpdate)
 	int iBackground;
 
 	const int nMaxOpcodes = WINDOW_DATA_BYTES_PER_LINE;
-	char  sAddress[ 5 ];
 
-	_ASSERT( CONSOLE_WIDTH > WINDOW_DATA_BYTES_PER_LINE );
-
-	char sOpcodes  [ CONSOLE_WIDTH ] = "";
-	char sImmediate[ 4 ]; // 'c'
+	_ASSERT( CONSOLE_WIDTH > (WINDOW_DATA_BYTES_PER_LINE * 3));
 
 	const int nDefaultFontWidth = 7; // g_aFontConfig[FONT_DISASM_DEFAULT]._nFontWidth or g_nFontWidthAvg
-	int X_OPCODE      =  6                    * nDefaultFontWidth;
-	int X_CHAR        = (6 + (nMaxOpcodes*3)) * nDefaultFontWidth;
+	const int X_OPCODE          =  6                    * nDefaultFontWidth;
+	const int X_CHAR            = (6 + (nMaxOpcodes*3)) * nDefaultFontWidth;
 
 	int iMemDump = 0;
 
@@ -3083,29 +3015,27 @@ void DrawSubWindow_Data (Update_t bUpdate)
 //	int iWindows = g_iThisWindow;
 //	WindowSplit_t * pWindow = &g_aWindowConfig[ iWindow ];
 
-	RECT rect;
-	rect.top = 0 + 0;
+	RECT rect = { 0 };
+	rect.top = 0;
 
-	int  iByte;
 	WORD iAddress = nAddress;
 
-	int iLine;
-	int nLines = g_nDisasmWinHeight;
+	const int nLines = g_nDisasmWinHeight;
 
-	for (iLine = 0; iLine < nLines; iLine++ )
+	for ( int iLine = 0; iLine < nLines; iLine++ )
 	{
 		iAddress = nAddress;
 
 	// Format
-		sprintf( sAddress, "%04X", iAddress );
+		std::string sAddress = WordToHexStr( iAddress );
 
-		sOpcodes[0] = 0;
-		for ( iByte = 0; iByte < nMaxOpcodes; iByte++ )
+		std::string sOpcodes;
+		const BYTE* mp = mem + iAddress;
+		for ( int iByte = 0; iByte < nMaxOpcodes; ++iByte, ++mp )
 		{
-			BYTE nData = (unsigned)*(LPBYTE)(mem + iAddress + iByte);
-			sprintf( &sOpcodes[ iByte * 3 ], "%02X ", nData );
+			StrAppendByteAsHex(sOpcodes, *mp);
+			sOpcodes += ' ';
 		}
-		sOpcodes[ nMaxOpcodes * 3 ] = 0;
 
 		int nFontHeight = g_aFontConfig[ FONT_DISASM_DEFAULT ]._nLineHeight;
 
@@ -3114,18 +3044,12 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		rect.right  = DISPLAY_DISASM_RIGHT;
 		rect.bottom = rect.top + nFontHeight;
 
-		if (iLine & 1)
-		{
-			iBackground = BG_DATA_1;
-		}
-		else
-		{
-			iBackground = BG_DATA_2;
-		}
+		iBackground = !!(iLine & 1) ? BG_DATA_1 : BG_DATA_2;
+
 		DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
 
 		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ) );
-		PrintTextCursorX( (LPCTSTR) sAddress, rect );
+		PrintTextCursorX( sAddress.c_str(), rect);
 
 		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_OPERATOR ) );
 		if (g_bConfigDisasmAddressColon)
@@ -3134,7 +3058,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		rect.left = X_OPCODE;
 
 		DebuggerSetColorFG( DebuggerGetColor( FG_DATA_BYTE ) );
-		PrintTextCursorX( (LPCTSTR) sOpcodes, rect );
+		PrintTextCursorX( sOpcodes.c_str(), rect);
 
 		rect.left = X_CHAR;
 
@@ -3151,7 +3075,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 			eView = MEM_VIEW_ASCII;
 
 		iAddress = nAddress;
-		for (iByte = 0; iByte < nMaxOpcodes; iByte++ )
+		for ( int iByte = 0; iByte < nMaxOpcodes; iByte++ )
 		{
 			BYTE nImmediate = (unsigned)*(LPBYTE)(mem + iAddress);
 			/*int iTextBackground = iBackground;
@@ -3160,15 +3084,15 @@ void DrawSubWindow_Data (Update_t bUpdate)
 				iTextBackground = BG_INFO_IO_BYTE;
 			}
 			*/
-			ColorizeSpecialChar( sImmediate, (BYTE) nImmediate, eView, iBackground );
-			PrintTextCursorX( (LPCSTR) sImmediate, rect );
+			std::string sImmediate = ColorizeSpecialChar( nImmediate, eView, iBackground );
+			PrintTextCursorX( sImmediate.c_str(), rect);
 
 			iAddress++;
 		}
 /*
 	// Colorized Text
 		iAddress = nAddress;
-		for (iByte = 0; iByte < nMaxOpcodes; iByte++ )
+		for ( int iByte = 0; iByte < nMaxOpcodes; iByte++ )
 		{
 			BYTE nImmediate = (unsigned)*(LPBYTE)(membank + iAddress);
 			int iTextBackground = iBackground; // BG_INFO_CHAR;
@@ -3176,8 +3100,8 @@ void DrawSubWindow_Data (Update_t bUpdate)
 			if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
 				iTextBackground = BG_INFO_IO_BYTE;
 
-			ColorizeSpecialChar( hDC, sImmediate, (BYTE) nImmediate, MEM_VIEW_APPLE, iBackground );
-			PrintTextCursorX( (LPCSTR) sImmediate, rect );
+			std::string sImmediate = ColorizeSpecialChar( nImmediate, MEM_VIEW_APPLE, iBackground );
+			PrintTextCursorX( sImmediate.c_str(), rect );
 
 			iAddress++;
 		}
@@ -3416,7 +3340,7 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 
 	DebuggerSetColorFG( DebuggerGetColor( FG_SOURCE ));
 
-	int nLines  = g_nDisasmWinHeight;
+	const int nLines  = g_nDisasmWinHeight;
 
 	int y = g_nDisasmWinHeight;
 	int nHeight = g_nDisasmWinHeight;
@@ -3424,7 +3348,7 @@ void DrawSubWindow_Source2 (Update_t bUpdate)
 	if (g_aWindowConfig[ g_iWindowThis ].bSplit) // HACK: Split Window Height is odd, so bottom window gets +1 height
 		nHeight++;
 
-	RECT rect;
+	RECT rect = { 0 };
 	rect.top    = (y * g_nFontHeight);
 	rect.bottom = rect.top + (nHeight * g_nFontHeight);
 	rect.left = 0;

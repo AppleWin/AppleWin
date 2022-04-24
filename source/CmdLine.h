@@ -84,6 +84,8 @@ struct CmdLine
 	bool bestFullScreenResolution;
 	UINT userSpecifiedWidth;
 	UINT userSpecifiedHeight;
+	std::string wavFileSpeaker;
+	std::string wavFileMockingboard;
 };
 
 bool ProcessCmdLine(LPSTR lpCmdLine);

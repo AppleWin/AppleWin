@@ -185,6 +185,16 @@ static UINT g_cyclesThisAudioFrame = 0;
 // Forward refs:
 static int MB_SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
 
+
+//---------------------------------------------------------------------------
+
+static bool g_bMBOutputToRiff = false;
+
+void MB_OutputToRiff(void)
+{
+	g_bMBOutputToRiff = true;
+}
+
 //---------------------------------------------------------------------------
 
 static bool IsAnyTimer1Active(void)
@@ -565,9 +575,8 @@ static void MB_UpdateInt(void)
 
 	dwByteOffset = (dwByteOffset + (DWORD)nNumSamples*sizeof(short)*g_nMB_NumChannels) % g_dwDSBufferSize;
 
-#ifdef RIFF_MB
-	RiffPutSamples(&g_nMixBuffer[0], nNumSamples);
-#endif
+	if (g_bMBOutputToRiff)
+		RiffPutSamples(&g_nMixBuffer[0], nNumSamples);
 }
 
 static void MB_Update(void)
