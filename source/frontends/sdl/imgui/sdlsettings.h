@@ -49,6 +49,7 @@ namespace sa2
 
     void drawDisassemblyTable(SDLFrame * frame);
     void drawConsole();
+    void drawBreakpoints();
     void drawRegisters();
     void drawAnnunciators();
     void drawSwitches();

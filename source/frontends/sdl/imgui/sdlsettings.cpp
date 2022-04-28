@@ -1094,6 +1094,48 @@ namespace sa2
     ImGui::EndDisabled();
   }
 
+  void ImGuiSettings::drawBreakpoints()
+  {
+    if (ImGui::BeginTable("Breakpoints", 7, ImGuiTableFlags_RowBg))
+    {
+      ImGui::TableSetupColumn("ID");
+      ImGui::TableSetupColumn("First");
+      ImGui::TableSetupColumn("Last");
+      ImGui::TableSetupColumn("Source");
+      ImGui::TableSetupColumn("Operator");
+      ImGui::TableSetupColumn("Enabled");
+      ImGui::TableSetupColumn("Temporary");
+      ImGui::TableHeadersRow();
+
+      for (int i = 0; i < MAX_BREAKPOINTS; ++i)
+      {
+        Breakpoint_t & bp = g_aBreakpoints[i];
+        if (bp.bSet)
+        {
+          ImGui::PushID(i);
+          ImGui::TableNextRow();
+          ImGui::TableNextColumn();
+          ImGui::Text("%2d", i);
+          ImGui::TableNextColumn();
+          ImGui::Text("%04X", bp.nAddress);
+          ImGui::TableNextColumn();
+          ImGui::Text("%04X", bp.nAddress + bp.nLength - 1);
+          ImGui::TableNextColumn();
+          ImGui::Text("%2d", bp.eSource);
+          ImGui::TableNextColumn();
+          ImGui::Text("%2d", bp.eOperator);
+          ImGui::TableNextColumn();
+          ImGui::Checkbox("##Enabled", &bp.bEnabled);
+          ImGui::TableNextColumn();
+          ImGui::Checkbox("##Temp", &bp.bTemp);
+          ImGui::PopID();
+        }
+      }
+
+      ImGui::EndTable();
+    }
+  }
+
   void ImGuiSettings::drawConsole()
   {
     const ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
@@ -1236,6 +1278,11 @@ namespace sa2
         if (ImGui::BeginTabItem("Console"))
         {
           drawConsole();
+          ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Breakpoints"))
+        {
+          drawBreakpoints();
           ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
