@@ -477,7 +477,7 @@ namespace sa2
                   }
 
                   ImGui::TableNextColumn();
-                  if (ImGui::RadioButton("", (dragAndDropSlot == slot) && (dragAndDropDrive == drive)))
+                  if (ImGui::RadioButton("##Sel", (dragAndDropSlot == slot) && (dragAndDropDrive == drive)))
                   {
                     frame->setDragDropSlotAndDrive(slot, drive);
                   }
@@ -523,7 +523,7 @@ namespace sa2
                   pHarddiskCard->ImageSwap();
                 }
                 ImGui::TableNextColumn();
-                if (ImGui::RadioButton("", (dragAndDropSlot == SLOT7) && (dragAndDropDrive == drive)))
+                if (ImGui::RadioButton("##Sel", (dragAndDropSlot == SLOT7) && (dragAndDropDrive == drive)))
                 {
                   frame->setDragDropSlotAndDrive(SLOT7, drive);
                 }
@@ -606,15 +606,15 @@ namespace sa2
             for (SoundInfo & device : myAudioInfo)
             {
               ImGui::TableNextColumn();
-              ImGui::Checkbox("", &device.running);
+              ImGui::Checkbox("##Running", &device.running);
               ImGui::TableNextColumn();
               ImGui::Text("%d", device.channels);
               ImGui::TableNextColumn();
-              ImGui::SliderFloat("", &device.volume, 0.0f, 1.0f, "%.2f");
+              ImGui::SliderFloat("##Volume", &device.volume, 0.0f, 1.0f, "%.2f");
               ImGui::TableNextColumn();
-              ImGui::SliderFloat("", &device.buffer, 0.0f, device.size, "%.3f");
+              ImGui::SliderFloat("##Buffer", &device.buffer, 0.0f, device.size, "%.3f");
               ImGui::TableNextColumn();
-              ImGui::SliderFloat("", &device.queue, 0.0f, device.size, "%.3f");
+              ImGui::SliderFloat("##Queue", &device.queue, 0.0f, device.size, "%.3f");
             }
             ImGui::EndDisabled();
 
@@ -956,7 +956,7 @@ namespace sa2
           ImGui::TableNextColumn();
 
           ImGui::BeginDisabled(g_nAppMode != MODE_DEBUG);
-          if (ImGui::CheckBoxTristate("", &state))
+          if (ImGui::CheckBoxTristate("##State", &state))
           {
             if (!breakpointActive && state == 1)
             {
