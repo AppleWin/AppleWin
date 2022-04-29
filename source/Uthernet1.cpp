@@ -1011,7 +1011,8 @@ static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE
 
 void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-    networkBackend = GetFrame().CreateNetworkBackend();
+    const std::string interfaceName = PCapBackend::tfe_GetRegistryInterface(m_slot);
+    networkBackend = GetFrame().CreateNetworkBackend(interfaceName);
     if (networkBackend->isValid())
     {
         RegisterIoHandler(m_slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, this, NULL);
@@ -1058,7 +1059,7 @@ void Uthernet1::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
     YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
     yamlSaveHelper.SaveBool(SS_YAML_KEY_ENABLED, networkBackend->isValid() ? true : false);
-    yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, PCapBackend::tfe_interface);
+    yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, networkBackend->getInterfaceName());
 
     yamlSaveHelper.SaveBool(SS_YAML_KEY_STARTED_TX, tfe_started_tx ? true : false);
     yamlSaveHelper.SaveBool(SS_YAML_KEY_CANNOT_USE, tfe_cannot_use ? true : false);
@@ -1083,7 +1084,7 @@ bool Uthernet1::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
 		ThrowErrorInvalidVersion(version);
 
     yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED);  // FIXME: what is the point of this?
-    PCapBackend::tfe_interface = yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE);
+    PCapBackend::tfe_SetRegistryInterface(m_slot, yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE));
 
     tfe_started_tx = yamlLoadHelper.LoadBool(SS_YAML_KEY_STARTED_TX) ? true : false;
     tfe_cannot_use = yamlLoadHelper.LoadBool(SS_YAML_KEY_CANNOT_USE) ? true : false;
@@ -1116,8 +1117,6 @@ bool Uthernet1::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
 
     for (UINT i = 0; i < 6; i++)
         tfe_sideeffects_write_pp((TFE_PP_ADDR_MAC_ADDR + i) & ~1, i & 1);           // set tfe_ia_mac
-
-    PCapBackend::tfe_SetRegistryInterface(m_slot, PCapBackend::tfe_interface);
 
     return true;
 }

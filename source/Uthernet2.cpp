@@ -1287,7 +1287,8 @@ void Uthernet2::Reset(const bool powerCycle)
     {
         // dataAddress is NOT reset, see page 10 of Uthernet II
         myDataAddress = 0;
-        myNetworkBackend = GetFrame().CreateNetworkBackend();
+        const std::string interfaceName = PCapBackend::tfe_GetRegistryInterface(m_slot);
+        myNetworkBackend = GetFrame().CreateNetworkBackend(interfaceName);
         myARPCache.clear();
         myDNSCache.clear();
     }
@@ -1460,7 +1461,7 @@ void Uthernet2::SaveSnapshot(YamlSaveHelper &yamlSaveHelper)
     YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
     YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
-    yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, PCapBackend::tfe_interface);
+    yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, myNetworkBackend->getInterfaceName());
     yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_MODE_REGISTER, myModeRegister);
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_DATA_ADDRESS, myDataAddress);
 
@@ -1503,8 +1504,7 @@ bool Uthernet2::LoadSnapshot(YamlLoadHelper &yamlLoadHelper, UINT version)
     if (version < 1 || version > kUNIT_VERSION)
         ThrowErrorInvalidVersion(version);
 
-    PCapBackend::tfe_interface = yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE);
-    PCapBackend::tfe_SetRegistryInterface(m_slot, PCapBackend::tfe_interface);
+    PCapBackend::tfe_SetRegistryInterface(m_slot, yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE));
 
     Reset(true); // AFTER the interface name has been restored
 

@@ -39,4 +39,7 @@ public:
 
 	// if the backend is usable
 	virtual bool isValid() = 0;
+
+	// get interface name
+	virtual const std::string & getInterfaceName() = 0;
 };
