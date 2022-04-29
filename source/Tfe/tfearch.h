@@ -71,4 +71,6 @@ extern int tfe_arch_enumadapter_open(void);
 extern int tfe_arch_enumadapter(std::string & name, std::string & description);
 extern int tfe_arch_enumadapter_close(void);
 
+extern const char * tfe_arch_lib_version();
+
 #endif

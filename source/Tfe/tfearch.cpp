@@ -556,4 +556,15 @@ int tfe_arch_receive(pcap_t * TfePcapFP,
     return -1;
 }
 
+const char * tfe_arch_lib_version()
+{
+    if (!TfePcapLoadLibrary())
+    {
+        return 0;
+    }
+
+    return p_pcap_lib_version();
+}
+
+
 //#endif /* #ifdef HAVE_TFE */

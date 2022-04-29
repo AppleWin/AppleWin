@@ -247,7 +247,7 @@ void LoadConfiguration(bool loadImages)
 			{
 				RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
 				// copy it to the new location
-				PCapBackend::tfe_SetRegistryInterface(slot, szFilename);
+				PCapBackend::SetRegistryInterface(slot, szFilename);
 
 				DWORD tfeEnabled;
 				REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &tfeEnabled, 0);

@@ -1011,7 +1011,7 @@ static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE
 
 void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-    const std::string interfaceName = PCapBackend::tfe_GetRegistryInterface(m_slot);
+    const std::string interfaceName = PCapBackend::GetRegistryInterface(m_slot);
     networkBackend = GetFrame().CreateNetworkBackend(interfaceName);
     if (networkBackend->isValid())
     {
@@ -1084,7 +1084,7 @@ bool Uthernet1::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
 		ThrowErrorInvalidVersion(version);
 
     yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED);  // FIXME: what is the point of this?
-    PCapBackend::tfe_SetRegistryInterface(m_slot, yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE));
+    PCapBackend::SetRegistryInterface(m_slot, yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE));
 
     tfe_started_tx = yamlLoadHelper.LoadBool(SS_YAML_KEY_STARTED_TX) ? true : false;
     tfe_cannot_use = yamlLoadHelper.LoadBool(SS_YAML_KEY_CANNOT_USE) ? true : false;

@@ -27,13 +27,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tfe/IPRaw.h"
 #include "Tfe/DNS.h"
 #include "W5100.h"
+#include "../Registry.h"
 
-#define U2_AUTO_DNS
-// U2_AUTO_DNS is an extension to the W5100
-// it enables DNS resulution by setting P3 = 1 for IP / TCP and UDP
-// the length - prefixed hostname is in 0x2A-0xFF is each socket memory
+
+// Virtual DNS
+// Virtual DNS is an extension to the W5100
+// It enables DNS resolution by setting P3 = 1 for IP / TCP and UDP
+// the length-prefixed hostname is in 0x2A-0xFF is each socket memory
 // it can be identified with PTIMER = 0.
 // this means, one can use TCP & UDP without a NetworkBackend.
+
 
 // Linux uses EINPROGRESS while Windows returns WSAEWOULDBLOCK
 // when the connect() calls is ongoing
@@ -330,6 +333,7 @@ const std::string& Uthernet2::GetSnapshotCardName()
 
 Uthernet2::Uthernet2(UINT slot) : Card(CT_Uthernet2, slot)
 {
+    myVirtualDNSEnabled = GetRegistryVirtualDNS(slot);
     Reset(true);
 }
 
@@ -866,18 +870,16 @@ void Uthernet2::openSocket(const size_t i)
 
     const uint8_t mr = myMemory[socket.registerAddress + W5100_SN_MR];
     const uint8_t protocol = mr & W5100_SN_MR_PROTO_MASK;
-    const bool auto_dns = protocol & W5100_SN_AUTO_DNS;
+    const bool virtual_dns = protocol & W5100_SN_VIRTUAL_DNS;
 
-#ifndef U2_AUTO_DNS
-    // if U2_AUTO_DNS is not defined, we cannot handle it here.
-    if (auto_dns)
+    // if virtual_dns is requested, but not enabled, we cannot handle it here.
+    if (virtual_dns && !myVirtualDNSEnabled)
     {
 #ifdef U2_LOG_STATE
-        LogFileOutput("U2: Open[%" SIZE_T_FMT "]: audo DNS not supported: %02x\n", i, mr);
+        LogFileOutput("U2: Open[%" SIZE_T_FMT "]: virtual DNS not supported: %02x\n", i, mr);
 #endif
         return;
     }
-#endif
 
     uint8_t &sr = socket.sn_sr;
 
@@ -1196,15 +1198,16 @@ void Uthernet2::writeSocketRegister(const uint16_t address, const uint8_t value)
         myMemory[address] = value;
         break;
     default:
-#ifdef U2_AUTO_DNS
-        if (loc >= W5100_SN_DNS_NAME_LEN)
+        if (myVirtualDNSEnabled && loc >= W5100_SN_DNS_NAME_LEN)
         {
             myMemory[address] = value;
         }
-#endif
+        else
+        {
 #ifdef U2_LOG_UNKNOWN
-        LogFileOutput("U2: Set unknown socket register[%d]: %04x\n", i, address);
+            LogFileOutput("U2: Set unknown socket register[%d]: %04x\n", i, address);
 #endif
+        }
         break;
     };
 }
@@ -1287,7 +1290,7 @@ void Uthernet2::Reset(const bool powerCycle)
     {
         // dataAddress is NOT reset, see page 10 of Uthernet II
         myDataAddress = 0;
-        const std::string interfaceName = PCapBackend::tfe_GetRegistryInterface(m_slot);
+        const std::string interfaceName = PCapBackend::GetRegistryInterface(m_slot);
         myNetworkBackend = GetFrame().CreateNetworkBackend(interfaceName);
         myARPCache.clear();
         myDNSCache.clear();
@@ -1320,10 +1323,11 @@ void Uthernet2::Reset(const bool powerCycle)
     myMemory[W5100_RCR]     = 0x08;
     setRXSizes(W5100_RMSR, 0x55);
     setTXSizes(W5100_TMSR, 0x55);
-#ifndef U2_AUTO_DNS
-    // this is 0 if we support Auto DNS
-    myMemory[W5100_PTIMER]  = 0x28;
-#endif
+    if (!myVirtualDNSEnabled)
+    {
+        // this is 0 if we support Virtual DNS
+        myMemory[W5100_PTIMER]  = 0x28;
+    }
 }
 
 BYTE Uthernet2::IO_C0(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
@@ -1443,7 +1447,11 @@ void Uthernet2::Update(const ULONG nExecutedCycles)
     }
 }
 
-static const UINT kUNIT_VERSION = 1;
+// Unit version history:
+// 2: Added: Virtual DNS
+static const UINT kUNIT_VERSION = 2;
+
+#define SS_YAML_KEY_VIRTUAL_DNS "Virtual DNS"
 #define SS_YAML_KEY_NETWORK_INTERFACE "Network Interface"
 
 #define SS_YAML_KEY_COMMON_REGISTERS "Common Registers"
@@ -1462,6 +1470,7 @@ void Uthernet2::SaveSnapshot(YamlSaveHelper &yamlSaveHelper)
 
     YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
     yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, myNetworkBackend->getInterfaceName());
+    yamlSaveHelper.SaveBool(SS_YAML_KEY_VIRTUAL_DNS, myVirtualDNSEnabled);
     yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_MODE_REGISTER, myModeRegister);
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_DATA_ADDRESS, myDataAddress);
 
@@ -1504,9 +1513,19 @@ bool Uthernet2::LoadSnapshot(YamlLoadHelper &yamlLoadHelper, UINT version)
     if (version < 1 || version > kUNIT_VERSION)
         ThrowErrorInvalidVersion(version);
 
-    PCapBackend::tfe_SetRegistryInterface(m_slot, yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE));
+    PCapBackend::SetRegistryInterface(m_slot, yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE));
 
-    Reset(true); // AFTER the interface name has been restored
+    if (version >= 2)
+    {
+        myVirtualDNSEnabled = yamlLoadHelper.LoadBool(SS_YAML_KEY_VIRTUAL_DNS);
+    }
+    else
+    {
+        myVirtualDNSEnabled = false;
+    }
+    SetRegistryVirtualDNS(m_slot, myVirtualDNSEnabled);
+
+    Reset(true); // AFTER the parameters have been restored
 
     myModeRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_MODE_REGISTER);
     myDataAddress = yamlLoadHelper.LoadUint(SS_YAML_KEY_DATA_ADDRESS);
@@ -1549,4 +1568,18 @@ bool Uthernet2::LoadSnapshot(YamlLoadHelper &yamlLoadHelper, UINT version)
     }
 
     return true;
+}
+
+void Uthernet2::SetRegistryVirtualDNS(UINT slot, const bool enabled)
+{
+    const std::string regSection = RegGetConfigSlotSection(slot);
+    RegSaveValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, TRUE, enabled);
+}
+
+bool Uthernet2::GetRegistryVirtualDNS(UINT slot)
+{
+    const std::string regSection = RegGetConfigSlotSection(slot);
+    DWORD enabled = 0;
+    RegLoadValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, TRUE, &enabled, 0);
+    return enabled != 0;
 }

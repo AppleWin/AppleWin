@@ -6,6 +6,7 @@
 #include "../DiskImage.h"	// Disk_Status_e
 #include "../Harddisk.h"
 #include "../Interface.h"	// VideoRefreshRate_e, GetVideoRefreshRate()
+#include "../Uthernet2.h"
 #include "../Tfe/PCapBackend.h"
 
 class CConfigNeedingRestart
@@ -18,6 +19,7 @@ public:
 		m_CpuType = CPU_UNKNOWN;
 		memset(m_Slot, 0, sizeof(m_Slot));
 		m_SlotAux = CT_Empty;
+		m_tfeVirtualDNS = false;
 		m_bEnableTheFreezesF8Rom = 0;
 		m_uSaveLoadStateMsg = 0;
 		m_videoRefreshRate = VR_NONE;
@@ -40,7 +42,8 @@ public:
 		for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 			m_Slot[slot] = cardManager.QuerySlot(slot);
 		m_SlotAux = cardManager.QueryAux();
-		m_tfeInterface = PCapBackend::tfe_interface;
+		m_tfeInterface = PCapBackend::GetRegistryInterface(SLOT3);
+		m_tfeVirtualDNS = Uthernet2::GetRegistryVirtualDNS(SLOT3);
 		m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 		m_uSaveLoadStateMsg = 0;
 		m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
@@ -53,6 +56,7 @@ public:
 		memcpy(m_Slot, other.m_Slot, sizeof(m_Slot));
 		m_SlotAux = other.m_SlotAux;
 		m_tfeInterface = other.m_tfeInterface;
+		m_tfeVirtualDNS = other.m_tfeVirtualDNS;
 		m_bEnableTheFreezesF8Rom = other.m_bEnableTheFreezesF8Rom;
 		m_uSaveLoadStateMsg = other.m_uSaveLoadStateMsg;
 		m_videoRefreshRate = other.m_videoRefreshRate;
@@ -66,6 +70,7 @@ public:
 			memcmp(m_Slot, other.m_Slot, sizeof(m_Slot)) == 0 &&
 			m_SlotAux == other.m_SlotAux &&
 			m_tfeInterface == other.m_tfeInterface &&
+			m_tfeVirtualDNS == other.m_tfeVirtualDNS &&
 			m_bEnableTheFreezesF8Rom == other.m_bEnableTheFreezesF8Rom &&
 			m_uSaveLoadStateMsg == other.m_uSaveLoadStateMsg &&
 			m_videoRefreshRate == other.m_videoRefreshRate;
@@ -81,6 +86,7 @@ public:
 	SS_CARDTYPE m_Slot[NUM_SLOTS];
 	SS_CARDTYPE m_SlotAux;
 	std::string m_tfeInterface;
+	bool m_tfeVirtualDNS;
 	UINT m_bEnableTheFreezesF8Rom;
 	UINT m_uSaveLoadStateMsg;
 	VideoRefreshRate_e m_videoRefreshRate;

@@ -103,21 +103,27 @@ int PCapBackend::tfe_enumadapter_close(void)
     return tfe_arch_enumadapter_close();
 }
 
-void PCapBackend::tfe_SetRegistryInterface(UINT slot, const std::string& name)
+const char * PCapBackend::tfe_lib_version(void)
+{
+    return tfe_arch_lib_version();
+}
+
+void PCapBackend::SetRegistryInterface(UINT slot, const std::string& name)
 {
     std::string regSection = RegGetConfigSlotSection(slot);
     RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, 1, name);
 }
 
-std::string PCapBackend::tfe_GetRegistryInterface(UINT slot)
+std::string PCapBackend::GetRegistryInterface(UINT slot)
 {
     char interfaceName[MAX_PATH];
     std::string regSection = RegGetConfigSlotSection(slot);
     RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, interfaceName, sizeof(interfaceName), TEXT(""));
     return interfaceName;
 }
-	
-void PCapBackend::get_disabled_state(int * param)
+
+int PCapBackend::tfe_cannot_use_pcap()
 {
-    *param = tfe_cannot_use;
+    return tfe_cannot_use;
+;
 }

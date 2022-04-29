@@ -35,10 +35,9 @@ public:
 	// get interface name
 	virtual const std::string & getInterfaceName();
 
-	// global functions
-	static void tfe_SetRegistryInterface(UINT slot, const std::string& name);
-	static std::string tfe_GetRegistryInterface(UINT slot);
-	static void get_disabled_state(int * param);
+	// global registry functions
+	static void SetRegistryInterface(UINT slot, const std::string& name);
+	static std::string GetRegistryInterface(UINT slot);
 
 	/*
 	 These functions let the UI enumerate the available interfaces.
@@ -64,6 +63,8 @@ public:
 	static int tfe_enumadapter_open(void);
 	static int tfe_enumadapter(std::string & name, std::string & description);
 	static int tfe_enumadapter_close(void);
+	static const char * tfe_lib_version(void);
+	static int tfe_cannot_use_pcap();
 
 private:
 	const std::string m_interfaceName;

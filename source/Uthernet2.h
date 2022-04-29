@@ -71,7 +71,13 @@ public:
 
     BYTE IO_C0(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
+    // global registry functions
+    static void SetRegistryVirtualDNS(UINT slot, const bool enabled);
+    static bool GetRegistryVirtualDNS(UINT slot);
+
 private:
+    bool myVirtualDNSEnabled; // extended virtualisation of DNS (not present in the real U II card)
+
     std::vector<uint8_t> myMemory;
     std::vector<Socket> mySockets;
     uint8_t myModeRegister;
