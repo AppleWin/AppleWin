@@ -265,6 +265,9 @@
     <ClCompile Include="source\Tfe\DNS.cpp">
       <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
+    <ClCompile Include="source\Configuration\Config.cpp">
+      <Filter>Source Files\Configuration</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\CommonVICE\6510core.h">

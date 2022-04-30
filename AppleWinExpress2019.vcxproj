@@ -158,6 +158,7 @@
     <ClCompile Include="source\CardManager.cpp" />
     <ClCompile Include="source\CmdLine.cpp" />
     <ClCompile Include="source\Configuration\About.cpp" />
+    <ClCompile Include="source\Configuration\Config.cpp" />
     <ClCompile Include="source\Configuration\PageAdvanced.cpp" />
     <ClCompile Include="source\Configuration\PageConfig.cpp" />
     <ClCompile Include="source\Configuration\PageConfigTfe.cpp" />

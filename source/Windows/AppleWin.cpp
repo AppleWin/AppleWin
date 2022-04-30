@@ -46,6 +46,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SoundCore.h"
 #include "Speaker.h"
 #include "LanguageCard.h"
+#include "CardManager.h"
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif

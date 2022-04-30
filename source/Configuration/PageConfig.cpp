@@ -30,7 +30,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Windows/Win32Frame.h"
 #include "../Registry.h"
 #include "../SerialComms.h"
+#include "../CardManager.h"
 #include "../Uthernet2.h"
+#include "../Tfe/PCapBackend.h"
+#include "../Interface.h"
 #include "../resource/resource.h"
 
 CPageConfig* CPageConfig::ms_this = 0;	// reinit'd in ctor

@@ -33,6 +33,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Log.h"
 #include "../Registry.h"
 #include "../SaveState.h"
+#include "../Interface.h"
+#include "../Uthernet2.h"
 #include "../Tfe/PCapBackend.h"
 
 /*
