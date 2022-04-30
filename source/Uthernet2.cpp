@@ -333,8 +333,28 @@ const std::string& Uthernet2::GetSnapshotCardName()
 
 Uthernet2::Uthernet2(UINT slot) : Card(CT_Uthernet2, slot)
 {
+#ifdef _MSC_VER
+    WSADATA wsaData;
+    myWSAStartup = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (myWSAStartup)
+    {
+        const int error = sock_error();
+        LogFileOutput("U2: WSAStartup: error %" ERROR_FMT "\n", STRERROR(error));
+    }
+#endif
+
     myVirtualDNSEnabled = GetRegistryVirtualDNS(slot);
     Reset(true);
+}
+
+Uthernet2::~Uthernet2()
+{
+#ifdef _MSC_VER
+    if (myWSAStartup == 0)
+    {
+        WSACleanup();
+    }
+#endif
 }
 
 void Uthernet2::setSocketModeRegister(const size_t i, const uint16_t address, const uint8_t value)

@@ -61,6 +61,7 @@ public:
     enum PacketDestination { HOST, BROADCAST, OTHER };
 
     Uthernet2(UINT slot);
+    virtual ~Uthernet2();
 
 	virtual void Destroy(void) {}
     virtual void InitializeIO(LPBYTE pCxRomPeripheral);
@@ -77,6 +78,10 @@ public:
 
 private:
     bool myVirtualDNSEnabled; // extended virtualisation of DNS (not present in the real U II card)
+
+#ifdef _MSC_VER
+    int myWSAStartup;
+#endif
 
     std::vector<uint8_t> myMemory;
     std::vector<Socket> mySockets;

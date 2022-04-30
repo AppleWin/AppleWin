@@ -443,7 +443,7 @@ void TfePcapPacketHandler(u_char *param, const struct pcap_pkthdr *header, const
     /* determine the count of bytes which has been returned, 
      * but make sure not to overrun the buffer 
      */
-    pinternal->rxlength = min(pinternal->size, header->caplen);
+    pinternal->rxlength = std::min(pinternal->size, header->caplen);
 
     memcpy(pinternal->buffer, pkt_data, pinternal->rxlength);
 }
