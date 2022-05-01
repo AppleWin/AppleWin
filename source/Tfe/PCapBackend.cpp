@@ -122,8 +122,7 @@ std::string PCapBackend::GetRegistryInterface(UINT slot)
     return interfaceName;
 }
 
-int PCapBackend::tfe_cannot_use_pcap()
+int PCapBackend::tfe_is_npcap_loaded()
 {
-    return tfe_cannot_use;
-;
+    return tfe_arch_is_npcap_loaded();
 }

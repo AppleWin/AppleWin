@@ -172,7 +172,12 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 	uilib_adjust_group_width(hwnd, ms_leftgroup);
 	uilib_move_group(hwnd, ms_rightgroup, xsize + 30);
 
-	if (PCapBackend::tfe_cannot_use_pcap())
+	if (PCapBackend::tfe_is_npcap_loaded())
+	{
+		const char * version = PCapBackend::tfe_lib_version();
+		SetWindowText(GetDlgItem(hwnd, IDC_TFE_NPCAP_INFO), version);
+	}
+	else
 	{
 		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), 0);
 		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), 0);
@@ -182,11 +187,6 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 			"Limited Uthernet support is available on your system.\n\n"
 			"Install Npcap from https://npcap.com\n"
 			"or select Uthernet II with Virtual DNS.");
-	}
-	else
-	{
-		const char * version = PCapBackend::tfe_lib_version();
-		SetWindowText(GetDlgItem(hwnd, IDC_TFE_NPCAP_INFO), version);
 	}
 
 	switch (m_tfe_selected)

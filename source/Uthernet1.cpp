@@ -1062,7 +1062,7 @@ void Uthernet1::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
     yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, networkBackend->getInterfaceName());
 
     yamlSaveHelper.SaveBool(SS_YAML_KEY_STARTED_TX, tfe_started_tx ? true : false);
-    yamlSaveHelper.SaveBool(SS_YAML_KEY_CANNOT_USE, tfe_cannot_use ? true : false);
+    yamlSaveHelper.SaveBool(SS_YAML_KEY_CANNOT_USE, PCapBackend::tfe_is_npcap_loaded() ? false : false);
 
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_TXCOLLECT_BUFFER, txcollect_buffer);
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_RX_BUFFER, rx_buffer);
@@ -1087,7 +1087,10 @@ bool Uthernet1::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
     PCapBackend::SetRegistryInterface(m_slot, yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE));
 
     tfe_started_tx = yamlLoadHelper.LoadBool(SS_YAML_KEY_STARTED_TX) ? true : false;
-    tfe_cannot_use = yamlLoadHelper.LoadBool(SS_YAML_KEY_CANNOT_USE) ? true : false;
+
+    // it is meaningless to restore this boolean flag
+    // as it depends on the availability of npcap on *this* pc
+    const bool tfe_cannot_use = yamlLoadHelper.LoadBool(SS_YAML_KEY_CANNOT_USE);
 
     txcollect_buffer = yamlLoadHelper.LoadUint(SS_YAML_KEY_TXCOLLECT_BUFFER);
     rx_buffer = yamlLoadHelper.LoadUint(SS_YAML_KEY_RX_BUFFER);

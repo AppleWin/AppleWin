@@ -64,7 +64,7 @@ public:
 	static int tfe_enumadapter(std::string & name, std::string & description);
 	static int tfe_enumadapter_close(void);
 	static const char * tfe_lib_version(void);
-	static int tfe_cannot_use_pcap();
+	static int tfe_is_npcap_loaded();
 
 private:
 	const std::string m_interfaceName;
