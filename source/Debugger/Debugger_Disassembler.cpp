@@ -27,6 +27,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "../Memory.h"
 
+inline static void _memsetz(void* dst, int val, size_t len)
+{
+	memset(dst, val, len);
+	static_cast<char*>(dst)[len] = 0;
+}
+
 //===========================================================================
 std::string FormatAddress(WORD nAddress, int nBytes)
 {
@@ -42,9 +48,9 @@ std::string FormatAddress(WORD nAddress, int nBytes)
 }
 
 //===========================================================================
-char* FormatCharCopy(char* pDst, const char* pSrc, const int nLen)
+char* FormatCharCopy(char* pDst, const char* pEnd, const char* pSrc, const int nLen)
 {
-	for (int i = 0; i < nLen; i++)
+	for (int i = 0; i < nLen && pDst < pEnd; i++)
 		*pDst++ = FormatCharTxtCtrl(*pSrc++);
 	return pDst;
 }
@@ -236,22 +242,22 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 			nTarget = nBaseAddress + 2 + (int)(signed char)nTarget;
 
 			line_.nTarget = nTarget;
-			sprintf(line_.sTargetValue, "%04X", nTarget & 0xFFFF);
+			strncpy_s(line_.sTargetValue, WordToHexStr(nTarget & 0xFFFF).c_str(), _TRUNCATE);
 
 			// Always show branch indicators
 			bDisasmFormatFlags |= DISASM_FORMAT_BRANCH;
 
 			if (nTarget < nBaseAddress)
-				sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorUp[g_iConfigDisasmBranchType]);
+				strncpy_s(line_.sBranch, g_sConfigBranchIndicatorUp[g_iConfigDisasmBranchType], _TRUNCATE);
 			else
 			if (nTarget > nBaseAddress)
-				sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorDown[g_iConfigDisasmBranchType]);
+				strncpy_s(line_.sBranch, g_sConfigBranchIndicatorDown[g_iConfigDisasmBranchType], _TRUNCATE);
 			else
-				sprintf(line_.sBranch, "%s", g_sConfigBranchIndicatorEqual[g_iConfigDisasmBranchType]);
+				strncpy_s(line_.sBranch, g_sConfigBranchIndicatorEqual[g_iConfigDisasmBranchType], _TRUNCATE);
 
 			bDisasmFormatFlags |= DISASM_FORMAT_TARGET_POINTER;
 			if (g_iConfigDisasmTargets & DISASM_TARGET_ADDR)
-				sprintf(line_.sTargetPointer, "%04X", nTarget & 0xFFFF);
+				strncpy_s(line_.sTargetPointer, WordToHexStr(nTarget & 0xFFFF).c_str(), _TRUNCATE);
 		}
 		// intentional re-test AM_R ...
 
@@ -326,11 +332,11 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 				pTarget = &sAddressBuf;
 			}
 
-			//sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, pTarget );
+			//sTarget = StrFormat( g_aOpmodes[ iOpmode ].m_sFormat, pTarget->c_str() );
 			if (bDisasmFormatFlags & DISASM_FORMAT_OFFSET)
 			{
 				int nAbsTargetOffset = (line_.nTargetOffset > 0) ? line_.nTargetOffset : -line_.nTargetOffset;
-				sprintf(line_.sTargetOffset, "%d", nAbsTargetOffset);
+				strncpy_s(line_.sTargetOffset, StrFormat("%d", nAbsTargetOffset).c_str(), _TRUNCATE);
 			}
 			strncpy_s(line_.sTarget, pTarget->c_str(), _TRUNCATE);
 
@@ -349,71 +355,72 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 				nTargetValue = *(mem + nTargetPointer) | (*(mem + ((nTargetPointer + 1) & 0xffff)) << 8);
 
 				//if (((iOpmode >= AM_A) && (iOpmode <= AM_NZ)) && (iOpmode != AM_R))
-				//	sprintf( sTargetValue_, "%04X", nTargetValue ); // & 0xFFFF
+				//	sTargetValue_ = WordToHexStr( nTargetValue ); // & 0xFFFF
 
 				if (g_iConfigDisasmTargets & DISASM_TARGET_ADDR)
-					sprintf(line_.sTargetPointer, "%04X", nTargetPointer & 0xFFFF);
+					strncpy_s(line_.sTargetPointer, WordToHexStr(nTargetPointer & 0xFFFF).c_str(), _TRUNCATE);
 
 				if (iOpcode != OPCODE_JMP_NA && iOpcode != OPCODE_JMP_IAX)
 				{
 					bDisasmFormatFlags |= DISASM_FORMAT_TARGET_VALUE;
 					if (g_iConfigDisasmTargets & DISASM_TARGET_VAL)
-						sprintf(line_.sTargetValue, "%02X", nTargetValue & 0xFF);
+						strncpy_s(line_.sTargetValue, ByteToHexStr(nTargetValue & 0xFF).c_str(), _TRUNCATE);
 
 					bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
 					line_.nImmediate = (BYTE)nTargetValue;
 
-					unsigned _char = FormatCharTxtCtrl(FormatCharTxtHigh(line_.nImmediate, NULL), NULL);
-					sprintf(line_.sImmediate, "%c", _char);
+					const char _char = FormatCharTxtCtrl(FormatCharTxtHigh(line_.nImmediate, NULL), NULL);
+					_memsetz(line_.sImmediate, _char, 1);
 
 					//if (ConsoleColorIsEscapeMeta( nImmediate_ ))
 #if OLD_CONSOLE_COLOR
 					if (ConsoleColorIsEscapeMeta(_char))
-						sprintf(line_.sImmediate, "%c%c", _char, _char);
+						_memsetz(line_.sImmediate, _char, 2);
 					else
-						sprintf(line_.sImmediate, "%c", _char);
+						_memsetz(line_.sImmediate, _char, 1);
 #endif
 				}
 
 				//if (iOpmode == AM_NA ) // Indirect Absolute
-				//	sprintf( sTargetValue_, "%04X", nTargetPointer & 0xFFFF );
+				//	sTargetValue_ = WordToHexStr( nTargetPointer & 0xFFFF );
 				//else
-				//	//sprintf( sTargetValue_, "%02X", nTargetValue & 0xFF );
-				//	sprintf( sTargetValue_, "%04X:%02X", nTargetPointer & 0xFFFF, nTargetValue & 0xFF );
+				//	//sTargetValue_ = ByteToHexStr( nTargetValue & 0xFF );
+				//	sTargetValue_ = StrFormat( "%04X:%02X", nTargetPointer & 0xFFFF, nTargetValue & 0xFF );
 			}
 		}
 		else
 		{
 			if (iOpmode == AM_M)
 			{
-				//sprintf( sTarget, g_aOpmodes[ iOpmode ]._sFormat, (unsigned)nTarget );
-				sprintf(line_.sTarget      , "%02X", (unsigned)nTarget);
+				//sTarget = StrFormat( g_aOpmodes[ iOpmode ].m_sFormat, (unsigned)nTarget );
+				strncpy_s(line_.sTarget, ByteToHexStr(nTarget).c_str(), _TRUNCATE);
 
 				if (nTarget == 0)
 					line_.sImmediateSignedDec[0] = 0; // nothing
 				else
 				if (nTarget < 128)
-					sprintf(line_.sImmediateSignedDec, "+%d" , nTarget );
+					strncpy_s(line_.sImmediateSignedDec, StrFormat("+%d", nTarget).c_str(), _TRUNCATE);
 				else
 				if (nTarget >= 128)
-					sprintf(line_.sImmediateSignedDec, "-%d" , (~nTarget + 1) & 0xFF );
+					strncpy_s(line_.sImmediateSignedDec, StrFormat("-%d" , (~nTarget + 1) & 0xFF).c_str(), _TRUNCATE);
 
 				bDisasmFormatFlags |= DISASM_FORMAT_CHAR;
 				line_.nImmediate = (BYTE)nTarget;
 
-				unsigned _char = FormatCharTxtCtrl(FormatCharTxtHigh(line_.nImmediate, NULL), NULL);
-				sprintf(line_.sImmediate, "%c", _char);
+				const char _char = FormatCharTxtCtrl(FormatCharTxtHigh(line_.nImmediate, NULL), NULL);
+				_memsetz(line_.sImmediate, _char, 1);
+
 #if OLD_CONSOLE_COLOR
 				if (ConsoleColorIsEscapeMeta(_char))
-					sprintf(line_.sImmediate, "%c%c", _char, _char);
+					_memsetz(line_.sImmediate, _char, 2);
 				else
-					sprintf(line_.sImmediate, "%c", _char);
+					_memsetz(line_.sImmediate, _char, 1);
 #endif
 			}
 		}
 	}
 
-	sprintf(line_.sAddress, "%04X", nBaseAddress);
+	strncpy_s(line_.sAddress, WordToHexStr(nBaseAddress).c_str(), _TRUNCATE);
 
 	// Opcode Bytes
 	FormatOpcodeBytes(nBaseAddress, line_);
@@ -431,11 +438,11 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 		strcpy(line_.sMnemonic, g_aOpcodes[line_.iOpcode].sMnemonic);
 	}
 
-	int nSpaces = strlen(line_.sOpCodes);
-	while (nSpaces < (int)nMinBytesLen)
+	const size_t nOpCodesLen = strlen(line_.sOpCodes);
+	if (nOpCodesLen < nMinBytesLen)
 	{
-		strcat(line_.sOpCodes, " ");
-		nSpaces++;
+		memset(line_.sOpCodes + nOpCodesLen, ' ', nMinBytesLen - nOpCodesLen);
+		line_.sOpCodes[nMinBytesLen] = '\0';
 	}
 
 	return bDisasmFormatFlags;
@@ -444,26 +451,25 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 //===========================================================================
 void FormatOpcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 {
-	int nOpbyte = line_.nOpbyte;
+	// 2.8.0.0 fix // TODO: FIX: show max 8 bytes for HEX
+	const int nMaxOpBytes = min(line_.nOpbyte, DISASM_DISPLAY_MAX_OPCODES);
 
-	char* pDst = line_.sOpCodes;
-	int nMaxOpBytes = nOpbyte;
-	if (nMaxOpBytes > DISASM_DISPLAY_MAX_OPCODES) // 2.8.0.0 fix // TODO: FIX: show max 8 bytes for HEX
-		nMaxOpBytes = DISASM_DISPLAY_MAX_OPCODES;
-
+	char*             cp = line_.sOpCodes;
+	const char* const ep = cp + sizeof(line_.sOpCodes);
 	for (int iByte = 0; iByte < nMaxOpBytes; iByte++)
 	{
-		BYTE nMem = mem[(nBaseAddress + iByte) & 0xFFFF];
-		sprintf(pDst, "%02X", nMem); // sBytes+strlen(sBytes)
-		pDst += 2;
+		const BYTE nMem = mem[(nBaseAddress + iByte) & 0xFFFF];
+		if ((cp+2) < ep)
+			cp = StrBufferAppendByteAsHex(cp, nMem);
 
 		// TODO: If Disassembly_IsDataAddress() don't show spaces...
 		if (g_bConfigDisasmOpcodeSpaces)
 		{
-			strcat(pDst, " ");
-			pDst++; // 2.5.3.3 fix
+			if ((cp+1) < ep)
+				*cp++ = ' ';
 		}
 	}
+	*cp = '\0';
 }
 
 struct FAC_t
@@ -509,13 +515,12 @@ void FAC_Unpack(WORD nAddress, FAC_t& fac_)
 //===========================================================================
 void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 {
-	char* pDst = line_.sTarget;
-	const	char* pSrc = 0;
-	DWORD nStartAddress = line_.pDisasmData->nStartAddress;
-	DWORD nEndAddress   = line_.pDisasmData->nEndAddress;
-	//		int   nDataLen      = nEndAddress - nStartAddress + 1 ;
-	int   nDisplayLen = nEndAddress - nBaseAddress + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
-	int   len = nDisplayLen;
+	// TODO: One day, line_.sTarget should become a std::string and things would be much simpler.
+	char*             pDst          = line_.sTarget;
+	const char* const pEnd          = pDst + sizeof(line_.sTarget);
+	const DWORD       nStartAddress = line_.pDisasmData->nStartAddress;
+	const DWORD       nEndAddress   = line_.pDisasmData->nEndAddress;
+	const int         nDisplayLen   = nEndAddress - nBaseAddress + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
 
 	for (int iByte = 0; iByte < line_.nOpbyte; )
 	{
@@ -528,14 +533,18 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 			case NOP_BYTE_2:
 			case NOP_BYTE_4:
 			case NOP_BYTE_8:
-				sprintf(pDst, "%02X", nTarget8); // sBytes+strlen(sBytes)
-				pDst += 2;
+				if ((pDst + 2) < pEnd)
+					pDst = StrBufferAppendByteAsHex(pDst, nTarget8);
 				iByte++;
 				if (line_.iNoptype == NOP_BYTE_1)
+				{
 					if (iByte < line_.nOpbyte)
 					{
-						*pDst++ = ',';
+						if ((pDst + 1) < pEnd)
+							*pDst++ = ',';
 					}
+				}
+				*pDst = '\0';
 				break;
 
 			case NOP_FAC:
@@ -544,27 +553,38 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 				FAC_Unpack( nBaseAddress, fac );
 				const char aSign[2] = { '+', '-' };
 				if (fac.isZero)
-					sprintf( pDst, "0" );
+				{
+					if ((pDst + 1) < pEnd)
+						*pDst++ = '0';
+				}
 				else
 				{
-					double f = fac.mantissa * pow( 2.0, fac.exponent - 32 );
-					//sprintf( "s%1X m%04X e%02X", fac.negative, fac.mantissa, fac.exponent );
-					sprintf( pDst, "%c%f", aSign[ fac.negative ], f );
+					const double f    = fac.mantissa * pow( 2.0, fac.exponent - 32 );
+					//std::string sFac = StrFormat( "s%1X m%04X e%02X", fac.negative, fac.mantissa, fac.exponent );
+					std::string  sFac = StrFormat( "%c%f", aSign[ fac.negative ], f );
+					if ((pDst + sFac.length()) < pEnd)
+					{
+						memcpy(pDst, sFac.c_str(), sFac.length());
+						pDst += sFac.length();
+					}
 				}
 				iByte += 5;
+				*pDst = '\0';
 				break;
 			}
 
 			case NOP_WORD_1:
 			case NOP_WORD_2:
 			case NOP_WORD_4:
-				sprintf(pDst, "%04X", nTarget16); // sBytes+strlen(sBytes)
-				pDst += 4;
+				if ((pDst + 4) < pEnd)
+					pDst = StrBufferAppendWordAsHex(pDst, nTarget16);
 				iByte += 2;
 				if (iByte < line_.nOpbyte)
 				{
-					*pDst++ = ',';
+					if ((pDst + 1) < pEnd)
+						*pDst++ = ',';
 				}
+				*pDst = '\0';
 				break;
 
 			case NOP_ADDRESS:
@@ -574,120 +594,124 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 
 			case NOP_STRING_APPLESOFT:
 				iByte = line_.nOpbyte;
-				strncpy(pDst, (const char*)(mem + nBaseAddress), iByte);
-				pDst += iByte;
+				if ((pDst + iByte) < pEnd)
+				{
+					memcpy(pDst, mem + nBaseAddress, iByte);
+					pDst += iByte;
+				}
 				*pDst = 0;
 				break;
 
 			case NOP_STRING_APPLE:
+			{
 				iByte = line_.nOpbyte; // handle all bytes of text
-				pSrc = (const char*)mem + nStartAddress;
+				const char* pSrc = (const char*)mem + nStartAddress;
 
-				if (len > (DISASM_DISPLAY_MAX_IMMEDIATE_LEN - 2)) // does "text" fit?
+				if (nDisplayLen > (DISASM_DISPLAY_MAX_IMMEDIATE_LEN - 2)) // does "text" fit?
 				{
-					if (len > DISASM_DISPLAY_MAX_IMMEDIATE_LEN) // no; need extra characters for ellipsis?
-						len = (DISASM_DISPLAY_MAX_IMMEDIATE_LEN - 3); // ellipsis = true
+					const bool ellipsis = (nDisplayLen > DISASM_DISPLAY_MAX_IMMEDIATE_LEN);
+					const int len = (ellipsis) ? (DISASM_DISPLAY_MAX_IMMEDIATE_LEN - 3)
+											   : nDisplayLen // no need of extra characters for ellipsis
+											   ;
 
 					// DISPLAY: text_longer_18...
-					FormatCharCopy(pDst, pSrc, len); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
+					pDst = FormatCharCopy(pDst, pEnd, pSrc, len); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
 
-					if (nDisplayLen > len) // ellipsis
+					if (ellipsis && (pDst + 3) < pEnd)
 					{
 						*pDst++ = '.';
 						*pDst++ = '.';
 						*pDst++ = '.';
 					}
 				}
-				else { // DISPLAY: "max_18_char"
-					*pDst++ = '"';
-					pDst = FormatCharCopy(pDst, pSrc, len); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
-					*pDst++ = '"';
+				else
+				{ // DISPLAY: "max_18_char"
+					if ((pDst + 1) < pEnd)
+						*pDst++ = '"';
+					pDst = FormatCharCopy(pDst, pEnd, pSrc, nDisplayLen); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
+					if ((pDst + 1) < pEnd)
+						*pDst++ = '"';
 				}
 
 				*pDst = 0;
 				break;
+			}
 
 			default:
 #if _DEBUG // Unhandled data disassembly!
-				int* FATAL = 0;
-				*FATAL = 0xDEADC0DE;
+				assert(false);
 #endif
 				iByte++;
 				break;
-		}
-	}
+		} // switch.
+	} // for.
 }
 
 //===========================================================================
-void FormatDisassemblyLine(const DisasmLine_t& line, char* sDisassembly, const int nBufferSize)
+std::string FormatDisassemblyLine(const DisasmLine_t& line)
 {
 	//> Address Separator Opcodes   Label Mnemonic Target [Immediate] [Branch]
 	//
 	// Data Disassembler
 	//                              Label Directive       [Immediate]
-	const char* pMnemonic = g_aOpcodes[line.iOpcode].sMnemonic;
 
-	sprintf(sDisassembly, "%s:%s %s "
+	std::string sDisassembly = StrFormat( "%s:%s %s "
 		, line.sAddress
 		, line.sOpCodes
-		, pMnemonic
+		, g_aOpcodes[line.iOpcode].sMnemonic
 	);
 
 	/*
 	if (line.bTargetIndexed || line.bTargetIndirect)
-	{
-		strcat( sDisassembly, "(" );
-	}
+		sDisassembly += '(';
 
 	if (line.bTargetImmediate)
-		strcat( sDisassembly, "#$" );
+		sDisassembly += "#$";
 
 	if (line.bTargetValue)
-		strcat( sDisassembly, line.sTarget );
+		sDisassembly += line.sTarget;
 
 	if (line.bTargetIndirect)
 	{
 		if (line.bTargetX)
-			strcat( sDisassembly, ", X" );
+			sDisassembly += ", X";
 		if (line.bTargetY)
-			strcat( sDisassembly, ", Y" );
+			sDisassembly += ", Y";
 	}
 
 	if (line.bTargetIndexed || line.bTargetIndirect)
-	{
-		strcat( sDisassembly, ")" );
-	}
+		sDisassembly += ')';
 
 	if (line.bTargetIndirect)
 	{
 		if (line.bTargetY)
-			strcat( sDisassembly, ", Y" );
+			sDisassembly += ", Y";
 	}
 	*/
-
-	char sTarget[32];
 
 	if (line.bTargetValue || line.bTargetRelative || line.bTargetImmediate)
 	{
 		if (line.bTargetRelative)
 		{
-			strcpy(sTarget, line.sTargetValue);
+			sDisassembly += '$';
+			sDisassembly += line.sTargetValue;
 		}
 		else
 		{
 			if (line.bTargetImmediate)
 			{
-				strcat(sDisassembly, "#");
-				strncpy(sTarget, line.sTarget, sizeof(sTarget));
-				sTarget[sizeof(sTarget) - 1] = 0;
+				sDisassembly += "#$";
+				sDisassembly += line.sTarget;
 			}
 			else
-				sprintf(sTarget, g_aOpmodes[line.iOpmode].m_sFormat, line.nTarget);
+			{
+				sDisassembly += '$';
+				sDisassembly += StrFormat( g_aOpmodes[line.iOpmode].m_sFormat, line.nTarget );
+			}
 		}
-
-		strcat(sDisassembly, "$");
-		strcat(sDisassembly, sTarget);
 	}
+
+	return sDisassembly;
 }
 
 // Given an Address, and Line to display it on
