@@ -392,8 +392,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 		{
 			if (iOpmode == AM_M)
 			{
-				//sTarget = StrFormat( g_aOpmodes[ iOpmode ].m_sFormat, (unsigned)nTarget );
-				strncpy_s(line_.sTarget, ByteToHexStr(nTarget).c_str(), _TRUNCATE);
+				strncpy_s(line_.sTarget, ByteToHexStr((BYTE)nTarget).c_str(), _TRUNCATE);
 
 				if (nTarget == 0)
 					line_.sImmediateSignedDec[0] = 0; // nothing

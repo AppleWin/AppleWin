@@ -341,7 +341,7 @@ Update_t CmdDisasmDataList (int nArgs)
 		{
 			bool hasSymbol = pData->sSymbol[0] != '\0';
 
-			// <smbol> <type> <start>:<end>
+			// <symbol> <type> <start>:<end>
 			// `TEST `300`:`320
 			ConsolePrintFormat( CHC_CATEGORY "%s %s%*s " CHC_ADDRESS "%04X" CHC_ARG_SEP ":" CHC_ADDRESS "%04X"
 				, g_aNopcodeTypes[ pData->eElementType ] 
