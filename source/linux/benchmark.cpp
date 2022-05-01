@@ -97,21 +97,21 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
         }
       }
       if (error) {
-        TCHAR outstr[256];
-        wsprintf(outstr,
-                 TEXT("The emulator experienced an error %u clock cycles ")
-                 TEXT("into the CPU benchmark.  Prior to the error, the ")
-                 TEXT("program counter was at $%04X.  After the error, it ")
-                 TEXT("had jumped to $%04X."),
-                 (unsigned)loop,
-                 (unsigned)lastpc,
-                 (unsigned)regs.pc);
+        const std::string outstr = StrFormat(
+          TEXT("The emulator experienced an error %u clock cycles ")
+          TEXT("into the CPU benchmark.  Prior to the error, the ")
+          TEXT("program counter was at $%04X.  After the error, it ")
+          TEXT("had jumped to $%04X."),
+          (unsigned)loop,
+          (unsigned)lastpc,
+          (unsigned)regs.pc);
         frame.FrameMessageBox(
-                   outstr,
+                   outstr.c_str(),
                    TEXT("Benchmarks"),
                    MB_ICONINFORMATION | MB_SETFOREGROUND);
       }
       else
+      {
         frame.FrameMessageBox(
                    TEXT("The emulator was unable to locate the exact ")
                    TEXT("point of the error.  This probably means that ")
@@ -120,6 +120,7 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
                    TEXT("a timer interrupt handler."),
                    TEXT("Benchmarks"),
                    MB_ICONINFORMATION | MB_SETFOREGROUND);
+      }
     }
 
   // DO A REALISTIC TEST OF HOW MANY FRAMES PER SECOND WE CAN PRODUCE
@@ -160,19 +161,18 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
   realisticfps = realisticfps * onesecond / elapsed;
 
   // DISPLAY THE RESULTS
-  TCHAR outstr[256];
-  wsprintf(outstr,
-           TEXT("Pure Video FPS:\t%u\n")
-           TEXT("Pure CPU MHz:\t%u.%u%s (video update)\n")
-           TEXT("Pure CPU MHz:\t%u.%u%s (full-speed)\n\n")
-           TEXT("EXPECTED AVERAGE VIDEO GAME\n")
-           TEXT("PERFORMANCE: %u FPS"),
-           (unsigned)totalhiresfps,
-           (unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
-           (unsigned)(totalmhz10[1] / 10), (unsigned)(totalmhz10[1] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
-           (unsigned)realisticfps);
+  const std::string outstr = StrFormat(
+    TEXT("Pure Video FPS:\t%u\n")
+    TEXT("Pure CPU MHz:\t%u.%u%s (video update)\n")
+    TEXT("Pure CPU MHz:\t%u.%u%s (full-speed)\n\n")
+    TEXT("EXPECTED AVERAGE VIDEO GAME\n")
+    TEXT("PERFORMANCE: %u FPS"),
+    (unsigned)totalhiresfps,
+    (unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
+    (unsigned)(totalmhz10[1] / 10), (unsigned)(totalmhz10[1] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")),
+    (unsigned)realisticfps);
   frame.FrameMessageBox(
-             outstr,
+             outstr.c_str(),
              TEXT("Benchmarks"),
              MB_ICONINFORMATION | MB_SETFOREGROUND);
 }

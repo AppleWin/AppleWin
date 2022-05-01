@@ -18,14 +18,6 @@ void strcpy_s(char * dest, size_t size, const char * source)
   strncpy(dest, source, size);
 }
 
-int vsnprintf_s(char *buffer, size_t sizeOfBuffer, size_t count, const char *format, va_list argptr)
-{
-  // is this even right?
-  const int res = vsnprintf(buffer, sizeOfBuffer, format, argptr);
-  buffer[sizeOfBuffer - 1] = 0;
-  return res;
-}
-
 LPSTR _strupr( LPSTR str )
 {
   LPSTR ret = str;
