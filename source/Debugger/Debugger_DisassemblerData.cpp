@@ -32,35 +32,31 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // __ Debugger Interface ____________________________________________________________________________
 
-void _GetAutoSymbolName ( const Nopcode_e &nopcode, const WORD nStartAddress, char *pSymbolName )
+std::string _GetAutoSymbolName(const Nopcode_e& nopcode, const WORD nStartAddress)
 {
 	switch (nopcode)
 	{
 		case NOP_ADDRESS:
-			sprintf( pSymbolName, "A_%04X", nStartAddress ); // DA range
-			break;
+			return StrFormat( "A_%04X", nStartAddress ); // DA range
 
 		case NOP_FAC:
-			sprintf( pSymbolName, "F_%04X", nStartAddress ); // DF range
+			return StrFormat( "F_%04X", nStartAddress ); // DF range
 
 		case NOP_STRING_ASCII:
 		case NOP_STRING_APPLE:
-			sprintf( pSymbolName, "T_%04X", nStartAddress ); // ASC range
-			break;
+			return StrFormat( "T_%04X", nStartAddress ); // ASC range
 
 		case NOP_WORD_1:
 		case NOP_WORD_2:
 		case NOP_WORD_4:
-			sprintf( pSymbolName, "W_%04X", nStartAddress ); // DW range
-			break;
+			return StrFormat( "W_%04X", nStartAddress ); // DW range
 
 		case NOP_BYTE_1:
 		case NOP_BYTE_2:
 		case NOP_BYTE_4:
 		case NOP_BYTE_8:
 		default:
-			sprintf( pSymbolName, "B_%04X", nStartAddress ); // DB range
-			break;
+			return StrFormat( "B_%04X", nStartAddress ); // DB range
 	}
 }
 
@@ -135,8 +131,7 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 
 	nAddress = _GetDataRange(nArgs,iArg,tData_);
 
-	const char *pSymbolName = "";
-	char aSymbolName[ MAX_SYMBOLS_LEN+1 ];
+	std::string sSymbolName;
 
 	SymbolTable_Index_e eSymbolTable = SYMBOLS_ASSEMBLY;
 	bool bAutoDefineName = false; // 2.7.0.34
@@ -150,7 +145,7 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 		else
 		{
 			g_aArgs[ 1 ].sArg[MAX_SYMBOLS_LEN] = 0;	// truncate to max symbol length
-			pSymbolName = g_aArgs[1].sArg;
+			sSymbolName = g_aArgs[1].sArg;
 		}
 	}
 	else
@@ -182,13 +177,12 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 
 	if ( bAutoDefineName )
 	{
-		_GetAutoSymbolName( nopcode, tData_.nStartAddress , aSymbolName );
-		pSymbolName = aSymbolName;
+		sSymbolName = _GetAutoSymbolName( nopcode, tData_.nStartAddress );
 	}
 
 	// bRemoveSymbol = false // use arg[2]
 	// bUpdateSymbol = true // add the symbol to the table
-	SymbolUpdate( eSymbolTable, pSymbolName, nAddress, false, true );
+	SymbolUpdate( eSymbolTable, sSymbolName.c_str(), nAddress, false, true );
 
 	// TODO: Note: need to call ConsoleUpdate(), as may print symbol has been updated
 	
@@ -196,7 +190,7 @@ WORD _CmdDefineByteRange(int nArgs,int iArg,DisasmData_t & tData_)
 	//    tData_.eElementType = nopcode;
 	// As that is done by the caller.
 
-	strcpy_s( tData_.sSymbol, sizeof(tData_.sSymbol), pSymbolName );
+	strncpy_s( tData_.sSymbol, sSymbolName.c_str(), _TRUNCATE );
 
 	return nAddress;
 }
@@ -294,12 +288,11 @@ Update_t CmdDisasmDataDefCode (int nArgs)
 				DisasmData_t tSplit = *pData;
 				pData->nEndAddress = nAddress - 1;
 
-				const char *pSymbolName = tSplit.sSymbol;
-
 				tSplit.nStartAddress = tData.nEndAddress + 1; // nAddress + 1;
-				_GetAutoSymbolName( pData->eElementType, tSplit.nStartAddress, tSplit.sSymbol );
+				std::string sSymbolName = _GetAutoSymbolName( pData->eElementType, tSplit.nStartAddress );
+				strncpy_s(tSplit.sSymbol, sSymbolName.c_str(), _TRUNCATE);
 
-				SymbolUpdate( eSymbolTable, pSymbolName, tSplit.nStartAddress, false, true );
+				SymbolUpdate( eSymbolTable, tSplit.sSymbol, tSplit.nStartAddress, false, true );
 				Disassembly_AddData( tSplit );
 			}
 
@@ -346,20 +339,16 @@ Update_t CmdDisasmDataList (int nArgs)
 	{
 		if (pData->iDirective != _NOP_REMOVED)
 		{
-			int nLen = strlen( pData->sSymbol );
+			bool hasSymbol = pData->sSymbol[0] != '\0';
 
-			// <smbol> <type> <start>:<end>
+			// <symbol> <type> <start>:<end>
 			// `TEST `300`:`320
-			ConsolePrintFormat( "%s%s %s%*s %s%04X%s:%s%04X"
-				, CHC_CATEGORY
+			ConsolePrintFormat( CHC_CATEGORY "%s %s%*s " CHC_ADDRESS "%04X" CHC_ARG_SEP ":" CHC_ADDRESS "%04X"
 				, g_aNopcodeTypes[ pData->eElementType ] 
-				, (nLen > 0) ? CHC_SYMBOL     : CHC_DEFAULT
+				, hasSymbol ? CHC_SYMBOL     : CHC_DEFAULT
 				, MAX_SYMBOLS_LEN
-				, (nLen > 0) ? pData->sSymbol : "???"
-				, CHC_ADDRESS
+				, hasSymbol ? pData->sSymbol : "???"
 				, pData->nStartAddress
-				, CHC_ARG_SEP
-				, CHC_ADDRESS
 				, pData->nEndAddress // Disassembly_IsDataAddress() is *inclusive* // KEEP IN SYNC:  _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
 			);
 		}
@@ -646,9 +635,9 @@ Update_t CmdDisasmDataDefString ( int nArgs )
 DisasmData_t* Disassembly_Enumerate( DisasmData_t *pCurrent )
 {
 	DisasmData_t *pData = NULL; // bIsNopcode = false
-	int nDataTargets = g_aDisassemblerData.size();
+	size_t nDataTargets = g_aDisassemblerData.size();
 
-	if ( nDataTargets )
+	if ( nDataTargets > 0 )
 	{
 		DisasmData_t *pBegin = & g_aDisassemblerData[ 0 ];
 		DisasmData_t *pEnd   = & g_aDisassemblerData[ nDataTargets - 1 ];
@@ -670,13 +659,13 @@ DisasmData_t* Disassembly_Enumerate( DisasmData_t *pCurrent )
 DisasmData_t* Disassembly_IsDataAddress ( WORD nAddress )
 {
 	DisasmData_t *pData = NULL; // bIsNopcode = false
-	int nDataTargets = g_aDisassemblerData.size();
+	size_t nDataTargets = g_aDisassemblerData.size();
 
-	if ( nDataTargets )
+	if ( nDataTargets > 0 )
 	{
 		// TODO: Replace with binary search -- should store data in sorted order, via start address
 		pData = & g_aDisassemblerData[ 0 ];
-		for ( int iTarget = 0; iTarget < nDataTargets; iTarget++ )
+		for ( size_t iTarget = 0; iTarget < nDataTargets; iTarget++ )
 		{
 			if ( pData->iDirective != _NOP_REMOVED )
 			{
@@ -719,13 +708,13 @@ void Disassembly_DelData( DisasmData_t tData)
 	WORD nAddress = tData.nStartAddress;
 
 	DisasmData_t *pData = NULL; // bIsNopcode = false
-	int nDataTargets = g_aDisassemblerData.size();
+	size_t nDataTargets = g_aDisassemblerData.size();
 
-	if ( nDataTargets )
+	if ( nDataTargets > 0 )
 	{
 		// TODO: Replace with binary search -- should store data in sorted order, via start address
 		pData = & g_aDisassemblerData[ 0 ];
-		for ( int iTarget = 0; iTarget < nDataTargets; iTarget++ )
+		for ( size_t iTarget = 0; iTarget < nDataTargets; iTarget++ )
 		{
 			if (pData->iDirective != _NOP_REMOVED)
 			{
