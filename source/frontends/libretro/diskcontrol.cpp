@@ -10,8 +10,23 @@
 #include <fstream>
 #include <filesystem>
 
+
 namespace
 {
+
+  const std::string M3U_COMMENT("#");
+  const std::string M3U_SAVEDISK("#SAVEDISK:");
+  const std::string M3U_SAVEDISK_LABEL("Save Disk ");
+
+  bool startsWith(const std::string & value, const std::string & prefix)
+  {
+    if (prefix.size() > value.size())
+    {
+      return false;
+    }
+    return std::equal(prefix.begin(), prefix.end(), value.begin());
+  }
+
   void getLabelAndPath(const std::string & line, std::filesystem::path & path, std::string & label)
   {
     const size_t pos = line.find('|');
@@ -75,21 +90,44 @@ namespace ra2
 
   bool DiskControl::insertPlaylist(const std::string & path)
   {
-    const std::filesystem::path palylistPath(path);
-    std::ifstream playlist(palylistPath);
+    const std::filesystem::path playlistPath(path);
+    std::ifstream playlist(playlistPath);
     if (!playlist)
     {
       return false;
     }
 
     myImages.clear();
-    const std::filesystem::path parent = palylistPath.parent_path();
+    const std::filesystem::path parent = playlistPath.parent_path();
+    const std::filesystem::path savePath(ra2::save_directory);
+    const std::string playlistStem = playlistPath.stem();
 
     std::string line;
     while (std::getline(playlist, line))
     {
       // should we trim initial spaces?
-      if (!line.empty() && line[0] != '#')
+      if (startsWith(line, M3U_SAVEDISK))
+      {
+        const size_t index = myImages.size() + 1;
+        const std::string filename = StrFormat("%s.save%" SIZE_T_FMT ".dsk", playlistStem.c_str(), index);
+
+        // 1) use the label from #SAVEDISK:label
+        std::string labelSuffix = line.substr(M3U_SAVEDISK.size());
+        if (labelSuffix.empty())
+        {
+          // 2) use an automatic label "the index"
+          labelSuffix = std::to_string(index);
+        }
+
+        // Always prefix with "Save Disk"
+        const std::string label = M3U_SAVEDISK_LABEL + labelSuffix;
+
+        const std::filesystem::path imagePath = savePath / filename;
+
+        // TODO: this disk is NOT formatted
+        myImages.push_back({imagePath.native(), label, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_CREATE});
+      }
+      else if (!startsWith(line, M3U_COMMENT))
       {
         std::filesystem::path imagePath;
         std::string label;
@@ -99,7 +137,7 @@ namespace ra2
         {
           imagePath = parent / imagePath;
         }
-        myImages.push_back({imagePath.native(), label, true, false});
+        myImages.push_back({imagePath.native(), label, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE});
       }
     }
 
@@ -259,7 +297,7 @@ namespace ra2
 
   bool DiskControl::addImageIndex()
   {
-    myImages.push_back({"", "", true, false});
+    myImages.push_back({"", "", IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE});
     return true;
   }
 

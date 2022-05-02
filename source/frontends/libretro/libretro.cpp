@@ -215,6 +215,12 @@ void retro_set_environment(retro_environment_t cb)
   bool achievements = true;
   cb(RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS, &achievements);
 
+  const char * saveDirectory = nullptr;
+  if (cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &saveDirectory))
+  {
+    ra2::save_directory = saveDirectory;
+  }
+
   unsigned dciVersion = 0;
   if (cb(RETRO_ENVIRONMENT_GET_DISK_CONTROL_INTERFACE_VERSION, &dciVersion) && (dciVersion >= 1))
   {

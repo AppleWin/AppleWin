@@ -6,6 +6,8 @@
 namespace ra2
 {
 
+  std::string save_directory;
+
   void fallback_log(enum retro_log_level level, const char *fmt, ...)
   {
     (void)level;
