@@ -1,10 +1,20 @@
 #include "frontends/libretro/buffer.h"
+
+#include "Disk.h"
+
 #include <vector>
 #include <string>
-#include <filesystem>
 
 namespace ra2
 {
+
+  struct DiskInfo
+  {
+    std::string path;
+    std::string label;
+    bool writeProtected = IMAGE_FORCE_WRITE_PROTECTED;
+    bool createIfNecessary = IMAGE_DONT_CREATE;
+  };
 
   class DiskControl
   {
@@ -24,8 +34,8 @@ namespace ra2
     bool addImageIndex();
 
     // these 2 functions update the images for the Disc Control Interface
-    bool insertDisk(const std::string & filename);
-    bool insertPlaylist(const std::string & filename);
+    bool insertDisk(const std::string & path);
+    bool insertPlaylist(const std::string & path);
 
     bool getImagePath(unsigned index, char *path, size_t len) const;
     bool getImageLabel(unsigned index, char *label, size_t len) const;
@@ -36,13 +46,13 @@ namespace ra2
     void deserialise(Buffer<char const> & buffer);
 
   private:
-    std::vector<std::filesystem::path> myImages;
+    std::vector<DiskInfo> myImages;
 
     bool myEjected;
     size_t myIndex;
 
-    bool insertFloppyDisk(const std::string & filename) const;
-    bool insertHardDisk(const std::string & filename) const;
+    bool insertFloppyDisk(const std::string & path, const bool writeProtected, bool const createIfNecessary) const;
+    bool insertHardDisk(const std::string & path) const;
 
     static unsigned ourInitialIndex;
     static std::string ourInitialPath;

@@ -1,3 +1,4 @@
+#include "StdAfx.h"
 #include "frontends/libretro/mouse.h"
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/game.h"

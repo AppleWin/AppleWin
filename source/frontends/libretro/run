@@ -1,1 +1,1 @@
-retroarch -L source/frontends/retro/libra2.so ../Disks/NoSlotClockTest.dsk
+retroarch -L ${HOME}/projects/games/retroarch/ra/cores/applewin_libretro.so /opt/vms/andrea/emulators/AppleWin/disks/games/games.m3u
