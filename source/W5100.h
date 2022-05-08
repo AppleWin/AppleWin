@@ -46,6 +46,10 @@
 #define W5100_SN_MR_IPRAW         0x03
 #define W5100_SN_MR_MACRAW        0x04
 #define W5100_SN_MR_PPPOE         0x05
+#define W5100_SN_VIRTUAL_DNS      0x08  // not present on real hardware, see comment in Uthernet2.cpp
+#define W5100_SN_MR_TCP_DNS       (W5100_SN_VIRTUAL_DNS | W5100_SN_MR_TCP)
+#define W5100_SN_MR_UDP_DNS       (W5100_SN_VIRTUAL_DNS | W5100_SN_MR_UDP)
+#define W5100_SN_MR_IPRAW_DNS     (W5100_SN_VIRTUAL_DNS | W5100_SN_MR_IPRAW)
 
 #define W5100_SN_CR_OPEN          0x01
 #define W5100_SN_CR_LISTENT       0x02
@@ -87,6 +91,11 @@
 #define W5100_SN_RX_RSR1          0x27  // RX Receive Size
 #define W5100_SN_RX_RD0           0x28  // RX Read Pointer
 #define W5100_SN_RX_RD1           0x29  // RX Read Pointer
+
+#define W5100_SN_DNS_NAME_LEN     0x2A  // these are not present on real hardware, see comment in Uthernet2.cpp
+#define W5100_SN_DNS_NAME_BEGIN   0x2B
+#define W5100_SN_DNS_NAME_END     0xFF
+#define W5100_SN_DNS_NAME_CPTY    (W5100_SN_DNS_NAME_END - W5100_SN_DNS_NAME_BEGIN)
 
 #define W5100_SN_SR_CLOSED        0x00
 #define W5100_SN_SR_SOCK_INIT     0x13

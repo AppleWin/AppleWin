@@ -61,6 +61,7 @@ public:
     enum PacketDestination { HOST, BROADCAST, OTHER };
 
     Uthernet2(UINT slot);
+    virtual ~Uthernet2();
 
 	virtual void Destroy(void) {}
     virtual void InitializeIO(LPBYTE pCxRomPeripheral);
@@ -71,7 +72,17 @@ public:
 
     BYTE IO_C0(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
+    // global registry functions
+    static void SetRegistryVirtualDNS(UINT slot, const bool enabled);
+    static bool GetRegistryVirtualDNS(UINT slot);
+
 private:
+    bool myVirtualDNSEnabled; // extended virtualisation of DNS (not present in the real U II card)
+
+#ifdef _MSC_VER
+    int myWSAStartup;
+#endif
+
     std::vector<uint8_t> myMemory;
     std::vector<Socket> mySockets;
     uint8_t myModeRegister;
@@ -82,8 +93,10 @@ private:
     // but in the interest of speeding up the emulator
     // we introduce one
     std::map<uint32_t, MACAddress> myARPCache;
+    std::map<std::string, uint32_t> myDNSCache;
 
     void getMACAddress(const uint32_t address, const MACAddress * & mac);
+    void resolveDNS(const size_t i);
 
     void setSocketModeRegister(const size_t i, const uint16_t address, const uint8_t value);
     void setTXSizes(const uint16_t address, uint8_t value);

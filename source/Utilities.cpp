@@ -241,27 +241,15 @@ void LoadConfiguration(bool loadImages)
 
 		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
 		{
-			if (slot == SLOT3)
-			{
-				// this must happen before the card is instantitated
-				// TODO move to the card
-				if ((SS_CARDTYPE)dwTmp == CT_Uthernet || (SS_CARDTYPE)dwTmp == CT_Uthernet2)	// TODO: move this to when UthernetCard object is instantiated
-				{
-					std::string regSection = RegGetConfigSlotSection(slot);
-					if (RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, szFilename, MAX_PATH, TEXT("")))
-						PCapBackend::tfe_interface = szFilename;
-				}
-			}
-
 			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
 		}
 		else	// legacy (AppleWin 1.30.3 or earlier)
 		{
 			if (slot == SLOT3)
 			{
-				// TODO: move this to when UthernetCard object is instantiated
 				RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
-				PCapBackend::tfe_interface = szFilename;
+				// copy it to the new location
+				PCapBackend::SetRegistryInterface(slot, szFilename);
 
 				DWORD tfeEnabled;
 				REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &tfeEnabled, 0);

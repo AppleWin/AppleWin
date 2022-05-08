@@ -30,6 +30,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Windows/Win32Frame.h"
 #include "../Registry.h"
 #include "../SerialComms.h"
+#include "../CardManager.h"
+#include "../Uthernet2.h"
+#include "../Tfe/PCapBackend.h"
+#include "../Interface.h"
 #include "../resource/resource.h"
 
 CPageConfig* CPageConfig::ms_this = 0;	// reinit'd in ctor
@@ -114,6 +118,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			ui_tfe_settings_dialog(hWnd);
 			m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = m_PageConfigTfe.m_tfe_selected;
 			m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
+			m_PropertySheetHelper.GetConfigNew().m_tfeVirtualDNS = m_PageConfigTfe.m_tfe_virtual_dns;
 			InitOptions(hWnd);
 			break;
 
@@ -261,7 +266,8 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 					break;
 				}
 
-				m_PageConfigTfe.m_tfe_interface_name = PCapBackend::tfe_interface;
+				m_PageConfigTfe.m_tfe_interface_name = PCapBackend::GetRegistryInterface(SLOT3);
+				m_PageConfigTfe.m_tfe_virtual_dns = Uthernet2::GetRegistryVirtualDNS(SLOT3);
 			}
 
 			InitOptions(hWnd);

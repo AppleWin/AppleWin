@@ -29,17 +29,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <iphlpapi.h>
 #endif
 
-std::string PCapBackend::tfe_interface;
-
-PCapBackend::PCapBackend(const std::string & pcapInterface)
+PCapBackend::PCapBackend(const std::string & interfaceName) : m_interfaceName(interfaceName)
 {
-	tfePcapFP = TfePcapOpenAdapter(pcapInterface);
+	m_tfePcapFP = TfePcapOpenAdapter(interfaceName);
 }
 
 PCapBackend::~PCapBackend()
 {
-	TfePcapCloseAdapter(tfePcapFP);
-	tfePcapFP = NULL;
+	TfePcapCloseAdapter(m_tfePcapFP);
+	m_tfePcapFP = NULL;
 }
 
 void PCapBackend::transmit(
@@ -47,17 +45,17 @@ void PCapBackend::transmit(
     uint8_t *txframe        /* Pointer to the frame to be transmitted */
 )
 {
-    if (tfePcapFP)
+    if (m_tfePcapFP)
     {
-        tfe_arch_transmit(tfePcapFP, txlength, txframe);
+        tfe_arch_transmit(m_tfePcapFP, txlength, txframe);
     }
 }
 
 int PCapBackend::receive(const int size, uint8_t * rxframe)
 {
-    if (tfePcapFP)
+    if (m_tfePcapFP)
     {
-        return tfe_arch_receive(tfePcapFP, size, rxframe);
+        return tfe_arch_receive(m_tfePcapFP, size, rxframe);
     }
     else
     {
@@ -67,7 +65,7 @@ int PCapBackend::receive(const int size, uint8_t * rxframe)
 
 bool PCapBackend::isValid()
 {
-    return tfePcapFP;
+    return m_tfePcapFP;
 }
 
 void PCapBackend::update(const ULONG /* nExecutedCycles */)
@@ -85,6 +83,11 @@ void PCapBackend::getMACAddress(const uint32_t address, MACAddress & mac)
 #endif
 }
 
+const std::string & PCapBackend::getInterfaceName()
+{
+    return m_interfaceName;
+}
+
 int PCapBackend::tfe_enumadapter_open(void)
 {
     return tfe_arch_enumadapter_open();
@@ -100,13 +103,26 @@ int PCapBackend::tfe_enumadapter_close(void)
     return tfe_arch_enumadapter_close();
 }
 
-void PCapBackend::tfe_SetRegistryInterface(UINT slot, const std::string& name)
+const char * PCapBackend::tfe_lib_version(void)
+{
+    return tfe_arch_lib_version();
+}
+
+void PCapBackend::SetRegistryInterface(UINT slot, const std::string& name)
 {
     std::string regSection = RegGetConfigSlotSection(slot);
     RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, 1, name);
 }
 
-void PCapBackend::get_disabled_state(int * param)
+std::string PCapBackend::GetRegistryInterface(UINT slot)
 {
-    *param = tfe_cannot_use;
+    char interfaceName[MAX_PATH];
+    std::string regSection = RegGetConfigSlotSection(slot);
+    RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, interfaceName, sizeof(interfaceName), TEXT(""));
+    return interfaceName;
+}
+
+int PCapBackend::tfe_is_npcap_loaded()
+{
+    return tfe_arch_is_npcap_loaded();
 }

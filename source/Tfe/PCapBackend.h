@@ -10,7 +10,7 @@ typedef struct pcap pcap_t;
 class PCapBackend : public NetworkBackend
 {
 public:
-	PCapBackend(const std::string & pcapInterface);
+	PCapBackend(const std::string & interfaceName);
 
 	virtual ~PCapBackend();
 
@@ -32,8 +32,12 @@ public:
 	// get MAC for IPRAW (it is only supposed to handle addresses on the local network)
 	virtual void getMACAddress(const uint32_t address, MACAddress & mac);
 
-	static void tfe_SetRegistryInterface(UINT slot, const std::string& name);
-	static void get_disabled_state(int * param);
+	// get interface name
+	virtual const std::string & getInterfaceName();
+
+	// global registry functions
+	static void SetRegistryInterface(UINT slot, const std::string& name);
+	static std::string GetRegistryInterface(UINT slot);
 
 	/*
 	 These functions let the UI enumerate the available interfaces.
@@ -59,9 +63,10 @@ public:
 	static int tfe_enumadapter_open(void);
 	static int tfe_enumadapter(std::string & name, std::string & description);
 	static int tfe_enumadapter_close(void);
-
-	static std::string tfe_interface;
+	static const char * tfe_lib_version(void);
+	static int tfe_is_npcap_loaded();
 
 private:
-	pcap_t * tfePcapFP;
+	const std::string m_interfaceName;
+	pcap_t * m_tfePcapFP;
 };

@@ -28,6 +28,11 @@
 /* #define WPCAP */
 
 #ifdef _MSC_VER
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include "pcap.h"
 #else
 // on Linux and Mac OS X, we use system's pcap.h, which needs to be included as <>
@@ -51,7 +56,8 @@
 
 #define TFE_DEBUG_WARN 1 /* this should not be deactivated */
 
-int tfe_cannot_use = 0;
+// once this is set, no further attempts to load npcap will be made
+static int tfe_cannot_use = 0;
 
 #ifdef _MSC_VER
 
@@ -113,35 +119,47 @@ void TfePcapFreeLibrary(void)
 static
 BOOL TfePcapLoadLibrary(void)
 {
-    if (!pcap_library) {
-        if (!SetDllDirectory("C:\\Windows\\System32\\Npcap\\"))	// Prefer Npcap over WinPcap (GH#822)
-        {
-            const char* error = "Warning: SetDllDirectory() failed for Npcap";
-            LogOutput("%s\n", error);
-            LogFileOutput("%s\n", error);
-        }
-
-        pcap_library = LoadLibrary("wpcap.dll");
-
-        if (!pcap_library) {
-            tfe_cannot_use = 1;
-            if(g_fh) fprintf(g_fh, "LoadLibrary WPCAP.DLL failed!\n" );
-            return FALSE;
-        }
-
-        GET_PROC_ADDRESS_AND_TEST(pcap_open_live);
-        GET_PROC_ADDRESS_AND_TEST(pcap_close);
-        GET_PROC_ADDRESS_AND_TEST(pcap_dispatch);
-        GET_PROC_ADDRESS_AND_TEST(pcap_setnonblock);
-        GET_PROC_ADDRESS_AND_TEST(pcap_findalldevs);
-        GET_PROC_ADDRESS_AND_TEST(pcap_freealldevs);
-        GET_PROC_ADDRESS_AND_TEST(pcap_sendpacket);
-        GET_PROC_ADDRESS_AND_TEST(pcap_datalink);
-        GET_PROC_ADDRESS_AND_TEST(pcap_lib_version);
-        GET_PROC_ADDRESS_AND_TEST(pcap_geterr);
-        LogOutput("%s\n", p_pcap_lib_version());
-        LogFileOutput("%s\n", p_pcap_lib_version());
+    if (pcap_library)
+    {
+        // already loaded
+        return TRUE;
     }
+
+    if (tfe_cannot_use)
+    {
+        // already failed
+        return FALSE;
+    }
+
+    // try to load
+    if (!SetDllDirectory("C:\\Windows\\System32\\Npcap\\"))	// Prefer Npcap over WinPcap (GH#822)
+    {
+        const char* error = "Warning: SetDllDirectory() failed for Npcap";
+        LogOutput("%s\n", error);
+        LogFileOutput("%s\n", error);
+    }
+
+    pcap_library = LoadLibrary("wpcap.dll");
+
+    if (!pcap_library)
+    {
+        tfe_cannot_use = 1;
+        if(g_fh) fprintf(g_fh, "LoadLibrary WPCAP.DLL failed!\n" );
+        return FALSE;
+    }
+
+    GET_PROC_ADDRESS_AND_TEST(pcap_open_live);
+    GET_PROC_ADDRESS_AND_TEST(pcap_close);
+    GET_PROC_ADDRESS_AND_TEST(pcap_dispatch);
+    GET_PROC_ADDRESS_AND_TEST(pcap_setnonblock);
+    GET_PROC_ADDRESS_AND_TEST(pcap_findalldevs);
+    GET_PROC_ADDRESS_AND_TEST(pcap_freealldevs);
+    GET_PROC_ADDRESS_AND_TEST(pcap_sendpacket);
+    GET_PROC_ADDRESS_AND_TEST(pcap_datalink);
+    GET_PROC_ADDRESS_AND_TEST(pcap_lib_version);
+    GET_PROC_ADDRESS_AND_TEST(pcap_geterr);
+    LogOutput("%s\n", p_pcap_lib_version());
+    LogFileOutput("%s\n", p_pcap_lib_version());
 
     return TRUE;
 }
@@ -549,6 +567,21 @@ int tfe_arch_receive(pcap_t * TfePcapFP,
     }
 
     return -1;
+}
+
+const char * tfe_arch_lib_version()
+{
+    if (!TfePcapLoadLibrary())
+    {
+        return 0;
+    }
+
+    return p_pcap_lib_version();
+}
+
+int tfe_arch_is_npcap_loaded()
+{
+    return TfePcapLoadLibrary();
 }
 
 //#endif /* #ifdef HAVE_TFE */

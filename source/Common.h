@@ -108,6 +108,7 @@ enum AppMode_e
 #define  REGVALUE_WINDOW_SCALE       "Window Scale"
 #define  REGVALUE_UTHERNET_ACTIVE       "Uthernet Active"	// GH#977: Deprecated from 1.30.5
 #define  REGVALUE_UTHERNET_INTERFACE    "Uthernet Interface"
+#define  REGVALUE_UTHERNET_VIRTUAL_DNS  "Uthernet Virtual DNS"
 #define  REGVALUE_SLOT4					"Slot 4"			// GH#977: Deprecated from 1.30.4
 #define  REGVALUE_SLOT5					"Slot 5"			// GH#977: Deprecated from 1.30.4
 #define  REGVALUE_VERSION				"Version"

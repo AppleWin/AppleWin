@@ -114,6 +114,7 @@
     <ClInclude Include="source\StrFormat.h" />
     <ClInclude Include="source\SynchronousEventManager.h" />
     <ClInclude Include="source\Tape.h" />
+    <ClInclude Include="source\Tfe\DNS.h" />
     <ClInclude Include="source\Tfe\IPRaw.h" />
     <ClInclude Include="source\Tfe\NetworkBackend.h" />
     <ClInclude Include="source\Tfe\Bpf.h" />
@@ -157,6 +158,7 @@
     <ClCompile Include="source\CardManager.cpp" />
     <ClCompile Include="source\CmdLine.cpp" />
     <ClCompile Include="source\Configuration\About.cpp" />
+    <ClCompile Include="source\Configuration\Config.cpp" />
     <ClCompile Include="source\Configuration\PageAdvanced.cpp" />
     <ClCompile Include="source\Configuration\PageConfig.cpp" />
     <ClCompile Include="source\Configuration\PageConfigTfe.cpp" />
@@ -223,6 +225,7 @@
     <ClCompile Include="source\StrFormat.cpp" />
     <ClCompile Include="source\SynchronousEventManager.cpp" />
     <ClCompile Include="source\Tape.cpp" />
+    <ClCompile Include="source\Tfe\DNS.cpp" />
     <ClCompile Include="source\Tfe\IPRaw.cpp" />
     <ClCompile Include="source\Tfe\NetworkBackend.cpp" />
     <ClCompile Include="source\Tfe\PCapBackend.cpp" />
