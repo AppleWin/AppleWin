@@ -36,6 +36,7 @@ set(SOURCE_FILES
   Tfe/NetworkBackend.cpp
   Tfe/PCapBackend.cpp
   Tfe/IPRaw.cpp
+  Tfe/DNS.cpp
 
   Debugger/Debug.cpp
   Debugger/Debugger_Help.cpp
@@ -93,6 +94,7 @@ set(SOURCE_FILES
   CmdLine.cpp
 
   Configuration/PropertySheetHelper.cpp
+  Configuration/Config.cpp
 
   linux/resources.cpp
   linux/benchmark.cpp
@@ -126,6 +128,7 @@ set(HEADER_FILES
   Tfe/NetworkBackend.h
   Tfe/PCapBackend.h
   Tfe/IPRaw.h
+  Tfe/DNS.h
 
   Uthernet1.h
   Uthernet2.h
@@ -196,6 +199,7 @@ set(HEADER_FILES
   Debugger/Util_Text.h
 
   Configuration/PropertySheetHelper.h
+  Configuration/Config.h
 
   linux/resources.h
   linux/linuxinterface.h

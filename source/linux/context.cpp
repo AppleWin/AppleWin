@@ -9,6 +9,7 @@
 #include "Debugger/Debug.h"
 
 #include "Interface.h"
+#include "CardManager.h"
 #include "Log.h"
 #include "Utilities.h"
 #include "SoundCore.h"

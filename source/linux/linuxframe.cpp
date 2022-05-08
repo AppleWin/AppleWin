@@ -130,12 +130,12 @@ void LinuxFrame::Restart()
   Begin();
 }
 
-std::shared_ptr<NetworkBackend> LinuxFrame::CreateNetworkBackend()
+std::shared_ptr<NetworkBackend> LinuxFrame::CreateNetworkBackend(const std::string & interfaceName)
 {
 #ifdef U2_USE_SLIRP
   return std::make_shared<SlirpBackend>();
 #else
-  return std::make_shared<PCapBackend>(PCapBackend::tfe_interface);
+  return std::make_shared<PCapBackend>(interfaceName);
 #endif
 }
 

@@ -211,4 +211,9 @@ void SlirpBackend::getMACAddress(const uint32_t address, MACAddress & mac)
   *ptr = address;
 }
 
+const std::string & SlirpBackend::getInterfaceName()
+{
+  return myEmptyInterface;
+}
+
 #endif

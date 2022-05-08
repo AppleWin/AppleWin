@@ -20,6 +20,7 @@
 #include "Memory.h"
 #include "ParallelPrinter.h"
 #include "SaveState.h"
+#include "Uthernet2.h"
 
 #include "Debugger/Debugger_Types.h"
 
@@ -360,7 +361,9 @@ namespace sa2
 
           ImGui::Separator();
 
-          const std::string current_interface = PCapBackend::tfe_interface;
+          const UINT uthernetSlot = SLOT3;
+
+          const std::string current_interface = PCapBackend::GetRegistryInterface(uthernetSlot);
 
           if (ImGui::BeginCombo("pcap", current_interface.c_str()))
           {
@@ -382,8 +385,7 @@ namespace sa2
                 if (ImGui::Selectable(iface.c_str(), isSelected))
                 {
                   // the following line interacts with tfe_enumadapter, so we must run it outside the above loop
-                  PCapBackend::tfe_interface = iface;
-                  PCapBackend::tfe_SetRegistryInterface(SLOT3, PCapBackend::tfe_interface);
+                  PCapBackend::SetRegistryInterface(uthernetSlot, iface);
                 }
                 if (isSelected)
                 {
@@ -392,6 +394,12 @@ namespace sa2
               }
             }
             ImGui::EndCombo();
+          }
+
+          bool virtualDNS = Uthernet2::GetRegistryVirtualDNS(uthernetSlot);
+          if (ImGui::Checkbox("Virtual DNS", &virtualDNS))
+          {
+            Uthernet2::SetRegistryVirtualDNS(uthernetSlot, virtualDNS);
           }
 
           ImGui::EndTabItem();
