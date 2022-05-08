@@ -34,9 +34,6 @@
 extern void tfe_arch_set_mac(const BYTE mac[6]);
 extern void tfe_arch_set_hashfilter(const DWORD hash_mask[2]);
 
-/* Flag: Can we even use TFE, or is the hardware not available? */
-extern int tfe_cannot_use;
-
 struct pcap;
 typedef struct pcap pcap_t;
 
@@ -67,8 +64,11 @@ int tfe_arch_receive(pcap_t * TfePcapFP,
                      BYTE *pbuffer       /* where to store a frame */
                     );
 
+extern int tfe_arch_is_npcap_loaded();
 extern int tfe_arch_enumadapter_open(void);
 extern int tfe_arch_enumadapter(std::string & name, std::string & description);
 extern int tfe_arch_enumadapter_close(void);
+
+extern const char * tfe_arch_lib_version();
 
 #endif

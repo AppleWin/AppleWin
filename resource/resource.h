@@ -119,6 +119,8 @@
 #define IDC_FOURPLAY_CONFIG             1087
 #define IDC_SNESMAX_CONFIG              1088
 #define IDC_CHECK_VIDHD_IN_SLOT3        1089
+#define IDC_CHECK_TFE_VIRTUAL_DNS       1090
+#define IDC_TFE_NPCAP_INFO              1091
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003

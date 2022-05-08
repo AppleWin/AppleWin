@@ -135,37 +135,16 @@ BOOL CPageConfigTfe::get_tfename(int number, std::string & name, std::string & d
 	return FALSE;
 }
 
-int CPageConfigTfe::gray_ungray_items(HWND hwnd)
+void CPageConfigTfe::gray_ungray_items(HWND hwnd)
 {
-	int enable;
-	int number;
-
-	int disabled = 0;
-	PCapBackend::get_disabled_state(&disabled);
-
-	if (disabled)
-	{
-		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE_T), 0);
-		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), 0);
-		EnableWindow(GetDlgItem(hwnd, IDOK), 0);
-		SetWindowText(GetDlgItem(hwnd,IDC_TFE_SETTINGS_INTERFACE_NAME), "");
-		SetWindowText(GetDlgItem(hwnd,IDC_TFE_SETTINGS_INTERFACE_DESC), "");
-		enable = 0;
-	}
-	else
-	{
-		enable = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0) ? 1 : 0;
-	}
-
-	EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_T), enable);
-	EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), enable);
+	const int enable = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
 
 	if (enable)
 	{
 		std::string name;
 		std::string description;
 
-		number = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), CB_GETCURSEL, 0, 0);
+		const int number = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), CB_GETCURSEL, 0, 0);
 
 		if (get_tfename(number, name, description))
 		{
@@ -179,7 +158,7 @@ int CPageConfigTfe::gray_ungray_items(HWND hwnd)
 		SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), "");
 	}
 
-	return disabled ? 1 : 0;
+	EnableWindow(GetDlgItem(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS), enable == 2);
 }
 
 void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
@@ -193,6 +172,23 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 	uilib_adjust_group_width(hwnd, ms_leftgroup);
 	uilib_move_group(hwnd, ms_rightgroup, xsize + 30);
 
+	if (PCapBackend::tfe_is_npcap_loaded())
+	{
+		const char * version = PCapBackend::tfe_lib_version();
+		SetWindowText(GetDlgItem(hwnd, IDC_TFE_NPCAP_INFO), version);
+	}
+	else
+	{
+		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), 0);
+		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), 0);
+		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), 0);
+
+		SetWindowText(GetDlgItem(hwnd, IDC_TFE_NPCAP_INFO),
+			"Limited Uthernet support is available on your system.\n\n"
+			"Install Npcap from https://npcap.com\n"
+			"or select Uthernet II with Virtual DNS.");
+	}
+
 	switch (m_tfe_selected)
 	{
 	case CT_Uthernet:
@@ -205,6 +201,8 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 		active_value = 0;
 		break;
 	}
+
+	CheckDlgButton(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS, m_tfe_virtual_dns ? BST_CHECKED : BST_UNCHECKED);
 
 	temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_ENABLE);
 	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Disabled");
@@ -244,22 +242,7 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 		PCapBackend::tfe_enumadapter_close();
 	}
 
-	if (gray_ungray_items(hwnd))
-	{
-		/* we have a problem: TFE is disabled. Give a message to the user */
-		// TC (18 Dec 2017) this vicekb URL is a broken link now, so I copied it to the AppleWin repo, here:
-		// . https://github.com/AppleWin/AppleWin/blob/master/docs/VICE%20Knowledge%20Base%20-%20Article%2013-005.htm
-		MessageBox( hwnd,
-			"Uthernet support is not available on your system,\n"
-			"WPCAP.DLL cannot be loaded.\n\n"
-			"Install Npcap from\n\n"
-			"      https://npcap.com\n\n"
-			"to activate networking with AppleWin.",
-			"Uthernet support", MB_ICONINFORMATION|MB_OK);
-
-		/* just quit the dialog before it is open */
-		SendMessage( hwnd, WM_COMMAND, IDCANCEL, 0);
-	}
+	gray_ungray_items(hwnd);
 }
 
 void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
@@ -270,27 +253,21 @@ void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 	buffer[255] = 0;
 	GetDlgItemText(hwnd, IDC_TFE_SETTINGS_INTERFACE, buffer, sizeof(buffer)-1);
 
-	// RGJ - Added check for NULL interface so we don't set it active without a valid interface selected
-	if (strlen(buffer) > 0)
+	m_tfe_interface_name = buffer;
+
+	active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
+	switch (active_value)
 	{
-		m_tfe_interface_name = buffer;
-		active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
-		switch (active_value)
-		{
-		case 1:
-			m_tfe_selected = CT_Uthernet;
-			break;
-		case 2:
-			m_tfe_selected = CT_Uthernet2;
-			break;
-		default:
-			m_tfe_selected = CT_Empty;
-			break;
-		}
-	}
-	else
-	{
+	case 1:
+		m_tfe_selected = CT_Uthernet;
+		break;
+	case 2:
+		m_tfe_selected = CT_Uthernet2;
+		break;
+	default:
 		m_tfe_selected = CT_Empty;
-		m_tfe_interface_name.clear();
+		break;
 	}
+
+	m_tfe_virtual_dns = IsDlgButtonChecked(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS) ? 1 : 0;
 }

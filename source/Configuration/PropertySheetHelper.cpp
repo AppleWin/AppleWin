@@ -33,6 +33,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Log.h"
 #include "../Registry.h"
 #include "../SaveState.h"
+#include "../Interface.h"
+#include "../Uthernet2.h"
 #include "../Tfe/PCapBackend.h"
 
 /*
@@ -336,7 +338,8 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		SetSlot(slot, ConfigNew.m_Slot[slot]);
 
 	// unconditionally save it, as the previous SetSlot might have removed the setting
-	PCapBackend::tfe_SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
+	PCapBackend::SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
+	Uthernet2::SetRegistryVirtualDNS(slot, ConfigNew.m_tfeVirtualDNS);
 
 	slot = SLOT4;
 	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
@@ -454,6 +457,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_tfeInterface))
 			strMsgMain += ". Uthernet interface has changed\n";
+
+		if (CONFIG_CHANGED(m_tfeVirtualDNS))
+			strMsgMain += ". Uthernet Virtual DNS has changed\n";
 
 		if (CONFIG_CHANGED(m_Slot[SLOT4]))
 			strMsgMain += GetSlot(SLOT4);

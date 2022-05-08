@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Uthernet2.h"
 #include "Speaker.h"
 #include "Utilities.h"
+#include "CardManager.h"
 #include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"
 #include "Debugger/Debug.h"
