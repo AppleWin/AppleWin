@@ -235,7 +235,7 @@ bool Socket::isOpen() const
 
 void Socket::process()
 {
-    if (myFD != INVALID_SOCKET && sn_sr == W5100_SN_SR_SOCK_INIT && (myErrno == SOCK_EINPROGRESS || myErrno == SOCK_EWOULDBLOCK))
+    if (myFD != INVALID_SOCKET && sn_sr == W5100_SN_SR_SOCK_SYNSENT && (myErrno == SOCK_EINPROGRESS || myErrno == SOCK_EWOULDBLOCK))
     {
 #ifdef _MSC_VER
         FD_SET writefds, exceptfds;
@@ -1005,6 +1005,7 @@ void Uthernet2::connectSocket(const size_t i)
         const int error = sock_error();
         if (error == SOCK_EINPROGRESS || error == SOCK_EWOULDBLOCK)
         {
+            socket.sn_sr = W5100_SN_SR_SOCK_SYNSENT;
             socket.myErrno = error;
         }
         else
