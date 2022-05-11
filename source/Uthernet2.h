@@ -25,14 +25,14 @@ struct Socket
     uint16_t sn_rx_wr;
     uint16_t sn_rx_rsr;
 
-    uint8_t sn_sr;
-
-    socket_t myFD;
-
     bool isOpen() const;
     void clearFD();
-    void setFD(const socket_t fd, const int status);
+    void setStatus(const uint8_t status);
+    void setFD(const socket_t fd, const uint8_t status);
     void process();
+
+    socket_t getFD() const;
+    uint8_t getStatus() const;
 
     bool isThereRoomFor(const size_t len, const size_t header) const;
     uint16_t getFreeRoom() const;
@@ -43,6 +43,10 @@ struct Socket
     Socket();
 
     ~Socket();
+
+private:
+    socket_t myFD;
+    uint8_t mySocketStatus;  // sn_sr
 };
 
 /*
