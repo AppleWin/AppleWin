@@ -196,6 +196,7 @@ Socket::Socket()
     , sn_rx_rsr(0)
     , mySocketStatus(W5100_SN_SR_CLOSED)
     , myFD(INVALID_SOCKET)
+    , myHeaderSize(0)
 {
 }
 
@@ -216,6 +217,25 @@ void Socket::clearFD()
 void Socket::setStatus(const uint8_t status)
 {
     mySocketStatus = status;
+
+    switch (mySocketStatus)
+    {
+    case W5100_SN_SR_ESTABLISHED:
+        myHeaderSize = 0;  // no header for TCP
+        break;
+    case W5100_SN_SR_SOCK_UDP:
+        myHeaderSize = 4 + 2 + 2;  // IP + Port + Size
+        break;
+    case W5100_SN_SR_SOCK_IPRAW:
+        myHeaderSize = 4 + 2;  // IP + Size
+        break;
+    case W5100_SN_SR_SOCK_MACRAW:
+        myHeaderSize = 2;  // Size
+        break;
+    default:
+        myHeaderSize = 0;
+        break;
+    }
 }
 
 void Socket::setFD(const socket_t fd, const uint8_t status)
@@ -233,6 +253,11 @@ Socket::socket_t Socket::getFD() const
 uint8_t Socket::getStatus() const
 {
     return mySocketStatus;
+}
+
+uint8_t Socket::getHeaderSize() const
+{
+    return myHeaderSize;
 }
 
 Socket::~Socket()
@@ -285,12 +310,12 @@ void Socket::process()
     }
 }
 
-bool Socket::isThereRoomFor(const size_t len, const size_t header) const
+bool Socket::isThereRoomFor(const size_t len) const
 {
     const uint16_t rsr = sn_rx_rsr;    // already present
     const uint16_t size = receiveSize; // total size
 
-    return rsr + len + header < size; // "not =": we do not want to fill the buffer.
+    return rsr + len + myHeaderSize < size; // "not =": we do not want to fill the buffer.
 }
 
 uint16_t Socket::getFreeRoom() const
@@ -298,7 +323,8 @@ uint16_t Socket::getFreeRoom() const
     const uint16_t rsr = sn_rx_rsr;    // already present
     const uint16_t size = receiveSize; // total size
 
-    return size - rsr;
+    const uint16_t total = size - rsr;
+    return total > myHeaderSize ? total - myHeaderSize : 0;
 }
 
 #define SS_YAML_KEY_SOCKET_RX_WRITE_REGISTER "RX Write Register"
@@ -638,12 +664,12 @@ void Uthernet2::receiveOnePacketMacRaw(const size_t i, const int size, uint8_t *
 {
     Socket &socket = mySockets[i];
 
-    if (socket.isThereRoomFor(size, sizeof(uint16_t)))
+    if (socket.isThereRoomFor(size))
     {
         writeDataMacRaw(socket, myMemory, data, size);
 #ifdef U2_LOG_TRAFFIC
-        LogFileOutput("U2: Read MACRAW[%" SIZE_T_FMT "]: " MAC_FMT " -> " MAC_FMT ": +%d -> %d bytes\n", i, MAC_SOURCE(data), MAC_DEST(data),
-            size, socket.sn_rx_rsr);
+        LogFileOutput("U2: Read MACRAW[%" SIZE_T_FMT "]: " MAC_FMT " -> " MAC_FMT ": +%d+%d -> %d bytes\n", i, MAC_SOURCE(data), MAC_DEST(data),
+            socket.getHeaderSize(), size, socket.sn_rx_rsr);
 #endif
     }
     else
@@ -659,11 +685,12 @@ void Uthernet2::receiveOnePacketIPRaw(const size_t i, const size_t lengthOfPaylo
 {
     Socket &socket = mySockets[i];
 
-    if (socket.isThereRoomFor(lengthOfPayload, 4 + sizeof(uint16_t)))
+    if (socket.isThereRoomFor(lengthOfPayload))
     {
         writeDataIPRaw(socket, myMemory, payload, lengthOfPayload, destination);
 #ifdef U2_LOG_TRAFFIC
-        LogFileOutput("U2: Read IPRAW[%" SIZE_T_FMT "]: +%" SIZE_T_FMT " (%d) -> %d bytes\n", i, lengthOfPayload, len, socket.sn_rx_rsr);
+        LogFileOutput("U2: Read IPRAW[%" SIZE_T_FMT "]: +%d+%" SIZE_T_FMT " (%d) -> %d bytes\n", i, socket.getHeaderSize(),
+            lengthOfPayload, len, socket.sn_rx_rsr);
 #endif
     }
     else
@@ -695,7 +722,8 @@ void Uthernet2::receiveOnePacketFromSocket(const size_t i)
             {
                 writeDataForProtocol(socket, myMemory, buffer.data(), data, source);
 #ifdef U2_LOG_TRAFFIC
-                LogFileOutput("U2: Read %s[%" SIZE_T_FMT "]: +%" SIZE_T_FMT " -> %d bytes\n", proto, i, data, socket.sn_rx_rsr);
+                LogFileOutput("U2: Read %s[%" SIZE_T_FMT "]: +%d+%" SIZE_T_FMT " -> %d bytes\n", proto, i, socket.getHeaderSize(),
+                    data, socket.sn_rx_rsr);
 #endif
             }
             else if (data == 0)

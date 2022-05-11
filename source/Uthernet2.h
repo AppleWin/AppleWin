@@ -33,8 +33,10 @@ struct Socket
 
     socket_t getFD() const;
     uint8_t getStatus() const;
+    uint8_t getHeaderSize() const;
 
-    bool isThereRoomFor(const size_t len, const size_t header) const;
+    // both functions work in "data" space, the header size is added internally
+    bool isThereRoomFor(const size_t len) const;
     uint16_t getFreeRoom() const;
 
     void SaveSnapshot(YamlSaveHelper &yamlSaveHelper);
@@ -47,6 +49,7 @@ struct Socket
 private:
     socket_t myFD;
     uint8_t mySocketStatus;  // sn_sr
+    uint8_t myHeaderSize;
 };
 
 /*
