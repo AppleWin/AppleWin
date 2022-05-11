@@ -28,7 +28,6 @@ struct Socket
     uint8_t sn_sr;
 
     socket_t myFD;
-    int myErrno;
 
     bool isOpen() const;
     void clearFD();

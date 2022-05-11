@@ -196,7 +196,6 @@ Socket::Socket()
     , sn_rx_rsr(0)
     , sn_sr(W5100_SN_SR_CLOSED)
     , myFD(INVALID_SOCKET)
-    , myErrno(0)
 {
 }
 
@@ -218,7 +217,6 @@ void Socket::setFD(const socket_t fd, const int status)
 {
     clearFD();
     myFD = fd;
-    myErrno = 0;
     sn_sr = status;
 }
 
@@ -235,7 +233,7 @@ bool Socket::isOpen() const
 
 void Socket::process()
 {
-    if (myFD != INVALID_SOCKET && sn_sr == W5100_SN_SR_SOCK_SYNSENT && (myErrno == SOCK_EINPROGRESS || myErrno == SOCK_EWOULDBLOCK))
+    if (myFD != INVALID_SOCKET && sn_sr == W5100_SN_SR_SOCK_SYNSENT)
     {
 #ifdef _MSC_VER
         FD_SET writefds, exceptfds;
@@ -256,7 +254,6 @@ void Socket::process()
 
             if (res == 0 && err == 0)
             {
-                myErrno = 0;
                 sn_sr = W5100_SN_SR_ESTABLISHED;
 #ifdef U2_LOG_STATE
                 LogFileOutput("U2: TCP[]: Connected\n");
@@ -994,7 +991,6 @@ void Uthernet2::connectSocket(const size_t i)
     if (res == 0)
     {
         socket.sn_sr = W5100_SN_SR_ESTABLISHED;
-        socket.myErrno = 0;
 #ifdef U2_LOG_STATE
         const uint16_t port = readNetworkWord(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
         LogFileOutput("U2: TCP[%" SIZE_T_FMT "]: CONNECT to %s:%d\n", i, formatIP(dest), port);
@@ -1006,7 +1002,6 @@ void Uthernet2::connectSocket(const size_t i)
         if (error == SOCK_EINPROGRESS || error == SOCK_EWOULDBLOCK)
         {
             socket.sn_sr = W5100_SN_SR_SOCK_SYNSENT;
-            socket.myErrno = error;
         }
         else
         {
