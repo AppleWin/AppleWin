@@ -162,9 +162,9 @@ namespace
         writeData(socket, memory, data, len);
     }
 
-    void writeDataIPRaw(Socket &socket, std::vector<uint8_t> &memory, const uint8_t *data, const size_t len, const uint32_t destination)
+    void writeDataIPRaw(Socket &socket, std::vector<uint8_t> &memory, const uint8_t *data, const size_t len, const uint32_t source)
     {
-        writeAny(socket, memory, destination);
+        writeAny(socket, memory, source);
         write16(socket, memory, static_cast<uint16_t>(len));
         writeData(socket, memory, data, len);
     }
@@ -620,9 +620,9 @@ void Uthernet2::receiveOnePacketRaw()
     {
         const uint8_t * payload;
         size_t lengthOfPayload;
-        uint32_t destination;
+        uint32_t source;
         uint8_t packetProtocol;
-        getIPPayload(len, buffer, lengthOfPayload, payload, destination, packetProtocol);
+        getIPPayload(len, buffer, lengthOfPayload, payload, source, packetProtocol);
 
         // see if there is a IPRAW socket that should accept thi spacket
         int ipRawSocket = -1;
@@ -649,7 +649,7 @@ void Uthernet2::receiveOnePacketRaw()
         // priority to IPRAW
         if (ipRawSocket >= 0)
         {
-            receiveOnePacketIPRaw(ipRawSocket, lengthOfPayload, payload, destination, packetProtocol, len);
+            receiveOnePacketIPRaw(ipRawSocket, lengthOfPayload, payload, source, packetProtocol, len);
         }
         // fallback to MACRAW (if open)
         else if (macRawSocket >= 0)
@@ -681,13 +681,13 @@ void Uthernet2::receiveOnePacketMacRaw(const size_t i, const int size, uint8_t *
     }
 }
 
-void Uthernet2::receiveOnePacketIPRaw(const size_t i, const size_t lengthOfPayload, const uint8_t * payload, const uint32_t destination, const uint8_t protocol, const int len)
+void Uthernet2::receiveOnePacketIPRaw(const size_t i, const size_t lengthOfPayload, const uint8_t * payload, const uint32_t source, const uint8_t protocol, const int len)
 {
     Socket &socket = mySockets[i];
 
     if (socket.isThereRoomFor(lengthOfPayload))
     {
-        writeDataIPRaw(socket, myMemory, payload, lengthOfPayload, destination);
+        writeDataIPRaw(socket, myMemory, payload, lengthOfPayload, source);
 #ifdef U2_LOG_TRAFFIC
         LogFileOutput("U2: Read IPRAW[%" SIZE_T_FMT "]: +%d+%" SIZE_T_FMT " (%d) -> %d bytes\n", i, socket.getHeaderSize(),
             lengthOfPayload, len, socket.sn_rx_rsr);

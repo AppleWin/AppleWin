@@ -112,7 +112,7 @@ private:
     uint8_t getRXDataSizeRegister(const size_t i, const size_t shift) const;
 
     void receiveOnePacketRaw();
-    void receiveOnePacketIPRaw(const size_t i, const size_t lengthOfPayload, const uint8_t * payload, const uint32_t destination, const uint8_t protocol, const int len);
+    void receiveOnePacketIPRaw(const size_t i, const size_t lengthOfPayload, const uint8_t * payload, const uint32_t source, const uint8_t protocol, const int len);
     void receiveOnePacketMacRaw(const size_t i, const int size, uint8_t * data);
     void receiveOnePacketFromSocket(const size_t i);
     void receiveOnePacket(const size_t i);
