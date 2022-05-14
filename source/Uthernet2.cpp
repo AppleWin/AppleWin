@@ -760,7 +760,10 @@ void Uthernet2::receiveOnePacket(const size_t i)
         receiveOnePacketFromSocket(i);
         break;
     case W5100_SN_SR_CLOSED:
-        break; // nothing to do
+#ifdef U2_LOG_STATE
+        LogFileOutput("U2: Read[%" SIZE_T_FMT "]: reading from a closed socket\n", i);
+#endif
+        break;
 #ifdef U2_LOG_UNKNOWN
     default:
         LogFileOutput("U2: Read[%" SIZE_T_FMT "]: unknown mode: %02x\n", i, socket.getStatus());
@@ -880,6 +883,11 @@ void Uthernet2::sendData(const size_t i)
     case W5100_SN_SR_ESTABLISHED:
     case W5100_SN_SR_SOCK_UDP:
         sendDataToSocket(i, data);
+        break;
+    case W5100_SN_SR_CLOSED:
+#ifdef U2_LOG_STATE
+        LogFileOutput("U2: Send[%" SIZE_T_FMT "]: sending to a closed socket\n", i);
+#endif
         break;
 #ifdef U2_LOG_UNKNOWN
     default:
