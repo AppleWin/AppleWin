@@ -48,7 +48,7 @@ struct Socket
 
 private:
     socket_t myFD;
-    uint8_t mySocketStatus;  // sn_sr
+    uint8_t mySocketStatus;  // aka W5100_SN_SR
     uint8_t myHeaderSize;
 };
 
