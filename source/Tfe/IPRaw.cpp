@@ -132,7 +132,7 @@ std::vector<uint8_t> createETH2Frame(const std::vector<uint8_t> &data,
 }
 
 void getIPPayload(const int lengthOfFrame, const uint8_t *frame,
-                  size_t &lengthOfPayload, const uint8_t *&payload, uint32_t &destination, uint8_t &protocol)
+                  size_t &lengthOfPayload, const uint8_t *&payload, uint32_t &source, uint8_t &protocol)
 {
     const int minimumSize = getIPMinimumSize();
     if (lengthOfFrame > minimumSize)
@@ -149,7 +149,7 @@ void getIPPayload(const int lengthOfFrame, const uint8_t *frame,
                 protocol = ip4header->proto;
                 payload = frame + sizeof(ETH2Frame) + ipv4HeaderSize;
                 lengthOfPayload = ipPacketSize - ipv4HeaderSize;
-                destination = ip4header->destinationAddress;
+                source = ip4header->sourceAddress;
                 return;
             }
         }
@@ -158,5 +158,5 @@ void getIPPayload(const int lengthOfFrame, const uint8_t *frame,
     protocol = 0xFF; // reserved protocol
     payload = nullptr;
     lengthOfPayload = 0;
-    destination = 0;
+    source = 0;
 }

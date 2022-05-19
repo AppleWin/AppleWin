@@ -99,6 +99,7 @@
 
 #define W5100_SN_SR_CLOSED        0x00
 #define W5100_SN_SR_SOCK_INIT     0x13
+#define W5100_SN_SR_SOCK_SYNSENT  0x15
 #define W5100_SN_SR_ESTABLISHED   0x17
 #define W5100_SN_SR_SOCK_UDP      0x22
 #define W5100_SN_SR_SOCK_IPRAW    0x32
