@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // when the connect() calls is ongoing
 //
 // in the checks below we allow both in all cases
-// (myErrno == SOCK_EINPROGRESS || myErrno == SOCK_EWOULDBLOCK)
+// (errno == SOCK_EINPROGRESS || errno == SOCK_EWOULDBLOCK)
 // this works, bu we could instead define 2 functions and check only the correct one
 #ifdef _MSC_VER
 
@@ -162,16 +162,16 @@ namespace
         writeData(socket, memory, data, len);
     }
 
-    void writeDataIPRaw(Socket &socket, std::vector<uint8_t> &memory, const uint8_t *data, const size_t len, const uint32_t destination)
+    void writeDataIPRaw(Socket &socket, std::vector<uint8_t> &memory, const uint8_t *data, const size_t len, const uint32_t source)
     {
-        writeAny(socket, memory, destination);
+        writeAny(socket, memory, source);
         write16(socket, memory, static_cast<uint16_t>(len));
         writeData(socket, memory, data, len);
     }
 
     void writeDataForProtocol(Socket &socket, std::vector<uint8_t> &memory, const uint8_t *data, const size_t len, const sockaddr_in &source)
     {
-        if (socket.sn_sr == W5100_SN_SR_SOCK_UDP)
+        if (socket.getStatus() == W5100_SN_SR_SOCK_UDP)
         {
             // these are already in network order
             writeAny(socket, memory, source.sin_addr);
@@ -194,9 +194,9 @@ Socket::Socket()
     , registerAddress(0)
     , sn_rx_wr(0)
     , sn_rx_rsr(0)
-    , sn_sr(W5100_SN_SR_CLOSED)
+    , mySocketStatus(W5100_SN_SR_CLOSED)
     , myFD(INVALID_SOCKET)
-    , myErrno(0)
+    , myHeaderSize(0)
 {
 }
 
@@ -211,15 +211,53 @@ void Socket::clearFD()
 #endif
     }
     myFD = INVALID_SOCKET;
-    sn_sr = W5100_SN_SR_CLOSED;
+    setStatus(W5100_SN_SR_CLOSED);
 }
 
-void Socket::setFD(const socket_t fd, const int status)
+void Socket::setStatus(const uint8_t status)
+{
+    mySocketStatus = status;
+
+    switch (mySocketStatus)
+    {
+    case W5100_SN_SR_ESTABLISHED:
+        myHeaderSize = 0;  // no header for TCP
+        break;
+    case W5100_SN_SR_SOCK_UDP:
+        myHeaderSize = 4 + 2 + 2;  // IP + Port + Size
+        break;
+    case W5100_SN_SR_SOCK_IPRAW:
+        myHeaderSize = 4 + 2;  // IP + Size
+        break;
+    case W5100_SN_SR_SOCK_MACRAW:
+        myHeaderSize = 2;  // Size
+        break;
+    default:
+        myHeaderSize = 0;
+        break;
+    }
+}
+
+void Socket::setFD(const socket_t fd, const uint8_t status)
 {
     clearFD();
     myFD = fd;
-    myErrno = 0;
-    sn_sr = status;
+    setStatus(status);
+}
+
+Socket::socket_t Socket::getFD() const
+{
+    return myFD;
+}
+
+uint8_t Socket::getStatus() const
+{
+    return mySocketStatus;
+}
+
+uint8_t Socket::getHeaderSize() const
+{
+    return myHeaderSize;
 }
 
 Socket::~Socket()
@@ -230,12 +268,12 @@ Socket::~Socket()
 bool Socket::isOpen() const
 {
     return (myFD != INVALID_SOCKET) &&
-        ((sn_sr == W5100_SN_SR_ESTABLISHED) || (sn_sr == W5100_SN_SR_SOCK_UDP));
+        ((mySocketStatus == W5100_SN_SR_ESTABLISHED) || (mySocketStatus == W5100_SN_SR_SOCK_UDP));
 }
 
 void Socket::process()
 {
-    if (myFD != INVALID_SOCKET && sn_sr == W5100_SN_SR_SOCK_INIT && (myErrno == SOCK_EINPROGRESS || myErrno == SOCK_EWOULDBLOCK))
+    if (myFD != INVALID_SOCKET && mySocketStatus == W5100_SN_SR_SOCK_SYNSENT)
     {
 #ifdef _MSC_VER
         FD_SET writefds, exceptfds;
@@ -256,8 +294,7 @@ void Socket::process()
 
             if (res == 0 && err == 0)
             {
-                myErrno = 0;
-                sn_sr = W5100_SN_SR_ESTABLISHED;
+                setStatus(W5100_SN_SR_ESTABLISHED);
 #ifdef U2_LOG_STATE
                 LogFileOutput("U2: TCP[]: Connected\n");
 #endif
@@ -273,12 +310,12 @@ void Socket::process()
     }
 }
 
-bool Socket::isThereRoomFor(const size_t len, const size_t header) const
+bool Socket::isThereRoomFor(const size_t len) const
 {
     const uint16_t rsr = sn_rx_rsr;    // already present
     const uint16_t size = receiveSize; // total size
 
-    return rsr + len + header < size; // "not =": we do not want to fill the buffer.
+    return rsr + len + myHeaderSize < size; // "not =": we do not want to fill the buffer.
 }
 
 uint16_t Socket::getFreeRoom() const
@@ -286,7 +323,8 @@ uint16_t Socket::getFreeRoom() const
     const uint16_t rsr = sn_rx_rsr;    // already present
     const uint16_t size = receiveSize; // total size
 
-    return size - rsr;
+    const uint16_t total = size - rsr;
+    return total > myHeaderSize ? total - myHeaderSize : 0;
 }
 
 #define SS_YAML_KEY_SOCKET_RX_WRITE_REGISTER "RX Write Register"
@@ -298,17 +336,19 @@ void Socket::SaveSnapshot(YamlSaveHelper &yamlSaveHelper)
 {
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SOCKET_RX_WRITE_REGISTER, sn_rx_wr);
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SOCKET_RX_SIZE_REGISTER, sn_rx_rsr);
-    yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SOCKET_REGISTER, sn_sr);
+    yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SOCKET_REGISTER, mySocketStatus);
 }
 
 bool Socket::LoadSnapshot(YamlLoadHelper &yamlLoadHelper)
 {
+    clearFD();
+
     sn_rx_wr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_RX_WRITE_REGISTER);
     sn_rx_rsr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_RX_SIZE_REGISTER);
-    sn_sr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_REGISTER);
+    uint8_t socketStatus = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_REGISTER);
 
     // transmit and receive sizes are restored from the card common registers
-    switch (sn_sr)
+    switch (socketStatus)
     {
     case W5100_SN_SR_SOCK_MACRAW:
     case W5100_SN_SR_SOCK_IPRAW:
@@ -317,10 +357,12 @@ bool Socket::LoadSnapshot(YamlLoadHelper &yamlLoadHelper)
     default:
         // no point in restoring a broken UDP or TCP connection
         // just reset the socket
-        sn_sr = W5100_SN_SR_CLOSED;
-        // for the same reason there is no point in saving myFD and myErrno
+        socketStatus = W5100_SN_SR_CLOSED;
+        // for the same reason there is no point in saving myFD
         break;
     }
+
+    setStatus(socketStatus);
 
     return true;
 }
@@ -558,7 +600,7 @@ void Uthernet2::receiveOnePacketRaw()
     int macRawSocket = -1;  // to which IPRaw soccket to send to (can only be 0)
 
     Socket & socket0 = mySockets[0];
-    if (socket0.sn_sr == W5100_SN_SR_SOCK_MACRAW)
+    if (socket0.getStatus() == W5100_SN_SR_SOCK_MACRAW)
     {
         macRawSocket = 0;  // the only MAC Raw socket is open, packet will go there as a fallback
         const uint8_t mr = myMemory[socket0.registerAddress + W5100_SN_MR];
@@ -578,9 +620,9 @@ void Uthernet2::receiveOnePacketRaw()
     {
         const uint8_t * payload;
         size_t lengthOfPayload;
-        uint32_t destination;
+        uint32_t source;
         uint8_t packetProtocol;
-        getIPPayload(len, buffer, lengthOfPayload, payload, destination, packetProtocol);
+        getIPPayload(len, buffer, lengthOfPayload, payload, source, packetProtocol);
 
         // see if there is a IPRAW socket that should accept thi spacket
         int ipRawSocket = -1;
@@ -590,7 +632,7 @@ void Uthernet2::receiveOnePacketRaw()
             {
                 Socket & socket = mySockets[i];
 
-                if (socket.sn_sr == W5100_SN_SR_SOCK_IPRAW)
+                if (socket.getStatus() == W5100_SN_SR_SOCK_IPRAW)
                 {
                     // IP only accepts by protocol & always filters MAC
                     const uint8_t socketProtocol = myMemory[socket.registerAddress + W5100_SN_PROTO];
@@ -607,7 +649,7 @@ void Uthernet2::receiveOnePacketRaw()
         // priority to IPRAW
         if (ipRawSocket >= 0)
         {
-            receiveOnePacketIPRaw(ipRawSocket, lengthOfPayload, payload, destination, packetProtocol, len);
+            receiveOnePacketIPRaw(ipRawSocket, lengthOfPayload, payload, source, packetProtocol, len);
         }
         // fallback to MACRAW (if open)
         else if (macRawSocket >= 0)
@@ -622,12 +664,12 @@ void Uthernet2::receiveOnePacketMacRaw(const size_t i, const int size, uint8_t *
 {
     Socket &socket = mySockets[i];
 
-    if (socket.isThereRoomFor(size, sizeof(uint16_t)))
+    if (socket.isThereRoomFor(size))
     {
         writeDataMacRaw(socket, myMemory, data, size);
 #ifdef U2_LOG_TRAFFIC
-        LogFileOutput("U2: Read MACRAW[%" SIZE_T_FMT "]: " MAC_FMT " -> " MAC_FMT ": +%d -> %d bytes\n", i, MAC_SOURCE(data), MAC_DEST(data),
-            size, socket.sn_rx_rsr);
+        LogFileOutput("U2: Read MACRAW[%" SIZE_T_FMT "]: " MAC_FMT " -> " MAC_FMT ": +%d+%d -> %d bytes\n", i, MAC_SOURCE(data), MAC_DEST(data),
+            socket.getHeaderSize(), size, socket.sn_rx_rsr);
 #endif
     }
     else
@@ -639,15 +681,16 @@ void Uthernet2::receiveOnePacketMacRaw(const size_t i, const int size, uint8_t *
     }
 }
 
-void Uthernet2::receiveOnePacketIPRaw(const size_t i, const size_t lengthOfPayload, const uint8_t * payload, const uint32_t destination, const uint8_t protocol, const int len)
+void Uthernet2::receiveOnePacketIPRaw(const size_t i, const size_t lengthOfPayload, const uint8_t * payload, const uint32_t source, const uint8_t protocol, const int len)
 {
     Socket &socket = mySockets[i];
 
-    if (socket.isThereRoomFor(lengthOfPayload, 4 + sizeof(uint16_t)))
+    if (socket.isThereRoomFor(lengthOfPayload))
     {
-        writeDataIPRaw(socket, myMemory, payload, lengthOfPayload, destination);
+        writeDataIPRaw(socket, myMemory, payload, lengthOfPayload, source);
 #ifdef U2_LOG_TRAFFIC
-        LogFileOutput("U2: Read IPRAW[%" SIZE_T_FMT "]: +%" SIZE_T_FMT " (%d) -> %d bytes\n", i, lengthOfPayload, len, socket.sn_rx_rsr);
+        LogFileOutput("U2: Read IPRAW[%" SIZE_T_FMT "]: +%d+%" SIZE_T_FMT " (%d) -> %d bytes\n", i, socket.getHeaderSize(),
+            lengthOfPayload, len, socket.sn_rx_rsr);
 #endif
     }
     else
@@ -671,15 +714,16 @@ void Uthernet2::receiveOnePacketFromSocket(const size_t i)
             std::vector<uint8_t> buffer(freeRoom - 1); // do not fill the buffer completely
             sockaddr_in source = {0};
             socklen_t len = sizeof(sockaddr_in);
-            const ssize_t data = recvfrom(socket.myFD, reinterpret_cast<char *>(buffer.data()), buffer.size(), 0, (struct sockaddr *)&source, &len);
+            const ssize_t data = recvfrom(socket.getFD(), reinterpret_cast<char *>(buffer.data()), buffer.size(), 0, (struct sockaddr *)&source, &len);
 #ifdef U2_LOG_TRAFFIC
-            const char *proto = socket.sn_sr == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
+            const char *proto = socket.getStatus() == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
 #endif
             if (data > 0)
             {
                 writeDataForProtocol(socket, myMemory, buffer.data(), data, source);
 #ifdef U2_LOG_TRAFFIC
-                LogFileOutput("U2: Read %s[%" SIZE_T_FMT "]: +%" SIZE_T_FMT " -> %d bytes\n", proto, i, data, socket.sn_rx_rsr);
+                LogFileOutput("U2: Read %s[%" SIZE_T_FMT "]: +%d+%" SIZE_T_FMT " -> %d bytes\n", proto, i, socket.getHeaderSize(),
+                    data, socket.sn_rx_rsr);
 #endif
             }
             else if (data == 0)
@@ -705,7 +749,7 @@ void Uthernet2::receiveOnePacketFromSocket(const size_t i)
 void Uthernet2::receiveOnePacket(const size_t i)
 {
     const Socket &socket = mySockets[i];
-    switch (socket.sn_sr)
+    switch (socket.getStatus())
     {
     case W5100_SN_SR_SOCK_MACRAW:
     case W5100_SN_SR_SOCK_IPRAW:
@@ -716,10 +760,13 @@ void Uthernet2::receiveOnePacket(const size_t i)
         receiveOnePacketFromSocket(i);
         break;
     case W5100_SN_SR_CLOSED:
-        break; // nothing to do
+#ifdef U2_LOG_STATE
+        LogFileOutput("U2: Read[%" SIZE_T_FMT "]: reading from a closed socket\n", i);
+#endif
+        break;
 #ifdef U2_LOG_UNKNOWN
     default:
-        LogFileOutput("U2: Read[%" SIZE_T_FMT "]: unknown mode: %02x\n", i, socket.sn_sr);
+        LogFileOutput("U2: Read[%" SIZE_T_FMT "]: unknown mode: %02x\n", i, socket.getStatus());
 #endif
     };
 }
@@ -777,9 +824,9 @@ void Uthernet2::sendDataToSocket(const size_t i, std::vector<uint8_t> &data)
         destination.sin_addr.s_addr = dest;
         destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
 
-        const ssize_t res = sendto(socket.myFD, reinterpret_cast<const char *>(data.data()), data.size(), 0, (const struct sockaddr *)&destination, sizeof(destination));
+        const ssize_t res = sendto(socket.getFD(), reinterpret_cast<const char *>(data.data()), data.size(), 0, (const struct sockaddr *)&destination, sizeof(destination));
 #ifdef U2_LOG_TRAFFIC
-        const char *proto = socket.sn_sr == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
+        const char *proto = socket.getStatus() == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
         LogFileOutput("U2: Send %s[%" SIZE_T_FMT "]: %" SIZE_T_FMT " of %" SIZE_T_FMT " bytes\n", proto, i, res, data.size());
 #endif
         if (res < 0)
@@ -825,7 +872,7 @@ void Uthernet2::sendData(const size_t i)
     myMemory[socket.registerAddress + W5100_SN_TX_RD0] = getIByte(sn_tx_wr, 8);
     myMemory[socket.registerAddress + W5100_SN_TX_RD1] = getIByte(sn_tx_wr, 0);
 
-    switch (socket.sn_sr)
+    switch (socket.getStatus())
     {
     case W5100_SN_SR_SOCK_MACRAW:
         sendDataMacRaw(i, data);
@@ -837,9 +884,14 @@ void Uthernet2::sendData(const size_t i)
     case W5100_SN_SR_SOCK_UDP:
         sendDataToSocket(i, data);
         break;
+    case W5100_SN_SR_CLOSED:
+#ifdef U2_LOG_STATE
+        LogFileOutput("U2: Send[%" SIZE_T_FMT "]: sending to a closed socket\n", i);
+#endif
+        break;
 #ifdef U2_LOG_UNKNOWN
     default:
-        LogFileOutput("U2: Send[%" SIZE_T_FMT "]: unknown mode: %02x\n", i, socket.sn_sr);
+        LogFileOutput("U2: Send[%" SIZE_T_FMT "]: unknown mode: %02x\n", i, socket.getStatus());
 #endif
     }
 }
@@ -901,16 +953,14 @@ void Uthernet2::openSocket(const size_t i)
         return;
     }
 
-    uint8_t &sr = socket.sn_sr;
-
     switch (protocol)
     {
     case W5100_SN_MR_IPRAW:
     case W5100_SN_MR_IPRAW_DNS:
-        sr = W5100_SN_SR_SOCK_IPRAW;
+        socket.setStatus(W5100_SN_SR_SOCK_IPRAW);
         break;
     case W5100_SN_MR_MACRAW:
-        sr = W5100_SN_SR_SOCK_MACRAW;
+        socket.setStatus(W5100_SN_SR_SOCK_MACRAW);
         break;
     case W5100_SN_MR_TCP:
     case W5100_SN_MR_TCP_DNS:
@@ -937,7 +987,7 @@ void Uthernet2::openSocket(const size_t i)
 
     resetRXTXBuffers(i); // needed?
 #ifdef U2_LOG_STATE
-    LogFileOutput("U2: Open[%" SIZE_T_FMT "]: SR = %02x\n", i, sr);
+    LogFileOutput("U2: Open[%" SIZE_T_FMT "]: SR = %02x\n", i, socket.getStatus());
 #endif
 }
 
@@ -989,12 +1039,11 @@ void Uthernet2::connectSocket(const size_t i)
     destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
     destination.sin_addr.s_addr = dest;
 
-    const int res = connect(socket.myFD, (struct sockaddr *)&destination, sizeof(destination));
+    const int res = connect(socket.getFD(), (struct sockaddr *)&destination, sizeof(destination));
 
     if (res == 0)
     {
-        socket.sn_sr = W5100_SN_SR_ESTABLISHED;
-        socket.myErrno = 0;
+        socket.setStatus(W5100_SN_SR_ESTABLISHED);
 #ifdef U2_LOG_STATE
         const uint16_t port = readNetworkWord(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
         LogFileOutput("U2: TCP[%" SIZE_T_FMT "]: CONNECT to %s:%d\n", i, formatIP(dest), port);
@@ -1005,7 +1054,7 @@ void Uthernet2::connectSocket(const size_t i)
         const int error = sock_error();
         if (error == SOCK_EINPROGRESS || error == SOCK_EWOULDBLOCK)
         {
-            socket.myErrno = error;
+            socket.setStatus(W5100_SN_SR_SOCK_SYNSENT);
         }
         else
         {
@@ -1055,7 +1104,7 @@ uint8_t Uthernet2::readSocketRegister(const uint16_t address)
         value = myMemory[address];
         break;
     case W5100_SN_SR:
-        value = mySockets[i].sn_sr;
+        value = mySockets[i].getStatus();
         break;
     case W5100_SN_TX_FSR0:
         value = getTXFreeSizeRegister(i, 8);
@@ -1599,7 +1648,12 @@ void Uthernet2::SetRegistryVirtualDNS(UINT slot, const bool enabled)
 bool Uthernet2::GetRegistryVirtualDNS(UINT slot)
 {
     const std::string regSection = RegGetConfigSlotSection(slot);
-    DWORD enabled = 0;
-    RegLoadValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, TRUE, &enabled, 0);
+
+    // The default value for VirtualDNS is enabled
+    // as it is backward compatible
+    // (except for the initial value of PTIMER which is anyway never used)
+
+    DWORD enabled = 1;
+    RegLoadValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, TRUE, &enabled);
     return enabled != 0;
 }

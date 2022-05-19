@@ -25,17 +25,18 @@ struct Socket
     uint16_t sn_rx_wr;
     uint16_t sn_rx_rsr;
 
-    uint8_t sn_sr;
-
-    socket_t myFD;
-    int myErrno;
-
     bool isOpen() const;
     void clearFD();
-    void setFD(const socket_t fd, const int status);
+    void setStatus(const uint8_t status);
+    void setFD(const socket_t fd, const uint8_t status);
     void process();
 
-    bool isThereRoomFor(const size_t len, const size_t header) const;
+    socket_t getFD() const;
+    uint8_t getStatus() const;
+    uint8_t getHeaderSize() const;
+
+    // both functions work in "data" space, the header size is added internally
+    bool isThereRoomFor(const size_t len) const;
     uint16_t getFreeRoom() const;
 
     void SaveSnapshot(YamlSaveHelper &yamlSaveHelper);
@@ -44,6 +45,11 @@ struct Socket
     Socket();
 
     ~Socket();
+
+private:
+    socket_t myFD;
+    uint8_t mySocketStatus;  // aka W5100_SN_SR
+    uint8_t myHeaderSize;
 };
 
 /*
@@ -106,7 +112,7 @@ private:
     uint8_t getRXDataSizeRegister(const size_t i, const size_t shift) const;
 
     void receiveOnePacketRaw();
-    void receiveOnePacketIPRaw(const size_t i, const size_t lengthOfPayload, const uint8_t * payload, const uint32_t destination, const uint8_t protocol, const int len);
+    void receiveOnePacketIPRaw(const size_t i, const size_t lengthOfPayload, const uint8_t * payload, const uint32_t source, const uint8_t protocol, const int len);
     void receiveOnePacketMacRaw(const size_t i, const int size, uint8_t * data);
     void receiveOnePacketFromSocket(const size_t i);
     void receiveOnePacket(const size_t i);

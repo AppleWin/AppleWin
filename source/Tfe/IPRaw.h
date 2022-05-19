@@ -8,4 +8,4 @@ std::vector<uint8_t> createETH2Frame(const std::vector<uint8_t> &data,
                                      const uint32_t sourceAddress, const uint32_t destinationAddress);
 
 void getIPPayload(const int lengthOfFrame, const uint8_t *frame,
-                  size_t &lengthOfPayload, const uint8_t *&payload, uint32_t &destination, uint8_t &protocol);
+                  size_t &lengthOfPayload, const uint8_t *&payload, uint32_t &source, uint8_t &protocol);
