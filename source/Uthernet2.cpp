@@ -1649,7 +1649,7 @@ bool Uthernet2::GetRegistryVirtualDNS(UINT slot)
 {
     const std::string regSection = RegGetConfigSlotSection(slot);
 
-    // The default value for VirtualDNS is enabled
+    // By default, VirtualDNS is enabled
     // as it is backward compatible
     // (except for the initial value of PTIMER which is anyway never used)
 
