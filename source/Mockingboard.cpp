@@ -321,12 +321,14 @@ static void WriteToORB(BYTE device)
 #else
 	if (g_bPhasorEnable)
 	{
-		int nAY_CS = (g_phasorMode == PH_Phasor) ? (~(value >> 3) & 3) : 1;
+		const int kAY0 = 2;		// bit4=0 (active low) selects the 1st AY8913, ie. the only AY8913 in Mockingboard mode (confirmed on real Phasor h/w)
+		const int kAY1 = 1;		// bit3=0 (active low) selects the 2nd AY8913 attached to this 6522 (unavailable in Mockingboard mode)
+		int nAY_CS = (g_phasorMode == PH_Phasor) ? (~(value >> 3) & 3) : kAY0;
 
-		if (nAY_CS & 1)
+		if (nAY_CS & kAY0)
 			AY8910_Write(device, value, 0);
 
-		if (nAY_CS & 2)
+		if (nAY_CS & kAY1)
 			AY8910_Write(device, value, 1);
 	}
 	else
