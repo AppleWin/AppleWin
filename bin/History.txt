@@ -9,10 +9,28 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.30.10.0 - 27 May 2022
+-----------------------
+. [Change #51097] Extend Uthernet II to support DNS offloading. [audetto]
+	- Details: https://github.com/a2retrosystems/uthernet2/wiki/Virtual-W5100-with-DNS
+	- No need for ethernet, so now works with host PC's WiFi.
+	- Supported by @oliverschmidt's A2Stream v1.2.
+	- NB. This virtual DNS is enable by default (but can be disabled via the Config UI).
+	- NB. Real W5100 chips don't offer this!
+. [Bug #1078] WOZ support: Better LSS support for reading write-protect.
+	- Fix images 'Run For It' and 'Stickybear Town Builder' (both when write-protected).
+. [PR #1100] Uthernet II fixes for UDP and IPRAW modes. [audetto]
+. [PR #1084 + others] Internal: refactor debugger. [kiyolee]
+. Fix Phasor card: use correct primary AY8913 for Phasor-native & MB modes (now checked in mb-audit v1.2).
+. Command line: add -wav-speaker <file> & -wav-mockingboard <file>
+	- Save a .wav of either Speaker or Mockingboard audio output during the emulation session.
+	- Warning: there's no file size limit, so it just keeps saving until AppleWin exits.
+
+
 1.30.9.0 - 23 Mar 2022
 ----------------------
 . [Change #518] Support Uthernet II card in slot 3. [audetto]
-	- EG. Use with Contiki, A2osX, ii-vision, a2stream etc.
+	- EG. Use with Contiki, A2osX, ii-vision, A2Stream etc.
 	- Support for W5100 modes: TCP, UDP, IPRAW and MACRAW (no support for PPPoE mode, interrupts and SPI).
 . [Bug #1066] Fix for save-states where (eg) disk image name contains '#' character.
 . [Bug #1017] Fix for printer interface where character got output twice.
