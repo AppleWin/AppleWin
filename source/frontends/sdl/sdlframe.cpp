@@ -585,17 +585,8 @@ namespace sa2
       GetCardMgr().Update(executedCycles);
       SpkrUpdate(executedCycles);
 
-      g_dwCyclesThisFrame += executedCycles;
-      if (g_dwCyclesThisFrame >= dwClksPerFrame)
-      {
-        g_dwCyclesThisFrame -= dwClksPerFrame;
-        if (g_bFullSpeed)
-        {
-          // only call VideoPresentScreen every 16ms
-          // hardcoded in FrameBase::VideoRedrawScreenDuringFullSpeed()
-          VideoRedrawScreenDuringFullSpeed(g_dwCyclesThisFrame);
-        }
-      }
+      g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
+
     } while (totalCyclesExecuted < cyclesToExecute);
   }
 
