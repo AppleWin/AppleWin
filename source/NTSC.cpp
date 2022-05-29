@@ -113,7 +113,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static unsigned short (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
 
 	typedef void (*UpdateScreenFunc_t)(long);
-	static UpdateScreenFunc_t g_apFuncVideoUpdateScanline[VIDEO_SCANNER_Y_DISPLAY];
 	static UpdateScreenFunc_t g_pFuncUpdateTextScreen     = 0; // updateScreenText40;
 	static UpdateScreenFunc_t g_pFuncUpdateGraphicsScreen = 0; // updateScreenText40;
 	static UpdateScreenFunc_t g_pFuncModeSwitchDelayed = 0;
@@ -689,15 +688,19 @@ inline void updateVideoScannerHorzEOL()
 			if (!GetColorBurst())
 			{
 				// Only for: VF_TEXT && !VF_MIXED (ie. full 24-row TEXT40 or TEXT80)
-				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
-				g_pFuncUpdateBnWPixel(0);
-				g_pFuncUpdateBnWPixel(0);
+				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);	// last pixel in 14M video modes
+				g_pFuncUpdateBnWPixel(0);						// 14M ringing pixel! (better definition for 80COL char's right-hand edge)
+				// Direct write instead of g_pFuncUpdateBnWPixel(0) to avoid random pixels on RHS in VT_COLOR_MONITOR_NTSC
+				*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;
+				*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;
 			}
 			else
 			{
-				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
-				g_pFuncUpdateHuePixel(0);
-				g_pFuncUpdateHuePixel(0);
+				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);	// last pixel in 14M video modes
+				g_pFuncUpdateHuePixel(0);						// 14M ringing pixel! (better definition for 80COL char's right-hand edge)
+				// Direct write instead of g_pFuncUpdateHuePixel(0) to avoid random pixels on RHS in VT_COLOR_MONITOR_NTSC
+				*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;
+				*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;
 			}
 		}
 
@@ -772,9 +775,72 @@ inline void updateVideoScannerAddress()
 	// Centre the older //e video modes when running with a VidHD
 	g_pVideoAddress += GetVideo().GetFrameBufferCentringValue();
 
+	if (GetVideo().HasVidHD())
+	{
+		if (GetVideo().GetVideoType() == VT_COLOR_MONITOR_NTSC)
+		{
+			// EG. Switching between TEXT (full 24 lines) and MIXED (HGR with purple vertical line-0)
+			// - AppleWin-Test repo, Tests-Various.dsk, option-C
+			g_pVideoAddress -= 2;
+			*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;
+			*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;
+		}
+	}
+
 	g_nColorPhaseNTSC      = INITIAL_COLOR_PHASE;
 	g_nLastColumnPixelNTSC = 0;
 	g_nSignalBitsNTSC      = 0;
+}
+
+//===========================================================================
+#if 1
+#define CLEAR_COLOUR_TOP 0
+#define CLEAR_COLOUR_SIDE 0
+#else	// debug
+#define CLEAR_COLOUR_TOP 0x0000FF00		// green
+#define CLEAR_COLOUR_SIDE 0x00FF0000	// red
+#endif
+
+static void ClearOverscanVideoArea(void)
+{
+	if (g_pFuncUpdateGraphicsScreen == updateScreenSHR)
+		return;
+
+	bgra_t* pSaveVideoAddress = g_pVideoAddress;	// save g_pVideoAddress
+	g_pVideoAddress = g_pScanLines[0];
+	uint32_t* pLine1Prev = getScanlinePreviousInbetween();
+	g_pVideoAddress = pSaveVideoAddress;			// restore g_pVideoAddress
+
+	const uint32_t kOverscanOffsetL = 3;	// In updateVideoScannerAddress(), g_pVideoAddress could be adjusted by: -2 + -1 = -3
+	const uint32_t kOverscanSpanL = 3;
+	const uint32_t kOverscanOverlapL = kOverscanSpanL - kOverscanOffsetL;
+
+	const uint32_t kOverscanOffsetR = 2;
+	const uint32_t kOverscanSpanR = 4;		// In updateVideoScannerHorzEOL() it writes 4 extra pixels
+	const uint32_t kOverscanOverlapR = kOverscanSpanR - kOverscanOffsetR;
+
+	const uint32_t kHorzPixels = (VIDEO_SCANNER_MAX_HORZ - VIDEO_SCANNER_HORZ_START) * 14;
+
+	pLine1Prev += GetVideo().GetFrameBufferCentringValue() - kOverscanOffsetL;		// Centre the older //e video modes when running with a VidHD
+
+	// Clear this line at Y=-1
+	for (uint32_t i = 0; i < (kHorzPixels + (kOverscanSpanL - kOverscanOverlapL) + (kOverscanSpanR - kOverscanOverlapR)); i++)
+		*pLine1Prev++ = CLEAR_COLOUR_TOP | ALPHA32_MASK;
+
+	// Clear overscan before & after display area
+	for (uint32_t i = 0; i < VIDEO_SCANNER_Y_DISPLAY*2; i++)
+	{
+		uint32_t* pScanLine = ((uint32_t*)g_pScanLines[i]);
+		pScanLine += GetVideo().GetFrameBufferCentringValue() - kOverscanOffsetL;		// Centre the older //e video modes when running with a VidHD
+
+		for (uint32_t j = 0; j < kOverscanSpanL + 1; j++)
+			pScanLine[j] = CLEAR_COLOUR_SIDE | ALPHA32_MASK;
+
+		pScanLine += kOverscanOffsetL + kHorzPixels - kOverscanOffsetR;
+
+		for (uint32_t j = 0; j < kOverscanSpanR; j++)
+			pScanLine[j] = CLEAR_COLOUR_SIDE | ALPHA32_MASK;
+	}
 }
 
 //===========================================================================
@@ -2181,7 +2247,9 @@ _mono:
 			else
 				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWMonitorDoubleScanline;
 			break;
-		}
+	}
+
+	ClearOverscanVideoArea();
 }
 
 //===========================================================================
