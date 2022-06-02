@@ -520,6 +520,14 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 									UINT size = PAGE_SIZE - (dstAddr & 0xff);
 									if (size > remaining) size = remaining;	// clip the last memcpy for the unaligned case
 
+									if (g_nAppMode == MODE_STEPPING)
+									{
+										if (DebuggerCheckMemBreakpoints(dstAddr, size, true))	// GH#1103
+											DebuggerBreakOnDma(dstAddr, size, true);
+
+										pCard->m_notBusyCycle = 0;	// DMA complete
+									}
+
 									memcpy(page + (dstAddr & 0xff), pSrc, size);
 									pSrc += size;
 									dstAddr += size;
