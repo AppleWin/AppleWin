@@ -662,6 +662,8 @@ inline void updateVideoScannerHorzEOLSimple()
 {
 	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 	{
+		*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;	// VT_COLOR_IDEALIZED: TEXT -> HGR can leave junk on RHS (GH#1106)
+
 		g_nVideoClockHorz = 0;
 
 		if (++g_nVideoClockVert == g_videoScannerMaxVert)
