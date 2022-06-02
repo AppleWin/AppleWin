@@ -861,7 +861,7 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 
 		if (g_phasorMode == PH_Phasor && CS_SSI263)					// NB. Mockingboard mode: SSI263.bit7 not readable
 		{
-			_ASSERT(!bAccessedDevice);
+			_ASSERT(!bAccessedDevice);								// In Phasor native mode, 6522 & SSI263 are interleaved in $Cn10-$Cn7F card I/O memory
 			if (nAddr & 0x40)	// Primary SSI263
 				nRes = g_MB[nMB * NUM_DEVS_PER_MB + 1].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
 			if (nAddr & 0x20)	// Secondary SSI263
@@ -967,15 +967,18 @@ static BYTE __stdcall MB_Write(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, UL
 				WriteToORB(device);
 		}
 
-		bool CS_SSI263 = !(nAddr & 0x80) && (nAddr & 0x60);				// SSI263 at $Cn2x and/or $Cn4x
+		bool CS_SSI263_A = (g_phasorMode == PH_Phasor)	? !(nAddr & 0x80) && (nAddr & 0x40)	// SSI263 at $Cn4x, $Cn6x
+														: nAddr & 0x40;						// SSI263 at $Cn4x-Cn7x, $CnCx-CnFx
 
-		if ((g_phasorMode == PH_Mockingboard || g_phasorMode == PH_Phasor) && CS_SSI263)	// No SSI263 for Echo+
+		bool CS_SSI263_B = (g_phasorMode == PH_Phasor)	? !(nAddr & 0x80) && (nAddr & 0x20)	// SSI263 at $Cn2x, $Cn6x
+														: nAddr & 0x20;						// SSI263 at $Cn2x-Cn3x, $Cn6x-Cn7x, $CnAx-CnBx, $CnEx-CnFx
+
+		if (g_phasorMode == PH_Mockingboard || g_phasorMode == PH_Phasor)	// No SSI263 for Echo+
 		{
 			// NB. Mockingboard mode: writes to $Cn4x/SSI263 also get written to 1st 6522 (have confirmed on real Phasor h/w)
-			_ASSERT( (g_phasorMode == PH_Mockingboard && (CS==0 || CS==1)) || (g_phasorMode == PH_Phasor && (CS==0)) );
-			if (nAddr & 0x40)	// Primary SSI263
+			if (CS_SSI263_A)	// Primary SSI263
 				g_MB[nMB * NUM_DEVS_PER_MB + 1].ssi263.Write(nAddr&0x7, nValue);	// 2nd 6522 is used for 1st speech chip
-			if (nAddr & 0x20)	// Secondary SSI263
+			if (CS_SSI263_B)	// Secondary SSI263
 				g_MB[nMB * NUM_DEVS_PER_MB + 0].ssi263.Write(nAddr&0x7, nValue);	// 1st 6522 is used for 2nd speech chip
 		}
 

@@ -328,6 +328,9 @@ void SSI263::Play(unsigned int nPhoneme)
 
 	bool bPause = false;
 
+	if (!m_isVotraxPhoneme && (m_ctrlArtAmp & AMPLITUDE_MASK) == 0)
+		nPhoneme = 0;
+
 	if (nPhoneme == 1)
 		nPhoneme = 2;	// Missing this sample, so map to phoneme-2
 
