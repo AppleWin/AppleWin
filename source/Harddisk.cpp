@@ -523,9 +523,10 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 									if (g_nAppMode == MODE_STEPPING)
 									{
 										if (DebuggerCheckMemBreakpoints(dstAddr, size, true))	// GH#1103
-											DebuggerBreakOnDma(dstAddr, size, true);
-
-										pCard->m_notBusyCycle = 0;	// DMA complete
+										{
+											// BP hit
+											pCard->m_notBusyCycle = 0;	// DMA complete
+										}
 									}
 
 									memcpy(page + (dstAddr & 0xff), pSrc, size);
