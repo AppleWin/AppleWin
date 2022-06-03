@@ -520,9 +520,18 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 									UINT size = PAGE_SIZE - (dstAddr & 0xff);
 									if (size > remaining) size = remaining;	// clip the last memcpy for the unaligned case
 
+									if (g_nAppMode == MODE_STEPPING)
+									{
+										if (DebuggerCheckMemBreakpoints(dstAddr, size, true))	// GH#1103
+										{
+											// BP hit
+											pCard->m_notBusyCycle = 0;	// DMA complete
+										}
+									}
+
 									memcpy(page + (dstAddr & 0xff), pSrc, size);
 									pSrc += size;
-									dstAddr += size;
+									dstAddr = (dstAddr + size) & (MEMORY_LENGTH-1);	// wraps at 64KiB boundary
 
 									remaining -= size;
 								}
@@ -545,6 +554,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 							pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
 							bool bRes = true;
 							const bool bAppendBlocks = (pHDD->m_diskblock * HD_BLOCK_SIZE) >= ImageGetImageSize(pHDD->m_imagehandle);
+							bool breakpointHit = false;
 
 							if (bAppendBlocks)
 							{
@@ -576,15 +586,28 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 							}
 							else
 							{
-								if (pHDD->m_memblock <= (MEMORY_LENGTH - HD_BLOCK_SIZE))
+								UINT size = HD_BLOCK_SIZE;
+								WORD srcAddr = pHDD->m_memblock;
+								BYTE* pDst = pHDD->m_buf;
+
+								if (pHDD->m_memblock > (MEMORY_LENGTH - HD_BLOCK_SIZE))		// wraps at 64KiB boundary (GH#1007)
+									size = MEMORY_LENGTH - pHDD->m_memblock;
+
+								if (g_nAppMode == MODE_STEPPING)
+									breakpointHit = DebuggerCheckMemBreakpoints(srcAddr, size, false);
+
+								memcpy(pDst, mem + srcAddr, size);
+
+								if (HD_BLOCK_SIZE != size)
 								{
-									memcpy(pHDD->m_buf, mem + pHDD->m_memblock, HD_BLOCK_SIZE);
-								}
-								else // wraps on 64KiB boundary (GH#1007)
-								{
-									const UINT size = MEMORY_LENGTH - pHDD->m_memblock;
-									memcpy(pHDD->m_buf, mem + pHDD->m_memblock, size);
-									memcpy(pHDD->m_buf + size, mem, HD_BLOCK_SIZE - size);
+									pDst += size;
+									size = HD_BLOCK_SIZE - size;
+									srcAddr = 0x0000;	// wrap around to 0x0000
+
+									if (g_nAppMode == MODE_STEPPING)
+										breakpointHit = DebuggerCheckMemBreakpoints(srcAddr, size, false);
+
+									memcpy(pDst, mem + srcAddr, size);
 								}
 							}
 
@@ -595,7 +618,9 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 							{
 								pHDD->m_error = 0;
 								r = 0;
-								pCard->m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
+
+								if (!breakpointHit)
+									pCard->m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
 							}
 							else
 							{

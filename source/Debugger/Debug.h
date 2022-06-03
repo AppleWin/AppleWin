@@ -41,6 +41,8 @@
 		, BP_HIT_INTERRUPT = (1 << 7)
 		, BP_DMA_TO_IO_MEM = (1 << 8)
 		, BP_DMA_FROM_IO_MEM = (1 << 9)
+		, BP_DMA_TO_MEM = (1 << 10)
+		, BP_DMA_FROM_MEM = (1 << 11)
 	};
 
 	extern int          g_nBreakpoints;
@@ -183,4 +185,5 @@
 	void	DebuggerMouseClick( int x, int y );
 
 	bool	IsDebugSteppingAtFullSpeed(void);
-	void	DebuggerBreakOnDmaToOrFromIoMemory(WORD addr, bool isDmaToMemory);
+	void	DebuggerBreakOnDmaToOrFromIoMemory(WORD nAddress, bool isDmaToMemory);
+	bool	DebuggerCheckMemBreakpoints(WORD nAddress, WORD nSize, bool isDmaToMemory);

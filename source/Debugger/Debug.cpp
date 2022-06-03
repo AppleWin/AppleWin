@@ -68,8 +68,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int  g_nDebugBreakOnInvalid  = 0; // Bit Flags of Invalid Opcode to break on: // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
 	int  g_iDebugBreakOnOpcode   = 0;
 	bool g_bDebugBreakOnInterrupt = false;
-	static int g_iDebugBreakOnDmaToOrFromIoMemory = 0;
-	static WORD g_uDebugBreakOnDmaIoMemoryAddr = 0;
+
+	struct DebugBreakOnDMA
+	{
+		DebugBreakOnDMA() : isToOrFromMemory(0), memoryAddr(0), memoryAddrEnd(0), BPid(0) {}
+
+		int isToOrFromMemory;
+		WORD memoryAddr;
+		WORD memoryAddrEnd;
+		int BPid;
+	};
+
+	static const uint32_t NUM_BREAK_ON_DMA = 3;	// A 512-byte block misaligned touching 3 pages
+	static DebugBreakOnDMA g_DebugBreakOnDMA[NUM_BREAK_ON_DMA];
+	static DebugBreakOnDMA g_DebugBreakOnDMAIO;
 
 	static int  g_bDebugBreakpointHit = 0;	// See: BreakpointHit_t
 
@@ -1118,7 +1130,7 @@ bool _CheckBreakpointValue( Breakpoint_t *pBP, int nVal )
 			 if ((nVal >= pBP->nAddress) && ((UINT)nVal < (pBP->nAddress + pBP->nLength)))
 			 	bStatus = true;
 			break;
-		case BP_OP_NOT_EQUAL    : // Rnage is: (,] (not-inclusive, inclusive)
+		case BP_OP_NOT_EQUAL    : // Range is: (,] (not-inclusive, inclusive)
 			 if ((nVal < pBP->nAddress) || ((UINT)nVal >= (pBP->nAddress + pBP->nLength)))
 			 	bStatus = true;
 			break;
@@ -1137,6 +1149,53 @@ bool _CheckBreakpointValue( Breakpoint_t *pBP, int nVal )
 	return bStatus;
 }
 
+//===========================================================================
+bool _CheckBreakpointRange(Breakpoint_t* pBP, int nVal, int nSize)
+{
+	bool bStatus = false;
+
+	int iCmp = pBP->eOperator;
+	switch (iCmp)
+	{
+	case BP_OP_EQUAL: // Range is like C++ STL: [,)  (inclusive,not-inclusive)
+		if ( ((nVal >= pBP->nAddress) && ((UINT)nVal < (pBP->nAddress + pBP->nLength))) ||
+			 ((pBP->nAddress >= nVal) && (pBP->nAddress < ((UINT)nVal + nSize))) )
+			bStatus = true;
+		break;
+	default:
+		_ASSERT(0);
+		break;
+	}
+
+	return bStatus;
+}
+
+//===========================================================================
+
+void DebuggerBreakOnDma(WORD nAddress, WORD nSize, bool isDmaToMemory, int iBreakpoint);
+
+bool DebuggerCheckMemBreakpoints(WORD nAddress, WORD nSize, bool isDmaToMemory)
+{
+	// NB. Caller handles when (addr+size) wraps on 64K
+
+	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
+	{
+		Breakpoint_t* pBP = &g_aBreakpoints[iBreakpoint];
+		if (_BreakpointValid(pBP))
+		{
+			if (pBP->eSource == BP_SRC_MEM_RW || (pBP->eSource == BP_SRC_MEM_READ_ONLY && !isDmaToMemory) || (pBP->eSource == BP_SRC_MEM_WRITE_ONLY && isDmaToMemory))
+			{
+				if (_CheckBreakpointRange(pBP, nAddress, nSize))
+				{
+					DebuggerBreakOnDma(nAddress, nSize, isDmaToMemory, iBreakpoint);
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
 
 //===========================================================================
 int CheckBreakpointsIO ()
@@ -1272,17 +1331,53 @@ void ClearTempBreakpoints ()
 }
 
 //===========================================================================
-static int CheckBreakpointsDmaToOrFromIoMemory(void)
+static int CheckBreakpointsDmaToOrFromIOMemory(void)
 {
-	int res = g_iDebugBreakOnDmaToOrFromIoMemory;
-	g_iDebugBreakOnDmaToOrFromIoMemory = 0;
+	int res = g_DebugBreakOnDMAIO.isToOrFromMemory;
+	g_DebugBreakOnDMAIO.isToOrFromMemory = 0;
 	return res;
 }
 
-void DebuggerBreakOnDmaToOrFromIoMemory(WORD addr, bool isDmaToMemory)
+void DebuggerBreakOnDmaToOrFromIoMemory(WORD nAddress, bool isDmaToMemory)
 {
-	g_iDebugBreakOnDmaToOrFromIoMemory = isDmaToMemory ? BP_DMA_TO_IO_MEM : BP_DMA_FROM_IO_MEM;
-	g_uDebugBreakOnDmaIoMemoryAddr = addr;
+	g_DebugBreakOnDMAIO.isToOrFromMemory = isDmaToMemory ? BP_DMA_TO_IO_MEM : BP_DMA_FROM_IO_MEM;
+	g_DebugBreakOnDMAIO.memoryAddr = nAddress;
+}
+
+static int CheckBreakpointsDmaToOrFromMemory(int idx)
+{
+	if (idx == -1)
+	{
+		int res = 0;
+		for (int i = 0; i < NUM_BREAK_ON_DMA; i++)
+			res |= g_DebugBreakOnDMA[i].isToOrFromMemory;
+		return res;
+	}
+
+	_ASSERT(idx < NUM_BREAK_ON_DMA);
+	if (idx >= NUM_BREAK_ON_DMA)
+		return 0;
+
+	int res = g_DebugBreakOnDMA[idx].isToOrFromMemory;
+	g_DebugBreakOnDMA[idx].isToOrFromMemory = 0;
+	return res;
+}
+
+static void DebuggerBreakOnDma(WORD nAddress, WORD nSize, bool isDmaToMemory, int iBreakpoint)
+{
+	for (int i = 0; i < NUM_BREAK_ON_DMA; i++)
+	{
+		if (g_DebugBreakOnDMA[i].isToOrFromMemory != 0)
+			continue;
+
+		g_DebugBreakOnDMA[i].isToOrFromMemory = isDmaToMemory ? BP_DMA_TO_MEM : BP_DMA_FROM_MEM;
+		g_DebugBreakOnDMA[i].memoryAddr = nAddress;
+		g_DebugBreakOnDMA[i].memoryAddrEnd = nAddress + nSize - 1;
+		g_DebugBreakOnDMA[i].BPid = iBreakpoint;
+		return;
+	}
+
+	_ASSERT(0);
 }
 
 //===========================================================================
@@ -8279,12 +8374,13 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 					g_bDebugBreakpointHit |= BP_HIT_INTERRUPT;
 			}
 
-			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg() | CheckBreakpointsDmaToOrFromIoMemory();
+			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg() | CheckBreakpointsDmaToOrFromIOMemory() | CheckBreakpointsDmaToOrFromMemory(-1);
 		}
 
 		if (regs.pc == g_nDebugStepUntil || g_bDebugBreakpointHit)
 		{
 			std::string stopReason = "Unknown!";
+			bool skipStopReason = false;
 
 			if (regs.pc == g_nDebugStepUntil)
 				stopReason = "PC matches 'Go until' address";
@@ -8305,11 +8401,28 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
 				stopReason = StrFormat("Interrupt occurred at $%04X", g_LBR);
 			else if (g_bDebugBreakpointHit & BP_DMA_TO_IO_MEM)
-				stopReason = StrFormat("HDD DMA to I/O memory or ROM $%04X", g_uDebugBreakOnDmaIoMemoryAddr);
+				stopReason = StrFormat("HDD DMA to I/O memory or ROM at $%04X", g_DebugBreakOnDMAIO.memoryAddr);
 			else if (g_bDebugBreakpointHit & BP_DMA_FROM_IO_MEM)
-				stopReason = StrFormat("HDD DMA from I/O memory $%04X", g_uDebugBreakOnDmaIoMemoryAddr);
+				stopReason = StrFormat("HDD DMA from I/O memory at $%04X ", g_DebugBreakOnDMAIO.memoryAddr);
+			else if (g_bDebugBreakpointHit & (BP_DMA_FROM_MEM | BP_DMA_TO_MEM))
+				skipStopReason = true;
 
-			ConsoleBufferPushFormat( "Stop reason: %s", stopReason.c_str() );
+			if (!skipStopReason)
+				ConsoleBufferPushFormat( "Stop reason: %s", stopReason.c_str() );
+
+			for (int i = 0; i < NUM_BREAK_ON_DMA; i++)
+			{
+				int nDebugBreakpointHit = CheckBreakpointsDmaToOrFromMemory(i);
+				if (nDebugBreakpointHit)
+				{
+					if (nDebugBreakpointHit & BP_DMA_TO_MEM)
+						stopReason = StrFormat("HDD DMA to memory $%04X-%04X (BP#%d)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, g_DebugBreakOnDMA[i].BPid);
+					else if (nDebugBreakpointHit & BP_DMA_FROM_MEM)
+						stopReason = StrFormat("HDD DMA from memory $%04X-%04X (BP#%d)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, g_DebugBreakOnDMA[i].BPid);
+					ConsoleBufferPushFormat("Stop reason: %s", stopReason.c_str());
+				}
+			}
+
 			ConsoleUpdate();
 
 			g_nDebugSteps = 0;
