@@ -857,7 +857,7 @@ static BYTE __stdcall MB_Read(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULO
 
 		bool bAccessedDevice = (CS & 3) ? true : false;
 
-		bool CS_SSI263 = !(nAddr & 0x80) && (nAddr & 0x60);			// SSI263 at $Cn2x and/or $Cn4x
+		bool CS_SSI263 = !(nAddr & 0x10) && (nAddr & 0x60) && !(nAddr & 0x80);				// SSI263 at $Cn2x and/or $Cn4x
 
 		if (g_phasorMode == PH_Phasor && CS_SSI263)					// NB. Mockingboard mode: SSI263.bit7 not readable
 		{

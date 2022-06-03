@@ -312,6 +312,15 @@ void SSI263::Play(unsigned int nPhoneme)
 			return;
 	}
 
+	if (!m_isVotraxPhoneme)
+	{
+		const DWORD volume = AMPLITUDE_MASK - (m_ctrlArtAmp & AMPLITUDE_MASK);	// Invert so that: 0=max, 15=min
+		SSI263SingleVoice.nVolume = NewVolume(volume*volume, AMPLITUDE_MASK*AMPLITUDE_MASK);	// logarithmic, but amplitude<8 can't be heard
+		HRESULT hr = SSI263SingleVoice.lpDSBvoice->SetVolume(SSI263SingleVoice.nVolume);
+		if (hr != S_OK)
+			LogFileOutput("SSI263::Play: SetVolume(%d) res = %08X\n", SSI263SingleVoice.nVolume, hr);
+	}
+
 	if (m_dbgFirst)
 	{
 		m_dbgStartTime = g_nCumulativeCycles;
@@ -327,9 +336,6 @@ void SSI263::Play(unsigned int nPhoneme)
 	m_currentActivePhoneme = nPhoneme;
 
 	bool bPause = false;
-
-	if (!m_isVotraxPhoneme && (m_ctrlArtAmp & AMPLITUDE_MASK) == 0)
-		nPhoneme = 0;
 
 	if (nPhoneme == 1)
 		nPhoneme = 2;	// Missing this sample, so map to phoneme-2
