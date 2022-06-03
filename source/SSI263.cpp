@@ -312,14 +312,14 @@ void SSI263::Play(unsigned int nPhoneme)
 			return;
 	}
 
+	DWORD volume = 0;	// 0=max
 	if (!m_isVotraxPhoneme)
-	{
-		const DWORD volume = AMPLITUDE_MASK - (m_ctrlArtAmp & AMPLITUDE_MASK);	// Invert so that: 0=max, 15=min
-		SSI263SingleVoice.nVolume = NewVolume(volume*volume, AMPLITUDE_MASK*AMPLITUDE_MASK);	// logarithmic, but amplitude<8 can't be heard
-		HRESULT hr = SSI263SingleVoice.lpDSBvoice->SetVolume(SSI263SingleVoice.nVolume);
-		if (hr != S_OK)
-			LogFileOutput("SSI263::Play: SetVolume(%d) res = %08X\n", SSI263SingleVoice.nVolume, hr);
-	}
+		volume = AMPLITUDE_MASK - (m_ctrlArtAmp & AMPLITUDE_MASK);	// Invert so that: 0=max, 15=min
+
+	SSI263SingleVoice.nVolume = NewVolume(volume*volume, AMPLITUDE_MASK*AMPLITUDE_MASK);	// logarithmic, but amplitude<8 can't be heard
+	HRESULT hr = SSI263SingleVoice.lpDSBvoice->SetVolume(SSI263SingleVoice.nVolume);
+	if (hr != S_OK)
+		LogFileOutput("SSI263::Play: SetVolume(%d) res = %08X\n", SSI263SingleVoice.nVolume, hr);
 
 	if (m_dbgFirst)
 	{
