@@ -8401,9 +8401,9 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
 				stopReason = StrFormat("Interrupt occurred at $%04X", g_LBR);
 			else if (g_bDebugBreakpointHit & BP_DMA_TO_IO_MEM)
-				stopReason = StrFormat("HDD DMA to I/O memory or ROM $%04X", g_DebugBreakOnDMAIO.memoryAddr);
+				stopReason = StrFormat("HDD DMA to I/O memory or ROM at $%04X", g_DebugBreakOnDMAIO.memoryAddr);
 			else if (g_bDebugBreakpointHit & BP_DMA_FROM_IO_MEM)
-				stopReason = StrFormat("HDD DMA from I/O memory $%04X ", g_DebugBreakOnDMAIO.memoryAddr);
+				stopReason = StrFormat("HDD DMA from I/O memory at $%04X ", g_DebugBreakOnDMAIO.memoryAddr);
 			else if (g_bDebugBreakpointHit & (BP_DMA_FROM_MEM | BP_DMA_TO_MEM))
 				skipStopReason = true;
 
