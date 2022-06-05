@@ -1025,7 +1025,7 @@ static void IoHandlerCardsOut(void)
 {
 	_ASSERT( SW_INTCXROM );
 
-	for (UINT uSlot=1; uSlot<NUM_SLOTS; uSlot++)
+	for (UINT uSlot=SLOT1; uSlot<NUM_SLOTS; uSlot++)
 	{
 		for (UINT i=0; i<16; i++)
 		{
@@ -1035,26 +1035,38 @@ static void IoHandlerCardsOut(void)
 	}
 }
 
+// From UTAIIe:5-28: If INTCXROM==0 && SLOTC3ROM==0 Then $C300-C3FF is internal ROM
+static void IoHandlerSlot3CardOut(void)
+{
+	_ASSERT(!SW_INTCXROM && !SW_SLOTC3ROM);
+
+	for (UINT i = 0; i < 16; i++)
+	{
+		IORead[SLOT3 * 16 + i] = IO_Cxxx;
+		IOWrite[SLOT3 * 16 + i] = IO_Cxxx;
+	}
+}
+
 static void IoHandlerCardsIn(void)
 {
 	_ASSERT( !SW_INTCXROM );
 
-	for (UINT uSlot=1; uSlot<NUM_SLOTS; uSlot++)
+	for (UINT uSlot=SLOT1; uSlot<NUM_SLOTS; uSlot++)
 	{
-		iofunction ioreadcx  = g_SlotInfo[uSlot].IOReadCx;
-		iofunction iowritecx = g_SlotInfo[uSlot].IOWriteCx;
-
-		if (uSlot == 3 && !SW_SLOTC3ROM)
+		if (uSlot == SLOT3 && !SW_SLOTC3ROM)
 		{
-			// From UTAIIe:5-28: If INTCXROM==0 && SLOTC3ROM==0 Then $C300-C3FF is internal ROM
-			ioreadcx  = IO_Cxxx;
-			iowritecx = IO_Cxxx;
+			IoHandlerSlot3CardOut();
 		}
-
-		for (UINT i=0; i<16; i++)
+		else
 		{
-			IORead[uSlot*16+i]	= ioreadcx;
-			IOWrite[uSlot*16+i]	= iowritecx;
+			iofunction ioreadcx = g_SlotInfo[uSlot].IOReadCx;
+			iofunction iowritecx = g_SlotInfo[uSlot].IOWriteCx;
+
+			for (UINT i = 0; i < 16; i++)
+			{
+				IORead[uSlot * 16 + i] = ioreadcx;
+				IOWrite[uSlot * 16 + i] = iowritecx;
+			}
 		}
 	}
 }
@@ -1745,8 +1757,14 @@ void MemInitializeFromSnapshot(void)
 	//
 
 	// Remove all the cards' ROMs at $Csnn if internal ROM is enabled
-	if (IsAppleIIeOrAbove(GetApple2Type()) && SW_INTCXROM)
-		IoHandlerCardsOut();
+	// Or just $C3nn if SLOT3 ROM is disabled
+	if (IsAppleIIeOrAbove(GetApple2Type()))
+	{
+		if (SW_INTCXROM)
+			IoHandlerCardsOut();
+		else if (!SW_SLOTC3ROM)
+			IoHandlerSlot3CardOut();
+	}
 
 	// Potentially init a card's expansion ROM
 	const UINT uSlot = g_uPeripheralRomSlot;

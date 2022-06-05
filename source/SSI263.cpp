@@ -556,6 +556,8 @@ void SSI263::Update(void)
 
 	//-------------
 
+	const double amplitude = !m_isVotraxPhoneme ? (double)(m_ctrlArtAmp & AMPLITUDE_MASK) / (double)AMPLITUDE_MASK : 1.0;
+
 	bool bSpeechIRQ = false;
 
 	{
@@ -572,7 +574,8 @@ void SSI263::Update(void)
 			UINT samplesWritten = 0;
 			while (samplesWritten < (UINT)nNumSamples)
 			{
-				m_currSampleSum += (int)*m_pPhonemeData;
+				double sample = (double)*m_pPhonemeData * amplitude;
+				m_currSampleSum += (int)sample;
 				m_currNumSamples++;
 
 				m_pPhonemeData++;
