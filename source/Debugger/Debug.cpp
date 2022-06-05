@@ -1172,7 +1172,7 @@ bool _CheckBreakpointRange(Breakpoint_t* pBP, int nVal, int nSize)
 
 //===========================================================================
 
-void DebuggerBreakOnDma(WORD nAddress, WORD nSize, bool isDmaToMemory, int iBreakpoint);
+static void DebuggerBreakOnDma(WORD nAddress, WORD nSize, bool isDmaToMemory, int iBreakpoint);
 
 bool DebuggerCheckMemBreakpoints(WORD nAddress, WORD nSize, bool isDmaToMemory)
 {
