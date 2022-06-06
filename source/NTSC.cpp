@@ -813,15 +813,15 @@ static void ClearOverscanVideoArea(void)
 	uint32_t* pLine1Prev = getScanlinePreviousInbetween();
 	g_pVideoAddress = pSaveVideoAddress;			// restore g_pVideoAddress
 
-	const uint32_t kOverscanOffsetL = 3;	// In updateVideoScannerAddress(), g_pVideoAddress could be adjusted by: -2 + -1 = -3
-	const uint32_t kOverscanSpanL = 3;
-	const uint32_t kOverscanOverlapL = kOverscanSpanL - kOverscanOffsetL;
+	const int kOverscanOffsetL = 3;	// In updateVideoScannerAddress(), g_pVideoAddress could be adjusted by: -2 + -1 = -3
+	const int kOverscanSpanL = 3;
+	const int kOverscanOverlapL = kOverscanSpanL - kOverscanOffsetL;
 
-	const uint32_t kOverscanOffsetR = 2;
-	const uint32_t kOverscanSpanR = 4;		// In updateVideoScannerHorzEOL() it writes 4 extra pixels
-	const uint32_t kOverscanOverlapR = kOverscanSpanR - kOverscanOffsetR;
+	const int kOverscanOffsetR = 2;
+	const int kOverscanSpanR = 4;		// In updateVideoScannerHorzEOL() it writes 4 extra pixels
+	const int kOverscanOverlapR = kOverscanSpanR - kOverscanOffsetR;
 
-	const uint32_t kHorzPixels = (VIDEO_SCANNER_MAX_HORZ - VIDEO_SCANNER_HORZ_START) * 14;
+	const int kHorzPixels = (VIDEO_SCANNER_MAX_HORZ - VIDEO_SCANNER_HORZ_START) * 14;
 
 	pLine1Prev += GetVideo().GetFrameBufferCentringValue() - kOverscanOffsetL;		// Centre the older //e video modes when running with a VidHD
 
