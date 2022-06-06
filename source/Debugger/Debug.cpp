@@ -354,6 +354,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static WORD g_LBR = 0x0000;	// Last Branch Record
 
+	static bool g_bScriptReadOk = false;
+
 // Private ________________________________________________________________________________________
 
 
@@ -6077,6 +6079,8 @@ _Help:
 //===========================================================================
 Update_t CmdOutputRun (int nArgs)
 {
+	g_bScriptReadOk = false;
+
 	if (! nArgs)
 		return Help_Arg_1( CMD_OUTPUT_RUN );
 
@@ -6114,6 +6118,8 @@ Update_t CmdOutputRun (int nArgs)
 
 	if (script.Read( sFileName ))
 	{
+		g_bScriptReadOk = true;
+
 		int nLine = script.GetNumLines();
 
 		Update_t bUpdateDisplay = UPDATE_NOTHING;	
@@ -8665,9 +8671,21 @@ void DebugInitialize ()
 	if (!doneAutoRun)	// Don't re-run on a VM restart
 	{
 		doneAutoRun = true;
-		std::string pathname = g_sProgramDir + "DebuggerAutoRun.txt";
+
+		const std::string debuggerAutoRunName = "DebuggerAutoRun.txt";
+
+		// Look in g_sCurrentDir, otherwise try g_sProgramDir
+
+		std::string pathname = g_sCurrentDir + debuggerAutoRunName;
 		strncpy_s(g_aArgs[1].sArg, MAX_ARG_LEN, pathname.c_str(), _TRUNCATE);
 		CmdOutputRun(1);
+
+		if (!g_bScriptReadOk)
+		{
+			pathname = g_sProgramDir + debuggerAutoRunName;
+			strncpy_s(g_aArgs[1].sArg, MAX_ARG_LEN, pathname.c_str(), _TRUNCATE);
+			CmdOutputRun(1);
+		}
 	}
 
 	CmdMOTD(0);

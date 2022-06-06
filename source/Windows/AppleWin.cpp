@@ -728,9 +728,6 @@ static void RepeatInitialization(void)
 			// Reapply after a restart - TODO: grey-out the Config UI for "Swap 0/1" when this cmd line is passed in
 		}
 
-		DebugInitialize();
-		LogFileOutput("Main: DebugInitialize()\n");
-
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
@@ -835,6 +832,10 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.bRemoveNoSlotClock)
 			MemRemoveNoSlotClock();
+
+		// Call DebugInitialize() after SetCurrentImageDir()
+		DebugInitialize();
+		LogFileOutput("Main: DebugInitialize()\n");
 
 		MemInitialize();
 		LogFileOutput("Main: MemInitialize()\n");
