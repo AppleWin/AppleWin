@@ -9,6 +9,20 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.30.11.0 - 8 Jun 2022
+-----------------------
+. [Change #1103] Debugger: support memory breakpoints for HDD DMA r/w's:
+	- When the debugger is active (eg. breakpoints enabled) then trap on HDD r/w's that match the BPM[R|W].
+	- NB. the breakpoint will fire after the whole HDD r/w operation has completed.
+. [Bug #1108] Fix for C3 ROM not set correctly when loading a save-state with a VidHD (in slot 3).
+. [Bug #1106] Fix for minor screen corruption with VidHD enabled.
+	- Debugger: fix for mouse-click hit-tests with VidHD enabled.
+. [Bug #1104] Fix for rare Mockingboard speech race condition when debugger-stepping.
+. [PR #1098] Internal: refactor debugger. [@kiyolee]
+. Change: Mockingboard's SSI263: support reg3's amplitude (fix for TR speaking during SSI263 detection).
+. Change: DebuggerAutoRun.txt: extend search path to first try CurrentDir, then ProgramDir.
+
+
 1.30.10.0 - 27 May 2022
 -----------------------
 . [Change #1097] Extend Uthernet II to support DNS offloading. [audetto]
