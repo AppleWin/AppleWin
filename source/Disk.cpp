@@ -484,6 +484,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 			m_magnetStates &= ~phase_bit;	// phase off
 	}
 
+	pDrive->m_lastStepperAccess = address & 7;
 #if LOG_DISK_PHASES
 	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
 #endif
@@ -1908,7 +1909,8 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 // 5: Added: Sequencer Function
 // 6: Added: Drive Connected & Motor On Cycle
 // 7: Deprecated SS_YAML_KEY_LSS_RESET_SEQUENCER, SS_YAML_KEY_DISK_ACCESSED
-static const UINT kUNIT_VERSION = 7;
+// 8: Added: Last Stepper Access
+static const UINT kUNIT_VERSION = 8;
 
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
 
@@ -1932,6 +1934,7 @@ static const UINT kUNIT_VERSION = 7;
 #define SS_YAML_KEY_PHASE_PRECISE "Phase (precise)"
 #define SS_YAML_KEY_TRACK "Track"	// deprecated at v4
 #define SS_YAML_KEY_HEAD_WINDOW "Head Window"
+#define SS_YAML_KEY_LAST_STEPPER_ACCESS "Last Stepper Access"
 #define SS_YAML_KEY_LAST_STEPPER_CYCLE "Last Stepper Cycle"
 #define SS_YAML_KEY_MOTOR_ON_CYCLE "Motor On Cycle"
 
@@ -1982,6 +1985,7 @@ void Disk2InterfaceCard::SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, U
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASE, m_floppyDrive[unit].m_phase);
 	yamlSaveHelper.SaveFloat(SS_YAML_KEY_PHASE_PRECISE, m_floppyDrive[unit].m_phasePrecise);	// v4
 	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_HEAD_WINDOW, m_floppyDrive[unit].m_headWindow);		// v4
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_LAST_STEPPER_ACCESS, m_floppyDrive[unit].m_lastStepperAccess);	// v8
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_STEPPER_CYCLE, m_floppyDrive[unit].m_lastStepperCycle);	// v4
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_MOTOR_ON_CYCLE, m_floppyDrive[unit].m_motorOnCycle);	// v6
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_SPINNING, m_floppyDrive[unit].m_spinning);
@@ -2118,6 +2122,9 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv4(YamlLoadHelper& yamlLoadHelper,
 		m_floppyDrive[unit].m_isConnected = yamlLoadHelper.LoadBool(SS_YAML_KEY_DRIVE_CONNECTED);
 		m_floppyDrive[unit].m_motorOnCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_MOTOR_ON_CYCLE);
 	}
+
+	if (version >= 8)
+		m_floppyDrive[unit].m_lastStepperAccess = yamlLoadHelper.LoadUint(SS_YAML_KEY_LAST_STEPPER_ACCESS);
 
 	yamlLoadHelper.PopMap();
 

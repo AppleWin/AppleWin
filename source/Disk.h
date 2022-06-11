@@ -101,6 +101,7 @@ public:
 		m_isConnected = true;
 		m_phasePrecise = 0;
 		m_phase = 0;
+		m_lastStepperAccess = (BYTE)-1;	// valid: [0..7], not accessed yet: -1
 		m_lastStepperCycle = 0;
 		m_motorOnCycle = 0;
 		m_headWindow = 0;
@@ -113,6 +114,7 @@ public:
 	bool m_isConnected;
 	float m_phasePrecise;	// Phase precise to half a phase (aka quarter track)
 	int m_phase;			// Integral phase number
+	BYTE m_lastStepperAccess;
 	unsigned __int64 m_lastStepperCycle;
 	unsigned __int64 m_motorOnCycle;
 	BYTE m_headWindow;
