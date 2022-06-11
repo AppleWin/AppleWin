@@ -2,10 +2,13 @@
 
 // Uthernet II registers
 
-#define U2_C0X_MODE_REGISTER      0x04
-#define U2_C0X_ADDRESS_HIGH       0x05
-#define U2_C0X_ADDRESS_LOW        0x06
-#define U2_C0X_DATA_PORT          0x07
+// only A0 and A1 are decoded
+#define U2_C0X_MASK               0x03
+
+#define U2_C0X_MODE_REGISTER      (0x04 & U2_C0X_MASK)
+#define U2_C0X_ADDRESS_HIGH       (0x05 & U2_C0X_MASK)
+#define U2_C0X_ADDRESS_LOW        (0x06 & U2_C0X_MASK)
+#define U2_C0X_DATA_PORT          (0x07 & U2_C0X_MASK)
 
 // W5100 registers and values
 
