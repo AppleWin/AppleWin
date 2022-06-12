@@ -20,7 +20,7 @@ Almost everything works, except the serial port, SNES-MAX and FourPlay.
 
 The UI has been rewritten in Qt or ImGui. The rest works very well.
 
-Network is supported via [libslirp](https://gitlab.freedesktop.org/slirp/libslirp).
+[Network](/source/Tfe/README.md) is supported via [libslirp](https://gitlab.freedesktop.org/slirp/libslirp).
 
 If this is not available, it uses `libpcap`, but it requires elevated capabilities:
 
@@ -42,7 +42,7 @@ This is your best choice, in particular the ImGui version.
 
 TL;DR: just run ``sa2``
 
-See [sa2](../source/frontends/sdl/README.md) for more details.
+See [sa2](/source/frontends/sdl/README.md) for more details.
 
 ### applen
 
@@ -133,15 +133,15 @@ or use `cmake-gui` (if none is selected, they are all built).
 
 ### Fedora
 
-On Fedora 35, from a fresh installation, install all packages from [fedora.list.txt](../source/linux/fedora.list.txt).
+On Fedora 35, from a fresh installation, install all packages from [fedora.list.txt](/source/linux/fedora.list.txt).
 
 ### Raspberry Pi OS, Ubuntu and other Debian distributions
 
-Install all packages from [raspbian.list.txt](../source/linux/raspbian.list.txt).
+Install all packages from [raspbian.list.txt](/source/linux/raspbian.list.txt).
 
 You can use `sudo apt-get -y install $(cat raspbian.list.txt)` for an automated installation.
 
-See [Travis](../.travis.yml) CI too.
+See [Travis](/.travis.yml) CI too.
 
 ### Packaging
 
