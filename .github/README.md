@@ -1,4 +1,8 @@
-# Linux
+# AppleWin on Linux
+
+This is a linux port of [AppleWin](https://github.com/AppleWin/AppleWin), that shares 100% of the code of the core emulator and video generation. Audio, UI, scheduling and other peripherals are **reimplemented**.
+
+**Number one goal** is to stay source compatible with AppleWin, to make `git merge` a trivial operation. Shared files are modified as a last resort.
 
 ## Structure
 
@@ -8,19 +12,17 @@ There are 4 projects
 * applen: a frontend based on ncurses
 * qapple: Qt frontend
 * sa2: SDL2 frontend
-* libra2: a libretro core
-
-The main goal is to reuse the AppleWin source files without changes: only where really necessary the AppleWin source files have
-been modified.
+* a [libretro](https://www.libretro.com) core
 
 ##  What works
 
 Almost everything works, except the serial port, SNES-MAX and FourPlay.
 
-The UI has been rewritten in Qt or ImGui.
+The UI has been rewritten in Qt or ImGui. The rest works very well.
 
-The rest works very well.
-Uthernet I is supported via `libpcap`, but it requires elevated capabilities:
+Network is supported via [libslirp](https://gitlab.freedesktop.org/slirp/libslirp).
+
+If this is not available, it uses `libpcap`, but it requires elevated capabilities:
 
 `sudo setcap cap_net_raw=ep ./sa2`
 
@@ -29,10 +31,6 @@ Unfortunately, this must be reapplied after every build.
 Most of the debugger now works (in the ImGui version).
 
 ## New features
-
-Uthernet II is supported too and by default uses `libslirp` which does *not* require elevated capabilities. Use the ImGui settings to enable it.
-
-`libslirp` is not packaged on Raspberry Pi OS. `libpcap` will be used instead, unless the user manually compiles and installs [libslirp](https://gitlab.freedesktop.org/slirp/libslirp).
 
 Audio files can be read via the cassette interface (SDL Version). Just drop a `wav` file into the emulator. Tested with all the formats from [asciiexpress](https://asciiexpress.net/).
 
@@ -44,7 +42,7 @@ This is your best choice, in particular the ImGui version.
 
 TL;DR: just run ``sa2``
 
-See [sa2](source/frontends/sdl/README.md) for more details.
+See [sa2](../source/frontends/sdl/README.md) for more details.
 
 ### applen
 
@@ -100,6 +98,8 @@ Audio (speaker) works.
 Easiest way to run from the ``build`` folder:
 ``retroarch -L source/frontends/libretro/applewin_libretro.so ../bin/MASTER.DSK``
 
+It supports playlists files `.m3u` (see https://docs.libretro.com/library/vice/#m3u-and-disk-control alttough not all options are implemented).
+
 ## Build
 
 The project can be built using cmake from the top level directory.
@@ -107,6 +107,8 @@ The project can be built using cmake from the top level directory.
 qapple can be managed from Qt Creator as well and the 2 have coexisted so far, but YMMV.
 
 ### Checkout
+
+**Don't forget the submodules!!**
 
 ```
 git clone https://github.com/audetto/AppleWin.git --recursive
@@ -131,15 +133,15 @@ or use `cmake-gui` (if none is selected, they are all built).
 
 ### Fedora
 
-On Fedora 35, from a fresh installation, install all packages from [fedora.list.txt](source/linux/fedora.list.txt).
+On Fedora 35, from a fresh installation, install all packages from [fedora.list.txt](../source/linux/fedora.list.txt).
 
 ### Raspberry Pi OS, Ubuntu and other Debian distributions
 
-Install all packages from [raspbian.list.txt](source/linux/raspbian.list.txt).
+Install all packages from [raspbian.list.txt](../source/linux/raspbian.list.txt).
 
 You can use `sudo apt-get -y install $(cat raspbian.list.txt)` for an automated installation.
 
-See [Travis](.travis.yml) CI too.
+See [Travis](../.travis.yml) CI too.
 
 ### Packaging
 

@@ -9,7 +9,7 @@ The default frontend uses SDL2 + ImGui and requires an OpenGL ES2.0 implementati
 The configuration GUI only works with ImGui: otherwise either manually edit the configuration file ``~/.applewin/applewin.conf`` or use ``qapple`` and run ``sa2 --qt-ini``.
 The format of the configuration file is the same as the Windows Registry of AppleWin.
 
-*Drag & drop* works for floppy disks. With ImGui it is possible to select which drive they are dropped into (``D&D``).
+*Drag & drop* works for floppy disks. With ImGui it is possible to select which drive they are dropped into (`System` -> `Settings` -> `Hardware` -> `D&D`).
 If the filename ends with `.yaml`, it will be loaded as a *State* file.
 
 Individual options can be passed via arguments too: ``-r Configuration.Printer_Filename=Printer.txt``.
