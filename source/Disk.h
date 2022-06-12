@@ -210,6 +210,7 @@ private:
 	void InsertSyncEvent(void);
 	static int SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
 	void ControlStepperDeferred(bool adjacentMagnetsOff, WORD nextAddress);
+	void ControlStepperLogging(WORD address, unsigned __int64 cumulativeCycles);
 
 	void PreJitterCheck(int phase, BYTE latch);
 	void AddJitter(int phase, FloppyDisk& floppy);
@@ -279,9 +280,9 @@ private:
 	SEQUENCER_FUNCTION m_seqFunc;
 	UINT m_dbgLatchDelayedCnt;
 
+	bool m_deferredStepperEvent;
 	WORD m_deferredStepperAddress;
 	unsigned __int64 m_deferredStepperCumulativeCycles;
-	bool m_ignoreNextStepperOff;
 	SyncEvent m_syncEvent;
 
 	// Jitter (GH#930)

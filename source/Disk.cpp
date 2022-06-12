@@ -73,9 +73,9 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	m_diskLastReadLatchCycle = 0;
 	m_enhanceDisk = true;
 	m_is13SectorFirmware = false;
+	m_deferredStepperEvent = false;
 	m_deferredStepperAddress = 0;
 	m_deferredStepperCumulativeCycles = 0;
-	m_ignoreNextStepperOff = false;
 
 	ResetLogicStateSequencer();
 
@@ -497,14 +497,31 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		// Check for adjacent magnets being turned off/on in a very short interval (10 cycles is purely based on A2osX). (GH#1110)
 		// . also ProDOS rapidly turning off all 4 magnets.
 		g_SynchronousEventMgr.Remove(m_syncEvent.m_id);
-		ControlStepperDeferred(true, address);
+		m_deferredStepperEvent = false;
+
+		int addrDelta = (m_deferredStepperAddress & 7) - (address & 7);
+		if (addrDelta < 0) addrDelta = -addrDelta;
+		if (addrDelta == 2 || addrDelta == 6)	// adjacent magnets: both turned off or both turned on
+		{
+			if ((address & 1) == 0)	// adjacent magnets off
+			{
+				// 2 adjacent magnets off in quick succession don't move the cog (GH#1110)
+				ControlStepperLogging(m_deferredStepperAddress, m_deferredStepperCumulativeCycles);
+				ControlStepperLogging(address, g_nCumulativeCycles);
+				return;
+			}
+			else	// adjacent magnets on
+			{
+				// do nothing for now (TODO: check this)
+			}
+		}
 	}
 
 	// defer the effect of changing the phase
-	// eg. 2 adjacent magnets off in quick succession won't move the cog (GH#1110)
 	m_deferredStepperAddress = address;
 	m_deferredStepperCumulativeCycles = g_nCumulativeCycles;
 	InsertSyncEvent();
+	m_deferredStepperEvent = true;
 }
 
 void Disk2InterfaceCard::InsertSyncEvent(void)
@@ -522,8 +539,8 @@ int Disk2InterfaceCard::SyncEventCallback(int id, int cycles, ULONG uExecutedCyc
 
 void Disk2InterfaceCard::ControlStepperDeferred(bool rapidMagnetChange, WORD nextAddress)
 {
+	m_deferredStepperEvent = false;
 	const WORD address = m_deferredStepperAddress;
-	m_deferredStepperAddress = 0;	// also acts as flag for loading a save-state to re-insert the syncEvent
 
 	FloppyDrive* pDrive = &m_floppyDrive[m_currDrive];
 	FloppyDisk* pFloppy = &pDrive->m_disk;
@@ -558,31 +575,6 @@ void Disk2InterfaceCard::ControlStepperDeferred(bool rapidMagnetChange, WORD nex
 	if (newPhasePrecise < 0)
 		newPhasePrecise = 0;
 
-	// Check for adjacent magnets being turned off/on in a very short interval (10 cycles is purely based on A2osX). (GH#1110)
-	if (m_ignoreNextStepperOff)
-	{
-		newPhasePrecise = pDrive->m_phasePrecise;
-		m_ignoreNextStepperOff = false;
-	}
-
-	if (rapidMagnetChange)
-	{
-		int addrDelta = (address & 7) - (nextAddress & 7);
-		if (addrDelta < 0) addrDelta = -addrDelta;
-		if (addrDelta == 2 || addrDelta == 6)	// adjacent magnets: both turned off or both turned on
-		{
-			if ((address & 1) == 0)	// adjacent magnets off
-			{
-				newPhasePrecise = pDrive->m_phasePrecise;
-				m_ignoreNextStepperOff = true;
-			}
-			else	// adjacent magnets on
-			{
-				// do nothing for now (TODO: check this)
-			}
-		}
-	}
-
 	// apply magnet step, if any
 	if (newPhasePrecise != pDrive->m_phasePrecise)
 	{
@@ -593,14 +585,21 @@ void Disk2InterfaceCard::ControlStepperDeferred(bool rapidMagnetChange, WORD nex
 		GetFrame().FrameDrawDiskStatus();	// Show track status (GH#201)
 	}
 
+	ControlStepperLogging(address, m_deferredStepperCumulativeCycles);
+}
+
+void Disk2InterfaceCard::ControlStepperLogging(WORD address, unsigned __int64 cumulativeCycles)
+{
+	FloppyDrive* pDrive = &m_floppyDrive[m_currDrive];
+
 #if LOG_DISK_PHASES
-	const ULONG cycleDelta = (ULONG)(m_deferredStepperCumulativeCycles - pDrive->m_lastStepperCycle);
+	const ULONG cycleDelta = (ULONG)(cumulativeCycles - pDrive->m_lastStepperCycle);
 #endif
-	pDrive->m_lastStepperCycle = m_deferredStepperCumulativeCycles;	// NB. Persisted to save-state
+	pDrive->m_lastStepperCycle = cumulativeCycles;	// NB. Persisted to save-state
 
 #if LOG_DISK_PHASES
 	LOG_DISK("%08X: track $%s magnet-states %d%d%d%d phase %d %s address $%4X last-stepper %.3fms\r\n",
-		(UINT32)m_deferredStepperCumulativeCycles,
+		(UINT32)cumulativeCycles,
 		GetCurrentTrackString().c_str(),
 		(m_magnetStates >> 3) & 1,
 		(m_magnetStates >> 2) & 1,
@@ -2289,7 +2288,7 @@ bool Disk2InterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versi
 
 	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 
-	if (m_deferredStepperAddress)
+	if (m_deferredStepperEvent)
 		InsertSyncEvent();
 
 	return true;
