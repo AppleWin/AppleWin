@@ -93,6 +93,9 @@ Disk2InterfaceCard::~Disk2InterfaceCard(void)
 {
 	EjectDiskInternal(DRIVE_1);
 	EjectDiskInternal(DRIVE_2);
+
+	if (m_syncEvent.m_active)
+		g_SynchronousEventMgr.Remove(m_syncEvent.m_id);
 }
 
 bool Disk2InterfaceCard::GetEnhanceDisk(void) { return m_enhanceDisk; }
@@ -501,8 +504,12 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	// eg. 2 adjacent magnets off in quick succession won't move the cog (GH#1110)
 	m_deferredStepperAddress = address;
 	m_deferredStepperCumulativeCycles = g_nCumulativeCycles;
+	InsertSyncEvent();
+}
 
-	m_syncEvent.m_cyclesRemaining = 10;	// NB. same for magnet off and on - but perhaps they take different times?
+void Disk2InterfaceCard::InsertSyncEvent(void)
+{
+	m_syncEvent.m_cyclesRemaining = 10;	// NB. same cycle delay for magnet off and on - but perhaps they take different times?
 	g_SynchronousEventMgr.Insert(&m_syncEvent);
 }
 
@@ -516,6 +523,7 @@ int Disk2InterfaceCard::SyncEventCallback(int id, int cycles, ULONG uExecutedCyc
 void Disk2InterfaceCard::ControlStepperDeferred(bool rapidMagnetChange, WORD nextAddress)
 {
 	const WORD address = m_deferredStepperAddress;
+	m_deferredStepperAddress = 0;	// also acts as flag for loading a save-state to re-insert the syncEvent
 
 	FloppyDrive* pDrive = &m_floppyDrive[m_currDrive];
 	FloppyDisk* pFloppy = &pDrive->m_disk;
@@ -2280,6 +2288,9 @@ bool Disk2InterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versi
 	LoadSnapshotDriveUnit(yamlLoadHelper, DRIVE_2, version);
 
 	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
+
+	if (m_deferredStepperAddress)
+		InsertSyncEvent();
 
 	return true;
 }

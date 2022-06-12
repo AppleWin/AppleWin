@@ -207,6 +207,7 @@ private:
 	bool GetFirmware(WORD lpNameId, BYTE* pDst);
 	void InitFirmware(LPBYTE pCxRomPeripheral);
 	void UpdateLatchForEmptyDrive(FloppyDrive* pDrive);
+	void InsertSyncEvent(void);
 	static int SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
 	void ControlStepperDeferred(bool adjacentMagnetsOff, WORD nextAddress);
 
