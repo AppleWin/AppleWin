@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskLog.h"
 #include "DiskFormatTrack.h"
 #include "DiskImage.h"
+#include "SynchronousEventManager.h"
 
 enum Drive_e
 {
@@ -101,7 +102,6 @@ public:
 		m_isConnected = true;
 		m_phasePrecise = 0;
 		m_phase = 0;
-		m_lastStepperAccess = (BYTE)-1;	// valid: [0..7], not accessed yet: -1
 		m_lastStepperCycle = 0;
 		m_motorOnCycle = 0;
 		m_headWindow = 0;
@@ -114,7 +114,6 @@ public:
 	bool m_isConnected;
 	float m_phasePrecise;	// Phase precise to half a phase (aka quarter track)
 	int m_phase;			// Integral phase number
-	BYTE m_lastStepperAccess;
 	unsigned __int64 m_lastStepperCycle;
 	unsigned __int64 m_motorOnCycle;
 	BYTE m_headWindow;
@@ -208,6 +207,8 @@ private:
 	bool GetFirmware(WORD lpNameId, BYTE* pDst);
 	void InitFirmware(LPBYTE pCxRomPeripheral);
 	void UpdateLatchForEmptyDrive(FloppyDrive* pDrive);
+	static int SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
+	void ControlStepperDeferred(bool adjacentMagnetsOff, WORD nextAddress);
 
 	void PreJitterCheck(int phase, BYTE latch);
 	void AddJitter(int phase, FloppyDisk& floppy);
@@ -276,6 +277,11 @@ private:
 
 	SEQUENCER_FUNCTION m_seqFunc;
 	UINT m_dbgLatchDelayedCnt;
+
+	WORD m_deferredStepperAddress;
+	unsigned __int64 m_deferredStepperCumulativeCycles;
+	bool m_ignoreNextStepperOff;
+	SyncEvent m_syncEvent;
 
 	// Jitter (GH#930)
 	static const BYTE m_T00S00Pattern[];

@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Interface.h"
 #include "Core.h"
+#include "CardManager.h"
 #include "CPU.h"
 #include "DiskImage.h"
 #include "Log.h"
@@ -58,7 +59,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 const BYTE Disk2InterfaceCard::m_T00S00Pattern[] = {0xD5,0xAA,0x96,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xDE};
 
 Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
-	Card(CT_Disk2, slot)
+	Card(CT_Disk2, slot),
+	m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for Disk2InterfaceCards
 {
 	if (m_slot != 5 && m_slot != 6)	// fixme
 		ThrowErrorInvalidSlot();
@@ -71,6 +73,9 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	m_diskLastReadLatchCycle = 0;
 	m_enhanceDisk = true;
 	m_is13SectorFirmware = false;
+	m_deferredStepperAddress = 0;
+	m_deferredStepperCumulativeCycles = 0;
+	m_ignoreNextStepperOff = false;
 
 	ResetLogicStateSequencer();
 
@@ -484,11 +489,36 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 			m_magnetStates &= ~phase_bit;	// phase off
 	}
 
-	pDrive->m_lastStepperAccess = address & 7;
-#if LOG_DISK_PHASES
-	const ULONG cycleDelta = (ULONG)(g_nCumulativeCycles - pDrive->m_lastStepperCycle);
-#endif
-	pDrive->m_lastStepperCycle = g_nCumulativeCycles;
+	if (m_syncEvent.m_active)
+	{
+		// Check for adjacent magnets being turned off/on in a very short interval (10 cycles is purely based on A2osX). (GH#1110)
+		// . also ProDOS rapidly turning off all 4 magnets.
+		g_SynchronousEventMgr.Remove(m_syncEvent.m_id);
+		ControlStepperDeferred(true, address);
+	}
+
+	// defer the effect of changing the phase
+	// eg. 2 adjacent magnets off in quick succession won't move the cog (GH#1110)
+	m_deferredStepperAddress = address;
+	m_deferredStepperCumulativeCycles = g_nCumulativeCycles;
+
+	m_syncEvent.m_cyclesRemaining = 10;	// NB. same for magnet off and on - but perhaps they take different times?
+	g_SynchronousEventMgr.Insert(&m_syncEvent);
+}
+
+int Disk2InterfaceCard::SyncEventCallback(int id, int cycles, ULONG uExecutedCycles)
+{
+	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(id));
+	disk2Card.ControlStepperDeferred(false, 0);
+	return 0;	// Don't repeat event
+}
+
+void Disk2InterfaceCard::ControlStepperDeferred(bool rapidMagnetChange, WORD nextAddress)
+{
+	const WORD address = m_deferredStepperAddress;
+
+	FloppyDrive* pDrive = &m_floppyDrive[m_currDrive];
+	FloppyDisk* pFloppy = &pDrive->m_disk;
 
 	// check for any stepping effect from a magnet
 	// - move only when the magnet opposite the cog is off
@@ -520,6 +550,31 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	if (newPhasePrecise < 0)
 		newPhasePrecise = 0;
 
+	// Check for adjacent magnets being turned off/on in a very short interval (10 cycles is purely based on A2osX). (GH#1110)
+	if (m_ignoreNextStepperOff)
+	{
+		newPhasePrecise = pDrive->m_phasePrecise;
+		m_ignoreNextStepperOff = false;
+	}
+
+	if (rapidMagnetChange)
+	{
+		int addrDelta = (address & 7) - (nextAddress & 7);
+		if (addrDelta < 0) addrDelta = -addrDelta;
+		if (addrDelta == 2 || addrDelta == 6)	// adjacent magnets: both turned off or both turned on
+		{
+			if ((address & 1) == 0)	// adjacent magnets off
+			{
+				newPhasePrecise = pDrive->m_phasePrecise;
+				m_ignoreNextStepperOff = true;
+			}
+			else	// adjacent magnets on
+			{
+				// do nothing for now (TODO: check this)
+			}
+		}
+	}
+
 	// apply magnet step, if any
 	if (newPhasePrecise != pDrive->m_phasePrecise)
 	{
@@ -531,8 +586,13 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	}
 
 #if LOG_DISK_PHASES
+	const ULONG cycleDelta = (ULONG)(m_deferredStepperCumulativeCycles - pDrive->m_lastStepperCycle);
+#endif
+	pDrive->m_lastStepperCycle = m_deferredStepperCumulativeCycles;	// NB. Persisted to save-state
+
+#if LOG_DISK_PHASES
 	LOG_DISK("%08X: track $%s magnet-states %d%d%d%d phase %d %s address $%4X last-stepper %.3fms\r\n",
-		(UINT32)g_nCumulativeCycles,
+		(UINT32)m_deferredStepperCumulativeCycles,
 		GetCurrentTrackString().c_str(),
 		(m_magnetStates >> 3) & 1,
 		(m_magnetStates >> 2) & 1,
@@ -541,7 +601,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 		(address >> 1) & 3,	// phase
 		(address & 1) ? "on " : "off",
 		address,
-		((float)cycleDelta)/(CLK_6502_NTSC/1000.0));
+		((float)cycleDelta) / (CLK_6502_NTSC / 1000.0));
 #endif
 }
 
@@ -1909,7 +1969,7 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 // 5: Added: Sequencer Function
 // 6: Added: Drive Connected & Motor On Cycle
 // 7: Deprecated SS_YAML_KEY_LSS_RESET_SEQUENCER, SS_YAML_KEY_DISK_ACCESSED
-// 8: Added: Last Stepper Access
+// 8: Added: TODO
 static const UINT kUNIT_VERSION = 8;
 
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
@@ -1934,7 +1994,6 @@ static const UINT kUNIT_VERSION = 8;
 #define SS_YAML_KEY_PHASE_PRECISE "Phase (precise)"
 #define SS_YAML_KEY_TRACK "Track"	// deprecated at v4
 #define SS_YAML_KEY_HEAD_WINDOW "Head Window"
-#define SS_YAML_KEY_LAST_STEPPER_ACCESS "Last Stepper Access"
 #define SS_YAML_KEY_LAST_STEPPER_CYCLE "Last Stepper Cycle"
 #define SS_YAML_KEY_MOTOR_ON_CYCLE "Motor On Cycle"
 
@@ -1985,7 +2044,6 @@ void Disk2InterfaceCard::SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, U
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASE, m_floppyDrive[unit].m_phase);
 	yamlSaveHelper.SaveFloat(SS_YAML_KEY_PHASE_PRECISE, m_floppyDrive[unit].m_phasePrecise);	// v4
 	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_HEAD_WINDOW, m_floppyDrive[unit].m_headWindow);		// v4
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_LAST_STEPPER_ACCESS, m_floppyDrive[unit].m_lastStepperAccess);	// v8
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_STEPPER_CYCLE, m_floppyDrive[unit].m_lastStepperCycle);	// v4
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_MOTOR_ON_CYCLE, m_floppyDrive[unit].m_motorOnCycle);	// v6
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_SPINNING, m_floppyDrive[unit].m_spinning);
@@ -2124,7 +2182,9 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv4(YamlLoadHelper& yamlLoadHelper,
 	}
 
 	if (version >= 8)
-		m_floppyDrive[unit].m_lastStepperAccess = yamlLoadHelper.LoadUint(SS_YAML_KEY_LAST_STEPPER_ACCESS);
+	{
+		// TODO
+	}
 
 	yamlLoadHelper.PopMap();
 
