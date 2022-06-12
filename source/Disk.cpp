@@ -1976,7 +1976,7 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 // 5: Added: Sequencer Function
 // 6: Added: Drive Connected & Motor On Cycle
 // 7: Deprecated SS_YAML_KEY_LSS_RESET_SEQUENCER, SS_YAML_KEY_DISK_ACCESSED
-// 8: Added: TODO
+// 8: Added: deferred stepper: event, address & cycle
 static const UINT kUNIT_VERSION = 8;
 
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
@@ -1994,6 +1994,9 @@ static const UINT kUNIT_VERSION = 8;
 #define SS_YAML_KEY_LSS_LATCH_DELAY "LSS Latch Delay"
 #define SS_YAML_KEY_LSS_RESET_SEQUENCER "LSS Reset Sequencer"	// deprecated at v7
 #define SS_YAML_KEY_LSS_SEQUENCER_FUNCTION "LSS Sequencer Function"
+#define SS_YAML_KEY_DEFERRED_STEPPER_EVENT "Deferred Stepper Event"
+#define SS_YAML_KEY_DEFERRED_STEPPER_ADDRESS "Deferred Stepper Address"
+#define SS_YAML_KEY_DEFERRED_STEPPER_CYCLE "Deferred Stepper Cycle"
 
 #define SS_YAML_KEY_DISK2UNIT "Unit"
 #define SS_YAML_KEY_DRIVE_CONNECTED "Drive Connected"
@@ -2074,6 +2077,9 @@ void Disk2InterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_LSS_SHIFT_REG, m_shiftReg);			// v4
 	yamlSaveHelper.SaveInt(SS_YAML_KEY_LSS_LATCH_DELAY, m_latchDelay);			// v4
 	yamlSaveHelper.SaveInt(SS_YAML_KEY_LSS_SEQUENCER_FUNCTION, m_seqFunc.function);	// v5
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_DEFERRED_STEPPER_EVENT, m_deferredStepperEvent);					// v8
+	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_DEFERRED_STEPPER_ADDRESS, m_deferredStepperAddress);			// v8
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_DEFERRED_STEPPER_CYCLE, m_deferredStepperCumulativeCycles);	// v8
 	m_formatTrack.SaveSnapshot(yamlSaveHelper);	// v2
 
 	SaveSnapshotDriveUnit(yamlSaveHelper, DRIVE_1);
@@ -2188,11 +2194,6 @@ bool Disk2InterfaceCard::LoadSnapshotDriveUnitv4(YamlLoadHelper& yamlLoadHelper,
 		m_floppyDrive[unit].m_motorOnCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_MOTOR_ON_CYCLE);
 	}
 
-	if (version >= 8)
-	{
-		// TODO
-	}
-
 	yamlLoadHelper.PopMap();
 
 	return bImageError;
@@ -2274,6 +2275,13 @@ bool Disk2InterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versi
 	if (version <= 6)
 	{
 		(void) yamlLoadHelper.LoadBool(SS_YAML_KEY_DISK_ACCESSED);	// deprecated - but retrieve the value to avoid the "State: Unknown key (Disk Accessed)" warning
+	}
+
+	if (version >= 8)
+	{
+		m_deferredStepperEvent = yamlLoadHelper.LoadBool(SS_YAML_KEY_DEFERRED_STEPPER_EVENT);
+		m_deferredStepperAddress = yamlLoadHelper.LoadUint(SS_YAML_KEY_DEFERRED_STEPPER_ADDRESS);
+		m_deferredStepperCumulativeCycles = yamlLoadHelper.LoadUint64(SS_YAML_KEY_DEFERRED_STEPPER_CYCLE);
 	}
 
 	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
