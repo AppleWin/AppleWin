@@ -63,3 +63,5 @@ It is unclear if port forwarding is necessary.
 ## Other emulators
 
 [Altirra](https://www.virtualdub.org/altirra.html) and [Ample](https://github.com/ksherlock/ample) probably implement a solution very similar to `libslirp`.
+
+[FUSE](https://sourceforge.net/p/fuse-emulator/fuse/ci/master/tree/peripherals/nic/) has a partial implementation which only supports TCP & UDP sockets.
