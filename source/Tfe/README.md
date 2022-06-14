@@ -1,8 +1,12 @@
 # Network emulation
 
-The Windows version emulates **raw socket** networking using [libpcap](https://npcap.com), while in Linux the default is [libslirp](https://gitlab.freedesktop.org/slirp/libslirp).
+## Software using the network
 
-## Alternatives
+See the [list](Software.md).
+
+## Alternative implementations
+
+The Windows version emulates **raw socket** networking using [libpcap](https://npcap.com), while in Linux the default is [libslirp](https://gitlab.freedesktop.org/slirp/libslirp).
 
 ### Virtual DNS
 
@@ -12,7 +16,7 @@ It is important to remember that the Uthernet II card can work **without** raw s
 
 https://npcap.com
 
-Used in AppleWin and VICE.
+Used in AppleWin and VICE. It creates a *bridged* network, where AppleWin operates directly on the LAN.
 
 Pros:
 - no setup required
@@ -26,6 +30,8 @@ Cons:
 ### libslirp
 
 https://gitlab.freedesktop.org/slirp/libslirp
+
+This creates a sub LAN for the emulator, which requires NAT to access the rest of the network.
 
 Default for AppleWin on Linux, available in QEMU and Bochs (see https://bochs.sourceforge.io/doc/docbook/user/using-slirp.html).
 
@@ -54,6 +60,6 @@ Cons:
 
 It is unclear if port forwarding is necessary.
 
-### Altirra and MAME
+## Other emulators
 
-They probably implement a solution very similar to `libslirp`.
+[Altirra](https://www.virtualdub.org/altirra.html) and [Ample](https://github.com/ksherlock/ample) probably implement a solution very similar to `libslirp`.
