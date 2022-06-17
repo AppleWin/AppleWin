@@ -463,7 +463,6 @@ void __stdcall Disk2InterfaceCard::ControlMotor(WORD, WORD address, BYTE, BYTE, 
 void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
 	FloppyDrive* pDrive = &m_floppyDrive[m_currDrive];
-	FloppyDisk* pFloppy = &pDrive->m_disk;
 
 	if (!m_floppyMotorOn)	// GH#525
 	{
@@ -515,6 +514,9 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 				// do nothing for now (TODO: check this)
 			}
 		}
+
+		// complete the deferred stepper event
+		ControlStepperDeferred();
 	}
 
 	// defer the effect of changing the phase
@@ -533,11 +535,11 @@ void Disk2InterfaceCard::InsertSyncEvent(void)
 int Disk2InterfaceCard::SyncEventCallback(int id, int cycles, ULONG uExecutedCycles)
 {
 	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(id));
-	disk2Card.ControlStepperDeferred(false, 0);
+	disk2Card.ControlStepperDeferred();
 	return 0;	// Don't repeat event
 }
 
-void Disk2InterfaceCard::ControlStepperDeferred(bool rapidMagnetChange, WORD nextAddress)
+void Disk2InterfaceCard::ControlStepperDeferred(void)
 {
 	m_deferredStepperEvent = false;
 	const WORD address = m_deferredStepperAddress;
@@ -549,7 +551,8 @@ void Disk2InterfaceCard::ControlStepperDeferred(bool rapidMagnetChange, WORD nex
 	// - move only when the magnet opposite the cog is off
 	// - move in the direction of an adjacent magnet if one is on
 	// - do not move if both adjacent magnets are on (ie. quarter track)
-	// momentum and timing are not accounted for ... maybe one day!
+	// - timing is accounted for in the case when "two phases [are] turned off in rapid sequence" (UTAIIe page 9-13) (GH#1110)
+	// momentum is not accounted for ... maybe one day!
 	int direction = 0;
 	if (m_magnetStates & (1 << ((pDrive->m_phase + 1) & 3)))
 		direction += 1;

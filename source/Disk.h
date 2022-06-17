@@ -209,7 +209,7 @@ private:
 	void UpdateLatchForEmptyDrive(FloppyDrive* pDrive);
 	void InsertSyncEvent(void);
 	static int SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
-	void ControlStepperDeferred(bool adjacentMagnetsOff, WORD nextAddress);
+	void ControlStepperDeferred(void);
 	void ControlStepperLogging(WORD address, unsigned __int64 cumulativeCycles);
 
 	void PreJitterCheck(int phase, BYTE latch);
