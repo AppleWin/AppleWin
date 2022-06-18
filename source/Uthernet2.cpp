@@ -1407,7 +1407,7 @@ BYTE Uthernet2::IO_C0(WORD programcounter, WORD address, BYTE write, BYTE value,
     const uint16_t oldAddress = myDataAddress;
 #endif
 
-    const uint8_t loc = address & 0x0F;
+    const uint8_t loc = address & U2_C0X_MASK;
 
     if (write)
     {
