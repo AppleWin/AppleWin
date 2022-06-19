@@ -27,6 +27,8 @@ add_library(common2 STATIC
   ${HEADER_FILES}
   )
 
+target_compile_features(common2 PUBLIC cxx_std_17)
+
 find_package(Boost REQUIRED
   COMPONENTS program_options
   )

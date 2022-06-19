@@ -27,9 +27,9 @@ namespace common2
     }
   }
 
-  void loadGeometryFromRegistry(const std::string &section, Geometry & geometry)
+  void loadGeometryFromRegistry(const std::string &section, std::optional<Geometry> & geometry)
   {
-    if (geometry.empty)  // otherwise it was user provided
+    if (!geometry)  // otherwise it was user provided
     {
       const std::string path = section + "\\geometry";
       const auto loadValue = [&path](const char * name, int & dest)
@@ -44,10 +44,11 @@ namespace common2
         }
       };
 
-      loadValue("width", geometry.width);
-      loadValue("height", geometry.height);
-      loadValue("x", geometry.x);
-      loadValue("y", geometry.y);
+      geometry = Geometry();
+      loadValue("width", geometry->width);
+      loadValue("height", geometry->height);
+      loadValue("x", geometry->x);
+      loadValue("y", geometry->y);
     }
   }
 

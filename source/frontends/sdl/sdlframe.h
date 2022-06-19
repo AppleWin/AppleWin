@@ -4,6 +4,7 @@
 #include "Configuration/Config.h"
 #include "frontends/common2/commonframe.h"
 #include "frontends/common2/speed.h"
+#include "frontends/common2/programoptions.h"
 #include <SDL.h>
 
 namespace common2
@@ -62,6 +63,8 @@ namespace sa2
 
     void SetFullSpeed(const bool value);
     bool CanDoFullSpeed();
+
+    common2::Geometry getGeometryOrDefault(const std::optional<common2::Geometry> & geometry) const;
 
     static double GetRelativePosition(const int value, const int width);
 

@@ -20,7 +20,7 @@ namespace po = boost::program_options;
 namespace
 {
 
-  void parseGeometry(const std::string & s, common2::Geometry & geometry)
+  void parseGeometry(const std::string & s, std::optional<common2::Geometry> & geometry)
   {
     std::smatch m;
     if (std::regex_match(s, m, std::regex("^(\\d+)x(\\d+)(\\+(\\d+)\\+(\\d+))?$")))
@@ -28,12 +28,13 @@ namespace
       const size_t groups = m.size();
       if (groups == 6)
       {
-        geometry.width = std::stoi(m.str(1));
-        geometry.height = std::stoi(m.str(2));
+        geometry = common2::Geometry();
+        geometry->width = std::stoi(m.str(1));
+        geometry->height = std::stoi(m.str(2));
         if (!m.str(3).empty())
         {
-          geometry.x = std::stoi(m.str(4));
-          geometry.y = std::stoi(m.str(5));
+          geometry->x = std::stoi(m.str(4));
+          geometry->y = std::stoi(m.str(5));
         }
         return;
       }
@@ -188,7 +189,6 @@ namespace common2
 
       if (vm.count("geometry"))
       {
-        options.geometry.empty = false;
         parseGeometry(vm["geometry"].as<std::string>(), options.geometry);
       }
 
