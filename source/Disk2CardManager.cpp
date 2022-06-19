@@ -143,3 +143,14 @@ void Disk2CardManager::GetFilenameAndPathForSaveState(std::string& filename, std
 		}
 	}
 }
+
+void Disk2CardManager::SetStepperDefer(bool defer)
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
+		{
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).SetStepperDefer(defer);
+		}
+	}
+}

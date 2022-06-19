@@ -166,6 +166,7 @@ public:
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
 	bool DriveSwap(void);
 	bool IsDriveConnected(int drive) { return m_floppyDrive[drive].m_isConnected; }
+	void SetStepperDefer(bool defer) { m_deferStepper = defer; }
 
 	static const std::string& GetSnapshotCardName(void);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
@@ -280,6 +281,7 @@ private:
 	SEQUENCER_FUNCTION m_seqFunc;
 	UINT m_dbgLatchDelayedCnt;
 
+	bool m_deferStepper;	// debug: can disable via cmd-line
 	bool m_deferredStepperEvent;
 	WORD m_deferredStepperAddress;
 	unsigned __int64 m_deferredStepperCumulativeCycles;
