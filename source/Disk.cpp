@@ -73,7 +73,6 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	m_diskLastReadLatchCycle = 0;
 	m_enhanceDisk = true;
 	m_is13SectorFirmware = false;
-	m_deferStepper = true;
 	m_deferredStepperEvent = false;
 	m_deferredStepperAddress = 0;
 	m_deferredStepperCumulativeCycles = 0;
@@ -492,7 +491,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 			m_magnetStates &= ~phase_bit;	// phase off
 	}
 
-	if (!m_deferStepper)
+	if (!GetCardMgr().GetDisk2CardMgr().IsStepperDeferred())
 	{
 		m_deferredStepperAddress = address;
 		m_deferredStepperCumulativeCycles = g_nCumulativeCycles;
