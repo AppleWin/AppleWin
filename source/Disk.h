@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskLog.h"
 #include "DiskFormatTrack.h"
 #include "DiskImage.h"
+#include "SynchronousEventManager.h"
 
 enum Drive_e
 {
@@ -206,6 +207,10 @@ private:
 	bool GetFirmware(WORD lpNameId, BYTE* pDst);
 	void InitFirmware(LPBYTE pCxRomPeripheral);
 	void UpdateLatchForEmptyDrive(FloppyDrive* pDrive);
+	void InsertSyncEvent(void);
+	static int SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
+	void ControlStepperDeferred(void);
+	void ControlStepperLogging(WORD address, unsigned __int64 cumulativeCycles);
 
 	void PreJitterCheck(int phase, BYTE latch);
 	void AddJitter(int phase, FloppyDisk& floppy);
@@ -274,6 +279,11 @@ private:
 
 	SEQUENCER_FUNCTION m_seqFunc;
 	UINT m_dbgLatchDelayedCnt;
+
+	bool m_deferredStepperEvent;
+	WORD m_deferredStepperAddress;
+	unsigned __int64 m_deferredStepperCumulativeCycles;
+	SyncEvent m_syncEvent;
 
 	// Jitter (GH#930)
 	static const BYTE m_T00S00Pattern[];

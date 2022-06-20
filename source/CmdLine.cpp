@@ -549,6 +549,10 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpNextArg = GetNextArg(lpNextArg);
 			g_cmdLine.wavFileMockingboard = lpCmdLine;
 		}
+		else if (strcmp(lpCmdLine, "-no-disk2-stepper-defer") == 0)	// a debug switch (likely to be removed in a future version)
+		{
+			g_cmdLine.noDisk2StepperDefer = true;
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);

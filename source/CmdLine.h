@@ -22,6 +22,7 @@ struct CmdLine
 		snesMaxAltControllerType[1] = false;
 		supportDCD = false;
 		enableDumpToRealPrinter = false;
+		noDisk2StepperDefer = false;
 		szImageName_harddisk[HARDDISK_1] = NULL;
 		szImageName_harddisk[HARDDISK_2] = NULL;
 		szSnapshotName = NULL;
@@ -63,6 +64,7 @@ struct CmdLine
 	bool snesMaxAltControllerType[2];
 	bool supportDCD;
 	bool enableDumpToRealPrinter;
+	bool noDisk2StepperDefer;	// debug
 	SS_CARDTYPE slotInsert[NUM_SLOTS];
 	LPCSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES];
 	bool driveConnected[NUM_SLOTS][NUM_DRIVES];
