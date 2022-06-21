@@ -502,7 +502,6 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	if (m_syncEvent.m_active)
 	{
 		// Check for adjacent magnets being turned off/on in a very short interval (10 cycles is purely based on A2osX). (GH#1110)
-		// . also ProDOS rapidly turning off all 4 magnets.
 		g_SynchronousEventMgr.Remove(m_syncEvent.m_id);
 		m_deferredStepperEvent = false;
 
@@ -513,17 +512,22 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 			if ((address & 1) == 0)	// adjacent magnets off
 			{
 				// 2 adjacent magnets off in quick succession don't move the cog (GH#1110)
+				// . also DOS3.2, Pascal and ProDOS rapidly turning off all 4 magnets.
 				ControlStepperLogging(m_deferredStepperAddress, m_deferredStepperCumulativeCycles);
 				ControlStepperLogging(address, g_nCumulativeCycles);
 				return;
 			}
-			else	// adjacent magnets on
+			else	// adjacent magnets turned on
 			{
-				// do nothing for now (TODO: check this)
+				// take no action - can't find any titles that ever do this!
+				const std::string msg = "Disk: ControlStepper() - adjacent magnets turned on\n";
+				LogOutput(msg.c_str());
+				LogFileOutput(msg.c_str());
 			}
 		}
 
 		// complete the deferred stepper event
+		// eg. Glutton, EDD III - both just combinations of turning off all 4 magnets
 		ControlStepperDeferred();
 	}
 
