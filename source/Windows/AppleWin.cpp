@@ -833,6 +833,9 @@ static void RepeatInitialization(void)
 		if (g_cmdLine.bRemoveNoSlotClock)
 			MemRemoveNoSlotClock();
 
+		if (g_cmdLine.noDisk2StepperDefer)
+			GetCardMgr().GetDisk2CardMgr().SetStepperDefer(false);
+
 		// Call DebugInitialize() after SetCurrentImageDir()
 		DebugInitialize();
 		LogFileOutput("Main: DebugInitialize()\n");
