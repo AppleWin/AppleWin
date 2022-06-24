@@ -521,8 +521,8 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 			{
 				// take no action - can't find any titles that ever do this!
 				const std::string msg = "Disk: ControlStepper() - adjacent magnets turned on\n";
-				LogOutput(msg.c_str());
-				LogFileOutput(msg.c_str());
+				LogOutput("%s", msg.c_str());
+				LogFileOutput("%s", msg.c_str());
 			}
 		}
 
