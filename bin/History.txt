@@ -9,11 +9,14 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.30.11.0 - 8 Jun 2022
+1.30.11.0 - 23 Jun 2022
 -----------------------
 . [Change #1103] Debugger: support memory breakpoints for HDD DMA r/w's:
 	- When the debugger is active (eg. breakpoints enabled) then trap on HDD r/w's that match the BPM[R|W].
 	- NB. the breakpoint will fire after the whole HDD r/w operation has completed.
+. [Bug #1113] Fix for Uthernet II registers repeating in DEVICE SELECT I/O space. [@audetto]
+. [Bug #1110] Fix for WOZ and quarter tracks for A2osX's 192K floppy image.
+	- Support two adjacent phases turned off in rapid sequence.
 . [Bug #1108] Fix for C3 ROM not set correctly when loading a save-state with a VidHD (in slot 3).
 . [Bug #1106] Fix for minor screen corruption with VidHD enabled.
 	- Debugger: fix for mouse-click hit-tests with VidHD enabled.
