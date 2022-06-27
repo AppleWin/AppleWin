@@ -22,9 +22,9 @@ Peripheral cards and add-on hardware supported:
 - No Slot Clock (NSC)
 
 
-Download latest (stable) release: [AppleWin v1.29.16.0](https://github.com/AppleWin/AppleWin/releases/download/v1.29.16.0/AppleWin1.29.16.0.zip)
+Download latest (stable) release: [AppleWin v1.30.10.0](https://github.com/AppleWin/AppleWin/releases/download/v1.30.10.0/AppleWin1.30.10.0.zip)
 
-Release Notes: [v1.29.16.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.29.16.0)
+Release Notes: [v1.30.10.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.30.10.0)
 
 
 Building

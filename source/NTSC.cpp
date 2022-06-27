@@ -743,8 +743,13 @@ inline void updateVideoScannerHorzEOL_SHR()
 //===========================================================================
 inline void updateVideoScannerAddress()
 {
-	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && GetVideo().GetVideoRefreshRate() == VR_50HZ)	// GH#763
-		g_nColorBurstPixels = 0;	// instantaneously kill color-burst!
+	if (g_nVideoMixed && GetVideo().GetVideoRefreshRate() == VR_50HZ)	// GH#763
+	{
+		if (g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+			g_nColorBurstPixels = 0;	// instantaneously kill color-burst!
+		else if (g_nVideoClockVert == 0 && (GetVideo().GetVideoMode() & VF_TEXT) == 0)
+			g_nColorBurstPixels = 1024;	// setup for line-0 (when TEXT is off), ie. so GetColorBurst() returns true below (GH#1119)
+	}
 
 	if (g_pFuncUpdateGraphicsScreen == updateScreenSHR)
 	{
