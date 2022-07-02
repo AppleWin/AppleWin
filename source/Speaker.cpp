@@ -61,7 +61,7 @@ static const DWORD g_dwDSSpkrBufferSize = MAX_SAMPLES * sizeof(short) * g_nSPKR_
 static short*	g_pSpeakerBuffer = NULL;
 
 // Globals (SOUND_WAVE)
-const short		SPKR_DATA_INIT = (short)0x8000;
+const short		SPKR_DATA_INIT = (short)0x8001;
 
 short		g_nSpeakerData	= SPKR_DATA_INIT;
 static UINT		g_nBufferIdx	= 0;
@@ -322,8 +322,14 @@ static void ReinitRemainderBuffer(UINT nCyclesRemaining)
 	_ASSERT(g_nRemainderBufferIdx < g_nRemainderBufferSize);
 }
 
+static int g_count = 0;
+static bool g_flag = false;
 static void UpdateRemainderBuffer(ULONG* pnCycleDiff)
 {
+	const bool flag = *pnCycleDiff <= g_nRemainderBufferSize;	// gap between $C030 accesses is less than a 44.1kHz sample
+	if (regs.pc < 0xc000 && !g_flag && flag)
+		g_flag = false;// true;
+
 	if(g_nRemainderBufferIdx)
 	{
 		while((g_nRemainderBufferIdx < g_nRemainderBufferSize) && *pnCycleDiff)
@@ -339,11 +345,24 @@ static void UpdateRemainderBuffer(ULONG* pnCycleDiff)
 			signed long nSampleMean = 0;
 			for(UINT i=0; i<g_nRemainderBufferSize; i++)
 				nSampleMean += (signed long) g_pRemainderBuffer[i];
+			signed long total = nSampleMean;
 			nSampleMean /= (signed long) g_nRemainderBufferSize;
 
 			if(g_nBufferIdx < SPKR_SAMPLE_RATE-1)
 				g_pSpeakerBuffer[g_nBufferIdx++] = DCFilter( (short)nSampleMean );
+
+			if (g_flag)
+			{
+				LogOutput("Mean=%d, Total=%d: ", nSampleMean, total);
+				for (UINT i = 0; i < g_nRemainderBufferSize; i++)
+					LogOutput("%d, ", g_pRemainderBuffer[i]);
+				LogOutput("\n");
+			}
 		}
+	}
+	else
+	{
+		g_count++;
 	}
 }
 
@@ -404,7 +423,7 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
         ResetDCFilter();
 
       if (g_nSpeakerData == speakerDriveLevel)
-        g_nSpeakerData = ~speakerDriveLevel;
+        g_nSpeakerData = -speakerDriveLevel;
       else
         g_nSpeakerData = speakerDriveLevel;
   }
