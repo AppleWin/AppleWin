@@ -806,7 +806,7 @@ static void RepeatInitialization(void)
 				res = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight, g_cmdLine.userSpecifiedWidth, g_cmdLine.userSpecifiedHeight);
 
 			if (res)
-				LogFileOutput("Best resolution for -fs-height/height=x switch(es): Width=%d, Height=%d\n", bestWidth, bestHeight);
+				LogFileOutput("Best resolution for -fs-width/height=x switch(es): Width=%d, Height=%d\n", bestWidth, bestHeight);
 			else
 				LogFileOutput("Failed to set parameter for -fs-width/height=x switch(es)\n");
 		}
