@@ -82,6 +82,9 @@
 			<li>best: picks the highest resolution where the height is an integer multiple of (192*2)</li>
 			<li>nnnn: select a specific resolution with height=nnnn pixels</li>
 		</ul>
+		-fs-width=&lt;nnnn&gt;<br>
+		Use in conjunction with -fs-height to select a better aspect ratio for full-screen mode.<br>
+		EG. for 4:3 aspect ratio on monitors that support it: -no-full-screen -fs-width=1600 -fs-height=1200<br><br>
 		NB. Combine with <em>-no-full-screen</em> to start in Windowed mode. Without this it'll just default to full-screen.<br>
 		NB. When switching to Windowed mode the default desktop resolution will be restored, and when switching back to full-screen mode this better resolution will again be used.<br><br>
 		-rom &lt;file&gt;<br>
