@@ -23,6 +23,9 @@ namespace common2
     std::string disk1;
     std::string disk2;
 
+    std::string hardDisk1;
+    std::string hardDisk2;
+
     std::string snapshotFilename;
     bool loadSnapshot = false;
 
