@@ -40,6 +40,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Debugger/Debug.h"	// For DWORD extbench
 
+#define FREQ_88200Hz 1
+#if FREQ_88200Hz
+#define FREQ_MUL 2
+#endif
+
+#define DO_RAMP 1
+#if DO_RAMP
+#define RAMP_DIV 4
+static short g_rampDiv = 0;
+static int g_rampCount = 0;
+#endif
+
 // Notes:
 //
 // [OLD: 23.191 Apple CLKs == 44100Hz (CLK_6502/44100)]
@@ -61,7 +73,7 @@ static const DWORD g_dwDSSpkrBufferSize = MAX_SAMPLES * sizeof(short) * g_nSPKR_
 static short*	g_pSpeakerBuffer = NULL;
 
 // Globals (SOUND_WAVE)
-const short		SPKR_DATA_INIT = (short)0x8001;
+const short		SPKR_DATA_INIT = (short)0x7FFF;
 
 short		g_nSpeakerData	= SPKR_DATA_INIT;
 static UINT		g_nBufferIdx	= 0;
@@ -99,6 +111,15 @@ static bool g_bSpkrOutputToRiff = false;
 void Spkr_OutputToRiff(void)
 {
 	g_bSpkrOutputToRiff = true;
+}
+
+unsigned int Spkr_GetSampleRate(void)
+{
+#if FREQ_88200Hz
+	return SPKR_SAMPLE_RATE * FREQ_MUL;
+#else
+	return SPKR_SAMPLE_RATE;
+#endif
 }
 
 //=============================================================================
@@ -269,7 +290,11 @@ void SpkrInitialize ()
 	{
 		InitRemainderBuffer();
 
+#if FREQ_88200Hz
+		g_pSpeakerBuffer = new short[SPKR_SAMPLE_RATE * FREQ_MUL];	// Buffer can hold a max of 1 seconds worth of samples
+#else
 		g_pSpeakerBuffer = new short [SPKR_SAMPLE_RATE];	// Buffer can hold a max of 1 seconds worth of samples
+#endif
 	}
 }
 
@@ -311,6 +336,90 @@ void SpkrSetEmulationType (SoundType_e newtype)
 
 //=============================================================================
 
+#if FREQ_88200Hz
+
+static void ReinitRemainderBuffer(UINT nCyclesRemaining)
+{
+	if (nCyclesRemaining == 0)
+		return;
+
+	for (g_nRemainderBufferIdx = 0; g_nRemainderBufferIdx < nCyclesRemaining; g_nRemainderBufferIdx++)
+		g_pRemainderBuffer[g_nRemainderBufferIdx] = g_nSpeakerData;
+
+	_ASSERT(g_nRemainderBufferIdx < g_nRemainderBufferSize);
+}
+
+static void UpdateRemainderBuffer(ULONG* pnCycleDiff)
+{
+	if (g_nRemainderBufferIdx)
+	{
+		while ((g_nRemainderBufferIdx < g_nRemainderBufferSize) && *pnCycleDiff)
+		{
+			g_pRemainderBuffer[g_nRemainderBufferIdx] = g_nSpeakerData;
+			g_nRemainderBufferIdx++;
+			(*pnCycleDiff)--;
+
+			if (g_rampCount)
+			{
+				int data = (int) g_nSpeakerData + (int) g_rampDiv;
+				if (data > SPKR_DATA_INIT)
+				{
+					data = SPKR_DATA_INIT;
+					g_rampCount = 0;
+				}
+				else if (data < -SPKR_DATA_INIT)
+				{
+					data = -SPKR_DATA_INIT;
+					g_rampCount = 0;
+				}
+
+				g_nSpeakerData = (short) data;
+			}
+		}
+
+		if (g_nRemainderBufferIdx == g_nRemainderBufferSize)
+		{
+			g_nRemainderBufferIdx = 0;
+			signed long nSampleMean = 0;
+			for (UINT i = 0; i < g_nRemainderBufferSize; i++)
+				nSampleMean += (signed long)g_pRemainderBuffer[i];
+			signed long total = nSampleMean;
+			nSampleMean /= (signed long)g_nRemainderBufferSize;
+
+			if (g_nBufferIdx < SPKR_SAMPLE_RATE - 1)
+				g_pSpeakerBuffer[g_nBufferIdx++] = DCFilter((short)nSampleMean);
+			else
+				_ASSERT(0);
+		}
+	}
+}
+
+static void UpdateSpkr()
+{
+	if (!g_bFullSpeed || SoundCore_GetTimerState())
+	{
+		ULONG nCycleDiff = (ULONG)(g_nCumulativeCycles - g_nSpkrLastCycle);
+#if FREQ_88200Hz
+		nCycleDiff *= FREQ_MUL;	// 88.2kHz: double sample rate
+#endif
+
+		UpdateRemainderBuffer(&nCycleDiff);
+
+		ULONG nNumSamples = (ULONG)((double)nCycleDiff / g_fClksPerSpkrSample);
+
+		ULONG nCyclesRemaining = (ULONG)((double)nCycleDiff - (double)nNumSamples * g_fClksPerSpkrSample);
+
+		while ((nNumSamples--) && (g_nBufferIdx < SPKR_SAMPLE_RATE - 1))
+			g_pSpeakerBuffer[g_nBufferIdx++] = DCFilter(g_nSpeakerData);
+
+		ReinitRemainderBuffer(nCyclesRemaining);	// Partially fill 1Mhz sample buffer
+	}
+
+	g_nSpkrLastCycle = g_nCumulativeCycles;
+}
+
+#else
+
 static void ReinitRemainderBuffer(UINT nCyclesRemaining)
 {
 	if(nCyclesRemaining == 0)
@@ -337,6 +446,12 @@ static void UpdateRemainderBuffer(ULONG* pnCycleDiff)
 			g_pRemainderBuffer[g_nRemainderBufferIdx] = g_nSpeakerData;
 			g_nRemainderBufferIdx++;
 			(*pnCycleDiff)--;
+
+			if (g_rampCount)
+			{
+				g_nSpeakerData += g_rampDiv;
+				g_rampCount--;
+			}
 		}
 
 		if(g_nRemainderBufferIdx == g_nRemainderBufferSize)
@@ -387,6 +502,8 @@ static void UpdateSpkr()
   g_nSpkrLastCycle = g_nCumulativeCycles;
 }
 
+#endif
+
 //=============================================================================
 
 // Called by emulation code when Speaker I/O reg is accessed
@@ -422,10 +539,27 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
       if (!g_bFullSpeed)
         ResetDCFilter();
 
-      if (g_nSpeakerData == speakerDriveLevel)
+#if 0
+	// This immediately flips from +N to -N/RAMP_DIV
+	// - When a change in voltage should just start stepping in the opposite direction
+      if (g_nSpeakerData < 0)
         g_nSpeakerData = -speakerDriveLevel;
       else
         g_nSpeakerData = speakerDriveLevel;
+#if DO_RAMP
+	  g_nSpeakerData /= RAMP_DIV;
+	  g_rampDiv = g_nSpeakerData;
+	  g_rampCount = 1;
+#endif
+#else
+	  if (g_nSpeakerData > 0)
+		  speakerDriveLevel = -speakerDriveLevel;
+#if DO_RAMP
+	  g_rampDiv = speakerDriveLevel / RAMP_DIV;
+	  g_rampCount = 1;
+#endif
+#endif
+
   }
 
   return MemReadFloatingBus(nExecutedCycles);
@@ -920,7 +1054,11 @@ bool Spkr_DSInit()
 
 	SpeakerVoice.bIsSpeaker = true;
 
+#if FREQ_88200Hz
+	HRESULT hr = DSGetSoundBuffer(&SpeakerVoice, DSBCAPS_CTRLVOLUME, g_dwDSSpkrBufferSize, SPKR_SAMPLE_RATE * FREQ_MUL, 1, "Spkr");
+#else
 	HRESULT hr = DSGetSoundBuffer(&SpeakerVoice, DSBCAPS_CTRLVOLUME, g_dwDSSpkrBufferSize, SPKR_SAMPLE_RATE, 1, "Spkr");
+#endif
 	if (FAILED(hr))
 	{
 		LogFileOutput("Spkr_DSInit: DSGetSoundBuffer failed (%08X)\n", hr);

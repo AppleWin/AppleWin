@@ -31,6 +31,7 @@ void    Spkr_Unmute();
 bool    Spkr_IsActive();
 bool    Spkr_DSInit();
 void	Spkr_OutputToRiff(void);
+unsigned int Spkr_GetSampleRate(void);
 void    SpkrSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    SpkrLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 
