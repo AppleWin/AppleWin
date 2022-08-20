@@ -326,8 +326,9 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 			}
 
 			pFloppy->m_byte = (currentPosition * pFloppy->m_nibbles) / currentTrackLength;	// Ref: WOZ-1.01
+			pFloppy->m_byte += 1;	// Round-up for sensitive cross-track sync check (GH#1022)
 
-			if (pFloppy->m_byte == (pFloppy->m_nibbles-1))	// Last nibble may not be complete, so advance by 1 nibble
+			if (pFloppy->m_byte >= (pFloppy->m_nibbles-1))	// Last nibble may not be complete, so advance by 1 nibble
 				pFloppy->m_byte = 0;
 
 			pFloppy->m_bitOffset = pFloppy->m_byte*8;
@@ -1239,7 +1240,11 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	FloppyDisk& floppy = drive.m_disk;
 
 	if (!floppy.m_trackimagedata && floppy.m_imagehandle)
+	{
 		ReadTrack(m_currDrive, uExecutedCycles);
+		// NB. ReadTrack() has called GetBitCellDelta(), so the subsequent call to GetBitCellDelta() below just returns bitCellDelta==0
+		// So could just return at this point.
+	}
 
 	if (!floppy.m_trackimagedata)
 	{
