@@ -301,8 +301,15 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 			UpdateBitStreamPosition(*pFloppy, bitCellDelta);
 		}
 
-		const UINT32 currentPosition = pFloppy->m_byte;
-		const UINT32 currentTrackLength = pFloppy->m_nibbles;
+		if (ImageIsWOZ(pFloppy->m_imagehandle) && (pFloppy->m_bitCount == 0))
+		{
+			// WOZ: m_bitCount only ever 0 on initial power on
+			pFloppy->m_bitOffset = 0;
+			pFloppy->m_bitCount = 8;
+		}
+
+		const UINT32 currentBitPosition = pFloppy->m_bitOffset;
+		const UINT32 currentBitTrackLength = pFloppy->m_bitCount;
 
 		ImageReadTrack(
 			pFloppy->m_imagehandle,
@@ -312,7 +319,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 			&pFloppy->m_bitCount,
 			m_enhanceDisk);
 
-		if (!ImageIsWOZ(pFloppy->m_imagehandle) || (currentTrackLength == 0))
+		if (!ImageIsWOZ(pFloppy->m_imagehandle))
 		{
 			pFloppy->m_byte = 0;
 		}
@@ -325,14 +332,15 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 				pFloppy->m_bitCount = 8;
 			}
 
-			pFloppy->m_byte = (currentPosition * pFloppy->m_nibbles) / currentTrackLength;	// Ref: WOZ-1.01
-			pFloppy->m_byte += 1;	// Round-up for sensitive cross-track sync check (GH#1022)
+			pFloppy->m_bitOffset = (currentBitPosition * pFloppy->m_bitCount) / currentBitTrackLength;	// Ref: WOZ-1.01
+			pFloppy->m_bitOffset += 7;	// Round-up for sensitive cross-track sync check (GH#1022)
 
-			if (pFloppy->m_byte >= (pFloppy->m_nibbles-1))	// Last nibble may not be complete, so advance by 1 nibble
-				pFloppy->m_byte = 0;
+			if (pFloppy->m_bitOffset >= pFloppy->m_bitCount)
+				pFloppy->m_bitOffset = 0;
 
-			pFloppy->m_bitOffset = pFloppy->m_byte*8;
-			pFloppy->m_bitMask = 1 << 7;
+			pFloppy->m_byte = pFloppy->m_bitOffset / 8;
+			pFloppy->m_bitMask = 1 << (7 - (pFloppy->m_bitOffset % 8));
+
 			pFloppy->m_extraCycles = 0.0;
 			pDrive->m_headWindow = 0;
 		}
