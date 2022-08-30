@@ -1450,6 +1450,12 @@ void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCy
 		return;
 	}
 
+	if (!drive.m_spinning)
+		return;
+
+	if (!floppy.m_trackimagedata)	// GH#1126
+		return;
+
 #if LOG_DISK_WOZ_SHIFTWRITE
 	LOG_DISK("T$%02X, bitOffset=%04X: %02X (%d bits)\n", drive.m_phase/2, floppy.m_bitOffset, m_shiftReg, bitCellRemainder);
 #endif
