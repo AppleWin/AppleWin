@@ -5415,12 +5415,12 @@ int _SearchMemoryFind(
 	g_vMemorySearchResults.clear();
 	g_vMemorySearchResults.push_back( NO_6502_TARGET );
 
-	WORD nAddress;
-	for ( nAddress = nAddressStart; nAddress < nAddressEnd; nAddress++ )
+	uint32_t nAddress;	// NB. can't be uint16_t, since may need to count to 0x10000 if searching up to and including 0xFFFF
+	for ( nAddress = nAddressStart; nAddress <= nAddressEnd; nAddress++ )
 	{
 		bool bMatchAll = true;
 
-		WORD nAddress2 = nAddress;
+		uint32_t nAddress2 = nAddress;
 
 		int nMemBlocks = vMemorySearchValues.size();
 		for ( int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
@@ -5463,8 +5463,7 @@ int _SearchMemoryFind(
 				if ((iBlock + 1) == nMemBlocks) // there is no next block, hence we match
 					continue;
 
-				WORD nAddress3 = nAddress2;
-				for (nAddress3 = nAddress2; nAddress3 < nAddressEnd; nAddress3++ )
+				for (uint32_t nAddress3 = nAddress2; nAddress3 < nAddressEnd; nAddress3++ )
 				{
 					if ((ms.m_iType == MEM_SEARCH_BYTE_EXACT    ) || 
 						(ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT) ||
