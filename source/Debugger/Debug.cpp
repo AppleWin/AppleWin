@@ -5415,7 +5415,7 @@ int _SearchMemoryFind(
 	g_vMemorySearchResults.clear();
 	g_vMemorySearchResults.push_back( NO_6502_TARGET );
 
-	uint32_t nAddress;	// NB. can't be uint16_t, since may need to count to 0x10000 if searching up to and including 0xFFFF
+	uint32_t nAddress;	// NB. can't be uint16_t, since need to count up to 0x10000 if nAddressEnd is 0xFFFF
 	for ( nAddress = nAddressStart; nAddress <= nAddressEnd; nAddress++ )
 	{
 		bool bMatchAll = true;
