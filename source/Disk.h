@@ -68,6 +68,10 @@ public:
 		m_trackimage = NULL;
 		m_trackimagedata = false;
 		m_trackimagedirty = false;
+		m_initialBitOffset = 0;
+		m_revs = 0;
+		m_numSyncFFs = 0;
+		m_latchWasSyncFF = false;
 	}
 
 public:
@@ -85,6 +89,10 @@ public:
 	LPBYTE m_trackimage;
 	bool m_trackimagedata;
 	bool m_trackimagedirty;
+	UINT m_initialBitOffset;
+	UINT m_revs;
+	UINT m_numSyncFFs;
+	bool m_latchWasSyncFF;
 };
 
 class FloppyDrive

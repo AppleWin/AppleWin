@@ -346,6 +346,9 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 		}
 
 		pFloppy->m_trackimagedata = (pFloppy->m_nibbles != 0);
+
+		pFloppy->m_initialBitOffset = pFloppy->m_bitOffset;
+		pFloppy->m_revs = 0;
 	}
 }
 
@@ -1196,6 +1199,9 @@ __forceinline void Disk2InterfaceCard::IncBitStream(FloppyDisk& floppy)
 		floppy.m_bitOffset = 0;
 		floppy.m_byte = 0;
 	}
+
+	if (floppy.m_bitOffset == floppy.m_initialBitOffset)
+		floppy.m_revs++;
 }
 
 void Disk2InterfaceCard::PreJitterCheck(int phase, BYTE latch)
@@ -1345,6 +1351,51 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 													: (rand() < RAND_THRESHOLD(3, 10)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
 
 		IncBitStream(floppy);
+#if 0
+		if (floppy.m_revs && drive.m_phase >= (33 * 2) && floppy.m_bitOffset == 0x6f1f)	// seam
+		{
+			if (floppy.m_revs & 1)	// alt revs
+				IncBitStream(floppy);
+		}
+#endif
+#if 1
+		if (floppy.m_revs && floppy.m_numSyncFFs == 100)	// seam
+		{
+//			LogOutput("Disk:(-) T%05.2f (revs=%d)\n", drive.m_phasePrecise / 2, floppy.m_revs);
+
+			LogOutput("Disk:(-) T%05.2f jitter - slip 1 bitcell (revs=%d)\n", drive.m_phasePrecise / 2, floppy.m_revs);
+			IncBitStream(floppy);
+
+#if 0
+			for (int i = 0; i < 3; i++)
+			{
+				if (rand() < RAND_THRESHOLD(9, 10))
+				{
+					LogOutput("Disk:(%d) T%05.2f jitter - slip 1 bitcell  (revs=%d) (rand)\n", i, drive.m_phasePrecise / 2, floppy.m_revs);
+					IncBitStream(floppy);
+				}
+				else
+				{
+					LogOutput("Disk:(%d) T%05.2f jitter - ***  SKIP  ***  (revs=%d) (rand)\n", i, drive.m_phasePrecise / 2, floppy.m_revs);
+				}
+			}
+#endif
+
+#if 0	// NG
+			if (floppy.m_extraCycles > 0.0)
+			{
+				floppy.m_extraCycles -= 1.0;
+				LogOutput("Disk: T%05.2f jitter - m_extraCycles--  (revs=%d)\n", drive.m_phasePrecise / 2, floppy.m_revs);
+			}
+			else
+			{
+				LogOutput("Disk: T%05.2f jitter - m_extraCycles=0  (revs=%d)\n", drive.m_phasePrecise / 2, floppy.m_revs);
+			}
+#endif
+
+			floppy.m_numSyncFFs = 0;
+		}
+#endif
 
 		m_shiftReg <<= 1;
 		m_shiftReg |= outputBit;
@@ -1364,6 +1415,15 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 				m_latchDelay += 4;	// extend by 4us (so 7us again) - GH#662
 
 				m_dbgLatchDelayedCnt++;
+//				if (m_floppyLatch == 0xff && m_dbgLatchDelayedCnt == 2)	// Fix for LSS - GH#1125
+//					floppy.m_extraCycles = 0.0;
+//				if (m_floppyLatch == 0xff && m_dbgLatchDelayedCnt == 2 && floppy.m_extraCycles == 2.0)	// Fix for LSS - GH#1125
+//					floppy.m_extraCycles = 3.0;
+				if (m_floppyLatch == 0xff && m_dbgLatchDelayedCnt == 2)	// Fix for LSS - GH#1125
+				{
+					floppy.m_numSyncFFs++;
+					floppy.m_latchWasSyncFF = true;
+				}
 #if LOG_DISK_NIBBLES_READ
 				if (m_dbgLatchDelayedCnt >= 3)
 				{
@@ -1388,6 +1448,11 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 			{
 				m_latchDelay = 7;
 				m_shiftReg = 0;
+
+				if (floppy.m_latchWasSyncFF)
+					floppy.m_latchWasSyncFF = false;
+				else
+					floppy.m_numSyncFFs = 0;
 #if LOG_DISK_NIBBLES_READ
 				// May not actually be read by 6502 (eg. Prologue's CHKSUM 4&4 nibble pair), but still pass to the log's nibble reader
 				m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
