@@ -1710,7 +1710,10 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 		shiftReg |= outputBit;
 
 		if (shiftReg == 0x01)
-			nibbleStartBitOffset = floppy.m_bitOffset;
+		{
+			nibbleStartBitOffset = floppy.m_bitOffset - 1;
+			if (nibbleStartBitOffset < 0) nibbleStartBitOffset += floppy.m_bitCount;
+		}
 	}
 
 	// Output any remaining zeroCount
