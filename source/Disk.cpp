@@ -343,6 +343,8 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 
 			pFloppy->m_extraCycles = 0.0;
 			pDrive->m_headWindow = 0;
+
+			FindSeamWOZ(*pFloppy, pDrive->m_phasePrecise/2);
 		}
 
 		pFloppy->m_trackimagedata = (pFloppy->m_nibbles != 0);
@@ -1334,7 +1336,7 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 #if _DEBUG
 	static int dbgWOZ = 0;
-	if (dbgWOZ)
+	if (dbgWOZ && drive.m_phase == 66)
 	{
 		dbgWOZ = 0;
 		DumpTrackWOZ(floppy);	// Enable as necessary
@@ -1543,6 +1545,94 @@ void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCy
 
 //===========================================================================
 
+// Simple:
+// . find [start,end] of longest run of FF/10 sync nibbles
+void Disk2InterfaceCard::FindSeamWOZ(FloppyDisk floppy, float track)	// pass a copy of m_floppy
+{
+	BYTE shiftReg = 0;
+	BYTE prevShiftReg = 0;
+	UINT zeroCount = 0;
+
+	int startBitOffset = -1;	// NB. change this to start of first FF/10
+	floppy.m_bitOffset = 0;
+
+	floppy.m_byte = floppy.m_bitOffset / 8;
+	const UINT remainder = 7 - (floppy.m_bitOffset & 7);
+	floppy.m_bitMask = 1 << remainder;
+
+	int prevNibbleStartBitOffset = -1;
+	int nibbleStartBitOffset = -1;
+	int syncFFStartBitOffset = -1;
+	int syncFFRunLength = 0;
+	int longestSyncFFStartBitOffset = -1;
+	int longestSyncFFRunLength = 0;
+
+	while (1)
+	{
+		BYTE n = floppy.m_trackimage[floppy.m_byte];
+		BYTE outputBit = (n & floppy.m_bitMask) ? 1 : 0;
+
+		IncBitStream(floppy);
+
+		if ((startBitOffset < 0 && floppy.m_bitOffset == 0) || (startBitOffset == floppy.m_bitOffset))	// done complete track?
+			break;
+
+		if (shiftReg == 0 && outputBit == 0)
+		{
+			zeroCount++;
+			continue;
+		}
+
+		if (nibbleStartBitOffset < 0)
+			prevNibbleStartBitOffset = nibbleStartBitOffset = floppy.m_bitOffset;
+
+		shiftReg <<= 1;
+		shiftReg |= outputBit;
+
+		if ((shiftReg & 0x80) == 0)
+			continue;
+
+		if (prevShiftReg == 0xff && zeroCount == 2)
+		{
+			if (startBitOffset < 0)
+				startBitOffset = prevNibbleStartBitOffset;
+			if (syncFFStartBitOffset < 0)
+				syncFFStartBitOffset = prevNibbleStartBitOffset;
+			syncFFRunLength++;
+		}
+
+		if ((prevShiftReg != 0xff || zeroCount != 2) && syncFFStartBitOffset >= 0)
+		{
+			if (longestSyncFFRunLength < syncFFRunLength)
+			{
+				longestSyncFFStartBitOffset = syncFFStartBitOffset;
+				longestSyncFFRunLength = syncFFRunLength;
+				syncFFStartBitOffset = -1;
+				syncFFRunLength = 0;
+			}
+		}
+
+		prevNibbleStartBitOffset = nibbleStartBitOffset;
+		nibbleStartBitOffset = -1;
+
+		prevShiftReg = shiftReg;
+		shiftReg = 0;
+		zeroCount = 0;
+	}
+
+	if (longestSyncFFRunLength)
+	{
+		const int endBitOffset = (longestSyncFFStartBitOffset + longestSyncFFRunLength * 10) % floppy.m_bitCount;
+		LogOutput("T%05.2f: FF/10 (run=%d), start=%04X, end=%04X\n", track, longestSyncFFRunLength, longestSyncFFStartBitOffset, endBitOffset);
+	}
+	else
+	{
+		LogOutput("T%05.2f: FF/10 (none)\n", track);
+	}
+}
+
+//===========================================================================
+
 #ifdef _DEBUG
 // Dump nibbles from current position bitstream wraps to same position
 // NB. Need to define LOG_DISK_NIBBLES_READ so that GetReadD5AAxxDetectedString() works.
@@ -1554,21 +1644,24 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 	UINT zeroCount = 0;
 	UINT nibbleCount = 0;
 
-	const UINT startBitOffset = 0;	// NB. may need to tweak this offset, since the bistream is a circular buffer
+	const UINT startBitOffset = 0;	// NB. may need to tweak this offset, since the bitstream is a circular buffer
 	floppy.m_bitOffset = startBitOffset;
 
 	floppy.m_byte = floppy.m_bitOffset / 8;
 	const UINT remainder = 7 - (floppy.m_bitOffset & 7);
 	floppy.m_bitMask = 1 << remainder;
 
+	int nibbleStartBitOffset = -1;
+
 	bool newLine = true;
 
 	while (1)
 	{
-		if (newLine)
+		if (newLine && nibbleStartBitOffset > 0)
 		{
 			newLine = false;
-			LogOutput("%04X:", floppy.m_bitOffset & 0xffff);
+			LogOutput("%04X:", nibbleStartBitOffset);
+			nibbleStartBitOffset = -1;
 		}
 
 		BYTE n = floppy.m_trackimage[floppy.m_byte];
@@ -1579,40 +1672,45 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 		if (startBitOffset == floppy.m_bitOffset)	// done complete track?
 			break;
 
-		if (shiftReg == 0 && outputBit == 0)
+		if (shiftReg & 0x80)
 		{
-			zeroCount++;
-			continue;
+			if (outputBit == 0)		// zero, so LSS holds nibble in latch
+			{
+				zeroCount++;
+				continue;
+			}
+
+			// else: start of next nibble
+
+			nibbleCount++;
+
+			char syncBits = zeroCount <= 9 ? '0' + zeroCount : '+';
+			if (zeroCount == 0)	LogOutput("%02X   ", shiftReg);
+			else				LogOutput("%02X(%c)", shiftReg, syncBits);
+
+			formatTrack.DecodeLatchNibbleRead(shiftReg);
+
+			if ((nibbleCount % 32) == 0)
+			{
+				std::string strReadDetected = formatTrack.GetReadD5AAxxDetectedString();
+				if (!strReadDetected.empty())
+				{
+					OutputDebugString("\t; ");
+					OutputDebugString(strReadDetected.c_str());
+				}
+				OutputDebugString("\n");
+				newLine = true;
+			}
+
+			shiftReg = 0;
+			zeroCount = 0;
 		}
 
 		shiftReg <<= 1;
 		shiftReg |= outputBit;
 
-		if ((shiftReg & 0x80) == 0)
-			continue;
-
-		nibbleCount++;
-
-		char syncBits = zeroCount <= 9 ? '0'+zeroCount : '+';
-		if (zeroCount == 0)	LogOutput("   %02X", shiftReg);
-		else				LogOutput("(%c)%02X", syncBits, shiftReg);
-
-		formatTrack.DecodeLatchNibbleRead(shiftReg);
-
-		if ((nibbleCount % 32) == 0)
-		{
-			std::string strReadDetected = formatTrack.GetReadD5AAxxDetectedString();
-			if (!strReadDetected.empty())
-			{
-				OutputDebugString("\t; ");
-				OutputDebugString(strReadDetected.c_str());
-			}
-			OutputDebugString("\n");
-			newLine = true;
-		}
-
-		shiftReg = 0;
-		zeroCount = 0;
+		if (shiftReg == 0x01)
+			nibbleStartBitOffset = floppy.m_bitOffset;
 	}
 
 	// Output any remaining zeroCount
