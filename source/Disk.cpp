@@ -1550,7 +1550,6 @@ void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCy
 void Disk2InterfaceCard::FindSeamWOZ(FloppyDisk floppy, float track)	// pass a copy of m_floppy
 {
 	BYTE shiftReg = 0;
-	BYTE prevShiftReg = 0;
 	UINT zeroCount = 0;
 
 	int startBitOffset = -1;	// NB. change this to start of first FF/10
@@ -1560,7 +1559,6 @@ void Disk2InterfaceCard::FindSeamWOZ(FloppyDisk floppy, float track)	// pass a c
 	const UINT remainder = 7 - (floppy.m_bitOffset & 7);
 	floppy.m_bitMask = 1 << remainder;
 
-	int prevNibbleStartBitOffset = -1;
 	int nibbleStartBitOffset = -1;
 	int syncFFStartBitOffset = -1;
 	int syncFFRunLength = 0;
@@ -1577,47 +1575,48 @@ void Disk2InterfaceCard::FindSeamWOZ(FloppyDisk floppy, float track)	// pass a c
 		if ((startBitOffset < 0 && floppy.m_bitOffset == 0) || (startBitOffset == floppy.m_bitOffset))	// done complete track?
 			break;
 
-		if (shiftReg == 0 && outputBit == 0)
+		if (shiftReg & 0x80)
 		{
-			zeroCount++;
-			continue;
-		}
+			if (outputBit == 0)		// zero, so LSS holds nibble in latch
+			{
+				zeroCount++;
+				continue;
+			}
 
-		if (nibbleStartBitOffset < 0)
-			prevNibbleStartBitOffset = nibbleStartBitOffset = floppy.m_bitOffset;
+			// else: start of next nibble
+
+			if (shiftReg == 0xff && zeroCount == 2)
+			{
+				if (startBitOffset < 0)
+					startBitOffset = nibbleStartBitOffset;
+				if (syncFFStartBitOffset < 0)
+					syncFFStartBitOffset = nibbleStartBitOffset;
+				syncFFRunLength++;
+			}
+
+			if ((shiftReg != 0xff || zeroCount != 2) && syncFFStartBitOffset >= 0)
+			{
+				if (longestSyncFFRunLength < syncFFRunLength)
+				{
+					longestSyncFFStartBitOffset = syncFFStartBitOffset;
+					longestSyncFFRunLength = syncFFRunLength;
+					syncFFStartBitOffset = -1;
+					syncFFRunLength = 0;
+				}
+			}
+
+			shiftReg = 0;
+			zeroCount = 0;
+		}
 
 		shiftReg <<= 1;
 		shiftReg |= outputBit;
 
-		if ((shiftReg & 0x80) == 0)
-			continue;
-
-		if (prevShiftReg == 0xff && zeroCount == 2)
+		if (shiftReg == 0x01)
 		{
-			if (startBitOffset < 0)
-				startBitOffset = prevNibbleStartBitOffset;
-			if (syncFFStartBitOffset < 0)
-				syncFFStartBitOffset = prevNibbleStartBitOffset;
-			syncFFRunLength++;
+			nibbleStartBitOffset = floppy.m_bitOffset - 1;
+			if (nibbleStartBitOffset < 0) nibbleStartBitOffset += floppy.m_bitCount;
 		}
-
-		if ((prevShiftReg != 0xff || zeroCount != 2) && syncFFStartBitOffset >= 0)
-		{
-			if (longestSyncFFRunLength < syncFFRunLength)
-			{
-				longestSyncFFStartBitOffset = syncFFStartBitOffset;
-				longestSyncFFRunLength = syncFFRunLength;
-				syncFFStartBitOffset = -1;
-				syncFFRunLength = 0;
-			}
-		}
-
-		prevNibbleStartBitOffset = nibbleStartBitOffset;
-		nibbleStartBitOffset = -1;
-
-		prevShiftReg = shiftReg;
-		shiftReg = 0;
-		zeroCount = 0;
 	}
 
 	if (longestSyncFFRunLength)
