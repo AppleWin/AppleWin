@@ -344,7 +344,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 			pFloppy->m_extraCycles = 0.0;
 			pDrive->m_headWindow = 0;
 
-			FindSeamWOZ(*pFloppy, pDrive->m_phasePrecise/2);
+			FindTrackSeamWOZ(*pFloppy, pDrive->m_phasePrecise/2);
 		}
 
 		pFloppy->m_trackimagedata = (pFloppy->m_nibbles != 0);
@@ -1353,49 +1353,21 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 													: (rand() < RAND_THRESHOLD(3, 10)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
 
 		IncBitStream(floppy);
-#if 0
-		if (floppy.m_revs && drive.m_phase >= (33 * 2) && floppy.m_bitOffset == 0x6f1f)	// seam
-		{
-			if (floppy.m_revs & 1)	// alt revs
-				IncBitStream(floppy);
-		}
-#endif
 #if 1
-		if (floppy.m_revs && floppy.m_numSyncFFs == 100)	// seam
+		if (floppy.m_revs && drive.m_phase >= (33 * 2))
 		{
-//			LogOutput("Disk:(-) T%05.2f (revs=%d)\n", drive.m_phasePrecise / 2, floppy.m_revs);
-
-			LogOutput("Disk:(-) T%05.2f jitter - slip 1 bitcell (revs=%d)\n", drive.m_phasePrecise / 2, floppy.m_revs);
-			IncBitStream(floppy);
-
-#if 0
-			for (int i = 0; i < 3; i++)
+			if (floppy.m_bitOffset == floppy.m_longestSyncFFBitOffsetStart)
 			{
 				if (rand() < RAND_THRESHOLD(9, 10))
 				{
-					LogOutput("Disk:(%d) T%05.2f jitter - slip 1 bitcell  (revs=%d) (rand)\n", i, drive.m_phasePrecise / 2, floppy.m_revs);
+					LogOutput("Disk: T%05.2f jitter - slip 1 bitcell  (revs=%d) (rand)\n", drive.m_phasePrecise / 2, floppy.m_revs);
 					IncBitStream(floppy);
 				}
 				else
 				{
-					LogOutput("Disk:(%d) T%05.2f jitter - ***  SKIP  ***  (revs=%d) (rand)\n", i, drive.m_phasePrecise / 2, floppy.m_revs);
+					LogOutput("Disk: T%05.2f jitter - ***  SKIP  ***  (revs=%d) (rand)\n", drive.m_phasePrecise / 2, floppy.m_revs);
 				}
 			}
-#endif
-
-#if 0	// NG
-			if (floppy.m_extraCycles > 0.0)
-			{
-				floppy.m_extraCycles -= 1.0;
-				LogOutput("Disk: T%05.2f jitter - m_extraCycles--  (revs=%d)\n", drive.m_phasePrecise / 2, floppy.m_revs);
-			}
-			else
-			{
-				LogOutput("Disk: T%05.2f jitter - m_extraCycles=0  (revs=%d)\n", drive.m_phasePrecise / 2, floppy.m_revs);
-			}
-#endif
-
-			floppy.m_numSyncFFs = 0;
 		}
 #endif
 
@@ -1417,15 +1389,6 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 				m_latchDelay += 4;	// extend by 4us (so 7us again) - GH#662
 
 				m_dbgLatchDelayedCnt++;
-//				if (m_floppyLatch == 0xff && m_dbgLatchDelayedCnt == 2)	// Fix for LSS - GH#1125
-//					floppy.m_extraCycles = 0.0;
-//				if (m_floppyLatch == 0xff && m_dbgLatchDelayedCnt == 2 && floppy.m_extraCycles == 2.0)	// Fix for LSS - GH#1125
-//					floppy.m_extraCycles = 3.0;
-				if (m_floppyLatch == 0xff && m_dbgLatchDelayedCnt == 2)	// Fix for LSS - GH#1125
-				{
-					floppy.m_numSyncFFs++;
-					floppy.m_latchWasSyncFF = true;
-				}
 #if LOG_DISK_NIBBLES_READ
 				if (m_dbgLatchDelayedCnt >= 3)
 				{
@@ -1451,10 +1414,6 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 				m_latchDelay = 7;
 				m_shiftReg = 0;
 
-				if (floppy.m_latchWasSyncFF)
-					floppy.m_latchWasSyncFF = false;
-				else
-					floppy.m_numSyncFFs = 0;
 #if LOG_DISK_NIBBLES_READ
 				// May not actually be read by 6502 (eg. Prologue's CHKSUM 4&4 nibble pair), but still pass to the log's nibble reader
 				m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
@@ -1499,6 +1458,8 @@ void Disk2InterfaceCard::DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemain
 	LOG_DISK("load shiftReg with %02X (was: %02X)\n", m_floppyLatch, m_shiftReg);
 #endif
 	m_shiftReg = m_floppyLatch;
+
+	floppy.m_longestSyncFFBitOffsetStart = -1;	// invalidate the track seam location after a write
 }
 
 void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCycles)
@@ -1545,25 +1506,26 @@ void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCy
 
 //===========================================================================
 
-// Simple:
+// For now all that's needed is this basic case:
 // . find [start,end] of longest run of FF/10 sync nibbles
-void Disk2InterfaceCard::FindSeamWOZ(FloppyDisk floppy, float track)	// pass a copy of m_floppy
+void Disk2InterfaceCard::FindTrackSeamWOZ(FloppyDisk& floppy, float track)
 {
+	const UINT oldBitOffset = floppy.m_bitOffset;	// Save current state
+
 	BYTE shiftReg = 0;
 	UINT zeroCount = 0;
 
 	int startBitOffset = -1;	// NB. change this to start of first FF/10
 	floppy.m_bitOffset = 0;
-
-	floppy.m_byte = floppy.m_bitOffset / 8;
-	const UINT remainder = 7 - (floppy.m_bitOffset & 7);
-	floppy.m_bitMask = 1 << remainder;
+	UpdateBitStreamOffsets(floppy);
 
 	int nibbleStartBitOffset = -1;
 	int syncFFStartBitOffset = -1;
 	int syncFFRunLength = 0;
 	int longestSyncFFStartBitOffset = -1;
 	int longestSyncFFRunLength = 0;
+
+	floppy.m_longestSyncFFBitOffsetStart = -1;
 
 	while (1)
 	{
@@ -1621,13 +1583,23 @@ void Disk2InterfaceCard::FindSeamWOZ(FloppyDisk floppy, float track)	// pass a c
 
 	if (longestSyncFFRunLength)
 	{
-		const int endBitOffset = (longestSyncFFStartBitOffset + longestSyncFFRunLength * 10) % floppy.m_bitCount;
-		LogOutput("T%05.2f: FF/10 (run=%d), start=%04X, end=%04X\n", track, longestSyncFFRunLength, longestSyncFFStartBitOffset, endBitOffset);
+		floppy.m_longestSyncFFBitOffsetStart = longestSyncFFStartBitOffset;
+		const int longestSyncFFBitOffsetEnd = (longestSyncFFStartBitOffset + longestSyncFFRunLength * 10 - 1) % floppy.m_bitCount;
+#if LOG_DISK_WOZ_TRACK_SEAM
+		LOG_DISK("Track seam: T%05.2f: FF/10 (run=%d), start=%04X, end=%04X\n", track, longestSyncFFRunLength, longestSyncFFStartBitOffset, longestSyncFFBitOffsetEnd);
+#endif
 	}
 	else
 	{
-		LogOutput("T%05.2f: FF/10 (none)\n", track);
+#if LOG_DISK_WOZ_TRACK_SEAM
+		LOG_DISK("Track seam: T%05.2f: FF/10 (none)\n", track);
+#endif
 	}
+
+	// Restore state
+
+	floppy.m_bitOffset = oldBitOffset;
+	UpdateBitStreamOffsets(floppy);
 }
 
 //===========================================================================
@@ -1645,10 +1617,7 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 
 	const UINT startBitOffset = 0;	// NB. may need to tweak this offset, since the bitstream is a circular buffer
 	floppy.m_bitOffset = startBitOffset;
-
-	floppy.m_byte = floppy.m_bitOffset / 8;
-	const UINT remainder = 7 - (floppy.m_bitOffset & 7);
-	floppy.m_bitMask = 1 << remainder;
+	UpdateBitStreamOffsets(floppy);
 
 	int nibbleStartBitOffset = -1;
 

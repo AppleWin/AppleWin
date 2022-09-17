@@ -70,8 +70,7 @@ public:
 		m_trackimagedirty = false;
 		m_initialBitOffset = 0;
 		m_revs = 0;
-		m_numSyncFFs = 0;
-		m_latchWasSyncFF = false;
+		m_longestSyncFFBitOffsetStart = -1;
 	}
 
 public:
@@ -91,8 +90,7 @@ public:
 	bool m_trackimagedirty;
 	UINT m_initialBitOffset;
 	UINT m_revs;
-	UINT m_numSyncFFs;
-	bool m_latchWasSyncFF;
+	int m_longestSyncFFBitOffsetStart;
 };
 
 class FloppyDrive
@@ -211,7 +209,7 @@ private:
 	void DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCycles);
 	void SetSequencerFunction(WORD addr, ULONG executedCycles);
-	void FindSeamWOZ(FloppyDisk floppy, float track);
+	void FindTrackSeamWOZ(FloppyDisk& floppy, float track);
 	void DumpTrackWOZ(FloppyDisk floppy);
 	bool GetFirmware(WORD lpNameId, BYTE* pDst);
 	void InitFirmware(LPBYTE pCxRomPeripheral);
