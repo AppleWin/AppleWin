@@ -1357,7 +1357,7 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 #if _DEBUG
 	static int dbgWOZ = 0;
-	if (dbgWOZ && drive.m_phase == 66)
+	if (dbgWOZ && drive.m_phase == 68)
 	{
 		dbgWOZ = 0;
 		DumpTrackWOZ(floppy);	// Enable as necessary
@@ -1555,8 +1555,6 @@ void Disk2InterfaceCard::FindTrackSeamWOZ(FloppyDisk& floppy, float track)
 
 			if (shiftReg == 0xff && zeroCount == 2)
 			{
-				if (startBitOffset < 0)
-					startBitOffset = nibbleStartBitOffset;
 				if (syncFFStartBitOffset < 0)
 					syncFFStartBitOffset = nibbleStartBitOffset;
 				syncFFRunLength++;
@@ -1564,13 +1562,17 @@ void Disk2InterfaceCard::FindTrackSeamWOZ(FloppyDisk& floppy, float track)
 
 			if ((shiftReg != 0xff || zeroCount != 2) && syncFFStartBitOffset >= 0)
 			{
+				// Longest FF/2 run could straddle end/start of track's bit buffer
+				if (startBitOffset < 0)
+					startBitOffset = nibbleStartBitOffset;
+
 				if (longestSyncFFRunLength < syncFFRunLength)
 				{
 					longestSyncFFStartBitOffset = syncFFStartBitOffset;
 					longestSyncFFRunLength = syncFFRunLength;
-					syncFFStartBitOffset = -1;
-					syncFFRunLength = 0;
 				}
+				syncFFStartBitOffset = -1;
+				syncFFRunLength = 0;
 			}
 
 			shiftReg = 0;
@@ -1628,10 +1630,11 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 	int nibbleStartBitOffset = -1;
 
 	bool newLine = true;
+	BYTE lastBit = 0;
 
 	while (1)
 	{
-		if (newLine && nibbleStartBitOffset > 0)
+		if (newLine && nibbleStartBitOffset >= 0)
 		{
 			newLine = false;
 			LogOutput("%04X:", nibbleStartBitOffset);
@@ -1644,7 +1647,10 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 		IncBitStream(floppy);
 
 		if (startBitOffset == floppy.m_bitOffset)	// done complete track?
+		{
+			lastBit = outputBit;
 			break;
+		}
 
 		if (shiftReg & 0x80)
 		{
@@ -1690,18 +1696,23 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 		}
 	}
 
-	// Output any remaining zeroCount
-	if (zeroCount)
-	{
-		char syncBits = zeroCount <= 9 ? '0'+zeroCount : '+';
-		LogOutput("(%c)", syncBits);
-	}
-
 	// Output any partial nibble
-	if (shiftReg)
+	if (shiftReg & 0x80)
+	{
+		LogOutput("%02X", shiftReg);
+
+		// Output any remaining zeroCount
+		if (zeroCount)
+		{
+			char syncBits = zeroCount <= 9 ? '0' + zeroCount : '+';
+			LogOutput("(%c)", syncBits);
+		}
+	}
+	else if (shiftReg)
 	{
 		LogOutput("%02X/Partial Nibble", shiftReg);
 	}
+	LogOutput(" %d/Last bit", lastBit);
 
 	// Output any remaining "read D5AAxx detected"
 	if (nibbleCount % 32)
