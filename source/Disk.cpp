@@ -337,6 +337,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 
 			if (pFloppy->m_bitOffset >= pFloppy->m_bitCount)
 				pFloppy->m_bitOffset = 0;
+			//LogOutput("T%05.2f: %04X->%04X, Len=%04X\n", pDrive->m_phasePrecise / 2, currentBitPosition, pFloppy->m_bitOffset, pFloppy->m_bitCount);
 
 			pFloppy->m_byte = pFloppy->m_bitOffset / 8;
 			pFloppy->m_bitMask = 1 << (7 - (pFloppy->m_bitOffset % 8));
@@ -1248,6 +1249,26 @@ void Disk2InterfaceCard::AddJitter(int phase, FloppyDisk& floppy)
 	m_foundT00S00Pattern = false;
 }
 
+// GH#1125: For T$21 (track 33.0) or above, randomly skip 1 bit-cell at the start of the FF/2 track seam.
+void Disk2InterfaceCard::AddTrackSeamJitter(float phasePrecise, FloppyDisk& floppy)
+{
+	if (phasePrecise >= (33.0 * 2))
+	{
+		if (floppy.m_bitOffset == floppy.m_longestSyncFFBitOffsetStart)
+		{
+			if (rand() < RAND_THRESHOLD(5, 10))
+			{
+				LogOutput("Disk: T%05.2f jitter - slip 1 bitcell  (revs=%d)\n", phasePrecise / 2, floppy.m_revs);
+				IncBitStream(floppy);
+			}
+			else
+			{
+				LogOutput("Disk: T%05.2f jitter - ***  SKIP  ***  (revs=%d)\n", phasePrecise / 2, floppy.m_revs);
+			}
+		}
+	}
+}
+
 void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYTE bWrite, ULONG uExecutedCycles)
 {
 	_ASSERT(m_seqFunc.function != dataShiftWrite);
@@ -1353,23 +1374,8 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 													: (rand() < RAND_THRESHOLD(3, 10)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
 
 		IncBitStream(floppy);
-#if 1
-		if (floppy.m_revs && drive.m_phase >= (33 * 2))
-		{
-			if (floppy.m_bitOffset == floppy.m_longestSyncFFBitOffsetStart)
-			{
-				if (rand() < RAND_THRESHOLD(9, 10))
-				{
-					LogOutput("Disk: T%05.2f jitter - slip 1 bitcell  (revs=%d) (rand)\n", drive.m_phasePrecise / 2, floppy.m_revs);
-					IncBitStream(floppy);
-				}
-				else
-				{
-					LogOutput("Disk: T%05.2f jitter - ***  SKIP  ***  (revs=%d) (rand)\n", drive.m_phasePrecise / 2, floppy.m_revs);
-				}
-			}
-		}
-#endif
+
+		AddTrackSeamJitter(drive.m_phasePrecise, floppy);
 
 		m_shiftReg <<= 1;
 		m_shiftReg |= outputBit;

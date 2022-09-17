@@ -221,6 +221,7 @@ private:
 
 	void PreJitterCheck(int phase, BYTE latch);
 	void AddJitter(int phase, FloppyDisk& floppy);
+	void AddTrackSeamJitter(float phasePrecise, FloppyDisk& floppy);
 
 	void SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	void SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
