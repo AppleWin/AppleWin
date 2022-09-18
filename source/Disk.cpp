@@ -1256,10 +1256,13 @@ void Disk2InterfaceCard::AddJitter(int phase, FloppyDisk& floppy)
 	m_foundT00S00Pattern = false;
 }
 
-// GH#1125: For T$21 (track 33.0) or above, randomly skip 1 bit-cell at the start of the FF/2 track seam.
+// GH#1125: For T$21 (track 33.0) or above (and sufficiently long FF/10 run-length), then randomly skip 1 bit-cell at the start of the FF/2 track seam.
+// Example of high run-lengths for tracks 33.0+:
+// . Accolade Comics:114, Silent Service:117, Wings of Fury:140, Wizardry I:127, Wizardry III:283
+// NB. Restrict to higher FF/10 run-lengths to limit the titles affected by this jitter.
 void Disk2InterfaceCard::AddTrackSeamJitter(float phasePrecise, FloppyDisk& floppy)
 {
-	if (phasePrecise >= (33.0 * 2))
+	if (phasePrecise >= (33.0 * 2) && floppy.m_longestSyncFFRunLength > 110)
 	{
 		if (floppy.m_bitOffset == floppy.m_longestSyncFFBitOffsetStart)
 		{
@@ -1598,11 +1601,12 @@ void Disk2InterfaceCard::FindTrackSeamWOZ(FloppyDisk& floppy, float track)
 
 	if (longestSyncFFRunLength)
 	{
-		floppy.m_longestSyncFFBitOffsetStart = longestSyncFFStartBitOffset;
 		const int longestSyncFFBitOffsetEnd = (longestSyncFFStartBitOffset + longestSyncFFRunLength * 10 - 1) % floppy.m_bitCount;
 #if LOG_DISK_WOZ_TRACK_SEAM
 		LOG_DISK("Track seam: T%05.2f: FF/10 (run=%d), start=%04X, end=%04X\n", track, longestSyncFFRunLength, longestSyncFFStartBitOffset, longestSyncFFBitOffsetEnd);
 #endif
+		floppy.m_longestSyncFFBitOffsetStart = longestSyncFFStartBitOffset;
+		floppy.m_longestSyncFFRunLength = longestSyncFFRunLength;
 	}
 	else
 	{
