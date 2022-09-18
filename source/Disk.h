@@ -68,9 +68,9 @@ public:
 		m_trackimage = NULL;
 		m_trackimagedata = false;
 		m_trackimagedirty = false;
+		m_longestSyncFFBitOffsetStart = -1;
 		m_initialBitOffset = 0;
 		m_revs = 0;
-		m_longestSyncFFBitOffsetStart = -1;
 	}
 
 public:
@@ -88,9 +88,9 @@ public:
 	LPBYTE m_trackimage;
 	bool m_trackimagedata;
 	bool m_trackimagedirty;
-	UINT m_initialBitOffset;
-	UINT m_revs;
 	int m_longestSyncFFBitOffsetStart;
+	UINT m_initialBitOffset;	// debug
+	UINT m_revs;				// debug
 };
 
 class FloppyDrive
@@ -161,8 +161,7 @@ public:
 	int GetCurrentDrive(void);
 	int GetCurrentTrack(void);
 	float GetCurrentPhase(void);
-	int GetCurrentOffset(void);
-	BYTE GetCurrentLSSBitMask(void);
+	UINT GetCurrentBitOffset(void);
 	double GetCurrentExtraCycles(void);
 	int GetTrack(const int drive);
 	static std::string FormatPhaseString(float phase);

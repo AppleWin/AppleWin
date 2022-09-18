@@ -104,8 +104,7 @@ void Disk2InterfaceCard::SetEnhanceDisk(bool bEnhanceDisk) { m_enhanceDisk = bEn
 int Disk2InterfaceCard::GetCurrentDrive(void)  { return m_currDrive; }
 int Disk2InterfaceCard::GetCurrentTrack(void)  { return ImagePhaseToTrack(m_floppyDrive[m_currDrive].m_disk.m_imagehandle, m_floppyDrive[m_currDrive].m_phasePrecise, false); }
 float Disk2InterfaceCard::GetCurrentPhase(void)  { return m_floppyDrive[m_currDrive].m_phasePrecise; }
-int Disk2InterfaceCard::GetCurrentOffset(void) { return m_floppyDrive[m_currDrive].m_disk.m_byte; }
-BYTE Disk2InterfaceCard::GetCurrentLSSBitMask(void) { return m_floppyDrive[m_currDrive].m_disk.m_bitMask; }
+UINT Disk2InterfaceCard::GetCurrentBitOffset(void) { return m_floppyDrive[m_currDrive].m_disk.m_bitOffset; }
 double Disk2InterfaceCard::GetCurrentExtraCycles(void) { return m_floppyDrive[m_currDrive].m_disk.m_extraCycles; }
 int Disk2InterfaceCard::GetTrack(const int drive)  { return ImagePhaseToTrack(m_floppyDrive[drive].m_disk.m_imagehandle, m_floppyDrive[drive].m_phasePrecise, false); }
 
