@@ -1256,8 +1256,8 @@ void Disk2InterfaceCard::AddJitter(int phase, FloppyDisk& floppy)
 	m_foundT00S00Pattern = false;
 }
 
-// GH#1125: For T$21 (track 33.0) or above (and sufficiently long FF/10 run-length), then randomly skip 1 bit-cell at the start of the FF/2 track seam.
-// Example of high run-lengths for tracks 33.0+:
+// GH#1125: For T$21 (track 33.0) or above (and sufficiently long sync FF/10 run-length), then randomly skip 1 bit-cell at the start of the FF/2 track seam.
+// Example of high sync FF/10 run-lengths for tracks 33.0+:
 // . Accolade Comics:114, Silent Service:117, Wings of Fury:140, Wizardry I:127, Wizardry III:283
 // NB. Restrict to higher FF/10 run-lengths to limit the titles affected by this jitter.
 void Disk2InterfaceCard::AddTrackSeamJitter(float phasePrecise, FloppyDisk& floppy)
