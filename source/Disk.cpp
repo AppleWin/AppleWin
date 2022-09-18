@@ -1364,7 +1364,7 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 #if _DEBUG
 	static int dbgWOZ = 0;
-	if (dbgWOZ && drive.m_phase == 68)
+	if (dbgWOZ)
 	{
 		dbgWOZ = 0;
 		DumpTrackWOZ(floppy);	// Enable as necessary
