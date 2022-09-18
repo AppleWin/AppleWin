@@ -324,6 +324,12 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 		}
 		else
 		{
+			// NB. This function is only called for a new track when there's a latch read, ie. only for *even* DEVICE SELECT I/O accesses.
+			// . So when seeking across tracks (ie. sequencing through the magnet phases), then not all (quarter) tracks will need reading.
+			// . eg. for 'Balance of Power'(GH#1022), for seek T00->T35: this only reads: 00.00, 00.25, 00.75, 01.25, 01.75, ... 34.25, 34.75, 35.00 (skipping the NN.00, NN.50 tracks).
+			// . And so the bitOffset "round-up" below isn't called for every track.
+			// TODO: consider forcing this function be be called for every track (and appropriately adjust the "round-up" amount - ie. halve it)
+
 			_ASSERT(pFloppy->m_nibbles && pFloppy->m_bitCount);
 			if (pFloppy->m_nibbles == 0 || pFloppy->m_bitCount == 0)
 			{
@@ -336,7 +342,9 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 
 			if (pFloppy->m_bitOffset >= pFloppy->m_bitCount)
 				pFloppy->m_bitOffset = 0;
-			//LogOutput("T%05.2f: %04X->%04X, Len=%04X\n", pDrive->m_phasePrecise / 2, currentBitPosition, pFloppy->m_bitOffset, pFloppy->m_bitCount);
+#if LOG_DISK_WOZ_READTRACK
+			LOG_DISK("T%05.2f: %04X->%04X, Len=%04X\n", pDrive->m_phasePrecise / 2, currentBitPosition, pFloppy->m_bitOffset, pFloppy->m_bitCount);
+#endif
 
 			pFloppy->m_byte = pFloppy->m_bitOffset / 8;
 			pFloppy->m_bitMask = 1 << (7 - (pFloppy->m_bitOffset % 8));
