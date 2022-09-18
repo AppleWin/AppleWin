@@ -1265,12 +1265,12 @@ void Disk2InterfaceCard::AddTrackSeamJitter(float phasePrecise, FloppyDisk& flop
 		{
 			if (rand() < RAND_THRESHOLD(5, 10))
 			{
-				LogOutput("Disk: T%05.2f jitter - slip 1 bitcell  (revs=%d)\n", phasePrecise / 2, floppy.m_revs);
+				LogOutput("Disk: T%05.2f jitter - slip 1 bitcell  (revs=%d) (PC=%04X)\n", phasePrecise / 2, floppy.m_revs, regs.pc);
 				IncBitStream(floppy);
 			}
 			else
 			{
-				LogOutput("Disk: T%05.2f jitter - ***  SKIP  ***  (revs=%d)\n", phasePrecise / 2, floppy.m_revs);
+				LogOutput("Disk: T%05.2f jitter - ***  SKIP  ***  (revs=%d) (PC=%04X)\n", phasePrecise / 2, floppy.m_revs, regs.pc);
 			}
 		}
 	}
