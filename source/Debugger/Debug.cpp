@@ -3436,13 +3436,12 @@ Update_t CmdDisk ( int nArgs)
 		if (nArgs > 2)
 			return HelpLastCommand();
 
-		ConsoleBufferPushFormat("FW%2d: D%d at T$%s, phase $%s, offset $%X, mask $%02X, extraCycles %.2f, %s",
+		ConsoleBufferPushFormat("FW%2d: D%d at T$%s, phase $%s, bitOffset $%04X, extraCycles %.2f, %s",
 			diskCard.GetCurrentFirmware(),
 			diskCard.GetCurrentDrive() + 1,
 			diskCard.GetCurrentTrackString().c_str(),
 			diskCard.GetCurrentPhaseString().c_str(),
-			diskCard.GetCurrentOffset(),
-			diskCard.GetCurrentLSSBitMask(),
+			diskCard.GetCurrentBitOffset(),
 			diskCard.GetCurrentExtraCycles(),
 			diskCard.GetCurrentState()
 		);
