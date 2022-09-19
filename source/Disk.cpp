@@ -1429,7 +1429,6 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 			{
 				m_latchDelay = 7;
 				m_shiftReg = 0;
-
 #if LOG_DISK_NIBBLES_READ
 				// May not actually be read by 6502 (eg. Prologue's CHKSUM 4&4 nibble pair), but still pass to the log's nibble reader
 				m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
@@ -1641,7 +1640,7 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 	int nibbleStartBitOffset = -1;
 
 	bool newLine = true;
-	BYTE lastBit = 0;
+	bool doneLastBit = false;
 
 	while (1)
 	{
@@ -1658,10 +1657,9 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 		IncBitStream(floppy);
 
 		if (startBitOffset == floppy.m_bitOffset)	// done complete track?
-		{
-			lastBit = outputBit;
+			doneLastBit = true;
+		else if (doneLastBit)
 			break;
-		}
 
 		if (shiftReg & 0x80)
 		{
@@ -1723,7 +1721,6 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 	{
 		LogOutput("%02X/Partial Nibble", shiftReg);
 	}
-	LogOutput(" %d/Last bit", lastBit);
 
 	// Output any remaining "read D5AAxx detected"
 	if (nibbleCount % 32)
