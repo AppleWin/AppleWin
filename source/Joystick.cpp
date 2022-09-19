@@ -665,9 +665,9 @@ void JoyResetPosition(ULONG nExecutedCycles)
 		const UINT joyNum = (pdl & 2) ? 1 : 0;
 		UINT pdlPos = (pdl & 1) ? ypos[joyNum] : xpos[joyNum];
 
-		// This is from KEGS. It helps games like Championship Lode Runner & Boulderdash
+		// This is from KEGS. It helps games like Championship Lode Runner, Boulderdash & Learning with Leeper(GH#1128)
 		if (pdlPos >= 255)
-			pdlPos = 280;
+			pdlPos = 287;
 
 		g_paddleInactiveCycle[pdl] = g_nCumulativeCycles + (UINT64)((double)pdlPos * PDL_CNTR_INTERVAL);
 	}
