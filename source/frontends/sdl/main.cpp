@@ -44,7 +44,7 @@ namespace
       throw std::runtime_error(sa2::decorateSDLError("SDL_GetCurrentDisplayMode"));
     }
 
-    return current.refresh_rate;
+    return current.refresh_rate ? current.refresh_rate : 60;
   }
 
   struct Data
