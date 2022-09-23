@@ -68,6 +68,10 @@ public:
 		m_trackimage = NULL;
 		m_trackimagedata = false;
 		m_trackimagedirty = false;
+		m_longestSyncFFRunLength = 0;
+		m_longestSyncFFBitOffsetStart = -1;
+		m_initialBitOffset = 0;
+		m_revs = 0;
 	}
 
 public:
@@ -85,6 +89,10 @@ public:
 	LPBYTE m_trackimage;
 	bool m_trackimagedata;
 	bool m_trackimagedirty;
+	UINT m_longestSyncFFRunLength;
+	int m_longestSyncFFBitOffsetStart;
+	UINT m_initialBitOffset;	// debug
+	UINT m_revs;				// debug
 };
 
 class FloppyDrive
@@ -155,8 +163,7 @@ public:
 	int GetCurrentDrive(void);
 	int GetCurrentTrack(void);
 	float GetCurrentPhase(void);
-	int GetCurrentOffset(void);
-	BYTE GetCurrentLSSBitMask(void);
+	UINT GetCurrentBitOffset(void);
 	double GetCurrentExtraCycles(void);
 	int GetTrack(const int drive);
 	static std::string FormatPhaseString(float phase);
@@ -203,6 +210,7 @@ private:
 	void DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCycles);
 	void SetSequencerFunction(WORD addr, ULONG executedCycles);
+	void FindTrackSeamWOZ(FloppyDisk& floppy, float track);
 	void DumpTrackWOZ(FloppyDisk floppy);
 	bool GetFirmware(WORD lpNameId, BYTE* pDst);
 	void InitFirmware(LPBYTE pCxRomPeripheral);
@@ -214,6 +222,7 @@ private:
 
 	void PreJitterCheck(int phase, BYTE latch);
 	void AddJitter(int phase, FloppyDisk& floppy);
+	void AddTrackSeamJitter(float phasePrecise, FloppyDisk& floppy);
 
 	void SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	void SaveSnapshotDriveUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
