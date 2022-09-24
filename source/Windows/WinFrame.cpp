@@ -2149,6 +2149,13 @@ void Win32Frame::SetFullScreenMode(void)
 	scalex = width  / GetVideo().GetFrameBufferBorderlessWidth();
 	scaley = height / GetVideo().GetFrameBufferBorderlessHeight();
 
+	// Retain aspect ratio if user hasn't changed full-screen resolution (GH#1121)
+	if (!GetFullScreenResolutionChangedByUser())
+	{
+		const int minimumScale = (scalex <= scaley) ? scalex : scaley;
+		scalex = scaley = minimumScale;
+	}
+
 	// NB. Separate x,y scaling is OK in full-screen mode
 	// . eg. SHR 640x400 (scalex=2, scaley=3) => 1280x1200, which roughly gives a 4:3 aspect ratio for a resolution of 1600x1200
 	g_win_fullscreen_offsetx = ((int)width - (int)(scalex * GetVideo().GetFrameBufferBorderlessWidth())) / 2;
