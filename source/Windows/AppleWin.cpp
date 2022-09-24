@@ -64,6 +64,8 @@ static bool g_bSysClkOK = false;
 
 bool g_bRestartFullScreen = false;
 
+static bool g_fullScreenResolutionChangedByUser = false;
+
 //===========================================================================
 
 bool GetLoadedSaveStateFlag(void)
@@ -84,6 +86,11 @@ bool GetHookAltTab(void)
 bool GetHookAltGrControl(void)
 {
 	return g_bHookAltGrControl;
+}
+
+bool GetFullScreenResolutionChangedByUser(void)
+{
+	return g_fullScreenResolutionChangedByUser;
 }
 
 static void ResetToLogoMode(void)
@@ -809,6 +816,9 @@ static void RepeatInitialization(void)
 				LogFileOutput("Best resolution for -fs-width/height=x switch(es): Width=%d, Height=%d\n", bestWidth, bestHeight);
 			else
 				LogFileOutput("Failed to set parameter for -fs-width/height=x switch(es)\n");
+
+			if (res)
+				g_fullScreenResolutionChangedByUser = true;
 		}
 
 		// Pre: may need g_hFrameWindow for MessageBox errors
