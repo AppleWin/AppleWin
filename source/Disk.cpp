@@ -1361,6 +1361,8 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 #if LOG_DISK_NIBBLES_READ
 	bool newLatchData = false;
 #endif
+	static UINT32 nibbleStream = 0;
+	static bool isAddrPrologue = false;
 
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
 	FloppyDisk& floppy = drive.m_disk;
@@ -1385,7 +1387,7 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 
 		IncBitStream(floppy);
 
-		AddTrackSeamJitter(drive.m_phasePrecise, floppy);
+//		AddTrackSeamJitter(drive.m_phasePrecise, floppy);
 
 		m_shiftReg <<= 1;
 		m_shiftReg |= outputBit;
@@ -1417,9 +1419,9 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 		if (!m_latchDelay)
 		{
 #if LOG_DISK_NIBBLES_READ
-			if (newLatchData)
+			if (newLatchData && drive.m_phasePrecise == 66.5)
 			{
-				LOG_DISK("read skipped latch data: %04X = %02X\r\n", floppy.m_byte, m_floppyLatch);
+				LOG_DISK("%04X: read skipped latch data: %02X\r\n", floppy.m_bitOffset, m_floppyLatch);
 				newLatchData = false;
 			}
 #endif
@@ -1434,8 +1436,31 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 				m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
 				newLatchData = true;
 #endif
+#if 1
+				if (drive.m_phasePrecise == 66.5)
+				{
+					nibbleStream <<= 8;
+					nibbleStream |= m_floppyLatch;
+					if ((nibbleStream & 0x00ffffff) == 0xd5aa96) isAddrPrologue = true;
+					if ((nibbleStream & 0x00ffffff) == 0xd5aaad) isAddrPrologue = false;
+					if ((nibbleStream & 0x00ffffff) == 0xdeaaeb && isAddrPrologue)
+					{
+						LogOutput("smap: ");
+						for (int i = 0; i < 16; i++)
+							LogOutput("%02X ", mem[0xb795 + i]);
+						LogOutput("\n");
+					}
+				}
+#endif
 			}
 		}
+#if 1
+		if (drive.m_phasePrecise == 66.5)
+		{
+			bool latchRead = ((i + 1) == bitCellRemainder);
+			LogOutput("%04X:(%d) %02X %s\n", floppy.m_bitOffset, (int)floppy.m_extraCycles, m_floppyLatch, !latchRead ? "" : (m_floppyLatch & 0x80) ? "*READ*" : " read ");
+		}
+#endif
 	} // for
 
 #if LOG_DISK_NIBBLES_READ
