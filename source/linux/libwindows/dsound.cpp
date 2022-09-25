@@ -44,6 +44,7 @@ HRESULT IDirectSoundBuffer::Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LP
 {
   const size_t totalWrittenBytes = dwAudioBytes1 + dwAudioBytes2;
   this->myWritePosition = (this->myWritePosition + totalWrittenBytes) % this->mySoundBuffer.size();
+  mutex.unlock();
   return DS_OK;
 }
 
@@ -88,6 +89,7 @@ HRESULT IDirectSoundBuffer::Restore()
 
 HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2, DWORD dwFlags )
 {
+  mutex.lock();
   // No attempt is made at restricting write buffer not to overtake play cursor
   if (dwFlags & DSBLOCK_ENTIREBUFFER)
   {
@@ -126,6 +128,8 @@ HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOI
 
 HRESULT IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2)
 {
+  const std::lock_guard<std::mutex> guard(mutex);
+
   // Read up to dwReadBytes, never going past the write cursor
   // Positions are updated immediately
   const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->bufferSize;
@@ -153,8 +157,9 @@ HRESULT IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DW
   return DS_OK;
 }
 
-DWORD IDirectSoundBuffer::GetBytesInBuffer() const
+DWORD IDirectSoundBuffer::GetBytesInBuffer()
 {
+  const std::lock_guard<std::mutex> guard(mutex);
   const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->bufferSize;
   return available;
 }

@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <memory>
+#include <mutex>
 
 #define IID_IDirectSoundNotify 1234
 #define DS_OK				0
@@ -90,6 +91,8 @@ class IDirectSoundBuffer : public IUnknown
   const size_t bitsPerSample;
   const size_t flags;
 
+  std::mutex mutex;
+
   IDirectSoundBuffer(const size_t bufferSize, const size_t channels, const size_t sampleRate, const size_t bitsPerSample, const size_t flags);
   HRESULT Release() override;
 
@@ -100,7 +103,7 @@ class IDirectSoundBuffer : public IUnknown
 
   // Read is NOT part of Windows API
   HRESULT Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2);
-  DWORD GetBytesInBuffer() const;
+  DWORD GetBytesInBuffer();
 
   HRESULT Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2, DWORD dwFlags );
   HRESULT Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2 );
