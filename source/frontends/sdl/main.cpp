@@ -70,8 +70,6 @@ void run_sdl(int argc, const char * argv [])
   const LoggerContext logger(options.log);
   const RegistryContext registryContext(CreateFileRegistry(options));
 
-  common2::loadGeometryFromRegistry("sa2", options.geometry);
-
   std::shared_ptr<sa2::SDLFrame> frame;
   if (options.imgui)
   {
