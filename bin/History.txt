@@ -9,6 +9,22 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.30.12.0 - 27 Sep 2022
+-----------------------
+. [Bug #1128] Increase paddle maximum offset - fixes 'Learning with Leepers'.
+. [Bug #1127] Debugger: fix memory search command.
+. [Bug #1126] Fix rare crash bug (when unprotected WOZ in drive).
+. [Bug #1125] Improve WOZ support: fixes 'Accolade Comics'.
+. [Bug #1121] Fix for aspect ratio in full-screen:
+	- Now revert to uniformly scaling in both x & y directions unless user specifies resolution.
+	- NB. Regression at 1.30.7.0 when adding VidHD support.
+. [Bug #1119] Fix render issue in 'Color (PAL Monitor)' video mode.
+. [Bug #1022] WOZ support: Better cross-track positioning - fixes 'Balance of Power'.
+. Fix for loading old save-states with Phasor card (bumps MB version in save-state to v9).
+	- NB. Regression at 1.30.10.0 when fixed Phasor to "use correct primary AY8913".
+. Change: Command line: support '-s2 ssc'.
+
+
 1.30.11.0 - 23 Jun 2022
 -----------------------
 . [Change #1103] Debugger: support memory breakpoints for HDD DMA r/w's:
@@ -63,7 +79,7 @@ Tom Charlesworth
 	- Fixes: What's My Logic, Forbidden Quest, The Isle of Mem.
 . [Bug #1018] Support AN3 for //e models.
 . [Bug #1015] Registry: fix support for legacy 'Harddisk Enable' key.
-. [PR #1028] Internal: Split 6522 out of MB code and into own class (bumps MB version in save-state).
+. [PR #1028] Internal: Split 6522 out of MB code and into own class (bumps MB version in save-state to v8).
 . [PR #1025] Load save-state for Cards: improve error messages. [audetto]
 . [PR #1014] Correct BMP creation. [audetto]
 . SSC: Fix for command line -dcd not being honoured. (Regression)
