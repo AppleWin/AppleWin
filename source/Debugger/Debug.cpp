@@ -114,6 +114,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"M", // Mem RW
 		"M", // Mem READ_ONLY
 		"M", // Mem WRITE_ONLY
+		// Watches
+		"M", // Memory
+		"V", // Video Scanner
 		// TODO: M0 ram bank 0, M1 aux ram ?
 	};
 
@@ -6655,7 +6658,7 @@ Update_t CmdWatch (int nArgs)
 //===========================================================================
 Update_t CmdWatchAdd (int nArgs)
 {
-	// WA [adddress]
+	// WA [address]
 	// WA # address
 	if (! nArgs)
 	{
@@ -6673,6 +6676,18 @@ Update_t CmdWatchAdd (int nArgs)
 	bool bAdded = false;
 	for (; iArg <= nArgs; iArg++ )
 	{
+		if (g_aArgs[iArg].eToken == TOKEN_ALPHANUMERIC && g_aArgs[iArg].sArg[0] == 'v')	// 'video' ?
+		{
+			g_aWatches[iWatch].bSet = true;
+			g_aWatches[iWatch].bEnabled = true;
+			g_aWatches[iWatch].eSource = BP_SRC_VIDEO_SCANNER;
+			g_aWatches[iWatch].nAddress = 0xDEAD;
+			bAdded = true;
+			g_nWatches++;
+			iWatch++;
+			continue;
+		}
+
 		WORD nAddress = g_aArgs[iArg].nValue;
 
 		// Make sure address isn't an IO address
@@ -6698,6 +6713,7 @@ Update_t CmdWatchAdd (int nArgs)
 		{
 			g_aWatches[iWatch].bSet = true;
 			g_aWatches[iWatch].bEnabled = true;
+			g_aWatches[iWatch].eSource = BP_SRC_MEMORY;
 			g_aWatches[iWatch].nAddress = (WORD) nAddress;
 			bAdded = true;
 			g_nWatches++;

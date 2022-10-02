@@ -869,6 +869,16 @@ INLINE uint16_t getVideoScannerAddressHGR()
 	return nAddress;
 }
 
+//===========================================================================
+INLINE uint16_t getVideoScannerAddressSHR()
+{
+	// 2 pixels per byte in 320-pixel mode = 160 bytes/scanline
+	// 4 pixels per byte in 640-pixel mode = 160 bytes/scanline
+	const UINT kBytesPerScanline = 160;
+	const UINT kBytesPerCycle = 4;
+	return 0x2000 + kBytesPerScanline * g_nVideoClockVert + kBytesPerCycle * (g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START);
+}
+
 // Non-Inline _________________________________________________________
 
 // Build the 4 phase chroma lookup table
@@ -1822,14 +1832,10 @@ void updateScreenSHR(long cycles6502)
 {
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		// 2 pixels per byte in 320-pixel mode = 160 bytes/scanline
-		// 4 pixels per byte in 640-pixel mode = 160 bytes/scanline
-		const UINT kBytesPerScanline = 160;
-		const UINT kBytesPerCycle = 4;
-		uint16_t addr = 0x2000 + kBytesPerScanline * g_nVideoClockVert + kBytesPerCycle * (g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START);
-
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY_IIGS)
 		{
+			uint16_t addr = getVideoScannerAddressSHR();
+
 			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
 				uint32_t* pAux = (uint32_t*) MemGetAuxPtr(addr);	// 8 pixels (320 mode) / 16 pixels (640 mode)
@@ -1947,6 +1953,8 @@ void NTSC_SetVideoTextMode( int cols )
 //===========================================================================
 void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 {
+	g_uNewVideoModeFlags = uVideoModeFlags;
+
 	if (uVideoModeFlags & VF_SHR)
 	{
 		g_pFuncUpdateGraphicsScreen = updateScreenSHR;
@@ -1965,7 +1973,6 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		// (GH#670) NB. if g_bFullSpeed then NTSC_VideoUpdateCycles() won't be called on the next 6502 opcode.
 		//  - Instead it's called when !g_bFullSpeed (eg. drive motor off), then the stale g_uNewVideoModeFlags will get used for NTSC_SetVideoMode()!
 		g_bDelayVideoMode = true;
-		g_uNewVideoModeFlags = uVideoModeFlags;
 		return;
 	}
 
@@ -2710,4 +2717,85 @@ UINT NTSC_GetCyclesUntilVBlank(int cycles)
 bool NTSC_IsVisible(void)
 {
 	return (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START);
+}
+
+// For debugger
+uint16_t NTSC_GetScannerAddressAndData(uint32_t& data, int& dataSize)
+{
+	uint16_t addr = 0;
+
+	if (g_uNewVideoModeFlags & VF_SHR)
+	{
+		addr = getVideoScannerAddressSHR();
+		uint32_t* pAux = (uint32_t*)MemGetAuxPtr(addr);	// 8 pixels (320 mode) / 16 pixels (640 mode)
+		data = pAux[0];
+		dataSize = 4;
+		return addr;
+	}
+
+	//
+
+	if ( (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED) ||
+		(g_uNewVideoModeFlags & VF_TEXT) ||
+		!(g_uNewVideoModeFlags & VF_HIRES) )
+	{
+		addr = getVideoScannerAddressTXT();
+	}
+	else
+	{
+		addr = getVideoScannerAddressHGR();
+	}
+
+	// Copy logic from NTSC_SetVideoMode()
+	if (g_uNewVideoModeFlags & VF_TEXT)
+	{
+		if (g_uNewVideoModeFlags & VF_80COL)
+			dataSize = 2;
+		else
+			dataSize = 1;
+	}
+	else if (g_uNewVideoModeFlags & VF_HIRES)
+	{
+		if (g_uNewVideoModeFlags & VF_DHIRES)
+		{
+			if (g_uNewVideoModeFlags & VF_80COL)
+				dataSize = 2;
+			else
+				dataSize = 1;
+		}
+		else
+		{
+			dataSize = 1;
+		}
+	}
+	else
+	{
+		if (g_uNewVideoModeFlags & VF_DHIRES)
+		{
+			if (g_uNewVideoModeFlags & VF_80COL)
+				dataSize = 2;
+			else
+				dataSize = 1;
+		}
+		else
+		{
+			dataSize = 1;
+		}
+	}
+
+	// Extra logic for MIXED mode
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && (g_uNewVideoModeFlags & VF_80COL))
+		dataSize = 2;
+
+
+	data = 0;
+	if (dataSize == 2)
+	{
+		uint8_t* pAux = MemGetAuxPtr(addr);
+		data = pAux[0] << 8;
+	}
+	uint8_t* pMain = MemGetMainPtr(addr);
+	data |= pMain[0];
+
+	return addr;
 }

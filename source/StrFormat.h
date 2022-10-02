@@ -75,4 +75,12 @@ inline std::string WordToHexStr(uint16_t n)
 	return s;
 }
 
+inline std::string DWordToHexStr(uint32_t n)
+{
+	std::string s;
+	StrAppendWordAsHex(s, n >> 16);
+	StrAppendWordAsHex(s, n);
+	return s;
+}
+
 } // namespace

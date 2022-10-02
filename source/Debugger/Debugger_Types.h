@@ -184,6 +184,9 @@
 		BP_SRC_MEM_READ_ONLY,
 		BP_SRC_MEM_WRITE_ONLY,
 
+		BP_SRC_MEMORY,			// For watches
+		BP_SRC_VIDEO_SCANNER,	// For watches
+
 		NUM_BREAKPOINT_SOURCES
 	};
 
@@ -516,7 +519,7 @@
 		, CMD_VIEW_DHGR2
 		, CMD_VIEW_SHR
 // Watch
-		, CMD_WATCH // TODO: Deprecated ?
+		, CMD_WATCH
 		, CMD_WATCH_ADD
 		, CMD_WATCH_CLEAR
 		, CMD_WATCH_DISABLE
