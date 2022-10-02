@@ -14,7 +14,7 @@ void NTSC_SetVideoTextMode(int cols);
 uint32_t* NTSC_VideoGetChromaTable(bool bHueTypeMonochrome, bool bMonitorTypeColorTV);
 void NTSC_VideoClockResync(const DWORD dwCyclesThisFrame);
 uint16_t NTSC_VideoGetScannerAddress(const ULONG uExecutedCycles);
-uint16_t NTSC_VideoGetScannerAddressForDebugger(void);
+void NTSC_UpdateVideoHVForDebugger(void);
 void NTSC_Destroy(void);
 void NTSC_VideoInit(uint8_t *pFramebuffer);
 void NTSC_VideoReinitialize(DWORD cyclesThisFrame, bool bInitVideoScannerAddress);

@@ -319,8 +319,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	INLINE void      updatePixels( uint16_t bits );
 	INLINE void      updateVideoScannerHorzEOL();
 	INLINE void      updateVideoScannerAddress();
-	INLINE uint16_t  getVideoScannerAddressTXT();
-	INLINE uint16_t  getVideoScannerAddressHGR();
 
 	static void initChromaPhaseTables();
 	static real initFilterChroma   (real z);
@@ -867,6 +865,19 @@ INLINE uint16_t getVideoScannerAddressHGR()
 		+ APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz]
 		+ (g_nHiresPage * 0x2000));
 	return nAddress;
+}
+
+//===========================================================================
+INLINE uint16_t getVideoScannerAddressTXTorHGR()
+{
+	const bool isTextAddr = ((g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED) ||
+		(g_uNewVideoModeFlags & VF_TEXT) ||
+		!(g_uNewVideoModeFlags & VF_HIRES));
+
+	if (isTextAddr)
+		return getVideoScannerAddressTXT();
+	else
+		return getVideoScannerAddressHGR();
 }
 
 //===========================================================================
@@ -1915,12 +1926,7 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 			g_nVideoClockVert = g_videoScannerMaxVert-1;
 	}
 
-	uint16_t addr;
-	bool bHires = (GetVideo().GetVideoMode() & VF_HIRES) && !(GetVideo().GetVideoMode() & VF_TEXT); // SW_HIRES && !SW_TEXT
-	if( bHires )
-		addr = getVideoScannerAddressHGR();
-	else
-		addr = getVideoScannerAddressTXT();
+	uint16_t addr = getVideoScannerAddressTXTorHGR();
 
 	g_nVideoClockVert = currVideoClockVert;
 	g_nVideoClockHorz = currVideoClockHorz;
@@ -1928,10 +1934,10 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 	return addr;
 }
 
-uint16_t NTSC_VideoGetScannerAddressForDebugger(void)
+void NTSC_UpdateVideoHVForDebugger(void)
 {
 	ResetCyclesExecutedForDebugger();		// if in full-speed, then reset cycles so that CpuCalcCycles() doesn't ASSERT
-	return NTSC_VideoGetScannerAddress(0);
+	NTSC_VideoGetScannerAddress(0);
 }
 
 //===========================================================================
@@ -2722,11 +2728,9 @@ bool NTSC_IsVisible(void)
 // For debugger
 uint16_t NTSC_GetScannerAddressAndData(uint32_t& data, int& dataSize)
 {
-	uint16_t addr = 0;
-
 	if (g_uNewVideoModeFlags & VF_SHR)
 	{
-		addr = getVideoScannerAddressSHR();
+		uint16_t addr = getVideoScannerAddressSHR();
 		uint32_t* pAux = (uint32_t*)MemGetAuxPtr(addr);	// 8 pixels (320 mode) / 16 pixels (640 mode)
 		data = pAux[0];
 		dataSize = 4;
@@ -2734,17 +2738,6 @@ uint16_t NTSC_GetScannerAddressAndData(uint32_t& data, int& dataSize)
 	}
 
 	//
-
-	if ( (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED) ||
-		(g_uNewVideoModeFlags & VF_TEXT) ||
-		!(g_uNewVideoModeFlags & VF_HIRES) )
-	{
-		addr = getVideoScannerAddressTXT();
-	}
-	else
-	{
-		addr = getVideoScannerAddressHGR();
-	}
 
 	// Copy logic from NTSC_SetVideoMode()
 	if (g_uNewVideoModeFlags & VF_TEXT)
@@ -2787,8 +2780,9 @@ uint16_t NTSC_GetScannerAddressAndData(uint32_t& data, int& dataSize)
 	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && (g_uNewVideoModeFlags & VF_80COL))
 		dataSize = 2;
 
-
+	uint16_t addr = getVideoScannerAddressTXTorHGR();
 	data = 0;
+
 	if (dataSize == 2)
 	{
 		uint8_t* pAux = MemGetAuxPtr(addr);

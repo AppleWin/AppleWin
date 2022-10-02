@@ -3231,7 +3231,7 @@ static void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 //===========================================================================
 static void DrawVideoScannerInfo(int line)
 {
-	NTSC_VideoGetScannerAddressForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
+	NTSC_UpdateVideoHVForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
 
 	int v = g_nVideoClockVert;
 	int h = g_nVideoClockHorz;

@@ -7801,15 +7801,16 @@ void OutputTraceLine ()
 
 	if (g_bTraceFileWithVideoScanner)
 	{
-		uint16_t addr = NTSC_VideoGetScannerAddressForDebugger();
-		BYTE data = mem[addr];
+		uint32_t data;
+		int dataSize;
+		uint16_t addr = NTSC_GetScannerAddressAndData(data, dataSize);
 
 		fprintf( g_hTraceFile,
 			"%04X %04X %04X   %02X %02X %02X %02X %04X %s  %s\n",
 			g_nVideoClockVert,
 			g_nVideoClockHorz,
 			addr,
-			data,
+			(uint8_t)data,	// truncated
 			(unsigned)regs.a,
 			(unsigned)regs.x,
 			(unsigned)regs.y,
