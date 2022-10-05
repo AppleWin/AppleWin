@@ -167,6 +167,11 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					g_cmdLine.bSlotEmpty[slot] = true;
 				if (strcmp(lpCmdLine, "diskii") == 0)
 					g_cmdLine.slotInsert[slot] = CT_Disk2;
+				if (strcmp(lpCmdLine, "diskii13") == 0)
+				{
+					g_cmdLine.slotInsert[slot] = CT_Disk2;
+					g_cmdLine.slotInfo[slot].isDiskII13 = true;
+				}
 				if (strcmp(lpCmdLine, "parallel") == 0)
 				{
 					if (slot == SLOT1)

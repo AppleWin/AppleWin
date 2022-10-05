@@ -73,6 +73,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	m_diskLastReadLatchCycle = 0;
 	m_enhanceDisk = true;
 	m_is13SectorFirmware = false;
+	m_force13SectorFirmware = false;
 	m_deferredStepperEvent = false;
 	m_deferredStepperAddress = 0;
 	m_deferredStepperCumulativeCycles = 0;
@@ -2004,7 +2005,10 @@ void Disk2InterfaceCard::InitFirmware(LPBYTE pCxRomPeripheral)
 
 	ImageInfo* pImage = m_floppyDrive[DRIVE_1].m_disk.m_imagehandle;
 
-	m_is13SectorFirmware = ImageIsBootSectorFormatSector13(pImage);
+	if (m_force13SectorFirmware)
+		m_is13SectorFirmware = true;
+	else
+		m_is13SectorFirmware = ImageIsBootSectorFormatSector13(pImage);
 
 	if (m_is13SectorFirmware)
 		memcpy(pCxRomPeripheral + m_slot*APPLE_SLOT_SIZE, m_13SectorFirmware, DISK2_FW_SIZE);

@@ -789,6 +789,12 @@ static void RepeatInitialization(void)
 			GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
 		}
 
+		for (UINT i = 0; i < NUM_SLOTS; i++)
+		{
+			if (GetCardMgr().QuerySlot(i) == CT_Disk2 && g_cmdLine.slotInfo[i].isDiskII13)
+				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).SetFirmware13Sector();
+		}
+
 		// Create window after inserting/removing VidHD card (as it affects width & height)
 		{
 			Win32Frame::GetWin32Frame().SetViewportScale(Win32Frame::GetWin32Frame().GetViewportScale(), true);
