@@ -98,7 +98,7 @@
 							</tr>
 						</tbody>
 		</table>
-		<p><font size="4"><b>Examples</b>:</font></p>
+		<p><font size="3"><b>Examples</b>:</font></p>
 		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="90%">
 			<COLGROUP>
 				<col width="64">
@@ -151,6 +151,142 @@ FF0A</span></b></font></font></p>
 						</tbody>
 		</table>
 		<br>
+		
+		<h3>Zero-page Watches</h3>
+		<p>Add a zero-page watch at the indirect address (nn).</p>
+		<table border="0" cellpadding="2" cellspacing="0" width="75%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#ffffff"><b>Command</b></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p style="FONT-STYLE: normal"><font color="#ffffff"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>ZPA (or ZP) nn</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Add/Update address to next zero page pointer</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>ZPA (or ZP) # nn</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Add/Update address to specific zero page pointer</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>ZPC #</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Clear (remove) zero page pointer</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>ZPD #</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Disable zero page pointer - it is still in the list, just not active</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>ZPE #</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>(Re)Enable disabled zero page pointer</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>ZPL</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>List all zero page pointers</i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<br>
+
+		<h3>Memory Watches</h3>
+		<p>Add a 16-bit memory watch at the 16-bit address nnnn.<br>
+		NB. For 'WA # v': specifying 'v' instead of an address will watch the video scanner.</p>
+		<table border="0" cellpadding="2" cellspacing="0" width="75%">
+			<COLGROUP>
+				<col width="64">
+					<col width="192">
+						<tbody>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#ffffff"><b>Command</b></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p style="FONT-STYLE: normal"><font color="#ffffff"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>WA (or W) nnnn|symbol</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Add/Update address or symbol to next watch</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>WA (or W) # nnnn|symbol|v</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Add/Update address or symbol to specific watch</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>WC #</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Clear (remove) watch</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>WD #</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Disable specific watch - it is still in the list, just not active</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>WE #</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>(Re)Enable disabled watch</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>WL</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>List all watches</i></p>
+								</td>
+							</tr>
+						</tbody>
+		</table>
+		<br>
+
 		<h3><a name="Memory_Search">Searching Memory</a></h3>
 		<p>You can search memory for hex values.&nbsp; Wildcard support is also supported 
 			via the '<b>?</b>' wildcard operator, including nibble searching. &nbsp; A 
