@@ -114,8 +114,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"M", // Mem RW
 		"M", // Mem READ_ONLY
 		"M", // Mem WRITE_ONLY
-		// Watches
-		"M", // Memory
 		"V", // Video Scanner
 		// TODO: M0 ram bank 0, M1 aux ram ?
 	};
@@ -1335,6 +1333,33 @@ void ClearTempBreakpoints ()
 	}
 }
 
+// Returns true if a video breakpoint is triggered
+//===========================================================================
+int CheckBreakpointsVideo()
+{
+	int bBreakpointHit = 0;
+
+	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
+	{
+		Breakpoint_t* pBP = &g_aBreakpoints[iBreakpoint];
+
+		if (!_BreakpointValid(pBP))
+			continue;
+
+		if (pBP->eSource != BP_SRC_VIDEO_SCANNER)
+			continue;
+
+		if (_CheckBreakpointValue(pBP, g_nVideoClockVert))
+		{
+			bBreakpointHit = BP_HIT_VIDEO_POS;
+			pBP->bEnabled = false;	// Disable, otherwise it'll trigger many times on this scan-line
+			break;
+		}
+	}
+
+	return bBreakpointHit;
+}
+
 //===========================================================================
 static int CheckBreakpointsDmaToOrFromIOMemory(void)
 {
@@ -1502,6 +1527,15 @@ bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoin
 		_ASSERT(nLen <= _6502_MEM_LEN);
 		if (nLen > (int) _6502_MEM_LEN) nLen = (int) _6502_MEM_LEN;
 
+		if (iSrc == BP_SRC_VIDEO_SCANNER)
+		{
+			if (nAddress >= NTSC_GetVideoLines())
+				nAddress = NTSC_GetVideoLines() - 1;
+
+			if ((nAddress + (UINT)nLen) >= NTSC_GetVideoLines())
+				nLen = NTSC_GetVideoLines() - nAddress;
+		}
+
 		pBP->eSource   = iSrc;
 		pBP->eOperator = iCmp;
 		pBP->nAddress  = nAddress;
@@ -1651,7 +1685,7 @@ Update_t CmdBreakpointAddMemW(int nArgs)
 	return CmdBreakpointAddMem(nArgs, BP_SRC_MEM_WRITE_ONLY);
 }
 //===========================================================================
-Update_t CmdBreakpointAddMem  (int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM_RW*/)
+Update_t CmdBreakpointAddMem(int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM_RW*/)
 {
 	BreakpointSource_t   iSrc = bpSrc;
 	BreakpointOperator_t iCmp = BP_OP_EQUAL;
@@ -1678,6 +1712,33 @@ Update_t CmdBreakpointAddMem  (int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_ME
 	return UPDATE_BREAKPOINTS | UPDATE_CONSOLE_DISPLAY;
 }
 
+//===========================================================================
+Update_t CmdBreakpointAddVideo(int nArgs)
+{
+	BreakpointSource_t   iSrc = BP_SRC_VIDEO_SCANNER;
+	BreakpointOperator_t iCmp = BP_OP_EQUAL;
+
+	int iArg = 0;
+
+	while (iArg++ < nArgs)
+	{
+		if (g_aArgs[iArg].bType & TYPE_OPERATOR)
+		{
+			return Help_Arg_1(CMD_BREAKPOINT_ADD_VIDEO);
+		}
+		else
+		{
+			int dArg = _CmdBreakpointAddCommonArg(iArg, nArgs, iSrc, iCmp);
+			if (!dArg)
+			{
+				return Help_Arg_1(CMD_BREAKPOINT_ADD_VIDEO);
+			}
+			iArg += dArg;
+		}
+	}
+
+	return UPDATE_BREAKPOINTS | UPDATE_CONSOLE_DISPLAY;
+}
 
 //===========================================================================
 void _BWZ_Clear( Breakpoint_t * aBreakWatchZero, int iSlot )
@@ -6713,7 +6774,7 @@ Update_t CmdWatchAdd (int nArgs)
 		{
 			g_aWatches[iWatch].bSet = true;
 			g_aWatches[iWatch].bEnabled = true;
-			g_aWatches[iWatch].eSource = BP_SRC_MEMORY;
+			g_aWatches[iWatch].eSource = BP_SRC_MEM_RW;
 			g_aWatches[iWatch].nAddress = (WORD) nAddress;
 			bAdded = true;
 			g_nWatches++;
@@ -8395,7 +8456,7 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 					g_bDebugBreakpointHit |= BP_HIT_INTERRUPT;
 			}
 
-			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg() | CheckBreakpointsDmaToOrFromIOMemory() | CheckBreakpointsDmaToOrFromMemory(-1);
+			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg() | CheckBreakpointsVideo() | CheckBreakpointsDmaToOrFromIOMemory() | CheckBreakpointsDmaToOrFromMemory(-1);
 		}
 
 		if (regs.pc == g_nDebugStepUntil || g_bDebugBreakpointHit)
@@ -8421,6 +8482,8 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 				stopReason = "PC reads from floating bus or I/O memory";
 			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
 				stopReason = StrFormat("Interrupt occurred at $%04X", g_LBR);
+			else if (g_bDebugBreakpointHit & BP_HIT_VIDEO_POS)
+				stopReason = StrFormat("Video scanner position matches at vpos=$%04X", g_nVideoClockVert);
 			else if (g_bDebugBreakpointHit & BP_DMA_TO_IO_MEM)
 				stopReason = StrFormat("HDD DMA to I/O memory or ROM at $%04X", g_DebugBreakOnDMAIO.memoryAddr);
 			else if (g_bDebugBreakpointHit & BP_DMA_FROM_IO_MEM)

@@ -940,7 +940,10 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleColorizePrint( " Usage: <range>" );
 			Help_Range();
 			break;
-	// Config - Load / Save
+		case CMD_BREAKPOINT_ADD_VIDEO:
+			ConsoleColorizePrint( " Usage: <vpos[,length]>" );
+			break;
+			// Config - Load / Save
 		case CMD_CONFIG_LOAD:
 			ConsoleColorizePrint( " Usage: [\"filename\"]" );
 			ConsoleBufferPushFormat( "  Load debugger configuration from '%s', or the specificed file.", g_sFileNameConfig.c_str() );

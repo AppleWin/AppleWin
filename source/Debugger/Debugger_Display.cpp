@@ -2767,7 +2767,7 @@ void DrawWatches (int line)
 #if DEBUG_FORCE_DISPLAY // Watch
 		if (true)
 #else
-		if (g_aWatches[iWatch].bEnabled && g_aWatches[iWatch].eSource == BP_SRC_MEMORY)
+		if (g_aWatches[iWatch].bEnabled && g_aWatches[iWatch].eSource == BP_SRC_MEM_RW)
 #endif
 		{
 			RECT rect2 = rect;
