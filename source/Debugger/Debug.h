@@ -43,6 +43,7 @@
 		, BP_DMA_FROM_IO_MEM = (1 << 9)
 		, BP_DMA_TO_MEM = (1 << 10)
 		, BP_DMA_FROM_MEM = (1 << 11)
+		, BP_HIT_VIDEO_POS = (1 << 12)
 	};
 
 	extern int          g_nBreakpoints;

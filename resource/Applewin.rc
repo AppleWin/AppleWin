@@ -295,7 +295,7 @@ BEGIN
             VALUE "FileDescription", "Apple //e Emulator for Windows"
             VALUE "FileVersion", APPLEWIN_VERSION_STR
             VALUE "InternalName", "APPLEWIN"
-            VALUE "LegalCopyright", " 1994-2021 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
+            VALUE "LegalCopyright", " 1994-2022 Michael O'Brien, Oliver Schmidt, Tom Charlesworth, Michael Pohoreski, Nick Westgate, Linards Ticmanis"
             VALUE "OriginalFilename", "APPLEWIN.EXE"
             VALUE "ProductName", "Apple //e Emulator"
             VALUE "ProductVersion", APPLEWIN_VERSION_STR

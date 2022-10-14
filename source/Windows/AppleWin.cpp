@@ -786,7 +786,20 @@ static void RepeatInitialization(void)
 				GetCardMgr().Remove(SLOT5);
 			}
 
-			GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
+			if (GetCardMgr().QuerySlot(SLOT5) != CT_Disk2)	// Ignore if already got Disk2 in slot 5
+				GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
+		}
+
+		if (g_cmdLine.slotInsert[SLOT6] == CT_Disk2)	// For now just support Disk2 in slot 6
+		{
+			if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)	// Ignore if already got Disk2 in slot 6
+				GetCardMgr().Insert(SLOT6, g_cmdLine.slotInsert[SLOT6]);
+		}
+
+		for (UINT i = 0; i < NUM_SLOTS; i++)
+		{
+			if (GetCardMgr().QuerySlot(i) == CT_Disk2 && g_cmdLine.slotInfo[i].isDiskII13)
+				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).SetFirmware13Sector();
 		}
 
 		// Create window after inserting/removing VidHD card (as it affects width & height)

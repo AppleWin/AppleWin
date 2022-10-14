@@ -2767,7 +2767,7 @@ void DrawWatches (int line)
 #if DEBUG_FORCE_DISPLAY // Watch
 		if (true)
 #else
-		if (g_aWatches[iWatch].bEnabled)
+		if (g_aWatches[iWatch].bEnabled && g_aWatches[iWatch].eSource == BP_SRC_MEM_RW)
 #endif
 		{
 			RECT rect2 = rect;
@@ -2779,39 +2779,31 @@ void DrawWatches (int line)
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BULLET ));
 			PrintTextCursorX( StrFormat( "%X ", iWatch ).c_str(), rect2 );
 			
-//			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
-//			PrintTextCursorX( ".", rect2 );
-
 			DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ));
 			PrintTextCursorX( WordToHexStr( g_aWatches[iWatch].nAddress ).c_str(), rect2 );
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 			PrintTextCursorX( ":", rect2 );
 
-			BYTE nTarget8 = 0;
+			//
 
-			nTarget8 = (unsigned)*(LPBYTE)(mem+g_aWatches[iWatch].nAddress);
+			BYTE nTargetL = *(LPBYTE)(mem + g_aWatches[iWatch].nAddress);
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
-			PrintTextCursorX( ByteToHexStr( nTarget8 ).c_str(), rect2 );
+			PrintTextCursorX( ByteToHexStr( nTargetL ).c_str(), rect2 );
 
-			nTarget8 = (unsigned)*(LPBYTE)(mem+g_aWatches[iWatch].nAddress + 1);
+			BYTE nTargetH = *(LPBYTE)(mem + ((g_aWatches[iWatch].nAddress + 1) & 0xffff));
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
-			PrintTextCursorX( ByteToHexStr( nTarget8 ).c_str(), rect2 );
+			PrintTextCursorX( ByteToHexStr( nTargetH ).c_str(), rect2 );
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 			PrintTextCursorX( "(", rect2 );
 
-			WORD nTarget16 = (unsigned)*(LPWORD)(mem+g_aWatches[iWatch].nAddress);
+			WORD nTarget16 = (((WORD)nTargetH) << 8) | ((WORD)nTargetL);
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
 			PrintTextCursorX( WordToHexStr( nTarget16 ).c_str(), rect2 );
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
-//			PrintTextCursorX( ":", rect2 );
 			PrintTextCursorX( ")", rect2 );
-
-//			BYTE nValue8 = *(LPBYTE)(mem + nTarget16);
-//			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
-//			PrintTextCursorX( ByteToHexStr( nValue8 ).c_str(), rect2 );
 
 			rect.top    += g_nFontHeight;
 			rect.bottom += g_nFontHeight;
@@ -2836,6 +2828,54 @@ void DrawWatches (int line)
 				PrintTextCursorX( ByteToHexStr( nValue8 ).c_str(), rect2 );
 			}
 		}
+		else if (g_aWatches[iWatch].bEnabled && g_aWatches[iWatch].eSource == BP_SRC_VIDEO_SCANNER)
+		{
+			uint32_t data;
+			int dataSize;
+			g_aWatches[iWatch].nAddress = NTSC_GetScannerAddressAndData(data, dataSize);
+
+			RECT rect2 = rect;
+
+			DebuggerSetColorBG(DebuggerGetColor(BG_INFO_WATCH));
+			DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));
+			PrintTextCursorX("W", rect2);
+
+			DebuggerSetColorFG(DebuggerGetColor(FG_INFO_BULLET));
+			PrintTextCursorX(StrFormat("%X ", iWatch).c_str(), rect2);
+
+			DebuggerSetColorFG(DebuggerGetColor(FG_DISASM_ADDRESS));
+			PrintTextCursorX(WordToHexStr(g_aWatches[iWatch].nAddress).c_str(), rect2);
+
+			DebuggerSetColorFG(DebuggerGetColor(FG_INFO_OPERATOR));
+			PrintTextCursorX(":", rect2);
+
+			DebuggerSetColorFG(DebuggerGetColor(FG_INFO_OPCODE));
+			if (dataSize == 1)
+			{
+				PrintTextCursorX(ByteToHexStr(data).c_str(), rect2);
+			}
+			else if (dataSize == 2)
+			{
+				PrintTextCursorX("a:", rect2);
+				PrintTextCursorX(ByteToHexStr(data>>8).c_str(), rect2);
+				PrintTextCursorX(" m:", rect2);
+				PrintTextCursorX(ByteToHexStr(data).c_str(), rect2);
+			}
+			else
+			{
+				_ASSERT(dataSize == 4);
+				PrintTextCursorX(DWordToHexStr(data).c_str(), rect2);
+			}
+
+			rect.top    += g_nFontHeight;
+			rect.bottom += g_nFontHeight;
+		}
+		else
+		{
+			rect.top    += g_nFontHeight;
+			rect.bottom += g_nFontHeight;
+		}
+
 		rect.top    += g_nFontHeight;
 		rect.bottom += g_nFontHeight;
 	}
@@ -3191,7 +3231,7 @@ static void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 //===========================================================================
 static void DrawVideoScannerInfo(int line)
 {
-	NTSC_VideoGetScannerAddressForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
+	NTSC_UpdateVideoHVForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
 
 	int v = g_nVideoClockVert;
 	int h = g_nVideoClockHorz;

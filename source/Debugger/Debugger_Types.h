@@ -183,6 +183,7 @@
 		BP_SRC_MEM_RW,
 		BP_SRC_MEM_READ_ONLY,
 		BP_SRC_MEM_WRITE_ONLY,
+		BP_SRC_VIDEO_SCANNER,
 
 		NUM_BREAKPOINT_SOURCES
 	};
@@ -334,6 +335,7 @@
 		, CMD_BREAKPOINT_ADD_MEM // break on: [$0000-$FFFF], excluding IO
 		, CMD_BREAKPOINT_ADD_MEMR // break on read on: [$0000-$FFFF], excluding IO
 		, CMD_BREAKPOINT_ADD_MEMW // break on write on: [$0000-$FFFF], excluding IO
+		, CMD_BREAKPOINT_ADD_VIDEO // break on video scanner position
 
 		, CMD_BREAKPOINT_CLEAR
 //		,	CMD_BREAKPOINT_REMOVE = CMD_BREAKPOINT_CLEAR // alias
@@ -516,7 +518,7 @@
 		, CMD_VIEW_DHGR2
 		, CMD_VIEW_SHR
 // Watch
-		, CMD_WATCH // TODO: Deprecated ?
+		, CMD_WATCH
 		, CMD_WATCH_ADD
 		, CMD_WATCH_CLEAR
 		, CMD_WATCH_DISABLE
@@ -641,6 +643,7 @@
 	Update_t CmdBreakpointAddMemA  (int nArgs);
 	Update_t CmdBreakpointAddMemR  (int nArgs);
 	Update_t CmdBreakpointAddMemW  (int nArgs);
+	Update_t CmdBreakpointAddVideo (int nArgs);
 	Update_t CmdBreakpointClear    (int nArgs);
 	Update_t CmdBreakpointDisable  (int nArgs);
 	Update_t CmdBreakpointEdit     (int nArgs);

@@ -173,6 +173,7 @@ public:
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
 	bool DriveSwap(void);
 	bool IsDriveConnected(int drive) { return m_floppyDrive[drive].m_isConnected; }
+	void SetFirmware13Sector(void) { m_force13SectorFirmware = true; }
 
 	static const std::string& GetSnapshotCardName(void);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
@@ -250,6 +251,7 @@ private:
 	BYTE m_13SectorFirmware[DISK2_FW_SIZE];
 	BYTE m_16SectorFirmware[DISK2_FW_SIZE];
 	bool m_is13SectorFirmware;
+	bool m_force13SectorFirmware;
 
 	WORD m_currDrive;
 	FloppyDrive m_floppyDrive[NUM_DRIVES];
