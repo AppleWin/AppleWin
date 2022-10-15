@@ -90,6 +90,9 @@ private:
 
 	void Benchmark(void);
 	void DisplayLogo(void);
+	bool GetTrackSector(UINT slot, int& drive1Track, int& drive1Sector, int& drive2Track, int& drive2Sector, int& activeFloppy);
+	void CreateTrackSectorStrings(int track, int sector, std::string& strTrack, std::string& strSector);
+	void DrawTrackSector(HDC dc, UINT slot, int drive1Track, int drive1Sector, int drive2Track, int drive2Sector);
 	void FrameDrawDiskLEDS(HDC hdc);  // overloaded Win32 only, call via GetWin32Frame()
 	void FrameDrawDiskStatus(HDC hdc);  // overloaded Win32 only, call via GetWin32Frame()
 	void EraseButton(int number);
