@@ -231,7 +231,7 @@ void Win32Frame::CreateGdiObjects(void)
 	btnfacepen      = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNFACE));
 	btnhighlightpen = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNHIGHLIGHT));
 	btnshadowpen    = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNSHADOW));
-	smallfont = CreateFont(11,6,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
+	smallfont = CreateFont(smallfontHeight,6,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
 							OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
 							DEFAULT_QUALITY,VARIABLE_PITCH | FF_SWISS,
 							TEXT("Small Fonts"));
@@ -687,12 +687,12 @@ void Win32Frame::DrawTrackSector(HDC dc, UINT slot, int drive1Track, int drive1S
 	text = "T" + strTrackDrive1;
 	TextOut(dc, x + 6, y + 35 + diskIIInfoSize, text.c_str(), text.length());
 	text = "S" + strSectorDrive1;
-	TextOut(dc, x + 6, y + 45 + diskIIInfoSize, text.c_str(), text.length());
+	TextOut(dc, x + 6, y + 35 + smallfontHeight + diskIIInfoSize, text.c_str(), text.length());
 
 	text = "T" + strTrackDrive2;
 	TextOut(dc, x + 26, y + 35 + diskIIInfoSize, text.c_str(), text.length());
 	text = "S" + strSectorDrive2;
-	TextOut(dc, x + 26, y + 45 + diskIIInfoSize, text.c_str(), text.length());
+	TextOut(dc, x + 26, y + 35 + smallfontHeight + diskIIInfoSize, text.c_str(), text.length());
 }
 
 // Feature Request #201 Show track status
@@ -730,23 +730,22 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 		if (!g_bFullScreen_ShowSubunitStatus)
 			return;
 
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ g_eStatusDrive1 ]);
-		TextOut(dc, x+ 3, y+5, TEXT("1"), 1);
-
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ g_eStatusDrive2 ]);
-		TextOut(dc, x+13, y+5, TEXT("2"), 1);
-
 		std::string strTrackDrive1, strSectorDrive1, strTrackDrive2, strSectorDrive2;
 		CreateTrackSectorStrings(nDrive1Track, g_nSector[SLOT6][0], strTrackDrive1, strSectorDrive1);
 		CreateTrackSectorStrings(nDrive2Track, g_nSector[SLOT6][1], strTrackDrive2, strSectorDrive2);
 
-		int dx = 0;
 		std::string text = ( nActiveFloppy == 0 )
 			? StrFormat( "%s/%s    ", strTrackDrive1.c_str(), strSectorDrive1.c_str() )
 			: StrFormat( "%s/%s    ", strTrackDrive2.c_str(), strSectorDrive2.c_str() );
 
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ DISK_STATUS_READ ] );
-		TextOut(dc, x+dx, y-9, text.c_str(), text.length());
+		TextOut(dc, x, y, text.c_str(), text.length());
+
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[g_eStatusDrive1]);
+		TextOut(dc, x + 3, y + smallfontHeight, TEXT("1"), 1);
+
+		SetTextColor(dc, g_aDiskFullScreenColorsLED[g_eStatusDrive2]);
+		TextOut(dc, x + 13, y + smallfontHeight, TEXT("2"), 1);
 	}
 	else
 	{

@@ -167,6 +167,7 @@ private:
 	RECT    framerect;
 
 	BOOL    helpquit;
+	const UINT smallfontHeight = 11;
 	HFONT   smallfont;
 	HWND    tooltipwindow;
 	int     viewportx;	// Default to Normal (non-FullScreen) mode
