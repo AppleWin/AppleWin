@@ -579,7 +579,7 @@ void Win32Frame::FrameDrawDiskStatus()
 	FrameDrawDiskStatus((HDC)0);
 }
 
-bool Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive1Sector, int& drive2Track, int& drive2Sector, int& activeFloppy)
+void Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, int& activeFloppy)
 {
 	//        DOS3.3   ProDOS
 	// Slot   $B7E9    $BE3C(DEFSLT=Default Slot)      ; ref: Beneath Apple ProDOS 8-3
@@ -588,8 +588,9 @@ bool Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive1Sector, 
 	// Sector $B7ED    LC1 $D357
 	// RWTS            LC1 $D300
 
+	drive1Track = drive2Track = activeFloppy = 0;
 	if (GetCardMgr().QuerySlot(slot) != CT_Disk2)
-		return false;
+		return;
 
 	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 	activeFloppy = disk2Card.GetCurrentDrive();
@@ -598,7 +599,8 @@ bool Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive1Sector, 
 
 	// Probe known OS's for default Slot/Track/Sector
 	const bool isProDOS = mem[0xBF00] == 0x4C;
-	bool isValid = false;
+	bool isSectorValid = false;
+	int drive1Sector = -1, drive2Sector = -1;
 
 	// Try DOS3.3 Sector
 	if (!isProDOS)
@@ -621,7 +623,7 @@ bool Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive1Sector, 
 			/**/ if (activeFloppy == 0) drive1Sector = nDOS33sector;
 			else if (activeFloppy == 1) drive2Sector = nDOS33sector;
 
-			isValid = true;
+			isSectorValid = true;
 		}
 	}
 	else // isProDOS
@@ -639,11 +641,21 @@ bool Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive1Sector, 
 			/**/ if (activeFloppy == 0) drive1Sector = nProDOSsector;
 			else if (activeFloppy == 1) drive2Sector = nProDOSsector;
 
-			isValid = true;
+			isSectorValid = true;
 		}
 	}
 
-	return isValid;
+	// Preserve sector so don't get "??" when switching drives, eg. if using COPYA to copy from drive-1 to drive-2
+	if (isSectorValid)
+	{
+		if (activeFloppy == 0) g_nSector[slot][0] = drive1Sector;
+		else                   g_nSector[slot][1] = drive2Sector;
+	}
+	else
+	{
+		if (activeFloppy == 0) g_nSector[slot][0] = -1;
+		else                   g_nSector[slot][1] = -1;
+	}
 }
 
 void Win32Frame::CreateTrackSectorStrings(int track, int sector, std::string& strTrack, std::string& strSector)
@@ -697,22 +709,8 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 	if (g_windowMinimized)	// Prevent DC leaks when app window is minimised (GH#820)
 		return;
 
-	int nDrive1Track, nDrive1Sector=-1, nDrive2Track, nDrive2Sector=-1, nActiveFloppy;
-	bool isSectorValid = GetTrackSector(SLOT6, nDrive1Track, nDrive1Sector, nDrive2Track, nDrive2Sector, nActiveFloppy);
-
-	g_nTrackDrive1 = nDrive1Track;
-	g_nTrackDrive2 = nDrive2Track;
-
-	if (isSectorValid)
-	{
-		if (nActiveFloppy == 0) g_nSectorDrive1 = nDrive1Sector;
-		else                    g_nSectorDrive2 = nDrive2Sector;
-	}
-	else
-	{
-		if (nActiveFloppy == 0) g_nSectorDrive1 = -1;
-		else                    g_nSectorDrive2 = -1;
-	}
+	int nDrive1Track, nDrive2Track, nActiveFloppy;
+	GetTrackSector(SLOT6, nDrive1Track, nDrive2Track, nActiveFloppy);
 
 	// Draw Track/Sector
 	FrameReleaseDC();
@@ -727,7 +725,7 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 
 	if (g_bIsFullScreen)
 	{
-		// GH#57 - drive lights in full screen mode
+		// GH#57 - drive lights in full screen mode (Slot 6 only)
 
 		if (!g_bFullScreen_ShowSubunitStatus)
 			return;
@@ -738,16 +736,17 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ g_eStatusDrive2 ]);
 		TextOut(dc, x+13, y+5, TEXT("2"), 1);
 
-		CreateTrackSectorStrings(g_nTrackDrive1, g_nSectorDrive1, g_strTrackDrive1, g_strSectorDrive1);
-		CreateTrackSectorStrings(g_nTrackDrive2, g_nSectorDrive2, g_strTrackDrive2, g_strSectorDrive2);
+		std::string strTrackDrive1, strSectorDrive1, strTrackDrive2, strSectorDrive2;
+		CreateTrackSectorStrings(nDrive1Track, g_nSector[SLOT6][0], strTrackDrive1, strSectorDrive1);
+		CreateTrackSectorStrings(nDrive2Track, g_nSector[SLOT6][1], strTrackDrive2, strSectorDrive2);
 
 		int dx = 0;
 		std::string text = ( nActiveFloppy == 0 )
-			? StrFormat( "%s/%s    ", g_strTrackDrive1.c_str(), g_strSectorDrive1.c_str() )
-			: StrFormat( "%s/%s    ", g_strTrackDrive2.c_str(), g_strSectorDrive2.c_str() );
+			? StrFormat( "%s/%s    ", strTrackDrive1.c_str(), strSectorDrive1.c_str() )
+			: StrFormat( "%s/%s    ", strTrackDrive2.c_str(), strSectorDrive2.c_str() );
 
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ DISK_STATUS_READ ] );
-		TextOut(dc, x+dx, y-9, text.c_str(), text.length()); // original: y+2; y-9 puts status in the Configuration Button Icon
+		TextOut(dc, x+dx, y-9, text.c_str(), text.length());
 	}
 	else
 	{
@@ -755,15 +754,13 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 		if (g_nViewportScale == 1)
 			return;
 
-		DrawTrackSector(dc, SLOT6, nDrive1Track, g_nSectorDrive1, nDrive2Track, g_nSectorDrive2);
+		DrawTrackSector(dc, SLOT6, nDrive1Track, g_nSector[SLOT6][0], nDrive2Track, g_nSector[SLOT6][1]);
 
 		// Slot 5's Disk II
 		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 		{
-			nDrive1Sector = nDrive2Sector = -1;
-			isSectorValid = GetTrackSector(SLOT5, nDrive1Track, nDrive1Sector, nDrive2Track, nDrive2Sector, nActiveFloppy);
-			// TODO: keep sector from last time
-			DrawTrackSector(dc, SLOT5, nDrive1Track, nDrive1Sector, nDrive2Track, nDrive2Sector);
+			GetTrackSector(SLOT5, nDrive1Track, nDrive2Track, nActiveFloppy);
+			DrawTrackSector(dc, SLOT5, nDrive1Track, g_nSector[SLOT5][0], nDrive2Track, g_nSector[SLOT5][1]);
 		}
 	}
 }

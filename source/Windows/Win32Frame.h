@@ -2,6 +2,7 @@
 
 #include "FrameBase.h"
 #include "DiskImage.h"
+#include "Card.h"
 
 class Video;
 
@@ -90,7 +91,7 @@ private:
 
 	void Benchmark(void);
 	void DisplayLogo(void);
-	bool GetTrackSector(UINT slot, int& drive1Track, int& drive1Sector, int& drive2Track, int& drive2Sector, int& activeFloppy);
+	void GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, int& activeFloppy);
 	void CreateTrackSectorStrings(int track, int sector, std::string& strTrack, std::string& strSector);
 	void DrawTrackSector(HDC dc, UINT slot, int drive1Track, int drive1Sector, int drive2Track, int drive2Sector);
 	void FrameDrawDiskLEDS(HDC hdc);  // overloaded Win32 only, call via GetWin32Frame()
@@ -186,14 +187,7 @@ private:
 	//===========================
 	HBITMAP g_hDiskWindowedLED[NUM_DISK_STATUS];
 
-	int    g_nTrackDrive1;
-	int    g_nTrackDrive2;
-	int    g_nSectorDrive1;
-	int    g_nSectorDrive2;
-	std::string g_strTrackDrive1;
-	std::string g_strTrackDrive2;
-	std::string g_strSectorDrive1;
-	std::string g_strSectorDrive2;
+	int g_nSector[NUM_SLOTS][2];
 	Disk_Status_e g_eStatusDrive1;
 	Disk_Status_e g_eStatusDrive2;
 
