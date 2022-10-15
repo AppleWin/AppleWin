@@ -61,7 +61,8 @@
 #define IDC_MB_VOLUME                   1010
 #define IDC_SAVESTATE_BROWSE            1011
 #define IDC_MONOCOLOR                   1012
-#define IDC_DISKII_SLOT5_ENABLE         1020
+#define IDC_DISKII_SLOT5_ENABLE         1019
+#define IDC_DISKII_SLOT5_STATUS_ENABLE  1020
 #define IDC_HDD_ENABLE                  1021
 #define IDC_HDD_SWAP                    1022
 #define IDC_PASTE_FROM_CLIPBOARD        1023

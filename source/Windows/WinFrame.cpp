@@ -519,6 +519,16 @@ void Win32Frame::SetFullScreenShowSubunitStatus(bool bShow)
 	g_bFullScreen_ShowSubunitStatus = bShow;
 }
 
+bool Win32Frame::GetWindowedModeShowDiskiiSlot5Status(void)
+{
+	return m_showDiskiiSlot5Status;
+}
+
+void Win32Frame::SetWindowedModeShowDiskiiSlot5Status(bool bShow)
+{
+	m_showDiskiiSlot5Status = bShow;
+}
+
 void Win32Frame::FrameDrawDiskLEDS()
 {
 	FrameDrawDiskLEDS((HDC)0);
@@ -561,7 +571,7 @@ void Win32Frame::FrameDrawDiskLEDS( HDC passdc )
 		DrawBitmapRect(dc, x + 12, y + 6, &rDiskLed, g_hDiskWindowedLED[g_eStatusDrive1]);
 		DrawBitmapRect(dc, x + 31, y + 6, &rDiskLed, g_hDiskWindowedLED[g_eStatusDrive2]);
 
-		if (g_nViewportScale > 1 && GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
+		if (g_nViewportScale > 1 && GetCardMgr().QuerySlot(SLOT5) == CT_Disk2 && GetWindowedModeShowDiskiiSlot5Status())
 		{
 			Disk_Status_e eDrive1StatusSlot5 = DISK_STATUS_OFF;
 			Disk_Status_e eDrive2StatusSlot5 = DISK_STATUS_OFF;
@@ -669,12 +679,12 @@ void Win32Frame::DrawTrackSector(HDC dc, UINT slot, int drive1Track, int drive1S
 	const int x = buttonx;
 	const int y = buttony + BUTTONS * BUTTONCY + 1;
 
-	const int diskIIInfoSize = (slot == SLOT6) ? 0 : 48;
+	const int diskIIInfoHeight = (slot == SLOT6) ? 0 : 48;
 
 	// Erase background
 	SelectObject(dc, GetStockObject(NULL_PEN));
 	SelectObject(dc, btnfacebrush);
-	Rectangle(dc, x + 4, y + 35 + diskIIInfoSize, x + BUTTONCX + 1, y + 59 + diskIIInfoSize);
+	Rectangle(dc, x + 4, y + 35 + diskIIInfoHeight, x + BUTTONCX + 1, y + 59 + diskIIInfoHeight);
 
 	SetTextColor(dc, RGB(0, 0, 0));
 	SetBkMode(dc, TRANSPARENT);
@@ -685,14 +695,14 @@ void Win32Frame::DrawTrackSector(HDC dc, UINT slot, int drive1Track, int drive1S
 
 	std::string text;
 	text = "T" + strTrackDrive1;
-	TextOut(dc, x + 6, y + 35 + diskIIInfoSize, text.c_str(), text.length());
+	TextOut(dc, x + 6, y + 35 + diskIIInfoHeight, text.c_str(), text.length());
 	text = "S" + strSectorDrive1;
-	TextOut(dc, x + 6, y + 35 + smallfontHeight + diskIIInfoSize, text.c_str(), text.length());
+	TextOut(dc, x + 6, y + 35 + smallfontHeight + diskIIInfoHeight, text.c_str(), text.length());
 
 	text = "T" + strTrackDrive2;
-	TextOut(dc, x + 26, y + 35 + diskIIInfoSize, text.c_str(), text.length());
+	TextOut(dc, x + 26, y + 35 + diskIIInfoHeight, text.c_str(), text.length());
 	text = "S" + strSectorDrive2;
-	TextOut(dc, x + 26, y + 35 + smallfontHeight + diskIIInfoSize, text.c_str(), text.length());
+	TextOut(dc, x + 26, y + 35 + smallfontHeight + diskIIInfoHeight, text.c_str(), text.length());
 }
 
 // Feature Request #201 Show track status
@@ -756,7 +766,7 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 		DrawTrackSector(dc, SLOT6, nDrive1Track, g_nSector[SLOT6][0], nDrive2Track, g_nSector[SLOT6][1]);
 
 		// Slot 5's Disk II
-		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
+		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2 && GetWindowedModeShowDiskiiSlot5Status())
 		{
 			GetTrackSector(SLOT5, nDrive1Track, nDrive2Track, nActiveFloppy);
 			DrawTrackSector(dc, SLOT5, nDrive1Track, g_nSector[SLOT5][0], nDrive2Track, g_nSector[SLOT5][1]);
@@ -864,11 +874,24 @@ void Win32Frame::DrawStatusArea (HDC passdc, int drawflags)
 
 			if (g_nViewportScale > 1 && GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 			{
-				std::string slot5 = "Slot 5:";
-				TextOut(dc, x + 14, y + 59, slot5.c_str(), slot5.length());
+				const int yOffsetDiskIISlot5 = 59;
 
-				TextOut(dc, x + 7, y + 70, TEXT("1"), 1);
-				TextOut(dc, x + 27, y + 70, TEXT("2"), 1);
+				if (!GetWindowedModeShowDiskiiSlot5Status())
+				{
+					// Erase background
+					SelectObject(dc, GetStockObject(NULL_PEN));
+					SelectObject(dc, btnfacebrush);
+					const int diskIIInfoHeight = 48;
+					Rectangle(dc, x + 1, y + yOffsetDiskIISlot5, x + BUTTONCX + 1, y + yOffsetDiskIISlot5 + diskIIInfoHeight);
+				}
+				else
+				{
+					std::string slot5 = "Slot 5:";
+					TextOut(dc, x + 14, y + yOffsetDiskIISlot5, slot5.c_str(), slot5.length());
+
+					TextOut(dc, x + 7, y + yOffsetDiskIISlot5 + smallfontHeight, "1", 1);
+					TextOut(dc, x + 27, y + yOffsetDiskIISlot5 + smallfontHeight, "2", 1);
+				}
 			}
 		}
 

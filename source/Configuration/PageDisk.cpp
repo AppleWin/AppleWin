@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PropertySheet.h"
 
 #include "../Windows/AppleWin.h"
+#include "../Windows/Win32Frame.h"
 #include "../CardManager.h"
 #include "../Disk.h"	// Drive_e, Disk_Status_e
 #include "../Harddisk.h"
@@ -279,6 +280,19 @@ void CPageDisk::DlgOK(HWND hWnd)
 		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (DWORD)bNewEnhanceDisk);
 	}
 
+	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
+	const bool bNewDiskiiSlot5Status = IsDlgButtonChecked(hWnd, IDC_DISKII_SLOT5_STATUS_ENABLE) ? true : false;
+
+	if (win32Frame.GetWindowedModeShowDiskiiSlot5Status() != bNewDiskiiSlot5Status)
+	{
+		REGSAVE(REGVALUE_SHOW_DISKII_SLOT5_STATUS, bNewDiskiiSlot5Status ? 1 : 0);
+		win32Frame.SetWindowedModeShowDiskiiSlot5Status(bNewDiskiiSlot5Status);
+
+		if (!win32Frame.IsFullScreen())
+			win32Frame.FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
+	}
+
+
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 
@@ -292,9 +306,11 @@ void CPageDisk::InitOptions(HWND hWnd)
 	const SS_CARDTYPE cardInSlot5 = m_PropertySheetHelper.GetConfigNew().m_Slot[slot];
 
 	CheckDlgButton(hWnd, IDC_DISKII_SLOT5_ENABLE, (cardInSlot5 == CT_Disk2) ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hWnd, IDC_DISKII_SLOT5_STATUS_ENABLE, Win32Frame::GetWin32Frame().GetWindowedModeShowDiskiiSlot5Status() ? BST_CHECKED : BST_UNCHECKED);
 
 	const BOOL enable = (cardInSlot5 == CT_Disk2 || cardInSlot5 == CT_Empty) ? TRUE : FALSE;
 	EnableWindow(GetDlgItem(hWnd, IDC_DISKII_SLOT5_ENABLE), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_DISKII_SLOT5_STATUS_ENABLE), (cardInSlot5 == CT_Disk2) ? TRUE : FALSE);
 
 	if (cardInSlot5 == CT_Disk2)
 		InitComboFloppyDrive(hWnd, slot);

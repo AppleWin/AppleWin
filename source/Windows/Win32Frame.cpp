@@ -34,6 +34,7 @@ Win32Frame::Win32Frame()
 	g_bFrameActive = false;
 	g_windowMinimized = false;
 	g_bFullScreen_ShowSubunitStatus = true;
+	m_showDiskiiSlot5Status = false;
 	g_win_fullscreen_offsetx = 0;
 	g_win_fullscreen_offsety = 0;
 	m_bestWidthForFullScreen = 0;

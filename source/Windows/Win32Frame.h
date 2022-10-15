@@ -40,6 +40,7 @@ public:
 	virtual void FrameSetCursorPosByMousePos();
 
 	virtual void SetFullScreenShowSubunitStatus(bool bShow);
+	virtual void SetWindowedModeShowDiskiiSlot5Status(bool bShow);
 	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth=0, UINT userSpecifiedHeight=0);
 	virtual int SetViewportScale(int nNewScale, bool bForce = false);
 	virtual void SetAltEnterToggleFullScreen(bool mode);
@@ -61,6 +62,7 @@ public:
 	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName);
 
 	bool GetFullScreenShowSubunitStatus(void);
+	bool GetWindowedModeShowDiskiiSlot5Status(void);
 	int GetFullScreenOffsetX(void);
 	int GetFullScreenOffsetY(void);
 	bool IsFullScreen(void);
@@ -140,6 +142,7 @@ private:
 	bool g_windowMinimized;
 	std::string driveTooltip;
 	bool g_bFullScreen_ShowSubunitStatus;
+	bool m_showDiskiiSlot5Status;
 	int						g_win_fullscreen_offsetx;
 	int						g_win_fullscreen_offsety;
 	UINT m_bestWidthForFullScreen;
