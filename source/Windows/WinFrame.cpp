@@ -578,8 +578,8 @@ void Win32Frame::FrameDrawDiskLEDS( HDC passdc )
 			if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).GetLightStatus(&eDrive1StatusSlot5, &eDrive2StatusSlot5);
 
-			DrawBitmapRect(dc, x + 12, y + 3 + 68, &rDiskLed, g_hDiskWindowedLED[eDrive1StatusSlot5]);
-			DrawBitmapRect(dc, x + 31, y + 3 + 68, &rDiskLed, g_hDiskWindowedLED[eDrive2StatusSlot5]);
+			DrawBitmapRect(dc, x + 12, y + 71, &rDiskLed, g_hDiskWindowedLED[eDrive1StatusSlot5]);
+			DrawBitmapRect(dc, x + 31, y + 71, &rDiskLed, g_hDiskWindowedLED[eDrive2StatusSlot5]);
 		}
 	}
 }
@@ -679,12 +679,12 @@ void Win32Frame::DrawTrackSector(HDC dc, UINT slot, int drive1Track, int drive1S
 	const int x = buttonx;
 	const int y = buttony + BUTTONS * BUTTONCY + 1;
 
-	const int diskIIInfoHeight = (slot == SLOT6) ? 0 : 48;
+	const int diskIIInfoOffset = (slot == SLOT6) ? 0 : diskIIInfoHeight;
 
 	// Erase background
 	SelectObject(dc, GetStockObject(NULL_PEN));
 	SelectObject(dc, btnfacebrush);
-	Rectangle(dc, x + 4, y + 35 + diskIIInfoHeight, x + BUTTONCX + 1, y + 59 + diskIIInfoHeight);
+	Rectangle(dc, x + 4, y + 35 + diskIIInfoOffset, x + BUTTONCX + 1, y + 59 + diskIIInfoOffset);
 
 	SetTextColor(dc, RGB(0, 0, 0));
 	SetBkMode(dc, TRANSPARENT);
@@ -695,14 +695,14 @@ void Win32Frame::DrawTrackSector(HDC dc, UINT slot, int drive1Track, int drive1S
 
 	std::string text;
 	text = "T" + strTrackDrive1;
-	TextOut(dc, x + 6, y + 35 + diskIIInfoHeight, text.c_str(), text.length());
+	TextOut(dc, x + 6, y + 35 + diskIIInfoOffset, text.c_str(), text.length());
 	text = "S" + strSectorDrive1;
-	TextOut(dc, x + 6, y + 35 + smallfontHeight + diskIIInfoHeight, text.c_str(), text.length());
+	TextOut(dc, x + 6, y + 35 + smallfontHeight + diskIIInfoOffset, text.c_str(), text.length());
 
 	text = "T" + strTrackDrive2;
-	TextOut(dc, x + 26, y + 35 + diskIIInfoHeight, text.c_str(), text.length());
+	TextOut(dc, x + 26, y + 35 + diskIIInfoOffset, text.c_str(), text.length());
 	text = "S" + strSectorDrive2;
-	TextOut(dc, x + 26, y + 35 + smallfontHeight + diskIIInfoHeight, text.c_str(), text.length());
+	TextOut(dc, x + 26, y + 35 + smallfontHeight + diskIIInfoOffset, text.c_str(), text.length());
 }
 
 // Feature Request #201 Show track status
@@ -881,7 +881,6 @@ void Win32Frame::DrawStatusArea (HDC passdc, int drawflags)
 					// Erase background
 					SelectObject(dc, GetStockObject(NULL_PEN));
 					SelectObject(dc, btnfacebrush);
-					const int diskIIInfoHeight = 48;
 					Rectangle(dc, x + 1, y + yOffsetDiskIISlot5, x + BUTTONCX + 1, y + yOffsetDiskIISlot5 + diskIIInfoHeight);
 				}
 				else

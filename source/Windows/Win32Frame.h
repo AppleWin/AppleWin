@@ -191,6 +191,7 @@ private:
 	//===========================
 	HBITMAP g_hDiskWindowedLED[NUM_DISK_STATUS];
 
+	const int diskIIInfoHeight = 48;	// Windowed mode: pixel distance between Slot 6's and Slot 5's "Tn Tn" (ie. track info for D1 & D2)
 	int g_nSector[NUM_SLOTS][2];
 	Disk_Status_e g_eStatusDrive1;
 	Disk_Status_e g_eStatusDrive2;
