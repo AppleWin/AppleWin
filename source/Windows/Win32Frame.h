@@ -140,7 +140,6 @@ private:
 	bool    g_bAppActive;
 	bool g_bFrameActive;
 	bool g_windowMinimized;
-	std::string driveTooltip;
 	bool g_bFullScreen_ShowSubunitStatus;
 	bool m_showDiskiiSlot5Status;
 	int						g_win_fullscreen_offsetx;
@@ -172,7 +171,11 @@ private:
 	BOOL    helpquit;
 	const UINT smallfontHeight = 11;
 	HFONT   smallfont;
+
 	HWND    tooltipwindow;
+	std::string driveTooltip;
+	enum {TTID_DRIVE1_BUTTON=0, TTID_DRIVE2_BUTTON, TTID_SLOT6_TRK_SEC_INFO, TTID_SLOT5_TRK_SEC_INFO, TTID_MAX};
+
 	int     viewportx;	// Default to Normal (non-FullScreen) mode
 	int     viewporty;	// Default to Normal (non-FullScreen) mode
 

@@ -165,8 +165,10 @@ public:
 	float GetCurrentPhase(void);
 	UINT GetCurrentBitOffset(void);
 	double GetCurrentExtraCycles(void);
+	float GetPhase(const int drive);
 	int GetTrack(const int drive);
-	static std::string FormatPhaseString(float phase);
+	static std::string FormatHexFracString(float phase);
+	static std::string FormatDecFracString(float phase);
 	std::string GetCurrentTrackString(void);
 	std::string GetCurrentPhaseString(void);
 	LPCTSTR GetCurrentState(void);

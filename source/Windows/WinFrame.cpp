@@ -1611,29 +1611,53 @@ LRESULT Win32Frame::WndProc(
 		if (((LPNMTTDISPINFO)lparam)->hdr.hwndFrom == tooltipwindow && ((LPNMTTDISPINFO)lparam)->hdr.code == TTN_GETDISPINFO)
 		{
 			LPNMTTDISPINFO pInfo = (LPNMTTDISPINFO)lparam;
-			SendMessage(pInfo->hdr.hwndFrom, TTM_SETMAXTIPWIDTH, 0, 150);
-
-			Disk2InterfaceCard *pDisk2Slot5 = NULL, *pDisk2Slot6 = NULL;
-
-			if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
-				pDisk2Slot5 = dynamic_cast<Disk2InterfaceCard*>(GetCardMgr().GetObj(SLOT5));
-			if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
-				pDisk2Slot6 = dynamic_cast<Disk2InterfaceCard*>(GetCardMgr().GetObj(SLOT6));
-
-			std::string slot5 = pDisk2Slot5 ? pDisk2Slot5->GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom) : "";
-			std::string slot6 = pDisk2Slot6 ? pDisk2Slot6->GetFullDiskFilename(((LPNMTTDISPINFO)lparam)->hdr.idFrom) : "";
-
-			if (pDisk2Slot5)
+			if (pInfo->hdr.idFrom == TTID_DRIVE1_BUTTON || pInfo->hdr.idFrom == TTID_DRIVE2_BUTTON)
 			{
-				if (slot6.empty()) slot6 = "<empty>";
-				if (slot5.empty()) slot5 = "<empty>";
-				slot6 = std::string("Slot6: ") + slot6;
-				slot5 = std::string("Slot5: ") + slot5;
-			}
+				SendMessage(pInfo->hdr.hwndFrom, TTM_SETMAXTIPWIDTH, 0, 150);
 
-			std::string join = (!slot6.empty() && !slot5.empty()) ? "\r\n" : "";
-			driveTooltip = slot6 + join + slot5;
-			((LPNMTTDISPINFO)lparam)->lpszText = (LPTSTR)driveTooltip.c_str();
+				Disk2InterfaceCard* pDisk2Slot5 = NULL, * pDisk2Slot6 = NULL;
+
+				if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
+					pDisk2Slot5 = dynamic_cast<Disk2InterfaceCard*>(GetCardMgr().GetObj(SLOT5));
+				if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
+					pDisk2Slot6 = dynamic_cast<Disk2InterfaceCard*>(GetCardMgr().GetObj(SLOT6));
+
+				std::string slot5 = pDisk2Slot5 ? pDisk2Slot5->GetFullDiskFilename(pInfo->hdr.idFrom) : "";
+				std::string slot6 = pDisk2Slot6 ? pDisk2Slot6->GetFullDiskFilename(pInfo->hdr.idFrom) : "";
+
+				if (pDisk2Slot5)
+				{
+					if (slot6.empty()) slot6 = "<empty>";
+					if (slot5.empty()) slot5 = "<empty>";
+					slot6 = std::string("Slot6: ") + slot6;
+					slot5 = std::string("Slot5: ") + slot5;
+				}
+
+				std::string join = (!slot6.empty() && !slot5.empty()) ? "\r\n" : "";
+				driveTooltip = slot6 + join + slot5;
+				pInfo->lpszText = (LPTSTR)driveTooltip.c_str();
+			}
+			else if (pInfo->hdr.idFrom == TTID_SLOT6_TRK_SEC_INFO || pInfo->hdr.idFrom == TTID_SLOT5_TRK_SEC_INFO)
+			{
+				SendMessage(pInfo->hdr.hwndFrom, TTM_SETMAXTIPWIDTH, 0, 150);
+
+				const UINT slot = (pInfo->hdr.idFrom == TTID_SLOT6_TRK_SEC_INFO) ? SLOT6 : SLOT5;
+				Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
+				float drive1Track = disk2Card.GetPhase(DRIVE_1) / 2;
+				float drive2Track = disk2Card.GetPhase(DRIVE_2) / 2;
+				driveTooltip = "Drive1: T$";
+				driveTooltip += disk2Card.FormatHexFracString(drive1Track);
+				driveTooltip += "(T";
+				driveTooltip += disk2Card.FormatDecFracString(drive1Track);
+				driveTooltip += ")\r\n";
+
+				driveTooltip += "Drive2: T$";
+				driveTooltip += disk2Card.FormatHexFracString(drive2Track);
+				driveTooltip += "(T";
+				driveTooltip += disk2Card.FormatDecFracString(drive2Track);
+				driveTooltip += ")\r\n";
+				pInfo->lpszText = (LPTSTR)driveTooltip.c_str();
+			}
 		}
 		break;
 
@@ -2347,14 +2371,35 @@ void Win32Frame::SetupTooltipControls(void)
 	toolinfo.lpszText = LPSTR_TEXTCALLBACK;
 	toolinfo.rect.left  = BUTTONX;
 	toolinfo.rect.right = toolinfo.rect.left+BUTTONCX+1;
-	toolinfo.uId = 0;
+
+	toolinfo.uId = TTID_DRIVE1_BUTTON;
 	toolinfo.rect.top    = BUTTONY+BTN_DRIVE1*BUTTONCY+1;
 	toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
 	SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
-	toolinfo.uId = 1;
+
+	toolinfo.uId = TTID_DRIVE2_BUTTON;
 	toolinfo.rect.top    = BUTTONY+BTN_DRIVE2*BUTTONCY+1;
 	toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
 	SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
+
+	if (g_nViewportScale > 1)
+	{
+		if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
+		{
+			toolinfo.uId = TTID_SLOT6_TRK_SEC_INFO;
+			toolinfo.rect.top = BUTTONY + BUTTONS * BUTTONCY + 1 + 35 + diskIIInfoHeight * 0;
+			toolinfo.rect.bottom = toolinfo.rect.top + smallfontHeight * 2;
+			SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
+		}
+
+		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
+		{
+			toolinfo.uId = TTID_SLOT5_TRK_SEC_INFO;
+			toolinfo.rect.top = BUTTONY + BUTTONS * BUTTONCY + 1 + 35 + diskIIInfoHeight * 1;
+			toolinfo.rect.bottom = toolinfo.rect.top + smallfontHeight * 2;
+			SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
+		}
+	}
 }
 
 // SM_CXPADDEDBORDER is not supported on 2000 & XP, but GetSystemMetrics() returns 0 for unknown values, so this use of SM_CXPADDEDBORDER works on 2000 & XP too:
@@ -2425,10 +2470,12 @@ void Win32Frame::FrameResizeWindow(int nNewScale)
 	TOOLINFO toolinfo = {0};
 	toolinfo.cbSize = sizeof(toolinfo);
 	toolinfo.hwnd = g_hFrameWindow;
-	toolinfo.uId = 0;
-	SendMessage(tooltipwindow, TTM_DELTOOL, 0, (LPARAM)&toolinfo);
-	toolinfo.uId = 1;
-	SendMessage(tooltipwindow, TTM_DELTOOL, 0, (LPARAM)&toolinfo);
+
+	for (UINT id = 0; id < TTID_MAX; id++)
+	{
+		toolinfo.uId = id;
+		SendMessage(tooltipwindow, TTM_DELTOOL, 0, (LPARAM)&toolinfo);
+	}
 
 	// Setup the tooltips for the new window size
 	SetupTooltipControls();
