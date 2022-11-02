@@ -867,11 +867,11 @@ void Win32Frame::DrawStatusArea (HDC passdc, int drawflags)
 			SetTextAlign(dc,TA_CENTER | TA_TOP);
 			SetTextColor(dc,RGB(0,0,0));
 			SetBkMode(dc,TRANSPARENT);
-			TextOut(dc,x+ 7,y+5,TEXT("1"),1);
-			TextOut(dc,x+27,y+5,TEXT("2"),1);
+			TextOut(dc, x + 7, y + yOffsetSlot6LEDNumbers, "1", 1);
+			TextOut(dc, x + 27, y + yOffsetSlot6LEDNumbers, "2", 1);
 
 			// 1.19.0.0 Hard Disk Status/Indicator Light
-			TextOut(dc,x+ 7,y+17,TEXT("H"),1);
+			TextOut(dc, x + 7, y + yOffsetCapsLock, TEXT("H"), 1);
 
 			if (g_nViewportScale > 1 && GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 			{
@@ -887,8 +887,8 @@ void Win32Frame::DrawStatusArea (HDC passdc, int drawflags)
 					std::string slot5 = "Slot 5:";
 					TextOut(dc, x + 14, y + yOffsetSlot5Label, slot5.c_str(), slot5.length());
 
-					TextOut(dc, x + 7, y + yOffsetSlot5LEDs, "1", 1);
-					TextOut(dc, x + 27, y + yOffsetSlot5LEDs, "2", 1);
+					TextOut(dc, x + 7, y + yOffsetSlot5LEDNumbers, "1", 1);
+					TextOut(dc, x + 27, y + yOffsetSlot5LEDNumbers, "2", 1);
 				}
 			}
 		}
@@ -905,18 +905,18 @@ void Win32Frame::DrawStatusArea (HDC passdc, int drawflags)
 				RECT rCapsLed = {0,0,10,12}; // HACK: HARD-CODED bitmaps size
 				switch (g_Apple2Type)
 				{
-					case A2TYPE_APPLE2        :			
-					case A2TYPE_APPLE2PLUS    :		
-					case A2TYPE_APPLE2E       :		
-					case A2TYPE_APPLE2EENHANCED:	
-					default                   : DrawBitmapRect(dc,x+31,y+17,&rCapsLed,g_hCapsLockBitmap[bCaps != 0]); break;
-					case A2TYPE_PRAVETS82     :		
-					case A2TYPE_PRAVETS8M     : DrawBitmapRect(dc,x+31,y+17,&rCapsLed,g_hCapsBitmapP8  [bCaps != 0]); break; // TODO: FIXME: Shouldn't one of these use g_hCapsBitmapLat ??
-					case A2TYPE_PRAVETS8A     : DrawBitmapRect(dc,x+31,y+17,&rCapsLed,g_hCapsBitmapP8  [bCaps != 0]); break;
+					case A2TYPE_APPLE2:
+					case A2TYPE_APPLE2PLUS:
+					case A2TYPE_APPLE2E:
+					case A2TYPE_APPLE2EENHANCED:
+					default: DrawBitmapRect(dc, x + 31, y + yOffsetCapsLock, &rCapsLed, g_hCapsLockBitmap[bCaps != 0]); break;
+					case A2TYPE_PRAVETS82:
+					case A2TYPE_PRAVETS8M: DrawBitmapRect(dc, x + 31, y + yOffsetCapsLock, &rCapsLed, g_hCapsBitmapP8[bCaps != 0]); break; // TODO: FIXME: Shouldn't one of these use g_hCapsBitmapLat ??
+					case A2TYPE_PRAVETS8A: DrawBitmapRect(dc, x + 31, y + yOffsetCapsLock, &rCapsLed, g_hCapsBitmapP8[bCaps != 0]); break;
 				}
 
 				RECT rDiskLed = {0,0,8,8};
-				DrawBitmapRect(dc,x+12,y+18,&rDiskLed,g_hDiskWindowedLED[eHardDriveStatus]);
+				DrawBitmapRect(dc, x + 12, y + yOffsetHardDiskLED, &rDiskLed, g_hDiskWindowedLED[eHardDriveStatus]);
 			}
 		}
 

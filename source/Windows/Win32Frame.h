@@ -195,13 +195,16 @@ private:
 	HBITMAP g_hDiskWindowedLED[NUM_DISK_STATUS];
 
 	// Y-offsets from end of last button
-	const UINT yOffsetSlot6LEDs = 6;
-	// const UINT yOffsetSlot7LED = ?;	// gap for: HDD LED & Caps Lock
+	const UINT yOffsetSlot6LEDNumbers = 5;
+	const UINT yOffsetSlot6LEDs = yOffsetSlot6LEDNumbers + 1;
+	const UINT yOffsetCapsLock = yOffsetSlot6LEDs + smallfontHeight;
+	const UINT yOffsetHardDiskLED = yOffsetSlot6LEDs + smallfontHeight + 1;
 	const UINT yOffsetSlot6TrackInfo = 35;
 	const UINT yOffsetSlot6SectorInfo = yOffsetSlot6TrackInfo + smallfontHeight;
 	const UINT yOffsetSlot5Label = yOffsetSlot6SectorInfo + smallfontHeight + 3;
-	const UINT yOffsetSlot5LEDs = yOffsetSlot5Label + smallfontHeight;
-	const UINT yOffsetSlot5TrackInfo = yOffsetSlot5LEDs + smallfontHeight + 1;
+	const UINT yOffsetSlot5LEDNumbers = yOffsetSlot5Label + smallfontHeight + 1;
+	const UINT yOffsetSlot5LEDs = yOffsetSlot5LEDNumbers + 1;
+	const UINT yOffsetSlot5TrackInfo = yOffsetSlot5LEDs + smallfontHeight;
 	const UINT yOffsetSlot5SectorInfo = yOffsetSlot5TrackInfo + smallfontHeight;
 	int g_nSector[NUM_SLOTS][2];
 	Disk_Status_e g_eStatusDrive1;
