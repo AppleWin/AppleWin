@@ -27,7 +27,7 @@ class Win32Frame : public FrameBase
 {
 public:
 	Win32Frame(void);
-	virtual ~Win32Frame(void){}
+	virtual ~Win32Frame(void) {}
 
 	static Win32Frame& GetWin32Frame();
 	static LRESULT CALLBACK FrameWndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
@@ -41,7 +41,7 @@ public:
 
 	virtual void SetFullScreenShowSubunitStatus(bool bShow);
 	virtual void SetWindowedModeShowDiskiiSlot5Status(bool bShow);
-	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth=0, UINT userSpecifiedHeight=0);
+	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth = 0, UINT userSpecifiedHeight = 0);
 	virtual int SetViewportScale(int nNewScale, bool bForce = false);
 	virtual void SetAltEnterToggleFullScreen(bool mode);
 
@@ -59,7 +59,7 @@ public:
 
 	virtual std::string Video_GetScreenShotFolder() const;
 
-	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName);
+	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string& interfaceName);
 
 	bool GetFullScreenShowSubunitStatus(void);
 	bool GetWindowedModeShowDiskiiSlot5Status(void);
@@ -116,7 +116,7 @@ private:
 	void FrameResizeWindow(int nNewScale);
 	void RevealCursor();
 	void ScreenWindowResize(const bool bCtrlKey);
-	void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
+	void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x = 0, int y = 0);
 	void DrawCrosshairsMouse();
 	void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen);
 	void CreateGdiObjects(void);
@@ -174,7 +174,7 @@ private:
 
 	HWND    tooltipwindow;
 	std::string driveTooltip;
-	enum {TTID_DRIVE1_BUTTON=0, TTID_DRIVE2_BUTTON, TTID_SLOT6_TRK_SEC_INFO, TTID_SLOT5_TRK_SEC_INFO, TTID_MAX};
+	enum { TTID_DRIVE1_BUTTON = 0, TTID_DRIVE2_BUTTON, TTID_SLOT6_TRK_SEC_INFO, TTID_SLOT5_TRK_SEC_INFO, TTID_MAX };
 
 	int     viewportx;	// Default to Normal (non-FullScreen) mode
 	int     viewporty;	// Default to Normal (non-FullScreen) mode
@@ -194,7 +194,15 @@ private:
 	//===========================
 	HBITMAP g_hDiskWindowedLED[NUM_DISK_STATUS];
 
-	const int diskIIInfoHeight = 48;	// Windowed mode: pixel distance between Slot 6's and Slot 5's "Tn Tn" (ie. track info for D1 & D2)
+	// Y-offsets from end of last button
+	const UINT yOffsetSlot6LEDs = 6;
+	// const UINT yOffsetSlot7LED = ?;	// gap for: HDD LED & Caps Lock
+	const UINT yOffsetSlot6TrackInfo = 35;
+	const UINT yOffsetSlot6SectorInfo = yOffsetSlot6TrackInfo + smallfontHeight;
+	const UINT yOffsetSlot5Label = yOffsetSlot6SectorInfo + smallfontHeight + 3;
+	const UINT yOffsetSlot5LEDs = yOffsetSlot5Label + smallfontHeight;
+	const UINT yOffsetSlot5TrackInfo = yOffsetSlot5LEDs + smallfontHeight + 1;
+	const UINT yOffsetSlot5SectorInfo = yOffsetSlot5TrackInfo + smallfontHeight;
 	int g_nSector[NUM_SLOTS][2];
 	Disk_Status_e g_eStatusDrive1;
 	Disk_Status_e g_eStatusDrive2;
