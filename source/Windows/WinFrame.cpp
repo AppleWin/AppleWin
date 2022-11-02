@@ -1646,15 +1646,15 @@ LRESULT Win32Frame::WndProc(
 				float drive1Track = disk2Card.GetPhase(DRIVE_1) / 2;
 				float drive2Track = disk2Card.GetPhase(DRIVE_2) / 2;
 				driveTooltip = "Drive1: T$";
-				driveTooltip += disk2Card.FormatHexFracString(drive1Track);
+				driveTooltip += disk2Card.FormatIntFracString(drive1Track, true);
 				driveTooltip += "(T";
-				driveTooltip += disk2Card.FormatDecFracString(drive1Track);
+				driveTooltip += disk2Card.FormatIntFracString(drive1Track, false);
 				driveTooltip += ")\r\n";
 
 				driveTooltip += "Drive2: T$";
-				driveTooltip += disk2Card.FormatHexFracString(drive2Track);
+				driveTooltip += disk2Card.FormatIntFracString(drive2Track, true);
 				driveTooltip += "(T";
-				driveTooltip += disk2Card.FormatDecFracString(drive2Track);
+				driveTooltip += disk2Card.FormatIntFracString(drive2Track, false);
 				driveTooltip += ")\r\n";
 				pInfo->lpszText = (LPTSTR)driveTooltip.c_str();
 			}

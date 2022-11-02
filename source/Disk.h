@@ -167,8 +167,7 @@ public:
 	double GetCurrentExtraCycles(void);
 	float GetPhase(const int drive);
 	int GetTrack(const int drive);
-	static std::string FormatHexFracString(float phase);
-	static std::string FormatDecFracString(float phase);
+	static std::string FormatIntFracString(float phase, bool hex);
 	std::string GetCurrentTrackString(void);
 	std::string GetCurrentPhaseString(void);
 	LPCTSTR GetCurrentState(void);
