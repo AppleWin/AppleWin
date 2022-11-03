@@ -124,6 +124,7 @@ private:
 	void FrameShowCursor(BOOL bShow);
 	void FullScreenRevealCursor(void);
 	void GetWidthHeight(int& nWidth, int& nHeight);
+	void SetSlotUIOffsets(void);
 
 	bool g_bAltEnter_ToggleFullScreen; // Default for ALT+ENTER is to toggle between windowed and full-screen modes
 	bool    g_bIsFullScreen;
@@ -142,6 +143,7 @@ private:
 	bool g_windowMinimized;
 	bool g_bFullScreen_ShowSubunitStatus;
 	bool m_showDiskiiSlot5Status;
+	bool m_redrawDiskiiSlot5Status;
 	int						g_win_fullscreen_offsetx;
 	int						g_win_fullscreen_offsety;
 	UINT m_bestWidthForFullScreen;
@@ -169,7 +171,7 @@ private:
 	RECT    framerect;
 
 	BOOL    helpquit;
-	const UINT smallfontHeight = 11;
+	static const UINT smallfontHeight = 11;
 	HFONT   smallfont;
 
 	HWND    tooltipwindow;
@@ -195,17 +197,36 @@ private:
 	HBITMAP g_hDiskWindowedLED[NUM_DISK_STATUS];
 
 	// Y-offsets from end of last button
-	const UINT yOffsetSlot6LEDNumbers = 5;
-	const UINT yOffsetSlot6LEDs = yOffsetSlot6LEDNumbers + 1;
-	const UINT yOffsetCapsLock = yOffsetSlot6LEDs + smallfontHeight;
-	const UINT yOffsetHardDiskLED = yOffsetSlot6LEDs + smallfontHeight + 1;
-	const UINT yOffsetSlot6TrackInfo = 35;
-	const UINT yOffsetSlot6SectorInfo = yOffsetSlot6TrackInfo + smallfontHeight;
-	const UINT yOffsetSlot5Label = yOffsetSlot6SectorInfo + smallfontHeight + 3;
-	const UINT yOffsetSlot5LEDNumbers = yOffsetSlot5Label + smallfontHeight + 1;
-	const UINT yOffsetSlot5LEDs = yOffsetSlot5LEDNumbers + 1;
-	const UINT yOffsetSlot5TrackInfo = yOffsetSlot5LEDs + smallfontHeight;
-	const UINT yOffsetSlot5SectorInfo = yOffsetSlot5TrackInfo + smallfontHeight;
+	static const UINT yOffsetSlot6LEDNumbers = 5;
+	static const UINT yOffsetSlot6LEDs = yOffsetSlot6LEDNumbers + 1;
+	static const UINT yOffsetCapsLock = yOffsetSlot6LEDs + smallfontHeight;
+	static const UINT yOffsetHardDiskLED = yOffsetSlot6LEDs + smallfontHeight + 1;
+	// 2x (or more) Windowed mode: Disk II LEDs and track/sector info
+	struct D2FullUI	// Disk II full UI
+	{
+		static const UINT yOffsetSlot6TrackInfo = 35;
+		static const UINT yOffsetSlot6SectorInfo = yOffsetSlot6TrackInfo + smallfontHeight;
+		static const UINT yOffsetSlot5Label = yOffsetSlot6SectorInfo + smallfontHeight + 3;
+		static const UINT yOffsetSlot5LEDNumbers = yOffsetSlot5Label + smallfontHeight + 1;
+		static const UINT yOffsetSlot5LEDs = yOffsetSlot5LEDNumbers + 1;
+		static const UINT yOffsetSlot5TrackInfo = yOffsetSlot5LEDs + smallfontHeight;
+		static const UINT yOffsetSlot5SectorInfo = yOffsetSlot5TrackInfo + smallfontHeight;
+	};
+	// 2x (or more) Windowed mode: Disk II LEDs only (no track/sector info)
+	struct D2CompactUI	// Disk II compact UI
+	{
+		static const UINT yOffsetSlot5Label = 35;
+		static const UINT yOffsetSlot5LEDNumbers = yOffsetSlot5Label + smallfontHeight + 1;
+		static const UINT yOffsetSlot5LEDs = yOffsetSlot5LEDNumbers + 1;
+	};
+	const UINT yOffsetSlot6TrackInfo = D2FullUI::yOffsetSlot6TrackInfo;
+	const UINT yOffsetSlot6SectorInfo = D2FullUI::yOffsetSlot6SectorInfo;
+	UINT yOffsetSlot5Label;
+	UINT yOffsetSlot5LEDNumbers;
+	UINT yOffsetSlot5LEDs;
+	const UINT yOffsetSlot5TrackInfo = D2FullUI::yOffsetSlot5TrackInfo;
+	const UINT yOffsetSlot5SectorInfo = D2FullUI::yOffsetSlot5SectorInfo;
+
 	int g_nSector[NUM_SLOTS][2];
 	Disk_Status_e g_eStatusDrive1;
 	Disk_Status_e g_eStatusDrive2;

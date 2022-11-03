@@ -527,6 +527,24 @@ bool Win32Frame::GetWindowedModeShowDiskiiSlot5Status(void)
 void Win32Frame::SetWindowedModeShowDiskiiSlot5Status(bool bShow)
 {
 	m_showDiskiiSlot5Status = bShow;
+	m_redrawDiskiiSlot5Status = true;
+	SetSlotUIOffsets();
+}
+
+void Win32Frame::SetSlotUIOffsets(void)
+{
+	if (m_showDiskiiSlot5Status)
+	{
+		yOffsetSlot5Label = D2FullUI::yOffsetSlot5Label;
+		yOffsetSlot5LEDNumbers = D2FullUI::yOffsetSlot5LEDNumbers;
+		yOffsetSlot5LEDs = D2FullUI::yOffsetSlot5LEDs;
+	}
+	else
+	{
+		yOffsetSlot5Label = D2CompactUI::yOffsetSlot5Label;
+		yOffsetSlot5LEDNumbers = D2CompactUI::yOffsetSlot5LEDNumbers;
+		yOffsetSlot5LEDs = D2CompactUI::yOffsetSlot5LEDs;
+	}
 }
 
 void Win32Frame::FrameDrawDiskLEDS()
@@ -571,12 +589,11 @@ void Win32Frame::FrameDrawDiskLEDS( HDC passdc )
 		DrawBitmapRect(dc, x + 12, y + yOffsetSlot6LEDs, &rDiskLed, g_hDiskWindowedLED[g_eStatusDrive1]);
 		DrawBitmapRect(dc, x + 31, y + yOffsetSlot6LEDs, &rDiskLed, g_hDiskWindowedLED[g_eStatusDrive2]);
 
-		if (g_nViewportScale > 1 && GetCardMgr().QuerySlot(SLOT5) == CT_Disk2 && GetWindowedModeShowDiskiiSlot5Status())
+		if (g_nViewportScale > 1 && GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 		{
 			Disk_Status_e eDrive1StatusSlot5 = DISK_STATUS_OFF;
 			Disk_Status_e eDrive2StatusSlot5 = DISK_STATUS_OFF;
-			if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
-				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).GetLightStatus(&eDrive1StatusSlot5, &eDrive2StatusSlot5);
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).GetLightStatus(&eDrive1StatusSlot5, &eDrive2StatusSlot5);
 
 			DrawBitmapRect(dc, x + 12, y + yOffsetSlot5LEDs, &rDiskLed, g_hDiskWindowedLED[eDrive1StatusSlot5]);
 			DrawBitmapRect(dc, x + 31, y + yOffsetSlot5LEDs, &rDiskLed, g_hDiskWindowedLED[eDrive2StatusSlot5]);
@@ -761,13 +778,13 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 	else
 	{
 		// NB. Only draw Track/Sector if 2x windowed
-		if (g_nViewportScale == 1)
+		if (g_nViewportScale == 1 || !GetWindowedModeShowDiskiiSlot5Status())
 			return;
 
 		DrawTrackSector(dc, SLOT6, nDrive1Track, g_nSector[SLOT6][0], nDrive2Track, g_nSector[SLOT6][1]);
 
 		// Slot 5's Disk II
-		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2 && GetWindowedModeShowDiskiiSlot5Status())
+		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 		{
 			GetTrackSector(SLOT5, nDrive1Track, nDrive2Track, nActiveFloppy);
 			DrawTrackSector(dc, SLOT5, nDrive1Track, g_nSector[SLOT5][0], nDrive2Track, g_nSector[SLOT5][1]);
@@ -776,7 +793,7 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 }
 
 //===========================================================================
-void Win32Frame::DrawStatusArea (HDC passdc, int drawflags)
+void Win32Frame::DrawStatusArea(HDC passdc, int drawflags)
 {
 	if (g_hFrameWindow == NULL)
 	{
@@ -875,21 +892,20 @@ void Win32Frame::DrawStatusArea (HDC passdc, int drawflags)
 
 			if (g_nViewportScale > 1 && GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 			{
-				if (!GetWindowedModeShowDiskiiSlot5Status())
+				if (m_redrawDiskiiSlot5Status)
 				{
-					// Erase background ("Slot 5" + LEDs + TrackInfo + SectorInfo)
+					m_redrawDiskiiSlot5Status = false;
+
+					// Erase background (Slot6's TrackInfo + SectorInfo + "Slot 5" + LEDs + TrackInfo + SectorInfo)
 					SelectObject(dc, GetStockObject(NULL_PEN));
 					SelectObject(dc, btnfacebrush);
-					Rectangle(dc, x + 1, y + yOffsetSlot5Label, x + BUTTONCX + 1, y + yOffsetSlot5SectorInfo + smallfontHeight);
+					Rectangle(dc, x + 1, y + yOffsetSlot6TrackInfo, x + BUTTONCX + 1, y + yOffsetSlot5SectorInfo + smallfontHeight);
 				}
-				else
-				{
-					std::string slot5 = "Slot 5:";
-					TextOut(dc, x + 14, y + yOffsetSlot5Label, slot5.c_str(), slot5.length());
 
-					TextOut(dc, x + 7, y + yOffsetSlot5LEDNumbers, "1", 1);
-					TextOut(dc, x + 27, y + yOffsetSlot5LEDNumbers, "2", 1);
-				}
+				std::string slot5 = "Slot 5:";
+				TextOut(dc, x + 15, y + yOffsetSlot5Label, slot5.c_str(), slot5.length());
+				TextOut(dc, x + 7, y + yOffsetSlot5LEDNumbers, "1", 1);
+				TextOut(dc, x + 27, y + yOffsetSlot5LEDNumbers, "2", 1);
 			}
 		}
 
@@ -1638,7 +1654,7 @@ LRESULT Win32Frame::WndProc(
 			}
 			else if (pInfo->hdr.idFrom == TTID_SLOT6_TRK_SEC_INFO || pInfo->hdr.idFrom == TTID_SLOT5_TRK_SEC_INFO)
 			{
-				if (pInfo->hdr.idFrom == TTID_SLOT5_TRK_SEC_INFO && !GetWindowedModeShowDiskiiSlot5Status())
+				if (!GetWindowedModeShowDiskiiSlot5Status())
 					break;
 
 				SendMessage(pInfo->hdr.hwndFrom, TTM_SETMAXTIPWIDTH, 0, 150);

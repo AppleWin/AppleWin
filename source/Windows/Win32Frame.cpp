@@ -34,7 +34,6 @@ Win32Frame::Win32Frame()
 	g_bFrameActive = false;
 	g_windowMinimized = false;
 	g_bFullScreen_ShowSubunitStatus = true;
-	m_showDiskiiSlot5Status = false;
 	g_win_fullscreen_offsetx = 0;
 	g_win_fullscreen_offsety = 0;
 	m_bestWidthForFullScreen = 0;
@@ -72,6 +71,9 @@ Win32Frame::Win32Frame()
 
 	// Set g_nViewportScale, g_nViewportCX, g_nViewportCY & buttonx, buttony
 	SetViewportScale(kDEFAULT_VIEWPORT_SCALE, true);
+
+	// Set m_showDiskiiSlot5Status, m_redrawDiskiiSlot5Status
+	SetWindowedModeShowDiskiiSlot5Status(false);
 }
 
 void Win32Frame::VideoCreateDIBSection(bool resetVideoState)
