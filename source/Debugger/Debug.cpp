@@ -3489,32 +3489,9 @@ Update_t CmdDisk (int nArgs)
 	if (! nArgs)
 		return HelpLastCommand();
 
-	if (GetCardMgr().QuerySlot(currentSlot) != CT_Disk2)
-		return ConsoleDisplayErrorFormat("No Disk II card in slot-%d", currentSlot);
-
-	Disk2InterfaceCard& diskCard = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(currentSlot));
-
 	// check for info or slot command
 	int iParam = 0;
-	FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END );
-
-	if (iParam == PARAM_DISK_INFO)
-	{
-		if (nArgs > 2)
-			return HelpLastCommand();
-
-		ConsoleBufferPushFormat("FW%2d: D%d at T$%s, phase $%s, bitOffset $%04X, extraCycles %.2f, %s",
-			diskCard.GetCurrentFirmware(),
-			diskCard.GetCurrentDrive() + 1,
-			diskCard.GetCurrentTrackString().c_str(),
-			diskCard.GetCurrentPhaseString().c_str(),
-			diskCard.GetCurrentBitOffset(),
-			diskCard.GetCurrentExtraCycles(),
-			diskCard.GetCurrentState()
-		);
-
-		return ConsoleUpdate();
-	}
+	FindParam(g_aArgs[1].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END);
 
 	if (iParam == PARAM_DISK_SET_SLOT)
 	{
@@ -3531,6 +3508,29 @@ Update_t CmdDisk (int nArgs)
 		}
 
 		ConsoleBufferPushFormat("Current Disk II slot = %d", currentSlot);
+		return ConsoleUpdate();
+	}
+
+	if (GetCardMgr().QuerySlot(currentSlot) != CT_Disk2)
+		return ConsoleDisplayErrorFormat("No Disk II card in slot-%d", currentSlot);
+
+	Disk2InterfaceCard& diskCard = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(currentSlot));
+
+	if (iParam == PARAM_DISK_INFO)
+	{
+		if (nArgs > 2)
+			return HelpLastCommand();
+
+		ConsoleBufferPushFormat("FW%2d: D%d at T$%s, phase $%s, bitOffset $%04X, extraCycles %.2f, %s",
+			diskCard.GetCurrentFirmware(),
+			diskCard.GetCurrentDrive() + 1,
+			diskCard.GetCurrentTrackString().c_str(),
+			diskCard.GetCurrentPhaseString().c_str(),
+			diskCard.GetCurrentBitOffset(),
+			diskCard.GetCurrentExtraCycles(),
+			diskCard.GetCurrentState()
+		);
+
 		return ConsoleUpdate();
 	}
 
