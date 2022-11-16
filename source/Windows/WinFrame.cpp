@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+#include <sstream>
 
 #include "Windows/Win32Frame.h"
 #include "Windows/AppleWin.h"
@@ -1648,7 +1649,7 @@ LRESULT Win32Frame::WndProc(
 					slot5 = std::string("Slot5: ") + slot5;
 				}
 
-				std::string join = (!slot6.empty() && !slot5.empty()) ? "\r\n" : "";
+				std::string join = (!slot6.empty() && !slot5.empty()) ? "\n" : "";
 				driveTooltip = slot6 + join + slot5;
 				pInfo->lpszText = (LPTSTR)driveTooltip.c_str();
 			}
@@ -1657,23 +1658,93 @@ LRESULT Win32Frame::WndProc(
 				if (!GetWindowedModeShowDiskiiSlot5Status())
 					break;
 
-				SendMessage(pInfo->hdr.hwndFrom, TTM_SETMAXTIPWIDTH, 0, 150);
+				SendMessage(pInfo->hdr.hwndFrom, TTM_SETMAXTIPWIDTH, 0, 200);
 
 				const UINT slot = (pInfo->hdr.idFrom == TTID_SLOT6_TRK_SEC_INFO) ? SLOT6 : SLOT5;
 				Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 				float drive1Track = disk2Card.GetPhase(DRIVE_1) / 2;
 				float drive2Track = disk2Card.GetPhase(DRIVE_2) / 2;
-				driveTooltip = "Drive1: T$";
+#if 1
+				driveTooltip = "Drive 1:\t\tDrive 2:\n";
+				driveTooltip += "T$";
+				driveTooltip += disk2Card.FormatIntFracString(drive1Track, true);
+				driveTooltip += " (T";
+				driveTooltip += disk2Card.FormatIntFracString(drive1Track, false);
+				driveTooltip += ")";
+				driveTooltip += "\tT$";
+				driveTooltip += disk2Card.FormatIntFracString(drive2Track, true);
+				driveTooltip += " (T";
+				driveTooltip += disk2Card.FormatIntFracString(drive2Track, false);
+				driveTooltip += ")";
+				driveTooltip += "\n";
+				// hex sector
+				driveTooltip += "S$";
+				char sector[3] = "??";
+				if (g_nSector[slot][0] >= 0) sprintf_s(sector, "%02X", g_nSector[slot][0]);
+				driveTooltip += sector;
+				// dec sector
+				driveTooltip += " (S";
+				strcpy(sector, "??");
+				if (g_nSector[slot][0] >= 0) sprintf_s(sector, "%02d", g_nSector[slot][0]);
+				driveTooltip += sector;
+				driveTooltip += ")";
+				// hex sector
+				driveTooltip += "\tS$";
+				strcpy(sector, "??");
+				if (g_nSector[slot][1] >= 0) sprintf_s(sector, "%02X", g_nSector[slot][1]);
+				driveTooltip += sector;
+				// dec sector
+				driveTooltip += " (S";
+				strcpy(sector, "??");
+				if (g_nSector[slot][1] >= 0) sprintf_s(sector, "%02d", g_nSector[slot][1]);
+				driveTooltip += sector;
+				driveTooltip += ")";
+#endif
+#if 0
+				driveTooltip = "Drive 1:\tDrive 2:\n";
+				driveTooltip += "T$";
+				driveTooltip += disk2Card.FormatIntFracString(drive1Track, true);
+				driveTooltip += "\tT$";
+				driveTooltip += disk2Card.FormatIntFracString(drive2Track, true);
+				driveTooltip += "\n";
+				driveTooltip += "T";
+				driveTooltip += disk2Card.FormatIntFracString(drive1Track, false);
+				driveTooltip += "\tT";
+				driveTooltip += disk2Card.FormatIntFracString(drive2Track, false);
+				driveTooltip += "\n";
+				// hex sector
+				driveTooltip += "S$";
+				char sector[3] = "??";
+				if (g_nSector[slot][0] >= 0) sprintf_s(sector, "%02X", g_nSector[slot][0]);
+				driveTooltip += sector;
+				driveTooltip += "\tS$";
+				strcpy(sector, "??");
+				if (g_nSector[slot][1] >= 0) sprintf_s(sector, "%02X", g_nSector[slot][1]);
+				driveTooltip += sector;
+				driveTooltip += "\n";
+				// dec sector
+				driveTooltip += "S";
+				strcpy(sector, "??");
+				if (g_nSector[slot][0] >= 0) sprintf_s(sector, "%02d", g_nSector[slot][0]);
+				driveTooltip += sector;
+				driveTooltip += "\tS";
+				strcpy(sector, "??");
+				if (g_nSector[slot][1] >= 0) sprintf_s(sector, "%02d", g_nSector[slot][1]);
+				driveTooltip += sector;
+#endif
+#if 0
+				driveTooltip = "Drive 1: T$";
 				driveTooltip += disk2Card.FormatIntFracString(drive1Track, true);
 				driveTooltip += "(T";
 				driveTooltip += disk2Card.FormatIntFracString(drive1Track, false);
-				driveTooltip += ")\r\n";
+				driveTooltip += ")\n";
 
-				driveTooltip += "Drive2: T$";
+				driveTooltip += "Drive 2: T$";
 				driveTooltip += disk2Card.FormatIntFracString(drive2Track, true);
 				driveTooltip += "(T";
 				driveTooltip += disk2Card.FormatIntFracString(drive2Track, false);
-				driveTooltip += ")\r\n";
+				driveTooltip += ")\n";
+#endif
 				pInfo->lpszText = (LPTSTR)driveTooltip.c_str();
 			}
 		}
@@ -2585,7 +2656,7 @@ void Win32Frame::FrameCreateWindow(void)
 
 	InitCommonControls();
 	tooltipwindow = CreateWindow(
-		TOOLTIPS_CLASS,NULL,TTS_ALWAYSTIP, 
+		TOOLTIPS_CLASS,NULL,TTS_ALWAYSTIP|TTS_NOPREFIX /*Allow tabs in tooltips*/ ,
 		CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT, 
 		g_hFrameWindow,
 		(HMENU)0,
