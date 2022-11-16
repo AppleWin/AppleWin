@@ -1664,7 +1664,13 @@ LRESULT Win32Frame::WndProc(
 				Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 				float drive1Track = disk2Card.GetPhase(DRIVE_1) / 2;
 				float drive2Track = disk2Card.GetPhase(DRIVE_2) / 2;
-#if 1
+
+				// Example tooltip:
+				//
+				//   Drive 1:          Drive 2:
+				//   T$10.00 (T16.00)  T$0C.00 (T12.00)
+				//   S$06 (S06)        S$0F (S15)
+				//
 				driveTooltip = "Drive 1:\t\tDrive 2:\n";
 				driveTooltip += "T$";
 				driveTooltip += disk2Card.FormatIntFracString(drive1Track, true);
@@ -1699,52 +1705,7 @@ LRESULT Win32Frame::WndProc(
 				if (g_nSector[slot][1] >= 0) sprintf_s(sector, "%02d", g_nSector[slot][1]);
 				driveTooltip += sector;
 				driveTooltip += ")";
-#endif
-#if 0
-				driveTooltip = "Drive 1:\tDrive 2:\n";
-				driveTooltip += "T$";
-				driveTooltip += disk2Card.FormatIntFracString(drive1Track, true);
-				driveTooltip += "\tT$";
-				driveTooltip += disk2Card.FormatIntFracString(drive2Track, true);
-				driveTooltip += "\n";
-				driveTooltip += "T";
-				driveTooltip += disk2Card.FormatIntFracString(drive1Track, false);
-				driveTooltip += "\tT";
-				driveTooltip += disk2Card.FormatIntFracString(drive2Track, false);
-				driveTooltip += "\n";
-				// hex sector
-				driveTooltip += "S$";
-				char sector[3] = "??";
-				if (g_nSector[slot][0] >= 0) sprintf_s(sector, "%02X", g_nSector[slot][0]);
-				driveTooltip += sector;
-				driveTooltip += "\tS$";
-				strcpy(sector, "??");
-				if (g_nSector[slot][1] >= 0) sprintf_s(sector, "%02X", g_nSector[slot][1]);
-				driveTooltip += sector;
-				driveTooltip += "\n";
-				// dec sector
-				driveTooltip += "S";
-				strcpy(sector, "??");
-				if (g_nSector[slot][0] >= 0) sprintf_s(sector, "%02d", g_nSector[slot][0]);
-				driveTooltip += sector;
-				driveTooltip += "\tS";
-				strcpy(sector, "??");
-				if (g_nSector[slot][1] >= 0) sprintf_s(sector, "%02d", g_nSector[slot][1]);
-				driveTooltip += sector;
-#endif
-#if 0
-				driveTooltip = "Drive 1: T$";
-				driveTooltip += disk2Card.FormatIntFracString(drive1Track, true);
-				driveTooltip += "(T";
-				driveTooltip += disk2Card.FormatIntFracString(drive1Track, false);
-				driveTooltip += ")\n";
 
-				driveTooltip += "Drive 2: T$";
-				driveTooltip += disk2Card.FormatIntFracString(drive2Track, true);
-				driveTooltip += "(T";
-				driveTooltip += disk2Card.FormatIntFracString(drive2Track, false);
-				driveTooltip += ")\n";
-#endif
 				pInfo->lpszText = (LPTSTR)driveTooltip.c_str();
 			}
 		}
