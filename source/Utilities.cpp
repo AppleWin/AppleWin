@@ -193,7 +193,7 @@ void LoadConfiguration(bool loadImages)
 	if(REGLOAD(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), &dwTmp))
 		GetFrame().SetFullScreenShowSubunitStatus(dwTmp ? true : false);
 
-	if (REGLOAD(TEXT(REGVALUE_SHOW_DISKII_SLOT5_STATUS), &dwTmp))
+	if (REGLOAD(TEXT(REGVALUE_SHOW_DISKII_STATUS), &dwTmp))
 		GetFrame().SetWindowedModeShowDiskiiSlot5Status(dwTmp ? true : false);
 
 	if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
