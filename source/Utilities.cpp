@@ -194,7 +194,7 @@ void LoadConfiguration(bool loadImages)
 		GetFrame().SetFullScreenShowSubunitStatus(dwTmp ? true : false);
 
 	if (REGLOAD(TEXT(REGVALUE_SHOW_DISKII_STATUS), &dwTmp))
-		GetFrame().SetWindowedModeShowDiskiiSlot5Status(dwTmp ? true : false);
+		GetFrame().SetWindowedModeShowDiskiiStatus(dwTmp ? true : false);
 
 	if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
 		GetPropertySheet().SetTheFreezesF8Rom(dwTmp);

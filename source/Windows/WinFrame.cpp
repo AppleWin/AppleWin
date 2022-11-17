@@ -520,21 +520,21 @@ void Win32Frame::SetFullScreenShowSubunitStatus(bool bShow)
 	g_bFullScreen_ShowSubunitStatus = bShow;
 }
 
-bool Win32Frame::GetWindowedModeShowDiskiiSlot5Status(void)
+bool Win32Frame::GetWindowedModeShowDiskiiStatus(void)
 {
-	return m_showDiskiiSlot5Status;
+	return m_showDiskiiStatus;
 }
 
-void Win32Frame::SetWindowedModeShowDiskiiSlot5Status(bool bShow)
+void Win32Frame::SetWindowedModeShowDiskiiStatus(bool bShow)
 {
-	m_showDiskiiSlot5Status = bShow;
-	m_redrawDiskiiSlot5Status = true;
+	m_showDiskiiStatus = bShow;
+	m_redrawDiskiiStatus = true;
 	SetSlotUIOffsets();
 }
 
 void Win32Frame::SetSlotUIOffsets(void)
 {
-	if (m_showDiskiiSlot5Status)
+	if (m_showDiskiiStatus)
 	{
 		yOffsetSlot5Label = D2FullUI::yOffsetSlot5Label;
 		yOffsetSlot5LEDNumbers = D2FullUI::yOffsetSlot5LEDNumbers;
@@ -779,7 +779,7 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 	else
 	{
 		// NB. Only draw Track/Sector if 2x windowed
-		if (g_nViewportScale == 1 || !GetWindowedModeShowDiskiiSlot5Status())
+		if (g_nViewportScale == 1 || !GetWindowedModeShowDiskiiStatus())
 			return;
 
 		DrawTrackSector(dc, SLOT6, nDrive1Track, g_nSector[SLOT6][0], nDrive2Track, g_nSector[SLOT6][1]);
@@ -893,9 +893,9 @@ void Win32Frame::DrawStatusArea(HDC passdc, int drawflags)
 
 			if (g_nViewportScale > 1 && GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 			{
-				if (m_redrawDiskiiSlot5Status)
+				if (m_redrawDiskiiStatus)
 				{
-					m_redrawDiskiiSlot5Status = false;
+					m_redrawDiskiiStatus = false;
 
 					// Erase background (Slot6's TrackInfo + SectorInfo + "Slot 5" + LEDs + TrackInfo + SectorInfo)
 					SelectObject(dc, GetStockObject(NULL_PEN));
@@ -1655,7 +1655,7 @@ LRESULT Win32Frame::WndProc(
 			}
 			else if (pInfo->hdr.idFrom == TTID_SLOT6_TRK_SEC_INFO || pInfo->hdr.idFrom == TTID_SLOT5_TRK_SEC_INFO)
 			{
-				if (!GetWindowedModeShowDiskiiSlot5Status())
+				if (!GetWindowedModeShowDiskiiStatus())
 					break;
 
 				SendMessage(pInfo->hdr.hwndFrom, TTM_SETMAXTIPWIDTH, 0, 200);

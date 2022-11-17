@@ -72,8 +72,8 @@ Win32Frame::Win32Frame()
 	// Set g_nViewportScale, g_nViewportCX, g_nViewportCY & buttonx, buttony
 	SetViewportScale(kDEFAULT_VIEWPORT_SCALE, true);
 
-	// Set m_showDiskiiSlot5Status, m_redrawDiskiiSlot5Status
-	SetWindowedModeShowDiskiiSlot5Status(false);
+	// Set m_showDiskiiStatus, m_redrawDiskiiStatus
+	SetWindowedModeShowDiskiiStatus(false);
 }
 
 void Win32Frame::VideoCreateDIBSection(bool resetVideoState)

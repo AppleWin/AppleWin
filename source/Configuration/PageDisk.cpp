@@ -183,7 +183,7 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 	case WM_INITDIALOG:
 		{
 			CheckDlgButton(hWnd, IDC_ENHANCE_DISK_ENABLE, GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk() ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_DISKII_STATUS_ENABLE, Win32Frame::GetWin32Frame().GetWindowedModeShowDiskiiSlot5Status() ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_DISKII_STATUS_ENABLE, Win32Frame::GetWin32Frame().GetWindowedModeShowDiskiiStatus() ? BST_CHECKED : BST_UNCHECKED);
 
 			const UINT slot = SLOT6;
 			if (GetCardMgr().QuerySlot(slot) == CT_Disk2)	// NB. SLOT6 not setup in m_PropertySheetHelper.GetConfigNew().m_Slot[]
@@ -282,17 +282,16 @@ void CPageDisk::DlgOK(HWND hWnd)
 	}
 
 	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
-	const bool bNewDiskiiSlot5Status = IsDlgButtonChecked(hWnd, IDC_DISKII_STATUS_ENABLE) ? true : false;
+	const bool bNewDiskiiStatus = IsDlgButtonChecked(hWnd, IDC_DISKII_STATUS_ENABLE) ? true : false;
 
-	if (win32Frame.GetWindowedModeShowDiskiiSlot5Status() != bNewDiskiiSlot5Status)
+	if (win32Frame.GetWindowedModeShowDiskiiStatus() != bNewDiskiiStatus)
 	{
-		REGSAVE(REGVALUE_SHOW_DISKII_STATUS, bNewDiskiiSlot5Status ? 1 : 0);
-		win32Frame.SetWindowedModeShowDiskiiSlot5Status(bNewDiskiiSlot5Status);
+		REGSAVE(REGVALUE_SHOW_DISKII_STATUS, bNewDiskiiStatus ? 1 : 0);
+		win32Frame.SetWindowedModeShowDiskiiStatus(bNewDiskiiStatus);
 
 		if (!win32Frame.IsFullScreen())
 			win32Frame.FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
 	}
-
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
