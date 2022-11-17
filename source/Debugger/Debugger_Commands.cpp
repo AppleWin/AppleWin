@@ -442,8 +442,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("SPACES")		, NULL, PARAM_CONFIG_SPACES  },
 		{TEXT("TARGET")     , NULL, PARAM_CONFIG_TARGET  },
 // Disk
-		{TEXT("EJECT")      , NULL, PARAM_DISK_EJECT     },
 		{TEXT("INFO")       , NULL, PARAM_DISK_INFO      },
+		{TEXT("SLOT")       , NULL, PARAM_DISK_SET_SLOT  },
+		{TEXT("EJECT")      , NULL, PARAM_DISK_EJECT     },
 		{TEXT("PROTECT")    , NULL, PARAM_DISK_PROTECT   },
 		{TEXT("READ")       , NULL, PARAM_DISK_READ      },
 // Font (Config)

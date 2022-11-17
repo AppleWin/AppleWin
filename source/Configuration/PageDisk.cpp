@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PropertySheet.h"
 
 #include "../Windows/AppleWin.h"
+#include "../Windows/Win32Frame.h"
 #include "../CardManager.h"
 #include "../Disk.h"	// Drive_e, Disk_Status_e
 #include "../Harddisk.h"
@@ -182,6 +183,7 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 	case WM_INITDIALOG:
 		{
 			CheckDlgButton(hWnd, IDC_ENHANCE_DISK_ENABLE, GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk() ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_DISKII_STATUS_ENABLE, Win32Frame::GetWin32Frame().GetWindowedModeShowDiskiiStatus() ? BST_CHECKED : BST_UNCHECKED);
 
 			const UINT slot = SLOT6;
 			if (GetCardMgr().QuerySlot(slot) == CT_Disk2)	// NB. SLOT6 not setup in m_PropertySheetHelper.GetConfigNew().m_Slot[]
@@ -277,6 +279,18 @@ void CPageDisk::DlgOK(HWND hWnd)
 	{
 		GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(bNewEnhanceDisk);
 		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (DWORD)bNewEnhanceDisk);
+	}
+
+	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
+	const bool bNewDiskiiStatus = IsDlgButtonChecked(hWnd, IDC_DISKII_STATUS_ENABLE) ? true : false;
+
+	if (win32Frame.GetWindowedModeShowDiskiiStatus() != bNewDiskiiStatus)
+	{
+		REGSAVE(REGVALUE_SHOW_DISKII_STATUS, bNewDiskiiStatus ? 1 : 0);
+		win32Frame.SetWindowedModeShowDiskiiStatus(bNewDiskiiStatus);
+
+		if (!win32Frame.IsFullScreen())
+			win32Frame.FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
 	}
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);

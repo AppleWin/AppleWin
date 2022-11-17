@@ -67,6 +67,7 @@ enum AppMode_e
 #define  REGVALUE_OLD_APPLE2_TYPE    "Computer Emulation"	// Deprecated
 #define  REGVALUE_CONFIRM_REBOOT     "Confirm Reboot" // Added at 1.24.1 PageConfig
 #define  REGVALUE_FS_SHOW_SUBUNIT_STATUS "Full-screen show subunit status"
+#define  REGVALUE_SHOW_DISKII_STATUS "Show Disk II Status"
 #define  REGVALUE_SOUND_EMULATION    "Sound Emulation"
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"

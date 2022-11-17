@@ -3471,8 +3471,9 @@ Update_t CmdFlag (int nArgs)
 // Disk ___________________________________________________________________________________________
 
 // Usage:
+//     DISK SLOT [#]                                 // Show [or set] the current slot of the Disk II I/F card (for all other cmds to act on)
+//     DISK INFO                                     // Info for current drive
 //     DISK # EJECT                                  // Unmount disk
-//     DISK INFO
 //     DISK # PROTECT #                              // Write-protect disk on/off
 //     DISK # "<filename>"                           // Mount filename as floppy disk
 // TODO:
@@ -3480,20 +3481,40 @@ Update_t CmdFlag (int nArgs)
 //     DISK # READ  <Track> <Sector> Addr:Addr           // Read Track/Sector(s)
 //     DISK # WRITE <Track> <Sector> Addr:Addr           // Write Track/Sector(s)
 // Examples:
-//     DISK 2 INFO
-Update_t CmdDisk ( int nArgs)
+//     DISK INFO
+Update_t CmdDisk (int nArgs)
 {
+	static UINT currentSlot = SLOT6;
+
 	if (! nArgs)
 		return HelpLastCommand();
 
-	if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
-		return ConsoleDisplayError("No DiskII card in slot-6");
-
-	Disk2InterfaceCard& diskCard = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
-
-	// check for info command
+	// check for info or slot command
 	int iParam = 0;
-	FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END );
+	FindParam(g_aArgs[1].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END);
+
+	if (iParam == PARAM_DISK_SET_SLOT)
+	{
+		if (nArgs > 2)
+			return HelpLastCommand();
+
+		if (nArgs > 1)
+		{
+			UINT slot = g_aArgs[2].nValue;
+			if (slot < SLOT1 || slot > SLOT7)
+				return HelpLastCommand();
+
+			currentSlot = slot;
+		}
+
+		ConsoleBufferPushFormat("Current Disk II slot = %d", currentSlot);
+		return ConsoleUpdate();
+	}
+
+	if (GetCardMgr().QuerySlot(currentSlot) != CT_Disk2)
+		return ConsoleDisplayErrorFormat("No Disk II card in slot-%d", currentSlot);
+
+	Disk2InterfaceCard& diskCard = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(currentSlot));
 
 	if (iParam == PARAM_DISK_INFO)
 	{
