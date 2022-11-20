@@ -660,7 +660,11 @@ inline void updateVideoScannerHorzEOLSimple()
 {
 	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 	{
-		*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;	// VT_COLOR_IDEALIZED: TEXT -> HGR can leave junk on RHS (GH#1106)
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)		// Only write to video memory when in visible part of display (GH#1143)
+		{
+			*(uint32_t*)g_pVideoAddress = 0 | ALPHA32_MASK;		// VT_COLOR_IDEALIZED: TEXT -> HGR can leave junk on RHS (GH#1106)
+			*(getScanlineNextInbetween()) = 0 | ALPHA32_MASK;	// ...and clear junk on RHS for non-'50% Scan lines'
+		}
 
 		g_nVideoClockHorz = 0;
 
