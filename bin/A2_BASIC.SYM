@@ -1,4 +1,5 @@
 ; Apple 2 Applesoft Symbol Table
+; Version 3 Fix AppleWin GH#1144
 ; Version 2 Cross-referenced/Sync'd with APPLE2E.SYM & A2_BASIC.SYM
 ; Version 1 by Michael Pohoreski - AppleWin Debugger Dev
 ; Based on Bob Sander-Cederlof's "S-C DocuMentor: Applesoft"
@@ -562,13 +563,14 @@ EA2B OUTOFRNG
 DB5A OUTQUES
 DB57 OUTSP
 E8D5 OVERFLOW
-  79 P.ADD
-  50 P.AND
-  7B P.MUL
-  7F P.NEQ
-  46 P.OR
-  7D P.PWR
-  64 P.REL
+; NB. these 7 P.xxx values are constants used in MATHTBL (a MATH OPERATOR BRANCH TABLE) - see AppleWin GH#1144
+;  79 P.ADD
+;  50 P.AND
+;  7B P.MUL
+;  7F P.NEQ
+;  46 P.OR
+;  7D P.PWR
+;  64 P.REL
 DEB2 PARCHK
 D56C PARSE
 	  .01=D56D  .02=D578  .03=D588  .04=D590  .05=D5A2  .06=D5A7  .07=D5A8
