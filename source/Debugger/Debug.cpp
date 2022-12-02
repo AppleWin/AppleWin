@@ -353,7 +353,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static bool      g_bIgnoreNextKey = false;
 
-	static WORD g_LBR = 0x0000;	// Last Branch Record
+	const UINT LBR_UNDEFINED = -1;
+	static UINT g_LBR = LBR_UNDEFINED;	// Last Branch Record
 
 	static bool g_bScriptReadOk = false;
 
@@ -2410,7 +2411,10 @@ Update_t CmdOut (int nArgs)
 //===========================================================================
 Update_t CmdLBR(int nArgs)
 {
-	ConsolePrintFormat(" LBR = $%04X", g_LBR);
+	if (g_LBR == LBR_UNDEFINED)
+		ConsolePrintFormat(" LBR not set yet. Hint: Run from the debugger via 'g' command.");
+	else
+		ConsolePrintFormat(" LBR = $%04X", g_LBR);
 	return ConsoleUpdate();
 }
 
@@ -3471,8 +3475,9 @@ Update_t CmdFlag (int nArgs)
 // Disk ___________________________________________________________________________________________
 
 // Usage:
+//     DISK SLOT [#]                                 // Show [or set] the current slot of the Disk II I/F card (for all other cmds to act on)
+//     DISK INFO                                     // Info for current drive
 //     DISK # EJECT                                  // Unmount disk
-//     DISK INFO
 //     DISK # PROTECT #                              // Write-protect disk on/off
 //     DISK # "<filename>"                           // Mount filename as floppy disk
 // TODO:
@@ -3480,20 +3485,40 @@ Update_t CmdFlag (int nArgs)
 //     DISK # READ  <Track> <Sector> Addr:Addr           // Read Track/Sector(s)
 //     DISK # WRITE <Track> <Sector> Addr:Addr           // Write Track/Sector(s)
 // Examples:
-//     DISK 2 INFO
-Update_t CmdDisk ( int nArgs)
+//     DISK INFO
+Update_t CmdDisk (int nArgs)
 {
+	static UINT currentSlot = SLOT6;
+
 	if (! nArgs)
 		return HelpLastCommand();
 
-	if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
-		return ConsoleDisplayError("No DiskII card in slot-6");
-
-	Disk2InterfaceCard& diskCard = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
-
-	// check for info command
+	// check for info or slot command
 	int iParam = 0;
-	FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END );
+	FindParam(g_aArgs[1].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END);
+
+	if (iParam == PARAM_DISK_SET_SLOT)
+	{
+		if (nArgs > 2)
+			return HelpLastCommand();
+
+		if (nArgs > 1)
+		{
+			UINT slot = g_aArgs[2].nValue;
+			if (slot < SLOT1 || slot > SLOT7)
+				return HelpLastCommand();
+
+			currentSlot = slot;
+		}
+
+		ConsoleBufferPushFormat("Current Disk II slot = %d", currentSlot);
+		return ConsoleUpdate();
+	}
+
+	if (GetCardMgr().QuerySlot(currentSlot) != CT_Disk2)
+		return ConsoleDisplayErrorFormat("No Disk II card in slot-%d", currentSlot);
+
+	Disk2InterfaceCard& diskCard = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(currentSlot));
 
 	if (iParam == PARAM_DISK_INFO)
 	{
@@ -8260,6 +8285,8 @@ void DebugBegin ()
 	DebugVideoMode::Instance().Reset();
 	UpdateDisplay( UPDATE_ALL );
 
+	g_LBR = LBR_UNDEFINED;	// reset LBR, so LBR isn't stale from a previous debugging session
+
 #if DEBUG_APPLE_FONT
 	int iFG = 7;
 	int iBG = 4;
@@ -8481,7 +8508,8 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				stopReason = "PC reads from floating bus or I/O memory";
 			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
-				stopReason = StrFormat("Interrupt occurred at $%04X", g_LBR);
+				stopReason = (g_LBR == LBR_UNDEFINED)	? StrFormat("Interrupt occurred (LBR unknown)")
+														: StrFormat("Interrupt occurred at $%04X", g_LBR);
 			else if (g_bDebugBreakpointHit & BP_HIT_VIDEO_POS)
 				stopReason = StrFormat("Video scanner position matches at vpos=$%04X", g_nVideoClockVert);
 			else if (g_bDebugBreakpointHit & BP_DMA_TO_IO_MEM)
@@ -8773,7 +8801,7 @@ void DebugInitialize ()
 void DebugReset(void)
 {
 	g_videoScannerDisplayInfo.Reset();
-	g_LBR = 0x0000;
+	g_LBR = LBR_UNDEFINED;
 }
 
 // Add character to the input line

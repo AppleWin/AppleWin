@@ -111,13 +111,16 @@ Etc.
 #define MODE_MOUSE_ON       (1<<0)              //    | | | | | | | \--- Mouse off (0) or on (1) 
 #define MODE_INT_MOVEMENT   (1<<1)              //    | | | | | | \----- Interrupt if mouse is moved 
 #define MODE_INT_BUTTON	    (1<<2)              //    | | | | | \------- Interrupt if button is pressed
-#define MODE_INT_VBL        (1<<3)              //    | | | | \--------- Interrupt on VBL 
+#define MODE_INT_VBL        (1<<3)              //    | | | | \--------- Interrupt on VBL [*1]
 #define MODE_RESERVED4      (1<<4)              //    | | | \----------- Reserved 
 #define MODE_RESERVED5      (1<<5)              //    | | \------------- Reserved 
 #define MODE_RESERVED6      (1<<6)              //    | \--------------- Reserved 
 #define MODE_RESERVED7      (1<<7)              //    \----------------- Reserved 
 
 #define MODE_INT_ALL		STAT_INT_ALL
+
+// [*1] "A mode byte of $08 (mouse off but VBL interrupt on) will generate VBL interrupts."
+// Ref. Apple II Technical Notes - Mouse #3: "Mode Byte of the SetMouse Routine"
 
 //===========================================================================
 
@@ -449,22 +452,26 @@ void CMouseInterface::OnMouseEvent(bool bEventVBL)
 {
 	int byState = 0;
 
-	if ( !( m_byMode & MODE_MOUSE_ON ) )		// Mouse Off
-		return;
-
-	if ( m_nX != m_iX || m_nY != m_iY )
-	{
-		byState |= STAT_INT_MOVEMENT|STAT_MOVEMENT_SINCE_READMOUSE;	// X/Y moved since last READMOUSE | Movement interrupt
-		m_byState |= STAT_MOVEMENT_SINCE_READMOUSE;							// [TC] Used by CopyII+9.1 and ProTERM3.1
-	}
-
-	if ( m_bBtn0 != m_bButtons[0] || m_bBtn1 != m_bButtons[1] )
-		byState |= STAT_INT_BUTTON;		// Button 0/1 interrupt
-	if ( bEventVBL )
+	if ((m_byMode & MODE_INT_VBL) && bEventVBL)
 		byState |= STAT_INT_VBL;
 
-	//byState &= m_byMode & 0x2E;
-	byState &= ((m_byMode & MODE_INT_ALL) | STAT_MOVEMENT_SINCE_READMOUSE);	// [TC] Keep "X/Y moved since last READMOUSE" for next MOUSE_READ (Contiki v1.3 uses this)
+	if (m_byMode & MODE_MOUSE_ON)
+	{
+		if (m_nX != m_iX || m_nY != m_iY)
+		{
+			byState |= STAT_INT_MOVEMENT | STAT_MOVEMENT_SINCE_READMOUSE;	// X/Y moved since last READMOUSE | Movement interrupt
+			m_byState |= STAT_MOVEMENT_SINCE_READMOUSE;							// [TC] Used by CopyII+9.1 and ProTERM3.1
+		}
+
+		if (m_bBtn0 != m_bButtons[0] || m_bBtn1 != m_bButtons[1])
+			byState |= STAT_INT_BUTTON;		// Button 0/1 interrupt
+
+		byState &= ((m_byMode & MODE_INT_ALL) | STAT_MOVEMENT_SINCE_READMOUSE);	// [TC] Keep "X/Y moved since last READMOUSE" for next MOUSE_READ (Contiki v1.3 uses this)
+	}
+	else // if MOUSE OFF then only consider VBL (GH#1138)
+	{
+		byState &= STAT_INT_VBL;
+	}
 
 	if ( byState & STAT_INT_ALL )
 	{

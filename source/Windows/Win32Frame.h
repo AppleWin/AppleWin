@@ -2,6 +2,7 @@
 
 #include "FrameBase.h"
 #include "DiskImage.h"
+#include "Card.h"
 
 class Video;
 
@@ -26,7 +27,7 @@ class Win32Frame : public FrameBase
 {
 public:
 	Win32Frame(void);
-	virtual ~Win32Frame(void){}
+	virtual ~Win32Frame(void) {}
 
 	static Win32Frame& GetWin32Frame();
 	static LRESULT CALLBACK FrameWndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
@@ -39,7 +40,8 @@ public:
 	virtual void FrameSetCursorPosByMousePos();
 
 	virtual void SetFullScreenShowSubunitStatus(bool bShow);
-	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth=0, UINT userSpecifiedHeight=0);
+	virtual void SetWindowedModeShowDiskiiStatus(bool bShow);
+	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth = 0, UINT userSpecifiedHeight = 0);
 	virtual int SetViewportScale(int nNewScale, bool bForce = false);
 	virtual void SetAltEnterToggleFullScreen(bool mode);
 
@@ -57,9 +59,10 @@ public:
 
 	virtual std::string Video_GetScreenShotFolder() const;
 
-	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName);
+	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string& interfaceName);
 
 	bool GetFullScreenShowSubunitStatus(void);
+	bool GetWindowedModeShowDiskiiStatus(void);
 	int GetFullScreenOffsetX(void);
 	int GetFullScreenOffsetY(void);
 	bool IsFullScreen(void);
@@ -90,6 +93,9 @@ private:
 
 	void Benchmark(void);
 	void DisplayLogo(void);
+	void GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, int& activeFloppy);
+	void CreateTrackSectorStrings(int track, int sector, std::string& strTrack, std::string& strSector);
+	void DrawTrackSector(HDC dc, UINT slot, int drive1Track, int drive1Sector, int drive2Track, int drive2Sector);
 	void FrameDrawDiskLEDS(HDC hdc);  // overloaded Win32 only, call via GetWin32Frame()
 	void FrameDrawDiskStatus(HDC hdc);  // overloaded Win32 only, call via GetWin32Frame()
 	void EraseButton(int number);
@@ -110,7 +116,7 @@ private:
 	void FrameResizeWindow(int nNewScale);
 	void RevealCursor();
 	void ScreenWindowResize(const bool bCtrlKey);
-	void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x=0, int y=0);
+	void UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY, int x = 0, int y = 0);
 	void DrawCrosshairsMouse();
 	void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen);
 	void CreateGdiObjects(void);
@@ -118,6 +124,7 @@ private:
 	void FrameShowCursor(BOOL bShow);
 	void FullScreenRevealCursor(void);
 	void GetWidthHeight(int& nWidth, int& nHeight);
+	void SetSlotUIOffsets(void);
 
 	bool g_bAltEnter_ToggleFullScreen; // Default for ALT+ENTER is to toggle between windowed and full-screen modes
 	bool    g_bIsFullScreen;
@@ -134,8 +141,9 @@ private:
 	bool    g_bAppActive;
 	bool g_bFrameActive;
 	bool g_windowMinimized;
-	std::string driveTooltip;
 	bool g_bFullScreen_ShowSubunitStatus;
+	bool m_showDiskiiStatus;
+	bool m_redrawDiskiiStatus;
 	int						g_win_fullscreen_offsetx;
 	int						g_win_fullscreen_offsety;
 	UINT m_bestWidthForFullScreen;
@@ -163,8 +171,13 @@ private:
 	RECT    framerect;
 
 	BOOL    helpquit;
+	static const UINT smallfontHeight = 11;
 	HFONT   smallfont;
+
 	HWND    tooltipwindow;
+	std::string driveTooltip;
+	enum { TTID_DRIVE1_BUTTON = 0, TTID_DRIVE2_BUTTON, TTID_SLOT6_TRK_SEC_INFO, TTID_SLOT5_TRK_SEC_INFO, TTID_MAX };
+
 	int     viewportx;	// Default to Normal (non-FullScreen) mode
 	int     viewporty;	// Default to Normal (non-FullScreen) mode
 
@@ -183,14 +196,38 @@ private:
 	//===========================
 	HBITMAP g_hDiskWindowedLED[NUM_DISK_STATUS];
 
-	int    g_nTrackDrive1;
-	int    g_nTrackDrive2;
-	int    g_nSectorDrive1;
-	int    g_nSectorDrive2;
-	std::string g_strTrackDrive1;
-	std::string g_strTrackDrive2;
-	std::string g_strSectorDrive1;
-	std::string g_strSectorDrive2;
+	// Y-offsets from end of last button
+	static const UINT yOffsetSlot6LEDNumbers = 5;
+	static const UINT yOffsetSlot6LEDs = yOffsetSlot6LEDNumbers + 1;
+	static const UINT yOffsetCapsLock = yOffsetSlot6LEDs + smallfontHeight;
+	static const UINT yOffsetHardDiskLED = yOffsetSlot6LEDs + smallfontHeight + 1;
+	// 2x (or more) Windowed mode: Disk II LEDs and track/sector info
+	struct D2FullUI	// Disk II full UI
+	{
+		static const UINT yOffsetSlot6TrackInfo = 35;
+		static const UINT yOffsetSlot6SectorInfo = yOffsetSlot6TrackInfo + smallfontHeight;
+		static const UINT yOffsetSlot5Label = yOffsetSlot6SectorInfo + smallfontHeight + 3;
+		static const UINT yOffsetSlot5LEDNumbers = yOffsetSlot5Label + smallfontHeight + 1;
+		static const UINT yOffsetSlot5LEDs = yOffsetSlot5LEDNumbers + 1;
+		static const UINT yOffsetSlot5TrackInfo = yOffsetSlot5LEDs + smallfontHeight;
+		static const UINT yOffsetSlot5SectorInfo = yOffsetSlot5TrackInfo + smallfontHeight;
+	};
+	// 2x (or more) Windowed mode: Disk II LEDs only (no track/sector info)
+	struct D2CompactUI	// Disk II compact UI
+	{
+		static const UINT yOffsetSlot5Label = 35;
+		static const UINT yOffsetSlot5LEDNumbers = yOffsetSlot5Label + smallfontHeight + 1;
+		static const UINT yOffsetSlot5LEDs = yOffsetSlot5LEDNumbers + 1;
+	};
+	const UINT yOffsetSlot6TrackInfo = D2FullUI::yOffsetSlot6TrackInfo;
+	const UINT yOffsetSlot6SectorInfo = D2FullUI::yOffsetSlot6SectorInfo;
+	UINT yOffsetSlot5Label;
+	UINT yOffsetSlot5LEDNumbers;
+	UINT yOffsetSlot5LEDs;
+	const UINT yOffsetSlot5TrackInfo = D2FullUI::yOffsetSlot5TrackInfo;
+	const UINT yOffsetSlot5SectorInfo = D2FullUI::yOffsetSlot5SectorInfo;
+
+	int g_nSector[NUM_SLOTS][2];
 	Disk_Status_e g_eStatusDrive1;
 	Disk_Status_e g_eStatusDrive2;
 

@@ -1396,8 +1396,9 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 // Disk
 	, _PARAM_DISK_BEGIN = _PARAM_CONFIG_END // Daisy Chain
-		, PARAM_DISK_EJECT = _PARAM_DISK_BEGIN // DISK 1 EJECT
-		, PARAM_DISK_INFO                      // DISK 1 INFO
+		, PARAM_DISK_INFO = _PARAM_DISK_BEGIN  // DISK INFO
+		, PARAM_DISK_SET_SLOT                  // DISK SLOT 6
+		, PARAM_DISK_EJECT                     // DISK 1 EJECT
 		, PARAM_DISK_PROTECT                   // DISK 1 PROTECT
 		, PARAM_DISK_READ                      // DISK 1 READ Track Sector NumSectors MemAddress
 	, _PARAM_DISK_END

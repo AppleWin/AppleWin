@@ -28,6 +28,7 @@ public:
 	virtual void FrameSetCursorPosByMousePos() = 0;
 
 	virtual void SetFullScreenShowSubunitStatus(bool bShow) = 0;
+	virtual void SetWindowedModeShowDiskiiStatus(bool bShow) = 0;
 	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth=0, UINT userSpecifiedHeight=0) = 0;
 	virtual int SetViewportScale(int nNewScale, bool bForce = false) = 0;
 	virtual void SetAltEnterToggleFullScreen(bool mode) = 0;
