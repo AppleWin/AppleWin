@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FrameBase.h"
+#include <memory>
 #include <vector>
 
 class LinuxFrame : public FrameBase

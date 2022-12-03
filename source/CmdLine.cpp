@@ -36,7 +36,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Keyboard.h"
 #include "Joystick.h"
 #include "SoundCore.h"
-#include "ParallelPrinter.h"
 #include "Interface.h"
 
 CmdLine g_cmdLine;

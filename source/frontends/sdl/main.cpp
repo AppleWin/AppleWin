@@ -19,12 +19,9 @@
 #include "frontends/sdl/renderer/sdlrendererframe.h"
 #include "frontends/sdl/imgui/sdlimguiframe.h"
 
-#include "CardManager.h"
 #include "Core.h"
-#include "Log.h"
 #include "CPU.h"
 #include "NTSC.h"
-#include "SaveState.h"
 #include "Interface.h"
 
 // comment out to test / debug init / shutdown only

@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 
 #include "linux/context.h"
-#include "linux/linuxframe.h"
 #include "linux/registry.h"
 #include "linux/paddle.h"
 #include "linux/duplicates/PropertySheet.h"
@@ -18,10 +17,7 @@
 #include "SaveState.h"
 #include "Memory.h"
 #include "Speaker.h"
-#include "MouseInterface.h"
 #include "Mockingboard.h"
-#include "Uthernet1.h"
-#include "Uthernet2.h"
 
 
 namespace

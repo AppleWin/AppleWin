@@ -2,6 +2,7 @@
 
 #include "frontends/sdl/sdlframe.h"
 #include "frontends/common2/gnuframe.h"
+#include <memory>
 
 namespace common2
 {
