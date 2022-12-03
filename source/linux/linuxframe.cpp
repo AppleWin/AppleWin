@@ -53,6 +53,10 @@ void LinuxFrame::ResizeWindow()
 {
 }
 
+void LinuxFrame::SetWindowedModeShowDiskiiStatus(bool /* bShow */)
+{
+}
+
 void LinuxFrame::Initialize(bool resetVideoState)
 {
   Video & video = GetVideo();
