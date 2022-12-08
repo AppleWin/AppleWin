@@ -13,3 +13,5 @@ libsdl2-dev
 libgles-dev
 libpcap-dev
 libslirp-dev
+libminizip-dev
+libyaml-dev
