@@ -6,6 +6,7 @@
 
 #include "linux/context.h"
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -45,6 +46,9 @@ namespace ra2
     std::shared_ptr<RetroFrame> myFrame;
 
     common2::Speed mySpeed;  // fixed speed
+
+    std::chrono::steady_clock::time_point firstBtnPress; // for quit
+    int pressCount = 0;
 
     std::vector<int> myButtonStates;
 

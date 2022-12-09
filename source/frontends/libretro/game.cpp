@@ -236,6 +236,28 @@ namespace ra2
       {
         ResetMachineState();
       }
+      if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_SELECT))
+      {
+        // added as convenience if game_focus is on:
+        // exit emulator by pressing "select" twice
+        pressCount++;
+        if (pressCount > 1)
+        {
+          std::chrono::steady_clock::time_point secondBtnPress = std::chrono::steady_clock::now();
+          int dt = std::chrono::duration_cast<std::chrono::milliseconds>(secondBtnPress - firstBtnPress).count();
+          if (dt <= 500)
+          {
+            log_cb(RETRO_LOG_INFO, "RA2: %s - user quitted\n", __FUNCTION__);
+            environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
+          }
+          pressCount = 1;
+        }
+        if (pressCount == 1)
+        {
+          ra2::display_message("Press again to quit.", 30 /* 0.5s at 60 FPS */);
+          firstBtnPress = std::chrono::steady_clock::now();
+        }
+      }
     }
     else
     {

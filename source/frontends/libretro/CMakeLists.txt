@@ -41,7 +41,12 @@ target_include_directories(applewin_libretro PRIVATE
   libretro-common/include
   )
 
+set(is_gnu "$<CXX_COMPILER_ID:GNU>")
+set(before_v9 "$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9>")
+set(static_stdcpp_fs "$<AND:${is_gnu},${before_v9}>")
+
 target_link_libraries(applewin_libretro PRIVATE
+  $<${static_stdcpp_fs}:stdc++fs>
   appleii
   common2
   windows
