@@ -15,6 +15,8 @@ public:
 
 		m_altControllerType[0] = g_cmdLine.snesMaxAltControllerType[0];
 		m_altControllerType[1] = g_cmdLine.snesMaxAltControllerType[1];
+
+		// TODO: m_SnesMaxButtons[][]
 	}
 	virtual ~SNESMAXCard(void) {}
 
@@ -31,10 +33,15 @@ public:
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
+	static bool ParseControllerMappingFile(UINT joyNum, const char* pathname, std::string& errorMsg);
+
+	enum Button { A, B, X, Y, LB, RB, SELECT, START, NUM_BUTTONS };
+
 private:
 	UINT m_buttonIndex;
 	UINT m_controller1Buttons;
 	UINT m_controller2Buttons;
 
 	bool m_altControllerType[2];
+	static UINT m_SnesMaxButtons[2][NUM_BUTTONS];
 };

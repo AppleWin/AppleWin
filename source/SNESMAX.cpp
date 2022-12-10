@@ -44,8 +44,10 @@
   Bit 7 = Controller 1, Active Low
 
   Once data is read, button presses (for each controller) should be stored in the following structure
-  Byte 0: B:Y:Sl:St:U:D:L:R
-  Byte 1: A:X:Fl:Fr:x:x:x:x
+
+     bit# 7 6 5 4 3  2  1 0
+  Byte 0: R:L:D:U:St:Sl:Y:B
+  Byte 1: x:x:x:x:Fr:Fl:X:A
 
   The variable controllerXButtons will stored in the reverse order.
 
@@ -56,6 +58,12 @@
 #include "SNESMAX.h"
 #include "Memory.h"
 #include "YamlHelper.h"
+
+UINT SNESMAXCard::m_SnesMaxButtons[2][NUM_BUTTONS] =
+{
+	{A,B,X,Y,LB,RB,SELECT,START},
+	{A,B,X,Y,LB,RB,SELECT,START}
+};
 
 BYTE __stdcall SNESMAXCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
 {
@@ -115,6 +123,7 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 			if (pCard->m_altControllerType[0])
 			{
 				// 8BitDo NES30 PRO
+				// Sr,Sl,R,L / -,-,-,Y,X,-,B,A
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0002) >> 1); // B Button
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0010) >> 3); // Y Button
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0400) >> 8); // Sl Button
@@ -128,6 +137,7 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 			else
 			{
 				// Logitech F310, Dualshock 4
+				// -,-,St,Sl / -,-,R,L,X,A,B,Y
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0002) >> 1); // B Button
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0001) << 1); // Y Button
 				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0100) >> 6); // Sl Button
@@ -239,4 +249,70 @@ bool SNESMAXCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	m_controller2Buttons = 0xff;
 
 	return true;
+}
+
+bool SNESMAXCard::ParseControllerMappingFile(UINT joyNum, const char* pathname, std::string& errorMsg)
+{
+	bool res = true;
+	YamlHelper yamlHelper;
+
+	try
+	{
+		if (!yamlHelper.InitParser(pathname))
+			throw std::runtime_error("Controller mapping file: Failed to initialize parser or open file");
+
+		if (yamlHelper.ParseFileHdr("AppleWin Controller Button Remapping") != 1)
+			throw std::runtime_error("Controller mapping file: Version mismatch");
+
+		std::string scalar;
+		while (yamlHelper.GetScalar(scalar))
+		{
+			if (scalar == SS_YAML_KEY_UNIT)
+			{
+				yamlHelper.GetMapStartEvent();
+				YamlLoadHelper yamlLoadHelper(yamlHelper);
+				std::string hid = yamlLoadHelper.LoadString("HID");
+				std::string desc = yamlLoadHelper.LoadString("Description");
+				for (UINT i = 0; i < SNESMAXCard::NUM_BUTTONS; i++)
+				{
+					char szButtonNum[3] = "00";
+					sprintf_s(szButtonNum, "%d", i + 1);	// +1 as 1-based
+					std::string buttonNum = szButtonNum;
+					std::string buttonStr = yamlLoadHelper.LoadString(buttonNum);
+					SNESMAXCard::Button button;
+					if (buttonStr == "A") button = SNESMAXCard::A;
+					else if (buttonStr == "B") button = SNESMAXCard::B;
+					else if (buttonStr == "X") button = SNESMAXCard::X;
+					else if (buttonStr == "Y") button = SNESMAXCard::Y;
+					else if (buttonStr == "LB") button = SNESMAXCard::LB;
+					else if (buttonStr == "RB") button = SNESMAXCard::RB;
+					else if (buttonStr == "SELECT") button = SNESMAXCard::SELECT;
+					else if (buttonStr == "START") button = SNESMAXCard::START;
+					else throw std::runtime_error("Controller mapping file: Unknown button: " + buttonStr);
+					m_SnesMaxButtons[joyNum][i] = button;
+				}
+			}
+			else
+			{
+				throw std::runtime_error("Unknown top-level scalar: " + scalar);
+			}
+
+			break;	// TODO: extend to support multiple controllers
+		}
+	}
+	catch (const std::exception& szMessage)
+	{
+		errorMsg = "Error with yaml file: ";
+		errorMsg += pathname;
+		errorMsg += "\n";
+		errorMsg += szMessage.what();
+		res = false;
+	}
+
+	yamlHelper.FinaliseParser();
+
+	if (res)
+		g_cmdLine.snesMaxAltControllerType[joyNum] = true;	// Enable the alt controller
+
+	return res;
 }
