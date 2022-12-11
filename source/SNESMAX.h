@@ -33,6 +33,8 @@ public:
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
+	void GetControllerButtons(JOYINFOEX& infoEx, UINT& controllerButtons, bool altControllerType);
+
 	static bool ParseControllerMappingFile(UINT joyNum, const char* pathname, std::string& errorMsg);
 
 	enum Button { A, B, X, Y, LB, RB, SELECT, START, NUM_BUTTONS };
