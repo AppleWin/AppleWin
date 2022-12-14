@@ -27,12 +27,11 @@ namespace ra2
   retro_audio_sample_t audio_cb;
   retro_audio_sample_batch_t audio_batch_cb;
 
-  void display_message(const std::string & message)
+  void display_message(const std::string & message, int durationFrames)
   {
     retro_message rmsg;
-    rmsg.frames = 180;
+    rmsg.frames = durationFrames;
     rmsg.msg = message.c_str();
     environ_cb(RETRO_ENVIRONMENT_SET_MESSAGE, &rmsg);
   }
-
 }

@@ -1,3 +1,4 @@
+#pragma once
 #include "libretro.h"
 
 #include <string>
@@ -19,6 +20,6 @@ namespace ra2
 
 #define MAX_PADS 1
 
-  void display_message(const std::string & message);
+  void display_message(const std::string & message, int durationFrames = 180);
 
 }
