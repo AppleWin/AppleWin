@@ -56,6 +56,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tape.h"
 #include "RGBMonitor.h"
 #include "VidHD.h"
+#include "CopyProtectionDongles.h"
 
 #include "z80emu.h"
 #include "Z80VICE/z80.h"
@@ -729,6 +730,9 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 
 	if (address >= 0xC05C && address <= 0xC05D && IsApple2JPlus(GetApple2Type()))
 		NTSC_VideoInitAppleType();		// AN2 switches between Katakana & ASCII video rom chars (GH#773)
+
+	if (address >= 0xC058 && address <= 0xC05F)
+		CopyProtDongleControl(address);	// Update AN0 - AN3 state for copy protection dongles
 
 	if (!write)
 		return MemReadFloatingBus(nExecutedCycles);

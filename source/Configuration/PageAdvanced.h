@@ -35,9 +35,11 @@ private:
 	int GetCloneMenuItem(void);
 	void InitFreezeDlgButton(HWND hWnd);
 	void InitCloneDropdownMenu(HWND hWnd);
+	void InitCpyPrtDongleDropdownMenu(HWND hWnd);
 
 	static CPageAdvanced* ms_this;
 	static const TCHAR m_CloneChoices[];
+	static const TCHAR m_CopyPrtDongleChoices[];
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;

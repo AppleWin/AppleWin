@@ -256,6 +256,8 @@ BEGIN
     COMBOBOX        IDC_CLONETYPE,35,185,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     CONTROL         "The Free&ze's non-autostart F8 rom (Apple ][ or ][+ only)",IDC_THE_FREEZES_F8_ROM_FW,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,201,194,10
+    LTEXT           "&Copy Protection Dongle:",IDC_STATIC,5,220,82,8
+    COMBOBOX        IDC_COMBO_CP_DONGLE,89,218,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 END
 
 
