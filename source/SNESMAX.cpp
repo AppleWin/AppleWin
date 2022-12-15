@@ -62,7 +62,7 @@
 // infoEx.dwButtons bit definitions:
 UINT SNESMAXCard::m_altControllerButtons[2][NUM_BUTTONS] =
 {
-	{A,B,UNUSED,X,Y,UNUSED,UNUSED,UNUSED, LB,RB,SELECT,START},	// b0 -> A, b1 -> B, b2 -> unused, etc
+	{A,B,UNUSED,X,Y,UNUSED,UNUSED,UNUSED, LB,RB,SELECT,START},	// bit0 -> A, bit1 -> B, bit2 -> unused, etc
 	{A,B,UNUSED,X,Y,UNUSED,UNUSED,UNUSED, LB,RB,SELECT,START}
 };
 
@@ -110,14 +110,14 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 		result = joyGetPosEx(JOYSTICKID1, &infoEx);
 		if (result == JOYERR_NOERROR)
 		{
-			pCard->GetControllerButtons(0, infoEx, controller1Buttons, pCard->m_altControllerType[0]);
+			pCard->GetControllerButtons(JOYSTICKID1, infoEx, controller1Buttons, pCard->m_altControllerType[0]);
 		}
 		controller1Buttons = ~controller1Buttons;
 
 		result = joyGetPosEx(JOYSTICKID2, &infoEx);
 		if (result == JOYERR_NOERROR)
 		{
-			pCard->GetControllerButtons(1, infoEx, controller2Buttons, pCard->m_altControllerType[1]);
+			pCard->GetControllerButtons(JOYSTICKID2, infoEx, controller2Buttons, pCard->m_altControllerType[1]);
 		}
 		controller2Buttons = ~controller2Buttons;
 
