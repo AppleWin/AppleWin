@@ -33,11 +33,11 @@ public:
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
-	void GetControllerButtons(JOYINFOEX& infoEx, UINT& controllerButtons, bool altControllerType);
+	void GetControllerButtons(UINT joyNum, JOYINFOEX& infoEx, UINT& controllerButtons, bool altControllerType);
 
 	static bool ParseControllerMappingFile(UINT joyNum, const char* pathname, std::string& errorMsg);
 
-	enum Button { A, B, X, Y, LB, RB, SELECT, START, NUM_BUTTONS };
+	enum Button {B, Y, SELECT, START, U, D, L, R, A, X, LB, RB, UNUSED1, UNUSED2, UNUSED3, UNUSED4, NUM_BUTTONS, UNUSED};
 
 private:
 	UINT m_buttonIndex;
@@ -45,5 +45,5 @@ private:
 	UINT m_controller2Buttons;
 
 	bool m_altControllerType[2];
-	static UINT m_SnesMaxButtons[2][NUM_BUTTONS];
+	static UINT m_altControllerButtons[2][NUM_BUTTONS];
 };
