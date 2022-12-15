@@ -169,11 +169,11 @@ void LoadConfiguration(bool loadImages)
 		LoadConfigOldJoystick_v1(JN_JOYSTICK1);
 
 
-	DWORD cpyPrtDongleType;
-	if (REGLOAD(TEXT(REGVALUE_CPYPRTDONGLE_TYPE), &cpyPrtDongleType))
-		SetCpyPrtDongleType(cpyPrtDongleType);
+	DWORD copyProtectionDongleType;
+	if (REGLOAD(TEXT(REGVALUE_COPYPROTECTIONDONGLE_TYPE), &copyProtectionDongleType))
+		SetCopyProtectionDongleType(copyProtectionDongleType);
 	else
-		SetCpyPrtDongleType(0);					// None
+		SetCopyProtectionDongleType(0);					// None
 
 	DWORD dwSoundType;
 	REGLOAD_DEFAULT(TEXT(REGVALUE_SOUND_EMULATION), &dwSoundType, REG_SOUNDTYPE_WAVE);

@@ -3,10 +3,9 @@
 #include "Common.h"
 
 
-void SetCpyPrtDongleType(DWORD type);
-DWORD GetCpyPrtDongleType(void);
-void CopyProtDongleControl(const UINT uControl);
-DWORD CopyProtDonglePB0(void);
-DWORD CopyProtDonglePB1(void);
-DWORD CopyProtDonglePB2(void);
+void SetCopyProtectionDongleType(DWORD type);
+DWORD GetCopyProtectionDongleType(void);
+int CopyProtectionDonglePB0(void);
+int CopyProtectionDonglePB1(void);
+int CopyProtectionDonglePB2(void);
 bool SdsSpeedStar(void);

@@ -33,81 +33,46 @@
 #include "StdAfx.h"
 
 #include "CopyProtectionDongles.h"
+#include "Memory.h"
 
-static DWORD cpyPrtDongleType = 0;
-
-static bool g_AN0 = 0;
-static bool g_AN1 = 0;
-static bool g_AN2 = 0;
-static bool g_AN3 = 0;
+static DWORD copyProtectionDongleType = 0;
 
 // Must be in the same order as in PageAdvanced.cpp
-enum CPYPRTDONGLETYPE { NONE, SDSSPEEDSTAR };
+enum COPYPROTECTIONDONGLETYPE { NONE, SDSSPEEDSTAR };
 
-void SetCpyPrtDongleType(DWORD type)
+void SetCopyProtectionDongleType(DWORD type)
 {
-	cpyPrtDongleType = type;
+	copyProtectionDongleType = type;
 }
 
-DWORD GetCpyPrtDongleType(void)
+DWORD GetCopyProtectionDongleType(void)
 {
-	return cpyPrtDongleType;
-}
-
-void CopyProtDongleControl(const UINT uControl)
-{
-	switch (uControl)
-	{
-	case 0xC058:	// AN0 clr
-		g_AN0 = 0;
-		break;
-	case 0xC059:	// AN0 set
-		g_AN0 = 1;
-		break;
-	case 0xC05A:	// AN1 clr
-		g_AN1 = 0;
-		break;
-	case 0xC05B:	// AN1 set
-		g_AN1 = 1;
-		break;
-	case 0xC05C:	// AN2 clr
-		g_AN2 = 0;
-		break;
-	case 0xC05D:	// AN2 set
-		g_AN2 = 1;
-		break;
-	case 0xC05E:	// AN3 clr
-		g_AN3 = 0;
-		break;
-	case 0xC05F:	// AN3 set
-		g_AN3 = 1;
-		break;
-	}
+	return copyProtectionDongleType;
 }
 
 // This protection dongle consists of a NAND gate connected with AN1 and AN2 on the inputs
 // PB2 on the output, and AN0 connected to power it.
 bool SdsSpeedStar(void)
 {
-	return !g_AN0 || !(g_AN1 && g_AN2);
+	return !MemGetAnnunciator(0) || !(MemGetAnnunciator(1) && MemGetAnnunciator(2));
 }
 
 // Returns the copy protection dongle state of PB0. A return value of -1 means not used by copy protection dongle
-DWORD CopyProtDonglePB0(void)
+int CopyProtectionDonglePB0(void)
 {
 	return -1;
 }
 
 // Returns the copy protection dongle state of PB1. A return value of -1 means not used by copy protection dongle
-DWORD CopyProtDonglePB1(void)
+int CopyProtectionDonglePB1(void)
 {
 	return -1;
 }
 
 // Returns the copy protection dongle state of PB2. A return value of -1 means not used by copy protection dongle
-DWORD CopyProtDonglePB2(void)
+int CopyProtectionDonglePB2(void)
 {
-	switch (cpyPrtDongleType)
+	switch (copyProtectionDongleType)
 	{
 	case SDSSPEEDSTAR:	// Southwestern Data Systems SoftKey for Speed Star Applesoft Compiler
 		return SdsSpeedStar();
