@@ -44,6 +44,8 @@ public:
 	int InitParser(const char* pPathname);
 	void FinaliseParser(void);
 
+	UINT ParseFileHdr(const char* tag);
+
 	int GetScalar(std::string& scalar);
 	void GetMapStartEvent(void);
 

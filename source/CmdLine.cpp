@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Keyboard.h"
 #include "Joystick.h"
 #include "SoundCore.h"
+#include "SNESMAX.h"
 #include "ParallelPrinter.h"
 #include "Interface.h"
 
@@ -47,6 +48,7 @@ bool g_bRegisterFileTypes = true;
 bool g_bHookSystemKey = true;
 bool g_bHookAltTab = false;
 bool g_bHookAltGrControl = false;
+
 
 static LPSTR GetCurrArg(LPSTR lpCmdLine)
 {
@@ -548,6 +550,20 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		else if (strcmp(lpCmdLine, "-snes-max-alt-joy2") == 0)
 		{
 			g_cmdLine.snesMaxAltControllerType[1] = true;
+		}
+		else if (strcmp(lpCmdLine, "-snes-max-user-joy1") == 0 || strcmp(lpCmdLine, "-snes-max-user-joy2") == 0)
+		{
+			const unsigned int joyNum = (strcmp(lpCmdLine, "-snes-max-user-joy1") == 0) ? 0 : 1;
+
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			std::string errorMsg;
+			if (!SNESMAXCard::ParseControllerMappingFile(joyNum, lpCmdLine, errorMsg))
+			{
+				LogFileOutput("%s", errorMsg.c_str());
+				GetFrame().FrameMessageBox(errorMsg.c_str(), TEXT("AppleWin Error"), MB_OK);
+			}
 		}
 		else if (strcmp(lpCmdLine, "-wav-speaker") == 0)
 		{
