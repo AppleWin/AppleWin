@@ -43,13 +43,10 @@
   Bit 6 = Controller 2, Active Low
   Bit 7 = Controller 1, Active Low
 
-  Once data is read, button presses (for each controller) should be stored in the following structure
+  Once data is read, button presses (for each controller) are stored in the following structure:
 
-     bit# 7 6 5 4 3  2  1 0
-  Byte 0: R:L:D:U:St:Sl:Y:B
-  Byte 1: x:x:x:x:Fr:Fl:X:A
-
-  The variable controllerXButtons will be stored in the reverse order.
+    bit#                          11 10 9 8 / 7 6 5 4 3  2  1 0
+    m_controllerXButtons: x:x:x:x:Fr:Fl:X:A / R:L:D:U:St:Sl:Y:B
 
   Alex Lukacz  Aug 2021
 */
@@ -156,7 +153,7 @@ void SNESMAXCard::GetControllerButtons(UINT joyNum, JOYINFOEX& infoEx, UINT& con
 
 	if (!altControllerType)
 	{
-		// Logitech F310, Dualshock 4
+		// Logitech F310, Sony DualShock 4
 		// b11,..,b0: -,-,St,Sl / -,-,R,L,X,A,B,Y
 		controllerButtons |= ((infoEx.dwButtons & 0x0002) >> 1); // B Button
 		controllerButtons |= ((infoEx.dwButtons & 0x0001) << 1); // Y Button
