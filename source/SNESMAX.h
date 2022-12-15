@@ -15,8 +15,6 @@ public:
 
 		m_altControllerType[0] = g_cmdLine.snesMaxAltControllerType[0];
 		m_altControllerType[1] = g_cmdLine.snesMaxAltControllerType[1];
-
-		// TODO: m_SnesMaxButtons[][]
 	}
 	virtual ~SNESMAXCard(void) {}
 
