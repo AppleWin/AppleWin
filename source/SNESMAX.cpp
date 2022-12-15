@@ -109,16 +109,12 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 
 		result = joyGetPosEx(JOYSTICKID1, &infoEx);
 		if (result == JOYERR_NOERROR)
-		{
-			pCard->GetControllerButtons(JOYSTICKID1, infoEx, controller1Buttons, pCard->m_altControllerType[0]);
-		}
+			controller1Buttons = pCard->GetControllerButtons(JOYSTICKID1, infoEx, pCard->m_altControllerType[0]);
 		controller1Buttons = ~controller1Buttons;
 
 		result = joyGetPosEx(JOYSTICKID2, &infoEx);
 		if (result == JOYERR_NOERROR)
-		{
-			pCard->GetControllerButtons(JOYSTICKID2, infoEx, controller2Buttons, pCard->m_altControllerType[1]);
-		}
+			controller2Buttons = pCard->GetControllerButtons(JOYSTICKID2, infoEx, pCard->m_altControllerType[1]);
 		controller2Buttons = ~controller2Buttons;
 
 		break;
@@ -137,19 +133,20 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 	return 0;
 }
 
-void SNESMAXCard::GetControllerButtons(UINT joyNum, JOYINFOEX& infoEx, UINT& controllerButtons, bool altControllerType)
+UINT SNESMAXCard::GetControllerButtons(UINT joyNum, JOYINFOEX& infoEx, bool altControllerType)
 {
 	UINT xAxis = (infoEx.dwXpos >> 8) & 0xFF;
 	UINT yAxis = (infoEx.dwYpos >> 8) & 0xFF;
 
+	UINT controllerButtons = 0;
 	controllerButtons |= ((yAxis < 103 || infoEx.dwPOV == 0 || infoEx.dwPOV == 4500 || infoEx.dwPOV == 31500) << 4); // U Button
 	controllerButtons |= ((yAxis > 153 || (infoEx.dwPOV >= 13500 && infoEx.dwPOV <= 22500)) << 5); // D Button
 	controllerButtons |= ((xAxis < 103 || (infoEx.dwPOV >= 22500 && infoEx.dwPOV <= 31500)) << 6); // L Button
 	controllerButtons |= ((xAxis > 153 || (infoEx.dwPOV >= 4500 && infoEx.dwPOV <= 13500)) << 7); // R Button
-//			controllerButtons |= 0 * 0x1000; // spare Button
-//			controllerButtons |= 0 * 0x2000; // spare Button
-//			controllerButtons |= 0 * 0x4000; // spare Button
-//			controllerButtons |= 0 * 0x8000; // spare Button
+//	controllerButtons |= 0 * 0x1000; // spare Button
+//	controllerButtons |= 0 * 0x2000; // spare Button
+//	controllerButtons |= 0 * 0x4000; // spare Button
+//	controllerButtons |= 0 * 0x8000; // spare Button
 
 	if (!altControllerType)
 	{
@@ -177,7 +174,7 @@ void SNESMAXCard::GetControllerButtons(UINT joyNum, JOYINFOEX& infoEx, UINT& con
 		}
 	}
 
-	controllerButtons |= 0x10000; // Controller plugged in status.
+	return controllerButtons | 0x10000; // Controller plugged in status.
 }
 
 void SNESMAXCard::InitializeIO(LPBYTE pCxRomPeripheral)

@@ -34,7 +34,7 @@ public:
 	static bool ParseControllerMappingFile(UINT joyNum, const char* pathname, std::string& errorMsg);
 
 private:
-	void GetControllerButtons(UINT joyNum, JOYINFOEX& infoEx, UINT& controllerButtons, bool altControllerType);
+	UINT GetControllerButtons(UINT joyNum, JOYINFOEX& infoEx, bool altControllerType);
 
 	enum Button { B, Y, SELECT, START, U, D, L, R, A, X, LB, RB, UNUSED1, UNUSED2, UNUSED3, UNUSED4, NUM_BUTTONS, UNUSED };
 
