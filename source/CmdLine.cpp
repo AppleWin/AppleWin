@@ -39,7 +39,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SNESMAX.h"
 #include "ParallelPrinter.h"
 #include "Interface.h"
-#include "YamlHelper.h"
 
 CmdLine g_cmdLine;
 std::string g_sConfigFile; // INI file to use instead of Registry
