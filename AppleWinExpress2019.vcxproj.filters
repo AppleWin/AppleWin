@@ -269,7 +269,7 @@
       <Filter>Source Files\Configuration</Filter>
     </ClCompile>
     <ClCompile Include="source\CopyProtectionDongles.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Emulator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -613,7 +613,7 @@
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
     <ClInclude Include="source\CopyProtectionDongles.h">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Emulator</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
