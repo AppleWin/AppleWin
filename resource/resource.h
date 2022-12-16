@@ -113,6 +113,7 @@
 #define IDC_COMBO_DISK1                 1080
 #define IDC_COMBO_DISK2                 1081
 #define IDC_CHECK_FS_SHOW_SUBUNIT_STATUS 1082
+#define IDC_COMBO_CP_DONGLE             1082
 #define IDC_CHECK_VERTICAL_BLEND        1083
 #define IDC_CHECK_50HZ_VIDEO            1084
 #define IDC_COMBO_DISK1_SLOT5           1085
@@ -137,7 +138,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        149
 #define _APS_NEXT_COMMAND_VALUE         40012
-#define _APS_NEXT_CONTROL_VALUE         1082
+#define _APS_NEXT_CONTROL_VALUE         1083
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
