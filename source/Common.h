@@ -73,6 +73,7 @@ enum AppMode_e
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
 #define  REGVALUE_SAVE_STATE_ON_EXIT "Save State On Exit"
+#define  REGVALUE_COPYPROTECTIONDONGLE_TYPE  "Copy Protection Dongle Type"
 #define  REGVALUE_HDD_ENABLED        "Harddisk Enable"		// Deprecated from 1.30.5
 #define  REGVALUE_JOYSTICK0_EMU_TYPE		"Joystick0 Emu Type v3"	// GH#434: Added at 1.26.3.0 (previously was "Joystick0 Emu Type")
 #define  REGVALUE_JOYSTICK1_EMU_TYPE		"Joystick1 Emu Type v3"	// GH#434: Added at 1.26.3.0 (previously was "Joystick1 Emu Type")

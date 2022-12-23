@@ -58,6 +58,31 @@ void YamlHelper::FinaliseParser(void)
 	yaml_parser_delete(&m_parser);
 }
 
+UINT YamlHelper::ParseFileHdr(const char* tag)
+{
+	std::string scalar;
+	if (!GetScalar(scalar))
+		throw std::runtime_error(SS_YAML_KEY_FILEHDR ": Failed to find scalar");
+
+	if (scalar != SS_YAML_KEY_FILEHDR)
+		throw std::runtime_error("Failed to find file header");
+
+	GetMapStartEvent();
+
+	YamlLoadHelper yamlLoadHelper(*this);
+
+	//
+
+	std::string value = yamlLoadHelper.LoadString(SS_YAML_KEY_TAG);
+	if (value != tag)
+	{
+		//printf("%s: Bad tag (%s) - expected %s\n", SS_YAML_KEY_FILEHDR, value.c_str(), tag);
+		throw std::runtime_error(SS_YAML_KEY_FILEHDR ": Bad tag");
+	}
+
+	return yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
+}
+
 void YamlHelper::GetNextEvent(void)
 {
 	yaml_event_delete(&m_newEvent);

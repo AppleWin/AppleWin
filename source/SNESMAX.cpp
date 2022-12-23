@@ -43,11 +43,10 @@
   Bit 6 = Controller 2, Active Low
   Bit 7 = Controller 1, Active Low
 
-  Once data is read, button presses (for each controller) should be stored in the following structure
-  Byte 0: B:Y:Sl:St:U:D:L:R
-  Byte 1: A:X:Fl:Fr:x:x:x:x
+  Once data is read, button presses (for each controller) are stored in the following structure:
 
-  The variable controllerXButtons will stored in the reverse order.
+    bit#                          11 10 9 8 / 7 6 5 4 3  2  1 0
+    m_controllerXButtons: x:x:x:x:Fr:Fl:X:A / R:L:D:U:St:Sl:Y:B
 
   Alex Lukacz  Aug 2021
 */
@@ -56,6 +55,16 @@
 #include "SNESMAX.h"
 #include "Memory.h"
 #include "YamlHelper.h"
+
+// AltControllerType defaults to "8BitDo NES30 PRO"
+// b11,..,b0: Sr,Sl,R,L / -,-,-,Y,X,-,B,A
+//
+// infoEx.dwButtons bit definitions:
+UINT SNESMAXCard::m_altControllerButtons[2][NUM_BUTTONS] =
+{
+	{A,B,UNUSED,X,Y,UNUSED,UNUSED,UNUSED, LB,RB,SELECT,START},	// bit0 -> A, bit1 -> B, bit2 -> unused, etc
+	{A,B,UNUSED,X,Y,UNUSED,UNUSED,UNUSED, LB,RB,SELECT,START}
+};
 
 BYTE __stdcall SNESMAXCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
 {
@@ -100,90 +109,12 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 
 		result = joyGetPosEx(JOYSTICKID1, &infoEx);
 		if (result == JOYERR_NOERROR)
-		{
-			xAxis = (infoEx.dwXpos >> 8) & 0xFF;
-			yAxis = (infoEx.dwYpos >> 8) & 0xFF;
-			controller1Buttons = controller1Buttons | ((yAxis < 103 || infoEx.dwPOV == 0 || infoEx.dwPOV == 4500 || infoEx.dwPOV == 31500) << 4); // U Button
-			controller1Buttons = controller1Buttons | ((yAxis > 153 || (infoEx.dwPOV >= 13500 && infoEx.dwPOV <= 22500)) << 5); // D Button
-			controller1Buttons = controller1Buttons | ((xAxis < 103 || (infoEx.dwPOV >= 22500 && infoEx.dwPOV <= 31500)) << 6); // L Button
-			controller1Buttons = controller1Buttons | ((xAxis > 153 || (infoEx.dwPOV >= 4500 && infoEx.dwPOV <= 13500)) << 7); // R Button
-//			controller1Buttons = controller1Buttons | 0 * 0x1000; // spare Button
-//			controller1Buttons = controller1Buttons | 0 * 0x2000; // spare Button
-//			controller1Buttons = controller1Buttons | 0 * 0x4000; // spare Button
-//			controller1Buttons = controller1Buttons | 0 * 0x8000; // spare Button
-
-			if (pCard->m_altControllerType[0])
-			{
-				// 8BitDo NES30 PRO
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0002) >> 1); // B Button
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0010) >> 3); // Y Button
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0400) >> 8); // Sl Button
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0800) >> 8); // St Button
-
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0001) << 8); // A Button
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0008) << 6); // X Button
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0100) << 2) | ((infoEx.dwButtons & 0x0040) << 4); // Fl Button
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0200) << 2) | ((infoEx.dwButtons & 0x0080) << 4); // Fr Button
-			}
-			else
-			{
-				// Logitech F310, Dualshock 4
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0002) >> 1); // B Button
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0001) << 1); // Y Button
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0100) >> 6); // Sl Button
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0200) >> 6); // St Button
-
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0004) << 6); // A Button
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0008) << 6); // X Button
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0010) << 6) | ((infoEx.dwButtons & 0x0040) << 4); // Fl Button
-				controller1Buttons = controller1Buttons | ((infoEx.dwButtons & 0x0020) << 6) | ((infoEx.dwButtons & 0x0080) << 4); // Fr Button
-			}
-			controller1Buttons = controller1Buttons | 0x10000; // Controller plugged in status.
-		}
+			controller1Buttons = pCard->GetControllerButtons(JOYSTICKID1, infoEx, pCard->m_altControllerType[0]);
 		controller1Buttons = ~controller1Buttons;
 
 		result = joyGetPosEx(JOYSTICKID2, &infoEx);
 		if (result == JOYERR_NOERROR)
-		{
-			xAxis = (infoEx.dwXpos >> 8) & 0xFF;
-			yAxis = (infoEx.dwYpos >> 8) & 0xFF;
-			controller2Buttons = controller2Buttons | ((yAxis < 103 || infoEx.dwPOV == 0 || infoEx.dwPOV == 4500 || infoEx.dwPOV == 31500) << 4); // U Button
-			controller2Buttons = controller2Buttons | ((yAxis > 153 || (infoEx.dwPOV >= 13500 && infoEx.dwPOV <= 22500)) << 5); // D Button
-			controller2Buttons = controller2Buttons | ((xAxis < 103 || (infoEx.dwPOV >= 22500 && infoEx.dwPOV <= 31500)) << 6); // L Button
-			controller2Buttons = controller2Buttons | ((xAxis > 153 || (infoEx.dwPOV >= 4500 && infoEx.dwPOV <= 13500)) << 7); // R Button
-//			controller2Buttons = controller2Buttons | 0 * 0x1000; // spare Button
-//			controller2Buttons = controller2Buttons | 0 * 0x2000; // spare Button
-//			controller2Buttons = controller2Buttons | 0 * 0x4000; // spare Button
-//			controller2Buttons = controller2Buttons | 0 * 0x8000; // spare Button
-
-			if (pCard->m_altControllerType[1])
-			{
-				// 8BitDo NES30 PRO
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0002) >> 1); // B Button
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0010) >> 3); // Y Button
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0400) >> 8); // Sl Button
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0800) >> 8); // St Button
-
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0001) << 8); // A Button
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0008) << 6); // X Button
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0100) << 2) | ((infoEx.dwButtons & 0x0040) << 4); // Fl Button
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0200) << 2) | ((infoEx.dwButtons & 0x0080) << 4); // Fr Button
-			}
-			else
-			{
-				// Logitech F310, Dualshock 4
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0002) >> 1); // B Button
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0001) << 1); // Y Button
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0100) >> 6); // Sl Button
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0200) >> 6); // St Button
-
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0004) << 6); // A Button
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0008) << 6); // X Button
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0010) << 6) | ((infoEx.dwButtons & 0x0040) << 4); // Fl Button
-				controller2Buttons = controller2Buttons | ((infoEx.dwButtons & 0x0020) << 6) | ((infoEx.dwButtons & 0x0080) << 4); // Fr Button
-			}
-			controller2Buttons = controller2Buttons | 0x10000; // Controller plugged in status.
-		}
+			controller2Buttons = pCard->GetControllerButtons(JOYSTICKID2, infoEx, pCard->m_altControllerType[1]);
 		controller2Buttons = ~controller2Buttons;
 
 		break;
@@ -202,9 +133,124 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 	return 0;
 }
 
+UINT SNESMAXCard::GetControllerButtons(UINT joyNum, JOYINFOEX& infoEx, bool altControllerType)
+{
+	UINT xAxis = (infoEx.dwXpos >> 8) & 0xFF;
+	UINT yAxis = (infoEx.dwYpos >> 8) & 0xFF;
+
+	UINT controllerButtons = 0;
+	controllerButtons |= ((yAxis < 103 || infoEx.dwPOV == 0 || infoEx.dwPOV == 4500 || infoEx.dwPOV == 31500) << 4); // U Button
+	controllerButtons |= ((yAxis > 153 || (infoEx.dwPOV >= 13500 && infoEx.dwPOV <= 22500)) << 5); // D Button
+	controllerButtons |= ((xAxis < 103 || (infoEx.dwPOV >= 22500 && infoEx.dwPOV <= 31500)) << 6); // L Button
+	controllerButtons |= ((xAxis > 153 || (infoEx.dwPOV >= 4500 && infoEx.dwPOV <= 13500)) << 7); // R Button
+//	controllerButtons |= 0 * 0x1000; // spare Button
+//	controllerButtons |= 0 * 0x2000; // spare Button
+//	controllerButtons |= 0 * 0x4000; // spare Button
+//	controllerButtons |= 0 * 0x8000; // spare Button
+
+	if (!altControllerType)
+	{
+		// Logitech F310, Sony DualShock 4
+		// b11,..,b0: -,-,St,Sl / -,-,R,L,X,A,B,Y
+		controllerButtons |= ((infoEx.dwButtons & 0x0002) >> 1); // B Button
+		controllerButtons |= ((infoEx.dwButtons & 0x0001) << 1); // Y Button
+		controllerButtons |= ((infoEx.dwButtons & 0x0100) >> 6); // Sl Button
+		controllerButtons |= ((infoEx.dwButtons & 0x0200) >> 6); // St Button
+
+		controllerButtons |= ((infoEx.dwButtons & 0x0004) << 6); // A Button
+		controllerButtons |= ((infoEx.dwButtons & 0x0008) << 6); // X Button
+		controllerButtons |= ((infoEx.dwButtons & 0x0010) << 6) | ((infoEx.dwButtons & 0x0040) << 4); // Fl Button
+		controllerButtons |= ((infoEx.dwButtons & 0x0020) << 6) | ((infoEx.dwButtons & 0x0080) << 4); // Fr Button
+	}
+	else
+	{
+		for (UINT i = 0; i < 12; i++)
+		{
+			if (infoEx.dwButtons & (1 << i))
+			{
+				if (m_altControllerButtons[joyNum][i] != UNUSED)
+					controllerButtons |= (1 << m_altControllerButtons[joyNum][i]);
+			}
+		}
+	}
+
+	return controllerButtons | 0x10000; // Controller plugged in status.
+}
+
 void SNESMAXCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	RegisterIoHandler(m_slot, &SNESMAXCard::IORead, &SNESMAXCard::IOWrite, IO_Null, IO_Null, this, NULL);
+}
+
+bool SNESMAXCard::ParseControllerMappingFile(UINT joyNum, const char* pathname, std::string& errorMsg)
+{
+	bool res = true;
+	YamlHelper yamlHelper;
+
+	try
+	{
+		if (!yamlHelper.InitParser(pathname))
+			throw std::runtime_error("Controller mapping file: Failed to initialize parser or open file");
+
+		if (yamlHelper.ParseFileHdr("AppleWin Controller Button Remapping") != 1)
+			throw std::runtime_error("Controller mapping file: Version mismatch");
+
+		std::string scalar;
+		while (yamlHelper.GetScalar(scalar))
+		{
+			if (scalar == SS_YAML_KEY_UNIT)
+			{
+				yamlHelper.GetMapStartEvent();
+				YamlLoadHelper yamlLoadHelper(yamlHelper);
+				std::string hid = yamlLoadHelper.LoadString("HID");
+				std::string desc = yamlLoadHelper.LoadString("Description");
+				for (UINT i = 0; i < SNESMAXCard::NUM_BUTTONS; i++)
+				{
+					char szButtonNum[3] = "00";
+					sprintf_s(szButtonNum, "%d", i + 1);	// +1 as 1-based
+					std::string buttonNum = szButtonNum;
+					bool found = false;
+					std::string buttonStr = yamlLoadHelper.LoadString_NoThrow(buttonNum, found);
+					SNESMAXCard::Button button = SNESMAXCard::UNUSED;
+					if (found)
+					{
+						if (buttonStr == "A") button = SNESMAXCard::A;
+						else if (buttonStr == "B") button = SNESMAXCard::B;
+						else if (buttonStr == "X") button = SNESMAXCard::X;
+						else if (buttonStr == "Y") button = SNESMAXCard::Y;
+						else if (buttonStr == "LB") button = SNESMAXCard::LB;
+						else if (buttonStr == "RB") button = SNESMAXCard::RB;
+						else if (buttonStr == "SELECT") button = SNESMAXCard::SELECT;
+						else if (buttonStr == "START") button = SNESMAXCard::START;
+						else if (buttonStr == "") button = SNESMAXCard::UNUSED;
+						else throw std::runtime_error("Controller mapping file: Unknown button: " + buttonStr);
+					}
+					m_altControllerButtons[joyNum][i] = button;
+				}
+			}
+			else
+			{
+				throw std::runtime_error("Unknown top-level scalar: " + scalar);
+			}
+
+			break;	// TODO: extend to support multiple controllers
+		}
+	}
+	catch (const std::exception& szMessage)
+	{
+		errorMsg = "Error with yaml file: ";
+		errorMsg += pathname;
+		errorMsg += "\n";
+		errorMsg += szMessage.what();
+		res = false;
+	}
+
+	yamlHelper.FinaliseParser();
+
+	if (res)
+		g_cmdLine.snesMaxAltControllerType[joyNum] = true;	// Enable the alt controller
+
+	return res;
 }
 
 //===========================================================================

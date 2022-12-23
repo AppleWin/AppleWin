@@ -237,33 +237,6 @@ static std::string GetApple2TypeAsString(void)
 
 //---
 
-static UINT ParseFileHdr(void)
-{
-	std::string scalar;
-	if (!yamlHelper.GetScalar(scalar))
-		throw std::runtime_error(SS_YAML_KEY_FILEHDR ": Failed to find scalar");
-
-	if (scalar != SS_YAML_KEY_FILEHDR)
-		throw std::runtime_error("Failed to find file header");
-
-	yamlHelper.GetMapStartEvent();
-
-	YamlLoadHelper yamlLoadHelper(yamlHelper);
-
-	//
-
-	std::string value = yamlLoadHelper.LoadString(SS_YAML_KEY_TAG);
-	if (value != SS_YAML_VALUE_AWSS)
-	{
-		//printf("%s: Bad tag (%s) - expected %s\n", SS_YAML_KEY_FILEHDR, value.c_str(), SS_YAML_VALUE_AWSS);
-		throw std::runtime_error(SS_YAML_KEY_FILEHDR ": Bad tag");
-	}
-
-	return yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
-}
-
-//---
-
 static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version == 0 || version > UNIT_APPLE2_VER)
@@ -376,10 +349,10 @@ static void Snapshot_LoadState_v2(void)
 
 	try
 	{
-		if (!yamlHelper.InitParser( g_strSaveStatePathname.c_str() ))
+		if (!yamlHelper.InitParser(g_strSaveStatePathname.c_str()))
 			throw std::runtime_error("Failed to initialize parser or open file: " + g_strSaveStatePathname);
 
-		if (ParseFileHdr() != SS_FILE_VER)
+		if (yamlHelper.ParseFileHdr(SS_YAML_VALUE_AWSS) != SS_FILE_VER)
 			throw std::runtime_error("Version mismatch");
 
 		//

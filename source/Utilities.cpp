@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Mockingboard.h"
 #include "Interface.h"
 #include "SoundCore.h"
+#include "CopyProtectionDongles.h"
 
 #include "Configuration/IPropertySheet.h"
 #include "Tfe/PCapBackend.h"
@@ -166,6 +167,13 @@ void LoadConfiguration(bool loadImages)
 		JoySetJoyType(JN_JOYSTICK1, dwJoyType);
 	else
 		LoadConfigOldJoystick_v1(JN_JOYSTICK1);
+
+
+	DWORD copyProtectionDongleType;
+	if (REGLOAD(TEXT(REGVALUE_COPYPROTECTIONDONGLE_TYPE), &copyProtectionDongleType))
+		SetCopyProtectionDongleType(copyProtectionDongleType);
+	else
+		SetCopyProtectionDongleType(0);					// None
 
 	DWORD dwSoundType;
 	REGLOAD_DEFAULT(TEXT(REGVALUE_SOUND_EMULATION), &dwSoundType, REG_SOUNDTYPE_WAVE);

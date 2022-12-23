@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Registry.h"
 #include "../SaveState.h"
 #include "../CardManager.h"
+#include "../CopyProtectionDongles.h"
 #include "../resource/resource.h"
 
 CPageAdvanced* CPageAdvanced::ms_this = 0;	// reinit'd in ctor
@@ -42,6 +43,11 @@ const TCHAR CPageAdvanced::m_CloneChoices[] =
 				TEXT("Pravets 8A\0")	// Bulgarian
 				TEXT("TK3000 //e\0")	// Brazilian
 				TEXT("Base 64A\0"); 	// Taiwanese
+
+enum COPYPROTECTIONDONGLECHOICE { MENUITEM_NONE, MENUITEM_SPEEDSTAR };
+const TCHAR CPageAdvanced::m_CopyProtectionDongleChoices[] =
+				TEXT("None\0")							
+				TEXT("SDS DataKey - Speed Star\0");	// Protection dongle for Southwestern Data Systems "Speed Star" Applesoft Compiler
 
 
 INT_PTR CALLBACK CPageAdvanced::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
@@ -123,6 +129,13 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = NewCloneType;
 				m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewCloneType);
 			}
+
+		case IDC_COMBO_CP_DONGLE:
+			if (HIWORD(wparam) == CBN_SELCHANGE)
+			{
+				const DWORD NewCopyProtectionDongleMenuItem = (DWORD)SendDlgItemMessage(hWnd, IDC_COMBO_CP_DONGLE, CB_GETCURSEL, 0, 0);
+				SetCopyProtectionDongleType(NewCopyProtectionDongleMenuItem);
+			}
 			break;
 		}
 		break;
@@ -179,6 +192,9 @@ void CPageAdvanced::DlgOK(HWND hWnd)
 	g_bSaveStateOnExit = IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT) ? true : false;
 	REGSAVE(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), g_bSaveStateOnExit ? 1 : 0);
 
+	// Save the copy protection dongle type
+	REGSAVE(TEXT(REGVALUE_COPYPROTECTIONDONGLE_TYPE), GetCopyProtectionDongleType());
+
 	if (GetCardMgr().IsParallelPrinterCardInstalled())
 	{
 		ParallelPrinterCard* card = GetCardMgr().GetParallelPrinterCard();
@@ -217,6 +233,7 @@ void CPageAdvanced::InitOptions(HWND hWnd)
 {
 	InitFreezeDlgButton(hWnd);
 	InitCloneDropdownMenu(hWnd);
+	InitCopyProtectionDongleDropdownMenu(hWnd);
 }
 
 // Advanced->Clone: Menu item to eApple2Type
@@ -281,4 +298,11 @@ void CPageAdvanced::InitCloneDropdownMenu(HWND hWnd)
 
 	const bool bIsClone = IsClone( m_PropertySheetHelper.GetConfigNew().m_Apple2Type );
 	EnableWindow(GetDlgItem(hWnd, IDC_CLONETYPE), bIsClone ? TRUE : FALSE);
+}
+
+void CPageAdvanced::InitCopyProtectionDongleDropdownMenu(HWND hWnd)
+{
+	// Set copy protection dongle menu choice
+	const int nCurrentChoice = GetCopyProtectionDongleType();
+	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_CP_DONGLE, m_CopyProtectionDongleChoices, nCurrentChoice);
 }

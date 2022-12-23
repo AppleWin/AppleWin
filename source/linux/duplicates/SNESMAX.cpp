@@ -6,6 +6,11 @@ void SNESMAXCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 }
 
+bool SNESMAXCard::ParseControllerMappingFile(UINT joyNum, const char* pathname, std::string& errorMsg)
+{
+  return false;
+}
+
 //===========================================================================
 
 static const UINT kUNIT_VERSION = 1;
