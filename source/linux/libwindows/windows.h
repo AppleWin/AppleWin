@@ -18,3 +18,4 @@
 #include "mmsystem.h"
 #include "dmusicc.h"
 #include "winnls.h"
+#include "joystickapi.h"

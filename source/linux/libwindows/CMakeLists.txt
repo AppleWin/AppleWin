@@ -33,6 +33,7 @@ set(HEADER_FILES
   winerror.h
   winnls.h
   winuser.h
+  joystickapi.h
   )
 
 add_library(windows STATIC
