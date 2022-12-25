@@ -21,10 +21,10 @@
 #include "ParallelPrinter.h"
 #include "SaveState.h"
 #include "Uthernet2.h"
+#include "CopyProtectionDongles.h"
 
 #include "Debugger/Debugger_Types.h"
 
-#include "Tfe/tfesupp.h"
 #include "Tfe/PCapBackend.h"
 
 namespace
@@ -400,6 +400,13 @@ namespace sa2
           if (ImGui::Checkbox("Virtual DNS", &virtualDNS))
           {
             Uthernet2::SetRegistryVirtualDNS(uthernetSlot, virtualDNS);
+          }
+
+          bool speedStar = GetCopyProtectionDongleType() != 0;
+          if (ImGui::Checkbox("Speed Star Copy Protection", &speedStar))
+          {
+            SetCopyProtectionDongleType(speedStar ? 1 : 0);
+            REGSAVE(TEXT(REGVALUE_COPYPROTECTIONDONGLE_TYPE), GetCopyProtectionDongleType());
           }
 
           ImGui::EndTabItem();

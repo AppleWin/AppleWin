@@ -2,10 +2,9 @@
 
 #include "linux/paddle.h"
 
-#include "Log.h"
 #include "Memory.h"
-#include "Common.h"
 #include "CPU.h"
+#include "CopyProtectionDongles.h"
 
 namespace
 {
@@ -96,12 +95,30 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExe
       switch (addr)
       {
       case Paddle::ourOpenApple:
-        pressed = Paddle::instance->getButton(0);
+        if (CopyProtectionDonglePB0() >= 0)
+        {
+          pressed = CopyProtectionDonglePB0();
+        }
+        else
+        {
+          pressed = Paddle::instance->getButton(0);
+        }
         break;
       case Paddle::ourSolidApple:
-        pressed = Paddle::instance->getButton(1);
+        if (CopyProtectionDonglePB1() >= 0)
+        {
+          pressed = CopyProtectionDonglePB1();
+        }
+        else
+        {
+          pressed = Paddle::instance->getButton(1);
+        }
         break;
       case Paddle::ourThirdApple:
+        if (CopyProtectionDonglePB2() >= 0)
+        {
+          pressed = CopyProtectionDonglePB2();
+        }
         break;
       }
     }
