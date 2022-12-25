@@ -1,7 +1,6 @@
 #pragma once
 
 #include "wincompat.h"
-#include "misc.h"
 
 #include <cstddef>
 #include <ctype.h>

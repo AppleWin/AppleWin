@@ -1,6 +1,5 @@
 #pragma once
 
-#include "winbase.h"
 #include "winhandles.h"
 #include "guiddef.h"
 

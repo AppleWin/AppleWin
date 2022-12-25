@@ -1,4 +1,5 @@
 #include "winstrings.h"
+#include "misc.h"
 
 #include <cstring>
 #include <cstdio>
