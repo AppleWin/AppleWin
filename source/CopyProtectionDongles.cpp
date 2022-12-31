@@ -34,6 +34,7 @@
 
 #include "CopyProtectionDongles.h"
 #include "Memory.h"
+#include "YamlHelper.h"
 
 static DONGLETYPE copyProtectionDongleType = DT_EMPTY;
 
@@ -78,5 +79,38 @@ int CopyProtectionDonglePB2(void)
 	default:
 		return -1;
 		break;
+	}
+}
+
+const std::string& CopyProtectionDongle_GetSnapshotStructName_SDSSpeedStar(void)
+{
+	static const std::string name("SDS SpeedStar dongle");
+	return name;
+}
+
+void CopyProtectionDongleSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	if (copyProtectionDongleType == DT_SDSSPEEDSTAR)
+	{
+		YamlSaveHelper::Label label(yamlSaveHelper, "%s: null\n", CopyProtectionDongle_GetSnapshotStructName_SDSSpeedStar().c_str());
+		// NB. No state for this dongle
+	}
+	else
+	{
+		_ASSERT(0);
+	}
+}
+
+void CopyProtectionDongleLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+{
+	bool found = false;
+	std::string s = yamlLoadHelper.LoadString_NoThrow(CopyProtectionDongle_GetSnapshotStructName_SDSSpeedStar(), found);
+	if (found)
+	{
+		copyProtectionDongleType = DT_SDSSPEEDSTAR;
+	}
+	else
+	{
+		_ASSERT(0);
 	}
 }
