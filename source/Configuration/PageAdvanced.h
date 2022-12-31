@@ -35,11 +35,11 @@ private:
 	int GetCloneMenuItem(void);
 	void InitFreezeDlgButton(HWND hWnd);
 	void InitCloneDropdownMenu(HWND hWnd);
-	void InitCopyProtectionDongleDropdownMenu(HWND hWnd);
+	void InitGameIOConnectorDropdownMenu(HWND hWnd);
 
 	static CPageAdvanced* ms_this;
 	static const TCHAR m_CloneChoices[];
-	static const TCHAR m_CopyProtectionDongleChoices[];
+	static const TCHAR m_gameIOConnectorChoices[];
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;
