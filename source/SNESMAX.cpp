@@ -45,8 +45,9 @@
 
   Once data is read, button presses (for each controller) are stored in the following structure:
 
-    bit#                          11 10 9 8 / 7 6 5 4 3  2  1 0
-    m_controllerXButtons: x:x:x:x:Fr:Fl:X:A / R:L:D:U:St:Sl:Y:B
+    bit#                  16 /         11 10 9 8 / 7 6 5 4 3  2  1 0
+    m_controllerXButtons: *1   x:x:x:x:Fr:Fl:X:A / R:L:D:U:St:Sl:Y:B
+	*1 = Controller plugged in status
 
   Alex Lukacz  Aug 2021
 */
@@ -56,14 +57,23 @@
 #include "Memory.h"
 #include "YamlHelper.h"
 
-// AltControllerType defaults to "8BitDo NES30 PRO"
-// b11,..,b0: Sr,Sl,R,L / -,-,-,Y,X,-,B,A
+// Default to Sony DS4 / DualSense:
+// b11,..,b0: St,Sl / -,-,R,L,X,A,B,Y
+//
+// infoEx.dwButtons bit definitions:
+const UINT SNESMAXCard::m_mainControllerButtons[NUM_BUTTONS] =
+{
+	Y,B,A,X,LB,RB,UNUSED,UNUSED, SELECT,START,UNUSED,UNUSED,UNUSED,UNUSED,UNUSED,UNUSED	// bit0 -> Y, bit1 -> B, bit2 -> A, etc
+};
+
+// AltControllerType defaults to "8BitDo NES30 PRO" (can be reconfigured via command line + yaml mapping file)
+// b11,..,b0: St,Sl,R,L / -,-,-,Y,X,-,B,A
 //
 // infoEx.dwButtons bit definitions:
 UINT SNESMAXCard::m_altControllerButtons[2][NUM_BUTTONS] =
 {
-	{A,B,UNUSED,X,Y,UNUSED,UNUSED,UNUSED, LB,RB,SELECT,START},	// bit0 -> A, bit1 -> B, bit2 -> unused, etc
-	{A,B,UNUSED,X,Y,UNUSED,UNUSED,UNUSED, LB,RB,SELECT,START}
+	{A,B,UNUSED,X,Y,UNUSED,UNUSED,UNUSED, LB,RB,SELECT,START,UNUSED,UNUSED,UNUSED,UNUSED},	// bit0 -> A, bit1 -> B, bit2 -> unused, etc
+	{A,B,UNUSED,X,Y,UNUSED,UNUSED,UNUSED, LB,RB,SELECT,START,UNUSED,UNUSED,UNUSED,UNUSED}
 };
 
 BYTE __stdcall SNESMAXCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
@@ -119,7 +129,7 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 
 		break;
 	case 1: // Clock
-		if (pCard->m_buttonIndex <= 16)
+		if (pCard->m_buttonIndex <= NUM_BUTTONS)	// NB. 17 bits (where last bit is: Controller plugged in status)
 		{
 			pCard->m_buttonIndex++;
 			controller1Buttons = controller1Buttons >> 1;
@@ -143,34 +153,15 @@ UINT SNESMAXCard::GetControllerButtons(UINT joyNum, JOYINFOEX& infoEx, bool altC
 	controllerButtons |= ((yAxis > 153 || (infoEx.dwPOV >= 13500 && infoEx.dwPOV <= 22500)) << 5); // D Button
 	controllerButtons |= ((xAxis < 103 || (infoEx.dwPOV >= 22500 && infoEx.dwPOV <= 31500)) << 6); // L Button
 	controllerButtons |= ((xAxis > 153 || (infoEx.dwPOV >= 4500 && infoEx.dwPOV <= 13500)) << 7); // R Button
-//	controllerButtons |= 0 * 0x1000; // spare Button
-//	controllerButtons |= 0 * 0x2000; // spare Button
-//	controllerButtons |= 0 * 0x4000; // spare Button
-//	controllerButtons |= 0 * 0x8000; // spare Button
 
-	if (!altControllerType)
-	{
-		// Logitech F310, Sony DualShock 4
-		// b11,..,b0: -,-,St,Sl / -,-,R,L,X,A,B,Y
-		controllerButtons |= ((infoEx.dwButtons & 0x0002) >> 1); // B Button
-		controllerButtons |= ((infoEx.dwButtons & 0x0001) << 1); // Y Button
-		controllerButtons |= ((infoEx.dwButtons & 0x0100) >> 6); // Sl Button
-		controllerButtons |= ((infoEx.dwButtons & 0x0200) >> 6); // St Button
+	UINT* controllerButtonMappings = !altControllerType ? (UINT*)m_mainControllerButtons : (UINT*)(&m_altControllerButtons[joyNum][0]);
 
-		controllerButtons |= ((infoEx.dwButtons & 0x0004) << 6); // A Button
-		controllerButtons |= ((infoEx.dwButtons & 0x0008) << 6); // X Button
-		controllerButtons |= ((infoEx.dwButtons & 0x0010) << 6) | ((infoEx.dwButtons & 0x0040) << 4); // Fl Button
-		controllerButtons |= ((infoEx.dwButtons & 0x0020) << 6) | ((infoEx.dwButtons & 0x0080) << 4); // Fr Button
-	}
-	else
+	for (UINT i = 0; i < NUM_BUTTONS; i++)
 	{
-		for (UINT i = 0; i < 12; i++)
+		if (infoEx.dwButtons & (1 << i))
 		{
-			if (infoEx.dwButtons & (1 << i))
-			{
-				if (m_altControllerButtons[joyNum][i] != UNUSED)
-					controllerButtons |= (1 << m_altControllerButtons[joyNum][i]);
-			}
+			if (controllerButtonMappings[i] != UNUSED)
+				controllerButtons |= (1 << controllerButtonMappings[i]);
 		}
 	}
 
@@ -281,8 +272,8 @@ bool SNESMAXCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	m_buttonIndex = yamlLoadHelper.LoadUint(SS_YAML_KEY_BUTTON_INDEX);
 
 	// Initialise with no buttons pressed (loaded state maybe part way through reading the buttons)
-	m_controller1Buttons = 0xff;
-	m_controller2Buttons = 0xff;
+	m_controller1Buttons = 0x1ffff;
+	m_controller2Buttons = 0x1ffff;
 
 	return true;
 }
