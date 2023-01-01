@@ -9,6 +9,27 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.30.13.0 - 2 Jan 2023
+----------------------
+. [Change #1153] Support Game I/O Connector copy protection dongles. [@medasaro]
+	- SDS SpeedStar dongle
+. [Change #1141,1142,1148,1149,1150] SNES MAX support for various controllers via mapping files. [@eriknoc]
+	- EG. -snes-max-user-joy1 snesmax\controller_Logitech_F310.yaml
+. [Change #1134] Add disk activity indicators for drives in Slot 5.
+	- Only visible in 2x Windowed mode.
+	- Add a new UI toggle in Config->Disk tab to "Show status" (ie. the track/sector status).
+	- Hovering over this status will show a tooltip with both decimal and hexadecimal values,
+	  and the track includes the full fractional quarter track value too.
+. [Change #1133] Add a new command line '-s<n> diskii13' to put a diskii card into slot-n and force it to use the 13-sector firmware.
+. [Bug #1144] Fix some ZP symbols in A2_BASIC.SYM.
+. [Bug #1143] Fix graphical glitches on penultimate scan line when in non-"50% Scan Lines" mode.
+. [Bug #1138] Fix Mousecard - wasn't generating VBL interrupt for mode byte of $08. Fixes 'Jeeves'.
+. [Bug #1131] Fix MIXED issue when in 'Color (PAL Monitor)' video mode.
+. Change: Extend the debugger to support DISK commands for Disk II cards in other slots:
+	- DISK SLOT n
+	- Now DISK INFO will provide info for the new slot.
+
+
 1.30.12.0 - 27 Sep 2022
 -----------------------
 . [Bug #1128] Increase paddle maximum offset - fixes 'Learning with Leepers'.
