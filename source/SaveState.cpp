@@ -341,7 +341,7 @@ static void ParseUnit(void)
 	}
 	else if (unit == GetSnapshotUnitGameIOConnectorName())
 	{
-		CopyProtectionDongleLoadSnapshot(yamlLoadHelper);
+		CopyProtectionDongleLoadSnapshot(yamlLoadHelper, unitVersion);
 	}
 	else if (unit == GetSnapshotUnitMiscName())
 	{

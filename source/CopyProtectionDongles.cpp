@@ -31,6 +31,7 @@
   Matthew D'Asaro  Dec 2022
 */
 #include "StdAfx.h"
+#include <sstream>
 
 #include "CopyProtectionDongles.h"
 #include "Memory.h"
@@ -82,7 +83,11 @@ int CopyProtectionDonglePB2(void)
 	}
 }
 
-const std::string& CopyProtectionDongle_GetSnapshotStructName_SDSSpeedStar(void)
+//===========================================================================
+
+static const UINT kUNIT_VERSION = 1;
+
+static const std::string& GetSnapshotStructName_SDSSpeedStar(void)
 {
 	static const std::string name("SDS SpeedStar dongle");
 	return name;
@@ -92,7 +97,7 @@ void CopyProtectionDongleSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	if (copyProtectionDongleType == DT_SDSSPEEDSTAR)
 	{
-		YamlSaveHelper::Label label(yamlSaveHelper, "%s: null\n", CopyProtectionDongle_GetSnapshotStructName_SDSSpeedStar().c_str());
+		yamlSaveHelper.SaveString(SS_YAML_KEY_DEVICE, GetSnapshotStructName_SDSSpeedStar());
 		// NB. No state for this dongle
 	}
 	else
@@ -101,11 +106,20 @@ void CopyProtectionDongleSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	}
 }
 
-void CopyProtectionDongleLoadSnapshot(YamlLoadHelper& yamlLoadHelper)
+void CopyProtectionDongleLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	bool found = false;
-	std::string s = yamlLoadHelper.LoadString_NoThrow(CopyProtectionDongle_GetSnapshotStructName_SDSSpeedStar(), found);
-	if (found)
+	if (version < 1 || version > kUNIT_VERSION)
+	{
+		std::ostringstream msg;
+		msg << "Version " << version;
+		msg << " is not supported for game I/O device.";
+
+		throw std::runtime_error(msg.str());
+	}
+
+	std::string device = yamlLoadHelper.LoadString(SS_YAML_KEY_DEVICE);
+
+	if (device == GetSnapshotStructName_SDSSpeedStar())
 	{
 		copyProtectionDongleType = DT_SDSSPEEDSTAR;
 	}

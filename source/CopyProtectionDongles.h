@@ -13,4 +13,4 @@ int CopyProtectionDonglePB2(void);
 bool SdsSpeedStar(void);
 
 void CopyProtectionDongleSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-void CopyProtectionDongleLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
+void CopyProtectionDongleLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
