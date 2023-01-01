@@ -3,8 +3,9 @@
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252"><title>Advanced Settings</title></head>
 <body style="background-color: rgb(255, 255, 255); font-family: verdana;" alink="#008000" link="#008000" vlink="#008000">
 <h2 style="color: rgb(0, 128, 0);">Advanced Settings</h2>
-<hr size="4"><img style="width: 354px; height: 460px; float: right;" src="img/advanced.png" alt="Advanced settings" hspace="5" vspace="5">
-<p><strong>Save State File Name:</strong><br>
+<hr size="4"><img style="width: 354px; height: 497px; float: right;" src="img/advanced.png" alt="Advanced settings" hspace="5" vspace="5">
+
+<p><strong>Save State Filename:</strong><br>
 This is the file name to use for save-state files. The default
 directory is the same as where your AppleWin.exe program is stored.</p>
 <p><strong>Save State on Exit:</strong><br>
@@ -19,18 +20,7 @@ emulation by pressing the F11 key.</p>
 Press this button to load the specified state file into
 the emulator. &nbsp;You can also load the system state during
 emulation by pressing the F12 key.</p>
-<p><strong>Clone:</strong><br>
-If you have specified Computer as 'Clone' on the main Configuration
-page, then this drop-down menu can be used to specify the clone type.<br>
-NB. Pravets 82, 8M and 8A are Bulgarian Apple II clones; 
-TK3000 is a Brazilian //e clone; 
-Base 64A is a Taiwanese Apple II clone.<br>
-<ul>
-	<li>Pravets 8A: Use F10 for the Pravets Caps Lock (and the PC's Caps Lock key controls Cyrillic/Latin lock).
-	<li>TK3000: Use Scroll Lock for the 'mode' key. Use to switch between standard Apple II and accented characters.
-	<li>Base 64A: Use Delete for the 'F2' key (eg. press F2, release F2 then press a key to auto-type a BASIC keyword).
-</ul>
-</p>
+
 <p><strong>Printer settings </strong>(Printer is emulated in slot 1)
 </p>
 <p style="margin-left: 40px;"><strong>Printer dump filename:<br>
@@ -67,7 +57,21 @@ disable appending when dumping to a real printer.)
 </strong>When printing is started, a printer file is created and it is
 closed either after the specified time expires, or when
 the emulator is reset. This setting is emulation speed dependent.
- </p>
+</p>
+
+<p><strong>Clone:</strong><br>
+If you have specified Computer as 'Clone' on the main Configuration
+page, then this drop-down menu can be used to specify the clone type.<br>
+NB. Pravets 82, 8M and 8A are Bulgarian Apple II clones;
+TK3000 is a Brazilian //e clone;
+Base 64A is a Taiwanese Apple II clone.<br>
+<ul>
+	<li>Pravets 8A: Use F10 for the Pravets Caps Lock (and the PC's Caps Lock key controls Cyrillic/Latin lock).
+	<li>TK3000: Use Scroll Lock for the 'mode' key. Use to switch between standard Apple II and accented characters.
+	<li>Base 64A: Use Delete for the 'F2' key (eg. press F2, release F2 then press a key to auto-type a BASIC keyword).
+</ul>
+</p>
+
 <p><strong>The Freeze's non-autostart F8 rom:</strong><br>
 If you have specified Computer as 'Apple ][' or 'Apple ][+' on the main
 Configuration page, then you will be able to enable this setting.
@@ -75,4 +79,16 @@ The Freeze F8 rom is a hacker's rom that replaces the normal 2K rom at
 $F800. <a href="cfg-advanced-freeze-rom.html">Here's the
 original release note</a>
 </p>
+
+<p><strong>Game I/O Connector:</strong><br>
+From the drop-down menu, select a device to use in the internal Game I/O Connector.
+Supported devices are:
+<ul>
+	<li> Empty
+	<li> SDS Datakey - SpeedStar (copy protection dongle)
+</ul>
+NB. Copy protection dongles can interfere with joysticks (eg. buttons may be hardwired to a fixed state), so only use dongles with the intended software.<br>
+NB. For Apple II/II+ models, when a joystick is selected (from the <a href="cfg-input.html">Input</a> tab), then there is also an implicit joystick connected at the same time as the device selected here.
+</p>
+
 </body></html>

@@ -47,7 +47,7 @@ const TCHAR CPageAdvanced::m_CloneChoices[] =
 //enum GAMEIOCONNECTOR_CHOICE { MENUITEM_EMPTY, MENUITEM_SPEEDSTAR };
 const TCHAR CPageAdvanced::m_gameIOConnectorChoices[] =
 				TEXT("Empty\0")
-				TEXT("SDS DataKey - Speed Star\0");	// Protection dongle for Southwestern Data Systems "Speed Star" Applesoft Compiler
+				TEXT("SDS DataKey - SpeedStar\0");	// Protection dongle for Southwestern Data Systems "SpeedStar" Applesoft Compiler
 
 
 INT_PTR CALLBACK CPageAdvanced::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)

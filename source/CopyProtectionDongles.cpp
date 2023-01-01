@@ -26,7 +26,7 @@
   Emulate hardware copy protection dongles for Apple II
 
   Currently supported:
-	- Southwestern Data Systems SoftKey for Speed Star Applesoft Compiler
+	- Southwestern Data Systems DataKey for SpeedStar Applesoft Compiler
 
   Matthew D'Asaro  Dec 2022
 */
@@ -73,7 +73,7 @@ int CopyProtectionDonglePB2(void)
 {
 	switch (copyProtectionDongleType)
 	{
-	case DT_SDSSPEEDSTAR:	// Southwestern Data Systems SoftKey for Speed Star Applesoft Compiler
+	case DT_SDSSPEEDSTAR:	// Southwestern Data Systems DataKey for SpeedStar Applesoft Compiler
 		return SdsSpeedStar();
 		break;
 
