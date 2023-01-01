@@ -1,0 +1,25 @@
+---
+File_hdr:
+  Tag: AppleWin Controller Button Remapping
+  Version: 1
+
+Unit:
+    HID: VID_6666&PID_0667
+    Description: Lik-Sang Super Smartjoy adapter  # Description to be used in AppleWin's GUI
+    1: X    # mirrors to 10 & Z-Rot up
+    2: A    # mirrors to 5  & Z-Axis right
+    3: B    # mirrors to 6  & Z-Rot down
+    4: Y    # mirrors to 11 & Z-Axis left
+    5: ""   # A (dup)
+    6: ""   # B (dup)
+    7: LB
+    8: RB
+    9: SELECT
+    10: ""  # X (dup)
+    11: ""  # Y (dup)
+    12: START
+    13: ""  # mirrors to X-Axis up
+    14: ""  # mirrors to Y-Axis right
+    15: ""  # mirrors to X-Axis down
+    16: ""  # mirrors to Y-Axis left
+...

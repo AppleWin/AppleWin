@@ -1,0 +1,23 @@
+---
+File_hdr:
+  Tag: AppleWin Controller Button Remapping
+  Version: 1
+
+Unit:
+    HID: VID_06A3&PID_040B
+    Description: Saitek P990 Dual Analog Pad  # Description to be used in AppleWin's GUI
+    1: Y       # upper-left
+    2: B       # lower-left
+    3: A       # lower-center
+    4: X       # upper-center
+    5: LB      # L1
+    6: RB      # R1
+    7: SELECT  # L2
+    8: START   # R2
+    9: RB      # lower-right (black)
+    10: LB     # upper-right (grey)
+    11: SELECT # button for X/Y Axis        {analog left }
+    12: START  # button for Z Axis/Rotation {analog right}
+    13: ""     # FPS    {AppleWin does not read}
+    14: ""     # analog     "
+...

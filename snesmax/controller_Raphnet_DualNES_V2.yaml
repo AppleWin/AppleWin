@@ -1,0 +1,21 @@
+---
+File_hdr:
+  Tag: AppleWin Controller Button Remapping
+  Version: 1
+
+Unit:
+    HID: VID_289B&PID_0042
+    Description: Raphnet Dual NES adapter V2  # Description to be used in AppleWin's GUI
+    1: Y    # SNES Y = NES B
+    2: B    # SNES B = NES A
+    3: SELECT
+    4: START
+    5: ""   # n/a : SNES A
+    6: ""   # n/a : SNES X
+    7: ""   # n/a : SNES LB
+    8: ""   # n/a : SNES RB
+    9: ""
+    10: ""
+    11: ""
+    12: ""
+...
