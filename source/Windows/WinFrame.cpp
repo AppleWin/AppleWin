@@ -831,9 +831,12 @@ void Win32Frame::DrawStatusArea(HDC passdc, int drawflags)
 				FrameDrawDiskStatus(dc);
 			}
 
-			SetTextAlign(dc, TA_RIGHT | TA_TOP);
-			SetTextColor(dc, g_aDiskFullScreenColorsLED[ eHardDriveStatus ] );
-			TextOut(dc,x+23,y+2,TEXT("H"),1);
+			if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
+			{
+				SetTextAlign(dc, TA_RIGHT | TA_TOP);
+				SetTextColor(dc, g_aDiskFullScreenColorsLED[eHardDriveStatus]);
+				TextOut(dc, x + 23, y + 2, TEXT("H"), 1);
+			}
 
 			if (!IS_APPLE2)
 			{
@@ -876,11 +879,13 @@ void Win32Frame::DrawStatusArea(HDC passdc, int drawflags)
 	{
 		if (drawflags & DRAW_BACKGROUND)
 		{
+			// Erase background (Slot6 drive LEDs, HDD LED & Caps)
 			SelectObject(dc,GetStockObject(NULL_PEN));
 			SelectObject(dc,btnfacebrush);
 			Rectangle(dc,x,y,x+BUTTONCX+2,y+34);
 			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+30,0);
 
+			// Add text for Slot6 drives: "1" & "2"
 			SelectObject(dc,smallfont);
 			SetTextAlign(dc,TA_CENTER | TA_TOP);
 			SetTextColor(dc,RGB(0,0,0));
@@ -888,10 +893,10 @@ void Win32Frame::DrawStatusArea(HDC passdc, int drawflags)
 			TextOut(dc, x + 7, y + yOffsetSlot6LEDNumbers, "1", 1);
 			TextOut(dc, x + 27, y + yOffsetSlot6LEDNumbers, "2", 1);
 
-			// 1.19.0.0 Hard Disk Status/Indicator Light
+			// Add text for Slot7 harddrive: "H"
 			TextOut(dc, x + 7, y + yOffsetCapsLock, TEXT("H"), 1);
 
-			if (g_nViewportScale > 1 && GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
+			if (g_nViewportScale > 1)
 			{
 				if (m_redrawDiskiiStatus)
 				{
@@ -903,10 +908,13 @@ void Win32Frame::DrawStatusArea(HDC passdc, int drawflags)
 					Rectangle(dc, x + 1, y + yOffsetSlot6TrackInfo, x + BUTTONCX + 1, y + yOffsetSlot5SectorInfo + smallfontHeight);
 				}
 
-				std::string slot5 = "Slot 5:";
-				TextOut(dc, x + 15, y + yOffsetSlot5Label, slot5.c_str(), slot5.length());
-				TextOut(dc, x + 7, y + yOffsetSlot5LEDNumbers, "1", 1);
-				TextOut(dc, x + 27, y + yOffsetSlot5LEDNumbers, "2", 1);
+				if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
+				{
+					std::string slot5 = "Slot 5:";
+					TextOut(dc, x + 15, y + yOffsetSlot5Label, slot5.c_str(), slot5.length());
+					TextOut(dc, x + 7, y + yOffsetSlot5LEDNumbers, "1", 1);
+					TextOut(dc, x + 27, y + yOffsetSlot5LEDNumbers, "2", 1);
+				}
 			}
 		}
 
