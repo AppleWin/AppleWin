@@ -438,7 +438,7 @@ static VOID CALLBACK SoundCore_TimerFunc(HWND hwnd, UINT uMsg, UINT_PTR idEvent,
 
 void SoundCore_SetFade(eFADE FadeType)
 {
-	static int nLastMode = -1;
+	static AppMode_e nLastMode = MODE_UNDEFINED;
 
 	if(g_nAppMode == MODE_DEBUG)
 		return;

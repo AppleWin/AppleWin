@@ -23,6 +23,7 @@ enum AppMode_e
 	, MODE_DEBUG    // 6502 is paused
 	, MODE_STEPPING // 6502 is running at normal/full speed (Debugger breakpoints always active)
 	, MODE_BENCHMARK
+	, MODE_UNDEFINED	// Used in SoundCore_SetFade()
 };
 
 #define  SPEED_MIN         0
