@@ -26,9 +26,14 @@ Tom Charlesworth
 . [Bug #1143] Fix graphical glitches on penultimate scan line when in non-"50% Scan Lines" mode.
 . [Bug #1138] Fix Mousecard - wasn't generating VBL interrupt for mode byte of $08. Fixes 'Jeeves'.
 . [Bug #1131] Fix MIXED issue when in 'Color (PAL Monitor)' video mode.
-. Change: Extend the debugger to support DISK commands for Disk II cards in other slots:
+. Change: Debugger: for LBR, support the unset/undefined case (eg. reset to undefined when beginning a new debug session).
+. Change: Debugger: extend to support DISK commands for Disk II cards in other slots:
 	- DISK SLOT n
 	- Now DISK INFO will provide info for the new slot.
+. Change: Debugger: add new command: 'bpv <vpos,[len]>'
+	- break when video-scanner's vertical position matches vpos.
+	- NB. auto disable when hit.
+. Change: Debugger: extend watches: 'WA <n> v' to show video scanner address & video data (aux and/or main or shr 4-byte).
 
 
 1.30.12.0 - 27 Sep 2022
