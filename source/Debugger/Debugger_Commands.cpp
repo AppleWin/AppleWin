@@ -274,7 +274,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{TEXT("DHGR2")       , CmdViewOutput_DHGR2  , CMD_VIEW_DHGR2 , "View Double Hi-res Page 2"              },
 		{TEXT("SHR")         , CmdViewOutput_SHR    , CMD_VIEW_SHR   , "View Super Hi-res"                      },
 	// Watch
-		{TEXT("W")           , CmdWatch             , CMD_WATCH         , "Alias for WA (Watch Add)"                      },
+		{TEXT("W")           , CmdWatchAdd          , CMD_WATCH         , "Alias for WA (Watch Add)"                      },
 		{TEXT("WA")          , CmdWatchAdd          , CMD_WATCH_ADD     , "Add/Update address or symbol to watch"         },
 		{TEXT("WC")          , CmdWatchClear        , CMD_WATCH_CLEAR   , "Clear (remove) watch"                          },
 		{TEXT("WD")          , CmdWatchDisable      , CMD_WATCH_DISABLE , "Disable specific watch - it is still in the list, just not active" },
@@ -300,7 +300,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //		{TEXT("WINSOURCE")   , CmdWindowShowSource  , CMD_WINDOW_SOURCE },
 //		{TEXT("ZEROPAGE")    , CmdWindowShowZeropage, CMD_WINDOW_ZEROPAGE },
 	// Zero Page
-		{TEXT("ZP")          , CmdZeroPage          , CMD_ZEROPAGE_POINTER       , "Alias for ZPA (Zero Page Add)"          },
+		{TEXT("ZP")          , CmdZeroPageAdd       , CMD_ZEROPAGE_POINTER       , "Alias for ZPA (Zero Page Add)"          },
 		{TEXT("ZP0")         , CmdZeroPagePointer   , CMD_ZEROPAGE_POINTER_0     , "Set/Update/Remove ZP watch 0 "          },
 		{TEXT("ZP1")         , CmdZeroPagePointer   , CMD_ZEROPAGE_POINTER_1     , "Set/Update/Remove ZP watch 1"           },
 		{TEXT("ZP2")         , CmdZeroPagePointer   , CMD_ZEROPAGE_POINTER_2     , "Set/Update/Remove ZP watch 2"           },

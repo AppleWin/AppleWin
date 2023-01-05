@@ -6735,27 +6735,26 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 
 
 //===========================================================================
-Update_t CmdWatch (int nArgs)
-{
-	return CmdWatchAdd( nArgs );
-}
-
-
-//===========================================================================
 Update_t CmdWatchAdd (int nArgs)
 {
 	// WA [address]
 	// WA # address
-	if (! nArgs)
+	if (!nArgs)
 	{
-		return CmdWatchList( 0 );
+		return CmdWatchList(0);
 	}
 
 	int iArg = 1;
 	int iWatch = NO_6502_TARGET;
 	if (nArgs > 1)
 	{
-		iWatch = g_aArgs[ 1 ].nValue;
+		iWatch = g_aArgs[1].nValue;
+		if (iWatch >= MAX_WATCHES)
+		{
+			ConsoleDisplayPushFormat("Watch index too big.  (Max: %d)", MAX_WATCHES - 1);
+			return ConsoleUpdate();
+		}
+
 		iArg++;
 	}
 
@@ -6778,7 +6777,7 @@ Update_t CmdWatchAdd (int nArgs)
 
 		// Make sure address isn't an IO address
 		if ((nAddress >= _6502_IO_BEGIN) && (nAddress <= _6502_IO_END))
-			return ConsoleDisplayError("You may not watch an I/O location.");
+			return ConsoleDisplayError("You cannot watch an I/O location.");
 
 		if (iWatch == NO_6502_TARGET)
 		{
@@ -6791,7 +6790,7 @@ Update_t CmdWatchAdd (int nArgs)
 
 		if ((iWatch >= MAX_WATCHES) && !bAdded)
 		{
-			ConsoleDisplayPushFormat( "All watches are currently in use.  (Max: %d)", MAX_WATCHES );
+			ConsoleDisplayPushFormat("All watches are currently in use.  (Max: %d)", MAX_WATCHES);
 			return ConsoleUpdate();
 		}
 
@@ -7270,21 +7269,13 @@ Update_t CmdWindowLast (int nArgs)
 
 
 //===========================================================================
-Update_t CmdZeroPage (int nArgs)
-{
-	// ZP [address]
-	// ZP # address
-	return CmdZeroPageAdd( nArgs );
-}
-
-//===========================================================================
-Update_t CmdZeroPageAdd     (int nArgs)
+Update_t CmdZeroPageAdd (int nArgs)
 {
 	// ZP [address]
 	// ZP # address [address...]
-	if (! nArgs)
+	if (!nArgs)
 	{
-		return CmdZeroPageList( 0 );
+		return CmdZeroPageList(0);
 	}
 
 	int iArg = 1;
@@ -7292,7 +7283,13 @@ Update_t CmdZeroPageAdd     (int nArgs)
 
 	if (nArgs > 1)
 	{
-		iZP = g_aArgs[ 1 ].nValue;
+		iZP = g_aArgs[1].nValue;
+		if (iZP >= MAX_ZEROPAGE_POINTERS)
+		{
+			ConsoleDisplayPushFormat("Zero page pointer index too big.  (Max: %d)", MAX_ZEROPAGE_POINTERS - 1);
+			return ConsoleUpdate();
+		}
+
 		iArg++;
 	}
 	
@@ -7300,6 +7297,13 @@ Update_t CmdZeroPageAdd     (int nArgs)
 	for (; iArg <= nArgs; iArg++ )
 	{
 		WORD nAddress = g_aArgs[iArg].nValue;
+
+		// Make sure address is a ZP address
+		if (nAddress > _6502_ZEROPAGE_END)
+		{
+			ConsoleDisplayPushFormat("Zero page pointer must be in the range: [00..%02X].", _6502_ZEROPAGE_END);
+			return ConsoleUpdate();
+		}
 
 		if (iZP == NO_6502_TARGET)
 		{
@@ -7312,7 +7316,7 @@ Update_t CmdZeroPageAdd     (int nArgs)
 
 		if ((iZP >= MAX_ZEROPAGE_POINTERS) && !bAdded)
 		{
-			ConsoleDisplayPushFormat( "All zero page pointers are currently in use.  (Max: %d)", MAX_ZEROPAGE_POINTERS );
+			ConsoleDisplayPushFormat("All zero page pointers are currently in use.  (Max: %d)", MAX_ZEROPAGE_POINTERS);
 			return ConsoleUpdate();
 		}
 		
@@ -7345,9 +7349,9 @@ Update_t _ZeroPage_Error()
 }
 
 //===========================================================================
-Update_t CmdZeroPageClear   (int nArgs)
+Update_t CmdZeroPageClear (int nArgs)
 {
-	if (!g_nBreakpoints)
+	if (!g_nZeroPagePointers)
 		return _ZeroPage_Error();
 
 	// CHECK FOR ERRORS
@@ -7356,7 +7360,7 @@ Update_t CmdZeroPageClear   (int nArgs)
 
 	_BWZ_ClearViaArgs( nArgs, g_aZeroPagePointers, MAX_ZEROPAGE_POINTERS, g_nZeroPagePointers );
 
-	if (! g_nZeroPagePointers)
+	if (!g_nZeroPagePointers)
 	{
 		UpdateDisplay( UPDATE_BACKGROUND );
 		return UPDATE_CONSOLE_DISPLAY;
@@ -7379,7 +7383,7 @@ Update_t CmdZeroPageDisable (int nArgs)
 }
 
 //===========================================================================
-Update_t CmdZeroPageEnable  (int nArgs)
+Update_t CmdZeroPageEnable (int nArgs)
 {
 	if (! g_nZeroPagePointers)
 		return _ZeroPage_Error();
@@ -7393,7 +7397,7 @@ Update_t CmdZeroPageEnable  (int nArgs)
 }
 
 //===========================================================================
-Update_t CmdZeroPageList    (int nArgs)
+Update_t CmdZeroPageList (int nArgs)
 {
 	if (! g_nZeroPagePointers)
 	{
