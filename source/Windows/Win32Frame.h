@@ -6,28 +6,18 @@
 
 class Video;
 
-#if 0 // enable non-integral full-screen scaling
-#define FULLSCREEN_SCALE_TYPE float
-#else
-#define FULLSCREEN_SCALE_TYPE int
-#endif
-
-// 3D border around the 560x384 Apple II display
-#define  VIEWPORTX   5
-#define  VIEWPORTY   5
-
-#define  BUTTONX     (g_nViewportCX + VIEWPORTX*2)
-#define  BUTTONY     0
-#define  BUTTONCX    45
-#define  BUTTONCY    45
+#define  BUTTONCX    48
+#define  BUTTONCY    48
 #define  BUTTONS     8
 
+// Comment to render without black borders
+#define RENDER_BORDERMARGIN 1
 
 class Win32Frame : public FrameBase
 {
 public:
 	Win32Frame(void);
-	virtual ~Win32Frame(void) {}
+	virtual ~Win32Frame(void){}
 
 	static Win32Frame& GetWin32Frame();
 	static LRESULT CALLBACK FrameWndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
@@ -39,10 +29,10 @@ public:
 	virtual void FrameUpdateApple2Type();
 	virtual void FrameSetCursorPosByMousePos();
 
-	virtual void SetFullScreenShowSubunitStatus(bool bShow);
+	virtual void SetIntegerScale(bool bShow);
+	virtual void SetStretchVideo(bool bShow);
 	virtual void SetWindowedModeShowDiskiiStatus(bool bShow);
 	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth = 0, UINT userSpecifiedHeight = 0);
-	virtual int SetViewportScale(int nNewScale, bool bForce = false);
 	virtual void SetAltEnterToggleFullScreen(bool mode);
 
 	virtual void SetLoadedSaveStateFlag(const bool bFlag);
@@ -59,22 +49,18 @@ public:
 
 	virtual std::string Video_GetScreenShotFolder() const;
 
-	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string& interfaceName);
+	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName);
 
-	bool GetFullScreenShowSubunitStatus(void);
+	bool GetIntegerScale(void);
+	bool GetStretchVideo(void);
 	bool GetWindowedModeShowDiskiiStatus(void);
-	int GetFullScreenOffsetX(void);
-	int GetFullScreenOffsetY(void);
+	
 	bool IsFullScreen(void);
 	void FrameRegisterClass();
 	void FrameCreateWindow(void);
-	void ChooseMonochromeColor(void);
-	UINT Get3DBorderWidth(void);
-	UINT Get3DBorderHeight(void);
+	void ChooseMonochromeColor(void);	
 	int GetViewportScale(void);
-	void GetViewportCXCY(int& nViewportCX, int& nViewportCY);
-	void SetFullScreenViewportScale(int nNewXScale, int nNewYScale);
-
+	
 	void ApplyVideoModeChange(void);
 
 	HDC FrameGetDC();
@@ -82,12 +68,20 @@ public:
 
 	bool	g_bScrollLock_FullSpeed;
 
+	RECT GetClientArea();
+	RECT GetVideoRect();
+	RECT GetToolbarRect();
+
 private:
 	static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName, LPVOID lpContext);
 	LRESULT WndProc(HWND   window, UINT   message, WPARAM wparam, LPARAM lparam);
 
-	void VideoCreateDIBSection(bool resetVideoState);
-	void VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale);
+	int  HitTestButton(int x, int y);
+	RECT GetButtonRect(int number);
+	RECT GetStatusRect(int number);
+	void OnSizeChanged();
+
+	void VideoCreateDIBSection(bool resetVideoState);	
 	bool DDInit(void);
 	void DDUninit(void);
 
@@ -104,10 +98,12 @@ private:
 	void DrawFrameWindow(bool bPaintingWindow = false);
 	void DrawStatusArea(HDC passdc, int drawflags);
 	void Draw3dRect(HDC dc, int x1, int y1, int x2, int y2, BOOL out);
-	void DrawBitmapRect(HDC dc, int x, int y, LPRECT rect, HBITMAP bitmap);
+	void DrawBitmapRect(HDC dc, int x, int y, LPRECT rect, HBITMAP bitmap, BOOL transparent);
+	void FillSolidRect(HDC dc, int x1, int y1, int x2, int y2, COLORREF color);
 	void ProcessButtonClick(int button, bool bFromButtonUI = false);
 	bool ConfirmReboot(bool bFromButtonUI);
 	void ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive);
+	void ProcessToolbarPopupMenu(HWND hWnd, POINT point);
 	void RelayEvent(UINT message, WPARAM wparam, LPARAM lparam);
 	void SetFullScreenMode(void);
 	void SetNormalMode(void);
@@ -122,8 +118,8 @@ private:
 	void CreateGdiObjects(void);
 	void DeleteGdiObjects(void);
 	void FrameShowCursor(BOOL bShow);
-	void FullScreenRevealCursor(void);
-	void GetWidthHeight(int& nWidth, int& nHeight);
+	void FullScreenRevealCursor(void);	
+	SIZE GetWidthHeight(int scaleFactor);
 	void SetSlotUIOffsets(void);
 
 	bool g_bAltEnter_ToggleFullScreen; // Default for ALT+ENTER is to toggle between windowed and full-screen modes
@@ -141,11 +137,11 @@ private:
 	bool    g_bAppActive;
 	bool g_bFrameActive;
 	bool g_windowMinimized;
-	bool g_bFullScreen_ShowSubunitStatus;
+	bool g_bIntegerScale;
 	bool m_showDiskiiStatus;
 	bool m_redrawDiskiiStatus;
-	int						g_win_fullscreen_offsetx;
-	int						g_win_fullscreen_offsety;
+	bool g_bStretchVideo;
+	
 	UINT m_bestWidthForFullScreen;
 	UINT m_bestHeightForFullScreen;
 	bool m_changedDisplaySettings;
@@ -165,8 +161,6 @@ private:
 	int     buttonactive;
 	int     buttondown;
 	int     buttonover;
-	int     buttonx;
-	int     buttony;
 	HDC     g_hFrameDC;
 	RECT    framerect;
 
@@ -176,15 +170,10 @@ private:
 
 	HWND    tooltipwindow;
 	std::string driveTooltip;
-	enum { TTID_DRIVE1_BUTTON = 0, TTID_DRIVE2_BUTTON, TTID_SLOT6_TRK_SEC_INFO, TTID_SLOT5_TRK_SEC_INFO, TTID_MAX };
-
-	int     viewportx;	// Default to Normal (non-FullScreen) mode
-	int     viewporty;	// Default to Normal (non-FullScreen) mode
 
 	RECT	g_main_window_saved_rect;
 	int		g_main_window_saved_style;
 	int		g_main_window_saved_exstyle;
-
 
 	HBITMAP g_hCapsLockBitmap[2];
 	HBITMAP g_hHardDiskBitmap[2];
@@ -201,6 +190,7 @@ private:
 	static const UINT yOffsetSlot6LEDs = yOffsetSlot6LEDNumbers + 1;
 	static const UINT yOffsetCapsLock = yOffsetSlot6LEDs + smallfontHeight;
 	static const UINT yOffsetHardDiskLED = yOffsetSlot6LEDs + smallfontHeight + 1;
+
 	// 2x (or more) Windowed mode: Disk II LEDs and track/sector info
 	struct D2FullUI	// Disk II full UI
 	{
@@ -231,9 +221,10 @@ private:
 	Disk_Status_e g_eStatusDrive1;
 	Disk_Status_e g_eStatusDrive2;
 
+	enum class ToolbarPosition { TOP = 0, RIGHT = 1, BOTTOM = 2, LEFT = 3 };
+
+	ToolbarPosition m_toolbarPosition;
+	BOOL    m_fullScreenToolbarVisible;
+
 	static const int kDEFAULT_VIEWPORT_SCALE = 2;
-	int g_nViewportCX;
-	int g_nViewportCY;
-	int g_nViewportScale; // saved REGSAVE
-	int g_nMaxViewportScale;	// Max scale in Windowed mode with borders, buttons etc (full-screen may be +1)
 };

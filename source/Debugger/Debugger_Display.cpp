@@ -632,21 +632,21 @@ void StretchBltMemToFrameDC(void)
 {
 	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
 
-	int nViewportCX, nViewportCY;
-	win32Frame.GetViewportCXCY(nViewportCX, nViewportCY);
+	RECT rc = win32Frame.GetVideoRect();
 
-	int xdest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetX() : GetVideo().GetFrameBufferCentringOffsetX() * win32Frame.GetViewportScale();
-	int ydest = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetY() : GetVideo().GetFrameBufferCentringOffsetY() * win32Frame.GetViewportScale();
-	int wdest = nViewportCX;
-	int hdest = nViewportCY;
+#if RENDER_BORDERMARGIN
+	int border = GetVideo().GetFrameBufferBorderWidth();	
+	::InflateRect(&rc, -border, -border);
+#endif
 
 	BOOL bRes = StretchBlt(
 		win32Frame.FrameGetDC(),			                // HDC hdcDest,
-		xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
-		wdest, hdest,										// int nWidthDest,   int nHeightDest,
+		rc.left, rc.top,									// int nXOriginDest, int nYOriginDest,
+		rc.right - rc.left, rc.bottom - rc.top,				// int nWidthDest,   int nHeightDest,
 		GetDebuggerMemDC(),									// HDC hdcSrc,
 		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
-		GetVideo().GetFrameBufferBorderlessWidth(), GetVideo().GetFrameBufferBorderlessHeight(),	// int nWidthSrc,    int nHeightSrc,
+		GetVideo().GetFrameBufferBorderlessWidth(),         // int nWidthSrc,    
+		GetVideo().GetFrameBufferBorderlessHeight(),	    // int nHeightSrc,
 		SRCCOPY                                             // DWORD dwRop
 	);
 }

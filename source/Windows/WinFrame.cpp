@@ -89,18 +89,6 @@ void Win32Frame::SetAltEnterToggleFullScreen(bool mode)
 //   - Optional: Draw status area to frame DC
 //
 
-UINT Win32Frame::Get3DBorderWidth(void)
-{
-	return IsFullScreen() ? 0 : VIEWPORTX;
-}
-
-UINT Win32Frame::Get3DBorderHeight(void)
-{
-	return IsFullScreen() ? 0 : VIEWPORTY;
-}
-
-//===========================================================================
-
 void Win32Frame::FrameShowCursor(BOOL bShow)
 {
 	int nCount;
@@ -267,8 +255,11 @@ void Win32Frame::DeleteGdiObjects(void)
 //===========================================================================
 void Win32Frame::Draw3dRect(HDC dc, int x1, int y1, int x2, int y2, BOOL out)
 {	
-	SelectObject(dc,GetStockObject(NULL_BRUSH));
-	SelectObject(dc,out ? btnshadowpen : btnhighlightpen);
+	HGDIOBJ hOldBrush = SelectObject(dc,GetStockObject(NULL_BRUSH));
+	HGDIOBJ hOldPen = SelectObject(dc, btnshadowpen/*out ? btnshadowpen : btnhighlightpen*/);
+
+	Rectangle(dc, x1, y1, x2, y2);
+	/*
 	POINT pt[3];
 	pt[0].x = x1;    pt[0].y = y2-1;
 	pt[1].x = x2-1;  pt[1].y = y2-1;
@@ -278,215 +269,229 @@ void Win32Frame::Draw3dRect(HDC dc, int x1, int y1, int x2, int y2, BOOL out)
 	pt[1].x = x1;    pt[1].y = y1;
 	pt[2].x = x2;    pt[2].y = y1;
 	Polyline(dc,(LPPOINT)&pt,3);
+	*/
+	SelectObject(dc, hOldPen);
+	SelectObject(dc, hOldBrush);
+}
+
+typedef BOOL WINAPI TransparentBltProc(
+	HDC hdcDest,
+	int xoriginDest,
+	int yoriginDest,
+	int wDest,
+	int hDest,
+	HDC hdcSrc,
+	int xoriginSrc,
+	int yoriginSrc,
+	int wSrc,
+	int hSrc,
+	UINT crTransparent);
+
+
+//===========================================================================
+void Win32Frame::DrawBitmapRect(HDC dc, int x, int y, LPRECT rect, HBITMAP bitmap, BOOL transparent)
+{
+	HDC memdc = CreateCompatibleDC(dc);
+	HGDIOBJ hOldBitmap = SelectObject(memdc, bitmap);
+
+	static HMODULE hMsImg32 = NULL;
+	static TransparentBltProc* pTransparentBlt = NULL;
+	static BOOL transparentBltLoaded = false;
+
+	if (transparent && !transparentBltLoaded)
+	{
+		transparentBltLoaded = true;
+
+		hMsImg32 = ::LoadLibrary("msimg32.dll");
+		if (hMsImg32 != NULL)
+			pTransparentBlt = (TransparentBltProc*) ::GetProcAddress(hMsImg32, "TransparentBlt");
+	}
+
+	if (transparent && pTransparentBlt != NULL)
+	{
+		BITMAP bm;
+		GetObject(bitmap, sizeof(BITMAP), &bm);
+
+		pTransparentBlt(dc, x, y,
+			rect->right + 1 - rect->left,
+			rect->bottom + 1 - rect->top,
+			memdc,
+			rect->left,
+			rect->top,
+			bm.bmWidth - rect->left,
+			bm.bmHeight - rect->top,
+			GetSysColor(COLOR_BTNFACE));
+	}
+	else
+	{
+		BitBlt(dc, x, y,
+			rect->right + 1 - rect->left,
+			rect->bottom + 1 - rect->top,
+			memdc,
+			rect->left,
+			rect->top,
+			SRCCOPY);
+	}
+
+	SelectObject(memdc, hOldBitmap);
+	DeleteDC(memdc);
+}
+
+
+//===========================================================================
+void Win32Frame::FillSolidRect(HDC dc, int x1, int y1, int x2, int y2, COLORREF color)
+{
+	COLORREF hOldColor = SetBkColor(dc, color);
+	int oldMode = SetBkMode(dc, OPAQUE);
+
+	RECT rc { x1, y1, x2, y2 };
+	ExtTextOut(dc, 0, 0, ETO_OPAQUE | ETO_CLIPPED, &rc, NULL, 0, NULL);
+
+	SetBkMode(dc, oldMode);
+	SetBkColor(dc, hOldColor);
+}
+
+
+static COLORREF ShadePixels(COLORREF srcPixel, COLORREF dstPixel, int percent)
+{
+	int ipercent = 100 - percent;
+
+	return RGB((GetBValue(srcPixel) * percent + (GetRValue(dstPixel)) * ipercent) / 100,
+		(GetGValue(srcPixel) * percent + (GetGValue(dstPixel)) * ipercent) / 100,
+		(GetRValue(srcPixel) * percent + (GetBValue(dstPixel)) * ipercent) / 100);
+
 }
 
 //===========================================================================
-void Win32Frame::DrawBitmapRect (HDC dc, int x, int y, LPRECT rect, HBITMAP bitmap) {
-  HDC memdc = CreateCompatibleDC(dc);
-  SelectObject(memdc,bitmap);
-  BitBlt(dc,x,y,
-         rect->right  + 1 - rect->left,
-         rect->bottom + 1 - rect->top,
-         memdc,
-         rect->left,
-         rect->top,
-         SRCCOPY);
-  DeleteDC(memdc);
-}
+void Win32Frame::DrawButton(HDC passdc, int number) 
+{
+	FrameReleaseDC();
+	HDC dc = (passdc ? passdc : GetDC(g_hFrameWindow));
 
-//===========================================================================
-void Win32Frame::DrawButton (HDC passdc, int number) {
-  FrameReleaseDC();
-  HDC dc = (passdc ? passdc : GetDC(g_hFrameWindow));
-  int x  = buttonx;
-  int y  = buttony+number*BUTTONCY;
-  if (number == buttondown) {
-    int loop = 0;
-    while (loop++ < 3)
-      Draw3dRect(dc,x+loop,y+loop,x+BUTTONCX,y+BUTTONCY,0);
-    RECT rect = {0,0,39,39};
-    DrawBitmapRect(dc,x+4,y+4,&rect,buttonbitmap[number]);
-  }
-  else {
-    Draw3dRect(dc,x+1,y+1,x+BUTTONCX,y+BUTTONCY,1);
-    Draw3dRect(dc,x+2,y+2,x+BUTTONCX-1,y+BUTTONCY-1,1);
-    RECT rect = {1,1,40,40};
-    DrawBitmapRect(dc,x+3,y+3,&rect,buttonbitmap[number]);
-  }
-  if ((number == BTN_DRIVE1) || (number == BTN_DRIVE2)) {
-    int  offset = (number == buttondown) << 1;
-    RECT rect = {x+offset+3,
-                 y+offset+31,
-                 x+offset+42,
-                 y+offset+42};
-    SelectObject(dc,smallfont);
-    SetTextColor(dc,RGB(0,0,0));
-    SetTextAlign(dc,TA_CENTER | TA_TOP);
-    SetBkMode(dc,TRANSPARENT);
+	RECT rc = GetButtonRect(number);
+	RECT rectImage = { 1, 1, 40, 40 };
 
-	LPCTSTR pszBaseName = (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
-		? dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).GetBaseName(number-BTN_DRIVE1).c_str()
-		: "";
+	int x = rc.left;
+	int y = rc.top;
 
-    ExtTextOut(dc,x+offset+22,rect.top,ETO_CLIPPED,&rect,
-               pszBaseName,
-               MIN(8,_tcslen(pszBaseName)),
-               NULL);
-  }
-  if (!passdc)
-    ReleaseDC(g_hFrameWindow,dc);
+	int imgX = x + (BUTTONCX - (rectImage.right - rectImage.left)) / 2;
+	int imgY = y + (BUTTONCY - (rectImage.bottom - rectImage.top)) / 2;
+
+	if (number == buttondown)
+	{
+		Draw3dRect(dc, x + 1, y + 1, x + BUTTONCX - 1, y + BUTTONCY - 1, 0);
+		FillSolidRect(dc, x + 2, y + 2, x + BUTTONCX - 2, y + BUTTONCY - 2, GetSysColor(COLOR_3DLIGHT));
+		DrawBitmapRect(dc, imgX + 1, imgY + 1, &rectImage, buttonbitmap[number], TRUE);
+	}
+	else
+	{
+		BOOL trans = FALSE;
+
+		if (number == buttonover)
+		{
+			FillSolidRect(dc, x + 2, y + 2, x + BUTTONCX - 2, y + BUTTONCY - 2, ShadePixels(GetSysColor(COLOR_BTNFACE), GetSysColor(COLOR_BTNHIGHLIGHT), 50));
+			Draw3dRect(dc, x + 1, y + 1, x + BUTTONCX - 1, y + BUTTONCY - 1, 1);
+			trans = TRUE;
+		}
+		else if ((number == BTN_DEBUG && g_nAppMode == MODE_DEBUG) || (number == BTN_FULLSCR && g_bIsFullScreen)) // Checked ?
+		{
+			FillSolidRect(dc, x + 2, y + 2, x + BUTTONCX - 2, y + BUTTONCY - 2, GetSysColor(COLOR_3DLIGHT));
+			Draw3dRect(dc, x + 1, y + 1, x + BUTTONCX - 1, y + BUTTONCY - 1, 0);
+			trans = TRUE;
+		}
+		else if (!passdc)
+			FillSolidRect(dc, x + 1, y + 1, x + BUTTONCX - 1, y + BUTTONCY - 1, GetSysColor(COLOR_BTNFACE));
+
+		DrawBitmapRect(dc, imgX, imgY, &rectImage, buttonbitmap[number], trans);
+	}
+	
+	if (number == BTN_DRIVE1 || number == BTN_DRIVE2)
+	{
+		int  offset = number == buttondown ? 1 : 0;
+
+		RECT rect = { x + offset + 3,
+					 y + offset + 31,
+					 x + offset + 42,
+					 y + offset + 42 };
+
+		rect = rc;
+		::InflateRect(&rect, 3, 3);
+
+		SelectObject(dc, smallfont);
+		SetTextColor(dc, RGB(0, 0, 0));
+		SetTextAlign(dc, TA_CENTER | TA_TOP);
+		SetBkMode(dc, TRANSPARENT);
+
+		LPCTSTR pszBaseName = (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
+			? dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).GetBaseName(number - BTN_DRIVE1).c_str()
+			: "";
+
+		ExtTextOut(dc, rect.left + offset + BUTTONCX / 2 + 2, rect.bottom - 16 + offset, ETO_CLIPPED, &rect,
+			pszBaseName,
+			MIN(8, _tcslen(pszBaseName)),
+			NULL);
+	}
+
+	if (!passdc)
+		ReleaseDC(g_hFrameWindow, dc);
 }
 
 //===========================================================================
 
 // NB. x=y=0 means erase only
-void Win32Frame::DrawCrosshairs (int x, int y) {
-  static int lastx = 0;
-  static int lasty = 0;
-  FrameReleaseDC();
-  HDC dc = GetDC(g_hFrameWindow);
-#define LINE(x1,y1,x2,y2) MoveToEx(dc,x1,y1,NULL); LineTo(dc,x2,y2);
+void Win32Frame::DrawCrosshairs (int x, int y) 
+{
+	if (x && y)
+	{
+		FrameReleaseDC();
 
-  // ERASE THE OLD CROSSHAIRS
-  if (lastx && lasty)
-    if (g_bIsFullScreen)
-	{
-      int loop = 4;
-      while (loop--) {
-        RECT rect = {0,0,5,5};
-        switch (loop) {
-          case 0: OffsetRect(&rect, GetFullScreenOffsetX()+lastx-2,                 GetFullScreenOffsetY()+viewporty-5);             break;
-          case 1: OffsetRect(&rect, GetFullScreenOffsetX()+lastx-2,                 GetFullScreenOffsetY()+viewporty+g_nViewportCY); break;
-          case 2: OffsetRect(&rect, GetFullScreenOffsetX()+viewportx-5,             GetFullScreenOffsetY()+lasty-2);                 break;
-          case 3: OffsetRect(&rect, GetFullScreenOffsetX()+viewportx+g_nViewportCX, GetFullScreenOffsetY()+lasty-2);                 break;
-        }
-        FillRect(dc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
-      }
-	}
-	else
-	{
-      int loop = 5;
-      while (loop--) {
-        switch (loop) {
-          case 0: SelectObject(dc,GetStockObject(BLACK_PEN));  break;
-          case 1: // fall through
-          case 2: SelectObject(dc,btnshadowpen);               break;
-          case 3: // fall through
-          case 4: SelectObject(dc,btnfacepen);                 break;
-        }
-        LINE(lastx-2,VIEWPORTY-loop-1,
-             lastx+3,VIEWPORTY-loop-1);
-        LINE(VIEWPORTX-loop-1,lasty-2,
-             VIEWPORTX-loop-1,lasty+3);
-        if ((loop == 1) || (loop == 2))
-          SelectObject(dc,btnhighlightpen);
-        LINE(lastx-2,VIEWPORTY+g_nViewportCY+loop,
-             lastx+3,VIEWPORTY+g_nViewportCY+loop);
-        LINE(VIEWPORTX+g_nViewportCX+loop,lasty-2,
-             VIEWPORTX+g_nViewportCX+loop,lasty+3);
-      }
-    }
+		HDC dc = GetDC(g_hFrameWindow);
 
-  // DRAW THE NEW CROSSHAIRS
-  if (x && y) {
-    if (g_bIsFullScreen)
-	{
-		int loop = 4;
-		while (loop--) {
-		  if ((loop == 1) || (loop == 2))
-			SelectObject(dc,GetStockObject(WHITE_PEN));
-		  else
-			SelectObject(dc,GetStockObject(BLACK_PEN));
-		  LINE(GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty-5,
-			   GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty);
-		  LINE(GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty+g_nViewportCY+4,
-			   GetFullScreenOffsetX()+x+loop-2,                  GetFullScreenOffsetY()+viewporty+g_nViewportCY-1);
-		  LINE(GetFullScreenOffsetX()+viewportx-5,               GetFullScreenOffsetY()+y+loop-2,
-			   GetFullScreenOffsetX()+viewportx,                 GetFullScreenOffsetY()+y+loop-2);
-		  LINE(GetFullScreenOffsetX()+viewportx+g_nViewportCX+4, GetFullScreenOffsetY()+y+loop-2,
-			   GetFullScreenOffsetX()+viewportx+g_nViewportCX-1, GetFullScreenOffsetY()+y+loop-2);
-		}
+		RECT rcVid = GetVideoRect();
+
+		#define LINE(x1,y1,x2,y2) MoveToEx(dc,x1,y1,NULL); LineTo(dc,x2,y2);
+		#define SZ 4
+
+		HGDIOBJ hPen = CreatePen(PS_SOLID, 2, RGB(255, 255, 255));
+		HGDIOBJ hOld = SelectObject(dc, hPen);
+
+		LINE(x, rcVid.top, x, rcVid.top + SZ);
+		LINE(x, rcVid.bottom - SZ, x, rcVid.bottom);
+
+		LINE(rcVid.left, y, rcVid.left + SZ, y);
+		LINE(rcVid.right - SZ, y, rcVid.right, y);
+
+		SelectObject(dc, hOld);
+		DeleteObject(hPen);
+
+		ReleaseDC(g_hFrameWindow, dc);
 	}
-	else
-	{
-		int loop = 4;
-		while (loop--) {
-		  if ((loop == 1) || (loop == 2))
-			SelectObject(dc,GetStockObject(WHITE_PEN));
-		  else
-			SelectObject(dc,GetStockObject(BLACK_PEN));
-		  LINE(x+loop-2,viewporty-5,
-			   x+loop-2,viewporty);
-		  LINE(x+loop-2,viewporty+g_nViewportCY+4,
-			   x+loop-2,viewporty+g_nViewportCY-1);
-		  LINE(viewportx-5,           y+loop-2,
-			   viewportx,             y+loop-2);
-		  LINE(viewportx+g_nViewportCX+4,y+loop-2,
-			   viewportx+g_nViewportCX-1,y+loop-2);
-		}
-	}
-  }
-#undef LINE
-  lastx = x;
-  lasty = y;
-  ReleaseDC(g_hFrameWindow,dc);
 }
 
 //===========================================================================
 void Win32Frame::DrawFrameWindow (bool bPaintingWindow/*=false*/)
 {
 	FrameReleaseDC();
+
 	PAINTSTRUCT ps;
 	HDC         dc = bPaintingWindow
 		? BeginPaint(g_hFrameWindow,&ps)
 		: GetDC(g_hFrameWindow);
 
-	if (!g_bIsFullScreen)
+	if (!g_bIsFullScreen || m_fullScreenToolbarVisible)
 	{
-		// DRAW THE 3D BORDER AROUND THE EMULATED SCREEN
-		Draw3dRect(dc,
-			VIEWPORTX-2,VIEWPORTY-2,
-			VIEWPORTX+g_nViewportCX+2,VIEWPORTY+g_nViewportCY+2,
-			0);
-		Draw3dRect(dc,
-			VIEWPORTX-3,VIEWPORTY-3,
-			VIEWPORTX+g_nViewportCX+3,VIEWPORTY+g_nViewportCY+3,
-			0);
-		SelectObject(dc,btnfacepen);
-		Rectangle(dc,
-			VIEWPORTX-4,VIEWPORTY-4,
-			VIEWPORTX+g_nViewportCX+4,VIEWPORTY+g_nViewportCY+4);
-		Rectangle(dc,
-			VIEWPORTX-5,VIEWPORTY-5,
-			VIEWPORTX+g_nViewportCX+5,VIEWPORTY+g_nViewportCY+5);
+		// DRAW THE TOOLBAR BACKGROUND
+		RECT rc = GetToolbarRect();
+		FillSolidRect(dc, rc.left, rc.top, rc.right, rc.bottom, GetSysColor(COLOR_BTNFACE));
 
 		// DRAW THE TOOLBAR BUTTONS
 		int iButton = BUTTONS;
 		while (iButton--)
-		{
-			DrawButton(dc,iButton);
-		}
-
-		if (g_nViewportScale == 2 || GetVideo().HasVidHD())
-		{
-			const int x = buttonx + 1;
-			const int y = buttony + BUTTONS * BUTTONCY + 36;	// 36 = height of StatusArea
-			RECT rect = { x, y, x + BUTTONCX, y + BUTTONS * BUTTONCY + 22 };
-
-			if (GetVideo().HasVidHD())
-			{
-				if (g_nViewportScale == 1)
-					rect.bottom += 14;
-				else
-					rect.bottom += 32;
-			}
-
-			int res = FillRect(dc, &rect, btnfacebrush);
-		}
+			DrawButton(dc, iButton);
 	}
 
 	// DRAW THE STATUS AREA
-	DrawStatusArea(dc,DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
+	DrawStatusArea(dc, DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
 
 	// DRAW THE CONTENTS OF THE EMULATED SCREEN
 	if (g_nAppMode == MODE_LOGO)
@@ -510,14 +515,24 @@ bool Win32Frame::IsFullScreen(void)
 	return g_bIsFullScreen;
 }
 
-bool Win32Frame::GetFullScreenShowSubunitStatus(void)
+bool Win32Frame::GetIntegerScale(void)
 {
-	return g_bFullScreen_ShowSubunitStatus;
+	return g_bIntegerScale;
 }
 
-void Win32Frame::SetFullScreenShowSubunitStatus(bool bShow)
+void Win32Frame::SetIntegerScale(bool bShow)
 {
-	g_bFullScreen_ShowSubunitStatus = bShow;
+	g_bIntegerScale = bShow;
+}
+
+bool Win32Frame::GetStretchVideo(void)
+{
+	return g_bStretchVideo;
+}
+
+void Win32Frame::SetStretchVideo(bool bShow)
+{
+	g_bStretchVideo = bShow;
 }
 
 bool Win32Frame::GetWindowedModeShowDiskiiStatus(void)
@@ -554,52 +569,56 @@ void Win32Frame::FrameDrawDiskLEDS()
 }
 
 //===========================================================================
-void Win32Frame::FrameDrawDiskLEDS( HDC passdc )
+void Win32Frame::FrameDrawDiskLEDS(HDC passdc)
 {
+	if (g_bIsFullScreen && !m_fullScreenToolbarVisible)
+		return;
+
 	g_eStatusDrive1 = DISK_STATUS_OFF;
 	g_eStatusDrive2 = DISK_STATUS_OFF;
 
+	// Slot6 drive takes priority unless it's off:
 	if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).GetLightStatus(&g_eStatusDrive1, &g_eStatusDrive2);
 
-	// Draw Track/Sector
-	FrameReleaseDC();
-	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
-	const int x = buttonx;
-	const int y = buttony + BUTTONS * BUTTONCY + 1;
-
-	if (g_bIsFullScreen)
+	// Slot5:
 	{
-		if (!g_bFullScreen_ShowSubunitStatus)
-			return;
-
-		SelectObject(dc,smallfont);
-		SetBkMode(dc,OPAQUE);
-		SetBkColor(dc,RGB(0,0,0));
-		SetTextAlign(dc,TA_LEFT | TA_TOP);
-
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[g_eStatusDrive1]);
-		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
-
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[g_eStatusDrive2]);
-		TextOut(dc,x+13,y+2,TEXT("2"),1);
-	}
-	else
-	{
-		RECT rDiskLed = { 0,0,8,8 };
-		DrawBitmapRect(dc, x + 12, y + yOffsetSlot6LEDs, &rDiskLed, g_hDiskWindowedLED[g_eStatusDrive1]);
-		DrawBitmapRect(dc, x + 31, y + yOffsetSlot6LEDs, &rDiskLed, g_hDiskWindowedLED[g_eStatusDrive2]);
-
-		if (g_nViewportScale > 1 && GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
-		{
-			Disk_Status_e eDrive1StatusSlot5 = DISK_STATUS_OFF;
-			Disk_Status_e eDrive2StatusSlot5 = DISK_STATUS_OFF;
+		Disk_Status_e eDrive1StatusSlot5 = DISK_STATUS_OFF;
+		Disk_Status_e eDrive2StatusSlot5 = DISK_STATUS_OFF;
+		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).GetLightStatus(&eDrive1StatusSlot5, &eDrive2StatusSlot5);
 
-			DrawBitmapRect(dc, x + 12, y + yOffsetSlot5LEDs, &rDiskLed, g_hDiskWindowedLED[eDrive1StatusSlot5]);
-			DrawBitmapRect(dc, x + 31, y + yOffsetSlot5LEDs, &rDiskLed, g_hDiskWindowedLED[eDrive2StatusSlot5]);
-		}
+		if (g_eStatusDrive1 == DISK_STATUS_OFF) g_eStatusDrive1 = eDrive1StatusSlot5;
+		if (g_eStatusDrive2 == DISK_STATUS_OFF) g_eStatusDrive2 = eDrive2StatusSlot5;
 	}
+
+	// Draw Track/Sector
+	FrameReleaseDC();
+	HDC  dc = (passdc ? passdc : GetDC(g_hFrameWindow));
+
+	RECT rcStatus = GetStatusRect(0);
+	int  x = rcStatus.left;
+	int  y = rcStatus.top;
+
+	RECT rDiskLed = { 0, 0, 8, 8 };
+
+	int offset = (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2 ? 0 : 6) + IS_APPLE2 ? 8 : 0;
+
+	DrawBitmapRect(dc, x + 13, y + yOffsetSlot6LEDs + offset, &rDiskLed, g_hDiskWindowedLED[g_eStatusDrive1], FALSE);
+	DrawBitmapRect(dc, x + 32, y + yOffsetSlot6LEDs + offset, &rDiskLed, g_hDiskWindowedLED[g_eStatusDrive2], FALSE);
+	
+	if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
+	{
+		Disk_Status_e eDrive1StatusSlot5 = DISK_STATUS_OFF;
+		Disk_Status_e eDrive2StatusSlot5 = DISK_STATUS_OFF;
+		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT5)).GetLightStatus(&eDrive1StatusSlot5, &eDrive2StatusSlot5);
+	
+		DrawBitmapRect(dc, x + 13, y + yOffsetHardDiskLED + smallfontHeight + 1, &rDiskLed, g_hDiskWindowedLED[eDrive1StatusSlot5], FALSE);
+		DrawBitmapRect(dc, x + 32, y + yOffsetHardDiskLED + smallfontHeight + 1, &rDiskLed, g_hDiskWindowedLED[eDrive2StatusSlot5], FALSE);
+	}
+	
+	if (!passdc)
+		ReleaseDC(g_hFrameWindow, dc);
 }
 
 void Win32Frame::FrameDrawDiskStatus()
@@ -694,40 +713,47 @@ void Win32Frame::CreateTrackSectorStrings(int track, int sector, std::string& st
 
 void Win32Frame::DrawTrackSector(HDC dc, UINT slot, int drive1Track, int drive1Sector, int drive2Track, int drive2Sector)
 {
-	const int x = buttonx;
-	const int y = buttony + BUTTONS * BUTTONCY + 1;
+	RECT rcStatus = GetStatusRect(slot == SLOT6 ? 1 : 2);
+	if (rcStatus.left < 0)
+		return;
 
-	const UINT yOffsetSlotNTrackInfo = (slot == SLOT6) ? yOffsetSlot6TrackInfo : yOffsetSlot5TrackInfo;
-	const UINT yOffsetSlotNSectorInfo = yOffsetSlotNTrackInfo + smallfontHeight;
+	const int x = rcStatus.left;
+	const int y = rcStatus.top;
 
 	// Erase background (TrackInfo + SectorInfo)
-	SelectObject(dc, GetStockObject(NULL_PEN));
-	SelectObject(dc, btnfacebrush);
-	Rectangle(dc, x + 4, y + yOffsetSlotNTrackInfo, x + BUTTONCX + 1, y + yOffsetSlotNSectorInfo + smallfontHeight);
+	//FillSolidRect(dc, x + 1, y - 1, x + BUTTONCX - 1, y + BUTTONCY - 1, GetSysColor(COLOR_BTNFACE));
+	// Draw3dRect(dc, x, y, x + BUTTONCX, y + BUTTONCY, 0);
 
+	SelectObject(dc, smallfont);
+	SetTextAlign(dc, TA_LEFT | TA_TOP);
 	SetTextColor(dc, RGB(0, 0, 0));
-	SetBkMode(dc, TRANSPARENT);
+	SetBkMode(dc, OPAQUE);
+	SetBkColor(dc, GetSysColor(COLOR_BTNFACE));
 
 	std::string strTrackDrive1, strSectorDrive1, strTrackDrive2, strSectorDrive2;
 	CreateTrackSectorStrings(drive1Track, drive1Sector, strTrackDrive1, strSectorDrive1);
 	CreateTrackSectorStrings(drive2Track, drive2Sector, strTrackDrive2, strSectorDrive2);
 
 	std::string text;
-	text = "T" + strTrackDrive1;
-	TextOut(dc, x + 6, y + yOffsetSlotNTrackInfo, text.c_str(), text.length());
-	text = "S" + strSectorDrive1;
-	TextOut(dc, x + 6, y + yOffsetSlotNSectorInfo, text.c_str(), text.length());
 
-	text = "T" + strTrackDrive2;
-	TextOut(dc, x + 26, y + yOffsetSlotNTrackInfo, text.c_str(), text.length());
-	text = "S" + strSectorDrive2;
-	TextOut(dc, x + 26, y + yOffsetSlotNSectorInfo, text.c_str(), text.length());
+	text = slot == SLOT6 ? "Slot 6:" : "Slot 5:";
+	TextOut(dc, x + 5, y + 5, text.c_str(), text.length());
+
+	text = "T" + strTrackDrive1 + "  ";
+	TextOut(dc, x + 5, y + 7 + smallfontHeight, text.c_str(), text.length());
+	text = "S" + strSectorDrive1 + "  ";
+	TextOut(dc, x + 5, y + 7 + smallfontHeight + smallfontHeight, text.c_str(), text.length());
+
+	text = "T" + strTrackDrive2 + "  ";
+	TextOut(dc, x + 25, y + 7 + smallfontHeight, text.c_str(), text.length());
+	text = "S" + strSectorDrive2 + "  ";
+	TextOut(dc, x + 25, y + 7 + smallfontHeight + smallfontHeight, text.c_str(), text.length());
 }
 
 // Feature Request #201 Show track status
 // https://github.com/AppleWin/AppleWin/issues/201
 //===========================================================================
-void Win32Frame::FrameDrawDiskStatus( HDC passdc )
+void Win32Frame::FrameDrawDiskStatus(HDC passdc)
 {
 	if (mem == NULL)
 		return;
@@ -738,59 +764,31 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 	if (g_windowMinimized)	// Prevent DC leaks when app window is minimised (GH#820)
 		return;
 
+	if (g_bIsFullScreen && !m_fullScreenToolbarVisible)
+		return;
+
+	// NB. Only draw Track/Sector if 2x windowed
+	if (/*GetViewportScale() <= 1 || */!GetWindowedModeShowDiskiiStatus())
+		return;
+
 	int nDrive1Track, nDrive2Track, nActiveFloppy;
 	GetTrackSector(SLOT6, nDrive1Track, nDrive2Track, nActiveFloppy);
 
 	// Draw Track/Sector
 	FrameReleaseDC();
-	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
-	const int x = buttonx;
-	const int y = buttony + BUTTONS * BUTTONCY + 1;
+	HDC dc = (passdc ? passdc : GetDC(g_hFrameWindow));
 
-	SelectObject(dc,smallfont);
-	SetBkMode(dc,OPAQUE);
-	SetBkColor(dc,RGB(0,0,0));
-	SetTextAlign(dc,TA_LEFT | TA_TOP);
+	DrawTrackSector(dc, SLOT6, nDrive1Track, g_nSector[SLOT6][0], nDrive2Track, g_nSector[SLOT6][1]);
 
-	if (g_bIsFullScreen)
+	// Slot 5's Disk II
+	if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 	{
-		// GH#57 - drive lights in full screen mode (Slot 6 only)
-
-		if (!g_bFullScreen_ShowSubunitStatus)
-			return;
-
-		std::string strTrackDrive1, strSectorDrive1, strTrackDrive2, strSectorDrive2;
-		CreateTrackSectorStrings(nDrive1Track, g_nSector[SLOT6][0], strTrackDrive1, strSectorDrive1);
-		CreateTrackSectorStrings(nDrive2Track, g_nSector[SLOT6][1], strTrackDrive2, strSectorDrive2);
-
-		std::string text = ( nActiveFloppy == 0 )
-			? StrFormat( "%s/%s    ", strTrackDrive1.c_str(), strSectorDrive1.c_str() )
-			: StrFormat( "%s/%s    ", strTrackDrive2.c_str(), strSectorDrive2.c_str() );
-
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[ DISK_STATUS_READ ] );
-		TextOut(dc, x, y, text.c_str(), text.length());
-
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[g_eStatusDrive1]);
-		TextOut(dc, x + 3, y + smallfontHeight, TEXT("1"), 1);
-
-		SetTextColor(dc, g_aDiskFullScreenColorsLED[g_eStatusDrive2]);
-		TextOut(dc, x + 13, y + smallfontHeight, TEXT("2"), 1);
-	}
-	else
-	{
-		// NB. Only draw Track/Sector if 2x windowed
-		if (g_nViewportScale == 1 || !GetWindowedModeShowDiskiiStatus())
-			return;
-
-		DrawTrackSector(dc, SLOT6, nDrive1Track, g_nSector[SLOT6][0], nDrive2Track, g_nSector[SLOT6][1]);
-
-		// Slot 5's Disk II
-		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
-		{
-			GetTrackSector(SLOT5, nDrive1Track, nDrive2Track, nActiveFloppy);
-			DrawTrackSector(dc, SLOT5, nDrive1Track, g_nSector[SLOT5][0], nDrive2Track, g_nSector[SLOT5][1]);
-		}
-	}
+		GetTrackSector(SLOT5, nDrive1Track, nDrive2Track, nActiveFloppy);
+		DrawTrackSector(dc, SLOT5, nDrive1Track, g_nSector[SLOT5][0], nDrive2Track, g_nSector[SLOT5][1]);
+	}	
+	
+	if (!passdc)
+		ReleaseDC(g_hFrameWindow, dc);
 }
 
 //===========================================================================
@@ -804,173 +802,100 @@ void Win32Frame::DrawStatusArea(HDC passdc, int drawflags)
 		return;
 	}
 
+	if (g_bIsFullScreen && !m_fullScreenToolbarVisible)
+		return;
+
 	FrameReleaseDC();
-	HDC  dc     = (passdc ? passdc : GetDC(g_hFrameWindow));
-	const int x = buttonx;
-	const int y = buttony + BUTTONS * BUTTONCY + 1;
+	HDC  dc = (passdc ? passdc : GetDC(g_hFrameWindow));
+
+	RECT rcStatus = GetStatusRect(0);
+
+	int  x = rcStatus.left;
+	int  y = rcStatus.top;
+
 	const bool bCaps = KeybGetCapsStatus();
 
 	Disk_Status_e eHardDriveStatus = DISK_STATUS_OFF;
 	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
 		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).GetLightStatus(&eHardDriveStatus);
 
-	if (g_bIsFullScreen)
+	int offset = (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2 ? 0 : 6) + IS_APPLE2 ? 8 : 0;
+
+	if (drawflags & DRAW_BACKGROUND)
 	{
-		if (!g_bFullScreen_ShowSubunitStatus)
+		// Erase background (Slot6 drive LEDs, HDD LED & Caps)
+		FillSolidRect(dc, x + 1, y + 1, x - 2, y + BUTTONCY - 2, GetSysColor(COLOR_BTNFACE));
+		// Draw3dRect(dc, x, y, x + BUTTONCX, y + BUTTONCY, 0);
+
+		// Add text for Slot6 drives: "1" & "2"
+		SelectObject(dc, smallfont);
+		SetTextAlign(dc, TA_CENTER | TA_TOP);
+		SetTextColor(dc, RGB(0, 0, 0));
+		SetBkMode(dc, TRANSPARENT);
+
+		TextOut(dc, x + 7, y +  yOffsetSlot6LEDNumbers + offset, "1", 1);
+		TextOut(dc, x + 27, y + yOffsetSlot6LEDNumbers + offset, "2", 1);
+
+		// Add text for Slot7 harddrive: "H"
+		if (!IS_APPLE2)
+			TextOut(dc, x + 7, y + yOffsetHardDiskLED + offset, TEXT("H"), 1);
+		
+		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 		{
-			// Erase Config button icon too, as trk/sec is written here - see FrameDrawDiskStatus()
-			RECT rect = {x-2,y-BUTTONCY,x+BUTTONCX+2,y+BUTTONCY};	// Extend rect's width by +/-2 as the TITLE_PAUSED text is wider than an icon button
-			FillRect(dc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
-		}
-		else
-		{
-			SelectObject(dc,smallfont);
-
-			if (drawflags & DRAW_DISK_STATUS)
-			{
-				FrameDrawDiskStatus(dc);
-			}
-
-			if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-			{
-				SetTextAlign(dc, TA_RIGHT | TA_TOP);
-				SetTextColor(dc, g_aDiskFullScreenColorsLED[eHardDriveStatus]);
-				TextOut(dc, x + 23, y + 2, TEXT("H"), 1);
-			}
-
-			if (!IS_APPLE2)
-			{
-				SetTextAlign(dc,TA_RIGHT | TA_TOP);
-				SetTextColor(dc,(bCaps
-					? RGB(128,128,128)
-					: RGB(  0,  0,  0) ));
-
-				TextOut(dc,x+BUTTONCX,y+2,TEXT("A"),1); // NB. Caps Lock indicator is already flush right!
-			}
-
-			//
-
-			static const char* pCurrentAppModeText = NULL;
-
-			const char* const pNewAppModeText = (g_nAppMode == MODE_PAUSED)
-				? TITLE_PAUSED
-				: (g_nAppMode == MODE_STEPPING)
-					? TITLE_STEPPING
-					: NULL;
-
-			SetTextAlign(dc, TA_CENTER | TA_TOP);
-
-			if (pCurrentAppModeText && pNewAppModeText != pCurrentAppModeText)
-			{
-				SetTextColor(dc, RGB(0,0,0));
-				TextOut(dc, x+BUTTONCX/2, y+13, pCurrentAppModeText, strlen(pCurrentAppModeText));
-				pCurrentAppModeText = NULL;
-			}
-
-			if (pNewAppModeText)
-			{
-				SetTextColor(dc, RGB(255,255,255));
-				TextOut(dc, x+BUTTONCX/2, y+13, pNewAppModeText, strlen(pNewAppModeText));
-				pCurrentAppModeText = pNewAppModeText;
-			}
+			TextOut(dc, x + 7, y + yOffsetHardDiskLED + smallfontHeight + 1, "1", 1);
+			TextOut(dc, x + 27, y + yOffsetHardDiskLED + smallfontHeight + 1, "2", 1);
 		}
 	}
-	else // !g_bIsFullScreen
+
+	if (drawflags & DRAW_LEDS)
 	{
-		if (drawflags & DRAW_BACKGROUND)
+		FrameDrawDiskLEDS(dc);
+
+		if (drawflags & DRAW_DISK_STATUS)
+			FrameDrawDiskStatus(dc);
+
+		if (!IS_APPLE2)
 		{
-			// Erase background (Slot6 drive LEDs, HDD LED & Caps)
-			SelectObject(dc,GetStockObject(NULL_PEN));
-			SelectObject(dc,btnfacebrush);
-			Rectangle(dc,x,y,x+BUTTONCX+2,y+34);
-			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+30,0);
+			RECT rCapsLed = { 0, 0, 10, 12 }; // HACK: HARD-CODED bitmaps size
 
-			// Add text for Slot6 drives: "1" & "2"
-			SelectObject(dc,smallfont);
-			SetTextAlign(dc,TA_CENTER | TA_TOP);
-			SetTextColor(dc,RGB(0,0,0));
-			SetBkMode(dc,TRANSPARENT);
-			TextOut(dc, x + 7, y + yOffsetSlot6LEDNumbers, "1", 1);
-			TextOut(dc, x + 27, y + yOffsetSlot6LEDNumbers, "2", 1);
-
-			// Add text for Slot7 harddrive: "H"
-			TextOut(dc, x + 7, y + yOffsetCapsLock, TEXT("H"), 1);
-
-			if (g_nViewportScale > 1)
+			switch (g_Apple2Type)
 			{
-				if (m_redrawDiskiiStatus)
-				{
-					m_redrawDiskiiStatus = false;
-
-					// Erase background (Slot6's TrackInfo + SectorInfo + "Slot 5" + LEDs + TrackInfo + SectorInfo)
-					SelectObject(dc, GetStockObject(NULL_PEN));
-					SelectObject(dc, btnfacebrush);
-					Rectangle(dc, x + 1, y + yOffsetSlot6TrackInfo, x + BUTTONCX + 1, y + yOffsetSlot5SectorInfo + smallfontHeight);
-				}
-
-				if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
-				{
-					std::string slot5 = "Slot 5:";
-					TextOut(dc, x + 15, y + yOffsetSlot5Label, slot5.c_str(), slot5.length());
-					TextOut(dc, x + 7, y + yOffsetSlot5LEDNumbers, "1", 1);
-					TextOut(dc, x + 27, y + yOffsetSlot5LEDNumbers, "2", 1);
-				}
+			case A2TYPE_APPLE2:
+			case A2TYPE_APPLE2PLUS:
+			case A2TYPE_APPLE2E:
+			case A2TYPE_APPLE2EENHANCED:
+			default: DrawBitmapRect(dc, x + 32, y + yOffsetCapsLock + offset, &rCapsLed, g_hCapsLockBitmap[bCaps != 0], FALSE); break;
+			case A2TYPE_PRAVETS82:
+			case A2TYPE_PRAVETS8M: DrawBitmapRect(dc, x + 32, y + yOffsetCapsLock + offset, &rCapsLed, g_hCapsBitmapP8[bCaps != 0], FALSE); break; // TODO: FIXME: Shouldn't one of these use g_hCapsBitmapLat ??
+			case A2TYPE_PRAVETS8A: DrawBitmapRect(dc, x + 32, y + yOffsetCapsLock + offset, &rCapsLed, g_hCapsBitmapP8[bCaps != 0], FALSE); break;
 			}
+
+			RECT rDiskLed = { 0, 0, 8, 8 };
+			DrawBitmapRect(dc, x + 13, y + yOffsetHardDiskLED + offset, &rDiskLed, g_hDiskWindowedLED[eHardDriveStatus], FALSE);
 		}
+	}
 
-		if (drawflags & DRAW_LEDS)
-		{
-			FrameDrawDiskLEDS( dc );
+	if (drawflags & DRAW_TITLE)
+	{
+		GetAppleWindowTitle(); // SetWindowText() // WindowTitle
+		SendMessage(g_hFrameWindow, WM_SETTEXT, 0, (LPARAM)g_pAppTitle.c_str());
+	}
 
-			if (drawflags & DRAW_DISK_STATUS)
-				FrameDrawDiskStatus( dc );
-
-			if (!IS_APPLE2)
-			{
-				RECT rCapsLed = {0,0,10,12}; // HACK: HARD-CODED bitmaps size
-				switch (g_Apple2Type)
-				{
-					case A2TYPE_APPLE2:
-					case A2TYPE_APPLE2PLUS:
-					case A2TYPE_APPLE2E:
-					case A2TYPE_APPLE2EENHANCED:
-					default: DrawBitmapRect(dc, x + 31, y + yOffsetCapsLock, &rCapsLed, g_hCapsLockBitmap[bCaps != 0]); break;
-					case A2TYPE_PRAVETS82:
-					case A2TYPE_PRAVETS8M: DrawBitmapRect(dc, x + 31, y + yOffsetCapsLock, &rCapsLed, g_hCapsBitmapP8[bCaps != 0]); break; // TODO: FIXME: Shouldn't one of these use g_hCapsBitmapLat ??
-					case A2TYPE_PRAVETS8A: DrawBitmapRect(dc, x + 31, y + yOffsetCapsLock, &rCapsLed, g_hCapsBitmapP8[bCaps != 0]); break;
-				}
-
-				RECT rDiskLed = {0,0,8,8};
-				DrawBitmapRect(dc, x + 12, y + yOffsetHardDiskLED, &rDiskLed, g_hDiskWindowedLED[eHardDriveStatus]);
-			}
-		}
-
-		if (drawflags & DRAW_TITLE)
-		{
-			GetAppleWindowTitle(); // SetWindowText() // WindowTitle
-			SendMessage(g_hFrameWindow,WM_SETTEXT,0,(LPARAM)g_pAppTitle.c_str());
-		}
-
-		if (drawflags & DRAW_BUTTON_DRIVES)
-		{
-			DrawButton(dc, BTN_DRIVE1);
-			DrawButton(dc, BTN_DRIVE2);
-		}
+	if (drawflags & DRAW_BUTTON_DRIVES)
+	{
+		DrawButton(dc, BTN_DRIVE1);
+		DrawButton(dc, BTN_DRIVE2);
 	}
 
 	if (!passdc)
-		ReleaseDC(g_hFrameWindow,dc);
+		ReleaseDC(g_hFrameWindow, dc);
 }
 
 //===========================================================================
-void Win32Frame::EraseButton (int number) {
-  RECT rect;
-  rect.left   = buttonx;
-  rect.right  = rect.left+BUTTONCX;
-  rect.top    = buttony+number*BUTTONCY;
-  rect.bottom = rect.top+BUTTONCY;
-
-	InvalidateRect(g_hFrameWindow,&rect,1);
+void Win32Frame::EraseButton(int number) 
+{
+	RECT rect = GetButtonRect(number);
+	InvalidateRect(g_hFrameWindow, &rect, 1);
 }
 
 //===========================================================================
@@ -985,6 +910,8 @@ LRESULT CALLBACK Win32Frame::FrameWndProc(
 	return win32Frame.WndProc(window, message, wparam, lparam);
 }
 
+
+
 LRESULT Win32Frame::WndProc(
 	HWND   window,
 	UINT   message,
@@ -992,7 +919,17 @@ LRESULT Win32Frame::WndProc(
 	LPARAM lparam)
 {
 	switch (message)
-	{
+	{		
+	case WM_GETMINMAXINFO:
+		{
+			SIZE sz = GetWidthHeight(1);
+
+			LPMINMAXINFO pMMI = (LPMINMAXINFO)lparam;
+			pMMI->ptMinTrackSize.x = sz.cx;
+			pMMI->ptMinTrackSize.y = sz.cy;
+		}
+		break;
+		
     case WM_ACTIVATE:		// Sent when window is activated/deactivated. wParam indicates WA_ACTIVE, WA_INACTIVE, etc
 							// Eg. Deactivate when Config dialog is active, AppleWin app loses focus, etc
       JoyReset();
@@ -1020,6 +957,9 @@ LRESULT Win32Frame::WndProc(
 		default:	// SIZE_MAXSHOW, SIZE_MAXHIDE
 			break;
 		}
+
+		OnSizeChanged();
+		InvalidateRect(g_hFrameWindow, NULL, 1);
 		break;
 
     case WM_CLOSE:
@@ -1117,7 +1057,7 @@ LRESULT Win32Frame::WndProc(
 			if (Error == eIMAGE_ERROR_NONE)
 			{
 				if (!g_bIsFullScreen)
-					DrawButton((HDC)0,BTN_DRIVE1);
+					EraseButton(BTN_DRIVE1);
 
 				PostMessage(window, WM_USER_BOOT, 0, 0);
 			}
@@ -1144,18 +1084,15 @@ LRESULT Win32Frame::WndProc(
 			DragQueryFile((HDROP)wparam,0,filename,sizeof(filename));
 			POINT point;
 			DragQueryPoint((HDROP)wparam,&point);
-			RECT rect;
-			rect.left   = buttonx;
-			rect.right  = rect.left+BUTTONCX+1;
-			rect.top    = buttony+BTN_DRIVE2*BUTTONCY+1;
-			rect.bottom = rect.top+BUTTONCY;
+			RECT rect = GetButtonRect(BTN_DRIVE2);
 			const int iDrive = PtInRect(&rect,point) ? DRIVE_2 : DRIVE_1;
 			ImageError_e Error = disk2Card.InsertDisk(iDrive, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 			if (Error == eIMAGE_ERROR_NONE)
 			{
 				if (!g_bIsFullScreen)
-					DrawButton((HDC)0,PtInRect(&rect,point) ? BTN_DRIVE2 : BTN_DRIVE1);
-				rect.top = buttony+BTN_DRIVE1*BUTTONCY+1;
+					EraseButton(PtInRect(&rect,point) ? BTN_DRIVE2 : BTN_DRIVE1);
+
+				rect = GetButtonRect(BTN_DRIVE1);				
 				if (!PtInRect(&rect,point))
 				{
 					SetForegroundWindow(window);
@@ -1212,13 +1149,13 @@ LRESULT Win32Frame::WndProc(
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
 		{
 			SetUsingCursor(FALSE);
-			buttondown = wparam-VK_F1;
+			buttondown = (wparam - VK_F1 - 1) % BUTTONS;			
 			if (g_bIsFullScreen && (buttonover != -1)) {
 				if (buttonover != buttondown)
 				EraseButton(buttonover);
 				buttonover = -1;
 			}
-			DrawButton((HDC)0,buttondown);
+			EraseButton(buttondown);
 		}
 		else if (wparam == VK_F9)
 		{
@@ -1387,32 +1324,37 @@ LRESULT Win32Frame::WndProc(
 			break;
 
 	case WM_KEYUP:
-		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == (int)wparam-VK_F1))
+		if (wparam >= VK_F1 && wparam <= VK_F8)
 		{
-			buttondown = -1;
-			if (g_bIsFullScreen)
-				EraseButton(wparam-VK_F1);
-			else
-				DrawButton((HDC)0,wparam-VK_F1);
-
-			const int iButton = wparam-VK_F1;
-			if (KeybGetCtrlStatus() && (wparam == VK_F3 || wparam == VK_F4))	// Ctrl+F3/F4 for drive pop-up menu (GH#817)
+			int btn = (wparam - VK_F1 - 1) % BUTTONS;
+			if (buttondown == btn)
 			{
-				POINT pt;		// location of mouse click
-				pt.x = buttonx + BUTTONCX/2;
-				pt.y = buttony + BUTTONCY/2 + iButton * BUTTONCY;
-				const int iDrive = wparam - VK_F3;
-				ProcessDiskPopupMenu( window, pt, iDrive );
+				buttondown = -1;
+				EraseButton(btn);
 
-				FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
-				DrawButton((HDC)0, iButton);
-			}
-			else
-			{
-				ProcessButtonClick(iButton, true);
+				const int iButton = btn;
+				if (KeybGetCtrlStatus() && (wparam == VK_F3 || wparam == VK_F4))	// Ctrl+F3/F4 for drive pop-up menu (GH#817)
+				{
+					RECT rcButton = GetButtonRect(iButton);
+										
+					// Center point
+					POINT pt;
+					pt.x = rcButton.left + (rcButton.right - rcButton.left) / 2;
+					pt.y = rcButton.top + (rcButton.bottom - rcButton.top) / 2;
+
+					const int iDrive = btn + 2;
+					ProcessDiskPopupMenu(window, pt, iDrive);
+
+					FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
+					EraseButton(iButton);
+				}
+				else
+				{
+					ProcessButtonClick(iButton, true);
+				}
 			}
 		}
-		else
+		else 
 		{
 			bool extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
 			bool down     = false;
@@ -1434,14 +1376,14 @@ LRESULT Win32Frame::WndProc(
 	  {
         int x = LOWORD(lparam);
         int y = HIWORD(lparam);
-        if ((x >= buttonx) &&
-            (y >= buttony) &&
-            (y <= buttony+BUTTONS*BUTTONCY))
+
+		int btn = HitTestButton(x, y);
+		if (btn >= 0)
 		{
-          buttonactive = buttondown = (y-buttony-1)/BUTTONCY;
-          DrawButton((HDC)0,buttonactive);
-          SetCapture(window);
-        }
+			buttonactive = buttondown = btn; // buttondown = (y - buttony - 1) / BUTTONCY;
+			EraseButton(buttonactive);
+			SetCapture(window);
+		}
         else if (g_bUsingCursor && !GetCardMgr().IsMouseCardInstalled())
 		{
           if (wparam & (MK_CONTROL | MK_SHIFT))
@@ -1453,9 +1395,11 @@ LRESULT Win32Frame::WndProc(
 	        JoySetButton(BUTTON0, BUTTON_DOWN);
 		  }
 		}
-        else if ( ((x < buttonx) && JoyUsingMouse() && ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING))) )
-		{
-          SetUsingCursor(TRUE);
+        else if ((JoyUsingMouse() && ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING))))
+		{			
+			RECT rcVid = GetVideoRect();
+			if (::PtInRect(&rcVid, POINT{ x, y }))
+				SetUsingCursor(TRUE);
 		}
 		else if (GetCardMgr().IsMouseCardInstalled())
 		{
@@ -1495,85 +1439,117 @@ LRESULT Win32Frame::WndProc(
       break;
 
     case WM_LBUTTONUP:
-      if (buttonactive != -1) {
-        ReleaseCapture();
-        if (buttondown == buttonactive) {
-          buttondown = -1;
-          if (g_bIsFullScreen)
-            EraseButton(buttonactive);
-          else
-            DrawButton((HDC)0,buttonactive);
-          ProcessButtonClick(buttonactive, true);
-        }
-        buttonactive = -1;
-      }
-      else if (g_bUsingCursor && !GetCardMgr().IsMouseCardInstalled())
-	  {
-	    JoySetButton(BUTTON0, BUTTON_UP);
-	  }
-	  else if (GetCardMgr().IsMouseCardInstalled())
-	  {
-		GetCardMgr().GetMouseCard()->SetButton(BUTTON0, BUTTON_UP);
-	  }
-      RelayEvent(WM_LBUTTONUP,wparam,lparam);
-      break;
+		if (buttonactive != -1) 
+		{
+			ReleaseCapture();
+			if (buttondown == buttonactive)
+			{
+				buttondown = -1;
+				DrawButton(NULL, buttonactive);
+				ProcessButtonClick(buttonactive, true);
+			}
+			int old = buttonactive;
+			buttonactive = -1;
+			EraseButton(old);
+		}
+		else if (g_bUsingCursor && !GetCardMgr().IsMouseCardInstalled())
+		{
+			JoySetButton(BUTTON0, BUTTON_UP);
+		}
+		else if (GetCardMgr().IsMouseCardInstalled())
+		{
+			GetCardMgr().GetMouseCard()->SetButton(BUTTON0, BUTTON_UP);
+		}
+		RelayEvent(WM_LBUTTONUP,wparam,lparam);
+		break;
 
-    case WM_MOUSEMOVE: {
-      // MSDN: "WM_MOUSEMOVE message" : Do not use the LOWORD or HIWORD macros to extract the x- and y- coordinates...
-      int x = GET_X_LPARAM(lparam);
-      int y = GET_Y_LPARAM(lparam);
-      int newover = (((x >= buttonx) &&
-                      (x <= buttonx+BUTTONCX) &&
-                      (y >= buttony) &&
-                      (y <= buttony+BUTTONS*BUTTONCY))
-                     ? (y-buttony-1)/BUTTONCY : -1);
-      if (buttonactive != -1) {
-        int newdown = (newover == buttonactive) ? buttonactive : -1;
-        if (newdown != buttondown) {
-          buttondown = newdown;
-          DrawButton((HDC)0,buttonactive);
-        }
-      }
-      else if (g_bIsFullScreen && (newover != buttonover) && (buttondown == -1)) {
-        if (buttonover != -1)
-          EraseButton(buttonover);
-        buttonover = newover;
-        if (buttonover != -1)
-          DrawButton((HDC)0,buttonover);
-      }
-      else if (g_bUsingCursor && !GetCardMgr().IsMouseCardInstalled())
-	  {
-        DrawCrosshairs(x,y);
-	    JoySetPosition(x-viewportx-2, g_nViewportCX-4, y-viewporty-2, g_nViewportCY-4);
-      }
-	  else if (GetCardMgr().IsMouseCardInstalled() && GetCardMgr().GetMouseCard()->IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
-	  {
+	case WM_MOUSELEAVE:
+		if (buttonover != -1)
+		{
+			int old = buttonover;
+			buttonover = -1;
+			EraseButton(old);
+		}
+		break;
+
+    case WM_MOUSEMOVE: 
+	{
+		// MSDN: "WM_MOUSEMOVE message" : Do not use the LOWORD or HIWORD macros to extract the x- and y- coordinates...
+		int x = GET_X_LPARAM(lparam);
+		int y = GET_Y_LPARAM(lparam);
+
+		RECT rc = GetToolbarRect();
+		BOOL fullScreenTb = IsFullScreen() && (buttonactive >= 0 || ::PtInRect(&rc, POINT{ x, y }));
+		if (m_fullScreenToolbarVisible != fullScreenTb)
+		{
+			m_fullScreenToolbarVisible = fullScreenTb;
+			InvalidateRect(g_hFrameWindow, &rc, TRUE);
+		}
+
+		int newover = HitTestButton(x, y);
+		if (buttonactive != -1)
+		{
+			int newdown = (newover == buttonactive) ? buttonactive : -1;
+			if (newdown != buttondown)
+			{
+				buttondown = newdown;
+				EraseButton(buttonactive);
+			}
+		}
+		else if (newover != buttonover)
+		{
+			if (buttonover != -1)
+				EraseButton(buttonover);				
+
+			buttonover = newover;
+
+			if (buttonover != -1)
+			{
+				TRACKMOUSEEVENT tme;
+				tme.cbSize = sizeof(TRACKMOUSEEVENT);
+				tme.dwFlags = TME_LEAVE;
+				tme.hwndTrack = window;
+				::_TrackMouseEvent(&tme);
+
+				DrawButton(NULL, buttonover); 
+				//EraseButton(buttonover);
+			}
+		}
+		else if (g_bUsingCursor && !GetCardMgr().IsMouseCardInstalled())
+		{
+			DrawCrosshairs(x, y);
+			RECT rc = GetVideoRect();
+			JoySetPosition(x - rc.left, rc.right, y - rc.top, rc.bottom);
+		}
+		else if (GetCardMgr().IsMouseCardInstalled() && GetCardMgr().GetMouseCard()->IsActiveAndEnabled() && (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_STEPPING))
+		{
 			if (g_bLastCursorInAppleViewport)
 				break;
 
 			// Outside Apple viewport
 
-			const int iAppleScreenMaxX = g_nViewportCX-1;
-			const int iAppleScreenMaxY = g_nViewportCY-1;
-			const int iBoundMinX = viewportx;
+			RECT rc = GetVideoRect();
+			const int iAppleScreenMaxX = rc.right - rc.left - 1;
+			const int iAppleScreenMaxY = rc.bottom - rc.top - 1;
+			const int iBoundMinX = rc.left;
 			const int iBoundMaxX = iAppleScreenMaxX;
-			const int iBoundMinY = viewporty;
+			const int iBoundMinY = rc.top;
 			const int iBoundMaxY = iAppleScreenMaxY;
 
-			int iOutOfBoundsX=0, iOutOfBoundsY=0;
-			if (x < iBoundMinX)	iOutOfBoundsX=-1;
-			if (x > iBoundMaxX)	iOutOfBoundsX=1;
-			if (y < iBoundMinY)	iOutOfBoundsY=-1;
-			if (y > iBoundMaxY)	iOutOfBoundsY=1;
+			int iOutOfBoundsX = 0, iOutOfBoundsY = 0;
+			if (x < iBoundMinX)	iOutOfBoundsX = -1;
+			if (x > iBoundMaxX)	iOutOfBoundsX = 1;
+			if (y < iBoundMinY)	iOutOfBoundsY = -1;
+			if (y > iBoundMaxY)	iOutOfBoundsY = 1;
 
 			UpdateMouseInAppleViewport(iOutOfBoundsX, iOutOfBoundsY, x, y);
-	  }
+		}
 
-      FullScreenRevealCursor();
+		FullScreenRevealCursor();
 
-      RelayEvent(WM_MOUSEMOVE,wparam,lparam);
-      break;
-    }
+		RelayEvent(WM_MOUSEMOVE, wparam, lparam);
+		break;
+	}
 
 	case WM_TIMER:
 		if (wparam == IDEVENT_TIMER_MOUSE)
@@ -1635,7 +1611,31 @@ LRESULT Win32Frame::WndProc(
 		if (((LPNMTTDISPINFO)lparam)->hdr.hwndFrom == tooltipwindow && ((LPNMTTDISPINFO)lparam)->hdr.code == TTN_GETDISPINFO)
 		{
 			LPNMTTDISPINFO pInfo = (LPNMTTDISPINFO)lparam;
-			if (pInfo->hdr.idFrom == TTID_DRIVE1_BUTTON || pInfo->hdr.idFrom == TTID_DRIVE2_BUTTON)
+
+			driveTooltip = "";
+
+			switch (pInfo->hdr.idFrom)
+			{
+			case BTN_RUN:
+				driveTooltip = "Run (F2)";
+				break;
+			case BTN_HELP:
+				driveTooltip = "Help (F1)";
+				break;
+			case BTN_DRIVESWAP:
+				driveTooltip = "Swap drives (F5)";
+				break;
+			case BTN_FULLSCR:
+				driveTooltip = "Fullscreen (F6)";
+				break;
+			case BTN_DEBUG:
+				driveTooltip = "Debugger (F7)";
+				break;
+			case BTN_SETUP:
+				driveTooltip = "Setup (F8)";
+				break;
+			case BTN_DRIVE1:
+			case BTN_DRIVE2:
 			{
 				SendMessage(pInfo->hdr.hwndFrom, TTM_SETMAXTIPWIDTH, 0, 150);
 
@@ -1646,8 +1646,9 @@ LRESULT Win32Frame::WndProc(
 				if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 					pDisk2Slot6 = dynamic_cast<Disk2InterfaceCard*>(GetCardMgr().GetObj(SLOT6));
 
-				std::string slot5 = pDisk2Slot5 ? pDisk2Slot5->GetFullDiskFilename(pInfo->hdr.idFrom) : "";
-				std::string slot6 = pDisk2Slot6 ? pDisk2Slot6->GetFullDiskFilename(pInfo->hdr.idFrom) : "";
+				int drive = pInfo->hdr.idFrom - BTN_DRIVE1;
+				std::string slot5 = pDisk2Slot5 ? pDisk2Slot5->GetFullDiskFilename(drive) : "";
+				std::string slot6 = pDisk2Slot6 ? pDisk2Slot6->GetFullDiskFilename(drive) : "";
 
 				if (pDisk2Slot5)
 				{
@@ -1659,11 +1660,11 @@ LRESULT Win32Frame::WndProc(
 
 				std::string join = (!slot6.empty() && !slot5.empty()) ? "\n" : "";
 				driveTooltip = slot6 + join + slot5;
-				pInfo->lpszText = (LPTSTR)driveTooltip.c_str();
 			}
-			else if (pInfo->hdr.idFrom == TTID_SLOT6_TRK_SEC_INFO || pInfo->hdr.idFrom == TTID_SLOT5_TRK_SEC_INFO)
+			case TTID_SLOT6_TRK_SEC_INFO:
+			case TTID_SLOT5_TRK_SEC_INFO:
 			{
-				if (!GetWindowedModeShowDiskiiStatus())
+				if (g_nAppMode == MODE_LOGO || !GetWindowedModeShowDiskiiStatus())
 					break;
 
 				SendMessage(pInfo->hdr.hwndFrom, TTM_SETMAXTIPWIDTH, 0, 200);
@@ -1713,11 +1714,14 @@ LRESULT Win32Frame::WndProc(
 				if (g_nSector[slot][1] >= 0) sprintf_s(sector, "%02d", g_nSector[slot][1]);
 				driveTooltip += sector;
 				driveTooltip += ")";
-
-				pInfo->lpszText = (LPTSTR)driveTooltip.c_str();
 			}
+			}
+
+			if (!driveTooltip.empty())
+				pInfo->lpszText = (LPTSTR)driveTooltip.c_str();
 		}
 		break;
+
 
     case WM_PAINT:
       if (GetUpdateRect(window,NULL,0)){
@@ -1739,16 +1743,15 @@ LRESULT Win32Frame::WndProc(
 
     case WM_RBUTTONDOWN:
     case WM_RBUTTONUP:
-		if ((buttonover == -1) && (message == WM_RBUTTONUP)) // HACK: BUTTON_NONE
+		if (message == WM_RBUTTONUP) // HACK: BUTTON_NONE
 		{
 			int x = LOWORD(lparam);
 			int y = HIWORD(lparam);
 
-			if ((x >= buttonx) &&
-				(y >= buttony) &&
-				(y <= buttony+BUTTONS*BUTTONCY))
+			int btn = HitTestButton(x, y);
+			if (btn >= 0)
 			{
-				const int iButton = (y-buttony-1)/BUTTONCY;
+				const int iButton = btn;
 				const int iDrive = iButton - BTN_DRIVE1;
 				if ((iButton == BTN_DRIVE1) || (iButton == BTN_DRIVE2))
 				{
@@ -1771,8 +1774,15 @@ LRESULT Win32Frame::WndProc(
                 	}
 
 					FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
-					DrawButton((HDC)0, iButton);
+					EraseButton(iButton);
 				}			
+			}			
+			else
+			{
+				RECT rcToolbar = GetToolbarRect();
+				POINT pt = { x, y };
+				if (::PtInRect(&rcToolbar, pt))
+					ProcessToolbarPopupMenu(window, pt);
 			}
 		}
 
@@ -1929,8 +1939,6 @@ LRESULT Win32Frame::WndProc(
   return DefWindowProc(window,message,wparam,lparam);
 }
 
-
-
 //===========================================================================
 // Process: VK_F6
 void Win32Frame::ScreenWindowResize(const bool bCtrlKey)
@@ -1943,13 +1951,13 @@ void Win32Frame::ScreenWindowResize(const bool bCtrlKey)
 		FrameResizeWindow(nOldViewportScale);
 	}
 	else if (bCtrlKey)		// if normal screen && CTRL: then toggle scaling
-	{
-		FrameResizeWindow( (g_nViewportScale == 1) ? 2 : 1 );	// Toggle between 1x and 2x
-		REGSAVE(TEXT(REGVALUE_WINDOW_SCALE), g_nViewportScale);
+	{		
+		nOldViewportScale = nOldViewportScale == 1 ? 2 : 1;
+		FrameResizeWindow(nOldViewportScale);	// Toggle between 1x and 2x
+		// REGSAVE(TEXT(REGVALUE_WINDOW_SCALE), nOldViewportScale);
 	}
 	else
 	{
-		nOldViewportScale = g_nViewportScale;
 		FrameResizeWindow(1);	// reset to 1x
 		SetFullScreenMode();
 	}
@@ -2042,7 +2050,7 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		{
 			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).UserSelectNewDiskImage(button-BTN_DRIVE1);
 			if (!g_bIsFullScreen)
-				DrawButton((HDC)0,button);
+				EraseButton(button);
 		}
 		break;
 
@@ -2087,6 +2095,7 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
     case BTN_SETUP:
       {
 		  GetPropertySheet().Init();
+		  InvalidateRect(g_hFrameWindow, NULL, 1); // In case Integer scale changed
       }
       break;
 
@@ -2222,6 +2231,56 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	_ASSERT(bRes);
 }
 
+void Win32Frame::ProcessToolbarPopupMenu(HWND hWnd, POINT point)
+{
+	//  Load the menu template containing the shortcut menu from the
+//  application's resources.
+	HMENU hmenu = LoadMenu(g_hInstance, MAKEINTRESOURCE(IDR_MENU_TOOLBAR));	// menu template
+	if (hmenu == NULL)
+		return;
+
+	ClientToScreen(hWnd, &point);
+
+	switch (m_toolbarPosition)
+	{
+	case ToolbarPosition::TOP:
+		CheckMenuItem(hmenu, ID_TOOLBAR_TOP, MF_CHECKED);
+		break;
+	case ToolbarPosition::BOTTOM:
+		CheckMenuItem(hmenu, ID_TOOLBAR_BOTTOM, MF_CHECKED);
+		break;
+	case ToolbarPosition::LEFT:
+		CheckMenuItem(hmenu, ID_TOOLBAR_LEFT, MF_CHECKED);
+		break;
+	case ToolbarPosition::RIGHT:
+		CheckMenuItem(hmenu, ID_TOOLBAR_RIGHT, MF_CHECKED);
+		break;
+	}
+
+	// Get the first shortcut menu in the menu template.
+	// This is the menu that TrackPopupMenu displays.
+	HMENU hmenuTrackPopup = GetSubMenu(hmenu, 0);
+
+	int iCommand = TrackPopupMenu(hmenuTrackPopup, TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RETURNCMD, point.x, point.y , 0 , hWnd, NULL);
+	switch (iCommand)
+	{
+	case ID_TOOLBAR_TOP:
+		m_toolbarPosition = ToolbarPosition::TOP;		
+		break;
+	case ID_TOOLBAR_BOTTOM:
+		m_toolbarPosition = ToolbarPosition::BOTTOM;
+		break;
+	case ID_TOOLBAR_LEFT:
+		m_toolbarPosition = ToolbarPosition::LEFT;
+		break;
+	case ID_TOOLBAR_RIGHT:
+		m_toolbarPosition = ToolbarPosition::RIGHT;
+		break;
+	}
+
+	RegSaveValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_TOOLBAR), 1, (DWORD) m_toolbarPosition);
+	InvalidateRect(g_hFrameWindow, NULL, 1);
+}
 
 //===========================================================================
 void Win32Frame::RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
@@ -2237,16 +2296,6 @@ void Win32Frame::RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 
 
 //===========================================================================
-
-int Win32Frame::GetFullScreenOffsetX(void)
-{
-	return g_win_fullscreen_offsetx;
-}
-
-int Win32Frame::GetFullScreenOffsetY(void)
-{
-	return g_win_fullscreen_offsety;
-}
 
 void Win32Frame::SetFullScreenMode(void)
 {
@@ -2271,11 +2320,6 @@ void Win32Frame::SetFullScreenMode(void)
 	}
 
 	//
-
-	MONITORINFO monitor_info;
-	FULLSCREEN_SCALE_TYPE width, height, scalex, scaley;
-	int top, left;
-
 	buttonover = -1;
 
 	g_main_window_saved_style = GetWindowLong(g_hFrameWindow, GWL_STYLE);
@@ -2284,40 +2328,22 @@ void Win32Frame::SetFullScreenMode(void)
 	SetWindowLong(g_hFrameWindow, GWL_STYLE  , g_main_window_saved_style   & ~(WS_CAPTION | WS_THICKFRAME));
 	SetWindowLong(g_hFrameWindow, GWL_EXSTYLE, g_main_window_saved_exstyle & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
 	
+	MONITORINFO monitor_info;
 	monitor_info.cbSize = sizeof(monitor_info);
 	GetMonitorInfo(MonitorFromWindow(g_hFrameWindow, MONITOR_DEFAULTTONEAREST), &monitor_info);
 
-	left = monitor_info.rcMonitor.left;
-	top  = monitor_info.rcMonitor.top;
+	int left = monitor_info.rcMonitor.left;
+	int top  = monitor_info.rcMonitor.top;
+	int width  = monitor_info.rcMonitor.right  - monitor_info.rcMonitor.left;
+	int height = monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top;
 
-	width  = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.right  - monitor_info.rcMonitor.left);
-	height = (FULLSCREEN_SCALE_TYPE)(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top );
-
-	scalex = width  / GetVideo().GetFrameBufferBorderlessWidth();
-	scaley = height / GetVideo().GetFrameBufferBorderlessHeight();
-
-	// Retain aspect ratio if user hasn't changed full-screen resolution (GH#1121)
-	if (!GetFullScreenResolutionChangedByUser())
-	{
-		const int minimumScale = (scalex <= scaley) ? scalex : scaley;
-		scalex = scaley = minimumScale;
-	}
-
-	// NB. Separate x,y scaling is OK in full-screen mode
-	// . eg. SHR 640x400 (scalex=2, scaley=3) => 1280x1200, which roughly gives a 4:3 aspect ratio for a resolution of 1600x1200
-	g_win_fullscreen_offsetx = ((int)width - (int)(scalex * GetVideo().GetFrameBufferBorderlessWidth())) / 2;
-	g_win_fullscreen_offsety = ((int)height - (int)(scaley * GetVideo().GetFrameBufferBorderlessHeight())) / 2;
 	SetWindowPos(g_hFrameWindow, NULL, left, top, (int)width, (int)height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+
 	g_bIsFullScreen = true;
+	m_fullScreenToolbarVisible = false;
 
-	SetFullScreenViewportScale(scalex, scaley);
-
-	buttonx    = GetFullScreenOffsetX() + g_nViewportCX + VIEWPORTX*2;
-	buttony    = GetFullScreenOffsetY();
-	viewportx  = VIEWPORTX;		// TC-TODO: Should be zero too? (Since there's no 3D border in full-screen)
-	viewporty  = 0; // GH#464
-
-	InvalidateRect(g_hFrameWindow,NULL,1);
+	OnSizeChanged();
+	InvalidateRect(g_hFrameWindow, NULL, 1);
 
 #endif // NO_DIRECT_X
 }
@@ -2335,13 +2361,7 @@ void Win32Frame::SetNormalMode(void)
 	FullScreenRevealCursor();	// Do before clearing g_bIsFullScreen flag
 
 	buttonover = -1;
-	buttonx    = BUTTONX;
-	buttony    = BUTTONY;
-	viewportx  = VIEWPORTX;
-	viewporty  = VIEWPORTY;
 
-	g_win_fullscreen_offsetx = 0;
-	g_win_fullscreen_offsety = 0;
 	SetWindowLong(g_hFrameWindow, GWL_STYLE, g_main_window_saved_style);
 	SetWindowLong(g_hFrameWindow, GWL_EXSTYLE, g_main_window_saved_exstyle);
 	SetWindowPos(g_hFrameWindow, NULL,
@@ -2350,7 +2370,9 @@ void Win32Frame::SetNormalMode(void)
 		g_main_window_saved_rect.right - g_main_window_saved_rect.left,
 		g_main_window_saved_rect.bottom - g_main_window_saved_rect.top,
 		SWP_SHOWWINDOW);
+
 	g_bIsFullScreen = false;
+	m_fullScreenToolbarVisible = false;
 }
 
 //===========================================================================
@@ -2367,10 +2389,7 @@ void Win32Frame::SetUsingCursor (BOOL bNewValue)
 		// . Using mouse for joystick emulation
 		// . Using mousecard and mouse is restricted to window
 		SetCapture(g_hFrameWindow);
-		RECT rect =	{	viewportx+2,				// left
-						viewporty+2,				// top
-						viewportx+g_nViewportCX-1,	// right
-						viewporty+g_nViewportCY-1};	// bottom
+		RECT rect = GetVideoRect();
 		ClientToScreen(g_hFrameWindow,(LPPOINT)&rect.left);
 		ClientToScreen(g_hFrameWindow,(LPPOINT)&rect.right);
 		ClipCursor(&rect);
@@ -2391,104 +2410,81 @@ void Win32Frame::SetUsingCursor (BOOL bNewValue)
 
 int Win32Frame::GetViewportScale(void)
 {
-	return g_nViewportScale;
-}
-
-int Win32Frame::SetViewportScale(int nNewScale, bool bForce /*=false*/)
-{
-	if (!bForce && nNewScale > g_nMaxViewportScale)
-		nNewScale = g_nMaxViewportScale;
-
-	g_nViewportScale = nNewScale;
-	g_nViewportCX = g_nViewportScale * GetVideo().GetFrameBufferBorderlessWidth();
-	g_nViewportCY = g_nViewportScale * GetVideo().GetFrameBufferBorderlessHeight();
-
-	buttonx = BUTTONX;	// NB. macro uses g_nViewportCX
-	buttony = BUTTONY;
-
-	return nNewScale;
-}
-
-void Win32Frame::SetFullScreenViewportScale(int nNewXScale, int nNewYScale)
-{
-	g_nViewportScale = MIN(nNewXScale, nNewYScale);	// Not needed in FS mode
-	g_nViewportCX = nNewXScale * GetVideo().GetFrameBufferBorderlessWidth();
-	g_nViewportCY = nNewYScale * GetVideo().GetFrameBufferBorderlessHeight();
-
-	buttonx = BUTTONX;	// NB. macro uses g_nViewportCX
-	buttony = BUTTONY;
+	RECT rc = GetClientArea();
+	int scale = max(1, (rc.bottom - rc.top + 32) / GetVideo().GetFrameBufferHeight()); // Add 32 pixels margin
+	return scale;
 }
 
 void Win32Frame::SetupTooltipControls(void)
 {
+	// Remove the tooltips for the old window size
+	for (int i = SendMessage(tooltipwindow, TTM_GETTOOLCOUNT, 0, 0); i > 0; i--)
+	{
+		TOOLINFO ti;
+		ti.cbSize = sizeof(ti);
+		if (SendMessage(tooltipwindow, TTM_ENUMTOOLS, i - 1, (LPARAM)&ti))
+			SendMessage(tooltipwindow, TTM_DELTOOL, 0, (LPARAM)&ti);
+	}
+
 	TOOLINFO toolinfo;
 	toolinfo.cbSize = sizeof(toolinfo);
-	toolinfo.uFlags = TTF_CENTERTIP;
 	toolinfo.hwnd = g_hFrameWindow;
+	toolinfo.uFlags = TTF_CENTERTIP;
 	toolinfo.hinst = g_hInstance;
 	toolinfo.lpszText = LPSTR_TEXTCALLBACK;
-	toolinfo.rect.left  = BUTTONX;
-	toolinfo.rect.right = toolinfo.rect.left+BUTTONCX+1;
 
-	toolinfo.uId = TTID_DRIVE1_BUTTON;
-	toolinfo.rect.top    = BUTTONY+BTN_DRIVE1*BUTTONCY+1;
-	toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
-	SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
-
-	toolinfo.uId = TTID_DRIVE2_BUTTON;
-	toolinfo.rect.top    = BUTTONY+BTN_DRIVE2*BUTTONCY+1;
-	toolinfo.rect.bottom = toolinfo.rect.top+BUTTONCY;
-	SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
-
-	if (g_nViewportScale > 1)
+	for (int i = 0; i < BUTTONS; i++)
 	{
-		if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
-		{
-			toolinfo.uId = TTID_SLOT6_TRK_SEC_INFO;
-			toolinfo.rect.top = BUTTONY + BUTTONS * BUTTONCY + 1 + yOffsetSlot6TrackInfo;
-			toolinfo.rect.bottom = toolinfo.rect.top + smallfontHeight * 2;
-			SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
-		}
+		toolinfo.uId = i;
+		toolinfo.rect = GetButtonRect(i);
+		SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
+	}
 
-		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
-		{
-			toolinfo.uId = TTID_SLOT5_TRK_SEC_INFO;
-			toolinfo.rect.top = BUTTONY + BUTTONS * BUTTONCY + 1 + yOffsetSlot5TrackInfo;
-			toolinfo.rect.bottom = toolinfo.rect.top + smallfontHeight * 2;
+	if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
+	{
+		toolinfo.uId = TTID_SLOT6_TRK_SEC_INFO;			
+		toolinfo.rect = GetStatusRect(1);
+		if (toolinfo.rect.left >= 0)
 			SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
-		}
+	}
+
+	if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
+	{
+		toolinfo.uId = TTID_SLOT5_TRK_SEC_INFO;
+		toolinfo.rect = GetStatusRect(2);
+		if (toolinfo.rect.left >= 0)
+			SendMessage(tooltipwindow, TTM_ADDTOOL, 0, (LPARAM)&toolinfo);
 	}
 }
 
 // SM_CXPADDEDBORDER is not supported on 2000 & XP, but GetSystemMetrics() returns 0 for unknown values, so this use of SM_CXPADDEDBORDER works on 2000 & XP too:
 // http://msdn.microsoft.com/en-nz/library/windows/desktop/ms724385(v=vs.85).aspx
 // NB. GetSystemMetrics(SM_CXPADDEDBORDER) returns 0 for Win7, when built with VS2008 (see GH#571)
-void Win32Frame::GetWidthHeight(int& nWidth, int& nHeight)
-{
-	nWidth  = g_nViewportCX + VIEWPORTX*2
-						    + BUTTONCX
-						    + (GetSystemMetrics(SM_CXFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2;
-	nHeight = g_nViewportCY + VIEWPORTY*2
-						    + (GetSystemMetrics(SM_CYFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2	// NB. No SM_CYPADDEDBORDER
-						    + GetSystemMetrics(SM_CYCAPTION);
 
-#if 0	// GH#571
-	LogOutput("g_nViewportCX                       = %d\n", g_nViewportCX);
-	LogOutput("VIEWPORTX                           = %d (const)\n", VIEWPORTX);
-	LogOutput("BUTTONCX                            = %d (const)\n", BUTTONCX);
-	LogOutput("GetSystemMetrics(SM_CXFRAME)        = %d (unused)\n", GetSystemMetrics(SM_CXFRAME));
-	LogOutput("GetSystemMetrics(SM_CXFIXEDFRAME)   = %d\n", GetSystemMetrics(SM_CXFIXEDFRAME));
-	LogOutput("GetSystemMetrics(SM_CXBORDER)       = %d (unused)\n", GetSystemMetrics(SM_CXBORDER));
-	LogOutput("GetSystemMetrics(SM_CXPADDEDBORDER) = %d\n", GetSystemMetrics(SM_CXPADDEDBORDER));
-	LogOutput("nWidth                              = %d\n", nWidth);
-	LogOutput("g_nViewportCY                       = %d\n", g_nViewportCY);
-	LogOutput("VIEWPORTY                           = %d (const)\n", VIEWPORTY);
-	LogOutput("GetSystemMetrics(SM_CYFRAME)        = %d (unused)\n", GetSystemMetrics(SM_CYFRAME));
-	LogOutput("GetSystemMetrics(SM_CYFIXEDFRAME)   = %d\n", GetSystemMetrics(SM_CYFIXEDFRAME));
-	LogOutput("GetSystemMetrics(SM_CYBORDER)       = %d (unused)\n", GetSystemMetrics(SM_CYBORDER));
-	LogOutput("GetSystemMetrics(SM_CYCAPTION)      = %d\n", GetSystemMetrics(SM_CYCAPTION));
-	LogOutput("nHeight                             = %d\n\n", nHeight);
+SIZE Win32Frame::GetWidthHeight(int scaleFactor)
+{
+#if RENDER_BORDERMARGIN
+	int nViewportCX = GetVideo().GetFrameBufferWidth() * scaleFactor;
+	int nViewportCY = GetVideo().GetFrameBufferHeight() * scaleFactor;
+#else
+	int nViewportCX = GetVideo().GetFrameBufferBorderlessWidth() * scaleFactor;
+	int nViewportCY = GetVideo().GetFrameBufferBorderlessHeight() * scaleFactor;
 #endif
+
+	RECT rc = GetToolbarRect();
+
+	SIZE sz =
+	{
+		nViewportCX + GetSystemMetrics(SM_CXFRAME) * 2,
+		nViewportCY + GetSystemMetrics(SM_CYFRAME) * 2 + GetSystemMetrics(SM_CYCAPTION)
+	};
+
+	if (m_toolbarPosition == ToolbarPosition::TOP || m_toolbarPosition == ToolbarPosition::BOTTOM)
+		sz.cy += BUTTONCY;
+	else 
+		sz.cx += BUTTONCX;
+
+	return sz;
 }
 
 // Window frame's border size has changed (eg. VidHD added/removed)
@@ -2499,42 +2495,17 @@ void Win32Frame::ResizeWindow(void)
 
 void Win32Frame::FrameResizeWindow(int nNewScale)
 {
-	int nOldWidth, nOldHeight;
-	GetWidthHeight(nOldWidth, nOldHeight);
+	RECT rcWindow;
+	GetWindowRect(g_hFrameWindow, &rcWindow);
 
-	nNewScale = SetViewportScale(nNewScale);
+	SIZE sz = GetWidthHeight(nNewScale);
 
-	GetWindowRect(g_hFrameWindow, &framerect);
-	int nXPos = framerect.left;
-	int nYPos = framerect.top;
-
-	// Invalidate old rect region
-	{
-		RECT irect;
-		irect.left = irect.top = 0;
-		irect.right = nOldWidth;
-		irect.bottom = nOldHeight;
-		InvalidateRect(g_hFrameWindow, &irect, TRUE);
-	}
-
-	// Resize the window
-	int nNewWidth, nNewHeight;
-	GetWidthHeight(nNewWidth, nNewHeight);
-
-	MoveWindow(g_hFrameWindow, nXPos, nYPos, nNewWidth, nNewHeight, TRUE);
+	MoveWindow(g_hFrameWindow, rcWindow.left, rcWindow.top, sz.cx, sz.cy, TRUE);
 	UpdateWindow(g_hFrameWindow);
+}
 
-	// Remove the tooltips for the old window size
-	TOOLINFO toolinfo = {0};
-	toolinfo.cbSize = sizeof(toolinfo);
-	toolinfo.hwnd = g_hFrameWindow;
-
-	for (UINT id = 0; id < TTID_MAX; id++)
-	{
-		toolinfo.uId = id;
-		SendMessage(tooltipwindow, TTM_DELTOOL, 0, (LPARAM)&toolinfo);
-	}
-
+void Win32Frame::OnSizeChanged()
+{
 	// Setup the tooltips for the new window size
 	SetupTooltipControls();
 }
@@ -2547,38 +2518,18 @@ void Win32Frame::FrameResizeWindow(int nNewScale)
 
 void Win32Frame::FrameCreateWindow(void)
 {
-	int nWidth, nHeight;
+	SIZE sz = GetWidthHeight(2);
+	if (sz.cx > GetSystemMetrics(SM_CXSCREEN) || sz.cy > GetSystemMetrics(SM_CYSCREEN))
+		sz = GetWidthHeight(1);
 
-	// Set g_nMaxViewportScale
-	{
-		int nOldViewportCX = g_nViewportCX;
-		int nOldViewportCY = g_nViewportCY;
-
-		g_nViewportCX = GetVideo().GetFrameBufferBorderlessWidth() * 2;
-		g_nViewportCY = GetVideo().GetFrameBufferBorderlessHeight() * 2;
-		GetWidthHeight(nWidth, nHeight);	// Probe with 2x dimensions
-
-		g_nViewportCX = nOldViewportCX;
-		g_nViewportCY = nOldViewportCY;
-
-		if (nWidth > GetSystemMetrics(SM_CXSCREEN) || nHeight > GetSystemMetrics(SM_CYSCREEN))
-			g_nMaxViewportScale = 1;
-	}
-
-	GetWidthHeight(nWidth, nHeight);
-
-	// If screen is too small for 2x, then revert to 1x
-	if (g_nViewportScale == 2 && (nWidth > GetSystemMetrics(SM_CXSCREEN) || nHeight > GetSystemMetrics(SM_CYSCREEN)))
-	{
-		g_nMaxViewportScale = 1;
-		SetViewportScale(1);
-		GetWidthHeight(nWidth, nHeight);
-	}
+	DWORD dwToolbar;
+	if (RegLoadValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_TOOLBAR), 1, &dwToolbar))
+		m_toolbarPosition = (ToolbarPosition) dwToolbar;
 
 	// Restore Window X Position
 	int nXPos = -1;
 	{
-		const int nXScreen = GetSystemMetrics(SM_CXSCREEN) - nWidth;
+		const int nXScreen = GetSystemMetrics(SM_CXSCREEN) - sz.cx;
 
 		if (RegLoadValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_X_POS), 1, (DWORD*)&nXPos))
 		{
@@ -2593,7 +2544,7 @@ void Win32Frame::FrameCreateWindow(void)
 	// Restore Window Y Position
 	int nYPos = -1;
 	{
-		const int nYScreen = GetSystemMetrics(SM_CYSCREEN) - nHeight;
+		const int nYScreen = GetSystemMetrics(SM_CYSCREEN) - sz.cy;
 
 		if (RegLoadValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_Y_POS), 1, (DWORD*)&nYPos))
 		{
@@ -2605,33 +2556,32 @@ void Win32Frame::FrameCreateWindow(void)
 			nYPos = nYScreen / 2;
 	}
 
-	//
-
-	buttonx = (g_nViewportCX + VIEWPORTX*2);
-	buttony = 0;
-
 	GetAppleWindowTitle();
 
 	// NB. g_hFrameWindow also set by WM_CREATE - NB. CreateWindow() must synchronously send WM_CREATE
 	g_hFrameWindow = CreateWindow(
 		TEXT("APPLE2FRAME"),
 		g_pAppTitle.c_str(),
-		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
-		WS_MINIMIZEBOX | WS_VISIBLE,
-		nXPos, nYPos, nWidth, nHeight,
+		WS_THICKFRAME | WS_CAPTION | WS_SYSMENU |
+		WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE,
+		nXPos, nYPos, sz.cx, sz.cy,
 		HWND_DESKTOP,
 		(HMENU)0,
 		g_hInstance, NULL );
 
 	InitCommonControls();
 	tooltipwindow = CreateWindow(
-		TOOLTIPS_CLASS,NULL,TTS_ALWAYSTIP|TTS_NOPREFIX /*Allow tabs in tooltips*/ ,
+		TOOLTIPS_CLASS,NULL,TTS_ALWAYSTIP | TTS_NOPREFIX,
 		CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT, 
 		g_hFrameWindow,
 		(HMENU)0,
 		g_hInstance,NULL );
 
+	SendMessage(tooltipwindow, TTM_SETDELAYTIME, TTDT_INITIAL, GetDoubleClickTime());
+	SendMessage(tooltipwindow, TTM_SETDELAYTIME, TTDT_RESHOW, GetDoubleClickTime() / 2);
+
 	SetupTooltipControls();
+	OnSizeChanged();
 
 	_ASSERT(g_TimerIDEvent_100msec == 0);
 	g_TimerIDEvent_100msec = SetTimer(g_hFrameWindow, IDEVENT_TIMER_100MSEC, 100, NULL);
@@ -2642,23 +2592,22 @@ void Win32Frame::FrameCreateWindow(void)
 HDC Win32Frame::FrameGetDC () {
   if (!g_hFrameDC) {
     g_hFrameDC = GetDC(g_hFrameWindow);
-    SetViewportOrgEx(g_hFrameDC,viewportx,viewporty,NULL);
   }
   return g_hFrameDC;
 }
 
 //===========================================================================
 void Win32Frame::FrameReleaseDC () {
-  if (g_hFrameDC) {
-    SetViewportOrgEx(g_hFrameDC,0,0,NULL);
+  if (g_hFrameDC) {    
     ReleaseDC(g_hFrameWindow,g_hFrameDC);
     g_hFrameDC = (HDC)0;
   }
 }
 
 //===========================================================================
-void Win32Frame::FrameRefreshStatus (int drawflags) {
-	DrawStatusArea((HDC)0,drawflags);
+void Win32Frame::FrameRefreshStatus (int drawflags) 
+{
+	InvalidateRect(g_hFrameWindow, NULL, 1);
 }
 
 //===========================================================================
@@ -2711,17 +2660,18 @@ void Win32Frame::FrameSetCursorPosByMousePos()
 	float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));
 	float fScaleY = (float)(iY-iMinY) / ((float)(iMaxY-iMinY));
 
-	int iWindowX = (int)(fScaleX * (float)g_nViewportCX);
-	int iWindowY = (int)(fScaleY * (float)g_nViewportCY);
+	RECT rc = GetVideoRect();
+	int iWindowX = rc.left + (int)(fScaleX * (float)(rc.right - rc.left));
+	int iWindowY = rc.top + (int)(fScaleY * (float)(rc.bottom - rc.top));
 
-	POINT Point = {viewportx+2, viewporty+2};	// top-left
-	ClientToScreen(g_hFrameWindow, &Point);
-	SetCursorPos(Point.x+iWindowX-VIEWPORTX, Point.y+iWindowY-VIEWPORTY);
+	POINT pt = { 0, 0 };
+	ClientToScreen(g_hFrameWindow, &pt);
+	SetCursorPos(pt.x + iWindowX, pt.y + iWindowY);
 
 #if defined(_DEBUG) && 0	// OutputDebugString() when cursor position changes since last time
 	static int OldX = 0, OldY = 0;
-	int X = Point.x + iWindowX - VIEWPORTX;
-	int Y = Point.y + iWindowY - VIEWPORTY;
+	int X = pt.x + iWindowX;
+	int Y = pt.y + iWindowY;
 	if (X != OldX || Y != OldY)
 	{
 		LogOutput("[FrameSetCursorPosByMousePos] x,y=%d,%d (MaxX,Y=%d,%d)\n", X, Y, iMaxX, iMaxY);
@@ -2746,6 +2696,8 @@ void Win32Frame::FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool 
 	int iY, iMinY, iMaxY;
 	GetCardMgr().GetMouseCard()->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 
+	RECT rc = GetVideoRect();
+
 	if (bLeavingAppleScreen)
 	{
 		// Set mouse x/y pos to edge of mouse's window
@@ -2756,28 +2708,19 @@ void Win32Frame::FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool 
 
 		float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));
 		float fScaleY = (float)(iY-iMinY) / ((float)(iMaxY-iMinY));
+		
+		int iWindowX = rc.left + (int)(fScaleX * (float)(rc.right - rc.left)) + dx;
+		int iWindowY = rc.top + (int)(fScaleY * (float)(rc.bottom - rc.top)) + dy;
 
-		int iWindowX = (int)(fScaleX * (float)g_nViewportCX) + dx;
-		int iWindowY = (int)(fScaleY * (float)g_nViewportCY) + dy;
-
-		POINT Point = {viewportx+2, viewporty+2};	// top-left
-		ClientToScreen(g_hFrameWindow, &Point);
-		SetCursorPos(Point.x+iWindowX-VIEWPORTX, Point.y+iWindowY-VIEWPORTY);
+		POINT pt = { 0, 0 };	// top-left
+		ClientToScreen(g_hFrameWindow, &pt);
+		SetCursorPos(pt.x + iWindowX, pt.y + iWindowY);
 		//LogOutput("[MOUSE_LEAVING ] x=%d, y=%d (Scale: x,y=%f,%f; iX,iY=%d,%d)\n", iWindowX, iWindowY, fScaleX, fScaleY, iX, iY);
 	}
 	else	// Mouse entering Apple screen area
 	{
-		//LogOutput("[MOUSE_ENTERING] x=%d, y=%d\n", x, y);
-		if (!g_bIsFullScreen)	// GH#464
-		{
-			x -= (viewportx+2-VIEWPORTX); if (x < 0) x = 0;
-			y -= (viewporty+2-VIEWPORTY); if (y < 0) y = 0;
-		}
-
-		_ASSERT(x <= g_nViewportCX);
-		_ASSERT(y <= g_nViewportCY);
-		float fScaleX = (float)x / (float)g_nViewportCX;
-		float fScaleY = (float)y / (float)g_nViewportCY;
+		float fScaleX = (float)x / (float)(rc.right - rc.left);
+		float fScaleY = (float)y / (float)(rc.bottom - rc.top);
 
 		int iAppleX = iMinX + (int)(fScaleX * (float)(iMaxX-iMinX));
 		int iAppleY = iMinY + (int)(fScaleY * (float)(iMaxY-iMinY));
@@ -2806,8 +2749,9 @@ void Win32Frame::DrawCrosshairsMouse()
 	float fScaleX = (float)(iX-iMinX) / ((float)(iMaxX-iMinX));
 	float fScaleY = (float)(iY-iMinY) / ((float)(iMaxY-iMinY));
 
-	int iWindowX = (int)(fScaleX * (float)g_nViewportCX);
-	int iWindowY = (int)(fScaleY * (float)g_nViewportCY);
+	RECT rc = GetVideoRect();
+	int iWindowX = rc.left + (int)(fScaleX * (float)(rc.right - rc.left));
+	int iWindowY = rc.top + (int)(fScaleY * (float)(rc.bottom - rc.top));
 
 	DrawCrosshairs(iWindowX,iWindowY);
 }
@@ -2864,12 +2808,6 @@ void Win32Frame::UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY
 
 		DrawCrosshairsMouse();
 	}
-}
-
-void Win32Frame::GetViewportCXCY(int& nViewportCX, int& nViewportCY)
-{
-	nViewportCX = g_nViewportCX;
-	nViewportCY = g_nViewportCY;
 }
 
 // Call all funcs with dependency on g_Apple2Type

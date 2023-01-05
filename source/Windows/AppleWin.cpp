@@ -804,8 +804,6 @@ static void RepeatInitialization(void)
 
 		// Create window after inserting/removing VidHD card (as it affects width & height)
 		{
-			Win32Frame::GetWin32Frame().SetViewportScale(Win32Frame::GetWin32Frame().GetViewportScale(), true);
-
 			GetFrame().Initialize(true); // g_pFramebufferinfo been created now & COM init'ed
 			LogFileOutput("Main: VideoInitialize()\n");
 

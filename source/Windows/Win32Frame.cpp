@@ -17,13 +17,15 @@
 
 Win32Frame::Win32Frame()
 {
+	m_toolbarPosition = ToolbarPosition::TOP;
+	m_fullScreenToolbarVisible = false;
 	g_pFramebufferinfo = NULL;
 	num_draw_devices = 0;
 	g_lpDD = NULL;
 	g_hLogoBitmap = (HBITMAP)0;
 	g_hDeviceBitmap = (HBITMAP)0;
 	g_hDeviceDC = (HDC)0;
-	g_bAltEnter_ToggleFullScreen = false;
+	g_bAltEnter_ToggleFullScreen = true;
 	g_bIsFullScreen = false;
 	g_bShowingCursor = true;
 	g_bLastCursorInAppleViewport = false;
@@ -33,14 +35,11 @@ Win32Frame::Win32Frame()
 	g_bAppActive = false;
 	g_bFrameActive = false;
 	g_windowMinimized = false;
-	g_bFullScreen_ShowSubunitStatus = true;
-	g_win_fullscreen_offsetx = 0;
-	g_win_fullscreen_offsety = 0;
+	g_bIntegerScale = false;
+	g_bStretchVideo = false;
 	m_bestWidthForFullScreen = 0;
 	m_bestHeightForFullScreen = 0;
 	m_changedDisplaySettings = false;
-
-	g_nMaxViewportScale = kDEFAULT_VIEWPORT_SCALE;	// Max scale in Windowed mode with borders, buttons etc (full-screen may be +1)
 
 	btnfacebrush = (HBRUSH)0;
 	btnfacepen = (HPEN)0;
@@ -55,8 +54,6 @@ Win32Frame::Win32Frame()
 	helpquit = 0;
 	smallfont = (HFONT)0;
 	tooltipwindow = (HWND)0;
-	viewportx = VIEWPORTX;	// Default to Normal (non-FullScreen) mode
-	viewporty = VIEWPORTY;	// Default to Normal (non-FullScreen) mode
 
 	g_bScrollLock_FullSpeed = false;
 
@@ -68,9 +65,6 @@ Win32Frame::Win32Frame()
 
 	g_eStatusDrive1 = DISK_STATUS_OFF;
 	g_eStatusDrive2 = DISK_STATUS_OFF;
-
-	// Set g_nViewportScale, g_nViewportCX, g_nViewportCY & buttonx, buttony
-	SetViewportScale(kDEFAULT_VIEWPORT_SCALE, true);
 
 	// Set m_showDiskiiStatus, m_redrawDiskiiStatus
 	SetWindowedModeShowDiskiiStatus(false);
@@ -354,32 +348,20 @@ void Win32Frame::ChooseMonochromeColor(void)
 
 //===========================================================================
 
-void Win32Frame::VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale)
-{
-	HDC hSrcDC = CreateCompatibleDC(hDstDC);
-	SelectObject(hSrcDC, g_hLogoBitmap);
-	StretchBlt(
-		hDstDC,   // hdcDest
-		xoff, yoff,  // nXDest, nYDest
-		scale * srcw, scale * srch, // nWidth, nHeight
-		hSrcDC,   // hdcSrc
-		0, 0,     // nXSrc, nYSrc
-		srcw, srch,
-		SRCCOPY   // dwRop
-	);
-
-	DeleteObject(hSrcDC);
-}
-
-//===========================================================================
-
 void Win32Frame::DisplayLogo(void)
 {
 	Video& video = GetVideo();
 	int nLogoX = 0, nLogoY = 0;
-	int scale = GetViewportScale();
 
 	HDC hFrameDC = FrameGetDC();
+
+	RECT rc = GetClientArea();
+
+	if (!IsFullScreen() || m_fullScreenToolbarVisible)
+	{
+		RECT rcToolbar = GetToolbarRect();
+		ExcludeClipRect(hFrameDC, rcToolbar.left, rcToolbar.top, rcToolbar.right, rcToolbar.bottom);
+	}
 
 	// DRAW THE LOGO
 	SelectObject(hFrameDC, GetStockObject(NULL_PEN));
@@ -389,16 +371,19 @@ void Win32Frame::DisplayLogo(void)
 		BITMAP bm;
 		if (GetObject(g_hLogoBitmap, sizeof(bm), &bm))
 		{
-			nLogoX = (g_nViewportCX - scale * bm.bmWidth) / 2;
-			nLogoY = (g_nViewportCY - scale * bm.bmHeight) / 2;
+			HDC hSrcDC = CreateCompatibleDC(hFrameDC);
+			SelectObject(hSrcDC, g_hLogoBitmap);
+			StretchBlt(
+				hFrameDC,   // hdcDest
+				rc.left, rc.top,  // nXDest, nYDest
+				rc.right - rc.left, rc.bottom - rc.top, // nWidth, nHeight
+				hSrcDC,   // hdcSrc
+				0, 0,     // nXSrc, nYSrc
+				bm.bmWidth, bm.bmHeight,
+				SRCCOPY   // dwRop
+			);
 
-			if (IsFullScreen())
-			{
-				nLogoX += GetFullScreenOffsetX();
-				nLogoY += GetFullScreenOffsetY();
-			}
-
-			VideoDrawLogoBitmap(hFrameDC, nLogoX, nLogoY, bm.bmWidth, bm.bmHeight, scale);
+			DeleteObject(hSrcDC);
 		}
 	}
 
@@ -409,16 +394,26 @@ void Win32Frame::DisplayLogo(void)
 		VARIABLE_PITCH | 4 | FF_SWISS,
 		sFontName);
 	SelectObject(hFrameDC, font);
-	SetTextAlign(hFrameDC, TA_RIGHT | TA_TOP);
+	SetTextAlign(hFrameDC, TA_LEFT | TA_TOP);
 	SetBkMode(hFrameDC, TRANSPARENT);
 
 	std::string strVersion = "Version " + g_VERSIONSTRING;
-	int xoff = GetFullScreenOffsetX(), yoff = GetFullScreenOffsetY();
+
+#if _DEBUG
+	strVersion += " - DEBUG";
+#endif
+
+	int xoff = -8;
+	int yoff = -8;
+
+	SIZE sz;
+	GetTextExtentPoint32(hFrameDC, strVersion.c_str(), strVersion.length(), &sz);
 
 #define  DRAWVERSION(x,y,c)                 \
 	SetTextColor(hFrameDC,c);               \
 	TextOut(hFrameDC,                       \
-		scale*540+x+xoff,scale*358+y+yoff,  \
+		rc.right - sz.cx + x + xoff,		\
+		rc.bottom - sz.cy + y + yoff,		\
 		strVersion.c_str(),                 \
 		strVersion.length());
 
@@ -433,19 +428,181 @@ void Win32Frame::DisplayLogo(void)
 		DRAWVERSION(0, 0, PALETTERGB(0x70, 0x30, 0xE0));
 	}
 
-#if _DEBUG
-	strVersion = "DEBUG";
-	DRAWVERSION(2, -358 * scale, RGB(0x00, 0x00, 0x00));
-	DRAWVERSION(1, -357 * scale, RGB(0x00, 0x00, 0x00));
-	DRAWVERSION(0, -356 * scale, RGB(0xFF, 0x00, 0xFF));
-#endif
+#undef DRAWVERSION
 
-#undef  DRAWVERSION
-
+	SelectClipRgn(hFrameDC, NULL);
 	DeleteObject(font);
 }
 
 //===========================================================================
+
+RECT Win32Frame::GetClientArea()
+{
+	RECT rc;
+	GetClientRect(g_hFrameWindow, &rc);
+
+	if (!IsFullScreen())
+	{
+		RECT rcToolbar = GetToolbarRect();
+		SubtractRect(&rc, &rc, &rcToolbar);
+	}
+
+	return rc;
+}
+
+RECT Win32Frame::GetToolbarRect()
+{
+	RECT rcClient;
+	GetClientRect(g_hFrameWindow, &rcClient);
+
+	switch (m_toolbarPosition)
+	{
+	case ToolbarPosition::RIGHT:
+		return { rcClient.right - BUTTONCX, rcClient.top, rcClient.right, rcClient.bottom };
+	case ToolbarPosition::LEFT:
+		return { rcClient.left, rcClient.top, rcClient.left + BUTTONCX, rcClient.bottom };
+	case ToolbarPosition::BOTTOM:
+		return { rcClient.left, rcClient.bottom - BUTTONCY, rcClient.right, rcClient.bottom};
+	}
+
+	// ToolbarPosition::TOP 
+	return { rcClient.left, rcClient.top, rcClient.right, rcClient.top + BUTTONCY };
+}
+
+RECT Win32Frame::GetButtonRect(int number)
+{
+	RECT rect = GetToolbarRect();
+
+	if (m_toolbarPosition == ToolbarPosition::TOP || m_toolbarPosition == ToolbarPosition::BOTTOM)
+	{
+		rect.left = rect.left + number * BUTTONCX;
+		rect.right = rect.left + BUTTONCX;
+	}
+	else
+	{
+		rect.top = rect.top + number * BUTTONCY;
+		rect.bottom = rect.top + BUTTONCY;
+	}
+
+	return rect;
+}
+
+int Win32Frame::HitTestButton(int x, int y)
+{
+	RECT rect = GetToolbarRect();
+
+	POINT pt = { x, y };
+	if (::PtInRect(&rect, pt))
+	{
+		if (m_toolbarPosition == ToolbarPosition::TOP || m_toolbarPosition == ToolbarPosition::BOTTOM)
+		{
+			if (x >= 0 && x <= BUTTONS * BUTTONCX)
+				return  (x - rect.left - 1) / BUTTONCX;
+		}
+		else
+		{
+			if (y >= 0 && y <= BUTTONS * BUTTONCY)
+				return  (y - rect.top - 1) / BUTTONCY;
+		}
+	}
+
+	return -1;
+}
+
+RECT Win32Frame::GetStatusRect(int number)
+{
+	RECT rc = GetToolbarRect();
+
+	int x = rc.left;
+	int y = rc.top;
+
+	if (m_toolbarPosition == ToolbarPosition::TOP || m_toolbarPosition == ToolbarPosition::BOTTOM)
+	{
+		x = rc.right - (number + 1) * BUTTONCX - 2;
+		if (number > 0 && x < BUTTONS * BUTTONCX)
+			return RECT{ -1, -1, -1, -1 };
+	}
+	else
+	{
+		y = rc.bottom - (number + 1) * BUTTONCY - 1;
+		if (number > 0 && y < BUTTONS * BUTTONCY)
+			return RECT{ -1, -1, -1, -1 };
+	}
+
+	return RECT{ x, y, x + BUTTONCX, y + BUTTONCY };
+}
+
+RECT Win32Frame::GetVideoRect()
+{
+	Video& video = GetVideo();
+
+	RECT rc = GetClientArea();
+
+	// TODO
+	if (g_bStretchVideo)
+		return rc;
+
+	int h = rc.bottom - rc.top;
+	int w = rc.right - rc.left;
+	int x = rc.left + w / 2;
+	int y = rc.top;
+
+	if (g_bIntegerScale)
+	{
+		// Integer scale
+#if RENDER_BORDERMARGIN
+		w = video.GetFrameBufferWidth();
+		h = video.GetFrameBufferHeight();
+#else
+		w = video.GetFrameBufferBorderlessWidth();
+		h = video.GetFrameBufferBorderlessHeight();
+#endif 
+
+		while (w * 2 <= rc.right - rc.left && h * 2 <= rc.bottom - rc.top)
+		{
+			w *= 2;
+			h *= 2;
+		}
+
+		x = rc.left + (rc.right - rc.left) / 2 - (w / 2);
+		y = rc.top + (rc.bottom - rc.top) / 2 - (h / 2);
+	}
+	else
+	{
+#if RENDER_BORDERMARGIN
+		float frameBufferRatio = (float)video.GetFrameBufferHeight() / (float)video.GetFrameBufferWidth();
+#else
+		float frameBufferRatio = (float)video.GetFrameBufferBorderlessHeight() / (float)video.GetFrameBufferBorderlessWidth();
+#endif
+
+		w = (int) (h / frameBufferRatio);
+
+		if (w > rc.right - rc.left)
+		{
+			w = rc.right - rc.left;
+			h = (int)(w * frameBufferRatio);
+			y = rc.top + (rc.bottom - rc.top) / 2 - h / 2;
+			x = rc.left;
+		}
+		else
+			x = rc.left + (rc.right - rc.left) / 2 - (w / 2);
+
+		// Fullscreen : Make sure the diplay fits into a 4:3 display
+		if (IsFullScreen() && !m_bestWidthForFullScreen && !m_bestHeightForFullScreen)
+		{
+			float frameRatio = 3.0 / 4.0;
+			if (frameRatio > frameBufferRatio)
+			{
+				w = (int) (w / frameRatio * frameBufferRatio);
+				h = (int) (h / frameRatio * frameBufferRatio);
+				x = rc.left + (rc.right - rc.left) / 2 - (w / 2);
+				y = rc.top + (rc.bottom - rc.top) / 2 - (h / 2);
+			}
+		}
+	}
+
+	return RECT { x, y, x + w, y + h };
+}
 
 void Win32Frame::VideoPresentScreen(void)
 {
@@ -454,25 +611,53 @@ void Win32Frame::VideoPresentScreen(void)
 	if (hFrameDC)
 	{
 		Video& video = GetVideo();
-		int xSrc = video.GetFrameBufferBorderWidth();
-		int ySrc = video.GetFrameBufferBorderHeight();
 
-		int xdest = IsFullScreen() ? GetFullScreenOffsetX() : 0;
-		int ydest = IsFullScreen() ? GetFullScreenOffsetY() : 0;
-		int wdest = g_nViewportCX;
-		int hdest = g_nViewportCY;
+		RECT rc = GetClientArea();
+		RECT rcVid = GetVideoRect();
 
-		SetStretchBltMode(hFrameDC, COLORONCOLOR);
+		ExcludeClipRect(hFrameDC, rcVid.left, rcVid.top, rcVid.right, rcVid.bottom);
+
+		if (m_fullScreenToolbarVisible)
+		{
+			RECT rcToolbar = GetToolbarRect();
+			SubtractRect(&rc, &rc, &rcToolbar);
+		}
+
+		FillSolidRect(hFrameDC, rc.left, rc.top, rc.right, rc.bottom, IsFullScreen() ? 0 : RGB(8, 8, 8));
+		SelectClipRgn(hFrameDC, NULL);
+
+		if (!IsFullScreen() || m_fullScreenToolbarVisible)
+		{
+			RECT rcToolbar = GetToolbarRect();
+			ExcludeClipRect(hFrameDC, rcToolbar.left, rcToolbar.top, rcToolbar.right, rcToolbar.bottom);
+		}
+
+		SetStretchBltMode(hFrameDC, (rcVid.bottom - rcVid.top) < (int) video.GetFrameBufferHeight() ? HALFTONE : COLORONCOLOR); // COLORONCOLOR		
+
+#if RENDER_BORDERMARGIN
 		StretchBlt(
 			hFrameDC,
-			xdest, ydest,
-			wdest, hdest,
+			rcVid.left, rcVid.top,
+			rcVid.right - rcVid.left, rcVid.bottom - rcVid.top,
 			g_hDeviceDC,
-			xSrc, ySrc,
+			0, 0,
+			video.GetFrameBufferWidth(), video.GetFrameBufferHeight(),
+			SRCCOPY);
+#else 
+		// Render without border !?
+		StretchBlt(
+			hFrameDC,
+			rcVid.left, rcVid.top,
+			rcVid.right - rcVid.left, rcVid.bottom - rcVid.top,
+			g_hDeviceDC,
+			video.GetFrameBufferBorderWidth(), video.GetFrameBufferBorderHeight(),
 			video.GetFrameBufferBorderlessWidth(), video.GetFrameBufferBorderlessHeight(),
 			SRCCOPY);
-	}
+#endif
 
+		SelectClipRgn(hFrameDC, NULL);
+	}
+	
 #ifdef NO_DIRECT_X
 #else
 	//if (g_lpDD) g_lpDD->WaitForVerticalBlank(DDWAITVB_BLOCKBEGIN, NULL);

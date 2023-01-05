@@ -198,8 +198,11 @@ void LoadConfiguration(bool loadImages)
 
 	DWORD dwTmp = 0;
 
-	if(REGLOAD(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), &dwTmp))
-		GetFrame().SetFullScreenShowSubunitStatus(dwTmp ? true : false);
+	if(REGLOAD(TEXT(REGVALUE_INTEGERSCALE), &dwTmp))
+		GetFrame().SetIntegerScale(dwTmp ? true : false);
+
+	if (REGLOAD(TEXT(REGVALUE_STRETCHVIDEO), &dwTmp))
+		GetFrame().SetStretchVideo(dwTmp ? true : false);
 
 	if (REGLOAD(TEXT(REGVALUE_SHOW_DISKII_STATUS), &dwTmp))
 		GetFrame().SetWindowedModeShowDiskiiStatus(dwTmp ? true : false);
@@ -313,11 +316,6 @@ void LoadConfiguration(bool loadImages)
 
 	if (GetCardMgr().IsParallelPrinterCardInstalled())
 		GetCardMgr().GetParallelPrinterCard()->GetRegistryConfig();
-
-	//
-
-	if (REGLOAD(TEXT(REGVALUE_WINDOW_SCALE), &dwTmp))
-		GetFrame().SetViewportScale(dwTmp);
 
 	if (REGLOAD(TEXT(REGVALUE_CONFIRM_REBOOT), &dwTmp))
 		GetFrame().g_bConfirmReboot = dwTmp;

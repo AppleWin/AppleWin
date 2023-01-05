@@ -129,9 +129,13 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 		case IDC_CHECK_CONFIRM_REBOOT:
 		case IDC_CHECK_HALF_SCAN_LINES:
 		case IDC_CHECK_VERTICAL_BLEND:
-		case IDC_CHECK_FS_SHOW_SUBUNIT_STATUS:
+		case IDC_CHECK_INTEGER_SCALE:		
 		case IDC_CHECK_50HZ_VIDEO:
 			// Checked in DlgOK()
+			break;
+
+		case IDC_CHECK_STRETCHVIDEO:
+			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_INTEGER_SCALE), !IsDlgButtonChecked(hWnd, IDC_CHECK_STRETCHVIDEO));
 			break;
 
 		case IDC_CHECK_VIDHD_IN_SLOT3:
@@ -218,8 +222,10 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE, GetVideo().GetVideoChoices(), GetVideo().GetVideoType());
 			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, GetVideo().IsVideoStyle(VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
 			Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
-			CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, win32Frame.GetFullScreenShowSubunitStatus() ? BST_CHECKED : BST_UNCHECKED);
-
+			CheckDlgButton(hWnd, IDC_CHECK_STRETCHVIDEO, win32Frame.GetStretchVideo() ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_CHECK_INTEGER_SCALE, win32Frame.GetIntegerScale() ? BST_CHECKED : BST_UNCHECKED);
+			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_INTEGER_SCALE), !win32Frame.GetStretchVideo());
+						
 			CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, GetVideo().IsVideoStyle(VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
 			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (GetVideo().GetVideoType() == VT_COLOR_IDEALIZED) ? TRUE : FALSE);
 
@@ -350,12 +356,23 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	//
 
-	const bool bNewFSSubunitStatus = IsDlgButtonChecked(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS) ? true : false;
+	const bool bNewFSSubunitStatus = IsDlgButtonChecked(hWnd, IDC_CHECK_INTEGER_SCALE) ? true : false;
 
-	if (win32Frame.GetFullScreenShowSubunitStatus() != bNewFSSubunitStatus)
+	if (win32Frame.GetIntegerScale() != bNewFSSubunitStatus)
 	{
-		REGSAVE(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), bNewFSSubunitStatus ? 1 : 0);
-		win32Frame.SetFullScreenShowSubunitStatus(bNewFSSubunitStatus);
+		REGSAVE(TEXT(REGVALUE_INTEGERSCALE), bNewFSSubunitStatus ? 1 : 0);
+		win32Frame.SetIntegerScale(bNewFSSubunitStatus);
+
+		if (win32Frame.IsFullScreen())
+			win32Frame.FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
+	}
+
+	const bool bNewStretchVideoStatus = IsDlgButtonChecked(hWnd, IDC_CHECK_STRETCHVIDEO) ? true : false;
+
+	if (win32Frame.GetStretchVideo() != bNewStretchVideoStatus)
+	{
+		REGSAVE(TEXT(REGVALUE_STRETCHVIDEO), bNewStretchVideoStatus ? 1 : 0);
+		win32Frame.SetStretchVideo(bNewStretchVideoStatus);
 
 		if (win32Frame.IsFullScreen())
 			win32Frame.FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);

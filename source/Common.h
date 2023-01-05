@@ -36,14 +36,17 @@ enum AppMode_e
 #define  DRAW_BUTTON_DRIVES (1 << 3)
 #define  DRAW_DISK_STATUS   (1 << 4)
 
-#define  BTN_HELP          0
-#define  BTN_RUN           1
-#define  BTN_DRIVE1        2
-#define  BTN_DRIVE2        3
-#define  BTN_DRIVESWAP     4
-#define  BTN_FULLSCR       5
-#define  BTN_DEBUG         6
-#define  BTN_SETUP         7
+#define  BTN_HELP          7
+#define  BTN_RUN           0
+#define  BTN_DRIVE1        1
+#define  BTN_DRIVE2        2
+#define  BTN_DRIVESWAP     3
+#define  BTN_FULLSCR       4
+#define  BTN_DEBUG         5
+#define  BTN_SETUP         6
+
+#define  TTID_SLOT6_TRK_SEC_INFO 8
+#define  TTID_SLOT5_TRK_SEC_INFO 9
 
 // TODO: Move to StringTable.h
 #define	TITLE_APPLE_2			TEXT("Apple ][ Emulator")
@@ -67,7 +70,8 @@ enum AppMode_e
 #define  REGVALUE_CPU_TYPE           "CPU Type"
 #define  REGVALUE_OLD_APPLE2_TYPE    "Computer Emulation"	// Deprecated
 #define  REGVALUE_CONFIRM_REBOOT     "Confirm Reboot" // Added at 1.24.1 PageConfig
-#define  REGVALUE_FS_SHOW_SUBUNIT_STATUS "Full-screen show subunit status"
+#define  REGVALUE_INTEGERSCALE		 "Integer scale"
+#define  REGVALUE_STRETCHVIDEO		 "Stretch"
 #define  REGVALUE_SHOW_DISKII_STATUS "Show Disk II Status"
 #define  REGVALUE_SOUND_EMULATION    "Sound Emulation"
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
@@ -130,6 +134,7 @@ enum AppMode_e
 #define REGVALUE_PREF_WINDOW_X_POS   "Window X-Position"
 #define REGVALUE_PREF_WINDOW_Y_POS   "Window Y-Position"
 #define REGVALUE_PREF_HDV_START_DIR  "HDV Starting Directory"
+#define REGVALUE_PREF_TOOLBAR		 "Toolbar"
 
 #define WM_USER_BENCHMARK	WM_USER+1
 #define WM_USER_SAVESTATE	WM_USER+2

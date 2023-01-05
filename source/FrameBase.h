@@ -27,10 +27,10 @@ public:
 	virtual void FrameUpdateApple2Type() = 0;
 	virtual void FrameSetCursorPosByMousePos() = 0;
 
-	virtual void SetFullScreenShowSubunitStatus(bool bShow) = 0;
+	virtual void SetIntegerScale(bool bShow) = 0;
+	virtual void SetStretchVideo(bool bShow) = 0;	
 	virtual void SetWindowedModeShowDiskiiStatus(bool bShow) = 0;
-	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth=0, UINT userSpecifiedHeight=0) = 0;
-	virtual int SetViewportScale(int nNewScale, bool bForce = false) = 0;
+	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth=0, UINT userSpecifiedHeight=0) = 0;	
 	virtual void SetAltEnterToggleFullScreen(bool mode) = 0;
 
 	virtual void SetLoadedSaveStateFlag(const bool bFlag) = 0;

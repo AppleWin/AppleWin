@@ -93,14 +93,14 @@ BEGIN
     COMBOBOX        IDC_COMPUTER,45,5,91,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     CONTROL         "Confirm reboot",IDC_CHECK_CONFIRM_REBOOT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,8,62,10
     GROUPBOX        "Video",IDC_STATIC,5,22,200,74
-    LTEXT           "Mo&de:",IDC_STATIC,12,33,33,8
-    COMBOBOX        IDC_VIDEOTYPE,33,30,103,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "Monochrome &Color...",IDC_MONOCOLOR,12,46,80,14
-    CONTROL         "50% Scan lines",IDC_CHECK_HALF_SCAN_LINES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,33,62,10
-    CONTROL         "Vertical blend",IDC_CHECK_VERTICAL_BLEND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,48,62,10
-    CONTROL         "Full-Screen: Show drive/keyboard status",IDC_CHECK_FS_SHOW_SUBUNIT_STATUS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,64,140,10
-    CONTROL         "VidHD in slot 3",IDC_CHECK_VIDHD_IN_SLOT3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,78,140,10
+    LTEXT           "Mo&de:",IDC_STATIC,12,36,33,8
+    COMBOBOX        IDC_VIDEOTYPE,33,33,103,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Monochrome &Color...",IDC_MONOCOLOR,10,55,80,14
+    CONTROL         "50% Scan lines",IDC_CHECK_HALF_SCAN_LINES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,34,62,10
+    CONTROL         "Vertical blend",IDC_CHECK_VERTICAL_BLEND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,49,62,10
+    CONTROL         "Integer scale",IDC_CHECK_INTEGER_SCALE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,78,60,10   
+    CONTROL         "Full stretch", IDC_CHECK_STRETCHVIDEO, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 142, 64, 60, 10
+    CONTROL         "VidHD in slot 3",IDC_CHECK_VIDHD_IN_SLOT3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,78,100,10
     LTEXT           "&Serial Port:",IDC_STATIC,5,108,40,8
     COMBOBOX        IDC_SERIALPORT,45,106,90,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "&Ethernet Settings...",IDC_ETHERNET,4,124,80,14
@@ -392,6 +392,16 @@ BEGIN
     END
 END
 
+IDR_MENU_TOOLBAR MENU
+BEGIN
+    POPUP "Toolbar Menu"
+    BEGIN
+        MENUITEM "Dock top",                    ID_TOOLBAR_TOP
+        MENUITEM "Dock left",                   ID_TOOLBAR_LEFT
+        MENUITEM "Dock bottom",                 ID_TOOLBAR_BOTTOM
+        MENUITEM "Dock right",                  ID_TOOLBAR_RIGHT
+    END
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //

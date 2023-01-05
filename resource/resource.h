@@ -112,7 +112,7 @@
 #define IDC_COMBO_HDD2                  1079
 #define IDC_COMBO_DISK1                 1080
 #define IDC_COMBO_DISK2                 1081
-#define IDC_CHECK_FS_SHOW_SUBUNIT_STATUS 1082
+#define IDC_CHECK_INTEGER_SCALE         1082
 #define IDC_CHECK_VERTICAL_BLEND        1083
 #define IDC_CHECK_50HZ_VIDEO            1084
 #define IDC_COMBO_DISK1_SLOT5           1085
@@ -123,6 +123,12 @@
 #define IDC_CHECK_TFE_VIRTUAL_DNS       1090
 #define IDC_TFE_NPCAP_INFO              1091
 #define IDC_COMBO_GAME_IO_CONNECTOR     1092
+#define IDR_MENU_TOOLBAR				1093
+#define ID_TOOLBAR_TOP					1094
+#define ID_TOOLBAR_LEFT					1095
+#define ID_TOOLBAR_BOTTOM				1096
+#define ID_TOOLBAR_RIGHT				1097
+#define IDC_CHECK_STRETCHVIDEO			1098
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
@@ -138,7 +144,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        149
 #define _APS_NEXT_COMMAND_VALUE         40012
-#define _APS_NEXT_CONTROL_VALUE         1083
+#define _APS_NEXT_CONTROL_VALUE         1099
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
