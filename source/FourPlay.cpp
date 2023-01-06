@@ -52,6 +52,9 @@
 #include "Memory.h"
 #include "YamlHelper.h"
 
+extern int JOYSTICK_1; // declared in joystick.cpp
+extern int JOYSTICK_2;
+
 BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
 {
 	BYTE nOutput = MemReadFloatingBus(nExecutedCycles);
@@ -67,15 +70,13 @@ BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 	UINT yAxis = 0;
 
 	JOYINFOEX infoEx;
-	MMRESULT result = 0;
 	infoEx.dwSize = sizeof(infoEx);
 	infoEx.dwFlags = JOY_RETURNPOV | JOY_RETURNBUTTONS;
 
 	switch (addr & 0xF)
 	{
 	case 0: // Joystick 1
-		result = joyGetPosEx(JOYSTICKID1, &infoEx);
-		if (result == JOYERR_NOERROR)
+		if (JOYSTICK_1 >= 0 && joyGetPosEx(JOYSTICK_1, &infoEx) == JOYERR_NOERROR)
 		{
 			xAxis = (infoEx.dwXpos >> 8) & 0xFF;
 			yAxis = (infoEx.dwYpos >> 8) & 0xFF;
@@ -89,8 +90,7 @@ BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 		nOutput = up | (down << 1) | (left << 2) | (right << 3) | (alwaysHigh << 5) | (trigger2 << 6) | (trigger1 << 7);
 		break;
 	case 1: // Joystick 2
-		result = joyGetPosEx(JOYSTICKID2, &infoEx);
-		if (result == JOYERR_NOERROR)
+		if (JOYSTICK_2 >= 0 && joyGetPosEx(JOYSTICK_2, &infoEx) == JOYERR_NOERROR)
 		{
 			xAxis = (infoEx.dwXpos >> 8) & 0xFF;
 			yAxis = (infoEx.dwYpos >> 8) & 0xFF;
