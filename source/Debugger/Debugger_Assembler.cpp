@@ -498,7 +498,6 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 		if ( pData_ )
 			*pData_ = pData;
 
-		const DWORD nStartAddress = pData->nStartAddress;
 		const DWORD nEndAddress   = pData->nEndAddress;
 		const int   nDisplayLen   = nEndAddress - nBaseAddress + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
 		nSlack = nDisplayLen;
