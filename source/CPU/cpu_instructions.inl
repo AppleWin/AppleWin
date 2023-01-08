@@ -56,7 +56,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #undef BNE
 #undef BPL
 #undef BRA
-#undef BRK
+#undef BRK_NMOS
+#undef BRK_CMOS
 #undef BVC
 #undef BVS
 #undef CLC
@@ -137,6 +138,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #undef ADCn
 #undef ASLn
+#undef BRKn
 #undef LSRn
 #undef ROLn
 #undef RORn
@@ -144,6 +146,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define ADCn ADC_NMOS
 #define ASLn ASL_NMOS
+#define BRKn BRK_NMOS
 #define LSRn LSR_NMOS
 #define ROLn ROL_NMOS
 #define RORn ROR_NMOS
@@ -153,6 +156,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #undef ADCc
 #undef ASLc
+#undef BRKC
 #undef LSRc
 #undef ROLc
 #undef RORc
@@ -160,6 +164,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define ADCc ADC_CMOS
 #define ASLc ASL_CMOS
+#define BRKc BRK_CMOS
 #define LSRc LSR_CMOS
 #define ROLc ROL_CMOS
 #define RORc ROR_CMOS
@@ -303,12 +308,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define BNE	 if (!flagz) BRANCH_TAKEN;
 #define BPL	 if (!flagn) BRANCH_TAKEN;
 #define BRA	 BRANCH_TAKEN;
-#define BRK	 regs.pc++;						    \
+#define BRK_NMOS	 regs.pc++;						    \
 		 PUSH(regs.pc >> 8)					    \
 		 PUSH(regs.pc & 0xFF)					    \
 		 EF_TO_AF						    \
 		 PUSH(regs.ps);						    \
 		 regs.ps |= AF_INTERRUPT;				    \
+		 regs.pc = *(LPWORD)(mem+0xFFFE);
+#define BRK_CMOS	 regs.pc++;						    \
+		 PUSH(regs.pc >> 8)					    \
+		 PUSH(regs.pc & 0xFF)					    \
+		 EF_TO_AF						    \
+		 PUSH(regs.ps);						    \
+		 regs.ps |= AF_INTERRUPT;				    \
+		 regs.ps &= ~AF_DECIMAL;	/*CMOS clears D flag*/	\
 		 regs.pc = *(LPWORD)(mem+0xFFFE);
 #define BVC	 if (!flagv) BRANCH_TAKEN;
 #define BVS	 if ( flagv) BRANCH_TAKEN;

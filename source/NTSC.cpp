@@ -703,8 +703,10 @@ inline void updateVideoScannerHorzEOL()
 				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);	// last pixel in 14M video modes
 				g_pFuncUpdateHuePixel(0);						// 14M ringing pixel! (better definition for 80COL char's right-hand edge)
 				// Direct write instead of g_pFuncUpdateHuePixel(0) to avoid random pixels on RHS in VT_COLOR_MONITOR_NTSC
-				*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;
-				*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;
+				*(uint32_t*)g_pVideoAddress = 0 | ALPHA32_MASK;
+				*(getScanlineNextInbetween()) = 0 | ALPHA32_MASK; g_pVideoAddress++;	// Clear junk on RHS for TV (Color/B&W) & Monitor (NTSC/PAL). (GH#1157)
+				*(uint32_t*)g_pVideoAddress = 0 | ALPHA32_MASK;
+				*(getScanlineNextInbetween()) = 0 | ALPHA32_MASK; g_pVideoAddress++;	// Clear junk on RHS for TV (Color/B&W) & Monitor (NTSC/PAL). (GH#1157)
 			}
 		}
 

@@ -23,6 +23,7 @@ enum AppMode_e
 	, MODE_DEBUG    // 6502 is paused
 	, MODE_STEPPING // 6502 is running at normal/full speed (Debugger breakpoints always active)
 	, MODE_BENCHMARK
+	, MODE_UNDEFINED	// Used in SoundCore_SetFade()
 };
 
 #define  SPEED_MIN         0
@@ -73,7 +74,6 @@ enum AppMode_e
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
 #define  REGVALUE_SAVE_STATE_ON_EXIT "Save State On Exit"
-#define  REGVALUE_COPYPROTECTIONDONGLE_TYPE  "Copy Protection Dongle Type"
 #define  REGVALUE_HDD_ENABLED        "Harddisk Enable"		// Deprecated from 1.30.5
 #define  REGVALUE_JOYSTICK0_EMU_TYPE		"Joystick0 Emu Type v3"	// GH#434: Added at 1.26.3.0 (previously was "Joystick0 Emu Type")
 #define  REGVALUE_JOYSTICK1_EMU_TYPE		"Joystick1 Emu Type v3"	// GH#434: Added at 1.26.3.0 (previously was "Joystick1 Emu Type")
@@ -117,6 +117,8 @@ enum AppMode_e
 #define REG_CONFIG_SLOT_AUX			"Slot Auxiliary"
 #define REG_CONFIG_SLOT				"Slot "
 #define  REGVALUE_CARD_TYPE			"Card type"
+#define REG_CONFIG_GAME_IO_CONNECTOR	"Game I/O Connector"
+#define REGVALUE_GAME_IO_TYPE		"Game I/O type"
 #define  REGVALUE_LAST_DISK_1		"Last Disk Image 1"
 #define  REGVALUE_LAST_DISK_2		"Last Disk Image 2"
 #define  REGVALUE_LAST_HARDDISK_1	"Last Harddisk Image 1"

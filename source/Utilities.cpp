@@ -168,12 +168,12 @@ void LoadConfiguration(bool loadImages)
 	else
 		LoadConfigOldJoystick_v1(JN_JOYSTICK1);
 
-
 	DWORD copyProtectionDongleType;
-	if (REGLOAD(TEXT(REGVALUE_COPYPROTECTIONDONGLE_TYPE), &copyProtectionDongleType))
-		SetCopyProtectionDongleType(copyProtectionDongleType);
+	std::string regSection = RegGetConfigSlotSection(GAME_IO_CONNECTOR);
+	if (RegLoadValue(regSection.c_str(), REGVALUE_GAME_IO_TYPE, TRUE, &copyProtectionDongleType))
+		SetCopyProtectionDongleType((DONGLETYPE)copyProtectionDongleType);
 	else
-		SetCopyProtectionDongleType(0);					// None
+		SetCopyProtectionDongleType(DT_EMPTY);
 
 	DWORD dwSoundType;
 	REGLOAD_DEFAULT(TEXT(REGVALUE_SOUND_EMULATION), &dwSoundType, REG_SOUNDTYPE_WAVE);

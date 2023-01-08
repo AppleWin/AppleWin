@@ -155,6 +155,9 @@ void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value) {
 //===========================================================================
 static inline std::string RegGetSlotSection(UINT slot)
 {
+	if (slot == GAME_IO_CONNECTOR)
+		return std::string(REG_CONFIG_GAME_IO_CONNECTOR);
+
 	return (slot == SLOT_AUX)
 		? std::string(REG_CONFIG_SLOT_AUX)
 		: (std::string(REG_CONFIG_SLOT) + (char)('0' + slot));
@@ -197,10 +200,26 @@ void RegDeleteConfigSlotSection(UINT slot)
 
 void RegSetConfigSlotNewCardType(UINT slot, SS_CARDTYPE type)
 {
+	_ASSERT(slot != GAME_IO_CONNECTOR);
+
 	RegDeleteConfigSlotSection(slot);
 
 	std::string regSection;
 	regSection = RegGetConfigSlotSection(slot);
 
 	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, type);
+}
+
+void RegSetConfigGameIOConnectorNewDongleType(UINT slot, DONGLETYPE type)
+{
+	_ASSERT(slot == GAME_IO_CONNECTOR);
+	if (slot != GAME_IO_CONNECTOR)
+		return;
+
+	RegDeleteConfigSlotSection(slot);
+
+	std::string regSection;
+	regSection = RegGetConfigSlotSection(slot);
+
+	RegSaveValue(regSection.c_str(), REGVALUE_GAME_IO_TYPE, TRUE, type);
 }

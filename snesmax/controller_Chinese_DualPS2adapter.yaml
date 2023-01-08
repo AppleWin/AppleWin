@@ -1,0 +1,21 @@
+---
+File_hdr:
+  Tag: AppleWin Controller Button Remapping
+  Version: 1
+
+Unit:
+    HID: VID_0810&PID_0001
+    Description: Chinese PS2 USB Dual Controller adapter  # Description to be used in AppleWin's GUI
+    1: X       # triangle
+    2: A       # circle
+    3: B       # x
+    4: Y       # square
+    5: ""      # L2
+    6: ""      # R2
+    7: LB      # L1
+    8: RB      # R1
+    9: SELECT  # Select
+    10: START  # Start
+    11: ""     # X/Y Axis button
+    12: ""     # Z Axis/Rotation button
+...

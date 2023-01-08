@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Interface.h"
 #include "CardManager.h"
+#include "CopyProtectionDongles.h"
 #include "Debug.h"
 #include "Joystick.h"
 #include "Keyboard.h"
@@ -66,9 +67,12 @@ static YamlHelper yamlHelper;
 // v5: Extended: cpu (added 'Defer IRQ By 1 Opcode')
 // v6: Added 'Unit Miscellaneous' for NoSlotClock(NSC)
 // v7: Extended: joystick (added 'Paddle Inactive Cycle')
-#define UNIT_APPLE2_VER 7
+// v8: Added 'Unit Game I/O Connector' for Game I/O Connector
+#define UNIT_APPLE2_VER 8
 
 #define UNIT_SLOTS_VER 1
+
+#define UNIT_GAME_IO_CONNECTOR_VER 1
 
 #define UNIT_MISC_VER 1
 
@@ -175,6 +179,12 @@ static const std::string& GetSnapshotUnitApple2Name(void)
 static const std::string& GetSnapshotUnitSlotsName(void)
 {
 	static const std::string name("Slots");
+	return name;
+}
+
+static const std::string& GetSnapshotUnitGameIOConnectorName(void)
+{
+	static const std::string name("Game I/O Connector");
 	return name;
 }
 
@@ -329,6 +339,10 @@ static void ParseUnit(void)
 	{
 		ParseSlots(yamlLoadHelper, unitVersion);
 	}
+	else if (unit == GetSnapshotUnitGameIOConnectorName())
+	{
+		CopyProtectionDongleLoadSnapshot(yamlLoadHelper, unitVersion);
+	}
 	else if (unit == GetSnapshotUnitMiscName())
 	{
 		// NB. could extend for other misc devices - see how ParseSlots() calls GetMapNextSlotNumber()
@@ -364,6 +378,8 @@ static void Snapshot_LoadState_v2(void)
 		for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 			GetCardMgr().Remove(slot);
 		GetCardMgr().RemoveAux();
+
+		SetCopyProtectionDongleType(DT_EMPTY);
 
 		MemReset();							// Also calls CpuInitialize()
 		GetPravets().Reset();
@@ -476,6 +492,15 @@ void Snapshot_SaveState(void)
 			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
 			GetCardMgr().SaveSnapshot(yamlSaveHelper);
+		}
+
+		// Unit: Game I/O Connector
+		if (GetCopyProtectionDongleType() != DT_EMPTY)
+		{
+			yamlSaveHelper.UnitHdr(GetSnapshotUnitGameIOConnectorName(), UNIT_GAME_IO_CONNECTOR_VER);
+			YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+			CopyProtectionDongleSaveSnapshot(yamlSaveHelper);
 		}
 
 		// Miscellaneous

@@ -44,10 +44,10 @@ const TCHAR CPageAdvanced::m_CloneChoices[] =
 				TEXT("TK3000 //e\0")	// Brazilian
 				TEXT("Base 64A\0"); 	// Taiwanese
 
-enum COPYPROTECTIONDONGLECHOICE { MENUITEM_NONE, MENUITEM_SPEEDSTAR };
-const TCHAR CPageAdvanced::m_CopyProtectionDongleChoices[] =
-				TEXT("None\0")							
-				TEXT("SDS DataKey - Speed Star\0");	// Protection dongle for Southwestern Data Systems "Speed Star" Applesoft Compiler
+//enum GAMEIOCONNECTOR_CHOICE { MENUITEM_EMPTY, MENUITEM_SPEEDSTAR };
+const TCHAR CPageAdvanced::m_gameIOConnectorChoices[] =
+				TEXT("Empty\0")
+				TEXT("SDS DataKey - SpeedStar\0");	// Protection dongle for Southwestern Data Systems "SpeedStar" Applesoft Compiler
 
 
 INT_PTR CALLBACK CPageAdvanced::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
@@ -130,11 +130,11 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 				m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewCloneType);
 			}
 
-		case IDC_COMBO_CP_DONGLE:
+		case IDC_COMBO_GAME_IO_CONNECTOR:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				const DWORD NewCopyProtectionDongleMenuItem = (DWORD)SendDlgItemMessage(hWnd, IDC_COMBO_CP_DONGLE, CB_GETCURSEL, 0, 0);
-				SetCopyProtectionDongleType(NewCopyProtectionDongleMenuItem);
+				const DONGLETYPE newCopyProtectionDongleMenuItem = (DONGLETYPE)SendDlgItemMessage(hWnd, IDC_COMBO_GAME_IO_CONNECTOR, CB_GETCURSEL, 0, 0);
+				SetCopyProtectionDongleType(newCopyProtectionDongleMenuItem);
 			}
 			break;
 		}
@@ -193,7 +193,7 @@ void CPageAdvanced::DlgOK(HWND hWnd)
 	REGSAVE(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), g_bSaveStateOnExit ? 1 : 0);
 
 	// Save the copy protection dongle type
-	REGSAVE(TEXT(REGVALUE_COPYPROTECTIONDONGLE_TYPE), GetCopyProtectionDongleType());
+	RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, GetCopyProtectionDongleType());
 
 	if (GetCardMgr().IsParallelPrinterCardInstalled())
 	{
@@ -233,7 +233,7 @@ void CPageAdvanced::InitOptions(HWND hWnd)
 {
 	InitFreezeDlgButton(hWnd);
 	InitCloneDropdownMenu(hWnd);
-	InitCopyProtectionDongleDropdownMenu(hWnd);
+	InitGameIOConnectorDropdownMenu(hWnd);
 }
 
 // Advanced->Clone: Menu item to eApple2Type
@@ -300,9 +300,9 @@ void CPageAdvanced::InitCloneDropdownMenu(HWND hWnd)
 	EnableWindow(GetDlgItem(hWnd, IDC_CLONETYPE), bIsClone ? TRUE : FALSE);
 }
 
-void CPageAdvanced::InitCopyProtectionDongleDropdownMenu(HWND hWnd)
+void CPageAdvanced::InitGameIOConnectorDropdownMenu(HWND hWnd)
 {
 	// Set copy protection dongle menu choice
 	const int nCurrentChoice = GetCopyProtectionDongleType();
-	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_CP_DONGLE, m_CopyProtectionDongleChoices, nCurrentChoice);
+	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_GAME_IO_CONNECTOR, m_gameIOConnectorChoices, nCurrentChoice);
 }

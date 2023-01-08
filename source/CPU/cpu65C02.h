@@ -62,7 +62,7 @@ static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 			switch (iOpcode)
 			{
 // TODO-MP Optimization Note: ?? Move CYC(#) to array ??
-			case 0x00:            BRK  CYC(7)  break;
+			case 0x00:            BRKc CYC(7)  break;
 			case 0x01: idx        ORA  CYC(6)  break;
 			case 0x02: IMM        NOP  CYC(2)  break;	// invalid
 			case 0x03:            NOP  CYC(1)  break;	// invalid

@@ -42,6 +42,7 @@ private:
 	UINT m_controller1Buttons;
 	UINT m_controller2Buttons;
 
+	static const UINT m_mainControllerButtons[NUM_BUTTONS];
 	bool m_altControllerType[2];
 	static UINT m_altControllerButtons[2][NUM_BUTTONS];
 };

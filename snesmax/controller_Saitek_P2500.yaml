@@ -1,0 +1,21 @@
+---
+File_hdr:
+  Tag: AppleWin Controller Button Remapping
+  Version: 1
+
+Unit:
+    HID: VID_06A3&PID_FF0C
+    Description: Saitek P2500 Cyborg Force Rumble Pad  # Description to be used in AppleWin's GUI
+    1: Y       # upper-left
+    2: X       # upper-center
+    3: B       # lower-left
+    4: A       # lower-center
+    5: LB      # upper-right
+    6: RB      # lower-right
+    7: LB      # LB
+    8: RB      # RB
+    9: SELECT  # button for X/Y Axis        {analog left }
+    10: START  # button for Z Axis/Rotation {analog right} | AKA Rudder/Throttle
+    11: START  # S (FPS)
+    12: SELECT # Digital
+...

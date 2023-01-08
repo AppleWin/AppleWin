@@ -4,7 +4,7 @@
   Copyright (C) 1994-1996, Michael O'Brien
   Copyright (C) 1999-2001, Oliver Schmidt
   Copyright (C) 2002-2005, Tom Charlesworth
-  Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
+  Copyright (C) 2006-2022, Tom Charlesworth, Michael Pohoreski
 
   AppleWin is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,26 +26,25 @@
   Emulate hardware copy protection dongles for Apple II
 
   Currently supported:
-	- Southwestern Data Systems SoftKey for Speed Star Applesoft Compiler
+	- Southwestern Data Systems DataKey for SpeedStar Applesoft Compiler
 
   Matthew D'Asaro  Dec 2022
 */
 #include "StdAfx.h"
+#include <sstream>
 
 #include "CopyProtectionDongles.h"
 #include "Memory.h"
+#include "YamlHelper.h"
 
-static DWORD copyProtectionDongleType = 0;
+static DONGLETYPE copyProtectionDongleType = DT_EMPTY;
 
-// Must be in the same order as in PageAdvanced.cpp
-enum COPYPROTECTIONDONGLETYPE { NONE, SDSSPEEDSTAR };
-
-void SetCopyProtectionDongleType(DWORD type)
+void SetCopyProtectionDongleType(DONGLETYPE type)
 {
 	copyProtectionDongleType = type;
 }
 
-DWORD GetCopyProtectionDongleType(void)
+DONGLETYPE GetCopyProtectionDongleType(void)
 {
 	return copyProtectionDongleType;
 }
@@ -74,12 +73,58 @@ int CopyProtectionDonglePB2(void)
 {
 	switch (copyProtectionDongleType)
 	{
-	case SDSSPEEDSTAR:	// Southwestern Data Systems SoftKey for Speed Star Applesoft Compiler
+	case DT_SDSSPEEDSTAR:	// Southwestern Data Systems DataKey for SpeedStar Applesoft Compiler
 		return SdsSpeedStar();
 		break;
 
 	default:
 		return -1;
 		break;
+	}
+}
+
+//===========================================================================
+
+static const UINT kUNIT_VERSION = 1;
+
+static const std::string& GetSnapshotStructName_SDSSpeedStar(void)
+{
+	static const std::string name("SDS SpeedStar dongle");
+	return name;
+}
+
+void CopyProtectionDongleSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	if (copyProtectionDongleType == DT_SDSSPEEDSTAR)
+	{
+		yamlSaveHelper.SaveString(SS_YAML_KEY_DEVICE, GetSnapshotStructName_SDSSpeedStar());
+		// NB. No state for this dongle
+	}
+	else
+	{
+		_ASSERT(0);
+	}
+}
+
+void CopyProtectionDongleLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
+{
+	if (version < 1 || version > kUNIT_VERSION)
+	{
+		std::ostringstream msg;
+		msg << "Version " << version;
+		msg << " is not supported for game I/O device.";
+
+		throw std::runtime_error(msg.str());
+	}
+
+	std::string device = yamlLoadHelper.LoadString(SS_YAML_KEY_DEVICE);
+
+	if (device == GetSnapshotStructName_SDSSpeedStar())
+	{
+		copyProtectionDongleType = DT_SDSSPEEDSTAR;
+	}
+	else
+	{
+		_ASSERT(0);
 	}
 }

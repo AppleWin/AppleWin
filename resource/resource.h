@@ -113,7 +113,6 @@
 #define IDC_COMBO_DISK1                 1080
 #define IDC_COMBO_DISK2                 1081
 #define IDC_CHECK_FS_SHOW_SUBUNIT_STATUS 1082
-#define IDC_COMBO_CP_DONGLE             1082
 #define IDC_CHECK_VERTICAL_BLEND        1083
 #define IDC_CHECK_50HZ_VIDEO            1084
 #define IDC_COMBO_DISK1_SLOT5           1085
@@ -123,6 +122,7 @@
 #define IDC_CHECK_VIDHD_IN_SLOT3        1089
 #define IDC_CHECK_TFE_VIRTUAL_DNS       1090
 #define IDC_TFE_NPCAP_INFO              1091
+#define IDC_COMBO_GAME_IO_CONNECTOR     1092
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
