@@ -405,8 +405,7 @@ namespace sa2
           bool speedStar = GetCopyProtectionDongleType() != 0;
           if (ImGui::Checkbox("Speed Star Copy Protection", &speedStar))
           {
-            SetCopyProtectionDongleType(speedStar ? 1 : 0);
-            REGSAVE(TEXT(REGVALUE_COPYPROTECTIONDONGLE_TYPE), GetCopyProtectionDongleType());
+            RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, GetCopyProtectionDongleType());
           }
 
           ImGui::EndTabItem();
