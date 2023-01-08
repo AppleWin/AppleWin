@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "frontends/sdl/gamepad.h"
 
-#include "Log.h"
-
 #define AXIS_MIN -32768
 #define AXIS_MAX 32767
 

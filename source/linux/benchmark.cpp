@@ -7,7 +7,6 @@
 #include "Memory.h"
 #include "Common.h"
 #include "NTSC.h"
-#include "Disk.h"
 #include "CPU.h"
 #include "Interface.h"
 

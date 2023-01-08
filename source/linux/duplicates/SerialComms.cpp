@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 
-#include "Common.h"
 #include "SerialComms.h"
 #include "YamlHelper.h"
 

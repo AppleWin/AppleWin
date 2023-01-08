@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 #include "Registry.h"
-#include "CmdLine.h"
 
 
 

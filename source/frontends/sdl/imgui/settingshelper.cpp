@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 #include "CardManager.h"
 #include "Registry.h"
-#include "Harddisk.h"
 #include "Core.h"
 #include "Memory.h"
 #include "Interface.h"

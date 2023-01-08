@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 #include "frontends/common2/commonframe.h"
-#include "frontends/common2/utils.h"
 #include "linux/resources.h"
 
 #include <sys/stat.h>

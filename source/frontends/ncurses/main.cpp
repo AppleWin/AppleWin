@@ -5,15 +5,12 @@
 #include <iostream>
 #include <ncurses.h>
 
-#include "Common.h"
 #include "CardManager.h"
 #include "Core.h"
-#include "Log.h"
 #include "CPU.h"
 #include "NTSC.h"
 #include "SaveState.h"
 #include "Utilities.h"
-#include "Interface.h"
 
 #include "linux/benchmark.h"
 #include "linux/paddle.h"

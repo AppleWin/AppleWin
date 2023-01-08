@@ -2,7 +2,6 @@
 #include "SaveState.h"
 
 #include "frontends/libretro/serialisation.h"
-#include "frontends/libretro/environment.h"
 #include "frontends/libretro/diskcontrol.h"
 
 #include <cstdio>

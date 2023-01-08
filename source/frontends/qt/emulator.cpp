@@ -3,10 +3,6 @@
 
 #include <QMdiSubWindow>
 #include "StdAfx.h"
-#include "Common.h"
-#include "Video.h"
-#include "NTSC.h"
-#include "Interface.h"
 
 #include <cmath>
 

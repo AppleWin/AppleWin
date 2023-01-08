@@ -4,7 +4,9 @@
 #include "StdAfx.h"
 #include "Card.h"
 #include "Common.h"
-#include "preferences.h"
+
+#include <QString>
+#include <QColor>
 
 class GlobalOptions
 {
