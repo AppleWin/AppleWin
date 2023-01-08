@@ -58,16 +58,12 @@ Events:  total =      22.42 ms, mean =       0.05 ms, std =       0.17 ms, n =  
 Texture: total =     113.32 ms, mean =       0.24 ms, std =       0.06 ms, n =    471
 Screen:  total =    7624.87 ms, mean =      16.19 ms, std =       1.66 ms, n =    471
 CPU:     total =     647.21 ms, mean =       1.34 ms, std =       0.48 ms, n =    484
-Expected clock: 1020484.45 Hz, 7.74 s
-Actual clock:   1014560.11 Hz, 7.79 s
 ```
 
 - ``events``: SDL events and audio
 - ``texture``: ``SDL_UpdateTexture``
 - ``screen``: ``SDL_RenderCopyEx`` and ``SDL_RenderPresent`` (this includes ``vsync``)
 - ``cpu``: AW's code
-
-The clock shows expected vs actual speed.
 
 ## Debugging
 
