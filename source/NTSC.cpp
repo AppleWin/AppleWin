@@ -1940,10 +1940,12 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 	return addr;
 }
 
-void NTSC_UpdateVideoHVForDebugger(void)
+void NTSC_GetVideoHVForDebugger(uint16_t& vert, uint16_t& horz)
 {
 	ResetCyclesExecutedForDebugger();		// if in full-speed, then reset cycles so that CpuCalcCycles() doesn't ASSERT
 	NTSC_VideoGetScannerAddress(0);
+	vert = g_nVideoClockVert;
+	horz = g_nVideoClockHorz;
 }
 
 //===========================================================================

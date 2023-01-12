@@ -1350,7 +1350,9 @@ int CheckBreakpointsVideo()
 		if (pBP->eSource != BP_SRC_VIDEO_SCANNER)
 			continue;
 
-		if (_CheckBreakpointValue(pBP, g_nVideoClockVert))
+		uint16_t vert, horz;
+		NTSC_GetVideoHVForDebugger(vert, horz);		// update g_nVideoClockHorz/g_nVideoClockVert - needed for when in fullspeed (GH#1164)
+		if (_CheckBreakpointValue(pBP, vert))
 		{
 			bBreakpointHit = BP_HIT_VIDEO_POS;
 			pBP->bEnabled = false;	// Disable, otherwise it'll trigger many times on this scan-line
