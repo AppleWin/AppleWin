@@ -1351,7 +1351,7 @@ int CheckBreakpointsVideo()
 			continue;
 
 		uint16_t vert, horz;
-		NTSC_GetVideoHVForDebugger(vert, horz);		// update g_nVideoClockHorz/g_nVideoClockVert - needed for when in fullspeed (GH#1164)
+		NTSC_GetVideoHVForDebugger(vert, horz);		// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
 		if (_CheckBreakpointValue(pBP, vert))
 		{
 			bBreakpointHit = BP_HIT_VIDEO_POS;
@@ -7893,14 +7893,17 @@ void OutputTraceLine ()
 
 	if (g_bTraceFileWithVideoScanner)
 	{
+		uint16_t vert, horz;
+		NTSC_GetVideoHVForDebugger(vert, horz);		// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
+
 		uint32_t data;
 		int dataSize;
 		uint16_t addr = NTSC_GetScannerAddressAndData(data, dataSize);
 
 		fprintf( g_hTraceFile,
 			"%04X %04X %04X   %02X %02X %02X %02X %04X %s  %s\n",
-			g_nVideoClockVert,
-			g_nVideoClockHorz,
+			vert,
+			horz,
 			addr,
 			(uint8_t)data,	// truncated
 			(unsigned)regs.a,
