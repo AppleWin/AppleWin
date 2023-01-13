@@ -15,6 +15,7 @@ uint32_t* NTSC_VideoGetChromaTable(bool bHueTypeMonochrome, bool bMonitorTypeCol
 void NTSC_VideoClockResync(const DWORD dwCyclesThisFrame);
 uint16_t NTSC_VideoGetScannerAddress(const ULONG uExecutedCycles);
 void NTSC_GetVideoHVForDebugger(uint16_t& vert, uint16_t& horz);
+uint16_t NTSC_GetVideoVForDebugger(void);
 void NTSC_Destroy(void);
 void NTSC_VideoInit(uint8_t *pFramebuffer);
 void NTSC_VideoReinitialize(DWORD cyclesThisFrame, bool bInitVideoScannerAddress);

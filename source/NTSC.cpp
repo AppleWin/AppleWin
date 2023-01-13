@@ -1948,6 +1948,13 @@ void NTSC_GetVideoHVForDebugger(uint16_t& vert, uint16_t& horz)
 	horz = g_nVideoClockHorz;
 }
 
+uint16_t NTSC_GetVideoVForDebugger(void)
+{
+	uint16_t vert, horz;
+	NTSC_GetVideoHVForDebugger(vert, horz);
+	return vert;
+}
+
 //===========================================================================
 void NTSC_SetVideoTextMode( int cols )
 {
