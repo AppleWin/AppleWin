@@ -455,7 +455,7 @@ bool Video::VideoGetVblBarEx(const DWORD dwCyclesThisFrame)
 		NTSC_VideoClockResync(dwCyclesThisFrame);
 	}
 
-	return NTSC_GetVideoVert() < kVDisplayableScanLines;
+	return NTSC_GetVblBar();
 }
 
 // Called when *inside* CpuExecute()
@@ -467,7 +467,7 @@ bool Video::VideoGetVblBar(const DWORD uExecutedCycles)
 		NTSC_VideoClockResync(CpuGetCyclesThisVideoFrame(uExecutedCycles));
 	}
 
-	return NTSC_GetVideoVert() < kVDisplayableScanLines;
+	return NTSC_GetVblBar();
 }
 
 //===========================================================================

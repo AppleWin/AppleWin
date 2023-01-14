@@ -1940,11 +1940,6 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 	return addr;
 }
 
-uint16_t NTSC_GetVideoVert(void)
-{
-	return g_nVideoClockVert;
-}
-
 void NTSC_GetVideoVertHorzForDebugger(uint16_t& vert, uint16_t& horz)
 {
 	ResetCyclesExecutedForDebugger();		// if in full-speed, then reset cycles so that CpuCalcCycles() doesn't ASSERT
@@ -2741,9 +2736,15 @@ UINT NTSC_GetCyclesUntilVBlank(int cycles)
 		(cyclesPerFrames - cycleCurrentPos + cycleVBl);
 }
 
+bool NTSC_GetVblBar(void)
+{
+	const UINT visibleScanLines = ((g_uNewVideoModeFlags & VF_SHR) == 0) ? VIDEO_SCANNER_Y_DISPLAY : VIDEO_SCANNER_Y_DISPLAY_IIGS;
+	return g_nVideoClockVert < visibleScanLines;
+}
+
 bool NTSC_IsVisible(void)
 {
-	return (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START);
+	return NTSC_GetVblBar() && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START);
 }
 
 // For debugger
