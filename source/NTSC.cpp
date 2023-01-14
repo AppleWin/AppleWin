@@ -69,8 +69,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 // Globals (Public) ___________________________________________________
-	uint16_t g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
-	uint16_t g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible (NB. final hpos is 2 cycles long, so a line is 65 cycles)
+	static uint16_t g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
+	static uint16_t g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible (NB. final hpos is 2 cycles long, so a line is 65 cycles)
 
 // Globals (Private) __________________________________________________
 	static int g_nVideoCharSet = 0;
@@ -1940,7 +1940,12 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 	return addr;
 }
 
-void NTSC_GetVideoHVForDebugger(uint16_t& vert, uint16_t& horz)
+uint16_t NTSC_GetVideoVert(void)
+{
+	return g_nVideoClockVert;
+}
+
+void NTSC_GetVideoVertHorzForDebugger(uint16_t& vert, uint16_t& horz)
 {
 	ResetCyclesExecutedForDebugger();		// if in full-speed, then reset cycles so that CpuCalcCycles() doesn't ASSERT
 	NTSC_VideoGetScannerAddress(0);
@@ -1948,10 +1953,10 @@ void NTSC_GetVideoHVForDebugger(uint16_t& vert, uint16_t& horz)
 	horz = g_nVideoClockHorz;
 }
 
-uint16_t NTSC_GetVideoVForDebugger(void)
+uint16_t NTSC_GetVideoVertForDebugger(void)
 {
 	uint16_t vert, horz;
-	NTSC_GetVideoHVForDebugger(vert, horz);
+	NTSC_GetVideoVertHorzForDebugger(vert, horz);
 	return vert;
 }
 

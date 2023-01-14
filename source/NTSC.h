@@ -3,8 +3,6 @@
 #include "Video.h"	// NB. needed by GCC (for fwd enum declaration)
 
 // Globals (Public)
-extern uint16_t g_nVideoClockVert;
-extern uint16_t g_nVideoClockHorz;
 extern uint32_t g_nChromaSize;
 
 // Prototypes (Public) ________________________________________________
@@ -14,8 +12,9 @@ void NTSC_SetVideoTextMode(int cols);
 uint32_t* NTSC_VideoGetChromaTable(bool bHueTypeMonochrome, bool bMonitorTypeColorTV);
 void NTSC_VideoClockResync(const DWORD dwCyclesThisFrame);
 uint16_t NTSC_VideoGetScannerAddress(const ULONG uExecutedCycles);
-void NTSC_GetVideoHVForDebugger(uint16_t& vert, uint16_t& horz);
-uint16_t NTSC_GetVideoVForDebugger(void);
+uint16_t NTSC_GetVideoVert(void);
+void NTSC_GetVideoVertHorzForDebugger(uint16_t& vert, uint16_t& horz);
+uint16_t NTSC_GetVideoVertForDebugger(void);
 void NTSC_Destroy(void);
 void NTSC_VideoInit(uint8_t *pFramebuffer);
 void NTSC_VideoReinitialize(DWORD cyclesThisFrame, bool bInitVideoScannerAddress);

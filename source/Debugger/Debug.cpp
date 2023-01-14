@@ -1350,7 +1350,7 @@ int CheckBreakpointsVideo()
 		if (pBP->eSource != BP_SRC_VIDEO_SCANNER)
 			continue;
 
-		uint16_t vert = NTSC_GetVideoVForDebugger();	// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
+		uint16_t vert = NTSC_GetVideoVertForDebugger();	// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
 		if (_CheckBreakpointValue(pBP, vert))
 		{
 			bBreakpointHit = BP_HIT_VIDEO_POS;
@@ -7893,7 +7893,7 @@ void OutputTraceLine ()
 	if (g_bTraceFileWithVideoScanner)
 	{
 		uint16_t vert, horz;
-		NTSC_GetVideoHVForDebugger(vert, horz);		// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
+		NTSC_GetVideoVertHorzForDebugger(vert, horz);		// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
 
 		uint32_t data;
 		int dataSize;
@@ -8519,7 +8519,7 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 				stopReason = (g_LBR == LBR_UNDEFINED)	? StrFormat("Interrupt occurred (LBR unknown)")
 														: StrFormat("Interrupt occurred at $%04X", g_LBR);
 			else if (g_bDebugBreakpointHit & BP_HIT_VIDEO_POS)
-				stopReason = StrFormat("Video scanner position matches at vpos=$%04X", NTSC_GetVideoVForDebugger());
+				stopReason = StrFormat("Video scanner position matches at vpos=$%04X", NTSC_GetVideoVertForDebugger());
 			else if (g_bDebugBreakpointHit & BP_DMA_TO_IO_MEM)
 				stopReason = StrFormat("HDD DMA to I/O memory or ROM at $%04X", g_DebugBreakOnDMAIO.memoryAddr);
 			else if (g_bDebugBreakpointHit & BP_DMA_FROM_IO_MEM)
