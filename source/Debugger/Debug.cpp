@@ -51,7 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,13);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,14);
 
 
 // Public _________________________________________________________________________________________
@@ -1350,7 +1350,8 @@ int CheckBreakpointsVideo()
 		if (pBP->eSource != BP_SRC_VIDEO_SCANNER)
 			continue;
 
-		if (_CheckBreakpointValue(pBP, g_nVideoClockVert))
+		uint16_t vert = NTSC_GetVideoVertForDebugger();	// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
+		if (_CheckBreakpointValue(pBP, vert))
 		{
 			bBreakpointHit = BP_HIT_VIDEO_POS;
 			pBP->bEnabled = false;	// Disable, otherwise it'll trigger many times on this scan-line
@@ -7891,14 +7892,17 @@ void OutputTraceLine ()
 
 	if (g_bTraceFileWithVideoScanner)
 	{
+		uint16_t vert, horz;
+		NTSC_GetVideoVertHorzForDebugger(vert, horz);		// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
+
 		uint32_t data;
 		int dataSize;
 		uint16_t addr = NTSC_GetScannerAddressAndData(data, dataSize);
 
 		fprintf( g_hTraceFile,
 			"%04X %04X %04X   %02X %02X %02X %02X %04X %s  %s\n",
-			g_nVideoClockVert,
-			g_nVideoClockHorz,
+			vert,
+			horz,
 			addr,
 			(uint8_t)data,	// truncated
 			(unsigned)regs.a,
@@ -8515,7 +8519,7 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 				stopReason = (g_LBR == LBR_UNDEFINED)	? StrFormat("Interrupt occurred (LBR unknown)")
 														: StrFormat("Interrupt occurred at $%04X", g_LBR);
 			else if (g_bDebugBreakpointHit & BP_HIT_VIDEO_POS)
-				stopReason = StrFormat("Video scanner position matches at vpos=$%04X", g_nVideoClockVert);
+				stopReason = StrFormat("Video scanner position matches at vpos=$%04X", NTSC_GetVideoVertForDebugger());
 			else if (g_bDebugBreakpointHit & BP_DMA_TO_IO_MEM)
 				stopReason = StrFormat("HDD DMA to I/O memory or ROM at $%04X", g_DebugBreakOnDMAIO.memoryAddr);
 			else if (g_bDebugBreakpointHit & BP_DMA_FROM_IO_MEM)

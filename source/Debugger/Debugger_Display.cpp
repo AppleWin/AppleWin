@@ -3231,10 +3231,8 @@ static void DrawVideoScannerValue(int line, int vert, int horz, bool isVisible)
 //===========================================================================
 static void DrawVideoScannerInfo(int line)
 {
-	NTSC_UpdateVideoHVForDebugger();		// update g_nVideoClockHorz/g_nVideoClockVert
-
-	int v = g_nVideoClockVert;
-	int h = g_nVideoClockHorz;
+	uint16_t v, h;
+	NTSC_GetVideoVertHorzForDebugger(v, h);		// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
 
 	if (g_videoScannerDisplayInfo.isHorzReal)
 	{

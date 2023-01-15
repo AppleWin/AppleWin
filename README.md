@@ -34,6 +34,11 @@ To compile from source see:
 * [docs/compiling.txt](https://github.com/AppleWin/AppleWin/blob/master/docs/compiling.txt)
 
 
+Contributing
+============
+Please see the [CONTRIBUTING](https://github.com/AppleWin/AppleWin/blob/master/CONTRIBUTING.md) doc before raising new bugs, features and _especially_ PRs.
+
+
 Next Version
 ============
 Experimental build: pending

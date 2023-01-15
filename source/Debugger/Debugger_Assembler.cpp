@@ -498,7 +498,9 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 		if ( pData_ )
 			*pData_ = pData;
 
-		nSlack = pData->nEndAddress - pData->nStartAddress + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
+		const DWORD nEndAddress   = pData->nEndAddress;
+		const int   nDisplayLen   = nEndAddress - nBaseAddress + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
+		nSlack = nDisplayLen;
 
 		// Data Disassembler
 		// Smart Disassembly - Data Section
