@@ -114,7 +114,6 @@ private:
 	void AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice);
 	void WriteToORB(BYTE device);
 	void UpdateIFRandIRQ(SY6522_AY8910* pMB, BYTE clr_mask, BYTE set_mask);
-	void InitSoundcardType(void);
 
 	void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);

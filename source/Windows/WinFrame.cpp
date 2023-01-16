@@ -964,9 +964,7 @@ LRESULT Win32Frame::WndProc(
 	  if (!g_bRestart)	// GH#564: Only save-state on shutdown (not on a restart)
 		Snapshot_Shutdown();
       DebugDestroy();
-      if (!g_bRestart) {	// TODO: why only done for !g_bRestart, ie. why only done when exiting the app ?
-		GetCardMgr().Destroy();
-      }
+	  GetCardMgr().Destroy();
       PrintDestroy();
       CpuDestroy();
       MemDestroy();

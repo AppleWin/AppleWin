@@ -241,6 +241,7 @@ void CardManager::Destroy()
 		}
 	}
 
+	GetCardMgr().GetDisk2CardMgr().Destroy();
 	GetCardMgr().GetMockingboardCardMgr().Destroy();
 }
 
