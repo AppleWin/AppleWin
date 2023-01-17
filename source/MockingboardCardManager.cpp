@@ -42,15 +42,6 @@ bool MockingboardCardManager::IsMockingboard(UINT slot)
 	return type == CT_MockingboardC || type == CT_Phasor;
 }
 
-void MockingboardCardManager::InitializePostWindowCreate(void)
-{
-	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
-	{
-		if (IsMockingboard(i))
-			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).MB_DSInit();
-	}
-}
-
 void MockingboardCardManager::ReinitializeClock(void)
 {
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)

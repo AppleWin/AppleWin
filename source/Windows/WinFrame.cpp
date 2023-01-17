@@ -987,8 +987,6 @@ LRESULT Win32Frame::WndProc(
 	  DSInit();					// NB. Need g_hFrameWindow for IDirectSound::SetCooperativeLevel()
       LogFileOutput("WM_CREATE: DSInit()\n");
 
-//	  GetCardMgr().GetMockingboardCardMgr().InitializePostWindowCreate();	// INFO: Moved to MockingboardCard::InitializeIO(), so that loading save-state works
-
 	  DIMouse::DirectInputInit(window);
       LogFileOutput("WM_CREATE: DIMouse::DirectInputInit()\n");
 

@@ -16,7 +16,6 @@ public:
 	{}
 
 	bool IsMockingboard(UINT slot);
-	void InitializePostWindowCreate(void);
 	void ReinitializeClock(void);
 	void InitializeForLoadingSnapshot(void);
 	void MuteControl(bool mute);
