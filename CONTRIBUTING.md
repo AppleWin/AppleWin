@@ -40,7 +40,7 @@ For large changes being submitted for review, then it's HIGHLY recommended to sp
 
 For a PR, don't make changes that are unrelated to the PR as this adds unnecessary noise and time to review. These can and should be done in separate PRs.
 
-Next, please make sure your code mades the existing style by reviewing the simple [Coding Conventions](https://github.com/AppleWin/AppleWin/blob/master/docs/CodingConventions.txt).
+Next, please make sure your code matches the existing style by reviewing the simple [Coding Conventions](https://github.com/AppleWin/AppleWin/blob/master/docs/CodingConventions.txt).
 
 Follow the coding style in the source file(s) that are being changed. Since this is a mature codebase, then bear in mind that different coding styles can and do exist in different source files due to many different authors over the past 25+ years.
 
@@ -54,9 +54,9 @@ When submitting UI changes please discuss WHY you are making changes.
 
 * **Functionality should be prioritized over Form.** The _entire_ point of UI is to empower the user to do the thing they want to do and _then get out of their way._  A pretty UI, but one that frustrates users, is not empowering them.
 
-* Also keep in mind many so called modern UI/UX "experts" tend to make changes for the sake of change in order to sell a product. Worse they tend to focus on mobile design even when it makes little or no sense on a desktop platform. There is a time and a place to focus on Form but as a mature project we are more interested in stability and functionality than throwing on a fresh coat of paint that more likely to introduces a new set of bugs.
+* Also keep in mind many so called modern UI/UX "experts" tend to make changes for the sake of change in order to sell a product. Worse they tend to focus on mobile design even when it makes little or no sense on a desktop platform. There is a time and a place to focus on Form but as a mature project we are more interested in stability and functionality than throwing on a fresh coat of paint that more likely introduces a new set of bugs.
 
-Understand that not everyone will agree to UI changes.  The developers have been using computers a very long time and are not interested in chasing modern UI fads unless it a good reason can be shown _why_ the UI should be changed.  For example, take a poll, or even better raise an issue asking for feedback.  This way we have hard data showing that there is interest instead of assuming that a change is automatically "better".
+Understand that not everyone will agree to UI changes.  The developers have been using computers a very long time and are not interested in chasing modern UI fads unless a good reason can be shown _why_ the UI should be changed.  For example, take a poll, or even better raise an issue asking for feedback.  This way we have hard data showing that there is interest instead of assuming that a change is automatically "better".
 
 Trivial changes such as updating art are much easier to accept than rewriting the UI moving buttons around.
 
