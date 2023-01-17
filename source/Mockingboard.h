@@ -10,39 +10,8 @@
 class MockingboardCard : public Card
 {
 public:
-	MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slot)
-	{
-		g_uLastCumulativeCycles = 0;
-		g_uLastCumulativeCycles2 = 0;	// TODO: Is this needed?
-
-		for (UINT i = 0; i < NUM_VOICES; i++)
-			ppAYVoiceBuffer[NUM_VOICES] = NULL;
-
-		// Construct via placement new, so that it is an array of 'SY6522_AY8910' objects
-		g_MB = (SY6522_AY8910*) new BYTE[sizeof(SY6522_AY8910) * NUM_SY6522];
-		for (UINT i=0; i< NUM_SY6522; i++)
-			new (&g_MB[i]) SY6522_AY8910(m_slot);
-
-		g_nMB_InActiveCycleCount = 0;
-		g_bMB_RegAccessedFlag = false;
-		g_bMB_Active = false;
-
-		g_bPhasorEnable = (QueryType() == CT_Phasor);
-		g_phasorMode = PH_Mockingboard;
-		g_PhasorClockScaleFactor = 1;	// for save-state only
-
-		g_uLastMBUpdateCycle = 0;
-		nNumSamplesError = 0;
-
-		MB_Initialize();
-	}
-
-	virtual ~MockingboardCard(void)
-	{
-		for (UINT i = 0; i < NUM_SY6522; i++)
-			g_MB[i].~SY6522_AY8910();
-		delete[] (BYTE*) g_MB;
-	}
+	MockingboardCard(UINT slot, SS_CARDTYPE type);
+	virtual ~MockingboardCard(void);
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void Destroy();
@@ -66,7 +35,6 @@ public:
 	bool IsActive(void);
 	void SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 	void SetCumulativeCycles(void);
-	bool MB_DSInit(void);
 	UINT MB_Update(void);
 	short** GetVoiceBuffers(void) { return ppAYVoiceBuffer; }
 	int GetNumSamplesError(void) { return nNumSamplesError; }
@@ -110,7 +78,6 @@ private:
 		}
 	};
 
-	void MB_Initialize(void);
 	void AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice);
 	void WriteToORB(BYTE device);
 	void UpdateIFRandIRQ(SY6522_AY8910* pMB, BYTE clr_mask, BYTE set_mask);
@@ -185,20 +152,3 @@ private:
 	UINT64 g_uLastMBUpdateCycle;
 	int nNumSamplesError;
 };
-
-#if 0
-class PhasorCard : public MockingboardCard
-{
-public:
-	PhasorCard(UINT slot) :
-		MockingboardCard(slot)
-	{
-		// TODO: set Card's type = CT_Phasor
-		// or maybe PhasorCard HAS_A MockingboardCard ?
-	}
-	virtual ~PhasorCard(void);
-
-private:
-
-};
-#endif

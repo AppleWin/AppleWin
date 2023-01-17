@@ -59,10 +59,74 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define DBG_MB_SS_CARD 0	// NB. From UI, select Mockingboard (not Phasor)
 
-//#define Phasor_SY6522A_CS		4
-//#define Phasor_SY6522B_CS		7
-//#define Phasor_SY6522A_Offset	(1<<Phasor_SY6522A_CS)
-//#define Phasor_SY6522B_Offset	(1<<Phasor_SY6522B_CS)
+//---------------------------------------------------------------------------
+
+MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slot)
+{
+	g_uLastCumulativeCycles = 0;
+	g_uLastCumulativeCycles2 = 0;	// TODO: Is this needed?
+
+	for (UINT i = 0; i < NUM_VOICES; i++)
+		ppAYVoiceBuffer[NUM_VOICES] = NULL;
+
+	// Construct via placement new, so that it is an array of 'SY6522_AY8910' objects
+	g_MB = (SY6522_AY8910*) new BYTE[sizeof(SY6522_AY8910) * NUM_SY6522];
+	for (UINT i = 0; i < NUM_SY6522; i++)
+		new (&g_MB[i]) SY6522_AY8910(m_slot);
+
+	g_nMB_InActiveCycleCount = 0;
+	g_bMB_RegAccessedFlag = false;
+	g_bMB_Active = false;
+
+	g_bPhasorEnable = (QueryType() == CT_Phasor);
+	g_phasorMode = PH_Mockingboard;
+	g_PhasorClockScaleFactor = 1;	// for save-state only
+
+	g_uLastMBUpdateCycle = 0;
+	nNumSamplesError = 0;
+
+	//
+
+	for (int id = 0; id < kNumSyncEvents; id++)
+	{
+		int syncId = (m_slot << 4) + id;	// NB. Encode the slot# into the id - used by MB_SyncEventCallback()
+		g_syncEvent[id] = new SyncEvent(syncId, 0, MB_SyncEventCallback);
+	}
+
+	LogFileOutput("MockingboardCard::ctor: g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
+	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
+	{
+		// MockingboardVoice.bMute = true;	// TODO-TC: move to class MockingboardCardManager
+	}
+	else
+	{
+		for (UINT i = 0; i < NUM_VOICES; i++)
+			ppAYVoiceBuffer[i] = new short[MAX_SAMPLES];	// Buffer can hold a max of 0.37 seconds worth of samples (16384/44100)
+
+		for (UINT i = 0; i < NUM_SY6522; i++)
+		{
+			g_MB[i] = SY6522_AY8910(m_slot);
+			g_MB[i].nAY8910Number = i;
+			const UINT id0 = i * SY6522::kNumTimersPer6522 + 0;	// TIMER1
+			const UINT id1 = i * SY6522::kNumTimersPer6522 + 1;	// TIMER2
+			g_MB[i].sy6522.InitSyncEvents(g_syncEvent[id0], g_syncEvent[id1]);
+			g_MB[i].ssi263.SetDevice(i);
+		}
+
+		AY8910_InitAll((int)g_fCurrentCLK6502, SAMPLE_RATE);
+		LogFileOutput("MockingboardCard::ctor: AY8910_InitAll()\n");
+
+		Reset(true);
+		LogFileOutput("MockingboardCard::ctor: Reset()\n");
+	}
+}
+
+MockingboardCard::~MockingboardCard(void)
+{
+	for (UINT i = 0; i < NUM_SY6522; i++)
+		g_MB[i].~SY6522_AY8910();
+	delete[](BYTE*) g_MB;
+}
 
 //---------------------------------------------------------------------------
 
@@ -363,66 +427,6 @@ UINT MockingboardCard::MB_Update(void)
 }
 
 //-----------------------------------------------------------------------------
-
-bool MockingboardCard::MB_DSInit(void)
-{
-	LogFileOutput("MB_DSInit\n");
-#ifdef NO_DIRECT_X
-
-	return false;
-
-#else // NO_DIRECT_X
-
-	for (UINT i = 0; i < NUM_SSI263; i++)
-	{
-		if (!g_MB[i].ssi263.DSInit())
-			return false;
-	}
-
-	return true;
-
-#endif // NO_DIRECT_X
-}
-
-void MockingboardCard::MB_Initialize(void)
-{
-	for (int id = 0; id < kNumSyncEvents; id++)
-	{
-		int syncId = (m_slot << 4) + id;	// NB. Encode the slot# into the id - used by MB_SyncEventCallback()
-		g_syncEvent[id] = new SyncEvent(syncId, 0, MB_SyncEventCallback);
-	}
-
-	LogFileOutput("MB_Initialize: g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
-	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
-	{
-//		MockingboardVoice.bMute = true;	// TODO-TC: move to class MockingboardCardManager
-	}
-	else
-	{
-		for (UINT i=0; i<NUM_VOICES; i++)
-			ppAYVoiceBuffer[i] = new short [MAX_SAMPLES];	// Buffer can hold a max of 0.37 seconds worth of samples (16384/44100)
-
-		for (UINT i=0; i<NUM_SY6522; i++)
-		{
-			g_MB[i] = SY6522_AY8910(m_slot);
-			g_MB[i].nAY8910Number = i;
-			const UINT id0 = i * SY6522::kNumTimersPer6522 + 0;	// TIMER1
-			const UINT id1 = i * SY6522::kNumTimersPer6522 + 1;	// TIMER2
-			g_MB[i].sy6522.InitSyncEvents(g_syncEvent[id0], g_syncEvent[id1]);
-			g_MB[i].ssi263.SetDevice(i);
-		}
-
-		AY8910_InitAll((int)g_fCurrentCLK6502, SAMPLE_RATE);
-		LogFileOutput("MB_Initialize: AY8910_InitAll()\n");
-
-		//
-
-		// INFO: NB. Used to call MB_DSInit() here; but can't now, since MB_Initialize() is called by ctor (and MB_Initialize() was called from WM_CREATE)
-
-		Reset(true);
-		LogFileOutput("MB_Initialize: Reset()\n");
-	}
-}
 
 // NB. Mockingboard voice is *already* muted because showing 'Select Load State file' dialog
 // . and voice will be unmuted when dialog is closed
@@ -772,7 +776,14 @@ void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral)
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;
 
-	MB_DSInit();
+#ifdef NO_DIRECT_X
+#else // NO_DIRECT_X
+	for (UINT i = 0; i < NUM_SSI263; i++)
+	{
+		if (!g_MB[i].ssi263.DSInit())
+			break;
+	}
+#endif // NO_DIRECT_X
 
 	//
 	// TODO-TC: move to class MockingboardCardManager
