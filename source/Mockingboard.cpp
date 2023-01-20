@@ -123,6 +123,8 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 
 MockingboardCard::~MockingboardCard(void)
 {
+	Destroy();
+
 	for (UINT i = 0; i < NUM_SY6522; i++)
 		g_MB[i].~SY6522_AY8910();
 	delete[](BYTE*) g_MB;
@@ -463,7 +465,10 @@ void MockingboardCard::Destroy(void)
 		g_MB[i].ssi263.DSUninit();
 
 	for (UINT i = 0; i < NUM_VOICES; i++)
+	{
 		delete[] ppAYVoiceBuffer[i];
+		ppAYVoiceBuffer[i] = NULL;
+	}
 
 	for (UINT id = 0; id < kNumSyncEvents; id++)
 	{
