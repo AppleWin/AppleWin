@@ -103,7 +103,7 @@ private:
 	UINT AY8910_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, UINT uChip, const std::string& suffix);
 	UINT AY8910_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uChip, const std::string& suffix);
 
-	UINT64 g_uLastCumulativeCycles2;	// TODO: Is this needed?
+	UINT64 m_lastAYUpdateCycle;
 	//-------------------------------------
 
 	static const UINT SY6522_DEVICE_A = 0;
@@ -130,7 +130,7 @@ private:
 
 	// Timer vars
 	static const UINT kTIMERDEVICE_INVALID = -1;
-	UINT64 g_uLastCumulativeCycles;
+	UINT64 m_lastCumulativeCycle;
 
 	static const DWORD SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 
@@ -148,6 +148,6 @@ private:
 
 	//
 
-	UINT64 g_uLastMBUpdateCycle;
+	UINT64 m_lastMBUpdateCycle;
 	int nNumSamplesError;
 };

@@ -63,8 +63,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slot)
 {
-	g_uLastCumulativeCycles = 0;
-	g_uLastCumulativeCycles2 = 0;	// TODO: Is this needed?
+	m_lastCumulativeCycle = 0;
+	m_lastAYUpdateCycle = 0;
 
 	for (UINT i = 0; i < NUM_VOICES; i++)
 		ppAYVoiceBuffer[NUM_VOICES] = NULL;
@@ -82,7 +82,7 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	g_phasorMode = PH_Mockingboard;
 	g_PhasorClockScaleFactor = 1;	// for save-state only
 
-	g_uLastMBUpdateCycle = 0;
+	m_lastMBUpdateCycle = 0;
 	nNumSamplesError = 0;
 
 	//
@@ -324,7 +324,7 @@ void MockingboardCard::UpdateIRQ(void)
 // Called from class SSI263
 UINT64 MockingboardCard::GetLastCumulativeCycles(void)
 {
-	return g_uLastCumulativeCycles;
+	return m_lastCumulativeCycle;
 }
 
 void MockingboardCard::UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask)
@@ -351,7 +351,7 @@ UINT MockingboardCard::MB_Update(void)
 		//   . Tune ends
 		//   . g_bFullSpeed:=true (disk-spinning) for ~50 frames
 		//   . U3 sets AY_ENABLE:=0xFF (as a side-effect, this sets g_bFullSpeed:=false)
-		//   o Without this, the write to AY_ENABLE gets ignored (since AY8910's /g_uLastCumulativeCycles/ was last set 50 frame ago)
+		//   o Without this, the write to AY_ENABLE gets ignored (since AY8910's /m_lastCumulativeCycle/ was last set 50 frame ago)
 		AY8910UpdateSetCycles();
 
 		// TODO:
@@ -388,17 +388,17 @@ UINT MockingboardCard::MB_Update(void)
 	const double kMinimumUpdateInterval = 500.0;	// Arbitary (500 cycles = 21 samples)
 	const double kMaximumUpdateInterval = (double)(0xFFFF + 2);	// Max 6522 timer interval (2756 samples)
 
-	if (g_uLastMBUpdateCycle == 0)
-		g_uLastMBUpdateCycle = g_uLastCumulativeCycles;		// Initial call to MB_Update() after reset/power-cycle
+	if (m_lastMBUpdateCycle == 0)
+		m_lastMBUpdateCycle = m_lastCumulativeCycle;		// Initial call to MB_Update() after reset/power-cycle
 
-	_ASSERT(g_uLastCumulativeCycles >= g_uLastMBUpdateCycle);
-	double updateInterval = (double)(g_uLastCumulativeCycles - g_uLastMBUpdateCycle);
+	_ASSERT(m_lastCumulativeCycle >= m_lastMBUpdateCycle);
+	double updateInterval = (double)(m_lastCumulativeCycle - m_lastMBUpdateCycle);
 	if (updateInterval < kMinimumUpdateInterval)
 		return 0;
 	if (updateInterval > kMaximumUpdateInterval)
 		updateInterval = kMaximumUpdateInterval;
 
-	g_uLastMBUpdateCycle = g_uLastCumulativeCycles;
+	m_lastMBUpdateCycle = m_lastCumulativeCycle;
 
 	const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
 	const int nNumSamplesPerPeriod = (int)((double)SAMPLE_RATE / nIrqFreq);	// Eg. For 60Hz this is 735
@@ -481,7 +481,7 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 		g_phasorMode = PH_Mockingboard;
 		g_PhasorClockScaleFactor = 1;
 
-		g_uLastMBUpdateCycle = 0;
+		m_lastMBUpdateCycle = 0;
 
 		for (int id = 0; id < kNumSyncEvents; id++)
 		{
@@ -781,15 +781,15 @@ void MockingboardCard::MuteControl(bool mute)
 #ifdef _DEBUG
 void MockingboardCard::CheckCumulativeCycles(void)
 {
-	_ASSERT(g_uLastCumulativeCycles == g_nCumulativeCycles);
-	g_uLastCumulativeCycles = g_nCumulativeCycles;
+	_ASSERT(m_lastCumulativeCycle == g_nCumulativeCycles);
+	m_lastCumulativeCycle = g_nCumulativeCycles;
 }
 #endif
 
 // Called by: ResetState() and Snapshot_LoadState_v2()
 void MockingboardCard::SetCumulativeCycles(void)
 {
-	g_uLastCumulativeCycles = g_nCumulativeCycles;
+	m_lastCumulativeCycle = g_nCumulativeCycles;
 }
 
 // Called by ContinueExecution() at the end of every execution period (~1000 cycles or ~3 cycles when MODE_STEPPING)
@@ -808,12 +808,12 @@ void MockingboardCard::Update(const ULONG executedCycles)
 void MockingboardCard::UpdateCycles(ULONG executedCycles)
 {
 	CpuCalcCycles(executedCycles);
-	UINT64 uCycles = g_nCumulativeCycles - g_uLastCumulativeCycles;
+	UINT64 uCycles = g_nCumulativeCycles - m_lastCumulativeCycle;
 	_ASSERT(uCycles >= 0);
 	if (uCycles == 0)
 		return;
 
-	g_uLastCumulativeCycles = g_nCumulativeCycles;
+	m_lastCumulativeCycle = g_nCumulativeCycles;
 	_ASSERT(uCycles < 0x10000 || g_nAppMode == MODE_BENCHMARK);
 	USHORT nClocks = (USHORT)uCycles;
 
@@ -837,7 +837,7 @@ int MockingboardCard::MB_SyncEventCallback(int id, int /*cycles*/, ULONG uExecut
 int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG uExecutedCycles)
 {
 	//UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
-	// Update all MBs, so that g_uLastCumulativeCycles remains in sync for all
+	// Update all MBs, so that m_lastCumulativeCycle remains in sync for all
 	GetCardMgr().GetMockingboardCardMgr().UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
 
 	SY6522_AY8910* pMB = &g_MB[(id & 0xf) / SY6522::kNumTimersPer6522];
@@ -928,26 +928,19 @@ void MockingboardCard::GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS)
 }
 
 //=============================================================================
-
 // AY8913 interface
-#define MAX_8910 4
-
-//static AY8913 g_AY8910[MAX_8910];
-//static unsigned __int64 g_uLastCumulativeCycles2 = 0;
 
 BYTE MockingboardCard::AYReadReg(int chip, int r)
 {
 	const UINT unit = chip / NUM_DEVS_PER_MB;
 	return g_MB[unit].ay8913[chip & 1].sound_ay_read(r);
-//	return g_AY8910[chip].sound_ay_read(r);
 }
 
 void MockingboardCard::_AYWriteReg(int chip, int r, int v)
 {
-	libspectrum_dword uOffset = (libspectrum_dword)(g_nCumulativeCycles - g_uLastCumulativeCycles2);
+	libspectrum_dword uOffset = (libspectrum_dword)(g_nCumulativeCycles - m_lastAYUpdateCycle);
 	const UINT unit = chip / NUM_DEVS_PER_MB;
 	g_MB[unit].ay8913[chip & 1].sound_ay_write(r, v, uOffset);
-//	g_AY8910[chip].sound_ay_write(r, v, uOffset);
 }
 
 void MockingboardCard::AY8910_reset(int chip)
@@ -955,12 +948,11 @@ void MockingboardCard::AY8910_reset(int chip)
 	// Don't reset the AY CLK, as this is a property of the card (MB/Phasor), not the AY chip
 	const UINT unit = chip / NUM_DEVS_PER_MB;
 	g_MB[unit].ay8913[chip & 1].sound_ay_reset();	// Calls: sound_ay_init();
-//	g_AY8910[chip].sound_ay_reset();	// Calls: sound_ay_init();
 }
 
 void MockingboardCard::AY8910UpdateSetCycles()
 {
-	g_uLastCumulativeCycles2 = g_nCumulativeCycles;
+	m_lastAYUpdateCycle = g_nCumulativeCycles;
 }
 
 void MockingboardCard::AY8910Update(int chip, INT16** buffer, int nNumSamples)
@@ -971,10 +963,6 @@ void MockingboardCard::AY8910Update(int chip, INT16** buffer, int nNumSamples)
 	g_MB[unit].ay8913[chip & 1].SetFramesize(nNumSamples);
 	g_MB[unit].ay8913[chip & 1].SetSoundBuffers(buffer);
 	g_MB[unit].ay8913[chip & 1].sound_frame();
-
-//	g_AY8910[chip].SetFramesize(nNumSamples);
-//	g_AY8910[chip].SetSoundBuffers(buffer);
-//	g_AY8910[chip].sound_frame();
 }
 
 void MockingboardCard::AY8910_InitAll(int nClock, int nSampleRate)
@@ -987,12 +975,6 @@ void MockingboardCard::AY8910_InitAll(int nClock, int nSampleRate)
 			g_MB[unit].ay8913[ay].sound_ay_init();
 		}
 	}
-
-//	for (UINT i = 0; i < MAX_8910; i++)
-//	{
-//		g_AY8910[i].sound_init(NULL);	// Inits mainly static members (except ay_tick_incr)
-//		g_AY8910[i].sound_ay_init();
-//	}
 }
 
 void MockingboardCard::AY8910_InitClock(int nClock)
@@ -1006,43 +988,34 @@ void MockingboardCard::AY8910_InitClock(int nClock)
 			g_MB[unit].ay8913[ay].sound_init(NULL);	// Inits mainly static members (except ay_tick_incr)
 		}
 	}
-
-//	for (UINT i = 0; i < MAX_8910; i++)
-//	{
-//		g_AY8910[i].sound_init(NULL);	// ay_tick_incr is dependent on AY_CLK
-//	}
 }
 
 BYTE* MockingboardCard::AY8910_GetRegsPtr(UINT chip)
 {
-	if (chip >= MAX_8910)
+	if (chip >= NUM_AY8913)
 		return NULL;
 
 	const UINT unit = chip / NUM_DEVS_PER_MB;
 	return g_MB[unit].ay8913[chip & 1].GetAYRegsPtr();
-//	return g_AY8910[uChip].GetAYRegsPtr();
 }
 
 UINT MockingboardCard::AY8910_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT chip, const std::string& suffix)
 {
-	if (chip >= MAX_8910)
+	if (chip >= NUM_AY8913)
 		return 0;
 
 	const UINT unit = chip / NUM_DEVS_PER_MB;
 	g_MB[unit].ay8913[chip & 1].SaveSnapshot(yamlSaveHelper, suffix);
 	return 1;
-//	g_AY8910[uChip].SaveSnapshot(yamlSaveHelper, suffix);
-//	return 1;
 }
 
 UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT chip, const std::string& suffix)
 {
-	if (chip >= MAX_8910)
+	if (chip >= NUM_AY8913)
 		return 0;
 
 	const UINT unit = chip / NUM_DEVS_PER_MB;
 	return g_MB[unit].ay8913[chip & 1].LoadSnapshot(yamlLoadHelper, suffix) ? 1 : 0;
-//	return g_AY8910[uChip].LoadSnapshot(yamlLoadHelper, suffix) ? 1 : 0;
 }
 
 //=============================================================================
