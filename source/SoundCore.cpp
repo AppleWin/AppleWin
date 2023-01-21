@@ -61,7 +61,7 @@ bool g_bDSAvailable = false;
 //-----------------------------------------------------------------------------
 
 // NB. Also similar is done by: MockingboardCardManager::Destroy()
-// - which is called from WM_DESTROY when !g_bRestart (ie. when exiting the app)
+// - which is called from WM_DESTROY (when both restarting VM & exiting the app)
 
 VOICE::~VOICE(void)
 {

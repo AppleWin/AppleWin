@@ -209,6 +209,9 @@ void MockingboardCardManager::UpdateSoundBuffer(void)
 
 	if (!MockingboardVoice.lpDSBvoice)
 	{
+		if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
+			return;
+
 		if (!Init())
 			return;
 	}

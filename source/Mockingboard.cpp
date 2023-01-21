@@ -93,32 +93,24 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 		g_syncEvent[id] = new SyncEvent(syncId, 0, MB_SyncEventCallback);
 	}
 
-	LogFileOutput("MockingboardCard::ctor: g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
-	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
+	for (UINT i = 0; i < NUM_VOICES; i++)
+		ppAYVoiceBuffer[i] = new short[MAX_SAMPLES];	// Buffer can hold a max of 0.37 seconds worth of samples (16384/44100)
+
+	for (UINT i = 0; i < NUM_SY6522; i++)
 	{
-		// MockingboardVoice.bMute = true;	// TODO-TC: move to class MockingboardCardManager
+		g_MB[i] = SY6522_AY8910(m_slot);
+		g_MB[i].nAY8910Number = i;
+		const UINT id0 = i * SY6522::kNumTimersPer6522 + 0;	// TIMER1
+		const UINT id1 = i * SY6522::kNumTimersPer6522 + 1;	// TIMER2
+		g_MB[i].sy6522.InitSyncEvents(g_syncEvent[id0], g_syncEvent[id1]);
+		g_MB[i].ssi263.SetDevice(i);
 	}
-	else
-	{
-		for (UINT i = 0; i < NUM_VOICES; i++)
-			ppAYVoiceBuffer[i] = new short[MAX_SAMPLES];	// Buffer can hold a max of 0.37 seconds worth of samples (16384/44100)
 
-		for (UINT i = 0; i < NUM_SY6522; i++)
-		{
-			g_MB[i] = SY6522_AY8910(m_slot);
-			g_MB[i].nAY8910Number = i;
-			const UINT id0 = i * SY6522::kNumTimersPer6522 + 0;	// TIMER1
-			const UINT id1 = i * SY6522::kNumTimersPer6522 + 1;	// TIMER2
-			g_MB[i].sy6522.InitSyncEvents(g_syncEvent[id0], g_syncEvent[id1]);
-			g_MB[i].ssi263.SetDevice(i);
-		}
+	AY8910_InitAll((int)g_fCurrentCLK6502, SAMPLE_RATE);
+	LogFileOutput("MockingboardCard::ctor: AY8910_InitAll()\n");
 
-		AY8910_InitAll((int)g_fCurrentCLK6502, SAMPLE_RATE);
-		LogFileOutput("MockingboardCard::ctor: AY8910_InitAll()\n");
-
-		Reset(true);
-		LogFileOutput("MockingboardCard::ctor: Reset()\n");
-	}
+	Reset(true);
+	LogFileOutput("MockingboardCard::ctor: Reset()\n");
 }
 
 MockingboardCard::~MockingboardCard(void)
@@ -430,15 +422,15 @@ UINT MockingboardCard::MB_Update(void)
 
 //-----------------------------------------------------------------------------
 
+//
+// TODO-TC: check this - but shouldn't happen now, since MockingboardCard's are now properly destructed
+//
 // NB. Mockingboard voice is *already* muted because showing 'Select Load State file' dialog
 // . and voice will be unmuted when dialog is closed
 void MockingboardCard::InitializeForLoadingSnapshot(void)	// GH#609
 {
 	Reset(true);
 
-	//
-	// TODO-TC: move to class MockingboardCardManager
-	//
 //	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 //		return;
 //
