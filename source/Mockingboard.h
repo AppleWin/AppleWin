@@ -28,7 +28,6 @@ public:
 	BYTE IOWriteInternal(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	BYTE PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles);
 
-	void InitializeForLoadingSnapshot(void);
 	void ReinitializeClock(void);
 	void MuteControl(bool mute);
 	void UpdateCycles(ULONG executedCycles);

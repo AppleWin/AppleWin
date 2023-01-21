@@ -53,11 +53,11 @@ void MockingboardCardManager::ReinitializeClock(void)
 
 void MockingboardCardManager::InitializeForLoadingSnapshot(void)
 {
-	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
-	{
-		if (IsMockingboard(i))
-			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).InitializeForLoadingSnapshot();
-	}
+	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
+		return;
+
+	if (MockingboardVoice.lpDSBvoice);
+		DSVoiceStop(&MockingboardVoice);	// Reason: 'MB voice is playing' then loading a save-state where 'no MB present' (GH#609)
 }
 
 void MockingboardCardManager::MuteControl(bool mute)

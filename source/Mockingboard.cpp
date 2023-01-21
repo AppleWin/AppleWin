@@ -422,26 +422,6 @@ UINT MockingboardCard::MB_Update(void)
 
 //-----------------------------------------------------------------------------
 
-//
-// TODO-TC: check this - but shouldn't happen now, since MockingboardCard's are now properly destructed
-//
-// NB. Mockingboard voice is *already* muted because showing 'Select Load State file' dialog
-// . and voice will be unmuted when dialog is closed
-void MockingboardCard::InitializeForLoadingSnapshot(void)	// GH#609
-{
-	Reset(true);
-
-//	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
-//		return;
-//
-//	_ASSERT(MockingboardVoice.lpDSBvoice);
-//	DSVoiceStop(&MockingboardVoice);			// Reason: 'MB voice is playing' then loading a save-state where 'no MB present'
-
-	// NB. ssi263.Stop() already done by Reset()
-}
-
-//-----------------------------------------------------------------------------
-
 // NB. Called when /g_fCurrentCLK6502/ changes
 void MockingboardCard::ReinitializeClock(void)
 {
