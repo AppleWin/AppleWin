@@ -36,8 +36,8 @@ public:
 	void SetCumulativeCycles(void);
 	UINT MB_Update(void);
 	short** GetVoiceBuffers(void) { return ppAYVoiceBuffer; }
-	int GetNumSamplesError(void) { return nNumSamplesError; }
-	void SetNumSamplesError(int numSamplesError) { nNumSamplesError = numSamplesError; }
+	int GetNumSamplesError(void) { return m_numSamplesError; }
+	void SetNumSamplesError(int numSamplesError) { m_numSamplesError = numSamplesError; }
 #ifdef _DEBUG
 	void CheckCumulativeCycles(void);
 	void Get6522IrqDescription(std::string& desc);
@@ -142,12 +142,12 @@ private:
 
 	//
 
-	bool g_bPhasorEnable;
-	PHASOR_MODE g_phasorMode;
-	UINT g_PhasorClockScaleFactor;
+	bool m_phasorEnable;
+	PHASOR_MODE m_phasorMode;
+	UINT m_phasorClockScaleFactor;
 
 	//
 
 	UINT64 m_lastMBUpdateCycle;
-	int nNumSamplesError;
+	int m_numSamplesError;
 };
