@@ -35,7 +35,7 @@ public:
 	void SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 	void SetCumulativeCycles(void);
 	UINT MB_Update(void);
-	short** GetVoiceBuffers(void) { return ppAYVoiceBuffer; }
+	short** GetVoiceBuffers(void) { return m_ppAYVoiceBuffer; }
 	int GetNumSamplesError(void) { return m_numSamplesError; }
 	void SetNumSamplesError(int numSamplesError) { m_numSamplesError = numSamplesError; }
 #ifdef _DEBUG
@@ -123,10 +123,10 @@ private:
 	static const UINT SSI263A_Offset = 0x40;
 
 	// MB has 2x (1x SY6522 + 1x AY8913), Phasor has 2x (1x SY6522 + 2x AY8913)
-	SY6522_AY8910* g_MB;	// NB. In ctor this becomes g_MB[NUM_SY6522]
+	SY6522_AY8910* m_MBSubUnit;	// NB. In ctor this becomes m_MBSubUnit[NUM_SY6522]
 
 	static const UINT kNumSyncEvents = NUM_SY6522 * SY6522::kNumTimersPer6522;
-	SyncEvent* g_syncEvent[kNumSyncEvents];
+	SyncEvent* m_syncEvent[kNumSyncEvents];
 
 	// Timer vars
 	static const UINT kTIMERDEVICE_INVALID = -1;
@@ -134,7 +134,7 @@ private:
 
 	static const DWORD SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 
-	short* ppAYVoiceBuffer[NUM_VOICES];
+	short* m_ppAYVoiceBuffer[NUM_VOICES];
 
 	UINT64 g_nMB_InActiveCycleCount;
 	bool g_bMB_RegAccessedFlag;

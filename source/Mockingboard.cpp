@@ -67,12 +67,12 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	m_lastAYUpdateCycle = 0;
 
 	for (UINT i = 0; i < NUM_VOICES; i++)
-		ppAYVoiceBuffer[NUM_VOICES] = NULL;
+		m_ppAYVoiceBuffer[NUM_VOICES] = NULL;
 
 	// Construct via placement new, so that it is an array of 'SY6522_AY8910' objects
-	g_MB = (SY6522_AY8910*) new BYTE[sizeof(SY6522_AY8910) * NUM_SY6522];
+	m_MBSubUnit = (SY6522_AY8910*) new BYTE[sizeof(SY6522_AY8910) * NUM_SY6522];
 	for (UINT i = 0; i < NUM_SY6522; i++)
-		new (&g_MB[i]) SY6522_AY8910(m_slot);
+		new (&m_MBSubUnit[i]) SY6522_AY8910(m_slot);
 
 	g_nMB_InActiveCycleCount = 0;
 	g_bMB_RegAccessedFlag = false;
@@ -90,20 +90,20 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	for (int id = 0; id < kNumSyncEvents; id++)
 	{
 		int syncId = (m_slot << 4) + id;	// NB. Encode the slot# into the id - used by MB_SyncEventCallback()
-		g_syncEvent[id] = new SyncEvent(syncId, 0, MB_SyncEventCallback);
+		m_syncEvent[id] = new SyncEvent(syncId, 0, MB_SyncEventCallback);
 	}
 
 	for (UINT i = 0; i < NUM_VOICES; i++)
-		ppAYVoiceBuffer[i] = new short[MAX_SAMPLES];	// Buffer can hold a max of 0.37 seconds worth of samples (16384/44100)
+		m_ppAYVoiceBuffer[i] = new short[MAX_SAMPLES];	// Buffer can hold a max of 0.37 seconds worth of samples (16384/44100)
 
 	for (UINT i = 0; i < NUM_SY6522; i++)
 	{
-		g_MB[i] = SY6522_AY8910(m_slot);
-		g_MB[i].nAY8910Number = i;
+		m_MBSubUnit[i] = SY6522_AY8910(m_slot);
+		m_MBSubUnit[i].nAY8910Number = i;
 		const UINT id0 = i * SY6522::kNumTimersPer6522 + 0;	// TIMER1
 		const UINT id1 = i * SY6522::kNumTimersPer6522 + 1;	// TIMER2
-		g_MB[i].sy6522.InitSyncEvents(g_syncEvent[id0], g_syncEvent[id1]);
-		g_MB[i].ssi263.SetDevice(i);
+		m_MBSubUnit[i].sy6522.InitSyncEvents(m_syncEvent[id0], m_syncEvent[id1]);
+		m_MBSubUnit[i].ssi263.SetDevice(i);
 	}
 
 	AY8910_InitAll((int)g_fCurrentCLK6502, SAMPLE_RATE);
@@ -118,8 +118,8 @@ MockingboardCard::~MockingboardCard(void)
 	Destroy();
 
 	for (UINT i = 0; i < NUM_SY6522; i++)
-		g_MB[i].~SY6522_AY8910();
-	delete[](BYTE*) g_MB;
+		m_MBSubUnit[i].~SY6522_AY8910();
+	delete[](BYTE*) m_MBSubUnit;
 }
 
 //---------------------------------------------------------------------------
@@ -128,7 +128,7 @@ bool MockingboardCard::IsAnyTimer1Active(void)
 {
 	bool active = false;
 	for (UINT i = 0; i < NUM_SY6522; i++)
-		active |= g_MB[i].sy6522.IsTimer1Active();
+		active |= m_MBSubUnit[i].sy6522.IsTimer1Active();
 	return active;
 }
 
@@ -140,7 +140,7 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 	bool isIRQ = false;
 	for (UINT i = 0; i < NUM_SY6522; i++)
 	{
-		if (g_MB[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IFR_IRQ)
+		if (m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IFR_IRQ)
 		{
 			isIRQ = true;
 			break;
@@ -158,24 +158,24 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 
 	for (UINT i=0; i<NUM_SY6522; i++)
 	{
-		if (g_MB[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IFR_IRQ)
+		if (m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IFR_IRQ)
 		{
-			if (g_MB[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IxR_TIMER1)
+			if (m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IxR_TIMER1)
 			{
 				desc += ((i&1)==0) ? "A:" : "B:";
 				desc += "TIMER1 ";
 			}
-			if (g_MB[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IxR_TIMER2)
+			if (m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IxR_TIMER2)
 			{
 				desc += ((i&1)==0) ? "A:" : "B:";
 				desc += "TIMER2 ";
 			}
-			if (g_MB[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IxR_VOTRAX)
+			if (m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IxR_VOTRAX)
 			{
 				desc += ((i&1)==0) ? "A:" : "B:";
 				desc += "VOTRAX ";
 			}
-			if (g_MB[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IxR_SSI263)
+			if (m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IxR_SSI263)
 			{
 				desc += ((i&1)==0) ? "A:" : "B:";
 				desc += "SSI263 ";
@@ -192,7 +192,7 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 void MockingboardCard::AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice)
 {
 	g_bMB_RegAccessedFlag = true;
-	SY6522_AY8910* pMB = &g_MB[nDevice];
+	SY6522_AY8910* pMB = &m_MBSubUnit[nDevice];
 
 	if (!m_phasorEnable)
 		nDevice += (m_slot - SLOT4) * 2;	// FIXME!
@@ -257,14 +257,14 @@ void MockingboardCard::AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice)
 
 void MockingboardCard::WriteToORB(BYTE device)
 {
-	BYTE value = g_MB[device].sy6522.Read(SY6522::rORB);
+	BYTE value = m_MBSubUnit[device].sy6522.Read(SY6522::rORB);
 
 	if ((device & 1) == 0 && // SC01 only at $Cn00 (not $Cn80)
-		g_MB[device].sy6522.Read(SY6522::rPCR) == 0xB0)
+		m_MBSubUnit[device].sy6522.Read(SY6522::rPCR) == 0xB0)
 	{
 		// Votrax speech data
-		const BYTE DDRB = g_MB[device].sy6522.Read(SY6522::rDDRB);
-		g_MB[device].ssi263.Votrax_Write((value & DDRB) | (DDRB ^ 0xff));	// DDRB's zero bits (inputs) are high impedence, so output as 1 (GH#952)
+		const BYTE DDRB = m_MBSubUnit[device].sy6522.Read(SY6522::rDDRB);
+		m_MBSubUnit[device].ssi263.Votrax_Write((value & DDRB) | (DDRB ^ 0xff));	// DDRB's zero bits (inputs) are high impedence, so output as 1 (GH#952)
 		return;
 	}
 
@@ -305,7 +305,7 @@ void MockingboardCard::UpdateIRQ(void)
 	// . OR-sum of all active TIMER1, TIMER2 & SPEECH sources (from all 6522s)
 	UINT bIRQ = 0;
 	for (UINT i=0; i<NUM_SY6522; i++)
-		bIRQ |= g_MB[i].sy6522.GetReg(SY6522::rIFR) & 0x80;
+		bIRQ |= m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & 0x80;
 
 	// NB. Mockingboard generates IRQ on both 6522s:
 	// . SSI263's IRQ (A/!R) is routed via the 2nd 6522 (at $Cn80) and must generate a 6502 IRQ (not NMI)
@@ -329,12 +329,12 @@ UINT64 MockingboardCard::GetLastCumulativeCycles(void)
 
 void MockingboardCard::UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask)
 {
-	UpdateIFRandIRQ(&g_MB[nDevice], clr_mask, set_mask);
+	UpdateIFRandIRQ(&m_MBSubUnit[nDevice], clr_mask, set_mask);
 }
 
 BYTE MockingboardCard::GetPCR(BYTE nDevice)
 {
-	return g_MB[nDevice].sy6522.GetReg(SY6522::rPCR);
+	return m_MBSubUnit[nDevice].sy6522.GetReg(SY6522::rPCR);
 }
 
 //===========================================================================
@@ -415,7 +415,7 @@ UINT MockingboardCard::MB_Update(void)
 
 	if (nNumSamples)
 		for (int nChip = 0; nChip < NUM_AY8913; nChip++)
-			AY8910Update(nChip, &ppAYVoiceBuffer[nChip * NUM_VOICES_PER_AY8913], nNumSamples);
+			AY8910Update(nChip, &m_ppAYVoiceBuffer[nChip * NUM_VOICES_PER_AY8913], nNumSamples);
 
 	return (UINT) nNumSamples;
 }
@@ -434,21 +434,21 @@ void MockingboardCard::ReinitializeClock(void)
 void MockingboardCard::Destroy(void)
 {
 	for (UINT i = 0; i < NUM_SSI263; i++)
-		g_MB[i].ssi263.DSUninit();
+		m_MBSubUnit[i].ssi263.DSUninit();
 
 	for (UINT i = 0; i < NUM_VOICES; i++)
 	{
-		delete[] ppAYVoiceBuffer[i];
-		ppAYVoiceBuffer[i] = NULL;
+		delete[] m_ppAYVoiceBuffer[i];
+		m_ppAYVoiceBuffer[i] = NULL;
 	}
 
 	for (UINT id = 0; id < kNumSyncEvents; id++)
 	{
-		if (g_syncEvent[id] && g_syncEvent[id]->m_active)
-			g_SynchronousEventMgr.Remove(g_syncEvent[id]->m_id);
+		if (m_syncEvent[id] && m_syncEvent[id]->m_active)
+			g_SynchronousEventMgr.Remove(m_syncEvent[id]->m_id);
 
-		delete g_syncEvent[id];
-		g_syncEvent[id] = NULL;
+		delete m_syncEvent[id];
+		m_syncEvent[id] = NULL;
 	}
 }
 
@@ -458,16 +458,16 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 {
 	for (int i=0; i<NUM_SY6522; i++)
 	{
-		g_MB[i].sy6522.Reset(powerCycle);
+		m_MBSubUnit[i].sy6522.Reset(powerCycle);
 
 		AY8910_reset(i * NUM_DEVS_PER_MB + 0);
 		AY8910_reset(i * NUM_DEVS_PER_MB + 1);
-		g_MB[i].nAYCurrentRegister = 0;
-		g_MB[i].state = AY_INACTIVE;
-		g_MB[i].stateB = AY_INACTIVE;
+		m_MBSubUnit[i].nAYCurrentRegister = 0;
+		m_MBSubUnit[i].state = AY_INACTIVE;
+		m_MBSubUnit[i].stateB = AY_INACTIVE;
 
-		g_MB[i].ssi263.SetCardMode(m_phasorMode);
-		g_MB[i].ssi263.Reset();
+		m_MBSubUnit[i].ssi263.SetCardMode(m_phasorMode);
+		m_MBSubUnit[i].ssi263.Reset();
 	}
 
 	// Reset state
@@ -485,8 +485,8 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 
 		for (int id = 0; id < kNumSyncEvents; id++)
 		{
-			if (g_syncEvent[id] && g_syncEvent[id]->m_active)
-				g_SynchronousEventMgr.Remove(g_syncEvent[id]->m_id);
+			if (m_syncEvent[id] && m_syncEvent[id]->m_active)
+				g_SynchronousEventMgr.Remove(m_syncEvent[id]->m_id);
 		}
 
 		// Not this, since no change on a CTRL+RESET or power-cycle:
@@ -539,10 +539,10 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 		BYTE nRes = 0;
 
 		if (CS & 1)
-			nRes |= g_MB[nMB * NUM_DEVS_PER_MB + SY6522_DEVICE_A].sy6522.Read(nAddr & 0xf);
+			nRes |= m_MBSubUnit[nMB * NUM_DEVS_PER_MB + SY6522_DEVICE_A].sy6522.Read(nAddr & 0xf);
 
 		if (CS & 2)
-			nRes |= g_MB[nMB * NUM_DEVS_PER_MB + SY6522_DEVICE_B].sy6522.Read(nAddr & 0xf);
+			nRes |= m_MBSubUnit[nMB * NUM_DEVS_PER_MB + SY6522_DEVICE_B].sy6522.Read(nAddr & 0xf);
 
 		bool bAccessedDevice = (CS & 3) ? true : false;
 
@@ -552,9 +552,9 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 		{
 			_ASSERT(!bAccessedDevice);
 			if (nAddr & 0x40)	// Primary SSI263
-				nRes = g_MB[nMB * NUM_DEVS_PER_MB + 1].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
+				nRes = m_MBSubUnit[nMB * NUM_DEVS_PER_MB + 1].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
 			if (nAddr & 0x20)	// Secondary SSI263
-				nRes = g_MB[nMB * NUM_DEVS_PER_MB + 0].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
+				nRes = m_MBSubUnit[nMB * NUM_DEVS_PER_MB + 0].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
 			bAccessedDevice = true;
 		}
 
@@ -569,7 +569,7 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 	// NB. Mockingboard: SSI263.bit7 not readable (TODO: check this with real h/w)
 	const BYTE device = nMB * NUM_DEVS_PER_MB + ((nOffset < SY6522B_Offset) ? SY6522_DEVICE_A : SY6522_DEVICE_B);
 	const BYTE reg = nAddr & 0xf;
-	return g_MB[device].sy6522.Read(reg);
+	return m_MBSubUnit[device].sy6522.Read(reg);
 }
 
 //-----------------------------------------------------------------------------
@@ -644,7 +644,7 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 		{
 			const BYTE device = nMB * NUM_DEVS_PER_MB + SY6522_DEVICE_A;
 			const BYTE reg = nAddr & 0xf;
-			g_MB[device].sy6522.Write(reg, nValue);
+			m_MBSubUnit[device].sy6522.Write(reg, nValue);
 			if (reg == SY6522::rORB)
 				WriteToORB(device);
 		}
@@ -653,7 +653,7 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 		{
 			const BYTE device = nMB * NUM_DEVS_PER_MB + SY6522_DEVICE_B;
 			const BYTE reg = nAddr & 0xf;
-			g_MB[device].sy6522.Write(reg, nValue);
+			m_MBSubUnit[device].sy6522.Write(reg, nValue);
 			if (reg == SY6522::rORB)
 				WriteToORB(device);
 		}
@@ -665,9 +665,9 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 			// NB. Mockingboard mode: writes to $Cn4x/SSI263 also get written to 1st 6522 (have confirmed on real Phasor h/w)
 			_ASSERT( (m_phasorMode == PH_Mockingboard && (CS==0 || CS==1)) || (m_phasorMode == PH_Phasor && (CS==0)) );
 			if (nAddr & 0x40)	// Primary SSI263
-				g_MB[nMB * NUM_DEVS_PER_MB + 1].ssi263.Write(nAddr&0x7, nValue);	// 2nd 6522 is used for 1st speech chip
+				m_MBSubUnit[nMB * NUM_DEVS_PER_MB + 1].ssi263.Write(nAddr&0x7, nValue);	// 2nd 6522 is used for 1st speech chip
 			if (nAddr & 0x20)	// Secondary SSI263
-				g_MB[nMB * NUM_DEVS_PER_MB + 0].ssi263.Write(nAddr&0x7, nValue);	// 1st 6522 is used for 2nd speech chip
+				m_MBSubUnit[nMB * NUM_DEVS_PER_MB + 0].ssi263.Write(nAddr&0x7, nValue);	// 1st 6522 is used for 2nd speech chip
 		}
 
 		return 0;
@@ -675,15 +675,15 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 
 	const BYTE device = nMB * NUM_DEVS_PER_MB + ((nOffset < SY6522B_Offset) ? SY6522_DEVICE_A : SY6522_DEVICE_B);
 	const BYTE reg = nAddr & 0xf;
-	g_MB[device].sy6522.Write(reg, nValue);
+	m_MBSubUnit[device].sy6522.Write(reg, nValue);
 	if (reg == SY6522::rORB)
 		WriteToORB(device);
 
 #if !DBG_MB_SS_CARD
 	if (nAddr & 0x40)
-		g_MB[nMB * NUM_DEVS_PER_MB + 1].ssi263.Write(nAddr&0x7, nValue);		// 2nd 6522 is used for 1st speech chip
+		m_MBSubUnit[nMB * NUM_DEVS_PER_MB + 1].ssi263.Write(nAddr&0x7, nValue);		// 2nd 6522 is used for 1st speech chip
 	if (nAddr & 0x20)
-		g_MB[nMB * NUM_DEVS_PER_MB + 0].ssi263.Write(nAddr&0x7, nValue);		// 1st 6522 is used for 2nd speech chip
+		m_MBSubUnit[nMB * NUM_DEVS_PER_MB + 0].ssi263.Write(nAddr&0x7, nValue);		// 1st 6522 is used for 2nd speech chip
 #endif
 
 	return 0;
@@ -733,7 +733,7 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 	AY8910_InitClock((int)(Get6502BaseClock() * m_phasorClockScaleFactor));
 
 	for (UINT i=0; i<NUM_SSI263; i++)
-		g_MB[i].ssi263.SetCardMode(m_phasorMode);
+		m_MBSubUnit[i].ssi263.SetCardMode(m_phasorMode);
 
 	return MemReadFloatingBus(nExecutedCycles);
 }
@@ -754,7 +754,7 @@ void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral)
 #else // NO_DIRECT_X
 	for (UINT i = 0; i < NUM_SSI263; i++)
 	{
-		if (!g_MB[i].ssi263.DSInit())
+		if (!m_MBSubUnit[i].ssi263.DSInit())
 			break;
 	}
 #endif // NO_DIRECT_X
@@ -767,12 +767,12 @@ void MockingboardCard::MuteControl(bool mute)
 	if (mute)
 	{
 		for (UINT i = 0; i < NUM_SSI263; i++)
-			g_MB[i].ssi263.Mute();
+			m_MBSubUnit[i].ssi263.Mute();
 	}
 	else
 	{
 		for (UINT i = 0; i < NUM_SSI263; i++)
-			g_MB[i].ssi263.Unmute();
+			m_MBSubUnit[i].ssi263.Unmute();
 	}
 }
 
@@ -796,7 +796,7 @@ void MockingboardCard::SetCumulativeCycles(void)
 void MockingboardCard::Update(const ULONG executedCycles)
 {
 	for (UINT i = 0; i < NUM_SSI263; i++)
-		g_MB[i].ssi263.PeriodicUpdate(executedCycles);
+		m_MBSubUnit[i].ssi263.PeriodicUpdate(executedCycles);
 }
 
 //-----------------------------------------------------------------------------
@@ -819,8 +819,8 @@ void MockingboardCard::UpdateCycles(ULONG executedCycles)
 
 	for (int i = 0; i < NUM_SY6522; i++)
 	{
-		g_MB[i].sy6522.UpdateTimer1(nClocks);
-		g_MB[i].sy6522.UpdateTimer2(nClocks);
+		m_MBSubUnit[i].sy6522.UpdateTimer1(nClocks);
+		m_MBSubUnit[i].sy6522.UpdateTimer2(nClocks);
 	}
 }
 
@@ -840,7 +840,7 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 	// Update all MBs, so that m_lastCumulativeCycle remains in sync for all
 	GetCardMgr().GetMockingboardCardMgr().UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
 
-	SY6522_AY8910* pMB = &g_MB[(id & 0xf) / SY6522::kNumTimersPer6522];
+	SY6522_AY8910* pMB = &m_MBSubUnit[(id & 0xf) / SY6522::kNumTimersPer6522];
 
 	if ((id & 1) == 0)
 	{
@@ -877,7 +877,7 @@ bool MockingboardCard::IsActive(void)
 {
 	bool isSSI263Active = false;
 	for (UINT i=0; i<NUM_SSI263; i++)
-		isSSI263Active |= g_MB[i].ssi263.IsPhonemeActive();
+		isSSI263Active |= m_MBSubUnit[i].ssi263.IsPhonemeActive();
 
 	return g_bMB_Active || isSSI263Active;
 }
@@ -887,7 +887,7 @@ bool MockingboardCard::IsActive(void)
 void MockingboardCard::SetVolume(DWORD volume, DWORD volumeMax)
 {
 	for (UINT i=0; i<NUM_SSI263; i++)
-		g_MB[i].ssi263.SetVolume(volume, volumeMax);
+		m_MBSubUnit[i].ssi263.SetVolume(volume, volumeMax);
 }
 
 //===========================================================================
@@ -904,7 +904,7 @@ void MockingboardCard::GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS)
 	pSS->Hdr.Slot = m_slot;
 	pSS->Hdr.Type = CT_MockingboardC;
 
-	SY6522_AY8910* pMB = &g_MB[0];
+	SY6522_AY8910* pMB = &m_MBSubUnit[0];
 
 	for (UINT i=0; i<MB_UNITS_PER_CARD_v1; i++)
 	{
@@ -933,21 +933,21 @@ void MockingboardCard::GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS)
 BYTE MockingboardCard::AYReadReg(int chip, int r)
 {
 	const UINT unit = chip / NUM_DEVS_PER_MB;
-	return g_MB[unit].ay8913[chip & 1].sound_ay_read(r);
+	return m_MBSubUnit[unit].ay8913[chip & 1].sound_ay_read(r);
 }
 
 void MockingboardCard::_AYWriteReg(int chip, int r, int v)
 {
 	libspectrum_dword uOffset = (libspectrum_dword)(g_nCumulativeCycles - m_lastAYUpdateCycle);
 	const UINT unit = chip / NUM_DEVS_PER_MB;
-	g_MB[unit].ay8913[chip & 1].sound_ay_write(r, v, uOffset);
+	m_MBSubUnit[unit].ay8913[chip & 1].sound_ay_write(r, v, uOffset);
 }
 
 void MockingboardCard::AY8910_reset(int chip)
 {
 	// Don't reset the AY CLK, as this is a property of the card (MB/Phasor), not the AY chip
 	const UINT unit = chip / NUM_DEVS_PER_MB;
-	g_MB[unit].ay8913[chip & 1].sound_ay_reset();	// Calls: sound_ay_init();
+	m_MBSubUnit[unit].ay8913[chip & 1].sound_ay_reset();	// Calls: sound_ay_init();
 }
 
 void MockingboardCard::AY8910UpdateSetCycles()
@@ -960,9 +960,9 @@ void MockingboardCard::AY8910Update(int chip, INT16** buffer, int nNumSamples)
 	AY8910UpdateSetCycles();
 
 	const UINT unit = chip / NUM_DEVS_PER_MB;
-	g_MB[unit].ay8913[chip & 1].SetFramesize(nNumSamples);
-	g_MB[unit].ay8913[chip & 1].SetSoundBuffers(buffer);
-	g_MB[unit].ay8913[chip & 1].sound_frame();
+	m_MBSubUnit[unit].ay8913[chip & 1].SetFramesize(nNumSamples);
+	m_MBSubUnit[unit].ay8913[chip & 1].SetSoundBuffers(buffer);
+	m_MBSubUnit[unit].ay8913[chip & 1].sound_frame();
 }
 
 void MockingboardCard::AY8910_InitAll(int nClock, int nSampleRate)
@@ -971,8 +971,8 @@ void MockingboardCard::AY8910_InitAll(int nClock, int nSampleRate)
 	{
 		for (UINT ay = 0; ay < 2; ay++)
 		{
-			g_MB[unit].ay8913[ay].sound_init(NULL);	// Inits mainly static members (except ay_tick_incr)
-			g_MB[unit].ay8913[ay].sound_ay_init();
+			m_MBSubUnit[unit].ay8913[ay].sound_init(NULL);	// Inits mainly static members (except ay_tick_incr)
+			m_MBSubUnit[unit].ay8913[ay].sound_ay_init();
 		}
 	}
 }
@@ -985,7 +985,7 @@ void MockingboardCard::AY8910_InitClock(int nClock)
 	{
 		for (UINT ay = 0; ay < 2; ay++)
 		{
-			g_MB[unit].ay8913[ay].sound_init(NULL);	// Inits mainly static members (except ay_tick_incr)
+			m_MBSubUnit[unit].ay8913[ay].sound_init(NULL);	// Inits mainly static members (except ay_tick_incr)
 		}
 	}
 }
@@ -996,7 +996,7 @@ BYTE* MockingboardCard::AY8910_GetRegsPtr(UINT chip)
 		return NULL;
 
 	const UINT unit = chip / NUM_DEVS_PER_MB;
-	return g_MB[unit].ay8913[chip & 1].GetAYRegsPtr();
+	return m_MBSubUnit[unit].ay8913[chip & 1].GetAYRegsPtr();
 }
 
 UINT MockingboardCard::AY8910_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT chip, const std::string& suffix)
@@ -1005,7 +1005,7 @@ UINT MockingboardCard::AY8910_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT 
 		return 0;
 
 	const UINT unit = chip / NUM_DEVS_PER_MB;
-	g_MB[unit].ay8913[chip & 1].SaveSnapshot(yamlSaveHelper, suffix);
+	m_MBSubUnit[unit].ay8913[chip & 1].SaveSnapshot(yamlSaveHelper, suffix);
 	return 1;
 }
 
@@ -1015,7 +1015,7 @@ UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 		return 0;
 
 	const UINT unit = chip / NUM_DEVS_PER_MB;
-	return g_MB[unit].ay8913[chip & 1].LoadSnapshot(yamlLoadHelper, suffix) ? 1 : 0;
+	return m_MBSubUnit[unit].ay8913[chip & 1].LoadSnapshot(yamlLoadHelper, suffix) ? 1 : 0;
 }
 
 //=============================================================================
@@ -1073,7 +1073,7 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 	const UINT nMbCardNum = m_slot - SLOT4;
 	UINT nDeviceNum = nMbCardNum*2;
-	SY6522_AY8910* pMB = &g_MB[nDeviceNum];
+	SY6522_AY8910* pMB = &m_MBSubUnit[nDeviceNum];
 
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
@@ -1114,7 +1114,7 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 
 	const UINT nMbCardNum = m_slot - SLOT4;	// FIXME
 	UINT nDeviceNum = nMbCardNum*2;
-	SY6522_AY8910* pMB = &g_MB[0];
+	SY6522_AY8910* pMB = &m_MBSubUnit[0];
 
 	bool isVotrax = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
 	pMB->ssi263.SetVotraxPhoneme(isVotrax);
@@ -1177,7 +1177,7 @@ void MockingboardCard::Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		throw std::runtime_error("Card: Phasor only supported in slot-4");
 
 	UINT nDeviceNum = 0;
-	SY6522_AY8910* pMB = &g_MB[0];	// fixme: Phasor uses MB's slot4(2x6522), slot4(2xSSI263), but slot4+5(4xAY8910)
+	SY6522_AY8910* pMB = &m_MBSubUnit[0];	// fixme: Phasor uses MB's slot4(2x6522), slot4(2xSSI263), but slot4+5(4xAY8910)
 
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardNamePhasor(), m_slot, kUNIT_VERSION);
 
@@ -1229,7 +1229,7 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 	AY8910UpdateSetCycles();
 
 	UINT nDeviceNum = 0;
-	SY6522_AY8910* pMB = &g_MB[0];
+	SY6522_AY8910* pMB = &m_MBSubUnit[0];
 
 	bool isVotrax = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
 	pMB->ssi263.SetVotraxPhoneme(isVotrax);
