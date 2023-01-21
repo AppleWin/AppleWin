@@ -758,15 +758,6 @@ void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral)
 			break;
 	}
 #endif // NO_DIRECT_X
-
-	//
-	// TODO-TC: move to class MockingboardCardManager
-	//
-	// Sound buffer may have been stopped by MB_InitializeForLoadingSnapshot().
-	// NB. DSZeroVoiceBuffer() also zeros the sound buffer, so it's better than directly calling IDirectSoundBuffer::Play():
-	// - without zeroing, then the previous sound buffer can be heard for a fraction of a second
-	// - eg. when doing Mockingboard playback, then loading a save-state which is also doing Mockingboard playback
-//	DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);
 }
 
 //-----------------------------------------------------------------------------

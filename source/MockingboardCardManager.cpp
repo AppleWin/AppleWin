@@ -56,8 +56,10 @@ void MockingboardCardManager::InitializeForLoadingSnapshot(void)
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;
 
-	if (MockingboardVoice.lpDSBvoice);
-		DSVoiceStop(&MockingboardVoice);	// Reason: 'MB voice is playing' then loading a save-state where 'no MB present' (GH#609)
+	if (!MockingboardVoice.lpDSBvoice)
+		return;
+
+	DSVoiceStop(&MockingboardVoice);	// Reason: 'MB voice is playing' then loading a save-state where 'no MB present' (GH#609)
 }
 
 void MockingboardCardManager::MuteControl(bool mute)
@@ -214,6 +216,15 @@ void MockingboardCardManager::UpdateSoundBuffer(void)
 
 		if (!Init())
 			return;
+	}
+
+	if (!MockingboardVoice.bActive)
+	{
+		// Sound buffer may have been stopped by MB_InitializeForLoadingSnapshot().
+		// NB. DSZeroVoiceBuffer() also zeros the sound buffer, so it's better than directly calling IDirectSoundBuffer::Play():
+		// - without zeroing, then the previous sound buffer can be heard for a fraction of a second
+		// - eg. when doing Mockingboard playback, then loading a save-state which is also doing Mockingboard playback
+		DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);	// ... and Play()
 	}
 
 	UINT numSamples = GenerateAllSoundData();

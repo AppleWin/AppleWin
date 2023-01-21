@@ -14,7 +14,7 @@ public:
 		m_userVolume = 0;
 
 		// NB. Cmd line has already been processed
-		LogFileOutput("MockingboardCardManager::ctor() g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
+		LogFileOutput("MBCardMgr::ctor() g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
 	}
 	~MockingboardCardManager(void)
 	{}
