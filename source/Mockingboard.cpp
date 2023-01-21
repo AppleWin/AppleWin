@@ -514,10 +514,7 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 		for (int id = 0; id < kNumSyncEvents; id++)
 		{
 			if (g_syncEvent[id] && g_syncEvent[id]->m_active)
-			{
-				int syncId = (m_slot << 4) + id;
-				g_SynchronousEventMgr.Remove(syncId);
-			}
+				g_SynchronousEventMgr.Remove(g_syncEvent[id]->m_id);
 		}
 
 		// Not this, since no change on a CTRL+RESET or power-cycle:
