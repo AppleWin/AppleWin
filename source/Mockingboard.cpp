@@ -74,9 +74,9 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	for (UINT i = 0; i < NUM_SY6522; i++)
 		new (&m_MBSubUnit[i]) SY6522_AY8910(m_slot);
 
-	g_nMB_InActiveCycleCount = 0;
-	g_bMB_RegAccessedFlag = false;
-	g_bMB_Active = false;
+	m_inActiveCycleCount = 0;
+	m_regAccessedFlag = false;
+	m_isActive = false;
 
 	m_phasorEnable = (QueryType() == CT_Phasor);
 	m_phasorMode = PH_Mockingboard;
@@ -191,7 +191,7 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 
 void MockingboardCard::AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice)
 {
-	g_bMB_RegAccessedFlag = true;
+	m_regAccessedFlag = true;
 	SY6522_AY8910* pMB = &m_MBSubUnit[nDevice];
 
 	if (!m_phasorEnable)
@@ -362,23 +362,23 @@ UINT MockingboardCard::MB_Update(void)
 
 	//
 
-	if (!g_bMB_RegAccessedFlag)
+	if (!m_regAccessedFlag)
 	{
-		if (!g_nMB_InActiveCycleCount)
+		if (!m_inActiveCycleCount)
 		{
-			g_nMB_InActiveCycleCount = g_nCumulativeCycles;
+			m_inActiveCycleCount = g_nCumulativeCycles;
 		}
-		else if (g_nCumulativeCycles - g_nMB_InActiveCycleCount > (unsigned __int64)g_fCurrentCLK6502 / 10)
+		else if (g_nCumulativeCycles - m_inActiveCycleCount > (unsigned __int64)g_fCurrentCLK6502 / 10)
 		{
 			// After 0.1 sec of Apple time, assume MB is not active
-			g_bMB_Active = false;
+			m_isActive = false;
 		}
 	}
 	else
 	{
-		g_nMB_InActiveCycleCount = 0;
-		g_bMB_RegAccessedFlag = false;
-		g_bMB_Active = true;
+		m_inActiveCycleCount = 0;
+		m_regAccessedFlag = false;
+		m_isActive = true;
 	}
 
 	//
@@ -474,9 +474,9 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 	{
 		SetCumulativeCycles();
 
-		g_nMB_InActiveCycleCount = 0;
-		g_bMB_RegAccessedFlag = false;
-		g_bMB_Active = false;
+		m_inActiveCycleCount = 0;
+		m_regAccessedFlag = false;
+		m_isActive = false;
 
 		m_phasorMode = PH_Mockingboard;
 		m_phasorClockScaleFactor = 1;
@@ -879,7 +879,7 @@ bool MockingboardCard::IsActive(void)
 	for (UINT i=0; i<NUM_SSI263; i++)
 		isSSI263Active |= m_MBSubUnit[i].ssi263.IsPhonemeActive();
 
-	return g_bMB_Active || isSSI263Active;
+	return m_isActive || isSSI263Active;
 }
 
 //-----------------------------------------------------------------------------

@@ -136,9 +136,9 @@ private:
 
 	short* m_ppAYVoiceBuffer[NUM_VOICES];
 
-	UINT64 g_nMB_InActiveCycleCount;
-	bool g_bMB_RegAccessedFlag;
-	bool g_bMB_Active;
+	UINT64 m_inActiveCycleCount;
+	bool m_regAccessedFlag;
+	bool m_isActive;
 
 	//
 
