@@ -24,13 +24,25 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Interface.h"
 #include "Tfe/NetworkBackend.h"
 #include "Tfe/PCapBackend.h"
+#include "Tfe/IPRaw.h"
+#include "Tfe/DNS.h"
 #include "W5100.h"
+#include "../Registry.h"
+
+
+// Virtual DNS
+// Virtual DNS is an extension to the W5100
+// It enables DNS resolution by setting P3 = 1 for IP / TCP and UDP
+// the length-prefixed hostname is in 0x2A-0xFF is each socket memory
+// it can be identified with PTIMER = 0.
+// this means, one can use TCP & UDP without a NetworkBackend.
+
 
 // Linux uses EINPROGRESS while Windows returns WSAEWOULDBLOCK
 // when the connect() calls is ongoing
 //
 // in the checks below we allow both in all cases
-// (myErrno == SOCK_EINPROGRESS || myErrno == SOCK_EWOULDBLOCK)
+// (errno == SOCK_EINPROGRESS || errno == SOCK_EWOULDBLOCK)
 // this works, bu we could instead define 2 functions and check only the correct one
 #ifdef _MSC_VER
 
@@ -73,6 +85,9 @@ typedef int socklen_t;
 #define SOCK_NONBLOCK O_NONBLOCK
 #endif
 
+// Dest MAC + Source MAC + Ether Type
+#define ETH_MINIMUM_SIZE (6 + 6 + 2)
+
 // #define U2_LOG_VERBOSE
 // #define U2_LOG_TRAFFIC
 // #define U2_LOG_STATE
@@ -93,6 +108,12 @@ namespace
         const uint16_t network = *reinterpret_cast<const uint16_t *>(address);
         const uint16_t host = ntohs(network);
         return host;
+    }
+
+    uint32_t readAddress(const uint8_t *ptr)
+    {
+        const uint32_t address = *reinterpret_cast<const uint32_t *>(ptr);
+        return address;
     }
 
     uint8_t getIByte(const uint16_t value, const size_t shift)
@@ -141,9 +162,16 @@ namespace
         writeData(socket, memory, data, len);
     }
 
+    void writeDataIPRaw(Socket &socket, std::vector<uint8_t> &memory, const uint8_t *data, const size_t len, const uint32_t source)
+    {
+        writeAny(socket, memory, source);
+        write16(socket, memory, static_cast<uint16_t>(len));
+        writeData(socket, memory, data, len);
+    }
+
     void writeDataForProtocol(Socket &socket, std::vector<uint8_t> &memory, const uint8_t *data, const size_t len, const sockaddr_in &source)
     {
-        if (socket.sn_sr == W5100_SN_SR_SOCK_UDP)
+        if (socket.getStatus() == W5100_SN_SR_SOCK_UDP)
         {
             // these are already in network order
             writeAny(socket, memory, source.sin_addr);
@@ -166,9 +194,9 @@ Socket::Socket()
     , registerAddress(0)
     , sn_rx_wr(0)
     , sn_rx_rsr(0)
-    , sn_sr(W5100_SN_SR_CLOSED)
+    , mySocketStatus(W5100_SN_SR_CLOSED)
     , myFD(INVALID_SOCKET)
-    , myErrno(0)
+    , myHeaderSize(0)
 {
 }
 
@@ -183,15 +211,53 @@ void Socket::clearFD()
 #endif
     }
     myFD = INVALID_SOCKET;
-    sn_sr = W5100_SN_SR_CLOSED;
+    setStatus(W5100_SN_SR_CLOSED);
 }
 
-void Socket::setFD(const socket_t fd, const int status)
+void Socket::setStatus(const uint8_t status)
+{
+    mySocketStatus = status;
+
+    switch (mySocketStatus)
+    {
+    case W5100_SN_SR_ESTABLISHED:
+        myHeaderSize = 0;  // no header for TCP
+        break;
+    case W5100_SN_SR_SOCK_UDP:
+        myHeaderSize = 4 + 2 + 2;  // IP + Port + Size
+        break;
+    case W5100_SN_SR_SOCK_IPRAW:
+        myHeaderSize = 4 + 2;  // IP + Size
+        break;
+    case W5100_SN_SR_SOCK_MACRAW:
+        myHeaderSize = 2;  // Size
+        break;
+    default:
+        myHeaderSize = 0;
+        break;
+    }
+}
+
+void Socket::setFD(const socket_t fd, const uint8_t status)
 {
     clearFD();
     myFD = fd;
-    myErrno = 0;
-    sn_sr = status;
+    setStatus(status);
+}
+
+Socket::socket_t Socket::getFD() const
+{
+    return myFD;
+}
+
+uint8_t Socket::getStatus() const
+{
+    return mySocketStatus;
+}
+
+uint8_t Socket::getHeaderSize() const
+{
+    return myHeaderSize;
 }
 
 Socket::~Socket()
@@ -199,43 +265,57 @@ Socket::~Socket()
     clearFD();
 }
 
+bool Socket::isOpen() const
+{
+    return (myFD != INVALID_SOCKET) &&
+        ((mySocketStatus == W5100_SN_SR_ESTABLISHED) || (mySocketStatus == W5100_SN_SR_SOCK_UDP));
+}
+
 void Socket::process()
 {
-    if (myFD != INVALID_SOCKET && sn_sr == W5100_SN_SR_SOCK_INIT && (myErrno == SOCK_EINPROGRESS || myErrno == SOCK_EWOULDBLOCK))
+    if (myFD != INVALID_SOCKET && mySocketStatus == W5100_SN_SR_SOCK_SYNSENT)
     {
 #ifdef _MSC_VER
-        FD_SET writefds;
+        FD_SET writefds, exceptfds;
         FD_ZERO(&writefds);
+        FD_ZERO(&exceptfds);
         FD_SET(myFD, &writefds);
+        FD_SET(myFD, &exceptfds);
         const timeval timeout = {0, 0};
-        if (select(0, NULL, &writefds, NULL, &timeout) > 0)
+        if (select(0, NULL, &writefds, &exceptfds, &timeout) > 0)
 #else
         pollfd pfd = {.fd = myFD, .events = POLLOUT};
         if (poll(&pfd, 1, 0) > 0)
 #endif
         {
             int err = 0;
-            socklen_t elen = sizeof err;
-            getsockopt(myFD, SOL_SOCKET, SO_ERROR, reinterpret_cast<char *>(&err), &elen);
+            socklen_t elen = sizeof(err);
+            const int res = getsockopt(myFD, SOL_SOCKET, SO_ERROR, reinterpret_cast<char *>(&err), &elen);
 
-            if (err == 0)
+            if (res == 0 && err == 0)
             {
-                myErrno = 0;
-                sn_sr = W5100_SN_SR_ESTABLISHED;
+                setStatus(W5100_SN_SR_ESTABLISHED);
 #ifdef U2_LOG_STATE
                 LogFileOutput("U2: TCP[]: Connected\n");
+#endif
+            }
+            else
+            {
+                clearFD();
+#ifdef U2_LOG_STATE
+                LogFileOutput("U2: TCP[]: Connection error: %d - %" ERROR_FMT "\n", res, STRERROR(err));
 #endif
             }
         }
     }
 }
 
-bool Socket::isThereRoomFor(const size_t len, const size_t header) const
+bool Socket::isThereRoomFor(const size_t len) const
 {
     const uint16_t rsr = sn_rx_rsr;    // already present
     const uint16_t size = receiveSize; // total size
 
-    return rsr + len + header < size; // "not =": we do not want to fill the buffer.
+    return rsr + len + myHeaderSize < size; // "not =": we do not want to fill the buffer.
 }
 
 uint16_t Socket::getFreeRoom() const
@@ -243,7 +323,8 @@ uint16_t Socket::getFreeRoom() const
     const uint16_t rsr = sn_rx_rsr;    // already present
     const uint16_t size = receiveSize; // total size
 
-    return size - rsr;
+    const uint16_t total = size - rsr;
+    return total > myHeaderSize ? total - myHeaderSize : 0;
 }
 
 #define SS_YAML_KEY_SOCKET_RX_WRITE_REGISTER "RX Write Register"
@@ -255,24 +336,33 @@ void Socket::SaveSnapshot(YamlSaveHelper &yamlSaveHelper)
 {
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SOCKET_RX_WRITE_REGISTER, sn_rx_wr);
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SOCKET_RX_SIZE_REGISTER, sn_rx_rsr);
-    yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SOCKET_REGISTER, sn_sr);
+    yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SOCKET_REGISTER, mySocketStatus);
 }
 
 bool Socket::LoadSnapshot(YamlLoadHelper &yamlLoadHelper)
 {
+    clearFD();
+
     sn_rx_wr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_RX_WRITE_REGISTER);
     sn_rx_rsr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_RX_SIZE_REGISTER);
-    sn_sr = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_REGISTER);
+    uint8_t socketStatus = yamlLoadHelper.LoadUint(SS_YAML_KEY_SOCKET_REGISTER);
 
     // transmit and receive sizes are restored from the card common registers
-
-    if (sn_sr != W5100_SN_SR_SOCK_MACRAW)
+    switch (socketStatus)
     {
+    case W5100_SN_SR_SOCK_MACRAW:
+    case W5100_SN_SR_SOCK_IPRAW:
+        // we can restore RAW sockets
+        break;
+    default:
         // no point in restoring a broken UDP or TCP connection
         // just reset the socket
-        sn_sr = W5100_SN_SR_CLOSED;
-        // for the same reason there is no point in saving myFD and myErrno
+        socketStatus = W5100_SN_SR_CLOSED;
+        // for the same reason there is no point in saving myFD
+        break;
     }
+
+    setStatus(socketStatus);
 
     return true;
 }
@@ -285,7 +375,28 @@ const std::string& Uthernet2::GetSnapshotCardName()
 
 Uthernet2::Uthernet2(UINT slot) : Card(CT_Uthernet2, slot)
 {
+#ifdef _MSC_VER
+    WSADATA wsaData;
+    myWSAStartup = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (myWSAStartup)
+    {
+        const int error = sock_error();
+        LogFileOutput("U2: WSAStartup: error %" ERROR_FMT "\n", STRERROR(error));
+    }
+#endif
+
+    myVirtualDNSEnabled = GetRegistryVirtualDNS(slot);
     Reset(true);
+}
+
+Uthernet2::~Uthernet2()
+{
+#ifdef _MSC_VER
+    if (myWSAStartup == 0)
+    {
+        WSACleanup();
+    }
+#endif
 }
 
 void Uthernet2::setSocketModeRegister(const size_t i, const uint16_t address, const uint8_t value)
@@ -300,16 +411,19 @@ void Uthernet2::setSocketModeRegister(const size_t i, const uint16_t address, co
 #endif
         break;
     case W5100_SN_MR_TCP:
+    case W5100_SN_MR_TCP_DNS:
 #ifdef U2_LOG_STATE
         LogFileOutput("U2: Mode[%" SIZE_T_FMT "]: TCP\n", i);
 #endif
         break;
     case W5100_SN_MR_UDP:
+    case W5100_SN_MR_UDP_DNS:
 #ifdef U2_LOG_STATE
         LogFileOutput("U2: Mode[%" SIZE_T_FMT "]: UDP\n", i);
 #endif
         break;
     case W5100_SN_MR_IPRAW:
+    case W5100_SN_MR_IPRAW_DNS:
 #ifdef U2_LOG_STATE
         LogFileOutput("U2: Mode[%" SIZE_T_FMT "]: IPRAW\n", i);
 #endif
@@ -434,7 +548,7 @@ void Uthernet2::updateRSR(const size_t i)
     socket.sn_rx_rsr = dataPresent;
 }
 
-int Uthernet2::receiveForMacAddress(const bool acceptAll, const int size, uint8_t * data)
+int Uthernet2::receiveForMacAddress(const bool acceptAll, const int size, uint8_t * data, PacketDestination & packetDestination)
 {
     const uint8_t * mac = myMemory.data() + W5100_SHAR0;
 
@@ -442,15 +556,9 @@ int Uthernet2::receiveForMacAddress(const bool acceptAll, const int size, uint8_
     int len;
     while ((len = myNetworkBackend->receive(size, data)) > 0)
     {
-        // minimum valid Ethernet frame is actually 64 bytes
-        // 12 is the minimum to ensure valid MAC Address logging later
-        if (len >= 12)
+        // smaller frames are not good anyway
+        if (len >= ETH_MINIMUM_SIZE)
         {
-            if (acceptAll)
-            {
-                return len;
-            }
-
             if (data[0] == mac[0] &&
                 data[1] == mac[1] &&
                 data[2] == mac[2] &&
@@ -458,6 +566,7 @@ int Uthernet2::receiveForMacAddress(const bool acceptAll, const int size, uint8_
                 data[4] == mac[4] &&
                 data[5] == mac[5])
             {
+                packetDestination = HOST;
                 return len;
             }
 
@@ -468,8 +577,16 @@ int Uthernet2::receiveForMacAddress(const bool acceptAll, const int size, uint8_
                 data[4] == 0xFF &&
                 data[5] == 0xFF)
             {
+                packetDestination = BROADCAST;
                 return len;
             }
+
+            if (acceptAll)
+            {
+                packetDestination = OTHER;
+                return len;
+            }
+
         }
         // skip this frame and try with another one
     }
@@ -477,34 +594,111 @@ int Uthernet2::receiveForMacAddress(const bool acceptAll, const int size, uint8_
     return len;
 }
 
-void Uthernet2::receiveOnePacketMacRaw(const size_t i)
+void Uthernet2::receiveOnePacketRaw()
+{
+    bool acceptAll = false;
+    int macRawSocket = -1;  // to which IPRaw soccket to send to (can only be 0)
+
+    Socket & socket0 = mySockets[0];
+    if (socket0.getStatus() == W5100_SN_SR_SOCK_MACRAW)
+    {
+        macRawSocket = 0;  // the only MAC Raw socket is open, packet will go there as a fallback
+        const uint8_t mr = myMemory[socket0.registerAddress + W5100_SN_MR];
+
+        // see if MAC RAW filters or not
+        const bool filterMAC = mr & W5100_SN_MR_MF;
+        if (!filterMAC)
+        {
+            acceptAll = true;
+        }
+    }
+
+    uint8_t buffer[MAX_RXLENGTH];
+    PacketDestination packetDestination;
+    const int len = receiveForMacAddress(acceptAll, sizeof(buffer), buffer, packetDestination);
+    if (len > 0)
+    {
+        const uint8_t * payload;
+        size_t lengthOfPayload;
+        uint32_t source;
+        uint8_t packetProtocol;
+        getIPPayload(len, buffer, lengthOfPayload, payload, source, packetProtocol);
+
+        // see if there is a IPRAW socket that should accept thi spacket
+        int ipRawSocket = -1;
+        if (packetDestination != OTHER)  // IPRaw always filters (HOST or BROADCAST, never OTHER)
+        {
+            for (size_t i = 0; i < mySockets.size(); ++i)
+            {
+                Socket & socket = mySockets[i];
+
+                if (socket.getStatus() == W5100_SN_SR_SOCK_IPRAW)
+                {
+                    // IP only accepts by protocol & always filters MAC
+                    const uint8_t socketProtocol = myMemory[socket.registerAddress + W5100_SN_PROTO];
+                    if (payload && packetProtocol == socketProtocol)
+                    {
+                        ipRawSocket = i;
+                        break; // a valid IPRAW socket has been found
+                    }
+                }
+                // we should probably check for UDP & TCP sockets and filter these packets too
+            }
+        }
+
+        // priority to IPRAW
+        if (ipRawSocket >= 0)
+        {
+            receiveOnePacketIPRaw(ipRawSocket, lengthOfPayload, payload, source, packetProtocol, len);
+        }
+        // fallback to MACRAW (if open)
+        else if (macRawSocket >= 0)
+        {
+            receiveOnePacketMacRaw(macRawSocket, len, buffer);
+        }
+        // else packet is dropped
+    }
+}
+
+void Uthernet2::receiveOnePacketMacRaw(const size_t i, const int size, uint8_t * data)
 {
     Socket &socket = mySockets[i];
 
-    uint8_t buffer[MAX_RXLENGTH];
-
-    const uint8_t mr = myMemory[socket.registerAddress + W5100_SN_MR];
-    const bool filterMAC = mr & W5100_SN_MR_MF;
-
-    const int len = receiveForMacAddress(!filterMAC, sizeof(buffer), buffer);
-    if (len > 0)
+    if (socket.isThereRoomFor(size))
     {
-        // we know the packet is at least 12 bytes, and logging is ok
-        if (socket.isThereRoomFor(len, sizeof(uint16_t)))
-        {
-            writeDataMacRaw(socket, myMemory, buffer, len);
+        writeDataMacRaw(socket, myMemory, data, size);
 #ifdef U2_LOG_TRAFFIC
-            LogFileOutput("U2: Read MACRAW[%" SIZE_T_FMT "]: " MAC_FMT " -> " MAC_FMT ": +%d -> %d bytes\n", i, MAC_SOURCE(buffer), MAC_DEST(buffer),
-                len, socket.sn_rx_rsr);
+        LogFileOutput("U2: Read MACRAW[%" SIZE_T_FMT "]: " MAC_FMT " -> " MAC_FMT ": +%d+%d -> %d bytes\n", i, MAC_SOURCE(data), MAC_DEST(data),
+            socket.getHeaderSize(), size, socket.sn_rx_rsr);
 #endif
-        }
-        else
-        {
-            // drop it
+    }
+    else
+    {
+        // drop it
 #ifdef U2_LOG_TRAFFIC
-            LogFileOutput("U2: Skip MACRAW[%" SIZE_T_FMT "]: %d bytes\n", i, len);
+        LogFileOutput("U2: Skip MACRAW[%" SIZE_T_FMT "]: %d bytes\n", i, size);
 #endif
-        }
+    }
+}
+
+void Uthernet2::receiveOnePacketIPRaw(const size_t i, const size_t lengthOfPayload, const uint8_t * payload, const uint32_t source, const uint8_t protocol, const int len)
+{
+    Socket &socket = mySockets[i];
+
+    if (socket.isThereRoomFor(lengthOfPayload))
+    {
+        writeDataIPRaw(socket, myMemory, payload, lengthOfPayload, source);
+#ifdef U2_LOG_TRAFFIC
+        LogFileOutput("U2: Read IPRAW[%" SIZE_T_FMT "]: +%d+%" SIZE_T_FMT " (%d) -> %d bytes\n", i, socket.getHeaderSize(),
+            lengthOfPayload, len, socket.sn_rx_rsr);
+#endif
+    }
+    else
+    {
+        // drop it
+#ifdef U2_LOG_TRAFFIC
+        LogFileOutput("U2: Skip IPRAW[%" SIZE_T_FMT "]: %" SIZE_T_FMT " (%d) bytes \n", i, lengthOfPayload, len);
+#endif
     }
 }
 
@@ -512,7 +706,7 @@ void Uthernet2::receiveOnePacketMacRaw(const size_t i)
 void Uthernet2::receiveOnePacketFromSocket(const size_t i)
 {
     Socket &socket = mySockets[i];
-    if (socket.myFD != INVALID_SOCKET)
+    if (socket.isOpen())
     {
         const uint16_t freeRoom = socket.getFreeRoom();
         if (freeRoom > 32) // avoid meaningless reads
@@ -520,15 +714,16 @@ void Uthernet2::receiveOnePacketFromSocket(const size_t i)
             std::vector<uint8_t> buffer(freeRoom - 1); // do not fill the buffer completely
             sockaddr_in source = {0};
             socklen_t len = sizeof(sockaddr_in);
-            const ssize_t data = recvfrom(socket.myFD, reinterpret_cast<char *>(buffer.data()), buffer.size(), 0, (struct sockaddr *)&source, &len);
+            const ssize_t data = recvfrom(socket.getFD(), reinterpret_cast<char *>(buffer.data()), buffer.size(), 0, (struct sockaddr *)&source, &len);
 #ifdef U2_LOG_TRAFFIC
-            const char *proto = socket.sn_sr == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
+            const char *proto = socket.getStatus() == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
 #endif
             if (data > 0)
             {
                 writeDataForProtocol(socket, myMemory, buffer.data(), data, source);
 #ifdef U2_LOG_TRAFFIC
-                LogFileOutput("U2: Read %s[%" SIZE_T_FMT "]: +%" SIZE_T_FMT " -> %d bytes\n", proto, i, data, socket.sn_rx_rsr);
+                LogFileOutput("U2: Read %s[%" SIZE_T_FMT "]: +%d+%" SIZE_T_FMT " -> %d bytes\n", proto, i, socket.getHeaderSize(),
+                    data, socket.sn_rx_rsr);
 #endif
             }
             else if (data == 0)
@@ -554,22 +749,49 @@ void Uthernet2::receiveOnePacketFromSocket(const size_t i)
 void Uthernet2::receiveOnePacket(const size_t i)
 {
     const Socket &socket = mySockets[i];
-    switch (socket.sn_sr)
+    switch (socket.getStatus())
     {
     case W5100_SN_SR_SOCK_MACRAW:
-        receiveOnePacketMacRaw(i);
+    case W5100_SN_SR_SOCK_IPRAW:
+        receiveOnePacketRaw();
         break;
     case W5100_SN_SR_ESTABLISHED:
     case W5100_SN_SR_SOCK_UDP:
         receiveOnePacketFromSocket(i);
         break;
     case W5100_SN_SR_CLOSED:
-        break; // nothing to do
+#ifdef U2_LOG_STATE
+        LogFileOutput("U2: Read[%" SIZE_T_FMT "]: reading from a closed socket\n", i);
+#endif
+        break;
 #ifdef U2_LOG_UNKNOWN
     default:
-        LogFileOutput("U2: Read[%" SIZE_T_FMT "]: unknown mode: %02x\n", i, socket.sn_sr);
+        LogFileOutput("U2: Read[%" SIZE_T_FMT "]: unknown mode: %02x\n", i, socket.getStatus());
 #endif
     };
+}
+
+void Uthernet2::sendDataIPRaw(const size_t i, std::vector<uint8_t> &payload)
+{
+    const Socket &socket = mySockets[i];
+
+    const uint8_t ttl = myMemory[socket.registerAddress + W5100_SN_TTL];
+    const uint8_t tos = myMemory[socket.registerAddress + W5100_SN_TOS];
+    const uint8_t protocol = myMemory[socket.registerAddress + W5100_SN_PROTO];
+    const uint32_t source = readAddress(myMemory.data() + W5100_SIPR0);
+    const uint32_t dest = readAddress(myMemory.data() + socket.registerAddress + W5100_SN_DIPR0);
+
+    const MACAddress * sourceMac = reinterpret_cast<const MACAddress *>(myMemory.data() + W5100_SHAR0);
+    const MACAddress * destinationMac;
+    getMACAddress(dest, destinationMac);
+
+    std::vector<uint8_t> packet = createETH2Frame(payload, sourceMac, destinationMac, ttl, tos, protocol, source, dest);
+
+#ifdef U2_LOG_TRAFFIC
+    LogFileOutput("U2: Send IPRAW[%" SIZE_T_FMT "]: %" SIZE_T_FMT " (%" SIZE_T_FMT ") bytes\n", i, payload.size(), packet.size());
+#endif
+
+    myNetworkBackend->transmit(packet.size(), packet.data());
 }
 
 void Uthernet2::sendDataMacRaw(const size_t i, std::vector<uint8_t> &packet) const
@@ -592,20 +814,19 @@ void Uthernet2::sendDataMacRaw(const size_t i, std::vector<uint8_t> &packet) con
 void Uthernet2::sendDataToSocket(const size_t i, std::vector<uint8_t> &data)
 {
     Socket &socket = mySockets[i];
-    if (socket.myFD != INVALID_SOCKET)
+    if (socket.isOpen())
     {
         sockaddr_in destination = {};
         destination.sin_family = AF_INET;
 
-        // already in network order
         // this seems to be ignored for TCP, and so we reuse the same code
-        const uint8_t *dest = myMemory.data() + socket.registerAddress + W5100_SN_DIPR0;
-        destination.sin_addr.s_addr = *reinterpret_cast<const uint32_t *>(dest);
+        const uint32_t dest = readAddress(myMemory.data() + socket.registerAddress + W5100_SN_DIPR0);
+        destination.sin_addr.s_addr = dest;
         destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
 
-        const ssize_t res = sendto(socket.myFD, reinterpret_cast<const char *>(data.data()), data.size(), 0, (const struct sockaddr *)&destination, sizeof(destination));
+        const ssize_t res = sendto(socket.getFD(), reinterpret_cast<const char *>(data.data()), data.size(), 0, (const struct sockaddr *)&destination, sizeof(destination));
 #ifdef U2_LOG_TRAFFIC
-        const char *proto = socket.sn_sr == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
+        const char *proto = socket.getStatus() == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
         LogFileOutput("U2: Send %s[%" SIZE_T_FMT "]: %" SIZE_T_FMT " of %" SIZE_T_FMT " bytes\n", proto, i, res, data.size());
 #endif
         if (res < 0)
@@ -651,18 +872,26 @@ void Uthernet2::sendData(const size_t i)
     myMemory[socket.registerAddress + W5100_SN_TX_RD0] = getIByte(sn_tx_wr, 8);
     myMemory[socket.registerAddress + W5100_SN_TX_RD1] = getIByte(sn_tx_wr, 0);
 
-    switch (socket.sn_sr)
+    switch (socket.getStatus())
     {
     case W5100_SN_SR_SOCK_MACRAW:
         sendDataMacRaw(i, data);
+        break;
+    case W5100_SN_SR_SOCK_IPRAW:
+        sendDataIPRaw(i, data);
         break;
     case W5100_SN_SR_ESTABLISHED:
     case W5100_SN_SR_SOCK_UDP:
         sendDataToSocket(i, data);
         break;
+    case W5100_SN_SR_CLOSED:
+#ifdef U2_LOG_STATE
+        LogFileOutput("U2: Send[%" SIZE_T_FMT "]: sending to a closed socket\n", i);
+#endif
+        break;
 #ifdef U2_LOG_UNKNOWN
     default:
-        LogFileOutput("U2: Send[%" SIZE_T_FMT "]: unknown mode: %02x\n", i, socket.sn_sr);
+        LogFileOutput("U2: Send[%" SIZE_T_FMT "]: unknown mode: %02x\n", i, socket.getStatus());
 #endif
     }
 }
@@ -680,7 +909,7 @@ void Uthernet2::resetRXTXBuffers(const size_t i)
     myMemory[socket.registerAddress + W5100_SN_RX_RD1] = 0x00;
 }
 
-void Uthernet2::openSystemSocket(const size_t i, const int type, const int protocol, const int state)
+void Uthernet2::openSystemSocket(const size_t i, const int type, const int protocol, const int status)
 {
     Socket &s = mySockets[i];
 #ifdef _MSC_VER
@@ -691,7 +920,7 @@ void Uthernet2::openSystemSocket(const size_t i, const int type, const int proto
     if (fd == INVALID_SOCKET)
     {
 #ifdef U2_LOG_STATE
-        const char *proto = state == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
+        const char *proto = (status == W5100_SN_SR_SOCK_UDP) ? "UDP" : "TCP";
         LogFileOutput("U2: %s[%" SIZE_T_FMT "]: socket error: %" ERROR_FMT "\n", proto, i, STRERROR(sock_error()));
 #endif
         s.clearFD();
@@ -702,28 +931,43 @@ void Uthernet2::openSystemSocket(const size_t i, const int type, const int proto
         u_long on = 1;
         ioctlsocket(fd, FIONBIO, &on);
 #endif
-        s.setFD(fd, state);
+        s.setFD(fd, status);
     }
 }
 
 void Uthernet2::openSocket(const size_t i)
 {
     Socket &socket = mySockets[i];
+    socket.clearFD();
+
     const uint8_t mr = myMemory[socket.registerAddress + W5100_SN_MR];
     const uint8_t protocol = mr & W5100_SN_MR_PROTO_MASK;
-    uint8_t &sr = socket.sn_sr;
+    const bool virtual_dns = protocol & W5100_SN_VIRTUAL_DNS;
+
+    // if virtual_dns is requested, but not enabled, we cannot handle it here.
+    if (virtual_dns && !myVirtualDNSEnabled)
+    {
+#ifdef U2_LOG_STATE
+        LogFileOutput("U2: Open[%" SIZE_T_FMT "]: virtual DNS not supported: %02x\n", i, mr);
+#endif
+        return;
+    }
+
     switch (protocol)
     {
     case W5100_SN_MR_IPRAW:
-        sr = W5100_SN_SR_SOCK_IPRAW;
+    case W5100_SN_MR_IPRAW_DNS:
+        socket.setStatus(W5100_SN_SR_SOCK_IPRAW);
         break;
     case W5100_SN_MR_MACRAW:
-        sr = W5100_SN_SR_SOCK_MACRAW;
+        socket.setStatus(W5100_SN_SR_SOCK_MACRAW);
         break;
     case W5100_SN_MR_TCP:
+    case W5100_SN_MR_TCP_DNS:
         openSystemSocket(i, SOCK_STREAM, IPPROTO_TCP, W5100_SN_SR_SOCK_INIT);
         break;
     case W5100_SN_MR_UDP:
+    case W5100_SN_MR_UDP_DNS:
         openSystemSocket(i, SOCK_DGRAM, IPPROTO_UDP, W5100_SN_SR_SOCK_UDP);
         break;
 #ifdef U2_LOG_UNKNOWN
@@ -731,9 +975,19 @@ void Uthernet2::openSocket(const size_t i)
         LogFileOutput("U2: Open[%" SIZE_T_FMT "]: unknown mode: %02x\n", i, mr);
 #endif
     }
+
+    switch (protocol)
+    {
+    case W5100_SN_MR_IPRAW_DNS:
+    case W5100_SN_MR_TCP_DNS:
+    case W5100_SN_MR_UDP_DNS:
+        resolveDNS(i);
+        break;
+    }
+
     resetRXTXBuffers(i); // needed?
 #ifdef U2_LOG_STATE
-    LogFileOutput("U2: Open[%" SIZE_T_FMT "]: SR = %02x\n", i, sr);
+    LogFileOutput("U2: Open[%" SIZE_T_FMT "]: SR = %02x\n", i, socket.getStatus());
 #endif
 }
 
@@ -746,27 +1000,53 @@ void Uthernet2::closeSocket(const size_t i)
 #endif
 }
 
+void Uthernet2::resolveDNS(const size_t i)
+{
+    Socket &socket = mySockets[i];
+    uint32_t *dest = reinterpret_cast<uint32_t *>(myMemory.data() + socket.registerAddress + W5100_SN_DIPR0);
+    *dest = 0; // 0.0.0.0 signals failure by any reason
+
+    const uint8_t length = myMemory[socket.registerAddress + W5100_SN_DNS_NAME_LEN];
+    if (length <= W5100_SN_DNS_NAME_CPTY)
+    {
+        const uint8_t * start = myMemory.data() + socket.registerAddress + W5100_SN_DNS_NAME_BEGIN;
+        const std::string name(start, start + length);
+        const std::map<std::string, uint32_t>::iterator it = myDNSCache.find(name);
+        if (it != myDNSCache.end())
+        {
+            *dest = it->second;
+        }
+        else
+        {
+            *dest = getHostByName(name);
+            myDNSCache[name] = *dest;
+#ifdef U2_LOG_STATE
+            LogFileOutput("U2: DNS[%" SIZE_T_FMT "]: %s = %s\n", i, name.c_str(), formatIP(*dest));
+#endif
+        }
+    }
+}
+
 void Uthernet2::connectSocket(const size_t i)
 {
     Socket &socket = mySockets[i];
-    const uint8_t *dest = myMemory.data() + socket.registerAddress + W5100_SN_DIPR0;
+    const uint32_t dest = readAddress(myMemory.data() + socket.registerAddress + W5100_SN_DIPR0);
 
     sockaddr_in destination = {};
     destination.sin_family = AF_INET;
 
     // already in network order
     destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
-    destination.sin_addr.s_addr = *reinterpret_cast<const uint32_t *>(dest);
+    destination.sin_addr.s_addr = dest;
 
-    const int res = connect(socket.myFD, (struct sockaddr *)&destination, sizeof(destination));
+    const int res = connect(socket.getFD(), (struct sockaddr *)&destination, sizeof(destination));
 
     if (res == 0)
     {
-        socket.sn_sr = W5100_SN_SR_ESTABLISHED;
-        socket.myErrno = 0;
+        socket.setStatus(W5100_SN_SR_ESTABLISHED);
 #ifdef U2_LOG_STATE
         const uint16_t port = readNetworkWord(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
-        LogFileOutput("U2: TCP[%" SIZE_T_FMT "]: CONNECT to %d.%d.%d.%d:%d\n", i, dest[0], dest[1], dest[2], dest[3], port);
+        LogFileOutput("U2: TCP[%" SIZE_T_FMT "]: CONNECT to %s:%d\n", i, formatIP(dest), port);
 #endif
     }
     else
@@ -774,7 +1054,7 @@ void Uthernet2::connectSocket(const size_t i)
         const int error = sock_error();
         if (error == SOCK_EINPROGRESS || error == SOCK_EWOULDBLOCK)
         {
-            socket.myErrno = error;
+            socket.setStatus(W5100_SN_SR_SOCK_SYNSENT);
         }
         else
         {
@@ -824,7 +1104,7 @@ uint8_t Uthernet2::readSocketRegister(const uint16_t address)
         value = myMemory[address];
         break;
     case W5100_SN_SR:
-        value = mySockets[i].sn_sr;
+        value = mySockets[i].getStatus();
         break;
     case W5100_SN_TX_FSR0:
         value = getTXFreeSizeRegister(i, 8);
@@ -854,7 +1134,7 @@ uint8_t Uthernet2::readSocketRegister(const uint16_t address)
         break;
     default:
 #ifdef U2_LOG_UNKNOWN
-        LogFileOutput("U2: Get unknown socket register[%" SIZE_T_FMT "]: %04x\n", i, address);
+        LogFileOutput("U2: Get unknown socket register[%d]: %04x\n", i, address);
 #endif
         value = myMemory[address];
         break;
@@ -986,11 +1266,18 @@ void Uthernet2::writeSocketRegister(const uint16_t address, const uint8_t value)
     case W5100_SN_RX_RD1:
         myMemory[address] = value;
         break;
-#ifdef U2_LOG_UNKNOWN
     default:
-        LogFileOutput("U2: Set unknown socket register[%" SIZE_T_FMT "]: %04x\n", i, address);
-        break;
+        if (myVirtualDNSEnabled && loc >= W5100_SN_DNS_NAME_LEN)
+        {
+            myMemory[address] = value;
+        }
+        else
+        {
+#ifdef U2_LOG_UNKNOWN
+            LogFileOutput("U2: Set unknown socket register[%d]: %04x\n", i, address);
 #endif
+        }
+        break;
     };
 }
 
@@ -1072,7 +1359,10 @@ void Uthernet2::Reset(const bool powerCycle)
     {
         // dataAddress is NOT reset, see page 10 of Uthernet II
         myDataAddress = 0;
-        myNetworkBackend = GetFrame().CreateNetworkBackend();
+        const std::string interfaceName = PCapBackend::GetRegistryInterface(m_slot);
+        myNetworkBackend = GetFrame().CreateNetworkBackend(interfaceName);
+        myARPCache.clear();
+        myDNSCache.clear();
     }
 
     mySockets.clear();
@@ -1084,14 +1374,29 @@ void Uthernet2::Reset(const bool powerCycle)
     {
         resetRXTXBuffers(i);
         mySockets[i].clearFD();
-        mySockets[i].registerAddress = static_cast<uint16_t>(W5100_S0_BASE + (i << 8));
+        const uint16_t registerAddress = static_cast<uint16_t>(W5100_S0_BASE + (i << 8));
+        mySockets[i].registerAddress = registerAddress;
+
+        myMemory[registerAddress + W5100_SN_DHAR0] = 0xFF;
+        myMemory[registerAddress + W5100_SN_DHAR1] = 0xFF;
+        myMemory[registerAddress + W5100_SN_DHAR2] = 0xFF;
+        myMemory[registerAddress + W5100_SN_DHAR3] = 0xFF;
+        myMemory[registerAddress + W5100_SN_DHAR4] = 0xFF;
+        myMemory[registerAddress + W5100_SN_DHAR5] = 0xFF;
+        myMemory[registerAddress + W5100_SN_TTL]   = 0x80;
     }
 
     // initial values
-    myMemory[W5100_RTR0] = 0x07;
-    myMemory[W5100_RTR1] = 0xD0;
+    myMemory[W5100_RTR0]    = 0x07;
+    myMemory[W5100_RTR1]    = 0xD0;
+    myMemory[W5100_RCR]     = 0x08;
     setRXSizes(W5100_RMSR, 0x55);
     setTXSizes(W5100_TMSR, 0x55);
+    if (!myVirtualDNSEnabled)
+    {
+        // this is 0 if we support Virtual DNS
+        myMemory[W5100_PTIMER]  = 0x28;
+    }
 }
 
 BYTE Uthernet2::IO_C0(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
@@ -1102,7 +1407,7 @@ BYTE Uthernet2::IO_C0(WORD programcounter, WORD address, BYTE write, BYTE value,
     const uint16_t oldAddress = myDataAddress;
 #endif
 
-    const uint8_t loc = address & 0x0F;
+    const uint8_t loc = address & U2_C0X_MASK;
 
     if (write)
     {
@@ -1162,6 +1467,46 @@ void Uthernet2::InitializeIO(LPBYTE pCxRomPeripheral)
     RegisterIoHandler(m_slot, u2_C0, u2_C0, nullptr, nullptr, this, nullptr);
 }
 
+void Uthernet2::getMACAddress(const uint32_t address, const MACAddress * & mac)
+{
+    const auto it = myARPCache.find(address);
+    if (it != myARPCache.end())
+    {
+        mac = &it->second;
+    }
+    else
+    {
+        MACAddress & macAddr = myARPCache[address];
+        const uint32_t source  = readAddress(myMemory.data() + W5100_SIPR0);
+
+        if (address == source)
+        {
+            const uint8_t * sourceMac = myMemory.data() + W5100_SHAR0;
+            memcpy(macAddr.address, sourceMac, sizeof(macAddr.address));
+        }
+        else
+        {
+            memset(macAddr.address, 0xFF, sizeof(macAddr.address));  // fallback to broadcast
+            if (address != INADDR_BROADCAST)
+            {
+                const uint32_t subnet  = readAddress(myMemory.data() + W5100_SUBR0);
+                if ((address & subnet) == (source & subnet))
+                {
+                    // same network: send ARP request
+                    myNetworkBackend->getMACAddress(address, macAddr);
+                }
+                else
+                {
+                    const uint32_t gateway = readAddress(myMemory.data() + W5100_GAR0);
+                    // different network: go via gateway
+                    myNetworkBackend->getMACAddress(gateway, macAddr);
+                }
+            }
+        }
+        mac = &macAddr;
+    }
+}
+
 void Uthernet2::Update(const ULONG nExecutedCycles)
 {
     myNetworkBackend->update(nExecutedCycles);
@@ -1171,7 +1516,11 @@ void Uthernet2::Update(const ULONG nExecutedCycles)
     }
 }
 
-static const UINT kUNIT_VERSION = 1;
+// Unit version history:
+// 2: Added: Virtual DNS
+static const UINT kUNIT_VERSION = 2;
+
+#define SS_YAML_KEY_VIRTUAL_DNS "Virtual DNS"
 #define SS_YAML_KEY_NETWORK_INTERFACE "Network Interface"
 
 #define SS_YAML_KEY_COMMON_REGISTERS "Common Registers"
@@ -1189,7 +1538,8 @@ void Uthernet2::SaveSnapshot(YamlSaveHelper &yamlSaveHelper)
     YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
     YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
-    yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, PCapBackend::tfe_interface);
+    yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, myNetworkBackend->getInterfaceName());
+    yamlSaveHelper.SaveBool(SS_YAML_KEY_VIRTUAL_DNS, myVirtualDNSEnabled);
     yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_MODE_REGISTER, myModeRegister);
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_DATA_ADDRESS, myDataAddress);
 
@@ -1232,10 +1582,19 @@ bool Uthernet2::LoadSnapshot(YamlLoadHelper &yamlLoadHelper, UINT version)
     if (version < 1 || version > kUNIT_VERSION)
         ThrowErrorInvalidVersion(version);
 
-    PCapBackend::tfe_interface = yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE);
-    PCapBackend::tfe_SetRegistryInterface(m_slot, PCapBackend::tfe_interface);
+    PCapBackend::SetRegistryInterface(m_slot, yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE));
 
-    Reset(true); // AFTER the interface name has been restored
+    if (version >= 2)
+    {
+        myVirtualDNSEnabled = yamlLoadHelper.LoadBool(SS_YAML_KEY_VIRTUAL_DNS);
+    }
+    else
+    {
+        myVirtualDNSEnabled = false;
+    }
+    SetRegistryVirtualDNS(m_slot, myVirtualDNSEnabled);
+
+    Reset(true); // AFTER the parameters have been restored
 
     myModeRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_MODE_REGISTER);
     myDataAddress = yamlLoadHelper.LoadUint(SS_YAML_KEY_DATA_ADDRESS);
@@ -1278,4 +1637,23 @@ bool Uthernet2::LoadSnapshot(YamlLoadHelper &yamlLoadHelper, UINT version)
     }
 
     return true;
+}
+
+void Uthernet2::SetRegistryVirtualDNS(UINT slot, const bool enabled)
+{
+    const std::string regSection = RegGetConfigSlotSection(slot);
+    RegSaveValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, TRUE, enabled);
+}
+
+bool Uthernet2::GetRegistryVirtualDNS(UINT slot)
+{
+    const std::string regSection = RegGetConfigSlotSection(slot);
+
+    // By default, VirtualDNS is enabled
+    // as it is backward compatible
+    // (except for the initial value of PTIMER which is anyway never used)
+
+    DWORD enabled = 1;
+    RegLoadValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, TRUE, &enabled);
+    return enabled != 0;
 }

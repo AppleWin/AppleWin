@@ -388,7 +388,9 @@ static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 	PUSH(regs.pc & 0xFF)
 	EF_TO_AF
 	PUSH(regs.ps & ~AF_BREAK)
-	regs.ps = regs.ps | AF_INTERRUPT & ~AF_DECIMAL;
+	regs.ps |= AF_INTERRUPT;
+	if (GetMainCpu() == CPU_65C02)	// GH#1099
+		regs.ps &= ~AF_DECIMAL;
 	regs.pc = * (WORD*) (mem+0xFFFA);
 	UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 	CYC(7);
@@ -431,7 +433,9 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		PUSH(regs.pc & 0xFF)
 		EF_TO_AF
 		PUSH(regs.ps & ~AF_BREAK)
-		regs.ps = (regs.ps | AF_INTERRUPT) & (~AF_DECIMAL);
+		regs.ps |= AF_INTERRUPT;
+		if (GetMainCpu() == CPU_65C02)	// GH#1099
+			regs.ps &= ~AF_DECIMAL;
 		regs.pc = * (WORD*) (mem+0xFFFE);
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7);
@@ -681,7 +685,9 @@ void CpuReset()
 	_ASSERT(mem != NULL);
 
 	// 7 cycles
-	regs.ps = (regs.ps | AF_INTERRUPT) & ~AF_DECIMAL;
+	regs.ps |= AF_INTERRUPT;
+	if (GetMainCpu() == CPU_65C02)	// GH#1099
+		regs.ps &= ~AF_DECIMAL;
 	regs.pc = *(WORD*)(mem + 0xFFFC);
 	regs.sp = 0x0100 | ((regs.sp - 3) & 0xFF);
 

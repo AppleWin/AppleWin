@@ -339,7 +339,8 @@ void DebuggerMouseClick(int x, int y)
 
 	// do picking
 
-	const int nOffsetX = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetX() : win32Frame.Get3DBorderWidth();
+	// NB. Full-screen + VidHD isn't centred yet
+	const int nOffsetX = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetX() : win32Frame.Get3DBorderWidth() + GetVideo().GetFrameBufferCentringOffsetX() * win32Frame.GetViewportScale();
 	const int nOffsetY = win32Frame.IsFullScreen() ? win32Frame.GetFullScreenOffsetY() : win32Frame.Get3DBorderHeight();
 
 	const int nOffsetInScreenX = x - nOffsetX;

@@ -46,6 +46,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SoundCore.h"
 #include "Speaker.h"
 #include "LanguageCard.h"
+#include "CardManager.h"
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
@@ -62,6 +63,8 @@ static bool g_bLoadedSaveState = false;
 static bool g_bSysClkOK = false;
 
 bool g_bRestartFullScreen = false;
+
+static bool g_fullScreenResolutionChangedByUser = false;
 
 //===========================================================================
 
@@ -83,6 +86,11 @@ bool GetHookAltTab(void)
 bool GetHookAltGrControl(void)
 {
 	return g_bHookAltGrControl;
+}
+
+bool GetFullScreenResolutionChangedByUser(void)
+{
+	return g_fullScreenResolutionChangedByUser;
 }
 
 static void ResetToLogoMode(void)
@@ -616,14 +624,17 @@ static void GetAppleWinVersion(void)
 // DO ONE-TIME INITIALIZATION
 static void OneTimeInitialization(HINSTANCE passinstance)
 {
-#if 0
-#ifdef RIFF_SPKR
-	RiffInitWriteFile("Spkr.wav", SPKR_SAMPLE_RATE, 1);
-#endif
-#ifdef RIFF_MB
-	RiffInitWriteFile("Mockingboard.wav", 44100, 2);
-#endif
-#endif
+	// Currently only support one RIFF file
+	if (!g_cmdLine.wavFileSpeaker.empty())
+	{
+		if (RiffInitWriteFile(g_cmdLine.wavFileSpeaker.c_str(), SPKR_SAMPLE_RATE, 1))
+			Spkr_OutputToRiff();
+	}
+	else if (!g_cmdLine.wavFileMockingboard.empty())
+	{
+		if (RiffInitWriteFile(g_cmdLine.wavFileMockingboard.c_str(), 44100, 2))
+			MB_OutputToRiff();
+	}
 
 	// Initialize COM - so we can use CoCreateInstance
 	// . DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
@@ -724,9 +735,6 @@ static void RepeatInitialization(void)
 			// Reapply after a restart - TODO: grey-out the Config UI for "Swap 0/1" when this cmd line is passed in
 		}
 
-		DebugInitialize();
-		LogFileOutput("Main: DebugInitialize()\n");
-
 		JoyInitialize();
 		LogFileOutput("Main: JoyInitialize()\n");
 
@@ -750,6 +758,21 @@ static void RepeatInitialization(void)
 			GetCardMgr().GetSSC()->SupportDCD(true);
 		}
 
+		if (g_cmdLine.slotInsert[SLOT1] != CT_Empty && g_cmdLine.slotInsert[SLOT1] == CT_GenericPrinter)	// For now just support Printer card in slot 1
+		{
+			GetCardMgr().Insert(SLOT1, g_cmdLine.slotInsert[SLOT1]);
+		}
+
+		if (g_cmdLine.slotInsert[SLOT2] != CT_Empty && g_cmdLine.slotInsert[SLOT2] == CT_SSC)	// For now just support SSC in slot 2
+		{
+			GetCardMgr().Insert(SLOT2, g_cmdLine.slotInsert[SLOT2]);
+		}
+
+		if (g_cmdLine.enableDumpToRealPrinter && GetCardMgr().IsParallelPrinterCardInstalled())
+		{
+			GetCardMgr().GetParallelPrinterCard()->SetEnableDumpToRealPrinter(true);
+		}
+
 		if (g_cmdLine.slotInsert[SLOT3] != CT_Empty && g_cmdLine.slotInsert[SLOT3] == CT_VidHD)	// For now just support VidHD in slot 3
 		{
 			GetCardMgr().Insert(SLOT3, g_cmdLine.slotInsert[SLOT3]);
@@ -763,7 +786,20 @@ static void RepeatInitialization(void)
 				GetCardMgr().Remove(SLOT5);
 			}
 
-			GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
+			if (GetCardMgr().QuerySlot(SLOT5) != CT_Disk2)	// Ignore if already got Disk2 in slot 5
+				GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
+		}
+
+		if (g_cmdLine.slotInsert[SLOT6] == CT_Disk2)	// For now just support Disk2 in slot 6
+		{
+			if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)	// Ignore if already got Disk2 in slot 6
+				GetCardMgr().Insert(SLOT6, g_cmdLine.slotInsert[SLOT6]);
+		}
+
+		for (UINT i = 0; i < NUM_SLOTS; i++)
+		{
+			if (GetCardMgr().QuerySlot(i) == CT_Disk2 && g_cmdLine.slotInfo[i].isDiskII13)
+				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).SetFirmware13Sector();
 		}
 
 		// Create window after inserting/removing VidHD card (as it affects width & height)
@@ -790,9 +826,12 @@ static void RepeatInitialization(void)
 				res = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight, g_cmdLine.userSpecifiedWidth, g_cmdLine.userSpecifiedHeight);
 
 			if (res)
-				LogFileOutput("Best resolution for -fs-height/height=x switch(es): Width=%d, Height=%d\n", bestWidth, bestHeight);
+				LogFileOutput("Best resolution for -fs-width/height=x switch(es): Width=%d, Height=%d\n", bestWidth, bestHeight);
 			else
 				LogFileOutput("Failed to set parameter for -fs-width/height=x switch(es)\n");
+
+			if (res)
+				g_fullScreenResolutionChangedByUser = true;
 		}
 
 		// Pre: may need g_hFrameWindow for MessageBox errors
@@ -821,6 +860,13 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.bRemoveNoSlotClock)
 			MemRemoveNoSlotClock();
+
+		if (g_cmdLine.noDisk2StepperDefer)
+			GetCardMgr().GetDisk2CardMgr().SetStepperDefer(false);
+
+		// Call DebugInitialize() after SetCurrentImageDir()
+		DebugInitialize();
+		LogFileOutput("Main: DebugInitialize()\n");
 
 		MemInitialize();
 		LogFileOutput("Main: MemInitialize()\n");

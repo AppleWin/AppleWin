@@ -75,9 +75,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Utils _ ________________________________________________________________________________________
 
-	void      _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize = 0 );
-	void      _PrintCurrentPath();
-	Update_t  _PrintSymbolInvalidTable();
+	std::string _CmdSymbolsInfoHeader( int iTable, int nDisplaySize = 0 );
+	void        _PrintCurrentPath();
+	Update_t    _PrintSymbolInvalidTable();
 
 
 // Private ________________________________________________________________________________________
@@ -90,33 +90,28 @@ void _PrintCurrentPath()
 
 Update_t _PrintSymbolInvalidTable()
 {
-	char sText[ CONSOLE_WIDTH * 2 ];
-	char sTemp[ CONSOLE_WIDTH * 2 ];
-
 	// TODO: display the user specified file name
 	ConsoleBufferPush( "Invalid symbol table." );
 
-	ConsolePrintFormat( "Only %s%d%s symbol tables are supported:"
-		, CHC_NUM_DEC, NUM_SYMBOL_TABLES
-		, CHC_DEFAULT
+	ConsolePrintFormat( "Only " CHC_NUM_DEC "%d" CHC_DEFAULT " symbol tables are supported:"
+		, NUM_SYMBOL_TABLES
 	);
 
+	std::string sText;
+
 	// Similar to _CmdSymbolsInfoHeader()
-	sText[0] = 0;
-	for( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
+	for ( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
 	{
-		sprintf( sTemp, "%s%s%s%c " // %s"
-			, CHC_USAGE, g_aSymbolTableNames[ iTable ]
-			, CHC_ARG_SEP
+		sText += StrFormat( CHC_USAGE "%s" CHC_ARG_SEP "%c "
+			, g_aSymbolTableNames[ iTable ]
 			, (iTable != (NUM_SYMBOL_TABLES-1))
 				? ','
 				: '.'
 		);
-		strcat( sText, sTemp );
 	}
 
-//	return ConsoleDisplayError( sText );
-	ConsolePrint( sText );
+//	return ConsoleDisplayError( sText.c_str() );
+	ConsolePrint( sText.c_str() );
 	return ConsoleUpdate();
 }
 
@@ -125,13 +120,13 @@ Update_t _PrintSymbolInvalidTable()
 
 
 //===========================================================================
-std::string const& GetSymbol (WORD nAddress, int nBytes, std::string& strAddressBuf)
+std::string const& GetSymbol (WORD nAddress, int nBytes, std::string& sAddressBuf)
 {
 	std::string const* pSymbol = FindSymbolFromAddress( nAddress );
 	if (pSymbol)
 		return *pSymbol;
 
-	return strAddressBuf = FormatAddress( nAddress, nBytes );
+	return sAddressBuf = FormatAddress( nAddress, nBytes );
 }
 
 //===========================================================================
@@ -160,7 +155,7 @@ std::string const* FindSymbolFromAddress (WORD nAddress, int * iTable_ )
 			continue;
 
 		std::map<WORD, std::string>::iterator iSymbols = g_aSymbols[iTable].find(nAddress);
-		if(g_aSymbols[iTable].find(nAddress) != g_aSymbols[iTable].end())
+		if (g_aSymbols[iTable].find(nAddress) != g_aSymbols[iTable].end())
 		{
 			if (iTable_)
 			{
@@ -286,7 +281,7 @@ Update_t CmdSymbolsClear (int nArgs)
 
 // Format the summary of the specified symbol table
 //===========================================================================
-void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize /* = 0 */ )
+std::string _CmdSymbolsInfoHeader( int iTable, int nDisplaySize /* = 0 */ )
 {
 	// Common case is to use/calc the table size
 	bool bActive = (g_bDisplaySymbolTables & (1 << iTable)) ? true : false;
@@ -295,24 +290,16 @@ void _CmdSymbolsInfoHeader( int iTable, char * pText, int nDisplaySize /* = 0 */
 	// Short Desc: `MAIN`: `1000`
 	// // 2.6.2.19 Color for name of symbol table: _CmdPrintSymbol() "SYM HOME" _CmdSymbolsInfoHeader "SYM"
 	// CHC_STRING and CHC_NUM_DEC are both cyan, using CHC_USAGE instead of CHC_STRING
-	sprintf( pText, "%s%s%s:%s%d " // %s"
-		, CHC_USAGE, g_aSymbolTableNames[ iTable ]
-		, CHC_ARG_SEP
+	return StrFormat(CHC_USAGE "%s" CHC_ARG_SEP ":%s%d " // CHC_DEFAULT
+		, g_aSymbolTableNames[ iTable ]
 		, bActive ? CHC_NUM_DEC : CHC_WARNING, nSymbols
-//		, CHC_DEFAULT
 	);
 }
 
 //===========================================================================
 Update_t CmdSymbolsInfo (int nArgs)
 {
-	const char sIndent[] = "  ";
-	char sText[ CONSOLE_WIDTH * 4 ] = "";
-	char sTemp[ CONSOLE_WIDTH * 2 ] = "";
-
 	int bDisplaySymbolTables = 0;
-
-	strcpy( sText, sIndent ); // Indent new line
 
 	if (! nArgs)
 	{
@@ -333,26 +320,27 @@ Update_t CmdSymbolsInfo (int nArgs)
 	//sprintf( sText, "  Symbols  Main: %s%d%s  User: %s%d%s   Source: %s%d%s"
 	// "Main:# Basic:# Asm:# User1:# User2:# Src1:# Src2:# Dos:# Prodos:#
 
-	int bTable = 1;
-	int iTable = 0;
-	for( ; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 )
+	std::string const sIndent = "  ";
+	std::string       sText   = sIndent; // Indent new line
+
+	for ( int iTable = 0, bTable = 1; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 )
 	{
-		if( bDisplaySymbolTables & bTable )
+		if ( !!(bDisplaySymbolTables & bTable) )
 		{
-			_CmdSymbolsInfoHeader( iTable, sTemp ); // 15 chars per table
+			std::string hdr = _CmdSymbolsInfoHeader( iTable ); // 15 chars per table
 
 			// 2.8.0.4 BUGFIX: Check for buffer overflow and wrap text
-			int nLen = ConsoleColor_StringLength( sTemp );
-			int nDst = ConsoleColor_StringLength( sText );
-			if((nDst + nLen) > CONSOLE_WIDTH )
+			int nLen = ConsoleColor_StringLength( hdr.c_str() );
+			int nDst = ConsoleColor_StringLength( sText.c_str() );
+			if ( (nDst + nLen) > CONSOLE_WIDTH )
 			{
-				ConsolePrint( sText );
-				strcpy( sText, sIndent ); // Indent new line
+				ConsolePrint( sText.c_str() );
+				sText = sIndent; // Indent new line
 			}
-			strcat( sText, sTemp );
+			sText += hdr;
 		}
 	}
-	ConsolePrint( sText );
+	ConsolePrint( sText.c_str() );
 
 	return ConsoleUpdate();
 }
@@ -381,7 +369,7 @@ bool _FindSymbolTable( int bSymbolTables, int iTable )
 	// iTable is enumeration
 	// bSymbolTables is bit-flags of enabled tables to search
 
-	if( bSymbolTables & (1 << iTable) )
+	if ( bSymbolTables & (1 << iTable) )
 	{
 		return true;
 	}
@@ -396,9 +384,9 @@ int _GetSymbolTableFromFlag( int bSymbolTables )
 	int iTable = 0;
 	int bTable = 1;
 
-	for( ; bTable <= bSymbolTables; iTable++, bTable <<= 1 )
+	for ( ; bTable <= bSymbolTables; iTable++, bTable <<= 1 )
 	{
-		if( bTable & bSymbolTables )
+		if ( bTable & bSymbolTables )
 			break;
 	}
 
@@ -475,25 +463,23 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 		SYMBOL B = $2000
 		SYM B
 	*/
-		
-	TCHAR sText[ CONSOLE_WIDTH ] = "";
 
-	for( int iArgs = 1; iArgs <= nArgs; iArgs++ )
+	for ( int iArgs = 1; iArgs <= nArgs; iArgs++ )
 	{
 		WORD nAddress = g_aArgs[iArgs].nValue;
 		LPCTSTR pSymbol = g_aArgs[iArgs].sArg;
 
 		// Dump all symbols for this table
-		if( g_aArgRaw[iArgs].eToken == TOKEN_STAR)
+		if ( g_aArgRaw[iArgs].eToken == TOKEN_STAR)
 		{
 	//		int iWhichTable = (g_iCommand - CMD_SYMBOLS_MAIN);
 	//		bDisplaySymbolTables = (1 << iWhichTable);
 
 			int iTable = 0;
 			int bTable = 1;
-			for( ; bTable <= bSymbolTables; iTable++, bTable <<= 1 )
+			for ( ; bTable <= bSymbolTables; iTable++, bTable <<= 1 )
 			{
-				if( bTable & bSymbolTables )
+				if ( bTable & bSymbolTables )
 				{
 					int nSymbols = g_aSymbols[iTable].size();
 					if (nSymbols)
@@ -507,8 +493,7 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 							++iSymbol;
 						}
 					}
-					_CmdSymbolsInfoHeader( iTable, sText );
-					ConsolePrint( sText );
+					ConsolePrint(_CmdSymbolsInfoHeader(iTable).c_str() );
 				}
 			}
 		}
@@ -564,12 +549,12 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 	if (pPathFileName.empty())
 		return nSymbolsLoaded;
 
-	std::string strFormat1 = StrFormat( "%%x %%%ds", MAX_SYMBOLS_LEN ); // i.e. "%x %13s"
-	std::string strFormat2 = StrFormat( "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%13s %x"
+	std::string sFormat1 = StrFormat( "%%x %%%ds", MAX_SYMBOLS_LEN ); // i.e. "%x %13s"
+	std::string sFormat2 = StrFormat( "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%13s %x"
 
 	FILE *hFile = fopen( pPathFileName.c_str(), "rt" );
 
-	if( !hFile && g_bSymbolsDisplayMissingFile )
+	if ( !hFile && g_bSymbolsDisplayMissingFile )
 	{
 		// TODO: print filename! Bug #242 Help file (.chm) description for "Symbols" #242
 		ConsoleDisplayError( "Symbol File not found:" );
@@ -578,9 +563,9 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 	}
 	
 	bool bDupSymbolHeader = false;
-	if( hFile )
+	if ( hFile )
 	{
-		while( !feof(hFile) )
+		while ( !feof(hFile) )
 		{
 			// Support 2 types of symbols files:
 			// 1) AppleWin:
@@ -596,24 +581,24 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 			const int MAX_LINE = 256;
 			char  szLine[ MAX_LINE ] = "";
 
-			if( !fgets(szLine, MAX_LINE-1, hFile) )	// Get next line
+			if ( !fgets(szLine, MAX_LINE-1, hFile) )	// Get next line
 			{
 				//ConsolePrint("<<EOF");
 				break;
 			}
 
-			if(strstr(szLine, "$") == NULL)
+			if (strstr(szLine, "$") == NULL)
 			{
-				sscanf(szLine, strFormat1.c_str(), &nAddress, sName);
+				sscanf(szLine, sFormat1.c_str(), &nAddress, sName);
 			}
 			else
 			{
 				char* p = strstr(szLine, "=");	// Optional
-				if(p) *p = ' ';
+				if (p) *p = ' ';
 				p = strstr(szLine, "$");
-				if(p) *p = ' ';
+				if (p) *p = ' ';
 				p = strstr(szLine, ";");		// Optional
-				if(p) *p = 0;
+				if (p) *p = 0;
 				p = strstr(szLine, " ");		// 1st space between name & value
 				if (p)
 				{
@@ -623,13 +608,13 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 						memset(&szLine[MAX_SYMBOLS_LEN], ' ', nLen - MAX_SYMBOLS_LEN);	// sscanf fails for nAddress if string too long
 					}
 				}
-				sscanf(szLine, strFormat2.c_str(), sName, &nAddress);
+				sscanf(szLine, sFormat2.c_str(), sName, &nAddress);
 			}
 
 			// SymbolOffset
 			nAddress += nSymbolOffset;
 
-			if( (nAddress > _6502_MEM_END) || (sName[0] == 0) )
+			if ( (nAddress > _6502_MEM_END) || (sName[0] == 0) )
 				continue;
 
 			// 2.9.0.11 Bug #479
@@ -655,9 +640,9 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 
 			// 2.8.0.5 Bug #244 (Debugger) Duplicate symbols for identical memory addresses in APPLE2E.SYM
 			std::string const* pSymbolPrev = FindSymbolFromAddress( (WORD)nAddress, &iTable ); // don't care which table it is in
-			if( pSymbolPrev )
+			if ( pSymbolPrev )
 			{
-				if( !bFileDisplayed )
+				if ( !bFileDisplayed )
 				{
 					bFileDisplayed = true;
 
@@ -712,9 +697,9 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 			WORD nAddressPrev = 0;
 
 			bool bExists  = FindAddressFromSymbol( sName, &nAddressPrev, &iTable );
-			if( bExists )
+			if ( bExists )
 			{
-				if( !bDupSymbolHeader )
+				if ( !bDupSymbolHeader )
 				{
 					bDupSymbolHeader = true;
 					ConsolePrintFormat( " %sDup Symbol Name%s (%s%s%s) %s"
@@ -773,7 +758,7 @@ Update_t CmdSymbolsLoad (int nArgs)
 	{
 		std::string pFileName;
 		
-		if( g_aArgs[ iArg ].bType & TYPE_QUOTED_2 )
+		if ( g_aArgs[ iArg ].bType & TYPE_QUOTED_2 )
 		{
 			pFileName = g_aArgs[ iArg ].sArg;
 
@@ -788,15 +773,15 @@ Update_t CmdSymbolsLoad (int nArgs)
 		unsigned int nOffsetAddr = 0;
 
 		iArg++;
-		if( iArg <= nArgs)
+		if ( iArg <= nArgs)
 		{
 			if (g_aArgs[ iArg ].eToken == TOKEN_COMMA)
 			{
 				iArg++;
-				if( iArg <= nArgs )
+				if ( iArg <= nArgs )
 				{
 					nOffsetAddr = g_aArgs[ iArg ].nValue;
-					if( (nOffsetAddr < _6502_MEM_BEGIN) || (nOffsetAddr > _6502_MEM_END) )
+					if ( (nOffsetAddr < _6502_MEM_BEGIN) || (nOffsetAddr > _6502_MEM_END) )
 					{
 						nOffsetAddr = 0;
 					}
@@ -804,13 +789,13 @@ Update_t CmdSymbolsLoad (int nArgs)
 			}
 		}
 
-		if( !pFileName.empty() )
+		if ( !pFileName.empty() )
 		{
 			nSymbols = ParseSymbolTable( sFileName, (SymbolTable_Index_e) iSymbolTable, nOffsetAddr );
 		}
 	}
 
-	if( nSymbols > 0 )
+	if ( nSymbols > 0 )
 	{
 		g_nSymbolsLoaded = nSymbols;
 	}
@@ -926,7 +911,7 @@ Update_t _CmdSymbolsUpdate( int nArgs, int bSymbolTables )
 			bSymbolTables =  SYMBOL_TABLE_USER_2; // Autogenerated symbol names go in table 2 for organization when reverse engineering.  Table 1 = known, Table 2 = unknown.
 
 		nAddress = g_aArgs[2].nValue;
-		sprintf( g_aArgs[1].sArg, "_%04X", nAddress ); // Autogenerated symbol name
+		strncpy_s( g_aArgs[1].sArg, StrFormat("_%04X", nAddress).c_str(), _TRUNCATE ); // Autogenerated symbol name
 
 		bUpdateSymbol = true;
 	}
@@ -953,8 +938,6 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 	Update_t iUpdate = _CmdSymbolsUpdate( nArgs, bSymbolTables );
 	if (iUpdate != UPDATE_NOTHING)
 		return iUpdate;
-
-	TCHAR sText[ CONSOLE_WIDTH ];
 
 	int iArg = 0;
 	while (iArg++ <= nArgs)
@@ -992,15 +975,9 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				int iTable = _GetSymbolTableFromFlag( bSymbolTables );
 				if (iTable != NUM_SYMBOL_TABLES)
 				{
-					if( bUpdate & UPDATE_SYMBOLS )
+					if ( bUpdate & UPDATE_SYMBOLS )
 					{
-						//sprintf( sText, "  Symbol Table: %s%s%s, %sloaded symbols: %s%d"
-						//	, CHC_STRING, g_aSymbolTableNames[ iTable ]
-						//	, CHC_DEFAULT, CHC_DEFAULT
-						//	, CHC_NUM_DEC, g_nSymbolsLoaded
-						//);
-						_CmdSymbolsInfoHeader( iTable, sText, g_nSymbolsLoaded );
-						ConsolePrint( sText );
+						ConsolePrint( _CmdSymbolsInfoHeader( iTable, g_nSymbolsLoaded ).c_str() );
 					}
 				}
 				else
@@ -1022,8 +999,7 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				int iTable = _GetSymbolTableFromFlag( bSymbolTables );
 				if (iTable != NUM_SYMBOL_TABLES)
 				{
-					_CmdSymbolsInfoHeader( iTable, sText );
-					ConsolePrint( sText );
+					ConsolePrint( _CmdSymbolsInfoHeader( iTable ).c_str() );
 				}
 				return ConsoleUpdate() | UPDATE_DISASM;
 			}
@@ -1034,8 +1010,7 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				int iTable = _GetSymbolTableFromFlag( bSymbolTables );
 				if (iTable != NUM_SYMBOL_TABLES)
 				{
-					_CmdSymbolsInfoHeader( iTable, sText );
-					ConsolePrint( sText );
+					ConsolePrint( _CmdSymbolsInfoHeader( iTable ).c_str() );
 				}
 				return ConsoleUpdate() | UPDATE_DISASM;
 			}

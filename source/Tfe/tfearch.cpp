@@ -28,6 +28,11 @@
 /* #define WPCAP */
 
 #ifdef _MSC_VER
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include "pcap.h"
 #else
 // on Linux and Mac OS X, we use system's pcap.h, which needs to be included as <>
@@ -41,7 +46,6 @@
 
 #include <StdAfx.h> // this is necessary in linux, but in MSVC windows.h MUST come after winsock2.h (from pcap.h above)
 #include "tfearch.h"
-#include "tfesupp.h"
 #include "../Log.h"
 
 
@@ -52,7 +56,8 @@
 
 #define TFE_DEBUG_WARN 1 /* this should not be deactivated */
 
-int tfe_cannot_use = 0;
+// once this is set, no further attempts to load npcap will be made
+static int tfe_cannot_use = 0;
 
 #ifdef _MSC_VER
 
@@ -65,6 +70,7 @@ typedef int (*pcap_findalldevs_t)(pcap_if_t **, char *);
 typedef void (*pcap_freealldevs_t)(pcap_if_t *);
 typedef int (*pcap_sendpacket_t)(pcap_t *p, u_char *buf, int size);
 typedef const char *(*pcap_lib_version_t)(void);
+typedef char* (*pcap_geterr_t)(pcap_t* p);
 
 static pcap_open_live_t   p_pcap_open_live;
 static pcap_close_t       p_pcap_close;
@@ -75,6 +81,7 @@ static pcap_freealldevs_t p_pcap_freealldevs;
 static pcap_sendpacket_t  p_pcap_sendpacket;
 static pcap_datalink_t p_pcap_datalink;
 static pcap_lib_version_t p_pcap_lib_version;
+static pcap_geterr_t p_pcap_geterr;
 
 static HINSTANCE pcap_library = NULL;
 
@@ -96,6 +103,7 @@ void TfePcapFreeLibrary(void)
         p_pcap_sendpacket = NULL;
         p_pcap_datalink = NULL;
         p_pcap_lib_version = NULL;
+        p_pcap_geterr = NULL;
     }
 }
 
@@ -111,34 +119,47 @@ void TfePcapFreeLibrary(void)
 static
 BOOL TfePcapLoadLibrary(void)
 {
-    if (!pcap_library) {
-        if (!SetDllDirectory("C:\\Windows\\System32\\Npcap\\"))	// Prefer Npcap over WinPcap (GH#822)
-        {
-            const char* error = "Warning: SetDllDirectory() failed for Npcap";
-            LogOutput("%s\n", error);
-            LogFileOutput("%s\n", error);
-        }
-
-        pcap_library = LoadLibrary("wpcap.dll");
-
-        if (!pcap_library) {
-            tfe_cannot_use = 1;
-            if(g_fh) fprintf(g_fh, "LoadLibrary WPCAP.DLL failed!\n" );
-            return FALSE;
-        }
-
-        GET_PROC_ADDRESS_AND_TEST(pcap_open_live);
-        GET_PROC_ADDRESS_AND_TEST(pcap_close);
-        GET_PROC_ADDRESS_AND_TEST(pcap_dispatch);
-        GET_PROC_ADDRESS_AND_TEST(pcap_setnonblock);
-        GET_PROC_ADDRESS_AND_TEST(pcap_findalldevs);
-        GET_PROC_ADDRESS_AND_TEST(pcap_freealldevs);
-        GET_PROC_ADDRESS_AND_TEST(pcap_sendpacket);
-        GET_PROC_ADDRESS_AND_TEST(pcap_datalink);
-        GET_PROC_ADDRESS_AND_TEST(pcap_lib_version);
-        LogOutput("%s\n", p_pcap_lib_version());
-        LogFileOutput("%s\n", p_pcap_lib_version());
+    if (pcap_library)
+    {
+        // already loaded
+        return TRUE;
     }
+
+    if (tfe_cannot_use)
+    {
+        // already failed
+        return FALSE;
+    }
+
+    // try to load
+    if (!SetDllDirectory("C:\\Windows\\System32\\Npcap\\"))	// Prefer Npcap over WinPcap (GH#822)
+    {
+        const char* error = "Warning: SetDllDirectory() failed for Npcap";
+        LogOutput("%s\n", error);
+        LogFileOutput("%s\n", error);
+    }
+
+    pcap_library = LoadLibrary("wpcap.dll");
+
+    if (!pcap_library)
+    {
+        tfe_cannot_use = 1;
+        if(g_fh) fprintf(g_fh, "LoadLibrary WPCAP.DLL failed!\n" );
+        return FALSE;
+    }
+
+    GET_PROC_ADDRESS_AND_TEST(pcap_open_live);
+    GET_PROC_ADDRESS_AND_TEST(pcap_close);
+    GET_PROC_ADDRESS_AND_TEST(pcap_dispatch);
+    GET_PROC_ADDRESS_AND_TEST(pcap_setnonblock);
+    GET_PROC_ADDRESS_AND_TEST(pcap_findalldevs);
+    GET_PROC_ADDRESS_AND_TEST(pcap_freealldevs);
+    GET_PROC_ADDRESS_AND_TEST(pcap_sendpacket);
+    GET_PROC_ADDRESS_AND_TEST(pcap_datalink);
+    GET_PROC_ADDRESS_AND_TEST(pcap_lib_version);
+    GET_PROC_ADDRESS_AND_TEST(pcap_geterr);
+    LogOutput("%s\n", p_pcap_lib_version());
+    LogFileOutput("%s\n", p_pcap_lib_version());
 
     return TRUE;
 }
@@ -157,6 +178,7 @@ BOOL TfePcapLoadLibrary(void)
 #define p_pcap_sendpacket pcap_sendpacket
 #define p_pcap_datalink pcap_datalink
 #define p_pcap_lib_version pcap_lib_version
+#define p_pcap_geterr pcap_geterr
 
 static BOOL TfePcapLoadLibrary(void)
 {
@@ -258,16 +280,16 @@ int tfe_arch_enumadapter_open(void)
     return 1;
 }
 
-int tfe_arch_enumadapter(char **ppname, char **ppdescription)
+int tfe_arch_enumadapter(std::string & name, std::string & description)
 {
     if (!TfePcapNextDev)
         return 0;
 
-    *ppname = lib_stralloc(TfePcapNextDev->name);
+    name = TfePcapNextDev->name;
     if (TfePcapNextDev->description)
-        *ppdescription = lib_stralloc(TfePcapNextDev->description);
+        description = TfePcapNextDev->description;
     else
-        *ppdescription = lib_stralloc(TfePcapNextDev->name);
+        description = TfePcapNextDev->name;
 
     TfePcapNextDev = TfePcapNextDev->next;
 
@@ -293,20 +315,18 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
     }
     else {
         /* look if we can find the specified adapter */
-        char *pname;
-        char *pdescription;
+        std::string name;
+        std::string description;
         BOOL  found = FALSE;
 
         if (!interface_name.empty()) {
             /* we have an interface name, try it */
             TfePcapDevice = TfePcapAlldevs;
 
-            while (tfe_arch_enumadapter(&pname, &pdescription)) {
-                if (strcmp(pname, interface_name.c_str())==0) {
+            while (tfe_arch_enumadapter(name, description)) {
+                if (name == interface_name) {
                     found = TRUE;
                 }
-                lib_free(pname);
-                lib_free(pdescription);
                 if (found) break;
                 TfePcapDevice = TfePcapNextDev;
             }
@@ -436,7 +456,7 @@ void TfePcapPacketHandler(u_char *param, const struct pcap_pkthdr *header, const
     /* determine the count of bytes which has been returned, 
      * but make sure not to overrun the buffer 
      */
-    pinternal->rxlength = min(pinternal->size, header->caplen);
+    pinternal->rxlength = std::min(pinternal->size, header->caplen);
 
     memcpy(pinternal->buffer, pkt_data, pinternal->rxlength);
 }
@@ -454,17 +474,23 @@ void TfePcapPacketHandler(u_char *param, const struct pcap_pkthdr *header, const
 static 
 int tfe_arch_receive_frame(pcap_t * TfePcapFP, TFE_PCAP_INTERNAL *pinternal)
 {
-    int ret = -1;
+    const char* error = "";
 
     /* check if there is something to receive */
-	/* RGJ changed from void to u_char for AppleWin */
-	if ((*p_pcap_dispatch)(TfePcapFP, 1, TfePcapPacketHandler, (u_char *)pinternal)!=0) {
+    /* RGJ changed from void to u_char for AppleWin */
+    int ret = (*p_pcap_dispatch)(TfePcapFP, 1, TfePcapPacketHandler, (u_char*)pinternal);
+    if (ret > 0) {
         /* Something has been received */
         ret = pinternal->rxlength;
     }
+    else {  // GH#1095: -ve values are errors
+        if (ret == -1)
+            error = (*p_pcap_geterr)(TfePcapFP); // "return the error text pertaining to the last pcap library error."
+        ret = -1;
+    }
 
 #ifdef TFE_DEBUG_ARCH
-    if(g_fh) fprintf( g_fh, "tfe_arch_receive_frame() called, returns %d.\n", ret );
+    if(g_fh) fprintf( g_fh, "tfe_arch_receive_frame() called, returns %d (%s).\n", ret, error );
 #endif
 
     return ret;
@@ -541,6 +567,21 @@ int tfe_arch_receive(pcap_t * TfePcapFP,
     }
 
     return -1;
+}
+
+const char * tfe_arch_lib_version()
+{
+    if (!TfePcapLoadLibrary())
+    {
+        return 0;
+    }
+
+    return p_pcap_lib_version();
+}
+
+int tfe_arch_is_npcap_loaded()
+{
+    return TfePcapLoadLibrary();
 }
 
 //#endif /* #ifdef HAVE_TFE */

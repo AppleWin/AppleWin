@@ -1,5 +1,7 @@
 #pragma once
 
+#include "StrFormat.h"
+
 // Memory Text File _________________________________________________________
 
 	class MemoryTextFile_t
@@ -43,6 +45,7 @@ inline	char *GetLine( const int iLine ) const
 
 		void  GetLine( const int iLine, char *pLine, const int n );
 
-		void PushLine( char *pLine );
+		void PushLine( const char *pLine );
+		void PushLineFormat( const char *pFormat, ... ) ATTRIBUTE_FORMAT_PRINTF(2, 3); // 1 is "this"
 	};
 	

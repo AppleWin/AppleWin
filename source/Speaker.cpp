@@ -92,6 +92,15 @@ static ULONG   Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples);
 static void    Spkr_SetActive(bool bActive);
 static void    Spkr_DSUninit();
 
+//-----------------------------------------------------------------------------
+
+static bool g_bSpkrOutputToRiff = false;
+
+void Spkr_OutputToRiff(void)
+{
+	g_bSpkrOutputToRiff = true;
+}
+
 //=============================================================================
 
 static void DisplayBenchmarkResults ()
@@ -603,17 +612,15 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 			}
 			
 			memcpy(pDSLockedBuffer0, &pSpeakerBuffer[0], dwBufferSize0);
-#ifdef RIFF_SPKR
-			RiffPutSamples(pDSLockedBuffer0, dwBufferSize0/sizeof(short));
-#endif
+			if (g_bSpkrOutputToRiff)
+				RiffPutSamples(pDSLockedBuffer0, dwBufferSize0/sizeof(short));
 			nNumSamples = dwBufferSize0/sizeof(short);
 
 			if(pDSLockedBuffer1 && dwBufferSize1)
 			{
 				memcpy(pDSLockedBuffer1, &pSpeakerBuffer[dwDSLockedBufferSize0/sizeof(short)], dwBufferSize1);
-#ifdef RIFF_SPKR
-				RiffPutSamples(pDSLockedBuffer1, dwBufferSize1/sizeof(short));
-#endif
+				if (g_bSpkrOutputToRiff)
+					RiffPutSamples(pDSLockedBuffer1, dwBufferSize1/sizeof(short));
 				nNumSamples += dwBufferSize1/sizeof(short);
 			}
 		}
@@ -628,17 +635,15 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 			if(dwBufferSize0)
 			{
 				wmemset((wchar_t*)pDSLockedBuffer0, (wchar_t)DCFilter(g_nSpeakerData), dwBufferSize0/sizeof(wchar_t));
-#ifdef RIFF_SPKR
-				RiffPutSamples(pDSLockedBuffer0, dwBufferSize0/sizeof(short));
-#endif
+				if (g_bSpkrOutputToRiff)
+					RiffPutSamples(pDSLockedBuffer0, dwBufferSize0/sizeof(short));
 			}
 
 			if(pDSLockedBuffer1)
 			{
 				wmemset((wchar_t*)pDSLockedBuffer1, (wchar_t)DCFilter(g_nSpeakerData), dwBufferSize1/sizeof(wchar_t));
-#ifdef RIFF_SPKR
-				RiffPutSamples(pDSLockedBuffer1, dwBufferSize1/sizeof(short));
-#endif
+				if (g_bSpkrOutputToRiff)
+					RiffPutSamples(pDSLockedBuffer1, dwBufferSize1/sizeof(short));
 			}
 		}
 
@@ -782,16 +787,14 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 		}
 
 		memcpy(pDSLockedBuffer0, &pSpeakerBuffer[0], dwDSLockedBufferSize0);
-#ifdef RIFF_SPKR
-		RiffPutSamples(pDSLockedBuffer0, dwDSLockedBufferSize0/sizeof(short));
-#endif
+		if (g_bSpkrOutputToRiff)
+			RiffPutSamples(pDSLockedBuffer0, dwDSLockedBufferSize0/sizeof(short));
 
 		if(pDSLockedBuffer1)
 		{
 			memcpy(pDSLockedBuffer1, &pSpeakerBuffer[dwDSLockedBufferSize0/sizeof(short)], dwDSLockedBufferSize1);
-#ifdef RIFF_SPKR
-			RiffPutSamples(pDSLockedBuffer1, dwDSLockedBufferSize1/sizeof(short));
-#endif
+			if (g_bSpkrOutputToRiff)
+				RiffPutSamples(pDSLockedBuffer1, dwDSLockedBufferSize1/sizeof(short));
 		}
 
 		// Commit sound buffer

@@ -1,0 +1,21 @@
+---
+File_hdr:
+  Tag: AppleWin Controller Button Remapping
+  Version: 1
+
+Unit:
+    HID: VID_054C&PID_05C4
+    Description: Sony DualShock 4     # Description to be used in AppleWin's GUI
+    1: Y
+    2: B
+    3: A
+    4: X
+    5: LB
+    6: RB
+    7: ""
+    8: ""
+    9: SELECT
+    10: START
+    11: ""
+    12: ""
+...

@@ -13,6 +13,7 @@ public:
 	{
 		CPageConfigTfe::ms_this = this;
 		m_tfe_selected = CT_Empty;
+		m_tfe_virtual_dns = false;
 	}
 	virtual ~CPageConfigTfe(){}
 
@@ -20,6 +21,7 @@ public:
 
 	SS_CARDTYPE m_tfe_selected;
 	std::string m_tfe_interface_name;
+	bool m_tfe_virtual_dns;
 
 protected:
 	// IPropertySheetPage
@@ -28,8 +30,8 @@ protected:
 	virtual void DlgCANCEL(HWND window);
 
 private:
-	BOOL get_tfename(int number, char **ppname, char **ppdescription);
-	int gray_ungray_items(HWND hwnd);
+	BOOL get_tfename(int number, std::string & name, std::string & description);
+	void gray_ungray_items(HWND hwnd);
 	void init_tfe_dialog(HWND hwnd);
 	void save_tfe_dialog(HWND hwnd);
 

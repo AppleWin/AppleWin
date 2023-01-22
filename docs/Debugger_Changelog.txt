@@ -1,4 +1,11 @@
 /*
+2.9.1.14 Fix disassembly when in middle of data
+    Example:
+        ASC 7D0:7D7
+        ASC 7D8:7DF
+        7CF:EA 40 41 42 43 44 45 46 47 48
+        U 7D7
+
 2.9.1.13 Added: CD now detects ".." to change to the previous directory and chops the trailing sub-directory from the current path.
          It worked before but would clutter up the current directory with a trailing "..\".
 2.9.1.12 Added: New commands HGR0, HGR3, HGR4, HGR5 to see pseudo pages $00, $60, $80, $A0 respectively.
@@ -35,7 +42,7 @@
     X  2002:2003
 Released post 1.30.7.0
 
-2.9.1.0 Added: Bookmarks now have their own indicator (a number with a box around it) and replace the ":" seperator. Updated Debug_Font.bmp
+2.9.1.0 Added: Bookmarks now have their own indicator (a number with a box around it) and replace the ":" separator. Updated Debug_Font.bmp
 
 .18 Fixed: Resetting bookmarks wasn't setting the total bookmarks back to zero.
 .17 Fixed: If all bookmarks were used then setting a new one wouldn't update an existing one to the new address.

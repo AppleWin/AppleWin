@@ -88,7 +88,7 @@ void SSI_Output(void)
 	LogOutput("SSI: ");
 	for (int i = 0; i <= 4; i++)
 	{
-		std::string r = (ssiRegs[i] >= 0) ? StrFormat("%02X", ssiRegs[i]) : "--";
+		std::string r = (ssiRegs[i] >= 0) ? ByteToHexStr(ssiRegs[i]) : "--";
 		LogOutput("%s ", r.c_str());
 		ssiRegs[i] = -1;
 	}
@@ -380,6 +380,9 @@ void SSI263::Play(unsigned int nPhoneme)
 	m_currSampleSum = 0;
 	m_currNumSamples = 0;
 	m_currSampleMod4 = 0;
+
+	// Set m_lastUpdateCycle, otherwise UpdateAccurateLength() can immediately complete phoneme! (GH#1104)
+	m_lastUpdateCycle = MB_GetLastCumulativeCycles();
 }
 
 void SSI263::Stop(void)
@@ -412,14 +415,9 @@ void SSI263::Update(void)
 #endif
 
 			if (m_phonemeAccurateLengthRemaining)
-			{
 				m_phonemeCompleteByFullSpeed = true;	// Let UpdateAccurateLength() call UpdateIRQ()
-				m_lastUpdateCycle = GetLastCumulativeCycles();	// Set m_lastUpdateCycle, otherwise UpdateAccurateLength() just early-returns!
-			}
 			else
-			{
 				UpdateIRQ();
-			}
 		}
 
 		m_updateWasFullSpeed = true;
@@ -512,11 +510,8 @@ void SSI263::Update(void)
 		const double kMinimumUpdateInterval = 500.0;	// Arbitary (500 cycles = 21 samples)
 		const double kMaximumUpdateInterval = (double)(0xFFFF + 2);	// Max 6522 timer interval (1372 samples)
 
-		if (m_lastUpdateCycle == 0)
-			m_lastUpdateCycle = GetLastCumulativeCycles();		// Initial call to SSI263_Update() after reset/power-cycle
-
-		_ASSERT(GetLastCumulativeCycles() >= m_lastUpdateCycle);
-		updateInterval = (double)(GetLastCumulativeCycles() - m_lastUpdateCycle);
+		_ASSERT(MB_GetLastCumulativeCycles() >= m_lastUpdateCycle);
+		updateInterval = (double)(MB_GetLastCumulativeCycles() - m_lastUpdateCycle);
 		if (updateInterval < kMinimumUpdateInterval)
 			return;
 		if (updateInterval > kMaximumUpdateInterval)
@@ -580,6 +575,8 @@ void SSI263::Update(void)
 
 	//-------------
 
+	const double amplitude = !m_isVotraxPhoneme ? (double)(m_ctrlArtAmp & AMPLITUDE_MASK) / (double)AMPLITUDE_MASK : 1.0;
+
 	bool bSpeechIRQ = false;
 
 	{
@@ -596,7 +593,8 @@ void SSI263::Update(void)
 			UINT samplesWritten = 0;
 			while (samplesWritten < (UINT)nNumSamples)
 			{
-				m_currSampleSum += (int)*m_pPhonemeData;
+				double sample = (double)*m_pPhonemeData * amplitude;
+				m_currSampleSum += (int)sample;
 				m_currNumSamples++;
 
 				m_pPhonemeData++;
@@ -676,6 +674,7 @@ void SSI263::UpdateAccurateLength(void)
 	if (!m_phonemeAccurateLengthRemaining)
 		return;
 
+	_ASSERT(m_lastUpdateCycle);		// Can't be 0, since set in Play()
 	if (m_lastUpdateCycle == 0)
 		return;
 

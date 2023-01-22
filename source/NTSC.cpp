@@ -69,8 +69,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 // Globals (Public) ___________________________________________________
-	uint16_t g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
-	uint16_t g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible (NB. final hpos is 2 cycles long, so a line is 65 cycles)
+	static uint16_t g_nVideoClockVert = 0; // 9-bit: VC VB VA V5 V4 V3 V2 V1 V0 = 0 .. 262
+	static uint16_t g_nVideoClockHorz = 0; // 6-bit:          H5 H4 H3 H2 H1 H0 = 0 .. 64, 25 >= visible (NB. final hpos is 2 cycles long, so a line is 65 cycles)
 
 // Globals (Private) __________________________________________________
 	static int g_nVideoCharSet = 0;
@@ -113,7 +113,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static unsigned short (*g_pHorzClockOffset)[VIDEO_SCANNER_MAX_HORZ] = 0;
 
 	typedef void (*UpdateScreenFunc_t)(long);
-	static UpdateScreenFunc_t g_apFuncVideoUpdateScanline[VIDEO_SCANNER_Y_DISPLAY];
 	static UpdateScreenFunc_t g_pFuncUpdateTextScreen     = 0; // updateScreenText40;
 	static UpdateScreenFunc_t g_pFuncUpdateGraphicsScreen = 0; // updateScreenText40;
 	static UpdateScreenFunc_t g_pFuncModeSwitchDelayed = 0;
@@ -320,8 +319,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	INLINE void      updatePixels( uint16_t bits );
 	INLINE void      updateVideoScannerHorzEOL();
 	INLINE void      updateVideoScannerAddress();
-	INLINE uint16_t  getVideoScannerAddressTXT();
-	INLINE uint16_t  getVideoScannerAddressHGR();
 
 	static void initChromaPhaseTables();
 	static real initFilterChroma   (real z);
@@ -663,6 +660,12 @@ inline void updateVideoScannerHorzEOLSimple()
 {
 	if (VIDEO_SCANNER_MAX_HORZ == ++g_nVideoClockHorz)
 	{
+		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY)		// Only write to video memory when in visible part of display (GH#1143)
+		{
+			*(uint32_t*)g_pVideoAddress = 0 | ALPHA32_MASK;		// VT_COLOR_IDEALIZED: TEXT -> HGR can leave junk on RHS (GH#1106)
+			*(getScanlineNextInbetween()) = 0 | ALPHA32_MASK;	// ...and clear junk on RHS for non-'50% Scan lines'
+		}
+
 		g_nVideoClockHorz = 0;
 
 		if (++g_nVideoClockVert == g_videoScannerMaxVert)
@@ -689,15 +692,21 @@ inline void updateVideoScannerHorzEOL()
 			if (!GetColorBurst())
 			{
 				// Only for: VF_TEXT && !VF_MIXED (ie. full 24-row TEXT40 or TEXT80)
-				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);
-				g_pFuncUpdateBnWPixel(0);
-				g_pFuncUpdateBnWPixel(0);
+				g_pFuncUpdateBnWPixel(g_nLastColumnPixelNTSC);	// last pixel in 14M video modes
+				g_pFuncUpdateBnWPixel(0);						// 14M ringing pixel! (better definition for 80COL char's right-hand edge)
+				// Direct write instead of g_pFuncUpdateBnWPixel(0) to avoid random pixels on RHS in VT_COLOR_MONITOR_NTSC
+				*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;
+				*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;
 			}
 			else
 			{
-				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);
-				g_pFuncUpdateHuePixel(0);
-				g_pFuncUpdateHuePixel(0);
+				g_pFuncUpdateHuePixel(g_nLastColumnPixelNTSC);	// last pixel in 14M video modes
+				g_pFuncUpdateHuePixel(0);						// 14M ringing pixel! (better definition for 80COL char's right-hand edge)
+				// Direct write instead of g_pFuncUpdateHuePixel(0) to avoid random pixels on RHS in VT_COLOR_MONITOR_NTSC
+				*(uint32_t*)g_pVideoAddress = 0 | ALPHA32_MASK;
+				*(getScanlineNextInbetween()) = 0 | ALPHA32_MASK; g_pVideoAddress++;	// Clear junk on RHS for TV (Color/B&W) & Monitor (NTSC/PAL). (GH#1157)
+				*(uint32_t*)g_pVideoAddress = 0 | ALPHA32_MASK;
+				*(getScanlineNextInbetween()) = 0 | ALPHA32_MASK; g_pVideoAddress++;	// Clear junk on RHS for TV (Color/B&W) & Monitor (NTSC/PAL). (GH#1157)
 			}
 		}
 
@@ -738,8 +747,13 @@ inline void updateVideoScannerHorzEOL_SHR()
 //===========================================================================
 inline void updateVideoScannerAddress()
 {
-	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && GetVideo().GetVideoRefreshRate() == VR_50HZ)	// GH#763
-		g_nColorBurstPixels = 0;	// instantaneously kill color-burst!
+	if (g_nVideoMixed && GetVideo().GetVideoRefreshRate() == VR_50HZ)	// GH#763
+	{
+		if (g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)
+			g_nColorBurstPixels = 0;	// instantaneously kill color-burst!
+		else if (g_nVideoClockVert == 0 && (GetVideo().GetVideoMode() & VF_TEXT) == 0)
+			g_nColorBurstPixels = 1024;	// setup for line-0 (when TEXT is off), ie. so GetColorBurst() returns true below (GH#1119)
+	}
 
 	if (g_pFuncUpdateGraphicsScreen == updateScreenSHR)
 	{
@@ -772,9 +786,72 @@ inline void updateVideoScannerAddress()
 	// Centre the older //e video modes when running with a VidHD
 	g_pVideoAddress += GetVideo().GetFrameBufferCentringValue();
 
+	if (GetVideo().HasVidHD())
+	{
+		if (GetVideo().GetVideoType() == VT_COLOR_MONITOR_NTSC)
+		{
+			// EG. Switching between TEXT (full 24 lines) and MIXED (HGR with purple vertical line-0)
+			// - AppleWin-Test repo, Tests-Various.dsk, option-C
+			g_pVideoAddress -= 2;
+			*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;
+			*(uint32_t*)g_pVideoAddress++ = 0 | ALPHA32_MASK;
+		}
+	}
+
 	g_nColorPhaseNTSC      = INITIAL_COLOR_PHASE;
 	g_nLastColumnPixelNTSC = 0;
 	g_nSignalBitsNTSC      = 0;
+}
+
+//===========================================================================
+#if 1
+#define CLEAR_COLOUR_TOP 0
+#define CLEAR_COLOUR_SIDE 0
+#else	// debug
+#define CLEAR_COLOUR_TOP 0x0000FF00		// green
+#define CLEAR_COLOUR_SIDE 0x00FF0000	// red
+#endif
+
+static void ClearOverscanVideoArea(void)
+{
+	if (g_pFuncUpdateGraphicsScreen == updateScreenSHR)
+		return;
+
+	bgra_t* pSaveVideoAddress = g_pVideoAddress;	// save g_pVideoAddress
+	g_pVideoAddress = g_pScanLines[0];
+	uint32_t* pLine1Prev = getScanlinePreviousInbetween();
+	g_pVideoAddress = pSaveVideoAddress;			// restore g_pVideoAddress
+
+	const int kOverscanOffsetL = 3;	// In updateVideoScannerAddress(), g_pVideoAddress could be adjusted by: -2 + -1 = -3
+	const int kOverscanSpanL = 3;
+	const int kOverscanOverlapL = kOverscanSpanL - kOverscanOffsetL;
+
+	const int kOverscanOffsetR = 2;
+	const int kOverscanSpanR = 4;		// In updateVideoScannerHorzEOL() it writes 4 extra pixels
+	const int kOverscanOverlapR = kOverscanSpanR - kOverscanOffsetR;
+
+	const int kHorzPixels = (VIDEO_SCANNER_MAX_HORZ - VIDEO_SCANNER_HORZ_START) * 14;
+
+	pLine1Prev += GetVideo().GetFrameBufferCentringValue() - kOverscanOffsetL;		// Centre the older //e video modes when running with a VidHD
+
+	// Clear this line at Y=-1
+	for (uint32_t i = 0; i < (kHorzPixels + (kOverscanSpanL - kOverscanOverlapL) + (kOverscanSpanR - kOverscanOverlapR)); i++)
+		*pLine1Prev++ = CLEAR_COLOUR_TOP | ALPHA32_MASK;
+
+	// Clear overscan before & after display area
+	for (uint32_t i = 0; i < VIDEO_SCANNER_Y_DISPLAY*2; i++)
+	{
+		uint32_t* pScanLine = ((uint32_t*)g_pScanLines[i]);
+		pScanLine += GetVideo().GetFrameBufferCentringValue() - kOverscanOffsetL;		// Centre the older //e video modes when running with a VidHD
+
+		for (uint32_t j = 0; j < kOverscanSpanL + 1; j++)
+			pScanLine[j] = CLEAR_COLOUR_SIDE | ALPHA32_MASK;
+
+		pScanLine += kOverscanOffsetL + kHorzPixels - kOverscanOffsetR;
+
+		for (uint32_t j = 0; j < kOverscanSpanR; j++)
+			pScanLine[j] = CLEAR_COLOUR_SIDE | ALPHA32_MASK;
+	}
 }
 
 //===========================================================================
@@ -794,6 +871,29 @@ INLINE uint16_t getVideoScannerAddressHGR()
 		+ APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz]
 		+ (g_nHiresPage * 0x2000));
 	return nAddress;
+}
+
+//===========================================================================
+INLINE uint16_t getVideoScannerAddressTXTorHGR()
+{
+	const bool isTextAddr = ((g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED) ||
+		(g_uNewVideoModeFlags & VF_TEXT) ||
+		!(g_uNewVideoModeFlags & VF_HIRES));
+
+	if (isTextAddr)
+		return getVideoScannerAddressTXT();
+	else
+		return getVideoScannerAddressHGR();
+}
+
+//===========================================================================
+INLINE uint16_t getVideoScannerAddressSHR()
+{
+	// 2 pixels per byte in 320-pixel mode = 160 bytes/scanline
+	// 4 pixels per byte in 640-pixel mode = 160 bytes/scanline
+	const UINT kBytesPerScanline = 160;
+	const UINT kBytesPerCycle = 4;
+	return 0x2000 + kBytesPerScanline * g_nVideoClockVert + kBytesPerCycle * (g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START);
 }
 
 // Non-Inline _________________________________________________________
@@ -1749,14 +1849,10 @@ void updateScreenSHR(long cycles6502)
 {
 	for (; cycles6502 > 0; --cycles6502)
 	{
-		// 2 pixels per byte in 320-pixel mode = 160 bytes/scanline
-		// 4 pixels per byte in 640-pixel mode = 160 bytes/scanline
-		const UINT kBytesPerScanline = 160;
-		const UINT kBytesPerCycle = 4;
-		uint16_t addr = 0x2000 + kBytesPerScanline * g_nVideoClockVert + kBytesPerCycle * (g_nVideoClockHorz - VIDEO_SCANNER_HORZ_START);
-
 		if (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY_IIGS)
 		{
+			uint16_t addr = getVideoScannerAddressSHR();
+
 			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
 				uint32_t* pAux = (uint32_t*) MemGetAuxPtr(addr);	// 8 pixels (320 mode) / 16 pixels (640 mode)
@@ -1836,12 +1932,7 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 			g_nVideoClockVert = g_videoScannerMaxVert-1;
 	}
 
-	uint16_t addr;
-	bool bHires = (GetVideo().GetVideoMode() & VF_HIRES) && !(GetVideo().GetVideoMode() & VF_TEXT); // SW_HIRES && !SW_TEXT
-	if( bHires )
-		addr = getVideoScannerAddressHGR();
-	else
-		addr = getVideoScannerAddressTXT();
+	uint16_t addr = getVideoScannerAddressTXTorHGR();
 
 	g_nVideoClockVert = currVideoClockVert;
 	g_nVideoClockHorz = currVideoClockHorz;
@@ -1849,10 +1940,19 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 	return addr;
 }
 
-uint16_t NTSC_VideoGetScannerAddressForDebugger(void)
+void NTSC_GetVideoVertHorzForDebugger(uint16_t& vert, uint16_t& horz)
 {
 	ResetCyclesExecutedForDebugger();		// if in full-speed, then reset cycles so that CpuCalcCycles() doesn't ASSERT
-	return NTSC_VideoGetScannerAddress(0);
+	NTSC_VideoGetScannerAddress(0);
+	vert = g_nVideoClockVert;
+	horz = g_nVideoClockHorz;
+}
+
+uint16_t NTSC_GetVideoVertForDebugger(void)
+{
+	uint16_t vert, horz;
+	NTSC_GetVideoVertHorzForDebugger(vert, horz);
+	return vert;
 }
 
 //===========================================================================
@@ -1874,6 +1974,8 @@ void NTSC_SetVideoTextMode( int cols )
 //===========================================================================
 void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 {
+	g_uNewVideoModeFlags = uVideoModeFlags;
+
 	if (uVideoModeFlags & VF_SHR)
 	{
 		g_pFuncUpdateGraphicsScreen = updateScreenSHR;
@@ -1892,7 +1994,6 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		// (GH#670) NB. if g_bFullSpeed then NTSC_VideoUpdateCycles() won't be called on the next 6502 opcode.
 		//  - Instead it's called when !g_bFullSpeed (eg. drive motor off), then the stale g_uNewVideoModeFlags will get used for NTSC_SetVideoMode()!
 		g_bDelayVideoMode = true;
-		g_uNewVideoModeFlags = uVideoModeFlags;
 		return;
 	}
 
@@ -1952,7 +2053,8 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 		else
 		{
-			g_nColorBurstPixels = 1024;		// (For mid-line video mode change)
+			if (!g_nVideoMixed || g_nVideoClockVert < VIDEO_SCANNER_Y_MIXED)	// 50HZ(PAL) will kill color-burst if 'mixed and >=160' - so don't re-enable color-burst! (GH#1131)
+				g_nColorBurstPixels = 1024;		// (For mid-line video mode change)
 
 			// Switching mid-line from TEXT to graphics
 			if (GetVideo().GetVideoType() == VT_COLOR_MONITOR_NTSC &&
@@ -2181,7 +2283,9 @@ _mono:
 			else
 				g_pFuncUpdateBnWPixel = g_pFuncUpdateHuePixel = updatePixelBnWMonitorDoubleScanline;
 			break;
-		}
+	}
+
+	ClearOverscanVideoArea();
 }
 
 //===========================================================================
@@ -2632,7 +2736,82 @@ UINT NTSC_GetCyclesUntilVBlank(int cycles)
 		(cyclesPerFrames - cycleCurrentPos + cycleVBl);
 }
 
+bool NTSC_GetVblBar(void)
+{
+	const UINT visibleScanLines = ((g_uNewVideoModeFlags & VF_SHR) == 0) ? VIDEO_SCANNER_Y_DISPLAY : VIDEO_SCANNER_Y_DISPLAY_IIGS;
+	return g_nVideoClockVert < visibleScanLines;
+}
+
 bool NTSC_IsVisible(void)
 {
-	return (g_nVideoClockVert < VIDEO_SCANNER_Y_DISPLAY) && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START);
+	return NTSC_GetVblBar() && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START);
+}
+
+// For debugger
+uint16_t NTSC_GetScannerAddressAndData(uint32_t& data, int& dataSize)
+{
+	if (g_uNewVideoModeFlags & VF_SHR)
+	{
+		uint16_t addr = getVideoScannerAddressSHR();
+		uint32_t* pAux = (uint32_t*)MemGetAuxPtr(addr);	// 8 pixels (320 mode) / 16 pixels (640 mode)
+		data = pAux[0];
+		dataSize = 4;
+		return addr;
+	}
+
+	//
+
+	// Copy logic from NTSC_SetVideoMode()
+	if (g_uNewVideoModeFlags & VF_TEXT)
+	{
+		if (g_uNewVideoModeFlags & VF_80COL)
+			dataSize = 2;
+		else
+			dataSize = 1;
+	}
+	else if (g_uNewVideoModeFlags & VF_HIRES)
+	{
+		if (g_uNewVideoModeFlags & VF_DHIRES)
+		{
+			if (g_uNewVideoModeFlags & VF_80COL)
+				dataSize = 2;
+			else
+				dataSize = 1;
+		}
+		else
+		{
+			dataSize = 1;
+		}
+	}
+	else
+	{
+		if (g_uNewVideoModeFlags & VF_DHIRES)
+		{
+			if (g_uNewVideoModeFlags & VF_80COL)
+				dataSize = 2;
+			else
+				dataSize = 1;
+		}
+		else
+		{
+			dataSize = 1;
+		}
+	}
+
+	// Extra logic for MIXED mode
+	if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED && (g_uNewVideoModeFlags & VF_80COL))
+		dataSize = 2;
+
+	uint16_t addr = getVideoScannerAddressTXTorHGR();
+	data = 0;
+
+	if (dataSize == 2)
+	{
+		uint8_t* pAux = MemGetAuxPtr(addr);
+		data = pAux[0] << 8;
+	}
+	uint8_t* pMain = MemGetMainPtr(addr);
+	data |= pMain[0];
+
+	return addr;
 }

@@ -51,7 +51,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALLOW_INPUT_LOWERCASE 1
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,13);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,14);
 
 
 // Public _________________________________________________________________________________________
@@ -68,8 +68,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int  g_nDebugBreakOnInvalid  = 0; // Bit Flags of Invalid Opcode to break on: // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
 	int  g_iDebugBreakOnOpcode   = 0;
 	bool g_bDebugBreakOnInterrupt = false;
-	static int g_iDebugBreakOnDmaToOrFromIoMemory = 0;
-	static WORD g_uDebugBreakOnDmaIoMemoryAddr = 0;
+
+	struct DebugBreakOnDMA
+	{
+		DebugBreakOnDMA() : isToOrFromMemory(0), memoryAddr(0), memoryAddrEnd(0), BPid(0) {}
+
+		int isToOrFromMemory;
+		WORD memoryAddr;
+		WORD memoryAddrEnd;
+		int BPid;
+	};
+
+	static const uint32_t NUM_BREAK_ON_DMA = 3;	// A 512-byte block misaligned touching 3 pages
+	static DebugBreakOnDMA g_DebugBreakOnDMA[NUM_BREAK_ON_DMA];
+	static DebugBreakOnDMA g_DebugBreakOnDMAIO;
 
 	static int  g_bDebugBreakpointHit = 0;	// See: BreakpointHit_t
 
@@ -102,6 +114,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"M", // Mem RW
 		"M", // Mem READ_ONLY
 		"M", // Mem WRITE_ONLY
+		"V", // Video Scanner
 		// TODO: M0 ram bank 0, M1 aux ram ?
 	};
 
@@ -238,8 +251,30 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	bool ProfileSave   ();
 	void ProfileFormat( bool bSeperateColumns, ProfileFormat_e eFormatMode );
 
-	char * ProfileLinePeek ( int iLine );
-	char * ProfileLinePush ();
+	// TODO: Things would be much simpler if g_aProfileLine is just a container of std::string.
+	struct ProfileLine_t
+	{
+		ProfileLine_t() : buf(NULL), bufsz(0) {}
+		ProfileLine_t(char* _buf, size_t _bufsz) : buf(_buf), bufsz(_bufsz) {}
+		void Assign(std::string const& str)
+		{
+			if (!buf || bufsz <= 0) return;
+			strncpy_s(buf, bufsz, str.c_str(), _TRUNCATE);
+		}
+		ATTRIBUTE_FORMAT_PRINTF(2, 3) /* 1 is "this" */
+		void Format(const char* fmt, ...)
+		{
+			if (!buf || bufsz <= 0) return;
+			va_list va;
+			va_start(va, fmt);
+			Assign(StrFormatV(fmt, va));
+			va_end(va);
+		}
+		char* buf;
+		size_t bufsz;
+	};
+	ProfileLine_t ProfileLinePeek ( int iLine );
+	ProfileLine_t ProfileLinePush ();
 	void ProfileLineReset  ();
 
 // Soft-switches __________________________________________________________________________________
@@ -318,7 +353,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static bool      g_bIgnoreNextKey = false;
 
-	static WORD g_LBR = 0x0000;	// Last Branch Record
+	const UINT LBR_UNDEFINED = -1;
+	static UINT g_LBR = LBR_UNDEFINED;	// Last Branch Record
+
+	static bool g_bScriptReadOk = false;
 
 // Private ________________________________________________________________________________________
 
@@ -672,8 +710,6 @@ Update_t CmdBookmarkLoad (int nArgs)
 //===========================================================================
 Update_t CmdBookmarkSave (int nArgs)
 {
-	TCHAR sText[ CONSOLE_WIDTH ];
-
 	g_ConfigState.Reset();
 
 	ConfigSave_PrepareHeader( PARAM_CAT_BOOKMARKS, CMD_BOOKMARK_CLEAR );
@@ -683,12 +719,11 @@ Update_t CmdBookmarkSave (int nArgs)
 	{
 		if (g_aBookmarks[ iBookmark ].bSet)
 		{
-			sprintf( sText, "%s %x %04X\n"
+			g_ConfigState.PushLineFormat( "%s %x %04X\n"
 				, g_aCommands[ CMD_BOOKMARK_ADD ].m_sName
 				, iBookmark
 				, g_aBookmarks[ iBookmark ].nAddress
 			);
-			g_ConfigState.PushLine( sText );
 		}
 		iBookmark++;
 	}
@@ -754,7 +789,7 @@ Update_t CmdProfile (int nArgs)
 {
 	if (! nArgs)
 	{
-		sprintf( g_aArgs[ 1 ].sArg, "%s", g_aParameters[ PARAM_RESET ].m_sName );
+		strncpy_s( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_RESET ].m_sName, _TRUNCATE );
 		nArgs = 1;
 	}
 
@@ -789,19 +824,15 @@ Update_t CmdProfile (int nArgs)
 			// Dump to console
 			if (iParam == PARAM_LIST)
 			{
+				const int nLine = g_nProfileLine;
 
-				char *pText;
-				char  sText[ CONSOLE_WIDTH ];
-
-				int   nLine = g_nProfileLine;
-				int   iLine;
-				
-				for( iLine = 0; iLine < nLine; iLine++ )
+				for ( int iLine = 0; iLine < nLine; iLine++ )
 				{
-					pText = ProfileLinePeek( iLine );
-					if (pText)
+					ProfileLine_t prfline = ProfileLinePeek( iLine );
+					if (prfline.buf)
 					{
-						TextConvertTabsToSpaces( sText, pText, CONSOLE_WIDTH, 4 );
+						char sText[ CONSOLE_WIDTH ];
+						TextConvertTabsToSpaces( sText, prfline.buf, CONSOLE_WIDTH, 4 );
 						// ConsoleBufferPush( sText );
 						ConsolePrint( sText );
 					}
@@ -815,7 +846,7 @@ Update_t CmdProfile (int nArgs)
 					ConsoleBufferPushFormat( " Saved: %s", g_FileNameProfile.c_str() );
 				}
 				else
-					ConsoleBufferPush( TEXT(" ERROR: Couldn't save file. (In use?)" ) );
+					ConsoleBufferPush( " ERROR: Couldn't save file. (In use?)" );
 			}
 		}
 	}
@@ -1103,7 +1134,7 @@ bool _CheckBreakpointValue( Breakpoint_t *pBP, int nVal )
 			 if ((nVal >= pBP->nAddress) && ((UINT)nVal < (pBP->nAddress + pBP->nLength)))
 			 	bStatus = true;
 			break;
-		case BP_OP_NOT_EQUAL    : // Rnage is: (,] (not-inclusive, inclusive)
+		case BP_OP_NOT_EQUAL    : // Range is: (,] (not-inclusive, inclusive)
 			 if ((nVal < pBP->nAddress) || ((UINT)nVal >= (pBP->nAddress + pBP->nLength)))
 			 	bStatus = true;
 			break;
@@ -1122,6 +1153,53 @@ bool _CheckBreakpointValue( Breakpoint_t *pBP, int nVal )
 	return bStatus;
 }
 
+//===========================================================================
+bool _CheckBreakpointRange(Breakpoint_t* pBP, int nVal, int nSize)
+{
+	bool bStatus = false;
+
+	int iCmp = pBP->eOperator;
+	switch (iCmp)
+	{
+	case BP_OP_EQUAL: // Range is like C++ STL: [,)  (inclusive,not-inclusive)
+		if ( ((nVal >= pBP->nAddress) && ((UINT)nVal < (pBP->nAddress + pBP->nLength))) ||
+			 ((pBP->nAddress >= nVal) && (pBP->nAddress < ((UINT)nVal + nSize))) )
+			bStatus = true;
+		break;
+	default:
+		_ASSERT(0);
+		break;
+	}
+
+	return bStatus;
+}
+
+//===========================================================================
+
+static void DebuggerBreakOnDma(WORD nAddress, WORD nSize, bool isDmaToMemory, int iBreakpoint);
+
+bool DebuggerCheckMemBreakpoints(WORD nAddress, WORD nSize, bool isDmaToMemory)
+{
+	// NB. Caller handles when (addr+size) wraps on 64K
+
+	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
+	{
+		Breakpoint_t* pBP = &g_aBreakpoints[iBreakpoint];
+		if (_BreakpointValid(pBP))
+		{
+			if (pBP->eSource == BP_SRC_MEM_RW || (pBP->eSource == BP_SRC_MEM_READ_ONLY && !isDmaToMemory) || (pBP->eSource == BP_SRC_MEM_WRITE_ONLY && isDmaToMemory))
+			{
+				if (_CheckBreakpointRange(pBP, nAddress, nSize))
+				{
+					DebuggerBreakOnDma(nAddress, nSize, isDmaToMemory, iBreakpoint);
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
 
 //===========================================================================
 int CheckBreakpointsIO ()
@@ -1256,18 +1334,82 @@ void ClearTempBreakpoints ()
 	}
 }
 
+// Returns true if a video breakpoint is triggered
 //===========================================================================
-static int CheckBreakpointsDmaToOrFromIoMemory(void)
+int CheckBreakpointsVideo()
 {
-	int res = g_iDebugBreakOnDmaToOrFromIoMemory;
-	g_iDebugBreakOnDmaToOrFromIoMemory = 0;
+	int bBreakpointHit = 0;
+
+	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
+	{
+		Breakpoint_t* pBP = &g_aBreakpoints[iBreakpoint];
+
+		if (!_BreakpointValid(pBP))
+			continue;
+
+		if (pBP->eSource != BP_SRC_VIDEO_SCANNER)
+			continue;
+
+		uint16_t vert = NTSC_GetVideoVertForDebugger();	// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
+		if (_CheckBreakpointValue(pBP, vert))
+		{
+			bBreakpointHit = BP_HIT_VIDEO_POS;
+			pBP->bEnabled = false;	// Disable, otherwise it'll trigger many times on this scan-line
+			break;
+		}
+	}
+
+	return bBreakpointHit;
+}
+
+//===========================================================================
+static int CheckBreakpointsDmaToOrFromIOMemory(void)
+{
+	int res = g_DebugBreakOnDMAIO.isToOrFromMemory;
+	g_DebugBreakOnDMAIO.isToOrFromMemory = 0;
 	return res;
 }
 
-void DebuggerBreakOnDmaToOrFromIoMemory(WORD addr, bool isDmaToMemory)
+void DebuggerBreakOnDmaToOrFromIoMemory(WORD nAddress, bool isDmaToMemory)
 {
-	g_iDebugBreakOnDmaToOrFromIoMemory = isDmaToMemory ? BP_DMA_TO_IO_MEM : BP_DMA_FROM_IO_MEM;
-	g_uDebugBreakOnDmaIoMemoryAddr = addr;
+	g_DebugBreakOnDMAIO.isToOrFromMemory = isDmaToMemory ? BP_DMA_TO_IO_MEM : BP_DMA_FROM_IO_MEM;
+	g_DebugBreakOnDMAIO.memoryAddr = nAddress;
+}
+
+static int CheckBreakpointsDmaToOrFromMemory(int idx)
+{
+	if (idx == -1)
+	{
+		int res = 0;
+		for (int i = 0; i < NUM_BREAK_ON_DMA; i++)
+			res |= g_DebugBreakOnDMA[i].isToOrFromMemory;
+		return res;
+	}
+
+	_ASSERT(idx < NUM_BREAK_ON_DMA);
+	if (idx >= NUM_BREAK_ON_DMA)
+		return 0;
+
+	int res = g_DebugBreakOnDMA[idx].isToOrFromMemory;
+	g_DebugBreakOnDMA[idx].isToOrFromMemory = 0;
+	return res;
+}
+
+static void DebuggerBreakOnDma(WORD nAddress, WORD nSize, bool isDmaToMemory, int iBreakpoint)
+{
+	for (int i = 0; i < NUM_BREAK_ON_DMA; i++)
+	{
+		if (g_DebugBreakOnDMA[i].isToOrFromMemory != 0)
+			continue;
+
+		g_DebugBreakOnDMA[i].isToOrFromMemory = isDmaToMemory ? BP_DMA_TO_MEM : BP_DMA_FROM_MEM;
+		g_DebugBreakOnDMA[i].memoryAddr = nAddress;
+		g_DebugBreakOnDMA[i].memoryAddrEnd = nAddress + nSize - 1;
+		g_DebugBreakOnDMA[i].BPid = iBreakpoint;
+		return;
+	}
+
+	_ASSERT(0);
 }
 
 //===========================================================================
@@ -1386,6 +1528,15 @@ bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoin
 	{
 		_ASSERT(nLen <= _6502_MEM_LEN);
 		if (nLen > (int) _6502_MEM_LEN) nLen = (int) _6502_MEM_LEN;
+
+		if (iSrc == BP_SRC_VIDEO_SCANNER)
+		{
+			if (nAddress >= NTSC_GetVideoLines())
+				nAddress = NTSC_GetVideoLines() - 1;
+
+			if ((nAddress + (UINT)nLen) >= NTSC_GetVideoLines())
+				nLen = NTSC_GetVideoLines() - nAddress;
+		}
 
 		pBP->eSource   = iSrc;
 		pBP->eOperator = iCmp;
@@ -1536,7 +1687,7 @@ Update_t CmdBreakpointAddMemW(int nArgs)
 	return CmdBreakpointAddMem(nArgs, BP_SRC_MEM_WRITE_ONLY);
 }
 //===========================================================================
-Update_t CmdBreakpointAddMem  (int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM_RW*/)
+Update_t CmdBreakpointAddMem(int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM_RW*/)
 {
 	BreakpointSource_t   iSrc = bpSrc;
 	BreakpointOperator_t iCmp = BP_OP_EQUAL;
@@ -1563,6 +1714,33 @@ Update_t CmdBreakpointAddMem  (int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_ME
 	return UPDATE_BREAKPOINTS | UPDATE_CONSOLE_DISPLAY;
 }
 
+//===========================================================================
+Update_t CmdBreakpointAddVideo(int nArgs)
+{
+	BreakpointSource_t   iSrc = BP_SRC_VIDEO_SCANNER;
+	BreakpointOperator_t iCmp = BP_OP_EQUAL;
+
+	int iArg = 0;
+
+	while (iArg++ < nArgs)
+	{
+		if (g_aArgs[iArg].bType & TYPE_OPERATOR)
+		{
+			return Help_Arg_1(CMD_BREAKPOINT_ADD_VIDEO);
+		}
+		else
+		{
+			int dArg = _CmdBreakpointAddCommonArg(iArg, nArgs, iSrc, iCmp);
+			if (!dArg)
+			{
+				return Help_Arg_1(CMD_BREAKPOINT_ADD_VIDEO);
+			}
+			iArg += dArg;
+		}
+	}
+
+	return UPDATE_BREAKPOINTS | UPDATE_CONSOLE_DISPLAY;
+}
 
 //===========================================================================
 void _BWZ_Clear( Breakpoint_t * aBreakWatchZero, int iSlot )
@@ -1583,7 +1761,7 @@ void _BWZ_RemoveOne( Breakpoint_t *aBreakWatchZero, const int iSlot, int & nTota
 
 void _BWZ_RemoveAll( Breakpoint_t *aBreakWatchZero, const int nMax, int & nTotal )
 {
-	for( int iSlot = 0; iSlot < nMax; iSlot++ )
+	for ( int iSlot = 0; iSlot < nMax; iSlot++ )
 	{
 		_BWZ_RemoveOne( aBreakWatchZero, iSlot, nTotal );
 	}
@@ -1628,7 +1806,7 @@ void _BWZ_EnableDisableViaArgs( int nArgs, Breakpoint_t * aBreakWatchZero, const
 
 		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
-			for( ; iSlot < nMax; iSlot++ )
+			for ( ; iSlot < nMax; iSlot++ )
 			{
 				aBreakWatchZero[ iSlot ].bEnabled = bEnabled;
 			}			
@@ -1701,8 +1879,8 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 {
 	static const char sFlags[] = "-*";
 
-	std::string strAddressBuf;
-	std::string const& symbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, strAddressBuf);
+	std::string sAddressBuf;
+	std::string const& sSymbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, sAddressBuf);
 
 	char cBPM = aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_READ_ONLY ? 'R'
 				: aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_WRITE_ONLY ? 'W'
@@ -1714,7 +1892,7 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 		sFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
 		aBreakWatchZero[ iBWZ ].nAddress,
 		cBPM,
-		symbol.c_str()
+		sSymbol.c_str()
 	);
 }
 
@@ -1768,8 +1946,6 @@ Update_t CmdBreakpointLoad (int nArgs)
 //===========================================================================
 Update_t CmdBreakpointSave (int nArgs)
 {
-	TCHAR sText[ CONSOLE_WIDTH ];
-
 	g_ConfigState.Reset();
 
 	ConfigSave_PrepareHeader( PARAM_CAT_BREAKPOINTS, CMD_BREAKPOINT_CLEAR );
@@ -1779,21 +1955,19 @@ Update_t CmdBreakpointSave (int nArgs)
 	{
 		if (g_aBreakpoints[ iBreakpoint ].bSet)
 		{
-			sprintf( sText, "%s %x %04X,%04X\n"
+			g_ConfigState.PushLineFormat( "%s %x %04X,%04X\n"
 				, g_aCommands[ CMD_BREAKPOINT_ADD_REG ].m_sName
 				, iBreakpoint
 				, g_aBreakpoints[ iBreakpoint ].nAddress
 				, g_aBreakpoints[ iBreakpoint ].nLength
 			);
-			g_ConfigState.PushLine( sText );
 		}
 		if (! g_aBreakpoints[ iBreakpoint ].bEnabled)
 		{
-			sprintf( sText, "%s %x\n"
+			g_ConfigState.PushLineFormat( "%s %x\n"
 				, g_aCommands[ CMD_BREAKPOINT_DISABLE ].m_sName
 				, iBreakpoint
 			);
-			g_ConfigState.PushLine( sText );
 		}
 		
 		iBreakpoint++;
@@ -2238,7 +2412,10 @@ Update_t CmdOut (int nArgs)
 //===========================================================================
 Update_t CmdLBR(int nArgs)
 {
-	ConsolePrintFormat(" LBR = $%04X", g_LBR);
+	if (g_LBR == LBR_UNDEFINED)
+		ConsolePrintFormat(" LBR not set yet. Hint: Run from the debugger via 'g' command.");
+	else
+		ConsolePrintFormat(" LBR = $%04X", g_LBR);
 	return ConsoleUpdate();
 }
 
@@ -2264,8 +2441,8 @@ void _CmdColorGet( const int iScheme, const int iColor )
 	}
 	else
 	{
-		std::string strText = StrFormat( "Color: %d\nOut of range!", iColor );
-		GetFrame().FrameMessageBox(strText.c_str(), "ERROR", MB_OK);
+		std::string sText = StrFormat( "Color: %d\nOut of range!", iColor );
+		GetFrame().FrameMessageBox(sText.c_str(), "ERROR", MB_OK);
 	}
 }
 
@@ -2408,13 +2585,11 @@ bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave )
 
 	if (hFile)
 	{
-		char *pText;
-		int   nLine = g_ConfigState.GetNumLines();
-		int   iLine;
+		const int nLine = g_ConfigState.GetNumLines();
 		
-		for( iLine = 0; iLine < nLine; iLine++ )
+		for ( int iLine = 0; iLine < nLine; iLine++ )
 		{
-			pText = g_ConfigState.GetLine( iLine );
+			const char *pText = g_ConfigState.GetLine( iLine );
 			if ( pText )
 			{
 				fputs( pText, hFile );
@@ -2424,9 +2599,6 @@ bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave )
 		fclose( hFile );
 		bStatus = true;
 	}
-	else
-	{
-	}
 
 	return bStatus;
 }
@@ -2435,20 +2607,16 @@ bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave )
 //===========================================================================
 void ConfigSave_PrepareHeader ( const Parameters_e eCategory, const Commands_e eCommandClear )
 {
-	char sText[ CONSOLE_WIDTH ];
-
-	sprintf( sText, "%s %s = %s\n"
+	g_ConfigState.PushLineFormat( "%s %s = %s\n"
 		, g_aTokens[ TOKEN_COMMENT_EOL  ].sToken
 		, g_aParameters[ PARAM_CATEGORY ].m_sName
 		, g_aParameters[ eCategory ].m_sName
 		);
-	g_ConfigState.PushLine( sText );
 
-	sprintf( sText, "%s %s\n"
+	g_ConfigState.PushLineFormat( "%s %s\n"
 		, g_aCommands[ eCommandClear ].m_sName
 		, g_aParameters[ PARAM_WILDSTAR ].m_sName
 	);
-	g_ConfigState.PushLine( sText );
 }
 
 
@@ -3308,8 +3476,9 @@ Update_t CmdFlag (int nArgs)
 // Disk ___________________________________________________________________________________________
 
 // Usage:
+//     DISK SLOT [#]                                 // Show [or set] the current slot of the Disk II I/F card (for all other cmds to act on)
+//     DISK INFO                                     // Info for current drive
 //     DISK # EJECT                                  // Unmount disk
-//     DISK INFO
 //     DISK # PROTECT #                              // Write-protect disk on/off
 //     DISK # "<filename>"                           // Mount filename as floppy disk
 // TODO:
@@ -3317,33 +3486,52 @@ Update_t CmdFlag (int nArgs)
 //     DISK # READ  <Track> <Sector> Addr:Addr           // Read Track/Sector(s)
 //     DISK # WRITE <Track> <Sector> Addr:Addr           // Write Track/Sector(s)
 // Examples:
-//     DISK 2 INFO
-Update_t CmdDisk ( int nArgs)
+//     DISK INFO
+Update_t CmdDisk (int nArgs)
 {
+	static UINT currentSlot = SLOT6;
+
 	if (! nArgs)
 		return HelpLastCommand();
 
-	if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
-		return ConsoleDisplayError("No DiskII card in slot-6");
-
-	Disk2InterfaceCard& diskCard = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
-
-	// check for info command
+	// check for info or slot command
 	int iParam = 0;
-	FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END );
+	FindParam(g_aArgs[1].sArg, MATCH_EXACT, iParam, _PARAM_DISK_BEGIN, _PARAM_DISK_END);
+
+	if (iParam == PARAM_DISK_SET_SLOT)
+	{
+		if (nArgs > 2)
+			return HelpLastCommand();
+
+		if (nArgs > 1)
+		{
+			UINT slot = g_aArgs[2].nValue;
+			if (slot < SLOT1 || slot > SLOT7)
+				return HelpLastCommand();
+
+			currentSlot = slot;
+		}
+
+		ConsoleBufferPushFormat("Current Disk II slot = %d", currentSlot);
+		return ConsoleUpdate();
+	}
+
+	if (GetCardMgr().QuerySlot(currentSlot) != CT_Disk2)
+		return ConsoleDisplayErrorFormat("No Disk II card in slot-%d", currentSlot);
+
+	Disk2InterfaceCard& diskCard = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(currentSlot));
 
 	if (iParam == PARAM_DISK_INFO)
 	{
 		if (nArgs > 2)
 			return HelpLastCommand();
 
-		ConsoleBufferPushFormat("FW%2d: D%d at T$%s, phase $%s, offset $%X, mask $%02X, extraCycles %.2f, %s",
+		ConsoleBufferPushFormat("FW%2d: D%d at T$%s, phase $%s, bitOffset $%04X, extraCycles %.2f, %s",
 			diskCard.GetCurrentFirmware(),
 			diskCard.GetCurrentDrive() + 1,
 			diskCard.GetCurrentTrackString().c_str(),
 			diskCard.GetCurrentPhaseString().c_str(),
-			diskCard.GetCurrentOffset(),
-			diskCard.GetCurrentLSSBitMask(),
+			diskCard.GetCurrentBitOffset(),
 			diskCard.GetCurrentExtraCycles(),
 			diskCard.GetCurrentState()
 		);
@@ -3423,40 +3611,40 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 
 	pArg->eDevice = DEV_MEMORY;						// Default
 
-	if(strncmp(g_aArgs[1].sArg, "SY", 2) == 0)			// SY6522
+	if (strncmp(g_aArgs[1].sArg, "SY", 2) == 0)			// SY6522
 	{
 		nAddress = (g_aArgs[1].sArg[2] - '0') & 3;
 		pArg->eDevice = DEV_SY6522;
 		bUpdate = true;
 	}
-	else if(strncmp(g_aArgs[1].sArg, "AY", 2) == 0)		// AY8910
+	else if (strncmp(g_aArgs[1].sArg, "AY", 2) == 0)		// AY8910
 	{
 		nAddress  = (g_aArgs[1].sArg[2] - '0') & 3;
 		pArg->eDevice = DEV_AY8910;
 		bUpdate = true;
 	}
 #ifdef SUPPORT_Z80_EMU
-	else if(strcmp(g_aArgs[1].sArg, "*AF") == 0)
+	else if (strcmp(g_aArgs[1].sArg, "*AF") == 0)
 	{
 		nAddress = *(WORD*)(mem + REG_AF);
 		bUpdate = true;
 	}
-	else if(strcmp(g_aArgs[1].sArg, "*BC") == 0)
+	else if (strcmp(g_aArgs[1].sArg, "*BC") == 0)
 	{
 		nAddress = *(WORD*)(mem + REG_BC);
 		bUpdate = true;
 	}
-	else if(strcmp(g_aArgs[1].sArg, "*DE") == 0)
+	else if (strcmp(g_aArgs[1].sArg, "*DE") == 0)
 	{
 		nAddress = *(WORD*)(mem + REG_DE);
 		bUpdate = true;
 	}
-	else if(strcmp(g_aArgs[1].sArg, "*HL") == 0)
+	else if (strcmp(g_aArgs[1].sArg, "*HL") == 0)
 	{
 		nAddress = *(WORD*)(mem + REG_HL);
 		bUpdate = true;
 	}
-	else if(strcmp(g_aArgs[1].sArg, "*IX") == 0)
+	else if (strcmp(g_aArgs[1].sArg, "*IX") == 0)
 	{
 		nAddress = *(WORD*)(mem + REG_IX);
 		bUpdate = true;
@@ -3466,7 +3654,7 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 	if (bUpdate)
 	{
 		pArg->nValue = nAddress;
-		sprintf( pArg->sArg, "%04X", nAddress );
+		strncpy_s( pArg->sArg, WordToHexStr(nAddress).c_str(), _TRUNCATE );
 	}
 
 	if (pAddress_)
@@ -3514,7 +3702,7 @@ static Update_t _CmdMemoryDump (int nArgs, int iWhich, int iView )
 {
 	WORD nAddress = 0;
 
-	if( ! MemoryDumpCheck(nArgs, & nAddress ) )
+	if ( ! MemoryDumpCheck(nArgs, & nAddress ) )
 	{
 		return Help_Arg_1( g_iCommand );
 	}
@@ -3609,7 +3797,7 @@ Update_t CmdMemoryEnterByte (int nArgs)
 	while (nArgs >= 2)
 	{
 		WORD nData = g_aArgs[nArgs].nValue;
-		if( nData > 0xFF)
+		if ( nData > 0xFF)
 		{
 			*(mem + nAddress + nArgs - 2)  = (BYTE)(nData >> 0);
 			*(mem + nAddress + nArgs - 1)  = (BYTE)(nData >> 8);
@@ -3654,7 +3842,7 @@ Update_t CmdMemoryEnterWord (int nArgs)
 //===========================================================================
 void MemMarkDirty( WORD nAddressStart, WORD nAddressEnd )
 {
-	for( int iPage = (nAddressStart >> 8); iPage <= (nAddressEnd >> 8); iPage++ )
+	for ( int iPage = (nAddressStart >> 8); iPage <= (nAddressEnd >> 8); iPage++ )
 	{
 		*(memdirty+iPage) = 1;
 	}
@@ -3675,7 +3863,7 @@ Update_t CmdMemoryFill (int nArgs)
 	int  nAddressLen = 0;
 	BYTE nValue = 0;
 
-	if( nArgs == 3)
+	if ( nArgs == 3)
 	{
 		nAddressStart = g_aArgs[1].nValue;
 		nAddressEnd   = g_aArgs[2].nValue;
@@ -3698,7 +3886,7 @@ Update_t CmdMemoryFill (int nArgs)
 		MemMarkDirty( nAddressStart, nAddressEnd );
 
 		nValue = g_aArgs[nArgs].nValue & 0xFF;
-		while( nAddressLen-- ) // v2.7.0.22
+		while ( nAddressLen-- ) // v2.7.0.22
 		{
 			// TODO: Optimize - split into pre_io, and post_io
 			if ((nAddress2 < _6502_IO_BEGIN) || (nAddress2 > _6502_IO_END))
@@ -3720,7 +3908,7 @@ static std::string g_sMemoryLoadSaveFileName;
 //===========================================================================
 Update_t CmdConfigGetDebugDir (int nArgs)
 {
-	if( nArgs != 0 )
+	if ( nArgs != 0 )
 		return Help_Arg_1( CMD_CONFIG_GET_DEBUG_DIR );
 
 	// TODO: debugger dir has no ` CONSOLE_COLOR_ESCAPE_CHAR ?!?!
@@ -3809,16 +3997,16 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 			if ((nSubDirLen == 3) && (sSubDir == UP_DIR))   // Up directory "..\" in the subpath?
 			{
 				size_t nCurrentLen    = g_sCurrentDir.size();
-				size_t nLastSeperator = g_sCurrentDir.rfind( '\\', nCurrentLen - 2 );
+				size_t nLastSeparator = g_sCurrentDir.rfind( '\\', nCurrentLen - 2 );
 
-				if (nLastSeperator != std::string::npos)
+				if (nLastSeparator != std::string::npos)
 				{
 #if _DEBUG
-					LogOutput( "Last: %" SIZE_T_FMT "\n", nLastSeperator	);
+					LogOutput( "Last: %" SIZE_T_FMT "\n", nLastSeparator	);
 					LogOutput( "%s\n", g_sCurrentDir.c_str()				);
-					LogOutput( "%*s%s\n", int(nLastSeperator), "", "^"		);
+					LogOutput( "%*s%s\n", int(nLastSeparator), "", "^"		);
 #endif
-					std::string sCurrentDir = g_sCurrentDir.substr( 0, nLastSeperator  + 1 ); // Path always has trailing slash so include it
+					std::string sCurrentDir = g_sCurrentDir.substr( 0, nLastSeparator  + 1 ); // Path always has trailing slash so include it
 					g_sCurrentDir = sCurrentDir;
 				}
 			}
@@ -3883,8 +4071,7 @@ Update_t CmdMemoryLoad (int nArgs)
 		if (g_aArgs[ iArgComma1 ].eToken != TOKEN_COMMA)
 			return Help_Arg_1( CMD_MEMORY_SAVE );
 
-		TCHAR sLoadSaveFilePath[ MAX_PATH ];
-		_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // TODO: g_sDebugDir
+		std::string sLoadSaveFilePath = g_sCurrentDir; // TODO: g_sDebugDir
 
 		WORD nAddressStart;
 		WORD nAddress2   = 0;
@@ -3913,11 +4100,11 @@ Update_t CmdMemoryLoad (int nArgs)
 
 		if (bHaveFileName)
 		{
-			_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
+			g_sMemoryLoadSaveFileName = g_aArgs[ 1 ].sArg;
 		}
-		strcat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
+		sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
 		
-		FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
+		FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 		if (hFile)
 		{
 			int nFileBytes = _GetFileSize( hFile );
@@ -3934,8 +4121,7 @@ Update_t CmdMemoryLoad (int nArgs)
 			size_t nRead = fread( pMemory, nAddressLen, 1, hFile );
 			if (nRead == 1) // (size_t)nLen)
 			{
-				int iByte;
-				for( iByte = 0; iByte < nAddressLen; iByte++ )
+				for ( int iByte = 0; iByte < nAddressLen; iByte++ )
 				{
 					*pDst++ = *pSrc++;
 				}
@@ -3949,7 +4135,7 @@ Update_t CmdMemoryLoad (int nArgs)
 
 			CmdConfigGetDebugDir( 0 );
 
-			ConsoleBufferPushFormat( "File: %s", g_sMemoryLoadSaveFileName );
+			ConsoleBufferPushFormat( "File: %s", g_sMemoryLoadSaveFileName.c_str() );
 		}
 		
 		delete [] pMemory;
@@ -4041,16 +4227,16 @@ Update_t CmdMemoryLoad (int nArgs)
 	const int              nFileTypes = sizeof( aFileTypes ) / sizeof( KnownFileType_t );
 	const KnownFileType_t *pFileType = NULL;
 
-	char *pFileName = g_aArgs[ 1 ].sArg;
+	const char *pFileName = g_aArgs[ 1 ].sArg;
 	int   nLen = strlen( pFileName );
-	char *pEnd = pFileName + nLen - 1;
-	while( pEnd > pFileName )
+	const char *pEnd = pFileName + nLen - 1;
+	while ( pEnd > pFileName )
 	{
-		if( *pEnd == '.' )
+		if ( *pEnd == '.' )
 		{
-			for( int i = 1; i < nFileTypes; i++ )
+			for ( int i = 1; i < nFileTypes; i++ )
 			{
-				if( strcmp( pEnd, aFileTypes[i].pExtension ) == 0 )
+				if ( strcmp( pEnd, aFileTypes[i].pExtension ) == 0 )
 				{
 					pFileType = &aFileTypes[i];
 					break;
@@ -4058,13 +4244,13 @@ Update_t CmdMemoryLoad (int nArgs)
 			}
 		}
 
-		if( pFileType )
+		if ( pFileType )
 			break;
 
 		pEnd--;
 	}
 
-	if( !pFileType )
+	if ( !pFileType )
 		if (g_aArgs[ iArgComma1 ].eToken != TOKEN_COMMA)
 			return Help_Arg_1( CMD_MEMORY_LOAD );
 
@@ -4073,7 +4259,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	WORD nAddressEnd   = 0;
 	int  nAddressLen   = 0;
 
-	if( pFileType )
+	if ( pFileType )
 	{
 		nAddressStart = pFileType->nAddress;
 		nAddressLen   = pFileType->nLength;
@@ -4085,7 +4271,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	if (g_aArgs[ iArgComma1 ].eToken == TOKEN_COMMA)
 		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
 
-	if( nArgs > iArgComma2 )
+	if ( nArgs > iArgComma2 )
 	{
 		if (eRange == RANGE_MISSING_ARG_2)
 		{
@@ -4196,7 +4382,7 @@ Update_t CmdMemoryMove (int nArgs)
 //			BYTE *pDst = mem + nDst;
 //			BYTE *pEnd = pSrc + nAddressLen;
 
-		while( nAddressLen-- ) // v2.7.0.23
+		while ( nAddressLen-- ) // v2.7.0.23
 		{
 			// TODO: Optimize - split into pre_io, and post_io
 			if ((nDst < _6502_IO_BEGIN) || (nDst > _6502_IO_END))
@@ -4284,11 +4470,11 @@ Update_t CmdMemorySave (int nArgs)
 		{
 			if (! bHaveFileName)
 			{
-				sprintf( g_sMemoryLoadSaveFileName, "%04X.%04X.bin", nAddressStart, nAddressLen ); // nAddressEnd );
+				g_sMemoryLoadSaveFileName = StrFormat( "%04X.%04X.bin", nAddressStart, nAddressLen ); // nAddressEnd );
 			}
 			else
 			{
-				_tcscpy( g_sMemoryLoadSaveFileName, g_aArgs[ 1 ].sArg );
+				g_sMemoryLoadSaveFileName = g_aArgs[ 1 ].sArg;
 			}
 			strcat( sLoadSaveFilePath, g_sMemoryLoadSaveFileName );
 
@@ -4299,8 +4485,7 @@ Update_t CmdMemorySave (int nArgs)
 				BYTE *pSrc = mem + nAddressStart;
 				
 				// memcpy -- copy out of active memory bank
-				int iByte;
-				for( iByte = 0; iByte < nAddressLen; iByte++ )
+				for ( int iByte = 0; iByte < nAddressLen; iByte++ )
 				{
 					*pDst++ = *pSrc++;
 				}
@@ -4435,12 +4620,9 @@ Update_t CmdMemorySave (int nArgs)
 		{
 			if (! bHaveFileName)
 			{
-				TCHAR sMemoryLoadSaveFileName[MAX_PATH];
-				if (! bBankSpecified)
-					sprintf( sMemoryLoadSaveFileName, "%04X.%04X.bin", nAddressStart, nAddressLen );
-				else
-					sprintf( sMemoryLoadSaveFileName, "%04X.%04X.bank%02X.bin", nAddressStart, nAddressLen, nBank );
-				g_sMemoryLoadSaveFileName = sMemoryLoadSaveFileName;
+				g_sMemoryLoadSaveFileName = (bBankSpecified)
+					? StrFormat( "%04X.%04X.bank%02X.bin", nAddressStart, nAddressLen, nBank )
+					: StrFormat( "%04X.%04X.bin", nAddressStart, nAddressLen );
 			}
 			else
 			{
@@ -4564,12 +4746,12 @@ size_t Util_GetDebuggerText( char* &pText_ )
 	memset( g_aDebuggerVirtualTextScreen, 0, sizeof( g_aDebuggerVirtualTextScreen ) );
 	DebugDisplay();
 
-	for( int y = 0; y < DEBUG_VIRTUAL_TEXT_HEIGHT; y++ )
+	for ( int y = 0; y < DEBUG_VIRTUAL_TEXT_HEIGHT; y++ )
 	{
-		for( int x = 0; x < DEBUG_VIRTUAL_TEXT_WIDTH; x++ )
+		for ( int x = 0; x < DEBUG_VIRTUAL_TEXT_WIDTH; x++ )
 		{
 			char c = g_aDebuggerVirtualTextScreen[y][x];
-			if( (c < 0x20) || (c >= 0x7F) )
+			if ( (c < 0x20) || (c >= 0x7F) )
 				c = ' '; // convert null to spaces to keep everything non-proptional
 			*pEnd++ = c;
 		}
@@ -4600,12 +4782,12 @@ size_t Util_GetTextScreen ( char* &pText_ )
 	LPBYTE g_pTextBank1  = MemGetAuxPtr (0x400 << uBank2);
 	LPBYTE g_pTextBank0  = MemGetMainPtr(0x400 << uBank2);
 
-	for( int y = 0; y < 24; y++ )
+	for ( int y = 0; y < 24; y++ )
 	{
 		// nAddressStart = 0x400 + (y%8)*0x80 + (y/8)*0x28;
 		nAddressStart = ((y&7)<<7) | ((y&0x18)<<2) | (y&0x18); // no 0x400| since using MemGet*Ptr()
 
-		for( int x = 0; x < 40; x++ ) // always 40 columns
+		for ( int x = 0; x < 40; x++ ) // always 40 columns
 		{
 			char c; // TODO: FormatCharTxtCtrl() ?
 
@@ -4614,7 +4796,7 @@ size_t Util_GetTextScreen ( char* &pText_ )
 				c = g_pTextBank1[ nAddressStart ] & 0x7F;
 				c = RemapChar(c);
 				*pEnd++ = c;
-			} // MAIN -- NOTE: intentional indent & outside if() !
+			} // MAIN -- NOTE: intentional indent & outside if () !
 
 				c = g_pTextBank0[ nAddressStart ] & 0x7F;
 				c = RemapChar(c);
@@ -4675,13 +4857,13 @@ Update_t CmdNTSC (int nArgs)
 	const char *pFileName = (nArgs > 1) ? g_aArgs[ 2 ].sArg : "";
 	int   nLen = strlen( pFileName );
 	const char *pEnd = pFileName + nLen - 1;
-	while( pEnd > pFileName )
+	while ( pEnd > pFileName )
 	{
-		if( *pEnd == '.' )
+		if ( *pEnd == '.' )
 		{
-			for( int i = TYPE_BMP; i < NUM_FILE_TYPES; i++ )
+			for ( int i = TYPE_BMP; i < NUM_FILE_TYPES; i++ )
 			{
-				if( strcmp( pEnd, aFileTypes[i].pExtension ) == 0 )
+				if ( strcmp( pEnd, aFileTypes[i].pExtension ) == 0 )
 				{
 					pFileType = &aFileTypes[i];
 					iFileType = (KnownFileType_e) i;
@@ -4690,13 +4872,13 @@ Update_t CmdNTSC (int nArgs)
 			}
 		}
 
-		if( pFileType )
+		if ( pFileType )
 			break;
 
 		pEnd--;
 	}
 
-	if( nLen == 0 )
+	if ( nLen == 0 )
 		pFileName = "AppleWinNTSC4096x4@32.data";
 
 	static std::string sPaletteFilePath;
@@ -4801,7 +4983,7 @@ Update_t CmdNTSC (int nArgs)
 
 				// Expand y from 1 to 256 rows
 				const size_t nBytesPerScanLine = 16 * 4 * nBPP; // 16 colors * 4 phases
-				for( int y = 0; y < 256; y++ )
+				for ( int y = 0; y < 256; y++ )
 					memcpy( pDst + y*nBytesPerScanLine, pSrc, nBytesPerScanLine );
 			}
 	};
@@ -4841,14 +5023,14 @@ Update_t CmdNTSC (int nArgs)
 
 #if 1 // Loop
 				// Expand x from 16 colors (single phase) to 64 colors (16 * 4 phases)
-				for( int iPhase = 0; iPhase < 4; iPhase++ )
+				for ( int iPhase = 0; iPhase < 4; iPhase++ )
 				{
 					int phase = iPhase;
 					if (iPhase == 1) phase = 3;
 					if (iPhase == 3) phase = 1;
 					int mul = (1 << phase); // Mul: *1 *8 *4 *2
 
-					for( int iDstX = 0; iDstX < 16; iDstX++ )
+					for ( int iDstX = 0; iDstX < 16; iDstX++ )
 					{
 						int iSrcX = (iDstX * mul) % 15; // Delta: +1 +2 +4 +8
 
@@ -4954,10 +5136,10 @@ Update_t CmdNTSC (int nArgs)
 				const uint8_t *pTmp = pSrc;
 				const uint32_t nBPP = 4; // bytes per pixel
 
-				for( int x = 0; x < 16; x++ )
+				for ( int x = 0; x < 16; x++ )
 				{
 					pTmp = pSrc + (x * nBPP); // dst is 16-px column
-					for( int y = 0; y < 256; y++ )
+					for ( int y = 0; y < 256; y++ )
 					{
 							*pDst++ = pTmp[0];
 							*pDst++ = pTmp[1];
@@ -4968,7 +5150,7 @@ Update_t CmdNTSC (int nArgs)
 
 				// we duplicate phase 0 a total of 4 times
 				const size_t nBytesPerScanLine = 4096 * nBPP;
-				for( int iPhase = 1; iPhase < 4; iPhase++ )
+				for ( int iPhase = 1; iPhase < 4; iPhase++ )
 					memcpy( pDst + iPhase*nBytesPerScanLine, pDst, nBytesPerScanLine );
 			}
 */
@@ -5032,13 +5214,13 @@ Update_t CmdNTSC (int nArgs)
 				/* */ uint8_t *pTmp = pDst;
 				const uint32_t nBPP = 4; // bytes per pixel
 
-				for( int iPhase = 0; iPhase < 4; iPhase++ )
+				for ( int iPhase = 0; iPhase < 4; iPhase++ )
 				{
 					pDst = pTmp + (iPhase * 16 * nBPP); // dst is 16-px column
 
-					for( int x = 0; x < 4096/16; x++ ) // 4096px/16 px = 256 columns
+					for ( int x = 0; x < 4096/16; x++ ) // 4096px/16 px = 256 columns
 					{
-						for( int i = 0; i < 16*nBPP; i++ ) // 16 px, 32-bit
+						for ( int i = 0; i < 16*nBPP; i++ ) // 16 px, 32-bit
 							*pDst++ = *pSrc++;
 
 						pDst -= (16*nBPP);
@@ -5052,12 +5234,12 @@ Update_t CmdNTSC (int nArgs)
 				const uint8_t *pTmp = pSrc;
 				const uint32_t nBPP = 4; // bytes per pixel
 
-				for( int iPhase = 0; iPhase < 4; iPhase++ )
+				for ( int iPhase = 0; iPhase < 4; iPhase++ )
 				{
 					pSrc = pTmp + (iPhase * 16 * nBPP); // src is 16-px column
-					for( int y = 0; y < 256; y++ )
+					for ( int y = 0; y < 256; y++ )
 					{
-						for( int i = 0; i < 16*nBPP; i++ ) // 16 px, 32-bit
+						for ( int i = 0; i < 16*nBPP; i++ ) // 16 px, 32-bit
 							*pDst++ = *pSrc++;
 
 						pSrc -= (16*nBPP);
@@ -5070,13 +5252,12 @@ Update_t CmdNTSC (int nArgs)
 	bool bColorTV = (GetVideo().GetVideoType() == VT_COLOR_TV);
 
 	uint32_t* pChromaTable = NTSC_VideoGetChromaTable( false, bColorTV );
-	char aStatusText[ CONSOLE_WIDTH*2 ] = "Loaded";
 
-//uint8_t* pTmp = (uint8_t*) pChromaTable; 
-//*pTmp++  = 0xFF; // b
-//*pTmp++ = 0x00; // g
-//*pTmp++ = 0x00; // r
-//*pTmp++ = 0xFF; // a
+	//uint8_t* pTmp = (uint8_t*) pChromaTable;
+	//*pTmp++ = 0xFF; // b
+	//*pTmp++ = 0x00; // g
+	//*pTmp++ = 0x00; // r
+	//*pTmp++ = 0xFF; // a
 
 	if (nFound)
 	{
@@ -5089,12 +5270,12 @@ Update_t CmdNTSC (int nArgs)
 		if (iParam == PARAM_SAVE)
 		{
 			FILE *pFile = fopen( sPaletteFilePath.c_str(), "w+b" );
-			if( pFile )
+			if ( pFile )
 			{
 				size_t nWrote = 0;
 				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
 
-				if( iFileType == TYPE_BMP )
+				if ( iFileType == TYPE_BMP )
 				{
 					// need to save 32-bit bpp as 24-bit bpp
 					// VideoSaveScreenShot()
@@ -5131,87 +5312,90 @@ Update_t CmdNTSC (int nArgs)
 		else
 		if (iParam == PARAM_LOAD)
 		{
+			std::string sStatusText;
+
 			FILE *pFile = fopen( sPaletteFilePath.c_str(), "rb" );
-			if( pFile )
+			if ( pFile )
 			{
-				strcpy( aStatusText, "Loaded" );
+				sStatusText = "Loaded";
 
 				// Get File Size
 				size_t  nFileSize  = _GetFileSize( pFile );
 				uint8_t *pSwizzled = new uint8_t[ g_nChromaSize ];
 				bool     bSwizzle  = true;
 
-				WinBmpHeader4_t bmp, *pBmp = &bmp;
-				if( iFileType == TYPE_BMP )
+				WinBmpHeader4_t bmp = { 0 };
+
+				if ( iFileType == TYPE_BMP )
 				{
-					fread( pBmp, sizeof( WinBmpHeader4_t ), 1, pFile );
-					fseek( pFile, pBmp->nOffsetData, SEEK_SET );
+					fread( &bmp, sizeof( WinBmpHeader4_t ), 1, pFile );
+					fseek( pFile, bmp.nOffsetData, SEEK_SET );
 
-					if (pBmp->nBitsPerPixel != 32)
+					if (bmp.nBitsPerPixel != 32)
 					{
-						strcpy( aStatusText, "Bitmap not 32-bit RGBA" );
+						sStatusText = "Bitmap not 32-bit RGBA";
 						goto _error;
 					}
 
-					if (pBmp->nOffsetData > nFileSize)
+					if (bmp.nOffsetData > nFileSize)
 					{
-						strcpy( aStatusText, "Bad BITMAP: Data > file size !?" );
+						sStatusText = "Bad BITMAP: Data > file size !?";
 						goto _error;
 					}
 
-					if( !
-					(  ((pBmp->nWidthPixels  == 64 ) && (pBmp->nHeightPixels == 256))
-					|| ((pBmp->nWidthPixels  == 64 ) && (pBmp->nHeightPixels == 1))
-					|| ((pBmp->nWidthPixels  == 16 ) && (pBmp->nHeightPixels == 1))
+					if ( !
+					(  ((bmp.nWidthPixels  == 64 ) && (bmp.nHeightPixels == 256))
+					|| ((bmp.nWidthPixels  == 64 ) && (bmp.nHeightPixels == 1))
+					|| ((bmp.nWidthPixels  == 16 ) && (bmp.nHeightPixels == 1))
 					))
 					{
-						strcpy( aStatusText, "Bitmap not 64x256, 64x1, or 16x1" );
+						sStatusText = "Bitmap not 64x256, 64x1, or 16x1";
 						goto _error;
 					}
 
-					if(pBmp->nStructSize == 0x28)
+					if (bmp.nStructSize == 0x28)
 					{
-						if( pBmp->nCompression == 0) // BI_RGB mode
+						if ( bmp.nCompression == 0) // BI_RGB mode
 							bSwizzle = false;
 					}
 					else // 0x7C version4 bitmap
 					{
-						if( pBmp->nCompression == 3 ) // BI_BITFIELDS
+						if ( bmp.nCompression == 3 ) // BI_BITFIELDS
 						{
-							if((pBmp->nRedMask   == 0xFF000000 ) // Gimp writes in ABGR order
-							&& (pBmp->nGreenMask == 0x00FF0000 )
-							&& (pBmp->nBlueMask  == 0x0000FF00 ))
+							if ((bmp.nRedMask   == 0xFF000000 ) // Gimp writes in ABGR order
+							&&  (bmp.nGreenMask == 0x00FF0000 )
+							&&  (bmp.nBlueMask  == 0x0000FF00 ))
 								bSwizzle = true;
 						}
 					}
 				}
 				else
-					if( nFileSize != g_nChromaSize )
+					if ( nFileSize != g_nChromaSize )
 					{
-						sprintf( aStatusText, "Raw size != %d", 64*256*4 );
+						sStatusText = StrFormat( "Raw size != %d", 64 * 256 * 4 );
 						goto _error;
 					}
 
 
 				fread( pSwizzled, g_nChromaSize, 1, pFile );
 
-				if( iFileType == TYPE_BMP )
+				if ( iFileType == TYPE_BMP )
 				{
 
-					if (pBmp->nHeightPixels == 1)
+					if (bmp.nHeightPixels == 1)
 					{
 						uint8_t *pTemp64x256 = new uint8_t[ 64 * 256 * 4 ];
 						memset( pTemp64x256, 0, g_nChromaSize );
 
-//Transpose16x1::transposeFrom16x1( pSwizzled, (uint8_t*) pChromaTable );
+						//Transpose16x1::transposeFrom16x1( pSwizzled, (uint8_t*) pChromaTable );
 
-						if (pBmp->nWidthPixels == 16)
+						if (bmp.nWidthPixels == 16)
 						{
 							Transpose16x1::transposeTo64x1( pSwizzled, pTemp64x256 );
 							Transpose64x1::transposeTo64x256( pTemp64x256, pTemp64x256 );
 						}
 						else
-						if (pBmp->nWidthPixels == 64)
+						if (bmp.nWidthPixels == 64)
 							Transpose64x1::transposeTo64x256( pSwizzled, pTemp64x256 );
 
 						Transpose4096x4::transposeFrom64x256( pTemp64x256, (uint8_t*) pChromaTable );
@@ -5221,7 +5405,7 @@ Update_t CmdNTSC (int nArgs)
 					else
 						Transpose4096x4::transposeFrom64x256( pSwizzled, (uint8_t*) pChromaTable );
 
-					if( bSwizzle )
+					if ( bSwizzle )
 						Swizzle32::ABGRswizzleBGRA( g_nChromaSize, (uint8_t*) pChromaTable, (uint8_t*) pChromaTable );
 				}
 				else
@@ -5233,11 +5417,11 @@ _error:
 			}
 			else
 			{
-				strcpy( aStatusText, "File: " );
-				ConsoleBufferPush( TEXT( "Error couldn't open file for reading." ) );
+				sStatusText = "File: ";
+				ConsoleBufferPush( "Error couldn't open file for reading." );
 			}
 
-			ConsoleFilename::update( aStatusText );
+			ConsoleFilename::update( sStatusText.c_str() );
 		}
 		else
 			return HelpLastCommand();
@@ -5268,11 +5452,11 @@ int CmdTextSave (int nArgs)
 
 	std::string sLoadSaveFilePath = g_sCurrentDir; // g_sProgramDir
 
-	if( bHaveFileName )
+	if ( bHaveFileName )
 		g_sMemoryLoadSaveFileName = g_aArgs[ 1 ].sArg;
 	else
 	{
-		if( GetVideo().VideoGetSW80COL() )
+		if ( GetVideo().VideoGetSW80COL() )
 			g_sMemoryLoadSaveFileName = "AppleWin_Text80.txt";
 		else
 			g_sMemoryLoadSaveFileName = "AppleWin_Text40.txt";
@@ -5320,15 +5504,15 @@ int _SearchMemoryFind(
 	g_vMemorySearchResults.clear();
 	g_vMemorySearchResults.push_back( NO_6502_TARGET );
 
-	WORD nAddress;
-	for( nAddress = nAddressStart; nAddress < nAddressEnd; nAddress++ )
+	uint32_t nAddress;	// NB. can't be uint16_t, since need to count up to 0x10000 if nAddressEnd is 0xFFFF
+	for ( nAddress = nAddressStart; nAddress <= nAddressEnd; nAddress++ )
 	{
 		bool bMatchAll = true;
 
-		WORD nAddress2 = nAddress;
+		uint32_t nAddress2 = nAddress;
 
 		int nMemBlocks = vMemorySearchValues.size();
-		for (int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
+		for ( int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
 		{
 			MemorySearch_t ms = vMemorySearchValues.at( iBlock );
 			ms.m_bFound = false;
@@ -5368,8 +5552,7 @@ int _SearchMemoryFind(
 				if ((iBlock + 1) == nMemBlocks) // there is no next block, hence we match
 					continue;
 
-				WORD nAddress3 = nAddress2;
-				for (nAddress3 = nAddress2; nAddress3 < nAddressEnd; nAddress3++ )
+				for (uint32_t nAddress3 = nAddress2; nAddress3 < nAddressEnd; nAddress3++ )
 				{
 					if ((ms.m_iType == MEM_SEARCH_BYTE_EXACT    ) || 
 						(ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT) ||
@@ -5415,90 +5598,49 @@ int _SearchMemoryFind(
 //===========================================================================
 Update_t _SearchMemoryDisplay (int nArgs)
 {
-	const UINT nBuf = CONSOLE_WIDTH * 2;
-
-	int nFound = g_vMemorySearchResults.size() - 1;
-
-	int nLen = 0; // temp
-	int nLineLen = 0; // string length of matches for this line, for word-wrap
-
-	TCHAR sMatches[ nBuf ] = TEXT("");
-	TCHAR sResult[ nBuf ];
-	TCHAR sText[ nBuf ] = TEXT("");
+	int const nFound = g_vMemorySearchResults.size() - 1;
 
 	if (nFound > 0)
 	{
+		std::string sMatches;
+
 		int iFound = 1;
 		while (iFound <= nFound)
 		{
-			WORD nAddress = g_vMemorySearchResults.at( iFound );
+			WORD const nAddress = g_vMemorySearchResults.at( iFound );
 
-//			sprintf( sText, "%2d:$%04X ", iFound, nAddress );
-//			int nLen = _tcslen( sText );
+			// 2.6.2.17 Search Results: The n'th result now using correct color (was command, now number decimal)
+			// BUGFIX: 2.6.2.32 n'th Search results were being displayed in dec, yet parser takes hex numbers. i.e. SH D000:FFFF A9 00
+			// Intentional default instead of CHC_ARG_SEP for better readability
+			// 2.6.2.16 Fixed: Search Results: The hex specify for target address results now colorized properly
+			// 2.6.2.15 Fixed: Search Results: Added space between results for better readability
 
-			sResult[0] = 0;
-			nLen = 0;
-
-			        StringCat( sResult, CHC_NUM_DEC, nBuf ); // 2.6.2.17 Search Results: The n'th result now using correct color (was command, now number decimal)
-			sprintf( sText, "%02X", iFound ); // BUGFIX: 2.6.2.32 n'th Search results were being displayed in dec, yet parser takes hex numbers. i.e. SH D000:FFFF A9 00
-			nLen += StringCat( sResult, sText , nBuf );
-
-			        StringCat( sResult, CHC_DEFAULT, nBuf ); // intentional default instead of CHC_ARG_SEP for better readability
-			nLen += StringCat( sResult, ":" , nBuf );
-
-			        StringCat( sResult, CHC_ARG_SEP, nBuf );
-			nLen += StringCat( sResult, "$" , nBuf ); // 2.6.2.16 Fixed: Search Results: The hex specify for target address results now colorized properly
-
-			        StringCat( sResult, CHC_ADDRESS, nBuf );
-			sprintf( sText, "%04X ", nAddress ); // 2.6.2.15 Fixed: Search Results: Added space between results for better readability
-			nLen += StringCat( sResult, sText, nBuf );
+			// FIXME: Color is DEC whereas the format is "%X". What's the real intention?
+			std::string sResult = StrFormat( CHC_NUM_DEC "%02X" CHC_DEFAULT ":" CHC_ARG_SEP "$" CHC_ADDRESS "%04X ",
+											 iFound, nAddress );
 
 			// Fit on same line?
-			if ((nLineLen + nLen) > (g_nConsoleDisplayWidth - 1)) // CONSOLE_WIDTH
+			if ((sMatches.length() + sResult.length()) > (size_t(g_nConsoleDisplayWidth) - 1)) // CONSOLE_WIDTH
 			{
-				//ConsoleDisplayPush( sMatches );
-				ConsolePrint( sMatches );
-				_tcscpy( sMatches, sResult );
-				nLineLen = nLen;
+				//ConsoleDisplayPush( sMatches.c_str() );
+				ConsolePrint( sMatches.c_str() );
+				sMatches = sResult;
 			}
 			else
 			{
-				StringCat( sMatches, sResult, nBuf );
-				nLineLen += nLen;
+				sMatches += sResult;
 			}
 
 			iFound++;
 		}
-		ConsolePrint( sMatches );
+
+		ConsolePrint( sMatches.c_str() );
 	}
 
-//	ConsoleDisplayPushFormat( "Total: %d  (#$%04X)", nFound, nFound );
-		sResult[0] = 0;
+	//ConsoleDisplayPushFormat( "Total: %d  (#$%04X)", nFound, nFound );
 
-		        StringCat( sResult, CHC_USAGE , nBuf );
-		nLen += StringCat( sResult, "Total", nBuf );
-
-		        StringCat( sResult, CHC_DEFAULT, nBuf );
-		nLen += StringCat( sResult, ": " , nBuf );
-
-		        StringCat( sResult, CHC_NUM_DEC, nBuf ); // intentional CHC_DEFAULT instead of 
-		sprintf( sText, "%d  ", nFound );
-		nLen += StringCat( sResult, sText, nBuf );
-
-		        StringCat( sResult, CHC_ARG_SEP, nBuf ); // CHC_ARC_OPT -> CHC_ARG_SEP
-		nLen += StringCat( sResult, "(" , nBuf );
-
-		        StringCat( sResult, CHC_ARG_SEP, nBuf ); // CHC_DEFAULT
-		nLen += StringCat( sResult, "#$", nBuf );
-
-		        StringCat( sResult, CHC_NUM_HEX, nBuf );
-		sprintf( sText, "%04X", nFound );
-		nLen += StringCat( sResult, sText, nBuf );
-
-		        StringCat( sResult, CHC_ARG_SEP, nBuf );
-		nLen += StringCat( sResult, ")" , nBuf );
-		
-		ConsolePrint( sResult );
+	ConsolePrintFormat( CHC_USAGE "Total" CHC_DEFAULT ": " CHC_NUM_DEC "%d  " CHC_ARG_SEP "(" CHC_ARG_SEP "#$" CHC_NUM_HEX "%04X" CHC_ARG_SEP ")",
+						nFound /*dec*/, nFound /*hex*/ );
 
 	// g_vMemorySearchResults is cleared in DebugEnd()
 
@@ -5520,7 +5662,7 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 
 //	if (eRange == RANGE_MISSING_ARG_2)
 	if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen))
-		return ConsoleDisplayError( "Error: Missing address seperator (comma or colon)" );
+		return ConsoleDisplayError( "Error: Missing address separator (comma or colon)" );
 
 	int iArgFirstByte = 4;
 	int iArg;
@@ -5775,7 +5917,7 @@ Update_t CmdOutputCalc (int nArgs)
 
 	int nBit = 0;
 	int iBit = 0;
-	for( iBit = 0; iBit < nBits; iBit++ )
+	for ( iBit = 0; iBit < nBits; iBit++ )
 	{
 		bool bSet = (nAddress >> iBit) & 1;
 		if (bSet)
@@ -5788,27 +5930,27 @@ Update_t CmdOutputCalc (int nArgs)
 	//    CHC_NUM_DEC
 	//    CHC_ARG_
 	//    CHC_STRING
-	std::string strText = StrFormat( "$%04X  0z%08X  %5d  '%c' ", nAddress, nBit, nAddress, c );
+	std::string sText = StrFormat( "$%04X  0z%08X  %5d  '%c' ", nAddress, nBit, nAddress, c );
 
 	if (bParen)
-		strText += '(';
+		sText += '(';
 
-	if (bHi & bLo)
-		strText += "High Ctrl";
+	if (bHi && bLo)
+		sText += "High Ctrl";
 	else
 	if (bHi)
-		strText += "High";
+		sText += "High";
 	else
 	if (bLo)
-		strText += "Ctrl";
+		sText += "Ctrl";
 
 	if (bParen)
-		strText += ')';
+		sText += ')';
 
-	ConsoleBufferPush( strText.c_str() );
+	ConsoleBufferPush( sText.c_str() );
 
 // If we colorize then w must also guard against character ouput $60
-//	ConsolePrint( strText.c_str() );
+//	ConsolePrint( sText.c_str() );
 
 	return ConsoleUpdate();
 }
@@ -5856,56 +5998,26 @@ Update_t CmdOutputPrint (int nArgs)
 {
 	// PRINT "A:",A," X:",X
 	// Removed: PRINT "A:%d",A," X: %d",X
-	TCHAR sText[ CONSOLE_WIDTH ] = TEXT("");
-	int nLen = 0;
+	std::string sText;
 
-	int nValue;
-
-	if (! nArgs)
+	if (nArgs <= 0)
 		goto _Help;
 
-	int iArg;
-	for (iArg = 1; iArg <= nArgs; iArg++ )
+	for ( int iArg = 1; iArg <= nArgs; iArg++ )
 	{
-		if (g_aArgs[ iArg ].bType & TYPE_QUOTED_2)
-		{
-			int iChar;
-			int nChar = _tcslen( g_aArgs[ iArg ].sArg );
-			for( iChar = 0; iChar < nChar; iChar++ )
-			{
-				TCHAR c = g_aArgs[ iArg ].sArg[ iChar ];
-				sText[ nLen++ ] = c;
-			}
+		sText += (!!(g_aArgs[ iArg ].bType & TYPE_QUOTED_2))
+			? g_aArgs[ iArg ].sArg
+			: WordToHexStr( g_aArgs[ iArg ].nValue );
 
-			iArg++;
-//			if (iArg > nArgs)
-//				goto _Help;
-			if (iArg <= nArgs)
-				if (g_aArgs[ iArg ].eToken != TOKEN_COMMA)
-					goto _Help;
-		}
-		else
-		{			
-			nValue = g_aArgs[ iArg ].nValue;
-			sprintf( &sText[ nLen ], "%04X", nValue );
-
-			while (sText[ nLen ])
-				nLen++;
-
-			iArg++;
-			if (iArg <= nArgs)
-				if (g_aArgs[ iArg ].eToken != TOKEN_COMMA)
-					goto _Help;
-		}		
-#if 0
-		sprintf( &sText[ nLen ], "%04X", nValue );
-		sprintf( &sText[ nLen ], "%d", nValue );
-		sprintf( &sText[ nLen ], "%c", nValue );
-#endif
+		iArg++;
+		//if (iArg > nArgs)
+		//	goto _Help;
+		if (iArg <= nArgs && g_aArgs[ iArg ].eToken != TOKEN_COMMA)
+			goto _Help;
 	}
 
-	if (nLen)
-		ConsoleBufferPush( sText );
+	if (!sText.empty())
+		ConsoleBufferPush( sText.c_str() );
 
 	return ConsoleUpdate();
 
@@ -5920,24 +6032,12 @@ Update_t CmdOutputPrintf (int nArgs)
 	// PRINTF "A:%d X:%d",A,X
 	// PRINTF "Hex:%x  Dec:%d  Bin:%z",A,A,A
 
-	TCHAR sText[ CONSOLE_WIDTH ] = TEXT("");
-
-	std::vector<Arg_t> aValues;
-	Arg_t entry;
-	int iValue = 0;
-	int nValue = 0;
-
 	if (! nArgs)
 		return Help_Arg_1( CMD_OUTPUT_PRINTF );
 
-	int nLen = 0;
+	std::vector<Arg_t> aValues;
 
-	PrintState_e eThis = PS_LITERAL;
-
-	int nWidth = 0;
-
-	int iArg;
-	for (iArg = 1; iArg <= nArgs; iArg++ )
+	for ( int iArg = 1; iArg <= nArgs; iArg++ )
 	{
 		if (g_aArgs[ iArg ].bType & TYPE_QUOTED_2)
 			continue;
@@ -5946,25 +6046,32 @@ Update_t CmdOutputPrintf (int nArgs)
 			continue;
 		else
 		{
+			Arg_t entry;
 			entry.nValue = g_aArgs[ iArg ].nValue;
 			aValues.push_back( entry );
 		}
 	}
-	const int nParamValues = (int) aValues.size();
 
-	for (iArg = 1; iArg <= nArgs; iArg++ )
+	std::string sText;
+	sText.reserve(CONSOLE_WIDTH);
+
+	PrintState_e eThis = PS_LITERAL;
+	int nWidth = 0;
+
+	const size_t nParamValues = aValues.size();
+	size_t iValue = 0;
+
+	for ( int iArg = 1; iArg <= nArgs; iArg++ )
 	{
 		if (g_aArgs[ iArg ].bType & TYPE_QUOTED_2)
 		{
-			int iChar;
-			int nChar = _tcslen( g_aArgs[ iArg ].sArg );
-			for( iChar = 0; iChar < nChar; iChar++ )
+			for ( const char* cp = g_aArgs[iArg].sArg, *ep = cp + strlen(g_aArgs[iArg].sArg); cp < ep; ++cp )
 			{
-				TCHAR c = g_aArgs[ iArg ].sArg[ iChar ];
+				const char c = *cp;
 				switch ( eThis )
 				{
 					case PS_LITERAL:
-						switch( c )
+						switch ( c )
 						{
 							case '\\':
 								eThis = PS_ESCAPE;
@@ -5973,70 +6080,62 @@ Update_t CmdOutputPrintf (int nArgs)
 								eThis = PS_TYPE;
 								break;
 							default:
-								sText[ nLen++ ] = c;
+								sText += c;
 								break;
 						}
 						break;
 					case PS_ESCAPE:
-						switch( c )
+						switch ( c )
 						{
 							case 'n':
 							case 'r':
 								eThis = PS_LITERAL;
-								sText[ nLen++ ] = '\n';
+								sText += '\n';
 								break;
 						}
 						break;
 					case PS_TYPE:
 						if (iValue >= nParamValues)
 						{
-							ConsoleBufferPushFormat( "Error: Missing value arg: %d", iValue + 1 );
+							ConsoleBufferPushFormat( "Error: Missing value arg: %" SIZE_T_FMT, iValue + 1 );
 							return ConsoleUpdate();
 						}
-						switch( c )
+						switch ( c )
 						{
 							case 'X':
 							case 'x': // PS_NEXT_ARG_HEX
-								nValue = aValues[ iValue ].nValue;
-								sprintf( &sText[ nLen ], "%04X", nValue );
+								sText += WordToHexStr( aValues[ iValue ].nValue );
 								iValue++;
 								break;
 							case 'D':
 							case 'd': // PS_NEXT_ARG_DEC
-								nValue = aValues[ iValue ].nValue;
-								sprintf( &sText[ nLen ], "%d", nValue );
+								sText += StrFormat( "%d", aValues[ iValue ].nValue );
 								iValue++;
 								break;
 							break;
 							case 'Z':
 							case 'z':
 							{
-								nValue = aValues[ iValue ].nValue;
+								const int nValue = aValues[ iValue ].nValue;
 								if (!nWidth)
 									nWidth = 8;
 								int nBits = nWidth;
 								while (nBits-- > 0)
 								{
-									if ((nValue >> nBits) & 1)
-										sText[ nLen++ ] = '1';
-									else
-										sText[ nLen++ ] = '0';
+									sText += ((nValue >> nBits) & 1) ? '1' : '0';
 								}
 								iValue++;
 								break;
 							}
 							case 'c': // PS_NEXT_ARG_CHR;
-								nValue = aValues[ iValue ].nValue;
-								sprintf( &sText[ nLen ], "%c", nValue );
+								sText += char(  aValues[ iValue ].nValue );
 								iValue++;
 								break;
 							case '%':
 							default:
-								sText[ nLen++ ] = c;
+								sText += c;
 								break;
 						}
-						while (sText[ nLen ])
-							nLen++;
 						eThis = PS_LITERAL;
 						break;
 					default:
@@ -6055,8 +6154,8 @@ Update_t CmdOutputPrintf (int nArgs)
 			goto _Help;
 	}
 
-	if (nLen)
-		ConsoleBufferPush( sText );
+	if (!sText.empty())
+		ConsoleBufferPush( sText.c_str() );
 
 	return ConsoleUpdate();
 
@@ -6068,6 +6167,8 @@ _Help:
 //===========================================================================
 Update_t CmdOutputRun (int nArgs)
 {
+	g_bScriptReadOk = false;
+
 	if (! nArgs)
 		return Help_Arg_1( CMD_OUTPUT_RUN );
 
@@ -6105,11 +6206,13 @@ Update_t CmdOutputRun (int nArgs)
 
 	if (script.Read( sFileName ))
 	{
+		g_bScriptReadOk = true;
+
 		int nLine = script.GetNumLines();
 
 		Update_t bUpdateDisplay = UPDATE_NOTHING;	
 
-		for( int iLine = 0; iLine < nLine; iLine++ )
+		for ( int iLine = 0; iLine < nLine; iLine++ )
 		{
 			script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
 			g_nConsoleInputChars = _tcslen( g_pConsoleInput );
@@ -6219,7 +6322,7 @@ bool ParseAssemblyListing( bool bBytesToMemory, bool bAddSymbols )
 	const DWORD INVALID_ADDRESS = _6502_MEM_END + 1;
 
 	int nLines = g_AssemblerSourceBuffer.GetNumLines();
-	for( int iLine = 0; iLine < nLines; iLine++ )
+	for ( int iLine = 0; iLine < nLines; iLine++ )
 	{
 		g_AssemblerSourceBuffer.GetLine( iLine, sText, MAX_LINE - 1 );
 
@@ -6341,7 +6444,7 @@ Update_t CmdSource (int nArgs)
 		g_bSourceAddMemory = false;
 		g_bSourceAddSymbols = false;
 
-		for( int iArg = 1; iArg <= nArgs; iArg++ )
+		for ( int iArg = 1; iArg <= nArgs; iArg++ )
 		{	
 			const std::string pFileName = g_aArgs[ iArg ].sArg;
 
@@ -6507,7 +6610,7 @@ enum ViewVideoPage_t
 
 Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 {
-	switch( iPage ) 
+	switch ( iPage ) 
 	{
 		case VIEW_PAGE_X:
 			bVideoModeFlags |= !GetVideo().VideoGetSWPAGE2() ? 0 : VF_PAGE2;
@@ -6633,38 +6736,49 @@ Update_t _ViewOutput( ViewVideoPage_t iPage, int bVideoModeFlags )
 
 
 //===========================================================================
-Update_t CmdWatch (int nArgs)
-{
-	return CmdWatchAdd( nArgs );
-}
-
-
-//===========================================================================
 Update_t CmdWatchAdd (int nArgs)
 {
-	// WA [adddress]
+	// WA [address]
 	// WA # address
-	if (! nArgs)
+	if (!nArgs)
 	{
-		return CmdWatchList( 0 );
+		return CmdWatchList(0);
 	}
 
 	int iArg = 1;
 	int iWatch = NO_6502_TARGET;
 	if (nArgs > 1)
 	{
-		iWatch = g_aArgs[ 1 ].nValue;
+		iWatch = g_aArgs[1].nValue;
+		if (iWatch >= MAX_WATCHES)
+		{
+			ConsoleDisplayPushFormat("Watch index too big.  (Max: %d)", MAX_WATCHES - 1);
+			return ConsoleUpdate();
+		}
+
 		iArg++;
 	}
 
 	bool bAdded = false;
 	for (; iArg <= nArgs; iArg++ )
 	{
+		if (g_aArgs[iArg].eToken == TOKEN_ALPHANUMERIC && g_aArgs[iArg].sArg[0] == 'v')	// 'video' ?
+		{
+			g_aWatches[iWatch].bSet = true;
+			g_aWatches[iWatch].bEnabled = true;
+			g_aWatches[iWatch].eSource = BP_SRC_VIDEO_SCANNER;
+			g_aWatches[iWatch].nAddress = 0xDEAD;
+			bAdded = true;
+			g_nWatches++;
+			iWatch++;
+			continue;
+		}
+
 		WORD nAddress = g_aArgs[iArg].nValue;
 
 		// Make sure address isn't an IO address
 		if ((nAddress >= _6502_IO_BEGIN) && (nAddress <= _6502_IO_END))
-			return ConsoleDisplayError("You may not watch an I/O location.");
+			return ConsoleDisplayError("You cannot watch an I/O location.");
 
 		if (iWatch == NO_6502_TARGET)
 		{
@@ -6677,7 +6791,7 @@ Update_t CmdWatchAdd (int nArgs)
 
 		if ((iWatch >= MAX_WATCHES) && !bAdded)
 		{
-			ConsoleDisplayPushFormat( "All watches are currently in use.  (Max: %d)", MAX_WATCHES );
+			ConsoleDisplayPushFormat("All watches are currently in use.  (Max: %d)", MAX_WATCHES);
 			return ConsoleUpdate();
 		}
 
@@ -6685,6 +6799,7 @@ Update_t CmdWatchAdd (int nArgs)
 		{
 			g_aWatches[iWatch].bSet = true;
 			g_aWatches[iWatch].bEnabled = true;
+			g_aWatches[iWatch].eSource = BP_SRC_MEM_RW;
 			g_aWatches[iWatch].nAddress = (WORD) nAddress;
 			bAdded = true;
 			g_nWatches++;
@@ -7155,21 +7270,13 @@ Update_t CmdWindowLast (int nArgs)
 
 
 //===========================================================================
-Update_t CmdZeroPage (int nArgs)
-{
-	// ZP [address]
-	// ZP # address
-	return CmdZeroPageAdd( nArgs );
-}
-
-//===========================================================================
-Update_t CmdZeroPageAdd     (int nArgs)
+Update_t CmdZeroPageAdd (int nArgs)
 {
 	// ZP [address]
 	// ZP # address [address...]
-	if (! nArgs)
+	if (!nArgs)
 	{
-		return CmdZeroPageList( 0 );
+		return CmdZeroPageList(0);
 	}
 
 	int iArg = 1;
@@ -7177,7 +7284,13 @@ Update_t CmdZeroPageAdd     (int nArgs)
 
 	if (nArgs > 1)
 	{
-		iZP = g_aArgs[ 1 ].nValue;
+		iZP = g_aArgs[1].nValue;
+		if (iZP >= MAX_ZEROPAGE_POINTERS)
+		{
+			ConsoleDisplayPushFormat("Zero page pointer index too big.  (Max: %d)", MAX_ZEROPAGE_POINTERS - 1);
+			return ConsoleUpdate();
+		}
+
 		iArg++;
 	}
 	
@@ -7185,6 +7298,13 @@ Update_t CmdZeroPageAdd     (int nArgs)
 	for (; iArg <= nArgs; iArg++ )
 	{
 		WORD nAddress = g_aArgs[iArg].nValue;
+
+		// Make sure address is a ZP address
+		if (nAddress > _6502_ZEROPAGE_END)
+		{
+			ConsoleDisplayPushFormat("Zero page pointer must be in the range: [00..%02X].", _6502_ZEROPAGE_END);
+			return ConsoleUpdate();
+		}
 
 		if (iZP == NO_6502_TARGET)
 		{
@@ -7197,7 +7317,7 @@ Update_t CmdZeroPageAdd     (int nArgs)
 
 		if ((iZP >= MAX_ZEROPAGE_POINTERS) && !bAdded)
 		{
-			ConsoleDisplayPushFormat( "All zero page pointers are currently in use.  (Max: %d)", MAX_ZEROPAGE_POINTERS );
+			ConsoleDisplayPushFormat("All zero page pointers are currently in use.  (Max: %d)", MAX_ZEROPAGE_POINTERS);
 			return ConsoleUpdate();
 		}
 		
@@ -7230,9 +7350,9 @@ Update_t _ZeroPage_Error()
 }
 
 //===========================================================================
-Update_t CmdZeroPageClear   (int nArgs)
+Update_t CmdZeroPageClear (int nArgs)
 {
-	if (!g_nBreakpoints)
+	if (!g_nZeroPagePointers)
 		return _ZeroPage_Error();
 
 	// CHECK FOR ERRORS
@@ -7241,7 +7361,7 @@ Update_t CmdZeroPageClear   (int nArgs)
 
 	_BWZ_ClearViaArgs( nArgs, g_aZeroPagePointers, MAX_ZEROPAGE_POINTERS, g_nZeroPagePointers );
 
-	if (! g_nZeroPagePointers)
+	if (!g_nZeroPagePointers)
 	{
 		UpdateDisplay( UPDATE_BACKGROUND );
 		return UPDATE_CONSOLE_DISPLAY;
@@ -7264,7 +7384,7 @@ Update_t CmdZeroPageDisable (int nArgs)
 }
 
 //===========================================================================
-Update_t CmdZeroPageEnable  (int nArgs)
+Update_t CmdZeroPageEnable (int nArgs)
 {
 	if (! g_nZeroPagePointers)
 		return _ZeroPage_Error();
@@ -7278,7 +7398,7 @@ Update_t CmdZeroPageEnable  (int nArgs)
 }
 
 //===========================================================================
-Update_t CmdZeroPageList    (int nArgs)
+Update_t CmdZeroPageList (int nArgs)
 {
 	if (! g_nZeroPagePointers)
 	{
@@ -7313,14 +7433,14 @@ Update_t CmdZeroPagePointer (int nArgs)
 	// p[0..4]                : disable
 	// p[0..4] <ZeroPageAddr> : enable
 
-	if( (nArgs != 0) && (nArgs != 1) )
+	if ( (nArgs != 0) && (nArgs != 1) )
 		return Help_Arg_1( g_iCommand );
 //		return DisplayHelp(CmdZeroPagePointer);
 
 //	int nPtrNum = g_aArgs[0].sArg[1] - '0'; // HACK: hard-coded to command length
 	int iZP = g_iCommand - CMD_ZEROPAGE_POINTER_0;
 
-	if( (iZP < 0) || (iZP >= MAX_ZEROPAGE_POINTERS) )
+	if ( (iZP < 0) || (iZP >= MAX_ZEROPAGE_POINTERS) )
 		return Help_Arg_1( g_iCommand );
 
 	if (nArgs == 0)
@@ -7378,7 +7498,7 @@ int FindParam(LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegi
 	{	
 #if ALLOW_INPUT_LOWERCASE
 		TCHAR aLookup[ 256 ] = "";
-		for( int i = 0; i < nLen; i++ )
+		for ( int i = 0; i < nLen; i++ )
 		{
 			aLookup[ i ] = toupper( pLookupName[ i ] );
 		}
@@ -7470,35 +7590,29 @@ int FindCommand( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 //===========================================================================
 void DisplayAmbigiousCommands( int nFound )
 {
-	ConsolePrintFormat("Ambiguous %s%" SIZE_T_FMT "%s Commands:"
-		, CHC_NUM_DEC
+	ConsolePrintFormat("Ambiguous " CHC_NUM_DEC "%" SIZE_T_FMT CHC_DEFAULT " Commands:"
 		, g_vPotentialCommands.size()
-		, CHC_DEFAULT
 	);
 
 	int iCommand = 0;
 	while (iCommand < nFound)
 	{
-		char sPotentialCommands[ CONSOLE_WIDTH ];
-		sprintf( sPotentialCommands, "%s ", CHC_COMMAND );
+		std::string sPotentialCommands = CHC_COMMAND " ";
 
-		int iWidth = strlen( sPotentialCommands );
-		while ((iCommand < nFound) && (iWidth < g_nConsoleDisplayWidth))
+		while ((iCommand < nFound) && (sPotentialCommands.length() < size_t(g_nConsoleDisplayWidth)))
 		{
-			int   nCommand = g_vPotentialCommands[ iCommand ];
-			char *pName = g_aCommands[ nCommand ].m_sName;
-			int   nLen = strlen( pName );
+			int const nCommand = g_vPotentialCommands[ iCommand ];
+			const char *const pName = g_aCommands[ nCommand ].m_sName;
+			size_t const nLen = strlen( pName );
 
-			if ((iWidth + nLen) >= (CONSOLE_WIDTH - 1))
+			if ((sPotentialCommands.length() + nLen) >= (CONSOLE_WIDTH - 1))
 				break;
-				
-			char sText[ CONSOLE_WIDTH * 2 ];
-			sprintf( sText, "%s ", pName );
-			strcat( sPotentialCommands, sText );
-			iWidth += nLen + 1;
+
+			sPotentialCommands.append(pName, nLen).append(1, ' ');
+
 			iCommand++;
 		}
-		ConsolePrint( sPotentialCommands );
+		ConsolePrint( sPotentialCommands.c_str() );
 	}
 }
 
@@ -7543,7 +7657,7 @@ Update_t ExecuteCommand (int nArgs)
 			for (int iChar = 0; iChar < (nLen - 1); iChar++, pChar++ )
 			{
 				bIsHex = IsHexDigit( *pChar );
-				if( !bIsHex )
+				if ( !bIsHex )
 				{
 					break;
 				}
@@ -7627,11 +7741,11 @@ Update_t ExecuteCommand (int nArgs)
 					bool bFoundLen = false;
 
 					pChar = pSrc;
-					while( *pChar )
+					while ( *pChar )
 					{
-						if( *pChar == '.' )
+						if ( *pChar == '.' )
 						{
-							if( pEnd ) // only allowed one period
+							if ( pEnd ) // only allowed one period
 							{
 								pEnd = 0;
 								break;
@@ -7641,22 +7755,22 @@ Update_t ExecuteCommand (int nArgs)
 							pEnd = pChar + 1;
 							bFoundSrc = true;
 						} else
-						if( !IsHexDigit( *pChar ) )
+						if ( !IsHexDigit( *pChar ) )
 						{
 							break;
 						}	
 						pChar++;
 					}
-					if( pEnd ) {
-						if(	(*pChar == 'M')
+					if ( pEnd ) {
+						if (	(*pChar == 'M')
 						||	(*pChar == 'm'))
 						{
 							*pChar++ = 0;
-							if( ! *pChar )
+							if ( ! *pChar )
 								bFoundLen = true;
 						}
 
-						if( bFoundSrc && bFoundLen )
+						if ( bFoundSrc && bFoundLen )
 						{
 							//ArgsGetValue( pArg, & nAddress );
 							//ConsolePrintFormat( "Dst:%s  Src: %s  End: %s", pDst, pSrc, pEnd );
@@ -7739,8 +7853,8 @@ void OutputTraceLine ()
 	DisasmLine_t line;
 	GetDisassemblyLine( regs.pc, line );
 
-	char sDisassembly[ CONSOLE_WIDTH ]; // DrawDisassemblyLine( 0,regs.pc, sDisassembly); // Get Disasm String
-	FormatDisassemblyLine( line, sDisassembly, CONSOLE_WIDTH );
+	// DrawDisassemblyLine( 0,regs.pc, sDisassembly); // Get Disasm String
+	std::string sDisassembly = FormatDisassemblyLine( line );
 
 	char sFlags[] = "........";
 	WORD nRegFlags = regs.ps;
@@ -7772,33 +7886,32 @@ void OutputTraceLine ()
 		}
 	}
 
-	char sTarget[ 16 ];
-	if (line.bTargetValue)
-	{
-		sprintf( sTarget, "%s:%s"
-			, line.sTargetPointer
-			, line.sTargetValue
-		);
-	}
+	//std::string const sTarget = (line.bTargetValue)
+	//	? StrFormat( "%s:%s", line.sTargetPointer , line.sTargetValue )
+	//	: std::string();
 
 	if (g_bTraceFileWithVideoScanner)
 	{
-		uint16_t addr = NTSC_VideoGetScannerAddressForDebugger();
-		BYTE data = mem[addr];
+		uint16_t vert, horz;
+		NTSC_GetVideoVertHorzForDebugger(vert, horz);		// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
+
+		uint32_t data;
+		int dataSize;
+		uint16_t addr = NTSC_GetScannerAddressAndData(data, dataSize);
 
 		fprintf( g_hTraceFile,
 			"%04X %04X %04X   %02X %02X %02X %02X %04X %s  %s\n",
-			g_nVideoClockVert,
-			g_nVideoClockHorz,
+			vert,
+			horz,
 			addr,
-			data,
+			(uint8_t)data,	// truncated
 			(unsigned)regs.a,
 			(unsigned)regs.x,
 			(unsigned)regs.y,
 			(unsigned)regs.sp,
-			(char*) sFlags
-			, sDisassembly
-			//, sTarget // TODO: Show target?
+			sFlags
+			, sDisassembly.c_str()
+			//, sTarget.c_str() // TODO: Show target?
 		);
 	}
 	else
@@ -7811,9 +7924,9 @@ void OutputTraceLine ()
 			(unsigned)regs.x,
 			(unsigned)regs.y,
 			(unsigned)regs.sp,
-			(char*) sFlags
-			, sDisassembly
-			//, sTarget // TODO: Show target?
+			sFlags
+			, sDisassembly.c_str()
+			//, sTarget.c_str() // TODO: Show target?
 		);
 	}
 }
@@ -7823,14 +7936,14 @@ int ParseInput ( LPTSTR pConsoleInput, bool bCook )
 {
 	int nArg = 0;
 
-	// TODO: need to check for non-quoted command seperator ';', and buffer input
+	// TODO: need to check for non-quoted command separator ';', and buffer input
 	RemoveWhiteSpaceReverse( pConsoleInput );
 
 	ArgsClear();
 	nArg = ArgsGet( pConsoleInput ); // Get the Raw Args
 
 	int iArg;
-	for( iArg = 0; iArg <= nArg; iArg++ )
+	for ( iArg = 0; iArg <= nArg; iArg++ )
 	{
 		g_aArgs[ iArg ] = g_aArgRaw[ iArg ];
 	}
@@ -7845,24 +7958,18 @@ void ParseParameter( )
 
 // Return address of next line to write to.
 //===========================================================================
-char * ProfileLinePeek ( int iLine )
+ProfileLine_t ProfileLinePeek ( int iLine )
 {
-	char *pText = NULL;
-
 	if (iLine < 0)
 		iLine = 0;
 	
-	if (! g_nProfileLine)
-		pText = & g_aProfileLine[ iLine ][ 0 ];
-
-	if (iLine <= g_nProfileLine)
-		pText = & g_aProfileLine[ iLine ][ 0 ];
-	
-	return pText;
+	return ( g_nProfileLine == 0 || iLine <= g_nProfileLine )
+		? ProfileLine_t( g_aProfileLine[ iLine ], sizeof(g_aProfileLine[iLine]) )
+		: ProfileLine_t();
 }
 
 //===========================================================================
-char * ProfileLinePush ()
+ProfileLine_t ProfileLinePush ()
 {
 	if (g_nProfileLine < NUM_PROFILE_LINES)
 	{
@@ -7882,31 +7989,31 @@ void ProfileLineReset()
 //===========================================================================
 void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 {
-	char sSeperator7[ 32 ] = "\t";
-	char sSeperator2[ 32 ] = "\t";
-	char sSeperator1[ 32 ] = "\t";
-	char sOpcode [ 8 ]; // 2 chars for opcode in hex, plus quotes on either side
-	char sAddress[MAX_OPMODE_NAME];
+	std::string sSeparator7;
+	std::string sSeparator2;
+	std::string sSeparator1;
 
 	if (eFormatMode == PROFILE_FORMAT_COMMA)
 	{
-		sSeperator7[0] = ',';
-		sSeperator2[0] = ',';
-		sSeperator1[0] = ',';
+		sSeparator7 = ',';
+		sSeparator2 = ',';
+		sSeparator1 = ',';
 	}
 	else
 	if (eFormatMode == PROFILE_FORMAT_SPACE)
 	{
-		sprintf( sSeperator7, "       " ); // 7
-		sprintf( sSeperator2, "  "      ); // 2
-		sprintf( sSeperator1, " "       ); // 1
+		sSeparator7.assign(7, ' ');
+		sSeparator2.assign(2, ' ');
+		sSeparator1 = ' ';
+	}
+	else
+	{
+		sSeparator7 = '\t';
+		sSeparator2 = '\t';
+		sSeparator1 = '\t';
 	}
 
 	ProfileLineReset();
-	char *pText = ProfileLinePeek( 0 );
-
-	int iOpcode;
-	int iOpmode;
 
 	bool bOpcodeGood = true;
 	bool bOpmodeGood = true;
@@ -7921,12 +8028,12 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 	Profile_t nOpcodeTotal = 0;
 	Profile_t nOpmodeTotal = 0;
 
-	for (iOpcode = 0; iOpcode < NUM_OPCODES; ++iOpcode )
+	for ( int iOpcode = 0; iOpcode < NUM_OPCODES; ++iOpcode )
 	{
 		nOpcodeTotal += vProfileOpcode[ iOpcode ].m_nCount;
 	}
 
-	for (iOpmode = 0; iOpmode < NUM_OPMODES; ++iOpmode )
+	for ( int iOpmode = 0; iOpmode < NUM_OPMODES; ++iOpmode )
 	{
 		nOpmodeTotal += vProfileOpmode[ iOpmode ].m_nCount;
 	}
@@ -7951,21 +8058,20 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		pColorMnemonic = CHC_COMMAND; // green
 		pColorOpmode   = CHC_USAGE  ; // yellow
 		pColorTotal    = CHC_DEFAULT; // white
-	}	
+	}
 	
-// Opcode
-	if (bExport) // Export = SeperateColumns
-		sprintf( pText
-			, "\"Percent\"" DELIM "\"Count\"" DELIM "\"Opcode\"" DELIM "\"Mnemonic\"" DELIM "\"Addressing Mode\"\n"
-			, sSeperator7, sSeperator2, sSeperator1, sSeperator1 );
-	else
-		sprintf( pText
-			, "Percent" DELIM "Count" DELIM "Mnemonic" DELIM "Addressing Mode\n"
-			, sSeperator7, sSeperator2, sSeperator1 );
+	ProfileLine_t prfline = ProfileLinePeek(0);
 
-	pText = ProfileLinePush();
+	// Opcode
+	if (bExport) // Export = SeperateColumns
+		prfline.Format( "\"Percent\"" DELIM "\"Count\"" DELIM "\"Opcode\"" DELIM "\"Mnemonic\"" DELIM "\"Addressing Mode\"\n",
+						sSeparator7.c_str(), sSeparator2.c_str(), sSeparator1.c_str(), sSeparator1.c_str() );
+	else
+		prfline.Format( "Percent" DELIM "Count" DELIM "Mnemonic" DELIM "Addressing Mode\n",
+						sSeparator7.c_str(), sSeparator2.c_str(), sSeparator1.c_str() );
+	prfline = ProfileLinePush();
 			
-	for (iOpcode = 0; iOpcode < NUM_OPCODES; ++iOpcode )
+	for ( int iOpcode = 0; iOpcode < NUM_OPCODES; ++iOpcode )
 	{
 		ProfileOpcode_t tProfileOpcode = vProfileOpcode.at( iOpcode );
 
@@ -7979,76 +8085,65 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		int       nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;
 		double    nPercent = (100. * nCount) / nOpcodeTotal;
 		
-		char sOpmode[ MAX_OPMODE_FORMAT ];
-		sprintf( sOpmode, g_aOpmodes[ nOpmode ].m_sFormat, 0 );
+		//std::string sOpmode = StrFormat( g_aOpmodes[ nOpmode ].m_sFormat, 0 );
 
-		if (bExport)
-		{
-			// Excel Bug: Quoted numbers are NOT treated as strings in .csv! WTF?
-			// @reference: http://support.microsoft.com/default.aspx?scid=kb;EN-US;Q214233
-			//
-			// Workaround: Prefix with (') apostrophe -- this doesn't break HEX2DEC()
-			// This works properly in Openoffice.
-			// In Excel, this ONLY works IF you TYPE it in!
-			// 
-			// Solution: Quote the numbers, but you must select the "TEXT" Column data format for the "Opcode" column.
-			// We don't use .csv, since you aren't given the Import Dialog in Excel!
-			sprintf( sOpcode, "\"%02X\"", nOpcode ); // Works with Excel, IF using Import dialog & choose Text. (also works with OpenOffice)
-//			sprintf( sOpcode, "'%02X", nOpcode ); // SHOULD work with Excel, but only works with OpenOffice.
-			sprintf( sAddress, "\"%s\"", g_aOpmodes[ nOpmode ].m_sName );
-		}
-		else // not qouted if dumping to console
-		{
-			sprintf( sOpcode, "%02X", nOpcode ); 
-			strcpy( sAddress, g_aOpmodes[ nOpmode ].m_sName );
-		}
+		// Excel Bug: Quoted numbers are NOT treated as strings in .csv! WTF?
+		// @reference: http://support.microsoft.com/default.aspx?scid=kb;EN-US;Q214233
+		//
+		// Workaround: Prefix with (') apostrophe -- this doesn't break HEX2DEC()
+		// This works properly in Openoffice.
+		// In Excel, this ONLY works IF you TYPE it in!
+		// 
+		// Solution: Quote the numbers, but you must select the "TEXT" Column data format for the "Opcode" column.
+		// We don't use .csv, since you aren't given the Import Dialog in Excel!
+		// StrFormat( "'%02X", nOpcode ); // SHOULD work with Excel, but only works with OpenOffice.
+		const std::string sOpcode = (bExport)
+			? StrFormat("\"%02X\"", nOpcode) // Works with Excel, IF using Import dialog & choose Text. (also works with OpenOffice)
+			: ByteToHexStr(nOpcode);
+		const std::string sAddress = (bExport)
+			? ( '"' + std::string(g_aOpmodes[nOpmode].m_sName) + '"' )
+			: std::string(g_aOpmodes[ nOpmode ].m_sName);
 		
 		// BUG: Yeah 100% is off by 1 char. Profiling only one opcode isn't worth fixing this visual alignment bug.
-		sprintf( pText,
-			"%s%7.4f%s%%" DELIM "%s%9u" DELIM "%s%s" DELIM "%s%s" DELIM "%s%s\n"
+		prfline.Format( "%s%7.4f%s%%" DELIM "%s%9u" DELIM "%s%s" DELIM "%s%s" DELIM "%s%s\n"
 			, pColorNumber
 			, nPercent
 			, pColorOperator
-			, sSeperator2
+			, sSeparator2.c_str()
 			, pColorNumber
-			, static_cast<unsigned int>(nCount), sSeperator2
+			, static_cast<unsigned int>(nCount), sSeparator2.c_str()
 			, pColorOpcode
-			, sOpcode, sSeperator2
+			, sOpcode.c_str(), sSeparator2.c_str()
 			, pColorMnemonic
-			, g_aOpcodes[ nOpcode ].sMnemonic, sSeperator2
+			, g_aOpcodes[ nOpcode ].sMnemonic, sSeparator2.c_str()
 			, pColorOpmode
-			, sAddress
+			, sAddress.c_str()
 		);
-		pText = ProfileLinePush();
+		prfline = ProfileLinePush();
 	}
 
 	if (! bOpcodeGood)
 		nOpcodeTotal = 0;
 
-	sprintf( pText
-		, "Total:  " DELIM "%s%9u\n"
-		, sSeperator2
+	prfline.Format( "Total:  " DELIM "%s%9u\n"
+		, sSeparator2.c_str()
 		, pColorTotal
 		, static_cast<unsigned int>(nOpcodeTotal) );
-	pText = ProfileLinePush();
+	prfline = ProfileLinePush();
 
-	sprintf( pText, "\n" );
-	pText = ProfileLinePush();
+	prfline.Assign( "\n" );
+	prfline = ProfileLinePush();
 
 // Opmode
 	//	"Percent     Count  Adressing Mode\n" );
 	if (bExport)
 		// Note: 2 extra dummy columns are inserted to keep Addressing Mode in same column
-		sprintf( pText
-			, "\"Percent\"" DELIM "\"Count\"" DELIM DELIM DELIM "\"Addressing Mode\"\n"
-			, sSeperator7, sSeperator2, sSeperator2, sSeperator2 );
+		prfline.Format( "\"Percent\"" DELIM "\"Count\"" DELIM DELIM DELIM "\"Addressing Mode\"\n",
+						sSeparator7.c_str(), sSeparator2.c_str(), sSeparator2.c_str(), sSeparator2.c_str() );
 	else
-	{
-		sprintf( pText
-			, "Percent" DELIM "Count" DELIM "Addressing Mode\n"
-			, sSeperator7, sSeperator2 );
-	}
-	pText = ProfileLinePush();
+		prfline.Format( "Percent" DELIM "Count" DELIM "Addressing Mode\n",
+						sSeparator7.c_str(), sSeparator2.c_str() );
+	prfline = ProfileLinePush();
 
 	if (nOpmodeTotal < 1)
 	{
@@ -8056,7 +8151,7 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		bOpmodeGood = false;
 	}
 
-	for (iOpmode = 0; iOpmode < NUM_OPMODES; ++iOpmode )
+	for ( int iOpmode = 0; iOpmode < NUM_OPMODES; ++iOpmode )
 	{
 		ProfileOpmode_t tProfileOpmode = vProfileOpmode.at( iOpmode );
 		Profile_t nCount  = tProfileOpmode.m_nCount;
@@ -8068,51 +8163,44 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 		int       nOpmode = tProfileOpmode.m_iOpmode;
 		double    nPercent = (100. * nCount) / nOpmodeTotal;
 
-		if (bExport)
-		{
+		const std::string sAddress = (bExport)
 			// Note: 2 extra dummy columns are inserted to keep Addressing Mode in same column
-			sprintf( sAddress, "%s%s\"%s\"", sSeperator1, sSeperator1, g_aOpmodes[ nOpmode ].m_sName );
-		}
-		else // not qouted if dumping to console
-		{
-			strcpy( sAddress, g_aOpmodes[ nOpmode ].m_sName );
-		}
+			? StrFormat( "%s%s\"%s\"", sSeparator1.c_str(), sSeparator1.c_str(), g_aOpmodes[ nOpmode ].m_sName )
+			// not qouted if dumping to console
+			: std::string( g_aOpmodes[ nOpmode ].m_sName );
 
 		// BUG: Yeah 100% is off by 1 char. Profiling only one opcode isn't worth fixing this visual alignment bug.
-		sprintf( pText
-			, "%s%7.4f%s%%" DELIM "%s%9u" DELIM "%s%s\n"
+		prfline.Format( "%s%7.4f%s%%" DELIM "%s%9u" DELIM "%s%s\n"
 			, pColorNumber
 			, nPercent
 			, pColorOperator
-			, sSeperator2
+			, sSeparator2.c_str()
 			, pColorNumber
-			, static_cast<unsigned int>(nCount), sSeperator2
+			, static_cast<unsigned int>(nCount), sSeparator2.c_str()
 			, pColorOpmode
-			, sAddress
+			, sAddress.c_str()
 		);
-		pText = ProfileLinePush();
+		prfline = ProfileLinePush();
 	}
 
 	if (! bOpmodeGood)
 		nOpmodeTotal = 0;
 
-	sprintf( pText
-		, "Total:  " DELIM "%s%9u\n"
-		, sSeperator2 
+	prfline.Format( "Total:  " DELIM "%s%9u\n"
+		, sSeparator2.c_str()
 		, pColorTotal
 		, static_cast<unsigned int>(nOpmodeTotal) );
-	pText = ProfileLinePush();
+	prfline = ProfileLinePush();
 
-	sprintf( pText, "===================\n" );
-	pText = ProfileLinePush();
+	prfline.Assign( "===================\n" );
+	prfline = ProfileLinePush();
 
 	unsigned int cycles = static_cast<unsigned int>(g_nCumulativeCycles - g_nProfileBeginCycles);
-	sprintf( pText
-		, "Cycles: " DELIM "%s%9u\n"
-		, sSeperator2
+	prfline.Format( "Cycles: " DELIM "%s%9u\n"
+		, sSeparator2.c_str()
 		, pColorNumber
 		, cycles );
-	pText = ProfileLinePush();
+	prfline = ProfileLinePush();
 }
 #undef DELIM
 
@@ -8120,16 +8208,13 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
 //===========================================================================
 void ProfileReset()
 {
-	int iOpcode;
-	int iOpmode;
-
-	for (iOpcode = 0; iOpcode < NUM_OPCODES; iOpcode++ )
+	for ( int iOpcode = 0; iOpcode < NUM_OPCODES; iOpcode++ )
 	{
 		g_aProfileOpcodes[ iOpcode ].m_iOpcode = iOpcode;
 		g_aProfileOpcodes[ iOpcode ].m_nCount = 0;
 	}
 
-	for (iOpmode = 0; iOpmode < NUM_OPMODES; iOpmode++ )
+	for ( int iOpmode = 0; iOpmode < NUM_OPMODES; iOpmode++ )
 	{
 		g_aProfileOpmodes[ iOpmode ].m_iOpmode = iOpmode;
 		g_aProfileOpmodes[ iOpmode ].m_nCount = 0;
@@ -8150,16 +8235,14 @@ bool ProfileSave()
 
 	if (hFile)
 	{
-		char *pText;
-		int   nLine = g_nProfileLine;
-		int   iLine;
-		
-		for( iLine = 0; iLine < nLine; iLine++ )
+		const int nLine = g_nProfileLine;
+
+		for ( int iLine = 0; iLine < nLine; iLine++ )
 		{
-			pText = ProfileLinePeek( iLine );
-			if ( pText )
+			ProfileLine_t prfline = ProfileLinePeek( iLine );
+			if ( prfline.buf )
 			{
-				fputs( pText, hFile );
+				fputs( prfline.buf, hFile );
 			}
 		}
 		
@@ -8209,6 +8292,8 @@ void DebugBegin ()
 
 	DebugVideoMode::Instance().Reset();
 	UpdateDisplay( UPDATE_ALL );
+
+	g_LBR = LBR_UNDEFINED;	// reset LBR, so LBR isn't stale from a previous debugging session
 
 #if DEBUG_APPLE_FONT
 	int iFG = 7;
@@ -8406,12 +8491,13 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 					g_bDebugBreakpointHit |= BP_HIT_INTERRUPT;
 			}
 
-			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg() | CheckBreakpointsDmaToOrFromIoMemory();
+			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg() | CheckBreakpointsVideo() | CheckBreakpointsDmaToOrFromIOMemory() | CheckBreakpointsDmaToOrFromMemory(-1);
 		}
 
 		if (regs.pc == g_nDebugStepUntil || g_bDebugBreakpointHit)
 		{
 			std::string stopReason = "Unknown!";
+			bool skipStopReason = false;
 
 			if (regs.pc == g_nDebugStepUntil)
 				stopReason = "PC matches 'Go until' address";
@@ -8430,13 +8516,33 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				stopReason = "PC reads from floating bus or I/O memory";
 			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
-				stopReason = StrFormat("Interrupt occurred at $%04X", g_LBR);
+				stopReason = (g_LBR == LBR_UNDEFINED)	? StrFormat("Interrupt occurred (LBR unknown)")
+														: StrFormat("Interrupt occurred at $%04X", g_LBR);
+			else if (g_bDebugBreakpointHit & BP_HIT_VIDEO_POS)
+				stopReason = StrFormat("Video scanner position matches at vpos=$%04X", NTSC_GetVideoVertForDebugger());
 			else if (g_bDebugBreakpointHit & BP_DMA_TO_IO_MEM)
-				stopReason = StrFormat("HDD DMA to I/O memory or ROM $%04X", g_uDebugBreakOnDmaIoMemoryAddr);
+				stopReason = StrFormat("HDD DMA to I/O memory or ROM at $%04X", g_DebugBreakOnDMAIO.memoryAddr);
 			else if (g_bDebugBreakpointHit & BP_DMA_FROM_IO_MEM)
-				stopReason = StrFormat("HDD DMA from I/O memory $%04X", g_uDebugBreakOnDmaIoMemoryAddr);
+				stopReason = StrFormat("HDD DMA from I/O memory at $%04X ", g_DebugBreakOnDMAIO.memoryAddr);
+			else if (g_bDebugBreakpointHit & (BP_DMA_FROM_MEM | BP_DMA_TO_MEM))
+				skipStopReason = true;
 
-			ConsoleBufferPushFormat( "Stop reason: %s", stopReason.c_str() );
+			if (!skipStopReason)
+				ConsoleBufferPushFormat( "Stop reason: %s", stopReason.c_str() );
+
+			for (int i = 0; i < NUM_BREAK_ON_DMA; i++)
+			{
+				int nDebugBreakpointHit = CheckBreakpointsDmaToOrFromMemory(i);
+				if (nDebugBreakpointHit)
+				{
+					if (nDebugBreakpointHit & BP_DMA_TO_MEM)
+						stopReason = StrFormat("HDD DMA to memory $%04X-%04X (BP#%d)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, g_DebugBreakOnDMA[i].BPid);
+					else if (nDebugBreakpointHit & BP_DMA_FROM_MEM)
+						stopReason = StrFormat("HDD DMA from memory $%04X-%04X (BP#%d)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, g_DebugBreakOnDMA[i].BPid);
+					ConsoleBufferPushFormat("Stop reason: %s", stopReason.c_str());
+				}
+			}
+
 			ConsoleUpdate();
 
 			g_nDebugSteps = 0;
@@ -8486,7 +8592,7 @@ void DebugDestroy ()
 //	DeleteObject(g_hFontWebDings);
 
 	// TODO: Symbols_Clear()
-	for( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
+	for ( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
 	{
 		_CmdSymbolsClear( (SymbolTable_Index_e) iTable );
 	}
@@ -8546,7 +8652,7 @@ void DebugInitialize ()
 	memset( g_aConsoleDisplay, 0, sizeof( g_aConsoleDisplay ) ); // CONSOLE_WIDTH * CONSOLE_HEIGHT );
 	ConsoleInputReset();
 
-	for( int iWindow = 0; iWindow < NUM_WINDOWS; iWindow++ )
+	for ( int iWindow = 0; iWindow < NUM_WINDOWS; iWindow++ )
 	{
 		WindowSplit_t *pWindow = & g_aWindowConfig[ iWindow ];
 
@@ -8670,7 +8776,7 @@ void DebugInitialize ()
 	}
 	
 #if _DEBUG
-//g_bConsoleBufferPaused = true;
+	//g_bConsoleBufferPaused = true;
 #endif
 
 	_Bookmark_Reset();
@@ -8679,9 +8785,21 @@ void DebugInitialize ()
 	if (!doneAutoRun)	// Don't re-run on a VM restart
 	{
 		doneAutoRun = true;
-		std::string pathname = g_sProgramDir + "DebuggerAutoRun.txt";
-		strcpy_s(g_aArgs[1].sArg, MAX_ARG_LEN, pathname.c_str());
+
+		const std::string debuggerAutoRunName = "DebuggerAutoRun.txt";
+
+		// Look in g_sCurrentDir, otherwise try g_sProgramDir
+
+		std::string pathname = g_sCurrentDir + debuggerAutoRunName;
+		strncpy_s(g_aArgs[1].sArg, MAX_ARG_LEN, pathname.c_str(), _TRUNCATE);
 		CmdOutputRun(1);
+
+		if (!g_bScriptReadOk)
+		{
+			pathname = g_sProgramDir + debuggerAutoRunName;
+			strncpy_s(g_aArgs[1].sArg, MAX_ARG_LEN, pathname.c_str(), _TRUNCATE);
+			CmdOutputRun(1);
+		}
 	}
 
 	CmdMOTD(0);
@@ -8691,7 +8809,7 @@ void DebugInitialize ()
 void DebugReset(void)
 {
 	g_videoScannerDisplayInfo.Reset();
-	g_LBR = 0x0000;
+	g_LBR = LBR_UNDEFINED;
 }
 
 // Add character to the input line
@@ -8899,7 +9017,7 @@ void DebuggerProcessKey( int keycode )
 		if (! g_nConsoleInputChars)
 		{
 			// bugfix: 2.6.1.35 Fixed: Pressing enter on blank line while in assembler wouldn't exit it.
-			if( g_bAssemblerInput )
+			if ( g_bAssemblerInput )
 			{
 				bUpdateDisplay |= DebuggerProcessCommand( false );
 			}

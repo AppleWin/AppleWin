@@ -1,16 +1,12 @@
 #pragma once
 
 int GetDisassemblyLine(const WORD nOffset, DisasmLine_t& line_);
-//		, int iOpcode, int iOpmode, int nOpbytes
-//		char *sAddress_, char *sOpCodes_,
-//		char *sTarget_, char *sTargetOffset_, int & nTargetOffset_, char *sTargetValue_,
-//		char * sImmediate_, char & nImmediate_, char *sBranch_ );
-void FormatDisassemblyLine(const DisasmLine_t& line, char* sDisassembly_, const int nBufferSize);
+std::string FormatDisassemblyLine(const DisasmLine_t& line);
 void FormatOpcodeBytes(WORD nBaseAddress, DisasmLine_t& line_);
 void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_);
 
 std::string FormatAddress(WORD nAddress, int nBytes);
-char* FormatCharCopy(char* pDst, const char* pSrc, const int nLen);
+char* FormatCharCopy(char* pDst, const char* pEnd, const char* pSrc, const int nLen);
 
 char  FormatCharTxtAsci(const BYTE b, bool* pWasAsci_ = NULL);
 char  FormatCharTxtCtrl(const BYTE b, bool* pWasCtrl_ = NULL);

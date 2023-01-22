@@ -139,3 +139,8 @@ void Disk2CardManager::GetFilenameAndPathForSaveState(std::string& filename, std
 		}
 	}
 }
+
+void Disk2CardManager::SetStepperDefer(bool defer)
+{
+	m_stepperDeferred = defer;
+}

@@ -52,65 +52,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
 
-// tests if pSrc fits into pDst
-// returns true if pSrc safely fits into pDst, else false (pSrc would of overflowed pDst)
-//===========================================================================
-bool TestStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
-{
-	int nLenDst = _tcslen( pDst );
-	int nLenSrc = _tcslen( pSrc );
-	int nSpcDst = nDstSize - nLenDst;
-
-	bool bOverflow = (nSpcDst <= nLenSrc); // 2.5.6.25 BUGFIX
-	if (bOverflow)
-	{
-		return false;
-	}
-	return true;
-}
-
-
-// tests if pSrc fits into pDst
-// returns true if pSrc safely fits into pDst, else false (pSrc would of overflowed pDst)
-//===========================================================================
-bool TryStringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
-{
-	int nLenDst = _tcslen( pDst );
-	int nLenSrc = _tcslen( pSrc );
-	int nSpcDst = nDstSize - nLenDst;
-	int nChars  = MIN( nLenSrc, nSpcDst );
-
-	bool bOverflow = (nSpcDst < nLenSrc);
-	if (bOverflow)
-	{
-		return false;
-	}
-	
-	_tcsncat( pDst, pSrc, nChars );
-	return true;
-}
-
-// cats string as much as possible
-// returns true if pSrc safely fits into pDst, else false (pSrc would of overflowed pDst)
-//===========================================================================
-int StringCat ( TCHAR * pDst, LPCSTR pSrc, const int nDstSize )
-{
-	int nLenDst = _tcslen( pDst );
-	int nLenSrc = _tcslen( pSrc );
-	int nSpcDst = nDstSize - nLenDst;
-	int nChars  = MIN( nLenSrc, nSpcDst );
-
-	_tcsncat( pDst, pSrc, nChars );
-
-	bool bOverflow = (nSpcDst < nLenSrc);
-	if (bOverflow)
-		return 0;
-		
-	return nChars;
-}
-
-
-
 // Help ___________________________________________________________________________________________
 
 
@@ -136,74 +77,48 @@ Update_t Help_Arg_1( int iCommandHelp )
 //===========================================================================
 void Help_Categories()
 {
-	const int nBuf = CONSOLE_WIDTH * 2;
-
-	char sText[ nBuf ] = "";
-	int  nLen = 0;
-
 	// TODO/FIXME: Colorize( sText, ... )
 	// Colorize("Usage:")
-	nLen += StringCat( sText, CHC_USAGE , nBuf );
-	nLen += StringCat( sText, "Usage", nBuf );
-
-	nLen += StringCat( sText, CHC_DEFAULT, nBuf );
-	nLen += StringCat( sText, ": " , nBuf );
-
-	nLen += StringCat( sText, CHC_ARG_OPT, nBuf );
-	nLen += StringCat( sText, "[ ", nBuf );
-
-	nLen += StringCat( sText, CHC_ARG_MAND, nBuf );
-	nLen += StringCat( sText, "< ", nBuf );
+	std::string sText = CHC_USAGE "Usage" CHC_DEFAULT ": " CHC_ARG_OPT "[ " CHC_ARG_MAND "< ";
 
 	for (int iCategory = _PARAM_HELPCATEGORIES_BEGIN ; iCategory < _PARAM_HELPCATEGORIES_END; iCategory++)
 	{
-		char *pName = g_aParameters[ iCategory ].m_sName;
+		const char *pName = g_aParameters[ iCategory ].m_sName;
 
-		if (nLen + strlen( pName ) >= (CONSOLE_WIDTH - 1))
+		if (sText.length() + strlen(pName) >= (CONSOLE_WIDTH - 1))
 		{
-			ConsolePrint( sText );
-			sText[ 0 ] = 0;
-			nLen = StringCat( sText, "    ", nBuf ); // indent
+			ConsolePrint( sText.c_str() );
+			sText = "    "; // indent
 		}
 
-			    StringCat( sText, CHC_COMMAND, nBuf );
-		nLen += StringCat( sText, pName      , nBuf );
+		sText += CHC_COMMAND;
+		sText += pName;
 
 		if (iCategory < (_PARAM_HELPCATEGORIES_END - 1))
 		{
-			char sSep[] = " | ";
+			const char sSep[] = " | ";
 
-			if (nLen + strlen( sSep ) >= (CONSOLE_WIDTH - 1))
+			if (sText.length() + strlen(sSep) >= (CONSOLE_WIDTH - 1))
 			{
-				ConsolePrint( sText );
-				sText[ 0 ] = 0;
-				nLen = StringCat( sText, "    ", nBuf ); // indent
+				ConsolePrint( sText.c_str() );
+				sText = "    "; // indent
 			}
-				    StringCat( sText, CHC_ARG_SEP, nBuf );
-			nLen += StringCat( sText, sSep, nBuf );
+
+			sText += CHC_ARG_SEP;
+			sText += sSep;
 		}
 	}
 
-	StringCat( sText, CHC_ARG_MAND, nBuf );
-	StringCat( sText, " >", nBuf);
+	sText += CHC_ARG_MAND " >" CHC_ARG_OPT " ]";
 
-	StringCat( sText, CHC_ARG_OPT, nBuf );
-	StringCat( sText, " ]", nBuf);
-
-//	ConsoleBufferPush( sText );
-	ConsolePrint( sText );  // Transcode colored text to native console color text
+//	ConsoleBufferPush( sText.c_str() );
+	ConsolePrint( sText.c_str() );  // Transcode colored text to native console color text
 		
-	ConsolePrintFormat( "%sNotes%s: %s<>%s = mandatory, %s[]%s = optional, %s|%s argument option"
-		, CHC_USAGE
-		, CHC_DEFAULT
-		, CHC_ARG_MAND
-		, CHC_DEFAULT
-		, CHC_ARG_OPT
-		, CHC_DEFAULT
-		, CHC_ARG_SEP
-		, CHC_DEFAULT
-	);
-//	ConsoleBufferPush( sText );
+	ConsolePrintFormat( CHC_USAGE "Notes" CHC_DEFAULT ": "
+						CHC_ARG_MAND "<>" CHC_DEFAULT " = mandatory, "
+						CHC_ARG_OPT "[]" CHC_DEFAULT " = optional, "
+						CHC_ARG_SEP "|" CHC_DEFAULT " argument option" );
+//	ConsoleBufferPush( sText.c_str() );
 }
 
 void Help_Examples()
@@ -249,29 +164,26 @@ void Help_Operators()
 	ConsolePrintFormat( "    %s#%s   Designate number in hex"             , CHC_USAGE, CHC_DEFAULT );
 //	ConsoleBufferPush( "  Operators: (Range)"                            );
 	ConsolePrintFormat( "  Operators: (%sRange%s)"                        , CHC_USAGE, CHC_DEFAULT );
-	ConsolePrintFormat( "    %s,%s   range seperator (2nd address is relative)", CHC_USAGE, CHC_DEFAULT );
-	ConsolePrintFormat( "    %s:%s   range seperator (2nd address is absolute)", CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( "    %s,%s   range separator (2nd address is relative)", CHC_USAGE, CHC_DEFAULT );
+	ConsolePrintFormat( "    %s:%s   range separator (2nd address is absolute)", CHC_USAGE, CHC_DEFAULT );
 //	ConsolePrintFormat( "  Operators: (Misc)"                             );
 	ConsolePrintFormat( "  Operators: (%sMisc%s)"                         , CHC_USAGE, CHC_DEFAULT );
 	ConsolePrintFormat( "    %s//%s  comment until end of line"           , CHC_USAGE, CHC_DEFAULT );
 //	ConsoleBufferPush( "  Operators: (Breakpoint)"                       );
 	ConsolePrintFormat( "  Operators: (%sBreakpoint%s)"                   , CHC_USAGE, CHC_DEFAULT );
 
-	char sText[CONSOLE_WIDTH];
-	_tcscpy( sText, "    " );
-	strcat( sText, CHC_USAGE );
-	int iBreakOp = 0;
-	for( iBreakOp = 0; iBreakOp < NUM_BREAKPOINT_OPERATORS; iBreakOp++ )
+	std::string sText = "    " CHC_USAGE;
+	for ( int iBreakOp = 0; iBreakOp < NUM_BREAKPOINT_OPERATORS; iBreakOp++ )
 	{
 		if ((iBreakOp >= PARAM_BP_LESS_EQUAL) &&
 			(iBreakOp <= PARAM_BP_GREATER_EQUAL))
 		{
-			strcat( sText, g_aBreakpointSymbols[ iBreakOp ] );
-			strcat( sText, " " );
+			sText += g_aBreakpointSymbols[ iBreakOp ];
+			sText += ' ';
 		}
 	}	
-	strcat( sText, CHC_DEFAULT );
-	ConsolePrint( sText );
+	sText += CHC_DEFAULT;
+	ConsolePrint( sText.c_str() );
 }
 
 void Help_KeyboardShortcuts()
@@ -452,7 +364,7 @@ bool Colorize( char * pDst, size_t /*nDstSz*/, const char* pSrc)
 			const char *start = pSrc;
 			const char *end   = pSrc;
 
-			while( isHexDigit( *end ) )
+			while ( isHexDigit( *end ) )
 				end++;
 
 			size_t nDigits = end - start;
@@ -580,11 +492,11 @@ Update_t CmdHelpSpecific (int nArgs)
 		{
 	//		int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_EXACT, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
 			int nFoundCategory = FindParam( g_aArgs[ iArg ].sArg, MATCH_FUZZY, iParam, _PARAM_HELPCATEGORIES_BEGIN, _PARAM_HELPCATEGORIES_END );
-			if( nFoundCategory )
+			if ( nFoundCategory )
 				bCategory = true;
 			else
 				bCategory = false;
-			switch( iParam )
+			switch ( iParam )
 			{
 				case PARAM_CAT_BOOKMARKS  : iCmdBegin = CMD_BOOKMARK        ; iCmdEnd = CMD_BOOKMARK_SAVE        ; break;
 				case PARAM_CAT_BREAKPOINTS: iCmdBegin = CMD_BREAK_INVALID   ; iCmdEnd = CMD_BREAKPOINT_SAVE      ; break;
@@ -646,7 +558,7 @@ Update_t CmdHelpSpecific (int nArgs)
 					if (nFound) {
 						bCategory = false; 
 					} else  // 2.7.0.17: HELP <category> wasn't displaying when category was one of: FLAGS, OUTPUT, WATCHES
-						if( nFoundCategory )
+						if ( nFoundCategory )
 						{
 							iCmdBegin = CMD_WATCH_ADD       ; iCmdEnd = CMD_WATCH_LIST           ;
 						}
@@ -735,62 +647,62 @@ Update_t CmdHelpSpecific (int nArgs)
 //		if (nFound && (! bAllCommands) && (! bCategory))
 		if (nFound && (! bAllCommands) && bDisplayCategory)
 		{
-			const char* pszCategory = "";
+			const char* pCategory = "";
 			int iCmd = g_aCommands[ iCommand ].iCommand; // Unaliased command
 
 			// HACK: Major kludge to display category!!!
 			if (iCmd <= CMD_UNASSEMBLE)
-				pszCategory = g_aParameters[ PARAM_CAT_CPU ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_CPU ].m_sName;
 			else
 			if (iCmd <= CMD_BOOKMARK_SAVE)
-				pszCategory = g_aParameters[ PARAM_CAT_BOOKMARKS ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_BOOKMARKS ].m_sName;
 			else
 			if (iCmd <= CMD_BREAKPOINT_SAVE)
-				pszCategory = g_aParameters[ PARAM_CAT_BREAKPOINTS ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_BREAKPOINTS ].m_sName;
 			else
 			if (iCmd <= CMD_CONFIG_SET_DEBUG_DIR)
-				pszCategory = g_aParameters[ PARAM_CAT_CONFIG ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_CONFIG ].m_sName;
 			else
 			if (iCmd <= CMD_CURSOR_PAGE_DOWN_4K)
-				pszCategory = "Scrolling";
+				pCategory = "Scrolling";
 			else
 			if (iCmd <= CMD_FLAG_SET_N)
-				pszCategory = g_aParameters[ PARAM_CAT_FLAGS ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_FLAGS ].m_sName;
 			else
 			if (iCmd <= CMD_MOTD)
-				pszCategory = g_aParameters[ PARAM_CAT_HELP ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_HELP ].m_sName;
 			else
 			if (iCmd <= CMD_MEMORY_FILL)
-				pszCategory = g_aParameters[ PARAM_CAT_MEMORY ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_MEMORY ].m_sName;
 			else
 			if (iCmd <= CMD_OUTPUT_RUN)
-				pszCategory = g_aParameters[ PARAM_CAT_OUTPUT ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_OUTPUT ].m_sName;
 			else
 			if (iCmd <= CMD_SYNC)
-				pszCategory = "Source";
+				pCategory = "Source";
 			else
 			if (iCmd <= CMD_SYMBOLS_LIST)
-				pszCategory = g_aParameters[ PARAM_CAT_SYMBOLS ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_SYMBOLS ].m_sName;
 			else
 			if (iCmd <= CMD_VIEW_DHGR2)
-				pszCategory = g_aParameters[ PARAM_CAT_VIEW ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_VIEW ].m_sName;
 			else
 			if (iCmd <= CMD_WATCH_SAVE)
-				pszCategory = g_aParameters[ PARAM_CAT_WATCHES ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_WATCHES ].m_sName;
 			else
 			if (iCmd <= CMD_WINDOW_OUTPUT)
-				pszCategory = g_aParameters[ PARAM_CAT_WINDOW ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_WINDOW ].m_sName;
 			else
 			if (iCmd <= CMD_ZEROPAGE_POINTER_SAVE)
-				pszCategory = g_aParameters[ PARAM_CAT_ZEROPAGE ].m_sName;
+				pCategory = g_aParameters[ PARAM_CAT_ZEROPAGE ].m_sName;
 			else
-				pszCategory = "Unknown!";
+				pCategory = "Unknown!";
 
 			ConsolePrintFormat( "%sCategory%s: %s%s"
 				, CHC_USAGE
 				, CHC_DEFAULT
 				, CHC_CATEGORY
-				, pszCategory );
+				, pCategory );
 
 			if (bCategory)
 				bDisplayCategory = false;
@@ -801,8 +713,8 @@ Update_t CmdHelpSpecific (int nArgs)
 			const char *const pHelp = pCommand->pHelpSummary;
 			if (pHelp)
 			{
-				std::string strText = StrFormat((bCategory) ? "%s%8s%s%s%s, "
-														    : "%s%s%s%s%s, ",
+				std::string strText = StrFormat((bCategory) ? "%s%8s%s, %s%s"
+														    : "%s%s%s, %s%s",
 												CHC_COMMAND, pCommand->m_sName, CHC_ARG_SEP,
 												CHC_DEFAULT, pHelp);
 				//ConsoleBufferPush( strText.c_str() );
@@ -937,15 +849,17 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 	// Breakpoints
 		case CMD_BREAK_INVALID:
-			ConsoleColorizePrintFormat( " Usage: [%s%s | %s%s] | [# | # %s%s | # %s%s]"
+			ConsoleColorizePrintFormat( " Usage: [%s%s | %s%s]"
 				, CHC_COMMAND
-				, g_aParameters[ PARAM_ON  ].m_sName
+				, g_aParameters[PARAM_ON].m_sName
 				, CHC_COMMAND
-				, g_aParameters[ PARAM_OFF  ].m_sName
+				, g_aParameters[PARAM_OFF].m_sName
+			);
+			ConsoleColorizePrintFormat(" Usage: [# | # %s%s | # %s%s]"
 				, CHC_COMMAND
-				, g_aParameters[ PARAM_ON  ].m_sName
+				, g_aParameters[PARAM_ON].m_sName
 				, CHC_COMMAND
-				, g_aParameters[ PARAM_OFF  ].m_sName
+				, g_aParameters[PARAM_OFF].m_sName
 			);
 			ConsoleColorizePrintFormat( " Usage: [%s%s %s%s | %s%s %s%s]"
 				, CHC_COMMAND
@@ -1026,7 +940,10 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleColorizePrint( " Usage: <range>" );
 			Help_Range();
 			break;
-	// Config - Load / Save
+		case CMD_BREAKPOINT_ADD_VIDEO:
+			ConsoleColorizePrint( " Usage: <vpos[,length]>" );
+			break;
+			// Config - Load / Save
 		case CMD_CONFIG_LOAD:
 			ConsoleColorizePrint( " Usage: [\"filename\"]" );
 			ConsoleBufferPushFormat( "  Load debugger configuration from '%s', or the specificed file.", g_sFileNameConfig.c_str() );
@@ -1485,33 +1402,23 @@ Update_t CmdHelpSpecific (int nArgs)
 //===========================================================================
 Update_t CmdHelpList (int nArgs)
 {
-	const int nBuf = CONSOLE_WIDTH * 2;
-
-	char sText[ nBuf ] = "";
-	
-	int nMaxWidth = g_nConsoleDisplayWidth - 1;
-	int iCommand;
+	const size_t nMaxWidth = g_nConsoleDisplayWidth - 1;
 
 	extern std::vector<Command_t> g_vSortedCommands;
 
 	if (! g_vSortedCommands.size())
 	{
-		for (iCommand = 0; iCommand < NUM_COMMANDS_WITH_ALIASES; iCommand++ )
+		for ( int iCommand = 0; iCommand < NUM_COMMANDS_WITH_ALIASES; iCommand++ )
 		{
 			g_vSortedCommands.push_back( g_aCommands[ iCommand ] );
 		}
 		std::sort( g_vSortedCommands.begin(), g_vSortedCommands.end(), commands_functor_compare() );
 	}
 
-	int nLen = 0;
-//		Colorize( sText, "Commands: " );
- 		        StringCat( sText, CHC_USAGE , nBuf );
-		nLen += StringCat( sText, "Commands", nBuf );
+	//Colorize( sText, "Commands: " );
+	std::string sText = CHC_USAGE "Commands" CHC_DEFAULT ": ";
 
-		        StringCat( sText, CHC_DEFAULT, nBuf );
-		nLen += StringCat( sText, ": " , nBuf );
-
-	for( iCommand = 0; iCommand < NUM_COMMANDS_WITH_ALIASES; iCommand++ ) // aliases are not printed
+	for ( int iCommand = 0; iCommand < NUM_COMMANDS_WITH_ALIASES; iCommand++ ) // aliases are not printed
 	{
 		Command_t *pCommand = & g_vSortedCommands.at( iCommand );
 //		Command_t *pCommand = & g_aCommands[ iCommand ];
@@ -1520,27 +1427,22 @@ Update_t CmdHelpList (int nArgs)
 		if (! pCommand->pFunction)
 			continue; // not implemented function
 
-		int nLenCmd = strlen( pName );
-		if ((nLen + nLenCmd) < (nMaxWidth))
+		if ((sText.length() + strlen(pName)) < nMaxWidth)
 		{
-			        StringCat( sText, CHC_COMMAND, nBuf );
-			nLen += StringCat( sText, pName      , nBuf );
+			sText += CHC_COMMAND;
 		}
 		else
 		{
-			ConsolePrint( sText );
-			nLen = 1;
-			strcpy( sText, " " );
-			        StringCat( sText, CHC_COMMAND, nBuf );
-			nLen += StringCat( sText, pName, nBuf );
+			ConsolePrint( sText.c_str() );
+			sText = " " CHC_COMMAND;
 		}
+		sText += pName;
 		
-		strcat( sText, " " );
-		nLen++;
+		sText += ' ';
 	}
 
-	//ConsoleBufferPush( sText );
-	ConsolePrint( sText );
+	//ConsoleBufferPush( sText.c_str() );
+	ConsolePrint( sText.c_str() );
 	ConsoleUpdate();
 
 	return UPDATE_CONSOLE_DISPLAY;

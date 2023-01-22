@@ -60,20 +60,20 @@ Win32Frame::Win32Frame()
 
 	g_bScrollLock_FullSpeed = false;
 
-	g_nTrackDrive1 = -1;
-	g_nTrackDrive2 = -1;
-	g_nSectorDrive1 = -1;
-	g_nSectorDrive2 = -1;
-	g_strTrackDrive1 = "??";
-	g_strTrackDrive2 = "??";
-	g_strSectorDrive1 = "??";
-	g_strSectorDrive2 = "??";
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		g_nSector[slot][0] = -1;
+		g_nSector[slot][1] = -1;
+	}
 
 	g_eStatusDrive1 = DISK_STATUS_OFF;
 	g_eStatusDrive2 = DISK_STATUS_OFF;
 
 	// Set g_nViewportScale, g_nViewportCX, g_nViewportCY & buttonx, buttony
 	SetViewportScale(kDEFAULT_VIEWPORT_SCALE, true);
+
+	// Set m_showDiskiiStatus, m_redrawDiskiiStatus
+	SetWindowedModeShowDiskiiStatus(false);
 }
 
 void Win32Frame::VideoCreateDIBSection(bool resetVideoState)
@@ -625,8 +625,8 @@ std::string Win32Frame::Video_GetScreenShotFolder() const
 	return std::string();
 }
 
-std::shared_ptr<NetworkBackend> Win32Frame::CreateNetworkBackend()
+std::shared_ptr<NetworkBackend> Win32Frame::CreateNetworkBackend(const std::string & interfaceName)
 {
-	std::shared_ptr<NetworkBackend> backend(new PCapBackend(PCapBackend::tfe_interface));
+	std::shared_ptr<NetworkBackend> backend(new PCapBackend(interfaceName));
 	return backend;
 }

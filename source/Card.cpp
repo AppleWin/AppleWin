@@ -69,9 +69,6 @@ void DummyCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	switch (QueryType())
 	{
-	case CT_GenericPrinter:
-		PrintLoadRom(pCxRomPeripheral, m_slot);
-		break;
 	case CT_GenericClock:
 		break; // nothing to do
 	case CT_Z80:
@@ -86,11 +83,6 @@ void DummyCard::Update(const ULONG nExecutedCycles)
 {
 	switch (QueryType())
 	{
-	case CT_GenericPrinter:
-		PrintUpdate(nExecutedCycles);
-		break;
-	case CT_GenericClock:
-		break; // nothing to do
 	case CT_Z80:
 		break; // nothing to do
 	default:
@@ -103,9 +95,6 @@ void DummyCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	switch (QueryType())
 	{
-	case CT_GenericPrinter:
-		Printer_SaveSnapshot(yamlSaveHelper, m_slot);
-		break;
 	case CT_Z80:
 		Z80_SaveSnapshot(yamlSaveHelper, m_slot);
 	default:
@@ -118,8 +107,6 @@ bool DummyCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	switch (QueryType())
 	{
-	case CT_GenericPrinter:
-		return Printer_LoadSnapshot(yamlLoadHelper, m_slot, version);
 	case CT_Z80:
 		return Z80_LoadSnapshot(yamlLoadHelper, m_slot, version);
 	default:
@@ -150,7 +137,7 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 	case CT_MockingboardC:
 		return MockingboardCard::GetSnapshotCardName();
 	case CT_GenericPrinter:
-		return Printer_GetSnapshotCardName();
+		return ParallelPrinterCard::GetSnapshotCardName();
 	case CT_GenericHDD:
 		return HarddiskInterfaceCard::GetSnapshotCardName();
 	case CT_GenericClock:
@@ -182,7 +169,7 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 
 SS_CARDTYPE Card::GetCardType(const std::string & card)
 {
-	if (card == Printer_GetSnapshotCardName())
+	if (card == ParallelPrinterCard::GetSnapshotCardName())
 	{
 		return CT_GenericPrinter;
 	}

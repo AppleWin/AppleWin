@@ -61,7 +61,8 @@
 #define IDC_MB_VOLUME                   1010
 #define IDC_SAVESTATE_BROWSE            1011
 #define IDC_MONOCOLOR                   1012
-#define IDC_DISKII_SLOT5_ENABLE         1020
+#define IDC_DISKII_SLOT5_ENABLE         1019
+#define IDC_DISKII_STATUS_ENABLE        1020
 #define IDC_HDD_ENABLE                  1021
 #define IDC_HDD_SWAP                    1022
 #define IDC_PASTE_FROM_CLIPBOARD        1023
@@ -119,6 +120,9 @@
 #define IDC_FOURPLAY_CONFIG             1087
 #define IDC_SNESMAX_CONFIG              1088
 #define IDC_CHECK_VIDHD_IN_SLOT3        1089
+#define IDC_CHECK_TFE_VIRTUAL_DNS       1090
+#define IDC_TFE_NPCAP_INFO              1091
+#define IDC_COMBO_GAME_IO_CONNECTOR     1092
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
@@ -134,7 +138,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        149
 #define _APS_NEXT_COMMAND_VALUE         40012
-#define _APS_NEXT_CONTROL_VALUE         1082
+#define _APS_NEXT_CONTROL_VALUE         1083
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

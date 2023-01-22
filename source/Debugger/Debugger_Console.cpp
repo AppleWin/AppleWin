@@ -292,7 +292,8 @@ void ConsoleBufferPush ( const char * pText )
 			{
 				g_nConsoleBuffer++;
 			}
-			pSrc++;
+			if (c == '\n')
+				pSrc++;
 			pDst = & g_aConsoleBuffer[ g_nConsoleBuffer ][ 0 ];
 		}
 		else
@@ -578,7 +579,7 @@ Update_t ConsoleScrollPageDn ()
 //===========================================================================
 Update_t ConsoleBufferTryUnpause (int nLines)
 {
-	for( int y = 0; y < nLines; y++ )
+	for ( int y = 0; y < nLines; y++ )
 	{
 		ConsoleBufferToDisplay();
 	}

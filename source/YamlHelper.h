@@ -11,6 +11,7 @@
 #define SS_YAML_KEY_TYPE "Type"
 #define SS_YAML_KEY_CARD "Card"
 #define SS_YAML_KEY_STATE "State"
+#define SS_YAML_KEY_DEVICE "Device"
 
 #define SS_YAML_VALUE_AWSS "AppleWin Save State"
 
@@ -43,6 +44,8 @@ public:
 
 	int InitParser(const char* pPathname);
 	void FinaliseParser(void);
+
+	UINT ParseFileHdr(const char* tag);
 
 	int GetScalar(std::string& scalar);
 	void GetMapStartEvent(void);

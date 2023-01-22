@@ -156,7 +156,7 @@ void Video::VideoReinitialize(bool bInitVideoScannerAddress)
 	NTSC_VideoInitAppleType();
 	NTSC_SetVideoStyle();
 	NTSC_SetVideoTextMode( g_uVideoMode &  VF_80COL ? 80 : 40 );
-	NTSC_SetVideoMode( g_uVideoMode );	// Pre-condition: g_nVideoClockHorz (derived from g_dwCyclesThisFrame)
+	NTSC_SetVideoMode( g_uVideoMode );
 	VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideoType());
 }
 
@@ -455,7 +455,7 @@ bool Video::VideoGetVblBarEx(const DWORD dwCyclesThisFrame)
 		NTSC_VideoClockResync(dwCyclesThisFrame);
 	}
 
-	return g_nVideoClockVert < kVDisplayableScanLines;
+	return NTSC_GetVblBar();
 }
 
 // Called when *inside* CpuExecute()
@@ -467,7 +467,7 @@ bool Video::VideoGetVblBar(const DWORD uExecutedCycles)
 		NTSC_VideoClockResync(CpuGetCyclesThisVideoFrame(uExecutedCycles));
 	}
 
-	return g_nVideoClockVert < kVDisplayableScanLines;
+	return NTSC_GetVblBar();
 }
 
 //===========================================================================

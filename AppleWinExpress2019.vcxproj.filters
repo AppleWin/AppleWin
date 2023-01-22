@@ -259,6 +259,18 @@
     <ClCompile Include="source\Uthernet2.cpp">
       <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
+    <ClCompile Include="source\Tfe\IPRaw.cpp">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Tfe\DNS.cpp">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Configuration\Config.cpp">
+      <Filter>Source Files\Configuration</Filter>
+    </ClCompile>
+    <ClCompile Include="source\CopyProtectionDongles.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
     <ClCompile Include="source\MockingboardCardManager.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
@@ -596,6 +608,15 @@
     </ClInclude>
     <ClInclude Include="source\Uthernet2.h">
       <Filter>Source Files\Uthernet</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Tfe\IPRaw.h">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Tfe\DNS.h">
+      <Filter>Source Files\Uthernet</Filter>
+    </ClInclude>
+    <ClInclude Include="source\CopyProtectionDongles.h">
+      <Filter>Source Files\Emulator</Filter>
     </ClInclude>
     <ClInclude Include="source\MockingboardCardManager.h">
       <Filter>Source Files\Emulator</Filter>

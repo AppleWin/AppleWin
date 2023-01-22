@@ -28,6 +28,7 @@ public:
 	virtual void FrameSetCursorPosByMousePos() = 0;
 
 	virtual void SetFullScreenShowSubunitStatus(bool bShow) = 0;
+	virtual void SetWindowedModeShowDiskiiStatus(bool bShow) = 0;
 	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth=0, UINT userSpecifiedHeight=0) = 0;
 	virtual int SetViewportScale(int nNewScale, bool bForce = false) = 0;
 	virtual void SetAltEnterToggleFullScreen(bool mode) = 0;
@@ -45,7 +46,7 @@ public:
 
 	// create the network backed for Uthernet 1 and 2
 	// useful to use libslirp in Linux
-	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend() = 0;
+	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName) = 0;
 
 	// FindResource, MAKEINTRESOURCE, SizeofResource, LoadResource, LockResource
 	// Return pointer to resource if size is correct.

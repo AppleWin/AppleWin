@@ -35,12 +35,12 @@ static DWORD dwDataOffset;
 static DWORD g_dwTotalNumberOfBytesWritten = 0;
 static unsigned int g_NumChannels = 2;
 
-int RiffInitWriteFile(const char* pszFile, unsigned int sample_rate, unsigned int NumChannels)
+bool RiffInitWriteFile(const char* pszFile, unsigned int sample_rate, unsigned int NumChannels)
 {
 	g_hRiffFile = CreateFile(pszFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 
 	if(g_hRiffFile == INVALID_HANDLE_VALUE)
-		return 1;
+		return false;
 
 	g_NumChannels = NumChannels;
 
@@ -92,13 +92,13 @@ int RiffInitWriteFile(const char* pszFile, unsigned int sample_rate, unsigned in
 	dwDataOffset = SetFilePointer(g_hRiffFile, 0, NULL, FILE_CURRENT);
 	WriteFile(g_hRiffFile, &temp32, 4, &dwNumberOfBytesWritten, NULL);
 
-	return 0;
+	return true;
 }
 
-int RiffFinishWriteFile()
+bool RiffFinishWriteFile()
 {
 	if(g_hRiffFile == INVALID_HANDLE_VALUE)
-		return 1;
+		return false;
 
 	//
 
@@ -114,13 +114,13 @@ int RiffFinishWriteFile()
 	SetFilePointer(g_hRiffFile, dwDataOffset, NULL, FILE_BEGIN);
 	WriteFile(g_hRiffFile, &temp32, 4, &dwNumberOfBytesWritten, NULL);
 
-	return CloseHandle(g_hRiffFile);
+	return CloseHandle(g_hRiffFile) ? true : false;
 }
 
-int RiffPutSamples(const short* buf, unsigned int uSamples)
+bool RiffPutSamples(const short* buf, unsigned int uSamples)
 {
 	if(g_hRiffFile == INVALID_HANDLE_VALUE)
-		return 1;
+		return false;
 
 	//
 
@@ -135,5 +135,5 @@ int RiffPutSamples(const short* buf, unsigned int uSamples)
 
 	g_dwTotalNumberOfBytesWritten += dwNumberOfBytesWritten;
 
-	return 0;
+	return true;
 }

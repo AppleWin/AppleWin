@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Keyboard.h"
 #include "Joystick.h"
 #include "SoundCore.h"
+#include "SNESMAX.h"
 #include "ParallelPrinter.h"
 #include "Interface.h"
 
@@ -47,6 +48,7 @@ bool g_bRegisterFileTypes = true;
 bool g_bHookSystemKey = true;
 bool g_bHookAltTab = false;
 bool g_bHookAltGrControl = false;
+
 
 static LPSTR GetCurrArg(LPSTR lpCmdLine)
 {
@@ -167,6 +169,25 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					g_cmdLine.bSlotEmpty[slot] = true;
 				if (strcmp(lpCmdLine, "diskii") == 0)
 					g_cmdLine.slotInsert[slot] = CT_Disk2;
+				if (strcmp(lpCmdLine, "diskii13") == 0)
+				{
+					g_cmdLine.slotInsert[slot] = CT_Disk2;
+					g_cmdLine.slotInfo[slot].isDiskII13 = true;
+				}
+				if (strcmp(lpCmdLine, "parallel") == 0)
+				{
+					if (slot == SLOT1)
+						g_cmdLine.slotInsert[slot] = CT_GenericPrinter;
+					else
+						LogFileOutput("Parallel Printer card currently only supported in slot 1\n");
+				}
+				if (strcmp(lpCmdLine, "ssc") == 0)
+				{
+					if (slot == SLOT2)
+						g_cmdLine.slotInsert[slot] = CT_SSC;
+					else
+						LogFileOutput("SSC currently only supported in slot 2\n");
+				}
 				if (strcmp(lpCmdLine, "vidhd") == 0)
 				{
 					if (slot == SLOT3)
@@ -394,7 +415,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-use-real-printer") == 0)	// Enable control in Advanced config to allow dumping to a real printer
 		{
-			g_bEnableDumpToRealPrinter = true;
+			g_cmdLine.enableDumpToRealPrinter = true;
 		}
 		else if (strcmp(lpCmdLine, "-speech") == 0)
 		{
@@ -529,6 +550,36 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		else if (strcmp(lpCmdLine, "-snes-max-alt-joy2") == 0)
 		{
 			g_cmdLine.snesMaxAltControllerType[1] = true;
+		}
+		else if (strcmp(lpCmdLine, "-snes-max-user-joy1") == 0 || strcmp(lpCmdLine, "-snes-max-user-joy2") == 0)
+		{
+			const unsigned int joyNum = (strcmp(lpCmdLine, "-snes-max-user-joy1") == 0) ? 0 : 1;
+
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			std::string errorMsg;
+			if (!SNESMAXCard::ParseControllerMappingFile(joyNum, lpCmdLine, errorMsg))
+			{
+				LogFileOutput("%s", errorMsg.c_str());
+				GetFrame().FrameMessageBox(errorMsg.c_str(), TEXT("AppleWin Error"), MB_OK);
+			}
+		}
+		else if (strcmp(lpCmdLine, "-wav-speaker") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			g_cmdLine.wavFileSpeaker = lpCmdLine;
+		}
+		else if (strcmp(lpCmdLine, "-wav-mockingboard") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			g_cmdLine.wavFileMockingboard = lpCmdLine;
+		}
+		else if (strcmp(lpCmdLine, "-no-disk2-stepper-defer") == 0)	// a debug switch (likely to be removed in a future version)
+		{
+			g_cmdLine.noDisk2StepperDefer = true;
 		}
 		else	// unsupported
 		{

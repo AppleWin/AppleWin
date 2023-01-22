@@ -183,6 +183,7 @@
 		BP_SRC_MEM_RW,
 		BP_SRC_MEM_READ_ONLY,
 		BP_SRC_MEM_WRITE_ONLY,
+		BP_SRC_VIDEO_SCANNER,
 
 		NUM_BREAKPOINT_SOURCES
 	};
@@ -334,6 +335,7 @@
 		, CMD_BREAKPOINT_ADD_MEM // break on: [$0000-$FFFF], excluding IO
 		, CMD_BREAKPOINT_ADD_MEMR // break on read on: [$0000-$FFFF], excluding IO
 		, CMD_BREAKPOINT_ADD_MEMW // break on write on: [$0000-$FFFF], excluding IO
+		, CMD_BREAKPOINT_ADD_VIDEO // break on video scanner position
 
 		, CMD_BREAKPOINT_CLEAR
 //		,	CMD_BREAKPOINT_REMOVE = CMD_BREAKPOINT_CLEAR // alias
@@ -516,7 +518,7 @@
 		, CMD_VIEW_DHGR2
 		, CMD_VIEW_SHR
 // Watch
-		, CMD_WATCH // TODO: Deprecated ?
+		, CMD_WATCH
 		, CMD_WATCH_ADD
 		, CMD_WATCH_CLEAR
 		, CMD_WATCH_DISABLE
@@ -641,6 +643,7 @@
 	Update_t CmdBreakpointAddMemA  (int nArgs);
 	Update_t CmdBreakpointAddMemR  (int nArgs);
 	Update_t CmdBreakpointAddMemW  (int nArgs);
+	Update_t CmdBreakpointAddVideo (int nArgs);
 	Update_t CmdBreakpointClear    (int nArgs);
 	Update_t CmdBreakpointDisable  (int nArgs);
 	Update_t CmdBreakpointEdit     (int nArgs);
@@ -1271,7 +1274,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		, TOKEN_PLUS         // + Delta  Argument1 += Argument2
 		, TOKEN_QUOTE_SINGLE // '
 		, TOKEN_QUOTE_DOUBLE // "
-		, TOKEN_SEMI         // ; Command Seperator
+		, TOKEN_SEMI         // ; Command Separator
 		, TOKEN_SPACE        //   Token Delimiter
 		, TOKEN_STAR         // *
 //		, TOKEN_TAB          // '\t'
@@ -1393,8 +1396,9 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 // Disk
 	, _PARAM_DISK_BEGIN = _PARAM_CONFIG_END // Daisy Chain
-		, PARAM_DISK_EJECT = _PARAM_DISK_BEGIN // DISK 1 EJECT
-		, PARAM_DISK_INFO                      // DISK 1 INFO
+		, PARAM_DISK_INFO = _PARAM_DISK_BEGIN  // DISK INFO
+		, PARAM_DISK_SET_SLOT                  // DISK SLOT 6
+		, PARAM_DISK_EJECT                     // DISK 1 EJECT
 		, PARAM_DISK_PROTECT                   // DISK 1 PROTECT
 		, PARAM_DISK_READ                      // DISK 1 READ Track Sector NumSectors MemAddress
 	, _PARAM_DISK_END

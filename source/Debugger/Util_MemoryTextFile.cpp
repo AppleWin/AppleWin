@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Util_Text.h"
 #include "Util_MemoryTextFile.h"
+#include "StrFormat.h"
 
 // MemoryTextFile _________________________________________________________________________________
 
@@ -121,9 +122,9 @@ void MemoryTextFile_t::GetLinePointers()
 
 
 //===========================================================================
-void MemoryTextFile_t::PushLine( char *pLine )
+void MemoryTextFile_t::PushLine( const char *pLine )
 {
-	char *pSrc = pLine;
+	const char *pSrc = pLine;
 	while (pSrc && *pSrc)
 	{
 		if (*pSrc == CHAR_CR)
@@ -141,4 +142,10 @@ void MemoryTextFile_t::PushLine( char *pLine )
 	m_bDirty = true;
 }
 
-
+void MemoryTextFile_t::PushLineFormat( const char *pFormat, ... )
+{
+	va_list va;
+	va_start(va, pFormat);
+	PushLine(StrFormatV(pFormat, va).c_str());
+	va_end(va);
+}

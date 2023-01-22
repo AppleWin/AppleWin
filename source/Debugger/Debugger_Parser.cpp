@@ -286,7 +286,7 @@ int	ArgsGet ( TCHAR * pInput )
 
 			if (iTokenSrc == TOKEN_SEMI)
 			{
-				// TODO - command seperator, must handle non-quoted though!
+				// TODO - command separator, must handle non-quoted though!
 			}
 
 			if (iTokenSrc == TOKEN_QUOTE_DOUBLE)
@@ -366,7 +366,7 @@ bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ )
 	if (pArg && pAddressValue_)
 	{
 		// Check if we refer to reg A X Y P S
-		for( int iReg = 0; iReg < (NUM_BREAKPOINT_SOURCES-1); iReg++ )
+		for ( int iReg = 0; iReg < (NUM_BREAKPOINT_SOURCES-1); iReg++ )
 		{
 			// Skip Opcode/Instruction/Mnemonic
 			if (iReg == BP_SRC_OPCODE)
@@ -379,7 +379,7 @@ bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ )
 			// Handle one char names
 			if ((pArg->nArgLen == 1) && (pArg->sArg[0] == g_aBreakpointSource[ iReg ][0]))
 			{
-				switch( iReg )
+				switch ( iReg )
 				{
 					case BP_SRC_REG_A : *pAddressValue_ = regs.a  & 0xFF; bStatus = true; break;
 					case BP_SRC_REG_P : *pAddressValue_ = regs.ps & 0xFF; bStatus = true; break;
@@ -912,7 +912,7 @@ void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDst
 			if ((nCur + nGap) >= nDstSize)
 				break;
 
-			for( int iSpc = 0; iSpc < nGap; iSpc++ )
+			for ( int iSpc = 0; iSpc < nGap; iSpc++ )
 			{
 				*pDst++ = CHAR_SPACE;
 			}

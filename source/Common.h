@@ -23,6 +23,7 @@ enum AppMode_e
 	, MODE_DEBUG    // 6502 is paused
 	, MODE_STEPPING // 6502 is running at normal/full speed (Debugger breakpoints always active)
 	, MODE_BENCHMARK
+	, MODE_UNDEFINED	// Used in SoundCore_SetFade()
 };
 
 #define  SPEED_MIN         0
@@ -67,6 +68,7 @@ enum AppMode_e
 #define  REGVALUE_OLD_APPLE2_TYPE    "Computer Emulation"	// Deprecated
 #define  REGVALUE_CONFIRM_REBOOT     "Confirm Reboot" // Added at 1.24.1 PageConfig
 #define  REGVALUE_FS_SHOW_SUBUNIT_STATUS "Full-screen show subunit status"
+#define  REGVALUE_SHOW_DISKII_STATUS "Show Disk II Status"
 #define  REGVALUE_SOUND_EMULATION    "Sound Emulation"
 #define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
 #define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
@@ -108,12 +110,15 @@ enum AppMode_e
 #define  REGVALUE_WINDOW_SCALE       "Window Scale"
 #define  REGVALUE_UTHERNET_ACTIVE       "Uthernet Active"	// GH#977: Deprecated from 1.30.5
 #define  REGVALUE_UTHERNET_INTERFACE    "Uthernet Interface"
+#define  REGVALUE_UTHERNET_VIRTUAL_DNS  "Uthernet Virtual DNS"
 #define  REGVALUE_SLOT4					"Slot 4"			// GH#977: Deprecated from 1.30.4
 #define  REGVALUE_SLOT5					"Slot 5"			// GH#977: Deprecated from 1.30.4
 #define  REGVALUE_VERSION				"Version"
 #define REG_CONFIG_SLOT_AUX			"Slot Auxiliary"
 #define REG_CONFIG_SLOT				"Slot "
 #define  REGVALUE_CARD_TYPE			"Card type"
+#define REG_CONFIG_GAME_IO_CONNECTOR	"Game I/O Connector"
+#define REGVALUE_GAME_IO_TYPE		"Game I/O type"
 #define  REGVALUE_LAST_DISK_1		"Last Disk Image 1"
 #define  REGVALUE_LAST_DISK_2		"Last Disk Image 2"
 #define  REGVALUE_LAST_HARDDISK_1	"Last Harddisk Image 1"

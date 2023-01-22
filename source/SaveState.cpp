@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Interface.h"
 #include "CardManager.h"
+#include "CopyProtectionDongles.h"
 #include "Debug.h"
 #include "Joystick.h"
 #include "Keyboard.h"
@@ -41,6 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Pravets.h"
 #include "Speaker.h"
 #include "Speech.h"
+#include "Harddisk.h"
 
 #include "Configuration/Config.h"
 #include "Configuration/IPropertySheet.h"
@@ -65,9 +67,12 @@ static YamlHelper yamlHelper;
 // v5: Extended: cpu (added 'Defer IRQ By 1 Opcode')
 // v6: Added 'Unit Miscellaneous' for NoSlotClock(NSC)
 // v7: Extended: joystick (added 'Paddle Inactive Cycle')
-#define UNIT_APPLE2_VER 7
+// v8: Added 'Unit Game I/O Connector' for Game I/O Connector
+#define UNIT_APPLE2_VER 8
 
 #define UNIT_SLOTS_VER 1
+
+#define UNIT_GAME_IO_CONNECTOR_VER 1
 
 #define UNIT_MISC_VER 1
 
@@ -177,6 +182,12 @@ static const std::string& GetSnapshotUnitSlotsName(void)
 	return name;
 }
 
+static const std::string& GetSnapshotUnitGameIOConnectorName(void)
+{
+	static const std::string name("Game I/O Connector");
+	return name;
+}
+
 static const std::string& GetSnapshotUnitMiscName(void)
 {
 	static const std::string name("Miscellaneous");
@@ -232,33 +243,6 @@ static std::string GetApple2TypeAsString(void)
 		default:
 			throw std::runtime_error("Save: Unknown Apple2 type");
 	}
-}
-
-//---
-
-static UINT ParseFileHdr(void)
-{
-	std::string scalar;
-	if (!yamlHelper.GetScalar(scalar))
-		throw std::runtime_error(SS_YAML_KEY_FILEHDR ": Failed to find scalar");
-
-	if (scalar != SS_YAML_KEY_FILEHDR)
-		throw std::runtime_error("Failed to find file header");
-
-	yamlHelper.GetMapStartEvent();
-
-	YamlLoadHelper yamlLoadHelper(yamlHelper);
-
-	//
-
-	std::string value = yamlLoadHelper.LoadString(SS_YAML_KEY_TAG);
-	if (value != SS_YAML_VALUE_AWSS)
-	{
-		//printf("%s: Bad tag (%s) - expected %s\n", SS_YAML_KEY_FILEHDR, value.c_str(), SS_YAML_VALUE_AWSS);
-		throw std::runtime_error(SS_YAML_KEY_FILEHDR ": Bad tag");
-	}
-
-	return yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 }
 
 //---
@@ -355,6 +339,10 @@ static void ParseUnit(void)
 	{
 		ParseSlots(yamlLoadHelper, unitVersion);
 	}
+	else if (unit == GetSnapshotUnitGameIOConnectorName())
+	{
+		CopyProtectionDongleLoadSnapshot(yamlLoadHelper, unitVersion);
+	}
 	else if (unit == GetSnapshotUnitMiscName())
 	{
 		// NB. could extend for other misc devices - see how ParseSlots() calls GetMapNextSlotNumber()
@@ -375,10 +363,10 @@ static void Snapshot_LoadState_v2(void)
 
 	try
 	{
-		if (!yamlHelper.InitParser( g_strSaveStatePathname.c_str() ))
+		if (!yamlHelper.InitParser(g_strSaveStatePathname.c_str()))
 			throw std::runtime_error("Failed to initialize parser or open file: " + g_strSaveStatePathname);
 
-		if (ParseFileHdr() != SS_FILE_VER)
+		if (yamlHelper.ParseFileHdr(SS_YAML_VALUE_AWSS) != SS_FILE_VER)
 			throw std::runtime_error("Version mismatch");
 
 		//
@@ -390,6 +378,8 @@ static void Snapshot_LoadState_v2(void)
 		for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 			GetCardMgr().Remove(slot);
 		GetCardMgr().RemoveAux();
+
+		SetCopyProtectionDongleType(DT_EMPTY);
 
 		MemReset();							// Also calls CpuInitialize()
 		GetPravets().Reset();
@@ -502,6 +492,15 @@ void Snapshot_SaveState(void)
 			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
 			GetCardMgr().SaveSnapshot(yamlSaveHelper);
+		}
+
+		// Unit: Game I/O Connector
+		if (GetCopyProtectionDongleType() != DT_EMPTY)
+		{
+			yamlSaveHelper.UnitHdr(GetSnapshotUnitGameIOConnectorName(), UNIT_GAME_IO_CONNECTOR_VER);
+			YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+			CopyProtectionDongleSaveSnapshot(yamlSaveHelper);
 		}
 
 		// Miscellaneous

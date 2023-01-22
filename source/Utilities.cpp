@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Mockingboard.h"
 #include "Interface.h"
 #include "SoundCore.h"
+#include "CopyProtectionDongles.h"
 
 #include "Configuration/IPropertySheet.h"
 #include "Tfe/PCapBackend.h"
@@ -167,6 +168,13 @@ void LoadConfiguration(bool loadImages)
 	else
 		LoadConfigOldJoystick_v1(JN_JOYSTICK1);
 
+	DWORD copyProtectionDongleType;
+	std::string regSection = RegGetConfigSlotSection(GAME_IO_CONNECTOR);
+	if (RegLoadValue(regSection.c_str(), REGVALUE_GAME_IO_TYPE, TRUE, &copyProtectionDongleType))
+		SetCopyProtectionDongleType((DONGLETYPE)copyProtectionDongleType);
+	else
+		SetCopyProtectionDongleType(DT_EMPTY);
+
 	DWORD dwSoundType;
 	REGLOAD_DEFAULT(TEXT(REGVALUE_SOUND_EMULATION), &dwSoundType, REG_SOUNDTYPE_WAVE);
 	switch (dwSoundType)
@@ -193,6 +201,9 @@ void LoadConfiguration(bool loadImages)
 	if(REGLOAD(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), &dwTmp))
 		GetFrame().SetFullScreenShowSubunitStatus(dwTmp ? true : false);
 
+	if (REGLOAD(TEXT(REGVALUE_SHOW_DISKII_STATUS), &dwTmp))
+		GetFrame().SetWindowedModeShowDiskiiStatus(dwTmp ? true : false);
+
 	if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
 		GetPropertySheet().SetTheFreezesF8Rom(dwTmp);
 
@@ -204,20 +215,6 @@ void LoadConfiguration(bool loadImages)
 
 	if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
 		g_bSaveStateOnExit = dwTmp ? true : false;
-
-
-	if(REGLOAD(TEXT(REGVALUE_DUMP_TO_PRINTER), &dwTmp))
-		g_bDumpToPrinter = dwTmp ? true : false;
-
-	if(REGLOAD(TEXT(REGVALUE_CONVERT_ENCODING), &dwTmp))
-		g_bConvertEncoding = dwTmp ? true : false;
-
-	if(REGLOAD(TEXT(REGVALUE_FILTER_UNPRINTABLE), &dwTmp))
-		g_bFilterUnprintable = dwTmp ? true : false;
-
-	if(REGLOAD(TEXT(REGVALUE_PRINTER_APPEND), &dwTmp))
-		g_bPrinterAppend = dwTmp ? true : false;
-
 
 	if(REGLOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
 		JoySetTrim((short)dwTmp, true);
@@ -253,27 +250,15 @@ void LoadConfiguration(bool loadImages)
 
 		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
 		{
-			if (slot == SLOT3)
-			{
-				// this must happen before the card is instantitated
-				// TODO move to the card
-				if ((SS_CARDTYPE)dwTmp == CT_Uthernet || (SS_CARDTYPE)dwTmp == CT_Uthernet2)	// TODO: move this to when UthernetCard object is instantiated
-				{
-					std::string regSection = RegGetConfigSlotSection(slot);
-					if (RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, szFilename, MAX_PATH, TEXT("")))
-						PCapBackend::tfe_interface = szFilename;
-				}
-			}
-
 			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
 		}
 		else	// legacy (AppleWin 1.30.3 or earlier)
 		{
 			if (slot == SLOT3)
 			{
-				// TODO: move this to when UthernetCard object is instantiated
 				RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
-				PCapBackend::tfe_interface = szFilename;
+				// copy it to the new location
+				PCapBackend::SetRegistryInterface(slot, szFilename);
 
 				DWORD tfeEnabled;
 				REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &tfeEnabled, 0);
@@ -326,11 +311,10 @@ void LoadConfiguration(bool loadImages)
 
 	//
 
-	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_PRINTER_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));
-	Printer_SetFilename(szFilename);	// If not in Registry than default will be used
+	if (GetCardMgr().IsParallelPrinterCardInstalled())
+		GetCardMgr().GetParallelPrinterCard()->GetRegistryConfig();
 
-	REGLOAD_DEFAULT(TEXT(REGVALUE_PRINTER_IDLE_LIMIT), &dwTmp, 10);
-	Printer_SetIdleLimit(dwTmp);
+	//
 
 	if (REGLOAD(TEXT(REGVALUE_WINDOW_SCALE), &dwTmp))
 		GetFrame().SetViewportScale(dwTmp);
@@ -543,7 +527,6 @@ void ResetMachineState()
 		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
 	GetVideo().VideoResetState();
 	KeybReset();
-	PrintReset();
 	JoyReset();
 	SpkrReset();
 	SetActiveCpu(GetMainCpu());
