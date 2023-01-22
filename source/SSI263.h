@@ -82,7 +82,7 @@ public:
 	void SetVotraxPhoneme(bool value) { m_isVotraxPhoneme = value; }
 
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT device, PHASOR_MODE mode, UINT version);
+	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version);
 
 private:
 	void Play(unsigned int nPhoneme);
