@@ -50,7 +50,7 @@ private:
 	static const UINT NUM_SY6522 = 2;
 	static const UINT NUM_AY8913 = 4;	// Phasor has 4, MB has 2
 //	static const UINT NUM_SSI263 = 2;
-	static const UINT NUM_DEVS_PER_MB = NUM_SY6522;
+	static const UINT NUM_DEVS_PER_MB = NUM_SY6522;	// Number of MB_SUBUNIT per Mockingboard card
 	static const UINT NUM_VOICES_PER_AY8913 = 3;
 	static const UINT NUM_VOICES = (NUM_AY8913 * NUM_VOICES_PER_AY8913);
 
