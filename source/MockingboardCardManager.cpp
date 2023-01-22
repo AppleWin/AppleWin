@@ -166,6 +166,8 @@ void MockingboardCardManager::Get6522IrqDescription(std::string& desc)
 // Called by CardManager::Destroy()
 void MockingboardCardManager::Destroy(void)
 {
+	// NB. All cards (including any Mockingboard cards) have just been destroyed by CardManager
+
 	if (MockingboardVoice.lpDSBvoice && MockingboardVoice.bActive)
 		DSVoiceStop(&MockingboardVoice);
 
@@ -176,6 +178,8 @@ void MockingboardCardManager::Destroy(void)
 // NB. Required for FT's TEST LAB #1 player
 void MockingboardCardManager::Update(const ULONG executedCycles)
 {
+	// NB. CardManager has just called each card's Update()
+
 	bool active = false;
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{

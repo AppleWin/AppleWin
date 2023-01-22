@@ -403,7 +403,6 @@ UINT MockingboardCard::MB_Update(void)
 	const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
 	const int nNumSamplesPerPeriod = (int)((double)SAMPLE_RATE / nIrqFreq);	// Eg. For 60Hz this is 735
 
-	//static int nNumSamplesError = 0;	// INFO-TC: moved to class
 	int nNumSamples = nNumSamplesPerPeriod + m_numSamplesError;					// Apply correction
 	if (nNumSamples <= 0)
 		nNumSamples = 0;

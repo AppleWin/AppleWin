@@ -109,6 +109,8 @@ void Disk2CardManager::LoadLastDiskImage(void)
 // Called by CardManager::Destroy()
 void Disk2CardManager::Destroy(void)
 {
+	// NB. All cards (including any Disk2 cards) have just been destroyed by CardManager
+	// - so nothing to do
 }
 
 bool Disk2CardManager::IsAnyFirmware13Sector(void)
