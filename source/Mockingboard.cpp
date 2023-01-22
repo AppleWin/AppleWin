@@ -69,10 +69,10 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	for (UINT i = 0; i < NUM_VOICES; i++)
 		m_ppAYVoiceBuffer[NUM_VOICES] = NULL;
 
-	// Construct via placement new, so that it is an array of 'SY6522_AY8910' objects
-	m_MBSubUnit = (SY6522_AY8910*) new BYTE[sizeof(SY6522_AY8910) * NUM_SY6522];
+	// Construct via placement new, so that it is an array of 'MB_SUBUNIT' objects
+	m_MBSubUnit = (MB_SUBUNIT*) new BYTE[sizeof(MB_SUBUNIT) * NUM_SY6522];
 	for (UINT i = 0; i < NUM_SY6522; i++)
-		new (&m_MBSubUnit[i]) SY6522_AY8910(m_slot);
+		new (&m_MBSubUnit[i]) MB_SUBUNIT(m_slot);
 
 	m_inActiveCycleCount = 0;
 	m_regAccessedFlag = false;
@@ -98,7 +98,7 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 
 	for (UINT i = 0; i < NUM_SY6522; i++)
 	{
-		m_MBSubUnit[i] = SY6522_AY8910(m_slot);
+		m_MBSubUnit[i] = MB_SUBUNIT(m_slot);
 		m_MBSubUnit[i].nAY8910Number = i;
 		const UINT id0 = i * SY6522::kNumTimersPer6522 + 0;	// TIMER1
 		const UINT id1 = i * SY6522::kNumTimersPer6522 + 1;	// TIMER2
@@ -118,7 +118,7 @@ MockingboardCard::~MockingboardCard(void)
 	Destroy();
 
 	for (UINT i = 0; i < NUM_SY6522; i++)
-		m_MBSubUnit[i].~SY6522_AY8910();
+		m_MBSubUnit[i].~MB_SUBUNIT();
 	delete[](BYTE*) m_MBSubUnit;
 }
 
@@ -192,7 +192,7 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 void MockingboardCard::AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice)
 {
 	m_regAccessedFlag = true;
-	SY6522_AY8910* pMB = &m_MBSubUnit[nDevice];
+	MB_SUBUNIT* pMB = &m_MBSubUnit[nDevice];
 
 	if (!m_phasorEnable)
 		nDevice += (m_slot - SLOT4) * 2;	// FIXME!
@@ -291,7 +291,7 @@ void MockingboardCard::WriteToORB(BYTE device)
 
 //-----------------------------------------------------------------------------
 
-void MockingboardCard::UpdateIFRandIRQ(SY6522_AY8910* pMB, BYTE clr_mask, BYTE set_mask)
+void MockingboardCard::UpdateIFRandIRQ(MB_SUBUNIT* pMB, BYTE clr_mask, BYTE set_mask)
 {
 	pMB->sy6522.UpdateIFR(clr_mask, set_mask);	// which calls UpdateIRQ()
 }
@@ -839,7 +839,7 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 	// Update all MBs, so that m_lastCumulativeCycle remains in sync for all
 	GetCardMgr().GetMockingboardCardMgr().UpdateCycles(uExecutedCycles);	// Underflow: so keep TIMER1/2 counters in sync
 
-	SY6522_AY8910* pMB = &m_MBSubUnit[(id & 0xf) / SY6522::kNumTimersPer6522];
+	MB_SUBUNIT* pMB = &m_MBSubUnit[(id & 0xf) / SY6522::kNumTimersPer6522];
 
 	if ((id & 1) == 0)
 	{
@@ -903,7 +903,7 @@ void MockingboardCard::GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS)
 	pSS->Hdr.Slot = m_slot;
 	pSS->Hdr.Type = CT_MockingboardC;
 
-	SY6522_AY8910* pMB = &m_MBSubUnit[0];
+	MB_SUBUNIT* pMB = &m_MBSubUnit[0];
 
 	for (UINT i=0; i<MB_UNITS_PER_CARD_v1; i++)
 	{
@@ -1072,7 +1072,7 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 	const UINT nMbCardNum = m_slot - SLOT4;
 	UINT nDeviceNum = nMbCardNum*2;
-	SY6522_AY8910* pMB = &m_MBSubUnit[nDeviceNum];
+	MB_SUBUNIT* pMB = &m_MBSubUnit[nDeviceNum];
 
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
@@ -1113,7 +1113,7 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 
 	const UINT nMbCardNum = m_slot - SLOT4;	// FIXME
 	UINT nDeviceNum = nMbCardNum*2;
-	SY6522_AY8910* pMB = &m_MBSubUnit[0];
+	MB_SUBUNIT* pMB = &m_MBSubUnit[0];
 
 	bool isVotrax = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
 	pMB->ssi263.SetVotraxPhoneme(isVotrax);
@@ -1176,7 +1176,7 @@ void MockingboardCard::Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		throw std::runtime_error("Card: Phasor only supported in slot-4");
 
 	UINT nDeviceNum = 0;
-	SY6522_AY8910* pMB = &m_MBSubUnit[0];	// fixme: Phasor uses MB's slot4(2x6522), slot4(2xSSI263), but slot4+5(4xAY8910)
+	MB_SUBUNIT* pMB = &m_MBSubUnit[0];	// fixme: Phasor uses MB's slot4(2x6522), slot4(2xSSI263), but slot4+5(4xAY8910)
 
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardNamePhasor(), m_slot, kUNIT_VERSION);
 
@@ -1228,7 +1228,7 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 	AY8910UpdateSetCycles();
 
 	UINT nDeviceNum = 0;
-	SY6522_AY8910* pMB = &m_MBSubUnit[0];
+	MB_SUBUNIT* pMB = &m_MBSubUnit[0];
 
 	bool isVotrax = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
 	pMB->ssi263.SetVotraxPhoneme(isVotrax);

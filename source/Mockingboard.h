@@ -57,7 +57,7 @@ public:
 private:
 	enum MockingboardUnitState_e { AY_NOP0, AY_NOP1, AY_INACTIVE, AY_READ, AY_NOP4, AY_NOP5, AY_WRITE, AY_LATCH };
 
-	struct SY6522_AY8910
+	struct MB_SUBUNIT
 	{
 		SY6522 sy6522;
 		AY8913 ay8913[2];				// Phasor has 2x AY per 6522
@@ -67,7 +67,7 @@ private:
 		MockingboardUnitState_e state;	// Where a unit is a 6522+AY8910 pair
 		MockingboardUnitState_e stateB;	// Phasor: 6522 & 2nd AY8910
 
-		SY6522_AY8910(UINT slot) : sy6522(slot), ssi263(slot)
+		MB_SUBUNIT(UINT slot) : sy6522(slot), ssi263(slot)
 		{
 			nAY8910Number = 0;
 			nAYCurrentRegister = 0;
@@ -79,7 +79,7 @@ private:
 
 	void AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice);
 	void WriteToORB(BYTE device);
-	void UpdateIFRandIRQ(SY6522_AY8910* pMB, BYTE clr_mask, BYTE set_mask);
+	void UpdateIFRandIRQ(MB_SUBUNIT* pMB, BYTE clr_mask, BYTE set_mask);
 
 	void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
@@ -123,7 +123,7 @@ private:
 	static const UINT SSI263A_Offset = 0x40;
 
 	// MB has 2x (1x SY6522 + 1x AY8913), Phasor has 2x (1x SY6522 + 2x AY8913)
-	SY6522_AY8910* m_MBSubUnit;	// NB. In ctor this becomes m_MBSubUnit[NUM_SY6522]
+	MB_SUBUNIT* m_MBSubUnit;	// NB. In ctor this becomes m_MBSubUnit[NUM_SY6522]
 
 	static const UINT kNumSyncEvents = NUM_SY6522 * SY6522::kNumTimersPer6522;
 	SyncEvent* m_syncEvent[kNumSyncEvents];
