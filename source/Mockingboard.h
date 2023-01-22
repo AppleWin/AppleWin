@@ -77,8 +77,8 @@ private:
 		}
 	};
 
-	void AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice);
-	void WriteToORB(BYTE device);
+	void WriteToORB(BYTE subunit);
+	void AY8910_Write(BYTE subunit, BYTE ay, BYTE value);
 	void UpdateIFRandIRQ(MB_SUBUNIT* pMB, BYTE clr_mask, BYTE set_mask);
 
 	void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
@@ -89,19 +89,19 @@ private:
 
 	//-------------------------------------
 	// MAME interface
-	BYTE AYReadReg(int chip, int r);
-	void _AYWriteReg(int chip, int r, int v);
-	void AY8910_reset(int chip);
-	void AY8910Update(int chip, INT16** buffer, int nNumSamples);
+	BYTE AYReadReg(BYTE subunit, BYTE ay, int r);
+	void _AYWriteReg(BYTE subunit, BYTE ay, int r, int v);
+	void AY8910_reset(BYTE subunit, BYTE ay);
+	void AY8910Update(BYTE subunit, BYTE ay, INT16** buffer, int nNumSamples);
 
 	void AY8910_InitAll(int nClock, int nSampleRate);
 	void AY8910_InitClock(int nClock);
-	BYTE* AY8910_GetRegsPtr(UINT uChip);
+	BYTE* AY8910_GetRegsPtr(BYTE subunit, BYTE ay);
 
 	void AY8910UpdateSetCycles();
 
-	UINT AY8910_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, UINT uChip, const std::string& suffix);
-	UINT AY8910_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uChip, const std::string& suffix);
+	UINT AY8910_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, BYTE subunit, BYTE ay, const std::string& suffix);
+	UINT AY8910_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, BYTE subunit, BYTE ay, const std::string& suffix);
 
 	UINT64 m_lastAYUpdateCycle;
 	//-------------------------------------

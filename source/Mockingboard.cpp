@@ -189,32 +189,70 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 
 //-----------------------------------------------------------------------------
 
-void MockingboardCard::AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice)
+void MockingboardCard::WriteToORB(BYTE subunit)
+{
+	BYTE value = m_MBSubUnit[subunit].sy6522.Read(SY6522::rORB);
+
+	if ((subunit & 1) == 0 && // SC01 only at $Cn00 (not $Cn80)
+		m_MBSubUnit[subunit].sy6522.Read(SY6522::rPCR) == 0xB0)
+	{
+		// Votrax speech data
+		const BYTE DDRB = m_MBSubUnit[subunit].sy6522.Read(SY6522::rDDRB);
+		m_MBSubUnit[subunit].ssi263.Votrax_Write((value & DDRB) | (DDRB ^ 0xff));	// DDRB's zero bits (inputs) are high impedence, so output as 1 (GH#952)
+		return;
+	}
+
+#if DBG_MB_SS_CARD
+	if ((subunit & 1) == 1)
+		AY8910_Write(subunit, 0, nValue);
+#else
+	if (m_phasorEnable)
+	{
+		const int kAY0 = 2;		// bit4=0 (active low) selects the 1st AY8913, ie. the only AY8913 in Mockingboard mode (confirmed on real Phasor h/w)
+		const int kAY1 = 1;		// bit3=0 (active low) selects the 2nd AY8913 attached to this 6522 (unavailable in Mockingboard mode)
+		int nAY_CS = (m_phasorMode == PH_Phasor) ? (~(value >> 3) & 3) : kAY0;
+
+		if (nAY_CS & kAY0)
+			AY8910_Write(subunit, 0, value);
+
+		if (nAY_CS & kAY1)
+			AY8910_Write(subunit, 1, value);
+	}
+	else
+	{
+		AY8910_Write(subunit, 0, value);
+	}
+#endif
+}
+
+//-----------------------------------------------------------------------------
+
+void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 {
 	m_regAccessedFlag = true;
-	MB_SUBUNIT* pMB = &m_MBSubUnit[nDevice];
+	MB_SUBUNIT* pMB = &m_MBSubUnit[subunit];
 
 	if (!m_phasorEnable)
-		nDevice += (m_slot - SLOT4) * 2;	// FIXME!
+		subunit += (m_slot - SLOT4) * 2;	// FIXME!
 
-	if ((nValue & 4) == 0)
+	if ((value & 4) == 0)
 	{
 		// RESET: Reset AY8910 only
-		AY8910_reset(nDevice+2*nAYDevice);
+		AY8910_reset(subunit+2*ay);
 	}
 	else
 	{
 		// Determine the AY8910 inputs
-		int nBDIR = (nValue & 2) ? 1 : 0;
+		int nBDIR = (value & 2) ? 1 : 0;
 		const int nBC2 = 1;		// Hardwired to +5V
-		int nBC1 = nValue & 1;
+		int nBC1 = value & 1;
 
 		MockingboardUnitState_e nAYFunc = (MockingboardUnitState_e) ((nBDIR<<2) | (nBC2<<1) | nBC1);
-		MockingboardUnitState_e& state = (nAYDevice == 0) ? pMB->state : pMB->stateB;	// GH#659
+		MockingboardUnitState_e& state = (ay == 0) ? pMB->state : pMB->stateB;	// GH#659
 
 #if _DEBUG
 		if (!m_phasorEnable)
-			_ASSERT(nAYDevice == 0);
+			_ASSERT(ay == 0);
 		if (nAYFunc == AY_WRITE || nAYFunc == AY_LATCH)
 			_ASSERT(state == AY_INACTIVE);
 #endif
@@ -230,11 +268,11 @@ void MockingboardCard::AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice)
 					if (m_phasorEnable && m_phasorMode == PH_EchoPlus)
 						pMB->sy6522.SetRegORA( 0xff & (pMB->sy6522.GetReg(SY6522::rDDRA) ^ 0xff) );	// Phasor (Echo+ mode) doesn't support reading AY8913s - it just reads 1's for the input bits
 					else
-						pMB->sy6522.SetRegORA( AYReadReg(nDevice+2*nAYDevice, pMB->nAYCurrentRegister) & (pMB->sy6522.GetReg(SY6522::rDDRA) ^ 0xff) );
+						pMB->sy6522.SetRegORA( AYReadReg(subunit+2*ay, pMB->nAYCurrentRegister) & (pMB->sy6522.GetReg(SY6522::rDDRA) ^ 0xff) );
 					break;
 
 				case AY_WRITE:		// 6: WRITE TO PSG
-					_AYWriteReg(nDevice+2*nAYDevice, pMB->nAYCurrentRegister, pMB->sy6522.GetReg(SY6522::rORA));
+					_AYWriteReg(subunit+2*ay, pMB->nAYCurrentRegister, pMB->sy6522.GetReg(SY6522::rORA));
 					break;
 
 				case AY_LATCH:		// 7: LATCH ADDRESS
@@ -251,44 +289,6 @@ void MockingboardCard::AY8910_Write(BYTE nDevice, BYTE nValue, BYTE nAYDevice)
 
 		state = nAYFunc;
 	}
-}
-
-//-----------------------------------------------------------------------------
-
-void MockingboardCard::WriteToORB(BYTE device)
-{
-	BYTE value = m_MBSubUnit[device].sy6522.Read(SY6522::rORB);
-
-	if ((device & 1) == 0 && // SC01 only at $Cn00 (not $Cn80)
-		m_MBSubUnit[device].sy6522.Read(SY6522::rPCR) == 0xB0)
-	{
-		// Votrax speech data
-		const BYTE DDRB = m_MBSubUnit[device].sy6522.Read(SY6522::rDDRB);
-		m_MBSubUnit[device].ssi263.Votrax_Write((value & DDRB) | (DDRB ^ 0xff));	// DDRB's zero bits (inputs) are high impedence, so output as 1 (GH#952)
-		return;
-	}
-
-#if DBG_MB_SS_CARD
-	if ((nDevice & 1) == 1)
-		AY8910_Write(nDevice, nValue, 0);
-#else
-	if (m_phasorEnable)
-	{
-		const int kAY0 = 2;		// bit4=0 (active low) selects the 1st AY8913, ie. the only AY8913 in Mockingboard mode (confirmed on real Phasor h/w)
-		const int kAY1 = 1;		// bit3=0 (active low) selects the 2nd AY8913 attached to this 6522 (unavailable in Mockingboard mode)
-		int nAY_CS = (m_phasorMode == PH_Phasor) ? (~(value >> 3) & 3) : kAY0;
-
-		if (nAY_CS & kAY0)
-			AY8910_Write(device, value, 0);
-
-		if (nAY_CS & kAY1)
-			AY8910_Write(device, value, 1);
-	}
-	else
-	{
-		AY8910_Write(device, value, 0);
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -929,24 +929,24 @@ void MockingboardCard::GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS)
 //=============================================================================
 // AY8913 interface
 
-BYTE MockingboardCard::AYReadReg(int chip, int r)
+BYTE MockingboardCard::AYReadReg(BYTE subunit, BYTE ay, int r)
 {
-	const UINT unit = chip / NUM_DEVS_PER_MB;
-	return m_MBSubUnit[unit].ay8913[chip & 1].sound_ay_read(r);
+	_ASSERT(subunit < NUM_SUBUNITS_PER_MB && ay < NUM_AY8913_PER_SUBUNIT);
+	return m_MBSubUnit[subunit].ay8913[ay].sound_ay_read(r);
 }
 
-void MockingboardCard::_AYWriteReg(int chip, int r, int v)
+void MockingboardCard::_AYWriteReg(BYTE subunit, BYTE ay, int r, int v)
 {
+	_ASSERT(subunit < NUM_SUBUNITS_PER_MB && ay < NUM_AY8913_PER_SUBUNIT);
 	libspectrum_dword uOffset = (libspectrum_dword)(g_nCumulativeCycles - m_lastAYUpdateCycle);
-	const UINT unit = chip / NUM_DEVS_PER_MB;
-	m_MBSubUnit[unit].ay8913[chip & 1].sound_ay_write(r, v, uOffset);
+	m_MBSubUnit[subunit].ay8913[ay].sound_ay_write(r, v, uOffset);
 }
 
-void MockingboardCard::AY8910_reset(int chip)
+void MockingboardCard::AY8910_reset(BYTE subunit, BYTE ay)
 {
 	// Don't reset the AY CLK, as this is a property of the card (MB/Phasor), not the AY chip
-	const UINT unit = chip / NUM_DEVS_PER_MB;
-	m_MBSubUnit[unit].ay8913[chip & 1].sound_ay_reset();	// Calls: sound_ay_init();
+	_ASSERT(subunit < NUM_SUBUNITS_PER_MB && ay < NUM_AY8913_PER_SUBUNIT);
+	m_MBSubUnit[subunit].ay8913[ay].sound_ay_reset();	// Calls: sound_ay_init();
 }
 
 void MockingboardCard::AY8910UpdateSetCycles()
@@ -954,24 +954,24 @@ void MockingboardCard::AY8910UpdateSetCycles()
 	m_lastAYUpdateCycle = g_nCumulativeCycles;
 }
 
-void MockingboardCard::AY8910Update(int chip, INT16** buffer, int nNumSamples)
+void MockingboardCard::AY8910Update(BYTE subunit, BYTE ay, INT16** buffer, int nNumSamples)
 {
+	_ASSERT(subunit < NUM_SUBUNITS_PER_MB && ay < NUM_AY8913_PER_SUBUNIT);
 	AY8910UpdateSetCycles();
 
-	const UINT unit = chip / NUM_DEVS_PER_MB;
-	m_MBSubUnit[unit].ay8913[chip & 1].SetFramesize(nNumSamples);
-	m_MBSubUnit[unit].ay8913[chip & 1].SetSoundBuffers(buffer);
-	m_MBSubUnit[unit].ay8913[chip & 1].sound_frame();
+	m_MBSubUnit[subunit].ay8913[ay].SetFramesize(nNumSamples);
+	m_MBSubUnit[subunit].ay8913[ay].SetSoundBuffers(buffer);
+	m_MBSubUnit[subunit].ay8913[ay].sound_frame();
 }
 
 void MockingboardCard::AY8910_InitAll(int nClock, int nSampleRate)
 {
-	for (UINT unit = 0; unit < NUM_DEVS_PER_MB; unit++)
+	for (UINT subunit = 0; subunit < NUM_DEVS_PER_MB; subunit++)
 	{
 		for (UINT ay = 0; ay < 2; ay++)
 		{
-			m_MBSubUnit[unit].ay8913[ay].sound_init(NULL);	// Inits mainly static members (except ay_tick_incr)
-			m_MBSubUnit[unit].ay8913[ay].sound_ay_init();
+			m_MBSubUnit[subunit].ay8913[ay].sound_init(NULL);	// Inits mainly static members (except ay_tick_incr)
+			m_MBSubUnit[subunit].ay8913[ay].sound_ay_init();
 		}
 	}
 }
@@ -980,41 +980,32 @@ void MockingboardCard::AY8910_InitClock(int nClock)
 {
 	AY8913::SetCLK((double)nClock);
 
-	for (UINT unit = 0; unit < NUM_DEVS_PER_MB; unit++)
+	for (UINT subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
 	{
-		for (UINT ay = 0; ay < 2; ay++)
+		for (UINT ay = 0; ay < NUM_AY8913_PER_SUBUNIT; ay++)
 		{
-			m_MBSubUnit[unit].ay8913[ay].sound_init(NULL);	// Inits mainly static members (except ay_tick_incr)
+			m_MBSubUnit[subunit].ay8913[ay].sound_init(NULL);	// Inits mainly static members (except ay_tick_incr)
 		}
 	}
 }
 
-BYTE* MockingboardCard::AY8910_GetRegsPtr(UINT chip)
+BYTE* MockingboardCard::AY8910_GetRegsPtr(BYTE subunit, BYTE ay)
 {
-	if (chip >= NUM_AY8913)
-		return NULL;
-
-	const UINT unit = chip / NUM_DEVS_PER_MB;
-	return m_MBSubUnit[unit].ay8913[chip & 1].GetAYRegsPtr();
+	_ASSERT(subunit < NUM_SUBUNITS_PER_MB && ay < NUM_AY8913_PER_SUBUNIT);
+	return m_MBSubUnit[subunit].ay8913[ay].GetAYRegsPtr();
 }
 
-UINT MockingboardCard::AY8910_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT chip, const std::string& suffix)
+UINT MockingboardCard::AY8910_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, BYTE subunit, BYTE ay, const std::string& suffix)
 {
-	if (chip >= NUM_AY8913)
-		return 0;
-
-	const UINT unit = chip / NUM_DEVS_PER_MB;
-	m_MBSubUnit[unit].ay8913[chip & 1].SaveSnapshot(yamlSaveHelper, suffix);
+	_ASSERT(subunit < NUM_SUBUNITS_PER_MB && ay < NUM_AY8913_PER_SUBUNIT);
+	m_MBSubUnit[subunit].ay8913[ay].SaveSnapshot(yamlSaveHelper, suffix);
 	return 1;
 }
 
-UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT chip, const std::string& suffix)
+UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, BYTE subunit, BYTE ay, const std::string& suffix)
 {
-	if (chip >= NUM_AY8913)
-		return 0;
-
-	const UINT unit = chip / NUM_DEVS_PER_MB;
-	return m_MBSubUnit[unit].ay8913[chip & 1].LoadSnapshot(yamlLoadHelper, suffix) ? 1 : 0;
+	_ASSERT(subunit < NUM_SUBUNITS_PER_MB && ay < NUM_AY8913_PER_SUBUNIT);
+	return m_MBSubUnit[subunit].ay8913[ay].LoadSnapshot(yamlLoadHelper, suffix) ? 1 : 0;
 }
 
 //=============================================================================
