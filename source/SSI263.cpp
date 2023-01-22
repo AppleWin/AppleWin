@@ -382,7 +382,7 @@ void SSI263::Play(unsigned int nPhoneme)
 	m_currSampleMod4 = 0;
 
 	// Set m_lastUpdateCycle, otherwise UpdateAccurateLength() can immediately complete phoneme! (GH#1104)
-	m_lastUpdateCycle = MB_GetLastCumulativeCycles();
+	m_lastUpdateCycle = GetLastCumulativeCycles();
 }
 
 void SSI263::Stop(void)
@@ -510,8 +510,8 @@ void SSI263::Update(void)
 		const double kMinimumUpdateInterval = 500.0;	// Arbitary (500 cycles = 21 samples)
 		const double kMaximumUpdateInterval = (double)(0xFFFF + 2);	// Max 6522 timer interval (1372 samples)
 
-		_ASSERT(MB_GetLastCumulativeCycles() >= m_lastUpdateCycle);
-		updateInterval = (double)(MB_GetLastCumulativeCycles() - m_lastUpdateCycle);
+		_ASSERT(GetLastCumulativeCycles() >= m_lastUpdateCycle);
+		updateInterval = (double)(GetLastCumulativeCycles() - m_lastUpdateCycle);
 		if (updateInterval < kMinimumUpdateInterval)
 			return;
 		if (updateInterval > kMaximumUpdateInterval)

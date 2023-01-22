@@ -633,7 +633,7 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 	else if (!g_cmdLine.wavFileMockingboard.empty())
 	{
 		if (RiffInitWriteFile(g_cmdLine.wavFileMockingboard.c_str(), 44100, 2))
-			MB_OutputToRiff();
+			GetCardMgr().GetMockingboardCardMgr().OutputToRiff();
 	}
 
 	// Initialize COM - so we can use CoCreateInstance

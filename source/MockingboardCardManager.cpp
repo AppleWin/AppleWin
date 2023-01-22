@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Core.h"
 #include "CardManager.h"
 #include "Mockingboard.h"
+#include "Riff.h"
 
 //#define DBG_MB_UPDATE
 
@@ -438,7 +439,6 @@ void MockingboardCardManager::MixAllAndCopyToRingBuffer(UINT nNumSamples)
 
 	m_byteOffset = (m_byteOffset + (DWORD)nNumSamples * sizeof(short) * NUM_MB_CHANNELS) % SOUNDBUFFER_SIZE;
 
-#ifdef RIFF_MB
-	RiffPutSamples(&g_nMixBuffer[0], nNumSamples);
-#endif
+	if (m_outputToRiff)
+		RiffPutSamples(&m_mixBuffer[0], nNumSamples);
 }

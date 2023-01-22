@@ -52,7 +52,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SoundCore.h"
 #include "SynchronousEventManager.h"
 #include "YamlHelper.h"
-#include "Riff.h"
 
 #include "AY8910.h"
 #include "SSI263.h"
@@ -650,19 +649,19 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 				WriteToORB(SY6522_DEVICE_B);
 		}
 
-		bool CS_SSI263_A = (g_phasorMode == PH_Phasor)	? !(nAddr & 0x80) && (nAddr & 0x40)	// SSI263 at $Cn4x, $Cn6x
+		bool CS_SSI263_A = (m_phasorMode == PH_Phasor)	? !(nAddr & 0x80) && (nAddr & 0x40)	// SSI263 at $Cn4x, $Cn6x
 														: nAddr & 0x40;						// SSI263 at $Cn4x-Cn7x, $CnCx-CnFx
 
-		bool CS_SSI263_B = (g_phasorMode == PH_Phasor)	? !(nAddr & 0x80) && (nAddr & 0x20)	// SSI263 at $Cn2x, $Cn6x
+		bool CS_SSI263_B = (m_phasorMode == PH_Phasor)	? !(nAddr & 0x80) && (nAddr & 0x20)	// SSI263 at $Cn2x, $Cn6x
 														: nAddr & 0x20;						// SSI263 at $Cn2x-Cn3x, $Cn6x-Cn7x, $CnAx-CnBx, $CnEx-CnFx
 
-		if (g_phasorMode == PH_Mockingboard || g_phasorMode == PH_Phasor)	// No SSI263 for Echo+
+		if (m_phasorMode == PH_Mockingboard || m_phasorMode == PH_Phasor)	// No SSI263 for Echo+
 		{
 			// NB. Mockingboard mode: writes to $Cn4x/SSI263 also get written to 1st 6522 (have confirmed on real Phasor h/w)
 			if (CS_SSI263_A)	// Primary SSI263
-				g_MB[1].ssi263.Write(nAddr&0x7, nValue);	// 2nd 6522 is used for 1st speech chip
+				m_MBSubUnit[1].ssi263.Write(nAddr&0x7, nValue);	// 2nd 6522 is used for 1st speech chip
 			if (CS_SSI263_B)	// Secondary SSI263
-				g_MB[0].ssi263.Write(nAddr&0x7, nValue);	// 1st 6522 is used for 2nd speech chip
+				m_MBSubUnit[0].ssi263.Write(nAddr&0x7, nValue);	// 1st 6522 is used for 2nd speech chip
 		}
 
 		return 0;
@@ -1021,6 +1020,7 @@ UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, BYTE 
 //    Changed at AppleWin 1.30.8
 // 9: Phasor AY's are swapped (means that AppleWin 1.30.10 and 1.30.11 are wrong)
 //    Changed at AppleWin 1.30.12
+const UINT kUNIT_VERSION = 9;
 
 #define SS_YAML_KEY_MB_UNIT "Unit"
 #define SS_YAML_KEY_AY_CURR_REG "AY Current Register"

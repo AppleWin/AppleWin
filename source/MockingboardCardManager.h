@@ -12,6 +12,7 @@ public:
 		m_byteOffset = (DWORD)-1;
 		m_cyclesThisAudioFrame = 0;
 		m_userVolume = 0;
+		m_outputToRiff = false;
 
 		// NB. Cmd line has already been processed
 		LogFileOutput("MBCardMgr::ctor() g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
@@ -28,6 +29,7 @@ public:
 	bool IsActive(void);
 	DWORD GetVolume(void);
 	void SetVolume(DWORD volume, DWORD volumeMax);
+	void OutputToRiff(void) { m_outputToRiff = true; }
 
 	void Destroy(void);
 	void Reset(const bool powerCycle)
@@ -70,4 +72,5 @@ private:
 	DWORD m_byteOffset;
 	UINT m_cyclesThisAudioFrame;
 	DWORD m_userVolume;	// GUI's slide volume
+	bool m_outputToRiff;
 };
