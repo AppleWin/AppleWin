@@ -232,9 +232,6 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 	m_regAccessedFlag = true;
 	MB_SUBUNIT* pMB = &m_MBSubUnit[subunit];
 
-	if (!m_phasorEnable)
-		subunit += (m_slot - SLOT4) * 2;	// FIXME!
-
 	if ((value & 4) == 0)
 	{
 		// RESET: Reset AY8910 only
@@ -529,14 +526,8 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 	}
 #endif
 
-	BYTE nMB = 0;	// (nAddr >> 8) & 0xf - SLOT4;
-	BYTE nOffset = nAddr&0xff;
-
 	if (m_phasorEnable)
 	{
-		if (nMB != 0)	// Slot4 only
-			return MemReadFloatingBus(nExecutedCycles);
-
 		int CS = 0;
 		if (m_phasorMode == PH_Mockingboard)
 			CS = ( ( nAddr & 0x80 ) >> 7 ) + 1;							// 1 or 2
@@ -548,10 +539,10 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 		BYTE nRes = 0;
 
 		if (CS & 1)
-			nRes |= m_MBSubUnit[nMB * NUM_SUBUNITS_PER_MB + SY6522_DEVICE_A].sy6522.Read(nAddr & 0xf);
+			nRes |= m_MBSubUnit[SY6522_DEVICE_A].sy6522.Read(nAddr & 0xf);
 
 		if (CS & 2)
-			nRes |= m_MBSubUnit[nMB * NUM_SUBUNITS_PER_MB + SY6522_DEVICE_B].sy6522.Read(nAddr & 0xf);
+			nRes |= m_MBSubUnit[SY6522_DEVICE_B].sy6522.Read(nAddr & 0xf);
 
 		bool bAccessedDevice = (CS & 3) ? true : false;
 
@@ -561,9 +552,9 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 		{
 			_ASSERT(!bAccessedDevice);
 			if (nAddr & 0x40)	// Primary SSI263
-				nRes = m_MBSubUnit[nMB * NUM_SUBUNITS_PER_MB + 1].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
+				nRes = m_MBSubUnit[1].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
 			if (nAddr & 0x20)	// Secondary SSI263
-				nRes = m_MBSubUnit[nMB * NUM_SUBUNITS_PER_MB + 0].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
+				nRes = m_MBSubUnit[0].ssi263.Read(nExecutedCycles);		// SSI263 only drives bit7
 			bAccessedDevice = true;
 		}
 
@@ -576,9 +567,10 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 #endif
 
 	// NB. Mockingboard: SSI263.bit7 not readable (TODO: check this with real h/w)
-	const BYTE device = nMB * NUM_SUBUNITS_PER_MB + ((nOffset < SY6522B_Offset) ? SY6522_DEVICE_A : SY6522_DEVICE_B);
+	const BYTE offset = nAddr & 0xff;
+	const BYTE subunit = (offset < SY6522B_Offset) ? SY6522_DEVICE_A : SY6522_DEVICE_B;
 	const BYTE reg = nAddr & 0xf;
-	return m_MBSubUnit[device].sy6522.Read(reg);
+	return m_MBSubUnit[subunit].sy6522.Read(reg);
 }
 
 //-----------------------------------------------------------------------------
@@ -632,14 +624,8 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 		}
 	}
 
-	BYTE nMB = 0;	// ((nAddr >> 8) & 0xf) - SLOT4;
-	BYTE nOffset = nAddr&0xff;
-
 	if (m_phasorEnable)
 	{
-		if (nMB != 0)	// Slot4 only
-			return 0;
-
 		int CS = 0;
 		if (m_phasorMode == PH_Mockingboard)
 			CS = ( ( nAddr & 0x80 ) >> 7 ) + 1;							// 1 or 2
@@ -650,20 +636,18 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 
 		if (CS & 1)
 		{
-			const BYTE device = nMB * NUM_SUBUNITS_PER_MB + SY6522_DEVICE_A;
 			const BYTE reg = nAddr & 0xf;
-			m_MBSubUnit[device].sy6522.Write(reg, nValue);
+			m_MBSubUnit[SY6522_DEVICE_A].sy6522.Write(reg, nValue);
 			if (reg == SY6522::rORB)
-				WriteToORB(device);
+				WriteToORB(SY6522_DEVICE_A);
 		}
 
 		if (CS & 2)
 		{
-			const BYTE device = nMB * NUM_SUBUNITS_PER_MB + SY6522_DEVICE_B;
 			const BYTE reg = nAddr & 0xf;
-			m_MBSubUnit[device].sy6522.Write(reg, nValue);
+			m_MBSubUnit[SY6522_DEVICE_B].sy6522.Write(reg, nValue);
 			if (reg == SY6522::rORB)
-				WriteToORB(device);
+				WriteToORB(SY6522_DEVICE_B);
 		}
 
 		bool CS_SSI263 = !(nAddr & 0x80) && (nAddr & 0x60);				// SSI263 at $Cn2x and/or $Cn4x
@@ -673,25 +657,26 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 			// NB. Mockingboard mode: writes to $Cn4x/SSI263 also get written to 1st 6522 (have confirmed on real Phasor h/w)
 			_ASSERT( (m_phasorMode == PH_Mockingboard && (CS==0 || CS==1)) || (m_phasorMode == PH_Phasor && (CS==0)) );
 			if (nAddr & 0x40)	// Primary SSI263
-				m_MBSubUnit[nMB * NUM_SUBUNITS_PER_MB + 1].ssi263.Write(nAddr&0x7, nValue);	// 2nd 6522 is used for 1st speech chip
+				m_MBSubUnit[1].ssi263.Write(nAddr&0x7, nValue);	// 2nd 6522 is used for 1st speech chip
 			if (nAddr & 0x20)	// Secondary SSI263
-				m_MBSubUnit[nMB * NUM_SUBUNITS_PER_MB + 0].ssi263.Write(nAddr&0x7, nValue);	// 1st 6522 is used for 2nd speech chip
+				m_MBSubUnit[0].ssi263.Write(nAddr&0x7, nValue);	// 1st 6522 is used for 2nd speech chip
 		}
 
 		return 0;
 	}
 
-	const BYTE device = nMB * NUM_SUBUNITS_PER_MB + ((nOffset < SY6522B_Offset) ? SY6522_DEVICE_A : SY6522_DEVICE_B);
+	const BYTE offset = nAddr & 0xff;
+	const BYTE subunit = (offset < SY6522B_Offset) ? SY6522_DEVICE_A : SY6522_DEVICE_B;
 	const BYTE reg = nAddr & 0xf;
-	m_MBSubUnit[device].sy6522.Write(reg, nValue);
+	m_MBSubUnit[subunit].sy6522.Write(reg, nValue);
 	if (reg == SY6522::rORB)
-		WriteToORB(device);
+		WriteToORB(subunit);
 
 #if !DBG_MB_SS_CARD
 	if (nAddr & 0x40)
-		m_MBSubUnit[nMB * NUM_SUBUNITS_PER_MB + 1].ssi263.Write(nAddr&0x7, nValue);		// 2nd 6522 is used for 1st speech chip
+		m_MBSubUnit[1].ssi263.Write(nAddr&0x7, nValue);		// 2nd 6522 is used for 1st speech chip
 	if (nAddr & 0x20)
-		m_MBSubUnit[nMB * NUM_SUBUNITS_PER_MB + 0].ssi263.Write(nAddr&0x7, nValue);		// 1st 6522 is used for 2nd speech chip
+		m_MBSubUnit[0].ssi263.Write(nAddr&0x7, nValue);		// 1st 6522 is used for 2nd speech chip
 #endif
 
 	return 0;

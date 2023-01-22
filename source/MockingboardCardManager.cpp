@@ -393,10 +393,10 @@ void MockingboardCardManager::MixAllAndCopyToRingBuffer(UINT nNumSamples)
 
 				// Regular MB-C AY's
 				nDataL += (int)((double)ppAYVoiceBuffer[0 * NUM_VOICES_PER_AY8913 + j][i] * fAttenuation);
-				nDataR += (int)((double)ppAYVoiceBuffer[1 * NUM_VOICES_PER_AY8913 + j][i] * fAttenuation);
+				nDataR += (int)((double)ppAYVoiceBuffer[2 * NUM_VOICES_PER_AY8913 + j][i] * fAttenuation);
 
 				// Extra Phasor AY's
-				nDataL += (int)((double)ppAYVoiceBuffer[2 * NUM_VOICES_PER_AY8913 + j][i] * fAttenuation);
+				nDataL += (int)((double)ppAYVoiceBuffer[1 * NUM_VOICES_PER_AY8913 + j][i] * fAttenuation);
 				nDataR += (int)((double)ppAYVoiceBuffer[3 * NUM_VOICES_PER_AY8913 + j][i] * fAttenuation);
 			}
 		}
