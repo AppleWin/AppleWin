@@ -70,8 +70,8 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 		m_ppAYVoiceBuffer[NUM_VOICES] = NULL;
 
 	// Construct via placement new, so that it is an array of 'MB_SUBUNIT' objects
-	m_MBSubUnit = (MB_SUBUNIT*) new BYTE[sizeof(MB_SUBUNIT) * NUM_SY6522];
-	for (UINT i = 0; i < NUM_SY6522; i++)
+	m_MBSubUnit = (MB_SUBUNIT*) new BYTE[sizeof(MB_SUBUNIT) * NUM_SUBUNITS_PER_MB];
+	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 		new (&m_MBSubUnit[i]) MB_SUBUNIT(m_slot);
 
 	m_inActiveCycleCount = 0;
@@ -96,7 +96,7 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	for (UINT i = 0; i < NUM_VOICES; i++)
 		m_ppAYVoiceBuffer[i] = new short[MAX_SAMPLES];	// Buffer can hold a max of 0.37 seconds worth of samples (16384/44100)
 
-	for (UINT i = 0; i < NUM_SY6522; i++)
+	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 	{
 		m_MBSubUnit[i] = MB_SUBUNIT(m_slot);
 		m_MBSubUnit[i].nAY8910Number = i;
@@ -117,7 +117,7 @@ MockingboardCard::~MockingboardCard(void)
 {
 	Destroy();
 
-	for (UINT i = 0; i < NUM_SY6522; i++)
+	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 		m_MBSubUnit[i].~MB_SUBUNIT();
 	delete[](BYTE*) m_MBSubUnit;
 }
@@ -127,7 +127,7 @@ MockingboardCard::~MockingboardCard(void)
 bool MockingboardCard::IsAnyTimer1Active(void)
 {
 	bool active = false;
-	for (UINT i = 0; i < NUM_SY6522; i++)
+	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 		active |= m_MBSubUnit[i].sy6522.IsTimer1Active();
 	return active;
 }
@@ -138,7 +138,7 @@ bool MockingboardCard::IsAnyTimer1Active(void)
 void MockingboardCard::Get6522IrqDescription(std::string& desc)
 {
 	bool isIRQ = false;
-	for (UINT i = 0; i < NUM_SY6522; i++)
+	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 	{
 		if (m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IFR_IRQ)
 		{
@@ -156,7 +156,7 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 	desc += m_slot;
 	desc += ": ";
 
-	for (UINT i=0; i<NUM_SY6522; i++)
+	for (UINT i=0; i< NUM_SUBUNITS_PER_MB; i++)
 	{
 		if (m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IFR_IRQ)
 		{
@@ -193,7 +193,7 @@ void MockingboardCard::WriteToORB(BYTE subunit)
 {
 	BYTE value = m_MBSubUnit[subunit].sy6522.Read(SY6522::rORB);
 
-	if ((subunit & 1) == 0 && // SC01 only at $Cn00 (not $Cn80)
+	if (subunit == 0 && // SC01 only at $Cn00 (not $Cn80)
 		m_MBSubUnit[subunit].sy6522.Read(SY6522::rPCR) == 0xB0)
 	{
 		// Votrax speech data
@@ -213,14 +213,14 @@ void MockingboardCard::WriteToORB(BYTE subunit)
 		int nAY_CS = (m_phasorMode == PH_Phasor) ? (~(value >> 3) & 3) : kAY0;
 
 		if (nAY_CS & kAY0)
-			AY8910_Write(subunit, 0, value);
+			AY8910_Write(subunit, AY8913_DEVICE_A, value);
 
 		if (nAY_CS & kAY1)
-			AY8910_Write(subunit, 1, value);
+			AY8910_Write(subunit, AY8913_DEVICE_B, value);
 	}
 	else
 	{
-		AY8910_Write(subunit, 0, value);
+		AY8910_Write(subunit, AY8913_DEVICE_A, value);
 	}
 #endif
 }
@@ -248,11 +248,11 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 		int nBC1 = value & 1;
 
 		MockingboardUnitState_e nAYFunc = (MockingboardUnitState_e) ((nBDIR<<2) | (nBC2<<1) | nBC1);
-		MockingboardUnitState_e& state = (ay == 0) ? pMB->state : pMB->stateB;	// GH#659
+		MockingboardUnitState_e& state = (ay == AY8913_DEVICE_A) ? pMB->state : pMB->stateB;	// GH#659
 
 #if _DEBUG
 		if (!m_phasorEnable)
-			_ASSERT(ay == 0);
+			_ASSERT(ay == AY8913_DEVICE_A);
 		if (nAYFunc == AY_WRITE || nAYFunc == AY_LATCH)
 			_ASSERT(state == AY_INACTIVE);
 #endif
@@ -306,7 +306,7 @@ void MockingboardCard::UpdateIRQ(void)
 	// Now update the IRQ signal from all 6522s
 	// . OR-sum of all active TIMER1, TIMER2 & SPEECH sources (from all 6522s)
 	UINT bIRQ = 0;
-	for (UINT i=0; i<NUM_SY6522; i++)
+	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 		bIRQ |= m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & 0x80;
 
 	// NB. Mockingboard generates IRQ on both 6522s:
@@ -825,7 +825,7 @@ void MockingboardCard::UpdateCycles(ULONG executedCycles)
 	_ASSERT(uCycles < 0x10000 || g_nAppMode == MODE_BENCHMARK);
 	USHORT nClocks = (USHORT)uCycles;
 
-	for (int i = 0; i < NUM_SY6522; i++)
+	for (int i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 	{
 		m_MBSubUnit[i].sy6522.UpdateTimer1(nClocks);
 		m_MBSubUnit[i].sy6522.UpdateTimer2(nClocks);
@@ -1071,16 +1071,16 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, pMB->ssi263.GetVotraxPhoneme());
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, m_MBSubUnit[0].ssi263.GetVotraxPhoneme());	// SC01 only in subunit 0
 
-	for (UINT subunit =0; subunit<NUM_SUBUNITS_PER_MB; subunit++)
+	for (UINT subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
 	{
 		MB_SUBUNIT* pMB = &m_MBSubUnit[subunit];
 
 		YamlSaveHelper::Label unit(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_MB_UNIT, subunit);
 
 		pMB->sy6522.SaveSnapshot(yamlSaveHelper);
-		AY8910_SaveSnapshot(yamlSaveHelper, subunit, 0, std::string(""));	// AY0
+		AY8910_SaveSnapshot(yamlSaveHelper, subunit, AY8913_DEVICE_A, std::string(""));
 		pMB->ssi263.SaveSnapshot(yamlSaveHelper);
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state);
@@ -1090,37 +1090,35 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (QueryType() == CT_Phasor)
-		return Phasor_LoadSnapshot(yamlLoadHelper, version);
-
-	//
-
-	if (m_slot != 4 && m_slot != 5)	// fixme
+	if (m_slot == 0 || m_slot == 3)
 		throw std::runtime_error("Card: wrong slot");
 
 	if (version < 1 || version > kUNIT_VERSION)
 		throw std::runtime_error("Card: wrong version");
 
+	if (QueryType() == CT_Phasor)
+		return Phasor_LoadSnapshot(yamlLoadHelper, version);
+
+	//
+
 	AY8910UpdateSetCycles();
 
-	const UINT nMbCardNum = m_slot - SLOT4;	// FIXME
-	UINT nDeviceNum = nMbCardNum*2;
-	MB_SUBUNIT* pMB = &m_MBSubUnit[0];
-
 	bool isVotrax = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
-	pMB->ssi263.SetVotraxPhoneme(isVotrax);
+	m_MBSubUnit[0].ssi263.SetVotraxPhoneme(isVotrax);	// SC01 only in subunit 0
 
-	for (UINT i=0; i<NUM_SUBUNITS_PER_MB; i++)
+	for (UINT subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
 	{
-		char szNum[2] = {char('0' + i), 0};
+		MB_SUBUNIT* pMB = &m_MBSubUnit[subunit];
+
+		char szNum[2] = {char('0' + subunit), 0};
 		std::string unit = std::string(SS_YAML_KEY_MB_UNIT) + std::string(szNum);
 		if (!yamlLoadHelper.GetSubMap(unit))
 			throw std::runtime_error("Card: Expected key: " + unit);
 
 		pMB->sy6522.LoadSnapshot(yamlLoadHelper, version);
 		UpdateIFRandIRQ(pMB, 0, pMB->sy6522.GetReg(SY6522::rIFR));			// Assert any pending IRQs (GH#677)
-		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum, std::string(""));
-		pMB->ssi263.LoadSnapshot(yamlLoadHelper, nDeviceNum, PH_Mockingboard, version);		// Pre: SetVotraxPhoneme()
+		AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string(""));
+		pMB->ssi263.LoadSnapshot(yamlLoadHelper, subunit, PH_Mockingboard, version);	// Pre: SetVotraxPhoneme() // TODO - check subunit == device
 
 		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
 
@@ -1148,11 +1146,6 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 			pMB->state = (MockingboardUnitState_e) (yamlLoadHelper.LoadUint(SS_YAML_KEY_MB_UNIT_STATE) & 7);
 
 		yamlLoadHelper.PopMap();
-
-		//
-
-		nDeviceNum++;
-		pMB++;
 	}
 
 	AY8910_InitClock((int)Get6502BaseClock());
@@ -1164,45 +1157,32 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 
 void MockingboardCard::Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	if (m_slot != 4)
-		throw std::runtime_error("Card: Phasor only supported in slot-4");
-
-	UINT nDeviceNum = 0;
-	MB_SUBUNIT* pMB = &m_MBSubUnit[0];	// fixme: Phasor uses MB's slot4(2x6522), slot4(2xSSI263), but slot4+5(4xAY8910)
-
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardNamePhasor(), m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASOR_MODE, m_phasorMode);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, pMB->ssi263.GetVotraxPhoneme());
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, m_MBSubUnit[0].ssi263.GetVotraxPhoneme());	// SC01 only in subunit 0
 
-	for (UINT i=0; i<NUM_SUBUNITS_PER_MB; i++)
+	for (UINT subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
 	{
-		YamlSaveHelper::Label unit(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_PHASOR_UNIT, i);
+		MB_SUBUNIT* pMB = &m_MBSubUnit[subunit];
+
+		YamlSaveHelper::Label unit(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_PHASOR_UNIT, subunit);
 
 		pMB->sy6522.SaveSnapshot(yamlSaveHelper);
-		AY8910_SaveSnapshot(yamlSaveHelper, nDeviceNum+0, std::string("-A"));
-		AY8910_SaveSnapshot(yamlSaveHelper, nDeviceNum+1, std::string("-B"));
+		AY8910_SaveSnapshot(yamlSaveHelper, subunit, AY8913_DEVICE_A, std::string("-A"));
+		AY8910_SaveSnapshot(yamlSaveHelper, subunit, AY8913_DEVICE_B, std::string("-B"));
 		pMB->ssi263.SaveSnapshot(yamlSaveHelper);
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state);
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE_B, pMB->stateB);
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
-
-		nDeviceNum += 2;
-		pMB++;
 	}
 }
 
 bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (m_slot != 4)	// fixme
-		throw std::runtime_error("Card: wrong slot");
-
-	if (version < 1 || version > kUNIT_VERSION)
-		throw std::runtime_error("Card: wrong version");
-
 	if (version < 6)
 		yamlLoadHelper.LoadUint(SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR);	// Consume redundant data
 
@@ -1223,20 +1203,22 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 	MB_SUBUNIT* pMB = &m_MBSubUnit[0];
 
 	bool isVotrax = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
-	pMB->ssi263.SetVotraxPhoneme(isVotrax);
+	m_MBSubUnit[0].ssi263.SetVotraxPhoneme(isVotrax);	// SC01 only in subunit 0
 
-	for (UINT i=0; i<NUM_SUBUNITS_PER_MB; i++)
+	for (UINT subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
 	{
-		char szNum[2] = {char('0' + i), 0};
+		MB_SUBUNIT* pMB = &m_MBSubUnit[subunit];
+
+		char szNum[2] = {char('0' + subunit), 0};
 		std::string unit = std::string(SS_YAML_KEY_MB_UNIT) + std::string(szNum);
 		if (!yamlLoadHelper.GetSubMap(unit))
 			throw std::runtime_error("Card: Expected key: " + unit);
 
 		pMB->sy6522.LoadSnapshot(yamlLoadHelper, version);
 		UpdateIFRandIRQ(pMB, 0, pMB->sy6522.GetReg(SY6522::rIFR));			// Assert any pending IRQs (GH#677)
-		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+0, std::string("-A"));
-		AY8910_LoadSnapshot(yamlLoadHelper, nDeviceNum+1, std::string("-B"));
-		pMB->ssi263.LoadSnapshot(yamlLoadHelper, nDeviceNum, PH_Phasor, version);	// Pre: SetVotraxPhoneme()
+		AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string("-A"));
+		AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_B, std::string("-B"));
+		pMB->ssi263.LoadSnapshot(yamlLoadHelper, subunit, PH_Phasor, version);	// Pre: SetVotraxPhoneme()
 
 		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
 
@@ -1266,11 +1248,6 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 			pMB->stateB = (MockingboardUnitState_e) (yamlLoadHelper.LoadUint(SS_YAML_KEY_MB_UNIT_STATE_B) & 7);
 
 		yamlLoadHelper.PopMap();
-
-		//
-
-		nDeviceNum += 2;
-		pMB++;
 	}
 
 	AY8910_InitClock((int)(Get6502BaseClock() * m_phasorClockScaleFactor));
