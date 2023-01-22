@@ -1015,7 +1015,9 @@ UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, BYTE 
 // 7: Added SS_YAML_KEY_SSI263_REG_ACTIVE_PHONEME to SSI263 sub-unit
 // 8: Moved Timer1 & Timer2 active to 6522 sub-unit
 //    Removed Timer1/Timer2/Speech IRQ Pending
-const UINT kUNIT_VERSION = 8;
+// 9: Phasor AY's are swapped (means that AppleWin 1.30.10 and 1.30.11 are wrong)
+//    Changed at AppleWin 1.30.12
+const UINT kUNIT_VERSION = 9;
 
 #define SS_YAML_KEY_MB_UNIT "Unit"
 #define SS_YAML_KEY_AY_CURR_REG "AY Current Register"
@@ -1201,8 +1203,17 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 
 		pMB->sy6522.LoadSnapshot(yamlLoadHelper, version);
 		UpdateIFRandIRQ(pMB, 0, pMB->sy6522.GetReg(SY6522::rIFR));			// Assert any pending IRQs (GH#677)
-		AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string("-A"));
-		AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_B, std::string("-B"));
+		if (version >= 5 && version <= 8)
+		{
+			const UINT phasorSubunit = subunit == 0 ? 1 : 0;
+			AY8910_LoadSnapshot(yamlLoadHelper, phasorSubunit, AY8913_DEVICE_A, std::string("-A"));
+			AY8910_LoadSnapshot(yamlLoadHelper, phasorSubunit, AY8913_DEVICE_B, std::string("-B"));
+		}
+		else
+		{
+			AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string("-A"));
+			AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_B, std::string("-B"));
+		}
 		pMB->ssi263.LoadSnapshot(yamlLoadHelper, PH_Phasor, version);	// Pre: SetVotraxPhoneme()
 
 		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
