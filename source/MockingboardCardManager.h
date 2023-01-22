@@ -8,9 +8,9 @@ class MockingboardCardManager
 public:
 	MockingboardCardManager(void)
 	{
-		nNumSamplesError = 0;
-		dwByteOffset = (DWORD)-1;
-		g_cyclesThisAudioFrame = 0;
+		m_numSamplesError = 0;
+		m_byteOffset = (DWORD)-1;
+		m_cyclesThisAudioFrame = 0;
 		m_userVolume = 0;
 
 		// NB. Cmd line has already been processed
@@ -32,7 +32,7 @@ public:
 	void Destroy(void);
 	void Reset(const bool powerCycle)
 	{
-		g_cyclesThisAudioFrame = 0;
+		m_cyclesThisAudioFrame = 0;
 	}
 	void Update(const ULONG executedCycles);
 	void UpdateSoundBuffer(void);
@@ -54,21 +54,19 @@ private:
 	static const UINT NUM_VOICES_PER_AY8913 = 3;
 	static const UINT NUM_VOICES = (NUM_AY8913 * NUM_VOICES_PER_AY8913);
 
-	static const unsigned short g_nMB_NumChannels = 2;
-	static const DWORD g_dwDSBufferSize = MAX_SAMPLES * sizeof(short) * g_nMB_NumChannels;
+	static const unsigned short NUM_MB_CHANNELS = 2;
+	static const DWORD SOUNDBUFFER_SIZE = MAX_SAMPLES * sizeof(short) * NUM_MB_CHANNELS;
 
-	static const SHORT nWaveDataMin = (SHORT)0x8000;
-	static const SHORT nWaveDataMax = (SHORT)0x7FFF;
+	static const SHORT WAVE_DATA_MIN = (SHORT)0x8000;
+	static const SHORT WAVE_DATA_MAX = (SHORT)0x7FFF;
 
-	short g_nMixBuffer[g_dwDSBufferSize / sizeof(short)];
-	VOICE MockingboardVoice;
+	short m_mixBuffer[SOUNDBUFFER_SIZE / sizeof(short)];
+	VOICE m_mockingboardVoice;
 
 	//
 
-	int nNumSamplesError;
-	DWORD dwByteOffset;
-
-	UINT g_cyclesThisAudioFrame;
-
+	int m_numSamplesError;
+	DWORD m_byteOffset;
+	UINT m_cyclesThisAudioFrame;
 	DWORD m_userVolume;	// GUI's slide volume
 };

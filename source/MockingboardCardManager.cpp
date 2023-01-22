@@ -56,10 +56,10 @@ void MockingboardCardManager::InitializeForLoadingSnapshot(void)
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;
 
-	if (!MockingboardVoice.lpDSBvoice)
+	if (!m_mockingboardVoice.lpDSBvoice)
 		return;
 
-	DSVoiceStop(&MockingboardVoice);	// Reason: 'MB voice is playing' then loading a save-state where 'no MB present' (GH#609)
+	DSVoiceStop(&m_mockingboardVoice);	// Reason: 'MB voice is playing' then loading a save-state where 'no MB present' (GH#609)
 }
 
 void MockingboardCardManager::MuteControl(bool mute)
@@ -72,18 +72,18 @@ void MockingboardCardManager::MuteControl(bool mute)
 
 	if (mute)
 	{
-		if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
+		if (m_mockingboardVoice.bActive && !m_mockingboardVoice.bMute)
 		{
-			MockingboardVoice.lpDSBvoice->SetVolume(DSBVOLUME_MIN);
-			MockingboardVoice.bMute = true;
+			m_mockingboardVoice.lpDSBvoice->SetVolume(DSBVOLUME_MIN);
+			m_mockingboardVoice.bMute = true;
 		}
 	}
 	else
 	{
-		if (MockingboardVoice.bActive && MockingboardVoice.bMute)
+		if (m_mockingboardVoice.bActive && m_mockingboardVoice.bMute)
 		{
-			MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
-			MockingboardVoice.bMute = false;
+			m_mockingboardVoice.lpDSBvoice->SetVolume(m_mockingboardVoice.nVolume);
+			m_mockingboardVoice.bMute = false;
 		}
 	}
 }
@@ -108,7 +108,7 @@ void MockingboardCardManager::UpdateCycles(ULONG executedCycles)
 
 bool MockingboardCardManager::IsActive(void)
 {
-	if (!MockingboardVoice.bActive)
+	if (!m_mockingboardVoice.bActive)
 		return false;
 
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
@@ -130,11 +130,11 @@ void MockingboardCardManager::SetVolume(DWORD volume, DWORD volumeMax)
 {
 	m_userVolume = volume;
 
-	MockingboardVoice.dwUserVolume = volume;
-	MockingboardVoice.nVolume = NewVolume(volume, volumeMax);
+	m_mockingboardVoice.dwUserVolume = volume;
+	m_mockingboardVoice.nVolume = NewVolume(volume, volumeMax);
 
-	if (MockingboardVoice.bActive && !MockingboardVoice.bMute)
-		MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
+	if (m_mockingboardVoice.bActive && !m_mockingboardVoice.bMute)
+		m_mockingboardVoice.lpDSBvoice->SetVolume(m_mockingboardVoice.nVolume);
 
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
@@ -168,10 +168,10 @@ void MockingboardCardManager::Destroy(void)
 {
 	// NB. All cards (including any Mockingboard cards) have just been destroyed by CardManager
 
-	if (MockingboardVoice.lpDSBvoice && MockingboardVoice.bActive)
-		DSVoiceStop(&MockingboardVoice);
+	if (m_mockingboardVoice.lpDSBvoice && m_mockingboardVoice.bActive)
+		DSVoiceStop(&m_mockingboardVoice);
 
-	DSReleaseSoundBuffer(&MockingboardVoice);
+	DSReleaseSoundBuffer(&m_mockingboardVoice);
 }
 
 // Called by ContinueExecution() at the end of every execution period (~1000 cycles or ~3 cycles when MODE_STEPPING)
@@ -193,11 +193,11 @@ void MockingboardCardManager::Update(const ULONG executedCycles)
 	// No 6522 TIMER1's are active, so periodically update AY8913's here...
 
 	const UINT kCyclesPerAudioFrame = 1000;
-	g_cyclesThisAudioFrame += executedCycles;
-	if (g_cyclesThisAudioFrame < kCyclesPerAudioFrame)
+	m_cyclesThisAudioFrame += executedCycles;
+	if (m_cyclesThisAudioFrame < kCyclesPerAudioFrame)
 		return;
 
-	g_cyclesThisAudioFrame %= kCyclesPerAudioFrame;
+	m_cyclesThisAudioFrame %= kCyclesPerAudioFrame;
 
 	UpdateSoundBuffer();
 }
@@ -213,7 +213,7 @@ void MockingboardCardManager::UpdateSoundBuffer(void)
 	PerfMarker perfMarker(!IsAnyTimer1Active() == kTIMERDEVICE_INVALID ? g_timeMB_NoTimer : g_timeMB_Timer);
 #endif
 
-	if (!MockingboardVoice.lpDSBvoice)
+	if (!m_mockingboardVoice.lpDSBvoice)
 	{
 		if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 			return;
@@ -222,13 +222,13 @@ void MockingboardCardManager::UpdateSoundBuffer(void)
 			return;
 	}
 
-	if (!MockingboardVoice.bActive)
+	if (!m_mockingboardVoice.bActive)
 	{
 		// Sound buffer may have been stopped by MB_InitializeForLoadingSnapshot().
 		// NB. DSZeroVoiceBuffer() also zeros the sound buffer, so it's better than directly calling IDirectSoundBuffer::Play():
 		// - without zeroing, then the previous sound buffer can be heard for a fraction of a second
 		// - eg. when doing Mockingboard playback, then loading a save-state which is also doing Mockingboard playback
-		DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);	// ... and Play()
+		DSZeroVoiceBuffer(&m_mockingboardVoice, SOUNDBUFFER_SIZE);	// ... and Play()
 	}
 
 	UINT numSamples = GenerateAllSoundData();
@@ -243,7 +243,7 @@ bool MockingboardCardManager::Init(void)
 
 	const DWORD SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 
-	HRESULT hr = DSGetSoundBuffer(&MockingboardVoice, DSBCAPS_CTRLVOLUME, g_dwDSBufferSize, SAMPLE_RATE, g_nMB_NumChannels, "MB");
+	HRESULT hr = DSGetSoundBuffer(&m_mockingboardVoice, DSBCAPS_CTRLVOLUME, SOUNDBUFFER_SIZE, SAMPLE_RATE, NUM_MB_CHANNELS, "MB");
 	LogFileOutput("MBCardMgr: DSGetSoundBuffer(), hr=0x%08X\n", hr);
 	if (FAILED(hr))
 	{
@@ -251,18 +251,18 @@ bool MockingboardCardManager::Init(void)
 		return false;
 	}
 
-	bool bRes = DSZeroVoiceBuffer(&MockingboardVoice, g_dwDSBufferSize);	// ... and Play()
+	bool bRes = DSZeroVoiceBuffer(&m_mockingboardVoice, SOUNDBUFFER_SIZE);	// ... and Play()
 	LogFileOutput("MBCardMgr: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
 	if (!bRes)
 		return false;
 
-	MockingboardVoice.bActive = true;
+	m_mockingboardVoice.bActive = true;
 
 	// Volume might've been setup from value in Registry
-	if (!MockingboardVoice.nVolume)
-		MockingboardVoice.nVolume = DSBVOLUME_MAX;
+	if (!m_mockingboardVoice.nVolume)
+		m_mockingboardVoice.nVolume = DSBVOLUME_MAX;
 
-	hr = MockingboardVoice.lpDSBvoice->SetVolume(MockingboardVoice.nVolume);
+	hr = m_mockingboardVoice.lpDSBvoice->SetVolume(m_mockingboardVoice.nVolume);
 	LogFileOutput("MBCardMgr: SetVolume(), hr=0x%08X\n", hr);
 	return true;
 }
@@ -281,35 +281,34 @@ UINT MockingboardCardManager::GenerateAllSoundData(void)
 
 		MockingboardCard& MB = dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot));
 
-		MB.SetNumSamplesError(nNumSamplesError);
+		MB.SetNumSamplesError(m_numSamplesError);
 		nNumSamples = MB.MB_Update();
-		nNumSamplesError = MB.GetNumSamplesError();
+		m_numSamplesError = MB.GetNumSamplesError();
 
 #if 1 // debug
 		if (numSamples0 == (UINT)-1)
 		{
 			numSamples0 = nNumSamples;
-			numSamplesError0 = nNumSamplesError;
+			numSamplesError0 = m_numSamplesError;
 		}
 
 		_ASSERT(numSamples0 == nNumSamples);
-		_ASSERT(numSamplesError0 == nNumSamplesError);
+		_ASSERT(numSamplesError0 == m_numSamplesError);
 #endif
 	}
 
 	//
 
 	DWORD dwCurrentPlayCursor, dwCurrentWriteCursor;
-	HRESULT hr = MockingboardVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
+	HRESULT hr = m_mockingboardVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
 	if (FAILED(hr))
 		return 0;
 
-	//static DWORD dwByteOffset = (DWORD)-1;	// Moved to class
-	if (dwByteOffset == (DWORD)-1)
+	if (m_byteOffset == (DWORD)-1)
 	{
 		// First time in this func
 
-		dwByteOffset = dwCurrentWriteCursor;
+		m_byteOffset = dwCurrentWriteCursor;
 	}
 	else
 	{
@@ -318,43 +317,43 @@ UINT MockingboardCardManager::GenerateAllSoundData(void)
 		if (dwCurrentWriteCursor > dwCurrentPlayCursor)
 		{
 			// |-----PxxxxxW-----|
-			if ((dwByteOffset > dwCurrentPlayCursor) && (dwByteOffset < dwCurrentWriteCursor))
+			if ((m_byteOffset > dwCurrentPlayCursor) && (m_byteOffset < dwCurrentWriteCursor))
 			{
 #ifdef DBG_MB_UPDATE
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
 				LogOutput("%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset, nNumSamples);
 #endif
-				dwByteOffset = dwCurrentWriteCursor;
-				nNumSamplesError = 0;
+				m_byteOffset = dwCurrentWriteCursor;
+				m_numSamplesError = 0;
 			}
 		}
 		else
 		{
 			// |xxW----------Pxxx|
-			if ((dwByteOffset > dwCurrentPlayCursor) || (dwByteOffset < dwCurrentWriteCursor))
+			if ((m_byteOffset > dwCurrentPlayCursor) || (m_byteOffset < dwCurrentWriteCursor))
 			{
 #ifdef DBG_MB_UPDATE
 				double fTicksSecs = (double)GetTickCount() / 1000.0;
 				LogOutput("%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset, nNumSamples);
 #endif
-				dwByteOffset = dwCurrentWriteCursor;
-				nNumSamplesError = 0;
+				m_byteOffset = dwCurrentWriteCursor;
+				m_numSamplesError = 0;
 			}
 		}
 	}
 
-	int nBytesRemaining = dwByteOffset - dwCurrentPlayCursor;
+	int nBytesRemaining = m_byteOffset - dwCurrentPlayCursor;
 	if (nBytesRemaining < 0)
-		nBytesRemaining += g_dwDSBufferSize;
+		nBytesRemaining += SOUNDBUFFER_SIZE;
 
 	// Calc correction factor so that play-buffer doesn't under/overflow
 	const int nErrorInc = SoundCore_GetErrorInc();
-	if (nBytesRemaining < g_dwDSBufferSize / 4)
-		nNumSamplesError += nErrorInc;				// < 0.25 of buffer remaining
-	else if (nBytesRemaining > g_dwDSBufferSize / 2)
-		nNumSamplesError -= nErrorInc;				// > 0.50 of buffer remaining
+	if (nBytesRemaining < SOUNDBUFFER_SIZE / 4)
+		m_numSamplesError += nErrorInc;				// < 0.25 of buffer remaining
+	else if (nBytesRemaining > SOUNDBUFFER_SIZE / 2)
+		m_numSamplesError -= nErrorInc;				// > 0.50 of buffer remaining
 	else
-		nNumSamplesError = 0;						// Acceptable amount of data in buffer
+		m_numSamplesError = 0;						// Acceptable amount of data in buffer
 
 #ifdef DBG_MB_UPDATE
 	double fTicksSecs = (double)GetTickCount() / 1000.0;
@@ -403,18 +402,18 @@ void MockingboardCardManager::MixAllAndCopyToRingBuffer(UINT nNumSamples)
 		}
 
 		// Cap the superpositioned output
-		if (nDataL < nWaveDataMin)
-			nDataL = nWaveDataMin;
-		else if (nDataL > nWaveDataMax)
-			nDataL = nWaveDataMax;
+		if (nDataL < WAVE_DATA_MIN)
+			nDataL = WAVE_DATA_MIN;
+		else if (nDataL > WAVE_DATA_MAX)
+			nDataL = WAVE_DATA_MAX;
 
-		if (nDataR < nWaveDataMin)
-			nDataR = nWaveDataMin;
-		else if (nDataR > nWaveDataMax)
-			nDataR = nWaveDataMax;
+		if (nDataR < WAVE_DATA_MIN)
+			nDataR = WAVE_DATA_MIN;
+		else if (nDataR > WAVE_DATA_MAX)
+			nDataR = WAVE_DATA_MAX;
 
-		g_nMixBuffer[i * g_nMB_NumChannels + 0] = (short)nDataL;	// L
-		g_nMixBuffer[i * g_nMB_NumChannels + 1] = (short)nDataR;	// R
+		m_mixBuffer[i * NUM_MB_CHANNELS + 0] = (short)nDataL;	// L
+		m_mixBuffer[i * NUM_MB_CHANNELS + 1] = (short)nDataR;	// R
 	}
 
 	//
@@ -422,22 +421,22 @@ void MockingboardCardManager::MixAllAndCopyToRingBuffer(UINT nNumSamples)
 	DWORD dwDSLockedBufferSize0, dwDSLockedBufferSize1;
 	SHORT* pDSLockedBuffer0, * pDSLockedBuffer1;
 
-	HRESULT hr = DSGetLock(MockingboardVoice.lpDSBvoice,
-		dwByteOffset, (DWORD)nNumSamples * sizeof(short) * g_nMB_NumChannels,
+	HRESULT hr = DSGetLock(m_mockingboardVoice.lpDSBvoice,
+		m_byteOffset, (DWORD)nNumSamples * sizeof(short) * NUM_MB_CHANNELS,
 		&pDSLockedBuffer0, &dwDSLockedBufferSize0,
 		&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 	if (FAILED(hr))
 		return;
 
-	memcpy(pDSLockedBuffer0, &g_nMixBuffer[0], dwDSLockedBufferSize0);
+	memcpy(pDSLockedBuffer0, &m_mixBuffer[0], dwDSLockedBufferSize0);
 	if (pDSLockedBuffer1)
-		memcpy(pDSLockedBuffer1, &g_nMixBuffer[dwDSLockedBufferSize0 / sizeof(short)], dwDSLockedBufferSize1);
+		memcpy(pDSLockedBuffer1, &m_mixBuffer[dwDSLockedBufferSize0 / sizeof(short)], dwDSLockedBufferSize1);
 
 	// Commit sound buffer
-	hr = MockingboardVoice.lpDSBvoice->Unlock((void*)pDSLockedBuffer0, dwDSLockedBufferSize0,
+	hr = m_mockingboardVoice.lpDSBvoice->Unlock((void*)pDSLockedBuffer0, dwDSLockedBufferSize0,
 		(void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
 
-	dwByteOffset = (dwByteOffset + (DWORD)nNumSamples * sizeof(short) * g_nMB_NumChannels) % g_dwDSBufferSize;
+	m_byteOffset = (m_byteOffset + (DWORD)nNumSamples * sizeof(short) * NUM_MB_CHANNELS) % SOUNDBUFFER_SIZE;
 
 #ifdef RIFF_MB
 	RiffPutSamples(&g_nMixBuffer[0], nNumSamples);
