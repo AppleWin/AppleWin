@@ -49,14 +49,6 @@ private:
 	UINT GenerateAllSoundData(void);
 	void MixAllAndCopyToRingBuffer(UINT nNumSamples);
 
-	static const UINT NUM_SY6522 = 2;
-	static const UINT NUM_AY8913 = 4;	// Phasor has 4, MB has 2
-//	static const UINT NUM_SSI263 = 2;
-	static const UINT NUM_SUBUNITS_PER_MB = NUM_SY6522;
-	static const UINT NUM_AY8913_PER_SUBUNIT = NUM_AY8913 / NUM_SUBUNITS_PER_MB;
-	static const UINT NUM_VOICES_PER_AY8913 = 3;
-	static const UINT NUM_VOICES = (NUM_AY8913 * NUM_VOICES_PER_AY8913);
-
 	static const unsigned short NUM_MB_CHANNELS = 2;
 	static const DWORD SOUNDBUFFER_SIZE = MAX_SAMPLES * sizeof(short) * NUM_MB_CHANNELS;
 

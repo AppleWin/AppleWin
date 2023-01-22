@@ -92,6 +92,7 @@
     <ClInclude Include="source\Memory.h" />
     <ClInclude Include="source\Mockingboard.h" />
     <ClInclude Include="source\MockingboardCardManager.h" />
+    <ClInclude Include="source\MockingboardDefs.h" />
     <ClInclude Include="source\MouseInterface.h" />
     <ClInclude Include="source\NoSlotClock.h" />
     <ClInclude Include="source\NTSC.h" />

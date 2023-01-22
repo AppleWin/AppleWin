@@ -1,5 +1,7 @@
 #pragma once
 
+#include "MockingboardDefs.h"
+
 class SSI263
 {
 public:

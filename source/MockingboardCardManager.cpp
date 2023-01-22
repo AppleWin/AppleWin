@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Core.h"
 #include "CardManager.h"
 #include "Mockingboard.h"
+#include "MockingboardDefs.h"
 #include "Riff.h"
 
 //#define DBG_MB_UPDATE

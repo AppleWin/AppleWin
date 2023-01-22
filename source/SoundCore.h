@@ -36,9 +36,6 @@ struct VOICE
 
 typedef VOICE* PVOICE;
 
-// PHASOR_MODE: Circular dependency for Mockingboard.h & SSI263.h - so put it here for now
-enum PHASOR_MODE { PH_Mockingboard = 0, PH_UNDEF1, PH_UNDEF2, PH_UNDEF3, PH_UNDEF4, PH_Phasor/*=5*/, PH_UNDEF6, PH_EchoPlus/*=7*/ };
-
 HRESULT DSGetLock(LPDIRECTSOUNDBUFFER pVoice, DWORD dwOffset, DWORD dwBytes,
 					  SHORT** ppDSLockedBuffer0, DWORD* pdwDSLockedBufferSize0,
 					  SHORT** ppDSLockedBuffer1, DWORD* pdwDSLockedBufferSize1);

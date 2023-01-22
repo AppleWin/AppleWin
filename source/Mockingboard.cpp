@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Mockingboard.h"
+#include "MockingboardDefs.h"
 #include "6522.h"
 
 #include "Core.h"
@@ -155,7 +156,7 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 	desc += m_slot;
 	desc += ": ";
 
-	for (UINT i=0; i< NUM_SUBUNITS_PER_MB; i++)
+	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 	{
 		if (m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & SY6522::IFR_IRQ)
 		{
@@ -461,11 +462,11 @@ void MockingboardCard::Destroy(void)
 
 void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 {
-	for (BYTE subunit=0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
+	for (BYTE subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
 	{
 		m_MBSubUnit[subunit].sy6522.Reset(powerCycle);
 
-		for (BYTE ay=0; ay < NUM_AY8913_PER_SUBUNIT; ay++)
+		for (BYTE ay = 0; ay < NUM_AY8913_PER_SUBUNIT; ay++)
 			AY8910_reset(subunit, ay);
 
 		m_MBSubUnit[subunit].nAYCurrentRegister = 0;
@@ -727,7 +728,7 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 
 	AY8910_InitClock((int)(Get6502BaseClock() * m_phasorClockScaleFactor));
 
-	for (UINT i=0; i<NUM_SSI263; i++)
+	for (UINT i = 0; i < NUM_SSI263; i++)
 		m_MBSubUnit[i].ssi263.SetCardMode(m_phasorMode);
 
 	return MemReadFloatingBus(nExecutedCycles);
@@ -812,7 +813,7 @@ void MockingboardCard::UpdateCycles(ULONG executedCycles)
 	_ASSERT(uCycles < 0x10000 || g_nAppMode == MODE_BENCHMARK);
 	USHORT nClocks = (USHORT)uCycles;
 
-	for (int i = 0; i < NUM_SUBUNITS_PER_MB; i++)
+	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 	{
 		m_MBSubUnit[i].sy6522.UpdateTimer1(nClocks);
 		m_MBSubUnit[i].sy6522.UpdateTimer2(nClocks);
@@ -871,7 +872,7 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 bool MockingboardCard::IsActive(void)
 {
 	bool isSSI263Active = false;
-	for (UINT i=0; i<NUM_SSI263; i++)
+	for (UINT i = 0; i  <NUM_SSI263; i++)
 		isSSI263Active |= m_MBSubUnit[i].ssi263.IsPhonemeActive();
 
 	return m_isActive || isSSI263Active;
@@ -881,7 +882,7 @@ bool MockingboardCard::IsActive(void)
 
 void MockingboardCard::SetVolume(DWORD volume, DWORD volumeMax)
 {
-	for (UINT i=0; i<NUM_SSI263; i++)
+	for (UINT i  =0; i < NUM_SSI263; i++)
 		m_MBSubUnit[i].ssi263.SetVolume(volume, volumeMax);
 }
 
