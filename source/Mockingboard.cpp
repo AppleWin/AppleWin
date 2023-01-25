@@ -69,11 +69,6 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	for (UINT i = 0; i < NUM_VOICES; i++)
 		m_ppAYVoiceBuffer[NUM_VOICES] = NULL;
 
-	// Construct via placement new, so that it is an array of 'MB_SUBUNIT' objects
-	m_MBSubUnit = (MB_SUBUNIT*) new BYTE[sizeof(MB_SUBUNIT) * NUM_SUBUNITS_PER_MB];
-	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
-		new (&m_MBSubUnit[i]) MB_SUBUNIT(m_slot);
-
 	m_inActiveCycleCount = 0;
 	m_regAccessedFlag = false;
 	m_isActive = false;
@@ -96,9 +91,13 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	for (UINT i = 0; i < NUM_VOICES; i++)
 		m_ppAYVoiceBuffer[i] = new short[MAX_SAMPLES];	// Buffer can hold a max of 0.37 seconds worth of samples (16384/44100)
 
+	// Construct via placement new, so that it is an array of 'MB_SUBUNIT' objects
+	m_MBSubUnit = (MB_SUBUNIT*) new BYTE[sizeof(MB_SUBUNIT) * NUM_SUBUNITS_PER_MB];
+	memset(m_MBSubUnit, sizeof(MB_SUBUNIT) * NUM_SUBUNITS_PER_MB, 0);
+
 	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 	{
-		m_MBSubUnit[i] = MB_SUBUNIT(m_slot);
+		new (&m_MBSubUnit[i]) MB_SUBUNIT(m_slot);
 		m_MBSubUnit[i].nAY8910Number = i;
 		const UINT id0 = i * SY6522::kNumTimersPer6522 + 0;	// TIMER1
 		const UINT id1 = i * SY6522::kNumTimersPer6522 + 1;	// TIMER2

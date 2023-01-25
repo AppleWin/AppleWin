@@ -48,7 +48,7 @@ static LPDIRECTSOUND g_lpDS = NULL;
 
 // Used for muting & fading:
 
-static const UINT uMAX_VOICES = 6;	// 4x SSI263 + spkr + MockingboardCardManager
+static const UINT uMAX_VOICES = NUM_SLOTS * 2 + 1 + 1;	// 8x (2x SSI263) + spkr + MockingboardCardManager
 static UINT g_uNumVoices = 0;
 static VOICE* g_pVoices[uMAX_VOICES] = {NULL};
 
