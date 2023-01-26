@@ -124,8 +124,6 @@ private:
 	static const UINT kNumSyncEvents = NUM_SY6522 * SY6522::kNumTimersPer6522;
 	SyncEvent* m_syncEvent[kNumSyncEvents];
 
-	// Timer vars
-	static const UINT kTIMERDEVICE_INVALID = -1;
 	UINT64 m_lastCumulativeCycle;
 
 	static const DWORD SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample

@@ -212,7 +212,7 @@ void MockingboardCardManager::UpdateSoundBuffer(void)
 #ifdef LOG_PERF_TIMINGS
 	extern UINT64 g_timeMB_NoTimer;
 	extern UINT64 g_timeMB_Timer;
-	PerfMarker perfMarker(!IsAnyTimer1Active() == kTIMERDEVICE_INVALID ? g_timeMB_NoTimer : g_timeMB_Timer);
+	PerfMarker perfMarker(!IsAnyTimer1Active() ? g_timeMB_NoTimer : g_timeMB_Timer);
 #endif
 
 	if (!m_mockingboardVoice.lpDSBvoice)
