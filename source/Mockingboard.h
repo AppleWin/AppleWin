@@ -119,7 +119,7 @@ private:
 	static const UINT SSI263A_Offset = 0x40;
 
 	// MB has 2x (1x SY6522 + 1x AY8913), Phasor has 2x (1x SY6522 + 2x AY8913)
-	MB_SUBUNIT* m_MBSubUnit;	// NB. In ctor this becomes m_MBSubUnit[NUM_SUBUNITS_PER_MB]
+	MB_SUBUNIT m_MBSubUnit[NUM_SUBUNITS_PER_MB];
 
 	static const UINT kNumSyncEvents = NUM_SY6522 * SY6522::kNumTimersPer6522;
 	SyncEvent* m_syncEvent[kNumSyncEvents];
