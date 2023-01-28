@@ -743,15 +743,12 @@ static void RepeatInitialization(void)
 
 		// Allow the 4 hardcoded slots to be configurated as empty
 		// NB. this state *is* persisted to the Registry/conf.ini (just like '-s7 empty' is)
-		// TODO: support bSlotEmpty[] for slots: 0,4,5
-		if (g_cmdLine.bSlotEmpty[SLOT1])
-			GetCardMgr().Remove(SLOT1);
-		if (g_cmdLine.bSlotEmpty[SLOT2])
-			GetCardMgr().Remove(SLOT2);
-		if (g_cmdLine.bSlotEmpty[SLOT3])
-			GetCardMgr().Remove(SLOT3);
-		if (g_cmdLine.bSlotEmpty[SLOT6])
-			GetCardMgr().Remove(SLOT6);
+		// TODO: support bSlotEmpty[] for slots: 0
+		for (UINT i = SLOT1; i < NUM_SLOTS; i++)
+		{
+			if (g_cmdLine.bSlotEmpty[i])
+				GetCardMgr().Remove(i);
+		}
 
 		if (g_cmdLine.supportDCD && GetCardMgr().IsSSCInstalled())
 		{
@@ -780,12 +777,6 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.slotInsert[SLOT5] != CT_Empty)
 		{
-			if (GetCardMgr().QuerySlot(SLOT4) == CT_MockingboardC && g_cmdLine.slotInsert[SLOT5] != CT_MockingboardC)	// Currently MB occupies slot4+5 when enabled
-			{
-				GetCardMgr().Remove(SLOT4);
-				GetCardMgr().Remove(SLOT5);
-			}
-
 			if (GetCardMgr().QuerySlot(SLOT5) != CT_Disk2)	// Ignore if already got Disk2 in slot 5
 				GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
 		}
@@ -796,7 +787,7 @@ static void RepeatInitialization(void)
 				GetCardMgr().Insert(SLOT6, g_cmdLine.slotInsert[SLOT6]);
 		}
 
-		for (UINT i = 0; i < NUM_SLOTS; i++)
+		for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 		{
 			if (GetCardMgr().QuerySlot(i) == CT_Disk2 && g_cmdLine.slotInfo[i].isDiskII13)
 				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).SetFirmware13Sector();
