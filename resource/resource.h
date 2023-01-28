@@ -30,7 +30,6 @@
 #define IDR_APPLE2_PLUS_ROM             127
 #define IDR_APPLE2E_ROM                 128
 #define IDR_APPLE2E_ENHANCED_ROM        129
-#define IDC_MB_ENABLE                   130
 #define IDD_TFE_SETTINGS_DIALOG         131
 #define IDR_PRINTDRVR_FW                132
 #define IDD_PROPPAGE_ADVANCED           132
@@ -68,9 +67,8 @@
 #define IDC_PASTE_FROM_CLIPBOARD        1023
 #define IDC_SPIN_XTRIM                  1026
 #define IDC_SPIN_YTRIM                  1027
-#define IDC_PHASOR_ENABLE               1029
-#define IDC_SAM_ENABLE                  1030
-#define IDC_SOUNDCARD_DISABLE           1031
+#define IDC_SOUNDCARD_SLOT4             1028
+#define IDC_SOUNDCARD_SLOT5             1029
 #define IDC_TFE_SETTINGS_ENABLE_T       1032
 #define IDC_TFE_SETTINGS_ENABLE         1033
 #define IDC_TFE_SETTINGS_INTERFACE_T    1034

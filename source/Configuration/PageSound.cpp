@@ -40,6 +40,13 @@ const TCHAR CPageSound::m_soundchoices[] =	TEXT("Disabled\0")
 											TEXT("Sound Card\0");
 
 
+const char CPageSound::m_soundCardChoices[] =	"Mockingboard\0"
+												"Phasor\0"
+												"SAM\0"
+												"Empty\0";
+
+const char CPageSound::m_soundCardChoice_Unavailable[] = "Unavailable\0\0";	// doubly-null terminate
+
 INT_PTR CALLBACK CPageSound::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
@@ -85,21 +92,25 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			break;
 		case IDC_MB_VOLUME:
 			break;
-		case IDC_MB_ENABLE:
-			if (NewSoundcardConfigured(hWnd, wparam, CT_MockingboardC))
-				InitOptions(hWnd);	// re-init
-			break;
-		case IDC_PHASOR_ENABLE:
-			if (NewSoundcardConfigured(hWnd, wparam, CT_Phasor))
-				InitOptions(hWnd);	// re-init
-			break;
-		case IDC_SAM_ENABLE:
-			if (NewSoundcardConfigured(hWnd, wparam, CT_SAM))
-				InitOptions(hWnd);	// re-init
-			break;
-		case IDC_SOUNDCARD_DISABLE:
-			if (NewSoundcardConfigured(hWnd, wparam, CT_Empty))
-				InitOptions(hWnd);	// re-init
+		case IDC_SOUNDCARD_SLOT4:
+		case IDC_SOUNDCARD_SLOT5:
+			if (HIWORD(wparam) == CBN_SELCHANGE)
+			{
+				UINT slot = (LOWORD(wparam) == IDC_SOUNDCARD_SLOT4) ? SLOT4 : SLOT5;
+				DWORD newChoiceItem = (DWORD)SendDlgItemMessage(hWnd, LOWORD(wparam), CB_GETCURSEL, 0, 0);
+
+				SS_CARDTYPE newCard = CT_Empty;
+				switch (newChoiceItem)
+				{
+				case SC_MOCKINGBOARD: newCard = CT_MockingboardC; break;
+				case SC_PHASOR: newCard = CT_Phasor; break;
+				case SC_SAM: newCard = CT_SAM; break;
+				case SC_EMPTY: newCard = CT_Empty; break;
+				default: _ASSERT(0); break;
+				}
+
+				m_PropertySheetHelper.GetConfigNew().m_Slot[slot] = newCard;
+			}
 			break;
 		}
 		break;
@@ -117,18 +128,6 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETPAGESIZE,0,10);
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETTICFREQ,10,0);
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETPOS,1, GetCardMgr().GetMockingboardCardMgr().GetVolume());
-
-			if (GetCardMgr().QuerySlot(SLOT5) == CT_SAM)
-			{
-				m_NewCardType = CT_SAM;
-			}
-			else
-			{
-				// Reinit 1st time page is activated (fires before PSN_SETACTIVE)
-				//m_NewCardType = MB_GetSoundcardType();
-				m_NewCardType = GetCardMgr().QuerySlot(SLOT4);	// FIXME: mimic the old static MB/Phasor behaviour
-																// NB. This doesn't scale for MB/Phasor in slots other than SLOT4, nor for mixed sound cards (eg. MB/s4+Phasor/s5)
-			}
 
 			InitOptions(hWnd);
 
@@ -160,87 +159,36 @@ void CPageSound::DlgOK(HWND hWnd)
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 
-void CPageSound::InitOptions(HWND hWnd)
+CPageSound::SOUNDCARDCHOICE CPageSound::CardTypeToComboItem(SS_CARDTYPE card)
 {
-	// CheckRadioButton
-	if(m_NewCardType == CT_MockingboardC)
-		m_nCurrentIDCheckButton = IDC_MB_ENABLE;
-	else if(m_NewCardType == CT_Phasor)
-		m_nCurrentIDCheckButton = IDC_PHASOR_ENABLE;
-	else if(m_NewCardType == CT_SAM) 
-		m_nCurrentIDCheckButton = IDC_SAM_ENABLE; 
-	else
-		m_nCurrentIDCheckButton = IDC_SOUNDCARD_DISABLE;
-
-	CheckRadioButton(hWnd, IDC_MB_ENABLE, IDC_SOUNDCARD_DISABLE, m_nCurrentIDCheckButton);
-
-	//
-
-	const SS_CARDTYPE Slot4 = m_PropertySheetHelper.GetConfigNew().m_Slot[4];
-	const SS_CARDTYPE Slot5 = m_PropertySheetHelper.GetConfigNew().m_Slot[5];
-
-	const bool bIsSlot4Empty = Slot4 == CT_Empty;
-	const bool bIsSlot5Empty = Slot5 == CT_Empty;
-
-	// Phasor button
+	switch (card)
 	{
-		const BOOL bEnable = bIsSlot4Empty || Slot4 == CT_MockingboardC || Slot4 == CT_Phasor;
-		EnableWindow(GetDlgItem(hWnd, IDC_PHASOR_ENABLE), bEnable);	// Disable Phasor (slot 4)
+	case CT_MockingboardC: return SC_MOCKINGBOARD;
+	case CT_Phasor: return SC_PHASOR;
+	case CT_SAM: return SC_SAM;
+	case CT_Empty: return SC_EMPTY;
+	default: _ASSERT(0); return SC_EMPTY;
 	}
-
-	// Mockingboard button
-	{
-		const BOOL bEnable = (bIsSlot4Empty || Slot4 == CT_Phasor || Slot4 == CT_MockingboardC) &&
-							 (bIsSlot5Empty || Slot5 == CT_SAM    || Slot5 == CT_MockingboardC);
-		EnableWindow(GetDlgItem(hWnd, IDC_MB_ENABLE), bEnable);		// Disable Mockingboard (slot 4 & 5)
-	}
-
-	// SAM button
-	{
-		const BOOL bEnable = bIsSlot5Empty || Slot5 == CT_MockingboardC || Slot5 == CT_SAM;
-		EnableWindow(GetDlgItem(hWnd, IDC_SAM_ENABLE), bEnable);	// Disable SAM (slot 5)
-	}
-
-	EnableWindow(GetDlgItem(hWnd, IDC_MB_VOLUME), (m_nCurrentIDCheckButton != IDC_SOUNDCARD_DISABLE) ? TRUE : FALSE);
 }
 
-bool CPageSound::NewSoundcardConfigured(HWND hWnd, WPARAM wparam, SS_CARDTYPE NewCardType)
+void CPageSound::InitOptions(HWND hWnd)
 {
-	if (HIWORD(wparam) != BN_CLICKED)
-		return false;
+	const SS_CARDTYPE slot4 = m_PropertySheetHelper.GetConfigNew().m_Slot[4];
+	const SS_CARDTYPE slot5 = m_PropertySheetHelper.GetConfigNew().m_Slot[5];
 
-	if (LOWORD(wparam) == m_nCurrentIDCheckButton)
-		return false;
+	bool isSlot4SoundCard = slot4 == CT_MockingboardC || slot4 == CT_Phasor || slot4 == CT_SAM || slot4 == CT_Empty;
+	bool isSlot5SoundCard = slot5 == CT_MockingboardC || slot5 == CT_Phasor || slot5 == CT_SAM || slot5 == CT_Empty;
 
-	m_NewCardType = NewCardType;
-
-	const SS_CARDTYPE Slot4 = m_PropertySheetHelper.GetConfigNew().m_Slot[4];
-	const SS_CARDTYPE Slot5 = m_PropertySheetHelper.GetConfigNew().m_Slot[5];
-
-	if (NewCardType == CT_MockingboardC)
-	{
-		m_PropertySheetHelper.GetConfigNew().m_Slot[4] = CT_MockingboardC;
-		m_PropertySheetHelper.GetConfigNew().m_Slot[5] = CT_MockingboardC;
-	}
-	else if (NewCardType == CT_Phasor)
-	{
-		m_PropertySheetHelper.GetConfigNew().m_Slot[4] = CT_Phasor;
-		if ((Slot5 == CT_MockingboardC) || (Slot5 == CT_SAM))
-			m_PropertySheetHelper.GetConfigNew().m_Slot[5] = CT_Empty;
-	}
-	else if (NewCardType == CT_SAM)
-	{
-	if ((Slot4 == CT_MockingboardC) || (Slot4 == CT_Phasor))
-		m_PropertySheetHelper.GetConfigNew().m_Slot[4] = CT_Empty;
-		m_PropertySheetHelper.GetConfigNew().m_Slot[5] = CT_SAM;
-	}
+	if (isSlot4SoundCard)
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SOUNDCARD_SLOT4, m_soundCardChoices, (int)CardTypeToComboItem(slot4));
 	else
-	{
-		if ((Slot4 == CT_MockingboardC) || (Slot4 == CT_Phasor))
-			m_PropertySheetHelper.GetConfigNew().m_Slot[4] = CT_Empty;
-		if ((Slot5 == CT_MockingboardC) || (Slot5 == CT_SAM))
-			m_PropertySheetHelper.GetConfigNew().m_Slot[5] = CT_Empty;
-	}
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SOUNDCARD_SLOT4, m_soundCardChoice_Unavailable, 0);
 
-	return true;
+	if (isSlot5SoundCard)
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SOUNDCARD_SLOT5, m_soundCardChoices, (int)CardTypeToComboItem(slot5));
+	else
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SOUNDCARD_SLOT5, m_soundCardChoice_Unavailable, 0);
+
+	bool enableMBVolume = slot4 == CT_MockingboardC || slot5 == CT_MockingboardC || slot4 == CT_Phasor || slot5 == CT_Phasor;
+	EnableWindow(GetDlgItem(hWnd, IDC_MB_VOLUME), enableMBVolume ? TRUE : FALSE);
 }
