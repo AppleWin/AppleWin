@@ -48,7 +48,7 @@ static LPDIRECTSOUND g_lpDS = NULL;
 
 // Used for muting & fading:
 
-static const UINT uMAX_VOICES = 6;	// 4x SSI263 + spkr + mockingboard
+static const UINT uMAX_VOICES = NUM_SLOTS * 2 + 1 + 1;	// 8x (2x SSI263) + spkr + MockingboardCardManager
 static UINT g_uNumVoices = 0;
 static VOICE* g_pVoices[uMAX_VOICES] = {NULL};
 
@@ -57,6 +57,21 @@ static VOICE* g_pSpeakerVoice = NULL;
 //-------------------------------------
 
 bool g_bDSAvailable = false;
+
+//-----------------------------------------------------------------------------
+
+// NB. Also similar is done by: MockingboardCardManager::Destroy()
+// - which is called from WM_DESTROY (when both restarting VM & exiting the app)
+
+VOICE::~VOICE(void)
+{
+	if (lpDSBvoice)
+	{
+		DSVoiceStop(this);
+		DSReleaseSoundBuffer(this);
+	}
+}
+
 
 //-----------------------------------------------------------------------------
 
@@ -540,8 +555,10 @@ bool DSInit()
 		return false;
 	}
 
-	hr = g_lpDS->SetCooperativeLevel(GetFrame().g_hFrameWindow, DSSCL_NORMAL);
-	if(FAILED(hr))
+	HWND hwnd = GetFrame().g_hFrameWindow;
+	_ASSERT(hwnd);
+	hr = g_lpDS->SetCooperativeLevel(hwnd, DSSCL_NORMAL);
+	if (FAILED(hr))
 	{
 		if(g_fh) fprintf(g_fh, "SetCooperativeLevel failed (%08X)\n",hr);
 		return false;

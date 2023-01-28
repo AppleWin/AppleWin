@@ -179,7 +179,7 @@ static void ContinueExecution(void)
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
+					 (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !GetCardMgr().GetMockingboardCardMgr().IsActive()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
@@ -188,7 +188,7 @@ static void ContinueExecution(void)
 			GetFrame().VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
 
 		// Don't call Spkr_Mute() - will get speaker clicks
-		MB_Mute();
+		GetCardMgr().GetMockingboardCardMgr().MuteControl(true);
 		SysClk_StopTimer();
 #ifdef USE_SPEECH_API
 		g_Speech.Reset();			// TODO: Put this on a timer (in emulated cycles)... otherwise CATALOG cuts out
@@ -206,7 +206,7 @@ static void ContinueExecution(void)
 			GetFrame().VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
 
 		// Don't call Spkr_Unmute()
-		MB_Unmute();
+		GetCardMgr().GetMockingboardCardMgr().MuteControl(false);
 		SysClk_StartTimerUsec(nExecutionPeriodUsec);
 
 		// Switch to higher priority, eg. for audio (BUG #015394)
@@ -633,7 +633,7 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 	else if (!g_cmdLine.wavFileMockingboard.empty())
 	{
 		if (RiffInitWriteFile(g_cmdLine.wavFileMockingboard.c_str(), 44100, 2))
-			MB_OutputToRiff();
+			GetCardMgr().GetMockingboardCardMgr().OutputToRiff();
 	}
 
 	// Initialize COM - so we can use CoCreateInstance
@@ -678,7 +678,7 @@ static void RepeatInitialization(void)
 		// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
 		const bool bShowAboutDlg = CheckOldAppleWinVersion();	// Post: g_OldAppleWinVersion
 
-		// Load configuration from Registry
+		// Load configuration from Registry (+ will insert cards)
 		{
 			bool loadImages = g_cmdLine.szSnapshotName == NULL;	// don't load floppy/harddisk images if a snapshot is to be loaded later on
 			LoadConfiguration(loadImages);

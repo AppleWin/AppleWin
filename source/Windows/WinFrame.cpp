@@ -1054,14 +1054,11 @@ LRESULT Win32Frame::WndProc(
 	  if (!g_bRestart)	// GH#564: Only save-state on shutdown (not on a restart)
 		Snapshot_Shutdown();
       DebugDestroy();
-      if (!g_bRestart) {
-		GetCardMgr().Destroy();
-      }
+	  GetCardMgr().Destroy();
       CpuDestroy();
       MemDestroy();
       SpkrDestroy();
       Destroy();
-      MB_Destroy();
       DeleteGdiObjects();
       DIMouse::DirectInputUninit(window);	// NB. do before window is destroyed
       PostQuitMessage(0);	// Post WM_QUIT message to the thread's message queue
@@ -1076,14 +1073,11 @@ LRESULT Win32Frame::WndProc(
       CreateGdiObjects();
       LogFileOutput("WM_CREATE: CreateGdiObjects()\n");
 
-	  DSInit();
+	  DSInit();					// NB. Need g_hFrameWindow for IDirectSound::SetCooperativeLevel()
       LogFileOutput("WM_CREATE: DSInit()\n");
 
 	  DIMouse::DirectInputInit(window);
       LogFileOutput("WM_CREATE: DIMouse::DirectInputInit()\n");
-
-	  MB_Initialize();
-      LogFileOutput("WM_CREATE: MB_Initialize()\n");
 
 	  SpkrInitialize();
       LogFileOutput("WM_CREATE: SpkrInitialize()\n");
