@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "VidHD.h"
 #include "LanguageCard.h"
 #include "Memory.h"
+#include "z80emu.h"
 
 void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 {
@@ -85,7 +86,9 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = m_pMouseCard = new CMouseInterface(slot);
 		break;
 	case CT_Z80:
-		m_slot[slot] = new DummyCard(type, slot);
+		_ASSERT(m_pZ80Card == NULL);
+		if (m_pZ80Card) break;	// Only support one Z80 card
+		m_slot[slot] = new Z80Card(slot);
 		break;
 	case CT_Phasor:
 		m_slot[slot] = new MockingboardCard(slot, type);

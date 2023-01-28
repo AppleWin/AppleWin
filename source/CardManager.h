@@ -12,7 +12,8 @@ public:
 		m_pMouseCard(NULL),
 		m_pSSC(NULL),
 		m_pLanguageCard(NULL),
-		m_pParallelPrinterCard(NULL)
+		m_pParallelPrinterCard(NULL),
+		m_pZ80Card(NULL)
 	{
 		InsertInternal(SLOT0, CT_Empty);
 		InsertInternal(SLOT1, CT_GenericPrinter);
@@ -82,4 +83,5 @@ private:
 	class CSuperSerialCard* m_pSSC;
 	class LanguageCardUnit* m_pLanguageCard;
 	class ParallelPrinterCard* m_pParallelPrinterCard;
+	class m_pZ80Card* m_pZ80Card;
 };

@@ -18,30 +18,39 @@
 #include "z80emu.h"
 #include "CPU.h"
 #include "Memory.h"
+#include "Z80VICE/z80.h"
 
-// Variaveis
-static int g_uCPMZ80Slot = 0;
 
-BYTE __stdcall CPMZ80_IONull(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
+BYTE __stdcall Z80Card::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
 {
-	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
-}
+	const UINT slot = (addr >> 8) & 0x7;
 
-BYTE __stdcall CPMZ80_IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles)
-{
-	if ((uAddr & 0xFF00) == (0xC000 + (g_uCPMZ80Slot << 8)))
+	if ((addr & 0xFF00) == (0xC000 + (slot << 8)))
 		SetActiveCpu( GetActiveCpu() == CPU_Z80 ? GetMainCpu() : CPU_Z80 );
 
-	return IO_Null(PC, uAddr, bWrite, uValue, nExecutedCycles);
+	return IO_Null(pc, addr, bWrite, value, nExecutedCycles);
+}
+
+void Z80Card::InitializeIO(LPBYTE pCxRomPeripheral)
+{	
+	memset(pCxRomPeripheral + (m_slot << 8), 0xFF, APPLE_SLOT_SIZE);
+	
+	RegisterIoHandler(m_slot, IO_Null, IO_Null, IO_Null, &Z80Card::IOWrite, this, NULL);
 }
 
 //===========================================================================
 
-void Z80_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot)
-{	
-	memset(pCxRomPeripheral + (uSlot << 8), 0xFF, APPLE_SLOT_SIZE);
-	
-	g_uCPMZ80Slot = uSlot;
+const std::string& Z80Card::GetSnapshotCardName(void)
+{
+	return Z80_GetSnapshotCardName();
+}
 
-	RegisterIoHandler(uSlot, CPMZ80_IONull, CPMZ80_IONull, CPMZ80_IONull, CPMZ80_IOWrite, NULL, NULL);
+void Z80Card::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	return Z80_SaveSnapshot(yamlSaveHelper, m_slot);
+}
+
+bool Z80Card::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
+{
+	return Z80_LoadSnapshot(yamlLoadHelper, m_slot, version);
 }
