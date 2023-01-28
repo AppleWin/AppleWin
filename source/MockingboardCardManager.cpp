@@ -273,9 +273,6 @@ UINT MockingboardCardManager::GenerateAllSoundData(void)
 {
 	UINT nNumSamples = 0;
 
-	UINT numSamples0 = (UINT)-1;
-	int numSamplesError0 = -1;
-
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
 		if (!IsMockingboard(slot))
@@ -286,17 +283,6 @@ UINT MockingboardCardManager::GenerateAllSoundData(void)
 		MB.SetNumSamplesError(m_numSamplesError);
 		nNumSamples = MB.MB_Update();
 		m_numSamplesError = MB.GetNumSamplesError();
-
-#if 1 // debug
-		if (numSamples0 == (UINT)-1)
-		{
-			numSamples0 = nNumSamples;
-			numSamplesError0 = m_numSamplesError;
-		}
-
-		_ASSERT(numSamples0 == nNumSamples);
-		_ASSERT(numSamplesError0 == m_numSamplesError);
-#endif
 	}
 
 	//

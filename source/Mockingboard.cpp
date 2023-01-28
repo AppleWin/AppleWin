@@ -75,7 +75,7 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 
 	m_phasorEnable = (QueryType() == CT_Phasor);
 	m_phasorMode = PH_Mockingboard;
-	m_phasorClockScaleFactor = 1;	// for save-state only
+	m_phasorClockScaleFactor = 1;
 
 	m_lastMBUpdateCycle = 0;
 	m_numSamplesError = 0;
