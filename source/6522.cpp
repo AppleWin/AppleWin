@@ -128,7 +128,7 @@ void SY6522::UpdateIFR(BYTE clr_ifr, BYTE set_ifr /*= 0*/)
 		m_regs.IFR &= ~IFR_IRQ;
 
 	if (GetCardMgr().GetObj(m_slot))	// If called from MockingboardCard ctor, then CardManager::m_slot[slot] == NULL
-		dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(m_slot)).UpdateIRQ();
+		GetCardMgr().GetMockingboardCardMgr().UpdateIRQ();
 }
 
 //-----------------------------------------------------------------------------

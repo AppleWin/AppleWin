@@ -43,7 +43,7 @@ public:
 	void Get6522IrqDescription(std::string& desc);
 #endif
 
-	void UpdateIRQ(void);
+	bool Is6522IRQ(void);
 	UINT64 GetLastCumulativeCycles(void);
 	void UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
 	BYTE GetPCR(BYTE nDevice);

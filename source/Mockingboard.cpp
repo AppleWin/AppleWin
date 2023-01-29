@@ -288,13 +288,13 @@ void MockingboardCard::UpdateIFRandIRQ(MB_SUBUNIT* pMB, BYTE clr_mask, BYTE set_
 //---------------------------------------------------------------------------
 
 // Called from class SY6522
-void MockingboardCard::UpdateIRQ(void)
+bool MockingboardCard::Is6522IRQ(void)
 {
 	// Now update the IRQ signal from all 6522s
 	// . OR-sum of all active TIMER1, TIMER2 & SPEECH sources (from all 6522s)
-	UINT bIRQ = 0;
+	bool irq = false;
 	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
-		bIRQ |= m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & 0x80;
+		irq |= m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & 0x80 ? true : false;
 
 	// NB. Mockingboard generates IRQ on both 6522s:
 	// . SSI263's IRQ (A/!R) is routed via the 2nd 6522 (at $Cn80) and must generate a 6502 IRQ (not NMI)
@@ -302,10 +302,7 @@ void MockingboardCard::UpdateIRQ(void)
 	// . SC-01's IRQ (A/!R) is routed via the 6522 at $Cn00 (NB. Only the Mockingboard "Sound/Speech I" card supports the SC-01)
 	// Phasor's SSI263 IRQ (A/!R) line is *also* wired directly to the 6502's IRQ (as well as the 6522's CA1)
 
-	if (bIRQ)
-	    CpuIrqAssert(IS_6522);
-	else
-	    CpuIrqDeassert(IS_6522);
+	return irq;
 }
 
 //---------------------------------------------------------------------------

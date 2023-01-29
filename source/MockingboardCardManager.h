@@ -26,6 +26,7 @@ public:
 	void MuteControl(bool mute);
 	void SetCumulativeCycles(void);
 	void UpdateCycles(ULONG executedCycles);
+	void UpdateIRQ(void);
 	bool IsActive(void);
 	DWORD GetVolume(void);
 	void SetVolume(DWORD volume, DWORD volumeMax);

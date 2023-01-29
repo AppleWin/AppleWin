@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "MockingboardCardManager.h"
 #include "Core.h"
 #include "CardManager.h"
+#include "CPU.h"
 #include "Mockingboard.h"
 #include "MockingboardDefs.h"
 #include "Riff.h"
@@ -106,6 +107,21 @@ void MockingboardCardManager::UpdateCycles(ULONG executedCycles)
 		if (IsMockingboard(i))
 			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).UpdateCycles(executedCycles);
 	}
+}
+
+void MockingboardCardManager::UpdateIRQ(void)
+{
+	bool irq = false;
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (IsMockingboard(i))
+			irq |= dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).Is6522IRQ();
+	}
+
+	if (irq)
+		CpuIrqAssert(IS_6522);
+	else
+		CpuIrqDeassert(IS_6522);
 }
 
 bool MockingboardCardManager::IsActive(void)
