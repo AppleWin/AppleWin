@@ -109,6 +109,7 @@ void MockingboardCardManager::UpdateCycles(ULONG executedCycles)
 	}
 }
 
+// Called from class SY6522
 void MockingboardCardManager::UpdateIRQ(void)
 {
 	bool irq = false;

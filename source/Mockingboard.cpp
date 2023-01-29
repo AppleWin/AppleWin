@@ -287,7 +287,7 @@ void MockingboardCard::UpdateIFRandIRQ(MB_SUBUNIT* pMB, BYTE clr_mask, BYTE set_
 
 //---------------------------------------------------------------------------
 
-// Called from class SY6522
+// Called from MockingboardCardMgr
 bool MockingboardCard::Is6522IRQ(void)
 {
 	// Now update the IRQ signal from all 6522s
