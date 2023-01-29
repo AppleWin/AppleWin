@@ -460,7 +460,7 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 		m_MBSubUnit[subunit].state = AY_INACTIVE;
 		m_MBSubUnit[subunit].stateB = AY_INACTIVE;
 
-		m_MBSubUnit[subunit].ssi263.SetCardMode(m_phasorMode);
+		m_MBSubUnit[subunit].ssi263.SetCardMode(PH_Mockingboard);	// Revert to PH_Mockingboard mode
 		m_MBSubUnit[subunit].ssi263.Reset();
 	}
 
@@ -1205,7 +1205,7 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 			AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string("-A"));
 			AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_B, std::string("-B"));
 		}
-		pMB->ssi263.LoadSnapshot(yamlLoadHelper, PH_Phasor, version);	// Pre: SetVotraxPhoneme()
+		pMB->ssi263.LoadSnapshot(yamlLoadHelper, m_phasorMode, version);	// Pre: SetVotraxPhoneme()
 
 		pMB->nAYCurrentRegister = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
 
