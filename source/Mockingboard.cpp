@@ -1008,7 +1008,9 @@ UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, BYTE 
 //    Changed at AppleWin 1.30.8
 // 9: Phasor AY's are swapped (means that AppleWin 1.30.10 and 1.30.11 are wrong)
 //    Changed at AppleWin 1.30.12
-const UINT kUNIT_VERSION = 9;
+//10: Phasor AY's are ordered correctly
+//    Changed at AppleWin 1.30.14
+const UINT kUNIT_VERSION = 10;
 
 #define SS_YAML_KEY_MB_UNIT "Unit"
 #define SS_YAML_KEY_AY_CURR_REG "AY Current Register"
@@ -1196,9 +1198,15 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 		UpdateIFRandIRQ(pMB, 0, pMB->sy6522.GetReg(SY6522::rIFR));			// Assert any pending IRQs (GH#677)
 		if (version >= 5 && version <= 8)
 		{
-			const UINT phasorSubunit = subunit == 0 ? 1 : 0;
-			AY8910_LoadSnapshot(yamlLoadHelper, phasorSubunit, AY8913_DEVICE_A, std::string("-A"));
-			AY8910_LoadSnapshot(yamlLoadHelper, phasorSubunit, AY8913_DEVICE_B, std::string("-B"));
+			const BYTE phasorDevice = subunit == 0 ? AY8913_DEVICE_B : AY8913_DEVICE_A;
+			AY8910_LoadSnapshot(yamlLoadHelper, 0, phasorDevice, std::string("-A"));
+			AY8910_LoadSnapshot(yamlLoadHelper, 1, phasorDevice, std::string("-B"));
+		}
+		else if (version <= 4 || version == 9)
+		{
+			const BYTE phasorDevice = subunit == 0 ? AY8913_DEVICE_A : AY8913_DEVICE_B;
+			AY8910_LoadSnapshot(yamlLoadHelper, 0, phasorDevice, std::string("-A"));
+			AY8910_LoadSnapshot(yamlLoadHelper, 1, phasorDevice, std::string("-B"));
 		}
 		else
 		{
