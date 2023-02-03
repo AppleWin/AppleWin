@@ -1,23 +1,25 @@
 #pragma once
 
-/*  Emulador do computador TK3000 //e (Microdigital)
- *  por Fábio Belavenuto - Copyright (C) 2004
- *
- *  Adaptado do emulador Applewin por Michael O'Brien
- *
- *  Este arquivo é distribuido pela Licença Pública Geral GNU.
- *  Veja o arquivo Licenca.txt distribuido com este software.
- *
- *  ESTE SOFTWARE NÃO OFERECE NENHUMA GARANTIA
- *
- */
+#include "Card.h"
 
-// Emula a CPU Z80
+class Z80Card : public Card
+{
+public:
+	Z80Card(UINT slot) :
+		Card(CT_Z80, slot)
+	{
+	}
+	virtual ~Z80Card(void) {}
 
-// Protótipos
-void Z80_InitializeIO(LPBYTE pCxRomPeripheral, UINT uSlot);
+	virtual void Destroy(void) {}
+	virtual void Reset(const bool powerCycle) {}
+	virtual void Update(const ULONG nExecutedCycles) {}
 
-// NB. These are in z80.cpp:
-const std::string& Z80_GetSnapshotCardName(void);
-void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
-bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT version);
+	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
+
+	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
+
+	static const std::string& GetSnapshotCardName(void);
+	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
+};

@@ -3,7 +3,7 @@
 class SY6522
 {
 public:
-	SY6522(void)
+	SY6522(UINT slot) : m_slot(slot)
 	{
 		for (UINT i = 0; i < kNumTimersPer6522; i++)
 			m_syncEvent[i] = NULL;
@@ -140,4 +140,5 @@ private:
 	bool m_timer2Active;
 
 	class SyncEvent* m_syncEvent[kNumTimersPer6522];
+	UINT m_slot;
 };

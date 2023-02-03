@@ -11,9 +11,7 @@ class CPageSound : private IPropertySheetPage
 public:
 	CPageSound(CPropertySheetHelper& PropertySheetHelper) :
 		m_Page(PG_SOUND),
-		m_PropertySheetHelper(PropertySheetHelper),
-		m_NewCardType(CT_Empty),
-		m_nCurrentIDCheckButton(0)
+		m_PropertySheetHelper(PropertySheetHelper)
 	{
 		CPageSound::ms_this = this;
 	}
@@ -30,8 +28,10 @@ protected:
 	virtual void DlgCANCEL(HWND hWnd){}
 
 private:
+	enum SOUNDCARDCHOICE { SC_MOCKINGBOARD = 0, SC_PHASOR, SC_SAM, SC_EMPTY, _SOUNDCARD_MAX_CHOICES, SC_UNAVAILABLE };
+
 	void InitOptions(HWND hWnd);
-	bool NewSoundcardConfigured(HWND hWnd, WPARAM wparam, SS_CARDTYPE NewCardType);
+	SOUNDCARDCHOICE CardTypeToComboItem(SS_CARDTYPE card);
 
 	static CPageSound* ms_this;
 
@@ -41,7 +41,6 @@ private:
 	static const UINT VOLUME_MIN = 0;
 	static const UINT VOLUME_MAX = 59;
 	static const TCHAR m_soundchoices[];
-
-	SS_CARDTYPE m_NewCardType;
-	int m_nCurrentIDCheckButton;
+	static const char m_soundCardChoices[];
+	static const char m_soundCardChoice_Unavailable[];
 };

@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "6522.h"
+#include "CardManager.h"
+#include "Mockingboard.h"
 #include "Core.h"
 #include "CPU.h"
 #include "Memory.h"
@@ -115,8 +117,6 @@ USHORT SY6522::SetTimerSyncEvent(BYTE reg, USHORT timerLatch)
 
 //-----------------------------------------------------------------------------
 
-extern void MB_UpdateIRQ(void);
-
 void SY6522::UpdateIFR(BYTE clr_ifr, BYTE set_ifr /*= 0*/)
 {
 	m_regs.IFR &= ~clr_ifr;
@@ -127,7 +127,8 @@ void SY6522::UpdateIFR(BYTE clr_ifr, BYTE set_ifr /*= 0*/)
 	else
 		m_regs.IFR &= ~IFR_IRQ;
 
-	MB_UpdateIRQ();
+	if (GetCardMgr().GetObj(m_slot))	// If called from MockingboardCard ctor, then CardManager::m_slot[slot] == NULL
+		GetCardMgr().GetMockingboardCardMgr().UpdateIRQ();
 }
 
 //-----------------------------------------------------------------------------

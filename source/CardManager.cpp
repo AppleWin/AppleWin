@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Disk.h"
 #include "FourPlay.h"
 #include "Harddisk.h"
+#include "Mockingboard.h"
 #include "MouseInterface.h"
 #include "ParallelPrinter.h"
 #include "SAM.h"
@@ -46,6 +47,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "VidHD.h"
 #include "LanguageCard.h"
 #include "Memory.h"
+#include "z80emu.h"
 
 void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 {
@@ -65,7 +67,7 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = m_pSSC = new CSuperSerialCard(slot);
 		break;
 	case CT_MockingboardC:
-		m_slot[slot] = new DummyCard(type, slot);
+		m_slot[slot] = new MockingboardCard(slot, type);
 		break;
 	case CT_GenericPrinter:
 		_ASSERT(m_pParallelPrinterCard == NULL);
@@ -84,10 +86,12 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = m_pMouseCard = new CMouseInterface(slot);
 		break;
 	case CT_Z80:
-		m_slot[slot] = new DummyCard(type, slot);
+		_ASSERT(m_pZ80Card == NULL);
+		if (m_pZ80Card) break;	// Only support one Z80 card
+		m_slot[slot] = new Z80Card(slot);
 		break;
 	case CT_Phasor:
-		m_slot[slot] = new DummyCard(type, slot);
+		m_slot[slot] = new MockingboardCard(slot, type);
 		break;
 	case CT_Echo:
 		m_slot[slot] = new DummyCard(type, slot);
@@ -237,26 +241,18 @@ void CardManager::InitializeIO(LPBYTE pCxRomPeripheral)
 	}
 }
 
-void CardManager::Update(const ULONG nExecutedCycles)
+void CardManager::Destroy()
 {
 	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
 	{
 		if (m_slot[i])
 		{
-			m_slot[i]->Update(nExecutedCycles);
+			m_slot[i]->Destroy();
 		}
 	}
-}
 
-void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
-{
-	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
-	{
-		if (m_slot[i])
-		{
-			m_slot[i]->SaveSnapshot(yamlSaveHelper);
-		}
-	}
+	GetCardMgr().GetDisk2CardMgr().Destroy();
+	GetCardMgr().GetMockingboardCardMgr().Destroy();
 }
 
 void CardManager::Reset(const bool powerCycle)
@@ -268,15 +264,30 @@ void CardManager::Reset(const bool powerCycle)
 			m_slot[i]->Reset(powerCycle);
 		}
 	}
+
+	GetCardMgr().GetMockingboardCardMgr().Reset(powerCycle);
 }
 
-void CardManager::Destroy()
+void CardManager::Update(const ULONG nExecutedCycles)
 {
 	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
 	{
 		if (m_slot[i])
 		{
-			m_slot[i]->Destroy();
+			m_slot[i]->Update(nExecutedCycles);
+		}
+	}
+
+	GetCardMgr().GetMockingboardCardMgr().Update(nExecutedCycles);
+}
+
+void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)
+	{
+		if (m_slot[i])
+		{
+			m_slot[i]->SaveSnapshot(yamlSaveHelper);
 		}
 	}
 }

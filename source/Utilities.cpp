@@ -212,8 +212,8 @@ void LoadConfiguration(bool loadImages)
 	SpkrSetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
 	dwTmp = 70;
-	REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp);
-	MB_SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
+	if(REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp));
+	GetCardMgr().GetMockingboardCardMgr().SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
 	if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
 		g_bSaveStateOnExit = dwTmp ? true : false;
@@ -530,7 +530,6 @@ void ResetMachineState()
 	GetVideo().VideoResetState();
 	KeybReset();
 	JoyReset();
-	MB_Reset(true);
 	SpkrReset();
 	SetActiveCpu(GetMainCpu());
 #ifdef USE_SPEECH_API
@@ -570,7 +569,6 @@ void CtrlReset()
 	GetPravets().Reset();
 	GetCardMgr().Reset(false);
 	KeybReset();
-	MB_Reset(false);
 #ifdef USE_SPEECH_API
 	g_Speech.Reset();
 #endif

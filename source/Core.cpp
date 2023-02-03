@@ -227,7 +227,7 @@ void SetCurrentCLK6502(void)
 	//
 
 	SpkrReinitialize();
-	MB_Reinitialize();
+	GetCardMgr().GetMockingboardCardMgr().ReinitializeClock();
 }
 
 void UseClockMultiplier(double clockMultiplier)

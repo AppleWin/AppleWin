@@ -179,7 +179,7 @@ static void ContinueExecution(void)
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
+					 (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !GetCardMgr().GetMockingboardCardMgr().IsActive()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
@@ -188,7 +188,7 @@ static void ContinueExecution(void)
 			GetFrame().VideoRedrawScreenDuringFullSpeed(0, true);	// Init for full-speed mode
 
 		// Don't call Spkr_Mute() - will get speaker clicks
-		MB_Mute();
+		GetCardMgr().GetMockingboardCardMgr().MuteControl(true);
 		SysClk_StopTimer();
 #ifdef USE_SPEECH_API
 		g_Speech.Reset();			// TODO: Put this on a timer (in emulated cycles)... otherwise CATALOG cuts out
@@ -206,7 +206,7 @@ static void ContinueExecution(void)
 			GetFrame().VideoRedrawScreenAfterFullSpeed(g_dwCyclesThisFrame);
 
 		// Don't call Spkr_Unmute()
-		MB_Unmute();
+		GetCardMgr().GetMockingboardCardMgr().MuteControl(false);
 		SysClk_StartTimerUsec(nExecutionPeriodUsec);
 
 		// Switch to higher priority, eg. for audio (BUG #015394)
@@ -633,7 +633,7 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 	else if (!g_cmdLine.wavFileMockingboard.empty())
 	{
 		if (RiffInitWriteFile(g_cmdLine.wavFileMockingboard.c_str(), 44100, 2))
-			MB_OutputToRiff();
+			GetCardMgr().GetMockingboardCardMgr().OutputToRiff();
 	}
 
 	// Initialize COM - so we can use CoCreateInstance
@@ -678,7 +678,7 @@ static void RepeatInitialization(void)
 		// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
 		const bool bShowAboutDlg = CheckOldAppleWinVersion();	// Post: g_OldAppleWinVersion
 
-		// Load configuration from Registry
+		// Load configuration from Registry (+ will insert cards)
 		{
 			bool loadImages = g_cmdLine.szSnapshotName == NULL;	// don't load floppy/harddisk images if a snapshot is to be loaded later on
 			LoadConfiguration(loadImages);
@@ -743,15 +743,12 @@ static void RepeatInitialization(void)
 
 		// Allow the 4 hardcoded slots to be configurated as empty
 		// NB. this state *is* persisted to the Registry/conf.ini (just like '-s7 empty' is)
-		// TODO: support bSlotEmpty[] for slots: 0,4,5
-		if (g_cmdLine.bSlotEmpty[SLOT1])
-			GetCardMgr().Remove(SLOT1);
-		if (g_cmdLine.bSlotEmpty[SLOT2])
-			GetCardMgr().Remove(SLOT2);
-		if (g_cmdLine.bSlotEmpty[SLOT3])
-			GetCardMgr().Remove(SLOT3);
-		if (g_cmdLine.bSlotEmpty[SLOT6])
-			GetCardMgr().Remove(SLOT6);
+		// TODO: support bSlotEmpty[] for slots: 0
+		for (UINT i = SLOT1; i < NUM_SLOTS; i++)
+		{
+			if (g_cmdLine.bSlotEmpty[i])
+				GetCardMgr().Remove(i);
+		}
 
 		if (g_cmdLine.supportDCD && GetCardMgr().IsSSCInstalled())
 		{
@@ -780,12 +777,6 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.slotInsert[SLOT5] != CT_Empty)
 		{
-			if (GetCardMgr().QuerySlot(SLOT4) == CT_MockingboardC && g_cmdLine.slotInsert[SLOT5] != CT_MockingboardC)	// Currently MB occupies slot4+5 when enabled
-			{
-				GetCardMgr().Remove(SLOT4);
-				GetCardMgr().Remove(SLOT5);
-			}
-
 			if (GetCardMgr().QuerySlot(SLOT5) != CT_Disk2)	// Ignore if already got Disk2 in slot 5
 				GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
 		}
@@ -796,7 +787,7 @@ static void RepeatInitialization(void)
 				GetCardMgr().Insert(SLOT6, g_cmdLine.slotInsert[SLOT6]);
 		}
 
-		for (UINT i = 0; i < NUM_SLOTS; i++)
+		for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 		{
 			if (GetCardMgr().QuerySlot(i) == CT_Disk2 && g_cmdLine.slotInfo[i].isDiskII13)
 				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).SetFirmware13Sector();

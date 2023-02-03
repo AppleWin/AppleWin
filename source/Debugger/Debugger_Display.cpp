@@ -1954,7 +1954,13 @@ void DrawMemory ( int line, int iMemDump )
 	SS_CARD_MOCKINGBOARD_v1 SS_MB;
 
 	if ((eDevice == DEV_SY6522) || (eDevice == DEV_AY8910))
-		MB_GetSnapshot_v1(&SS_MB, 4+(nAddr>>1));		// Slot4 or Slot5
+	{
+		UINT slot = 4 + (nAddr >> 1);		// Slot4 or Slot5
+		if (GetCardMgr().GetMockingboardCardMgr().IsMockingboard(slot))
+			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot)).GetSnapshot_v1(&SS_MB);
+		else // No MB in this slot
+			SS_MB.Hdr.UnitHdr.hdr.v2.Type = UT_Reserved;
+	}
 
 	RECT rect = { 0 };
 	rect.left   = DISPLAY_MINIMEM_COLUMN;
@@ -2059,31 +2065,45 @@ void DrawMemory ( int line, int iMemDump )
 //			else
 			if (eDevice == DEV_SY6522)
 			{
-				sText = StrFormat( "%02X ", (unsigned)((BYTE*)&SS_MB.Unit[nAddr & 1].RegsSY6522)[iAddress] );
-				if (SS_MB.Unit[nAddr & 1].bTimer1Active && (iAddress == 4 || iAddress == 5))		// T1C
+				if (SS_MB.Hdr.UnitHdr.hdr.v2.Type == UT_Card)
 				{
-					DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));							// if timer1 active then draw in white
-				}
-				else if (SS_MB.Unit[nAddr & 1].bTimer2Active && (iAddress == 8 || iAddress == 9))	// T2C
-				{
-					DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));							// if timer2 active then draw in white
+					sText = StrFormat("%02X ", (unsigned)((BYTE*)&SS_MB.Unit[nAddr & 1].RegsSY6522)[iAddress]);
+					if (SS_MB.Unit[nAddr & 1].bTimer1Active && (iAddress == 4 || iAddress == 5))		// T1C
+					{
+						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));							// if timer1 active then draw in white
+					}
+					else if (SS_MB.Unit[nAddr & 1].bTimer2Active && (iAddress == 8 || iAddress == 9))	// T2C
+					{
+						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));							// if timer2 active then draw in white
+					}
+					else
+					{
+						if (iCol & 1)
+							DebuggerSetColorFG(DebuggerGetColor(iForeground));
+						else
+							DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
+					}
 				}
 				else
 				{
-					if (iCol & 1)
-						DebuggerSetColorFG( DebuggerGetColor( iForeground ));
-					else
-						DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
+					sText = "-- ";	// No MB card in this slot
 				}
 			}
 			else
 			if (eDevice == DEV_AY8910)
 			{
-				sText = StrFormat( "%02X ", (unsigned)SS_MB.Unit[nAddr & 1].RegsAY8910[iAddress] );
-				if (iCol & 1)
-					DebuggerSetColorFG( DebuggerGetColor( iForeground ));
+				if (SS_MB.Hdr.UnitHdr.hdr.v2.Type == UT_Card)
+				{
+					sText = StrFormat("%02X ", (unsigned)SS_MB.Unit[nAddr & 1].RegsAY8910[iAddress]);
+					if (iCol & 1)
+						DebuggerSetColorFG(DebuggerGetColor(iForeground));
+					else
+						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
+				}
 				else
-					DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
+				{
+					sText = "-- ";	// No MB card in this slot
+				}
 			}
 			else
 			{

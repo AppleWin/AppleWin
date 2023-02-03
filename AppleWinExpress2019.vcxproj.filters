@@ -271,6 +271,9 @@
     <ClCompile Include="source\CopyProtectionDongles.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\MockingboardCardManager.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\CommonVICE\6510core.h">
@@ -613,6 +616,12 @@
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
     <ClInclude Include="source\CopyProtectionDongles.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MockingboardCardManager.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MockingboardDefs.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
   </ItemGroup>

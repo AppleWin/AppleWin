@@ -441,7 +441,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		CYC(7);
 #if defined(_DEBUG) && LOG_IRQ_TAKEN_AND_RTI
 		std::string irq6522;
-		MB_Get6522IrqDescription(irq6522);
+		GetCardMgr().GetMockingboardCardMgr().Get6522IrqDescription(irq6522);
 		const char* pSrc =	(g_bmIRQ & 1) ? irq6522.c_str() :
 							(g_bmIRQ & 2) ? "SPEECH" :
 							(g_bmIRQ & 4) ? "SSC" :
@@ -614,7 +614,7 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 	g_interruptInLastExecutionBatch = false;
 
 #ifdef _DEBUG
-	MB_CheckCumulativeCycles();
+	GetCardMgr().GetMockingboardCardMgr().CheckCumulativeCycles();
 #endif
 
 	// uCycles:
@@ -625,7 +625,7 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
 	// . Ensures that 6522 regs are up-to-date for any potential save-state
 	// . SyncEvent will trigger the 6522 TIMER1/2 underflow on the correct cycle
-	MB_UpdateCycles(uExecutedCycles);
+	GetCardMgr().GetMockingboardCardMgr().UpdateCycles(uExecutedCycles);
 
 	const UINT nRemainingCycles = uExecutedCycles - g_nCyclesExecuted;
 	g_nCumulativeCycles	+= nRemainingCycles;
