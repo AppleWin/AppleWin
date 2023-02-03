@@ -15,9 +15,7 @@
 #include "Interface.h"
 #include "NTSC.h"
 #include "CPU.h"
-#include "Mockingboard.h"
 #include "MouseInterface.h"
-#include "Log.h"
 #include "Debugger/Debug.h"
 
 #include "linux/paddle.h"
@@ -28,6 +26,10 @@
 #include <SDL_image.h>
 
 // #define KEY_LOGGING_VERBOSE
+
+#ifdef KEY_LOGGING_VERBOSE
+#include "Log.h"
+#endif
 
 namespace
 {
@@ -677,14 +679,14 @@ namespace sa2
       if (value)
       {
         // entering full speed
-        MB_Mute();
+        GetCardMgr().GetMockingboardCardMgr().MuteControl(true);
         setGLSwapInterval(0);
         VideoRedrawScreenDuringFullSpeed(0, true);
       }
       else
       {
         // leaving full speed
-        MB_Unmute();
+        GetCardMgr().GetMockingboardCardMgr().MuteControl(false);
         setGLSwapInterval(myTargetGLSwap);
         mySpeed.reset();
       }
@@ -696,7 +698,7 @@ namespace sa2
   {
     return myScrollLockFullSpeed ||
            (g_dwSpeed == SPEED_MAX) ||
-           (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !MB_IsActive()) ||
+           (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !GetCardMgr().GetMockingboardCardMgr().IsActive()) ||
            IsDebugSteppingAtFullSpeed();
   }
 

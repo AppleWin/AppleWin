@@ -62,6 +62,7 @@ set(SOURCE_FILES
   SoundCore.cpp
   AY8910.cpp
   Mockingboard.cpp
+  MockingboardCardManager.cpp
   Pravets.cpp
   YamlHelper.cpp
   Log.cpp
@@ -143,6 +144,7 @@ set(HEADER_FILES
   SoundCore.h
   AY8910.h
   Mockingboard.h
+  MockingboardCardManager.h
   Pravets.h
   Tape.h
   YamlHelper.h

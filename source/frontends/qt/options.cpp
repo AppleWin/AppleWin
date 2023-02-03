@@ -12,7 +12,6 @@
 #include "CPU.h"
 #include "Video.h"
 #include "Speaker.h"
-#include "Mockingboard.h"
 #include "ParallelPrinter.h"
 #include "Configuration/IPropertySheet.h"
 #include "qtframe.h"
@@ -211,7 +210,7 @@ void getAppleWinPreferences(PreferenceData & data)
     data.apple2Type = GetApple2Type();
 
     data.speakerVolume = SpkrGetVolume();
-    data.mockingboardVolume = MB_GetVolume();
+    data.mockingboardVolume = cardManager.GetMockingboardCardMgr().GetVolume();
 
     const std::string & saveState = Snapshot_GetFilename();
     if (!saveState.empty())
@@ -252,8 +251,8 @@ void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const Prefer
 
     if (currentData.mockingboardVolume != newData.mockingboardVolume)
     {
-        MB_SetVolume(newData.mockingboardVolume, GetPropertySheet().GetVolumeMax());
-        REGSAVE(TEXT(REGVALUE_MB_VOLUME), MB_GetVolume());
+        cardManager.GetMockingboardCardMgr().SetVolume(newData.mockingboardVolume, GetPropertySheet().GetVolumeMax());
+        REGSAVE(TEXT(REGVALUE_MB_VOLUME), cardManager.GetMockingboardCardMgr().GetVolume());
     }
 
     if (currentData.apple2Type != newData.apple2Type)

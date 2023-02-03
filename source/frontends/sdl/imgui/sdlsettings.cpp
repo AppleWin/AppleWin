@@ -14,7 +14,6 @@
 #include "Disk.h"
 #include "Harddisk.h"
 #include "Speaker.h"
-#include "Mockingboard.h"
 #include "Registry.h"
 #include "Utilities.h"
 #include "Memory.h"
@@ -597,11 +596,11 @@ namespace sa2
             REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
           }
 
-          myMockingboardVolume = volumeMax - MB_GetVolume();
+          myMockingboardVolume = volumeMax - cardManager.GetMockingboardCardMgr().GetVolume();
           if (ImGui::SliderInt("Mockingboard volume", &myMockingboardVolume, 0, volumeMax))
           {
-            MB_SetVolume(volumeMax - myMockingboardVolume, volumeMax);
-            REGSAVE(TEXT(REGVALUE_MB_VOLUME), MB_GetVolume());
+            cardManager.GetMockingboardCardMgr().SetVolume(volumeMax - myMockingboardVolume, volumeMax);
+            REGSAVE(TEXT(REGVALUE_MB_VOLUME), cardManager.GetMockingboardCardMgr().GetVolume());
           }
 
           ImGui::Separator();
