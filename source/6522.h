@@ -52,6 +52,7 @@ public:
 	USHORT GetRegT2C(void) { return m_regs.TIMER2_COUNTER.w; }
 	void GetRegs(BYTE regs[SIZE_6522_REGS]) { memcpy(&regs[0], (BYTE*)&m_regs, SIZE_6522_REGS); }	// For debugger
 	void SetRegORA(BYTE reg) { m_regs.ORA = reg; }
+	bool IsTimer1IrqDelay(void) { return m_timer1IrqDelay ? true : false; }
 
 	BYTE Read(BYTE nReg);
 	void Write(BYTE nReg, BYTE nValue);
