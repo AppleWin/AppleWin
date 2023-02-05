@@ -67,7 +67,7 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	m_lastAYUpdateCycle = 0;
 
 	for (UINT i = 0; i < NUM_VOICES; i++)
-		m_ppAYVoiceBuffer[NUM_VOICES] = NULL;
+		m_ppAYVoiceBuffer[i] = new short[MAX_SAMPLES];	// Buffer can hold a max of 0.37 seconds worth of samples (16384/44100)
 
 	m_inActiveCycleCount = 0;
 	m_regAccessedFlag = false;
@@ -87,9 +87,6 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 		int syncId = (m_slot << 4) + id;	// NB. Encode the slot# into the id - used by MB_SyncEventCallback()
 		m_syncEvent[id] = new SyncEvent(syncId, 0, MB_SyncEventCallback);
 	}
-
-	for (UINT i = 0; i < NUM_VOICES; i++)
-		m_ppAYVoiceBuffer[i] = new short[MAX_SAMPLES];	// Buffer can hold a max of 0.37 seconds worth of samples (16384/44100)
 
 	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 	{
