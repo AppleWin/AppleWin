@@ -12,7 +12,6 @@ public:
 	bool GetEnhanceDisk(void);
 	void SetEnhanceDisk(bool enhanceDisk);
 	void LoadLastDiskImage(void);
-	void Destroy(void);
 	bool IsAnyFirmware13Sector(void);
 	void GetFilenameAndPathForSaveState(std::string& filename, std::string& path);
 	void SetStepperDefer(bool defer);
