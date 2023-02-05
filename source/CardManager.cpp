@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "CardManager.h"
-#include "Core.h"
 #include "Registry.h"
 
 #include "Disk.h"
@@ -251,8 +250,7 @@ void CardManager::Destroy()
 		}
 	}
 
-	GetCardMgr().GetDisk2CardMgr().Destroy();
-	GetCardMgr().GetMockingboardCardMgr().Destroy();
+	GetMockingboardCardMgr().Destroy();
 }
 
 void CardManager::Reset(const bool powerCycle)
@@ -265,7 +263,7 @@ void CardManager::Reset(const bool powerCycle)
 		}
 	}
 
-	GetCardMgr().GetMockingboardCardMgr().Reset(powerCycle);
+	GetMockingboardCardMgr().Reset(powerCycle);
 }
 
 void CardManager::Update(const ULONG nExecutedCycles)
@@ -278,7 +276,7 @@ void CardManager::Update(const ULONG nExecutedCycles)
 		}
 	}
 
-	GetCardMgr().GetMockingboardCardMgr().Update(nExecutedCycles);
+	GetMockingboardCardMgr().Update(nExecutedCycles);
 }
 
 void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
