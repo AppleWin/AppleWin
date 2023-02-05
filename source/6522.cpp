@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "6522.h"
 #include "CardManager.h"
-#include "Mockingboard.h"
 #include "Core.h"
 #include "CPU.h"
 #include "Memory.h"

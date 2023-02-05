@@ -90,8 +90,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Core.h"
 #include "CardManager.h"
 #include "Memory.h"
-#include "Mockingboard.h"
-#include "MouseInterface.h"
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
