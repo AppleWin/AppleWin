@@ -43,14 +43,12 @@ Etc.
 #include "StdAfx.h"
 
 #include "MouseInterface.h"
-#include "SaveState_Structs_common.h"
 #include "Common.h"
 
 #include "Core.h"	// g_SynchronousEventMgr
 #include "CardManager.h"
 #include "CPU.h"
 #include "Interface.h"	// FrameSetCursorPosByMousePos()
-#include "Log.h"
 #include "Memory.h"
 #include "NTSC.h"	// NTSC_GetCyclesUntilVBlank()
 #include "YamlHelper.h"

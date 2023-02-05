@@ -32,8 +32,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Disk.h"
 
-#include "SaveState_Structs_v1.h"
-
 #include "Interface.h"
 #include "Core.h"
 #include "CardManager.h"

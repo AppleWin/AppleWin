@@ -50,7 +50,6 @@
 
 #include "Core.h"
 #include "Memory.h"
-#include "NTSC.h"
 #include "Video.h"
 #include "VidHD.h"
 #include "YamlHelper.h"
