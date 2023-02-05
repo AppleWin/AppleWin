@@ -202,6 +202,10 @@ void SY6522::Write(BYTE nReg, BYTE nValue)
 			nValue &= 0x7F;
 			m_regs.IER |= nValue;
 		}
+		if (m_syncEvent[0])
+			m_syncEvent[0]->m_canAssertIRQ = (m_regs.IER & IxR_TIMER1) ? true : false;
+		if (m_syncEvent[1])
+			m_syncEvent[1]->m_canAssertIRQ = (m_regs.IER & IxR_TIMER2) ? true : false;
 		UpdateIFR(0);
 		break;
 	case 0x0f:	// ORA_NO_HS
@@ -669,12 +673,14 @@ void SY6522::SetTimersActiveFromSnapshot(bool timer1Active, bool timer2Active, U
 	{
 		SyncEvent* syncEvent = m_syncEvent[0];
 		syncEvent->SetCycles(GetRegT1C() + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
+		syncEvent->m_canAssertIRQ = (m_regs.IER & IxR_TIMER1) ? true : false;
 		g_SynchronousEventMgr.Insert(syncEvent);
 	}
 	if (IsTimer2Active())
 	{
 		SyncEvent* syncEvent = m_syncEvent[1];
 		syncEvent->SetCycles(GetRegT2C() + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
+		syncEvent->m_canAssertIRQ = (m_regs.IER & IxR_TIMER2) ? true : false;
 		g_SynchronousEventMgr.Insert(syncEvent);
 	}
 }

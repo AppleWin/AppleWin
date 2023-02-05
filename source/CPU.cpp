@@ -139,6 +139,9 @@ static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
 static bool g_irqDefer1Opcode = false;
 static bool g_interruptInLastExecutionBatch = false;	// Last batch of executed cycles included an interrupt (IRQ/NMI)
 
+// NB. No need to save to save-state, as IRQ() follows CheckSynchronousInterruptSources(), and IRQ() always sets it to false.
+static bool g_irqOnLastOpcodeCycle = false;
+
 //
 
 static eCpuType g_MainCPU = CPU_65C02;
@@ -202,6 +205,12 @@ void ResetCyclesExecutedForDebugger(void)
 bool IsInterruptInLastExecution(void)
 {
 	return g_interruptInLastExecutionBatch;
+}
+
+void SetIrqOnLastOpcodeCycle(void)
+{
+	if (!(regs.ps & AF_INTERRUPT))
+		g_irqOnLastOpcodeCycle = true;
 }
 
 //
@@ -405,9 +414,6 @@ static __forceinline void CheckSynchronousInterruptSources(UINT cycles, ULONG uE
 {
 	g_SynchronousEventMgr.Update(cycles, uExecutedCycles);
 }
-
-// NB. No need to save to save-state, as IRQ() follows CheckSynchronousInterruptSources(), and IRQ() always sets it to false.
-bool g_irqOnLastOpcodeCycle = false;
 
 static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {

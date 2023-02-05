@@ -834,6 +834,8 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 		if ((pMB->sy6522.GetReg(SY6522::rACR) & SY6522::ACR_RUNMODE) == SY6522::ACR_RM_FREERUNNING)
 		{
 			pMB->sy6522.StartTimer1();
+			if (pMB->sy6522.IsTimer1IrqDelay())
+				return 0x0001;	// T1C=0xFFFF, which is really -1, as there's 1 cycle until underflow occurs
 			return pMB->sy6522.GetRegT1C() + SY6522::kExtraTimerCycles;
 		}
 
