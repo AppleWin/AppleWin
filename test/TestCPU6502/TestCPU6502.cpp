@@ -34,6 +34,10 @@ eCpuType GetActiveCpu(void)
 	return g_ActiveCPU;
 }
 
+void SetIrqOnLastOpcodeCycle(void)
+{
+}
+
 bool g_bStopOnBRK = false;
 
 static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)

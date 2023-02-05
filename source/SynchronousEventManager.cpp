@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "SynchronousEventManager.h"
+#include "CPU.h"
 
 void SynchronousEventManager::Insert(SyncEvent* pNewEvent)
 {
@@ -135,8 +136,6 @@ bool SynchronousEventManager::Remove(int id)
 	return false;
 }
 
-extern bool g_irqOnLastOpcodeCycle;
-
 void SynchronousEventManager::Update(int cycles, ULONG uExecutedCycles)
 {
 	SyncEvent* pCurrEvent = m_syncEventHead;
@@ -147,8 +146,8 @@ void SynchronousEventManager::Update(int cycles, ULONG uExecutedCycles)
 	pCurrEvent->m_cyclesRemaining -= cycles;
 	if (pCurrEvent->m_cyclesRemaining <= 0)
 	{
-		if (pCurrEvent->m_cyclesRemaining == 0)
-			g_irqOnLastOpcodeCycle = true;		// IRQ occurs on last cycle of opcode
+		if (pCurrEvent->m_cyclesRemaining == 0 && pCurrEvent->m_canAssertIRQ)
+			SetIrqOnLastOpcodeCycle();		// IRQ occurs on last cycle of opcode
 
 		int cyclesUnderflowed = -pCurrEvent->m_cyclesRemaining;
 

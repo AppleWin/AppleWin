@@ -61,3 +61,4 @@ bool IsIrqAsserted(void);
 bool Is6502InterruptEnabled(void);
 void ResetCyclesExecutedForDebugger(void);
 bool IsInterruptInLastExecution(void);
+void SetIrqOnLastOpcodeCycle(void);

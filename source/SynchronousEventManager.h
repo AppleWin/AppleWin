@@ -32,6 +32,7 @@ public:
 		: m_id(id),
 		m_cyclesRemaining(initCycles),
 		m_active(false),
+		m_canAssertIRQ(true),
 		m_callback(callback),
 		m_next(NULL)
 	{}
@@ -45,6 +46,7 @@ public:
 	int m_id;
 	int m_cyclesRemaining;
 	bool m_active;
+	bool m_canAssertIRQ;
 	syncEventCB m_callback;
 	SyncEvent* m_next;
 };
