@@ -34,9 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Interface.h"
 #include "Utilities.h"
 #include "Pravets.h"
-#include "Tape.h"
 #include "YamlHelper.h"
-#include "Log.h"
 
 static BYTE asciicode[3][10] = {
 	// VK_LEFT/UP/RIGHT/DOWN/SELECT, VK_PRINT/EXECUTE/SNAPSHOT/INSERT/DELETE

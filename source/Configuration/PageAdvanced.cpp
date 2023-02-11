@@ -129,6 +129,7 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = NewCloneType;
 				m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewCloneType);
 			}
+			break;
 
 		case IDC_COMBO_GAME_IO_CONNECTOR:
 			if (HIWORD(wparam) == CBN_SELCHANGE)

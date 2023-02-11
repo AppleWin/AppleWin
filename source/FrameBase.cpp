@@ -2,8 +2,8 @@
 
 #include "FrameBase.h"
 #include "Interface.h"
-#include "Core.h"
 #include "NTSC.h"
+#include "StrFormat.h"
 
 FrameBase::FrameBase()
 {

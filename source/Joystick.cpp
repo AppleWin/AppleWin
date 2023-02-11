@@ -40,14 +40,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Joystick.h"
-#include "Windows/AppleWin.h"
 #include "CPU.h"
 #include "Memory.h"
 #include "YamlHelper.h"
 #include "Interface.h"
 #include "CopyProtectionDongles.h"
-
-#include "Configuration/PropertySheet.h"
 
 enum {DEVICE_NONE=0, DEVICE_JOYSTICK, DEVICE_KEYBOARD, DEVICE_MOUSE, DEVICE_JOYSTICK_THUMBSTICK2};
 

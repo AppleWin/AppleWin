@@ -38,7 +38,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Joystick.h"
 #include "Keyboard.h"
 #include "Memory.h"
-#include "Mockingboard.h"
 #include "Pravets.h"
 #include "Speaker.h"
 #include "Speech.h"
