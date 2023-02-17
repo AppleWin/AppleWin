@@ -96,7 +96,7 @@ target_sources(sa2 PRIVATE
   ${IMGUI_PATH}/imgui_draw.cpp
   ${IMGUI_PATH}/imgui_tables.cpp
   ${IMGUI_PATH}/imgui_widgets.cpp
-  ${IMGUI_PATH}/backends/imgui_impl_sdl.cpp
+  ${IMGUI_PATH}/backends/imgui_impl_sdl2.cpp
   ${IMGUI_PATH}/backends/imgui_impl_opengl3.cpp
 
   ${IMGUI_CLUB_PATH}/imgui_memory_editor/imgui_memory_editor.h
