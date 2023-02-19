@@ -263,10 +263,7 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 					break;
 
 				case AY_READ:		// 5: READ FROM PSG (need to set DDRA to input)
-					if (m_phasorEnable && m_phasorMode == PH_EchoPlus)
-						r6522.SetRegORA( 0xff & (r6522.GetReg(SY6522::rDDRA) ^ 0xff) );	// Phasor (Echo+ mode) doesn't support reading AY8913s - it just reads 1's for the input bits
-					else
-						r6522.SetRegORA( AYReadReg(subunit, ay, pMB->nAYCurrentRegister) & (r6522.GetReg(SY6522::rDDRA) ^ 0xff) );
+					r6522.SetRegORA( AYReadReg(subunit, ay, pMB->nAYCurrentRegister) & (r6522.GetReg(SY6522::rDDRA) ^ 0xff) );
 					break;
 
 				case AY_WRITE:		// 6: WRITE TO PSG
