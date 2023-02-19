@@ -83,5 +83,5 @@ private:
 	class CSuperSerialCard* m_pSSC;
 	class LanguageCardUnit* m_pLanguageCard;
 	class ParallelPrinterCard* m_pParallelPrinterCard;
-	class m_pZ80Card* m_pZ80Card;
+	class Z80Card* m_pZ80Card;
 };
