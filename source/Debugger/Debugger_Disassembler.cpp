@@ -451,7 +451,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 void FormatOpcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 {
 	// 2.8.0.0 fix // TODO: FIX: show max 8 bytes for HEX
-	const int nMaxOpBytes = std::min(line_.nOpbyte, int(DISASM_DISPLAY_MAX_OPCODES));
+	const int nMaxOpBytes = std::min<int>(line_.nOpbyte, DISASM_DISPLAY_MAX_OPCODES);
 
 	char*             cp = line_.sOpCodes;
 	const char* const ep = cp + sizeof(line_.sOpCodes);
