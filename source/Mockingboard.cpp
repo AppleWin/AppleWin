@@ -58,6 +58,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SSI263.h"
 
 #define DBG_MB_SS_CARD 0	// NB. From UI, select Mockingboard (not Phasor)
+#define DBG_SUPPORT_ECHOPLUS 0	// Allow Phasor (in Echo+ mode) to pass the TMS5220 detection used by Echo+ disk
 
 //---------------------------------------------------------------------------
 
@@ -197,13 +198,25 @@ void MockingboardCard::WriteToORB(BYTE subunit)
 	{
 		const int kAY0 = 2;		// bit4=0 (active low) selects the 1st AY8913, ie. the only AY8913 in Mockingboard mode (confirmed on real Phasor h/w)
 		const int kAY1 = 1;		// bit3=0 (active low) selects the 2nd AY8913 attached to this 6522 (unavailable in Mockingboard mode)
-		int nAY_CS = (m_phasorMode == PH_Phasor) ? (~(value >> 3) & 3) : kAY0;
 
-		if (nAY_CS & kAY0)
-			AY8910_Write(subunit, AY8913_DEVICE_A, value);
+		if (m_phasorMode == PH_EchoPlus)
+		{
+			int nAY_CS = (value >> 3) & 3;
+			if (nAY_CS & kAY0)
+				AY8910_Write(0, AY8913_DEVICE_A, value);
 
-		if (nAY_CS & kAY1)
-			AY8910_Write(subunit, AY8913_DEVICE_B, value);
+			if (nAY_CS & kAY1)
+				AY8910_Write(1, AY8913_DEVICE_A, value);
+		}
+		else
+		{
+			int nAY_CS = (m_phasorMode == PH_Phasor) ? (~(value >> 3) & 3) : kAY0;
+			if (nAY_CS & kAY0)
+				AY8910_Write(subunit, AY8913_DEVICE_A, value);
+
+			if (nAY_CS & kAY1)
+				AY8910_Write(subunit, AY8913_DEVICE_B, value);
+		}
 	}
 	else
 	{
@@ -218,6 +231,7 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 {
 	m_regAccessedFlag = true;
 	MB_SUBUNIT* pMB = &m_MBSubUnit[subunit];
+	SY6522& r6522 = (m_phasorEnable && m_phasorMode == PH_EchoPlus) ? m_MBSubUnit[SY6522_DEVICE_B].sy6522 : pMB->sy6522;
 
 	if ((value & 4) == 0)
 	{
@@ -235,9 +249,9 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 		MockingboardUnitState_e& state = (ay == AY8913_DEVICE_A) ? pMB->state : pMB->stateB;	// GH#659
 
 #if _DEBUG
-		if (!m_phasorEnable)
+		if (!m_phasorEnable || m_phasorMode != PH_Phasor)
 			_ASSERT(ay == AY8913_DEVICE_A);
-		if (nAYFunc == AY_WRITE || nAYFunc == AY_LATCH)
+		if (nAYFunc == AY_READ || nAYFunc == AY_WRITE || nAYFunc == AY_LATCH)
 			_ASSERT(state == AY_INACTIVE);
 #endif
 
@@ -250,13 +264,13 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 
 				case AY_READ:		// 5: READ FROM PSG (need to set DDRA to input)
 					if (m_phasorEnable && m_phasorMode == PH_EchoPlus)
-						pMB->sy6522.SetRegORA( 0xff & (pMB->sy6522.GetReg(SY6522::rDDRA) ^ 0xff) );	// Phasor (Echo+ mode) doesn't support reading AY8913s - it just reads 1's for the input bits
+						r6522.SetRegORA( 0xff & (r6522.GetReg(SY6522::rDDRA) ^ 0xff) );	// Phasor (Echo+ mode) doesn't support reading AY8913s - it just reads 1's for the input bits
 					else
-						pMB->sy6522.SetRegORA( AYReadReg(subunit, ay, pMB->nAYCurrentRegister) & (pMB->sy6522.GetReg(SY6522::rDDRA) ^ 0xff) );
+						r6522.SetRegORA( AYReadReg(subunit, ay, pMB->nAYCurrentRegister) & (r6522.GetReg(SY6522::rDDRA) ^ 0xff) );
 					break;
 
 				case AY_WRITE:		// 6: WRITE TO PSG
-					_AYWriteReg(subunit, ay, pMB->nAYCurrentRegister, pMB->sy6522.GetReg(SY6522::rORA));
+					_AYWriteReg(subunit, ay, pMB->nAYCurrentRegister, r6522.GetReg(SY6522::rORA));
 					break;
 
 				case AY_LATCH:		// 7: LATCH ADDRESS
@@ -264,8 +278,8 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 					// Selecting an unused register number above 0x0f puts the AY into a state where
 					// any values written to the data/address bus are ignored, but can be read back
 					// within a few tens of thousands of cycles before they decay to zero.
-					if (pMB->sy6522.GetReg(SY6522::rORA) <= 0x0F)
-						pMB->nAYCurrentRegister = pMB->sy6522.GetReg(SY6522::rORA) & 0x0F;
+					if (r6522.GetReg(SY6522::rORA) <= 0x0F)
+						pMB->nAYCurrentRegister = r6522.GetReg(SY6522::rORA) & 0x0F;
 					// else Pro-Mockingboard (clone from HK)
 					break;
 			}
@@ -714,6 +728,11 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 
 	for (UINT i = 0; i < NUM_SSI263; i++)
 		m_MBSubUnit[i].ssi263.SetCardMode(m_phasorMode);
+
+#if DBG_SUPPORT_ECHOPLUS
+	if (m_phasorMode == PH_EchoPlus && (nAddr & 0xf) == 0)
+		return 0x1f;	// for TMS5220 detection
+#endif
 
 	return MemReadFloatingBus(nExecutedCycles);
 }
