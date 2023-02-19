@@ -198,25 +198,16 @@ void MockingboardCard::WriteToORB(BYTE subunit)
 	{
 		const int kAY0 = 2;		// bit4=0 (active low) selects the 1st AY8913, ie. the only AY8913 in Mockingboard mode (confirmed on real Phasor h/w)
 		const int kAY1 = 1;		// bit3=0 (active low) selects the 2nd AY8913 attached to this 6522 (unavailable in Mockingboard mode)
+		const int nAY_CS = (m_phasorMode == PH_Mockingboard) ? kAY0 : (~(value >> 3) & 3);
 
 		if (m_phasorMode == PH_EchoPlus)
-		{
-			int nAY_CS = (value >> 3) & 3;
-			if (nAY_CS & kAY0)
-				AY8910_Write(0, AY8913_DEVICE_A, value);
+			subunit = SY6522_DEVICE_B;
 
-			if (nAY_CS & kAY1)
-				AY8910_Write(1, AY8913_DEVICE_A, value);
-		}
-		else
-		{
-			int nAY_CS = (m_phasorMode == PH_Phasor) ? (~(value >> 3) & 3) : kAY0;
-			if (nAY_CS & kAY0)
-				AY8910_Write(subunit, AY8913_DEVICE_A, value);
+		if (nAY_CS & kAY0)
+			AY8910_Write(subunit, AY8913_DEVICE_A, value);
 
-			if (nAY_CS & kAY1)
-				AY8910_Write(subunit, AY8913_DEVICE_B, value);
-		}
+		if (nAY_CS & kAY1)
+			AY8910_Write(subunit, AY8913_DEVICE_B, value);
 	}
 	else
 	{
@@ -249,7 +240,7 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 		MockingboardUnitState_e& state = (ay == AY8913_DEVICE_A) ? pMB->state : pMB->stateB;	// GH#659
 
 #if _DEBUG
-		if (!m_phasorEnable || m_phasorMode != PH_Phasor)
+		if (!m_phasorEnable || m_phasorMode == PH_Mockingboard)
 			_ASSERT(ay == AY8913_DEVICE_A);
 		if (nAYFunc == AY_READ || nAYFunc == AY_WRITE || nAYFunc == AY_LATCH)
 			_ASSERT(state == AY_INACTIVE);
