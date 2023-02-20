@@ -87,7 +87,7 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 	case CT_Z80:
 		_ASSERT(m_pZ80Card == NULL);
 		if (m_pZ80Card) break;	// Only support one Z80 card
-		m_slot[slot] = new Z80Card(slot);
+		m_slot[slot] = m_pZ80Card = new Z80Card(slot);
 		break;
 	case CT_Phasor:
 		m_slot[slot] = new MockingboardCard(slot, type);
@@ -166,6 +166,9 @@ void CardManager::RemoveInternal(UINT slot)
 		case CT_Saturn128K:
 		case CT_LanguageCardIIe:
 			m_pLanguageCard = NULL;
+			break;
+		case CT_Z80:
+			m_pZ80Card = NULL;
 			break;
 		}
 
