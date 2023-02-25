@@ -196,27 +196,22 @@ void MockingboardCard::WriteToORB(BYTE subunit)
 #else
 	if (m_phasorEnable)
 	{
-		const int kAY0 = 2;		// bit4=0 (active low) selects the 1st AY8913, ie. the only AY8913 in Mockingboard mode (confirmed on real Phasor h/w)
-		const int kAY1 = 1;		// bit3=0 (active low) selects the 2nd AY8913 attached to this 6522 (unavailable in Mockingboard mode)
+		const int kAY0 = 2;		// Phasor mode: bit4=0 (active low)  selects the 1st AY8913, ie. the only AY8913 in Mockingboard mode (confirmed on real Phasor h/w)
+								// Echo+  mode: bit3=1 (active high) selects the 1st AY8913
+		const int kAY1 = 1;		// Phasor mode: bit3=0 (active low)  selects the 2nd AY8913 attached to this 6522 (unavailable in Mockingboard mode)
+								// Echo+  mode: bit4=1 (active high) selects the 2nd AY8913
+		const int nAY_CS =	(m_phasorMode == PH_EchoPlus) ? ((value >> 4) & 1) | ((value >> 2) & 2)	// swap bits 4 & 3
+							: (m_phasorMode == PH_Phasor) ? (~(value >> 3) & 3)
+							: kAY0; // Anything else is Mockingboard
 
 		if (m_phasorMode == PH_EchoPlus)
-		{
-			int nAY_CS = (value >> 3) & 3;
-			if (nAY_CS & kAY0)
-				AY8910_Write(0, AY8913_DEVICE_A, value);
+			subunit = SY6522_DEVICE_B;
 
-			if (nAY_CS & kAY1)
-				AY8910_Write(1, AY8913_DEVICE_A, value);
-		}
-		else
-		{
-			int nAY_CS = (m_phasorMode == PH_Phasor) ? (~(value >> 3) & 3) : kAY0;
-			if (nAY_CS & kAY0)
-				AY8910_Write(subunit, AY8913_DEVICE_A, value);
+		if (nAY_CS & kAY0)
+			AY8910_Write(subunit, AY8913_DEVICE_A, value);
 
-			if (nAY_CS & kAY1)
-				AY8910_Write(subunit, AY8913_DEVICE_B, value);
-		}
+		if (nAY_CS & kAY1)
+			AY8910_Write(subunit, AY8913_DEVICE_B, value);
 	}
 	else
 	{
@@ -249,7 +244,7 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 		MockingboardUnitState_e& state = (ay == AY8913_DEVICE_A) ? pMB->state : pMB->stateB;	// GH#659
 
 #if _DEBUG
-		if (!m_phasorEnable || m_phasorMode != PH_Phasor)
+		if (!m_phasorEnable || m_phasorMode == PH_Mockingboard)
 			_ASSERT(ay == AY8913_DEVICE_A);
 		if (nAYFunc == AY_READ || nAYFunc == AY_WRITE || nAYFunc == AY_LATCH)
 			_ASSERT(state == AY_INACTIVE);
@@ -263,10 +258,7 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 					break;
 
 				case AY_READ:		// 5: READ FROM PSG (need to set DDRA to input)
-					if (m_phasorEnable && m_phasorMode == PH_EchoPlus)
-						r6522.SetRegORA( 0xff & (r6522.GetReg(SY6522::rDDRA) ^ 0xff) );	// Phasor (Echo+ mode) doesn't support reading AY8913s - it just reads 1's for the input bits
-					else
-						r6522.SetRegORA( AYReadReg(subunit, ay, pMB->nAYCurrentRegister) & (r6522.GetReg(SY6522::rDDRA) ^ 0xff) );
+					r6522.SetRegORA( AYReadReg(subunit, ay, pMB->nAYCurrentRegister) & (r6522.GetReg(SY6522::rDDRA) ^ 0xff) );
 					break;
 
 				case AY_WRITE:		// 6: WRITE TO PSG

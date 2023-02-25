@@ -23,7 +23,7 @@ Win32Frame::Win32Frame()
 	g_hLogoBitmap = (HBITMAP)0;
 	g_hDeviceBitmap = (HBITMAP)0;
 	g_hDeviceDC = (HDC)0;
-	g_bAltEnter_ToggleFullScreen = false;
+	g_bAltEnter_ToggleFullScreen = true;	// Alt+Enter defaults to toggling full screen
 	g_bIsFullScreen = false;
 	g_bShowingCursor = true;
 	g_bLastCursorInAppleViewport = false;
