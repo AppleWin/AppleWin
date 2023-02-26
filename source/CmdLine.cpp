@@ -148,13 +148,13 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
-			g_cmdLine.szImageName_harddisk[HARDDISK_1] = lpCmdLine;
+			g_cmdLine.szImageName_harddisk[SLOT7][HARDDISK_1] = lpCmdLine;
 		}
 		else if (strcmp(lpCmdLine, "-h2") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
-			g_cmdLine.szImageName_harddisk[HARDDISK_2] = lpCmdLine;
+			g_cmdLine.szImageName_harddisk[SLOT7][HARDDISK_2] = lpCmdLine;
 		}
 		else if (lpCmdLine[0] == '-' && lpCmdLine[1] == 's' && lpCmdLine[2] >= '1' && lpCmdLine[2] <= '7')
 		{
@@ -173,6 +173,8 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					g_cmdLine.slotInsert[slot] = CT_Disk2;
 					g_cmdLine.slotInfo[slot].isDiskII13 = true;
 				}
+				if (strcmp(lpCmdLine, "hdc") == 0)
+					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
 				if (strcmp(lpCmdLine, "parallel") == 0)
 				{
 					if (slot == SLOT1)
@@ -199,7 +201,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			{
 				const UINT drive = lpCmdLine[4] == '1' ? DRIVE_1 : DRIVE_2;
 
-				if (slot != 5 && slot != 6)
+				if (slot != SLOT5 && slot != SLOT6)
 				{
 					LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
 				}
@@ -208,6 +210,21 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					lpCmdLine = GetCurrArg(lpNextArg);
 					lpNextArg = GetNextArg(lpNextArg);
 					g_cmdLine.szImageName_drive[slot][drive] = lpCmdLine;
+				}
+			}
+			else if (lpCmdLine[3] == 'h' && (lpCmdLine[4] == '1' || lpCmdLine[4] == '2'))	// -s[1..7]h[1|2] <dsk-image>
+			{
+				const UINT drive = lpCmdLine[4] == '1' ? HARDDISK_1 : HARDDISK_2;
+
+				if (slot != SLOT5 && slot != SLOT7)
+				{
+					LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
+				}
+				else
+				{
+					lpCmdLine = GetCurrArg(lpNextArg);
+					lpNextArg = GetNextArg(lpNextArg);
+					g_cmdLine.szImageName_harddisk[slot][drive] = lpCmdLine;
 				}
 			}
 			else if (strcmp(lpCmdLine, "-s7-empty-on-exit") == 0)
