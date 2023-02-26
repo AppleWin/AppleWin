@@ -1094,6 +1094,14 @@ bool GetBreakpointInfo ( WORD nOffset, bool & bBreakpointActive_, bool & bBreakp
 	return false;
 }
 
+// returns the hit type if the breakpoints stops
+static BreakpointHit_t hitBreakpoint(Breakpoint_t * pBP, BreakpointHit_t eHitType)
+{
+	pBP->bHit = true;
+	++pBP->nHitCount;
+	return pBP->bStop ? eHitType : BP_HIT_NONE;
+}
+
 
 // Returns true if we should continue checking breakpoint details, else false
 //===========================================================================
@@ -1213,7 +1221,7 @@ int CheckBreakpointsIO ()
 		NO_6502_TARGET
 	};
 	int  nBytes;
-	bool bBreakpointHit = 0;
+	int  iBreakpointHit = 0;
 
 	int  iTarget;
 	int  nAddress;
@@ -1244,17 +1252,21 @@ int CheckBreakpointsIO ()
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
 								{
-									return BP_HIT_MEM;
+									iBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEM);
 								}
 								else if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
 								{
 									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_RI|MEM_R))
-										return BP_HIT_MEMR;
+									{
+										iBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEMR);
+									}
 								}
 								else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
 								{
 									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_WI|MEM_W))
-										return BP_HIT_MEMW;
+									{
+										iBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEMW);
+									}
 								}
 								else
 								{
@@ -1267,14 +1279,14 @@ int CheckBreakpointsIO ()
 			}
 		}
 	}
-	return bBreakpointHit;
+	return iBreakpointHit;
 }
 
 // Returns true if a register breakpoint is triggered
 //===========================================================================
 int CheckBreakpointsReg ()
 {
-	int bBreakpointHit = 0;
+	int iAnyBreakpointHit = 0;
 
 	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
 	{
@@ -1282,6 +1294,8 @@ int CheckBreakpointsReg ()
 
 		if (! _BreakpointValid( pBP ))
 			continue;
+
+		bool bBreakpointHit = 0;
 
 		switch (pBP->eSource)
 		{
@@ -1309,15 +1323,13 @@ int CheckBreakpointsReg ()
 
 		if (bBreakpointHit)
 		{
-			bBreakpointHit = BP_HIT_REG;
+			iAnyBreakpointHit = hitBreakpoint(pBP, BP_HIT_REG);
 			if (pBP->bTemp)
 				_BWZ_Clear(pBP, iBreakpoint);
-
-			break;
 		}
 	}
 
-	return bBreakpointHit;
+	return iAnyBreakpointHit;
 }
 
 void ClearTempBreakpoints ()
@@ -1338,7 +1350,7 @@ void ClearTempBreakpoints ()
 //===========================================================================
 int CheckBreakpointsVideo()
 {
-	int bBreakpointHit = 0;
+	int iBreakpointHit = 0;
 
 	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
 	{
@@ -1353,13 +1365,12 @@ int CheckBreakpointsVideo()
 		uint16_t vert = NTSC_GetVideoVertForDebugger();	// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
 		if (_CheckBreakpointValue(pBP, vert))
 		{
-			bBreakpointHit = BP_HIT_VIDEO_POS;
+			iBreakpointHit = hitBreakpoint(pBP, BP_HIT_VIDEO_POS);
 			pBP->bEnabled = false;	// Disable, otherwise it'll trigger many times on this scan-line
-			break;
 		}
 	}
 
-	return bBreakpointHit;
+	return iBreakpointHit;
 }
 
 //===========================================================================
@@ -1545,6 +1556,9 @@ bool _CmdBreakpointAddReg( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoin
 		pBP->bSet      = true;
 		pBP->bEnabled  = true;
 		pBP->bTemp     = bIsTempBreakpoint;
+		pBP->bStop     = true;
+		pBP->bHit      = false;
+		pBP->nHitCount = 0;
 		bStatus = true;
 	}
 
@@ -1875,9 +1889,55 @@ Update_t CmdBreakpointEnable (int nArgs) {
 }
 
 
+Update_t CmdBreakpointChange (int nArgs) {
+
+	if (! g_nBreakpoints)
+		return ConsoleDisplayError("There are no (PC) Breakpoints defined.");
+
+	if (nArgs != 2)
+		return Help_Arg_1( CMD_BREAKPOINT_CHANGE );
+
+	const int iSlot = g_aArgs[1].nValue;
+	if (iSlot >= 0 && iSlot < MAX_BREAKPOINTS && g_aBreakpoints[iSlot].bSet)
+	{
+		Breakpoint_t & bp = g_aBreakpoints[iSlot];
+		const char * sArg = g_aArgs[2].sArg;
+		const int nArgLen = g_aArgs[2].nArgLen;
+		for (int i = 0; i < nArgLen; ++i)
+		{
+			switch (sArg[i])
+			{
+			case 'E':
+				bp.bEnabled = true;
+				break;
+			case 'e':
+				bp.bEnabled = false;
+				break;
+			case 'T':
+				bp.bTemp = true;
+				break;
+			case 't':
+				bp.bTemp = false;
+				break;
+			case 'S':
+				bp.bStop = true;
+				break;
+			case 's':
+				bp.bStop = false;
+				break;
+			}
+		}
+	}
+
+	return UPDATE_BREAKPOINTS;
+}
+
 void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool bZeroBased )
 {
-	static const char sFlags[] = "-*";
+	static const char sEnabledFlags[] = "-E";
+	static const char sStopFlags[] = "-S";
+	static const char sTempFlags[] = "-T";
+	static const char sHitFlags[] = " *";
 
 	std::string sAddressBuf;
 	std::string const& sSymbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, sAddressBuf);
@@ -1886,10 +1946,14 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 				: aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_WRITE_ONLY ? 'W'
 				: ' ';
 
-	ConsoleBufferPushFormat( "  #%d %c %04X %c %s",
+	ConsoleBufferPushFormat( "  #%d %c %c %c %c %08X %04X %c %s",
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
-		sFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
+		sEnabledFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
+		sStopFlags[ aBreakWatchZero[ iBWZ ].bStop ? 1 : 0 ],
+		sTempFlags[ aBreakWatchZero[ iBWZ ].bTemp ? 1 : 0 ],
+		sHitFlags[ aBreakWatchZero[ iBWZ ].bHit ? 1 : 0 ],
+		aBreakWatchZero[ iBWZ ].nHitCount,
 		aBreakWatchZero[ iBWZ ].nAddress,
 		cBPM,
 		sSymbol.c_str()

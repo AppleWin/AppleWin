@@ -215,6 +215,9 @@
 		bool                 bSet    ; // used to be called enabled pre 2.0
 		bool                 bEnabled;
 		bool                 bTemp;    // If true then remove BP when hit or stepping cancelled (eg. G xxxx)
+		bool                 bHit;     // true when the breakpoint has just been hit
+		bool                 bStop;    // true if the debugger stops when it is hit
+		DWORD                nHitCount;  // number of times the breakpoint was hit
 	};
 
 	typedef Breakpoint_t Bookmark_t;
@@ -345,6 +348,7 @@
 		, CMD_BREAKPOINT_LIST
 //		, CMD_BREAKPOINT_LOAD
 		, CMD_BREAKPOINT_SAVE
+		, CMD_BREAKPOINT_CHANGE
 // Benchmark / Timing
 //		, CMD_BENCHMARK_START
 //		, CMD_BENCHMARK_STOP
@@ -648,6 +652,7 @@
 	Update_t CmdBreakpointDisable  (int nArgs);
 	Update_t CmdBreakpointEdit     (int nArgs);
 	Update_t CmdBreakpointEnable   (int nArgs);
+	Update_t CmdBreakpointChange   (int nArgs);
 	Update_t CmdBreakpointList     (int nArgs);
 //	Update_t CmdBreakpointLoad     (int nArgs);
 	Update_t CmdBreakpointSave     (int nArgs);
