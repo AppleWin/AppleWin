@@ -374,7 +374,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //	bool CheckBreakpoint (WORD address, BOOL memory);
 	bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, WORD nAddress, int nLen, bool bIsTempBreakpoint );
 	int  _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint=false );
-	void _BWZ_Clear( Breakpoint_t * aBreakWatchZero, int iSlot );
+	void _BWZ_RemoveOne( Breakpoint_t *aBreakWatchZero, const int iSlot, int & nTotal );
 
 // Config - Save
 	bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave );
@@ -1121,6 +1121,29 @@ bool _BreakpointValid( Breakpoint_t *pBP ) //, BreakpointSource_t iSrc )
 	return true;
 }
 
+// Stepping
+void ClearTempBreakpoints()
+{
+	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
+	{
+		Breakpoint_t *pBP = &g_aBreakpoints[iBreakpoint];
+
+		if (! _BreakpointValid( pBP ))
+			continue;
+
+		if (pBP->bHit && pBP->bTemp)
+			_BWZ_RemoveOne(g_aBreakpoints, iBreakpoint, g_nBreakpoints);
+
+		pBP->bHit = false;
+	}
+}
+
+static void DebugEnterStepping()
+{
+	ClearTempBreakpoints();
+	g_nAppMode = MODE_STEPPING;
+	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
+}
 
 //===========================================================================
 bool _CheckBreakpointValue( Breakpoint_t *pBP, int nVal )
@@ -1324,26 +1347,10 @@ int CheckBreakpointsReg ()
 		if (bBreakpointHit)
 		{
 			iAnyBreakpointHit = hitBreakpoint(pBP, BP_HIT_REG);
-			if (pBP->bTemp)
-				_BWZ_Clear(pBP, iBreakpoint);
 		}
 	}
 
 	return iAnyBreakpointHit;
-}
-
-void ClearTempBreakpoints ()
-{
-	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
-	{
-		Breakpoint_t *pBP = &g_aBreakpoints[iBreakpoint];
-
-		if (! _BreakpointValid( pBP ))
-			continue;
-
-		if (pBP->bTemp)
-			_BWZ_Clear(pBP, iBreakpoint);
-	}
 }
 
 // Returns true if a video breakpoint is triggered
@@ -2237,8 +2244,7 @@ static Update_t CmdGo (int nArgs, const bool bFullSpeed)
 	g_bLastGoCmdWasFullSpeed = bFullSpeed;
 	g_bGoCmd_ReinitFlag = true;
 
-	g_nAppMode = MODE_STEPPING;
-	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
+	DebugEnterStepping();
 
 	SoundCore_SetFade(FADE_IN);
 
@@ -2306,7 +2312,8 @@ Update_t CmdTrace (int nArgs)
 	g_nDebugStepCycles  = 0;
 	g_nDebugStepStart = regs.pc;
 	g_nDebugStepUntil = -1;
-	g_nAppMode = MODE_STEPPING;
+
+	DebugEnterStepping();
 	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 	DebugContinueStepping(true);
 
@@ -2364,7 +2371,7 @@ Update_t CmdTraceLine (int nArgs)
 	g_nDebugStepStart = regs.pc;
 	g_nDebugStepUntil = -1;
 
-	g_nAppMode = MODE_STEPPING;
+	DebugEnterStepping();
 	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 	DebugContinueStepping(true);
 
@@ -8387,6 +8394,8 @@ void DebugBegin ()
 //===========================================================================
 void DebugExitDebugger ()
 {
+	ClearTempBreakpoints();  // make sure we remove dead breakpoints before checking
+	// should this check if breakpoints are enabled?
 	if (g_nBreakpoints == 0 && g_hTraceFile == NULL)
 	{
 		DebugEnd();
@@ -8642,7 +8651,6 @@ void DebugStopStepping(void)
 		return;
 
 	g_nDebugSteps = 0; // On next DebugContinueStepping(), stop single-stepping and transition to MODE_DEBUG
-	ClearTempBreakpoints();
 }
 
 //===========================================================================

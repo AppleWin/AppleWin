@@ -188,3 +188,5 @@
 	bool	IsDebugSteppingAtFullSpeed(void);
 	void	DebuggerBreakOnDmaToOrFromIoMemory(WORD nAddress, bool isDmaToMemory);
 	bool	DebuggerCheckMemBreakpoints(WORD nAddress, WORD nSize, bool isDmaToMemory);
+
+	void	ClearTempBreakpoints();
