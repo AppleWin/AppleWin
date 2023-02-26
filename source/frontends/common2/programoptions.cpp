@@ -251,7 +251,7 @@ namespace common2
       szImageName_harddisk[DRIVE_2] = options.hardDisk2.c_str();
     }
 
-    InsertHardDisks(szImageName_harddisk, bBoot);
+    InsertHardDisks(SLOT7, szImageName_harddisk, bBoot);
 
     if (!options.customRom.empty())
     {
