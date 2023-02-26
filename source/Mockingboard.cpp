@@ -212,6 +212,12 @@ void MockingboardCard::WriteToORB(BYTE subunit)
 
 		if (nAY_CS & kAY1)
 			AY8910_Write(subunit, AY8913_DEVICE_B, value);
+
+		if (nAY_CS == 0)
+		{
+			SY6522& r6522 = m_MBSubUnit[subunit].sy6522;
+			r6522.SetRegORA(r6522.GetReg(SY6522::rDDRA) ^ 0xff);	// direction '0' = input, and empirically it floats high (so DDRA=0x00 will read 0xFF as input)
+		}
 	}
 	else
 	{
@@ -226,7 +232,7 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 {
 	m_regAccessedFlag = true;
 	MB_SUBUNIT* pMB = &m_MBSubUnit[subunit];
-	SY6522& r6522 = (m_phasorEnable && m_phasorMode == PH_EchoPlus) ? m_MBSubUnit[SY6522_DEVICE_B].sy6522 : pMB->sy6522;
+	SY6522& r6522 = pMB->sy6522;
 
 	if ((value & 4) == 0)
 	{
