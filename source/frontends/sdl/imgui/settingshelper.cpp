@@ -102,7 +102,7 @@ namespace
       {2, {CT_Empty, CT_SSC, CT_Uthernet2}},
       {3, {CT_Empty, CT_Uthernet, CT_Uthernet2, CT_VidHD}},
       {4, {CT_Empty, CT_MockingboardC, CT_MouseInterface, CT_Phasor, CT_Uthernet2}},
-      {5, {CT_Empty, CT_MockingboardC, CT_Z80, CT_SAM, CT_Disk2, CT_GenericHDD, CT_FourPlay, CT_SNESMAX, CT_Uthernet2}},
+      {5, {CT_Empty, CT_MockingboardC, CT_Disk2, CT_GenericHDD, CT_Uthernet2, CT_Z80, CT_SAM, CT_FourPlay, CT_SNESMAX}},
       {6, {CT_Empty, CT_Disk2, CT_Uthernet2}},
       {7, {CT_Empty, CT_GenericHDD, CT_Uthernet2}},
     };
