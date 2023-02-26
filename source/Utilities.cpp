@@ -373,22 +373,22 @@ static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 	return res;
 }
 
-static bool DoHardDiskInsert(const int nDrive, LPCSTR szFileName)
+static bool DoHardDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 {
-	_ASSERT(GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD);
-	if (GetCardMgr().QuerySlot(SLOT7) != CT_GenericHDD)
+	_ASSERT(GetCardMgr().QuerySlot(slot) == CT_GenericHDD);
+	if (GetCardMgr().QuerySlot(slot) != CT_GenericHDD)
 		return false;
 
 	if (szFileName[0] == '\0')
 	{
-		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Unplug(nDrive);
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).Unplug(nDrive);
 		return true;
 	}
 
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
-	BOOL bRes = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).Insert(nDrive, strPathName);
+	BOOL bRes = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).Insert(nDrive, strPathName);
 	bool res = (bRes == TRUE);
 	if (res)
 		SetCurrentDir(strPathName);
@@ -427,19 +427,21 @@ void InsertFloppyDisks(const UINT slot, LPCSTR szImageName_drive[NUM_DRIVES], bo
 		GetFrame().FrameMessageBox("Failed to insert floppy disk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
 }
 
-void InsertHardDisks(LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
+void InsertHardDisks(const UINT slot, LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 {
+	_ASSERT(slot == 5 || slot == 7);
+
 	if (!szImageName_harddisk[HARDDISK_1] && !szImageName_harddisk[HARDDISK_2])
 		return;
 
-	if (GetCardMgr().QuerySlot(SLOT7) != CT_GenericHDD)
-		GetCardMgr().Insert(SLOT7, CT_GenericHDD);	// Enable the Harddisk controller card
+	if (GetCardMgr().QuerySlot(slot) != CT_GenericHDD)
+		GetCardMgr().Insert(slot, CT_GenericHDD);	// Enable the Harddisk controller card
 
 	bool bRes = true;
 
 	if (szImageName_harddisk[HARDDISK_1])
 	{
-		bRes = DoHardDiskInsert(HARDDISK_1, szImageName_harddisk[HARDDISK_1]);
+		bRes = DoHardDiskInsert(slot, HARDDISK_1, szImageName_harddisk[HARDDISK_1]);
 		LogFileOutput("Init: DoHardDiskInsert(HDD1), res=%d\n", bRes);
 		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);	// harddisk activity LED
 		bBoot = true;
@@ -447,7 +449,7 @@ void InsertHardDisks(LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 
 	if (szImageName_harddisk[HARDDISK_2])
 	{
-		bRes &= DoHardDiskInsert(HARDDISK_2, szImageName_harddisk[HARDDISK_2]);
+		bRes &= DoHardDiskInsert(slot, HARDDISK_2, szImageName_harddisk[HARDDISK_2]);
 		LogFileOutput("Init: DoHardDiskInsert(HDD2), res=%d\n", bRes);
 	}
 

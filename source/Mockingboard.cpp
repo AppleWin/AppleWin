@@ -411,6 +411,16 @@ UINT MockingboardCard::MB_Update(void)
 				AY8910Update(subunit, ay, &m_ppAYVoiceBuffer[chip * NUM_VOICES_PER_AY8913], nNumSamples);
 			}
 		}
+
+		// Echo+ right speaker is also output to left speaker
+		if (m_phasorEnable && m_phasorMode == PH_EchoPlus)
+		{
+			for (UINT j = 0; j < NUM_VOICES_PER_AY8913; j++)
+			{
+				memcpy(m_ppAYVoiceBuffer[0 * NUM_VOICES_PER_AY8913 + j], m_ppAYVoiceBuffer[2 * NUM_VOICES_PER_AY8913 + j], nNumSamples * sizeof(short));
+				memcpy(m_ppAYVoiceBuffer[1 * NUM_VOICES_PER_AY8913 + j], m_ppAYVoiceBuffer[3 * NUM_VOICES_PER_AY8913 + j], nNumSamples * sizeof(short));
+			}
+		}
 	}
 
 	return (UINT) nNumSamples;
@@ -487,7 +497,7 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 		}
 
 		// Not this, since no change on a CTRL+RESET or power-cycle:
-//		g_bPhasorEnable = false;
+//		m_phasorEnable = false;
 	}
 
 	ReinitializeClock();	// Reset CLK for AY8910s
@@ -1140,7 +1150,7 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 
 	AY8910_InitClock((int)Get6502BaseClock());
 
-	// NB. g_bPhasorEnable setup in ctor
+	// NB. m_phasorEnable setup in ctor
 
 	return true;
 }
@@ -1257,7 +1267,7 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 
 	AY8910_InitClock((int)(Get6502BaseClock() * m_phasorClockScaleFactor));
 
-	// NB. g_bPhasorEnable setup in ctor
+	// NB. m_phasorEnable setup in ctor
 
 	return true;
 }

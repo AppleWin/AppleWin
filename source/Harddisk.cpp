@@ -129,7 +129,7 @@ Overview
 HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	Card(CT_GenericHDD, slot)
 {
-	if (m_slot != SLOT7)	// fixme
+	if (m_slot != SLOT5 && m_slot != SLOT7)	// fixme
 		ThrowErrorInvalidSlot();
 
 	m_unitNum = HARDDISK_1 << 7;	// b7=unit

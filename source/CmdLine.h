@@ -33,8 +33,6 @@ struct CmdLine
 		supportDCD = false;
 		enableDumpToRealPrinter = false;
 		noDisk2StepperDefer = false;
-		szImageName_harddisk[HARDDISK_1] = NULL;
-		szImageName_harddisk[HARDDISK_2] = NULL;
 		szSnapshotName = NULL;
 		szScreenshotFilename = NULL;
 		uRamWorksExPages = 0;
@@ -60,6 +58,8 @@ struct CmdLine
 			szImageName_drive[i][DRIVE_2] = NULL;
 			driveConnected[i][DRIVE_1] = true;
 			driveConnected[i][DRIVE_2] = true;
+			szImageName_harddisk[i][HARDDISK_1] = NULL;
+			szImageName_harddisk[i][HARDDISK_2] = NULL;
 		}
 	}
 
@@ -79,7 +79,7 @@ struct CmdLine
 	SlotInfo slotInfo[NUM_SLOTS];
 	LPCSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES];
 	bool driveConnected[NUM_SLOTS][NUM_DRIVES];
-	LPCSTR szImageName_harddisk[NUM_HARDDISKS];
+	LPCSTR szImageName_harddisk[NUM_SLOTS][NUM_HARDDISKS];
 	LPSTR szSnapshotName;
 	LPSTR szScreenshotFilename;
 	UINT uRamWorksExPages;

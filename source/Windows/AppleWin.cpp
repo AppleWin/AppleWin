@@ -787,6 +787,12 @@ static void RepeatInitialization(void)
 				GetCardMgr().Insert(SLOT6, g_cmdLine.slotInsert[SLOT6]);
 		}
 
+		if (g_cmdLine.slotInsert[SLOT7] != CT_Empty)
+		{
+			if (GetCardMgr().QuerySlot(SLOT7) != CT_GenericHDD)	// Ignore if already got HDC in slot 7
+				GetCardMgr().Insert(SLOT7, g_cmdLine.slotInsert[SLOT7]);
+		}
+
 		for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 		{
 			if (GetCardMgr().QuerySlot(i) == CT_Disk2 && g_cmdLine.slotInfo[i].isDiskII13)
@@ -835,8 +841,11 @@ static void RepeatInitialization(void)
 			InsertFloppyDisks(SLOT6, g_cmdLine.szImageName_drive[SLOT6], g_cmdLine.driveConnected[SLOT6], g_cmdLine.bBoot);
 			g_cmdLine.szImageName_drive[SLOT6][DRIVE_1] = g_cmdLine.szImageName_drive[SLOT6][DRIVE_2] = NULL;	// Don't insert on a restart
 
-			InsertHardDisks(g_cmdLine.szImageName_harddisk, g_cmdLine.bBoot);
-			g_cmdLine.szImageName_harddisk[HARDDISK_1] = g_cmdLine.szImageName_harddisk[HARDDISK_2] = NULL;	// Don't insert on a restart
+			InsertHardDisks(SLOT5, g_cmdLine.szImageName_harddisk[SLOT5], temp);
+			g_cmdLine.szImageName_harddisk[SLOT5][HARDDISK_1] = g_cmdLine.szImageName_harddisk[SLOT5][HARDDISK_2] = NULL;	// Don't insert on a restart
+
+			InsertHardDisks(SLOT7, g_cmdLine.szImageName_harddisk[SLOT7], g_cmdLine.bBoot);
+			g_cmdLine.szImageName_harddisk[SLOT7][HARDDISK_1] = g_cmdLine.szImageName_harddisk[SLOT7][HARDDISK_2] = NULL;	// Don't insert on a restart
 
 			if (g_cmdLine.bSlotEmpty[SLOT7])
 			{
