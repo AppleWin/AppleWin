@@ -397,6 +397,10 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			KeybSetAltGrSendsWM_CHAR(true);
 		}
+		else if (strcmp(lpCmdLine, "-capslock=off") == 0)			// GH#1187
+		{
+			KeybSetCapsLock(false);
+		}
 		else if (strcmp(lpCmdLine, "-no-hook-alt") == 0)			// GH#583
 		{
 			JoySetHookAltKeys(false);
