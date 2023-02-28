@@ -216,7 +216,9 @@ void MockingboardCard::WriteToORB(BYTE subunit)
 		if (nAY_CS == 0)
 		{
 			SY6522& r6522 = m_MBSubUnit[subunit].sy6522;
-			r6522.SetRegORA(r6522.GetReg(SY6522::rDDRA) ^ 0xff);	// direction '0' = input, and empirically it floats high (so DDRA=0x00 will read 0xFF as input)
+			BYTE ora = r6522.GetReg(SY6522::rORA);
+			ora |= r6522.GetReg(SY6522::rDDRA) ^ 0xff;	// for any DDRA bits set as input (logical 0), then set them in ORA
+			r6522.SetRegORA(ora);						// empirically bus floats high (or pull-up?) if no AY chip-selected (so DDRA=0x00 will read 0xFF as input)
 		}
 	}
 	else
