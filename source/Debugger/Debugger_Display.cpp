@@ -2094,11 +2094,21 @@ void DrawMemory ( int line, int iMemDump )
 			{
 				if (SS_MB.Hdr.UnitHdr.hdr.v2.Type == UT_Card)
 				{
-					sText = StrFormat("%02X ", (unsigned)SS_MB.Unit[nAddr & 1].RegsAY8910[iAddress]);
-					if (iCol & 1)
-						DebuggerSetColorFG(DebuggerGetColor(iForeground));
+					if (iAddress <= 13)
+						sText = StrFormat("%02X ", (unsigned)SS_MB.Unit[nAddr & 1].RegsAY8910[iAddress]);
 					else
-						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
+						sText = "-- ";	// regs 14 & 15 aren't supported by AY-3-8913
+					if (SS_MB.Unit[nAddr & 1].nAYCurrentRegister == iAddress)
+					{
+						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));							// if latched address then draw in white
+					}
+					else
+					{
+						if (iCol & 1)
+							DebuggerSetColorFG(DebuggerGetColor(iForeground));
+						else
+							DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
+					}
 				}
 				else
 				{

@@ -240,6 +240,9 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 	{
 		// RESET: Reset AY8910 only
 		AY8910_reset(subunit, ay);
+		pMB->nAYCurrentRegister = 0;	// not valid
+		pMB->state = pMB->stateB = AY_INACTIVE;
+		pMB->isAYLatchedAddressValid[0] = pMB->isAYLatchedAddressValid[1] = false;
 	}
 	else
 	{
@@ -270,7 +273,9 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 					break;
 
 				case AY_WRITE:		// 6: WRITE TO PSG
-					_AYWriteReg(subunit, ay, pMB->nAYCurrentRegister, r6522.GetReg(SY6522::rORA));
+					if (pMB->isAYLatchedAddressValid[ay])
+						_AYWriteReg(subunit, ay, pMB->nAYCurrentRegister, r6522.GetReg(SY6522::rORA));
+					// else if invalid then just ignore
 					break;
 
 				case AY_LATCH:		// 7: LATCH ADDRESS
@@ -279,7 +284,10 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 					// any values written to the data/address bus are ignored, but can be read back
 					// within a few tens of thousands of cycles before they decay to zero.
 					if (r6522.GetReg(SY6522::rORA) <= 0x0F)
+					{
 						pMB->nAYCurrentRegister = r6522.GetReg(SY6522::rORA) & 0x0F;
+						pMB->isAYLatchedAddressValid[ay] = true;
+					}
 					// else Pro-Mockingboard (clone from HK)
 					break;
 			}
@@ -929,7 +937,7 @@ void MockingboardCard::GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS)
 		}
 
 		memset(&pSS->Unit[i].RegsSSI263, 0, sizeof(SSI263A));	// Not used by debugger
-		pSS->Unit[i].nAYCurrentRegister = pMB->nAYCurrentRegister;
+		pSS->Unit[i].nAYCurrentRegister = pMB->isAYLatchedAddressValid[0] ? pMB->nAYCurrentRegister : 0xff;
 		pSS->Unit[i].bTimer1Active = pMB->sy6522.IsTimer1Active();
 		pSS->Unit[i].bTimer2Active = pMB->sy6522.IsTimer2Active();
 		pSS->Unit[i].bSpeechIrqPending = false;
@@ -1092,7 +1100,7 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		pMB->ssi263.SaveSnapshot(yamlSaveHelper);
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state);
-		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);	// save all 8 bits (even though top 4 bits should be 0)
 	}
 }
 
@@ -1185,7 +1193,7 @@ void MockingboardCard::Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state);
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE_B, pMB->stateB);
-		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister);	// save all 8 bits (even though top 4 bits should be 0)
 	}
 }
 

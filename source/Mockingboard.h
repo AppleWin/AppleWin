@@ -66,13 +66,15 @@ private:
 		BYTE nAYCurrentRegister;
 		MockingboardUnitState_e state;	// Where a unit is a 6522+AY8910 pair
 		MockingboardUnitState_e stateB;	// Phasor: 6522 & 2nd AY8910
+		bool isAYLatchedAddressValid[2];
 
 		MB_SUBUNIT(UINT slot) : sy6522(slot), ssi263(slot)
 		{
 			nAY8910Number = 0;
 			nAYCurrentRegister = 0;
-			state = AY_NOP0;
-			stateB = AY_NOP0;
+			state = AY_INACTIVE;
+			stateB = AY_INACTIVE;
+			isAYLatchedAddressValid[0] = isAYLatchedAddressValid[1] = false;	// after AY reset
 			// sy6522 & ssi263 have already been default constructed
 		}
 	};
