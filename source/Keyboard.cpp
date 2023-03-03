@@ -63,6 +63,11 @@ void KeybSetAltGrSendsWM_CHAR(bool state)
 	g_bAltGrSendsWM_CHAR = state;
 }
 
+void KeybSetCapsLock(bool state)
+{
+	g_bCapsLock = state;
+}
+
 //===========================================================================
 
 void KeybReset()

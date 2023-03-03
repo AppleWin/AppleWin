@@ -9,29 +9,36 @@
 		<h2 style="COLOR: rgb(0,128,0)">
 			Sound</h2>
 		<hr size="4">
+
 		<h3>Sound:</h3>
-		<p>AppleWin emulates the internal speaker, the Mockingboard (or Phasor) sound card and also the SAM card; using a PC sound card.</p>
+		<p>AppleWin emulates the Apple II's internal speaker, the Mockingboard (or Phasor) sound card and also the SAM card.</p>
 		<p>Use the AppleWin Configuration tab labelled <em>Sound</em>.</p>
 		<p>If you want to use a sound card then use at least DirectX&nbsp;9.</p>
+
 		<h4>Speaker:</h4>
 		<p>You can now only emulate this with a sound card.</p>
+
 		<h4>Mockingboard:</h4>
-		<p>When the Mockingboards are enabled, the cards are physically plugged into slots 
-			4 and 5 of the Apple II.</p>
-		<p>Each Mockingboard is a type 'C': 2x AY-3-8913 (3-channel sound generator) &amp; 2x
-			SSI263 (speech chip)<font face="Tahoma"><br>
-			</font>Each AY-3-8913 is fully emulated (tone, noise &amp; envelope).<font face="Tahoma"><br>
-			</font>Each SY6522 (that controls an AY-3-8913) can generate precise timer
-			interrupts or phoneme-complete interrupts.<font face="Tahoma"><br>
-			</font>Emulation of the SSI263 is basic at the moment and only plays back 
-			phonemes at a fixed rate without any support for inflection or filters.<font face="Tahoma"><br>
-			</font>Additionally the Votrax/SC-01 (predecessor to the SSI263) is emulated by 
-			remapping Votrax phonemes to the SSI263's.</p>
-		<H4>Phasor:</H4>
-		<P>When Phasor is enabled, the card is physically plugged into slot 4 of the Apple II.</P>
-		<P>Phasor is equivalent to 2 Mockingboards: so has 4x AY-3-8913 &amp; 2x SSI263.</P>
+		<p>Mockingboards can be plugged into slots 4 and/or 5 of the Apple II.</p>
+		<p>Each Mockingboard is a type 'C': 2x AY-3-8913 (3-channel sound generator) &amp; 2x SSI263 (speech chip)<br>
+			Each AY-3-8913 is fully emulated (tone, noise &amp; envelope).<br>
+			Each SY6522 (that controls an AY-3-8913) can generate precise timer interrupts or phoneme-complete interrupts.<br>
+			Emulation of the SSI263 is basic at the moment and only plays back phonemes at a fixed rate without any support for inflection or filters.<br>
+			Additionally the Votrax/SC-01 (predecessor to the SSI263) is emulated by remapping Votrax phonemes to the SSI263's.<br>
+			<br>
+			NB. Some Mockingboard compatible software requires the card to be in a specific slot (usually slot 4).<br>
+			Some software will allow the user to pick the slot, and better software will auto-detect the slot.
+		</p>
+
+		<h4>Phasor:</h4>
+		<p>Phasors can be plugged into slots 4 and/or 5 of the Apple II.</p>
+		<p>A Phasor is roughly equivalent to 2 Mockingboards and has 4x AY-3-8913.<br>
+			It powers up in a hardware-identical mode to the Mockingboard type 'C', and so is compatible with all Mockingboard titles.<br>
+			Using software (to access memory mapped I/O) it can be switched to native Phasor mode (4x AY8913s) or Echo+ mode (but without the TMS5220 speech chip).
+		</p>
 		<br>
-		<P>There are a number of games and demos that support Mockingboard (or Phasor), eg:</P>
+
+		<p>There are a number of games and demos that support Mockingboard (or Phasor), eg:</p>
 		<ul>
 			<li>Adventure Construction Set</li>
 			<li>Ape Escape (Votrax speech)</li>
@@ -65,7 +72,8 @@
 			<li>Zoo Master (Votrax speech)</li>
 		</ul>
 		<br>
+
 		<h3>SAM:</h3>
-		<p>SAM (Software Automatic Mouth) is an 8-bit DAC card than can be enabled in slot 5.</p>
+		<p>SAM (Software Automatic Mouth) is an 8-bit DAC card than can be plugged into slots 4 and/or 5.</p>
 	</body>
 </html>

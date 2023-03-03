@@ -6,6 +6,7 @@ void    ClipboardInitiatePaste();
 
 void    KeybReset();
 void    KeybSetAltGrSendsWM_CHAR(bool state);
+void    KeybSetCapsLock(bool state);
 bool    KeybGetCapsStatus();
 bool    KeybGetAltStatus();
 bool    KeybGetCtrlStatus();
