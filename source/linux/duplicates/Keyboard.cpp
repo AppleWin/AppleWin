@@ -4,3 +4,7 @@
 void KeybSetAltGrSendsWM_CHAR(bool state)
 {
 }
+
+void KeybSetCapsLock(bool state)
+{
+}
