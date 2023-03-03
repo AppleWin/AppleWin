@@ -83,7 +83,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static DebugBreakOnDMA g_DebugBreakOnDMA[NUM_BREAK_ON_DMA];
 	static DebugBreakOnDMA g_DebugBreakOnDMAIO;
 
-	static int  g_bDebugBreakpointHit = 0;	// See: BreakpointHit_t
+	int  g_bDebugBreakpointHit = 0;	// See: BreakpointHit_t
 
 	int  g_nBreakpoints          = 0;
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
@@ -1764,18 +1764,13 @@ Update_t CmdBreakpointAddVideo(int nArgs)
 }
 
 //===========================================================================
-void _BWZ_Clear( Breakpoint_t * aBreakWatchZero, int iSlot )
-{
-	aBreakWatchZero[ iSlot ].bSet     = false;
-	aBreakWatchZero[ iSlot ].bEnabled = false;
-	aBreakWatchZero[ iSlot ].nLength  = 0;
-}
-
 void _BWZ_RemoveOne( Breakpoint_t *aBreakWatchZero, const int iSlot, int & nTotal )
 {
 	if (aBreakWatchZero[iSlot].bSet)
 	{
-		_BWZ_Clear( aBreakWatchZero, iSlot );
+		aBreakWatchZero[ iSlot ].bSet     = false;
+		aBreakWatchZero[ iSlot ].bEnabled = false;
+		aBreakWatchZero[ iSlot ].nLength  = 0;
 		nTotal--;
 	}
 }
@@ -8395,7 +8390,7 @@ void DebugBegin ()
 void DebugExitDebugger ()
 {
 	ClearTempBreakpoints();  // make sure we remove dead breakpoints before checking
-	// should this check if breakpoints are enabled?
+	// should this check if breakpoints are actually enabled?
 	if (g_nBreakpoints == 0 && g_hTraceFile == NULL)
 	{
 		DebugEnd();
