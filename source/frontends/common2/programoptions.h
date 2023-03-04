@@ -53,6 +53,7 @@ namespace common2
     bool imgui = true; // use imgui renderer
     std::optional<Geometry> geometry; // must be initialised with defaults
     int glSwapInterval = 1; // SDL_GL_SetSwapInterval
+    std::optional<int> gameController;
 
     std::string customRomF8;
     std::string customRom;

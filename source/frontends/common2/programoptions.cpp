@@ -94,12 +94,11 @@ namespace common2
     po::options_description emulatorDesc("Emulator");
     emulatorDesc.add_options()
       ("log", "Log to AppleWin.log")
-      ("headless", "Headless: disable video (freewheel)")
       ("fixed-speed", "Fixed (non-adaptive) speed")
-      ("ntsc,nt", "NTSC: execute NTSC code")
       ("benchmark,b", "Benchmark emulator")
       ("rom", po::value<std::string>(), "Custom 12k/16k ROM")
       ("f8rom", po::value<std::string>(), "Custom 2k ROM")
+      ("no-squaring", "Gamepad range is (already) a square")
       ;
     desc.add(emulatorDesc);
 
@@ -109,15 +108,17 @@ namespace common2
       ("gl-swap", po::value<int>()->default_value(options.glSwapInterval), "SDL_GL_SwapInterval")
       ("no-imgui", "Plain SDL2 renderer")
       ("geometry", po::value<std::string>(), "WxH[+X+Y]")
+      ("game-controller", po::value<int>(), "SDL_GameControllerOpen")
       ;
     desc.add(sdlDesc);
 
-    po::options_description paddleDesc("Paddle");
-    paddleDesc.add_options()
-      ("no-squaring", "Gamepad range is (already) a square")
-      ("device-name", po::value<std::string>(), "Gamepad device name")
+    po::options_description applenDesc("applen");
+    applenDesc.add_options()
+      ("headless", "Headless: disable video (freewheel)")
+      ("ntsc,nt", "NTSC: execute NTSC code")
+      ("device-name", po::value<std::string>(), "Gamepad device name (for applen)")
       ;
-    desc.add(paddleDesc);
+    desc.add(applenDesc);
 
     po::variables_map vm;
     try
@@ -197,6 +198,11 @@ namespace common2
       if (vm.count("device-name"))
       {
         options.paddleDeviceName = vm["device-name"].as<std::string>();
+      }
+
+      if (vm.count("game-controller"))
+      {
+        options.gameController = vm["game-controller"].as<int>();
       }
 
       if (vm.count("geometry"))

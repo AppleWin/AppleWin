@@ -65,6 +65,7 @@ void run_sdl(int argc, const char * argv [])
 
   const LoggerContext logger(options.log);
   const RegistryContext registryContext(CreateFileRegistry(options));
+  const std::shared_ptr<Paddle> paddle = sa2::Gamepad::create(options.gameController);
 
   std::shared_ptr<sa2::SDLFrame> frame;
   if (options.imgui)
@@ -78,7 +79,6 @@ void run_sdl(int argc, const char * argv [])
 
   std::cerr << "Default GL swap interval: " << SDL_GL_GetSwapInterval() << std::endl;
 
-  std::shared_ptr<Paddle> paddle(new sa2::Gamepad(0));
   const Initialisation init(frame, paddle);
   common2::applyOptions(options);
   frame->Begin();
