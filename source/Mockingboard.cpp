@@ -1076,6 +1076,10 @@ const UINT kUNIT_VERSION = 10;
 #define SS_YAML_KEY_MB_UNIT "Unit"
 #define SS_YAML_KEY_AY_CURR_REG "AY Current Register"
 #define SS_YAML_KEY_AY_CURR_REG_B "AY Current Register B"	// Phasor only
+#define SS_YAML_KEY_CS_A "Chip Select A"
+#define SS_YAML_KEY_CS_B "Chip Select B"			// Phasor only
+#define SS_YAML_KEY_LATCH_ADDR_VALID_A "Reg Address Latch Valid A"
+#define SS_YAML_KEY_LATCH_ADDR_VALID_B "Reg Address Latch Valid B"	// Phasor only
 #define SS_YAML_KEY_MB_UNIT_STATE "Unit State"
 #define SS_YAML_KEY_MB_UNIT_STATE_B "Unit State-B"	// Phasor only
 #define SS_YAML_KEY_TIMER1_IRQ "Timer1 IRQ Pending"	// v8: deprecated
@@ -1087,10 +1091,6 @@ const UINT kUNIT_VERSION = 10;
 #define SS_YAML_KEY_PHASOR_UNIT "Unit"
 #define SS_YAML_KEY_PHASOR_CLOCK_SCALE_FACTOR "Clock Scale Factor"	// v6: deprecated
 #define SS_YAML_KEY_PHASOR_MODE "Mode"
-#define SS_YAML_KEY_PHASOR_CS_A "Chip Select A"
-#define SS_YAML_KEY_PHASOR_CS_B "Chip Select B"
-#define SS_YAML_KEY_PHASOR_LATCH_ADDR_VALID_A "Reg Address Latch Valid A"
-#define SS_YAML_KEY_PHASOR_LATCH_ADDR_VALID_B "Reg Address Latch Valid B"
 
 #define SS_YAML_KEY_VOTRAX_PHONEME "Votrax Phoneme"
 
@@ -1131,6 +1131,8 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state[0]);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister[0]);	// save all 8 bits (even though top 4 bits should be 0)
+		yamlSaveHelper.SaveBool(SS_YAML_KEY_CS_A, pMB->isChipSelected[0]);
+		yamlSaveHelper.SaveBool(SS_YAML_KEY_LATCH_ADDR_VALID_A, pMB->isAYLatchedAddressValid[0]);
 	}
 }
 
@@ -1191,6 +1193,12 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 		if (version >= 3)
 			pMB->state[0] = (MockingboardUnitState_e) (yamlLoadHelper.LoadUint(SS_YAML_KEY_MB_UNIT_STATE) & 7);
 
+		if (version >= 10)
+		{
+			pMB->isChipSelected[0] = yamlLoadHelper.LoadBool(SS_YAML_KEY_CS_A);
+			pMB->isAYLatchedAddressValid[0] = yamlLoadHelper.LoadBool(SS_YAML_KEY_LATCH_ADDR_VALID_A);
+		}
+
 		yamlLoadHelper.PopMap();
 	}
 
@@ -1226,10 +1234,10 @@ void MockingboardCard::Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister[0]);	// save all 8 bits (even though top 4 bits should be 0)
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_AY_CURR_REG_B, pMB->nAYCurrentRegister[1]);	// save all 8 bits (even though top 4 bits should be 0)
 
-		yamlSaveHelper.SaveBool(SS_YAML_KEY_PHASOR_CS_A, pMB->isChipSelected[0]);
-		yamlSaveHelper.SaveBool(SS_YAML_KEY_PHASOR_CS_B, pMB->isChipSelected[1]);
-		yamlSaveHelper.SaveBool(SS_YAML_KEY_PHASOR_LATCH_ADDR_VALID_A, pMB->isAYLatchedAddressValid[0]);
-		yamlSaveHelper.SaveBool(SS_YAML_KEY_PHASOR_LATCH_ADDR_VALID_B, pMB->isAYLatchedAddressValid[1]);
+		yamlSaveHelper.SaveBool(SS_YAML_KEY_CS_A, pMB->isChipSelected[0]);
+		yamlSaveHelper.SaveBool(SS_YAML_KEY_CS_B, pMB->isChipSelected[1]);
+		yamlSaveHelper.SaveBool(SS_YAML_KEY_LATCH_ADDR_VALID_A, pMB->isAYLatchedAddressValid[0]);
+		yamlSaveHelper.SaveBool(SS_YAML_KEY_LATCH_ADDR_VALID_B, pMB->isAYLatchedAddressValid[1]);
 	}
 }
 
@@ -1318,10 +1326,10 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 
 		if (version >= 10)
 		{
-			pMB->isChipSelected[0] = yamlLoadHelper.LoadBool(SS_YAML_KEY_PHASOR_CS_A);
-			pMB->isChipSelected[1] = yamlLoadHelper.LoadBool(SS_YAML_KEY_PHASOR_CS_B);
-			pMB->isAYLatchedAddressValid[0] = yamlLoadHelper.LoadBool(SS_YAML_KEY_PHASOR_LATCH_ADDR_VALID_A);
-			pMB->isAYLatchedAddressValid[1] = yamlLoadHelper.LoadBool(SS_YAML_KEY_PHASOR_LATCH_ADDR_VALID_B);
+			pMB->isChipSelected[0] = yamlLoadHelper.LoadBool(SS_YAML_KEY_CS_A);
+			pMB->isChipSelected[1] = yamlLoadHelper.LoadBool(SS_YAML_KEY_CS_B);
+			pMB->isAYLatchedAddressValid[0] = yamlLoadHelper.LoadBool(SS_YAML_KEY_LATCH_ADDR_VALID_A);
+			pMB->isAYLatchedAddressValid[1] = yamlLoadHelper.LoadBool(SS_YAML_KEY_LATCH_ADDR_VALID_B);
 		}
 
 		yamlLoadHelper.PopMap();
