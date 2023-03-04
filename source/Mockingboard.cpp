@@ -271,16 +271,17 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 					break;
 
 				case AY_WRITE:		// 6: WRITE TO PSG
-					if (pMB->isAYLatchedAddressValid[ay])
+					if (pMB->isChipSelected[ay] && pMB->isAYLatchedAddressValid[ay])
 						_AYWriteReg(subunit, ay, pMB->nAYCurrentRegister[ay], r6522.GetReg(SY6522::rORA));
 					// else if invalid then just ignore
 
 					if (m_phasorEnable && m_phasorMode == PH_Phasor)	// GH#1192
 					{
-						if (ay == AY8913_DEVICE_A && pMB->isChipSelected[AY8913_DEVICE_B] && pMB->isAYLatchedAddressValid[AY8913_DEVICE_B])
-							_AYWriteReg(subunit, AY8913_DEVICE_B, pMB->nAYCurrentRegister[AY8913_DEVICE_B], r6522.GetReg(SY6522::rORA));
-						else // AY8913_DEVICE_B
-							pMB->isChipSelected[AY8913_DEVICE_A] = false;
+						if (ay == AY8913_DEVICE_A)
+						{
+							if (pMB->isChipSelected[AY8913_DEVICE_B] && pMB->isAYLatchedAddressValid[AY8913_DEVICE_B])
+								_AYWriteReg(subunit, AY8913_DEVICE_B, pMB->nAYCurrentRegister[AY8913_DEVICE_B], r6522.GetReg(SY6522::rORA));
+						}
 					}
 					break;
 
@@ -292,18 +293,18 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 					if (r6522.GetReg(SY6522::rORA) <= 0x0F)
 					{
 						pMB->nAYCurrentRegister[ay] = r6522.GetReg(SY6522::rORA) & 0x0F;
+						pMB->isChipSelected[ay] = true;
 						pMB->isAYLatchedAddressValid[ay] = true;
 
 						if (m_phasorEnable && m_phasorMode == PH_Phasor)	// GH#1192
 						{
-							pMB->isChipSelected[ay] = true;
-
 							if (ay == AY8913_DEVICE_A)
 							{
 								pMB->isChipSelected[AY8913_DEVICE_B] = false;
 							}
 							else // AY8913_DEVICE_B
 							{
+								pMB->isChipSelected[AY8913_DEVICE_A] = true;
 								pMB->nAYCurrentRegister[AY8913_DEVICE_A] = pMB->nAYCurrentRegister[AY8913_DEVICE_B];
 								pMB->isAYLatchedAddressValid[AY8913_DEVICE_A] = true;
 							}
