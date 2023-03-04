@@ -63,17 +63,25 @@ private:
 		AY8913 ay8913[2];				// Phasor has 2x AY per 6522
 		SSI263 ssi263;
 		BYTE nAY8910Number;
-		BYTE nAYCurrentRegister;
+		BYTE nAYCurrentRegister[2];
 		MockingboardUnitState_e state;	// Where a unit is a 6522+AY8910 pair
 		MockingboardUnitState_e stateB;	// Phasor: 6522 & 2nd AY8910
+		bool isAYLatchedAddressValid[2];
+		bool isChipSelected[2];
 
 		MB_SUBUNIT(UINT slot) : sy6522(slot), ssi263(slot)
 		{
 			nAY8910Number = 0;
-			nAYCurrentRegister = 0;
-			state = AY_NOP0;
-			stateB = AY_NOP0;
 			// sy6522 & ssi263 have already been default constructed
+		}
+
+		void Reset(void)
+		{
+			nAYCurrentRegister[0] = nAYCurrentRegister[1] = 0;	// not valid
+			state = AY_INACTIVE;
+			stateB = AY_INACTIVE;
+			isAYLatchedAddressValid[0] = isAYLatchedAddressValid[1] = false;	// after AY reset
+			isChipSelected[0] = isChipSelected[1] = false;
 		}
 	};
 
