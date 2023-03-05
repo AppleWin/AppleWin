@@ -116,6 +116,13 @@ USHORT SY6522::SetTimerSyncEvent(BYTE reg, USHORT timerLatch)
 
 //-----------------------------------------------------------------------------
 
+void SY6522::UpdatePortAForHiZ(void)
+{
+	BYTE ora = GetReg(SY6522::rORA);
+	ora |= GetReg(SY6522::rDDRA) ^ 0xff;	// for any DDRA bits set as input (logical 0), then set them in ORA
+	SetRegORA(ora);							// empirically bus floats high (or pull-up?) if no AY chip-selected (so DDRA=0x00 will read 0xFF as input)
+}
+
 void SY6522::UpdateIFR(BYTE clr_ifr, BYTE set_ifr /*= 0*/)
 {
 	m_regs.IFR &= ~clr_ifr;
