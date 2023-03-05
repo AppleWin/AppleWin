@@ -42,16 +42,13 @@
 		-s0 &lt;languagecard|lc&gt;<br>
 		Insert an Apple 16K Language Card into slot 0 in the original Apple II and use the F8 auto-start ROM.<br>
 		NB. The Apple II+ already defaults to having a Language Card, so this switch is not required.<br><br>
-		-s1 empty<br>
-		Remove the parallel printer card from slot 1.<br><br>
+		-s&lt;N&gt; empty<br>
+		Remove any card from slot N (N=1-7).<br>
+		NB. '-s7 empty' is useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br><br>
 		-s1 parallel<br>
 		Insert a parallel printer card into slot 1.<br><br>
-		-s2 empty<br>
-		Remove the SSC card from slot 2.<br><br>
 		-s2 ssc<br>
 		Insert a SSC into slot 2.<br><br>
-		-s3 empty<br>
-		Remove any card from slot 3.<br><br>
 		-s3 vidhd<br>
 		Insert a VidHD card into slot 3.<br><br>
 		-s5 diskii<br>
@@ -60,13 +57,11 @@
 		-s5 diskii13<br>
 		-s6 diskii13<br>
 		Insert a Disk II controller card (with 13-sector firmware) into slot 5 or 6.<br><br>
-		-s6 empty<br>
-		Remove the Disk II controller card from slot 6.<br><br>
-		-s7 empty<br>
-		Remove the hard disk controller card from slot 7.<br>
-		Useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br><br>
 		-s7-empty-on-exit<br>
 		Remove the hard disk controller card from slot 7 on AppleWin exit.<br><br>
+		-s5 hdc<br>
+		-s7 hdc<br>
+		Insert a hard disk controller card into slot 5 or 7.<br><br>
 		-d1-disconnected, -d2-disconnected<br>
 		Disconnect drive-1 and/or drive-2 from the Disk II controller card in slot 6.<br><br>
 		-no-nsc<br>
