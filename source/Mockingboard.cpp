@@ -339,7 +339,7 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 
 		state = nAYFunc;
 
-		if (state == AY_INACTIVE)
+		if (state == AY_INACTIVE && m_phasorEnable)		// Assume Phasor(even in MB mode) will read PortA inputs as high.
 			r6522.UpdatePortAForHiZ();	// Float high any PortA input bits (GH#1193)
 	}
 }
