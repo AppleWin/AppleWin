@@ -128,6 +128,7 @@ namespace sa2
 
   SDLFrame::SDLFrame(const common2::EmulatorOptions & options)
     : myTargetGLSwap(options.glSwapInterval)
+    , myPreserveAspectRatio(options.aspectRatio)
     , myForceCapsLock(true)
     , myMultiplier(1)
     , myFullscreen(false)
@@ -670,6 +671,11 @@ namespace sa2
   {
     myDragAndDropSlot = slot;
     myDragAndDropDrive = drive;
+  }
+
+  bool & SDLFrame::getPreserveAspectRatio()
+  {
+    return myPreserveAspectRatio;
   }
 
   void SDLFrame::SetFullSpeed(const bool value)

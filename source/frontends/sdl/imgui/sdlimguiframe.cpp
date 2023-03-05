@@ -28,6 +28,21 @@ namespace
     }
   }
 
+  void correctAspectRatio(ImVec2 & p_min, ImVec2 & p_max, float originalAspectRatio)
+  {
+    // scale
+    const float w1 = p_max.x - p_min.x;
+    const float h1 = p_max.y - p_min.y;
+    const float w = std::min(w1, h1 * originalAspectRatio);
+    const float h = std::min(h1, w1 / originalAspectRatio);
+
+    // center
+    p_min.x += (p_max.x - p_min.x - w) / 2;
+    p_max.x = p_min.x + w;
+    p_min.y += (p_max.y - p_min.y - h) / 2;
+    p_max.y = p_min.y + h;
+  }
+
 }
 
 
@@ -122,6 +137,7 @@ namespace sa2
 
     myBorderlessWidth = video.GetFrameBufferBorderlessWidth();
     myBorderlessHeight = video.GetFrameBufferBorderlessHeight();
+    myOriginalAspectRatio = float(myBorderlessWidth) / float(myBorderlessHeight);
 
     const int width = video.GetFrameBufferWidth();
     const size_t borderWidth = video.GetFrameBufferBorderWidth();
@@ -140,7 +156,12 @@ namespace sa2
 
   void SDLImGuiFrame::ClearBackground()
   {
-    const ImVec4 background(0.45f, 0.55f, 0.60f, 1.00f);
+    ImVec4 background(0.0f, 0.0f, 0.0f, 1.0f); // black is good for the borders
+    if (mySettings.windowed)
+    {
+      background = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    }
+
     glClearColor(background.x, background.y, background.z, background.w);
     glClear(GL_COLOR_BUFFER_BIT);
   }
@@ -166,10 +187,19 @@ namespace sa2
     else
     {
       UpdateTexture();
-      const ImVec2 zero(0, menuBarHeight);
+
       // draw on the background
       ImGuiIO& io = ImGui::GetIO();
-      ImGui::GetBackgroundDrawList()->AddImage(myTexture, zero, io.DisplaySize, uv0, uv1);
+      ImVec2 p_min(0, menuBarHeight);
+      ImVec2 p_max = io.DisplaySize;
+
+      if (myPreserveAspectRatio)
+      {
+        // scale & center
+        correctAspectRatio(p_min, p_max, myOriginalAspectRatio);
+      }
+
+      ImGui::GetBackgroundDrawList()->AddImage(myTexture, p_min, p_max, uv0, uv1);
     }
   }
 

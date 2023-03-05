@@ -39,6 +39,7 @@ namespace sa2
     size_t myOffset;
     size_t myBorderlessWidth;
     size_t myBorderlessHeight;
+    float myOriginalAspectRatio;
 
     int myDeadTopZone; // for mouse position
     bool myPresenting; // VideoPresentScreen() is NOT REENTRANT

@@ -221,6 +221,8 @@ namespace sa2
           ImGui::Checkbox("Apple Video windowed", &windowed);
           ImGui::SameLine(); HelpMarker("Show Apple video in a separate window.");
 
+          ImGui::Checkbox("Preserve aspect ratio", &frame->getPreserveAspectRatio());
+
           ImGui::Checkbox("Memory", &myShowMemory);
           ImGui::SameLine(); HelpMarker("Show Apple memory.");
 

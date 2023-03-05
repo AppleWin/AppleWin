@@ -52,6 +52,7 @@ namespace common2
     int sdlDriver = -1; // default = -1 to let SDL choose
     bool imgui = true; // use imgui renderer
     std::optional<Geometry> geometry; // must be initialised with defaults
+    bool aspectRatio = false; // preserve aspect ratio
     int glSwapInterval = 1; // SDL_GL_SetSwapInterval
     std::optional<int> gameControllerIndex;
     std::string gameControllerMappingFile;

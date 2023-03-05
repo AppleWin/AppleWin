@@ -43,6 +43,11 @@ namespace sa2
     const int sw = video.GetFrameBufferBorderlessWidth();
     const int sh = video.GetFrameBufferBorderlessHeight();
 
+    if (myPreserveAspectRatio && SDL_RenderSetLogicalSize(myRenderer.get(), sw, sh))
+    {
+      throw std::runtime_error(decorateSDLError("SDL_RenderSetLogicalSize"));
+    }
+
     myTexture.reset(SDL_CreateTexture(myRenderer.get(), ourFormat, SDL_TEXTUREACCESS_STATIC, width, height), SDL_DestroyTexture);
 
     myRect.x = video.GetFrameBufferBorderWidth();
@@ -55,6 +60,7 @@ namespace sa2
   void SDLRendererFrame::VideoPresentScreen()
   {
     SDL_UpdateTexture(myTexture.get(), nullptr, myFramebuffer.data(), myPitch);
+    SDL_RenderClear(myRenderer.get());
     SDL_RenderCopyEx(myRenderer.get(), myTexture.get(), &myRect, nullptr, 0.0, nullptr, SDL_FLIP_VERTICAL);
     SDL_RenderPresent(myRenderer.get());
   }
