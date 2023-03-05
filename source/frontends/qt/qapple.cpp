@@ -110,14 +110,14 @@ QApple::QApple(QWidget *parent) :
     mySaveStateLabel = new QLabel;
     statusBar()->addPermanentWidget(mySaveStateLabel);
 
-    Registry::instance.reset(new Configuration);
+    Registry::instance = std::make_shared<Configuration>();
 
     myPreferences = new Preferences(this);
 
     Emulator * emulator = new Emulator(ui->mdiArea);
     myEmulatorWindow = ui->mdiArea->addSubWindow(emulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
 
-    myFrame.reset(new QtFrame(emulator, myEmulatorWindow));
+    myFrame = std::make_shared<QtFrame>(emulator, myEmulatorWindow);
     SetFrame(myFrame);
 
     readSettings();

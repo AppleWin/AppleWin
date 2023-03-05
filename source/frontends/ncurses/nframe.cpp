@@ -31,7 +31,7 @@ namespace na2
       set_escdelay(0);
 
       // make sure this happens when ncurses is indeed initialised
-      colors.reset(new GraphicsColors(20, 20, 32));
+      colors = std::make_shared<GraphicsColors>(20, 20, 32);
     }
     ~NCurses()
     {
@@ -55,7 +55,7 @@ namespace na2
     CommonFrame::Initialize(resetVideoState);
     myTextFlashCounter = 0;
     myTextFlashState = 0;
-    myAsciiArt.reset(new ASCIIArt());
+    myAsciiArt = std::make_shared<ASCIIArt>();
   }
 
   void NFrame::Destroy()
@@ -129,7 +129,7 @@ namespace na2
   {
     if (!myNCurses)
     {
-      myNCurses.reset(new NCurses());
+      myNCurses = std::make_shared<NCurses>();
     }
   }
 

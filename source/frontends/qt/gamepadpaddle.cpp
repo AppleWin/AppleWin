@@ -16,8 +16,8 @@ std::shared_ptr<Paddle> GamepadPaddle::fromName(const QString & name)
     {
         if (name == manager->gamepadName(id))
         {
-            const std::shared_ptr<QGamepad> gamepad(new QGamepad(id));
-            std::shared_ptr<Paddle> paddle(new GamepadPaddle(gamepad));
+            const std::shared_ptr<QGamepad> gamepad = std::make_shared<QGamepad>(id);
+            std::shared_ptr<Paddle> paddle = std::make_shared<GamepadPaddle>(gamepad);
             return paddle;
         }
     }

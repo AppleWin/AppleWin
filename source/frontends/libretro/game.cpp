@@ -19,6 +19,7 @@
 #include "frontends/common2/utils.h"
 
 #include "libretro.h"
+#include <memory>
 
 namespace ra2
 {
@@ -29,9 +30,9 @@ namespace ra2
     : mySpeed(true)  // fixed speed
     , myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
   {
-    myLoggerContext.reset(new LoggerContext(true));
-    myRegistryContext.reset(new RegistryContext(CreateRetroRegistry()));
-    myFrame.reset(new ra2::RetroFrame());
+    myLoggerContext = std::make_shared<LoggerContext>(true);
+    myRegistryContext = std::make_shared<RegistryContext>(CreateRetroRegistry());
+    myFrame = std::make_shared<ra2::RetroFrame>();
 
     SetFrame(myFrame);
     myFrame->Begin();

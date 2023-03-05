@@ -70,11 +70,11 @@ void run_sdl(int argc, const char * argv [])
   std::shared_ptr<sa2::SDLFrame> frame;
   if (options.imgui)
   {
-    frame.reset(new sa2::SDLImGuiFrame(options));
+    frame = std::make_shared<sa2::SDLImGuiFrame>(options);
   }
   else
   {
-    frame.reset(new sa2::SDLRendererFrame(options));
+    frame = std::make_shared<sa2::SDLRendererFrame>(options);
   }
 
   std::cerr << "Default GL swap interval: " << SDL_GL_GetSwapInterval() << std::endl;

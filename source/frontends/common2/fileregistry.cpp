@@ -128,7 +128,7 @@ namespace common2
       saveOnExit = true;
     }
 
-    std::shared_ptr<Configuration> config(new Configuration(filename, saveOnExit));
+    std::shared_ptr<Configuration> config = std::make_shared<Configuration>(filename, saveOnExit);
     config->addExtraOptions(options.registryOptions);
 
     return config;

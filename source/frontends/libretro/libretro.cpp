@@ -132,15 +132,15 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
       Paddle::instance.reset();
       break;
     case RETRO_DEVICE_JOYPAD:
-      Paddle::instance.reset(new ra2::Joypad(device));
+      Paddle::instance = std::make_shared<ra2::Joypad>(device);
       Paddle::setSquaring(false);
       break;
     case RETRO_DEVICE_ANALOG:
-      Paddle::instance.reset(new ra2::Analog(device));
+      Paddle::instance = std::make_shared<ra2::Analog>(device);
       Paddle::setSquaring(true);
       break;
     case RETRO_DEVICE_MOUSE:
-      Paddle::instance.reset(new ra2::Mouse(device, &ourGame));
+      Paddle::instance = std::make_shared<ra2::Mouse>(device, &ourGame);
       Paddle::setSquaring(false);
       break;
     default:
@@ -298,7 +298,7 @@ bool retro_load_game(const retro_game_info *info)
 
   try
   {
-    std::unique_ptr<ra2::Game> game(new ra2::Game());
+    std::unique_ptr<ra2::Game> game = std::make_unique<ra2::Game>();
 
     const std::string snapshotEnding = ".aws.yaml";
     const std::string playlistEnding = ".m3u";

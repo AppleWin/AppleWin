@@ -60,7 +60,7 @@ namespace
         audioFormat.setByteOrder(QAudioFormat::LittleEndian);
         audioFormat.setSampleType(QAudioFormat::SignedInt);
 
-        myAudioOutput.reset(new QAudioOutput(audioFormat));
+        myAudioOutput = std::make_shared<QAudioOutput>(audioFormat);
         myAudioFormat = myAudioOutput->format();
     }
 

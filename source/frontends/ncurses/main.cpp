@@ -144,8 +144,8 @@ namespace
 
     const LoggerContext loggerContext(options.log);
     const RegistryContext registryContet(CreateFileRegistry(options));
-    const std::shared_ptr<na2::EvDevPaddle> paddle(new na2::EvDevPaddle(options.paddleDeviceName));
-    const std::shared_ptr<na2::NFrame> frame(new na2::NFrame(paddle));
+    const std::shared_ptr<na2::EvDevPaddle> paddle = std::make_shared<na2::EvDevPaddle>(options.paddleDeviceName);
+    const std::shared_ptr<na2::NFrame> frame = std::make_shared<na2::NFrame>(paddle);
 
     const Initialisation init(frame, paddle);
     common2::applyOptions(options);
