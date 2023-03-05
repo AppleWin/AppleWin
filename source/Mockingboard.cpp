@@ -338,6 +338,9 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 		}
 
 		state = nAYFunc;
+
+		if (state == AY_INACTIVE)
+			r6522.UpdatePortAForHiZ();	// Float high any PortA input bits (GH#1193)
 	}
 }
 
