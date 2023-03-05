@@ -3,6 +3,7 @@
 #include "frontends/sdl/utils.h"
 
 #include <iostream>
+#include <stdexcept>
 
 #define AXIS_MIN -32768
 #define AXIS_MAX 32767
@@ -11,7 +12,7 @@
 namespace sa2
 {
 
-  std::shared_ptr<Gamepad> Gamepad::create(const std::optional<int> & index)
+  std::shared_ptr<Gamepad> Gamepad::create(const std::optional<int> & index, const std::string & mappingFile)
   {
     if (!index && SDL_NumJoysticks() <= 0)
     {
@@ -19,8 +20,31 @@ namespace sa2
       return std::shared_ptr<Gamepad>();
     }
 
-    // any error will be fatal
-    return std::make_shared<Gamepad>(index.value_or(0));
+    if (!mappingFile.empty())
+    {
+      const int res = SDL_GameControllerAddMappingsFromFile(mappingFile.c_str());
+      if (res < 0)
+      {
+        throw std::runtime_error(decorateSDLError("SDL_GameControllerAddMappingsFromFile"));
+      }
+      std::cerr << "SDL Game Controller: Loaded " << res << " mappings" << std::endl;
+    }
+
+    try
+    {
+      return std::make_shared<Gamepad>(index.value_or(0));
+    } 
+    catch (const std::runtime_error & e) 
+    {
+      if (!index)
+      {
+        // first game controller exists, but it is not usable
+        // since it was not explicitly required, do not throw
+        std::cerr << e.what() << std::endl;
+        return std::shared_ptr<Gamepad>();
+      }
+      throw;
+    }
   }
 
   Gamepad::Gamepad(const int index)

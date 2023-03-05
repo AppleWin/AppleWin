@@ -109,6 +109,7 @@ namespace common2
       ("no-imgui", "Plain SDL2 renderer")
       ("geometry", po::value<std::string>(), "WxH[+X+Y]")
       ("game-controller", po::value<int>(), "SDL_GameControllerOpen")
+      ("game-mapping-file", po::value<std::string>(), "SDL_GameControllerAddMappingsFromFile")
       ;
     desc.add(sdlDesc);
 
@@ -202,7 +203,12 @@ namespace common2
 
       if (vm.count("game-controller"))
       {
-        options.gameController = vm["game-controller"].as<int>();
+        options.gameControllerIndex = vm["game-controller"].as<int>();
+      }
+
+      if (vm.count("game-mapping-file"))
+      {
+        options.gameControllerMappingFile = vm["game-mapping-file"].as<std::string>();
       }
 
       if (vm.count("geometry"))

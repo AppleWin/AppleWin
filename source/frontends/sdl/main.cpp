@@ -65,7 +65,7 @@ void run_sdl(int argc, const char * argv [])
 
   const LoggerContext logger(options.log);
   const RegistryContext registryContext(CreateFileRegistry(options));
-  const std::shared_ptr<Paddle> paddle = sa2::Gamepad::create(options.gameController);
+  const std::shared_ptr<Paddle> paddle = sa2::Gamepad::create(options.gameControllerIndex, options.gameControllerMappingFile);
 
   std::shared_ptr<sa2::SDLFrame> frame;
   if (options.imgui)
@@ -175,7 +175,7 @@ void run_sdl(int argc, const char * argv [])
 int main(int argc, const char * argv [])
 {
   //First we need to start up SDL, and make sure it went ok
-  const Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO | SDL_INIT_TIMER;
+  const Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_EVENTS;
   if (SDL_Init(flags) != 0)
   {
     std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
