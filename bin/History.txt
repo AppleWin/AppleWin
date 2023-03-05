@@ -17,7 +17,7 @@ Tom Charlesworth
 - [Change #1190] Document command line: '-multimon'.
   - At start-up, use the Registry's saved "Window x/y position" to position the AppleWin window correctly for multiple monitors.
 - [Change #1033] New command line support for hard disk controller in slots 5 and 7.
-  - Use '-s5 hdc' or 's7 hdc' to start up with a hard disk controller (hdc) in slots 5 and 7 respectively.
+  - Use '-s5 hdc' or '-s7 hdc' to start up with a hard disk controller (hdc) in slots 5 and 7 respectively.
   - Use '-s5h1 <pathname>' and '-s5h2 <pathname>' to connect to hard disk image.
   - NB. There's no GUI configuration support for the hdc in slot 5.
   - NB. An hdc in slot 5 allows these 3.5" titles to work: "Perplexing Puzzles" and "Dark Heart of Uukrul".
