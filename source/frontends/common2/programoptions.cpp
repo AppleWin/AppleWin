@@ -43,6 +43,20 @@ namespace
   }
 
   template <typename T>
+  bool setOption(const po::variables_map & vm, const char * x, std::optional<T> & value)
+  {
+    if (vm.count(x))
+    {
+      value = vm[x].as<T>();
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+  template <typename T>
   bool setOption(const po::variables_map & vm, const char * x, T & value)
   {
     if (vm.count(x))
