@@ -28,6 +28,7 @@ public:
 	void StopTimer2(void);
 	bool IsTimer2Active(void) { return m_timer2Active; }
 
+	void UpdatePortAForHiZ(void);
 	void UpdateIFR(BYTE clr_ifr, BYTE set_ifr = 0);
 
 	void UpdateTimer1(USHORT clocks);

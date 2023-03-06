@@ -72,14 +72,16 @@ private:
 		{
 			nAY8910Number = 0;
 			// sy6522 & ssi263 have already been default constructed
+			// Reset() called from MockingboardCard ctor
 		}
 
-		void Reset(void)
+		void Reset(SS_CARDTYPE type)
 		{
 			nAYCurrentRegister[0] = nAYCurrentRegister[1] = 0;	// not valid
 			state[0] = state[1] = AY_INACTIVE;
 			isAYLatchedAddressValid[0] = isAYLatchedAddressValid[1] = false;	// after AY reset
-			isChipSelected[0] = isChipSelected[1] = false;
+			isChipSelected[0] = type == CT_MockingboardC ? true : false;
+			isChipSelected[1] = false;
 		}
 	};
 

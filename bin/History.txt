@@ -9,6 +9,33 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.30.14.0 - 5 Mar 2023
+----------------------
+- [Change #1080] Support Mockingboard and Mouse at same time. (Improvement for: "Witch Trial".)
+- [Change #1187] New command line: '-capslock=off' to start up with Caps Lock off.
+- [Change #1183] Phasor: add support for Echo+ mode (eg. 6522 PortA chip select for the AYs, dual-mono sound output & reading AY regs).
+- [Change #1190] Document command line: '-multimon'.
+  - At start-up, use the Registry's saved "Window x/y position" to position the AppleWin window correctly for multiple monitors.
+- [Change #1033] New command line support for hard disk controller in slots 5 and 7.
+  - Use '-s5 hdc' or '-s7 hdc' to start up with a hard disk controller (hdc) in slots 5 and 7 respectively.
+  - Use '-s5h1 <pathname>' and '-s5h2 <pathname>' to connect to hard disk image.
+  - NB. There's no GUI configuration support for the hdc in slot 5.
+  - NB. An hdc in slot 5 allows these 3.5" titles to work: "Perplexing Puzzles" and "Dark Heart of Uukrul".
+- [Bug #1193] Phasor: now can't read AY regs (via 6522 PortA) after AY set to INACTIVE function. (Mockingboard still can.)
+- [Bug #1192] Phasor: support the GAL logic for AY chip select & AY PSG Function.
+- [Bug #1188] Alt+Enter: fix regression, as this key combo should default to toggling full screen.
+- [Bug #1175, #1176] Mockingboard: fix some edge cases.
+- [Bug #1164] Debugger: Fix 'bpv' & 'tf' commands to trigger for non-visible scan lines when in full-speed.
+- [Bug #1163] Debugger: Fix disassembly when in middle of data.
+- [Bug #1099] Fix 6502/65C02: Clearing the D flag (or not) on a BRK or Interrupt or Reset.
+- [PR #1171] Refactor the Mockingboard & Phasor code.
+  - Can now put any sound card (Mockingboard, Phasor or SAM) into either or both slots 4 and 5.
+  - NB. Allows Mouse card in slot 4 and Mockingboard (or Phasor) in slot 5.
+- Change: Command line '-s<N> empty' now works for slots 1-7 (just not slot 0).
+- Debugger: Improve mini-memory views for AY8913 chip registers: show reg. latch address in white.
+- Debugger: Fix 'zpc' command, which wasn't working.
+
+
 1.30.13.0 - 2 Jan 2023
 ----------------------
 . [Change #1153] Support Game I/O Connector copy protection dongles. [@medasaro]

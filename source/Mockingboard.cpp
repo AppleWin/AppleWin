@@ -92,6 +92,7 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 	{
 		m_MBSubUnit[i].nAY8910Number = i;
+		m_MBSubUnit[i].Reset(QueryType());
 		const UINT id0 = i * SY6522::kNumTimersPer6522 + 0;	// TIMER1
 		const UINT id1 = i * SY6522::kNumTimersPer6522 + 1;	// TIMER2
 		m_MBSubUnit[i].sy6522.InitSyncEvents(m_syncEvent[id0], m_syncEvent[id1]);
@@ -177,6 +178,29 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 
 //-----------------------------------------------------------------------------
 
+// Notes on Phasor's AY-3-8913 chip-select & r/w: (GH#1192)
+// ----------------------------------------------
+//
+// Where: AY1 is the primary AY-3-8913 connected to 6522, and AY2 is the 2nd-ary.
+//
+// AFAICT, inputs to the Phasor GAL are:
+// . ORB.b4:3 = Chip Select (CS) for AY1 & AY2 (active low)
+// . ORB.b2:0 = PSG Function (RESET, INACTIVE, READ, WRITE, LATCH)
+// . Phasor mode (Mockingboard, Echo+, Phasor-native)
+// . Slot inputs (address, reset, etc)
+// And outputs from the GAL are:
+// . GAL CS' for AY1 & AY2 (not just passed-through, but dependent on PSG Function)
+// (Not PSG Function - probably just passed-through from 6522 to the chip-selected AY-3-8913's)
+//
+// In Phasor-native mode, GAL logic:
+// . AY2 LATCH func selects AY2 and AY1; sets latch addr for AY2 and AY1
+// . AY1 LATCH func selects AY1; deselects AY2; sets latch addr for AY1
+// . AY2 WRITE func writes AY2 if it's selected
+// . AY1 WRITE func writes AY1; writes AY2 if it's selected
+//
+// EG, to do a "AY1 LATCH", then write 6522 ORB with b4:3=%01, b2:0=%111
+//
+
 void MockingboardCard::WriteToORB(BYTE subunit)
 {
 	BYTE value = m_MBSubUnit[subunit].sy6522.Read(SY6522::rORB);
@@ -214,12 +238,7 @@ void MockingboardCard::WriteToORB(BYTE subunit)
 			AY8910_Write(subunit, AY8913_DEVICE_B, value);
 
 		if (nAY_CS == 0)
-		{
-			SY6522& r6522 = m_MBSubUnit[subunit].sy6522;
-			BYTE ora = r6522.GetReg(SY6522::rORA);
-			ora |= r6522.GetReg(SY6522::rDDRA) ^ 0xff;	// for any DDRA bits set as input (logical 0), then set them in ORA
-			r6522.SetRegORA(ora);						// empirically bus floats high (or pull-up?) if no AY chip-selected (so DDRA=0x00 will read 0xFF as input)
-		}
+			m_MBSubUnit[subunit].sy6522.UpdatePortAForHiZ();
 	}
 	else
 	{
@@ -240,7 +259,7 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 	{
 		// RESET: Reset AY8910 only
 		AY8910_reset(subunit, ay);
-		pMB->Reset();
+		pMB->Reset(QueryType());
 	}
 	else
 	{
@@ -270,7 +289,7 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 					if (pMB->isChipSelected[ay] && pMB->isAYLatchedAddressValid[ay])
 						r6522.SetRegORA(AYReadReg(subunit, ay, pMB->nAYCurrentRegister[ay]) & (r6522.GetReg(SY6522::rDDRA) ^ 0xff));
 					else
-						r6522.SetRegORA(r6522.GetReg(SY6522::rDDRA) ^ 0xff);
+						r6522.UpdatePortAForHiZ();
 					break;
 
 				case AY_WRITE:		// 6: WRITE TO PSG
@@ -319,6 +338,9 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 		}
 
 		state = nAYFunc;
+
+		if (state == AY_INACTIVE && m_phasorEnable)		// Assume Phasor(even in MB mode) will read PortA inputs as high.
+			r6522.UpdatePortAForHiZ();	// Float high any PortA input bits (GH#1193)
 	}
 }
 
@@ -510,7 +532,7 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 		for (BYTE ay = 0; ay < NUM_AY8913_PER_SUBUNIT; ay++)
 			AY8910_reset(subunit, ay);
 
-		m_MBSubUnit[subunit].Reset();
+		m_MBSubUnit[subunit].Reset(QueryType());
 		m_MBSubUnit[subunit].ssi263.SetCardMode(PH_Mockingboard);	// Revert to PH_Mockingboard mode
 		m_MBSubUnit[subunit].ssi263.Reset();
 	}
@@ -763,6 +785,12 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 		m_phasorClockScaleFactor = 1;
 	else if (m_phasorMode == PH_Phasor)
 		m_phasorClockScaleFactor = 2;
+
+	if (m_phasorMode == PH_Mockingboard)
+	{
+		for (BYTE subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
+			m_MBSubUnit[subunit].isChipSelected[0] = true;
+	}
 
 	AY8910_InitClock((int)(Get6502BaseClock() * m_phasorClockScaleFactor));
 
