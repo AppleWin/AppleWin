@@ -290,6 +290,15 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 						r6522.SetRegORA(AYReadReg(subunit, ay, pMB->nAYCurrentRegister[ay]) & (r6522.GetReg(SY6522::rDDRA) ^ 0xff));
 					else
 						r6522.UpdatePortAForHiZ();
+
+					if (m_phasorEnable && m_phasorMode == PH_Phasor)	// GH#1192
+					{
+						if (ay == AY8913_DEVICE_A)
+						{
+							if (pMB->isChipSelected[AY8913_DEVICE_B] && pMB->isAYLatchedAddressValid[AY8913_DEVICE_B])
+								r6522.SetRegORA(r6522.GetReg(SY6522::rORA) | (AYReadReg(subunit, AY8913_DEVICE_B, pMB->nAYCurrentRegister[AY8913_DEVICE_B]) & (r6522.GetReg(SY6522::rDDRA) ^ 0xff)));
+						}
+					}
 					break;
 
 				case AY_WRITE:		// 6: WRITE TO PSG
