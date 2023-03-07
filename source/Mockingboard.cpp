@@ -221,23 +221,23 @@ void MockingboardCard::WriteToORB(BYTE subunit)
 #else
 	if (m_phasorEnable)
 	{
-		const int kAY0 = 2;		// Phasor mode: bit4=0 (active low)  selects the 1st AY8913, ie. the only AY8913 in Mockingboard mode (confirmed on real Phasor h/w)
+		const int kAY1 = 2;		// Phasor mode: bit4=0 (active low)  selects the 1st AY8913, ie. the only AY8913 in Mockingboard mode (confirmed on real Phasor h/w)
 								// Echo+  mode: bit3=1 (active high) selects the 1st AY8913
-		const int kAY1 = 1;		// Phasor mode: bit3=0 (active low)  selects the 2nd AY8913 attached to this 6522 (unavailable in Mockingboard mode)
+		const int kAY2 = 1;		// Phasor mode: bit3=0 (active low)  selects the 2nd AY8913 attached to this 6522 (unavailable in Mockingboard mode)
 								// Echo+  mode: bit4=1 (active high) selects the 2nd AY8913
 		const int nAY_CS =	(m_phasorMode == PH_EchoPlus) ? ((value >> 4) & 1) | ((value >> 2) & 2)	// swap bits 4 & 3
 							: (m_phasorMode == PH_Phasor) ? (~(value >> 3) & 3)
-							: kAY0; // Anything else is Mockingboard
+							: kAY1; // Anything else is Mockingboard
 
 		if (m_phasorMode == PH_EchoPlus)
 			subunit = SY6522_DEVICE_B;
 
 		// NB. For PH_Phasor, when selecting *both* AYs, then order matters: first do AY8913_DEVICE_A then AY8913_DEVICE_B
 		// Reason: from GAL logic: 'AY1 LATCH func' deselects AY2, then 'AY2 LATCH func' selects AY2 and AY1. (And we want both selected)
-		if (nAY_CS & kAY0)
+		if (nAY_CS & kAY1)
 			AY8910_Write(subunit, AY8913_DEVICE_A, value);
 
-		if (nAY_CS & kAY1)
+		if (nAY_CS & kAY2)
 			AY8910_Write(subunit, AY8913_DEVICE_B, value);
 
 		if (nAY_CS == 0)
@@ -351,7 +351,7 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 
 		state = nAYFunc;
 
-		if (state == AY_INACTIVE && m_phasorEnable)		// Assume Phasor(even in MB mode) will read PortA inputs as high.
+		if (state == AY_INACTIVE && m_phasorEnable)		// Phasor(even in MB mode) will read PortA inputs as high.
 			r6522.UpdatePortAForHiZ();	// Float high any PortA input bits (GH#1193)
 	}
 }
