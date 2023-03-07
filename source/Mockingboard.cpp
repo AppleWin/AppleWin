@@ -185,7 +185,7 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 //
 // AFAICT, inputs to the Phasor GAL are:
 // . ORB.b4:3 = Chip Select (CS) for AY1 & AY2 (active low)
-// . ORB.b2:0 = PSG Function (RESET, INACTIVE, READ, WRITE, LATCH)
+// . ORB.b2:0 = PSG Function (RESET, INACTIVE, READ, WRITE, LATCH) [Or since LATCH=%111, then maybe a 3-input AND: b2.b1.b0 -> GAL?]
 // . Phasor mode (Mockingboard, Echo+, Phasor-native)
 // . Slot inputs (address, reset, etc)
 // And outputs from the GAL are:
@@ -195,8 +195,9 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 // In Phasor-native mode, GAL logic:
 // . AY2 LATCH func selects AY2 and AY1; sets latch addr for AY2 and AY1
 // . AY1 LATCH func selects AY1; deselects AY2; sets latch addr for AY1
-// . AY2 WRITE func writes AY2 if it's selected
-// . AY1 WRITE func writes AY1; writes AY2 if it's selected
+// . AY2 & AY1 LATCH func selects AY2 and AY1; sets latch addr for AY2 and AY1
+// . AY2 WRITE(READ) func writes(reads) AY2 if it's selected
+// . AY1 WRITE(READ) func writes(reads) AY1; writes(reads) AY2 if it's selected. NB. If both chips, then the READ is the OR-sum.
 //
 // EG, to do a "AY1 LATCH", then write 6522 ORB with b4:3=%01, b2:0=%111
 //
@@ -231,6 +232,8 @@ void MockingboardCard::WriteToORB(BYTE subunit)
 		if (m_phasorMode == PH_EchoPlus)
 			subunit = SY6522_DEVICE_B;
 
+		// NB. For PH_Phasor, when selecting *both* AYs, then order matters: first do AY8913_DEVICE_A then AY8913_DEVICE_B
+		// Reason: from GAL logic: 'AY1 LATCH func' deselects AY2, then 'AY2 LATCH func' selects AY2 and AY1. (And we want both selected)
 		if (nAY_CS & kAY0)
 			AY8910_Write(subunit, AY8913_DEVICE_A, value);
 
