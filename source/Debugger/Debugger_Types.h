@@ -1176,6 +1176,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		DEV_DISK2 ,
 		DEV_SY6522,
 		DEV_AY8913,
+		DEV_AY8913_PAIR,	// Phasor's pair of AYs (connected to one of the 6522s)
 		NUM_DEVICES
 	};
 

@@ -60,6 +60,7 @@ public:
 	};
 	struct DEBUGGER_MB_CARD
 	{
+		SS_CARDTYPE type;
 		DEBUGGER_MB_SUBUNIT subUnit[NUM_SUBUNITS_PER_MB];
 	};
 	void GetSnapshotForDebugger(DEBUGGER_MB_CARD* const pMBForDebugger);

@@ -1953,10 +1953,10 @@ void DrawMemory ( int line, int iMemDump )
 
 	MockingboardCard::DEBUGGER_MB_CARD MB;
 	bool isMockingboardInSlot = false;
+	UINT slot = nAddr >> 4, subUnit = nAddr & 1;
 
-	if ((eDevice == DEV_SY6522) || (eDevice == DEV_AY8913))
+	if (eDevice == DEV_SY6522 || eDevice == DEV_AY8913 || eDevice == DEV_AY8913_PAIR)
 	{
-		UINT slot = 4 + (nAddr >> 1);		// Slot4 or Slot5
 		if (GetCardMgr().GetMockingboardCardMgr().IsMockingboard(slot))
 		{
 			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot)).GetSnapshotForDebugger(&MB);
@@ -1982,7 +1982,10 @@ void DrawMemory ( int line, int iMemDump )
 
 	const int MAX_MEM_VIEW_TXT = 16;
 
-	const char* pType = "Mem";
+	std::string sType = "Mem";
+	if (eDevice == DEV_SY6522 || eDevice == DEV_AY8913 || eDevice == DEV_AY8913_PAIR)
+		sType = StrFormat("Slot%d", slot);
+
 	std::string sAddress;
 
 	int iForeground = FG_INFO_OPCODE;
@@ -1991,37 +1994,41 @@ void DrawMemory ( int line, int iMemDump )
 #if DISPLAY_MEMORY_TITLE
 	if (eDevice == DEV_SY6522)
 	{
-//		sData = StrFormat("Mem at SY#%d", nAddr);
-		sAddress = StrFormat( "SY#%d", nAddr );
+		sAddress = StrFormat("%c: SY", 'A' + subUnit);
 	}
 	else if (eDevice == DEV_AY8913)
 	{
-//		sData = StrFormat("Mem at AY#%d", nAddr);
-		sAddress = StrFormat( "AY#%d", nAddr );
+		sAddress = StrFormat("%c: AY", 'A' + subUnit);
+	}
+	else if (eDevice == DEV_AY8913_PAIR)
+	{
+		sAddress = StrFormat("%c: AY1&AY2", 'A' + subUnit);
 	}
 	else
 	{
 		sAddress = WordToHexStr( nAddr );
 
 		if (iView == MEM_VIEW_HEX)
-			pType = "HEX";
+			sType = "HEX";
+		else if (iView == MEM_VIEW_ASCII)
+			sType = "ASCII";
 		else
-		if (iView == MEM_VIEW_ASCII)
-			pType = "ASCII";
-		else
-			pType = "TEXT";
+			sType = "TEXT";
 	}
 
 	rect2 = rect;	
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
 	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
-	PrintTextCursorX( pType, rect2 );
+	PrintTextCursorX(sType.c_str(), rect2);
 
-	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
-	PrintTextCursorX( " at ", rect2 );
+	DebuggerSetColorFG(DebuggerGetColor(FG_INFO_OPERATOR));
+	if (eDevice == DEV_SY6522 || eDevice == DEV_AY8913 || eDevice == DEV_AY8913_PAIR)
+		PrintTextCursorX(": ", rect2);
+	else
+		PrintTextCursorX(" at ", rect2);
 
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
-	PrintTextCursorY( sAddress.c_str(), rect2);
+	PrintTextCursorY(sAddress.c_str(), rect2);
 #endif
 
 	rect.top    = rect2.top;
@@ -2039,31 +2046,102 @@ void DrawMemory ( int line, int iMemDump )
 
 	if (eDevice == DEV_SY6522 || eDevice == DEV_AY8913)
 	{
-		iAddress = 0;
+		iAddress = 0;	// reg #0
 		nCols = 4;
+	}
+
+	if (eDevice == DEV_AY8913_PAIR)
+	{
+		iAddress = 0;	// reg #0
+		nCols = 8;
 	}
 
 	rect.right = DISPLAY_WIDTH - 1;
 
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
 
-	for (int iLine = 0; iLine < nLines; iLine++ )
+	if (eDevice == DEV_AY8913_PAIR)
+	{
+		// SlotX: A: AY1&AY2
+		// 00010203:04050607	; AY1
+		// 08090A0B:0C0D----
+		// 00010203:04050607	; AY2
+		// 08090A0B:0C0D----
+
+		UINT ay = 0;	// 1st AY
+
+		for (int iLine = 0; iLine < nLines; iLine++)
+		{
+			rect2 = rect;
+
+			for (int iCol = 0; iCol < nCols; iCol++)
+			{
+				DebuggerSetColorBG(DebuggerGetColor(iBackground));
+				DebuggerSetColorFG(DebuggerGetColor(iForeground));
+
+				std::string sText;
+
+				if (isMockingboardInSlot && iAddress <= 13)
+				{
+					sText = StrFormat("%02X", MB.subUnit[subUnit].regsAY8913[ay][iAddress]);
+					if (MB.subUnit[subUnit].nAYCurrentRegister[ay] == iAddress)
+					{
+						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));	// if latched address then draw in white
+					}
+					else
+					{
+						if (iCol & 1)
+							DebuggerSetColorFG(DebuggerGetColor(iForeground));
+						else
+							DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
+					}
+				}
+				else
+				{
+					sText = "--";	// No MB card in this slot; or regs 14 & 15 which aren't supported by AY-3-8913
+				}
+
+				PrintTextCursorX(sText.c_str(), rect2);
+				if (iCol == 3)
+					PrintTextCursorX(":", rect2);
+
+				iAddress++;
+			}
+
+			if (iLine == 1)		// done lines 0 & 1, so advance to next subUnit
+			{
+				ay = 1;			// 2nd AY
+				iAddress = 0;	// reg #0
+				if (MB.type != CT_Phasor)
+					isMockingboardInSlot = false;
+			}
+
+			rect.top += g_nFontHeight;
+			rect.bottom += g_nFontHeight;
+		}
+
+		return;
+	}
+
+	//
+
+	for (int iLine = 0; iLine < nLines; iLine++)
 	{
 		rect2 = rect;
 
 		if (iView == MEM_VIEW_HEX)
 		{
-			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
-			PrintTextCursorX( WordToHexStr( iAddress ).c_str(), rect2);
+			DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
+			PrintTextCursorX(WordToHexStr(iAddress).c_str(), rect2);
 
-			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
-			PrintTextCursorX( ":", rect2 );
+			DebuggerSetColorFG(DebuggerGetColor(FG_INFO_OPERATOR));
+			PrintTextCursorX(":", rect2);
 		}
 
 		for (int iCol = 0; iCol < nCols; iCol++)
 		{
-			DebuggerSetColorBG( DebuggerGetColor( iBackground ));
-			DebuggerSetColorFG( DebuggerGetColor( iForeground ));
+			DebuggerSetColorBG(DebuggerGetColor(iBackground));
+			DebuggerSetColorFG(DebuggerGetColor(iForeground));
 
 			std::string sText;
 
@@ -2077,12 +2155,12 @@ void DrawMemory ( int line, int iMemDump )
 			{
 				if (isMockingboardInSlot)
 				{
-					sText = StrFormat("%02X ", MB.subUnit[nAddr & 1].regsSY6522[iAddress]);
-					if (MB.subUnit[nAddr & 1].timer1Active && (iAddress == 4 || iAddress == 5))		// T1C
+					sText = StrFormat("%02X ", MB.subUnit[subUnit].regsSY6522[iAddress]);
+					if (MB.subUnit[subUnit].timer1Active && (iAddress == 4 || iAddress == 5))		// T1C
 					{
 						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));						// if timer1 active then draw in white
 					}
-					else if (MB.subUnit[nAddr & 1].timer2Active && (iAddress == 8 || iAddress == 9))	// T2C
+					else if (MB.subUnit[subUnit].timer2Active && (iAddress == 8 || iAddress == 9))	// T2C
 					{
 						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));						// if timer2 active then draw in white
 					}
@@ -2096,21 +2174,17 @@ void DrawMemory ( int line, int iMemDump )
 				}
 				else
 				{
-					sText = "-- ";	// No MB card in this slot
+					sText = "-- ";	// No MB card in this slot; or regs 14 & 15 which aren't supported by AY-3-8913
 				}
 			}
-			else
-			if (eDevice == DEV_AY8913)
+			else if (eDevice == DEV_AY8913)
 			{
-				if (isMockingboardInSlot)
+				if (isMockingboardInSlot && iAddress <= 13)
 				{
-					if (iAddress <= 13)
-						sText = StrFormat("%02X ", MB.subUnit[nAddr & 1].regsAY8913[0][iAddress]);	// TODO: Support AY2
-					else
-						sText = "-- ";	// regs 14 & 15 aren't supported by AY-3-8913
-					if (MB.subUnit[nAddr & 1].nAYCurrentRegister[0] == iAddress)
+					sText = StrFormat("%02X ", MB.subUnit[subUnit].regsAY8913[0][iAddress]);
+					if (MB.subUnit[subUnit].nAYCurrentRegister[0] == iAddress)
 					{
-						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));						// if latched address then draw in white
+						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));	// if latched address then draw in white
 					}
 					else
 					{
@@ -2127,16 +2201,16 @@ void DrawMemory ( int line, int iMemDump )
 			}
 			else
 			{
-				BYTE nData = (unsigned)*(LPBYTE)(mem+iAddress);
+				BYTE nData = (unsigned)*(LPBYTE)(mem + iAddress);
 
 				if (iView == MEM_VIEW_HEX)
 				{
 					if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
 					{
-						DebuggerSetColorFG( DebuggerGetColor( FG_INFO_IO_BYTE ));
+						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_IO_BYTE));
 					}
 
-					sText = StrFormat( "%02X ", nData );
+					sText = StrFormat("%02X ", nData);
 				}
 				else
 				{
@@ -2144,10 +2218,10 @@ void DrawMemory ( int line, int iMemDump )
 					if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
 						iBackground = BG_INFO_IO_BYTE;
 
-					sText = ColorizeSpecialChar( nData, iView, iBackground );
+					sText = ColorizeSpecialChar(nData, iView, iBackground);
 				}
 			}
-			PrintTextCursorX( sText.c_str(), rect2); // PrintTextCursorX()
+			PrintTextCursorX(sText.c_str(), rect2);
 			iAddress++;
 		}
 		// Windows HACK: Bugfix: Rest of line is still background color
@@ -2155,7 +2229,7 @@ void DrawMemory ( int line, int iMemDump )
 //		DebuggerSetColorFG(hDC, DebuggerGetColor( FG_INFO_TITLE )); //COLOR_STATIC
 //		PrintTextCursorX( " ", rect2 );
 
-		rect.top    += g_nFontHeight;
+		rect.top += g_nFontHeight;
 		rect.bottom += g_nFontHeight;
 	}
 }

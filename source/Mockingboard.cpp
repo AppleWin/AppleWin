@@ -975,6 +975,8 @@ void MockingboardCard::SetVolume(DWORD volume, DWORD volumeMax)
 
 void MockingboardCard::GetSnapshotForDebugger(DEBUGGER_MB_CARD* const pMBForDebugger)
 {
+	pMBForDebugger->type = QueryType();
+
 	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 	{
 		MB_SUBUNIT* pMB = &m_MBSubUnit[i];
