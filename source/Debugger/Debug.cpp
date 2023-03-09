@@ -50,6 +50,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //	#define DEBUG_ASM_HASH 1
 #define ALLOW_INPUT_LOWERCASE 1
 
+#define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
+
 	// See /docs/Debugger_Changelog.txt for full details
 	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,14);
 
@@ -3620,7 +3622,7 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 	else if (strncmp(g_aArgs[1].sArg, "AY", 2) == 0)		// AY8910
 	{
 		nAddress  = (g_aArgs[1].sArg[2] - '0') & 3;
-		pArg->eDevice = DEV_AY8910;
+		pArg->eDevice = DEV_AY8913;
 		bUpdate = true;
 	}
 #ifdef SUPPORT_Z80_EMU

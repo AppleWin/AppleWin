@@ -1951,15 +1951,25 @@ void DrawMemory ( int line, int iMemDump )
 	DEVICE_e     eDevice = pMD->eDevice;
 	MemoryView_e iView   = pMD->eView;
 
-	SS_CARD_MOCKINGBOARD_v1 SS_MB;
+	MockingboardCard::DEBUGGER_MB_CARD MB;
+	bool isMockingboardInSlot = false;
 
-	if ((eDevice == DEV_SY6522) || (eDevice == DEV_AY8910))
+	if ((eDevice == DEV_SY6522) || (eDevice == DEV_AY8913))
 	{
 		UINT slot = 4 + (nAddr >> 1);		// Slot4 or Slot5
 		if (GetCardMgr().GetMockingboardCardMgr().IsMockingboard(slot))
-			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot)).GetSnapshot_v1(&SS_MB);
-		else // No MB in this slot
-			SS_MB.Hdr.UnitHdr.hdr.v2.Type = UT_Reserved;
+		{
+			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot)).GetSnapshotForDebugger(&MB);
+			isMockingboardInSlot = true;
+			for (int i = 0; i < NUM_SUBUNITS_PER_MB; i++)
+			{
+				for (int j = 0; j < NUM_AY8913_PER_SUBUNIT; j++)
+				{
+					if (!MB.subUnit[i].isAYLatchedAddressValid[j])
+						MB.subUnit[i].nAYCurrentRegister[j] = 0xff;
+				}
+			}
+		}
 	}
 
 	RECT rect = { 0 };
@@ -1984,7 +1994,7 @@ void DrawMemory ( int line, int iMemDump )
 //		sData = StrFormat("Mem at SY#%d", nAddr);
 		sAddress = StrFormat( "SY#%d", nAddr );
 	}
-	else if (eDevice == DEV_AY8910)
+	else if (eDevice == DEV_AY8913)
 	{
 //		sData = StrFormat("Mem at AY#%d", nAddr);
 		sAddress = StrFormat( "AY#%d", nAddr );
@@ -2027,7 +2037,7 @@ void DrawMemory ( int line, int iMemDump )
 		nCols = MAX_MEM_VIEW_TXT;
 	}
 
-	if (eDevice == DEV_SY6522 || eDevice == DEV_AY8910)
+	if (eDevice == DEV_SY6522 || eDevice == DEV_AY8913)
 	{
 		iAddress = 0;
 		nCols = 4;
@@ -2065,16 +2075,16 @@ void DrawMemory ( int line, int iMemDump )
 //			else
 			if (eDevice == DEV_SY6522)
 			{
-				if (SS_MB.Hdr.UnitHdr.hdr.v2.Type == UT_Card)
+				if (isMockingboardInSlot)
 				{
-					sText = StrFormat("%02X ", (unsigned)((BYTE*)&SS_MB.Unit[nAddr & 1].RegsSY6522)[iAddress]);
-					if (SS_MB.Unit[nAddr & 1].bTimer1Active && (iAddress == 4 || iAddress == 5))		// T1C
+					sText = StrFormat("%02X ", MB.subUnit[nAddr & 1].regsSY6522[iAddress]);
+					if (MB.subUnit[nAddr & 1].timer1Active && (iAddress == 4 || iAddress == 5))		// T1C
 					{
-						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));							// if timer1 active then draw in white
+						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));						// if timer1 active then draw in white
 					}
-					else if (SS_MB.Unit[nAddr & 1].bTimer2Active && (iAddress == 8 || iAddress == 9))	// T2C
+					else if (MB.subUnit[nAddr & 1].timer2Active && (iAddress == 8 || iAddress == 9))	// T2C
 					{
-						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));							// if timer2 active then draw in white
+						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));						// if timer2 active then draw in white
 					}
 					else
 					{
@@ -2090,17 +2100,17 @@ void DrawMemory ( int line, int iMemDump )
 				}
 			}
 			else
-			if (eDevice == DEV_AY8910)
+			if (eDevice == DEV_AY8913)
 			{
-				if (SS_MB.Hdr.UnitHdr.hdr.v2.Type == UT_Card)
+				if (isMockingboardInSlot)
 				{
 					if (iAddress <= 13)
-						sText = StrFormat("%02X ", (unsigned)SS_MB.Unit[nAddr & 1].RegsAY8910[iAddress]);
+						sText = StrFormat("%02X ", MB.subUnit[nAddr & 1].regsAY8913[0][iAddress]);	// TODO: Support AY2
 					else
 						sText = "-- ";	// regs 14 & 15 aren't supported by AY-3-8913
-					if (SS_MB.Unit[nAddr & 1].nAYCurrentRegister == iAddress)
+					if (MB.subUnit[nAddr & 1].nAYCurrentRegister[0] == iAddress)
 					{
-						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));							// if latched address then draw in white
+						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));						// if latched address then draw in white
 					}
 					else
 					{

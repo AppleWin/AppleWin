@@ -522,12 +522,6 @@
     <ClInclude Include="source\YamlHelper.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
-    <ClInclude Include="source\SaveState_Structs_common.h">
-      <Filter>Source Files\_Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="source\SaveState_Structs_v1.h">
-      <Filter>Source Files\_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="source\RGBMonitor.h">
       <Filter>Source Files\Video</Filter>
     </ClInclude>

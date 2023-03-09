@@ -1175,7 +1175,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		DEV_MEMORY,
 		DEV_DISK2 ,
 		DEV_SY6522,
-		DEV_AY8910,
+		DEV_AY8913,
 		NUM_DEVICES
 	};
 

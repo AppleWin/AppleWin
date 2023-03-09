@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PageInput.h"
 #include "PropertySheet.h"
 
-#include "../SaveState_Structs_common.h"
 #include "../Common.h"
 #include "../Keyboard.h"
 #include "../Registry.h"
