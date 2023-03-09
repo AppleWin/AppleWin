@@ -3617,7 +3617,10 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 	{
 		if (strlen(g_aArgs[1].sArg) == 3)		// "SY0" or "SY1"
 		{
-			nAddress = (g_aArgs[1].sArg[2] - '0') & 3;
+			UINT bits = (g_aArgs[1].sArg[2] - '0') & 3;
+			UINT slot = 4 + (bits >> 1);
+			UINT subUnit = bits & 1;
+			nAddress = (slot << 4) | subUnit;		// slot=[4..5] | subUnit=[0..1]
 			pArg->eDevice = DEV_SY6522;
 			bUpdate = true;
 		}
