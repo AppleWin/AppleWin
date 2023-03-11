@@ -1934,6 +1934,115 @@ static void DrawFlags ( int line, BYTE nRegFlags )
 }
 
 //===========================================================================
+
+void DrawByte_SY6522(std::string& sText, int iCol, WORD iAddress, BYTE data, bool timer1Active, bool timer2Active)
+{
+	sText = StrFormat("%02X", data);
+	if (timer1Active && (iAddress == 4 || iAddress == 5))		// T1C
+	{
+		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));	// if timer1 active then draw in white
+	}
+	else if (timer2Active && (iAddress == 8 || iAddress == 9))	// T2C
+	{
+		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));	// if timer2 active then draw in white
+	}
+	else
+	{
+		if ((iCol & 1) == 0)
+			DebuggerSetColorFG(DebuggerGetColor(FG_SY6522_EVEN));
+		else
+			DebuggerSetColorFG(DebuggerGetColor(FG_SY6522_ODD));
+	}
+}
+
+void DrawByte_AY8913(std::string& sText, int iCol, WORD iAddress, BYTE data, BYTE nAYCurrentRegister)
+{
+	sText = StrFormat("%02X", data);
+	if (nAYCurrentRegister == iAddress)
+	{
+		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));	// if latched address then draw in white
+	}
+	else
+	{
+		if ((iCol & 1) == 0)
+			DebuggerSetColorFG(DebuggerGetColor(FG_AY8913_EVEN));
+		else
+			DebuggerSetColorFG(DebuggerGetColor(FG_AY8913_ODD));
+	}
+}
+
+void DrawLine_MB_SUBUNIT(RECT& rect, WORD& iAddress, const int nCols, int iForeground, int iBackground, UINT subUnit, bool& is6522, MockingboardCard::DEBUGGER_MB_CARD& MB, bool isMockingboardInSlot)
+{
+	RECT rect2 = rect;
+
+	for (int iCol = 0; iCol < nCols; iCol++)
+	{
+		DebuggerSetColorBG(DebuggerGetColor(iBackground));
+		DebuggerSetColorFG(DebuggerGetColor(iForeground));
+
+		std::string sText;
+
+		if (isMockingboardInSlot && (is6522 || (!is6522 && iAddress <= 13)))
+		{
+			if (is6522)
+			{
+				BYTE data = MB.subUnit[subUnit].regsSY6522[iAddress];
+				DrawByte_SY6522(sText, iCol, iAddress, data, MB.subUnit[subUnit].timer1Active, MB.subUnit[subUnit].timer2Active);
+			}
+			else
+			{
+				BYTE data = MB.subUnit[subUnit].regsAY8913[0][iAddress];
+				DrawByte_AY8913(sText, iCol, iAddress, data, MB.subUnit[subUnit].nAYCurrentRegister[0]);
+			}
+		}
+		else
+		{
+			sText = "--";	// No MB card in this slot; or AY regs 14 & 15 which aren't supported by AY-3-8913
+		}
+
+		PrintTextCursorX(sText.c_str(), rect2);
+		if (iCol == 3)
+			PrintTextCursorX(":", rect2);
+
+		iAddress++;
+	}
+
+	rect.top += g_nFontHeight;
+	rect.bottom += g_nFontHeight;
+}
+
+void DrawLine_AY8913_PAIR(RECT& rect, WORD& iAddress, const int nCols, int iForeground, int iBackground, UINT subUnit, UINT ay, MockingboardCard::DEBUGGER_MB_CARD& MB, bool isMockingboardInSlot)
+{
+	RECT rect2 = rect;
+
+	for (int iCol = 0; iCol < nCols; iCol++)
+	{
+		DebuggerSetColorBG(DebuggerGetColor(iBackground));
+		DebuggerSetColorFG(DebuggerGetColor(iForeground));
+
+		std::string sText;
+
+		if (isMockingboardInSlot && iAddress <= 13)
+		{
+			BYTE data = MB.subUnit[subUnit].regsAY8913[0][iAddress];
+			DrawByte_AY8913(sText, iCol, iAddress, data, MB.subUnit[subUnit].nAYCurrentRegister[0]);
+		}
+		else
+		{
+			sText = "--";	// No MB card in this slot; or AY regs 14 & 15 which aren't supported by AY-3-8913
+		}
+
+		PrintTextCursorX(sText.c_str(), rect2);
+		if (iCol == 3)
+			PrintTextCursorX(":", rect2);
+
+		iAddress++;
+	}
+
+	rect.top += g_nFontHeight;
+	rect.bottom += g_nFontHeight;
+}
+
 void DrawMemory ( int line, int iMemDump )
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
@@ -1955,7 +2064,7 @@ void DrawMemory ( int line, int iMemDump )
 	bool isMockingboardInSlot = false;
 	UINT slot = nAddr >> 4, subUnit = nAddr & 1;
 
-	if (eDevice == DEV_SY6522 || eDevice == DEV_AY8913 || eDevice == DEV_AY8913_PAIR)
+	if (eDevice == DEV_MB_SUBUNIT || eDevice == DEV_AY8913_PAIR)
 	{
 		if (GetCardMgr().GetMockingboardCardMgr().IsMockingboard(slot))
 		{
@@ -1983,7 +2092,7 @@ void DrawMemory ( int line, int iMemDump )
 	const int MAX_MEM_VIEW_TXT = 16;
 
 	std::string sType = "Mem";
-	if (eDevice == DEV_SY6522 || eDevice == DEV_AY8913 || eDevice == DEV_AY8913_PAIR)
+	if (eDevice == DEV_MB_SUBUNIT || eDevice == DEV_AY8913_PAIR)
 		sType = StrFormat("Slot%d", slot);
 
 	std::string sAddress;
@@ -1992,13 +2101,9 @@ void DrawMemory ( int line, int iMemDump )
 	int iBackground = BG_INFO;
 
 #if DISPLAY_MEMORY_TITLE
-	if (eDevice == DEV_SY6522)
+	if (eDevice == DEV_MB_SUBUNIT)
 	{
-		sAddress = StrFormat("%c: SY", 'A' + subUnit);
-	}
-	else if (eDevice == DEV_AY8913)
-	{
-		sAddress = StrFormat("%c: AY", 'A' + subUnit);
+		sAddress = StrFormat("%c: SY & AY", 'A' + subUnit);
 	}
 	else if (eDevice == DEV_AY8913_PAIR)
 	{
@@ -2016,18 +2121,18 @@ void DrawMemory ( int line, int iMemDump )
 			sType = "TEXT";
 	}
 
-	rect2 = rect;	
-	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE ));
-	DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+	rect2 = rect;
+	DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));
+	DebuggerSetColorBG(DebuggerGetColor(BG_INFO));
 	PrintTextCursorX(sType.c_str(), rect2);
 
 	DebuggerSetColorFG(DebuggerGetColor(FG_INFO_OPERATOR));
-	if (eDevice == DEV_SY6522 || eDevice == DEV_AY8913 || eDevice == DEV_AY8913_PAIR)
+	if (eDevice == DEV_MB_SUBUNIT || eDevice == DEV_AY8913_PAIR)
 		PrintTextCursorX(": ", rect2);
 	else
 		PrintTextCursorX(" at ", rect2);
 
-	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
+	DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
 	PrintTextCursorY(sAddress.c_str(), rect2);
 #endif
 
@@ -2044,13 +2149,7 @@ void DrawMemory ( int line, int iMemDump )
 		nCols = MAX_MEM_VIEW_TXT;
 	}
 
-	if (eDevice == DEV_SY6522 || eDevice == DEV_AY8913)
-	{
-		iAddress = 0;	// reg #0
-		nCols = 4;
-	}
-
-	if (eDevice == DEV_AY8913_PAIR)
+	if (eDevice == DEV_MB_SUBUNIT || eDevice == DEV_AY8913_PAIR)
 	{
 		iAddress = 0;	// reg #0
 		nCols = 8;
@@ -2059,6 +2158,32 @@ void DrawMemory ( int line, int iMemDump )
 	rect.right = DISPLAY_WIDTH - 1;
 
 	DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
+
+	if (eDevice == DEV_MB_SUBUNIT)
+	{
+		// SlotX: A: SY & AY
+		// 00010203:04050607	; SY
+		// 08090A0B:0C0D0E0F
+		// 00010203:04050607	; AY
+		// 08090A0B:0C0D----
+
+		bool is6522 = true;		// 1st is 6522
+
+		for (int iLine = 0; iLine < nLines; iLine++)
+		{
+			DrawLine_MB_SUBUNIT(rect, iAddress, nCols, iForeground, iBackground, subUnit, is6522, MB, isMockingboardInSlot);
+
+			if (iLine == 1)		// done lines 0 & 1, so advance to next subUnit
+			{
+				iBackground = BG_DATA_2;
+
+				is6522 = false;	// 2nd is AY
+				iAddress = 0;	// reg #0
+			}
+		}
+
+		return;
+	}
 
 	if (eDevice == DEV_AY8913_PAIR)
 	{
@@ -2072,52 +2197,17 @@ void DrawMemory ( int line, int iMemDump )
 
 		for (int iLine = 0; iLine < nLines; iLine++)
 		{
-			rect2 = rect;
-
-			for (int iCol = 0; iCol < nCols; iCol++)
-			{
-				DebuggerSetColorBG(DebuggerGetColor(iBackground));
-				DebuggerSetColorFG(DebuggerGetColor(iForeground));
-
-				std::string sText;
-
-				if (isMockingboardInSlot && iAddress <= 13)
-				{
-					sText = StrFormat("%02X", MB.subUnit[subUnit].regsAY8913[ay][iAddress]);
-					if (MB.subUnit[subUnit].nAYCurrentRegister[ay] == iAddress)
-					{
-						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));	// if latched address then draw in white
-					}
-					else
-					{
-						if (iCol & 1)
-							DebuggerSetColorFG(DebuggerGetColor(iForeground));
-						else
-							DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
-					}
-				}
-				else
-				{
-					sText = "--";	// No MB card in this slot; or regs 14 & 15 which aren't supported by AY-3-8913
-				}
-
-				PrintTextCursorX(sText.c_str(), rect2);
-				if (iCol == 3)
-					PrintTextCursorX(":", rect2);
-
-				iAddress++;
-			}
+			DrawLine_AY8913_PAIR(rect, iAddress, nCols, iForeground, iBackground, subUnit, ay, MB, isMockingboardInSlot);
 
 			if (iLine == 1)		// done lines 0 & 1, so advance to next subUnit
 			{
+				iBackground = BG_DATA_2;
+
 				ay = 1;			// 2nd AY
 				iAddress = 0;	// reg #0
 				if (MB.type != CT_Phasor)
 					isMockingboardInSlot = false;
 			}
-
-			rect.top += g_nFontHeight;
-			rect.bottom += g_nFontHeight;
 		}
 
 		return;
@@ -2151,55 +2241,6 @@ void DrawMemory ( int line, int iMemDump )
 //				sText = "IO ";
 //			}
 //			else
-			if (eDevice == DEV_SY6522)
-			{
-				if (isMockingboardInSlot)
-				{
-					sText = StrFormat("%02X ", MB.subUnit[subUnit].regsSY6522[iAddress]);
-					if (MB.subUnit[subUnit].timer1Active && (iAddress == 4 || iAddress == 5))		// T1C
-					{
-						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));						// if timer1 active then draw in white
-					}
-					else if (MB.subUnit[subUnit].timer2Active && (iAddress == 8 || iAddress == 9))	// T2C
-					{
-						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));						// if timer2 active then draw in white
-					}
-					else
-					{
-						if (iCol & 1)
-							DebuggerSetColorFG(DebuggerGetColor(iForeground));
-						else
-							DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
-					}
-				}
-				else
-				{
-					sText = "-- ";	// No MB card in this slot; or regs 14 & 15 which aren't supported by AY-3-8913
-				}
-			}
-			else if (eDevice == DEV_AY8913)
-			{
-				if (isMockingboardInSlot && iAddress <= 13)
-				{
-					sText = StrFormat("%02X ", MB.subUnit[subUnit].regsAY8913[0][iAddress]);
-					if (MB.subUnit[subUnit].nAYCurrentRegister[0] == iAddress)
-					{
-						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_TITLE));	// if latched address then draw in white
-					}
-					else
-					{
-						if (iCol & 1)
-							DebuggerSetColorFG(DebuggerGetColor(iForeground));
-						else
-							DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
-					}
-				}
-				else
-				{
-					sText = "-- ";	// No MB card in this slot
-				}
-			}
-			else
 			{
 				BYTE nData = (unsigned)*(LPBYTE)(mem + iAddress);
 
@@ -3467,7 +3508,7 @@ void DrawSubWindow_Info ( Update_t bUpdate, int iWindow )
 		if (bForceDisplayMemory1 || (bUpdate & UPDATE_MEM_DUMP))
 			DrawMemory( yMemory, 0 ); // g_aMemDump[0].nAddress, g_aMemDump[0].eDevice);
 
-		yMemory += (g_nDisplayMemoryLines + 1);
+		yMemory += (1 + g_nDisplayMemoryLines + 1);	// Title(1) + Lines(4) + Gap(1)
 		g_nDisplayMemoryLines = MAX_DISPLAY_MEMORY_LINES_2;
 
 		bool bForceDisplayMemory2 = DEBUG_FORCE_DISPLAY || (g_aMemDump[1].bActive);

@@ -3613,39 +3613,34 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 
 	pArg->eDevice = DEV_MEMORY;						// Default
 
-	if (strncmp(g_aArgs[1].sArg, "SY", 2) == 0)			// SY6522
+	if (strncmp(g_aArgs[1].sArg, "MB", 2) == 0)		// Mockingboard sub-unit (6522+AY8913): "MBs" or "MBsn"
 	{
-		if (strlen(g_aArgs[1].sArg) == 3)		// "SY0" or "SY1"
+		UINT slot = (UINT)-1;
+		UINT subUnit = 0;							// Default to 6522-A
+		if (strlen(g_aArgs[1].sArg) >= 3)			// "MBs" where s = slot#
+			slot = g_aArgs[1].sArg[2] - '0';
+		if (strlen(g_aArgs[1].sArg) == 4)			// "MBsn" where s = slot#, n = SY6522 A or B eg. AY4A
+			subUnit = g_aArgs[1].sArg[3] - 'A';
+		if (slot <= 7 && subUnit <= 1)
 		{
-			UINT bits = (g_aArgs[1].sArg[2] - '0') & 3;
-			UINT slot = 4 + (bits >> 1);
-			UINT subUnit = bits & 1;
-			nAddress = (slot << 4) | subUnit;		// slot=[4..5] | subUnit=[0..1]
-			pArg->eDevice = DEV_SY6522;
+			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
+			pArg->eDevice = DEV_MB_SUBUNIT;
 			bUpdate = true;
 		}
 	}
-	else if (strncmp(g_aArgs[1].sArg, "AY", 2) == 0)	// AY8913
+	else if (strncmp(g_aArgs[1].sArg, "AY", 2) == 0)	// AY8913: "AYs" or "AYsn"
 	{
-		if (strlen(g_aArgs[1].sArg) == 3)		// "AY0" or "AY1"
+		UINT slot = (UINT)-1;
+		UINT subUnit = 0;							// Default to 6522-A
+		if (strlen(g_aArgs[1].sArg) >= 3)			// "AYs" where s = slot#
+			slot = g_aArgs[1].sArg[2] - '0';
+		if (strlen(g_aArgs[1].sArg) == 4)			// "AYsn" where s = slot#, n = SY6522 A or B eg. AY4A
+			subUnit = g_aArgs[1].sArg[3] - 'A';
+		if (slot <= 7 && subUnit <= 1)
 		{
-			UINT bits = (g_aArgs[1].sArg[2] - '0') & 3;
-			UINT slot = 4 + (bits >> 1);
-			UINT subUnit = bits & 1;
-			nAddress = (slot << 4) | subUnit;		// slot=[4..5] | subUnit=[0..1]
-			pArg->eDevice = DEV_AY8913;
+			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
+			pArg->eDevice = DEV_AY8913_PAIR;		// for Phasor
 			bUpdate = true;
-		}
-		else if (strlen(g_aArgs[1].sArg) == 4)	// "AYsn" where s = slot#, n = SY6522 A or B eg. AY4A
-		{
-			UINT slot = g_aArgs[1].sArg[2] - '0';
-			UINT subUnit = g_aArgs[1].sArg[3] - 'A';
-			if (slot <= 7 && subUnit <= 1)
-			{
-				nAddress = (slot << 4) | subUnit;	// slot=[0..7] | subUnit=[0..1]
-				pArg->eDevice = DEV_AY8913_PAIR;	// for Phasor
-				bUpdate = true;
-			}
 		}
 	}
 #ifdef SUPPORT_Z80_EMU
