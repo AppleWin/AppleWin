@@ -2024,8 +2024,8 @@ void DrawLine_AY8913_PAIR(RECT& rect, WORD& iAddress, const int nCols, int iFore
 
 		if (isMockingboardInSlot && iAddress <= 13)
 		{
-			BYTE data = MB.subUnit[subUnit].regsAY8913[0][iAddress];
-			DrawByte_AY8913(sText, iCol, iAddress, data, MB.subUnit[subUnit].nAYCurrentRegister[0]);
+			BYTE data = MB.subUnit[subUnit].regsAY8913[ay][iAddress];
+			DrawByte_AY8913(sText, iCol, iAddress, data, MB.subUnit[subUnit].nAYCurrentRegister[ay]);
 		}
 		else
 		{
