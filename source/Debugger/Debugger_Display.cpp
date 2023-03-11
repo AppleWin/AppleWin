@@ -1998,6 +1998,12 @@ void DrawLine_MB_SUBUNIT(RECT& rect, WORD& iAddress, const int nCols, int iForeg
 		else
 		{
 			sText = "--";	// No MB card in this slot; or AY regs 14 & 15 which aren't supported by AY-3-8913
+			if (isMockingboardInSlot && !is6522 && iAddress == 15)	// for AY reg-15, output the AY's state
+			{
+				sText = (char*)&MB.subUnit[subUnit].szState[0];
+				if (sText.compare("--") != 0)
+					DebuggerSetColorFG(DebuggerGetColor(FG_AY8913_FUNCTION));	// Show any active function in red
+			}
 		}
 
 		PrintTextCursorX(sText.c_str(), rect2);
@@ -2030,6 +2036,12 @@ void DrawLine_AY8913_PAIR(RECT& rect, WORD& iAddress, const int nCols, int iFore
 		else
 		{
 			sText = "--";	// No MB card in this slot; or AY regs 14 & 15 which aren't supported by AY-3-8913
+			if (isMockingboardInSlot && iAddress == 15)	// for AY reg-15, output the AY's state
+			{
+				sText = (char*)&MB.subUnit[subUnit].szState[ay];
+				if (sText.compare("--") != 0)
+					DebuggerSetColorFG(DebuggerGetColor(FG_AY8913_FUNCTION));	// Show any active function in red
+			}
 		}
 
 		PrintTextCursorX(sText.c_str(), rect2);

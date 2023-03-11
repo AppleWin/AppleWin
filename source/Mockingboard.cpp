@@ -992,6 +992,18 @@ void MockingboardCard::GetSnapshotForDebugger(DEBUGGER_MB_CARD* const pMBForDebu
 
 			pMBForDebugger->subUnit[i].nAYCurrentRegister[j] = pMB->nAYCurrentRegister[j];
 			pMBForDebugger->subUnit[i].isAYLatchedAddressValid[j] = pMB->isAYLatchedAddressValid[j];
+
+			switch (pMB->state[j])
+			{
+			case AY_READ:
+				strcpy((char*)&pMBForDebugger->subUnit[i].szState[j], "RD"); break;
+			case AY_WRITE:
+				strcpy((char*)&pMBForDebugger->subUnit[i].szState[j], "WR"); break;
+			case AY_LATCH:
+				strcpy((char*)&pMBForDebugger->subUnit[i].szState[j], "LA"); break;
+			default: //AY_INACTIVE
+				strcpy((char*)&pMBForDebugger->subUnit[i].szState[j], "--"); break;
+			}
 		}
 	}
 }
