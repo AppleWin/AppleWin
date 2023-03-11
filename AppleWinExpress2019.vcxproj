@@ -104,8 +104,6 @@
     <ClInclude Include="source\Riff.h" />
     <ClInclude Include="source\SAM.h" />
     <ClInclude Include="source\SaveState.h" />
-    <ClInclude Include="source\SaveState_Structs_common.h" />
-    <ClInclude Include="source\SaveState_Structs_v1.h" />
     <ClInclude Include="source\SerialComms.h" />
     <ClInclude Include="source\SNESMAX.h" />
     <ClInclude Include="source\SoundCore.h" />

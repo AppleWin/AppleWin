@@ -49,7 +49,21 @@ public:
 	BYTE GetPCR(BYTE nDevice);
 	bool IsAnyTimer1Active(void);
 
-	void GetSnapshot_v1(struct SS_CARD_MOCKINGBOARD_v1* const pSS);
+	struct DEBUGGER_MB_SUBUNIT
+	{
+		BYTE regsSY6522[SY6522::SIZE_6522_REGS];
+		bool timer1Active;
+		bool timer2Active;
+		BYTE regsAY8913[NUM_AY8913_PER_SUBUNIT][16];
+		BYTE nAYCurrentRegister[NUM_AY8913_PER_SUBUNIT];
+		bool isAYLatchedAddressValid[NUM_AY8913_PER_SUBUNIT];
+	};
+	struct DEBUGGER_MB_CARD
+	{
+		SS_CARDTYPE type;
+		DEBUGGER_MB_SUBUNIT subUnit[NUM_SUBUNITS_PER_MB];
+	};
+	void GetSnapshotForDebugger(DEBUGGER_MB_CARD* const pMBForDebugger);
 
 	static std::string GetSnapshotCardName(void);
 	static std::string GetSnapshotCardNamePhasor(void);
@@ -60,13 +74,13 @@ private:
 	struct MB_SUBUNIT
 	{
 		SY6522 sy6522;
-		AY8913 ay8913[2];				// Phasor has 2x AY per 6522
+		AY8913 ay8913[NUM_AY8913_PER_SUBUNIT];					// Phasor has 2x AY per 6522
 		SSI263 ssi263;
 		BYTE nAY8910Number;
-		BYTE nAYCurrentRegister[2];
-		MockingboardUnitState_e state[2];	// AY's PSG function
-		bool isAYLatchedAddressValid[2];
-		bool isChipSelected[2];
+		BYTE nAYCurrentRegister[NUM_AY8913_PER_SUBUNIT];
+		MockingboardUnitState_e state[NUM_AY8913_PER_SUBUNIT];	// AY's PSG function
+		bool isAYLatchedAddressValid[NUM_AY8913_PER_SUBUNIT];
+		bool isChipSelected[NUM_AY8913_PER_SUBUNIT];
 
 		MB_SUBUNIT(UINT slot) : sy6522(slot), ssi263(slot)
 		{

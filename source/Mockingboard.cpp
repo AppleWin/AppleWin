@@ -973,38 +973,26 @@ void MockingboardCard::SetVolume(DWORD volume, DWORD volumeMax)
 
 //===========================================================================
 
-#include "SaveState_Structs_v1.h"
-
-// Called by debugger - Debugger_Display.cpp
-void MockingboardCard::GetSnapshot_v1(SS_CARD_MOCKINGBOARD_v1* const pSS)
+void MockingboardCard::GetSnapshotForDebugger(DEBUGGER_MB_CARD* const pMBForDebugger)
 {
-	pSS->Hdr.UnitHdr.hdr.v2.Length = sizeof(SS_CARD_MOCKINGBOARD_v1);
-	pSS->Hdr.UnitHdr.hdr.v2.Type = UT_Card;
-	pSS->Hdr.UnitHdr.hdr.v2.Version = 1;
+	pMBForDebugger->type = QueryType();
 
-	pSS->Hdr.Slot = m_slot;
-	pSS->Hdr.Type = CT_MockingboardC;
-
-	MB_SUBUNIT* pMB = &m_MBSubUnit[0];
-
-	for (UINT i=0; i<MB_UNITS_PER_CARD_v1; i++)
+	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
 	{
-		// 6522
-		pMB->sy6522.GetRegs((BYTE*)&pSS->Unit[i].RegsSY6522);	// continuous 16-byte array
+		MB_SUBUNIT* pMB = &m_MBSubUnit[i];
 
-		// AY8913
-		for (UINT j=0; j<16; j++)
+		pMB->sy6522.GetRegs(pMBForDebugger->subUnit[i].regsSY6522);	// continuous 16-byte array
+		pMBForDebugger->subUnit[i].timer1Active = pMB->sy6522.IsTimer1Active();
+		pMBForDebugger->subUnit[i].timer2Active = pMB->sy6522.IsTimer2Active();
+
+		for (UINT j = 0; j < NUM_AY8913_PER_SUBUNIT; j++)
 		{
-			pSS->Unit[i].RegsAY8910[j] = AYReadReg(i, 0, j);	// FIXME: also support Phasor's 2nd AY8913
+			for (UINT k = 0; k < 16; k++)
+				pMBForDebugger->subUnit[i].regsAY8913[j][k] = AYReadReg(i, j, k);
+
+			pMBForDebugger->subUnit[i].nAYCurrentRegister[j] = pMB->nAYCurrentRegister[j];
+			pMBForDebugger->subUnit[i].isAYLatchedAddressValid[j] = pMB->isAYLatchedAddressValid[j];
 		}
-
-		memset(&pSS->Unit[i].RegsSSI263, 0, sizeof(SSI263A));	// Not used by debugger
-		pSS->Unit[i].nAYCurrentRegister = pMB->isAYLatchedAddressValid[0] ? pMB->nAYCurrentRegister[0] : 0xff;
-		pSS->Unit[i].bTimer1Active = pMB->sy6522.IsTimer1Active();
-		pSS->Unit[i].bTimer2Active = pMB->sy6522.IsTimer2Active();
-		pSS->Unit[i].bSpeechIrqPending = false;
-
-		pMB++;
 	}
 }
 

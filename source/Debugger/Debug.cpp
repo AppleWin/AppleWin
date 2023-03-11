@@ -50,6 +50,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //	#define DEBUG_ASM_HASH 1
 #define ALLOW_INPUT_LOWERCASE 1
 
+#define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
+
 	// See /docs/Debugger_Changelog.txt for full details
 	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,14);
 
@@ -3611,17 +3613,35 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 
 	pArg->eDevice = DEV_MEMORY;						// Default
 
-	if (strncmp(g_aArgs[1].sArg, "SY", 2) == 0)			// SY6522
+	if (strncmp(g_aArgs[1].sArg, "MB", 2) == 0)		// Mockingboard sub-unit (6522+AY8913): "MBs" or "MBsn"
 	{
-		nAddress = (g_aArgs[1].sArg[2] - '0') & 3;
-		pArg->eDevice = DEV_SY6522;
-		bUpdate = true;
+		UINT slot = (UINT)-1;
+		UINT subUnit = 0;							// Default to 6522-A
+		if (strlen(g_aArgs[1].sArg) >= 3)			// "MBs" where s = slot#
+			slot = g_aArgs[1].sArg[2] - '0';
+		if (strlen(g_aArgs[1].sArg) == 4)			// "MBsn" where s = slot#, n = SY6522 A or B eg. AY4A
+			subUnit = g_aArgs[1].sArg[3] - 'A';
+		if (slot <= 7 && subUnit <= 1)
+		{
+			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
+			pArg->eDevice = DEV_MB_SUBUNIT;
+			bUpdate = true;
+		}
 	}
-	else if (strncmp(g_aArgs[1].sArg, "AY", 2) == 0)		// AY8910
+	else if (strncmp(g_aArgs[1].sArg, "AY", 2) == 0)	// AY8913: "AYs" or "AYsn"
 	{
-		nAddress  = (g_aArgs[1].sArg[2] - '0') & 3;
-		pArg->eDevice = DEV_AY8910;
-		bUpdate = true;
+		UINT slot = (UINT)-1;
+		UINT subUnit = 0;							// Default to 6522-A
+		if (strlen(g_aArgs[1].sArg) >= 3)			// "AYs" where s = slot#
+			slot = g_aArgs[1].sArg[2] - '0';
+		if (strlen(g_aArgs[1].sArg) == 4)			// "AYsn" where s = slot#, n = SY6522 A or B eg. AY4A
+			subUnit = g_aArgs[1].sArg[3] - 'A';
+		if (slot <= 7 && subUnit <= 1)
+		{
+			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
+			pArg->eDevice = DEV_AY8913_PAIR;		// for Phasor
+			bUpdate = true;
+		}
 	}
 #ifdef SUPPORT_Z80_EMU
 	else if (strcmp(g_aArgs[1].sArg, "*AF") == 0)
