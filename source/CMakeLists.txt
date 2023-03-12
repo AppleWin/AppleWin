@@ -183,8 +183,6 @@ set(HEADER_FILES
   DiskDefs.h
   DiskLog.h
   Interface.h
-  SaveState_Structs_common.h
-  SaveState_Structs_v1.h
 
   Debugger/Debug.h
   Debugger/DebugDefs.h
