@@ -46,7 +46,10 @@ void SY6522::Reset(const bool powerCycle)
 	}
 
 	CpuCreateCriticalSection();	// Reset() called by SY6522 global ctor, so explicitly create CPU's CriticalSection
+	Write(rDDRB, 0x00);	// DDRB = 0x00: all pins are inputs
+	Write(rDDRA, 0x00);	// DDRA = 0x00: all pins are inputs
 	Write(rACR, 0x00);	// ACR = 0x00: T1 one-shot mode
+	Write(rPCR, 0x00);	// PCR = 0x00: CB2/CA2 Control = Input (negative active edge)
 	Write(rIFR, 0x7f);	// IFR = 0x7F: de-assert any IRQs
 	Write(rIER, 0x7f);	// IER = 0x7F: disable all IRQs
 
@@ -120,7 +123,7 @@ void SY6522::UpdatePortAForHiZ(void)
 {
 	BYTE ora = GetReg(SY6522::rORA);
 	ora |= GetReg(SY6522::rDDRA) ^ 0xff;	// for any DDRA bits set as input (logical 0), then set them in ORA
-	SetRegORA(ora);							// empirically bus floats high (or pull-up?) if no AY chip-selected (so DDRA=0x00 will read 0xFF as input)
+	SetRegORA(ora);							// Empirically Phasor's 6522-AY8913 bus floats high (or pull-up?) if no AY chip-selected (so DDRA=0x00 will read 0xFF as input)
 }
 
 void SY6522::UpdateIFR(BYTE clr_ifr, BYTE set_ifr /*= 0*/)

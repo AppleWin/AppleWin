@@ -56,6 +56,7 @@ public:
 		bool timer2Active;
 		BYTE regsAY8913[NUM_AY8913_PER_SUBUNIT][16];
 		BYTE nAYCurrentRegister[NUM_AY8913_PER_SUBUNIT];
+		char szState[NUM_AY8913_PER_SUBUNIT][3];	// "--"(INACTIVE), "RD", "WR", "LA"
 		bool isAYLatchedAddressValid[NUM_AY8913_PER_SUBUNIT];
 	};
 	struct DEBUGGER_MB_CARD

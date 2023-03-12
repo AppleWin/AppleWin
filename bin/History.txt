@@ -9,6 +9,11 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.30.14.1 - 11 Mar 2023
+-----------------------
+- [Bug #1193] Fix for reading AY regs after AY Function set to INACTIVE. (Fix for mb-audit v1.3.)
+
+
 1.30.14.0 - 5 Mar 2023
 ----------------------
 - [Change #1080] Support Mockingboard and Mouse at same time. (Improvement for: "Witch Trial".)
