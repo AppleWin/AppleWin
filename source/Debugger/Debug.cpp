@@ -1094,7 +1094,7 @@ bool GetBreakpointInfo ( WORD nOffset, bool & bBreakpointActive_, bool & bBreakp
 	return false;
 }
 
-// returns the hit type if the breakpoints stops
+// returns the hit type if the breakpoint stops
 static BreakpointHit_t hitBreakpoint(Breakpoint_t * pBP, BreakpointHit_t eHitType)
 {
 	pBP->bHit = true;
@@ -2309,7 +2309,6 @@ Update_t CmdTrace (int nArgs)
 	g_nDebugStepUntil = -1;
 
 	DebugEnterStepping();
-	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 	DebugContinueStepping(true);
 
 	return UPDATE_ALL; // TODO: Verify // 0
@@ -2367,7 +2366,6 @@ Update_t CmdTraceLine (int nArgs)
 	g_nDebugStepUntil = -1;
 
 	DebugEnterStepping();
-	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 	DebugContinueStepping(true);
 
 	return UPDATE_ALL; // TODO: Verify // 0
@@ -8389,8 +8387,7 @@ void DebugBegin ()
 //===========================================================================
 void DebugExitDebugger ()
 {
-	ClearTempBreakpoints();  // make sure we remove dead breakpoints before checking
-	// should this check if breakpoints are actually enabled?
+	ClearTempBreakpoints();  // make sure we remove temp breakpoints before checking
 	if (g_nBreakpoints == 0 && g_hTraceFile == NULL)
 	{
 		DebugEnd();
