@@ -8692,8 +8692,11 @@ void DebugInitialize ()
 
 	// CLEAR THE BREAKPOINT AND WATCH TABLES
 	memset( g_aBreakpoints     , 0, MAX_BREAKPOINTS       * sizeof(Breakpoint_t));
+	g_nBreakpoints = 0;
 	memset( g_aWatches         , 0, MAX_WATCHES           * sizeof(Watches_t) );
+	g_nWatches = 0;
 	memset( g_aZeroPagePointers, 0, MAX_ZEROPAGE_POINTERS * sizeof(ZeroPagePointers_t));
+	g_nZeroPagePointers = 0;
 
 	// Load Main, Applesoft, and User Symbols
 	g_bSymbolsDisplayMissingFile = false;
