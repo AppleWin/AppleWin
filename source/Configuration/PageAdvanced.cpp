@@ -44,10 +44,10 @@ const TCHAR CPageAdvanced::m_CloneChoices[] =
 				TEXT("TK3000 //e\0")	// Brazilian
 				TEXT("Base 64A\0"); 	// Taiwanese
 
-//enum GAMEIOCONNECTOR_CHOICE { MENUITEM_EMPTY, MENUITEM_SPEEDSTAR };
 const TCHAR CPageAdvanced::m_gameIOConnectorChoices[] =
-				TEXT("Empty\0")
-				TEXT("SDS DataKey - SpeedStar\0");	// Protection dongle for Southwestern Data Systems "SpeedStar" Applesoft Compiler
+				"Empty\0"
+				"SDS DataKey - SpeedStar\0"		/* Protection dongle for Southwestern Data Systems "SpeedStar" Applesoft Compiler */
+				"Cortechs Corp - CodeWriter\0";	/* Protection key for Dynatech Microsoftware / Cortechs Corp "CodeWriter" */
 
 
 INT_PTR CALLBACK CPageAdvanced::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)

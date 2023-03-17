@@ -39,6 +39,13 @@
 
 static DONGLETYPE copyProtectionDongleType = DT_EMPTY;
 
+static UINT codeWriterIndex = 0;
+static BYTE codeWriterBits[127] = {
+	1,1,0,1,0,1,1,0,1,1,1,1,0,1,1,0,0,0,1,1,0,1,0,0,1,0,1,1,1,0,1,1,
+	1,0,0,1,1,0,0,1,0,1,0,1,0,1,1,1,1,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,
+	1,1,0,0,0,0,1,0,1,0,0,0,1,1,1,1,0,0,1,0,0,0,1,0,1,1,0,0,1,1,1,0,
+	1,0,1,0,0,1,1,1,1,1,0,1,0,0,0,0,1,1,1,0,0,0,1,0,0,1,0,0,1,1,0 };
+
 void SetCopyProtectionDongleType(DONGLETYPE type)
 {
 	copyProtectionDongleType = type;
@@ -49,9 +56,26 @@ DONGLETYPE GetCopyProtectionDongleType(void)
 	return copyProtectionDongleType;
 }
 
+void DongleControl(WORD address)
+{
+	UINT AN = ((address - 8) >> 1) & 7;
+	bool state = address & 1;	// ie. C058 = AN0_off; C059 = AN0_on
+
+	if (copyProtectionDongleType == DT_EMPTY || copyProtectionDongleType == DT_SDSSPEEDSTAR)
+		return;
+
+	if (copyProtectionDongleType == DT_CODEWRITER)
+	{
+		if ((AN == 3 && state == false) || MemGetAnnunciator(3))	// reset?
+			codeWriterIndex = 0;
+		else if (AN == 2 && state == false && MemGetAnnunciator(2) == true)	// AN2 true->false edge?
+			codeWriterIndex = (codeWriterIndex + 1) % std::size(codeWriterBits);
+	}
+}
+
 // This protection dongle consists of a NAND gate connected with AN1 and AN2 on the inputs
 // PB2 on the output, and AN0 connected to power it.
-bool SdsSpeedStar(void)
+static bool SdsSpeedStar(void)
 {
 	return !MemGetAnnunciator(0) || !(MemGetAnnunciator(1) && MemGetAnnunciator(2));
 }
@@ -77,6 +101,9 @@ int CopyProtectionDonglePB2(void)
 		return SdsSpeedStar();
 		break;
 
+	case DT_CODEWRITER:		// Dynatech Microsoftware / Cortechs Corp protection key for "CodeWriter"
+		return codeWriterBits[codeWriterIndex];
+
 	default:
 		return -1;
 		break;
@@ -84,6 +111,8 @@ int CopyProtectionDonglePB2(void)
 }
 
 //===========================================================================
+
+#define SS_YAML_KEY_CODEWRITER_INDEX "Index"
 
 static const UINT kUNIT_VERSION = 1;
 
@@ -93,12 +122,23 @@ static const std::string& GetSnapshotStructName_SDSSpeedStar(void)
 	return name;
 }
 
+static const std::string& GetSnapshotStructName_CodeWriter(void)
+{
+	static const std::string name("Cortechs Corp CodeWriter protection key");
+	return name;
+}
+
 void CopyProtectionDongleSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	if (copyProtectionDongleType == DT_SDSSPEEDSTAR)
 	{
 		yamlSaveHelper.SaveString(SS_YAML_KEY_DEVICE, GetSnapshotStructName_SDSSpeedStar());
 		// NB. No state for this dongle
+	}
+	else if (copyProtectionDongleType == DT_CODEWRITER)
+	{
+		yamlSaveHelper.SaveString(SS_YAML_KEY_DEVICE, GetSnapshotStructName_CodeWriter());
+		yamlSaveHelper.SaveUint(SS_YAML_KEY_CODEWRITER_INDEX, codeWriterIndex);
 	}
 	else
 	{
@@ -122,6 +162,11 @@ void CopyProtectionDongleLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versi
 	if (device == GetSnapshotStructName_SDSSpeedStar())
 	{
 		copyProtectionDongleType = DT_SDSSPEEDSTAR;
+	}
+	else if (device == GetSnapshotStructName_CodeWriter())
+	{
+		copyProtectionDongleType = DT_CODEWRITER;
+		codeWriterIndex = yamlLoadHelper.LoadUint(SS_YAML_KEY_CODEWRITER_INDEX);
 	}
 	else
 	{
