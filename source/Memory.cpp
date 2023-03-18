@@ -710,7 +710,7 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 	// . $C2B5: LDA $C05D (CLRAN2) ;SETUP
 	// . $C2B8: LDA $C05F (CLRAN3) ; ANNUNCIATORS
 
-	DongleControl(address);	// do before setting g_Annunciator[]
+	DongleControl(address);	// do before setting g_Annunciator[] as may need to access old MemGetAnnunciator() state
 
 	g_Annunciator[(address>>1) & 3] = (address&1) ? true : false;
 
