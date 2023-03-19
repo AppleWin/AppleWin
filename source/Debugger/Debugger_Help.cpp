@@ -181,7 +181,7 @@ void Help_Operators()
 			sText += g_aBreakpointSymbols[ iBreakOp ];
 			sText += ' ';
 		}
-	}	
+	}
 	sText += CHC_DEFAULT;
 	ConsolePrint( sText.c_str() );
 }
@@ -379,7 +379,7 @@ bool Colorize( char * pDst, size_t /*nDstSz*/, const char* pSrc)
 		{
 			*pDst = *pSrc;
 			pDst++;
-			pSrc++;	
+			pSrc++;
 		}
 	}
 	*pDst = 0;
@@ -602,7 +602,7 @@ Update_t CmdHelpSpecific (int nArgs)
 	}
 
 	for (iArg = 1; iArg <= nArgs; iArg++ )
-	{	
+	{
 		iCommand = 0;
 		nFound = 0;
 
@@ -726,7 +726,7 @@ Update_t CmdHelpSpecific (int nArgs)
 				ConsoleBufferPushFormat( "%s  <-- Missing", pCommand->m_sName );
 	#if DEBUG_COMMAND_HELP
 				if (! bAllCommands) // Release version doesn't display message
-				{			
+				{
 					ConsoleBufferPushFormat( "Missing Summary Help: %s", g_aCommands[ iCommand ].aName );
 				}
 	#endif
@@ -735,11 +735,11 @@ Update_t CmdHelpSpecific (int nArgs)
 
 			if (bCategory)
 				continue;
-		}		
+		}
 
 		// MASTER HELP
 		switch (iCommand)
-		{	
+		{
 	// CPU / General
 		case CMD_ASSEMBLE:
 			ConsoleColorizePrint( " Usage: [address | symbol]" );
@@ -1141,7 +1141,7 @@ Update_t CmdHelpSpecific (int nArgs)
 				ConsoleBufferPush( "  Notes: If no filename specified, defaults to the last filename (if possible)" );
 			}
 			if (iCommand == CMD_MEMORY_SAVE)
-			{			
+			{
 				ConsoleColorizePrint( " Usage: [\"Filename\"],[bank:]address,length" );
 				ConsoleColorizePrint( " Usage: [\"Filename\"],[bank:]range"          );
 				Help_Range();
@@ -1447,7 +1447,7 @@ Update_t CmdHelpList (int nArgs)
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
-	
+
 //===========================================================================
 Update_t CmdVersion (int nArgs)
 {
