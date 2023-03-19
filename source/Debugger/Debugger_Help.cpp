@@ -1285,7 +1285,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsoleColorizePrint( " Usage: symbol" );
 			ConsoleBufferPush( "  Looks up symbol in all 3 symbol tables: main, user, source" );
 			break;
-// Cycles
+	// Cycles
 		case CMD_CYCLES_INFO:
 			ConsoleColorizePrint(" Usage: <abs|rel|part>");
 			ConsoleBufferPush("  Where:");
@@ -1296,8 +1296,7 @@ Update_t CmdHelpSpecific (int nArgs)
 		case CMD_CYCLES_RESET:
 			ConsoleBufferPush("  Use in conjunctioned with 'cycles part' to reset to current instruction");
 			break;
-// Video-Scanner
-
+	// Video-Scanner
 		case CMD_VIDEO_SCANNER_INFO:
 			ConsoleColorizePrint(" Usage: <dec|hex|real|apple>");
 			ConsoleBufferPush("  Where:");
@@ -1308,7 +1307,7 @@ Update_t CmdHelpSpecific (int nArgs)
 				,CHC_COMMAND, CHC_DEFAULT	// green
 			);
 			break;
-// View
+	// View
 		case CMD_VIEW_TEXT4X:
 		case CMD_VIEW_TEXT41:
 		case CMD_VIEW_TEXT42:
