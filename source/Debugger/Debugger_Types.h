@@ -208,16 +208,16 @@
 
 	struct Breakpoint_t
 	{
-		WORD                 nAddress; // for registers, functions as nValue
-		UINT                 nLength ;
+		WORD                 nAddress ; // for registers, functions as nValue
+		UINT                 nLength  ;
 		BreakpointSource_t   eSource;
 		BreakpointOperator_t eOperator;
-		bool                 bSet    ; // used to be called enabled pre 2.0
+		bool                 bSet     ; // used to be called enabled pre 2.0
 		bool                 bEnabled;
-		bool                 bTemp;    // If true then remove BP when hit or stepping cancelled (eg. G xxxx)
-		bool                 bHit;     // true when the breakpoint has just been hit
-		bool                 bStop;    // true if the debugger stops when it is hit
-		DWORD                nHitCount;  // number of times the breakpoint was hit
+		bool                 bTemp    ; // If true then remove BP when hit or stepping cancelled (eg. G xxxx)
+		bool                 bHit     ; // true when the breakpoint has just been hit
+		bool                 bStop    ; // true if the debugger stops when it is hit
+		DWORD                nHitCount; // number of times the breakpoint was hit
 	};
 
 	typedef Breakpoint_t Bookmark_t;

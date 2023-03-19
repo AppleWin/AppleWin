@@ -1244,7 +1244,7 @@ int CheckBreakpointsIO ()
 		NO_6502_TARGET
 	};
 	int  nBytes;
-	int  iBreakpointHit = 0;
+	int  bBreakpointHit = 0;
 
 	int  iTarget;
 	int  nAddress;
@@ -1275,20 +1275,20 @@ int CheckBreakpointsIO ()
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
 								{
-									iBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEM);
+									bBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEM);
 								}
 								else if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
 								{
 									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_RI|MEM_R))
 									{
-										iBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEMR);
+										bBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEMR);
 									}
 								}
 								else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
 								{
 									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_WI|MEM_W))
 									{
-										iBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEMW);
+										bBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEMW);
 									}
 								}
 								else
@@ -1302,7 +1302,7 @@ int CheckBreakpointsIO ()
 			}
 		}
 	}
-	return iBreakpointHit;
+	return bBreakpointHit;
 }
 
 // Returns true if a register breakpoint is triggered
@@ -1909,24 +1909,24 @@ Update_t CmdBreakpointChange (int nArgs) {
 		{
 			switch (sArg[i])
 			{
-			case 'E':
-				bp.bEnabled = true;
-				break;
-			case 'e':
-				bp.bEnabled = false;
-				break;
-			case 'T':
-				bp.bTemp = true;
-				break;
-			case 't':
-				bp.bTemp = false;
-				break;
-			case 'S':
-				bp.bStop = true;
-				break;
-			case 's':
-				bp.bStop = false;
-				break;
+				case 'E':
+					bp.bEnabled = true;
+					break;
+				case 'e':
+					bp.bEnabled = false;
+					break;
+				case 'T':
+					bp.bTemp = true;
+					break;
+				case 't':
+					bp.bTemp = false;
+					break;
+				case 'S':
+					bp.bStop = true;
+					break;
+				case 's':
+					bp.bStop = false;
+					break;
 			}
 		}
 	}
@@ -1937,9 +1937,9 @@ Update_t CmdBreakpointChange (int nArgs) {
 void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool bZeroBased )
 {
 	static const char sEnabledFlags[] = "-E";
-	static const char sStopFlags[] = "-S";
-	static const char sTempFlags[] = "-T";
-	static const char sHitFlags[] = " *";
+	static const char sStopFlags[]    = "-S";
+	static const char sTempFlags[]    = "-T";
+	static const char sHitFlags[]     = " *";
 
 	std::string sAddressBuf;
 	std::string const& sSymbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, sAddressBuf);
