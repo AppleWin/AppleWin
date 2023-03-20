@@ -1954,11 +1954,11 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
 		sEnabledFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
-		sStopFlags[ aBreakWatchZero[ iBWZ ].bStop ? 1 : 0 ],
-		sTempFlags[ aBreakWatchZero[ iBWZ ].bTemp ? 1 : 0 ],
-		sHitFlags[ aBreakWatchZero[ iBWZ ].bHit ? 1 : 0 ],
-		aBreakWatchZero[ iBWZ ].nHitCount,
-		aBreakWatchZero[ iBWZ ].nAddress,
+		sStopFlags   [ aBreakWatchZero[ iBWZ ].bStop    ? 1 : 0 ],
+		sTempFlags   [ aBreakWatchZero[ iBWZ ].bTemp    ? 1 : 0 ],
+		sHitFlags    [ aBreakWatchZero[ iBWZ ].bHit     ? 1 : 0 ],
+		               aBreakWatchZero[ iBWZ ].nHitCount,
+		               aBreakWatchZero[ iBWZ ].nAddress,
 		cBPM,
 		sSymbol.c_str()
 	);
