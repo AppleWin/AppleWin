@@ -1327,7 +1327,7 @@ int CheckBreakpointsReg ()
 
 		switch (pBP->eSource)
 		{
-			case BP_SRC_REG_PC: 
+			case BP_SRC_REG_PC:
 				bBreakpointHit = _CheckBreakpointValue( pBP, regs.pc );
 				break;
 			case BP_SRC_REG_A:
