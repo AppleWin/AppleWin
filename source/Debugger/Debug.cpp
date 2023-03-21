@@ -8595,7 +8595,22 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 			else if (g_bDebugBreakpointHit & BP_HIT_OPCODE)
 				stopReason = "Opcode match";
 			else if (g_bDebugBreakpointHit & BP_HIT_REG)
-				stopReason = "Register matches value";
+			{
+					if (g_pDebugBreakpointHit)
+					{
+						int iBreakpoint = (g_pDebugBreakpointHit - g_aBreakpoints);
+						stopReason = StrFormat( "Register %s%s%s matches breakpoint %s#%s%d",
+							CHC_CATEGORY, // TODO: CHC_REGS
+							g_aBreakpointSource[ g_pDebugBreakpointHit->eSource ],
+							CHC_DEFAULT,
+							CHC_ARG_SEP,
+							CHC_NUM_HEX,
+							iBreakpoint
+						);
+					}
+					else
+						stopReason = "Register matches value";
+			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
 				stopReason = StrFormat("Memory access at $%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMW)
@@ -8617,7 +8632,7 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 				skipStopReason = true;
 
 			if (!skipStopReason)
-				ConsoleBufferPushFormat( "Stop reason: %s", stopReason.c_str() );
+				ConsolePrintFormat( CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str() );
 
 			for (int i = 0; i < NUM_BREAK_ON_DMA; i++)
 			{
@@ -8628,7 +8643,7 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 						stopReason = StrFormat("HDD DMA to memory $%04X-%04X (BP#%d)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, g_DebugBreakOnDMA[i].BPid);
 					else if (nDebugBreakpointHit & BP_DMA_FROM_MEM)
 						stopReason = StrFormat("HDD DMA from memory $%04X-%04X (BP#%d)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, g_DebugBreakOnDMA[i].BPid);
-					ConsoleBufferPushFormat("Stop reason: %s", stopReason.c_str());
+					ConsolePrintFormat( CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str() );
 				}
 			}
 
