@@ -1901,37 +1901,30 @@ Update_t CmdBreakpointChange (int nArgs)
 		return ConsoleDisplayError( "" );
 	}
 
-	if (nArgs != 2)
+	if (nArgs < 2)
 		return Help_Arg_1( CMD_BREAKPOINT_CHANGE );
 
 	const int iSlot = g_aArgs[1].nValue;
 	if (iSlot >= 0 && iSlot < MAX_BREAKPOINTS && g_aBreakpoints[iSlot].bSet)
 	{
 		Breakpoint_t & bp = g_aBreakpoints[iSlot];
-		const char * sArg = g_aArgs[2].sArg;
-		const int nArgLen = g_aArgs[2].nArgLen;
-		for (int i = 0; i < nArgLen; ++i)
+		int iParam;
+		int iParamArg;
+
+		for (iParamArg = 2; iParamArg <= nArgs; ++iParamArg)
 		{
-			switch (sArg[i])
+			int bFound = FindParam( g_aArgs[ iParamArg ].sArg, MATCH_EXACT, iParam, _PARAM_BP_CHANGE_BEGIN, _PARAM_BP_CHANGE_END, true );
+			if (! bFound)
+				return Help_Arg_1( CMD_BREAKPOINT_CHANGE );
+
+			switch (iParam)
 			{
-				case 'E':
-					bp.bEnabled = true;
-					break;
-				case 'e':
-					bp.bEnabled = false;
-					break;
-				case 'T':
-					bp.bTemp = true;
-					break;
-				case 't':
-					bp.bTemp = false;
-					break;
-				case 'S':
-					bp.bStop = true;
-					break;
-				case 's':
-					bp.bStop = false;
-					break;
+				case PARAM_BP_CHANGE_ENABLE  : bp.bEnabled = true ; break;
+				case PARAM_BP_CHANGE_DISABLE : bp.bEnabled = false; break;
+				case PARAM_BP_CHANGE_TEMP_ON : bp.bTemp    = true ; break;
+				case PARAM_BP_CHANGE_TEMP_OFF: bp.bTemp    = false; break;
+				case PARAM_BP_CHANGE_STOP_ON : bp.bStop    = true ; break;
+				case PARAM_BP_CHANGE_STOP_OFF: bp.bStop    = false; break;
 			}
 		}
 	}
