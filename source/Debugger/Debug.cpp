@@ -1892,9 +1892,9 @@ Update_t CmdBreakpointEnable (int nArgs) {
 	return UPDATE_BREAKPOINTS;
 }
 
-
-Update_t CmdBreakpointChange (int nArgs) {
-
+// bpchange # <[E e T t S s]>
+Update_t CmdBreakpointChange (int nArgs)
+{
 	if (! g_nBreakpoints)
 		return ConsoleDisplayError("There are no (PC) Breakpoints defined.");
 
