@@ -1946,11 +1946,25 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 	std::string sAddressBuf;
 	std::string const& sSymbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, sAddressBuf);
 
-	char cBPM = aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_READ_ONLY ? 'R'
-				: aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_WRITE_ONLY ? 'W'
-				: ' ';
+	const char *aMemAccess[4] =
+	{
+		 "R  "
+		,"W  "
+		,"R/W"
+		,"   "
+	};
 
-	ConsoleBufferPushFormat( "  #%d %c %c %c %c %08X %04X %c %s",
+	int iBPM;
+	switch (aBreakWatchZero[iBWZ].eSource)
+	{
+		case BP_SRC_MEM_READ_ONLY : iBPM = 0; break;
+		case BP_SRC_MEM_WRITE_ONLY: iBPM = 1; break;
+		case BP_SRC_MEM_RW        : iBPM = 2; break;
+		default                   : iBPM = 3; break;
+	}
+
+	// ID On Stop Temp HitCounter  Addr Mem Symbol
+	ConsolePrintFormat( "  #%X %c  %c    %c  %c   %08X " CHC_ADDRESS " %04X " CHC_INFO "%s" CHC_SYMBOL " %s",
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
 		sEnabledFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
@@ -1959,13 +1973,15 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 		sHitFlags    [ aBreakWatchZero[ iBWZ ].bHit     ? 1 : 0 ],
 		               aBreakWatchZero[ iBWZ ].nHitCount,
 		               aBreakWatchZero[ iBWZ ].nAddress,
-		cBPM,
+		aMemAccess[ iBPM ],
 		sSymbol.c_str()
 	);
 }
 
 void _BWZ_ListAll( const Breakpoint_t * aBreakWatchZero, const int nMax )
 {
+	ConsolePrintFormat( "  ID On Stop Temp HitCounter  Addr Mem Symbol" );
+
 	int iBWZ = 0;
 	while (iBWZ < nMax) // 
 	{
