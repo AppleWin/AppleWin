@@ -7565,7 +7565,7 @@ Update_t CmdZeroPagePointer (int nArgs)
 
 // Note: Range is [iParamBegin,iParamEnd], not the usually (STL) expected [iParamBegin,iParamEnd)
 //===========================================================================
-int FindParam(LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd )
+int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd, const bool bCaseSensitive /* false */ )
 {
 	int nFound = 0;
 	int nLen     = _tcslen( pLookupName );
@@ -7575,7 +7575,8 @@ int FindParam(LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegi
 		return nFound;
 
 #if ALLOW_INPUT_LOWERCASE
-	eMatch = MATCH_FUZZY;
+	if (! bCaseSensitive) // HACK: Until We fixup all callers using MATCH_EXACT with MATCH_ANYCASE we need to preserve behavior of ALLOW_INPUT_LOWERCASE always being MATCH_FUZZY
+		eMatch = MATCH_FUZZY;
 #endif
 
 	if (eMatch == MATCH_EXACT)
@@ -7584,7 +7585,7 @@ int FindParam(LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegi
 		for (iParam = iParamBegin; iParam <= iParamEnd; iParam++ )
 		{
 			TCHAR *pParamName = g_aParameters[iParam].m_sName;
-			int eCompare = _tcsicmp(pLookupName, pParamName);
+			int eCompare = _tcscmp(pLookupName, pParamName);
 			if (! eCompare) // exact match?
 			{
 				nFound++;
