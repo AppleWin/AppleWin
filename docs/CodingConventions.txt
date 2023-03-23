@@ -2,6 +2,15 @@ Coding Conventions for AppleWin
 ===============================
 
 History:
+v7 - 23-Mar-2023 (MP)
+. Clarify 2.1 Naming
+. Split into sub-section 2.1.1: Simplified prefix names
+. Split into sub-section 2.1.2: Loop conters
+. Split into sub-section 2.1.3: Out parameters
+. Clarify 2.6 Indentation
+. Add 2.6.1: Brace placement
+. Add 2.6.1.1: Debugger function style
+. Clarify b, and n prefix
 v6 - 12-Jan-2023 (TC)
 . Avoid global vars & provide getter/setter accessor functions.
 . Avoid C++11 empty initializer lists. (PR#634)
@@ -59,10 +68,11 @@ and therefore by extension all header files can be included in any order.
 As a general rule and for consistency, adopt the coding convention/style of any module (or function) you are modifying.
 
 2.1: Naming
-For functions use upper camel case.
+For functions use upper camel case (PascalCase).
 
-For variables use lower camel case.
+For variables use lower camel case (camelCase).
 
+2.1.1: Simplified prefix names
 And only if applicable, the following simplified prefix (Hungarian) style can be used:
 
 Prefixes:
@@ -86,8 +96,11 @@ EG:
 		UINT b;
 	};
 
+2.1.2: Loop conters
 Simple loop counters (i,j,k) don't need to adhere to this style.
+NOTE: It would be better to use a better descriptive loop name then a non-descript single character variable name.
 
+2.1.3: Out parameters
 Naming for parameters that are being modified (eg. OUT):
 It is recommended (but not mandatory) to use a suffix of OUT or '_', eg:
 	bool Find(int* pFoundOUT);
@@ -115,7 +128,39 @@ Always use bool instead of BOOL
 GPL header, followed by description of module & author.
 
 2.6: Indentation
-Tabs favoured over spaces.
+Tabs favoured over spaces.  (Tabs for indent, spaces for alignment.)
+
+2.6.1: Brace placement
+Braces should be formated with Allman Style (opening brace on separate line) and NOT K&R style (opening brace on same indentation level as its header).
+EG:
+	void FindFoo()      // GOOD
+	{
+	}
+
+	void FindFoo() {    // BAD
+	}
+
+See: https://en.wikipedia.org/wiki/Indentation_style
+
+2.6.1.1: Debugger function style
+For functions in the debugger, both the
+
+* function declaration,and
+* function definition
+
+MUST have a space between the end of the function name and the opening parenthesis.
+This makes it trivial to search and jump to the function implementation since every function call _won't_ have that extra space.
+EG:
+	void FindFoo (); // .h
+
+	void FindFoo ()  // .cpp
+	{
+	}
+
+	void Bar()
+	{
+		if (FindFoo() // usage
+	}
 
 2.7: Expression to be well spaced and parenthesised
 It is recommended (but not mandatory):
@@ -172,12 +217,12 @@ Appendix: Legacy Hungarian notation
 dw	: DWORD
 sz	: string (null-terminated)
 a	: array
-b	: bool
+b	: bool or bitmask
 e	: enum variable
 h	: handle
 i	: iterator (eg. UINT, STL-iterator)
 m	: STL map
-n	: int
+n	: int, total, or length
 r	: reference
 s	: string
 sg_p	: singleton

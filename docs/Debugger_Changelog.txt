@@ -1,4 +1,5 @@
 /*
+2.9.1.16 Added: QoL to BPL. Header and colorized address, mem, and symbols.
 2.9.1.15 Added: QoL when a breakpoint register is hit display which register and breakpoint triggered it.
     Example:
         Stop reason: Register PC matches breakpoint #0

@@ -1366,8 +1366,18 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 //		, PARAM_SIZE  // TODO: used by FONT SIZE
 
+	, _PARAM_BP_CHANGE_BEGIN = _PARAM_BREAKPOINT_END // Daisy Chain
+		, PARAM_BP_CHANGE_ENABLE = _PARAM_BP_CHANGE_BEGIN // E
+		, PARAM_BP_CHANGE_DISABLE  // e
+		, PARAM_BP_CHANGE_TEMP_ON  // T
+		, PARAM_BP_CHANGE_TEMP_OFF // t
+		, PARAM_BP_CHANGE_STOP_ON  // S
+		, PARAM_BP_CHANGE_STOP_OFF // s
+	, _PARAM_BP_CHANGE_END
+	,  PARAM_BP_CHANGE_NUM = _PARAM_BP_CHANGE_END - _PARAM_BP_CHANGE_BEGIN
+
 	// Note: Order must match BreakpointSource_t
-	, _PARAM_REGS_BEGIN = _PARAM_BREAKPOINT_END // Daisy Chain
+	, _PARAM_REGS_BEGIN = _PARAM_BP_CHANGE_END // Daisy Chain
 // Regs
 		, PARAM_REG_A = _PARAM_REGS_BEGIN
 		, PARAM_REG_X

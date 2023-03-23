@@ -1896,43 +1896,39 @@ Update_t CmdBreakpointEnable (int nArgs) {
 	return UPDATE_BREAKPOINTS;
 }
 
-
-Update_t CmdBreakpointChange (int nArgs) {
-
+// bpchange # <[E e T t S s]>
+Update_t CmdBreakpointChange (int nArgs)
+{
 	if (! g_nBreakpoints)
-		return ConsoleDisplayError("There are no (PC) Breakpoints defined.");
+	{
+		ConsolePrintFormat( "There are no " CHC_CATEGORY "PC" CHC_DEFAULT " Breakpoints defined." );
+		return ConsoleDisplayError( "" );
+	}
 
-	if (nArgs != 2)
+	if (nArgs < 2)
 		return Help_Arg_1( CMD_BREAKPOINT_CHANGE );
 
 	const int iSlot = g_aArgs[1].nValue;
 	if (iSlot >= 0 && iSlot < MAX_BREAKPOINTS && g_aBreakpoints[iSlot].bSet)
 	{
 		Breakpoint_t & bp = g_aBreakpoints[iSlot];
-		const char * sArg = g_aArgs[2].sArg;
-		const int nArgLen = g_aArgs[2].nArgLen;
-		for (int i = 0; i < nArgLen; ++i)
+		int iParam;
+		int iParamArg;
+
+		for (iParamArg = 2; iParamArg <= nArgs; ++iParamArg)
 		{
-			switch (sArg[i])
+			int bFound = FindParam( g_aArgs[ iParamArg ].sArg, MATCH_EXACT, iParam, _PARAM_BP_CHANGE_BEGIN, _PARAM_BP_CHANGE_END, true );
+			if (! bFound)
+				return Help_Arg_1( CMD_BREAKPOINT_CHANGE );
+
+			switch (iParam)
 			{
-				case 'E':
-					bp.bEnabled = true;
-					break;
-				case 'e':
-					bp.bEnabled = false;
-					break;
-				case 'T':
-					bp.bTemp = true;
-					break;
-				case 't':
-					bp.bTemp = false;
-					break;
-				case 'S':
-					bp.bStop = true;
-					break;
-				case 's':
-					bp.bStop = false;
-					break;
+				case PARAM_BP_CHANGE_ENABLE  : bp.bEnabled = true ; break;
+				case PARAM_BP_CHANGE_DISABLE : bp.bEnabled = false; break;
+				case PARAM_BP_CHANGE_TEMP_ON : bp.bTemp    = true ; break;
+				case PARAM_BP_CHANGE_TEMP_OFF: bp.bTemp    = false; break;
+				case PARAM_BP_CHANGE_STOP_ON : bp.bStop    = true ; break;
+				case PARAM_BP_CHANGE_STOP_OFF: bp.bStop    = false; break;
 			}
 		}
 	}
@@ -1950,11 +1946,25 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 	std::string sAddressBuf;
 	std::string const& sSymbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, sAddressBuf);
 
-	char cBPM = aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_READ_ONLY ? 'R'
-				: aBreakWatchZero[iBWZ].eSource == BP_SRC_MEM_WRITE_ONLY ? 'W'
-				: ' ';
+	const char *aMemAccess[4] =
+	{
+		 "R  "
+		,"W  "
+		,"R/W"
+		,"   "
+	};
 
-	ConsoleBufferPushFormat( "  #%d %c %c %c %c %08X %04X %c %s",
+	int iBPM;
+	switch (aBreakWatchZero[iBWZ].eSource)
+	{
+		case BP_SRC_MEM_READ_ONLY : iBPM = 0; break;
+		case BP_SRC_MEM_WRITE_ONLY: iBPM = 1; break;
+		case BP_SRC_MEM_RW        : iBPM = 2; break;
+		default                   : iBPM = 3; break;
+	}
+
+	// ID On Stop Temp HitCounter  Addr Mem Symbol
+	ConsolePrintFormat( "  #%X %c  %c    %c  %c   %08X " CHC_ADDRESS " %04X " CHC_INFO "%s" CHC_SYMBOL " %s",
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
 		sEnabledFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
@@ -1963,13 +1973,15 @@ void _BWZ_List( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool 
 		sHitFlags    [ aBreakWatchZero[ iBWZ ].bHit     ? 1 : 0 ],
 		               aBreakWatchZero[ iBWZ ].nHitCount,
 		               aBreakWatchZero[ iBWZ ].nAddress,
-		cBPM,
+		aMemAccess[ iBPM ],
 		sSymbol.c_str()
 	);
 }
 
 void _BWZ_ListAll( const Breakpoint_t * aBreakWatchZero, const int nMax )
 {
+	ConsolePrintFormat( "  ID On Stop Temp HitCounter  Addr Mem Symbol" );
+
 	int iBWZ = 0;
 	while (iBWZ < nMax) // 
 	{
@@ -7553,7 +7565,7 @@ Update_t CmdZeroPagePointer (int nArgs)
 
 // Note: Range is [iParamBegin,iParamEnd], not the usually (STL) expected [iParamBegin,iParamEnd)
 //===========================================================================
-int FindParam(LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd )
+int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd, const bool bCaseSensitive /* false */ )
 {
 	int nFound = 0;
 	int nLen     = _tcslen( pLookupName );
@@ -7563,7 +7575,8 @@ int FindParam(LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegi
 		return nFound;
 
 #if ALLOW_INPUT_LOWERCASE
-	eMatch = MATCH_FUZZY;
+	if (! bCaseSensitive) // HACK: Until We fixup all callers using MATCH_EXACT with MATCH_ANYCASE we need to preserve behavior of ALLOW_INPUT_LOWERCASE always being MATCH_FUZZY
+		eMatch = MATCH_FUZZY;
 #endif
 
 	if (eMatch == MATCH_EXACT)
@@ -7572,7 +7585,7 @@ int FindParam(LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegi
 		for (iParam = iParamBegin; iParam <= iParamEnd; iParam++ )
 		{
 			TCHAR *pParamName = g_aParameters[iParam].m_sName;
-			int eCompare = _tcsicmp(pLookupName, pParamName);
+			int eCompare = _tcscmp(pLookupName, pParamName);
 			if (! eCompare) // exact match?
 			{
 				nFound++;
