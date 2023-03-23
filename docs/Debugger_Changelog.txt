@@ -1,4 +1,6 @@
 /*
+2.9.1.16 Added: QoL to BPL. Header and colorized address, mem, and symbols.
+
 2.9.1.14 Fix disassembly when in middle of data
     Example:
         ASC 7D0:7D7
