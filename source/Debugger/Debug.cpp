@@ -371,13 +371,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Breakpoints
 	Update_t _BP_InfoNone ();
+	void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, int & nTotal );
+	void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, const bool bEnabled );
 	void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ); // bool bZeroBased = true );
 	void _BWZ_ListAll ( const Breakpoint_t * aBreakWatchZero, const int nMax );
+	void _BWZ_RemoveOne ( Breakpoint_t *aBreakWatchZero, const int iSlot, int & nTotal );
+	void _BWZ_RemoveAll ( Breakpoint_t *aBreakWatchZero, const int nMax, int & nTotal );
 
 //	bool CheckBreakpoint (WORD address, BOOL memory);
 	bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, WORD nAddress, int nLen, bool bIsTempBreakpoint );
 	int  _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint=false );
-	void _BWZ_RemoveOne( Breakpoint_t *aBreakWatchZero, const int iSlot, int & nTotal );
 
 // Config - Save
 	bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave );
@@ -1773,80 +1776,6 @@ Update_t CmdBreakpointAddVideo (int nArgs)
 }
 
 //===========================================================================
-void _BWZ_RemoveOne ( Breakpoint_t *aBreakWatchZero, const int iSlot, int & nTotal )
-{
-	if (aBreakWatchZero[iSlot].bSet)
-	{
-		aBreakWatchZero[ iSlot ].bSet     = false;
-		aBreakWatchZero[ iSlot ].bEnabled = false;
-		aBreakWatchZero[ iSlot ].nLength  = 0;
-		nTotal--;
-	}
-}
-
-void _BWZ_RemoveAll ( Breakpoint_t *aBreakWatchZero, const int nMax, int & nTotal )
-{
-	for ( int iSlot = 0; iSlot < nMax; iSlot++ )
-	{
-		_BWZ_RemoveOne( aBreakWatchZero, iSlot, nTotal );
-	}
-}
-
-// called by BreakpointsClear, WatchesClear, ZeroPagePointersClear
-//===========================================================================
-void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, int & nTotal )
-{
-	int iSlot = 0;
-	
-	// Clear specified breakpoints
-	while (nArgs)
-	{
-		iSlot = g_aArgs[nArgs].nValue;
-
-		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
-		{
-			_BWZ_RemoveAll( aBreakWatchZero, nMax, nTotal );
-			break;
-		}
-		else
-		if ((iSlot >= 0) && (iSlot < nMax))
-		{
-			_BWZ_RemoveOne( aBreakWatchZero, iSlot, nTotal );
-		}
-
-		nArgs--;
-	}
-}
-
-// called by BreakpointsEnable, WatchesEnable, ZeroPagePointersEnable
-// called by BreakpointsDisable, WatchesDisable, ZeroPagePointersDisable
-void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, const bool bEnabled )
-{
-	int iSlot = 0;
-
-	// Enable each breakpoint in the list
-	while (nArgs)
-	{
-		iSlot = g_aArgs[nArgs].nValue;
-
-		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
-		{
-			for ( ; iSlot < nMax; iSlot++ )
-			{
-				aBreakWatchZero[ iSlot ].bEnabled = bEnabled;
-			}			
-		}
-		else
-		if ((iSlot >= 0) && (iSlot < nMax))
-		{
-			aBreakWatchZero[ iSlot ].bEnabled = bEnabled;
-		}
-
-		nArgs--;
-	}
-}
-
-//===========================================================================
 Update_t CmdBreakpointClear (int nArgs)
 {
 	if (!g_nBreakpoints)
@@ -1936,6 +1865,62 @@ Update_t CmdBreakpointChange (int nArgs)
 	return UPDATE_BREAKPOINTS;
 }
 
+// called by BreakpointsClear, WatchesClear, ZeroPagePointersClear
+//===========================================================================
+void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, int & nTotal )
+{
+	int iSlot = 0;
+
+	// Clear specified breakpoints
+	while (nArgs)
+	{
+		iSlot = g_aArgs[nArgs].nValue;
+
+		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		{
+			_BWZ_RemoveAll( aBreakWatchZero, nMax, nTotal );
+			break;
+		}
+		else
+		if ((iSlot >= 0) && (iSlot < nMax))
+		{
+			_BWZ_RemoveOne( aBreakWatchZero, iSlot, nTotal );
+		}
+
+		nArgs--;
+	}
+}
+
+// called by BreakpointsEnable, WatchesEnable, ZeroPagePointersEnable
+// called by BreakpointsDisable, WatchesDisable, ZeroPagePointersDisable
+//===========================================================================
+void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, const bool bEnabled )
+{
+	int iSlot = 0;
+
+	// Enable each breakpoint in the list
+	while (nArgs)
+	{
+		iSlot = g_aArgs[nArgs].nValue;
+
+		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		{
+			for ( ; iSlot < nMax; iSlot++ )
+			{
+				aBreakWatchZero[ iSlot ].bEnabled = bEnabled;
+			}
+		}
+		else
+		if ((iSlot >= 0) && (iSlot < nMax))
+		{
+			aBreakWatchZero[ iSlot ].bEnabled = bEnabled;
+		}
+
+		nArgs--;
+	}
+}
+
+//===========================================================================
 void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool bZeroBased )
 {
 	static const char sEnabledFlags[] = "-E";
@@ -1990,6 +1975,27 @@ void _BWZ_ListAll ( const Breakpoint_t * aBreakWatchZero, const int nMax )
 			_BWZ_List( aBreakWatchZero, iBWZ );
 		}
 		iBWZ++;
+	}
+}
+
+//===========================================================================
+void _BWZ_RemoveOne ( Breakpoint_t *aBreakWatchZero, const int iSlot, int & nTotal )
+{
+	if (aBreakWatchZero[iSlot].bSet)
+	{
+		aBreakWatchZero[ iSlot ].bSet     = false;
+		aBreakWatchZero[ iSlot ].bEnabled = false;
+		aBreakWatchZero[ iSlot ].nLength  = 0;
+		nTotal--;
+	}
+}
+
+//===========================================================================
+void _BWZ_RemoveAll ( Breakpoint_t *aBreakWatchZero, const int nMax, int & nTotal )
+{
+	for ( int iSlot = 0; iSlot < nMax; iSlot++ )
+	{
+		_BWZ_RemoveOne( aBreakWatchZero, iSlot, nTotal );
 	}
 }
 
