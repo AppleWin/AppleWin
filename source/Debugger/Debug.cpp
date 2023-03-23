@@ -8052,11 +8052,6 @@ int ParseInput ( LPTSTR pConsoleInput, bool bCook )
 	return nArg;
 }
 
-//===========================================================================
-void ParseParameter ( )
-{
-}
-
 // Return address of next line to write to.
 //===========================================================================
 ProfileLine_t ProfileLinePeek ( int iLine )
