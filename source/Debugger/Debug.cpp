@@ -370,6 +370,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static	Update_t ExecuteCommand ( int nArgs );
 
 // Breakpoints
+	Update_t _BP_InfoNone ();
 	void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ); // bool bZeroBased = true );
 	void _BWZ_ListAll ( const Breakpoint_t * aBreakWatchZero, const int nMax );
 
@@ -864,6 +865,12 @@ _Help:
 
 // Breakpoints ____________________________________________________________________________________
 
+//===========================================================================
+Update_t _BP_InfoNone()
+{
+		ConsolePrintFormat( "There are no " CHC_ARG_SEP "(" CHC_CATEGORY "PC" CHC_ARG_SEP ")" CHC_DEFAULT " Breakpoints defined.");
+		return ConsoleDisplayError( "" );
+}
 
 //===========================================================================
 
@@ -1843,7 +1850,7 @@ void _BWZ_EnableDisableViaArgs( int nArgs, Breakpoint_t * aBreakWatchZero, const
 Update_t CmdBreakpointClear (int nArgs)
 {
 	if (!g_nBreakpoints)
-		return ConsoleDisplayError("There are no breakpoints defined.");
+		return _BP_InfoNone();
 
 	if (!nArgs)
 	{
@@ -1861,7 +1868,7 @@ Update_t CmdBreakpointClear (int nArgs)
 Update_t CmdBreakpointDisable (int nArgs)
 {
 	if (! g_nBreakpoints)
-		return ConsoleDisplayError("There are no (PC) Breakpoints defined.");
+		return _BP_InfoNone();
 
 	if (! nArgs)
 		return Help_Arg_1( CMD_BREAKPOINT_DISABLE );
@@ -1882,7 +1889,7 @@ Update_t CmdBreakpointEdit (int nArgs)
 Update_t CmdBreakpointEnable (int nArgs) {
 
 	if (! g_nBreakpoints)
-		return ConsoleDisplayError("There are no (PC) Breakpoints defined.");
+		return _BP_InfoNone();
 
 	if (! nArgs)
 		return Help_Arg_1( CMD_BREAKPOINT_ENABLE );
@@ -1896,10 +1903,7 @@ Update_t CmdBreakpointEnable (int nArgs) {
 Update_t CmdBreakpointChange (int nArgs)
 {
 	if (! g_nBreakpoints)
-	{
-		ConsolePrintFormat( "There are no " CHC_CATEGORY "PC" CHC_DEFAULT " Breakpoints defined." );
-		return ConsoleDisplayError( "" );
-	}
+		return _BP_InfoNone();
 
 	if (nArgs < 2)
 		return Help_Arg_1( CMD_BREAKPOINT_CHANGE );
