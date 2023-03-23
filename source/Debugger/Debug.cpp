@@ -1896,7 +1896,10 @@ Update_t CmdBreakpointEnable (int nArgs) {
 Update_t CmdBreakpointChange (int nArgs)
 {
 	if (! g_nBreakpoints)
-		return ConsoleDisplayError("There are no (PC) Breakpoints defined.");
+	{
+		ConsolePrintFormat( "There are no " CHC_CATEGORY "PC" CHC_DEFAULT " Breakpoints defined." );
+		return ConsoleDisplayError( "" );
+	}
 
 	if (nArgs != 2)
 		return Help_Arg_1( CMD_BREAKPOINT_CHANGE );
