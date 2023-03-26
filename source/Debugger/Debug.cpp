@@ -88,7 +88,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int                  g_bDebugBreakpointHit = 0;       // See: BreakpointHit_t
 	static Breakpoint_t *g_pDebugBreakpointHit = nullptr; // NOTE: Only valid for BP_HIT_REG, see: CheckBreakpointsReg()
 
-	int  g_nBreakpoints          = 0;
+	int          g_nBreakpoints = 0;
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
 	// NOTE: BreakpointSource_t and g_aBreakpointSource must match!
