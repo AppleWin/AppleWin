@@ -80,6 +80,7 @@
 	#define CHC_STRING   "`6" // 
 	#define CHC_EXAMPLE  "`:"
 	#define CHC_PATH     "`:" // Light Blue
+	#define CHC_REGS     "`6" // Cyan
 #else
 	#define CHC_DEFAULT  ""
 	#define CHC_USAGE    ""
