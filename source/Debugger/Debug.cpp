@@ -8613,7 +8613,7 @@ void DebugContinueStepping(const bool bCallerWillUpdateDisplay/*=false*/)
 					{
 						int iBreakpoint = (g_pDebugBreakpointHit - g_aBreakpoints);
 						stopReason = StrFormat( "Register %s%s%s matches breakpoint %s#%s%d",
-							CHC_CATEGORY, // TODO: CHC_REGS
+							CHC_REGS,
 							g_aBreakpointSource[ g_pDebugBreakpointHit->eSource ],
 							CHC_DEFAULT,
 							CHC_ARG_SEP,
