@@ -530,7 +530,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 			default:
 #if _DEBUG // not implemented!
 				int *fatal = 0;
-				*fatal = 0xDEADC0DE;
+				    *fatal = 0xDEADC0DE;
 #endif
 				break;
 		}
