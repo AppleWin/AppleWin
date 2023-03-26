@@ -43,23 +43,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	AddressingMode_t g_aOpmodes[ NUM_ADDRESSING_MODES ] =
 	{ // Output, but eventually used for Input when Assembler is working.
-		{TEXT("")        , 1 , "(implied)"              }, // (implied)
-        {TEXT("")        , 1 , "n/a 1"         }, // INVALID1
-        {TEXT("")        , 2 , "n/a 2"         }, // INVALID2
-        {TEXT("")        , 3 , "n/a 3"         }, // INVALID3
+		{TEXT("")        , 1 , "(implied)"     }, // (implied)
+		{TEXT("")        , 1 , "n/a 1"         }, // INVALID1
+		{TEXT("")        , 2 , "n/a 2"         }, // INVALID2
+		{TEXT("")        , 3 , "n/a 3"         }, // INVALID3
 		{TEXT("%02X")    , 2 , "Immediate"     }, // AM_M // #$%02X -> %02X
-        {TEXT("%04X")    , 3 , "Absolute"      }, // AM_A
-        {TEXT("%02X")    , 2 , "Zero Page"     }, // AM_Z
-        {TEXT("%04X,X")  , 3 , "Absolute,X"    }, // AM_AX     // %s,X
-        {TEXT("%04X,Y")  , 3 , "Absolute,Y"    }, // AM_AY     // %s,Y
-        {TEXT("%02X,X")  , 2 , "Zero Page,X"   }, // AM_ZX     // %s,X
-        {TEXT("%02X,Y")  , 2 , "Zero Page,Y"   }, // AM_ZY     // %s,Y
-        {TEXT("%s")      , 2 , "Relative"      }, // AM_R
-        {TEXT("(%02X,X)"), 2 , "(Zero Page),X" }, // AM_IZX // ($%02X,X) -> %s,X 
-        {TEXT("(%04X,X)"), 3 , "(Absolute),X"  }, // AM_IAX // ($%04X,X) -> %s,X
-        {TEXT("(%02X),Y"), 2 , "(Zero Page),Y" }, // AM_NZY // ($%02X),Y
-        {TEXT("(%02X)")  , 2 , "(Zero Page)"   }, // AM_NZ  // ($%02X) -> $%02X
-        {TEXT("(%04X)")  , 3 , "(Absolute)"    }  // AM_NA  // (%04X) -> %s
+		{TEXT("%04X")    , 3 , "Absolute"      }, // AM_A
+		{TEXT("%02X")    , 2 , "Zero Page"     }, // AM_Z
+		{TEXT("%04X,X")  , 3 , "Absolute,X"    }, // AM_AX     // %s,X
+		{TEXT("%04X,Y")  , 3 , "Absolute,Y"    }, // AM_AY     // %s,Y
+		{TEXT("%02X,X")  , 2 , "Zero Page,X"   }, // AM_ZX     // %s,X
+		{TEXT("%02X,Y")  , 2 , "Zero Page,Y"   }, // AM_ZY     // %s,Y
+		{TEXT("%s")      , 2 , "Relative"      }, // AM_R
+		{TEXT("(%02X,X)"), 2 , "(Zero Page),X" }, // AM_IZX // ($%02X,X) -> %s,X
+		{TEXT("(%04X,X)"), 3 , "(Absolute),X"  }, // AM_IAX // ($%04X,X) -> %s,X
+		{TEXT("(%02X),Y"), 2 , "(Zero Page),Y" }, // AM_NZY // ($%02X),Y
+		{TEXT("(%02X)")  , 2 , "(Zero Page)"   }, // AM_NZ  // ($%02X) -> $%02X
+		{TEXT("(%04X)")  , 3 , "(Absolute)"    }  // AM_NA  // (%04X) -> %s
 	};
 
 
