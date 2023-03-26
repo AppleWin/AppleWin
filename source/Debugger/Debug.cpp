@@ -2294,7 +2294,8 @@ Update_t CmdStepOver (int nArgs)
 
 	while (nDebugSteps -- > 0)
 	{
-		int nOpcode = *(mem + regs.pc); // g_nDisasmCurAddress
+		int nOpcode = *(mem + regs.pc);
+		WORD nExpectedAddr = (regs.pc + 3) & _6502_MEM_END; // Wrap around 64K edge case when PC = $FFFD..$FFFF: 20 xx xx
 	//	int eMode = g_aOpcodes[ nOpcode ].addrmode;
 	//	int nByte = g_aOpmodes[eMode]._nBytes;
 	//	if ((eMode ==  AM_A) && 
@@ -2303,9 +2304,46 @@ Update_t CmdStepOver (int nArgs)
 		if (nOpcode == OPCODE_JSR)
 		{
 			CmdStepOut(0);
-			g_nDebugSteps = 0xFFFF;
+
+			int nMaxSteps = 0xFFFFF; // GH #1194
+			g_nDebugSteps = nMaxSteps;
+
 			while (g_nDebugSteps != 0)
+			{
 				DebugContinueStepping(true);
+			}
+
+			// If the PC isn't at the expected address after the JSR print a diagnostic so the user knows the stack may be buggered up
+			if (regs.pc != nExpectedAddr)
+			{
+				WORD nActualAddr;
+				bool bValidAddr   = _6502_GetStackReturnAddress( nActualAddr ) &&  (nActualAddr == nExpectedAddr);
+				int  nStackOffset = _6502_FindStackReturnAddress( nExpectedAddr ) - 1; // Trace stack to seee if our expected address is on it
+
+				// MSVC:
+				//   int nMaxSteps = 0xFFFFF; // GH #1194
+				//   Set BP on line above: (regs.pc != nExpectedAddr)
+				// AppleWin:
+				//   F7
+				//   300:A0 FF 20 09 03 88 D0 FA 60 A9 FF 20 A8 FC 60
+				//   BPX 30B
+				//   F7
+				//   CALL 768
+				//   <Ctrl>-<Space>
+				// MSVC:
+				// Change regs.sp to one of 3 cases:
+				//   Case   Addr On Stack   Top of Stack   Diagnostic                      R SP
+				//   0      No              No             ERROR        nStackOffset = 0   regs.sp = 0x1F3
+				//   1      Yes             Yes            INFO         nStackOffset = 1   regs.sp = 0x1F2
+				//   2      Yes             No             WARN         nStackOffset > 1   regs.sp = 0x1F1
+				/**/ if (nStackOffset <  0) ConsolePrintFormat( CHC_ERROR   "ERROR" CHC_ARG_SEP ":" CHC_ERROR   " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "RTS address not found!"                                                                          CHC_ARG_SEP ")"                      ); // Case 0
+				else if (nStackOffset == 0) ConsolePrintFormat( CHC_INFO    "INFO"  CHC_ARG_SEP ":" CHC_INFO    " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "RTS on top of stack."                                                                            CHC_ARG_SEP ")"                      ); // Case 1
+				else /*                  */ ConsolePrintFormat( CHC_WARNING "WARN"  CHC_ARG_SEP ":" CHC_WARNING " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "Stack has RTS address but needs fixup: " CHC_ARG_SEP "$" CHC_NUM_HEX "%02X" CHC_DEFAULT " bytes" CHC_ARG_SEP ")", nStackOffset & 0xFF ); // Case 2
+
+				ConsolePrintFormat( CHC_DEFAULT "  Please report '" CHC_SYMBOL "nMaxSteps" CHC_ARG_SEP " = " CHC_DEFAULT "0x" CHC_NUM_HEX "%04X" CHC_DEFAULT "' to:", nMaxSteps );
+				ConsolePrintFormat( CHC_PATH    "  https://github.com/AppleWin/AppleWin/issues/1194"               );
+				ConsoleUpdate();
+			}
 		}
 	}
 
@@ -8607,7 +8645,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 			bool skipStopReason = false;
 
 			if (regs.pc == g_nDebugStepUntil)
-				stopReason = "PC matches 'Go until' address";
+				stopReason = StrFormat( CHC_DEFAULT "Register " CHC_REGS "PC" CHC_DEFAULT " matches '" CHC_INFO "Go until" CHC_DEFAULT "' address $" CHC_ADDRESS "%04X", g_nDebugStepUntil);
 			else if (g_bDebugBreakpointHit & BP_HIT_INVALID)
 				stopReason = "Invalid opcode";
 			else if (g_bDebugBreakpointHit & BP_HIT_OPCODE)
