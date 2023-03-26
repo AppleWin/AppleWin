@@ -464,6 +464,27 @@ bool _6502_CalcRelativeOffset ( int nOpcode, int nBaseAddress, int nTargetAddres
 	return false;
 }
 
+// Return stack offset if the address is on stack, else 0 if not found
+//===========================================================================
+int _6502_FindStackReturnAddress (const WORD & nAddress)
+{
+	unsigned nStack = regs.sp;
+	nStack++;
+
+	while (nStack <= (_6502_STACK_END - 1))
+	{
+		WORD nReturnAddress = (unsigned)*(LPBYTE)(mem + nStack);
+		nStack++;
+
+		nReturnAddress += ((unsigned)*(LPBYTE)(mem + nStack)) << 8;
+		nReturnAddress++;
+
+		if (nReturnAddress ==nAddress)
+			return (nStack-1 - regs.sp);
+	}
+
+	return 0; // not found
+}
 
 //===========================================================================
 int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpbyte_, const DisasmData_t** pData_ )
