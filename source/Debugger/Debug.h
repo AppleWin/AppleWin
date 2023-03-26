@@ -29,20 +29,20 @@
 // Breakpoints
 	enum BreakpointHit_t
 	{
-		BP_HIT_NONE = 0
-		, BP_HIT_INVALID = (1 << 0)
-		, BP_HIT_OPCODE = (1 << 1)
-		, BP_HIT_REG = (1 << 2)
-		, BP_HIT_MEM = (1 << 3)
-		, BP_HIT_MEMR = (1 << 4)
-		, BP_HIT_MEMW = (1 << 5)
-		, BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM = (1 << 6)
-		, BP_HIT_INTERRUPT = (1 << 7)
-		, BP_DMA_TO_IO_MEM = (1 << 8)
-		, BP_DMA_FROM_IO_MEM = (1 << 9)
-		, BP_DMA_TO_MEM = (1 << 10)
-		, BP_DMA_FROM_MEM = (1 << 11)
-		, BP_HIT_VIDEO_POS = (1 << 12)
+		  BP_HIT_NONE                           = 0
+		, BP_HIT_INVALID                        = (1 <<  0)
+		, BP_HIT_OPCODE                         = (1 <<  1)
+		, BP_HIT_REG                            = (1 <<  2)
+		, BP_HIT_MEM                            = (1 <<  3)
+		, BP_HIT_MEMR                           = (1 <<  4)
+		, BP_HIT_MEMW                           = (1 <<  5)
+		, BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM = (1 <<  6)
+		, BP_HIT_INTERRUPT                      = (1 <<  7)
+		, BP_DMA_TO_IO_MEM                      = (1 <<  8)
+		, BP_DMA_FROM_IO_MEM                    = (1 <<  9)
+		, BP_DMA_TO_MEM                         = (1 << 10)
+		, BP_DMA_FROM_MEM                       = (1 << 11)
+		, BP_HIT_VIDEO_POS                      = (1 << 12)
 	};
 
 	extern int          g_bDebugBreakpointHit;
