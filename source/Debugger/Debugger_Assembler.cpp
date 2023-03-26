@@ -414,8 +414,8 @@ Fx	BEQ r  SBC (d),Y  sbc (z)  ---  ---      SBC d,X  INC z,X  ---  SED  SBC a,Y 
 		int  m_iOpmode ; // AddressingMode_e
 	};
 	
-	std::vector <DelayedTarget_t> m_vDelayedTargets;
-	bool                     m_bDelayedTargetsDirty = false;
+	std::vector<DelayedTarget_t> m_vDelayedTargets;
+	bool                         m_bDelayedTargetsDirty = false;
 
 	int  m_nAsmBytes         = 0;
 	WORD m_nAsmBaseAddress   = 0;
