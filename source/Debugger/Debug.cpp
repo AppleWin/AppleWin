@@ -85,8 +85,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static DebugBreakOnDMA g_DebugBreakOnDMA[NUM_BREAK_ON_DMA];
 	static DebugBreakOnDMA g_DebugBreakOnDMAIO;
 
-	int                 g_bDebugBreakpointHit = 0;       // See: BreakpointHit_t
-	static Breakpoint_t*g_pDebugBreakpointHit = nullptr; // NOTE: Only valid for BP_HIT_REG, see: CheckBreakpointsReg()
+	int                  g_bDebugBreakpointHit = 0;       // See: BreakpointHit_t
+	static Breakpoint_t *g_pDebugBreakpointHit = nullptr; // NOTE: Only valid for BP_HIT_REG, see: CheckBreakpointsReg()
 
 	int  g_nBreakpoints          = 0;
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
