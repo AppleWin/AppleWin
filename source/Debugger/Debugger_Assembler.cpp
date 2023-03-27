@@ -479,7 +479,7 @@ int _6502_FindStackReturnAddress (const WORD & nAddress)
 		nReturnAddress += ((unsigned)*(LPBYTE)(mem + nStack)) << 8;
 		nReturnAddress++;
 
-		if (nReturnAddress ==nAddress)
+		if (nReturnAddress == nAddress)
 			return (nStack-1 - regs.sp);
 	}
 
