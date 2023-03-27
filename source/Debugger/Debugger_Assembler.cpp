@@ -468,7 +468,7 @@ bool _6502_CalcRelativeOffset ( int nOpcode, int nBaseAddress, int nTargetAddres
 //===========================================================================
 int _6502_FindStackReturnAddress (const WORD & nAddress)
 {
-	unsigned nStack = regs.sp;
+	WORD nStack = regs.sp;
 	nStack++;
 
 	while (nStack <= (_6502_STACK_END - 1))
