@@ -793,6 +793,10 @@ namespace sa2
       ImGui::TextUnformatted("sa2: Apple ][ emulator for Linux");
       ImGui::Text("Based on AppleWin %s", getVersion().c_str());
 
+      int nMajor, nMinor, nFixMajor, nFixMinor;
+      UnpackVersion(DEBUGGER_VERSION, nMajor, nMinor, nFixMajor, nFixMinor);
+      ImGui::Text("Debugger %d.%d.%d.%d", nMajor, nMinor, nFixMajor, nFixMinor);
+
       ImGui::Separator();
       SDL_version sdl;
       SDL_GetVersion(&sdl);
