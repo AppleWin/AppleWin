@@ -2303,6 +2303,23 @@ Update_t CmdStepOver (int nArgs)
 		CmdTrace(0);
 		if (nOpcode == OPCODE_JSR)
 		{
+			// Repro #2 Test when SP <= 0x01 before JSR and _6502_GetStackReturnAddress() fetch return address
+			// 300:BA 86 FF A2 01 9A 20 0D 03 A6 FF 9A 60 A9 FF 20 A8 FC 60
+			// BPX 306
+			/*
+			        ORG $300
+			        TSX         ; 300
+			        STX $FF     ; 301
+			        LDX #1      ; 303
+			        TXS         ; 305
+			        JSR DelayFF ; 306
+			        LDX $FF     ; 309
+			        TXS         ; 30B
+			        RTS         ; 30C
+			DelayFF LDA #$FF    ; 30D
+			        JSR $FCA8   ; 30F
+			        RTS         ; 312
+			*/
 			CmdStepOut(0);
 
 			int nMaxSteps = 0xFFFFF; // GH #1194
@@ -2317,9 +2334,22 @@ Update_t CmdStepOver (int nArgs)
 			if (regs.pc != nExpectedAddr)
 			{
 				WORD nActualAddr;
-				bool bValidAddr   = _6502_GetStackReturnAddress( nActualAddr ) &&  (nActualAddr == nExpectedAddr);
-				int  nStackOffset = _6502_FindStackReturnAddress( nExpectedAddr ) - 1; // Trace stack to seee if our expected address is on it
+				bool bValidAddr   = _6502_GetStackReturnAddress( nActualAddr ) && (nActualAddr == nExpectedAddr);
+				int  nStackOffset = _6502_FindStackReturnAddress( nExpectedAddr ); // Trace stack to seee if our expected address is on it
 
+				/*
+				            ORG $300
+				Main        JSR HugeWait
+				            RTS
+				HugeWait    LDY #$FF
+				Loop        JSR Delay
+				            DEY
+				            BNE Loop
+				            RTS
+				Delay       LDA #$FF
+				            JSR $FCA8
+				            RTS
+				*/
 				// MSVC:
 				//   int nMaxSteps = 0xFFFFF; // GH #1194
 				//   Set BP on line above: (regs.pc != nExpectedAddr)
