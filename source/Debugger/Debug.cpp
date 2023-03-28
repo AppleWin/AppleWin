@@ -2351,8 +2351,8 @@ Update_t CmdStepOver (int nArgs)
 				            RTS
 				*/
 				// MSVC:
-				//   int nMaxSteps = 0xFFFFF; // GH #1194
-				//   Set BP on line above: (regs.pc != nExpectedAddr)
+				// 1.  Revert line to repro: int nMaxSteps = 0xFFFF;
+				// 2.  Set BP on line above: (regs.pc != nExpectedAddr)
 				// AppleWin:
 				//   F7
 				//   300:A0 FF 20 09 03 88 D0 FA 60 A9 FF 20 A8 FC 60
