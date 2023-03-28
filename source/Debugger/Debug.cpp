@@ -2356,7 +2356,7 @@ Update_t CmdStepOut (int nArgs)
 	// TODO: "RET" should probably pop the Call stack
 	// Also see: CmdCursorJumpRetAddr
 	WORD nAddress;
-	if (_6502_GetStackReturnAddress( nAddress ))
+	if (_6502_GetStackReturnAddress( nAddress, true ))
 	{
 		nArgs = _Arg_1( nAddress );
 		g_aArgs[1].sArg[0] = 0;

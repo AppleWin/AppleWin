@@ -194,7 +194,7 @@ extern	int g_aAssemblerFirstDirective[ NUM_ASSEMBLERS ];
 	int  _6502_FindStackReturnAddress (const WORD & nAddress);
 	int  _6502_GetOpmodeOpbyte( const int iAddress, int & iOpmode_, int & nOpbytes_, const DisasmData_t** pData = NULL );
 	void _6502_GetOpcodeOpmodeOpbyte( int & iOpcode_, int & iOpmode_, int & nOpbytes_ );
-	bool _6502_GetStackReturnAddress( WORD & nAddress_ );
+	bool _6502_GetStackReturnAddress (WORD & nAddress_, bool bWrapAround = false);
 	bool _6502_GetTargets( WORD nAddress, int *pTargetPartial_, int *pTargetPartial2_, int *pTargetPointer_, int * pBytes_,
 						   bool bIgnoreBranch = true, bool bIncludeNextOpcodeAddress = true );
 	bool _6502_GetTargetAddress( const WORD & nAddress, WORD & nTarget_ );

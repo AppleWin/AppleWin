@@ -587,18 +587,20 @@ void _6502_GetOpcodeOpmodeOpbyte (int & iOpcode_, int & iOpmode_, int & nOpbyte_
 	iOpcode_ = _6502_GetOpmodeOpbyte( regs.pc, iOpmode_, nOpbyte_ );
 }
 
+// NOTE: If the stack pointer is <= 01 before a JSR the stack will wrap around.
+// Use bWrapAround to access stack memory in this case.
 //===========================================================================
-bool _6502_GetStackReturnAddress (WORD & nAddress_)
+bool _6502_GetStackReturnAddress (WORD & nAddress_, bool bWrapAround /* = false */)
 {
 	unsigned nStack = regs.sp;
 	nStack++;
 
-	if (nStack <= (_6502_STACK_END - 1))
+	if (bWrapAround || nStack <= (_6502_STACK_END - 1)) // JSR always pushes 2 bytes.  If no wrap around then the stack pointer must be <= 0x1FE
 	{
-		nAddress_ = (unsigned)*(LPBYTE)(mem + nStack);
+		nAddress_ = (unsigned)*(LPBYTE)(mem + 0x100 + (nStack & 0xFF));
 		nStack++;
 		
-		nAddress_ += ((unsigned)*(LPBYTE)(mem + nStack)) << 8;
+		nAddress_ += ((unsigned)*(LPBYTE)(mem + 0x100 + (nStack & 0xFF))) << 8;
 		nAddress_++;
 		return true;
 	}
