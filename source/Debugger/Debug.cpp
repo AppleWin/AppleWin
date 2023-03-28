@@ -53,7 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,14);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,15);
 
 
 // Public _________________________________________________________________________________________
@@ -85,9 +85,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static DebugBreakOnDMA g_DebugBreakOnDMA[NUM_BREAK_ON_DMA];
 	static DebugBreakOnDMA g_DebugBreakOnDMAIO;
 
-	int  g_bDebugBreakpointHit = 0;	// See: BreakpointHit_t
+	int                  g_bDebugBreakpointHit = 0;       // See: BreakpointHit_t
+	static Breakpoint_t *g_pDebugBreakpointHit = nullptr; // NOTE: Only valid for BP_HIT_REG, see: CheckBreakpointsReg()
 
-	int  g_nBreakpoints          = 0;
+	int          g_nBreakpoints = 0;
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
 	// NOTE: BreakpointSource_t and g_aBreakpointSource must match!
@@ -1321,6 +1322,8 @@ int CheckBreakpointsIO ()
 //===========================================================================
 int CheckBreakpointsReg ()
 {
+	g_pDebugBreakpointHit = nullptr;
+
 	int iAnyBreakpointHit = 0;
 
 	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
@@ -1334,7 +1337,7 @@ int CheckBreakpointsReg ()
 
 		switch (pBP->eSource)
 		{
-			case BP_SRC_REG_PC: 
+			case BP_SRC_REG_PC:
 				bBreakpointHit = _CheckBreakpointValue( pBP, regs.pc );
 				break;
 			case BP_SRC_REG_A:
@@ -1359,6 +1362,7 @@ int CheckBreakpointsReg ()
 		if (bBreakpointHit)
 		{
 			iAnyBreakpointHit = hitBreakpoint(pBP, BP_HIT_REG);
+			g_pDebugBreakpointHit = pBP; // Save breakpoint so we can display which register triggered the breakpoint.
 		}
 	}
 
@@ -8609,7 +8613,22 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 			else if (g_bDebugBreakpointHit & BP_HIT_OPCODE)
 				stopReason = "Opcode match";
 			else if (g_bDebugBreakpointHit & BP_HIT_REG)
-				stopReason = "Register matches value";
+			{
+					if (g_pDebugBreakpointHit)
+					{
+						int iBreakpoint = (g_pDebugBreakpointHit - g_aBreakpoints);
+						stopReason = StrFormat( "Register %s%s%s matches breakpoint %s#%s%d",
+							CHC_REGS,
+							g_aBreakpointSource[ g_pDebugBreakpointHit->eSource ],
+							CHC_DEFAULT,
+							CHC_ARG_SEP,
+							CHC_NUM_HEX,
+							iBreakpoint
+						);
+					}
+					else
+						stopReason = "Register matches value";
+			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
 				stopReason = StrFormat("Memory access at $%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMW)
@@ -8631,7 +8650,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 				skipStopReason = true;
 
 			if (!skipStopReason)
-				ConsoleBufferPushFormat( "Stop reason: %s", stopReason.c_str() );
+				ConsolePrintFormat( CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str() );
 
 			for (int i = 0; i < NUM_BREAK_ON_DMA; i++)
 			{
@@ -8642,7 +8661,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 						stopReason = StrFormat("HDD DMA to memory $%04X-%04X (BP#%d)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, g_DebugBreakOnDMA[i].BPid);
 					else if (nDebugBreakpointHit & BP_DMA_FROM_MEM)
 						stopReason = StrFormat("HDD DMA from memory $%04X-%04X (BP#%d)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, g_DebugBreakOnDMA[i].BPid);
-					ConsoleBufferPushFormat("Stop reason: %s", stopReason.c_str());
+					ConsolePrintFormat( CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str() );
 				}
 			}
 

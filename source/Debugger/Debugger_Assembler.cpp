@@ -43,23 +43,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	AddressingMode_t g_aOpmodes[ NUM_ADDRESSING_MODES ] =
 	{ // Output, but eventually used for Input when Assembler is working.
-		{TEXT("")        , 1 , "(implied)"              }, // (implied)
-        {TEXT("")        , 1 , "n/a 1"         }, // INVALID1
-        {TEXT("")        , 2 , "n/a 2"         }, // INVALID2
-        {TEXT("")        , 3 , "n/a 3"         }, // INVALID3
+		{TEXT("")        , 1 , "(implied)"     }, // (implied)
+		{TEXT("")        , 1 , "n/a 1"         }, // INVALID1
+		{TEXT("")        , 2 , "n/a 2"         }, // INVALID2
+		{TEXT("")        , 3 , "n/a 3"         }, // INVALID3
 		{TEXT("%02X")    , 2 , "Immediate"     }, // AM_M // #$%02X -> %02X
-        {TEXT("%04X")    , 3 , "Absolute"      }, // AM_A
-        {TEXT("%02X")    , 2 , "Zero Page"     }, // AM_Z
-        {TEXT("%04X,X")  , 3 , "Absolute,X"    }, // AM_AX     // %s,X
-        {TEXT("%04X,Y")  , 3 , "Absolute,Y"    }, // AM_AY     // %s,Y
-        {TEXT("%02X,X")  , 2 , "Zero Page,X"   }, // AM_ZX     // %s,X
-        {TEXT("%02X,Y")  , 2 , "Zero Page,Y"   }, // AM_ZY     // %s,Y
-        {TEXT("%s")      , 2 , "Relative"      }, // AM_R
-        {TEXT("(%02X,X)"), 2 , "(Zero Page),X" }, // AM_IZX // ($%02X,X) -> %s,X 
-        {TEXT("(%04X,X)"), 3 , "(Absolute),X"  }, // AM_IAX // ($%04X,X) -> %s,X
-        {TEXT("(%02X),Y"), 2 , "(Zero Page),Y" }, // AM_NZY // ($%02X),Y
-        {TEXT("(%02X)")  , 2 , "(Zero Page)"   }, // AM_NZ  // ($%02X) -> $%02X
-        {TEXT("(%04X)")  , 3 , "(Absolute)"    }  // AM_NA  // (%04X) -> %s
+		{TEXT("%04X")    , 3 , "Absolute"      }, // AM_A
+		{TEXT("%02X")    , 2 , "Zero Page"     }, // AM_Z
+		{TEXT("%04X,X")  , 3 , "Absolute,X"    }, // AM_AX     // %s,X
+		{TEXT("%04X,Y")  , 3 , "Absolute,Y"    }, // AM_AY     // %s,Y
+		{TEXT("%02X,X")  , 2 , "Zero Page,X"   }, // AM_ZX     // %s,X
+		{TEXT("%02X,Y")  , 2 , "Zero Page,Y"   }, // AM_ZY     // %s,Y
+		{TEXT("%s")      , 2 , "Relative"      }, // AM_R
+		{TEXT("(%02X,X)"), 2 , "(Zero Page),X" }, // AM_IZX // ($%02X,X) -> %s,X
+		{TEXT("(%04X,X)"), 3 , "(Absolute),X"  }, // AM_IAX // ($%04X,X) -> %s,X
+		{TEXT("(%02X),Y"), 2 , "(Zero Page),Y" }, // AM_NZY // ($%02X),Y
+		{TEXT("(%02X)")  , 2 , "(Zero Page)"   }, // AM_NZ  // ($%02X) -> $%02X
+		{TEXT("(%04X)")  , 3 , "(Absolute)"    }  // AM_NA  // (%04X) -> %s
 	};
 
 
@@ -414,8 +414,8 @@ Fx	BEQ r  SBC (d),Y  sbc (z)  ---  ---      SBC d,X  INC z,X  ---  SED  SBC a,Y 
 		int  m_iOpmode ; // AddressingMode_e
 	};
 	
-	std::vector <DelayedTarget_t> m_vDelayedTargets;
-	bool                     m_bDelayedTargetsDirty = false;
+	std::vector<DelayedTarget_t> m_vDelayedTargets;
+	bool                         m_bDelayedTargetsDirty = false;
 
 	int  m_nAsmBytes         = 0;
 	WORD m_nAsmBaseAddress   = 0;
@@ -430,9 +430,9 @@ Fx	BEQ r  SBC (d),Y  sbc (z)  ---  ---      SBC d,X  INC z,X  ---  SED  SBC a,Y 
 
 
 //===========================================================================
-bool _6502_CalcRelativeOffset( int nOpcode, int nBaseAddress, int nTargetAddress, WORD * pTargetOffset_ )
+bool _6502_CalcRelativeOffset ( int nOpcode, int nBaseAddress, int nTargetAddress, WORD * pTargetOffset_ )
 {
-	if (_6502_IsOpcodeBranch( nOpcode))
+	if (_6502_IsOpcodeBranch(nOpcode))
 	{
 		// Branch is
 		//   a) relative to address+2
@@ -450,7 +450,7 @@ bool _6502_CalcRelativeOffset( int nOpcode, int nBaseAddress, int nTargetAddress
 		// BaseAddress
 		int nDistance = nTargetAddress - nBaseAddress;
 		if (pTargetOffset_)
-			*pTargetOffset_ = (BYTE)(nDistance - 2); 
+			*pTargetOffset_ = (BYTE)(nDistance - 2);
 
 		if ((nDistance - 2) > _6502_BRANCH_POS)
 			m_iAsmAddressMode = NUM_OPMODES; // signal bad
@@ -473,7 +473,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 	{
 		GetFrame().FrameMessageBox("Debugger not properly initialized", "ERROR", MB_OK );
 
-		g_aOpcodes = & g_aOpcodes65C02[ 0 ];	// Enhanced Apple //e
+		g_aOpcodes                  = &g_aOpcodes65C02[ 0 ]; // Enhanced Apple //e
 		g_aOpmodes[ AM_2 ].m_nBytes = 2;
 		g_aOpmodes[ AM_3 ].m_nBytes = 3;
 	}
@@ -498,8 +498,8 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 		if ( pData_ )
 			*pData_ = pData;
 
-		const DWORD nEndAddress   = pData->nEndAddress;
-		const int   nDisplayLen   = nEndAddress - nBaseAddress + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
+		const DWORD nEndAddress = pData->nEndAddress;
+		const int   nDisplayLen = nEndAddress - nBaseAddress + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
 		nSlack = nDisplayLen;
 
 		// Data Disassembler
@@ -530,7 +530,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 			default:
 #if _DEBUG // not implemented!
 				int *fatal = 0;
-				*fatal = 0xDEADC0DE;
+				    *fatal = 0xDEADC0DE;
 #endif
 				break;
 		}
@@ -561,13 +561,13 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 
 
 //===========================================================================
-void _6502_GetOpcodeOpmodeOpbyte ( int & iOpcode_, int & iOpmode_, int & nOpbyte_ )
+void _6502_GetOpcodeOpmodeOpbyte (int & iOpcode_, int & iOpmode_, int & nOpbyte_)
 {
 	iOpcode_ = _6502_GetOpmodeOpbyte( regs.pc, iOpmode_, nOpbyte_ );
 }
 
 //===========================================================================
-bool _6502_GetStackReturnAddress ( WORD & nAddress_ )
+bool _6502_GetStackReturnAddress (WORD & nAddress_)
 {
 	unsigned nStack = regs.sp;
 	nStack++;
@@ -586,7 +586,7 @@ bool _6502_GetStackReturnAddress ( WORD & nAddress_ )
 
 
 //===========================================================================
-bool _6502_GetTargets ( WORD nAddress, int *pTargetPartial_, int *pTargetPartial2_, int *pTargetPointer_, int * pTargetBytes_,
+bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2_, int *pTargetPointer_, int * pTargetBytes_,
 						bool bIgnoreBranch /*= true*/, bool bIncludeNextOpcodeAddress /*= true*/ )
 {
 	if (! pTargetPartial_)
