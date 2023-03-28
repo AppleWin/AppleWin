@@ -464,11 +464,12 @@ bool _6502_CalcRelativeOffset ( int nOpcode, int nBaseAddress, int nTargetAddres
 	return false;
 }
 
-// Return stack offset if the address is on stack, else 0 if not found
+// Return stack offset if the address is on stack, else -1 if not found
 //===========================================================================
 int _6502_FindStackReturnAddress (const WORD & nAddress)
 {
 	WORD nStack = regs.sp;
+	int  nDepth = -1; // not found
 	nStack++;
 
 	while (nStack <= (_6502_STACK_END - 1))
@@ -480,10 +481,13 @@ int _6502_FindStackReturnAddress (const WORD & nAddress)
 		nReturnAddress++;
 
 		if (nReturnAddress == nAddress)
-			return (nStack-1 - regs.sp);
+		{
+			nDepth = (nStack - 2 - regs.sp);
+			return nDepth;
+		}
 	}
 
-	return 0; // not found
+	return nDepth;
 }
 
 //===========================================================================
