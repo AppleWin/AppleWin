@@ -468,7 +468,11 @@ WORD _6502_GetStackReturnAddress ()
 	return nAddress;
 }
 
-// NOTE: nStack is both an input and output
+// NOTES: nStack is both an input and output;
+//        If nStack is 0x1FF it WILL return overflow 0x200.  Current callers are:
+//          _6502_FindStackReturnAddress(), and
+//          _6502_GetStackReturnAddress()
+//       which DON'T return this overflow stack value to previous callers.
 //===========================================================================
 WORD _6502_PeekStackReturnAddress (WORD & nStack)
 {
