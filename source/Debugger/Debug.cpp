@@ -2336,8 +2336,8 @@ Update_t CmdStepOver (int nArgs)
 			// If the PC isn't at the expected address after the JSR print a diagnostic so the user knows the stack may be buggered up
 			if (regs.pc != nExpectedAddr)
 			{
-				WORD nActualAddr;
-				bool bValidAddr   = _6502_GetStackReturnAddress( nActualAddr ) && (nActualAddr == nExpectedAddr);
+				WORD nActualAddr  = _6502_GetStackReturnAddress();
+				bool bValidAddr   = (nActualAddr == nExpectedAddr);
 				int  nStackOffset = _6502_FindStackReturnAddress( nExpectedAddr ); // Trace stack to seee if our expected address is on it
 
 				/*
@@ -2388,13 +2388,11 @@ Update_t CmdStepOut (int nArgs)
 {
 	// TODO: "RET" should probably pop the Call stack
 	// Also see: CmdCursorJumpRetAddr
-	WORD nAddress;
-	if (_6502_GetStackReturnAddress( nAddress, true ))
-	{
-		nArgs = _Arg_1( nAddress );
-		g_aArgs[1].sArg[0] = 0;
-		CmdGo( 1, true );
-	}
+	WORD nAddress = _6502_GetStackReturnAddress();
+
+	nArgs = _Arg_1( nAddress );
+	g_aArgs[1].sArg[0] = 0;
+	CmdGo( 1, true );
 
 	return UPDATE_ALL;
 }
@@ -3367,22 +3365,19 @@ Update_t CmdCursorJumpPC (int nArgs)
 //===========================================================================
 Update_t CmdCursorJumpRetAddr (int nArgs)
 {
-	WORD nAddress = 0;
-	if (_6502_GetStackReturnAddress( nAddress ))
-	{	
-		g_nDisasmCurAddress = nAddress;
+	WORD nAddress = _6502_GetStackReturnAddress();
+	g_nDisasmCurAddress = nAddress;
 
-		if (CURSOR_ALIGN_CENTER == nArgs)
-		{
-			WindowUpdateDisasmSize();
-		}
-		else
-		if (CURSOR_ALIGN_TOP == nArgs)
-		{
-			g_nDisasmCurLine = 0;
-		}
-		DisasmCalcTopBotAddress();
+	if (CURSOR_ALIGN_CENTER == nArgs)
+	{
+		WindowUpdateDisasmSize();
 	}
+	else
+	if (CURSOR_ALIGN_TOP == nArgs)
+	{
+		g_nDisasmCurLine = 0;
+	}
+	DisasmCalcTopBotAddress();
 
 	return UPDATE_ALL;
 }
