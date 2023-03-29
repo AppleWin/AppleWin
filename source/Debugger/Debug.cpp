@@ -2303,10 +2303,13 @@ Update_t CmdStepOver (int nArgs)
 		CmdTrace(0);
 		if (nOpcode == OPCODE_JSR)
 		{
-			// Repro #2 Test when SP <= 0x01 before JSR and _6502_GetStackReturnAddress() fetch return address
-			// 300:BA 86 FF A2 01 9A 20 0D 03 A6 FF 9A 60 A9 FF 20 A8 FC 60
-			// BPX 306
 			/*
+				Repro #2 Test when SP <= 0x01 before JSR and _6502_GetStackReturnAddress() fetch return address
+				300:BA 86 FF A2 01 9A 20 0D 03 A6 FF 9A 60 A9 FF 20 A8 FC 60
+				BPX 306
+				MD1 100
+				MD2 1E0
+
 			        ORG $300
 			        TSX         ; 300
 			        STX $FF     ; 301
@@ -2349,23 +2352,23 @@ Update_t CmdStepOver (int nArgs)
 				Delay       LDA #$FF
 				            JSR $FCA8
 				            RTS
+
+				Repro #1
+				1. MSVC: Revert line to repro: int nMaxSteps = 0xFFFF;
+				2. MSVC: Set BP on line above: (regs.pc != nExpectedAddr)
+				3. AppleWin:
+				   F7
+				   300:A0 FF 20 09 03 88 D0 FA 60 A9 FF 20 A8 FC 60
+				   BPX 30B
+				   F7
+				   CALL 768
+				   <Ctrl>-<Space>
+				4. MSVC:Change regs.sp to one of 3 cases:
+				   Case   Addr On Stack   Top of Stack   Diagnostic   nStackOffset   R SP              Continue in emulator
+				   0      No              No             ERROR        -1             regs.sp = 0x1F3
+				   1      Yes             Yes            INFO          O             regs.sp = 0x1F2   R PC FCB3
+				   2      Yes             No             WARN         +1             regs.sp = 0x1F1   R S  F1
 				*/
-				// MSVC:
-				// 1.  Revert line to repro: int nMaxSteps = 0xFFFF;
-				// 2.  Set BP on line above: (regs.pc != nExpectedAddr)
-				// AppleWin:
-				//   F7
-				//   300:A0 FF 20 09 03 88 D0 FA 60 A9 FF 20 A8 FC 60
-				//   BPX 30B
-				//   F7
-				//   CALL 768
-				//   <Ctrl>-<Space>
-				// MSVC:
-				// Change regs.sp to one of 3 cases:
-				//   Case   Addr On Stack   Top of Stack   Diagnostic   nStackOffset   R SP              Continue in emulator
-				//   0      No              No             ERROR        -1             regs.sp = 0x1F3
-				//   1      Yes             Yes            INFO          O             regs.sp = 0x1F2   R PC FCB3
-				//   2      Yes             No             WARN         +1             regs.sp = 0x1F1   R S  F1
 				/**/ if (nStackOffset <  0) ConsolePrintFormat( CHC_ERROR   "ERROR" CHC_ARG_SEP ":" CHC_ERROR   " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "RTS address not found!"                                                                          CHC_ARG_SEP ")"                      ); // Case 0
 				else if (nStackOffset == 0) ConsolePrintFormat( CHC_INFO    "INFO"  CHC_ARG_SEP ":" CHC_INFO    " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "RTS on top of stack."                                                                            CHC_ARG_SEP ")"                      ); // Case 1
 				else /*                  */ ConsolePrintFormat( CHC_WARNING "WARN"  CHC_ARG_SEP ":" CHC_WARNING " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "Stack has RTS address but needs fixup: " CHC_ARG_SEP "$" CHC_NUM_HEX "%02X" CHC_DEFAULT " bytes" CHC_ARG_SEP ")", nStackOffset & 0xFF ); // Case 2
