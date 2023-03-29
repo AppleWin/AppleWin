@@ -2369,9 +2369,9 @@ Update_t CmdStepOver (int nArgs)
 				   1      Yes             Yes            INFO          O             regs.sp = 0x1F2   R PC FCB3
 				   2      Yes             No             WARN         +1             regs.sp = 0x1F1   R S  F1
 				*/
-				/**/ if (nStackOffset <  0) ConsolePrintFormat( CHC_ERROR   "ERROR" CHC_ARG_SEP ":" CHC_ERROR   " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "RTS address not found!"                                                                          CHC_ARG_SEP ")"                      ); // Case 0
-				else if (nStackOffset == 0) ConsolePrintFormat( CHC_INFO    "INFO"  CHC_ARG_SEP ":" CHC_INFO    " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "RTS on top of stack."                                                                            CHC_ARG_SEP ")"                      ); // Case 1
-				else /*                  */ ConsolePrintFormat( CHC_WARNING "WARN"  CHC_ARG_SEP ":" CHC_WARNING " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "Stack has RTS address but needs fixup: " CHC_ARG_SEP "$" CHC_NUM_HEX "%02X" CHC_DEFAULT " bytes" CHC_ARG_SEP ")", nStackOffset & 0xFF ); // Case 2
+				/**/ if (nStackOffset <  0) ConsolePrintFormat( CHC_ERROR   "ERROR" CHC_ARG_SEP ":" CHC_ERROR   " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "RTS "           CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_DEFAULT " not found!"                                                                CHC_ARG_SEP ")", nExpectedAddr                      ); // Case 0
+				else if (nStackOffset == 0) ConsolePrintFormat( CHC_INFO    "INFO"  CHC_ARG_SEP ":" CHC_INFO    " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "RTS "           CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_DEFAULT " on top of stack."                                                          CHC_ARG_SEP ")", nExpectedAddr                      ); // Case 1
+				else /*                  */ ConsolePrintFormat( CHC_WARNING "WARN"  CHC_ARG_SEP ":" CHC_WARNING " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "Stack has RTS " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_DEFAULT " but needs fixup: " CHC_ARG_SEP "$" CHC_NUM_HEX "%02X" CHC_DEFAULT " bytes" CHC_ARG_SEP ")", nExpectedAddr, nStackOffset & 0xFF ); // Case 2
 
 				ConsolePrintFormat( CHC_DEFAULT "  Please report '" CHC_SYMBOL "nMaxSteps" CHC_ARG_SEP " = " CHC_DEFAULT "0x" CHC_NUM_HEX "%04X" CHC_DEFAULT "' to:", nMaxSteps );
 				ConsolePrintFormat( CHC_PATH    "  https://github.com/AppleWin/AppleWin/issues/1194"               );
