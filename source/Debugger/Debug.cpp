@@ -2294,7 +2294,8 @@ Update_t CmdStepOver (int nArgs)
 
 	while (nDebugSteps -- > 0)
 	{
-		int nOpcode = *(mem + regs.pc); // g_nDisasmCurAddress
+		int nOpcode = *(mem + regs.pc);
+		WORD nExpectedAddr = (regs.pc + 3) & _6502_MEM_END; // Wrap around 64K edge case when PC = $FFFD..$FFFF: 20 xx xx
 	//	int eMode = g_aOpcodes[ nOpcode ].addrmode;
 	//	int nByte = g_aOpmodes[eMode]._nBytes;
 	//	if ((eMode ==  AM_A) && 
@@ -2302,10 +2303,80 @@ Update_t CmdStepOver (int nArgs)
 		CmdTrace(0);
 		if (nOpcode == OPCODE_JSR)
 		{
+			/*
+				Repro #2 Test when SP <= 0x01 before JSR and _6502_GetStackReturnAddress() fetch return address
+				300:BA 86 FF A2 01 9A 20 0D 03 A6 FF 9A 60 A9 FF 20 A8 FC 60
+				BPX 306
+				MD1 100
+				MD2 1E0
+
+			        ORG $300
+			        TSX         ; 300
+			        STX $FF     ; 301
+			        LDX #1      ; 303
+			        TXS         ; 305
+			        JSR DelayFF ; 306
+			        LDX $FF     ; 309
+			        TXS         ; 30B
+			        RTS         ; 30C
+			DelayFF LDA #$FF    ; 30D
+			        JSR $FCA8   ; 30F
+			        RTS         ; 312
+			*/
 			CmdStepOut(0);
-			g_nDebugSteps = 0xFFFF;
+
+			int nMaxSteps = 0xFFFFF; // GH #1194
+			g_nDebugSteps = nMaxSteps;
+
 			while (g_nDebugSteps != 0)
+			{
 				DebugContinueStepping(true);
+			}
+
+			// If the PC isn't at the expected address after the JSR print a diagnostic so the user knows the stack may be buggered up
+			if (regs.pc != nExpectedAddr)
+			{
+				WORD nActualAddr  = _6502_GetStackReturnAddress();
+				bool bValidAddr   = (nActualAddr == nExpectedAddr);
+				int  nStackOffset = _6502_FindStackReturnAddress( nExpectedAddr ); // Trace stack to seee if our expected address is on it
+
+				/*
+				            ORG $300
+				Main        JSR HugeWait
+				            RTS
+				HugeWait    LDY #$FF
+				Loop        JSR Delay
+				            DEY
+				            BNE Loop
+				            RTS
+				Delay       LDA #$FF
+				            JSR $FCA8
+				            RTS
+
+				Repro #1
+				1. MSVC: Revert line to repro: int nMaxSteps = 0xFFFF;
+				2. MSVC: Set BP on line above: (regs.pc != nExpectedAddr)
+				3. AppleWin:
+				   F7
+				   300:A0 FF 20 09 03 88 D0 FA 60 A9 FF 20 A8 FC 60
+				   BPX 30B
+				   F7
+				   CALL 768
+				   <Ctrl>-<Space>
+				4. MSVC:Change regs.sp to one of 3 cases:
+				   Case   Addr On Stack   Top of Stack   Diagnostic   nStackOffset   R SP              Continue in emulator
+				   0      No              No             ERROR        -1             regs.sp = 0x1F3
+				   1      Yes             Yes            INFO          O             regs.sp = 0x1F2   R PC FCB3
+				   2      Yes             No             WARN         +1             regs.sp = 0x1F1   R S  F1
+				*/
+				/**/ if (nStackOffset <  0) ConsolePrintFormat( CHC_ERROR   "ERROR" CHC_ARG_SEP ":" CHC_ERROR   " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "RTS "           CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_DEFAULT " not found!"                                                                CHC_ARG_SEP ")", nExpectedAddr                      ); // Case 0
+				else if (nStackOffset == 0) ConsolePrintFormat( CHC_INFO    "INFO"  CHC_ARG_SEP ":" CHC_INFO    " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "RTS "           CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_DEFAULT " on top of stack."                                                          CHC_ARG_SEP ")", nExpectedAddr                      ); // Case 1
+				else /*                  */ ConsolePrintFormat( CHC_WARNING "WARN"  CHC_ARG_SEP ":" CHC_WARNING " Didn't step over JSR! " CHC_ARG_SEP "(" CHC_DEFAULT "Stack has RTS " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_DEFAULT " but needs fixup: " CHC_ARG_SEP "$" CHC_NUM_HEX "%02X" CHC_DEFAULT " bytes" CHC_ARG_SEP ")", nExpectedAddr, nStackOffset & 0xFF ); // Case 2
+
+				ConsolePrintFormat( CHC_DEFAULT "  Please report '" CHC_SYMBOL "nMaxSteps" CHC_ARG_SEP " = " CHC_DEFAULT "0x" CHC_NUM_HEX "%04X" CHC_DEFAULT "' to:", nMaxSteps );
+				ConsolePrintFormat( CHC_PATH    "  https://github.com/AppleWin/AppleWin/issues/1194"               );
+				ConsoleUpdate();
+			}
 		}
 	}
 
@@ -2317,13 +2388,11 @@ Update_t CmdStepOut (int nArgs)
 {
 	// TODO: "RET" should probably pop the Call stack
 	// Also see: CmdCursorJumpRetAddr
-	WORD nAddress;
-	if (_6502_GetStackReturnAddress( nAddress ))
-	{
-		nArgs = _Arg_1( nAddress );
-		g_aArgs[1].sArg[0] = 0;
-		CmdGo( 1, true );
-	}
+	WORD nAddress = _6502_GetStackReturnAddress();
+
+	nArgs = _Arg_1( nAddress );
+	g_aArgs[1].sArg[0] = 0;
+	CmdGo( 1, true );
 
 	return UPDATE_ALL;
 }
@@ -3296,22 +3365,19 @@ Update_t CmdCursorJumpPC (int nArgs)
 //===========================================================================
 Update_t CmdCursorJumpRetAddr (int nArgs)
 {
-	WORD nAddress = 0;
-	if (_6502_GetStackReturnAddress( nAddress ))
-	{	
-		g_nDisasmCurAddress = nAddress;
+	WORD nAddress = _6502_GetStackReturnAddress();
+	g_nDisasmCurAddress = nAddress;
 
-		if (CURSOR_ALIGN_CENTER == nArgs)
-		{
-			WindowUpdateDisasmSize();
-		}
-		else
-		if (CURSOR_ALIGN_TOP == nArgs)
-		{
-			g_nDisasmCurLine = 0;
-		}
-		DisasmCalcTopBotAddress();
+	if (CURSOR_ALIGN_CENTER == nArgs)
+	{
+		WindowUpdateDisasmSize();
 	}
+	else
+	if (CURSOR_ALIGN_TOP == nArgs)
+	{
+		g_nDisasmCurLine = 0;
+	}
+	DisasmCalcTopBotAddress();
 
 	return UPDATE_ALL;
 }
@@ -8609,7 +8675,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 			bool skipStopReason = false;
 
 			if (regs.pc == g_nDebugStepUntil)
-				stopReason = "PC matches 'Go until' address";
+				stopReason = StrFormat( CHC_DEFAULT "Register " CHC_REGS "PC" CHC_DEFAULT " matches '" CHC_INFO "Go until" CHC_DEFAULT "' address $" CHC_ADDRESS "%04X", g_nDebugStepUntil);
 			else if (g_bDebugBreakpointHit & BP_HIT_INVALID)
 				stopReason = "Invalid opcode";
 			else if (g_bDebugBreakpointHit & BP_HIT_OPCODE)

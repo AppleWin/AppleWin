@@ -426,8 +426,64 @@ Fx	BEQ r  SBC (d),Y  sbc (z)  ---  ---      SBC d,X  INC z,X  ---  SED  SBC a,Y 
 	void AssemblerHashOpcodes ();
 	void AssemblerHashDirectives ();
 
-// Implementation ___________________________________________________________
+// Utility __________________________________________________________________
 
+// === Stack ===
+
+// Return stack offset if the address is on the stack, else -1 if not found
+//===========================================================================
+int _6502_FindStackReturnAddress (const WORD nAddress)
+{
+	WORD nReturnAddress;
+	WORD nStack = regs.sp + 1;
+	int  nDepth = -1; // not found
+
+	// Normally would <= _6502_STACK_END-1 since JSR always pushes 2 bytes
+	// but the SP could be $00 before JSR forcing RTS address to be split $100/$1FF
+	// or  the SP could be $01 before JSR forcing RTS address to be at    $100/$101
+	//    R PC 300
+	//    R S 0
+	//    300:20 04 03 60 60
+	//    <Ctrl-Space>
+	while (nStack <= (_6502_STACK_END + 1))
+	{
+		nReturnAddress = _6502_PeekStackReturnAddress(nStack);
+
+		if (nReturnAddress == nAddress)
+		{
+			nDepth = (nStack - 2 - regs.sp);
+			return nDepth;
+		}
+	}
+
+	return nDepth;
+}
+
+// NOTE: If the stack pointer is <= 01 before a JSR the stack will wrap around.
+//===========================================================================
+WORD _6502_GetStackReturnAddress ()
+{
+	WORD nStack = regs.sp + 1;
+	WORD nAddress = _6502_PeekStackReturnAddress(nStack);
+	return nAddress;
+}
+
+// NOTES: nStack is both an input and output;
+//        If nStack is 0x1FF it WILL return overflow 0x200.  Current callers are:
+//          _6502_FindStackReturnAddress(), and
+//          _6502_GetStackReturnAddress()
+//       which DON'T return this overflow stack value to previous callers.
+//===========================================================================
+WORD _6502_PeekStackReturnAddress (WORD & nStack)
+{
+	WORD   nAddress;
+	       nAddress  = ((unsigned) *(LPBYTE)(mem + 0x100 + (nStack & 0xFF))     ); nStack++;
+	       nAddress += ((unsigned) *(LPBYTE)(mem + 0x100 + (nStack & 0xFF)) << 8);
+	       nAddress++;
+	return nAddress;
+}
+
+// == Opcodes ===
 
 //===========================================================================
 bool _6502_CalcRelativeOffset ( int nOpcode, int nBaseAddress, int nTargetAddress, WORD * pTargetOffset_ )
@@ -463,7 +519,6 @@ bool _6502_CalcRelativeOffset ( int nOpcode, int nBaseAddress, int nTargetAddres
 
 	return false;
 }
-
 
 //===========================================================================
 int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpbyte_, const DisasmData_t** pData_ )
@@ -565,25 +620,6 @@ void _6502_GetOpcodeOpmodeOpbyte (int & iOpcode_, int & iOpmode_, int & nOpbyte_
 {
 	iOpcode_ = _6502_GetOpmodeOpbyte( regs.pc, iOpmode_, nOpbyte_ );
 }
-
-//===========================================================================
-bool _6502_GetStackReturnAddress (WORD & nAddress_)
-{
-	unsigned nStack = regs.sp;
-	nStack++;
-
-	if (nStack <= (_6502_STACK_END - 1))
-	{
-		nAddress_ = (unsigned)*(LPBYTE)(mem + nStack);
-		nStack++;
-		
-		nAddress_ += ((unsigned)*(LPBYTE)(mem + nStack)) << 8;
-		nAddress_++;
-		return true;
-	}
-	return false;
-}
-
 
 //===========================================================================
 bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2_, int *pTargetPointer_, int * pTargetBytes_,
