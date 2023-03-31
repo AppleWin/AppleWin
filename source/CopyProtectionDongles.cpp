@@ -72,7 +72,7 @@ void DongleControl(WORD address)
 
 	if (copyProtectionDongleType == DT_CODEWRITER)
 	{
-		if ((AN == 3 && state == false) || MemGetAnnunciator(3))	// reset?
+		if ((AN == 3 && state == true) || MemGetAnnunciator(3))	// reset or was already reset? (ie. takes precedent over AN2)
 			codeWriterResetLFSR();
 		else if (AN == 2 && state == false && MemGetAnnunciator(2) == true)	// AN2 true->false edge?
 			codeWriterClockLFSR();
