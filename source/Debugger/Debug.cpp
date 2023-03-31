@@ -8523,31 +8523,31 @@ static void CheckBreakOpcode ( int iOpcode )
 		int iOpcodeType = AM_1;
 		switch (g_aOpcodes[iOpcode].nAddressMode)
 		{
-		case AM_1:    //    Invalid 1 Byte
-		case AM_IMPLIED:
-			iOpcodeType = AM_1;
-			break;
-		case AM_2:    //    Invalid 2 Bytes
-		case AM_M:    //  4 #Immediate
-		case AM_Z:    //  6 Zeropage
-		case AM_ZX:   //  9 Zeropage, X
-		case AM_ZY:   // 10 Zeropage, Y
-		case AM_R:    // 11 Relative
-		case AM_IZX:  // 12 Indexed (Zeropage Indirect, X)
-		case AM_NZY:  // 14 Indirect (Zeropage) Indexed, Y
-		case AM_NZ:   // 15 Indirect (Zeropage)
-			iOpcodeType = AM_2;
-			break;
-		case AM_3:    //    Invalid 3 Bytes
-		case AM_A:    //  5 $Absolute
-		case AM_AX:   //  7 Absolute, X
-		case AM_AY:   //  8 Absolute, Y
-		case AM_IAX:  // 13 Indexed (Absolute Indirect, X)
-		case AM_NA:   // 16 Indirect (Absolute) i.e. JMP
-			iOpcodeType = AM_3;
-			break;
-		default:
-			_ASSERT(0);
+			case AM_1:    //    Invalid 1 Byte
+			case AM_IMPLIED:
+				iOpcodeType = AM_1;
+				break;
+			case AM_2:    //    Invalid 2 Bytes
+			case AM_M:    //  4 #Immediate
+			case AM_Z:    //  6 Zeropage
+			case AM_ZX:   //  9 Zeropage, X
+			case AM_ZY:   // 10 Zeropage, Y
+			case AM_R:    // 11 Relative
+			case AM_IZX:  // 12 Indexed (Zeropage Indirect, X)
+			case AM_NZY:  // 14 Indirect (Zeropage) Indexed, Y
+			case AM_NZ:   // 15 Indirect (Zeropage)
+				iOpcodeType = AM_2;
+				break;
+			case AM_3:    //    Invalid 3 Bytes
+			case AM_A:    //  5 $Absolute
+			case AM_AX:   //  7 Absolute, X
+			case AM_AY:   //  8 Absolute, Y
+			case AM_IAX:  // 13 Indexed (Absolute Indirect, X)
+			case AM_NA:   // 16 Indirect (Absolute) i.e. JMP
+				iOpcodeType = AM_3;
+				break;
+			default:
+				_ASSERT(0);
 		}
 		g_bDebugBreakpointHit |= IsDebugBreakOnInvalid(iOpcodeType) ? BP_HIT_INVALID : 0;
 	}
