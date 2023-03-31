@@ -38,12 +38,19 @@
 
 static DONGLETYPE copyProtectionDongleType = DT_EMPTY;
 
-static UINT codeWriterIndex = 0;
-static BYTE codeWriterBits[127] = {
-	1,1,0,1,0,1,1,0,1,1,1,1,0,1,1,0,0,0,1,1,0,1,0,0,1,0,1,1,1,0,1,1,
-	1,0,0,1,1,0,0,1,0,1,0,1,0,1,1,1,1,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,
-	1,1,0,0,0,0,1,0,1,0,0,0,1,1,1,1,0,0,1,0,0,0,1,0,1,1,0,0,1,1,1,0,
-	1,0,1,0,0,1,1,1,1,1,0,1,0,0,0,0,1,1,1,0,0,0,1,0,0,1,0,0,1,1,0 };
+static const BYTE codewriterInitialLFSR = 0x6B;	// %1101011 (7-bit LFSR)
+static BYTE codewriterLFSR = codewriterInitialLFSR;
+
+static void codeWriterResetLFSR()
+{
+	codewriterLFSR = codewriterInitialLFSR;
+}
+
+static void codeWriterClockLFSR()
+{
+	BYTE bit = ((codewriterLFSR >> 1) ^ (codewriterLFSR >> 0)) & 1;
+	codewriterLFSR = (codewriterLFSR >> 1) | (bit << 6);
+}
 
 void SetCopyProtectionDongleType(DONGLETYPE type)
 {
@@ -66,9 +73,9 @@ void DongleControl(WORD address)
 	if (copyProtectionDongleType == DT_CODEWRITER)
 	{
 		if ((AN == 3 && state == false) || MemGetAnnunciator(3))	// reset?
-			codeWriterIndex = 0;
+			codeWriterResetLFSR();
 		else if (AN == 2 && state == false && MemGetAnnunciator(2) == true)	// AN2 true->false edge?
-			codeWriterIndex = (codeWriterIndex + 1) % std::size(codeWriterBits);
+			codeWriterClockLFSR();
 	}
 }
 
@@ -98,10 +105,9 @@ int CopyProtectionDonglePB2(void)
 	{
 	case DT_SDSSPEEDSTAR:	// Southwestern Data Systems DataKey for SpeedStar Applesoft Compiler
 		return SdsSpeedStar();
-		break;
 
 	case DT_CODEWRITER:		// Dynatech Microsoftware / Cortechs Corp protection key for "CodeWriter"
-		return codeWriterBits[codeWriterIndex];
+		return codewriterLFSR & 1;
 
 	default:
 		return -1;
@@ -137,7 +143,7 @@ void CopyProtectionDongleSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	else if (copyProtectionDongleType == DT_CODEWRITER)
 	{
 		yamlSaveHelper.SaveString(SS_YAML_KEY_DEVICE, GetSnapshotStructName_CodeWriter());
-		yamlSaveHelper.SaveUint(SS_YAML_KEY_CODEWRITER_INDEX, codeWriterIndex);
+		yamlSaveHelper.SaveUint(SS_YAML_KEY_CODEWRITER_INDEX, codewriterLFSR);
 	}
 	else
 	{
@@ -165,7 +171,7 @@ void CopyProtectionDongleLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versi
 	else if (device == GetSnapshotStructName_CodeWriter())
 	{
 		copyProtectionDongleType = DT_CODEWRITER;
-		codeWriterIndex = yamlLoadHelper.LoadUint(SS_YAML_KEY_CODEWRITER_INDEX);
+		codewriterLFSR = yamlLoadHelper.LoadUint(SS_YAML_KEY_CODEWRITER_INDEX);
 	}
 	else
 	{
