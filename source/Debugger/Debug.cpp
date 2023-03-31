@@ -8726,9 +8726,9 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 				if (nDebugBreakpointHit)
 				{
 					if (nDebugBreakpointHit & BP_DMA_TO_MEM)
-						stopReason = StrFormat("HDD DMA to memory $%04X-%04X (BP#%d)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, g_DebugBreakOnDMA[i].BPid);
+						stopReason = StrFormat("HDD DMA to memory $%04X-%04X (breakpoint %s#%s%d%s)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, CHC_ARG_SEP, CHC_NUM_HEX, g_DebugBreakOnDMA[i].BPid, CHC_DEFAULT);
 					else if (nDebugBreakpointHit & BP_DMA_FROM_MEM)
-						stopReason = StrFormat("HDD DMA from memory $%04X-%04X (BP#%d)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, g_DebugBreakOnDMA[i].BPid);
+						stopReason = StrFormat("HDD DMA from memory $%04X-%04X (breakpoint %s#%s%d%s)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, CHC_ARG_SEP, CHC_NUM_HEX, g_DebugBreakOnDMA[i].BPid, CHC_DEFAULT);
 					ConsolePrintFormat( CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str() );
 				}
 			}
