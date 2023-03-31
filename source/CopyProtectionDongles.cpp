@@ -117,9 +117,12 @@ int CopyProtectionDonglePB2(void)
 
 //===========================================================================
 
-#define SS_YAML_KEY_CODEWRITER_INDEX "Index"
+#define SS_YAML_KEY_CODEWRITER_INDEX "LFSR"
 
-static const UINT kUNIT_VERSION = 1;
+// Unit version history:
+// 1: Add SDS SpeedStar dongle
+// 2: Add Cortechs Corp CodeWriter protection key
+static const UINT kUNIT_VERSION = 2;
 
 static const std::string& GetSnapshotStructName_SDSSpeedStar(void)
 {
@@ -143,7 +146,7 @@ void CopyProtectionDongleSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	else if (copyProtectionDongleType == DT_CODEWRITER)
 	{
 		yamlSaveHelper.SaveString(SS_YAML_KEY_DEVICE, GetSnapshotStructName_CodeWriter());
-		yamlSaveHelper.SaveUint(SS_YAML_KEY_CODEWRITER_INDEX, codewriterLFSR);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_CODEWRITER_INDEX, codewriterLFSR);
 	}
 	else
 	{
