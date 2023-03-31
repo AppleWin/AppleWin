@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Interface.h"
 #include "Core.h"
 #include "CardManager.h"
+#include "CopyProtectionDongles.h"
 #include "CPU.h"
 #include "Joystick.h"
 #include "Keyboard.h"
@@ -708,6 +709,8 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 	// . $FA72: LDA $C05A (SETAN1) ; AN1 = TTL LO
 	// . $C2B5: LDA $C05D (CLRAN2) ;SETUP
 	// . $C2B8: LDA $C05F (CLRAN3) ; ANNUNCIATORS
+
+	DongleControl(address);	// do before setting g_Annunciator[] as may need to access old MemGetAnnunciator() state
 
 	g_Annunciator[(address>>1) & 3] = (address&1) ? true : false;
 
