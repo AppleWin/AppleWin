@@ -62,7 +62,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //---------------------------------------------------------------------------
 
-MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slot), m_MBSubUnit{slot, slot}
+MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slot), m_MBSubUnit{ {slot, type}, {slot, type} }
 {
 	m_lastCumulativeCycle = 0;
 	m_lastAYUpdateCycle = 0;
@@ -206,7 +206,8 @@ void MockingboardCard::WriteToORB(BYTE subunit)
 {
 	BYTE value = m_MBSubUnit[subunit].sy6522.Read(SY6522::rORB);
 
-	if (subunit == 0 && // SC01 only at $Cn00 (not $Cn80)
+	if ((QueryType() == CT_MockingboardC || QueryType() == CT_Phasor) &&	// Not CT_MegaAudio
+		subunit == 0 && // SC01 only at $Cn00 (not $Cn80)
 		m_MBSubUnit[subunit].sy6522.Read(SY6522::rPCR) == 0xB0)
 	{
 		// Votrax speech data
@@ -748,10 +749,13 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 		WriteToORB(subunit);
 
 #if !DBG_MB_SS_CARD
-	if (nAddr & 0x40)
-		m_MBSubUnit[1].ssi263.Write(nAddr&0x7, nValue);		// 2nd 6522 is used for 1st speech chip
-	if (nAddr & 0x20)
-		m_MBSubUnit[0].ssi263.Write(nAddr&0x7, nValue);		// 1st 6522 is used for 2nd speech chip
+	if (QueryType() == CT_MockingboardC || QueryType() == CT_Phasor)	// Not CT_MegaAudio
+	{
+		if (nAddr & 0x40)
+			m_MBSubUnit[1].ssi263.Write(nAddr & 0x7, nValue);		// 2nd 6522 is used for 1st speech chip
+		if (nAddr & 0x20)
+			m_MBSubUnit[0].ssi263.Write(nAddr & 0x7, nValue);		// 1st 6522 is used for 2nd speech chip
+	}
 #endif
 
 	return 0;
@@ -821,10 +825,10 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 
 void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-	if (QueryType() == CT_MockingboardC)
-		RegisterIoHandler(m_slot, IO_Null, IO_Null, IORead, IOWrite, this, NULL);
-	else	// Phasor
+	if (QueryType() == CT_Phasor)
 		RegisterIoHandler(m_slot, PhasorIO, PhasorIO, IORead, IOWrite, this, NULL);
+	else	// All other Mockingboard variants
+		RegisterIoHandler(m_slot, IO_Null, IO_Null, IORead, IOWrite, this, NULL);
 
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;
@@ -1146,6 +1150,12 @@ std::string MockingboardCard::GetSnapshotCardNamePhasor(void)
 	return name;
 }
 
+std::string MockingboardCard::GetSnapshotCardNameMegaAudio(void)
+{
+	static const std::string name("MEGA Audio");
+	return name;
+}
+
 void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	if (QueryType() == CT_Phasor)
@@ -1153,7 +1163,11 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 	//
 
-	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
+	std::string cardName = GetSnapshotCardName();
+	if (QueryType() == CT_MegaAudio)
+		cardName = GetSnapshotCardNameMegaAudio();
+
+	YamlSaveHelper::Slot slot(yamlSaveHelper, cardName, m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 

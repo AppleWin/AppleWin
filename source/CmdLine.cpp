@@ -175,6 +175,8 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 				}
 				if (strcmp(lpCmdLine, "hdc") == 0)
 					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
+				if (strcmp(lpCmdLine, "megaaudio") == 0)
+					g_cmdLine.slotInsert[slot] = CT_MegaAudio;
 				if (strcmp(lpCmdLine, "parallel") == 0)
 				{
 					if (slot == SLOT1)
