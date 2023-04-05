@@ -1,0 +1,19 @@
+---
+File_hdr:
+  Tag: AppleWin Controller Button Remapping
+  Version: 1
+
+Unit:
+    HID: VID_046D&PID_C216
+    Description: Logitech F310        # Description to be used in AppleWin's GUI
+    1: Y       # X
+    2: B       # A
+    3: A       # B
+    4: X       # Y
+    5: LB      # LB
+    6: RB      # RB
+    7: LB      # LT
+    8: RB      # RT
+    9: SELECT  # BACK
+    10: START  # START
+...

@@ -1,0 +1,21 @@
+---
+File_hdr:
+  Tag: AppleWin Controller Button Remapping
+  Version: 1
+
+Unit:
+    HID: VID_2DC8&PID_9001
+    Description: 8Bitdo NES30 PRO        # Description to be used in AppleWin's GUI
+    1: A       # A
+    2: B       # B
+    3: ""
+    4: X       # X
+    5: Y       # Y
+    6: ""
+    7: LB      # L2
+    8: RB      # R2
+    9: LB      # L1
+    10: RB     # R1
+    11: SELECT # SELECT
+    12: START  # START
+...
