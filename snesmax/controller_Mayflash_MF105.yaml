@@ -1,0 +1,19 @@
+---
+File_hdr:
+  Tag: AppleWin Controller Button Remapping
+  Version: 1
+
+Unit:
+    HID: VID_20D6&PID_A710
+    Description: Mayflash MF105        # Description to be used in AppleWin's GUI
+    1: X       # X
+    2: A       # A
+    3: B       # B
+    4: Y       # Y
+    5: LB      # L
+    6: RB      # R
+    7: ""
+    8: ""
+    9: SELECT  # SELECT
+    10: START  # START
+...
