@@ -290,10 +290,17 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 					break;
 
 				case AY_READ:		// 5: READ FROM PSG (need to set DDRA to input)
-					if (pMB->isChipSelected[ay] && pMB->isAYLatchedAddressValid[ay])
-						r6522.SetRegORA(AYReadReg(subunit, ay, pMB->nAYCurrentRegister[ay]) & (r6522.GetReg(SY6522::rDDRA) ^ 0xff));
+					if (QueryType() != CT_MegaAudio)
+					{
+						if (pMB->isChipSelected[ay] && pMB->isAYLatchedAddressValid[ay])
+							r6522.SetRegORA(AYReadReg(subunit, ay, pMB->nAYCurrentRegister[ay]) & (r6522.GetReg(SY6522::rDDRA) ^ 0xff));
+						else
+							r6522.UpdatePortAForHiZ();
+					}
 					else
-						r6522.UpdatePortAForHiZ();
+					{
+						r6522.SetRegORA(0x00);		// Reads not supported. TODO: find out what value is actually read.
+					}
 
 					if (m_phasorEnable && m_phasorMode == PH_Phasor)	// GH#1192
 					{
