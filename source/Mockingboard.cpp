@@ -936,6 +936,7 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 			pMB->sy6522.StartTimer1();
 			if (pMB->sy6522.IsTimer1IrqDelay())
 				return 0x0001;	// T1C=0xFFFF, which is really -1, as there's 1 cycle until underflow occurs
+								// TODO: can also be 0x0002 for MegaAudio
 			return pMB->sy6522.GetRegT1C() + SY6522::kExtraTimerCycles;
 		}
 
