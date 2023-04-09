@@ -53,7 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,17);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,18);
 
 
 // Public _________________________________________________________________________________________
@@ -5542,6 +5542,10 @@ Update_t CmdNTSC (int nArgs)
 							&&  (bmp.nGreenMask == 0x00FF0000 )
 							&&  (bmp.nBlueMask  == 0x0000FF00 ))
 								bSwizzle = true;
+							if ((bmp.nRedMask   == 0x00FF0000 ) // Gimp 32 Bits, X8 R8 G8 B8
+							&&  (bmp.nGreenMask == 0x0000FF00 )
+							&&  (bmp.nBlueMask  == 0x000000FF ))
+								bSwizzle = false;
 						}
 					}
 				}

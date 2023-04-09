@@ -1,4 +1,16 @@
 /*
+2.9.1.18 Fixed: NTSC LOAD was failing to import BMPs exported from GIMP.
+    To export a 64x256 bitmap from GIMP:
+      1. File, Export As...
+      2. Use a file extension of .bmp
+      3. Export Image as BMP
+         Compatibility Options
+           [x] Do not write color space information
+         Advanced Options
+           32 Bits
+             (x) X8 R8 G8 B8
+    In the debugger load your .bmp file:
+      NTSC LOAD palette.bmp
 2.9.1.17 Fixed: Ctrl-Space failing to step over a long sub-routine (and wasn't providing any feedback on why it failed.) GH #1194
     Increased the max steps to 0xFFFFF (from 0xFFFF)
     If step-over succeeds the debugger's feedback is:
