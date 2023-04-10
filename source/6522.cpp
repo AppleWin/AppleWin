@@ -110,7 +110,7 @@ USHORT SY6522::SetTimerSyncEvent(BYTE reg, USHORT timerLatch)
 	if (syncEvent->m_active)
 		g_SynchronousEventMgr.Remove(syncEvent->m_id);
 
-	if (m_isMegaAudio && timerLatch == 0x0000) timerLatch = 0xFFFF;	// Probably should be 0x10000, but 0xFFFF is good enough
+	if (m_isMegaAudio && reg == rT1CH && timerLatch == 0x0000) timerLatch = 0xFFFF;	// Probably should be 0x10000, but 0xFFFF is good enough
 	const UINT kMegaAudioAdjust = m_isMegaAudio ? 1 : 0;	// MegaAudio asserts IRQ 1 cycle late!
 	syncEvent->SetCycles(timerLatch + kExtraTimerCycles + opcodeCycleAdjust + kMegaAudioAdjust);
 	g_SynchronousEventMgr.Insert(syncEvent);
@@ -177,12 +177,10 @@ void SY6522::Write(BYTE nReg, BYTE nValue)
 		m_regs.TIMER1_LATCH.h = nValue;
 		break;
 	case 0x08:	// TIMER2L
-		if (m_isMegaAudio) break;			// MegaAudio: Assume no Timer2
 		m_regs.TIMER2_LATCH.l = nValue;
 		break;
 	case 0x09:	// TIMER2H
 	{
-		if (m_isMegaAudio) break;			// MegaAudio: Assume no Timer2
 		UpdateIFR(IxR_TIMER2);				// Clear Timer2 Interrupt Flag
 		m_regs.TIMER2_LATCH.h = nValue;		// NB. Real 6522 doesn't have TIMER2_LATCH.h
 		m_regs.TIMER2_COUNTER.w = SetTimerSyncEvent(nReg, m_regs.TIMER2_LATCH.w);
@@ -372,13 +370,13 @@ BYTE SY6522::Read(BYTE nReg)
 		nValue = m_regs.TIMER1_LATCH.h;
 		break;
 	case 0x08:	// TIMER2L
-		if (m_isMegaAudio) break;			// MegaAudio: Assume no Timer2
 		nValue = GetTimer2Counter(nReg) & 0xff;
 		UpdateIFR(IxR_TIMER2);
+		if (m_isMegaAudio) nValue = 0xFF;	// MegaAudio: Timer2 just reads as $00FF
 		break;
 	case 0x09:	// TIMER2H
-		if (m_isMegaAudio) break;			// MegaAudio: Assume no Timer2
 		nValue = GetTimer2Counter(nReg) >> 8;
+		if (m_isMegaAudio) nValue = 0x00;	// MegaAudio: Timer2 just reads as $00FF
 		break;
 	case 0x0a:	// SERIAL_SHIFT
 		break;

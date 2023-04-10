@@ -299,7 +299,7 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 					}
 					else
 					{
-						r6522.SetRegORA(0x00);		// Reads not supported. TODO: find out what value is actually read.
+						r6522.SetRegORA(0x00);		// Reads not supported.
 					}
 
 					if (m_phasorEnable && m_phasorMode == PH_Phasor)	// GH#1192
