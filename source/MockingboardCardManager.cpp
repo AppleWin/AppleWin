@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 bool MockingboardCardManager::IsMockingboard(UINT slot)
 {
 	SS_CARDTYPE type = GetCardMgr().QuerySlot(slot);
-	return type == CT_MockingboardC || type == CT_Phasor;
+	return type == CT_MockingboardC || type == CT_Phasor || type == CT_MegaAudio;
 }
 
 void MockingboardCardManager::ReinitializeClock(void)

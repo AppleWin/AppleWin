@@ -25,6 +25,7 @@ enum SS_CARDTYPE
 	CT_SNESMAX,			// 2 port Nintendo NES/SNES controller serial interface card
 	CT_VidHD,
 	CT_Uthernet2,
+	CT_MegaAudio,		// Soundcard
 };
 
 enum SLOTS { SLOT0=0, SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6, SLOT7, NUM_SLOTS, SLOT_AUX, GAME_IO_CONNECTOR };

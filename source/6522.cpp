@@ -110,7 +110,16 @@ USHORT SY6522::SetTimerSyncEvent(BYTE reg, USHORT timerLatch)
 	if (syncEvent->m_active)
 		g_SynchronousEventMgr.Remove(syncEvent->m_id);
 
-	syncEvent->SetCycles(timerLatch + kExtraTimerCycles + opcodeCycleAdjust);
+	if (m_isMegaAudio)
+	{
+		if (reg == rT1CH && timerLatch == 0x0000)
+			timerLatch = 0xFFFF;	// MegaAudio && T1.LATCH=0: use 0xFFFF (or maybe 0x10000?)
+		syncEvent->SetCycles(timerLatch + kExtraMegaAudioTimerCycles + opcodeCycleAdjust);	// MegaAudio asserts IRQ 1 cycle late!
+	}
+	else
+	{
+		syncEvent->SetCycles(timerLatch + kExtraTimerCycles + opcodeCycleAdjust);
+	}
 	g_SynchronousEventMgr.Insert(syncEvent);
 
 	// It doesn't matter if this overflows (ie. >0xFFFF), since on completion of current opcode it'll be corrected
@@ -260,10 +269,21 @@ bool SY6522::CheckTimerUnderflow(USHORT& counter, int& timerIrqDelay, const USHO
 
 	if (oldTimer >= 0 && timer < 0)	// Underflow occurs for 0x0000 -> 0xFFFF
 	{
-		if (timer <= -2)				// TIMER = 0xFFFE (or less)
-			timerIrq = true;
-		else							// TIMER = 0xFFFF
-			timerIrqDelay = 1;			// ...so 1 cycle until IRQ
+		if (m_isMegaAudio)
+		{
+			if (timer <= -3)				// TIMER = 0xFFFD (or less)
+				timerIrq = true;
+			else							// TIMER = 0xFFFF or 0xFFFE
+				timerIrqDelay = 1;			// ...so 1 or 2 cycles until IRQ
+		}
+		else
+		{
+			if (timer <= -2)				// TIMER = 0xFFFE (or less)
+				timerIrq = true;
+			else							// TIMER = 0xFFFF
+				timerIrqDelay = 1;			// ...so 1 cycle until IRQ
+		}
+
 	}
 
 	return timerIrq;
@@ -272,10 +292,19 @@ bool SY6522::CheckTimerUnderflow(USHORT& counter, int& timerIrqDelay, const USHO
 int SY6522::OnTimer1Underflow(USHORT& counter)
 {
 	int timer = (int)(short)(counter);
-	while (timer < -1)
-		timer += (m_regs.TIMER1_LATCH.w + kExtraTimerCycles);	// GH#651: account for underflowed cycles / GH#652: account for extra 2 cycles
+	if (m_isMegaAudio)
+	{
+		const UINT timerLatch = m_regs.TIMER1_LATCH.w ? m_regs.TIMER1_LATCH.w : 0xFFFF;	// MegaAudio && T1.LATCH=0: use 0xFFFF (or maybe 0x10000?)
+		while (timer < -2)
+			timer += (timerLatch + kExtraMegaAudioTimerCycles);		// MegaAudio asserts IRQ 1 cycle late!
+	}
+	else
+	{
+		while (timer < -1)
+			timer += (m_regs.TIMER1_LATCH.w + kExtraTimerCycles);	// GH#651: account for underflowed cycles / GH#652: account for extra 2 cycles
+	}
 	counter = (USHORT)timer;
-	return (timer == -1) ? 1 : 0;		// timer1IrqDelay
+	return (timer < 0) ? 1 : 0;			// timer1IrqDelay
 }
 
 //-----------------------------------------------------------------------------
@@ -349,9 +378,11 @@ BYTE SY6522::Read(BYTE nReg)
 	case 0x08:	// TIMER2L
 		nValue = GetTimer2Counter(nReg) & 0xff;
 		UpdateIFR(IxR_TIMER2);
+		if (m_isMegaAudio) nValue = 0xFF;	// MegaAudio: Timer2 just reads as $00FF
 		break;
 	case 0x09:	// TIMER2H
 		nValue = GetTimer2Counter(nReg) >> 8;
+		if (m_isMegaAudio) nValue = 0x00;	// MegaAudio: Timer2 just reads as $00FF
 		break;
 	case 0x0a:	// SERIAL_SHIFT
 		break;
@@ -370,6 +401,8 @@ BYTE SY6522::Read(BYTE nReg)
 		break;
 	case 0x0e:	// IER
 		nValue = 0x80 | m_regs.IER;	// GH#567
+		if (m_isMegaAudio)
+			nValue &= 0x7F;
 		break;
 	case 0x0f:	// ORA_NO_HS
 		nValue = m_regs.ORA;

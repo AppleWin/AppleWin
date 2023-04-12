@@ -775,6 +775,11 @@ static void RepeatInitialization(void)
 			GetCardMgr().Insert(SLOT3, g_cmdLine.slotInsert[SLOT3]);
 		}
 
+		if (g_cmdLine.slotInsert[SLOT4] != CT_Empty)
+		{
+			GetCardMgr().Insert(SLOT4, g_cmdLine.slotInsert[SLOT4]);
+		}
+
 		if (g_cmdLine.slotInsert[SLOT5] != CT_Empty)
 		{
 			if (GetCardMgr().QuerySlot(SLOT5) != CT_Disk2)	// Ignore if already got Disk2 in slot 5
