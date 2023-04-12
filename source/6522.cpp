@@ -110,9 +110,16 @@ USHORT SY6522::SetTimerSyncEvent(BYTE reg, USHORT timerLatch)
 	if (syncEvent->m_active)
 		g_SynchronousEventMgr.Remove(syncEvent->m_id);
 
-	if (m_isMegaAudio && reg == rT1CH && timerLatch == 0x0000) timerLatch = 0xFFFF;	// MegaAudio && T1.LATCH=0: use 0xFFFF (or maybe 0x10000?)
-	const UINT kMegaAudioAdjust = m_isMegaAudio ? kExtraMegaAudioTimerCycles : 0;	// MegaAudio asserts IRQ 1 cycle late!
-	syncEvent->SetCycles(timerLatch + kExtraTimerCycles + opcodeCycleAdjust + kMegaAudioAdjust);
+	if (m_isMegaAudio)
+	{
+		if (reg == rT1CH && timerLatch == 0x0000)
+			timerLatch = 0xFFFF;	// MegaAudio && T1.LATCH=0: use 0xFFFF (or maybe 0x10000?)
+		syncEvent->SetCycles(timerLatch + kExtraMegaAudioTimerCycles + opcodeCycleAdjust);	// MegaAudio asserts IRQ 1 cycle late!
+	}
+	else
+	{
+		syncEvent->SetCycles(timerLatch + kExtraTimerCycles + opcodeCycleAdjust);
+	}
 	g_SynchronousEventMgr.Insert(syncEvent);
 
 	// It doesn't matter if this overflows (ie. >0xFFFF), since on completion of current opcode it'll be corrected
@@ -289,7 +296,7 @@ int SY6522::OnTimer1Underflow(USHORT& counter)
 	{
 		const UINT timerLatch = m_regs.TIMER1_LATCH.w ? m_regs.TIMER1_LATCH.w : 0xFFFF;	// MegaAudio && T1.LATCH=0: use 0xFFFF (or maybe 0x10000?)
 		while (timer < -2)
-			timer += (timerLatch + kExtraTimerCycles + kExtraMegaAudioTimerCycles);		// MegaAudio asserts IRQ 1 cycle late!
+			timer += (timerLatch + kExtraMegaAudioTimerCycles);		// MegaAudio asserts IRQ 1 cycle late!
 	}
 	else
 	{

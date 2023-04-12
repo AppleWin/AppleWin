@@ -145,5 +145,5 @@ private:
 	UINT m_slot;
 	bool m_isMegaAudio;
 
-	static const UINT kExtraMegaAudioTimerCycles = 1;
+	static const UINT kExtraMegaAudioTimerCycles = kExtraTimerCycles + 1;
 };
