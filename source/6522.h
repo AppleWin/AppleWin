@@ -3,7 +3,7 @@
 class SY6522
 {
 public:
-	SY6522(UINT slot) : m_slot(slot)
+	SY6522(UINT slot, bool isMegaAudio) : m_slot(slot), m_isMegaAudio(isMegaAudio)
 	{
 		for (UINT i = 0; i < kNumTimersPer6522; i++)
 			m_syncEvent[i] = NULL;
@@ -143,4 +143,7 @@ private:
 
 	class SyncEvent* m_syncEvent[kNumTimersPer6522];
 	UINT m_slot;
+	bool m_isMegaAudio;
+
+	static const UINT kExtraMegaAudioTimerCycles = kExtraTimerCycles + 1;
 };
