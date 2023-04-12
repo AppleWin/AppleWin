@@ -144,4 +144,6 @@ private:
 	class SyncEvent* m_syncEvent[kNumTimersPer6522];
 	UINT m_slot;
 	bool m_isMegaAudio;
+
+	static const UINT kExtraMegaAudioTimerCycles = 1;
 };
