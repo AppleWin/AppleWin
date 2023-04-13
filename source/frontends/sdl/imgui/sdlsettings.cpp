@@ -660,10 +660,12 @@ namespace sa2
           }
 
           ImVec4 color = colorrefToImVec4(video.GetMonochromeRGB());
-          ImGui::ColorEdit3("Monochrome Color", (float*)&color, 0);
-          const COLORREF cr = imVec4ToColorref(color);
-          video.SetMonochromeRGB(cr);
-          frame->ApplyVideoModeChange();
+          if (ImGui::ColorEdit3("Monochrome Color", (float*)&color, 0))
+          {
+            const COLORREF cr = imVec4ToColorref(color);
+            video.SetMonochromeRGB(cr);
+            frame->ApplyVideoModeChange();
+          }
 
           bool scanLines = video.IsVideoStyle(VS_HALF_SCANLINES);
           if (ImGui::Checkbox("50% Scan lines", &scanLines))
