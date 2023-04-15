@@ -3684,14 +3684,23 @@ Update_t CmdDisk (int nArgs)
 		if (nArgs > 2)
 			return HelpLastCommand();
 
-		ConsoleBufferPushFormat("FW%2d: D%d at T$%s, phase $%s, bitOffset $%04X, extraCycles %.2f, %s",
+		ConsolePrintFormat(
+			/*CHC_DEFAULT*/ "FW"        CHC_NUM_DEC "%2d"  CHC_ARG_SEP ":"
+			  CHC_DEFAULT   " D"        CHC_NUM_DEC "%d"
+			  CHC_DEFAULT   " T$"       CHC_NUM_HEX "%s"   CHC_ARG_SEP ","
+			  CHC_DEFAULT   " Phase $"  CHC_NUM_HEX "%s"   CHC_ARG_SEP ","
+			  CHC_DEFAULT   " Offset $" CHC_ADDRESS "%04X" CHC_ARG_SEP ","
+			  CHC_DEFAULT   " Cycles "  CHC_NUM_DEC "%.2f" CHC_ARG_SEP ","
+			  CHC_CATEGORY  " %s"
+			  CHC_DEFAULT   " "         CHC_NUM_HEX "%02X",
 			diskCard.GetCurrentFirmware(),
 			diskCard.GetCurrentDrive() + 1,
 			diskCard.GetCurrentTrackString().c_str(),
 			diskCard.GetCurrentPhaseString().c_str(),
 			diskCard.GetCurrentBitOffset(),
 			diskCard.GetCurrentExtraCycles(),
-			diskCard.GetCurrentState()
+			diskCard.GetCurrentState(),
+			diskCard.GetCurrentShiftReg()
 		);
 
 		return ConsoleUpdate();
