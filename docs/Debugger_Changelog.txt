@@ -1,4 +1,7 @@
 /*
+2.9.1.19 Added: QoL to DISK INFO.
+    Colorized numbers and status to improve readability.
+    Also shows the .WOZ current shift register.
 2.9.1.18 Fixed: NTSC LOAD was failing to import BMPs exported from GIMP.
     To export a 64x256 bitmap from GIMP:
       1. File, Export As...
