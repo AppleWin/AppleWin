@@ -354,7 +354,7 @@ void ConsoleConvertFromText ( conchar_t * sText, const char * pText )
 //===========================================================================
 Update_t ConsoleDisplayError ( const char * pText )
 {
-	ConsoleBufferPush( pText );
+	ConsolePrintFormat( CHC_ERROR "%s", pText );
 	return ConsoleUpdate();
 }
 
