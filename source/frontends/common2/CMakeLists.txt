@@ -2,6 +2,7 @@ include(GNUInstallDirs)
 
 set(SOURCE_FILES
   commonframe.cpp
+  commoncontext.cpp
   gnuframe.cpp
   fileregistry.cpp
   ptreeregistry.cpp
@@ -13,6 +14,7 @@ set(SOURCE_FILES
 
 set(HEADER_FILES
   commonframe.h
+  commoncontext.h
   gnuframe.h
   fileregistry.h
   ptreeregistry.h

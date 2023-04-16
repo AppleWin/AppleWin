@@ -5,6 +5,7 @@
 #include "Interface.h"
 #include "Log.h"
 #include "Core.h"
+#include "SaveState.h"
 
 void LinuxFrame::FrameDrawDiskLEDS()
 {
@@ -131,6 +132,11 @@ void LinuxFrame::Restart()
 {
   End();
   Begin();
+}
+
+void LinuxFrame::LoadSnapshot()
+{
+  Snapshot_LoadState();
 }
 
 std::shared_ptr<NetworkBackend> LinuxFrame::CreateNetworkBackend(const std::string & interfaceName)

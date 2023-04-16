@@ -9,7 +9,7 @@
 #include "linux/context.h"
 
 #include "frontends/common2/fileregistry.h"
-#include "frontends/common2/utils.h"
+#include "frontends/common2/commoncontext.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/timer.h"
 #include "frontends/sdl/gamepad.h"
@@ -79,15 +79,7 @@ void run_sdl(int argc, const char * argv [])
 
   std::cerr << "Default GL swap interval: " << SDL_GL_GetSwapInterval() << std::endl;
 
-  const Initialisation init(frame, paddle);
-  common2::applyOptions(options);
-  frame->Begin();
-
-  common2::setSnapshotFilename(options.snapshotFilename);
-  if (options.loadSnapshot)
-  {
-    frame->LoadSnapshot();
-  }
+  const common2::CommonInitialisation init(frame, paddle, options);
 
   const int fps = getRefreshRate();
   std::cerr << "Video refresh rate: " << fps << " Hz, " << 1000.0 / fps << " ms" << std::endl;
@@ -168,7 +160,6 @@ void run_sdl(int argc, const char * argv [])
 
     sa2::stopAudio();
   }
-  frame->End();
 #endif
 }
 

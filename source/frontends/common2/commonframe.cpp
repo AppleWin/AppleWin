@@ -7,15 +7,9 @@
 #include <unistd.h>
 
 #include "Log.h"
-#include "SaveState.h"
 
 namespace common2
 {
-
-  void CommonFrame::LoadSnapshot()
-  {
-    Snapshot_LoadState();
-  }
 
   BYTE* CommonFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)
   {

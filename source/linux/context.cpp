@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 
 #include "linux/context.h"
+#include "linux/linuxframe.h"
 #include "linux/registry.h"
 #include "linux/paddle.h"
 #include "linux/duplicates/PropertySheet.h"
@@ -47,17 +48,17 @@ Video& GetVideo()
 }
 
 Initialisation::Initialisation(
-  const std::shared_ptr<FrameBase> & frame,
-  const std::shared_ptr<Paddle> & paddle
-  )
+  const std::shared_ptr<LinuxFrame> & frame,
+  const std::shared_ptr<Paddle> & paddle)
+: myFrame(frame)
 {
-  SetFrame(frame);
+  SetFrame(myFrame);
   Paddle::instance = paddle;
 }
 
 Initialisation::~Initialisation()
 {
-  GetFrame().Destroy();
+  myFrame->Destroy();
   SetFrame(std::shared_ptr<FrameBase>());
 
   Paddle::instance.reset();
@@ -90,6 +91,8 @@ RegistryContext::~RegistryContext()
 {
   Registry::instance.reset();
 }
+
+#define RIFF_SPKR
 
 void InitialiseEmulator()
 {

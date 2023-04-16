@@ -42,6 +42,8 @@ public:
   virtual void Begin();
   virtual void End();
 
+  virtual void LoadSnapshot();
+
 protected:
   std::vector<uint8_t> myFramebuffer;
 };

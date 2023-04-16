@@ -3,6 +3,7 @@
 #include <memory>
 
 class FrameBase;
+class LinuxFrame;
 class Paddle;
 class Registry;
 
@@ -16,10 +17,12 @@ class Initialisation
 {
 public:
   Initialisation(
-    const std::shared_ptr<FrameBase> & frame,
+    const std::shared_ptr<LinuxFrame> & frame,
     const std::shared_ptr<Paddle> & paddle
     );
   ~Initialisation();
+protected:
+  const std::shared_ptr<LinuxFrame> myFrame;
 };
 
 // RAII around LogInit / LogDone.

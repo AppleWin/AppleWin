@@ -373,8 +373,7 @@ void QApple::on_actionLoad_state_triggered()
     // have relative disk location
     SetCurrentImageDir(path.toStdString().c_str());
 
-    Snapshot_LoadState();
-
+    myFrame->LoadSnapshot();
     myFrame->FrameRefreshStatus(DRAW_TITLE);
     myFrame->VideoPresentScreen();
 
