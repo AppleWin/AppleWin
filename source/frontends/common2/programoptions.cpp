@@ -11,6 +11,9 @@
 #include "Disk.h"
 #include "Utilities.h"
 #include "Core.h"
+#include "Speaker.h"
+#include "Riff.h"
+#include "CardManager.h"
 
 #include <iostream>
 #include <regex>
@@ -130,6 +133,13 @@ namespace common2
       ;
     desc.add(emulatorDesc);
 
+    po::options_description audioDesc("Audio");
+    audioDesc.add_options()
+      ("wav-speaker", po::value<std::string>(), "Speaker wav output")
+      ("wav-mockingboard", po::value<std::string>(), "Mockingboard wav output")
+      ;
+    desc.add(audioDesc);
+
     po::options_description sdlDesc("SDL");
     sdlDesc.add_options()
       ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
@@ -195,6 +205,10 @@ namespace common2
       options.fixedSpeed = vm.count("fixed-speed") > 0;
       options.benchmark = vm.count("benchmark") > 0;
       options.paddleSquaring = vm.count("no-squaring") == 0;
+
+      // Audio
+      setOption(vm, "wav-speaker", options.wavFileSpeaker);
+      setOption(vm, "wav-mockingboard", options.wavFileMockingboard);
 
       // SDL
       options.sdlDriver = vm["sdl-driver"].as<int>();
@@ -282,6 +296,21 @@ namespace common2
       if (g_hCustomRomF8 == INVALID_HANDLE_VALUE)
       {
         LogFileOutput("Init: Failed to load custom F8 ROM: %s\n", options.customRomF8.c_str());
+      }
+    }
+
+    if (!options.wavFileSpeaker.empty())
+    {
+      if (RiffInitWriteFile(options.wavFileSpeaker.c_str(), SPKR_SAMPLE_RATE, 1))
+      {
+        Spkr_OutputToRiff();
+      }
+    }
+    else if (!options.wavFileMockingboard.empty())
+    {
+      if (RiffInitWriteFile(options.wavFileMockingboard.c_str(), 44100, 2))
+      {
+        GetCardMgr().GetMockingboardCardMgr().OutputToRiff();
       }
     }
 

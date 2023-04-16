@@ -10,7 +10,6 @@
 #include "NTSC.h"
 #include "SaveState.h"
 #include "Speaker.h"
-#include "Riff.h"
 
 #include "linux/benchmark.h"
 #include "linux/version.h"
@@ -42,12 +41,6 @@ namespace
 
     void initialiseEmulator()
     {
-#ifdef RIFF_SPKR
-        RiffInitWriteFile("/tmp/Spkr.wav", SPKR_SAMPLE_RATE, 1);
-#endif
-#ifdef RIFF_MB
-        RiffInitWriteFile("/tmp/Mockingboard.wav", 44100, 2);
-#endif
         g_nAppMode = MODE_RUNNING;
         LogInit();
         g_bFullSpeed = false;

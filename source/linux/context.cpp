@@ -63,6 +63,8 @@ Initialisation::~Initialisation()
 
   Paddle::instance.reset();
 
+  RiffFinishWriteFile();
+
   CloseHandle(g_hCustomRomF8);
   g_hCustomRomF8 = INVALID_HANDLE_VALUE;
   CloseHandle(g_hCustomRom);
@@ -92,17 +94,8 @@ RegistryContext::~RegistryContext()
   Registry::instance.reset();
 }
 
-#define RIFF_SPKR
-
 void InitialiseEmulator()
 {
-#ifdef RIFF_SPKR
-  RiffInitWriteFile("/tmp/Spkr.wav", SPKR_SAMPLE_RATE, 1);
-#endif
-#ifdef RIFF_MB
-  RiffInitWriteFile("/tmp/Mockingboard.wav", 44100, 2);
-#endif
-
   g_nAppMode = MODE_RUNNING;
   LogFileOutput("Initialisation\n");
 
@@ -138,5 +131,4 @@ void DestroyEmulator()
   DSUninit();
   CpuDestroy();
   DebugDestroy();
-  RiffFinishWriteFile();
 }

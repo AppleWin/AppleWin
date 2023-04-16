@@ -60,6 +60,9 @@ namespace common2
     std::string customRomF8;
     std::string customRom;
 
+    std::string wavFileSpeaker;
+    std::string wavFileMockingboard;
+
     std::vector<std::string> registryOptions;
   };
 
