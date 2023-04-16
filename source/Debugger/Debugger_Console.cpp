@@ -463,8 +463,7 @@ bool ConsoleInputClear ()
 //===========================================================================
 bool ConsoleInputChar ( char ch )
 {
-	if (g_nConsoleInputChars < (g_nConsoleDisplayWidth-1)) // GH #1204 Need to count the space at EOL for the cursor
-
+	if (g_nConsoleInputChars < g_nConsoleInputMaxLen) // GH #1204 Need to count the space at EOL for the cursor
 	{
 		g_pConsoleInput[ g_nConsoleInputChars ] = ch;
 		g_nConsoleInputChars++;

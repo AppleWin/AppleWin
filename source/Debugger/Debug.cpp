@@ -9043,7 +9043,7 @@ void DebuggerInputConsoleChar ( TCHAR ch )
 			return;
 	}
 	
-	if (g_nConsoleInputChars > (g_nConsoleDisplayWidth-1))
+	if (g_nConsoleInputChars > g_nConsoleInputMaxLen)
 		return;
 
 	if ((ch >= CHAR_SPACE) && (ch <= 126)) // HACK MAGIC # 32 -> ' ', # 126 
