@@ -80,11 +80,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		char g_aConsoleInput[ CONSOLE_WIDTH ]; // = g_aConsoleDisplay[0];
 
 		// Cooked input line (no prompt)
-		int          g_nConsoleInputChars  = 0;
-		      char * g_pConsoleInput       = 0; // points to past prompt
-		const char * g_pConsoleFirstArg    = 0; // points to first arg
-		bool         g_bConsoleInputQuoted = false; // Allows lower-case to be entered
-		char         g_nConsoleInputSkip   = '~';
+		      int    g_nConsoleInputChars       = 0;
+		      char * g_pConsoleInput            = 0; // points to past prompt
+		      int    g_nConsoleInputMaxLen      = 0;
+		      int    g_nConsoleInputScrollWidth = 0;
+		const char * g_pConsoleFirstArg         = 0; // points to first arg
+		      bool   g_bConsoleInputQuoted      = false; // Allows lower-case to be entered
+		      char   g_nConsoleInputSkip        = '~';
 
 // Prototypes _______________________________________________________________
 
