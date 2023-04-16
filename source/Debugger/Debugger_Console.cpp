@@ -430,7 +430,7 @@ bool ConsoleInputBackSpace ()
 {
 	if (g_nConsoleInputChars)
 	{
-		g_pConsoleInput[ g_nConsoleInputChars ] = CHAR_SPACE;
+		g_pConsoleInput[ g_nConsoleInputChars ] = 0;
 
 		g_nConsoleInputChars--;
 
