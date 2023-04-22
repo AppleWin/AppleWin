@@ -13,7 +13,6 @@
 #include "Interface.h"
 
 #include "linux/keyboard.h"
-#include "linux/registry.h"
 #include "linux/paddle.h"
 #include "linux/context.h"
 #include "frontends/common2/utils.h"

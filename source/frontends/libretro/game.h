@@ -4,11 +4,12 @@
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/diskcontrol.h"
 
-#include "linux/context.h"
-
 #include <chrono>
 #include <string>
 #include <vector>
+
+class LoggerContext;
+class RegistryContext;
 
 namespace ra2
 {
