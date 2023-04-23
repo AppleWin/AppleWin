@@ -81,7 +81,7 @@ namespace
       }
      },
      {
-      "video",
+      "video_mode",
       "Video mode",
       REG_CONFIG,
       REGVALUE_VIDEO_MODE,
@@ -94,6 +94,26 @@ namespace
        {"Monochrome (Amber)", VT_MONO_AMBER},
        {"Monochrome (Green)", VT_MONO_GREEN},
        {"Monochrome (White)", VT_MONO_WHITE},
+      }
+     },
+     {
+      "video_style",
+      "Video style",
+      REG_CONFIG,
+      REGVALUE_VIDEO_STYLE,
+      {
+       {"Half Scanlines", VS_HALF_SCANLINES},
+       {"None", VS_NONE},
+      }
+     },
+     {
+      "video_refresh_rate",
+      "Video Refresh Rate",
+      REG_CONFIG,
+      REGVALUE_VIDEO_REFRESH_RATE,
+      {
+       {"60Hz", VR_60HZ},
+       {"50Hz", VR_50HZ},
       }
      },
     };
