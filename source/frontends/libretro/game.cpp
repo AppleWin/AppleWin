@@ -244,7 +244,6 @@ namespace ra2
     return pressed;
   }
 
-
   void Game::keyboardEmulation()
   {
     if (ourInputDevices[0] != RETRO_DEVICE_NONE)
@@ -263,7 +262,7 @@ namespace ra2
       }
       if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_START))
       {
-        ResetMachineState();
+        reset(); // just a myFrame->Restart();
       }
       if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_SELECT))
       {
@@ -283,7 +282,7 @@ namespace ra2
         }
         if (pressCount == 1)
         {
-          ra2::display_message("Press again to quit.", 30 /* 0.5s at 60 FPS */);
+          display_message("Press again to quit.", 30 /* 0.5s at 60 FPS */);
           firstBtnPress = std::chrono::steady_clock::now();
         }
       }
@@ -319,6 +318,11 @@ namespace ra2
   DiskControl & Game::getDiskControl()
   {
     return myDiskControl;
+  }
+
+  void Game::reset()
+  {
+    myFrame->Restart();
   }
 
 }

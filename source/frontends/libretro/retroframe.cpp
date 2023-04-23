@@ -152,9 +152,6 @@ namespace ra2
       uint32_t size;
       const bool res = getBitmapData(buffer, width, height, bpp, data, size);
 
-      log_cb(RETRO_LOG_INFO, "RA2: %s. %s = %dx%d, %dbpp\n", __FUNCTION__, path.c_str(),
-             width, height, bpp);
-
       if (res && height > 0 && size <= cb)
       {
         const size_t length = size / height;
@@ -170,6 +167,7 @@ namespace ra2
       }
     }
 
+    log_cb(RETRO_LOG_INFO, "RA2: %s. Missing bitmap '%s'\n", __FUNCTION__, lpBitmapName);
     CommonFrame::GetBitmap(lpBitmapName, cb, lpvBits);
   }
 

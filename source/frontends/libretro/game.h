@@ -29,6 +29,8 @@ namespace ra2
 
     bool loadSnapshot(const std::string & path);
 
+    void reset();
+
     void updateVariables();
     void executeOneFrame();
     void processInputEvents();

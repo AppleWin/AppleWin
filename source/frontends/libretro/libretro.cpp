@@ -121,7 +121,7 @@ unsigned retro_api_version(void)
 
 void retro_set_controller_port_device(unsigned port, unsigned device)
 {
-  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s, Plugging device %u into port %u.\n", __FUNCTION__, device, port);
+  ra2::log_cb(RETRO_LOG_INFO, "RA2: %s, Plugging device %u into port %u\n", __FUNCTION__, device, port);
   if (port == 0)
   {
     ra2::Game::ourInputDevices[port] = device;
@@ -358,8 +358,12 @@ unsigned retro_get_region(void)
 
 void retro_reset(void)
 {
+  if (ourGame)
+  {
+    ourGame->updateVariables();
+    ourGame->reset();
+  }
   ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
-  ResetMachineState();
 }
 
 bool retro_load_game_special(unsigned type, const struct retro_game_info *info, size_t num)
