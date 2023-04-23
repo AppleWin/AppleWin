@@ -377,42 +377,6 @@ void Preferences::on_colorButton_clicked()
     }
 }
 
-void Preferences::on_slot4_combo_activated(int index)
-{
-    const SS_CARDTYPE slot4Card = cardsInSlot4[index];
-    if (slot4Card == CT_MockingboardC)
-    {
-        const int slot5Index = getIndexInList(cardsInSlot5, CT_MockingboardC, 0);
-        ui->slot5_combo->setCurrentIndex(slot5Index);
-    }
-    else
-    {
-        const SS_CARDTYPE slot5Card = cardsInSlot5[ui->slot5_combo->currentIndex()];
-        if (slot5Card == CT_MockingboardC)
-        {
-            ui->slot5_combo->setCurrentIndex(0);
-        }
-    }
-}
-
-void Preferences::on_slot5_combo_activated(int index)
-{
-    const SS_CARDTYPE slot5Card = cardsInSlot5[index];
-    if (slot5Card == CT_MockingboardC)
-    {
-        const int slot4Index = getIndexInList(cardsInSlot4, CT_MockingboardC, 0);
-        ui->slot4_combo->setCurrentIndex(slot4Index);
-    }
-    else
-    {
-        const SS_CARDTYPE slot4Card = cardsInSlot4[ui->slot4_combo->currentIndex()];
-        if (slot4Card == CT_MockingboardC)
-        {
-            ui->slot4_combo->setCurrentIndex(0);
-        }
-    }
-}
-
 void Preferences::on_browse_pf_clicked()
 {
     const QString name = QFileDialog::getSaveFileName(this, QString(), ui->printer_filename->text());

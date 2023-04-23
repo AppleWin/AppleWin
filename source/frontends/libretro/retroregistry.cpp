@@ -79,6 +79,7 @@ namespace
        {"Empty", CT_Empty},
        {"CP/M", CT_Z80},
        {"Mockingboard", CT_MockingboardC},
+       {"Phasor", CT_Phasor},
        {"SAM/DAC", CT_SAM},
       }
      },

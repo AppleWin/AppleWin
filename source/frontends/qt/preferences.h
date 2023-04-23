@@ -42,10 +42,6 @@ private slots:
 
     void on_colorButton_clicked();
 
-    void on_slot4_combo_activated(int index);
-
-    void on_slot5_combo_activated(int index);
-
     void on_browse_pf_clicked();
 
 private:

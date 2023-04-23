@@ -103,7 +103,7 @@ namespace
       {2, {CT_Empty, CT_SSC, CT_Uthernet2}},
       {3, {CT_Empty, CT_Uthernet, CT_Uthernet2, CT_VidHD}},
       {4, {CT_Empty, CT_MockingboardC, CT_MegaAudio, CT_MouseInterface, CT_Phasor, CT_Uthernet2}},
-      {5, {CT_Empty, CT_MockingboardC, CT_MegaAudio, CT_Disk2, CT_GenericHDD, CT_Uthernet2, CT_Z80, CT_SAM, CT_FourPlay, CT_SNESMAX}},
+      {5, {CT_Empty, CT_MockingboardC, CT_MegaAudio, CT_Disk2, CT_GenericHDD, CT_Phasor, CT_Uthernet2, CT_Z80, CT_SAM, CT_FourPlay, CT_SNESMAX}},
       {6, {CT_Empty, CT_Disk2, CT_Uthernet2}},
       {7, {CT_Empty, CT_GenericHDD, CT_Uthernet2}},
     };
@@ -175,23 +175,6 @@ namespace sa2
           // the old card was a VidHD, which will be removed
           // reset it
           video.SetVidHD(false);
-        }
-        break;
-      }
-      case 4:
-      case 5:
-      {
-        if (card == CT_MockingboardC || card == CT_MegaAudio)
-        {
-          cardManager.Insert(9 - slot, card);  // the other
-        }
-        else
-        {
-          const SS_CARDTYPE existingCard = cardManager.QuerySlot(slot);
-          if (existingCard == CT_MockingboardC || existingCard == CT_MegaAudio)
-          {
-            cardManager.Insert(9 - slot, CT_Empty);  // the other
-          }
         }
         break;
       }
