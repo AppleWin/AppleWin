@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "frontends/libretro/game.h"
+#include "frontends/libretro/rdirectsound.h"
 #include "frontends/libretro/retroregistry.h"
 #include "frontends/libretro/retroframe.h"
 #include "frontends/common2/utils.h"
@@ -51,6 +52,8 @@ namespace ra2
     myRegistryContext = std::make_shared<RegistryContext>(myRegistry);
     myFrame = std::make_shared<ra2::RetroFrame>();
 
+    myAudioChannelsSelected = GetAudioOutputChannels();
+
     SetFrame(myFrame);
     myFrame->Begin();
 
@@ -91,6 +94,7 @@ namespace ra2
     if (ra2::environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
     {
       PopulateRegistry(myRegistry);
+      myAudioChannelsSelected = GetAudioOutputChannels();
     }
   }
 
@@ -323,6 +327,11 @@ namespace ra2
   void Game::reset()
   {
     myFrame->Restart();
+  }
+
+  void Game::writeAudio(const size_t ms)
+  {
+    ra2::writeAudio(myAudioChannelsSelected, ms);
   }
 
 }

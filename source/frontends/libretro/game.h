@@ -34,6 +34,7 @@ namespace ra2
     void updateVariables();
     void executeOneFrame();
     void processInputEvents();
+    void writeAudio(const size_t ms);
 
     void drawVideoBuffer();
 
@@ -61,6 +62,8 @@ namespace ra2
     int pressCount = 0;
 
     std::vector<int> myButtonStates;
+
+    size_t myAudioChannelsSelected;
 
     struct MousePosition_t
     {

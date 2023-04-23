@@ -14,17 +14,12 @@
 namespace
 {
 
-  // we can only run 1 generator at a time
-  // 1 is for speaker (2 would be Mockingboard)
-  const size_t ourChannels = 1;
-
   class DirectSoundGenerator
   {
   public:
     DirectSoundGenerator(IDirectSoundBuffer * buffer);
 
     void writeAudio(const size_t ms);
-    void playSilence(const size_t ms);
 
     bool isRunning() const;
     size_t getNumberOfChannels() const;
@@ -48,7 +43,7 @@ namespace
       const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
       if (generator->isRunning() && generator->getNumberOfChannels() == channels)
       {
-	return generator;
+        return generator;
       }
     }
     return std::shared_ptr<DirectSoundGenerator>();
@@ -93,8 +88,8 @@ namespace
       myMixerBuffer.resize(2 * frames);
       for (int16_t i = 0; i < frames; ++i)
       {
-	myMixerBuffer[i * 2] = data[i];
-	myMixerBuffer[i * 2 + 1] = data[i];
+        myMixerBuffer[i * 2] = data[i];
+        myMixerBuffer[i * 2 + 1] = data[i];
       }
     }
 
@@ -108,19 +103,6 @@ namespace
       sample = (sample * rvolume) / 128;
     }
 
-    ra2::audio_batch_cb(myMixerBuffer.data(), frames);
-  }
-
-  void DirectSoundGenerator::playSilence(const size_t ms)
-  {
-    if (!isRunning())
-    {
-      return;
-    }
-
-    const size_t frames = ms * myBuffer->sampleRate / 1000;
-    myMixerBuffer.resize(2 * frames);
-    std::fill(myMixerBuffer.begin(), myMixerBuffer.end(), 0);
     ra2::audio_batch_cb(myMixerBuffer.data(), frames);
   }
 
@@ -170,21 +152,12 @@ void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
 namespace ra2
 {
 
-  void writeAudio(const size_t ms)
+  void writeAudio(const size_t channels, const size_t ms)
   {
-    const auto generator = findRunningGenerator(ourChannels);
+    const auto generator = findRunningGenerator(channels);
     if (generator)
     {
       generator->writeAudio(ms);
-    }
-  }
-
-  void playSilence(const size_t ms)
-  {
-    const auto generator = findRunningGenerator(ourChannels);
-    if (generator)
-    {
-      generator->playSilence(ms);
     }
   }
 

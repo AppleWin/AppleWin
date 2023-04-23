@@ -16,6 +16,8 @@ namespace
 {
 
   const std::string ourScope = "applewin_";
+  const char * REG_AUDIO_OUTPUT = "ra2\\audio";
+  const char * REGVALUE_AUDIO_OUTPUT_CHANNELS = "Number of channels";
 
   struct Variable
   {
@@ -116,6 +118,16 @@ namespace
        {"50Hz", VR_50HZ},
       }
      },
+     {
+      "audio_output",
+      "Audio Output",
+      REG_AUDIO_OUTPUT,
+      REGVALUE_AUDIO_OUTPUT_CHANNELS,
+      {
+       {"Speaker", 1},
+       {"Mockingboard", 2},
+      }
+     },
     };
 
   std::string getKey(const Variable & var)
@@ -194,4 +206,10 @@ namespace ra2
     return registry;
   }
 
+  size_t GetAudioOutputChannels()
+  {
+    DWORD value = 1;
+    RegLoadValue(REG_AUDIO_OUTPUT, REGVALUE_AUDIO_OUTPUT_CHANNELS, TRUE, &value);
+    return value;
+  }
 }
