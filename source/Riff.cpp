@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 static HANDLE g_hRiffFile = INVALID_HANDLE_VALUE;
 static DWORD dwTotalOffset;
 static DWORD dwDataOffset;
-static DWORD g_dwTotalNumberOfBytesWritten = 0;
 static unsigned int g_NumChannels = 2;
 
 bool RiffInitWriteFile(const char* pszFile, unsigned int sample_rate, unsigned int NumChannels)
@@ -106,11 +105,13 @@ bool RiffFinishWriteFile()
 
 	DWORD dwNumberOfBytesWritten;
 	
-	temp32 = g_dwTotalNumberOfBytesWritten - (dwTotalOffset + 4);
+	DWORD fileSize = SetFilePointer(g_hRiffFile, 0, NULL, FILE_END);
+
+	temp32 = fileSize - (dwTotalOffset + 4);
 	SetFilePointer(g_hRiffFile, dwTotalOffset, NULL, FILE_BEGIN);
 	WriteFile(g_hRiffFile, &temp32, 4, &dwNumberOfBytesWritten, NULL);
 
-	temp32 = g_dwTotalNumberOfBytesWritten - (dwDataOffset + 4);
+	temp32 = fileSize - (dwDataOffset + 4);
 	SetFilePointer(g_hRiffFile, dwDataOffset, NULL, FILE_BEGIN);
 	WriteFile(g_hRiffFile, &temp32, 4, &dwNumberOfBytesWritten, NULL);
 
@@ -132,8 +133,6 @@ bool RiffPutSamples(const short* buf, unsigned int uSamples)
 		uSamples * sizeof(short) * g_NumChannels,
 		&dwNumberOfBytesWritten,
 		NULL);
-
-	g_dwTotalNumberOfBytesWritten += dwNumberOfBytesWritten;
 
 	return true;
 }
