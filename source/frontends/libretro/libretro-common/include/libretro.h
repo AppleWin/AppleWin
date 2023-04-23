@@ -283,6 +283,14 @@ enum retro_language
    RETRO_LANGUAGE_HEBREW              = 21,
    RETRO_LANGUAGE_ASTURIAN            = 22,
    RETRO_LANGUAGE_FINNISH             = 23,
+   RETRO_LANGUAGE_INDONESIAN          = 24,
+   RETRO_LANGUAGE_SWEDISH             = 25,
+   RETRO_LANGUAGE_UKRAINIAN           = 26,
+   RETRO_LANGUAGE_CZECH               = 27,
+   RETRO_LANGUAGE_CATALAN_VALENCIA    = 28,
+   RETRO_LANGUAGE_CATALAN             = 29,
+   RETRO_LANGUAGE_BRITISH_ENGLISH     = 30,
+   RETRO_LANGUAGE_HUNGARIAN           = 31,
    RETRO_LANGUAGE_LAST,
 
    /* Ensure sizeof(enum) == sizeof(int) */
@@ -1753,6 +1761,39 @@ enum retro_mod
                                             * the frontend is attempting to call retro_run().
                                             */
 
+#define RETRO_ENVIRONMENT_GET_SAVESTATE_CONTEXT (72 | RETRO_ENVIRONMENT_EXPERIMENTAL)
+                                           /* int * --
+                                            * Tells the core about the context the frontend is asking for savestate.
+                                            * (see enum retro_savestate_context)
+                                            */
+
+#define RETRO_ENVIRONMENT_GET_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE_SUPPORT (73 | RETRO_ENVIRONMENT_EXPERIMENTAL)
+                                            /* struct retro_hw_render_context_negotiation_interface * --
+                                             * Before calling SET_HW_RNEDER_CONTEXT_NEGOTIATION_INTERFACE, a core can query
+                                             * which version of the interface is supported.
+                                             *
+                                             * Frontend looks at interface_type and returns the maximum supported
+                                             * context negotiation interface version.
+                                             * If the interface_type is not supported or recognized by the frontend, a version of 0
+                                             * must be returned in interface_version and true is returned by frontend.
+                                             *
+                                             * If this environment call returns true with interface_version greater than 0,
+                                             * a core can always use a negotiation interface version larger than what the frontend returns, but only
+                                             * earlier versions of the interface will be used by the frontend.
+                                             * A frontend must not reject a negotiation interface version that is larger than
+                                             * what the frontend supports. Instead, the frontend will use the older entry points that it recognizes.
+                                             * If this is incompatible with a particular core's requirements, it can error out early.
+                                             *
+                                             * Backwards compatibility note:
+                                             * This environment call was introduced after Vulkan v1 context negotiation.
+                                             * If this environment call is not supported by frontend - i.e. the environment call returns false -
+                                             * only Vulkan v1 context negotiation is supported (if Vulkan HW rendering is supported at all).
+                                             * If a core uses Vulkan negotiation interface with version > 1, negotiation may fail unexpectedly.
+                                             * All future updates to the context negotiation interface implies that frontend must support
+                                             * this environment call to query support.
+                                             */
+
+
 /* VFS functionality */
 
 /* File paths:
@@ -2990,6 +3031,35 @@ enum retro_pixel_format
    RETRO_PIXEL_FORMAT_UNKNOWN  = INT_MAX
 };
 
+enum retro_savestate_context
+{
+   /* Standard savestate written to disk. */
+   RETRO_SAVESTATE_CONTEXT_NORMAL                 = 0,
+
+   /* Savestate where you are guaranteed that the same instance will load the save state.
+    * You can store internal pointers to code or data.
+    * It's still a full serialization and deserialization, and could be loaded or saved at any time. 
+    * It won't be written to disk or sent over the network.
+    */
+   RETRO_SAVESTATE_CONTEXT_RUNAHEAD_SAME_INSTANCE = 1,
+
+   /* Savestate where you are guaranteed that the same emulator binary will load that savestate.
+    * You can skip anything that would slow down saving or loading state but you can not store internal pointers. 
+    * It won't be written to disk or sent over the network.
+    * Example: "Second Instance" runahead
+    */
+   RETRO_SAVESTATE_CONTEXT_RUNAHEAD_SAME_BINARY   = 2,
+
+   /* Savestate used within a rollback netplay feature.
+    * You should skip anything that would unnecessarily increase bandwidth usage.
+    * It won't be written to disk but it will be sent over the network.
+    */
+   RETRO_SAVESTATE_CONTEXT_ROLLBACK_NETPLAY       = 3,
+
+   /* Ensure sizeof() == sizeof(int). */
+   RETRO_SAVESTATE_CONTEXT_UNKNOWN                = INT_MAX
+};
+
 struct retro_message
 {
    const char *msg;        /* Message to be displayed. */
@@ -3460,6 +3530,10 @@ struct retro_core_option_definition
     * ignored */
    const char *default_value;
 };
+
+#ifdef __PS3__
+#undef local
+#endif
 
 struct retro_core_options_intl
 {
