@@ -56,6 +56,9 @@ void run_sdl(int argc, const char * argv [])
 {
   std::cerr << std::fixed << std::setprecision(2);
 
+  std::cerr << "SDL Video driver: " << SDL_GetCurrentVideoDriver() << std::endl;
+  std::cerr << "SDL Audio driver: " << SDL_GetCurrentAudioDriver() << std::endl;
+
   common2::EmulatorOptions options;
 
   const bool run = getEmulatorOptions(argc, argv, "SDL2", options);

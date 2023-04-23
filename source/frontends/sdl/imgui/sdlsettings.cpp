@@ -596,11 +596,13 @@ namespace sa2
             REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
           }
 
-          myMockingboardVolume = volumeMax - cardManager.GetMockingboardCardMgr().GetVolume();
+          MockingboardCardManager& mockingboard = cardManager.GetMockingboardCardMgr();
+
+          myMockingboardVolume = volumeMax - mockingboard.GetVolume();
           if (ImGui::SliderInt("Mockingboard volume", &myMockingboardVolume, 0, volumeMax))
           {
-            cardManager.GetMockingboardCardMgr().SetVolume(volumeMax - myMockingboardVolume, volumeMax);
-            REGSAVE(TEXT(REGVALUE_MB_VOLUME), cardManager.GetMockingboardCardMgr().GetVolume());
+            mockingboard.SetVolume(volumeMax - myMockingboardVolume, volumeMax);
+            REGSAVE(TEXT(REGVALUE_MB_VOLUME), mockingboard.GetVolume());
           }
 
           ImGui::Separator();

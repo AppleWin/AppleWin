@@ -13,7 +13,7 @@ namespace sa2
     SDL_GetRendererInfo(ren.get(), &info);
 
     const size_t n = SDL_GetNumRenderDrivers();
-    os << "SDL: " << n << " drivers" << std::endl;
+    os << "SDL: " << n << " rendering drivers" << std::endl;
     for(size_t i = 0; i < n; ++i)
     {
       SDL_RendererInfo info;
