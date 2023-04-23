@@ -58,8 +58,7 @@ namespace ra2
 
     common2::Speed mySpeed;  // fixed speed
 
-    std::chrono::steady_clock::time_point firstBtnPress; // for quit
-    int pressCount = 0;
+    std::chrono::steady_clock::time_point myFirstBtnPress;
 
     std::vector<int> myButtonStates;
 

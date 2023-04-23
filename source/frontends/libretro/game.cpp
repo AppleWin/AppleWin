@@ -293,22 +293,17 @@ namespace ra2
       {
         // added as convenience if game_focus is on:
         // exit emulator by pressing "select" twice
-        pressCount++;
-        if (pressCount > 1)
+        const auto secondBtnPress = std::chrono::steady_clock::now();
+        const auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(secondBtnPress - myFirstBtnPress).count();
+        myFirstBtnPress = secondBtnPress;
+        if (dt <= 500)
         {
-          std::chrono::steady_clock::time_point secondBtnPress = std::chrono::steady_clock::now();
-          int dt = std::chrono::duration_cast<std::chrono::milliseconds>(secondBtnPress - firstBtnPress).count();
-          if (dt <= 500)
-          {
-            log_cb(RETRO_LOG_INFO, "RA2: %s - user quitted\n", __FUNCTION__);
-            environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
-          }
-          pressCount = 1;
+          log_cb(RETRO_LOG_INFO, "RA2: %s - user quitted\n", __FUNCTION__);
+          environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
         }
-        if (pressCount == 1)
+        else
         {
           display_message("Press again to quit.", 30 /* 0.5s at 60 FPS */);
-          firstBtnPress = std::chrono::steady_clock::now();
         }
       }
     }
