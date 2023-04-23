@@ -17,7 +17,7 @@ namespace
 
   const std::string ourScope = "applewin_";
   const char * REG_AUDIO_OUTPUT = "ra2\\audio";
-  const char * REGVALUE_AUDIO_OUTPUT_CHANNELS = "Number of channels";
+  const char * REGVALUE_AUDIO_OUTPUT_CHANNELS = "Number of Channels";
 
   struct Variable
   {
@@ -32,7 +32,7 @@ namespace
     {
      {
       "machine",
-      "Apple ][ type",
+      "Apple ][ Type",
       REG_CONFIG,
       REGVALUE_APPLE2_TYPE, // reset required
       {
@@ -50,7 +50,7 @@ namespace
      },
      {
       "slot3",
-      "Card in slot 3",
+      "Card in Slot 3",
       "Configuration\\Slot 3",
       REGVALUE_CARD_TYPE, // reset required
       {
@@ -60,7 +60,7 @@ namespace
      },
      {
       "slot4",
-      "Card in slot 4",
+      "Card in Slot 4",
       "Configuration\\Slot 4",
       REGVALUE_CARD_TYPE, // reset required
       {
@@ -72,7 +72,7 @@ namespace
      },
      {
       "slot5",
-      "Card in slot 5",
+      "Card in Slot 5",
       "Configuration\\Slot 5",
       REGVALUE_CARD_TYPE, // reset required
       {
@@ -84,7 +84,7 @@ namespace
      },
      {
       "video_mode",
-      "Video mode",
+      "Video Mode",
       REG_CONFIG,
       REGVALUE_VIDEO_MODE,
       {
@@ -100,17 +100,17 @@ namespace
      },
      {
       "video_style",
-      "Video style",
+      "Video Style",
       REG_CONFIG,
       REGVALUE_VIDEO_STYLE,
       {
-       {"Half scanlines", VS_HALF_SCANLINES},
+       {"Half Scanlines", VS_HALF_SCANLINES},
        {"None", VS_NONE},
       }
      },
      {
       "video_refresh_rate",
-      "Video refresh rate",
+      "Video Refresh Rate",
       REG_CONFIG,
       REGVALUE_VIDEO_REFRESH_RATE, // reset required
       {
@@ -120,7 +120,7 @@ namespace
      },
      {
       "audio_output",
-      "Audio output",
+      "Audio Output",
       REG_AUDIO_OUTPUT,
       REGVALUE_AUDIO_OUTPUT_CHANNELS,
       {
