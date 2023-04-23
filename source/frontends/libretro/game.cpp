@@ -303,7 +303,7 @@ namespace ra2
         }
         else
         {
-          display_message("Press again to quit.", 30 /* 0.5s at 60 FPS */);
+          display_message("Press again to quit...", 30 /* 0.5s at 60 FPS */);
         }
       }
     }
