@@ -94,7 +94,28 @@ namespace ra2
     if (ra2::environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
     {
       PopulateRegistry(myRegistry);
+
+      // some variables are immediately applied
       myAudioChannelsSelected = GetAudioOutputChannels();
+
+      Video& video = GetVideo();
+      const VideoType_e prevVideoType = video.GetVideoType();
+      const VideoStyle_e prevVideoStyle = video.GetVideoStyle();
+
+      DWORD dwTmp = prevVideoType;
+      RegLoadValue(REG_CONFIG, REGVALUE_VIDEO_MODE, TRUE, &dwTmp);
+      const VideoType_e newVideoType = static_cast<VideoType_e>(dwTmp);
+
+      dwTmp = prevVideoStyle;
+      RegLoadValue(REG_CONFIG, REGVALUE_VIDEO_STYLE, TRUE, &dwTmp);
+      const VideoStyle_e newVideoStyle = static_cast<VideoStyle_e>(dwTmp);
+
+      if ((prevVideoType != newVideoType) || (prevVideoStyle != newVideoStyle))
+      {
+        video.SetVideoStyle(newVideoStyle);
+        video.SetVideoType(newVideoType);
+        myFrame->ApplyVideoModeChange();
+      }
     }
   }
 

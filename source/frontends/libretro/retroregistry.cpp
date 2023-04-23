@@ -34,7 +34,7 @@ namespace
       "machine",
       "Apple ][ type",
       REG_CONFIG,
-      REGVALUE_APPLE2_TYPE,
+      REGVALUE_APPLE2_TYPE, // reset required
       {
        {"Enhanced Apple //e", A2TYPE_APPLE2EENHANCED},
        {"Apple ][ (Original)", A2TYPE_APPLE2},
@@ -52,7 +52,7 @@ namespace
       "slot3",
       "Card in slot 3",
       "Configuration\\Slot 3",
-      REGVALUE_CARD_TYPE,
+      REGVALUE_CARD_TYPE, // reset required
       {
        {"Empty", CT_Empty},
        {"Video HD", CT_VidHD},
@@ -62,7 +62,7 @@ namespace
       "slot4",
       "Card in slot 4",
       "Configuration\\Slot 4",
-      REGVALUE_CARD_TYPE,
+      REGVALUE_CARD_TYPE, // reset required
       {
        {"Empty", CT_Empty},
        {"Mouse", CT_MouseInterface},
@@ -74,7 +74,7 @@ namespace
       "slot5",
       "Card in slot 5",
       "Configuration\\Slot 5",
-      REGVALUE_CARD_TYPE,
+      REGVALUE_CARD_TYPE, // reset required
       {
        {"Empty", CT_Empty},
        {"CP/M", CT_Z80},
@@ -104,15 +104,15 @@ namespace
       REG_CONFIG,
       REGVALUE_VIDEO_STYLE,
       {
-       {"Half Scanlines", VS_HALF_SCANLINES},
+       {"Half scanlines", VS_HALF_SCANLINES},
        {"None", VS_NONE},
       }
      },
      {
       "video_refresh_rate",
-      "Video Refresh Rate",
+      "Video refresh rate",
       REG_CONFIG,
-      REGVALUE_VIDEO_REFRESH_RATE,
+      REGVALUE_VIDEO_REFRESH_RATE, // reset required
       {
        {"60Hz", VR_60HZ},
        {"50Hz", VR_50HZ},
@@ -120,7 +120,7 @@ namespace
      },
      {
       "audio_output",
-      "Audio Output",
+      "Audio output",
       REG_AUDIO_OUTPUT,
       REGVALUE_AUDIO_OUTPUT_CHANNELS,
       {
