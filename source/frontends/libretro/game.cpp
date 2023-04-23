@@ -2,6 +2,8 @@
 #include "frontends/libretro/game.h"
 #include "frontends/libretro/retroregistry.h"
 #include "frontends/libretro/retroframe.h"
+#include "frontends/common2/utils.h"
+#include "frontends/common2/ptreeregistry.h"
 
 #include "Common.h"
 #include "CardManager.h"
@@ -15,10 +17,25 @@
 #include "linux/keyboard.h"
 #include "linux/paddle.h"
 #include "linux/context.h"
-#include "frontends/common2/utils.h"
 
 #include "libretro.h"
 #include <memory>
+
+#define APPLEWIN_RETRO_CONF "/tmp/applewin.retro.conf"
+
+namespace
+{
+  void saveRegistryToINI(const std::shared_ptr<common2::PTreeRegistry> & registry)
+  {
+    try
+    {
+      registry->saveToINIFile(APPLEWIN_RETRO_CONF);
+      ra2::display_message("Configuration saved to: " APPLEWIN_RETRO_CONF);
+    } catch (const std::exception & e) {
+      ra2::display_message(std::string("Error saving configuration: ") + e.what());
+    }
+  }
+}
 
 namespace ra2
 {
@@ -30,7 +47,8 @@ namespace ra2
     , myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
   {
     myLoggerContext = std::make_shared<LoggerContext>(true);
-    myRegistryContext = std::make_shared<RegistryContext>(CreateRetroRegistry());
+    myRegistry = CreateRetroRegistry();
+    myRegistryContext = std::make_shared<RegistryContext>(myRegistry);
     myFrame = std::make_shared<ra2::RetroFrame>();
 
     SetFrame(myFrame);
@@ -64,6 +82,15 @@ namespace ra2
       g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
       GetCardMgr().Update(executedCycles);
       SpkrUpdate(executedCycles);
+    }
+  }
+
+  void Game::updateVariables()
+  {
+    bool updated = false;
+    if (ra2::environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
+    {
+      PopulateRegistry(myRegistry);
     }
   }
 
@@ -229,6 +256,10 @@ namespace ra2
       if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_L))
       {
         myFrame->Cycle50ScanLines();
+      }
+      if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_L2))
+      {
+        saveRegistryToINI(myRegistry);
       }
       if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_START))
       {

@@ -1,6 +1,7 @@
 #include "frontends/common2/ptreeregistry.h"
 
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/property_tree/ini_parser.hpp>
 
 namespace
 {
@@ -77,6 +78,11 @@ namespace common2
       }
     }
     return values;
+  }
+
+  void PTreeRegistry::saveToINIFile(const std::string & filename) const
+  {
+    boost::property_tree::ini_parser::write_ini(filename, myINI);
   }
 
 }

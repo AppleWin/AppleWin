@@ -59,7 +59,7 @@ namespace
     {
       try
       {
-        boost::property_tree::ini_parser::write_ini(myFilename, myINI);
+        saveToINIFile(myFilename);
       }
       catch(const std::exception& e)
       {

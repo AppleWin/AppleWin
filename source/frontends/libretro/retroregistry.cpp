@@ -163,10 +163,8 @@ namespace ra2
     environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, retroVariables.data());
   }
 
-  std::shared_ptr<Registry> CreateRetroRegistry()
+  void PopulateRegistry(const std::shared_ptr<Registry> & registry)
   {
-    const auto registry = std::make_shared<common2::PTreeRegistry>();
-
     for (const Variable & variable : ourVariables)
     {
       const std::string retroKey = ourScope + variable.name;
@@ -187,7 +185,12 @@ namespace ra2
         }
       }
     }
+  }
 
+  std::shared_ptr<common2::PTreeRegistry> CreateRetroRegistry()
+  {
+    const auto registry = std::make_shared<common2::PTreeRegistry>();
+    PopulateRegistry(registry);
     return registry;
   }
 
