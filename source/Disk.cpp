@@ -132,24 +132,44 @@ std::string Disk2InterfaceCard::GetCurrentPhaseString(void)
 	return FormatIntFracString(m_floppyDrive[m_currDrive].m_phasePrecise, true);
 }
 
-LPCTSTR Disk2InterfaceCard::GetCurrentState(void)
+LPCTSTR Disk2InterfaceCard::GetCurrentState(Disk_Status_e *pDiskState)
 {
 	if (m_floppyDrive[m_currDrive].m_disk.m_imagehandle == NULL)
+	{
+		if (pDiskState)
+			*pDiskState = DISK_STATUS_EMPTY;
 		return "Empty";
+	}
 
 	if (!m_floppyMotorOn)
 	{
 		if (m_floppyDrive[m_currDrive].m_spinning > 0)
+		{
+			if (pDiskState)
+				*pDiskState = DISK_STATUS_SPIN;
 			return "Off (spinning)";
+		}
 		else
+		{
+			if (pDiskState)
+				*pDiskState = DISK_STATUS_OFF;
 			return "Off";
+		}
 	}
 	else if (m_seqFunc.writeMode)
 	{
 		if (m_floppyDrive[m_currDrive].m_disk.m_bWriteProtected)
+		{
+			if (pDiskState)
+				*pDiskState = DISK_STATUS_PROT;
 			return "Writing (write protected)";
+		}
 		else
+		{
+			if (pDiskState)
+				*pDiskState = DISK_STATUS_WRITE;
 			return "Writing";
+		}
 	}
 	else
 	{
@@ -161,7 +181,11 @@ LPCTSTR Disk2InterfaceCard::GetCurrentState(void)
 				return "Reading write protect state (not write protected)";
 		}
 		else*/
+		{
+			if (pDiskState)
+				*pDiskState = DISK_STATUS_READ;
 			return "Reading";
+		}
 	}
 }
 
@@ -766,7 +790,7 @@ Disk_Status_e Disk2InterfaceCard::GetDriveLightStatus(const int drive)
 		}
 	}
 
-	return DISK_STATUS_OFF;
+	return DISK_STATUS_EMPTY;
 }
 
 void Disk2InterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status, Disk_Status_e *pDisk2Status)

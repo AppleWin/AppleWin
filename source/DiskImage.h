@@ -48,7 +48,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		DISK_STATUS_OFF  ,
 		DISK_STATUS_READ ,
 		DISK_STATUS_WRITE,
-		DISK_STATUS_PROT ,
+		DISK_STATUS_PROT , // NOTE: GetDriveLightStatus() and GetCurrentState() return slightly different states
+		DISK_STATUS_EMPTY, // See: GetCurrentState(); no disk image mounted
+		DISK_STATUS_SPIN , // See: GetCurrentState(), not reading, not writing
 		NUM_DISK_STATUS
 	};
 

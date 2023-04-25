@@ -173,7 +173,7 @@ public:
 	static std::string FormatIntFracString(float phase, bool hex);
 	std::string GetCurrentTrackString(void);
 	std::string GetCurrentPhaseString(void);
-	LPCTSTR GetCurrentState(void);
+	LPCTSTR GetCurrentState(Disk_Status_e *pDiskState = NULL);
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
 	bool DriveSwap(void);
 	bool IsDriveConnected(int drive) { return m_floppyDrive[drive].m_isConnected; }
