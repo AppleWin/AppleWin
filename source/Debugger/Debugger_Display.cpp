@@ -1310,13 +1310,13 @@ void DrawConsoleInput ()
 		//  [--------]       g_nConsoleInputScrollWidth = 10
 		// >6789ABCDEF_      g_nConsoleInputMaxLen      = 16
 		static char aScrollingInput[ CONSOLE_WIDTH+1 ];
-		aScrollingInput[0] = g_aConsoleInput[0];                                           // 1. SOL
+		aScrollingInput[0] = g_aConsoleInput[0];                                           // 1. Start-of-Line
 
 		const int nInputOffset =      g_nConsoleInputChars - g_nConsoleInputScrollWidth  ; // 2. Middle
 		const int nInputWidth  = min( g_nConsoleInputChars,  g_nConsoleInputScrollWidth ); // NOTE: Keep in Sync! DrawConsoleInput() and DrawConsoleCursor()
 		strncpy( aScrollingInput+1, g_aConsoleInput + 1 + nInputOffset, nInputWidth );     // +1 to skip prompt
 
-		aScrollingInput[ g_nConsoleInputScrollWidth+1 ] = 0;                               // 3. EOL leave room for cursor
+		aScrollingInput[ g_nConsoleInputScrollWidth+1 ] = 0;                               // 3. End-of-Line leave room for cursor
 
 		PrintText( aScrollingInput, rect );
 	}

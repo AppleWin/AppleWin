@@ -7155,7 +7155,7 @@ void WindowUpdateConsoleDisplayedSize ()
 		g_bConsoleFullWidth = true;
 	}
 
-	g_nConsoleInputMaxLen      = g_nConsoleDisplayWidth-1; // -1 prompt at SOL, -1 for cursor at EOL
+	g_nConsoleInputMaxLen      = g_nConsoleDisplayWidth-1; // -1 prompt at Start-of-Line, -1 for cursor at End-of-Line
 	g_nConsoleInputScrollWidth = g_nConsoleDisplayWidth-1; // Maximum number of characters for the horizontol scrolling window on the input line
 #else
 	g_nConsoleDisplayWidth = (CONSOLE_WIDTH / 2) + 10;
