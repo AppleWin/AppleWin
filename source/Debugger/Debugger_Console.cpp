@@ -80,11 +80,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		char g_aConsoleInput[ CONSOLE_WIDTH ]; // = g_aConsoleDisplay[0];
 
 		// Cooked input line (no prompt)
-		int          g_nConsoleInputChars  = 0;
-		      char * g_pConsoleInput       = 0; // points to past prompt
-		const char * g_pConsoleFirstArg    = 0; // points to first arg
-		bool         g_bConsoleInputQuoted = false; // Allows lower-case to be entered
-		char         g_nConsoleInputSkip   = '~';
+		      int    g_nConsoleInputChars       = 0;
+		      char * g_pConsoleInput            = 0; // points to past prompt
+		      int    g_nConsoleInputMaxLen      = 0;
+		      int    g_nConsoleInputScrollWidth = 0;
+		const char * g_pConsoleFirstArg         = 0; // points to first arg
+		      bool   g_bConsoleInputQuoted      = false; // Allows lower-case to be entered
+		      char   g_nConsoleInputSkip        = '~';
 
 // Prototypes _______________________________________________________________
 
@@ -354,7 +356,7 @@ void ConsoleConvertFromText ( conchar_t * sText, const char * pText )
 //===========================================================================
 Update_t ConsoleDisplayError ( const char * pText )
 {
-	ConsoleBufferPush( pText );
+	ConsolePrintFormat( CHC_ERROR "%s", pText );
 	return ConsoleUpdate();
 }
 
@@ -430,7 +432,7 @@ bool ConsoleInputBackSpace ()
 {
 	if (g_nConsoleInputChars)
 	{
-		g_pConsoleInput[ g_nConsoleInputChars ] = CHAR_SPACE;
+		g_pConsoleInput[ g_nConsoleInputChars ] = 0;
 
 		g_nConsoleInputChars--;
 
@@ -461,7 +463,7 @@ bool ConsoleInputClear ()
 //===========================================================================
 bool ConsoleInputChar ( char ch )
 {
-	if (g_nConsoleInputChars < g_nConsoleDisplayWidth) // bug? include prompt?
+	if (g_nConsoleInputChars < g_nConsoleInputMaxLen) // GH #1204 Need to count the space at EOL for the cursor
 	{
 		g_pConsoleInput[ g_nConsoleInputChars ] = ch;
 		g_nConsoleInputChars++;
