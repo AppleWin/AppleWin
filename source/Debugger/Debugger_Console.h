@@ -64,7 +64,7 @@
 	// Console Help Color
 	#define CHC_DEFAULT  "`0"
 	#define CHC_USAGE    "`3"
-	#define CHC_CATEGORY "`6"
+	#define CHC_CATEGORY "`6" // Cyan
 	#define CHC_COMMAND  "`2" // Green
 	#define CHC_KEY      "`1" // Red
 	#define CHC_ARG_MAND "`7" // < >
