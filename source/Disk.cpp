@@ -1149,6 +1149,9 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 #endif
 	}
 
+	// GH #1212 We have a non .WOZ disk, mirror so that GetCurrentShiftReg() returns last nibble read
+	m_shiftReg = m_floppyLatch;
+
 	if (++pFloppy->m_byte >= pFloppy->m_nibbles)
 		pFloppy->m_byte = 0;
 
