@@ -7163,6 +7163,9 @@ void WindowUpdateConsoleDisplayedSize ()
 		g_nConsoleDisplayWidth = CONSOLE_WIDTH - 1;
 		g_bConsoleFullWidth = true;
 	}
+
+	g_nConsoleInputMaxLen      = g_nConsoleDisplayWidth-1; // -1 prompt at Start-of-Line, -1 for cursor at End-of-Line
+	g_nConsoleInputScrollWidth = g_nConsoleDisplayWidth-1; // Maximum number of characters for the horizontol scrolling window on the input line
 #else
 	g_nConsoleDisplayWidth = (CONSOLE_WIDTH / 2) + 10;
 	g_bConsoleFullWidth = false;
@@ -9049,7 +9052,7 @@ void DebuggerInputConsoleChar ( TCHAR ch )
 			return;
 	}
 	
-	if (g_nConsoleInputChars > (g_nConsoleDisplayWidth-1))
+	if (g_nConsoleInputChars > g_nConsoleInputMaxLen)
 		return;
 
 	if ((ch >= CHAR_SPACE) && (ch <= 126)) // HACK MAGIC # 32 -> ' ', # 126 

@@ -245,11 +245,12 @@
 		extern char g_aConsoleInput[ CONSOLE_WIDTH ];
 
 		// Cooked input line (no prompt)
-		extern int          g_nConsoleInputChars  ;
-		extern       char * g_pConsoleInput       ; // points to past prompt
-		extern const char * g_pConsoleFirstArg    ; // points to first arg
-		extern bool         g_bConsoleInputQuoted ;
-
+		extern       int    g_nConsoleInputChars      ;
+		extern       char * g_pConsoleInput           ; // points to past prompt
+		extern       int    g_nConsoleInputMaxLen     ; // = g_nConsoleDisplayWidth-1 = 78 // Maximum number of characters allowed on input line
+		extern       int    g_nConsoleInputScrollWidth; // = g_nConsoleDisplayWidth-1 = 78 // Maximum number of characters for the horizontol scrolling window on the input line
+		extern const char * g_pConsoleFirstArg        ; // points to first arg
+		extern       bool   g_bConsoleInputQuoted     ;
 		extern char         g_nConsoleInputSkip   ;
 
 
