@@ -103,18 +103,19 @@ void Disk2InterfaceCard::SetEnhanceDisk(bool bEnhanceDisk) { m_enhanceDisk = bEn
 // Returns true if Track, Sector is valid
 void Disk2InterfaceCard::GetLastReadTrackSector(const int drive, int& track, int& sector)
 {
-	// Waiting for PR #1212 which adds DISK_STATUS_EMPTY
-	/*
-	Disk_Status_e status = GetDriveLightStatus(drive);
-	if (status == DISK_STATUS_EMPTY)
+	// IsDriveEmpty()
+	FloppyDrive* pDrive = &m_floppyDrive[drive];
+	FloppyDisk* pFloppy = &pDrive->m_disk;
+	if (! pFloppy->m_imagehandle)
 	{
 		track = -1;
 		sector = -1;
+		return;
 	}
-	*/
 
 	    track    = m_floppyDrive[drive].m_LastReadTrackSector[0];
 	int physical = m_floppyDrive[drive].m_LastReadTrackSector[1];
+	assert(track <= 80);
 
 	const int PhysicalToLogicalSectorNumber[16] = {0x00,0x07,0x0E,0x06,0x0D,0x05,0x0C,0x04, 0x0B,0x03,0x0A,0x02,0x09,0x01,0x08,0x0F};
 	sector = PhysicalToLogicalSectorNumber[physical];
