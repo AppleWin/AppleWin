@@ -135,7 +135,7 @@ public:
 	DWORD m_spinning;
 	DWORD m_writelight;
 	FloppyDisk m_disk;
-	BYTE m_LastReadTrackSector[2];
+	int m_LastReadTrackSector[2];
 };
 
 class Disk2InterfaceCard : public Card

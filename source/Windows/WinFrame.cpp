@@ -609,7 +609,9 @@ void Win32Frame::FrameDrawDiskStatus()
 
 void Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, int& activeFloppy)
 {
-	drive1Track = drive2Track = activeFloppy = 0;
+	drive1Track = -1;
+	drive2Track = -1;
+	activeFloppy = 0;
 	g_nSector[slot][0] = -1;
 	g_nSector[slot][1] = -1;
 
@@ -625,7 +627,7 @@ void Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, i
 
 void Win32Frame::CreateTrackSectorStrings(int track, int sector, std::string& strTrack, std::string& strSector)
 {
-	strTrack = StrFormat("%2d", track);
+	strTrack  = (track  < 0) ? "??" : StrFormat("%2d", track );
 	strSector = (sector < 0) ? "??" : StrFormat("%2d", sector);
 }
 
