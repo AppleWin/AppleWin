@@ -270,6 +270,8 @@ void FormatTrack::DecodeLatchNibble(BYTE floppylatch, bool bIsWrite, bool bIsSyn
 				BYTE addrPrologue = m_bAddressPrologueIsDOS3_2 ? (BYTE)kADDR_PROLOGUE_DOS3_2 : (BYTE)kADDR_PROLOGUE_DOS3_3;
 				m_strReadD5AAxxDetected = StrFormat("read D5AA%02X detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X %s",
 					addrPrologue, m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3], chk?"":"(bad)");
+				// NOTE: We can NOT: assert(m_VolTrkSecChk[2] <= 0xF);
+				// Since some disks have bogus sector numbers: PLASMA2-SYS.PO
 				if (!m_bSuppressReadD5AAxxDetected)
 				{
 					LOG_DISK("%s\r\n", m_strReadD5AAxxDetected.c_str());
