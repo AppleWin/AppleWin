@@ -168,7 +168,7 @@ public:
 	bool IsConditionForFullSpeed(void);
 	void NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error);
 	UINT GetCurrentFirmware(void) { return m_is13SectorFirmware ? 13 : 16; }
-	bool GetLastReadTrackSector(const int drive, int& track, int& sector);
+	void GetLastReadTrackSector(const int drive, int& track, int& sector);
 	int GetCurrentDrive(void);
 	int GetCurrentTrack(void);
 	float GetCurrentPhase(void);

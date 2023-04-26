@@ -101,7 +101,7 @@ bool Disk2InterfaceCard::GetEnhanceDisk(void) { return m_enhanceDisk; }
 void Disk2InterfaceCard::SetEnhanceDisk(bool bEnhanceDisk) { m_enhanceDisk = bEnhanceDisk; }
 
 // Returns true if Track, Sector is valid
-bool Disk2InterfaceCard::GetLastReadTrackSector(const int drive, int& track, int& sector)
+void Disk2InterfaceCard::GetLastReadTrackSector(const int drive, int& track, int& sector)
 {
 	Disk_Status_e status = GetDriveLightStatus(drive);
 	bool bValid = DISK_STATUS_OFF ? false : true;
