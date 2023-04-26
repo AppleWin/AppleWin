@@ -609,81 +609,18 @@ void Win32Frame::FrameDrawDiskStatus()
 
 void Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, int& activeFloppy)
 {
-	//        DOS3.3   ProDOS
-	// Slot   $B7E9    $BE3C(DEFSLT=Default Slot)      ; ref: Beneath Apple ProDOS 8-3
-	// Drive  $B7EA    $BE3D(DEFDRV=Default Drive)     ; ref: Beneath Apple ProDOS 8-3
-	// Track  $B7EC    LC1 $D356
-	// Sector $B7ED    LC1 $D357
-	// RWTS            LC1 $D300
-
 	drive1Track = drive2Track = activeFloppy = 0;
+	g_nSector[slot][0] = -1;
+	g_nSector[slot][1] = -1;
+
 	if (GetCardMgr().QuerySlot(slot) != CT_Disk2)
 		return;
 
 	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 	activeFloppy = disk2Card.GetCurrentDrive();
-	drive1Track = disk2Card.GetTrack(DRIVE_1);
-	drive2Track = disk2Card.GetTrack(DRIVE_2);
 
-	// Probe known OS's for default Slot/Track/Sector
-	const bool isProDOS = mem[0xBF00] == 0x4C;
-	bool isSectorValid = false;
-	int drive1Sector = -1, drive2Sector = -1;
-
-	// Try DOS3.3 Sector
-	if (!isProDOS)
-	{
-		const int nDOS33slot = mem[0xB7E9] / 16;
-		const int nDOS33track = mem[0xB7EC];
-		const int nDOS33sector = mem[0xB7ED];
-
-		if ((nDOS33slot == slot)
-			&& (nDOS33track >= 0 && nDOS33track < 40)
-			&& (nDOS33sector >= 0 && nDOS33sector < 16))
-		{
-#if _DEBUG && 0
-			if (nDOS33track != nDisk1Track)
-			{
-				LogOutput("\n\n\nWARNING: DOS33Track: %d (%02X) != nDisk1Track: %d (%02X)\n\n\n", nDOS33track, nDOS33track, nDisk1Track, nDisk1Track);
-			}
-#endif // _DEBUG
-
-			/**/ if (activeFloppy == 0) drive1Sector = nDOS33sector;
-			else if (activeFloppy == 1) drive2Sector = nDOS33sector;
-
-			isSectorValid = true;
-		}
-	}
-	else // isProDOS
-	{
-		// we can't just read from mem[ 0xD357 ] since it might be bank-switched from ROM
-		// and we need the Language Card RAM
-		const int nProDOSslot = mem[0xBE3C];
-		const int nProDOStrack = *MemGetMainPtr(0xC356); // LC1 $D356
-		const int nProDOSsector = *MemGetMainPtr(0xC357); // LC1 $D357
-
-		if ((nProDOSslot == slot)
-			&& (nProDOStrack >= 0 && nProDOStrack < 40)
-			&& (nProDOSsector >= 0 && nProDOSsector < 16))
-		{
-			/**/ if (activeFloppy == 0) drive1Sector = nProDOSsector;
-			else if (activeFloppy == 1) drive2Sector = nProDOSsector;
-
-			isSectorValid = true;
-		}
-	}
-
-	// Preserve sector so don't get "??" when switching drives, eg. if using COPYA to copy from drive-1 to drive-2
-	if (isSectorValid)
-	{
-		if (activeFloppy == 0) g_nSector[slot][0] = drive1Sector;
-		else                   g_nSector[slot][1] = drive2Sector;
-	}
-	else
-	{
-		if (activeFloppy == 0) g_nSector[slot][0] = -1;
-		else                   g_nSector[slot][1] = -1;
-	}
+	disk2Card.GetLastReadTrackSector(0, drive1Track, g_nSector[slot][0]);
+	disk2Card.GetLastReadTrackSector(1, drive2Track, g_nSector[slot][1]);
 }
 
 void Win32Frame::CreateTrackSectorStrings(int track, int sector, std::string& strTrack, std::string& strSector)

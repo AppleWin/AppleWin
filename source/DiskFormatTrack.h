@@ -45,6 +45,7 @@ public:
 	std::string GetReadD5AAxxDetectedString(void) { std::string tmp = m_strReadD5AAxxDetected; m_strReadD5AAxxDetected = ""; return tmp; }
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
+	BYTE* GetLastReadVolumeTrackSectorChecksum() { return m_VolTrkSecChk; }
 
 private:
 	void UpdateOnWriteLatch(UINT uSpinNibbleCount, const class FloppyDisk* const pFloppy);
