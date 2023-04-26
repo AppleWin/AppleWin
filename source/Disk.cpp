@@ -115,10 +115,17 @@ void Disk2InterfaceCard::GetLastReadTrackSector(const int drive, int& track, int
 
 	    track    = m_floppyDrive[drive].m_LastReadTrackSector[0];
 	int physical = m_floppyDrive[drive].m_LastReadTrackSector[1];
-	assert(track <= 80);
 
-	const int PhysicalToLogicalSectorNumber[16] = {0x00,0x07,0x0E,0x06,0x0D,0x05,0x0C,0x04, 0x0B,0x03,0x0A,0x02,0x09,0x01,0x08,0x0F};
-	sector = PhysicalToLogicalSectorNumber[physical];
+	if (physical >= 0)
+	{
+		const int PhysicalToLogicalSectorNumber[16] = {0x00,0x07,0x0E,0x06,0x0D,0x05,0x0C,0x04, 0x0B,0x03,0x0A,0x02,0x09,0x01,0x08,0x0F};
+		sector = PhysicalToLogicalSectorNumber[physical];
+	}
+	else
+		sector = -1;
+
+	assert(track <= 80);
+	assert(physical <= 16);
 }
 
 int Disk2InterfaceCard::GetCurrentDrive(void)  { return m_currDrive; }
