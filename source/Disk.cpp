@@ -1050,7 +1050,10 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 		ReadTrack(m_currDrive, uExecutedCycles);
 
 	if (!pFloppy->m_trackimagedata)
+	{
+		pDrive->SetLastReadTrackSector(0);
 		return UpdateLatchForEmptyDrive(pDrive);
+	}
 
 	// Improve precision of "authentic" drive mode - GH#125
 	UINT uSpinNibbleCount = 0;

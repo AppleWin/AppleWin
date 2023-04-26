@@ -115,14 +115,25 @@ public:
 		m_headWindow = 0;
 		m_spinning = 0;
 		m_writelight = 0;
+		m_LastReadTrackSector[0] = -1;
+		m_LastReadTrackSector[1] = -1;
 		m_disk.clear();
 	}
 
 	// NOTE: Managed by Disk2InterfaceCard::ReadWrite()
 	void SetLastReadTrackSector(BYTE* pVolumeTrackSectorChecksum)
 	{
-		m_LastReadTrackSector[0] = pVolumeTrackSectorChecksum[1];
-		m_LastReadTrackSector[1] = pVolumeTrackSectorChecksum[2];
+		if (pVolumeTrackSectorChecksum)
+		{
+			m_LastReadTrackSector[0] = pVolumeTrackSectorChecksum[1];
+			m_LastReadTrackSector[1] = pVolumeTrackSectorChecksum[2];
+		}
+		else
+		{
+			m_LastReadTrackSector[0] = -1;
+			m_LastReadTrackSector[1] = -1;
+		}
+		assert(m_LastReadTrackSector[0] <= 80);
 	}
 
 public:
