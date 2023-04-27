@@ -1,4 +1,10 @@
 /*
+2.9.1.21 Added: DISK INFO [#]
+    You can now config and see a 1 or 2 line DISK INFO line.
+    To configure 1 or 2 line respectively use:
+      DISK INFO 1
+      DISK INFO 2
+2.9.1.20 Added: 1 line status to DISK INFO
 2.9.1.19 Added: QoL to DISK INFO.
     Colorized numbers and status to improve readability.
     Also shows the .WOZ current shift register.

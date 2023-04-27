@@ -53,7 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,19);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,21);
 
 
 // Public _________________________________________________________________________________________
@@ -3638,6 +3638,7 @@ Update_t CmdFlag (int nArgs)
 // Usage:
 //     DISK SLOT [#]                                 // Show [or set] the current slot of the Disk II I/F card (for all other cmds to act on)
 //     DISK INFO                                     // Info for current drive
+//     DISK INFO [#]                                 // Set 1 or 2 line info. output
 //     DISK # EJECT                                  // Unmount disk
 //     DISK # PROTECT #                              // Write-protect disk on/off
 //     DISK # "<filename>"                           // Mount filename as floppy disk
@@ -3685,6 +3686,15 @@ Update_t CmdDisk (int nArgs)
 	{
 		if (nArgs > 2)
 			return HelpLastCommand();
+
+		if (nArgs == 2)
+		{
+			int nLines = g_aArgs[ 2 ].nValue;
+			if ((nLines == 1) || (nLines == 2))
+				g_bConfigDiskOneLine = (nLines == 1);
+			else
+				return ConsoleDisplayErrorFormat("Can only display 1 or 2 disk status line.");
+		}
 
 		Disk_Status_e eDiskState;
 		LPCTSTR       sDiskState = diskCard.GetCurrentState(eDiskState);
