@@ -3632,6 +3632,7 @@ Update_t CmdFlag (int nArgs)
 
 
 // Disk ___________________________________________________________________________________________
+	bool gbDebuggerDiskInfoOneLine = false; // TODO: CONFIG DISK 1
 
 // Usage:
 //     DISK SLOT [#]                                 // Show [or set] the current slot of the Disk II I/F card (for all other cmds to act on)
@@ -3688,25 +3689,73 @@ Update_t CmdDisk (int nArgs)
 		LPCTSTR       sDiskState = diskCard.GetCurrentState(eDiskState);
 		BYTE          nShiftReg  = diskCard.GetCurrentShiftReg();
 
-		ConsolePrintFormat(
+		static const char *aDiskStateMiniDesc[NUM_DISK_STATUS] =
+		{
+			 "Off"  // DISK_STATUS_OFF
+			,"R"    // DISK_STATUS_READ
+			,"W"    // DISK_STATUS_WRITE
+			,"WP"   // DISK_STATUS_PROT
+			,"n/a"  // DISK_STATUS_EMPTY
+			,"Spin" // DISK_STATUS_SPIN
+		};
+
+		static const char *aDiskStatusCHC[NUM_DISK_STATUS] =
+		{
+			 CHC_INFO     "%s" CHC_DEFAULT  "    " CHC_NUM_HEX "    " // DISK_STATUS_OFF
+			,CHC_COMMAND  "%s" CHC_DEFAULT  " << " CHC_NUM_HEX "%02X" // DISK_STATUS_READ
+			,CHC_ERROR    "%s" CHC_DEFAULT  " >> " CHC_NUM_HEX "%02X" // DISK_STATUS_WRITE
+			,CHC_WARNING  "%s" CHC_DEFAULT  " >| " CHC_NUM_HEX "%02X" // DISK_STATUS_PROT
+			,CHC_INFO     "%s" CHC_DEFAULT "     " CHC_NUM_HEX "    " // DISK_STATUS_EMPTY
+			,CHC_INFO     "%s" CHC_DEFAULT "     " CHC_NUM_HEX "    " // DISK_STATUS_SPIN
+		};
+
+		std::string Format(
 			/*CHC_DEFAULT*/ "FW"           CHC_NUM_DEC "%2d"  CHC_ARG_SEP ":"
 			  CHC_DEFAULT   " D"           CHC_NUM_DEC "%d"
 			  CHC_DEFAULT   " T$"          CHC_NUM_HEX "%s"   CHC_ARG_SEP ","
 			  CHC_DEFAULT   " Phase $"     CHC_NUM_HEX "%s"   CHC_ARG_SEP ","
 			  CHC_DEFAULT   " bitOffset $" CHC_ADDRESS "%04X" CHC_ARG_SEP ","
-			  CHC_DEFAULT   " Cycles "     CHC_NUM_DEC "%.2f" CHC_ARG_SEP ",",
-			diskCard.GetCurrentFirmware(),
-			diskCard.GetCurrentDrive() + 1,
-			diskCard.GetCurrentTrackString().c_str(),
-			diskCard.GetCurrentPhaseString().c_str(),
-			diskCard.GetCurrentBitOffset(),
-			diskCard.GetCurrentExtraCycles()
+			  CHC_DEFAULT   " Cycles "     CHC_NUM_DEC "%.2f" CHC_ARG_SEP ","
 		);
 
-		if      (eDiskState == DISK_STATUS_READ ) ConsolePrintFormat( CHC_COMMAND " %s" CHC_DEFAULT  " << " CHC_NUM_HEX "%02X", sDiskState, nShiftReg );
-		else if (eDiskState == DISK_STATUS_WRITE) ConsolePrintFormat( CHC_ERROR   " %s" CHC_DEFAULT  " >> " CHC_NUM_HEX "%02X", sDiskState, nShiftReg );
-		else if (eDiskState == DISK_STATUS_PROT ) ConsolePrintFormat( CHC_WARNING " %s" CHC_DEFAULT  " >| " CHC_NUM_HEX "%02X", sDiskState, nShiftReg );
-		else /*                                */ ConsolePrintFormat( CHC_INFO    " %s"                                       , sDiskState            );
+		std::string Format2(gbDebuggerDiskInfoOneLine ? " " : "  "); // Same line? 1 space after comma
+		Format2 += aDiskStatusCHC[eDiskState];                       // Two lines? Extra indent for readability
+
+		if (gbDebuggerDiskInfoOneLine)
+		{
+			sDiskState = aDiskStateMiniDesc[eDiskState];
+			Format += Format2;
+
+			ConsolePrintFormat(
+				Format.c_str(),
+				diskCard.GetCurrentFirmware(),
+				diskCard.GetCurrentDrive() + 1,
+				diskCard.GetCurrentTrackString().c_str(),
+				diskCard.GetCurrentPhaseString().c_str(),
+				diskCard.GetCurrentBitOffset(),
+				diskCard.GetCurrentExtraCycles(),
+				sDiskState,
+				nShiftReg
+			);
+		}
+		else
+		{
+			ConsolePrintFormat(
+				Format.c_str(),
+				diskCard.GetCurrentFirmware(),
+				diskCard.GetCurrentDrive() + 1,
+				diskCard.GetCurrentTrackString().c_str(),
+				diskCard.GetCurrentPhaseString().c_str(),
+				diskCard.GetCurrentBitOffset(),
+				diskCard.GetCurrentExtraCycles()
+			);
+
+			ConsolePrintFormat(
+				Format2.c_str(),
+				sDiskState,
+				nShiftReg
+			);
+		}
 
 		return ConsoleUpdate();
 	}
