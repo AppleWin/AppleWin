@@ -3730,7 +3730,7 @@ Update_t CmdDisk (int nArgs)
 		);
 
 		std::string Format2(g_bConfigDiskOneLine ? " " : "\n  "); // Same line? 1 space after comma
-		Format2 += aDiskStatusCHC[eDiskState];                         // Two lines? Extra indent for readability
+		Format2 += aDiskStatusCHC[eDiskState];                    // Two lines? Extra indent for readability
 
 		if (g_bConfigDiskOneLine)
 		{
