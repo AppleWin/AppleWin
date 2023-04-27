@@ -137,20 +137,17 @@ LPCTSTR Disk2InterfaceCard::GetCurrentState(Disk_Status_e& eDiskState_)
 	if (m_floppyDrive[m_currDrive].m_disk.m_imagehandle == NULL)
 	{
 		eDiskState_ = DISK_STATUS_EMPTY;
-		return "Empty";
 	}
-
+	else
 	if (!m_floppyMotorOn)
 	{
 		if (m_floppyDrive[m_currDrive].m_spinning > 0)
 		{
 			eDiskState_ = DISK_STATUS_SPIN;
-			return "Off (spinning)";
 		}
 		else
 		{
 			eDiskState_ = DISK_STATUS_OFF;
-			return "Off";
 		}
 	}
 	else if (m_seqFunc.writeMode)
@@ -158,12 +155,10 @@ LPCTSTR Disk2InterfaceCard::GetCurrentState(Disk_Status_e& eDiskState_)
 		if (m_floppyDrive[m_currDrive].m_disk.m_bWriteProtected)
 		{
 			eDiskState_ = DISK_STATUS_PROT;
-			return "Writing (write protected)";
 		}
 		else
 		{
 			eDiskState_ = DISK_STATUS_WRITE;
-			return "Writing";
 		}
 	}
 	else
@@ -178,9 +173,19 @@ LPCTSTR Disk2InterfaceCard::GetCurrentState(Disk_Status_e& eDiskState_)
 		else*/
 		{
 			eDiskState_ = DISK_STATUS_READ;
-			return "Reading";
 		}
 	}
+
+	static const char *aDiskStateLongDesc[NUM_DISK_STATUS] =
+	{
+		 "Off"                       // DISK_STATUS_OFF
+		,"Reading"                   // DISK_STATUS_READ
+		,"Writing"                   // DISK_STATUS_WRITE
+		,"Writing (write protected)" // DISK_STATUS_PROT
+		,"Empty"                     // DISK_STATUS_EMPTY
+		,"Off (spinning)"            // DISK_STATUS_SPIN
+	};
+	return aDiskStateLongDesc[eDiskState_];
 }
 
 //===========================================================================
