@@ -217,6 +217,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int   g_iConfigDisasmBranchType    = DISASM_BRANCH_FANCY;
 	int   g_bConfigDisasmImmediateChar = DISASM_IMMED_BOTH;
 	int   g_iConfigDisasmScroll        = 3; // favor 3 byte opcodes
+// Config - Disk
+	bool  g_bConfigDiskOneLine = false; // DISK INFO [#]
 // Config - Info
 	bool  g_bConfigInfoTargetPointer   = false;
 
@@ -3632,7 +3634,6 @@ Update_t CmdFlag (int nArgs)
 
 
 // Disk ___________________________________________________________________________________________
-	bool gbDebuggerDiskInfoOneLine = false; // TODO: CONFIG DISK 1
 
 // Usage:
 //     DISK SLOT [#]                                 // Show [or set] the current slot of the Disk II I/F card (for all other cmds to act on)
@@ -3718,44 +3719,27 @@ Update_t CmdDisk (int nArgs)
 			  CHC_DEFAULT   " Cycles "     CHC_NUM_DEC "%.2f" CHC_ARG_SEP ","
 		);
 
-		std::string Format2(gbDebuggerDiskInfoOneLine ? " " : "  "); // Same line? 1 space after comma
-		Format2 += aDiskStatusCHC[eDiskState];                       // Two lines? Extra indent for readability
+		std::string Format2(g_bConfigDiskOneLine ? " " : "\n  "); // Same line? 1 space after comma
+		Format2 += aDiskStatusCHC[eDiskState];                         // Two lines? Extra indent for readability
 
-		if (gbDebuggerDiskInfoOneLine)
+		if (g_bConfigDiskOneLine)
 		{
 			sDiskState = aDiskStateMiniDesc[eDiskState];
-			Format += Format2;
-
-			ConsolePrintFormat(
-				Format.c_str(),
-				diskCard.GetCurrentFirmware(),
-				diskCard.GetCurrentDrive() + 1,
-				diskCard.GetCurrentTrackString().c_str(),
-				diskCard.GetCurrentPhaseString().c_str(),
-				diskCard.GetCurrentBitOffset(),
-				diskCard.GetCurrentExtraCycles(),
-				sDiskState,
-				nShiftReg
-			);
 		}
-		else
-		{
-			ConsolePrintFormat(
-				Format.c_str(),
-				diskCard.GetCurrentFirmware(),
-				diskCard.GetCurrentDrive() + 1,
-				diskCard.GetCurrentTrackString().c_str(),
-				diskCard.GetCurrentPhaseString().c_str(),
-				diskCard.GetCurrentBitOffset(),
-				diskCard.GetCurrentExtraCycles()
-			);
 
-			ConsolePrintFormat(
-				Format2.c_str(),
-				sDiskState,
-				nShiftReg
-			);
-		}
+		Format += Format2;
+
+		ConsolePrintFormat(
+			Format.c_str(),
+			diskCard.GetCurrentFirmware(),
+			diskCard.GetCurrentDrive() + 1,
+			diskCard.GetCurrentTrackString().c_str(),
+			diskCard.GetCurrentPhaseString().c_str(),
+			diskCard.GetCurrentBitOffset(),
+			diskCard.GetCurrentExtraCycles(),
+			sDiskState,
+			nShiftReg
+		);
 
 		return ConsoleUpdate();
 	}
