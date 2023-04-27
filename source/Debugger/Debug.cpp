@@ -3685,7 +3685,7 @@ Update_t CmdDisk (int nArgs)
 			return HelpLastCommand();
 
 		Disk_Status_e eDiskState;
-		LPCTSTR       sDiskState = diskCard.GetCurrentState(&eDiskState);
+		LPCTSTR       sDiskState = diskCard.GetCurrentState(eDiskState);
 		BYTE	      nShiftReg  = diskCard.GetCurrentShiftReg();
 
 		ConsolePrintFormat(

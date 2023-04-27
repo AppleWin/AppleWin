@@ -132,12 +132,11 @@ std::string Disk2InterfaceCard::GetCurrentPhaseString(void)
 	return FormatIntFracString(m_floppyDrive[m_currDrive].m_phasePrecise, true);
 }
 
-LPCTSTR Disk2InterfaceCard::GetCurrentState(Disk_Status_e *pDiskState)
+LPCTSTR Disk2InterfaceCard::GetCurrentState(Disk_Status_e& eDiskState_)
 {
 	if (m_floppyDrive[m_currDrive].m_disk.m_imagehandle == NULL)
 	{
-		if (pDiskState)
-			*pDiskState = DISK_STATUS_EMPTY;
+		eDiskState_ = DISK_STATUS_EMPTY;
 		return "Empty";
 	}
 
@@ -145,14 +144,12 @@ LPCTSTR Disk2InterfaceCard::GetCurrentState(Disk_Status_e *pDiskState)
 	{
 		if (m_floppyDrive[m_currDrive].m_spinning > 0)
 		{
-			if (pDiskState)
-				*pDiskState = DISK_STATUS_SPIN;
+			eDiskState_ = DISK_STATUS_SPIN;
 			return "Off (spinning)";
 		}
 		else
 		{
-			if (pDiskState)
-				*pDiskState = DISK_STATUS_OFF;
+			eDiskState_ = DISK_STATUS_OFF;
 			return "Off";
 		}
 	}
@@ -160,14 +157,12 @@ LPCTSTR Disk2InterfaceCard::GetCurrentState(Disk_Status_e *pDiskState)
 	{
 		if (m_floppyDrive[m_currDrive].m_disk.m_bWriteProtected)
 		{
-			if (pDiskState)
-				*pDiskState = DISK_STATUS_PROT;
+			eDiskState_ = DISK_STATUS_PROT;
 			return "Writing (write protected)";
 		}
 		else
 		{
-			if (pDiskState)
-				*pDiskState = DISK_STATUS_WRITE;
+			eDiskState_ = DISK_STATUS_WRITE;
 			return "Writing";
 		}
 	}
@@ -182,8 +177,7 @@ LPCTSTR Disk2InterfaceCard::GetCurrentState(Disk_Status_e *pDiskState)
 		}
 		else*/
 		{
-			if (pDiskState)
-				*pDiskState = DISK_STATUS_READ;
+			eDiskState_ = DISK_STATUS_READ;
 			return "Reading";
 		}
 	}
