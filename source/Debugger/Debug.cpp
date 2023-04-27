@@ -3640,7 +3640,7 @@ Update_t CmdFlag (int nArgs)
 //     DISK # PROTECT #                              // Write-protect disk on/off
 //     DISK # "<filename>"                           // Mount filename as floppy disk
 // TODO:
-//     DISK # READ  <Track> <Sector> <NumSec> <Addr>	 // Read Track/Sector(s)
+//     DISK # READ  <Track> <Sector> <NumSec> <Addr>     // Read Track/Sector(s)
 //     DISK # READ  <Track> <Sector> Addr:Addr           // Read Track/Sector(s)
 //     DISK # WRITE <Track> <Sector> Addr:Addr           // Write Track/Sector(s)
 // Examples:
@@ -3686,7 +3686,7 @@ Update_t CmdDisk (int nArgs)
 
 		Disk_Status_e eDiskState;
 		LPCTSTR       sDiskState = diskCard.GetCurrentState(eDiskState);
-		BYTE	      nShiftReg  = diskCard.GetCurrentShiftReg();
+		BYTE          nShiftReg  = diskCard.GetCurrentShiftReg();
 
 		ConsolePrintFormat(
 			/*CHC_DEFAULT*/ "FW"           CHC_NUM_DEC "%2d"  CHC_ARG_SEP ":"
