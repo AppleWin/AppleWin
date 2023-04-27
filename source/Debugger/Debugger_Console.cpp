@@ -140,7 +140,7 @@ void ConsolePrint ( const char * pText )
 
 	while ((y < MAX_PUSH_HEIGHT) && (c = *pSrc))
 	{
-		if ((c == '\n') || (x >= (CONSOLE_WIDTH - 1)))
+		if ((c == '\n') || (x >= g_nConsoleDisplayWidth))
 		{
 			*pDst = 0;
 			x = 0;
@@ -158,6 +158,9 @@ void ConsolePrint ( const char * pText )
 				g_nConsoleBuffer++;
 			}
 			pDst = & g_aConsoleBuffer[ g_nConsoleBuffer ][ 0 ];
+
+			if (c == '\n')
+				pSrc++;
 		}
 		else
 		{
