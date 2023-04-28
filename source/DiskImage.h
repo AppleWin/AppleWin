@@ -45,12 +45,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	enum Disk_Status_e
 	{
-		DISK_STATUS_OFF  ,
+		DISK_STATUS_OFF  , // motor is off
 		DISK_STATUS_READ ,
 		DISK_STATUS_WRITE,
 		DISK_STATUS_PROT , // NOTE: GetDriveLightStatus() and GetCurrentState() return slightly different states
 		DISK_STATUS_EMPTY, // See: GetCurrentState(); no disk image mounted
-		DISK_STATUS_SPIN , // See: GetCurrentState(), not reading, not writing
+		DISK_STATUS_SPIN , // See: GetCurrentState(), motor has been turned off, spinning before stopping
 		NUM_DISK_STATUS
 	};
 

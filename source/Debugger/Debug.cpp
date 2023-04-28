@@ -53,7 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,21);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,20);
 
 
 // Public _________________________________________________________________________________________
@@ -217,8 +217,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	int   g_iConfigDisasmBranchType    = DISASM_BRANCH_FANCY;
 	int   g_bConfigDisasmImmediateChar = DISASM_IMMED_BOTH;
 	int   g_iConfigDisasmScroll        = 3; // favor 3 byte opcodes
-// Config - Disk
-	bool  g_bConfigDiskOneLine = false; // DISK INFO [#]
 // Config - Info
 	bool  g_bConfigInfoTargetPointer   = false;
 
@@ -3638,7 +3636,6 @@ Update_t CmdFlag (int nArgs)
 // Usage:
 //     DISK SLOT [#]                                 // Show [or set] the current slot of the Disk II I/F card (for all other cmds to act on)
 //     DISK INFO                                     // Info for current drive
-//     DISK INFO [#]                                 // Set 1 or 2 line info. output
 //     DISK # EJECT                                  // Unmount disk
 //     DISK # PROTECT #                              // Write-protect disk on/off
 //     DISK # "<filename>"                           // Mount filename as floppy disk
@@ -3684,31 +3681,12 @@ Update_t CmdDisk (int nArgs)
 
 	if (iParam == PARAM_DISK_INFO)
 	{
-		if (nArgs > 2)
+		if (nArgs > 1)
 			return HelpLastCommand();
-
-		if (nArgs == 2)
-		{
-			int nLines = g_aArgs[ 2 ].nValue;
-			if ((nLines == 1) || (nLines == 2))
-				g_bConfigDiskOneLine = (nLines == 1);
-			else
-				return ConsoleDisplayErrorFormat("Can only display 1 or 2 disk status line.");
-		}
 
 		Disk_Status_e eDiskState;
 		LPCTSTR       sDiskState = diskCard.GetCurrentState(eDiskState);
 		BYTE          nShiftReg  = diskCard.GetCurrentShiftReg();
-
-		static const char *aDiskStateMiniDesc[NUM_DISK_STATUS] =
-		{
-			 "Off"  // DISK_STATUS_OFF
-			,"R"    // DISK_STATUS_READ
-			,"W"    // DISK_STATUS_WRITE
-			,"WP"   // DISK_STATUS_PROT
-			,"n/a"  // DISK_STATUS_EMPTY
-			,"Spin" // DISK_STATUS_SPIN
-		};
 
 		static const char *aDiskStatusCHC[NUM_DISK_STATUS] =
 		{
@@ -3726,18 +3704,9 @@ Update_t CmdDisk (int nArgs)
 			  CHC_DEFAULT   " T$"          CHC_NUM_HEX "%s"   CHC_ARG_SEP ","
 			  CHC_DEFAULT   " Phase $"     CHC_NUM_HEX "%s"   CHC_ARG_SEP ","
 			  CHC_DEFAULT   " bitOffset $" CHC_ADDRESS "%04X" CHC_ARG_SEP ","
-			  CHC_DEFAULT   " Cycles "     CHC_NUM_DEC "%.2f" CHC_ARG_SEP ","
+			  CHC_DEFAULT   " Cycles "     CHC_NUM_DEC "%.2f" CHC_ARG_SEP ", "
 		);
-
-		std::string Format2(g_bConfigDiskOneLine ? " " : "\n  "); // Same line? 1 space after comma
-		Format2 += aDiskStatusCHC[eDiskState];                    // Two lines? Extra indent for readability
-
-		if (g_bConfigDiskOneLine)
-		{
-			sDiskState = aDiskStateMiniDesc[eDiskState];
-		}
-
-		Format += Format2;
+		Format += aDiskStatusCHC[eDiskState];
 
 		ConsolePrintFormat(
 			Format.c_str(),

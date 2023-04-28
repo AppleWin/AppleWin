@@ -176,16 +176,17 @@ LPCTSTR Disk2InterfaceCard::GetCurrentState(Disk_Status_e& eDiskState_)
 		}
 	}
 
-	static const char *aDiskStateLongDesc[NUM_DISK_STATUS] =
+	static const char *aDiskStateMiniDesc[NUM_DISK_STATUS] =
 	{
-		 "Off"                       // DISK_STATUS_OFF
-		,"Reading"                   // DISK_STATUS_READ
-		,"Writing"                   // DISK_STATUS_WRITE
-		,"Writing (write protected)" // DISK_STATUS_PROT
-		,"Empty"                     // DISK_STATUS_EMPTY
-		,"Off (spinning)"            // DISK_STATUS_SPIN
+		 "Off"  // DISK_STATUS_OFF
+		,"R"    // DISK_STATUS_READ
+		,"W"    // DISK_STATUS_WRITE
+		,"WP"   // DISK_STATUS_PROT
+		,"n/a"  // DISK_STATUS_EMPTY
+		,"Spin" // DISK_STATUS_SPIN
 	};
-	return aDiskStateLongDesc[eDiskState_];
+
+	return aDiskStateMiniDesc[eDiskState_];
 }
 
 //===========================================================================
