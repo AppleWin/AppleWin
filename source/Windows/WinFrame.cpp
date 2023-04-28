@@ -70,7 +70,7 @@ static const DWORD g_aDiskFullScreenColorsLED[ NUM_DISK_STATUS ] =
 	RGB(255,  0,  0), // DISK_STATUS_WRITE RED
 	RGB(255,128,  0), // DISK_STATUS_PROT  ORANGE
 	RGB(  0,  0,255), // DISK_STATUS_EMPTY -blue-
-	RGB(  0,1280,128)  // DISK_STATUS_SPIN  -cyan-
+	RGB(  0,128,128)  // DISK_STATUS_SPIN  -cyan-
 };
 
 void Win32Frame::SetAltEnterToggleFullScreen(bool mode)
