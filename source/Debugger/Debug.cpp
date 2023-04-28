@@ -53,7 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,18);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,20);
 
 
 // Public _________________________________________________________________________________________
@@ -3640,7 +3640,7 @@ Update_t CmdFlag (int nArgs)
 //     DISK # PROTECT #                              // Write-protect disk on/off
 //     DISK # "<filename>"                           // Mount filename as floppy disk
 // TODO:
-//     DISK # READ  <Track> <Sector> <NumSec> <Addr>	 // Read Track/Sector(s)
+//     DISK # READ  <Track> <Sector> <NumSec> <Addr>     // Read Track/Sector(s)
 //     DISK # READ  <Track> <Sector> Addr:Addr           // Read Track/Sector(s)
 //     DISK # WRITE <Track> <Sector> Addr:Addr           // Write Track/Sector(s)
 // Examples:
@@ -3681,17 +3681,43 @@ Update_t CmdDisk (int nArgs)
 
 	if (iParam == PARAM_DISK_INFO)
 	{
-		if (nArgs > 2)
+		if (nArgs > 1)
 			return HelpLastCommand();
 
-		ConsoleBufferPushFormat("FW%2d: D%d at T$%s, phase $%s, bitOffset $%04X, extraCycles %.2f, %s",
+		Disk_Status_e eDiskState;
+		LPCTSTR       sDiskState = diskCard.GetCurrentState(eDiskState);
+		BYTE          nShiftReg  = diskCard.GetCurrentShiftReg();
+
+		static const char *aDiskStatusCHC[NUM_DISK_STATUS] =
+		{
+			 CHC_INFO     "%s" CHC_DEFAULT  "    " CHC_NUM_HEX "    " // DISK_STATUS_OFF
+			,CHC_COMMAND  "%s" CHC_DEFAULT  " << " CHC_NUM_HEX "%02X" // DISK_STATUS_READ
+			,CHC_ERROR    "%s" CHC_DEFAULT  " >> " CHC_NUM_HEX "%02X" // DISK_STATUS_WRITE
+			,CHC_WARNING  "%s" CHC_DEFAULT  " >| " CHC_NUM_HEX "%02X" // DISK_STATUS_PROT
+			,CHC_INFO     "%s" CHC_DEFAULT "     " CHC_NUM_HEX "    " // DISK_STATUS_EMPTY
+			,CHC_INFO     "%s" CHC_DEFAULT "     " CHC_NUM_HEX "    " // DISK_STATUS_SPIN
+		};
+
+		std::string Format(
+			/*CHC_DEFAULT*/ "FW"           CHC_NUM_DEC "%2d"  CHC_ARG_SEP ":"
+			  CHC_DEFAULT   " D"           CHC_NUM_DEC "%d"
+			  CHC_DEFAULT   " T$"          CHC_NUM_HEX "%s"   CHC_ARG_SEP ","
+			  CHC_DEFAULT   " Phase $"     CHC_NUM_HEX "%s"   CHC_ARG_SEP ","
+			  CHC_DEFAULT   " bitOffset $" CHC_ADDRESS "%04X" CHC_ARG_SEP ","
+			  CHC_DEFAULT   " Cycles "     CHC_NUM_DEC "%.2f" CHC_ARG_SEP ", "
+		);
+		Format += aDiskStatusCHC[eDiskState];
+
+		ConsolePrintFormat(
+			Format.c_str(),
 			diskCard.GetCurrentFirmware(),
 			diskCard.GetCurrentDrive() + 1,
 			diskCard.GetCurrentTrackString().c_str(),
 			diskCard.GetCurrentPhaseString().c_str(),
 			diskCard.GetCurrentBitOffset(),
 			diskCard.GetCurrentExtraCycles(),
-			diskCard.GetCurrentState()
+			sDiskState,
+			nShiftReg
 		);
 
 		return ConsoleUpdate();

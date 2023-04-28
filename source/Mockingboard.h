@@ -69,6 +69,7 @@ public:
 	static std::string GetSnapshotCardName(void);
 	static std::string GetSnapshotCardNamePhasor(void);
 	static std::string GetSnapshotCardNameMegaAudio(void);
+	static std::string GetSnapshotCardNameSDMusic(void);
 
 private:
 	enum MockingboardUnitState_e { AY_NOP0, AY_NOP1, AY_INACTIVE, AY_READ, AY_NOP4, AY_NOP5, AY_WRITE, AY_LATCH };
@@ -101,7 +102,7 @@ private:
 		}
 	};
 
-	void WriteToORB(BYTE subunit);
+	void WriteToORB(BYTE subunit, BYTE subunitForAY=0);
 	void AY8910_Write(BYTE subunit, BYTE ay, BYTE value);
 	void UpdateIFRandIRQ(MB_SUBUNIT* pMB, BYTE clr_mask, BYTE set_mask);
 
