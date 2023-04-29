@@ -281,7 +281,7 @@ void retro_run(void)
   ourGame->processInputEvents();
   ourGame->executeOneFrame();
   GetFrame().VideoPresentScreen();
-  const size_t ms = (1000 + 60 - 1) / 60; // round up
+  constexpr size_t ms = (1000 + ra2::Game::FPS - 1) / ra2::Game::FPS; // round up to 17ms
   ourGame->writeAudio(ms);
 }
 
