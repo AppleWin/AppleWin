@@ -12,7 +12,6 @@
 #include "Speaker.h"
 #include "CPU.h"
 #include "NTSC.h"
-#include "Utilities.h"
 #include "Interface.h"
 
 #include "linux/keyboard.h"
