@@ -33,7 +33,7 @@ public:
 	void SetVolume(DWORD volume, DWORD volumeMax);
 	void OutputToRiff(void) { m_outputToRiff = true; }
 	void SetEnableExtraCardTypes(bool enable) { m_enableExtraCardTypes = enable; }
-	bool GetEnableExtraCardTypes(void) { return m_enableExtraCardTypes; }
+	bool GetEnableExtraCardTypes(void);
 
 	void Destroy(void);
 	void Reset(const bool powerCycle)
@@ -52,6 +52,7 @@ private:
 	bool Init(void);
 	UINT GenerateAllSoundData(void);
 	void MixAllAndCopyToRingBuffer(UINT nNumSamples);
+	bool IsMockingboardExtraCardType(UINT slot);
 
 	static const unsigned short NUM_MB_CHANNELS = 2;
 	static const DWORD SOUNDBUFFER_SIZE = MAX_SAMPLES * sizeof(short) * NUM_MB_CHANNELS;
