@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Memory.h"
 #include "Registry.h"
 #include "SaveState.h"
+#include "Windows/Win32Frame.h"
 #include "YamlHelper.h"
 
 #include "../resource/resource.h"

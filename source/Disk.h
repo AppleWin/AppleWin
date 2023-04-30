@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 #include "Card.h"
+#include "Log.h"
 #include "DiskLog.h"
 #include "DiskFormatTrack.h"
 #include "DiskImage.h"

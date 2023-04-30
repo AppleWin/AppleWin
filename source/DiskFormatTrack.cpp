@@ -46,6 +46,7 @@ Writes the following: (in 1 continuous write operation)
 
 #include "DiskFormatTrack.h"
 #include "Disk.h"
+#include "Interface.h" // GetFrame()
 #include "YamlHelper.h"
 
 // Occurs on these conditions:
