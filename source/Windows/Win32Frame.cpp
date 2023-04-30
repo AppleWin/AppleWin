@@ -62,6 +62,8 @@ Win32Frame::Win32Frame()
 
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
+		g_nTrack [slot][0] = -1;
+		g_nTrack [slot][1] = -1;
 		g_nSector[slot][0] = -1;
 		g_nSector[slot][1] = -1;
 	}
