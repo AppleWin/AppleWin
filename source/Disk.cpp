@@ -103,32 +103,30 @@ Disk2InterfaceCard::~Disk2InterfaceCard(void)
 bool Disk2InterfaceCard::GetEnhanceDisk(void) { return m_enhanceDisk; }
 void Disk2InterfaceCard::SetEnhanceDisk(bool bEnhanceDisk) { m_enhanceDisk = bEnhanceDisk; }
 
-// Returns true if Track, Sector is valid
-void Disk2InterfaceCard::GetLastReadTrackSector(const int drive, int& track, int& sector)
+void Disk2InterfaceCard::SetLastReadTrackSector(int track, int physical)
 {
-	// IsDriveEmpty()
-	FloppyDrive* pDrive = &m_floppyDrive[drive];
-	FloppyDisk* pFloppy = &pDrive->m_disk;
-	if (! pFloppy->m_imagehandle)
-	{
-		track = -1;
-		sector = -1;
-		return;
-	}
-
-	    track    = m_floppyDrive[drive].m_LastReadTrackSector[0];
-	int physical = m_floppyDrive[drive].m_LastReadTrackSector[1];
-
-	// Some disk images have bogus sector numbers
-	if ((physical >= 0) && (physical <= 15))
-	{
-		const int PhysicalToLogicalSectorNumber[16] = {0x00,0x07,0x0E,0x06,0x0D,0x05,0x0C,0x04, 0x0B,0x03,0x0A,0x02,0x09,0x01,0x08,0x0F};
-		sector = PhysicalToLogicalSectorNumber[physical];
-	}
-	else
-		sector = physical;
-
 	assert(track <= 80);
+
+	Win32Frame& WinFrame = Win32Frame::GetWin32Frame();
+
+	// IsDriveEmpty()
+	FloppyDrive* pDrive = &m_floppyDrive[m_currDrive];
+	FloppyDisk* pDisk = &pDrive->m_disk;
+	if (! pDisk->m_imagehandle)
+		WinFrame.SetLastReadTrackSector(m_slot, m_currDrive, -1, -1);
+	else
+	{
+		int sector = physical;
+
+		// Some disk images have bogus sector numbers
+		if ((physical >= 0) && (physical <= 15))
+		{
+			const int PhysicalToLogicalSectorNumber[16] = {0x00,0x07,0x0E,0x06,0x0D,0x05,0x0C,0x04, 0x0B,0x03,0x0A,0x02,0x09,0x01,0x08,0x0F};
+			sector = PhysicalToLogicalSectorNumber[physical];
+		}
+
+		WinFrame.SetLastReadTrackSector( m_slot, m_currDrive, track, sector );
+	}
 }
 
 int Disk2InterfaceCard::GetCurrentDrive(void)  { return m_currDrive; }
@@ -1061,7 +1059,7 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 	if (!pFloppy->m_trackimagedata)
 	{
-		pDrive->SetLastReadTrackSector(0);
+		SetLastReadTrackSector(-1,-1);
 		return UpdateLatchForEmptyDrive(pDrive);
 	}
 
@@ -1124,11 +1122,10 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 		{
 			LOG_DISK("read %04X = %02X\r\n", pFloppy->m_byte, m_floppyLatch);
 		}
-
-		m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
-		BYTE *VolTrkSecChk = m_formatTrack.GetLastReadVolumeTrackSectorChecksum();
-		pDrive->SetLastReadTrackSector(VolTrkSecChk);
 #endif
+
+		m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch); // GH #1215 Handle .DSK / .PO  VTSC (non .WOZ)
+
 	}
 	else if (!pFloppy->m_bWriteProtected) // && m_seqFunc.writeMode
 	{
@@ -1145,7 +1142,6 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 #endif
 
 		m_formatTrack.DecodeLatchNibbleWrite(m_floppyLatch, uSpinNibbleCount, pFloppy, bIsSyncFF);	// GH#125
-		pDrive->SetLastReadTrackSector(m_formatTrack.GetLastReadVolumeTrackSectorChecksum());
 
 #if LOG_DISK_NIBBLES_WRITE
   #if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
@@ -1162,10 +1158,6 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 	if (++pFloppy->m_byte >= pFloppy->m_nibbles)
 		pFloppy->m_byte = 0;
-
-	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
-	if ((pFloppy->m_byte & 0xFF) == 0)
-		GetFrame().FrameDrawDiskStatus();
 }
 
 //===========================================================================
@@ -1478,6 +1470,10 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 			}
 		}
 	} // for
+
+	// GH #1215 Handle. WOZ VTSC
+	if (m_floppyLatch & 0x80)
+		m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
 
 #if LOG_DISK_NIBBLES_READ
 	if (m_floppyLatch & 0x80)

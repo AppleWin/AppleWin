@@ -607,22 +607,17 @@ void Win32Frame::FrameDrawDiskStatus()
 	FrameDrawDiskStatus((HDC)0);
 }
 
-void Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, int& activeFloppy)
+int Win32Frame::GetActiveDrive(UINT slot)
 {
-	drive1Track = -1;
-	drive2Track = -1;
-	activeFloppy = 0;
-	g_nSector[slot][0] = -1;
-	g_nSector[slot][1] = -1;
+	int activeFloppy = 0;
 
 	if (GetCardMgr().QuerySlot(slot) != CT_Disk2)
-		return;
+		return activeFloppy;
 
 	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 	activeFloppy = disk2Card.GetCurrentDrive();
 
-	disk2Card.GetLastReadTrackSector(0, drive1Track, g_nSector[slot][0]);
-	disk2Card.GetLastReadTrackSector(1, drive2Track, g_nSector[slot][1]);
+	return activeFloppy;
 }
 
 void Win32Frame::CreateTrackSectorStrings(int track, int sector, std::string& strTrack, std::string& strSector)
@@ -677,8 +672,7 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 	if (g_windowMinimized)	// Prevent DC leaks when app window is minimised (GH#820)
 		return;
 
-	int nDrive1Track, nDrive2Track, nActiveFloppy;
-	GetTrackSector(SLOT6, nDrive1Track, nDrive2Track, nActiveFloppy);
+	int nSlot6ActiveFloppy = GetActiveDrive(SLOT6);
 
 	// Draw Track/Sector
 	FrameReleaseDC();
@@ -699,10 +693,10 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 			return;
 
 		std::string strTrackDrive1, strSectorDrive1, strTrackDrive2, strSectorDrive2;
-		CreateTrackSectorStrings(nDrive1Track, g_nSector[SLOT6][0], strTrackDrive1, strSectorDrive1);
-		CreateTrackSectorStrings(nDrive2Track, g_nSector[SLOT6][1], strTrackDrive2, strSectorDrive2);
+		CreateTrackSectorStrings(g_nTrack[SLOT6][0], g_nSector[SLOT6][0], strTrackDrive1, strSectorDrive1);
+		CreateTrackSectorStrings(g_nTrack[SLOT6][1], g_nSector[SLOT6][1], strTrackDrive2, strSectorDrive2);
 
-		std::string text = ( nActiveFloppy == 0 )
+		std::string text = (nSlot6ActiveFloppy == 0)
 			? StrFormat( "%s/%s    ", strTrackDrive1.c_str(), strSectorDrive1.c_str() )
 			: StrFormat( "%s/%s    ", strTrackDrive2.c_str(), strSectorDrive2.c_str() );
 
@@ -721,13 +715,24 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 		if (g_nViewportScale == 1 || !GetWindowedModeShowDiskiiStatus())
 			return;
 
-		DrawTrackSector(dc, SLOT6, nDrive1Track, g_nSector[SLOT6][0], nDrive2Track, g_nSector[SLOT6][1]);
+		DrawTrackSector(
+			dc,
+			SLOT6,
+			g_nTrack[SLOT6][0], g_nSector[SLOT6][0],
+			g_nTrack[SLOT6][1], g_nSector[SLOT6][1]
+		);
 
 		// Slot 5's Disk II
 		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 		{
-			GetTrackSector(SLOT5, nDrive1Track, nDrive2Track, nActiveFloppy);
-			DrawTrackSector(dc, SLOT5, nDrive1Track, g_nSector[SLOT5][0], nDrive2Track, g_nSector[SLOT5][1]);
+			//GetTrackSector(SLOT5, nDrive1Track, nDrive2Track, nActiveFloppy);
+			int nSlot5ActiveFloppy = GetActiveDrive(SLOT5);
+			DrawTrackSector(
+				dc,
+				SLOT5,
+				g_nTrack[SLOT5][0], g_nSector[SLOT5][0],
+				g_nTrack[SLOT5][1], g_nSector[SLOT5][1]
+			);
 		}
 	}
 }

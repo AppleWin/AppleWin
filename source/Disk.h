@@ -116,25 +116,7 @@ public:
 		m_headWindow = 0;
 		m_spinning = 0;
 		m_writelight = 0;
-		m_LastReadTrackSector[0] = -1;
-		m_LastReadTrackSector[1] = -1;
 		m_disk.clear();
-	}
-
-	// NOTE: Managed by Disk2InterfaceCard::ReadWrite()
-	void SetLastReadTrackSector(BYTE* pVolumeTrackSectorChecksum)
-	{
-		if (pVolumeTrackSectorChecksum)
-		{
-			m_LastReadTrackSector[0] = pVolumeTrackSectorChecksum[1];
-			m_LastReadTrackSector[1] = pVolumeTrackSectorChecksum[2];
-		}
-		else
-		{
-			m_LastReadTrackSector[0] = -1;
-			m_LastReadTrackSector[1] = -1;
-		}
-		assert(m_LastReadTrackSector[0] <= 80);
 	}
 
 public:
@@ -147,7 +129,6 @@ public:
 	DWORD m_spinning;
 	DWORD m_writelight;
 	FloppyDisk m_disk;
-	int m_LastReadTrackSector[2];
 };
 
 class Disk2InterfaceCard : public Card
@@ -180,7 +161,7 @@ public:
 	bool IsConditionForFullSpeed(void);
 	void NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error);
 	UINT GetCurrentFirmware(void) { return m_is13SectorFirmware ? 13 : 16; }
-	void GetLastReadTrackSector(const int drive, int& track, int& sector);
+	void SetLastReadTrackSector(int track, int sector);
 	int GetCurrentDrive(void);
 	int GetCurrentTrack(void);
 	float GetCurrentPhase(void);

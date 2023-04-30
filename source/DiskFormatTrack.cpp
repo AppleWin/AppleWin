@@ -264,15 +264,22 @@ void FormatTrack::DecodeLatchNibble(BYTE floppylatch, bool bIsWrite, bool bIsSyn
 			for (UINT i=0; i<4; i++)
 				m_VolTrkSecChk[i] = ((m_VolTrkSecChk4and4[i*2] & 0x55) << 1) | (m_VolTrkSecChk4and4[i*2+1] & 0x55);
 
-#if LOG_DISK_NIBBLES_READ
+			// GH #1215
+			m_pCard->SetLastReadTrackSector( m_VolTrkSecChk[1], m_VolTrkSecChk[2] );
+			GetFrame().FrameDrawDiskStatus();
+
+#if LOG_DISK_NIBBLES_ADDR
 			const bool chk = (m_VolTrkSecChk[0] ^ m_VolTrkSecChk[1] ^ m_VolTrkSecChk[2] ^ m_VolTrkSecChk[3]) == 0;
 			if (!bIsWrite)
 			{
 				BYTE addrPrologue = m_bAddressPrologueIsDOS3_2 ? (BYTE)kADDR_PROLOGUE_DOS3_2 : (BYTE)kADDR_PROLOGUE_DOS3_3;
 				m_strReadD5AAxxDetected = StrFormat("read D5AA%02X detected - Vol:%02X Trk:%02X Sec:%02X Chk:%02X %s",
 					addrPrologue, m_VolTrkSecChk[0], m_VolTrkSecChk[1], m_VolTrkSecChk[2], m_VolTrkSecChk[3], chk?"":"(bad)");
-				// NOTE: We can NOT: assert(m_VolTrkSecChk[2] <= 0xF);
-				// Since some disks have bogus sector numbers: PLASMA2-SYS.PO
+
+				// NOTE: We can NOT check for sector <= 15:
+				//    _ASSERT(m_VolTrkSecChk[2] <= 0xF);
+				// Since some disks have bogus sector numbers
+
 				if (!m_bSuppressReadD5AAxxDetected)
 				{
 					LOG_DISK("%s\r\n", m_strReadD5AAxxDetected.c_str());

@@ -82,6 +82,15 @@ public:
 
 	bool	g_bScrollLock_FullSpeed;
 
+	void SetLastReadTrackSector(UINT slot, int drive, int track, int sector)
+	{
+		assert((slot >= 0) && (slot <= 7));
+		assert((drive >= 0) && (drive <= 1));
+
+		g_nTrack [ slot ][ drive ] = track;
+		g_nSector[ slot ][ drive ] = sector;
+	}
+
 private:
 	static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName, LPVOID lpContext);
 	LRESULT WndProc(HWND   window, UINT   message, WPARAM wparam, LPARAM lparam);
@@ -93,7 +102,7 @@ private:
 
 	void Benchmark(void);
 	void DisplayLogo(void);
-	void GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, int& activeFloppy);
+	int  GetActiveDrive(UINT slot);
 	void CreateTrackSectorStrings(int track, int sector, std::string& strTrack, std::string& strSector);
 	void DrawTrackSector(HDC dc, UINT slot, int drive1Track, int drive1Sector, int drive2Track, int drive2Sector);
 	void FrameDrawDiskLEDS(HDC hdc);  // overloaded Win32 only, call via GetWin32Frame()
@@ -227,6 +236,7 @@ private:
 	const UINT yOffsetSlot5TrackInfo = D2FullUI::yOffsetSlot5TrackInfo;
 	const UINT yOffsetSlot5SectorInfo = D2FullUI::yOffsetSlot5SectorInfo;
 
+	int g_nTrack [NUM_SLOTS][2];
 	int g_nSector[NUM_SLOTS][2];
 	Disk_Status_e g_eStatusDrive1;
 	Disk_Status_e g_eStatusDrive2;
