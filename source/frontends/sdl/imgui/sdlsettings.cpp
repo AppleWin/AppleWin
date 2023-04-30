@@ -358,6 +358,11 @@ namespace sa2
               }
               ImGui::EndCombo();
             }
+            int ramWorksMemorySize = GetRamWorksMemorySize();
+            if (ImGui::SliderInt("RamWorks size", &ramWorksMemorySize, 1, kMaxExMemoryBanks))
+            {
+              SetRamWorksMemorySize(ramWorksMemorySize);
+            }
           }
 
           ImGui::Separator();

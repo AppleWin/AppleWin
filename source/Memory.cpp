@@ -362,6 +362,11 @@ void SetRamWorksMemorySize(UINT pages)
 	g_uMaxExPages = pages;
 }
 
+UINT GetRamWorksMemorySize()
+{
+	return g_uMaxExPages;
+}
+
 UINT GetRamWorksActiveBank(void)
 {
 	return g_uActiveBank;
@@ -1296,7 +1301,7 @@ void MemDestroy()
 	delete [] pCxRomPeripheral;
 
 #ifdef RAMWORKS
-	for (UINT i=1; i<g_uMaxExPages; i++)
+	for (UINT i=1; i<kMaxExMemoryBanks; i++)
 	{
 		if (RWpages[i])
 		{

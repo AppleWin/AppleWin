@@ -114,6 +114,7 @@ void	SetExpansionMemType(const SS_CARDTYPE type);
 SS_CARDTYPE GetCurrentExpansionMemType(void);
 
 void	SetRamWorksMemorySize(UINT pages);
+UINT	GetRamWorksMemorySize();
 UINT	GetRamWorksActiveBank(void);
 void	SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain=false);
 
