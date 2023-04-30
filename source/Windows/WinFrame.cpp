@@ -663,6 +663,8 @@ void Win32Frame::DrawTrackSector(HDC dc, UINT slot, int drive1Track, int drive1S
 
 // Feature Request #201 Show track status
 // https://github.com/AppleWin/AppleWin/issues/201
+// Over-hauled in #1215
+// https://github.com/AppleWin/AppleWin/issues/1215
 //===========================================================================
 void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 {
@@ -728,7 +730,6 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 		// Slot 5's Disk II
 		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 		{
-			//GetTrackSector(SLOT5, nDrive1Track, nDrive2Track, nActiveFloppy);
 			int nSlot5ActiveFloppy = GetActiveDrive(SLOT5);
 			DrawTrackSector(
 				dc,
