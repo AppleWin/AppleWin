@@ -1081,6 +1081,9 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 			if (pFloppy->m_byte >= pFloppy->m_nibbles)
 				pFloppy->m_byte -= pFloppy->m_nibbles;
 
+
+			m_formatTrack.Reset(); // GH #1215
+
 #if LOG_DISK_NIBBLES_SPIN
 			UINT uCompleteRevolutions = uSpinNibbleCount / pFloppy->m_nibbles;
 			LOG_DISK("spin: revs=%d, nibbles=%d\r\n", uCompleteRevolutions, uWrapOffset);
