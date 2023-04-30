@@ -202,11 +202,11 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 // EG, to do a "AY1 LATCH", then write 6522 ORB with b4:3=%01, b2:0=%111
 //
 
-void MockingboardCard::WriteToORB(BYTE subunit)
+void MockingboardCard::WriteToORB(BYTE subunit, BYTE subunitForAY/*=0*/)
 {
 	BYTE value = m_MBSubUnit[subunit].sy6522.Read(SY6522::rORB);
 
-	if ((QueryType() == CT_MockingboardC || QueryType() == CT_Phasor) &&	// Not CT_MegaAudio
+	if ((QueryType() == CT_MockingboardC || QueryType() == CT_Phasor) &&	// Not CT_MegaAudio/CT_SDMusic
 		subunit == 0 && // SC01 only at $Cn00 (not $Cn80)
 		m_MBSubUnit[subunit].sy6522.Read(SY6522::rPCR) == 0xB0)
 	{
@@ -246,7 +246,10 @@ void MockingboardCard::WriteToORB(BYTE subunit)
 	}
 	else
 	{
-		AY8910_Write(subunit, AY8913_DEVICE_A, value);
+		if (QueryType() == CT_SDMusic)
+			AY8910_Write(subunitForAY, AY8913_DEVICE_A, value);
+		else
+			AY8910_Write(subunit, AY8913_DEVICE_A, value);
 	}
 #endif
 }
@@ -257,7 +260,7 @@ void MockingboardCard::AY8910_Write(BYTE subunit, BYTE ay, BYTE value)
 {
 	m_regAccessedFlag = true;
 	MB_SUBUNIT* pMB = &m_MBSubUnit[subunit];
-	SY6522& r6522 = pMB->sy6522;
+	SY6522& r6522 = (QueryType() != CT_SDMusic) ? pMB->sy6522 : m_MBSubUnit[0].sy6522;
 
 	if ((value & 4) == 0)
 	{
@@ -647,8 +650,7 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 #endif
 
 	// NB. Mockingboard: SSI263.bit7 not readable (TODO: check this with real h/w)
-	const BYTE offset = nAddr & 0xff;
-	const BYTE subunit = (offset < SY6522B_Offset) ? SY6522_DEVICE_A : SY6522_DEVICE_B;
+	const BYTE subunit = QueryType() == CT_SDMusic ? SY6522_DEVICE_A : !(nAddr & 0x80) ? SY6522_DEVICE_A : SY6522_DEVICE_B;
 	const BYTE reg = nAddr & 0xf;
 	return m_MBSubUnit[subunit].sy6522.Read(reg);
 }
@@ -748,15 +750,25 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 		return 0;
 	}
 
-	const BYTE offset = nAddr & 0xff;
-	const BYTE subunit = (offset < SY6522B_Offset) ? SY6522_DEVICE_A : SY6522_DEVICE_B;
-	const BYTE reg = nAddr & 0xf;
-	m_MBSubUnit[subunit].sy6522.Write(reg, nValue);
-	if (reg == SY6522::rORB)
-		WriteToORB(subunit);
+	if (QueryType() == CT_SDMusic)
+	{
+		const BYTE subunit = SY6522_DEVICE_A;	// Only one 6522
+		const BYTE reg = nAddr & 0xf;
+		m_MBSubUnit[subunit].sy6522.Write(reg, nValue);
+		if (reg == SY6522::rORB)
+			WriteToORB(subunit, !(nAddr & 0x80) ? SY6522_DEVICE_A : SY6522_DEVICE_B);
+	}
+	else
+	{
+		const BYTE subunit = !(nAddr & 0x80) ? SY6522_DEVICE_A : SY6522_DEVICE_B;
+		const BYTE reg = nAddr & 0xf;
+		m_MBSubUnit[subunit].sy6522.Write(reg, nValue);
+		if (reg == SY6522::rORB)
+			WriteToORB(subunit);
+	}
 
 #if !DBG_MB_SS_CARD
-	if (QueryType() == CT_MockingboardC || QueryType() == CT_Phasor)	// Not CT_MegaAudio
+	if (QueryType() == CT_MockingboardC || QueryType() == CT_Phasor)	// Not CT_MegaAudio/CT_SDMusic
 	{
 		if (nAddr & 0x40)
 			m_MBSubUnit[1].ssi263.Write(nAddr & 0x7, nValue);		// 2nd 6522 is used for 1st speech chip
@@ -1164,6 +1176,12 @@ std::string MockingboardCard::GetSnapshotCardNameMegaAudio(void)
 	return name;
 }
 
+std::string MockingboardCard::GetSnapshotCardNameSDMusic(void)
+{
+	static const std::string name("SD Music");
+	return name;
+}
+
 void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	if (QueryType() == CT_Phasor)
@@ -1174,6 +1192,8 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	std::string cardName = GetSnapshotCardName();
 	if (QueryType() == CT_MegaAudio)
 		cardName = GetSnapshotCardNameMegaAudio();
+	else if (QueryType() == CT_SDMusic)
+		cardName = GetSnapshotCardNameSDMusic();
 
 	YamlSaveHelper::Slot slot(yamlSaveHelper, cardName, m_slot, kUNIT_VERSION);
 

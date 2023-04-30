@@ -67,6 +67,7 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		break;
 	case CT_MockingboardC:
 	case CT_MegaAudio:
+	case CT_SDMusic:
 		m_slot[slot] = new MockingboardCard(slot, type);
 		break;
 	case CT_GenericPrinter:

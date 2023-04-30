@@ -127,30 +127,40 @@ void ConsolePrint ( const char * pText )
 	// Convert color string to native console color text
 	// Ignores g_nConsoleDisplayWidth
 	char c;
-
 	int x = 0;
+	int y = 0;
 	const char *pSrc = pText;
 	conchar_t  *pDst = & g_aConsoleBuffer[ g_nConsoleBuffer ][ 0 ];
+
+	const int MAX_PUSH_HEIGHT = 16;
 
 	conchar_t g = 0;
 	bool bHaveColor = false;
 	char cColor = 0;
 
-	while ((x < CONSOLE_WIDTH) && (c = *pSrc))
+	while ((y < MAX_PUSH_HEIGHT) && (c = *pSrc))
 	{
-		if ((c == '\n') || (x >= (CONSOLE_WIDTH - 1)))
+		if ((c == '\n') || (x >= g_nConsoleDisplayWidth))
 		{
 			*pDst = 0;
 			x = 0;
+			y++;
+
+			if (cColor)
+				bHaveColor = true; // wrap color to next line
+
 			if (g_nConsoleBuffer >= CONSOLE_BUFFER_HEIGHT)
 			{
-				ConsoleBufferToDisplay();	
+				ConsoleBufferToDisplay();
 			}
 			else
 			{
 				g_nConsoleBuffer++;
-			}							
+			}
 			pDst = & g_aConsoleBuffer[ g_nConsoleBuffer ][ 0 ];
+
+			if (c == '\n')
+				pSrc++;
 		}
 		else
 		{
@@ -192,7 +202,7 @@ void ConsolePrint ( const char * pText )
 			{
 				if (bHaveColor)
 				{
-					g = ConsoleColor_MakeColor( cColor, c );	
+					g = ConsoleColor_MakeColor( cColor, c );
 					bHaveColor = false;
 				}
 				*pDst = g;

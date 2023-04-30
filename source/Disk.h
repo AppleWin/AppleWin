@@ -160,19 +160,21 @@ public:
 
 	bool IsConditionForFullSpeed(void);
 	void NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error);
-	UINT GetCurrentFirmware(void) { return m_is13SectorFirmware ? 13 : 16; }
 	void SetLastReadTrackSector(int track, int sector);
-	int GetCurrentDrive(void);
-	int GetCurrentTrack(void);
-	float GetCurrentPhase(void);
 	UINT GetCurrentBitOffset(void);
+	UINT GetCurrentFirmware(void) { return m_is13SectorFirmware ? 13 : 16; }
 	double GetCurrentExtraCycles(void);
+	float GetCurrentPhase(void);
+	int GetCurrentDrive(void);
+	BYTE GetCurrentShiftReg(void);
+	int GetCurrentTrack(void);
+
 	float GetPhase(const int drive);
 	int GetTrack(const int drive);
 	static std::string FormatIntFracString(float phase, bool hex);
 	std::string GetCurrentTrackString(void);
 	std::string GetCurrentPhaseString(void);
-	LPCTSTR GetCurrentState(void);
+	LPCTSTR GetCurrentState(Disk_Status_e& eDiskState_);
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
 	bool DriveSwap(void);
 	bool IsDriveConnected(int drive) { return m_floppyDrive[drive].m_isConnected; }

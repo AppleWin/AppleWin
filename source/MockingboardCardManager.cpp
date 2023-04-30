@@ -42,7 +42,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 bool MockingboardCardManager::IsMockingboard(UINT slot)
 {
 	SS_CARDTYPE type = GetCardMgr().QuerySlot(slot);
-	return type == CT_MockingboardC || type == CT_Phasor || type == CT_MegaAudio;
+	return type == CT_MockingboardC || type == CT_Phasor || IsMockingboardExtraCardType(slot);
+}
+
+bool MockingboardCardManager::IsMockingboardExtraCardType(UINT slot)
+{
+	SS_CARDTYPE type = GetCardMgr().QuerySlot(slot);
+	return type == CT_MegaAudio || type == CT_SDMusic;
 }
 
 void MockingboardCardManager::ReinitializeClock(void)
@@ -160,6 +166,20 @@ void MockingboardCardManager::SetVolume(DWORD volume, DWORD volumeMax)
 		if (IsMockingboard(i))
 			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).SetVolume(volume, volumeMax);
 	}
+}
+
+bool MockingboardCardManager::GetEnableExtraCardTypes(void)
+{
+	// Scan slots for any extra card types
+	// . eg. maybe started a new AppleWin (with empty cmd line), but with Registry's slot 4 = CT_MegaAudio
+	// Otherwise, Config->Sound will show slot as "Unavailable"
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (IsMockingboardExtraCardType(i))
+			return true;
+	}
+
+	return m_enableExtraCardTypes;
 }
 
 #ifdef _DEBUG

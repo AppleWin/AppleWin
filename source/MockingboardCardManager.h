@@ -13,6 +13,7 @@ public:
 		m_cyclesThisAudioFrame = 0;
 		m_userVolume = 0;
 		m_outputToRiff = false;
+		m_enableExtraCardTypes = false;
 
 		// NB. Cmd line has already been processed
 		LogFileOutput("MBCardMgr::ctor() g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
@@ -31,6 +32,8 @@ public:
 	DWORD GetVolume(void);
 	void SetVolume(DWORD volume, DWORD volumeMax);
 	void OutputToRiff(void) { m_outputToRiff = true; }
+	void SetEnableExtraCardTypes(bool enable) { m_enableExtraCardTypes = enable; }
+	bool GetEnableExtraCardTypes(void);
 
 	void Destroy(void);
 	void Reset(const bool powerCycle)
@@ -49,6 +52,7 @@ private:
 	bool Init(void);
 	UINT GenerateAllSoundData(void);
 	void MixAllAndCopyToRingBuffer(UINT nNumSamples);
+	bool IsMockingboardExtraCardType(UINT slot);
 
 	static const unsigned short NUM_MB_CHANNELS = 2;
 	static const DWORD SOUNDBUFFER_SIZE = MAX_SAMPLES * sizeof(short) * NUM_MB_CHANNELS;
@@ -66,4 +70,5 @@ private:
 	UINT m_cyclesThisAudioFrame;
 	DWORD m_userVolume;	// GUI's slide volume
 	bool m_outputToRiff;
+	bool m_enableExtraCardTypes;
 };
