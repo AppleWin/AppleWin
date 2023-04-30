@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "DiskLog.h"
 
+class Disk2InterfaceCard;
+
 class FormatTrack	// Monitor for formatting of track
 {
 public:
@@ -46,6 +48,7 @@ public:
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 	BYTE* GetLastReadVolumeTrackSectorChecksum() { return m_VolTrkSecChk; }
+	void SetCard(Disk2InterfaceCard* pCard) { m_pCard = pCard; }
 
 private:
 	void UpdateOnWriteLatch(UINT uSpinNibbleCount, const class FloppyDisk* const pFloppy);
@@ -64,6 +67,8 @@ private:
 	UINT32 m_uLast3Bytes;
 	BYTE m_VolTrkSecChk4and4[8];
 	UINT m_4and4idx;
+
+	Disk2InterfaceCard *m_pCard;
 
 	std::string m_strReadD5AAxxDetected;
 	bool m_bSuppressReadD5AAxxDetected;

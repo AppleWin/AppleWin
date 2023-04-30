@@ -87,6 +87,8 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	m_uWriteLastCycle = 0;
 	m_uSyncFFCount = 0;
 #endif
+
+	m_formatTrack.SetCard(this);
 }
 
 Disk2InterfaceCard::~Disk2InterfaceCard(void)
