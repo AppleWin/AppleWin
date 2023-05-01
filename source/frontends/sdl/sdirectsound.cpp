@@ -50,7 +50,7 @@ namespace
     , myAudioDevice(0)
     , myBytesPerSecond(0)
   {
-    SDL_memset(&myAudioSpec, 0, sizeof(myAudioSpec));
+    SDL_zero(myAudioSpec);
   }
 
   DirectSoundGenerator::~DirectSoundGenerator()
@@ -84,7 +84,7 @@ namespace
     }
 
     SDL_AudioSpec want;
-    SDL_memset(&want, 0, sizeof(want));
+    SDL_zero(want);
 
     want.freq = myBuffer->sampleRate;
     want.format = AUDIO_S16LSB;
