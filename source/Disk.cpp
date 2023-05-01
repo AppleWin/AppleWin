@@ -677,7 +677,7 @@ void Disk2InterfaceCard::ControlStepperDeferred(void)
 		FlushCurrentTrack(m_currDrive);
 		pDrive->m_phasePrecise = newPhasePrecise;
 		pFloppy->m_trackimagedata = false;
-		m_formatTrack.DriveNotWritingTrack();
+		m_formatTrack.Reset();
 		GetFrame().FrameDrawDiskStatus();	// Show track status (GH#201)
 	}
 
@@ -1510,10 +1510,6 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 			}
 		}
 	} // for
-
-	// GH #1215 Handle. WOZ VTSC
-	if (m_floppyLatch & 0x80)
-		m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
 
 #if LOG_DISK_NIBBLES_READ
 	if (m_floppyLatch & 0x80)
