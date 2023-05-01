@@ -30,9 +30,10 @@ class Disk2InterfaceCard;
 class FormatTrack	// Monitor for formatting of track
 {
 public:
-	FormatTrack(bool bSuppressOutput=false)
+	FormatTrack(bool bSuppressOutput=false, bool bSuppressDiskStatus=false)
 	{
 		m_bSuppressReadD5AAxxDetected = bSuppressOutput;
+		m_bSuppressDiskStatus = bSuppressDiskStatus;
 		Reset();
 	};
 
@@ -77,4 +78,6 @@ private:
 	UINT m_DbgGap2Size;
 	int m_DbgGap3Size;
 #endif
+
+	bool m_bSuppressDiskStatus;
 };

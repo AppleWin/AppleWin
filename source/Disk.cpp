@@ -1108,7 +1108,15 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 				pFloppy->m_byte -= pFloppy->m_nibbles;
 
 
-			m_formatTrack.Reset(); // GH #1215
+			// Feed all the skipped nibbles to our nibble-reader so that VTSC remains in-sync with the nibble stream
+			for (UINT i = 0; i < uWrapOffset; i++)
+			{
+				m_floppyLatch = *(pFloppy->m_trackimage + pFloppy->m_byte);
+				m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
+
+				if (++pFloppy->m_byte >= pFloppy->m_nibbles)
+					pFloppy->m_byte = 0;
+			}
 
 #if LOG_DISK_NIBBLES_SPIN
 			UINT uCompleteRevolutions = uSpinNibbleCount / pFloppy->m_nibbles;
@@ -1696,7 +1704,7 @@ void Disk2InterfaceCard::FindTrackSeamWOZ(FloppyDisk& floppy, float track)
 // NB. Need to define LOG_DISK_NIBBLES_READ so that GetReadD5AAxxDetectedString() works.
 void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_floppy
 {
-	FormatTrack formatTrack(true);
+	FormatTrack formatTrack(true, true);
 
 	BYTE shiftReg = 0;
 	UINT zeroCount = 0;

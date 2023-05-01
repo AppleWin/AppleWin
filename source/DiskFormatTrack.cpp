@@ -264,9 +264,12 @@ void FormatTrack::DecodeLatchNibble(BYTE floppylatch, bool bIsWrite, bool bIsSyn
 			for (UINT i=0; i<4; i++)
 				m_VolTrkSecChk[i] = ((m_VolTrkSecChk4and4[i*2] & 0x55) << 1) | (m_VolTrkSecChk4and4[i*2+1] & 0x55);
 
-			// GH #1215
-			m_pCard->SetLastReadTrackSector( m_VolTrkSecChk[1], m_VolTrkSecChk[2] );
-			GetFrame().FrameDrawDiskStatus();
+			if (!m_bSuppressDiskStatus)
+			{
+				// GH #1215
+				m_pCard->SetLastReadTrackSector(m_VolTrkSecChk[1], m_VolTrkSecChk[2]);
+				GetFrame().FrameDrawDiskStatus();
+			}
 
 #if LOG_DISK_NIBBLES_ADDR
 			const bool chk = (m_VolTrkSecChk[0] ^ m_VolTrkSecChk[1] ^ m_VolTrkSecChk[2] ^ m_VolTrkSecChk[3]) == 0;
