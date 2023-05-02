@@ -220,13 +220,17 @@ void MockingboardCardManager::Update(const ULONG executedCycles)
 	// NB. CardManager has just called each card's Update()
 
 	bool active = false;
+	bool present = false;
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
 		if (IsMockingboard(i))
+		{
 			active |= dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).IsAnyTimer1Active();
+			present = true;
+		}
 	}
 
-	if (active)
+	if (!present || active)
 		return;
 
 	// No 6522 TIMER1's are active, so periodically update AY8913's here...
