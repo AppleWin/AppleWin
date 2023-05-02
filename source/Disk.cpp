@@ -105,7 +105,7 @@ void Disk2InterfaceCard::SetEnhanceDisk(bool bEnhanceDisk) { m_enhanceDisk = bEn
 
 void Disk2InterfaceCard::SetLastReadTrackSector(int track, int physical)
 {
-	assert(track <= 80);
+	assert(track <= 40);
 
 	Win32Frame& WinFrame = Win32Frame::GetWin32Frame();
 
@@ -1401,6 +1401,7 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 		drive.m_headWindow = 0;
 
 		AddJitter(drive.m_phase, floppy);	// Only call when skipping a big number of bit-cells (ie. >significantBitCells)
+		m_formatTrack.Reset();
 	}
 
 	if (!bWrite)
