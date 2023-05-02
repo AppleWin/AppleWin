@@ -634,14 +634,14 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 
 			if(dwBufferSize0)
 			{
-				wmemset((wchar_t*)pDSLockedBuffer0, (wchar_t)DCFilter(g_nSpeakerData), dwBufferSize0/sizeof(wchar_t));
+				std::fill_n(pDSLockedBuffer0, dwBufferSize0/sizeof(short), DCFilter(g_nSpeakerData));
 				if (g_bSpkrOutputToRiff)
 					RiffPutSamples(pDSLockedBuffer0, dwBufferSize0/sizeof(short));
 			}
 
 			if(pDSLockedBuffer1)
 			{
-				wmemset((wchar_t*)pDSLockedBuffer1, (wchar_t)DCFilter(g_nSpeakerData), dwBufferSize1/sizeof(wchar_t));
+				std::fill_n(pDSLockedBuffer1, dwBufferSize1/sizeof(short), DCFilter(g_nSpeakerData));
 				if (g_bSpkrOutputToRiff)
 					RiffPutSamples(pDSLockedBuffer1, dwBufferSize1/sizeof(short));
 			}
