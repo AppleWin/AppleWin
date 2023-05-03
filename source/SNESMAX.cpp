@@ -57,6 +57,9 @@
 #include "Memory.h"
 #include "YamlHelper.h"
 
+extern int JOYSTICK_1; // declared in joystick.cpp
+extern int JOYSTICK_2;
+
 // Default to Sony DS4 / DualSense:
 // b11,..,b0: St,Sl / -,-,R,L,X,A,B,Y
 //
@@ -102,8 +105,7 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 	UINT xAxis = 0;
 	UINT yAxis = 0;
 
-	JOYINFOEX infoEx;
-	MMRESULT result = 0;
+	JOYINFOEX infoEx;	
 	infoEx.dwSize = sizeof(infoEx);
 	infoEx.dwFlags = JOY_RETURNPOV | JOY_RETURNBUTTONS;
 
@@ -117,14 +119,14 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 		controller1Buttons = 0;
 		controller2Buttons = 0;
 
-		result = joyGetPosEx(JOYSTICKID1, &infoEx);
-		if (result == JOYERR_NOERROR)
+		if (JOYSTICK_1 >= 0 && joyGetPosEx(JOYSTICK_1, &infoEx) == JOYERR_NOERROR)
 			controller1Buttons = pCard->GetControllerButtons(JOYSTICKID1, infoEx, pCard->m_altControllerType[0]);
+
 		controller1Buttons = ~controller1Buttons;
 
-		result = joyGetPosEx(JOYSTICKID2, &infoEx);
-		if (result == JOYERR_NOERROR)
+		if (JOYSTICK_2 >= 0 && joyGetPosEx(JOYSTICK_2, &infoEx) == JOYERR_NOERROR)
 			controller2Buttons = pCard->GetControllerButtons(JOYSTICKID2, infoEx, pCard->m_altControllerType[1]);
+
 		controller2Buttons = ~controller2Buttons;
 
 		break;
