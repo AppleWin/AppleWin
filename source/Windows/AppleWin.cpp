@@ -632,7 +632,7 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 	}
 	else if (!g_cmdLine.wavFileMockingboard.empty())
 	{
-		if (RiffInitWriteFile(g_cmdLine.wavFileMockingboard.c_str(), 44100, 2))
+		if (RiffInitWriteFile(g_cmdLine.wavFileMockingboard.c_str(), MockingboardCard::SAMPLE_RATE, MockingboardCard::NUM_MB_CHANNELS))
 			GetCardMgr().GetMockingboardCardMgr().OutputToRiff();
 	}
 
