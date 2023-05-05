@@ -48,9 +48,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 enum {DEVICE_NONE=0, DEVICE_JOYSTICK, DEVICE_KEYBOARD, DEVICE_MOUSE, DEVICE_JOYSTICK_THUMBSTICK2};
 
-int JOYSTICK_1 = -1;
-int JOYSTICK_2 = -1;
-
 // Indexed by joytype[n]
 static const DWORD joyinfo[6] =	{	DEVICE_NONE,
 									DEVICE_JOYSTICK,
@@ -113,6 +110,9 @@ static UINT g_uJoyportReadMode = JOYPORT_LEFTRIGHT;
 
 static bool g_bHookAltKeys = true;
 
+static int JOYSTICK_1 = -1;
+static int JOYSTICK_2 = -1;
+
 //===========================================================================
 
 void JoySetHookAltKeys(bool hook)
@@ -120,8 +120,18 @@ void JoySetHookAltKeys(bool hook)
 	g_bHookAltKeys = hook;
 }
 
+int GetJoystick1(void)
+{
+	return JOYSTICK_1;
+}
+
+int GetJoystick2(void)
+{
+	return JOYSTICK_2;
+}
+
 //===========================================================================
-void CheckJoystick0()
+static void CheckJoystick0()
 {
 	if (JOYSTICK_1 < 0)
 		return;
@@ -148,7 +158,7 @@ void CheckJoystick0()
   }
 }
 
-void CheckJoystick1()
+static void CheckJoystick1()
 {
   static DWORD lastcheck = 0;
   DWORD currtime = GetTickCount();
@@ -156,7 +166,7 @@ void CheckJoystick1()
   {
     lastcheck = currtime;
     JOYINFO info;
-    MMRESULT result = 0;
+    MMRESULT result = JOYERR_NOERROR;
     if (joyinfo[joytype[1]] == DEVICE_JOYSTICK_THUMBSTICK2)
     {
       // Use results of joystick 1 thumbstick 2 and button 2 for joystick 1 and button 1
@@ -171,9 +181,12 @@ void CheckJoystick1()
         info.wYpos = infoEx.dwRpos;
       }
     }
-    else
-      result = joyGetPos(JOYSTICK_2, &info);
-    if (result == JOYERR_NOERROR)
+	else
+	{
+	  result = joyGetPos(JOYSTICK_2, &info);	// NB. joyGetPos(-1, &info) returns JOYERR_PARMS (bad parameters)
+	}
+
+	if (result == JOYERR_NOERROR)
 	{
       joybutton[2] = ((info.wButtons & JOY_BUTTON1) != 0);
       if(joyinfo[joytype[1]] != DEVICE_NONE)
@@ -197,7 +210,7 @@ void CheckJoystick1()
 void JoyInitialize()
 {
 	//
-	// Detect First and Second connected JOYSTICK in WinMM apis. JOYSTICKID1 is 0 and is not always anymore the first connected joystick
+	// Detect First and Second connected JOYSTICK in WinMM API. JOYSTICKID1 == 0 but is not always the first connected joystick.
 	//
 
 	JOYSTICK_1 = -1;
@@ -205,8 +218,8 @@ void JoyInitialize()
 
 	bool firstFound = false;
 
-	UINT joys = joyGetNumDevs();
-	for (int i = 0; i < joys; i++)
+	const UINT numDevs = joyGetNumDevs();
+	for (UINT i = 0; i < numDevs; i++)
 	{
 		JOYCAPS caps;
 		int ret = joyGetDevCaps(i, &caps, sizeof(JOYCAPS));
@@ -264,10 +277,10 @@ void JoyInitialize()
 	// Init for emulated joystick #1:
 	//
 
-	if (JOYSTICK_2 >= 0 && joyinfo[joytype[1]] == DEVICE_JOYSTICK)
+	if (joyinfo[joytype[1]] == DEVICE_JOYSTICK)
 	{
 		JOYCAPS caps;
-		if (joyGetDevCaps(JOYSTICK_2, &caps, sizeof(JOYCAPS)) == JOYERR_NOERROR)
+		if (JOYSTICK_2 >= 0 && joyGetDevCaps(JOYSTICK_2, &caps, sizeof(JOYCAPS)) == JOYERR_NOERROR)
 		{
 			joyshrx[1] = 0;
 			joyshry[1] = 0;
@@ -291,10 +304,10 @@ void JoyInitialize()
 			joytype[1] = J1C_DISABLED;
 		}
 	}
-	else if (JOYSTICK_1 >= 0 && joyinfo[joytype[1]] == DEVICE_JOYSTICK_THUMBSTICK2)
+	else if (joyinfo[joytype[1]] == DEVICE_JOYSTICK_THUMBSTICK2)
 	{
 		JOYCAPS caps;
-		if (joyGetDevCaps(JOYSTICK_1, &caps, sizeof(JOYCAPS)) == JOYERR_NOERROR)
+		if (JOYSTICK_1 >= 0 && joyGetDevCaps(JOYSTICK_1, &caps, sizeof(JOYCAPS)) == JOYERR_NOERROR)
 		{
 			joyshrx[1] = 0;
 			joyshry[1] = 0;
@@ -742,8 +755,8 @@ BOOL JoySetEmulationType(HWND window, DWORD newtype, int nJoystickNumber, const 
   if (joyinfo[newtype] == DEVICE_JOYSTICK || joyinfo[newtype] == DEVICE_JOYSTICK_THUMBSTICK2)
   {
     JOYCAPS caps;
-	unsigned int nJoy2ID = joyinfo[newtype] == DEVICE_JOYSTICK_THUMBSTICK2 ? JOYSTICK_1 : JOYSTICK_2;
-	unsigned int nJoyID = nJoystickNumber == JN_JOYSTICK0 ? JOYSTICK_1 : nJoy2ID;
+	int nJoy2ID = joyinfo[newtype] == DEVICE_JOYSTICK_THUMBSTICK2 ? JOYSTICK_1 : JOYSTICK_2;
+	int nJoyID = nJoystickNumber == JN_JOYSTICK0 ? JOYSTICK_1 : nJoy2ID;
     if (nJoyID < 0 || joyGetDevCaps(nJoyID, &caps, sizeof(JOYCAPS)) != JOYERR_NOERROR)
     {
       MessageBox(window,

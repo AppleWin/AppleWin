@@ -53,12 +53,10 @@
 */
 #include "StdAfx.h"
 
+#include "Joystick.h"
 #include "SNESMAX.h"
 #include "Memory.h"
 #include "YamlHelper.h"
-
-extern int JOYSTICK_1; // declared in joystick.cpp
-extern int JOYSTICK_2;
 
 // Default to Sony DS4 / DualSense:
 // b11,..,b0: St,Sl / -,-,R,L,X,A,B,Y
@@ -119,12 +117,12 @@ BYTE __stdcall SNESMAXCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 		controller1Buttons = 0;
 		controller2Buttons = 0;
 
-		if (JOYSTICK_1 >= 0 && joyGetPosEx(JOYSTICK_1, &infoEx) == JOYERR_NOERROR)
+		if (GetJoystick1() >= 0 && joyGetPosEx(GetJoystick1(), &infoEx) == JOYERR_NOERROR)
 			controller1Buttons = pCard->GetControllerButtons(JOYSTICKID1, infoEx, pCard->m_altControllerType[0]);
 
 		controller1Buttons = ~controller1Buttons;
 
-		if (JOYSTICK_2 >= 0 && joyGetPosEx(JOYSTICK_2, &infoEx) == JOYERR_NOERROR)
+		if (GetJoystick2() >= 0 && joyGetPosEx(GetJoystick2(), &infoEx) == JOYERR_NOERROR)
 			controller2Buttons = pCard->GetControllerButtons(JOYSTICKID2, infoEx, pCard->m_altControllerType[1]);
 
 		controller2Buttons = ~controller2Buttons;

@@ -49,11 +49,9 @@
 #include "StdAfx.h"
 
 #include "FourPlay.h"
+#include "Joystick.h"
 #include "Memory.h"
 #include "YamlHelper.h"
-
-extern int JOYSTICK_1; // declared in joystick.cpp
-extern int JOYSTICK_2;
 
 BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
 {
@@ -76,7 +74,7 @@ BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 	switch (addr & 0xF)
 	{
 	case 0: // Joystick 1
-		if (JOYSTICK_1 >= 0 && joyGetPosEx(JOYSTICK_1, &infoEx) == JOYERR_NOERROR)
+		if (GetJoystick1() >= 0 && joyGetPosEx(GetJoystick1(), &infoEx) == JOYERR_NOERROR)
 		{
 			xAxis = (infoEx.dwXpos >> 8) & 0xFF;
 			yAxis = (infoEx.dwYpos >> 8) & 0xFF;
@@ -90,7 +88,7 @@ BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 		nOutput = up | (down << 1) | (left << 2) | (right << 3) | (alwaysHigh << 5) | (trigger2 << 6) | (trigger1 << 7);
 		break;
 	case 1: // Joystick 2
-		if (JOYSTICK_2 >= 0 && joyGetPosEx(JOYSTICK_2, &infoEx) == JOYERR_NOERROR)
+		if (GetJoystick2() >= 0 && joyGetPosEx(GetJoystick2(), &infoEx) == JOYERR_NOERROR)
 		{
 			xAxis = (infoEx.dwXpos >> 8) & 0xFF;
 			yAxis = (infoEx.dwYpos >> 8) & 0xFF;
