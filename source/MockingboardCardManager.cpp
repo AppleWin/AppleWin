@@ -33,7 +33,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Core.h"
 #include "CardManager.h"
 #include "CPU.h"
-#include "Mockingboard.h"
 #include "MockingboardDefs.h"
 #include "Riff.h"
 
@@ -220,13 +219,17 @@ void MockingboardCardManager::Update(const ULONG executedCycles)
 	// NB. CardManager has just called each card's Update()
 
 	bool active = false;
+	bool present = false;
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
 		if (IsMockingboard(i))
+		{
 			active |= dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).IsAnyTimer1Active();
+			present = true;
+		}
 	}
 
-	if (active)
+	if (!present || active)
 		return;
 
 	// No 6522 TIMER1's are active, so periodically update AY8913's here...
@@ -280,9 +283,7 @@ bool MockingboardCardManager::Init(void)
 	if (!g_bDSAvailable)
 		return false;
 
-	const DWORD SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
-
-	HRESULT hr = DSGetSoundBuffer(&m_mockingboardVoice, DSBCAPS_CTRLVOLUME, SOUNDBUFFER_SIZE, SAMPLE_RATE, NUM_MB_CHANNELS, "MB");
+	HRESULT hr = DSGetSoundBuffer(&m_mockingboardVoice, DSBCAPS_CTRLVOLUME, SOUNDBUFFER_SIZE, MockingboardCard::SAMPLE_RATE, MockingboardCard::NUM_MB_CHANNELS, "MB");
 	LogFileOutput("MBCardMgr: DSGetSoundBuffer(), hr=0x%08X\n", hr);
 	if (FAILED(hr))
 	{
@@ -437,8 +438,8 @@ void MockingboardCardManager::MixAllAndCopyToRingBuffer(UINT nNumSamples)
 		else if (nDataR > WAVE_DATA_MAX)
 			nDataR = WAVE_DATA_MAX;
 
-		m_mixBuffer[i * NUM_MB_CHANNELS + 0] = (short)nDataL;	// L
-		m_mixBuffer[i * NUM_MB_CHANNELS + 1] = (short)nDataR;	// R
+		m_mixBuffer[i * MockingboardCard::NUM_MB_CHANNELS + 0] = (short)nDataL;	// L
+		m_mixBuffer[i * MockingboardCard::NUM_MB_CHANNELS + 1] = (short)nDataR;	// R
 	}
 
 	//
@@ -447,7 +448,7 @@ void MockingboardCardManager::MixAllAndCopyToRingBuffer(UINT nNumSamples)
 	SHORT* pDSLockedBuffer0, * pDSLockedBuffer1;
 
 	HRESULT hr = DSGetLock(m_mockingboardVoice.lpDSBvoice,
-		m_byteOffset, (DWORD)nNumSamples * sizeof(short) * NUM_MB_CHANNELS,
+		m_byteOffset, (DWORD)nNumSamples * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS,
 		&pDSLockedBuffer0, &dwDSLockedBufferSize0,
 		&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 	if (FAILED(hr))
@@ -461,7 +462,7 @@ void MockingboardCardManager::MixAllAndCopyToRingBuffer(UINT nNumSamples)
 	hr = m_mockingboardVoice.lpDSBvoice->Unlock((void*)pDSLockedBuffer0, dwDSLockedBufferSize0,
 		(void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
 
-	m_byteOffset = (m_byteOffset + (DWORD)nNumSamples * sizeof(short) * NUM_MB_CHANNELS) % SOUNDBUFFER_SIZE;
+	m_byteOffset = (m_byteOffset + (DWORD)nNumSamples * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS) % SOUNDBUFFER_SIZE;
 
 	if (m_outputToRiff)
 		RiffPutSamples(&m_mixBuffer[0], nNumSamples);

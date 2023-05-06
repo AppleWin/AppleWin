@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "SoundCore.h"
+#include "Mockingboard.h"
 
 class MockingboardCardManager
 {
@@ -54,8 +55,7 @@ private:
 	void MixAllAndCopyToRingBuffer(UINT nNumSamples);
 	bool IsMockingboardExtraCardType(UINT slot);
 
-	static const unsigned short NUM_MB_CHANNELS = 2;
-	static const DWORD SOUNDBUFFER_SIZE = MAX_SAMPLES * sizeof(short) * NUM_MB_CHANNELS;
+	static const DWORD SOUNDBUFFER_SIZE = MAX_SAMPLES * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS;
 
 	static const SHORT WAVE_DATA_MIN = (SHORT)0x8000;
 	static const SHORT WAVE_DATA_MAX = (SHORT)0x7FFF;

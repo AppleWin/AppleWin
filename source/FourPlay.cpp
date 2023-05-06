@@ -49,6 +49,7 @@
 #include "StdAfx.h"
 
 #include "FourPlay.h"
+#include "Joystick.h"
 #include "Memory.h"
 #include "YamlHelper.h"
 
@@ -67,15 +68,13 @@ BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 	UINT yAxis = 0;
 
 	JOYINFOEX infoEx;
-	MMRESULT result = 0;
 	infoEx.dwSize = sizeof(infoEx);
 	infoEx.dwFlags = JOY_RETURNPOV | JOY_RETURNBUTTONS;
 
 	switch (addr & 0xF)
 	{
 	case 0: // Joystick 1
-		result = joyGetPosEx(JOYSTICKID1, &infoEx);
-		if (result == JOYERR_NOERROR)
+		if (GetJoystick1() >= 0 && joyGetPosEx(GetJoystick1(), &infoEx) == JOYERR_NOERROR)
 		{
 			xAxis = (infoEx.dwXpos >> 8) & 0xFF;
 			yAxis = (infoEx.dwYpos >> 8) & 0xFF;
@@ -89,8 +88,7 @@ BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 		nOutput = up | (down << 1) | (left << 2) | (right << 3) | (alwaysHigh << 5) | (trigger2 << 6) | (trigger1 << 7);
 		break;
 	case 1: // Joystick 2
-		result = joyGetPosEx(JOYSTICKID2, &infoEx);
-		if (result == JOYERR_NOERROR)
+		if (GetJoystick2() >= 0 && joyGetPosEx(GetJoystick2(), &infoEx) == JOYERR_NOERROR)
 		{
 			xAxis = (infoEx.dwXpos >> 8) & 0xFF;
 			yAxis = (infoEx.dwYpos >> 8) & 0xFF;
