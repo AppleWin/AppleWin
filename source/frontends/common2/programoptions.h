@@ -50,6 +50,7 @@ namespace common2
     bool fixedSpeed = false; // default adaptive
 
     int sdlDriver = -1; // default = -1 to let SDL choose
+    size_t sdlAudioBuffer = 46; // in ms -> corresponds to 2048 samples
     bool imgui = true; // use imgui renderer
     std::optional<Geometry> geometry; // must be initialised with defaults
     bool aspectRatio = false; // preserve aspect ratio

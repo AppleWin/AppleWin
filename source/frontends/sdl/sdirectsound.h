@@ -20,7 +20,7 @@ namespace sa2
   };
 
   void stopAudio();
-  void writeAudio();
+  void writeAudio(const size_t ms);
   void resetUnderruns();
   void printAudioInfo();
   std::vector<SoundInfo> getAudioInfo();

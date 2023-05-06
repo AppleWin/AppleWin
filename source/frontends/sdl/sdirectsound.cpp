@@ -1,7 +1,10 @@
+#include "StdAfx.h"
 #include "frontends/sdl/sdirectsound.h"
 
 #include "windows.h"
 #include "linux/linuxinterface.h"
+
+#include "SoundCore.h"
 
 #include <SDL.h>
 
@@ -13,6 +16,21 @@
 namespace
 {
 
+  size_t getBytesPerPeriod(const SDL_AudioSpec & spec, const size_t ms)
+  {
+    const size_t bitsPerSample = spec.format & SDL_AUDIO_MASK_BITSIZE;
+    const size_t bytesPerFrame = spec.channels * bitsPerSample / 8;
+    return spec.freq * bytesPerFrame * ms / 1000;
+  }
+
+  size_t nextPowerOf2(size_t n)
+  {
+    size_t k = 1;
+    while (k < n)
+      k *= 2;
+    return k;
+  }
+
   class DirectSoundGenerator
   {
   public:
@@ -20,7 +38,7 @@ namespace
     ~DirectSoundGenerator();
 
     void stop();
-    void writeAudio();
+    void writeAudio(const size_t ms);
     void resetUnderruns();
 
     void printInfo() const;
@@ -42,7 +60,6 @@ namespace
 
     void close();
     bool isRunning() const;
-    bool isRunning();
 
     Uint8 * mixBufferTo(Uint8 * stream);
   };
@@ -110,44 +127,6 @@ namespace
     return myAudioDevice;
   }
 
-  bool DirectSoundGenerator::isRunning()
-  {
-    if (myAudioDevice)
-    {
-      return true;
-    }
-
-    DWORD dwStatus;
-    myBuffer->GetStatus(&dwStatus);
-    if (!(dwStatus & DSBSTATUS_PLAYING))
-    {
-      return false;
-    }
-
-    SDL_AudioSpec want;
-    SDL_zero(want);
-
-    want.freq = myBuffer->sampleRate;
-    want.format = AUDIO_S16LSB;
-    want.channels = myBuffer->channels;
-    want.samples = 4096;  // what does this really mean?
-    want.callback = staticAudioCallback;
-    want.userdata = this;
-    myAudioDevice = SDL_OpenAudioDevice(nullptr, 0, &want, &myAudioSpec, 0);
-
-    if (myAudioDevice)
-    {
-      const size_t bitsPerSample = myAudioSpec.format & SDL_AUDIO_MASK_BITSIZE;
-      const size_t bytesPerFrame = myAudioSpec.channels * bitsPerSample / 8;
-      myBytesPerSecond = myAudioSpec.freq * bytesPerFrame;
-
-      SDL_PauseAudioDevice(myAudioDevice, 0);
-      return true;
-    }
-
-    return false;
-  }
-
   void DirectSoundGenerator::printInfo() const
   {
     if (isRunning())
@@ -208,11 +187,39 @@ namespace
     return stream + len;
   }
 
-  void DirectSoundGenerator::writeAudio()
+  void DirectSoundGenerator::writeAudio(const size_t ms)
   {
     // this is autostart as we only do for the palying buffers
     // and AW might activate one later
-    isRunning();
+    if (myAudioDevice)
+    {
+      return;
+    }
+
+    DWORD dwStatus;
+    myBuffer->GetStatus(&dwStatus);
+    if (!(dwStatus & DSBSTATUS_PLAYING))
+    {
+      return;
+    }
+
+    SDL_AudioSpec want;
+    SDL_zero(want);
+
+    want.freq = myBuffer->sampleRate;
+    want.format = AUDIO_S16LSB;
+    want.channels = myBuffer->channels;
+    want.samples = std::min<size_t>(MAX_SAMPLES, nextPowerOf2(myBuffer->sampleRate * ms / 1000));
+    want.callback = staticAudioCallback;
+    want.userdata = this;
+    myAudioDevice = SDL_OpenAudioDevice(nullptr, 0, &want, &myAudioSpec, 0);
+
+    if (myAudioDevice)
+    {
+      myBytesPerSecond = getBytesPerPeriod(myAudioSpec, 1000);
+
+      SDL_PauseAudioDevice(myAudioDevice, 0);
+    }
   }
 
 }
@@ -246,12 +253,12 @@ namespace sa2
     }
   }
 
-  void writeAudio()
+  void writeAudio(const size_t ms)
   {
     for (auto & it : activeSoundGenerators)
     {
       const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
-      generator->writeAudio();
+      generator->writeAudio(ms);
     }
   }
 
