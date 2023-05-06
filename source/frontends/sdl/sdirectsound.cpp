@@ -44,7 +44,7 @@ namespace
     bool isRunning() const;
     bool isRunning();
 
-    void mixBuffer(const void * ptr, const size_t size);
+    Uint8 * mixBufferTo(Uint8 * stream);
   };
 
   std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator>> activeSoundGenerators;
@@ -61,20 +61,24 @@ namespace
     DWORD dwAudioBytes1, dwAudioBytes2;
     myBuffer->Read(len, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
 
+    const size_t bytesRead = dwAudioBytes1 + dwAudioBytes2;
+    myMixerBuffer.resize(bytesRead);
+
+    Uint8 * dest = myMixerBuffer.data();
     if (lpvAudioPtr1 && dwAudioBytes1)
     {
-      mixBuffer(lpvAudioPtr1, dwAudioBytes1);
-      memcpy(stream, myMixerBuffer.data(), myMixerBuffer.size());
-      stream += dwAudioBytes1;
+      memcpy(dest, lpvAudioPtr1, dwAudioBytes1);
+      dest += dwAudioBytes1;
     }
     if (lpvAudioPtr2 && dwAudioBytes2)
     {
-      mixBuffer(lpvAudioPtr2, dwAudioBytes2);
-      memcpy(stream, myMixerBuffer.data(), myMixerBuffer.size());
-      stream += dwAudioBytes2;
+      memcpy(dest, lpvAudioPtr2, dwAudioBytes2);
+      dest += dwAudioBytes2;
     }
 
-    const size_t gap = len - dwAudioBytes1 - dwAudioBytes2;
+    stream = mixBufferTo(stream);
+
+    const size_t gap = len - bytesRead;
     if (gap)
     {
       myBuffer->SetBufferUnderrun();
@@ -190,18 +194,18 @@ namespace
     }
   }
 
-  void DirectSoundGenerator::mixBuffer(const void * ptr, const size_t size)
+  Uint8 * DirectSoundGenerator::mixBufferTo(Uint8 * stream)
   {
+    // we could copy ADJUST_VOLUME from SDL_mixer.c and avoid all copying and (rare) race conditions
     const double logVolume = myBuffer->GetLogarithmicVolume();
     // same formula as QAudio::convertVolume()
     const double linVolume = logVolume > 0.99 ? 1.0 : -std::log(1.0 - logVolume) / std::log(100.0);
-
     const Uint8 svolume = Uint8(linVolume * SDL_MIX_MAXVOLUME);
 
-    // this is a bit of a waste copy-time, but it reuses SDL to do it properly
-    myMixerBuffer.resize(size);
-    memset(myMixerBuffer.data(), 0, size);
-    SDL_MixAudioFormat(myMixerBuffer.data(), (const Uint8*)ptr, myAudioSpec.format, size, svolume);
+    const size_t len = myMixerBuffer.size();
+    memset(stream, 0, len);
+    SDL_MixAudioFormat(stream, myMixerBuffer.data(), myAudioSpec.format, len, svolume);
+    return stream + len;
   }
 
   void DirectSoundGenerator::writeAudio()
