@@ -619,7 +619,7 @@ namespace sa2
             ImGui::TableSetupColumn("Running");
             ImGui::TableSetupColumn("Channels");
             ImGui::TableSetupColumn("Volume");
-            ImGui::TableSetupColumn("Buffer");
+            ImGui::TableSetupColumn("Buffer (ms)");
             ImGui::TableSetupColumn("Underruns");
             ImGui::TableHeadersRow();
 
@@ -631,9 +631,12 @@ namespace sa2
               ImGui::TableNextColumn();
               ImGui::Text("%d", device.channels);
               ImGui::TableNextColumn();
-              ImGui::SliderFloat("##Volume", &device.volume, 0.0f, 1.0f, "%.2f");
+              int volume = device.volume * 100;
+              ImGui::SliderInt("##Volume", &volume, 0, 100, "%3d");
               ImGui::TableNextColumn();
-              ImGui::SliderFloat("##Buffer", &device.buffer, 0.0f, device.size, "%.3f");
+              float buffer = device.buffer * 1000;
+              float size = device.size * 1000;
+              ImGui::SliderFloat("##Buffer", &buffer, 0, size, "%4.0f");
               ImGui::TableNextColumn();
               ImGui::Text("%zu", device.numberOfUnderruns);
             }
