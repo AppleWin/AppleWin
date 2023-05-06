@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "frontends/sdl/imgui/sdlsettings.h"
 #include "frontends/sdl/imgui/settingshelper.h"
+#include "frontends/sdl/sdirectsound.h"
 #include "frontends/sdl/sdlframe.h"
 #include "linux/registry.h"
 #include "linux/version.h"
@@ -619,7 +620,7 @@ namespace sa2
             ImGui::TableSetupColumn("Channels");
             ImGui::TableSetupColumn("Volume");
             ImGui::TableSetupColumn("Buffer");
-            ImGui::TableSetupColumn("Queue");
+            ImGui::TableSetupColumn("Underruns");
             ImGui::TableHeadersRow();
 
             ImGui::BeginDisabled();
@@ -634,12 +635,20 @@ namespace sa2
               ImGui::TableNextColumn();
               ImGui::SliderFloat("##Buffer", &device.buffer, 0.0f, device.size, "%.3f");
               ImGui::TableNextColumn();
-              ImGui::SliderFloat("##Queue", &device.queue, 0.0f, device.size, "%.3f");
+              ImGui::Text("%zu", device.numberOfUnderruns);
             }
             ImGui::EndDisabled();
 
             ImGui::EndTable();
           }
+
+          if (ImGui::Button("Reset underruns"))
+          {
+            resetUnderruns();
+          }
+
+          ImGui::Separator();
+          ImGui::Text("Feedback cycles = %6d", g_nCpuCyclesFeedback);
 
           ImGui::EndTabItem();
         }

@@ -1,10 +1,11 @@
 #pragma once
 
-#include "winbase.h"
+#include "winhandles.h"
 #include "winerror.h"
 #include "mmreg.h"
 #include "guiddef.h"
 
+#include <atomic>
 #include <vector>
 #include <memory>
 #include <mutex>
@@ -84,14 +85,16 @@ class IDirectSoundBuffer : public IUnknown
   WORD myStatus = 0;
   LONG myVolume = DSBVOLUME_MAX;
 
+  // updated by the callback
+  std::atomic_size_t myNumberOfUnderruns;
+  std::mutex myMutex;
+
  public:
   const size_t bufferSize;
   const size_t sampleRate;
   const size_t channels;
   const size_t bitsPerSample;
   const size_t flags;
-
-  std::mutex mutex;
 
   IDirectSoundBuffer(const size_t bufferSize, const size_t channels, const size_t sampleRate, const size_t bitsPerSample, const size_t flags);
   HRESULT Release() override;
@@ -100,10 +103,6 @@ class IDirectSoundBuffer : public IUnknown
 
   HRESULT SetCurrentPosition( DWORD dwNewPosition );
   HRESULT GetCurrentPosition( LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor );
-
-  // Read is NOT part of Windows API
-  HRESULT Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2);
-  DWORD GetBytesInBuffer();
 
   HRESULT Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2, DWORD dwFlags );
   HRESULT Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2 );
@@ -114,10 +113,16 @@ class IDirectSoundBuffer : public IUnknown
   HRESULT SetVolume( LONG lVolume );
   HRESULT GetVolume( LONG * lplVolume );
 
-  double GetLogarithmicVolume() const;  // in [0, 1]
-
   HRESULT GetStatus( LPDWORD lpdwStatus );
   HRESULT Restore();
+
+  // NOT part of Windows API
+  HRESULT Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2);
+  DWORD GetBytesInBuffer();
+  void SetBufferUnderrun();
+  size_t GetBufferUnderruns() const;
+  void ResetUnderrruns();
+  double GetLogarithmicVolume() const;  // in [0, 1]
 };
 typedef class IDirectSoundBuffer *LPDIRECTSOUNDBUFFER,**LPLPDIRECTSOUNDBUFFER;
 

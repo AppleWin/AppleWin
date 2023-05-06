@@ -11,6 +11,7 @@ HRESULT IDirectSoundNotify::SetNotificationPositions(DWORD cPositionNotifies, LP
 IDirectSoundBuffer::IDirectSoundBuffer(const size_t aBufferSize, const size_t aChannels, const size_t aSampleRate, const size_t aBitsPerSample, const size_t aFlags)
   : mySoundNotify(new IDirectSoundNotify)
   , mySoundBuffer(aBufferSize)
+  , myNumberOfUnderruns(0)
   , bufferSize(aBufferSize)
   , sampleRate(aSampleRate)
   , channels(aChannels)
@@ -44,7 +45,7 @@ HRESULT IDirectSoundBuffer::Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LP
 {
   const size_t totalWrittenBytes = dwAudioBytes1 + dwAudioBytes2;
   this->myWritePosition = (this->myWritePosition + totalWrittenBytes) % this->mySoundBuffer.size();
-  mutex.unlock();
+  myMutex.unlock();
   return DS_OK;
 }
 
@@ -89,7 +90,7 @@ HRESULT IDirectSoundBuffer::Restore()
 
 HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2, DWORD dwFlags )
 {
-  mutex.lock();
+  myMutex.lock();
   // No attempt is made at restricting write buffer not to overtake play cursor
   if (dwFlags & DSBLOCK_ENTIREBUFFER)
   {
@@ -128,7 +129,7 @@ HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOI
 
 HRESULT IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2)
 {
-  const std::lock_guard<std::mutex> guard(mutex);
+  const std::lock_guard<std::mutex> guard(myMutex);
 
   // Read up to dwReadBytes, never going past the write cursor
   // Positions are updated immediately
@@ -159,7 +160,7 @@ HRESULT IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DW
 
 DWORD IDirectSoundBuffer::GetBytesInBuffer()
 {
-  const std::lock_guard<std::mutex> guard(mutex);
+  const std::lock_guard<std::mutex> guard(myMutex);
   const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->bufferSize;
   return available;
 }
@@ -181,6 +182,21 @@ double IDirectSoundBuffer::GetLogarithmicVolume() const
 {
   const double volume = (double(myVolume) - DSBVOLUME_MIN) / (0.0 - DSBVOLUME_MIN);
   return volume;
+}
+
+void IDirectSoundBuffer::SetBufferUnderrun()
+{
+  ++myNumberOfUnderruns;
+}
+
+size_t IDirectSoundBuffer::GetBufferUnderruns() const
+{
+  return myNumberOfUnderruns;
+}
+
+void IDirectSoundBuffer::ResetUnderrruns()
+{
+  myNumberOfUnderruns = 0;
 }
 
 HRESULT WINAPI DirectSoundCreate(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN pUnkOuter)
