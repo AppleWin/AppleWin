@@ -697,6 +697,7 @@ namespace sa2
         mySpeed.reset();
       }
       g_bFullSpeed = value;
+      g_nCpuCyclesFeedback = 0;
     }
   }
 
