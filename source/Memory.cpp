@@ -1296,7 +1296,7 @@ void MemDestroy()
 	delete [] pCxRomPeripheral;
 
 #ifdef RAMWORKS
-	for (UINT i=1; i<g_uMaxExPages; i++)
+	for (UINT i=1; i<kMaxExMemoryBanks; i++)
 	{
 		if (RWpages[i])
 		{
