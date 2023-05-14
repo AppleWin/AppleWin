@@ -16,11 +16,11 @@
 namespace
 {
 
-  size_t getBytesPerPeriod(const SDL_AudioSpec & spec, const size_t ms)
+  size_t getBytesPerSecond(const SDL_AudioSpec & spec)
   {
     const size_t bitsPerSample = spec.format & SDL_AUDIO_MASK_BITSIZE;
     const size_t bytesPerFrame = spec.channels * bitsPerSample / 8;
-    return spec.freq * bytesPerFrame * ms / 1000;
+    return spec.freq * bytesPerFrame;
   }
 
   size_t nextPowerOf2(size_t n)
@@ -216,7 +216,7 @@ namespace
 
     if (myAudioDevice)
     {
-      myBytesPerSecond = getBytesPerPeriod(myAudioSpec, 1000);
+      myBytesPerSecond = getBytesPerSecond(myAudioSpec);
 
       SDL_PauseAudioDevice(myAudioDevice, 0);
     }
