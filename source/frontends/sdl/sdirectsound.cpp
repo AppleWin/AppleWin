@@ -76,9 +76,8 @@ namespace
   {
     LPVOID lpvAudioPtr1, lpvAudioPtr2;
     DWORD dwAudioBytes1, dwAudioBytes2;
-    myBuffer->Read(len, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
+    const size_t bytesRead = myBuffer->Read(len, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
 
-    const size_t bytesRead = dwAudioBytes1 + dwAudioBytes2;
     myMixerBuffer.resize(bytesRead);
 
     Uint8 * dest = myMixerBuffer.data();
@@ -98,7 +97,6 @@ namespace
     const size_t gap = len - bytesRead;
     if (gap)
     {
-      myBuffer->SetBufferUnderrun();
       memset(stream, myAudioSpec.silence, gap);
     }
   }

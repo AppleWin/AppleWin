@@ -127,14 +127,18 @@ HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOI
   return DS_OK;
 }
 
-HRESULT IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2)
+DWORD IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2)
 {
   const std::lock_guard<std::mutex> guard(myMutex);
 
   // Read up to dwReadBytes, never going past the write cursor
   // Positions are updated immediately
   const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->bufferSize;
-  dwReadBytes = std::min(dwReadBytes, available);
+  if (available < dwReadBytes)
+  {
+    dwReadBytes = available;
+    ++myNumberOfUnderruns;
+  }
 
   const DWORD availableInFirstPart = this->mySoundBuffer.size() - this->myPlayPosition;
 
@@ -155,7 +159,7 @@ HRESULT IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DW
     }
   }
   this->myPlayPosition = (this->myPlayPosition + dwReadBytes) % this->mySoundBuffer.size();
-  return DS_OK;
+  return dwReadBytes;
 }
 
 DWORD IDirectSoundBuffer::GetBytesInBuffer()
@@ -182,11 +186,6 @@ double IDirectSoundBuffer::GetLogarithmicVolume() const
 {
   const double volume = (double(myVolume) - DSBVOLUME_MIN) / (0.0 - DSBVOLUME_MIN);
   return volume;
-}
-
-void IDirectSoundBuffer::SetBufferUnderrun()
-{
-  ++myNumberOfUnderruns;
 }
 
 size_t IDirectSoundBuffer::GetBufferUnderruns() const

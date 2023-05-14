@@ -117,9 +117,8 @@ class IDirectSoundBuffer : public IUnknown
   HRESULT Restore();
 
   // NOT part of Windows API
-  HRESULT Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2);
+  DWORD Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2);
   DWORD GetBytesInBuffer();
-  void SetBufferUnderrun();
   size_t GetBufferUnderruns() const;
   void ResetUnderrruns();
   double GetLogarithmicVolume() const;  // in [0, 1]
