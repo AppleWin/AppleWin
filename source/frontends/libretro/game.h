@@ -34,7 +34,7 @@ namespace ra2
     void updateVariables();
     void executeOneFrame();
     void processInputEvents();
-    void writeAudio(const size_t ms);
+    void writeAudio(const size_t fps);
 
     void drawVideoBuffer();
 
