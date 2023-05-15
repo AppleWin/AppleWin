@@ -18,6 +18,7 @@ IDirectSoundBuffer::IDirectSoundBuffer(const size_t aBufferSize, const size_t aC
   , bitsPerSample(aBitsPerSample)
   , flags(aFlags)
 {
+  registerSoundBuffer(this);
 }
 
 HRESULT IDirectSoundBuffer::Release()
@@ -213,14 +214,17 @@ HRESULT DirectSoundEnumerate(LPDSENUMCALLBACK lpDSEnumCallback, LPVOID lpContext
 
 HRESULT IDirectSound::CreateSoundBuffer( LPCDSBUFFERDESC lpcDSBufferDesc, IDirectSoundBuffer **lplpDirectSoundBuffer, IUnknown FAR* pUnkOuter )
 {
+  if (*lplpDirectSoundBuffer)
+  {
+    (*lplpDirectSoundBuffer)->Release();
+  }
+
   const size_t bufferSize = lpcDSBufferDesc->dwBufferBytes;
   const size_t channels = lpcDSBufferDesc->lpwfxFormat->nChannels;
   const size_t sampleRate = lpcDSBufferDesc->lpwfxFormat->nSamplesPerSec;
   const size_t bitsPerSample = lpcDSBufferDesc->lpwfxFormat->wBitsPerSample;
   const size_t flags = lpcDSBufferDesc->dwFlags;
   IDirectSoundBuffer * dsb = new IDirectSoundBuffer(bufferSize, channels, sampleRate, bitsPerSample, flags);
-
-  registerSoundBuffer(dsb);
 
   *lplpDirectSoundBuffer = dsb;
   return DS_OK;
