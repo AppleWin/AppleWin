@@ -10,9 +10,7 @@
 #include <memory>
 #include <mutex>
 
-#define IID_IDirectSoundNotify 1234
 #define DS_OK				0
-#define DSBPN_OFFSETSTOP		-1
 
 #define DSBCAPS_CTRLVOLUME          0x00000080
 #define DSBCAPS_LOCSOFTWARE         0x00000008
@@ -71,13 +69,11 @@ typedef const DSBPOSITIONNOTIFY *LPCDSBPOSITIONNOTIFY;
 
 struct IDirectSoundNotify
 {
-  HRESULT SetNotificationPositions(DWORD cPositionNotifies, LPCDSBPOSITIONNOTIFY lpcPositionNotifies);
 };
 typedef struct IDirectSoundNotify *LPDIRECTSOUNDNOTIFY,**LPLPDIRECTSOUNDNOTIFY;
 
 class IDirectSoundBuffer : public IUnknown
 {
-  const std::unique_ptr<IDirectSoundNotify> mySoundNotify;
   std::vector<char> mySoundBuffer;
 
   size_t myPlayPosition = 0;
@@ -97,9 +93,7 @@ class IDirectSoundBuffer : public IUnknown
   const size_t flags;
 
   IDirectSoundBuffer(const size_t bufferSize, const size_t channels, const size_t sampleRate, const size_t bitsPerSample, const size_t flags);
-  HRESULT Release() override;
-
-  HRESULT QueryInterface(int riid, void **ppvObject);
+  virtual HRESULT Release() override;
 
   HRESULT SetCurrentPosition( DWORD dwNewPosition );
   HRESULT GetCurrentPosition( LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor );

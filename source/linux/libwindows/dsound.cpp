@@ -3,14 +3,8 @@
 
 #include <cstring>
 
-HRESULT IDirectSoundNotify::SetNotificationPositions(DWORD cPositionNotifies, LPCDSBPOSITIONNOTIFY lpcPositionNotifies)
-{
-  return DS_OK;
-}
-
 IDirectSoundBuffer::IDirectSoundBuffer(const size_t aBufferSize, const size_t aChannels, const size_t aSampleRate, const size_t aBitsPerSample, const size_t aFlags)
-  : mySoundNotify(new IDirectSoundNotify)
-  , mySoundBuffer(aBufferSize)
+  : mySoundBuffer(aBufferSize)
   , myNumberOfUnderruns(0)
   , bufferSize(aBufferSize)
   , sampleRate(aSampleRate)
@@ -29,17 +23,6 @@ HRESULT IDirectSoundBuffer::Release()
 
   // do not call any more methods after the next function returns
   return IUnknown::Release();
-}
-
-HRESULT IDirectSoundBuffer::QueryInterface(int riid, void **ppvObject)
-{
-  if (riid == IID_IDirectSoundNotify)
-  {
-    *ppvObject = mySoundNotify.get();
-    return S_OK;
-  }
-
-  return E_NOINTERFACE;
 }
 
 HRESULT IDirectSoundBuffer::Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2 )
