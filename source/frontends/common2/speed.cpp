@@ -25,7 +25,7 @@ namespace common2
     return cycles;
   }
 
-  uint64_t Speed::getCyclesTillNext(const size_t microseconds) const
+  uint64_t Speed::getCyclesTillNext(const size_t microseconds)
   {
     if (myFixedSpeed || g_bFullSpeed)
     {
@@ -39,6 +39,9 @@ namespace common2
       const auto currentDelta = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - myStartTime).count();
       // target the next time we will be called
       const auto targetDeltaInMicros = currentDelta + microseconds;
+
+      // permanently apply the correction
+      myStartCycles += g_nCpuCyclesFeedback;
 
       const uint64_t targetCycles = static_cast<uint64_t>(targetDeltaInMicros * g_fCurrentCLK6502 * 1.0e-6) + myStartCycles;
       if (targetCycles > currentCycles)

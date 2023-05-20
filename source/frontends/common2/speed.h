@@ -14,7 +14,7 @@ namespace common2
 
     // calculate the number of cycles to execute in the current period
     // assuming the next call will happen in x microseconds
-    uint64_t getCyclesTillNext(const size_t microseconds) const;
+    uint64_t getCyclesTillNext(const size_t microseconds);
     uint64_t getCyclesAtFixedSpeed(const size_t microseconds) const;
 
   private:
