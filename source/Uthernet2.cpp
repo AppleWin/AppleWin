@@ -373,7 +373,7 @@ const std::string& Uthernet2::GetSnapshotCardName()
     return name;
 }
 
-Uthernet2::Uthernet2(UINT slot) : Card(CT_Uthernet2, slot)
+Uthernet2::Uthernet2(UINT slot) : NetworkCard(CT_Uthernet2, slot)
 {
 #ifdef _MSC_VER
     WSADATA wsaData;
@@ -1656,4 +1656,9 @@ bool Uthernet2::GetRegistryVirtualDNS(UINT slot)
     DWORD enabled = 1;
     RegLoadValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, TRUE, &enabled);
     return enabled != 0;
+}
+
+const std::shared_ptr<NetworkBackend> & Uthernet2::GetNetworkBackend() const
+{
+    return myNetworkBackend;
 }

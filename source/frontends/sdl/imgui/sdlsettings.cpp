@@ -5,6 +5,7 @@
 #include "linux/registry.h"
 #include "linux/version.h"
 #include "linux/tape.h"
+#include "linux/network/slirp2.h"
 
 #include "Interface.h"
 #include "CardManager.h"
@@ -741,14 +742,39 @@ namespace sa2
           ImGui::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Debugger"))
+#ifdef U2_USE_SLIRP
+        if (ImGui::BeginTabItem("Network"))
         {
-          if (ImGui::RadioButton("Color", g_iColorScheme == SCHEME_COLOR)) { g_iColorScheme = SCHEME_COLOR; } ImGui::SameLine();
-          if (ImGui::RadioButton("Mono", g_iColorScheme == SCHEME_MONO)) { g_iColorScheme = SCHEME_MONO; } ImGui::SameLine();
-          if (ImGui::RadioButton("BW", g_iColorScheme == SCHEME_BW)) { g_iColorScheme = SCHEME_BW; }
+          if (ImGui::BeginTabBar("Uthernet"))
+          {
+            for (size_t slot = SLOT1; slot < NUM_SLOTS; ++slot)
+            {
+              const SS_CARDTYPE card = cardManager.QuerySlot(slot);
+              if (card == CT_Uthernet || card == CT_Uthernet2)
+              {
+                const std::string slotNumber = StrFormat("Slot %" SIZE_T_FMT, slot);
+                if (ImGui::BeginTabItem(slotNumber.c_str()))
+                {
+                  ImGui::LabelText("Card", "%s", getCardName(card).c_str());
+                  ImGui::Separator();
+                  const NetworkCard & networkCard = dynamic_cast<NetworkCard &>(cardManager.GetRef(slot));
+                  const std::shared_ptr<NetworkBackend> & backend = networkCard.GetNetworkBackend();
+                  const std::shared_ptr<SlirpBackend> slirp = std::dynamic_pointer_cast<SlirpBackend>(backend);
+                  if (slirp)
+                  {
+                    const std::string info = slirp->getNeighborInfo();
+                    ImGui::TextUnformatted(info.c_str());
+                  }
+                  ImGui::EndTabItem();
+                }
+              }
+            }
 
+            ImGui::EndTabBar();
+          }
           ImGui::EndTabItem();
         }
+#endif
 
         if (ImGui::BeginTabItem("Registry"))
         {
@@ -1248,6 +1274,9 @@ namespace sa2
       {
         if (ImGui::BeginTabItem("CPU"))
         {
+          if (ImGui::RadioButton("Color", g_iColorScheme == SCHEME_COLOR)) { g_iColorScheme = SCHEME_COLOR; } ImGui::SameLine();
+          if (ImGui::RadioButton("Mono", g_iColorScheme == SCHEME_MONO)) { g_iColorScheme = SCHEME_MONO; } ImGui::SameLine();
+          if (ImGui::RadioButton("BW", g_iColorScheme == SCHEME_BW)) { g_iColorScheme = SCHEME_BW; } ImGui::SameLine();
           ImGui::Checkbox("Auto-sync PC", &mySyncCPU);
 
           bool recalc = false;

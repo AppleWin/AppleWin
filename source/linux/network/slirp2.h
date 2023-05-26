@@ -38,6 +38,8 @@ public:
 
   int addPoll(const int fd, const int events);
   int getREvents(const int idx) const;
+
+  std::string getNeighborInfo() const;
 private:
 
   static constexpr size_t ourQueueSize = 10;

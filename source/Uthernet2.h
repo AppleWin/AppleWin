@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Card.h"
+#include "NetworkCard.h"
 
 #include <vector>
 #include <map>
@@ -59,7 +59,7 @@ private:
 *   https://www.wiznet.io/wp-content/uploads/wiznethome/Chip/W5100/Document/3150Aplus_5100_ES_V260E.pdf
 */
 
-class Uthernet2 : public Card
+class Uthernet2 : public NetworkCard
 {
 public:
     static const std::string& GetSnapshotCardName();
@@ -75,6 +75,8 @@ public:
     virtual void Update(const ULONG nExecutedCycles);
     virtual void SaveSnapshot(YamlSaveHelper &yamlSaveHelper);
     virtual bool LoadSnapshot(YamlLoadHelper &yamlLoadHelper, UINT version);
+
+    virtual const std::shared_ptr<NetworkBackend> & GetNetworkBackend() const;
 
     BYTE IO_C0(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 

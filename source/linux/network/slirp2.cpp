@@ -216,4 +216,12 @@ const std::string & SlirpBackend::getInterfaceName()
   return myEmptyInterface;
 }
 
+std::string SlirpBackend::getNeighborInfo() const
+{
+  char * info = slirp_neighbor_info(mySlirp.get());
+  const std::string ret = info;
+  free(info);
+  return ret;
+}
+
 #endif

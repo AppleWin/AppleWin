@@ -227,7 +227,6 @@ add_library(appleii STATIC
   )
 
 target_include_directories(appleii PRIVATE
-  ${CMAKE_CURRENT_BINARY_DIR}  # for config.h
   ${YAML_INCLUDE_DIRS}
   ${PCAP_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
@@ -237,6 +236,7 @@ target_include_directories(appleii PRIVATE
 
 # this one appears in header files
 target_include_directories(appleii PUBLIC
+  ${CMAKE_CURRENT_BINARY_DIR}  # for config.h
   ${MINIZIP_INCLUDE_DIRS}
   )
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Card.h"
+#include "NetworkCard.h"
 
 /* define this only if VICE should write each and every frame received
    and send into the VICE log
@@ -118,7 +118,7 @@ TFE_PP_ADDR_MAC_ADDR        0x0158 * # RW - 4.6., p. 71 - 5.3., p. 86 *
 
 class NetworkBackend;
 
-class Uthernet1 : public Card
+class Uthernet1 : public NetworkCard
 {
 public:
 	Uthernet1(UINT slot);
@@ -129,6 +129,8 @@ public:
 	virtual void Update(const ULONG nExecutedCycles);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
+
+	virtual const std::shared_ptr<NetworkBackend> & GetNetworkBackend() const;
 
 	BYTE tfe_read(WORD ioaddress);
 	void tfe_store(WORD ioaddress, BYTE byte);
