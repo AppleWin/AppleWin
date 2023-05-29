@@ -128,6 +128,7 @@ namespace common2
     emulatorDesc.add_options()
       ("log", "Log to AppleWin.log")
       ("fixed-speed", "Fixed (non-adaptive) speed")
+      ("audio-buffer", po::value<size_t>()->default_value(options.audioBuffer), "Audio buffer (ms)")
       ("benchmark,b", "Benchmark emulator")
       ("no-squaring", "Gamepad range is (already) a square")
       ("nat", po::value<std::vector<std::string>>(), "SLIRP PortFwd")
@@ -144,7 +145,6 @@ namespace common2
     po::options_description sdlDesc("SDL");
     sdlDesc.add_options()
       ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
-      ("sdl-audio-buffer", po::value<size_t>()->default_value(options.sdlAudioBuffer), "SDL audio buffer (ms)")
       ("gl-swap", po::value<int>()->default_value(options.glSwapInterval), "SDL_GL_SwapInterval")
       ("no-imgui", "Plain SDL2 renderer")
       ("geometry", po::value<std::string>(), "WxH[+X+Y]")
@@ -205,6 +205,7 @@ namespace common2
       // Emulator
       options.log = vm.count("log") > 0;
       options.fixedSpeed = vm.count("fixed-speed") > 0;
+      setOption(vm, "audio-buffer", options.audioBuffer);
       options.benchmark = vm.count("benchmark") > 0;
       options.paddleSquaring = vm.count("no-squaring") == 0;
       setOption(vm, "nat", options.natPortFwds);
@@ -227,7 +228,6 @@ namespace common2
       options.aspectRatio = vm.count("aspect-ratio") > 0;
       setOption(vm, "game-controller", options.gameControllerIndex);
       setOption(vm, "game-mapping-file", options.gameControllerMappingFile);
-      setOption(vm, "sdl-audio-buffer", options.sdlAudioBuffer);
 
       // applen
       options.headless = vm.count("headless") > 0;
