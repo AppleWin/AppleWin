@@ -119,7 +119,7 @@ void run_sdl(int argc, const char * argv [])
     std::string updateTextureTimerTag, refreshScreenTimerTag, cpuTimerTag, eventTimerTag;
 
     // it does not need to be exact
-    const size_t oneFrame = 1000 / fps;
+    const uint64_t oneFrameMicros = 1000000 / fps;
 
     bool quit = false;
 
@@ -133,7 +133,7 @@ void run_sdl(int argc, const char * argv [])
       eventTimer.toc();
 
       cpuTimer.tic();
-      frame->ExecuteOneFrame(oneFrame);
+      frame->ExecuteOneFrame(oneFrameMicros);
       cpuTimer.toc();
 
       if (!options.headless)

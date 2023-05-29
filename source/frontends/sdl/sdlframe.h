@@ -29,7 +29,7 @@ namespace sa2
 
     void ProcessEvents(bool &quit);
 
-    void ExecuteOneFrame(const size_t msNextFrame);
+    void ExecuteOneFrame(const uint64_t microseconds);
     void ChangeMode(const AppMode_e mode);
     void SingleStep();
     void ResetHardware();
@@ -59,8 +59,8 @@ namespace sa2
     void ProcessMouseButton(const SDL_MouseButtonEvent & button);
     void ProcessMouseMotion(const SDL_MouseMotionEvent & motion);
 
-    void ExecuteInRunningMode(const size_t msNextFrame);
-    void ExecuteInDebugMode(const size_t msNextFrame);
+    void ExecuteInRunningMode(const uint64_t microseconds);
+    void ExecuteInDebugMode(const uint64_t microseconds);
     void Execute(const DWORD uCycles);
 
     void SetFullSpeed(const bool value);
