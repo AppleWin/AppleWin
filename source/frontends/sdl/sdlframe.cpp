@@ -764,6 +764,11 @@ namespace sa2
     #endif
   }
 
+  const common2::Speed & SDLFrame::getSpeed() const
+  {
+    return mySpeed;
+  }
+
 }
 
 void SingleStep(bool /* bReinit */)

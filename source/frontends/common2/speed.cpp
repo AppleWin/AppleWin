@@ -27,6 +27,8 @@ namespace common2
   {
     myStartTime = std::chrono::steady_clock::now();
     myStartCycles = g_nCumulativeCycles;
+    myOrgStartCycles = myStartCycles;
+    myTotalFeedbackCycles = 0;
     myAudioSpeed = getAudioAdjustedSpeed();
   }
 
@@ -38,6 +40,8 @@ namespace common2
 
   uint64_t Speed::getCyclesTillNext(const uint64_t microseconds)
   {
+    myTotalFeedbackCycles += g_nCpuCyclesFeedback;
+
     if (myFixedSpeed || g_bFullSpeed)
     {
       return getCyclesAtFixedSpeed(microseconds);
@@ -68,6 +72,28 @@ namespace common2
         return 0;
       }
     }
+  }
+
+  Speed::Stats Speed::getSpeedStats() const
+  {
+    const auto currentTime = std::chrono::steady_clock::now();
+    const auto currentDelta = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - myStartTime).count();
+    const double multiplier = 1000000.0 / currentDelta;
+
+    Stats stats{};
+
+    stats.nominal = g_fCurrentCLK6502;
+    stats.audio = myAudioSpeed;
+
+    if (g_nAppMode == MODE_RUNNING)
+    {
+      stats.netFeedback = myTotalFeedbackCycles * multiplier;
+
+      const uint64_t totalCycles = g_nCumulativeCycles - myOrgStartCycles;
+      stats.actual = totalCycles * multiplier;
+    }
+
+    return stats;
   }
 
 }

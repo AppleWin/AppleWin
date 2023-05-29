@@ -79,21 +79,6 @@ namespace sa2
 
           ImGui::Separator();
 
-          ImGui::BeginDisabled();
-          ImGui::Checkbox("Full speed", &g_bFullSpeed);
-          ImGui::EndDisabled();
-
-          int speed = g_dwSpeed;
-          if (ImGui::SliderInt("Speed", &speed, SPEED_MIN, SPEED_MAX))
-          {
-            g_dwSpeed = speed;
-            SetCurrentCLK6502();
-            REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
-            frame->ResetSpeed();
-          }
-          ImGui::LabelText("Clock", "%15.2f Hz", g_fCurrentCLK6502);
-
-          ImGui::Separator();
           ImGui::LabelText("Save state", "%s", Snapshot_GetPathname().c_str());
           ImGui::Separator();
 
@@ -121,6 +106,38 @@ namespace sa2
           if (ImGui::Button("CtrlReset"))
           {
             CtrlReset();
+          }
+
+          ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Speed"))
+        {
+          ImGui::BeginDisabled();
+          ImGui::Checkbox("Full speed", &g_bFullSpeed);
+          ImGui::EndDisabled();
+
+          ImGui::LabelText("Mode", "%s", getAppModeName(g_nAppMode).c_str());
+
+          ImGui::Separator();
+
+          int speedMultiplier = g_dwSpeed;
+          if (ImGui::SliderInt("Speed", &speedMultiplier, SPEED_MIN, SPEED_MAX))
+          {
+            g_dwSpeed = speedMultiplier;
+            SetCurrentCLK6502();
+            REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
+            frame->ResetSpeed();
+          }
+
+          const common2::Speed::Stats stats = frame->getSpeed().getSpeedStats();
+          ImGui::LabelText("Clock",          "%15.2f Hz", stats.nominal);
+          ImGui::LabelText("Audio adjusted", "%12.0f    Hz", stats.audio);
+          ImGui::LabelText("Actual",         "%12.0f    Hz", stats.actual);
+          ImGui::LabelText("Feedback",       "%12.0f    Hz", stats.netFeedback);
+          if (ImGui::Button("Reset speed"))
+          {
+            frame->ResetSpeed();
           }
 
           ImGui::EndTabItem();
@@ -490,9 +507,6 @@ namespace sa2
           {
             resetUnderruns();
           }
-
-          ImGui::Separator();
-          ImGui::Text("Feedback cycles = %6d", g_nCpuCyclesFeedback);
 
           ImGui::EndTabItem();
         }

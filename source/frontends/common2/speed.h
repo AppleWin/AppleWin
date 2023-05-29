@@ -15,7 +15,6 @@ namespace common2
       double actual;        // real speed since last reset
 
       double netFeedback;   // Hz net feedback adjustment
-      double absFeedback;   // Hz sum(abc) feedback adjustment
     };
 
     Speed(const bool fixedSpeed);
@@ -27,6 +26,8 @@ namespace common2
     uint64_t getCyclesTillNext(const uint64_t microseconds);
     uint64_t getCyclesAtFixedSpeed(const uint64_t microseconds) const;
 
+    Stats getSpeedStats() const;
+
   private:
 
     const bool myFixedSpeed;
@@ -37,7 +38,6 @@ namespace common2
     double myAudioSpeed;
 
     int64_t myTotalFeedbackCycles;
-    int64_t myAbsFeedbackCycles;
   };
 
 }

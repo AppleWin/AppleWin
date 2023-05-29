@@ -46,6 +46,8 @@ namespace sa2
 
     bool & getPreserveAspectRatio();
 
+    const common2::Speed & getSpeed() const;
+
     static void setGLSwapInterval(const int interval);
 
   protected:
