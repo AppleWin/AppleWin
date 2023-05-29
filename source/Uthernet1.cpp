@@ -1012,6 +1012,8 @@ static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE
 void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
 {
     const std::string interfaceName = PCapBackend::GetRegistryInterface(m_slot);
+    // first clean the old one, as 2 backends might not be able to exist at the same time
+    networkBackend.reset();
     networkBackend = GetFrame().CreateNetworkBackend(interfaceName);
     if (networkBackend->isValid())
     {

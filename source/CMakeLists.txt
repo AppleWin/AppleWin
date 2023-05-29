@@ -108,6 +108,7 @@ set(SOURCE_FILES
   linux/context.cpp
   linux/tape.cpp
   linux/network/slirp2.cpp
+  linux/network/portfwds.cpp
 
   linux/duplicates/Debugger_Display.cpp
   linux/duplicates/Debugger_Win32.cpp
@@ -213,6 +214,7 @@ set(HEADER_FILES
   linux/linuxframe.h
   linux/tape.h
   linux/network/slirp2.h
+  linux/network/portfwds.h
 
   Z80VICE/z80.h
   Z80VICE/z80mem.h

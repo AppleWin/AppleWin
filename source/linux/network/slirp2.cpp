@@ -100,7 +100,7 @@ namespace
 
 }
 
-SlirpBackend::SlirpBackend()
+SlirpBackend::SlirpBackend(const std::vector<PortFwd> & portFwds)
 {
   const SlirpConfig cfg =
   {
@@ -126,6 +126,19 @@ SlirpBackend::SlirpBackend()
   };
   Slirp * slirp = slirp_new(&cfg, &slirp_cb, this);
   mySlirp.reset(slirp, slirp_cleanup);
+  for (const auto & pf : portFwds)
+  {
+    const int res = slirp_add_hostfwd(slirp, pf.is_udp, pf.host_addr, pf.host_port, 
+      pf.guest_addr, pf.guest_port);
+    if (res != 0)
+    {
+      LogOutput("nat [%s]: slirp error: %s\n", pf.toString().c_str(), strerror(errno));
+    }
+    else
+    {
+      LogOutput("nat [%s]\n", pf.toString().c_str());
+    }
+  }
 }
 
 void SlirpBackend::transmit(const int txlength,	uint8_t *txframe)

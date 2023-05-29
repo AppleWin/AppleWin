@@ -1360,6 +1360,8 @@ void Uthernet2::Reset(const bool powerCycle)
         // dataAddress is NOT reset, see page 10 of Uthernet II
         myDataAddress = 0;
         const std::string interfaceName = PCapBackend::GetRegistryInterface(m_slot);
+        // first clean the old one, as 2 backends might not be able to exist at the same time
+        myNetworkBackend.reset();
         myNetworkBackend = GetFrame().CreateNetworkBackend(interfaceName);
         myARPCache.clear();
         myDNSCache.clear();

@@ -4,6 +4,23 @@ This file only lists options not already described in ``-h``.
 
 The default frontend uses SDL2 + ImGui and requires an OpenGL ES2.0 implementation. It is possible to use plain SDL2 and select the renderer (pass ``--no-imgui`` and look at ``-h``).
 
+## Network and port forwarding
+
+When `libslirp` is used as backend for Uthernet cards, ports must be explicitly opened and forwarded to the guest (only MACRAW sockets for Uthernet 2).
+
+Syntax is similar to Virtual Box
+```
+--nat 3,tcp,,8080,,http
+```
+Multiple `nat` options can be specified at once
+
+- default host address is 0.0.0.0
+- default guest address is the first in the dhcp range
+- service names are accepted
+- the slot (3) is currently ignored
+
+Parsing errors are fatal, listening errors are logged to the console.
+
 ## Configuration
 
 The configuration GUI only works with ImGui: otherwise either manually edit the configuration file ``~/.applewin/applewin.conf`` or use ``qapple`` and run ``sa2 --qt-ini``.

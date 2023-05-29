@@ -5,6 +5,7 @@
 #include "frontends/common2/commonframe.h"
 #include "frontends/common2/speed.h"
 #include "frontends/common2/programoptions.h"
+#include "linux/network/portfwds.h"
 #include <SDL.h>
 
 namespace common2
@@ -26,6 +27,7 @@ namespace sa2
     void FrameRefreshStatus(int drawflags) override;
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
     void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
+    std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName) override;
 
     void ProcessEvents(bool &quit);
 
@@ -82,6 +84,8 @@ namespace sa2
     bool myScrollLockFullSpeed;
 
     common2::Speed mySpeed;
+
+    std::vector<PortFwd> myPortFwds;
 
     std::shared_ptr<SDL_Window> myWindow;
 
