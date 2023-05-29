@@ -3,6 +3,16 @@
 #include "StdAfx.h"
 #include "CPU.h"
 #include "Core.h"
+#include "Speaker.h"
+
+namespace
+{
+  double getAudioAdjustedSpeed()
+  {
+    return g_fClksPerSpkrSample * SPKR_SAMPLE_RATE;
+    // return g_fCurrentCLK6502;
+  }
+}
 
 namespace common2
 {
@@ -17,11 +27,12 @@ namespace common2
   {
     myStartTime = std::chrono::steady_clock::now();
     myStartCycles = g_nCumulativeCycles;
+    myAudioSpeed = getAudioAdjustedSpeed();
   }
 
   uint64_t Speed::getCyclesAtFixedSpeed(const uint64_t microseconds) const
   {
-    const uint64_t cycles = static_cast<uint64_t>(microseconds * g_fCurrentCLK6502 * 1.0e-6) + g_nCpuCyclesFeedback;
+    const uint64_t cycles = static_cast<uint64_t>(microseconds * myAudioSpeed * 1.0e-6) + g_nCpuCyclesFeedback;
     return cycles;
   }
 
@@ -43,7 +54,7 @@ namespace common2
       // permanently apply the correction
       myStartCycles += g_nCpuCyclesFeedback;
 
-      const uint64_t targetCycles = static_cast<uint64_t>(targetDeltaInMicros * g_fCurrentCLK6502 * 1.0e-6) + myStartCycles;
+      const uint64_t targetCycles = static_cast<uint64_t>(targetDeltaInMicros * myAudioSpeed * 1.0e-6) + myStartCycles;
       if (targetCycles > currentCycles)
       {
         // number of cycles to fill this period
