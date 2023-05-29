@@ -1,6 +1,6 @@
 #pragma once
 
-#include "linux/registry.h"
+#include "linux/registryclass.h"
 #include <boost/property_tree/ptree.hpp>
 #include <string>
 

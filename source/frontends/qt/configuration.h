@@ -1,7 +1,7 @@
 #ifndef REGISTRY_H
 #define REGISTRY_H
 
-#include "linux/registry.h"
+#include "linux/registryclass.h"
 
 #include <QSettings>
 

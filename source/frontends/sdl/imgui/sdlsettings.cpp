@@ -2,9 +2,9 @@
 #include "frontends/sdl/imgui/sdlsettings.h"
 #include "frontends/sdl/imgui/settingshelper.h"
 #include "frontends/sdl/sdlframe.h"
-#include "linux/registry.h"
+#include "linux/registryclass.h"
 #include "linux/version.h"
-#include "linux/tape.h"
+#include "linux/cassettetape.h"
 #include "linux/network/slirp2.h"
 
 #include "Interface.h"

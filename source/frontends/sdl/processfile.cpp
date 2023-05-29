@@ -3,7 +3,7 @@
 #include "frontends/sdl/sdlframe.h"
 #include "frontends/common2/utils.h"
 
-#include "linux/tape.h"
+#include "linux/cassettetape.h"
 
 #include "CardManager.h"
 #include "Disk.h"

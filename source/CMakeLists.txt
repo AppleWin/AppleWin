@@ -102,11 +102,11 @@ set(SOURCE_FILES
   linux/benchmark.cpp
   linux/paddle.cpp
   linux/version.cpp
-  linux/registry.cpp
+  linux/registryclass.cpp
   linux/keyboard.cpp
   linux/linuxframe.cpp
   linux/context.cpp
-  linux/tape.cpp
+  linux/cassettetape.cpp
   linux/network/slirp2.cpp
   linux/network/portfwds.cpp
 
@@ -209,10 +209,10 @@ set(HEADER_FILES
   linux/benchmark.h
   linux/paddle.h
   linux/version.h
-  linux/registry.h
+  linux/registryclass.h
   linux/keyboard.h
   linux/linuxframe.h
-  linux/tape.h
+  linux/cassettetape.h
   linux/network/slirp2.h
   linux/network/portfwds.h
 

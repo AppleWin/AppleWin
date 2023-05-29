@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 
-#include "linux/tape.h"
+#include "cassettetape.h"
 
 #include "Core.h"
 #include "Tape.h"
