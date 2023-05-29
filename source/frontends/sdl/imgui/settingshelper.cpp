@@ -112,6 +112,12 @@ namespace
     const std::vector<SS_CARDTYPE> expansionCards =
       {CT_Empty, CT_LanguageCard, CT_Extended80Col, CT_Saturn128K, CT_RamWorksIII};
 
+  uint8_t roundToRGB(float x)
+  {
+    // c++ cast truncates
+    return uint8_t(x * 255 + 0.5);
+  }
+
 }
 
 namespace sa2
@@ -238,6 +244,20 @@ namespace sa2
     }
   }
 
+  ImVec4 colorrefToImVec4(const COLORREF cr)
+  {
+    const float coeff = 1.0 / 255.0;
+    const bgra_t * bgra = reinterpret_cast<const bgra_t *>(&cr);
+    const ImVec4 color(bgra->b * coeff, bgra->g * coeff, bgra->r * coeff, 1);
+    return color;
+  }
+
+  COLORREF imVec4ToColorref(const ImVec4 & color)
+  {
+    const bgra_t bgra = {roundToRGB(color.x), roundToRGB(color.y), roundToRGB(color.z), roundToRGB(color.w)};
+    const COLORREF * cr = reinterpret_cast<const COLORREF *>(&bgra);
+    return *cr;
+  }
 
 }
 

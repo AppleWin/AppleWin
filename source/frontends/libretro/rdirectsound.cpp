@@ -168,7 +168,7 @@ namespace ra2
       if (diff >= 5)
       {
         // this is very verbose
-        // log_cb(RETRO_LOG_INFO, "RA2: %s occupancy = %d, underrun_likely = %d\n", __FUNCTION__, occupancy, underrun_likely);
+        log_cb(RETRO_LOG_INFO, "RA2: %s occupancy = %d, underrun_likely = %d\n", __FUNCTION__, occupancy, underrun_likely);
         lastOccupancy = occupancy;
       }
     }

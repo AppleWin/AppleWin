@@ -373,7 +373,7 @@ const std::string& Uthernet2::GetSnapshotCardName()
     return name;
 }
 
-Uthernet2::Uthernet2(UINT slot) : Card(CT_Uthernet2, slot)
+Uthernet2::Uthernet2(UINT slot) : NetworkCard(CT_Uthernet2, slot)
 {
 #ifdef _MSC_VER
     WSADATA wsaData;
@@ -1360,6 +1360,8 @@ void Uthernet2::Reset(const bool powerCycle)
         // dataAddress is NOT reset, see page 10 of Uthernet II
         myDataAddress = 0;
         const std::string interfaceName = PCapBackend::GetRegistryInterface(m_slot);
+        // first clean the old one, as 2 backends might not be able to exist at the same time
+        myNetworkBackend.reset();
         myNetworkBackend = GetFrame().CreateNetworkBackend(interfaceName);
         myARPCache.clear();
         myDNSCache.clear();
@@ -1656,4 +1658,9 @@ bool Uthernet2::GetRegistryVirtualDNS(UINT slot)
     DWORD enabled = 1;
     RegLoadValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, TRUE, &enabled);
     return enabled != 0;
+}
+
+const std::shared_ptr<NetworkBackend> & Uthernet2::GetNetworkBackend() const
+{
+    return myNetworkBackend;
 }

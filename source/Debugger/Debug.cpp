@@ -8712,7 +8712,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 			else if (g_bDebugBreakpointHit & BP_HIT_INVALID)
 				stopReason = "Invalid opcode";
 			else if (g_bDebugBreakpointHit & BP_HIT_OPCODE)
-				stopReason = "Opcode match";
+				stopReason = StrFormat("Opcode match at " CHC_ARG_SEP "$" CHC_ADDRESS "%04X", regs.pc);
 			else if (g_bDebugBreakpointHit & BP_HIT_REG)
 			{
 					if (g_pDebugBreakpointHit)

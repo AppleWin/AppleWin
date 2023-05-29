@@ -65,6 +65,8 @@ namespace common2
     std::string wavFileMockingboard;
 
     std::vector<std::string> registryOptions;
+
+    std::vector<std::string> natPortFwds;
   };
 
   bool getEmulatorOptions(int argc, const char * argv [], const std::string & edition, EmulatorOptions & options);

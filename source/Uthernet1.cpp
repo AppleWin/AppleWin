@@ -181,7 +181,7 @@ void Uthernet1::tfe_debug_output_pp( void )
 
 #endif
 
-Uthernet1::Uthernet1(UINT slot) : Card(CT_Uthernet, slot)
+Uthernet1::Uthernet1(UINT slot) : NetworkCard(CT_Uthernet, slot)
 {
     if (m_slot != SLOT3)	// fixme
         ThrowErrorInvalidSlot();
@@ -1012,6 +1012,8 @@ static BYTE __stdcall TfeIo (WORD programcounter, WORD address, BYTE write, BYTE
 void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
 {
     const std::string interfaceName = PCapBackend::GetRegistryInterface(m_slot);
+    // first clean the old one, as 2 backends might not be able to exist at the same time
+    networkBackend.reset();
     networkBackend = GetFrame().CreateNetworkBackend(interfaceName);
     if (networkBackend->isValid())
     {
@@ -1122,4 +1124,9 @@ bool Uthernet1::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
         tfe_sideeffects_write_pp((TFE_PP_ADDR_MAC_ADDR + i) & ~1, i & 1);           // set tfe_ia_mac
 
     return true;
+}
+
+const std::shared_ptr<NetworkBackend> & Uthernet1::GetNetworkBackend() const
+{
+    return networkBackend;
 }

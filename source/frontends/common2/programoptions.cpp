@@ -130,6 +130,7 @@ namespace common2
       ("fixed-speed", "Fixed (non-adaptive) speed")
       ("benchmark,b", "Benchmark emulator")
       ("no-squaring", "Gamepad range is (already) a square")
+      ("nat", po::value<std::vector<std::string>>(), "SLIRP PortFwd")
       ;
     desc.add(emulatorDesc);
 
@@ -206,6 +207,7 @@ namespace common2
       options.fixedSpeed = vm.count("fixed-speed") > 0;
       options.benchmark = vm.count("benchmark") > 0;
       options.paddleSquaring = vm.count("no-squaring") == 0;
+      setOption(vm, "nat", options.natPortFwds);
 
       // Audio
       setOption(vm, "wav-speaker", options.wavFileSpeaker);

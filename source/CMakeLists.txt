@@ -108,6 +108,7 @@ set(SOURCE_FILES
   linux/context.cpp
   linux/tape.cpp
   linux/network/slirp2.cpp
+  linux/network/portfwds.cpp
 
   linux/duplicates/Debugger_Display.cpp
   linux/duplicates/Debugger_Win32.cpp
@@ -213,6 +214,7 @@ set(HEADER_FILES
   linux/linuxframe.h
   linux/tape.h
   linux/network/slirp2.h
+  linux/network/portfwds.h
 
   Z80VICE/z80.h
   Z80VICE/z80mem.h
@@ -227,7 +229,6 @@ add_library(appleii STATIC
   )
 
 target_include_directories(appleii PRIVATE
-  ${CMAKE_CURRENT_BINARY_DIR}  # for config.h
   ${YAML_INCLUDE_DIRS}
   ${PCAP_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
@@ -237,6 +238,7 @@ target_include_directories(appleii PRIVATE
 
 # this one appears in header files
 target_include_directories(appleii PUBLIC
+  ${CMAKE_CURRENT_BINARY_DIR}  # for config.h
   ${MINIZIP_INCLUDE_DIRS}
   )
 

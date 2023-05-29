@@ -82,11 +82,13 @@ target_sources(sa2 PRIVATE
   imgui/image.cpp
   imgui/settingshelper.cpp
   imgui/sdlsettings.cpp
+  imgui/sdldebugger.cpp
 
   imgui/sdlimguiframe.h
   imgui/image.h
   imgui/settingshelper.h
   imgui/sdlsettings.h
+  imgui/sdldebugger.h
   imgui/imconfig.h
   imgui/glselector.h
 
