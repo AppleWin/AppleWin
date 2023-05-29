@@ -1,5 +1,8 @@
 #include "StdAfx.h"
 #include "Registry.h"
+#include "Common.h"
+#include "Card.h"
+#include "CopyProtectionDongles.h"
 
 
 
