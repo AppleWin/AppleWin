@@ -14,7 +14,7 @@
 #include "NTSC.h"
 #include "Interface.h"
 
-#include "linux/keyboard.h"
+#include "linux/keyboardbuffer.h"
 #include "linux/paddle.h"
 #include "linux/context.h"
 

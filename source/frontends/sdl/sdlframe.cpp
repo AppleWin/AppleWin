@@ -19,7 +19,7 @@
 #include "Debugger/Debug.h"
 
 #include "linux/paddle.h"
-#include "linux/keyboard.h"
+#include "linux/keyboardbuffer.h"
 #include "linux/network/slirp2.h"
 
 #include <algorithm>

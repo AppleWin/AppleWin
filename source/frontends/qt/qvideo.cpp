@@ -4,7 +4,7 @@
 #include <QKeyEvent>
 
 #include "StdAfx.h"
-#include "linux/keyboard.h"
+#include "linux/keyboardbuffer.h"
 #include "linux/paddle.h"
 #include "Common.h"
 #include "CardManager.h"

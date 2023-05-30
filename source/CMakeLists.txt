@@ -103,7 +103,6 @@ set(SOURCE_FILES
   linux/paddle.cpp
   linux/version.cpp
   linux/registryclass.cpp
-  linux/keyboard.cpp
   linux/linuxframe.cpp
   linux/context.cpp
   linux/cassettetape.cpp
@@ -210,7 +209,7 @@ set(HEADER_FILES
   linux/paddle.h
   linux/version.h
   linux/registryclass.h
-  linux/keyboard.h
+  linux/keyboardbuffer.h
   linux/linuxframe.h
   linux/cassettetape.h
   linux/network/slirp2.h

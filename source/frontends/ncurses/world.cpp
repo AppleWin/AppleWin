@@ -5,7 +5,7 @@
 #include <signal.h>
 
 #include "linux/linuxinterface.h"
-#include "linux/keyboard.h"
+#include "linux/keyboardbuffer.h"
 
 #include "frontends/ncurses/nframe.h"
 
