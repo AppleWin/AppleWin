@@ -362,7 +362,6 @@ Update_t CmdDisasmDataList (int nArgs)
 
 // TODO: merge _CmdDisasmDataDefByteX() and _CmdDisasmDataDefWordX
 //       add params( iDirective, iOpcode ) to allow ASM_DEFINE_FLOAT, NOP_FAC
-
 //===========================================================================
 Update_t _CmdDisasmDataDefByteX (int nArgs)
 {
@@ -382,9 +381,9 @@ Update_t _CmdDisasmDataDefByteX (int nArgs)
 	DisasmData_t tData;
 	int iArg = 2;
 
-	if (nArgs == 3 ) // 2.7.0.31 Bug fix: DB range, i.e. DB 174E:175F
+	if (nArgs == 3) // 2.7.0.31 Bug fix: DB range, i.e. DB 174E:175F
 	{
-		if ( g_aArgs[ 2 ].eToken == TOKEN_COLON )
+		if (g_aArgs[ 2 ].eToken == TOKEN_COLON)
 			iArg = 1;
 	}
 
