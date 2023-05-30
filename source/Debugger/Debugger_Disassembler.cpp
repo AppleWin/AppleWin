@@ -567,7 +567,8 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 				{
 					const double f    = fac.mantissa * pow( 2.0, fac.exponent - 32 );
 					//std::string sFac = StrFormat( "s%1X m%04X e%08X", fac.negative, fac.mantissa, fac.exponent );
-					std::string  sFac = StrFormat( "%c%f", aSign[ fac.negative ], f );
+					// 2.9.1.23: Show floating-point values in scientific notation.
+					std::string  sFac = StrFormat( "%c%e", aSign[ fac.negative ], f );
 					if ((pDst + sFac.length()) < pEnd)
 					{
 						memcpy(pDst, sFac.c_str(), sFac.length());
