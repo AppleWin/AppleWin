@@ -53,7 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,20);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,1,21);
 
 
 // Public _________________________________________________________________________________________
