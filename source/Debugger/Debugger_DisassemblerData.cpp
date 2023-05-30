@@ -391,8 +391,13 @@ Update_t _CmdDisasmDataDefByteX (int nArgs)
 	WORD nAddress = _CmdDefineByteRange( nArgs, iArg, tData );
 
 	// TODO: Allow user to select which assembler to use for displaying directives!
-//	tData.iDirective = FIRST_M_DIRECTIVE + ASM_M_DEFINE_BYTE;
 	tData.iDirective = g_aAssemblerFirstDirective[ g_iAssemblerSyntax ] + ASM_DEFINE_BYTE;
+
+	// 2.9.1.22 Fixed: `df FAC` was incorrectly getting marked up as `db`
+	if (g_aArgs[0].nValue == NOP_FAC)
+	{
+		tData.iDirective = g_aAssemblerFirstDirective[ g_iAssemblerSyntax ] + ASM_DEFINE_FLOAT;
+	}
 
 	tData.eElementType = (Nopcode_e)( NOP_BYTE_1 + iCmd );
 	tData.bSymbolLookup = false;
@@ -552,6 +557,18 @@ Update_t CmdDisasmDataDefByte8 ( int nArgs )
 // Command: DF
 // Usage:
 //     DF <addr>
+// Applesoft has several floating-point constants in ROM.
+// i.e.
+//     300:A0 E9     LDY #>$E932
+//     302:A9 32     LDA #<$E932
+//     304:20 F9 EA  JSR LOAD.FAC.FROM.YA
+//     307:4C 2E ED  JMP PRINT.FAC
+//
+// Addr  Symbol         FAC         Value     
+// E913  CON.ONE        8100000000  1.0       
+// E92D  CON.SQR.HALF   803504F334  .707106781
+// E932  CON.SQR.TWO    813504F334  1.41421356
+// etc.
 Update_t CmdDisasmDataDefFloat(int nArgs)
 {
 	g_aArgs[0].nValue = NOP_FAC;
