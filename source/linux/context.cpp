@@ -2,7 +2,7 @@
 
 #include "linux/context.h"
 #include "linux/linuxframe.h"
-#include "linux/registry.h"
+#include "linux/registryclass.h"
 #include "linux/paddle.h"
 #include "linux/duplicates/PropertySheet.h"
 

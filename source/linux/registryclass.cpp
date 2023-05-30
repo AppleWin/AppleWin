@@ -1,4 +1,4 @@
-#include "linux/registry.h"
+#include "registryclass.h"
 #include "windows.h"
 #include "Log.h"
 
