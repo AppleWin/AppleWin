@@ -566,7 +566,7 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 				else
 				{
 					const double f    = fac.mantissa * pow( 2.0, fac.exponent - 32 );
-					//std::string sFac = StrFormat( "s%1X m%04X e%02X", fac.negative, fac.mantissa, fac.exponent );
+					//std::string sFac = StrFormat( "s%1X m%04X e%08X", fac.negative, fac.mantissa, fac.exponent );
 					std::string  sFac = StrFormat( "%c%f", aSign[ fac.negative ], f );
 					if ((pDst + sFac.length()) < pEnd)
 					{
