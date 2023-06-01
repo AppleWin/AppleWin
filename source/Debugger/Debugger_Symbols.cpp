@@ -753,7 +753,7 @@ Update_t CmdSymbolsLoad (int nArgs)
 		nSymbols = ParseSymbolTable( sFileName, (SymbolTable_Index_e) iSymbolTable );
 
 		// Try optional alternate location
-		if (nSymbols == 0 && !g_sBuiltinSymbolsDir.empty())
+		if ((nSymbols == 0) && !g_sBuiltinSymbolsDir.empty())
 		{
 			sFileName = g_sBuiltinSymbolsDir + g_sFileNameSymbols[ iSymbolTable ];
 			nSymbols = ParseSymbolTable( sFileName, (SymbolTable_Index_e) iSymbolTable );
