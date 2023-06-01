@@ -2,6 +2,7 @@
 #include "linux/linuxframe.h"
 #include "linux/context.h"
 #include "linux/network/slirp2.h"
+#include "linux/version.h"
 #include "Interface.h"
 #include "Log.h"
 #include "Core.h"
@@ -55,6 +56,12 @@ void LinuxFrame::ResizeWindow()
 
 void LinuxFrame::SetWindowedModeShowDiskiiStatus(bool /* bShow */)
 {
+}
+
+LinuxFrame::LinuxFrame()
+{
+  const std::array<int, 4> version = getVersionNumbers();
+  SetAppleWinVersion(version[0], version[1], version[2], version[3]);
 }
 
 void LinuxFrame::Initialize(bool resetVideoState)

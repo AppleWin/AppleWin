@@ -7,6 +7,7 @@
 class LinuxFrame : public FrameBase
 {
 public:
+  LinuxFrame();
 
   void Initialize(bool resetVideoState) override;
   void Destroy() override;
