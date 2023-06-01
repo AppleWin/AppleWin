@@ -8,3 +8,8 @@ std::string getVersion()
 {
   return xstr2(APPLEWIN_VERSION);
 }
+
+std::array<int, 4> getVersionNumbers()
+{
+  return {APPLEWIN_VERSION};
+}
