@@ -231,10 +231,14 @@ const std::string & SlirpBackend::getInterfaceName()
 
 std::string SlirpBackend::getNeighborInfo() const
 {
+#if SLIRP_CHECK_VERSION(4, 5, 0)
   char * info = slirp_neighbor_info(mySlirp.get());
   const std::string ret = info;
   free(info);
   return ret;
+#else
+  return "NeighborInfo not available";
+#endif
 }
 
 #endif
