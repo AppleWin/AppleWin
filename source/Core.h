@@ -38,6 +38,7 @@ extern AppMode_e g_nAppMode;
 extern std::string g_sStartDir;
 extern std::string g_sProgramDir;
 extern std::string g_sCurrentDir;
+extern std::string g_sBuiltinSymbolsDir;
 
 bool SetCurrentImageDir(const std::string& pszImageDir);
 

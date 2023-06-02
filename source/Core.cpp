@@ -61,6 +61,7 @@ AppMode_e	g_nAppMode = MODE_LOGO;
 std::string g_sStartDir;	// NB. AppleWin.exe maybe relative to this! (GH#663)
 std::string g_sProgramDir;	// Directory of where AppleWin executable resides
 std::string g_sCurrentDir;	// Also Starting Dir.  Debugger uses this when load/save
+std::string g_sBuiltinSymbolsDir; // Alternate directory for built-in debug symbols
 
 bool      g_bRestart = false;
 
