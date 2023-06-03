@@ -103,7 +103,7 @@
 	// NOTE: Keep in sync!  AsmCustomDirective_e  g_aAssemblerDirectives
 	enum AsmCustomDirective_e
 	{
-		 ASM_DEFINE_BYTE	
+		 ASM_DEFINE_BYTE
 		,ASM_DEFINE_WORD
 //		,ASM_DEFINE_ADDRESS_8
 		,ASM_DEFINE_ADDRESS_16

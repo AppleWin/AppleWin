@@ -218,7 +218,7 @@ static void _SetupColorRamp(const int iPrimary, int & iColor_)
 
 
 //===========================================================================
-void ConfigColorsReset(void)
+void ConfigColorsReset (void)
 {
 	//	int iColor = 1; // black only has one level, skip it, since black levels same as white levels
 	//	for (int iPrimary = 1; iPrimary < 8; iPrimary++ )
@@ -247,6 +247,20 @@ void ConfigColorsReset(void)
 			BW = 0;
 		else
 			BW = 255;
+
+		// GH #1231
+		// Force contrast between:
+		//   BG_DISASM_PC_X and FG_DISASM_PC_X
+		if (iColor == FG_DISASM_PC_X)
+		{
+			int nIndexBG  = iColor - 1;
+			int nPrevBG   = g_aColors[ SCHEME_BW ][ nIndexBG ] & 0xFF;
+			int nContrast = 0xFF - nPrevBG;
+			int nDelta    = abs(BW - nPrevBG);
+
+			if (nDelta < 0x80)
+				BW = nContrast;
+		}
 
 		COLORREF nMono = RGB(M, M, M);
 		COLORREF nBW = RGB(BW, BW, BW);
