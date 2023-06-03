@@ -265,7 +265,7 @@ namespace sa2
   void ImGuiDebugger::drawDisassemblyTable(SDLFrame * frame)
   {
     const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable("Disassembly", 10, flags))
+    if (ImGui::BeginTable("Disassembly", 9, flags))
     {
       ImGui::PushStyleCompact();
       // weigths proportional to column width (including header)
@@ -409,20 +409,24 @@ namespace sa2
           if (bDisasmFormatFlags & DISASM_FORMAT_CHAR)
           {
             DebugColors_e color;
-            unsigned int c = (unsigned char)line.nImmediate;
+            const unsigned int c = (unsigned char)line.nImmediate;
             if ((c & 0x7F) < 0x20)
             {
-                // "bCtrlBit"
-                color = FG_INFO_CHAR_LO;
+              // Invisible control characters 0x00..0x1F are mapped to a visible range
+              // in sImmediate, but we want to specially color it.
+              // Mimics "bCtrlBit" logic in Windows.
+              color = FG_INFO_CHAR_LO;
             }
             else if (c > 0x7F)
             {
-                // "bHighBit"
-                color = FG_INFO_CHAR_HI;
+              // Characters with high bit set are mapped back down to 0x00..0x7F in
+              // sImmediate, but we want to specially color it.
+              // Mimics "bHighBit" logic in Windows.
+              color = FG_INFO_CHAR_HI;
             }
             else
             {
-                color = FG_DISASM_CHAR;
+              color = FG_DISASM_CHAR;
             }
             // FIXME: handle 0xFF, which displays as a gray block on AppleWin
             // but ImGui doesn't seem to have an appropriate character to map to.
