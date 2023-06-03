@@ -265,7 +265,7 @@ namespace sa2
   void ImGuiDebugger::drawDisassemblyTable(SDLFrame * frame)
   {
     const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY;
-    if (ImGui::BeginTable("Disassembly", 10, flags))
+    if (ImGui::BeginTable("Disassembly", 9, flags))
     {
       ImGui::PushStyleCompact();
       // weigths proportional to column width (including header)
@@ -275,10 +275,9 @@ namespace sa2
       ImGui::TableSetupColumn("Opcode", 0, 8);
       ImGui::TableSetupColumn("Symbol", 0, 10);
       ImGui::TableSetupColumn("Disassembly", 0, 20);
-      ImGui::TableSetupColumn("Target", 0, 4);
-      ImGui::TableSetupColumn("Value", 0, 6);
-      ImGui::TableSetupColumn("Immediate", 0, 4);
-      ImGui::TableSetupColumn("Branch", 0, 4);
+      ImGui::TableSetupColumn("Target", 0, 7);
+      ImGui::TableSetupColumn("Branch", 0, 1);
+      ImGui::TableSetupColumn("Immediate", 0, 1);
       ImGui::TableSetupColumn("Cycles", 0, 6);
       ImGui::TableHeadersRow();
 
@@ -373,24 +372,65 @@ namespace sa2
           if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER)
           {
             debuggerTextColored(FG_DISASM_ADDRESS, line.sTargetPointer);
+            
+            if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_VALUE)
+            {
+              ImGui::SameLine(0, 0);
+              debuggerTextColored(FG_DISASM_OPERATOR, ":");
+              ImGui::SameLine(0, 0);
+              debuggerTextColored(FG_DISASM_OPCODE, line.sTargetValue);
+            }
           }
-
-          ImGui::TableNextColumn();
-          if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_VALUE)
+          else if (line.bTargetImmediate && line.nImmediate)
           {
-            debuggerTextColored(FG_DISASM_OPCODE, line.sTargetValue);
-          }
-
-          ImGui::TableNextColumn();
-          if (bDisasmFormatFlags & DISASM_FORMAT_CHAR)
-          {
-            ImGui::TextUnformatted(line.sImmediate);
+            debuggerTextColored(FG_DISASM_OPERATOR, "#");
+            ImGui::SameLine(0, 0);
+            debuggerTextColored(FG_DISASM_SINT8, line.sImmediateSignedDec);
           }
 
           ImGui::TableNextColumn();
           if (bDisasmFormatFlags & DISASM_FORMAT_BRANCH)
           {
-            ImGui::TextUnformatted(line.sBranch);
+            if ((unsigned char)*line.sBranch == 0x8A)
+            {
+              debuggerTextColored(FG_DISASM_BRANCH, "v");
+            }
+            else if ((unsigned char)*line.sBranch == 0x8B)
+            {
+              debuggerTextColored(FG_DISASM_BRANCH, "^");
+            }
+            else
+            {
+              ImGui::TextUnformatted(line.sBranch);
+            }
+          }
+
+          ImGui::TableNextColumn();
+          if (bDisasmFormatFlags & DISASM_FORMAT_CHAR)
+          {
+            DebugColors_e color;
+            const unsigned int c = (unsigned char)line.nImmediate;
+            if ((c & 0x7F) < 0x20)
+            {
+              // Invisible control characters 0x00..0x1F are mapped to a visible range
+              // in sImmediate, but we want to specially color it.
+              // Mimics "bCtrlBit" logic in Windows.
+              color = FG_INFO_CHAR_LO;
+            }
+            else if (c > 0x7F)
+            {
+              // Characters with high bit set are mapped back down to 0x00..0x7F in
+              // sImmediate, but we want to specially color it.
+              // Mimics "bHighBit" logic in Windows.
+              color = FG_INFO_CHAR_HI;
+            }
+            else
+            {
+              color = FG_DISASM_CHAR;
+            }
+            // FIXME: handle 0xFF, which displays as a gray block on AppleWin
+            // but ImGui doesn't seem to have an appropriate character to map to.
+            debuggerTextColored(color, line.sImmediate);
           }
 
           ImGui::TableNextColumn();
