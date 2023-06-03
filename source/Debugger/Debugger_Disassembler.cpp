@@ -553,14 +553,22 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 				const char aSign[2] = { '+', '-' };
 				if (fac.isZero)
 				{
-					if ((pDst + 1) < pEnd)
-						*pDst++ = '0';
+					// 2.9.1.21 Fixed: `df` showing zero was displaying 0 instead 0.0
+					// Format 0.0 so users know this is a floating point value
+					std::string sFac( "0.0" );
+					if ((pDst + 3) < pEnd)
+					{
+						memcpy(pDst, sFac.c_str(), sFac.length());
+						pDst += sFac.length();
+					}
+					// No room???
 				}
 				else
 				{
 					const double f    = fac.mantissa * pow( 2.0, fac.exponent - 32 );
-					//std::string sFac = StrFormat( "s%1X m%04X e%02X", fac.negative, fac.mantissa, fac.exponent );
-					std::string  sFac = StrFormat( "%c%f", aSign[ fac.negative ], f );
+					//std::string sFac = StrFormat( "s%1X m%08X e%02X", fac.negative, fac.mantissa, fac.exponent & 0xFF );
+					// 2.9.1.23: Show floating-point values in scientific notation.
+					std::string  sFac = StrFormat( "%c%e", aSign[ fac.negative ], f );
 					if ((pDst + sFac.length()) < pEnd)
 					{
 						memcpy(pDst, sFac.c_str(), sFac.length());
