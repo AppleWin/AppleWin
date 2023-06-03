@@ -275,9 +275,9 @@ namespace sa2
       ImGui::TableSetupColumn("Opcode", 0, 8);
       ImGui::TableSetupColumn("Symbol", 0, 10);
       ImGui::TableSetupColumn("Disassembly", 0, 20);
-      ImGui::TableSetupColumn("Target", 0, 7);
-      ImGui::TableSetupColumn("Branch", 0, 1);
-      ImGui::TableSetupColumn("Immediate", 0, 1);
+      ImGui::TableSetupColumn("Target", 0, 4);
+      ImGui::TableSetupColumn("Branch", 0, 3);
+      ImGui::TableSetupColumn("Immediate", 0, 4);
       ImGui::TableSetupColumn("Cycles", 0, 6);
       ImGui::TableHeadersRow();
 
