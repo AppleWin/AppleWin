@@ -1435,7 +1435,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	int  bAddressIsBookmark = Bookmark_Find( nBaseAddress );
 
 	DebugColors_e iBackground = BG_DISASM_1;
-	DebugColors_e iForeground = FG_DISASM_MNEMONIC; // FG_DISASM_TEXT;
+	DebugColors_e iForeground = FG_DISASM_ADDRESS;
 	bool bCursorLine = false;
 
 	if (((! g_bDisasmCurBad) && (iLine == g_nDisasmCurLine))
@@ -1498,21 +1498,12 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 		}
 		else
 		{
-			iForeground = FG_DISASM_MNEMONIC;
+			iForeground = FG_DISASM_ADDRESS;
 		}
 	}
 
 	DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
 	DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
-
-	// Address
-	if (! bCursorLine)
-		DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_ADDRESS ) );
-//	else
-//	{
-//		DebuggerSetColorBG( GetDebuggerMemDC(), DebuggerGetColor( FG_DISASM_BOOKMARK ) ); // swapped
-//		DebuggerSetColorFG( GetDebuggerMemDC(), DebuggerGetColor( BG_DISASM_BOOKMARK ) ); // swapped
-//	}
 
 	if ( g_bConfigDisasmAddressView )
 	{
