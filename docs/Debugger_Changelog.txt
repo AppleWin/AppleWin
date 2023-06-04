@@ -1,4 +1,5 @@
 /*
+2.9.1.25 Fixed: R P ## wasn't setting P flag status register.
 2.9.1.24 Fixed: Disassembly line when at PC for BW mode. GH #1231
 2.9.1.23 Fixed: Show floating-point values in scientific notation.
 2.9.1.22 Fixed: `df FAC` was incorrectly getting marked up as `db`

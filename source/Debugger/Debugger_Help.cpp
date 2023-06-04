@@ -784,7 +784,7 @@ Update_t CmdHelpSpecific (int nArgs)
 	// Registers
 		case CMD_REGISTER_SET:
 			ConsoleColorizePrint( " Usage: <reg> <value | expression | symbol>" );
-			ConsoleBufferPush( "  Where <reg> is one of: A X Y PC SP " );
+			ConsoleBufferPush( "  Where <reg> is one of: A X Y P PC SP " );
 			ConsoleColorizePrintFormat( " See also: %s%s"
 				, CHC_CATEGORY
 				, g_aParameters[ PARAM_CAT_OPERATORS ].m_sName );
@@ -794,6 +794,7 @@ Update_t CmdHelpSpecific (int nArgs)
 			ConsolePrintFormat( "%s  R A  A1"       , CHC_EXAMPLE );
 			ConsolePrintFormat( "%s  R A  $A1"      , CHC_EXAMPLE );
 			ConsolePrintFormat( "%s  R A  #A1"      , CHC_EXAMPLE );
+			ConsolePrintFormat( "%s  R P  0"        , CHC_EXAMPLE );
 			break;
 		case CMD_SOURCE:
 //			ConsoleBufferPush( " Reads assembler source file." );
