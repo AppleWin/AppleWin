@@ -876,15 +876,16 @@ void SymbolUpdate ( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, W
 #endif
 			g_aSymbols[ eSymbolTable ][ nAddress ] = pSymbolName;
 
+			// 2.9.1.26: When adding symbols list the address first then the name for readability
 			// Tell user symbol was added
 			ConsolePrintFormat(
-				/*CHC_DEFAULT*/ " Added symbol: "
-				  CHC_SYMBOL    "%s"
-				  CHC_DEFAULT   " "
+				/*CHC_DEFAULT*/ " Added: "
 				  CHC_ARG_SEP   "$"
 				  CHC_ADDRESS   "%04X"
-				, pSymbolName
+				  CHC_DEFAULT   " "
+				  CHC_SYMBOL    "%s"
 				, nAddress
+				, pSymbolName
 			);
 		}
 	}
