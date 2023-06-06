@@ -84,9 +84,9 @@
 		, FG_DISASM_OPERATOR // Gray192     :               $ (also around instruction addressing g_nAppMode)
 		, FG_DISASM_OPCODE   // Yellow       xx xx xx
 		, FG_DISASM_MNEMONIC // White                   LDA
-/*ZZZ*/	, FG_DISASM_DIRECTIVE// Purple                  db 
+		, FG_DISASM_DIRECTIVE// Purple                  db 
 		, FG_DISASM_TARGET   // Orange                       FAC8
-/*ZZZ*/	, FG_DISASM_SYMBOL   // Green                        HOME
+		, FG_DISASM_SYMBOL   // Green                        HOME
 		, FG_DISASM_CHAR     // Cyan                               'c'
 		, FG_DISASM_BRANCH   // Green                                   ^ = v
 		, FG_DISASM_SINT8    // Lite Blue
