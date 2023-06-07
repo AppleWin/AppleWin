@@ -112,7 +112,7 @@ public:
 private:
 	void CleanupDriveInternal(const int iDrive);
 	void CleanupDrive(const int iDrive);
-	void NotifyInvalidImage(TCHAR* pszImageFilename);
+	void NotifyInvalidImage(const std::string & szImageFilename);
 	void SaveLastDiskImage(const int drive);
 	const std::string& DiskGetBaseName(const int iDrive);
 	bool SelectImage(const int drive, LPCSTR pszFilename);
