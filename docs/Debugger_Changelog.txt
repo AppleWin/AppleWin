@@ -1,4 +1,5 @@
 /*
+2.9.1.26 Fixed: When adding symbols list the address first then the name for readability
 2.9.1.25 Fixed: R P ## wasn't setting P flag status register.
 2.9.1.24 Fixed: Disassembly line when at PC for BW mode. GH #1231
 2.9.1.23 Fixed: Show floating-point values in scientific notation.

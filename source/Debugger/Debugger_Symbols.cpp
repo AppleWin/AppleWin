@@ -823,7 +823,7 @@ Update_t _CmdSymbolsClear( SymbolTable_Index_e eSymbolTable )
 
 
 //===========================================================================
-void SymbolUpdate( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, WORD nAddress, bool bRemoveSymbol, bool bUpdateSymbol )
+void SymbolUpdate ( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, WORD nAddress, bool bRemoveSymbol, bool bUpdateSymbol )
 {
 	if (bRemoveSymbol)
 		pSymbolName = g_aArgs[2].sArg;
@@ -876,11 +876,16 @@ void SymbolUpdate( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, WO
 #endif
 			g_aSymbols[ eSymbolTable ][ nAddress ] = pSymbolName;
 
+			// 2.9.1.26: When adding symbols list the address first then the name for readability
 			// Tell user symbol was added
-			ConsolePrintFormat( " Added symbol: %s%s%s %s$%s%04X%s"
-				, CHC_SYMBOL, pSymbolName, CHC_DEFAULT
-				, CHC_ARG_SEP					
-				, CHC_ADDRESS, nAddress, CHC_DEFAULT
+			ConsolePrintFormat(
+				/*CHC_DEFAULT*/ " Added: "
+				  CHC_ARG_SEP   "$"
+				  CHC_ADDRESS   "%04X"
+				  CHC_DEFAULT   " "
+				  CHC_SYMBOL    "%s"
+				, nAddress
+				, pSymbolName
 			);
 		}
 	}
