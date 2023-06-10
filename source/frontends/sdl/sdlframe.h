@@ -36,7 +36,10 @@ namespace sa2
     void SingleStep();
     void ResetHardware();
     bool HardwareChanged() const;
+
+    void FrameResetMachineState();
     virtual void ResetSpeed();
+
     void LoadSnapshot() override;
 
     const std::shared_ptr<SDL_Window> & GetWindow() const;

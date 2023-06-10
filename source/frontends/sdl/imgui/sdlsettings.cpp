@@ -99,7 +99,7 @@ namespace sa2
           ImGui::SameLine();
           if (ImGui::Button("ResetMachineState"))
           {
-            ResetMachineState();
+            frame->FrameResetMachineState();
           }
 
           ImGui::SameLine();

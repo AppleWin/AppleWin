@@ -463,7 +463,7 @@ namespace sa2
           }
           else
           {
-            ResetMachineState();
+            FrameResetMachineState();
           }
           break;
         }
@@ -720,6 +720,12 @@ namespace sa2
   void SDLFrame::ResetHardware()
   {
     myHardwareConfig.Reload();
+  }
+
+  void SDLFrame::FrameResetMachineState()
+  {
+    ResetMachineState();  // this changes g_bFullSpeed
+    ResetSpeed();
   }
 
   bool SDLFrame::HardwareChanged() const
