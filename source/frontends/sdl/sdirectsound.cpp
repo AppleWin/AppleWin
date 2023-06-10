@@ -45,13 +45,13 @@ namespace
     sa2::SoundInfo getInfo() const;
 
   private:
-    static void staticAudioCallback(void* userdata, Uint8* stream, int len);
+    static void staticAudioCallback(void* userdata, uint8_t* stream, int len);
 
-    void audioCallback(Uint8* stream, int len);
+    void audioCallback(uint8_t* stream, int len);
 
     IDirectSoundBuffer * myBuffer;
 
-    std::vector<Uint8> myMixerBuffer;
+    std::vector<uint8_t> myMixerBuffer;
 
     SDL_AudioDeviceID myAudioDevice;
     SDL_AudioSpec myAudioSpec;
@@ -61,18 +61,18 @@ namespace
     void close();
     bool isRunning() const;
 
-    Uint8 * mixBufferTo(Uint8 * stream);
+    uint8_t * mixBufferTo(uint8_t * stream);
   };
 
   std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator>> activeSoundGenerators;
 
-  void DirectSoundGenerator::staticAudioCallback(void* userdata, Uint8* stream, int len)
+  void DirectSoundGenerator::staticAudioCallback(void* userdata, uint8_t* stream, int len)
   {
     DirectSoundGenerator * generator = static_cast<DirectSoundGenerator *>(userdata);
     return generator->audioCallback(stream, len);
   }
 
-  void DirectSoundGenerator::audioCallback(Uint8* stream, int len)
+  void DirectSoundGenerator::audioCallback(uint8_t* stream, int len)
   {
     LPVOID lpvAudioPtr1, lpvAudioPtr2;
     DWORD dwAudioBytes1, dwAudioBytes2;
@@ -80,7 +80,7 @@ namespace
 
     myMixerBuffer.resize(bytesRead);
 
-    Uint8 * dest = myMixerBuffer.data();
+    uint8_t * dest = myMixerBuffer.data();
     if (lpvAudioPtr1 && dwAudioBytes1)
     {
       memcpy(dest, lpvAudioPtr1, dwAudioBytes1);
@@ -171,13 +171,13 @@ namespace
     }
   }
 
-  Uint8 * DirectSoundGenerator::mixBufferTo(Uint8 * stream)
+  uint8_t * DirectSoundGenerator::mixBufferTo(uint8_t * stream)
   {
     // we could copy ADJUST_VOLUME from SDL_mixer.c and avoid all copying and (rare) race conditions
     const double logVolume = myBuffer->GetLogarithmicVolume();
     // same formula as QAudio::convertVolume()
     const double linVolume = logVolume > 0.99 ? 1.0 : -std::log(1.0 - logVolume) / std::log(100.0);
-    const Uint8 svolume = Uint8(linVolume * SDL_MIX_MAXVOLUME);
+    const uint8_t svolume = uint8_t(linVolume * SDL_MIX_MAXVOLUME);
 
     const size_t len = myMixerBuffer.size();
     memset(stream, 0, len);
