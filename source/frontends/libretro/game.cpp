@@ -344,9 +344,9 @@ namespace ra2
     myFrame->Restart();
   }
 
-  void Game::writeAudio(const size_t ms)
+  void Game::writeAudio(const size_t fps)
   {
-    ra2::writeAudio(myAudioChannelsSelected, ms);
+    ra2::writeAudio(myAudioChannelsSelected, fps);
   }
 
 }

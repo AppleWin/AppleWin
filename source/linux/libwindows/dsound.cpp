@@ -3,20 +3,16 @@
 
 #include <cstring>
 
-HRESULT IDirectSoundNotify::SetNotificationPositions(DWORD cPositionNotifies, LPCDSBPOSITIONNOTIFY lpcPositionNotifies)
-{
-  return DS_OK;
-}
-
 IDirectSoundBuffer::IDirectSoundBuffer(const size_t aBufferSize, const size_t aChannels, const size_t aSampleRate, const size_t aBitsPerSample, const size_t aFlags)
-  : mySoundNotify(new IDirectSoundNotify)
-  , mySoundBuffer(aBufferSize)
+  : mySoundBuffer(aBufferSize)
+  , myNumberOfUnderruns(0)
   , bufferSize(aBufferSize)
   , sampleRate(aSampleRate)
   , channels(aChannels)
   , bitsPerSample(aBitsPerSample)
   , flags(aFlags)
 {
+  registerSoundBuffer(this);
 }
 
 HRESULT IDirectSoundBuffer::Release()
@@ -29,22 +25,11 @@ HRESULT IDirectSoundBuffer::Release()
   return IUnknown::Release();
 }
 
-HRESULT IDirectSoundBuffer::QueryInterface(int riid, void **ppvObject)
-{
-  if (riid == IID_IDirectSoundNotify)
-  {
-    *ppvObject = mySoundNotify.get();
-    return S_OK;
-  }
-
-  return E_NOINTERFACE;
-}
-
 HRESULT IDirectSoundBuffer::Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2 )
 {
   const size_t totalWrittenBytes = dwAudioBytes1 + dwAudioBytes2;
   this->myWritePosition = (this->myWritePosition + totalWrittenBytes) % this->mySoundBuffer.size();
-  mutex.unlock();
+  myMutex.unlock();
   return DS_OK;
 }
 
@@ -89,7 +74,7 @@ HRESULT IDirectSoundBuffer::Restore()
 
 HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2, DWORD dwFlags )
 {
-  mutex.lock();
+  myMutex.lock();
   // No attempt is made at restricting write buffer not to overtake play cursor
   if (dwFlags & DSBLOCK_ENTIREBUFFER)
   {
@@ -126,14 +111,18 @@ HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOI
   return DS_OK;
 }
 
-HRESULT IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2)
+DWORD IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2)
 {
-  const std::lock_guard<std::mutex> guard(mutex);
+  const std::lock_guard<std::mutex> guard(myMutex);
 
   // Read up to dwReadBytes, never going past the write cursor
   // Positions are updated immediately
   const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->bufferSize;
-  dwReadBytes = std::min(dwReadBytes, available);
+  if (available < dwReadBytes)
+  {
+    dwReadBytes = available;
+    ++myNumberOfUnderruns;
+  }
 
   const DWORD availableInFirstPart = this->mySoundBuffer.size() - this->myPlayPosition;
 
@@ -154,12 +143,12 @@ HRESULT IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DW
     }
   }
   this->myPlayPosition = (this->myPlayPosition + dwReadBytes) % this->mySoundBuffer.size();
-  return DS_OK;
+  return dwReadBytes;
 }
 
 DWORD IDirectSoundBuffer::GetBytesInBuffer()
 {
-  const std::lock_guard<std::mutex> guard(mutex);
+  const std::lock_guard<std::mutex> guard(myMutex);
   const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->bufferSize;
   return available;
 }
@@ -183,6 +172,16 @@ double IDirectSoundBuffer::GetLogarithmicVolume() const
   return volume;
 }
 
+size_t IDirectSoundBuffer::GetBufferUnderruns() const
+{
+  return myNumberOfUnderruns;
+}
+
+void IDirectSoundBuffer::ResetUnderrruns()
+{
+  myNumberOfUnderruns = 0;
+}
+
 HRESULT WINAPI DirectSoundCreate(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN pUnkOuter)
 {
   *ppDS = new IDirectSound();
@@ -198,14 +197,17 @@ HRESULT DirectSoundEnumerate(LPDSENUMCALLBACK lpDSEnumCallback, LPVOID lpContext
 
 HRESULT IDirectSound::CreateSoundBuffer( LPCDSBUFFERDESC lpcDSBufferDesc, IDirectSoundBuffer **lplpDirectSoundBuffer, IUnknown FAR* pUnkOuter )
 {
+  if (*lplpDirectSoundBuffer)
+  {
+    (*lplpDirectSoundBuffer)->Release();
+  }
+
   const size_t bufferSize = lpcDSBufferDesc->dwBufferBytes;
   const size_t channels = lpcDSBufferDesc->lpwfxFormat->nChannels;
   const size_t sampleRate = lpcDSBufferDesc->lpwfxFormat->nSamplesPerSec;
   const size_t bitsPerSample = lpcDSBufferDesc->lpwfxFormat->wBitsPerSample;
   const size_t flags = lpcDSBufferDesc->dwFlags;
   IDirectSoundBuffer * dsb = new IDirectSoundBuffer(bufferSize, channels, sampleRate, bitsPerSample, flags);
-
-  registerSoundBuffer(dsb);
 
   *lplpDirectSoundBuffer = dsb;
   return DS_OK;

@@ -57,11 +57,14 @@ Some of the configuration options are exposed in the ``Settings`` menu. This is 
 
 Audio works reasonably well, using AppleWin adaptive algorithm.
 
+There is a command line argument to customise the SDL audio buffer: ``--audio-buffer 46``.
+AppleWin target is between 92 and 185 ms, so any number above 90 will risk numerous underruns. It can be as small as 1, but it will probably put pressure on the host scheduling.
+
 Use ``F1`` during emulation to have an idea of the size of the audio queue
 
 ```
-Channels: 1, buffer: 32768, SDL:  8804, queue: 0.47 s
-Channels: 2, buffer: 45000, SDL: 65536, queue: 0.63 s
+Channels: 2, buffer:  21780,   123.47 ms, underruns:          0
+Channels: 1, buffer:   9760,   110.66 ms, underruns:          1
 ```
 (1) is the speaker, (2) the Mockingboard.
 

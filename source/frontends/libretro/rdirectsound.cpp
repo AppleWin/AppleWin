@@ -19,7 +19,7 @@ namespace
   public:
     DirectSoundGenerator(IDirectSoundBuffer * buffer);
 
-    void writeAudio(const size_t ms);
+    void writeAudio(const size_t fps);
 
     bool isRunning() const;
     size_t getNumberOfChannels() const;
@@ -28,8 +28,6 @@ namespace
     IDirectSoundBuffer * myBuffer;
 
     std::vector<int16_t> myMixerBuffer;
-
-    size_t myBytesPerSecond;
 
     void mixBuffer(const void * ptr, const size_t size);
   };
@@ -52,7 +50,6 @@ namespace
   DirectSoundGenerator::DirectSoundGenerator(IDirectSoundBuffer * buffer)
     : myBuffer(buffer)
   {
-    myBytesPerSecond = myBuffer->channels * myBuffer->sampleRate * sizeof(int16_t);
   }
 
   bool DirectSoundGenerator::isRunning() const
@@ -106,7 +103,7 @@ namespace
     ra2::audio_batch_cb(myMixerBuffer.data(), frames);
   }
 
-  void DirectSoundGenerator::writeAudio(const size_t ms)
+  void DirectSoundGenerator::writeAudio(const size_t fps)
   {
     // this is autostart as we only do for the palying buffers
     // and AW might activate one later
@@ -115,7 +112,7 @@ namespace
       return;
     }
 
-    const size_t frames = ms * myBuffer->sampleRate / 1000;
+    const size_t frames = myBuffer->sampleRate / fps;
     const size_t bytesToRead = frames * myBuffer->channels * sizeof(int16_t);
 
     LPVOID lpvAudioPtr1, lpvAudioPtr2;
@@ -152,12 +149,12 @@ void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
 namespace ra2
 {
 
-  void writeAudio(const size_t channels, const size_t ms)
+  void writeAudio(const size_t channels, const size_t fps)
   {
     const auto generator = findRunningGenerator(channels);
     if (generator)
     {
-      generator->writeAudio(ms);
+      generator->writeAudio(fps);
     }
   }
 

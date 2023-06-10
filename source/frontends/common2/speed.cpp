@@ -3,6 +3,16 @@
 #include "StdAfx.h"
 #include "CPU.h"
 #include "Core.h"
+#include "Speaker.h"
+
+namespace
+{
+  double getAudioAdjustedSpeed()
+  {
+    return g_fClksPerSpkrSample * SPKR_SAMPLE_RATE;
+    // return g_fCurrentCLK6502;
+  }
+}
 
 namespace common2
 {
@@ -17,16 +27,21 @@ namespace common2
   {
     myStartTime = std::chrono::steady_clock::now();
     myStartCycles = g_nCumulativeCycles;
+    myOrgStartCycles = myStartCycles;
+    myTotalFeedbackCycles = 0;
+    myAudioSpeed = getAudioAdjustedSpeed();
   }
 
-  uint64_t Speed::getCyclesAtFixedSpeed(const size_t microseconds) const
+  uint64_t Speed::getCyclesAtFixedSpeed(const uint64_t microseconds) const
   {
-    const uint64_t cycles = static_cast<uint64_t>(microseconds * g_fCurrentCLK6502 * 1.0e-6);
+    const uint64_t cycles = static_cast<uint64_t>(microseconds * myAudioSpeed * 1.0e-6) + g_nCpuCyclesFeedback;
     return cycles;
   }
 
-  uint64_t Speed::getCyclesTillNext(const size_t microseconds) const
+  uint64_t Speed::getCyclesTillNext(const uint64_t microseconds)
   {
+    myTotalFeedbackCycles += g_nCpuCyclesFeedback;
+
     if (myFixedSpeed || g_bFullSpeed)
     {
       return getCyclesAtFixedSpeed(microseconds);
@@ -40,7 +55,10 @@ namespace common2
       // target the next time we will be called
       const auto targetDeltaInMicros = currentDelta + microseconds;
 
-      const uint64_t targetCycles = static_cast<uint64_t>(targetDeltaInMicros * g_fCurrentCLK6502 * 1.0e-6) + myStartCycles;
+      // permanently apply the correction
+      myStartCycles += g_nCpuCyclesFeedback;
+
+      const uint64_t targetCycles = static_cast<uint64_t>(targetDeltaInMicros * myAudioSpeed * 1.0e-6) + myStartCycles;
       if (targetCycles > currentCycles)
       {
         // number of cycles to fill this period
@@ -54,6 +72,28 @@ namespace common2
         return 0;
       }
     }
+  }
+
+  Speed::Stats Speed::getSpeedStats() const
+  {
+    const auto currentTime = std::chrono::steady_clock::now();
+    const auto currentDelta = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - myStartTime).count();
+    const double multiplier = 1000000.0 / currentDelta;
+
+    Stats stats{};
+
+    stats.nominal = g_fCurrentCLK6502;
+    stats.audio = myAudioSpeed;
+
+    if (g_nAppMode == MODE_RUNNING)
+    {
+      stats.netFeedback = myTotalFeedbackCycles * multiplier;
+
+      const uint64_t totalCycles = g_nCumulativeCycles - myOrgStartCycles;
+      stats.actual = totalCycles * multiplier;
+    }
+
+    return stats;
   }
 
 }

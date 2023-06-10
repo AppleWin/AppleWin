@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "frontends/sdl/imgui/sdlsettings.h"
 #include "frontends/sdl/imgui/settingshelper.h"
+#include "frontends/sdl/sdirectsound.h"
 #include "frontends/sdl/sdlframe.h"
 #include "linux/registryclass.h"
 #include "linux/version.h"
@@ -78,21 +79,6 @@ namespace sa2
 
           ImGui::Separator();
 
-          ImGui::BeginDisabled();
-          ImGui::Checkbox("Full speed", &g_bFullSpeed);
-          ImGui::EndDisabled();
-
-          int speed = g_dwSpeed;
-          if (ImGui::SliderInt("Speed", &speed, SPEED_MIN, SPEED_MAX))
-          {
-            g_dwSpeed = speed;
-            SetCurrentCLK6502();
-            REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
-            frame->ResetSpeed();
-          }
-          ImGui::LabelText("Clock", "%15.2f Hz", g_fCurrentCLK6502);
-
-          ImGui::Separator();
           ImGui::LabelText("Save state", "%s", Snapshot_GetPathname().c_str());
           ImGui::Separator();
 
@@ -113,13 +99,45 @@ namespace sa2
           ImGui::SameLine();
           if (ImGui::Button("ResetMachineState"))
           {
-            ResetMachineState();
+            frame->FrameResetMachineState();
           }
 
           ImGui::SameLine();
           if (ImGui::Button("CtrlReset"))
           {
             CtrlReset();
+          }
+
+          ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Speed"))
+        {
+          ImGui::BeginDisabled();
+          ImGui::Checkbox("Full speed", &g_bFullSpeed);
+          ImGui::EndDisabled();
+
+          ImGui::LabelText("Mode", "%s", getAppModeName(g_nAppMode).c_str());
+
+          ImGui::Separator();
+
+          int speedMultiplier = g_dwSpeed;
+          if (ImGui::SliderInt("Speed", &speedMultiplier, SPEED_MIN, SPEED_MAX))
+          {
+            g_dwSpeed = speedMultiplier;
+            SetCurrentCLK6502();
+            REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
+            frame->ResetSpeed();
+          }
+
+          const common2::Speed::Stats stats = frame->getSpeed().getSpeedStats();
+          ImGui::LabelText("Clock",          "%15.2f Hz", stats.nominal);
+          ImGui::LabelText("Audio adjusted", "%12.0f    Hz", stats.audio);
+          ImGui::LabelText("Actual",         "%12.0f    Hz", stats.actual);
+          ImGui::LabelText("Feedback",       "%12.0f    Hz", stats.netFeedback);
+          if (ImGui::Button("Reset speed"))
+          {
+            frame->ResetSpeed();
           }
 
           ImGui::EndTabItem();
@@ -459,8 +477,8 @@ namespace sa2
             ImGui::TableSetupColumn("Running");
             ImGui::TableSetupColumn("Channels");
             ImGui::TableSetupColumn("Volume");
-            ImGui::TableSetupColumn("Buffer");
-            ImGui::TableSetupColumn("Queue");
+            ImGui::TableSetupColumn("Buffer (ms)");
+            ImGui::TableSetupColumn("Underruns");
             ImGui::TableHeadersRow();
 
             ImGui::BeginDisabled();
@@ -471,15 +489,23 @@ namespace sa2
               ImGui::TableNextColumn();
               ImGui::Text("%d", device.channels);
               ImGui::TableNextColumn();
-              ImGui::SliderFloat("##Volume", &device.volume, 0.0f, 1.0f, "%.2f");
+              int volume = device.volume * 100;
+              ImGui::SliderInt("##Volume", &volume, 0, 100, "%3d");
               ImGui::TableNextColumn();
-              ImGui::SliderFloat("##Buffer", &device.buffer, 0.0f, device.size, "%.3f");
+              float buffer = device.buffer * 1000;
+              float size = device.size * 1000;
+              ImGui::SliderFloat("##Buffer", &buffer, 0, size, "%4.0f");
               ImGui::TableNextColumn();
-              ImGui::SliderFloat("##Queue", &device.queue, 0.0f, device.size, "%.3f");
+              ImGui::Text("%zu", device.numberOfUnderruns);
             }
             ImGui::EndDisabled();
 
             ImGui::EndTable();
+          }
+
+          if (ImGui::Button("Reset underruns"))
+          {
+            resetUnderruns();
           }
 
           ImGui::EndTabItem();

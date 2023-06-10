@@ -128,6 +128,7 @@ namespace common2
     emulatorDesc.add_options()
       ("log", "Log to AppleWin.log")
       ("fixed-speed", "Fixed (non-adaptive) speed")
+      ("audio-buffer", po::value<size_t>()->default_value(options.audioBuffer), "Audio buffer (ms)")
       ("benchmark,b", "Benchmark emulator")
       ("no-squaring", "Gamepad range is (already) a square")
       ("nat", po::value<std::vector<std::string>>(), "SLIRP PortFwd")
@@ -204,6 +205,7 @@ namespace common2
       // Emulator
       options.log = vm.count("log") > 0;
       options.fixedSpeed = vm.count("fixed-speed") > 0;
+      setOption(vm, "audio-buffer", options.audioBuffer);
       options.benchmark = vm.count("benchmark") > 0;
       options.paddleSquaring = vm.count("no-squaring") == 0;
       setOption(vm, "nat", options.natPortFwds);
