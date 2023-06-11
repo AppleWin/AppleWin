@@ -48,7 +48,7 @@ namespace common2
     }
     else
     {
-      const uint64_t currentCycles = g_nCumulativeCycles;
+      const int64_t currentCycles = g_nCumulativeCycles;
       const auto currentTime = std::chrono::steady_clock::now();
 
       const auto currentDelta = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - myStartTime).count();
@@ -58,7 +58,7 @@ namespace common2
       // permanently apply the correction
       myStartCycles += g_nCpuCyclesFeedback;
 
-      const uint64_t targetCycles = static_cast<uint64_t>(targetDeltaInMicros * myAudioSpeed * 1.0e-6) + myStartCycles;
+      const int64_t targetCycles = static_cast<int64_t>(targetDeltaInMicros * myAudioSpeed * 1.0e-6) + myStartCycles;
       if (targetCycles > currentCycles)
       {
         // number of cycles to fill this period

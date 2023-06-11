@@ -33,8 +33,8 @@ namespace common2
     const bool myFixedSpeed;
 
     std::chrono::time_point<std::chrono::steady_clock> myStartTime;
-    uint64_t myStartCycles;
-    uint64_t myOrgStartCycles;
+    int64_t myStartCycles;
+    int64_t myOrgStartCycles;
     double myAudioSpeed;
 
     int64_t myTotalFeedbackCycles;
