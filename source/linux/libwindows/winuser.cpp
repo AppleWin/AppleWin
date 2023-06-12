@@ -14,7 +14,9 @@ HCURSOR SetCursor(HCURSOR hCursor)
 
 UINT_PTR SetTimer(HWND,UINT_PTR,UINT,TIMERPROC)
 {
-  return 0;
+  // ignore everything
+  // 1 is to avoid a warning to the console
+  return 1;
 }
 
 BOOL KillTimer(HWND hWnd, UINT uIDEvent)
