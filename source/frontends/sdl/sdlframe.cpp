@@ -583,6 +583,7 @@ namespace sa2
     // check at the end because we want to always execute at least 1 cycle even for "0"
     do
     {
+      _ASSERT(cyclesToExecute >= totalCyclesExecuted);
       const DWORD thisCyclesToExecute = std::min(fExecutionPeriodClks, cyclesToExecute - totalCyclesExecuted);
       const DWORD executedCycles = CpuExecute(thisCyclesToExecute, bVideoUpdate);
       totalCyclesExecuted += executedCycles;
@@ -598,7 +599,7 @@ namespace sa2
   void SDLFrame::ExecuteInRunningMode(const uint64_t microseconds)
   {
     SetFullSpeed(CanDoFullSpeed());
-    const uint64_t cyclesToExecute = mySpeed.getCyclesTillNext(microseconds);  // this checks g_bFullSpeed
+    const DWORD cyclesToExecute = mySpeed.getCyclesTillNext(microseconds);  // this checks g_bFullSpeed
     Execute(cyclesToExecute);
   }
 
@@ -606,7 +607,7 @@ namespace sa2
   {
     // In AppleWin this is called without a timer for just one iteration
     // because we run a "frame" at a time, we need a bit of ingenuity
-    const uint64_t cyclesToExecute = mySpeed.getCyclesAtFixedSpeed(microseconds);
+    const DWORD cyclesToExecute = mySpeed.getCyclesAtFixedSpeed(microseconds);
     const uint64_t target = g_nCumulativeCycles + cyclesToExecute;
 
     while (g_nAppMode == MODE_STEPPING && g_nCumulativeCycles < target)

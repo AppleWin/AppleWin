@@ -12,6 +12,15 @@ namespace
     return g_fClksPerSpkrSample * SPKR_SAMPLE_RATE;
     // return g_fCurrentCLK6502;
   }
+
+  uint32_t checkAndReturn(const int64_t cycles)
+  {
+    // AppleWin uses DWORD, so we check the value is sound
+    const int64_t cyclesToExecute = std::max<int64_t>(0, cycles);
+    _ASSERT(cyclesToExecute <= std::numeric_limits<uint32_t>::max());
+
+    return static_cast<uint32_t>(cyclesToExecute);
+  }
 }
 
 namespace common2
@@ -32,13 +41,13 @@ namespace common2
     myAudioSpeed = getAudioAdjustedSpeed();
   }
 
-  uint64_t Speed::getCyclesAtFixedSpeed(const uint64_t microseconds) const
+  uint32_t Speed::getCyclesAtFixedSpeed(const uint64_t microseconds) const
   {
-    const uint64_t cycles = static_cast<uint64_t>(microseconds * myAudioSpeed * 1.0e-6) + g_nCpuCyclesFeedback;
-    return cycles;
+    const int64_t cycles = static_cast<int64_t>(microseconds * myAudioSpeed * 1.0e-6) + g_nCpuCyclesFeedback;
+    return checkAndReturn(cycles);
   }
 
-  uint64_t Speed::getCyclesTillNext(const uint64_t microseconds)
+  uint32_t Speed::getCyclesTillNext(const uint64_t microseconds)
   {
     myTotalFeedbackCycles += g_nCpuCyclesFeedback;
 
@@ -59,18 +68,10 @@ namespace common2
       myStartCycles += g_nCpuCyclesFeedback;
 
       const int64_t targetCycles = static_cast<int64_t>(targetDeltaInMicros * myAudioSpeed * 1.0e-6) + myStartCycles;
-      if (targetCycles > currentCycles)
-      {
-        // number of cycles to fill this period
-        const uint64_t cyclesToExecute = targetCycles - currentCycles;
-        return cyclesToExecute;
-      }
-      else
-      {
-        // we got ahead, nothing to do this time
-        // CpuExecute will still execute 1 instruction, which does not cause any issues
-        return 0;
-      }
+
+      // if we got ahead, nothing to do this time
+      // CpuExecute will still execute 1 instruction, which does not cause any issues
+      return checkAndReturn(targetCycles - currentCycles);
     }
   }
 
