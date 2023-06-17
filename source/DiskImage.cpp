@@ -78,7 +78,8 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 	if (!bExpectFloppy)
 		return eIMAGE_ERROR_UNSUPPORTED;
 
-	_ASSERT(pImageInfo->uNumTracks);
+	if (!pImageInfo->uNumTracks)
+		return eIMAGE_ERROR_UNSUPPORTED;
 
 	*pWriteProtected = pImageInfo->bWriteProtected;
 

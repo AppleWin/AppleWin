@@ -197,12 +197,12 @@ void HarddiskInterfaceCard::CleanupDrive(const int iDrive)
 
 //===========================================================================
 
-void HarddiskInterfaceCard::NotifyInvalidImage(TCHAR* pszImageFilename)
+void HarddiskInterfaceCard::NotifyInvalidImage(const std::string & szImageFilename)
 {
 	// TC: TO DO - see Disk2InterfaceCard::NotifyInvalidImage()
 
 	std::string strText = StrFormat("Unable to open the file %s.",
-									pszImageFilename);
+									szImageFilename.c_str());
 
 	GetFrame().FrameMessageBox(strText.c_str(),
 							   g_pAppTitle.c_str(),
@@ -263,13 +263,11 @@ void HarddiskInterfaceCard::SaveLastDiskImage(const int drive)
 	if (m_slot != SLOT7 || drive != HARDDISK_1)
 		return;
 
-	TCHAR szPathName[MAX_PATH];
-	StringCbCopy(szPathName, MAX_PATH, pathName.c_str());
-	TCHAR* slash = _tcsrchr(szPathName, PATH_SEPARATOR);
-	if (slash != NULL)
+	const size_t slash = pathName.find_last_of(PATH_SEPARATOR);
+	if (slash != std::string::npos)
 	{
-		slash[1] = '\0';
-		RegSaveString(REG_PREFS, REGVALUE_PREF_HDV_START_DIR, 1, szPathName);
+		const std::string dirName = pathName.substr(0, slash + 1);
+		RegSaveString(REG_PREFS, REGVALUE_PREF_HDV_START_DIR, 1, dirName);
 	}
 }
 
@@ -410,16 +408,17 @@ bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
 
 	if (GetOpenFileName(&ofn))
 	{
+		std::string openFilename = filename;
 		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
-			StringCbCat(filename, MAX_PATH, TEXT(".hdv"));
+			openFilename += TEXT(".hdv");
 		
-		if (Insert(drive, filename))
+		if (Insert(drive, openFilename))
 		{
 			bRes = true;
 		}
 		else
 		{
-			NotifyInvalidImage(filename);
+			NotifyInvalidImage(openFilename);
 		}
 	}
 

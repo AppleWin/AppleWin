@@ -159,7 +159,7 @@ public:
 	void UnplugDrive(const int drive);
 
 	bool IsConditionForFullSpeed(void);
-	void NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error);
+	void NotifyInvalidImage(const int drive, const std::string & szImageFilename, const ImageError_e Error);
 
 	UINT GetCurrentBitOffset(void);
 	UINT GetCurrentFirmware(void) { return m_is13SectorFirmware ? 13 : 16; }
