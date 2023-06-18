@@ -243,13 +243,11 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 	if (m_slot != SLOT6 || drive != DRIVE_1)
 		return;
 
-	TCHAR szPathName[MAX_PATH];
-	StringCbCopy(szPathName, MAX_PATH, pathName.c_str());
-	TCHAR* slash = _tcsrchr(szPathName, PATH_SEPARATOR);
-	if (slash != NULL)
+	const size_t slash = pathName.find_last_of(PATH_SEPARATOR);
+	if (slash != std::string::npos)
 	{
-		slash[1] = '\0';
-		RegSaveString(REG_PREFS, REGVALUE_PREF_START_DIR, 1, szPathName);
+		const std::string dirName = pathName.substr(0, slash + 1);
+		RegSaveString(REG_PREFS, REGVALUE_PREF_START_DIR, 1, dirName);
 	}
 }
 
@@ -887,9 +885,10 @@ bool Disk2InterfaceCard::IsConditionForFullSpeed(void)
 
 //===========================================================================
 
-void Disk2InterfaceCard::NotifyInvalidImage(const int drive, LPCTSTR pszImageFilename, const ImageError_e Error)
+void Disk2InterfaceCard::NotifyInvalidImage(const int drive, const std::string & szImageFilename, const ImageError_e Error)
 {
 	std::string strText;
+	const char * pszImageFilename = szImageFilename.c_str();
 
 	switch (Error)
 	{
@@ -1842,17 +1841,18 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 
 	if (GetOpenFileName(&ofn))
 	{
+		std::string openFilename = filename;
 		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
-			StringCbCat(filename, MAX_PATH, TEXT(".dsk"));
+			openFilename += TEXT(".dsk");
 
-		ImageError_e Error = InsertDisk(drive, filename, ofn.Flags & OFN_READONLY, IMAGE_CREATE);
+		ImageError_e Error = InsertDisk(drive, openFilename, ofn.Flags & OFN_READONLY, IMAGE_CREATE);
 		if (Error == eIMAGE_ERROR_NONE)
 		{
 			bRes = true;
 		}
 		else
 		{
-			NotifyInvalidImage(drive, filename, Error);
+			NotifyInvalidImage(drive, openFilename, Error);
 		}
 	}
 
