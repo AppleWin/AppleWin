@@ -5100,8 +5100,8 @@ Update_t CmdNTSC (int nArgs)
 					ConsoleBufferPush( pPrefixText );	// TODO: Add a ": " separator
 
 #if _DEBUG
-					LogOutput( "Filename.length.1: %d\n", len1 );
-					LogOutput( "Filename.length.2: %d\n", len2 );
+					LogOutput( "Filename.length.1: %" SIZE_T_FMT "\n", len1 );
+					LogOutput( "Filename.length.2: %" SIZE_T_FMT "\n", len2 );
 					OutputDebugString( sPaletteFilePath.c_str() );
 #endif
 					// File path is too long
