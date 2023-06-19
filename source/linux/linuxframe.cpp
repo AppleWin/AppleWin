@@ -62,6 +62,7 @@ LinuxFrame::LinuxFrame()
 {
   const std::array<int, 4> version = getVersionNumbers();
   SetAppleWinVersion(version[0], version[1], version[2], version[3]);
+  g_hFrameWindow = this;
 }
 
 void LinuxFrame::Initialize(bool resetVideoState)

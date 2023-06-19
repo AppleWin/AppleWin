@@ -18,6 +18,7 @@
 #define _WINDEF_
 
 #include <cstdint>
+#include <cassert>
 
 #ifdef __cplusplus
 extern "C" {
