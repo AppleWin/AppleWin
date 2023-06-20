@@ -729,13 +729,16 @@ void JoyResetPosition(ULONG nExecutedCycles)
 		if (isJoystick[joyNum])
 		{
 			// Convert to unit circle, centred at (0,0)
-			const double x[2] = { ((double)xpos[joyNum]) / (0.5 * 255) - 1.0, ((double)ypos[joyNum]) / (0.5 * 255) - 1.0};
-			double axis = x[pdl & 1];
+			const double scalar = 0.5 * 255.0;
+			const double offset = 1.0;
+			const double x = ((double)xpos[joyNum]) / scalar - offset;
+			const double y = ((double)ypos[joyNum]) / scalar - offset;
+			double axis = !(pdl & 1) ? x : y;
 
-			if (x[0] * x[1] != 0.0)
+			if (x * y != 0.0)
 			{
 				// rescale the circle to the square
-				const double ratio2 = (x[1] * x[1]) / (x[0] * x[0]);
+				const double ratio2 = (y * y) / (x * x);
 				const double c = min(ratio2, 1.0 / ratio2);
 				const double coeff = sqrt(1.0 + c);
 				axis *= coeff;
@@ -744,7 +747,7 @@ void JoyResetPosition(ULONG nExecutedCycles)
 			if (axis < -1.0) axis = -1.0;
 			else if (axis > 1.0) axis = 1.0;
 
-			pdlPos = static_cast<int>((axis + 1.0) * 0.5 * 255);
+			pdlPos = static_cast<int>((axis + offset) * scalar);
 		}
 
 		// This is from KEGS. It helps games like Championship Lode Runner, Boulderdash & Learning with Leeper(GH#1128)
