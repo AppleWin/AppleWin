@@ -703,10 +703,18 @@ void JoyResetPosition(ULONG nExecutedCycles)
 {
 	CpuCalcCycles(nExecutedCycles);
 
-	if(joyinfo[joytype[0]] == DEVICE_JOYSTICK)
+	bool isJoystick[2] = { false, false };
+
+	if (joyinfo[joytype[0]] == DEVICE_JOYSTICK)
+	{
 		CheckJoystick0();
-	if((joyinfo[joytype[1]] == DEVICE_JOYSTICK) || (joyinfo[joytype[1]] == DEVICE_JOYSTICK_THUMBSTICK2))
+		isJoystick[0] = true;
+	}
+	if (joyinfo[joytype[1]] == DEVICE_JOYSTICK || joyinfo[joytype[1]] == DEVICE_JOYSTICK_THUMBSTICK2)
+	{
 		CheckJoystick1();
+		isJoystick[1] = true;
+	}
 
 	// If any of the timers are still running then strobe has no effect (GH#985)
 	for (UINT pdl = 0; pdl < 4; pdl++)
@@ -716,6 +724,31 @@ void JoyResetPosition(ULONG nExecutedCycles)
 
 		const UINT joyNum = (pdl & 2) ? 1 : 0;
 		UINT pdlPos = (pdl & 1) ? ypos[joyNum] : xpos[joyNum];
+
+		// "Square the circle" for controllers with analog sticks (but compatible with digital D-pads too) - GH#429
+		if (isJoystick[joyNum])
+		{
+			// Convert to unit circle, centred at (0,0)
+			const double scalar = 0.5 * 255.0;
+			const double offset = 1.0;
+			const double x = ((double)xpos[joyNum]) / scalar - offset;
+			const double y = ((double)ypos[joyNum]) / scalar - offset;
+			double axis = !(pdl & 1) ? x : y;
+
+			if (x * y != 0.0)
+			{
+				// rescale the circle to the square
+				const double ratio2 = (y * y) / (x * x);
+				const double c = min(ratio2, 1.0 / ratio2);
+				const double coeff = sqrt(1.0 + c);
+				axis *= coeff;
+			}
+
+			if (axis < -1.0) axis = -1.0;
+			else if (axis > 1.0) axis = 1.0;
+
+			pdlPos = static_cast<int>((axis + offset) * scalar);
+		}
 
 		// This is from KEGS. It helps games like Championship Lode Runner, Boulderdash & Learning with Leeper(GH#1128)
 		if (pdlPos >= 255)
