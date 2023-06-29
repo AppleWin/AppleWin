@@ -1505,12 +1505,21 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 				m_pInfo = (InfoChunkv2*)pImage32;
 				if (m_pInfo->v1.diskType != InfoChunk::diskType5_25)
 					return eMismatch;
+#ifdef _DEBUG
+				if (m_pInfo->v1.version >= 3)
+				{
+					InfoChunkv3* pInfoV3 = (InfoChunkv3*)pImage32;
+					LogOutput("WOZ: Largest Flux Track = %d\n", pInfoV3->largestFluxTrack);
+				}
 				break;
+#endif
 			case TMAP_CHUNK_ID:
 				pImageInfo->pWOZTrackMap = (BYTE*) pImage32;
 				break;
 			case TRKS_CHUNK_ID:
 				dwOffset = pImageInfo->uOffset = pImageInfo->uImageSize - imageSizeRemaining;	// offset into image of track data
+				break;
+			case FLUX_CHUNK_ID:	// WOZ v3 (todo)
 				break;
 			case WRIT_CHUNK_ID:	// WOZ v2 (optional)
 				break;
@@ -1574,14 +1583,29 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 	if (hGZFile == NULL)
 		return eIMAGE_ERROR_UNABLE_TO_OPEN_GZ;
 
-	const UINT MAX_UNCOMPRESSED_SIZE = GetMaxImageSize() + 1;	// +1 to detect images that are too big
-	pImageInfo->pImageBuffer = new BYTE[MAX_UNCOMPRESSED_SIZE];
+	// determine uncompressed file length
+	UINT fileSize = 0;
+	{
+		const UINT tempBufferSize = 256 * 1024;
+		BYTE* tempBuffer = new BYTE[tempBufferSize];
+		while (int len = gzread(hGZFile, tempBuffer, tempBufferSize))
+			fileSize += len;
+		delete[] tempBuffer;
+		int res = gzrewind(hGZFile);
+		if (res != 0)
+			return eIMAGE_ERROR_GZ;
+	}
 
-	int nLen = gzread(hGZFile, pImageInfo->pImageBuffer, MAX_UNCOMPRESSED_SIZE);
+	if (fileSize == 0 || fileSize > GetMaxImageSize())
+		return eIMAGE_ERROR_BAD_SIZE;
+
+	pImageInfo->pImageBuffer = new BYTE[fileSize];
+
+	int nLen = gzread(hGZFile, pImageInfo->pImageBuffer, fileSize);
 	int nRes = gzclose(hGZFile);	// close before returning (due to error) to avoid resource leak
 	hGZFile = NULL;
 
-	if (nLen < 0 || nLen == MAX_UNCOMPRESSED_SIZE)
+	if (nLen <= 0)
 		return eIMAGE_ERROR_BAD_SIZE;
 
 	if (nRes != Z_OK)
@@ -1986,6 +2010,8 @@ bool CImageHelperBase::WOZUpdateInfo(ImageInfo* pImageInfo, DWORD& dwOffset)
 CDiskImageHelper::CDiskImageHelper(void) :
 	CImageHelperBase(true)
 {
+	m_vecImageTypes.push_back( new CWOZ1Image );	// Try to match WOZ1/WOZ2 first, as these can be precisely matched
+	m_vecImageTypes.push_back( new CWOZ2Image );
 	m_vecImageTypes.push_back( new CDoImage );
 	m_vecImageTypes.push_back( new CPoImage );
 	m_vecImageTypes.push_back( new CNib1Image );
@@ -1994,8 +2020,6 @@ CDiskImageHelper::CDiskImageHelper(void) :
 	m_vecImageTypes.push_back( new CIIeImage );
 	m_vecImageTypes.push_back( new CAplImage );
 	m_vecImageTypes.push_back( new CPrgImage );
-	m_vecImageTypes.push_back( new CWOZ1Image );
-	m_vecImageTypes.push_back( new CWOZ2Image );
 }
 
 CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, DWORD dwSize, const TCHAR* pszExt, DWORD& dwOffset, ImageInfo* pImageInfo)
@@ -2112,8 +2136,11 @@ CImageBase* CDiskImageHelper::GetImageForCreation(const TCHAR* pszExt, DWORD* pC
 
 UINT CDiskImageHelper::GetMaxImageSize(void)
 {
-	// TODO: This doesn't account for .2mg files with comments after the disk-image
-	return UNIDISK35_800K_SIZE + m_MacBinaryHelper.GetMaxHdrSize() + m_2IMGHelper.GetMaxHdrSize();
+	// Pathologic largest 5.25 image is a WOZ with FLUX tracks for each 0.25 track (GH#1240)
+	const UINT largestFluxTrackInBlocks = 100;	// typically this is 70-80 blocks
+	const UINT maxTracks = 35 * 4;				// typically only ~10-20 FLUX tracks (the rest TRKS tracks)
+	const UINT bytesPerBlock = 512;
+	return largestFluxTrackInBlocks * maxTracks * bytesPerBlock;	// ~7MB
 }
 
 UINT CDiskImageHelper::GetMinDetectSize(const UINT uImageSize, bool* pTempDetectBuffer)

@@ -284,6 +284,7 @@ private:
 	static const UINT32 TRKS_CHUNK_ID = 'SKRT';	// 'TRKS'
 	static const UINT32 WRIT_CHUNK_ID = 'TIRW';	// 'WRIT' - WOZv2
 	static const UINT32 META_CHUNK_ID = 'ATEM';	// 'META'
+	static const UINT32 FLUX_CHUNK_ID = 'XULF';	// 'FLUX' - WOZv3
 	static const UINT32 INFO_CHUNK_SIZE = 60;	// Fixed size for both WOZv1 & WOZv2
 
 	struct InfoChunk
@@ -312,6 +313,13 @@ private:
 		UINT16 largestTrack;	// in blocks (512 bytes)
 
 		static const BYTE optimalBitTiming5_25 = 32;
+	};
+
+	struct InfoChunkv3
+	{
+		InfoChunkv2 v2;
+		UINT16 fluxBlock;		// Block number where the FLUX chuck resides relative to the start of the file.
+		UINT16 largestFluxTrack;	// in blocks (512 bytes)
 	};
 
 	InfoChunkv2* m_pInfo;	// NB. image-specific - only valid during Detect(), which calls InvalidateInfo() when done
