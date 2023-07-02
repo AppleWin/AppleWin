@@ -613,10 +613,11 @@ void Win32Frame::FrameDrawDiskStatus()
 void Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, int& activeFloppy)
 {
 	//        DOS3.3   ProDOS
-	// Slot   $B7E9    $BE3C(DEFSLT=Default Slot)      ; ref: Beneath Apple ProDOS 8-3
+	// Slot   $B7E9    $BE3C(DEFSLT=Default Slot)      ; ref: Beneath Apple ProDOS 8-3. Not ProDOS v1.9 (16-JUL-90)
 	// Drive  $B7EA    $BE3D(DEFDRV=Default Drive)     ; ref: Beneath Apple ProDOS 8-3
 	// Track  $B7EC    LC1 $D356
 	// Sector $B7ED    LC1 $D357
+	// Unit   -        LC1 $D359					   ; ref: Beneath Apple ProDOS 1.20 and 1.30 Supplement, p83
 	// RWTS            LC1 $D300
 
 	drive1Track = drive2Track = activeFloppy = 0;
@@ -661,9 +662,9 @@ void Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, i
 	{
 		// we can't just read from mem[ 0xD357 ] since it might be bank-switched from ROM
 		// and we need the Language Card RAM
-		const int nProDOSslot = mem[0xBE3C];
 		const int nProDOStrack = *MemGetMainPtr(0xC356); // LC1 $D356
 		const int nProDOSsector = *MemGetMainPtr(0xC357); // LC1 $D357
+		const int nProDOSslot = *MemGetMainPtr(0xC359) / 16; // LC1 $D359
 
 		if ((nProDOSslot == slot)
 			&& (nProDOStrack >= 0 && nProDOStrack < 40)
