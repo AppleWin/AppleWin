@@ -9,6 +9,25 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.30.15.0 - ? Jul 2023
+----------------------
+- [Change #1162] Fix joysticks not detected: first & second devices are not always at index 0 & 1. [@fabricecaruso]
+- [Change #429, #1237] Joystick axis shaping: allow analog sticks to reach corners.
+- [Change #1198] Support Dynatech Microsoftware / Cortechs Corp's CodeWriter protection key.
+- [Bug #1240] Fix for very large 5.25 WOZ files.
+- [Bug #1215] Fix for: Disk Status getting ?? for Sectors in ProDOS.
+- [Bug #1238] Debugger: 2.9.1.25 Fixed: R P ## wasn't setting P flag status register.
+- [Bug #1231] Debugger: Fix disassembly of current line is illegible in "black & white" mode.
+- [Bug #1204] Debugger: Crash due to debugger command line length.
+- [Bug #1194] Debugger: Step-over WAIT can fail.
+- [Change #1230] Debugger: Allow alternate directory for built-in symbols.
+- [Change #1229] Debugger: df ("define float") QoL.
+- [Change #1212] Debugger: DISK INFO QoL.
+- [Change #1209] Debugger: Update BMP import from GIMP 2.10 with X8 R8 G8 B8.
+- [Change #1203] Debugger: Debugger: Step-over QoL.
+- [Change #1200] Debugger: Debugger: Stop reason QoL.
+
+
 1.30.14.1 - 11 Mar 2023
 -----------------------
 - [Bug #1193] Fix for reading AY regs after AY Function set to INACTIVE. (Fix for mb-audit v1.3.)
