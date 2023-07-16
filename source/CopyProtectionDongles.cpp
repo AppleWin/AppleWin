@@ -26,9 +26,9 @@
   Emulate hardware copy protection dongles for Apple II
 
   Currently supported:
-	- Southwestern Data Systems DataKey for SpeedStar Applesoft Compiler (Matthew D'Asaro  Dec 2022)
-	- Dynatech Microsoftware / Cortechs Corp protection key for "CodeWriter"
-	- Robocom Ltd's Interface Module for Robo Graphics' BitStik
+	- Southwestern Data Systems' datakey for SpeedStar Applesoft Compiler (Matthew D'Asaro  Dec 2022)
+	- Dynatech Microsoftware / Cortechs Corp's protection key for "CodeWriter"
+	- Robocom Ltd's Interface Module for Robo Graphics 500/1000/1500 & RoboCAD 1/2 (BitStik joystick plugs in on top)
 */
 #include "StdAfx.h"
 #include <sstream>
@@ -104,10 +104,10 @@ int CopyProtectionDonglePB2(void)
 {
 	switch (copyProtectionDongleType)
 	{
-	case DT_SDSSPEEDSTAR:	// Southwestern Data Systems DataKey for SpeedStar Applesoft Compiler
+	case DT_SDSSPEEDSTAR:
 		return SdsSpeedStar();
 
-	case DT_CODEWRITER:		// Dynatech Microsoftware / Cortechs Corp protection key for "CodeWriter"
+	case DT_CODEWRITER:
 		return codewriterLFSR & 1;
 
 	default:
@@ -126,19 +126,19 @@ int CopyProtectionDonglePDL(UINT pdl)
 
 	if (copyProtectionDongleType == DT_ROBOCOM500)
 	{
-		static BYTE robo500[8] = { 0x3F,0x2E,0x54,0x54,0x2E,0x22,0x72,0x17 };	// lower bound
+		static BYTE robo500[8] = { 0x3F,0x2E,0x54,0x54,0x2E,0x22,0x72,0x17 };	// PDL3 lower bound
 		return robo500[roboComInterfaceModuleMode] + 1;
 	}
 
 	if (copyProtectionDongleType == DT_ROBOCOM1000)
 	{
-		static BYTE robo1000[8] = { 0x17,0x72,0x22,0x2E,0x54,0x54,0x2E,0x3F };	// lower bound
+		static BYTE robo1000[8] = { 0x17,0x72,0x22,0x2E,0x54,0x54,0x2E,0x3F };	// PDL3 lower bound
 		return robo1000[roboComInterfaceModuleMode] + 1;
 	}
 
 	if (copyProtectionDongleType == DT_ROBOCOM1500)
 	{
-		static BYTE robo1500[8] = { 0x72,0x17,0x2E,0x17,0x22,0x3F,0x54,0x22 };	// lower bound
+		static BYTE robo1500[8] = { 0x72,0x17,0x2E,0x17,0x22,0x3F,0x54,0x22 };	// PDL3 lower bound
 		return robo1500[roboComInterfaceModuleMode] + 1;
 	}
 
