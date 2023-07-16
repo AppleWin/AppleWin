@@ -163,25 +163,25 @@ static const std::string& GetSnapshotStructName_SDSSpeedStar(void)
 
 static const std::string& GetSnapshotStructName_CodeWriter(void)
 {
-	static const std::string name("Cortechs Corp CodeWriter protection key");
+	static const std::string name("Cortechs Corp - CodeWriter protection key");
 	return name;
 }
 
 static const std::string& GetSnapshotStructName_Robocom500(void)
 {
-	static const std::string name("Robocom Robo 500 Interface Module");
+	static const std::string name("Robocom Ltd - Robo 500 Interface Module");
 	return name;
 }
 
 static const std::string& GetSnapshotStructName_Robocom1000(void)
 {
-	static const std::string name("Robocom Robo 1000 Interface Module");
+	static const std::string name("Robocom Ltd - Robo 1000 Interface Module");
 	return name;
 }
 
 static const std::string& GetSnapshotStructName_Robocom1500(void)
 {
-	static const std::string name("Robocom Robo 1500 Interface Module");
+	static const std::string name("Robocom Ltd - Robo 1500 Interface Module");
 	return name;
 }
 
