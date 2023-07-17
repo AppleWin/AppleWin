@@ -118,31 +118,38 @@ int CopyProtectionDonglePB2(void)
 // Returns the copy protection dongle state of PDL(n). A return value of -1 means not used by copy protection dongle
 int CopyProtectionDonglePDL(UINT pdl)
 {
+	if (copyProtectionDongleType != DT_ROBOCOM500 && copyProtectionDongleType != DT_ROBOCOM1000 && copyProtectionDongleType != DT_ROBOCOM1500)
+		return -1;
+
 	bool roboComInterfaceModulePower = !MemGetAnnunciator(3);
 	if (!roboComInterfaceModulePower || pdl != 3)
 		return -1;
 
 	UINT roboComInterfaceModuleMode = ((UINT)MemGetAnnunciator(2) << 2) | ((UINT)MemGetAnnunciator(1) << 1) | (UINT)MemGetAnnunciator(0);
 
-	if (copyProtectionDongleType == DT_ROBOCOM500)
+	switch (copyProtectionDongleType)
 	{
-		static BYTE robo500[8] = { 0x3F,0x2E,0x54,0x54,0x2E,0x22,0x72,0x17 };	// PDL3 lower bound
-		return robo500[roboComInterfaceModuleMode] + 1;
-	}
+		case DT_ROBOCOM500:
+		{
+			static BYTE robo500[8] = { 0x3F,0x2E,0x54,0x54,0x2E,0x22,0x72,0x17 };	// PDL3 lower bound
+			return robo500[roboComInterfaceModuleMode] + 1;
+		}
 
-	if (copyProtectionDongleType == DT_ROBOCOM1000)
-	{
-		static BYTE robo1000[8] = { 0x17,0x72,0x22,0x2E,0x54,0x54,0x2E,0x3F };	// PDL3 lower bound
-		return robo1000[roboComInterfaceModuleMode] + 1;
-	}
+		case DT_ROBOCOM1000:
+		{
+			static BYTE robo1000[8] = { 0x17,0x72,0x22,0x2E,0x54,0x54,0x2E,0x3F };	// PDL3 lower bound
+			return robo1000[roboComInterfaceModuleMode] + 1;
+		}
 
-	if (copyProtectionDongleType == DT_ROBOCOM1500)
-	{
-		static BYTE robo1500[8] = { 0x72,0x17,0x2E,0x17,0x22,0x3F,0x54,0x22 };	// PDL3 lower bound
-		return robo1500[roboComInterfaceModuleMode] + 1;
-	}
+		case DT_ROBOCOM1500:
+		{
+			static BYTE robo1500[8] = { 0x72,0x17,0x2E,0x17,0x22,0x3F,0x54,0x22 };	// PDL3 lower bound
+			return robo1500[roboComInterfaceModuleMode] + 1;
+		}
 
-	return -1;
+		default:
+			return -1;
+	}
 }
 
 //===========================================================================
