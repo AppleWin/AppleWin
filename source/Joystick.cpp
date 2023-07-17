@@ -622,7 +622,7 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedC
 				pressed = !swapButtons0and1 ? CheckButton0Pressed() : CheckButton1Pressed();
 				const UINT button0 = !swapButtons0and1 ? 0 : 1;
 				DoAutofire(button0, pressed);
-				if(CopyProtectionDonglePB0() >= 0)				//If a copy protection dongle needs PB0, this overrides the joystick
+				if (CopyProtectionDonglePB0() >= 0)				//If a copy protection dongle needs PB0, this overrides the joystick
 					pressed = CopyProtectionDonglePB0();
 			}
 			break;
@@ -682,9 +682,9 @@ BYTE __stdcall JoyReadPosition(WORD programcounter, WORD address, BYTE, BYTE, UL
 
 	BOOL nPdlCntrActive = g_nCumulativeCycles <= g_paddleInactiveCycle[address & 3];
 
-	// If no joystick connected, then this is always active (GH#778)
+	// If no joystick connected, then this is always active (GH#778) && no copy-protection dongle connected
 	const UINT joyNum = (address & 2) ? 1 : 0;	// $C064..$C067
-	if (joyinfo[joytype[joyNum]] == DEVICE_NONE)
+	if (joyinfo[joytype[joyNum]] == DEVICE_NONE && CopyProtectionDonglePDL(address & 3) < 0)
 		nPdlCntrActive = TRUE;
 
 	return MemReadFloatingBus(nPdlCntrActive, nExecutedCycles);
@@ -699,6 +699,12 @@ void JoyReset()
 }
 
 //===========================================================================
+
+static void SetPaddleInactiveCycle(UINT pdl, UINT pdlPos)
+{
+	g_paddleInactiveCycle[pdl] = g_nCumulativeCycles + (UINT64)((double)pdlPos * PDL_CNTR_INTERVAL);
+}
+
 void JoyResetPosition(ULONG nExecutedCycles)
 {
 	CpuCalcCycles(nExecutedCycles);
@@ -754,7 +760,17 @@ void JoyResetPosition(ULONG nExecutedCycles)
 		if (pdlPos >= 255)
 			pdlPos = 287;
 
-		g_paddleInactiveCycle[pdl] = g_nCumulativeCycles + (UINT64)((double)pdlPos * PDL_CNTR_INTERVAL);
+		SetPaddleInactiveCycle(pdl, pdlPos);
+	}
+
+	// Protection dongle overrides the PDL timer
+	// . eg. needed when Robocom PDL3 is still timing-out from the extended-255 count (eg. 287)
+	// . really if it were at 255 (ie. not connected), then on enabling the dongle it switches to (eg) 23 it should timeout immediately
+	for (UINT pdl = 0; pdl < 4; pdl++)
+	{
+		int pdlPosDongle = CopyProtectionDonglePDL(pdl);
+		if (pdlPosDongle >= 0)
+			SetPaddleInactiveCycle(pdl, pdlPosDongle);
 	}
 }
 
