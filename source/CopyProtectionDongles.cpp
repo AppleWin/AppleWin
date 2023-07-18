@@ -26,8 +26,9 @@
   Emulate hardware copy protection dongles for Apple II
 
   Currently supported:
-	- Southwestern Data Systems DataKey for SpeedStar Applesoft Compiler (Matthew D'Asaro  Dec 2022)
-	- Dynatech Microsoftware / Cortechs Corp protection key for "CodeWriter"
+	- Southwestern Data Systems' datakey for SpeedStar Applesoft Compiler (Matthew D'Asaro  Dec 2022)
+	- Dynatech Microsoftware / Cortechs Corp's protection key for "CodeWriter"
+	- Robocom Ltd's Interface Module for Robo Graphics 500/1000/1500 & RoboCAD 1/2 (BitStik joystick plugs in on top)
 */
 #include "StdAfx.h"
 #include <sstream>
@@ -41,12 +42,12 @@ static DONGLETYPE copyProtectionDongleType = DT_EMPTY;
 static const BYTE codewriterInitialLFSR = 0x6B;	// %1101011 (7-bit LFSR)
 static BYTE codewriterLFSR = codewriterInitialLFSR;
 
-static void codeWriterResetLFSR()
+static void CodeWriterResetLFSR()
 {
 	codewriterLFSR = codewriterInitialLFSR;
 }
 
-static void codeWriterClockLFSR()
+static void CodeWriterClockLFSR()
 {
 	BYTE bit = ((codewriterLFSR >> 1) ^ (codewriterLFSR >> 0)) & 1;
 	codewriterLFSR = (codewriterLFSR >> 1) | (bit << 6);
@@ -73,9 +74,9 @@ void DongleControl(WORD address)
 	if (copyProtectionDongleType == DT_CODEWRITER)
 	{
 		if ((AN == 3 && state == true) || MemGetAnnunciator(3))	// reset or was already reset? (ie. takes precedent over AN2)
-			codeWriterResetLFSR();
+			CodeWriterResetLFSR();
 		else if (AN == 2 && state == false && MemGetAnnunciator(2) == true)	// AN2 true->false edge?
-			codeWriterClockLFSR();
+			CodeWriterClockLFSR();
 	}
 }
 
@@ -103,15 +104,51 @@ int CopyProtectionDonglePB2(void)
 {
 	switch (copyProtectionDongleType)
 	{
-	case DT_SDSSPEEDSTAR:	// Southwestern Data Systems DataKey for SpeedStar Applesoft Compiler
+	case DT_SDSSPEEDSTAR:
 		return SdsSpeedStar();
 
-	case DT_CODEWRITER:		// Dynatech Microsoftware / Cortechs Corp protection key for "CodeWriter"
+	case DT_CODEWRITER:
 		return codewriterLFSR & 1;
 
 	default:
 		return -1;
-		break;
+	}
+}
+
+// Returns the copy protection dongle state of PDL(n). A return value of -1 means not used by copy protection dongle
+int CopyProtectionDonglePDL(UINT pdl)
+{
+	if (copyProtectionDongleType != DT_ROBOCOM500 && copyProtectionDongleType != DT_ROBOCOM1000 && copyProtectionDongleType != DT_ROBOCOM1500)
+		return -1;
+
+	bool roboComInterfaceModulePower = !MemGetAnnunciator(3);
+	if (!roboComInterfaceModulePower || pdl != 3)
+		return -1;
+
+	UINT roboComInterfaceModuleMode = ((UINT)MemGetAnnunciator(2) << 2) | ((UINT)MemGetAnnunciator(1) << 1) | (UINT)MemGetAnnunciator(0);
+
+	switch (copyProtectionDongleType)
+	{
+		case DT_ROBOCOM500:
+		{
+			static BYTE robo500[8] = { 0x3F,0x2E,0x54,0x54,0x2E,0x22,0x72,0x17 };	// PDL3 lower bound
+			return robo500[roboComInterfaceModuleMode] + 1;
+		}
+
+		case DT_ROBOCOM1000:
+		{
+			static BYTE robo1000[8] = { 0x17,0x72,0x22,0x2E,0x54,0x54,0x2E,0x3F };	// PDL3 lower bound
+			return robo1000[roboComInterfaceModuleMode] + 1;
+		}
+
+		case DT_ROBOCOM1500:
+		{
+			static BYTE robo1500[8] = { 0x72,0x17,0x2E,0x17,0x22,0x3F,0x54,0x22 };	// PDL3 lower bound
+			return robo1500[roboComInterfaceModuleMode] + 1;
+		}
+
+		default:
+			return -1;
 	}
 }
 
@@ -122,6 +159,7 @@ int CopyProtectionDonglePB2(void)
 // Unit version history:
 // 1: Add SDS SpeedStar dongle
 // 2: Add Cortechs Corp CodeWriter protection key
+//    Add Robocom Ltd - Robo 500/1000/1500 Interface Modules
 static const UINT kUNIT_VERSION = 2;
 
 static const std::string& GetSnapshotStructName_SDSSpeedStar(void)
@@ -132,7 +170,25 @@ static const std::string& GetSnapshotStructName_SDSSpeedStar(void)
 
 static const std::string& GetSnapshotStructName_CodeWriter(void)
 {
-	static const std::string name("Cortechs Corp CodeWriter protection key");
+	static const std::string name("Cortechs Corp - CodeWriter protection key");
+	return name;
+}
+
+static const std::string& GetSnapshotStructName_Robocom500(void)
+{
+	static const std::string name("Robocom Ltd - Robo 500 Interface Module");
+	return name;
+}
+
+static const std::string& GetSnapshotStructName_Robocom1000(void)
+{
+	static const std::string name("Robocom Ltd - Robo 1000 Interface Module");
+	return name;
+}
+
+static const std::string& GetSnapshotStructName_Robocom1500(void)
+{
+	static const std::string name("Robocom Ltd - Robo 1500 Interface Module");
 	return name;
 }
 
@@ -147,6 +203,21 @@ void CopyProtectionDongleSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	{
 		yamlSaveHelper.SaveString(SS_YAML_KEY_DEVICE, GetSnapshotStructName_CodeWriter());
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_CODEWRITER_INDEX, codewriterLFSR);
+	}
+	else if (copyProtectionDongleType == DT_ROBOCOM500)
+	{
+		yamlSaveHelper.SaveString(SS_YAML_KEY_DEVICE, GetSnapshotStructName_Robocom500());
+		// NB. No state for this dongle
+	}
+	else if (copyProtectionDongleType == DT_ROBOCOM1000)
+	{
+		yamlSaveHelper.SaveString(SS_YAML_KEY_DEVICE, GetSnapshotStructName_Robocom1000());
+		// NB. No state for this dongle
+	}
+	else if (copyProtectionDongleType == DT_ROBOCOM1500)
+	{
+		yamlSaveHelper.SaveString(SS_YAML_KEY_DEVICE, GetSnapshotStructName_Robocom1500());
+		// NB. No state for this dongle
 	}
 	else
 	{
@@ -175,6 +246,18 @@ void CopyProtectionDongleLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versi
 	{
 		copyProtectionDongleType = DT_CODEWRITER;
 		codewriterLFSR = yamlLoadHelper.LoadUint(SS_YAML_KEY_CODEWRITER_INDEX);
+	}
+	else if (device == GetSnapshotStructName_Robocom500())
+	{
+		copyProtectionDongleType = DT_ROBOCOM500;
+	}
+	else if (device == GetSnapshotStructName_Robocom1000())
+	{
+		copyProtectionDongleType = DT_ROBOCOM1000;
+	}
+	else if (device == GetSnapshotStructName_Robocom1500())
+	{
+		copyProtectionDongleType = DT_ROBOCOM1500;
 	}
 	else
 	{
