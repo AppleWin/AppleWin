@@ -9,12 +9,13 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.30.15.0 - ? Jul 2023
-----------------------
+1.30.15.0 - 23 Jul 2023
+-----------------------
 - [Change #1162] Fix joysticks not detected: first & second devices are not always at index 0 & 1. [@fabricecaruso]
 - [Change #429, #1237] Joystick axis shaping: allow analog sticks to reach corners.
+- [Change #1247] Support Robocom Ltd's BitStik Interface Module protection key.
 - [Change #1198] Support Dynatech Microsoftware / Cortechs Corp's CodeWriter protection key.
-- [Bug #1240] Fix for very large 5.25 WOZ files.
+- [Bug #1240] Fix for very large (>800KiB) 5.25 WOZ files.
 - [Bug #1215] Fix for: Disk Status getting ?? for Sectors in ProDOS.
 - [Bug #1238] Debugger: 2.9.1.25 Fixed: R P ## wasn't setting P flag status register.
 - [Bug #1231] Debugger: Fix disassembly of current line is illegible in "black & white" mode.
