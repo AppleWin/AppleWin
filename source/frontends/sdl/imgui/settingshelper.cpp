@@ -97,6 +97,16 @@ namespace
     {VT_MONO_WHITE, "Monochrome (White)"},
   };
 
+  const std::map<DONGLETYPE, std::string> dongleTypes =
+  {
+    {DT_EMPTY, "Empty"},
+    {DT_SDSSPEEDSTAR, "Speed Star"},
+    {DT_CODEWRITER, "Code Writer"},
+    {DT_ROBOCOM500, "RoboCom 500"},
+    {DT_ROBOCOM1000, "RoboCom 1000"},
+    {DT_ROBOCOM1500, "RoboCom 1500"},
+  };
+
   const std::map<size_t, std::vector<SS_CARDTYPE>> cardsForSlots =
     {
       {0, {CT_Empty, CT_LanguageCard, CT_Saturn128K}},
@@ -128,11 +138,6 @@ namespace sa2
     return cards.at(card);
   }
 
-  const std::string & getApple2Name(eApple2Type type)
-  {
-    return apple2Types.at(type);
-  }
-
   const std::string & getCPUName(eCpuType cpu)
   {
     return cpuTypes.at(cpu);
@@ -141,11 +146,6 @@ namespace sa2
   const std::string & getAppModeName(AppMode_e mode)
   {
     return appModes.at(mode);
-  }
-
-  const std::string & getVideoTypeName(VideoType_e type)
-  {
-    return videoTypes.at(type);
   }
 
   const std::vector<SS_CARDTYPE> & getCardsForSlot(size_t slot)
@@ -158,9 +158,24 @@ namespace sa2
     return expansionCards;
   }
 
+  const std::map<SS_CARDTYPE, std::string> & getCardNames()
+  {
+    return cards;
+  }
+
   const std::map<eApple2Type, std::string> & getAapple2Types()
   {
     return apple2Types;
+  }
+
+  const std::map<DONGLETYPE, std::string> & getDongleTypes()
+  {
+    return dongleTypes;
+  }
+
+  const std::map<VideoType_e, std::string> & getVideoTypes()
+  {
+    return videoTypes;
   }
 
   const std::string & getDiskStatusName(Disk_Status_e status)

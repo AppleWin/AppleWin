@@ -146,26 +146,11 @@ namespace sa2
         if (ImGui::BeginTabItem("Hardware"))
         {
           ImGui::LabelText("Option", "Value");
-          const eApple2Type a2e = GetApple2Type();
-          const std::map<eApple2Type, std::string> & apple2Types = getAapple2Types();
 
-          if (ImGui::BeginCombo("Apple 2", getApple2Name(a2e).c_str()))
-          {
-            for (const auto & it : apple2Types)
-            {
-              const bool isSelected = it.first == a2e;
-              if (ImGui::Selectable(getApple2Name(it.first).c_str(), isSelected))
-              {
-                SetApple2Type(it.first);
-                REGSAVE(REGVALUE_APPLE2_TYPE, it.first);
-              }
-              if (isSelected)
-              {
-                ImGui::SetItemDefaultFocus();
-              }
-            }
-            ImGui::EndCombo();
-          }
+          comboIterator("Apple 2", GetApple2Type(), getAapple2Types(), [] (eApple2Type x) {
+            SetApple2Type(x);
+            REGSAVE(REGVALUE_APPLE2_TYPE, x);
+          });
 
           ImGui::LabelText("CPU", "%s", getCPUName(GetMainCpu()).c_str());
           ImGui::LabelText("Mode", "%s", getAppModeName(g_nAppMode).c_str());
@@ -176,23 +161,9 @@ namespace sa2
           for (size_t slot = SLOT1; slot < NUM_SLOTS; ++slot)
           {
             const SS_CARDTYPE current = cardManager.QuerySlot(slot);
-            if (ImGui::BeginCombo(std::to_string(slot).c_str(), getCardName(current).c_str()))
-            {
-              const std::vector<SS_CARDTYPE> & cards = getCardsForSlot(slot);
-              for (SS_CARDTYPE card : cards)
-              {
-                const bool isSelected = card == current;
-                if (ImGui::Selectable(getCardName(card).c_str(), isSelected))
-                {
-                  insertCard(slot, card, frame);
-                }
-                if (isSelected)
-                {
-                  ImGui::SetItemDefaultFocus();
-                }
-              }
-              ImGui::EndCombo();
-            }
+            comboIterator(std::to_string(slot).c_str(), current, getCardsForSlot(slot), getCardNames(), [slot, &frame] (SS_CARDTYPE x) {
+              insertCard(slot, x, frame);
+            });
           }
 
           ImGui::Separator();
@@ -200,23 +171,10 @@ namespace sa2
           {
             // Expansion
             const SS_CARDTYPE expansion = GetCurrentExpansionMemType();
-            if (ImGui::BeginCombo("Expansion", getCardName(expansion).c_str()))
-            {
-              const std::vector<SS_CARDTYPE> & cards = getExpansionCards();
-              for (SS_CARDTYPE card : cards)
-              {
-                const bool isSelected = card == expansion;
-                if (ImGui::Selectable(getCardName(card).c_str(), isSelected))
-                {
-                  setExpansionCard(card);
-                }
-                if (isSelected)
-                {
-                  ImGui::SetItemDefaultFocus();
-                }
-              }
-              ImGui::EndCombo();
-            }
+            comboIterator("Expansion", expansion, getExpansionCards(), getCardNames(), [] (SS_CARDTYPE x) {
+              setExpansionCard(x);
+            });
+
             int ramWorksMemorySize = GetRamWorksMemorySize();
             if (ImGui::SliderInt("RamWorks size", &ramWorksMemorySize, 1, kMaxExMemoryBanks))
             {
@@ -225,6 +183,10 @@ namespace sa2
           }
 
           ImGui::Separator();
+
+          comboIterator("Copy protection", GetCopyProtectionDongleType(), getDongleTypes(), [] (DONGLETYPE x) {
+            SetCopyProtectionDongleType(x);
+          });
 
           const UINT uthernetSlot = SLOT3;
 
@@ -265,12 +227,6 @@ namespace sa2
           if (ImGui::Checkbox("Virtual DNS", &virtualDNS))
           {
             Uthernet2::SetRegistryVirtualDNS(uthernetSlot, virtualDNS);
-          }
-
-          bool speedStar = GetCopyProtectionDongleType() != 0;
-          if (ImGui::Checkbox("Speed Star Copy Protection", &speedStar))
-          {
-            RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, GetCopyProtectionDongleType());
           }
 
           ImGui::EndTabItem();
@@ -514,24 +470,10 @@ namespace sa2
         if (ImGui::BeginTabItem("Video"))
         {
           Video & video = GetVideo();
-          const VideoType_e videoType = video.GetVideoType();
-          if (ImGui::BeginCombo("Video mode", getVideoTypeName(videoType).c_str()))
-          {
-            for (size_t value = VT_MONO_CUSTOM; value < NUM_VIDEO_MODES; ++value)
-            {
-              const bool isSelected = value == videoType;
-              if (ImGui::Selectable(getVideoTypeName(VideoType_e(value)).c_str(), isSelected))
-              {
-                video.SetVideoType(VideoType_e(value));
-                frame->ApplyVideoModeChange();
-              }
-              if (isSelected)
-              {
-                ImGui::SetItemDefaultFocus();
-              }
-            }
-            ImGui::EndCombo();
-          }
+          comboIterator("Video mode", video.GetVideoType(), getVideoTypes(), [&video, &frame] (VideoType_e x) {
+            video.SetVideoType(x);
+            frame->ApplyVideoModeChange();
+          });
 
           ImVec4 color = colorrefToImVec4(video.GetMonochromeRGB());
           if (ImGui::ColorEdit3("Monochrome Color", (float*)&color, 0))
