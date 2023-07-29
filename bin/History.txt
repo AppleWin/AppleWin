@@ -9,7 +9,7 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.30.15.0 - 23 Jul 2023
+1.30.15.0 - 29 Jul 2023
 -----------------------
 - [Change #1162] Fix joysticks not detected: first & second devices are not always at index 0 & 1. [@fabricecaruso]
 - [Change #429, #1237] Joystick axis shaping: allow analog sticks to reach corners.
