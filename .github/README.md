@@ -114,6 +114,23 @@ qapple can be managed from Qt Creator as well and the 2 have coexisted so far, b
 
 ```
 git clone https://github.com/audetto/AppleWin.git --recursive
+```
+
+### Fedora
+
+On Fedora 35, from a fresh installation, install all packages from [fedora.list.txt](/source/linux/fedora.list.txt).
+
+### Raspberry Pi OS, Ubuntu and other Debian distributions
+
+Install all packages from [raspbian.list.txt](/source/linux/raspbian.list.txt).
+
+You can use `sudo apt-get -y install $(cat AppleWin/source/linux/raspbian.list.txt)` for an automated installation.
+
+See [Travis](/.travis.yml) CI too.
+
+### Building
+
+```
 cd AppleWin
 mkdir build
 cd build
@@ -132,18 +149,6 @@ cmake -DBUILD_SA2=ON -DBUILD_LIBRETRO=ON ..
 ```
 
 or use `cmake-gui` (if none is selected, they are all built).
-
-### Fedora
-
-On Fedora 35, from a fresh installation, install all packages from [fedora.list.txt](/source/linux/fedora.list.txt).
-
-### Raspberry Pi OS, Ubuntu and other Debian distributions
-
-Install all packages from [raspbian.list.txt](/source/linux/raspbian.list.txt).
-
-You can use `sudo apt-get -y install $(cat raspbian.list.txt)` for an automated installation.
-
-See [Travis](/.travis.yml) CI too.
 
 ### Packaging
 
