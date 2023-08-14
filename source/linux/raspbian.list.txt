@@ -1,4 +1,5 @@
 cmake
+pkg-config
 libyaml-dev
 libminizip-dev
 qtbase5-dev
@@ -13,5 +14,3 @@ libsdl2-dev
 libgles-dev
 libpcap-dev
 libslirp-dev
-libminizip-dev
-libyaml-dev
