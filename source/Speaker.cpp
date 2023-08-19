@@ -59,6 +59,7 @@ static const DWORD g_dwDSSpkrBufferSize = MAX_SAMPLES * sizeof(short) * g_nSPKR_
 //-------------------------------------
 
 static short*	g_pSpeakerBuffer = NULL;
+static double*	g_pSpeakerFilterTap = NULL;
 
 // Globals (SOUND_WAVE)
 const short		SPKR_DATA_INIT = (short)0x8000;
@@ -217,9 +218,11 @@ void SpkrDestroy ()
 
 	if(soundtype == SOUND_WAVE)
 	{
+		delete [] g_pSpeakerFilterTap;
 		delete [] g_pSpeakerBuffer;
 		delete [] g_pRemainderBuffer;
-		
+
+        g_pSpeakerFilterTap = NULL;
 		g_pSpeakerBuffer = NULL;
 		g_pRemainderBuffer = NULL;
 	}
@@ -270,6 +273,7 @@ void SpkrInitialize ()
 		InitRemainderBuffer();
 
 		g_pSpeakerBuffer = new short [SPKR_SAMPLE_RATE];	// Buffer can hold a max of 1 seconds worth of samples
+        g_pSpeakerFilterTap = new double[2];                 // Filter tap of 2
 	}
 }
 
@@ -311,13 +315,37 @@ void SpkrSetEmulationType (SoundType_e newtype)
 
 //=============================================================================
 
+static short FilterSpeakerData() {
+	if (g_uDCFilterState == 0) {
+		return 0;
+	}
+
+    double c1 = 1.9955211;
+    double c2 = 0.996093;
+
+    double y = c1 * g_pSpeakerFilterTap[0] - c2 * g_pSpeakerFilterTap[1] + (((double) g_nSpeakerData) / 32768.0);
+    g_pSpeakerFilterTap[1] = g_pSpeakerFilterTap[0];
+    g_pSpeakerFilterTap[0] = y;
+
+    double return_value = y / 4000.0;
+    if (return_value < -1.0) {
+        return_value = -1.0;
+    } else if (return_value > 1.0) {
+        return_value = 1.0;
+    }
+
+    return (short) (return_value * 32768.0);
+}
+
 static void ReinitRemainderBuffer(UINT nCyclesRemaining)
 {
 	if(nCyclesRemaining == 0)
 		return;
 
-	for(g_nRemainderBufferIdx=0; g_nRemainderBufferIdx<nCyclesRemaining; g_nRemainderBufferIdx++)
-		g_pRemainderBuffer[g_nRemainderBufferIdx] = g_nSpeakerData;
+	for(g_nRemainderBufferIdx=0; g_nRemainderBufferIdx<nCyclesRemaining; g_nRemainderBufferIdx++) {
+		g_pRemainderBuffer[g_nRemainderBufferIdx] = FilterSpeakerData();
+		//g_pRemainderBuffer[g_nRemainderBufferIdx] = g_nSpeakerData;
+    }
 
 	_ASSERT(g_nRemainderBufferIdx < g_nRemainderBufferSize);
 }
@@ -328,7 +356,8 @@ static void UpdateRemainderBuffer(ULONG* pnCycleDiff)
 	{
 		while((g_nRemainderBufferIdx < g_nRemainderBufferSize) && *pnCycleDiff)
 		{
-			g_pRemainderBuffer[g_nRemainderBufferIdx] = g_nSpeakerData;
+			g_pRemainderBuffer[g_nRemainderBufferIdx] = FilterSpeakerData();
+			//g_pRemainderBuffer[g_nRemainderBufferIdx] = g_nSpeakerData;
 			g_nRemainderBufferIdx++;
 			(*pnCycleDiff)--;
 		}
@@ -336,13 +365,26 @@ static void UpdateRemainderBuffer(ULONG* pnCycleDiff)
 		if(g_nRemainderBufferIdx == g_nRemainderBufferSize)
 		{
 			g_nRemainderBufferIdx = 0;
+			/*
 			signed long nSampleMean = 0;
 			for(UINT i=0; i<g_nRemainderBufferSize; i++)
 				nSampleMean += (signed long) g_pRemainderBuffer[i];
 			nSampleMean /= (signed long) g_nRemainderBufferSize;
+			*/
+			if (g_nBufferIdx < SPKR_SAMPLE_RATE - 1) {
+				double return_value = g_pSpeakerFilterTap[0] / 4000.0;
+				if (return_value < -1.0) {
+					return_value = -1.0;
+				}
+				else if (return_value > 1.0) {
+					return_value = 1.0;
+				}
 
-			if(g_nBufferIdx < SPKR_SAMPLE_RATE-1)
-				g_pSpeakerBuffer[g_nBufferIdx++] = DCFilter( (short)nSampleMean );
+				if (g_uDCFilterState == 0) {
+					return_value = 0;
+				}
+				g_pSpeakerBuffer[g_nBufferIdx++] = DCFilter((short)(return_value * 32768.0));
+			}
 		}
 	}
 }
@@ -359,8 +401,14 @@ static void UpdateSpkr()
 
 	  ULONG nCyclesRemaining = (ULONG) ((double)nCycleDiff - (double)nNumSamples * g_fClksPerSpkrSample);
 
-	  while((nNumSamples--) && (g_nBufferIdx < SPKR_SAMPLE_RATE-1))
-		g_pSpeakerBuffer[g_nBufferIdx++] = DCFilter(g_nSpeakerData);
+	  while ((nNumSamples--) && (g_nBufferIdx < SPKR_SAMPLE_RATE - 1)) {
+		  //g_pSpeakerBuffer[g_nBufferIdx++] = DCFilter(g_nSpeakerData);
+		  int value;
+		  for (int i = 0; i < (int)g_fClksPerSpkrSample - 1; i++) {
+			  value = FilterSpeakerData();
+		  }
+		  g_pSpeakerBuffer[g_nBufferIdx++] = DCFilter(FilterSpeakerData());
+	  }
 
 	  ReinitRemainderBuffer(nCyclesRemaining);	// Partially fill 1Mhz sample buffer
   }
@@ -634,14 +682,16 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 
 			if(dwBufferSize0)
 			{
-				std::fill_n(pDSLockedBuffer0, dwBufferSize0/sizeof(short), DCFilter(g_nSpeakerData));
+				//std::fill_n(pDSLockedBuffer0, dwBufferSize0/sizeof(short), DCFilter(g_nSpeakerData));
+				std::fill_n(pDSLockedBuffer0, dwBufferSize0/sizeof(short), DCFilter(FilterSpeakerData()));
 				if (g_bSpkrOutputToRiff)
 					RiffPutSamples(pDSLockedBuffer0, dwBufferSize0/sizeof(short));
 			}
 
 			if(pDSLockedBuffer1)
 			{
-				std::fill_n(pDSLockedBuffer1, dwBufferSize1/sizeof(short), DCFilter(g_nSpeakerData));
+				//std::fill_n(pDSLockedBuffer1, dwBufferSize1/sizeof(short), DCFilter(g_nSpeakerData));
+				std::fill_n(pDSLockedBuffer1, dwBufferSize1/sizeof(short), DCFilter(FilterSpeakerData()));
 				if (g_bSpkrOutputToRiff)
 					RiffPutSamples(pDSLockedBuffer1, dwBufferSize1/sizeof(short));
 			}
