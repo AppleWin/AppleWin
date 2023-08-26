@@ -13,7 +13,6 @@ namespace
 }
 
 
-
 std::shared_ptr<const Paddle> Paddle::instance;
 
 std::set<int> Paddle::ourButtons;
@@ -129,22 +128,35 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExe
 
 BYTE __stdcall JoyReadPosition(WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
-  const int nJoyNum = (address & 2) ? 1 : 0;	// $C064..$C067
-
   CpuCalcCycles(uExecutedCycles);
-  BOOL nPdlCntrActive = 0;
 
-  if (Paddle::instance)
+  const int pdl = address & 3;  // 11: joy number & axis
+  const int copyProtection = CopyProtectionDonglePDL(pdl);
+
+  // if nothing is connected, set it to TRUE
+  BOOL nPdlCntrActive = TRUE;
+
+  const auto setPdlPos = [&nPdlCntrActive] (const int pos) {
+    nPdlCntrActive = g_nCumulativeCycles <= (g_nJoyCntrResetCycle + (unsigned __int64) ((double)pos * PDL_CNTR_INTERVAL));
+  };
+
+  if (copyProtection >= 0)
   {
+    // if active, this has the highest priority
+    setPdlPos(copyProtection);
+  }
+  else if (Paddle::instance)
+  {
+    const int nJoyNum = (address & 2) ? 1 : 0;	// $C064..$C067
     if (nJoyNum == 0)
     {
       int axis = address & 1;
-      int pdl = Paddle::instance->getAxisValue(axis);
+      int pos = Paddle::instance->getAxisValue(axis);
       // This is from KEGS. It helps games like Championship Lode Runner & Boulderdash
-      if (pdl >= 255)
-	pdl = 280;
+      if (pos >= 255)
+        pos = 280;
 
-      nPdlCntrActive  = g_nCumulativeCycles <= (g_nJoyCntrResetCycle + (unsigned __int64) ((double)pdl * PDL_CNTR_INTERVAL));
+      setPdlPos(pos);
     }
   }
 
