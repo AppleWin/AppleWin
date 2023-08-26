@@ -10,8 +10,41 @@
 #include "Core.h"
 #include "Harddisk.h"
 
+#include <algorithm>
+#include <sstream>
+
 namespace
 {
+
+  bool doesExtensionMatch(const char * filename, const std::vector<const char *> & valid)
+  {
+    return std::any_of(valid.begin(), valid.end(), [filename] (const char * ext) {
+      return strlen(filename) > strlen(ext) && !strcmp(filename + strlen(filename) - strlen(ext), ext);
+    });
+  }
+
+  bool checkExtension(sa2::SDLFrame * frame, const char * filename, const std::vector<const char *> & valid)
+  {
+    if (!doesExtensionMatch(filename, valid))
+    {
+      std::ostringstream msg;
+      msg << "Invalid extension (" << filename << "). Supported: ";
+      for (size_t i = 0; i < valid.size(); ++i)
+      {
+        if (i)
+        {
+          msg << ", ";
+        }
+        msg << valid[i];
+      }
+      frame->FrameMessageBox(msg.str().c_str(), "ERROR", MB_OK);
+      return false;
+    }
+    else
+    {
+      return true;
+    }
+  }
 
   void insertDisk(sa2::SDLFrame * frame, const char * filename, const size_t dragAndDropSlot, const size_t dragAndDropDrive)
   {
@@ -21,20 +54,26 @@ namespace
     {
       case CT_Disk2:
       {
-        Disk2InterfaceCard * card2 = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(dragAndDropSlot));
-        const ImageError_e error = card2->InsertDisk(dragAndDropDrive, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
-        if (error != eIMAGE_ERROR_NONE)
+        if (checkExtension(frame, filename, {".bin", ".do", ".dsk", ".nib", ".po", ".gz", ".woz", ".zip", ".2mg", ".2img", ".iie", ".apl"}))
         {
-          card2->NotifyInvalidImage(dragAndDropDrive, filename, error);
+          Disk2InterfaceCard * card2 = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(dragAndDropSlot));
+          const ImageError_e error = card2->InsertDisk(dragAndDropDrive, filename, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+          if (error != eIMAGE_ERROR_NONE)
+          {
+            card2->NotifyInvalidImage(dragAndDropDrive, filename, error);
+          }
         }
         break;
       }
       case CT_GenericHDD:
       {
-        HarddiskInterfaceCard * harddiskCard = dynamic_cast<HarddiskInterfaceCard*>(cardManager.GetObj(dragAndDropSlot));
-        if (!harddiskCard->Insert(dragAndDropDrive, filename))
+        if (checkExtension(frame, filename, {".hdv", ".po", ".2mg", ".2img", ".gz", ".zip"}))
         {
-          frame->FrameMessageBox("Invalid HD image", "ERROR", MB_OK);
+          HarddiskInterfaceCard * harddiskCard = dynamic_cast<HarddiskInterfaceCard*>(cardManager.GetObj(dragAndDropSlot));
+          if (!harddiskCard->Insert(dragAndDropDrive, filename))
+          {
+            frame->FrameMessageBox("Invalid HD image", "ERROR", MB_OK);
+          }
         }
         break;
       }
@@ -85,14 +124,12 @@ namespace sa2
 
   void processFile(SDLFrame * frame, const char * filename, const size_t dragAndDropSlot, const size_t dragAndDropDrive)
   {
-    const char * yaml = ".yaml";
-    const char * wav = ".wav";
-    if (strlen(filename) > strlen(yaml) && !strcmp(filename + strlen(filename) - strlen(yaml), yaml))
+    if (doesExtensionMatch(filename, {".yaml"}))
     {
       common2::setSnapshotFilename(filename);
       frame->LoadSnapshot();
     }
-    else if (strlen(filename) > strlen(wav) && !strcmp(filename + strlen(filename) - strlen(wav), wav))
+    else if (doesExtensionMatch(filename, {".wav"}))
     {
       insertTape(frame, filename);
     }
