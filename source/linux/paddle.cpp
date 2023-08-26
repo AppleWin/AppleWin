@@ -152,9 +152,9 @@ BYTE __stdcall JoyReadPosition(WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG
     {
       int axis = address & 1;
       int pos = Paddle::instance->getAxisValue(axis);
-      // This is from KEGS. It helps games like Championship Lode Runner & Boulderdash
+      // This is from KEGS. It helps games like Championship Lode Runner, Boulderdash & Learning with Leeper(GH#1128)
       if (pos >= 255)
-        pos = 280;
+        pos = 287;
 
       setPdlPos(pos);
     }
