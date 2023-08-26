@@ -186,6 +186,7 @@ namespace sa2
 
           comboIterator("Copy protection", GetCopyProtectionDongleType(), getDongleTypes(), [] (DONGLETYPE x) {
             SetCopyProtectionDongleType(x);
+            RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, x);
           });
 
           const UINT uthernetSlot = SLOT3;
