@@ -111,6 +111,7 @@ private:
 	HANDLE m_hCommHandle;
 	SOCKET m_hCommListenSocket;
 	SOCKET m_hCommAcceptSocket;
+	HWND m_hFrameWindow; // to avoid variable (de)-initialisation order issues
 
 	//
 

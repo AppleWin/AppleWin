@@ -71,7 +71,8 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	m_strSerialPortChoices(1, '\0'), // Combo box friendly, just in case.
 	m_uTCPChoiceItemIdx(0),
 	m_bCfgSupportDCD(false),
-	m_pExpansionRom(NULL)
+	m_pExpansionRom(NULL),
+	m_hFrameWindow(NULL)
 {
 	if (m_slot != 2)	// fixme
 		ThrowErrorInvalidSlot();
@@ -259,9 +260,10 @@ bool CSuperSerialCard::CheckComm()
 			}
 
 			// now send async events to our app's message handler
+			m_hFrameWindow = GetFrame().g_hFrameWindow;
 			if (WSAAsyncSelect(
 					/* SOCKET s */ m_hCommListenSocket,
-					/* HWND hWnd */ GetFrame().g_hFrameWindow,
+					/* HWND hWnd */ m_hFrameWindow,
 					/* unsigned int wMsg */ WM_USER_TCP_SERIAL,
 					/* long lEvent */ (FD_ACCEPT | FD_CONNECT | FD_READ | FD_CLOSE)) != 0)
 			{
@@ -333,7 +335,7 @@ void CSuperSerialCard::CommTcpSerialCleanup()
 {
 	if (m_hCommListenSocket != INVALID_SOCKET)
 	{
-		WSAAsyncSelect(m_hCommListenSocket, GetFrame().g_hFrameWindow, 0, 0); // Stop event messages
+		WSAAsyncSelect(m_hCommListenSocket, m_hFrameWindow, 0, 0); // Stop event messages
 		closesocket(m_hCommListenSocket);
 		m_hCommListenSocket = INVALID_SOCKET;
 
