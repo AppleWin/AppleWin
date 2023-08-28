@@ -47,6 +47,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define TCP_SERIAL_PORT 1977
 
+const UINT CSuperSerialCard::SERIALPORTITEM_INVALID_COM_PORT = 0;
+
 // Default: 9600-8-N-1
 SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 {
@@ -241,6 +243,7 @@ bool CSuperSerialCard::CheckComm()
 			saAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 			if (bind(m_hCommListenSocket, (LPSOCKADDR)&saAddress, sizeof(saAddress)) == SOCKET_ERROR)
 			{
+				closesocket(m_hCommListenSocket);
 				m_hCommListenSocket = INVALID_SOCKET;
 				WSACleanup();
 				return false;
@@ -249,6 +252,7 @@ bool CSuperSerialCard::CheckComm()
 			// bound, so listen
 			if (listen(m_hCommListenSocket, 1) == SOCKET_ERROR)
 			{
+				closesocket(m_hCommListenSocket);
 				m_hCommListenSocket = INVALID_SOCKET;
 				WSACleanup();
 				return false;
@@ -261,6 +265,7 @@ bool CSuperSerialCard::CheckComm()
 					/* unsigned int wMsg */ WM_USER_TCP_SERIAL,
 					/* long lEvent */ (FD_ACCEPT | FD_CONNECT | FD_READ | FD_CLOSE)) != 0)
 			{
+				closesocket(m_hCommListenSocket);
 				m_hCommListenSocket = INVALID_SOCKET;
 				WSACleanup();
 				return false;
