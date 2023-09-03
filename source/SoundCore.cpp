@@ -646,7 +646,8 @@ void SoundCore_SetErrorMax(const int nErrorMax)
 
 //=============================================================================
 
-static DWORD g_dwAdviseToken;
+// Use DWORD_PTR according to IReferenceClock from <strmif.h>.
+static DWORD_PTR g_pdwAdviseCookie = 0; // Not really used as pointer.
 static IReferenceClock *g_pRefClock = NULL;
 static HANDLE g_hSemaphore = NULL;
 static bool g_bRefClockTimerActive = false;
@@ -713,7 +714,9 @@ void SysClk_StartTimerUsec(DWORD dwUsecPeriod)
 		return;
 	}
 
-	if (g_pRefClock->AdvisePeriodic(rtNow, rtPeriod, g_hSemaphore, &g_dwAdviseToken) != S_OK)
+	// IReferenceClock from <strmif.h> (origin <axcore.idl>) is "oddly" defined to use HSEMAPHORE.
+	static_assert(sizeof(HSEMAPHORE) == sizeof(HANDLE), "must be same size");
+	if (g_pRefClock->AdvisePeriodic(rtNow, rtPeriod, (HSEMAPHORE)g_hSemaphore, &g_pdwAdviseCookie) != S_OK)
 	{
 		fprintf(stderr, "Error creating timer\n");
 		_ASSERT(0);
@@ -729,7 +732,7 @@ void SysClk_StopTimer()
 	if(!g_bRefClockTimerActive)
 		return;
 
-	if (g_pRefClock->Unadvise(g_dwAdviseToken) != S_OK)
+	if (g_pRefClock->Unadvise(g_pdwAdviseCookie) != S_OK)
 	{
 		fprintf(stderr, "Error deleting timer\n");
 		_ASSERT(0);
