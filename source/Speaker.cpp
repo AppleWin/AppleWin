@@ -418,6 +418,9 @@ static void UpdateSpkr()
 
 //=============================================================================
 
+static FILE* g_fhSpkr = NULL;
+static unsigned __int64 g_nSpkrLastCycle2 = 0;
+
 // Called by emulation code when Speaker I/O reg is accessed
 //
 
@@ -440,6 +443,14 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
   if (soundtype == SOUND_WAVE)
   {
 	  CpuCalcCycles(nExecutedCycles);
+
+#if 0
+	  if (!g_fhSpkr)
+		  g_fhSpkr = fopen("spkrDelta.log", "w+");
+	  ULONG nCycleDiff = (ULONG)(g_nCumulativeCycles - g_nSpkrLastCycle2);
+	  g_nSpkrLastCycle2 = g_nCumulativeCycles;
+	  fprintf(g_fhSpkr, "%d\n", nCycleDiff);
+#endif
 
 	  UpdateSpkr();
 
