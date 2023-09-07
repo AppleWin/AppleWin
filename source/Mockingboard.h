@@ -106,7 +106,8 @@ private:
 	};
 
 	void WriteToORB(BYTE subunit, BYTE subunitForAY=0);
-	void AY8910_Write(BYTE subunit, BYTE ay, BYTE value);
+	void AY8913_Reset(BYTE subunit);
+	void AY8913_Write(BYTE subunit, BYTE ay, BYTE value);
 	void UpdateIFRandIRQ(MB_SUBUNIT* pMB, BYTE clr_mask, BYTE set_mask);
 
 	void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
