@@ -1502,14 +1502,14 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 		switch(chunkId)
 		{
 			case INFO_CHUNK_ID:
-				m_pInfo = (InfoChunkv2*)pImage32;
-				if (m_pInfo->v1.diskType != InfoChunk::diskType5_25)
+				m_pInfo = (InfoChunkv3*)pImage32;
+				if (m_pInfo->v2.v1.diskType != InfoChunk::diskType5_25)
 					return eMismatch;
 #ifdef _DEBUG
-				if (m_pInfo->v1.version >= 3)
+				if (m_pInfo->v2.v1.version >= 3)
 				{
 					InfoChunkv3* pInfoV3 = (InfoChunkv3*)pImage32;
-					LogOutput("WOZ: Largest Flux Track = %d\n", pInfoV3->largestFluxTrack);
+					LogOutput("WOZ: Largest Flux Track (in blocks) = %d\n", pInfoV3->largestFluxTrack);
 				}
 				break;
 #endif
@@ -1519,7 +1519,8 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 			case TRKS_CHUNK_ID:
 				dwOffset = pImageInfo->uOffset = pImageInfo->uImageSize - imageSizeRemaining;	// offset into image of track data
 				break;
-			case FLUX_CHUNK_ID:	// WOZ v3 (todo)
+			case FLUX_CHUNK_ID:	// WOZ v2.1 (todo)
+				pImageInfo->pWOZTrackMapFlux = (BYTE*)pImage32;
 				break;
 			case WRIT_CHUNK_ID:	// WOZ v2 (optional)
 				break;
@@ -1537,7 +1538,44 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset)
 			return eMismatch;
 	}
 
+	ValidateTMAPandFLUX(pImageInfo);
+
 	return eMatch;
+}
+
+bool CWOZHelper::ValidateTMAPandFLUX(ImageInfo* pImageInfo)
+{
+	if (pImageInfo->pWOZTrackMap == NULL)
+		return false;
+
+	if (pImageInfo->pWOZTrackMapFlux == NULL)
+		return true;
+
+	if ( (m_pInfo->v2.v1.version < 3) ||	// 	// must be INFO v3 or more for FLUX tmap
+		(!m_pInfo->fluxBlock || !m_pInfo->largestFluxTrack) )	// both fluxBlock and largestFluxTrack must be non-zero
+	{
+		LogOutput("WOZ image with FLUX invalid\n");
+		pImageInfo->pWOZTrackMapFlux = NULL;
+		return false;
+	}
+
+	// We have both TMAP and FLUX tmaps so check there's no valid (non-0xFF) entries in both.
+
+	BYTE* pTMAP = (BYTE*)pImageInfo->pWOZTrackMap;
+	BYTE* pFLUX = (BYTE*)pImageInfo->pWOZTrackMapFlux;
+
+//	LogOutput("----: TMAP FLUX\n");
+	for (UINT i = 0; i < MAX_QUARTER_TRACKS_5_25; i++, pTMAP++, pFLUX++)
+	{
+//		LogOutput("%04d:  %02X   %02X\n", i, *pTMAP, *pFLUX);
+		if (*pTMAP != TMAP_TRACK_EMPTY && *pFLUX != TMAP_TRACK_EMPTY)
+		{
+			LogOutput("WOZ image with FLUX not created properly (quarter track: %d)\n", i);
+			*pTMAP = TMAP_TRACK_EMPTY;	// WOZ v2.1 spec says to use FLUX
+		}
+	}
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -2251,18 +2289,18 @@ BYTE* CWOZHelper::CreateEmptyDisk(DWORD& size)
 	pWOZ->infoHdr.id = INFO_CHUNK_ID;
 	pWOZ->infoHdr.size = (BYTE*)&pWOZ->tmapHdr - (BYTE*)&pWOZ->info;
 	_ASSERT(pWOZ->infoHdr.size == INFO_CHUNK_SIZE);
-	pWOZ->info.v1.version = 2;
-	pWOZ->info.v1.diskType = InfoChunk::diskType5_25;
-	pWOZ->info.v1.cleaned = 1;
+	pWOZ->info.v2.v1.version = 2;
+	pWOZ->info.v2.v1.diskType = InfoChunk::diskType5_25;
+	pWOZ->info.v2.v1.cleaned = 1;
 	std::string creator = "AppleWin v" + g_VERSIONSTRING;
-	memset(&pWOZ->info.v1.creator[0], ' ', sizeof(pWOZ->info.v1.creator));
-	memcpy(&pWOZ->info.v1.creator[0], creator.c_str(), creator.size());	// don't include null
-	pWOZ->info.diskSides = 1;
-	pWOZ->info.bootSectorFormat = bootUnknown;	// could be INIT'd to 13 or 16 sector
-	pWOZ->info.optimalBitTiming = InfoChunkv2::optimalBitTiming5_25;
-	pWOZ->info.compatibleHardware = 0;	// unknown
-	pWOZ->info.requiredRAM = 0;			// unknown
-	pWOZ->info.largestTrack = TRK_DEFAULT_BLOCK_COUNT_5_25;		// unknown - but use default
+	memset(&pWOZ->info.v2.v1.creator[0], ' ', sizeof(pWOZ->info.v2.v1.creator));
+	memcpy(&pWOZ->info.v2.v1.creator[0], creator.c_str(), creator.size());	// don't include null
+	pWOZ->info.v2.diskSides = 1;
+	pWOZ->info.v2.bootSectorFormat = bootUnknown;	// could be INIT'd to 13 or 16 sector
+	pWOZ->info.v2.optimalBitTiming = InfoChunkv2::optimalBitTiming5_25;
+	pWOZ->info.v2.compatibleHardware = 0;	// unknown
+	pWOZ->info.v2.requiredRAM = 0;			// unknown
+	pWOZ->info.v2.largestTrack = TRK_DEFAULT_BLOCK_COUNT_5_25;		// unknown - but use default
 
 	// TMAP
 	ASSERT_OFFSET(tmapHdr, 80);

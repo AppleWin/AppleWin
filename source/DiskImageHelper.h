@@ -37,6 +37,7 @@ struct ImageInfo
 	UINT			uNumTracks;
 	BYTE*			pImageBuffer;
 	BYTE*			pWOZTrackMap;		// WOZ only (points into pImageBuffer)
+	BYTE*			pWOZTrackMapFlux;	// WOZ only (points into pImageBuffer) (from WOZv2.1)
 	BYTE			optimalBitTiming;	// WOZ only
 	BYTE			bootSectorFormat;	// WOZ only
 	UINT			maxNibblesPerTrack;
@@ -209,12 +210,13 @@ public:
 	virtual eDetectResult DetectHdr(LPBYTE& pImage, DWORD& dwImageSize, DWORD& dwOffset) { _ASSERT(0); return eMismatch; }
 	virtual UINT GetMaxHdrSize(void) { return sizeof(WOZHeader); }
 	eDetectResult ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset);
-	bool IsWriteProtected(void) { return m_pInfo->v1.writeProtected == 1; }
-	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->optimalBitTiming : InfoChunkv2::optimalBitTiming5_25; }
-	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE : WOZ1_TRACK_SIZE; }
-	BYTE GetBootSectorFormat(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->bootSectorFormat : bootUnknown; }
+	bool IsWriteProtected(void) { return m_pInfo->v2.v1.writeProtected == 1; }
+	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v2.v1.version >= 2) ? m_pInfo->v2.optimalBitTiming : InfoChunkv2::optimalBitTiming5_25; }
+	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v2.v1.version >= 2) ? m_pInfo->v2.largestTrack*CWOZHelper::BLOCK_SIZE : WOZ1_TRACK_SIZE; }
+	BYTE GetBootSectorFormat(void) { return (m_pInfo->v2.v1.version >= 2) ? m_pInfo->v2.bootSectorFormat : bootUnknown; }
 	void InvalidateInfo(void) { m_pInfo = NULL; }
 	BYTE* CreateEmptyDisk(DWORD& size);
+	bool ValidateTMAPandFLUX(ImageInfo* pImageInfo);
 #if _DEBUG
 	BYTE* CreateEmptyDiskv1(DWORD& size);
 #endif
@@ -267,9 +269,9 @@ public:
 
 	struct TRKv2
 	{
-		UINT16 startBlock;	// relative to start of file
+		UINT16 startBlock;	// First block of BITS (or flux) data, relative to start of file
 		UINT16 blockCount;	// number of blocks for this BITS data
-		UINT32 bitCount;
+		UINT32 bitCount;	// NB. From WOZv2.1 for flux tracks this is a byte count
 	};
 
 	struct Trks
@@ -284,8 +286,8 @@ private:
 	static const UINT32 TRKS_CHUNK_ID = 'SKRT';	// 'TRKS'
 	static const UINT32 WRIT_CHUNK_ID = 'TIRW';	// 'WRIT' - WOZv2
 	static const UINT32 META_CHUNK_ID = 'ATEM';	// 'META'
-	static const UINT32 FLUX_CHUNK_ID = 'XULF';	// 'FLUX' - WOZv3
-	static const UINT32 INFO_CHUNK_SIZE = 60;	// Fixed size for both WOZv1 & WOZv2
+	static const UINT32 FLUX_CHUNK_ID = 'XULF';	// 'FLUX' - WOZv2.1
+	static const UINT32 INFO_CHUNK_SIZE = 60;	// Fixed size for both WOZv1 & WOZv2.1
 
 	struct InfoChunk
 	{
@@ -322,7 +324,7 @@ private:
 		UINT16 largestFluxTrack;	// in blocks (512 bytes)
 	};
 
-	InfoChunkv2* m_pInfo;	// NB. image-specific - only valid during Detect(), which calls InvalidateInfo() when done
+	InfoChunkv3* m_pInfo;	// NB. image-specific - only valid during Detect(), which calls InvalidateInfo() when done
 
 	//
 
@@ -331,8 +333,8 @@ private:
 		WOZHeader hdr;
 
 		WOZChunkHdr infoHdr;
-		InfoChunkv2 info;
-		BYTE infoPadding[INFO_CHUNK_SIZE-sizeof(InfoChunkv2)];
+		InfoChunkv3 info;
+		BYTE infoPadding[INFO_CHUNK_SIZE-sizeof(InfoChunkv3)];
 
 		WOZChunkHdr tmapHdr;
 		Tmap tmap;
