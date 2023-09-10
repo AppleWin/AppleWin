@@ -55,6 +55,7 @@ namespace ra2
 
     SetFrame(myFrame);
     myFrame->Begin();
+    mySpeed.reset();
 
     Video & video = GetVideo();
     // should the user be allowed to tweak 0.75
