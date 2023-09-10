@@ -296,7 +296,7 @@ namespace sa2
       }
     case SDL_CONTROLLERBUTTONDOWN:
       {
-        if (e.cbutton.button == SDL_CONTROLLER_BUTTON_GUIDE)  // SELECT
+        if (e.cbutton.button == SDL_CONTROLLER_BUTTON_BACK)  // SELECT
         {
           quit = myControllerQuit.pressButton();
         }
