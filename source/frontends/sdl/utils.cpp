@@ -1,8 +1,49 @@
 #include "frontends/sdl/utils.h"
 #include <ostream>
 
+#define INDENT '\t'
+
 namespace sa2
 {
+
+  void printVideoInfo(std::ostream & os)
+  {
+    os << "SDL Video driver (SDL_VIDEODRIVER): " << SDL_GetCurrentVideoDriver() << std::endl;
+    for (int i = 0; i < SDL_GetNumVideoDrivers(); ++i)
+    {
+      os << INDENT << SDL_GetVideoDriver(i) << std::endl;
+    }
+  }
+
+  void printAudioInfo(std::ostream & os)
+  {
+    os << "SDL Audio driver (SDL_AUDIODRIVER): " << SDL_GetCurrentAudioDriver() << std::endl;
+    for (int i = 0; i < SDL_GetNumAudioDrivers(); ++i)
+    {
+      os << INDENT << SDL_GetAudioDriver(i) << std::endl;
+    }
+
+    os << "SDL Audio device: ";
+    
+    const int iscapture = 0;
+    char *defaultDevice = nullptr;
+    SDL_AudioSpec spec;
+    if (!SDL_GetDefaultAudioInfo(&defaultDevice, &spec, iscapture))
+    {
+      os << defaultDevice;
+      SDL_free(defaultDevice);
+    }
+    else
+    {
+      os << "<default>";
+    }
+    os << std::endl;
+
+    for (int i = 0; i < SDL_GetNumAudioDevices(iscapture); ++i)
+    {
+      os << INDENT << SDL_GetAudioDeviceName(i, iscapture) << std::endl;
+    }
+  }
 
   void printRendererInfo(std::ostream & os,
                          const std::shared_ptr<SDL_Renderer> & ren,
@@ -13,28 +54,27 @@ namespace sa2
     SDL_GetRendererInfo(ren.get(), &info);
 
     const size_t n = SDL_GetNumRenderDrivers();
-    os << "SDL: " << n << " rendering drivers" << std::endl;
+    os << "SDL Render driver:" << std::endl;
     for(size_t i = 0; i < n; ++i)
     {
       SDL_RendererInfo info;
       SDL_GetRenderDriverInfo(i, &info);
-      os << " " << i << ": " << info.name << std::endl;
+      os << INDENT << i << ": " << info.name << std::endl;
     }
 
     if (SDL_GetRendererInfo(ren.get(), &info) == 0)
     {
       os << "Active driver (" << selectedDriver << "): " << info.name << std::endl;
-      os << " SDL_RENDERER_SOFTWARE: " << ((info.flags & SDL_RENDERER_SOFTWARE) > 0) << std::endl;
-      os << " SDL_RENDERER_ACCELERATED: " << ((info.flags & SDL_RENDERER_ACCELERATED) > 0) << std::endl;
-      os << " SDL_RENDERER_PRESENTVSYNC: " << ((info.flags & SDL_RENDERER_PRESENTVSYNC) > 0) << std::endl;
-      os << " SDL_RENDERER_TARGETTEXTURE: " << ((info.flags & SDL_RENDERER_TARGETTEXTURE) > 0) << std::endl;
+      os << INDENT << "SDL_RENDERER_SOFTWARE: " << ((info.flags & SDL_RENDERER_SOFTWARE) > 0) << std::endl;
+      os << INDENT << "SDL_RENDERER_ACCELERATED: " << ((info.flags & SDL_RENDERER_ACCELERATED) > 0) << std::endl;
+      os << INDENT << "SDL_RENDERER_PRESENTVSYNC: " << ((info.flags & SDL_RENDERER_PRESENTVSYNC) > 0) << std::endl;
+      os << INDENT << "SDL_RENDERER_TARGETTEXTURE: " << ((info.flags & SDL_RENDERER_TARGETTEXTURE) > 0) << std::endl;
 
-      os << "Supported pixel formats:" << std::endl;
+      os << "Pixel format: " << SDL_GetPixelFormatName(pixelFormat) << std::endl;
       for (size_t i = 0; i < info.num_texture_formats; ++i)
       {
-        os << " " << SDL_GetPixelFormatName(info.texture_formats[i]) << std::endl;
+        os << INDENT << SDL_GetPixelFormatName(info.texture_formats[i]) << std::endl;
       }
-      os << "Selected format: " << SDL_GetPixelFormatName(pixelFormat) << std::endl;
     }
     else
     {

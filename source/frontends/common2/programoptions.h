@@ -57,6 +57,7 @@ namespace common2
     int glSwapInterval = 1; // SDL_GL_SetSwapInterval
     std::optional<int> gameControllerIndex;
     std::string gameControllerMappingFile;
+    std::string audioDeviceName;
 
     std::string customRomF8;
     std::string customRom;

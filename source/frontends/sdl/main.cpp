@@ -56,8 +56,8 @@ void run_sdl(int argc, const char * argv [])
 {
   std::cerr << std::fixed << std::setprecision(2);
 
-  std::cerr << "SDL Video driver: " << SDL_GetCurrentVideoDriver() << std::endl;
-  std::cerr << "SDL Audio driver: " << SDL_GetCurrentAudioDriver() << std::endl;
+  sa2::printVideoInfo(std::cerr);
+  sa2::printAudioInfo(std::cerr);
 
   common2::EmulatorOptions options;
 
@@ -123,12 +123,14 @@ void run_sdl(int argc, const char * argv [])
 
     bool quit = false;
 
+    const char * audioDeviceName = options.audioDeviceName.empty() ? nullptr : options.audioDeviceName.c_str();
+
     do
     {
       frameTimer.tic();
 
       eventTimer.tic();
-      sa2::writeAudio(options.audioBuffer);
+      sa2::writeAudio(audioDeviceName, options.audioBuffer);
       frame->ProcessEvents(quit);
       eventTimer.toc();
 

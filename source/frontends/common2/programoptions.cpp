@@ -151,6 +151,7 @@ namespace common2
       ("aspect-ratio", "Always preserve correct aspect ratio")
       ("game-controller", po::value<int>(), "SDL_GameControllerOpen")
       ("game-mapping-file", po::value<std::string>(), "SDL_GameControllerAddMappingsFromFile")
+      ("audio-device", po::value<std::string>(), "Audio device name")
       ;
     desc.add(sdlDesc);
 
@@ -228,6 +229,7 @@ namespace common2
       options.aspectRatio = vm.count("aspect-ratio") > 0;
       setOption(vm, "game-controller", options.gameControllerIndex);
       setOption(vm, "game-mapping-file", options.gameControllerMappingFile);
+      setOption(vm, "audio-device", options.audioDeviceName);
 
       // applen
       options.headless = vm.count("headless") > 0;
