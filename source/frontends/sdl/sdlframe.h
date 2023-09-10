@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "Configuration/Config.h"
 #include "frontends/common2/commonframe.h"
+#include "frontends/common2/controllerquit.h"
 #include "frontends/common2/speed.h"
 #include "frontends/common2/programoptions.h"
 #include "linux/network/portfwds.h"
@@ -95,6 +96,8 @@ namespace sa2
     std::shared_ptr<SDL_Window> myWindow;
 
     CConfigNeedingRestart myHardwareConfig;
+
+    common2::ControllerQuit myControllerQuit;
   };
 
 }

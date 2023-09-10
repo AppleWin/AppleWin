@@ -294,6 +294,14 @@ namespace sa2
         SDL_free(e.drop.file);
         break;
       }
+    case SDL_CONTROLLERBUTTONDOWN:
+      {
+        if (e.cbutton.button == SDL_CONTROLLER_BUTTON_GUIDE)  // SELECT
+        {
+          quit = myControllerQuit.pressButton();
+        }
+        break;
+      }
     }
   }
 

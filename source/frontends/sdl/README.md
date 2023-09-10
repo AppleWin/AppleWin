@@ -55,6 +55,8 @@ Some of the configuration options are exposed in the ``Settings`` menu. This is 
 
 ``Ctrl-Insert`` copies the text screen (in AppleWin this is ``Ctrl-PrintScreen``).
 
+The application terminates if the `SDL_CONTROLLER_BUTTON_GUIDE` (i.e. `SELECT`) button is pressed twice in one second.
+
 ## Audio
 
 Audio works reasonably well, using AppleWin adaptive algorithm.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "frontends/common2/speed.h"
+#include "frontends/common2/controllerquit.h"
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/diskcontrol.h"
 
@@ -58,7 +59,7 @@ namespace ra2
 
     common2::Speed mySpeed;  // fixed speed
 
-    std::chrono::steady_clock::time_point myFirstBtnPress;
+    common2::ControllerQuit myControllerQuit;
 
     std::vector<int> myButtonStates;
 
