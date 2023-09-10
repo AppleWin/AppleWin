@@ -212,7 +212,7 @@ public:
 	eDetectResult ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset);
 	bool IsWriteProtected(void) { return m_pInfo->v2.v1.writeProtected == 1; }
 	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v2.v1.version >= 2) ? m_pInfo->v2.optimalBitTiming : InfoChunkv2::optimalBitTiming5_25; }
-	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v2.v1.version >= 2) ? m_pInfo->v2.largestTrack*CWOZHelper::BLOCK_SIZE : WOZ1_TRACK_SIZE; }
+	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v2.v1.version >= 2) ? max(m_pInfo->largestFluxTrack,m_pInfo->v2.largestTrack)*CWOZHelper::BLOCK_SIZE : WOZ1_TRACK_SIZE; }
 	BYTE GetBootSectorFormat(void) { return (m_pInfo->v2.v1.version >= 2) ? m_pInfo->v2.bootSectorFormat : bootUnknown; }
 	void InvalidateInfo(void) { m_pInfo = NULL; }
 	BYTE* CreateEmptyDisk(DWORD& size);

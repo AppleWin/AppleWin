@@ -59,6 +59,7 @@ ImageInfo::ImageInfo()
 	uNumTracks = 0;
 	pImageBuffer = NULL;
 	pWOZTrackMap = NULL;
+	pWOZTrackMapFlux = NULL;
 	optimalBitTiming = 0;
 	bootSectorFormat = CWOZHelper::bootUnknown;
 	maxNibblesPerTrack = 0;
@@ -1269,16 +1270,38 @@ public:
 
 	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
-		BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
+		BYTE indexFromTMAP = CWOZHelper::TMAP_TRACK_EMPTY;
+		bool isFluxTrack = false;
 
-		const BYTE indexFromTMAP = pTrackMap[(BYTE)(phase * 2)];
+		if (pImageInfo->pWOZTrackMapFlux)
+		{
+			BYTE* pTrackMapFlux = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMapFlux)->tmap;
+			indexFromTMAP = pTrackMapFlux[(BYTE)(phase * 2)];
+			isFluxTrack = (indexFromTMAP != CWOZHelper::TMAP_TRACK_EMPTY);
+		}
+
+		if (indexFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
+		{
+			BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
+			indexFromTMAP = pTrackMap[(BYTE)(phase * 2)];
+		}
+
 		if (indexFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);
 
 		CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) &pImageInfo->pImageBuffer[pImageInfo->uOffset];
 		CWOZHelper::TRKv2* pTRK = &pTRKS[indexFromTMAP];
-		*pBitCount = pTRK->bitCount;
-		*pNibbles = (pTRK->bitCount+7) / 8;
+
+		if (isFluxTrack)
+		{
+			*pBitCount = 0;	// NB. use as a "flag" to callee that this is flux data
+			*pNibbles = pTRK->bitCount;	// byte count of flux data
+		}
+		else
+		{
+			*pBitCount = pTRK->bitCount;
+			*pNibbles = (pTRK->bitCount + 7) / 8;
+		}
 
 		const UINT maxNibblesPerTrack = pImageInfo->maxNibblesPerTrack;
 		if (*pNibbles > (int)maxNibblesPerTrack)
