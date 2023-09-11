@@ -100,6 +100,27 @@ namespace
     return ourGame->getDiskControl().getImageLabel(index, label, len);
   }
 
+  const retro_input_descriptor inputDescriptors[] = {
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "PDL(0):0"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "PDL(0):255"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP, "PDL(1):0"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN, "PDL(1):255"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A, "Button 0"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B, "Button 1"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START, "Start"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L, "Scan lines"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R, "Cycle video"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2, "Save conf"},
+
+    {0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_LEFT, "Button 0"},
+    {0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_RIGHT, "Button 1"},
+
+    {0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X, "PDL(0)" },
+    {0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y, "PDL(1)" },
+    {0}
+  };
+
 }
 
 void retro_init(void)
@@ -200,6 +221,7 @@ void retro_set_environment(retro_environment_t cb)
     };
 
   cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
+  cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, (void*)inputDescriptors);
 
   retro_keyboard_callback keyboardCallback = {&ra2::Game::keyboardCallback};
   cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &keyboardCallback);
