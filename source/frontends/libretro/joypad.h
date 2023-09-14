@@ -11,12 +11,12 @@ namespace ra2
   class Joypad : public JoypadBase
   {
   public:
-    Joypad(unsigned device);
+    Joypad();
 
     double getAxis(int i) const override;
 
   private:
-    std::vector<std::map<unsigned, double> > myAxisCodes;
+    std::vector<std::vector<std::pair<InputDescriptor, double> > > myAxisCodes;
   };
 
 }

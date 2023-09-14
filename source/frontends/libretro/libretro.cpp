@@ -14,7 +14,6 @@
 
 #include "frontends/libretro/game.h"
 #include "frontends/libretro/environment.h"
-#include "frontends/libretro/rdirectsound.h"
 #include "frontends/libretro/retroregistry.h"
 #include "frontends/libretro/joypad.h"
 #include "frontends/libretro/analog.h"
@@ -101,10 +100,10 @@ namespace
   }
 
   const retro_input_descriptor inputDescriptors[] = {
-    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "PDL(0):0"},
-    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "PDL(0):255"},
-    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP, "PDL(1):0"},
-    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN, "PDL(1):255"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "PDL(0)=0"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "PDL(0)=255"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP, "PDL(1)=0"},
+    {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN, "PDL(1)=255"},
     {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A, "Button 0"},
     {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B, "Button 1"},
     {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select"},
@@ -118,7 +117,7 @@ namespace
 
     {0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X, "PDL(0)" },
     {0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y, "PDL(1)" },
-    {0}
+    {0, 0, 0, 0, nullptr}
   };
 
 }
@@ -152,15 +151,15 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
       Paddle::instance.reset();
       break;
     case RETRO_DEVICE_JOYPAD:
-      Paddle::instance = std::make_shared<ra2::Joypad>(device);
+      Paddle::instance = std::make_shared<ra2::Joypad>();
       Paddle::setSquaring(false);
       break;
     case RETRO_DEVICE_ANALOG:
-      Paddle::instance = std::make_shared<ra2::Analog>(device);
+      Paddle::instance = std::make_shared<ra2::Analog>();
       Paddle::setSquaring(true);
       break;
     case RETRO_DEVICE_MOUSE:
-      Paddle::instance = std::make_shared<ra2::Mouse>(device, &ourGame);
+      Paddle::instance = std::make_shared<ra2::Mouse>(&ourGame);
       Paddle::setSquaring(false);
       break;
     default:

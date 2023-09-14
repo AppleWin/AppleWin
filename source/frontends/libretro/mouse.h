@@ -12,7 +12,7 @@ namespace ra2
   class Mouse : public ControllerBase
   {
   public:
-    Mouse(unsigned device, const std::unique_ptr<Game> * game);
+    Mouse(const std::unique_ptr<Game> * game);
 
     double getAxis(int i) const override;
 

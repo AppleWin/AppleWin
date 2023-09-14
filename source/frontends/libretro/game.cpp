@@ -273,6 +273,7 @@ namespace ra2
   {
     if (ourInputDevices[0] != RETRO_DEVICE_NONE)
     {
+      // we should use an InputDescriptor, but these are all on RETRO_DEVICE_JOYPAD anyway
       if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_R))
       {
         myFrame->CycleVideoType();
@@ -312,6 +313,7 @@ namespace ra2
 
   void Game::mouseEmulation()
   {
+    // we should use an InputDescriptor, but these are all on RETRO_DEVICE_MOUSE anyway
     for (auto & mouse : myMouse)
     {
       const int16_t x = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, mouse.id);

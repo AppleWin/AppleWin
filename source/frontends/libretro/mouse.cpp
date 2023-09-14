@@ -7,8 +7,11 @@
 namespace ra2
 {
 
-  Mouse::Mouse(unsigned device, const std::unique_ptr<Game> * game)
-    : ControllerBase(device, {RETRO_DEVICE_ID_MOUSE_LEFT, RETRO_DEVICE_ID_MOUSE_RIGHT})
+  Mouse::Mouse(const std::unique_ptr<Game> * game)
+    : ControllerBase({
+      {RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_LEFT},
+      {RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_RIGHT},
+    })
     , myGame(game)
   {
   }

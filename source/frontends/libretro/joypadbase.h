@@ -8,24 +8,28 @@
 namespace ra2
 {
 
+  struct InputDescriptor
+  {
+    unsigned device;
+    unsigned index;
+    unsigned id;
+  };
+
   class ControllerBase : public Paddle
   {
   public:
-    ControllerBase(unsigned device, const std::vector<unsigned> & buttonCodes);
+    ControllerBase(const std::vector<InputDescriptor> & buttonCodes);
 
     bool getButton(int i) const override;
 
-  protected:
-    const unsigned myDevice;
-
   private:
-    const std::vector<unsigned> myButtonCodes;
+    const std::vector<InputDescriptor> myButtonCodes;
   };
 
   class JoypadBase : public ControllerBase
   {
   public:
-    JoypadBase(unsigned device);
+    JoypadBase();
   };
 
 

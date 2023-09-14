@@ -10,12 +10,12 @@ namespace ra2
   class Analog : public JoypadBase
   {
   public:
-    Analog(unsigned device);
+    Analog();
 
     double getAxis(int i) const override;
 
   private:
-    std::vector<std::pair<unsigned, unsigned> > myAxisCodes;
+    std::vector<InputDescriptor> myAxisCodes;
   };
 
 }
