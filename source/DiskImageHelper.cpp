@@ -658,12 +658,12 @@ public:
 		return ePossibleMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, Extra& extra)
 	{
 		const UINT track = PhaseToTrack(phase);
 		ReadTrack(pImageInfo, track, m_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		*pNibbles = NibblizeTrack(pTrackImageBuffer, eDOSOrder, track);
-		if (!enhanceDisk)
+		if (!extra.enhanceDisk)
 			SkewTrack(track, *pNibbles, pTrackImageBuffer);
 	}
 
@@ -726,12 +726,12 @@ public:
 		return ePossibleMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, Extra& extra)
 	{
 		const UINT track = PhaseToTrack(phase);
 		ReadTrack(pImageInfo, track, m_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 		*pNibbles = NibblizeTrack(pTrackImageBuffer, eProDOSOrder, track);
-		if (!enhanceDisk)
+		if (!extra.enhanceDisk)
 			SkewTrack(track, *pNibbles, pTrackImageBuffer);
 	}
 
@@ -792,7 +792,7 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, Extra& extra)
 	{
 		const UINT track = PhaseToTrack(phase);
 		ReadTrack(pImageInfo, track, pTrackImageBuffer, NIB1_TRACK_SIZE);
@@ -834,7 +834,7 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, Extra& extra)
 	{
 		const UINT track = PhaseToTrack(phase);
 		ReadTrack(pImageInfo, track, pTrackImageBuffer, NIB2_TRACK_SIZE);
@@ -912,7 +912,7 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, Extra& extra)
 	{
 		UINT track = PhaseToTrack(phase);
 
@@ -1147,7 +1147,7 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, Extra& extra)
 	{
 		BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
 
@@ -1268,22 +1268,22 @@ public:
 		return eMatch;
 	}
 
-	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, Extra& extra)
 	{
 		BYTE indexFromTMAP = CWOZHelper::TMAP_TRACK_EMPTY;
-		bool isFluxTrack = false;
 
 		if (pImageInfo->pWOZTrackMapFlux)
 		{
 			BYTE* pTrackMapFlux = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMapFlux)->tmap;
 			indexFromTMAP = pTrackMapFlux[(BYTE)(phase * 2)];
-			isFluxTrack = (indexFromTMAP != CWOZHelper::TMAP_TRACK_EMPTY);
+			extra.isFluxTrack = (indexFromTMAP != CWOZHelper::TMAP_TRACK_EMPTY);
 		}
 
 		if (indexFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 		{
 			BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
 			indexFromTMAP = pTrackMap[(BYTE)(phase * 2)];
+			extra.isFluxTrack = false;
 		}
 
 		if (indexFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
@@ -1292,7 +1292,7 @@ public:
 		CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) &pImageInfo->pImageBuffer[pImageInfo->uOffset];
 		CWOZHelper::TRKv2* pTRK = &pTRKS[indexFromTMAP];
 
-		if (isFluxTrack)
+		if (extra.isFluxTrack)
 		{
 			*pBitCount = 0;	// NB. use as a "flag" to callee that this is flux data
 			*pNibbles = pTRK->bitCount;	// byte count of flux data

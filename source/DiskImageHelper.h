@@ -54,6 +54,12 @@ struct ImageInfo
 
 #define DEFAULT_VOLUME_NUMBER 254
 
+struct Extra
+{
+	bool enhanceDisk;
+	bool isFluxTrack;
+};
+
 class CImageBase
 {
 public:
@@ -62,7 +68,7 @@ public:
 
 	virtual bool Boot(ImageInfo* pImageInfo) { return false; }
 	virtual eDetectResult Detect(const LPBYTE pImage, const DWORD dwImageSize, const TCHAR* pszExt) = 0;
-	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk) { }
+	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, Extra& extra) { }
 	virtual bool Read(ImageInfo* pImageInfo, UINT nBlock, LPBYTE pBlockBuffer) { return false; }
 	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles) { }
 	virtual bool Write(ImageInfo* pImageInfo, UINT nBlock, LPBYTE pBlockBuffer) { return false; }
@@ -212,7 +218,12 @@ public:
 	eDetectResult ProcessChunks(ImageInfo* pImageInfo, DWORD& dwOffset);
 	bool IsWriteProtected(void) { return m_pInfo->v2.v1.writeProtected == 1; }
 	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v2.v1.version >= 2) ? m_pInfo->v2.optimalBitTiming : InfoChunkv2::optimalBitTiming5_25; }
-	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v2.v1.version >= 2) ? max(m_pInfo->largestFluxTrack,m_pInfo->v2.largestTrack)*CWOZHelper::BLOCK_SIZE : WOZ1_TRACK_SIZE; }
+	UINT GetMaxNibblesPerTrack(void)
+	{
+		return (m_pInfo->v2.v1.version >= 3) ? max(m_pInfo->largestFluxTrack, m_pInfo->v2.largestTrack) * CWOZHelper::BLOCK_SIZE
+			: (m_pInfo->v2.v1.version == 2) ? m_pInfo->v2.largestTrack * CWOZHelper::BLOCK_SIZE
+			: WOZ1_TRACK_SIZE;
+	}
 	BYTE GetBootSectorFormat(void) { return (m_pInfo->v2.v1.version >= 2) ? m_pInfo->v2.bootSectorFormat : bootUnknown; }
 	void InvalidateInfo(void) { m_pInfo = NULL; }
 	BYTE* CreateEmptyDisk(DWORD& size);

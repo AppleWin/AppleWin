@@ -127,7 +127,10 @@ void ImageReadTrack(	ImageInfo* const pImageInfo,
 
 	if (pImageInfo->pImageType->AllowRW())
 	{
-		pImageInfo->pImageType->Read(pImageInfo, phase, pTrackImageBuffer, pNibbles, pBitCount, enhanceDisk);
+		Extra extra;
+		extra.enhanceDisk = enhanceDisk;
+		extra.isFluxTrack = false;
+		pImageInfo->pImageType->Read(pImageInfo, phase, pTrackImageBuffer, pNibbles, pBitCount, extra);
 	}
 	else
 	{
