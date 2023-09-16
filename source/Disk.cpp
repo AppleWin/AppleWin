@@ -344,6 +344,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 			pFloppy->m_trackimage,
 			&pFloppy->m_nibbles,
 			&pFloppy->m_bitCount,
+			&pFloppy->m_isFluxTrack,
 			m_enhanceDisk);
 
 		if (!ImageIsWOZ(pFloppy->m_imagehandle))

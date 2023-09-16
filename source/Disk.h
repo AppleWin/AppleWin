@@ -69,6 +69,7 @@ public:
 		m_trackimage = NULL;
 		m_trackimagedata = false;
 		m_trackimagedirty = false;
+		m_isFluxTrack = false;
 		m_longestSyncFFRunLength = 0;
 		m_longestSyncFFBitOffsetStart = -1;
 		m_initialBitOffset = 0;
@@ -90,6 +91,7 @@ public:
 	LPBYTE m_trackimage;
 	bool m_trackimagedata;
 	bool m_trackimagedirty;
+	bool m_isFluxTrack;
 	UINT m_longestSyncFFRunLength;
 	int m_longestSyncFFBitOffsetStart;
 	UINT m_initialBitOffset;	// debug

@@ -82,7 +82,7 @@ ImageError_e ImageOpen(const std::string & pszImageFilename, ImageInfo** ppImage
 void ImageClose(ImageInfo* const pImageInfo);
 BOOL ImageBoot(ImageInfo* const pImageInfo);
 
-void ImageReadTrack(ImageInfo* const pImageInfo, float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk);
+void ImageReadTrack(ImageInfo* const pImageInfo, float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool* pIsFluxTrack, bool enhanceDisk);
 void ImageWriteTrack(ImageInfo* const pImageInfo, float phase, LPBYTE pTrackImageBuffer, int nNibbles);
 bool ImageReadBlock(ImageInfo* const pImageInfo, UINT nBlock, LPBYTE pBlockBuffer);
 bool ImageWriteBlock(ImageInfo* const pImageInfo, UINT nBlock, LPBYTE pBlockBuffer);

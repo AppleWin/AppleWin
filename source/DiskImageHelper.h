@@ -56,8 +56,10 @@ struct ImageInfo
 
 struct Extra
 {
-	bool enhanceDisk;
-	bool isFluxTrack;
+	Extra(bool* pIsFluxTrack, bool enhanceDisk) : m_pIsFluxTrack(pIsFluxTrack), m_enhanceDisk(enhanceDisk) { *m_pIsFluxTrack = false; }
+
+	const bool m_enhanceDisk;	// read-only
+	bool* m_pIsFluxTrack;
 };
 
 class CImageBase
