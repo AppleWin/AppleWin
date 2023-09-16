@@ -338,14 +338,15 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 		const UINT32 currentBitPosition = pFloppy->m_bitOffset;
 		const UINT32 currentBitTrackLength = pFloppy->m_bitCount;
 
+		Extra extra(pFloppy->m_isFluxTrack, m_enhanceDisk);
+
 		ImageReadTrack(
 			pFloppy->m_imagehandle,
 			pDrive->m_phasePrecise,
 			pFloppy->m_trackimage,
 			&pFloppy->m_nibbles,
 			&pFloppy->m_bitCount,
-			&pFloppy->m_isFluxTrack,
-			m_enhanceDisk);
+			extra);
 
 		if (!ImageIsWOZ(pFloppy->m_imagehandle))
 		{

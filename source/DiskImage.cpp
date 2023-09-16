@@ -117,8 +117,7 @@ void ImageReadTrack(	ImageInfo* const pImageInfo,
 						LPBYTE pTrackImageBuffer,
 						int* pNibbles,
 						UINT* pBitCount,
-						bool* pIsFluxTrack,
-						bool enhanceDisk)
+						Extra& extra)
 {
 	_ASSERT(phase >= 0);
 	if (phase < 0)
@@ -128,7 +127,6 @@ void ImageReadTrack(	ImageInfo* const pImageInfo,
 
 	if (pImageInfo->pImageType->AllowRW())
 	{
-		Extra extra(pIsFluxTrack, enhanceDisk);
 		pImageInfo->pImageType->Read(pImageInfo, phase, pTrackImageBuffer, pNibbles, pBitCount, extra);
 	}
 	else

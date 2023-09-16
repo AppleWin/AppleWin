@@ -1276,14 +1276,14 @@ public:
 		{
 			BYTE* pTrackMapFlux = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMapFlux)->tmap;
 			indexFromTMAP = pTrackMapFlux[(BYTE)(phase * 2)];
-			*extra.m_pIsFluxTrack = (indexFromTMAP != CWOZHelper::TMAP_TRACK_EMPTY);
+			extra.m_isFluxTrack = (indexFromTMAP != CWOZHelper::TMAP_TRACK_EMPTY);
 		}
 
 		if (indexFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
 		{
 			BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
 			indexFromTMAP = pTrackMap[(BYTE)(phase * 2)];
-			*extra.m_pIsFluxTrack = false;
+			extra.m_isFluxTrack = false;
 		}
 
 		if (indexFromTMAP == CWOZHelper::TMAP_TRACK_EMPTY)
@@ -1292,7 +1292,7 @@ public:
 		CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) &pImageInfo->pImageBuffer[pImageInfo->uOffset];
 		CWOZHelper::TRKv2* pTRK = &pTRKS[indexFromTMAP];
 
-		if (*extra.m_pIsFluxTrack)
+		if (extra.m_isFluxTrack)
 		{
 			*pBitCount = 0;	// NB. use as a "flag" to callee that this is flux data
 			*pNibbles = pTRK->bitCount;	// byte count of flux data

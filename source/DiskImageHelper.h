@@ -54,14 +54,6 @@ struct ImageInfo
 
 #define DEFAULT_VOLUME_NUMBER 254
 
-struct Extra
-{
-	Extra(bool* pIsFluxTrack, bool enhanceDisk) : m_pIsFluxTrack(pIsFluxTrack), m_enhanceDisk(enhanceDisk) { *m_pIsFluxTrack = false; }
-
-	const bool m_enhanceDisk;	// read-only
-	bool* m_pIsFluxTrack;
-};
-
 class CImageBase
 {
 public:
