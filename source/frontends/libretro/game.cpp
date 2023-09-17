@@ -199,6 +199,20 @@ namespace ra2
         Paddle::setButtonPressed(Paddle::ourSolidApple);
         break;
       }
+    case RETROK_SPACE ... RETROK_AT:
+    case RETROK_LEFTBRACKET ... RETROK_BACKQUOTE:
+    case RETROK_LEFTBRACE ... RETROK_TILDE:
+      {
+        // this is the same range below
+        // we only use if the driver does not provide characters
+        // it is a decision between keycode vs characters
+        // as keyboard layout might change
+        if (!character && !key_modifiers)
+        {
+          ch = keycode;
+        }
+        break;
+      }
     case RETROK_a ... RETROK_z:
       {
         ch = (keycode - RETROK_a) + 0x01;
@@ -218,6 +232,8 @@ namespace ra2
       }
     }
 
+    // log_cb(RETRO_LOG_INFO, "RA2: %s - %02x %02x %02x %02x\n", __FUNCTION__, character, keycode, key_modifiers, ch);
+
     if (!ch)
     {
       switch (character) {
@@ -236,7 +252,6 @@ namespace ra2
     if (ch)
     {
       addKeyToBuffer(ch);
-      // log_cb(RETRO_LOG_INFO, "RA2: %s - %02x\n", __FUNCTION__, ch);
     }
   }
 
