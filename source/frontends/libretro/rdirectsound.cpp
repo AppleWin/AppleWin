@@ -19,7 +19,7 @@ namespace
   public:
     DirectSoundGenerator(IDirectSoundBuffer * buffer);
 
-    void writeAudio(const size_t fps);
+    void writeAudio(const size_t fps, const bool write);
 
     bool isRunning() const;
     size_t getNumberOfChannels() const;
@@ -33,19 +33,6 @@ namespace
   };
 
   std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator>> activeSoundGenerators;
-
-  std::shared_ptr<DirectSoundGenerator> findRunningGenerator(const size_t channels)
-  {
-    for (auto & it : activeSoundGenerators)
-    {
-      const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
-      if (generator->isRunning() && generator->getNumberOfChannels() == channels)
-      {
-        return generator;
-      }
-    }
-    return std::shared_ptr<DirectSoundGenerator>();
-  }
 
   DirectSoundGenerator::DirectSoundGenerator(IDirectSoundBuffer * buffer)
     : myBuffer(buffer)
@@ -103,29 +90,26 @@ namespace
     ra2::audio_batch_cb(myMixerBuffer.data(), frames);
   }
 
-  void DirectSoundGenerator::writeAudio(const size_t fps)
+  void DirectSoundGenerator::writeAudio(const size_t fps, const bool write)
   {
-    // this is autostart as we only do for the palying buffers
-    // and AW might activate one later
-    if (!isRunning())
-    {
-      return;
-    }
-
     const size_t frames = myBuffer->sampleRate / fps;
     const size_t bytesToRead = frames * myBuffer->channels * sizeof(int16_t);
 
     LPVOID lpvAudioPtr1, lpvAudioPtr2;
     DWORD dwAudioBytes1, dwAudioBytes2;
+    // always read to keep AppleWin audio algorithms working correctly.
     myBuffer->Read(bytesToRead, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
 
-    if (lpvAudioPtr1 && dwAudioBytes1)
+    if (write)
     {
-      mixBuffer(lpvAudioPtr1, dwAudioBytes1);
-    }
-    if (lpvAudioPtr2 && dwAudioBytes2)
-    {
-      mixBuffer(lpvAudioPtr2, dwAudioBytes2);
+      if (lpvAudioPtr1 && dwAudioBytes1)
+      {
+        mixBuffer(lpvAudioPtr1, dwAudioBytes1);
+      }
+      if (lpvAudioPtr2 && dwAudioBytes2)
+      {
+        mixBuffer(lpvAudioPtr2, dwAudioBytes2);
+      }
     }
   }
 
@@ -151,11 +135,25 @@ namespace ra2
 
   void writeAudio(const size_t channels, const size_t fps)
   {
-    const auto generator = findRunningGenerator(channels);
-    if (generator)
+    bool found = false;
+    for (auto & it : activeSoundGenerators)
     {
-      generator->writeAudio(fps);
+      const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
+      if (generator->isRunning())
+      {
+        const bool selected = !found && (generator->getNumberOfChannels() == channels);
+        // we still read audio from all buffers
+        // to keep AppleWin audio generation woking correctly
+        // but only write on the selected one
+        generator->writeAudio(fps, selected);
+        // TODO: implement an algorithm to merge 2 channels (speaker + mockingboard)
+        if (selected)
+        {
+          found = true;
+        }
+      }
     }
+    // TODO: if found = false, we should probably write some silence
   }
 
   void bufferStatusCallback(bool active, unsigned occupancy, bool underrun_likely)
