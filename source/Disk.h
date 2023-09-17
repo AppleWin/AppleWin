@@ -70,6 +70,10 @@ public:
 		m_trackimagedata = false;
 		m_trackimagedirty = false;
 		m_isFluxTrack = false;
+		m_zeroTickCount = 0;
+		m_bitCellCount = 0;
+//		m_tickCount = 0;
+		m_tickCountdown = 0;
 		m_longestSyncFFRunLength = 0;
 		m_longestSyncFFBitOffsetStart = -1;
 		m_initialBitOffset = 0;
@@ -92,6 +96,10 @@ public:
 	bool m_trackimagedata;
 	bool m_trackimagedirty;
 	bool m_isFluxTrack;
+	UINT m_zeroTickCount;		// Flux data: # of ticks (zeros) until next flux transition (one)
+	UINT m_bitCellCount;
+//	UINT m_tickCount;
+	UINT m_tickCountdown;
 	UINT m_longestSyncFFRunLength;
 	int m_longestSyncFFBitOffsetStart;
 	UINT m_initialBitOffset;	// debug
@@ -116,6 +124,7 @@ public:
 		m_lastStepperCycle = 0;
 		m_motorOnCycle = 0;
 		m_headWindow = 0;
+		memset(&m_headWindowFlux, 0, sizeof(m_headWindowFlux));
 		m_spinning = 0;
 		m_writelight = 0;
 		m_disk.clear();
@@ -128,6 +137,7 @@ public:
 	unsigned __int64 m_lastStepperCycle;
 	unsigned __int64 m_motorOnCycle;
 	BYTE m_headWindow;
+	uint32_t m_headWindowFlux[4];	// 32 bits / 4us (0.125ms x 8 x 4 = 4us)
 	DWORD m_spinning;
 	DWORD m_writelight;
 	FloppyDisk m_disk;
@@ -214,7 +224,9 @@ private:
 	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
 	void UpdateBitStreamOffsets(FloppyDisk& floppy);
 	__forceinline void IncBitStream(FloppyDisk& floppy);
+	void NextFluxData(FloppyDisk& floppy);
 	void DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
+	void DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks);
 	void DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCycles);
 	void SetSequencerFunction(WORD addr, ULONG executedCycles);

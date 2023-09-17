@@ -352,7 +352,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 		{
 			pFloppy->m_byte = 0;
 		}
-		else
+		else if (!pFloppy->m_isFluxTrack)
 		{
 			// NB. This function is only called for a new track when there's a latch read, ie. only for *even* DEVICE SELECT I/O accesses.
 			// . So when seeking across tracks (ie. sequencing through the magnet phases), then not all (quarter) tracks will need reading.
@@ -383,6 +383,13 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 			pDrive->m_headWindow = 0;
 
 			FindTrackSeamWOZ(*pFloppy, pDrive->m_phasePrecise/2);
+		}
+		else // WOZ && Flux track
+		{
+			pFloppy->m_byte = 0;	// For flux tracks: cross-track sync is hard! (So ignore for now)
+			//pFloppy->m_tickCount = 0;
+			NextFluxData(*pFloppy);
+			memset(&pDrive->m_headWindowFlux, 0, sizeof(pDrive->m_headWindowFlux));
 		}
 
 		pFloppy->m_trackimagedata = (pFloppy->m_nibbles != 0);
@@ -1340,6 +1347,29 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	if (!drive.m_spinning)	// GH#599
 		return;
 
+	if (floppy.m_isFluxTrack)
+	{
+		if (!bWrite)
+		{
+			if (m_seqFunc.function != readSequencing)
+			{
+				return;
+			}
+
+			uint64_t cycleDelta = g_nCumulativeCycles - m_diskLastCycle;
+			const UINT MAX_TRACK_CYCLE_SIZE = 0x1C00 * 8 * 4;	// max nibbles * 8 (bits) * 4 (usec/bit)
+			if (cycleDelta > MAX_TRACK_CYCLE_SIZE)
+				cycleDelta = MAX_TRACK_CYCLE_SIZE;
+
+			m_diskLastCycle = g_nCumulativeCycles;
+
+			UINT ticks = ((UINT)cycleDelta) * 8;	// 125ns units
+			DataLatchReadWOZFlux(pc, addr, ticks);
+		}
+
+		return;
+	}
+
 	// Skipping forward a large amount of bitcells means the bitstream will very likely be out-of-sync.
 	// The first 1-bit will produce a latch nibble, and this 1-bit is unlikely to be the nibble's high bit.
 	// So we need to ensure we run enough bits through the sequencer to re-sync.
@@ -1483,6 +1513,150 @@ void Disk2InterfaceCard::DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemain
 		}
 	}
 #endif
+}
+
+void Disk2InterfaceCard::NextFluxData(FloppyDisk& floppy)
+{
+	floppy.m_zeroTickCount = 0;
+	do
+	{
+		BYTE data = floppy.m_trackimage[floppy.m_byte++];
+		if (floppy.m_byte == floppy.m_nibbles)
+			floppy.m_byte = 0;
+		floppy.m_zeroTickCount += data;
+		if (data != 255)
+			break;
+	} while (1);
+
+	floppy.m_bitCellCount = (floppy.m_zeroTickCount + 0x0f) / 0x20;
+	floppy.m_tickCountdown = (floppy.m_bitCellCount > 1) ? 0x20 : floppy.m_zeroTickCount;	// last one may be eg. 0x1E,0x20,0x22
+
+//	floppy.m_zeroTickCount += 0x0f;
+//	floppy.m_zeroTickCount &= ~0x1f;
+//	_ASSERT(floppy.m_zeroTickCount);
+}
+
+void Disk2InterfaceCard::DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks)
+{
+	static int dbg = 0;
+#if LOG_DISK_NIBBLES_READ
+	bool newLatchData = false;
+#endif
+
+	FloppyDrive& drive = m_floppyDrive[m_currDrive];
+	FloppyDisk& floppy = drive.m_disk;
+
+	for (UINT i = 0; i < ticks; i++)
+	{
+#if 0
+		uint32_t bit0 = floppy.m_zeroTickCount ? 0 : 1;
+
+		// m_headWindowFlux[3,..,0] <<= 1
+		for (int j = 0; j < 4; j++)
+		{
+			uint32_t highBit = drive.m_headWindowFlux[j] & 0x80000000 ? 1 : 0;
+			drive.m_headWindowFlux[j] = (drive.m_headWindowFlux[j] << 1) | bit0;
+			bit0 = highBit;
+		}
+
+		if (floppy.m_zeroTickCount == 0)
+			NextFluxData(floppy);
+		else
+			floppy.m_zeroTickCount--;
+
+		floppy.m_tickCount++;
+		floppy.m_tickCount &= 0x1f;
+		if (floppy.m_tickCount)
+			continue;
+
+		//
+
+//		BYTE outputBit = (drive.m_headWindow & 0xf) ? (drive.m_headWindow >> 1) & 1
+//			: (rand() < RAND_THRESHOLD(3, 10)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
+
+		BYTE outputBit = drive.m_headWindowFlux[1] ? 1 : 0;
+
+		if (dbg)
+		{
+			LogOutput("%d : %08X\n", outputBit, drive.m_headWindowFlux[1]);
+		}
+#endif
+
+		floppy.m_zeroTickCount--;
+
+		floppy.m_tickCountdown--;
+		if (floppy.m_tickCountdown)
+			continue;
+
+		floppy.m_bitCellCount--;
+
+		BYTE outputBit = floppy.m_bitCellCount ? 0 : 1;	// TODO: MC3470 random chance of a 1 bit
+
+		if (outputBit == 0)
+		{
+			if (floppy.m_bitCellCount > 1)
+				floppy.m_tickCountdown = 0x20;
+			else if (floppy.m_bitCellCount == 1)
+				floppy.m_tickCountdown = floppy.m_zeroTickCount;	// last one may be eg. 0x1E,0x20,0x22
+		}
+		else
+		{
+			NextFluxData(floppy);
+		}
+
+		//
+
+		m_shiftReg <<= 1;
+		m_shiftReg |= outputBit;
+
+		if (m_latchDelay)
+		{
+			m_latchDelay -= 4;
+			if (m_latchDelay < 0)
+				m_latchDelay = 0;
+
+			if (m_shiftReg)
+			{
+				m_dbgLatchDelayedCnt = 0;
+			}
+			else // m_shiftReg==0
+			{
+				m_latchDelay += 4;	// extend by 4us (so 7us again) - GH#662
+
+				m_dbgLatchDelayedCnt++;
+#if LOG_DISK_NIBBLES_READ
+				if (m_dbgLatchDelayedCnt >= 3)
+				{
+					LOG_DISK("read: latch held due to 0: PC=%04X, cnt=%02X\r\n", regs.pc, m_dbgLatchDelayedCnt);
+				}
+#endif
+			}
+		}
+
+		if (!m_latchDelay)
+		{
+#if LOG_DISK_NIBBLES_READ
+			if (newLatchData)
+			{
+				LOG_DISK("read skipped latch data: %04X = %02X\r\n", floppy.m_byte, m_floppyLatch);
+				newLatchData = false;
+			}
+#endif
+			m_floppyLatch = m_shiftReg;
+
+			if (m_shiftReg & 0x80)
+			{
+				m_latchDelay = 7;
+				m_shiftReg = 0;
+#if LOG_DISK_NIBBLES_READ
+				// May not actually be read by 6502 (eg. Prologue's CHKSUM 4&4 nibble pair), but still pass to the log's nibble reader
+				m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
+				newLatchData = true;
+#endif
+			}
+		}
+
+	}
 }
 
 void Disk2InterfaceCard::DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder)
