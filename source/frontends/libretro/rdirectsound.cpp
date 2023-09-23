@@ -147,10 +147,7 @@ namespace ra2
         // but only write on the selected one
         generator->writeAudio(fps, selected);
         // TODO: implement an algorithm to merge 2 channels (speaker + mockingboard)
-        if (selected)
-        {
-          found = true;
-        }
+        found = found || selected;
       }
     }
     // TODO: if found = false, we should probably write some silence

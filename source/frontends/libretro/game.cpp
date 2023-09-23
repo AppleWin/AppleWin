@@ -71,8 +71,6 @@ namespace ra2
     SetFrame(myFrame);
   }
 
-  retro_usec_t Game::ourFrameTime = 0;
-
   void Game::executeOneFrame()
   {
     if (g_nAppMode == MODE_RUNNING)
@@ -143,11 +141,6 @@ namespace ra2
     {
       processKeyUp(keycode, character, key_modifiers);
     }
-  }
-
-  void Game::frameTimeCallback(retro_usec_t usec)
-  {
-    ourFrameTime = usec;
   }
 
   void Game::processKeyDown(unsigned keycode, uint32_t character, uint16_t key_modifiers)

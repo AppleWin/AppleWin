@@ -233,9 +233,6 @@ void retro_set_environment(retro_environment_t cb)
   // retro_audio_buffer_status_callback audioCallback = {&ra2::bufferStatusCallback};
   // cb(RETRO_ENVIRONMENT_SET_AUDIO_BUFFER_STATUS_CALLBACK, &audioCallback);
 
-  retro_frame_time_callback timeCallback = {&ra2::Game::frameTimeCallback, 1000000 / ra2::Game::FPS};
-  cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &timeCallback);
-
   // see retro_get_memory_data() below
   bool achievements = true;
   cb(RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS, &achievements);
