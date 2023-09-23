@@ -1,5 +1,6 @@
 #pragma once
 
+#include "frontends/libretro/rkeyboard.h"
 #include <memory>
 
 class Registry;
@@ -17,5 +18,5 @@ namespace ra2
   void PopulateRegistry(const std::shared_ptr<Registry> & registry);
 
   size_t GetAudioOutputChannels();
-
+  KeyboardType GetKeyboardEmulationType();
 }

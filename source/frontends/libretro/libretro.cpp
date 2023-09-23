@@ -99,6 +99,11 @@ namespace
     return ourGame->getDiskControl().getImageLabel(index, label, len);
   }
 
+  void retro_keyboard_event(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers)
+  {
+    ourGame->keyboardCallback(down, keycode, character, key_modifiers);
+  }
+
   const retro_input_descriptor inputDescriptors[] = {
     {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "PDL(0)=0"},
     {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "PDL(0)=255"},
@@ -222,7 +227,7 @@ void retro_set_environment(retro_environment_t cb)
   cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
   cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, (void*)inputDescriptors);
 
-  retro_keyboard_callback keyboardCallback = {&ra2::Game::keyboardCallback};
+  retro_keyboard_callback keyboardCallback = {&retro_keyboard_event};
   cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &keyboardCallback);
 
   // retro_audio_buffer_status_callback audioCallback = {&ra2::bufferStatusCallback};

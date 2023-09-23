@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "frontends/common2/ptreeregistry.h"
 #include "frontends/libretro/environment.h"
+#include "frontends/libretro/retroregistry.h"
 
 #include "Common.h"
 #include "Card.h"
@@ -18,6 +19,9 @@ namespace
   const std::string ourScope = "applewin_";
   const char * REG_AUDIO_OUTPUT = "ra2\\audio";
   const char * REGVALUE_AUDIO_OUTPUT_CHANNELS = "Number of Channels";
+
+  const char * REG_KEYBOARD_TYPE = "ra2\\keyboard";
+  const char * REGVALUE_KEYBOARD_TYPE = "Keyboard Type";
 
   struct Variable
   {
@@ -129,6 +133,16 @@ namespace
        {"Mockingboard", 2},
       }
      },
+     {
+      "keyboard_type",
+      "Keyboard Type",
+      REG_KEYBOARD_TYPE,
+      REGVALUE_KEYBOARD_TYPE,
+      {
+       {"ASCII", static_cast<DWORD>(ra2::KeyboardType::ASCII)},
+       {"Original", static_cast<DWORD>(ra2::KeyboardType::Original)},
+      }
+     },
     };
 
   std::string getKey(const Variable & var)
@@ -212,5 +226,12 @@ namespace ra2
     DWORD value = 1;
     RegLoadValue(REG_AUDIO_OUTPUT, REGVALUE_AUDIO_OUTPUT_CHANNELS, TRUE, &value);
     return value;
+  }
+
+  KeyboardType GetKeyboardEmulationType()
+  {
+    DWORD value = static_cast<DWORD>(KeyboardType::ASCII);
+    RegLoadValue(REG_KEYBOARD_TYPE, REGVALUE_KEYBOARD_TYPE, TRUE, &value);
+    return static_cast<KeyboardType>(value);
   }
 }
