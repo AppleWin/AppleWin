@@ -1294,7 +1294,12 @@ public:
 
 		if (extra.m_isFluxTrack)
 		{
-			*pBitCount = 0;	// NB. use as a "flag" to callee that this is flux data
+			UINT bitCount = 0;
+			BYTE* p = &pImageInfo->pImageBuffer[pTRK->startBlock * CWOZHelper::BLOCK_SIZE];
+			for (UINT i = 0; i < pTRK->bitCount; i++)
+				bitCount += *p++;
+
+			*pBitCount = bitCount / 32;
 			*pNibbles = pTRK->bitCount;	// byte count of flux data
 		}
 		else

@@ -72,7 +72,6 @@ public:
 		m_isFluxTrack = false;
 		m_zeroTickCount = 0;
 		m_bitCellCount = 0;
-//		m_tickCount = 0;
 		m_tickCountdown = 0;
 		m_longestSyncFFRunLength = 0;
 		m_longestSyncFFBitOffsetStart = -1;
