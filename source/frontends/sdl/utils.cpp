@@ -26,6 +26,8 @@ namespace sa2
     os << "SDL Audio device: ";
     
     const int iscapture = 0;
+
+#if SDL_VERSION_ATLEAST(2, 24, 0)
     char *defaultDevice = nullptr;
     SDL_AudioSpec spec;
     if (!SDL_GetDefaultAudioInfo(&defaultDevice, &spec, iscapture))
@@ -34,6 +36,8 @@ namespace sa2
       SDL_free(defaultDevice);
     }
     else
+#endif
+
     {
       os << "<default>";
     }
