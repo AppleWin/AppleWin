@@ -386,7 +386,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 		}
 		else // WOZ && Flux track
 		{
-			// Scan from start until we get to the correct bitCell position - req'd for cross-track sync (eg. Sirius' Fly Wars)
+			// Scan from start until we get to the correct bitCell position - req'd for any cross-track sync
 			pFloppy->m_byte = 0;
 			UINT totalZeroTickCount = 0;
 			do
@@ -399,8 +399,6 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 #if LOG_DISK_WOZ_READTRACK
 			LOG_DISK("T%05.2f: %04X->%04X, Len=%04X (flux)\n", pDrive->m_phasePrecise / 2, currentBitPosition, pFloppy->m_bitOffset, pFloppy->m_bitCount);
 #endif
-
-			memset(&pDrive->m_headWindowFlux, 0, sizeof(pDrive->m_headWindowFlux));
 		}
 
 		pFloppy->m_trackimagedata = (pFloppy->m_nibbles != 0);

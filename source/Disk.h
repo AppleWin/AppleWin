@@ -122,7 +122,6 @@ public:
 		m_lastStepperCycle = 0;
 		m_motorOnCycle = 0;
 		m_headWindow = 0;
-		memset(&m_headWindowFlux, 0, sizeof(m_headWindowFlux));
 		m_spinning = 0;
 		m_writelight = 0;
 		m_disk.clear();
@@ -135,7 +134,6 @@ public:
 	unsigned __int64 m_lastStepperCycle;
 	unsigned __int64 m_motorOnCycle;
 	BYTE m_headWindow;
-	uint32_t m_headWindowFlux[4];	// 32 bits / 4us (0.125ms x 8 x 4 = 4us)
 	DWORD m_spinning;
 	DWORD m_writelight;
 	FloppyDisk m_disk;
