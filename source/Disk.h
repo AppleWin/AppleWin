@@ -97,7 +97,6 @@ public:
 	bool m_isFluxTrack;
 	UINT m_zeroTickCount;		// Flux data: # of ticks (zeros) until next flux transition (one)
 	UINT m_bitCellCount;
-//	UINT m_tickCount;
 	UINT m_tickCountdown;
 	UINT m_longestSyncFFRunLength;
 	int m_longestSyncFFBitOffsetStart;

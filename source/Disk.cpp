@@ -1545,7 +1545,6 @@ void Disk2InterfaceCard::NextFluxData(FloppyDisk& floppy)
 
 void Disk2InterfaceCard::DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks)
 {
-	static int dbg = 0;
 #if LOG_DISK_NIBBLES_READ
 	bool newLatchData = false;
 #endif
