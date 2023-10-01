@@ -161,7 +161,7 @@ namespace
       const DWORD bytesInBuffer = myBuffer->GetBytesInBuffer();
       const float coeff = 1.0 / myBytesPerSecond;
       info.buffer = bytesInBuffer * coeff;
-      info.size = myBuffer->bufferSize * coeff;
+      info.size = myBuffer->myBufferSize * coeff;
     }
 
     return info;
@@ -214,10 +214,10 @@ namespace
     SDL_AudioSpec want;
     SDL_zero(want);
 
-    want.freq = myBuffer->sampleRate;
+    want.freq = myBuffer->mySampleRate;
     want.format = AUDIO_S16LSB;
-    want.channels = myBuffer->channels;
-    want.samples = std::min<size_t>(MAX_SAMPLES, nextPowerOf2(myBuffer->sampleRate * ms / 1000));
+    want.channels = myBuffer->myChannels;
+    want.samples = std::min<size_t>(MAX_SAMPLES, nextPowerOf2(myBuffer->mySampleRate * ms / 1000));
     want.callback = staticAudioCallback;
     want.userdata = this;
     myAudioDevice = SDL_OpenAudioDevice(deviceName, 0, &want, &myAudioSpec, 0);

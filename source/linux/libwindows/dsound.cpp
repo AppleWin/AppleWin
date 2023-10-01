@@ -3,14 +3,14 @@
 
 #include <cstring>
 
-IDirectSoundBuffer::IDirectSoundBuffer(const size_t aBufferSize, const size_t aChannels, const size_t aSampleRate, const size_t aBitsPerSample, const size_t aFlags)
-  : mySoundBuffer(aBufferSize)
+IDirectSoundBuffer::IDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
+  : mySoundBuffer(lpcDSBufferDesc->dwBufferBytes)
   , myNumberOfUnderruns(0)
-  , bufferSize(aBufferSize)
-  , sampleRate(aSampleRate)
-  , channels(aChannels)
-  , bitsPerSample(aBitsPerSample)
-  , flags(aFlags)
+  , myBufferSize(lpcDSBufferDesc->dwBufferBytes)
+  , mySampleRate(lpcDSBufferDesc->lpwfxFormat->nSamplesPerSec)
+  , myChannels(lpcDSBufferDesc->lpwfxFormat->nChannels)
+  , myBitsPerSample(lpcDSBufferDesc->lpwfxFormat->wBitsPerSample)
+  , myFlags(lpcDSBufferDesc->dwFlags)
 {
   registerSoundBuffer(this);
 }
@@ -117,7 +117,7 @@ DWORD IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWOR
 
   // Read up to dwReadBytes, never going past the write cursor
   // Positions are updated immediately
-  const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->bufferSize;
+  const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->myBufferSize;
   if (available < dwReadBytes)
   {
     dwReadBytes = available;
@@ -149,7 +149,7 @@ DWORD IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWOR
 DWORD IDirectSoundBuffer::GetBytesInBuffer()
 {
   const std::lock_guard<std::mutex> guard(myMutex);
-  const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->bufferSize;
+  const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->myBufferSize;
   return available;
 }
 
@@ -202,12 +202,7 @@ HRESULT IDirectSound::CreateSoundBuffer( LPCDSBUFFERDESC lpcDSBufferDesc, IDirec
     (*lplpDirectSoundBuffer)->Release();
   }
 
-  const size_t bufferSize = lpcDSBufferDesc->dwBufferBytes;
-  const size_t channels = lpcDSBufferDesc->lpwfxFormat->nChannels;
-  const size_t sampleRate = lpcDSBufferDesc->lpwfxFormat->nSamplesPerSec;
-  const size_t bitsPerSample = lpcDSBufferDesc->lpwfxFormat->wBitsPerSample;
-  const size_t flags = lpcDSBufferDesc->dwFlags;
-  IDirectSoundBuffer * dsb = new IDirectSoundBuffer(bufferSize, channels, sampleRate, bitsPerSample, flags);
+  IDirectSoundBuffer * dsb = new IDirectSoundBuffer(lpcDSBufferDesc);
 
   *lplpDirectSoundBuffer = dsb;
   return DS_OK;

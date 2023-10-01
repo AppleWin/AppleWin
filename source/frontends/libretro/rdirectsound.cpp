@@ -55,17 +55,17 @@ namespace
 
   size_t DirectSoundGenerator::getNumberOfChannels() const
   {
-    return myBuffer->channels;
+    return myBuffer->myChannels;
   }
 
   void DirectSoundGenerator::mixBuffer(const void * ptr, const size_t size)
   {
-    const int16_t frames = size / (sizeof(int16_t) * myBuffer->channels);
+    const int16_t frames = size / (sizeof(int16_t) * myBuffer->myChannels);
     const int16_t * data = static_cast<const int16_t *>(ptr);
 
-    if (myBuffer->channels == 2)
+    if (myBuffer->myChannels == 2)
     {
-      myMixerBuffer.assign(data, data + frames * myBuffer->channels);
+      myMixerBuffer.assign(data, data + frames * myBuffer->myChannels);
     }
     else
     {
@@ -92,8 +92,8 @@ namespace
 
   void DirectSoundGenerator::writeAudio(const size_t fps, const bool write)
   {
-    const size_t frames = myBuffer->sampleRate / fps;
-    const size_t bytesToRead = frames * myBuffer->channels * sizeof(int16_t);
+    const size_t frames = myBuffer->mySampleRate / fps;
+    const size_t bytesToRead = frames * myBuffer->myChannels * sizeof(int16_t);
 
     LPVOID lpvAudioPtr1, lpvAudioPtr2;
     DWORD dwAudioBytes1, dwAudioBytes2;

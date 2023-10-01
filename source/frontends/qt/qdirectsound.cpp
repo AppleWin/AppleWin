@@ -53,9 +53,9 @@ namespace
     {
         // only initialise here to skip all the buffers which are not in DSBSTATUS_PLAYING mode
         QAudioFormat audioFormat;
-        audioFormat.setSampleRate(myBuffer->sampleRate);
-        audioFormat.setChannelCount(myBuffer->channels);
-        audioFormat.setSampleSize(myBuffer->bitsPerSample);
+        audioFormat.setSampleRate(myBuffer->mySampleRate);
+        audioFormat.setChannelCount(myBuffer->myChannels);
+        audioFormat.setSampleSize(myBuffer->myBitsPerSample);
         audioFormat.setCodec(QString::fromUtf8("audio/pcm"));
         audioFormat.setByteOrder(QAudioFormat::LittleEndian);
         audioFormat.setSampleType(QAudioFormat::SignedInt);

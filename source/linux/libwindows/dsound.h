@@ -101,13 +101,13 @@ class IDirectSoundBuffer : public IUnknown
   std::mutex myMutex;
 
  public:
-  const size_t bufferSize;
-  const size_t sampleRate;
-  const size_t channels;
-  const size_t bitsPerSample;
-  const size_t flags;
+  const size_t myBufferSize;
+  const size_t mySampleRate;
+  const size_t myChannels;
+  const size_t myBitsPerSample;
+  const size_t myFlags;
 
-  IDirectSoundBuffer(const size_t bufferSize, const size_t channels, const size_t sampleRate, const size_t bitsPerSample, const size_t flags);
+  IDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc);
   virtual HRESULT Release() override;
 
   HRESULT SetCurrentPosition( DWORD dwNewPosition );
