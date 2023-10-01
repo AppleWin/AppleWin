@@ -12,7 +12,6 @@ IDirectSoundBuffer::IDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
   , myBitsPerSample(lpcDSBufferDesc->lpwfxFormat->wBitsPerSample)
   , myFlags(lpcDSBufferDesc->dwFlags)
 {
-  registerSoundBuffer(this);
 }
 
 HRESULT IDirectSoundBuffer::Release()
@@ -202,10 +201,10 @@ HRESULT IDirectSound::CreateSoundBuffer( LPCDSBUFFERDESC lpcDSBufferDesc, IDirec
     (*lplpDirectSoundBuffer)->Release();
   }
 
-  IDirectSoundBuffer * dsb = new IDirectSoundBuffer(lpcDSBufferDesc);
+  IDirectSoundBuffer * dsb = iCreateDirectSoundBuffer(lpcDSBufferDesc);
 
   *lplpDirectSoundBuffer = dsb;
-  return DS_OK;
+  return dsb ? DS_OK : DSERR_GENERIC;
 }
 
 HRESULT IDirectSound::SetCooperativeLevel( HWND hwnd, DWORD dwLevel )

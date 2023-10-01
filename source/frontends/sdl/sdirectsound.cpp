@@ -236,10 +236,12 @@ namespace
 
 }
 
-void registerSoundBuffer(IDirectSoundBuffer * buffer)
+IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
 {
+  IDirectSoundBuffer * buffer = new IDirectSoundBuffer(lpcDSBufferDesc);
   const std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(buffer);
   activeSoundGenerators[buffer] = generator;
+  return buffer;
 }
 
 void unregisterSoundBuffer(IDirectSoundBuffer * buffer)

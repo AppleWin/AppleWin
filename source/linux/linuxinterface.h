@@ -3,5 +3,6 @@
 class IDirectSoundBuffer;
 
 // Sound
-void registerSoundBuffer(IDirectSoundBuffer * buffer);
+IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc);
+
 void unregisterSoundBuffer(IDirectSoundBuffer * buffer);
