@@ -162,8 +162,6 @@ void run_sdl(int argc, const char * argv [])
     std::cerr << "Screen:  " << refreshScreenTimer << std::endl;
     std::cerr << "Events:  " << eventTimer << std::endl;
     std::cerr << "CPU:     " << cpuTimer << std::endl;
-
-    // sa2::stopAudio();
   }
 #endif
 }

@@ -45,6 +45,7 @@ namespace
   {
   public:
     DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc);
+    virtual ~DirectSoundGenerator() override;
     virtual HRESULT Release() override;
 
     void stop();
@@ -72,7 +73,7 @@ namespace
     uint8_t * mixBufferTo(uint8_t * stream);
   };
 
-  std::unordered_map<IDirectSoundBuffer *, DirectSoundGenerator *> activeSoundGenerators;
+  std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator> > activeSoundGenerators;
 
   void DirectSoundGenerator::staticAudioCallback(void* userdata, uint8_t* stream, int len)
   {
@@ -117,18 +118,15 @@ namespace
     SDL_zero(myAudioSpec);
   }
 
-  void DirectSoundGenerator::close()
+  DirectSoundGenerator::~DirectSoundGenerator()
   {
-    SDL_CloseAudioDevice(myAudioDevice);
-    myAudioDevice = 0;
+    stop();
   }
 
   HRESULT DirectSoundGenerator::Release()
   {
-    stop();
-
     activeSoundGenerators.erase(this);
-    return IDirectSoundBuffer::Release();
+    return DS_OK;
   }
 
   bool DirectSoundGenerator::isRunning() const
@@ -178,7 +176,8 @@ namespace
     if (myAudioDevice)
     {
       SDL_PauseAudioDevice(myAudioDevice, 1);
-      close();
+      SDL_CloseAudioDevice(myAudioDevice);
+      myAudioDevice = 0;
     }
   }
 
@@ -239,9 +238,10 @@ namespace
 
 IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
 {
-  DirectSoundGenerator * generator = new DirectSoundGenerator(lpcDSBufferDesc);
-  activeSoundGenerators[generator] = generator;
-  return generator;
+  std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(lpcDSBufferDesc);
+  IDirectSoundBuffer * buffer = generator.get();
+  activeSoundGenerators[buffer] = generator;
+  return buffer;
 }
 
 namespace sa2
