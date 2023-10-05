@@ -41,25 +41,23 @@ namespace
     }
   }
 
-  class DirectSoundGenerator
+  class DirectSoundGenerator : public IDirectSoundBuffer
   {
   public:
-    DirectSoundGenerator(IDirectSoundBuffer * buffer);
-    ~DirectSoundGenerator();
+    DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc);
+    virtual HRESULT Release() override;
 
     void stop();
     void writeAudio(const char * deviceName, const size_t ms);
     void resetUnderruns();
 
-    void printInfo() const;
-    sa2::SoundInfo getInfo() const;
+    void printInfo();
+    sa2::SoundInfo getInfo();
 
   private:
     static void staticAudioCallback(void* userdata, uint8_t* stream, int len);
 
     void audioCallback(uint8_t* stream, int len);
-
-    IDirectSoundBuffer * myBuffer;
 
     std::vector<uint8_t> myMixerBuffer;
 
@@ -74,7 +72,7 @@ namespace
     uint8_t * mixBufferTo(uint8_t * stream);
   };
 
-  std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator>> activeSoundGenerators;
+  std::unordered_map<IDirectSoundBuffer *, DirectSoundGenerator *> activeSoundGenerators;
 
   void DirectSoundGenerator::staticAudioCallback(void* userdata, uint8_t* stream, int len)
   {
@@ -86,7 +84,7 @@ namespace
   {
     LPVOID lpvAudioPtr1, lpvAudioPtr2;
     DWORD dwAudioBytes1, dwAudioBytes2;
-    const size_t bytesRead = myBuffer->Read(len, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
+    const size_t bytesRead = Read(len, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
 
     myMixerBuffer.resize(bytesRead);
 
@@ -111,17 +109,12 @@ namespace
     }
   }
 
-  DirectSoundGenerator::DirectSoundGenerator(IDirectSoundBuffer * buffer)
-    : myBuffer(buffer)
+  DirectSoundGenerator::DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc)
+    : IDirectSoundBuffer(lpcDSBufferDesc)
     , myAudioDevice(0)
     , myBytesPerSecond(0)
   {
     SDL_zero(myAudioSpec);
-  }
-
-  DirectSoundGenerator::~DirectSoundGenerator()
-  {
-    close();
   }
 
   void DirectSoundGenerator::close()
@@ -130,38 +123,46 @@ namespace
     myAudioDevice = 0;
   }
 
+  HRESULT DirectSoundGenerator::Release()
+  {
+    stop();
+
+    activeSoundGenerators.erase(this);
+    return IDirectSoundBuffer::Release();
+  }
+
   bool DirectSoundGenerator::isRunning() const
   {
     return myAudioDevice;
   }
 
-  void DirectSoundGenerator::printInfo() const
+  void DirectSoundGenerator::printInfo()
   {
     if (isRunning())
     {
-      const DWORD bytesInBuffer = myBuffer->GetBytesInBuffer();
+      const DWORD bytesInBuffer = GetBytesInBuffer();
       std::cerr << "Channels: " << (int)myAudioSpec.channels;
       std::cerr << ", buffer: " << std::setw(6) << bytesInBuffer;
       const double time = double(bytesInBuffer) / myBytesPerSecond * 1000;
       std::cerr << ", " << std::setw(8) << time << " ms";
-      std::cerr << ", underruns: " << std::setw(10) << myBuffer->GetBufferUnderruns() << std::endl;
+      std::cerr << ", underruns: " << std::setw(10) << GetBufferUnderruns() << std::endl;
     }
   }
 
-  sa2::SoundInfo DirectSoundGenerator::getInfo() const
+  sa2::SoundInfo DirectSoundGenerator::getInfo()
   {
     sa2::SoundInfo info;
     info.running = isRunning();
     info.channels = myAudioSpec.channels;
-    info.volume = myBuffer->GetLogarithmicVolume();
-    info.numberOfUnderruns = myBuffer->GetBufferUnderruns();
+    info.volume = GetLogarithmicVolume();
+    info.numberOfUnderruns = GetBufferUnderruns();
 
     if (info.running && myBytesPerSecond > 0)
     {
-      const DWORD bytesInBuffer = myBuffer->GetBytesInBuffer();
+      const DWORD bytesInBuffer = GetBytesInBuffer();
       const float coeff = 1.0 / myBytesPerSecond;
       info.buffer = bytesInBuffer * coeff;
-      info.size = myBuffer->myBufferSize * coeff;
+      info.size = myBufferSize * coeff;
     }
 
     return info;
@@ -169,7 +170,7 @@ namespace
 
   void DirectSoundGenerator::resetUnderruns()
   {
-    myBuffer->ResetUnderrruns();
+    ResetUnderrruns();
   }
 
   void DirectSoundGenerator::stop()
@@ -184,7 +185,7 @@ namespace
   uint8_t * DirectSoundGenerator::mixBufferTo(uint8_t * stream)
   {
     // we could copy ADJUST_VOLUME from SDL_mixer.c and avoid all copying and (rare) race conditions
-    const double logVolume = myBuffer->GetLogarithmicVolume();
+    const double logVolume = GetLogarithmicVolume();
     // same formula as QAudio::convertVolume()
     const double linVolume = logVolume > 0.99 ? 1.0 : -std::log(1.0 - logVolume) / std::log(100.0);
     const uint8_t svolume = uint8_t(linVolume * SDL_MIX_MAXVOLUME);
@@ -205,7 +206,7 @@ namespace
     }
 
     DWORD dwStatus;
-    myBuffer->GetStatus(&dwStatus);
+    GetStatus(&dwStatus);
     if (!(dwStatus & DSBSTATUS_PLAYING))
     {
       return;
@@ -214,10 +215,10 @@ namespace
     SDL_AudioSpec want;
     SDL_zero(want);
 
-    want.freq = myBuffer->mySampleRate;
+    want.freq = mySampleRate;
     want.format = AUDIO_S16LSB;
-    want.channels = myBuffer->myChannels;
-    want.samples = std::min<size_t>(MAX_SAMPLES, nextPowerOf2(myBuffer->mySampleRate * ms / 1000));
+    want.channels = myChannels;
+    want.samples = std::min<size_t>(MAX_SAMPLES, nextPowerOf2(mySampleRate * ms / 1000));
     want.callback = staticAudioCallback;
     want.userdata = this;
     myAudioDevice = SDL_OpenAudioDevice(deviceName, 0, &want, &myAudioSpec, 0);
@@ -238,21 +239,9 @@ namespace
 
 IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
 {
-  IDirectSoundBuffer * buffer = new IDirectSoundBuffer(lpcDSBufferDesc);
-  const std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(buffer);
-  activeSoundGenerators[buffer] = generator;
-  return buffer;
-}
-
-void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
-{
-  const auto it = activeSoundGenerators.find(buffer);
-  if (it != activeSoundGenerators.end())
-  {
-    // stop the QAudioOutput before removing. is this necessary?
-    it->second->stop();
-    activeSoundGenerators.erase(it);
-  }
+  DirectSoundGenerator * generator = new DirectSoundGenerator(lpcDSBufferDesc);
+  activeSoundGenerators[generator] = generator;
+  return generator;
 }
 
 namespace sa2
@@ -262,7 +251,7 @@ namespace sa2
   {
     for (auto & it : activeSoundGenerators)
     {
-      const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
+      const auto generator = it.second;
       generator->stop();
     }
   }
@@ -271,7 +260,7 @@ namespace sa2
   {
     for (auto & it : activeSoundGenerators)
     {
-      const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
+      const auto generator = it.second;
       generator->writeAudio(deviceName, ms);
     }
   }
@@ -280,7 +269,7 @@ namespace sa2
   {
     for (auto & it : activeSoundGenerators)
     {
-      const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
+      const auto generator = it.second;
       generator->printInfo();
     }
   }
@@ -289,7 +278,7 @@ namespace sa2
   {
     for (auto & it : activeSoundGenerators)
     {
-      const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
+      const auto generator = it.second;
       generator->resetUnderruns();
     }
   }
@@ -301,7 +290,7 @@ namespace sa2
 
     for (auto & it : activeSoundGenerators)
     {
-      const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
+      const auto & generator = it.second;
       info.push_back(generator->getInfo());
     }
 

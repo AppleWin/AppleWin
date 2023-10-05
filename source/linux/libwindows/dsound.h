@@ -108,7 +108,6 @@ class IDirectSoundBuffer : public IUnknown
   const size_t myFlags;
 
   IDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc);
-  virtual HRESULT Release() override;
 
   HRESULT SetCurrentPosition( DWORD dwNewPosition );
   HRESULT GetCurrentPosition( LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor );

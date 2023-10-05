@@ -130,7 +130,3 @@ IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
 {
   return nullptr;
 }
-
-void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
-{
-}

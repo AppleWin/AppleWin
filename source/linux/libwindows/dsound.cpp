@@ -14,16 +14,6 @@ IDirectSoundBuffer::IDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
 {
 }
 
-HRESULT IDirectSoundBuffer::Release()
-{
-  // unregister *before* the destructor is called (in Release below)
-  // makes things a little bit more linear
-  unregisterSoundBuffer(this);
-
-  // do not call any more methods after the next function returns
-  return IUnknown::Release();
-}
-
 HRESULT IDirectSoundBuffer::Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2 )
 {
   const size_t totalWrittenBytes = dwAudioBytes1 + dwAudioBytes2;

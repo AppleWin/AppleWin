@@ -163,7 +163,7 @@ void run_sdl(int argc, const char * argv [])
     std::cerr << "Events:  " << eventTimer << std::endl;
     std::cerr << "CPU:     " << cpuTimer << std::endl;
 
-    sa2::stopAudio();
+    // sa2::stopAudio();
   }
 #endif
 }

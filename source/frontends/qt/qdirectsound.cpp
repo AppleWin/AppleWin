@@ -12,10 +12,10 @@
 namespace
 {
 
-    class DirectSoundGenerator
+    class DirectSoundGenerator : public IDirectSoundBuffer
     {
     public:
-        DirectSoundGenerator(IDirectSoundBuffer * buffer);
+        DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc);
 
         void start();
         void stop();
@@ -23,9 +23,9 @@ namespace
         void stateChanged(QAudio::State state);
         void setOptions(const qint32 initialSilence);
 
-    private:
-        IDirectSoundBuffer * myBuffer;
+        virtual HRESULT Release() override;
 
+    private:
         typedef short int audio_t;
 
         std::shared_ptr<QAudioOutput> myAudioOutput;
@@ -42,20 +42,27 @@ namespace
     };
 
 
-    std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator>> activeSoundGenerators;
+    std::unordered_map<IDirectSoundBuffer *, DirectSoundGenerator *> activeSoundGenerators;
 
-    DirectSoundGenerator::DirectSoundGenerator(IDirectSoundBuffer * buffer) : myBuffer(buffer)
+    DirectSoundGenerator::DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc) : IDirectSoundBuffer(lpcDSBufferDesc)
     {
         myInitialSilence = 200;
+    }
+
+    HRESULT DirectSoundGenerator::Release()
+    {
+        stop();
+        activeSoundGenerators.erase(this);
+        return IDirectSoundBuffer::Release();
     }
 
     void DirectSoundGenerator::initialise()
     {
         // only initialise here to skip all the buffers which are not in DSBSTATUS_PLAYING mode
         QAudioFormat audioFormat;
-        audioFormat.setSampleRate(myBuffer->mySampleRate);
-        audioFormat.setChannelCount(myBuffer->myChannels);
-        audioFormat.setSampleSize(myBuffer->myBitsPerSample);
+        audioFormat.setSampleRate(mySampleRate);
+        audioFormat.setChannelCount(myChannels);
+        audioFormat.setSampleSize(myBitsPerSample);
         audioFormat.setCodec(QString::fromUtf8("audio/pcm"));
         audioFormat.setByteOrder(QAudioFormat::LittleEndian);
         audioFormat.setSampleType(QAudioFormat::SignedInt);
@@ -91,7 +98,7 @@ namespace
 
     void DirectSoundGenerator::setVolume()
     {
-        const qreal logVolume = myBuffer->GetLogarithmicVolume();
+        const qreal logVolume = GetLogarithmicVolume();
         const qreal linVolume = QAudio::convertVolume(logVolume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
         myAudioOutput->setVolume(linVolume);
     }
@@ -104,7 +111,7 @@ namespace
         }
 
         DWORD dwStatus;
-        myBuffer->GetStatus(&dwStatus);
+        GetStatus(&dwStatus);
         if (!(dwStatus & DSBSTATUS_PLAYING))
         {
             return;
@@ -184,7 +191,7 @@ namespace
         LPVOID lpvAudioPtr1, lpvAudioPtr2;
         DWORD dwAudioBytes1, dwAudioBytes2;
         // this function reads as much as possible up to bytesFree
-        myBuffer->Read(bytesFree, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
+        Read(bytesFree, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
 
         qint64 bytesWritten = 0;
         qint64 bytesToWrite = 0;
@@ -208,21 +215,9 @@ namespace
 
 IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
 {
-    IDirectSoundBuffer * buffer = new IDirectSoundBuffer(lpcDSBufferDesc);
-    const std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(buffer);
-    activeSoundGenerators[buffer] = generator;
-    return buffer;
-}
-
-void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
-{
-    const auto it = activeSoundGenerators.find(buffer);
-    if (it != activeSoundGenerators.end())
-    {
-        // stop the QAudioOutput before removing. is this necessary?
-        it->second->stop();
-        activeSoundGenerators.erase(it);
-    }
+    DirectSoundGenerator * generator = new DirectSoundGenerator(lpcDSBufferDesc);
+    activeSoundGenerators[generator] = generator;
+    return generator;
 }
 
 namespace QDirectSound
@@ -232,7 +227,7 @@ namespace QDirectSound
     {
         for (auto & it : activeSoundGenerators)
         {
-            const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
+            const auto generator = it.second;
             generator->start();
         }
     }
@@ -241,7 +236,7 @@ namespace QDirectSound
     {
         for (auto & it : activeSoundGenerators)
         {
-            const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
+            const auto generator = it.second;
             generator->stop();
         }
     }
@@ -250,7 +245,7 @@ namespace QDirectSound
     {
         for (auto & it : activeSoundGenerators)
         {
-            const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
+            const auto generator = it.second;
             generator->writeAudio();
         }
     }
@@ -259,7 +254,7 @@ namespace QDirectSound
     {
         for (auto & it : activeSoundGenerators)
         {
-            const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
+            const auto generator = it.second;
             generator->setOptions(initialSilence);
         }
     }
