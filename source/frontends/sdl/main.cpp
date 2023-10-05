@@ -130,7 +130,6 @@ void run_sdl(int argc, const char * argv [])
       frameTimer.tic();
 
       eventTimer.tic();
-      sa2::writeAudio(audioDeviceName, options.audioBuffer);
       frame->ProcessEvents(quit);
       eventTimer.toc();
 

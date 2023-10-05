@@ -100,7 +100,7 @@ class IDirectSoundBuffer : public IUnknown
   std::atomic_size_t myNumberOfUnderruns;
   std::mutex myMutex;
 
- public:
+public:
   const size_t myBufferSize;
   const size_t mySampleRate;
   const size_t myChannels;
@@ -115,8 +115,8 @@ class IDirectSoundBuffer : public IUnknown
   HRESULT Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2, DWORD dwFlags );
   HRESULT Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2 );
 
-  HRESULT Stop();
-  HRESULT Play( DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags );
+  virtual HRESULT Stop();
+  virtual HRESULT Play( DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags );
 
   HRESULT SetVolume( LONG lVolume );
   HRESULT GetVolume( LONG * lplVolume );
