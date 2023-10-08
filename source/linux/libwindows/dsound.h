@@ -118,7 +118,7 @@ public:
   virtual HRESULT Stop();
   virtual HRESULT Play( DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags );
 
-  HRESULT SetVolume( LONG lVolume );
+  virtual HRESULT SetVolume( LONG lVolume );
   HRESULT GetVolume( LONG * lplVolume );
 
   HRESULT GetStatus( LPDWORD lpdwStatus );

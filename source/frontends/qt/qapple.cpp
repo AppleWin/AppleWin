@@ -138,7 +138,6 @@ void QApple::closeEvent(QCloseEvent * event)
 {
     stopTimer();
     myFrame->End();
-    QDirectSound::stop();
 
     QSettings settings;
     settings.setValue("QApple/window/geometry", saveGeometry().toBase64());
@@ -175,8 +174,6 @@ void QApple::startEmulator()
 
 void QApple::on_timer()
 {
-    QDirectSound::start();
-
     if (!myElapsedTimer.isValid())
     {
         myElapsedTimer.start();
@@ -251,7 +248,6 @@ void QApple::stopTimer()
 void QApple::restartTimeCounters()
 {
     // let them restart next time
-    QDirectSound::stop();
     myElapsedTimer.invalidate();
 }
 
