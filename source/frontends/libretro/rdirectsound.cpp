@@ -32,7 +32,7 @@ namespace
     void mixBuffer(const void * ptr, const size_t size);
   };
 
-  std::unordered_map<IDirectSoundBuffer *, DirectSoundGenerator *> activeSoundGenerators;
+  std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator> > activeSoundGenerators;
 
   DirectSoundGenerator::DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc)
     : IDirectSoundBuffer(lpcDSBufferDesc)
@@ -42,7 +42,7 @@ namespace
   HRESULT DirectSoundGenerator::Release()
   {
     activeSoundGenerators.erase(this);
-    return IDirectSoundBuffer::Release();
+    return DS_OK;
   }
 
   bool DirectSoundGenerator::isRunning()
@@ -123,9 +123,10 @@ namespace
 
 IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
 {
-  DirectSoundGenerator * generator = new DirectSoundGenerator(lpcDSBufferDesc);
-  activeSoundGenerators[generator] = generator;
-  return generator;
+  std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(lpcDSBufferDesc);
+  DirectSoundGenerator * ptr = generator.get();
+  activeSoundGenerators[ptr] = generator;
+  return ptr;
 }
 
 namespace ra2
@@ -134,7 +135,7 @@ namespace ra2
   void writeAudio(const size_t channels, const size_t fps)
   {
     bool found = false;
-    for (auto & it : activeSoundGenerators)
+    for (const auto & it : activeSoundGenerators)
     {
       const auto generator = it.second;
       if (generator->isRunning())
