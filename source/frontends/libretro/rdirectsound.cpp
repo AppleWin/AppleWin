@@ -42,7 +42,7 @@ namespace
   HRESULT DirectSoundGenerator::Release()
   {
     activeSoundGenerators.erase(this);
-    return DS_OK;
+    return IUnknown::Release();
   }
 
   bool DirectSoundGenerator::isRunning()

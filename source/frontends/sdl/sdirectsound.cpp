@@ -141,7 +141,7 @@ namespace
   HRESULT DirectSoundGenerator::Release()
   {
     activeSoundGenerators.erase(this);  // this will force the destructor
-    return DS_OK;
+    return IUnknown::Release();
   }
 
   HRESULT DirectSoundGenerator::Stop()

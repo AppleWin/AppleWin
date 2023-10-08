@@ -34,10 +34,6 @@ void Paddle::setSquaring(bool value)
 }
 
 
-Paddle::Paddle()
-{
-}
-
 bool Paddle::getButton(int i) const
 {
   return false;
@@ -72,10 +68,6 @@ int Paddle::getAxisValue(int i) const
 
   const int value = static_cast<int>((axis + 1.0) * 0.5 * 255);
   return value;
-}
-
-Paddle::~Paddle()
-{
 }
 
 BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)

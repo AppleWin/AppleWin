@@ -68,7 +68,7 @@ namespace
     HRESULT DirectSoundGenerator::Release()
     {
         activeSoundGenerators.erase(this);
-        return DS_OK;
+        return IUnknown::Release();
     }
 
     void DirectSoundGenerator::setOptions(const qint32 initialSilence)

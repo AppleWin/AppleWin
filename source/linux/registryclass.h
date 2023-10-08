@@ -9,7 +9,7 @@
 class Registry
 {
 public:
-  virtual ~Registry();
+  virtual ~Registry() = default;
 
   static std::shared_ptr<Registry> instance;
 

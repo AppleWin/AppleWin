@@ -133,7 +133,7 @@ public:
 };
 typedef class IDirectSoundBuffer *LPDIRECTSOUNDBUFFER,**LPLPDIRECTSOUNDBUFFER;
 
-struct IDirectSound : public IUnknown
+struct IDirectSound : public IAutoRelease
 {
   HRESULT CreateSoundBuffer( LPCDSBUFFERDESC lpcDSBufferDesc, IDirectSoundBuffer **lplpDirectSoundBuffer, IUnknown FAR* pUnkOuter );
   HRESULT SetCooperativeLevel( HWND hwnd, DWORD dwLevel );

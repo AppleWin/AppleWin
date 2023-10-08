@@ -4,7 +4,7 @@
 
 struct CHANDLE
 {
-  virtual ~CHANDLE() {}
+  virtual ~CHANDLE() = default;
 };
 
 typedef CHANDLE * HANDLE;
