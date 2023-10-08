@@ -228,6 +228,7 @@ private:
 	void SetSequencerFunction(WORD addr, ULONG executedCycles);
 	void FindTrackSeamWOZ(FloppyDisk& floppy, float track);
 	void DumpTrackWOZ(FloppyDisk floppy);
+	void DumpTrackWOZFlux(FloppyDisk floppy);
 	bool GetFirmware(WORD lpNameId, BYTE* pDst);
 	void InitFirmware(LPBYTE pCxRomPeripheral);
 	void UpdateLatchForEmptyDrive(FloppyDrive* pDrive);

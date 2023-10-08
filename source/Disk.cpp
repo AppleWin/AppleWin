@@ -1537,8 +1537,17 @@ void Disk2InterfaceCard::NextFluxData(FloppyDisk& floppy)
 			break;
 	} while (1);
 
+#if 0
 	floppy.m_bitCellCount = (floppy.m_zeroTickCount + 0x0f) / 0x20;
+#else
+	UINT zeroTickCount = floppy.m_zeroTickCount;
+	if ((zeroTickCount & 0x10) == 0) zeroTickCount &= ~0x1f;	// round down: if 0x0n, 0x2n, 0x4n etc
+	else zeroTickCount += 0x1f;	// round up: if 0x1n, 0x3n, 0x5n etc
+	floppy.m_bitCellCount = zeroTickCount / 0x20;
+#endif
+	if (floppy.m_bitCellCount == 0) floppy.m_bitCellCount = 1;
 	floppy.m_tickCountdown = (floppy.m_bitCellCount > 1) ? 0x20 : floppy.m_zeroTickCount;	// last one may be eg. 0x1E,0x20,0x22
+	_ASSERT(floppy.m_bitCellCount);
 }
 
 void Disk2InterfaceCard::DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks)
@@ -1549,6 +1558,15 @@ void Disk2InterfaceCard::DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks)
 
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
 	FloppyDisk& floppy = drive.m_disk;
+
+#if _DEBUG
+	static int dbgWOZ = 0;
+	if (dbgWOZ)
+	{
+		dbgWOZ = 0;
+		DumpTrackWOZFlux(floppy);	// Enable as necessary
+	}
+#endif
 
 	for (UINT i = 0; i < ticks; i++)
 	{
@@ -1850,6 +1868,139 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 			doneLastBit = true;
 		else if (doneLastBit)
 			break;
+
+		if (shiftReg & 0x80)
+		{
+			if (outputBit == 0)		// zero, so LSS holds nibble in latch
+			{
+				zeroCount++;
+				continue;
+			}
+
+			// else: start of next nibble
+
+			nibbleCount++;
+
+			char syncBits = zeroCount <= 9 ? '0' + zeroCount : '+';
+			if (zeroCount == 0)	LogOutput("%02X   ", shiftReg);
+			else				LogOutput("%02X(%c)", shiftReg, syncBits);
+
+			formatTrack.DecodeLatchNibbleRead(shiftReg);
+
+			if ((nibbleCount % 32) == 0)
+			{
+				std::string strReadDetected = formatTrack.GetReadD5AAxxDetectedString();
+				if (!strReadDetected.empty())
+				{
+					OutputDebugString("\t; ");
+					OutputDebugString(strReadDetected.c_str());
+				}
+				OutputDebugString("\n");
+				newLine = true;
+			}
+
+			shiftReg = 0;
+			zeroCount = 0;
+		}
+
+		shiftReg <<= 1;
+		shiftReg |= outputBit;
+
+		if (shiftReg == 0x01)
+		{
+			nibbleStartBitOffset = floppy.m_bitOffset - 1;
+			if (nibbleStartBitOffset < 0) nibbleStartBitOffset += floppy.m_bitCount;
+		}
+	}
+
+	// Output any partial nibble
+	if (shiftReg & 0x80)
+	{
+		LogOutput("%02X", shiftReg);
+
+		// Output any remaining zeroCount
+		if (zeroCount)
+		{
+			char syncBits = zeroCount <= 9 ? '0' + zeroCount : '+';
+			LogOutput("(%c)", syncBits);
+		}
+	}
+	else if (shiftReg)
+	{
+		LogOutput("%02X/Partial Nibble", shiftReg);
+	}
+
+	// Output any remaining "read D5AAxx detected"
+	if (nibbleCount % 32)
+	{
+		std::string strReadDetected = formatTrack.GetReadD5AAxxDetectedString();
+		if (!strReadDetected.empty())
+		{
+			OutputDebugString("\t; ");
+			OutputDebugString(strReadDetected.c_str());
+		}
+		OutputDebugString("\n");
+	}
+}
+
+// Dump nibbles from current position bitstream wraps to same position
+// NB. Need to define LOG_DISK_NIBBLES_READ so that GetReadD5AAxxDetectedString() works.
+void Disk2InterfaceCard::DumpTrackWOZFlux(FloppyDisk floppy)	// pass a copy of m_floppy
+{
+	FormatTrack formatTrack(true);
+
+	BYTE shiftReg = 0;
+	UINT zeroCount = 0;
+	UINT nibbleCount = 0;
+
+	const UINT startBitOffset = 0;	// NB. may need to tweak this offset, since the bitstream is a circular buffer
+	floppy.m_bitOffset = startBitOffset;
+	UpdateBitStreamOffsets(floppy);
+
+	NextFluxData(floppy);	// Post: m_bitCellCount >= 1
+
+	int nibbleStartBitOffset = -1;
+
+	bool newLine = true;
+	bool doneLastBit = false;
+
+	while (1)
+	{
+		if (newLine && nibbleStartBitOffset >= 0)
+		{
+			newLine = false;
+			LogOutput("%04X:", nibbleStartBitOffset);
+			nibbleStartBitOffset = -1;
+		}
+
+#if 1
+		floppy.m_bitCellCount--;
+		floppy.m_bitOffset++;
+
+		const BYTE outputBit = floppy.m_bitCellCount ? 0 : 1;
+
+		if (outputBit)
+		{
+			NextFluxData(floppy);
+			if (floppy.m_byte == 0)
+				floppy.m_bitOffset = 0;
+		}
+
+		if (floppy.m_byte == 0)	// done complete track?
+			doneLastBit = true;
+		else if (doneLastBit)
+			break;
+#else
+		BYTE n = floppy.m_trackimage[floppy.m_byte];
+		BYTE outputBit = (n & floppy.m_bitMask) ? 1 : 0;
+
+		IncBitStream(floppy);
+
+		if (startBitOffset == floppy.m_bitOffset)	// done complete track?
+			doneLastBit = true;
+		else if (doneLastBit)
+			break;
+#endif
 
 		if (shiftReg & 0x80)
 		{
