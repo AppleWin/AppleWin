@@ -148,6 +148,9 @@ namespace
 
     const common2::CommonInitialisation init(frame, paddle, options);
 
+    // no audio in the ncurses frontend
+    g_bDisableDirectSound = true;
+    g_bDisableDirectSoundMockingboard = true;
     na2::SetCtrlCHandler(options.headless);
 
     if (options.benchmark)

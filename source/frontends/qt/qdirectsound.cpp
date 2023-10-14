@@ -24,7 +24,7 @@ namespace
         virtual HRESULT Release() override;
         virtual HRESULT Stop() override;
         virtual HRESULT Play( DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags ) override;
-        virtual HRESULT SetVolume( LONG lVolume );
+        virtual HRESULT SetVolume( LONG lVolume ) override;
 
     private:
         typedef short int audio_t;
@@ -42,10 +42,11 @@ namespace
 
     std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator> > activeSoundGenerators;
 
-    DirectSoundGenerator::DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc) : IDirectSoundBuffer(lpcDSBufferDesc)
+    DirectSoundGenerator::DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc) 
+    : IDirectSoundBuffer(lpcDSBufferDesc)
+    , myDevice(nullptr)
+    , myInitialSilence(200)
     {
-        myInitialSilence = 200;
-
         // only initialise here to skip all the buffers which are not in DSBSTATUS_PLAYING mode
         QAudioFormat audioFormat;
         audioFormat.setSampleRate(mySampleRate);

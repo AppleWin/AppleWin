@@ -1,10 +1,12 @@
 #include "StdAfx.h"
 #include "frontends/sdl/sdirectsound.h"
 #include "frontends/sdl/utils.h"
+#include "frontends/common2/programoptions.h"
 
 #include "windows.h"
 #include "linux/linuxinterface.h"
 
+#include "Core.h"
 #include "SoundCore.h"
 #include "Log.h"
 
@@ -19,8 +21,8 @@ namespace
 {
 
   // these have to come from EmulatorOptions
-  const char * deviceName = nullptr;
-  const size_t ms = 46;
+  std::string audioDeviceName;
+  size_t audioBuffer = 0;
 
   size_t getBytesPerSecond(const SDL_AudioSpec & spec)
   {
@@ -113,6 +115,8 @@ namespace
 
     SDL_AudioSpec want;
     SDL_zero(want);
+
+    _ASSERT(ms > 0);
 
     want.freq = mySampleRate;
     want.format = AUDIO_S16LSB;
@@ -215,14 +219,19 @@ IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
 {
   try
   {
-    std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(lpcDSBufferDesc, deviceName, ms);
+    const char * deviceName = audioDeviceName.empty() ? nullptr : audioDeviceName.c_str();
+
+    std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(lpcDSBufferDesc, deviceName, audioBuffer);
     DirectSoundGenerator * ptr = generator.get();
     activeSoundGenerators[ptr] = generator;
     return ptr;
   }
   catch (const std::exception & e)
   {
-    LogOutput("IDirectSoundBuffer: %s", e.what());
+    // once this fails, no point in trying again next time
+    g_bDisableDirectSound = true;
+    g_bDisableDirectSoundMockingboard = true;
+    LogOutput("IDirectSoundBuffer: %s\n", e.what());
     return nullptr;
   }
 }
@@ -239,7 +248,7 @@ namespace sa2
     }
   }
 
-  void resetUnderruns()
+  void resetAudioUnderruns()
   {
     for (const auto & it : activeSoundGenerators)
     {
@@ -260,6 +269,12 @@ namespace sa2
     }
 
     return info;
+  }
+
+  void setAudioOptions(const common2::EmulatorOptions & options)
+  {
+    audioDeviceName = options.audioDeviceName;
+    audioBuffer = options.audioBuffer;
   }
 
 }

@@ -70,6 +70,8 @@ void run_sdl(int argc, const char * argv [])
   const RegistryContext registryContext(CreateFileRegistry(options));
   const std::shared_ptr<Paddle> paddle = sa2::Gamepad::create(options.gameControllerIndex, options.gameControllerMappingFile);
 
+  sa2::setAudioOptions(options);
+
   std::shared_ptr<sa2::SDLFrame> frame;
   if (options.imgui)
   {
@@ -122,8 +124,6 @@ void run_sdl(int argc, const char * argv [])
     const uint64_t oneFrameMicros = 1000000 / fps;
 
     bool quit = false;
-
-    const char * audioDeviceName = options.audioDeviceName.empty() ? nullptr : options.audioDeviceName.c_str();
 
     do
     {
