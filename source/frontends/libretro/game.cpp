@@ -21,6 +21,7 @@
 
 #include "libretro.h"
 #include <memory>
+#include <string>
 
 #define APPLEWIN_RETRO_CONF "/tmp/applewin.retro.conf"
 
@@ -283,6 +284,19 @@ namespace ra2
       if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_L2))
       {
         saveRegistryToINI(myRegistry);
+      }
+      if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_R2))
+      {
+        if (myAudioChannelsSelected == 1)
+        {
+          myAudioChannelsSelected = 2;
+          display_message("Audio source: Mockingboard");
+        }
+        else
+        {
+          myAudioChannelsSelected = 1;
+          display_message("Audio source: speaker");
+        }
       }
       if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_START))
       {
