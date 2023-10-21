@@ -186,10 +186,6 @@ void QApple::on_timer()
     if (current > target)
     {
         // we got ahead of the timer by a lot
-
-        // just check if we got something to write
-        QDirectSound::writeAudio();
-
         // wait next call
         return;
     }
@@ -228,10 +224,6 @@ void QApple::on_timer()
     if (count > 1)  // 1 is the non-full speed case
     {
         restartTimeCounters();
-    }
-    else
-    {
-        QDirectSound::writeAudio();
     }
 }
 
@@ -350,7 +342,7 @@ void QApple::reloadOptions()
 
     Paddle::instance = GamepadPaddle::fromName(myOptions.gamepadName);
     Paddle::setSquaring(myOptions.gamepadSquaring);
-    QDirectSound::setOptions(myOptions.audioLatency);
+    QDirectSound::setOptions(myOptions.msAudioBuffer);
 }
 
 void QApple::on_actionSave_state_triggered()

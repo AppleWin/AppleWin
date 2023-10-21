@@ -3,11 +3,9 @@
 
 #include <QtGlobal>
 
-
 namespace QDirectSound
 {
-    void writeAudio();
-    void setOptions(const qint32 initialSilence);
+    void setOptions(const qint64 duration);  // in ms
 }
 
 #endif // DIRECTSOUND_H

@@ -24,7 +24,7 @@ public:
     int msGap;
     int msFullSpeed;
 
-    int audioLatency;
+    int msAudioBuffer;
 
     void setData(const GlobalOptions & data);
 };

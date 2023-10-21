@@ -30,8 +30,7 @@ namespace
     const QString REG_RAMWORKS_SIZE = QString::fromUtf8("QApple/Hardware/RamWorks Size");
     const QString REG_GAMEPAD_NAME = QString::fromUtf8("QApple/Hardware/Gamepad/Name");
     const QString REG_GAMEPAD_SQUARING = QString::fromUtf8("QApple/Hardware/Gamepad/Squaring");
-    const QString REG_AUDIO_LATENCY = QString::fromUtf8("QApple/Audio/Latency");
-    const QString REG_SILENCE_DELAY = QString::fromUtf8("QApple/Audio/Silence Delay");
+    const QString REG_AUDIO_BUFFER = QString::fromUtf8("QApple/Audio/Buffer");
     const QString REG_VOLUME = QString::fromUtf8("QApple/Audio/Volume");
     const QString REG_TIMER = QString::fromUtf8("QApple/Emulator/Timer");
     const QString REG_FULL_SPEED = QString::fromUtf8("QApple/Emulator/Full Speed");
@@ -110,7 +109,9 @@ GlobalOptions GlobalOptions::fromQSettings()
 
     options.msGap = settings.value(REG_TIMER, 5).toInt();
     options.msFullSpeed = settings.value(REG_FULL_SPEED, 5).toInt();
-    options.audioLatency = settings.value(REG_AUDIO_LATENCY, 200).toInt();
+
+    // 250ms is empirically the duration for the default buffer
+    options.msAudioBuffer = settings.value(REG_AUDIO_BUFFER, 250).toInt();
 
     return options;
 }
@@ -159,10 +160,10 @@ void GlobalOptions::setData(const GlobalOptions & data)
         QSettings().setValue(REG_GAMEPAD_SQUARING, this->gamepadSquaring);
     }
 
-    if (this->audioLatency != data.audioLatency)
+    if (this->msAudioBuffer != data.msAudioBuffer)
     {
-        this->audioLatency = data.audioLatency;
-        QSettings().setValue(REG_AUDIO_LATENCY, this->audioLatency);
+        this->msAudioBuffer = data.msAudioBuffer;
+        QSettings().setValue(REG_AUDIO_BUFFER, this->msAudioBuffer);
     }
 
 }
