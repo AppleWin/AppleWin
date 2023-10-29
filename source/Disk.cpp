@@ -1373,6 +1373,17 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 			m_diskLastCycle = g_nCumulativeCycles;
 
 			UINT ticks = ((UINT)cycleDelta) * 8;	// 125ns units
+#if 0
+			if (drive.m_phasePrecise == 12.0 && floppy.m_byte == 0x00003b53)
+			{
+//				if (rand() < RAND_THRESHOLD(5, 10))
+				{
+					UINT adj = 7;
+					if (ticks > adj)
+						ticks -= adj;
+				}
+			}
+#endif
 			DataLatchReadWOZFlux(pc, addr, ticks);
 		}
 

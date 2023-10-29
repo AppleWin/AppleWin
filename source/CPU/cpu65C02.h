@@ -56,6 +56,48 @@ static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
 		}
 		else
 		{
+#if 0
+			if (regs.pc >= 0x59f && regs.pc < 0x680)
+			{
+				if (regs.pc == 0x5d9)
+					LogOutput("%04X: inc $ea -> %02X\n", regs.pc, (mem[0xea] + 1) & 0xff);
+				else if (regs.pc == 0x5da)
+					LogOutput("%04X: nop $ea  = %02X\n", regs.pc, mem[0xea]);
+				//
+				else if (regs.pc == 0x5ef)
+					LogOutput("%04X: inc $ea -> %02X\n", regs.pc, (mem[0xea] + 1) & 0xff);
+				else if (regs.pc == 0x5f0)
+					LogOutput("%04X: nop $ea  = %02X\n", regs.pc, mem[0xea]);
+				//
+				else if (regs.pc == 0x606)
+					LogOutput("%04X: inc $ea -> %02X\n", regs.pc, (mem[0xea] + 1) & 0xff);
+				else if (regs.pc == 0x607)
+					LogOutput("%04X: nop $ea  = %02X\n", regs.pc, mem[0xea]);
+				//
+				else if (regs.pc == 0x61c)
+					LogOutput("%04X: inc $ea -> %02X\n", regs.pc, (mem[0xea] + 1) & 0xff);
+				else if (regs.pc == 0x61d)
+					LogOutput("%04X: nop $ea  = %02X\n", regs.pc, mem[0xea]);
+				//
+				else if (regs.pc == 0x631)
+					LogOutput("%04X: inc $ea -> %02X\n", regs.pc, (mem[0xea] + 1) & 0xff);
+				else if (regs.pc == 0x632)
+					LogOutput("%04X: nop $ea  = %02X\n", regs.pc, mem[0xea]);
+				//
+				else if (regs.pc == 0x647)
+					LogOutput("%04X: inc $ea -> %02X\n", regs.pc, (mem[0xea] + 1) & 0xff);
+				else if (regs.pc == 0x648)
+					LogOutput("%04X: nop $ea  = %02X\n", regs.pc, mem[0xea]);
+				//
+				else if (regs.pc == 0x65f)
+					LogOutput("%04X: inc $ea -> %02X\n", regs.pc, (mem[0xea] + 1) & 0xff);
+				//
+				else if (regs.pc == 0x672)
+					LogOutput("%04X: rol $ea -> %02X\n", regs.pc, mem[0xea]);
+				else if (regs.pc == 0x674)
+					LogOutput("%04X: rol $3a -> %02X\n", regs.pc, mem[0x3a]);
+			}
+#endif
 			HEATMAP_X( regs.pc );
 			Fetch(iOpcode, uExecutedCycles);
 

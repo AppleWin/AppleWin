@@ -5,6 +5,8 @@
 #include "../../source/Memory.h"
 #include "../../source/SynchronousEventManager.h"
 
+void LogOutput(const char* format, ...) {}
+
 // From Applewin.cpp
 bool g_bFullSpeed = false;
 enum AppMode_e g_nAppMode = MODE_RUNNING;
