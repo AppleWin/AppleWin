@@ -354,6 +354,7 @@ IDR_PRAVETS_8C_ROM      ROM                     "Pravets8C.rom"
 IDR_TK3000_2E_ROM       ROM                     "TK3000e.rom"
 IDR_BASE_64A_ROM        ROM                     "Base64A.rom"
 IDR_FREEZES_F8_ROM      ROM                     "FREEZES_NON-AUTOSTART_F8_ROM.rom"
+IDR_DISK2_341_0028_A    ROM                     "341-0028-a.rom"
 
 /////////////////////////////////////////////////////////////////////////////
 //

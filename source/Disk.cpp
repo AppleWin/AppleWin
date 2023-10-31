@@ -2376,6 +2376,11 @@ void Disk2InterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 	res = GetFirmware(IDR_DISK2_16SECTOR_FW, m_16SectorFirmware);
 	_ASSERT(res);
 
+	BYTE* pData = GetFrame().GetResource(IDR_DISK2_341_0028_A, "ROM", DISK2_LSS_SIZE);
+	_ASSERT(pData);
+	if (pData)
+		memcpy(m_16SectorLSSROM, pData, DISK2_LSS_SIZE);
+
 	// Note: We used to disable the track stepping delay in the Disk II controller firmware by
 	// patching $C64C with $A9,$00,$EA. Now not doing this since:
 	// . Authentic Speed should be authentic

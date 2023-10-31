@@ -269,6 +269,9 @@ private:
 	bool m_is13SectorFirmware;
 	bool m_force13SectorFirmware;
 
+	static const UINT DISK2_LSS_SIZE = 256;
+	BYTE m_16SectorLSSROM[DISK2_LSS_SIZE];
+
 	WORD m_currDrive;
 	FloppyDrive m_floppyDrive[NUM_DRIVES];
 	BYTE m_floppyLatch;
