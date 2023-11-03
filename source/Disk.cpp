@@ -1184,6 +1184,10 @@ void Disk2InterfaceCard::ResetLogicStateSequencer(void)
 	m_shiftReg = 0;
 	m_latchDelay = 0;
 	m_writeStarted = false;
+	m_LSSState = 0;
+	m_LSSTicks = 0;
+	m_LSSCode = 0;	// TODO
+	m_readPulse = 0;
 	m_dbgLatchDelayedCnt = 0;
 
 	m_T00S00PatternIdx = 0;
@@ -1561,6 +1565,29 @@ void Disk2InterfaceCard::NextFluxData(FloppyDisk& floppy)
 	_ASSERT(floppy.m_bitCellCount);
 }
 
+void Disk2InterfaceCard::NextLSS(BYTE readPulse)
+{
+	// UTAIIe 9-11(Fig 9.8) & 9-14
+	//  A0 = LSS ROM O5
+	//  A1 = QA
+	//  A2 = SHIFT/LOAD
+	//  A3 = READ/WRITE
+	//  A4 = read pulse' (UTAIIe 9-15: "...inverted in the process to form a negative pulse.")
+	//  A5 = LSS ROM O4
+	//  A6 = LSS ROM O6
+	//  A7 = LSS ROM O7
+	const BYTE sequence = m_LSSCode & 0xf0;
+	BYTE addr = ((sequence >> 5) & 0x01) |
+		((m_shiftReg >> 6) & 0x02) |
+		(((BYTE)m_seqFunc.loadMode) << 2) |
+		(((BYTE)m_seqFunc.writeMode) << 3) |
+		((readPulse ? 0 : 1) << 4) |
+		((sequence << 1) & 0x20) |
+		(sequence & 0xC0);
+
+	m_LSSCode = m_16SectorLSSROM[addr];
+}
+
 void Disk2InterfaceCard::DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks)
 {
 #if LOG_DISK_NIBBLES_READ
@@ -1584,35 +1611,76 @@ void Disk2InterfaceCard::DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks)
 		floppy.m_zeroTickCount--;
 
 		floppy.m_tickCountdown--;
-		if (floppy.m_tickCountdown)
-			continue;
-
-		floppy.m_bitCellCount--;
-		floppy.m_bitOffset++;
-
-		const BYTE floppyBit = floppy.m_bitCellCount ? 0 : 1;
-
-		if (floppyBit == 0)
+		if (floppy.m_tickCountdown == 0)
 		{
-			if (floppy.m_bitCellCount > 1)
-				floppy.m_tickCountdown = 0x20;
-			else if (floppy.m_bitCellCount == 1)
-				floppy.m_tickCountdown = floppy.m_zeroTickCount;	// last one may be eg. 0x1E,0x20,0x22
+			floppy.m_bitCellCount--;
+			floppy.m_bitOffset++;
+
+			const BYTE floppyBit = floppy.m_bitCellCount ? 0 : 1;
+
+			if (floppyBit == 0)
+			{
+				if (floppy.m_bitCellCount > 1)
+					floppy.m_tickCountdown = 0x20;
+				else if (floppy.m_bitCellCount == 1)
+					floppy.m_tickCountdown = floppy.m_zeroTickCount;	// last one may be eg. 0x1E,0x20,0x22
+			}
+			else
+			{
+				NextFluxData(floppy);
+				if (floppy.m_byte == 0)
+					floppy.m_bitOffset = 0;
+			}
+
+			drive.m_headWindow <<= 1;
+			drive.m_headWindow |= floppyBit;
+			m_readPulse = (drive.m_headWindow & 0xf) ? (drive.m_headWindow >> 1) & 1
+				: (rand() < RAND_THRESHOLD(3, 10)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
+
+			// NB. Read pulse lasts for one sequencer clock (UTAIIe page 9-29) - ie. 4x 125ns ticks
+			m_readPulse *= 4;
 		}
-		else
+
+		m_LSSTicks = (++m_LSSTicks) & 3;	// 2MHz clock (= 4x 125ns ticks)
+		if (m_LSSTicks == 0)
 		{
-			NextFluxData(floppy);
-			if (floppy.m_byte == 0)
-				floppy.m_bitOffset = 0;
+			NextLSS(m_readPulse);
+
+			const BYTE code = m_LSSCode & 0x0f;
+			if (code == CLR)
+			{
+				m_shiftReg = 0;
+			}
+			else if (code == NOP)
+			{
+				// NOP
+			}
+			else if (code == SL0)
+			{
+				m_shiftReg <<= 1;
+			}
+			else if (code == SL1)
+			{
+				m_shiftReg <<= 1;
+				m_shiftReg |= 1;
+			}
+			else
+			{
+				_ASSERT(0);
+			}
 		}
 
-		drive.m_headWindow <<= 1;
-		drive.m_headWindow |= floppyBit;
-		BYTE outputBit = (drive.m_headWindow & 0xf) ? (drive.m_headWindow >> 1) & 1
-			: (rand() < RAND_THRESHOLD(3, 10)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
+		if (m_readPulse)
+			m_readPulse--;
 
+		m_floppyLatch = m_shiftReg;
+	}
+
+	////////////
+
+#if 0
 		m_shiftReg <<= 1;
-		m_shiftReg |= outputBit;
+		m_shiftReg |= readPulse;
 
 		if (m_latchDelay)
 		{
@@ -1666,8 +1734,8 @@ void Disk2InterfaceCard::DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks)
 #endif
 			}
 		}
-
 	}
+#endif
 }
 
 void Disk2InterfaceCard::DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder)

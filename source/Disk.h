@@ -221,6 +221,7 @@ private:
 	void UpdateBitStreamOffsets(FloppyDisk& floppy);
 	__forceinline void IncBitStream(FloppyDisk& floppy);
 	void NextFluxData(FloppyDisk& floppy);
+	void NextLSS(BYTE readPulse);
 	void DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks);
 	void DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
@@ -271,6 +272,10 @@ private:
 
 	static const UINT DISK2_LSS_SIZE = 256;
 	BYTE m_16SectorLSSROM[DISK2_LSS_SIZE];
+	BYTE m_LSSState;
+	BYTE m_LSSTicks;
+	BYTE m_LSSCode;
+	BYTE m_readPulse;
 
 	WORD m_currDrive;
 	FloppyDrive m_floppyDrive[NUM_DRIVES];
@@ -296,6 +301,7 @@ private:
 	int m_latchDelay;
 	bool m_writeStarted;
 
+	enum SEQCODE {CLR=0, NOP=8, SL0=9, SR=0xA, LD=0xB, SL1=0xD};	// UTAIIe 9-20
 	enum SEQFUNC {readSequencing=0, dataShiftWrite, checkWriteProtAndInitWrite, dataLoadWrite};	// UTAIIe 9-14
 	union SEQUENCER_FUNCTION
 	{
