@@ -1605,6 +1605,7 @@ void Disk2InterfaceCard::DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks)
 		DumpTrackWOZFlux(floppy);	// Enable as necessary
 	}
 #endif
+	bool oldFlag = false;
 
 	for (UINT i = 0; i < ticks; i++)
 	{
@@ -1637,50 +1638,44 @@ void Disk2InterfaceCard::DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks)
 			m_readPulse = (drive.m_headWindow & 0xf) ? (drive.m_headWindow >> 1) & 1
 				: (rand() < RAND_THRESHOLD(3, 10)) ? 1 : 0;	// ~30% chance of a 1 bit (Ref: WOZ-2.0)
 
-			// NB. Read pulse lasts for one sequencer clock (UTAIIe page 9-29) - ie. 4x 125ns ticks
-			m_readPulse *= 4;
+			oldFlag = true;
 		}
 
+#if 1
 		m_LSSTicks = (++m_LSSTicks) & 3;	// 2MHz clock (= 4x 125ns ticks)
 		if (m_LSSTicks == 0)
 		{
 			NextLSS(m_readPulse);
 
+			// NB. Read pulse lasts for one sequencer clock (UTAIIe page 9-29) - ie. 4x 125ns ticks
+			m_readPulse = 0;
+
 			const BYTE code = m_LSSCode & 0x0f;
-			if (code == CLR)
+			switch (code)
 			{
-				m_shiftReg = 0;
-			}
-			else if (code == NOP)
-			{
-				// NOP
-			}
-			else if (code == SL0)
-			{
-				m_shiftReg <<= 1;
-			}
-			else if (code == SL1)
-			{
-				m_shiftReg <<= 1;
-				m_shiftReg |= 1;
-			}
-			else
-			{
+			case CLR:
+				m_shiftReg = 0; break;
+			case NOP:
+				break;
+			case SL0:
+				m_shiftReg <<= 1; break;
+			case SL1:
+				m_shiftReg <<= 1; m_shiftReg |= 1; break;
+			default:
 				_ASSERT(0);
 			}
 		}
 
-		if (m_readPulse)
-			m_readPulse--;
-
 		m_floppyLatch = m_shiftReg;
-	}
 
-	////////////
+#else	////////////
 
-#if 0
+		if (!oldFlag)
+			continue;
+		oldFlag = false;
+
 		m_shiftReg <<= 1;
-		m_shiftReg |= readPulse;
+		m_shiftReg |= m_readPulse ? 1 : 0;
 
 		if (m_latchDelay)
 		{
@@ -1734,8 +1729,10 @@ void Disk2InterfaceCard::DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks)
 #endif
 			}
 		}
-	}
 #endif
+
+	}
+
 }
 
 void Disk2InterfaceCard::DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder)
