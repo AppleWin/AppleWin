@@ -21,6 +21,7 @@
 #include "gamepadpaddle.h"
 #include "preferences.h"
 #include "configuration.h"
+#include "audioinfo.h"
 #include "qtframe.h"
 
 #include <QMdiSubWindow>
@@ -220,6 +221,8 @@ void QApple::on_timer()
     // just repaint each time, to make it simpler
     // we run @ 60 fps anyway
     myFrame->VideoPresentScreen();
+
+    emit endFrame();
 
     if (count > 1)  // 1 is the non-full speed case
     {
@@ -497,4 +500,17 @@ void QApple::dropEvent(QDropEvent *event)
             }
         }
    }
+}
+
+void QApple::on_actionAudio_Info_triggered()
+{
+    AudioInfo * container = new AudioInfo(ui->mdiArea);
+    QMdiSubWindow * window = ui->mdiArea->addSubWindow(container);
+
+    // need to close as it points to old memory
+    connect(this, SIGNAL(endEmulator()), window, SLOT(close()));
+    connect(this, SIGNAL(endFrame()), container, SLOT(updateInfo()));
+
+    window->setWindowTitle("Audio info");
+    window->show();
 }

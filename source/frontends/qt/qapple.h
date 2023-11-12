@@ -33,6 +33,7 @@ public:
 
 signals:
     void endEmulator();
+    void endFrame();
 
 public slots:
     void startEmulator();
@@ -82,6 +83,8 @@ private slots:
     void on_actionNext_video_mode_triggered();
 
     void on_actionQuit_triggered();
+
+    void on_actionAudio_Info_triggered();
 
 private:
 

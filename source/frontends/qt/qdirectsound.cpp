@@ -24,6 +24,7 @@ namespace
         virtual HRESULT SetVolume( LONG lVolume ) override;
 
         void setOptions(const qint64 duration);  // in ms
+        QDirectSound::SoundInfo getInfo();
 
     protected:
         virtual qint64 readData(char *data, qint64 maxlen) override;
@@ -130,6 +131,24 @@ namespace
         return bytesRead;
     }
 
+    QDirectSound::SoundInfo DirectSoundGenerator::getInfo()
+    {
+        QDirectSound::SoundInfo info;
+        info.running = QIODevice::isOpen();
+        info.channels = myChannels;
+        info.numberOfUnderruns = GetBufferUnderruns();
+
+        if (info.running)
+        {
+            const DWORD bytesInBuffer = GetBytesInBuffer();
+            const auto & format = myAudioOutput->format();
+            info.buffer = format.durationForBytes(bytesInBuffer) / 1000;
+            info.size = format.durationForBytes(myBufferSize) / 1000;
+        }
+
+        return info;
+    }
+
     qint64 DirectSoundGenerator::writeData(const char *data, qint64 len)
     {
         // cannot write
@@ -168,6 +187,20 @@ namespace QDirectSound
             const auto generator = it.second;
             generator->setOptions(duration);
         }
+    }
+
+    std::vector<SoundInfo> getAudioInfo()
+    {
+        std::vector<SoundInfo> info;
+        info.reserve(activeSoundGenerators.size());
+
+        for (const auto & it : activeSoundGenerators)
+        {
+        const auto & generator = it.second;
+        info.push_back(generator->getInfo());
+        }
+
+        return info;
     }
 
 }
