@@ -222,6 +222,7 @@ private:
 	__forceinline void IncBitStream(FloppyDisk& floppy);
 	void NextFluxData(FloppyDisk& floppy);
 	void NextLSS(BYTE readPulse);
+	void SetCountdown(FloppyDisk& floppy);
 	void DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks);
 	void DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
