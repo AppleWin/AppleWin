@@ -96,6 +96,10 @@ namespace sa2
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
 
+    io.Fonts->AddFontDefault();
+    const std::string debugFontFilename = getResourcePath("debug6502.ttf");
+    myDebuggerFont = io.Fonts->AddFontFromFileTTF(debugFontFilename.c_str(), 13);
+
     myIniFileLocation = common2::GetConfigFile("imgui.ini");
     if (myIniFileLocation.empty())
     {
@@ -228,7 +232,7 @@ namespace sa2
       ImGui::NewFrame();
 
       // "this" is a bit circular
-      mySettings.show(this);
+      mySettings.show(this, myDebuggerFont);
       DrawAppleVideo();
 
       ImGui::Render();

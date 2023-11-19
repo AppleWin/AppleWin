@@ -655,7 +655,7 @@ namespace sa2
     ImGui::End();
   }
 
-  void ImGuiSettings::show(SDLFrame * frame)
+  void ImGuiSettings::show(SDLFrame * frame, ImFont * debuggerFont)
   {
     if (myShowSettings)
     {
@@ -669,7 +669,9 @@ namespace sa2
 
     if (myDebugger.showDebugger)
     {
+      ImGui::PushFont(debuggerFont);
       myDebugger.drawDebugger(frame);
+      ImGui::PopFont();
     }
 
     if (myShowAbout)

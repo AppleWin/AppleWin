@@ -12,7 +12,7 @@ namespace sa2
   class ImGuiSettings
   {
   public:
-    void show(SDLFrame* frame);
+    void show(SDLFrame* frame, ImFont * debuggerFont);
     float drawMenuBar(SDLFrame* frame);
     void resetDebuggerCycles();
 
