@@ -11,7 +11,7 @@ Tom Charlesworth
 
 1.30.16.0 - 26 Nov 2023
 -----------------------
-- [Change #1258]  New command line: -mac-lc-card-dlgr to support the DLGR bug in the 'Apple IIe card Mac LC'.
+- [Change #1258]  New command line: -mac-lc-card-dlgr to support the DLGR display bug in the 'Apple IIe card for Mac LC'.
   - NB. This switch only has an effect when in either "Color (Composite Idealized)" or "RGB Card/Monitor" video modes.
 - [Bug #1197] Phasor: 6522's AY RESET always resets both attached AYs, regardless of Phasor mode or chip-select bits.
 
