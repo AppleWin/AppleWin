@@ -1,4 +1,6 @@
 cmake
+g++
+ninja-build
 pkg-config
 libyaml-dev
 libminizip-dev
