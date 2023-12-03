@@ -63,6 +63,10 @@ namespace
         return timeInMS;
     }
 
+    bool isWayland()
+    {
+        return QApplication::platformName() == "wayland";
+    }
 }
 
 
@@ -155,7 +159,13 @@ void QApple::readSettings()
 
     restoreGeometry(windowGeometry);
     restoreState(windowState);
-    myEmulatorWindow->restoreGeometry(emulatorGeometry);
+
+    if (!isWayland())
+    {
+        // this works very badly in wayland
+        // see https://bugreports.qt.io/browse/QTBUG-80612
+        myEmulatorWindow->restoreGeometry(emulatorGeometry);
+    }
 }
 
 void QApple::startEmulator()
