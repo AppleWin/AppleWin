@@ -48,6 +48,7 @@ namespace sa2
     ImTextureID myTexture;
 
     std::string myIniFileLocation;
+    ImFont* myDebuggerFont;
     ImGuiSettings mySettings;
   };
 

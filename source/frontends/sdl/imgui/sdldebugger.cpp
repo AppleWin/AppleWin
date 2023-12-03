@@ -22,16 +22,14 @@ namespace
     printBoolean(label, value, "OFF", "ON");
   }
 
-  char getPrintableChar(const uint8_t x)
+  char getPrintableChar(const uint8_t x)  // copied from FormatCharTxtCtrl
   {
-    if (x >= 0x20 && x <= 0x7e)
+    char c = x & 0x7F; // .32 Changed: Lo now maps High Ascii to printable chars. i.e. ML1 D0D0
+    if (c < 0x20) // SPACE
     {
-      return x;
+      c += '@'; // map ctrl chars to visible
     }
-    else
-    {
-      return '.';
-    }
+    return c;
   }
 
   void printReg(const char label, const BYTE value)
@@ -50,6 +48,48 @@ namespace
   {
     const ImVec4 color = debuggerGetColor(iColor);
     ImGui::TextColored(color, "%s", text);
+  }
+
+  void adjustMouseText(const char* text, size_t length, char* out)
+  {
+    for (size_t i = 0; i < length; ++i)
+    {
+      const auto ch = *(text + i) & 0x7F;  // same as DebuggerPrint()
+      // to understand the conversion, look at
+      // resource/Debug_Font.bmp vs resource/debug6502.ttf
+      // the latter comes from https://fontstruct.com/fontstructions/show/1912741/debug6502
+      switch (ch)
+      {
+      case 0x00 ... 0x1F:  // mouse text -> U+00C0
+        *out = 0xC3;
+        ++out;
+        *out = 0x80 + (ch - 0x00);
+        break;
+      case 0x7F:  // -> U+00BF
+        *out = 0xC2;
+        ++out;
+        *out = 0xBF;
+        break;
+      case 0x80 ... 0x8F:  // bookmarks, not currently used -> U+00F0
+        *out = 0xC3;
+        ++out;
+        *out = 0xB0 + (ch - 0x80);
+        break;
+      default:
+        *out = ch;
+      }
+      ++out;
+    }
+    *out = 0x00;
+  }
+
+  // use this if "text" may contain mouse text
+  void safeDebuggerTextColored(int iColor, const char* text)
+  {
+    const size_t length = strlen(text);
+    char utf8[2 * length + 1];  // worst case is 2-bytes utf8 encoding
+    adjustMouseText(text, length, utf8);
+    debuggerTextColored(iColor, utf8);
   }
 
   void displayDisassemblyLine(const DisasmLine_t& line, const int bDisasmFormatFlags)
@@ -272,9 +312,9 @@ namespace sa2
       ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
       ImGui::TableSetupColumn("", 0, 1);
       ImGui::TableSetupColumn("Address", 0, 5);
-      ImGui::TableSetupColumn("Opcode", 0, 8);
+      ImGui::TableSetupColumn("Opcode", 0, 6);
       ImGui::TableSetupColumn("Symbol", 0, 10);
-      ImGui::TableSetupColumn("Disassembly", 0, 20);
+      ImGui::TableSetupColumn("Disassembly", 0, 15);
       ImGui::TableSetupColumn("Target", 0, 4);
       ImGui::TableSetupColumn("Branch", 0, 3);
       ImGui::TableSetupColumn("Immediate", 0, 4);
@@ -391,18 +431,7 @@ namespace sa2
           ImGui::TableNextColumn();
           if (bDisasmFormatFlags & DISASM_FORMAT_BRANCH)
           {
-            if ((unsigned char)*line.sBranch == 0x8A)
-            {
-              debuggerTextColored(FG_DISASM_BRANCH, "v");
-            }
-            else if ((unsigned char)*line.sBranch == 0x8B)
-            {
-              debuggerTextColored(FG_DISASM_BRANCH, "^");
-            }
-            else
-            {
-              ImGui::TextUnformatted(line.sBranch);
-            }
+            safeDebuggerTextColored(FG_DISASM_BRANCH, line.sBranch);
           }
 
           ImGui::TableNextColumn();
@@ -428,9 +457,7 @@ namespace sa2
             {
               color = FG_DISASM_CHAR;
             }
-            // FIXME: handle 0xFF, which displays as a gray block on AppleWin
-            // but ImGui doesn't seem to have an appropriate character to map to.
-            debuggerTextColored(color, line.sImmediate);
+            safeDebuggerTextColored(color, line.sImmediate);
           }
 
           ImGui::TableNextColumn();
@@ -563,23 +590,30 @@ namespace sa2
       for (int i = g_nConsoleDisplayTotal; i >= CONSOLE_FIRST_LINE; --i)
       {
         const conchar_t * src = g_aConsoleDisplay[i];
+
         char line[CONSOLE_WIDTH + 1];
+        char lineMouseText[2 * CONSOLE_WIDTH + 1];
         size_t length = 0;
 
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
         COLORREF currentColor = DebuggerGetColor( FG_CONSOLE_OUTPUT );
 
-        const auto textAndReset = [&line, &length, & currentColor] () {
+        const auto textAndReset = [&line, &lineMouseText, &length, &currentColor] () {
           line[length] = 0;
-          length = 0;
           const ImVec4 color = colorrefToImVec4(currentColor);
-          ImGui::TextColored(color, "%s", line);
+          adjustMouseText(line, length, lineMouseText);
+          ImGui::TextColored(color, "%s", lineMouseText);
+          length = 0;
         };
 
         for (size_t j = 0; j < CONSOLE_WIDTH; ++j)
         {
           const conchar_t g = src[j];
+          if (!g)
+          {
+            break;
+          }
           if (ConsoleColor_IsColorOrMouse(g))
           {
             // colors propagate till next color information
@@ -589,14 +623,7 @@ namespace sa2
             currentColor = ConsoleColor_GetColor(g);
           }
           line[length] = ConsoleChar_GetChar(g);
-          if (line[length])
-          {
-            ++length;
-          }
-          else
-          {
-            break;
-          }
+          ++length;
         }
         textAndReset();
       }
