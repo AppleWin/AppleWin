@@ -2,6 +2,7 @@
 
 #include "frontends/sdl/imgui/glselector.h"
 #include "frontends/sdl/imgui/sdldebugger.h"
+#include "frontends/sdl/imgui/imgui-filebrowser/imfilebrowser.h"
 #include "frontends/sdl/sdirectsound.h"
 
 namespace sa2
@@ -27,7 +28,11 @@ namespace sa2
     int mySpeakerVolume;
     int myMockingboardVolume;
 
+    size_t myOpenSlot = 0;
+    size_t myOpenDrive = 0;
+
     ImGuiDebugger myDebugger;
+    ImGui::FileBrowser myFileDialog;
 
     std::vector<MemoryEditor> myMemoryEditors;
 
