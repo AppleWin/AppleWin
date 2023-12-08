@@ -337,6 +337,7 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 
 		const UINT32 currentBitPosition = pFloppy->m_bitOffset;
 		const UINT32 currentBitTrackLength = pFloppy->m_bitCount;
+		_ASSERT(currentBitPosition < currentBitTrackLength);
 
 		Extra extra(pFloppy->m_isFluxTrack, m_enhanceDisk);
 
@@ -386,6 +387,21 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 		}
 		else // WOZ && Flux track
 		{
+#if 1
+			// NB. m_bitCount may be a little low if there are short bits in the track
+			const UINT bitOffset = (currentBitPosition * pFloppy->m_bitCount) / currentBitTrackLength;	// Ref: WOZ-1.01
+
+			// Scan from start until we get to the correct bitCell position - req'd for any cross-track sync
+			pFloppy->m_byte = 0;
+			UINT totalZeroTickCount = 0;
+			do
+			{
+				NextFluxData(*pFloppy);	// NB. could zero m_bitOffset
+				totalZeroTickCount += pFloppy->m_zeroTickCount;
+			} while (totalZeroTickCount < (bitOffset * 32));
+
+			pFloppy->m_bitOffset = bitOffset;
+#else
 			// Scan from start until we get to the correct bitCell position - req'd for any cross-track sync
 			pFloppy->m_byte = 0;
 			UINT totalZeroTickCount = 0;
@@ -396,6 +412,8 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 			} while (totalZeroTickCount < (currentBitPosition * 32));
 
 			pFloppy->m_bitOffset = totalZeroTickCount / 32;
+#endif
+			m_readPulse = 0;
 #if LOG_DISK_WOZ_READTRACK
 			LOG_DISK("T%05.2f: %04X->%04X, Len=%04X (flux)\n", pDrive->m_phasePrecise / 2, currentBitPosition, pFloppy->m_bitOffset, pFloppy->m_bitCount);
 #endif
@@ -1563,6 +1581,101 @@ void Disk2InterfaceCard::NextLSS(BYTE readPulse)
 }
 
 #if 1
+#define DO_BITOFFSET 1
+
+void Disk2InterfaceCard::NextFluxData(FloppyDisk& floppy)
+{
+	floppy.m_zeroTickCount = 0;
+	do
+	{
+		BYTE data = floppy.m_trackimage[floppy.m_byte++];
+		if (floppy.m_byte == floppy.m_nibbles)
+		{
+			floppy.m_byte = 0;
+#if DO_BITOFFSET
+			floppy.m_bitOffset = 0;
+#endif
+		}
+		floppy.m_zeroTickCount += data;
+		if (data != 255)
+			break;
+	} while (1);
+}
+
+void Disk2InterfaceCard::SetCountdown(FloppyDisk& floppy)	// not used
+{
+	floppy.m_tickCountdown = 0;
+}
+
+void Disk2InterfaceCard::DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks)
+{
+	FloppyDrive& drive = m_floppyDrive[m_currDrive];
+	FloppyDisk& floppy = drive.m_disk;
+
+#if _DEBUG
+	static int dbgWOZ = 0;
+	if (dbgWOZ)
+	{
+		dbgWOZ = 0;
+		DumpTrackWOZFlux(floppy);	// Enable as necessary
+	}
+#endif
+
+	for (UINT i = 0; i < ticks; i++)
+	{
+		floppy.m_zeroTickCount--;
+		_ASSERT((int)floppy.m_zeroTickCount >= 0);
+
+		if (floppy.m_zeroTickCount == 0)
+		{
+			_ASSERT(m_readPulse == 0);
+			m_readPulse = 1;
+			NextFluxData(floppy);
+		}
+
+		m_LSSTicks = (++m_LSSTicks) & 3;	// 2MHz clock (= 4x 125ns ticks)
+		if (m_LSSTicks == 0)
+		{
+			NextLSS(m_readPulse);
+
+			// NB. Read pulse lasts for one sequencer clock (UTAIIe page 9-29) - ie. 4x 125ns ticks
+			m_readPulse = 0;
+
+			const BYTE code = m_LSSCode & 0x0f;
+			switch (code)
+			{
+			case CLR:
+				m_shiftReg = 0; break;
+			case NOP:
+				break;
+			case SL0:
+				m_shiftReg <<= 1; break;
+			case SL1:
+				m_shiftReg <<= 1; m_shiftReg |= 1; break;
+			default:
+				_ASSERT(0);
+			}
+
+#if DO_BITOFFSET
+			if (code == SL0 || code == SL1)
+			{
+				floppy.m_bitOffset++;
+				// Short bits mean that bitCount may be a little low
+				if (floppy.m_bitOffset >= floppy.m_bitCount)
+					floppy.m_bitCount++;	// fix-up the total bitCount for the track
+			}
+#endif
+		}
+
+//		if (m_LSSTicks == 0)	//0:T17, 1:T12, 2:T12, 3:T12 (Bandits)
+//			m_floppyLatch = m_shiftReg;
+	}
+
+	m_floppyLatch = m_shiftReg;
+}
+
+#elif (0) // ----------------------------------------
+
 void Disk2InterfaceCard::NextFluxData(FloppyDisk& floppy)
 {
 	floppy.m_zeroTickCount = 0;
@@ -1605,8 +1718,8 @@ void Disk2InterfaceCard::DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks)
 	{
 		floppy.m_zeroTickCount--;
 		floppy.m_tickCountdown--;
-		_ASSERT(floppy.m_zeroTickCount >= 0);
-		_ASSERT(floppy.m_tickCountdown >= 0);
+		_ASSERT((int)floppy.m_zeroTickCount >= 0);
+		_ASSERT((int)floppy.m_tickCountdown >= 0);
 
 		if (floppy.m_zeroTickCount == 0 || floppy.m_tickCountdown == 0)
 		{
@@ -2125,6 +2238,7 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 
 // Dump nibbles from current position bitstream wraps to same position
 // NB. Need to define LOG_DISK_NIBBLES_READ so that GetReadD5AAxxDetectedString() works.
+// TODO: Fix if using LSS
 void Disk2InterfaceCard::DumpTrackWOZFlux(FloppyDisk floppy)	// pass a copy of m_floppy
 {
 	FormatTrack formatTrack(true);
