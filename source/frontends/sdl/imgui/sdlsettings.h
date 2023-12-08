@@ -41,6 +41,7 @@ namespace sa2
     void showSettings(SDLFrame* frame);
     void showMemory();
     void showAboutWindow();
+    void openFileDialog(const std::string & diskName, const size_t slot, const size_t drive);
   };
 
 }

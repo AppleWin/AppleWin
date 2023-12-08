@@ -324,12 +324,13 @@ namespace sa2
                   ImGui::TableNextColumn();
                   if (ImGui::SmallButton("Open"))
                   {
-                    myFileDialog.Open();
-                    myOpenSlot = slot;
-                    myOpenDrive = drive;
+                    const std::string & diskName = card2->DiskGetFullPathName(drive);
+                    openFileDialog(diskName, slot, drive);
                   }
+
                   ImGui::TableNextColumn();
                   ImGui::TextUnformatted(card2->GetFullDiskFilename(drive).c_str());
+
                   ImGui::PopID();
                 }
               }
@@ -351,19 +352,22 @@ namespace sa2
                   ImGui::TableNextColumn();
                   ImGui::TableNextColumn();
                   ImGui::TableNextColumn();
-                  ImGui::TableNextColumn();
 
+                  ImGui::TableNextColumn();
                   ImGui::TextUnformatted(getDiskStatusName(disk1Status_).c_str());
+
                   ImGui::TableNextColumn();
                   if (ImGui::SmallButton("Eject"))
                   {
                     pHarddiskCard->Unplug(drive);
                   }
+
                   ImGui::TableNextColumn();
                   if (ImGui::SmallButton("Swap"))
                   {
                     pHarddiskCard->ImageSwap();
                   }
+
                   ImGui::TableNextColumn();
                   if (ImGui::RadioButton("##Sel", (dragAndDropSlot == slot) && (dragAndDropDrive == drive)))
                   {
@@ -373,12 +377,13 @@ namespace sa2
                   ImGui::TableNextColumn();
                   if (ImGui::SmallButton("Open"))
                   {
-                    myFileDialog.Open();
-                    myOpenSlot = slot;
-                    myOpenDrive = drive;
+                    const std::string & diskName = pHarddiskCard->HarddiskGetFullPathName(drive);
+                    openFileDialog(diskName, slot, drive);
                   }
+
                   ImGui::TableNextColumn();
                   ImGui::TextUnformatted(pHarddiskCard->GetFullName(drive).c_str());
+
                   ImGui::PopID();
                 }
               }
@@ -784,6 +789,18 @@ namespace sa2
   void ImGuiSettings::resetDebuggerCycles()
   {
     myDebugger.resetDebuggerCycles();
+  }
+
+  void ImGuiSettings::openFileDialog(const std::string & diskName, const size_t slot, const size_t drive)
+  {
+    if (!diskName.empty())
+    {
+      const std::filesystem::path path(diskName);
+      myFileDialog.SetPwd(path.parent_path());
+    }
+    myFileDialog.Open();
+    myOpenSlot = slot;
+    myOpenDrive = drive;
   }
 
 }
