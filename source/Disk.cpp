@@ -337,7 +337,10 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 
 		const UINT32 currentBitPosition = pFloppy->m_bitOffset;
 		const UINT32 currentBitTrackLength = pFloppy->m_bitCount;
-		_ASSERT(currentBitPosition < currentBitTrackLength);
+		if (currentBitTrackLength)
+		{
+			_ASSERT(currentBitPosition < currentBitTrackLength);
+		}
 
 		Extra extra(pFloppy->m_isFluxTrack, m_enhanceDisk);
 
