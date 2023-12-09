@@ -53,7 +53,7 @@ target_link_libraries(qapple PRIVATE
   Qt5::Gamepad
   Qt5::Multimedia
   appleii
-  qhexview-lib
+  QHexView
   windows
   )
 
