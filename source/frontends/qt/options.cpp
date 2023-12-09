@@ -110,8 +110,7 @@ GlobalOptions GlobalOptions::fromQSettings()
     options.msGap = settings.value(REG_TIMER, 5).toInt();
     options.msFullSpeed = settings.value(REG_FULL_SPEED, 5).toInt();
 
-    // 250ms is empirically the duration for the default buffer
-    options.msAudioBuffer = settings.value(REG_AUDIO_BUFFER, 250).toInt();
+    options.msAudioBuffer = settings.value(REG_AUDIO_BUFFER, 100).toInt();
 
     return options;
 }

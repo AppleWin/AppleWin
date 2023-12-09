@@ -16,7 +16,7 @@ public:
     ~AudioInfo();
 
 public slots:
-    void updateInfo();
+    void updateInfo(const qint64 speed, const qint64 target);
 
 private:
     Ui::AudioInfo *ui;
