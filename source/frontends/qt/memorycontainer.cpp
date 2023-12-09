@@ -9,9 +9,18 @@
 
 namespace
 {
-    void setComment(QHexView* view, qint64 begin, qint64 end, const QColor &fgcolor, const QColor &bgcolor, const QString &comment)
+    struct Metadata_t
     {
-        view->setMetadata(begin, end, fgcolor, bgcolor, comment);
+        qint64 begin;
+        qint64 end;
+        QColor fgcolor;
+        QColor bgcolor;
+        QString comment;
+    };
+
+    void setMetadata(QHexView* view, const Metadata_t & comment)
+    {
+        view->setMetadata(comment.begin, comment.end, comment.fgcolor, comment.bgcolor, comment.comment);
     }
 }
 
@@ -28,14 +37,21 @@ MemoryContainer::MemoryContainer(QWidget *parent) :
     ui->main->setReadOnly(true);
     ui->main->setDocument(mainDocument);
 
-    setComment(ui->main, 0x0400, 0x0800, Qt::blue, Qt::yellow, "Text Video Page 1");
-    setComment(ui->main, 0x0800, 0x0C00, Qt::black, Qt::yellow, "Text Video Page 2");
-    setComment(ui->main, 0x2000, 0x4000, Qt::blue, Qt::yellow, "HiRes Video Page 1");
-    setComment(ui->main, 0x4000, 0x6000, Qt::black, Qt::yellow, "HiRes Video Page 2");
+    const Metadata_t mainMetadata[] =
+    {
+        {0x0400, 0x0800, Qt::blue, Qt::yellow, "Text Video Page 1"},
+        {0x0800, 0x0C00, Qt::black, Qt::yellow, "Text Video Page 2"},
+        {0x2000, 0x4000, Qt::blue, Qt::yellow, "HiRes Video Page 1"},
+        {0x4000, 0x6000, Qt::black, Qt::yellow, "HiRes Video Page 2"},
+        {0xC000, 0xC100, Qt::white, Qt::blue, "Soft Switches"},
+        {0xC100, 0xC800, Qt::white, Qt::red, "Peripheral Card Memory"},
+        {0xF800, 0x10000, Qt::white, Qt::red, "System Monitor"},
+    };
 
-    setComment(ui->main, 0xC000, 0xC100, Qt::white, Qt::blue, "Soft Switches");
-    setComment(ui->main, 0xC100, 0xC800, Qt::white, Qt::red, "Peripheral Card Memory");
-    setComment(ui->main, 0xF800, 0x10000, Qt::white, Qt::red, "System Monitor");
+    for (const auto & metadata: mainMetadata)
+    {
+        setMetadata(ui->main, metadata);
+    }
 
     // aux memory
     char * auxBase = reinterpret_cast<char *>(MemGetAuxPtr(0));
@@ -43,10 +59,18 @@ MemoryContainer::MemoryContainer(QWidget *parent) :
     ui->aux->setReadOnly(true);
     ui->aux->setDocument(auxDocument);
 
-    setComment(ui->aux, 0x0400, 0x0800, Qt::blue, Qt::yellow, "Text Video Page 1");
-    setComment(ui->aux, 0x0800, 0x0C00, Qt::black, Qt::yellow, "Text Video Page 2");
-    setComment(ui->aux, 0x2000, 0x4000, Qt::blue, Qt::yellow, "HiRes Video Page 1");
-    setComment(ui->aux, 0x4000, 0x6000, Qt::black, Qt::yellow, "HiRes Video Page 2");
+    const Metadata_t auxMetadata[] =
+    {
+        {0x0400, 0x0800, Qt::blue, Qt::yellow, "Text Video Page 1"},
+        {0x0800, 0x0C00, Qt::black, Qt::yellow, "Text Video Page 2"},
+        {0x2000, 0x4000, Qt::blue, Qt::yellow, "HiRes Video Page 1"},
+        {0x4000, 0x6000, Qt::black, Qt::yellow, "HiRes Video Page 2"},
+    };
+
+    for (const auto & metadata: auxMetadata)
+    {
+        setMetadata(ui->aux, metadata);
+    }
 }
 
 MemoryContainer::~MemoryContainer()
