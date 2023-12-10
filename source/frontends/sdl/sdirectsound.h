@@ -24,8 +24,6 @@ namespace sa2
     size_t numberOfUnderruns = 0;
   };
 
-  void stopAudio();
-  void writeAudio(const char * deviceName, const size_t ms);
   void resetAudioUnderruns();
   void printAudioInfo();
   std::vector<SoundInfo> getAudioInfo();
