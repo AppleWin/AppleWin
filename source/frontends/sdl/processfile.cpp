@@ -19,7 +19,7 @@ namespace
   bool doesExtensionMatch(const char * filename, const std::vector<const char *> & valid)
   {
     return std::any_of(valid.begin(), valid.end(), [filename] (const char * ext) {
-      return strlen(filename) > strlen(ext) && !strcmp(filename + strlen(filename) - strlen(ext), ext);
+      return strlen(filename) > strlen(ext) && !strcasecmp(filename + strlen(filename) - strlen(ext), ext);
     });
   }
 

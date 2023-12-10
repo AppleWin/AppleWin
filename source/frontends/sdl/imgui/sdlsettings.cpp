@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "frontends/sdl/imgui/sdlsettings.h"
 #include "frontends/sdl/imgui/settingshelper.h"
+#include "frontends/sdl/processfile.h"
 #include "frontends/sdl/sdirectsound.h"
 #include "frontends/sdl/sdlframe.h"
 #include "linux/registryclass.h"
@@ -248,7 +249,7 @@ namespace sa2
           size_t dragAndDropDrive;
           frame->getDragDropSlotAndDrive(dragAndDropSlot, dragAndDropDrive);
 
-          if (ImGui::BeginTable("Disk2", 12, ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
+          if (ImGui::BeginTable("Disk2", 13, ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
           {
             ImGui::TableSetupColumn("Slot", ImGuiTableColumnFlags_WidthFixed);
             ImGui::TableSetupColumn("Drive", ImGuiTableColumnFlags_WidthFixed);
@@ -260,6 +261,7 @@ namespace sa2
             ImGui::TableSetupColumn("Eject", ImGuiTableColumnFlags_WidthFixed);
             ImGui::TableSetupColumn("Swap", ImGuiTableColumnFlags_WidthFixed);
             ImGui::TableSetupColumn("D&D", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Open", ImGuiTableColumnFlags_WidthFixed);
             ImGui::TableSetupColumn("Filename", ImGuiTableColumnFlags_WidthStretch);
             ImGui::TableHeadersRow();
 
@@ -320,7 +322,15 @@ namespace sa2
                   }
 
                   ImGui::TableNextColumn();
+                  if (ImGui::SmallButton("Open"))
+                  {
+                    const std::string & diskName = card2->DiskGetFullPathName(drive);
+                    openFileDialog(diskName, slot, drive);
+                  }
+
+                  ImGui::TableNextColumn();
                   ImGui::TextUnformatted(card2->GetFullDiskFilename(drive).c_str());
+
                   ImGui::PopID();
                 }
               }
@@ -342,19 +352,22 @@ namespace sa2
                   ImGui::TableNextColumn();
                   ImGui::TableNextColumn();
                   ImGui::TableNextColumn();
-                  ImGui::TableNextColumn();
 
+                  ImGui::TableNextColumn();
                   ImGui::TextUnformatted(getDiskStatusName(disk1Status_).c_str());
+
                   ImGui::TableNextColumn();
                   if (ImGui::SmallButton("Eject"))
                   {
                     pHarddiskCard->Unplug(drive);
                   }
+
                   ImGui::TableNextColumn();
                   if (ImGui::SmallButton("Swap"))
                   {
                     pHarddiskCard->ImageSwap();
                   }
+
                   ImGui::TableNextColumn();
                   if (ImGui::RadioButton("##Sel", (dragAndDropSlot == slot) && (dragAndDropDrive == drive)))
                   {
@@ -362,13 +375,29 @@ namespace sa2
                   }
 
                   ImGui::TableNextColumn();
+                  if (ImGui::SmallButton("Open"))
+                  {
+                    const std::string & diskName = pHarddiskCard->HarddiskGetFullPathName(drive);
+                    openFileDialog(diskName, slot, drive);
+                  }
+
+                  ImGui::TableNextColumn();
                   ImGui::TextUnformatted(pHarddiskCard->GetFullName(drive).c_str());
+
                   ImGui::PopID();
                 }
               }
               ImGui::PopID();
             }
             ImGui::EndTable();
+
+            myFileDialog.Display();
+            if (myFileDialog.HasSelected())
+            {
+              sa2::processFile(frame, myFileDialog.GetSelected().string().c_str(), myOpenSlot, myOpenDrive);
+              myFileDialog.ClearSelected();
+            }
+
           }
           ImGui::EndTabItem();
         }
@@ -760,6 +789,18 @@ namespace sa2
   void ImGuiSettings::resetDebuggerCycles()
   {
     myDebugger.resetDebuggerCycles();
+  }
+
+  void ImGuiSettings::openFileDialog(const std::string & diskName, const size_t slot, const size_t drive)
+  {
+    if (!diskName.empty())
+    {
+      const std::filesystem::path path(diskName);
+      myFileDialog.SetPwd(path.parent_path());
+    }
+    myFileDialog.Open();
+    myOpenSlot = slot;
+    myOpenDrive = drive;
   }
 
 }

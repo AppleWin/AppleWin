@@ -7,3 +7,6 @@
 [submodule "source/frontends/sdl/imgui/imgui_club"]
 	path = source/frontends/sdl/imgui/imgui_club
 	url = ../../ocornut/imgui_club
+[submodule "source/frontends/sdl/imgui/imgui-filebrowser"]
+	path = source/frontends/sdl/imgui/imgui-filebrowser
+	url = ../../AirGuanZ/imgui-filebrowser
