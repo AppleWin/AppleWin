@@ -2,10 +2,6 @@
 #include "windows.h"
 #include "Log.h"
 
-Registry::~Registry()
-{
-}
-
 std::shared_ptr<Registry> Registry::instance;
 
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, DWORD chars, LPCTSTR defaultValue)

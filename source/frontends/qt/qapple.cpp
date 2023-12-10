@@ -21,6 +21,7 @@
 #include "gamepadpaddle.h"
 #include "preferences.h"
 #include "configuration.h"
+#include "audioinfo.h"
 #include "qtframe.h"
 
 #include <QMdiSubWindow>
@@ -55,13 +56,6 @@ namespace
      * Here we implement something similar to 1)
      *
      */
-
-    qint64 emulatorTimeInMS()
-    {
-        const double timeInSeconds = g_nCumulativeCycles / g_fCurrentCLK6502;
-        const qint64 timeInMS = timeInSeconds * 1000;
-        return timeInMS;
-    }
 
     bool isWayland()
     {
@@ -138,7 +132,6 @@ void QApple::closeEvent(QCloseEvent * event)
 {
     stopTimer();
     myFrame->End();
-    QDirectSound::stop();
 
     QSettings settings;
     settings.setValue("QApple/window/geometry", saveGeometry().toBase64());
@@ -175,42 +168,41 @@ void QApple::startEmulator()
 
 void QApple::on_timer()
 {
-    QDirectSound::start();
+    const double audioAdjustedSpeed = g_fClksPerSpkrSample * SPKR_SAMPLE_RATE;
 
     if (!myElapsedTimer.isValid())
     {
         myElapsedTimer.start();
-        myCpuTimeReference = emulatorTimeInMS();
+        myStartCycles = g_nCumulativeCycles;
+        myOrgStartCycles = myStartCycles;
     }
 
+    const qint64 elapsed = myElapsedTimer.elapsed();
+
+    myStartCycles += g_nCpuCyclesFeedback;
     // target x ms ahead of where we are now, which is when the timer should be called again
-    const qint64 target = myElapsedTimer.elapsed() + myOptions.msGap;
-    const qint64 current = emulatorTimeInMS() - myCpuTimeReference;
-    if (current > target)
+    const qint64 targetMS = elapsed + myOptions.msGap;
+    const qint64 targetCycles = myStartCycles + targetMS * audioAdjustedSpeed * 1.0e-3;
+    const qint64 currentCycles = g_nCumulativeCycles;
+    if (currentCycles > targetCycles)
     {
         // we got ahead of the timer by a lot
-
-        // just check if we got something to write
-        QDirectSound::writeAudio();
-
         // wait next call
         return;
     }
 
-    const qint64 maximumToRum = 10 * myOptions.msGap;  // just to avoid crazy times (e.g. debugging)
-    const qint64 toRun = std::min(target - current, maximumToRum);
-    const double fUsecPerSec        = 1.e6;
-    const qint64 nExecutionPeriodUsec = 1000 * toRun;
-
-    const double fExecutionPeriodClks = g_fCurrentCLK6502 * (double(nExecutionPeriodUsec) / fUsecPerSec);
-    const DWORD uCyclesToExecute = fExecutionPeriodClks;
+    const qint64 maximumToRun = 10 * myOptions.msGap * audioAdjustedSpeed * 1.0e-3;  // just to avoid crazy times (e.g. debugging)
+    const qint64 toRun = std::min(targetCycles - currentCycles, maximumToRun);
+    const DWORD uCyclesToExecute = toRun;
 
     const bool bVideoUpdate = true;
 
     CardManager & cardManager = GetCardMgr();
 
-    int count = 0;
+    const qint64 wallclockTargetMS = elapsed + myOptions.msFullSpeed;
     const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
+
+    int count = 0;
     do
     {
         const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
@@ -222,19 +214,22 @@ void QApple::on_timer()
         g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
         ++count;
     }
-    while (cardManager.GetDisk2CardMgr().IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < target + myOptions.msFullSpeed));
+    while (cardManager.GetDisk2CardMgr().IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < wallclockTargetMS));
 
     // just repaint each time, to make it simpler
     // we run @ 60 fps anyway
     myFrame->VideoPresentScreen();
 
+
+    if (const qint64 nowElapsed = myElapsedTimer.elapsed())
+    {
+        const qint64 actualSpeed = 1000 * (g_nCumulativeCycles - myOrgStartCycles) / nowElapsed;
+        emit endFrame(actualSpeed, static_cast<qint64>(audioAdjustedSpeed));
+    }
+
     if (count > 1)  // 1 is the non-full speed case
     {
         restartTimeCounters();
-    }
-    else
-    {
-        QDirectSound::writeAudio();
     }
 }
 
@@ -251,7 +246,6 @@ void QApple::stopTimer()
 void QApple::restartTimeCounters()
 {
     // let them restart next time
-    QDirectSound::stop();
     myElapsedTimer.invalidate();
 }
 
@@ -354,7 +348,7 @@ void QApple::reloadOptions()
 
     Paddle::instance = GamepadPaddle::fromName(myOptions.gamepadName);
     Paddle::setSquaring(myOptions.gamepadSquaring);
-    QDirectSound::setOptions(myOptions.audioLatency);
+    QDirectSound::setOptions(myOptions.msAudioBuffer);
 }
 
 void QApple::on_actionSave_state_triggered()
@@ -509,4 +503,17 @@ void QApple::dropEvent(QDropEvent *event)
             }
         }
    }
+}
+
+void QApple::on_actionAudio_Info_triggered()
+{
+    AudioInfo * container = new AudioInfo(ui->mdiArea);
+    QMdiSubWindow * window = ui->mdiArea->addSubWindow(container);
+
+    // need to close as it points to old memory
+    connect(this, SIGNAL(endEmulator()), window, SLOT(close()));
+    connect(this, SIGNAL(endFrame(qint64, qint64)), container, SLOT(updateInfo(qint64, qint64)));
+
+    window->setWindowTitle("Audio info");
+    window->show();
 }

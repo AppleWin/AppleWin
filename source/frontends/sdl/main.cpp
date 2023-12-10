@@ -70,6 +70,8 @@ void run_sdl(int argc, const char * argv [])
   const RegistryContext registryContext(CreateFileRegistry(options));
   const std::shared_ptr<Paddle> paddle = sa2::Gamepad::create(options.gameControllerIndex, options.gameControllerMappingFile);
 
+  sa2::setAudioOptions(options);
+
   std::shared_ptr<sa2::SDLFrame> frame;
   if (options.imgui)
   {
@@ -123,14 +125,11 @@ void run_sdl(int argc, const char * argv [])
 
     bool quit = false;
 
-    const char * audioDeviceName = options.audioDeviceName.empty() ? nullptr : options.audioDeviceName.c_str();
-
     do
     {
       frameTimer.tic();
 
       eventTimer.tic();
-      sa2::writeAudio(audioDeviceName, options.audioBuffer);
       frame->ProcessEvents(quit);
       eventTimer.toc();
 
@@ -162,8 +161,6 @@ void run_sdl(int argc, const char * argv [])
     std::cerr << "Screen:  " << refreshScreenTimer << std::endl;
     std::cerr << "Events:  " << eventTimer << std::endl;
     std::cerr << "CPU:     " << cpuTimer << std::endl;
-
-    sa2::stopAudio();
   }
 #endif
 }

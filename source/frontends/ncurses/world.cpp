@@ -126,10 +126,7 @@ namespace na2
 }
 
 // Mockingboard
-void registerSoundBuffer(IDirectSoundBuffer * buffer)
+IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
 {
-}
-
-void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
-{
+  return nullptr;
 }

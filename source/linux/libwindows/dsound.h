@@ -100,15 +100,14 @@ class IDirectSoundBuffer : public IUnknown
   std::atomic_size_t myNumberOfUnderruns;
   std::mutex myMutex;
 
- public:
-  const size_t bufferSize;
-  const size_t sampleRate;
-  const size_t channels;
-  const size_t bitsPerSample;
-  const size_t flags;
+public:
+  const size_t myBufferSize;
+  const size_t mySampleRate;
+  const size_t myChannels;
+  const size_t myBitsPerSample;
+  const size_t myFlags;
 
-  IDirectSoundBuffer(const size_t bufferSize, const size_t channels, const size_t sampleRate, const size_t bitsPerSample, const size_t flags);
-  virtual HRESULT Release() override;
+  IDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc);
 
   HRESULT SetCurrentPosition( DWORD dwNewPosition );
   HRESULT GetCurrentPosition( LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor );
@@ -116,10 +115,10 @@ class IDirectSoundBuffer : public IUnknown
   HRESULT Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2, DWORD dwFlags );
   HRESULT Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2 );
 
-  HRESULT Stop();
-  HRESULT Play( DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags );
+  virtual HRESULT Stop();
+  virtual HRESULT Play( DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags );
 
-  HRESULT SetVolume( LONG lVolume );
+  virtual HRESULT SetVolume( LONG lVolume );
   HRESULT GetVolume( LONG * lplVolume );
 
   HRESULT GetStatus( LPDWORD lpdwStatus );
@@ -134,7 +133,7 @@ class IDirectSoundBuffer : public IUnknown
 };
 typedef class IDirectSoundBuffer *LPDIRECTSOUNDBUFFER,**LPLPDIRECTSOUNDBUFFER;
 
-struct IDirectSound : public IUnknown
+struct IDirectSound : public IAutoRelease
 {
   HRESULT CreateSoundBuffer( LPCDSBUFFERDESC lpcDSBufferDesc, IDirectSoundBuffer **lplpDirectSoundBuffer, IUnknown FAR* pUnkOuter );
   HRESULT SetCooperativeLevel( HWND hwnd, DWORD dwLevel );

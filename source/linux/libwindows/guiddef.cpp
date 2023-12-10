@@ -1,10 +1,6 @@
 #include "guiddef.h"
 #include "winerror.h"
 
-IUnknown::~IUnknown()
-{
-}
-
 HRESULT IUnknown::QueryInterface(int riid, void **ppvObject)
 {
   return S_OK;
@@ -12,8 +8,14 @@ HRESULT IUnknown::QueryInterface(int riid, void **ppvObject)
 
 HRESULT IUnknown::Release()
 {
-  delete this;
   return S_OK;
+}
+
+HRESULT IAutoRelease::Release()
+{
+  const HRESULT res = IUnknown::Release();
+  delete this;
+  return res;
 }
 
 HRESULT CoCreateInstance(

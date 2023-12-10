@@ -37,11 +37,11 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-execute_process(COMMAND uname -n
+execute_process(COMMAND uname -m
   OUTPUT_VARIABLE UNAME
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-if(${UNAME} STREQUAL raspberrypi)
+if((${UNAME} STREQUAL armv7l) OR (${UNAME} STREQUAL aarch64))
   # it is too slow and might cause out of memory issues
   # more forensic is required
   MESSAGE(NOTICE "Raspberry Pi detected: IPO disabled")

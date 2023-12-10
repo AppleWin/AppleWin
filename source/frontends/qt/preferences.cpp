@@ -207,7 +207,7 @@ void Preferences::setData(const PreferenceData & data)
     ui->joystick->setCurrentText(data.options.gamepadName);
     ui->squareCircle->setChecked(data.options.gamepadSquaring);
     ui->screenshot->setText(data.options.screenshotTemplate);
-    ui->audio_latency->setValue(data.options.audioLatency);
+    ui->audio_buffer->setValue(data.options.msAudioBuffer);
 
     ui->speaker_volume->setValue(ui->speaker_volume->maximum() - data.speakerVolume);
     ui->mb_volume->setValue(ui->mb_volume->maximum() - data.mockingboardVolume);
@@ -254,7 +254,7 @@ PreferenceData Preferences::getData() const
     data.options.msGap = ui->timer_gap->value();
     data.options.msFullSpeed = ui->full_ms->value();
     data.options.screenshotTemplate = ui->screenshot->text();
-    data.options.audioLatency = ui->audio_latency->value();
+    data.options.msAudioBuffer = ui->audio_buffer->value();
 
     // because index = 0 is None
     if (ui->joystick->currentIndex() >= 1)

@@ -12,6 +12,7 @@ add_subdirectory(QHexView)
 
 set(SOURCE_FILES
   main.cpp
+  audioinfo.cpp
   qapple.cpp
   preferences.cpp
   emulator.cpp
@@ -28,6 +29,7 @@ set(SOURCE_FILES
 
 set(HEADER_FILES
   applicationname.h
+  audioinfo.h
   qapple.h
   preferences.h
   emulator.h

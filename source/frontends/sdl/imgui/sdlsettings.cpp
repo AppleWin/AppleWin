@@ -491,7 +491,7 @@ namespace sa2
 
           if (ImGui::Button("Reset underruns"))
           {
-            resetUnderruns();
+            resetAudioUnderruns();
           }
 
           ImGui::EndTabItem();

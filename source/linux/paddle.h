@@ -6,9 +6,7 @@
 class Paddle
 {
 public:
-  Paddle();
-
-  virtual ~Paddle();
+  virtual ~Paddle() = default;
 
   virtual bool getButton(int i) const;
   virtual double getAxis(int i) const;  // -> [-1, 1]

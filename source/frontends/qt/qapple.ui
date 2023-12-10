@@ -66,6 +66,7 @@
      <string>Wi&amp;ndow</string>
     </property>
     <addaction name="actionMemory"/>
+    <addaction name="actionAudio_Info"/>
     <addaction name="actionAbout_Qt"/>
     <addaction name="actionAbout"/>
    </widget>
@@ -236,6 +237,11 @@
   <action name="actionQuit">
    <property name="text">
     <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionAudio_Info">
+   <property name="text">
+    <string>Audio Info</string>
    </property>
   </action>
  </widget>

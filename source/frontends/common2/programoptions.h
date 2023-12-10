@@ -62,6 +62,7 @@ namespace common2
     std::string customRomF8;
     std::string customRom;
 
+    bool noAudio = false;
     std::string wavFileSpeaker;
     std::string wavFileMockingboard;
 

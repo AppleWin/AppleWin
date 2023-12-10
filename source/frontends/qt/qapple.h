@@ -33,6 +33,7 @@ public:
 
 signals:
     void endEmulator();
+    void endFrame(const qint64 speed, const qint64 target);
 
 public slots:
     void startEmulator();
@@ -83,6 +84,8 @@ private slots:
 
     void on_actionQuit_triggered();
 
+    void on_actionAudio_Info_triggered();
+
 private:
 
     // helper class to pause the emulator and restart at the end of the block
@@ -110,8 +113,9 @@ private:
 
     std::shared_ptr<QtFrame> myFrame;
     QElapsedTimer myElapsedTimer;
+    qint64 myStartCycles;
+    qint64 myOrgStartCycles;
     QMdiSubWindow * myEmulatorWindow;
-    qint64 myCpuTimeReference;
 
     GlobalOptions myOptions;
 

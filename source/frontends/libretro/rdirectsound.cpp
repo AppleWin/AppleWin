@@ -14,35 +14,41 @@
 namespace
 {
 
-  class DirectSoundGenerator
+  class DirectSoundGenerator : public IDirectSoundBuffer 
   {
   public:
-    DirectSoundGenerator(IDirectSoundBuffer * buffer);
+    DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc);
+
+    virtual HRESULT Release() override;
 
     void writeAudio(const size_t fps, const bool write);
 
-    bool isRunning() const;
+    bool isRunning();
     size_t getNumberOfChannels() const;
 
   private:
-    IDirectSoundBuffer * myBuffer;
-
     std::vector<int16_t> myMixerBuffer;
 
     void mixBuffer(const void * ptr, const size_t size);
   };
 
-  std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator>> activeSoundGenerators;
+  std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator> > activeSoundGenerators;
 
-  DirectSoundGenerator::DirectSoundGenerator(IDirectSoundBuffer * buffer)
-    : myBuffer(buffer)
+  DirectSoundGenerator::DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc)
+    : IDirectSoundBuffer(lpcDSBufferDesc)
   {
   }
 
-  bool DirectSoundGenerator::isRunning() const
+  HRESULT DirectSoundGenerator::Release()
+  {
+    activeSoundGenerators.erase(this);
+    return IUnknown::Release();
+  }
+
+  bool DirectSoundGenerator::isRunning()
   {
     DWORD dwStatus;
-    myBuffer->GetStatus(&dwStatus);
+    GetStatus(&dwStatus);
     if (dwStatus & DSBSTATUS_PLAYING)
     {
       return true;
@@ -55,17 +61,17 @@ namespace
 
   size_t DirectSoundGenerator::getNumberOfChannels() const
   {
-    return myBuffer->channels;
+    return myChannels;
   }
 
   void DirectSoundGenerator::mixBuffer(const void * ptr, const size_t size)
   {
-    const int16_t frames = size / (sizeof(int16_t) * myBuffer->channels);
+    const int16_t frames = size / (sizeof(int16_t) * myChannels);
     const int16_t * data = static_cast<const int16_t *>(ptr);
 
-    if (myBuffer->channels == 2)
+    if (myChannels == 2)
     {
-      myMixerBuffer.assign(data, data + frames * myBuffer->channels);
+      myMixerBuffer.assign(data, data + frames * myChannels);
     }
     else
     {
@@ -77,7 +83,7 @@ namespace
       }
     }
 
-    const double logVolume = myBuffer->GetLogarithmicVolume();
+    const double logVolume = GetLogarithmicVolume();
     // same formula as QAudio::convertVolume()
     const double linVolume = logVolume > 0.99 ? 1.0 : -std::log(1.0 - logVolume) / std::log(100.0);
     const int16_t rvolume = int16_t(linVolume * 128);
@@ -92,13 +98,13 @@ namespace
 
   void DirectSoundGenerator::writeAudio(const size_t fps, const bool write)
   {
-    const size_t frames = myBuffer->sampleRate / fps;
-    const size_t bytesToRead = frames * myBuffer->channels * sizeof(int16_t);
+    const size_t frames = mySampleRate / fps;
+    const size_t bytesToRead = frames * myChannels * sizeof(int16_t);
 
     LPVOID lpvAudioPtr1, lpvAudioPtr2;
     DWORD dwAudioBytes1, dwAudioBytes2;
     // always read to keep AppleWin audio algorithms working correctly.
-    myBuffer->Read(bytesToRead, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
+    Read(bytesToRead, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
 
     if (write)
     {
@@ -115,19 +121,12 @@ namespace
 
 }
 
-void registerSoundBuffer(IDirectSoundBuffer * buffer)
+IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
 {
-  const std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(buffer);
-  activeSoundGenerators[buffer] = generator;
-}
-
-void unregisterSoundBuffer(IDirectSoundBuffer * buffer)
-{
-  const auto it = activeSoundGenerators.find(buffer);
-  if (it != activeSoundGenerators.end())
-  {
-    activeSoundGenerators.erase(it);
-  }
+  std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(lpcDSBufferDesc);
+  DirectSoundGenerator * ptr = generator.get();
+  activeSoundGenerators[ptr] = generator;
+  return ptr;
 }
 
 namespace ra2
@@ -136,9 +135,9 @@ namespace ra2
   void writeAudio(const size_t channels, const size_t fps)
   {
     bool found = false;
-    for (auto & it : activeSoundGenerators)
+    for (const auto & it : activeSoundGenerators)
     {
-      const std::shared_ptr<DirectSoundGenerator> & generator = it.second;
+      const auto generator = it.second;
       if (generator->isRunning())
       {
         const bool selected = !found && (generator->getNumberOfChannels() == channels);

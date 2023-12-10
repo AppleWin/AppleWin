@@ -89,13 +89,14 @@ Keyboard emulation
 * ``JOYPAD_L``: equivalent to ``CTRL-SHIFT-F6`` to cycle 50% scan lines
 * ``START``: equivalent to ``F2`` to reset the machine
 * ``SELECT``: press twice quickly to exit
+* ``JOYPAD_R2``: switch audio source
 * ``JOYPAD_L2``: save configuration to `/tmp/applewin.retro.conf`
 
-In order to have a better experience with the keyboard, one should probably enable *Game Focus Mode* (normally Scroll-Lock) to disable hotkeys.
+In order to have a better experience with the keyboard, one should probably enable *Game Focus Mode* (normally Scroll-Lock) to disable hotkeys. Even better set *Auto Enable 'Game Focus' Mode* to *Detect*.
 
 Video works, but the vertical flip is done in software.
 
-Audio (speaker) works.
+Audio: speaker and mockingboard works, but only one at a time (use ``JOYPAD_R2`` to switch).
 
 Easiest way to run from the ``build`` folder:
 ``retroarch -L source/frontends/libretro/applewin_libretro.so ../bin/MASTER.DSK``

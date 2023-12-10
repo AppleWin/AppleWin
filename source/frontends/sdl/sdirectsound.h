@@ -2,6 +2,11 @@
 
 #include <vector>
 
+namespace common2
+{
+  struct EmulatorOptions;
+}
+
 namespace sa2
 {
 
@@ -21,7 +26,9 @@ namespace sa2
 
   void stopAudio();
   void writeAudio(const char * deviceName, const size_t ms);
-  void resetUnderruns();
+  void resetAudioUnderruns();
   void printAudioInfo();
   std::vector<SoundInfo> getAudioInfo();
+
+  void setAudioOptions(const common2::EmulatorOptions & options);
 }

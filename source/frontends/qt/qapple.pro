@@ -11,6 +11,7 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
+    audioinfo.cpp \
     loggingcategory.cpp \
     options.cpp \
     qapple.cpp \
@@ -25,6 +26,7 @@ SOURCES += main.cpp\
     qtframe.cpp
 
 HEADERS  += qapple.h \
+    audioinfo.h \
     emulator.h \
     loggingcategory.h \
     options.h \
@@ -39,6 +41,7 @@ HEADERS  += qapple.h \
     applicationname.h
 
 FORMS    += qapple.ui \
+    audioinfo.ui \
     emulator.ui \
     memorycontainer.ui \
     preferences.ui

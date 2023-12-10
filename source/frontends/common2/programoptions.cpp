@@ -137,6 +137,7 @@ namespace common2
 
     po::options_description audioDesc("Audio");
     audioDesc.add_options()
+      ("no-audio", "Disable audio")
       ("wav-speaker", po::value<std::string>(), "Speaker wav output")
       ("wav-mockingboard", po::value<std::string>(), "Mockingboard wav output")
       ;
@@ -212,6 +213,7 @@ namespace common2
       setOption(vm, "nat", options.natPortFwds);
 
       // Audio
+      options.noAudio = vm.count("no-audio") > 0;
       setOption(vm, "wav-speaker", options.wavFileSpeaker);
       setOption(vm, "wav-mockingboard", options.wavFileMockingboard);
 
@@ -253,8 +255,8 @@ namespace common2
   void applyOptions(const EmulatorOptions & options)
   {
     g_nMemoryClearType = options.memclear;
-
-    bool bBoot;
+    g_bDisableDirectSound = options.noAudio;
+    g_bDisableDirectSoundMockingboard = options.noAudio;
 
     LPCSTR szImageName_drive[NUM_DRIVES] = {nullptr, nullptr};
 	  bool driveConnected[NUM_DRIVES] = {true, true};
@@ -269,6 +271,7 @@ namespace common2
       szImageName_drive[DRIVE_2] = options.disk2.c_str();
     }
 
+    bool bBoot = false;
     InsertFloppyDisks(SLOT6, szImageName_drive, driveConnected, bBoot);
 
     LPCSTR szImageName_harddisk[NUM_HARDDISKS] = {nullptr, nullptr};
@@ -314,7 +317,7 @@ namespace common2
     }
     else if (!options.wavFileMockingboard.empty())
     {
-      if (RiffInitWriteFile(options.wavFileMockingboard.c_str(), 44100, 2))
+      if (RiffInitWriteFile(options.wavFileMockingboard.c_str(), MockingboardCard::SAMPLE_RATE, 2))
       {
         GetCardMgr().GetMockingboardCardMgr().OutputToRiff();
       }

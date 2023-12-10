@@ -16,9 +16,14 @@ struct IUnknown
   HRESULT QueryInterface(int riid, void **ppvObject);
   virtual HRESULT Release();
 
-  virtual ~IUnknown();
+  virtual ~IUnknown() = default;
 };
 typedef IUnknown *LPUNKNOWN;
+
+struct IAutoRelease : public IUnknown
+{
+  virtual HRESULT Release() override;
+};
 
 HRESULT CoCreateInstance(
   REFCLSID  rclsid,
