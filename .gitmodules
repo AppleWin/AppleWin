@@ -1,6 +1,7 @@
 [submodule "source/frontends/qt/QHexView"]
 	path = source/frontends/qt/QHexView
-	url = ../../Dax89/QHexView.git
+	url = ../../Dax89/QHexView
+	branch = 5.0
 [submodule "source/frontends/sdl/imgui/imgui"]
 	path = source/frontends/sdl/imgui/imgui
 	url = ../../ocornut/imgui
