@@ -184,7 +184,7 @@ namespace QDirectSound
         defaultDuration = duration;
         for (const auto & it : activeSoundGenerators)
         {
-            const auto generator = it.second;
+            const auto & generator = it.second;
             generator->setOptions(duration);
         }
     }
@@ -196,8 +196,8 @@ namespace QDirectSound
 
         for (const auto & it : activeSoundGenerators)
         {
-        const auto & generator = it.second;
-        info.push_back(generator->getInfo());
+            const auto & generator = it.second;
+            info.push_back(generator->getInfo());
         }
 
         return info;

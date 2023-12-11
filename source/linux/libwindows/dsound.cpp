@@ -166,7 +166,7 @@ size_t IDirectSoundBuffer::GetBufferUnderruns() const
   return myNumberOfUnderruns;
 }
 
-void IDirectSoundBuffer::ResetUnderrruns()
+void IDirectSoundBuffer::ResetUnderruns()
 {
   myNumberOfUnderruns = 0;
 }

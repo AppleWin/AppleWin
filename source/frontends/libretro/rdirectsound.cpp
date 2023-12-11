@@ -137,7 +137,7 @@ namespace ra2
     bool found = false;
     for (const auto & it : activeSoundGenerators)
     {
-      const auto generator = it.second;
+      const auto & generator = it.second;
       if (generator->isRunning())
       {
         const bool selected = !found && (generator->getNumberOfChannels() == channels);

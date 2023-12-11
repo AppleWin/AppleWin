@@ -128,7 +128,7 @@ public:
   DWORD Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2);
   DWORD GetBytesInBuffer();
   size_t GetBufferUnderruns() const;
-  void ResetUnderrruns();
+  void ResetUnderruns();
   double GetLogarithmicVolume() const;  // in [0, 1]
 };
 typedef class IDirectSoundBuffer *LPDIRECTSOUNDBUFFER,**LPLPDIRECTSOUNDBUFFER;

@@ -49,8 +49,6 @@ namespace
     virtual HRESULT Stop() override;
     virtual HRESULT Play( DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags ) override;
 
-    void resetUnderruns();
-
     void printInfo();
     sa2::SoundInfo getInfo();
 
@@ -194,11 +192,6 @@ namespace
     return info;
   }
 
-  void DirectSoundGenerator::resetUnderruns()
-  {
-    ResetUnderrruns();
-  }
-
   uint8_t * DirectSoundGenerator::mixBufferTo(uint8_t * stream)
   {
     // we could copy ADJUST_VOLUME from SDL_mixer.c and avoid all copying and (rare) race conditions
@@ -243,7 +236,7 @@ namespace sa2
   {
     for (const auto & it : activeSoundGenerators)
     {
-      const auto generator = it.second;
+      const auto & generator = it.second;
       generator->printInfo();
     }
   }
@@ -252,8 +245,8 @@ namespace sa2
   {
     for (const auto & it : activeSoundGenerators)
     {
-      const auto generator = it.second;
-      generator->resetUnderruns();
+      const auto & generator = it.second;
+      generator->ResetUnderruns();
     }
   }
 

@@ -29,7 +29,7 @@ void AudioInfo::updateInfo(const qint64 speed, const qint64 target)
     myCounter = 0;
     const std::vector<QDirectSound::SoundInfo> & info = QDirectSound::getAudioInfo();
 
-    QString s("Channels Buffer Underrruns\n");
+    QString s("Channels Buffer Underruns\n");
     for (const auto & i : info)
     {
         if (i.running)
