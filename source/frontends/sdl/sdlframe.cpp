@@ -670,7 +670,3 @@ namespace sa2
 
 }
 
-void SingleStep(bool /* bReinit */)
-{
-  dynamic_cast<sa2::SDLFrame &>(GetFrame()).SingleStep();
-}

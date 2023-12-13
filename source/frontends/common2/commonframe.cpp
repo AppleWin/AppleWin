@@ -11,6 +11,7 @@
 #include "Core.h"
 #include "CPU.h"
 #include "Debugger/Debug.h"
+#include "Interface.h"
 #include "Log.h"
 #include "NTSC.h"
 #include "Speaker.h"
@@ -213,4 +214,9 @@ namespace common2
     return myHardwareConfig != currentConfig;
   }
 
+}
+
+void SingleStep(bool /* bReinit */)
+{
+  dynamic_cast<common2::CommonFrame &>(GetFrame()).SingleStep();
 }
