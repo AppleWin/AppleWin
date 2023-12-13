@@ -25,6 +25,7 @@ namespace common2
 
   void CommonFrame::Begin()
   {
+    LinuxFrame::Begin();
     ResetSpeed();
     ResetHardware();
   }
