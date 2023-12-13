@@ -4,11 +4,6 @@
 #include "frontends/common2/gnuframe.h"
 #include <memory>
 
-namespace common2
-{
-  struct EmulatorOptions;
-}
-
 namespace sa2
 {
 

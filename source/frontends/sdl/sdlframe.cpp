@@ -128,7 +128,8 @@ namespace sa2
 {
 
   SDLFrame::SDLFrame(const common2::EmulatorOptions & options)
-    : myTargetGLSwap(options.glSwapInterval)
+    : CommonFrame(options)
+    , myTargetGLSwap(options.glSwapInterval)
     , myPreserveAspectRatio(options.aspectRatio)
     , myForceCapsLock(true)
     , myMultiplier(1)
@@ -136,7 +137,6 @@ namespace sa2
     , myDragAndDropSlot(SLOT6)
     , myDragAndDropDrive(DRIVE_1)
     , myScrollLockFullSpeed(false)
-    , mySpeed(options.fixedSpeed)
     , myPortFwds(getPortFwds(options.natPortFwds))
   {
   }
@@ -167,9 +167,7 @@ namespace sa2
   void SDLFrame::Begin()
   {
     CommonFrame::Begin();
-    mySpeed.reset();
     setGLSwapInterval(myTargetGLSwap);
-    ResetHardware();
   }
 
   void SDLFrame::FrameRefreshStatus(int drawflags)
@@ -425,7 +423,7 @@ namespace sa2
             Snapshot_SaveState();
           }
           SoundCore_SetFade(FADE_IN);
-          mySpeed.reset();
+          ResetSpeed();
           break;
         }
       case SDLK_F9:
@@ -583,99 +581,6 @@ namespace sa2
     }
   }
 
-  void SDLFrame::Execute(const DWORD cyclesToExecute)
-  {
-    const bool bVideoUpdate = !g_bFullSpeed;
-    const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-
-    // do it in the same batches as AppleWin (1 ms)
-    const DWORD fExecutionPeriodClks = g_fCurrentCLK6502 * (1.0 / 1000.0);  // 1 ms
-
-    DWORD totalCyclesExecuted = 0;
-    // check at the end because we want to always execute at least 1 cycle even for "0"
-    do
-    {
-      _ASSERT(cyclesToExecute >= totalCyclesExecuted);
-      const DWORD thisCyclesToExecute = std::min(fExecutionPeriodClks, cyclesToExecute - totalCyclesExecuted);
-      const DWORD executedCycles = CpuExecute(thisCyclesToExecute, bVideoUpdate);
-      totalCyclesExecuted += executedCycles;
-
-      GetCardMgr().Update(executedCycles);
-      SpkrUpdate(executedCycles);
-
-      g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
-
-    } while (totalCyclesExecuted < cyclesToExecute);
-  }
-
-  void SDLFrame::ExecuteInRunningMode(const uint64_t microseconds)
-  {
-    SetFullSpeed(CanDoFullSpeed());
-    const DWORD cyclesToExecute = mySpeed.getCyclesTillNext(microseconds);  // this checks g_bFullSpeed
-    Execute(cyclesToExecute);
-  }
-
-  void SDLFrame::ExecuteInDebugMode(const uint64_t microseconds)
-  {
-    // In AppleWin this is called without a timer for just one iteration
-    // because we run a "frame" at a time, we need a bit of ingenuity
-    const DWORD cyclesToExecute = mySpeed.getCyclesAtFixedSpeed(microseconds);
-    const uint64_t target = g_nCumulativeCycles + cyclesToExecute;
-
-    while (g_nAppMode == MODE_STEPPING && g_nCumulativeCycles < target)
-    {
-      DebugContinueStepping();
-    }
-  }
-
-  void SDLFrame::ExecuteOneFrame(const uint64_t microseconds)
-  {
-    // when running in adaptive speed
-    // the value msNextFrame is only a hint for when the next frame will arrive
-    switch (g_nAppMode)
-    {
-      case MODE_RUNNING:
-        {
-          ExecuteInRunningMode(microseconds);
-          break;
-        }
-      case MODE_STEPPING:
-        {
-          ExecuteInDebugMode(microseconds);
-          break;
-        }
-    };
-  }
-
-  void SDLFrame::ResetSpeed()
-  {
-    mySpeed.reset();
-  }
-
-  void SDLFrame::ChangeMode(const AppMode_e mode)
-  {
-    if (mode != g_nAppMode)
-    {
-      switch (mode)
-      {
-      case MODE_RUNNING:
-        DebugExitDebugger();
-        SoundCore_SetFade(FADE_IN);
-        break;
-      case MODE_DEBUG:
-        DebugBegin();
-        CmdWindowViewConsole(0);
-        break;
-      default:
-        g_nAppMode = mode;
-        SoundCore_SetFade(FADE_OUT);
-        break;
-      }
-      FrameRefreshStatus(DRAW_TITLE);
-      ResetSpeed();
-    }
-  }
-
   void SDLFrame::getDragDropSlotAndDrive(size_t & slot, size_t & drive) const
   {
     slot = myDragAndDropSlot;
@@ -695,44 +600,25 @@ namespace sa2
 
   void SDLFrame::SetFullSpeed(const bool value)
   {
+    CommonFrame::SetFullSpeed(value);
     if (g_bFullSpeed != value)
     {
       if (value)
       {
         // entering full speed
-        GetCardMgr().GetMockingboardCardMgr().MuteControl(true);
         setGLSwapInterval(0);
-        VideoRedrawScreenDuringFullSpeed(0, true);
       }
       else
       {
         // leaving full speed
-        GetCardMgr().GetMockingboardCardMgr().MuteControl(false);
         setGLSwapInterval(myTargetGLSwap);
-        mySpeed.reset();
       }
-      g_bFullSpeed = value;
-      g_nCpuCyclesFeedback = 0;
     }
   }
 
   bool SDLFrame::CanDoFullSpeed()
   {
-    return myScrollLockFullSpeed ||
-           (g_dwSpeed == SPEED_MAX) ||
-           (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !GetCardMgr().GetMockingboardCardMgr().IsActive()) ||
-           IsDebugSteppingAtFullSpeed();
-  }
-
-  void SDLFrame::SingleStep()
-  {
-    SetFullSpeed(CanDoFullSpeed());
-    Execute(0);
-  }
-
-  void SDLFrame::ResetHardware()
-  {
-    myHardwareConfig.Reload();
+    return myScrollLockFullSpeed || CommonFrame::CanDoFullSpeed();
   }
 
   void SDLFrame::FrameResetMachineState()
@@ -741,16 +627,10 @@ namespace sa2
     ResetSpeed();
   }
 
-  bool SDLFrame::HardwareChanged() const
-  {
-    const CConfigNeedingRestart currentConfig = CConfigNeedingRestart::Create();
-    return myHardwareConfig != currentConfig;
-  }
-
   void SDLFrame::LoadSnapshot()
   {
     common2::CommonFrame::LoadSnapshot();
-    mySpeed.reset();
+    ResetSpeed();
     ResetHardware();
   }
 

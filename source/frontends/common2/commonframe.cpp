@@ -1,15 +1,33 @@
 #include "StdAfx.h"
 #include "frontends/common2/commonframe.h"
+#include "frontends/common2/programoptions.h"
 #include "linux/resources.h"
 
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "CardManager.h"
+#include "Core.h"
+#include "CPU.h"
+#include "Debugger/Debug.h"
 #include "Log.h"
+#include "NTSC.h"
+#include "Speaker.h"
 
 namespace common2
 {
+
+  CommonFrame::CommonFrame(const EmulatorOptions & options)
+    : mySpeed(options.fixedSpeed)
+  {
+  }
+
+  void CommonFrame::Begin()
+  {
+    ResetSpeed();
+    ResetHardware();
+  }
 
   BYTE* CommonFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)
   {
@@ -52,6 +70,146 @@ namespace common2
     if (resource == "CHARSET8C") return "CHARSET8C.bmp";
 
     return resource;
+  }
+
+  void CommonFrame::ResetSpeed()
+  {
+    mySpeed.reset();
+  }
+
+  void CommonFrame::SetFullSpeed(const bool value)
+  {
+    if (g_bFullSpeed != value)
+    {
+      if (value)
+      {
+        // entering full speed
+        GetCardMgr().GetMockingboardCardMgr().MuteControl(true);
+        VideoRedrawScreenDuringFullSpeed(0, true);
+      }
+      else
+      {
+        // leaving full speed
+        GetCardMgr().GetMockingboardCardMgr().MuteControl(false);
+        ResetSpeed();
+      }
+      g_bFullSpeed = value;
+      g_nCpuCyclesFeedback = 0;
+    }
+  }
+
+  bool CommonFrame::CanDoFullSpeed()
+  {
+    return (g_dwSpeed == SPEED_MAX) ||
+           (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !GetCardMgr().GetMockingboardCardMgr().IsActive()) ||
+           IsDebugSteppingAtFullSpeed();
+  }
+
+  void CommonFrame::ExecuteOneFrame(const uint64_t microseconds)
+  {
+    // when running in adaptive speed
+    // the value msNextFrame is only a hint for when the next frame will arrive
+    switch (g_nAppMode)
+    {
+      case MODE_RUNNING:
+        {
+          ExecuteInRunningMode(microseconds);
+          break;
+        }
+      case MODE_STEPPING:
+        {
+          ExecuteInDebugMode(microseconds);
+          break;
+        }
+      default:
+        break;
+    };
+  }
+
+  void CommonFrame::ExecuteInRunningMode(const uint64_t microseconds)
+  {
+    SetFullSpeed(CanDoFullSpeed());
+    const DWORD cyclesToExecute = mySpeed.getCyclesTillNext(microseconds);  // this checks g_bFullSpeed
+    Execute(cyclesToExecute);
+  }
+
+  void CommonFrame::ExecuteInDebugMode(const uint64_t microseconds)
+  {
+    // In AppleWin this is called without a timer for just one iteration
+    // because we run a "frame" at a time, we need a bit of ingenuity
+    const DWORD cyclesToExecute = mySpeed.getCyclesAtFixedSpeed(microseconds);
+    const uint64_t target = g_nCumulativeCycles + cyclesToExecute;
+
+    while (g_nAppMode == MODE_STEPPING && g_nCumulativeCycles < target)
+    {
+      DebugContinueStepping();
+    }
+  }
+
+  void CommonFrame::Execute(const DWORD cyclesToExecute)
+  {
+    const bool bVideoUpdate = !g_bFullSpeed;
+    const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
+
+    // do it in the same batches as AppleWin (1 ms)
+    const DWORD fExecutionPeriodClks = g_fCurrentCLK6502 * (1.0 / 1000.0);  // 1 ms
+
+    DWORD totalCyclesExecuted = 0;
+    // check at the end because we want to always execute at least 1 cycle even for "0"
+    do
+    {
+      _ASSERT(cyclesToExecute >= totalCyclesExecuted);
+      const DWORD thisCyclesToExecute = std::min(fExecutionPeriodClks, cyclesToExecute - totalCyclesExecuted);
+      const DWORD executedCycles = CpuExecute(thisCyclesToExecute, bVideoUpdate);
+      totalCyclesExecuted += executedCycles;
+
+      GetCardMgr().Update(executedCycles);
+      SpkrUpdate(executedCycles);
+
+      g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
+
+    } while (totalCyclesExecuted < cyclesToExecute);
+  }
+
+  void CommonFrame::ChangeMode(const AppMode_e mode)
+  {
+    if (mode != g_nAppMode)
+    {
+      switch (mode)
+      {
+      case MODE_RUNNING:
+        DebugExitDebugger();
+        SoundCore_SetFade(FADE_IN);
+        break;
+      case MODE_DEBUG:
+        DebugBegin();
+        CmdWindowViewConsole(0);
+        break;
+      default:
+        g_nAppMode = mode;
+        SoundCore_SetFade(FADE_OUT);
+        break;
+      }
+      FrameRefreshStatus(DRAW_TITLE);
+      ResetSpeed();
+    }
+  }
+
+  void CommonFrame::SingleStep()
+  {
+    SetFullSpeed(CanDoFullSpeed());
+    Execute(0);
+  }
+
+  void CommonFrame::ResetHardware()
+  {
+    myHardwareConfig.Reload();
+  }
+
+  bool CommonFrame::HardwareChanged() const
+  {
+    const CConfigNeedingRestart currentConfig = CConfigNeedingRestart::Create();
+    return myHardwareConfig != currentConfig;
   }
 
 }
