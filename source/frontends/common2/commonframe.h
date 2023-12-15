@@ -1,9 +1,11 @@
 #pragma once
 
 #include "linux/linuxframe.h"
+
 #include "Common.h"
 #include "Configuration/Config.h"
-#include "speed.h"
+
+#include "frontends/common2/speed.h"
 #include <vector>
 #include <string>
 

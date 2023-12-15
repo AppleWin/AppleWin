@@ -10,11 +10,8 @@
 #include "Core.h"
 #include "Utilities.h"
 #include "SaveState.h"
-#include "Speaker.h"
 #include "SoundCore.h"
 #include "Interface.h"
-#include "NTSC.h"
-#include "CPU.h"
 #include "MouseInterface.h"
 #include "Debugger/Debug.h"
 

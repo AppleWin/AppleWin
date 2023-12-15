@@ -1,4 +1,5 @@
 #include "StdAfx.h"
+#include "frontends/common2/commonframe.h"
 #include "frontends/ncurses/nframe.h"
 #include "frontends/ncurses/colors.h"
 #include "frontends/ncurses/asciiart.h"
@@ -41,8 +42,9 @@ namespace na2
     std::shared_ptr<GraphicsColors> colors;
   };
 
-  NFrame::NFrame(const std::shared_ptr<EvDevPaddle> & paddle)
-    : myPaddle(paddle)
+  NFrame::NFrame(const common2::EmulatorOptions & options, const std::shared_ptr<EvDevPaddle> & paddle)
+    : common2::CommonFrame(options)
+    , myPaddle(paddle)
     , myRows(-1)
     , myColumns(-1)
   {
@@ -390,10 +392,5 @@ namespace na2
     LogFileOutput("MessageBox:\n%s\n%s\n\n", lpCaption, lpText);
     return IDOK;
   }
-
-}
-
-void SingleStep(bool /* bReinit */)
-{
 
 }

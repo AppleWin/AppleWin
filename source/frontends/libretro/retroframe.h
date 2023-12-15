@@ -12,7 +12,7 @@ namespace ra2
   class RetroFrame : public virtual common2::CommonFrame, public common2::GNUFrame
   {
   public:
-    RetroFrame();
+    RetroFrame(const common2::EmulatorOptions & options);
 
     void VideoPresentScreen() override;
     void FrameRefreshStatus(int drawflags) override;

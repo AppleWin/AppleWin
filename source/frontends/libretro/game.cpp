@@ -6,6 +6,7 @@
 #include "frontends/libretro/rkeyboard.h"
 #include "frontends/common2/utils.h"
 #include "frontends/common2/ptreeregistry.h"
+#include "frontends/common2/programoptions.h"
 
 #include "Common.h"
 #include "CardManager.h"
@@ -51,7 +52,9 @@ namespace ra2
     myLoggerContext = std::make_shared<LoggerContext>(true);
     myRegistry = CreateRetroRegistry();
     myRegistryContext = std::make_shared<RegistryContext>(myRegistry);
-    myFrame = std::make_shared<ra2::RetroFrame>();
+
+    const common2::EmulatorOptions defaultOptions;
+    myFrame = std::make_shared<ra2::RetroFrame>(defaultOptions);
 
     refreshVariables();
 
