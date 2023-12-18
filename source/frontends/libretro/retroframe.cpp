@@ -179,4 +179,15 @@ namespace ra2
     return IDOK;
   }
 
+  void RetroFrame::SetFullSpeed(const bool /* value */)
+  {
+    // do nothing
+  }
+  
+  bool RetroFrame::CanDoFullSpeed()
+  {
+    // Let libretro deal with it.
+    return false;
+  }
+
 }

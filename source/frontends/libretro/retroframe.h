@@ -3,7 +3,6 @@
 #include "frontends/common2/commonframe.h"
 #include "frontends/common2/gnuframe.h"
 
-#include <memory>
 #include <vector>
 
 namespace ra2
@@ -20,6 +19,10 @@ namespace ra2
     void Destroy() override;
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
     void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
+
+  protected:
+    virtual void SetFullSpeed(const bool value) override;
+    virtual bool CanDoFullSpeed() override;
 
   private:
     std::vector<uint8_t> myVideoBuffer;

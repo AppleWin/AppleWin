@@ -9,11 +9,6 @@
 #include "frontends/common2/programoptions.h"
 
 #include "Common.h"
-#include "CardManager.h"
-#include "Core.h"
-#include "Speaker.h"
-#include "CPU.h"
-#include "NTSC.h"
 #include "Interface.h"
 
 #include "linux/keyboardbuffer.h"
@@ -21,23 +16,25 @@
 #include "linux/context.h"
 
 #include "libretro.h"
-#include <memory>
-#include <string>
 
 #define APPLEWIN_RETRO_CONF "/tmp/applewin.retro.conf"
 
 namespace
 {
+
   void saveRegistryToINI(const std::shared_ptr<common2::PTreeRegistry> & registry)
   {
     try
     {
       registry->saveToINIFile(APPLEWIN_RETRO_CONF);
       ra2::display_message("Configuration saved to: " APPLEWIN_RETRO_CONF);
-    } catch (const std::exception & e) {
+    }
+    catch (const std::exception & e)
+    {
       ra2::display_message(std::string("Error saving configuration: ") + e.what());
     }
   }
+
 }
 
 namespace ra2
@@ -46,21 +43,20 @@ namespace ra2
   unsigned Game::ourInputDevices[MAX_PADS] = {RETRO_DEVICE_NONE};
 
   Game::Game()
-    : mySpeed(true)  // fixed speed
-    , myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
+    : myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
   {
     myLoggerContext = std::make_shared<LoggerContext>(true);
     myRegistry = CreateRetroRegistry();
     myRegistryContext = std::make_shared<RegistryContext>(myRegistry);
 
-    const common2::EmulatorOptions defaultOptions;
+    common2::EmulatorOptions defaultOptions;
+    defaultOptions.fixedSpeed = true;
     myFrame = std::make_shared<ra2::RetroFrame>(defaultOptions);
 
     refreshVariables();
 
     SetFrame(myFrame);
     myFrame->Begin();
-    mySpeed.reset();
 
     Video & video = GetVideo();
     // should the user be allowed to tweak 0.75
@@ -77,18 +73,7 @@ namespace ra2
 
   void Game::executeOneFrame()
   {
-    if (g_nAppMode == MODE_RUNNING)
-    {
-      const bool bVideoUpdate = true;
-      const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-
-      const DWORD cyclesToExecute = mySpeed.getCyclesTillNext(ourFrameTime);
-      const DWORD executedCycles = CpuExecute(cyclesToExecute, bVideoUpdate);
-
-      g_dwCyclesThisFrame = (g_dwCyclesThisFrame + executedCycles) % dwClksPerFrame;
-      GetCardMgr().Update(executedCycles);
-      SpkrUpdate(executedCycles);
-    }
+    myFrame->ExecuteOneFrame(ourFrameTime);
   }
 
   void Game::refreshVariables()
