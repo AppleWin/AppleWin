@@ -136,7 +136,7 @@ namespace sa2
           ImGui::LabelText("Audio adjusted", "%12.0f    Hz", stats.audio);
           ImGui::LabelText("Actual",         "%12.0f    Hz", stats.actual);
           ImGui::LabelText("Feedback",       "%12.0f    Hz", stats.netFeedback);
-          if (ImGui::Button("Reset speed"))
+          if (ImGui::Button("Reset stats"))
           {
             frame->ResetSpeed();
           }
