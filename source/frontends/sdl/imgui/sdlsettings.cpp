@@ -46,6 +46,14 @@ namespace
     }
   }
 
+  void setSpeedMultiplier(sa2::SDLFrame* frame, const DWORD speedMultiplier)
+  {
+    g_dwSpeed = speedMultiplier;
+    SetCurrentCLK6502();
+    REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
+    frame->ResetSpeed();
+  }
+
 }
 
 namespace sa2
@@ -125,11 +133,16 @@ namespace sa2
           int speedMultiplier = g_dwSpeed;
           if (ImGui::SliderInt("Speed", &speedMultiplier, SPEED_MIN, SPEED_MAX))
           {
-            g_dwSpeed = speedMultiplier;
-            SetCurrentCLK6502();
-            REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
-            frame->ResetSpeed();
+            setSpeedMultiplier(frame, speedMultiplier);
           }
+
+          /*              */ if (ImGui::Button("0.5 MHz")) setSpeedMultiplier(frame, SPEED_MIN);
+          ImGui::SameLine(); if (ImGui::Button("1 MHz")) setSpeedMultiplier(frame, SPEED_NORMAL);
+          ImGui::SameLine(); if (ImGui::Button("2 MHz")) setSpeedMultiplier(frame, 20);
+          ImGui::SameLine(); if (ImGui::Button("3 MHz")) setSpeedMultiplier(frame, 30);
+          ImGui::SameLine(); if (ImGui::Button("MAX")) setSpeedMultiplier(frame, SPEED_MAX);
+
+          ImGui::Separator();
 
           const common2::Speed::Stats stats = frame->getSpeed().getSpeedStats();
           ImGui::LabelText("Clock",          "%15.2f Hz", stats.nominal);
