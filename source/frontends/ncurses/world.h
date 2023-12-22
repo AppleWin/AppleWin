@@ -7,7 +7,7 @@ namespace na2
 
   class NFrame;
 
-  int ProcessKeyboard(const std::shared_ptr<NFrame> & frame);
+  int GetKeyPressed(const std::shared_ptr<NFrame> & frame);
   void SetCtrlCHandler(const bool headless);
 
   extern double g_relativeSpeed;

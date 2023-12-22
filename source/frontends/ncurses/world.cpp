@@ -32,7 +32,6 @@ namespace
 namespace na2
 {
 
-  double g_relativeSpeed = 1.0;
   bool g_stop = false;
 
   void SetCtrlCHandler(const bool headless)
@@ -48,7 +47,7 @@ namespace na2
     }
   }
 
-  int ProcessKeyboard(const std::shared_ptr<NFrame> & frame)
+  int GetKeyPressed(const std::shared_ptr<NFrame> & frame)
   {
     WINDOW * window = frame->GetWindow();
     if (!window)
