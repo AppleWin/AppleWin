@@ -287,7 +287,20 @@ namespace sa2
         }
       }
     }
+
+    if (!showDebugger)
+    {
+      // this happes when the window is closed
+      syncDebuggerState(frame);
+    }
+
     ImGui::End();
+  }
+
+  void ImGuiDebugger::syncDebuggerState(SDLFrame * frame)
+  {
+    const AppMode_e mode = showDebugger ? MODE_DEBUG : MODE_RUNNING;
+    frame->ChangeMode(mode);
   }
 
   void ImGuiDebugger::debuggerCommand(SDLFrame * frame, const char * s)

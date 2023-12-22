@@ -16,6 +16,9 @@ namespace sa2
 
     void drawDebugger(SDLFrame* frame);
     void resetDebuggerCycles();
+
+    void syncDebuggerState(SDLFrame* frame);
+
   private:
     bool mySyncCPU = true;
 

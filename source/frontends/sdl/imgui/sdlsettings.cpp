@@ -77,9 +77,9 @@ namespace sa2
           ImGui::Checkbox("Memory", &myShowMemory);
           ImGui::SameLine(); HelpMarker("Show Apple memory.");
 
-          if (ImGui::Checkbox("Debugger", &myDebugger.showDebugger) && myDebugger.showDebugger)
+          if (ImGui::Checkbox("Debugger", &myDebugger.showDebugger))
           {
-            frame->ChangeMode(MODE_DEBUG);
+            myDebugger.syncDebuggerState(frame);
           }
           ImGui::SameLine(); HelpMarker("Show Apple CPU.");
 
@@ -738,9 +738,9 @@ namespace sa2
       {
         ImGui::MenuItem("Settings", nullptr, &myShowSettings);
         ImGui::MenuItem("Memory", nullptr, &myShowMemory);
-        if (ImGui::MenuItem("Debugger", nullptr, &myDebugger.showDebugger) && myDebugger.showDebugger)
+        if (ImGui::MenuItem("Debugger", nullptr, &myDebugger.showDebugger))
         {
-          frame->ChangeMode(MODE_DEBUG);
+          myDebugger.syncDebuggerState(frame);
         }
         ImGui::EndMenu();
       }
