@@ -138,8 +138,8 @@ namespace sa2
 
           /*              */ if (ImGui::Button("0.5 MHz")) setSpeedMultiplier(frame, SPEED_MIN);
           ImGui::SameLine(); if (ImGui::Button("1 MHz")) setSpeedMultiplier(frame, SPEED_NORMAL);
-          ImGui::SameLine(); if (ImGui::Button("2 MHz")) setSpeedMultiplier(frame, 20);
-          ImGui::SameLine(); if (ImGui::Button("3 MHz")) setSpeedMultiplier(frame, 30);
+          ImGui::SameLine(); if (ImGui::Button("2 MHz")) setSpeedMultiplier(frame, SPEED_NORMAL * 2);
+          ImGui::SameLine(); if (ImGui::Button("3 MHz")) setSpeedMultiplier(frame, SPEED_NORMAL * 3);
           ImGui::SameLine(); if (ImGui::Button("MAX")) setSpeedMultiplier(frame, SPEED_MAX);
 
           ImGui::Separator();
