@@ -13,7 +13,7 @@ namespace
 }
 
 
-std::shared_ptr<const Paddle> Paddle::instance;
+std::shared_ptr<Paddle> Paddle::instance;
 
 std::set<int> Paddle::ourButtons;
 bool Paddle::ourSquaring = true;
