@@ -215,6 +215,13 @@ namespace common2
     return myHardwareConfig != currentConfig;
   }
 
+  void CommonFrame::LoadSnapshot()
+  {
+    LinuxFrame::LoadSnapshot();
+    ResetSpeed();
+    ResetHardware();
+  }
+
 }
 
 void SingleStep(bool /* bReinit */)

@@ -624,13 +624,6 @@ namespace sa2
     ResetSpeed();
   }
 
-  void SDLFrame::LoadSnapshot()
-  {
-    common2::CommonFrame::LoadSnapshot();
-    ResetSpeed();
-    ResetHardware();
-  }
-
   common2::Geometry SDLFrame::getGeometryOrDefault(const std::optional<common2::Geometry> & geometry) const
   {
     if (geometry)

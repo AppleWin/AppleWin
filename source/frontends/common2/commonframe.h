@@ -32,6 +32,8 @@ namespace common2
     void ResetHardware();
     bool HardwareChanged() const;
 
+    void LoadSnapshot() override;
+
   protected:
     virtual std::string getResourcePath(const std::string & filename) = 0;
 

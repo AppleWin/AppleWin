@@ -26,8 +26,6 @@ namespace sa2
 
     void FrameResetMachineState();
 
-    void LoadSnapshot() override;
-
     const std::shared_ptr<SDL_Window> & GetWindow() const;
 
     void getDragDropSlotAndDrive(size_t & slot, size_t & drive) const;
