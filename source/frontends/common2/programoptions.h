@@ -35,7 +35,7 @@ namespace common2
 
     bool benchmark = false;
     bool headless = false;
-    bool ntsc = false;  // only for applen
+    bool noVideoUpdate = false;  // only for applen
 
     bool paddleSquaring = true;  // turn the x/y range to a square
     // on my PC it is something like

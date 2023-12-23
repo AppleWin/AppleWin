@@ -44,9 +44,11 @@ namespace common2
     void ExecuteInDebugMode(const uint64_t microseconds);
     void Execute(const DWORD uCycles);
 
+    const bool myAllowVideoUpdate;
+    Speed mySpeed;
+
     std::vector<BYTE> myResource;
 
-    Speed mySpeed;
 
   private:
     CConfigNeedingRestart myHardwareConfig;
