@@ -7,8 +7,6 @@
 
 #include "CardManager.h"
 #include "Core.h"
-#include "CPU.h"
-#include "NTSC.h"
 #include "SaveState.h"
 #include "Utilities.h"
 
@@ -23,33 +21,10 @@
 
 namespace
 {
-  bool ContinueExecution(const common2::EmulatorOptions & options, const std::shared_ptr<na2::NFrame> & frame)
+
+  void ProcessKeys(const std::shared_ptr<na2::NFrame> & frame, bool &quit)
   {
-    const auto start = std::chrono::steady_clock::now();
-
-    const double fUsecPerSec        = 1.e6;
-#if 1
-    const UINT nExecutionPeriodUsec = 1000000 / 60;             // 60 FPS
-    //  const UINT nExecutionPeriodUsec = 100;          // 0.1ms
-    const double fExecutionPeriodClks = g_fCurrentCLK6502 * ((double)nExecutionPeriodUsec / fUsecPerSec);
-#else
-    const double fExecutionPeriodClks = 1800.0;
-    const UINT nExecutionPeriodUsec = (UINT) (fUsecPerSec * (fExecutionPeriodClks / g_fCurrentCLK6502));
-#endif
-
-    const DWORD uCyclesToExecute = fExecutionPeriodClks;
-
-    const bool bVideoUpdate = options.ntsc;
-    g_bFullSpeed = !bVideoUpdate;
-
-    const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
-    g_dwCyclesThisFrame += uActualCyclesExecuted;
-
-    CardManager & cardManager = GetCardMgr();
-
-    cardManager.Update(uActualCyclesExecuted);
-
-    const int key = ProcessKeyboard(frame);
+    const int key = GetKeyPressed(frame);
 
     switch (key)
     {
@@ -65,7 +40,8 @@ namespace
       }
     case KEY_F(3):
       {
-        return false;
+        quit = true;
+        break;
       }
     case KEY_F(5):
       {
@@ -87,56 +63,50 @@ namespace
         break;
       }
     }
+  }
 
+  void ContinueExecution(const common2::EmulatorOptions & options, const std::shared_ptr<na2::NFrame> & frame, bool &quit)
+  {
+    const auto start = std::chrono::steady_clock::now();
+
+    constexpr const int64_t nExecutionPeriodUsec = 1000000 / 60;             // 60 FPS
+    frame->ExecuteOneFrame(nExecutionPeriodUsec);
+
+    ProcessKeys(frame, quit);
     frame->ProcessEvDev();
-
-    const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
-    if (g_dwCyclesThisFrame >= dwClksPerFrame)
-    {
-      g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
-      if (!options.headless)
-      {
-        frame->VideoPresentScreen();
-      }
-    }
 
     if (!options.headless)
     {
-      const auto end = std::chrono::steady_clock::now();
-      const auto diff = end - start;
-      const long us = std::chrono::duration_cast<std::chrono::microseconds>(diff).count();
-
-      const double coeff = exp(-0.000001 * nExecutionPeriodUsec);  // 0.36 after 1 second
-
-      na2::g_relativeSpeed = na2::g_relativeSpeed * coeff + double(us) / double(nExecutionPeriodUsec) * (1.0 - coeff);
-
-      if (!cardManager.GetDisk2CardMgr().IsConditionForFullSpeed())
+      frame->VideoPresentScreen();
+      if (!g_bFullSpeed)
       {
+        const auto end = std::chrono::steady_clock::now();
+        const auto diff = end - start;
+        const int64_t us = std::chrono::duration_cast<std::chrono::microseconds>(diff).count();
         if (us < nExecutionPeriodUsec)
         {
           const auto duration = std::chrono::microseconds(nExecutionPeriodUsec - us);
           std::this_thread::sleep_for(duration);
         }
       }
-      return true;
-    }
-    else
-    {
-      return !na2::g_stop;
     }
   }
 
   void EnterMessageLoop(const common2::EmulatorOptions & options, const std::shared_ptr<na2::NFrame> & frame)
   {
-    while (ContinueExecution(options, frame))
+    bool quit = false;
+
+    do
     {
-    }
+      ContinueExecution(options, frame, quit);
+    } while (!quit && !na2::g_stop);
   }
 
   int run_ncurses(int argc, const char * argv [])
   {
     common2::EmulatorOptions options;
     const bool run = getEmulatorOptions(argc, argv, "ncurses", options);
+    options.fixedSpeed = true;  // TODO: remove, some testing required
 
     if (!run)
       return 1;
@@ -144,7 +114,7 @@ namespace
     const LoggerContext loggerContext(options.log);
     const RegistryContext registryContet(CreateFileRegistry(options));
     const std::shared_ptr<na2::EvDevPaddle> paddle = std::make_shared<na2::EvDevPaddle>(options.paddleDeviceName);
-    const std::shared_ptr<na2::NFrame> frame = std::make_shared<na2::NFrame>(paddle);
+    const std::shared_ptr<na2::NFrame> frame = std::make_shared<na2::NFrame>(options, paddle);
 
     const common2::CommonInitialisation init(frame, paddle, options);
 

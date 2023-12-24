@@ -1,18 +1,10 @@
 #pragma once
 
-#include "Common.h"
-#include "Configuration/Config.h"
 #include "frontends/common2/commonframe.h"
 #include "frontends/common2/controllerquit.h"
-#include "frontends/common2/speed.h"
 #include "frontends/common2/programoptions.h"
 #include "linux/network/portfwds.h"
 #include <SDL.h>
-
-namespace common2
-{
-  struct EmulatorOptions;
-}
 
 namespace sa2
 {
@@ -32,16 +24,7 @@ namespace sa2
 
     void ProcessEvents(bool &quit);
 
-    void ExecuteOneFrame(const uint64_t microseconds);
-    void ChangeMode(const AppMode_e mode);
-    void SingleStep();
-    void ResetHardware();
-    bool HardwareChanged() const;
-
     void FrameResetMachineState();
-    virtual void ResetSpeed();
-
-    void LoadSnapshot() override;
 
     const std::shared_ptr<SDL_Window> & GetWindow() const;
 
@@ -67,12 +50,8 @@ namespace sa2
     void ProcessMouseButton(const SDL_MouseButtonEvent & button);
     void ProcessMouseMotion(const SDL_MouseMotionEvent & motion);
 
-    void ExecuteInRunningMode(const uint64_t microseconds);
-    void ExecuteInDebugMode(const uint64_t microseconds);
-    void Execute(const DWORD uCycles);
-
-    void SetFullSpeed(const bool value);
-    bool CanDoFullSpeed();
+    void SetFullSpeed(const bool value) override;
+    bool CanDoFullSpeed() override;
 
     common2::Geometry getGeometryOrDefault(const std::optional<common2::Geometry> & geometry) const;
 
@@ -89,13 +68,9 @@ namespace sa2
 
     bool myScrollLockFullSpeed;
 
-    common2::Speed mySpeed;
-
     std::vector<PortFwd> myPortFwds;
 
     std::shared_ptr<SDL_Window> myWindow;
-
-    CConfigNeedingRestart myHardwareConfig;
 
     common2::ControllerQuit myControllerQuit;
   };

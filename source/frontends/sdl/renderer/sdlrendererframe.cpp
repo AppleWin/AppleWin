@@ -13,6 +13,7 @@ namespace sa2
 
   SDLRendererFrame::SDLRendererFrame(const common2::EmulatorOptions & options)
     : SDLFrame(options)
+    , CommonFrame(options)
   {
     const common2::Geometry geometry = getGeometryOrDefault(options.geometry);
 

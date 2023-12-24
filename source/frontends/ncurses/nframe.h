@@ -17,7 +17,7 @@ namespace na2
   class NFrame : public virtual common2::CommonFrame, public common2::GNUFrame
   {
   public:
-    NFrame(const std::shared_ptr<EvDevPaddle> & paddle);
+    NFrame(const common2::EmulatorOptions & options, const std::shared_ptr<EvDevPaddle> & paddle);
 
     WINDOW * GetWindow();
     WINDOW * GetStatus();

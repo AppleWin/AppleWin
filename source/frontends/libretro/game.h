@@ -1,11 +1,11 @@
 #pragma once
 
-#include "frontends/common2/speed.h"
 #include "frontends/common2/controllerquit.h"
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/diskcontrol.h"
 #include "frontends/libretro/rkeyboard.h"
 
+#include <memory>
 #include <chrono>
 #include <string>
 #include <vector>
@@ -56,8 +56,6 @@ namespace ra2
     std::shared_ptr<common2::PTreeRegistry> myRegistry;
     std::shared_ptr<RegistryContext> myRegistryContext;
     std::shared_ptr<RetroFrame> myFrame;
-
-    common2::Speed mySpeed;  // fixed speed
 
     common2::ControllerQuit myControllerQuit;
 

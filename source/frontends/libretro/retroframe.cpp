@@ -1,4 +1,5 @@
 #include "StdAfx.h"
+#include "frontends/common2/commonframe.h"
 #include "frontends/libretro/retroframe.h"
 #include "frontends/libretro/environment.h"
 
@@ -77,7 +78,8 @@ namespace
 namespace ra2
 {
 
-  RetroFrame::RetroFrame()
+  RetroFrame::RetroFrame(const common2::EmulatorOptions & options)
+  : common2::CommonFrame(options)
   {
   }
 
@@ -175,6 +177,17 @@ namespace ra2
   {
     log_cb(RETRO_LOG_INFO, "RA2: %s: %s - %s\n", __FUNCTION__, lpCaption, lpText);
     return IDOK;
+  }
+
+  void RetroFrame::SetFullSpeed(const bool /* value */)
+  {
+    // do nothing
+  }
+  
+  bool RetroFrame::CanDoFullSpeed()
+  {
+    // Let libretro deal with it.
+    return false;
   }
 
 }

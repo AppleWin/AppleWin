@@ -5,11 +5,6 @@
 #include "frontends/sdl/imgui/glselector.h"
 #include "frontends/common2/gnuframe.h"
 
-namespace common2
-{
-  struct EmulatorOptions;
-}
-
 namespace sa2
 {
 

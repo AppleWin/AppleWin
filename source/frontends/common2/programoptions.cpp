@@ -159,7 +159,7 @@ namespace common2
     po::options_description applenDesc("applen");
     applenDesc.add_options()
       ("headless", "Headless: disable video (freewheel)")
-      ("ntsc,nt", "NTSC: execute NTSC code")
+      ("no-video-update,nv", "Do not execute NTSC code")
       ("device-name", po::value<std::string>(), "Gamepad device name (for applen)")
       ;
     desc.add(applenDesc);
@@ -235,7 +235,7 @@ namespace common2
 
       // applen
       options.headless = vm.count("headless") > 0;
-      options.ntsc = vm.count("ntsc") > 0;
+      options.noVideoUpdate = vm.count("no-video-update") > 0;
       setOption(vm, "device-name", options.paddleDeviceName);
 
       return true;
