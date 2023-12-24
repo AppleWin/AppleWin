@@ -94,6 +94,11 @@ namespace
 
   void EnterMessageLoop(const common2::EmulatorOptions & options, const std::shared_ptr<na2::NFrame> & frame)
   {
+    if (options.headless)
+    {
+      std::cout << "Press Ctrl-C to quit." << std::endl;
+    }
+
     bool quit = false;
 
     do
@@ -105,7 +110,7 @@ namespace
   int run_ncurses(int argc, const char * argv [])
   {
     common2::EmulatorOptions options;
-    const bool run = getEmulatorOptions(argc, argv, "ncurses", options);
+    const bool run = getEmulatorOptions(argc, argv, common2::OptionsType::applen, "ncurses", options);
     options.fixedSpeed = true;  // TODO: remove, some testing required
 
     if (!run)

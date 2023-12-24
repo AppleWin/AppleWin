@@ -61,7 +61,7 @@ void run_sdl(int argc, const char * argv [])
 
   common2::EmulatorOptions options;
 
-  const bool run = getEmulatorOptions(argc, argv, "SDL2", options);
+  const bool run = getEmulatorOptions(argc, argv, common2::OptionsType::sa2, "SDL2", options);
 
   if (!run)
     return;

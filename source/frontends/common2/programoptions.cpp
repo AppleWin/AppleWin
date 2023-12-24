@@ -84,7 +84,7 @@ namespace common2
     configurationFile = GetConfigFile("applewin.conf");
   }
 
-  bool getEmulatorOptions(int argc, const char * argv [], const std::string & edition, EmulatorOptions & options)
+  bool getEmulatorOptions(int argc, const char * argv [], OptionsType type, const std::string & edition, EmulatorOptions & options)
   {
     const std::string name = "Apple Emulator for " + edition + " (based on AppleWin " + getVersion() + ")";
     po::options_description desc(name);
@@ -128,6 +128,7 @@ namespace common2
     emulatorDesc.add_options()
       ("log", "Log to AppleWin.log")
       ("fixed-speed", "Fixed (non-adaptive) speed")
+      ("headless", "Headless: disable video (freewheel)")
       ("audio-buffer", po::value<size_t>()->default_value(options.audioBuffer), "Audio buffer (ms)")
       ("benchmark,b", "Benchmark emulator")
       ("no-squaring", "Gamepad range is (already) a square")
@@ -143,26 +144,35 @@ namespace common2
       ;
     desc.add(audioDesc);
 
-    po::options_description sdlDesc("SDL");
-    sdlDesc.add_options()
-      ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
-      ("gl-swap", po::value<int>()->default_value(options.glSwapInterval), "SDL_GL_SwapInterval")
-      ("no-imgui", "Plain SDL2 renderer")
-      ("geometry", po::value<std::string>(), "WxH[+X+Y]")
-      ("aspect-ratio", "Always preserve correct aspect ratio")
-      ("game-controller", po::value<int>(), "SDL_GameControllerOpen")
-      ("game-mapping-file", po::value<std::string>(), "SDL_GameControllerAddMappingsFromFile")
-      ("audio-device", po::value<std::string>(), "Audio device name")
-      ;
-    desc.add(sdlDesc);
-
-    po::options_description applenDesc("applen");
-    applenDesc.add_options()
-      ("headless", "Headless: disable video (freewheel)")
-      ("no-video-update,nv", "Do not execute NTSC code")
-      ("device-name", po::value<std::string>(), "Gamepad device name (for applen)")
-      ;
-    desc.add(applenDesc);
+    switch (type)
+    {
+    case OptionsType::sa2:
+    {
+      po::options_description sdlDesc("SDL");
+      sdlDesc.add_options()
+        ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
+        ("gl-swap", po::value<int>()->default_value(options.glSwapInterval), "SDL_GL_SwapInterval")
+        ("no-imgui", "Plain SDL2 renderer")
+        ("geometry", po::value<std::string>(), "WxH[+X+Y]")
+        ("aspect-ratio", "Always preserve correct aspect ratio")
+        ("game-controller", po::value<int>(), "SDL_GameControllerOpen")
+        ("game-mapping-file", po::value<std::string>(), "SDL_GameControllerAddMappingsFromFile")
+        ("audio-device", po::value<std::string>(), "Audio device name")
+        ;
+      desc.add(sdlDesc);
+      break;
+    }
+    case OptionsType::applen:
+    {
+      po::options_description applenDesc("applen");
+      applenDesc.add_options()
+        ("no-video-update,nv", "Do not execute NTSC code")
+        ("device-name", po::value<std::string>(), "Gamepad device name (for applen)")
+        ;
+      desc.add(applenDesc);
+      break;
+    }
+    }
 
     po::variables_map vm;
     try
@@ -207,6 +217,7 @@ namespace common2
       // Emulator
       options.log = vm.count("log") > 0;
       options.fixedSpeed = vm.count("fixed-speed") > 0;
+      options.headless = vm.count("headless") > 0;
       setOption(vm, "audio-buffer", options.audioBuffer);
       options.benchmark = vm.count("benchmark") > 0;
       options.paddleSquaring = vm.count("no-squaring") == 0;
@@ -217,26 +228,33 @@ namespace common2
       setOption(vm, "wav-speaker", options.wavFileSpeaker);
       setOption(vm, "wav-mockingboard", options.wavFileMockingboard);
 
-      // SDL
-      options.sdlDriver = vm["sdl-driver"].as<int>();
-      options.glSwapInterval = vm["gl-swap"].as<int>();
-      options.imgui = vm.count("no-imgui") == 0;
-
-      std::string geometry;
-      if (setOption(vm, "geometry", geometry))
+      switch (type)
       {
-        parseGeometry(geometry, options.geometry);
+      case OptionsType::sa2:
+      {
+        options.sdlDriver = vm["sdl-driver"].as<int>();
+        options.glSwapInterval = vm["gl-swap"].as<int>();
+        options.imgui = vm.count("no-imgui") == 0;
+
+        std::string geometry;
+        if (setOption(vm, "geometry", geometry))
+        {
+          parseGeometry(geometry, options.geometry);
+        }
+
+        options.aspectRatio = vm.count("aspect-ratio") > 0;
+        setOption(vm, "game-controller", options.gameControllerIndex);
+        setOption(vm, "game-mapping-file", options.gameControllerMappingFile);
+        setOption(vm, "audio-device", options.audioDeviceName);
+        break;
       }
-
-      options.aspectRatio = vm.count("aspect-ratio") > 0;
-      setOption(vm, "game-controller", options.gameControllerIndex);
-      setOption(vm, "game-mapping-file", options.gameControllerMappingFile);
-      setOption(vm, "audio-device", options.audioDeviceName);
-
-      // applen
-      options.headless = vm.count("headless") > 0;
-      options.noVideoUpdate = vm.count("no-video-update") > 0;
-      setOption(vm, "device-name", options.paddleDeviceName);
+      case OptionsType::applen:
+      {
+        options.noVideoUpdate = vm.count("no-video-update") > 0;
+        setOption(vm, "device-name", options.paddleDeviceName);
+        break;
+      }
+      }
 
       return true;
     }
