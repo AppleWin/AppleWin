@@ -22,7 +22,7 @@ public:
   static std::set<int> ourButtons;
   static void setSquaring(bool value);
 
-  static std::shared_ptr<const Paddle> instance;
+  static std::shared_ptr<Paddle> instance;
 
 private:
   static bool ourSquaring;
