@@ -152,6 +152,7 @@ namespace common2
       sdlDesc.add_options()
         ("sdl-driver", po::value<int>()->default_value(options.sdlDriver), "SDL driver")
         ("gl-swap", po::value<int>()->default_value(options.glSwapInterval), "SDL_GL_SwapInterval")
+        ("timer", "Synchronise with timer")
         ("no-imgui", "Plain SDL2 renderer")
         ("geometry", po::value<std::string>(), "WxH[+X+Y]")
         ("aspect-ratio", "Always preserve correct aspect ratio")
@@ -234,6 +235,7 @@ namespace common2
       {
         options.sdlDriver = vm["sdl-driver"].as<int>();
         options.glSwapInterval = vm["gl-swap"].as<int>();
+        options.syncWithTimer = vm.count("timer") > 0;
         options.imgui = vm.count("no-imgui") == 0;
 
         std::string geometry;

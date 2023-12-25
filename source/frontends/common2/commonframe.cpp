@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <thread>
 
 #include "CardManager.h"
 #include "Core.h"
@@ -21,8 +22,10 @@ namespace common2
 
   CommonFrame::CommonFrame(const EmulatorOptions & options)
     : mySpeed(options.fixedSpeed)
+    , mySynchroniseWithTimer(options.syncWithTimer)
     , myAllowVideoUpdate(!options.noVideoUpdate)
   {
+    myLastSync = std::chrono::steady_clock::now();
   }
 
   void CommonFrame::Begin()
@@ -220,6 +223,18 @@ namespace common2
     LinuxFrame::LoadSnapshot();
     ResetSpeed();
     ResetHardware();
+  }
+
+  void CommonFrame::SyncVideoPresentScreen(const int64_t microseconds)
+  {
+    if (mySynchroniseWithTimer)
+    {
+      const auto next = myLastSync + std::chrono::microseconds(microseconds);
+      // no need to check here if "next" is in the past
+      std::this_thread::sleep_until(next);
+      myLastSync = std::chrono::steady_clock::now();
+    }
+    VideoPresentScreen();
   }
 
 }

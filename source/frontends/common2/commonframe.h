@@ -26,6 +26,9 @@ namespace common2
 
     void ExecuteOneFrame(const int64_t microseconds);
 
+    // this function will emulate GL vert sync if necessary
+    // it acts as a syncronisation point (sa2 (in qemu) and applen)
+    void SyncVideoPresentScreen(const int64_t microseconds);
 
     void ChangeMode(const AppMode_e mode);
     void SingleStep();
@@ -47,13 +50,16 @@ namespace common2
     void ExecuteInDebugMode(const int64_t microseconds);
     void Execute(const DWORD uCycles);
 
-    const bool myAllowVideoUpdate;
     Speed mySpeed;
+
+    // used to synchronise if OpenGL cannot do it (or without it)
+    bool mySynchroniseWithTimer;
+    std::chrono::time_point<std::chrono::steady_clock> myLastSync;
 
     std::vector<BYTE> myResource;
 
-
   private:
+    const bool myAllowVideoUpdate;
     CConfigNeedingRestart myHardwareConfig;
   };
 

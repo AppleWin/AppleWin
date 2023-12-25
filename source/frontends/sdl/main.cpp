@@ -146,7 +146,7 @@ void run_sdl(int argc, const char * argv [])
         }
         else
         {
-          frame->VideoPresentScreen();
+          frame->SyncVideoPresentScreen(oneFrameMicros);
         }
         refreshScreenTimer.toc();
       }

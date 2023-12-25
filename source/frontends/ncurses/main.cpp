@@ -1,7 +1,5 @@
 #include "StdAfx.h"
 
-#include <chrono>
-#include <thread>
 #include <iostream>
 #include <ncurses.h>
 
@@ -69,25 +67,21 @@ namespace
   {
     const auto start = std::chrono::steady_clock::now();
 
-    constexpr const int64_t nExecutionPeriodUsec = 1000000 / 60;             // 60 FPS
-    frame->ExecuteOneFrame(nExecutionPeriodUsec);
+    constexpr const int64_t oneFrameMicros = 1000000 / 60;             // 60 FPS
+    frame->ExecuteOneFrame(oneFrameMicros);
 
     ProcessKeys(frame, quit);
     frame->ProcessEvDev();
 
     if (!options.headless)
     {
-      frame->VideoPresentScreen();
-      if (!g_bFullSpeed)
+      if (g_bFullSpeed)
       {
-        const auto end = std::chrono::steady_clock::now();
-        const auto diff = end - start;
-        const int64_t us = std::chrono::duration_cast<std::chrono::microseconds>(diff).count();
-        if (us < nExecutionPeriodUsec)
-        {
-          const auto duration = std::chrono::microseconds(nExecutionPeriodUsec - us);
-          std::this_thread::sleep_for(duration);
-        }
+        frame->VideoPresentScreen();
+      }
+      else
+      {
+        frame->SyncVideoPresentScreen(oneFrameMicros);
       }
     }
   }
@@ -112,6 +106,7 @@ namespace
     common2::EmulatorOptions options;
     const bool run = getEmulatorOptions(argc, argv, common2::OptionsType::applen, "ncurses", options);
     options.fixedSpeed = true;  // TODO: remove, some testing required
+    options.syncWithTimer = true;
 
     if (!run)
       return 1;
