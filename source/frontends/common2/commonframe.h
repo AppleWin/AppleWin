@@ -24,7 +24,8 @@ namespace common2
 
     virtual void ResetSpeed();
 
-    void ExecuteOneFrame(const uint64_t microseconds);
+    void ExecuteOneFrame(const int64_t microseconds);
+
 
     void ChangeMode(const AppMode_e mode);
     void SingleStep();
@@ -42,8 +43,8 @@ namespace common2
     virtual void SetFullSpeed(const bool value);
     virtual bool CanDoFullSpeed();
 
-    void ExecuteInRunningMode(const uint64_t microseconds);
-    void ExecuteInDebugMode(const uint64_t microseconds);
+    void ExecuteInRunningMode(const int64_t microseconds);
+    void ExecuteInDebugMode(const int64_t microseconds);
     void Execute(const DWORD uCycles);
 
     const bool myAllowVideoUpdate;

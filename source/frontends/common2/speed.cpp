@@ -41,13 +41,13 @@ namespace common2
     myAudioSpeed = getAudioAdjustedSpeed();
   }
 
-  uint32_t Speed::getCyclesAtFixedSpeed(const uint64_t microseconds) const
+  uint32_t Speed::getCyclesAtFixedSpeed(const int64_t microseconds) const
   {
     const int64_t cycles = static_cast<int64_t>(microseconds * myAudioSpeed * 1.0e-6) + g_nCpuCyclesFeedback;
     return checkAndReturn(cycles);
   }
 
-  uint32_t Speed::getCyclesTillNext(const uint64_t microseconds)
+  uint32_t Speed::getCyclesTillNext(const int64_t microseconds)
   {
     myTotalFeedbackCycles += g_nCpuCyclesFeedback;
 
@@ -90,7 +90,7 @@ namespace common2
     {
       stats.netFeedback = myTotalFeedbackCycles * multiplier;
 
-      const uint64_t totalCycles = g_nCumulativeCycles - myOrgStartCycles;
+      const int64_t totalCycles = g_nCumulativeCycles - myOrgStartCycles;
       stats.actual = totalCycles * multiplier;
     }
 

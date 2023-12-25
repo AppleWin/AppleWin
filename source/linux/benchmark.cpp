@@ -37,7 +37,7 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
   redraw();
 
   typedef std::chrono::microseconds interval_t;
-  typedef uint64_t counter_t; // avoid overflows
+  typedef int64_t counter_t; // avoid overflows
   const counter_t onesecond = 1000000;
   counter_t totalhiresfps = 0;
   counter_t elapsed;

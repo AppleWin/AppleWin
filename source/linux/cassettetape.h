@@ -33,7 +33,7 @@ private:
 
   std::vector<tape_data_t> myData;
 
-  uint64_t myBaseCycles;
+  int64_t myBaseCycles;
   int myFrequency;
   bool myIsPlaying = false;
   BYTE myLastBit = 1; // negative wave
