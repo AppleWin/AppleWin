@@ -3968,7 +3968,7 @@ static void opcode_dd(BYTE ip1, BYTE ip2, BYTE ip3, WORD ip12, WORD ip23)
         NOP(4, 1);
         break;
       default:
-#ifdef DEBUG_Z80
+#if 0 && defined(DEBUG_Z80)
         log_message(LOG_DEFAULT,
                     "%i PC %04x A%02x F%02x B%02x C%02x D%02x E%02x "
                     "H%02x L%02x SP%04x OP DD %02x %02x %02x.",
@@ -4176,7 +4176,7 @@ static void opcode_ed(BYTE ip1, BYTE ip2, BYTE ip3, WORD ip12, WORD ip23)
         NOP(8, 2);
         break;
       default:
-#ifdef DEBUG_Z80
+#if 0 && defined(DEBUG_Z80)
         log_message(LOG_DEFAULT,
                     "%i PC %04x A%02x F%02x B%02x C%02x D%02x E%02x "
                     "H%02x L%02x SP%04x OP ED %02x %02x %02x.",
@@ -5493,7 +5493,7 @@ static void opcode_fd(BYTE ip1, BYTE ip2, BYTE ip3, WORD ip12, WORD ip23)
         NOP(4, 1);
         break;
       default:
-#ifdef DEBUG_Z80
+#if 0 && defined(DEBUG_Z80)
         log_message(LOG_DEFAULT,
                     "%i PC %04x A%02x F%02x B%02x C%02x D%02x E%02x "
                     "H%02x L%02x SP%04x OP FD %02x %02x %02x.",
@@ -5554,7 +5554,7 @@ DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)
 
         FETCH_OPCODE(opcode);
 
-#ifdef DEBUG
+#if 0 && defined(DEBUG_Z80)
         if (debug.maincpu_traceflg)
             log_message(LOG_DEFAULT,
                         ".%04x %i %-25s A%02x F%02x B%02x C%02x D%02x E%02x "
