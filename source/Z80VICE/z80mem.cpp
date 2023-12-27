@@ -141,10 +141,6 @@ static void REGPARM2 store_unconnected_io(WORD addr, BYTE value)
 //    log_message(z80mem_log, "Store to unconnected IO %04x %02x", addr, value);	// [AppleWin-TC]
 }
 
-#ifdef _MSC_VER
-#pragma optimize("",off)
-#endif
-
 void z80mem_initialize(void)
 {
 	int i, j;
@@ -411,10 +407,6 @@ void z80mem_initialize(void)
     io_write_tab[0xdf] = c64io2_store;
 #endif
 }
-
-#ifdef _MSC_VER
-#pragma optimize("",on)
-#endif
 
 void z80mem_set_bank_pointer(BYTE **base, int *limit)
 {
