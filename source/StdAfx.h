@@ -3,6 +3,11 @@
 #include <tchar.h>
 
 #include <crtdbg.h>
+// <strmif.h> has the correct IReferenceClock definition that works for both x86 and x64,
+// whereas the alternative definition in <dsound.h> is incorrect for x64. (out of
+// maintenance perhaps)
+// <strmif.h> *must* be included before <dsound.h> for x64 to work.
+#include <strmif.h>
 #include <dsound.h>
 #include <dshow.h>
 
