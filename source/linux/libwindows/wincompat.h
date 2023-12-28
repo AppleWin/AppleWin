@@ -149,6 +149,7 @@ typedef LONG            HRESULT;
 typedef intptr_t        LONG_PTR;
 typedef uintptr_t       ULONG_PTR;
 typedef LONG_PTR        LRESULT;
+typedef ULONG_PTR       DWORD_PTR;
 
 typedef DWORD           LCID,       *PLCID;
 
