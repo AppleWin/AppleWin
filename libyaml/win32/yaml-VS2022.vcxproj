@@ -19,8 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\LICENSE" />
-    <None Include="..\README" />
+    <None Include="..\License" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\yaml.h" />
