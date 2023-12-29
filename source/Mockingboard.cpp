@@ -208,7 +208,7 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 
 void MockingboardCard::WriteToORB(BYTE subunit, BYTE subunitForAY/*=0*/)
 {
-	BYTE value = m_MBSubUnit[subunit].sy6522.Read(SY6522::rORB);
+	BYTE value = m_MBSubUnit[subunit].sy6522.GetBusViewOfORB();
 
 	if ((QueryType() == CT_MockingboardC || QueryType() == CT_Phasor) &&	// Not CT_MegaAudio/CT_SDMusic
 		subunit == 0 && // SC01 only at $Cn00 (not $Cn80)
