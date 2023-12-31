@@ -15,8 +15,8 @@
 @MKDIR "%~1\snesmax"
 @COPY /Y "%APPLEWIN_ROOT%\snesmax\*" "%~1\snesmax"
 CD "%~1"
-"C:\Program Files (x86)\7-Zip\7z.exe" a ..\AppleWin"%~1".zip *
-"C:\Program Files (x86)\7-Zip\7z.exe" a ..\AppleWin"%~1"-PDB.zip "%APPLEWIN_ROOT%\Release v141_xp\AppleWin.pdb"
+"C:\Program Files\7-Zip\7z.exe" a ..\AppleWin"%~1".zip *
+"C:\Program Files\7-Zip\7z.exe" a ..\AppleWin"%~1"-PDB.zip "%APPLEWIN_ROOT%\Release v141_xp\AppleWin.pdb"
 CD ..
 @GOTO end
 
