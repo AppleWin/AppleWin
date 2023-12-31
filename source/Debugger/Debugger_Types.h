@@ -266,9 +266,9 @@
 	{
 		MAX_COMMAND_LEN = 12,
 
-		MAX_ARGS        = 32, // was 40
+		MAX_ARGS        = 32,
 		ARG_SYNTAX_ERROR= -1,
-		MAX_ARG_LEN     = 127, // extended to allow font names, GH#481, any value is good > CONSOLE_WIDTH=80
+		MAX_ARG_LEN     = MAX_PATH, // extended to allow font names, GH#481, any value is good > CONSOLE_WIDTH(=80)
 	};
 
 	// NOTE: All Commands return flags of what needs to be redrawn
@@ -1023,7 +1023,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 	enum
 	{
-		MAX_FONT_NAME = MAX_ARG_LEN // was 64
+		MAX_FONT_NAME = MAX_ARG_LEN
 	};
 
 	enum FontSpacing_e
