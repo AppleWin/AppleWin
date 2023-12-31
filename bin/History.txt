@@ -17,7 +17,7 @@ Tom Charlesworth
 - [PR #1252] Update to libyaml 0.2.5. [@kiyolee]
 - [PR #1251] Update to zlib 1.3. [@kiyolee]
 - [PR #1250] Internal: Win64 DirectSound fix. [@kiyolee]
-- [Change #755] Internl: remove de-optimisation for Z80 code.
+- [Change #755] Internal: remove de-optimisation for Z80 code.
 
 
 1.30.16.0 - 26 Nov 2023
