@@ -9,6 +9,17 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.30.17.0 - 31 Dec 2023
+-----------------------
+- [Bug #1262] Fix loading save-state for RAMWorks III card with 2 or more aux 64K banks.
+- [Bug #1260] Fix for read 6522's IRB for "Werewolf!" game's Mockingboard detection not working.
+- [PR #1253] Update to minizip 1.1. [@kiyolee]
+- [PR #1252] Update to libyaml 0.2.5. [@kiyolee]
+- [PR #1251] Update to zlib 1.3. [@kiyolee]
+- [PR #1250] Internal: Win64 DirectSound fix. [@kiyolee]
+- [Change #755] Internl: remove de-optimisation for Z80 code.
+
+
 1.30.16.0 - 26 Nov 2023
 -----------------------
 - [Change #1258]  New command line: -mac-lc-card-dlgr to support the DLGR display bug in the 'Apple IIe card for Mac LC'.
