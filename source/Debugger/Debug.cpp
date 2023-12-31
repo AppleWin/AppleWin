@@ -4493,7 +4493,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	}
 	const std::string sLoadSaveFilePath = g_sCurrentDir + g_sMemoryLoadSaveFileName; // TODO: g_sDebugDir
 	
-	BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
+	BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank, true) : mem;
 	if (!pMemBankBase)
 	{
 		ConsoleBufferPush( TEXT( "Error: Bank out of range." ) );
@@ -4832,7 +4832,7 @@ Update_t CmdMemorySave (int nArgs)
 			}
 			sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
 
-			const BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
+			const BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank, true) : mem;
 			if (!pMemBankBase)
 			{
 				ConsoleBufferPush( TEXT( "Error: Bank out of range." ) );

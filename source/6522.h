@@ -49,7 +49,7 @@ public:
 		_ASSERT(0);
 		return 0;
 	}
-	BYTE GetBusViewOfORB(void) {	return m_regs.ORB & m_regs.DDRB; }	// Return how the AY8913 sees ORB on the bus (ie. not CPU's view which will be OR'd with !DDRB)
+	BYTE GetBusViewOfORB(void) { return m_regs.ORB & m_regs.DDRB; }	// Return how the AY8913 sees ORB on the bus (ie. not CPU's view which will be OR'd with !DDRB)
 	USHORT GetRegT1C(void) { return m_regs.TIMER1_COUNTER.w; }
 	USHORT GetRegT2C(void) { return m_regs.TIMER2_COUNTER.w; }
 	void GetRegs(BYTE regs[SIZE_6522_REGS]) { memcpy(&regs[0], (BYTE*)&m_regs, SIZE_6522_REGS); }	// For debugger
