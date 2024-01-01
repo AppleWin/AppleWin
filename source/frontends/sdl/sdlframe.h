@@ -39,6 +39,7 @@ namespace sa2
 
   protected:
     void SetApplicationIcon();
+    void SetGLSynchronisation(const common2::EmulatorOptions & options);
 
     virtual void ProcessSingleEvent(const SDL_Event & event, bool & quit);
     virtual void GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, double & x, double & y) const = 0;

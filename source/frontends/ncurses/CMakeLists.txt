@@ -23,30 +23,32 @@ add_executable(applen
   ${HEADER_FILES}
   )
 
+set(CURSES_NEED_NCURSES TRUE)
+set(CURSES_NEED_WIDE TRUE)  # required for Unicode in GR and HGR
 find_package(Curses REQUIRED)
-# pkg_search_module(NCURSESW REQUIRED ncursesw)
+
 pkg_search_module(LIBEVDEV REQUIRED libevdev)
 
 target_include_directories(applen PRIVATE
-  ${CURSES_INCLUDE_DIRS}
+  ${NCURSES_INCLUDE_DIRS}
   ${LIBEVDEV_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   )
 
 target_compile_options(applen PRIVATE
-  ${CURSES_CFLAGS}
+  ${NCURSES_CFLAGS}
   ${LIBEVDEV_CFLAGS_OTHER}
   )
 
 target_link_libraries(applen PRIVATE
-  ${CURSES_LIBRARIES}
+  ${NCURSES_LIBRARIES}
   ${LIBEVDEV_LIBRARIES}
   appleii
   common2
   )
 
 target_link_directories(applen PRIVATE
-  ${NCURSESW_LIBRARY_DIRS}
+  ${NCURSES_LIBRARY_DIRS}
   ${LIBEVDEV_LIBRARY_DIRS}
   )
 

@@ -25,8 +25,8 @@ namespace sa2
     bool myScrollConsole = true;
     char myInputBuffer[CONSOLE_WIDTH] = "";
 
-    uint64_t myBaseDebuggerCycles;
-    std::unordered_map<DWORD, uint64_t> myAddressCycles;
+    int64_t myBaseDebuggerCycles;
+    std::unordered_map<DWORD, int64_t> myAddressCycles;
 
     void debuggerCommand(SDLFrame * frame, const char * s);
 

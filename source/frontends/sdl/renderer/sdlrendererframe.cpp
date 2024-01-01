@@ -31,6 +31,8 @@ namespace sa2
       throw std::runtime_error(decorateSDLError("SDL_CreateRenderer"));
     }
 
+    SetGLSynchronisation(options);  // must be called after GL initialisation
+
     printRendererInfo(std::cerr, myRenderer, ourFormat, options.sdlDriver);
   }
 

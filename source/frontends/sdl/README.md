@@ -94,3 +94,7 @@ CPU:     total =     647.21 ms, mean =       1.34 ms, std =       0.48 ms, n =  
 For debugging and profiling (valgrind), it is best to switch off adaptive speed, as otherwise it enters a feedback loop and seems to hang.
 
 Use ``--fixed-speed``.
+
+## QEMU
+
+If the OpenGL implementation does not support `vsync`, the emulator will revert to `sleep_until` from `<thread>`; it is possible to force this behaviour with `--timer`.

@@ -138,6 +138,27 @@ namespace sa2
   {
   }
 
+  void SDLFrame::SetGLSynchronisation(const common2::EmulatorOptions & options)
+  {
+    const int defaultGLSwap = SDL_GL_GetSwapInterval();
+    if (defaultGLSwap == 0)
+    {
+      // sane default
+      mySynchroniseWithTimer = true;
+      myTargetGLSwap = 0;
+    }
+    else if (options.syncWithTimer)
+    {
+      mySynchroniseWithTimer = true;
+      myTargetGLSwap = 0;
+    }
+    else
+    {
+      mySynchroniseWithTimer = false;
+      myTargetGLSwap = options.glSwapInterval;
+    }
+  }
+
   void SDLFrame::End()
   {
     CommonFrame::End();

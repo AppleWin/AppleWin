@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <thread>
 
 #include "CardManager.h"
 #include "Core.h"
@@ -21,8 +22,10 @@ namespace common2
 
   CommonFrame::CommonFrame(const EmulatorOptions & options)
     : mySpeed(options.fixedSpeed)
+    , mySynchroniseWithTimer(options.syncWithTimer)
     , myAllowVideoUpdate(!options.noVideoUpdate)
   {
+    myLastSync = std::chrono::steady_clock::now();
   }
 
   void CommonFrame::Begin()
@@ -108,7 +111,7 @@ namespace common2
            IsDebugSteppingAtFullSpeed();
   }
 
-  void CommonFrame::ExecuteOneFrame(const uint64_t microseconds)
+  void CommonFrame::ExecuteOneFrame(const int64_t microseconds)
   {
     // when running in adaptive speed
     // the value msNextFrame is only a hint for when the next frame will arrive
@@ -129,19 +132,19 @@ namespace common2
     };
   }
 
-  void CommonFrame::ExecuteInRunningMode(const uint64_t microseconds)
+  void CommonFrame::ExecuteInRunningMode(const int64_t microseconds)
   {
     SetFullSpeed(CanDoFullSpeed());
     const DWORD cyclesToExecute = mySpeed.getCyclesTillNext(microseconds);  // this checks g_bFullSpeed
     Execute(cyclesToExecute);
   }
 
-  void CommonFrame::ExecuteInDebugMode(const uint64_t microseconds)
+  void CommonFrame::ExecuteInDebugMode(const int64_t microseconds)
   {
     // In AppleWin this is called without a timer for just one iteration
     // because we run a "frame" at a time, we need a bit of ingenuity
     const DWORD cyclesToExecute = mySpeed.getCyclesAtFixedSpeed(microseconds);
-    const uint64_t target = g_nCumulativeCycles + cyclesToExecute;
+    const int64_t target = g_nCumulativeCycles + cyclesToExecute;
 
     while (g_nAppMode == MODE_STEPPING && g_nCumulativeCycles < target)
     {
@@ -220,6 +223,18 @@ namespace common2
     LinuxFrame::LoadSnapshot();
     ResetSpeed();
     ResetHardware();
+  }
+
+  void CommonFrame::SyncVideoPresentScreen(const int64_t microseconds)
+  {
+    if (mySynchroniseWithTimer)
+    {
+      const auto next = myLastSync + std::chrono::microseconds(microseconds);
+      // no need to check here if "next" is in the past
+      std::this_thread::sleep_until(next);
+      myLastSync = std::chrono::steady_clock::now();
+    }
+    VideoPresentScreen();
   }
 
 }

@@ -121,7 +121,7 @@ void run_sdl(int argc, const char * argv [])
     std::string updateTextureTimerTag, refreshScreenTimerTag, cpuTimerTag, eventTimerTag;
 
     // it does not need to be exact
-    const uint64_t oneFrameMicros = 1000000 / fps;
+    const int64_t oneFrameMicros = 1000000 / fps;
 
     bool quit = false;
 
@@ -146,7 +146,7 @@ void run_sdl(int argc, const char * argv [])
         }
         else
         {
-          frame->VideoPresentScreen();
+          frame->SyncVideoPresentScreen(oneFrameMicros);
         }
         refreshScreenTimer.toc();
       }

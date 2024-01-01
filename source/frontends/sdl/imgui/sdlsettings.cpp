@@ -688,11 +688,13 @@ namespace sa2
       SDL_GetVersion(&sdl);
       ImGui::Text("SDL version %d.%d.%d", sdl.major, sdl.minor, sdl.patch);
       ImGui::Text("Dear ImGui %s", ImGui::GetVersion());
-    }
 
-    ImGui::Separator();
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui::Text("FPS: %d", int(io.Framerate));
+      ImGui::Separator();
+      const int glSwap = SDL_GL_GetSwapInterval();
+      ImGui::Text("GL Swap: %d", glSwap);
+      ImGuiIO& io = ImGui::GetIO();
+      ImGui::Text("FPS: %d", int(io.Framerate));
+    }
 
     ImGui::End();
   }

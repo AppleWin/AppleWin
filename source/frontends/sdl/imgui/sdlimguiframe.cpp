@@ -82,6 +82,7 @@ namespace sa2
     }
 
     SDL_GL_MakeCurrent(myWindow.get(), myGLContext);
+    SetGLSynchronisation(options); // must be called after GL initialisation
 
     // Setup Platform/Renderer backends
     std::cerr << "IMGUI_VERSION: " << IMGUI_VERSION << std::endl;

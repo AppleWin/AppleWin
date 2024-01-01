@@ -56,8 +56,12 @@ namespace na2
     }
 
     const int inch = wgetch(window);
-
     int ch = ERR;
+
+    /*
+    Ctrl & Alt - Arrows are not quite right.
+    I have changed them many times and I suspect they are terminal-dependent.
+    */
 
     switch (inch)
     {
@@ -82,16 +86,20 @@ namespace na2
     case 0x14a: // DEL
       ch = 0x7f;
       break;
-    case 543 ... 546: // Various values for Ctrl/Alt - Left on Ubuntu and Pi OS
+    case 550: // Alt-Left
+    case 552: // Ctrl-Left
       frame->ChangeColumns(-1);
       break;
-    case 558 ... 561: // Ctrl/Alt - Right
+    case 565: // Alt-Right
+    case 567: // Ctrl-Right
       frame->ChangeColumns(+1);
       break;
-    case 564 ... 567: // Ctrl/Alt - Up
+    case 571: // Alt-Up
+    case 573: // Ctrl-Up
       frame->ChangeRows(-1);
       break;
-    case 523 ... 526: // Ctrl/Alt - Down
+    case 530: // Alt-Down
+    case 532: // Ctrl-Down
       frame->ChangeRows(+1);
       break;
     default:

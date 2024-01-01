@@ -48,6 +48,7 @@ namespace common2
     bool run = true;  // false if options include "-h"
 
     bool fixedSpeed = false; // default adaptive
+    bool syncWithTimer = false;
     size_t audioBuffer = 46; // in ms -> corresponds to 2048 samples (keep below 90ms)
 
     int sdlDriver = -1; // default = -1 to let SDL choose
