@@ -646,7 +646,6 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 				{
 					bFileDisplayed = true;
 
-					// TODO: Must check for buffer overflow !
 					ConsolePrintFormat( "%s%s"
 						, CHC_PATH
 						, pPathFileName.c_str()

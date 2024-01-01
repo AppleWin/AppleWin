@@ -6408,6 +6408,9 @@ Update_t CmdOutputRun (int nArgs)
 	{
 		g_bScriptReadOk = true;
 
+		ConsolePrintFormat("%sRun script: ", CHC_INFO);
+		ConsolePrintFormat("%s%s", CHC_PATH, sFileName.c_str());	// Output pathname to console to indicate the script has been read
+
 		int nLine = script.GetNumLines();
 
 		Update_t bUpdateDisplay = UPDATE_NOTHING;	
@@ -6421,9 +6424,8 @@ Update_t CmdOutputRun (int nArgs)
 	}
 	else
 	{
-		std::string sMiniFileName = sFileName.substr(0, MIN(sFileName.size(), CONSOLE_WIDTH));
-		ConsolePrintFormat("%sCouldn't load filename:", CHC_ERROR);
-		ConsolePrintFormat("%s%s", CHC_STRING, sMiniFileName.c_str());
+		ConsolePrintFormat("%sCouldn't load script:", CHC_WARNING);
+		ConsolePrintFormat("%s%s", CHC_STRING, sFileName.c_str());
 	}
 
 	return ConsoleUpdate();
@@ -9011,28 +9013,28 @@ void DebugInitialize ()
 		// Look in g_sCurrentDir, otherwise try g_sProgramDir
 
 		std::string pathname = g_sCurrentDir + debuggerAutoRunName;
-		if (pathname.size() >= MAX_PATH)
+		errno_t error = strncpy_s(g_aArgs[1].sArg, MAX_PATH, pathname.c_str(), pathname.size());
+		if (error != 0)
 		{
 			ConsolePrintFormat("%sPathname too long:", CHC_ERROR);
 			ConsolePrintFormat("%s%s", CHC_STRING, pathname.c_str());
 		}
 		else
 		{
-			strncpy_s(g_aArgs[1].sArg, MAX_PATH, pathname.c_str(), _TRUNCATE);
 			CmdOutputRun(1);
 		}
 
 		if (!g_bScriptReadOk)
 		{
 			pathname = g_sProgramDir + debuggerAutoRunName;
-			if (pathname.size() >= MAX_PATH)
+			error = strncpy_s(g_aArgs[1].sArg, MAX_PATH, pathname.c_str(), pathname.size());
+			if (error != 0)
 			{
 				ConsolePrintFormat("%sPathname too long:", CHC_ERROR);
 				ConsolePrintFormat("%s%s", CHC_STRING, pathname.c_str());
 			}
 			else
 			{
-				strncpy_s(g_aArgs[1].sArg, MAX_PATH, pathname.c_str(), _TRUNCATE);
 				CmdOutputRun(1);
 			}
 		}
