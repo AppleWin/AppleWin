@@ -4493,7 +4493,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	}
 	const std::string sLoadSaveFilePath = g_sCurrentDir + g_sMemoryLoadSaveFileName; // TODO: g_sDebugDir
 	
-	BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
+	BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank, true) : mem;
 	if (!pMemBankBase)
 	{
 		ConsoleBufferPush( TEXT( "Error: Bank out of range." ) );
@@ -4832,7 +4832,7 @@ Update_t CmdMemorySave (int nArgs)
 			}
 			sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
 
-			const BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
+			const BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank, true) : mem;
 			if (!pMemBankBase)
 			{
 				ConsoleBufferPush( TEXT( "Error: Bank out of range." ) );
@@ -6391,29 +6391,25 @@ Update_t CmdOutputRun (int nArgs)
 	MemoryTextFile_t script; 
 
 	const std::string pFileName = g_aArgs[ 1 ].sArg;
-
 	std::string sFileName;
-	std::string sMiniFileName; // [CONSOLE_WIDTH];
-
-//	if (g_aArgs[1].bType & TYPE_QUOTED_2)
-
-	sMiniFileName = pFileName.substr(0, MIN(pFileName.size(), CONSOLE_WIDTH));
-//	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
 	if (pFileName[0] == PATH_SEPARATOR || pFileName[1] == ':')	// NB. Any prefix quote has already been stripped
 	{
 		// Abs pathname
-		sFileName = sMiniFileName;
+		sFileName = pFileName;
 	}
 	else
 	{
 		// Rel pathname
-		sFileName = g_sCurrentDir + sMiniFileName;
+		sFileName = g_sCurrentDir + pFileName;
 	}
 
 	if (script.Read( sFileName ))
 	{
 		g_bScriptReadOk = true;
+
+		ConsolePrintFormat("%sRun script: ", CHC_INFO);
+		ConsolePrintFormat("%s%s", CHC_PATH, sFileName.c_str());	// Output pathname to console to indicate the script has been read
 
 		int nLine = script.GetNumLines();
 
@@ -6428,7 +6424,7 @@ Update_t CmdOutputRun (int nArgs)
 	}
 	else
 	{
-		ConsolePrintFormat("%sCouldn't load filename:", CHC_ERROR);
+		ConsolePrintFormat("%sCouldn't load script:", CHC_WARNING);
 		ConsolePrintFormat("%s%s", CHC_STRING, sFileName.c_str());
 	}
 
@@ -9017,14 +9013,30 @@ void DebugInitialize ()
 		// Look in g_sCurrentDir, otherwise try g_sProgramDir
 
 		std::string pathname = g_sCurrentDir + debuggerAutoRunName;
-		strncpy_s(g_aArgs[1].sArg, MAX_ARG_LEN, pathname.c_str(), _TRUNCATE);
-		CmdOutputRun(1);
+		errno_t error = strncpy_s(g_aArgs[1].sArg, MAX_PATH, pathname.c_str(), pathname.size());
+		if (error != 0)
+		{
+			ConsolePrintFormat("%sPathname too long:", CHC_ERROR);
+			ConsolePrintFormat("%s%s", CHC_STRING, pathname.c_str());
+		}
+		else
+		{
+			CmdOutputRun(1);
+		}
 
 		if (!g_bScriptReadOk)
 		{
 			pathname = g_sProgramDir + debuggerAutoRunName;
-			strncpy_s(g_aArgs[1].sArg, MAX_ARG_LEN, pathname.c_str(), _TRUNCATE);
-			CmdOutputRun(1);
+			error = strncpy_s(g_aArgs[1].sArg, MAX_PATH, pathname.c_str(), pathname.size());
+			if (error != 0)
+			{
+				ConsolePrintFormat("%sPathname too long:", CHC_ERROR);
+				ConsolePrintFormat("%s%s", CHC_STRING, pathname.c_str());
+			}
+			else
+			{
+				CmdOutputRun(1);
+			}
 		}
 	}
 

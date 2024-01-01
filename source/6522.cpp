@@ -349,11 +349,11 @@ BYTE SY6522::Read(BYTE nReg)
 
 	switch (nReg)
 	{
-	case 0x00:	// ORB
-		nValue = m_regs.ORB;
+	case 0x00:	// IRB
+		nValue = m_regs.ORB | (m_regs.DDRB ^ 0xff);	// Input bits read back as 1's (GH#1260)
 		break;
-	case 0x01:	// ORA
-		nValue = m_regs.ORA;
+	case 0x01:	// IRA
+		nValue = m_regs.ORA;						// NB. Inputs bits driven by AY8913
 		break;
 	case 0x02:	// DDRB
 		nValue = m_regs.DDRB;
