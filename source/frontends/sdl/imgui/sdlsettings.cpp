@@ -775,7 +775,7 @@ namespace sa2
 
         size_t i = 0;
         void * bank;
-        while ((bank = MemGetBankPtr(i)))
+        while ((bank = MemGetBankPtr(i, true)))
         {
           const std::string name = "Bank " + std::to_string(i);
           banks.push_back({bank, 0, _6502_MEM_LEN, name});

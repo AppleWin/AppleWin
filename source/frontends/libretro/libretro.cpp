@@ -452,7 +452,7 @@ void *retro_get_memory_data(unsigned id)
   switch (id & RETRO_MEMORY_MASK)
   {
   case RETRO_MEMORY_SYSTEM_RAM:
-    return MemGetBankPtr(0);
+    return MemGetBankPtr(0, true);
   default:
     return nullptr;
   };
