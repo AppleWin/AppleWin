@@ -28,7 +28,6 @@ public:
 	void StopTimer2(void);
 	bool IsTimer2Active(void) { return m_timer2Active; }
 
-	void UpdatePortAForHiZ(void);
 	void UpdateIFR(BYTE clr_ifr, BYTE set_ifr = 0);
 
 	void UpdateTimer1(USHORT clocks);
@@ -53,10 +52,10 @@ public:
 	USHORT GetRegT1C(void) { return m_regs.TIMER1_COUNTER.w; }
 	USHORT GetRegT2C(void) { return m_regs.TIMER2_COUNTER.w; }
 	void GetRegs(BYTE regs[SIZE_6522_REGS]) { memcpy(&regs[0], (BYTE*)&m_regs, SIZE_6522_REGS); }	// For debugger
-	void SetRegORA(BYTE reg) { m_regs.ORA = reg; }
+	void SetRegIRA(BYTE reg) { m_regs.ORA = reg; }
 	bool IsTimer1IrqDelay(void) { return m_timer1IrqDelay ? true : false; }
 
-	BYTE Read(BYTE nReg);
+	BYTE Read(BYTE nReg, bool isDrivingBus = false);
 	void Write(BYTE nReg, BYTE nValue);
 
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);

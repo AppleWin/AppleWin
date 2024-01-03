@@ -128,13 +128,6 @@ USHORT SY6522::SetTimerSyncEvent(BYTE reg, USHORT timerLatch)
 
 //-----------------------------------------------------------------------------
 
-void SY6522::UpdatePortAForHiZ(void)
-{
-	BYTE ora = GetReg(SY6522::rORA);
-	ora |= GetReg(SY6522::rDDRA) ^ 0xff;	// for any DDRA bits set as input (logical 0), then set them in ORA
-	SetRegORA(ora);							// Empirically Phasor's 6522-AY8913 bus floats high (or pull-up?) if no AY chip-selected (so DDRA=0x00 will read 0xFF as input)
-}
-
 void SY6522::UpdateIFR(BYTE clr_ifr, BYTE set_ifr /*= 0*/)
 {
 	m_regs.IFR &= ~clr_ifr;
@@ -343,7 +336,7 @@ bool SY6522::IsTimer2Underflowed(BYTE reg)
 
 //-----------------------------------------------------------------------------
 
-BYTE SY6522::Read(BYTE nReg)
+BYTE SY6522::Read(BYTE nReg, bool isDrivingBus/*=false*/)
 {
 	BYTE nValue = 0x00;
 
@@ -353,7 +346,7 @@ BYTE SY6522::Read(BYTE nReg)
 		nValue = m_regs.ORB | (m_regs.DDRB ^ 0xff);	// Input bits read back as 1's (GH#1260)
 		break;
 	case 0x01:	// IRA
-		nValue = m_regs.ORA;						// NB. Inputs bits driven by AY8913
+		nValue = m_regs.ORA | (isDrivingBus ? 0x00 : (m_regs.DDRA ^ 0xff));	// NB. Inputs bits driven by AY8913 if in PSG READ mode
 		break;
 	case 0x02:	// DDRB
 		nValue = m_regs.DDRB;
