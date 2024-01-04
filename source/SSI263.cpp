@@ -323,6 +323,11 @@ void SSI263::Votrax_Write(BYTE value)
 
 void SSI263::Play(unsigned int nPhoneme)
 {
+	if (!SSI263SingleVoice.lpDSBvoice)
+	{
+		return;
+	}
+
 	if (!SSI263SingleVoice.bActive)
 	{
 		bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, m_kDSBufferByteSize);
