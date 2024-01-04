@@ -900,7 +900,7 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 
 	//
 
-	_ASSERT(m_device != -1);
+	_ASSERT(m_device != BYTE(-1));
 	SetCardMode(mode);
 
 	// Only need to directly assert IRQ for Phasor mode (for Mockingboard mode it's done via UpdateIFR() in parent)
