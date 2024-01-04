@@ -125,7 +125,7 @@ namespace sa2
 {
 
   SDLFrame::SDLFrame(const common2::EmulatorOptions & options)
-    : CommonFrame(options)
+    : common2::GNUFrame(options)
     , myTargetGLSwap(options.glSwapInterval)
     , myPreserveAspectRatio(options.aspectRatio)
     , myForceCapsLock(true)

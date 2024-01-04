@@ -1,5 +1,4 @@
 #include "StdAfx.h"
-#include "frontends/common2/commonframe.h"
 #include "frontends/libretro/retroframe.h"
 #include "frontends/libretro/environment.h"
 
@@ -79,7 +78,7 @@ namespace ra2
 {
 
   RetroFrame::RetroFrame(const common2::EmulatorOptions & options)
-  : common2::CommonFrame(options)
+  : common2::GNUFrame(options)
   {
   }
 

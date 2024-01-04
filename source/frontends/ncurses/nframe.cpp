@@ -43,7 +43,7 @@ namespace na2
   };
 
   NFrame::NFrame(const common2::EmulatorOptions & options, const std::shared_ptr<EvDevPaddle> & paddle)
-    : common2::CommonFrame(options)
+    : common2::GNUFrame(options)
     , myPaddle(paddle)
     , myRows(-1)
     , myColumns(-1)

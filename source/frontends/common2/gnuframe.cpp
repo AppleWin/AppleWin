@@ -78,8 +78,9 @@ namespace
 namespace common2
 {
 
-  GNUFrame::GNUFrame()
-  : myHomeDir(GetHomeDir())
+  GNUFrame::GNUFrame(const EmulatorOptions & options)
+  : CommonFrame(options)
+  , myHomeDir(GetHomeDir())
   , myResourceFolder(getResourceFolder("/resource/"))
   {
     // should this go down to LinuxFrame (maybe Initialisation?)

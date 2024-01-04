@@ -51,7 +51,6 @@ namespace sa2
 
   SDLImGuiFrame::SDLImGuiFrame(const common2::EmulatorOptions & options)
     : SDLFrame(options)
-    , CommonFrame(options)
     , myPresenting(false)
   {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SA2_CONTEXT_FLAGS);
