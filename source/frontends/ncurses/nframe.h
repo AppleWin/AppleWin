@@ -34,6 +34,7 @@ namespace na2
     void ChangeRows(const int x);
 
     void Init(int rows, int columns);
+    void ReInit();
 
   private:
 
@@ -66,6 +67,7 @@ namespace na2
     bool UpdateDHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
 
     void InitialiseNCurses();
+    void ForceInit(int rows, int columns);
   };
 
 }

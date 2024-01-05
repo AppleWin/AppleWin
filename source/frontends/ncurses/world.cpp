@@ -9,6 +9,11 @@
 
 #include "frontends/ncurses/nframe.h"
 
+// #define KEY_LOGGING_VERBOSE
+
+#ifdef KEY_LOGGING_VERBOSE
+#include "Log.h"
+#endif
 
 namespace
 {
@@ -56,6 +61,14 @@ namespace na2
     }
 
     const int inch = wgetch(window);
+
+#ifdef KEY_LOGGING_VERBOSE
+    if (inch != ERR)
+    {
+      LogFileOutput("wgetch = %3d\n", inch);
+    }
+#endif
+
     int ch = ERR;
 
     /*
@@ -86,18 +99,25 @@ namespace na2
     case 0x14a: // DEL
       ch = 0x7f;
       break;
+    case 410:
+      frame->ReInit();
+      break;
+    case 548: // Raspberry Pi
     case 550: // Alt-Left
     case 552: // Ctrl-Left
       frame->ChangeColumns(-1);
       break;
+    case 563: // Raspberry Pi
     case 565: // Alt-Right
     case 567: // Ctrl-Right
       frame->ChangeColumns(+1);
       break;
+    case 569: // Raspberry Pi
     case 571: // Alt-Up
     case 573: // Ctrl-Up
       frame->ChangeRows(-1);
       break;
+    case 528: // Raspberry Pi
     case 530: // Alt-Down
     case 532: // Ctrl-Down
       frame->ChangeRows(+1);

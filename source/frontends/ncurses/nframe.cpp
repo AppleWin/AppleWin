@@ -37,7 +37,11 @@ namespace na2
     ~NCurses()
     {
       endwin();
-      colors.reset();
+    }
+    void allclear()
+    {
+      clear();
+      refresh();
     }
     std::shared_ptr<GraphicsColors> colors;
   };
@@ -87,33 +91,37 @@ namespace na2
     myAsciiArt->changeRows(x);
   }
 
+  void NFrame::ReInit()
+  {
+    ForceInit(myRows, myColumns);
+  }
+
+  void NFrame::ForceInit(int rows, int columns)
+  {
+    InitialiseNCurses();
+    myNCurses->allclear();
+
+    myRows = rows;
+    myColumns = columns;
+
+    const int width = 1 + myColumns + 1;
+    const int left = std::max(0, (COLS - width) / 2);
+
+    myFrame.reset(newwin(1 + myRows + 1, width, 0, left), delwin);
+    box(myFrame.get(), 0, 0);
+    wtimeout(myFrame.get(), 0);
+    keypad(myFrame.get(), true);
+    wrefresh(myFrame.get());
+
+    myStatus.reset(newwin(8, width, 1 + myRows + 1, left), delwin);
+    FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
+  }
+
   void NFrame::Init(int rows, int columns)
   {
     if (myRows != rows || myColumns != columns)
     {
-      InitialiseNCurses();
-      if (columns < myColumns || rows < myRows)
-      {
-        werase(myStatus.get());
-        wrefresh(myStatus.get());
-        werase(myFrame.get());
-        wrefresh(myFrame.get());
-      }
-
-      myRows = rows;
-      myColumns = columns;
-
-      const int width = 1 + myColumns + 1;
-      const int left = (COLS - width) / 2;
-
-      myFrame.reset(newwin(1 + myRows + 1, width, 0, left), delwin);
-      box(myFrame.get(), 0 , 0);
-      wtimeout(myFrame.get(), 0);
-      keypad(myFrame.get(), true);
-      wrefresh(myFrame.get());
-
-      myStatus.reset(newwin(8, width, 1 + myRows + 1, left), delwin);
-      FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
+      ForceInit(rows, columns);
     }
   }
 
