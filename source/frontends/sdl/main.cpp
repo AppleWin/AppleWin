@@ -152,7 +152,7 @@ void run_sdl(int argc, const char * argv [])
       }
 
       frameTimer.toc();
-    } while (!quit);
+    } while (!quit && !frame->Quit());
 
     global.toc();
 

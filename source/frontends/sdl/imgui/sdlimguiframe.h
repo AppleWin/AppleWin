@@ -19,6 +19,8 @@ namespace sa2
     void ResetSpeed() override;
     void Initialize(bool resetVideoState) override;
 
+    bool Quit() const override;
+
   protected:
 
     void ProcessSingleEvent(const SDL_Event & event, bool & quit) override;

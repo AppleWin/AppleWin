@@ -77,5 +77,9 @@ namespace sa2
     y = GetRelativePosition(motion.y, height);
   }
 
+  bool SDLRendererFrame::Quit() const
+  {
+    return false;
+  }
 
 }

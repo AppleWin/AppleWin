@@ -479,6 +479,11 @@ namespace sa2
           }
           break;
         }
+      case SDLK_F3:
+      {
+        quit = true;
+        break;
+      }
       case SDLK_F2:
         {
           if (key.keysym.mod & KMOD_CTRL)

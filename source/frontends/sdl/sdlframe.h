@@ -22,6 +22,8 @@ namespace sa2
     void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
     std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName) override;
 
+    virtual bool Quit() const = 0;
+
     void ProcessEvents(bool &quit);
 
     void FrameResetMachineState();

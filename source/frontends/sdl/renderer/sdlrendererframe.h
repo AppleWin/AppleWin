@@ -15,6 +15,8 @@ namespace sa2
     void VideoPresentScreen() override;
     void Initialize(bool resetVideoState) override;
 
+    bool Quit() const override;
+
   protected:
     void GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, double & x, double & y) const override;
 

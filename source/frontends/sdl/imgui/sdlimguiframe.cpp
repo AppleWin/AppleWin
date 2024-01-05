@@ -276,6 +276,11 @@ namespace sa2
     SDLFrame::ProcessSingleEvent(event, quit);
   }
 
+  bool SDLImGuiFrame::Quit() const
+  {
+    return mySettings.quit;
+  }
+
   void SDLImGuiFrame::ResetSpeed()
   {
     SDLFrame::ResetSpeed();

@@ -744,6 +744,8 @@ namespace sa2
         {
           myDebugger.syncDebuggerState(frame);
         }
+        ImGui::Separator();
+        ImGui::MenuItem("Exit", "F3", &quit);
         ImGui::EndMenu();
       }
 

@@ -18,6 +18,7 @@ namespace sa2
     void resetDebuggerCycles();
 
     bool windowed = false;
+    bool quit = false;
 
   private:
     bool myShowDemo = false;
