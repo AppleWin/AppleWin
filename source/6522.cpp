@@ -43,6 +43,7 @@ void SY6522::Reset(const bool powerCycle)
 		memset(&m_regs, 0, sizeof(Regs));
 		m_regs.TIMER1_LATCH.w = 0xffff;	// Some random value (but pick $ffff so it's deterministic)
 										// . NB. if it's too small (< ~$0007) then MB detection routines will fail!
+		m_isBusDriven = false;
 	}
 
 	CpuCreateCriticalSection();	// Reset() called by SY6522 global ctor, so explicitly create CPU's CriticalSection
@@ -336,7 +337,7 @@ bool SY6522::IsTimer2Underflowed(BYTE reg)
 
 //-----------------------------------------------------------------------------
 
-BYTE SY6522::Read(BYTE nReg, bool isDrivingBus/*=false*/)
+BYTE SY6522::Read(BYTE nReg)
 {
 	BYTE nValue = 0x00;
 
@@ -346,7 +347,7 @@ BYTE SY6522::Read(BYTE nReg, bool isDrivingBus/*=false*/)
 		nValue = m_regs.ORB | (m_regs.DDRB ^ 0xff);	// Input bits read back as 1's (GH#1260)
 		break;
 	case 0x01:	// IRA
-		nValue = m_regs.ORA | (isDrivingBus ? 0x00 : (m_regs.DDRA ^ 0xff));	// NB. Inputs bits driven by AY8913 if in PSG READ mode
+		nValue = m_regs.ORA | (m_isBusDriven ? 0x00 : (m_regs.DDRA ^ 0xff));	// NB. Inputs bits driven by AY8913 if in PSG READ mode
 		break;
 	case 0x02:	// DDRB
 		nValue = m_regs.DDRB;

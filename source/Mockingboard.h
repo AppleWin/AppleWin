@@ -87,7 +87,7 @@ private:
 		MockingboardUnitState_e state[NUM_AY8913_PER_SUBUNIT];	// AY's PSG function
 		bool isAYLatchedAddressValid[NUM_AY8913_PER_SUBUNIT];
 		bool isChipSelected[NUM_AY8913_PER_SUBUNIT];
-		bool isDrivingBus;
+		bool isBusDriven;
 
 		MB_SUBUNIT(UINT slot, SS_CARDTYPE type) : sy6522(slot, type == CT_MegaAudio), ssi263(slot)
 		{
@@ -103,7 +103,13 @@ private:
 			isAYLatchedAddressValid[0] = isAYLatchedAddressValid[1] = false;	// after AY reset
 			isChipSelected[0] = type == CT_Phasor ? false : true;	// Only Phasor is false, all other MB variants are true
 			isChipSelected[1] = false;
-			isDrivingBus = false;
+			SetBusState(false);
+		}
+
+		void SetBusState(bool state)
+		{
+			isBusDriven = state;
+			sy6522.SetBusBeingDriven(state);
 		}
 	};
 
