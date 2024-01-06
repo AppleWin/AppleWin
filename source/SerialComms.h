@@ -88,7 +88,7 @@ private:
 	std::string m_currentSerialPortName;
 	DWORD	m_dwSerialPortItem;
 
-	static const UINT SERIALPORTITEM_INVALID_COM_PORT = 0;
+	static const UINT SERIALPORTITEM_INVALID_COM_PORT;
 	std::vector<UINT> m_vecSerialPortsItems;	// Includes "None" & "TCP" items
 	std::string m_strSerialPortChoices;
 	UINT	m_uTCPChoiceItemIdx;
@@ -111,6 +111,7 @@ private:
 	HANDLE m_hCommHandle;
 	SOCKET m_hCommListenSocket;
 	SOCKET m_hCommAcceptSocket;
+	HWND m_hFrameWindow; // to avoid variable (de)-initialisation order issues
 
 	//
 

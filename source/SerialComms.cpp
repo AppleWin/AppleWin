@@ -47,6 +47,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define TCP_SERIAL_PORT 1977
 
+const UINT CSuperSerialCard::SERIALPORTITEM_INVALID_COM_PORT = 0;
+
 // Default: 9600-8-N-1
 SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
 {
@@ -69,7 +71,8 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	m_strSerialPortChoices(1, '\0'), // Combo box friendly, just in case.
 	m_uTCPChoiceItemIdx(0),
 	m_bCfgSupportDCD(false),
-	m_pExpansionRom(NULL)
+	m_pExpansionRom(NULL),
+	m_hFrameWindow(NULL)
 {
 	if (m_slot != 2)	// fixme
 		ThrowErrorInvalidSlot();
@@ -241,6 +244,7 @@ bool CSuperSerialCard::CheckComm()
 			saAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 			if (bind(m_hCommListenSocket, (LPSOCKADDR)&saAddress, sizeof(saAddress)) == SOCKET_ERROR)
 			{
+				closesocket(m_hCommListenSocket);
 				m_hCommListenSocket = INVALID_SOCKET;
 				WSACleanup();
 				return false;
@@ -249,18 +253,21 @@ bool CSuperSerialCard::CheckComm()
 			// bound, so listen
 			if (listen(m_hCommListenSocket, 1) == SOCKET_ERROR)
 			{
+				closesocket(m_hCommListenSocket);
 				m_hCommListenSocket = INVALID_SOCKET;
 				WSACleanup();
 				return false;
 			}
 
 			// now send async events to our app's message handler
+			m_hFrameWindow = GetFrame().g_hFrameWindow;
 			if (WSAAsyncSelect(
 					/* SOCKET s */ m_hCommListenSocket,
-					/* HWND hWnd */ GetFrame().g_hFrameWindow,
+					/* HWND hWnd */ m_hFrameWindow,
 					/* unsigned int wMsg */ WM_USER_TCP_SERIAL,
 					/* long lEvent */ (FD_ACCEPT | FD_CONNECT | FD_READ | FD_CLOSE)) != 0)
 			{
+				closesocket(m_hCommListenSocket);
 				m_hCommListenSocket = INVALID_SOCKET;
 				WSACleanup();
 				return false;
@@ -328,7 +335,7 @@ void CSuperSerialCard::CommTcpSerialCleanup()
 {
 	if (m_hCommListenSocket != INVALID_SOCKET)
 	{
-		WSAAsyncSelect(m_hCommListenSocket, GetFrame().g_hFrameWindow, 0, 0); // Stop event messages
+		WSAAsyncSelect(m_hCommListenSocket, m_hFrameWindow, 0, 0); // Stop event messages
 		closesocket(m_hCommListenSocket);
 		m_hCommListenSocket = INVALID_SOCKET;
 
