@@ -627,7 +627,7 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 	// Currently only support one RIFF file
 	if (!g_cmdLine.wavFileSpeaker.empty())
 	{
-		if (RiffInitWriteFile(g_cmdLine.wavFileSpeaker.c_str(), SPKR_SAMPLE_RATE, 1))
+		if (RiffInitWriteFile(g_cmdLine.wavFileSpeaker.c_str(), SPKR_SAMPLE_RATE, Spkr_GetNumChannels()))
 			Spkr_OutputToRiff();
 	}
 	else if (!g_cmdLine.wavFileMockingboard.empty())
