@@ -53,6 +53,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // their buffers are running low.
 //
 
+// NB. Setting g_nSPKR_NumChannels=1 still works (ie. mono).
+// . Retain it for a while in case there are regressions with the new 2-channel code, then remove it.
 static const unsigned short g_nSPKR_NumChannels = 2;
 static const DWORD g_dwDSSpkrBufferSize = MAX_SAMPLES * sizeof(short) * g_nSPKR_NumChannels;
 
@@ -354,8 +356,9 @@ static void UpdateRemainderBuffer(ULONG* pnCycleDiff)
 				}
 				else
 				{
-					g_pSpeakerBuffer[g_nBufferIdx * 2 + 0] = 0x0000;
-					g_pSpeakerBuffer[g_nBufferIdx * 2 + 1] = DCFilter((short)nSampleMean);
+					const short sample = DCFilter((short)nSampleMean);
+					g_pSpeakerBuffer[g_nBufferIdx * 2 + 0] = sample;
+					g_pSpeakerBuffer[g_nBufferIdx * 2 + 1] = sample;
 				}
 				g_nBufferIdx++;
 			}
@@ -383,8 +386,9 @@ static void UpdateSpkr()
 		  }
 		  else
 		  {
-			  g_pSpeakerBuffer[g_nBufferIdx * 2 + 0] = 0x0000;
-			  g_pSpeakerBuffer[g_nBufferIdx * 2 + 1] = DCFilter(g_nSpeakerData);
+			  const short sample = DCFilter(g_nSpeakerData);
+			  g_pSpeakerBuffer[g_nBufferIdx * 2 + 0] = sample;
+			  g_pSpeakerBuffer[g_nBufferIdx * 2 + 1] = sample;
 		  }
 		  g_nBufferIdx++;
 	  }
@@ -670,8 +674,9 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 				{
 					for (UINT i = 0; i < numSamples; i++)
 					{
-						pDSLockedBuffer0[i * 2 + 0] = 0x0000;
-						pDSLockedBuffer0[i * 2 + 1] = DCFilter(g_nSpeakerData);
+						const short sample = DCFilter(g_nSpeakerData);
+						pDSLockedBuffer0[i * 2 + 0] = sample;
+						pDSLockedBuffer0[i * 2 + 1] = sample;
 					}
 				}
 
@@ -690,8 +695,9 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 				{
 					for (UINT i = 0; i < numSamples; i++)
 					{
-						pDSLockedBuffer1[i * 2 + 0] = 0x0000;
-						pDSLockedBuffer1[i * 2 + 1] = DCFilter(g_nSpeakerData);
+						const short sample = DCFilter(g_nSpeakerData);
+						pDSLockedBuffer1[i * 2 + 0] = sample;
+						pDSLockedBuffer1[i * 2 + 1] = sample;
 					}
 				}
 
