@@ -284,10 +284,10 @@ GetSlotInX
 ;	A = result of hd_execute
 ; Read or write command
 ;	X = Slot# << 4
-;   Y = command
+;	Y = command
 ; Status command
-;   X = low byte of disk size
-;   Y = high byte of disk size
+;	X = low byte of disk size
+;	Y = high byte of disk size
 cmdproc
  php
 

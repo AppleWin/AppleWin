@@ -711,8 +711,8 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 	case 0x0:	// r/o: status
 	case 0x1:	// r/o: execute
 	case 0x8:	// r/o: legacy next-data port
-	case 0x9:   // r/o: low byte of image size
-	case 0xa:   // r/o: high byte of image size
+	case 0x9:	// r/o: low byte of image size
+	case 0xa:	// r/o: high byte of image size
 		// Writing to these 5 read-only registers is a no-op.
 		// NB. Don't change m_status_next, as UpdateLightStatus() has a huge performance cost!
 		// Firmware has a busy-wait loop doing "rol hd_status,x"
