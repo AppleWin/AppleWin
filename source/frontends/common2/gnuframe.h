@@ -6,10 +6,10 @@
 namespace common2
 {
 
-  class GNUFrame : public virtual CommonFrame
+  class GNUFrame : public CommonFrame
   {
   public:
-    GNUFrame();
+    GNUFrame(const common2::EmulatorOptions & option);
 
     std::string Video_GetScreenShotFolder() const override;
     std::string getResourcePath(const std::string & filename) override;

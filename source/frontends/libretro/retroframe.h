@@ -1,6 +1,5 @@
 #pragma once
 
-#include "frontends/common2/commonframe.h"
 #include "frontends/common2/gnuframe.h"
 
 #include <vector>
@@ -8,7 +7,7 @@
 namespace ra2
 {
 
-  class RetroFrame : public virtual common2::CommonFrame, public common2::GNUFrame
+  class RetroFrame : public common2::GNUFrame
   {
   public:
     RetroFrame(const common2::EmulatorOptions & options);

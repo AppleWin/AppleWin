@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frontends/common2/commonframe.h"
+#include "frontends/common2/gnuframe.h"
 #include "frontends/common2/controllerquit.h"
 #include "frontends/common2/programoptions.h"
 #include "linux/network/portfwds.h"
@@ -9,7 +9,7 @@
 namespace sa2
 {
 
-  class SDLFrame : public virtual common2::CommonFrame
+  class SDLFrame : public common2::GNUFrame
   {
   public:
     SDLFrame(const common2::EmulatorOptions & options);

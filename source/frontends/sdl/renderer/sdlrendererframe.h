@@ -1,13 +1,12 @@
 #pragma once
 
 #include "frontends/sdl/sdlframe.h"
-#include "frontends/common2/gnuframe.h"
 #include <memory>
 
 namespace sa2
 {
 
-  class SDLRendererFrame : public SDLFrame, public common2::GNUFrame
+  class SDLRendererFrame : public SDLFrame
   {
   public:
     SDLRendererFrame(const common2::EmulatorOptions & options);

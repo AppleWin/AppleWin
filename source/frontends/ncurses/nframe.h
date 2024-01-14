@@ -1,6 +1,5 @@
 #pragma once
 
-#include "frontends/common2/commonframe.h"
 #include "frontends/common2/gnuframe.h"
 
 #include <memory>
@@ -14,7 +13,7 @@ namespace na2
   class EvDevPaddle;
   struct NCurses;
 
-  class NFrame : public virtual common2::CommonFrame, public common2::GNUFrame
+  class NFrame : public common2::GNUFrame
   {
   public:
     NFrame(const common2::EmulatorOptions & options, const std::shared_ptr<EvDevPaddle> & paddle);
