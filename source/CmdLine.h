@@ -36,6 +36,7 @@ struct CmdLine
 		noDisk2StepperDefer = false;
 		szSnapshotName = NULL;
 		szScreenshotFilename = NULL;
+		uHarddiskNumBlocks = 0;
 		uRamWorksExPages = 0;
 		uSaturnBanks = 0;
 		newVideoType = -1;
@@ -82,6 +83,7 @@ struct CmdLine
 	LPCSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES];
 	bool driveConnected[NUM_SLOTS][NUM_DRIVES];
 	LPCSTR szImageName_harddisk[NUM_SLOTS][NUM_HARDDISKS];
+	UINT uHarddiskNumBlocks;
 	LPSTR szSnapshotName;
 	LPSTR szScreenshotFilename;
 	UINT uRamWorksExPages;

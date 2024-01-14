@@ -55,6 +55,8 @@ hd_unitnum = $c083
 hd_memblock  = $c084
 hd_diskblock = $c086
 ;hd_nextbyte = $c088	; legacy read-only port (still supported by AppleWin)
+hd_imgsizelo = $c089
+hd_imgsizehi = $c08a
 
 ; Notes on accesses to I/O registers:
 ; . ROR ABS16,X and ROL ABS16,X - only used for $C081+s*$10 STATUS register:
@@ -280,7 +282,12 @@ GetSlotInX
 ; Post:
 ; 	C = hd_status.b0
 ;	A = result of hd_execute
+; Read or write command
 ;	X = Slot# << 4
+;   Y = command
+; Status command
+;   X = low byte of disk size
+;   Y = high byte of disk size
 cmdproc
  php
 
@@ -309,11 +316,21 @@ cmdproc
 
 done
  ror hd_status,x	; Post: C=0 or 1
+ ldy command		; Was it status
+ beq size			; yes, fill in the values
+ rts				; no, go home
+
+size
+ pha				; Save result
+ ldy hd_imgsizehi,x ; Get high byte of size
+ lda hd_imgsizelo,x ; Get low byte of size 
+ tax				; Transfer into X
+ pla				; Get back status call result
  rts
 
 ;======================================
 
-; 33 unused bytes
+; 18 unused bytes
 
 !zone data
 
@@ -330,12 +347,12 @@ done
 ; $D7 = Removable, Interruptable, #Volumes=2, Supports write/read/status
 ; $BF = Removable, Interruptable, #Volumes=4, Supports format/write/read/status (KEGS / IIGS)
 
-; datablock.  This starts near the end of the firmware (at offset $FC)
+; datablock.  This starts near the end of the firmware (at offset $FB)
 ;; data
-@checkCsFC
-*= $00FC	; org $00FC
-!warn "CsFC padding = ", * - @checkCsFC
-
- !word $7fff ; how many blocks are on the device.
+@checkCsFB
+*= $00FB	; org $00FB
+!warn "CsFB padding = ", * - @checkCsFB
+ !byte $00 ; Smart port ID Type byte
+ !word $0000 ; how many blocks are on the device. Zero means use status call
  !byte $D7 ; specifics about the device (number of drives, read/write/format capability, etc)
  !byte <Entrypoint_ProDOS ; entry point offset for ProDOS (must be $0a)
