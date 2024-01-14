@@ -48,7 +48,8 @@
 		NB. The Apple II+ already defaults to having a Language Card, so this switch is not required.<br><br>
 		-s&lt;N&gt; empty<br>
 		Remove any card from slot N (N=1-7).<br>
-		NB. '-s7 empty' is useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br><br>
+		NB. '-s7 empty' is useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br>
+		NB. '-s6 empty' persists this state to the Registry and there's currently no GUI option to re-insert a Disk II controller card into slot 6. So you must use '-s6 diskii' to re-enable the card in slot 6.<br><br>
 		-s1 parallel<br>
 		Insert a parallel printer card into slot 1.<br><br>
 		-s2 ssc<br>
@@ -203,9 +204,9 @@
 		<br>
 		-wav-speaker &lt;file.wav&gt;<br>
 		Save the speaker audio to a .wav file.<br>
-		Warning: there's no file size limit, so it just keeps saving until AppleWin exits (~5MB per minute).<br>
+		Warning: there's no file size limit, so it just keeps saving until AppleWin exits (~10MB per minute).<br>
 		<br>
-		Save the Mockingboard audio to a .wav file.<br>
+		Save the Mockingboard audio (but not speech) to a .wav file.<br>
 		-wav-mockingboard &lt;file.wav&gt;<br>
 		Warning: there's no file size limit, so it just keeps saving until AppleWin exits (~10MB per minute).<br>
 		<br>

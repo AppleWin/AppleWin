@@ -2365,11 +2365,8 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 
 	yamlLoadHelper.PopMap();
 
-	//
-
-	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
-	UpdatePaging(1);	// Initialize=1 (Still needed, even with call to MemUpdatePaging() - why?)
-						// TC-TODO: At this point, the cards haven't been loaded, so the card's expansion ROM is unknown - so pointless(?) calling this now
+	// NB. MemInitializeFromSnapshot()->MemUpdatePaging() called at end of Snapshot_LoadState_v2()
+	// . At this point, the cards haven't been loaded (no aux mem & any card's expansion ROM is unknown) - so pointless calling MemUpdatePaging() at this stage (GH#1267)
 
 	return true;
 }
