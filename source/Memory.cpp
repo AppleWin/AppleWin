@@ -1336,19 +1336,6 @@ bool MemCheckINTCXROM()
 
 //===========================================================================
 
-static void BackMainImage(void)
-{
-	for (UINT loop = 0; loop < 256; loop++)
-	{
-		if (memshadow[loop] && ((*(memdirty+loop) & 1) || (loop <= 1)))
-			memcpy(memshadow[loop], mem+(loop << 8), 256);
-
-		*(memdirty+loop) &= ~1;
-	}
-}
-
-//===========================================================================
-
 static LPBYTE MemGetPtrBANK1(const WORD offset, const LPBYTE pMemBase)
 {
 	if ((offset & 0xF000) != 0xC000)	// Requesting RAM at physical addr $Cxxx (ie. 4K RAM BANK1)
@@ -1434,11 +1421,24 @@ LPBYTE MemGetMainPtr(const WORD offset)
 
 //===========================================================================
 
+static void BackMainImage(void)
+{
+	for (UINT loop = 0; loop < 256; loop++)
+	{
+		if (memshadow[loop] && ((*(memdirty + loop) & 1) || (loop <= 1)))
+			memcpy(memshadow[loop], mem + (loop << 8), 256);
+
+		*(memdirty + loop) &= ~1;
+	}
+}
+
+//-------------------------------------
+
 // Used by:
 // . Savestate: MemSaveSnapshotMemory(), MemLoadSnapshotAux()
 // . VidHD    : SaveSnapshot(), LoadSnapshot()
 // . Debugger : CmdMemorySave(), CmdMemoryLoad()
-LPBYTE MemGetBankPtr(const UINT nBank, const bool isSaveSnapshotOrDebugging)
+LPBYTE MemGetBankPtr(const UINT nBank, const bool isSaveSnapshotOrDebugging/*=true*/)
 {
 	// Only call BackMainImage() when a consistent 64K bank is needed, eg. for saving snapshot or debugging
 	// - for snapshot loads it's pointless, and worse it can corrupt pages 0 & 1 for aux banks (GH#1262)
@@ -2250,7 +2250,7 @@ static const std::string& MemGetSnapshotAuxMemStructName(void)
 
 static void MemSaveSnapshotMemory(YamlSaveHelper& yamlSaveHelper, bool bIsMainMem, UINT bank=0, UINT size=64*1024)
 {
-	LPBYTE pMemBase = MemGetBankPtr(bank, true);
+	LPBYTE pMemBase = MemGetBankPtr(bank);
 
 	if (bIsMainMem)
 	{
