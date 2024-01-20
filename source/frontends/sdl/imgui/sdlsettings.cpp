@@ -82,10 +82,6 @@ namespace sa2
             myDebugger.syncDebuggerState(frame);
           }
           ImGui::SameLine(); HelpMarker("Show Apple CPU.");
-
-          ImGui::Checkbox("Show Demo", &myShowDemo);
-          ImGui::SameLine(); HelpMarker("Show Dear ImGui DemoWindow.");
-
           ImGui::Separator();
 
           ImGui::LabelText("Save state", "%s", Snapshot_GetPathname().c_str());
@@ -751,7 +747,7 @@ namespace sa2
 
       if (ImGui::BeginMenu("Help"))
       {
-        ImGui::MenuItem("Demo", nullptr, &myShowDemo);
+        ImGui::MenuItem("ImGui Demo", nullptr, &myShowDemo);
         ImGui::Separator();
         ImGui::MenuItem("About", nullptr, &myShowAbout);
         ImGui::EndMenu();
