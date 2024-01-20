@@ -1258,8 +1258,11 @@ static void UpdatePaging(BOOL initialize)
 	// PAGING SHADOW TABLE
 	//
 	// NB. the condition 'loop <= 1' is there because:
-	// . Page0 (ZP)    : memdirty[0] is set when the 6502 CPU does a ZP-write, but perhaps older versions didn't set this flag (eg. the asm version?).
-	// . Page1 (stack) : memdirty[1] is NOT set when the 6502 CPU writes to this page with JSR, etc.
+	// . Page0 (ZP) and Page1 (stack) are written to so often that it's almost certain that they'll be dirty every time this function is called.
+	// Note also that:
+	// . Page0 (ZP)    : memdirty[0] is set when the 6502 CPU writes to ZP.
+	// . Page1 (stack) : memdirty[1] is NOT set when the 6502 CPU writes to this page with JSR, PHA, etc.
+	// Ultimately this is an optimisation (due to Page1 writes not setting memdirty[1]) and Page0 could be optimised to also not set memdirty[0].
 
 	for (loop = 0x00; loop < 0x100; loop++)
 	{
