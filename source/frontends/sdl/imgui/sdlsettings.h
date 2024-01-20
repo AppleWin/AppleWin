@@ -13,6 +13,8 @@ namespace sa2
   class ImGuiSettings
   {
   public:
+    ImGuiSettings();
+
     void show(SDLFrame* frame, ImFont * debuggerFont);
     float drawMenuBar(SDLFrame* frame);
     void resetDebuggerCycles();
@@ -33,7 +35,8 @@ namespace sa2
     size_t myOpenDrive = 0;
 
     ImGuiDebugger myDebugger;
-    ImGui::FileBrowser myFileDialog;
+    ImGui::FileBrowser myDiskFileDialog;
+    ImGui::FileBrowser mySaveFileDialog;
 
     std::vector<MemoryEditor> myMemoryEditors;
 
@@ -42,7 +45,8 @@ namespace sa2
     void showSettings(SDLFrame* frame);
     void showMemory();
     void showAboutWindow();
-    void openFileDialog(const std::string & diskName, const size_t slot, const size_t drive);
+    void openFileDialog(ImGui::FileBrowser & browser, const std::string & filename);
+    void openDiskFileDialog(ImGui::FileBrowser & browser, const std::string & diskName, const size_t slot, const size_t drive);
   };
 
 }

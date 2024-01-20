@@ -37,6 +37,8 @@ namespace sa2
 
     const common2::Speed & getSpeed() const;
 
+    void SaveSnapshot();
+
     static void setGLSwapInterval(const int interval);
 
   protected:

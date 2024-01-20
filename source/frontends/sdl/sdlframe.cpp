@@ -433,15 +433,7 @@ namespace sa2
         }
       case SDLK_F11:
         {
-          const std::string & pathname = Snapshot_GetPathname();
-          const std::string message = "Do you want to save the state to: " + pathname + "?";
-          SoundCore_SetFade(FADE_OUT);
-          if (show_yes_no_dialog(myWindow, "Save state", message))
-          {
-            Snapshot_SaveState();
-          }
-          SoundCore_SetFade(FADE_IN);
-          ResetSpeed();
+          SaveSnapshot();
           break;
         }
       case SDLK_F9:
@@ -682,6 +674,19 @@ namespace sa2
   const common2::Speed & SDLFrame::getSpeed() const
   {
     return mySpeed;
+  }
+
+  void SDLFrame::SaveSnapshot()
+  {
+    const std::string & pathname = Snapshot_GetPathname();
+    const std::string message = "Do you want to save the state to: " + pathname + "?";
+    SoundCore_SetFade(FADE_OUT);
+    if (show_yes_no_dialog(myWindow, "Save state", message))
+    {
+      Snapshot_SaveState();
+    }
+    SoundCore_SetFade(FADE_IN);
+    ResetSpeed();
   }
 
 }

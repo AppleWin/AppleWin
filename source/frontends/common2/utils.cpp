@@ -22,8 +22,8 @@ namespace common2
       // dir points inside temp!
       chdir(dir);
       Snapshot_SetFilename(filename);
-
       free(temp);
+      RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, Snapshot_GetPathname());
     }
   }
 
