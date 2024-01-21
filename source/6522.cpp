@@ -345,9 +345,11 @@ BYTE SY6522::Read(BYTE nReg)
 	{
 	case 0x00:	// IRB
 		nValue = m_regs.ORB | (m_regs.DDRB ^ 0xff);	// Input bits read back as 1's (GH#1260)
+		if (m_isMegaAudio) nValue = 0x00;			// MegaAudio: IRB just reads as $00
 		break;
 	case 0x01:	// IRA
 		nValue = m_regs.ORA | (m_isBusDriven ? 0x00 : (m_regs.DDRA ^ 0xff));	// NB. Inputs bits driven by AY8913 if in PSG READ mode
+		if (m_isMegaAudio) nValue = 0x00;			// MegaAudio: IRA just reads as $00
 		break;
 	case 0x02:	// DDRB
 		nValue = m_regs.DDRB;
