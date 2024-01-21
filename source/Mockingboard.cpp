@@ -322,8 +322,8 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 					}
 					else
 					{
-						r6522.SetRegIRA(0x00);		// Reads not supported. Bus not driven.
-						busState = false;
+						r6522.SetRegIRA(0x00);		// Reads not supported - always return 0x00.
+						busState = true;
 					}
 
 					if (m_phasorEnable && m_phasorMode == PH_Phasor)	// GH#1192
