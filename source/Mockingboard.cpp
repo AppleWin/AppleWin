@@ -313,18 +313,10 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 				{
 					bool busState = true;			// Initially default to true
 
-					if (QueryType() != CT_MegaAudio)
-					{
-						if (pMB->isChipSelected[ay] && pMB->isAYLatchedAddressValid[ay])
-							r6522.SetRegIRA(AYReadReg(subunit, ay, pMB->nAYCurrentRegister[ay]) & (r6522.GetReg(SY6522::rDDRA) ^ 0xff));
-						else
-							busState = false;
-					}
+					if (pMB->isChipSelected[ay] && pMB->isAYLatchedAddressValid[ay])
+						r6522.SetRegIRA(AYReadReg(subunit, ay, pMB->nAYCurrentRegister[ay]) & (r6522.GetReg(SY6522::rDDRA) ^ 0xff));
 					else
-					{
-						r6522.SetRegIRA(0x00);		// Reads not supported. Bus not driven.
 						busState = false;
-					}
 
 					if (m_phasorEnable && m_phasorMode == PH_Phasor)	// GH#1192
 					{
