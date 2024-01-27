@@ -167,7 +167,7 @@ void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	const DWORD HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
 
-	BYTE* pData = GetFrame().GetResource(IDR_HDDRVR_FW, "FIRMWARE", HARDDISK_FW_SIZE);
+	BYTE* pData = GetFrame().GetResource(IDR_HDDRVR_V2_FW, "FIRMWARE", HARDDISK_FW_SIZE);
 	if (pData == NULL)
 		return;
 
@@ -795,7 +795,8 @@ bool HarddiskInterfaceCard::ImageSwap(void)
 // 2: Updated $C7nn firmware to fix GH#319
 // 3: Updated $Csnn firmware to fix GH#996 (now slot-independent code)
 //    Added: Not Busy Cycle
-static const UINT kUNIT_VERSION = 3;
+// 4: Updated $Csnn firmware to fix GH#1264
+static const UINT kUNIT_VERSION = 4;
 
 #define SS_YAML_VALUE_CARD_HDD "Generic HDD"
 
