@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Interface.h"
 #include "../Uthernet2.h"
 #include "../Tfe/PCapBackend.h"
+#include "../CmdLine.h"
 
 /*
 Config causing AfterClose msgs:
@@ -134,6 +135,8 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 
 	GetCardMgr().Insert(slot, newCardType);
 	GetCardMgr().GetRef(slot).InitializeIO(GetCxRomPeripheral());
+	if (newCardType == CT_GenericHDD)
+		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).SetUserNumBlocks(g_cmdLine.uHarddiskNumBlocks);
 }
 
 // Used by:

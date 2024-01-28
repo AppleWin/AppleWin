@@ -37,7 +37,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Registry.h"
 #include "SaveState.h"
 #include "YamlHelper.h"
-#include "CmdLine.h"
 
 #include "Debugger/Debug.h"
 #include "../resource/resource.h"
@@ -677,13 +676,13 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 		break;
 	case 0x9:
 		if (pHDD->m_imageloaded)
-			r = (BYTE)(GetImageSizeInBlocks(pHDD->m_imagehandle) & 0x00ff);
+			r = (BYTE)(pCard->GetImageSizeInBlocks(pHDD->m_imagehandle) & 0x00ff);
 		else
 			r = 0;
 		break;
 	case 0xa:
 		if (pHDD->m_imageloaded)
-			r = (BYTE)((GetImageSizeInBlocks(pHDD->m_imagehandle) & 0xff00) >> 8);
+			r = (BYTE)((pCard->GetImageSizeInBlocks(pHDD->m_imagehandle) & 0xff00) >> 8);
 		else
 			r = 0;
 		break;
@@ -750,8 +749,8 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 
 UINT HarddiskInterfaceCard::GetImageSizeInBlocks(ImageInfo* const pImageInfo)
 {
-	if (g_cmdLine.uHarddiskNumBlocks != 0)
-		return g_cmdLine.uHarddiskNumBlocks;
+	if (m_userNumBlocks != 0)
+		return m_userNumBlocks;
 	UINT numberOfBlocks = (pImageInfo ? pImageInfo->uImageSize : 0) / HD_BLOCK_SIZE;
 	if (numberOfBlocks > kHarddiskMaxNumBlocks)
 		numberOfBlocks = kHarddiskMaxNumBlocks;
