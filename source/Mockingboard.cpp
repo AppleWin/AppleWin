@@ -258,7 +258,10 @@ void MockingboardCard::WriteToORB(BYTE subunit, BYTE subunitForAY/*=0*/)
 	{
 		if ((value & 4) == 0)
 		{
-			AY8913_Reset(subunit);
+			if (QueryType() == CT_SDMusic)
+				AY8913_Reset(subunitForAY);	// to do: check that AYs can be independently reset
+			else
+				AY8913_Reset(subunit);
 			return;
 		}
 
@@ -327,7 +330,7 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 						}
 					}
 
-					pMB->SetBusState(busState);
+					pMB->SetBusState(busState, r6522);	// NB. Need to pass SY6522 as card may only have one (eg. CT_SDMusic)
 				}
 				break;
 

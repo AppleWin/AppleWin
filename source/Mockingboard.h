@@ -111,6 +111,11 @@ private:
 			isBusDriven = state;
 			sy6522.SetBusBeingDriven(state);
 		}
+		void SetBusState(bool state, SY6522& r6522)
+		{
+			isBusDriven = state;
+			r6522.SetBusBeingDriven(state);
+		}
 	};
 
 	void WriteToORB(BYTE subunit, BYTE subunitForAY=0);
