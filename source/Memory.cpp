@@ -417,7 +417,10 @@ static BYTE __stdcall IOWrite_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 static BYTE __stdcall IORead_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	if (IS_APPLE2)	// Include Pravets machines too?
-		return KeybReadFlag();
+	{
+		KeybClearStrobe();
+		return IO_Null(pc, addr, bWrite, d, nExecutedCycles);	// GH#1261
+	}
 
 	bool res = false;
 	switch (addr & 0xf)
@@ -445,7 +448,7 @@ static BYTE __stdcall IORead_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 
 static BYTE __stdcall IOWrite_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	return KeybReadFlag();
+	return KeybClearStrobe();
 }
 
 //-------------------------------------
