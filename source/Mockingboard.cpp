@@ -388,7 +388,12 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 	state = nAYFunc;
 
 	if (state == AY_INACTIVE)		// Mockingboard or Phasor(any mode) will read PortA inputs as high.
-		pMB->SetBusState(false);
+	{
+		if (QueryType() != CT_SDMusic)
+			pMB->SetBusState(false);
+		else
+			m_MBSubUnit[0].SetBusState(false);
+	}
 }
 
 //-----------------------------------------------------------------------------
