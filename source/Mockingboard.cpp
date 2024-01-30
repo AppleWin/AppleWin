@@ -282,6 +282,9 @@ void MockingboardCard::AY8913_Reset(BYTE subunit)
 		AY8910_reset(subunit, AY8913_DEVICE_B);		// GH#1197: Reset both AYs regardless of Phasor mode & chip-select bits
 
 	m_MBSubUnit[subunit].Reset(QueryType());
+
+	if (QueryType() == CT_SDMusic)
+		m_MBSubUnit[0].SetBusState(false);
 }
 
 void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
@@ -330,7 +333,10 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 						}
 					}
 
-					pMB->SetBusState(busState, r6522);	// NB. Need to pass SY6522 as card may only have one (eg. CT_SDMusic)
+					if (QueryType() != CT_SDMusic)
+						pMB->SetBusState(busState);
+					else
+						m_MBSubUnit[0].SetBusState(busState);
 				}
 				break;
 
