@@ -333,6 +333,22 @@ static char ClipboardCurrChar(bool bIncPtr)
 	return nKey;
 }
 
+static BYTE ClipboardReadOrPeek(bool incPtr)
+{
+	if (g_bPasteFromClipboard)
+		ClipboardInit();
+
+	if (g_bClipboardActive)
+	{
+		if (*lptstr == 0)
+			ClipboardDone();
+		else
+			return 0x80 | ClipboardCurrChar(incPtr);
+	}
+
+	return 0;
+}
+
 //===========================================================================
 
 const UINT kAKDNumElements = 256/64;
@@ -402,43 +418,29 @@ BYTE KeybReadData (void)
 {
 	LogFileTimeUntilFirstKeyRead();
 
-	if (g_bPasteFromClipboard)
-		ClipboardInit();
-
-	if (g_bClipboardActive)
-	{
-		if(*lptstr == 0)
-			ClipboardDone();
-		else
-			return 0x80 | ClipboardCurrChar(false);
-	}
-
-	//
+	BYTE res = ClipboardReadOrPeek(false);
+	if (res)
+		return res;
 
 	return keycode | (keywaiting ? 0x80 : 0);
 }
 
 //===========================================================================
 
-BYTE KeybReadFlag (void)
+BYTE KeybClearStrobe(void)
 {
-	if (g_bPasteFromClipboard)
-		ClipboardInit();
-
-	if (g_bClipboardActive)
-	{
-		if(*lptstr == 0)
-			ClipboardDone();
-		else
-			return 0x80 | ClipboardCurrChar(true);
-	}
-
-	//
-
 	keywaiting = 0;
 
-	if (IS_APPLE2)	// Include Pravets machines too?
-		return keycode;
+	return ClipboardReadOrPeek(true);
+}
+
+BYTE KeybReadFlag (void)
+{
+	_ASSERT(!IS_APPLE2);	// And also not Pravets machines?
+
+	BYTE res = KeybClearStrobe();
+	if (res)
+		return res;
 
 	// AKD
 

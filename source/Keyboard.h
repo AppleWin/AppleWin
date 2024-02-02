@@ -17,6 +17,7 @@ void    KeybQueueKeypress(WPARAM key, Keystroke_e bASCII);
 void    KeybToggleCapsLock ();
 void    KeybToggleP8ACapsLock ();
 void    KeybAnyKeyDown(UINT message, WPARAM wparam, bool bIsExtended);
+BYTE    KeybClearStrobe(void);
 BYTE    KeybReadData (void);
 BYTE    KeybReadFlag (void);
 void    KeybSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
