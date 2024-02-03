@@ -613,8 +613,6 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-mb-audit") == 0)	// enable selection of additional sound cards, eg. for mb-audit
 		{
-			lpCmdLine = GetCurrArg(lpNextArg);
-			lpNextArg = GetNextArg(lpNextArg);
 			g_cmdLine.supportExtraMBCardTypes = true;
 		}
 		else if (strcmp(lpCmdLine, "-no-disk2-stepper-defer") == 0)	// a debug switch (likely to be removed in a future version)
