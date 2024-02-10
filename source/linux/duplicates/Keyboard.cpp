@@ -9,8 +9,16 @@
 namespace
 {
   std::queue<BYTE> keys;
-  BYTE keycode = 0;
   bool g_bCapsLock = true; //Caps lock key for Apple2 and Lat/Cyr lock for Pravets8
+  BYTE keycode = 0;
+
+  void setKeyCode()
+  {
+    if (!keys.empty())
+    {
+      keycode = keys.front();
+    }
+  }
 }
 
 void addKeyToBuffer(BYTE key)
@@ -61,26 +69,21 @@ BYTE KeybReadData()
 {
   LogFileTimeUntilFirstKeyRead();
 
-  if (keys.empty())
-  {
-    return keycode;
-  }
-  else
-  {
-    keycode = keys.front();
-    const BYTE result = keycode | 0x80;
-    return result;
-  }
+  setKeyCode();
+
+  return keycode | (keys.empty() ? 0 : 0x80);
 }
 
 BYTE KeybReadFlag()
 {
-  if (!keys.empty())
-  {
-    keys.pop();
-  }
+  _ASSERT(!IS_APPLE2);	// And also not Pravets machines?
 
-  return KeybReadData();
+  BYTE res = KeybClearStrobe();
+  if (res)
+    return res;
+
+	// AKD
+  return keycode | (keys.empty() ? 0: 0x80);
 }
 
 #define SS_YAML_KEY_LASTKEY "Last Key"
@@ -118,6 +121,7 @@ void KeybLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 void KeybReset()
 {
+  keycode = 0;
   std::queue<BYTE>().swap(keys);
 }
 
@@ -134,4 +138,18 @@ bool KeybGetAltStatus()
 bool KeybGetCtrlStatus()
 {
   return false;
+}
+
+BYTE KeybClearStrobe(void)
+{
+  if (keys.empty())
+  {
+    return 0;
+  }
+  else
+  {
+    const BYTE result = keys.front();
+    keys.pop();
+    return result | 0x80;
+  }
 }
