@@ -27,11 +27,17 @@ namespace
      {IDR_MOUSEINTERFACE_FW, "MouseInterface.rom"},
      {IDR_THUNDERCLOCKPLUS_FW, "ThunderClockPlus.rom"},
      {IDR_TKCLOCK_FW, "TKClock.rom"},
-     {IDR_BASE64A_VIDEO_ROM, "Base64A_German_Video.rom"}
+     {IDR_BASE64A_VIDEO_ROM, "Base64A_German_Video.rom"},
+     {IDR_HDDRVR_V2_FW, "Hddrvr-v2.bin"},
     };
 }
 
 const std::string & getResourceName(WORD x)
 {
-  return resources.at(x);
+  const auto it = resources.find(x);
+  if (it == resources.end())
+  {
+    throw std::runtime_error("Missing resource: " + std::to_string(x));
+  }
+  return it->second;
 }

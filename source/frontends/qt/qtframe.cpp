@@ -138,7 +138,7 @@ BYTE* QtFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)
 
     if (myResource.isEmpty())
     {
-        LogFileOutput("FindResource: could not load resource %s\n", filename.c_str());
+        throw std::runtime_error("FindResource: could not load resource '" + filename + "'");
     }
 
     return reinterpret_cast<BYTE *>(myResource.data());
