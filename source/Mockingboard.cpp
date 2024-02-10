@@ -226,12 +226,9 @@ void MockingboardCard::WriteToORB(BYTE subunit, BYTE subunitForAY/*=0*/)
 #else
 	if (m_phasorEnable)
 	{
-		const int kAY1 = 2;		// Phasor mode: bit4=0 (active low)  selects the 1st AY8913, ie. the only AY8913 in Mockingboard mode (confirmed on real Phasor h/w)
-								// Echo+  mode: bit3=1 (active high) selects the 1st AY8913
-		const int kAY2 = 1;		// Phasor mode: bit3=0 (active low)  selects the 2nd AY8913 attached to this 6522 (unavailable in Mockingboard mode)
-								// Echo+  mode: bit4=1 (active high) selects the 2nd AY8913
-		const int nAY_CS =	(m_phasorMode == PH_EchoPlus) ? ((value >> 4) & 1) | ((value >> 2) & 2)	// swap bits 4 & 3
-							: (m_phasorMode == PH_Phasor) ? (~(value >> 3) & 3)
+		const int kAY1 = 2;		// Phasor/Echo+ mode: bit4=0 (active low) selects the 1st AY8913, ie. the only AY8913 in Mockingboard mode (confirmed on real Phasor h/w)
+		const int kAY2 = 1;		// Phasor/Echo+ mode: bit3=0 (active low) selects the 2nd AY8913 attached to this 6522 (unavailable in Mockingboard mode)
+		const int nAY_CS =	(m_phasorMode == PH_Phasor || m_phasorMode == PH_EchoPlus) ? (~(value >> 3) & 3)
 							: kAY1; // Anything else is Mockingboard
 
 		if (m_phasorMode == PH_EchoPlus)
@@ -306,7 +303,8 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 	if (!m_phasorEnable || m_phasorMode == PH_Mockingboard)
 		_ASSERT(ay == AY8913_DEVICE_A);
 	if (nAYFunc == AY_READ || nAYFunc == AY_WRITE || nAYFunc == AY_LATCH)
-		_ASSERT(state == AY_INACTIVE);
+		if ((nAYFunc != state) || (m_phasorEnable && m_phasorMode != PH_EchoPlus))	// Deater's Xmas2023 demo interleaves writes to both AY's (need this line to avoid ASSERT for Echo+)
+			_ASSERT(state == AY_INACTIVE);
 #endif
 
 	if (state == AY_INACTIVE)	// GH#320: functions only work from inactive state

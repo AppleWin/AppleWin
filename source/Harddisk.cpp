@@ -53,6 +53,8 @@ Memory map (for slot 7):
 	C0F6	(r/w) LOW BYTE OF BLOCK NUMBER
 	C0F7	(r/w) HIGH BYTE OF BLOCK NUMBER
 	C0F8    (r)   NEXT BYTE (legacy read-only port - still supported)
+	C0F9    (r)   LOW BYTE OF DISK IMAGE SIZE IN BLOCKS
+	C0FA    (r)   HIGHT BYTE OF DISK IMAGE SIZE IN BLOCKS
 
 Firmware notes:
 . ROR ABS16,X and ROL ABS16,X - only used for $C081+s*$10 STATUS register:
@@ -75,6 +77,8 @@ Overview
       bytes, in a linear fashion. The internal formatting and meaning of each
       block to be decided by the Apple's operating system (ProDOS). To create
       an empty .HDV file, just create a 0 byte file.
+      Use the -harddisknumblocks n command line option to set the disk size 
+      returned by ProDOS status calls.
 
   2. Emulation code
       There are 4 commands ProDOS will send to a block device.
@@ -162,7 +166,7 @@ void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	const DWORD HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
 
-	BYTE* pData = GetFrame().GetResource(IDR_HDDRVR_FW, "FIRMWARE", HARDDISK_FW_SIZE);
+	BYTE* pData = GetFrame().GetResource(IDR_HDDRVR_V2_FW, "FIRMWARE", HARDDISK_FW_SIZE);
 	if (pData == NULL)
 		return;
 
@@ -657,18 +661,30 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 		r = (BYTE)(pHDD->m_memblock & 0x00FF);
 		break;
 	case 0x5:
-		r = (BYTE)(pHDD->m_memblock & 0xFF00 >> 8);
+		r = (BYTE)((pHDD->m_memblock & 0xFF00) >> 8);
 		break;
 	case 0x6:
 		r = (BYTE)(pHDD->m_diskblock & 0x00FF);
 		break;
 	case 0x7:
-		r = (BYTE)(pHDD->m_diskblock & 0xFF00 >> 8);
+		r = (BYTE)((pHDD->m_diskblock & 0xFF00) >> 8);
 		break;
 	case 0x8:	// Legacy: continue to support this I/O port for old HDD firmware
 		r = pHDD->m_buf[pHDD->m_buf_ptr];
 		if (pHDD->m_buf_ptr < sizeof(pHDD->m_buf)-1)
 			pHDD->m_buf_ptr++;
+		break;
+	case 0x9:
+		if (pHDD->m_imageloaded)
+			r = (BYTE)(pCard->GetImageSizeInBlocks(pHDD->m_imagehandle) & 0x00ff);
+		else
+			r = 0;
+		break;
+	case 0xa:
+		if (pHDD->m_imageloaded)
+			r = (BYTE)((pCard->GetImageSizeInBlocks(pHDD->m_imagehandle) & 0xff00) >> 8);
+		else
+			r = 0;
 		break;
 	default:
 		pHDD->m_status_next = DISK_STATUS_OFF;
@@ -694,7 +710,9 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 	case 0x0:	// r/o: status
 	case 0x1:	// r/o: execute
 	case 0x8:	// r/o: legacy next-data port
-		// Writing to these 3 read-only registers is a no-op.
+	case 0x9:	// r/o: low byte of image size
+	case 0xa:	// r/o: high byte of image size
+		// Writing to these 5 read-only registers is a no-op.
 		// NB. Don't change m_status_next, as UpdateLightStatus() has a huge performance cost!
 		// Firmware has a busy-wait loop doing "rol hd_status,x"
 		// - this RMW opcode does an IORead() then an IOWrite(), and the loop iterates ~100 times!
@@ -727,6 +745,16 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 
 	pCard->UpdateLightStatus(pHDD);
 	return r;
+}
+
+UINT HarddiskInterfaceCard::GetImageSizeInBlocks(ImageInfo* const pImageInfo)
+{
+	if (m_userNumBlocks != 0)
+		return m_userNumBlocks;
+	UINT numberOfBlocks = (pImageInfo ? pImageInfo->uImageSize : 0) / HD_BLOCK_SIZE;
+	if (numberOfBlocks > kHarddiskMaxNumBlocks)
+		numberOfBlocks = kHarddiskMaxNumBlocks;
+	return numberOfBlocks;
 }
 
 //===========================================================================
@@ -766,7 +794,8 @@ bool HarddiskInterfaceCard::ImageSwap(void)
 // 2: Updated $C7nn firmware to fix GH#319
 // 3: Updated $Csnn firmware to fix GH#996 (now slot-independent code)
 //    Added: Not Busy Cycle
-static const UINT kUNIT_VERSION = 3;
+// 4: Updated $Csnn firmware to fix GH#1264
+static const UINT kUNIT_VERSION = 4;
 
 #define SS_YAML_VALUE_CARD_HDD "Generic HDD"
 

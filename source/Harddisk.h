@@ -34,6 +34,8 @@ enum HardDrive_e
 	NUM_HARDDISKS
 };
 
+const UINT kHarddiskMaxNumBlocks = 0xffff;	// Maximum number of blocks we can report.
+
 class HardDiskDrive
 {
 public:
@@ -98,6 +100,7 @@ public:
 	void Unplug(const int iDrive);
 	bool IsDriveUnplugged(const int iDrive);
 	void LoadLastDiskImage(const int iDrive);
+	void SetUserNumBlocks(UINT numBlocks) { m_userNumBlocks = numBlocks; }
 
 	void GetLightStatus(Disk_Status_e* pDisk1Status);
 	bool ImageSwap(void);
@@ -117,7 +120,7 @@ private:
 	const std::string& DiskGetBaseName(const int iDrive);
 	bool SelectImage(const int drive, LPCSTR pszFilename);
 	void UpdateLightStatus(HardDiskDrive* pHDD);
-
+	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo);
 	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
 
@@ -126,6 +129,7 @@ private:
 	BYTE m_unitNum;			// b7=unit
 	BYTE m_command;
 	UINT64 m_notBusyCycle;
+	UINT m_userNumBlocks;
 
 	bool m_saveDiskImage;	// Save the DiskImage name to Registry
 
