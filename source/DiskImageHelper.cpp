@@ -1731,10 +1731,12 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 
 					SetImageInfo(pImageInfo, eFileZip, dwOffset, pImageType, dwSize);
 
-					pImageInfo2 = new ImageInfo();	// use this dummy one, as some members get overwritten during Detect()
+					pImageInfo2 = new ImageInfo();	// use this dummy one for remaining entries in zip archive, as some members get overwritten during Detect()
 				}
 			}
 
+			if (pImageInfo->pImageBuffer == pImageBuffer)	// on error: avoid double-free when parent calls ImageClose()
+				pImageInfo->pImageBuffer = NULL;
 			delete [] pImageBuffer;
 			pImageBuffer = NULL;
 		}
