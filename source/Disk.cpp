@@ -1620,7 +1620,7 @@ void Disk2InterfaceCard::DataLatchReadWOZFlux(WORD pc, WORD addr, UINT ticks)
 	if (dbgWOZ)
 	{
 		dbgWOZ = 0;
-		DumpTrackWOZFlux(floppy);	// Enable as necessary
+		DumpTrackWOZFlux(floppy);	// Enable as necessary (TODO: Fix for using LSS)
 	}
 #endif
 
@@ -2255,6 +2255,7 @@ void Disk2InterfaceCard::DumpTrackWOZFlux(FloppyDisk floppy)	// pass a copy of m
 	UpdateBitStreamOffsets(floppy);
 
 	NextFluxData(floppy);	// Post: m_bitCellCount >= 1
+	_ASSERT(floppy.m_bitCellCount);	// TODO: Fix if using LSS
 
 	int nibbleStartBitOffset = -1;
 
