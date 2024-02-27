@@ -131,20 +131,22 @@ int CopyProtectionDonglePDL(UINT pdl)
 	{
 		case DT_ROBOCOM500:
 		{
-			static BYTE robo500[8] = { 0x3F,0x2E,0x54,0x54,0x2E,0x22,0x72,0x17 };	// PDL3 lower bound
-			return robo500[roboComInterfaceModuleMode] + 1;
+			static BYTE robo500_lo[8] = { 0x3F,0x2E,0x54,0x54,0x2E,0x22,0x72,0x17 };	// PDL3 lower bound - see GH#1247
+			static BYTE robo500_hi[8] = { 0x6F,0x54,0x94,0x94,0x54,0x40,0xC4,0x2E };	// PDL3 upper bound - see GH#1247
+			// This mean value gives values that are very close to the actual 1000 & 1500 Module Interfaces - so assume it's similar for the 500 series.
+			return (robo500_lo[roboComInterfaceModuleMode] + robo500_hi[roboComInterfaceModuleMode] - 1) / 2;
 		}
 
 		case DT_ROBOCOM1000:
 		{
-			static BYTE robo1000[8] = { 0x17,0x72,0x22,0x2E,0x54,0x54,0x2E,0x3F };	// PDL3 lower bound
-			return robo1000[roboComInterfaceModuleMode] + 1;
+			static BYTE robo1000[8] = { 34,151,48,64,113,113,64,85 };	// Actual Module Interface values for PDL3
+			return robo1000[roboComInterfaceModuleMode];
 		}
 
 		case DT_ROBOCOM1500:
 		{
-			static BYTE robo1500[8] = { 0x72,0x17,0x2E,0x17,0x22,0x3F,0x54,0x22 };	// PDL3 lower bound
-			return robo1500[roboComInterfaceModuleMode] + 1;
+			static BYTE robo1500[8] = { 153,34,64,34,48,86,114,48 };	// Actual Module Interface values for PDL3
+			return robo1500[roboComInterfaceModuleMode];
 		}
 
 		default:
