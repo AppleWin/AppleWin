@@ -19,6 +19,7 @@
 		</li>
 		</ul>
 
+		<br>
 		AppleWin doesn't startup.
 		<ul>
 		<li>It could be being blocked by your anti-virus software. There is a known problem with Constant Guard Protection Suite.
@@ -28,6 +29,7 @@
 		</li>
 		</ul>
 
+		<br>
 		When using a non-US (or UK) keyboard, certain keys can't be typed.
 		<ul>
 		<li>AltGr (or right Alt) needs to be used to type certain keys, eg:
@@ -46,12 +48,14 @@
 		<li>The workaround is to use the `-no-hook-alt` command line switch and configure Joystick 1 = "Keyboard (numpad)"; and then use the '0' and '.' keys for Open/Solid Apple.</li>
 		</ul>
 
+		<br>
 		No Apple II speaker sound, but Mockingboard sound is working!
 		<ul>
 		<li>Check the Volume Control for the Speaker, under the <a href="cfg-sound.html">Configuration->Sound tab</a>.</li>
 		<li>Try installing the Realtek-specific audio driver supplied by ASUS (as opposed to the default Win10 driver).</li>
 		</ul>
 
+		<br>
 		Color (RGB Card/Monitor) and title compatibility issues:
 		<ul>
 		<li>Dragon Wars: double hi-res bit7 needs inverting, so use the -rgb-card-invert-bit7 command line switch.</li>
@@ -59,6 +63,7 @@
 		<li>Apple's AppleColor card or Video7's RGB-SL7 card: corruption for titles/demos that accidentally switch to foreground/background hi-res mode, eg. French Touch DIGIDREAM demo.</li>
 		</ul>
 
+		<br>
 		Can't switch to 2x windowed mode:
 		<ul>
 		<li>If the resolution isn't high enough to support 2x windowed mode, then AppleWin will refuse to switch.</li>
@@ -70,24 +75,44 @@
 			</ul>
 		</ul>
 		
+		<br>
 		Can't set bookmark 0 in the debugger / CTRL+SHIFT+0 not working:
 		<img style="FLOAT: right;" src="img/Change Key Sequence.png" alt="Configuration settings" hspace="5" vspace="5">		
 		<ul>
-		<li>From Control Panel...".</li>
+		<li>Windows 7: From "Control Panel...":</li>
 		<ul>
 			<li>Windows 7: Change keyboards or other input methods -> 'Keyboards and Languages' tab -> Change Keyboards -> 'Advanced Key Settings' -> Change Key Sequence...</li>
+		</ul>
+		</ul>
+
+		<ul>
+		<li>Windows 10: From "Control Panel...":</li>
+		<ul>
 			<li>Windows 10: Typing -> Advanced Keyboard Settings -> Input language hot keys -> Change Key Sequence...</li>
 		</ul>
+		</ul>
+
+		<ul>
+		<li>Windows 11: From "Settings":</li>
+		<ul>
+			<li>Time & Language -> Typing -> Advanced Keyboard Settings -> Input language hot keys -> Change Key Sequence...</li>
+		</ul>
+		</ul>
+
+		<ul>
 		<li>Finally set "Switch Keyboard Layout" to "Not Assigned".</li>
 		</ul>
 
-		How to reset AppleWin back to the default settings:
+		<br>
+		.po floppy image doesn't boot and may crash to the monitor.
 		<ul>
-		<li>Within the AppleWin install folder there is the file: DELREG.INF.</li>
+		<li>Try renaming with a ".do" or ".dsk" extension.</li>
+		<li>Or you can use a utility like CiderPress to convert them to proper .po disks and then they will work correctly in emulators and with ProDOS block devices.</li>
+		<li> Details:</li>
 		<ul>
-			<li>Windows 10/11: From Explorer, right click on this file, then select: Install</li>
+			<li>".do" and ".po" specify a specific order.</li>
+			<li>These non-booting .po images are with DOS-order sectors.</li>
 		</ul>
-		<li>This will remove all AppleWin configuration from the Registry.</li>
 		</ul>
 	</body>
 </html>
