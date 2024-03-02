@@ -72,17 +72,10 @@ typedef int socklen_t;
 #include <arpa/inet.h>
 #include <poll.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <errno.h>
 
-#endif
-
-// fix SOCK_NONBLOCK for e.g. macOS
-#ifndef SOCK_NONBLOCK
-// DISCALIMER
-// totally untested, use at your own risk
-#include <fcntl.h>
-#define SOCK_NONBLOCK O_NONBLOCK
 #endif
 
 // Dest MAC + Source MAC + Ether Type
@@ -912,11 +905,8 @@ void Uthernet2::resetRXTXBuffers(const size_t i)
 void Uthernet2::openSystemSocket(const size_t i, const int type, const int protocol, const int status)
 {
     Socket &s = mySockets[i];
-#ifdef _MSC_VER
+
     const Socket::socket_t fd = socket(AF_INET, type, protocol);
-#else
-    const Socket::socket_t fd = socket(AF_INET, type | SOCK_NONBLOCK, protocol);
-#endif
     if (fd == INVALID_SOCKET)
     {
 #ifdef U2_LOG_STATE
@@ -929,9 +919,23 @@ void Uthernet2::openSystemSocket(const size_t i, const int type, const int proto
     {
 #ifdef _MSC_VER
         u_long on = 1;
-        ioctlsocket(fd, FIONBIO, &on);
+        const int res = ioctlsocket(fd, FIONBIO, &on);
+#else
+        const int current = fcntl(fd, F_GETFL);
+        const int res = fcntl(fd, F_SETFL, current | O_NONBLOCK);
 #endif
-        s.setFD(fd, status);
+        if (res)
+        {
+#ifdef U2_LOG_STATE
+            const char *proto = (status == W5100_SN_SR_SOCK_UDP) ? "UDP" : "TCP";
+            LogFileOutput("U2: %s[%" SIZE_T_FMT "]: socket error: %" ERROR_FMT "\n", proto, i, STRERROR(sock_error()));
+#endif
+            s.clearFD();
+        }
+        else
+        {
+            s.setFD(fd, status);
+        }
     }
 }
 
