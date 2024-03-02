@@ -101,6 +101,7 @@ public:
 	bool IsDriveUnplugged(const int iDrive);
 	void LoadLastDiskImage(const int iDrive);
 	void SetUserNumBlocks(UINT numBlocks) { m_userNumBlocks = numBlocks; }
+	void UseHdcFirmwareV1(void) { m_useHdcFirmwareV1 = true; }
 
 	void GetLightStatus(Disk_Status_e* pDisk1Status);
 	bool ImageSwap(void);
@@ -130,6 +131,7 @@ private:
 	BYTE m_command;
 	UINT64 m_notBusyCycle;
 	UINT m_userNumBlocks;
+	bool m_useHdcFirmwareV1;
 
 	bool m_saveDiskImage;	// Save the DiskImage name to Registry
 
