@@ -94,7 +94,7 @@ static DWORD Cpu6502(DWORD uTotalCycles, const bool bVideoUpdate)
 			case 0x1D: ABSX_OPT   ORA  CYC(4)  break;
 			case 0x1E: ABSX_CONST ASLn CYC(7)  break;
 			case 0x1F: ABSX_CONST ASO  CYC(7)  break;	// invalid
-			case 0x20: ABS        JSR  CYC(6)  break;
+			case 0x20:            JSR  CYC(6)  break;	// GH#1257: not ABS
 			case 0x21: idx        AND  CYC(6)  break;
 			case 0x22:            HLT  CYC(2)  break;	// invalid
 			case 0x23: idx        RLA  CYC(8)  break;	// invalid
