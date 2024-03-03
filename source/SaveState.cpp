@@ -67,7 +67,8 @@ static YamlHelper yamlHelper;
 // v6: Added 'Unit Miscellaneous' for NoSlotClock(NSC)
 // v7: Extended: joystick (added 'Paddle Inactive Cycle')
 // v8: Added 'Unit Game I/O Connector' for Game I/O Connector
-#define UNIT_APPLE2_VER 8
+// v9: Extended: memory (added 'Last Slot to Set Main Mem LC')
+#define UNIT_APPLE2_VER 9
 
 #define UNIT_SLOTS_VER 1
 
@@ -292,7 +293,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		SS_CARDTYPE type = Card::GetCardType(card);
 		bool bRes = false;
 
-		if (slot == 0)
+		if (slot == SLOT0)
 		{
 			SetExpansionMemType(type);	// calls GetCardMgr().Insert() & InsertAux()
 		}

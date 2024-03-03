@@ -241,6 +241,8 @@ static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 
 static const UINT kNumAnnunciators = 4;
 static bool g_Annunciator[kNumAnnunciators] = {};
+static UINT g_lastSlotToSetMainMemLC = SLOT0;
+static UINT g_lastSlotToSetMainMemLCFromSnapshot = SLOT0;
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
@@ -384,12 +386,14 @@ static void SetLastRamWrite(BOOL count)
 
 //
 
-void SetMemMainLanguageCard(LPBYTE ptr, bool bMemMain /*=false*/)
+void SetMemMainLanguageCard(LPBYTE ptr, UINT slot, bool bMemMain /*=false*/)
 {
 	if (bMemMain)
 		g_pMemMainLanguageCard = memmain+0xC000;
 	else
 		g_pMemMainLanguageCard = ptr;
+
+	g_lastSlotToSetMainMemLC = slot;
 }
 
 LPBYTE GetCxRomPeripheral(void)
@@ -1777,6 +1781,15 @@ void MemInitializeFromSnapshot(void)
 		// NB. Copied to /mem/ by UpdatePaging(TRUE)
 	}
 
+	// If multiple "Language Cards" (eg. LC+Saturn or 2xSaturn) then setup via the last card that selected the 16KB LC bank.
+	// NB. Skip if not Saturn card (ie. a LC), since LC's are only in slot0 and in the ctor it has called SetMainMemLanguageCard()
+	if (GetCardMgr().QuerySlot(g_lastSlotToSetMainMemLCFromSnapshot) == CT_Saturn128K)
+	{
+		Saturn128K& saturn = dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(g_lastSlotToSetMainMemLCFromSnapshot));
+		saturn.SetMainMemLanguageCard();
+	}
+
+	// Finally setup the paging tables
 	MemUpdatePaging(TRUE);
 
 	//
@@ -2208,6 +2221,7 @@ void MemRemoveNoSlotClock(void)
 #define SS_YAML_KEY_EXPANSIONROMTYPE "Expansion ROM Type"
 #define SS_YAML_KEY_PERIPHERALROMSLOT "Peripheral ROM Slot"
 #define SS_YAML_KEY_ANNUNCIATOR "Annunciator"
+#define SS_YAML_KEY_LASTSLOTTOSETMAINMEMLC "Last Slot to Set Main Mem LC"
 
 //
 
@@ -2282,6 +2296,7 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, INTC8ROM ? 1 : 0);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_EXPANSIONROMTYPE, (UINT) g_eExpansionRomType);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_PERIPHERALROMSLOT, g_uPeripheralRomSlot);
+		yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTSLOTTOSETMAINMEMLC, g_lastSlotToSetMainMemLC);
 
 		for (UINT i=0; i<kNumAnnunciators; i++)
 		{
@@ -2341,6 +2356,12 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 			std::string annunciator = SS_YAML_KEY_ANNUNCIATOR + std::string(1,'0'+i);
 			g_Annunciator[i] = yamlLoadHelper.LoadBool(annunciator.c_str());
 		}
+	}
+
+	g_lastSlotToSetMainMemLCFromSnapshot = SLOT0;
+	if (unitVersion >= 9)
+	{
+		g_lastSlotToSetMainMemLCFromSnapshot = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTSLOTTOSETMAINMEMLC);
 	}
 
 	yamlLoadHelper.PopMap();

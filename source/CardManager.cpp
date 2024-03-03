@@ -115,21 +115,27 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 	case CT_Uthernet2:
 		m_slot[slot] = new Uthernet2(slot);
 		break;
-
 	case CT_LanguageCard:
 		_ASSERT(m_pLanguageCard == NULL);
 		if (m_pLanguageCard) break;	// Only support one language card
 		m_slot[slot] = m_pLanguageCard = LanguageCardSlot0::create(slot);
 		break;
-	case CT_Saturn128K:
-		_ASSERT(m_pLanguageCard == NULL);
-		if (m_pLanguageCard) break;	// Only support one language card
-		m_slot[slot] = m_pLanguageCard = new Saturn128K(slot, Saturn128K::GetSaturnMemorySize());
-		break;
 	case CT_LanguageCardIIe:
 		_ASSERT(m_pLanguageCard == NULL);
 		if (m_pLanguageCard) break;	// Only support one language card
 		m_slot[slot] = m_pLanguageCard = LanguageCardUnit::create(slot);
+		break;
+	case CT_Saturn128K:
+		if (slot == SLOT0)
+		{
+			_ASSERT(m_pLanguageCard == NULL);
+			if (m_pLanguageCard) break;	// Only support one language card
+			m_slot[slot] = m_pLanguageCard = new Saturn128K(slot, Saturn128K::GetSaturnMemorySize());
+		}
+		else
+		{
+			m_slot[slot] = new Saturn128K(slot, Saturn128K::kMaxSaturnBanks);
+		}
 		break;
 
 	default:
@@ -165,9 +171,13 @@ void CardManager::RemoveInternal(UINT slot)
 			m_pParallelPrinterCard = NULL;
 			break;
 		case CT_LanguageCard:
-		case CT_Saturn128K:
 		case CT_LanguageCardIIe:
+			_ASSERT(slot == SLOT0);
 			m_pLanguageCard = NULL;
+			break;
+		case CT_Saturn128K:
+			if (slot == SLOT0)
+				m_pLanguageCard = NULL;
 			break;
 		case CT_Z80:
 			m_pZ80Card = NULL;

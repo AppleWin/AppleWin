@@ -47,15 +47,17 @@ LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
 	Card(type, slot),
 	m_uLastRamWrite(0)
 {
-	if (m_slot != LanguageCardUnit::kSlot0)
+	if (type != CT_Saturn128K && m_slot != LanguageCardUnit::kSlot0)
 		ThrowErrorInvalidSlot();
 
-	SetMemMainLanguageCard(NULL, true);
+	if (m_slot == SLOT0)
+		SetMemMainLanguageCard(NULL, SLOT0, true);
 }
 
 LanguageCardUnit::~LanguageCardUnit(void)
 {
-	SetMemMainLanguageCard(NULL);
+	if (m_slot == SLOT0)
+		SetMemMainLanguageCard(NULL, SLOT0);
 }
 
 void LanguageCardUnit::InitializeIO(LPBYTE pCxRomPeripheral)
@@ -154,7 +156,8 @@ LanguageCardSlot0::LanguageCardSlot0(SS_CARDTYPE type, UINT slot)
 	: LanguageCardUnit(type, slot)
 {
 	m_pMemory = new BYTE[kMemBankSize];
-	SetMemMainLanguageCard(m_pMemory);
+	if (m_slot == SLOT0)
+		SetMemMainLanguageCard(m_pMemory, SLOT0);
 }
 
 LanguageCardSlot0::~LanguageCardSlot0(void)
@@ -261,7 +264,8 @@ Saturn128K::Saturn128K(UINT slot, UINT banks)
 	for (UINT i = 1; i < m_uSaturnTotalBanks; i++)
 		m_aSaturnBanks[i] = new BYTE[kMemBankSize]; // Saturn banks are 16K, max 8 banks/card
 
-	SetMemMainLanguageCard( m_aSaturnBanks[ m_uSaturnActiveBank ] );
+	if (slot == SLOT0)
+		SetMemMainLanguageCard(m_aSaturnBanks[m_uSaturnActiveBank], SLOT0);
 }
 
 Saturn128K::~Saturn128K(void)
@@ -334,7 +338,7 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 			pLC->m_uSaturnActiveBank = pLC->m_uSaturnTotalBanks-1;	// FIXME: just prevent crash for now!
 		}
 
-		SetMemMainLanguageCard( pLC->m_aSaturnBanks[ pLC->m_uSaturnActiveBank ] );
+		SetMemMainLanguageCard(pLC->m_aSaturnBanks[pLC->m_uSaturnActiveBank], uSlot);
 		bBankChanged = true;
 	}
 	else
@@ -453,11 +457,16 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 		yamlLoadHelper.PopMap();
 	}
 
-	SetMemMainLanguageCard( m_aSaturnBanks[ m_uSaturnActiveBank ] );
-
-	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
+	// NB. MemInitializeFromSnapshot() called at end of Snapshot_LoadState_v2():
+	// . SetMemMainLanguageCard() for the slot/card that last set the 16KB LC bank
+	// . MemUpdatePaging(TRUE)
 
 	return true;
+}
+
+void Saturn128K::SetMainMemLanguageCard(void)
+{
+	SetMemMainLanguageCard(m_aSaturnBanks[m_uSaturnActiveBank], m_slot);
 }
 
 void Saturn128K::SetSaturnMemorySize(UINT banks)
