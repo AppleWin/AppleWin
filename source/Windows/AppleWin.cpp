@@ -803,7 +803,11 @@ static void RepeatInitialization(void)
 			if (GetCardMgr().QuerySlot(i) == CT_Disk2 && g_cmdLine.slotInfo[i].isDiskII13)
 				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).SetFirmware13Sector();
 			if (GetCardMgr().QuerySlot(i) == CT_GenericHDD)
+			{
 				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).SetUserNumBlocks(g_cmdLine.uHarddiskNumBlocks);
+				if (g_cmdLine.useHdcFirmwareV1)
+					dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).UseHdcFirmwareV1();
+			}
 		}
 
 		// Create window after inserting/removing VidHD card (as it affects width & height)

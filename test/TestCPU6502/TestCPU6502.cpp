@@ -1266,6 +1266,41 @@ int GH321_test()
 
 //-------------------------------------
 
+int GH1257_test()
+{
+	const UINT kNumTests = 3;
+	const BYTE code[kNumTests][6] = {	{ 0xA2, 0x7C, 0x9A, 0x20, 0x55, 0x13 },		// LDA #$7C; TXS; JSR $1355
+										{ 0xA2, 0x7D, 0x9A, 0x20, 0x55, 0x13 },		// LDA #$7D; TXS; JSR $1355 - actually JSRs to $0155
+										{ 0xA2, 0x7E, 0x9A, 0x20, 0x55, 0x13 } };	// LDA #$7E; TXS; JSR $1355 - actually JSRs to $7D55
+	const WORD resPC[kNumTests] = { 0x1355, 0x0155, 0x7D55 };
+
+	const UINT org = 0x0178;
+	g_bStopOnBRK = true;
+
+	for (UINT i = 0; i < kNumTests; i++)
+	{
+		memcpy(mem + org, code[i], sizeof(code[i]));
+		mem[resPC[i]] = 0x00;	// BRK
+		reset();
+		regs.pc = org;
+		TestCpu6502(2 + 2 + 6);
+		if (regs.pc != resPC[i]) return 1;
+
+		//
+
+		memcpy(mem + org, code[i], sizeof(code[i]));
+		mem[resPC[i]] = 0x00;	// BRK
+		reset();
+		regs.pc = org;
+		TestCpu65C02(2 + 2 + 6);
+		if (regs.pc != resPC[i]) return 1;
+	}
+
+	return 0;
+}
+
+//-------------------------------------
+
 int testCB(int id, int cycles, ULONG uExecutedCycles)
 {
 	return 0;
@@ -1344,6 +1379,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (res) return res;
 
 	res = GH292_test();
+	if (res) return res;
+
+	res = GH1257_test();
 	if (res) return res;
 
 	res = SyncEvents_test();

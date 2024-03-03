@@ -131,7 +131,7 @@ Overview
 
 
 HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
-	Card(CT_GenericHDD, slot)
+	Card(CT_GenericHDD, slot), m_userNumBlocks(0), m_useHdcFirmwareV1(false)
 {
 	if (m_slot != SLOT5 && m_slot != SLOT7)	// fixme
 		ThrowErrorInvalidSlot();
@@ -166,7 +166,8 @@ void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	const DWORD HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
 
-	BYTE* pData = GetFrame().GetResource(IDR_HDDRVR_V2_FW, "FIRMWARE", HARDDISK_FW_SIZE);
+	const WORD id = m_useHdcFirmwareV1 ? IDR_HDDRVR_FW : IDR_HDDRVR_V2_FW;
+	BYTE* pData = GetFrame().GetResource(id, "FIRMWARE", HARDDISK_FW_SIZE);
 	if (pData == NULL)
 		return;
 

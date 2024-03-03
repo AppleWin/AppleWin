@@ -253,10 +253,14 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpNextArg = GetNextArg(lpNextArg);
 			g_cmdLine.uHarddiskNumBlocks = atoi(lpCmdLine);
 			if (g_cmdLine.uHarddiskNumBlocks > kHarddiskMaxNumBlocks)
+			{
 				g_cmdLine.uHarddiskNumBlocks = kHarddiskMaxNumBlocks;
+			}
 			else
+			{
 				if (g_cmdLine.uHarddiskNumBlocks < 0)
 					g_cmdLine.uHarddiskNumBlocks = 0;
+			}
 		}
 		else if (strcmp(lpCmdLine, "-load-state") == 0)
 		{
@@ -627,9 +631,13 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.supportExtraMBCardTypes = true;
 		}
-		else if (strcmp(lpCmdLine, "-no-disk2-stepper-defer") == 0)	// a debug switch (likely to be removed in a future version)
+		else if (strcmp(lpCmdLine, "-no-disk2-stepper-defer") == 0)	// a debug switch added at 1.30.11 / GH#1110 (likely to be removed in a future version)
 		{
 			g_cmdLine.noDisk2StepperDefer = true;
+		}
+		else if (strcmp(lpCmdLine, "-hdc-firmware-v1") == 0)	// a debug switch added at 1.30.18 / GH#1277 (likely to be removed in a future version)
+		{
+			g_cmdLine.useHdcFirmwareV1 = true;
 		}
 		else	// unsupported
 		{

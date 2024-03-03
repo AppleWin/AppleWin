@@ -98,7 +98,15 @@
 			</ul>
 		</P>
 		<P>The card implements a <A href="https://github.com/a2retrosystems/uthernet2/wiki/Virtual-W5100-with-DNS">Virtual DNS</A>
-			interface (not found on real hardware) for Apple II software to run without raw sockets:
-			this allows operation on any type of network.</P>
+			interface (not found on real hardware) for Apple II software to run without raw sockets: this allows operation on any type of network.
+		</P>
+		<P>Note that the Apple II application must be virtual W5100-aware (currently as of early 2024 the only application that supports this is <A href="https://github.com/oliverschmidt/A2Stream">A2Stream</A>). AppleWin will utilise DNS offloading when both AppleWin is configured to use "Virtual DNS" and the Apple II application enables the W5100 for the "Virtual DNS" mode.
+		</P>
+		<P>Enabling AppleWin for "Virtual DNS" and using with Apple II applications that don't support this is harmless (but you won't get any benefit).
+		</P>
+		<P>AppleWin's W5100 emulation returns the following depending on whether AppleWin's "Virtual DNS" is checked or not:
+			<li>Checked (default): W5100 register 0x28 returns 0x00 (so Apple II applications can use this to detect the virtual W5100 has virtual DNS support).</li>
+			<li>Unchecked: W5100 register 0x28 returns 0x28 (ie. the emulated W5100 behaves like a real W5100).</li>
+		</P>
 		</body>
 </html>
