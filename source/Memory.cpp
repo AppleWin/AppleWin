@@ -1786,7 +1786,7 @@ void MemInitializeFromSnapshot(void)
 	if (GetCardMgr().QuerySlot(g_lastSlotToSetMainMemLCFromSnapshot) == CT_Saturn128K)
 	{
 		Saturn128K& saturn = dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(g_lastSlotToSetMainMemLCFromSnapshot));
-		saturn.SetMainMemLanguageCard();
+		saturn.SetMemMainLanguageCard();
 	}
 
 	// Finally setup the paging tables

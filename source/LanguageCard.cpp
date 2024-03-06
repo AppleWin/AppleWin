@@ -56,8 +56,9 @@ LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
 
 LanguageCardUnit::~LanguageCardUnit(void)
 {
-	if (m_slot == SLOT0)
-		SetMemMainLanguageCard(NULL, SLOT0);
+	// Nothing to do for SetMemMainLanguageCard():
+	// . if //e, then no ptr to clean up (since just using memmain)
+	// . else: subclass will do ptr clean up
 }
 
 void LanguageCardUnit::InitializeIO(LPBYTE pCxRomPeripheral)
@@ -164,6 +165,8 @@ LanguageCardSlot0::~LanguageCardSlot0(void)
 {
 	delete [] m_pMemory;
 	m_pMemory = NULL;
+	if (m_slot == SLOT0)
+		SetMemMainLanguageCard(NULL, SLOT0);
 }
 
 //
@@ -265,7 +268,7 @@ Saturn128K::Saturn128K(UINT slot, UINT banks)
 		m_aSaturnBanks[i] = new BYTE[kMemBankSize]; // Saturn banks are 16K, max 8 banks/card
 
 	if (slot == SLOT0)
-		SetMemMainLanguageCard(m_aSaturnBanks[m_uSaturnActiveBank], SLOT0);
+		::SetMemMainLanguageCard(m_aSaturnBanks[m_uSaturnActiveBank], SLOT0);
 }
 
 Saturn128K::~Saturn128K(void)
@@ -280,6 +283,8 @@ Saturn128K::~Saturn128K(void)
 			m_aSaturnBanks[i] = NULL;
 		}
 	}
+
+	// TODO: want the Saturn128K object that set the ptr via ::SetMemMainLanguageCard() to now set it to NULL (may be from SLOT0 or another slot)
 }
 
 UINT Saturn128K::GetActiveBank(void)
@@ -338,7 +343,7 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 			pLC->m_uSaturnActiveBank = pLC->m_uSaturnTotalBanks-1;	// FIXME: just prevent crash for now!
 		}
 
-		SetMemMainLanguageCard(pLC->m_aSaturnBanks[pLC->m_uSaturnActiveBank], uSlot);
+		::SetMemMainLanguageCard(pLC->m_aSaturnBanks[pLC->m_uSaturnActiveBank], uSlot);
 		bBankChanged = true;
 	}
 	else
@@ -464,9 +469,9 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	return true;
 }
 
-void Saturn128K::SetMainMemLanguageCard(void)
+void Saturn128K::SetMemMainLanguageCard(void)
 {
-	SetMemMainLanguageCard(m_aSaturnBanks[m_uSaturnActiveBank], m_slot);
+	::SetMemMainLanguageCard(m_aSaturnBanks[m_uSaturnActiveBank], m_slot);
 }
 
 void Saturn128K::SetSaturnMemorySize(UINT banks)

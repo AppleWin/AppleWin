@@ -85,7 +85,7 @@ public:
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
-	void SetMainMemLanguageCard(void);
+	void SetMemMainLanguageCard(void);
 
 	static UINT	GetSaturnMemorySize();
 	static void	SetSaturnMemorySize(UINT banks);
