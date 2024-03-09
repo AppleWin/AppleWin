@@ -112,11 +112,21 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 	if (MemOptimizeForModeChanging(PC, uAddr))
 		return bWrite ? 0 : MemReadFloatingBus(nExecutedCycles);
 
+	bool bBankChanged = GetLastSlotToSetMainMemLC() != SLOT0;
+	if (bBankChanged)
+		SetMemMainLanguageCard(NULL, SLOT0, true);	// TODO: fix for non-//e
+
 	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
 	// WRITE TABLES.
-	if (lastmemmode != memmode)
+	if ((lastmemmode != memmode) || bBankChanged)
 	{
-		SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (memmode & MF_LANGCARD_MASK));
+		if (lastmemmode != memmode)
+		{
+//			UINT oldmode = GetMemMode();
+			SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (memmode & MF_LANGCARD_MASK));
+//			UINT newmode = GetMemMode();
+//			LogOutput("[s%d] LC memmode: %08X -> %08X\n", pLC->m_slot, oldmode, newmode);
+		}
 		MemUpdatePaging(0);	// Initialize=0
 	}
 
@@ -383,7 +393,12 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 	if ((lastmemmode != memmode) || bBankChanged)
 	{
 		if (lastmemmode != memmode)
+		{
+//			UINT oldmode = GetMemMode();
 			SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (memmode & MF_LANGCARD_MASK));
+//			UINT newmode = GetMemMode();
+//			LogOutput("[s%d] LC memmode: %08X -> %08X\n", pLC->m_slot, oldmode, newmode);
+		}
 		MemUpdatePaging(0);	// Initialize=0
 	}
 

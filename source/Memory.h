@@ -118,3 +118,4 @@ UINT	GetRamWorksActiveBank(void);
 void	SetMemMainLanguageCard(LPBYTE ptr, UINT slot, bool bMemMain=false);
 
 LPBYTE GetCxRomPeripheral(void);
+UINT GetLastSlotToSetMainMemLC(void);

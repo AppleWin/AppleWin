@@ -401,6 +401,11 @@ LPBYTE GetCxRomPeripheral(void)
 	return pCxRomPeripheral;	// Can be NULL if at MODE_LOGO
 }
 
+UINT GetLastSlotToSetMainMemLC(void)
+{
+	return g_lastSlotToSetMainMemLC;
+}
+
 //=============================================================================
 
 static BYTE __stdcall IORead_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
