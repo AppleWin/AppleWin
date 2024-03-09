@@ -76,20 +76,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // . Sather uses INTCXROM instead of SLOTCXROM' (used by the Apple//e Tech Ref Manual), so keep to this
 //   convention too since UTAIIe is the reference for most of the logic that we implement in the emulator.
 
-#define  SW_80STORE    (memmode & MF_80STORE)
-#define  SW_ALTZP      (memmode & MF_ALTZP)
-#define  SW_AUXREAD    (memmode & MF_AUXREAD)
-#define  SW_AUXWRITE   (memmode & MF_AUXWRITE)
-#define  SW_BANK2      (memmode & MF_BANK2)
-#define  SW_HIGHRAM    (memmode & MF_HIGHRAM)
-#define  SW_HIRES      (memmode & MF_HIRES)
-#define  SW_PAGE2      (memmode & MF_PAGE2)
-#define  SW_SLOTC3ROM  (memmode & MF_SLOTC3ROM)
-#define  SW_INTCXROM   (memmode & MF_INTCXROM)
-#define  SW_WRITERAM   (memmode & MF_WRITERAM)
-#define  SW_IOUDIS     (memmode & MF_IOUDIS)
-#define  SW_ALTROM0    (memmode & MF_ALTROM0)	// For Copam Base64A
-#define  SW_ALTROM1    (memmode & MF_ALTROM1)	// For Copam Base64A
+#define  SW_80STORE    (g_memmode & MF_80STORE)
+#define  SW_ALTZP      (g_memmode & MF_ALTZP)
+#define  SW_AUXREAD    (g_memmode & MF_AUXREAD)
+#define  SW_AUXWRITE   (g_memmode & MF_AUXWRITE)
+#define  SW_BANK2      (g_memmode & MF_BANK2)
+#define  SW_HIGHRAM    (g_memmode & MF_HIGHRAM)
+#define  SW_HIRES      (g_memmode & MF_HIRES)
+#define  SW_PAGE2      (g_memmode & MF_PAGE2)
+#define  SW_SLOTC3ROM  (g_memmode & MF_SLOTC3ROM)
+#define  SW_INTCXROM   (g_memmode & MF_INTCXROM)
+#define  SW_WRITERAM   (g_memmode & MF_WRITERAM)
+#define  SW_IOUDIS     (g_memmode & MF_IOUDIS)
+#define  SW_ALTROM0    (g_memmode & MF_ALTROM0)	// For Copam Base64A
+#define  SW_ALTROM1    (g_memmode & MF_ALTROM1)	// For Copam Base64A
 
 /*
 MEMORY MANAGEMENT SOFT SWITCHES
@@ -224,7 +224,7 @@ static LPBYTE	pCxRomPeripheral	= NULL;
 
 static LPBYTE g_pMemMainLanguageCard = NULL;
 
-static DWORD   memmode      = LanguageCardUnit::kMemModeInitialState;
+static DWORD   g_memmode = LanguageCardUnit::kMemModeInitialState;
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
 
 static UINT    memrompages = 1;
@@ -650,12 +650,12 @@ static BYTE __stdcall IOWrite_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULON
 	case 0xC:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xD:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xE:	if (IS_APPLE2C())
-					SetMemMode(memmode | MF_IOUDIS);	// On: disable IOU access for addresses $C058 to $C05F; enable access to DHIRES switch
+					SetMemMode(g_memmode | MF_IOUDIS);	// On: disable IOU access for addresses $C058 to $C05F; enable access to DHIRES switch
 				else
 					return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 				break;
 	case 0xF:	if (IS_APPLE2C())
-					SetMemMode(memmode & ~MF_IOUDIS);	// Off: enable IOU access for addresses $C058 to $C05F; disable access to DHIRES switch
+					SetMemMode(g_memmode & ~MF_IOUDIS);	// Off: enable IOU access for addresses $C058 to $C05F; disable access to DHIRES switch
 				else
 					return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 				break;
@@ -1080,14 +1080,14 @@ static bool IsCardInSlot(UINT slot)
 
 DWORD GetMemMode(void)
 {
-	return memmode;
+	return g_memmode;
 }
 
 void SetMemMode(DWORD uNewMemMode)
 {
 #if defined(_DEBUG) && 0
 	static DWORD dwOldDiff = 0;
-	DWORD dwDiff = memmode ^ uNewMemMode;
+	DWORD dwDiff = g_memmode ^ uNewMemMode;
 	dwDiff &= ~(MF_SLOTC3ROM | MF_INTCXROM);
 	if (dwOldDiff != dwDiff)
 	{
@@ -1122,7 +1122,7 @@ void SetMemMode(DWORD uNewMemMode)
 		OutputDebugString(str.c_str());
 	}
 #endif
-	memmode = uNewMemMode;
+	g_memmode = uNewMemMode;
 }
 
 //===========================================================================
@@ -1962,7 +1962,7 @@ void MemReset()
 	mem = memimage;
 
 	// INITIALIZE PAGING, FILLING IN THE 64K MEMORY IMAGE
-	ResetPaging(TRUE);		// Initialize=1, init memmode
+	ResetPaging(TRUE);		// Initialize=1, init g_memmode
 	MemAnnunciatorReset();
 
 	// INITIALIZE & RESET THE CPU
@@ -2026,7 +2026,7 @@ static void DebugFlip(WORD address, ULONG nExecutedCycles)
 BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nExecutedCycles)
 {
 	address &= 0xFF;
-	DWORD lastmemmode = memmode;
+	DWORD lastmemmode = g_memmode;
 #if defined(_DEBUG) && defined(DEBUG_FLIP_TIMINGS)
 	DebugFlip(address, nExecutedCycles);
 #endif
@@ -2036,22 +2036,22 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	{
 		switch (address)
 		{
-			case 0x00: SetMemMode(memmode & ~MF_80STORE);    break;
-			case 0x01: SetMemMode(memmode |  MF_80STORE);    break;
-			case 0x02: SetMemMode(memmode & ~MF_AUXREAD);    break;
-			case 0x03: SetMemMode(memmode |  MF_AUXREAD);    break;
-			case 0x04: SetMemMode(memmode & ~MF_AUXWRITE);   break;
-			case 0x05: SetMemMode(memmode |  MF_AUXWRITE);   break;
-			case 0x06: SetMemMode(memmode & ~MF_INTCXROM);   break;
-			case 0x07: SetMemMode(memmode |  MF_INTCXROM);   break;
-			case 0x08: SetMemMode(memmode & ~MF_ALTZP);      break;
-			case 0x09: SetMemMode(memmode |  MF_ALTZP);      break;
-			case 0x0A: SetMemMode(memmode & ~MF_SLOTC3ROM);  break;
-			case 0x0B: SetMemMode(memmode |  MF_SLOTC3ROM);  break;
-			case 0x54: SetMemMode(memmode & ~MF_PAGE2);      break;
-			case 0x55: SetMemMode(memmode |  MF_PAGE2);      break;
-			case 0x56: SetMemMode(memmode & ~MF_HIRES);      break;
-			case 0x57: SetMemMode(memmode |  MF_HIRES);      break;
+			case 0x00: SetMemMode(g_memmode & ~MF_80STORE);    break;
+			case 0x01: SetMemMode(g_memmode |  MF_80STORE);    break;
+			case 0x02: SetMemMode(g_memmode & ~MF_AUXREAD);    break;
+			case 0x03: SetMemMode(g_memmode |  MF_AUXREAD);    break;
+			case 0x04: SetMemMode(g_memmode & ~MF_AUXWRITE);   break;
+			case 0x05: SetMemMode(g_memmode |  MF_AUXWRITE);   break;
+			case 0x06: SetMemMode(g_memmode & ~MF_INTCXROM);   break;
+			case 0x07: SetMemMode(g_memmode |  MF_INTCXROM);   break;
+			case 0x08: SetMemMode(g_memmode & ~MF_ALTZP);      break;
+			case 0x09: SetMemMode(g_memmode |  MF_ALTZP);      break;
+			case 0x0A: SetMemMode(g_memmode & ~MF_SLOTC3ROM);  break;
+			case 0x0B: SetMemMode(g_memmode |  MF_SLOTC3ROM);  break;
+			case 0x54: SetMemMode(g_memmode & ~MF_PAGE2);      break;
+			case 0x55: SetMemMode(g_memmode |  MF_PAGE2);      break;
+			case 0x56: SetMemMode(g_memmode & ~MF_HIRES);      break;
+			case 0x57: SetMemMode(g_memmode |  MF_HIRES);      break;
 #ifdef RAMWORKS
 			case 0x71: // extended memory aux page number
 			case 0x73: // Ramworks III set aux page number
@@ -2079,10 +2079,10 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	{
 		switch (address)
 		{
-			case 0x58: SetMemMode(memmode & ~MF_ALTROM0);  break;
-			case 0x59: SetMemMode(memmode |  MF_ALTROM0);  break;
-			case 0x5A: SetMemMode(memmode & ~MF_ALTROM1);  break;
-			case 0x5B: SetMemMode(memmode |  MF_ALTROM1);  break;
+			case 0x58: SetMemMode(g_memmode & ~MF_ALTROM0);  break;
+			case 0x59: SetMemMode(g_memmode |  MF_ALTROM0);  break;
+			case 0x5A: SetMemMode(g_memmode & ~MF_ALTROM1);  break;
+			case 0x5B: SetMemMode(g_memmode |  MF_ALTROM1);  break;
 		}
 	}
 
@@ -2091,10 +2091,10 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 
 	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
 	// WRITE TABLES.
-	if ((lastmemmode != memmode) || modechanging)
+	if ((lastmemmode != g_memmode) || modechanging)
 	{
 		// NB. Must check MF_SLOTC3ROM too, as IoHandlerCardsIn() depends on both MF_INTCXROM|MF_SLOTC3ROM
-		if ((lastmemmode & (MF_INTCXROM|MF_SLOTC3ROM)) != (memmode & (MF_INTCXROM|MF_SLOTC3ROM)))
+		if ((lastmemmode & (MF_INTCXROM|MF_SLOTC3ROM)) != (g_memmode & (MF_INTCXROM|MF_SLOTC3ROM)))
 		{
 			if (!SW_INTCXROM)
 			{
@@ -2136,6 +2136,9 @@ bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
 {
 	if (IsAppleIIeOrAbove(GetApple2Type()))
 	{
+		if (programcounter > 0xFFFC)	// Prevent out of bounds access!
+			return false;
+
 		// IF THE EMULATED PROGRAM HAS JUST UPDATED THE MEMORY WRITE MODE AND IS
 		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
 		// IT DOES SO.
@@ -2149,6 +2152,8 @@ bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
 				return true;
 		}
 
+		// TODO: support Saturn in any slot.
+		// NB. GH#602 asks for any examples of this happening:
 		if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&	// Now: LC
 			(((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||		// Next: STA $C004(RAMWRTOFF) or STA $C005(RAMWRTON)
 			 ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)))		//    or STA $C002(RAMRDOFF)  or STA $C003(RAMRDON)
@@ -2178,7 +2183,7 @@ void MemAnnunciatorReset(void)
 
 	if (IsCopamBase64A(GetApple2Type()))
 	{
-		SetMemMode(memmode & ~(MF_ALTROM0|MF_ALTROM1));
+		SetMemMode(g_memmode & ~(MF_ALTROM0|MF_ALTROM1));
 		UpdatePaging(FALSE);	// Initialize=FALSE
 	}
 }
@@ -2286,7 +2291,7 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	// Scope so that "Memory" & "Main Memory" are at same indent level
 	{
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotStructName().c_str());
-		DWORD saveMemMode = memmode;
+		DWORD saveMemMode = g_memmode;
 		if (IsApple2PlusOrClone(GetApple2Type()))
 			saveMemMode &= ~MF_LANGCARD_MASK;		// For II,II+: clear LC bits - set later by slot-0 LC or Saturn
 		yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, saveMemMode);

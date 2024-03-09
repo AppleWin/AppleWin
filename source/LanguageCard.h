@@ -26,6 +26,8 @@ public:
 
 	BOOL GetLastRamWrite(void) { return m_uLastRamWrite; }
 	void SetLastRamWrite(BOOL count) { m_uLastRamWrite = count; }
+	UINT GetLCMemMode(void) { return m_memmode; }
+	void SetLCMemMode(UINT memmode) { m_memmode = memmode; }
 	SS_CARDTYPE GetMemoryType(void) { return QueryType(); }
 	bool IsOpcodeRMWabs(WORD addr);
 
@@ -39,6 +41,7 @@ protected:
 
 private:
 	UINT m_uLastRamWrite;
+	UINT m_memmode;
 };
 
 //

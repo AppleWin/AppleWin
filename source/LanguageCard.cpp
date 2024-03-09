@@ -51,7 +51,8 @@ LanguageCardUnit * LanguageCardUnit::create(UINT slot)
 
 LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
 	Card(type, slot),
-	m_uLastRamWrite(0)
+	m_uLastRamWrite(0),
+	m_memmode(kMemModeInitialState)
 {
 	if (type != CT_Saturn128K && m_slot != LanguageCardUnit::kSlot0)
 		ThrowErrorInvalidSlot();
@@ -77,7 +78,7 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 	UINT uSlot = ((uAddr & 0xff) >> 4) - 8;
 	LanguageCardUnit* pLC = (LanguageCardUnit*) MemGetSlotParameters(uSlot);
 
-	DWORD memmode = GetMemMode();
+	DWORD memmode = pLC->GetLCMemMode();
 	DWORD lastmemmode = memmode;
 	memmode &= ~(MF_BANK2 | MF_HIGHRAM);
 
@@ -104,7 +105,7 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 	}
 
 	pLC->SetLastRamWrite( ((uAddr & 1) && !bWrite) ); // UTAIIe:5-23
-	SetMemMode(memmode);
+	pLC->SetLCMemMode(memmode);
 
 	//
 
@@ -115,6 +116,7 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 	// WRITE TABLES.
 	if (lastmemmode != memmode)
 	{
+		SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (memmode & MF_LANGCARD_MASK));
 		MemUpdatePaging(0);	// Initialize=0
 	}
 
@@ -198,7 +200,7 @@ const std::string& LanguageCardSlot0::GetSnapshotCardName(void)
 
 void LanguageCardSlot0::SaveLCState(YamlSaveHelper& yamlSaveHelper)
 {
-	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, GetMemMode() & (MF_WRITERAM|MF_HIGHRAM|MF_BANK2));
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, GetMemMode() & MF_LANGCARD_MASK);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite() ? 1 : 0);
 }
 
@@ -354,7 +356,7 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 	}
 	else
 	{
-		memmode = GetMemMode();
+		memmode = pLC->GetLCMemMode();
 		lastmemmode = memmode;
 		memmode &= ~(MF_BANK2 | MF_HIGHRAM);
 
@@ -370,15 +372,18 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 			memmode &= ~MF_WRITERAM;
 
 		pLC->SetLastRamWrite(uAddr & 1);		// Saturn differs from Apple's 16K LC: any access (LC is read-only)
-		SetMemMode(memmode);
+		pLC->SetLCMemMode(memmode);
 	}
 
-	// NB. Unlike LC, no need to check if next opcode is STA $C002-5, as Saturn is not for //e
+	// NB. Saturn can be put in any slot but MemOptimizeForModeChanging() currently only supports LC in slot 0.
+	// . This optimization (check if next opcode is STA $C002-5) isn't essential, so skip it for now.
 
 	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
 	// WRITE TABLES.
 	if ((lastmemmode != memmode) || bBankChanged)
 	{
+		if (lastmemmode != memmode)
+			SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (memmode & MF_LANGCARD_MASK));
 		MemUpdatePaging(0);	// Initialize=0
 	}
 
