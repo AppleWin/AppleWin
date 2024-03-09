@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 namespace common2
@@ -13,6 +14,7 @@ namespace sa2
   struct SoundInfo
   {
     bool running = false;
+    std::string name;
     int channels = 0;
 
     // in seconds

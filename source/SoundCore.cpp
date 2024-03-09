@@ -201,6 +201,7 @@ HRESULT DSGetSoundBuffer(VOICE* pVoice, DWORD dwFlags, DWORD dwBufferSize, DWORD
 	dsbdesc.dwBufferBytes = dwBufferSize;
 	dsbdesc.lpwfxFormat = &wavfmt;
 	dsbdesc.dwFlags = dwFlags | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_STICKYFOCUS;
+	dsbdesc.szName = pszDevName;
 
 	// Are buffers released when g_lpDS OR pVoice->lpDSBvoice is released?
 	// . From DirectX doc:

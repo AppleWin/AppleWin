@@ -11,6 +11,7 @@ IDirectSoundBuffer::IDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
   , myChannels(lpcDSBufferDesc->lpwfxFormat->nChannels)
   , myBitsPerSample(lpcDSBufferDesc->lpwfxFormat->wBitsPerSample)
   , myFlags(lpcDSBufferDesc->dwFlags)
+  , myName(lpcDSBufferDesc->szName)
 {
 }
 
