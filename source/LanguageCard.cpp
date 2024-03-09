@@ -52,7 +52,8 @@ LanguageCardUnit * LanguageCardUnit::create(UINT slot)
 LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
 	Card(type, slot),
 	m_uLastRamWrite(0),
-	m_memmode(kMemModeInitialState)
+	m_memmode(kMemModeInitialState),
+	m_pMemory(NULL)
 {
 	if (type != CT_Saturn128K && m_slot != LanguageCardUnit::kSlot0)
 		ThrowErrorInvalidSlot();
@@ -77,6 +78,7 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 {
 	UINT uSlot = ((uAddr & 0xff) >> 4) - 8;
 	LanguageCardUnit* pLC = (LanguageCardUnit*) MemGetSlotParameters(uSlot);
+	_ASSERT(uSlot == SLOT0);
 
 	DWORD memmode = pLC->GetLCMemMode();
 	DWORD lastmemmode = memmode;
@@ -107,14 +109,19 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 	pLC->SetLastRamWrite( ((uAddr & 1) && !bWrite) ); // UTAIIe:5-23
 	pLC->SetLCMemMode(memmode);
 
+	const bool bBankChanged = GetLastSlotToSetMainMemLC() != SLOT0;
+	if (bBankChanged)
+	{
+		if (pLC->QueryType() == CT_LanguageCardIIe)
+			SetMemMainLanguageCard(NULL, SLOT0, true);
+		else // CT_LanguageCard
+			SetMemMainLanguageCard(pLC->m_pMemory, SLOT0);
+	}
+
 	//
 
 	if (MemOptimizeForModeChanging(PC, uAddr))
 		return bWrite ? 0 : MemReadFloatingBus(nExecutedCycles);
-
-	bool bBankChanged = GetLastSlotToSetMainMemLC() != SLOT0;
-	if (bBankChanged)
-		SetMemMainLanguageCard(NULL, SLOT0, true);	// TODO: fix for non-//e
 
 	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
 	// WRITE TABLES.
@@ -383,6 +390,12 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 
 		pLC->SetLastRamWrite(uAddr & 1);		// Saturn differs from Apple's 16K LC: any access (LC is read-only)
 		pLC->SetLCMemMode(memmode);
+
+		bBankChanged = GetLastSlotToSetMainMemLC() != uSlot;
+		if (bBankChanged)
+		{
+			::SetMemMainLanguageCard(pLC->m_pMemory, uSlot);
+		}
 	}
 
 	// NB. Saturn can be put in any slot but MemOptimizeForModeChanging() currently only supports LC in slot 0.

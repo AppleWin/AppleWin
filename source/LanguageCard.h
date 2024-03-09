@@ -39,6 +39,8 @@ public:
 protected:
 	LanguageCardUnit(SS_CARDTYPE type, UINT slot);
 
+	LPBYTE m_pMemory;
+
 private:
 	UINT m_uLastRamWrite;
 	UINT m_memmode;
@@ -66,8 +68,6 @@ protected:
 	LanguageCardSlot0(SS_CARDTYPE type, UINT slot);
 	void SaveLCState(class YamlSaveHelper& yamlSaveHelper);
 	void LoadLCState(class YamlLoadHelper& yamlLoadHelper);
-
-	LPBYTE m_pMemory;
 
 private:
 	const std::string& GetSnapshotMemStructName(void);
