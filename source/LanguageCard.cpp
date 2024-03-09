@@ -24,6 +24,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* Description: Language Card and Saturn 128K emulation
  *
  * Author: various
+ *
+ *
+ * Consider adding a LangauageCardManager class:
+ * . would manage g_lastSlotToSetMainMemLC (so move out of Memory.cpp)
+ * . assist with debugger's display of "sNN" for active 16K bank
+ * Currently conclude that there's not much point.
  */
 
 #include "StdAfx.h"
