@@ -128,12 +128,8 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 	if ((lastmemmode != memmode) || bBankChanged)
 	{
 		if (lastmemmode != memmode)
-		{
-//			UINT oldmode = GetMemMode();
 			SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (memmode & MF_LANGCARD_MASK));
-//			UINT newmode = GetMemMode();
-//			LogOutput("[s%d] LC memmode: %08X -> %08X\n", pLC->m_slot, oldmode, newmode);
-		}
+
 		MemUpdatePaging(0);	// Initialize=0
 	}
 
@@ -406,12 +402,8 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 	if ((lastmemmode != memmode) || bBankChanged)
 	{
 		if (lastmemmode != memmode)
-		{
-//			UINT oldmode = GetMemMode();
 			SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (memmode & MF_LANGCARD_MASK));
-//			UINT newmode = GetMemMode();
-//			LogOutput("[s%d] LC memmode: %08X -> %08X\n", pLC->m_slot, oldmode, newmode);
-		}
+
 		MemUpdatePaging(0);	// Initialize=0
 	}
 
