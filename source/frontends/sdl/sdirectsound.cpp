@@ -176,6 +176,7 @@ namespace
     GetStatus(&dwStatus);
 
     sa2::SoundInfo info;
+    info.name = myName;
     info.running = dwStatus & DSBSTATUS_PLAYING;
     info.channels = myChannels;
     info.volume = GetLogarithmicVolume();

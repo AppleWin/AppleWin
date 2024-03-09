@@ -1,7 +1,7 @@
 #include "StdAfx.h"
+#include "frontends/libretro/retroregistry.h"
 #include "frontends/common2/ptreeregistry.h"
 #include "frontends/libretro/environment.h"
-#include "frontends/libretro/retroregistry.h"
 
 #include "Common.h"
 #include "Card.h"
@@ -10,15 +10,15 @@
 #include "libretro.h"
 
 #include <list>
-#include <vector>
 #include <sstream>
 
 namespace
 {
 
   const std::string ourScope = "applewin_";
-  const char * REG_AUDIO_OUTPUT = "ra2\\audio";
-  const char * REGVALUE_AUDIO_OUTPUT_CHANNELS = "Number of Channels";
+
+  const char * REG_AUDIO = "ra2\\audio";
+  const char * REGVALUE_AUDIO_SOURCE = "Source";
 
   const char * REG_KEYBOARD_TYPE = "ra2\\keyboard";
   const char * REGVALUE_KEYBOARD_TYPE = "Keyboard Type";
@@ -124,13 +124,13 @@ namespace
       }
      },
      {
-      "audio_output",
-      "Audio Output",
-      REG_AUDIO_OUTPUT,
-      REGVALUE_AUDIO_OUTPUT_CHANNELS,
+      "audio_source",
+      "Audio Source",
+      REG_AUDIO,
+      REGVALUE_AUDIO_SOURCE,
       {
-       {"Speaker", 1},
-       {"Mockingboard", 2},
+       {REGVALUE_AUDIO_SPEAKER, static_cast<DWORD>(ra2::eAudioSource::SPEAKER)},
+       {REGVALUE_AUDIO_MOCKINGBOARD, static_cast<DWORD>(ra2::eAudioSource::MOCKINGBOARD)},
       }
      },
      {
@@ -221,11 +221,12 @@ namespace ra2
     return registry;
   }
 
-  size_t GetAudioOutputChannels()
+  eAudioSource GetAudioSource()
   {
     DWORD value = 1;
-    RegLoadValue(REG_AUDIO_OUTPUT, REGVALUE_AUDIO_OUTPUT_CHANNELS, TRUE, &value);
-    return value;
+    RegLoadValue(REG_AUDIO, REGVALUE_AUDIO_SOURCE, TRUE, &value);
+    const eAudioSource source = value <= DWORD(eAudioSource::UNKNOWN) ? eAudioSource(value) : eAudioSource::UNKNOWN;
+    return source;
   }
 
   KeyboardType GetKeyboardEmulationType()

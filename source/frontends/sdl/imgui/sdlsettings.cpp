@@ -494,9 +494,10 @@ namespace sa2
 
           ImGui::Separator();
 
-          if (ImGui::BeginTable("Devices", 5, ImGuiTableFlags_RowBg))
+          if (ImGui::BeginTable("Devices", 6, ImGuiTableFlags_RowBg))
           {
             myAudioInfo = getAudioInfo();
+            ImGui::TableSetupColumn("Name");
             ImGui::TableSetupColumn("Running");
             ImGui::TableSetupColumn("Channels");
             ImGui::TableSetupColumn("Volume");
@@ -507,6 +508,8 @@ namespace sa2
             ImGui::BeginDisabled();
             for (SoundInfo & device : myAudioInfo)
             {
+              ImGui::TableNextColumn();
+              ImGui::TextUnformatted(device.name.c_str());
               ImGui::TableNextColumn();
               ImGui::Checkbox("##Running", &device.running);
               ImGui::TableNextColumn();

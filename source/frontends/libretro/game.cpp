@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 #include "frontends/libretro/game.h"
-#include "frontends/libretro/rdirectsound.h"
 #include "frontends/libretro/retroregistry.h"
 #include "frontends/libretro/retroframe.h"
 #include "frontends/libretro/rkeyboard.h"
@@ -78,7 +77,7 @@ namespace ra2
 
   void Game::refreshVariables()
   {
-    myAudioChannelsSelected = GetAudioOutputChannels();
+    myAudioSource = GetAudioSource();
     myKeyboardType = GetKeyboardEmulationType();
   }
 
@@ -275,15 +274,20 @@ namespace ra2
       }
       if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_R2))
       {
-        if (myAudioChannelsSelected == 1)
+        switch (myAudioSource)
         {
-          myAudioChannelsSelected = 2;
-          display_message("Audio source: Mockingboard");
+        case eAudioSource::SPEAKER:
+        {
+          myAudioSource = eAudioSource::MOCKINGBOARD;
+          display_message(std::string("Audio source: ") + REGVALUE_AUDIO_MOCKINGBOARD);
+          break;
         }
-        else
+        case eAudioSource::MOCKINGBOARD:
         {
-          myAudioChannelsSelected = 1;
-          display_message("Audio source: speaker");
+          myAudioSource = eAudioSource::SPEAKER;
+          display_message(std::string("Audio source: ") + REGVALUE_AUDIO_SPEAKER);
+          break;
+        }
         }
       }
       if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_START))
@@ -346,7 +350,7 @@ namespace ra2
 
   void Game::writeAudio(const size_t fps)
   {
-    ra2::writeAudio(myAudioChannelsSelected, fps);
+    ra2::writeAudio(myAudioSource, fps);
   }
 
 }

@@ -4,6 +4,7 @@
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/diskcontrol.h"
 #include "frontends/libretro/rkeyboard.h"
+#include "frontends/libretro/rdirectsound.h"
 
 #include <memory>
 #include <chrono>
@@ -61,7 +62,7 @@ namespace ra2
 
     std::vector<int> myButtonStates;
 
-    size_t myAudioChannelsSelected;
+    eAudioSource myAudioSource;
 
     KeyboardType myKeyboardType;
 

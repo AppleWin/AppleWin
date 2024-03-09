@@ -1,7 +1,7 @@
+#include "StdAfx.h"
 #include "frontends/libretro/rdirectsound.h"
 #include "frontends/libretro/environment.h"
 
-#include "windows.h"
 #include "linux/linuxinterface.h"
 
 #include <unordered_map>
@@ -14,6 +14,29 @@
 namespace
 {
 
+  ra2::eAudioSource getAudioSourceFromName(const std::string & name)
+  {
+    // These are the strings used in DSGetSoundBuffer
+
+    if (name == "Spkr")
+    {
+      return ra2::eAudioSource::SPEAKER;
+    }
+
+    if (name == "MB")
+    {
+      return ra2::eAudioSource::MOCKINGBOARD;
+    }
+
+    if (name == "SSI263")
+    {
+      return ra2::eAudioSource::SSI263;
+    }
+
+    // something new, just ignore it
+    return ra2::eAudioSource::UNKNOWN;
+  }
+
   class DirectSoundGenerator : public IDirectSoundBuffer 
   {
   public:
@@ -24,9 +47,11 @@ namespace
     void writeAudio(const size_t fps, const bool write);
 
     bool isRunning();
-    size_t getNumberOfChannels() const;
+
+    ra2::eAudioSource getSource() const;
 
   private:
+    const ra2::eAudioSource myAudioSource;
     std::vector<int16_t> myMixerBuffer;
 
     void mixBuffer(const void * ptr, const size_t size);
@@ -36,6 +61,7 @@ namespace
 
   DirectSoundGenerator::DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc)
     : IDirectSoundBuffer(lpcDSBufferDesc)
+    , myAudioSource(getAudioSourceFromName(myName))
   {
   }
 
@@ -59,9 +85,9 @@ namespace
     }
   }
 
-  size_t DirectSoundGenerator::getNumberOfChannels() const
+  ra2::eAudioSource DirectSoundGenerator::getSource() const
   {
-    return myChannels;
+    return myAudioSource;
   }
 
   void DirectSoundGenerator::mixBuffer(const void * ptr, const size_t size)
@@ -132,7 +158,7 @@ IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
 namespace ra2
 {
 
-  void writeAudio(const size_t channels, const size_t fps)
+  void writeAudio(const eAudioSource selectedSource, const size_t fps)
   {
     bool found = false;
     for (const auto & it : activeSoundGenerators)
@@ -140,7 +166,7 @@ namespace ra2
       const auto & generator = it.second;
       if (generator->isRunning())
       {
-        const bool selected = !found && (generator->getNumberOfChannels() == channels);
+        const bool selected = !found && (selectedSource == generator->getSource());
         // we still read audio from all buffers
         // to keep AppleWin audio generation woking correctly
         // but only write on the selected one

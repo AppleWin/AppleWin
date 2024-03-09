@@ -9,6 +9,7 @@
 #include <vector>
 #include <memory>
 #include <mutex>
+#include <string>
 
 #define DS_OK				0
 
@@ -72,6 +73,7 @@ typedef struct _DSBUFFERDESC
   DWORD		dwReserved;
   LPWAVEFORMATEX	lpwfxFormat;
   GUID		guid3DAlgorithm;
+  LPCSTR  szName;  // only in the linux version to differentiate the channels
 } DSBUFFERDESC,*LPDSBUFFERDESC;
 typedef const DSBUFFERDESC *LPCDSBUFFERDESC;
 
@@ -106,6 +108,7 @@ public:
   const size_t myChannels;
   const size_t myBitsPerSample;
   const size_t myFlags;
+  const std::string myName;
 
   IDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc);
 
