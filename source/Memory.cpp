@@ -1794,6 +1794,8 @@ void MemInitializeFromSnapshot(void)
 		saturn.SetMemMainLanguageCard();
 	}
 
+	dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(g_lastSlotToSetMainMemLCFromSnapshot)).SetGlobalLCMemMode();
+
 	// Finally setup the paging tables
 	MemUpdatePaging(TRUE);
 

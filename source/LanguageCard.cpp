@@ -52,7 +52,7 @@ LanguageCardUnit * LanguageCardUnit::create(UINT slot)
 LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
 	Card(type, slot),
 	m_uLastRamWrite(0),
-	m_memmode(kMemModeInitialState),
+	m_memMode(kMemModeInitialState),
 	m_pMemory(NULL)
 {
 	if (type != CT_Saturn128K && m_slot != LanguageCardUnit::kSlot0)
@@ -80,8 +80,8 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 	LanguageCardUnit* pLC = (LanguageCardUnit*) MemGetSlotParameters(uSlot);
 	_ASSERT(uSlot == SLOT0);
 
-	DWORD memmode = pLC->GetLCMemMode();
-	DWORD lastmemmode = memmode;
+	UINT memmode = pLC->GetLCMemMode();
+	UINT lastmemmode = memmode;
 	memmode &= ~(MF_BANK2 | MF_HIGHRAM);
 
 	if (!(uAddr & 8))
@@ -167,6 +167,11 @@ bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 	return false;
 }
 
+void LanguageCardUnit::SetGlobalLCMemMode(void)
+{
+	SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (GetLCMemMode() & MF_LANGCARD_MASK));
+}
+
 //-------------------------------------
 
 LanguageCardSlot0 * LanguageCardSlot0::create(UINT slot)
@@ -213,15 +218,15 @@ const std::string& LanguageCardSlot0::GetSnapshotCardName(void)
 
 void LanguageCardSlot0::SaveLCState(YamlSaveHelper& yamlSaveHelper)
 {
-	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, GetMemMode() & MF_LANGCARD_MASK);
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, GetLCMemMode() & MF_LANGCARD_MASK);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite() ? 1 : 0);
 }
 
 void LanguageCardSlot0::LoadLCState(YamlLoadHelper& yamlLoadHelper)
 {
-	DWORD memMode     = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) & MF_LANGCARD_MASK;
+	UINT memMode      = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) & MF_LANGCARD_MASK;
 	BOOL lastRamWrite = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
-	SetMemMode( (GetMemMode() & ~MF_LANGCARD_MASK) | memMode );
+	SetLCMemMode(memMode);
 	SetLastRamWrite(lastRamWrite);
 }
 
@@ -347,7 +352,7 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 		return bWrite ? 0 : MemReadFloatingBus(nExecutedCycles);
 
 	bool bBankChanged = false;
-	DWORD memmode=0, lastmemmode=0;
+	UINT memmode=0, lastmemmode=0;
 
 	if (uAddr & (1<<2))
 	{
