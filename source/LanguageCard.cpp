@@ -310,7 +310,8 @@ Saturn128K::~Saturn128K(void)
 		}
 	}
 
-	// TODO: want the Saturn128K object that set the ptr via ::SetMemMainLanguageCard() to now set it to NULL (may be from SLOT0 or another slot)
+	// NB. want the Saturn128K object that set the ptr via ::SetMemMainLanguageCard() to now set it to NULL (may be from SLOT0 or another slot)
+	// In reality, dtor only called when whole VM is being destroyed, so won't have have use-after-frees.
 }
 
 UINT Saturn128K::GetActiveBank(void)
@@ -438,13 +439,6 @@ const std::string& Saturn128K::GetSnapshotCardName(void)
 
 void Saturn128K::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	if (!IsApple2PlusOrClone(GetApple2Type()))
-	{
-		_ASSERT(0);
-		LogFileOutput("Warning: Save-state attempted to save %s for //e or above\n", GetSnapshotCardName().c_str());
-		return;	// No Saturn support for //e and above
-	}
-
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_SATURN_VER);
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
