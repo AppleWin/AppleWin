@@ -109,8 +109,8 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 	pLC->SetLastRamWrite( ((uAddr & 1) && !bWrite) ); // UTAIIe:5-23
 	pLC->SetLCMemMode(memmode);
 
-	const bool bBankChanged = GetLastSlotToSetMainMemLC() != SLOT0;
-	if (bBankChanged)
+	const bool bCardChanged = GetLastSlotToSetMainMemLC() != SLOT0;
+	if (bCardChanged)
 	{
 		if (pLC->QueryType() == CT_LanguageCardIIe)
 			SetMemMainLanguageCard(NULL, SLOT0, true);
@@ -125,11 +125,10 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 
 	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
 	// WRITE TABLES.
-	if ((lastmemmode != memmode) || bBankChanged)
+	if ((lastmemmode != memmode) || bCardChanged)
 	{
-		if (lastmemmode != memmode)
-			SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (memmode & MF_LANGCARD_MASK));
-
+		// NB. Always SetMemMode() - locally may be same, but card may've changed
+		SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (memmode & MF_LANGCARD_MASK));
 		MemUpdatePaging(0);	// Initialize=0
 	}
 
@@ -353,7 +352,8 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 		return bWrite ? 0 : MemReadFloatingBus(nExecutedCycles);
 
 	bool bBankChanged = false;
-	UINT memmode=0, lastmemmode=0;
+	UINT memmode = pLC->GetLCMemMode();
+	UINT lastmemmode = memmode;
 
 	if (uAddr & (1<<2))
 	{
@@ -375,8 +375,6 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 	}
 	else
 	{
-		memmode = pLC->GetLCMemMode();
-		lastmemmode = memmode;
 		memmode &= ~(MF_BANK2 | MF_HIGHRAM);
 
 		if (!(uAddr & 8))
@@ -407,9 +405,8 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 	// WRITE TABLES.
 	if ((lastmemmode != memmode) || bBankChanged)
 	{
-		if (lastmemmode != memmode)
-			SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (memmode & MF_LANGCARD_MASK));
-
+		// NB. Always SetMemMode() - locally may be same, but card or bank may've changed
+		SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (memmode & MF_LANGCARD_MASK));
 		MemUpdatePaging(0);	// Initialize=0
 	}
 
