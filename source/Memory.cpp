@@ -2234,6 +2234,7 @@ void MemRemoveNoSlotClock(void)
 #define SS_YAML_KEY_PERIPHERALROMSLOT "Peripheral ROM Slot"
 #define SS_YAML_KEY_ANNUNCIATOR "Annunciator"
 #define SS_YAML_KEY_LASTSLOTTOSETMAINMEMLC "Last Slot to Set Main Mem LC"
+#define SS_YAML_KEY_MMULCMODE "MMU LC Mode"
 
 //
 
@@ -2298,12 +2299,15 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	// Scope so that "Memory" & "Main Memory" are at same indent level
 	{
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotStructName().c_str());
-		DWORD saveMemMode = g_memmode;
-		if (IsApple2PlusOrClone(GetApple2Type()))
-			saveMemMode &= ~MF_LANGCARD_MASK;		// For II,II+: clear LC bits - set later by slot-0 LC or Saturn
-		yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, saveMemMode);
-		if (!IsApple2PlusOrClone(GetApple2Type()))	// NB. This is set later for II,II+ by slot-0 LC or Saturn
+		// LC bits
+		// . For II,II+: set later by slot-0 LC or Saturn
+		// . For //e,//c: set in SS_YAML_KEY_MMULCMODE
+		yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, g_memmode & ~MF_LANGCARD_MASK);	// Clear LC bits
+		if (!IsApple2PlusOrClone(GetApple2Type()))	// NB. Thesed are set later for II,II+ by slot-0 LC or Saturn
+		{
+			yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MMULCMODE, g_memmode & MF_LANGCARD_MASK);
 			yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite() ? 1 : 0);
+		}
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT, IO_SELECT);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, INTC8ROM ? 1 : 0);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_EXPANSIONROMTYPE, (UINT) g_eExpansionRomType);
@@ -2353,12 +2357,21 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 	else
 	{
 		UINT uMemMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE);
-		if (IsApple2PlusOrClone(GetApple2Type()))
-			uMemMode &= ~MF_LANGCARD_MASK;	// For II,II+: clear LC bits - set later by slot-0 LC or Saturn
+		if (IsApple2PlusOrClone(GetApple2Type()) || unitVersion >= 9)
+			uMemMode &= ~MF_LANGCARD_MASK;	// For II,II+: clear LC bits - set later by slot-0 LC or Saturn (or some other slot-n Saturn)
+											// For //e,//c: (>=v9) clear LC bits - set later after reading all cards and we know which card contributes these bits
+											// For //e (<9): don't clear, as only old versions only supported the IIe LC from the MMU
 		SetMemMode(uMemMode);
 
-		if (!IsApple2PlusOrClone(GetApple2Type()))
-			SetLastRamWrite( yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE );	// NB. This is set later for II,II+ by slot-0 LC or Saturn
+		if (!IsApple2PlusOrClone(GetApple2Type()))	// NB. These are set later for II,II+ by slot-0 LC or Saturn
+		{
+			if (unitVersion >= 9)
+			{
+				UINT LCMemMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_MMULCMODE);
+				dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(SLOT0)).SetLCMemMode(LCMemMode);
+			}
+			SetLastRamWrite(yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE);
+		}
 	}
 
 	if (unitVersion >= 3)

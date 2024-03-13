@@ -394,7 +394,7 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 		bBankChanged = GetLastSlotToSetMainMemLC() != uSlot;
 		if (bBankChanged)
 		{
-			::SetMemMainLanguageCard(pLC->m_pMemory, uSlot);
+			::SetMemMainLanguageCard(pLC->m_aSaturnBanks[pLC->m_uSaturnActiveBank], uSlot);
 		}
 	}
 
