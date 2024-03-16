@@ -1,7 +1,7 @@
 #pragma once
 
 #include "frontends/common2/gnuframe.h"
-#include "frontends/common2/controllerquit.h"
+#include "frontends/common2/controllerdoublepress.h"
 #include "frontends/common2/programoptions.h"
 #include "linux/network/portfwds.h"
 #include <SDL.h>
@@ -77,7 +77,7 @@ namespace sa2
 
     std::shared_ptr<SDL_Window> myWindow;
 
-    common2::ControllerQuit myControllerQuit;
+    common2::ControllerDoublePress myControllerQuit;
   };
 
 }

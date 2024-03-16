@@ -292,7 +292,15 @@ namespace ra2
       }
       if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_START))
       {
-        reset(); // just a myFrame->Restart();
+        // reset emulator by pressing "start" twice
+        if (myControllerReset.pressButton())
+        {
+          reset(); // just a myFrame->Restart();
+        }
+        else
+        {
+          display_message("Press again to reset...", 60 /* 1.0s at 60 FPS */);
+        }
       }
       if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_SELECT))
       {

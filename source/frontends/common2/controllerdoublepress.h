@@ -5,10 +5,10 @@
 namespace common2
 {
 
-  class ControllerQuit
+  class ControllerDoublePress
   {
   public:
-    bool pressButton();  // if it returns true, app should end
+    bool pressButton();  // if it returns true, action is triggered
   private:
     // too short and it becomes hard to trigger with SDL.
     static constexpr long myThreshold = 1000;

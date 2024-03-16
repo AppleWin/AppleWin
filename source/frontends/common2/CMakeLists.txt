@@ -3,7 +3,7 @@ include(GNUInstallDirs)
 set(SOURCE_FILES
   commonframe.cpp
   commoncontext.cpp
-  controllerquit.cpp
+  controllerdoublepress.cpp
   gnuframe.cpp
   fileregistry.cpp
   ptreeregistry.cpp
@@ -16,7 +16,7 @@ set(SOURCE_FILES
 set(HEADER_FILES
   commonframe.h
   commoncontext.h
-  controllerquit.h
+  controllerdoublepress.h
   gnuframe.h
   fileregistry.h
   ptreeregistry.h
