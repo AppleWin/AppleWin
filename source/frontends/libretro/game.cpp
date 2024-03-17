@@ -218,7 +218,7 @@ namespace ra2
       found = !!ch;
     }
 
-    // log_cb(RETRO_LOG_INFO, "RA2: %s - %02x %02x %02x %02x\n", __FUNCTION__, character, keycode, key_modifiers, ch);
+    // log_cb(RETRO_LOG_INFO, "RA2: %s - char=%02x keycode=%04x modifiers=%02x ch=%02x\n", __FUNCTION__, character, keycode, key_modifiers, ch);
 
     if (found)
     {
