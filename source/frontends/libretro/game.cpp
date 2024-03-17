@@ -41,8 +41,11 @@ namespace ra2
 
   unsigned Game::ourInputDevices[MAX_PADS] = {RETRO_DEVICE_NONE};
 
-  Game::Game()
-    : myButtonStates(RETRO_DEVICE_ID_JOYPAD_R3 + 1)
+  Game::Game(const bool supportsInputBitmasks)
+    : mySupportsInputBitmasks(supportsInputBitmasks)
+    , myButtonStates(0)
+    , myAudioSource(eAudioSource::UNKNOWN)
+    , myKeyboardType(KeyboardType::ASCII)
   {
     myLoggerContext = std::make_shared<LoggerContext>(true);
     myRegistry = CreateRetroRegistry();
@@ -243,36 +246,55 @@ namespace ra2
     }
   }
 
-  bool Game::checkButtonPressed(unsigned id)
+  size_t Game::updateButtonStates()
   {
-    // pressed if it is down now, but was up before
-    const int value = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, id);
-    const bool pressed = (value != 0) && myButtonStates[id] == 0;
+    size_t newState;
+    if (mySupportsInputBitmasks)
+    {
+      newState = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_MASK);
+    }
+    else
+    {
+      newState = 0;
+      for (size_t i = 0; i < RETRO_DEVICE_ID_JOYPAD_R3 + 1; i++)
+      {
+        if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, i))
+        {
+          newState |= 1 << i;
+        }
+      }
+    }
+    // if it is active NOW and was NOT before.
+    const size_t result = (~myButtonStates) & newState;
 
-    // update to avoid multiple fires
-    myButtonStates[id] = value;
-
-    return pressed;
+    myButtonStates = newState;
+    return result;
   }
 
   void Game::keyboardEmulation()
   {
     if (ourInputDevices[0] != RETRO_DEVICE_NONE)
     {
-      // we should use an InputDescriptor, but these are all on RETRO_DEVICE_JOYPAD anyway
-      if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_R))
+      const size_t activeButtons = updateButtonStates();
+
+      const auto checkButton = [activeButtons] (const size_t i)
+      {
+        return activeButtons & (1 << i);
+      };
+
+      if (checkButton(RETRO_DEVICE_ID_JOYPAD_R))
       {
         myFrame->CycleVideoType();
       }
-      if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_L))
+      if (checkButton(RETRO_DEVICE_ID_JOYPAD_L))
       {
         myFrame->Cycle50ScanLines();
       }
-      if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_L2))
+      if (checkButton(RETRO_DEVICE_ID_JOYPAD_L2))
       {
         saveRegistryToINI(myRegistry);
       }
-      if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_R2))
+      if (checkButton(RETRO_DEVICE_ID_JOYPAD_R2))
       {
         switch (myAudioSource)
         {
@@ -290,7 +312,7 @@ namespace ra2
         }
         }
       }
-      if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_START))
+      if (checkButton(RETRO_DEVICE_ID_JOYPAD_START))
       {
         // reset emulator by pressing "start" twice
         if (myControllerReset.pressButton())
@@ -302,7 +324,7 @@ namespace ra2
           display_message("Press again to reset...", 60 /* 1.0s at 60 FPS */);
         }
       }
-      if (checkButtonPressed(RETRO_DEVICE_ID_JOYPAD_SELECT))
+      if (checkButton(RETRO_DEVICE_ID_JOYPAD_SELECT))
       {
         // added as convenience if game_focus is on:
         // exit emulator by pressing "select" twice
@@ -319,7 +341,7 @@ namespace ra2
     }
     else
     {
-      std::fill(myButtonStates.begin(), myButtonStates.end(), 0);
+      myButtonStates = 0;
     }
   }
 

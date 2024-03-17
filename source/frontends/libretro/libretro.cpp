@@ -319,9 +319,11 @@ bool retro_load_game(const retro_game_info *info)
     return false;
   }
 
+  const bool supportsInputBitmasks = !!ra2::environ_cb(RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, NULL);
+
   try
   {
-    std::unique_ptr<ra2::Game> game = std::make_unique<ra2::Game>();
+    std::unique_ptr<ra2::Game> game = std::make_unique<ra2::Game>(supportsInputBitmasks);
 
     const std::string snapshotEnding = ".aws.yaml";
     const std::string playlistEnding = ".m3u";
