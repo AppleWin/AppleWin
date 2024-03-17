@@ -270,6 +270,9 @@ void retro_set_environment(retro_environment_t cb)
     cb(RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE, &diskControlCallback);
   }
 
+  bool noContent = true;
+  cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &noContent);
+
   ra2::SetupRetroVariables();
 }
 
@@ -328,7 +331,7 @@ bool retro_load_game(const retro_game_info *info)
 
     bool ok;
 
-    if (info->path && *info->path)
+    if (info && info->path && *info->path)
     {
       const std::string gamePath = info->path;
       if (endsWith(gamePath, snapshotEnding))
@@ -343,13 +346,13 @@ bool retro_load_game(const retro_game_info *info)
       {
         ok = game->getDiskControl().insertDisk(gamePath);
       }
+      ra2::log_cb(RETRO_LOG_INFO, "Game path: %s -> %d\n", info->path, ok);
     }
     else
     {
-      ok = false;
+      // we support no content
+      ok = true;
     }
-
-    ra2::log_cb(RETRO_LOG_INFO, "Game path: %s -> %d\n", info->path, ok);
 
     if (ok)
     {
