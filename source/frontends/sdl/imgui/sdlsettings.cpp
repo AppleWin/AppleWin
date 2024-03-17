@@ -25,6 +25,26 @@
 namespace
 {
 
+  const char * ourShortcutHeaders[5] = {
+    "Key", "Normal", "Control", "Shift", "Both"
+  };
+
+  const char * ourShortcutKeys[][5] = {
+    {"Left ALT", "Open Apple"},
+    {"Right ALT", "Solid Apple"},
+    {"Pause", "Pause"},
+    {"Insert", nullptr, "Copy", "Paste", "Screenshot"},
+    {"Scroll lock", "Toggle full speed"},
+    {"F1", "Print audio info"},
+    {"F2", "Reset", "Ctrl-Reset", "Quit"},
+    {"F3", "Quit"},
+    {"F5", "Swap S6 disks"},
+    {"F6", "Fullscreen", "2x", nullptr, "Toggle 50 scan lines"},
+    {"F9", "Cycle video type"},
+    {"F11", "Save snapshot"},
+    {"F12", "Load snapshot"},
+  };
+
   struct MemoryTab
   {
     void * basePtr;
@@ -726,6 +746,40 @@ namespace sa2
     ImGui::End();
   }
 
+  void ImGuiSettings::showShortcutWindow()
+  {
+    if (ImGui::Begin("Shortcuts", &myShowShortcuts))
+    {
+      // ImGui::TextUnformatted("Available shortcuts");
+      if (ImGui::BeginTable("Shortcuts", std::size(ourShortcutHeaders), ImGuiTableFlags_RowBg))
+      {
+        for (const auto & col : ourShortcutHeaders)
+        {
+          ImGui::TableSetupColumn(col);
+        }
+        ImGui::TableHeadersRow();
+
+        for (const auto & row : ourShortcutKeys)
+        {
+          ImGui::TableNextRow();
+          for (const auto & col : row)
+          {
+            ImGui::TableNextColumn();
+            if (col)
+            {
+              ImGui::TextUnformatted(col);
+            }
+          }
+        }
+        ImGui::EndTable();
+        ImGui::Separator();
+        ImGui::TextUnformatted("If an ImGui window is selected, it captures the keyboard.");
+      }
+    }
+
+    ImGui::End();
+  }
+
   void ImGuiSettings::show(SDLFrame * frame, ImFont * debuggerFont)
   {
     if (myShowSettings)
@@ -748,6 +802,11 @@ namespace sa2
     if (myShowAbout)
     {
       showAboutWindow();
+    }
+
+    if (myShowShortcuts)
+    {
+      showShortcutWindow();
     }
 
     if (myShowDemo)
@@ -778,6 +837,7 @@ namespace sa2
 
       if (ImGui::BeginMenu("Help"))
       {
+        ImGui::MenuItem("Shortcuts", nullptr, &myShowShortcuts);
         ImGui::MenuItem("ImGui Demo", nullptr, &myShowDemo);
         ImGui::Separator();
         ImGui::MenuItem("About", nullptr, &myShowAbout);

@@ -27,6 +27,7 @@ namespace sa2
     bool myShowSettings = false;
     bool myShowMemory = false;
     bool myShowAbout = false;
+    bool myShowShortcuts = false;
 
     int mySpeakerVolume;
     int myMockingboardVolume;
@@ -45,6 +46,7 @@ namespace sa2
     void showSettings(SDLFrame* frame);
     void showMemory();
     void showAboutWindow();
+    void showShortcutWindow();
     void openFileDialog(ImGui::FileBrowser & browser, const std::string & filename);
     void openDiskFileDialog(ImGui::FileBrowser & browser, const std::string & diskName, const size_t slot, const size_t drive);
   };
