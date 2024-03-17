@@ -25,9 +25,28 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: various
  *
+ * Note: Here's what isn't fully emulated:
+ * From UTAII 5-42 (Application Note: Multiple RAM Card Configurations)
+ * . For II/II, INHIBIT' (disable motherboard ROM for $D000-$FFFF) and Apple's 16K RAM card isn't correct:
+ *   . "If the expansion RAM is not enabled on a RAM card, the ROM on the card will respond to $F800-$FFFF addressing - period."
+ *   . In UTAIIe 5-24, Sather describes this as "a particularly nettlesome associated fact"!
+ *     . NB. "When INHIBIT' is low on the Apple IIe, all motherboard ROM is disabled, including high RAM."
+ *     . Note: I assume a Saturn card "will release the $F800-$FFFF range when RAM on the card is disabled", since there's no F8 ROM on the Saturn.
+ *   . Summary: for a II/II+ with an *Apple* 16K RAM card in slot 0, when (High) RAM is disabled, then:
+ *     . ROM on the slot 0 card will respond, along with any Saturn card(s) in other slots which pull INHIBIT' low.
+ *     . *** AppleWin emulates a slot 0 LC as if the Sather h/w mod had been applied.
+ * . [UTAII 5-42] "Enable two RAM cards for writing simultaneously..."
+ *     "both RAM cards will accept the data from a single store instruction to the $D000-$FFFF range"
+ *   *** AppleWin only stores to the last accessed RAM card.
+ * . Presumably enabling two RAM cards for reading RAM will both respond and the result is the OR-sum?
+ *   *** AppleWin only loads from the last accessed RAM card.
+ * . The 16K RAM card has a socket for an F8 ROM, whereas the Saturn card doesn't.
+ * Also see UTAII 6-6, where Firmware card and 16K RAM card are described.
+ * . Sather refers to the Apple 16K RAM card, which is just the Apple Language Card.
  *
- * Consider adding a LangauageCardManager class:
+ * Note: Consider adding a LangauageCardManager class:
  * . would manage g_lastSlotToSetMainMemLC (so move out of Memory.cpp)
+ * . would manage reset for all cards (eg. II/II+'s LC is unaffected, whereas //e's LC is)
  * . assist with debugger's display of "sNN" for active 16K bank
  * Currently conclude that there's not much point.
  */

@@ -1139,9 +1139,12 @@ static void UpdatePaging(BOOL initialize);
 // . CtrlReset() Soft-reset (Ctrl+Reset) for //e
 void MemResetPaging()
 {
-	ResetPaging(0);		// Initialize=0
+	ResetPaging(FALSE);	// Initialize=0
 }
 
+// Call by:
+// . MemResetPaging() -> ResetPaging(FALSE)
+// . MemReset()       -> ResetPaging(TRUE)
 static void ResetPaging(BOOL initialize)
 {
 	SetLastRamWrite(0);
@@ -1150,6 +1153,19 @@ static void ResetPaging(BOOL initialize)
 		SetMemMode(0);
 	else
 		SetMemMode(LanguageCardUnit::kMemModeInitialState);
+
+	// For power on: card's ctor will have set card's local memmode to LanguageCardUnit::kMemModeInitialState.
+	// For reset: II/II+ unaffected, so only for //e or above.
+	if (IsAppleIIeOrAbove(GetApple2Type()))
+	{
+		if (GetCardMgr().QuerySlot(SLOT0) != CT_Empty)	// LC or Saturn
+			dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(SLOT0)).SetLCMemMode(GetMemMode() & MF_LANGCARD_MASK);
+		for (UINT i = SLOT1; i < NUM_SLOTS; i++)
+		{
+			if (GetCardMgr().QuerySlot(i) == CT_Saturn128K)
+				dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(i)).SetLCMemMode(GetMemMode() & MF_LANGCARD_MASK);
+		}
+	}
 
 	UpdatePaging(initialize);
 }
