@@ -341,6 +341,7 @@ namespace ra2
 
   bool Game::loadSnapshot(const std::string & path)
   {
+    const common2::RestoreCurrentDirectory restoreChDir;
     common2::setSnapshotFilename(path);
     myFrame->LoadSnapshot();
     return true;

@@ -16,6 +16,7 @@ namespace ra2
     void FrameRefreshStatus(int drawflags) override;
     void Initialize(bool resetVideoState) override;
     void Destroy() override;
+    void Begin() override;
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
     void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
 
