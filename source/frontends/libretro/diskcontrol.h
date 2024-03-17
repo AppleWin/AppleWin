@@ -1,3 +1,5 @@
+#pragma once
+
 #include "frontends/libretro/buffer.h"
 
 #include "Disk.h"
@@ -7,6 +9,8 @@
 
 namespace ra2
 {
+
+  enum class PlaylistStartDisk { First, Previous };
 
   struct DiskInfo
   {
@@ -54,6 +58,7 @@ namespace ra2
     bool insertFloppyDisk(const std::string & path, const bool writeProtected, bool const createIfNecessary) const;
     bool insertHardDisk(const std::string & path) const;
 
+    // these are here because they are set before we have create a game context
     static unsigned ourInitialIndex;
     static std::string ourInitialPath;
   };

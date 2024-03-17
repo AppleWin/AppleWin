@@ -2,6 +2,7 @@
 
 #include "frontends/libretro/rkeyboard.h"
 #include "frontends/libretro/rdirectsound.h"
+#include "frontends/libretro/diskcontrol.h"
 
 #include <memory>
 
@@ -14,10 +15,13 @@ namespace common2
 
 namespace ra2
 {
+
   void SetupRetroVariables();
   std::shared_ptr<common2::PTreeRegistry> CreateRetroRegistry();
   void PopulateRegistry(const std::shared_ptr<Registry> & registry);
 
   eAudioSource GetAudioSource();
   KeyboardType GetKeyboardEmulationType();
+  PlaylistStartDisk GetPlaylistStartDisk();
+
 }

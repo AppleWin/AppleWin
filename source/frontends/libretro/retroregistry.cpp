@@ -17,11 +17,10 @@ namespace
 
   const std::string ourScope = "applewin_";
 
-  const char * REG_AUDIO = "ra2\\audio";
-  const char * REGVALUE_AUDIO_SOURCE = "Source";
-
-  const char * REG_KEYBOARD_TYPE = "ra2\\keyboard";
-  const char * REGVALUE_KEYBOARD_TYPE = "Keyboard Type";
+  const char * REG_RA2 = "ra2";
+  const char * REGVALUE_AUDIO_SOURCE = "Audio source";
+  const char * REGVALUE_KEYBOARD_TYPE = "Keyboard type";
+  const char * REGVALUE_PLAYLIST_START = "Playlist start";
 
   struct Variable
   {
@@ -126,7 +125,7 @@ namespace
      {
       "audio_source",
       "Audio Source",
-      REG_AUDIO,
+      REG_RA2,
       REGVALUE_AUDIO_SOURCE,
       {
        {REGVALUE_AUDIO_SPEAKER, static_cast<DWORD>(ra2::eAudioSource::SPEAKER)},
@@ -136,11 +135,21 @@ namespace
      {
       "keyboard_type",
       "Keyboard Type",
-      REG_KEYBOARD_TYPE,
+      REG_RA2,
       REGVALUE_KEYBOARD_TYPE,
       {
        {"ASCII", static_cast<DWORD>(ra2::KeyboardType::ASCII)},
        {"Original", static_cast<DWORD>(ra2::KeyboardType::Original)},
+      }
+     },
+     {
+      "playlist_start",
+      "Playlist start disk",
+      REG_RA2,
+      REGVALUE_PLAYLIST_START,
+      {
+       {"First", static_cast<DWORD>(ra2::PlaylistStartDisk::First)},
+       {"Previous", static_cast<DWORD>(ra2::PlaylistStartDisk::Previous)},
       }
      },
     };
@@ -224,7 +233,7 @@ namespace ra2
   eAudioSource GetAudioSource()
   {
     DWORD value = 1;
-    RegLoadValue(REG_AUDIO, REGVALUE_AUDIO_SOURCE, TRUE, &value);
+    RegLoadValue(REG_RA2, REGVALUE_AUDIO_SOURCE, TRUE, &value);
     const eAudioSource source = value <= DWORD(eAudioSource::UNKNOWN) ? eAudioSource(value) : eAudioSource::UNKNOWN;
     return source;
   }
@@ -232,7 +241,15 @@ namespace ra2
   KeyboardType GetKeyboardEmulationType()
   {
     DWORD value = static_cast<DWORD>(KeyboardType::ASCII);
-    RegLoadValue(REG_KEYBOARD_TYPE, REGVALUE_KEYBOARD_TYPE, TRUE, &value);
+    RegLoadValue(REG_RA2, REGVALUE_KEYBOARD_TYPE, TRUE, &value);
     return static_cast<KeyboardType>(value);
   }
+
+  PlaylistStartDisk GetPlaylistStartDisk()
+  {
+    DWORD value = static_cast<DWORD>(PlaylistStartDisk::First);
+    RegLoadValue(REG_RA2, REGVALUE_PLAYLIST_START, TRUE, &value);
+    return static_cast<PlaylistStartDisk>(value);
+  }
+
 }

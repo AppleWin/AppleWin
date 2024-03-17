@@ -251,12 +251,9 @@ void retro_set_environment(retro_environment_t cb)
       &retro_set_eject_state, &retro_get_eject_state,
       &retro_get_image_index, &retro_set_image_index,
       &retro_get_num_images, &retro_replace_image_index,
-      &retro_add_image_index, nullptr,
+      &retro_add_image_index, &retro_set_initial_image,
       &retro_get_image_path, &retro_get_image_label
     };
-    // intentionally skip retro_set_initial_image
-    // as we do always want to restart with the first disk of a playlist
-    // which (normally) is the only bootable floppy of a game
     cb(RETRO_ENVIRONMENT_SET_DISK_CONTROL_EXT_INTERFACE, &diskControlExtCallback);
   }
   else

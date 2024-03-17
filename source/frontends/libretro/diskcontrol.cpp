@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "frontends/libretro/diskcontrol.h"
 #include "frontends/libretro/environment.h"
+#include "frontends/libretro/retroregistry.h"
 
 #include "Core.h"
 #include "CardManager.h"
@@ -141,18 +142,21 @@ namespace ra2
       }
     }
 
-    // if we have an initial disk image, let's try to honour it
-    if (!ourInitialPath.empty() && ourInitialIndex < myImages.size() && myImages[ourInitialIndex].path == ourInitialPath)
+    // insert the first image by default
+    myIndex = 0;
+
+    const PlaylistStartDisk playlistStartDisk = GetPlaylistStartDisk();
+
+    if (playlistStartDisk == PlaylistStartDisk::Previous)
     {
-      myIndex = ourInitialIndex;
-      // do we need to reset for next time?
-      ourInitialPath.clear();
-      ourInitialIndex = 0;
-    }
-    else
-    {
-      // insert the first image
-      myIndex = 0;
+      // if we have an initial disk image, let's try to honour it
+      if (!ourInitialPath.empty() && ourInitialIndex < myImages.size() && myImages[ourInitialIndex].path == ourInitialPath)
+      {
+        myIndex = ourInitialIndex;
+        // do we need to reset for next time?
+        ourInitialPath.clear();
+        ourInitialIndex = 0;
+      }
     }
 
     // this is safe even if myImages is empty
