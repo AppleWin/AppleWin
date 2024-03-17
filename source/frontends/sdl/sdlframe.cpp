@@ -520,7 +520,11 @@ namespace sa2
         }
       case SDLK_INSERT:
         {
-          if (key.keysym.mod & KMOD_SHIFT)
+          if ((key.keysym.mod & KMOD_CTRL) && (key.keysym.mod & KMOD_SHIFT))
+          {
+            Video_TakeScreenShot(Video::SCREENSHOT_560x384);
+          }
+          else if (key.keysym.mod & KMOD_SHIFT)
           {
             char * text = SDL_GetClipboardText();
             if (text)
@@ -539,10 +543,6 @@ namespace sa2
             {
               SDL_SetClipboardText(pText);
             }
-          }
-          else if (key.keysym.mod & KMOD_ALT)
-          {
-            Video_TakeScreenShot(Video::SCREENSHOT_560x384);
           }
           break;
         }
