@@ -84,6 +84,14 @@ LanguageCardUnit::~LanguageCardUnit(void)
 	// . else: subclass will do ptr clean up
 }
 
+void LanguageCardUnit::Reset(const bool powerCycle)
+{
+	// For power on: card's ctor will have set card's local memmode to LanguageCardUnit::kMemModeInitialState.
+	// For reset: II/II+ unaffected, so only for //e or above.
+	if (IsAppleIIeOrAbove(GetApple2Type()))
+		SetLCMemMode(LanguageCardUnit::kMemModeInitialState);
+}
+
 void LanguageCardUnit::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	RegisterIoHandler(m_slot, &LanguageCardUnit::IO, &LanguageCardUnit::IO, NULL, NULL, this, NULL);
@@ -537,6 +545,9 @@ UINT Saturn128K::GetSaturnMemorySize()
 
 void LanguageCardManager::Reset(const bool powerCycle /*=false*/)
 {
+	if (IsApple2PlusOrClone(GetApple2Type()) && !powerCycle)	// For reset : II/II+ unaffected
+		return;
+
 	if (GetLanguageCard())
 		GetLanguageCard()->SetLastRamWrite(0);
 
@@ -544,19 +555,6 @@ void LanguageCardManager::Reset(const bool powerCycle /*=false*/)
 		SetMemMode(0);
 	else
 		SetMemMode(LanguageCardUnit::kMemModeInitialState);
-
-	// For power on: card's ctor will have set card's local memmode to LanguageCardUnit::kMemModeInitialState.
-	// For reset: II/II+ unaffected, so only for //e or above.
-	if (IsAppleIIeOrAbove(GetApple2Type()))
-	{
-		if (GetCardMgr().QuerySlot(SLOT0) != CT_Empty)	// LC or Saturn
-			dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(SLOT0)).SetLCMemMode(GetMemMode() & MF_LANGCARD_MASK);
-		for (UINT i = SLOT1; i < NUM_SLOTS; i++)
-		{
-			if (GetCardMgr().QuerySlot(i) == CT_Saturn128K)
-				dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(i)).SetLCMemMode(GetMemMode() & MF_LANGCARD_MASK);
-		}
-	}
 }
 
 void LanguageCardManager::SetMemModeFromSnapshot(void)
