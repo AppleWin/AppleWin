@@ -567,7 +567,8 @@ void LanguageCardManager::SetMemModeFromSnapshot(void)
 		saturn.SetMemMainLanguageCard();
 	}
 
-	dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(m_lastSlotToSetMainMemLCFromSnapshot)).SetGlobalLCMemMode();
+	if (GetCardMgr().QuerySlot(m_lastSlotToSetMainMemLCFromSnapshot) != CT_Empty)
+		dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(m_lastSlotToSetMainMemLCFromSnapshot)).SetGlobalLCMemMode();
 }
 
 bool LanguageCardManager::SetLanguageCard(SS_CARDTYPE type)
