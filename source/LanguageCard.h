@@ -18,7 +18,6 @@ public:
 	virtual void Reset(const bool powerCycle) {}
 	virtual void Update(const ULONG nExecutedCycles) {}
 
-
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual UINT GetActiveBank(void) { return 0; }	// Always 0 as only 1x 16K bank
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) { } // A no-op for //e - called from CardManager::SaveSnapshot()
@@ -108,4 +107,35 @@ private:
 	UINT m_uSaturnTotalBanks;	// Will be > 0 if Saturn card is installed
 	UINT m_uSaturnActiveBank;	// Saturn 128K Language Card Bank 0 .. 7
 	LPBYTE m_aSaturnBanks[kMaxSaturnBanks];
+};
+
+//
+// Language Card manager
+//
+
+class LanguageCardManager
+{
+public:
+	LanguageCardManager(void) :
+		m_pLanguageCard(NULL),
+		m_lastSlotToSetMainMemLC(SLOT0),
+		m_lastSlotToSetMainMemLCFromSnapshot(SLOT0)
+	{}
+	~LanguageCardManager(void) {}
+
+	void Reset(const bool powerCycle = false);
+
+	UINT GetLastSlotToSetMainMemLC(void) { return m_lastSlotToSetMainMemLC;	}
+	void SetLastSlotToSetMainMemLC(UINT slot) { m_lastSlotToSetMainMemLC = slot; }
+	void SetLastSlotToSetMainMemLCFromSnapshot(UINT slot) { m_lastSlotToSetMainMemLCFromSnapshot = slot; }
+
+	LanguageCardUnit* GetLanguageCard(void) { return m_pLanguageCard; }
+	bool SetLanguageCard(SS_CARDTYPE type);
+
+	void SetMemModeFromSnapshot(void);
+
+private:
+	LanguageCardUnit* m_pLanguageCard;
+	UINT m_lastSlotToSetMainMemLC;
+	UINT m_lastSlotToSetMainMemLCFromSnapshot;
 };

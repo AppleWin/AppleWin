@@ -241,8 +241,6 @@ static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 
 static const UINT kNumAnnunciators = 4;
 static bool g_Annunciator[kNumAnnunciators] = {};
-static UINT g_lastSlotToSetMainMemLC = SLOT0;
-static UINT g_lastSlotToSetMainMemLCFromSnapshot = SLOT0;
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
@@ -373,15 +371,15 @@ UINT GetRamWorksActiveBank(void)
 
 static BOOL GetLastRamWrite(void)
 {
-	if (GetCardMgr().GetLanguageCard())
-		return GetCardMgr().GetLanguageCard()->GetLastRamWrite();
+	if (GetCardMgr().GetLanguageCardMgr().GetLanguageCard())
+		return GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->GetLastRamWrite();
 	return 0;
 }
 
 static void SetLastRamWrite(BOOL count)
 {
-	if (GetCardMgr().GetLanguageCard())
-		GetCardMgr().GetLanguageCard()->SetLastRamWrite(count);
+	if (GetCardMgr().GetLanguageCardMgr().GetLanguageCard())
+		GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->SetLastRamWrite(count);
 }
 
 //
@@ -393,17 +391,12 @@ void SetMemMainLanguageCard(LPBYTE ptr, UINT slot, bool bMemMain /*=false*/)
 	else
 		g_pMemMainLanguageCard = ptr;
 
-	g_lastSlotToSetMainMemLC = slot;
+	GetCardMgr().GetLanguageCardMgr().SetLastSlotToSetMainMemLC(slot);
 }
 
 LPBYTE GetCxRomPeripheral(void)
 {
 	return pCxRomPeripheral;	// Can be NULL if at MODE_LOGO
-}
-
-UINT GetLastSlotToSetMainMemLC(void)
-{
-	return g_lastSlotToSetMainMemLC;
 }
 
 //=============================================================================
@@ -1147,26 +1140,7 @@ void MemResetPaging()
 // . MemReset()       -> ResetPaging(TRUE)
 static void ResetPaging(BOOL initialize)
 {
-	SetLastRamWrite(0);
-
-	if (IsApple2PlusOrClone(GetApple2Type()) && GetCardMgr().QuerySlot(SLOT0) == CT_Empty)
-		SetMemMode(0);
-	else
-		SetMemMode(LanguageCardUnit::kMemModeInitialState);
-
-	// For power on: card's ctor will have set card's local memmode to LanguageCardUnit::kMemModeInitialState.
-	// For reset: II/II+ unaffected, so only for //e or above.
-	if (IsAppleIIeOrAbove(GetApple2Type()))
-	{
-		if (GetCardMgr().QuerySlot(SLOT0) != CT_Empty)	// LC or Saturn
-			dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(SLOT0)).SetLCMemMode(GetMemMode() & MF_LANGCARD_MASK);
-		for (UINT i = SLOT1; i < NUM_SLOTS; i++)
-		{
-			if (GetCardMgr().QuerySlot(i) == CT_Saturn128K)
-				dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(i)).SetLCMemMode(GetMemMode() & MF_LANGCARD_MASK);
-		}
-	}
-
+	GetCardMgr().GetLanguageCardMgr().Reset(initialize);
 	UpdatePaging(initialize);
 }
 
@@ -1802,15 +1776,7 @@ void MemInitializeFromSnapshot(void)
 		// NB. Copied to /mem/ by UpdatePaging(TRUE)
 	}
 
-	// If multiple "Language Cards" (eg. LC+Saturn or 2xSaturn) then setup via the last card that selected the 16KB LC bank.
-	// NB. Skip if not Saturn card (ie. a LC), since LC's are only in slot0 and in the ctor it has called SetMainMemLanguageCard()
-	if (GetCardMgr().QuerySlot(g_lastSlotToSetMainMemLCFromSnapshot) == CT_Saturn128K)
-	{
-		Saturn128K& saturn = dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(g_lastSlotToSetMainMemLCFromSnapshot));
-		saturn.SetMemMainLanguageCard();
-	}
-
-	dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(g_lastSlotToSetMainMemLCFromSnapshot)).SetGlobalLCMemMode();
+	GetCardMgr().GetLanguageCardMgr().SetMemModeFromSnapshot();
 
 	// Finally setup the paging tables
 	MemUpdatePaging(TRUE);
@@ -2328,7 +2294,7 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, INTC8ROM ? 1 : 0);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_EXPANSIONROMTYPE, (UINT) g_eExpansionRomType);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_PERIPHERALROMSLOT, g_uPeripheralRomSlot);
-		yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTSLOTTOSETMAINMEMLC, g_lastSlotToSetMainMemLC);
+		yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTSLOTTOSETMAINMEMLC, GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC());
 
 		for (UINT i=0; i<kNumAnnunciators; i++)
 		{
@@ -2399,10 +2365,10 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		}
 	}
 
-	g_lastSlotToSetMainMemLCFromSnapshot = SLOT0;
+	GetCardMgr().GetLanguageCardMgr().SetLastSlotToSetMainMemLCFromSnapshot(SLOT0);
 	if (unitVersion >= 9)
 	{
-		g_lastSlotToSetMainMemLCFromSnapshot = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTSLOTTOSETMAINMEMLC);
+		GetCardMgr().GetLanguageCardMgr().SetLastSlotToSetMainMemLCFromSnapshot(yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTSLOTTOSETMAINMEMLC));
 	}
 
 	yamlLoadHelper.PopMap();
