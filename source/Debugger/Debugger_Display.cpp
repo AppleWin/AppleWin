@@ -2594,7 +2594,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, const int iBankDisplay, int b
 		int iActiveBank = -1;
 		char cMemType = '?'; // Default to RAMWORKS
 		if (GetCurrentExpansionMemType() == CT_RamWorksIII) { cMemType = 'r'; iActiveBank = GetRamWorksActiveBank(); }
-		if (GetCurrentExpansionMemType() == CT_Saturn128K)  { cMemType = 's'; iActiveBank = GetCardMgr().GetLanguageCard()->GetActiveBank(); }
+		if (GetCurrentExpansionMemType() == CT_Saturn128K)  { cMemType = 's'; iActiveBank = GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->GetActiveBank(); }
 
 		if (iActiveBank >= 0)
 		{

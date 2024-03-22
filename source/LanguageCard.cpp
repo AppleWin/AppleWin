@@ -24,11 +24,32 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* Description: Language Card and Saturn 128K emulation
  *
  * Author: various
+ *
+ * Note: Here's what isn't fully emulated:
+ * From UTAII 5-42 (Application Note: Multiple RAM Card Configurations)
+ * . For II/II, INHIBIT' (disable motherboard ROM for $D000-$FFFF) and Apple's 16K RAM card isn't correct:
+ *   . "If the expansion RAM is not enabled on a RAM card, the ROM on the card will respond to $F800-$FFFF addressing - period."
+ *   . In UTAIIe 5-24, Sather describes this as "a particularly nettlesome associated fact"!
+ *     . NB. "When INHIBIT' is low on the Apple IIe, all motherboard ROM is disabled, including high RAM."
+ *     . Note: I assume a Saturn card "will release the $F800-$FFFF range when RAM on the card is disabled", since there's no F8 ROM on the Saturn.
+ *   . Summary: for a II/II+ with an *Apple* 16K RAM card in slot 0, when (High) RAM is disabled, then:
+ *     . ROM on the slot 0 card will respond, along with any Saturn card(s) in other slots which pull INHIBIT' low.
+ *     . *** AppleWin emulates a slot 0 LC as if the Sather h/w mod had been applied.
+ * . [UTAII 5-42] "Enable two RAM cards for writing simultaneously..."
+ *     "both RAM cards will accept the data from a single store instruction to the $D000-$FFFF range"
+ *   *** AppleWin only stores to the last accessed RAM card.
+ * . Presumably enabling two RAM cards for reading RAM will both respond and the result is the OR-sum?
+ *   *** AppleWin only loads from the last accessed RAM card.
+ * . The 16K RAM card has a socket for an F8 ROM, whereas the Saturn card doesn't.
+ * Also see UTAII 6-6, where Firmware card and 16K RAM card are described.
+ * . Sather refers to the Apple 16K RAM card, which is just the Apple Language Card.
+ *
  */
 
 #include "StdAfx.h"
 
 #include "LanguageCard.h"
+#include "CardManager.h"
 #include "Core.h"
 #include "CPU.h"		// GH#700
 #include "Log.h"
@@ -45,17 +66,30 @@ LanguageCardUnit * LanguageCardUnit::create(UINT slot)
 
 LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
 	Card(type, slot),
-	m_uLastRamWrite(0)
+	m_uLastRamWrite(0),
+	m_memMode(kMemModeInitialState),
+	m_pMemory(NULL)
 {
-	if (m_slot != LanguageCardUnit::kSlot0)
+	if (type != CT_Saturn128K && m_slot != LanguageCardUnit::kSlot0)
 		ThrowErrorInvalidSlot();
 
-	SetMemMainLanguageCard(NULL, true);
+	if (m_slot == SLOT0)
+		SetMemMainLanguageCard(NULL, SLOT0, true);
 }
 
 LanguageCardUnit::~LanguageCardUnit(void)
 {
-	SetMemMainLanguageCard(NULL);
+	// Nothing to do for SetMemMainLanguageCard():
+	// . if //e, then no ptr to clean up (since just using memmain)
+	// . else: subclass will do ptr clean up
+}
+
+void LanguageCardUnit::Reset(const bool powerCycle)
+{
+	// For power on: card's ctor will have set card's local memmode to LanguageCardUnit::kMemModeInitialState.
+	// For reset: II/II+ unaffected, so only for //e or above.
+	if (IsAppleIIeOrAbove(GetApple2Type()))
+		SetLCMemMode(LanguageCardUnit::kMemModeInitialState);
 }
 
 void LanguageCardUnit::InitializeIO(LPBYTE pCxRomPeripheral)
@@ -67,9 +101,10 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 {
 	UINT uSlot = ((uAddr & 0xff) >> 4) - 8;
 	LanguageCardUnit* pLC = (LanguageCardUnit*) MemGetSlotParameters(uSlot);
+	_ASSERT(uSlot == SLOT0);
 
-	DWORD memmode = GetMemMode();
-	DWORD lastmemmode = memmode;
+	UINT memmode = pLC->GetLCMemMode();
+	UINT lastmemmode = memmode;
 	memmode &= ~(MF_BANK2 | MF_HIGHRAM);
 
 	if (!(uAddr & 8))
@@ -95,7 +130,16 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 	}
 
 	pLC->SetLastRamWrite( ((uAddr & 1) && !bWrite) ); // UTAIIe:5-23
-	SetMemMode(memmode);
+	pLC->SetLCMemMode(memmode);
+
+	const bool bCardChanged = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC() != SLOT0;
+	if (bCardChanged)
+	{
+		if (pLC->QueryType() == CT_LanguageCardIIe)
+			SetMemMainLanguageCard(NULL, SLOT0, true);
+		else // CT_LanguageCard
+			SetMemMainLanguageCard(pLC->m_pMemory, SLOT0);
+	}
 
 	//
 
@@ -104,8 +148,10 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 
 	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
 	// WRITE TABLES.
-	if (lastmemmode != memmode)
+	if ((lastmemmode != memmode) || bCardChanged)
 	{
+		// NB. Always SetMemMode() - locally may be same, but card may've changed
+		SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (memmode & MF_LANGCARD_MASK));
 		MemUpdatePaging(0);	// Initialize=0
 	}
 
@@ -143,6 +189,11 @@ bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 	return false;
 }
 
+void LanguageCardUnit::SetGlobalLCMemMode(void)
+{
+	SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (GetLCMemMode() & MF_LANGCARD_MASK));
+}
+
 //-------------------------------------
 
 LanguageCardSlot0 * LanguageCardSlot0::create(UINT slot)
@@ -154,13 +205,16 @@ LanguageCardSlot0::LanguageCardSlot0(SS_CARDTYPE type, UINT slot)
 	: LanguageCardUnit(type, slot)
 {
 	m_pMemory = new BYTE[kMemBankSize];
-	SetMemMainLanguageCard(m_pMemory);
+	if (m_slot == SLOT0)
+		SetMemMainLanguageCard(m_pMemory, SLOT0);
 }
 
 LanguageCardSlot0::~LanguageCardSlot0(void)
 {
 	delete [] m_pMemory;
 	m_pMemory = NULL;
+	if (m_slot == SLOT0)
+		SetMemMainLanguageCard(NULL, SLOT0);
 }
 
 //
@@ -186,15 +240,15 @@ const std::string& LanguageCardSlot0::GetSnapshotCardName(void)
 
 void LanguageCardSlot0::SaveLCState(YamlSaveHelper& yamlSaveHelper)
 {
-	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, GetMemMode() & (MF_WRITERAM|MF_HIGHRAM|MF_BANK2));
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, GetLCMemMode() & MF_LANGCARD_MASK);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite() ? 1 : 0);
 }
 
 void LanguageCardSlot0::LoadLCState(YamlLoadHelper& yamlLoadHelper)
 {
-	DWORD memMode     = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) & MF_LANGCARD_MASK;
+	UINT memMode      = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) & MF_LANGCARD_MASK;
 	BOOL lastRamWrite = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
-	SetMemMode( (GetMemMode() & ~MF_LANGCARD_MASK) | memMode );
+	SetLCMemMode(memMode);
 	SetLastRamWrite(lastRamWrite);
 }
 
@@ -261,7 +315,8 @@ Saturn128K::Saturn128K(UINT slot, UINT banks)
 	for (UINT i = 1; i < m_uSaturnTotalBanks; i++)
 		m_aSaturnBanks[i] = new BYTE[kMemBankSize]; // Saturn banks are 16K, max 8 banks/card
 
-	SetMemMainLanguageCard( m_aSaturnBanks[ m_uSaturnActiveBank ] );
+	if (slot == SLOT0)
+		::SetMemMainLanguageCard(m_aSaturnBanks[m_uSaturnActiveBank], SLOT0);
 }
 
 Saturn128K::~Saturn128K(void)
@@ -276,6 +331,9 @@ Saturn128K::~Saturn128K(void)
 			m_aSaturnBanks[i] = NULL;
 		}
 	}
+
+	// NB. want the Saturn128K object that set the ptr via ::SetMemMainLanguageCard() to now set it to NULL (may be from SLOT0 or another slot)
+	// In reality, dtor only called when whole VM is being destroyed, so won't have have use-after-frees.
 }
 
 UINT Saturn128K::GetActiveBank(void)
@@ -317,7 +375,8 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 		return bWrite ? 0 : MemReadFloatingBus(nExecutedCycles);
 
 	bool bBankChanged = false;
-	DWORD memmode=0, lastmemmode=0;
+	UINT memmode = pLC->GetLCMemMode();
+	UINT lastmemmode = memmode;
 
 	if (uAddr & (1<<2))
 	{
@@ -334,13 +393,11 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 			pLC->m_uSaturnActiveBank = pLC->m_uSaturnTotalBanks-1;	// FIXME: just prevent crash for now!
 		}
 
-		SetMemMainLanguageCard( pLC->m_aSaturnBanks[ pLC->m_uSaturnActiveBank ] );
+		::SetMemMainLanguageCard(pLC->m_aSaturnBanks[pLC->m_uSaturnActiveBank], uSlot);
 		bBankChanged = true;
 	}
 	else
 	{
-		memmode = GetMemMode();
-		lastmemmode = memmode;
 		memmode &= ~(MF_BANK2 | MF_HIGHRAM);
 
 		if (!(uAddr & 8))
@@ -355,15 +412,24 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 			memmode &= ~MF_WRITERAM;
 
 		pLC->SetLastRamWrite(uAddr & 1);		// Saturn differs from Apple's 16K LC: any access (LC is read-only)
-		SetMemMode(memmode);
+		pLC->SetLCMemMode(memmode);
+
+		bBankChanged = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC() != uSlot;
+		if (bBankChanged)
+		{
+			::SetMemMainLanguageCard(pLC->m_aSaturnBanks[pLC->m_uSaturnActiveBank], uSlot);
+		}
 	}
 
-	// NB. Unlike LC, no need to check if next opcode is STA $C002-5, as Saturn is not for //e
+	// NB. Saturn can be put in any slot but MemOptimizeForModeChanging() currently only supports LC in slot 0.
+	// . This optimization (check if next opcode is STA $C002-5) isn't essential, so skip it for now.
 
 	// IF THE MEMORY PAGING MODE HAS CHANGED, UPDATE OUR MEMORY IMAGES AND
 	// WRITE TABLES.
 	if ((lastmemmode != memmode) || bBankChanged)
 	{
+		// NB. Always SetMemMode() - locally may be same, but card or bank may've changed
+		SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (memmode & MF_LANGCARD_MASK));
 		MemUpdatePaging(0);	// Initialize=0
 	}
 
@@ -393,13 +459,6 @@ const std::string& Saturn128K::GetSnapshotCardName(void)
 
 void Saturn128K::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	if (!IsApple2PlusOrClone(GetApple2Type()))
-	{
-		_ASSERT(0);
-		LogFileOutput("Warning: Save-state attempted to save %s for //e or above\n", GetSnapshotCardName().c_str());
-		return;	// No Saturn support for //e and above
-	}
-
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_SATURN_VER);
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
@@ -453,11 +512,16 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 		yamlLoadHelper.PopMap();
 	}
 
-	SetMemMainLanguageCard( m_aSaturnBanks[ m_uSaturnActiveBank ] );
-
-	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
+	// NB. MemInitializeFromSnapshot() called at end of Snapshot_LoadState_v2():
+	// . SetMemMainLanguageCard() for the slot/card that last set the 16KB LC bank
+	// . MemUpdatePaging(TRUE)
 
 	return true;
+}
+
+void Saturn128K::SetMemMainLanguageCard(void)
+{
+	::SetMemMainLanguageCard(m_aSaturnBanks[m_uSaturnActiveBank], m_slot);
 }
 
 void Saturn128K::SetSaturnMemorySize(UINT banks)
@@ -468,4 +532,71 @@ void Saturn128K::SetSaturnMemorySize(UINT banks)
 UINT Saturn128K::GetSaturnMemorySize()
 {
 	return g_uSaturnBanksFromCmdLine;
+}
+
+//-------------------------------------
+
+/*
+* LangauageCardManager:
+* . manage reset for all cards (eg. II/II+'s LC is unaffected, whereas //e's LC is)
+* . manage lastSlotToSetMainMemLC
+* . TODO: assist with debugger's display of "sNN" for active 16K bank
+*/
+
+void LanguageCardManager::Reset(const bool powerCycle /*=false*/)
+{
+	if (IsApple2PlusOrClone(GetApple2Type()) && !powerCycle)	// For reset : II/II+ unaffected
+		return;
+
+	if (GetLanguageCard())
+		GetLanguageCard()->SetLastRamWrite(0);
+
+	if (IsApple2PlusOrClone(GetApple2Type()) && GetCardMgr().QuerySlot(SLOT0) == CT_Empty)
+		SetMemMode(0);
+	else
+		SetMemMode(LanguageCardUnit::kMemModeInitialState);
+}
+
+void LanguageCardManager::SetMemModeFromSnapshot(void)
+{
+	// If multiple "Language Cards" (eg. LC+Saturn or 2xSaturn) then setup via the last card that selected the 16KB LC bank.
+	// NB. Skip if not Saturn card (ie. a LC), since LC's are only in slot0 and in the ctor it has called SetMainMemLanguageCard()
+	if (GetCardMgr().QuerySlot(m_lastSlotToSetMainMemLCFromSnapshot) == CT_Saturn128K)
+	{
+		Saturn128K& saturn = dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(m_lastSlotToSetMainMemLCFromSnapshot));
+		saturn.SetMemMainLanguageCard();
+	}
+
+	dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(m_lastSlotToSetMainMemLCFromSnapshot)).SetGlobalLCMemMode();
+}
+
+bool LanguageCardManager::SetLanguageCard(SS_CARDTYPE type)
+{
+	if (type == CT_Empty)
+	{
+		m_pLanguageCard = NULL;
+		return true;
+	}
+
+	_ASSERT(GetLanguageCard() == NULL);
+	if (GetLanguageCard())
+		return false;	// Only support one language card
+
+	switch (type)
+	{
+	case CT_LanguageCard:
+		m_pLanguageCard = LanguageCardSlot0::create(SLOT0);
+		break;
+	case CT_LanguageCardIIe:
+		m_pLanguageCard = LanguageCardUnit::create(SLOT0);
+		break;
+	case CT_Saturn128K:
+		m_pLanguageCard = new Saturn128K(SLOT0, Saturn128K::GetSaturnMemorySize());
+		break;
+	default:
+		_ASSERT(0);
+		return false;
+	}
+
+	return true;
 }

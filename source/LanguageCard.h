@@ -15,9 +15,8 @@ public:
 	virtual ~LanguageCardUnit(void);
 
 	virtual void Destroy(void) {}
-	virtual void Reset(const bool powerCycle) {}
+	virtual void Reset(const bool powerCycle);
 	virtual void Update(const ULONG nExecutedCycles) {}
-
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual UINT GetActiveBank(void) { return 0; }	// Always 0 as only 1x 16K bank
@@ -26,6 +25,9 @@ public:
 
 	BOOL GetLastRamWrite(void) { return m_uLastRamWrite; }
 	void SetLastRamWrite(BOOL count) { m_uLastRamWrite = count; }
+	UINT GetLCMemMode(void) { return m_memMode; }
+	void SetLCMemMode(UINT memMode) { m_memMode = memMode; }
+	void SetGlobalLCMemMode(void);
 	SS_CARDTYPE GetMemoryType(void) { return QueryType(); }
 	bool IsOpcodeRMWabs(WORD addr);
 
@@ -37,8 +39,11 @@ public:
 protected:
 	LanguageCardUnit(SS_CARDTYPE type, UINT slot);
 
+	LPBYTE m_pMemory;
+
 private:
 	UINT m_uLastRamWrite;
+	UINT m_memMode;
 };
 
 //
@@ -64,8 +69,6 @@ protected:
 	void SaveLCState(class YamlSaveHelper& yamlSaveHelper);
 	void LoadLCState(class YamlLoadHelper& yamlLoadHelper);
 
-	LPBYTE m_pMemory;
-
 private:
 	const std::string& GetSnapshotMemStructName(void);
 };
@@ -85,6 +88,8 @@ public:
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
+	void SetMemMainLanguageCard(void);
+
 	static UINT	GetSaturnMemorySize();
 	static void	SetSaturnMemorySize(UINT banks);
 
@@ -102,4 +107,35 @@ private:
 	UINT m_uSaturnTotalBanks;	// Will be > 0 if Saturn card is installed
 	UINT m_uSaturnActiveBank;	// Saturn 128K Language Card Bank 0 .. 7
 	LPBYTE m_aSaturnBanks[kMaxSaturnBanks];
+};
+
+//
+// Language Card manager
+//
+
+class LanguageCardManager
+{
+public:
+	LanguageCardManager(void) :
+		m_pLanguageCard(NULL),
+		m_lastSlotToSetMainMemLC(SLOT0),
+		m_lastSlotToSetMainMemLCFromSnapshot(SLOT0)
+	{}
+	~LanguageCardManager(void) {}
+
+	void Reset(const bool powerCycle = false);
+
+	UINT GetLastSlotToSetMainMemLC(void) { return m_lastSlotToSetMainMemLC;	}
+	void SetLastSlotToSetMainMemLC(UINT slot) { m_lastSlotToSetMainMemLC = slot; }
+	void SetLastSlotToSetMainMemLCFromSnapshot(UINT slot) { m_lastSlotToSetMainMemLCFromSnapshot = slot; }
+
+	LanguageCardUnit* GetLanguageCard(void) { return m_pLanguageCard; }
+	bool SetLanguageCard(SS_CARDTYPE type);
+
+	void SetMemModeFromSnapshot(void);
+
+private:
+	LanguageCardUnit* m_pLanguageCard;
+	UINT m_lastSlotToSetMainMemLC;
+	UINT m_lastSlotToSetMainMemLCFromSnapshot;
 };

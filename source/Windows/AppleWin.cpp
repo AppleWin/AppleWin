@@ -770,9 +770,11 @@ static void RepeatInitialization(void)
 			GetCardMgr().GetParallelPrinterCard()->SetEnableDumpToRealPrinter(true);
 		}
 
-		if (g_cmdLine.slotInsert[SLOT3] != CT_Empty && g_cmdLine.slotInsert[SLOT3] == CT_VidHD)	// For now just support VidHD in slot 3
+		if (g_cmdLine.slotInsert[SLOT3] != CT_Empty)
 		{
-			GetCardMgr().Insert(SLOT3, g_cmdLine.slotInsert[SLOT3]);
+			// NB. Only support Saturn in slot 3, otherwise there's more Config UI to change
+			if (g_cmdLine.slotInsert[SLOT3] == CT_VidHD || g_cmdLine.slotInsert[SLOT3] == CT_Saturn128K)	// For now just support VidHD and Saturn128 in slot 3)
+				GetCardMgr().Insert(SLOT3, g_cmdLine.slotInsert[SLOT3]);
 		}
 
 		if (g_cmdLine.slotInsert[SLOT4] != CT_Empty)

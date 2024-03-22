@@ -2,6 +2,7 @@
 
 #include "Card.h"
 #include "Disk2CardManager.h"
+#include "LanguageCard.h"
 #include "MockingboardCardManager.h"
 #include "Common.h"
 
@@ -11,7 +12,6 @@ public:
 	CardManager(void) :
 		m_pMouseCard(NULL),
 		m_pSSC(NULL),
-		m_pLanguageCard(NULL),
 		m_pParallelPrinterCard(NULL),
 		m_pZ80Card(NULL)
 	{
@@ -53,6 +53,7 @@ public:
 	//
 
 	Disk2CardManager& GetDisk2CardMgr(void) { return m_disk2CardMgr; }
+	LanguageCardManager& GetLanguageCardMgr(void) { return m_languageCardMgr; }
 	MockingboardCardManager& GetMockingboardCardMgr(void) { return m_mockingboardCardMgr; }
 	class CMouseInterface* GetMouseCard(void) { return m_pMouseCard; }
 	bool IsMouseCardInstalled(void) { return m_pMouseCard != NULL; }
@@ -60,8 +61,6 @@ public:
 	bool IsSSCInstalled(void) { return m_pSSC != NULL; }
 	class ParallelPrinterCard* GetParallelPrinterCard(void) { return m_pParallelPrinterCard; }
 	bool IsParallelPrinterCardInstalled(void) { return m_pParallelPrinterCard != NULL; }
-
-	class LanguageCardUnit* GetLanguageCard(void) { return m_pLanguageCard; }
 
 	void InitializeIO(LPBYTE pCxRomPeripheral);
 	void Destroy(void);
@@ -78,10 +77,10 @@ private:
 	Card* m_slot[NUM_SLOTS];
 	Card* m_aux;
 	Disk2CardManager m_disk2CardMgr;
+	LanguageCardManager m_languageCardMgr;
 	MockingboardCardManager m_mockingboardCardMgr;
 	class CMouseInterface* m_pMouseCard;
 	class CSuperSerialCard* m_pSSC;
-	class LanguageCardUnit* m_pLanguageCard;
 	class ParallelPrinterCard* m_pParallelPrinterCard;
 	class Z80Card* m_pZ80Card;
 };
