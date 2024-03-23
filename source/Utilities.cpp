@@ -551,6 +551,7 @@ void CtrlReset()
 	if (!IS_APPLE2)
 	{
 		// For A][ & A][+, reset doesn't reset the LC switches (UTAII:5-29)
+		// TODO: What about Saturn cards? Presumably the same as the A][ & A][+ slot0 LC?
 		MemResetPaging();
 
 		// For A][ & A][+, reset doesn't reset the video mode (UTAII:4-4)
