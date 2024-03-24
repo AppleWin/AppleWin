@@ -44,7 +44,7 @@ namespace ra2
   Game::Game(const bool supportsInputBitmasks)
     : mySupportsInputBitmasks(supportsInputBitmasks)
     , myButtonStates(0)
-    , myAudioSource(eAudioSource::UNKNOWN)
+    , myAudioSource(AudioSource::UNKNOWN)
     , myKeyboardType(KeyboardType::ASCII)
   {
     myLoggerContext = std::make_shared<LoggerContext>(true);
@@ -298,15 +298,15 @@ namespace ra2
       {
         switch (myAudioSource)
         {
-        case eAudioSource::SPEAKER:
+        case AudioSource::SPEAKER:
         {
-          myAudioSource = eAudioSource::MOCKINGBOARD;
+          myAudioSource = AudioSource::MOCKINGBOARD;
           display_message(std::string("Audio source: ") + REGVALUE_AUDIO_MOCKINGBOARD);
           break;
         }
-        case eAudioSource::MOCKINGBOARD:
+        case AudioSource::MOCKINGBOARD:
         {
-          myAudioSource = eAudioSource::SPEAKER;
+          myAudioSource = AudioSource::SPEAKER;
           display_message(std::string("Audio source: ") + REGVALUE_AUDIO_SPEAKER);
           break;
         }

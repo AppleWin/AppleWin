@@ -20,7 +20,7 @@ namespace ra2
   std::shared_ptr<common2::PTreeRegistry> CreateRetroRegistry();
   void PopulateRegistry(const std::shared_ptr<Registry> & registry);
 
-  eAudioSource GetAudioSource();
+  AudioSource GetAudioSource();
   KeyboardType GetKeyboardEmulationType();
   PlaylistStartDisk GetPlaylistStartDisk();
 

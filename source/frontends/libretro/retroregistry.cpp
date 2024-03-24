@@ -128,8 +128,8 @@ namespace
       REG_RA2,
       REGVALUE_AUDIO_SOURCE,
       {
-       {REGVALUE_AUDIO_SPEAKER, static_cast<DWORD>(ra2::eAudioSource::SPEAKER)},
-       {REGVALUE_AUDIO_MOCKINGBOARD, static_cast<DWORD>(ra2::eAudioSource::MOCKINGBOARD)},
+       {REGVALUE_AUDIO_SPEAKER, static_cast<DWORD>(ra2::AudioSource::SPEAKER)},
+       {REGVALUE_AUDIO_MOCKINGBOARD, static_cast<DWORD>(ra2::AudioSource::MOCKINGBOARD)},
       }
      },
      {
@@ -230,11 +230,11 @@ namespace ra2
     return registry;
   }
 
-  eAudioSource GetAudioSource()
+  AudioSource GetAudioSource()
   {
     DWORD value = 1;
     RegLoadValue(REG_RA2, REGVALUE_AUDIO_SOURCE, TRUE, &value);
-    const eAudioSource source = value <= DWORD(eAudioSource::UNKNOWN) ? eAudioSource(value) : eAudioSource::UNKNOWN;
+    const AudioSource source = value <= DWORD(AudioSource::UNKNOWN) ? AudioSource(value) : AudioSource::UNKNOWN;
     return source;
   }
 

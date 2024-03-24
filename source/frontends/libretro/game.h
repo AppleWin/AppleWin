@@ -54,7 +54,7 @@ namespace ra2
   private:
     const bool mySupportsInputBitmasks;
     size_t myButtonStates;
-    eAudioSource myAudioSource;
+    AudioSource myAudioSource;
     KeyboardType myKeyboardType;
 
     // keep them in this order!
