@@ -16,15 +16,16 @@ Peripheral cards and add-on hardware supported:
 - RGB cards: Apple's Extended 80-Column Text/AppleColor Adaptor Card and 'Le Chat Mauve' Féline.
 - CP/M SoftCard
 - Uthernet I and II (ethernet cards)
-- Language Card and Saturn 64/128K for Apple II/II+
+- Language Card and Saturn 64/128K for Apple II/II+ (and Saturn 128K for any Apple II in slot 3)
 - 4Play and SNES MAX joystick cards
 - VidHD card (functionality limited to IIgs' Super Hi-Res video modes)
 - No Slot Clock (NSC)
+- Game I/O Connector copy protection dongles 
 
 
-Download latest (stable) release: [AppleWin v1.30.16.0](https://github.com/AppleWin/AppleWin/releases/download/v1.30.16.0/AppleWin1.30.16.0.zip)
+Download latest (stable) release: [AppleWin v1.30.17.0](https://github.com/AppleWin/AppleWin/releases/download/v1.30.17.0/AppleWin1.30.17.0.zip)
 
-Release Notes: [v1.30.16.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.30.16.0)
+Release Notes: [v1.30.17.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.30.17.0)
 
 
 Building

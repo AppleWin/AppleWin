@@ -2338,8 +2338,13 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 
 	if (unitVersion == 1)
 	{
-		SetMemMode( yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) ^ MF_INTCXROM );	// Convert from SLOTCXROM to INTCXROM
-		SetLastRamWrite( yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE );
+		UINT uMemMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) ^ MF_INTCXROM;	// Convert from SLOTCXROM to INTCXROM
+		SetMemMode(uMemMode);
+
+		if (GetCardMgr().GetLanguageCardMgr().GetLanguageCard())
+			GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->SetLCMemMode(uMemMode & MF_LANGCARD_MASK);
+
+		SetLastRamWrite(yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE);
 	}
 	else
 	{
@@ -2352,10 +2357,14 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 
 		if (!IsApple2PlusOrClone(GetApple2Type()))	// NB. These are set later for II,II+ by slot-0 LC or Saturn
 		{
-			if (unitVersion >= 9)
+			if (unitVersion < 9)
+			{
+				GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->SetLCMemMode(uMemMode & MF_LANGCARD_MASK);
+			}
+			else
 			{
 				UINT LCMemMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_MMULCMODE);
-				dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(SLOT0)).SetLCMemMode(LCMemMode);
+				GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->SetLCMemMode(LCMemMode);
 			}
 			SetLastRamWrite(yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE);
 		}
