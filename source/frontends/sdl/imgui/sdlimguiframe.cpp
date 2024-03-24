@@ -259,6 +259,7 @@ namespace sa2
         {
           return; // do not pass on
         }
+        break;
       }
     case SDL_MOUSEBUTTONDOWN:
     case SDL_MOUSEBUTTONUP:
@@ -269,6 +270,7 @@ namespace sa2
         {
           return; // do not pass on
         }
+        break;
       }
     }
 
