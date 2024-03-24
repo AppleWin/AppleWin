@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "frontends/libretro/retroframe.h"
 #include "frontends/libretro/environment.h"
+#include "frontends/common2/utils.h"
 
 #include "Interface.h"
 #include "Core.h"
@@ -188,5 +189,12 @@ namespace ra2
     // Let libretro deal with it.
     return false;
   }
+
+  void RetroFrame::Begin()
+  {
+    const common2::RestoreCurrentDirectory restoreChDir;
+    common2::GNUFrame::Begin();
+  }
+
 
 }

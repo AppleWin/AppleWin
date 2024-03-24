@@ -20,7 +20,7 @@ namespace common2
       char * temp = strdup(filename.c_str());
       const char * dir = dirname(temp);
       // dir points inside temp!
-      chdir(dir);
+      SetCurrentDirectory(dir);
       Snapshot_SetFilename(filename);
       free(temp);
       RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, Snapshot_GetPathname());
@@ -60,6 +60,23 @@ namespace common2
     saveValue("height", geometry.height);
     saveValue("x", geometry.x);
     saveValue("y", geometry.y);
+  }
+
+  RestoreCurrentDirectory::RestoreCurrentDirectory()
+  {
+    char szFilename[MAX_PATH];
+    if (GetCurrentDirectory(sizeof(szFilename), szFilename))
+    {
+      myCurrentDirectory = szFilename;
+    }
+  }
+
+  RestoreCurrentDirectory::~RestoreCurrentDirectory()
+  {
+    if (!myCurrentDirectory.empty())
+    {
+      SetCurrentDirectory(myCurrentDirectory.c_str());
+    }
   }
 
 }
