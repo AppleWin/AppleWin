@@ -65,7 +65,7 @@ namespace
 namespace ra2
 {
 
-  DiskControl::DiskControl() : myEjected(false), myIndex(0)
+  DiskControl::DiskControl() : myEjected(true), myIndex(0)
   {
 
   }
@@ -210,7 +210,7 @@ namespace ra2
   {
     if (myEjected == ejected)
     {
-      return true; // or false?
+      return true;
     }
 
     CardManager & cardManager = GetCardMgr();
