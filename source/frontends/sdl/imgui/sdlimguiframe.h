@@ -23,6 +23,7 @@ namespace sa2
   protected:
 
     void ProcessSingleEvent(const SDL_Event & event, bool & quit) override;
+    void ProcessKeyDown(const SDL_KeyboardEvent & key, bool &quit) override;
     void GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, double & x, double & y) const override;
 
   private:
