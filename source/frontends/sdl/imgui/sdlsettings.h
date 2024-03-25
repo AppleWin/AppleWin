@@ -18,6 +18,9 @@ namespace sa2
     void show(SDLFrame* frame, ImFont * debuggerFont);
     float drawMenuBar(SDLFrame* frame);
     void resetDebuggerCycles();
+    void showDiskTab();
+    void toggleSettings();
+    void toggleShortcuts();
 
     bool windowed = false;
     bool quit = false;
@@ -28,6 +31,7 @@ namespace sa2
     bool myShowMemory = false;
     bool myShowAbout = false;
     bool myShowShortcuts = false;
+    bool myShowDiskTab = false;
 
     int mySpeakerVolume;
     int myMockingboardVolume;

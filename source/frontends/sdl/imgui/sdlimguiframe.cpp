@@ -277,6 +277,39 @@ namespace sa2
     SDLFrame::ProcessSingleEvent(event, quit);
   }
 
+  void SDLImGuiFrame::ProcessKeyDown(const SDL_KeyboardEvent & key, bool &quit)
+  {
+    // a bit of care is required
+    // since we do not want to trigger twice (here and SDLFrame)
+    // we need to ensure the modifiers are consistent
+    const auto allModifiers = KMOD_CTRL | KMOD_SHIFT | KMOD_ALT;
+    const auto modified = key.keysym.mod & allModifiers;
+
+    if (!key.repeat && modified == 0)
+    {
+      switch (key.keysym.sym)
+      {
+      case SDLK_F8:
+        {
+          mySettings.toggleSettings();
+          break;
+        }
+      case SDLK_F3:
+        {
+          mySettings.showDiskTab();
+          break;
+        }
+      case SDLK_F1:
+        {
+          mySettings.toggleShortcuts();
+          break;
+        }
+      }
+    }
+
+    SDLFrame::ProcessKeyDown(key, quit);
+  }
+
   bool SDLImGuiFrame::Quit() const
   {
     return mySettings.quit;

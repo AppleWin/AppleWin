@@ -25,21 +25,23 @@
 namespace
 {
 
-  const char * ourShortcutHeaders[5] = {
-    "Key", "Normal", "Control", "Shift", "Both"
+  const char * ourShortcutHeaders[6] = {
+    "Key", "Normal", "Control", "Shift", "Both", "Alt",
   };
 
-  const char * ourShortcutKeys[][5] = {
+  const char * ourShortcutKeys[][6] = {
     {"Left ALT", "Open Apple"},
     {"Right ALT", "Solid Apple"},
     {"Pause", "Pause"},
     {"Insert", nullptr, "Copy", "Paste", "Screenshot"},
-    {"Scroll lock", "Toggle full speed"},
-    {"F1", "Print audio info"},
+    {"Scroll lock", "Full speed"},
+    {"F1", "Shortcuts", "Print audio info"},
     {"F2", "Reset", "Ctrl-Reset", "Quit"},
-    {"F3", "Quit"},
+    {"F3", "Disks"},
+    {"F4", nullptr, nullptr, nullptr, nullptr, "Quit"},
     {"F5", "Swap S6 disks"},
-    {"F6", "Fullscreen", "2x", nullptr, "Toggle 50 scan lines"},
+    {"F6", "Fullscreen", "2x", nullptr, "50 scan lines"},
+    {"F8", "Settings"},
     {"F9", "Cycle video type"},
     {"F11", "Save snapshot"},
     {"F12", "Load snapshot"},
@@ -291,7 +293,9 @@ namespace sa2
           ImGui::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Disks"))
+        const ImGuiTabItemFlags disksFlags = myShowDiskTab ? ImGuiTabItemFlags_SetSelected : 0;
+        myShowDiskTab = false;  // only do it once
+        if (ImGui::BeginTabItem("Disks", nullptr, disksFlags))
         {
           bool enhancedSpeed = cardManager.GetDisk2CardMgr().GetEnhanceDisk();
           if (ImGui::Checkbox("Enhanced speed", &enhancedSpeed))
@@ -773,7 +777,7 @@ namespace sa2
         }
         ImGui::EndTable();
         ImGui::Separator();
-        ImGui::TextUnformatted("If an ImGui window is selected, it captures the keyboard.");
+        ImGui::TextUnformatted("Press the Gamepad BACK button twice to quit.");
       }
     }
 
@@ -824,20 +828,20 @@ namespace sa2
       menuBarHeight = ImGui::GetWindowHeight();
       if (ImGui::BeginMenu("System"))
       {
-        ImGui::MenuItem("Settings", nullptr, &myShowSettings);
+        ImGui::MenuItem("Settings", "F8", &myShowSettings);
         ImGui::MenuItem("Memory", nullptr, &myShowMemory);
         if (ImGui::MenuItem("Debugger", nullptr, &myDebugger.showDebugger))
         {
           myDebugger.syncDebuggerState(frame);
         }
         ImGui::Separator();
-        ImGui::MenuItem("Exit", "F3", &quit);
+        ImGui::MenuItem("Quit", "Alt-F4", &quit);
         ImGui::EndMenu();
       }
 
       if (ImGui::BeginMenu("Help"))
       {
-        ImGui::MenuItem("Shortcuts", nullptr, &myShowShortcuts);
+        ImGui::MenuItem("Shortcuts", "F1", &myShowShortcuts);
         ImGui::MenuItem("ImGui Demo", nullptr, &myShowDemo);
         ImGui::Separator();
         ImGui::MenuItem("About", nullptr, &myShowAbout);
@@ -910,6 +914,22 @@ namespace sa2
     openFileDialog(browser, diskName);
     myOpenSlot = slot;
     myOpenDrive = drive;
+  }
+
+  void ImGuiSettings::showDiskTab()
+  {
+    myShowSettings = true;
+    myShowDiskTab = true;
+  }
+
+  void ImGuiSettings::toggleSettings()
+  {
+    myShowSettings = !myShowSettings;
+  }
+
+  void ImGuiSettings::toggleShortcuts()
+  {
+    myShowShortcuts = !myShowShortcuts;
   }
 
 }

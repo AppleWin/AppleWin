@@ -45,15 +45,7 @@ Some of the configuration options are exposed in the ``Settings`` menu. This is 
 
 ## Hotkeys
 
-``F2``, ``F5``, ``F6``, ``F9``, ``F11``, ``F12`` and ``Pause``  have the same meaning as in AppleWin.
-
-``F2``: ResetMachineState, `Ctrl-F2`: Ctrl-Reset, `Shift-F2`: Quit
-
-``Left Alt`` and ``Right Alt`` emulate the Open and Solid Apple key.
-
-``Shift-Insert`` pastes the clipboard to the input key buffer.
-
-``Ctrl-Insert`` copies the text screen (in AppleWin this is ``Ctrl-PrintScreen``).
+Press ``F1`` to see a list of hotkeys.
 
 The application terminates if the `SDL_CONTROLLER_BUTTON_BACK` (i.e. `SELECT`) button is pressed twice in one second.
 
@@ -64,7 +56,7 @@ Audio works reasonably well, using AppleWin adaptive algorithm.
 There is a command line argument to customise the SDL audio buffer: ``--audio-buffer 46``.
 AppleWin target is between 92 and 185 ms, so any number above 90 will risk numerous underruns. It can be as small as 1, but it will probably put pressure on the host scheduling.
 
-Use ``F1`` during emulation to have an idea of the size of the audio queue
+Use ``Ctrl-F1`` during emulation to have an idea of the size of the audio queue
 
 ```
 Channels: 2, buffer:  21780,   123.47 ms, underruns:          0

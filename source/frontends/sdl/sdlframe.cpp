@@ -471,11 +471,17 @@ namespace sa2
           }
           break;
         }
-      case SDLK_F3:
-      {
-        quit = true;
-        break;
-      }
+      case SDLK_F4:
+        {
+          if (key.keysym.mod & KMOD_ALT)
+          {
+            // In GNOME (and probably most Desktop Environments)
+            // we never get here: we receive instead a SDL_QUIT
+            // this is only a fallback for "other" environments
+            quit = true;
+          }
+          break;
+        }
       case SDLK_F2:
         {
           if (key.keysym.mod & KMOD_CTRL)
@@ -494,7 +500,10 @@ namespace sa2
         }
       case SDLK_F1:
         {
-          sa2::printAudioInfo();
+          if (key.keysym.mod & KMOD_CTRL)
+          {
+            sa2::printAudioInfo();
+          }
           break;
         }
       case SDLK_LALT:
