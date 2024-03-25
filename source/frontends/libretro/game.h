@@ -27,7 +27,7 @@ namespace ra2
   class Game
   {
   public:
-    Game();
+    Game(const bool supportsInputBitmasks);
     ~Game();
 
     bool loadSnapshot(const std::string & path);
@@ -52,6 +52,11 @@ namespace ra2
     static constexpr retro_usec_t ourFrameTime = 1000000 / FPS;
 
   private:
+    const bool mySupportsInputBitmasks;
+    size_t myButtonStates;
+    AudioSource myAudioSource;
+    KeyboardType myKeyboardType;
+
     // keep them in this order!
     std::shared_ptr<LoggerContext> myLoggerContext;
     std::shared_ptr<common2::PTreeRegistry> myRegistry;
@@ -60,12 +65,6 @@ namespace ra2
 
     common2::ControllerDoublePress myControllerQuit;
     common2::ControllerDoublePress myControllerReset;
-
-    std::vector<int> myButtonStates;
-
-    eAudioSource myAudioSource;
-
-    KeyboardType myKeyboardType;
 
     struct MousePosition_t
     {
@@ -78,7 +77,7 @@ namespace ra2
 
     DiskControl myDiskControl;
 
-    bool checkButtonPressed(unsigned id);
+    size_t updateButtonStates();
     void keyboardEmulation();
     void mouseEmulation();
     void refreshVariables();

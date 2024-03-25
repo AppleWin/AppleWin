@@ -14,27 +14,27 @@
 namespace
 {
 
-  ra2::eAudioSource getAudioSourceFromName(const std::string & name)
+  ra2::AudioSource getAudioSourceFromName(const std::string & name)
   {
     // These are the strings used in DSGetSoundBuffer
 
     if (name == "Spkr")
     {
-      return ra2::eAudioSource::SPEAKER;
+      return ra2::AudioSource::SPEAKER;
     }
 
     if (name == "MB")
     {
-      return ra2::eAudioSource::MOCKINGBOARD;
+      return ra2::AudioSource::MOCKINGBOARD;
     }
 
     if (name == "SSI263")
     {
-      return ra2::eAudioSource::SSI263;
+      return ra2::AudioSource::SSI263;
     }
 
     // something new, just ignore it
-    return ra2::eAudioSource::UNKNOWN;
+    return ra2::AudioSource::UNKNOWN;
   }
 
   class DirectSoundGenerator : public IDirectSoundBuffer 
@@ -48,10 +48,10 @@ namespace
 
     bool isRunning();
 
-    ra2::eAudioSource getSource() const;
+    ra2::AudioSource getSource() const;
 
   private:
-    const ra2::eAudioSource myAudioSource;
+    const ra2::AudioSource myAudioSource;
     std::vector<int16_t> myMixerBuffer;
 
     void mixBuffer(const void * ptr, const size_t size);
@@ -85,7 +85,7 @@ namespace
     }
   }
 
-  ra2::eAudioSource DirectSoundGenerator::getSource() const
+  ra2::AudioSource DirectSoundGenerator::getSource() const
   {
     return myAudioSource;
   }
@@ -158,7 +158,7 @@ IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
 namespace ra2
 {
 
-  void writeAudio(const eAudioSource selectedSource, const size_t fps)
+  void writeAudio(const AudioSource selectedSource, const size_t fps)
   {
     bool found = false;
     for (const auto & it : activeSoundGenerators)

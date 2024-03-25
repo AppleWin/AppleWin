@@ -251,12 +251,9 @@ void retro_set_environment(retro_environment_t cb)
       &retro_set_eject_state, &retro_get_eject_state,
       &retro_get_image_index, &retro_set_image_index,
       &retro_get_num_images, &retro_replace_image_index,
-      &retro_add_image_index, nullptr,
+      &retro_add_image_index, &retro_set_initial_image,
       &retro_get_image_path, &retro_get_image_label
     };
-    // intentionally skip retro_set_initial_image
-    // as we do always want to restart with the first disk of a playlist
-    // which (normally) is the only bootable floppy of a game
     cb(RETRO_ENVIRONMENT_SET_DISK_CONTROL_EXT_INTERFACE, &diskControlExtCallback);
   }
   else
@@ -269,6 +266,9 @@ void retro_set_environment(retro_environment_t cb)
     };
     cb(RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE, &diskControlCallback);
   }
+
+  bool noContent = true;
+  cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &noContent);
 
   ra2::SetupRetroVariables();
 }
@@ -319,16 +319,18 @@ bool retro_load_game(const retro_game_info *info)
     return false;
   }
 
+  const bool supportsInputBitmasks = !!ra2::environ_cb(RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, NULL);
+
   try
   {
-    std::unique_ptr<ra2::Game> game = std::make_unique<ra2::Game>();
+    std::unique_ptr<ra2::Game> game = std::make_unique<ra2::Game>(supportsInputBitmasks);
 
     const std::string snapshotEnding = ".aws.yaml";
     const std::string playlistEnding = ".m3u";
 
     bool ok;
 
-    if (info->path && *info->path)
+    if (info && info->path && *info->path)
     {
       const std::string gamePath = info->path;
       if (endsWith(gamePath, snapshotEnding))
@@ -343,13 +345,13 @@ bool retro_load_game(const retro_game_info *info)
       {
         ok = game->getDiskControl().insertDisk(gamePath);
       }
+      ra2::log_cb(RETRO_LOG_INFO, "Game path: %s -> %d\n", info->path, ok);
     }
     else
     {
-      ok = false;
+      // we support no content
+      ok = true;
     }
-
-    ra2::log_cb(RETRO_LOG_INFO, "Game path: %s -> %d\n", info->path, ok);
 
     if (ok)
     {
