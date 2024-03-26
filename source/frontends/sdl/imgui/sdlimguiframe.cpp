@@ -282,26 +282,34 @@ namespace sa2
     // a bit of care is required
     // since we do not want to trigger twice (here and SDLFrame)
     // we need to ensure the modifiers are consistent
-    const auto allModifiers = KMOD_CTRL | KMOD_SHIFT | KMOD_ALT;
-    const auto modified = key.keysym.mod & allModifiers;
-
-    if (!key.repeat && modified == 0)
+    if (!key.repeat)
     {
+      const size_t modifiers = getCanonicalModifiers(key);
+
       switch (key.keysym.sym)
       {
       case SDLK_F8:
         {
-          mySettings.toggleSettings();
+          if (modifiers == KMOD_NONE)
+          {
+            mySettings.toggleSettings();
+          }
           break;
         }
       case SDLK_F3:
         {
-          mySettings.showDiskTab();
+          if (modifiers == KMOD_NONE)
+          {
+            mySettings.showDiskTab();
+          }
           break;
         }
       case SDLK_F1:
         {
-          mySettings.toggleShortcuts();
+          if (modifiers == KMOD_NONE)
+          {
+            mySettings.toggleShortcuts();
+          }
           break;
         }
       }

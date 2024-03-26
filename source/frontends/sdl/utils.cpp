@@ -120,4 +120,24 @@ namespace sa2
     return prefix + ": " + SDL_GetError();
   }
 
+  size_t getCanonicalModifiers(const SDL_KeyboardEvent & key)
+  {
+    // simplification of the handling of left and right version of the modifiers
+    // so we can use equality == comparisons
+    size_t modifiers = KMOD_NONE;
+    if (key.keysym.mod & KMOD_CTRL)
+    {
+      modifiers |= KMOD_CTRL;
+    }
+    if (key.keysym.mod & KMOD_SHIFT)
+    {
+      modifiers |= KMOD_SHIFT;
+    }
+    if (key.keysym.mod & KMOD_ALT)
+    {
+      modifiers |= KMOD_ALT;
+    }
+    return modifiers;
+  }
+
 }

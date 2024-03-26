@@ -22,4 +22,7 @@ namespace sa2
                           const std::string & text);
 
   std::string decorateSDLError(const std::string & prefix);
+
+  size_t getCanonicalModifiers(const SDL_KeyboardEvent & key);
+
 }
