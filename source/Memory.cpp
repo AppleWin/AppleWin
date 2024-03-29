@@ -56,9 +56,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "YamlHelper.h"
 
 // In this file allocate the 64KB of RAM with aligned memory allocations (0x10000)
-// to ease mapping between Apple ][ and host memory space (while debugging).
-
-// this is not available in Visual Studio
+// to ease mapping between Apple ][ and host memory space (while debugging) & also to fix GH#1285.
+// This is not available in Windows CRT:
 // https://en.cppreference.com/w/c/memory/aligned_alloc
 
 #ifdef _MSC_VER
@@ -243,6 +242,7 @@ static const UINT kNumAnnunciators = 4;
 static bool g_Annunciator[kNumAnnunciators] = {};
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
+void FreeMemImage(void);
 
 //=============================================================================
 
@@ -1289,7 +1289,7 @@ void MemDestroy()
 {
 	ALIGNED_FREE(memaux);
 	ALIGNED_FREE(memmain);
-	ALIGNED_FREE(memimage);
+	FreeMemImage();
 
 	delete [] memdirty;
 	delete [] memrom;
@@ -1509,12 +1509,106 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 
 //===========================================================================
 
+static HANDLE g_hMemImage = NULL;	// NB. This handle is NULL (not INVALID_HANDLE_VALUE) when not initialised
+
+static void FreeMemImage(void)
+{
+	if (memimage == NULL)
+		return;
+
+	if (g_hMemImage)
+	{
+		const UINT num64KPages = 2;
+		for (UINT i = 0; i < num64KPages; i++)
+			UnmapViewOfFile(memimage + i * _6502_MEM_LEN);
+
+		CloseHandle(g_hMemImage);
+		g_hMemImage = NULL;
+	}
+	else
+	{
+		ALIGNED_FREE(memimage);
+	}
+}
+
+static LPBYTE AllocMemImage(void)
+{
+	LPBYTE baseAddr = NULL;
+
+	// Allocate memory for 'memimage' (and the alias 'mem')
+	// . Setup so we have 2 consecutive virtual 64K pages pointing to the same physical 64K page.
+	// . This is a fix (and optimisation) for 6502 opcodes that do a 16-bit at 6502 address $FFFF. (GH#1285)
+	SYSTEM_INFO info;
+	GetSystemInfo(&info);
+	bool res = info.dwAllocationGranularity <= _6502_MEM_LEN;
+
+	if (res)
+	{
+		res = false;
+		const UINT num64KPages = 2;
+		const SIZE_T totalVirtualSize = _6502_MEM_LEN * num64KPages;
+
+		g_hMemImage = CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0, _6502_MEM_LEN, NULL);
+		// NB. Returns NULL on failure (not INVALID_HANDLE_VALUE)
+		if (g_hMemImage != NULL)
+		{
+			for (UINT retry = 0; retry < 10; retry++)
+			{
+				baseAddr = (LPBYTE)VirtualAlloc(0, totalVirtualSize, MEM_RESERVE, PAGE_NOACCESS);
+				if (baseAddr)
+				{
+					VirtualFree(baseAddr, 0, MEM_RELEASE);
+
+					res = true;
+					for (UINT i = 0; i < num64KPages; i++)
+					{
+						// MSDN: "To specify a suggested base address for the view, use the MapViewOfFileEx function. However, this practice is not recommended."
+						// This is why we retry 10 times.
+						if (!MapViewOfFileEx(g_hMemImage, FILE_MAP_ALL_ACCESS, 0, 0, _6502_MEM_LEN, baseAddr + i * _6502_MEM_LEN))
+						{
+							res = false;
+							break;
+						}
+					}
+
+					if (res)
+						break;
+
+					// Failed this time, so clean-up and retry...
+					for (UINT i = 0; i < num64KPages; i++)
+						UnmapViewOfFile(baseAddr + i * _6502_MEM_LEN);
+				}
+			}
+
+			if (!res)
+				FreeMemImage();
+		}
+
+#if 1
+		if (res)	// test
+		{
+			baseAddr[0x0000] = 0x11;
+			baseAddr[0xffff] = 0x22;
+			USHORT value = *((USHORT*)(baseAddr + 0xffff));
+			_ASSERT(value == 0x1122);
+		}
+#endif
+	}
+
+	if (!res)
+		baseAddr = ALIGNED_ALLOC(_6502_MEM_LEN);
+
+	return baseAddr;
+}
+
+//===========================================================================
+
 void MemInitialize()
 {
 	// ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
 	memaux   = ALIGNED_ALLOC(_6502_MEM_LEN);	// NB. alloc even if model is Apple II/II+, since it's used by VidHD card
 	memmain  = ALIGNED_ALLOC(_6502_MEM_LEN);
-	memimage = ALIGNED_ALLOC(_6502_MEM_LEN);
+	memimage = AllocMemImage();
 
 	memdirty = new BYTE[0x100];
 	memrom   = new BYTE[0x3000 * MaxRomPages];
