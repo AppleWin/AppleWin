@@ -1548,41 +1548,39 @@ static LPBYTE AllocMemImage(void)
 
 	if (res)
 	{
-		res = false;
-		const UINT num64KRegions = 2;
-
 		UINT retry = 10;
 		do
 		{
+			res = false;
+			const UINT num64KRegions = 2;
 			const SIZE_T totalVirtualSize = _6502_MEM_LEN * num64KRegions;
 			baseAddr = (LPBYTE)VirtualAlloc(0, totalVirtualSize, MEM_RESERVE, PAGE_NOACCESS);
-			if (baseAddr)
+			if (baseAddr == NULL)
+				break;
+			VirtualFree(baseAddr, 0, MEM_RELEASE);
+
+			// Create a file mapping object of [64K] size that is backed by the system paging file.
+			g_hMemImage = CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0, _6502_MEM_LEN, NULL);
+			// NB. Returns NULL on failure (not INVALID_HANDLE_VALUE)
+			if (g_hMemImage == NULL)
+				break;
+
+			UINT count = 0;
+			while (count < num64KRegions)
 			{
-				VirtualFree(baseAddr, 0, MEM_RELEASE);
-
-				// Create a file mapping object of [64K] size that is backed by the system paging file.
-				g_hMemImage = CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0, _6502_MEM_LEN, NULL);
-				// NB. Returns NULL on failure (not INVALID_HANDLE_VALUE)
-				if (g_hMemImage == NULL)
+				// MSDN: "To specify a suggested base address for the view, use the MapViewOfFileEx function. However, this practice is not recommended."
+				// The OS (ie. another process) may've beaten us to this suggested baseAddr. This is why we retry multiple times.
+				if (!MapViewOfFileEx(g_hMemImage, FILE_MAP_ALL_ACCESS, 0, 0, _6502_MEM_LEN, baseAddr + count * _6502_MEM_LEN))
 					break;
-
-				UINT count = 0;
-				while (count < num64KRegions)
-				{
-					// MSDN: "To specify a suggested base address for the view, use the MapViewOfFileEx function. However, this practice is not recommended."
-					// The OS (ie. another process) may've beaten us to this suggested baseAddr. This is why we retry multiple times.
-					if (!MapViewOfFileEx(g_hMemImage, FILE_MAP_ALL_ACCESS, 0, 0, _6502_MEM_LEN, baseAddr + count * _6502_MEM_LEN))
-						break;
-					count++;
-				}
-
-				res = (count == num64KRegions);
-				if (res)
-					break;
-
-				// Failed this time, so clean-up and retry...
-				FreeMemImage();
+				count++;
 			}
+
+			res = (count == num64KRegions);
+			if (res)
+				break;
+
+			// Failed this time, so clean-up and retry...
+			FreeMemImage();
 		}
 		while (retry--);
 
