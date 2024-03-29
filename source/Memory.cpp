@@ -1543,7 +1543,7 @@ static LPBYTE AllocMemImage(void)
 	LPBYTE baseAddr = NULL;
 
 	// Allocate memory for 'memimage' (and the alias 'mem')
-	// . Setup so we have 2 consecutive virtual 64K pages pointing to the same physical 64K page.
+	// . Setup so we have 2 consecutive virtual 64K regions pointing to the same physical 64K region.
 	// . This is a fix (and optimisation) for 6502 opcodes that do a 16-bit read at 6502 address $FFFF. (GH#1285)
 	SYSTEM_INFO info;
 	GetSystemInfo(&info);
@@ -1552,8 +1552,8 @@ static LPBYTE AllocMemImage(void)
 	if (res)
 	{
 		res = false;
-		const UINT num64KPages = 2;
-		const SIZE_T totalVirtualSize = _6502_MEM_LEN * num64KPages;
+		const UINT num64KRegions = 2;
+		const SIZE_T totalVirtualSize = _6502_MEM_LEN * num64KRegions;
 
 		g_hMemImage = CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0, _6502_MEM_LEN, NULL);
 		// NB. Returns NULL on failure (not INVALID_HANDLE_VALUE)
@@ -1568,7 +1568,7 @@ static LPBYTE AllocMemImage(void)
 					VirtualFree(baseAddr, 0, MEM_RELEASE);
 
 					UINT count = 0;
-					while (count < num64KPages)
+					while (count < num64KRegions)
 					{
 						// MSDN: "To specify a suggested base address for the view, use the MapViewOfFileEx function. However, this practice is not recommended."
 						// This is why we retry multiple times.
@@ -1577,7 +1577,7 @@ static LPBYTE AllocMemImage(void)
 						count++;
 					}
 
-					res = (count == num64KPages);
+					res = (count == num64KRegions);
 					if (res)
 						break;
 
