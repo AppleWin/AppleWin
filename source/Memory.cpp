@@ -241,6 +241,10 @@ static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 static const UINT kNumAnnunciators = 4;
 static bool g_Annunciator[kNumAnnunciators] = {};
 
+#ifdef _MSC_VER
+static HANDLE g_hMemImage = NULL;	// NB. When not initialised, this handle is NULL (not INVALID_HANDLE_VALUE)
+#endif
+
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 void FreeMemImage(void);
 
@@ -1509,10 +1513,9 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 
 //===========================================================================
 
-static HANDLE g_hMemImage = NULL;	// NB. This handle is NULL (not INVALID_HANDLE_VALUE) when not initialised
-
 static void FreeMemImage(void)
 {
+#ifdef _MSC_VER
 	if (memimage == NULL)
 		return;
 
@@ -1529,10 +1532,14 @@ static void FreeMemImage(void)
 	{
 		ALIGNED_FREE(memimage);
 	}
+#else
+	ALIGNED_FREE(memimage);
+#endif
 }
 
 static LPBYTE AllocMemImage(void)
 {
+#ifdef _MSC_VER
 	LPBYTE baseAddr = NULL;
 
 	// Allocate memory for 'memimage' (and the alias 'mem')
@@ -1552,7 +1559,8 @@ static LPBYTE AllocMemImage(void)
 		// NB. Returns NULL on failure (not INVALID_HANDLE_VALUE)
 		if (g_hMemImage != NULL)
 		{
-			for (UINT retry = 0; retry < 10; retry++)
+			UINT retry = 10;
+			do
 			{
 				baseAddr = (LPBYTE)VirtualAlloc(0, totalVirtualSize, MEM_RESERVE, PAGE_NOACCESS);
 				if (baseAddr)
@@ -1563,7 +1571,7 @@ static LPBYTE AllocMemImage(void)
 					while (count < num64KPages)
 					{
 						// MSDN: "To specify a suggested base address for the view, use the MapViewOfFileEx function. However, this practice is not recommended."
-						// This is why we retry 10 times.
+						// This is why we retry multiple times.
 						if (!MapViewOfFileEx(g_hMemImage, FILE_MAP_ALL_ACCESS, 0, 0, _6502_MEM_LEN, baseAddr + count * _6502_MEM_LEN))
 							break;
 						count++;
@@ -1578,6 +1586,7 @@ static LPBYTE AllocMemImage(void)
 						UnmapViewOfFile(baseAddr + i * _6502_MEM_LEN);
 				}
 			}
+			while (retry--);
 
 			if (!res)
 				FreeMemImage();
@@ -1595,9 +1604,15 @@ static LPBYTE AllocMemImage(void)
 	}
 
 	if (!res)
+	{
+		LogFileOutput("MemInitialize: Failed to map 2 adjacent virtual 64K pages (reverting to old method).\n");
 		baseAddr = ALIGNED_ALLOC(_6502_MEM_LEN);
+	}
 
 	return baseAddr;
+#else
+	return ALIGNED_ALLOC(_6502_MEM_LEN);
+#endif
 }
 
 //===========================================================================
