@@ -493,7 +493,7 @@ void GetAppleWindowTitle()
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
 		g_pAppTitle += TEXT(" (custom rom)");
-	else if (GetPropertySheet().GetTheFreezesF8Rom() && IS_APPLE2)
+	else if (GetPropertySheet().GetTheFreezesF8Rom() && IsApple2PlusOrClone(GetApple2Type()))
 		g_pAppTitle += TEXT(" (The Freeze's non-autostart F8 rom)");
 
 	switch (g_nAppMode)
@@ -548,7 +548,7 @@ void ResetMachineState()
  // todo: consolidate CtrlReset() and ResetMachineState()
 void CtrlReset()
 {
-	if (!IS_APPLE2)
+	if (IsAppleIIeOrAbove(GetApple2Type()))
 	{
 		// For A][ & A][+, reset doesn't reset the LC switches (UTAII:5-29)
 		// TODO: What about Saturn cards? Presumably the same as the A][ & A][+ slot0 LC?
