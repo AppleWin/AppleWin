@@ -1516,9 +1516,6 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 static void FreeMemImage(void)
 {
 #ifdef _MSC_VER
-	if (memimage == NULL)
-		return;
-
 	if (g_hMemImage)
 	{
 		const UINT num64KPages = 2;
@@ -1553,44 +1550,41 @@ static LPBYTE AllocMemImage(void)
 	{
 		res = false;
 		const UINT num64KRegions = 2;
-		const SIZE_T totalVirtualSize = _6502_MEM_LEN * num64KRegions;
 
-		g_hMemImage = CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0, _6502_MEM_LEN, NULL);
-		// NB. Returns NULL on failure (not INVALID_HANDLE_VALUE)
-		if (g_hMemImage != NULL)
+		UINT retry = 10;
+		do
 		{
-			UINT retry = 10;
-			do
+			const SIZE_T totalVirtualSize = _6502_MEM_LEN * num64KRegions;
+			baseAddr = (LPBYTE)VirtualAlloc(0, totalVirtualSize, MEM_RESERVE, PAGE_NOACCESS);
+			if (baseAddr)
 			{
-				baseAddr = (LPBYTE)VirtualAlloc(0, totalVirtualSize, MEM_RESERVE, PAGE_NOACCESS);
-				if (baseAddr)
+				VirtualFree(baseAddr, 0, MEM_RELEASE);
+
+				// Create a file mapping object of [64K] size that is backed by the system paging file.
+				g_hMemImage = CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0, _6502_MEM_LEN, NULL);
+				// NB. Returns NULL on failure (not INVALID_HANDLE_VALUE)
+				if (g_hMemImage == NULL)
+					break;
+
+				UINT count = 0;
+				while (count < num64KRegions)
 				{
-					VirtualFree(baseAddr, 0, MEM_RELEASE);
-
-					UINT count = 0;
-					while (count < num64KRegions)
-					{
-						// MSDN: "To specify a suggested base address for the view, use the MapViewOfFileEx function. However, this practice is not recommended."
-						// This is why we retry multiple times.
-						if (!MapViewOfFileEx(g_hMemImage, FILE_MAP_ALL_ACCESS, 0, 0, _6502_MEM_LEN, baseAddr + count * _6502_MEM_LEN))
-							break;
-						count++;
-					}
-
-					res = (count == num64KRegions);
-					if (res)
+					// MSDN: "To specify a suggested base address for the view, use the MapViewOfFileEx function. However, this practice is not recommended."
+					// The OS (ie. another process) may've beaten us to this suggested baseAddr. This is why we retry multiple times.
+					if (!MapViewOfFileEx(g_hMemImage, FILE_MAP_ALL_ACCESS, 0, 0, _6502_MEM_LEN, baseAddr + count * _6502_MEM_LEN))
 						break;
-
-					// Failed this time, so clean-up and retry...
-					for (UINT i = 0; i < count; i++)
-						UnmapViewOfFile(baseAddr + i * _6502_MEM_LEN);
+					count++;
 				}
-			}
-			while (retry--);
 
-			if (!res)
+				res = (count == num64KRegions);
+				if (res)
+					break;
+
+				// Failed this time, so clean-up and retry...
 				FreeMemImage();
+			}
 		}
+		while (retry--);
 
 #if 1
 		if (res)	// test
