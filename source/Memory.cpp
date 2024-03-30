@@ -1544,7 +1544,7 @@ static LPBYTE AllocMemImage(void)
 	// . This is a fix (and optimisation) for 6502 opcodes that do a 16-bit read at 6502 address $FFFF. (GH#1285)
 	SYSTEM_INFO info;
 	GetSystemInfo(&info);
-	bool res = info.dwAllocationGranularity <= _6502_MEM_LEN;
+	bool res = (info.dwAllocationGranularity == _6502_MEM_LEN);
 
 	if (res)
 	{
@@ -1593,6 +1593,10 @@ static LPBYTE AllocMemImage(void)
 			_ASSERT(value == 0x1122);
 		}
 #endif
+	}
+	else
+	{
+		LogFileOutput("MemInitialize: SYSETEM_INFO.wAllocationGranularity = 0x%08X.\n", info.dwAllocationGranularity);
 	}
 
 	if (!res)
