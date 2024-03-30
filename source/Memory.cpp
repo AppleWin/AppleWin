@@ -246,7 +246,7 @@ static HANDLE g_hMemImage = NULL;	// NB. When not initialised, this handle is NU
 #endif
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
-void FreeMemImage(void);
+static void FreeMemImage(void);
 
 //=============================================================================
 
