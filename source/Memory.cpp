@@ -56,9 +56,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "YamlHelper.h"
 
 // In this file allocate the 64KB of RAM with aligned memory allocations (0x10000)
-// to ease mapping between Apple ][ and host memory space (while debugging).
-
-// this is not available in Visual Studio
+// to ease mapping between Apple ][ and host memory space (while debugging) & also to fix GH#1285.
+// This is not available in Windows CRT:
 // https://en.cppreference.com/w/c/memory/aligned_alloc
 
 #ifdef _MSC_VER
@@ -66,6 +65,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALIGNED_ALLOC(size) (LPBYTE)VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE)
 #define ALIGNED_FREE(ptr) VirtualFree(ptr, 0, MEM_RELEASE)
 #else
+#include <unistd.h>
+#include <sys/mman.h>
 // use plain "new" in gcc (where debugging needs are less important)
 #define ALIGNED_ALLOC(size) new BYTE[size]
 #define ALIGNED_FREE(ptr) delete [] ptr
@@ -242,7 +243,14 @@ static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 static const UINT kNumAnnunciators = 4;
 static bool g_Annunciator[kNumAnnunciators] = {};
 
+#ifdef _MSC_VER
+static HANDLE g_hMemImage = NULL;	// NB. When not initialised, this handle is NULL (not INVALID_HANDLE_VALUE)
+#else
+static FILE * g_hMemTempFile = NULL;
+#endif
+
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
+static void FreeMemImage(void);
 
 //=============================================================================
 
@@ -1289,7 +1297,7 @@ void MemDestroy()
 {
 	ALIGNED_FREE(memaux);
 	ALIGNED_FREE(memmain);
-	ALIGNED_FREE(memimage);
+	FreeMemImage();
 
 	delete [] memdirty;
 	delete [] memrom;
@@ -1509,12 +1517,154 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 
 //===========================================================================
 
+static void FreeMemImage(void)
+{
+#ifdef _MSC_VER
+	if (g_hMemImage)
+	{
+		const UINT num64KPages = 2;
+		for (UINT i = 0; i < num64KPages; i++)
+			UnmapViewOfFile(memimage + i * _6502_MEM_LEN);
+
+		CloseHandle(g_hMemImage);
+		g_hMemImage = NULL;
+	}
+	else
+	{
+		ALIGNED_FREE(memimage);
+	}
+#else
+	if (g_hMemTempFile)
+	{
+		const UINT num64KPages = 2;
+		for (UINT i = 0; i < num64KPages; i++)
+		{
+			munmap(memimage + i * _6502_MEM_LEN, _6502_MEM_LEN);
+		}
+		// with the following line, SDL_Quit() segfaults ????
+		// munmap(memimage + num64KPages * _6502_MEM_LEN, _6502_MEM_LEN);
+
+		fclose(g_hMemTempFile);
+		g_hMemTempFile = NULL;
+	}
+	else
+	{
+		ALIGNED_FREE(memimage);
+	}
+#endif
+}
+
+static LPBYTE AllocMemImage(void)
+{
+#ifdef _MSC_VER
+	LPBYTE baseAddr = NULL;
+
+	// Allocate memory for 'memimage' (and the alias 'mem')
+	// . Setup so we have 2 consecutive virtual 64K regions pointing to the same physical 64K region.
+	// . This is a fix (and optimisation) for 6502 opcodes that do a 16-bit read at 6502 address $FFFF. (GH#1285)
+	SYSTEM_INFO info;
+	GetSystemInfo(&info);
+	bool res = (info.dwAllocationGranularity == _6502_MEM_LEN);
+
+	if (res)
+	{
+		UINT retry = 10;
+		do
+		{
+			res = false;
+			const UINT num64KRegions = 2;
+			const SIZE_T totalVirtualSize = _6502_MEM_LEN * num64KRegions;
+			baseAddr = (LPBYTE)VirtualAlloc(0, totalVirtualSize, MEM_RESERVE, PAGE_NOACCESS);
+			if (baseAddr == NULL)
+				break;
+			VirtualFree(baseAddr, 0, MEM_RELEASE);
+
+			// Create a file mapping object of [64K] size that is backed by the system paging file.
+			g_hMemImage = CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0, _6502_MEM_LEN, NULL);
+			// NB. Returns NULL on failure (not INVALID_HANDLE_VALUE)
+			if (g_hMemImage == NULL)
+				break;
+
+			UINT count = 0;
+			while (count < num64KRegions)
+			{
+				// MSDN: "To specify a suggested base address for the view, use the MapViewOfFileEx function. However, this practice is not recommended."
+				// The OS (ie. another process) may've beaten us to this suggested baseAddr. This is why we retry multiple times.
+				if (!MapViewOfFileEx(g_hMemImage, FILE_MAP_ALL_ACCESS, 0, 0, _6502_MEM_LEN, baseAddr + count * _6502_MEM_LEN))
+					break;
+				count++;
+			}
+
+			res = (count == num64KRegions);
+			if (res)
+				break;
+
+			// Failed this time, so clean-up and retry...
+			FreeMemImage();
+		}
+		while (retry--);
+
+#if 1
+		if (res)	// test
+		{
+			baseAddr[0x0000] = 0x11;
+			baseAddr[0xffff] = 0x22;
+			USHORT value = *((USHORT*)(baseAddr + 0xffff));
+			_ASSERT(value == 0x1122);
+		}
+#endif
+	}
+	else
+	{
+		LogFileOutput("MemInitialize: SYSETEM_INFO.wAllocationGranularity = 0x%08X.\n", info.dwAllocationGranularity);
+	}
+
+	if (!res)
+	{
+		LogFileOutput("MemInitialize: Failed to map 2 adjacent virtual 64K pages (reverting to old method).\n");
+		baseAddr = ALIGNED_ALLOC(_6502_MEM_LEN);
+	}
+
+	return baseAddr;
+#else
+	g_hMemTempFile = tmpfile();
+	if (g_hMemTempFile)
+	{
+		const int fd = fileno(g_hMemTempFile);
+		if (!ftruncate(fd, _6502_MEM_LEN))
+		{
+			const UINT num64KPages = 2;
+			LPBYTE baseAddr = static_cast<LPBYTE>(mmap(NULL, num64KPages * _6502_MEM_LEN, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+			if (baseAddr)
+			{
+				for (UINT i = 0; i < num64KPages; i++)
+				{
+					// can this ever fail?
+					mmap(baseAddr + i * _6502_MEM_LEN , _6502_MEM_LEN, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+				}
+				// we could fclose the file here
+				// but we keep it as a reminder of how to free the memory later
+				return baseAddr;
+			}
+		}
+
+		fclose(g_hMemTempFile);
+		g_hMemTempFile = NULL;
+	}
+
+	LogFileOutput("MemInitialize: Failed to map 2 adjacent virtual 64K pages (reverting to old method).\n");
+	return ALIGNED_ALLOC(_6502_MEM_LEN);
+#endif
+}
+
+//===========================================================================
+
 void MemInitialize()
 {
 	// ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
 	memaux   = ALIGNED_ALLOC(_6502_MEM_LEN);	// NB. alloc even if model is Apple II/II+, since it's used by VidHD card
 	memmain  = ALIGNED_ALLOC(_6502_MEM_LEN);
-	memimage = ALIGNED_ALLOC(_6502_MEM_LEN);
+	memimage = AllocMemImage();
 
 	memdirty = new BYTE[0x100];
 	memrom   = new BYTE[0x3000 * MaxRomPages];
