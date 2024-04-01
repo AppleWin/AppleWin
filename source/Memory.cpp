@@ -65,6 +65,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ALIGNED_ALLOC(size) (LPBYTE)VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE)
 #define ALIGNED_FREE(ptr) VirtualFree(ptr, 0, MEM_RELEASE)
 #else
+#include <unistd.h>
+#include <sys/mman.h>
 // use plain "new" in gcc (where debugging needs are less important)
 #define ALIGNED_ALLOC(size) new BYTE[size]
 #define ALIGNED_FREE(ptr) delete [] ptr
@@ -243,6 +245,8 @@ static bool g_Annunciator[kNumAnnunciators] = {};
 
 #ifdef _MSC_VER
 static HANDLE g_hMemImage = NULL;	// NB. When not initialised, this handle is NULL (not INVALID_HANDLE_VALUE)
+#else
+static FILE * g_hMemTempFile = NULL;
 #endif
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
@@ -1530,7 +1534,23 @@ static void FreeMemImage(void)
 		ALIGNED_FREE(memimage);
 	}
 #else
-	ALIGNED_FREE(memimage);
+	if (g_hMemTempFile)
+	{
+		const UINT num64KPages = 2;
+		for (UINT i = 0; i < num64KPages; i++)
+		{
+			munmap(memimage + i * _6502_MEM_LEN, _6502_MEM_LEN);
+		}
+		// with the following line, SDL_Quit() segfaults ????
+		// munmap(memimage + num64KPages * _6502_MEM_LEN, _6502_MEM_LEN);
+
+		fclose(g_hMemTempFile);
+		g_hMemTempFile = NULL;
+	}
+	else
+	{
+		ALIGNED_FREE(memimage);
+	}
 #endif
 }
 
@@ -1607,6 +1627,32 @@ static LPBYTE AllocMemImage(void)
 
 	return baseAddr;
 #else
+	g_hMemTempFile = tmpfile();
+	if (g_hMemTempFile)
+	{
+		const int fd = fileno(g_hMemTempFile);
+		if (!ftruncate(fd, _6502_MEM_LEN))
+		{
+			const UINT num64KPages = 2;
+			LPBYTE baseAddr = static_cast<LPBYTE>(mmap(NULL, num64KPages * _6502_MEM_LEN, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+			if (baseAddr)
+			{
+				for (UINT i = 0; i < num64KPages; i++)
+				{
+					// can this ever fail?
+					mmap(baseAddr + i * _6502_MEM_LEN , _6502_MEM_LEN, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+				}
+				// we could fclose the file here
+				// but we keep it as a reminder of how to free the memory later
+				return baseAddr;
+			}
+		}
+
+		fclose(g_hMemTempFile);
+		g_hMemTempFile = NULL;
+	}
+
+	LogFileOutput("MemInitialize: Failed to map 2 adjacent virtual 64K pages (reverting to old method).\n");
 	return ALIGNED_ALLOC(_6502_MEM_LEN);
 #endif
 }
