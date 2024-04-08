@@ -16,7 +16,7 @@ namespace sa2
     ImGuiSettings();
 
     void show(SDLFrame* frame, ImFont * debuggerFont);
-    float drawMenuBar(SDLFrame* frame);
+    float drawMenuBar(SDLFrame* frame, const bool enabled);
     void resetDebuggerCycles();
     void showDiskTab();
     void toggleSettings();

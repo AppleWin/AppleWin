@@ -819,11 +819,11 @@ namespace sa2
     }
   }
 
-  float ImGuiSettings::drawMenuBar(SDLFrame* frame)
+  float ImGuiSettings::drawMenuBar(SDLFrame* frame, const bool enabled)
   {
     float menuBarHeight;
 
-    if (ImGui::BeginMainMenuBar())
+    if (enabled && ImGui::BeginMainMenuBar())
     {
       menuBarHeight = ImGui::GetWindowHeight();
       if (ImGui::BeginMenu("System"))
