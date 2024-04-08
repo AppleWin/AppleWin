@@ -341,10 +341,10 @@ namespace sa2
     }
   }
 
-  double SDLFrame::GetRelativePosition(const int value, const int size)
+  float SDLFrame::GetRelativePosition(const float value, const float size)
   {
     // the minimum size of a window is 1
-    const double result = double(value) / double(std::max(1, size - 1));
+    const float result = value / std::max(1.0f, size - 1.0f);
     return result;
   }
 
@@ -395,7 +395,7 @@ namespace sa2
         const int sizeY = iMaxY - iMinY;
 
 
-        double x, y;
+        float x, y;
         GetRelativeMousePosition(motion, x, y);
 
         const int newX = lround(x * sizeX) + iMinX;

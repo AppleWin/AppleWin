@@ -208,14 +208,15 @@ namespace sa2
     }
   }
 
-  void SDLImGuiFrame::GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, double & x, double & y) const
+  void SDLImGuiFrame::GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, float & x, float & y) const
   {
     // this currently ignores a windowed apple video and applies to the whole sdl window
-    int width, height;
-    SDL_GetWindowSize(myWindow.get(), &width, &height);
+    int w, h;
+    SDL_GetWindowSize(myWindow.get(), &w, &h);
 
-    const int posY = std::max(motion.y - myDeadTopZone, 0);
-    height = std::max(height - myDeadTopZone, 1);  // a real window has a minimum size of 1
+    const float posY = std::max(motion.y - myDeadTopZone, 0.0f);
+    const float height = std::max(h - myDeadTopZone, 1.0f);  // a real window has a minimum size of 1
+    const float width = w;
 
     x = GetRelativePosition(motion.x, width);
     y = GetRelativePosition(posY, height);

@@ -51,7 +51,7 @@ namespace sa2
 
   void printRendererInfo(std::ostream & os,
                          const std::shared_ptr<SDL_Renderer> & ren,
-                         const Uint32 pixelFormat,
+                         const SDL_PixelFormatEnum pixelFormat,
                          const int selectedDriver)
   {
     SDL_RendererInfo info;

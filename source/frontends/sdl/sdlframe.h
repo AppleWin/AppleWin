@@ -46,7 +46,7 @@ namespace sa2
     void SetGLSynchronisation(const common2::EmulatorOptions & options);
 
     virtual void ProcessSingleEvent(const SDL_Event & event, bool & quit);
-    virtual void GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, double & x, double & y) const = 0;
+    virtual void GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, float & x, float & y) const = 0;
     virtual void ProcessKeyDown(const SDL_KeyboardEvent & key, bool &quit);
 
     void ProcessKeyUp(const SDL_KeyboardEvent & key);
@@ -60,7 +60,7 @@ namespace sa2
 
     common2::Geometry getGeometryOrDefault(const std::optional<common2::Geometry> & geometry) const;
 
-    static double GetRelativePosition(const int value, const int width);
+    static float GetRelativePosition(const float value, const float size);
 
     int myTargetGLSwap;
     bool myPreserveAspectRatio;

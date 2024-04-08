@@ -7,6 +7,8 @@
 #include "CPU.h"
 #include "Memory.h"
 
+#include <cinttypes>
+
 namespace
 {
 

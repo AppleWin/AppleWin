@@ -32,7 +32,7 @@ namespace sa2
 
     SetGLSynchronisation(options);  // must be called after GL initialisation
 
-    printRendererInfo(std::cerr, myRenderer, ourFormat, options.sdlDriver);
+    printRendererInfo(std::cerr, myRenderer, ourPixelFormat, options.sdlDriver);
   }
 
   void SDLRendererFrame::Initialize(bool resetVideoState)
@@ -50,7 +50,7 @@ namespace sa2
       throw std::runtime_error(decorateSDLError("SDL_RenderSetLogicalSize"));
     }
 
-    myTexture.reset(SDL_CreateTexture(myRenderer.get(), ourFormat, SDL_TEXTUREACCESS_STATIC, width, height), SDL_DestroyTexture);
+    myTexture.reset(SDL_CreateTexture(myRenderer.get(), ourPixelFormat, SDL_TEXTUREACCESS_STATIC, width, height), SDL_DestroyTexture);
 
     myRect.x = video.GetFrameBufferBorderWidth();
     myRect.y = video.GetFrameBufferBorderHeight();
@@ -67,7 +67,7 @@ namespace sa2
     SDL_RenderPresent(myRenderer.get());
   }
 
-  void SDLRendererFrame::GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, double & x, double & y) const
+  void SDLRendererFrame::GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, float & x, float & y) const
   {
     int width, height;
     SDL_GetWindowSize(myWindow.get(), &width, &height);
