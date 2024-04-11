@@ -56,3 +56,5 @@ target_link_libraries(applewin_libretro PRIVATE
 
 # just call it "applewin_libretro.so" as per libretro standard
 set_target_properties(applewin_libretro PROPERTIES PREFIX "")
+
+configure_file(info/applewin_libretro.info applewin_libretro.info COPYONLY)

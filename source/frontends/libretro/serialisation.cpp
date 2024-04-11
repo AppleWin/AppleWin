@@ -6,6 +6,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <unistd.h>
 
 namespace
 {
@@ -18,22 +19,24 @@ namespace
     const std::string & getFilename() const;  // only if true
 
   protected:
+    int myFD;
     std::string myFilename;
   };
 
   AutoFile::AutoFile()
   {
-    // massive race condition, but without changes to AW, little can we do here
-    const char * tmp = std::tmpnam(nullptr);
-    if (!tmp)
+    char pattern[] = "/tmp/awXXXXXX.aws.yaml";
+    myFD = mkstemps(pattern, 9);
+    if (myFD <= 0)
     {
       throw std::runtime_error("Cannot create temporary file");
     }
-    myFilename = tmp;
+    myFilename = pattern;
   }
 
   AutoFile::~AutoFile()
   {
+    close(myFD);
     std::remove(myFilename.c_str());
   }
 

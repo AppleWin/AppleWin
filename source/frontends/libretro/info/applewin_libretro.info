@@ -1,0 +1,10 @@
+# Software Information - Information about the core software itself
+display_name = "Apple - apple ][ (AppleWin)"
+license = "GPLv2"
+categories = "Emulator"
+manufacturer = "Apple"
+
+# Libretro Features - The libretro API features the core supports. Useful for sorting cores
+savestate = "true"
+savestate_features = "serialized"
+supports_no_game = "true"
