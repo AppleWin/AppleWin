@@ -12,6 +12,7 @@
 #include "linux/version.h"
 #include "linux/paddle.h"
 
+#include "frontends/common2/utils.h"
 #include "frontends/libretro/game.h"
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/retroregistry.h"
@@ -401,6 +402,7 @@ size_t retro_serialize_size(void)
   try
   {
     const size_t size = ra2::RetroSerialisation::getSize();
+    ra2::log_cb(RETRO_LOG_INFO, "RA2: %s - size = %" SIZE_T_FMT "\n", __FUNCTION__, size);
     return size;
   }
   catch(const std::exception& e)
@@ -426,6 +428,8 @@ bool retro_serialize(void *data, size_t size)
 
 bool retro_unserialize(const void *data, size_t size)
 {
+  const common2::RestoreCurrentDirectory restoreChDir;
+
   try
   {
     ra2::RetroSerialisation::deserialise(data, size, ourGame->getDiskControl());

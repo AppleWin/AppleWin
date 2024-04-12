@@ -25,6 +25,7 @@ namespace ra2
   public:
     DiskControl();
 
+    const std::string & getCurrentDiskFolder() const;
     bool getEjectedState() const;
     bool setEjectedState(bool state);
 
@@ -54,9 +55,11 @@ namespace ra2
 
     bool myEjected;
     size_t myIndex;
+    std::string myCurrentDiskFolder;
 
-    bool insertFloppyDisk(const std::string & path, const bool writeProtected, bool const createIfNecessary) const;
-    bool insertHardDisk(const std::string & path) const;
+    bool insertFloppyDisk(const std::string & path, const bool writeProtected, bool const createIfNecessary);
+    bool insertHardDisk(const std::string & path);
+    void storeCurrentDiskFolder(const std::string & path);
 
     // these are here because they are set before we have create a game context
     static unsigned ourInitialIndex;

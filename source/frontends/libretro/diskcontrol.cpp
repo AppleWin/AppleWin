@@ -70,6 +70,19 @@ namespace ra2
 
   }
 
+  const std::string & DiskControl::getCurrentDiskFolder() const
+  {
+    return myCurrentDiskFolder;
+  }
+
+  void DiskControl::storeCurrentDiskFolder(const std::string & path)
+  {
+    // a bit of a workaround to a save state issue, where the disk folder is lost
+    // this will only support 1 disk
+    const std::filesystem::path filePath(path);
+    myCurrentDiskFolder = filePath.parent_path().string();
+  }
+
   bool DiskControl::insertDisk(const std::string & path)
   {
     const bool writeProtected = IMAGE_FORCE_WRITE_PROTECTED;
@@ -164,7 +177,7 @@ namespace ra2
     return setEjectedState(false);
   }
 
-  bool DiskControl::insertFloppyDisk(const std::string & path, const bool writeProtected, bool const createIfNecessary) const
+  bool DiskControl::insertFloppyDisk(const std::string & path, const bool writeProtected, bool const createIfNecessary)
   {
     CardManager & cardManager = GetCardMgr();
 
@@ -175,6 +188,7 @@ namespace ra2
 
       if (error == eIMAGE_ERROR_NONE)
       {
+        storeCurrentDiskFolder(path);
         return true;
       }
     }
@@ -182,7 +196,7 @@ namespace ra2
     return false;
   }
 
-  bool DiskControl::insertHardDisk(const std::string & path) const
+  bool DiskControl::insertHardDisk(const std::string & path)
   {
     CardManager & cardManager = GetCardMgr();
 
@@ -194,8 +208,13 @@ namespace ra2
     HarddiskInterfaceCard * harddiskCard = dynamic_cast<HarddiskInterfaceCard*>(cardManager.GetObj(SLOT7));
     if (harddiskCard)
     {
-      BOOL bRes = harddiskCard->Insert(HARDDISK_1, path);
-      return bRes == TRUE;
+      const BOOL bRes = harddiskCard->Insert(HARDDISK_1, path);
+      const bool ok = bRes == TRUE;
+      if (ok)
+      {
+        storeCurrentDiskFolder(path);
+      }
+      return ok;
     }
 
     return false;
@@ -335,6 +354,7 @@ namespace ra2
 
   void DiskControl::serialise(Buffer<char> & buffer) const
   {
+    writeString(buffer, myCurrentDiskFolder);
     buffer.get<bool>() = myEjected;
     buffer.get<size_t>() = myIndex;
     buffer.get<size_t>() = myImages.size();
@@ -350,6 +370,7 @@ namespace ra2
 
   void DiskControl::deserialise(Buffer<char const> & buffer)
   {
+    readString(buffer, myCurrentDiskFolder);
     myEjected = buffer.get<bool const>();
     myIndex = buffer.get<size_t const>();
     size_t const numberOfImages = buffer.get<size_t const>();

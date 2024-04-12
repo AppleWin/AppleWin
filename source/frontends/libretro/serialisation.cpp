@@ -109,6 +109,8 @@ namespace ra2
       ofs.write(begin, end - begin);
     }
 
+    // bit of a workaround, since the state files do not have full disk paths
+    SetCurrentDirectory(diskControl.getCurrentDiskFolder().c_str());
     Snapshot_SetFilename(filename);
     Snapshot_LoadState();
   }
