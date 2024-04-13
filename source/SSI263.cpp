@@ -127,6 +127,7 @@ BYTE SSI263::Read(ULONG nExecutedCycles)
 {
 	// Regardless of register, just return inverted A/!R in bit7
 	// . inverted "A/!R" is high for REQ (ie. Request, as phoneme nearly complete)
+	// NB. this doesn't clear the IRQ
 
 	return MemReadFloatingBus(m_currentMode & 1, nExecutedCycles);
 }
@@ -140,6 +141,25 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 	ssiRegs[nReg] = nValue;
 #endif
 
+	// Notes:
+	// . Phasor's text-to-speech playback has no CTL H->L
+	//		- ISR just writes CTL=0 (and new ART+AMP values), and writes DUR=x (and new PHON)
+	//		- since no CTL H->L, then DUR value doesn't take affect (so continue using previous)
+	//		- so the write to DURPHON must clear the IRQ
+	// . Does a write of CTL=0 clear IRQ? (ie. CTL 0->0)
+	// . Does a write of CTL=1 clear IRQ? (ie. CTL 0->1)
+	//		- SSI263 datasheet says: "Setting the Control bit (CTL) to a logic one puts the device into Power Down mode..."
+	// . Does phoneme output only happen when CTL=0? (Otherwise device is in PD mode)
+
+	// SSI263 datasheet is not clear, but a write to DURPHON must clear the IRQ.
+	// . Empirically writes to regs 0,1 & 2 all clear the IRQ (and writes to 3,4..7 don't) (GH#1197)
+	// NB. For Mockingboard, A/!R is ack'ed by 6522's PCR handshake and D7 is cleared.
+	if (m_cardMode == PH_Phasor && nReg <= SSI_RATEINF)
+	{
+		CpuIrqDeassert(IS_SPEECH);
+		m_currentMode &= ~1;	// Clear SSI263's D7 pin
+	}
+
 	switch(nReg)
 	{
 	case SSI_DURPHON:
@@ -150,25 +170,6 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 #if LOG_SSI263B
 		SSI_Output();
 #endif
-
-		// Notes:
-		// . Phasor's text-to-speech playback has no CTL H->L
-		//		- ISR just writes CTL=0 (and new ART+AMP values), and writes DUR=x (and new PHON)
-		//		- since no CTL H->L, then DUR value doesn't take affect (so continue using previous)
-		//		- so the write to DURPHON must clear the IRQ
-		// . Does a write of CTL=0 clear IRQ? (ie. CTL 0->0)
-		// . Does a write of CTL=1 clear IRQ? (ie. CTL 0->1)
-		//		- SSI263 datasheet says: "Setting the Control bit (CTL) to a logic one puts the device into Power Down mode..."
-		// . Does phoneme output only happen when CTL=0? (Otherwise device is in PD mode)
-
-		// SSI263 datasheet is not clear, but a write to DURPHON must clear the IRQ.
-		// NB. For Mockingboard, A/!R is ack'ed by 6522's PCR handshake.
-		if (m_cardMode == PH_Phasor)
-		{
-			CpuIrqDeassert(IS_SPEECH);
-		}
-
-		m_currentMode &= ~1;	// Clear SSI263's D7 pin
 
 		m_durationPhoneme = nValue;
 
