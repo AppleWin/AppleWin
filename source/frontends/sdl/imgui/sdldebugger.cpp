@@ -184,6 +184,22 @@ namespace
     }
   }
 
+  void processDebuggerKeys()
+  {
+    if (ImGui::IsKeyChordPressed(ImGuiKey_Space | ImGuiMod_Ctrl))
+    {
+      CmdStepOver(0);
+    }
+    else if (ImGui::IsKeyChordPressed(ImGuiKey_Space | ImGuiMod_Shift))
+    {
+      CmdStepOut(0);
+    }
+    else if (ImGui::IsKeyChordPressed(ImGuiKey_Space))
+    {
+      CmdTrace(0);
+    }
+  }
+
 }
 
 namespace sa2
@@ -197,11 +213,28 @@ namespace sa2
       ImGui::BeginChild("Console", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
       if (ImGui::BeginTabBar("Tabs"))
       {
+        bool debuggerShortcutEnabled = false;
+        if (g_nAppMode == MODE_DEBUG)
+        {
+          if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
+          {
+            debuggerShortcutEnabled = true;
+            ImGui::SetNextFrameWantCaptureKeyboard(true);
+            processDebuggerKeys();
+          }
+        }
+
         if (ImGui::BeginTabItem("CPU"))
         {
           if (ImGui::RadioButton("Color", g_iColorScheme == SCHEME_COLOR)) { g_iColorScheme = SCHEME_COLOR; } ImGui::SameLine();
           if (ImGui::RadioButton("Mono", g_iColorScheme == SCHEME_MONO)) { g_iColorScheme = SCHEME_MONO; } ImGui::SameLine();
           if (ImGui::RadioButton("BW", g_iColorScheme == SCHEME_BW)) { g_iColorScheme = SCHEME_BW; } ImGui::SameLine();
+
+          ImGui::BeginDisabled();
+          ImGui::Checkbox("Shortcuts", &debuggerShortcutEnabled);
+          ImGui::EndDisabled();
+          ImGui::SameLine();
+
           ImGui::Checkbox("Auto-sync PC", &mySyncCPU);
 
           bool recalc = false;
@@ -279,9 +312,11 @@ namespace sa2
         ImGui::EndTabBar();
       }
       ImGui::EndChild();
+
       if (g_nAppMode == MODE_DEBUG)
       {
-        if (ImGui::InputText("Prompt", myInputBuffer, IM_ARRAYSIZE(myInputBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
+        const ImGuiInputTextFlags inputTextFlags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_EscapeClearsAll;
+        if (ImGui::InputText("Prompt", myInputBuffer, IM_ARRAYSIZE(myInputBuffer), inputTextFlags))
         {
           debuggerCommand(frame, myInputBuffer);
           myInputBuffer[0] = 0;
@@ -292,7 +327,7 @@ namespace sa2
 
     if (!showDebugger)
     {
-      // this happes when the window is closed
+      // this happens when the window is closed
       syncDebuggerState(frame);
     }
 

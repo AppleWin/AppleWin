@@ -45,6 +45,7 @@ namespace
     {"F9", "Cycle video type"},
     {"F11", "Save snapshot"},
     {"F12", "Load snapshot"},
+    {"Space", "Trace", "Step over", "Step out"},
   };
 
   struct MemoryTab
@@ -109,6 +110,14 @@ namespace sa2
             myDebugger.syncDebuggerState(frame);
           }
           ImGui::SameLine(); HelpMarker("Show Apple CPU.");
+          ImGui::Separator();
+
+          ImGui::BeginDisabled();
+          ImGuiIO& io = ImGui::GetIO();
+          bool keyboardEnabled = !io.WantCaptureKeyboard;
+          ImGui::Checkbox("Apple keyboard enabled", &keyboardEnabled);
+          ImGui::EndDisabled();
+          ImGui::SameLine(); HelpMarker("Keys go to Apple ][.");
           ImGui::Separator();
 
           const std::string& snapshotPathname = Snapshot_GetPathname();
