@@ -20,8 +20,7 @@ namespace sa2
     void syncDebuggerState(SDLFrame* frame);
 
   private:
-    bool mySyncCPU = true;
-
+    bool mySyncCursor = true;
     bool myScrollConsole = true;
 
     int64_t myBaseDebuggerCycles;
@@ -35,8 +34,13 @@ namespace sa2
     void drawConsole();
     void drawBreakpoints();
     void drawRegisters();
+    void drawStackReturnAddress();
     void drawAnnunciators();
     void drawSwitches();
+
+    void processDebuggerKeys();
+
+    void setCurrentAddress(const DWORD nAddress);
  };
 
 }

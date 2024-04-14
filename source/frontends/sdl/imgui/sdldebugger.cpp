@@ -184,22 +184,6 @@ namespace
     }
   }
 
-  void processDebuggerKeys()
-  {
-    if (ImGui::IsKeyChordPressed(ImGuiKey_Space | ImGuiMod_Ctrl))
-    {
-      CmdStepOver(0);
-    }
-    else if (ImGui::IsKeyChordPressed(ImGuiKey_Space | ImGuiMod_Shift))
-    {
-      CmdStepOut(0);
-    }
-    else if (ImGui::IsKeyChordPressed(ImGuiKey_Space))
-    {
-      CmdTrace(0);
-    }
-  }
-
 }
 
 namespace sa2
@@ -235,10 +219,10 @@ namespace sa2
           ImGui::EndDisabled();
           ImGui::SameLine();
 
-          ImGui::Checkbox("Auto-sync PC", &mySyncCPU);
+          ImGui::Checkbox("Auto-sync cursor", &mySyncCursor);
 
           bool recalc = false;
-          if (mySyncCPU || (ImGui::SameLine(), ImGui::Button("Sync PC")))
+          if (mySyncCursor || (ImGui::SameLine(), ImGui::Button("Sync cursor")))
           {
             recalc = true;
             g_nDisasmCurAddress = regs.pc;
@@ -263,11 +247,11 @@ namespace sa2
           ImGui::SameLine();
           ImGui::Text("%016llu - %04X", g_nCumulativeCycles, regs.pc);
 
-          if (!mySyncCPU)
+          if (!mySyncCursor)
           {
             ImGui::SameLine();
             ImGui::PushItemWidth(ImGui::GetFontSize() * 5);
-            if (ImGui::InputScalar("Reference", ImGuiDataType_U16, &g_nDisasmCurAddress, nullptr, nullptr, "%04X", ImGuiInputTextFlags_CharsHexadecimal))
+            if (ImGui::InputScalar("Cursor", ImGuiDataType_U16, &g_nDisasmCurAddress, nullptr, nullptr, "%04X", ImGuiInputTextFlags_CharsHexadecimal))
             {
               recalc = true;
             }
@@ -275,7 +259,7 @@ namespace sa2
           }
 
           // do not flip next ||
-          if (ImGui::SliderInt("PC position", &g_nDisasmCurLine, 0, 100) || recalc)
+          if (ImGui::SliderInt("Cursor row", &g_nDisasmCurLine, 0, 100) || recalc)
           {
             DisasmCalcTopBotAddress();
           }
@@ -290,10 +274,13 @@ namespace sa2
           ImGui::SameLine();
 
           ImGui::BeginChild("Flags");
+          const ImVec2 gap(0.0f, 20.0f);
           drawRegisters();
-          ImGui::Dummy(ImVec2(0.0f, 20.0f));
+          ImGui::Dummy(gap);
+          drawStackReturnAddress();
+          ImGui::Dummy(gap);
           drawAnnunciators();
-          ImGui::Dummy(ImVec2(0.0f, 20.0f));
+          ImGui::Dummy(gap);
           drawSwitches();
           ImGui::EndChild();
 
@@ -443,7 +430,11 @@ namespace sa2
           }
 
           ImGui::TableNextColumn();
-          ImGui::Selectable(line.sAddress, false, ImGuiSelectableFlags_SpanAllColumns);
+          if (ImGui::Selectable(line.sAddress, g_nDisasmCurAddress == nAddress, ImGuiSelectableFlags_SpanAllColumns))
+          {
+            g_nDisasmCurAddress = nAddress;
+            mySyncCursor = false;
+          }
 
           ImGui::TableNextColumn();
           debuggerTextColored(FG_DISASM_OPCODE, line.sOpCodes);
@@ -541,6 +532,18 @@ namespace sa2
     {
       ImGui::Separator();
       ImGui::Selectable("CPU Jammed");
+    }
+  }
+
+  void ImGuiDebugger::drawStackReturnAddress()
+  {
+    ImGui::TextUnformatted("Stack return");
+    ImGui::Separator();
+    const WORD nAddress = _6502_GetStackReturnAddress();
+    const std::string s = FormatAddress(nAddress, 3);
+    if (ImGui::Button(s.c_str()))
+    {
+      setCurrentAddress(nAddress);
     }
   }
 
@@ -693,6 +696,42 @@ namespace sa2
   {
     myAddressCycles.clear();
     myBaseDebuggerCycles = g_nCumulativeCycles;
+  }
+
+  void ImGuiDebugger::processDebuggerKeys()
+  {
+    if (ImGui::IsKeyChordPressed(ImGuiKey_Space | ImGuiMod_Ctrl))
+    {
+      CmdStepOver(0);
+    }
+    else if (ImGui::IsKeyChordPressed(ImGuiKey_Space | ImGuiMod_Shift))
+    {
+      CmdStepOut(0);
+    }
+    else if (ImGui::IsKeyChordPressed(ImGuiKey_Space))
+    {
+      CmdTrace(0);
+    }
+    else if (ImGui::IsKeyChordPressed(ImGuiKey_DownArrow | ImGuiMod_Ctrl))
+    {
+      CmdCursorRunUntil(0);
+    }
+    else if (ImGui::IsKeyChordPressed(ImGuiKey_RightArrow | ImGuiMod_Ctrl))
+    {
+      CmdCursorSetPC(0);
+    }
+    else if (ImGui::IsKeyChordPressed(ImGuiKey_LeftArrow))
+    {
+    	WORD nAddress = _6502_GetStackReturnAddress();
+      setCurrentAddress(nAddress);
+    }
+  }
+
+  void ImGuiDebugger::setCurrentAddress(const DWORD nAddress)
+  {
+    g_nDisasmCurAddress = nAddress;
+    DisasmCalcTopBotAddress();
+    mySyncCursor = false;
   }
 
 }

@@ -45,8 +45,42 @@ namespace
     {"F9", "Cycle video type"},
     {"F11", "Save snapshot"},
     {"F12", "Load snapshot"},
-    {"Space", "Trace", "Step over", "Step out"},
   };
+
+  const char * ourDebuggerShortcutKeys[][6] = {
+    {"Space", "Step into", "Step over", "Step out"},
+    {"Down", nullptr, "Run to cursor"},
+    {"Right", nullptr, "Set PC"},
+    {"Left", "Show return"},
+  };
+
+  template <typename T>
+  void drawShortcutTable(const char * label, const T & keys)
+  {
+    ImGui::SeparatorText(label);
+    if (ImGui::BeginTable(label, std::size(ourShortcutHeaders), ImGuiTableFlags_RowBg))
+    {
+      for (const auto & col : ourShortcutHeaders)
+      {
+        ImGui::TableSetupColumn(col);
+      }
+      ImGui::TableHeadersRow();
+
+      for (const auto & row : keys)
+      {
+        ImGui::TableNextRow();
+        for (const auto & col : row)
+        {
+          ImGui::TableNextColumn();
+          if (col)
+          {
+            ImGui::TextUnformatted(col);
+          }
+        }
+      }
+      ImGui::EndTable();
+    }
+  }
 
   struct MemoryTab
   {
@@ -763,33 +797,12 @@ namespace sa2
   {
     if (ImGui::Begin("Shortcuts", &myShowShortcuts))
     {
-      // ImGui::TextUnformatted("Available shortcuts");
-      if (ImGui::BeginTable("Shortcuts", std::size(ourShortcutHeaders), ImGuiTableFlags_RowBg))
-      {
-        for (const auto & col : ourShortcutHeaders)
-        {
-          ImGui::TableSetupColumn(col);
-        }
-        ImGui::TableHeadersRow();
+      drawShortcutTable("Emulator", ourShortcutKeys);
+      drawShortcutTable("Debugger", ourDebuggerShortcutKeys);
 
-        for (const auto & row : ourShortcutKeys)
-        {
-          ImGui::TableNextRow();
-          for (const auto & col : row)
-          {
-            ImGui::TableNextColumn();
-            if (col)
-            {
-              ImGui::TextUnformatted(col);
-            }
-          }
-        }
-        ImGui::EndTable();
-        ImGui::Separator();
-        ImGui::TextUnformatted("Press the Gamepad BACK button twice to quit.");
-      }
+      ImGui::SeparatorText("Gamepad");
+      ImGui::TextUnformatted("Press the Gamepad BACK button twice to quit.");
     }
-
     ImGui::End();
   }
 
