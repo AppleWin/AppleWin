@@ -315,11 +315,10 @@ namespace sa2
 
       if (g_nAppMode == MODE_DEBUG)
       {
-        const ImGuiInputTextFlags inputTextFlags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_EscapeClearsAll;
-        if (ImGui::InputText("Prompt", myInputBuffer, IM_ARRAYSIZE(myInputBuffer), inputTextFlags))
+        if (myInputTextHistory.inputText("Prompt"))
         {
-          debuggerCommand(frame, myInputBuffer);
-          myInputBuffer[0] = 0;
+          const std::string & command = myInputTextHistory.execute();
+          debuggerCommand(frame, command.c_str());
           ImGui::SetKeyboardFocusHere(-1);
         }
       }
