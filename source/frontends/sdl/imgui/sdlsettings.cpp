@@ -30,8 +30,8 @@ namespace
   };
 
   const char * ourShortcutKeys[][6] = {
-    {"Left ALT", "Open Apple"},
-    {"Right ALT", "Solid Apple"},
+    {"Left Alt", "Open Apple"},
+    {"Right Alt", "Solid Apple"},
     {"Pause", "Pause"},
     {"Insert", nullptr, "Copy", "Paste", "Screenshot"},
     {"Scroll lock", "Full speed"},
@@ -48,6 +48,7 @@ namespace
   };
 
   const char * ourDebuggerShortcutKeys[][6] = {
+    {"Tab", "Cycle", nullptr, "Cycle"},
     {"Space", "Step into", "Step over", "Step out"},
     {"Down", nullptr, "Run to cursor"},
     {"Right", nullptr, "Set PC"},

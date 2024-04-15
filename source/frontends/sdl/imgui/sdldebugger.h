@@ -1,5 +1,6 @@
 #include "frontends/sdl/imgui/glselector.h"
 #include "frontends/sdl/imgui/inputtexthistory.h"
+#include "frontends/sdl/imgui/cycletabitems.h"
 #include "Debugger/Debug.h"
 
 #include <unordered_map>
@@ -26,6 +27,7 @@ namespace sa2
     int64_t myBaseDebuggerCycles;
     std::unordered_map<DWORD, int64_t> myAddressCycles;
 
+    CycleTabItems myCycleTabItems;
     InputTextHistory myInputTextHistory;
 
     void debuggerCommand(SDLFrame * frame, const char * s);

@@ -192,10 +192,30 @@ namespace sa2
   {
     myAddressCycles[regs.pc] = g_nCumulativeCycles - myBaseDebuggerCycles;
 
+    ImGui::PushTabStop(false);  // natural ImGui tabbing interacts with Tab switching
     if (ImGui::Begin("Debugger", &showDebugger))
     {
+      myCycleTabItems.init();
+      if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
+      {
+        // unfortunately if we put this where it belongs (i.e. a few lines below with the rest of the key handling)
+        // there are some focus-related issues, and we no longer capture keys
+        // at the same time, there is a potential double counting with InputText,
+        // but, since it does not handle TABs (see ImGuiInputTextFlags_CallbackCompletion & ImGuiInputTextFlags_AllowTabInput)
+        // this is not an issue now
+        ImGui::SetNextFrameWantCaptureKeyboard(true);
+        if (ImGui::IsKeyChordPressed(ImGuiKey_Tab | ImGuiMod_Shift))
+        {
+          myCycleTabItems.prev();
+        }
+        else if (ImGui::IsKeyChordPressed(ImGuiKey_Tab))
+        {
+          myCycleTabItems.next();
+        }
+      }
+
       ImGui::BeginChild("Console", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
-      if (ImGui::BeginTabBar("Tabs"))
+      if (myCycleTabItems.beginTabBar("Tabs"))
       {
         bool debuggerShortcutEnabled = false;
         if (g_nAppMode == MODE_DEBUG)
@@ -208,7 +228,7 @@ namespace sa2
           }
         }
 
-        if (ImGui::BeginTabItem("CPU"))
+        if (myCycleTabItems.beginTabItem("CPU"))
         {
           if (ImGui::RadioButton("Color", g_iColorScheme == SCHEME_COLOR)) { g_iColorScheme = SCHEME_COLOR; } ImGui::SameLine();
           if (ImGui::RadioButton("Mono", g_iColorScheme == SCHEME_MONO)) { g_iColorScheme = SCHEME_MONO; } ImGui::SameLine();
@@ -286,12 +306,12 @@ namespace sa2
 
           ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Console"))
+        if (myCycleTabItems.beginTabItem("Console"))
         {
           drawConsole();
           ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Breakpoints"))
+        if (myCycleTabItems.beginTabItem("Breakpoints"))
         {
           drawBreakpoints();
           ImGui::EndTabItem();
@@ -306,10 +326,10 @@ namespace sa2
         {
           const std::string & command = myInputTextHistory.execute();
           debuggerCommand(frame, command.c_str());
-          ImGui::SetKeyboardFocusHere(-1);
         }
       }
     }
+    ImGui::PopTabStop();  // natural ImGui tabbing interacts with Tab switching
 
     if (!showDebugger)
     {
