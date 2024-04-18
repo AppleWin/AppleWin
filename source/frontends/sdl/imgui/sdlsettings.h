@@ -2,6 +2,7 @@
 
 #include "frontends/sdl/imgui/glselector.h"
 #include "frontends/sdl/imgui/sdldebugger.h"
+#include "frontends/sdl/imgui/sdlmemory.h"
 #include "frontends/sdl/imgui/imgui-filebrowser/imfilebrowser.h"
 #include "frontends/sdl/sdirectsound.h"
 
@@ -28,7 +29,7 @@ namespace sa2
   private:
     bool myShowDemo = false;
     bool myShowSettings = false;
-    bool myShowMemory = false;
+    bool myShowMemoryEditor = false;
     bool myShowAbout = false;
     bool myShowShortcuts = false;
     bool myShowDiskTab = false;
@@ -40,6 +41,7 @@ namespace sa2
     size_t myOpenDrive = 0;
 
     ImGuiDebugger myDebugger;
+    ImGuiMemory myMemoryViewer;
     ImGui::FileBrowser myDiskFileDialog;
     ImGui::FileBrowser mySaveFileDialog;
 
@@ -48,7 +50,7 @@ namespace sa2
     std::vector<SoundInfo> myAudioInfo;
 
     void showSettings(SDLFrame* frame);
-    void showMemory();
+    void showMemoryEditor();
     void showAboutWindow();
     void showShortcutWindow();
     void openFileDialog(ImGui::FileBrowser & browser, const std::string & filename);

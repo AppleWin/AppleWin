@@ -83,6 +83,7 @@ target_sources(sa2 PRIVATE
   imgui/settingshelper.cpp
   imgui/sdlsettings.cpp
   imgui/sdldebugger.cpp
+  imgui/sdlmemory.cpp
   imgui/inputtexthistory.cpp
   imgui/cycletabitems.cpp
 
@@ -91,6 +92,7 @@ target_sources(sa2 PRIVATE
   imgui/settingshelper.h
   imgui/sdlsettings.h
   imgui/sdldebugger.h
+  imgui/sdlmemory.h
   imgui/imconfig.h
   imgui/glselector.h
   imgui/inputtexthistory.h

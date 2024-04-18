@@ -137,7 +137,9 @@ namespace sa2
 
           ImGui::Checkbox("Preserve aspect ratio", &frame->getPreserveAspectRatio());
 
-          ImGui::Checkbox("Memory", &myShowMemory);
+          ImGui::Checkbox("Memory viewer", &myMemoryViewer.show);
+
+          ImGui::Checkbox("Memory editor", &myShowMemoryEditor);
           ImGui::SameLine(); HelpMarker("Show Apple memory.");
 
           if (ImGui::Checkbox("Debugger", &myDebugger.showDebugger))
@@ -814,15 +816,22 @@ namespace sa2
       showSettings(frame);
     }
 
-    if (myShowMemory)
+    if (myShowMemoryEditor)
     {
-      showMemory();
+      showMemoryEditor();
     }
 
-    if (myDebugger.showDebugger)
+    if (myMemoryViewer.show || myDebugger.showDebugger)
     {
       ImGui::PushFont(debuggerFont);
-      myDebugger.drawDebugger(frame);
+      if (myMemoryViewer.show)
+      {
+        myMemoryViewer.draw();
+      }
+      if (myDebugger.showDebugger)
+      {
+        myDebugger.drawDebugger(frame);
+      }
       ImGui::PopFont();
     }
 
@@ -852,7 +861,8 @@ namespace sa2
       if (ImGui::BeginMenu("System"))
       {
         ImGui::MenuItem("Settings", "F8", &myShowSettings);
-        ImGui::MenuItem("Memory", nullptr, &myShowMemory);
+        ImGui::MenuItem("Memory viewer", nullptr, &myMemoryViewer.show);
+        ImGui::MenuItem("Memory editor", nullptr, &myShowMemoryEditor);
         if (ImGui::MenuItem("Debugger", nullptr, &myDebugger.showDebugger))
         {
           myDebugger.syncDebuggerState(frame);
@@ -880,9 +890,9 @@ namespace sa2
     return menuBarHeight;
   }
 
-  void ImGuiSettings::showMemory()
+  void ImGuiSettings::showMemoryEditor()
   {
-    if (ImGui::Begin("Memory Viewer", &myShowMemory))
+    if (ImGui::Begin("Memory editor", &myShowMemoryEditor))
     {
       if (ImGui::BeginTabBar("Memory"))
       {

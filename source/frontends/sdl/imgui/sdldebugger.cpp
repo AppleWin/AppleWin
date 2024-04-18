@@ -24,19 +24,9 @@ namespace
     printBoolean(label, value, "OFF", "ON");
   }
 
-  char getPrintableChar(const uint8_t x)  // copied from FormatCharTxtCtrl
-  {
-    char c = x & 0x7F; // .32 Changed: Lo now maps High Ascii to printable chars. i.e. ML1 D0D0
-    if (c < 0x20) // SPACE
-    {
-      c += '@'; // map ctrl chars to visible
-    }
-    return c;
-  }
-
   void printReg(const char label, const BYTE value)
   {
-    ImGui::Text("%c  '%c'  %02X", label, getPrintableChar(value), value);
+    ImGui::Text("%c  '%c'  %02X", label, sa2::getPrintableChar(value), value);
   }
 
   ImVec4 debuggerGetColor(int iColor)
