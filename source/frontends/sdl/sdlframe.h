@@ -34,6 +34,7 @@ namespace sa2
     void setDragDropSlotAndDrive(const size_t slot, const size_t drive);
 
     bool & getPreserveAspectRatio();
+    bool & getAutoBoot();
 
     const common2::Speed & getSpeed() const;
 

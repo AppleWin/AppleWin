@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Common.h"
+
 #include <memory>
 
 class FrameBase;
@@ -9,7 +11,7 @@ class Registry;
 
 void SetFrame(const std::shared_ptr<FrameBase> & frame);
 
-void InitialiseEmulator();
+void InitialiseEmulator(const AppMode_e mode);
 void DestroyEmulator();
 
 // RAII around Frame Registry and Paddle

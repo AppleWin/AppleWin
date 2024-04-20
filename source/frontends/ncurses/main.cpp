@@ -38,6 +38,11 @@ namespace
       }
     case KEY_F(3):
       {
+        frame->TogglePaused();
+        break;
+      }
+    case 279: // Shift-F3
+      {
         quit = true;
         break;
       }

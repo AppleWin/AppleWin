@@ -7,7 +7,7 @@
 class LinuxFrame : public FrameBase
 {
 public:
-  LinuxFrame();
+  LinuxFrame(const bool autoBoot);
 
   void Initialize(bool resetVideoState) override;
   void Destroy() override;
@@ -47,6 +47,8 @@ public:
 
 protected:
   std::vector<uint8_t> myFramebuffer;
+
+  bool myAutoBoot;  // non const to allow settings change
 };
 
 int MessageBox(HWND, LPCSTR lpText, LPCSTR lpCaption, UINT uType);

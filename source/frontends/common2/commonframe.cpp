@@ -21,7 +21,8 @@ namespace common2
 {
 
   CommonFrame::CommonFrame(const EmulatorOptions & options)
-    : mySpeed(options.fixedSpeed)
+    : LinuxFrame(options.autoBoot)
+    , mySpeed(options.fixedSpeed)
     , mySynchroniseWithTimer(options.syncWithTimer)
     , myAllowVideoUpdate(!options.noVideoUpdate)
   {
@@ -199,6 +200,12 @@ namespace common2
       FrameRefreshStatus(DRAW_TITLE);
       ResetSpeed();
     }
+  }
+
+  void CommonFrame::TogglePaused()
+  {
+    const AppMode_e newMode = (g_nAppMode == MODE_RUNNING) ? MODE_PAUSED : MODE_RUNNING;
+    ChangeMode(newMode);
   }
 
   void CommonFrame::SingleStep()

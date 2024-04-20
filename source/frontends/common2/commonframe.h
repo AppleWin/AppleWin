@@ -31,6 +31,7 @@ namespace common2
     void SyncVideoPresentScreen(const int64_t microseconds);
 
     void ChangeMode(const AppMode_e mode);
+    void TogglePaused();
     void SingleStep();
 
     void ResetHardware();

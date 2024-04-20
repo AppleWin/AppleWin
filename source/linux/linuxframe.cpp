@@ -58,7 +58,7 @@ void LinuxFrame::SetWindowedModeShowDiskiiStatus(bool /* bShow */)
 {
 }
 
-LinuxFrame::LinuxFrame()
+LinuxFrame::LinuxFrame(const bool autoBoot) : myAutoBoot(autoBoot)
 {
   const std::array<int, 4> version = getVersionNumbers();
   SetAppleWinVersion(version[0], version[1], version[2], version[3]);
@@ -126,7 +126,7 @@ void LinuxFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
 
 void LinuxFrame::Begin()
 {
-  InitialiseEmulator();
+  InitialiseEmulator(myAutoBoot ? MODE_RUNNING : MODE_PAUSED);
   Initialize(true);
 }
 
