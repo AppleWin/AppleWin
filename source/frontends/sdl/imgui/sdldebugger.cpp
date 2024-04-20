@@ -24,19 +24,9 @@ namespace
     printBoolean(label, value, "OFF", "ON");
   }
 
-  char getPrintableChar(const uint8_t x)  // copied from FormatCharTxtCtrl
-  {
-    char c = x & 0x7F; // .32 Changed: Lo now maps High Ascii to printable chars. i.e. ML1 D0D0
-    if (c < 0x20) // SPACE
-    {
-      c += '@'; // map ctrl chars to visible
-    }
-    return c;
-  }
-
   void printReg(const char label, const BYTE value)
   {
-    ImGui::Text("%c  '%c'  %02X", label, getPrintableChar(value), value);
+    ImGui::Text("%c  '%c'  %02X", label, sa2::getPrintableChar(value), value);
   }
 
   ImVec4 debuggerGetColor(int iColor)
@@ -192,20 +182,57 @@ namespace sa2
   {
     myAddressCycles[regs.pc] = g_nCumulativeCycles - myBaseDebuggerCycles;
 
+    ImGui::PushTabStop(false);  // natural ImGui tabbing interacts with Tab switching
     if (ImGui::Begin("Debugger", &showDebugger))
     {
-      ImGui::BeginChild("Console", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
-      if (ImGui::BeginTabBar("Tabs"))
+      myCycleTabItems.init();
+      if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
       {
-        if (ImGui::BeginTabItem("CPU"))
+        // unfortunately if we put this where it belongs (i.e. a few lines below with the rest of the key handling)
+        // there are some focus-related issues, and we no longer capture keys
+        // at the same time, there is a potential double counting with InputText,
+        // but, since it does not handle TABs (see ImGuiInputTextFlags_CallbackCompletion & ImGuiInputTextFlags_AllowTabInput)
+        // this is not an issue now
+        ImGui::SetNextFrameWantCaptureKeyboard(true);
+        if (ImGui::IsKeyChordPressed(ImGuiKey_Tab | ImGuiMod_Shift))
+        {
+          myCycleTabItems.prev();
+        }
+        else if (ImGui::IsKeyChordPressed(ImGuiKey_Tab))
+        {
+          myCycleTabItems.next();
+        }
+      }
+
+      ImGui::BeginChild("Console", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
+      if (myCycleTabItems.beginTabBar("Tabs"))
+      {
+        bool debuggerShortcutEnabled = false;
+        if (g_nAppMode == MODE_DEBUG)
+        {
+          if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
+          {
+            debuggerShortcutEnabled = true;
+            ImGui::SetNextFrameWantCaptureKeyboard(true);
+            processDebuggerKeys();
+          }
+        }
+
+        if (myCycleTabItems.beginTabItem("CPU"))
         {
           if (ImGui::RadioButton("Color", g_iColorScheme == SCHEME_COLOR)) { g_iColorScheme = SCHEME_COLOR; } ImGui::SameLine();
           if (ImGui::RadioButton("Mono", g_iColorScheme == SCHEME_MONO)) { g_iColorScheme = SCHEME_MONO; } ImGui::SameLine();
           if (ImGui::RadioButton("BW", g_iColorScheme == SCHEME_BW)) { g_iColorScheme = SCHEME_BW; } ImGui::SameLine();
-          ImGui::Checkbox("Auto-sync PC", &mySyncCPU);
+
+          ImGui::BeginDisabled();
+          ImGui::Checkbox("Shortcuts", &debuggerShortcutEnabled);
+          ImGui::EndDisabled();
+          ImGui::SameLine();
+
+          ImGui::Checkbox("Auto-sync cursor", &mySyncCursor);
 
           bool recalc = false;
-          if (mySyncCPU || (ImGui::SameLine(), ImGui::Button("Sync PC")))
+          if (mySyncCursor || (ImGui::SameLine(), ImGui::Button("Sync cursor")))
           {
             recalc = true;
             g_nDisasmCurAddress = regs.pc;
@@ -230,11 +257,11 @@ namespace sa2
           ImGui::SameLine();
           ImGui::Text("%016llu - %04X", g_nCumulativeCycles, regs.pc);
 
-          if (!mySyncCPU)
+          if (!mySyncCursor)
           {
             ImGui::SameLine();
             ImGui::PushItemWidth(ImGui::GetFontSize() * 5);
-            if (ImGui::InputScalar("Reference", ImGuiDataType_U16, &g_nDisasmCurAddress, nullptr, nullptr, "%04X", ImGuiInputTextFlags_CharsHexadecimal))
+            if (ImGui::InputScalar("Cursor", ImGuiDataType_U16, &g_nDisasmCurAddress, nullptr, nullptr, "%04X", ImGuiInputTextFlags_CharsHexadecimal))
             {
               recalc = true;
             }
@@ -242,7 +269,7 @@ namespace sa2
           }
 
           // do not flip next ||
-          if (ImGui::SliderInt("PC position", &g_nDisasmCurLine, 0, 100) || recalc)
+          if (ImGui::SliderInt("Cursor row", &g_nDisasmCurLine, 0, 100) || recalc)
           {
             DisasmCalcTopBotAddress();
           }
@@ -257,21 +284,24 @@ namespace sa2
           ImGui::SameLine();
 
           ImGui::BeginChild("Flags");
+          const ImVec2 gap(0.0f, 20.0f);
           drawRegisters();
-          ImGui::Dummy(ImVec2(0.0f, 20.0f));
+          ImGui::Dummy(gap);
+          drawStackReturnAddress();
+          ImGui::Dummy(gap);
           drawAnnunciators();
-          ImGui::Dummy(ImVec2(0.0f, 20.0f));
+          ImGui::Dummy(gap);
           drawSwitches();
           ImGui::EndChild();
 
           ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Console"))
+        if (myCycleTabItems.beginTabItem("Console"))
         {
           drawConsole();
           ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Breakpoints"))
+        if (myCycleTabItems.beginTabItem("Breakpoints"))
         {
           drawBreakpoints();
           ImGui::EndTabItem();
@@ -279,20 +309,21 @@ namespace sa2
         ImGui::EndTabBar();
       }
       ImGui::EndChild();
+
       if (g_nAppMode == MODE_DEBUG)
       {
-        if (ImGui::InputText("Prompt", myInputBuffer, IM_ARRAYSIZE(myInputBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
+        if (myInputTextHistory.inputText("Prompt"))
         {
-          debuggerCommand(frame, myInputBuffer);
-          myInputBuffer[0] = 0;
-          ImGui::SetKeyboardFocusHere(-1);
+          const std::string & command = myInputTextHistory.execute();
+          debuggerCommand(frame, command.c_str());
         }
       }
     }
+    ImGui::PopTabStop();  // natural ImGui tabbing interacts with Tab switching
 
     if (!showDebugger)
     {
-      // this happes when the window is closed
+      // this happens when the window is closed
       syncDebuggerState(frame);
     }
 
@@ -409,7 +440,11 @@ namespace sa2
           }
 
           ImGui::TableNextColumn();
-          ImGui::Selectable(line.sAddress, false, ImGuiSelectableFlags_SpanAllColumns);
+          if (ImGui::Selectable(line.sAddress, g_nDisasmCurAddress == nAddress, ImGuiSelectableFlags_SpanAllColumns))
+          {
+            g_nDisasmCurAddress = nAddress;
+            mySyncCursor = false;
+          }
 
           ImGui::TableNextColumn();
           debuggerTextColored(FG_DISASM_OPCODE, line.sOpCodes);
@@ -507,6 +542,18 @@ namespace sa2
     {
       ImGui::Separator();
       ImGui::Selectable("CPU Jammed");
+    }
+  }
+
+  void ImGuiDebugger::drawStackReturnAddress()
+  {
+    ImGui::TextUnformatted("Stack return");
+    ImGui::Separator();
+    const WORD nAddress = _6502_GetStackReturnAddress();
+    const std::string s = FormatAddress(nAddress, 3);
+    if (ImGui::Button(s.c_str()))
+    {
+      setCurrentAddress(nAddress);
     }
   }
 
@@ -659,6 +706,42 @@ namespace sa2
   {
     myAddressCycles.clear();
     myBaseDebuggerCycles = g_nCumulativeCycles;
+  }
+
+  void ImGuiDebugger::processDebuggerKeys()
+  {
+    if (ImGui::IsKeyChordPressed(ImGuiKey_Space | ImGuiMod_Ctrl))
+    {
+      CmdStepOver(0);
+    }
+    else if (ImGui::IsKeyChordPressed(ImGuiKey_Space | ImGuiMod_Shift))
+    {
+      CmdStepOut(0);
+    }
+    else if (ImGui::IsKeyChordPressed(ImGuiKey_Space))
+    {
+      CmdTrace(0);
+    }
+    else if (ImGui::IsKeyChordPressed(ImGuiKey_DownArrow | ImGuiMod_Ctrl))
+    {
+      CmdCursorRunUntil(0);
+    }
+    else if (ImGui::IsKeyChordPressed(ImGuiKey_RightArrow | ImGuiMod_Ctrl))
+    {
+      CmdCursorSetPC(0);
+    }
+    else if (ImGui::IsKeyChordPressed(ImGuiKey_LeftArrow))
+    {
+    	WORD nAddress = _6502_GetStackReturnAddress();
+      setCurrentAddress(nAddress);
+    }
+  }
+
+  void ImGuiDebugger::setCurrentAddress(const DWORD nAddress)
+  {
+    g_nDisasmCurAddress = nAddress;
+    DisasmCalcTopBotAddress();
+    mySyncCursor = false;
   }
 
 }

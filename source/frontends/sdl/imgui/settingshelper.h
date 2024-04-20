@@ -101,6 +101,8 @@ namespace sa2
   ImVec4 colorrefToImVec4(const COLORREF cr);
   COLORREF imVec4ToColorref(const ImVec4 & color);
 
+  char getPrintableChar(const uint8_t x);  // copied from FormatCharTxtCtrl
+
 }
 
 namespace ImGui

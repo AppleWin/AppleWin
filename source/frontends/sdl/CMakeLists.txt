@@ -83,14 +83,20 @@ target_sources(sa2 PRIVATE
   imgui/settingshelper.cpp
   imgui/sdlsettings.cpp
   imgui/sdldebugger.cpp
+  imgui/sdlmemory.cpp
+  imgui/inputtexthistory.cpp
+  imgui/cycletabitems.cpp
 
   imgui/sdlimguiframe.h
   imgui/image.h
   imgui/settingshelper.h
   imgui/sdlsettings.h
   imgui/sdldebugger.h
+  imgui/sdlmemory.h
   imgui/imconfig.h
   imgui/glselector.h
+  imgui/inputtexthistory.h
+  imgui/cycletabitems.h
 
   ${IMGUI_PATH}/imgui.h
   ${IMGUI_PATH}/imgui.cpp

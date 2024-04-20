@@ -274,6 +274,16 @@ namespace sa2
     return *cr;
   }
 
+  char getPrintableChar(const uint8_t x)  // copied from FormatCharTxtCtrl
+  {
+    char c = x & 0x7F; // .32 Changed: Lo now maps High Ascii to printable chars. i.e. ML1 D0D0
+    if (c < 0x20) // SPACE
+    {
+      c += '@'; // map ctrl chars to visible
+    }
+    return c;
+  }
+
 }
 
 namespace ImGui

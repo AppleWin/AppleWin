@@ -30,8 +30,8 @@ namespace
   };
 
   const char * ourShortcutKeys[][6] = {
-    {"Left ALT", "Open Apple"},
-    {"Right ALT", "Solid Apple"},
+    {"Left Alt", "Open Apple"},
+    {"Right Alt", "Solid Apple"},
     {"Pause", "Pause"},
     {"Insert", nullptr, "Copy", "Paste", "Screenshot"},
     {"Scroll lock", "Full speed"},
@@ -46,6 +46,42 @@ namespace
     {"F11", "Save snapshot"},
     {"F12", "Load snapshot"},
   };
+
+  const char * ourDebuggerShortcutKeys[][6] = {
+    {"Tab", "Cycle", nullptr, "Cycle"},
+    {"Space", "Step into", "Step over", "Step out"},
+    {"Down", nullptr, "Run to cursor"},
+    {"Right", nullptr, "Set PC"},
+    {"Left", "Show return"},
+  };
+
+  template <typename T>
+  void drawShortcutTable(const char * label, const T & keys)
+  {
+    ImGui::SeparatorText(label);
+    if (ImGui::BeginTable(label, std::size(ourShortcutHeaders), ImGuiTableFlags_RowBg))
+    {
+      for (const auto & col : ourShortcutHeaders)
+      {
+        ImGui::TableSetupColumn(col);
+      }
+      ImGui::TableHeadersRow();
+
+      for (const auto & row : keys)
+      {
+        ImGui::TableNextRow();
+        for (const auto & col : row)
+        {
+          ImGui::TableNextColumn();
+          if (col)
+          {
+            ImGui::TextUnformatted(col);
+          }
+        }
+      }
+      ImGui::EndTable();
+    }
+  }
 
   struct MemoryTab
   {
@@ -101,7 +137,9 @@ namespace sa2
 
           ImGui::Checkbox("Preserve aspect ratio", &frame->getPreserveAspectRatio());
 
-          ImGui::Checkbox("Memory", &myShowMemory);
+          ImGui::Checkbox("Memory viewer", &myMemoryViewer.show);
+
+          ImGui::Checkbox("Memory editor", &myShowMemoryEditor);
           ImGui::SameLine(); HelpMarker("Show Apple memory.");
 
           if (ImGui::Checkbox("Debugger", &myDebugger.showDebugger))
@@ -109,6 +147,14 @@ namespace sa2
             myDebugger.syncDebuggerState(frame);
           }
           ImGui::SameLine(); HelpMarker("Show Apple CPU.");
+          ImGui::Separator();
+
+          ImGui::BeginDisabled();
+          ImGuiIO& io = ImGui::GetIO();
+          bool keyboardEnabled = !io.WantCaptureKeyboard;
+          ImGui::Checkbox("Apple keyboard enabled", &keyboardEnabled);
+          ImGui::EndDisabled();
+          ImGui::SameLine(); HelpMarker("Keys go to Apple ][.");
           ImGui::Separator();
 
           const std::string& snapshotPathname = Snapshot_GetPathname();
@@ -758,33 +804,12 @@ namespace sa2
   {
     if (ImGui::Begin("Shortcuts", &myShowShortcuts))
     {
-      // ImGui::TextUnformatted("Available shortcuts");
-      if (ImGui::BeginTable("Shortcuts", std::size(ourShortcutHeaders), ImGuiTableFlags_RowBg))
-      {
-        for (const auto & col : ourShortcutHeaders)
-        {
-          ImGui::TableSetupColumn(col);
-        }
-        ImGui::TableHeadersRow();
+      drawShortcutTable("Emulator", ourShortcutKeys);
+      drawShortcutTable("Debugger", ourDebuggerShortcutKeys);
 
-        for (const auto & row : ourShortcutKeys)
-        {
-          ImGui::TableNextRow();
-          for (const auto & col : row)
-          {
-            ImGui::TableNextColumn();
-            if (col)
-            {
-              ImGui::TextUnformatted(col);
-            }
-          }
-        }
-        ImGui::EndTable();
-        ImGui::Separator();
-        ImGui::TextUnformatted("Press the Gamepad BACK button twice to quit.");
-      }
+      ImGui::SeparatorText("Gamepad");
+      ImGui::TextUnformatted("Press the Gamepad BACK button twice to quit.");
     }
-
     ImGui::End();
   }
 
@@ -795,15 +820,22 @@ namespace sa2
       showSettings(frame);
     }
 
-    if (myShowMemory)
+    if (myShowMemoryEditor)
     {
-      showMemory();
+      showMemoryEditor();
     }
 
-    if (myDebugger.showDebugger)
+    if (myMemoryViewer.show || myDebugger.showDebugger)
     {
       ImGui::PushFont(debuggerFont);
-      myDebugger.drawDebugger(frame);
+      if (myMemoryViewer.show)
+      {
+        myMemoryViewer.draw();
+      }
+      if (myDebugger.showDebugger)
+      {
+        myDebugger.drawDebugger(frame);
+      }
       ImGui::PopFont();
     }
 
@@ -833,7 +865,8 @@ namespace sa2
       if (ImGui::BeginMenu("System"))
       {
         ImGui::MenuItem("Settings", "F8", &myShowSettings);
-        ImGui::MenuItem("Memory", nullptr, &myShowMemory);
+        ImGui::MenuItem("Memory viewer", nullptr, &myMemoryViewer.show);
+        ImGui::MenuItem("Memory editor", nullptr, &myShowMemoryEditor);
         if (ImGui::MenuItem("Debugger", nullptr, &myDebugger.showDebugger))
         {
           myDebugger.syncDebuggerState(frame);
@@ -861,9 +894,9 @@ namespace sa2
     return menuBarHeight;
   }
 
-  void ImGuiSettings::showMemory()
+  void ImGuiSettings::showMemoryEditor()
   {
-    if (ImGui::Begin("Memory Viewer", &myShowMemory))
+    if (ImGui::Begin("Memory editor", &myShowMemoryEditor))
     {
       if (ImGui::BeginTabBar("Memory"))
       {
