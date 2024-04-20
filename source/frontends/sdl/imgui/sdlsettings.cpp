@@ -172,7 +172,11 @@ namespace sa2
           ImGui::Checkbox("Full speed", &g_bFullSpeed);
           ImGui::EndDisabled();
 
-          ImGui::LabelText("Mode", "%s", getAppModeName(g_nAppMode).c_str());
+          ImGui::Checkbox("Auto boot", &frame->getAutoBoot());
+          if (ImGui::Button(getAppModeName(g_nAppMode).c_str()))
+          {
+            frame->TogglePaused();
+          }
 
           ImGui::Separator();
 

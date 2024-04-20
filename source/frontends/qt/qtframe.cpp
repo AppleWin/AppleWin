@@ -4,7 +4,6 @@
 
 #include "Core.h"
 #include "Utilities.h"
-#include "Log.h"
 
 #include "linux/resources.h"
 
@@ -13,7 +12,11 @@
 #include <QMessageBox>
 #include <QStandardPaths>
 
-QtFrame::QtFrame(Emulator * emulator, QMdiSubWindow * window) : myEmulator(emulator), myWindow(window), myForceRepaint(false)
+QtFrame::QtFrame(Emulator * emulator, QMdiSubWindow * window) 
+: LinuxFrame(true)
+, myEmulator(emulator)
+, myWindow(window)
+, myForceRepaint(false)
 {
 
 }

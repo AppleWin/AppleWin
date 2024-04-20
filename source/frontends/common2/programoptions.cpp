@@ -127,6 +127,7 @@ namespace common2
     po::options_description emulatorDesc("Emulator");
     emulatorDesc.add_options()
       ("log", "Log to AppleWin.log")
+      ("paused", "Start paused")
       ("fixed-speed", "Fixed (non-adaptive) speed")
       ("headless", "Headless: disable video (freewheel)")
       ("audio-buffer", po::value<size_t>()->default_value(options.audioBuffer), "Audio buffer (ms)")
@@ -217,6 +218,7 @@ namespace common2
 
       // Emulator
       options.log = vm.count("log") > 0;
+      options.autoBoot = vm.count("paused") == 0; 
       options.fixedSpeed = vm.count("fixed-speed") > 0;
       options.headless = vm.count("headless") > 0;
       setOption(vm, "audio-buffer", options.audioBuffer);

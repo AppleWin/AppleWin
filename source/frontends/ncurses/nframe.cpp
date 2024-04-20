@@ -233,7 +233,7 @@ namespace na2
     ++row;
 
     mvwprintw(myStatus.get(), ++row, 1, "F2: ResetMachine / Shift-F2: CtrlReset");
-    mvwprintw(myStatus.get(), ++row, 1, "F3: Exit         / F5: Swap");
+    mvwprintw(myStatus.get(), ++row, 1, "F3: Pause        / Shift-F3: Exit");
     mvwprintw(myStatus.get(), ++row, 1, "F11: Load State  / F12: Save State");
     wrefresh(myStatus.get());
   }

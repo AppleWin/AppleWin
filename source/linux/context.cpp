@@ -94,9 +94,9 @@ RegistryContext::~RegistryContext()
   Registry::instance.reset();
 }
 
-void InitialiseEmulator()
+void InitialiseEmulator(const AppMode_e mode)
 {
-  g_nAppMode = MODE_RUNNING;
+  g_nAppMode = mode;
   LogFileOutput("Initialisation\n");
 
   g_bFullSpeed = false;
