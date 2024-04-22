@@ -449,6 +449,10 @@ namespace sa2
           {
             CycleVideoType();
           }
+          else if (modifiers == KMOD_CTRL)
+          {
+            ToggleMouseCursor();
+          }
           break;
         }
       case SDLK_F6:

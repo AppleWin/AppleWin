@@ -42,7 +42,7 @@ namespace
     {"F5", "Swap S6 disks"},
     {"F6", "Fullscreen", "2x", nullptr, "50 scan lines"},
     {"F8", "Settings"},
-    {"F9", "Cycle video type"},
+    {"F9", "Cycle video type", "Toggle mouse cursor"},
     {"F11", "Save snapshot"},
     {"F12", "Load snapshot"},
   };

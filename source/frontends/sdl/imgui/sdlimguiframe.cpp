@@ -52,6 +52,7 @@ namespace sa2
   SDLImGuiFrame::SDLImGuiFrame(const common2::EmulatorOptions & options)
     : SDLFrame(options)
     , myPresenting(false)
+    , myShowMouseCursor(true)
   {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SA2_CONTEXT_FLAGS);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SA2_CONTEXT_PROFILE_MASK);
@@ -233,6 +234,11 @@ namespace sa2
       ImGui_ImplSDL2_NewFrame();
       ImGui::NewFrame();
 
+      if (!myShowMouseCursor)
+      {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+      } // otherwise leave it to the default set in ImGui::NewFrame();
+
       // "this" is a bit circular
       mySettings.show(this, myDebuggerFont);
       DrawAppleVideo();
@@ -328,6 +334,11 @@ namespace sa2
   {
     SDLFrame::ResetSpeed();
     mySettings.resetDebuggerCycles();
+  }
+
+  void SDLImGuiFrame::ToggleMouseCursor()
+  {
+    myShowMouseCursor = !myShowMouseCursor;
   }
 
 }

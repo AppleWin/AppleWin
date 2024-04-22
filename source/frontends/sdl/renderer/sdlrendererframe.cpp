@@ -81,4 +81,10 @@ namespace sa2
     return false;
   }
 
+  void SDLRendererFrame::ToggleMouseCursor()
+  {
+    const int current = SDL_ShowCursor(SDL_QUERY);
+    SDL_ShowCursor(current ^ 1);
+  }
+
 }

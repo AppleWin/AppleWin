@@ -18,6 +18,7 @@ namespace sa2
 
   protected:
     void GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, float & x, float & y) const override;
+    void ToggleMouseCursor() override;
 
   private:
 
