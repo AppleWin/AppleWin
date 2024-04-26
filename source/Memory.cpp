@@ -243,6 +243,7 @@ static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 static const UINT kNumAnnunciators = 4;
 static bool g_Annunciator[kNumAnnunciators] = {};
 
+static const UINT num64KPages = 2;  // number of 64K pages used to create hardware circular buffer
 #ifdef _MSC_VER
 static HANDLE g_hMemImage = NULL;	// NB. When not initialised, this handle is NULL (not INVALID_HANDLE_VALUE)
 #else
@@ -1522,7 +1523,6 @@ static void FreeMemImage(void)
 #ifdef _MSC_VER
 	if (g_hMemImage)
 	{
-		const UINT num64KPages = 2;
 		for (UINT i = 0; i < num64KPages; i++)
 			UnmapViewOfFile(memimage + i * _6502_MEM_LEN);
 
@@ -1536,13 +1536,8 @@ static void FreeMemImage(void)
 #else
 	if (g_hMemTempFile)
 	{
-		const UINT num64KPages = 2;
-		for (UINT i = 0; i < num64KPages; i++)
-		{
-			munmap(memimage + i * _6502_MEM_LEN, _6502_MEM_LEN);
-		}
-		// with the following line, SDL_Quit() segfaults ????
-		// munmap(memimage + num64KPages * _6502_MEM_LEN, _6502_MEM_LEN);
+		// unmap the whole region, everything inside will be unmapped too
+		munmap(memimage, num64KPages * _6502_MEM_LEN);
 
 		fclose(g_hMemTempFile);
 		g_hMemTempFile = NULL;
@@ -1572,8 +1567,7 @@ static LPBYTE AllocMemImage(void)
 		do
 		{
 			res = false;
-			const UINT num64KRegions = 2;
-			const SIZE_T totalVirtualSize = _6502_MEM_LEN * num64KRegions;
+			const SIZE_T totalVirtualSize = _6502_MEM_LEN * num64KPages;
 			baseAddr = (LPBYTE)VirtualAlloc(0, totalVirtualSize, MEM_RESERVE, PAGE_NOACCESS);
 			if (baseAddr == NULL)
 				break;
@@ -1586,7 +1580,7 @@ static LPBYTE AllocMemImage(void)
 				break;
 
 			UINT count = 0;
-			while (count < num64KRegions)
+			while (count < num64KPages)
 			{
 				// MSDN: "To specify a suggested base address for the view, use the MapViewOfFileEx function. However, this practice is not recommended."
 				// The OS (ie. another process) may've beaten us to this suggested baseAddr. This is why we retry multiple times.
@@ -1595,7 +1589,7 @@ static LPBYTE AllocMemImage(void)
 				count++;
 			}
 
-			res = (count == num64KRegions);
+			res = (count == num64KPages);
 			if (res)
 				break;
 
@@ -1633,18 +1627,24 @@ static LPBYTE AllocMemImage(void)
 		const int fd = fileno(g_hMemTempFile);
 		if (!ftruncate(fd, _6502_MEM_LEN))
 		{
-			const UINT num64KPages = 2;
 			LPBYTE baseAddr = static_cast<LPBYTE>(mmap(NULL, num64KPages * _6502_MEM_LEN, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
 			if (baseAddr)
 			{
+				bool ok = true;
 				for (UINT i = 0; i < num64KPages; i++)
 				{
-					// can this ever fail?
-					mmap(baseAddr + i * _6502_MEM_LEN , _6502_MEM_LEN, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+					void * target = baseAddr + i * _6502_MEM_LEN;
+					void * addr = mmap(target, _6502_MEM_LEN, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+					ok = ok && (target == addr);
 				}
 				// we could fclose the file here
 				// but we keep it as a reminder of how to free the memory later
-				return baseAddr;
+				if (ok)
+				{
+					return baseAddr;
+				}
+				// revert to ALIGNED_ALLOC
+				munmap(baseAddr, num64KPages * _6502_MEM_LEN);
 			}
 		}
 
