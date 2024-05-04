@@ -301,37 +301,40 @@ namespace sa2
 
           const UINT uthernetSlot = SLOT3;
 
-          const std::string current_interface = PCapBackend::GetRegistryInterface(uthernetSlot);
-
-          if (ImGui::BeginCombo("pcap", current_interface.c_str()))
+          if (PCapBackend::tfe_is_npcap_loaded())
           {
-            std::vector<std::string> ifaces;
-            if (PCapBackend::tfe_enumadapter_open())
+            const std::string current_interface = PCapBackend::GetRegistryInterface(uthernetSlot);
+
+            if (ImGui::BeginCombo("pcap", current_interface.c_str()))
             {
-              std::string name;
-              std::string description;
-
-              while (PCapBackend::tfe_enumadapter(name, description))
+              std::vector<std::string> ifaces;
+              if (PCapBackend::tfe_enumadapter_open())
               {
-                ifaces.push_back(name);
-              }
-              PCapBackend::tfe_enumadapter_close();
+                std::string name;
+                std::string description;
 
-              for (const auto & iface : ifaces)
-              {
-                const bool isSelected = iface == current_interface;
-                if (ImGui::Selectable(iface.c_str(), isSelected))
+                while (PCapBackend::tfe_enumadapter(name, description))
                 {
-                  // the following line interacts with tfe_enumadapter, so we must run it outside the above loop
-                  PCapBackend::SetRegistryInterface(uthernetSlot, iface);
+                  ifaces.push_back(name);
                 }
-                if (isSelected)
+                PCapBackend::tfe_enumadapter_close();
+
+                for (const auto & iface : ifaces)
                 {
-                  ImGui::SetItemDefaultFocus();
+                  const bool isSelected = iface == current_interface;
+                  if (ImGui::Selectable(iface.c_str(), isSelected))
+                  {
+                    // the following line interacts with tfe_enumadapter, so we must run it outside the above loop
+                    PCapBackend::SetRegistryInterface(uthernetSlot, iface);
+                  }
+                  if (isSelected)
+                  {
+                    ImGui::SetItemDefaultFocus();
+                  }
                 }
               }
+              ImGui::EndCombo();
             }
-            ImGui::EndCombo();
           }
 
           bool virtualDNS = Uthernet2::GetRegistryVirtualDNS(uthernetSlot);
