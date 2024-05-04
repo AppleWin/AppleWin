@@ -8,6 +8,10 @@
 #include "Core.h"
 #include "SaveState.h"
 
+#ifndef U2_USE_SLIRP
+#include "Tfe/PCapBackend.h"
+#endif
+
 void LinuxFrame::FrameDrawDiskLEDS()
 {
 }

@@ -6,32 +6,34 @@ pkg_search_module(YAML REQUIRED yaml-0.1)
 pkg_search_module(MINIZIP REQUIRED minizip)
 pkg_search_module(SLIRP slirp)
 
-if ("${SLIRP_FOUND}" STREQUAL "")
-  message(WARNING "'libslirp' not found. Will use 'libpcap' instead")
-endif()
+# if slirp is not found, we will try pcap
+# if it is not found either, a dummy pcap will be compiled
+# but network will be badly affected
 
-pkg_search_module(PCAP libpcap)
-if ("${PCAP_FOUND}" STREQUAL "")
-  # old versions of pcap do not work with pkg-config
-  # this is necessary on Rapsberri Pi OS
-  execute_process(COMMAND pcap-config --cflags
-    OUTPUT_VARIABLE PCAP_INCLUDE_DIRS
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    RESULT_VARIABLE STATUS)
-  if ("${STATUS}" STREQUAL "0")
-    message("Found 'libpcap' via pcap-config")
-  else()
-    message(FATAL_ERROR "Cannot locate 'libpcap-dev'")
+if ("${SLIRP_FOUND}" STREQUAL "")
+  message(WARNING "'libslirp' not found: will try 'libpcap' instead")
+
+  pkg_search_module(PCAP libpcap)
+  if ("${PCAP_FOUND}" STREQUAL "")
+    # old versions of pcap do not work with pkg-config
+    # this is necessary on Rapsberri Pi OS
+    execute_process(COMMAND pcap-config --cflags
+      OUTPUT_VARIABLE PCAP_INCLUDE_DIRS
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE STATUS)
+    if ("${STATUS}" STREQUAL "0")
+      message("Found 'libpcap' via pcap-config")
+      execute_process(COMMAND pcap-config --libs
+        OUTPUT_VARIABLE PCAP_LIBRARIES
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+      set(PCAP_FOUND "1")
+    endif()
   endif()
-  execute_process(COMMAND pcap-config --libs
-    OUTPUT_VARIABLE PCAP_LIBRARIES
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()
 
 find_package(Boost REQUIRED)
 
 set(SOURCE_FILES
-  Tfe/tfearch.cpp
   Tfe/tfesupp.cpp
   Tfe/NetworkBackend.cpp
   Tfe/PCapBackend.cpp
@@ -226,6 +228,12 @@ add_library(appleii STATIC
   ${SOURCE_FILES}
   ${HEADER_FILES}
   )
+
+if ("${PCAP_FOUND}" STREQUAL "1")
+  target_sources(appleii PRIVATE Tfe/tfearch.cpp)
+else()
+  target_sources(appleii PRIVATE linux/duplicates/tfearch.cpp)
+endif()
 
 target_include_directories(appleii PRIVATE
   ${YAML_INCLUDE_DIRS}

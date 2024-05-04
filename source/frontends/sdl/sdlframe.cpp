@@ -697,7 +697,7 @@ namespace sa2
     #ifdef U2_USE_SLIRP
       return std::make_shared<SlirpBackend>(myPortFwds);
     #else
-      return std::make_shared<PCapBackend>(interfaceName);
+      return common2::GNUFrame::CreateNetworkBackend(interfaceName);
     #endif
   }
 
