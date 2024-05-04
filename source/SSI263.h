@@ -11,17 +11,18 @@ public:
 		m_cardMode = PH_Mockingboard;
 		m_pPhonemeData00 = NULL;
 
-		ResetState();
+		ResetState(true);
 	}
 	~SSI263(void)
 	{
 		delete [] m_pPhonemeData00;
 	}
 
-	void ResetState(void)
+	void ResetState(const bool powerCycle)
 	{
 		m_currentActivePhoneme = -1;
 		m_isVotraxPhoneme = false;
+		m_votraxPhoneme = 0;
 		m_cyclesThisAudioFrame = 0;
 
 		//
@@ -34,6 +35,7 @@ public:
 		m_phonemeAccurateLengthRemaining = 0;
 		m_phonemePlaybackAndDebugger = false;
 		m_phonemeCompleteByFullSpeed = false;
+		m_phonemeLeadoutLength = 0;
 
 		//
 
@@ -48,10 +50,10 @@ public:
 		m_durationPhoneme = 0;
 		m_inflection = 0;
 		m_rateInflection = 0;
-		m_ctrlArtAmp = 0;
+		m_ctrlArtAmp = powerCycle ? CONTROL_MASK : 0;	// Chip power-on, so CTL=1 (power-down / standby)
 		m_filterFreq = 0;
 
-		m_currentMode = 0;
+		m_currentMode.mode = 0;
 
 		//
 
@@ -65,7 +67,7 @@ public:
 	bool DSInit(void);
 	void DSUninit(void);
 
-	void Reset(void);
+	void Reset(const bool powerCycle);
 	bool IsPhonemeActive(void) { return m_currentActivePhoneme >= 0; }
 
 	BYTE Read(ULONG nExecutedCycles);
@@ -105,6 +107,8 @@ private:
 
 	//
 
+	static const BYTE CONTROL_MASK = 0x80;
+
 	UINT m_slot;
 	BYTE m_device;	// SSI263 device# which is generating phoneme-complete IRQ (and only required whilst Mockingboard isn't a class)
 	PHASOR_MODE m_cardMode;
@@ -112,6 +116,7 @@ private:
 
 	int m_currentActivePhoneme;
 	bool m_isVotraxPhoneme;
+	BYTE m_votraxPhoneme;
 	UINT m_cyclesThisAudioFrame;
 
 	//
@@ -124,6 +129,7 @@ private:
 	UINT m_phonemeAccurateLengthRemaining;	// length in samples, decremented by cycles executed
 	bool m_phonemePlaybackAndDebugger;
 	bool m_phonemeCompleteByFullSpeed;
+	UINT m_phonemeLeadoutLength;			// length in samples, decremented after \m_phonemeLengthRemaining\ goes to zero. Delay until phoneme repeats
 
 	//
 
@@ -140,7 +146,17 @@ private:
 	BYTE m_ctrlArtAmp;
 	BYTE m_filterFreq;
 
-	BYTE m_currentMode;		// b7:6=Mode; b0=D7 pin (for IRQ)
+	union
+	{
+		struct
+		{
+			BYTE function : 2;		// b7:6 = function
+			BYTE enableInts : 1;	// b5 = enable A/!R (ie. interrupts)
+			BYTE reserved : 4;
+			BYTE D7 : 1;			// b0=D7 pin (for IRQ)
+		};
+		BYTE mode;
+	} m_currentMode;
 
 	// Debug
 	bool m_dbgFirst;

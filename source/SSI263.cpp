@@ -56,13 +56,13 @@ const DWORD SAMPLE_RATE_SSI263 = 22050;
 
 // Duration/Phonome
 const BYTE DURATION_MODE_MASK = 0xC0;
-const BYTE DURATION_SHIFT = 6;
+const BYTE DURATION_MODE_SHIFT = 6;
 const BYTE PHONEME_MASK = 0x3F;
 
-const BYTE MODE_PHONEME_TRANSITIONED_INFLECTION = 0xC0;	// IRQ active
-const BYTE MODE_PHONEME_IMMEDIATE_INFLECTION = 0x80;	// IRQ active
-const BYTE MODE_FRAME_IMMEDIATE_INFLECTION = 0x40;		// IRQ active
-const BYTE MODE_IRQ_DISABLED = 0x00;
+const BYTE MODE_PHONEME_TRANSITIONED_INFLECTION = 0xC0;
+const BYTE MODE_PHONEME_IMMEDIATE_INFLECTION = 0x80;
+const BYTE MODE_FRAME_IMMEDIATE_INFLECTION = 0x40;
+const BYTE MODE_IRQ_DISABLED = 0x00;	// disable interrupts, but retains one of the 3 modes
 
 // Rate/Inflection
 const BYTE RATE_MASK = 0xF0;
@@ -70,7 +70,6 @@ const BYTE INFLECTION_MASK_H = 0x08;	// I11
 const BYTE INFLECTION_MASK_L = 0x07;	// I2..I0
 
 // Ctrl/Art/Amp
-const BYTE CONTROL_MASK = 0x80;
 const BYTE ARTICULATION_MASK = 0x70;
 const BYTE AMPLITUDE_MASK = 0x0F;
 
@@ -129,7 +128,7 @@ BYTE SSI263::Read(ULONG nExecutedCycles)
 	// . inverted "A/!R" is high for REQ (ie. Request, as phoneme nearly complete)
 	// NB. this doesn't clear the IRQ
 
-	return MemReadFloatingBus(m_currentMode & 1, nExecutedCycles);
+	return MemReadFloatingBus(m_currentMode.D7, nExecutedCycles);
 }
 
 void SSI263::Write(BYTE nReg, BYTE nValue)
@@ -157,14 +156,14 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 	if (m_cardMode == PH_Phasor && nReg <= SSI_RATEINF)
 	{
 		CpuIrqDeassert(IS_SPEECH);
-		m_currentMode &= ~1;	// Clear SSI263's D7 pin
+		m_currentMode.D7 = 0;
 	}
 
 	switch(nReg)
 	{
 	case SSI_DURPHON:
 #if LOG_SSI263
-		if(g_fh) fprintf(g_fh, "DUR   = 0x%02X, PHON = 0x%02X\n\n", nValue>>6, nValue&PHONEME_MASK);
+		if (g_fh) fprintf(g_fh, "DUR   = 0x%02X, PHON = 0x%02X\n\n", nValue>>6, nValue&PHONEME_MASK);
 		LogOutput("DUR   = %d, PHON = 0x%02X\n", nValue>>6, nValue&PHONEME_MASK);
 #endif
 #if LOG_SSI263B
@@ -172,25 +171,27 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 #endif
 
 		m_durationPhoneme = nValue;
+		m_isVotraxPhoneme = false;
 
-		Play(nValue & PHONEME_MASK);
+		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
+			Play(m_durationPhoneme & PHONEME_MASK);		// Play phoneme when *not* in power-down / standby mode
 		break;
 	case SSI_INFLECT:
 #if LOG_SSI263
-		if(g_fh) fprintf(g_fh, "INF   = 0x%02X\n", nValue);
+		if (g_fh) fprintf(g_fh, "INF   = 0x%02X\n", nValue);
 #endif
 		m_inflection = nValue;
 		break;
 
 	case SSI_RATEINF:
 #if LOG_SSI263
-		if(g_fh) fprintf(g_fh, "RATE  = 0x%02X, INF = 0x%02X\n", nValue>>4, nValue&0x0F);
+		if (g_fh) fprintf(g_fh, "RATE  = 0x%02X, INF = 0x%02X\n", nValue>>4, nValue&0x0F);
 #endif
 		m_rateInflection = nValue;
 		break;
 	case SSI_CTTRAMP:
 #if LOG_SSI263
-		if(g_fh) fprintf(g_fh, "CTRL  = %d, ART = 0x%02X, AMP=0x%02X\n", nValue>>7, (nValue&ARTICULATION_MASK)>>4, nValue&AMPLITUDE_MASK);
+		if (g_fh) fprintf(g_fh, "CTRL  = %d, ART = 0x%02X, AMP=0x%02X\n", nValue>>7, (nValue&ARTICULATION_MASK)>>4, nValue&AMPLITUDE_MASK);
 		//
 		{
 			bool H2L = (m_ctrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK);
@@ -202,23 +203,35 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 		if ( ((m_ctrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK)) || ((nValue&0xF) == 0x0) )	// H->L or amp=0
 			SSI_Output();
 #endif
-		if((m_ctrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK))	// H->L
+		if ((m_ctrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK))	// H->L
 		{
-			m_currentMode = m_durationPhoneme & DURATION_MODE_MASK;
-			if (m_currentMode == MODE_IRQ_DISABLED)
+			if ((m_durationPhoneme & DURATION_MODE_MASK) != MODE_IRQ_DISABLED)
+			{
+				m_currentMode.function = (m_durationPhoneme & DURATION_MODE_MASK) >> DURATION_MODE_SHIFT;
+				m_currentMode.enableInts = 1;
+			}
+			else
 			{
 				// "Disables A/!R output only; does not change previous A/!R response" (SSI263 datasheet)
+				m_currentMode.enableInts = 0;
+
+				// TODO: What if IRQ is currently asserted? Does it deassert the IRQ?
 //				CpuIrqDeassert(IS_SPEECH);
+				// NB. D7 is not cleared -- check this
 			}
+
+			// Device out of power down / "standby" mode, so play phoneme
+			Play(m_durationPhoneme & PHONEME_MASK);
 		}
 
 		m_ctrlArtAmp = nValue;
 
 		// "Setting the Control bit (CTL) to a logic one puts the device into Power Down mode..." (SSI263 datasheet)
+		// . this silences the phoneme - actually "turns off the excitation sources and analog circuits"
 		if (m_ctrlArtAmp & CONTROL_MASK)
 		{
-//			CpuIrqDeassert(IS_SPEECH);
-//			m_currentMode &= ~1;	// Clear SSI263's D7 pin
+			CpuIrqDeassert(IS_SPEECH);
+			m_currentMode.D7 = 0;
 		}
 		break;
 	case SSI_FILFREQ:	// RegAddr.b2=1 (b1 & b0 are: don't care)
@@ -310,6 +323,7 @@ void SSI263::Votrax_Write(BYTE value)
 	LogOutput("SC01: %02X (= SSI263: %02X)\n", value, m_Votrax2SSI263[value & PHONEME_MASK]);
 #endif
 	m_isVotraxPhoneme = true;
+	m_votraxPhoneme = value & PHONEME_MASK;
 
 	// !A/R: Acknowledge receipt of phoneme data (signal goes from high to low)
 	UpdateIFR(m_device, SY6522::IxR_VOTRAX, 0);
@@ -317,7 +331,7 @@ void SSI263::Votrax_Write(BYTE value)
 	// NB. Don't set reg0.DUR, as SC01's phoneme duration doesn't change with pitch (empirically determined from MAME's SC01 emulation)
 	//m_durationPhoneme = value;	// Set reg0.DUR = I1:0 (inflection or pitch)
 	m_durationPhoneme = 0;
-	Play(m_Votrax2SSI263[value & PHONEME_MASK]);
+	Play(m_Votrax2SSI263[m_votraxPhoneme]);
 }
 
 //-----------------------------------------------------------------------------
@@ -366,6 +380,7 @@ void SSI263::Play(unsigned int nPhoneme)
 	m_phonemeAccurateLengthRemaining = m_phonemeLengthRemaining;
 	m_phonemePlaybackAndDebugger = (g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
 	m_phonemeCompleteByFullSpeed = false;
+	m_phonemeLeadoutLength = m_phonemeLengthRemaining / 10;	// Arbitrary! (TODO: determine a more accurate factor)
 
 	if (bPause)
 	{
@@ -581,18 +596,20 @@ void SSI263::Update(void)
 
 	//-------------
 
-	const double amplitude = !m_isVotraxPhoneme ? (double)(m_ctrlArtAmp & AMPLITUDE_MASK) / (double)AMPLITUDE_MASK : 1.0;
+	const double amplitude = m_isVotraxPhoneme ? 1.0
+		: m_ctrlArtAmp & CONTROL_MASK ? 0.0		// Power-down / standby
+		: (double)(m_ctrlArtAmp & AMPLITUDE_MASK) / (double)AMPLITUDE_MASK;
 
 	bool bSpeechIRQ = false;
 
 	{
-		const BYTE DUR = m_durationPhoneme >> DURATION_SHIFT;
+		const BYTE DUR = m_durationPhoneme >> DURATION_MODE_SHIFT;
 		const BYTE numSamplesToAvg = (DUR <= 1) ? 1 :
 									 (DUR == 2) ? 2 :
 												  4;
 
 		short* pMixBuffer = &m_mixBufferSSI263[0];
-		int zeroSize = nNumSamples;
+		UINT zeroSize = nNumSamples;
 
 		if (m_phonemeLengthRemaining && !prefillBufferOnInit)
 		{
@@ -633,7 +650,12 @@ void SSI263::Update(void)
 		}
 
 		if (zeroSize)
+		{
 			memset(pMixBuffer, 0, zeroSize * sizeof(short));
+
+			if (!prefillBufferOnInit)
+				m_phonemeLeadoutLength -= (m_phonemeLeadoutLength > zeroSize) ? zeroSize : m_phonemeLeadoutLength;
+		}
 	}
 
 	//
@@ -669,6 +691,14 @@ void SSI263::Update(void)
 		if (!m_phonemePlaybackAndDebugger /*|| m_phonemeAccurateLengthRemaining*/)	// superfluous, so commented out (see above)
 			UpdateIRQ();
 	}
+
+	if (m_phonemeLeadoutLength == 0)
+	{
+		if (!m_isVotraxPhoneme)
+			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
+		else
+			Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested in MAME 0.262)
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -689,7 +719,7 @@ void SSI263::UpdateAccurateLength(void)
 	const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
 	const int nNumSamplesPerPeriod = (int)((double)(SAMPLE_RATE_SSI263) / nIrqFreq);	// Eg. For 60Hz this is 367
 
-	const BYTE DUR = m_durationPhoneme >> DURATION_SHIFT;
+	const BYTE DUR = m_durationPhoneme >> DURATION_MODE_SHIFT;
 
 	const UINT numSamples = nNumSamplesPerPeriod * (DUR+1);
 	if (m_phonemeAccurateLengthRemaining > numSamples)
@@ -735,17 +765,17 @@ void SSI263::SetSpeechIRQ(void)
 {
 	if (!m_isVotraxPhoneme)
 	{
-		// Always set SSI263's D7 pin regardless of SSI263 mode (DR1:0), including MODE_IRQ_DISABLED
-		m_currentMode |= 1;	// Set SSI263's D7 pin
+		// Always set SSI263's D7 pin regardless of SSI263 mode (DR1:0), including when SSI263 ints are disabled (via MODE_IRQ_DISABLED)
+		m_currentMode.D7 = 1;	// Set SSI263's D7 pin
 
-		if ((m_currentMode & DURATION_MODE_MASK) != MODE_IRQ_DISABLED)
+		if (m_currentMode.enableInts)
 		{
 			if (m_cardMode == PH_Mockingboard)
 			{
-				if ((GetPCR(m_device) & 1) == 0)			// CA1 Latch/Input = 0 (Negative active edge)
+				if ((GetPCR(m_device) & 1) == 0)		// CA1 Latch/Input = 0 (Negative active edge)
 					UpdateIFR(m_device, 0, SY6522::IxR_SSI263);
 				if (GetPCR(m_device) == 0x0C)			// CA2 Control = b#110 (Low output)
-					m_currentMode &= ~1;	// Clear SSI263's D7 pin (cleared by 6522's PCR CA1/CA2 handshake)
+					m_currentMode.D7 = 0;				// Clear SSI263's D7 pin (cleared by 6522's PCR CA1/CA2 handshake)
 
 				// NB. Don't set CTL=1, as Mockingboard(SMS) speech doesn't work (it sets MODE_IRQ_DISABLED mode during ISR)
 				//pMB->SpeechChip.CtrlArtAmp |= CONTROL_MASK;	// 6522's CA2 sets Power Down mode (pin 18), which sets Control bit
@@ -766,10 +796,7 @@ void SSI263::SetSpeechIRQ(void)
 	if (m_isVotraxPhoneme && GetPCR(m_device) == 0xB0)
 	{
 		// !A/R: Time-out of old phoneme (signal goes from low to high)
-
 		UpdateIFR(m_device, 0, SY6522::IxR_VOTRAX);
-
-		m_isVotraxPhoneme = false;
 	}
 }
 
@@ -811,10 +838,14 @@ void SSI263::DSUninit(void)
 
 //-----------------------------------------------------------------------------
 
-void SSI263::Reset(void)
+// Votrax phoneme continues to play after CTRL+RESET (tested on MAME 0.262)
+void SSI263::Reset(const bool powerCycle)
 {
+	if (!powerCycle)
+		return;
+
 	Stop();
-	ResetState();
+	ResetState(powerCycle);
 	CpuIrqDeassert(IS_SPEECH);
 }
 
@@ -866,6 +897,7 @@ void SSI263::PeriodicUpdate(UINT executedCycles)
 
 #define SS_YAML_KEY_SSI263 "SSI263"
 // NB. No version - this is determined by the parent "Mockingboard C" or "Phasor" unit
+// TODO: Persist m_isVotraxPhoneme & m_votraxPhoneme
 
 #define SS_YAML_KEY_SSI263_REG_DUR_PHON "Duration / Phoneme"
 #define SS_YAML_KEY_SSI263_REG_INF "Inflection"
@@ -884,7 +916,7 @@ void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_RATE_INF, m_rateInflection);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, m_ctrlArtAmp);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode.mode);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME, IsPhonemeActive());
 }
 
@@ -898,7 +930,7 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	m_rateInflection  = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_RATE_INF);
 	m_ctrlArtAmp      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP);
 	m_filterFreq      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_FILTER_FREQ);
-	m_currentMode     = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_CURRENT_MODE);
+	m_currentMode.mode = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_CURRENT_MODE);
 	bool activePhoneme = (version >= 7) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME) : false;
 	m_currentActivePhoneme = !activePhoneme ? -1 : 0x00;	// Not important which phoneme, since UpdateIRQ() resets this
 
@@ -910,7 +942,7 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	SetCardMode(mode);
 
 	// Only need to directly assert IRQ for Phasor mode (for Mockingboard mode it's done via UpdateIFR() in parent)
-	if (m_cardMode == PH_Phasor && (m_currentMode & DURATION_MODE_MASK) != MODE_IRQ_DISABLED && (m_currentMode & 1))
+	if (m_cardMode == PH_Phasor && m_currentMode.enableInts && m_currentMode.D7 & 1)
 		CpuIrqAssert(IS_SPEECH);
 
 	if (IsPhonemeActive())
