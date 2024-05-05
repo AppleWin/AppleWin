@@ -195,6 +195,9 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 #endif
 		if ((m_ctrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK))	// H->L
 		{
+			// NB. Just changed from CTL=1 (power-down) - where IRQ was de-asserted & D7=0
+			// . So CTL H->L never affects IRQ or D7
+
 			if ((m_durationPhoneme & DURATION_MODE_MASK) != MODE_IRQ_DISABLED)
 			{
 				m_currentMode.function = (m_durationPhoneme & DURATION_MODE_MASK) >> DURATION_MODE_SHIFT;
@@ -204,10 +207,6 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 			{
 				// "Disables A/!R output only; does not change previous A/!R response" (SSI263 datasheet)
 				m_currentMode.enableInts = 0;
-
-				// TODO: What if IRQ is currently asserted? Does it deassert the IRQ?
-//				CpuIrqDeassert(IS_SPEECH);
-				// NB. D7 is not cleared -- check this
 			}
 
 			// Device out of power down / "standby" mode, so play phoneme
