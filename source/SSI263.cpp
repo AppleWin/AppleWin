@@ -767,8 +767,10 @@ void SSI263::SetSpeechIRQ(void)
 						UpdateIFR(m_device, 0, SY6522::IxR_SSI263);
 				}
 			}
-			else if (m_cardMode == PH_Phasor)	// Phasor's SSI263 IRQ (A/!R) line is *also* wired directly to the 6502's IRQ (as well as the 6522's CA1)
+			else if (m_cardMode == PH_Phasor)
 			{
+				// Phasor (in native mode): SSI263 IRQ (A/!R) pin is wired directly to the 6502's IRQ
+				// . And A/!R is wired to the 6522's CA1 but only when in Mockingboard mode
 				CpuIrqAssert(IS_SPEECH);
 			}
 			else
