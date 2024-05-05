@@ -405,9 +405,9 @@ bool MockingboardCard::Is6522IRQ(void)
 		irq |= m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & 0x80 ? true : false;
 
 	// NB. Mockingboard generates IRQ on both 6522s:
-	// . SSI263's IRQ (A/!R) is routed via the 2nd 6522 (at $Cn80) and must generate a 6502 IRQ (not NMI)
-	//   - NB. 2nd SSI263's IRQ is routed via the 1st 6522 (at $Cn00) and again generates a 6502 IRQ
-	// . SC-01's IRQ (A/!R) is routed via the 6522 at $Cn00 (NB. Only the Mockingboard "Sound/Speech I" card supports the SC-01)
+	// . SSI263's IRQ (A/!R) is routed via the 2nd 6522's CA1 input (at $Cn80) and must generate a 6502 IRQ (not NMI)
+	//   - NB. 2nd SSI263's IRQ is routed via the 1st 6522's CA1 input (at $Cn00) and again generates a 6502 IRQ
+	// . SC-01's IRQ (!A/R) is routed via the 6522 at $Cn00 (NB. Only the Mockingboard "Sound/Speech I" card supports the SC-01)
 	// Phasor's SSI263 IRQ (A/!R) line is *also* wired directly to the 6502's IRQ (as well as the 6522's CA1)
 
 	return irq;
