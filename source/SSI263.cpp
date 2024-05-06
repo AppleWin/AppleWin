@@ -587,6 +587,7 @@ void SSI263::Update(void)
 
 	const double amplitude = m_isVotraxPhoneme ? 1.0
 		: m_ctrlArtAmp & CONTROL_MASK ? 0.0		// Power-down / standby
+		: m_filterFreq == FILTER_FREQ_SILENCE ? 0.0
 		: (double)(m_ctrlArtAmp & AMPLITUDE_MASK) / (double)AMPLITUDE_MASK;
 
 	bool bSpeechIRQ = false;

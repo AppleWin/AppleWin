@@ -51,7 +51,7 @@ public:
 		m_inflection = 0;
 		m_rateInflection = 0;
 		m_ctrlArtAmp = powerCycle ? CONTROL_MASK : 0;	// Chip power-on, so CTL=1 (power-down / standby)
-		m_filterFreq = 0;
+		m_filterFreq = powerCycle ? FILTER_FREQ_SILENCE : 0;	// Empirically seen at chip power-on (GH#175)
 
 		m_currentMode.mode = 0;
 
@@ -108,6 +108,7 @@ private:
 	//
 
 	static const BYTE CONTROL_MASK = 0x80;
+	static const BYTE FILTER_FREQ_SILENCE = 0xFF;
 
 	UINT m_slot;
 	BYTE m_device;	// SSI263 device# which is generating phoneme-complete IRQ (and only required whilst Mockingboard isn't a class)
