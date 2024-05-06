@@ -795,6 +795,27 @@ void SSI263::SetSpeechIRQ(void)
 
 //-----------------------------------------------------------------------------
 
+void SSI263::SetCardMode(PHASOR_MODE mode)
+{
+	const PHASOR_MODE oldCardMode = m_cardMode;
+	m_cardMode = mode;
+
+	if ((oldCardMode == PH_Phasor && m_cardMode == PH_Mockingboard)
+		|| (oldCardMode == PH_Mockingboard && m_cardMode == PH_Phasor))
+	{
+		if (m_currentMode.D7 == 1)
+		{
+			m_currentMode.D7 = 0;	// So that \PH_Mockingboard\ path sets IFR. Post: D7=1
+			SetSpeechIRQ();
+		}
+
+		if (m_cardMode == PH_Mockingboard)
+			CpuIrqDeassert(IS_SPEECH);
+	}
+}
+
+//-----------------------------------------------------------------------------
+
 bool SSI263::DSInit(void)
 {
 	//

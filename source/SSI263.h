@@ -62,7 +62,7 @@ public:
 	}
 
 	void SetDevice(UINT device) { m_device = device; }
-	void SetCardMode(PHASOR_MODE mode) { m_cardMode = mode; }
+	void SetCardMode(PHASOR_MODE mode);
 
 	bool DSInit(void);
 	void DSUninit(void);
