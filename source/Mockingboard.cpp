@@ -668,7 +668,7 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 		return MemReadFloatingBus(nExecutedCycles);
 #endif
 
-	// NB. Mockingboard: SSI263.bit7 not readable (TODO: check this with real h/w)
+	// NB. Mockingboard: SSI263.bit7 not readable
 	const BYTE subunit = QueryType() == CT_SDMusic ? SY6522_DEVICE_A : !(nAddr & 0x80) ? SY6522_DEVICE_A : SY6522_DEVICE_B;
 	const BYTE reg = nAddr & 0xf;
 	return m_MBSubUnit[subunit].sy6522.Read(reg);
