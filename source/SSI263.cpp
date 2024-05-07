@@ -140,9 +140,9 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 	ssiRegs[nReg] = nValue;
 #endif
 
-	// SSI263 datasheet is not clear, but a write to DURPHON must de-assert the IRQ and clear D7.
-	// . Empirically writes to regs 0,1 & 2 all de-assert the IRQ (and writes to 3,4..7 don't) (GH#1197)
-	// NB. The same for Mockingboard as there's no automatic handshake from the 6522 (CA2 isn't connected to the SSI263). So a write to reg0, 1 or 2 completes the handshake.
+	// SSI263 datasheet is not clear, but a write to DURPHON de-asserts the IRQ and clears D7.
+	// . Empirically writes to regs 0,1,2 (and reg3.CTL=1) all de-assert the IRQ (and writes to reg3.CTL=0 and regs 4..7 don't) (GH#1197)
+	// NB. The same for Mockingboard as there's no automatic handshake from the 6522 (CA2 isn't connected to the SSI263). So writes to regs 0, 1 or 2 complete the "handshake".
 	if (nReg <= SSI_RATEINF)
 	{
 		CpuIrqDeassert(IS_SPEECH);
@@ -771,7 +771,7 @@ void SSI263::SetSpeechIRQ(void)
 			else if (m_cardMode == PH_Phasor)
 			{
 				// Phasor (in native mode): SSI263 IRQ (A/!R) pin is connected directly to the 6502's IRQ
-				// . And A/!R is connected to the 6522's CA1 but only when in Mockingboard mode
+				// . And Mockingboard mode: A/!R is connected to the 6522's CA1
 				CpuIrqAssert(IS_SPEECH);
 			}
 			else
