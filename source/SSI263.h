@@ -47,13 +47,19 @@ public:
 
 		//
 
-		m_durationPhoneme = 0;
+		// After a chip power-on, if the first thing done is CTL=0, then empirically it can be observed that:
+		// . enableInts = 1 (mostly an SSI263 interrupt occurs, but not always)
+		// . DR1:0 != b#00 (since enableInts is set to 1, except when no interrupt => DR1:0 == b#00)
+		m_durationPhoneme = MODE_PHONEME_TRANSITIONED_INFLECTION;	// Typical function & phoneme=$00
 		m_inflection = 0;
 		m_rateInflection = 0;
-		m_ctrlArtAmp = powerCycle ? CONTROL_MASK : 0;	// Chip power-on, so CTL=1 (power-down / standby)
-		m_filterFreq = powerCycle ? FILTER_FREQ_SILENCE : 0;	// Empirically observed at chip power-on (GH#175)
+		m_ctrlArtAmp = powerCycle ? CONTROL_MASK : 0;				// Chip power-on, so CTL=1 (power-down / standby)
+		m_filterFreq = powerCycle ? FILTER_FREQ_SILENCE : 0;		// Empirically observed at chip power-on (GH#1302)
 
 		m_currentMode.mode = 0;
+		m_currentMode.function = 0;		// Set at runtime when CTL=0
+		m_currentMode.enableInts = 0;	// Set at runtime when CTL=0
+		m_currentMode.D7 = 0;			// Since in power-down mode (as per SSI263 datasheet)
 
 		//
 
@@ -87,6 +93,8 @@ public:
 
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version);
+	void SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, bool hasSC01);
+	void SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, bool hasSC01, UINT version);
 
 private:
 	void Play(unsigned int nPhoneme);
@@ -107,7 +115,27 @@ private:
 
 	//
 
+	// Duration/Phonome
+	static const BYTE DURATION_MODE_MASK = 0xC0;
+	static const BYTE DURATION_MODE_SHIFT = 6;
+	static const BYTE PHONEME_MASK = 0x3F;
+
+	static const BYTE MODE_PHONEME_TRANSITIONED_INFLECTION = 0xC0;
+	static const BYTE MODE_PHONEME_IMMEDIATE_INFLECTION = 0x80;
+	static const BYTE MODE_FRAME_IMMEDIATE_INFLECTION = 0x40;
+	static const BYTE MODE_IRQ_DISABLED = 0x00;	// disable interrupts, but retains one of the 3 modes
+
+	// Rate/Inflection
+	static const BYTE RATE_MASK = 0xF0;
+	static const BYTE INFLECTION_MASK_H = 0x08;	// I11
+	static const BYTE INFLECTION_MASK_L = 0x07;	// I2..I0
+
+	// Ctrl/Art/Amp
+	static const BYTE ARTICULATION_MASK = 0x70;
+	static const BYTE AMPLITUDE_MASK = 0x0F;
 	static const BYTE CONTROL_MASK = 0x80;
+
+	// Filter frequency range
 	static const BYTE FILTER_FREQ_SILENCE = 0xFF;
 
 	UINT m_slot;
@@ -151,10 +179,10 @@ private:
 	{
 		struct
 		{
-			BYTE function : 2;		// b7:6 = function
-			BYTE enableInts : 1;	// b5 = enable A/!R (ie. interrupts)
-			BYTE reserved : 4;
 			BYTE D7 : 1;			// b0=D7 pin (for IRQ)
+			BYTE reserved : 4;
+			BYTE enableInts : 1;	// b5 = enable A/!R (ie. interrupts)
+			BYTE function : 2;		// b7:6 = function
 		};
 		BYTE mode;
 	} m_currentMode;

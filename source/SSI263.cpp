@@ -54,25 +54,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 const DWORD SAMPLE_RATE_SSI263 = 22050;
 
-// Duration/Phonome
-const BYTE DURATION_MODE_MASK = 0xC0;
-const BYTE DURATION_MODE_SHIFT = 6;
-const BYTE PHONEME_MASK = 0x3F;
-
-const BYTE MODE_PHONEME_TRANSITIONED_INFLECTION = 0xC0;
-const BYTE MODE_PHONEME_IMMEDIATE_INFLECTION = 0x80;
-const BYTE MODE_FRAME_IMMEDIATE_INFLECTION = 0x40;
-const BYTE MODE_IRQ_DISABLED = 0x00;	// disable interrupts, but retains one of the 3 modes
-
-// Rate/Inflection
-const BYTE RATE_MASK = 0xF0;
-const BYTE INFLECTION_MASK_H = 0x08;	// I11
-const BYTE INFLECTION_MASK_L = 0x07;	// I2..I0
-
-// Ctrl/Art/Amp
-const BYTE ARTICULATION_MASK = 0x70;
-const BYTE AMPLITUDE_MASK = 0x0F;
-
 //-----------------------------------------------------------------------------
 
 #if LOG_SSI263B
@@ -678,8 +659,16 @@ void SSI263::Update(void)
 	{
 		// NB. if m_phonemePlaybackAndDebugger==true, then "m_phonemeAccurateLengthRemaining!=0" must be true.
 		// Since in UpdateAccurateLength(), (when m_phonemePlaybackAndDebugger==true) then m_phonemeAccurateLengthRemaining decs to zero.
+#if _DEBUG
+		if (m_phonemePlaybackAndDebugger)
+		{
+			_ASSERT(m_phonemeAccurateLengthRemaining);	// Check this!
+		}
+#endif
 		if (!m_phonemePlaybackAndDebugger /*|| m_phonemeAccurateLengthRemaining*/)	// superfluous, so commented out (see above)
+		{
 			UpdateIRQ();
+		}
 	}
 
 	if (m_phonemeLeadoutLength == 0)
@@ -753,7 +742,7 @@ void SSI263::UpdateIRQ(void)
 // Pre: m_isVotraxPhoneme, m_cardMode, m_device
 void SSI263::SetSpeechIRQ(void)
 {
-	if (!m_isVotraxPhoneme)
+	if (!m_isVotraxPhoneme && ((m_ctrlArtAmp & CONTROL_MASK) == 0))
 	{
 		if (m_currentMode.enableInts)
 		{
@@ -781,6 +770,7 @@ void SSI263::SetSpeechIRQ(void)
 		}
 
 		// Always set SSI263's D7 pin regardless of SSI263 mode (DR1:0), including when SSI263 ints are disabled (via MODE_IRQ_DISABLED)
+		// NB. Don't set D7 when in power-down / standby mode.
 		m_currentMode.D7 = 1;
 	}
 
@@ -911,7 +901,6 @@ void SSI263::PeriodicUpdate(UINT executedCycles)
 
 #define SS_YAML_KEY_SSI263 "SSI263"
 // NB. No version - this is determined by the parent "Mockingboard C" or "Phasor" unit
-// TODO: Persist m_isVotraxPhoneme & m_votraxPhoneme
 
 #define SS_YAML_KEY_SSI263_REG_DUR_PHON "Duration / Phoneme"
 #define SS_YAML_KEY_SSI263_REG_INF "Inflection"
@@ -948,6 +937,19 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	bool activePhoneme = (version >= 7) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME) : false;
 	m_currentActivePhoneme = !activePhoneme ? -1 : 0x00;	// Not important which phoneme, since UpdateIRQ() resets this
 
+	if (version < 12)
+	{
+		if (m_currentMode.function == 0)	// invalid function (but in older versions this was accepted)
+		{
+			m_currentMode.function = MODE_PHONEME_TRANSITIONED_INFLECTION >> DURATION_MODE_SHIFT;	// Typically this is used
+			m_currentMode.enableInts = 0;
+		}
+		else
+		{
+			m_currentMode.enableInts = 1;
+		}
+	}
+
 	yamlLoadHelper.PopMap();
 
 	//
@@ -956,11 +958,44 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	SetCardMode(mode);
 
 	// Only need to directly assert IRQ for Phasor mode (for Mockingboard mode it's done via UpdateIFR() in parent)
-	if (m_cardMode == PH_Phasor && m_currentMode.enableInts && m_currentMode.D7 & 1)
+	if (m_cardMode == PH_Phasor && m_currentMode.enableInts && m_currentMode.D7 == 1)
 		CpuIrqAssert(IS_SPEECH);
 
 	if (IsPhonemeActive())
 		UpdateIRQ();		// Pre: m_device, m_cardMode
 
 	m_lastUpdateCycle = GetLastCumulativeCycles();
+}
+
+//=============================================================================
+
+#define SS_YAML_KEY_SSI263 "SC01"
+// NB. No version - this is determined by the parent "Mockingboard C" or "Phasor" unit
+
+#define SS_YAML_KEY_SC01_PHONEME "SC01 Phoneme"
+#define SS_YAML_KEY_SC01_ACTIVE_PHONEME "SC01 Active Phoneme"
+
+void SSI263::SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, bool hasSC01)
+{
+	if (!hasSC01)
+		return;
+
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263);
+
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SC01_PHONEME, m_votraxPhoneme);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME, m_isVotraxPhoneme);
+}
+
+void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, bool hasSC01, UINT version)
+{
+	if (!hasSC01)
+		return;
+
+	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263))
+		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_SSI263);
+
+	m_votraxPhoneme = yamlLoadHelper.LoadUint(SS_YAML_KEY_SC01_PHONEME);
+	m_isVotraxPhoneme = yamlLoadHelper.LoadBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME);
+
+	yamlLoadHelper.PopMap();
 }

@@ -751,14 +751,13 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 				WriteToORB(SY6522_DEVICE_B);
 		}
 
-		bool CS_SSI263_A = (m_phasorMode == PH_Phasor)	? !(nAddr & 0x80) && (nAddr & 0x40)	// SSI263 at $Cn4x, $Cn6x
-														: nAddr & 0x40;						// SSI263 at $Cn4x-Cn7x, $CnCx-CnFx
-
-		bool CS_SSI263_B = (m_phasorMode == PH_Phasor)	? !(nAddr & 0x80) && (nAddr & 0x20)	// SSI263 at $Cn2x, $Cn6x
-														: nAddr & 0x20;						// SSI263 at $Cn2x-Cn3x, $Cn6x-Cn7x, $CnAx-CnBx, $CnEx-CnFx
-
 		if (m_phasorMode == PH_Mockingboard || m_phasorMode == PH_Phasor)	// No SSI263 for Echo+
 		{
+			// Confirmed that Phasor has no extra logic to map SSI263 (it's the same as Mockingboard's)
+			bool CS_SSI263_A = nAddr & 0x40;					// SSI263 at $Cn4x-Cn7x, $CnCx-CnFx
+
+			bool CS_SSI263_B = nAddr & 0x20;					// SSI263 at $Cn2x-Cn3x, $Cn6x-Cn7x, $CnAx-CnBx, $CnEx-CnFx
+
 			// NB. Mockingboard mode: writes to $Cn4x/SSI263 also get written to 1st 6522 (have confirmed on real Phasor h/w)
 			if (CS_SSI263_A)	// Primary SSI263
 				m_MBSubUnit[1].ssi263.Write(nAddr&0x7, nValue);	// 2nd 6522 is used for 1st speech chip
@@ -1155,7 +1154,9 @@ UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, BYTE 
 //    "Reg Address Latch Valid A" + "Reg Address Latch Valid B"
 //    Changed at AppleWin 1.30.14
 //11: Added: "Bus Driven by AY"
-const UINT kUNIT_VERSION = 11;
+//12: Added: SSI263: SC01 phoneme & active
+//    Current Mode changed (added bit5 = enableInts)
+const UINT kUNIT_VERSION = 12;
 
 #define SS_YAML_KEY_MB_UNIT "Unit"
 #define SS_YAML_KEY_AY_CURR_REG "AY Current Register"
@@ -1231,6 +1232,8 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		pMB->sy6522.SaveSnapshot(yamlSaveHelper);
 		AY8910_SaveSnapshot(yamlSaveHelper, subunit, AY8913_DEVICE_A, std::string(""));
 		pMB->ssi263.SaveSnapshot(yamlSaveHelper);
+		const bool hasSC01 = (subunit == 0);
+		pMB->ssi263.SC01_SaveSnapshot(yamlSaveHelper, hasSC01);
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state[0]);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister[0]);	// save all 8 bits (even though top 4 bits should be 0)
@@ -1271,6 +1274,8 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 		UpdateIFRandIRQ(pMB, 0, pMB->sy6522.GetReg(SY6522::rIFR));			// Assert any pending IRQs (GH#677)
 		AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string(""));
 		pMB->ssi263.LoadSnapshot(yamlLoadHelper, PH_Mockingboard, version);	// Pre: SetVotraxPhoneme()
+		const bool hasSC01 = (subunit == 0);
+		pMB->ssi263.SC01_LoadSnapshot(yamlLoadHelper, hasSC01, version);
 
 		pMB->nAYCurrentRegister[0] = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
 
@@ -1337,6 +1342,8 @@ void MockingboardCard::Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		AY8910_SaveSnapshot(yamlSaveHelper, subunit, AY8913_DEVICE_A, std::string("-A"));
 		AY8910_SaveSnapshot(yamlSaveHelper, subunit, AY8913_DEVICE_B, std::string("-B"));
 		pMB->ssi263.SaveSnapshot(yamlSaveHelper);
+		const bool hasSC01 = (subunit == 0);
+		pMB->ssi263.SC01_SaveSnapshot(yamlSaveHelper, hasSC01);
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state[0]);
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE_B, pMB->state[1]);
@@ -1405,6 +1412,8 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 			AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_B, std::string("-B"));
 		}
 		pMB->ssi263.LoadSnapshot(yamlLoadHelper, m_phasorMode, version);	// Pre: SetVotraxPhoneme()
+		const bool hasSC01 = (subunit == 0);
+		pMB->ssi263.SC01_LoadSnapshot(yamlLoadHelper, hasSC01, version);
 
 		pMB->nAYCurrentRegister[0] = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
 		if (version >= 10)
