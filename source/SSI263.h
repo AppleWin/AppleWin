@@ -143,7 +143,7 @@ private:
 	PHASOR_MODE m_cardMode;
 	short* m_pPhonemeData00;
 
-	int m_currentActivePhoneme;
+	int m_currentActivePhoneme;				// -1 (if none) or SSI263 or SC01 phoneme
 	bool m_isVotraxPhoneme;
 	BYTE m_votraxPhoneme;
 	UINT m_cyclesThisAudioFrame;

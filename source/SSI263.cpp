@@ -191,6 +191,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 			}
 
 			// Device out of power down / "standby" mode, so play phoneme
+			m_isVotraxPhoneme = false;
 			Play(m_durationPhoneme & PHONEME_MASK);
 		}
 
@@ -742,7 +743,7 @@ void SSI263::UpdateIRQ(void)
 // Pre: m_isVotraxPhoneme, m_cardMode, m_device
 void SSI263::SetSpeechIRQ(void)
 {
-	if (!m_isVotraxPhoneme && ((m_ctrlArtAmp & CONTROL_MASK) == 0))
+	if (!m_isVotraxPhoneme && (m_ctrlArtAmp & CONTROL_MASK) == 0)
 	{
 		if (m_currentMode.enableInts)
 		{
@@ -958,7 +959,7 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	SetCardMode(mode);
 
 	// Only need to directly assert IRQ for Phasor mode (for Mockingboard mode it's done via UpdateIFR() in parent)
-	if (m_cardMode == PH_Phasor && m_currentMode.enableInts && m_currentMode.D7 == 1)
+	if (m_cardMode == PH_Phasor && (m_ctrlArtAmp & CONTROL_MASK) == 0 && m_currentMode.enableInts && m_currentMode.D7 == 1)
 		CpuIrqAssert(IS_SPEECH);
 
 	if (IsPhonemeActive())
@@ -969,7 +970,7 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 
 //=============================================================================
 
-#define SS_YAML_KEY_SSI263 "SC01"
+#define SS_YAML_KEY_SC01 "SC01"
 // NB. No version - this is determined by the parent "Mockingboard C" or "Phasor" unit
 
 #define SS_YAML_KEY_SC01_PHONEME "SC01 Phoneme"
@@ -980,7 +981,7 @@ void SSI263::SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, bool hasSC01)
 	if (!hasSC01)
 		return;
 
-	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263);
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SC01);
 
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SC01_PHONEME, m_votraxPhoneme);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME, m_isVotraxPhoneme);
