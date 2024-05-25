@@ -73,7 +73,7 @@ public:
 	bool DSInit(void);
 	void DSUninit(void);
 
-	void Reset(const bool powerCycle);
+	void Reset(const bool powerCycle, const bool isPhasorCard);
 	bool IsPhonemeActive(void) { return m_currentActivePhoneme >= 0; }
 
 	BYTE Read(ULONG nExecutedCycles);
@@ -101,6 +101,7 @@ private:
 	void Stop(void);
 	void UpdateIRQ(void);
 	void UpdateAccurateLength(void);
+	void SetDeviceModeAndInts(void);
 
 	UINT64 GetLastCumulativeCycles(void);
 	void UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);

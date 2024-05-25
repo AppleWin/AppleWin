@@ -576,7 +576,7 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 
 		m_MBSubUnit[subunit].Reset(QueryType());
 		m_MBSubUnit[subunit].ssi263.SetCardMode(PH_Mockingboard);	// Revert to PH_Mockingboard mode
-		m_MBSubUnit[subunit].ssi263.Reset(powerCycle);
+		m_MBSubUnit[subunit].ssi263.Reset(powerCycle, m_phasorEnable);
 	}
 
 	// Reset state

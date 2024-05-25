@@ -178,17 +178,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 		{
 			// NB. Just changed from CTL=1 (power-down) - where IRQ was de-asserted & D7=0
 			// . So CTL H->L never affects IRQ or D7
-
-			if ((m_durationPhoneme & DURATION_MODE_MASK) != MODE_IRQ_DISABLED)
-			{
-				m_currentMode.function = (m_durationPhoneme & DURATION_MODE_MASK) >> DURATION_MODE_SHIFT;
-				m_currentMode.enableInts = 1;
-			}
-			else
-			{
-				// "Disables A/!R output only; does not change previous A/!R response" (SSI263 datasheet)
-				m_currentMode.enableInts = 0;
-			}
+			SetDeviceModeAndInts();
 
 			// Device out of power down / "standby" mode, so play phoneme
 			m_isVotraxPhoneme = false;
@@ -212,6 +202,20 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 #endif
 		m_filterFreq = nValue;
 		break;
+	}
+}
+
+void SSI263::SetDeviceModeAndInts(void)
+{
+	if ((m_durationPhoneme & DURATION_MODE_MASK) != MODE_IRQ_DISABLED)
+	{
+		m_currentMode.function = (m_durationPhoneme & DURATION_MODE_MASK) >> DURATION_MODE_SHIFT;
+		m_currentMode.enableInts = 1;
+	}
+	else
+	{
+		// "Disables A/!R output only; does not change previous A/!R response" (SSI263 datasheet)
+		m_currentMode.enableInts = 0;
 	}
 }
 
@@ -791,6 +795,7 @@ void SSI263::SetCardMode(PHASOR_MODE mode)
 	const PHASOR_MODE oldCardMode = m_cardMode;
 	m_cardMode = mode;
 
+	// TODO: What if switching to/from PH_EchoPlus?
 	if ((oldCardMode == PH_Phasor && m_cardMode == PH_Mockingboard)
 		|| (oldCardMode == PH_Mockingboard && m_cardMode == PH_Phasor))
 	{
@@ -843,11 +848,21 @@ void SSI263::DSUninit(void)
 
 //-----------------------------------------------------------------------------
 
+// SSI263 phoneme continues to play after CTRL+RESET (tested on real h/w)
 // Votrax phoneme continues to play after CTRL+RESET (tested on MAME 0.262)
-void SSI263::Reset(const bool powerCycle)
+void SSI263::Reset(const bool powerCycle, const bool isPhasorCard)
 {
 	if (!powerCycle)
+	{
+		if (isPhasorCard)
+		{
+			// Empirically observed it does CTL H->L to enable ints (and set the device mode?) (GH#175)
+			// TODO: Stick a 'scope on !PD/!RST pin 18
+			SetDeviceModeAndInts();
+		}
+
 		return;
+	}
 
 	Stop();
 	ResetState(powerCycle);
