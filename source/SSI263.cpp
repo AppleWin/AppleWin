@@ -857,8 +857,8 @@ void SSI263::Reset(const bool powerCycle, const bool isPhasorCard)
 		if (isPhasorCard)
 		{
 			// Empirically observed it does CTL H->L to enable ints (and set the device mode?) (GH#175)
+			// NB. RESET doesn't clear m_ctrlArtAmp.CTL (ie. if the device is in power-down/standby mode)
 			// TODO: Stick a 'scope on !PD/!RST pin 18
-			m_ctrlArtAmp &= ~CONTROL_MASK;
 			SetDeviceModeAndInts();
 		}
 
