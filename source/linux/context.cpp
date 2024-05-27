@@ -4,8 +4,8 @@
 #include "linux/linuxframe.h"
 #include "linux/registryclass.h"
 #include "linux/paddle.h"
-#include "linux/duplicates/PropertySheet.h"
 
+#include "Configuration/PropertySheet.h"
 #include "Debugger/Debug.h"
 
 #include "Interface.h"

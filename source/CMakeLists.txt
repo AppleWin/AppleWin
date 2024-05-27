@@ -120,6 +120,12 @@ set(SOURCE_FILES
   linux/duplicates/FourPlay.cpp
   linux/duplicates/SNESMAX.cpp
   linux/duplicates/Keyboard.cpp
+  linux/duplicates/PageConfig.cpp
+  linux/duplicates/PageConfigTfe.cpp
+  linux/duplicates/PageInput.cpp
+  linux/duplicates/PageSound.cpp
+  linux/duplicates/PageDisk.cpp
+  linux/duplicates/PageAdvanced.cpp
 
   Z80VICE/z80.cpp
   Z80VICE/z80mem.cpp
