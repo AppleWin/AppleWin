@@ -60,7 +60,6 @@ DEBUG_BUTTON            BITMAP                  "DEBUG.BMP"
 DRIVE1_BUTTON           BITMAP                  "DRIVE1.BMP"
 DRIVE2_BUTTON           BITMAP                  "DRIVE2.BMP"
 SETUP_BUTTON            BITMAP                  "SETUP.BMP"
-CHARSET40               BITMAP                  "CHARSET4.BMP"
 DISKOFF_BITMAP          BITMAP                  "DISKOFF.BMP"
 DISKREAD_BITMAP         BITMAP                  "DISKREAD.BMP"
 DISKWRITE_BITMAP        BITMAP                  "DISKWRIT.BMP"
@@ -361,6 +360,7 @@ IDR_FREEZES_F8_ROM      ROM                     "FREEZES_NON-AUTOSTART_F8_ROM.ro
 // VIDEO ROM
 //
 
+IDR_APPLE2_VIDEO_ROM          ROM               "Apple2_Video.rom"
 IDR_APPLE2_JPLUS_VIDEO_ROM    ROM               "Apple2_JPlus_Video.rom"
 IDR_APPLE2E_ENHANCED_VIDEO_ROM ROM              "Apple2e_Enhanced_Video.rom"
 IDR_BASE64A_VIDEO_ROM         ROM               "Base64A_German_Video.rom"
