@@ -256,6 +256,15 @@ static void VideoRomForIIJPlus(void)
 	userVideoRom2K(&csbits_a2j[1], pVideoRom, A2TYPE_APPLE2JPLUS, 1);
 }
 
+static void VideoRomForIIeEnhanced(void)
+{
+	BYTE* pVideoRom = GetFrame().GetResource(IDR_APPLE2E_ENHANCED_VIDEO_ROM, "ROM", Video::kVideoRomSize4K);
+	if (pVideoRom == NULL)
+		return;
+
+	userVideoRom4K(&csbits_enhanced2e[0], pVideoRom);
+}
+
 static void VideoRomForBase64A(void)
 {
 	BYTE* pVideoRom = GetFrame().GetResource(IDR_BASE64A_VIDEO_ROM, "ROM", Video::kVideoRomSize4K);
@@ -271,13 +280,15 @@ static void VideoRomForBase64A(void)
 
 void make_csbits(void)
 {
-	get_csbits(&csbits_enhanced2e[0], TEXT("CHARSET40"), 0);	// Enhanced //e: Alt char set off
-	get_csbits(&csbits_enhanced2e[1], TEXT("CHARSET40"), 16);	// Enhanced //e: Alt char set on (mousetext)
+//	get_csbits(&csbits_enhanced2e[0], TEXT("CHARSET40"), 0);	// Enhanced //e: Alt char set off
+//	get_csbits(&csbits_enhanced2e[1], TEXT("CHARSET40"), 16);	// Enhanced //e: Alt char set on (mousetext)
 	get_csbits(&csbits_a2[0],         TEXT("CHARSET40"), 32);	// Apple ][, ][+
 	get_csbits(&csbits_pravets82[0],  TEXT("CHARSET82"), 0);	// Pravets 82
 	get_csbits(&csbits_pravets8M[0],  TEXT("CHARSET8M"), 0);	// Pravets 8M
 	get_csbits(&csbits_pravets8C[0],  TEXT("CHARSET8C"), 0);	// Pravets 8A / 8C: Alt char set off
 	get_csbits(&csbits_pravets8C[1],  TEXT("CHARSET8C"), 16);	// Pravets 8A / 8C: Alt char set on
+
+	VideoRomForIIeEnhanced();	// GH#1308
 
 	// Original //e is just Enhanced //e with the 32 mousetext chars [0x40..0x5F] replaced by the non-alt charset chars [0x40..0x5F]
 	memcpy(csbits_2e, csbits_enhanced2e, sizeof(csbits_enhanced2e));

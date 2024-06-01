@@ -348,7 +348,7 @@ IDR_APPLE2_ROM          ROM                     "Apple2.rom"
 IDR_APPLE2_PLUS_ROM     ROM                     "Apple2_Plus.rom"
 IDR_APPLE2_JPLUS_ROM    ROM                     "Apple2_JPlus.rom"
 IDR_APPLE2E_ROM         ROM                     "Apple2e.rom"
-IDR_APPLE2E_ENHANCED_ROM ROM                     "Apple2e_Enhanced.rom"
+IDR_APPLE2E_ENHANCED_ROM ROM                    "Apple2e_Enhanced.rom"
 IDR_PRAVETS_82_ROM      ROM                     "Pravets82.rom"
 IDR_PRAVETS_8M_ROM      ROM                     "Pravets8M.rom"
 IDR_PRAVETS_8C_ROM      ROM                     "Pravets8C.rom"
@@ -362,6 +362,7 @@ IDR_FREEZES_F8_ROM      ROM                     "FREEZES_NON-AUTOSTART_F8_ROM.ro
 //
 
 IDR_APPLE2_JPLUS_VIDEO_ROM    ROM               "Apple2_JPlus_Video.rom"
+IDR_APPLE2E_ENHANCED_VIDEO_ROM ROM              "Apple2e_Enhanced_Video.rom"
 IDR_BASE64A_VIDEO_ROM         ROM               "Base64A_German_Video.rom"
 
 /////////////////////////////////////////////////////////////////////////////
