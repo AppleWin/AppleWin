@@ -770,7 +770,8 @@ void SSI263::SetSpeechIRQ(void)
 			}
 			else
 			{
-				_ASSERT(0);
+				_ASSERT(m_cardMode == PH_EchoPlus);
+				// SSI263 not visible from Echo+ mode, but still continues to operate
 			}
 		}
 
@@ -795,19 +796,19 @@ void SSI263::SetCardMode(PHASOR_MODE mode)
 	const PHASOR_MODE oldCardMode = m_cardMode;
 	m_cardMode = mode;
 
-	// TODO: What if switching to/from PH_EchoPlus?
-	if ((oldCardMode == PH_Phasor && m_cardMode == PH_Mockingboard)
-		|| (oldCardMode == PH_Mockingboard && m_cardMode == PH_Phasor))
-	{
-		if (m_currentMode.D7 == 1)
-		{
-			m_currentMode.D7 = 0;	// So that \PH_Mockingboard\ path sets IFR. Post: D7=1
-			SetSpeechIRQ();
-		}
+	if (oldCardMode == m_cardMode)
+		return;
 
-		if (m_cardMode == PH_Mockingboard)
-			CpuIrqDeassert(IS_SPEECH);
+	// mode change
+
+	if (m_currentMode.D7 == 1)
+	{
+		m_currentMode.D7 = 0;	// So that \PH_Mockingboard\ path sets IFR. Post: D7=1
+		SetSpeechIRQ();
 	}
+
+	if (m_cardMode != PH_Phasor)
+		CpuIrqDeassert(IS_SPEECH);
 }
 
 //-----------------------------------------------------------------------------
