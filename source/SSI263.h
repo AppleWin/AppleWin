@@ -93,8 +93,8 @@ public:
 
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version);
-	void SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, bool hasSC01);
-	void SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, bool hasSC01, UINT version);
+	void SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
+	void SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 private:
 	void Play(unsigned int nPhoneme);

@@ -993,24 +993,18 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 #define SS_YAML_KEY_SC01_PHONEME "SC01 Phoneme"
 #define SS_YAML_KEY_SC01_ACTIVE_PHONEME "SC01 Active Phoneme"
 
-void SSI263::SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, bool hasSC01)
+void SSI263::SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	if (!hasSC01)
-		return;
-
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SC01);
 
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SC01_PHONEME, m_votraxPhoneme);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME, m_isVotraxPhoneme);
 }
 
-void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, bool hasSC01, UINT version)
+void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (!hasSC01)
-		return;
-
-	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263))
-		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_SSI263);
+	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SC01))
+		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_SC01);
 
 	m_votraxPhoneme = yamlLoadHelper.LoadUint(SS_YAML_KEY_SC01_PHONEME);
 	m_isVotraxPhoneme = yamlLoadHelper.LoadBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME);
