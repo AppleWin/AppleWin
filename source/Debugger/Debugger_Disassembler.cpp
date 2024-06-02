@@ -124,7 +124,7 @@ char FormatChar4Font(const BYTE b, bool* pWasHi_, bool* pWasLo_)
 // Disassembly
 	/*
 		// Thought about moving MouseText to another location, say high bit, 'A' + 0x80
-		// But would like to keep compatibility with existing CHARSET40
+		// But would like to keep compatibility with existing CHARSET40 - UPDATE: we now use original video ROMs (GH#1308)
 		// Since we should be able to display all apple chars 0x00 .. 0xFF with minimal processing
 		// Use CONSOLE_COLOR_ESCAPE_CHAR to shift to mouse text
 		* Apple Font
