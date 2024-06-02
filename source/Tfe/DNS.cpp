@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #ifndef _MSC_VER
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #include <netdb.h>
 #endif
 
