@@ -41,7 +41,8 @@ namespace
         frame->TogglePaused();
         break;
       }
-    case 279: // Shift-F3
+    case KEY_F(4):
+    case 279: // Shift-F3 (this is non standard, use F4 instead)
       {
         quit = true;
         break;
