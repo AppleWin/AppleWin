@@ -8,6 +8,8 @@ namespace
     {
      {IDR_APPLE2_ROM, "Apple2.rom"},
      {IDR_APPLE2_PLUS_ROM, "Apple2_Plus.rom"},
+     {IDR_APPLE2_VIDEO_ROM, "Apple2_Video.rom"},
+     {IDR_APPLE2E_ENHANCED_VIDEO_ROM, "Apple2e_Enhanced_Video.rom"},
      {IDR_APPLE2_JPLUS_ROM, "Apple2_JPlus.rom"},
      {IDR_APPLE2E_ROM, "Apple2e.rom"},
      {IDR_APPLE2E_ENHANCED_ROM, "Apple2e_Enhanced.rom"},
