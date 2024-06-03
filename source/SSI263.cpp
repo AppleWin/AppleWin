@@ -579,7 +579,8 @@ void SSI263::Update(void)
 	bool bSpeechIRQ = false;
 
 	{
-		const BYTE DUR = m_durationPhoneme >> DURATION_MODE_SHIFT;
+		const BYTE DUR = (m_currentMode.function == (MODE_FRAME_IMMEDIATE_INFLECTION >> DURATION_MODE_SHIFT)) ? 3	// Frame timing mode
+						: m_durationPhoneme >> DURATION_MODE_SHIFT;	// Phoneme timing mode
 		const BYTE numSamplesToAvg = (DUR <= 1) ? 1 :
 									 (DUR == 2) ? 2 :
 												  4;
