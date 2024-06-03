@@ -69,11 +69,12 @@ typedef int socklen_t;
 #define SOCK_EWOULDBLOCK EWOULDBLOCK
 #define SOCK_EINPROGRESS EINPROGRESS
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 #include <poll.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/types.h>
 #include <errno.h>
 
 #endif
