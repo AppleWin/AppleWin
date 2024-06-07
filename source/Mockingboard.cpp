@@ -838,6 +838,8 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 		m_phasorClockScaleFactor = 1;
 	else if (m_phasorMode == PH_Phasor)
 		m_phasorClockScaleFactor = 2;
+	else // undefined mode
+		m_phasorClockScaleFactor = 1;	// TODO: Check for undefined Phasor mode
 
 	if (m_phasorMode == PH_Mockingboard)
 	{
@@ -848,7 +850,7 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 	AY8910_InitClock((int)(Get6502BaseClock() * m_phasorClockScaleFactor));
 
 	for (UINT i = 0; i < NUM_SSI263; i++)
-		m_MBSubUnit[i].ssi263.SetCardMode(m_phasorMode);
+		m_MBSubUnit[i].ssi263.SetCardMode(m_phasorMode);	// TODO: Check for undefined Phasor mode
 
 #if DBG_SUPPORT_ECHOPLUS
 	if (m_phasorMode == PH_EchoPlus && (nAddr & 0xf) == 0)

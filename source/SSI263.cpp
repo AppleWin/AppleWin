@@ -23,7 +23,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: SSI263 emulation
  *
- * Author: Various
+ * Extra "spec" that's not obvious from the datasheet: (GH#175)
+ * . Writes to regs 0,1,2 (and reg3.CTL=1) all de-assert the IRQ (and writes to reg3.CTL=0 and regs 4..7 don't) (GH#1197)
+ * . A phoneme will continue playing back infinitely; unless the phoneme is changed or CTL=1.
+ *   . NB. if silenced (Amplitude=0) it's still playing.
+ *   . The IRQ is set at the end of the phoneme.
+ *   . If IRQ is then cleared, a new IRQ will occur when the phoneme completes again (but need to clear IRQ with a write to reg0, 1 or 2, even for Mockingboard-C).
+ * . CTL=1 sets "PD" (Power Down / "standby") mode, also set at power-on.
+ *   . Registers can still be changed in this mode.
+ *   . IRQ de-asserted & D7=0.
+ * . CTL=0 brings device out of "PD" mode, the mode will be set to DR1,DR0 and the phoneme P5-P0 will play.
+ * . Setting mode to DR1:0 = %00 just disables A/!R (ie. disables interrupts), but otherwise retains the previous DR1:0 mode.
+ *   . If an IRQ was previously asserted then to set DR1:0=%00, you must go via CTL=1, which de-asserts the IRQ.
+ * . Mockingboard-C: CTRL+RESET is not connected to !PD/!RST pin 18.
+ *   . Phasor: TODO: check with a 'scope.
+ *   . Phasor: with SSI263 ints disabled & reg0's DR1:0 != %00, then CTRL+RESET will cause SSI263 to enable ints & assert IRQ.
+ *     . it's as if the SSI263 does a CTL H->L to pick-up the new DR1:0. (Bug in SSI263? Assume it should remain in PD mode.)
+ *     . but if CTL=1, then CTRL+RESET has no affect.
+ * . Power-on: PD=1 (so D7=0), reg4 (Filter Freq)=0xFF (other regs are seemingly random?).
  */
 
 #include "StdAfx.h"
@@ -176,7 +193,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 #endif
 		if ((m_ctrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK))	// H->L
 		{
-			// NB. Just changed from CTL=1 (power-down) - where IRQ was de-asserted & D7=0
+			// NB. Just changed from CTL=1 (power-down) - where IRQ was already de-asserted & D7=0
 			// . So CTL H->L never affects IRQ or D7
 			SetDeviceModeAndInts();
 
@@ -859,8 +876,9 @@ void SSI263::Reset(const bool powerCycle, const bool isPhasorCard)
 		if (isPhasorCard)
 		{
 			// Empirically observed it does CTL H->L to enable ints (and set the device mode?) (GH#175)
-			// NB. RESET doesn't clear m_ctrlArtAmp.CTL (ie. if the device is in power-down/standby mode then ignore RST)
-			// TODO: Stick a 'scope on !PD/!RST pin 18
+			// NB. CTRL+RESET doesn't clear m_ctrlArtAmp.CTL (ie. if the device is in power-down/standby mode then ignore RST)
+			// Speculate that there's a bug in the SSI263 and that RST should put the device into power-down/standby mode (ie. silence the device)
+			// TODO: Stick a 'scope on !PD/!RST pin 18 to see what the Phasor h/w does.
 			if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
 				SetDeviceModeAndInts();
 		}
