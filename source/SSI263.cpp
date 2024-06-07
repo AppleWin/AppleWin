@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *   . Phasor: TODO: check with a 'scope.
  *   . Phasor: with SSI263 ints disabled & reg0's DR1:0 != %00, then CTRL+RESET will cause SSI263 to enable ints & assert IRQ.
  *     . it's as if the SSI263 does a CTL H->L to pick-up the new DR1:0. (Bug in SSI263? Assume it should remain in PD mode.)
- *     . but if CTL=1, then CTRL+RESET has no affect.
+ *     . but if CTL=1, then CTRL+RESET has no effect.
  * . Power-on: PD=1 (so D7=0), reg4 (Filter Freq)=0xFF (other regs are seemingly random?).
  */
 
