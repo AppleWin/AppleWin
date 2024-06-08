@@ -153,6 +153,7 @@ void SY6522::Write(BYTE nReg, BYTE nValue)
 		m_regs.ORB = nValue & m_regs.DDRB;
 		break;
 	case 0x01:	// ORA
+	case 0x0f:	// ORA_NO_HS
 		m_regs.ORA = nValue & m_regs.DDRA;
 		break;
 	case 0x02:	// DDRB
@@ -219,8 +220,6 @@ void SY6522::Write(BYTE nReg, BYTE nValue)
 		if (m_syncEvent[1])
 			m_syncEvent[1]->m_canAssertIRQ = (m_regs.IER & IxR_TIMER2) ? true : false;
 		UpdateIFR(0);
-		break;
-	case 0x0f:	// ORA_NO_HS
 		break;
 	}
 }
@@ -348,6 +347,7 @@ BYTE SY6522::Read(BYTE nReg)
 		if (m_isMegaAudio) nValue = 0x00;			// MegaAudio: IRB just reads as $00
 		break;
 	case 0x01:	// IRA
+	case 0x0f:	// IRA_NO_HS
 		nValue = m_regs.ORA | (m_isBusDriven ? 0x00 : (m_regs.DDRA ^ 0xff));	// NB. Inputs bits driven by AY8913 if in PSG READ mode
 		if (m_isMegaAudio) nValue = 0x00;			// MegaAudio: IRA just reads as $00
 		break;
@@ -399,9 +399,6 @@ BYTE SY6522::Read(BYTE nReg)
 		nValue = 0x80 | m_regs.IER;	// GH#567
 		if (m_isMegaAudio)
 			nValue &= 0x7F;
-		break;
-	case 0x0f:	// ORA_NO_HS
-		nValue = m_regs.ORA;
 		break;
 	}
 
