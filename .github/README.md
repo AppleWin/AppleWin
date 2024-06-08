@@ -53,7 +53,7 @@ Keyboard shortcuts
 * ``F2``: reset the machine
 * ``Shift-F2``: ctrl reset
 * ``F3``: pause
-* ``Shift-F3``: exit
+* ``Shift-F3``: exit (``F4`` as well to avoid key code issues)
 * ``F5``: swap disks
 * ``F11``, ``F12``: Load, Save Snapshot
 * ``ALT-RIGHT``: wider hi res graphis
