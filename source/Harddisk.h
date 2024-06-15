@@ -35,6 +35,7 @@ enum HardDrive_e
 };
 
 const UINT kHarddiskMaxNumBlocks = 0xffff;	// Maximum number of blocks we can report.
+const UINT kMaxSmartPortUnits = 2;
 
 class HardDiskDrive
 {
@@ -102,6 +103,7 @@ public:
 	void LoadLastDiskImage(const int iDrive);
 	void SetUserNumBlocks(UINT numBlocks) { m_userNumBlocks = numBlocks; }
 	void UseHdcFirmwareV1(void) { m_useHdcFirmwareV1 = true; }
+	void UseHdcFirmwareSmartPort(void) { m_useHdcFirmwareSmartPort = true; }
 
 	void GetLightStatus(Disk_Status_e* pDisk1Status);
 	bool ImageSwap(void);
@@ -112,6 +114,8 @@ public:
 
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+	static BYTE __stdcall IOReadSmartPort(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
+	static BYTE __stdcall IOWriteSmartPort(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 private:
 	void CleanupDriveInternal(const int iDrive);
@@ -132,8 +136,10 @@ private:
 	UINT64 m_notBusyCycle;
 	UINT m_userNumBlocks;
 	bool m_useHdcFirmwareV1;
+	bool m_useHdcFirmwareSmartPort;
 
 	bool m_saveDiskImage;	// Save the DiskImage name to Registry
 
 	HardDiskDrive m_hardDiskDrive[NUM_HARDDISKS];
+	HardDiskDrive m_smartPortController;	// SP unit 0
 };

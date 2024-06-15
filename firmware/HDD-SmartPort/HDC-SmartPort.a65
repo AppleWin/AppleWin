@@ -115,8 +115,8 @@ Cn_start		lda #$20
 				lda #$00
 				cmp #$03				; will set C=0
 
-				lda #$00				; SP mode
-;				lda #$3C				; BLK mode
+;				lda #$00				; SP mode
+				lda #$3C				; BLK mode
 				bcc Cn_Bootstrap
 
 Cn_Entry_BLK	sec						; $Cn0A - BLK entrypoint
@@ -158,11 +158,12 @@ Cn_Entry		php
 
 				lda Ptr1+1
 				pha
-				
+
+; TODO: tsx, as X=$n0
 				lda $100,x				; rts LO byte
 				sta Ptr1
-;				sec						; from bcc above...
-				adc #2					; ...so will add 3
+;				clc						; from bcs above
+				adc #3
 				sta $100,x				; rts LO byte
 
 				lda $101,x				; rts HI byte
@@ -191,14 +192,12 @@ Cn_Bootstrap	bit IO_IIE_OPENAPPLE
 ; Lets check to see if there's an image ready
 ; Slot n, disk 1
 
-				sta BLK_UnitNum,x		; b7=0 => disk 1, b6b5b4 = n
-
 				lda #BLK_Cmd_Status
-				sta BLK_Cmd
-;				lda #0				
-				lda IO_Execute,x
+				sta IO_Unitnum,x		; b7=0 => disk 1
+				sta	IO_Command,x
+				lda IO_Execute,x		; Post: A=STATUS
 
-				lda IO_Status,x			; Post: C=0 or 1
+;				lda IO_Status,x			; Post: C=0 or 1
 				lsr						; on error A = 0eeeeee1, where eeeeee = Standard ProDOS error codes (see ProDOS.inc)
 				bcs Cn_Sloop			; no image ready, boot Slot n-1 image instead
 ;--------------------------------------				
@@ -239,7 +238,7 @@ Cn_BLK			php
 				stx Slot_n0
 
 				ldy #0
-				
+
 -				lda BLK_Cmd,y
 				sta IO_Command,x		; BLK_Cmds are $0x
 				iny						; BLK_UnitNums are DSSS0000 : if SSS does NOT match physical slot...
@@ -258,7 +257,7 @@ Cn_BLK			php
 
 				ror 					; Post: C=0 or 1
 				bcs Cn_Sloop			; Boot Failed....
-				
+
 				jmp BootBlocklA2		; Success, run $801 BOOT code for Apple ][ (not /// at $800)
 
 Cn_BLK_Done		ror 					; Post: C=0 or 1
@@ -277,7 +276,7 @@ Cn_BLK_Done		ror 					; Post: C=0 or 1
 Cn_SP			lda (Ptr1),y			; CMD byte
 
 				cmp #SP_Cmd_format
-				bcs Cn_SP_E_BADCALL		; only STATUS,READBLOCK & WRITEBLOCK supported
+				bcs Cn_SP_E_BADCALL		; only STATUS, READBLOCK & WRITEBLOCK supported
 
 				ora #$80				; Smartport calls = $8x, Statuscode written at IO_StatusCode
 
@@ -288,7 +287,7 @@ Cn_SP			lda (Ptr1),y			; CMD byte
 				iny						; param LO
 				lda (Ptr1),y
 				pha
-				
+
 				iny						; param HI
 				lda (Ptr1),y
 
@@ -299,7 +298,7 @@ Cn_SP			lda (Ptr1),y			; CMD byte
 				ldy #0					; Param Cnt
 
 				lda (Ptr1),y
-				cmp #3					; STATUS,READBLOCK & WRITEBLOCK = all 3 parameters
+				cmp #3					; STATUS, READBLOCK & WRITEBLOCK = all 3 parameters
 				sec
 				bne Cn_SP_E_BADCNT
 
@@ -314,11 +313,11 @@ Cn_SP			lda (Ptr1),y			; CMD byte
 
 -				lda IO_Status,x			; b7=busy doing DMA?
 				bmi -
-				
+
 				ror						; get C=1 & A = ERROR CODE ... or C=0 & A = 0
 
 				tax						; Save Error Code
-				
+
 				!byte $2C				; BIT ABS
 
 Cn_SP_E_BADCALL	ldx #E_BADCALL
@@ -332,9 +331,9 @@ Cn_SP_E_BADCNT	ldx #E_BADCNT
 
 				pla
 				sta Ptr1
-				
+
 				txa						; Restore Error Code
-				
+
 				ldx #0
 				ldy #2					; exit returning YX = $0200 bytes transferred if success
 
