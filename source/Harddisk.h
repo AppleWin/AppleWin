@@ -114,8 +114,6 @@ public:
 
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
-	static BYTE __stdcall IOReadSmartPort(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
-	static BYTE __stdcall IOWriteSmartPort(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 private:
 	void CleanupDriveInternal(const int iDrive);
