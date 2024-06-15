@@ -54,7 +54,7 @@ Memory map ProDOS BLK device (IO addr + s*$10):
 	C087	(r/w) HIGH BYTE OF BLOCK NUMBER
 	C088	(r)   NEXT BYTE (legacy read-only port - still supported)
 	C089	(r)   LOW BYTE OF DISK IMAGE SIZE IN BLOCKS
-	C08A	(r)   HIGHT BYTE OF DISK IMAGE SIZE IN BLOCKS
+	C08A	(r)   HIGH BYTE OF DISK IMAGE SIZE IN BLOCKS
 
 Firmware notes:
 . ROR ABS16,X and ROL ABS16,X - only used for $C081+s*$10 STATUS register:
@@ -78,7 +78,7 @@ Memory map SmartPort device (IO addr + s*$10):
 	C088	(w)   3rd byte for SP 24 bit block number
 ;	C088	(r)   NEXT BYTE (legacy read-only port - still supported)
 	C089	(r)   LOW BYTE OF DISK IMAGE SIZE IN BLOCKS
-	C08A	(r)   HIGHT BYTE OF DISK IMAGE SIZE IN BLOCKS
+	C08A	(r)   HIGH BYTE OF DISK IMAGE SIZE IN BLOCKS
 
 */
 
@@ -193,10 +193,7 @@ void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 
 	memcpy(pCxRomPeripheral + m_slot * APPLE_SLOT_SIZE, pData, HARDDISK_FW_SIZE);
 
-	if (m_useHdcFirmwareSmartPort)
-		RegisterIoHandler(m_slot, IOReadSmartPort, IOWriteSmartPort, NULL, NULL, this, NULL);
-	else
-		RegisterIoHandler(m_slot, IORead, IOWrite, NULL, NULL, this, NULL);
+	RegisterIoHandler(m_slot, IORead, IOWrite, NULL, NULL, this, NULL);
 }
 
 //===========================================================================
@@ -476,6 +473,29 @@ bool HarddiskInterfaceCard::IsDriveUnplugged(const int iDrive)
 
 //===========================================================================
 
+// ProDOS BLK & SmartPort commands
+//
+const UINT BLK_Cmd_Status = 0x00;
+const UINT BLK_Cmd_Read = 0x01;
+const UINT BLK_Cmd_Write = 0x02;
+const UINT BLK_Cmd_Format = 0x03;
+//
+const UINT SP_Cmd_status = 0x00;
+const UINT SP_Cmd_status_STATUS = 0x00;
+const UINT SP_Cmd_status_GETDCB = 0x01;
+const UINT SP_Cmd_status_GETNL = 0x02;
+const UINT SP_Cmd_status_GETDIB = 0x03;
+const UINT SP_Cmd_readblock = 0x01;
+const UINT SP_Cmd_writeblock = 0x02;
+const UINT SP_Cmd_format = 0x03;
+const UINT SP_Cmd_control = 0x04;
+const UINT SP_Cmd_init = 0x05;
+const UINT SP_Cmd_open = 0x06;
+const UINT SP_Cmd_close = 0x07;
+const UINT SP_Cmd_read = 0x08;
+const UINT SP_Cmd_write = 0x09;
+const UINT SP_Cmd_extended = 0x40;
+
 #define DEVICE_OK				0x00
 #define DEVICE_IO_ERROR			0x27
 #define DEVICE_NOT_CONNECTED	0x28	// No device detected/connected
@@ -484,7 +504,10 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 {
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
-	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->m_unitNum >> 7]);	// bit7 = drive select
+
+	HardDiskDrive* pHDD = pCard->GetUnit();
+	if (pHDD == NULL)
+		return DEVICE_NOT_CONNECTED;
 
 	CpuCalcCycles(nExecutedCycles);
 	const UINT CYCLES_FOR_DMA_RW_BLOCK = HD_BLOCK_SIZE;
@@ -503,14 +526,14 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 				switch (pCard->m_command)
 				{
 					default:
-					case 0x00: //status
+					case BLK_Cmd_Status:
 						if (ImageGetImageSize(pHDD->m_imagehandle) == 0)
 						{
 							pHDD->m_error = 1;
 							r = DEVICE_IO_ERROR;
 						}
 						break;
-					case 0x01: //read
+					case BLK_Cmd_Read:
 						if ((pHDD->m_diskblock * HD_BLOCK_SIZE) < ImageGetImageSize(pHDD->m_imagehandle))
 						{
 							bool breakpointHit = false;
@@ -575,7 +598,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 							r = DEVICE_IO_ERROR;
 						}
 						break;
-					case 0x02: //write
+					case BLK_Cmd_Write:
 						{
 							pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
 							bool bRes = true;
@@ -650,7 +673,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 							}
 						}
 						break;
-					case 0x03: //format
+					case BLK_Cmd_Format:
 						pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
 						break;
 				}
@@ -725,7 +748,10 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 {
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
-	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->m_unitNum >> 7]);	// bit7 = drive select
+
+	HardDiskDrive* pHDD = pCard->GetUnit();
+	if (pHDD == NULL)
+		return DEVICE_NOT_CONNECTED;
 
 	BYTE r = DEVICE_OK;
 
@@ -772,6 +798,26 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 }
 
 //===========================================================================
+
+HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
+{
+	const bool isSmartPortFirmware = mem[0xC007 + 0x100 * m_slot] == 0x00;
+
+	if (!isSmartPortFirmware)
+		return &m_hardDiskDrive[m_unitNum >> 7];	// bit7 = drive select
+
+	if (m_unitNum > kMaxSmartPortUnits)
+		return NULL;	// TODO: support more than 2 units
+
+	if (m_unitNum == 0)
+		return &m_smartPortController;
+
+	return &m_hardDiskDrive[m_unitNum - 1];
+}
+
+//===========================================================================
+
+#if 0
 
 BYTE __stdcall HarddiskInterfaceCard::IOReadSmartPort(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
@@ -1061,6 +1107,8 @@ BYTE __stdcall HarddiskInterfaceCard::IOWriteSmartPort(WORD pc, WORD addr, BYTE 
 	pCard->UpdateLightStatus(pHDD);
 	return r;
 }
+
+#endif
 
 //===========================================================================
 

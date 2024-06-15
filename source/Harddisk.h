@@ -125,6 +125,7 @@ private:
 	const std::string& DiskGetBaseName(const int iDrive);
 	bool SelectImage(const int drive, LPCSTR pszFilename);
 	void UpdateLightStatus(HardDiskDrive* pHDD);
+	HardDiskDrive* GetUnit(void);
 	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo);
 	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
@@ -141,5 +142,5 @@ private:
 	bool m_saveDiskImage;	// Save the DiskImage name to Registry
 
 	HardDiskDrive m_hardDiskDrive[NUM_HARDDISKS];
-	HardDiskDrive m_smartPortController;	// SP unit 0
+	HardDiskDrive m_smartPortController;		// unit-0 is the SmartPort controller
 };
