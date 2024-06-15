@@ -821,9 +821,9 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 
 HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
 {
-	const bool isSmartPortFirmware = mem[0xC007 + 0x100 * m_slot] == 0x00;
+	const bool isSmartPortCmd = m_command & SP_Cmd_base;
 
-	if (!isSmartPortFirmware)
+	if (!isSmartPortCmd)
 		return &m_hardDiskDrive[m_unitNum >> 7];	// bit7 = drive select
 
 	if (m_unitNum > kMaxSmartPortUnits)

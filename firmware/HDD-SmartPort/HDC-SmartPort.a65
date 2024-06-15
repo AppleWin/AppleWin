@@ -115,8 +115,8 @@ Cn_start		lda #$20
 				lda #$00
 				cmp #$03				; will set C=0
 
-;				lda #$00				; SP mode
-				lda #$3C				; BLK mode
+				lda #$00				; SP mode
+;				lda #$3C				; BLK mode
 				bcc Cn_Bootstrap
 
 Cn_Entry_BLK	sec						; $Cn0A - BLK entrypoint
