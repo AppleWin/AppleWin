@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /*
 Memory map ProDOS BLK device (IO addr + s*$10):
+. "hddrvr" v1 and v2 firmware
 
     C080	(r)   EXECUTE AND RETURN STATUS
 	C081	(r)   STATUS (or ERROR): b7=busy, b0=error
@@ -65,6 +66,8 @@ Firmware notes:
 ---
 
 Memory map SmartPort device (IO addr + s*$10):
+. "hdc-smartport" firmware
+. I/O basically compatible with older "hddrvr" firmware
 
 	C080	(r)   EXECUTE (AND RETURN STATUS?)
 	C081	(r)   STATUS : b7=busy, b0=error
@@ -72,7 +75,7 @@ Memory map SmartPort device (IO addr + s*$10):
 	C083	(w)   UNIT NUMBER : BLK = DSSS0000 if SSS != n from CnXX, add 2 to D (4 drives support). SP = $00,$01.....
 	C084	(w)   LOW BYTE OF MEMORY BUFFER
 	C085	(w)   HIGH BYTE OF MEMORY BUFFER
-	C086	(w?)   STATUS CODE : write SP status code $00, $03
+	C086	(w)   STATUS CODE : write SP status code $00(device status), $03(device info block)
 	C086	(w)   LOW BYTE OF BLOCK NUMBER : BLK = 16 bit value. SP = 24 bit value
 	C087	(w)   HIGH BYTE OF BLOCK NUMBER
 	C088	(w)   3rd byte for SP 24 bit block number
@@ -159,6 +162,9 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	// The HDD interface has a single Command register for both drives:
 	// . ProDOS will write to Command before switching drives
 	m_command = 0;
+
+	// SmartPort Status cmd's Status code
+	m_statusCode = 0;
 
 	// Interface busy doing DMA for r/w when current cycle is earlier than this cycle
 	m_notBusyCycle = 0;
@@ -475,28 +481,31 @@ bool HarddiskInterfaceCard::IsDriveUnplugged(const int iDrive)
 
 // ProDOS BLK & SmartPort commands
 //
-const UINT BLK_Cmd_Status = 0x00;
-const UINT BLK_Cmd_Read = 0x01;
-const UINT BLK_Cmd_Write = 0x02;
-const UINT BLK_Cmd_Format = 0x03;
+const UINT BLK_Cmd_Status		= 0x00;
+const UINT BLK_Cmd_Read			= 0x01;
+const UINT BLK_Cmd_Write		= 0x02;
+const UINT BLK_Cmd_Format		= 0x03;
 //
-const UINT SP_Cmd_status = 0x00;
-const UINT SP_Cmd_status_STATUS = 0x00;
-const UINT SP_Cmd_status_GETDCB = 0x01;
-const UINT SP_Cmd_status_GETNL = 0x02;
-const UINT SP_Cmd_status_GETDIB = 0x03;
-const UINT SP_Cmd_readblock = 0x01;
-const UINT SP_Cmd_writeblock = 0x02;
-const UINT SP_Cmd_format = 0x03;
-const UINT SP_Cmd_control = 0x04;
-const UINT SP_Cmd_init = 0x05;
-const UINT SP_Cmd_open = 0x06;
-const UINT SP_Cmd_close = 0x07;
-const UINT SP_Cmd_read = 0x08;
-const UINT SP_Cmd_write = 0x09;
-const UINT SP_Cmd_extended = 0x40;
+const UINT SP_Cmd_base			= 0x80;
+const UINT SP_Cmd_extended		= 0x40;
+const UINT SP_Cmd_status		= SP_Cmd_base + 0x00;
+const UINT SP_Cmd_status_STATUS	= 0x00;
+const UINT SP_Cmd_status_GETDCB	= 0x01;
+const UINT SP_Cmd_status_GETNL	= 0x02;
+const UINT SP_Cmd_status_GETDIB	= 0x03;
+const UINT SP_Cmd_readblock		= SP_Cmd_base + 0x01;
+const UINT SP_Cmd_writeblock	= SP_Cmd_base + 0x02;
+const UINT SP_Cmd_format		= SP_Cmd_base + 0x03;
+const UINT SP_Cmd_control		= SP_Cmd_base + 0x04;
+const UINT SP_Cmd_init			= SP_Cmd_base + 0x05;
+const UINT SP_Cmd_open			= SP_Cmd_base + 0x06;
+const UINT SP_Cmd_close			= SP_Cmd_base + 0x07;
+const UINT SP_Cmd_read			= SP_Cmd_base + 0x08;
+const UINT SP_Cmd_write			= SP_Cmd_base + 0x09;
 
 #define DEVICE_OK				0x00
+#define BUSERR					0x06
+#define BADCTL					0x21
 #define DEVICE_IO_ERROR			0x27
 #define DEVICE_NOT_CONNECTED	0x28	// No device detected/connected
 
@@ -525,7 +534,6 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 				// returns status
 				switch (pCard->m_command)
 				{
-					default:
 					case BLK_Cmd_Status:
 						if (ImageGetImageSize(pHDD->m_imagehandle) == 0)
 						{
@@ -533,7 +541,11 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 							r = DEVICE_IO_ERROR;
 						}
 						break;
+					case SP_Cmd_status:
+						r = pCard->SmartPortCmdStatus(pHDD);
+						break;
 					case BLK_Cmd_Read:
+					case SP_Cmd_readblock:
 						if ((pHDD->m_diskblock * HD_BLOCK_SIZE) < ImageGetImageSize(pHDD->m_imagehandle))
 						{
 							bool breakpointHit = false;
@@ -599,7 +611,8 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 						}
 						break;
 					case BLK_Cmd_Write:
-						{
+					case SP_Cmd_writeblock:
+					{
 							pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
 							bool bRes = true;
 							const bool bAppendBlocks = (pHDD->m_diskblock * HD_BLOCK_SIZE) >= ImageGetImageSize(pHDD->m_imagehandle);
@@ -676,16 +689,20 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 					case BLK_Cmd_Format:
 						pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
 						break;
+					default:
+						pHDD->m_error = 1;
+						r = DEVICE_IO_ERROR;
+						break;
 				}
 			}
-			else
+			else // !pHDD->m_imageloaded
 			{
 				pHDD->m_status_next = DISK_STATUS_OFF;
 				pHDD->m_error = 1;
 				r = DEVICE_NOT_CONNECTED;	// GH#452
 			}
 		break;
-	case 0x1: // m_error
+	case 0x1:	// STATUS
 		if (pHDD->m_error & 0x7f)
 			pHDD->m_error = 1;		// Firmware requires that b0=1 for an error
 		else
@@ -783,7 +800,10 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 		pHDD->m_memblock = (pHDD->m_memblock & 0x00FF) | (d << 8);
 		break;
 	case 0x6:
-		pHDD->m_diskblock = (pHDD->m_diskblock & 0xFF00) | d;
+		if (pCard->m_command != SP_Cmd_status)
+			pHDD->m_diskblock = (pHDD->m_diskblock & 0xFF00) | d;
+		else
+			pCard->m_statusCode = d;
 		break;
 	case 0x7:
 		pHDD->m_diskblock = (pHDD->m_diskblock & 0x00FF) | (d << 8);
@@ -813,6 +833,81 @@ HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
 		return &m_smartPortController;
 
 	return &m_hardDiskDrive[m_unitNum - 1];
+}
+
+BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
+{
+	WORD statusListAddr = pHDD->m_memblock;
+	BYTE r = DEVICE_OK;
+
+	if (m_unitNum != 0)
+	{
+		switch (m_statusCode)
+		{
+		case SP_Cmd_status_STATUS:
+		case SP_Cmd_status_GETDIB:
+			// Device status (4 bytes)
+			mem[statusListAddr++] = 0xF0;	// general status (b7=block device, b6=write allowed, b5=read allowed, b4=device online, ....)
+			mem[statusListAddr++] = GetImageSizeInBlocks(pHDD->m_imagehandle) & 0xff;			// num blocks (lo)
+			mem[statusListAddr++] = (GetImageSizeInBlocks(pHDD->m_imagehandle) >> 8) & 0xff;	// num blocks (med)
+			mem[statusListAddr++] = (GetImageSizeInBlocks(pHDD->m_imagehandle) >> 16) & 0xff;	// num blocks (hi)
+			if (m_statusCode == SP_Cmd_status_STATUS)
+				break;
+			// Device Information Block (DIB)
+			mem[statusListAddr++] = 0;		// ID string length
+			for (UINT i = 0; i < 16; i++)
+				mem[statusListAddr++] = ' ';	// ID string padded with ASCII spaces
+			mem[statusListAddr++] = 0x02;	// device type (0x02: Hard disk)
+			mem[statusListAddr++] = 0x20;	// device subtype (0x20: Hard disk)
+			mem[statusListAddr++] = 0x00;	// f/w version (lo) - assume little-endian
+			mem[statusListAddr++] = 0x00;	// f/w version (hi)
+			break;
+		case SP_Cmd_status_GETDCB:
+		case SP_Cmd_status_GETNL:
+		default:
+			pHDD->m_error = 1;
+			r = BADCTL;
+			break;
+		}
+	}
+	else	// Unit-0: SmartPort Controller
+	{
+		UINT numDevices = 0;
+		for (UINT i = 0; i < NUM_HARDDISKS; i++)
+		{
+			if (m_hardDiskDrive[i].m_imageloaded)
+				numDevices++;
+		}
+
+		switch (m_statusCode)
+		{
+		case SP_Cmd_status_STATUS:
+		case SP_Cmd_status_GETDIB:
+			// SmartPort driver status (8 bytes)
+			mem[statusListAddr++] = numDevices;
+			for (UINT i = 0; i < 7; i++)
+				mem[statusListAddr++] = 0;	// reserved
+			if (m_statusCode == SP_Cmd_status_STATUS)
+				break;
+			// Device Information Block (DIB)
+			mem[statusListAddr++] = 0;		// ID string length
+			for (UINT i = 0; i < 16; i++)
+				mem[statusListAddr++] = ' ';	// ID string padded with ASCII spaces
+			mem[statusListAddr++] = 0x00;	// device type (0x00: Apple II memory expansion card)
+			mem[statusListAddr++] = 0x00;	// device subtype (0x00: Apple II memory expansion card)
+			mem[statusListAddr++] = 0x00;	// f/w version (lo) - assume little-endian
+			mem[statusListAddr++] = 0x00;	// f/w version (hi)
+			break;
+		case SP_Cmd_status_GETDCB:
+		case SP_Cmd_status_GETNL:
+		default:
+			pHDD->m_error = 1;
+			r = BADCTL;
+			break;
+		}
+	}
+
+	return r;
 }
 
 //===========================================================================

@@ -126,6 +126,7 @@ private:
 	bool SelectImage(const int drive, LPCSTR pszFilename);
 	void UpdateLightStatus(HardDiskDrive* pHDD);
 	HardDiskDrive* GetUnit(void);
+	BYTE SmartPortCmdStatus(HardDiskDrive* pHDD);
 	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo);
 	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
@@ -134,6 +135,7 @@ private:
 
 	BYTE m_unitNum;			// b7=unit
 	BYTE m_command;
+	BYTE m_statusCode;
 	UINT64 m_notBusyCycle;
 	UINT m_userNumBlocks;
 	bool m_useHdcFirmwareV1;
