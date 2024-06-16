@@ -514,9 +514,13 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
 
-	HardDiskDrive* pHDD = pCard->GetUnit();
-	if (pHDD == NULL)
-		return DEVICE_NOT_CONNECTED;
+	HardDiskDrive* pHDD = NULL;
+	if ((addr & 0xF) != 0x2 && (addr & 0xF) != 0x3)	// GetUnit() depends on m_command & m_unitNum
+	{
+		pHDD = pCard->GetUnit();
+		if (pHDD == NULL)
+			return DEVICE_NOT_CONNECTED;
+	}
 
 	CpuCalcCycles(nExecutedCycles);
 	const UINT CYCLES_FOR_DMA_RW_BLOCK = HD_BLOCK_SIZE;
@@ -755,7 +759,9 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 		r = IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
-	pCard->UpdateLightStatus(pHDD);
+	if (pHDD)
+		pCard->UpdateLightStatus(pHDD);
+
 	return r;
 }
 
@@ -767,7 +773,7 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
 
 	HardDiskDrive* pHDD = NULL;
-	if ((addr & 0xF) > 0x3)	// GetUnit() depends on m_command & m_unitNum
+	if ((addr & 0xF) != 0x2 && (addr & 0xF) != 0x3)	// GetUnit() depends on m_command & m_unitNum
 	{
 		pHDD = pCard->GetUnit();
 		if (pHDD == NULL)
