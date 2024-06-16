@@ -143,33 +143,30 @@ Cn_Entry		php
 				asl
 				asl
 				asl
-				asl						
-				tax						; X=$n0
+				asl
+				sta Slot_n0
 
 				plp						; + restore int status
 				bcs Cn_BLK				; C=1: ProDOS mode .....
 ;--------------------------------------
 ; C=0: fall through to SmartPort...
 ;--------------------------------------
-				sta Slot_n0
- 
-				lda Ptr1
+				lda Ptr1				; X = Stack Ptr from TSX above
 				pha
 
 				lda Ptr1+1
 				pha
 
-; TODO: tsx, as X=$n0
-				lda $100,x				; rts LO byte
+				lda $102,x				; jsr LO byte
 				sta Ptr1
 ;				clc						; from bcs above
 				adc #3
-				sta $100,x				; rts LO byte
+				sta $102,x				; jsr LO byte
 
-				lda $101,x				; rts HI byte
+				lda $103,x				; jsr HI byte
 				sta Ptr1+1
 				adc #0
-				sta $101,x				; rts HI byte
+				sta $103,x				; jsr HI byte
 
 				ldy #1					; CMD byte
 				bne Cn_SP				; Always
@@ -187,10 +184,12 @@ Cn_Bootstrap	bit IO_IIE_OPENAPPLE
 				asl
 				asl
 				asl
-				tax						; A=X=$n0
+				sta Slot_n0
 
 ; Lets check to see if there's an image ready
 ; Slot n, disk 1
+
+				tax						; A=$n0
 
 				lda #BLK_Cmd_Status
 				sta IO_Unitnum,x		; b7=0 => disk 1
@@ -213,7 +212,9 @@ Cn_Bootstrap	bit IO_IIE_OPENAPPLE
 				sta BLK_BlockNum+1
 				lda #$8
 				sta BLK_MemPtr+1
-				clc
+
+;				clc						; C = 0 from bcs Cn_Sloop
+
 ;--------------------------------------
 ; entry point for BLK driver
 ; simple really. Copy the command from BLK_Cmd..BLK_BlockNum+1
@@ -235,7 +236,7 @@ Cn_Bootstrap	bit IO_IIE_OPENAPPLE
 ;--------------------------------------
 Cn_BLK			php
 
-				stx Slot_n0
+				ldx Slot_n0
 
 				ldy #0
 
@@ -255,12 +256,12 @@ Cn_BLK			php
 				plp						; restore C
 				bcs Cn_BLK_Done			; from Cn_Entry_BLK
 
-				ror 					; Post: C=0 or 1
+				lsr 					; Post: C=0 or 1
 				bcs Cn_Sloop			; Boot Failed....
 
 				jmp BootBlocklA2		; Success, run $801 BOOT code for Apple ][ (not /// at $800)
 
-Cn_BLK_Done		ror 					; Post: C=0 or 1
+Cn_BLK_Done		lsr 					; Post: C=0 or 1
 
 				ldy BLK_Cmd				; Was it status ?
 				bne	+					; no, go home
@@ -306,15 +307,15 @@ Cn_SP			lda (Ptr1),y			; CMD byte
 				lda (Ptr1),y			; UnitNum (B),  MemPtr (W), StatusCode (B) -> IO (S)
 				sta IO_Unitnum,x		; UnitNum Range is 0 (smartport controller itself), 1,2,3.....
 				inx
-				cpy #7					; blockNums are 24bits for SP calls
+				cpy #6					; blockNums are 24bits for SP calls
 				bcc -
 
-				lda IO_Execute,x		; A = result of IO_Execute (NB. instantaneous 512 byte r/w!)
+				lda IO_Execute-6,x		; A = result of IO_Execute (NB. instantaneous 512 byte r/w!)
 
--				lda IO_Status,x			; b7=busy doing DMA?
+-				lda IO_Status-6,x		; b7=busy doing DMA?
 				bmi -
 
-				ror						; get C=1 & A = ERROR CODE ... or C=0 & A = 0
+				lsr						; get C=1 & A = ERROR CODE ... or C=0 & A = 0
 
 				tax						; Save Error Code
 

@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 Memory map ProDOS BLK device (IO addr + s*$10):
 . "hddrvr" v1 and v2 firmware
 
-    C080	(r)   EXECUTE AND RETURN STATUS
+	C080	(r)   EXECUTE AND RETURN STATUS
 	C081	(r)   STATUS (or ERROR): b7=busy, b0=error
 	C082	(r/w) COMMAND
 	C083	(r/w) UNIT NUMBER
@@ -766,9 +766,13 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
 
-	HardDiskDrive* pHDD = pCard->GetUnit();
-	if (pHDD == NULL)
-		return DEVICE_NOT_CONNECTED;
+	HardDiskDrive* pHDD = NULL;
+	if ((addr & 0xF) > 0x3)	// GetUnit() depends on m_command & m_unitNum
+	{
+		pHDD = pCard->GetUnit();
+		if (pHDD == NULL)
+			return DEVICE_NOT_CONNECTED;
+	}
 
 	BYTE r = DEVICE_OK;
 
@@ -813,7 +817,9 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 		r = IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
-	pCard->UpdateLightStatus(pHDD);
+	if (pHDD)
+		pCard->UpdateLightStatus(pHDD);
+
 	return r;
 }
 
