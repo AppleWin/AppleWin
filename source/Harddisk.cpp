@@ -166,6 +166,9 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	// SmartPort Status cmd's Status code
 	m_statusCode = 0;
 
+	// SmartPort Controller is always loaded
+	m_smartPortController.m_imageloaded = true;
+
 	// Interface busy doing DMA for r/w when current cycle is earlier than this cycle
 	m_notBusyCycle = 0;
 
