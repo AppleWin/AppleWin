@@ -850,6 +850,25 @@ HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
 	return &m_hardDiskDrive[m_unitNum - 1];
 }
 
+void HarddiskInterfaceCard::SetIdString(WORD addr, const char* str)
+{
+	BYTE& idStrLen = mem[addr];	// ID string length
+	idStrLen = 0;
+
+	WORD idStrAddr = addr + 1;
+	for (UINT i = 0; i < 16; i++)
+		mem[idStrAddr + i] = ' ';	// ID string padded with ASCII spaces
+
+	if (str == NULL)
+		return;
+
+	while (*str && idStrLen < 16)
+	{
+		idStrLen++;
+		mem[idStrAddr++] = *str++;
+	}
+}
+
 BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 {
 	WORD statusListAddr = pHDD->m_memblock;
@@ -861,6 +880,7 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 		{
 		case SP_Cmd_status_STATUS:
 		case SP_Cmd_status_GETDIB:
+		{
 			// Device status (4 bytes)
 			mem[statusListAddr++] = 0xF0;	// general status (b7=block device, b6=write allowed, b5=read allowed, b4=device online, ....)
 			mem[statusListAddr++] = GetImageSizeInBlocks(pHDD->m_imagehandle) & 0xff;			// num blocks (lo)
@@ -869,14 +889,16 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 			if (m_statusCode == SP_Cmd_status_STATUS)
 				break;
 			// Device Information Block (DIB)
-			mem[statusListAddr++] = 0;		// ID string length
-			for (UINT i = 0; i < 16; i++)
-				mem[statusListAddr++] = ' ';	// ID string padded with ASCII spaces
+			std::string idStr = "AppleWin SP Dev";
+			idStr += (char)('0' + m_unitNum);
+			SetIdString(statusListAddr, idStr.c_str());
+			statusListAddr += 17;
 			mem[statusListAddr++] = 0x02;	// device type (0x02: Hard disk)
 			mem[statusListAddr++] = 0x20;	// device subtype (0x20: Hard disk)
-			mem[statusListAddr++] = 0x00;	// f/w version (lo) - assume little-endian
-			mem[statusListAddr++] = 0x00;	// f/w version (hi)
+			mem[statusListAddr++] = 1;		// f/w version (major)
+			mem[statusListAddr++] = 30;		// f/w version (minor)
 			break;
+		}
 		case SP_Cmd_status_GETDCB:
 		case SP_Cmd_status_GETNL:
 		default:
@@ -898,6 +920,7 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 		{
 		case SP_Cmd_status_STATUS:
 		case SP_Cmd_status_GETDIB:
+		{
 			// SmartPort driver status (8 bytes)
 			mem[statusListAddr++] = numDevices;
 			for (UINT i = 0; i < 7; i++)
@@ -905,14 +928,15 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 			if (m_statusCode == SP_Cmd_status_STATUS)
 				break;
 			// Device Information Block (DIB)
-			mem[statusListAddr++] = 0;		// ID string length
-			for (UINT i = 0; i < 16; i++)
-				mem[statusListAddr++] = ' ';	// ID string padded with ASCII spaces
+			std::string idStr = "AppleWin SP";
+			SetIdString(statusListAddr, idStr.c_str());
+			statusListAddr += 17;
 			mem[statusListAddr++] = 0x00;	// device type (0x00: Apple II memory expansion card)
 			mem[statusListAddr++] = 0x00;	// device subtype (0x00: Apple II memory expansion card)
-			mem[statusListAddr++] = 0x00;	// f/w version (lo) - assume little-endian
-			mem[statusListAddr++] = 0x00;	// f/w version (hi)
+			mem[statusListAddr++] = 1;		// f/w version (major)
+			mem[statusListAddr++] = 30;		// f/w version (minor)
 			break;
+		}
 		case SP_Cmd_status_GETDCB:
 		case SP_Cmd_status_GETNL:
 		default:
