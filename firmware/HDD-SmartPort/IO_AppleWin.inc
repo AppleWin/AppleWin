@@ -1,8 +1,8 @@
 ;--------------------------------------
 ; Applewin HD Controller IOs
 ;--------------------------------------
-IO_Execute 		 = $c080				; R
-IO_Status 		 = $c081				; R : b7=busy, b0=error
+IO_Execute 		 = $c080				; R : Execute command & return IO_Status. Then on subsequent IO_Execute reads just return IO_Status
+IO_Status 		 = $c081				; R : b7=busy, b6..b1=ProDOS error code, b0=error
 ;--------------------------------------
 IO_Command 		 = $c082				; W : BLK = $00 status, $01 read, $02 write. SP = $80 status, $81 read, $82 write,
 IO_Unitnum 		 = $c083				; W : BLK = DSSS0000 if SSS != n from CnXX, add 2 to D (4 drives support). SP = $00,$01.....
@@ -10,7 +10,7 @@ IO_MemPtr 		 = $c084				; W : 16 bits values
 ;--------------------------------------
 ; to be added :
 IO_StatusCode	 = $c086				; W : write SP status code $00, $03
-;(see hddrvr-v3.a65 : SP_Commands)
+;(see HDC-SmartPort.a65 : SP_Commands)
 ;--------------------------------------
 IO_BlockNum		 = $c086				; W : BLK = 16 bits values. SP = 24bits values, see below
 ;--------------------------------------

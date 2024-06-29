@@ -195,9 +195,9 @@ Cn_Bootstrap	bit IO_IIE_OPENAPPLE
 				sta IO_Unitnum,x		; b7=0 => disk 1
 				sta	IO_Command,x
 				lda IO_Execute,x		; Post: A=STATUS
+										; on error A = 0eeeeee1, where eeeeee = Standard ProDOS error codes (see ProDOS.inc)
 
-;				lda IO_Status,x			; Post: C=0 or 1
-				lsr						; on error A = 0eeeeee1, where eeeeee = Standard ProDOS error codes (see ProDOS.inc)
+				lsr						; Post: C=0 or 1
 				bcs Cn_Sloop			; no image ready, boot Slot n-1 image instead
 ;--------------------------------------				
 ; image ready.  Lets boot from it.
@@ -248,10 +248,8 @@ Cn_BLK			php
 				bcc -
 
 				ldx Slot_n0
-				lda IO_Execute,x		; A = result of IO_Execute (NB. instantaneous 512 byte r/w!)
-
--				lda IO_Status,x			; b7=busy doing DMA?
-				bmi -
+-				lda IO_Execute,x		; A = result of IO_Execute (NB. instantaneous 512 byte r/w!)
+				bmi -					; b7=busy doing DMA?
 
 				plp						; restore C
 				bcs Cn_BLK_Done			; from Cn_Entry_BLK
@@ -310,10 +308,8 @@ Cn_SP			lda (Ptr1),y			; CMD byte
 				cpy #6					; blockNums are 24bits for SP calls
 				bcc -
 
-				lda IO_Execute-6,x		; A = result of IO_Execute (NB. instantaneous 512 byte r/w!)
-
--				lda IO_Status-6,x		; b7=busy doing DMA?
-				bmi -
+-				lda IO_Execute-6,x		; A = result of IO_Execute (NB. instantaneous 512 byte r/w!)
+				bmi -					; b7=busy doing DMA?
 
 				lsr						; get C=1 & A = ERROR CODE ... or C=0 & A = 0
 
