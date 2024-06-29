@@ -854,7 +854,7 @@ BYTE HarddiskInterfaceCard::CmdStatus(HardDiskDrive* pHDD)
 		pHDD->m_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
 
 	// Firmware requires that error code is [b6..1]
-	r != (pHDD->m_error << 1) & ERRORCODE_MASK;
+	r |= (pHDD->m_error << 1) & ERRORCODE_MASK;
 
 	return r;
 }
