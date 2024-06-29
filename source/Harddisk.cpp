@@ -513,6 +513,11 @@ const UINT SP_Cmd_write			= SP_Cmd_base + 0x09;
 #define DEVICE_NOT_CONNECTED	0x28	// No device detected/connected
 #define ERRORCODE_MASK			0x3F	// limit to just 6 bits (as 'error' byte uses b0 & b7 for other status)
 
+#define STATUS_OK				0x00
+#define STATUS_ERROR			0x01
+#define STATUS_BUSY				0x80
+#define SET_STATUS_ERROR(err)	(((err)<<1)|STATUS_ERROR)
+
 BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
@@ -523,13 +528,12 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 	{
 		pHDD = pCard->GetUnit();
 		if (pHDD == NULL)
-			return DEVICE_NOT_CONNECTED;
+			return SET_STATUS_ERROR(DEVICE_NOT_CONNECTED);
 	}
 
 	CpuCalcCycles(nExecutedCycles);
 
-	BYTE r = DEVICE_OK;
-	pHDD->m_status_next = DISK_STATUS_READ;
+	BYTE r = STATUS_OK;
 
 	switch (addr & 0xF)
 	{
@@ -615,6 +619,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 		break;
 	case BLK_Cmd_Read:
 	case SP_Cmd_readblock:
+		pHDD->m_status_next = DISK_STATUS_READ;
 		if ((pHDD->m_diskblock * HD_BLOCK_SIZE) < ImageGetImageSize(pHDD->m_imagehandle))
 		{
 			bool breakpointHit = false;
@@ -772,10 +777,10 @@ BYTE HarddiskInterfaceCard::CmdStatus(HardDiskDrive* pHDD)
 	BYTE r = 0;
 
 	if (pHDD->m_error)
-		r = 1;		// Firmware requires that b0=1 for an error
+		r = STATUS_ERROR;		// Firmware requires that b0=1 for an error
 
 	if (g_nCumulativeCycles <= m_notBusyCycle)
-		r |= 0x80;	// Firmware requires that b7=1 for busy (eg. busy doing r/w DMA operation)
+		r |= STATUS_BUSY;		// Firmware requires that b7=1 for busy (eg. busy doing r/w DMA operation)
 	else
 		pHDD->m_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
 
@@ -798,10 +803,8 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 	{
 		pHDD = pCard->GetUnit();
 		if (pHDD == NULL)
-			return DEVICE_NOT_CONNECTED;
+			return SET_STATUS_ERROR(DEVICE_NOT_CONNECTED);
 	}
-
-	BYTE r = DEVICE_OK;
 
 	switch (addr & 0xF)
 	{
@@ -841,13 +844,12 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 		break;
 	default:
 		pHDD->m_status_next = DISK_STATUS_OFF;
-		r = IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
 	if (pHDD)
 		pCard->UpdateLightStatus(pHDD);
 
-	return r;
+	return 0;
 }
 
 //===========================================================================
