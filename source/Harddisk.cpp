@@ -539,6 +539,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 	{
 	case 0x0:	// EXECUTE & RETURN STATUS
 		r = pCard->CmdExecute(pHDD);
+		pCard->m_command = BLK_Cmd_Status;		// Subsequent reads from IO addr 0x0 just executes 'Status' cmd
 		break;
 	case 0x1:	// STATUS
 		r = pCard->CmdStatus(pHDD);
@@ -594,8 +595,8 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 	if (!pHDD->m_imageloaded)
 	{
 		pHDD->m_status_next = DISK_STATUS_OFF;
-		pHDD->m_error = 1;
-		return DEVICE_NOT_CONNECTED;	// GH#452
+		pHDD->m_error = DEVICE_NOT_CONNECTED;	// GH#452
+		return CmdStatus(pHDD);
 	}
 
 	//
@@ -603,20 +604,16 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 	const UINT CYCLES_FOR_DMA_RW_BLOCK = HD_BLOCK_SIZE;
 	const UINT PAGE_SIZE = 256;
 
-	BYTE r = 0;
+	pHDD->m_error = DEVICE_OK;
 
 	switch (m_command)
 	{
 	case BLK_Cmd_Status:
 		if (ImageGetImageSize(pHDD->m_imagehandle) == 0)
-		{
-			pHDD->m_error = 1;
-			r = DEVICE_IO_ERROR;
-		}
+			pHDD->m_error = DEVICE_IO_ERROR;
 		break;
 	case SP_Cmd_status:
-		r = SmartPortCmdStatus(pHDD);
-		break;
+		return SmartPortCmdStatus(pHDD);
 	case BLK_Cmd_Read:
 	case SP_Cmd_readblock:
 		pHDD->m_status_next = DISK_STATUS_READ;
@@ -666,22 +663,19 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 
 			if (bRes)
 			{
-				pHDD->m_error = 0;
-				r = 0;
+				pHDD->m_error = DEVICE_OK;
 
 				if (!breakpointHit)
 					m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
 			}
 			else
 			{
-				pHDD->m_error = 1;
-				r = DEVICE_IO_ERROR;
+				pHDD->m_error = DEVICE_IO_ERROR;
 			}
 		}
 		else
 		{
-			pHDD->m_error = 1;
-			r = DEVICE_IO_ERROR;
+			pHDD->m_error = DEVICE_IO_ERROR;
 		}
 		break;
 	case BLK_Cmd_Write:
@@ -747,29 +741,27 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 
 		if (bRes)
 		{
-			pHDD->m_error = 0;
-			r = 0;
+			pHDD->m_error = DEVICE_OK;
 
 			if (!breakpointHit)
 				m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
 		}
 		else
 		{
-			pHDD->m_error = 1;
-			r = DEVICE_IO_ERROR;
+			pHDD->m_error = DEVICE_IO_ERROR;
 		}
 	}
 	break;
 	case BLK_Cmd_Format:
-		pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
+		pHDD->m_error = DEVICE_IO_ERROR;	// Not supported
 		break;
 	default:
-		pHDD->m_error = 1;
-		r = DEVICE_IO_ERROR;
+		pHDD->m_error = DEVICE_IO_ERROR;
 		break;
 	}
 
-	return r;
+	// All commands return here (except SP_Cmd_status)
+	return CmdStatus(pHDD);
 }
 
 BYTE HarddiskInterfaceCard::CmdStatus(HardDiskDrive* pHDD)
