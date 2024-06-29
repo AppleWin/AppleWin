@@ -124,6 +124,7 @@ private:
 	bool SelectImage(const int drive, LPCSTR pszFilename);
 	void UpdateLightStatus(HardDiskDrive* pHDD);
 	HardDiskDrive* GetUnit(void);
+	BYTE CmdStatus(HardDiskDrive* pHDD);
 	void SetIdString(WORD addr, const char* str);
 	BYTE SmartPortCmdStatus(HardDiskDrive* pHDD);
 	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo);

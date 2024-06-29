@@ -511,6 +511,7 @@ const UINT SP_Cmd_write			= SP_Cmd_base + 0x09;
 #define BADCTL					0x21
 #define DEVICE_IO_ERROR			0x27
 #define DEVICE_NOT_CONNECTED	0x28	// No device detected/connected
+#define ERRORCODE_MASK			0x3F	// limit to just 6 bits (as 'error' byte uses b0 & b7 for other status)
 
 BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
@@ -710,17 +711,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 			}
 		break;
 	case 0x1:	// STATUS
-		if (pHDD->m_error & 0x7f)
-			pHDD->m_error = 1;		// Firmware requires that b0=1 for an error
-		else
-			pHDD->m_error = 0;
-
-		if (g_nCumulativeCycles <= pCard->m_notBusyCycle)
-			pHDD->m_error |= 0x80;	// Firmware requires that b7=1 for busy (eg. busy doing r/w DMA operation)
-		else
-			pHDD->m_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
-
-		r = pHDD->m_error;
+		r = pCard->CmdStatus(pHDD);
 		break;
 	case 0x2:
 		r = pCard->m_command;
@@ -848,6 +839,24 @@ HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
 		return &m_smartPortController;
 
 	return &m_hardDiskDrive[m_unitNum - 1];
+}
+
+BYTE HarddiskInterfaceCard::CmdStatus(HardDiskDrive* pHDD)
+{
+	BYTE r = 0;
+
+	if (pHDD->m_error)
+		r = 1;		// Firmware requires that b0=1 for an error
+
+	if (g_nCumulativeCycles <= m_notBusyCycle)
+		r |= 0x80;	// Firmware requires that b7=1 for busy (eg. busy doing r/w DMA operation)
+	else
+		pHDD->m_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
+
+	// Firmware requires that error code is [b6..1]
+	r != (pHDD->m_error << 1) & ERRORCODE_MASK;
+
+	return r;
 }
 
 void HarddiskInterfaceCard::SetIdString(WORD addr, const char* str)
