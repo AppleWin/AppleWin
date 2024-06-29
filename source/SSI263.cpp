@@ -1023,6 +1023,13 @@ void SSI263::SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
+	if (version < 12)
+	{
+		m_votraxPhoneme = 0;
+		// NB. m_isVotraxPhoneme already set by SetVotraxPhoneme() by parent
+		return;
+	}
+
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SC01))
 		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_SC01);
 
