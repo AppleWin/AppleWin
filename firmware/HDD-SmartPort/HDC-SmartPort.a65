@@ -194,7 +194,8 @@ Cn_Bootstrap	bit IO_IIE_OPENAPPLE
 				lda #BLK_Cmd_Status
 				sta IO_Unitnum,x		; b7=0 => disk 1
 				sta	IO_Command,x
-				lda IO_Execute,x		; Post: A=STATUS
+
+				lda IO_Execute,x		; Post: A=STATUS (BLK_Cmd_Status completes immediately, no need to check STATUS.b7 busy bit)
 										; on error A = 0eeeeee1, where eeeeee = Standard ProDOS error codes (see ProDOS.inc)
 
 				lsr						; Post: C=0 or 1
