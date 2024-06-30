@@ -35,6 +35,7 @@ struct CmdLine
 		supportExtraMBCardTypes = false;
 		noDisk2StepperDefer = false;
 		useHdcFirmwareV1 = false;
+		useHdcFirmwareV2 = false;
 		useHdcFirmwareSmartPort = false;
 		szSnapshotName = NULL;
 		szScreenshotFilename = NULL;
@@ -81,6 +82,7 @@ struct CmdLine
 	bool supportExtraMBCardTypes;
 	bool noDisk2StepperDefer;	// debug
 	bool useHdcFirmwareV1;	// debug
+	bool useHdcFirmwareV2;
 	bool useHdcFirmwareSmartPort;
 	SS_CARDTYPE slotInsert[NUM_SLOTS];
 	SlotInfo slotInfo[NUM_SLOTS];

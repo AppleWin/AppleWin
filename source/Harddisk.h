@@ -103,6 +103,7 @@ public:
 	void LoadLastDiskImage(const int iDrive);
 	void SetUserNumBlocks(UINT numBlocks) { m_userNumBlocks = numBlocks; }
 	void UseHdcFirmwareV1(void) { m_useHdcFirmwareV1 = true; }
+	void UseHdcFirmwareV2(void) { m_useHdcFirmwareV2 = true; }
 	void UseHdcFirmwareSmartPort(void) { m_useHdcFirmwareSmartPort = true; }
 
 	void GetLightStatus(Disk_Status_e* pDisk1Status);
@@ -140,6 +141,7 @@ private:
 	UINT64 m_notBusyCycle;
 	UINT m_userNumBlocks;
 	bool m_useHdcFirmwareV1;
+	bool m_useHdcFirmwareV2;
 	bool m_useHdcFirmwareSmartPort;
 
 	bool m_saveDiskImage;	// Save the DiskImage name to Registry

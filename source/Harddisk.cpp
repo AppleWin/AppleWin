@@ -193,9 +193,13 @@ void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	const DWORD HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
 
-	const WORD id = m_useHdcFirmwareSmartPort ? IDR_HDC_SMARTPORT_FW :
-					m_useHdcFirmwareV1 ? IDR_HDDRVR_FW :
-					IDR_HDDRVR_V2_FW;
+	WORD id = IsEnhancedIIE() ? IDR_HDC_SMARTPORT_FW : IDR_HDDRVR_V2_FW;
+
+	// Use any cmd line override
+	if (m_useHdcFirmwareV1) id = IDR_HDDRVR_FW;
+	else if (m_useHdcFirmwareV2) id = IDR_HDDRVR_V2_FW;
+	else if (m_useHdcFirmwareSmartPort) id = IDR_HDC_SMARTPORT_FW;
+
 	BYTE* pData = GetFrame().GetResource(id, "FIRMWARE", HARDDISK_FW_SIZE);
 	if (pData == NULL)
 		return;
