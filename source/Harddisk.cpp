@@ -613,7 +613,8 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 			pHDD->m_error = DEVICE_IO_ERROR;
 		break;
 	case SP_Cmd_status:
-		return SmartPortCmdStatus(pHDD);
+		pHDD->m_error = SmartPortCmdStatus(pHDD);
+		break;
 	case BLK_Cmd_Read:
 	case SP_Cmd_readblock:
 		pHDD->m_status_next = DISK_STATUS_READ;
@@ -760,7 +761,6 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 		break;
 	}
 
-	// All commands return here (except SP_Cmd_status)
 	return CmdStatus(pHDD);
 }
 
