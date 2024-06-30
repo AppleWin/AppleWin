@@ -883,6 +883,18 @@ void HarddiskInterfaceCard::SetIdString(WORD addr, const char* str)
 
 BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 {
+	// Make Firmware version: eg. 1.30.18.0 => 130.18
+	UINT fwVerMajorCheck = g_AppleWinVersion[0] * 100 + g_AppleWinVersion[1];
+	_ASSERT(fwVerMajorCheck < 256);
+	if (fwVerMajorCheck >= 256) fwVerMajorCheck = 255;
+	UINT fwVerMinorCheck = g_AppleWinVersion[2];
+	_ASSERT(fwVerMinorCheck < 256);
+	if (fwVerMinorCheck >= 256) fwVerMinorCheck = 255;
+	const BYTE fwVerMajor = fwVerMajorCheck;
+	const BYTE fwVerMinor = fwVerMinorCheck;
+
+	//
+
 	WORD statusListAddr = pHDD->m_memblock;
 	BYTE r = DEVICE_OK;
 
@@ -901,14 +913,15 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 			if (m_statusCode == SP_Cmd_status_STATUS)
 				break;
 			// Device Information Block (DIB)
-			std::string idStr = "AppleWin SP Dev";
-			idStr += (char)('0' + m_unitNum);
+			std::string idStr = "AppleWin SP D#";	// + "01".."99" (device number in decimal)
+			idStr += (char)('0' + m_unitNum / 10);
+			idStr += (char)('0' + m_unitNum % 10);
 			SetIdString(statusListAddr, idStr.c_str());
 			statusListAddr += 17;
 			mem[statusListAddr++] = 0x02;	// device type (0x02: Hard disk)
 			mem[statusListAddr++] = 0x20;	// device subtype (0x20: Hard disk)
-			mem[statusListAddr++] = 1;		// f/w version (major)
-			mem[statusListAddr++] = 30;		// f/w version (minor)
+			mem[statusListAddr++] = fwVerMajor;	// f/w version (major)
+			mem[statusListAddr++] = fwVerMinor;	// f/w version (minor)
 			break;
 		}
 		case SP_Cmd_status_GETDCB:
@@ -945,8 +958,8 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 			statusListAddr += 17;
 			mem[statusListAddr++] = 0x00;	// device type (0x00: Apple II memory expansion card)
 			mem[statusListAddr++] = 0x00;	// device subtype (0x00: Apple II memory expansion card)
-			mem[statusListAddr++] = 1;		// f/w version (major)
-			mem[statusListAddr++] = 30;		// f/w version (minor)
+			mem[statusListAddr++] = fwVerMajor;	// f/w version (major)
+			mem[statusListAddr++] = fwVerMinor;	// f/w version (minor)
 			break;
 		}
 		case SP_Cmd_status_GETDCB:
