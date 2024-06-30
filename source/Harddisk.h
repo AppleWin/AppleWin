@@ -123,7 +123,7 @@ private:
 	void UpdateLightStatus(HardDiskDrive* pHDD);
 	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo);
 	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
-	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
+	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version);
 
 	//
 
