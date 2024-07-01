@@ -42,19 +42,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../resource/resource.h"
 
 /*
-Memory map (for slot 7):
+Memory map ProDOS BLK device (IO addr + s*$10):
+. "hddrvr" v1 and v2 firmware
 
-    C0F0	(r)   EXECUTE AND RETURN STATUS
-	C0F1	(r)   STATUS (or ERROR): b7=busy, b0=error
-	C0F2	(r/w) COMMAND
-	C0F3	(r/w) UNIT NUMBER
-	C0F4	(r/w) LOW BYTE OF MEMORY BUFFER
-	C0F5	(r/w) HIGH BYTE OF MEMORY BUFFER
-	C0F6	(r/w) LOW BYTE OF BLOCK NUMBER
-	C0F7	(r/w) HIGH BYTE OF BLOCK NUMBER
-	C0F8    (r)   NEXT BYTE (legacy read-only port - still supported)
-	C0F9    (r)   LOW BYTE OF DISK IMAGE SIZE IN BLOCKS
-	C0FA    (r)   HIGHT BYTE OF DISK IMAGE SIZE IN BLOCKS
+	C080	(r)   EXECUTE AND RETURN STATUS
+	C081	(r)   STATUS (or ERROR): b7=busy, b0=error
+	C082	(r/w) COMMAND
+	C083	(r/w) UNIT NUMBER
+	C084	(r/w) LOW BYTE OF MEMORY BUFFER
+	C085	(r/w) HIGH BYTE OF MEMORY BUFFER
+	C086	(r/w) LOW BYTE OF BLOCK NUMBER
+	C087	(r/w) HIGH BYTE OF BLOCK NUMBER
+	C088	(r)   NEXT BYTE (legacy read-only port - still supported)
+	C089	(r)   LOW BYTE OF DISK IMAGE SIZE IN BLOCKS
+	C08A	(r)   HIGH BYTE OF DISK IMAGE SIZE IN BLOCKS
 
 Firmware notes:
 . ROR ABS16,X and ROL ABS16,X - only used for $C081+s*$10 STATUS register:
@@ -62,10 +63,30 @@ Firmware notes:
     65C02: double read (old data), write (new data). The write is harmless as writes to STATUS are ignored.
 . STA ABS16,X does a false-read. This is harmless for writable I/O registers, since the false-read has no side effect.
 
+---
+
+Memory map SmartPort device (IO addr + s*$10):
+. "hdc-smartport" firmware
+. I/O basically compatible with older "hddrvr" firmware
+
+	C080	(r)   EXECUTE AND RETURN STATUS; subsequent reads just return STATUS (need to write COMMAND again for EXECUTE)
+	C081	(r)   STATUS : b7=busy, b0=error
+	C082	(w)   COMMAND : BLK = $00 status, $01 read, $02 write. SP = $80 status, $81 read, $82 write,
+	C083	(w)   UNIT NUMBER : BLK = DSSS0000 if SSS != n from CnXX, add 2 to D (4 drives support). SP = $00,$01.....
+	C084	(w)   LOW BYTE OF MEMORY BUFFER
+	C085	(w)   HIGH BYTE OF MEMORY BUFFER
+	C086	(w)   STATUS CODE : write SP status code $00(device status), $03(device info block)
+	C086	(w)   LOW BYTE OF BLOCK NUMBER : BLK = 16 bit value. SP = 24 bit value
+	C087	(w)   HIGH BYTE OF BLOCK NUMBER
+	C088	(w)   3rd byte for SP 24 bit block number
+;	C088	(r)   NEXT BYTE (legacy read-only port - still supported)
+	C089	(r)   LOW BYTE OF DISK IMAGE SIZE IN BLOCKS
+	C08A	(r)   HIGH BYTE OF DISK IMAGE SIZE IN BLOCKS
+
 */
 
 /*
-Hard drive emulation in AppleWin.
+Hard drive emulation in AppleWin - for the HDDRVR v1 & v2 firmware
 
 Concept
     To emulate a 32mb hard drive connected to an Apple IIe via AppleWin.
@@ -131,7 +152,7 @@ Overview
 
 
 HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
-	Card(CT_GenericHDD, slot), m_userNumBlocks(0), m_useHdcFirmwareV1(false)
+	Card(CT_GenericHDD, slot), m_userNumBlocks(0), m_useHdcFirmwareV1(false), m_useHdcFirmwareSmartPort(false)
 {
 	if (m_slot != SLOT5 && m_slot != SLOT7)	// fixme
 		ThrowErrorInvalidSlot();
@@ -141,6 +162,12 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	// The HDD interface has a single Command register for both drives:
 	// . ProDOS will write to Command before switching drives
 	m_command = 0;
+
+	// SmartPort Status cmd's Status code
+	m_statusCode = 0;
+
+	// SmartPort Controller is always loaded
+	m_smartPortController.m_imageloaded = true;
 
 	// Interface busy doing DMA for r/w when current cycle is earlier than this cycle
 	m_notBusyCycle = 0;
@@ -166,7 +193,13 @@ void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	const DWORD HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
 
-	const WORD id = m_useHdcFirmwareV1 ? IDR_HDDRVR_FW : IDR_HDDRVR_V2_FW;
+	WORD id = IsEnhancedIIE() ? IDR_HDC_SMARTPORT_FW : IDR_HDDRVR_V2_FW;
+
+	// Use any cmd line override
+	if (m_useHdcFirmwareV1) id = IDR_HDDRVR_FW;
+	else if (m_useHdcFirmwareV2) id = IDR_HDDRVR_V2_FW;
+	else if (m_useHdcFirmwareSmartPort) id = IDR_HDC_SMARTPORT_FW;
+
 	BYTE* pData = GetFrame().GetResource(id, "FIRMWARE", HARDDISK_FW_SIZE);
 	if (pData == NULL)
 		return;
@@ -453,204 +486,67 @@ bool HarddiskInterfaceCard::IsDriveUnplugged(const int iDrive)
 
 //===========================================================================
 
+// ProDOS BLK & SmartPort commands
+//
+const UINT BLK_Cmd_Status		= 0x00;
+const UINT BLK_Cmd_Read			= 0x01;
+const UINT BLK_Cmd_Write		= 0x02;
+const UINT BLK_Cmd_Format		= 0x03;
+//
+const UINT SP_Cmd_base			= 0x80;
+const UINT SP_Cmd_extended		= 0x40;
+const UINT SP_Cmd_status		= SP_Cmd_base + 0x00;
+const UINT SP_Cmd_status_STATUS	= 0x00;
+const UINT SP_Cmd_status_GETDCB	= 0x01;
+const UINT SP_Cmd_status_GETNL	= 0x02;
+const UINT SP_Cmd_status_GETDIB	= 0x03;
+const UINT SP_Cmd_readblock		= SP_Cmd_base + 0x01;
+const UINT SP_Cmd_writeblock	= SP_Cmd_base + 0x02;
+const UINT SP_Cmd_format		= SP_Cmd_base + 0x03;
+const UINT SP_Cmd_control		= SP_Cmd_base + 0x04;
+const UINT SP_Cmd_init			= SP_Cmd_base + 0x05;
+const UINT SP_Cmd_open			= SP_Cmd_base + 0x06;
+const UINT SP_Cmd_close			= SP_Cmd_base + 0x07;
+const UINT SP_Cmd_read			= SP_Cmd_base + 0x08;
+const UINT SP_Cmd_write			= SP_Cmd_base + 0x09;
+
 #define DEVICE_OK				0x00
+#define BUSERR					0x06
+#define BADCTL					0x21
 #define DEVICE_IO_ERROR			0x27
 #define DEVICE_NOT_CONNECTED	0x28	// No device detected/connected
+#define ERRORCODE_MASK			0x3F	// limit to just 6 bits (as 'error' byte uses b0 & b7 for other status)
+
+#define STATUS_OK				0x00
+#define STATUS_ERROR			0x01
+#define STATUS_BUSY				0x80
+#define SET_STATUS_ERROR(err)	(((err)<<1)|STATUS_ERROR)
 
 BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
-	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->m_unitNum >> 7]);	// bit7 = drive select
+
+	HardDiskDrive* pHDD = NULL;
+	if ((addr & 0xF) != 0x2 && (addr & 0xF) != 0x3)	// GetUnit() depends on m_command & m_unitNum
+	{
+		pHDD = pCard->GetUnit();
+		if (pHDD == NULL)
+			return SET_STATUS_ERROR(DEVICE_NOT_CONNECTED);
+	}
 
 	CpuCalcCycles(nExecutedCycles);
-	const UINT CYCLES_FOR_DMA_RW_BLOCK = HD_BLOCK_SIZE;
-	const UINT PAGE_SIZE = 256;
 
-	BYTE r = DEVICE_OK;
-	pHDD->m_status_next = DISK_STATUS_READ;
+	BYTE r = STATUS_OK;
 
 	switch (addr & 0xF)
 	{
-		case 0x0:
-			if (pHDD->m_imageloaded)
-			{
-				// based on loaded data block request, load block into memory
-				// returns status
-				switch (pCard->m_command)
-				{
-					default:
-					case 0x00: //status
-						if (ImageGetImageSize(pHDD->m_imagehandle) == 0)
-						{
-							pHDD->m_error = 1;
-							r = DEVICE_IO_ERROR;
-						}
-						break;
-					case 0x01: //read
-						if ((pHDD->m_diskblock * HD_BLOCK_SIZE) < ImageGetImageSize(pHDD->m_imagehandle))
-						{
-							bool breakpointHit = false;
-
-							bool bRes = ImageReadBlock(pHDD->m_imagehandle, pHDD->m_diskblock, pHDD->m_buf);
-							if (bRes)
-							{
-								pHDD->m_buf_ptr = 0;
-
-								// Apple II's MMU could be setup so that read & write memory is different,
-								// so can't use 'mem' (like we can for HDD block writes)
-								WORD dstAddr = pHDD->m_memblock;
-								UINT remaining = HD_BLOCK_SIZE;
-								BYTE* pSrc = pHDD->m_buf;
-
-								while (remaining)
-								{
-									memdirty[dstAddr >> 8] = 0xFF;
-									LPBYTE page = memwrite[dstAddr >> 8];
-									if (!page)	// I/O space or ROM
-									{
-										if (g_nAppMode == MODE_STEPPING)
-											DebuggerBreakOnDmaToOrFromIoMemory(dstAddr, true);	//  GH#1007
-										//else // Show MessageBox?
-
-										bRes = false;
-										break;
-									}
-
-									// handle both page-aligned & non-page aligned destinations
-									UINT size = PAGE_SIZE - (dstAddr & 0xff);
-									if (size > remaining) size = remaining;	// clip the last memcpy for the unaligned case
-
-									if (g_nAppMode == MODE_STEPPING)
-										breakpointHit = DebuggerCheckMemBreakpoints(dstAddr, size, true);	// GH#1103
-
-									memcpy(page + (dstAddr & 0xff), pSrc, size);
-									pSrc += size;
-									dstAddr = (dstAddr + size) & (MEMORY_LENGTH-1);	// wraps at 64KiB boundary
-
-									remaining -= size;
-								}
-							}
-
-							if (bRes)
-							{
-								pHDD->m_error = 0;
-								r = 0;
-
-								if (!breakpointHit)
-									pCard->m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
-							}
-							else
-							{
-								pHDD->m_error = 1;
-								r = DEVICE_IO_ERROR;
-							}
-						}
-						else
-						{
-							pHDD->m_error = 1;
-							r = DEVICE_IO_ERROR;
-						}
-						break;
-					case 0x02: //write
-						{
-							pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
-							bool bRes = true;
-							const bool bAppendBlocks = (pHDD->m_diskblock * HD_BLOCK_SIZE) >= ImageGetImageSize(pHDD->m_imagehandle);
-							bool breakpointHit = false;
-
-							if (bAppendBlocks)
-							{
-								memset(pHDD->m_buf, 0, HD_BLOCK_SIZE);
-
-								// Inefficient (especially for gzip/zip files!)
-								UINT uBlock = ImageGetImageSize(pHDD->m_imagehandle) / HD_BLOCK_SIZE;
-								while (uBlock < pHDD->m_diskblock)
-								{
-									bRes = ImageWriteBlock(pHDD->m_imagehandle, uBlock++, pHDD->m_buf);
-									_ASSERT(bRes);
-									if (!bRes)
-										break;
-								}
-							}
-
-							// Trap and error on any accesses that overlap with I/O memory (GH#1007)
-							if ((pHDD->m_memblock < APPLE_IO_BEGIN && ((pHDD->m_memblock + HD_BLOCK_SIZE - 1) >= APPLE_IO_BEGIN))	// 1) Starts before I/O, but ends in I/O memory
-								|| ((pHDD->m_memblock >> 12) == (APPLE_IO_BEGIN >> 12)))											// 2) Starts in I/O memory
-							{
-								WORD dstAddr = ((pHDD->m_memblock >> 12) == (APPLE_IO_BEGIN >> 12)) ? pHDD->m_memblock : APPLE_IO_BEGIN;
-
-								if (g_nAppMode == MODE_STEPPING)
-									DebuggerBreakOnDmaToOrFromIoMemory(dstAddr, false);
-								//else // Show MessageBox?
-
-								bRes = false;
-							}
-							else
-							{
-								// NB. Do the writes in units of PAGE_SIZE so that DMA breakpoints are consistent with reads
-								WORD srcAddr = pHDD->m_memblock;
-								UINT remaining = HD_BLOCK_SIZE;
-								BYTE* pDst = pHDD->m_buf;
-
-								while (remaining)
-								{
-									UINT size = PAGE_SIZE - (srcAddr & 0xff);
-									if (size > remaining) size = remaining;	// clip the last memcpy for the unaligned case
-
-									if (g_nAppMode == MODE_STEPPING)
-										breakpointHit = DebuggerCheckMemBreakpoints(srcAddr, size, false);
-
-									memcpy(pDst, mem + srcAddr, size);
-									pDst += size;
-									srcAddr = (srcAddr + size) & (MEMORY_LENGTH - 1);	// wraps at 64KiB boundary
-
-									remaining -= size;
-								}
-							}
-
-							if (bRes)
-								bRes = ImageWriteBlock(pHDD->m_imagehandle, pHDD->m_diskblock, pHDD->m_buf);
-
-							if (bRes)
-							{
-								pHDD->m_error = 0;
-								r = 0;
-
-								if (!breakpointHit)
-									pCard->m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
-							}
-							else
-							{
-								pHDD->m_error = 1;
-								r = DEVICE_IO_ERROR;
-							}
-						}
-						break;
-					case 0x03: //format
-						pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
-						break;
-				}
-			}
-			else
-			{
-				pHDD->m_status_next = DISK_STATUS_OFF;
-				pHDD->m_error = 1;
-				r = DEVICE_NOT_CONNECTED;	// GH#452
-			}
+	case 0x0:	// EXECUTE & RETURN STATUS
+		r = pCard->CmdExecute(pHDD);
+		pCard->m_command = BLK_Cmd_Status;		// Subsequent reads from IO addr 0x0 just executes 'Status' cmd
 		break;
-	case 0x1: // m_error
-		if (pHDD->m_error & 0x7f)
-			pHDD->m_error = 1;		// Firmware requires that b0=1 for an error
-		else
-			pHDD->m_error = 0;
-
-		if (g_nCumulativeCycles <= pCard->m_notBusyCycle)
-			pHDD->m_error |= 0x80;	// Firmware requires that b7=1 for busy (eg. busy doing r/w DMA operation)
-		else
-			pHDD->m_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
-
-		r = pHDD->m_error;
+	case 0x1:	// STATUS
+		r = pCard->CmdStatus(pHDD);
 		break;
 	case 0x2:
 		r = pCard->m_command;
@@ -692,7 +588,202 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 		r = IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
-	pCard->UpdateLightStatus(pHDD);
+	if (pHDD)
+		pCard->UpdateLightStatus(pHDD);
+
+	return r;
+}
+
+BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
+{
+	if (!pHDD->m_imageloaded)
+	{
+		pHDD->m_status_next = DISK_STATUS_OFF;
+		pHDD->m_error = DEVICE_NOT_CONNECTED;	// GH#452
+		return CmdStatus(pHDD);
+	}
+
+	//
+
+	const UINT CYCLES_FOR_DMA_RW_BLOCK = HD_BLOCK_SIZE;
+	const UINT PAGE_SIZE = 256;
+
+	pHDD->m_error = DEVICE_OK;
+
+	switch (m_command)
+	{
+	case BLK_Cmd_Status:
+		if (ImageGetImageSize(pHDD->m_imagehandle) == 0)
+			pHDD->m_error = DEVICE_IO_ERROR;
+		break;
+	case SP_Cmd_status:
+		pHDD->m_error = SmartPortCmdStatus(pHDD);
+		break;
+	case BLK_Cmd_Read:
+	case SP_Cmd_readblock:
+		pHDD->m_status_next = DISK_STATUS_READ;
+		if ((pHDD->m_diskblock * HD_BLOCK_SIZE) < ImageGetImageSize(pHDD->m_imagehandle))
+		{
+			bool breakpointHit = false;
+
+			bool bRes = ImageReadBlock(pHDD->m_imagehandle, pHDD->m_diskblock, pHDD->m_buf);
+			if (bRes)
+			{
+				pHDD->m_buf_ptr = 0;
+
+				// Apple II's MMU could be setup so that read & write memory is different,
+				// so can't use 'mem' (like we can for HDD block writes)
+				WORD dstAddr = pHDD->m_memblock;
+				UINT remaining = HD_BLOCK_SIZE;
+				BYTE* pSrc = pHDD->m_buf;
+
+				while (remaining)
+				{
+					memdirty[dstAddr >> 8] = 0xFF;
+					LPBYTE page = memwrite[dstAddr >> 8];
+					if (!page)	// I/O space or ROM
+					{
+						if (g_nAppMode == MODE_STEPPING)
+							DebuggerBreakOnDmaToOrFromIoMemory(dstAddr, true);	//  GH#1007
+						//else // Show MessageBox?
+
+						bRes = false;
+						break;
+					}
+
+					// handle both page-aligned & non-page aligned destinations
+					UINT size = PAGE_SIZE - (dstAddr & 0xff);
+					if (size > remaining) size = remaining;	// clip the last memcpy for the unaligned case
+
+					if (g_nAppMode == MODE_STEPPING)
+						breakpointHit = DebuggerCheckMemBreakpoints(dstAddr, size, true);	// GH#1103
+
+					memcpy(page + (dstAddr & 0xff), pSrc, size);
+					pSrc += size;
+					dstAddr = (dstAddr + size) & (MEMORY_LENGTH - 1);	// wraps at 64KiB boundary
+
+					remaining -= size;
+				}
+			}
+
+			if (bRes)
+			{
+				pHDD->m_error = DEVICE_OK;
+
+				if (!breakpointHit)
+					m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
+			}
+			else
+			{
+				pHDD->m_error = DEVICE_IO_ERROR;
+			}
+		}
+		else
+		{
+			pHDD->m_error = DEVICE_IO_ERROR;
+		}
+		break;
+	case BLK_Cmd_Write:
+	case SP_Cmd_writeblock:
+	{
+		pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
+		bool bRes = true;
+		const bool bAppendBlocks = (pHDD->m_diskblock * HD_BLOCK_SIZE) >= ImageGetImageSize(pHDD->m_imagehandle);
+		bool breakpointHit = false;
+
+		if (bAppendBlocks)
+		{
+			memset(pHDD->m_buf, 0, HD_BLOCK_SIZE);
+
+			// Inefficient (especially for gzip/zip files!)
+			UINT uBlock = ImageGetImageSize(pHDD->m_imagehandle) / HD_BLOCK_SIZE;
+			while (uBlock < pHDD->m_diskblock)
+			{
+				bRes = ImageWriteBlock(pHDD->m_imagehandle, uBlock++, pHDD->m_buf);
+				_ASSERT(bRes);
+				if (!bRes)
+					break;
+			}
+		}
+
+		// Trap and error on any accesses that overlap with I/O memory (GH#1007)
+		if ((pHDD->m_memblock < APPLE_IO_BEGIN && ((pHDD->m_memblock + HD_BLOCK_SIZE - 1) >= APPLE_IO_BEGIN))	// 1) Starts before I/O, but ends in I/O memory
+			|| ((pHDD->m_memblock >> 12) == (APPLE_IO_BEGIN >> 12)))											// 2) Starts in I/O memory
+		{
+			WORD dstAddr = ((pHDD->m_memblock >> 12) == (APPLE_IO_BEGIN >> 12)) ? pHDD->m_memblock : APPLE_IO_BEGIN;
+
+			if (g_nAppMode == MODE_STEPPING)
+				DebuggerBreakOnDmaToOrFromIoMemory(dstAddr, false);
+			//else // Show MessageBox?
+
+			bRes = false;
+		}
+		else
+		{
+			// NB. Do the writes in units of PAGE_SIZE so that DMA breakpoints are consistent with reads
+			WORD srcAddr = pHDD->m_memblock;
+			UINT remaining = HD_BLOCK_SIZE;
+			BYTE* pDst = pHDD->m_buf;
+
+			while (remaining)
+			{
+				UINT size = PAGE_SIZE - (srcAddr & 0xff);
+				if (size > remaining) size = remaining;	// clip the last memcpy for the unaligned case
+
+				if (g_nAppMode == MODE_STEPPING)
+					breakpointHit = DebuggerCheckMemBreakpoints(srcAddr, size, false);
+
+				memcpy(pDst, mem + srcAddr, size);
+				pDst += size;
+				srcAddr = (srcAddr + size) & (MEMORY_LENGTH - 1);	// wraps at 64KiB boundary
+
+				remaining -= size;
+			}
+		}
+
+		if (bRes)
+			bRes = ImageWriteBlock(pHDD->m_imagehandle, pHDD->m_diskblock, pHDD->m_buf);
+
+		if (bRes)
+		{
+			pHDD->m_error = DEVICE_OK;
+
+			if (!breakpointHit)
+				m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
+		}
+		else
+		{
+			pHDD->m_error = DEVICE_IO_ERROR;
+		}
+	}
+	break;
+	case BLK_Cmd_Format:
+		pHDD->m_error = DEVICE_IO_ERROR;	// Not supported
+		break;
+	default:
+		pHDD->m_error = DEVICE_IO_ERROR;
+		break;
+	}
+
+	return CmdStatus(pHDD);
+}
+
+BYTE HarddiskInterfaceCard::CmdStatus(HardDiskDrive* pHDD)
+{
+	BYTE r = 0;
+
+	if (pHDD->m_error)
+		r = STATUS_ERROR;		// Firmware requires that b0=1 for an error
+
+	if (g_nCumulativeCycles <= m_notBusyCycle)
+		r |= STATUS_BUSY;		// Firmware requires that b7=1 for busy (eg. busy doing r/w DMA operation)
+	else
+		pHDD->m_status_next = DISK_STATUS_OFF; // TODO: FIXME: ??? YELLOW ??? WARNING
+
+	// Firmware requires that error code is [b6..1]
+	_ASSERT(pHDD->m_error <= ERRORCODE_MASK);
+	r |= (pHDD->m_error & ERRORCODE_MASK) << 1;
+
 	return r;
 }
 
@@ -702,9 +793,14 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 {
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
-	HardDiskDrive* pHDD = &(pCard->m_hardDiskDrive[pCard->m_unitNum >> 7]);	// bit7 = drive select
 
-	BYTE r = DEVICE_OK;
+	HardDiskDrive* pHDD = NULL;
+	if ((addr & 0xF) != 0x2 && (addr & 0xF) != 0x3)	// GetUnit() depends on m_command & m_unitNum
+	{
+		pHDD = pCard->GetUnit();
+		if (pHDD == NULL)
+			return SET_STATUS_ERROR(DEVICE_NOT_CONNECTED);
+	}
 
 	switch (addr & 0xF)
 	{
@@ -734,19 +830,155 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 		pHDD->m_memblock = (pHDD->m_memblock & 0x00FF) | (d << 8);
 		break;
 	case 0x6:
-		pHDD->m_diskblock = (pHDD->m_diskblock & 0xFF00) | d;
+		if (pCard->m_command != SP_Cmd_status)
+			pHDD->m_diskblock = (pHDD->m_diskblock & 0xFF00) | d;
+		else
+			pCard->m_statusCode = d;
 		break;
 	case 0x7:
 		pHDD->m_diskblock = (pHDD->m_diskblock & 0x00FF) | (d << 8);
 		break;
 	default:
 		pHDD->m_status_next = DISK_STATUS_OFF;
-		r = IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
 
-	pCard->UpdateLightStatus(pHDD);
+	if (pHDD)
+		pCard->UpdateLightStatus(pHDD);
+
+	return 0;
+}
+
+//===========================================================================
+
+HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
+{
+	const bool isSmartPortCmd = m_command & SP_Cmd_base;
+
+	if (!isSmartPortCmd)
+		return &m_hardDiskDrive[m_unitNum >> 7];	// bit7 = drive select
+
+	if (m_unitNum > kMaxSmartPortUnits)
+		return NULL;	// TODO: support more than 2 units
+
+	if (m_unitNum == 0)
+		return &m_smartPortController;
+
+	return &m_hardDiskDrive[m_unitNum - 1];
+}
+
+void HarddiskInterfaceCard::SetIdString(WORD addr, const char* str)
+{
+	BYTE& idStrLen = mem[addr];	// ID string length
+	idStrLen = 0;
+
+	WORD idStrAddr = addr + 1;
+	for (UINT i = 0; i < 16; i++)
+		mem[idStrAddr + i] = ' ';	// ID string padded with ASCII spaces
+
+	if (str == NULL)
+		return;
+
+	while (*str && idStrLen < 16)
+	{
+		idStrLen++;
+		mem[idStrAddr++] = *str++;
+	}
+}
+
+BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
+{
+	// Make Firmware version: eg. 1.30.18.0 => 130.18
+	UINT fwVerMajorCheck = g_AppleWinVersion[0] * 100 + g_AppleWinVersion[1];
+	_ASSERT(fwVerMajorCheck < 256);
+	if (fwVerMajorCheck >= 256) fwVerMajorCheck = 255;
+	UINT fwVerMinorCheck = g_AppleWinVersion[2];
+	_ASSERT(fwVerMinorCheck < 256);
+	if (fwVerMinorCheck >= 256) fwVerMinorCheck = 255;
+	const BYTE fwVerMajor = fwVerMajorCheck;
+	const BYTE fwVerMinor = fwVerMinorCheck;
+
+	//
+
+	WORD statusListAddr = pHDD->m_memblock;
+	BYTE r = DEVICE_OK;
+
+	if (m_unitNum != 0)
+	{
+		switch (m_statusCode)
+		{
+		case SP_Cmd_status_STATUS:
+		case SP_Cmd_status_GETDIB:
+		{
+			// Device status (4 bytes)
+			mem[statusListAddr++] = 0xF0;	// general status (b7=block device, b6=write allowed, b5=read allowed, b4=device online, ....)
+			mem[statusListAddr++] = GetImageSizeInBlocks(pHDD->m_imagehandle) & 0xff;			// num blocks (lo)
+			mem[statusListAddr++] = (GetImageSizeInBlocks(pHDD->m_imagehandle) >> 8) & 0xff;	// num blocks (med)
+			mem[statusListAddr++] = (GetImageSizeInBlocks(pHDD->m_imagehandle) >> 16) & 0xff;	// num blocks (hi)
+			if (m_statusCode == SP_Cmd_status_STATUS)
+				break;
+			// Device Information Block (DIB)
+			std::string idStr = "AppleWin SP D#";	// + "01".."99" (device number in decimal)
+			idStr += (char)('0' + m_unitNum / 10);
+			idStr += (char)('0' + m_unitNum % 10);
+			SetIdString(statusListAddr, idStr.c_str());
+			statusListAddr += 17;
+			mem[statusListAddr++] = 0x02;	// device type (0x02: Hard disk)
+			mem[statusListAddr++] = 0x20;	// device subtype (0x20: Hard disk)
+			mem[statusListAddr++] = fwVerMajor;	// f/w version (major)
+			mem[statusListAddr++] = fwVerMinor;	// f/w version (minor)
+			break;
+		}
+		case SP_Cmd_status_GETDCB:
+		case SP_Cmd_status_GETNL:
+		default:
+			pHDD->m_error = 1;
+			r = BADCTL;
+			break;
+		}
+	}
+	else	// Unit-0: SmartPort Controller
+	{
+		UINT numDevices = 0;
+		for (UINT i = 0; i < NUM_HARDDISKS; i++)
+		{
+			if (m_hardDiskDrive[i].m_imageloaded)
+				numDevices++;
+		}
+
+		switch (m_statusCode)
+		{
+		case SP_Cmd_status_STATUS:
+		case SP_Cmd_status_GETDIB:
+		{
+			// SmartPort driver status (8 bytes)
+			mem[statusListAddr++] = numDevices;
+			for (UINT i = 0; i < 7; i++)
+				mem[statusListAddr++] = 0;	// reserved
+			if (m_statusCode == SP_Cmd_status_STATUS)
+				break;
+			// Device Information Block (DIB)
+			std::string idStr = "AppleWin SP";
+			SetIdString(statusListAddr, idStr.c_str());
+			statusListAddr += 17;
+			mem[statusListAddr++] = 0x00;	// device type (0x00: Apple II memory expansion card)
+			mem[statusListAddr++] = 0x00;	// device subtype (0x00: Apple II memory expansion card)
+			mem[statusListAddr++] = fwVerMajor;	// f/w version (major)
+			mem[statusListAddr++] = fwVerMinor;	// f/w version (minor)
+			break;
+		}
+		case SP_Cmd_status_GETDCB:
+		case SP_Cmd_status_GETNL:
+		default:
+			pHDD->m_error = 1;
+			r = BADCTL;
+			break;
+		}
+	}
+
 	return r;
 }
+
+//===========================================================================
 
 UINT HarddiskInterfaceCard::GetImageSizeInBlocks(ImageInfo* const pImageInfo)
 {

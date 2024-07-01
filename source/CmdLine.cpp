@@ -641,6 +641,14 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.useHdcFirmwareV1 = true;
 		}
+		else if (strcmp(lpCmdLine, "-hdc-firmware-v2") == 0)
+		{
+			g_cmdLine.useHdcFirmwareV2 = true;
+		}
+		else if (strcmp(lpCmdLine, "-hdc-firmware-sp") == 0)
+		{
+			g_cmdLine.useHdcFirmwareSmartPort = true;
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
