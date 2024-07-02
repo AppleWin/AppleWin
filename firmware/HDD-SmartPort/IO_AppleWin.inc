@@ -21,6 +21,9 @@ IO_Nextbyte		 = $c088				; R : legacy read-only port (still supported by AppleWi
 IO_Imgsizelo	 = $c089				; R
 IO_Imgsizehi	 = $c08a				; R
 ;--------------------------------------
+IO_BlkCmdFifo	 = $c088				; W
+IO_SPCmdFifo	 = $c089				; W
+;--------------------------------------
 ; Notes on accesses to I/O registers:
 ; . ROR ABS16,X and ROL ABS16,X - only used for $C081+s*$10 STATUS register:
 ;     6502:  double read (old data), write (old data), write (new data). The writes are harmless as writes to STATUS are ignored.

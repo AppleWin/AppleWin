@@ -163,6 +163,8 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	// . ProDOS will write to Command before switching drives
 	m_command = 0;
 
+	m_fifoIdx = 0;
+
 	// SmartPort Status cmd's Status code
 	m_statusCode = 0;
 
@@ -185,6 +187,8 @@ void HarddiskInterfaceCard::Reset(const bool powerCycle)
 {
 	m_hardDiskDrive[HARDDISK_1].m_error = 0;
 	m_hardDiskDrive[HARDDISK_2].m_error = 0;
+
+	m_fifoIdx = 0;
 }
 
 //===========================================================================
@@ -544,6 +548,8 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 	case 0x0:	// EXECUTE & RETURN STATUS
 		r = pCard->CmdExecute(pHDD);
 		pCard->m_command = BLK_Cmd_Status;		// Subsequent reads from IO addr 0x0 just executes 'Status' cmd
+		_ASSERT(pCard->m_fifoIdx == 0);
+		pCard->m_fifoIdx = 0;
 		break;
 	case 0x1:	// STATUS
 		r = pCard->CmdStatus(pHDD);
@@ -802,7 +808,14 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 			return SET_STATUS_ERROR(DEVICE_NOT_CONNECTED);
 	}
 
-	switch (addr & 0xF)
+	BYTE addrIdx = addr & 0xF;
+	if (addrIdx == 0x8)
+	{
+		addrIdx = 0x2 + pCard->m_fifoIdx;
+		pCard->m_fifoIdx = (pCard->m_fifoIdx + 1) % 6;
+	}
+
+	switch (addrIdx)
 	{
 	case 0x0:	// r/o: status
 	case 0x1:	// r/o: execute
@@ -1028,6 +1041,7 @@ bool HarddiskInterfaceCard::ImageSwap(void)
 // 3: Updated $Csnn firmware to fix GH#996 (now slot-independent code)
 //    Added: Not Busy Cycle
 // 4: Updated $Csnn firmware to fix GH#1264
+// 5: TODO: m_fifoIdx
 static const UINT kUNIT_VERSION = 4;
 
 #define SS_YAML_VALUE_CARD_HDD "Generic HDD"

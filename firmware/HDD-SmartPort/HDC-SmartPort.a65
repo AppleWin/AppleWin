@@ -242,13 +242,12 @@ Cn_BLK			php
 				ldy #0
 
 -				lda BLK_Cmd,y
-				sta IO_Command,x		; BLK_Cmds are $0x
+				sta IO_BlkCmdFifo,x		; BLK_Cmds are $0x
 				iny						; BLK_UnitNums are DSSS0000 : if SSS does NOT match physical slot...
-				inx						; ...hardware should handle the remap by adding +2 to the REAL dev_ID
+										; ...hardware should handle the remap by adding +2 to the REAL dev_ID
 				cpy #6					; that way, a BLK controller can support 4 devices (see $CnFE byte below)
 				bcc -
 
-				ldx Slot_n0
 -				lda IO_Execute,x		; A = result of IO_Execute (NB. instantaneous 512 byte r/w!)
 				bmi -					; b7=busy doing DMA?
 

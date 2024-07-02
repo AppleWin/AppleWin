@@ -137,6 +137,7 @@ private:
 
 	BYTE m_unitNum;			// b7=unit
 	BYTE m_command;
+	BYTE m_fifoIdx;
 	BYTE m_statusCode;
 	UINT64 m_notBusyCycle;
 	UINT m_userNumBlocks;
