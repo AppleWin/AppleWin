@@ -767,6 +767,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 		pHDD->m_error = DEVICE_IO_ERROR;	// Not supported
 		break;
 	default:
+		_ASSERT(0);
 		pHDD->m_error = DEVICE_IO_ERROR;
 		break;
 	}
@@ -801,16 +802,20 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
 
 	HardDiskDrive* pHDD = NULL;
-	if ((addr & 0xF) != 0x2 && (addr & 0xF) != 0x3)	// GetUnit() depends on m_command & m_unitNum
+	BYTE addrIdx = addr & 0xF;
+	if (addrIdx != 0x2 && addrIdx != 0x3	// GetUnit() depends on m_command & m_unitNum
+		&& !((addrIdx == 0x8 || addrIdx == 0x9) && pCard->m_fifoIdx < 2))
 	{
 		pHDD = pCard->GetUnit();
 		if (pHDD == NULL)
 			return SET_STATUS_ERROR(DEVICE_NOT_CONNECTED);
 	}
 
-	BYTE addrIdx = addr & 0xF;
-	if (addrIdx == 0x8)
+	if (addrIdx == 0x8 || addrIdx == 0x9)	// BLK or SP cmd FIFO
 	{
+		if (addrIdx == 0x9 && pCard->m_fifoIdx == 0)
+			d |= SP_Cmd_base;
+
 		addrIdx = 0x2 + pCard->m_fifoIdx;
 		pCard->m_fifoIdx = (pCard->m_fifoIdx + 1) % 6;
 	}

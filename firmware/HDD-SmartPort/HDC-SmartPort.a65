@@ -277,11 +277,9 @@ Cn_SP			lda (Ptr1),y			; CMD byte
 				cmp #SP_Cmd_format
 				bcs Cn_SP_E_BADCALL		; only STATUS, READBLOCK & WRITEBLOCK supported
 
-				ora #$80				; Smartport calls = $8x, Statuscode written at IO_StatusCode
-
 				ldx Slot_n0
 
-				sta IO_Command,x
+				sta IO_SPCmdFifo,x		; Smartport calls = $8x (OR'd with $80 by h/w), Statuscode written at IO_StatusCode
 
 				iny						; param LO
 				lda (Ptr1),y
@@ -303,12 +301,11 @@ Cn_SP			lda (Ptr1),y			; CMD byte
 
 -				iny						; UnitNum (B),  MemPtr (W), DiskBlock (W) -> IO (R,W)
 				lda (Ptr1),y			; UnitNum (B),  MemPtr (W), StatusCode (B) -> IO (S)
-				sta IO_Unitnum,x		; UnitNum Range is 0 (smartport controller itself), 1,2,3.....
-				inx
-				cpy #6					; blockNums are 24bits for SP calls
+				sta IO_SPCmdFifo,x		; UnitNum Range is 0 (smartport controller itself), 1,2,3.....
+				cpy #5					; blockNums are 24bits for SP calls
 				bcc -
 
--				lda IO_Execute-6,x		; A = result of IO_Execute (NB. instantaneous 512 byte r/w!)
+-				lda IO_Execute,x		; A = result of IO_Execute (NB. instantaneous 512 byte r/w!)
 				bmi -					; b7=busy doing DMA?
 
 				lsr						; get C=1 & A = ERROR CODE ... or C=0 & A = 0

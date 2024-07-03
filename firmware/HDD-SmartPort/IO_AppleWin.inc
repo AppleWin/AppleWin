@@ -21,8 +21,8 @@ IO_Nextbyte		 = $c088				; R : legacy read-only port (still supported by AppleWi
 IO_Imgsizelo	 = $c089				; R
 IO_Imgsizehi	 = $c08a				; R
 ;--------------------------------------
-IO_BlkCmdFifo	 = $c088				; W
-IO_SPCmdFifo	 = $c089				; W
+IO_BlkCmdFifo	 = $c088				; W : a 6-deep FIFO to write: command, unitNum, memPtr(2), blockNum(2)
+IO_SPCmdFifo	 = $c089				; W : same as IO_BlkCmdFifo, except that the first byte gets OR'd with $80 (ie. to indicate it's an SP command)
 ;--------------------------------------
 ; Notes on accesses to I/O registers:
 ; . ROR ABS16,X and ROL ABS16,X - only used for $C081+s*$10 STATUS register:
