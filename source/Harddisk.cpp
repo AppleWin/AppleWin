@@ -77,12 +77,13 @@ Memory map SmartPort device (IO addr + s*$10):
 	C085	(w)   HIGH BYTE OF MEMORY BUFFER
 	C086	(w)   STATUS CODE : write SP status code $00(device status), $03(device info block)
 	C086	(w)   LOW BYTE OF BLOCK NUMBER : BLK = 16 bit value. SP = 24 bit value
-	C087	(w)   HIGH BYTE OF BLOCK NUMBER
-	C088	(w)   3rd byte for SP 24 bit block number
+	C087	(w)   MIDDLE BYTE OF BLOCK NUMBER
+	C088	(w)   HIGH BYTE OF BLOCK NUMBER (SP only)
 ;	C088	(r)   NEXT BYTE (legacy read-only port - still supported)
 	C089	(r)   LOW BYTE OF DISK IMAGE SIZE IN BLOCKS
 	C08A	(r)   HIGH BYTE OF DISK IMAGE SIZE IN BLOCKS
-
+	C089	(w)   a 6-deep FIFO to write: command, unitNum, memPtr(2), blockNum(2)
+	C08A	(w)   a 7-deep FIFO to write: command, unitNum, memPtr(2), blockNum(3); first byte gets OR'd with $80 (ie. to indicate it's an SP command)
 */
 
 /*
@@ -532,7 +533,8 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 	HarddiskInterfaceCard* pCard = (HarddiskInterfaceCard*)MemGetSlotParameters(slot);
 
 	HardDiskDrive* pHDD = NULL;
-	if ((addr & 0xF) != 0x2 && (addr & 0xF) != 0x3)	// GetUnit() depends on m_command & m_unitNum
+	const BYTE addrIdx = addr & 0xF;
+	if (addrIdx != 0x2 && addrIdx != 0x3)	// GetUnit() depends on m_command & m_unitNum
 	{
 		pHDD = pCard->GetUnit();
 		if (pHDD == NULL)
@@ -543,7 +545,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 
 	BYTE r = STATUS_OK;
 
-	switch (addr & 0xF)
+	switch (addrIdx)
 	{
 	case 0x0:	// EXECUTE & RETURN STATUS
 		r = pCard->CmdExecute(pHDD);
@@ -572,7 +574,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 	case 0x7:
 		r = (BYTE)((pHDD->m_diskblock & 0xFF00) >> 8);
 		break;
-	case 0x8:	// Legacy: continue to support this I/O port for old HDD firmware
+	case 0x8:	// Legacy: continue to support this I/O port for old HDC firmware
 		r = pHDD->m_buf[pHDD->m_buf_ptr];
 		if (pHDD->m_buf_ptr < sizeof(pHDD->m_buf)-1)
 			pHDD->m_buf_ptr++;
@@ -804,32 +806,34 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 	HardDiskDrive* pHDD = NULL;
 	BYTE addrIdx = addr & 0xF;
 	if (addrIdx != 0x2 && addrIdx != 0x3	// GetUnit() depends on m_command & m_unitNum
-		&& !((addrIdx == 0x8 || addrIdx == 0x9) && pCard->m_fifoIdx < 2))
+		&& !((addrIdx == 0x9 || addrIdx == 0xA) && pCard->m_fifoIdx < 2))
 	{
 		pHDD = pCard->GetUnit();
 		if (pHDD == NULL)
 			return SET_STATUS_ERROR(DEVICE_NOT_CONNECTED);
 	}
 
-	if (addrIdx == 0x8 || addrIdx == 0x9)	// BLK or SP cmd FIFO
+	if (addrIdx == 0x9 || addrIdx == 0xA)	// BLK or SP cmd FIFO
 	{
-		if (addrIdx == 0x9 && pCard->m_fifoIdx == 0)
-			d |= SP_Cmd_base;
+		UINT fifoSize = 6;
+		if (addrIdx == 0xA)
+		{
+			fifoSize = 7;
+			if (pCard->m_fifoIdx == 0)
+				d |= SP_Cmd_base;
+		}
 
 		addrIdx = 0x2 + pCard->m_fifoIdx;
-		pCard->m_fifoIdx = (pCard->m_fifoIdx + 1) % 6;
+		pCard->m_fifoIdx = (pCard->m_fifoIdx + 1) % fifoSize;
 	}
 
 	switch (addrIdx)
 	{
 	case 0x0:	// r/o: status
 	case 0x1:	// r/o: execute
-	case 0x8:	// r/o: legacy next-data port
-	case 0x9:	// r/o: low byte of image size
-	case 0xa:	// r/o: high byte of image size
-		// Writing to these 5 read-only registers is a no-op.
+		// Writing to these read-only registers is a no-op.
 		// NB. Don't change m_status_next, as UpdateLightStatus() has a huge performance cost!
-		// Firmware has a busy-wait loop doing "rol hd_status,x"
+		// Some HDC's firmware has a busy-wait loop doing "rol hd_status,x"
 		// - this RMW opcode does an IORead() then an IOWrite(), and the loop iterates ~100 times!
 		break;
 	case 0x2:
@@ -849,19 +853,28 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 		break;
 	case 0x6:
 		if (pCard->m_command != SP_Cmd_status)
-			pHDD->m_diskblock = (pHDD->m_diskblock & 0xFF00) | d;
+			pHDD->m_diskblock = (pHDD->m_diskblock & 0xFFFF00) | d;
 		else
 			pCard->m_statusCode = d;
 		break;
 	case 0x7:
-		pHDD->m_diskblock = (pHDD->m_diskblock & 0x00FF) | (d << 8);
+		pHDD->m_diskblock = (pHDD->m_diskblock & 0xFF00FF) | (d << 8);
+		break;
+	case 0x8:
+		if (pCard->m_command & SP_Cmd_base)
+			pHDD->m_diskblock = (pHDD->m_diskblock & 0x00FFFF) | (d << 16);
 		break;
 	default:
 		pHDD->m_status_next = DISK_STATUS_OFF;
 	}
 
 	if (pHDD)
+	{
+		if ((pCard->m_command & SP_Cmd_base) == 0)
+			pHDD->m_diskblock &= 0x00FFFF;	// BLK cmds are only 16-bit
+
 		pCard->UpdateLightStatus(pHDD);
+	}
 
 	return 0;
 }
@@ -1176,7 +1189,7 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 		ThrowErrorInvalidVersion(version);
 
 	if (version <= 2 && (regs.pc >> 8) == (0xC0|m_slot))
-		throw std::runtime_error("HDD card: 6502 is running old HDD firmware");
+		throw std::runtime_error("HDC card: 6502 is running old HDD firmware");
 
 	m_unitNum = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_UNIT);	// b7=unit
 	m_command = yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);

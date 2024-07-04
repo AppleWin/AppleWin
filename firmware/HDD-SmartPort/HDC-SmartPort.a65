@@ -302,7 +302,7 @@ Cn_SP			lda (Ptr1),y			; CMD byte
 -				iny						; UnitNum (B),  MemPtr (W), DiskBlock (W) -> IO (R,W)
 				lda (Ptr1),y			; UnitNum (B),  MemPtr (W), StatusCode (B) -> IO (S)
 				sta IO_SPCmdFifo,x		; UnitNum Range is 0 (smartport controller itself), 1,2,3.....
-				cpy #5					; blockNums are 24bits for SP calls
+				cpy #6					; blockNums are 24-bit for SP calls
 				bcc -
 
 -				lda IO_Execute,x		; A = result of IO_Execute (NB. instantaneous 512 byte r/w!)
