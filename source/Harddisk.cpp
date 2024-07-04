@@ -611,7 +611,15 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 		return CmdStatus(pHDD);
 	}
 
-	//
+	// For SP read/write block cmds, a 24-bit blockNum => 8GiB capacity
+	// . but eg. in CImageBase::ReadBlock() only 32-bit byte positions are supported (ie. 4GiB capacity)
+	const UINT DISK_BLOCK_MAX = 0x007FFFFF;
+	if ((m_command == SP_Cmd_readblock || m_command == SP_Cmd_writeblock) && pHDD->m_diskblock > DISK_BLOCK_MAX)
+	{
+		pHDD->m_status_next = DISK_STATUS_OFF;
+		pHDD->m_error = DEVICE_IO_ERROR;
+		return CmdStatus(pHDD);
+	}
 
 	const UINT CYCLES_FOR_DMA_RW_BLOCK = HD_BLOCK_SIZE;
 	const UINT PAGE_SIZE = 256;
