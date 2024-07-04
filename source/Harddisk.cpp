@@ -1067,8 +1067,8 @@ bool HarddiskInterfaceCard::ImageSwap(void)
 // 3: Updated $Csnn firmware to fix GH#996 (now slot-independent code)
 //    Added: Not Busy Cycle
 // 4: Updated $Csnn firmware to fix GH#1264
-// 5: TODO: m_fifoIdx
-static const UINT kUNIT_VERSION = 4;
+// 5: Added: SP Status Code, FIFO Index & 256-byte firmware
+static const UINT kUNIT_VERSION = 5;
 
 #define SS_YAML_VALUE_CARD_HDD "Generic HDD"
 
@@ -1086,6 +1086,9 @@ static const UINT kUNIT_VERSION = 4;
 #define SS_YAML_KEY_BUF_PTR "Buffer Offset"
 #define SS_YAML_KEY_BUF "Buffer"
 #define SS_YAML_KEY_NOT_BUSY_CYCLE "Not Busy Cycle"
+#define SS_YAML_KEY_SP_STATUS_CODE "SP Status Code"
+#define SS_YAML_KEY_FIFO_INDEX "FIFO Index"
+#define SS_YAML_KEY_FIRMWARE "Firmware"
 
 const std::string& HarddiskInterfaceCard::GetSnapshotCardName(void)
 {
@@ -1120,6 +1123,14 @@ void HarddiskInterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.Save("%s: %d # b7=unit\n", SS_YAML_KEY_CURRENT_UNIT, m_unitNum);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_COMMAND, m_command);
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_NOT_BUSY_CYCLE, m_notBusyCycle);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SP_STATUS_CODE, m_statusCode);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_FIFO_INDEX, m_fifoIdx);
+
+	// New label
+	{
+		YamlSaveHelper::Label buffer(yamlSaveHelper, "%s:\n", SS_YAML_KEY_FIRMWARE);
+		yamlSaveHelper.SaveMemory(mem + APPLE_IO_BEGIN + m_slot * APPLE_SLOT_SIZE, APPLE_SLOT_SIZE);
+	}
 
 	SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_1);
 	SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_2);
@@ -1204,6 +1215,19 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 
 	if (version >= 3)
 		m_notBusyCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_NOT_BUSY_CYCLE);
+
+	if (version >= 5)
+	{
+		m_statusCode = yamlLoadHelper.LoadUint(SS_YAML_KEY_SP_STATUS_CODE);
+		m_fifoIdx = yamlLoadHelper.LoadUint(SS_YAML_KEY_FIFO_INDEX);
+
+		//
+
+		if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_FIRMWARE))
+			throw std::runtime_error(std::string("HDC") + ": Missing: " + SS_YAML_KEY_FIRMWARE);
+		yamlLoadHelper.LoadMemory(mem + APPLE_IO_BEGIN + m_slot * APPLE_SLOT_SIZE, APPLE_SLOT_SIZE);
+		yamlLoadHelper.PopMap();
+	}
 
 	// Unplug all HDDs first in case HDD-2 is to be plugged in as HDD-1
 	for (UINT i=0; i<NUM_HARDDISKS; i++)
