@@ -176,6 +176,8 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	m_notBusyCycle = 0;
 
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
+
+	m_saveStateFirmwareValid = false;
 }
 
 HarddiskInterfaceCard::~HarddiskInterfaceCard(void)
@@ -208,6 +210,12 @@ void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 	BYTE* pData = GetFrame().GetResource(id, "FIRMWARE", HARDDISK_FW_SIZE);
 	if (pData == NULL)
 		return;
+
+	if (m_saveStateFirmwareValid)
+	{
+		m_saveStateFirmwareValid = false;
+		pData = m_saveStateFirmware;
+	}
 
 	memcpy(pCxRomPeripheral + m_slot * APPLE_SLOT_SIZE, pData, HARDDISK_FW_SIZE);
 
@@ -1225,8 +1233,9 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 
 		if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_FIRMWARE))
 			throw std::runtime_error(std::string("HDC") + ": Missing: " + SS_YAML_KEY_FIRMWARE);
-		yamlLoadHelper.LoadMemory(mem + APPLE_IO_BEGIN + m_slot * APPLE_SLOT_SIZE, APPLE_SLOT_SIZE);
-		yamlLoadHelper.PopMap();
+		yamlLoadHelper.LoadMemory(m_saveStateFirmware, APPLE_SLOT_SIZE);
+		yamlLoadHelper.PopMap();	// TODO: Needed?
+		m_saveStateFirmwareValid = true;
 	}
 
 	// Unplug all HDDs first in case HDD-2 is to be plugged in as HDD-1
