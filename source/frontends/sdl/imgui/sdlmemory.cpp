@@ -7,6 +7,7 @@
 #include "Debugger/DebugDefs.h"
 #include "StrFormat.h"
 
+#include <sstream>
 #include <iomanip>
 
 namespace sa2
