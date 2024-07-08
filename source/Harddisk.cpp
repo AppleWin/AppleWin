@@ -1234,7 +1234,7 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 		if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_FIRMWARE))
 			throw std::runtime_error(std::string("HDC") + ": Missing: " + SS_YAML_KEY_FIRMWARE);
 		yamlLoadHelper.LoadMemory(m_saveStateFirmware, APPLE_SLOT_SIZE);
-		yamlLoadHelper.PopMap();	// TODO: Needed?
+		yamlLoadHelper.PopMap();
 		m_saveStateFirmwareValid = true;
 	}
 

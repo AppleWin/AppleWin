@@ -207,6 +207,7 @@ Cn_Bootstrap	bit IO_IIE_OPENAPPLE
 ;--------------------------------------
 				lda #$1
 				sta BLK_Cmd
+				stx BLK_UnitNum			; DSSS0000, where D=0 (ie. disk 1)
 				lda #$0
 				sta BLK_MemPtr
 				sta BLK_BlockNum
@@ -242,8 +243,8 @@ Cn_BLK			php
 				ldy #0
 
 -				lda BLK_Cmd,y
-				sta IO_BlkCmdFifo,x		; BLK_Cmds are $0x
-				iny						; BLK_UnitNums are DSSS0000 : if SSS does NOT match physical slot...
+				sta IO_BlkCmdFifo,x		; BLK_Cmd's are $0x
+				iny						; BLK_UnitNum's are DSSS0000 : if SSS does NOT match physical slot...
 										; ...hardware should handle the remap by adding +2 to the REAL dev_ID
 				cpy #6					; that way, a BLK controller can support 4 devices (see $CnFE byte below)
 				bcc -
