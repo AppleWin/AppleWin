@@ -121,6 +121,7 @@ enum AppMode_e
 #define REGVALUE_GAME_IO_TYPE		"Game I/O type"
 #define  REGVALUE_LAST_DISK_1		"Last Disk Image 1"
 #define  REGVALUE_LAST_DISK_2		"Last Disk Image 2"
+#define  REGVALUE_LAST_HARDDISK_	"Last Harddisk Image "
 #define  REGVALUE_LAST_HARDDISK_1	"Last Harddisk Image 1"
 #define  REGVALUE_LAST_HARDDISK_2	"Last Harddisk Image 2"
 

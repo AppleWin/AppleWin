@@ -182,14 +182,14 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 
 HarddiskInterfaceCard::~HarddiskInterfaceCard(void)
 {
-	CleanupDriveInternal(HARDDISK_1);
-	CleanupDriveInternal(HARDDISK_2);
+	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+		CleanupDriveInternal(i);
 }
 
 void HarddiskInterfaceCard::Reset(const bool powerCycle)
 {
-	m_hardDiskDrive[HARDDISK_1].m_error = 0;
-	m_hardDiskDrive[HARDDISK_2].m_error = 0;
+	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+		m_hardDiskDrive[i].m_error = 0;
 
 	m_fifoIdx = 0;
 }
@@ -264,12 +264,9 @@ void HarddiskInterfaceCard::NotifyInvalidImage(const std::string & szImageFilena
 
 void HarddiskInterfaceCard::LoadLastDiskImage(const int drive)
 {
-	_ASSERT(drive == HARDDISK_1 || drive == HARDDISK_2);
+	_ASSERT(drive >= HARDDISK_1 && drive < NUM_HARDDISKS);
 
-	const std::string regKey = (drive == HARDDISK_1)
-		? REGVALUE_LAST_HARDDISK_1
-		: REGVALUE_LAST_HARDDISK_2;
-
+	const std::string regKey = std::string(REGVALUE_LAST_HARDDISK_) + (char)('1' + drive);
 	char pathname[MAX_PATH];
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
@@ -291,7 +288,7 @@ void HarddiskInterfaceCard::LoadLastDiskImage(const int drive)
 
 void HarddiskInterfaceCard::SaveLastDiskImage(const int drive)
 {
-	_ASSERT(drive == HARDDISK_1 || drive == HARDDISK_2);
+	_ASSERT(drive >= HARDDISK_1 && drive < NUM_HARDDISKS);
 
 	if (!m_saveDiskImage)
 		return;
@@ -299,10 +296,7 @@ void HarddiskInterfaceCard::SaveLastDiskImage(const int drive)
 	std::string regSection = RegGetConfigSlotSection(m_slot);
 	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, CT_GenericHDD);
 
-	const std::string regKey = (drive == HARDDISK_1)
-		? REGVALUE_LAST_HARDDISK_1
-		: REGVALUE_LAST_HARDDISK_2;
-
+	const std::string regKey = std::string(REGVALUE_LAST_HARDDISK_) + (char)('1' + drive);
 	const std::string& pathName = HarddiskGetFullPathName(drive);
 
 	RegSaveString(regSection.c_str(), regKey.c_str(), TRUE, pathName);
@@ -344,7 +338,7 @@ void HarddiskInterfaceCard::GetFilenameAndPathForSaveState(std::string& filename
 	filename = "";
 	path = "";
 
-	for (UINT i=HARDDISK_1; i<=HARDDISK_2; i++)
+	for (UINT i = 0; i < NUM_HARDDISKS; i++)
 	{
 		if (!m_hardDiskDrive[i].m_imageloaded)
 			continue;
@@ -368,11 +362,11 @@ void HarddiskInterfaceCard::GetFilenameAndPathForSaveState(std::string& filename
 
 void HarddiskInterfaceCard::Destroy(void)
 {
-	m_saveDiskImage = false;
-	CleanupDrive(HARDDISK_1);
-
-	m_saveDiskImage = false;
-	CleanupDrive(HARDDISK_2);
+	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+	{
+		m_saveDiskImage = false;
+		CleanupDrive(i);
+	}
 
 	m_saveDiskImage = true;
 }
@@ -589,13 +583,13 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 		break;
 	case 0x9:
 		if (pHDD->m_imageloaded)
-			r = (BYTE)(pCard->GetImageSizeInBlocks(pHDD->m_imagehandle) & 0x00ff);
+			r = (BYTE)(pCard->GetImageSizeInBlocks(pHDD->m_imagehandle, true) & 0x00ff);
 		else
 			r = 0;
 		break;
 	case 0xa:
 		if (pHDD->m_imageloaded)
-			r = (BYTE)((pCard->GetImageSizeInBlocks(pHDD->m_imagehandle) & 0xff00) >> 8);
+			r = (BYTE)((pCard->GetImageSizeInBlocks(pHDD->m_imagehandle, true) & 0xff00) >> 8);
 		else
 			r = 0;
 		break;
@@ -619,10 +613,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 		return CmdStatus(pHDD);
 	}
 
-	// For SP read/write block cmds, a 24-bit blockNum => 8GiB capacity
-	// . but eg. in CImageBase::ReadBlock() only 32-bit byte positions are supported (ie. 4GiB capacity)
-	const UINT DISK_BLOCK_MAX = 0x007FFFFF;
-	if ((m_command == SP_Cmd_readblock || m_command == SP_Cmd_writeblock) && pHDD->m_diskblock > DISK_BLOCK_MAX)
+	if ((m_command == SP_Cmd_readblock || m_command == SP_Cmd_writeblock) && pHDD->m_diskblock > kHarddiskMaxNumBlocks)
 	{
 		pHDD->m_status_next = DISK_STATUS_OFF;
 		pHDD->m_error = DEVICE_IO_ERROR;
@@ -905,7 +896,7 @@ HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
 		return &m_hardDiskDrive[m_unitNum >> 7];	// bit7 = drive select
 
 	if (m_unitNum > kMaxSmartPortUnits)
-		return NULL;	// TODO: support more than 2 units
+		return NULL;
 
 	if (m_unitNum == 0)
 		return &m_smartPortController;
@@ -1027,13 +1018,15 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 
 //===========================================================================
 
-UINT HarddiskInterfaceCard::GetImageSizeInBlocks(ImageInfo* const pImageInfo)
+UINT HarddiskInterfaceCard::GetImageSizeInBlocks(ImageInfo* const pImageInfo, const bool is16bit/*=false*/)
 {
 	if (m_userNumBlocks != 0)
 		return m_userNumBlocks;
 	UINT numberOfBlocks = (pImageInfo ? pImageInfo->uImageSize : 0) / HD_BLOCK_SIZE;
 	if (numberOfBlocks > kHarddiskMaxNumBlocks)
 		numberOfBlocks = kHarddiskMaxNumBlocks;
+	if (is16bit && numberOfBlocks > 0xffff)
+		numberOfBlocks = 0xffff;
 	return numberOfBlocks;
 }
 
@@ -1050,7 +1043,7 @@ void HarddiskInterfaceCard::UpdateLightStatus(HardDiskDrive* pHDD)
 
 void HarddiskInterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status)
 {
-	HardDiskDrive* pHDD = &m_hardDiskDrive[m_unitNum >> 7];	// bit7 = drive select
+	HardDiskDrive* pHDD = &m_hardDiskDrive[m_unitNum >> 7];	// bit7 = drive select // FIXME: Fix for SP units
 	*pDisk1Status = pHDD->m_status_prev;
 }
 
@@ -1239,7 +1232,7 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 	}
 
 	// Unplug all HDDs first in case HDD-2 is to be plugged in as HDD-1
-	for (UINT i=0; i<NUM_HARDDISKS; i++)
+	for (UINT i = 0; i < NUM_BLK_HARDDISKS; i++)	// FIXME: Fix save-state for NUM_HARDDISKS
 	{
 		Unplug(i);
 		m_hardDiskDrive[i].clear();

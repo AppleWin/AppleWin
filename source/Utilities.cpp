@@ -429,26 +429,24 @@ void InsertHardDisks(const UINT slot, LPCSTR szImageName_harddisk[NUM_HARDDISKS]
 {
 	_ASSERT(slot == 5 || slot == 7);
 
-	if (!szImageName_harddisk[HARDDISK_1] && !szImageName_harddisk[HARDDISK_2])
-		return;
-
 	if (GetCardMgr().QuerySlot(slot) != CT_GenericHDD)
 		GetCardMgr().Insert(slot, CT_GenericHDD);	// Enable the Harddisk controller card
 
 	bool bRes = true;
 
-	if (szImageName_harddisk[HARDDISK_1])
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 	{
-		bRes = DoHardDiskInsert(slot, HARDDISK_1, szImageName_harddisk[HARDDISK_1]);
-		LogFileOutput("Init: DoHardDiskInsert(HDD1), res=%d\n", bRes);
-		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);	// harddisk activity LED
-		bBoot = true;
-	}
+		if (szImageName_harddisk[i])
+		{
+			bRes &= DoHardDiskInsert(slot, i, szImageName_harddisk[i]);
+			LogFileOutput("Init: DoHardDiskInsert(HDD-%d), res=%d\n", i, bRes);
 
-	if (szImageName_harddisk[HARDDISK_2])
-	{
-		bRes &= DoHardDiskInsert(slot, HARDDISK_2, szImageName_harddisk[HARDDISK_2]);
-		LogFileOutput("Init: DoHardDiskInsert(HDD2), res=%d\n", bRes);
+			if (i == HARDDISK_1)
+			{
+				GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);	// harddisk activity LED
+				bBoot = true;
+			}
+		}
 	}
 
 	if (!bRes)

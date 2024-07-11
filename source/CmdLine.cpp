@@ -237,11 +237,12 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					g_cmdLine.szImageName_drive[slot][drive] = lpCmdLine;
 				}
 			}
-			else if (lpCmdLine[3] == 'h' && (lpCmdLine[4] == '1' || lpCmdLine[4] == '2'))	// -s[1..7]h[1|2] <dsk-image>
+			else if (lpCmdLine[3] == 'h' && (lpCmdLine[4] >= '1' || lpCmdLine[4] <= '8'))	// -s[1..7]h[1|2|...|8] <dsk-image>
 			{
-				const UINT drive = lpCmdLine[4] == '1' ? HARDDISK_1 : HARDDISK_2;
+				const UINT drive = lpCmdLine[4] - '1';
+				bool badDrive = drive >= NUM_HARDDISKS;
 
-				if (slot != SLOT5 && slot != SLOT7)
+				if (badDrive || (slot != SLOT5 && slot != SLOT7))
 				{
 					LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
 				}

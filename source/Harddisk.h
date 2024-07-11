@@ -32,11 +32,14 @@ enum HardDrive_e
 {
 	HARDDISK_1 = 0,
 	HARDDISK_2,
-	NUM_HARDDISKS
+	NUM_BLK_HARDDISKS = 2,
+	NUM_HARDDISKS = 8
 };
 
-const UINT kHarddiskMaxNumBlocks = 0xffff;	// Maximum number of blocks we can report.
-const UINT kMaxSmartPortUnits = 2;
+// For SP read/write block cmds, a 24-bit blockNum => 8GiB capacity
+// . but eg. in CImageBase::ReadBlock() only 32-bit byte positions are supported (ie. 4GiB capacity)
+const UINT kHarddiskMaxNumBlocks = 0x007FFFFF;	// Maximum number of blocks we can report.
+const UINT kMaxSmartPortUnits = NUM_HARDDISKS;
 
 class HardDiskDrive
 {
@@ -130,7 +133,7 @@ private:
 	BYTE CmdStatus(HardDiskDrive* pHDD);
 	void SetIdString(WORD addr, const char* str);
 	BYTE SmartPortCmdStatus(HardDiskDrive* pHDD);
-	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo);
+	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo, const bool is16bit = false);
 	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
 	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
 

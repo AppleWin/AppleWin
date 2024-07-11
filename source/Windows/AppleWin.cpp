@@ -859,10 +859,12 @@ static void RepeatInitialization(void)
 			g_cmdLine.szImageName_drive[SLOT6][DRIVE_1] = g_cmdLine.szImageName_drive[SLOT6][DRIVE_2] = NULL;	// Don't insert on a restart
 
 			InsertHardDisks(SLOT5, g_cmdLine.szImageName_harddisk[SLOT5], temp);
-			g_cmdLine.szImageName_harddisk[SLOT5][HARDDISK_1] = g_cmdLine.szImageName_harddisk[SLOT5][HARDDISK_2] = NULL;	// Don't insert on a restart
+			for (UINT i = 0; i < NUM_HARDDISKS; i++)
+				g_cmdLine.szImageName_harddisk[SLOT5][i] = NULL;	// Don't insert on a restart
 
 			InsertHardDisks(SLOT7, g_cmdLine.szImageName_harddisk[SLOT7], g_cmdLine.bBoot);
-			g_cmdLine.szImageName_harddisk[SLOT7][HARDDISK_1] = g_cmdLine.szImageName_harddisk[SLOT7][HARDDISK_2] = NULL;	// Don't insert on a restart
+			for (UINT i = 0; i < NUM_HARDDISKS; i++)
+				g_cmdLine.szImageName_harddisk[SLOT7][i] = NULL;	// Don't insert on a restart
 
 			if (g_cmdLine.bSlotEmpty[SLOT7])
 			{
