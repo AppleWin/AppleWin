@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Card.h"
-#include "Memory.h"
 
 class ParallelPrinterCard : public Card
 {
