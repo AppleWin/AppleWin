@@ -429,17 +429,23 @@ void InsertHardDisks(const UINT slot, LPCSTR szImageName_harddisk[NUM_HARDDISKS]
 {
 	_ASSERT(slot == 5 || slot == 7);
 
+	// If no HDDs then just return (and don't insert an HDC into this slot)
+	bool res = true;
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+		res &= szImageName_harddisk[i] == NULL;
+	if (res)
+		return;
+
 	if (GetCardMgr().QuerySlot(slot) != CT_GenericHDD)
 		GetCardMgr().Insert(slot, CT_GenericHDD);	// Enable the Harddisk controller card
 
-	bool bRes = true;
-
+	res = true;
 	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 	{
 		if (szImageName_harddisk[i])
 		{
-			bRes &= DoHardDiskInsert(slot, i, szImageName_harddisk[i]);
-			LogFileOutput("Init: DoHardDiskInsert(HDD-%d), res=%d\n", i, bRes);
+			res &= DoHardDiskInsert(slot, i, szImageName_harddisk[i]);
+			LogFileOutput("Init: DoHardDiskInsert(HDD-%d), res=%d\n", i, res);
 
 			if (i == HARDDISK_1)
 			{
@@ -449,7 +455,7 @@ void InsertHardDisks(const UINT slot, LPCSTR szImageName_harddisk[NUM_HARDDISKS]
 		}
 	}
 
-	if (!bRes)
+	if (!res)
 		GetFrame().FrameMessageBox("Failed to insert harddisk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
 }
 
