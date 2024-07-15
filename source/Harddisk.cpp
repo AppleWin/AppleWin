@@ -1133,15 +1133,18 @@ void HarddiskInterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		yamlSaveHelper.SaveMemory(mem + APPLE_IO_BEGIN + m_slot * APPLE_SLOT_SIZE, APPLE_SLOT_SIZE);
 	}
 
-	SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_1);
-	SaveSnapshotHDDUnit(yamlSaveHelper, HARDDISK_2);
+	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+	{
+		if (!IsDriveUnplugged(i))
+			SaveSnapshotHDDUnit(yamlSaveHelper, i);
+	}
 }
 
-bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
+bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version)
 {
-	std::string hddUnitName = std::string(SS_YAML_KEY_HDDUNIT) + (unit == HARDDISK_1 ? std::string("0") : std::string("1"));
+	std::string hddUnitName = std::string(SS_YAML_KEY_HDDUNIT) + (char)('0' + unit);
 	if (!yamlLoadHelper.GetSubMap(hddUnitName))
-		throw std::runtime_error("Card: Expected key: " + hddUnitName);
+		return false;	// No HDD plugged in for this unit#
 
 	m_hardDiskDrive[unit].m_fullname.clear();
 	m_hardDiskDrive[unit].m_imagename.clear();
@@ -1163,13 +1166,13 @@ bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_BUF))
 		throw std::runtime_error(hddUnitName + ": Missing: " + SS_YAML_KEY_BUF);
 	yamlLoadHelper.LoadMemory(m_hardDiskDrive[unit].m_buf, HD_BLOCK_SIZE);
-
 	yamlLoadHelper.PopMap();
+
 	yamlLoadHelper.PopMap();
 
 	//
 
-	bool bResSelectImage = false;
+	bool userSelectedImageFolder = false;
 
 	if (!filename.empty())
 	{
@@ -1177,7 +1180,7 @@ bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, 
 		if (dwAttributes == INVALID_FILE_ATTRIBUTES)
 		{
 			// Get user to browse for file
-			bResSelectImage = SelectImage(unit, filename.c_str());
+			userSelectedImageFolder = SelectImage(unit, filename.c_str());
 
 			dwAttributes = GetFileAttributes(filename.c_str());
 		}
@@ -1200,7 +1203,7 @@ bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, 
 		}
 	}
 
-	return bResSelectImage;
+	return userSelectedImageFolder;
 }
 
 bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
@@ -1231,17 +1234,18 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 		m_saveStateFirmwareValid = true;
 	}
 
-	// Unplug all HDDs first in case HDD-2 is to be plugged in as HDD-1
-	for (UINT i = 0; i < NUM_BLK_HARDDISKS; i++)	// FIXME: Fix save-state for NUM_HARDDISKS
+	// Unplug all HDDs first in case eg. HDD-2 is to be plugged in as HDD-1
+	for (UINT i = 0; i < NUM_HARDDISKS; i++)
 	{
 		Unplug(i);
 		m_hardDiskDrive[i].clear();
 	}
 
-	bool bResSelectImage1 = LoadSnapshotHDDUnit(yamlLoadHelper, HARDDISK_1);
-	bool bResSelectImage2 = LoadSnapshotHDDUnit(yamlLoadHelper, HARDDISK_2);
+	bool userSelectedImageFolder = false;
+	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+		userSelectedImageFolder |= LoadSnapshotHDDUnit(yamlLoadHelper, i, version);
 
-	if (!bResSelectImage1 && !bResSelectImage2)
+	if (!userSelectedImageFolder)
 		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, Snapshot_GetPath());
 
 	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);

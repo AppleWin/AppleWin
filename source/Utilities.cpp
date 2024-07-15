@@ -431,7 +431,7 @@ void InsertHardDisks(const UINT slot, LPCSTR szImageName_harddisk[NUM_HARDDISKS]
 
 	// If no HDDs then just return (and don't insert an HDC into this slot)
 	bool res = true;
-	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+	for (UINT i = 0; i < NUM_HARDDISKS; i++)
 		res &= szImageName_harddisk[i] == NULL;
 	if (res)
 		return;
@@ -440,7 +440,7 @@ void InsertHardDisks(const UINT slot, LPCSTR szImageName_harddisk[NUM_HARDDISKS]
 		GetCardMgr().Insert(slot, CT_GenericHDD);	// Enable the Harddisk controller card
 
 	res = true;
-	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+	for (UINT i = 0; i < NUM_HARDDISKS; i++)
 	{
 		if (szImageName_harddisk[i])
 		{
