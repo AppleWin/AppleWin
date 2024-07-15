@@ -1140,7 +1140,7 @@ void HarddiskInterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	}
 }
 
-bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version)
+bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
 {
 	std::string hddUnitName = std::string(SS_YAML_KEY_HDDUNIT) + (char)('0' + unit);
 	if (!yamlLoadHelper.GetSubMap(hddUnitName))
@@ -1243,7 +1243,7 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 
 	bool userSelectedImageFolder = false;
 	for (UINT i = 0; i < NUM_HARDDISKS; i++)
-		userSelectedImageFolder |= LoadSnapshotHDDUnit(yamlLoadHelper, i, version);
+		userSelectedImageFolder |= LoadSnapshotHDDUnit(yamlLoadHelper, i);
 
 	if (!userSelectedImageFolder)
 		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, Snapshot_GetPath());

@@ -135,7 +135,7 @@ private:
 	BYTE SmartPortCmdStatus(HardDiskDrive* pHDD);
 	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo, const bool is16bit = false);
 	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
-	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version);
+	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
 
 	//
 
