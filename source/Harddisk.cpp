@@ -940,41 +940,7 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 	WORD statusListAddr = pHDD->m_memblock;
 	BYTE r = DEVICE_OK;
 
-	if (m_unitNum != 0)
-	{
-		switch (m_statusCode)
-		{
-		case SP_Cmd_status_STATUS:
-		case SP_Cmd_status_GETDIB:
-		{
-			// Device status (4 bytes)
-			mem[statusListAddr++] = 0xF0;	// general status (b7=block device, b6=write allowed, b5=read allowed, b4=device online, ....)
-			mem[statusListAddr++] = GetImageSizeInBlocks(pHDD->m_imagehandle) & 0xff;			// num blocks (lo)
-			mem[statusListAddr++] = (GetImageSizeInBlocks(pHDD->m_imagehandle) >> 8) & 0xff;	// num blocks (med)
-			mem[statusListAddr++] = (GetImageSizeInBlocks(pHDD->m_imagehandle) >> 16) & 0xff;	// num blocks (hi)
-			if (m_statusCode == SP_Cmd_status_STATUS)
-				break;
-			// Device Information Block (DIB)
-			std::string idStr = "AppleWin SP D#";	// + "01".."99" (device number in decimal)
-			idStr += (char)('0' + m_unitNum / 10);
-			idStr += (char)('0' + m_unitNum % 10);
-			SetIdString(statusListAddr, idStr.c_str());
-			statusListAddr += 17;
-			mem[statusListAddr++] = 0x02;	// device type (0x02: Hard disk)
-			mem[statusListAddr++] = 0x20;	// device subtype (0x20: Hard disk)
-			mem[statusListAddr++] = fwVerMajor;	// f/w version (major)
-			mem[statusListAddr++] = fwVerMinor;	// f/w version (minor)
-			break;
-		}
-		case SP_Cmd_status_GETDCB:
-		case SP_Cmd_status_GETNL:
-		default:
-			pHDD->m_error = 1;
-			r = BADCTL;
-			break;
-		}
-	}
-	else	// Unit-0: SmartPort Controller
+	if (m_unitNum == 0)	// Unit-0: SmartPort Controller
 	{
 		UINT numDevices = 0;
 		for (UINT i = 0; i < NUM_HARDDISKS; i++)
@@ -1000,6 +966,40 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 			statusListAddr += 17;
 			mem[statusListAddr++] = 0x00;	// device type (0x00: Apple II memory expansion card)
 			mem[statusListAddr++] = 0x00;	// device subtype (0x00: Apple II memory expansion card)
+			mem[statusListAddr++] = fwVerMajor;	// f/w version (major)
+			mem[statusListAddr++] = fwVerMinor;	// f/w version (minor)
+			break;
+		}
+		case SP_Cmd_status_GETDCB:
+		case SP_Cmd_status_GETNL:
+		default:
+			pHDD->m_error = 1;
+			r = BADCTL;
+			break;
+		}
+	}
+	else	// Unit > 0: SmartPort Devices
+	{
+		switch (m_statusCode)
+		{
+		case SP_Cmd_status_STATUS:
+		case SP_Cmd_status_GETDIB:
+		{
+			// Device status (4 bytes)
+			mem[statusListAddr++] = 0xF0;	// general status (b7=block device, b6=write allowed, b5=read allowed, b4=device online, ....)
+			mem[statusListAddr++] = GetImageSizeInBlocks(pHDD->m_imagehandle) & 0xff;			// num blocks (lo)
+			mem[statusListAddr++] = (GetImageSizeInBlocks(pHDD->m_imagehandle) >> 8) & 0xff;	// num blocks (med)
+			mem[statusListAddr++] = (GetImageSizeInBlocks(pHDD->m_imagehandle) >> 16) & 0xff;	// num blocks (hi)
+			if (m_statusCode == SP_Cmd_status_STATUS)
+				break;
+			// Device Information Block (DIB)
+			std::string idStr = "AppleWin SP D#";	// + "01".."99" (device number in decimal)
+			idStr += (char)('0' + m_unitNum / 10);
+			idStr += (char)('0' + m_unitNum % 10);
+			SetIdString(statusListAddr, idStr.c_str());
+			statusListAddr += 17;
+			mem[statusListAddr++] = 0x02;	// device type (0x02: Hard disk)
+			mem[statusListAddr++] = 0x20;	// device subtype (0x20: Hard disk)
 			mem[statusListAddr++] = fwVerMajor;	// f/w version (major)
 			mem[statusListAddr++] = fwVerMinor;	// f/w version (minor)
 			break;
