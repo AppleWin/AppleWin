@@ -606,12 +606,14 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 
 BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 {
-	if (!pHDD->m_imageloaded)
+#if 1
+	if (!pHDD->m_imageloaded && m_command != BLK_Cmd_Status && m_command != SP_Cmd_status)
 	{
 		pHDD->m_status_next = DISK_STATUS_OFF;
-		pHDD->m_error = DEVICE_NOT_CONNECTED;	// GH#452
+		pHDD->m_error = DEVICE_NOT_CONNECTED;	// GH#452 (TODO: check this for ProDOS BLK device)
 		return CmdStatus(pHDD);
 	}
+#endif
 
 	if ((m_command == SP_Cmd_readblock || m_command == SP_Cmd_writeblock) && pHDD->m_diskblock > kHarddiskMaxNumBlocks)
 	{
@@ -888,6 +890,20 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 
 //===========================================================================
 
+BYTE HarddiskInterfaceCard::GetNumConnectedDevices(void)
+{
+	// Scan backwards to find the index of the last attached HDD
+	int numDevices = NUM_HARDDISKS - 1;
+
+	for (; numDevices >= 0; numDevices--)
+	{
+		if (m_hardDiskDrive[numDevices].m_imageloaded)
+			break;
+	}
+
+	return numDevices + 1;
+}
+
 HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
 {
 	const bool isSmartPortCmd = m_command & SP_Cmd_base;
@@ -896,6 +912,9 @@ HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
 		return &m_hardDiskDrive[m_unitNum >> 7];	// bit7 = drive select
 
 	if (m_unitNum > kMaxSmartPortUnits)
+		return NULL;
+
+	if (m_unitNum > GetNumConnectedDevices())
 		return NULL;
 
 	if (m_unitNum == 0)
@@ -942,12 +961,7 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 
 	if (m_unitNum == 0)	// Unit-0: SmartPort Controller
 	{
-		UINT numDevices = 0;
-		for (UINT i = 0; i < NUM_HARDDISKS; i++)
-		{
-			if (m_hardDiskDrive[i].m_imageloaded)
-				numDevices++;
-		}
+		BYTE numDevices = GetNumConnectedDevices();
 
 		switch (m_statusCode)
 		{
@@ -986,12 +1000,22 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 		case SP_Cmd_status_GETDIB:
 		{
 			// Device status (4 bytes)
-			mem[statusListAddr++] = 0xF0;	// general status (b7=block device, b6=write allowed, b5=read allowed, b4=device online, ....)
-			mem[statusListAddr++] = GetImageSizeInBlocks(pHDD->m_imagehandle) & 0xff;			// num blocks (lo)
-			mem[statusListAddr++] = (GetImageSizeInBlocks(pHDD->m_imagehandle) >> 8) & 0xff;	// num blocks (med)
-			mem[statusListAddr++] = (GetImageSizeInBlocks(pHDD->m_imagehandle) >> 16) & 0xff;	// num blocks (hi)
+			const bool isImageLoaded = m_hardDiskDrive[m_unitNum - 1].m_imageloaded;
+
+			// general status:
+			// . b7=block device, b6=write allowed, b5=read allowed, b4=device online or disk in drive,
+			// . b3=format allowed, b2=media write protected (block devices only), b1=device currently interrupting (//c only), b0=device currently open (char device only)
+			const BYTE generalStatus = isImageLoaded ? 0xF0 : 0xE0;		// Loaded: b#11110000: bwrl---- / Not loaded: b#11100000: bwr-----
+			mem[statusListAddr++] = generalStatus;
+
+			const UINT imageSizeInBlocks = isImageLoaded ? GetImageSizeInBlocks(pHDD->m_imagehandle) : 0;
+			mem[statusListAddr++] = imageSizeInBlocks & 0xff;			// num blocks (lo)
+			mem[statusListAddr++] = (imageSizeInBlocks >> 8) & 0xff;	// num blocks (med)
+			mem[statusListAddr++] = (imageSizeInBlocks >> 16) & 0xff;	// num blocks (hi)
+
 			if (m_statusCode == SP_Cmd_status_STATUS)
 				break;
+
 			// Device Information Block (DIB)
 			std::string idStr = "AppleWin SP D#";	// + "01".."99" (device number in decimal)
 			idStr += (char)('0' + m_unitNum / 10);

@@ -128,6 +128,7 @@ private:
 	const std::string& DiskGetBaseName(const int iDrive);
 	bool SelectImage(const int drive, LPCSTR pszFilename);
 	void UpdateLightStatus(HardDiskDrive* pHDD);
+	BYTE GetNumConnectedDevices(void);
 	HardDiskDrive* GetUnit(void);
 	BYTE CmdExecute(HardDiskDrive* pHDD);
 	BYTE CmdStatus(HardDiskDrive* pHDD);

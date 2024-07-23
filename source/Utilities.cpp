@@ -283,10 +283,13 @@ void LoadConfiguration(bool loadImages)
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
-	if (loadImages && GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
+	for (UINT slot = SLOT1; slot <= SLOT7; slot++)
 	{
-		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).LoadLastDiskImage(HARDDISK_1);
-		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7)).LoadLastDiskImage(HARDDISK_2);
+		if (loadImages && GetCardMgr().QuerySlot(slot) == CT_GenericHDD)
+		{
+			for (UINT i = 0; i < NUM_HARDDISKS; i++)
+				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).LoadLastDiskImage(i);
+		}
 	}
 
 	//
