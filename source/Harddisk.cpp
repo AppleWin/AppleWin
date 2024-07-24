@@ -601,14 +601,12 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 
 BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 {
-#if 1
 	if (!pHDD->m_imageloaded && m_command != BLK_Cmd_Status && m_command != SP_Cmd_status)
 	{
 		pHDD->m_status_next = DISK_STATUS_OFF;
-		pHDD->m_error = DEVICE_NOT_CONNECTED;	// GH#452 (TODO: check this for ProDOS BLK device)
+		pHDD->m_error = DEVICE_NOT_CONNECTED;	// GH#452
 		return CmdStatus(pHDD);
 	}
-#endif
 
 	if ((m_command == SP_Cmd_readblock || m_command == SP_Cmd_writeblock) && pHDD->m_diskblock > kHarddiskMaxNumBlocks)
 	{
