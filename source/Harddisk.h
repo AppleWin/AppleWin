@@ -103,7 +103,6 @@ public:
 	bool Select(const int iDrive);
 	bool Insert(const int iDrive, const std::string& pathname);
 	void Unplug(const int iDrive);
-	bool IsDriveUnplugged(const int iDrive);
 	void LoadLastDiskImage(const int iDrive);
 	void SetUserNumBlocks(UINT numBlocks) { m_userNumBlocks = numBlocks; }
 	void UseHdcFirmwareV1(void) { m_useHdcFirmwareV1 = true; }

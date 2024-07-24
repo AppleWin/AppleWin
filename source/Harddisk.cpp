@@ -486,11 +486,6 @@ void HarddiskInterfaceCard::Unplug(const int iDrive)
 	}
 }
 
-bool HarddiskInterfaceCard::IsDriveUnplugged(const int iDrive)
-{
-	return m_hardDiskDrive[iDrive].m_imageloaded == false;
-}
-
 //===========================================================================
 
 // ProDOS BLK & SmartPort commands
@@ -1159,7 +1154,7 @@ void HarddiskInterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 	for (UINT i = 0; i < NUM_HARDDISKS; i++)
 	{
-		if (!IsDriveUnplugged(i))
+		if (m_hardDiskDrive[i].m_imageloaded)
 			SaveSnapshotHDDUnit(yamlSaveHelper, i);
 	}
 }
@@ -1215,7 +1210,7 @@ bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, 
 			if (!Insert(unit, filename.c_str()))
 				bImageError = true;
 
-			// HD_Insert() sets up:
+			// Insert() sets up:
 			// . m_imagename
 			// . m_fullname
 			// . m_imageloaded
