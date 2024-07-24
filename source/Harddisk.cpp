@@ -177,6 +177,8 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
 
+	m_saveStateFirmwareV1 = false;
+	m_saveStateFirmwareV2 = false;
 	m_saveStateFirmwareValid = false;
 }
 
@@ -203,9 +205,12 @@ void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 	WORD id = IsEnhancedIIE() ? IDR_HDC_SMARTPORT_FW : IDR_HDDRVR_V2_FW;
 
 	// Use any cmd line override
-	if (m_useHdcFirmwareV1) id = IDR_HDDRVR_FW;
-	else if (m_useHdcFirmwareV2) id = IDR_HDDRVR_V2_FW;
+	if (m_useHdcFirmwareV1 || m_saveStateFirmwareV1) id = IDR_HDDRVR_FW;
+	else if (m_useHdcFirmwareV2 || m_saveStateFirmwareV2) id = IDR_HDDRVR_V2_FW;
 	else if (m_useHdcFirmwareSmartPort) id = IDR_HDC_SMARTPORT_FW;
+
+	m_saveStateFirmwareV1 = false;
+	m_saveStateFirmwareV2 = false;
 
 	BYTE* pData = GetFrame().GetResource(id, "FIRMWARE", HARDDISK_FW_SIZE);
 	if (pData == NULL)
@@ -1238,6 +1243,12 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 
 	if (version >= 3)
 		m_notBusyCycle = yamlLoadHelper.LoadUint64(SS_YAML_KEY_NOT_BUSY_CYCLE);
+
+	m_saveStateFirmwareV1 = m_saveStateFirmwareV2 = false;
+	if (version < 4)
+		m_saveStateFirmwareV1 = true;
+	else if (version == 4)
+		m_saveStateFirmwareV2 = true;
 
 	if (version >= 5)
 	{

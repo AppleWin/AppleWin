@@ -154,6 +154,8 @@ private:
 	HardDiskDrive m_hardDiskDrive[NUM_HARDDISKS];
 	HardDiskDrive m_smartPortController;		// unit-0 is the SmartPort controller
 
+	bool m_saveStateFirmwareV1;
+	bool m_saveStateFirmwareV2;
 	BYTE m_saveStateFirmware[APPLE_SLOT_SIZE];
 	bool m_saveStateFirmwareValid;
 };
