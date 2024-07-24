@@ -814,19 +814,21 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 	{
 		pHDD = pCard->GetUnit();
 		if (pHDD == NULL)
+		{
+			// Ensure that fifoIdx returns to 0, even if unitNum is out of range
+			// EG. ProDOS 8 v2.5.0: Bitsy Bye: TAB through S7 volumes
+			const UINT fifoSize = (addrIdx == 0x9) ? 6 : 7;
+			pCard->m_fifoIdx = (pCard->m_fifoIdx + 1) % fifoSize;
 			return SET_STATUS_ERROR(DEVICE_NOT_CONNECTED);
+		}
 	}
 
 	if (addrIdx == 0x9 || addrIdx == 0xA)	// BLK or SP cmd FIFO
 	{
-		UINT fifoSize = 6;
-		if (addrIdx == 0xA)
-		{
-			fifoSize = 7;
-			if (pCard->m_fifoIdx == 0)
+		if (addrIdx == 0xA && pCard->m_fifoIdx == 0)
 				d |= SP_Cmd_base;
-		}
 
+		const UINT fifoSize = (addrIdx == 0x9) ? 6 : 7;
 		addrIdx = 0x2 + pCard->m_fifoIdx;
 		pCard->m_fifoIdx = (pCard->m_fifoIdx + 1) % fifoSize;
 	}
