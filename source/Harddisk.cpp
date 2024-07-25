@@ -1093,6 +1093,7 @@ bool HarddiskInterfaceCard::ImageSwap(void)
 //    Added: Not Busy Cycle
 // 4: Updated $Csnn firmware to fix GH#1264
 // 5: Added: SP Status Code, FIFO Index & 256-byte firmware
+//    Units are 1-based (up to v4 they were 0-based)
 static const UINT kUNIT_VERSION = 5;
 
 #define SS_YAML_VALUE_CARD_HDD "Generic HDD"
@@ -1121,9 +1122,11 @@ const std::string& HarddiskInterfaceCard::GetSnapshotCardName(void)
 	return name;
 }
 
-void HarddiskInterfaceCard::SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit)
+void HarddiskInterfaceCard::SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, const UINT unit)
 {
-	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_HDDUNIT, unit);
+	const UINT baseUnitNum = 1;	// Unit0 is the SP Controller, so SP units start from 1
+
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_HDDUNIT, baseUnitNum + unit);
 	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, m_hardDiskDrive[unit].m_fullname);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_ERROR, m_hardDiskDrive[unit].m_error);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_MEMBLOCK, m_hardDiskDrive[unit].m_memblock);
@@ -1145,7 +1148,7 @@ void HarddiskInterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
-	yamlSaveHelper.Save("%s: %d # b7=unit\n", SS_YAML_KEY_CURRENT_UNIT, m_unitNum);
+	yamlSaveHelper.Save("%s: %d # b7=unit for ProDOS BLK device\n", SS_YAML_KEY_CURRENT_UNIT, m_unitNum);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_COMMAND, m_command);
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_NOT_BUSY_CYCLE, m_notBusyCycle);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SP_STATUS_CODE, m_statusCode);
@@ -1164,9 +1167,11 @@ void HarddiskInterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	}
 }
 
-bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit)
+bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, const UINT unit, const UINT version)
 {
-	std::string hddUnitName = std::string(SS_YAML_KEY_HDDUNIT) + (char)('0' + unit);
+	const UINT baseUnitNum = (version >= 5) ? 1 : 0;
+
+	std::string hddUnitName = std::string(SS_YAML_KEY_HDDUNIT) + (char)('0' + baseUnitNum + unit);
 	if (!yamlLoadHelper.GetSubMap(hddUnitName))
 		return false;	// No HDD plugged in for this unit#
 
@@ -1273,7 +1278,7 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 
 	bool userSelectedImageFolder = false;
 	for (UINT i = 0; i < NUM_HARDDISKS; i++)
-		userSelectedImageFolder |= LoadSnapshotHDDUnit(yamlLoadHelper, i);
+		userSelectedImageFolder |= LoadSnapshotHDDUnit(yamlLoadHelper, i, version);
 
 	if (!userSelectedImageFolder)
 		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, Snapshot_GetPath());
