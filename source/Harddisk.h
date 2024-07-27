@@ -128,6 +128,7 @@ private:
 	bool SelectImage(const int drive, LPCSTR pszFilename);
 	void UpdateLightStatus(HardDiskDrive* pHDD);
 	BYTE GetNumConnectedDevices(void);
+	BYTE GetProDOSBlockDeviceUnit(void);
 	HardDiskDrive* GetUnit(void);
 	BYTE CmdExecute(HardDiskDrive* pHDD);
 	BYTE CmdStatus(HardDiskDrive* pHDD);

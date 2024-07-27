@@ -158,7 +158,7 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	if (m_slot != SLOT5 && m_slot != SLOT7)	// fixme
 		ThrowErrorInvalidSlot();
 
-	m_unitNum = HARDDISK_1 << 7;	// b7=unit
+	m_unitNum = (HARDDISK_1 << 7) | (m_slot << 4);	// b7=unit, b6:4=slot
 
 	// The HDD interface has a single Command register for both drives:
 	// . ProDOS will write to Command before switching drives
@@ -604,8 +604,16 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 	return r;
 }
 
+#if 0
+#include "DiskLog.h"	// NB. Need to enable LOG_DISK_ENABLED too
+#else
+#define LOG_DISK(...)
+#endif
+
 BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 {
+	LOG_DISK("HDD-%d(%02X): Cmd=%02X ", (m_command & SP_Cmd_base) ? m_unitNum : GetProDOSBlockDeviceUnit(), m_unitNum, m_command);
+
 	if (!pHDD->m_imageloaded && m_command != BLK_Cmd_Status && m_command != SP_Cmd_status)
 	{
 		pHDD->m_status_next = DISK_STATUS_OFF;
@@ -630,12 +638,15 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 	case BLK_Cmd_Status:
 		if (ImageGetImageSize(pHDD->m_imagehandle) == 0)
 			pHDD->m_error = DEVICE_IO_ERROR;
+		LOG_DISK("ST-BLK: %02X\n", pHDD->m_error);
 		break;
 	case SP_Cmd_status:
 		pHDD->m_error = SmartPortCmdStatus(pHDD);
+		LOG_DISK("ST: %02X\n", pHDD->m_error);
 		break;
 	case BLK_Cmd_Read:
 	case SP_Cmd_readblock:
+		LOG_DISK("RD: %08X\n", pHDD->m_diskblock);
 		pHDD->m_status_next = DISK_STATUS_READ;
 		if ((pHDD->m_diskblock * HD_BLOCK_SIZE) < ImageGetImageSize(pHDD->m_imagehandle))
 		{
@@ -701,6 +712,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 	case BLK_Cmd_Write:
 	case SP_Cmd_writeblock:
 	{
+		LOG_DISK("WR: %08X\n", pHDD->m_diskblock);
 		pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
 		bool bRes = true;
 		const bool bAppendBlocks = (pHDD->m_diskblock * HD_BLOCK_SIZE) >= ImageGetImageSize(pHDD->m_imagehandle);
@@ -904,12 +916,19 @@ BYTE HarddiskInterfaceCard::GetNumConnectedDevices(void)
 	return numDevices + 1;
 }
 
+BYTE HarddiskInterfaceCard::GetProDOSBlockDeviceUnit(void)
+{
+	const BYTE slotFromUnitNum = (m_unitNum >> 4) & 7;
+	const BYTE offset = (slotFromUnitNum == m_slot) ? 0 : 2;
+	return offset + (m_unitNum >> 7);	// bit7 = drive select
+}
+
 HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
 {
 	const bool isSmartPortCmd = m_command & SP_Cmd_base;
 
 	if (!isSmartPortCmd)
-		return &m_hardDiskDrive[m_unitNum >> 7];	// bit7 = drive select
+		return &m_hardDiskDrive[GetProDOSBlockDeviceUnit()];
 
 	if (m_unitNum > kMaxSmartPortUnits)
 		return NULL;
@@ -1067,7 +1086,8 @@ void HarddiskInterfaceCard::UpdateLightStatus(HardDiskDrive* pHDD)
 
 void HarddiskInterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status)
 {
-	HardDiskDrive* pHDD = &m_hardDiskDrive[m_unitNum >> 7];	// bit7 = drive select // FIXME: Fix for SP units
+	const BYTE unit = (m_command & SP_Cmd_base) ? m_unitNum : GetProDOSBlockDeviceUnit();
+	HardDiskDrive* pHDD = &m_hardDiskDrive[unit];
 	*pDisk1Status = pHDD->m_status_prev;
 }
 
@@ -1243,7 +1263,7 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 	if (version <= 2 && (regs.pc >> 8) == (0xC0|m_slot))
 		throw std::runtime_error("HDC card: 6502 is running old HDD firmware");
 
-	m_unitNum = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_UNIT);	// b7=unit
+	m_unitNum = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_UNIT);
 	m_command = yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);
 
 	if (version >= 3)

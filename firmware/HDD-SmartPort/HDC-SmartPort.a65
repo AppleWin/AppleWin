@@ -189,10 +189,10 @@ Cn_Bootstrap	bit IO_IIE_OPENAPPLE
 ; Lets check to see if there's an image ready
 ; Slot n, disk 1
 
-				tax						; A=$n0
+				tax						; A=%0SSS0000
+				sta IO_Unitnum,x		; b7=0 (and b6:4=SSS) => disk 1
 
 				lda #BLK_Cmd_Status
-				sta IO_Unitnum,x		; b7=0 => disk 1
 				sta	IO_Command,x
 
 				lda IO_Execute,x		; Post: A=STATUS (BLK_Cmd_Status completes immediately, no need to check STATUS.b7 busy bit)
@@ -374,6 +374,6 @@ Cn_SP_E_BADCNT	ldx #E_BADCNT
 ;--------------------------------------
 				!byte $00 				; Smart port ID Type byte
 				!word $0000 			; how many blocks are on the device. Zero means use status call
-				!byte $D7 				; specifics about the device (number of drives, read/write/format capability, etc)
+				!byte $F7 				; specifics about the device (number of drives, read/write/format capability, etc)
 				!byte <Cn_Entry_BLK		; entry point offset for ProDOS (must be $0a)
 ;--------------------------------------
