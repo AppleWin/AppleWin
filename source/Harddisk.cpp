@@ -493,6 +493,12 @@ void HarddiskInterfaceCard::Unplug(const int iDrive)
 
 //===========================================================================
 
+#if 0	// Enable HDD command logging
+#define LOG_DISK(format, ...) LOG(format, __VA_ARGS__)
+#else
+#define LOG_DISK(...)
+#endif
+
 // ProDOS BLK & SmartPort commands
 //
 const UINT BLK_Cmd_Status		= 0x00;
@@ -516,6 +522,7 @@ const UINT SP_Cmd_open			= SP_Cmd_base + 0x06;
 const UINT SP_Cmd_close			= SP_Cmd_base + 0x07;
 const UINT SP_Cmd_read			= SP_Cmd_base + 0x08;
 const UINT SP_Cmd_write			= SP_Cmd_base + 0x09;
+const UINT SP_Cmd_busyStatus	= SP_Cmd_base + 0x3F;	// AppleWin vendor-specific command
 
 #define DEVICE_OK				0x00
 #define BUSERR					0x06
@@ -551,7 +558,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 	{
 	case 0x0:	// EXECUTE & RETURN STATUS
 		r = pCard->CmdExecute(pHDD);
-		pCard->m_command = BLK_Cmd_Status;		// Subsequent reads from IO addr 0x0 just executes 'Status' cmd
+		pCard->m_command = (pCard->m_command & SP_Cmd_base) ? SP_Cmd_busyStatus : BLK_Cmd_Status;	// Subsequent reads from IO addr 0x0 just executes 'Status' cmd
 		_ASSERT(pCard->m_fifoIdx == 0);
 		pCard->m_fifoIdx = 0;
 		break;
@@ -604,15 +611,9 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 	return r;
 }
 
-#if 0
-#include "DiskLog.h"	// NB. Need to enable LOG_DISK_ENABLED too
-#else
-#define LOG_DISK(...)
-#endif
-
 BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 {
-	LOG_DISK("HDD-%d(%02X): Cmd=%02X ", (m_command & SP_Cmd_base) ? m_unitNum : GetProDOSBlockDeviceUnit(), m_unitNum, m_command);
+	LOG_DISK("slot-%d, HDD-%d(%02X): Cmd=%02X ", m_slot, (m_command & SP_Cmd_base) ? m_unitNum : GetProDOSBlockDeviceUnit(), m_unitNum, m_command);
 
 	if (!pHDD->m_imageloaded && m_command != BLK_Cmd_Status && m_command != SP_Cmd_status)
 	{
@@ -639,6 +640,9 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 		if (ImageGetImageSize(pHDD->m_imagehandle) == 0)
 			pHDD->m_error = DEVICE_IO_ERROR;
 		LOG_DISK("ST-BLK: %02X\n", pHDD->m_error);
+		break;
+	case SP_Cmd_busyStatus:
+		LOG_DISK("ST-BSY: %02X\n", pHDD->m_error);
 		break;
 	case SP_Cmd_status:
 		pHDD->m_error = SmartPortCmdStatus(pHDD);
