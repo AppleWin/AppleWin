@@ -153,7 +153,7 @@ Overview
 
 
 HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
-	Card(CT_GenericHDD, slot), m_userNumBlocks(0), m_useHdcFirmwareV1(false), m_useHdcFirmwareSmartPort(false)
+	Card(CT_GenericHDD, slot), m_userNumBlocks(0), m_useHdcFirmwareV1(false), m_useHdcFirmwareMode(HdcDefault)
 {
 	if (m_slot != SLOT5 && m_slot != SLOT7)	// fixme
 		ThrowErrorInvalidSlot();
@@ -207,22 +207,38 @@ void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 	// Use any cmd line override
 	if (m_useHdcFirmwareV1 || m_saveStateFirmwareV1) id = IDR_HDDRVR_FW;
 	else if (m_useHdcFirmwareV2 || m_saveStateFirmwareV2) id = IDR_HDDRVR_V2_FW;
-	else if (m_useHdcFirmwareSmartPort) id = IDR_HDC_SMARTPORT_FW;
+	else if (m_useHdcFirmwareMode == HdcSmartPort) id = IDR_HDC_SMARTPORT_FW;
 
 	m_saveStateFirmwareV1 = false;
 	m_saveStateFirmwareV2 = false;
 
-	BYTE* pData = GetFrame().GetResource(id, "FIRMWARE", HARDDISK_FW_SIZE);
-	if (pData == NULL)
-		return;
-
-	if (m_saveStateFirmwareValid)
+	bool allowFirmwareMods = false;
+	BYTE* pData = NULL;
+	if (!m_saveStateFirmwareValid)
+	{
+		pData = GetFrame().GetResource(id, "FIRMWARE", HARDDISK_FW_SIZE);
+		if (pData == NULL)
+			return;
+		allowFirmwareMods = true;
+	}
+	else
 	{
 		m_saveStateFirmwareValid = false;
 		pData = m_saveStateFirmware;
 	}
 
-	memcpy(pCxRomPeripheral + m_slot * APPLE_SLOT_SIZE, pData, HARDDISK_FW_SIZE);
+	BYTE* pFirmwareBase = pCxRomPeripheral + m_slot * APPLE_SLOT_SIZE;
+	memcpy(pFirmwareBase, pData, HARDDISK_FW_SIZE);
+
+	if (allowFirmwareMods)
+	{
+		if (m_useHdcFirmwareMode == HdcBlockMode2Devices || m_useHdcFirmwareMode == HdcBlockMode4Devices)
+		{
+			pFirmwareBase[0x07] = 0x3C;	// Block mode (not SmartPort)
+			const BYTE numDrives = (m_useHdcFirmwareMode == HdcBlockMode2Devices) ? 1 : 3;
+			pFirmwareBase[0xFE] = (pFirmwareBase[0xFE] & 0xCF) | (numDrives << 4);	// 2 or 4 drives
+		}
+	}
 
 	RegisterIoHandler(m_slot, IORead, IOWrite, NULL, NULL, this, NULL);
 }

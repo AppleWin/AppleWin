@@ -36,7 +36,7 @@ struct CmdLine
 		noDisk2StepperDefer = false;
 		useHdcFirmwareV1 = false;
 		useHdcFirmwareV2 = false;
-		useHdcFirmwareSmartPort = false;
+		useHdcFirmwareMode = HdcDefault;
 		szSnapshotName = NULL;
 		szScreenshotFilename = NULL;
 		uHarddiskNumBlocks = 0;
@@ -83,7 +83,7 @@ struct CmdLine
 	bool noDisk2StepperDefer;	// debug
 	bool useHdcFirmwareV1;	// debug
 	bool useHdcFirmwareV2;
-	bool useHdcFirmwareSmartPort;
+	HdcMode useHdcFirmwareMode;
 	SS_CARDTYPE slotInsert[NUM_SLOTS];
 	SlotInfo slotInfo[NUM_SLOTS];
 	LPCSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES];

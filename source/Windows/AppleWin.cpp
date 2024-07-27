@@ -811,8 +811,7 @@ static void RepeatInitialization(void)
 					dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).UseHdcFirmwareV1();
 				if (g_cmdLine.useHdcFirmwareV2)
 					dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).UseHdcFirmwareV2();
-				if (g_cmdLine.useHdcFirmwareSmartPort)
-					dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).UseHdcFirmwareSmartPort();
+				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).SetHdcFirmwareMode(g_cmdLine.useHdcFirmwareMode);
 			}
 		}
 

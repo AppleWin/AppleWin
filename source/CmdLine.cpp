@@ -648,7 +648,15 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-hdc-firmware-sp") == 0)
 		{
-			g_cmdLine.useHdcFirmwareSmartPort = true;
+			g_cmdLine.useHdcFirmwareMode = HdcSmartPort;
+		}
+		else if (strcmp(lpCmdLine, "-hdc-firmware-bm2") == 0)
+		{
+			g_cmdLine.useHdcFirmwareMode = HdcBlockMode2Devices;
+		}
+		else if (strcmp(lpCmdLine, "-hdc-firmware-bm4") == 0)
+		{
+			g_cmdLine.useHdcFirmwareMode = HdcBlockMode4Devices;
 		}
 		else	// unsupported
 		{

@@ -36,6 +36,11 @@ enum HardDrive_e
 	NUM_HARDDISKS = 8
 };
 
+enum HdcMode
+{
+	HdcDefault, HdcSmartPort, HdcBlockMode2Devices, HdcBlockMode4Devices
+};
+
 // For SP read/write block cmds, a 24-bit blockNum => 8GiB capacity
 // . but eg. in CImageBase::ReadBlock() only 32-bit byte positions are supported (ie. 4GiB capacity)
 const UINT kHarddiskMaxNumBlocks = 0x007FFFFF;	// Maximum number of blocks we can report.
@@ -107,7 +112,7 @@ public:
 	void SetUserNumBlocks(UINT numBlocks) { m_userNumBlocks = numBlocks; }
 	void UseHdcFirmwareV1(void) { m_useHdcFirmwareV1 = true; }
 	void UseHdcFirmwareV2(void) { m_useHdcFirmwareV2 = true; }
-	void UseHdcFirmwareSmartPort(void) { m_useHdcFirmwareSmartPort = true; }
+	void SetHdcFirmwareMode(HdcMode hdcMode) { m_useHdcFirmwareMode = hdcMode; }
 
 	void GetLightStatus(Disk_Status_e* pDisk1Status);
 	bool ImageSwap(void);
@@ -148,7 +153,7 @@ private:
 	UINT m_userNumBlocks;
 	bool m_useHdcFirmwareV1;
 	bool m_useHdcFirmwareV2;
-	bool m_useHdcFirmwareSmartPort;
+	HdcMode m_useHdcFirmwareMode;
 
 	bool m_saveDiskImage;	// Save the DiskImage name to Registry
 
