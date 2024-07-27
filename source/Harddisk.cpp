@@ -153,7 +153,7 @@ Overview
 
 
 HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
-	Card(CT_GenericHDD, slot), m_userNumBlocks(0), m_useHdcFirmwareV1(false), m_useHdcFirmwareMode(HdcDefault)
+	Card(CT_GenericHDD, slot), m_userNumBlocks(0), m_useHdcFirmwareV1(false), m_useHdcFirmwareV2(false), m_useHdcFirmwareMode(HdcDefault)
 {
 	if (m_slot != SLOT5 && m_slot != SLOT7)	// fixme
 		ThrowErrorInvalidSlot();
