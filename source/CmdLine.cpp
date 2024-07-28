@@ -188,6 +188,21 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 				}
 				if (strcmp(lpCmdLine, "hdc") == 0)
 					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
+				if (strcmp(lpCmdLine, "hdc-sp") == 0)
+				{
+					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
+					g_cmdLine.slotInfo[slot].useHdcFirmwareMode = HdcSmartPort;
+				}
+				if (strcmp(lpCmdLine, "hdc-bm2") == 0)
+				{
+					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
+					g_cmdLine.slotInfo[slot].useHdcFirmwareMode = HdcBlockMode2Devices;
+				}
+				if (strcmp(lpCmdLine, "hdc-bm4") == 0)
+				{
+					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
+					g_cmdLine.slotInfo[slot].useHdcFirmwareMode = HdcBlockMode4Devices;
+				}
 				if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)	// Support Saturn128 card in slot 1-7 too (GH#1279)
 					g_cmdLine.slotInsert[slot] = CT_Saturn128K;
 				if (strcmp(lpCmdLine, "megaaudio") == 0)
@@ -645,18 +660,6 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		else if (strcmp(lpCmdLine, "-hdc-firmware-v2") == 0)
 		{
 			g_cmdLine.useHdcFirmwareV2 = true;
-		}
-		else if (strcmp(lpCmdLine, "-hdc-firmware-sp") == 0)
-		{
-			g_cmdLine.useHdcFirmwareMode = HdcSmartPort;
-		}
-		else if (strcmp(lpCmdLine, "-hdc-firmware-bm2") == 0)
-		{
-			g_cmdLine.useHdcFirmwareMode = HdcBlockMode2Devices;
-		}
-		else if (strcmp(lpCmdLine, "-hdc-firmware-bm4") == 0)
-		{
-			g_cmdLine.useHdcFirmwareMode = HdcBlockMode4Devices;
 		}
 		else	// unsupported
 		{

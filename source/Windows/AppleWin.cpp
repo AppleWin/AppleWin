@@ -784,19 +784,19 @@ static void RepeatInitialization(void)
 
 		if (g_cmdLine.slotInsert[SLOT5] != CT_Empty)
 		{
-			if (GetCardMgr().QuerySlot(SLOT5) != CT_Disk2)	// Ignore if already got Disk2 in slot 5
+			if (GetCardMgr().QuerySlot(SLOT5) != g_cmdLine.slotInsert[SLOT5])	// Ignore if already got this card type in slot 5
 				GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
 		}
 
 		if (g_cmdLine.slotInsert[SLOT6] == CT_Disk2)	// For now just support Disk2 in slot 6
 		{
-			if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)	// Ignore if already got Disk2 in slot 6
+			if (GetCardMgr().QuerySlot(SLOT6) != g_cmdLine.slotInsert[SLOT6])	// Ignore if already got this card type in slot 6
 				GetCardMgr().Insert(SLOT6, g_cmdLine.slotInsert[SLOT6]);
 		}
 
 		if (g_cmdLine.slotInsert[SLOT7] != CT_Empty)
 		{
-			if (GetCardMgr().QuerySlot(SLOT7) != CT_GenericHDD)	// Ignore if already got HDC in slot 7
+			if (GetCardMgr().QuerySlot(SLOT7) != g_cmdLine.slotInsert[SLOT7])	// Ignore if already got this card type in slot 7
 				GetCardMgr().Insert(SLOT7, g_cmdLine.slotInsert[SLOT7]);
 		}
 
@@ -811,7 +811,7 @@ static void RepeatInitialization(void)
 					dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).UseHdcFirmwareV1();
 				if (g_cmdLine.useHdcFirmwareV2)
 					dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).UseHdcFirmwareV2();
-				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).SetHdcFirmwareMode(g_cmdLine.useHdcFirmwareMode);
+				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).SetHdcFirmwareMode(g_cmdLine.slotInfo[i].useHdcFirmwareMode);
 			}
 		}
 
