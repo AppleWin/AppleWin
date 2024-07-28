@@ -132,6 +132,7 @@ private:
 	const std::string& DiskGetBaseName(const int iDrive);
 	bool SelectImage(const int drive, LPCSTR pszFilename);
 	void UpdateLightStatus(HardDiskDrive* pHDD);
+	void FixupUnitNum(void);
 	BYTE GetNumConnectedDevices(void);
 	BYTE GetProDOSBlockDeviceUnit(void);
 	HardDiskDrive* GetUnit(void);
@@ -151,6 +152,7 @@ private:
 	BYTE m_statusCode;
 	UINT64 m_notBusyCycle;
 	UINT m_userNumBlocks;
+	bool m_isFirmwareV1or2;
 	bool m_useHdcFirmwareV1;
 	bool m_useHdcFirmwareV2;
 	HdcMode m_useHdcFirmwareMode;

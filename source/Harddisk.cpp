@@ -153,7 +153,7 @@ Overview
 
 
 HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
-	Card(CT_GenericHDD, slot), m_userNumBlocks(0), m_useHdcFirmwareV1(false), m_useHdcFirmwareV2(false), m_useHdcFirmwareMode(HdcDefault)
+	Card(CT_GenericHDD, slot), m_userNumBlocks(0), m_isFirmwareV1or2(false), m_useHdcFirmwareV1(false), m_useHdcFirmwareV2(false), m_useHdcFirmwareMode(HdcDefault)
 {
 	if (m_slot != SLOT5 && m_slot != SLOT7)	// fixme
 		ThrowErrorInvalidSlot();
@@ -180,6 +180,7 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	m_saveStateFirmwareV1 = false;
 	m_saveStateFirmwareV2 = false;
 	m_saveStateFirmwareValid = false;
+	memset(m_saveStateFirmware, 0, sizeof(m_saveStateFirmware));
 }
 
 HarddiskInterfaceCard::~HarddiskInterfaceCard(void)
@@ -219,6 +220,8 @@ void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 		pData = GetFrame().GetResource(id, "FIRMWARE", HARDDISK_FW_SIZE);
 		if (pData == NULL)
 			return;
+		if (id == IDR_HDDRVR_FW || id == IDR_HDDRVR_V2_FW)
+			m_isFirmwareV1or2 = true;
 		allowFirmwareMods = true;
 	}
 	else
@@ -885,6 +888,7 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 		// b6..4 = slot#
 		// b3..0 = ?
 		pCard->m_unitNum = d;
+		pCard->FixupUnitNum();
 		break;
 	case 0x4:
 		pHDD->m_memblock = (pHDD->m_memblock & 0xFF00) | d;
@@ -921,6 +925,16 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 }
 
 //===========================================================================
+
+void HarddiskInterfaceCard::FixupUnitNum(void)
+{
+	if (!m_isFirmwareV1or2)
+		return;
+
+	// Older firmwares can write unitNum with 0x00
+	if ((m_unitNum >> 4) != m_slot)
+		m_unitNum = (m_unitNum & 0x8F) | (m_slot << 4);
+}
 
 BYTE HarddiskInterfaceCard::GetNumConnectedDevices(void)
 {
@@ -1284,6 +1298,12 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 		throw std::runtime_error("HDC card: 6502 is running old HDD firmware");
 
 	m_unitNum = yamlLoadHelper.LoadUint(SS_YAML_KEY_CURRENT_UNIT);
+	if (version < 5)
+	{
+		m_isFirmwareV1or2 = true;
+		FixupUnitNum();
+	}
+
 	m_command = yamlLoadHelper.LoadUint(SS_YAML_KEY_COMMAND);
 
 	if (version >= 3)
