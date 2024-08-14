@@ -90,6 +90,7 @@
     <ClInclude Include="source\LanguageCard.h" />
     <ClInclude Include="source\Log.h" />
     <ClInclude Include="source\Memory.h" />
+    <ClInclude Include="source\MemoryDefs.h" />
     <ClInclude Include="source\Mockingboard.h" />
     <ClInclude Include="source\MockingboardCardManager.h" />
     <ClInclude Include="source\MockingboardDefs.h" />

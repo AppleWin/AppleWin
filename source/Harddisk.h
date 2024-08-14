@@ -26,15 +26,25 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Card.h"
 #include "DiskImage.h"
 #include "DiskImageHelper.h"
+#include "MemoryDefs.h"	// APPLE_SLOT_SIZE
 
 enum HardDrive_e
 {
 	HARDDISK_1 = 0,
 	HARDDISK_2,
-	NUM_HARDDISKS
+	NUM_BLK_HARDDISKS = 2,
+	NUM_HARDDISKS = 8
 };
 
-const UINT kHarddiskMaxNumBlocks = 0xffff;	// Maximum number of blocks we can report.
+enum HdcMode
+{
+	HdcDefault, HdcSmartPort, HdcBlockMode2Devices, HdcBlockMode4Devices
+};
+
+// For SP read/write block cmds, a 24-bit blockNum => 8GiB capacity
+// . but eg. in CImageBase::ReadBlock() only 32-bit byte positions are supported (ie. 4GiB capacity)
+const UINT kHarddiskMaxNumBlocks = 0x007FFFFF;	// Maximum number of blocks we can report.
+const UINT kMaxSmartPortUnits = NUM_HARDDISKS;
 
 class HardDiskDrive
 {
@@ -98,10 +108,11 @@ public:
 	bool Select(const int iDrive);
 	bool Insert(const int iDrive, const std::string& pathname);
 	void Unplug(const int iDrive);
-	bool IsDriveUnplugged(const int iDrive);
 	void LoadLastDiskImage(const int iDrive);
 	void SetUserNumBlocks(UINT numBlocks) { m_userNumBlocks = numBlocks; }
 	void UseHdcFirmwareV1(void) { m_useHdcFirmwareV1 = true; }
+	void UseHdcFirmwareV2(void) { m_useHdcFirmwareV2 = true; }
+	void SetHdcFirmwareMode(HdcMode hdcMode) { m_useHdcFirmwareMode = hdcMode; }
 
 	void GetLightStatus(Disk_Status_e* pDisk1Status);
 	bool ImageSwap(void);
@@ -121,19 +132,38 @@ private:
 	const std::string& DiskGetBaseName(const int iDrive);
 	bool SelectImage(const int drive, LPCSTR pszFilename);
 	void UpdateLightStatus(HardDiskDrive* pHDD);
-	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo);
-	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, UINT unit);
-	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, UINT unit);
+	void FixupUnitNum(void);
+	BYTE GetNumConnectedDevices(void);
+	BYTE GetProDOSBlockDeviceUnit(void);
+	HardDiskDrive* GetUnit(void);
+	BYTE CmdExecute(HardDiskDrive* pHDD);
+	BYTE CmdStatus(HardDiskDrive* pHDD);
+	void SetIdString(WORD addr, const char* str);
+	BYTE SmartPortCmdStatus(HardDiskDrive* pHDD);
+	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo, const bool is16bit = false);
+	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, const UINT unit);
+	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, const UINT unit, const UINT version);
 
 	//
 
 	BYTE m_unitNum;			// b7=unit
 	BYTE m_command;
+	BYTE m_fifoIdx;
+	BYTE m_statusCode;
 	UINT64 m_notBusyCycle;
 	UINT m_userNumBlocks;
+	bool m_isFirmwareV1or2;
 	bool m_useHdcFirmwareV1;
+	bool m_useHdcFirmwareV2;
+	HdcMode m_useHdcFirmwareMode;
 
 	bool m_saveDiskImage;	// Save the DiskImage name to Registry
 
 	HardDiskDrive m_hardDiskDrive[NUM_HARDDISKS];
+	HardDiskDrive m_smartPortController;		// unit-0 is the SmartPort controller
+
+	bool m_saveStateFirmwareV1;
+	bool m_saveStateFirmwareV2;
+	BYTE m_saveStateFirmware[APPLE_SLOT_SIZE];
+	bool m_saveStateFirmwareValid;
 };
