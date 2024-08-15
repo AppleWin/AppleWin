@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tfe/DNS.h"
 #include "W5100.h"
 #include "../Registry.h"
-
+#include "../Windows/Win32Frame.h"
 
 // Virtual DNS
 // Virtual DNS is an extension to the W5100
@@ -1469,7 +1469,19 @@ BYTE __stdcall u2_C0(WORD programcounter, WORD address, BYTE write, BYTE value, 
 
 void Uthernet2::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-    RegisterIoHandler(m_slot, u2_C0, u2_C0, IO_Null, IO_Null, this, nullptr);
+    const std::string interfaceName = PCapBackend::GetRegistryInterface(m_slot);
+    myNetworkBackend = GetFrame().CreateNetworkBackend(interfaceName);
+    if (myNetworkBackend->isValid())
+    {
+        RegisterIoHandler(m_slot, u2_C0, u2_C0, IO_Null, IO_Null, this, nullptr);
+    }
+    else
+    {
+        // Interface doesn't exist or user picked an interface that isn't Ethernet!
+        // . So setup as a "null" card: I/O reads from floating bus & writes go to null
+        RegisterIoHandler(m_slot, IO_Null, IO_Null, IO_Null, IO_Null, this, nullptr);
+        Win32Frame::GetWin32Frame().FrameMessageBox("Reconfigure the Interface via 'Ethernet Settings'.", "Uthernet II interface isn't valid!", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+    }
 }
 
 void Uthernet2::getMACAddress(const uint32_t address, const MACAddress * & mac)
