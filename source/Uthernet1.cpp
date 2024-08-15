@@ -37,7 +37,6 @@
 #include "Tfe/tfesupp.h"
 #include "Tfe/NetworkBackend.h"
 #include "Tfe/PCapBackend.h"
-#include "../Windows/Win32Frame.h"
 
 /* Makros for reading and writing the visible TFE register: */
 #define GET_TFE_8(  _xxx_ ) \
@@ -1023,7 +1022,7 @@ void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
         // Interface doesn't exist or user picked an interface that isn't Ethernet!
         // . So setup as a "null" card: I/O reads from floating bus & writes go to null
         RegisterIoHandler(m_slot, IO_Null, IO_Null, TfeIoCxxx, TfeIoCxxx, this, NULL);
-        Win32Frame::GetWin32Frame().FrameMessageBox("Reconfigure the Interface via 'Ethernet Settings'.", "Uthernet 1 interface isn't valid!", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+        GetFrame().FrameMessageBox("Uthernet interface isn't valid!\nReconfigure the Interface via 'Ethernet Settings'.", "Uthernet Interface", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
     }
 }
 

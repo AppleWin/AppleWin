@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tfe/DNS.h"
 #include "W5100.h"
 #include "../Registry.h"
-#include "../Windows/Win32Frame.h"
 
 // Virtual DNS
 // Virtual DNS is an extension to the W5100
@@ -1480,7 +1479,7 @@ void Uthernet2::InitializeIO(LPBYTE pCxRomPeripheral)
         // Interface doesn't exist or user picked an interface that isn't Ethernet!
         // . So setup as a "null" card: I/O reads from floating bus & writes go to null
         RegisterIoHandler(m_slot, IO_Null, IO_Null, IO_Null, IO_Null, this, nullptr);
-        Win32Frame::GetWin32Frame().FrameMessageBox("Reconfigure the Interface via 'Ethernet Settings'.", "Uthernet II interface isn't valid!", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+        GetFrame().FrameMessageBox("Uthernet II interface isn't valid!\nReconfigure the Interface via 'Ethernet Settings'.", "Uthernet Interface", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
     }
 }
 
