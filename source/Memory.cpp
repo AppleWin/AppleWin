@@ -816,7 +816,7 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 		if ((address >= APPLE_SLOT_BEGIN) && (address <= APPLE_SLOT_END))
 		{
 			const UINT uSlot = (address>>8)&0x7;
-			if (uSlot != 3)
+			if (IS_APPLE2 || uSlot != SLOT3)
 			{
 				if (ExpansionRom[uSlot])
 					IO_SELECT |= 1<<uSlot;
@@ -841,7 +841,7 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 		if (IO_SELECT && IO_STROBE)
 		{
 			// Enable Peripheral Expansion ROM
-			UINT uSlot=1;
+			UINT uSlot = SLOT1;
 			for (; uSlot<NUM_SLOTS; uSlot++)
 			{
 				if (IO_SELECT & (1<<uSlot))
@@ -907,8 +907,8 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 		const UINT uSlot = (address>>8)&0x7;
 		const bool bPeripheralSlotRomEnabled = IS_APPLE2 ? true	// A][
 													     :		// A//e or above
-			  ( !SW_INTCXROM   &&					// Peripheral (card) ROMs enabled in $C100..$C7FF
-		      !(!SW_SLOTC3ROM  && uSlot == 3) );	// Internal C3 ROM disabled in $C300 when slot == 3
+			  ( !SW_INTCXROM   &&						// Peripheral (card) ROMs enabled in $C100..$C7FF
+		      !(!SW_SLOTC3ROM  && uSlot == SLOT3) );	// Internal C3 ROM disabled in $C300 when slot == 3
 
 		// Fix for GH#149 and GH#164
 		if (bPeripheralSlotRomEnabled && !IsCardInSlot(uSlot))	// Slot is empty
@@ -1001,7 +1001,7 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 	IORead[uSlot+8]		= IOReadC0;
 	IOWrite[uSlot+8]	= IOWriteC0;
 
-	if (uSlot == 0)		// Don't trash C0xx handlers
+	if (uSlot == SLOT0)		// Don't trash C0xx handlers
 		return;
 
 	//

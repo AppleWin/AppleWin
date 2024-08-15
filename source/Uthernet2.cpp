@@ -1469,7 +1469,7 @@ BYTE __stdcall u2_C0(WORD programcounter, WORD address, BYTE write, BYTE value, 
 
 void Uthernet2::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-    RegisterIoHandler(m_slot, u2_C0, u2_C0, nullptr, nullptr, this, nullptr);
+    RegisterIoHandler(m_slot, u2_C0, u2_C0, IO_Null, IO_Null, this, nullptr);
 }
 
 void Uthernet2::getMACAddress(const uint32_t address, const MACAddress * & mac)
