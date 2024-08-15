@@ -9,7 +9,7 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.30.19.0 - 28 Jul 2023
+1.30.19.0 - 28 Jul 2024
 -----------------------
 - [Change #1207] Support for SmartPort hard disk controller for Enhanced //e. [@burniouf, @alupin65, @inexorabletash, @univta0001]
 - [Bug #926, #1315] DiskII Interface: 'DRIVES OFF' forces the control flipflops to clear. Fixes Infocom's Shogun & Zork0. [@sicklittlemonkey]
@@ -17,7 +17,7 @@ Tom Charlesworth
 - [Bug #1285] Fix crash in 6502 emulation at 0xFFFF boundary.
 
 
-1.30.18.0 - 23 Mar 2023
+1.30.18.0 - 23 Mar 2024
 -----------------------
 - [Change #1272] New HDC firmware v2 to support returning HDD size in Y:X for status call. [@peteri]
   - [Change #1277] Add (debug) cmd line switch to revert to HDC firmware v1: -hdc-firmware-v1.
