@@ -1470,17 +1470,13 @@ void Uthernet2::InitializeIO(LPBYTE pCxRomPeripheral)
 {
     const std::string interfaceName = PCapBackend::GetRegistryInterface(m_slot);
     myNetworkBackend = GetFrame().CreateNetworkBackend(interfaceName);
-    if (myNetworkBackend->isValid())
-    {
-        RegisterIoHandler(m_slot, u2_C0, u2_C0, IO_Null, IO_Null, this, nullptr);
-    }
-    else
+    if (!myNetworkBackend->isValid())
     {
         // Interface doesn't exist or user picked an interface that isn't Ethernet!
-        // . So setup as a "null" card: I/O reads from floating bus & writes go to null
-        RegisterIoHandler(m_slot, IO_Null, IO_Null, IO_Null, IO_Null, this, nullptr);
         GetFrame().FrameMessageBox("Uthernet II interface isn't valid!\nReconfigure the Interface via 'Ethernet Settings'.", "Uthernet Interface", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
     }
+
+    RegisterIoHandler(m_slot, u2_C0, u2_C0, IO_Null, IO_Null, this, nullptr);
 }
 
 void Uthernet2::getMACAddress(const uint32_t address, const MACAddress * & mac)
