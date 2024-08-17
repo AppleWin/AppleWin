@@ -1013,17 +1013,13 @@ void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
 {
     const std::string interfaceName = PCapBackend::GetRegistryInterface(m_slot);
     networkBackend = GetFrame().CreateNetworkBackend(interfaceName);
-    if (networkBackend->isValid())
-    {
-        RegisterIoHandler(m_slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, this, NULL);
-    }
-    else
+    if (!networkBackend->isValid())
     {
         // Interface doesn't exist or user picked an interface that isn't Ethernet!
-        // . So setup as a "null" card: I/O reads from floating bus & writes go to null
-        RegisterIoHandler(m_slot, IO_Null, IO_Null, TfeIoCxxx, TfeIoCxxx, this, NULL);
         GetFrame().FrameMessageBox("Uthernet interface isn't valid!\nReconfigure the Interface via 'Ethernet Settings'.", "Uthernet Interface", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
     }
+
+    RegisterIoHandler(m_slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, this, NULL);
 }
 
 void Uthernet1::Reset(const bool powerCycle)
