@@ -79,7 +79,8 @@
 		Remove the hard disk controller card from slot 7 on AppleWin exit.<br><br>
 		-s5 hdc<br>
 		-s7 hdc<br>
-		Insert a hard disk controller card into slot 5 or 7.<br><br>
+		Insert a hard disk controller card into slot 5 or 7.<br>
+		NB. For enhanced //e, the firmware will support SmartPort commands (and up to 8 hard disk devices).<br><br>
 		-d1-disconnected, -d2-disconnected<br>
 		Disconnect drive-1 and/or drive-2 from the Disk II controller card in slot 6.<br><br>
 		-harddisknumblocks &lt;number of ProDOS blocks&gt;<br>
@@ -243,6 +244,12 @@
 		Force all attached hard disk controllers to use the old v1 firmware (as per pre-AppleWin 1.30.17).
 		<ul>
 			<li>NB. Switch likely to be removed after a few releases.</li>
+		</ul>
+		-s&lt;n&gt; hdc-[sp|bm2|bm4]
+		<ul>
+			<li>hdc-sp: Force HDC SmartPort firmware for II/II+/Unenhanced //e machines (now won't autoboot from HDD-1).</li>
+			<li>hdc-bm2: Modify HDC firmware $CnFE to report supporting 2 block mode devices.</li>
+			<li>hdc-bm4: Modify HDC firmware $CnFE to report supporting 4 block mode devices.</li>
 		</ul>
 		<br><br>
 	</body>
