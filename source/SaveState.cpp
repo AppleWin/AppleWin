@@ -72,7 +72,8 @@ static YamlHelper yamlHelper;
 
 #define UNIT_SLOTS_VER 1
 
-#define UNIT_GAME_IO_CONNECTOR_VER 1
+// See CopyProtectionDongle.cppS
+#define UNIT_GAME_IO_CONNECTOR_VER 3
 
 #define UNIT_MISC_VER 1
 
@@ -341,7 +342,7 @@ static void ParseUnit(void)
 	}
 	else if (unit == GetSnapshotUnitGameIOConnectorName())
 	{
-		CopyProtectionDongleLoadSnapshot(yamlLoadHelper, unitVersion);
+		CopyProtectionDongleLoadSnapshot(yamlLoadHelper, unitVersion, UNIT_GAME_IO_CONNECTOR_VER);
 	}
 	else if (unit == GetSnapshotUnitMiscName())
 	{
