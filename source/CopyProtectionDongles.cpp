@@ -124,7 +124,7 @@ int CopyProtectionDonglePDL(UINT pdl)
 {
 	if (copyProtectionDongleType == DT_HAYDENCOMPILER && pdl == 3)
 	{
-		static BYTE haydenValue[4] = {0xFF, 0x96, (0x96+0x50)/2, 0x50};	// Derived from reverse-engineered Hayden code
+		static BYTE haydenValue[4] = {0xFF, 0x96, 0x96, 0x50};	// Derived from reverse-engineered Hayden code
 		UINT haydenDongleMode = ((UINT)MemGetAnnunciator(2) << 1) | (UINT)MemGetAnnunciator(0);
 		return haydenValue[haydenDongleMode];
 	}
