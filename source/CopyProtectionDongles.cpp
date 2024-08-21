@@ -175,7 +175,8 @@ int CopyProtectionDonglePDL(UINT pdl)
 // 1: Add SDS SpeedStar dongle
 // 2: Add Cortechs Corp CodeWriter protection key
 //    Add Robocom Ltd - Robo 500/1000/1500 Interface Modules
-static const UINT kUNIT_VERSION = 2;
+// 3: Add Hayden Compiler protection key
+static const UINT kUNIT_VERSION = 3;
 
 static const std::string& GetSnapshotStructName_SDSSpeedStar(void)
 {
