@@ -202,13 +202,11 @@ void HarddiskInterfaceCard::Reset(const bool powerCycle)
 void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 	const DWORD HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
-
-	WORD id = IsEnhancedIIE() ? IDR_HDC_SMARTPORT_FW : IDR_HDDRVR_V2_FW;
+	WORD id = IDR_HDC_SMARTPORT_FW;	// If not enhanced //e, then modify the firmware later
 
 	// Use any cmd line override
 	if (m_useHdcFirmwareV1 || m_saveStateFirmwareV1) id = IDR_HDDRVR_FW;
 	else if (m_useHdcFirmwareV2 || m_saveStateFirmwareV2) id = IDR_HDDRVR_V2_FW;
-	else if (m_useHdcFirmwareMode == HdcSmartPort) id = IDR_HDC_SMARTPORT_FW;
 
 	m_saveStateFirmwareV1 = false;
 	m_saveStateFirmwareV2 = false;
@@ -240,6 +238,11 @@ void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 			pFirmwareBase[0x07] = 0x3C;	// Block mode (not SmartPort)
 			const BYTE numDrives = (m_useHdcFirmwareMode == HdcBlockMode2Devices) ? 1 : 3;
 			pFirmwareBase[0xFE] = (pFirmwareBase[0xFE] & 0xCF) | (numDrives << 4);	// 2 or 4 drives
+		}
+		else if (!IsEnhancedIIE())
+		{
+			if (m_useHdcFirmwareMode != HdcSmartPort)
+				pFirmwareBase[0x07] = 0x3C;	// Block mode (not SmartPort)
 		}
 	}
 
