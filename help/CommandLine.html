@@ -248,8 +248,8 @@
 		-s&lt;n&gt; hdc-[sp|bm2|bm4]
 		<ul>
 			<li>hdc-sp: Force HDC SmartPort firmware for II/II+/Unenhanced //e machines (now won't autoboot from HDD-1).</li>
-			<li>hdc-bm2: Modify HDC firmware $CnFE to report supporting 2 block mode devices.</li>
-			<li>hdc-bm4: Modify HDC firmware $CnFE to report supporting 4 block mode devices.</li>
+			<li>hdc-bm2: Modify HDC firmware: $Cn07=$3C (block mode, not SmartPort), and $CnFE to report supporting 2 block mode devices.</li>
+			<li>hdc-bm4: Modify HDC firmware: $Cn07=$3C (block mode, not SmartPort), and $CnFE to report supporting 4 block mode devices.</li>
 		</ul>
 		<br><br>
 	</body>
