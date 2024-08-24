@@ -163,6 +163,7 @@ set(HEADER_FILES
   DiskImageHelper.h
   Harddisk.h
   Memory.h
+  MemoryDefs.h
   CPU.h
   6821.h
   NoSlotClock.h

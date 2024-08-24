@@ -1,0 +1,379 @@
+;--------------------------------------
+;AppleWin : An Apple //e emulator for Windows
+;
+;Copyright (C) 1994-1996, Michael O'Brien
+;Copyright (C) 1999-2001, Oliver Schmidt
+;Copyright (C) 2002-2005, Tom Charlesworth
+;Copyright (C) 2006-2024, Tom Charlesworth, Michael Pohoreski
+;
+;AppleWin is free software; you can redistribute it and/or modify
+;it under the terms of the GNU General Public License as published by
+;the Free Software Foundation; either version 2 of the License, or
+;(at your option) any later version.
+;
+;AppleWin is distributed in the hope that it will be useful,
+;but WITHOUT ANY WARRANTY; without even the implied warranty of
+;MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;GNU General Public License for more details.
+;
+;You should have received a copy of the GNU General Public License
+;along with AppleWin; if not, write to the Free Software
+;Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+;
+
+; Description: SmartPort firmware for Hard Disk Controller card
+;
+; Author: Copyright (c) 2024, Rémy Gibert
+; . derived from works: Copyright (c) 2005, Robert Hoem
+;
+
+;--------------------------------------
+!cpu 6502								; Compatible with all Apple2's
+!to "HDC-SmartPort.bin", plain
+!sl "HDC-SmartPort.labels"
+;--------------------------------------
+				!src "IO_Apple.inc"
+				!src "IO_Applewin.inc"
+				!src "MON.inc"
+				!src "ProDOS.inc"
+;--------------------------------------
+; SP commands
+;--------------------------------------
+SP_Cmd_status		 = $00
+SP_Cmd_status_STATUS	 = $00
+SP_Cmd_status_GETDCB	 = $01
+SP_Cmd_status_GETNL		 = $02
+SP_Cmd_status_GETDIB	 = $03
+SP_Cmd_readblock 	 = $01
+SP_Cmd_writeblock	 = $02
+SP_Cmd_format		 = $03
+SP_Cmd_control		 = $04
+SP_Cmd_init			 = $05
+SP_Cmd_open			 = $06
+SP_Cmd_close		 = $07
+SP_Cmd_read			 = $08
+SP_Cmd_write		 = $09
+
+SP_Cmd_extended		 = $40
+;--------------------------------------
+; ZP locations
+;--------------------------------------
+Ptr1			 = $3C
+
+BLK_Cmd		 	 = $42
+BLK_Cmd_Status		 = $0
+BLK_Cmd_Read		 = $1
+BLK_Cmd_Write		 = $2
+BLK_Cmd_Format		 = $3
+
+BLK_UnitNum		 = $43
+BLK_MemPtr		 = $44
+BLK_BlockNum	 = $46
+;--------------------------------------
+; Screen holes (scratch space)
+;--------------------------------------
+Slot_n0			 = $478
+
+;				 = $4F8
+;				 = $578
+;				 = $5F8
+
+;				 = $678
+;				 = $6F8
+;				 = $778
+;Slot_C8		 = $7F8					; IRQ protocol for handling $C800 space properly
+
+; Screen holes,Cn indexed
+
+;				 = $478-$C0
+;				 = $4F8-$C0
+;				 = $578-$C0
+;				 = $5F8-$C0
+
+;				 = $678-$C0
+;				 = $6F8-$C0
+;				 = $778-$C0
+;				 = $7F8-$C0
+
+;--------------------------------------
+BootBlocklA3	 = $800
+BootBlocklA2	 = $801
+;--------------------------------------
+; The Autoboot rom will call this.
+; This is also the entry point for such things as IN#7 and PR#7
+; Autoboot and ProDOS look at the following few opcodes to detect block devices
+; NB. $Cn07 should be $00 for a SmartPort Interface, but changing this means that it won't autoboot on ][, ][+ and unenhanced IIe.
+; . ref: http://www.1000bit.it/support/manuali/apple/technotes/udsk/tn.udsk.2.html
+;--------------------------------------
+
+!zone code
+
+*				 = $0000				; org $0000 - position-independent code, so doesn't matter (but the other fixed org positions need to be on the same page)
+
+
+Cn_start		lda #$20
+				lda #$00
+				cmp #$03				; will set C=0
+
+				lda #$00				; SP mode
+;				lda #$3C				; BLK mode
+				bcc Cn_Bootstrap
+
+Cn_Entry_BLK	sec						; $Cn0A - BLK entrypoint
+				bcs Cn_Entry
+
+Cn_Entry_SP		clc						; $Cn0D - SmartPort entrypoint
+
+Cn_Entry		php
+				sei						; disable ints, in case an int handler races our $0000/RTS and stack accesses!
+;--------------------------------------
+; NB. need RAM that's guaranteed to be both read & writeable:
+; . can't use $0200-$BFFF, due to eg. RAMRD=0/RAMWRT=1 combination
+; . can't use LC as ROM might be enabled.
+; So use ZP (specifically $0000) as whatever the state of ALTZP, both read & write will be to the same physical memory location.
+;--------------------------------------
+				lda $00					; save $00
+				ldx #$60				; opcode RTS
+				stx $00
+				jsr $0000				; RTS immediately (NB. can't use $FF58, since LC RAM may be switched in)
+				sta $00					; restore $00
+
+				tsx
+				lda $0100,x				; $Cn
+				asl
+				asl
+				asl
+				asl
+				sta Slot_n0
+
+				plp						; + restore int status
+				bcs Cn_BLK				; C=1: ProDOS mode .....
+;--------------------------------------
+; C=0: fall through to SmartPort...
+;--------------------------------------
+				lda Ptr1				; X = Stack Ptr from TSX above
+				pha
+
+				lda Ptr1+1
+				pha
+
+				lda $102,x				; jsr LO byte
+				sta Ptr1
+;				clc						; from bcs above
+				adc #3
+				sta $102,x				; jsr LO byte
+
+				lda $103,x				; jsr HI byte
+				sta Ptr1+1
+				adc #0
+				sta $103,x				; jsr HI byte
+
+				ldy #1					; CMD byte
+				bne Cn_SP				; Always
+;--------------------------------------
+Cn_Sloop		jmp MON_SLOOP
+;--------------------------------------
+Cn_Bootstrap	bit IO_IIE_OPENAPPLE
+				bmi Cn_Sloop
+
+				jsr MON_RTS				; ROM supposed to be enabled at BOOT time or PR#7
+
+				tsx
+				lda $0100,x				; $Cn
+				asl
+				asl
+				asl
+				asl
+				sta Slot_n0
+
+; Lets check to see if there's an image ready
+; Slot n, disk 1
+
+				tax						; A=%0SSS0000
+				sta IO_Unitnum,x		; b7=0 (and b6:4=SSS) => disk 1
+
+				lda #BLK_Cmd_Status
+				sta	IO_Command,x
+
+				lda IO_Execute,x		; Post: A=STATUS (BLK_Cmd_Status completes immediately, no need to check STATUS.b7 busy bit)
+										; on error A = 0eeeeee1, where eeeeee = Standard ProDOS error codes (see ProDOS.inc)
+
+				lsr						; Post: C=0 or 1
+				bcs Cn_Sloop			; no image ready, boot Slot n-1 image instead
+;--------------------------------------				
+; image ready.  Lets boot from it.
+; we want to load block 1 from disk 1 to $800 then jump there
+; Pre: X = Slot# << 4
+;--------------------------------------
+				lda #$1
+				sta BLK_Cmd
+				stx BLK_UnitNum			; DSSS0000, where D=0 (ie. disk 1)
+				lda #$0
+				sta BLK_MemPtr
+				sta BLK_BlockNum
+				sta BLK_BlockNum+1
+				lda #$8
+				sta BLK_MemPtr+1
+
+;				clc						; C = 0 from bcs Cn_Sloop
+
+;--------------------------------------
+; entry point for BLK driver
+; simple really. Copy the command from BLK_Cmd..BLK_BlockNum+1
+; to our I/O ports then execute command
+
+; Pre:
+;	X = Slot# << 4
+;	C = 0 from Cn_Bootstrap
+;	C = 1 from Cn_Entry_BLK
+; Post:
+; 	C = IO_Status b0
+;	A = result of IO_Execute
+; Read or write command
+;	X = Slot# << 4
+;	Y = command
+; Status command
+;	X = low byte of disk size
+;	Y = high byte of disk size
+;--------------------------------------
+Cn_BLK			php
+
+				ldx Slot_n0
+
+				ldy #0
+
+-				lda BLK_Cmd,y
+				sta IO_BlkCmdFifo,x		; BLK_Cmd's are $0x
+				iny						; BLK_UnitNum's are DSSS0000 : if SSS does NOT match physical slot...
+										; ...hardware should handle the remap by adding +2 to the REAL dev_ID
+				cpy #6					; that way, a BLK controller can support 4 devices (see $CnFE byte below)
+				bcc -
+
+-				lda IO_Execute,x		; A = result of IO_Execute (NB. instantaneous 512 byte r/w!)
+				bmi -					; b7=busy doing DMA?
+
+				plp						; restore C
+				bcs Cn_BLK_Done			; from Cn_Entry_BLK
+
+				lsr 					; Post: C=0 or 1
+				bcs Cn_Sloop			; Boot Failed....
+
+				jmp BootBlocklA2		; Success, run $801 BOOT code for Apple ][ (not /// at $800)
+
+Cn_BLK_Done		lsr 					; Post: C=0 or 1
+
+				ldy BLK_Cmd				; Was it status ?
+				bne	+					; no, go home
+
+				pha						; Save result
+				ldy IO_Imgsizehi,x 		; Get high byte of size
+				lda IO_Imgsizelo,x 		; Get low byte of size 
+				tax						; Transfer into X
+				pla						; Get back status call result
+
++	 			rts
+;--------------------------------------
+Cn_SP			lda (Ptr1),y			; CMD byte
+
+				cmp #SP_Cmd_format
+				bcs Cn_SP_E_BADCALL		; only STATUS, READBLOCK & WRITEBLOCK supported
+
+				ldx Slot_n0
+
+				sta IO_SPCmdFifo,x		; Smartport calls = $8x (OR'd with $80 by h/w), Statuscode written at IO_StatusCode
+
+				iny						; param LO
+				lda (Ptr1),y
+				pha
+
+				iny						; param HI
+				lda (Ptr1),y
+
+				sta Ptr1+1
+				pla 
+				sta Ptr1				; Now Ptr1 = Param list
+
+				ldy #0					; Param Cnt
+
+				lda (Ptr1),y
+				cmp #3					; STATUS, READBLOCK & WRITEBLOCK = all 3 parameters
+				sec
+				bne Cn_SP_E_BADCNT
+
+-				iny						; UnitNum (B),  MemPtr (L/H), DiskBlock (L/M/H) -> IO (R,W)
+				lda (Ptr1),y			; UnitNum (B),  MemPtr (L/H), StatusCode (B) -> IO (S)
+				sta IO_SPCmdFifo,x		; UnitNum Range is 0 (smartport controller itself), 1,2,3.....
+				cpy #6					; blockNums are 24-bit for SP calls
+				bcc -
+
+-				lda IO_Execute,x		; A = result of IO_Execute (NB. instantaneous 512 byte r/w!)
+				bmi -					; b7=busy doing DMA?
+
+				lsr						; get C=1 & A = ERROR CODE ... or C=0 & A = 0
+
+				tax						; Save Error Code
+
+				!byte $2C				; BIT ABS
+
+Cn_SP_E_BADCALL	ldx #E_BADCALL
+
+				!byte $2C				; BIT ABS
+
+Cn_SP_E_BADCNT	ldx #E_BADCNT
+
+				pla
+				sta Ptr1+1
+
+				pla
+				sta Ptr1
+
+				txa						; Restore Error Code
+
+				ldx #0
+				ldy #2					; exit returning YX = $0200 bytes transferred if success
+
+				rts						; or C=1 & A=ERROR CODE
+;--------------------------------------
+
+!zone data
+
+;--------------------------------------
+; datablock.  This starts near the end of the firmware (at offset $CnFB)
+;
+; $CnFB :
+; 7 : 1 = Support Extended commands
+; 6 : [Reserved]
+; 5 : [Reserved]
+; 4 : [Reserved]
+; 3 : [Reserved]
+; 2 : [Reserved]
+; 1 : 1 = Supports SCSI devices (Helps ProDOS build SP device list)
+; 0 : 1 = Supports RAMDisk Card
+;
+; $CnFC/D : size in blocks (BLK) if $0000 Software must issue a BLK Status Call to get size in blocks
+;
+; $CnFE = status bits (BAP p7-14)
+;  7 = medium is removable
+;  6 = device is interruptable
+;  5-4 = number of volumes (0..3 means 1..4)
+;  3 = device supports Format call
+;  2 = device can be written to
+;  1 = device can be read from (must be 1)
+;  0 = device status can be read (must be 1)
+;
+; $C7 = Removable, Interruptable, #Volumes=1, Supports write/read/status
+; $D7 = Removable, Interruptable, #Volumes=2, Supports write/read/status
+; $F7 = Removable, Interruptable, #Volumes=4, Supports write/read/status
+; $BF = Removable, Interruptable, #Volumes=4, Supports format/write/read/status (KEGS / IIGS)
+;
+; $CnFF = offset to BLK entry point
+;--------------------------------------
+@checkCsFB
+*= $00FB	; org $00FB
+!warn "CsFB padding = ", * - @checkCsFB
+;--------------------------------------
+				!byte $00 				; Smart port ID Type byte
+				!word $0000 			; how many blocks are on the device. Zero means use status call
+				!byte $F7 				; specifics about the device (number of drives, read/write/format capability, etc)
+				!byte <Cn_Entry_BLK		; entry point offset for ProDOS (must be $0a)
+;--------------------------------------

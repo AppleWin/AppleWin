@@ -494,6 +494,10 @@ void __stdcall Disk2InterfaceCard::ControlMotor(WORD, WORD address, BYTE, BYTE, 
 	BOOL newState = address & 1;
 	bool stateChanged = (newState != m_floppyMotorOn);
 
+	// "2. [...] (DRIVES OFF forces the control flipflops to clear.)" (UTAIIe page 9-12)
+	if (newState == FALSE)
+		m_magnetStates = 0;		// GH#926, GH#1315
+
 	if (stateChanged)
 	{
 		m_floppyMotorOn = newState;

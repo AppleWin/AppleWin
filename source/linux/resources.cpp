@@ -31,6 +31,7 @@ namespace
      {IDR_TKCLOCK_FW, "TKClock.rom"},
      {IDR_BASE64A_VIDEO_ROM, "Base64A_German_Video.rom"},
      {IDR_HDDRVR_V2_FW, "Hddrvr-v2.bin"},
+     {IDR_HDC_SMARTPORT_FW, "HDC-SmartPort.bin"},
     };
 }
 

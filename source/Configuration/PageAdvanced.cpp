@@ -50,7 +50,8 @@ const TCHAR CPageAdvanced::m_gameIOConnectorChoices[] =
 				"Cortechs Corp - CodeWriter\0"	/* Protection key for Dynatech Microsoftware / Cortechs Corp "CodeWriter" */
 				"Robocom Ltd - Robo 500\0"		/* Interface Module for Robocom Ltd's Robo 500 */
 				"Robocom Ltd - Robo 1000\0"		/* Interface Module for Robocom Ltd's Robo 1000 */
-				"Robocom Ltd - Robo 1500, CAD-2P\0";	/* Interface Module for Robocom Ltd's Robo 1500, Robo Systems CAD-2P */
+				"Robocom Ltd - Robo 1500, CAD-2P\0"	/* Interface Module for Robocom Ltd's Robo 1500, Robo Systems CAD-2P */
+				"Hayden - Applesoft Compiler\0";	/* Protection key for Hayden's Applsoft Compiler (1981) */
 
 
 INT_PTR CALLBACK CPageAdvanced::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)

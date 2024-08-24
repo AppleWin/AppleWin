@@ -188,6 +188,21 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 				}
 				if (strcmp(lpCmdLine, "hdc") == 0)
 					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
+				if (strcmp(lpCmdLine, "hdc-sp") == 0)
+				{
+					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
+					g_cmdLine.slotInfo[slot].useHdcFirmwareMode = HdcSmartPort;
+				}
+				if (strcmp(lpCmdLine, "hdc-bm2") == 0)
+				{
+					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
+					g_cmdLine.slotInfo[slot].useHdcFirmwareMode = HdcBlockMode2Devices;
+				}
+				if (strcmp(lpCmdLine, "hdc-bm4") == 0)
+				{
+					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
+					g_cmdLine.slotInfo[slot].useHdcFirmwareMode = HdcBlockMode4Devices;
+				}
 				if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)	// Support Saturn128 card in slot 1-7 too (GH#1279)
 					g_cmdLine.slotInsert[slot] = CT_Saturn128K;
 				if (strcmp(lpCmdLine, "megaaudio") == 0)
@@ -237,11 +252,12 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					g_cmdLine.szImageName_drive[slot][drive] = lpCmdLine;
 				}
 			}
-			else if (lpCmdLine[3] == 'h' && (lpCmdLine[4] == '1' || lpCmdLine[4] == '2'))	// -s[1..7]h[1|2] <dsk-image>
+			else if (lpCmdLine[3] == 'h' && (lpCmdLine[4] >= '1' || lpCmdLine[4] <= '8'))	// -s[1..7]h[1|2|...|8] <dsk-image>
 			{
-				const UINT drive = lpCmdLine[4] == '1' ? HARDDISK_1 : HARDDISK_2;
+				const UINT drive = lpCmdLine[4] - '1';
+				bool badDrive = drive >= NUM_HARDDISKS;
 
-				if (slot != SLOT5 && slot != SLOT7)
+				if (badDrive || (slot != SLOT5 && slot != SLOT7))
 				{
 					LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
 				}
@@ -640,6 +656,10 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		else if (strcmp(lpCmdLine, "-hdc-firmware-v1") == 0)	// a debug switch added at 1.30.18 / GH#1277 (likely to be removed in a future version)
 		{
 			g_cmdLine.useHdcFirmwareV1 = true;
+		}
+		else if (strcmp(lpCmdLine, "-hdc-firmware-v2") == 0)
+		{
+			g_cmdLine.useHdcFirmwareV2 = true;
 		}
 		else	// unsupported
 		{

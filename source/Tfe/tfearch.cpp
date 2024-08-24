@@ -333,8 +333,13 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
         }
 
         if (!found) {
+#if 1
+            // TC: Don't take the first adapter, as this could be any NIC (eg. WAN miniport, Bluetooth, loopback etc)
+            return NULL;
+#else
             /* just take the first adapter */
             TfePcapDevice = TfePcapAlldevs;
+#endif
         }
     }
 
@@ -361,7 +366,7 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
         return NULL;
 	}
 
-    if(g_fh) fprintf(g_fh, "PCAP: Successfully opened adapter: '%s'\n", TfePcapDevice->name);
+    if(g_fh) fprintf(g_fh, "PCAP: Successfully opened adapter: '%s' (%s)\n", TfePcapDevice->name, TfePcapDevice->description);
 
     tfe_arch_enumadapter_close();
     return TfePcapFP;
