@@ -1444,7 +1444,7 @@ static void BackMainImage(void)
 LPBYTE MemGetBankPtr(const UINT nBank, const bool isSaveSnapshotOrDebugging/*=true*/)
 {
 	// Only call BackMainImage() when a consistent 64K bank is needed, eg. for saving snapshot or debugging
-	// - for snapshot loads it's pointless, and worse it can corrupt pages 0 & 1 for aux banks (GH#1262)
+	// - for snapshot *loads* it's redundant, and worse it can corrupt pages 0 & 1 for aux banks, so must be avoided (GH#1262)
 	if (isSaveSnapshotOrDebugging)
 		BackMainImage();	// Flush any dirty pages to back-buffer
 
