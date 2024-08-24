@@ -210,7 +210,7 @@ void VidHDCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		// Save [$400-$9FFF]
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotAuxMemStructName().c_str());
 
-		LPBYTE pMemBase = MemGetBankPtr(1, true);
+		LPBYTE pMemBase = MemGetBankPtr(1);
 		yamlSaveHelper.SaveMemory(pMemBase, (SHR_MEMORY_END + 1) - TEXT_PAGE1_BEGIN, TEXT_PAGE1_BEGIN);
 	}
 }
