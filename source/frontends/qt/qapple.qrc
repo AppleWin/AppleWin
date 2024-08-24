@@ -13,6 +13,7 @@
         <file>resources/DISK2-13sector.rom</file>
         <file>resources/Hddrvr.bin</file>
         <file>resources/Hddrvr-v2.bin</file>
+        <file>resources/HDC-SmartPort.bin</file>
         <file>resources/Parallel.rom</file>
         <file>resources/MouseInterface.rom</file>
         <file>resources/Apple2_Plus.rom</file>
