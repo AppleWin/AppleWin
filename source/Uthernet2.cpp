@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "W5100.h"
 #include "Registry.h"
 
-
 // Virtual DNS
 // Virtual DNS is an extension to the W5100
 // It enables DNS resolution by setting P3 = 1 for IP / TCP and UDP
@@ -1471,7 +1470,15 @@ BYTE __stdcall u2_C0(WORD programcounter, WORD address, BYTE write, BYTE value, 
 
 void Uthernet2::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-    RegisterIoHandler(m_slot, u2_C0, u2_C0, nullptr, nullptr, this, nullptr);
+    const std::string interfaceName = PCapBackend::GetRegistryInterface(m_slot);
+    myNetworkBackend = GetFrame().CreateNetworkBackend(interfaceName);
+    if (!myNetworkBackend->isValid())
+    {
+        // Interface doesn't exist or user picked an interface that isn't Ethernet!
+        GetFrame().FrameMessageBox("Uthernet II interface isn't valid!\nReconfigure the Interface via 'Ethernet Settings'.", "Uthernet Interface", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+    }
+
+    RegisterIoHandler(m_slot, u2_C0, u2_C0, IO_Null, IO_Null, this, nullptr);
 }
 
 void Uthernet2::getMACAddress(const uint32_t address, const MACAddress * & mac)

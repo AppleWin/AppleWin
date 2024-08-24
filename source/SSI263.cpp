@@ -698,8 +698,8 @@ void SSI263::Update(void)
 	{
 		if (!m_isVotraxPhoneme)
 			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
-		else
-			Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested in MAME 0.262)
+//		else	// GH#1318 - remove for now, as TR v5.1 can start with repeating phoneme in debugger 'g' mode!
+//			Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested in MAME 0.262)
 	}
 }
 

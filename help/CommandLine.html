@@ -28,14 +28,24 @@
 		-s5d2 &lt;pathname&gt;<br>
 		Start with a floppy disk in slot 5 drive-2 (must be used with '-s5 diskii' or '-s5 diskii13').<br><br>
 		-h1 &lt;pathname&gt;<br>
-		Start with hard disk 1 plugged-in (and auto power-on the Apple II). NB. Hard disk controller card gets enabled.<br><br>
+		Start with hard disk 1 plugged in (and auto power-on the Apple II). NB. Hard disk controller card in slot 7 gets enabled.<br><br>
 		-h2 &lt;pathname&gt;<br>
-		Start with hard disk 2 plugged-in. NB. Hard disk controller card gets enabled.<br><br>
+		Start with hard disk 2 plugged in. NB. Hard disk controller card in slot 7 gets enabled.<br><br>
 		-s5h1 &lt;pathname&gt;<br>
-		Start with hard disk 1 plugged-in slot 5 (must be used with '-s5 hdc').<br><br>
+		Start with hard disk 1 plugged into HDC in slot 5 (must be used with '-s5 hdc').<br><br>
 		-s5h2 &lt;pathname&gt;<br>
-		Start with hard disk 2 plugged-in slot 5 (must be used with '-s5 hdc').<br><br>
-		NB. For -d1,-d2,-s5d1,-s5d2,-h1,-h2,-s5h1,-s5h2, if pathname is "", then the disk is ejected or the hard disk is unplugged.<br><br>
+		Start with hard disk 2 plugged into HDC in  slot 5 (must be used with '-s5 hdc').<br><br>
+		-s5h&lt;1|2|3|4|5|6|7|8&gt; &lt;pathname&gt;<br>
+		Start with hard disk n plugged into HDC in  slot 5 (must be used with '-s5 hdc').<br>
+		NB. Only SmartPort firmware for enhanced //e supports hard disks 5-8.<br><br>
+		-s7h1 &lt;pathname&gt;<br>
+		Start with hard disk 1 plugged into HDC in slot 7 (must be used with '-s7 hdc').<br><br>
+		-s7h2 &lt;pathname&gt;<br>
+		Start with hard disk 2 plugged into HDC in slot 7 (must be used with '-s7 hdc').<br><br>
+		-s7h&lt;1|2|3|4|5|6|7|8&gt; &lt;pathname&gt;<br>
+		Start with hard disk n plugged into HDC in slot 7 (must be used with '-s7 hdc').<br>
+		NB. Only SmartPort firmware for enhanced //e supports hard disks 5-8.<br><br>
+		NB. For -d1,-d2,-s5d1,-s5d2,-h1,-h2,-s5h*,-s7h*, if pathname is "", then the disk is ejected or the hard disk is unplugged.<br><br>
 		-model &lt;apple2|apple2p|apple2jp|apple2e|apple2ee&gt;<br>
 		Select the machine model: Apple II, Apple II+, Apple II J-Plus, Apple //e, Enhanced Apple //e.<br><br>
 		-clock-multiplier &lt;value&gt;<br>
@@ -69,7 +79,8 @@
 		Remove the hard disk controller card from slot 7 on AppleWin exit.<br><br>
 		-s5 hdc<br>
 		-s7 hdc<br>
-		Insert a hard disk controller card into slot 5 or 7.<br><br>
+		Insert a hard disk controller card into slot 5 or 7.<br>
+		NB. For enhanced //e, the firmware will support SmartPort commands (and up to 8 hard disk devices).<br><br>
 		-d1-disconnected, -d2-disconnected<br>
 		Disconnect drive-1 and/or drive-2 from the Disk II controller card in slot 6.<br><br>
 		-harddisknumblocks &lt;number of ProDOS blocks&gt;<br>
@@ -233,6 +244,12 @@
 		Force all attached hard disk controllers to use the old v1 firmware (as per pre-AppleWin 1.30.17).
 		<ul>
 			<li>NB. Switch likely to be removed after a few releases.</li>
+		</ul>
+		-s&lt;n&gt; hdc-[sp|bm2|bm4]
+		<ul>
+			<li>hdc-sp: Force HDC SmartPort firmware for II/II+/Unenhanced //e machines (now won't autoboot from HDD-1).</li>
+			<li>hdc-bm2: Modify HDC firmware: $Cn07=$3C (block mode, not SmartPort), and $CnFE to report supporting 2 block mode devices.</li>
+			<li>hdc-bm4: Modify HDC firmware: $Cn07=$3C (block mode, not SmartPort), and $CnFE to report supporting 4 block mode devices.</li>
 		</ul>
 		<br><br>
 	</body>

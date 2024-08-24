@@ -1015,10 +1015,13 @@ void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
     // first clean the old one, as 2 backends might not be able to exist at the same time
     networkBackend.reset();
     networkBackend = GetFrame().CreateNetworkBackend(interfaceName);
-    if (networkBackend->isValid())
+    if (!networkBackend->isValid())
     {
-        RegisterIoHandler(m_slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, this, NULL);
+        // Interface doesn't exist or user picked an interface that isn't Ethernet!
+        GetFrame().FrameMessageBox("Uthernet interface isn't valid!\nReconfigure the Interface via 'Ethernet Settings'.", "Uthernet Interface", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
     }
+
+    RegisterIoHandler(m_slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, this, NULL);
 }
 
 void Uthernet1::Reset(const bool powerCycle)
