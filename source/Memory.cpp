@@ -1274,8 +1274,11 @@ static void UpdatePaging(BOOL initialize)
 	// PAGING SHADOW TABLE
 	//
 	// NB. the condition 'loop <= 1' is there because:
-	// . Page0 (ZP)    : memdirty[0] is set when the 6502 CPU does a ZP-write, but perhaps older versions didn't set this flag (eg. the asm version?).
-	// . Page1 (stack) : memdirty[1] is NOT set when the 6502 CPU writes to this page with JSR, etc.
+	// . Page0 (ZP) and Page1 (stack) are written to so often that it's almost certain that they'll be dirty every time this function is called.
+	// Note also that:
+	// . Page0 (ZP)    : memdirty[0] is set when the 6502 CPU writes to ZP.
+	// . Page1 (stack) : memdirty[1] is NOT set when the 6502 CPU writes to this page with JSR, PHA, etc.
+	// Ultimately this is an optimisation (due to Page1 writes not setting memdirty[1]) and Page0 could be optimised to also not set memdirty[0].
 
 	for (loop = 0x00; loop < 0x100; loop++)
 	{
@@ -1348,19 +1351,6 @@ bool MemCheckSLOTC3ROM()
 bool MemCheckINTCXROM()
 {
 	return SW_INTCXROM ? true : false;
-}
-
-//===========================================================================
-
-static void BackMainImage(void)
-{
-	for (UINT loop = 0; loop < 256; loop++)
-	{
-		if (memshadow[loop] && ((*(memdirty+loop) & 1) || (loop <= 1)))
-			memcpy(memshadow[loop], mem+(loop << 8), 256);
-
-		*(memdirty+loop) &= ~1;
-	}
 }
 
 //===========================================================================
@@ -1450,14 +1440,27 @@ LPBYTE MemGetMainPtr(const WORD offset)
 
 //===========================================================================
 
+static void BackMainImage(void)
+{
+	for (UINT loop = 0; loop < 256; loop++)
+	{
+		if (memshadow[loop] && ((*(memdirty + loop) & 1) || (loop <= 1)))
+			memcpy(memshadow[loop], mem + (loop << 8), 256);
+
+		*(memdirty + loop) &= ~1;
+	}
+}
+
+//-------------------------------------
+
 // Used by:
 // . Savestate: MemSaveSnapshotMemory(), MemLoadSnapshotAux()
 // . VidHD    : SaveSnapshot(), LoadSnapshot()
 // . Debugger : CmdMemorySave(), CmdMemoryLoad()
-LPBYTE MemGetBankPtr(const UINT nBank, const bool isSaveSnapshotOrDebugging)
+LPBYTE MemGetBankPtr(const UINT nBank, const bool isSaveSnapshotOrDebugging/*=true*/)
 {
 	// Only call BackMainImage() when a consistent 64K bank is needed, eg. for saving snapshot or debugging
-	// - for snapshot loads it's pointless, and worse it can corrupt pages 0 & 1 for aux banks (GH#1262)
+	// - for snapshot *loads* it's redundant, and worse it can corrupt pages 0 & 1 for aux banks, so must be avoided (GH#1262)
 	if (isSaveSnapshotOrDebugging)
 		BackMainImage();	// Flush any dirty pages to back-buffer
 
@@ -2417,7 +2420,7 @@ static const std::string& MemGetSnapshotAuxMemStructName(void)
 
 static void MemSaveSnapshotMemory(YamlSaveHelper& yamlSaveHelper, bool bIsMainMem, UINT bank=0, UINT size=64*1024)
 {
-	LPBYTE pMemBase = MemGetBankPtr(bank, true);
+	LPBYTE pMemBase = MemGetBankPtr(bank);
 
 	if (bIsMainMem)
 	{

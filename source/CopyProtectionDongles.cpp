@@ -29,7 +29,7 @@
 	- Southwestern Data Systems' datakey for SpeedStar Applesoft Compiler (Matthew D'Asaro  Dec 2022)
 	- Dynatech Microsoftware / Cortechs Corp's protection key for "CodeWriter"
 	- Robocom Ltd's Interface Module for Robo Graphics 500/1000/1500 & RoboCAD 1/2 (BitStik joystick plugs in on top)
-	- Hayden's protection key for "Applesoft Compiler"
+	- Hayden Book Company, Inc's protection key for "Applesoft Compiler"
 */
 #include "StdAfx.h"
 #include <sstream>

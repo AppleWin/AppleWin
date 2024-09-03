@@ -57,7 +57,7 @@ bool	MemCheckSLOTC3ROM();
 bool	MemCheckINTCXROM();
 LPBYTE  MemGetAuxPtr(const WORD);
 LPBYTE  MemGetMainPtr(const WORD);
-LPBYTE  MemGetBankPtr(const UINT nBank, const bool isSaveSnapshotOrDebugging);
+LPBYTE  MemGetBankPtr(const UINT nBank, const bool isSaveSnapshotOrDebugging = true);
 LPBYTE  MemGetCxRomPeripheral();
 DWORD   GetMemMode(void);
 void    SetMemMode(DWORD memmode);
