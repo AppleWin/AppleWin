@@ -2210,7 +2210,8 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 // 6: Added: Drive Connected & Motor On Cycle
 // 7: Deprecated SS_YAML_KEY_LSS_RESET_SEQUENCER, SS_YAML_KEY_DISK_ACCESSED
 // 8: Added: deferred stepper: event, address & cycle
-static const UINT kUNIT_VERSION = 8;
+// 9: Added: absolute path
+static const UINT kUNIT_VERSION = 9;
 
 #define SS_YAML_VALUE_CARD_DISK2 "Disk]["
 
@@ -2242,6 +2243,7 @@ static const UINT kUNIT_VERSION = 8;
 
 #define SS_YAML_KEY_FLOPPY "Floppy"
 #define SS_YAML_KEY_FILENAME "Filename"
+#define SS_YAML_KEY_ABSOLUTE_PATH "Absolute Path"
 #define SS_YAML_KEY_BYTE "Byte"
 #define SS_YAML_KEY_NIBBLES "Nibbles"
 #define SS_YAML_KEY_BIT_OFFSET "Bit Offset"
@@ -2264,6 +2266,7 @@ void Disk2InterfaceCard::SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_FLOPPY);
 	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, m_floppyDrive[unit].m_disk.m_fullname);
+	yamlSaveHelper.SaveString(SS_YAML_KEY_ABSOLUTE_PATH, ImageGetPathname(m_floppyDrive[unit].m_disk.m_imagehandle));
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_BYTE, m_floppyDrive[unit].m_disk.m_byte);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_NIBBLES, m_floppyDrive[unit].m_disk.m_nibbles);
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_BIT_OFFSET, m_floppyDrive[unit].m_disk.m_bitOffset);	// v4
@@ -2321,14 +2324,26 @@ void Disk2InterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version, std::vector<BYTE>& track)
 {
-	std::string filename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
+	const std::string simpleFilename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
+	const std::string absolutePath = version >= 9 ? yamlLoadHelper.LoadString(SS_YAML_KEY_ABSOLUTE_PATH) : "";
+
+	std::string filename = simpleFilename;
 	bool bImageError = filename.empty();
 
 	if (!bImageError)
 	{
 		DWORD dwAttributes = GetFileAttributes(filename.c_str());
+		if (dwAttributes == INVALID_FILE_ATTRIBUTES && !absolutePath.empty())
+		{
+			// try the absolute path if present
+			filename = absolutePath;
+			dwAttributes = GetFileAttributes(filename.c_str());
+		}
+
 		if (dwAttributes == INVALID_FILE_ATTRIBUTES)
 		{
+			// ignore absolute name when opening the file dialog
+			filename = simpleFilename;
 			// Get user to browse for file
 			UserSelectNewDiskImage(unit, filename.c_str());
 
