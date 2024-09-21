@@ -9,7 +9,7 @@ extern unsigned char csbits_pravets82[1][256][8];	// Pravets 82
 extern unsigned char csbits_pravets8M[1][256][8];	// Pravets 8M
 extern unsigned char csbits_pravets8C[2][256][8];	// Pravets 8A & 8C
 extern unsigned char csbits_base64a[2][256][8];  	// Base64A
-extern unsigned char csbits_hebrew[1][256][8];		// Hebrew
+extern unsigned char csbits_hebrew[2][256][8];		// Hebrew
 
 
 void make_csbits(void);

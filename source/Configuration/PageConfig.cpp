@@ -207,7 +207,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 				case A2TYPE_PRAVETS8A:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_TK30002E:		nCurrentChoice = MENUITEM_CLONE; break;
 				case A2TYPE_BASE64A:		nCurrentChoice = MENUITEM_CLONE; break;
-				case A2TYPE_HEBREW:			nCurrentChoice = MENUITEM_CLONE; break;	
+				case A2TYPE_HEBREW:		nCurrentChoice = MENUITEM_CLONE; break;	
 				default: _ASSERT(0); break;
 				}
 

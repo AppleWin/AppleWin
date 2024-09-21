@@ -1731,7 +1731,7 @@ void MemInitializeROM(void)
 	case A2TYPE_PRAVETS8A:      resourceId = IDR_PRAVETS_8C_ROM      ; ROM_SIZE = Apple2eRomSize; break;
 	case A2TYPE_TK30002E:       resourceId = IDR_TK3000_2E_ROM       ; ROM_SIZE = Apple2eRomSize; break;
 	case A2TYPE_BASE64A:        resourceId = IDR_BASE_64A_ROM        ; ROM_SIZE = Base64ARomSize; break;
-	case A2TYPE_HEBREW:			resourceId = IDR_APPLE2E_ROM         ; ROM_SIZE = Apple2eRomSize; break;
+	case A2TYPE_HEBREW:         resourceId = IDR_APPLE2E_ROM         ; ROM_SIZE = Apple2eRomSize; break;
 	}
 
 	BYTE* pData = NULL;

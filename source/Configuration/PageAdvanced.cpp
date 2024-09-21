@@ -42,8 +42,8 @@ const TCHAR CPageAdvanced::m_CloneChoices[] =
 				TEXT("Pravets 8M\0")	// Bulgarian
 				TEXT("Pravets 8A\0")	// Bulgarian
 				TEXT("TK3000 //e\0")	// Brazilian
-				TEXT("Base 64A\0")	 	// Taiwanese
-				TEXT("Hebrew\0");		// Israeli
+				TEXT("Base 64A\0")	// Taiwanese
+				TEXT("Hebrew\0");	// Israeli
 
 const TCHAR CPageAdvanced::m_gameIOConnectorChoices[] =
 				"Empty\0"

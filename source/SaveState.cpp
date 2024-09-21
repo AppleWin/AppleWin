@@ -243,7 +243,7 @@ static std::string GetApple2TypeAsString(void)
 		case A2TYPE_PRAVETS8A:		return SS_YAML_VALUE_PRAVETS8A;
 		case A2TYPE_TK30002E:		return SS_YAML_VALUE_TK30002E;
 		case A2TYPE_BASE64A:		return SS_YAML_VALUE_BASE64A;
-		case A2TYPE_HEBREW:			return SS_YAML_VALUE_HEBREW;
+		case A2TYPE_HEBREW:		return SS_YAML_VALUE_HEBREW;
 		default:
 			throw std::runtime_error("Save: Unknown Apple2 type");
 	}
