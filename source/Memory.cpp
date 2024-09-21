@@ -1731,6 +1731,7 @@ void MemInitializeROM(void)
 	case A2TYPE_PRAVETS8A:      resourceId = IDR_PRAVETS_8C_ROM      ; ROM_SIZE = Apple2eRomSize; break;
 	case A2TYPE_TK30002E:       resourceId = IDR_TK3000_2E_ROM       ; ROM_SIZE = Apple2eRomSize; break;
 	case A2TYPE_BASE64A:        resourceId = IDR_BASE_64A_ROM        ; ROM_SIZE = Base64ARomSize; break;
+	case A2TYPE_HEBREW:			resourceId = IDR_APPLE2E_ROM         ; ROM_SIZE = Apple2eRomSize; break;
 	}
 
 	BYTE* pData = NULL;
@@ -1754,6 +1755,7 @@ void MemInitializeROM(void)
 		case A2TYPE_PRAVETS8A:      _tcscpy(sRomFileName, TEXT("PRAVETS8C.ROM"       )); break;
 		case A2TYPE_TK30002E:       _tcscpy(sRomFileName, TEXT("TK3000e.ROM"         )); break;
 		case A2TYPE_BASE64A:        _tcscpy(sRomFileName, TEXT("BASE64A.ROM"         )); break;
+		case A2TYPE_HEBREW:         _tcscpy(sRomFileName, TEXT("APPLE2E.ROM"         )); break;
 		default:
 			{
 				_tcscpy(sRomFileName, TEXT("Unknown type!"));

@@ -35,6 +35,7 @@ unsigned char csbits_pravets82[1][256][8];	// Pravets 82
 unsigned char csbits_pravets8M[1][256][8];	// Pravets 8M
 unsigned char csbits_pravets8C[2][256][8];	// Pravets 8A & 8C
 unsigned char csbits_base64a[2][256][8];	// Base 64A
+unsigned char csbits_hebrew[1][256][8];		// Hebrew
 
 
 //
@@ -292,6 +293,7 @@ void make_csbits(void)
 	get_csbits(&csbits_pravets8M[0],  TEXT("CHARSET8M"), 0);	// Pravets 8M
 	get_csbits(&csbits_pravets8C[0],  TEXT("CHARSET8C"), 0);	// Pravets 8A / 8C: Alt char set off
 	get_csbits(&csbits_pravets8C[1],  TEXT("CHARSET8C"), 16);	// Pravets 8A / 8C: Alt char set on
+	get_csbits(&csbits_hebrew[0],     TEXT("CHARSETHE"), 0);	// Hebrew
 
 	VideoRomForIIandIIPlus();	// GH#1308
 	VideoRomForIIeEnhanced();	// GH#1308

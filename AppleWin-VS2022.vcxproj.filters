@@ -734,6 +734,9 @@
     <Image Include="resource\ApplewinLogo.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="resource\CHARSETHE.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="resource\Apple2.rom">

@@ -57,6 +57,7 @@ enum AppMode_e
 #define	TITLE_PRAVETS_8A        TEXT("Pravets 8A Emulator")
 #define	TITLE_TK3000_2E         TEXT("TK3000 //e Emulator")
 #define	TITLE_BASE64A           TEXT("Base64A Emulator")
+#define TITLE_HEBREW            TEXT("Hebrew Apple //e Emulator")
 
 #define TITLE_PAUSED       TEXT("* PAUSED *")
 #define TITLE_STEPPING     TEXT("Stepping")
@@ -190,6 +191,7 @@ enum eApple2Type {
 					A2TYPE_BAD_PRAVETS8M,							// Wrongly tagged as Apple //e clone (< AppleWin 1.26)
 					A2TYPE_PRAVETS8A,								// Apple //e clone
 					A2TYPE_TK30002E,								// Apple //e enhanced clone
+					A2TYPE_HEBREW,									// Apple ][ cloneF
 					// (Gap for more Apple //e clones)
 					A2TYPE_MAX
 				};

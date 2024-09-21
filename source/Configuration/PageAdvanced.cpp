@@ -36,13 +36,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 CPageAdvanced* CPageAdvanced::ms_this = 0;	// reinit'd in ctor
 
-enum CLONECHOICE {MENUITEM_CLONEMIN, MENUITEM_PRAVETS82=MENUITEM_CLONEMIN, MENUITEM_PRAVETS8M, MENUITEM_PRAVETS8A, MENUITEM_TK30002E, MENUITEM_BASE64A, MENUITEM_CLONEMAX};
+enum CLONECHOICE {MENUITEM_CLONEMIN, MENUITEM_PRAVETS82=MENUITEM_CLONEMIN, MENUITEM_PRAVETS8M, MENUITEM_PRAVETS8A, MENUITEM_TK30002E, MENUITEM_BASE64A, MENUITEM_HEBREW, MENUITEM_CLONEMAX};
 const TCHAR CPageAdvanced::m_CloneChoices[] =
 				TEXT("Pravets 82\0")	// Bulgarian
 				TEXT("Pravets 8M\0")	// Bulgarian
 				TEXT("Pravets 8A\0")	// Bulgarian
 				TEXT("TK3000 //e\0")	// Brazilian
-				TEXT("Base 64A\0"); 	// Taiwanese
+				TEXT("Base 64A\0")	 	// Taiwanese
+				TEXT("Hebrew\0");		// Israeli
 
 const TCHAR CPageAdvanced::m_gameIOConnectorChoices[] =
 				"Empty\0"
@@ -251,6 +252,7 @@ eApple2Type CPageAdvanced::GetCloneType(DWORD NewMenuItem)
 		case MENUITEM_PRAVETS8A:	return A2TYPE_PRAVETS8A;
 		case MENUITEM_TK30002E:		return A2TYPE_TK30002E;
 		case MENUITEM_BASE64A:		return A2TYPE_BASE64A;
+		case MENUITEM_HEBREW:		return A2TYPE_HEBREW;	
 		default:					return A2TYPE_PRAVETS82;
 	}
 }
@@ -279,6 +281,7 @@ int CPageAdvanced::GetCloneMenuItem(void)
 		case A2TYPE_PRAVETS8A:	nMenuItem = MENUITEM_PRAVETS8A; break;
 		case A2TYPE_TK30002E:	nMenuItem = MENUITEM_TK30002E;  break;
 		case A2TYPE_BASE64A:	nMenuItem = MENUITEM_BASE64A;   break;
+		case A2TYPE_HEBREW:		nMenuItem = MENUITEM_HEBREW;    break;
 		default:	// New clone needs adding here?
 			_ASSERT(0);
 	}
