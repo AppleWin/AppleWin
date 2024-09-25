@@ -48,6 +48,8 @@ public:
 	void UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
 	BYTE GetPCR(BYTE nDevice);
 	bool IsAnyTimer1Active(void);
+	void UseBad6522A(void) { m_MBSubUnit[0].sy6522.InitBadState(true); }
+	void UseBad6522B(void) { m_MBSubUnit[1].sy6522.InitBadState(true); }
 
 	struct DEBUGGER_MB_SUBUNIT
 	{

@@ -20,6 +20,11 @@ public:
 		m_syncEvent[1] = event1;
 	}
 
+	void InitBadState(bool bad6522)
+	{
+		m_bad6522 = bad6522;
+	}
+
 	void Reset(const bool powerCycle);
 
 	void StartTimer1(void);
@@ -148,4 +153,7 @@ private:
 	bool m_isBusDriven;
 
 	static const UINT kExtraMegaAudioTimerCycles = kExtraTimerCycles + 1;
+
+	// For mb-audit
+	bool m_bad6522;
 };

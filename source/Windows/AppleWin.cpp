@@ -803,8 +803,10 @@ static void RepeatInitialization(void)
 		for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 		{
 			if (GetCardMgr().QuerySlot(i) == CT_Disk2 && g_cmdLine.slotInfo[i].isDiskII13)
+			{
 				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).SetFirmware13Sector();
-			if (GetCardMgr().QuerySlot(i) == CT_GenericHDD)
+			}
+			else if (GetCardMgr().QuerySlot(i) == CT_GenericHDD)
 			{
 				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).SetUserNumBlocks(g_cmdLine.uHarddiskNumBlocks);
 				if (g_cmdLine.useHdcFirmwareV1)
@@ -812,6 +814,13 @@ static void RepeatInitialization(void)
 				if (g_cmdLine.useHdcFirmwareV2)
 					dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).UseHdcFirmwareV2();
 				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).SetHdcFirmwareMode(g_cmdLine.slotInfo[i].useHdcFirmwareMode);
+			}
+			else if (GetCardMgr().GetMockingboardCardMgr().IsMockingboard(i))
+			{
+				if (g_cmdLine.slotInfo[i].useBad6522A)
+					dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).UseBad6522A();
+				if (g_cmdLine.slotInfo[i].useBad6522B)
+					dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).UseBad6522B();
 			}
 		}
 
