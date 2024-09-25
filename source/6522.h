@@ -3,7 +3,7 @@
 class SY6522
 {
 public:
-	SY6522(UINT slot, bool isMegaAudio) : m_slot(slot), m_isMegaAudio(isMegaAudio), m_isBusDriven(false)
+	SY6522(UINT slot, bool isMegaAudio) : m_slot(slot), m_isMegaAudio(isMegaAudio), m_isBusDriven(false), m_bad6522(false)
 	{
 		for (UINT i = 0; i < kNumTimersPer6522; i++)
 			m_syncEvent[i] = NULL;
