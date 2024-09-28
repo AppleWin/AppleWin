@@ -1036,6 +1036,7 @@ void MockingboardCard::GetSnapshotForDebugger(DEBUGGER_MB_CARD* const pMBForDebu
 
 			pMBForDebugger->subUnit[i].nAYCurrentRegister[j] = pMB->nAYCurrentRegister[j];
 			pMBForDebugger->subUnit[i].isAYLatchedAddressValid[j] = pMB->isAYLatchedAddressValid[j];
+			pMBForDebugger->subUnit[i].is6522Bad = pMB->sy6522.IsBad();
 
 			switch (pMB->state[j])
 			{

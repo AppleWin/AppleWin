@@ -60,6 +60,7 @@ public:
 		BYTE nAYCurrentRegister[NUM_AY8913_PER_SUBUNIT];
 		char szState[NUM_AY8913_PER_SUBUNIT][3];	// "--"(INACTIVE), "RD", "WR", "LA"
 		bool isAYLatchedAddressValid[NUM_AY8913_PER_SUBUNIT];
+		bool is6522Bad;
 	};
 	struct DEBUGGER_MB_CARD
 	{

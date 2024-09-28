@@ -60,6 +60,7 @@ public:
 	void SetRegIRA(BYTE reg) { m_regs.ORA = reg; }
 	bool IsTimer1IrqDelay(void) { return m_timer1IrqDelay ? true : false; }
 	void SetBusBeingDriven(bool state) { m_isBusDriven = state; }
+	bool IsBad(void) { return m_bad6522; }
 
 	BYTE Read(BYTE nReg);
 	void Write(BYTE nReg, BYTE nValue);
