@@ -548,6 +548,8 @@ void AY8913::sound_ay_overlay( void )
 	 */
 	if( ay_tone_tick[r] >= ay_tone_period[r] * 2 )
 	  ay_tone_tick[r] %= ay_tone_period[r] * 2;
+
+	ay_tone_comparitor_active[r] = true;
 	break;
       case 6:
 	ay_noise_tick = 0;
@@ -648,26 +650,61 @@ void AY8913::sound_ay_overlay( void )
     tone_count = ay_tone_subcycles >> ( 3 + 16 );
     ay_tone_subcycles &= ( 8 << 16 ) - 1;
 
-    if( ( mixer & 1 ) == 0 ) {
-      level = chan1;
-      AY_DO_TONE( chan1, 0 );
-    }
-    if( ( mixer & 0x08 ) == 0 && noise_toggle )
-      chan1 = 0;
+	ay_global_tone_tick += tone_count;
+	const bool global_tone_tick_overflow = ay_global_tone_tick >= (1 << 12);
+	ay_global_tone_tick &= (1 << 12) - 1;	// 12-bit to match range of channel PERIOD
 
-    if( ( mixer & 2 ) == 0 ) {
-      level = chan2;
-      AY_DO_TONE( chan2, 1 );
-    }
-    if( ( mixer & 0x10 ) == 0 && noise_toggle )
-      chan2 = 0;
+	for (UINT i = 0; i < 3; i++)
+	{
+		if (ay_tone_comparitor_active[i] && global_tone_tick_overflow)
+		{
+			ay_tone_comparitor_active[i] = false;
+			ay_tone_tick[i] = 0;
+			ay_tone_high[i] = 0;
+		}
+	}
 
-    if( ( mixer & 4 ) == 0 ) {
-      level = chan3;
-      AY_DO_TONE( chan3, 2 );
-    }
-    if( ( mixer & 0x20 ) == 0 && noise_toggle )
-      chan3 = 0;
+	if (ay_tone_comparitor_active[0])
+	{
+		chan1 = 0;	// actually ramps down to 0
+	}
+	else
+	{
+		if ((mixer & 1) == 0) {
+			level = chan1;
+			AY_DO_TONE(chan1, 0);
+		}
+		if ((mixer & 0x08) == 0 && noise_toggle)
+			chan1 = 0;
+	}
+
+	if (ay_tone_comparitor_active[1])
+	{
+		chan2 = 0;	// actually ramps down to 0
+	}
+	else
+	{
+		if ((mixer & 2) == 0) {
+			level = chan2;
+			AY_DO_TONE(chan2, 1);
+		}
+		if ((mixer & 0x10) == 0 && noise_toggle)
+			chan2 = 0;
+	}
+
+	if (ay_tone_comparitor_active[2])
+	{
+		chan3 = 0;	// actually ramps down to 0
+	}
+	else
+	{
+		if ((mixer & 4) == 0) {
+			level = chan3;
+			AY_DO_TONE(chan3, 2);
+		}
+		if ((mixer & 0x20) == 0 && noise_toggle)
+			chan3 = 0;
+	}
 
     /* write the sample(s) */
 	*pBuf1++ = chan1;	// [TC]
@@ -803,6 +840,10 @@ void AY8913::sound_ay_reset( void )
   for( f = 0; f < 3; f++ )
     ay_tone_high[f] = 0;
   ay_tone_subcycles = ay_env_subcycles = 0;
+
+  ay_global_tone_tick = 0;
+  for (f = 0; f < 3; f++)
+	  ay_tone_comparitor_active[f] = false;
 }
 
 

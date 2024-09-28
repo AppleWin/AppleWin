@@ -46,6 +46,8 @@ private:
 	unsigned int ay_env_internal_tick, ay_env_tick;
 	unsigned int ay_tick_incr;
 	unsigned int ay_tone_period[3], ay_noise_period, ay_env_period;
+	unsigned int ay_global_tone_tick;
+	bool ay_tone_comparitor_active[3];
 
 	//static int beeper_last_subpos[2] = { 0, 0 };
 
