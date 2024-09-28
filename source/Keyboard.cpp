@@ -190,6 +190,20 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 				else
 					keycode = key;
 			}
+
+			// Remap for Hebrew keyboard layout
+			if (GetApple2Type() == A2TYPE_HEBREW)
+			{
+				if (!g_bCapsLock)
+				{
+					const char* lookup = "tcdsvuzjyhlfkonibxg;p.mera,";
+					const char* pos = strchr(lookup, keycode);
+					if (pos != NULL)
+					{
+						keycode = pos - lookup + 0x60;
+					}
+				}
+			}
 		}
 	} 
 	else //(bASCII != ASCII)	// WM_KEYDOWN

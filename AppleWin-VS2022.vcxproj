@@ -343,6 +343,7 @@
     <Image Include="resource\CHARSET82.bmp" />
     <Image Include="resource\CHARSET8C.bmp" />
     <Image Include="resource\CHARSET8M.bmp" />
+    <Image Include="resource\CHARSETHE.bmp" />
     <Image Include="resource\COLOR.BMP" />
     <Image Include="resource\DEBUG.BMP" />
     <Image Include="resource\Debug_Font.bmp" />
