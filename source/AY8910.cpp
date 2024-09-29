@@ -411,9 +411,9 @@ sound_write_buf_pstereo( libspectrum_signed_word * out, int c )
 #define AY_GET_SUBVAL( chan ) \
   ( level * 2 * ay_tone_tick[ chan ] / tone_count )
 
-void AY8913::AY_DO_TONE(int& chanLevel, const UINT chan, const UINT level, const UINT tone_count)
+int AY8913::AY_DO_TONE(const UINT chan, const UINT level, const UINT tone_count)
 {
-  chanLevel = 0;
+  int chanLevel = 0;
   int is_low = 0;
   if( level ) {
     if( ay_tone_high[ chan ] )
@@ -445,6 +445,8 @@ void AY8913::AY_DO_TONE(int& chanLevel, const UINT chan, const UINT level, const
   /* (That said, this should also help avoid aliasing noise.)   */
   if (count > 1)
     chanLevel = -((int)level);
+
+  return chanLevel;
 }
 
 #if 0
@@ -550,7 +552,7 @@ void AY8913::sound_ay_overlay( void )
 	if( ay_tone_tick[r] >= ay_tone_period[r] * 2 )
 	  ay_tone_tick[r] %= ay_tone_period[r] * 2;
 
-	ay_tone_comparitor_active[r] = true;
+	//ay_tone_comparitor_active[r] = true;
 	break;
       case 6:
 	ay_noise_tick = 0;
@@ -672,8 +674,7 @@ void AY8913::sound_ay_overlay( void )
 	else
 	{
 		if ((mixer & 1) == 0) {
-			level = chan1;
-			AY_DO_TONE(chan1, 0, level, tone_count);
+			chan1 = AY_DO_TONE(0, chan1, tone_count);
 		}
 		if ((mixer & 0x08) == 0 && noise_toggle)
 			chan1 = 0;
@@ -686,8 +687,7 @@ void AY8913::sound_ay_overlay( void )
 	else
 	{
 		if ((mixer & 2) == 0) {
-			level = chan2;
-			AY_DO_TONE(chan2, 1, level, tone_count);
+			chan2 = AY_DO_TONE(1, chan2, tone_count);
 		}
 		if ((mixer & 0x10) == 0 && noise_toggle)
 			chan2 = 0;
@@ -700,8 +700,7 @@ void AY8913::sound_ay_overlay( void )
 	else
 	{
 		if ((mixer & 4) == 0) {
-			level = chan3;
-			AY_DO_TONE(chan3, 2, level, tone_count);
+			chan3 = AY_DO_TONE(2, chan3, tone_count);
 		}
 		if ((mixer & 0x20) == 0 && noise_toggle)
 			chan3 = 0;

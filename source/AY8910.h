@@ -38,12 +38,13 @@ private:
 	void sound_ay_overlay( void );
 
 private:
-	void AY_DO_TONE(int& chanLevel, const UINT chan, const UINT level, const UINT tone_count);
+	int AY_DO_TONE(const UINT chan, const UINT level, const UINT tone_count);
 
 	/* foo_subcycles are fixed-point with low 16 bits as fractional part.
 	 * The other bits count as the chip does.
 	 */
-	unsigned int ay_tone_tick[3], ay_tone_high[3], ay_noise_tick;
+	unsigned int ay_tone_tick[3], ay_noise_tick;
+	unsigned int ay_tone_high[3];	// ay_tone_high is really just a bool
 	unsigned int ay_tone_subcycles, ay_env_subcycles;
 	unsigned int ay_env_internal_tick, ay_env_tick;
 	unsigned int ay_tick_incr;
