@@ -411,40 +411,41 @@ sound_write_buf_pstereo( libspectrum_signed_word * out, int c )
 #define AY_GET_SUBVAL( chan ) \
   ( level * 2 * ay_tone_tick[ chan ] / tone_count )
 
-#define AY_DO_TONE( var, chan ) \
-  ( var ) = 0;								\
-  is_low = 0;								\
-  if( level ) {								\
-    if( ay_tone_high[ chan ] )						\
-      ( var ) = ( level );						\
-    else {								\
-      ( var ) = -( level );						\
-      is_low = 1;							\
-    }									\
-  }									\
-  									\
-  ay_tone_tick[ chan ] += tone_count;					\
-  count = 0;								\
-  while( ay_tone_tick[ chan ] >= ay_tone_period[ chan ] ) {		\
-    count++;								\
-    ay_tone_tick[ chan ] -= ay_tone_period[ chan ];			\
-    ay_tone_high[ chan ] = !ay_tone_high[ chan ];			\
-    									\
-    /* has to be here, unfortunately... */				\
-    if( count == 1 && level && ay_tone_tick[ chan ] < tone_count ) {	\
-      if( is_low )							\
-        ( var ) += AY_GET_SUBVAL( chan );				\
-      else								\
-        ( var ) -= AY_GET_SUBVAL( chan );				\
-      }									\
-    }									\
-  									\
-  /* if it's changed more than once during the sample, we can't */	\
-  /* represent it faithfully. So, just hope it's a sample.      */	\
-  /* (That said, this should also help avoid aliasing noise.)   */	\
-  if( count > 1 )							\
-    ( var ) = -( level )
+void AY8913::AY_DO_TONE(int& chanLevel, const UINT chan, const UINT level, const UINT tone_count)
+{
+  chanLevel = 0;
+  int is_low = 0;
+  if( level ) {
+    if( ay_tone_high[ chan ] )
+	  chanLevel = level;
+    else {
+	  chanLevel = -((int)level);
+      is_low = 1;
+    }
+  }
 
+  ay_tone_tick[ chan ] += tone_count;
+  UINT count = 0;
+  while( ay_tone_tick[ chan ] >= ay_tone_period[ chan ] ) {
+    count++;
+    ay_tone_tick[ chan ] -= ay_tone_period[ chan ];
+    ay_tone_high[ chan ] = !ay_tone_high[ chan ];
+
+    /* has to be here, unfortunately... */
+    if( count == 1 && level && ay_tone_tick[ chan ] < tone_count ) {
+      if( is_low )
+        chanLevel += AY_GET_SUBVAL( chan );
+      else
+        chanLevel -= AY_GET_SUBVAL( chan );
+      }
+    }
+
+  /* if it's changed more than once during the sample, we can't */
+  /* represent it faithfully. So, just hope it's a sample.      */
+  /* (That said, this should also help avoid aliasing noise.)   */
+  if (count > 1)
+    chanLevel = -((int)level);
+}
 
 #if 0
 /* add val, correctly delayed on either left or right buffer,
@@ -475,12 +476,12 @@ void AY8913::sound_ay_overlay( void )
 {
   int tone_level[3];
   int mixer, envshape;
-  int f, g, level, count;
+  int f, g;
+  UINT level;
 //  libspectrum_signed_word *ptr;
   struct ay_change_tag *change_ptr = ay_change;
   int changes_left = ay_change_count;
   int reg, r;
-  int is_low;
   int chan1, chan2, chan3;
   unsigned int tone_count, noise_count;
   libspectrum_dword sfreq, cpufreq;
@@ -579,8 +580,8 @@ void AY8913::sound_ay_overlay( void )
     level = ay_tone_levels[ env_counter ];
 
     for( g = 0; g < 3; g++ )
-      if( sound_ay_registers[ 8 + g ] & 16 )
-	tone_level[g] = level;
+      if( sound_ay_registers[ 8 + g ] & 16 )	// channel's VOL > 0 ?
+	    tone_level[g] = level;
 
     /* envelope output counter gets incr'd every 16 AY cycles.
      * Has to be a while, as this is sub-output-sample res.
@@ -672,7 +673,7 @@ void AY8913::sound_ay_overlay( void )
 	{
 		if ((mixer & 1) == 0) {
 			level = chan1;
-			AY_DO_TONE(chan1, 0);
+			AY_DO_TONE(chan1, 0, level, tone_count);
 		}
 		if ((mixer & 0x08) == 0 && noise_toggle)
 			chan1 = 0;
@@ -686,7 +687,7 @@ void AY8913::sound_ay_overlay( void )
 	{
 		if ((mixer & 2) == 0) {
 			level = chan2;
-			AY_DO_TONE(chan2, 1);
+			AY_DO_TONE(chan2, 1, level, tone_count);
 		}
 		if ((mixer & 0x10) == 0 && noise_toggle)
 			chan2 = 0;
@@ -700,7 +701,7 @@ void AY8913::sound_ay_overlay( void )
 	{
 		if ((mixer & 4) == 0) {
 			level = chan3;
-			AY_DO_TONE(chan3, 2);
+			AY_DO_TONE(chan3, 2, level, tone_count);
 		}
 		if ((mixer & 0x20) == 0 && noise_toggle)
 			chan3 = 0;
