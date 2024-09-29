@@ -551,7 +551,7 @@ void AY8913::sound_ay_overlay( void )
 	if( ay_tone_tick[r] >= ay_tone_period[r] * 2 )
 	  ay_tone_tick[r] %= ay_tone_period[r] * 2;
 
-	//ay_tone_comparitor_active[r] = true;
+	ay_tone_comparitor_active[r] = true;
 	break;
       case 6:
 	ay_noise_tick = 0;
