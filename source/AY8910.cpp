@@ -526,6 +526,7 @@ void AY8913::sound_ay_overlay( void )
      * glitches.
      */
     while( changes_left && f >= change_ptr->ofs ) {
+      const bool regChanged = sound_ay_registers[change_ptr->reg] != change_ptr->val;
       sound_ay_registers[ reg = change_ptr->reg ] = change_ptr->val;
       change_ptr++;
       changes_left--;
@@ -551,7 +552,8 @@ void AY8913::sound_ay_overlay( void )
 	if( ay_tone_tick[r] >= ay_tone_period[r] * 2 )
 	  ay_tone_tick[r] %= ay_tone_period[r] * 2;
 
-	ay_tone_comparitor_active[r] = true;
+	if (regChanged)
+	  ay_tone_comparitor_active[r] = true;
 	break;
       case 6:
 	ay_noise_tick = 0;
@@ -651,9 +653,10 @@ void AY8913::sound_ay_overlay( void )
     tone_count = ay_tone_subcycles >> ( 3 + 16 );
     ay_tone_subcycles &= ( 8 << 16 ) - 1;
 
+#define GLOBAL_COUNT_RANGE 12
 	ay_global_tone_tick += tone_count;
-	const bool global_tone_tick_overflow = ay_global_tone_tick >= (1 << 12);
-	ay_global_tone_tick &= (1 << 12) - 1;	// 12-bit to match range of channel PERIOD
+	const bool global_tone_tick_overflow = ay_global_tone_tick >= (1 << GLOBAL_COUNT_RANGE);
+	ay_global_tone_tick &= (1 << GLOBAL_COUNT_RANGE) - 1;	// 12-bit to match range of channel PERIOD
 
 	for (UINT i = 0; i < 3; i++)
 	{
