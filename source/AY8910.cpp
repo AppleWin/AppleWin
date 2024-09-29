@@ -479,7 +479,6 @@ void AY8913::sound_ay_overlay( void )
   int tone_level[3];
   int mixer, envshape;
   int f, g;
-  UINT level;
 //  libspectrum_signed_word *ptr;
   struct ay_change_tag *change_ptr = ay_change;
   int changes_left = ay_change_count;
@@ -579,11 +578,10 @@ void AY8913::sound_ay_overlay( void )
 
     /* envelope */
     envshape = sound_ay_registers[13];
-    level = ay_tone_levels[ env_counter ];
 
     for( g = 0; g < 3; g++ )
-      if( sound_ay_registers[ 8 + g ] & 16 )	// channel's VOL > 0 ?
-	    tone_level[g] = level;
+      if( sound_ay_registers[ 8 + g ] & 16 )	// channel's VOL using envelope?
+	    tone_level[g] = ay_tone_levels[env_counter];
 
     /* envelope output counter gets incr'd every 16 AY cycles.
      * Has to be a while, as this is sub-output-sample res.
@@ -673,9 +671,9 @@ void AY8913::sound_ay_overlay( void )
 	}
 	else
 	{
-		if ((mixer & 1) == 0) {
-			chan1 = AY_DO_TONE(0, chan1, tone_count);
-		}
+		chan1 = AY_DO_TONE(0, chan1, tone_count);	// Toggle even if disabled by mixer
+		if (mixer & 1)
+			chan1 = tone_level[0];
 		if ((mixer & 0x08) == 0 && noise_toggle)
 			chan1 = 0;
 	}
@@ -686,9 +684,9 @@ void AY8913::sound_ay_overlay( void )
 	}
 	else
 	{
-		if ((mixer & 2) == 0) {
-			chan2 = AY_DO_TONE(1, chan2, tone_count);
-		}
+		chan2 = AY_DO_TONE(1, chan2, tone_count);	// Toggle even if disabled by mixer
+		if (mixer & 2)
+			chan2 = tone_level[1];
 		if ((mixer & 0x10) == 0 && noise_toggle)
 			chan2 = 0;
 	}
@@ -699,9 +697,9 @@ void AY8913::sound_ay_overlay( void )
 	}
 	else
 	{
-		if ((mixer & 4) == 0) {
-			chan3 = AY_DO_TONE(2, chan3, tone_count);
-		}
+		chan3 = AY_DO_TONE(2, chan3, tone_count);	// Toggle even if disabled by mixer
+		if (mixer & 4)
+			chan3 = tone_level[2];
 		if ((mixer & 0x20) == 0 && noise_toggle)
 			chan3 = 0;
 	}
