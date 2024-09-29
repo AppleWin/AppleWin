@@ -474,6 +474,8 @@ int AY8913::AY_DO_TONE(const UINT chan, const UINT level, const UINT tone_count)
 #define HZ_COMMON_DENOMINATOR 50
 #include "Log.h"
 
+#define DO_AY8913_EMU 1
+
 void AY8913::sound_ay_overlay( void )
 {
   int tone_level[3];
@@ -527,6 +529,7 @@ void AY8913::sound_ay_overlay( void )
      */
     while( changes_left && f >= change_ptr->ofs ) {
       const bool regChanged = sound_ay_registers[change_ptr->reg] != change_ptr->val;
+	  const BYTE oldReg = sound_ay_registers[change_ptr->reg];
       sound_ay_registers[ reg = change_ptr->reg ] = change_ptr->val;
       change_ptr++;
       changes_left--;
@@ -552,8 +555,11 @@ void AY8913::sound_ay_overlay( void )
 	if( ay_tone_tick[r] >= ay_tone_period[r] * 2 )
 	  ay_tone_tick[r] %= ay_tone_period[r] * 2;
 
+#if DO_AY8913_EMU
 	if (regChanged)
-	  ay_tone_comparitor_active[r] = true;
+	  if (reg & 1) // PERIOD-n_HIGH order byte
+	    ay_tone_comparitor_active[r] = true;
+#endif
 	break;
       case 6:
 	ay_noise_tick = 0;
@@ -654,13 +660,21 @@ void AY8913::sound_ay_overlay( void )
     ay_tone_subcycles &= ( 8 << 16 ) - 1;
 
 #define GLOBAL_COUNT_RANGE 12
+    const UINT ay_global_tone_tick_old = ay_global_tone_tick;
 	ay_global_tone_tick += tone_count;
 	const bool global_tone_tick_overflow = ay_global_tone_tick >= (1 << GLOBAL_COUNT_RANGE);
 	ay_global_tone_tick &= (1 << GLOBAL_COUNT_RANGE) - 1;	// 12-bit to match range of channel PERIOD
 
+#define USE_GLOBAL_TICK_OVERFLOW 0
+
 	for (UINT i = 0; i < 3; i++)
 	{
+#if USE_GLOBAL_TICK_OVERFLOW
 		if (ay_tone_comparitor_active[i] && global_tone_tick_overflow)
+#else // USE GLOBAL_TICK == AY_PERIOD
+		const bool tone_period_match = ay_global_tone_tick_old < ay_tone_period[i] && ay_global_tone_tick >= ay_tone_period[i];
+		if (ay_tone_comparitor_active[i] && tone_period_match)
+#endif
 		{
 			ay_tone_comparitor_active[i] = false;
 			ay_tone_tick[i] = 0;
