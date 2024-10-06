@@ -1,7 +1,7 @@
 #ifndef VIEWBUFFER_H
 #define VIEWBUFFER_H
 
-#include <qhexview.h>
+#include <QHexView/qhexview.h>
 
 class ViewBuffer : public QHexBuffer
 {

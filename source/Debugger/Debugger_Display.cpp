@@ -2130,7 +2130,7 @@ void DrawMemory ( int line, int iMemDump )
 #if DISPLAY_MEMORY_TITLE
 	if (eDevice == DEV_MB_SUBUNIT)
 	{
-		sAddress = StrFormat("%c: SY & AY", 'A' + subUnit);
+		sAddress = StrFormat("%c:%cSY & AY", 'A' + subUnit, !MB.subUnit[subUnit].is6522Bad ? ' ' : '!');
 	}
 	else if (eDevice == DEV_AY8913_PAIR)
 	{
@@ -2160,6 +2160,8 @@ void DrawMemory ( int line, int iMemDump )
 		PrintTextCursorX(" at ", rect2);
 
 	DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
+	if (MB.subUnit[subUnit].is6522Bad && eDevice == DEV_MB_SUBUNIT)
+		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS_SY6522_AY8913_BAD));
 	PrintTextCursorY(sAddress.c_str(), rect2);
 #endif
 
