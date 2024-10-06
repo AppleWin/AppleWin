@@ -530,7 +530,8 @@ void AY8913::sound_ay_overlay( void )
     while( changes_left && f >= change_ptr->ofs ) {
       const bool regChanged = sound_ay_registers[change_ptr->reg] != change_ptr->val;
 	  const BYTE oldReg = sound_ay_registers[change_ptr->reg];
-      sound_ay_registers[ reg = change_ptr->reg ] = change_ptr->val;
+	  const UINT oldPeriod = ay_tone_period[change_ptr->reg >> 1];
+	  sound_ay_registers[ reg = change_ptr->reg ] = change_ptr->val;
       change_ptr++;
       changes_left--;
 
@@ -557,8 +558,13 @@ void AY8913::sound_ay_overlay( void )
 
 #if DO_AY8913_EMU
 	if (regChanged)
-	  if (reg & 1) // PERIOD-n_HIGH order byte
-	    ay_tone_comparitor_active[r] = true;
+	{
+		if (reg & 1) // PERIOD-n_HIGH order byte
+		{
+			ay_tone_comparitor_active[r] = true;
+			LogOutput("AY8913: %c %04X -> %04X\n", 'A'+r, oldPeriod, ay_tone_period[r]);
+		}
+	}
 #endif
 	break;
       case 6:
