@@ -353,6 +353,8 @@ BYTE SY6522::Read(BYTE nReg)
 		break;
 	case 0x02:	// DDRB
 		nValue = m_regs.DDRB;
+		if (m_bad6522)
+			nValue &= ~1;	// DDRB.b0 = 0 (for testing mb-audit)
 		break;
 	case 0x03:	// DDRA
 		nValue = m_regs.DDRA;

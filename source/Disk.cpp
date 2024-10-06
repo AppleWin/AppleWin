@@ -494,9 +494,16 @@ void __stdcall Disk2InterfaceCard::ControlMotor(WORD, WORD address, BYTE, BYTE, 
 	BOOL newState = address & 1;
 	bool stateChanged = (newState != m_floppyMotorOn);
 
-	// "2. [...] (DRIVES OFF forces the control flipflops to clear.)" (UTAIIe page 9-12)
+	// "2. [...] (DRIVES OFF forces the control flip-flops to clear.)" (UTAIIe page 9-12)
+	// - so m_magnetStates = 0.
+	// "5. Causes the ENABLE1' or the ENABLE2' signal to go low depending on which drive is selected by the drive1/drive2 switch."
+	// - so m_currDrive not affected.
+	// TODO: what about m_seqFunc.function?
 	if (newState == FALSE)
+	{
 		m_magnetStates = 0;		// GH#926, GH#1315
+		ControlStepperLogging(address, g_nCumulativeCycles);
+	}
 
 	if (stateChanged)
 	{
@@ -1776,7 +1783,7 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 
 void Disk2InterfaceCard::Reset(const bool bIsPowerCycle)
 {
-	// RESET forces all switches off (UTAIIe Table 9.1)
+	// RESET' forces all switches off (UTAIIe Table 9.1)
 	ResetSwitches();
 
 	m_formatTrack.Reset();

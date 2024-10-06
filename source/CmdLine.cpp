@@ -187,7 +187,9 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					g_cmdLine.slotInfo[slot].isDiskII13 = true;
 				}
 				if (strcmp(lpCmdLine, "hdc") == 0)
+				{
 					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
+				}
 				if (strcmp(lpCmdLine, "hdc-sp") == 0)
 				{
 					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
@@ -204,7 +206,9 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					g_cmdLine.slotInfo[slot].useHdcFirmwareMode = HdcBlockMode4Devices;
 				}
 				if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)	// Support Saturn128 card in slot 1-7 too (GH#1279)
+				{
 					g_cmdLine.slotInsert[slot] = CT_Saturn128K;
+				}
 				if (strcmp(lpCmdLine, "megaaudio") == 0)
 				{
 					g_cmdLine.slotInsert[slot] = CT_MegaAudio;
@@ -214,6 +218,14 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 				{
 					g_cmdLine.slotInsert[slot] = CT_SDMusic;
 					g_cmdLine.supportExtraMBCardTypes = true;
+				}
+				if (strcmp(lpCmdLine, "6522a-bad") == 0)
+				{
+					g_cmdLine.slotInfo[slot].useBad6522A = true;
+				}
+				if (strcmp(lpCmdLine, "6522b-bad") == 0)
+				{
+					g_cmdLine.slotInfo[slot].useBad6522B = true;
 				}
 				if (strcmp(lpCmdLine, "parallel") == 0)
 				{

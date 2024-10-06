@@ -15,10 +15,14 @@ struct CmdLine
 		{
 			isDiskII13 = false;
 			useHdcFirmwareMode = HdcDefault;
+			useBad6522A = false;
+			useBad6522B = false;
 		}
 
 		bool isDiskII13;
 		HdcMode useHdcFirmwareMode;
+		bool useBad6522A;
+		bool useBad6522B;
 	};
 
 	CmdLine()
