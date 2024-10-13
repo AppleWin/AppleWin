@@ -1151,7 +1151,8 @@ bool HarddiskInterfaceCard::ImageSwap(void)
 // 4: Updated $Csnn firmware to fix GH#1264
 // 5: Added: SP Status Code, FIFO Index & 256-byte firmware
 //    Units are 1-based (up to v4 they were 0-based)
-static const UINT kUNIT_VERSION = 5;
+// 6: Added: absolute path
+static const UINT kUNIT_VERSION = 6;
 
 #define SS_YAML_VALUE_CARD_HDD "Generic HDD"
 
@@ -1160,6 +1161,7 @@ static const UINT kUNIT_VERSION = 5;
 
 #define SS_YAML_KEY_HDDUNIT "Unit"
 #define SS_YAML_KEY_FILENAME "Filename"
+#define SS_YAML_KEY_ABSOLUTE_PATH "Absolute Path"
 #define SS_YAML_KEY_ERROR "Error"
 #define SS_YAML_KEY_MEMBLOCK "MemBlock"
 #define SS_YAML_KEY_DISKBLOCK "DiskBlock"
@@ -1185,6 +1187,7 @@ void HarddiskInterfaceCard::SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, 
 
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s%d:\n", SS_YAML_KEY_HDDUNIT, baseUnitNum + unit);
 	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, m_hardDiskDrive[unit].m_fullname);
+	yamlSaveHelper.SaveString(SS_YAML_KEY_ABSOLUTE_PATH, ImageGetPathname(m_hardDiskDrive[unit].m_imagehandle));
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_ERROR, m_hardDiskDrive[unit].m_error);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_MEMBLOCK, m_hardDiskDrive[unit].m_memblock);
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_DISKBLOCK, m_hardDiskDrive[unit].m_diskblock);
@@ -1238,7 +1241,8 @@ bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, 
 	m_hardDiskDrive[unit].m_status_next = DISK_STATUS_OFF;
 	m_hardDiskDrive[unit].m_status_prev = DISK_STATUS_OFF;
 
-	std::string filename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
+	const std::string simpleFilename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
+	const std::string absolutePath = version >= 6 ? yamlLoadHelper.LoadString(SS_YAML_KEY_ABSOLUTE_PATH) : "";
 	m_hardDiskDrive[unit].m_error = yamlLoadHelper.LoadUint(SS_YAML_KEY_ERROR);
 	m_hardDiskDrive[unit].m_memblock = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMBLOCK);
 	m_hardDiskDrive[unit].m_diskblock = yamlLoadHelper.LoadUint(SS_YAML_KEY_DISKBLOCK);
@@ -1260,11 +1264,21 @@ bool HarddiskInterfaceCard::LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, 
 
 	bool userSelectedImageFolder = false;
 
+	std::string filename = simpleFilename;
 	if (!filename.empty())
 	{
 		DWORD dwAttributes = GetFileAttributes(filename.c_str());
+		if (dwAttributes == INVALID_FILE_ATTRIBUTES && !absolutePath.empty())
+		{
+			// try the absolute path if present
+			filename = absolutePath;
+			dwAttributes = GetFileAttributes(filename.c_str());
+		}
+
 		if (dwAttributes == INVALID_FILE_ATTRIBUTES)
 		{
+			// ignore absolute name when opening the file dialog
+			filename = simpleFilename;
 			// Get user to browse for file
 			userSelectedImageFolder = SelectImage(unit, filename.c_str());
 

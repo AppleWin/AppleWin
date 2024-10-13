@@ -17,6 +17,7 @@ Tom Charlesworth
   - Supports up to 8 SmartPort units per HDC (currently limited to 4GiB capacity for each unit).
   - Supports up to 4 ProDOS block devices per HDC (previously was 2).
   - Command line support only for slot 5 HDC (-s5 hdc) and hard disks after unit-2 (eg. -s5h3 <pathname>, -s7h3 <pathname>, etc).
+  - [Bug #563] Fixes "UniDOS 3.3 v2.0.1".
 - [Change #175] Improvements to the SSI263 emulation (mostly edge cases). Use in conjunction with mb-audit v1.53.
 - [Bug #926, #1315] DiskII Interface: 'DRIVES OFF' forces the control flipflops to clear. Fixes Infocom's Shogun & Zork0. [@sicklittlemonkey]
 - [Bug #1308] Fix for corrupt 't' glyph. [@xotmatrix] and use actual II+ and Enhanced //e video character ROMs.
@@ -27,6 +28,7 @@ Tom Charlesworth
 -----------------------
 - [Change #1272] New HDC firmware v2 to support returning HDD size in Y:X for status call. [@peteri]
   - [Change #1277] Add (debug) cmd line switch to revert to HDC firmware v1: -hdc-firmware-v1.
+  - [Bug #88] Fixes "Oz DOS 1.0" crashing or returning "This device is too small for Oz-DOS...".
 - [Change #1279] Support Saturn RAM card in slot 3 for any Apple II model (for Robo Systems' RoboCAD 2).
 - [Change #1159] Speaker: change from mono to stereo sound buffer.
 - [Change #1247] Robocom's Interface Module dongle: use actual values for 1000 & 1500 series dongles.
