@@ -411,9 +411,8 @@ BYTE SY6522::Read(BYTE nReg)
 // TODO: RMW opcodes: dec,inc,asl,lsr,rol,ror (abs16 & abs16,x) + 65C02 trb,tsb (abs16)
 UINT SY6522::GetOpcodeCyclesForRead(BYTE reg)
 {
-	UINT opcodeCycles = 0;
-	BYTE opcode = 0;
-	bool abs16 = false;
+	UINT zpOpcodeCycles = 0, opcodeCycles = 0;
+	BYTE zpOpcode = 0, opcode = 0;	// these double-up as flags to indicate validity
 	bool abs16x = false;
 	bool abs16y = false;
 	bool indx = false;
@@ -422,142 +421,63 @@ UINT SY6522::GetOpcodeCyclesForRead(BYTE reg)
 	const BYTE opcodeMinus3 = mem[(::regs.pc - 3) & 0xffff];
 	const BYTE opcodeMinus2 = mem[(::regs.pc - 2) & 0xffff];
 
+	// Check 2-byte opcodes
 	if (((opcodeMinus2 & 0x0f) == 0x01) && ((opcodeMinus2 & 0x10) == 0x00))	// ora (zp,x), and (zp,x), ..., sbc (zp,x)
 	{
 		// NB. this is for read, so don't need to exclude 0x81 / sta (zp,x)
-		opcodeCycles = 6;
-		opcode = opcodeMinus2;
+		zpOpcodeCycles = 6;
+		zpOpcode = opcodeMinus2;
 		indx = true;
 	}
 	else if (((opcodeMinus2 & 0x0f) == 0x01) && ((opcodeMinus2 & 0x10) == 0x10))	// ora (zp),y, and (zp),y, ..., sbc (zp),y
 	{
 		// NB. this is for read, so don't need to exclude 0x91 / sta (zp),y
-		opcodeCycles = 5;
-		opcode = opcodeMinus2;
+		zpOpcodeCycles = 5;
+		zpOpcode = opcodeMinus2;
 		indy = true;
 	}
 	else if (((opcodeMinus2 & 0x0f) == 0x02) && ((opcodeMinus2 & 0x10) == 0x10) && GetMainCpu() == CPU_65C02)	// ora (zp), and (zp), ..., sbc (zp) : 65C02-only
 	{
 		// NB. this is for read, so don't need to exclude 0x92 / sta (zp)
-		opcodeCycles = 5;
-		opcode = opcodeMinus2;
-	}
-	else
-	{
-		if ((((opcodeMinus3 & 0x0f) == 0x0D) && ((opcodeMinus3 & 0x10) == 0x00)) ||	// ora abs16, and abs16, ..., sbc abs16
-			(opcodeMinus3 == 0x2C) ||			// bit abs16
-			(opcodeMinus3 == 0xAC) ||			// ldy abs16
-			(opcodeMinus3 == 0xAE) ||			// ldx abs16
-			(opcodeMinus3 == 0xCC) ||			// cpy abs16
-			(opcodeMinus3 == 0xEC))			// cpx abs16
-		{
-		}
-		else if ((opcodeMinus3 == 0xBC) ||			// ldy abs16,x
-			((opcodeMinus3 == 0x3C) && GetMainCpu() == CPU_65C02))		// bit abs16,x : 65C02-only
-		{
-			abs16x = true;
-		}
-		else if ((opcodeMinus3 == 0xBE))			// ldx abs16,y
-		{
-			abs16y = true;
-		}
-		else if ((opcodeMinus3 & 0x10) == 0x10)
-		{
-			if ((opcodeMinus3 & 0x0f) == 0x0D)		// ora abs16,x, and abs16,x, ..., sbc abs16,x
-				abs16x = true;
-			else if ((opcodeMinus3 & 0x0f) == 0x09) // ora abs16,y, and abs16,y, ..., sbc abs16,y
-				abs16y = true;
-		}
-		else
-		{
-			_ASSERT(0);
-			opcodeCycles = 0;
-			return 0;
-		}
-
-		opcodeCycles = 4;
-		opcode = opcodeMinus3;
-		abs16 = true;
-	}
-
-	//
-
-	WORD addr16 = 0;
-
-	if (!abs16)
-	{
-		BYTE zp = mem[(::regs.pc - 1) & 0xffff];
-		if (indx) zp += ::regs.x;
-		addr16 = (mem[zp] | (mem[(zp + 1) & 0xff] << 8));
-		if (indy) addr16 += ::regs.y;
-	}
-	else
-	{
-		addr16 = mem[(::regs.pc - 2) & 0xffff] | (mem[(::regs.pc - 1) & 0xffff] << 8);
-		if (abs16y) addr16 += ::regs.y;
-		if (abs16x) addr16 += ::regs.x;
-	}
-
-	// Check we've reverse looked-up the 6502 opcode correctly
-	if ((addr16 & 0xF80F) != (0xC000 + reg))
-	{
-		_ASSERT(0);
-		return 0;
-	}
-
-	return opcodeCycles;
-}
-
-// TODO: RMW opcodes: dec,inc,asl,lsr,rol,ror (abs16 & abs16,x) + 65C02 trb,tsb (abs16)
-UINT SY6522::GetOpcodeCyclesForWrite(BYTE reg)
-{
-	UINT zpOpcodeCycles = 0, opcodeCycles = 0;
-	BYTE zpOpcode = 0, opcode = 0;	// these double-up as flag to indicate validity
-
-	const BYTE opcodeMinus3 = mem[(::regs.pc - 3) & 0xffff];
-	const BYTE opcodeMinus2 = mem[(::regs.pc - 2) & 0xffff];
-
-	// Check 3-byte opcodes
-	if ((opcodeMinus3 == 0x8C) ||		// sty abs16
-		(opcodeMinus3 == 0x8D) ||		// sta abs16
-		(opcodeMinus3 == 0x8E))		// stx abs16
-	{	// Eg. FT demos: CHIP, MADEF, MAD2
-		opcodeCycles = 4;
-		opcode = opcodeMinus3;
-	}
-	else if ((opcodeMinus3 == 0x99) ||	// sta abs16,y
-		(opcodeMinus3 == 0x9D))	// sta abs16,x
-	{	// Eg. Paleotronic microTracker demo
-		opcodeCycles = 5;
-		opcode = opcodeMinus3;
-	}
-	else if (opcodeMinus3 == 0x9C && GetMainCpu() == CPU_65C02)		// stz abs16 : 65C02-only
-	{
-		opcodeCycles = 4;
-		opcode = opcodeMinus3;
-	}
-	else if (opcodeMinus3 == 0x9E && GetMainCpu() == CPU_65C02)		// stz abs16,x : 65C02-only
-	{
-		opcodeCycles = 5;
-		opcode = opcodeMinus3;
-	}
-
-	// Check 2-byte opcodes
-	if (opcodeMinus2 == 0x81)		// sta (zp,x)
-	{
-		zpOpcodeCycles = 6;
-		zpOpcode = opcodeMinus2;
-	}
-	else if (opcodeMinus2 == 0x91)		// sta (zp),y
-	{	// Eg. FT demos: OMT, PLS
-		zpOpcodeCycles = 6;
-		zpOpcode = opcodeMinus2;
-	}
-	else if (opcodeMinus2 == 0x92 && GetMainCpu() == CPU_65C02)		// sta (zp) : 65C02-only
-	{
 		zpOpcodeCycles = 5;
 		zpOpcode = opcodeMinus2;
 	}
+
+	// Check 3-byte opcodes
+	if ((((opcodeMinus3 & 0x0f) == 0x0D) && ((opcodeMinus3 & 0x10) == 0x00)) ||	// ora abs16, and abs16, ..., sbc abs16
+		(opcodeMinus3 == 0x2C) ||			// bit abs16
+		(opcodeMinus3 == 0xAC) ||			// ldy abs16
+		(opcodeMinus3 == 0xAE) ||			// ldx abs16
+		(opcodeMinus3 == 0xCC) ||			// cpy abs16
+		(opcodeMinus3 == 0xEC))				// cpx abs16
+	{
+		opcodeCycles = 4;
+		opcode = opcodeMinus3;
+	}
+	else if ((opcodeMinus3 == 0xBC) ||			// ldy abs16,x
+		((opcodeMinus3 == 0x3C) && GetMainCpu() == CPU_65C02))		// bit abs16,x : 65C02-only
+	{
+		opcodeCycles = 4;
+		opcode = opcodeMinus3;
+		abs16x = true;
+	}
+	else if ((opcodeMinus3 == 0xBE))			// ldx abs16,y
+	{
+		opcodeCycles = 4;
+		opcode = opcodeMinus3;
+		abs16y = true;
+	}
+	else if ((opcodeMinus3 & 0x10) == 0x10)
+	{
+		opcodeCycles = 4;
+		opcode = opcodeMinus3;
+		if ((opcodeMinus3 & 0x0f) == 0x0D)		// ora abs16,x, and abs16,x, ..., sbc abs16,x
+			abs16x = true;
+		else if ((opcodeMinus3 & 0x0f) == 0x09) // ora abs16,y, and abs16,y, ..., sbc abs16,y
+			abs16y = true;
+	}
+
+	//
 
 	if (!opcode && !zpOpcode)	// Unsupported opcode
 	{
@@ -572,16 +492,121 @@ UINT SY6522::GetOpcodeCyclesForWrite(BYTE reg)
 	if (zpOpcode)
 	{
 		BYTE zp = mem[(::regs.pc - 1) & 0xffff];
-		if (zpOpcode == 0x81) zp += ::regs.x;
+		if (indx) zp += ::regs.x;
 		zpAddr16 = (mem[zp] | (mem[(zp + 1) & 0xff] << 8));
-		if (zpOpcode == 0x91) zpAddr16 += ::regs.y;
+		if (indy) zpAddr16 += ::regs.y;
 	}
 
 	if (opcode)
 	{
 		addr16 = mem[(::regs.pc - 2) & 0xffff] | (mem[(::regs.pc - 1) & 0xffff] << 8);
-		if (opcode == 0x99) addr16 += ::regs.y;
-		if (opcode == 0x9D || opcode == 0x9E) addr16 += ::regs.x;
+		if (abs16y) addr16 += ::regs.y;
+		if (abs16x) addr16 += ::regs.x;
+	}
+
+	// Check we've reverse looked-up the 6502 opcode correctly
+	const bool isZpAddrValid = (zpAddr16 & 0xF80F) == (0xC000 + reg);
+	const bool isAbs16AddrValid = (addr16 & 0xF80F) == (0xC000 + reg);
+
+	if ((isZpAddrValid && isAbs16AddrValid)
+		|| (!isZpAddrValid && !isAbs16AddrValid))
+	{
+		_ASSERT(0);
+		return 0;
+	}
+
+	return isZpAddrValid ? zpOpcodeCycles : opcodeCycles;
+}
+
+// TODO: RMW opcodes: dec,inc,asl,lsr,rol,ror (abs16 & abs16,x) + 65C02 trb,tsb (abs16)
+UINT SY6522::GetOpcodeCyclesForWrite(BYTE reg)
+{
+	UINT zpOpcodeCycles = 0, opcodeCycles = 0;
+	BYTE zpOpcode = 0, opcode = 0;	// these double-up as flags to indicate validity
+	bool abs16x = false;
+	bool abs16y = false;
+	bool indx = false;
+	bool indy = false;
+
+	const BYTE opcodeMinus3 = mem[(::regs.pc - 3) & 0xffff];
+	const BYTE opcodeMinus2 = mem[(::regs.pc - 2) & 0xffff];
+
+	// Check 2-byte opcodes
+	if (opcodeMinus2 == 0x81)			// sta (zp,x)
+	{
+		zpOpcodeCycles = 6;
+		zpOpcode = opcodeMinus2;
+		indx = true;
+	}
+	else if (opcodeMinus2 == 0x91)		// sta (zp),y
+	{	// Eg. FT demos: OMT, PLS
+		zpOpcodeCycles = 6;
+		zpOpcode = opcodeMinus2;
+		indy = true;
+	}
+	else if (opcodeMinus2 == 0x92 && GetMainCpu() == CPU_65C02)		// sta (zp) : 65C02-only
+	{
+		zpOpcodeCycles = 5;
+		zpOpcode = opcodeMinus2;
+	}
+
+	// Check 3-byte opcodes
+	if ((opcodeMinus3 == 0x8C) ||		// sty abs16
+		(opcodeMinus3 == 0x8D) ||		// sta abs16
+		(opcodeMinus3 == 0x8E))			// stx abs16
+	{	// Eg. FT demos: CHIP, MADEF, MAD2
+		opcodeCycles = 4;
+		opcode = opcodeMinus3;
+	}
+	else if (opcodeMinus3 == 0x99)		// sta abs16,y
+	{
+		opcodeCycles = 5;
+		opcode = opcodeMinus3;
+		abs16y = true;
+	}
+	else if (opcodeMinus3 == 0x9D)		// sta abs16,x
+	{	// Eg. Paleotronic microTracker demo
+		opcodeCycles = 5;
+		opcode = opcodeMinus3;
+		abs16x = true;
+	}
+	else if (opcodeMinus3 == 0x9C && GetMainCpu() == CPU_65C02)		// stz abs16 : 65C02-only
+	{
+		opcodeCycles = 4;
+		opcode = opcodeMinus3;
+	}
+	else if (opcodeMinus3 == 0x9E && GetMainCpu() == CPU_65C02)		// stz abs16,x : 65C02-only
+	{
+		opcodeCycles = 5;
+		opcode = opcodeMinus3;
+		abs16x = true;
+	}
+
+	//
+
+	if (!opcode && !zpOpcode)	// Unsupported opcode
+	{
+		_ASSERT(0);
+		return 0;
+	}
+
+	//
+
+	WORD zpAddr16 = 0, addr16 = 0;
+
+	if (zpOpcode)
+	{
+		BYTE zp = mem[(::regs.pc - 1) & 0xffff];
+		if (indx) zp += ::regs.x;
+		zpAddr16 = (mem[zp] | (mem[(zp + 1) & 0xff] << 8));
+		if (indy) zpAddr16 += ::regs.y;
+	}
+
+	if (opcode)
+	{
+		addr16 = mem[(::regs.pc - 2) & 0xffff] | (mem[(::regs.pc - 1) & 0xffff] << 8);
+		if (abs16y) addr16 += ::regs.y;
+		if (abs16x) addr16 += ::regs.x;
 	}
 
 	// Check we've reverse looked-up the 6502 opcode correctly
