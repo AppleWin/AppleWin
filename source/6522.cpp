@@ -469,12 +469,18 @@ UINT SY6522::GetOpcodeCyclesForRead(BYTE reg)
 	}
 	else if ((opcodeMinus3 & 0x10) == 0x10)
 	{
-		opcodeCycles = 4;
-		opcode = opcodeMinus3;
 		if ((opcodeMinus3 & 0x0f) == 0x0D)		// ora abs16,x, and abs16,x, ..., sbc abs16,x
+		{
+			opcodeCycles = 4;
+			opcode = opcodeMinus3;
 			abs16x = true;
+		}
 		else if ((opcodeMinus3 & 0x0f) == 0x09) // ora abs16,y, and abs16,y, ..., sbc abs16,y
+		{
+			opcodeCycles = 4;
+			opcode = opcodeMinus3;
 			abs16y = true;
+		}
 	}
 
 	//
