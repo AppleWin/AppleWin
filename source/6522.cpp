@@ -512,60 +512,54 @@ UINT SY6522::GetOpcodeCyclesForRead(BYTE reg)
 UINT SY6522::GetOpcodeCyclesForWrite(BYTE reg)
 {
 	UINT zpOpcodeCycles = 0, opcodeCycles = 0;
-	BYTE zpOpcode = 0, opcode = 0;
-	bool isZP = false, isAbs16 = false;
+	BYTE zpOpcode = 0, opcode = 0;	// these double-up as flag to indicate validity
 
 	const BYTE opcodeMinus3 = mem[(::regs.pc - 3) & 0xffff];
 	const BYTE opcodeMinus2 = mem[(::regs.pc - 2) & 0xffff];
 
+	// Check 3-byte opcodes
 	if ((opcodeMinus3 == 0x8C) ||		// sty abs16
 		(opcodeMinus3 == 0x8D) ||		// sta abs16
 		(opcodeMinus3 == 0x8E))		// stx abs16
 	{	// Eg. FT demos: CHIP, MADEF, MAD2
 		opcodeCycles = 4;
 		opcode = opcodeMinus3;
-		isAbs16 = true;
 	}
 	else if ((opcodeMinus3 == 0x99) ||	// sta abs16,y
 		(opcodeMinus3 == 0x9D))	// sta abs16,x
 	{	// Eg. Paleotronic microTracker demo
 		opcodeCycles = 5;
 		opcode = opcodeMinus3;
-		isAbs16 = true;
 	}
 	else if (opcodeMinus3 == 0x9C && GetMainCpu() == CPU_65C02)		// stz abs16 : 65C02-only
 	{
 		opcodeCycles = 4;
 		opcode = opcodeMinus3;
-		isAbs16 = true;
 	}
 	else if (opcodeMinus3 == 0x9E && GetMainCpu() == CPU_65C02)		// stz abs16,x : 65C02-only
 	{
 		opcodeCycles = 5;
 		opcode = opcodeMinus3;
-		isAbs16 = true;
 	}
 
+	// Check 2-byte opcodes
 	if (opcodeMinus2 == 0x81)		// sta (zp,x)
 	{
 		zpOpcodeCycles = 6;
 		zpOpcode = opcodeMinus2;
-		isZP = true;
 	}
 	else if (opcodeMinus2 == 0x91)		// sta (zp),y
 	{	// Eg. FT demos: OMT, PLS
 		zpOpcodeCycles = 6;
 		zpOpcode = opcodeMinus2;
-		isZP = true;
 	}
 	else if (opcodeMinus2 == 0x92 && GetMainCpu() == CPU_65C02)		// sta (zp) : 65C02-only
 	{
 		zpOpcodeCycles = 5;
 		zpOpcode = opcodeMinus2;
-		isZP = true;
 	}
 
-	if (!isAbs16 && !isZP)	// Unsupported opcode
+	if (!opcode && !zpOpcode)	// Unsupported opcode
 	{
 		_ASSERT(0);
 		return 0;
@@ -575,7 +569,7 @@ UINT SY6522::GetOpcodeCyclesForWrite(BYTE reg)
 
 	WORD zpAddr16 = 0, addr16 = 0;
 
-	if (isZP)
+	if (zpOpcode)
 	{
 		BYTE zp = mem[(::regs.pc - 1) & 0xffff];
 		if (zpOpcode == 0x81) zp += ::regs.x;
@@ -583,7 +577,7 @@ UINT SY6522::GetOpcodeCyclesForWrite(BYTE reg)
 		if (zpOpcode == 0x91) zpAddr16 += ::regs.y;
 	}
 
-	if (isAbs16)
+	if (opcode)
 	{
 		addr16 = mem[(::regs.pc - 2) & 0xffff] | (mem[(::regs.pc - 1) & 0xffff] << 8);
 		if (opcode == 0x99) addr16 += ::regs.y;
@@ -601,10 +595,7 @@ UINT SY6522::GetOpcodeCyclesForWrite(BYTE reg)
 		return 0;
 	}
 
-	if (isZpAddrValid && !isAbs16AddrValid)
-		opcodeCycles = zpOpcodeCycles;
-
-	return opcodeCycles;
+	return isZpAddrValid ? zpOpcodeCycles : opcodeCycles;
 }
 
 //=============================================================================
