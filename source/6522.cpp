@@ -485,37 +485,7 @@ UINT SY6522::GetOpcodeCyclesForRead(BYTE reg)
 		return 0;
 	}
 
-	//
-
-	WORD zpAddr16 = 0, addr16 = 0;
-
-	if (zpOpcode)
-	{
-		BYTE zp = mem[(::regs.pc - 1) & 0xffff];
-		if (indx) zp += ::regs.x;
-		zpAddr16 = (mem[zp] | (mem[(zp + 1) & 0xff] << 8));
-		if (indy) zpAddr16 += ::regs.y;
-	}
-
-	if (opcode)
-	{
-		addr16 = mem[(::regs.pc - 2) & 0xffff] | (mem[(::regs.pc - 1) & 0xffff] << 8);
-		if (abs16y) addr16 += ::regs.y;
-		if (abs16x) addr16 += ::regs.x;
-	}
-
-	// Check we've reverse looked-up the 6502 opcode correctly
-	const bool isZpAddrValid = (zpAddr16 & 0xF80F) == (0xC000 + reg);
-	const bool isAbs16AddrValid = (addr16 & 0xF80F) == (0xC000 + reg);
-
-	if ((isZpAddrValid && isAbs16AddrValid)
-		|| (!isZpAddrValid && !isAbs16AddrValid))
-	{
-		_ASSERT(0);
-		return 0;
-	}
-
-	return isZpAddrValid ? zpOpcodeCycles : opcodeCycles;
+	return GetOpcodeCycles(reg, zpOpcodeCycles, opcodeCycles, zpOpcode, opcode, abs16x, abs16y, indx, indy);
 }
 
 // TODO: RMW opcodes: dec,inc,asl,lsr,rol,ror (abs16 & abs16,x) + 65C02 trb,tsb (abs16)
@@ -590,8 +560,13 @@ UINT SY6522::GetOpcodeCyclesForWrite(BYTE reg)
 		return 0;
 	}
 
-	//
+	return GetOpcodeCycles(reg, zpOpcodeCycles, opcodeCycles, zpOpcode, opcode, abs16x, abs16y, indx, indy);
+}
 
+UINT SY6522::GetOpcodeCycles(BYTE reg, UINT zpOpcodeCycles, UINT opcodeCycles,
+								BYTE zpOpcode, BYTE opcode,
+								bool abs16x, bool abs16y, bool indx, bool indy)
+{
 	WORD zpAddr16 = 0, addr16 = 0;
 
 	if (zpOpcode)
