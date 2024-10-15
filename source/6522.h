@@ -97,6 +97,7 @@ private:
 
 	UINT GetOpcodeCyclesForRead(BYTE reg);
 	UINT GetOpcodeCyclesForWrite(BYTE reg);
+	UINT GetOpcodeCycles(BYTE reg, UINT zpOpcodeCycles, UINT opcodeCycles, BYTE zpOpcode, BYTE opcode, bool abs16x, bool abs16y, bool indx, bool indy);
 
 	void StartTimer2(void);
 	void StartTimer1_LoadStateV1(void);
