@@ -364,7 +364,8 @@ Cn_SP_E_BADCNT	ldx #E_BADCNT
 ; $C7 = Removable, Interruptable, #Volumes=1, Supports write/read/status
 ; $D7 = Removable, Interruptable, #Volumes=2, Supports write/read/status
 ; $F7 = Removable, Interruptable, #Volumes=4, Supports write/read/status
-; $BF = Removable, Interruptable, #Volumes=4, Supports format/write/read/status (KEGS / IIGS)
+; $FF = Removable, Interruptable, #Volumes=4, Supports format/write/read/status
+; $BF = Removable,              , #Volumes=4, Supports format/write/read/status (KEGS / IIGS)
 ;
 ; $CnFF = offset to BLK entry point
 ;--------------------------------------
@@ -374,6 +375,6 @@ Cn_SP_E_BADCNT	ldx #E_BADCNT
 ;--------------------------------------
 				!byte $00 				; Smart port ID Type byte
 				!word $0000 			; how many blocks are on the device. Zero means use status call
-				!byte $F7 				; specifics about the device (number of drives, read/write/format capability, etc)
+				!byte $FF 				; specifics about the device (number of drives, read/write/format capability, etc)
 				!byte <Cn_Entry_BLK		; entry point offset for ProDOS (must be $0a)
 ;--------------------------------------

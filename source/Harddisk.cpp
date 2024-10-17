@@ -515,13 +515,13 @@ void HarddiskInterfaceCard::Unplug(const int iDrive)
 
 //===========================================================================
 
-#if 0	// Enable HDD command logging
+#if 1	// Enable HDD command logging
 #define LOG_DISK(format, ...) LOG(format, __VA_ARGS__)
 #else
 #define LOG_DISK(...)
 #endif
 
-#define DEBUG_SKIP_BUSY_STATUS 0
+#define DEBUG_SKIP_BUSY_STATUS 1
 
 // ProDOS BLK & SmartPort commands
 //
@@ -553,6 +553,7 @@ const UINT SP_Cmd_busyStatus	= SP_Cmd_base + 0x3F;	// AppleWin vendor-specific c
 #define BADCTL					0x21
 #define DEVICE_IO_ERROR			0x27
 #define DEVICE_NOT_CONNECTED	0x28	// No device detected/connected
+#define NOWRITE					0x2B	// Disk write protected
 #define ERRORCODE_MASK			0x3F	// limit to just 6 bits (as 'error' byte uses b0 & b7 for other status)
 
 #define STATUS_OK				0x00
@@ -820,7 +821,10 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 	}
 	break;
 	case BLK_Cmd_Format:
-		pHDD->m_error = DEVICE_IO_ERROR;	// Not supported
+		if (pHDD->m_bWriteProtected)
+			pHDD->m_error = NOWRITE;
+		else
+			pHDD->m_error = DEVICE_IO_ERROR;	// Not supported
 		break;
 	default:
 		_ASSERT(0);
