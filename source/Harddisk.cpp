@@ -746,78 +746,86 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 	case SP_Cmd_writeblock:
 	{
 		LOG_DISK("WR: %08X (from addr: %04X)\n", pHDD->m_diskblock, pHDD->m_memblock);
-		pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
-		bool bRes = true;
-		const bool bAppendBlocks = (pHDD->m_diskblock * HD_BLOCK_SIZE) >= ImageGetImageSize(pHDD->m_imagehandle);
-		bool breakpointHit = false;
-
-		if (bAppendBlocks)
+		if (pHDD->m_bWriteProtected)
 		{
-			memset(pHDD->m_buf, 0, HD_BLOCK_SIZE);
-
-			// Inefficient (especially for gzip/zip files!)
-			UINT uBlock = ImageGetImageSize(pHDD->m_imagehandle) / HD_BLOCK_SIZE;
-			while (uBlock < pHDD->m_diskblock)
-			{
-				bRes = ImageWriteBlock(pHDD->m_imagehandle, uBlock++, pHDD->m_buf);
-				_ASSERT(bRes);
-				if (!bRes)
-					break;
-			}
-		}
-
-		// Trap and error on any accesses that overlap with I/O memory (GH#1007)
-		if ((pHDD->m_memblock < APPLE_IO_BEGIN && ((pHDD->m_memblock + HD_BLOCK_SIZE - 1) >= APPLE_IO_BEGIN))	// 1) Starts before I/O, but ends in I/O memory
-			|| ((pHDD->m_memblock >> 12) == (APPLE_IO_BEGIN >> 12)))											// 2) Starts in I/O memory
-		{
-			WORD dstAddr = ((pHDD->m_memblock >> 12) == (APPLE_IO_BEGIN >> 12)) ? pHDD->m_memblock : APPLE_IO_BEGIN;
-
-			if (g_nAppMode == MODE_STEPPING)
-				DebuggerBreakOnDmaToOrFromIoMemory(dstAddr, false);
-			//else // Show MessageBox?
-
-			bRes = false;
+			pHDD->m_status_next = DISK_STATUS_PROT;
+			pHDD->m_error = NOWRITE;
 		}
 		else
 		{
-			// NB. Do the writes in units of PAGE_SIZE so that DMA breakpoints are consistent with reads
-			WORD srcAddr = pHDD->m_memblock;
-			UINT remaining = HD_BLOCK_SIZE;
-			BYTE* pDst = pHDD->m_buf;
+			pHDD->m_status_next = DISK_STATUS_WRITE;
+			bool bRes = true;
+			const bool bAppendBlocks = (pHDD->m_diskblock * HD_BLOCK_SIZE) >= ImageGetImageSize(pHDD->m_imagehandle);
+			bool breakpointHit = false;
 
-			while (remaining)
+			if (bAppendBlocks)
 			{
-				UINT size = PAGE_SIZE - (srcAddr & 0xff);
-				if (size > remaining) size = remaining;	// clip the last memcpy for the unaligned case
+				memset(pHDD->m_buf, 0, HD_BLOCK_SIZE);
+
+				// Inefficient (especially for gzip/zip files!)
+				UINT uBlock = ImageGetImageSize(pHDD->m_imagehandle) / HD_BLOCK_SIZE;
+				while (uBlock < pHDD->m_diskblock)
+				{
+					bRes = ImageWriteBlock(pHDD->m_imagehandle, uBlock++, pHDD->m_buf);
+					_ASSERT(bRes);
+					if (!bRes)
+						break;
+				}
+			}
+
+			// Trap and error on any accesses that overlap with I/O memory (GH#1007)
+			if ((pHDD->m_memblock < APPLE_IO_BEGIN && ((pHDD->m_memblock + HD_BLOCK_SIZE - 1) >= APPLE_IO_BEGIN))	// 1) Starts before I/O, but ends in I/O memory
+				|| ((pHDD->m_memblock >> 12) == (APPLE_IO_BEGIN >> 12)))											// 2) Starts in I/O memory
+			{
+				WORD dstAddr = ((pHDD->m_memblock >> 12) == (APPLE_IO_BEGIN >> 12)) ? pHDD->m_memblock : APPLE_IO_BEGIN;
 
 				if (g_nAppMode == MODE_STEPPING)
-					breakpointHit = DebuggerCheckMemBreakpoints(srcAddr, size, false);
+					DebuggerBreakOnDmaToOrFromIoMemory(dstAddr, false);
+				//else // Show MessageBox?
 
-				memcpy(pDst, mem + srcAddr, size);
-				pDst += size;
-				srcAddr = (srcAddr + size) & (MEMORY_LENGTH - 1);	// wraps at 64KiB boundary
-
-				remaining -= size;
+				bRes = false;
 			}
-		}
+			else
+			{
+				// NB. Do the writes in units of PAGE_SIZE so that DMA breakpoints are consistent with reads
+				WORD srcAddr = pHDD->m_memblock;
+				UINT remaining = HD_BLOCK_SIZE;
+				BYTE* pDst = pHDD->m_buf;
 
-		if (bRes)
-			bRes = ImageWriteBlock(pHDD->m_imagehandle, pHDD->m_diskblock, pHDD->m_buf);
+				while (remaining)
+				{
+					UINT size = PAGE_SIZE - (srcAddr & 0xff);
+					if (size > remaining) size = remaining;	// clip the last memcpy for the unaligned case
 
-		if (bRes)
-		{
-			pHDD->m_error = DEVICE_OK;
+					if (g_nAppMode == MODE_STEPPING)
+						breakpointHit = DebuggerCheckMemBreakpoints(srcAddr, size, false);
 
-			if (!breakpointHit)
-				m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
+					memcpy(pDst, mem + srcAddr, size);
+					pDst += size;
+					srcAddr = (srcAddr + size) & (MEMORY_LENGTH - 1);	// wraps at 64KiB boundary
+
+					remaining -= size;
+				}
+			}
+
+			if (bRes)
+				bRes = ImageWriteBlock(pHDD->m_imagehandle, pHDD->m_diskblock, pHDD->m_buf);
+
+			if (bRes)
+			{
+				pHDD->m_error = DEVICE_OK;
+
+				if (!breakpointHit)
+					m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
 #if DEBUG_SKIP_BUSY_STATUS
-			m_notBusyCycle = 0;
+				m_notBusyCycle = 0;
 #endif
-		}
-		else
-		{
-			pHDD->m_error = DEVICE_IO_ERROR;
-		}
+			}
+			else
+			{
+				pHDD->m_error = DEVICE_IO_ERROR;
+			}
+		} // if (pHDD->m_bWriteProtected)
 	}
 	break;
 	case BLK_Cmd_Format:
