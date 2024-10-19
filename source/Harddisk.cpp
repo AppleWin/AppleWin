@@ -82,16 +82,16 @@ Memory map SmartPort device (IO addr + s*$10):
 ;	C088	(r)   NEXT BYTE (legacy read-only port - still supported)
 	C089	(r)   LOW BYTE OF DISK IMAGE SIZE IN BLOCKS
 	C08A	(r)   HIGH BYTE OF DISK IMAGE SIZE IN BLOCKS
-	C089	(w)   a 6-deep FIFO to write: command, unitNum, memPtr(2), blockNum(2)
-	C08A	(w)   a 7-deep FIFO to write: command, unitNum, memPtr(2), blockNum(3); first byte gets OR'd with $80 (ie. to indicate it's an SP command)
+	C089	(w)   a 6-deep FIFO to write: command, unitNum, memPtr(2), blockNum(2); for BLK driver
+	C08A	(w)   a 7-deep FIFO to write: command, unitNum, memPtr(2), blockNum(3); for SP: first byte gets OR'd with $80 (ie. to indicate it's an SP command)
 */
 
 /*
 Hard drive emulation in AppleWin - for the HDDRVR v1 & v2 firmware
 
 Concept
-    To emulate a 32mb hard drive connected to an Apple IIe via AppleWin.
-    Designed to work with Autoboot Rom and Prodos.
+    To emulate a 32MiB hard drive connected to an Apple IIe via AppleWin.
+    Designed to work with Autoboot ROM and ProDOS.
 
 Overview
   1. Hard drive image file
@@ -130,8 +130,8 @@ Overview
             patching prodos (to detect DELETE FILE calls).
 
       4. FORMAT
-          Ignored.  This would be used for low level formatting of the device
-            (as in the case of a tape or SCSI drive, perhaps).
+          This is used for low level formatting of the device. (GH#88)
+            (Also in the case of a tape or SCSI drive, perhaps.)
 
   3. Bugs
       The only thing I've noticed is that Copy II+ 7.1 seems to crash or stall
@@ -515,13 +515,14 @@ void HarddiskInterfaceCard::Unplug(const int iDrive)
 
 //===========================================================================
 
-#if 1	// Enable HDD command logging
+#if 0	// Enable HDD command logging
 #define LOG_DISK(format, ...) LOG(format, __VA_ARGS__)
+#define DEBUG_SKIP_BUSY_STATUS 1
 #else
 #define LOG_DISK(...)
+#define DEBUG_SKIP_BUSY_STATUS 0
 #endif
 
-#define DEBUG_SKIP_BUSY_STATUS 1
 
 // ProDOS BLK & SmartPort commands
 //
