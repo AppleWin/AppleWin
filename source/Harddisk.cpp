@@ -656,6 +656,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 	}
 
 	const UINT CYCLES_FOR_DMA_RW_BLOCK = HD_BLOCK_SIZE;
+	const UINT CYCLES_FOR_FORMATTING_1_BLOCK = 100;	// Arbitrary
 	const UINT PAGE_SIZE = 256;
 
 	pHDD->m_error = DEVICE_OK;
@@ -829,10 +830,35 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 	}
 	break;
 	case BLK_Cmd_Format:
+	case SP_Cmd_format:
+		LOG_DISK("FORMAT: write-protected=%d\n", pHDD->m_bWriteProtected);
 		if (pHDD->m_bWriteProtected)
+		{
 			pHDD->m_error = NOWRITE;
+		}
 		else
-			pHDD->m_error = DEVICE_IO_ERROR;	// Not supported
+		{
+			const UINT numBlocks = GetImageSizeInBlocks(pHDD->m_imagehandle);
+			memset(pHDD->m_buf, 0, HD_BLOCK_SIZE);
+			bool res = false;
+			m_notBusyCycle = g_nCumulativeCycles;
+
+			for (UINT block = 0; block < numBlocks; block++)
+			{
+				// Inefficient (especially for gzip/zip files!)
+				res = ImageWriteBlock(pHDD->m_imagehandle, block, pHDD->m_buf);
+				_ASSERT(res);
+				if (!res)
+					break;
+
+				m_notBusyCycle += (UINT64)CYCLES_FOR_FORMATTING_1_BLOCK;
+#if DEBUG_SKIP_BUSY_STATUS
+				m_notBusyCycle = 0;
+#endif
+			}
+
+			pHDD->m_error = res ? DEVICE_OK : DEVICE_IO_ERROR;
+		}
 		break;
 	default:
 		_ASSERT(0);
