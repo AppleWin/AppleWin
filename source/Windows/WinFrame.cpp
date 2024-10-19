@@ -1244,7 +1244,7 @@ LRESULT Win32Frame::WndProc(
 		}
 		else if (wparam == VK_F10)
 		{
-			if (g_Apple2Type == A2TYPE_APPLE2E || g_Apple2Type == A2TYPE_APPLE2EENHANCED || g_Apple2Type == A2TYPE_BASE64A)
+			if (g_Apple2Type == A2TYPE_APPLE2E || g_Apple2Type == A2TYPE_APPLE2EENHANCED || g_Apple2Type == A2TYPE_BASE64A || g_Apple2Type == A2TYPE_HEBREW)
 			{
 				GetVideo().SetVideoRomRockerSwitch( !GetVideo().GetVideoRomRockerSwitch() );	// F10: toggle rocker switch
 				NTSC_VideoInitAppleType();
