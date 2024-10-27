@@ -521,6 +521,8 @@ void HarddiskInterfaceCard::Unplug(const int iDrive)
 #define LOG_DISK(...)
 #endif
 
+#define DEBUG_SKIP_BUSY_STATUS 0
+
 // ProDOS BLK & SmartPort commands
 //
 const UINT BLK_Cmd_Status		= 0x00;
@@ -623,6 +625,7 @@ BYTE __stdcall HarddiskInterfaceCard::IORead(WORD pc, WORD addr, BYTE bWrite, BY
 			r = 0;
 		break;
 	default:
+		LOG_DISK("slot-%d, Bad IORead(), io reg=$%1X, PC=$%04X\n", pCard->m_slot, addrIdx, pc);
 		pHDD->m_status_next = DISK_STATUS_OFF;
 		r = IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	}
@@ -672,7 +675,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 		break;
 	case BLK_Cmd_Read:
 	case SP_Cmd_readblock:
-		LOG_DISK("RD: %08X\n", pHDD->m_diskblock);
+		LOG_DISK("RD: %08X (to addr: %04X)\n", pHDD->m_diskblock, pHDD->m_memblock);
 		pHDD->m_status_next = DISK_STATUS_READ;
 		if ((pHDD->m_diskblock * HD_BLOCK_SIZE) < ImageGetImageSize(pHDD->m_imagehandle))
 		{
@@ -724,6 +727,9 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 
 				if (!breakpointHit)
 					m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
+#if DEBUG_SKIP_BUSY_STATUS
+				m_notBusyCycle = 0;
+#endif
 			}
 			else
 			{
@@ -738,7 +744,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 	case BLK_Cmd_Write:
 	case SP_Cmd_writeblock:
 	{
-		LOG_DISK("WR: %08X\n", pHDD->m_diskblock);
+		LOG_DISK("WR: %08X (from addr: %04X)\n", pHDD->m_diskblock, pHDD->m_memblock);
 		pHDD->m_status_next = DISK_STATUS_WRITE;	// or DISK_STATUS_PROT if we ever enable write-protect on HDD
 		bool bRes = true;
 		const bool bAppendBlocks = (pHDD->m_diskblock * HD_BLOCK_SIZE) >= ImageGetImageSize(pHDD->m_imagehandle);
@@ -803,6 +809,9 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 
 			if (!breakpointHit)
 				m_notBusyCycle = g_nCumulativeCycles + (UINT64)CYCLES_FOR_DMA_RW_BLOCK;
+#if DEBUG_SKIP_BUSY_STATUS
+			m_notBusyCycle = 0;
+#endif
 		}
 		else
 		{

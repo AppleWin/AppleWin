@@ -28,7 +28,6 @@ Tom Charlesworth
 -----------------------
 - [Change #1272] New HDC firmware v2 to support returning HDD size in Y:X for status call. [@peteri]
   - [Change #1277] Add (debug) cmd line switch to revert to HDC firmware v1: -hdc-firmware-v1.
-  - [Bug #88] Fixes "Oz DOS 1.0" crashing or returning "This device is too small for Oz-DOS...".
 - [Change #1279] Support Saturn RAM card in slot 3 for any Apple II model (for Robo Systems' RoboCAD 2).
 - [Change #1159] Speaker: change from mono to stereo sound buffer.
 - [Change #1247] Robocom's Interface Module dongle: use actual values for 1000 & 1500 series dongles.
