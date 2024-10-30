@@ -409,6 +409,12 @@ bool HarddiskInterfaceCard::Insert(const int iDrive, const std::string& pathname
 	if (m_hardDiskDrive[iDrive].m_imageloaded)
 		Unplug(iDrive);
 
+	const DWORD dwAttributes = GetFileAttributes(pathname.c_str());
+	if (dwAttributes == INVALID_FILE_ATTRIBUTES)
+		m_hardDiskDrive[iDrive].m_bWriteProtected = false;	// File doesn't exist - so ImageOpen() below will fail
+	else
+		m_hardDiskDrive[iDrive].m_bWriteProtected = (dwAttributes & FILE_ATTRIBUTE_READONLY) ? true : false;
+
 	// Check if image is being used by the other HDD, and unplug it in order to be swapped
 	{
 		const std::string & pszOtherPathname = HarddiskGetFullPathName(!iDrive);
