@@ -680,7 +680,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 		break;
 	case SP_Cmd_status:
 		pHDD->m_error = SmartPortCmdStatus(pHDD);
-		LOG_DISK("ST: %02X\n", pHDD->m_error);
+		LOG_DISK("ST: %02X (statusCode: %02X)\n", pHDD->m_error, m_statusCode);
 		break;
 	case BLK_Cmd_Read:
 	case SP_Cmd_readblock:
@@ -753,7 +753,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD)
 	case BLK_Cmd_Write:
 	case SP_Cmd_writeblock:
 	{
-		LOG_DISK("WR: %08X (from addr: %04X)\n", pHDD->m_diskblock, pHDD->m_memblock);
+		LOG_DISK("WR: %08X (from addr: %04X) %s\n", pHDD->m_diskblock, pHDD->m_memblock, pHDD->m_bWriteProtected ? "write-protected" : "");
 		if (pHDD->m_bWriteProtected)
 		{
 			pHDD->m_status_next = DISK_STATUS_PROT;
@@ -1115,7 +1115,8 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD)
 			// general status:
 			// . b7=block device, b6=write allowed, b5=read allowed, b4=device online or disk in drive,
 			// . b3=format allowed, b2=media write protected (block devices only), b1=device currently interrupting (//c only), b0=device currently open (char device only)
-			const BYTE generalStatus = isImageLoaded ? 0xF0 : 0xE0;		// Loaded: b#11110000: bwrl---- / Not loaded: b#11100000: bwr-----
+			BYTE generalStatus = isImageLoaded ? 0xF8 : 0xE8;			// Loaded: b#11111000: bwrlf--- / Not loaded: b#11101000: bwr-f---
+			if (pHDD->m_bWriteProtected) generalStatus |= (1 << 2);
 			mem[statusListAddr++] = generalStatus;
 
 			const UINT imageSizeInBlocks = isImageLoaded ? GetImageSizeInBlocks(pHDD->m_imagehandle) : 0;
