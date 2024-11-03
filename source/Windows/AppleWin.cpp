@@ -959,6 +959,7 @@ static void RepeatInitialization(void)
 			// Override value just loaded from Registry by LoadConfiguration()
 			// . NB. Registry value is not updated with this cmd-line value
 			Snapshot_SetFilename(g_cmdLine.szSnapshotName);
+			Snapshot_SetIgnoreHdcFirmware(g_cmdLine.snapshotIgnoreHdcFirmware);
 			Snapshot_LoadState();
 			g_cmdLine.bBoot = true;
 			g_cmdLine.szSnapshotName = NULL;
