@@ -35,7 +35,7 @@ unsigned char csbits_pravets82[1][256][8];	// Pravets 82
 unsigned char csbits_pravets8M[1][256][8];	// Pravets 8M
 unsigned char csbits_pravets8C[2][256][8];	// Pravets 8A & 8C
 unsigned char csbits_base64a[2][256][8];	// Base 64A
-
+unsigned char csbits_imc2001[1][256][8];	// IMC-2001
 
 //
 
@@ -198,6 +198,12 @@ static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const eApple2
 		{
 			BYTE n = pVideoRom[RA+y];
 
+			if (type == A2TYPE_IMC2001)
+			{
+				// characters are shifted by one position in the ROM
+				n = ( n >> 1 );
+			}
+
 			// UTAII:8-30 "Bit 7 of your EPROM fonts will control flashing in the lower 1024 bytes of the EPROM"
 			// UTAII:8-31 "If you leave O7 (EPROM Output7) reset in these patterns, the resulting characters will be inversions..."
 			// Apple II J-Plus: simplest logic is just invert if reading low 1K of video ROM
@@ -208,6 +214,12 @@ static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const eApple2
 				{
 					if (!(n & 0x01))
 						n = n ^ 0xfe;
+				}
+				else if (type == A2TYPE_IMC2001)
+				{
+					// for now just unconditionally negate the pattern for inverse (does
+					// this work for small letters too?)
+					n = n ^ 0xfe;
 				}
 				else
 				{
@@ -221,6 +233,11 @@ static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const eApple2
 			{
 				// On the Base 64A bits are ordered 1345672.
 				d = (n >> 2) | ((n & 2) >> 1) | ((n & 4) << 4);
+			}
+			else if (type == A2TYPE_IMC2001)
+			{
+				// bits are reversed and shifted
+				d = (n >> 1);
 			}
 			else
 			{
@@ -253,6 +270,15 @@ static void VideoRomForIIandIIPlus(void)
 		return;
 
 	userVideoRom2K(&csbits_a2[0], pVideoRom);
+}
+
+static void VideoRomForImc2001()
+{
+	BYTE* pVideoRom = GetFrame().GetResource(IDR_IMC2001_VIDEO_ROM, "ROM", Video::kVideoRomSize2K);
+	if (pVideoRom == NULL)
+		return;
+
+	userVideoRom2K(&csbits_imc2001[0], pVideoRom, A2TYPE_IMC2001, 0);
 }
 
 static void VideoRomForIIJPlus(void)
@@ -302,6 +328,8 @@ void make_csbits(void)
 
 	VideoRomForIIJPlus();	// GH#773
 	VideoRomForBase64A();	// GH#806
+
+	VideoRomForImc2001();
 
 	// Try to use any user-provided video ROM for Original/Enhanced //e
 	userVideoRomForIIe();

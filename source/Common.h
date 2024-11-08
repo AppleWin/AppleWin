@@ -57,6 +57,7 @@ enum AppMode_e
 #define	TITLE_PRAVETS_8A        TEXT("Pravets 8A Emulator")
 #define	TITLE_TK3000_2E         TEXT("TK3000 //e Emulator")
 #define	TITLE_BASE64A           TEXT("Base64A Emulator")
+#define	TITLE_IMC2001           TEXT("IMC-2001 Emulator")
 
 #define TITLE_PAUSED       TEXT("* PAUSED *")
 #define TITLE_STEPPING     TEXT("Stepping")
@@ -181,6 +182,7 @@ enum eApple2Type {
 					A2TYPE_PRAVETS8M,								// Apple ][ clone
 					A2TYPE_PRAVETS82,								// Apple ][ clone
 					A2TYPE_BASE64A,									// Apple ][ clone
+					A2TYPE_IMC2001,									// Apple ][ clone
 					// (Gap for more Apple ][ clones)
 					A2TYPE_CLONE_A2_MAX,
 
@@ -248,6 +250,11 @@ inline bool IsCopamBase64A(eApple2Type type)		// Copam Base64A
 inline bool IsPravets(eApple2Type type)
 {
 	return type == A2TYPE_PRAVETS8M || type == A2TYPE_PRAVETS82 || type == A2TYPE_PRAVETS8A;
+}
+
+inline bool IsIMC2001(eApple2Type type)
+{
+	return type == A2TYPE_IMC2001;
 }
 
 enum eBUTTON {BUTTON0=0, BUTTON1};
