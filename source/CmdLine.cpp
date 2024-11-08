@@ -310,6 +310,10 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpNextArg = GetNextArg(lpNextArg);
 			g_cmdLine.szSnapshotName = lpCmdLine;
 		}
+		else if (strcmp(lpCmdLine, "-load-state-ignore-hdc-fw") == 0)	// For testing - Use in combination with -load-state
+		{
+			g_cmdLine.snapshotIgnoreHdcFirmware = true;
+		}
 		else if (strcmp(lpCmdLine, "-f") == 0 || strcmp(lpCmdLine, "-full-screen") == 0)
 		{
 			g_cmdLine.setFullScreen = 1;

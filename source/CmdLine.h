@@ -43,6 +43,7 @@ struct CmdLine
 		useHdcFirmwareV1 = false;
 		useHdcFirmwareV2 = false;
 		szSnapshotName = NULL;
+		snapshotIgnoreHdcFirmware = false;
 		szScreenshotFilename = NULL;
 		uHarddiskNumBlocks = 0;
 		uRamWorksExPages = 0;
@@ -95,6 +96,7 @@ struct CmdLine
 	LPCSTR szImageName_harddisk[NUM_SLOTS][NUM_HARDDISKS];
 	UINT uHarddiskNumBlocks;
 	LPSTR szSnapshotName;
+	bool snapshotIgnoreHdcFirmware;
 	LPSTR szScreenshotFilename;
 	UINT uRamWorksExPages;
 	UINT uSaturnBanks;

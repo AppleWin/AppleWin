@@ -79,6 +79,20 @@ static YamlHelper yamlHelper;
 
 //-----------------------------------------------------------------------------
 
+static bool g_ignoreHdcFirmware = false;
+
+bool Snapshot_GetIgnoreHdcFirmware()
+{
+	return g_ignoreHdcFirmware;
+}
+
+void Snapshot_SetIgnoreHdcFirmware(const bool ignoreHdcFirmware)
+{
+	g_ignoreHdcFirmware = ignoreHdcFirmware;
+}
+
+//-----------------------------------------------------------------------------
+
 static void Snapshot_SetPathname(const std::string& strPathname)
 {
 	if (strPathname.empty())

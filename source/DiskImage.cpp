@@ -73,6 +73,10 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 			*ppImageInfo = NULL;
 			Err = eIMAGE_ERROR_UNSUPPORTED_HDV;
 		}
+
+		if (Err == eIMAGE_ERROR_NONE)
+			*pWriteProtected = pImageInfo->bWriteProtected;
+
 		return Err;
 	}
 
