@@ -217,8 +217,8 @@ static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const eApple2
 				}
 				else if (type == A2TYPE_IMC2001)
 				{
-					// for now just unconditionally negate the pattern for inverse (does
-					// this work for small letters too?)
+					// for now just unconditionally negate the pattern for inverse
+					// (does this work for small letters too?)
 					n = n ^ 0xfe;
 				}
 				else
