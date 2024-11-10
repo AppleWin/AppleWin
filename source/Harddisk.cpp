@@ -1399,6 +1399,11 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 		yamlLoadHelper.LoadMemory(m_saveStateFirmware, APPLE_SLOT_SIZE);
 		yamlLoadHelper.PopMap();
 		m_saveStateFirmwareValid = true;
+
+		// NB. A command line option can be used to ignore the HDC's firmware:
+		// . Used by AppleWin-Test (regression suite) so that an older save-state file can be used to test newer HDC firmware (eg. GH#1207).
+		if (Snapshot_GetIgnoreHdcFirmware())
+			m_saveStateFirmwareValid = false;
 	}
 
 	// Unplug all HDDs first in case eg. HDD-2 is to be plugged in as HDD-1
