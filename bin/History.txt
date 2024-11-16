@@ -9,6 +9,24 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
+1.30.20.0 - 16 Nov 2024
+-----------------------
+- [Change #1312] Support Hayden's Applesoft compiler protection key.
+  - For use with Hayden's 1981 AppleSoft compiler (DOS 3.2 and DOS 3.3 pre-release versions).
+- [Change #1337] HDC controller: support Format command (both SmartPort and ProDOS block device):
+  - [Bug #88] Fix for Oz-DOS (uses ProDOS block device command).
+  - SP Status command: 'General Status': set format-allowed & write-protected flags
+  - For read-only HDD images: support them as write-protected.
+- [Change #1319] For II/II+/Unenhanced //e use the new SmartPort firmware, but with $Cs07 = 0x3C:
+  - This now defaults to supporting 4 block mode devices (instead of the previous 2).
+- [Change #1295] Help doc: add troubleshooting note about "High DPI scaling override", eg. for 2K or 4K monitors.
+- [Change #1290] Save-state: add absolute path to disk & hard disk image. [@audetto]
+- [Bug #1333] Mockingboard: fix edge-case for 6522 Timer1/2 read/write (cycle accuracy). Test added to (future) mb-audit v1.56.
+- [Bug #1321] Uthernet/Uthernet II cards: fix $Csxx space not reading as floating-bus.
+- [Bug #1227] Fix issue with not being able to insert a 3.5" 800K image (after failing to insert it into a 5.25" drive).
+- [PR #1335] Help doc: add some 'quick-start' info to the Keyboard page.
+
+
 1.30.19.0 - 28 Jul 2024
 -----------------------
 - [Change #1207] Support for SmartPort hard disk controller for Enhanced //e. [Thanks to @burniouf, with additional testing and input from: @alupin65, @inexorabletash, @univta0001]
