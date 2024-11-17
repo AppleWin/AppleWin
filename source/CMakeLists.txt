@@ -6,6 +6,12 @@ pkg_search_module(YAML REQUIRED yaml-0.1)
 pkg_search_module(MINIZIP REQUIRED minizip)
 pkg_search_module(SLIRP slirp)
 
+# see https://github.com/madler/zlib/commit/7e6f0784cc0c33e8d5fcb368248168c6656f73c8
+if (MINIZIP_INCLUDE_DIRS MATCHES "minizip$")
+  # old style, include from the zlib root
+  string(APPEND MINIZIP_INCLUDE_DIRS "/..")
+endif()
+
 # if slirp is not found, we will try pcap
 # if it is not found either, a dummy pcap will be compiled
 # but network will be badly affected

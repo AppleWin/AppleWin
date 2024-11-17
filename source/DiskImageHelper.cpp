@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Common.h"
 
 #include "zlib.h"
-#include "unzip.h"
+#include "minizip/unzip.h"
 
 #include "CPU.h"
 #include "DiskImage.h"
