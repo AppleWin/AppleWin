@@ -2,7 +2,7 @@
 
 #include "DiskDefs.h"
 #include "DiskImage.h"
-#include "zip.h"
+#include "minizip/zip.h"
 
 #define GZ_SUFFIX ".gz"
 #define GZ_SUFFIX_LEN (sizeof(GZ_SUFFIX)-1)
