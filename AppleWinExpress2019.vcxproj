@@ -90,6 +90,7 @@
     <ClInclude Include="source\LanguageCard.h" />
     <ClInclude Include="source\Log.h" />
     <ClInclude Include="source\Memory.h" />
+    <ClInclude Include="source\MemoryDefs.h" />
     <ClInclude Include="source\Mockingboard.h" />
     <ClInclude Include="source\MockingboardCardManager.h" />
     <ClInclude Include="source\MockingboardDefs.h" />
@@ -509,7 +510,7 @@
     </Link>
     <PreBuildEvent>
       <Command>echo Performing unit-test: TestCPU6502
-.\Debug\TestCPU6502.exe</Command>
+".\Debug v141_xp\TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -601,7 +602,7 @@
     </Link>
     <PreBuildEvent>
       <Command>echo Performing unit-test: TestCPU6502
-.\Release\TestCPU6502.exe</Command>
+".\Release v141_xp\TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
