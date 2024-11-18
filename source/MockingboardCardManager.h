@@ -29,7 +29,7 @@ public:
 	void SetCumulativeCycles(void);
 	void UpdateCycles(ULONG executedCycles);
 	void UpdateIRQ(void);
-	bool IsActive(void);
+	bool IsActive(const bool isFullSpeedCheck);
 	DWORD GetVolume(void);
 	void SetVolume(DWORD volume, DWORD volumeMax);
 	void OutputToRiff(void) { m_outputToRiff = true; }

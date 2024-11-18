@@ -74,7 +74,13 @@ public:
 	void DSUninit(void);
 
 	void Reset(const bool powerCycle, const bool isPhasorCard);
-	bool IsPhonemeActive(void) { return m_currentActivePhoneme >= 0; }
+	bool IsPhonemeActive(void)
+	{
+		if (!m_isVotraxPhoneme)
+			return (m_ctrlArtAmp & CONTROL_MASK) == 0 && m_currentActivePhoneme >= 0;
+		else
+			return m_currentActivePhoneme >= 0;
+	}
 
 	BYTE Read(ULONG nExecutedCycles);
 	void Write(BYTE nReg, BYTE nValue);
