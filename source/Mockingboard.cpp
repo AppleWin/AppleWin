@@ -998,26 +998,13 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 
 //-----------------------------------------------------------------------------
 
-bool MockingboardCard::IsActive(const bool isFullSpeedCheck)
+bool MockingboardCard::IsActiveToPreventFullSpeed(void)
 {
-	// Full-speed check ignores SSI263::IsPhonemeActive(), because:
+	// Full-speed check ignores SSI263::IsPhonemeActive(), because: (GH#1340)
 	// . Once an SSI263 has started playing a phoneme (and the chip isn't powered-down) then it'll repeat it indefinitely.
 	// . Typically a SSI263 is "disabled" by disabling ints & setting phoneme=PAUSE(0x00) and leaving the chip powered-up.
 	// . So if we also checked SSI263::IsPhonemeActive(), then it'd always report the SSI263 as active, and so prohibit full-speed.
-	if (isFullSpeedCheck)
-		return m_isActive;
-
-	// Currently this codepath isn't taken - ie. isFullSpeedCheck==false (so remove this codepath for now)
-#if 1
-	_ASSERT(0);
 	return m_isActive;
-#else
-	bool isSSI263Active = false;
-	for (UINT i = 0; i < NUM_SSI263; i++)
-		isSSI263Active |= m_MBSubUnit[i].ssi263.IsPhonemeActive();
-
-	return m_isActive || isSSI263Active;
-#endif
 }
 
 //-----------------------------------------------------------------------------

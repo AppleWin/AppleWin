@@ -179,7 +179,7 @@ static void ContinueExecution(void)
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !GetCardMgr().GetMockingboardCardMgr().IsActive(true)) ||
+					 (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !GetCardMgr().GetMockingboardCardMgr().IsActiveToPreventFullSpeed()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
