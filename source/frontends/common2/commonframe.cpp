@@ -107,7 +107,10 @@ namespace common2
   bool CommonFrame::CanDoFullSpeed()
   {
     return (g_dwSpeed == SPEED_MAX) ||
-           (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !GetCardMgr().GetMockingboardCardMgr().IsActive()) ||
+           (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && 
+             !Spkr_IsActive() && 
+             !GetCardMgr().GetMockingboardCardMgr().IsActiveToPreventFullSpeed()
+           ) ||
            IsDebugSteppingAtFullSpeed();
   }
 
