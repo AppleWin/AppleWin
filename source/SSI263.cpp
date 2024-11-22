@@ -417,7 +417,7 @@ void SSI263::Update(void)
 	if (!SSI263SingleVoice.bActive)
 		return;
 
-	if (g_bFullSpeed)	// ie. only true when IsPhonemeActive() is true
+	if (g_bFullSpeed)	// NB. if true, then it's irrespective of IsPhonemeActive()
 	{
 		if (m_phonemeLengthRemaining)
 		{
@@ -697,9 +697,14 @@ void SSI263::Update(void)
 	if (m_phonemeLeadoutLength == 0)
 	{
 		if (!m_isVotraxPhoneme)
-			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
+		{
+			if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
+				Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
+		}
 //		else	// GH#1318 - remove for now, as TR v5.1 can start with repeating phoneme in debugger 'g' mode!
+//		{
 //			Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested in MAME 0.262)
+//		}
 	}
 }
 

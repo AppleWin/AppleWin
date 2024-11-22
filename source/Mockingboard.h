@@ -31,7 +31,7 @@ public:
 	void ReinitializeClock(void);
 	void MuteControl(bool mute);
 	void UpdateCycles(ULONG executedCycles);
-	bool IsActive(void);
+	bool IsActiveToPreventFullSpeed(void);
 	void SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
 	void SetCumulativeCycles(void);
 	UINT MB_Update(void);
