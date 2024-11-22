@@ -130,7 +130,7 @@ void MockingboardCardManager::UpdateIRQ(void)
 		CpuIrqDeassert(IS_6522);
 }
 
-bool MockingboardCardManager::IsActive(void)
+bool MockingboardCardManager::IsActiveToPreventFullSpeed(void)
 {
 	if (!m_mockingboardVoice.bActive)
 		return false;
@@ -138,7 +138,7 @@ bool MockingboardCardManager::IsActive(void)
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
 		if (IsMockingboard(i))
-			if (dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).IsActive())
+			if (dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).IsActiveToPreventFullSpeed())
 				return true;	// if any card is true then the condition for active is true
 	}
 
