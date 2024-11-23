@@ -75,8 +75,7 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	m_isActive = false;
 
 	m_phasorEnable = (QueryType() == CT_Phasor);
-	m_phasorMode = PH_Mockingboard;
-	m_phasorClockScaleFactor = 1;
+	SetPhasorMode(PH_Mockingboard);		// + re-init's AY CLK
 
 	m_lastMBUpdateCycle = 0;
 	m_numSamplesError = 0;
@@ -567,6 +566,8 @@ void MockingboardCard::Destroy(void)
 
 void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 {
+	SetPhasorMode(PH_Mockingboard);		// + re-init's AY CLK
+
 	for (BYTE subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
 	{
 		m_MBSubUnit[subunit].sy6522.Reset(powerCycle);
@@ -575,7 +576,6 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 			AY8910_reset(subunit, ay);
 
 		m_MBSubUnit[subunit].Reset(QueryType());
-		m_MBSubUnit[subunit].ssi263.SetCardMode(PH_Mockingboard);	// Revert to PH_Mockingboard mode
 		m_MBSubUnit[subunit].ssi263.Reset(powerCycle, m_phasorEnable);
 	}
 
@@ -586,9 +586,6 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 		m_inActiveCycleCount = 0;
 		m_regAccessedFlag = false;
 		m_isActive = false;
-
-		m_phasorMode = PH_Mockingboard;
-		m_phasorClockScaleFactor = 1;
 
 		m_lastMBUpdateCycle = 0;
 
@@ -601,8 +598,6 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 		// Not this, since no change on a CTRL+RESET or power-cycle:
 //		m_phasorEnable = false;
 	}
-
-	ReinitializeClock();	// Reset CLK for AY8910s
 }
 
 //-----------------------------------------------------------------------------
@@ -832,7 +827,15 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 	if (nAddr & 8)
 		bits = 0;
 	bits |= (nAddr & 7);
-	m_phasorMode = (PHASOR_MODE) bits;
+
+	SetPhasorMode((PHASOR_MODE)bits);
+
+	return MemReadFloatingBus(nExecutedCycles);
+}
+
+void MockingboardCard::SetPhasorMode(PHASOR_MODE newMode)
+{
+	m_phasorMode = newMode;
 
 	if (m_phasorMode == PH_Mockingboard || m_phasorMode == PH_EchoPlus)
 		m_phasorClockScaleFactor = 1;
@@ -856,8 +859,6 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 	if (m_phasorMode == PH_EchoPlus && (nAddr & 0xf) == 0)
 		return 0x1f;	// for TMS5220 detection
 #endif
-
-	return MemReadFloatingBus(nExecutedCycles);
 }
 
 //-----------------------------------------------------------------------------
