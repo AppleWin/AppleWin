@@ -175,7 +175,7 @@ private:
 
 	//
 
-	bool m_phasorEnable;
+	bool m_isPhasorCard;
 	PHASOR_MODE m_phasorMode;
 	UINT m_phasorClockScaleFactor;
 
