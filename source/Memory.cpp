@@ -320,13 +320,27 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 		else
 			newSlot0Card = CT_Empty;	// NB. No slot0 for //e
 	}
-	else if (type == CT_RamWorksIII)
+	else if (type == CT_80Col || type == CT_Extended80Col || type == CT_RamWorksIII)
 	{
 		g_MemTypeAppleIIe = type;
 		if (IsApple2PlusOrClone(GetApple2Type()))
 			newSlotAuxCard = CT_Empty;	// NB. No aux slot for ][ or ][+
 		else
 			newSlotAuxCard = type;
+	}
+	else if (type == CT_Empty)	// NB. This sets global state depending on machine type
+	{
+		if (IsApple2PlusOrClone(GetApple2Type()))
+		{
+			g_MemTypeAppleII = CT_Empty;
+			g_MemTypeAppleIIPlus = CT_Empty;
+			newSlot0Card = CT_Empty;
+		}
+		else
+		{
+			g_MemTypeAppleIIe = CT_Empty;
+			newSlotAuxCard = CT_Empty;
+		}
 	}
 
 	GetCardMgr().Insert(SLOT0, newSlot0Card);
@@ -1665,6 +1679,7 @@ static LPBYTE AllocMemImage(void)
 void MemInitialize()
 {
 	// ALLOCATE MEMORY FOR THE APPLE MEMORY IMAGE AND ASSOCIATED DATA STRUCTURES
+	// NB. alloc memaux even if a IIe with an empty aux slot - writes still go to memaux, but reads are from floating bus
 	memaux   = ALIGNED_ALLOC(_6502_MEM_LEN);	// NB. alloc even if model is Apple II/II+, since it's used by VidHD card
 	memmain  = ALIGNED_ALLOC(_6502_MEM_LEN);
 	memimage = AllocMemImage();
