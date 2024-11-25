@@ -74,9 +74,8 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	m_regAccessedFlag = false;
 	m_isActive = false;
 
-	m_phasorEnable = (QueryType() == CT_Phasor);
-	m_phasorMode = PH_Mockingboard;
-	m_phasorClockScaleFactor = 1;
+	m_isPhasorCard = (QueryType() == CT_Phasor);
+	SetPhasorMode(PH_Mockingboard);		// + re-init's AY CLK
 
 	m_lastMBUpdateCycle = 0;
 	m_numSamplesError = 0;
@@ -224,7 +223,7 @@ void MockingboardCard::WriteToORB(BYTE subunit, BYTE subunitForAY/*=0*/)
 	if ((subunit & 1) == 1)
 		AY8910_Write(subunit, 0, nValue);
 #else
-	if (m_phasorEnable)
+	if (m_isPhasorCard)
 	{
 		const int kAY1 = 2;		// Phasor/Echo+ mode: bit4=0 (active low) selects the 1st AY8913, ie. the only AY8913 in Mockingboard mode (confirmed on real Phasor h/w)
 		const int kAY2 = 1;		// Phasor/Echo+ mode: bit3=0 (active low) selects the 2nd AY8913 attached to this 6522 (unavailable in Mockingboard mode)
@@ -300,10 +299,10 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 	MockingboardUnitState_e& state = pMB->state[ay];	// GH#659
 
 #if _DEBUG
-	if (!m_phasorEnable || m_phasorMode == PH_Mockingboard)
+	if (!m_isPhasorCard || m_phasorMode == PH_Mockingboard)
 		_ASSERT(ay == AY8913_DEVICE_A);
 	if (nAYFunc == AY_READ || nAYFunc == AY_WRITE || nAYFunc == AY_LATCH)
-		if ((nAYFunc != state) || (m_phasorEnable && m_phasorMode != PH_EchoPlus))	// Deater's Xmas2023 demo interleaves writes to both AY's (need this line to avoid ASSERT for Echo+)
+		if ((nAYFunc != state) || (m_isPhasorCard && m_phasorMode != PH_EchoPlus))	// Deater's Xmas2023 demo interleaves writes to both AY's (need this line to avoid ASSERT for Echo+)
 			_ASSERT(state == AY_INACTIVE);
 #endif
 
@@ -322,7 +321,7 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 						busState = true;
 					}
 
-					if (m_phasorEnable && m_phasorMode == PH_Phasor)	// GH#1192
+					if (m_isPhasorCard && m_phasorMode == PH_Phasor)	// GH#1192
 					{
 						if (ay == AY8913_DEVICE_A)
 						{
@@ -338,7 +337,7 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 					_AYWriteReg(subunit, ay, pMB->nAYCurrentRegister[ay], r6522.GetReg(SY6522::rORA));
 				// else if invalid then just ignore
 
-				if (m_phasorEnable && m_phasorMode == PH_Phasor)	// GH#1192
+				if (m_isPhasorCard && m_phasorMode == PH_Phasor)	// GH#1192
 				{
 					if (ay == AY8913_DEVICE_A)
 					{
@@ -359,7 +358,7 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 					pMB->isChipSelected[ay] = true;
 					pMB->isAYLatchedAddressValid[ay] = true;
 
-					if (m_phasorEnable && m_phasorMode == PH_Phasor)	// GH#1192
+					if (m_isPhasorCard && m_phasorMode == PH_Phasor)	// GH#1192
 					{
 						if (ay == AY8913_DEVICE_A)
 						{
@@ -518,7 +517,7 @@ UINT MockingboardCard::MB_Update(void)
 		}
 
 		// Echo+ right speaker is also output to left speaker
-		if (m_phasorEnable && m_phasorMode == PH_EchoPlus)
+		if (m_isPhasorCard && m_phasorMode == PH_EchoPlus)
 		{
 			for (UINT j = 0; j < NUM_VOICES_PER_AY8913; j++)
 			{
@@ -567,6 +566,8 @@ void MockingboardCard::Destroy(void)
 
 void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 {
+	SetPhasorMode(PH_Mockingboard);		// + re-init's AY CLK
+
 	for (BYTE subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
 	{
 		m_MBSubUnit[subunit].sy6522.Reset(powerCycle);
@@ -575,8 +576,7 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 			AY8910_reset(subunit, ay);
 
 		m_MBSubUnit[subunit].Reset(QueryType());
-		m_MBSubUnit[subunit].ssi263.SetCardMode(PH_Mockingboard);	// Revert to PH_Mockingboard mode
-		m_MBSubUnit[subunit].ssi263.Reset(powerCycle, m_phasorEnable);
+		m_MBSubUnit[subunit].ssi263.Reset(powerCycle, m_isPhasorCard);
 	}
 
 	// Reset state
@@ -587,9 +587,6 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 		m_regAccessedFlag = false;
 		m_isActive = false;
 
-		m_phasorMode = PH_Mockingboard;
-		m_phasorClockScaleFactor = 1;
-
 		m_lastMBUpdateCycle = 0;
 
 		for (int id = 0; id < kNumSyncEvents; id++)
@@ -599,10 +596,8 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 		}
 
 		// Not this, since no change on a CTRL+RESET or power-cycle:
-//		m_phasorEnable = false;
+//		m_isPhasorCard = false;
 	}
-
-	ReinitializeClock();	// Reset CLK for AY8910s
 }
 
 //-----------------------------------------------------------------------------
@@ -628,7 +623,7 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 	}
 #endif
 
-	if (m_phasorEnable)
+	if (m_isPhasorCard)
 	{
 		int CS = 0;
 		if (m_phasorMode == PH_Mockingboard)
@@ -725,7 +720,7 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 		}
 	}
 
-	if (m_phasorEnable)
+	if (m_isPhasorCard)
 	{
 		int CS = 0;
 		if (m_phasorMode == PH_Mockingboard)
@@ -825,14 +820,22 @@ BYTE __stdcall MockingboardCard::PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE
 
 BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	if (!m_phasorEnable)
+	if (!m_isPhasorCard)
 		return MemReadFloatingBus(nExecutedCycles);
 
 	UINT bits = (UINT) m_phasorMode;
 	if (nAddr & 8)
 		bits = 0;
 	bits |= (nAddr & 7);
-	m_phasorMode = (PHASOR_MODE) bits;
+
+	SetPhasorMode((PHASOR_MODE)bits);
+
+	return MemReadFloatingBus(nExecutedCycles);
+}
+
+void MockingboardCard::SetPhasorMode(PHASOR_MODE newMode)
+{
+	m_phasorMode = newMode;
 
 	if (m_phasorMode == PH_Mockingboard || m_phasorMode == PH_EchoPlus)
 		m_phasorClockScaleFactor = 1;
@@ -856,8 +859,6 @@ BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE n
 	if (m_phasorMode == PH_EchoPlus && (nAddr & 0xf) == 0)
 		return 0x1f;	// for TMS5220 detection
 #endif
-
-	return MemReadFloatingBus(nExecutedCycles);
 }
 
 //-----------------------------------------------------------------------------
@@ -1321,7 +1322,7 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 
 	AY8910_InitClock((int)Get6502BaseClock());
 
-	// NB. m_phasorEnable setup in ctor
+	// NB. m_isPhasorCard setup in ctor
 
 	return true;
 }
@@ -1465,7 +1466,7 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 
 	AY8910_InitClock((int)(Get6502BaseClock() * m_phasorClockScaleFactor));
 
-	// NB. m_phasorEnable setup in ctor
+	// NB. m_isPhasorCard setup in ctor
 
 	return true;
 }

@@ -128,7 +128,8 @@
 	enum
 	{
 		// raised from 13 to 31 for Contiki
-		MAX_SYMBOLS_LEN = 31
+		// raised from 31 to 51 (GH#1342)
+		MAX_SYMBOLS_LEN = 51
 	};
 
 // Bookmarks ______________________________________________________________________________________

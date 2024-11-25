@@ -184,6 +184,9 @@ HRESULT DSGetLock(LPDIRECTSOUNDBUFFER pVoice, DWORD dwOffset, DWORD dwBytes,
 
 HRESULT DSGetSoundBuffer(VOICE* pVoice, DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, const char* pszDevName)
 {
+	if (!g_lpDS)
+		return E_FAIL;
+
 	pVoice->name = pszDevName;
 
 	WAVEFORMATEX wavfmt;

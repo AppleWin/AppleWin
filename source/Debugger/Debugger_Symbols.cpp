@@ -549,8 +549,8 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 	if (pPathFileName.empty())
 		return nSymbolsLoaded;
 
-	std::string sFormat1 = StrFormat( "%%x %%%ds", MAX_SYMBOLS_LEN ); // i.e. "%x %13s"
-	std::string sFormat2 = StrFormat( "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%13s %x"
+	std::string sFormat1 = StrFormat( "%%x %%%ds", MAX_SYMBOLS_LEN ); // i.e. "%x %51s"
+	std::string sFormat2 = StrFormat( "%%%ds %%x", MAX_SYMBOLS_LEN ); // i.e. "%51s %x"
 
 	FILE *hFile = fopen( pPathFileName.c_str(), "rt" );
 
