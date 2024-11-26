@@ -59,6 +59,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
 				: *(mem+addr)													\
 		)
+#define _READ2	(																\
+			(memread[addr >> 8] == MEM_Normal)											\
+				? *(mem+addr)													\
+				: (memread[addr >> 8] == MEM_IORead)										\
+					? IORead[(addr >> 4) & 0xFF](regs.pc, addr, 0, 0, uExecutedCycles)	\
+					: MemReadFloatingBus(uExecutedCycles)						\
+		)
 #define _READ_WITH_IO_F8xx (										/* GH#827 */\
 			((addr & 0xF000) == 0xC000)											\
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\

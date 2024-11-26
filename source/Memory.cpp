@@ -200,9 +200,17 @@ SOFT SWITCH STATUS FLAGS
 //			. memshadow[0] = &memaux[0x0000]
 //			. memshadow[1] = &memaux[0x0100]
 //
+// Apple //e 64K (so no 80-col card) - GH#1341
+// . MMU still supports RAMRDOFF/RAMRDON/RAMWRTOFF/RAMWRTON/ALTZPOFF/ALTZPON
+// . aux writes still get written to memaux (write-only memory!)
+// . aux reads are from floating bus
+// . DHIRESON: no affect, as the Ext 80-col card enables this
+// . NB. With a VidHD, then 80-col video works correctly to HDMI-out
+//
 
-static LPBYTE  memshadow[0x100];
-LPBYTE         memwrite[0x100];
+static LPBYTE	memshadow[0x100];
+LPBYTE			memwrite[0x100];
+BYTE			memread[0x100];
 
 iofunction		IORead[256];
 iofunction		IOWrite[256];
@@ -1178,6 +1186,17 @@ static void UpdatePaging(BOOL initialize)
 {
 	modechanging = 0;
 
+	const UINT oldmemmode = g_memmode;
+
+	if (IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
+	{
+		// Clear all the switches that enable reading auxmem
+		// NB. Don't touch MF_AUXWRITE
+		SetMemMode(g_memmode & ~MF_80STORE);
+		SetMemMode(g_memmode & ~MF_AUXREAD);
+		SetMemMode(g_memmode & ~MF_ALTZP);
+	}
+
 	// SAVE THE CURRENT PAGING SHADOW TABLE
 	LPBYTE oldshadow[256];
 	if (!initialize)
@@ -1302,6 +1321,33 @@ static void UpdatePaging(BOOL initialize)
 
 			memcpy(mem+(loop << 8),memshadow[loop],256);
 		}
+	}
+
+	g_memmode = oldmemmode;
+
+	//
+	// For Cpu6502_altRead() & Cpu65C02_altRead()
+	//
+
+	for (loop = 0x00; loop < 0x02; loop++)
+		memread[loop] = SW_ALTZP ? MEM_FloatingBus : MEM_Normal;
+
+	for (loop = 0x02; loop < 0xC0; loop++)
+		memread[loop] = SW_AUXREAD ? MEM_FloatingBus : MEM_Normal;
+
+	for (loop = 0xC0; loop < 0xD0; loop++)
+		memread[loop] = MEM_IORead;
+
+	for (loop = 0xD0; loop < 0x100; loop++)
+		memread[loop] = (SW_HIGHRAM && SW_ALTZP) ? MEM_FloatingBus : MEM_Normal;
+
+	if (SW_80STORE && SW_PAGE2)
+	{
+		for (loop = 0x04; loop < 0x08; loop++)
+			memread[loop] = MEM_FloatingBus;
+
+		for (loop = 0x20; loop < 0x40; loop++)
+			memread[loop] = MEM_FloatingBus;
 	}
 }
 

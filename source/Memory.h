@@ -36,11 +36,15 @@ enum MemoryInitPattern_e
 	, NUM_MIP
 };
 
+// For Cpu6502_altRead() & Cpu65C02_altRead()
+enum { MEM_Normal = 0, MEM_IORead, MEM_FloatingBus };
+
 typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nExecutedCycles);
 
 extern iofunction IORead[256];
 extern iofunction IOWrite[256];
 extern LPBYTE     memwrite[0x100];
+extern BYTE       memread[0x100];
 extern LPBYTE     mem;
 extern LPBYTE     memdirty;
 extern LPBYTE     memVidHD;
