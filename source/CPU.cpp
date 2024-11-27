@@ -528,11 +528,37 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //-------
 
+// 6502 & debugger & alt read support
+#define READ _READ2
+#define WRITE(value) _WRITE(value)
+
+#define Cpu6502 Cpu6502_debug_altRead
+#include "CPU/cpu6502.h"  // MOS 6502
+#undef Cpu6502
+
+#undef READ
+#undef WRITE
+
+//-------
+
 // 65C02 & debugger
 #define READ Heatmap_ReadByte(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte(addr, value, uExecutedCycles);
 
 #define Cpu65C02 Cpu65C02_debug
+#include "CPU/cpu65C02.h" // WDC 65C02
+#undef Cpu65C02
+
+#undef READ
+#undef WRITE
+
+//-------
+
+// 65C02 & debugger & alt read support
+#define READ _READ2
+#define WRITE(value) _WRITE(value)
+
+#define Cpu65C02 Cpu65C02_debug_altRead
 #include "CPU/cpu65C02.h" // WDC 65C02
 #undef Cpu65C02
 
@@ -563,7 +589,10 @@ static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdat
 	{
 		if (IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
 		{
-			// TODO: //e debugging & alt read
+			if (GetMainCpu() == CPU_6502)
+				return Cpu6502_debug_altRead(uTotalCycles, bVideoUpdate);		// Apple //e
+			else
+				return Cpu65C02_debug_altRead(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
 		}
 
 		_ASSERT(g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);

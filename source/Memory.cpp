@@ -1186,17 +1186,6 @@ static void UpdatePaging(BOOL initialize)
 {
 	modechanging = 0;
 
-	const UINT oldmemmode = g_memmode;
-
-	if (IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
-	{
-		// Clear all the switches that enable reading auxmem
-		// NB. Don't touch MF_AUXWRITE
-		SetMemMode(g_memmode & ~MF_80STORE);
-		SetMemMode(g_memmode & ~MF_AUXREAD);
-		SetMemMode(g_memmode & ~MF_ALTZP);
-	}
-
 	// SAVE THE CURRENT PAGING SHADOW TABLE
 	LPBYTE oldshadow[256];
 	if (!initialize)
@@ -1323,8 +1312,6 @@ static void UpdatePaging(BOOL initialize)
 		}
 	}
 
-	g_memmode = oldmemmode;
-
 	//
 	// For Cpu6502_altRead() & Cpu65C02_altRead()
 	//
@@ -1341,13 +1328,13 @@ static void UpdatePaging(BOOL initialize)
 	for (loop = 0xD0; loop < 0x100; loop++)
 		memread[loop] = (SW_HIGHRAM && SW_ALTZP) ? MEM_FloatingBus : MEM_Normal;
 
-	if (SW_80STORE && SW_PAGE2)
+	if (SW_80STORE)
 	{
 		for (loop = 0x04; loop < 0x08; loop++)
-			memread[loop] = MEM_FloatingBus;
+			memread[loop] = SW_PAGE2 ? MEM_FloatingBus : MEM_Normal;
 
 		for (loop = 0x20; loop < 0x40; loop++)
-			memread[loop] = MEM_FloatingBus;
+			memread[loop] = SW_PAGE2 ? MEM_FloatingBus : MEM_Normal;
 	}
 }
 
@@ -2183,7 +2170,7 @@ void MemReset()
 
 BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 {
-	return mem[ NTSC_VideoGetScannerAddress(uExecutedCycles) ];		// OK: This does the 2-cycle adjust for ANSI STORY (End Credits)
+	return memmain[ NTSC_VideoGetScannerAddress(uExecutedCycles) ];		// OK: This does the 2-cycle adjust for ANSI STORY (End Credits)
 }
 
 //===========================================================================
