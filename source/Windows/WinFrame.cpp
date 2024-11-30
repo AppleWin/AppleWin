@@ -196,6 +196,9 @@ void Win32Frame::CreateGdiObjects(void)
 	case A2TYPE_BASE64A:
 		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNBASE64A_BUTTON"));
 		break;
+	case A2TYPE_IMC2001:
+		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNIMC2001_BUTTON"));
+		break;
 	default:
 		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON"));
 		break;

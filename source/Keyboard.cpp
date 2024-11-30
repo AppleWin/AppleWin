@@ -134,7 +134,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 			return;
 
 		// Initially default to non-clone behaviour:
-		if (IsAppleIIeOrAbove(GetApple2Type()))
+		if (IsAppleIIeOrAbove(GetApple2Type()) || IsIMC2001(GetApple2Type()))
 		{
 			if (!IS_CLONE() && key > 0x7F)	// accented chars, eg. AltGr+A
 				return;
@@ -223,6 +223,14 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 		if (key >= VK_LEFT && key <= VK_DELETE)
 		{
 			UINT model = IsCopamBase64A(GetApple2Type()) ? 2 : IS_APPLE2 ? 0 : 1;
+			if (IsIMC2001(GetApple2Type()))
+			{
+				// TODO: The IMC-2001 features black LEFT and RIGHT arrow keys that function like the
+				// ones on an Apple IIe. Additionally, it has light-colored arrow keys UP, DOWN, LEFT, RIGHT,
+				// which directly position the cursor on the screen. For now just emulating the black
+				// arrow keys.
+				model = 1;
+			}
 			BYTE n = asciicode[model][key - VK_LEFT];		// Convert to Apple arrow keycode
 			if (!n)
 				return;
@@ -450,7 +458,7 @@ BYTE KeybReadFlag (void)
 //===========================================================================
 void KeybToggleCapsLock ()
 {
-	if (!IS_APPLE2)
+	if (!IS_APPLE2 || IsIMC2001(g_Apple2Type))
 	{
 		g_bCapsLock = (GetKeyState(VK_CAPITAL) & 1);
 		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
