@@ -1,5 +1,8 @@
-#ifdef _MSC_VER
+#ifdef _WIN32
 
+#ifdef __MINGW32__
+#define STRSAFE_NO_DEPRECATE
+#endif
 #include <tchar.h>
 
 #include <crtdbg.h>
@@ -33,6 +36,7 @@ typedef UINT64 uint64_t;
 #include <ddraw.h>
 #include <htmlhelp.h>
 #include <assert.h>
+#include <winsock.h>
 
 #include <algorithm>
 #include <map>
@@ -65,7 +69,7 @@ typedef UINT64 uint64_t;
 #define PTRDIFF_T_FMT "td"
 #endif
 
-#else
+#else // !_WIN32
 
 #include <cmath>
 #include <map>
@@ -77,11 +81,11 @@ typedef UINT64 uint64_t;
 #include <string>
 #include <vector>
 
-#include "windows.h"
+#include "linux/libwindows/windows.h"
 
 //#define USE_SPEECH_API
 
 #define SIZE_T_FMT "zu"
 #define PTRDIFF_T_FMT "td"
 
-#endif
+#endif // _WIN32
