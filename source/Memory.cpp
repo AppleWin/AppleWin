@@ -2180,32 +2180,28 @@ void MemReset()
 
 //===========================================================================
 
-BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
+static BYTE ReadFloatingBus(const ULONG uExecutedCycles, const bool fullSpeed)
 {
 	BYTE* pMain = MemGetMainPtr(0x0000);
-	return pMain[ NTSC_VideoGetScannerAddress(uExecutedCycles) ];		// OK: This does the 2-cycle adjust for ANSI STORY (End Credits)
+	return pMain[NTSC_VideoGetScannerAddress(uExecutedCycles, fullSpeed)];		// OK: This does the 2-cycle adjust for ANSI STORY (End Credits)
 }
 
-//===========================================================================
+BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
+{
+	return ReadFloatingBus(uExecutedCycles, g_bFullSpeed);
+}
 
 BYTE MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles)
 {
-	BYTE r = MemReadFloatingBus(uExecutedCycles);
+	BYTE r = ReadFloatingBus(uExecutedCycles, g_bFullSpeed);
 	return (r & ~0x80) | (highbit ? 0x80 : 0);
 }
 
-//===========================================================================
-
 BYTE MemReadFloatingBusFromNTSC(void)
 {
-	const bool fullspeed = g_bFullSpeed;	// save
-
-	// Set g_bFullSpeed=false: to avoid NTSC_VideoGetScannerAddress() calling NTSC_VideoClockResync()
-	g_bFullSpeed = false;	// g_bFullSpeed only true when doing NTSC_VideoRedrawWholeScreen()
-	BYTE d = MemReadFloatingBus(0);
-
-	g_bFullSpeed = fullspeed;				// restore
-	return d;
+	// fullspeed=false: to avoid NTSC_VideoGetScannerAddress() calling NTSC_VideoClockResync()
+	// NB. g_bFullSpeed only true when doing NTSC_VideoRedrawWholeScreen()
+	return ReadFloatingBus(0, false);
 }
 
 //===========================================================================

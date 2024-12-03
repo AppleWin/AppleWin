@@ -1916,9 +1916,9 @@ void NTSC_VideoClockResync(const DWORD dwCyclesThisFrame)
 }
 
 //===========================================================================
-uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
+uint16_t NTSC_VideoGetScannerAddress(const ULONG uExecutedCycles, const bool fullSpeed)
 {
-	if (g_bFullSpeed)
+	if (fullSpeed)
 	{
 		// Ensure that NTSC video-scanner gets updated during full-speed, so video-dependent Apple II code doesn't hang
 		NTSC_VideoClockResync( CpuGetCyclesThisVideoFrame(uExecutedCycles) );
@@ -1948,7 +1948,7 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 void NTSC_GetVideoVertHorzForDebugger(uint16_t& vert, uint16_t& horz)
 {
 	ResetCyclesExecutedForDebugger();		// if in full-speed, then reset cycles so that CpuCalcCycles() doesn't ASSERT
-	NTSC_VideoGetScannerAddress(0);
+	NTSC_VideoGetScannerAddress(0, g_bFullSpeed);
 	vert = g_nVideoClockVert;
 	horz = g_nVideoClockHorz;
 }
