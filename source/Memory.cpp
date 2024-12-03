@@ -1411,13 +1411,20 @@ static LPBYTE MemGetPtrBANK1(const WORD offset, const LPBYTE pMemBase)
 
 //-------------------------------------
 
-LPBYTE MemGetAuxPtr(const WORD offset)
+#if 0	// Unused
+LPBYTE MemGetAuxPtrWithLC(const WORD offset)
 {
 	LPBYTE lpMem = MemGetPtrBANK1(offset, memaux);
 	if (lpMem)
 		return lpMem;
 
-	lpMem = (memshadow[(offset >> 8)] == (memaux+(offset & 0xFF00)))
+	return MemGetAuxPtr(offset);
+}
+#endif
+
+LPBYTE MemGetAuxPtr(const WORD offset)
+{
+	LPBYTE lpMem = (memshadow[(offset >> 8)] == (memaux+(offset & 0xFF00)))
 			? mem+offset				// Return 'mem' copy if possible, as page could be dirty
 			: memaux+offset;
 
@@ -1469,15 +1476,20 @@ LPBYTE MemGetAuxPtr(const WORD offset)
 // . if no, then return memmain, as the mem(cache) isn't involved in memmain (any writes will go directly to this backing-store).
 //
 
-LPBYTE MemGetMainPtr(const WORD offset)
+LPBYTE MemGetMainPtrWithLC(const WORD offset)
 {
 	LPBYTE lpMem = MemGetPtrBANK1(offset, memmain);
 	if (lpMem)
 		return lpMem;
 
-	return (memshadow[(offset >> 8)] == (memmain+(offset & 0xFF00)))
-			? mem+offset				// Return 'mem' copy if possible, as page could be dirty
-			: memmain+offset;
+	return MemGetMainPtr(offset);
+}
+
+LPBYTE MemGetMainPtr(const WORD offset)
+{
+	return (memshadow[(offset >> 8)] == (memmain + (offset & 0xFF00)))
+		? mem + offset				// Return 'mem' copy if possible, as page could be dirty
+		: memmain + offset;
 }
 
 //===========================================================================
@@ -2170,7 +2182,8 @@ void MemReset()
 
 BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 {
-	return memmain[ NTSC_VideoGetScannerAddress(uExecutedCycles) ];		// OK: This does the 2-cycle adjust for ANSI STORY (End Credits)
+	BYTE* pMain = MemGetMainPtr(0x0000);
+	return pMain[ NTSC_VideoGetScannerAddress(uExecutedCycles) ];		// OK: This does the 2-cycle adjust for ANSI STORY (End Credits)
 }
 
 //===========================================================================
@@ -2179,6 +2192,20 @@ BYTE MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles)
 {
 	BYTE r = MemReadFloatingBus(uExecutedCycles);
 	return (r & ~0x80) | (highbit ? 0x80 : 0);
+}
+
+//===========================================================================
+
+BYTE MemReadFloatingBusFromNTSC(void)
+{
+	const bool fullspeed = g_bFullSpeed;	// save
+
+	// Set g_bFullSpeed=false: to avoid NTSC_VideoGetScannerAddress() calling NTSC_VideoClockResync()
+	g_bFullSpeed = false;	// g_bFullSpeed only true when doing NTSC_VideoRedrawWholeScreen()
+	BYTE d = MemReadFloatingBus(0);
+
+	g_bFullSpeed = fullspeed;				// restore
+	return d;
 }
 
 //===========================================================================

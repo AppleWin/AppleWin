@@ -1380,8 +1380,8 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				uint8_t  *pMain = MemGetMainPtr(addr);
-				uint8_t  *pAux  = MemGetAuxPtr (addr);
+				uint8_t *pMain = MemGetMainPtr(addr);
+				uint8_t *pAux  = MemGetAuxPtr(addr);
 
 				uint8_t m = pMain[0];
 				uint8_t a = pAux [0];
@@ -1481,7 +1481,7 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
 				uint8_t *pMain = MemGetMainPtr(addr);
-				uint8_t *pAux  = MemGetAuxPtr (addr);
+				uint8_t *pAux  = MemGetAuxPtr(addr);
 
 				uint8_t m = pMain[0];
 				uint8_t a = pAux [0];
@@ -1757,7 +1757,7 @@ void updateScreenText40RGB(long cycles6502)
 
 //===========================================================================
 #include "CardManager.h"
-#include "Core.h"
+
 void updateScreenText80 (long cycles6502)
 {
 	for (; cycles6502 > 0; --cycles6502)
@@ -1774,13 +1774,13 @@ void updateScreenText80 (long cycles6502)
 			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
 				uint8_t *pMain = MemGetMainPtr(addr);
-				uint8_t *pAux  = MemGetAuxPtr (addr);
+				uint8_t *pAux  = MemGetAuxPtr(addr);
 
 				uint8_t m = pMain[0];
 				uint8_t a = pAux [0];
 
-				if (IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
-					a = MemReadFloatingBus(0);// g_nCyclesExecuted);
+				if (GetCardMgr().QueryAux() == CT_Empty)
+					a = MemReadFloatingBusFromNTSC();
 
 				uint16_t main = getCharSetBits( m );
 				uint16_t aux  = getCharSetBits( a );
