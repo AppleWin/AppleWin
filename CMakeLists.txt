@@ -41,16 +41,6 @@ execute_process(COMMAND uname -m
   OUTPUT_VARIABLE UNAME
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-if((${UNAME} STREQUAL armv7l) OR (${UNAME} STREQUAL aarch64))
-  # it is too slow and might cause out of memory issues
-  # more forensic is required
-  MESSAGE(NOTICE "Raspberry Pi detected: IPO disabled")
-else()
-  include(CheckIPOSupported)
-  check_ipo_supported()
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
-endif()
-
 include_directories(source)
 
 add_subdirectory(source)
