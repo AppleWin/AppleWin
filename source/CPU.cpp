@@ -587,15 +587,16 @@ static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdat
 	}
 	else
 	{
+		_ASSERT(g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
+
 		if (IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
 		{
 			if (GetMainCpu() == CPU_6502)
-				return Cpu6502_debug_altRead(uTotalCycles, bVideoUpdate);		// Apple //e
+				return Cpu6502_debug_altRead(uTotalCycles, bVideoUpdate);	// Apple //e
 			else
 				return Cpu65C02_debug_altRead(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
 		}
 
-		_ASSERT(g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
 		if (GetMainCpu() == CPU_6502)
 			return Cpu6502_debug(uTotalCycles, bVideoUpdate);	// Apple ][, ][+, //e, Clones
 		else
