@@ -6538,7 +6538,9 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 		{
 			*p = 0;
 			//	sscanf( sLine, "%s %s %s %s %s %s %s %s", sAddr1, sByte1, sByte2, sByte3, sLineN, sLabel, sAsm, sParam );
-			sscanf( sLine, "%X", &nAddress );
+			unsigned nScanAddress; // helper variable in case sizeof(DWORD) != sizeof(unsigned)
+			sscanf( sLine, "%X", &nScanAddress );
+			nAddress = nScanAddress;
 
 			if (nAddress >= INVALID_ADDRESS) // || (sName[0] == 0) )
 				continue;

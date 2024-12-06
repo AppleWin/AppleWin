@@ -518,7 +518,7 @@ void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 	);
 
 #define EXPECTED_BMP_HEADER_SIZE (14 + 40)
-#ifdef _MSC_VER
+#ifdef _WIN32
 	char sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[ sizeof( WinBmpHeader_t ) == EXPECTED_BMP_HEADER_SIZE];
 	/**/ sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[0]=0;
 #else
