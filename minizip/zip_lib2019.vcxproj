@@ -36,8 +36,8 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{509739E7-0AF3-4C09-A1A9-F0B1BC31B39D}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>zip_lib</RootNamespace>
-    <ProjectName>zip_lib</ProjectName>
+    <RootNamespace>minizip</RootNamespace>
+    <ProjectName>minizip</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
