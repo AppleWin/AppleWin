@@ -162,7 +162,7 @@ void LogFileTimeUntilFirstKeyRead(void)
 
 	DWORD dwTime = GetTickCount() - dwLogKeyReadTickStart;
 
-	LogFileOutput("Time from emulation reboot until first $C000 access: %d msec\n", dwTime);
+	LogFileOutput("Time from emulation reboot until first $C000 access: %" DWORD_T_FMT " msec\n", dwTime);
 
 	bLogKeyReadDone = true;
 }

@@ -1953,7 +1953,7 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 	}
 
 	// ID On Stop Temp HitCounter  Addr Mem Symbol
-	ConsolePrintFormat( "  #%X %c  %c    %c  %c   %08X " CHC_ADDRESS " %04X " CHC_INFO "%s" CHC_SYMBOL " %s",
+	ConsolePrintFormat( "  #%X %c  %c    %c  %c   %08" DWORD_T_FMT " " CHC_ADDRESS " %04X " CHC_INFO "%s" CHC_SYMBOL " %s",
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
 		sEnabledFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
@@ -6538,7 +6538,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 		{
 			*p = 0;
 			//	sscanf( sLine, "%s %s %s %s %s %s %s %s", sAddr1, sByte1, sByte2, sByte3, sLineN, sLabel, sAsm, sParam );
-			sscanf( sLine, "%X", &nAddress );
+			sscanf( sLine, "%" DWORD_T_FMT, &nAddress );
 
 			if (nAddress >= INVALID_ADDRESS) // || (sName[0] == 0) )
 				continue;
