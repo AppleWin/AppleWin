@@ -43,11 +43,12 @@ typedef uint16_t UINT16;
 // we stick to VS's definition
 // this is important when selecting the correct printf format specifier
 #define __int64 long long int
+typedef __int64 LONGLONG;
+typedef unsigned __int64 UINT64;
 
 typedef intptr_t INT_PTR;
 typedef uintptr_t UINT_PTR;
 
-typedef __int64 LONGLONG;
 
 typedef uint32_t UINT32;
 
@@ -75,10 +76,10 @@ typedef uint32_t UINT32;
 #define CONST               const
 #endif
 
-typedef uint32_t            DWORD;
-typedef int32_t             BOOL;
+typedef unsigned int        DWORD;
+typedef int                 BOOL;
 typedef unsigned char       BYTE;
-typedef uint16_t            WORD;
+typedef unsigned short      WORD;
 typedef BOOL                *LPBOOL;
 typedef BYTE                *LPBYTE;
 typedef WORD                *LPWORD;
@@ -86,8 +87,8 @@ typedef DWORD               *LPDWORD;
 typedef void                *LPVOID;
 typedef CONST void          *LPCVOID;
 
-typedef int32_t             INT;
-typedef uint32_t            UINT;
+typedef int                 INT;
+typedef unsigned int        UINT;
 
 #define MAKEWORD(a, b)      ((WORD)(((BYTE)(a)) | ((WORD)((BYTE)(b))) << 8))
 #define MAKELONG(a, b)      ((LONG)(((WORD)(a)) | ((DWORD)((WORD)(b))) << 16))
@@ -104,7 +105,7 @@ typedef DWORD   *LPCOLORREF;
 #define VOID void
 typedef char CHAR;
 typedef short SHORT;
-typedef int32_t /*long*/ LONG;
+typedef int /*long*/ LONG;
 typedef LONG *PLONG;
 typedef wchar_t WCHAR;
 
@@ -115,8 +116,6 @@ typedef LONG_PTR        LRESULT;
 typedef ULONG_PTR       DWORD_PTR;
 
 typedef DWORD           LCID;
-
-typedef unsigned __int64 UINT64;
 
 //
 // ANSI (Multi-byte Character) types
