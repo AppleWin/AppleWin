@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef _WIN32
+#error libwindows must not be used on Windows builds.
+#endif
+
 #include "wincompat.h"
 #include "guiddef.h"
 #include "winhandles.h"
