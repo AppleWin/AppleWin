@@ -27,10 +27,8 @@ extern "C" {
 #ifndef BASETYPES
 #define BASETYPES
 typedef uint32_t ULONG;  // 32 bit long in VS
-typedef ULONG *PULONG;
 typedef uint16_t USHORT;
 typedef unsigned char UCHAR;
-typedef char *PSZ;
 #endif  /* !BASETYPES */
 
 typedef int16_t INT16;
@@ -52,9 +50,6 @@ typedef uintptr_t UINT_PTR;
 typedef __int64 LONGLONG;
 
 typedef uint32_t UINT32;
-typedef uint8_t UINT8;
-typedef int32_t INT32;
-
 
 #define MAX_PATH          260
 
@@ -74,34 +69,8 @@ typedef int32_t INT32;
 #define TRUE                1
 #endif
 
-#ifndef IN
-#define IN
-#endif
+#define FAR
 
-#ifndef OUT
-#define OUT
-#endif
-
-#ifndef OPTIONAL
-#define OPTIONAL
-#endif
-
-#undef far
-#undef near
-#undef pascal
-
-#define far
-#define near
-#if (!defined(_MAC)) && ((_MSC_VER >= 800) || defined(_STDCALL_SUPPORTED))
-#define pascal __stdcall
-#else
-#define pascal
-#endif
-
-#undef FAR
-#undef NEAR
-#define FAR                 far
-#define NEAR                near
 #ifndef CONST
 #define CONST               const
 #endif
@@ -110,17 +79,12 @@ typedef uint32_t            DWORD;
 typedef int32_t             BOOL;
 typedef unsigned char       BYTE;
 typedef uint16_t            WORD;
-typedef float               FLOAT;
-typedef BOOL near           *PBOOL;
-typedef BOOL far            *LPBOOL;
-typedef BYTE near           *PBYTE;
-typedef BYTE far            *LPBYTE;
-typedef WORD near           *PWORD;
-typedef WORD far            *LPWORD;
-typedef DWORD near          *PDWORD;
-typedef DWORD far           *LPDWORD;
-typedef void far            *LPVOID;
-typedef CONST void far      *LPCVOID;
+typedef BOOL                *LPBOOL;
+typedef BYTE                *LPBYTE;
+typedef WORD                *LPWORD;
+typedef DWORD               *LPDWORD;
+typedef void                *LPVOID;
+typedef CONST void          *LPCVOID;
 
 typedef int32_t             INT;
 typedef uint32_t            UINT;
@@ -141,7 +105,6 @@ typedef DWORD   *LPCOLORREF;
 typedef char CHAR;
 typedef short SHORT;
 typedef int32_t /*long*/ LONG;
-typedef SHORT *PSHORT;
 typedef LONG *PLONG;
 typedef wchar_t WCHAR;
 
@@ -151,25 +114,20 @@ typedef uintptr_t       ULONG_PTR;
 typedef LONG_PTR        LRESULT;
 typedef ULONG_PTR       DWORD_PTR;
 
-typedef DWORD           LCID,       *PLCID;
+typedef DWORD           LCID;
 
-typedef unsigned __int64 UINT64, *PUINT64;
+typedef unsigned __int64 UINT64;
 
 //
 // ANSI (Multi-byte Character) types
 //
 typedef CHAR *PCHAR;
-typedef CHAR *LPCH, *PCH;
 
-typedef CONST CHAR *LPCCH, *PCCH;
-typedef CHAR *NPSTR;
-typedef CHAR *LPSTR, *PSTR;
-typedef CONST CHAR *LPCSTR, *PCSTR;
+typedef CHAR *LPSTR;
+typedef CONST CHAR *LPCSTR;
 
-typedef LPSTR LPTCH, PTCH;
 typedef LPSTR PTSTR, LPTSTR;
 typedef LPCSTR LPCTSTR;
-typedef LPSTR LP;
 
 typedef WCHAR *LPWSTR;
 typedef CONST WCHAR *LPCWSTR;
@@ -180,8 +138,7 @@ typedef CONST WCHAR *LPCWSTR;
 // othwerise QTCreator does not show the values (i.e. string) while debugging
 // it treats it as an array of bytes
 #define TCHAR char
-typedef TCHAR _TCHAR, *PTCHAR;
-typedef unsigned char TBYTE , *PTBYTE ;
+typedef TCHAR _TCHAR;
 #define _TCHAR_DEFINED
 #endif /* !_TCHAR_DEFINED */
 
