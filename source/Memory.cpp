@@ -1316,25 +1316,36 @@ static void UpdatePaging(BOOL initialize)
 	// For Cpu6502_altRead() & Cpu65C02_altRead()
 	//
 
+	const BYTE memType = (GetCardMgr().QueryAux() == CT_Empty) ? MEM_FloatingBus
+		: (GetCardMgr().QueryAux() == CT_80Col) ? MEM_Aux1K
+		: MEM_Normal;
+
 	for (loop = 0x00; loop < 0x02; loop++)
-		memread[loop] = SW_ALTZP ? MEM_FloatingBus : MEM_Normal;
+		memread[loop] = SW_ALTZP ? memType : MEM_Normal;
 
 	for (loop = 0x02; loop < 0xC0; loop++)
-		memread[loop] = SW_AUXREAD ? MEM_FloatingBus : MEM_Normal;
+		memread[loop] = SW_AUXREAD ? memType : MEM_Normal;
 
 	for (loop = 0xC0; loop < 0xD0; loop++)
 		memread[loop] = MEM_IORead;
 
 	for (loop = 0xD0; loop < 0x100; loop++)
-		memread[loop] = (SW_HIGHRAM && SW_ALTZP) ? MEM_FloatingBus : MEM_Normal;
+		memread[loop] = (SW_HIGHRAM && SW_ALTZP) ? memType : MEM_Normal;
 
 	if (SW_80STORE)
 	{
 		for (loop = 0x04; loop < 0x08; loop++)
-			memread[loop] = SW_PAGE2 ? MEM_FloatingBus : MEM_Normal;
+			memread[loop] = SW_PAGE2 ? memType : MEM_Normal;
 
 		for (loop = 0x20; loop < 0x40; loop++)
-			memread[loop] = SW_PAGE2 ? MEM_FloatingBus : MEM_Normal;
+			memread[loop] = SW_PAGE2 ? memType : MEM_Normal;
+	}
+
+	if (GetCardMgr().QueryAux() == CT_80Col)
+	{
+		if (SW_AUXREAD || (SW_80STORE && SW_PAGE2))
+			for (loop = 0x04; loop < 0x07; loop++)
+				memread[loop] =  MEM_Normal;
 	}
 }
 

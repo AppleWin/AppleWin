@@ -305,10 +305,10 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			{
 				g_cmdLine.auxSlotEmpty = true;
 			}
-//			else if (strcmp(lpCmdLine, "std80") == 0)	// TODO
-//			{
-//				g_cmdLine.auxSlotInsert = CT_80Col;
-//			}
+			else if (strcmp(lpCmdLine, "std80") == 0)
+			{
+				g_cmdLine.auxSlotInsert = CT_80Col;
+			}
 			else if (strcmp(lpCmdLine, "ext80") == 0)
 			{
 				g_cmdLine.auxSlotInsert = CT_Extended80Col;
