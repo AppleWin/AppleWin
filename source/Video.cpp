@@ -187,8 +187,24 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 	{
 		case 0x00:                 g_uVideoMode &= ~VF_80STORE;                            break;
 		case 0x01:                 g_uVideoMode |=  VF_80STORE;                            break;
-		case 0x0C: if (!IS_APPLE2){g_uVideoMode &= ~VF_80COL; NTSC_SetVideoTextMode(40);}; break;
-		case 0x0D: if (!IS_APPLE2){g_uVideoMode |=  VF_80COL; NTSC_SetVideoTextMode(80);}; break;
+		case 0x0C:
+			if (!IS_APPLE2)
+			{
+				g_uVideoMode &= ~VF_80COL;
+				NTSC_SetVideoTextMode(40);
+				if (GetCardMgr().QueryAux() == CT_Empty)
+					g_uVideoMode &= ~VF_80COL_AUX_EMPTY;
+			}
+			break;
+		case 0x0D:
+			if (!IS_APPLE2)
+			{
+				g_uVideoMode |=  VF_80COL;
+				NTSC_SetVideoTextMode(80);
+				if (GetCardMgr().QueryAux() == CT_Empty)
+					g_uVideoMode |= VF_80COL_AUX_EMPTY;
+			}
+			break;
 		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
 		case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
 		case 0x22: if (vidHD) vidHD->VideoIOWrite(pc, address, write, d, uExecutedCycles); break;	// VidHD IIgs video mode register
@@ -265,6 +281,11 @@ bool Video::VideoGetSWTEXT(void)
 bool Video::VideoGetSWAltCharSet(void)
 {
 	return g_nAltCharSetOffset != 0;
+}
+
+bool Video::VideoGet80COLAUXEMPTY(void)
+{
+	return g_uVideoMode & VF_80COL_AUX_EMPTY ? true : false;
 }
 
 //===========================================================================

@@ -1756,8 +1756,6 @@ void updateScreenText40RGB(long cycles6502)
 }
 
 //===========================================================================
-#include "CardManager.h"
-
 void updateScreenText80 (long cycles6502)
 {
 	for (; cycles6502 > 0; --cycles6502)
@@ -1779,7 +1777,7 @@ void updateScreenText80 (long cycles6502)
 				uint8_t m = pMain[0];
 				uint8_t a = pAux [0];
 
-				if (GetCardMgr().QueryAux() == CT_Empty)
+				if (g_uNewVideoModeFlags & VF_80COL_AUX_EMPTY)
 					a = MemReadFloatingBusFromNTSC();
 
 				uint16_t main = getCharSetBits( m );
@@ -1970,10 +1968,13 @@ void NTSC_SetVideoTextMode( int cols )
 		else
 			g_pFuncUpdateTextScreen = updateScreenText80RGB;
 	}
-	else if( cols == 40 )
-		g_pFuncUpdateTextScreen = updateScreenText40;
 	else
-		g_pFuncUpdateTextScreen = updateScreenText80;
+	{
+		if (cols == 40)
+			g_pFuncUpdateTextScreen = updateScreenText40;
+		else
+			g_pFuncUpdateTextScreen = updateScreenText80;
+	}
 }
 
 //===========================================================================
@@ -2813,7 +2814,10 @@ uint16_t NTSC_GetScannerAddressAndData(uint32_t& data, int& dataSize)
 	if (dataSize == 2)
 	{
 		uint8_t* pAux = MemGetAuxPtr(addr);
-		data = pAux[0] << 8;
+		uint8_t a = pAux[0];
+		if (g_uNewVideoModeFlags & VF_80COL_AUX_EMPTY)
+			a = MemReadFloatingBusFromNTSC();
+		data = a << 8;
 	}
 	uint8_t* pMain = MemGetMainPtr(addr);
 	data |= pMain[0];
