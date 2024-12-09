@@ -4,12 +4,27 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 COMPONENTS Widgets Multimedia OpenGLWidgets)
+# default still Qt5
+option(QAPPLE_USE_QT5 "Enable Qt5 build" OFF)
 
-if(NOT Qt6_FOUND)
+if(QAPPLE_USE_QT5)
+  find_package(Qt5 REQUIRED COMPONENTS Widgets Gamepad Multimedia)
+else()
+  find_package(Qt6 COMPONENTS Widgets Multimedia OpenGLWidgets)
+  if(NOT Qt6_FOUND)
     find_package(Qt5 REQUIRED COMPONENTS Widgets Gamepad Multimedia)
+  endif()
 endif()
 
+if(Qt6_FOUND)
+  message("qapple: building with Qt6")
+  set(QHEXVIEW_USE_QT5 OFF)
+else()
+  message("qapple: building with Qt5")
+  set(QHEXVIEW_USE_QT5 ON)
+endif()
+
+set(QHEXVIEW_BUILD_EXAMPLE OFF)
 add_subdirectory(QHexView)
 
 set(SOURCE_FILES

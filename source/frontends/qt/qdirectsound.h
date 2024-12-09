@@ -4,11 +4,13 @@
 #include <QtGlobal>
 
 #include <vector>
+#include <string>
 
 namespace QDirectSound
 {
     struct SoundInfo
     {
+        std::string name;
         bool running = false;
         int channels = 0;
 

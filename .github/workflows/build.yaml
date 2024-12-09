@@ -29,5 +29,8 @@ jobs:
 
     - name: Build
       run: |
+        cmake --version
         cmake -S . -B build
         cmake --build build
+        cmake -S . -DQAPPLE_USE_QT5=ON -DBUILD_QAPPLE=ON -B build-qt5
+        cmake --build build-qt5

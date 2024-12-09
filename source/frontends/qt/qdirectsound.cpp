@@ -6,9 +6,15 @@
 #include <unordered_map>
 #include <memory>
 
-#include <QAudioOutput>
 #include <QIODevice>
 #include <QAudioFormat>
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#include <QAudioOutput>
+typedef QAudioOutput QAudioSink;
+#else
+#include <QAudioSink>
+#endif
 
 namespace
 {
@@ -33,7 +39,7 @@ namespace
         virtual qint64 writeData(const char *data, qint64 len) override;
 
     private:
-        std::shared_ptr<QAudioOutput> myAudioOutput;
+        std::shared_ptr<QAudioSink> myAudioOutput;
     };
 
     std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator> > activeSoundGenerators;
@@ -46,22 +52,23 @@ namespace
         audioFormat.setSampleRate(mySampleRate);
         audioFormat.setChannelCount(myChannels);
 
+        Q_ASSERT(myBitsPerSample == 16);
+
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         audioFormat.setSampleSize(myBitsPerSample);
         audioFormat.setCodec(QString::fromUtf8("audio/pcm"));
         audioFormat.setByteOrder(QAudioFormat::LittleEndian);
         audioFormat.setSampleType(QAudioFormat::SignedInt);
-        myAudioOutput = std::make_shared<QAudioOutput>(audioFormat);
+        myAudioOutput = std::make_shared<QAudioSink>(audioFormat);
 #else
         audioFormat.setSampleFormat(QAudioFormat::Int16);
+        myAudioOutput = std::make_shared<QAudioSink>(audioFormat);
 #endif
     }
 
     DirectSoundGenerator::~DirectSoundGenerator()
     {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         myAudioOutput->stop();
-#endif
     }
 
     HRESULT DirectSoundGenerator::Release()
@@ -72,7 +79,6 @@ namespace
 
     void DirectSoundGenerator::setOptions(const qint64 duration)  // in ms
     {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         const qint64 buffer = myAudioOutput->format().bytesForDuration(duration * 1000);
         if (buffer == myAudioOutput->bufferSize())
         {
@@ -91,7 +97,6 @@ namespace
         {
             myAudioOutput->start(this);
         }
-#endif
     }
 
     HRESULT DirectSoundGenerator::SetVolume( LONG lVolume )
@@ -99,18 +104,14 @@ namespace
         const HRESULT res = IDirectSoundBuffer::SetVolume(lVolume);
         const qreal logVolume = GetLogarithmicVolume();
         const qreal linVolume = QAudio::convertVolume(logVolume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         myAudioOutput->setVolume(linVolume);
-#endif
         return res;
     }
 
     HRESULT DirectSoundGenerator::Stop()
     {
         const HRESULT res = IDirectSoundBuffer::Stop();
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         myAudioOutput->stop();
-#endif
         QIODevice::close();
         return res;
     }
@@ -119,9 +120,7 @@ namespace
     {
         const HRESULT res = IDirectSoundBuffer::Play(dwReserved1, dwReserved2, dwFlags);
         QIODevice::open(ReadOnly);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         myAudioOutput->start(this);
-#endif
         return res;
     }
 
@@ -150,18 +149,17 @@ namespace
     QDirectSound::SoundInfo DirectSoundGenerator::getInfo()
     {
         QDirectSound::SoundInfo info;
+        info.name = myName;
         info.running = QIODevice::isOpen();
         info.channels = myChannels;
         info.numberOfUnderruns = GetBufferUnderruns();
 
         if (info.running)
         {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
             const DWORD bytesInBuffer = GetBytesInBuffer();
             const auto & format = myAudioOutput->format();
             info.buffer = format.durationForBytes(bytesInBuffer) / 1000;
             info.size = format.durationForBytes(myBufferSize) / 1000;
-#endif
         }
 
         return info;

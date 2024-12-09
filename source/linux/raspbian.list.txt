@@ -15,3 +15,6 @@ libsdl2-image-dev
 libsdl2-dev
 libgles-dev
 libslirp-dev
+
+qt6-base-dev
+qt6-multimedia-dev
