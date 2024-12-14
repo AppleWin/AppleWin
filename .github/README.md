@@ -70,15 +70,16 @@ The joystick uses evdev (``--device-name /dev/input/by-id/id_of_device``).
 
 This is based on Qt.
 
-* keyboard shortcuts are listed in the menu entries
-* joystick: it uses QtGamepad
-* emulator runs in the main UI thread
-* Qt timers are very coarse: the emulator needs to dynamically adapt the cycles to execute
+* can use either Qt5 or Qt6 (default). If both are present, use `-DQAPPLE_USE_QT5=ON` to force Qt5.
+* keyboard shortcuts are listed in the menu entries.
+* joystick: it uses QtGamepad (not available with Qt6).
+* emulator runs in the main UI thread.
+* Qt timers are very coarse: the emulator needs to dynamically adapt the cycles to execute.
 * the app runs at 60FPS with correction for uneven timer deltas.
-* full speed when disk spins execute up to 5 ms real wall clock of emulator code (then returns to Qt)
-* audio is supported and there are a few configuration options to tune the latency (default very conservative 200ms)
-* Open Apple and Solid Apple can be emulated using AltGr and Menu (unfortunately, Alt does not work well)
-* ``yaml`` files can be dropped to restore a saved state
+* full speed when disk spins execute up to 5 ms real wall clock of emulator code (then returns to Qt).
+* audio is supported and there are a few configuration options to tune the latency (default very conservative 200ms). This is currently not working with Qt6.
+* Open Apple and Solid Apple can be emulated using AltGr and Menu (unfortunately, Alt does not work well).
+* ``yaml`` files can be dropped to restore a saved state.
 
 ### ra2
 

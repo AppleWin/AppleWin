@@ -41,6 +41,10 @@ execute_process(COMMAND uname -m
   OUTPUT_VARIABLE UNAME
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 
+execute_process(
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_BINARY_DIR}/compile_commands.json ${CMAKE_SOURCE_DIR}/compile_commands.json
+)
+
 include_directories(source)
 
 add_subdirectory(source)

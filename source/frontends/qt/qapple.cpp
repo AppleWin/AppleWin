@@ -18,11 +18,14 @@
 #include "emulator.h"
 #include "memorycontainer.h"
 #include "qdirectsound.h"
-#include "gamepadpaddle.h"
 #include "preferences.h"
 #include "configuration.h"
 #include "audioinfo.h"
 #include "qtframe.h"
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#include "gamepadpaddle.h"
+#endif
 
 #include <QMdiSubWindow>
 #include <QMessageBox>
@@ -346,8 +349,10 @@ void QApple::reloadOptions()
 {
     myFrame->FrameRefreshStatus(DRAW_TITLE);
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     Paddle::instance = GamepadPaddle::fromName(myOptions.gamepadName);
     Paddle::setSquaring(myOptions.gamepadSquaring);
+#endif
     QDirectSound::setOptions(myOptions.msAudioBuffer);
 }
 

@@ -9,8 +9,11 @@
 
 #include <QFileDialog>
 #include <QColorDialog>
-#include <QGamepadManager>
 #include <QSettings>
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#include <QGamepadManager>
+#endif
 
 namespace
 {
@@ -171,6 +174,7 @@ void Preferences::populateJoysticks()
     ui->joystick->clear();
     ui->joystick->addItem("None"); // index = 0
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QGamepadManager * manager = QGamepadManager::instance();
     const QList<int> gamepads = manager->connectedGamepads();
 
@@ -179,6 +183,7 @@ void Preferences::populateJoysticks()
         const QString name = manager->gamepadName(id);
         ui->joystick->addItem(name);
     }
+#endif
 }
 
 void Preferences::setSettings(QSettings & settings)

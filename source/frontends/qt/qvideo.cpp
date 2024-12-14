@@ -227,7 +227,11 @@ void QVideo::mouseMoveEvent(QMouseEvent *event)
         int iY, iMinY, iMaxY;
         cardManager.GetMouseCard()->GetXY(iX, iMinX, iMaxX, iY, iMinY, iMaxY);
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         const QPointF p = event->localPos();
+#else
+        const QPointF p = event->position();
+#endif
         const QSize s = size();
 
         const int newX = lround((p.x() / s.width()) * (iMaxX - iMinX) + iMinX);

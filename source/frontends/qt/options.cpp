@@ -17,7 +17,6 @@
 #include "qtframe.h"
 
 #include <QMessageBox>
-#include <QGamepad>
 #include <QSettings>
 
 namespace
