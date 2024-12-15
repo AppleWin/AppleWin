@@ -474,9 +474,9 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //-------
 
-// 6502 & no debugger & alt read support
+// 6502 & no debugger & alt read/write support
 #define READ _READ2
-#define WRITE(value) _WRITE(value)
+#define WRITE(value) _WRITE2(value)
 
 #define Cpu6502 Cpu6502_altRead
 #include "CPU/cpu6502.h"  // MOS 6502
@@ -498,9 +498,9 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //-------
 
-// 65C02 & no debugger & alt read support
+// 65C02 & no debugger & alt read/write support
 #define READ _READ2
-#define WRITE(value) _WRITE(value)
+#define WRITE(value) _WRITE2(value)
 
 #define Cpu65C02 Cpu65C02_altRead
 #include "CPU/cpu65C02.h" // WDC 65C02
@@ -528,9 +528,9 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //-------
 
-// 6502 & debugger & alt read support
+// 6502 & debugger & alt read/write support
 #define READ _READ2
-#define WRITE(value) _WRITE(value)
+#define WRITE(value) _WRITE2(value)
 
 #define Cpu6502 Cpu6502_debug_altRead
 #include "CPU/cpu6502.h"  // MOS 6502
@@ -554,9 +554,9 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //-------
 
-// 65C02 & debugger & alt read support
+// 65C02 & debugger & alt read/write support
 #define READ _READ2
-#define WRITE(value) _WRITE(value)
+#define WRITE(value) _WRITE2(value)
 
 #define Cpu65C02 Cpu65C02_debug_altRead
 #include "CPU/cpu65C02.h" // WDC 65C02

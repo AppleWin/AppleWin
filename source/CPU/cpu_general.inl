@@ -90,6 +90,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles);\
 			}																			\
 		}
+#define _WRITE2(a) {																	\
+			{																			\
+				memdirty[memwriteDirtyPage[addr >> 8]] = 0xFF;							\
+				LPBYTE page = memwrite[addr >> 8];										\
+				if (page)																\
+					*(page+(addr & 0xFF)) = (BYTE)(a);									\
+				else if ((addr & 0xF000) == 0xC000)										\
+					IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles);\
+			}																			\
+		}
 #define _WRITE_WITH_IO_F8xx(a) {											/* GH#827 */\
 			if (addr >= 0xF800)															\
 				IO_F8xx(regs.pc,addr,1,(BYTE)(a),uExecutedCycles);						\

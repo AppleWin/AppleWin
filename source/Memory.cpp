@@ -211,6 +211,7 @@ SOFT SWITCH STATUS FLAGS
 static LPBYTE	memshadow[0x100];
 LPBYTE			memwrite[0x100];
 BYTE			memread[0x100];
+BYTE			memwriteDirtyPage[0x100];
 
 iofunction		IORead[256];
 iofunction		IOWrite[256];
@@ -1338,15 +1339,74 @@ static void UpdatePaging(BOOL initialize)
 			memread[loop] = SW_PAGE2 ? memType : MEM_Normal;
 
 		for (loop = 0x20; loop < 0x40; loop++)
-			memread[loop] = SW_PAGE2 ? memType : MEM_Normal;
+			memread[loop] = (SW_PAGE2 && SW_HIRES) ? memType : MEM_Normal;
 	}
 
 	if (GetCardMgr().QueryAux() == CT_80Col)
 	{
+		// Overide the MEM_Aux1K set above (slightly quicker code-path during CPU emulation)
 		if (SW_AUXREAD || (SW_80STORE && SW_PAGE2))
-			for (loop = 0x04; loop < 0x07; loop++)
-				memread[loop] =  MEM_Normal;
+			for (loop = 0x04; loop < 0x08; loop++)
+				memread[loop] = MEM_Normal;
 	}
+
+	for (loop = 0x00; loop<0x100; loop++)
+		memwriteDirtyPage[loop] = loop;
+
+#if 0
+	if (GetCardMgr().QueryAux() == CT_80Col)
+	{
+		// Dirty pages are only in the 1K range
+
+		for (loop = 0x00; loop < 0x02; loop++)
+			if (SW_ALTZP)
+				memwriteDirtyPage[loop] = 0x04 + (loop & 3);
+
+		for (loop = 0x02; loop < 0xC0; loop++)
+			if (SW_AUXWRITE)
+				memwriteDirtyPage[loop] = 0x04 + (loop & 3);
+
+		for (loop = 0xD0; loop < 0x100; loop++)
+			if (SW_HIGHRAM && SW_ALTZP)
+				memwriteDirtyPage[loop] = 0x04 + (loop & 3);
+
+		if (SW_80STORE && SW_PAGE2)
+		{
+			for (loop = 0x04; loop < 0x08; loop++)
+				memwriteDirtyPage[loop] = 0x04 + (loop & 3);
+
+			for (loop = 0x20; loop < 0x40; loop++)
+				memwriteDirtyPage[loop] = 0x04 + (loop & 3);
+		}
+
+		// Map all aux writes into the 1K memory
+		// . NG, as wrong page marked as dirty - so also use memwriteDirtyPage[]
+
+		for (loop = 0x00; loop < 0x02; loop++)
+			if (SW_ALTZP)
+				memwrite[loop] = memaux + 0x400 + ((loop & 3) << 8);
+
+		for (loop = 0x02; loop < 0xC0; loop++)
+			if (SW_AUXWRITE)
+				memwrite[loop] = (memwrite[loop] - (loop << 8)) + 0x400 + ((loop & 3) << 8);
+
+		for (loop = 0xD0; loop < 0x100; loop++)
+			if (SW_HIGHRAM && SW_ALTZP)
+				memwrite[loop] = memaux + 0x400 + ((loop & 3) << 8);
+
+		if (SW_80STORE && SW_PAGE2)
+		{
+			for (loop = 0x04; loop < 0x08; loop++)
+				memwrite[loop] = mem + 0x400 + ((loop & 3) << 8);
+
+			if (SW_HIRES)
+			{
+				for (loop = 0x20; loop < 0x40; loop++)
+					memwrite[loop] = mem + 0x400 + ((loop & 3) << 8);
+			}
+		}
+	}
+#endif
 }
 
 //
