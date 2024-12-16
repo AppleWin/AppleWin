@@ -1204,7 +1204,12 @@ static void UpdatePaging(BOOL initialize)
 	}
 
 	for (loop = 0x00; loop < 0x02; loop++)
-		memshadow[loop] = SW_ALTZP ? memaux+(loop << 8) : memmain+(loop << 8);
+	{
+		memshadow[loop] = SW_ALTZP ? memaux + (loop << 8) : memmain + (loop << 8);
+
+		// re-init this, since for //e aux slot 80-col(1KiB) card, this can change
+		memwrite[loop] = mem + (loop << 8);
+	}
 
 	for (loop = 0x02; loop < 0xC0; loop++)
 	{
@@ -1353,7 +1358,7 @@ static void UpdatePaging(BOOL initialize)
 	for (loop = 0x00; loop<0x100; loop++)
 		memwriteDirtyPage[loop] = loop;
 
-#if 0
+#if 1
 	if (GetCardMgr().QueryAux() == CT_80Col)
 	{
 		// Dirty pages are only in the 1K range
