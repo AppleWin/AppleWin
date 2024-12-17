@@ -2353,6 +2353,14 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 				break;
 #endif
 		}
+
+		if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD && GetCardMgr().QueryAux() == CT_80Col)
+		{
+			const bool isWriteAux = (g_memmode & MF_AUXWRITE) ||		// Write to aux: $200-$BFFF
+				((g_memmode & MF_80STORE) && (g_memmode & MF_PAGE2));	// Write to aux: $400-$7FF and $2000-$3FFF
+
+			memVidHD = isWriteAux ? memaux : NULL;
+		}
 	}
 	else // Apple ][,][+,][J-Plus or clone ][,][+
 	{
