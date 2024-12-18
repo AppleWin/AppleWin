@@ -2356,10 +2356,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 
 		if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD && GetCardMgr().QueryAux() == CT_80Col)
 		{
-			const bool isWriteAux = (g_memmode & MF_AUXWRITE) ||		// Write to aux: $200-$BFFF
-				((g_memmode & MF_80STORE) && (g_memmode & MF_PAGE2));	// Write to aux: $400-$7FF and $2000-$3FFF
-
-			memVidHD = isWriteAux ? memaux : NULL;
+			memVidHD = MemIsWriteAux(g_memmode) ? memaux : NULL;
 		}
 	}
 	else // Apple ][,][+,][J-Plus or clone ][,][+
@@ -2425,6 +2422,17 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 		return GetVideo().VideoSetMode(programcounter,address,write,value,nExecutedCycles);
 
 	return write ? 0 : MemReadFloatingBus(nExecutedCycles);
+}
+
+//===========================================================================
+
+// NB. Not particularly accurate (but good enough for now)
+// . 80STORE && PAGE2 just means that writes occur to aux $400-7FF (and $2000-$3FFF if HIRES=1), not the entire aux 64K
+
+bool MemIsWriteAux(uint32_t memMode)
+{
+	return (memMode & MF_AUXWRITE) ||						// Write to aux: $200-$BFFF
+		((memMode & MF_80STORE) && (memMode & MF_PAGE2));	// Write to aux: $400-$7FF and $2000-$3FFF
 }
 
 //===========================================================================

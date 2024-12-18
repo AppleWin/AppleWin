@@ -100,8 +100,7 @@ void VidHDCard::VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG 
 
 bool VidHDCard::IsWriteAux(void)
 {
-	return (m_memMode & MF_AUXWRITE) ||							// Write to aux: $200-$BFFF
-		((m_memMode & MF_80STORE) && (m_memMode & MF_PAGE2));	// Write to aux: $400-$7FF and $2000-$3FFF
+	return MemIsWriteAux(m_memMode);
 }
 
 //===========================================================================
