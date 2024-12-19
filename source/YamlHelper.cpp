@@ -560,7 +560,7 @@ void YamlSaveHelper::SaveMemory(const LPBYTE pMemBase, const UINT uMemSize, cons
 	size_t lineSize = kIndent+6+2*kStride+2;	// "AAAA: 00010203...3F\n\00" = 6+ 2*64 +2
 	char* const pLine = new char [lineSize];
 
-	for (DWORD addr = offset; addr < (uMemSize + offset); addr += kStride)
+	for (uint32_t addr = offset; addr < (uMemSize + offset); addr += kStride)
 	{
 		char* pDst = pLine;
 		for (UINT i=0; i<kIndent; i++)

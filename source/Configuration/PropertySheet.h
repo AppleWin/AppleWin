@@ -22,7 +22,7 @@ public:
 	virtual ~CPropertySheet(){}
 
 	virtual void Init(void);
-	virtual DWORD GetVolumeMax(void);								// TODO:TC: Move out of here
+	virtual uint32_t GetVolumeMax(void);								// TODO:TC: Move out of here
 	virtual bool SaveStateSelectImage(HWND hWindow, bool bSave);	// TODO:TC: Move out of here
 	void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
 	{

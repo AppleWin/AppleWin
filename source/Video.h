@@ -222,9 +222,9 @@ public:
 	void ClearSHRResidue(void);
 
 	enum VideoScanner_e {VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH};
-	WORD VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr = VS_FullAddr);
-	bool VideoGetVblBarEx(const DWORD dwCyclesThisFrame);
-	bool VideoGetVblBar(const DWORD uExecutedCycles);
+	WORD VideoGetScannerAddress(uint32_t nCycles, VideoScanner_e videoScannerAddr = VS_FullAddr);
+	bool VideoGetVblBarEx(const uint32_t dwCyclesThisFrame);
+	bool VideoGetVblBar(const uint32_t uExecutedCycles);
 
 	bool VideoGetSW80COL(void);
 	bool VideoGetSWDHIRES(void);
@@ -289,7 +289,7 @@ private:
 
 	int g_nAltCharSetOffset;
 	uint32_t g_uVideoMode;		// Current Video Mode (this is the last set one as it may change mid-scan line!)
-	DWORD g_eVideoType;			// saved to Registry
+	uint32_t g_eVideoType;			// saved to Registry
 	VideoStyle_e g_eVideoStyle;
 	bool g_bVideoScannerNTSC;	// NTSC video scanning (or PAL)
 	COLORREF g_nMonochromeRGB;	// saved to Registry

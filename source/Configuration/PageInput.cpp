@@ -136,7 +136,7 @@ INT_PTR CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		case IDC_JOYSTICK0:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				DWORD dwNewJoyType = (DWORD)SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);
+				uint32_t dwNewJoyType = (uint32_t)SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);
 				const bool bIsSlot4Mouse = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT4] == CT_MouseInterface;
 				JoySetEmulationType(hWnd, m_nJoy0ChoiceTranlationTbl[dwNewJoyType], JN_JOYSTICK0, bIsSlot4Mouse);
 				InitOptions(hWnd);
@@ -146,7 +146,7 @@ INT_PTR CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		case IDC_JOYSTICK1:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				DWORD dwNewJoyType = (DWORD)SendDlgItemMessage(hWnd, IDC_JOYSTICK1, CB_GETCURSEL, 0, 0);
+				uint32_t dwNewJoyType = (uint32_t)SendDlgItemMessage(hWnd, IDC_JOYSTICK1, CB_GETCURSEL, 0, 0);
 				const bool bIsSlot4Mouse = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT4] == CT_MouseInterface;
 				JoySetEmulationType(hWnd, m_nJoy1ChoiceTranlationTbl[dwNewJoyType], JN_JOYSTICK1, bIsSlot4Mouse);
 				InitOptions(hWnd);
@@ -169,7 +169,7 @@ INT_PTR CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		case IDC_CPM_CONFIG:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				const DWORD NewCPMChoiceItem = (DWORD) SendDlgItemMessage(hWnd, IDC_CPM_CONFIG, CB_GETCURSEL, 0, 0);
+				const uint32_t NewCPMChoiceItem = (uint32_t) SendDlgItemMessage(hWnd, IDC_CPM_CONFIG, CB_GETCURSEL, 0, 0);
 				const CPMCHOICE NewCPMChoice = m_CPMComboItemToChoice[NewCPMChoiceItem];
 				if (NewCPMChoice == m_CPMChoice)
 					break;
@@ -195,7 +195,7 @@ INT_PTR CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		case IDC_FOURPLAY_CONFIG:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				const DWORD NewFourPlayChoiceItem = (DWORD) SendDlgItemMessage(hWnd, IDC_FOURPLAY_CONFIG, CB_GETCURSEL, 0, 0);
+				const uint32_t NewFourPlayChoiceItem = (uint32_t) SendDlgItemMessage(hWnd, IDC_FOURPLAY_CONFIG, CB_GETCURSEL, 0, 0);
 				const FOURPLAYCHOICE NewFourPlayChoice = m_FourPlayComboItemToChoice[NewFourPlayChoiceItem];
 				if (NewFourPlayChoice == m_FourPlayChoice)
 					break;
@@ -226,7 +226,7 @@ INT_PTR CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		case IDC_SNESMAX_CONFIG:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				const DWORD NewSNESMAXChoiceItem = (DWORD) SendDlgItemMessage(hWnd, IDC_SNESMAX_CONFIG, CB_GETCURSEL, 0, 0);
+				const uint32_t NewSNESMAXChoiceItem = (uint32_t) SendDlgItemMessage(hWnd, IDC_SNESMAX_CONFIG, CB_GETCURSEL, 0, 0);
 				const SNESMAXCHOICE NewSNESMAXChoice = m_SNESMAXComboItemToChoice[NewSNESMAXChoiceItem];
 				if (NewSNESMAXChoice == m_SNESMAXChoice)
 					break;

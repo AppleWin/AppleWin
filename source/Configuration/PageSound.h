@@ -19,7 +19,7 @@ public:
 
 	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
-	DWORD GetVolumeMax(void){ return VOLUME_MAX; }
+	uint32_t GetVolumeMax(void){ return VOLUME_MAX; }
 
 protected:
 	// IPropertySheetPage

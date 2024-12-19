@@ -40,7 +40,7 @@ public:
 		//
 
 		m_numSamplesError = 0;
-		m_byteOffset = (DWORD)-1;
+		m_byteOffset = (uint32_t)-1;
 		m_currSampleSum = 0;
 		m_currNumSamples = 0;
 		m_currSampleMod4 = 0;
@@ -87,7 +87,7 @@ public:
 
 	void Mute(void);
 	void Unmute(void);
-	void SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
+	void SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax);
 
 	void PeriodicUpdate(UINT executedCycles);
 	void Update(void);
@@ -116,7 +116,7 @@ private:
 	static const BYTE m_Votrax2SSI263[/*64*/];
 
 	static const unsigned short m_kNumChannels = 1;
-	static const DWORD m_kDSBufferByteSize = MAX_SAMPLES * sizeof(short) * m_kNumChannels;
+	static const uint32_t m_kDSBufferByteSize = MAX_SAMPLES * sizeof(short) * m_kNumChannels;
 	short m_mixBufferSSI263[m_kDSBufferByteSize / sizeof(short)];
 	VOICE SSI263SingleVoice;
 
@@ -170,7 +170,7 @@ private:
 	//
 
 	int m_numSamplesError;
-	DWORD m_byteOffset;
+	uint32_t m_byteOffset;
 	int m_currSampleSum;
 	int m_currNumSamples;
 	UINT m_currSampleMod4;

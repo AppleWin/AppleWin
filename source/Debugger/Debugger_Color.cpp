@@ -203,7 +203,7 @@ static void _SetupColorRamp(const int iPrimary, int & iColor_)
 		int nR = bR ? nC : 0;
 		int nG = bG ? nC : 0;
 		int nB = bB ? nC : 0;
-		DWORD nColor = RGB(nR, nG, nB);
+		uint32_t nColor = RGB(nR, nG, nB);
 		g_aColorPalette[iColor_] = nColor;
 #if DEBUG_COLOR_RAMP
 		strRamp += StrFormat("RGB(%3d,%3d,%3d), ", nR, nG, nB);

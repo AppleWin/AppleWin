@@ -341,7 +341,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static BOOL      g_bProfiling       = 0;
 	static int       g_nDebugSteps      = 0;
-	static DWORD     g_nDebugStepCycles = 0;
+	static uint32_t  g_nDebugStepCycles = 0;
 	static int       g_nDebugStepStart  = 0;
 	static int       g_nDebugStepUntil  = -1; // HACK: MAGIC #
 
@@ -352,7 +352,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static bool      g_bTraceHeader     = false; // semaphore, flag header to be printed
 	static bool      g_bTraceFileWithVideoScanner = false;
 
-	DWORD     extbench      = 0;
+	uint32_t     extbench      = 0;
 
 	static bool      g_bIgnoreNextKey = false;
 
@@ -783,7 +783,7 @@ Update_t CmdBenchmarkStop (int nArgs)
 	
 	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 	GetFrame().VideoRedrawScreen();
-	DWORD currtime = GetTickCount();
+	uint32_t currtime = GetTickCount();
 	while ((extbench = GetTickCount()) != currtime)
 		; // intentional busy-waiting
 	KeybQueueKeypress(TEXT(' ') ,ASCII);
@@ -2800,7 +2800,7 @@ Update_t CmdConfigSave (int nArgs)
 	{
 		void *pSrc;
 		int   nLen;
-		DWORD nPut;
+		uint32_t nPut;
 
 	// FIXME: Should be saving in Text format, not binary!
 
@@ -6522,14 +6522,14 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 	g_nSourceAssembleBytes = 0;
 	g_nSourceAssemblySymbols = 0;
 
-	const DWORD INVALID_ADDRESS = _6502_MEM_END + 1;
+	const uint32_t INVALID_ADDRESS = _6502_MEM_END + 1;
 
 	int nLines = g_AssemblerSourceBuffer.GetNumLines();
 	for ( int iLine = 0; iLine < nLines; iLine++ )
 	{
 		g_AssemblerSourceBuffer.GetLine( iLine, sText, MAX_LINE - 1 );
 
-		DWORD nAddress = INVALID_ADDRESS;
+		uint32_t nAddress = INVALID_ADDRESS;
 
 		_tcscpy( sLine, sText );
 		char *p = sLine;
@@ -6620,7 +6620,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 					if (pAddress)
 					{
 						char *pAddressEnd;
-						nAddress = (DWORD) strtol( pAddress, &pAddressEnd, 16 );
+						nAddress = (uint32_t) strtol( pAddress, &pAddressEnd, 16 );
 						g_aSymbols[ SYMBOLS_SRC_2 ][ (WORD) nAddress] = sName;
 						g_nSourceAssemblySymbols++;
 					}
@@ -8852,7 +8852,7 @@ void DebugInitialize ()
 	AssemblerOff(); // update prompt
 
 #if _DEBUG
-	DWORD nError = 0;
+	uint32_t nError = 0;
 #endif
 
 #if _DEBUG
@@ -9595,9 +9595,9 @@ void DebuggerCursorUpdate ()
 		return;
 
 	const  int nUpdatesPerSecond = 4;
-	const  DWORD nUpdateInternal_ms = 1000 / nUpdatesPerSecond;
-	static DWORD nBeg = GetTickCount(); // timeGetTime();
-	       DWORD nNow = GetTickCount(); // timeGetTime();
+	const  uint32_t nUpdateInternal_ms = 1000 / nUpdatesPerSecond;
+	static uint32_t nBeg = GetTickCount(); // timeGetTime();
+	       uint32_t nNow = GetTickCount(); // timeGetTime();
 
 	if (((nNow - nBeg) >= nUpdateInternal_ms) && !DebugVideoMode::Instance().IsSet())
 	{

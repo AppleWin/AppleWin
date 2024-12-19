@@ -85,7 +85,7 @@ void CPropertySheet::Init(void)
 	INT_PTR nRes = PropertySheet(&PropSheetHeader);	// Result: 0=Cancel, 1=OK
 }
 
-DWORD CPropertySheet::GetVolumeMax()
+uint32_t CPropertySheet::GetVolumeMax()
 {
 	return m_PageSound.GetVolumeMax();
 }

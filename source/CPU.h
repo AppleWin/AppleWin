@@ -30,7 +30,7 @@ extern unsigned __int64 g_nCumulativeCycles;
 
 void    CpuDestroy ();
 void    CpuCalcCycles(ULONG nExecutedCycles);
-DWORD   CpuExecute(const DWORD uCycles, const bool bVideoUpdate);
+uint32_t   CpuExecute(const uint32_t uCycles, const bool bVideoUpdate);
 ULONG   CpuGetCyclesThisVideoFrame(ULONG nExecutedCycles);
 void    CpuCreateCriticalSection(void);
 void    CpuInitialize(void);

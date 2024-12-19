@@ -201,7 +201,7 @@ void HarddiskInterfaceCard::Reset(const bool powerCycle)
 
 void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-	const DWORD HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
+	const uint32_t HARDDISK_FW_SIZE = APPLE_SLOT_SIZE;
 	WORD id = IDR_HDC_SMARTPORT_FW;	// If not enhanced //e, then modify the firmware later
 
 	// Use any cmd line override

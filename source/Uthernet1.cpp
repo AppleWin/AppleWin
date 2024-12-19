@@ -412,7 +412,7 @@ void Uthernet1::tfe_sideeffects_write_pp(WORD ppaddress, int oddaddress)
     case TFE_PP_ADDR_LOG_ADDR_FILTER+6:
 		{
 			unsigned int pos = 8 * (ppaddress - TFE_PP_ADDR_LOG_ADDR_FILTER + oddaddress);
-			DWORD *p = (pos < 32) ? &tfe_hash_mask[0] : &tfe_hash_mask[1];
+			uint32_t *p = (pos < 32) ? &tfe_hash_mask[0] : &tfe_hash_mask[1];
 
 			*p &= ~(0xFF << pos); /* clear out relevant bits */
 			*p |= GET_PP_8(ppaddress+oddaddress) << pos;

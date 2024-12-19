@@ -391,7 +391,7 @@ void tfe_arch_set_mac( const BYTE mac[6] )
 #endif
 }
 
-void tfe_arch_set_hashfilter(const DWORD hash_mask[2])
+void tfe_arch_set_hashfilter(const uint32_t hash_mask[2])
 {
 #if defined(TFE_DEBUG_ARCH) || defined(TFE_DEBUG_FRAMES)
     if(g_fh) fprintf( g_fh, "New hash filter set: %08X:%08X.\n",

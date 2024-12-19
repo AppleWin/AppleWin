@@ -69,12 +69,12 @@ bool		g_bDisableDirectInput = false;
 bool		g_bDisableDirectSound = false;
 bool		g_bDisableDirectSoundMockingboard = false;
 
-DWORD		g_dwSpeed		= SPEED_NORMAL;	// Affected by Config dialog's speed slider bar
+uint32_t		g_dwSpeed		= SPEED_NORMAL;	// Affected by Config dialog's speed slider bar
 double		g_fCurrentCLK6502 = CLK_6502_NTSC;	// Affected by Config dialog's speed slider bar
 static double g_fMHz		= 1.0;			// Affected by Config dialog's speed slider bar
 
 int			g_nCpuCyclesFeedback = 0;
-DWORD       g_dwCyclesThisFrame = 0;
+uint32_t       g_dwCyclesThisFrame = 0;
 
 int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.cpp MemReset()
 
@@ -128,7 +128,7 @@ void LogPerfTimings(void)
 
 //===========================================================================
 
-static DWORD dwLogKeyReadTickStart;
+static uint32_t dwLogKeyReadTickStart;
 static bool bLogKeyReadDone = false;
 
 void LogFileTimeUntilFirstKeyReadReset(void)
@@ -160,7 +160,7 @@ void LogFileTimeUntilFirstKeyRead(void)
 		)
 		return;
 
-	DWORD dwTime = GetTickCount() - dwLogKeyReadTickStart;
+	uint32_t dwTime = GetTickCount() - dwLogKeyReadTickStart;
 
 	LogFileOutput("Time from emulation reboot until first $C000 access: %d msec\n", dwTime);
 
@@ -200,7 +200,7 @@ double Get6502BaseClock(void)
 
 void SetCurrentCLK6502(void)
 {
-	static DWORD dwPrevSpeed = (DWORD) -1;
+	static uint32_t dwPrevSpeed = (uint32_t) -1;
 	static VideoRefreshRate_e prevVideoRefreshRate = VR_NONE;
 
 	if (dwPrevSpeed == g_dwSpeed && GetVideo().GetVideoRefreshRate() == prevVideoRefreshRate)

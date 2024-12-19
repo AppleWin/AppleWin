@@ -235,7 +235,7 @@ static UINT g_nMin = 0xFFFFFFFF;
 static UINT g_nMax = 0;
 #endif
 
-static __forceinline void DoIrqProfiling(DWORD uCycles)
+static __forceinline void DoIrqProfiling(uint32_t uCycles)
 {
 #ifdef _DEBUG
 	if(regs.ps & AF_INTERRUPT)
@@ -513,7 +513,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //===========================================================================
 
-static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdate)
+static uint32_t InternalCpuExecute(const uint32_t uTotalCycles, const bool bVideoUpdate)
 {
 	if (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_BENCHMARK)
 	{
@@ -607,7 +607,7 @@ ULONG CpuGetCyclesThisVideoFrame(const ULONG nExecutedCycles)
 
 //===========================================================================
 
-DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
+uint32_t CpuExecute(const uint32_t uCycles, const bool bVideoUpdate)
 {
 #ifdef LOG_PERF_TIMINGS
 	extern UINT64 g_timeCpu;
@@ -624,7 +624,7 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 	// uCycles:
 	//  =0  : Do single step
 	//  >0  : Do multi-opcode emulation
-	const DWORD uExecutedCycles = InternalCpuExecute(uCycles, bVideoUpdate);
+	const uint32_t uExecutedCycles = InternalCpuExecute(uCycles, bVideoUpdate);
 
 	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
 	// . Ensures that 6522 regs are up-to-date for any potential save-state

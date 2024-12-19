@@ -627,7 +627,7 @@ void UpdateDHiResCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, bool u
 	BYTE byteval3 = *pMain;
 	BYTE byteval4 = (x < 39) ? *(pAux + 1) : 0;
 
-	DWORD dwordval = (byteval1 & 0x70) | ((byteval2 & 0x7F) << 7) |
+	uint32_t dwordval = (byteval1 & 0x70) | ((byteval2 & 0x7F) << 7) |
 		((byteval3 & 0x7F) << 14) | ((byteval4 & 0x07) << 21);
 
 #define PIXEL  0
@@ -664,12 +664,12 @@ void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 	uint8_t byteval4 = (x >= 38 ? 0 : *(pMain + 2));
 	
 	// all 28 bits chained
-	DWORD dwordval = (byteval1 & 0x7F) | ((byteval2 & 0x7F) << 7) | ((byteval3 & 0x7F) << 14) | ((byteval4 & 0x7F) << 21);
+	uint32_t dwordval = (byteval1 & 0x7F) | ((byteval2 & 0x7F) << 7) | ((byteval3 & 0x7F) << 14) | ((byteval4 & 0x7F) << 21);
 
 	// Extraction of 14 color pixels
 	UINT32 colors[14];
 	int color = 0;
-	DWORD dwordval_tmp = dwordval;
+	uint32_t dwordval_tmp = dwordval;
 	dwordval_tmp = dwordval_tmp >> 7;
 	bool offset = (byteval2 & 0x80) ? true : false;
 	for (int i = 0; i < 14; i++)
@@ -688,9 +688,9 @@ void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 	bw[0] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[0]);
 	bw[1] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[1]);
 
-	DWORD mask  =  0x01C0; //  00|000001 1|1000000
-	DWORD chck1 =  0x0140; //  00|000001 0|1000000
-	DWORD chck2 =  0x0080; //  00|000000 1|0000000
+	uint32_t mask  =  0x01C0; //  00|000001 1|1000000
+	uint32_t chck1 =  0x0140; //  00|000001 0|1000000
+	uint32_t chck2 =  0x0080; //  00|000000 1|0000000
 
 	// HIRES render in RGB works on a pixel-basis (1-bit data in framebuffer)
 	// The pixel can be 'color', if it makes a 101 or 010 pattern with the two neighbour bits
@@ -762,13 +762,13 @@ void UpdateDHiResCellRGB(int x, int y, uint16_t addr, bgra_t* pVideoAddress, boo
 	uint8_t byteval4 = *(pMain + 1);
 
 	// all 28 bits chained
-	DWORD dwordval = (byteval1 & 0x7F) | ((byteval2 & 0x7F) << 7) | ((byteval3 & 0x7F) << 14) | ((byteval4 & 0x7F) << 21);
+	uint32_t dwordval = (byteval1 & 0x7F) | ((byteval2 & 0x7F) << 7) | ((byteval3 & 0x7F) << 14) | ((byteval4 & 0x7F) << 21);
 
 	// Extraction of 7 color pixels and 7x4 bits
 	int bits[7];
 	UINT32 colors[7];
 	int color = 0;
-	DWORD dwordval_tmp = dwordval;
+	uint32_t dwordval_tmp = dwordval;
 	for (int i = 0; i < 7; i++)
 	{
 		bits[i] = dwordval_tmp & 0xF;
@@ -972,7 +972,7 @@ int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	BYTE byteval3 = *pMain;
 	BYTE byteval4 = (x < 39) ? *(pAux+1) : 0;
 
-	DWORD dwordval = (byteval1 & 0xF8)        | ((byteval2 & 0xFF) << 8) |
+	uint32_t dwordval = (byteval1 & 0xF8)        | ((byteval2 & 0xFF) << 8) |
 					((byteval3 & 0xFF) << 16) | ((byteval4 & 0x1F) << 24);
 	dwordval <<= 2;
 
@@ -1003,7 +1003,7 @@ int UpdateDHiRes160Cell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 	BYTE byteval3 = *pMain;
 	BYTE byteval4 = (x < 39) ? *(pAux+1) : 0;
 
-	DWORD dwordval = (byteval1 & 0xFC)        | ((byteval2 & 0xFF) << 8) |	// NB. Needs more bits than above squashed version, to avoid vertical black lines
+	uint32_t dwordval = (byteval1 & 0xFC)        | ((byteval2 & 0xFF) << 8) |	// NB. Needs more bits than above squashed version, to avoid vertical black lines
 					((byteval3 & 0xFF) << 16) | ((byteval4 & 0x3F) << 24);
 	dwordval <<= 2;
 

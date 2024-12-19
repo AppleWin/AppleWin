@@ -219,18 +219,18 @@ static void ContinueExecution(void)
 	const UINT uCyclesToExecuteWithFeedback = (nCyclesWithFeedback >= 0) ? nCyclesWithFeedback
 																		 : 0;
 
-	const DWORD uCyclesToExecute = (g_nAppMode == MODE_RUNNING)		? uCyclesToExecuteWithFeedback
+	const uint32_t uCyclesToExecute = (g_nAppMode == MODE_RUNNING)		? uCyclesToExecuteWithFeedback
 												/* MODE_STEPPING */ : 0;
 
 	const bool bVideoUpdate = !g_bFullSpeed;
-	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
+	const uint32_t uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
 	GetCardMgr().Update(uActualCyclesExecuted);
 
 	//
 
-	DWORD uSpkrActualCyclesExecuted = uActualCyclesExecuted;
+	uint32_t uSpkrActualCyclesExecuted = uActualCyclesExecuted;
 
 	bool bModeStepping_WaitTimer = false;
 	if (g_nAppMode == MODE_STEPPING && !IsDebugSteppingAtFullSpeed())

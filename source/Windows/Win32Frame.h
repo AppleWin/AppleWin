@@ -54,7 +54,7 @@ public:
 
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
 	virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
-	virtual BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize);
+	virtual BYTE* GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize);
 	virtual void Restart();
 
 	virtual std::string Video_GetScreenShotFolder() const;

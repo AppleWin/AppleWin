@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "YamlHelper.h"
 #include "Riff.h"
 
-#include "Debugger/Debug.h"	// For DWORD extbench
+#include "Debugger/Debug.h"	// For uint32_t extbench
 
 // Notes:
 //
@@ -56,7 +56,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // NB. Setting g_nSPKR_NumChannels=1 still works (ie. mono).
 // . Retain it for a while in case there are regressions with the new 2-channel code, then remove it.
 static const unsigned short g_nSPKR_NumChannels = 2;
-static const DWORD g_dwDSSpkrBufferSize = MAX_SAMPLES * sizeof(short) * g_nSPKR_NumChannels;
+static const uint32_t g_dwDSSpkrBufferSize = MAX_SAMPLES * sizeof(short) * g_nSPKR_NumChannels;
 
 //-------------------------------------
 
@@ -112,11 +112,11 @@ UINT Spkr_GetNumChannels(void)
 
 static void DisplayBenchmarkResults ()
 {
-  DWORD totaltime = GetTickCount()-extbench;
+  uint32_t totaltime = GetTickCount()-extbench;
   GetFrame().VideoRedrawScreen();
   std::string strText = StrFormat("This benchmark took %u.%02u seconds.",
-								  (unsigned)(totaltime / 1000),
-								  (unsigned)((totaltime / 10) % 100));
+								  (uint32_t)(totaltime / 1000),
+								  (uint32_t)((totaltime / 10) % 100));
   GetFrame().FrameMessageBox(strText.c_str(),
 							 "Benchmark Results",
 							 MB_ICONINFORMATION | MB_SETFOREGROUND);
@@ -446,7 +446,7 @@ BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
 //=============================================================================
 
 // Called by ContinueExecution()
-void SpkrUpdate (DWORD totalcycles)
+void SpkrUpdate (uint32_t totalcycles)
 {
 #ifdef LOG_PERF_TIMINGS
 	extern UINT64 g_timeSpeaker;
@@ -508,7 +508,7 @@ void SpkrUpdate_Timer()
 
 //=============================================================================
 
-static DWORD dwByteOffset = (DWORD)-1;
+static uint32_t dwByteOffset = (uint32_t)-1;
 static int nNumSamplesError = 0;
 static int nDbgSpkrCnt = 0;
 
@@ -544,7 +544,7 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 	if(FAILED(hr))
 		return nNumSamples;
 
-	if(dwByteOffset == (DWORD)-1)
+	if(dwByteOffset == (uint32_t)-1)
 	{
 		// First time in this func (probably after re-init (Spkr_SubmitWaveBuffer()))
 
@@ -613,7 +613,7 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 	if(nNumSamplesToUse >= 128)	// Limit the buffer unlock/locking to a minimum
 	{
 		hr = DSGetLock(SpeakerVoice.lpDSBvoice,
-			dwByteOffset, (DWORD)nNumSamplesToUse * sizeof(short) * g_nSPKR_NumChannels,
+			dwByteOffset, (uint32_t)nNumSamplesToUse * sizeof(short) * g_nSPKR_NumChannels,
 			&pDSLockedBuffer0, &dwDSLockedBufferSize0,
 			&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 		if (FAILED(hr))
@@ -621,8 +621,8 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 
 		//
 
-		DWORD dwBufferSize0 = 0;
-		DWORD dwBufferSize1 = 0;
+		uint32_t dwBufferSize0 = 0;
+		uint32_t dwBufferSize1 = 0;
 
 		if(nNumSamples)
 		{
@@ -712,7 +712,7 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 		if(FAILED(hr))
 			return nNumSamples;
 
-		dwByteOffset = (dwByteOffset + (DWORD)nNumSamplesToUse*sizeof(short)*g_nSPKR_NumChannels) % g_dwDSSpkrBufferSize;
+		dwByteOffset = (dwByteOffset + (uint32_t)nNumSamplesToUse*sizeof(short)*g_nSPKR_NumChannels) % g_dwDSSpkrBufferSize;
 	}
 
 	return nNumSamples;
@@ -730,7 +730,7 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 	if(pSpeakerBuffer == NULL)
 	{
 		// Re-init from SpkrReset()
-		dwByteOffset = (DWORD)-1;
+		dwByteOffset = (uint32_t)-1;
 		nNumSamplesError = 0;
 
 		// Don't call DSZeroVoiceBuffer() - get noise with "VIA AC'97 Enhanced Audio Controller"
@@ -755,7 +755,7 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 		return nNumSamples;
 	}
 
-	if(dwByteOffset == (DWORD)-1)
+	if(dwByteOffset == (uint32_t)-1)
 	{
 		// First time in this func (probably after re-init (above))
 
@@ -836,7 +836,7 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 		//LogOutput("[Submit]    C=%08X, PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X +++\n", nDbgSpkrCnt, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamplesToUse);
 
 		hr = DSGetLock(SpeakerVoice.lpDSBvoice,
-			dwByteOffset, (DWORD)nNumSamplesToUse * sizeof(short) * g_nSPKR_NumChannels,
+			dwByteOffset, (uint32_t)nNumSamplesToUse * sizeof(short) * g_nSPKR_NumChannels,
 			&pDSLockedBuffer0, &dwDSLockedBufferSize0,
 			&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 		if (FAILED(hr))
@@ -865,7 +865,7 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 			return nNumSamples;
 		}
 
-		dwByteOffset = (dwByteOffset + (DWORD)nNumSamplesToUse*sizeof(short)*g_nSPKR_NumChannels) % g_dwDSSpkrBufferSize;
+		dwByteOffset = (dwByteOffset + (uint32_t)nNumSamplesToUse*sizeof(short)*g_nSPKR_NumChannels) % g_dwDSSpkrBufferSize;
 	}
 
 	return bBufferError ? nNumSamples : nNumSamplesToUse;
@@ -926,12 +926,12 @@ bool Spkr_IsActive()
 
 //-----------------------------------------------------------------------------
 
-DWORD SpkrGetVolume()
+uint32_t SpkrGetVolume()
 {
 	return SpeakerVoice.dwUserVolume;
 }
 
-void SpkrSetVolume(DWORD dwVolume, DWORD dwVolumeMax)
+void SpkrSetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 {
 	SpeakerVoice.dwUserVolume = dwVolume;
 
@@ -996,7 +996,7 @@ bool Spkr_DSInit()
 
 		hr = SpeakerVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
 		LogFileOutput("Spkr_DSInit: GetCurrentPosition kludge (%08X)\n", hr);
-		LogOutput("[DSInit] PC=%08X, WC=%08X, Diff=%08X\n", dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor);
+		LogOutput("[DSInit] PC=%08" DWORD_T_FMT ", WC=%08" DWORD_T_FMT ", Diff=%08" DWORD_T_FMT "\n", dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor);
 	}
 
 	return true;

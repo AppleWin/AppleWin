@@ -145,12 +145,12 @@ bool MockingboardCardManager::IsActiveToPreventFullSpeed(void)
 	return false;
 }
 
-DWORD MockingboardCardManager::GetVolume(void)
+uint32_t MockingboardCardManager::GetVolume(void)
 {
 	return m_userVolume;
 }
 
-void MockingboardCardManager::SetVolume(DWORD volume, DWORD volumeMax)
+void MockingboardCardManager::SetVolume(uint32_t volume, uint32_t volumeMax)
 {
 	m_userVolume = volume;
 
@@ -330,7 +330,7 @@ UINT MockingboardCardManager::GenerateAllSoundData(void)
 	if (FAILED(hr))
 		return 0;
 
-	if (m_byteOffset == (DWORD)-1)
+	if (m_byteOffset == (uint32_t)-1)
 	{
 		// First time in this func
 
@@ -448,7 +448,7 @@ void MockingboardCardManager::MixAllAndCopyToRingBuffer(UINT nNumSamples)
 	SHORT* pDSLockedBuffer0, * pDSLockedBuffer1;
 
 	HRESULT hr = DSGetLock(m_mockingboardVoice.lpDSBvoice,
-		m_byteOffset, (DWORD)nNumSamples * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS,
+		m_byteOffset, (uint32_t)nNumSamples * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS,
 		&pDSLockedBuffer0, &dwDSLockedBufferSize0,
 		&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 	if (FAILED(hr))
@@ -462,7 +462,7 @@ void MockingboardCardManager::MixAllAndCopyToRingBuffer(UINT nNumSamples)
 	hr = m_mockingboardVoice.lpDSBvoice->Unlock((void*)pDSLockedBuffer0, dwDSLockedBufferSize0,
 		(void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
 
-	m_byteOffset = (m_byteOffset + (DWORD)nNumSamples * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS) % SOUNDBUFFER_SIZE;
+	m_byteOffset = (m_byteOffset + (uint32_t)nNumSamples * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS) % SOUNDBUFFER_SIZE;
 
 	if (m_outputToRiff)
 		RiffPutSamples(&m_mixBuffer[0], nNumSamples);

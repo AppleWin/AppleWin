@@ -45,11 +45,11 @@ bool SetCurrentImageDir(const std::string& pszImageDir);
 
 extern bool       g_bRestart;
 
-extern DWORD      g_dwSpeed;
+extern uint32_t   g_dwSpeed;
 extern double     g_fCurrentCLK6502;
 
 extern int        g_nCpuCyclesFeedback;
-extern DWORD      g_dwCyclesThisFrame;
+extern uint32_t   g_dwCyclesThisFrame;
 
 extern int        g_nMemoryClearType;					// Cmd line switch: use specific MIP (Memory Initialization Pattern)
 
