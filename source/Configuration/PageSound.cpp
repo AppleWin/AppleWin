@@ -107,7 +107,7 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
 				UINT slot = (LOWORD(wparam) == IDC_SOUNDCARD_SLOT4) ? SLOT4 : SLOT5;
-				DWORD newChoiceItem = (DWORD)SendDlgItemMessage(hWnd, LOWORD(wparam), CB_GETCURSEL, 0, 0);
+				uint32_t newChoiceItem = (uint32_t)SendDlgItemMessage(hWnd, LOWORD(wparam), CB_GETCURSEL, 0, 0);
 
 				SS_CARDTYPE newCard = CT_Empty;
 				switch (newChoiceItem)
@@ -154,11 +154,11 @@ void CPageSound::DlgOK(HWND hWnd)
 {
 	const SoundType_e newSoundType = (SoundType_e) SendDlgItemMessage(hWnd, IDC_SOUNDTYPE, CB_GETCURSEL, 0, 0);
 
-	const DWORD dwSpkrVolume = SendDlgItemMessage(hWnd, IDC_SPKR_VOLUME, TBM_GETPOS, 0, 0);
-	const DWORD dwMBVolume = SendDlgItemMessage(hWnd, IDC_MB_VOLUME, TBM_GETPOS, 0, 0);
+	const uint32_t dwSpkrVolume = SendDlgItemMessage(hWnd, IDC_SPKR_VOLUME, TBM_GETPOS, 0, 0);
+	const uint32_t dwMBVolume = SendDlgItemMessage(hWnd, IDC_MB_VOLUME, TBM_GETPOS, 0, 0);
 
 	SpkrSetEmulationType(newSoundType);
-	DWORD dwSoundType = (soundtype == SOUND_NONE) ? REG_SOUNDTYPE_NONE : REG_SOUNDTYPE_WAVE;
+	uint32_t dwSoundType = (soundtype == SOUND_NONE) ? REG_SOUNDTYPE_NONE : REG_SOUNDTYPE_WAVE;
 	REGSAVE(TEXT(REGVALUE_SOUND_EMULATION), dwSoundType);
 
 	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence

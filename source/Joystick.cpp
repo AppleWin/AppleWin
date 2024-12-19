@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 enum {DEVICE_NONE=0, DEVICE_JOYSTICK, DEVICE_KEYBOARD, DEVICE_MOUSE, DEVICE_JOYSTICK_THUMBSTICK2};
 
 // Indexed by joytype[n]
-static const DWORD joyinfo[6] =	{	DEVICE_NONE,
+static const uint32_t joyinfo[6] =	{	DEVICE_NONE,
 									DEVICE_JOYSTICK,
 									DEVICE_KEYBOARD,	// Cursors (prev: Numpad-Standard)
 									DEVICE_KEYBOARD,	// Numpad (prev: Numpad-Centering)
@@ -90,7 +90,7 @@ static int   joysubx[2]     = {0,0};
 static int   joysuby[2]     = {0,0};
 
 // Value persisted to Registry for REGVALUE_JOYSTICK0_EMU_TYPE
-static DWORD joytype[2]            = {J0C_JOYSTICK1, J1C_DISABLED};	// Emulation Type for joysticks #0 & #1
+static uint32_t joytype[2]            = {J0C_JOYSTICK1, J1C_DISABLED};	// Emulation Type for joysticks #0 & #1
 
 static BOOL  setbutton[3]   = {0,0,0};	// Used when a mouse button is pressed/released
 
@@ -136,8 +136,8 @@ static void CheckJoystick0()
 	if (JOYSTICK_1 < 0)
 		return;
 
-  static DWORD lastcheck = 0;
-  DWORD currtime = GetTickCount();
+  static uint32_t lastcheck = 0;
+  uint32_t currtime = GetTickCount();
   if ((currtime-lastcheck >= 10) || joybutton[0] || joybutton[1])
   {
     lastcheck = currtime;
@@ -160,8 +160,8 @@ static void CheckJoystick0()
 
 static void CheckJoystick1()
 {
-  static DWORD lastcheck = 0;
-  DWORD currtime = GetTickCount();
+  static uint32_t lastcheck = 0;
+  uint32_t currtime = GetTickCount();
   if ((currtime-lastcheck >= 10) || joybutton[2])
   {
     lastcheck = currtime;
@@ -796,7 +796,7 @@ void JoySetButton(eBUTTON number, eBUTTONSTATE down)
 }
 
 //===========================================================================
-BOOL JoySetEmulationType(HWND window, DWORD newtype, int nJoystickNumber, const bool bMousecardActive)
+BOOL JoySetEmulationType(HWND window, uint32_t newtype, int nJoystickNumber, const bool bMousecardActive)
 {
   if(joytype[nJoystickNumber] == newtype)
 	  return 1;	// Already set to this type. Return OK.
@@ -922,7 +922,7 @@ void JoyDisableUsingMouse()
 
 //===========================================================================
 
-void JoySetJoyType(UINT num, DWORD type)
+void JoySetJoyType(UINT num, uint32_t type)
 {
 	_ASSERT(num <= JN_JOYSTICK1);
 	if (num > JN_JOYSTICK1)
@@ -948,7 +948,7 @@ void JoySetJoyType(UINT num, DWORD type)
 	JoySetTrim(JoyGetTrim(false), false);
 }
 
-DWORD JoyGetJoyType(UINT num)
+uint32_t JoyGetJoyType(UINT num)
 {
 	_ASSERT(num <= JN_JOYSTICK1);
 	if (num > JN_JOYSTICK1)
