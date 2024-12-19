@@ -6,7 +6,7 @@ void CPropertySheet::Init(void)
 {
 }
 
-DWORD CPropertySheet::GetVolumeMax(void)
+uint32_t CPropertySheet::GetVolumeMax(void)
 {
   return 99;
 }

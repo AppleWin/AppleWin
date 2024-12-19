@@ -25,7 +25,7 @@ namespace sa2
     bool myScrollConsole = true;
 
     int64_t myBaseDebuggerCycles;
-    std::unordered_map<DWORD, int64_t> myAddressCycles;
+    std::unordered_map<uint32_t, int64_t> myAddressCycles;
 
     CycleTabItems myCycleTabItems;
     InputTextHistory myInputTextHistory;
@@ -42,7 +42,7 @@ namespace sa2
 
     void processDebuggerKeys();
 
-    void setCurrentAddress(const DWORD nAddress);
+    void setCurrentAddress(const uint32_t nAddress);
  };
 
 }

@@ -137,7 +137,7 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
 
   do {
     // this is a simplified version of AppleWin.cpp:ContinueExecution()
-    const DWORD executedcycles = CpuExecute(cyclesPerMs, true);
+    const uint32_t executedcycles = CpuExecute(cyclesPerMs, true);
     cyclesThisFrame += executedcycles;
     // every ms disk and joystick are updated
     GetCardMgr().GetDisk2CardMgr().Update(executedcycles);

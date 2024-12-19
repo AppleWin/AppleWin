@@ -98,7 +98,7 @@ namespace ra2
       const VideoType_e prevVideoType = video.GetVideoType();
       const VideoStyle_e prevVideoStyle = video.GetVideoStyle();
 
-      DWORD dwTmp = prevVideoType;
+      uint32_t dwTmp = prevVideoType;
       RegLoadValue(REG_CONFIG, REGVALUE_VIDEO_MODE, TRUE, &dwTmp);
       const VideoType_e newVideoType = static_cast<VideoType_e>(dwTmp);
 

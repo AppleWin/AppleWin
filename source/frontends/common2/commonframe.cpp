@@ -36,7 +36,7 @@ namespace common2
     ResetHardware();
   }
 
-  BYTE* CommonFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)
+  BYTE* CommonFrame::GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize)
   {
     myResource.clear();
 
@@ -138,7 +138,7 @@ namespace common2
   void CommonFrame::ExecuteInRunningMode(const int64_t microseconds)
   {
     SetFullSpeed(CanDoFullSpeed());
-    const DWORD cyclesToExecute = mySpeed.getCyclesTillNext(microseconds);  // this checks g_bFullSpeed
+    const uint32_t cyclesToExecute = mySpeed.getCyclesTillNext(microseconds);  // this checks g_bFullSpeed
     Execute(cyclesToExecute);
   }
 
@@ -146,7 +146,7 @@ namespace common2
   {
     // In AppleWin this is called without a timer for just one iteration
     // because we run a "frame" at a time, we need a bit of ingenuity
-    const DWORD cyclesToExecute = mySpeed.getCyclesAtFixedSpeed(microseconds);
+    const uint32_t cyclesToExecute = mySpeed.getCyclesAtFixedSpeed(microseconds);
     const int64_t target = g_nCumulativeCycles + cyclesToExecute;
 
     while (g_nAppMode == MODE_STEPPING && g_nCumulativeCycles < target)
@@ -155,21 +155,21 @@ namespace common2
     }
   }
 
-  void CommonFrame::Execute(const DWORD cyclesToExecute)
+  void CommonFrame::Execute(const uint32_t cyclesToExecute)
   {
     const bool bVideoUpdate = myAllowVideoUpdate && !g_bFullSpeed;
     const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
 
     // do it in the same batches as AppleWin (1 ms)
-    const DWORD fExecutionPeriodClks = g_fCurrentCLK6502 * (1.0 / 1000.0);  // 1 ms
+    const uint32_t fExecutionPeriodClks = g_fCurrentCLK6502 * (1.0 / 1000.0);  // 1 ms
 
-    DWORD totalCyclesExecuted = 0;
+    uint32_t totalCyclesExecuted = 0;
     // check at the end because we want to always execute at least 1 cycle even for "0"
     do
     {
       _ASSERT(cyclesToExecute >= totalCyclesExecuted);
-      const DWORD thisCyclesToExecute = std::min(fExecutionPeriodClks, cyclesToExecute - totalCyclesExecuted);
-      const DWORD executedCycles = CpuExecute(thisCyclesToExecute, bVideoUpdate);
+      const uint32_t thisCyclesToExecute = std::min(fExecutionPeriodClks, cyclesToExecute - totalCyclesExecuted);
+      const uint32_t executedCycles = CpuExecute(thisCyclesToExecute, bVideoUpdate);
       totalCyclesExecuted += executedCycles;
 
       GetCardMgr().Update(executedCycles);

@@ -156,7 +156,7 @@ namespace
 
         if (info.running)
         {
-            const DWORD bytesInBuffer = GetBytesInBuffer();
+            const uint32_t bytesInBuffer = GetBytesInBuffer();
             const auto & format = myAudioOutput->format();
             info.buffer = format.durationForBytes(bytesInBuffer) / 1000;
             info.size = format.durationForBytes(myBufferSize) / 1000;
