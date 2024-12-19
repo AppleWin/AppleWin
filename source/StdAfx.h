@@ -81,7 +81,9 @@ typedef UINT64 uint64_t;
 #include <string>
 #include <vector>
 
-#include "linux/libwindows/windows.h"
+// NOTE: this is a local version of windows.h with aliases for windows functions when not
+//       building in a windows environment (!_WIN32)
+#include "windows.h"
 
 //#define USE_SPEECH_API
 
