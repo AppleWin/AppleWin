@@ -557,6 +557,9 @@ void CtrlReset()
 {
 	if (IsAppleIIeOrAbove(GetApple2Type()))
 	{
+		// NB. RamWorks III manual (v1.41, pg 45):
+		// "The bank select register is initialized to zero on a power-up, but not after a reset."
+
 		// For A][ & A][+, reset doesn't reset the LC switches (UTAII:5-29)
 		// TODO: What about Saturn cards? Presumably the same as the A][ & A][+ slot0 LC?
 		MemResetPaging();
