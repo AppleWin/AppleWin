@@ -28,7 +28,7 @@ protected:
 
 private:
 	void InitOptions(HWND hWnd);
-	eApple2Type GetApple2Type(DWORD NewMenuItem);
+	eApple2Type GetApple2Type(uint32_t NewMenuItem);
 	void EnableTrackbar(HWND hWnd, BOOL enable);
 	void ui_tfe_settings_dialog(HWND hwnd);
 	bool IsOkToBenchmark(HWND hWnd, const bool bConfigChanged);

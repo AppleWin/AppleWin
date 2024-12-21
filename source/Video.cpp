@@ -313,7 +313,7 @@ void Video::VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 // References to Jim Sather's books are given as eg:
 // UTAIIe:5-7,P3 (Understanding the Apple IIe, chapter 5, page 7, Paragraph 3)
 //
-WORD Video::VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAddr /*= VS_FullAddr*/)
+WORD Video::VideoGetScannerAddress(uint32_t nCycles, VideoScanner_e videoScannerAddr /*= VS_FullAddr*/)
 {
 	const int kHBurstClock      =    53; // clock when Color Burst starts
 	const int kHBurstClocks     =     4; // clocks per Color Burst duration
@@ -446,7 +446,7 @@ WORD Video::VideoGetScannerAddress(DWORD nCycles, VideoScanner_e videoScannerAdd
 //===========================================================================
 
 // Called when *outside* of CpuExecute()
-bool Video::VideoGetVblBarEx(const DWORD dwCyclesThisFrame)
+bool Video::VideoGetVblBarEx(const uint32_t dwCyclesThisFrame)
 {
 	if (g_bFullSpeed)
 	{
@@ -458,7 +458,7 @@ bool Video::VideoGetVblBarEx(const DWORD dwCyclesThisFrame)
 }
 
 // Called when *inside* CpuExecute()
-bool Video::VideoGetVblBar(const DWORD uExecutedCycles)
+bool Video::VideoGetVblBar(const uint32_t uExecutedCycles)
 {
 	if (g_bFullSpeed)
 	{
@@ -654,18 +654,18 @@ void Video::Config_Load_Video()
 		, VT127_NUM_VIDEO_MODES
 	};
 
-	DWORD dwTmp;
+	uint32_t dwTmp;
 
-	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MODE), &dwTmp, (DWORD)VT_DEFAULT);
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MODE), &dwTmp, (uint32_t)VT_DEFAULT);
 	g_eVideoType = dwTmp;
 
-	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_STYLE), &dwTmp, (DWORD)VS_HALF_SCANLINES);
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_STYLE), &dwTmp, (uint32_t)VS_HALF_SCANLINES);
 	g_eVideoStyle = (VideoStyle_e)dwTmp;
 
-	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MONO_COLOR), &dwTmp, (DWORD)RGB(0xC0, 0xC0, 0xC0));
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MONO_COLOR), &dwTmp, (uint32_t)RGB(0xC0, 0xC0, 0xC0));
 	g_nMonochromeRGB = (COLORREF)dwTmp;
 
-	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_REFRESH_RATE), &dwTmp, (DWORD)VR_60HZ);
+	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_REFRESH_RATE), &dwTmp, (uint32_t)VR_60HZ);
 	SetVideoRefreshRate((VideoRefreshRate_e)dwTmp);
 
 	//
@@ -673,13 +673,13 @@ void Video::Config_Load_Video()
 	const UINT16* pOldVersion = GetOldAppleWinVersion();
 	if (pOldVersion[0] == 1 && pOldVersion[1] <= 28 && pOldVersion[2] <= 1)
 	{
-		DWORD dwHalfScanLines;
+		uint32_t dwHalfScanLines;
 		REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES), &dwHalfScanLines, 0);
 
 		if (dwHalfScanLines)
-			g_eVideoStyle = (VideoStyle_e) ((DWORD)g_eVideoStyle | VS_HALF_SCANLINES);
+			g_eVideoStyle = (VideoStyle_e) ((uint32_t)g_eVideoStyle | VS_HALF_SCANLINES);
 		else
-			g_eVideoStyle = (VideoStyle_e) ((DWORD)g_eVideoStyle & ~VS_HALF_SCANLINES);
+			g_eVideoStyle = (VideoStyle_e) ((uint32_t)g_eVideoStyle & ~VS_HALF_SCANLINES);
 
 		REGSAVE(TEXT(REGVALUE_VIDEO_STYLE), g_eVideoStyle);
 	}

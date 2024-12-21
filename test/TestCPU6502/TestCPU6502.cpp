@@ -51,7 +51,7 @@ static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 	return 1;
 }
 
-static __forceinline void DoIrqProfiling(DWORD uCycles)
+static __forceinline void DoIrqProfiling(uint32_t uCycles)
 {
 }
 
@@ -70,7 +70,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 }
 
 // From z80.cpp
-DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)
+uint32_t z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)
 {
 	return 0;
 }
@@ -131,12 +131,12 @@ void reset(void)
 
 //-------------------------------------
 
-DWORD TestCpu6502(DWORD uTotalCycles)
+uint32_t TestCpu6502(uint32_t uTotalCycles)
 {
 	return Cpu6502(uTotalCycles, true);
 }
 
-DWORD TestCpu65C02(DWORD uTotalCycles)
+uint32_t TestCpu65C02(uint32_t uTotalCycles)
 {
 	return Cpu65C02(uTotalCycles, true);
 }
@@ -156,7 +156,7 @@ int GH264_test(void)
 	mem[regs.pc+3] = dst&0xff;
 	mem[regs.pc+4] = dst>>8;
 
-	DWORD cycles = TestCpu6502(0);
+	uint32_t cycles = TestCpu6502(0);
 	if (cycles != 5) return 1;
 	if (regs.pc != dst) return 1;
 
@@ -686,7 +686,7 @@ int GH278_JMP_INDX(void)
 	mem[regs.pc+3] = dst&0xff;
 	mem[regs.pc+4] = dst>>8;
 
-	DWORD cycles = TestCpu65C02(0);
+	uint32_t cycles = TestCpu65C02(0);
 	if (cycles != 6) return 1;
 	if (regs.pc != dst) return 1;
 
@@ -737,7 +737,7 @@ int GH278_ADC_SBC(UINT op)
 	// No page-cross
 	reset();
 	regs.ps = AF_DECIMAL;
-	DWORD cycles = TestCpu6502(0);
+	uint32_t cycles = TestCpu6502(0);
 	if (g_OpcodeTimings[op][CYC_6502] != cycles) return 1;
 
 	reset();
@@ -803,7 +803,7 @@ int GH278_test(void)
 		mem[regs.pc+0] = op;
 		mem[regs.pc+1] = base&0xff;
 		mem[regs.pc+2] = base>>8;
-		DWORD cycles = TestCpu6502(0);
+		uint32_t cycles = TestCpu6502(0);
 		if (g_OpcodeTimings[op][variant] != cycles) return 1;
 	}
 
@@ -820,7 +820,7 @@ int GH278_test(void)
 		mem[regs.pc+1] = base&0xff;
 		mem[regs.pc+2] = base>>8;
 		mem[0xff] = 0xff; mem[0x00] = 0x00;	// For: OPCODE (zp),Y
-		DWORD cycles = TestCpu6502(0);
+		uint32_t cycles = TestCpu6502(0);
 		if (g_OpcodeTimings[op][variant] != cycles) return 1;
 	}
 
@@ -838,7 +838,7 @@ int GH278_test(void)
 		mem[regs.pc+0] = op;
 		mem[regs.pc+1] = base&0xff;
 		mem[regs.pc+2] = base>>8;
-		DWORD cycles = TestCpu65C02(0);
+		uint32_t cycles = TestCpu65C02(0);
 		if (g_OpcodeTimings[op][variant] != cycles) return 1;
 	}
 
@@ -855,7 +855,7 @@ int GH278_test(void)
 		mem[regs.pc+1] = base&0xff;
 		mem[regs.pc+2] = base>>8;
 		mem[0xff] = 0xff; mem[0x00] = 0x00;	// For: OPCODE (zp),Y
-		DWORD cycles = TestCpu65C02(0);
+		uint32_t cycles = TestCpu65C02(0);
 		if (g_OpcodeTimings[op][variant] != cycles) return 1;
 	}
 
@@ -892,7 +892,7 @@ int GH278_test(void)
 
 //-------------------------------------
 
-DWORD AXA_ZPY(BYTE a, BYTE x, BYTE y, WORD base)
+uint32_t AXA_ZPY(BYTE a, BYTE x, BYTE y, WORD base)
 {
 	reset();
 	mem[0xfe] = base&0xff;
@@ -905,7 +905,7 @@ DWORD AXA_ZPY(BYTE a, BYTE x, BYTE y, WORD base)
 	return TestCpu6502(0);
 }
 
-DWORD AXA_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
+uint32_t AXA_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
 {
 	reset();
 	regs.a = a;
@@ -917,7 +917,7 @@ DWORD AXA_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
 	return TestCpu6502(0);
 }
 
-DWORD SAY_ABSX(BYTE a, BYTE x, BYTE y, WORD base)
+uint32_t SAY_ABSX(BYTE a, BYTE x, BYTE y, WORD base)
 {
 	reset();
 	regs.a = a;
@@ -929,7 +929,7 @@ DWORD SAY_ABSX(BYTE a, BYTE x, BYTE y, WORD base)
 	return TestCpu6502(0);
 }
 
-DWORD TAS_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
+uint32_t TAS_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
 {
 	reset();
 	regs.a = a;
@@ -941,7 +941,7 @@ DWORD TAS_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
 	return TestCpu6502(0);
 }
 
-DWORD XAS_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
+uint32_t XAS_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
 {
 	reset();
 	regs.a = a;
@@ -960,7 +960,7 @@ int GH282_test(void)
 		WORD base = 0x20ff, addr = 0x20ff;
 		mem[addr] = 0xcc;
 		BYTE a = 0xea, x = 0xff, y = 0;
-		DWORD cycles = AXA_ZPY(a, x, y, base);
+		uint32_t cycles = AXA_ZPY(a, x, y, base);
 		if (cycles != 6) return 1;
 		if (mem[addr] != (a & x & ((base>>8)+1))) return 1;
 	}
@@ -970,7 +970,7 @@ int GH282_test(void)
 		WORD base = 0x20ff, addr = 0x2000;
 		mem[addr] = 0xcc;
 		BYTE a = 0xea, x = 0xff, y = 1;
-		DWORD cycles = AXA_ZPY(a, x, y, base);
+		uint32_t cycles = AXA_ZPY(a, x, y, base);
 		if (cycles != 6) return 1;
 		if (mem[addr] != (a & x & ((base>>8)+1))) return 1;
 	}
@@ -982,7 +982,7 @@ int GH282_test(void)
 		WORD base = 0x20ff, addr = 0x20ff;
 		mem[addr] = 0xcc;
 		BYTE a = 0xea, x = 0xff, y = 0;
-		DWORD cycles = AXA_ABSY(a, x, y, base);
+		uint32_t cycles = AXA_ABSY(a, x, y, base);
 		if (cycles != 5) return 1;
 		if (mem[addr] != (a & x & ((base>>8)+1))) return 1;
 	}
@@ -992,7 +992,7 @@ int GH282_test(void)
 		WORD base = 0x20ff, addr = 0x2000;
 		mem[addr] = 0xcc;
 		BYTE a = 0xea, x = 0xff, y = 1;
-		DWORD cycles = AXA_ABSY(a, x, y, base);
+		uint32_t cycles = AXA_ABSY(a, x, y, base);
 		if (cycles != 5) return 1;
 		if (mem[addr] != (a & x & ((base>>8)+1))) return 1;
 	}
@@ -1004,7 +1004,7 @@ int GH282_test(void)
 		WORD base = 0x20ff, addr = 0x20ff;
 		mem[addr] = 0xcc;
 		BYTE a = 0xea, x = 0, y=0x20;
-		DWORD cycles = SAY_ABSX(a, x, y, base);
+		uint32_t cycles = SAY_ABSX(a, x, y, base);
 		if (cycles != 5) return 1;
 		if (mem[addr] != (y & ((base>>8)+1))) return 1;
 	}
@@ -1014,7 +1014,7 @@ int GH282_test(void)
 		WORD base = 0x20ff, addr = 0x2000;
 		mem[addr] = 0xcc;
 		BYTE a = 0xea, x = 1, y=0x20;
-		DWORD cycles = SAY_ABSX(a, x, y, base);
+		uint32_t cycles = SAY_ABSX(a, x, y, base);
 		if (cycles != 5) return 1;
 		if (mem[addr] != (y & ((base>>8)+1))) return 1;
 	}
@@ -1026,7 +1026,7 @@ int GH282_test(void)
 		WORD base = 0x20ff, addr = 0x20ff;
 		mem[addr] = 0xcc;
 		BYTE a = 0xea, x = 0xff, y = 0;
-		DWORD cycles = TAS_ABSY(a, x, y, base);
+		uint32_t cycles = TAS_ABSY(a, x, y, base);
 		if (cycles != 5) return 1;
 		if (mem[addr] != (a & x & ((base>>8)+1))) return 1;
 		if (regs.sp != (0x100 | (a & x))) return 1;
@@ -1037,7 +1037,7 @@ int GH282_test(void)
 		WORD base = 0x20ff, addr = 0x2000;
 		mem[addr] = 0xcc;
 		BYTE a = 0xea, x = 0xff, y = 1;
-		DWORD cycles = TAS_ABSY(a, x, y, base);
+		uint32_t cycles = TAS_ABSY(a, x, y, base);
 		if (cycles != 5) return 1;
 		if (mem[addr] != (a & x & ((base>>8)+1))) return 1;
 		if (regs.sp != (0x100 | (a & x))) return 1;
@@ -1050,7 +1050,7 @@ int GH282_test(void)
 		WORD base = 0x20ff, addr = 0x20ff;
 		mem[addr] = 0xcc;
 		BYTE a = 0xea, x = 0x20, y = 0;
-		DWORD cycles = XAS_ABSY(a, x, y, base);
+		uint32_t cycles = XAS_ABSY(a, x, y, base);
 		if (cycles != 5) return 1;
 		if (mem[addr] != (x & ((base>>8)+1))) return 1;
 	}
@@ -1060,7 +1060,7 @@ int GH282_test(void)
 		WORD base = 0x20ff, addr = 0x2000;
 		mem[addr] = 0xcc;
 		BYTE a = 0xea, x = 0x20, y = 1;
-		DWORD cycles = XAS_ABSY(a, x, y, base);
+		uint32_t cycles = XAS_ABSY(a, x, y, base);
 		if (cycles != 5) return 1;
 		if (mem[addr] != (x & ((base>>8)+1))) return 1;
 	}
@@ -1156,7 +1156,7 @@ const BYTE g_GH321_code[] =
 0x00
 };
 
-DWORD g_dwCyclesThisFrame = 0;	// # cycles executed in frame before Cpu65C02() was called
+uint32_t g_dwCyclesThisFrame = 0;	// # cycles executed in frame before Cpu65C02() was called
 
 ULONG CpuGetCyclesThisVideoFrame(ULONG nExecutedCycles)
 {
@@ -1183,7 +1183,7 @@ int const kVSyncLines       =     4; // lines per VSync duration
 bool bVideoScannerNTSC = true;
 
 // Derived from VideoGetScannerAddress()
-bool VideoGetVbl(const DWORD uExecutedCycles)
+bool VideoGetVbl(const uint32_t uExecutedCycles)
 {
     // get video scanner position
     //

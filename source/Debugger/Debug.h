@@ -20,7 +20,7 @@
 	extern bool g_bDebuggerEatKey;
 
 // Benchmarking
-	extern DWORD      extbench;
+	extern uint32_t      extbench;
 
 // Bookmarks
 	extern int          g_nBookmarks;
