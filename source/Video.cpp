@@ -182,11 +182,13 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
 		vidHD = dynamic_cast<VidHDCard*>(GetCardMgr().GetObj(SLOT3));
 
+	const bool supportsDHires = GetCardMgr().QueryAux() == CT_Extended80Col || GetCardMgr().QueryAux() == CT_RamWorksIII || IS_APPLE2C();
+
 	address &= 0xFF;
 	switch (address)
 	{
-		case 0x00:                 g_uVideoMode &= ~VF_80STORE;                            break;
-		case 0x01:                 g_uVideoMode |=  VF_80STORE;                            break;
+		case 0x00: g_uVideoMode &= ~VF_80STORE; break;
+		case 0x01: g_uVideoMode |=  VF_80STORE; break;
 		case 0x0C:
 			if (!IS_APPLE2)
 			{
@@ -205,22 +207,22 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 					g_uVideoMode |= VF_80COL_AUX_EMPTY;
 			}
 			break;
-		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;           break;	// Alternate char set off
-		case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256;         break;	// Alternate char set on
+		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;   break;	// Alternate char set off
+		case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256; break;	// Alternate char set on
 		case 0x22: if (vidHD) vidHD->VideoIOWrite(pc, address, write, d, uExecutedCycles); break;	// VidHD IIgs video mode register
 		case 0x29: if (vidHD) vidHD->VideoIOWrite(pc, address, write, d, uExecutedCycles); break;	// VidHD IIgs video mode register
 		case 0x34: if (vidHD) vidHD->VideoIOWrite(pc, address, write, d, uExecutedCycles); break;	// VidHD IIgs video mode register
 		case 0x35: if (vidHD) vidHD->VideoIOWrite(pc, address, write, d, uExecutedCycles); break;	// VidHD IIgs video mode register
-		case 0x50: g_uVideoMode &= ~VF_TEXT;    break;
-		case 0x51: g_uVideoMode |=  VF_TEXT;    break;
-		case 0x52: g_uVideoMode &= ~VF_MIXED;   break;
-		case 0x53: g_uVideoMode |=  VF_MIXED;   break;
-		case 0x54: g_uVideoMode &= ~VF_PAGE2;   break;
-		case 0x55: g_uVideoMode |=  VF_PAGE2;   break;
-		case 0x56: g_uVideoMode &= ~VF_HIRES;   break;
-		case 0x57: g_uVideoMode |=  VF_HIRES;   break;
-		case 0x5E: if (!IS_APPLE2) g_uVideoMode |=  VF_DHIRES;  break;
-		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES;  break;
+		case 0x50: g_uVideoMode &= ~VF_TEXT;  break;
+		case 0x51: g_uVideoMode |=  VF_TEXT;  break;
+		case 0x52: g_uVideoMode &= ~VF_MIXED; break;
+		case 0x53: g_uVideoMode |=  VF_MIXED; break;
+		case 0x54: g_uVideoMode &= ~VF_PAGE2; break;
+		case 0x55: g_uVideoMode |=  VF_PAGE2; break;
+		case 0x56: g_uVideoMode &= ~VF_HIRES; break;
+		case 0x57: g_uVideoMode |=  VF_HIRES; break;
+		case 0x5E: if (supportsDHires) g_uVideoMode |=  VF_DHIRES; break;
+		case 0x5F: if (supportsDHires) g_uVideoMode &= ~VF_DHIRES; break;
 	}
 
 	if (vidHD && vidHD->IsSHR())

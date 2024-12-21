@@ -200,12 +200,24 @@ SOFT SWITCH STATUS FLAGS
 //			. memshadow[0] = &memaux[0x0000]
 //			. memshadow[1] = &memaux[0x0100]
 //
-// Apple //e 64K (so no 80-col card) - GH#1341
+// memread (used by _READ_ALT for CPU emulation)
+// - 1 byte entry per 256-byte page
+// - Required specifically for when the aux slot is empty, so that it can return floating-bus.
+//
+// memwriteDirtyPage (used by _WRITE_ALT for CPU emulation)
+// - 1 byte entry per 256-byte page
+// - Required specifically for the 80-Col(1KiB) card so that writes *outside* the 1KiB area only set dirty pages *inside* the 1KiB area!
+//
+// Apple //e 64K (aux slot is empty or has 80-Col(1KiB) card) - GH#1341
 // . MMU still supports RAMRDOFF/RAMRDON/RAMWRTOFF/RAMWRTON/ALTZPOFF/ALTZPON
-// . aux writes still get written to memaux (write-only memory!)
-// . aux reads are from floating bus
-// . DHIRESON: no affect, as the Ext 80-col card enables this
-// . NB. With a VidHD, then 80-col video works correctly to HDMI-out
+// . DHIRESON: no affect, as the Ext 80-col card enables this (so no DHGR or DGR - although a full VidHD would support this)
+// . NB. With a VidHD card, then SHR video works correctly to HDMI-out
+// . Apple //e 64K (aux slot is empty)
+//   . aux writes still get written to memaux (write-only memory! Used by VidHD card)
+//   . aux reads are from floating bus
+// . Apple //e 64K (w/ 80-Col(1KiB) card in aux slot)
+//   . aux reads & writes are to the 1KiB of aux mem
+//   . aux writes outside of the aux TEXT1 get written to memaux (if there's a VidHD card)
 //
 
 static LPBYTE	memshadow[0x100];
