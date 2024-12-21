@@ -2543,8 +2543,10 @@ static const UINT kUNIT_AUXSLOT_VER = 2;
 // Unit version history:
 // 2: Added: RGB card state
 // 3: Extended: RGB card state ('80COL changed')
-static const UINT kUNIT_CARD_VER = 3;
+// 4: Support aux empty or aux 1KiB card
+static const UINT kUNIT_CARD_VER = 4;
 
+#define SS_YAML_VALUE_CARD_EMPTY "Empty"
 #define SS_YAML_VALUE_CARD_80COL "80 Column"
 #define SS_YAML_VALUE_CARD_EXTENDED80COL "Extended 80 Column"
 #define SS_YAML_VALUE_CARD_RAMWORKSIII "RamWorksIII"
@@ -2722,7 +2724,6 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 	return true;
 }
 
-// TODO: Switch from checking 'g_uMaxExPages == n' to using g_SlotAux
 void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 {
 	if (IS_APPLE2)
@@ -2741,23 +2742,40 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 	{
 		YamlSaveHelper::Label unitState(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-		std::string card = 	g_uMaxExPages == 0 ?	SS_YAML_VALUE_CARD_80COL :			// todo: support empty slot
-							g_uMaxExPages == 1 ?	SS_YAML_VALUE_CARD_EXTENDED80COL :
-													SS_YAML_VALUE_CARD_RAMWORKSIII;
+		const SS_CARDTYPE cardType = GetCardMgr().QueryAux();
+		std::string card =	cardType == CT_Empty ? SS_YAML_VALUE_CARD_EMPTY :
+							cardType == CT_80Col ? SS_YAML_VALUE_CARD_80COL :
+							cardType == CT_Extended80Col ? SS_YAML_VALUE_CARD_EXTENDED80COL :
+							cardType == CT_RamWorksIII ? SS_YAML_VALUE_CARD_RAMWORKSIII :
+							"";
+		_ASSERT(!card.empty());
 
 		yamlSaveHelper.SaveString(SS_YAML_KEY_CARD, card.c_str());
 		yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_VERSION, kUNIT_CARD_VER);
 
 		// Card state
+		if (cardType == CT_80Col)
+		{
+			YamlSaveHelper::Label cardState(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+
+			// 1KiB memory
+			{
+				const UINT bank = 1;
+				LPBYTE pMemBase = MemGetBankPtr(bank);
+				YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotAuxMemStructName().c_str());
+				yamlSaveHelper.SaveMemory(pMemBase + TEXT_PAGE1_BEGIN, TEXT_PAGE1_SIZE);
+			}
+		}
+		else if (cardType == CT_Extended80Col || cardType == CT_RamWorksIII)
 		{
 			YamlSaveHelper::Label cardState(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
 			yamlSaveHelper.Save("%s: 0x%02X   # [0,1..7F] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
 			yamlSaveHelper.Save("%s: 0x%02X # [  0..7E] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
 
-			for(UINT uBank = 1; uBank <= g_uMaxExPages; uBank++)
+			for(UINT bank = 1; bank <= g_uMaxExPages; bank++)
 			{
-				MemSaveSnapshotMemory(yamlSaveHelper, false, uBank);
+				MemSaveSnapshotMemory(yamlSaveHelper, false, bank);
 			}
 
 			RGB_SaveSnapshot(yamlSaveHelper);
@@ -2765,66 +2783,89 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 	}
 }
 
-static void MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::string& card)
+static SS_CARDTYPE MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::string& card)
 {
-	// "State"
-	UINT numAuxBanks   = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUMAUXBANKS);
-	UINT activeAuxBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVEAUXBANK);
+	g_uMaxExPages = 0;
+	g_uActiveBank = 0;
 
-	SS_CARDTYPE type = CT_Empty;
+	if (card == SS_YAML_VALUE_CARD_EMPTY)
+		return CT_Empty;
+
+	SS_CARDTYPE cardType;
 	if (card == SS_YAML_VALUE_CARD_80COL)
-	{
-		type = CT_80Col;
-		if (numAuxBanks != 0 || activeAuxBank != 0)
-			throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
-	}
+		cardType = CT_80Col;
 	else if (card == SS_YAML_VALUE_CARD_EXTENDED80COL)
-	{
-		type = CT_Extended80Col;
-		if (numAuxBanks != 1 || activeAuxBank != 0)
-			throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
-	}
+		cardType = CT_Extended80Col;
 	else if (card == SS_YAML_VALUE_CARD_RAMWORKSIII)
-	{
-		type = CT_RamWorksIII;
-		if (numAuxBanks < 2 || numAuxBanks > 0x7F || (activeAuxBank+1) > numAuxBanks)
-			throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
-	}
+		cardType = CT_RamWorksIII;
 	else
-	{
-		// todo: support empty slot
-		type = CT_Empty;
 		throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Unknown card: " + card);
+
+	// "State"
+	UINT numAuxBanks = 0, activeAuxBank = 0;
+	if (card == SS_YAML_VALUE_CARD_EXTENDED80COL || card == SS_YAML_VALUE_CARD_RAMWORKSIII)
+	{
+		numAuxBanks = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUMAUXBANKS);
+		activeAuxBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVEAUXBANK);
 	}
 
-	g_uMaxExPages = numAuxBanks;
-	g_uActiveBank = activeAuxBank;
-
-	//
-
-	for(UINT uBank = 1; uBank <= g_uMaxExPages; uBank++)
+	if (cardType == CT_80Col)
 	{
-		LPBYTE pBank = MemGetBankPtr(uBank, false);
+		const UINT bank = 1;
+		LPBYTE pBank = MemGetBankPtr(bank, false);
 		if (!pBank)
-		{
-			pBank = RWpages[uBank-1] = ALIGNED_ALLOC(_6502_MEM_LEN);
-		}
+			pBank = RWpages[bank - 1] = ALIGNED_ALLOC(_6502_MEM_LEN);
 
-		// "Auxiliary Memory Bankxx"
-		std::string auxMemName = MemGetSnapshotAuxMemStructName() + ByteToHexStr(uBank-1);
-
+		std::string auxMemName = MemGetSnapshotAuxMemStructName();
 		if (!yamlLoadHelper.GetSubMap(auxMemName))
 			throw std::runtime_error("Memory: Missing map name: " + auxMemName);
 
-		yamlLoadHelper.LoadMemory(pBank, _6502_MEM_LEN);
+		yamlLoadHelper.LoadMemory(pBank + TEXT_PAGE1_BEGIN, TEXT_PAGE1_SIZE);
 
 		yamlLoadHelper.PopMap();
 	}
+	else
+	{
+		if (cardType == CT_Extended80Col)
+		{
+			if (numAuxBanks != 1 || activeAuxBank != 0)
+				throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
+		}
+		else // cardType == CT_RamWorksIII
+		{
+			if (numAuxBanks < 2 || numAuxBanks > 0x7F || (activeAuxBank + 1) > numAuxBanks)
+				throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
+		}
 
-	GetCardMgr().InsertAux(type);
+		g_uMaxExPages = numAuxBanks;
+		g_uActiveBank = activeAuxBank;
+
+		//
+
+		for (UINT bank = 1; bank <= g_uMaxExPages; bank++)
+		{
+			LPBYTE pBank = MemGetBankPtr(bank, false);
+			if (!pBank)
+				pBank = RWpages[bank - 1] = ALIGNED_ALLOC(_6502_MEM_LEN);
+
+			// "Auxiliary Memory Bankxx"
+			std::string auxMemName = MemGetSnapshotAuxMemStructName() + ByteToHexStr(bank - 1);
+
+			if (!yamlLoadHelper.GetSubMap(auxMemName))
+				throw std::runtime_error("Memory: Missing map name: " + auxMemName);
+
+			yamlLoadHelper.LoadMemory(pBank, _6502_MEM_LEN);
+
+			yamlLoadHelper.PopMap();
+		}
+	}
+
+	GetCardMgr().InsertAux(cardType);
 
 	memaux = RWpages[g_uActiveBank];
 	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
+
+	return cardType;
 }
 
 static void MemLoadSnapshotAuxVer1(YamlLoadHelper& yamlLoadHelper)
@@ -2841,9 +2882,10 @@ static void MemLoadSnapshotAuxVer2(YamlLoadHelper& yamlLoadHelper)
 	if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
 		throw std::runtime_error(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
 
-	MemLoadSnapshotAuxCommon(yamlLoadHelper, card);
+	SS_CARDTYPE cardType = MemLoadSnapshotAuxCommon(yamlLoadHelper, card);
 
-	RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
+	if (card == SS_YAML_VALUE_CARD_EXTENDED80COL || card == SS_YAML_VALUE_CARD_RAMWORKSIII)
+		RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
 }
 
 bool MemLoadSnapshotAux(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
