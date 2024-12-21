@@ -13,7 +13,7 @@ const double CLK_6502_PAL  = (_14M_PAL  * 65.0) / (65.0*14.0+2.0);
 
 // Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 // Assume base freqs are 44.1KHz & 48KHz
-const DWORD SPKR_SAMPLE_RATE = 44100;
+const uint32_t SPKR_SAMPLE_RATE = 44100;
 
 enum AppMode_e
 {

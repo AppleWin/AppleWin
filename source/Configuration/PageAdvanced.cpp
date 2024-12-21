@@ -128,7 +128,7 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 		case IDC_CLONETYPE:
 			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				const DWORD NewCloneMenuItem = (DWORD) SendDlgItemMessage(hWnd, IDC_CLONETYPE, CB_GETCURSEL, 0, 0);
+				const uint32_t NewCloneMenuItem = (uint32_t) SendDlgItemMessage(hWnd, IDC_CLONETYPE, CB_GETCURSEL, 0, 0);
 				const eApple2Type NewCloneType = GetCloneType(NewCloneMenuItem);
 				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = NewCloneType;
 				m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewCloneType);
@@ -242,7 +242,7 @@ void CPageAdvanced::InitOptions(HWND hWnd)
 }
 
 // Advanced->Clone: Menu item to eApple2Type
-eApple2Type CPageAdvanced::GetCloneType(DWORD NewMenuItem)
+eApple2Type CPageAdvanced::GetCloneType(uint32_t NewMenuItem)
 {
 	switch (NewMenuItem)
 	{

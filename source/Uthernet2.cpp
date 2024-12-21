@@ -1667,7 +1667,7 @@ bool Uthernet2::GetRegistryVirtualDNS(UINT slot)
     // as it is backward compatible
     // (except for the initial value of PTIMER which is anyway never used)
 
-    DWORD enabled = 1;
+    uint32_t enabled = 1;
     RegLoadValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, TRUE, &enabled);
     return enabled != 0;
 }

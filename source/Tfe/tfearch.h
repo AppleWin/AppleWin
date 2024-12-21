@@ -32,7 +32,7 @@
 #include <string>
 
 extern void tfe_arch_set_mac(const BYTE mac[6]);
-extern void tfe_arch_set_hashfilter(const DWORD hash_mask[2]);
+extern void tfe_arch_set_hashfilter(const uint32_t hash_mask[2]);
 
 struct pcap;
 typedef struct pcap pcap_t;

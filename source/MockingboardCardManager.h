@@ -10,7 +10,7 @@ public:
 	MockingboardCardManager(void)
 	{
 		m_numSamplesError = 0;
-		m_byteOffset = (DWORD)-1;
+		m_byteOffset = (uint32_t)-1;
 		m_cyclesThisAudioFrame = 0;
 		m_userVolume = 0;
 		m_outputToRiff = false;
@@ -30,8 +30,8 @@ public:
 	void UpdateCycles(ULONG executedCycles);
 	void UpdateIRQ(void);
 	bool IsActiveToPreventFullSpeed(void);
-	DWORD GetVolume(void);
-	void SetVolume(DWORD volume, DWORD volumeMax);
+	uint32_t GetVolume(void);
+	void SetVolume(uint32_t volume, uint32_t volumeMax);
 	void OutputToRiff(void) { m_outputToRiff = true; }
 	void SetEnableExtraCardTypes(bool enable) { m_enableExtraCardTypes = enable; }
 	bool GetEnableExtraCardTypes(void);
@@ -55,7 +55,7 @@ private:
 	void MixAllAndCopyToRingBuffer(UINT nNumSamples);
 	bool IsMockingboardExtraCardType(UINT slot);
 
-	static const DWORD SOUNDBUFFER_SIZE = MAX_SAMPLES * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS;
+	static const uint32_t SOUNDBUFFER_SIZE = MAX_SAMPLES * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS;
 
 	static const SHORT WAVE_DATA_MIN = (SHORT)0x8000;
 	static const SHORT WAVE_DATA_MAX = (SHORT)0x7FFF;
@@ -66,9 +66,9 @@ private:
 	//
 
 	int m_numSamplesError;
-	DWORD m_byteOffset;
+	uint32_t m_byteOffset;
 	UINT m_cyclesThisAudioFrame;
-	DWORD m_userVolume;	// GUI's slide volume
+	uint32_t m_userVolume;	// GUI's slide volume
 	bool m_outputToRiff;
 	bool m_enableExtraCardTypes;
 };

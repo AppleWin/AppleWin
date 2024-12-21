@@ -575,7 +575,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 			//    . SYMBOL  =$0000; Comment
 			//    . SYMBOL  =$FFFF; Comment
 			//
-			DWORD nAddress = _6502_MEM_END + 1; // default to invalid address
+			uint32_t nAddress = _6502_MEM_END + 1; // default to invalid address
 			char  sName[ MAX_SYMBOLS_LEN+1 ]  = "";
 
 			const int MAX_LINE = 256;
