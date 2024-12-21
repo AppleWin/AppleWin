@@ -63,7 +63,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			(memread[addr >> 8] == MEM_Normal)									\
 				? *(mem+addr)													\
 				: (memread[addr >> 8] == MEM_Aux1K)								\
-					? *(mem+0x400+(addr&0x3FF))									\
+					? *(mem+TEXT_PAGE1_BEGIN+(addr&(TEXT_PAGE1_SIZE-1)))		\
 					: (memread[addr >> 8] == MEM_IORead)						\
 						? IORead[(addr >> 4) & 0xFF](regs.pc, addr, 0, 0, uExecutedCycles)	\
 						: MemReadFloatingBus(uExecutedCycles)					\

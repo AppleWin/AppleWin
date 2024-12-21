@@ -478,7 +478,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
 
-#define Cpu6502 Cpu6502_altRead
+#define Cpu6502 Cpu6502_altRW
 #include "CPU/cpu6502.h"  // MOS 6502
 #undef Cpu6502
 
@@ -502,7 +502,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
 
-#define Cpu65C02 Cpu65C02_altRead
+#define Cpu65C02 Cpu65C02_altRW
 #include "CPU/cpu65C02.h" // WDC 65C02
 #undef Cpu65C02
 
@@ -532,7 +532,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
 
-#define Cpu6502 Cpu6502_debug_altRead
+#define Cpu6502 Cpu6502_debug_altRW
 #include "CPU/cpu6502.h"  // MOS 6502
 #undef Cpu6502
 
@@ -558,7 +558,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
 
-#define Cpu65C02 Cpu65C02_debug_altRead
+#define Cpu65C02 Cpu65C02_debug_altRW
 #include "CPU/cpu65C02.h" // WDC 65C02
 #undef Cpu65C02
 
@@ -575,9 +575,9 @@ static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdat
 		if (IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
 		{
 			if (GetMainCpu() == CPU_6502)
-				return Cpu6502_altRead(uTotalCycles, bVideoUpdate);		// Apple //e
+				return Cpu6502_altRW(uTotalCycles, bVideoUpdate);		// Apple //e
 			else
-				return Cpu65C02_altRead(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+				return Cpu65C02_altRW(uTotalCycles, bVideoUpdate);		// Enhanced Apple //e
 		}
 
 		if (GetMainCpu() == CPU_6502)
@@ -592,9 +592,9 @@ static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdat
 		if (IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
 		{
 			if (GetMainCpu() == CPU_6502)
-				return Cpu6502_debug_altRead(uTotalCycles, bVideoUpdate);	// Apple //e
+				return Cpu6502_debug_altRW(uTotalCycles, bVideoUpdate);		// Apple //e
 			else
-				return Cpu65C02_debug_altRead(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+				return Cpu65C02_debug_altRW(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
 		}
 
 		if (GetMainCpu() == CPU_6502)
