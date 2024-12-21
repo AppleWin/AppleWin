@@ -225,7 +225,7 @@ static LPBYTE	pCxRomPeripheral	= NULL;
 
 static LPBYTE g_pMemMainLanguageCard = NULL;
 
-static DWORD   g_memmode = LanguageCardUnit::kMemModeInitialState;
+static uint32_t   g_memmode = LanguageCardUnit::kMemModeInitialState;
 static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
 
 static UINT    memrompages = 1;
@@ -1090,16 +1090,16 @@ static bool IsCardInSlot(UINT slot)
 
 //===========================================================================
 
-DWORD GetMemMode(void)
+uint32_t GetMemMode(void)
 {
 	return g_memmode;
 }
 
-void SetMemMode(DWORD uNewMemMode)
+void SetMemMode(uint32_t uNewMemMode)
 {
 #if defined(_DEBUG) && 0
-	static DWORD dwOldDiff = 0;
-	DWORD dwDiff = g_memmode ^ uNewMemMode;
+	static uint32_t dwOldDiff = 0;
+	uint32_t dwDiff = g_memmode ^ uNewMemMode;
 	dwDiff &= ~(MF_SLOTC3ROM | MF_INTCXROM);
 	if (dwOldDiff != dwDiff)
 	{
@@ -1952,7 +1952,7 @@ void MemInitializeFromSnapshot(void)
 	}
 }
 
-inline DWORD getRandomTime()
+inline uint32_t getRandomTime()
 {
 	return rand() ^ timeGetTime(); // We can't use g_nCumulativeCycles as it will be zero on a fresh execution.
 }
@@ -1993,7 +1993,7 @@ void MemReset()
 	//   F2. Ctrl-F2. CALL-151, C050 C053 C057
 	// OR
 	//   F2, Ctrl-F2, F7, HGR
-	DWORD randTime = getRandomTime();
+	uint32_t randTime = getRandomTime();
 	MemoryInitPattern_e eMemoryInitPattern = static_cast<MemoryInitPattern_e>(g_nMemoryClearType);
 
 	if (g_nMemoryClearType < 0)	// random
@@ -2173,7 +2173,7 @@ static void DebugFlip(WORD address, ULONG nExecutedCycles)
 BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nExecutedCycles)
 {
 	address &= 0xFF;
-	DWORD lastmemmode = g_memmode;
+	uint32_t lastmemmode = g_memmode;
 #if defined(_DEBUG) && defined(DEBUG_FLIP_TIMINGS)
 	DebugFlip(address, nExecutedCycles);
 #endif

@@ -53,14 +53,14 @@ public:
 	// NULL if resource is invalid or size check fails
 	// The pointer is only valid until the next call to GetResource
 	// (in Windows, the pointer is valid forever, but it would be very restrictive to force this on other FrameBase implementations)
-	virtual BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) = 0;
+	virtual BYTE* GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize) = 0;
 
 	virtual void Restart() = 0;
 
 	void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
 	void VideoRedrawScreen(void);
-	void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
-	void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
+	void VideoRedrawScreenDuringFullSpeed(uint32_t dwCyclesThisFrame, bool bInit = false);
+	void VideoRedrawScreenAfterFullSpeed(uint32_t dwCyclesThisFrame);
 	void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
 
 	virtual std::string Video_GetScreenShotFolder() const = 0;
@@ -78,7 +78,7 @@ private:
 
 	bool g_bShowPrintScreenWarningDialog;
 
-	DWORD dwFullSpeedStartTime;
+	uint32_t dwFullSpeedStartTime;
 	bool g_bDisplayPrintScreenFileName;
 
 	int g_nLastScreenShot;

@@ -37,7 +37,7 @@ void FrameBase::VideoRedrawScreen(void)
 }
 
 //===========================================================================
-void FrameBase::VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=false*/)
+void FrameBase::VideoRedrawScreenDuringFullSpeed(uint32_t dwCyclesThisFrame, bool bInit /*=false*/)
 {
 	if (bInit)
 	{
@@ -46,7 +46,7 @@ void FrameBase::VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool b
 		return;
 	}
 
-	DWORD dwFullSpeedDuration = GetTickCount() - dwFullSpeedStartTime;
+	uint32_t dwFullSpeedDuration = GetTickCount() - dwFullSpeedStartTime;
 	if (dwFullSpeedDuration <= 16)	// Only update after every realtime ~17ms of *continuous* full-speed
 		return;
 
@@ -55,7 +55,7 @@ void FrameBase::VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool b
 	VideoRedrawScreenAfterFullSpeed(dwCyclesThisFrame);
 }
 
-void FrameBase::VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
+void FrameBase::VideoRedrawScreenAfterFullSpeed(uint32_t dwCyclesThisFrame)
 {
 	NTSC_VideoClockResync(dwCyclesThisFrame);
 	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()

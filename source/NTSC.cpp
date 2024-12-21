@@ -1904,7 +1904,7 @@ uint32_t*NTSC_VideoGetChromaTable( bool bHueTypeMonochrome, bool bMonitorTypeCol
 }
 
 //===========================================================================
-void NTSC_VideoClockResync(const DWORD dwCyclesThisFrame)
+void NTSC_VideoClockResync(const uint32_t dwCyclesThisFrame)
 {
 	g_nVideoClockVert = (uint16_t)(dwCyclesThisFrame / VIDEO_SCANNER_MAX_HORZ) % g_videoScannerMaxVert;
 	g_nVideoClockHorz = (uint16_t)(dwCyclesThisFrame % VIDEO_SCANNER_MAX_HORZ);
@@ -2269,7 +2269,7 @@ void NTSC_SetVideoStyle(void)
 
 		case VT_MONO_CUSTOM:
 			// From WinGDI.h
-			// #define RGB(r,g,b)         ((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
+			// #define RGB(r,g,b)         ((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((uint32_t)(BYTE)(b))<<16)))
 			//#define GetRValue(rgb)      (LOBYTE(rgb))
 			//#define GetGValue(rgb)      (LOBYTE(((WORD)(rgb)) >> 8))
 			//#define GetBValue(rgb)      (LOBYTE((rgb)>>16))
@@ -2387,7 +2387,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 }
 
 //===========================================================================
-void NTSC_VideoReinitialize( DWORD cyclesThisFrame, bool bInitVideoScannerAddress )
+void NTSC_VideoReinitialize( uint32_t cyclesThisFrame, bool bInitVideoScannerAddress )
 {
 	if (cyclesThisFrame >= g_videoScanner6502Cycles)
 	{
@@ -2534,7 +2534,7 @@ static bool CheckVideoTables2( eApple2Type type, uint32_t mode )
 
 	g_nVideoClockHorz = g_nVideoClockVert = 0;
 
-	for (DWORD cycles=0; cycles<VIDEO_SCANNER_MAX_VERT*VIDEO_SCANNER_MAX_HORZ; cycles++)
+	for (uint32_t cycles=0; cycles<VIDEO_SCANNER_MAX_VERT*VIDEO_SCANNER_MAX_HORZ; cycles++)
 	{
 		WORD addr1 = GetVideo().VideoGetScannerAddress(cycles);
 		WORD addr2 = GetVideo().GetVideoMode() & VF_TEXT ? getVideoScannerAddressTXT()

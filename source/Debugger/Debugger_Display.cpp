@@ -231,7 +231,7 @@ enum WinROP4_e
 */
 
 #if DEBUG_FONT_ROP
-const DWORD aROP4[ 256 ] =
+const uint32_t aROP4[ 256 ] =
 {
 	0x00000042, // BLACKNESS
 	0x00010289, // DPSoon 	
@@ -647,7 +647,7 @@ void StretchBltMemToFrameDC(void)
 		GetDebuggerMemDC(),									// HDC hdcSrc,
 		0, 0,												// int nXOriginSrc,  int nYOriginSrc,
 		GetVideo().GetFrameBufferBorderlessWidth(), GetVideo().GetFrameBufferBorderlessHeight(),	// int nWidthSrc,    int nHeightSrc,
-		SRCCOPY                                             // DWORD dwRop
+		SRCCOPY                                             // uint32_t dwRop
 	);
 }
 

@@ -139,7 +139,7 @@ static const char *DirectSound_ErrorText (HRESULT error)
 
 //-----------------------------------------------------------------------------
 
-HRESULT DSGetLock(LPDIRECTSOUNDBUFFER pVoice, DWORD dwOffset, DWORD dwBytes,
+HRESULT DSGetLock(LPDIRECTSOUNDBUFFER pVoice, uint32_t dwOffset, uint32_t dwBytes,
 					  SHORT** ppDSLockedBuffer0, DWORD* pdwDSLockedBufferSize0,
 					  SHORT** ppDSLockedBuffer1, DWORD* pdwDSLockedBufferSize1)
 {
@@ -182,7 +182,7 @@ HRESULT DSGetLock(LPDIRECTSOUNDBUFFER pVoice, DWORD dwOffset, DWORD dwBytes,
 
 //-----------------------------------------------------------------------------
 
-HRESULT DSGetSoundBuffer(VOICE* pVoice, DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, const char* pszDevName)
+HRESULT DSGetSoundBuffer(VOICE* pVoice, uint32_t dwFlags, uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszDevName)
 {
 	if (!g_lpDS)
 		return E_FAIL;
@@ -266,7 +266,7 @@ bool DSVoiceStop(PVOICE Voice)
 }
 
 // Use this to Play()
-bool DSZeroVoiceBuffer(PVOICE Voice, DWORD dwBufferSize)
+bool DSZeroVoiceBuffer(PVOICE Voice, uint32_t dwBufferSize)
 {
 #ifdef NO_DIRECT_X
 	return false;
@@ -309,7 +309,7 @@ bool DSZeroVoiceBuffer(PVOICE Voice, DWORD dwBufferSize)
 
 //-----------------------------------------------------------------------------
 
-bool DSZeroVoiceWritableBuffer(PVOICE Voice, DWORD dwBufferSize)
+bool DSZeroVoiceWritableBuffer(PVOICE Voice, uint32_t dwBufferSize)
 {
 	DWORD dwDSLockedBufferSize0=0, dwDSLockedBufferSize1=0;
 	SHORT *pDSLockedBuffer0, *pDSLockedBuffer1;
@@ -614,7 +614,7 @@ void DSUninit()
 
 //-----------------------------------------------------------------------------
 
-LONG NewVolume(DWORD dwVolume, DWORD dwVolumeMax)
+LONG NewVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 {
 	float fVol = (float) dwVolume / (float) dwVolumeMax;	// 0.0=Max, 1.0=Min
 
@@ -655,7 +655,7 @@ static DWORD_PTR g_pdwAdviseCookie = 0; // Not really used as pointer.
 static IReferenceClock *g_pRefClock = NULL;
 static HANDLE g_hSemaphore = NULL;
 static bool g_bRefClockTimerActive = false;
-static DWORD g_dwLastUsecPeriod = 0;
+static uint32_t g_dwLastUsecPeriod = 0;
 
 
 bool SysClk_InitTimer()
@@ -699,7 +699,7 @@ void SysClk_WaitTimer()
 
 //
 
-void SysClk_StartTimerUsec(DWORD dwUsecPeriod)
+void SysClk_StartTimerUsec(uint32_t dwUsecPeriod)
 {
 	if(g_bRefClockTimerActive && (g_dwLastUsecPeriod == dwUsecPeriod))
 		return;

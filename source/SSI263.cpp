@@ -69,7 +69,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define SSI_CTTRAMP	0x03
 #define SSI_FILFREQ	0x04
 
-const DWORD SAMPLE_RATE_SSI263 = 22050;
+const uint32_t SAMPLE_RATE_SSI263 = 22050;
 
 //-----------------------------------------------------------------------------
 
@@ -444,7 +444,7 @@ void SSI263::Update(void)
 
 	// NB. next call to this function: nowNormalSpeed = false
 	if (nowNormalSpeed)
-		m_byteOffset = (DWORD)-1;	// ...which resets m_numSamplesError below
+		m_byteOffset = (uint32_t)-1;	// ...which resets m_numSamplesError below
 
 	//-------------
 
@@ -455,7 +455,7 @@ void SSI263::Update(void)
 
 	bool prefillBufferOnInit = false;
 
-	if (m_byteOffset == (DWORD)-1)
+	if (m_byteOffset == (uint32_t)-1)
 	{
 		// First time in this func (or transitioned from full-speed to normal speed, or a ring-buffer reset)
 #ifdef DBG_SSI263_UPDATE
@@ -577,7 +577,7 @@ void SSI263::Update(void)
 			// When the AppleWin code restarts and reads the ring-buffer position it'll be at a random point, and maybe nearly full (>50% full)
 			// - so the code waits until it drains (nNumSamples=0 each time)
 			// - but it takes a large number of calls to this func to drain to an acceptable level
-			m_byteOffset = (DWORD)-1;
+			m_byteOffset = (uint32_t)-1;
 #if defined(DBG_SSI263_UPDATE)
 			double fTicksSecs = (double)GetTickCount() / 1000.0;
 			LogOutput("%010.3f: [SSUpdt%1d]    Reset ring-buffer\n", fTicksSecs, m_device);
@@ -658,7 +658,7 @@ void SSI263::Update(void)
 	short *pDSLockedBuffer0, *pDSLockedBuffer1;
 
 	hr = DSGetLock(SSI263SingleVoice.lpDSBvoice,
-		m_byteOffset, (DWORD)nNumSamples * sizeof(short) * m_kNumChannels,
+		m_byteOffset, (uint32_t)nNumSamples * sizeof(short) * m_kNumChannels,
 		&pDSLockedBuffer0, &dwDSLockedBufferSize0,
 		&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 	if (FAILED(hr))
@@ -674,7 +674,7 @@ void SSI263::Update(void)
 	if (FAILED(hr))
 		return;
 
-	m_byteOffset = (m_byteOffset + (DWORD)nNumSamples*sizeof(short)*m_kNumChannels) % m_kDSBufferByteSize;
+	m_byteOffset = (m_byteOffset + (uint32_t)nNumSamples*sizeof(short)*m_kNumChannels) % m_kDSBufferByteSize;
 
 	//
 
@@ -919,7 +919,7 @@ void SSI263::Unmute(void)
 	}
 }
 
-void SSI263::SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
+void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 {
 	SSI263SingleVoice.dwUserVolume = dwVolume;
 

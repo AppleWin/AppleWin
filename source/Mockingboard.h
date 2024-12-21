@@ -32,7 +32,7 @@ public:
 	void MuteControl(bool mute);
 	void UpdateCycles(ULONG executedCycles);
 	bool IsActiveToPreventFullSpeed(void);
-	void SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
+	void SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax);
 	void SetCumulativeCycles(void);
 	UINT MB_Update(void);
 	short** GetVoiceBuffers(void) { return m_ppAYVoiceBuffer; }
@@ -75,7 +75,7 @@ public:
 	static std::string GetSnapshotCardNameSDMusic(void);
 
 	static const unsigned short NUM_MB_CHANNELS = 2;
-	static const DWORD SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
+	static const uint32_t SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 
 private:
 	enum MockingboardUnitState_e { AY_NOP0, AY_NOP1, AY_INACTIVE, AY_READ, AY_NOP4, AY_NOP5, AY_WRITE, AY_LATCH };

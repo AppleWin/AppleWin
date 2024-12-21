@@ -180,15 +180,15 @@ void Win32Frame::Benchmark(void)
 	// SEE HOW MANY TEXT FRAMES PER SECOND WE CAN PRODUCE WITH NOTHING ELSE
 	// GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
 	// SIMULATE THE ACTIVITY OF AN AVERAGE GAME
-	DWORD totaltextfps = 0;
+	uint32_t totaltextfps = 0;
 
 	video.SetVideoMode(VF_TEXT);
 	memset(mem + 0x400, 0x14, 0x400);
 	VideoRedrawScreen();
-	DWORD milliseconds = GetTickCount();
+	uint32_t milliseconds = GetTickCount();
 	while (GetTickCount() == milliseconds);
 	milliseconds = GetTickCount();
-	DWORD cycle = 0;
+	uint32_t cycle = 0;
 	do {
 		if (cycle & 1)
 			memset(mem + 0x400, 0x14, 0x400);
@@ -203,7 +203,7 @@ void Win32Frame::Benchmark(void)
 	// SEE HOW MANY HIRES FRAMES PER SECOND WE CAN PRODUCE WITH NOTHING ELSE
 	// GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
 	// SIMULATE THE ACTIVITY OF AN AVERAGE GAME
-	DWORD totalhiresfps = 0;
+	uint32_t totalhiresfps = 0;
 	video.SetVideoMode(VF_HIRES);
 	memset(mem + 0x2000, 0x14, 0x2000);
 	VideoRedrawScreen();
@@ -224,7 +224,7 @@ void Win32Frame::Benchmark(void)
 
 	// DETERMINE HOW MANY 65C02 CLOCK CYCLES WE CAN EMULATE PER SECOND WITH
 	// NOTHING ELSE GOING ON
-	DWORD totalmhz10[2] = { 0,0 };	// bVideoUpdate & !bVideoUpdate
+	uint32_t totalmhz10[2] = { 0,0 };	// bVideoUpdate & !bVideoUpdate
 	for (UINT i = 0; i < 2; i++)
 	{
 		CpuSetupBenchmark();
@@ -287,7 +287,7 @@ void Win32Frame::Benchmark(void)
 	// DO A REALISTIC TEST OF HOW MANY FRAMES PER SECOND WE CAN PRODUCE
 	// WITH FULL EMULATION OF THE CPU, JOYSTICK, AND DISK HAPPENING AT
 	// THE SAME TIME
-	DWORD realisticfps = 0;
+	uint32_t realisticfps = 0;
 	memset(mem + 0x2000, 0xAA, 0x2000);
 	VideoRedrawScreen();
 	milliseconds = GetTickCount();
@@ -298,7 +298,7 @@ void Win32Frame::Benchmark(void)
 		if (realisticfps < 10) {
 			int cycles = 100000;
 			while (cycles > 0) {
-				DWORD executedcycles = CpuExecute(103, true);
+				uint32_t executedcycles = CpuExecute(103, true);
 				cycles -= executedcycles;
 				GetCardMgr().GetDisk2CardMgr().Update(executedcycles);
 			}
@@ -600,13 +600,13 @@ void Win32Frame::Restart()
 	PostMessage(g_hFrameWindow, WM_CLOSE, 0, 0);
 }
 
-BYTE* Win32Frame::GetResource(WORD id, LPCSTR lpType, DWORD dwExpectedSize)
+BYTE* Win32Frame::GetResource(WORD id, LPCSTR lpType, uint32_t dwExpectedSize)
 {
 	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(id), lpType);
 	if (hResInfo == NULL)
 		return NULL;
 
-	DWORD dwResSize = SizeofResource(NULL, hResInfo);
+	uint32_t dwResSize = SizeofResource(NULL, hResInfo);
 	if (dwResSize != dwExpectedSize)
 		return NULL;
 

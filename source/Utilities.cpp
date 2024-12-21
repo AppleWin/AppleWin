@@ -55,7 +55,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Backwards compatibility with AppleWin <1.24.0
 static void LoadConfigOldJoystick_v1(const UINT uJoyNum)
 {
-	DWORD dwOldJoyType;
+	uint32_t dwOldJoyType;
 	if (!REGLOAD(TEXT(uJoyNum==0 ? REGVALUE_OLD_JOYSTICK0_EMU_TYPE1 : REGVALUE_OLD_JOYSTICK1_EMU_TYPE1), &dwOldJoyType))
 		return;	// EG. Old AppleWin never installed
 
@@ -91,12 +91,12 @@ static void LoadConfigOldJoystick_v1(const UINT uJoyNum)
 // - Registry images may have been deleted from disk, so avoid the MessageBox
 void LoadConfiguration(bool loadImages)
 {
-	DWORD dwComputerType = 0;
+	uint32_t dwComputerType = 0;
 	eApple2Type apple2Type = A2TYPE_APPLE2EENHANCED;
 
 	if (REGLOAD(TEXT(REGVALUE_APPLE2_TYPE), &dwComputerType))
 	{
-		const DWORD dwLoadedComputerType = dwComputerType;
+		const uint32_t dwLoadedComputerType = dwComputerType;
 
 		if ( (dwComputerType >= A2TYPE_MAX) ||
 			 (dwComputerType >= A2TYPE_UNDEFINED && dwComputerType < A2TYPE_CLONE) ||
@@ -141,7 +141,7 @@ void LoadConfiguration(bool loadImages)
 
 	//
 
-	DWORD dwMainCpuType;
+	uint32_t dwMainCpuType;
 	REGLOAD_DEFAULT(TEXT(REGVALUE_CPU_TYPE), &dwMainCpuType, CPU_65C02);
 	if (dwMainCpuType != CPU_6502 && dwMainCpuType != CPU_65C02)
 		dwMainCpuType = CPU_65C02;
@@ -149,7 +149,7 @@ void LoadConfiguration(bool loadImages)
 
 	//
 
-	DWORD dwJoyType;
+	uint32_t dwJoyType;
 	if (REGLOAD(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), &dwJoyType))
 		JoySetJoyType(JN_JOYSTICK0, dwJoyType);
 	else if (REGLOAD(TEXT(REGVALUE_OLD_JOYSTICK0_EMU_TYPE2), &dwJoyType))	// GH#434
@@ -164,14 +164,14 @@ void LoadConfiguration(bool loadImages)
 	else
 		LoadConfigOldJoystick_v1(JN_JOYSTICK1);
 
-	DWORD copyProtectionDongleType;
+	uint32_t copyProtectionDongleType;
 	std::string regSection = RegGetConfigSlotSection(GAME_IO_CONNECTOR);
 	if (RegLoadValue(regSection.c_str(), REGVALUE_GAME_IO_TYPE, TRUE, &copyProtectionDongleType))
 		SetCopyProtectionDongleType((DONGLETYPE)copyProtectionDongleType);
 	else
 		SetCopyProtectionDongleType(DT_EMPTY);
 
-	DWORD dwSoundType;
+	uint32_t dwSoundType;
 	REGLOAD_DEFAULT(TEXT(REGVALUE_SOUND_EMULATION), &dwSoundType, REG_SOUNDTYPE_WAVE);
 	switch (dwSoundType)
 	{
@@ -192,7 +192,7 @@ void LoadConfiguration(bool loadImages)
 
 	//
 
-	DWORD dwTmp = 0;
+	uint32_t dwTmp = 0;
 
 	if(REGLOAD(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), &dwTmp))
 		GetFrame().SetFullScreenShowSubunitStatus(dwTmp ? true : false);
@@ -258,7 +258,7 @@ void LoadConfiguration(bool loadImages)
 				// copy it to the new location
 				PCapBackend::SetRegistryInterface(slot, szFilename);
 
-				DWORD tfeEnabled;
+				uint32_t tfeEnabled;
 				REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &tfeEnabled, 0);
 				GetCardMgr().Insert(SLOT3, tfeEnabled ? CT_Uthernet : CT_Empty);
 			}
@@ -306,7 +306,7 @@ void LoadConfiguration(bool loadImages)
 		GetCardMgr().GetDisk2CardMgr().LoadLastDiskImage();
 
 	// Do this after populating the slots with Disk II controller(s)
-	DWORD dwEnhanceDisk;
+	uint32_t dwEnhanceDisk;
 	REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
 	GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
