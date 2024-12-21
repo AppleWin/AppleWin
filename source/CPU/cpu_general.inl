@@ -59,7 +59,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
 				: *(mem+addr)													\
 		)
-#define _READ2	(																\
+#define _READ_ALT (																\
 			(memread[addr >> 8] == MEM_Normal)									\
 				? *(mem+addr)													\
 				: (memread[addr >> 8] == MEM_Aux1K)								\
@@ -90,7 +90,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles);\
 			}																			\
 		}
-#define _WRITE2(a) {																	\
+#define _WRITE_ALT(a) {																	\
 			{																			\
 				memdirty[memwriteDirtyPage[addr >> 8]] = 0xFF;							\
 				LPBYTE page = memwrite[addr >> 8];										\
