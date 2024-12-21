@@ -1178,6 +1178,8 @@ static void ResetPaging(BOOL initialize)
 
 //===========================================================================
 
+static void UpdatePagingForAltRW(void);
+
 void MemUpdatePaging(BOOL initialize)
 {
 	UpdatePaging(initialize);
@@ -1318,9 +1320,13 @@ static void UpdatePaging(BOOL initialize)
 		}
 	}
 
-	//
-	// For Cpu6502_altRead() & Cpu65C02_altRead()
-	//
+	UpdatePagingForAltRW();
+}
+
+// For Cpu6502_altRead() & Cpu65C02_altRead()
+static void UpdatePagingForAltRW(void)
+{
+	UINT loop;
 
 	const BYTE memType = (GetCardMgr().QueryAux() == CT_Empty) ? MEM_FloatingBus
 		: (GetCardMgr().QueryAux() == CT_80Col) ? MEM_Aux1K
@@ -1358,7 +1364,6 @@ static void UpdatePaging(BOOL initialize)
 	for (loop = 0x00; loop<0x100; loop++)
 		memwriteDirtyPage[loop] = loop;
 
-#if 1
 	if (GetCardMgr().QueryAux() == CT_80Col)
 	{
 		// Dirty pages are only in the 1K range
@@ -1411,7 +1416,6 @@ static void UpdatePaging(BOOL initialize)
 			}
 		}
 	}
-#endif
 }
 
 //
