@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 FILE* g_fh = NULL;
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #define LOG_FILENAME "AppleWin.log"
 #else
 // save to /tmp as otherwise it creates a file in the current folder which can be a bit everywhere
@@ -49,7 +49,7 @@ inline std::string GetTimeStamp()
 {
 	time_t ltime;
 	time(&ltime);
-#ifdef _MSC_VER
+#ifdef _WIN32
 	char ct[32];
 	ctime_s(ct, sizeof(ct), &ltime);
 #else
