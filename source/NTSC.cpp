@@ -2393,7 +2393,7 @@ void NTSC_VideoInit( uint8_t* pFramebuffer ) // wsVideoInit
 }
 
 //===========================================================================
-void NTSC_VideoReinitialize(uint32_t cyclesThisFrame, bool bInitVideoScannerAddress )
+void NTSC_VideoReinitialize( uint32_t cyclesThisFrame, bool bInitVideoScannerAddress )
 {
 	if (cyclesThisFrame >= g_videoScanner6502Cycles)
 	{
