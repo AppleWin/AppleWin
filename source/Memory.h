@@ -68,6 +68,7 @@ LPBYTE  MemGetCxRomPeripheral();
 DWORD   GetMemMode(void);
 void    SetMemMode(DWORD memmode);
 bool    MemIsWriteAux(uint32_t memMode);
+bool    IsIIeWithoutAuxMem(void);
 bool	MemOptimizeForModeChanging(WORD programcounter, WORD address);
 bool    MemIsAddrCodeMemory(const USHORT addr);
 void    MemInitialize ();

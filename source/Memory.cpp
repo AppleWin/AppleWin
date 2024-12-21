@@ -1623,7 +1623,7 @@ LPBYTE MemGetCxRomPeripheral()
 // . false: I/O memory or floating bus
 bool MemIsAddrCodeMemory(const USHORT addr)
 {
-	if (addr < 0xC000 || addr > FIRMWARE_EXPANSION_END)	// Assume all A][ types have at least 48K
+	if (addr < APPLE_IO_BEGIN || addr > FIRMWARE_EXPANSION_END)	// Assume all A][ types have at least 48K
 		return true;
 
 	if (addr < APPLE_SLOT_BEGIN)		// [$C000..C0FF]
@@ -2076,10 +2076,13 @@ void MemInitializeFromSnapshot(void)
 
 	memVidHD = NULL;
 
-	if (IsApple2PlusOrClone(GetApple2Type()) && (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD))
+	if ((GetCardMgr().QuerySlot(SLOT3) == CT_VidHD))
 	{
-		VidHDCard& vidHD = dynamic_cast<VidHDCard&>(GetCardMgr().GetRef(SLOT3));
-		memVidHD = vidHD.IsWriteAux() ? memaux : NULL;
+		if (IsApple2PlusOrClone(GetApple2Type()) || IsIIeWithoutAuxMem())
+		{
+			VidHDCard& vidHD = dynamic_cast<VidHDCard&>(GetCardMgr().GetRef(SLOT3));
+			memVidHD = vidHD.IsWriteAux() ? memaux : NULL;
+		}
 	}
 }
 
@@ -2356,6 +2359,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 
 		if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD && GetCardMgr().QueryAux() == CT_80Col)
 		{
+			// NB. if aux slot is empty, then writes already occur to memaux
 			memVidHD = MemIsWriteAux(g_memmode) ? memaux : NULL;
 		}
 	}
@@ -2433,6 +2437,14 @@ bool MemIsWriteAux(uint32_t memMode)
 {
 	return (memMode & MF_AUXWRITE) ||						// Write to aux: $200-$BFFF
 		((memMode & MF_80STORE) && (memMode & MF_PAGE2));	// Write to aux: $400-$7FF and $2000-$3FFF
+}
+
+//===========================================================================
+
+bool IsIIeWithoutAuxMem(void)
+{
+	return IsAppleIIe(GetApple2Type()) &&
+		(GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col);
 }
 
 //===========================================================================
@@ -2785,14 +2797,14 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 
 static SS_CARDTYPE MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::string& card)
 {
-	g_uMaxExPages = 0;
+	g_uMaxExPages = 1;	// Must be at least 1 (for aux mem) - regardless of Apple2 type!
 	g_uActiveBank = 0;
-
-	if (card == SS_YAML_VALUE_CARD_EMPTY)
-		return CT_Empty;
+	_ASSERT(MemGetBankPtr(1, false));	// Ensure there is always aux mem (eg. for CT_80Col or CT_VidHD)
 
 	SS_CARDTYPE cardType;
-	if (card == SS_YAML_VALUE_CARD_80COL)
+	if (card == SS_YAML_VALUE_CARD_EMPTY)
+		cardType = CT_Empty;
+	else if (card == SS_YAML_VALUE_CARD_80COL)
 		cardType = CT_80Col;
 	else if (card == SS_YAML_VALUE_CARD_EXTENDED80COL)
 		cardType = CT_Extended80Col;
@@ -2809,12 +2821,15 @@ static SS_CARDTYPE MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, cons
 		activeAuxBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVEAUXBANK);
 	}
 
-	if (cardType == CT_80Col)
+	if (cardType == CT_Empty)
 	{
-		const UINT bank = 1;
-		LPBYTE pBank = MemGetBankPtr(bank, false);
-		if (!pBank)
-			pBank = RWpages[bank - 1] = ALIGNED_ALLOC(_6502_MEM_LEN);
+		// nothing to do here
+	}
+	else if (cardType == CT_80Col)
+	{
+		const UINT bank1 = 1;
+		LPBYTE pBank = MemGetBankPtr(bank1, false);
+		_ASSERT(pBank);
 
 		std::string auxMemName = MemGetSnapshotAuxMemStructName();
 		if (!yamlLoadHelper.GetSubMap(auxMemName))
@@ -2879,8 +2894,11 @@ static void MemLoadSnapshotAuxVer2(YamlLoadHelper& yamlLoadHelper)
 	std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
 	UINT cardVersion = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 
-	if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
-		throw std::runtime_error(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
+	if (card != SS_YAML_VALUE_CARD_EMPTY)
+	{
+		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
+			throw std::runtime_error(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
+	}
 
 	SS_CARDTYPE cardType = MemLoadSnapshotAuxCommon(yamlLoadHelper, card);
 
