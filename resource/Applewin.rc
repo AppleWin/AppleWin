@@ -56,6 +56,7 @@ RUN_BUTTON              BITMAP                  "RUN.BMP"
 RUNP_BUTTON             BITMAP                  "RUNP.BMP"
 RUN3000E_BUTTON         BITMAP                  "RUN3000E.BMP"
 RUNBASE64A_BUTTON       BITMAP                  "RUNBASE64A.BMP"
+RUNIMC2001_BUTTON       BITMAP                  "RUNIMC2001.BMP"
 DEBUG_BUTTON            BITMAP                  "DEBUG.BMP"
 DRIVE1_BUTTON           BITMAP                  "DRIVE1.BMP"
 DRIVE2_BUTTON           BITMAP                  "DRIVE2.BMP"
@@ -354,6 +355,7 @@ IDR_PRAVETS_8M_ROM      ROM                     "Pravets8M.rom"
 IDR_PRAVETS_8C_ROM      ROM                     "Pravets8C.rom"
 IDR_TK3000_2E_ROM       ROM                     "TK3000e.rom"
 IDR_BASE_64A_ROM        ROM                     "Base64A.rom"
+IDR_IMC2001_ROM         ROM                     "IMC2001.rom"
 IDR_FREEZES_F8_ROM      ROM                     "FREEZES_NON-AUTOSTART_F8_ROM.rom"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -365,6 +367,7 @@ IDR_APPLE2_VIDEO_ROM          ROM               "Apple2_Video.rom"
 IDR_APPLE2_JPLUS_VIDEO_ROM    ROM               "Apple2_JPlus_Video.rom"
 IDR_APPLE2E_ENHANCED_VIDEO_ROM ROM              "Apple2e_Enhanced_Video.rom"
 IDR_BASE64A_VIDEO_ROM         ROM               "Base64A_German_Video.rom"
+IDR_IMC2001_VIDEO_ROM         ROM               "IMC2001-Video.rom"
 
 /////////////////////////////////////////////////////////////////////////////
 //

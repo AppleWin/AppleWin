@@ -303,6 +303,8 @@
     <None Include="resource\Apple2_Plus.rom" />
     <None Include="resource\Base64A.rom" />
     <None Include="resource\Base64A_German_Video.rom" />
+    <None Include="resource\IMC2001.rom" />
+    <None Include="resource\IMC2001-Video.rom" />
     <None Include="resource\Disk2-13sector.rom" />
     <None Include="resource\DISK2.rom" />
     <None Include="resource\Freezes_Non-autostart_F8_Rom.rom" />
@@ -367,6 +369,7 @@
     <Image Include="resource\RUN.BMP" />
     <Image Include="resource\RUN3000E.bmp" />
     <Image Include="resource\RUNBASE64A.BMP" />
+    <Image Include="resource\RUNIMC2001.BMP" />
     <Image Include="resource\RUNP.BMP" />
     <Image Include="resource\SETUP.BMP" />
   </ItemGroup>

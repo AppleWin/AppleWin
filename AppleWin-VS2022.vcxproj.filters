@@ -734,6 +734,9 @@
     <Image Include="resource\ApplewinLogo.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="resource\RUNIMC2001.BMP">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="resource\Apple2.rom">
@@ -797,6 +800,12 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="resource\Base64A_German_Video.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\IMC2001.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\IMC2001-Video.rom">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="resource\Apple2_JPlus.rom">
