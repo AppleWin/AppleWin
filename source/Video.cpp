@@ -190,7 +190,7 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 		case 0x00: g_uVideoMode &= ~VF_80STORE; break;
 		case 0x01: g_uVideoMode |=  VF_80STORE; break;
 		case 0x0C:
-			if (!IS_APPLE2)
+			if (!IS_APPLE2 && supportsDHires)
 			{
 				g_uVideoMode &= ~VF_80COL;
 				NTSC_SetVideoTextMode(40);
@@ -199,7 +199,7 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 			}
 			break;
 		case 0x0D:
-			if (!IS_APPLE2)
+			if (!IS_APPLE2 && supportsDHires)
 			{
 				g_uVideoMode |=  VF_80COL;
 				NTSC_SetVideoTextMode(80);
@@ -221,8 +221,8 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 		case 0x55: g_uVideoMode |=  VF_PAGE2; break;
 		case 0x56: g_uVideoMode &= ~VF_HIRES; break;
 		case 0x57: g_uVideoMode |=  VF_HIRES; break;
-		case 0x5E: if (supportsDHires) g_uVideoMode |=  VF_DHIRES; break;
-		case 0x5F: if (supportsDHires) g_uVideoMode &= ~VF_DHIRES; break;
+		case 0x5E: if (!IS_APPLE2) g_uVideoMode |=  VF_DHIRES; break;
+		case 0x5F: if (!IS_APPLE2) g_uVideoMode &= ~VF_DHIRES; break;
 	}
 
 	if (vidHD && vidHD->IsSHR())
