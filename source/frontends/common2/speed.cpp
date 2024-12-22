@@ -15,7 +15,7 @@ namespace
 
   uint32_t checkAndReturn(const int64_t cycles)
   {
-    // AppleWin uses DWORD, so we check the value is sound
+    // AppleWin uses uint32_t, so we check the value is sound
     const int64_t cyclesToExecute = std::max<int64_t>(0, cycles);
     _ASSERT(cyclesToExecute <= std::numeric_limits<uint32_t>::max());
 

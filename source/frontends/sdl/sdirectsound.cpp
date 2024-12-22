@@ -162,7 +162,7 @@ namespace
 
   void DirectSoundGenerator::printInfo()
   {
-    const DWORD bytesInBuffer = GetBytesInBuffer();
+    const uint32_t bytesInBuffer = GetBytesInBuffer();
     std::cerr << "Channels: " << (int)myAudioSpec.channels;
     std::cerr << ", buffer: " << std::setw(6) << bytesInBuffer;
     const double time = double(bytesInBuffer) / myBytesPerSecond * 1000;
@@ -184,7 +184,7 @@ namespace
 
     if (info.running && myBytesPerSecond > 0)
     {
-      const DWORD bytesInBuffer = GetBytesInBuffer();
+      const uint32_t bytesInBuffer = GetBytesInBuffer();
       const float coeff = 1.0 / myBytesPerSecond;
       info.buffer = bytesInBuffer * coeff;
       info.size = myBufferSize * coeff;

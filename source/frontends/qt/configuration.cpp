@@ -28,7 +28,7 @@ std::string Configuration::getString(const std::string & section, const std::str
     return res;
 }
 
-DWORD Configuration::getDWord(const std::string & section, const std::string & key) const
+uint32_t Configuration::getDWord(const std::string & section, const std::string & key) const
 {
     const QVariant value = getVariant(section, key);
     const uint res = value.toUInt();
@@ -48,7 +48,7 @@ void Configuration::putString(const std::string & section, const std::string & k
     mySettings.setValue(getKey(section, key), QVariant::fromValue(s));
 }
 
-void Configuration::putDWord(const std::string & section, const std::string & key, const DWORD value)
+void Configuration::putDWord(const std::string & section, const std::string & key, const uint32_t value)
 {
     mySettings.setValue(getKey(section, key), QVariant::fromValue(value));
 }

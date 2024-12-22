@@ -14,7 +14,7 @@ void JoySetTrim(short nValue, bool bAxisX)
 {
 }
 
-void JoySetJoyType(UINT num, DWORD type)
+void JoySetJoyType(UINT num, uint32_t type)
 {
 }
 

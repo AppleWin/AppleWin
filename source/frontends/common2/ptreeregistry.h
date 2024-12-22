@@ -21,11 +21,11 @@ namespace common2
     typedef boost::property_tree::basic_ptree<std::string, std::string, KeyQtEncodedLess> ini_t;
 
     std::string getString(const std::string & section, const std::string & key) const override;
-    DWORD getDWord(const std::string & section, const std::string & key) const override;
+    uint32_t getDWord(const std::string & section, const std::string & key) const override;
     bool getBool(const std::string & section, const std::string & key) const override;
 
     void putString(const std::string & section, const std::string & key, const std::string & value) override;
-    void putDWord(const std::string & section, const std::string & key, const DWORD value) override;
+    void putDWord(const std::string & section, const std::string & key, const uint32_t value) override;
 
     template<typename T>
     T getValue(const std::string & section, const std::string & key) const;

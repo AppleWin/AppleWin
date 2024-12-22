@@ -4,7 +4,7 @@
 
 std::shared_ptr<Registry> Registry::instance;
 
-BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, DWORD chars, LPCTSTR defaultValue)
+BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, uint32_t chars, LPCTSTR defaultValue)
 {
   BOOL success = RegLoadString(section, key, peruser, buffer, chars);
   if (!success)
@@ -12,7 +12,7 @@ BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, D
   return success;
 }
 
-BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD* value, DWORD defaultValue) {
+BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t* value, uint32_t defaultValue) {
   BOOL success = RegLoadValue(section, key, peruser, value);
   if (!success)
     *value = defaultValue;
@@ -20,7 +20,7 @@ BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD* value, DWO
 }
 
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser,
-                    LPTSTR buffer, DWORD chars)
+                    LPTSTR buffer, uint32_t chars)
 {
   BOOL result;
   try
@@ -39,7 +39,7 @@ BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser,
   return result;
 }
 
-BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD *value)
+BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t *value)
 {
   BOOL result;
   try
@@ -79,7 +79,7 @@ void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::strin
   LogFileOutput("RegSaveString: %s - %s = %s\n", section, key, buffer.c_str());
 }
 
-void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value)
+void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t value)
 {
   Registry::instance->putDWord(section, key, value);
   LogFileOutput("RegSaveValue: %s - %s = %d\n", section, key, value);

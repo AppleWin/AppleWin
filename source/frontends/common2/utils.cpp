@@ -32,12 +32,12 @@ namespace common2
     const std::string path = section + "\\geometry";
     const auto loadValue = [&path](const char * name, int & dest)
     {
-      DWORD value;
+      uint32_t value;
       if (RegLoadValue(path.c_str(), name, TRUE, &value))
       {
-        // DWORD and int have the same size
+        // uint32_t and int have the same size
         // but if they did not, this would be necessary
-        typedef std::make_signed<DWORD>::type signed_t;
+        typedef std::make_signed<uint32_t>::type signed_t;
         dest = static_cast<signed_t>(value);
       }
     };

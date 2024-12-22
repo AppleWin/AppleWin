@@ -121,7 +121,7 @@ void QtFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
     }
 }
 
-BYTE* QtFrame::GetResource(WORD id, LPCSTR lpType, DWORD expectedSize)
+BYTE* QtFrame::GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize)
 {
     Q_UNUSED(lpType);
     myResource.clear();

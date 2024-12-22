@@ -20,7 +20,7 @@ namespace common2
 
     void Begin() override;
 
-    BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) override;
+    BYTE* GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize) override;
 
     virtual void ResetSpeed();
 
@@ -49,7 +49,7 @@ namespace common2
 
     void ExecuteInRunningMode(const int64_t microseconds);
     void ExecuteInDebugMode(const int64_t microseconds);
-    void Execute(const DWORD uCycles);
+    void Execute(const uint32_t uCycles);
 
     Speed mySpeed;
 
