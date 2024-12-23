@@ -182,15 +182,13 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
 		vidHD = dynamic_cast<VidHDCard*>(GetCardMgr().GetObj(SLOT3));
 
-	const bool supportsDHires = GetCardMgr().QueryAux() == CT_Extended80Col || GetCardMgr().QueryAux() == CT_RamWorksIII || IS_APPLE2C();
-
 	address &= 0xFF;
 	switch (address)
 	{
 		case 0x00: g_uVideoMode &= ~VF_80STORE; break;
 		case 0x01: g_uVideoMode |=  VF_80STORE; break;
 		case 0x0C:
-			if (!IS_APPLE2 && supportsDHires)
+			if (!IS_APPLE2)
 			{
 				g_uVideoMode &= ~VF_80COL;
 				NTSC_SetVideoTextMode(40);
@@ -199,9 +197,9 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 			}
 			break;
 		case 0x0D:
-			if (!IS_APPLE2 && supportsDHires)
+			if (!IS_APPLE2)
 			{
-				g_uVideoMode |=  VF_80COL;
+				g_uVideoMode |= VF_80COL;
 				NTSC_SetVideoTextMode(80);
 				if (GetCardMgr().QueryAux() == CT_Empty)
 					g_uVideoMode |= VF_80COL_AUX_EMPTY;
@@ -238,7 +236,11 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 	if ((oldVideoMode ^ g_uVideoMode) & (VF_TEXT|VF_MIXED))
 		delay = true;
 
-	NTSC_SetVideoMode(g_uVideoMode, delay);
+	uint32_t ntscVideoMode = g_uVideoMode;
+	if (((!IS_APPLE2) && GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col) && !(g_uVideoMode & VF_TEXT))
+		ntscVideoMode &= ~VF_80COL;	// if (aux=empty or aux=80col) && not TEXT: then 80COL switch is ignored
+
+	NTSC_SetVideoMode(ntscVideoMode, delay);
 
 	return MemReadFloatingBus(uExecutedCycles);
 }
