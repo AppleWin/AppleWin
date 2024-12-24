@@ -60,7 +60,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // This is not available in Windows CRT:
 // https://en.cppreference.com/w/c/memory/aligned_alloc
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 // VirtualAlloc is aligned
 #define ALIGNED_ALLOC(size) (LPBYTE)VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE)
 #define ALIGNED_FREE(ptr) VirtualFree(ptr, 0, MEM_RELEASE)
@@ -244,7 +244,7 @@ static const UINT kNumAnnunciators = 4;
 static bool g_Annunciator[kNumAnnunciators] = {};
 
 static const UINT num64KPages = 2;  // number of 64K pages used to create hardware circular buffer
-#ifdef _MSC_VER
+#ifdef _WIN32
 static HANDLE g_hMemImage = NULL;	// NB. When not initialised, this handle is NULL (not INVALID_HANDLE_VALUE)
 #else
 static FILE * g_hMemTempFile = NULL;
@@ -1528,7 +1528,7 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 
 static void FreeMemImage(void)
 {
-#ifdef _MSC_VER
+#ifdef _WIN32
 	if (g_hMemImage)
 	{
 		for (UINT i = 0; i < num64KPages; i++)
@@ -1559,7 +1559,7 @@ static void FreeMemImage(void)
 
 static LPBYTE AllocMemImage(void)
 {
-#ifdef _MSC_VER
+#ifdef _WIN32
 	LPBYTE baseAddr = NULL;
 
 	// Allocate memory for 'memimage' (and the alias 'mem')

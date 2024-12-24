@@ -1,5 +1,8 @@
-#ifdef _MSC_VER
+#ifdef _WIN32
 
+#ifdef __MINGW32__
+#define STRSAFE_NO_DEPRECATE
+#endif
 #include <tchar.h>
 
 #include <crtdbg.h>
@@ -33,6 +36,7 @@ typedef UINT64 uint64_t;
 #include <ddraw.h>
 #include <htmlhelp.h>
 #include <assert.h>
+#include <winsock.h>
 
 #include <algorithm>
 #include <map>
@@ -66,7 +70,7 @@ typedef UINT64 uint64_t;
 #define DWORD_T_FMT "lX"
 #endif
 
-#else
+#else // !_WIN32
 
 #include <cmath>
 #include <map>
@@ -79,6 +83,8 @@ typedef UINT64 uint64_t;
 #include <vector>
 #include <cassert>
 
+// NOTE: this is a local version of windows.h with aliases for windows functions when not
+//       building in a windows environment (!_WIN32)
 #include "windows.h"
 
 //#define USE_SPEECH_API
@@ -87,4 +93,4 @@ typedef UINT64 uint64_t;
 #define PTRDIFF_T_FMT "td"
 #define DWORD_T_FMT "X"
 
-#endif
+#endif // _WIN32

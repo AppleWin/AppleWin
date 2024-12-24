@@ -10,7 +10,7 @@ struct MACAddress;
 
 struct Socket
 {
-#ifdef _MSC_VER
+#ifdef _WIN32
     typedef SOCKET socket_t;
 #else
     typedef int socket_t;
@@ -87,7 +87,7 @@ public:
 private:
     bool myVirtualDNSEnabled; // extended virtualisation of DNS (not present in the real U II card)
 
-#ifdef _MSC_VER
+#ifdef _WIN32
     int myWSAStartup;
 #endif
 
