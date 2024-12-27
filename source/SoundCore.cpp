@@ -34,29 +34,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Log.h"
 #include "Speaker.h"
 
-//-----------------------------------------------------------------------------
-
-#define MAX_SOUND_DEVICES 10
-
-static std::string sound_devices[MAX_SOUND_DEVICES];
-static GUID sound_device_guid[MAX_SOUND_DEVICES];
-static int num_sound_devices = 0;
-
-static LPDIRECTSOUND g_lpDS = NULL;
-
 //-------------------------------------
 
 // Used for muting & fading:
 
 static const UINT uMAX_VOICES = NUM_SLOTS * 2 + 1 + 1;	// 8x (2x SSI263) + spkr + MockingboardCardManager
-static UINT g_uNumVoices = 0;
+UINT g_uNumVoices = 0;
 static VOICE* g_pVoices[uMAX_VOICES] = {NULL};
 
 static VOICE* g_pSpeakerVoice = NULL;
-
-//-------------------------------------
-
-bool g_bDSAvailable = false;
 
 //-----------------------------------------------------------------------------
 
@@ -70,26 +56,6 @@ VOICE::~VOICE(void)
 		DSVoiceStop(this);
 		DSReleaseSoundBuffer(this);
 	}
-}
-
-
-//-----------------------------------------------------------------------------
-
-static BOOL CALLBACK DSEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName,  LPVOID lpContext)
-{
-	int i = num_sound_devices;
-	if(i == MAX_SOUND_DEVICES)
-		return TRUE;
-	if(lpGUID != NULL)
-		memcpy(&sound_device_guid[i], lpGUID, sizeof (GUID));
-	else
-		memset(&sound_device_guid[i], 0, sizeof(GUID));
-	sound_devices[i] = lpszDesc;
-
-	if(g_fh) fprintf(g_fh, "%d: %s - %s\n",i,lpszDesc,lpszDrvName);
-
-	num_sound_devices++;
-	return TRUE;
 }
 
 //-----------------------------------------------------------------------------
@@ -139,7 +105,7 @@ static const char *DirectSound_ErrorText (HRESULT error)
 
 //-----------------------------------------------------------------------------
 
-HRESULT DSGetLock(LPDIRECTSOUNDBUFFER pVoice, uint32_t dwOffset, uint32_t dwBytes,
+HRESULT DSGetLock(std::shared_ptr<SoundBuffer>& pVoice, uint32_t dwOffset, uint32_t dwBytes,
 					  SHORT** ppDSLockedBuffer0, DWORD* pdwDSLockedBufferSize0,
 					  SHORT** ppDSLockedBuffer1, DWORD* pdwDSLockedBufferSize1)
 {
@@ -184,36 +150,17 @@ HRESULT DSGetLock(LPDIRECTSOUNDBUFFER pVoice, uint32_t dwOffset, uint32_t dwByte
 
 HRESULT DSGetSoundBuffer(VOICE* pVoice, uint32_t dwFlags, uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszDevName)
 {
-	if (!g_lpDS)
-		return E_FAIL;
-
 	pVoice->name = pszDevName;
 
-	WAVEFORMATEX wavfmt;
-	DSBUFFERDESC dsbdesc;
+	std::shared_ptr<SoundBuffer> soundBuffer = GetFrame().CreateSoundBuffer();
+	if (!soundBuffer)
+		return E_FAIL;
 
-	wavfmt.wFormatTag = WAVE_FORMAT_PCM;
-	wavfmt.nChannels = nChannels;
-	wavfmt.nSamplesPerSec = nSampleRate;
-	wavfmt.wBitsPerSample = 16;
-	wavfmt.nBlockAlign = wavfmt.nChannels==1 ? 2 : 4;
-	wavfmt.nAvgBytesPerSec = wavfmt.nBlockAlign * wavfmt.nSamplesPerSec;
-
-	memset (&dsbdesc, 0, sizeof (dsbdesc));
-	dsbdesc.dwSize = sizeof (dsbdesc);
-	dsbdesc.dwBufferBytes = dwBufferSize;
-	dsbdesc.lpwfxFormat = &wavfmt;
-	dsbdesc.dwFlags = dwFlags | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_STICKYFOCUS;
-
-	// Are buffers released when g_lpDS OR pVoice->lpDSBvoice is released?
-	// . From DirectX doc:
-	//   "Buffer objects are owned by the device object that created them. When the
-	//    device object is released, all buffers created by that object are also released..."
-	HRESULT hr = g_lpDS->CreateSoundBuffer(&dsbdesc, &pVoice->lpDSBvoice, NULL);
-	if(FAILED(hr))
+	HRESULT hr = soundBuffer->Init(dwFlags, dwBufferSize, nSampleRate, nChannels, pszDevName);
+	if (FAILED(hr))
 		return hr;
 
-	//
+	pVoice->lpDSBvoice = soundBuffer;
 
 	_ASSERT(g_uNumVoices < uMAX_VOICES);
 	if(g_uNumVoices < uMAX_VOICES)
@@ -255,7 +202,7 @@ bool DSVoiceStop(PVOICE Voice)
 	HRESULT hr = Voice->lpDSBvoice->Stop();
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSStop failed (%08X)\n", Voice->name.c_str(), hr);
+		if(g_fh) fprintf(g_fh, "%s: DSStop failed (%08X)\n", Voice->name.c_str(), (unsigned)hr);
 		return false;
 	}
 
@@ -280,7 +227,7 @@ bool DSZeroVoiceBuffer(PVOICE Voice, uint32_t dwBufferSize)
 	HRESULT hr = DSGetLock(Voice->lpDSBvoice, 0, 0, &pDSLockedBuffer, &dwDSLockedBufferSize, NULL, 0);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name.c_str(), hr);
+		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name.c_str(), (unsigned)hr);
 		return false;
 	}
 
@@ -290,14 +237,14 @@ bool DSZeroVoiceBuffer(PVOICE Voice, uint32_t dwBufferSize)
 	hr = Voice->lpDSBvoice->Unlock((void*)pDSLockedBuffer, dwDSLockedBufferSize, NULL, 0);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name.c_str(), hr);
+		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name.c_str(), (unsigned)hr);
 		return false;
 	}
 
 	hr = Voice->lpDSBvoice->Play(0,0,DSBPLAY_LOOPING);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSPlay failed (%08X)\n", Voice->name.c_str(), hr);
+		if(g_fh) fprintf(g_fh, "%s: DSPlay failed (%08X)\n", Voice->name.c_str(), (unsigned)hr);
 		return false;
 	}
 
@@ -320,7 +267,7 @@ bool DSZeroVoiceWritableBuffer(PVOICE Voice, uint32_t dwBufferSize)
 							&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name.c_str(), hr);
+		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name.c_str(), (unsigned)hr);
 		return false;
 	}
 
@@ -332,7 +279,7 @@ bool DSZeroVoiceWritableBuffer(PVOICE Voice, uint32_t dwBufferSize)
 									(void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name.c_str(), hr);
+		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name.c_str(), (unsigned)hr);
 		return false;
 	}
 
@@ -366,7 +313,7 @@ static bool SoundCore_StartTimer()
 	return true;
 }
 
-static void SoundCore_StopTimer()
+void SoundCore_StopTimer()
 {
 	if(!g_bTimerActive)
 		return;
@@ -512,103 +459,6 @@ void SoundCore_TweakVolumes()
 		g_pVoices[i]->lpDSBvoice->SetVolume(g_pVoices[i]->nVolume-1);
 		g_pVoices[i]->lpDSBvoice->SetVolume(g_pVoices[i]->nVolume);
 	}
-}
-
-//-----------------------------------------------------------------------------
-
-static UINT g_uDSInitRefCount = 0;
-
-bool DSInit()
-{
-	if(g_bDSAvailable)
-	{
-		g_uDSInitRefCount++;
-		return true;		// Already initialised successfully
-	}
-
-	num_sound_devices = 0;
-	HRESULT hr = DirectSoundEnumerate((LPDSENUMCALLBACK)DSEnumProc, NULL);
-	if(FAILED(hr))
-	{
-		if(g_fh) fprintf(g_fh, "DSEnumerate failed (%08X)\n",hr);
-		return false;
-	}
-
-	if(g_fh)
-	{
-		fprintf(g_fh, "Number of sound devices = %d\n",num_sound_devices);
-	}
-
-	bool bCreatedOK = false;
-	for(int x=0; x<num_sound_devices; x++)
-	{
-		hr = DirectSoundCreate(&sound_device_guid[x], &g_lpDS, NULL);
-		if(SUCCEEDED(hr))
-		{
-			if(g_fh) fprintf(g_fh, "DSCreate succeeded for sound device #%d\n",x);
-			bCreatedOK = true;
-			break;
-		}
-
-		if(g_fh) fprintf(g_fh, "DSCreate failed for sound device #%d (%08X)\n",x,hr);
-	}
-	if(!bCreatedOK)
-	{
-		if(g_fh) fprintf(g_fh, "DSCreate failed for all sound devices\n");
-		return false;
-	}
-
-	HWND hwnd = GetFrame().g_hFrameWindow;
-	_ASSERT(hwnd);
-	hr = g_lpDS->SetCooperativeLevel(hwnd, DSSCL_NORMAL);
-	if (FAILED(hr))
-	{
-		if(g_fh) fprintf(g_fh, "SetCooperativeLevel failed (%08X)\n",hr);
-		return false;
-	}
-
-	DSCAPS DSCaps;
-    memset(&DSCaps, 0, sizeof(DSCAPS));
-    DSCaps.dwSize = sizeof(DSCAPS);
-	hr = g_lpDS->GetCaps(&DSCaps);
-	if(FAILED(hr))
-	{
-		if(g_fh) fprintf(g_fh, "GetCaps failed (%08X)\n",hr);
-		// Not fatal: so continue...
-	}
-
-	g_bDSAvailable = true;
-
-	g_uDSInitRefCount = 1;
-
-	return true;
-}
-
-//-----------------------------------------------------------------------------
-
-void DSUninit()
-{
-	if(!g_bDSAvailable)
-		return;
-
-	_ASSERT(g_uDSInitRefCount);
-
-	if(g_uDSInitRefCount == 0)
-		return;
-
-	g_uDSInitRefCount--;
-
-	if(g_uDSInitRefCount)
-		return;
-
-	//
-
-	_ASSERT(g_uNumVoices == 0);
-
-	SAFE_RELEASE(g_lpDS);
-	g_bDSAvailable = false;
-
-	SoundCore_StopTimer();
 }
 
 //-----------------------------------------------------------------------------

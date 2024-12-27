@@ -3,6 +3,7 @@
 #include "Video.h"
 
 class NetworkBackend;
+class SoundBuffer;
 
 class FrameBase
 {
@@ -47,6 +48,9 @@ public:
 	// create the network backed for Uthernet 1 and 2
 	// useful to use libslirp in Linux
 	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName) = 0;
+
+	// create an object to write sound output to
+	virtual std::shared_ptr<SoundBuffer> CreateSoundBuffer() = 0;
 
 	// FindResource, MAKEINTRESOURCE, SizeofResource, LoadResource, LockResource
 	// Return pointer to resource if size is correct.

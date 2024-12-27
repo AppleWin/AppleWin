@@ -280,7 +280,7 @@ void MockingboardCardManager::UpdateSoundBuffer(void)
 
 bool MockingboardCardManager::Init(void)
 {
-	if (!g_bDSAvailable)
+	if (!DSAvailable())
 		return false;
 
 	HRESULT hr = DSGetSoundBuffer(&m_mockingboardVoice, DSBCAPS_CTRLVOLUME, SOUNDBUFFER_SIZE, MockingboardCard::SAMPLE_RATE, MockingboardCard::NUM_MB_CHANNELS, "MB");
