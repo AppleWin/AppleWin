@@ -221,7 +221,7 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 		delay = true;
 
 	uint32_t ntscVideoMode = g_uVideoMode;
-	if ((!IS_APPLE2) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
+	if ((!IS_APPLE2) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))	// aux empty or 80col (GH#1341)
 	{
 		g_uVideoMode &= ~VF_DHIRES;
 		if (GetCardMgr().QueryAux() == CT_Empty)
