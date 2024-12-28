@@ -172,7 +172,7 @@ bool DSInit()
 	HRESULT hr = DirectSoundEnumerate((LPDSENUMCALLBACK)DSEnumProc, NULL);
 	if (FAILED(hr))
 	{
-		if (g_fh) fprintf(g_fh, "DSEnumerate failed (%08X)\n", (unsigned)hr);
+		if (g_fh) fprintf(g_fh, "DSEnumerate failed (%08X)\n", (uint32_t)hr);
 		return false;
 	}
 
@@ -192,7 +192,7 @@ bool DSInit()
 			break;
 		}
 
-		if (g_fh) fprintf(g_fh, "DSCreate failed for sound device #%d (%08X)\n", x, (unsigned)hr);
+		if (g_fh) fprintf(g_fh, "DSCreate failed for sound device #%d (%08X)\n", x, (uint32_t)hr);
 	}
 	if (!bCreatedOK)
 	{
@@ -205,7 +205,7 @@ bool DSInit()
 	hr = g_lpDS->SetCooperativeLevel(hwnd, DSSCL_NORMAL);
 	if (FAILED(hr))
 	{
-		if (g_fh) fprintf(g_fh, "SetCooperativeLevel failed (%08X)\n", (unsigned)hr);
+		if (g_fh) fprintf(g_fh, "SetCooperativeLevel failed (%08X)\n", (uint32_t)hr);
 		return false;
 	}
 
@@ -215,7 +215,7 @@ bool DSInit()
 	hr = g_lpDS->GetCaps(&DSCaps);
 	if (FAILED(hr))
 	{
-		if (g_fh) fprintf(g_fh, "GetCaps failed (%08X)\n", (unsigned)hr);
+		if (g_fh) fprintf(g_fh, "GetCaps failed (%08X)\n", (uint32_t)hr);
 		// Not fatal: so continue...
 	}
 

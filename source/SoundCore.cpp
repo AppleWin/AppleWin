@@ -202,7 +202,7 @@ bool DSVoiceStop(PVOICE Voice)
 	HRESULT hr = Voice->lpDSBvoice->Stop();
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSStop failed (%08X)\n", Voice->name.c_str(), (unsigned)hr);
+		if(g_fh) fprintf(g_fh, "%s: DSStop failed (%08X)\n", Voice->name.c_str(), (uint32_t)hr);
 		return false;
 	}
 
@@ -227,7 +227,7 @@ bool DSZeroVoiceBuffer(PVOICE Voice, uint32_t dwBufferSize)
 	HRESULT hr = DSGetLock(Voice->lpDSBvoice, 0, 0, &pDSLockedBuffer, &dwDSLockedBufferSize, NULL, 0);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name.c_str(), (unsigned)hr);
+		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name.c_str(), (uint32_t)hr);
 		return false;
 	}
 
@@ -237,14 +237,14 @@ bool DSZeroVoiceBuffer(PVOICE Voice, uint32_t dwBufferSize)
 	hr = Voice->lpDSBvoice->Unlock((void*)pDSLockedBuffer, dwDSLockedBufferSize, NULL, 0);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name.c_str(), (unsigned)hr);
+		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name.c_str(), (uint32_t)hr);
 		return false;
 	}
 
 	hr = Voice->lpDSBvoice->Play(0,0,DSBPLAY_LOOPING);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSPlay failed (%08X)\n", Voice->name.c_str(), (unsigned)hr);
+		if(g_fh) fprintf(g_fh, "%s: DSPlay failed (%08X)\n", Voice->name.c_str(), (uint32_t)hr);
 		return false;
 	}
 
@@ -267,7 +267,7 @@ bool DSZeroVoiceWritableBuffer(PVOICE Voice, uint32_t dwBufferSize)
 							&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name.c_str(), (unsigned)hr);
+		if(g_fh) fprintf(g_fh, "%s: DSGetLock failed (%08X)\n", Voice->name.c_str(), (uint32_t)hr);
 		return false;
 	}
 
@@ -279,7 +279,7 @@ bool DSZeroVoiceWritableBuffer(PVOICE Voice, uint32_t dwBufferSize)
 									(void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
 	if(FAILED(hr))
 	{
-		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name.c_str(), (unsigned)hr);
+		if(g_fh) fprintf(g_fh, "%s: DSUnlock failed (%08X)\n", Voice->name.c_str(), (uint32_t)hr);
 		return false;
 	}
 
