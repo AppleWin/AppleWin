@@ -12,7 +12,7 @@ SynchronousEventManager g_SynchronousEventMgr;
 
 // From Memory.cpp
 LPBYTE         memwrite[0x100];		// TODO: Init
-BYTE           memread[0x100];		// TODO: Init
+BYTE           memreadPageType[0x100];		// TODO: Init
 BYTE           memwriteDirtyPage[0x100];	// TODO: Init
 LPBYTE         mem          = NULL;	// TODO: Init
 LPBYTE         memdirty     = NULL;	// TODO: Init

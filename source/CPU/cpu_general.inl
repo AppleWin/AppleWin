@@ -60,11 +60,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				: *(mem+addr)													\
 		)
 #define _READ_ALT (																\
-			(memread[addr >> 8] == MEM_Normal)									\
+			(memreadPageType[addr >> 8] == MEM_Normal)							\
 				? *(mem+addr)													\
-				: (memread[addr >> 8] == MEM_Aux1K)								\
+				: (memreadPageType[addr >> 8] == MEM_Aux1K)						\
 					? *(mem+TEXT_PAGE1_BEGIN+(addr&(TEXT_PAGE1_SIZE-1)))		\
-					: (memread[addr >> 8] == MEM_IORead)						\
+					: (memreadPageType[addr >> 8] == MEM_IORead)				\
 						? IORead[(addr >> 4) & 0xFF](regs.pc, addr, 0, 0, uExecutedCycles)	\
 						: MemReadFloatingBus(uExecutedCycles)					\
 		)
