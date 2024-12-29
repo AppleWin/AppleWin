@@ -1295,12 +1295,6 @@ static void UpdatePaging(BOOL initialize)
 			memshadow[loop] = SW_PAGE2	? memaux+(loop << 8)
 										: memmain+(loop << 8);
 			memwrite[loop]  = mem+(loop << 8);
-
-			if (GetCardMgr().QueryAux() == CT_Empty && SW_PAGE2)
-			{
-				memshadow[loop] = memmain + (loop << 8);	// for video generator in 80COL mode: reading aux means reading floating-bus
-				memwrite[loop] = memaux + (loop << 8);		// writes still go to memaux (ie. discarded)
-			}
 		}
 
 		if (SW_HIRES)
@@ -2286,9 +2280,18 @@ void MemReset()
 
 //===========================================================================
 
-static BYTE ReadFloatingBus(const ULONG uExecutedCycles, const bool fullSpeed)
+static BYTE ReadFloatingBus(const ULONG uExecutedCycles, const bool fullSpeed, const bool auxEmpty = false)
 {
 	BYTE* pMain = MemGetMainPtr(0x0000);
+
+	if (auxEmpty && (SW_AUXREAD || (SW_80STORE && SW_PAGE2)))
+	{
+		// Special case: Aux slot empty and in 80-col mode: video generator reading floating bus.
+		// Can't rely on using "mem" (ie. the CPU read cache), since "80STORE && PAGE2" will have switched in the non-existent memory from "memaux"!
+		// NB. Only care about $400-7FF (ie. TEXT page 1)
+		pMain = memmain;
+	}
+
 	return pMain[NTSC_VideoGetScannerAddress(uExecutedCycles, fullSpeed)];		// OK: This does the 2-cycle adjust for ANSI STORY (End Credits)
 }
 
@@ -2307,7 +2310,7 @@ BYTE MemReadFloatingBusFromNTSC(void)
 {
 	// fullspeed=false: to avoid NTSC_VideoGetScannerAddress() calling NTSC_VideoClockResync()
 	// NB. g_bFullSpeed only true when doing NTSC_VideoRedrawWholeScreen()
-	return ReadFloatingBus(0, false);
+	return ReadFloatingBus(0, false, true);
 }
 
 //===========================================================================
