@@ -26,5 +26,5 @@ public:
 	virtual HRESULT Restore();
 
 private:
-	LPDIRECTSOUNDBUFFER m_pBuffer;
+	LPDIRECTSOUNDBUFFER m_pBuffer = NULL;
 };

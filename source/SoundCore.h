@@ -20,7 +20,6 @@ struct VOICE
 
 	VOICE(void)
 	{
-		lpDSBvoice = NULL;
 		bActive = false;
 		bMute = false;
 		nVolume = 0;
@@ -36,7 +35,7 @@ struct VOICE
 
 typedef VOICE* PVOICE;
 
-HRESULT DSGetLock(std::shared_ptr<SoundBuffer>& pVoice, uint32_t dwOffset, uint32_t dwBytes,
+HRESULT DSGetLock(const std::shared_ptr<SoundBuffer>& pVoice, uint32_t dwOffset, uint32_t dwBytes,
 					  SHORT** ppDSLockedBuffer0, DWORD* pdwDSLockedBufferSize0,
 					  SHORT** ppDSLockedBuffer1, DWORD* pdwDSLockedBufferSize1);
 
