@@ -1295,6 +1295,12 @@ static void UpdatePaging(BOOL initialize)
 			memshadow[loop] = SW_PAGE2	? memaux+(loop << 8)
 										: memmain+(loop << 8);
 			memwrite[loop]  = mem+(loop << 8);
+
+			if (GetCardMgr().QueryAux() == CT_Empty && SW_PAGE2)
+			{
+				memshadow[loop] = memmain + (loop << 8);	// for video generator in 80COL mode: reading aux means reading floating-bus
+				memwrite[loop] = memaux + (loop << 8);		// writes still go to memaux (ie. discarded)
+			}
 		}
 
 		if (SW_HIRES)
