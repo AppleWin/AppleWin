@@ -2286,7 +2286,7 @@ static BYTE ReadFloatingBus(const ULONG uExecutedCycles, const bool fullSpeed, c
 
 	if (auxEmpty && (SW_AUXREAD || (SW_80STORE && SW_PAGE2)))
 	{
-		// Special case: Aux slot empty and in 80-col mode: video generator reading floating bus.
+		// Special case: Aux slot empty and in 80-col mode: video generator reading floating bus. (GH#1341)
 		// Can't rely on using "mem" (ie. the CPU read cache), since "80STORE && PAGE2" will have switched in the non-existent memory from "memaux"!
 		// NB. Only care about $400-7FF (ie. TEXT page 1)
 		pMain = memmain;
