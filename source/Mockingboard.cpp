@@ -1010,7 +1010,7 @@ bool MockingboardCard::IsActiveToPreventFullSpeed(void)
 
 //-----------------------------------------------------------------------------
 
-void MockingboardCard::SetVolume(DWORD volume, DWORD volumeMax)
+void MockingboardCard::SetVolume(uint32_t volume, uint32_t volumeMax)
 {
 	for (UINT i = 0; i < NUM_SSI263; i++)
 		m_MBSubUnit[i].ssi263.SetVolume(volume, volumeMax);

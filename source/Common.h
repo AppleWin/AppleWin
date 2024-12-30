@@ -13,7 +13,7 @@ const double CLK_6502_PAL  = (_14M_PAL  * 65.0) / (65.0*14.0+2.0);
 
 // Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 // Assume base freqs are 44.1KHz & 48KHz
-const DWORD SPKR_SAMPLE_RATE = 44100;
+const uint32_t SPKR_SAMPLE_RATE = 44100;
 
 enum AppMode_e
 {
@@ -140,7 +140,7 @@ enum AppMode_e
 #define WM_USER_FULLSCREEN	WM_USER+8
 #define VK_SNAPSHOT_TEXT	WM_USER+9 // PrintScreen+Ctrl
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #define PATH_SEPARATOR '\\'
 #else
 #define PATH_SEPARATOR '/'

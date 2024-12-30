@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //===========================================================================
 
-static DWORD Cpu65C02(DWORD uTotalCycles, const bool bVideoUpdate)
+static uint32_t Cpu65C02(uint32_t uTotalCycles, const bool bVideoUpdate)
 {
 	WORD addr;
 	BOOL flagc; // must always be 0 or 1, no other values allowed

@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "DiskDefs.h"
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 
 #define RAND_THRESHOLD(num, den) ((RAND_MAX * num) / den)
 

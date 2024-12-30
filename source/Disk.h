@@ -126,8 +126,8 @@ public:
 	unsigned __int64 m_lastStepperCycle;
 	unsigned __int64 m_motorOnCycle;
 	BYTE m_headWindow;
-	DWORD m_spinning;
-	DWORD m_writelight;
+	uint32_t m_spinning;
+	uint32_t m_writelight;
 	FloppyDisk m_disk;
 };
 

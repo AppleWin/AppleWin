@@ -71,7 +71,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			case PSN_KILLACTIVE:
 				// About to stop being active page
 				{
-					DWORD NewComputerMenuItem = (DWORD) SendDlgItemMessage(hWnd, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
+					uint32_t NewComputerMenuItem = (uint32_t) SendDlgItemMessage(hWnd, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
 					SetWindowLongPtr(hWnd, DWLP_MSGRESULT, FALSE);		// Changes are valid
 				}
 				break;
@@ -145,7 +145,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 		case IDC_COMPUTER:
 			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				const DWORD NewComputerMenuItem = (DWORD) SendDlgItemMessage(hWnd, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
+				const uint32_t NewComputerMenuItem = (uint32_t) SendDlgItemMessage(hWnd, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
 				const eApple2Type NewApple2Type = GetApple2Type(NewComputerMenuItem);
 				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = NewApple2Type;
 				if (NewApple2Type != A2TYPE_CLONE)
@@ -245,7 +245,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 				BOOL bCustom = TRUE;
 				if (g_dwSpeed == SPEED_NORMAL)
 				{
-					DWORD dwCustomSpeed;
+					uint32_t dwCustomSpeed;
 					REGLOAD_DEFAULT(TEXT(REGVALUE_CUSTOM_SPEED), &dwCustomSpeed, 0);
 					bCustom = dwCustomSpeed ? TRUE : FALSE;
 				}
@@ -374,7 +374,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	if (GetCardMgr().IsSSCInstalled())
 	{
-		const DWORD uNewSerialPort = (DWORD) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
+		const uint32_t uNewSerialPort = (uint32_t) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
 		GetCardMgr().GetSSC()->CommSetSerialPort(uNewSerialPort);
 	}
 
@@ -406,7 +406,7 @@ void CPageConfig::InitOptions(HWND hWnd)
 }
 
 // Config->Computer: Menu item to eApple2Type
-eApple2Type CPageConfig::GetApple2Type(DWORD NewMenuItem)
+eApple2Type CPageConfig::GetApple2Type(uint32_t NewMenuItem)
 {
 	switch (NewMenuItem)
 	{

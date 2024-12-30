@@ -27,7 +27,7 @@
 
 /* #define WPCAP */
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -59,7 +59,7 @@
 // once this is set, no further attempts to load npcap will be made
 static int tfe_cannot_use = 0;
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 
 typedef pcap_t	*(*pcap_open_live_t)(const char *, int, int, int, char *);
 typedef void (*pcap_close_t)(pcap_t *);
@@ -391,7 +391,7 @@ void tfe_arch_set_mac( const BYTE mac[6] )
 #endif
 }
 
-void tfe_arch_set_hashfilter(const DWORD hash_mask[2])
+void tfe_arch_set_hashfilter(const uint32_t hash_mask[2])
 {
 #if defined(TFE_DEBUG_ARCH) || defined(TFE_DEBUG_FRAMES)
     if(g_fh) fprintf( g_fh, "New hash filter set: %08X:%08X.\n",
