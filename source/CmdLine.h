@@ -60,6 +60,8 @@ struct CmdLine
 		bestFullScreenResolution = false;
 		userSpecifiedWidth = 0;
 		userSpecifiedHeight = 0;
+		auxSlotEmpty = false;
+		auxSlotInsert = CT_Empty;
 
 		for (UINT i = 0; i < NUM_SLOTS; i++)
 		{
@@ -115,6 +117,8 @@ struct CmdLine
 	UINT userSpecifiedHeight;
 	std::string wavFileSpeaker;
 	std::string wavFileMockingboard;
+	bool auxSlotEmpty;
+	SS_CARDTYPE auxSlotInsert;
 };
 
 bool ProcessCmdLine(LPSTR lpCmdLine);

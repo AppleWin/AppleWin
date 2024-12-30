@@ -219,6 +219,11 @@ inline bool IsApple2PlusOrClone(eApple2Type type)	// Apple ][,][+,][J-Plus or cl
 	return (type & (APPLE2E_MASK|APPLE2C_MASK)) == 0;
 }
 
+inline bool IsAppleIIe(eApple2Type type)			// Apple //e,Enhanced//e or clone //e,Enhanced//e
+{
+	return type & APPLE2E_MASK;
+}
+
 inline bool IsAppleIIeOrAbove(eApple2Type type)		// Apple //e,Enhanced//e,//c or clone //e,Enhanced//e
 {
 	return !IsApple2PlusOrClone(type);
