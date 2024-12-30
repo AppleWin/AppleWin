@@ -10,6 +10,7 @@
 #include "CardManager.h"
 #include "Debugger/Debug.h"
 #include "Tfe/PCapBackend.h"
+#include "DXSoundBuffer.h"
 #include "../resource/resource.h"
 
 // Win32Frame methods are implemented in AppleWin, WinFrame and WinVideo.
@@ -629,4 +630,9 @@ std::shared_ptr<NetworkBackend> Win32Frame::CreateNetworkBackend(const std::stri
 {
 	std::shared_ptr<NetworkBackend> backend(new PCapBackend(interfaceName));
 	return backend;
+}
+
+std::shared_ptr<SoundBuffer> Win32Frame::CreateSoundBuffer()
+{
+	return std::make_shared<DXSoundBuffer>();
 }

@@ -4,10 +4,11 @@
 
 #define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
 
+#include "SoundBuffer.h"
+
 struct VOICE
 {
-	LPDIRECTSOUNDBUFFER lpDSBvoice;
-	LPDIRECTSOUNDNOTIFY lpDSNotify;
+	std::shared_ptr<SoundBuffer> lpDSBvoice;
 	bool bActive;			// Playback is active
 	bool bMute;
 	LONG nVolume;			// Current volume (as used by DirectSound)
@@ -19,8 +20,6 @@ struct VOICE
 
 	VOICE(void)
 	{
-		lpDSBvoice = NULL;
-		lpDSNotify = NULL;
 		bActive = false;
 		bMute = false;
 		nVolume = 0;
@@ -36,7 +35,7 @@ struct VOICE
 
 typedef VOICE* PVOICE;
 
-HRESULT DSGetLock(LPDIRECTSOUNDBUFFER pVoice, uint32_t dwOffset, uint32_t dwBytes,
+HRESULT DSGetLock(const std::shared_ptr<SoundBuffer>& pVoice, uint32_t dwOffset, uint32_t dwBytes,
 					  SHORT** ppDSLockedBuffer0, DWORD* pdwDSLockedBufferSize0,
 					  SHORT** ppDSLockedBuffer1, DWORD* pdwDSLockedBufferSize1);
 
@@ -57,8 +56,11 @@ void SoundCore_SetErrorInc(const int nErrorInc);
 int SoundCore_GetErrorMax();
 void SoundCore_SetErrorMax(const int nErrorMax);
 
+void SoundCore_StopTimer();
+
 bool DSInit();
 void DSUninit();
+bool DSAvailable();
 
 LONG NewVolume(uint32_t dwVolume, uint32_t dwVolumeMax);
 
@@ -68,6 +70,4 @@ void SysClk_UninitTimer();
 void SysClk_StartTimerUsec(uint32_t dwUsecPeriod);
 void SysClk_StopTimer();
 
-//
-
-extern bool g_bDSAvailable;
+extern UINT g_uNumVoices;

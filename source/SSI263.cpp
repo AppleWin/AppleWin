@@ -842,7 +842,7 @@ bool SSI263::DSInit(void)
 	// Create single SSI263 voice
 	//
 
-	if (!g_bDSAvailable)
+	if (!DSAvailable())
 		return false;
 
 	HRESULT hr = DSGetSoundBuffer(&SSI263SingleVoice, DSBCAPS_CTRLVOLUME, m_kDSBufferByteSize, SAMPLE_RATE_SSI263, m_kNumChannels, "SSI263");
