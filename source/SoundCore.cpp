@@ -188,7 +188,7 @@ void DSReleaseSoundBuffer(VOICE* pVoice)
 		}
 	}
 
-	SAFE_RELEASE(pVoice->lpDSBvoice);
+	pVoice->lpDSBvoice.reset();
 }
 
 //-----------------------------------------------------------------------------

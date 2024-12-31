@@ -8,7 +8,6 @@ public:
 	~DXSoundBuffer() { Release(); }
 
 	virtual HRESULT Init(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pDevName);
-	virtual HRESULT Release();
 
 	virtual HRESULT SetCurrentPosition(DWORD dwNewPosition);
 	virtual HRESULT GetCurrentPosition(LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor);
@@ -27,6 +26,8 @@ public:
 
 private:
 	LPDIRECTSOUNDBUFFER m_pBuffer = NULL;
+
+	HRESULT Release();
 };
 
 bool DSInit();

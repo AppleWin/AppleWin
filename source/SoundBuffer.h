@@ -6,7 +6,6 @@ public:
 	virtual ~SoundBuffer() = default;
 
 	virtual HRESULT Init(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pDevName) = 0;
-	virtual HRESULT Release() = 0;
 
 	virtual HRESULT SetCurrentPosition(DWORD dwNewPosition) = 0;
 	virtual HRESULT GetCurrentPosition(LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor) = 0;
