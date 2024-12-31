@@ -28,3 +28,6 @@ public:
 private:
 	LPDIRECTSOUNDBUFFER m_pBuffer = NULL;
 };
+
+bool DSInit();
+void DSUninit();

@@ -23,3 +23,6 @@ public:
 	virtual HRESULT GetStatus(LPDWORD lpdwStatus) = 0;
 	virtual HRESULT Restore() = 0;
 };
+
+// this must be reimplemented in each platform
+bool DSAvailable();
