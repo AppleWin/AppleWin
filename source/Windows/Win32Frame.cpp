@@ -587,9 +587,9 @@ int Win32Frame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 	return MessageBox(handle, lpText, lpCaption, uType);
 }
 
-void Win32Frame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
+void Win32Frame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)
 {
-	HBITMAP hBitmap = LoadBitmap(g_hInstance, lpBitmapName);
+	HBITMAP hBitmap = LoadBitmap(g_hInstance, MAKEINTRESOURCE(id));
 	GetBitmapBits(hBitmap, cb, lpvBits);
 	DeleteObject(hBitmap);
 }

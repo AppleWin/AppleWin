@@ -53,7 +53,7 @@ public:
 	virtual void ResizeWindow(void);
 
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
-	virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits);
+	virtual void GetBitmap(WORD id, LONG cb, LPVOID lpvBits);
 	virtual BYTE* GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize);
 	virtual void Restart();
 

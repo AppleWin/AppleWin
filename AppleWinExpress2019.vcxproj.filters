@@ -817,6 +817,10 @@
     <None Include="resource\Disk2-13sector.rom">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="resource\Hddrvr-v2.bin" />
+    <None Include="resource\HDC-SmartPort.bin" />
+    <None Include="resource\Apple2_Video.rom" />
+    <None Include="resource\Apple2e_Enhanced_Video.rom" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="docs\CodingConventions.txt">
