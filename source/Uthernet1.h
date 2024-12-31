@@ -177,7 +177,7 @@ private:
 	BYTE  tfe_ia_mac[6];
 
 	/* remember the value of the hash mask */
-	DWORD tfe_hash_mask[2];
+	uint32_t tfe_hash_mask[2];
 
 	int  tfe_recv_broadcast;	/* broadcast */
 	int  tfe_recv_mac;			/* individual address (IA) */

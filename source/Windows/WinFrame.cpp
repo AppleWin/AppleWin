@@ -63,7 +63,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 static bool FileExists(std::string strFilename);
 
 // Must keep in sync with Disk_Status_e g_aDiskFullScreenColors
-static const DWORD g_aDiskFullScreenColorsLED[ NUM_DISK_STATUS ] =
+static const uint32_t g_aDiskFullScreenColorsLED[ NUM_DISK_STATUS ] =
 {
 	RGB(  0,  0,  0), // DISK_STATUS_OFF   BLACK
 	RGB(  0,255,  0), // DISK_STATUS_READ  GREEN
@@ -662,9 +662,9 @@ void Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, i
 	{
 		// we can't just read from mem[ 0xD357 ] since it might be bank-switched from ROM
 		// and we need the Language Card RAM
-		const int nProDOStrack = *MemGetMainPtr(0xC356); // LC1 $D356
-		const int nProDOSsector = *MemGetMainPtr(0xC357); // LC1 $D357
-		const int nProDOSslot = *MemGetMainPtr(0xC359) / 16; // LC1 $D359
+		const int nProDOStrack = *MemGetMainPtrWithLC(0xC356); // LC1 $D356
+		const int nProDOSsector = *MemGetMainPtrWithLC(0xC357); // LC1 $D357
+		const int nProDOSslot = *MemGetMainPtrWithLC(0xC359) / 16; // LC1 $D359
 
 		if ((nProDOSslot == slot)
 			&& (nProDOStrack >= 0 && nProDOStrack < 40)
@@ -2263,7 +2263,7 @@ void Win32Frame::SetFullScreenMode(void)
 		devMode.dmPelsHeight = m_bestHeightForFullScreen;
 		devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
 
-		DWORD dwFlags = 0;
+		uint32_t dwFlags = 0;
 		LONG res = ChangeDisplaySettings(&devMode, dwFlags);
 		m_changedDisplaySettings = true;
 	}
@@ -2578,7 +2578,7 @@ void Win32Frame::FrameCreateWindow(void)
 	{
 		const int nXScreen = GetSystemMetrics(SM_CXSCREEN) - nWidth;
 
-		if (RegLoadValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_X_POS), 1, (DWORD*)&nXPos))
+		if (RegLoadValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_X_POS), 1, (uint32_t*)&nXPos))
 		{
 			if ((nXPos > nXScreen) && !g_bMultiMon)
 				nXPos = -1;	// Not fully visible, so default to centre position
@@ -2593,7 +2593,7 @@ void Win32Frame::FrameCreateWindow(void)
 	{
 		const int nYScreen = GetSystemMetrics(SM_CYSCREEN) - nHeight;
 
-		if (RegLoadValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_Y_POS), 1, (DWORD*)&nYPos))
+		if (RegLoadValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_Y_POS), 1, (uint32_t*)&nYPos))
 		{
 			if ((nYPos > nYScreen) && !g_bMultiMon)
 				nYPos = -1;	// Not fully visible, so default to centre position

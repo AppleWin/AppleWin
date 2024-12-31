@@ -4,6 +4,7 @@ enum
 {
 	// Note: All are in bytes!
 	TEXT_PAGE1_BEGIN         = 0x0400,
+	TEXT_PAGE1_SIZE          = 0x0400,
 
 	APPLE_SLOT_SIZE          = 0x0100, // 1 page  = $Cx00 .. $CxFF (slot 1 .. 7)
 	APPLE_IO_BEGIN           = 0xC000,

@@ -235,7 +235,7 @@ static UINT g_nMin = 0xFFFFFFFF;
 static UINT g_nMax = 0;
 #endif
 
-static __forceinline void DoIrqProfiling(DWORD uCycles)
+static __forceinline void DoIrqProfiling(uint32_t uCycles)
 {
 #ifdef _DEBUG
 	if(regs.ps & AF_INTERRUPT)
@@ -462,6 +462,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //===========================================================================
 
+// 6502 & no debugger
 #define READ _READ_WITH_IO_F8xx
 #define WRITE(value) _WRITE_WITH_IO_F8xx(value)
 #define HEATMAP_X(address)
@@ -473,6 +474,20 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //-------
 
+// 6502 & no debugger & alt read/write support
+#define READ _READ_ALT
+#define WRITE(value) _WRITE_ALT(value)
+
+#define Cpu6502 Cpu6502_altRW
+#include "CPU/cpu6502.h"  // MOS 6502
+#undef Cpu6502
+
+#undef READ
+#undef WRITE
+
+//-------
+
+// 65C02 & no debugger
 #define READ _READ
 #define WRITE(value) _WRITE(value)
 
@@ -480,13 +495,26 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 #undef READ
 #undef WRITE
+
+//-------
+
+// 65C02 & no debugger & alt read/write support
+#define READ _READ_ALT
+#define WRITE(value) _WRITE_ALT(value)
+
+#define Cpu65C02 Cpu65C02_altRW
+#include "CPU/cpu65C02.h" // WDC 65C02
+#undef Cpu65C02
+
+#undef READ
+#undef WRITE
 #undef HEATMAP_X
 
 //-----------------
 
+// 6502 & debugger
 #define READ Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte_With_IO_F8xx(addr, value, uExecutedCycles);
-
 #define HEATMAP_X(address) Heatmap_X(address)
 
 #include "CPU/cpu_heatmap.inl"
@@ -500,6 +528,20 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //-------
 
+// 6502 & debugger & alt read/write support
+#define READ _READ_ALT
+#define WRITE(value) _WRITE_ALT(value)
+
+#define Cpu6502 Cpu6502_debug_altRW
+#include "CPU/cpu6502.h"  // MOS 6502
+#undef Cpu6502
+
+#undef READ
+#undef WRITE
+
+//-------
+
+// 65C02 & debugger
 #define READ Heatmap_ReadByte(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte(addr, value, uExecutedCycles);
 
@@ -509,14 +551,35 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 #undef READ
 #undef WRITE
+
+//-------
+
+// 65C02 & debugger & alt read/write support
+#define READ _READ_ALT
+#define WRITE(value) _WRITE_ALT(value)
+
+#define Cpu65C02 Cpu65C02_debug_altRW
+#include "CPU/cpu65C02.h" // WDC 65C02
+#undef Cpu65C02
+
+#undef READ
+#undef WRITE
 #undef HEATMAP_X
 
 //===========================================================================
 
-static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdate)
+static uint32_t InternalCpuExecute(const uint32_t uTotalCycles, const bool bVideoUpdate)
 {
 	if (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_BENCHMARK)
 	{
+		if (IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
+		{
+			if (GetMainCpu() == CPU_6502)
+				return Cpu6502_altRW(uTotalCycles, bVideoUpdate);		// Apple //e
+			else
+				return Cpu65C02_altRW(uTotalCycles, bVideoUpdate);		// Enhanced Apple //e
+		}
+
 		if (GetMainCpu() == CPU_6502)
 			return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
 		else
@@ -525,6 +588,15 @@ static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdat
 	else
 	{
 		_ASSERT(g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
+
+		if (IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
+		{
+			if (GetMainCpu() == CPU_6502)
+				return Cpu6502_debug_altRW(uTotalCycles, bVideoUpdate);		// Apple //e
+			else
+				return Cpu65C02_debug_altRW(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
+		}
+
 		if (GetMainCpu() == CPU_6502)
 			return Cpu6502_debug(uTotalCycles, bVideoUpdate);	// Apple ][, ][+, //e, Clones
 		else
@@ -607,7 +679,7 @@ ULONG CpuGetCyclesThisVideoFrame(const ULONG nExecutedCycles)
 
 //===========================================================================
 
-DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
+uint32_t CpuExecute(const uint32_t uCycles, const bool bVideoUpdate)
 {
 #ifdef LOG_PERF_TIMINGS
 	extern UINT64 g_timeCpu;
@@ -624,7 +696,7 @@ DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 	// uCycles:
 	//  =0  : Do single step
 	//  >0  : Do multi-opcode emulation
-	const DWORD uExecutedCycles = InternalCpuExecute(uCycles, bVideoUpdate);
+	const uint32_t uExecutedCycles = InternalCpuExecute(uCycles, bVideoUpdate);
 
 	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
 	// . Ensures that 6522 regs are up-to-date for any potential save-state

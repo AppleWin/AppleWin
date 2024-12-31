@@ -31,7 +31,7 @@ protected:
 
 private:
 	void InitOptions(HWND hWnd);
-	eApple2Type GetCloneType(DWORD NewMenuItem);
+	eApple2Type GetCloneType(uint32_t NewMenuItem);
 	int GetCloneMenuItem(void);
 	void InitFreezeDlgButton(HWND hWnd);
 	void InitCloneDropdownMenu(HWND hWnd);

@@ -517,8 +517,8 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 	// TODO: One day, line_.sTarget should become a std::string and things would be much simpler.
 	char*             pDst          = line_.sTarget;
 	const char* const pEnd          = pDst + sizeof(line_.sTarget);
-	const DWORD       nStartAddress = line_.pDisasmData->nStartAddress;
-	const DWORD       nEndAddress   = line_.pDisasmData->nEndAddress;
+	const uint32_t    nStartAddress = line_.pDisasmData->nStartAddress;
+	const uint32_t    nEndAddress   = line_.pDisasmData->nEndAddress;
 	const int         nDisplayLen   = nEndAddress - nBaseAddress + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
 
 	for (int iByte = 0; iByte < line_.nOpbyte; )
