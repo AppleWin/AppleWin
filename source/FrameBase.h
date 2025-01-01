@@ -50,7 +50,7 @@ public:
 	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName) = 0;
 
 	// create an object to write sound output to
-	virtual std::shared_ptr<SoundBuffer> CreateSoundBuffer() = 0;
+	virtual std::shared_ptr<SoundBuffer> CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pDevName) = 0;
 
 	// FindResource, MAKEINTRESOURCE, SizeofResource, LoadResource, LockResource
 	// Return pointer to resource if size is correct.

@@ -632,7 +632,7 @@ std::shared_ptr<NetworkBackend> Win32Frame::CreateNetworkBackend(const std::stri
 	return backend;
 }
 
-std::shared_ptr<SoundBuffer> Win32Frame::CreateSoundBuffer()
+std::shared_ptr<SoundBuffer> Win32Frame::CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pDevName)
 {
-	return std::make_shared<DXSoundBuffer>();
+	return DXSoundBuffer::create(dwFlags, dwBufferSize, nSampleRate, nChannels);
 }

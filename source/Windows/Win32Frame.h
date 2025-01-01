@@ -60,7 +60,7 @@ public:
 	virtual std::string Video_GetScreenShotFolder() const;
 
 	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string& interfaceName);
-	virtual std::shared_ptr<SoundBuffer> CreateSoundBuffer();
+	virtual std::shared_ptr<SoundBuffer> CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pDevName);
 
 	bool GetFullScreenShowSubunitStatus(void);
 	bool GetWindowedModeShowDiskiiStatus(void);
