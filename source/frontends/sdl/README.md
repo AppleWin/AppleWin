@@ -49,6 +49,10 @@ Press ``F1`` to see a list of hotkeys.
 
 The application terminates if the `SDL_CONTROLLER_BUTTON_BACK` (i.e. `SELECT`) button is pressed twice in one second.
 
+## macOS
+
+When compiled for macOS, the `delete` key (or if you use a non-Apple keyboard, then its `backspace` key) is mapped to the emulated Apple ]['s `Delete` key.
+
 ## Audio
 
 Audio works reasonably well, using AppleWin adaptive algorithm.
