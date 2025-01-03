@@ -152,13 +152,9 @@ HRESULT DSGetSoundBuffer(VOICE* pVoice, uint32_t dwFlags, uint32_t dwBufferSize,
 {
 	pVoice->name = pszDevName;
 
-	std::shared_ptr<SoundBuffer> soundBuffer = GetFrame().CreateSoundBuffer();
+	std::shared_ptr<SoundBuffer> soundBuffer = GetFrame().CreateSoundBuffer(dwFlags, dwBufferSize, nSampleRate, nChannels, pszDevName);
 	if (!soundBuffer)
 		return E_FAIL;
-
-	HRESULT hr = soundBuffer->Init(dwFlags, dwBufferSize, nSampleRate, nChannels, pszDevName);
-	if (FAILED(hr))
-		return hr;
 
 	pVoice->lpDSBvoice = soundBuffer;
 
@@ -169,7 +165,7 @@ HRESULT DSGetSoundBuffer(VOICE* pVoice, uint32_t dwFlags, uint32_t dwBufferSize,
 	if(pVoice->bIsSpeaker)
 		g_pSpeakerVoice = pVoice;
 
-	return hr;
+	return DS_OK;
 }
 
 void DSReleaseSoundBuffer(VOICE* pVoice)
@@ -188,7 +184,7 @@ void DSReleaseSoundBuffer(VOICE* pVoice)
 		}
 	}
 
-	SAFE_RELEASE(pVoice->lpDSBvoice);
+	pVoice->lpDSBvoice.reset();
 }
 
 //-----------------------------------------------------------------------------

@@ -141,7 +141,7 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 	//
 
 	desc += "Slot-";
-	desc += m_slot;
+	desc += (char)('0' + m_slot);
 	desc += ": ";
 
 	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
@@ -170,8 +170,6 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 			}
 		}
 	}
-
-	desc += "\n";
 }
 #endif
 

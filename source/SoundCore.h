@@ -58,10 +58,6 @@ void SoundCore_SetErrorMax(const int nErrorMax);
 
 void SoundCore_StopTimer();
 
-bool DSInit();
-void DSUninit();
-bool DSAvailable();
-
 LONG NewVolume(uint32_t dwVolume, uint32_t dwVolumeMax);
 
 void SysClk_WaitTimer();

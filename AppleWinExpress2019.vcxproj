@@ -107,6 +107,7 @@
     <ClInclude Include="source\SaveState.h" />
     <ClInclude Include="source\SerialComms.h" />
     <ClInclude Include="source\SNESMAX.h" />
+    <ClInclude Include="source\SoundBuffer.h" />
     <ClInclude Include="source\SoundCore.h" />
     <ClInclude Include="source\Speaker.h" />
     <ClInclude Include="source\Speech.h" />
@@ -134,6 +135,7 @@
     <ClInclude Include="source\W5100.h" />
     <ClInclude Include="source\Windows\AppleWin.h" />
     <ClInclude Include="source\Windows\DirectInput.h" />
+    <ClInclude Include="source\Windows\DXSoundBuffer.h" />
     <ClInclude Include="source\Windows\HookFilter.h" />
     <ClInclude Include="source\Windows\Win32Frame.h" />
     <ClInclude Include="source\YamlHelper.h" />
@@ -264,6 +266,7 @@
     <ClCompile Include="Source\VidHD.cpp" />
     <ClCompile Include="source\Windows\AppleWin.cpp" />
     <ClCompile Include="source\Windows\DirectInput.cpp" />
+    <ClCompile Include="source\Windows\DXSoundBuffer.cpp" />
     <ClCompile Include="source\Windows\HookFilter.cpp" />
     <ClCompile Include="source\Windows\Win32Frame.cpp" />
     <ClCompile Include="source\Windows\WinFrame.cpp" />
@@ -298,14 +301,18 @@
     <None Include="resource\Apple2.rom" />
     <None Include="resource\Apple2e.rom" />
     <None Include="resource\Apple2e_Enhanced.rom" />
+    <None Include="resource\Apple2e_Enhanced_Video.rom" />
     <None Include="resource\Apple2_JPlus.rom" />
     <None Include="resource\Apple2_JPlus_Video.rom" />
     <None Include="resource\Apple2_Plus.rom" />
+    <None Include="resource\Apple2_Video.rom" />
     <None Include="resource\Base64A.rom" />
     <None Include="resource\Base64A_German_Video.rom" />
     <None Include="resource\Disk2-13sector.rom" />
     <None Include="resource\DISK2.rom" />
     <None Include="resource\Freezes_Non-autostart_F8_Rom.rom" />
+    <None Include="resource\HDC-SmartPort.bin" />
+    <None Include="resource\Hddrvr-v2.bin" />
     <None Include="resource\Hddrvr.bin" />
     <None Include="resource\Mockingboard-D.rom" />
     <None Include="resource\MouseInterface.rom" />

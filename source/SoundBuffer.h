@@ -5,9 +5,6 @@ class SoundBuffer
 public:
 	virtual ~SoundBuffer() = default;
 
-	virtual HRESULT Init(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pDevName) = 0;
-	virtual HRESULT Release() = 0;
-
 	virtual HRESULT SetCurrentPosition(DWORD dwNewPosition) = 0;
 	virtual HRESULT GetCurrentPosition(LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor) = 0;
 
@@ -23,3 +20,6 @@ public:
 	virtual HRESULT GetStatus(LPDWORD lpdwStatus) = 0;
 	virtual HRESULT Restore() = 0;
 };
+
+// this must be reimplemented in each platform
+bool DSAvailable();

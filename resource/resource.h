@@ -56,6 +56,9 @@
 #define IDR_BASE64A_VIDEO_ROM           154
 #define IDR_HDDRVR_V2_FW                155
 #define IDR_HDC_SMARTPORT_FW            156
+#define IDB_CHARSET8M                   157
+#define IDB_CHARSET82                   158
+#define IDB_CHARSET8C                   159
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
@@ -138,7 +141,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        149
+#define _APS_NEXT_RESOURCE_VALUE        160
 #define _APS_NEXT_COMMAND_VALUE         40012
 #define _APS_NEXT_CONTROL_VALUE         1083
 #define _APS_NEXT_SYMED_VALUE           101

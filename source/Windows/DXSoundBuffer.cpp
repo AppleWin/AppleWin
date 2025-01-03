@@ -48,10 +48,10 @@ static UINT g_uDSInitRefCount = 0;
 
 //-----------------------------------------------------------------------------
 
-HRESULT DXSoundBuffer::Init(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pDevName)
+std::shared_ptr<SoundBuffer> DXSoundBuffer::create(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels)
 {
 	if (!g_lpDS)
-		return E_FAIL;
+		return NULL;
 
 	WAVEFORMATEX wavfmt;
 	DSBUFFERDESC dsbdesc;
@@ -69,21 +69,30 @@ HRESULT DXSoundBuffer::Init(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate
 	dsbdesc.lpwfxFormat = &wavfmt;
 	dsbdesc.dwFlags = dwFlags | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_STICKYFOCUS;
 
+	LPDIRECTSOUNDBUFFER pBuffer;
+
 	// Are buffers released when g_lpDS OR m_pBuffer is released?
 	// . From DirectX doc:
 	//   "Buffer objects are owned by the device object that created them. When the
 	//    device object is released, all buffers created by that object are also released..."
-	return g_lpDS->CreateSoundBuffer(&dsbdesc, &m_pBuffer, NULL);
+	HRESULT hr = g_lpDS->CreateSoundBuffer(&dsbdesc, &pBuffer, NULL);
+	if (FAILED(hr))
+	{
+		LogFileOutput("DXSoundBuffer: CreateSoundBuffer(), hr=0x%08X\n", (uint32_t)hr);
+		return NULL;
+	}
+
+	return std::make_shared<DXSoundBuffer>(pBuffer);
 }
 
-HRESULT DXSoundBuffer::Release()
+DXSoundBuffer::DXSoundBuffer(LPDIRECTSOUNDBUFFER pBuffer) : m_pBuffer(pBuffer)
 {
-	if (!m_pBuffer)
-		return DS_OK;
+	_ASSERT(m_pBuffer);
+}
 
+DXSoundBuffer::~DXSoundBuffer()
+{
 	HRESULT hr = m_pBuffer->Release();
-	m_pBuffer = NULL;
-	return hr;
 }
 
 HRESULT DXSoundBuffer::SetCurrentPosition(DWORD dwNewPosition)

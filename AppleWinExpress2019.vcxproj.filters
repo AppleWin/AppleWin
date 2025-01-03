@@ -274,6 +274,9 @@
     <ClCompile Include="source\MockingboardCardManager.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\Windows\DXSoundBuffer.cpp">
+      <Filter>Source Files\Windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\CommonVICE\6510core.h">
@@ -621,6 +624,12 @@
     <ClInclude Include="source\MemoryDefs.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
+    <ClInclude Include="source\SoundBuffer.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Windows\DXSoundBuffer.h">
+      <Filter>Source Files\Windows</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\Applewin.bmp">
@@ -808,6 +817,10 @@
     <None Include="resource\Disk2-13sector.rom">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="resource\Hddrvr-v2.bin" />
+    <None Include="resource\HDC-SmartPort.bin" />
+    <None Include="resource\Apple2_Video.rom" />
+    <None Include="resource\Apple2e_Enhanced_Video.rom" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="docs\CodingConventions.txt">

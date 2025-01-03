@@ -587,9 +587,9 @@ int Win32Frame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 	return MessageBox(handle, lpText, lpCaption, uType);
 }
 
-void Win32Frame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
+void Win32Frame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)
 {
-	HBITMAP hBitmap = LoadBitmap(g_hInstance, lpBitmapName);
+	HBITMAP hBitmap = LoadBitmap(g_hInstance, MAKEINTRESOURCE(id));
 	GetBitmapBits(hBitmap, cb, lpvBits);
 	DeleteObject(hBitmap);
 }
@@ -632,7 +632,7 @@ std::shared_ptr<NetworkBackend> Win32Frame::CreateNetworkBackend(const std::stri
 	return backend;
 }
 
-std::shared_ptr<SoundBuffer> Win32Frame::CreateSoundBuffer()
+std::shared_ptr<SoundBuffer> Win32Frame::CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pDevName)
 {
-	return std::make_shared<DXSoundBuffer>();
+	return DXSoundBuffer::create(dwFlags, dwBufferSize, nSampleRate, nChannels);
 }

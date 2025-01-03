@@ -5,10 +5,10 @@
 class DXSoundBuffer : public SoundBuffer
 {
 public:
-	~DXSoundBuffer() { Release(); }
+	static std::shared_ptr<SoundBuffer> create(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels);
 
-	virtual HRESULT Init(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pDevName);
-	virtual HRESULT Release();
+	DXSoundBuffer(LPDIRECTSOUNDBUFFER pBuffer);
+	virtual ~DXSoundBuffer();
 
 	virtual HRESULT SetCurrentPosition(DWORD dwNewPosition);
 	virtual HRESULT GetCurrentPosition(LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor);
@@ -26,5 +26,8 @@ public:
 	virtual HRESULT Restore();
 
 private:
-	LPDIRECTSOUNDBUFFER m_pBuffer = NULL;
+	const LPDIRECTSOUNDBUFFER m_pBuffer;
 };
+
+bool DSInit();
+void DSUninit();
