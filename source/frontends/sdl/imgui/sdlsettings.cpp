@@ -104,7 +104,7 @@ namespace
     }
   }
 
-  void setSpeedMultiplier(sa2::SDLFrame* frame, const DWORD speedMultiplier)
+  void setSpeedMultiplier(sa2::SDLFrame* frame, const uint32_t speedMultiplier)
   {
     g_dwSpeed = speedMultiplier;
     SetCurrentCLK6502();
@@ -354,7 +354,7 @@ namespace sa2
           if (ImGui::Checkbox("Enhanced speed", &enhancedSpeed))
           {
             cardManager.GetDisk2CardMgr().SetEnhanceDisk(enhancedSpeed);
-            REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (DWORD)enhancedSpeed);
+            REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (uint32_t)enhancedSpeed);
           }
 
           ImGui::Separator();

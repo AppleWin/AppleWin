@@ -96,7 +96,7 @@ namespace sa2
 
   void saveTFEEnabled(const int enabled);
 
-  void changeBreakpoint(const DWORD nAddress, const bool enableAndSet);
+  void changeBreakpoint(const uint32_t nAddress, const bool enableAndSet);
 
   ImVec4 colorrefToImVec4(const COLORREF cr);
   COLORREF imVec4ToColorref(const ImVec4 & color);

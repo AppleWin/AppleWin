@@ -196,7 +196,7 @@ void QApple::on_timer()
 
     const qint64 maximumToRun = 10 * myOptions.msGap * audioAdjustedSpeed * 1.0e-3;  // just to avoid crazy times (e.g. debugging)
     const qint64 toRun = std::min(targetCycles - currentCycles, maximumToRun);
-    const DWORD uCyclesToExecute = toRun;
+    const uint32_t uCyclesToExecute = toRun;
 
     const bool bVideoUpdate = true;
 
@@ -208,7 +208,7 @@ void QApple::on_timer()
     int count = 0;
     do
     {
-        const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
+        const uint32_t uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
         g_dwCyclesThisFrame += uActualCyclesExecuted;
         cardManager.Update(uActualCyclesExecuted);
         SpkrUpdate(uActualCyclesExecuted);

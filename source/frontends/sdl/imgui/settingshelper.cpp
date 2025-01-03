@@ -241,7 +241,7 @@ namespace sa2
     REGSAVE(TEXT(REGVALUE_UTHERNET_ACTIVE), enabled);
   }
 
-  void changeBreakpoint(const DWORD nAddress, const bool enableAndSet)
+  void changeBreakpoint(const uint32_t nAddress, const bool enableAndSet)
   {
     // see _BWZ_RemoveOne
     for (Breakpoint_t & bp : g_aBreakpoints)

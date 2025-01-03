@@ -737,7 +737,7 @@ namespace sa2
     }
   }
 
-  void ImGuiDebugger::setCurrentAddress(const DWORD nAddress)
+  void ImGuiDebugger::setCurrentAddress(const uint32_t nAddress)
   {
     g_nDisasmCurAddress = nAddress;
     DisasmCalcTopBotAddress();

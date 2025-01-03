@@ -50,7 +50,10 @@ namespace
         ch = 0x0d;
         break;
       }
+#ifndef __APPLE__
+    // On macOS, the [delete] key emits SDLK_BACKSPACE but we want to map it to DEL (0x7F)
     case SDLK_BACKSPACE: // same as AppleWin
+#endif
     case SDLK_LEFT:
       {
         ch = 0x08;
@@ -71,6 +74,10 @@ namespace
         ch = 0x0a;
         break;
       }
+#ifdef __APPLE__
+    // On macOS, the [delete] key emits SDLK_BACKSPACE but we want to map it to DEL (0x7F)
+    case SDLK_BACKSPACE:
+#endif
     case SDLK_DELETE:
       {
         ch = 0x7f;

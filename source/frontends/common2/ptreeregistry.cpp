@@ -32,9 +32,9 @@ namespace common2
     return getValue<std::string>(section, key);
   }
 
-  DWORD PTreeRegistry::getDWord(const std::string & section, const std::string & key) const
+  uint32_t PTreeRegistry::getDWord(const std::string & section, const std::string & key) const
   {
-    return getValue<DWORD>(section, key);
+    return getValue<uint32_t>(section, key);
   }
 
   bool PTreeRegistry::getBool(const std::string & section, const std::string & key) const
@@ -47,7 +47,7 @@ namespace common2
     putValue(section, key, value);
   }
 
-  void PTreeRegistry::putDWord(const std::string & section, const std::string & key, const DWORD value)
+  void PTreeRegistry::putDWord(const std::string & section, const std::string & key, const uint32_t value)
   {
     putValue(section, key, value);
   }
