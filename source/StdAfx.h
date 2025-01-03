@@ -77,6 +77,7 @@ typedef UINT64 uint64_t;
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <memory>
 
 // NOTE: this is a local version of windows.h with aliases for windows functions when not
 //       building in a windows environment (!_WIN32)
