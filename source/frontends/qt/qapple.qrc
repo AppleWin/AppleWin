@@ -5,10 +5,10 @@
         <file>resources/Apple2e_Enhanced.rom</file>
         <file>resources/Apple2_Video.rom</file>
         <file>resources/Apple2e_Enhanced_Video.rom</file>
-        <file alias="resources/CHARSET82.BMP">resources/CHARSET82.bmp</file>
-        <file alias="resources/CHARSET8M.BMP">resources/CHARSET8M.bmp</file>
-        <file alias="resources/CHARSET8C.BMP">resources/CHARSET8C.bmp</file>
-        <file alias="resources/APPLEWINLOGO.BMP">resources/ApplewinLogo.bmp</file>
+        <file>resources/CHARSET82.bmp</file>
+        <file>resources/CHARSET8M.bmp</file>
+        <file>resources/CHARSET8C.bmp</file>
+        <file>resources/ApplewinLogo.bmp</file>
         <file>resources/DISK2.rom</file>
         <file>resources/DISK2-13sector.rom</file>
         <file>resources/Hddrvr.bin</file>

@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "qtframe.h"
 #include "emulator.h"
+#include "qdirectsound.h"
 
 #include "Core.h"
 #include "Utilities.h"
@@ -98,14 +99,15 @@ int QtFrame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
     }
 }
 
-void QtFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
+void QtFrame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)
 {
-    const std::string path = std::string(":/resources/") + lpBitmapName + ".BMP";
+    const std::string & filename = getResourceName(id);
+    const std::string path = std::string(":/resources/") + filename;
     QImage image = QImage(QString::fromStdString(path));
 
     if (image.isNull())
     {
-        return LinuxFrame::GetBitmap(lpBitmapName, cb, lpvBits);
+        return LinuxFrame::GetBitmap(id, cb, lpvBits);
     }
 
     const uchar * bits = image.bits();
@@ -151,6 +153,12 @@ std::string QtFrame::Video_GetScreenShotFolder() const
 {
     const QString pictures = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
     return pictures.toStdString() + "/";
+}
+
+std::shared_ptr<SoundBuffer> QtFrame::CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+{
+    const auto buffer = QDirectSound::iCreateDirectSoundBuffer(dwFlags, dwBufferSize, nSampleRate, nChannels, pStreamName);
+    return buffer;
 }
 
 void SingleStep(bool /* bReinit */)

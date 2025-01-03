@@ -112,6 +112,7 @@ set(SOURCE_FILES
   linux/version.cpp
   linux/registryclass.cpp
   linux/linuxframe.cpp
+  linux/linuxsoundbuffer.cpp
   linux/context.cpp
   linux/cassettetape.cpp
   linux/network/slirp2.cpp
@@ -193,6 +194,7 @@ set(HEADER_FILES
   FrameBase.h
   FourPlay.h
   SNESMAX.h
+  SoundBuffer.h
 
   Common.h
   DiskDefs.h
@@ -219,13 +221,13 @@ set(HEADER_FILES
   Configuration/Config.h
 
   linux/resources.h
-  linux/linuxinterface.h
   linux/benchmark.h
   linux/paddle.h
   linux/version.h
   linux/registryclass.h
   linux/keyboardbuffer.h
   linux/linuxframe.h
+  linux/linuxsoundbuffer.h
   linux/cassettetape.h
   linux/network/slirp2.h
   linux/network/portfwds.h

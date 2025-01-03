@@ -107,7 +107,6 @@ void InitialiseEmulator(const AppMode_e mode)
   GetAppleWindowTitle();
   GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 
-  DSInit();
   SpkrInitialize();
 
   MemInitialize();
@@ -128,7 +127,6 @@ void DestroyEmulator()
   Snapshot_Shutdown();
   MemDestroy();
   SpkrDestroy();
-  DSUninit();
   CpuDestroy();
   DebugDestroy();
 }

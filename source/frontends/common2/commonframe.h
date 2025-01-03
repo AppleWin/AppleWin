@@ -42,8 +42,6 @@ namespace common2
   protected:
     virtual std::string getResourcePath(const std::string & filename) = 0;
 
-    static std::string getBitmapFilename(const std::string & resource);
-
     virtual void SetFullSpeed(const bool value);
     virtual bool CanDoFullSpeed();
 

@@ -69,15 +69,6 @@ namespace common2
     return myResource.data();
   }
 
-  std::string CommonFrame::getBitmapFilename(const std::string & resource)
-  {
-    if (resource == "CHARSET82") return "CHARSET82.bmp";
-    if (resource == "CHARSET8M") return "CHARSET8M.bmp";
-    if (resource == "CHARSET8C") return "CHARSET8C.bmp";
-
-    return resource;
-  }
-
   void CommonFrame::ResetSpeed()
   {
     mySpeed.reset();

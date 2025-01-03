@@ -1,5 +1,9 @@
 #include "StdAfx.h"
+
+#include "linux/resources.h"
+
 #include "frontends/libretro/retroframe.h"
+#include "frontends/libretro/rdirectsound.h"
 #include "frontends/libretro/environment.h"
 #include "frontends/common2/utils.h"
 
@@ -138,9 +142,9 @@ namespace ra2
     myVideoBuffer.clear();
   }
 
-  void RetroFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
+  void RetroFrame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)
   {
-    const std::string filename = getBitmapFilename(lpBitmapName);
+    const std::string & filename = getResourceName(id);
     const std::string path = getResourcePath(filename);
 
     std::vector<char> buffer;
@@ -169,8 +173,8 @@ namespace ra2
       }
     }
 
-    log_cb(RETRO_LOG_INFO, "RA2: %s. Missing bitmap '%s'\n", __FUNCTION__, lpBitmapName);
-    CommonFrame::GetBitmap(lpBitmapName, cb, lpvBits);
+    log_cb(RETRO_LOG_INFO, "RA2: %s. Missing bitmap %d\n", __FUNCTION__, id);
+    CommonFrame::GetBitmap(id, cb, lpvBits);
   }
 
   int RetroFrame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
@@ -196,5 +200,10 @@ namespace ra2
     common2::GNUFrame::Begin();
   }
 
+  std::shared_ptr<SoundBuffer> RetroFrame::CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+  {
+      const auto buffer = ra2::iCreateDirectSoundBuffer(dwFlags, dwBufferSize, nSampleRate, nChannels, pStreamName);
+      return buffer;
+  }
 
 }

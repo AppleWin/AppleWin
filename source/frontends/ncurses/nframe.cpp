@@ -401,4 +401,9 @@ namespace na2
     return IDOK;
   }
 
+  std::shared_ptr<SoundBuffer> NFrame::CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+  {
+    return nullptr;
+  }
+
 }

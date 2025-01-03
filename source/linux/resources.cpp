@@ -32,6 +32,10 @@ namespace
      {IDR_BASE64A_VIDEO_ROM, "Base64A_German_Video.rom"},
      {IDR_HDDRVR_V2_FW, "Hddrvr-v2.bin"},
      {IDR_HDC_SMARTPORT_FW, "HDC-SmartPort.bin"},
+
+     {IDB_CHARSET82, "CHARSET82.bmp"},
+     {IDB_CHARSET8M, "CHARSET8M.bmp"},
+     {IDB_CHARSET8C, "CHARSET8C.bmp"},
     };
 }
 
