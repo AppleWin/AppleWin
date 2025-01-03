@@ -283,7 +283,7 @@ bool MockingboardCardManager::Init(void)
 	if (!DSAvailable())
 		return false;
 
-	HRESULT hr = DSGetSoundBuffer(&m_mockingboardVoice, DSBCAPS_CTRLVOLUME, SOUNDBUFFER_SIZE, MockingboardCard::SAMPLE_RATE, MockingboardCard::NUM_MB_CHANNELS, "MB");
+	HRESULT hr = DSGetSoundBuffer(&m_mockingboardVoice, SOUNDBUFFER_SIZE, MockingboardCard::SAMPLE_RATE, MockingboardCard::NUM_MB_CHANNELS, "MB");
 	LogFileOutput("MBCardMgr: DSGetSoundBuffer(), hr=0x%08X\n", hr);
 	if (FAILED(hr))
 	{

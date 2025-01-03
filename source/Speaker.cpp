@@ -960,7 +960,7 @@ bool Spkr_DSInit()
 
 	SpeakerVoice.bIsSpeaker = true;
 
-	HRESULT hr = DSGetSoundBuffer(&SpeakerVoice, DSBCAPS_CTRLVOLUME, g_dwDSSpkrBufferSize, SPKR_SAMPLE_RATE, g_nSPKR_NumChannels, "Spkr");
+	HRESULT hr = DSGetSoundBuffer(&SpeakerVoice, g_dwDSSpkrBufferSize, SPKR_SAMPLE_RATE, g_nSPKR_NumChannels, "Spkr");
 	if (FAILED(hr))
 	{
 		LogFileOutput("Spkr_DSInit: DSGetSoundBuffer failed (%08X)\n", hr);

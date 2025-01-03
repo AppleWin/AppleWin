@@ -5,7 +5,7 @@
 class DXSoundBuffer : public SoundBuffer
 {
 public:
-	static std::shared_ptr<SoundBuffer> create(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels);
+	static std::shared_ptr<SoundBuffer> create(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels);
 
 	DXSoundBuffer(LPDIRECTSOUNDBUFFER pBuffer);
 	virtual ~DXSoundBuffer();

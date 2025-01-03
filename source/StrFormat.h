@@ -2,14 +2,7 @@
 
 #include <cstdarg>
 #include <string>
-
-#if defined(_MSC_VER) && _MSC_VER < 1600
-#include <basetsd.h>
-typedef UINT8 uint8_t;
-typedef UINT16 uint16_t;
-#else
 #include <cstdint>
-#endif
 
 #ifdef _WIN32
 #define ATTRIBUTE_FORMAT_PRINTF(a, b)

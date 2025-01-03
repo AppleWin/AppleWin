@@ -10,14 +10,6 @@
 
 #include <windows.h>
 
-#if _MSC_VER >= 1600	// <stdint.h> supported from VS2010 (cl.exe v16.00)
 #include <stdint.h> // cleanup WORD DWORD -> uint16_t uint32_t
-#else
-#include <BaseTsd.h>
-typedef UINT8 uint8_t;
-typedef UINT16 uint16_t;
-typedef UINT32 uint32_t;
-typedef UINT64 uint64_t;
-#endif
 
 #include <string>
