@@ -39,7 +39,7 @@ HRESULT DSGetLock(const std::shared_ptr<SoundBuffer>& pVoice, uint32_t dwOffset,
 					  SHORT** ppDSLockedBuffer0, DWORD* pdwDSLockedBufferSize0,
 					  SHORT** ppDSLockedBuffer1, DWORD* pdwDSLockedBufferSize1);
 
-HRESULT DSGetSoundBuffer(VOICE* pVoice, uint32_t dwFlags, uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszDevName);
+HRESULT DSGetSoundBuffer(VOICE* pVoice, uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName);
 void DSReleaseSoundBuffer(VOICE* pVoice);
 
 bool DSVoiceStop(PVOICE Voice);
