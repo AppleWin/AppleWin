@@ -28,7 +28,7 @@ public:
   void SetLoadedSaveStateFlag(const bool bFlag) override;
 
   void Restart() override; // calls End() - Begin()
-  void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
+  void GetBitmap(WORD id, LONG cb, LPVOID lpvBits) override;
 
   std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName) override;
 

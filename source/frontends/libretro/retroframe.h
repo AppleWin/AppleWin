@@ -18,7 +18,9 @@ namespace ra2
     void Destroy() override;
     void Begin() override;
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
-    void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) override;
+    void GetBitmap(WORD id, LONG cb, LPVOID lpvBits) override;
+
+    std::shared_ptr<SoundBuffer> CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName) override;
 
   protected:
     virtual void SetFullSpeed(const bool value) override;

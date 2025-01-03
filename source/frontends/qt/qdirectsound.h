@@ -5,12 +5,15 @@
 
 #include <vector>
 #include <string>
+#include <memory>
+
+class SoundBuffer;
 
 namespace QDirectSound
 {
     struct SoundInfo
     {
-        std::string name;
+        std::string streamName;
         bool running = false;
         int channels = 0;
 
@@ -20,6 +23,8 @@ namespace QDirectSound
 
         size_t numberOfUnderruns = 0;
     };
+
+    std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName);
 
     void setOptions(const qint64 duration);  // in ms
     std::vector<SoundInfo> getAudioInfo();

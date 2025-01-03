@@ -17,7 +17,7 @@ QVideo::QVideo(QWidget *parent) : QVIDEO_BASECLASS(parent)
 {
     this->setMouseTracking(true);
 
-    myLogo = QImage(":/resources/APPLEWINLOGO.BMP").mirrored(false, true);
+    myLogo = QImage(":/resources/ApplewinLogo.bmp").mirrored(false, true);
 }
 
 void QVideo::loadVideoSettings()

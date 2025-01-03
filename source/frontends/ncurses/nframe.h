@@ -27,6 +27,8 @@ namespace na2
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
     void FrameRefreshStatus(int drawflags) override;
 
+    std::shared_ptr<SoundBuffer> CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName) override;
+
     void ProcessEvDev();
 
     void ChangeColumns(const int x);

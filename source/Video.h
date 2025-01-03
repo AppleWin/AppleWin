@@ -57,10 +57,11 @@ enum VideoFlag_e
 	VF_PAGE2  = 0x00000020,		// Text or Hires
 	VF_TEXT   = 0x00000040,
 	VF_SHR    = 0x00000080,		// For VidHD's support for IIgs SHR video modes
-	VF_PAGE0  = 0x00000100,		// Pseudo Page $00 (Poorman's heatmap)
-	VF_PAGE3  = 0x00000200,		// Pseudo Page $60 (Poorman's heatmap)
-	VF_PAGE4  = 0x00000400,		// Pseudo Page $80 (Poorman's heatmap)
-	VF_PAGE5  = 0x00000800,		// Pseudo Page $A0 (Poorman's heatmap)
+	VF_80COL_AUX_EMPTY = 0x00000100,	// For 80COL when aux slot is empty (returns floating bus)
+	VF_PAGE0  = 0x10000000,		// Debugger: Pseudo Page $00 (Poorman's heatmap)
+	VF_PAGE3  = 0x20000000,		// Debugger: Pseudo Page $60 (Poorman's heatmap)
+	VF_PAGE4  = 0x40000000,		// Debugger: Pseudo Page $80 (Poorman's heatmap)
+	VF_PAGE5  = 0x80000000,		// Debugger: Pseudo Page $A0 (Poorman's heatmap)
 };
 
 enum AppleFont_e
@@ -234,6 +235,7 @@ public:
 	bool VideoGetSWPAGE2(void);
 	bool VideoGetSWTEXT(void);
 	bool VideoGetSWAltCharSet(void);
+	bool VideoGet80COLAUXEMPTY(void);
 
 	void VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);

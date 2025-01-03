@@ -59,6 +59,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
 				: *(mem+addr)													\
 		)
+#define _READ_ALT (																\
+			(memreadPageType[addr >> 8] == MEM_Normal)							\
+				? *(mem+addr)													\
+				: (memreadPageType[addr >> 8] == MEM_Aux1K)						\
+					? *(mem+TEXT_PAGE1_BEGIN+(addr&(TEXT_PAGE1_SIZE-1)))		\
+					: (memreadPageType[addr >> 8] == MEM_IORead)				\
+						? IORead[(addr >> 4) & 0xFF](regs.pc, addr, 0, 0, uExecutedCycles)	\
+						: MemReadFloatingBus(uExecutedCycles)					\
+		)
 #define _READ_WITH_IO_F8xx (										/* GH#827 */\
 			((addr & 0xF000) == 0xC000)											\
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
@@ -77,6 +86,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				LPBYTE page = memwrite[addr >> 8];										\
 				if (page)																\
 					*(page+(addr & 0xFF)) = (BYTE)(a);									\
+				else if ((addr & 0xF000) == 0xC000)										\
+					IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles);\
+			}																			\
+		}
+#define _WRITE_ALT(a) {																	\
+			{																			\
+				memdirty[memwriteDirtyPage[addr >> 8]] = 0xFF;							\
+				LPBYTE page = memwrite[addr >> 8];										\
+				if (page) {																\
+					*(page+(addr & 0xFF)) = (BYTE)(a);									\
+					if (memVidHD)											/* GH#997 */\
+						*(memVidHD + addr) = (BYTE)(a);									\
+				}																		\
 				else if ((addr & 0xF000) == 0xC000)										\
 					IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles);\
 			}																			\

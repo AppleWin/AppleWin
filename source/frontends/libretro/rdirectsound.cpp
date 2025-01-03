@@ -2,12 +2,10 @@
 #include "frontends/libretro/rdirectsound.h"
 #include "frontends/libretro/environment.h"
 
-#include "linux/linuxinterface.h"
+#include "linux/linuxsoundbuffer.h"
 
-#include <unordered_map>
+#include <unordered_set>
 #include <memory>
-#include <iostream>
-#include <iomanip>
 #include <cmath>
 #include <vector>
 
@@ -37,12 +35,11 @@ namespace
     return ra2::AudioSource::UNKNOWN;
   }
 
-  class DirectSoundGenerator : public IDirectSoundBuffer 
+  class DirectSoundGenerator : public LinuxSoundBuffer
   {
   public:
-    DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc);
-
-    virtual HRESULT Release() override;
+    DirectSoundGenerator(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName);
+    virtual ~DirectSoundGenerator() override;
 
     void writeAudio(const size_t fps, const bool write);
 
@@ -57,18 +54,17 @@ namespace
     void mixBuffer(const void * ptr, const size_t size);
   };
 
-  std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator> > activeSoundGenerators;
+  std::unordered_set<DirectSoundGenerator *> activeSoundGenerators;
 
-  DirectSoundGenerator::DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc)
-    : IDirectSoundBuffer(lpcDSBufferDesc)
-    , myAudioSource(getAudioSourceFromName(myName))
+  DirectSoundGenerator::DirectSoundGenerator(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+    : LinuxSoundBuffer(dwBufferSize, nSampleRate, nChannels, pStreamName)
+    , myAudioSource(getAudioSourceFromName(myStreamName))
   {
   }
 
-  HRESULT DirectSoundGenerator::Release()
+  DirectSoundGenerator::~DirectSoundGenerator()
   {
     activeSoundGenerators.erase(this);
-    return IUnknown::Release();
   }
 
   bool DirectSoundGenerator::isRunning()
@@ -147,23 +143,23 @@ namespace
 
 }
 
-IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
-{
-  std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(lpcDSBufferDesc);
-  DirectSoundGenerator * ptr = generator.get();
-  activeSoundGenerators[ptr] = generator;
-  return ptr;
-}
-
 namespace ra2
 {
+
+  std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+  {
+    std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(dwBufferSize, nSampleRate, nChannels, pStreamName);
+    DirectSoundGenerator * ptr = generator.get();
+    activeSoundGenerators.insert(ptr);
+    return generator;
+  }
 
   void writeAudio(const AudioSource selectedSource, const size_t fps)
   {
     bool found = false;
     for (const auto & it : activeSoundGenerators)
     {
-      const auto & generator = it.second;
+      const auto & generator = it;
       if (generator->isRunning())
       {
         const bool selected = !found && (selectedSource == generator->getSource());

@@ -4,7 +4,6 @@
 #include <ncurses.h>
 #include <signal.h>
 
-#include "linux/linuxinterface.h"
 #include "linux/keyboardbuffer.h"
 
 #include "frontends/ncurses/nframe.h"
@@ -150,10 +149,4 @@ namespace na2
     }
   }
 
-}
-
-// Mockingboard
-IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
-{
-  return nullptr;
 }

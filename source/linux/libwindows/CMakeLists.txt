@@ -1,6 +1,5 @@
 set(SOURCE_FILES
   dmusicc.cpp
-  dsound.cpp
   fileapi.cpp
   guiddef.cpp
   winhandles.cpp

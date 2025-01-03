@@ -122,9 +122,9 @@ void LinuxFrame::Cycle50ScanLines()
   ApplyVideoModeChange();
 }
 
-void LinuxFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
+void LinuxFrame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)
 {
-  LogFileOutput("LoadBitmap: could not load resource %s\n", lpBitmapName);
+  LogFileOutput("GetBitmap: could not load bitmap: %d\n", id);
   memset(lpvBits, 0, cb);
 }
 

@@ -10,6 +10,7 @@
 #include "CardManager.h"
 #include "Debugger/Debug.h"
 #include "Tfe/PCapBackend.h"
+#include "DXSoundBuffer.h"
 #include "../resource/resource.h"
 
 // Win32Frame methods are implemented in AppleWin, WinFrame and WinVideo.
@@ -586,9 +587,9 @@ int Win32Frame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 	return MessageBox(handle, lpText, lpCaption, uType);
 }
 
-void Win32Frame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
+void Win32Frame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)
 {
-	HBITMAP hBitmap = LoadBitmap(g_hInstance, lpBitmapName);
+	HBITMAP hBitmap = LoadBitmap(g_hInstance, MAKEINTRESOURCE(id));
 	GetBitmapBits(hBitmap, cb, lpvBits);
 	DeleteObject(hBitmap);
 }
@@ -629,4 +630,9 @@ std::shared_ptr<NetworkBackend> Win32Frame::CreateNetworkBackend(const std::stri
 {
 	std::shared_ptr<NetworkBackend> backend(new PCapBackend(interfaceName));
 	return backend;
+}
+
+std::shared_ptr<SoundBuffer> Win32Frame::CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pDevName)
+{
+	return DXSoundBuffer::create(dwFlags, dwBufferSize, nSampleRate, nChannels);
 }

@@ -59,15 +59,11 @@ typedef UINT64 uint64_t;
 #if _MSC_VER < 1900
 #ifdef _WIN64
 #define SIZE_T_FMT "llu"
-#define PTRDIFF_T_FMT "lld"
 #else
 #define SIZE_T_FMT "lu"
-#define PTRDIFF_T_FMT "ld"
 #endif
 #else
 #define SIZE_T_FMT "zu"
-#define PTRDIFF_T_FMT "td"
-#define DWORD_T_FMT "lX"
 #endif
 
 #else // !_WIN32
@@ -82,6 +78,7 @@ typedef UINT64 uint64_t;
 #include <string>
 #include <vector>
 #include <cassert>
+#include <memory>
 
 // NOTE: this is a local version of windows.h with aliases for windows functions when not
 //       building in a windows environment (!_WIN32)
@@ -90,7 +87,5 @@ typedef UINT64 uint64_t;
 //#define USE_SPEECH_API
 
 #define SIZE_T_FMT "zu"
-#define PTRDIFF_T_FMT "td"
-#define DWORD_T_FMT "X"
 
 #endif // _WIN32

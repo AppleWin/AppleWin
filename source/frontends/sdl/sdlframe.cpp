@@ -15,6 +15,7 @@
 #include "MouseInterface.h"
 #include "Debugger/Debug.h"
 
+#include "linux/resources.h"
 #include "linux/paddle.h"
 #include "linux/keyboardbuffer.h"
 #include "linux/network/slirp2.h"
@@ -219,9 +220,9 @@ namespace sa2
     return myWindow;
   }
 
-  void SDLFrame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
+  void SDLFrame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)
   {
-    const std::string filename = getBitmapFilename(lpBitmapName);
+    const std::string & filename = getResourceName(id);
     const std::string path = getResourcePath(filename);
 
     std::shared_ptr<SDL_Surface> surface(SDL_LoadBMP(path.c_str()), SDL_FreeSurface);
@@ -253,7 +254,7 @@ namespace sa2
     }
     else
     {
-      CommonFrame::GetBitmap(lpBitmapName, cb, lpvBits);
+      CommonFrame::GetBitmap(id, cb, lpvBits);
     }
   }
 
@@ -724,6 +725,12 @@ namespace sa2
     }
     SoundCore_SetFade(FADE_IN);
     ResetSpeed();
+  }
+
+  std::shared_ptr<SoundBuffer> SDLFrame::CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+  {
+    const auto buffer = iCreateDirectSoundBuffer(dwFlags, dwBufferSize, nSampleRate, nChannels, pStreamName);
+    return buffer;
   }
 
 }

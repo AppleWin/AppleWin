@@ -6811,13 +6811,13 @@ enum ViewVideoPage_t
 	VIEW_PAGE_5  // Pseudo
 };
 
-Update_t _ViewOutput ( ViewVideoPage_t iPage, int bVideoModeFlags )
+static Update_t _ViewOutput ( ViewVideoPage_t iPage, UINT bVideoModeFlags )
 {
 	switch ( iPage ) 
 	{
 		case VIEW_PAGE_X:
-			bVideoModeFlags |= !GetVideo().VideoGetSWPAGE2() ? 0 : VF_PAGE2;
-			bVideoModeFlags |= !GetVideo().VideoGetSWMIXED() ? 0 : VF_MIXED;
+			bVideoModeFlags |= GetVideo().VideoGetSWPAGE2() ? VF_PAGE2 : 0;
+			bVideoModeFlags |= GetVideo().VideoGetSWMIXED() ? VF_MIXED : 0;
 			break; // Page Current & current MIXED state
 		case VIEW_PAGE_0: bVideoModeFlags |= VF_PAGE0; break; // Pseudo   Page 0 ($0000)
 		case VIEW_PAGE_1: bVideoModeFlags |= 0       ; break; // Hardware Page 1 ($2000), NOTE: VF_HIRES will be passed in
@@ -6829,6 +6829,8 @@ Update_t _ViewOutput ( ViewVideoPage_t iPage, int bVideoModeFlags )
 			_ASSERT(0);
 			break;
 	}
+
+	bVideoModeFlags |= GetVideo().VideoGet80COLAUXEMPTY() ? VF_80COL_AUX_EMPTY : 0;	// Preserve this flag
 
 	DebugVideoMode::Instance().Set(bVideoModeFlags);
 	GetFrame().VideoRefreshScreen( bVideoModeFlags, true );

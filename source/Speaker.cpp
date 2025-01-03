@@ -952,9 +952,9 @@ bool Spkr_DSInit()
 	// Create single Apple speaker voice
 	//
 
-	if (!g_bDSAvailable)
+	if (!DSAvailable())
 	{
-		LogFileOutput("Spkr_DSInit: g_bDSAvailable=0\n");
+		LogFileOutput("Spkr_DSInit: DSAvailable=0\n");
 		return false;
 	}
 
@@ -980,14 +980,14 @@ bool Spkr_DSInit()
 		SpeakerVoice.nVolume = DSBVOLUME_MAX;
 
 	hr = SpeakerVoice.lpDSBvoice->SetVolume(SpeakerVoice.nVolume);
-	LogFileOutput("Spkr_DSInit: SetVolume(%d) res = %08X\n", SpeakerVoice.nVolume, hr);
+	LogFileOutput("Spkr_DSInit: SetVolume(%d) res = %08X\n", SpeakerVoice.nVolume, (uint32_t)hr);
 
 	//
 
 	DWORD dwCurrentPlayCursor, dwCurrentWriteCursor;
 	hr = SpeakerVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
 	if (FAILED(hr))
-		LogFileOutput("Spkr_DSInit: GetCurrentPosition failed (%08X)\n", hr);
+		LogFileOutput("Spkr_DSInit: GetCurrentPosition failed (%08X)\n", (uint32_t)hr);
 	if (SUCCEEDED(hr) && (dwCurrentPlayCursor == dwCurrentWriteCursor))
 	{
 		// KLUDGE: For my WinXP PC with "VIA AC'97 Enhanced Audio Controller"
@@ -995,8 +995,9 @@ bool Spkr_DSInit()
 		Sleep(200);
 
 		hr = SpeakerVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
-		LogFileOutput("Spkr_DSInit: GetCurrentPosition kludge (%08X)\n", hr);
-		LogOutput("[DSInit] PC=%08" DWORD_T_FMT ", WC=%08" DWORD_T_FMT ", Diff=%08" DWORD_T_FMT "\n", dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor);
+		LogFileOutput("Spkr_DSInit: GetCurrentPosition kludge (%08X)\n", (uint32_t)hr);
+		LogOutput("[DSInit] PC=%08X, WC=%08X, Diff=%08X\n", (uint32_t)dwCurrentPlayCursor,
+			(uint32_t)dwCurrentWriteCursor, (uint32_t)(dwCurrentWriteCursor-dwCurrentPlayCursor));
 	}
 
 	return true;

@@ -38,13 +38,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Mockingboard.h"
 #include "MouseInterface.h"
 #include "Windows/DirectInput.h"
+#include "Windows/DXSoundBuffer.h"
 #include "NTSC.h"
 #include "ParallelPrinter.h"
 #include "Pravets.h"
 #include "Registry.h"
 #include "SaveState.h"
 #include "SerialComms.h"
-#include "SoundCore.h"
 #include "Uthernet1.h"
 #include "Uthernet2.h"
 #include "Speaker.h"
@@ -662,9 +662,9 @@ void Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, i
 	{
 		// we can't just read from mem[ 0xD357 ] since it might be bank-switched from ROM
 		// and we need the Language Card RAM
-		const int nProDOStrack = *MemGetMainPtr(0xC356); // LC1 $D356
-		const int nProDOSsector = *MemGetMainPtr(0xC357); // LC1 $D357
-		const int nProDOSslot = *MemGetMainPtr(0xC359) / 16; // LC1 $D359
+		const int nProDOStrack = *MemGetMainPtrWithLC(0xC356); // LC1 $D356
+		const int nProDOSsector = *MemGetMainPtrWithLC(0xC357); // LC1 $D357
+		const int nProDOSslot = *MemGetMainPtrWithLC(0xC359) / 16; // LC1 $D359
 
 		if ((nProDOSslot == slot)
 			&& (nProDOStrack >= 0 && nProDOStrack < 40)

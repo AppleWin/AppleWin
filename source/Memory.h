@@ -36,11 +36,16 @@ enum MemoryInitPattern_e
 	, NUM_MIP
 };
 
+// For Cpu6502_altRead() & Cpu65C02_altRead()
+enum { MEM_Normal = 0, MEM_IORead, MEM_FloatingBus, MEM_Aux1K, MEM_NoSlotClock };
+
 typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nExecutedCycles);
 
 extern iofunction IORead[256];
 extern iofunction IOWrite[256];
 extern LPBYTE     memwrite[0x100];
+extern BYTE       memreadPageType[0x100];
+extern BYTE       memwriteDirtyPage[0x100];
 extern LPBYTE     mem;
 extern LPBYTE     memdirty;
 extern LPBYTE     memVidHD;
@@ -56,11 +61,14 @@ void    MemDestroy ();
 bool	MemCheckSLOTC3ROM();
 bool	MemCheckINTCXROM();
 LPBYTE  MemGetAuxPtr(const WORD);
+LPBYTE  MemGetMainPtrWithLC(const WORD);
 LPBYTE  MemGetMainPtr(const WORD);
 LPBYTE  MemGetBankPtr(const UINT nBank, const bool isSaveSnapshotOrDebugging = true);
 LPBYTE  MemGetCxRomPeripheral();
 uint32_t   GetMemMode(void);
 void    SetMemMode(uint32_t memmode);
+bool    MemIsWriteAux(uint32_t memMode);
+bool    IsIIeWithoutAuxMem(void);
 bool	MemOptimizeForModeChanging(WORD programcounter, WORD address);
 bool    MemIsAddrCodeMemory(const USHORT addr);
 void    MemInitialize ();
@@ -71,6 +79,7 @@ void    MemInitializeIO(void);
 void    MemInitializeFromSnapshot(void);
 BYTE    MemReadFloatingBus(const ULONG uExecutedCycles);
 BYTE    MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles);
+BYTE    MemReadFloatingBusFromNTSC(void);
 void    MemReset ();
 void    MemResetPaging ();
 void    MemUpdatePaging(BOOL initialize);
@@ -103,4 +112,3 @@ UINT	GetRamWorksActiveBank(void);
 void	SetMemMainLanguageCard(LPBYTE ptr, UINT slot, bool bMemMain=false);
 
 LPBYTE GetCxRomPeripheral(void);
-UINT GetLastSlotToSetMainMemLC(void);

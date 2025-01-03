@@ -1,9 +1,10 @@
+#include "StdAfx.h"
+
 #include "qdirectsound.h"
 
 #include "loggingcategory.h"
-#include "windows.h"
-#include "linux/linuxinterface.h"
-#include <unordered_map>
+#include "linux/linuxsoundbuffer.h"
+#include <unordered_set>
 #include <memory>
 
 #include <QIODevice>
@@ -20,13 +21,12 @@ namespace
 {
     qint64 defaultDuration = 0;
 
-    class DirectSoundGenerator : public IDirectSoundBuffer, public QIODevice
+    class DirectSoundGenerator : public LinuxSoundBuffer, public QIODevice
     {
     public:
-        DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc);
+        DirectSoundGenerator(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName);
         virtual ~DirectSoundGenerator() override;
 
-        virtual HRESULT Release() override;
         virtual HRESULT Stop() override;
         virtual HRESULT Play( DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags ) override;
         virtual HRESULT SetVolume( LONG lVolume ) override;
@@ -42,10 +42,10 @@ namespace
         std::shared_ptr<QAudioSink> myAudioOutput;
     };
 
-    std::unordered_map<IDirectSoundBuffer *, std::shared_ptr<DirectSoundGenerator> > activeSoundGenerators;
+    std::unordered_set<DirectSoundGenerator *> activeSoundGenerators;
 
-    DirectSoundGenerator::DirectSoundGenerator(LPCDSBUFFERDESC lpcDSBufferDesc) 
-    : IDirectSoundBuffer(lpcDSBufferDesc)
+    DirectSoundGenerator::DirectSoundGenerator(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName) 
+    : LinuxSoundBuffer(dwBufferSize, nSampleRate, nChannels, pStreamName)
     {
         // only initialise here to skip all the buffers which are not in DSBSTATUS_PLAYING mode
         QAudioFormat audioFormat;
@@ -68,13 +68,8 @@ namespace
 
     DirectSoundGenerator::~DirectSoundGenerator()
     {
-        myAudioOutput->stop();
-    }
-
-    HRESULT DirectSoundGenerator::Release()
-    {
         activeSoundGenerators.erase(this);
-        return IUnknown::Release();
+        myAudioOutput->stop();
     }
 
     void DirectSoundGenerator::setOptions(const qint64 duration)  // in ms
@@ -101,7 +96,7 @@ namespace
 
     HRESULT DirectSoundGenerator::SetVolume( LONG lVolume )
     {
-        const HRESULT res = IDirectSoundBuffer::SetVolume(lVolume);
+        const HRESULT res = LinuxSoundBuffer::SetVolume(lVolume);
         const qreal logVolume = GetLogarithmicVolume();
         const qreal linVolume = QAudio::convertVolume(logVolume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
         myAudioOutput->setVolume(linVolume);
@@ -110,7 +105,7 @@ namespace
 
     HRESULT DirectSoundGenerator::Stop()
     {
-        const HRESULT res = IDirectSoundBuffer::Stop();
+        const HRESULT res = LinuxSoundBuffer::Stop();
         myAudioOutput->stop();
         QIODevice::close();
         return res;
@@ -118,7 +113,7 @@ namespace
 
     HRESULT DirectSoundGenerator::Play( DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags )
     {
-        const HRESULT res = IDirectSoundBuffer::Play(dwReserved1, dwReserved2, dwFlags);
+        const HRESULT res = LinuxSoundBuffer::Play(dwReserved1, dwReserved2, dwFlags);
         QIODevice::open(ReadOnly);
         myAudioOutput->start(this);
         return res;
@@ -149,7 +144,7 @@ namespace
     QDirectSound::SoundInfo DirectSoundGenerator::getInfo()
     {
         QDirectSound::SoundInfo info;
-        info.name = myName;
+        info.streamName = myStreamName;
         info.running = QIODevice::isOpen();
         info.channels = myChannels;
         info.numberOfUnderruns = GetBufferUnderruns();
@@ -173,25 +168,25 @@ namespace
 
 }
 
-IDirectSoundBuffer * iCreateDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
-{
-    try
-    {
-        std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(lpcDSBufferDesc);
-        generator->setOptions(defaultDuration);
-        DirectSoundGenerator * ptr = generator.get();
-        activeSoundGenerators[ptr] = generator;
-        return ptr;
-    }
-    catch (const std::exception & e)
-    {
-        qDebug(appleAudio) << "IDirectSoundBuffer: " << e.what();
-        return nullptr;
-    }
-}
-
 namespace QDirectSound
 {
+
+    std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+    {
+        try
+        {
+            std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(dwBufferSize, nSampleRate, nChannels, pStreamName);
+            generator->setOptions(defaultDuration);
+            DirectSoundGenerator * ptr = generator.get();
+            activeSoundGenerators.insert(ptr);
+            return generator;
+        }
+        catch (const std::exception & e)
+        {
+            qDebug(appleAudio) << "SoundBuffer: " << e.what();
+            return nullptr;
+        }
+    }
 
     void setOptions(const qint64 duration)
     {
@@ -200,7 +195,7 @@ namespace QDirectSound
         defaultDuration = duration;
         for (const auto & it : activeSoundGenerators)
         {
-            const auto & generator = it.second;
+            const auto & generator = it;
             generator->setOptions(duration);
         }
     }
@@ -212,7 +207,7 @@ namespace QDirectSound
 
         for (const auto & it : activeSoundGenerators)
         {
-            const auto & generator = it.second;
+            const auto & generator = it;
             info.push_back(generator->getInfo());
         }
 

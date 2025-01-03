@@ -1380,8 +1380,8 @@ void updateScreenDoubleHires80 (long cycles6502 ) // wsUpdateVideoDblHires
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				uint8_t  *pMain = MemGetMainPtr(addr);
-				uint8_t  *pAux  = MemGetAuxPtr (addr);
+				uint8_t *pMain = MemGetMainPtr(addr);
+				uint8_t *pAux  = MemGetAuxPtr(addr);
 
 				uint8_t m = pMain[0];
 				uint8_t a = pAux [0];
@@ -1481,7 +1481,7 @@ void updateScreenDoubleLores80 (long cycles6502) // wsUpdateVideoDblLores
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
 				uint8_t *pMain = MemGetMainPtr(addr);
-				uint8_t *pAux  = MemGetAuxPtr (addr);
+				uint8_t *pAux  = MemGetAuxPtr(addr);
 
 				uint8_t m = pMain[0];
 				uint8_t a = pAux [0];
@@ -1772,10 +1772,13 @@ void updateScreenText80 (long cycles6502)
 			if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
 				uint8_t *pMain = MemGetMainPtr(addr);
-				uint8_t *pAux  = MemGetAuxPtr (addr);
+				uint8_t *pAux  = MemGetAuxPtr(addr);
 
 				uint8_t m = pMain[0];
 				uint8_t a = pAux [0];
+
+				if (g_uNewVideoModeFlags & VF_80COL_AUX_EMPTY)
+					a = MemReadFloatingBusFromNTSC();
 
 				uint16_t main = getCharSetBits( m );
 				uint16_t aux  = getCharSetBits( a );
@@ -1911,9 +1914,9 @@ void NTSC_VideoClockResync(const uint32_t dwCyclesThisFrame)
 }
 
 //===========================================================================
-uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
+uint16_t NTSC_VideoGetScannerAddress(const ULONG uExecutedCycles, const bool fullSpeed)
 {
-	if (g_bFullSpeed)
+	if (fullSpeed)
 	{
 		// Ensure that NTSC video-scanner gets updated during full-speed, so video-dependent Apple II code doesn't hang
 		NTSC_VideoClockResync( CpuGetCyclesThisVideoFrame(uExecutedCycles) );
@@ -1943,7 +1946,7 @@ uint16_t NTSC_VideoGetScannerAddress ( const ULONG uExecutedCycles )
 void NTSC_GetVideoVertHorzForDebugger(uint16_t& vert, uint16_t& horz)
 {
 	ResetCyclesExecutedForDebugger();		// if in full-speed, then reset cycles so that CpuCalcCycles() doesn't ASSERT
-	NTSC_VideoGetScannerAddress(0);
+	NTSC_VideoGetScannerAddress(0, g_bFullSpeed);
 	vert = g_nVideoClockVert;
 	horz = g_nVideoClockHorz;
 }
@@ -1965,10 +1968,13 @@ void NTSC_SetVideoTextMode( int cols )
 		else
 			g_pFuncUpdateTextScreen = updateScreenText80RGB;
 	}
-	else if( cols == 40 )
-		g_pFuncUpdateTextScreen = updateScreenText40;
 	else
-		g_pFuncUpdateTextScreen = updateScreenText80;
+	{
+		if (cols == 40)
+			g_pFuncUpdateTextScreen = updateScreenText40;
+		else
+			g_pFuncUpdateTextScreen = updateScreenText80;
+	}
 }
 
 //===========================================================================
@@ -2808,7 +2814,10 @@ uint16_t NTSC_GetScannerAddressAndData(uint32_t& data, int& dataSize)
 	if (dataSize == 2)
 	{
 		uint8_t* pAux = MemGetAuxPtr(addr);
-		data = pAux[0] << 8;
+		uint8_t a = pAux[0];
+		if (g_uNewVideoModeFlags & VF_80COL_AUX_EMPTY)
+			a = MemReadFloatingBusFromNTSC();
+		data = a << 8;
 	}
 	uint8_t* pMain = MemGetMainPtr(addr);
 	data |= pMain[0];

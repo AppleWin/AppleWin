@@ -1,21 +1,20 @@
-#include "dsound.h"
-#include "linux/linuxinterface.h"
+#include <StdAfx.h>
 
-#include <cstring>
+#include "linux/linuxsoundbuffer.h"
 
-IDirectSoundBuffer::IDirectSoundBuffer(LPCDSBUFFERDESC lpcDSBufferDesc)
-  : mySoundBuffer(lpcDSBufferDesc->dwBufferBytes)
+
+LinuxSoundBuffer::LinuxSoundBuffer(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+  : mySoundBuffer(dwBufferSize)
   , myNumberOfUnderruns(0)
-  , myBufferSize(lpcDSBufferDesc->dwBufferBytes)
-  , mySampleRate(lpcDSBufferDesc->lpwfxFormat->nSamplesPerSec)
-  , myChannels(lpcDSBufferDesc->lpwfxFormat->nChannels)
-  , myBitsPerSample(lpcDSBufferDesc->lpwfxFormat->wBitsPerSample)
-  , myFlags(lpcDSBufferDesc->dwFlags)
-  , myName(lpcDSBufferDesc->szName)
+  , myBufferSize(dwBufferSize)
+  , mySampleRate(nSampleRate)
+  , myChannels(nChannels)
+  , myBitsPerSample(16)
+  , myStreamName(pStreamName)
 {
 }
 
-HRESULT IDirectSoundBuffer::Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2 )
+HRESULT LinuxSoundBuffer::Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2 )
 {
   const size_t totalWrittenBytes = dwAudioBytes1 + dwAudioBytes2;
   this->myWritePosition = (this->myWritePosition + totalWrittenBytes) % this->mySoundBuffer.size();
@@ -23,46 +22,46 @@ HRESULT IDirectSoundBuffer::Unlock( LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LP
   return DS_OK;
 }
 
-HRESULT IDirectSoundBuffer::Stop()
+HRESULT LinuxSoundBuffer::Stop()
 {
   const DWORD mask = DSBSTATUS_PLAYING | DSBSTATUS_LOOPING;
   this->myStatus &= ~mask;
   return DS_OK;
 }
 
-HRESULT IDirectSoundBuffer::SetCurrentPosition( DWORD dwNewPosition )
+HRESULT LinuxSoundBuffer::SetCurrentPosition( DWORD dwNewPosition )
 {
   return DS_OK;
 }
 
-HRESULT IDirectSoundBuffer::Play( DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags )
+HRESULT LinuxSoundBuffer::Play( DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags )
 {
   this->myStatus |= DSBSTATUS_PLAYING;
   if (dwFlags & DSBPLAY_LOOPING)
   {
     this->myStatus |= DSBSTATUS_LOOPING;
   }
-  return S_OK;
+  return DS_OK;
 }
 
-HRESULT IDirectSoundBuffer::SetVolume( LONG lVolume )
+HRESULT LinuxSoundBuffer::SetVolume( LONG lVolume )
 {
   this->myVolume = lVolume;
   return DS_OK;
 }
 
-HRESULT IDirectSoundBuffer::GetStatus( LPDWORD lpdwStatus )
+HRESULT LinuxSoundBuffer::GetStatus( LPDWORD lpdwStatus )
 {
   *lpdwStatus = this->myStatus;
   return DS_OK;
 }
 
-HRESULT IDirectSoundBuffer::Restore()
+HRESULT LinuxSoundBuffer::Restore()
 {
   return DS_OK;
 }
 
-HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2, DWORD dwFlags )
+HRESULT LinuxSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2, DWORD dwFlags )
 {
   myMutex.lock();
   // No attempt is made at restricting write buffer not to overtake play cursor
@@ -101,7 +100,7 @@ HRESULT IDirectSoundBuffer::Lock( DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOI
   return DS_OK;
 }
 
-DWORD IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2)
+DWORD LinuxSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWORD * lpdwAudioBytes1, LPVOID * lplpvAudioPtr2, DWORD * lpdwAudioBytes2)
 {
   const std::lock_guard<std::mutex> guard(myMutex);
 
@@ -136,75 +135,43 @@ DWORD IDirectSoundBuffer::Read( DWORD dwReadBytes, LPVOID * lplpvAudioPtr1, DWOR
   return dwReadBytes;
 }
 
-DWORD IDirectSoundBuffer::GetBytesInBuffer()
+DWORD LinuxSoundBuffer::GetBytesInBuffer()
 {
   const std::lock_guard<std::mutex> guard(myMutex);
   const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->myBufferSize;
   return available;
 }
 
-HRESULT IDirectSoundBuffer::GetCurrentPosition( LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor )
+HRESULT LinuxSoundBuffer::GetCurrentPosition( LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor )
 {
   *lpdwCurrentPlayCursor = this->myPlayPosition;
   *lpdwCurrentWriteCursor = this->myWritePosition;
   return DS_OK;
 }
 
-HRESULT IDirectSoundBuffer::GetVolume( LONG * lplVolume )
+HRESULT LinuxSoundBuffer::GetVolume( LONG * lplVolume )
 {
   *lplVolume = this->myVolume;
   return DS_OK;
 }
 
-double IDirectSoundBuffer::GetLogarithmicVolume() const
+double LinuxSoundBuffer::GetLogarithmicVolume() const
 {
   const double volume = (double(myVolume) - DSBVOLUME_MIN) / (0.0 - DSBVOLUME_MIN);
   return volume;
 }
 
-size_t IDirectSoundBuffer::GetBufferUnderruns() const
+size_t LinuxSoundBuffer::GetBufferUnderruns() const
 {
   return myNumberOfUnderruns;
 }
 
-void IDirectSoundBuffer::ResetUnderruns()
+void LinuxSoundBuffer::ResetUnderruns()
 {
   myNumberOfUnderruns = 0;
 }
 
-HRESULT WINAPI DirectSoundCreate(LPGUID lpGuid, LPDIRECTSOUND* ppDS, LPUNKNOWN pUnkOuter)
+bool DSAvailable()
 {
-  *ppDS = new IDirectSound();
-  return DS_OK;
-}
-
-HRESULT DirectSoundEnumerate(LPDSENUMCALLBACK lpDSEnumCallback, LPVOID lpContext)
-{
-  GUID guid = 123;
-  lpDSEnumCallback(&guid, "audio", "linux", lpContext);
-  return DS_OK;
-}
-
-HRESULT IDirectSound::CreateSoundBuffer( LPCDSBUFFERDESC lpcDSBufferDesc, IDirectSoundBuffer **lplpDirectSoundBuffer, IUnknown FAR* pUnkOuter )
-{
-  if (*lplpDirectSoundBuffer)
-  {
-    (*lplpDirectSoundBuffer)->Release();
-  }
-
-  IDirectSoundBuffer * dsb = iCreateDirectSoundBuffer(lpcDSBufferDesc);
-
-  *lplpDirectSoundBuffer = dsb;
-  return dsb ? DS_OK : DSERR_GENERIC;
-}
-
-HRESULT IDirectSound::SetCooperativeLevel( HWND hwnd, DWORD dwLevel )
-{
-  return DS_OK;
-}
-
-HRESULT IDirectSound::GetCaps(LPDSCCAPS pDSCCaps)
-{
-  memset(pDSCCaps, 0, sizeof(*pDSCCaps));
-  return DS_OK;
+  return true;
 }

@@ -43,7 +43,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Riff.h"
 #include "SaveState.h"
 #include "SerialComms.h"
-#include "SoundCore.h"
 #include "Speaker.h"
 #include "LanguageCard.h"
 #include "CardManager.h"
@@ -51,6 +50,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 #include "Windows/Win32Frame.h"
+#include "Windows/DXSoundBuffer.h"
 #include "RGBMonitor.h"
 #include "NTSC.h"
 
@@ -712,20 +712,23 @@ static void RepeatInitialization(void)
 		if (g_cmdLine.uRamWorksExPages)
 		{
 			SetRamWorksMemorySize(g_cmdLine.uRamWorksExPages);
-			SetExpansionMemType(CT_RamWorksIII);
+			if (!g_cmdLine.auxSlotEmpty)
+				SetExpansionMemType(CT_RamWorksIII);
 			g_cmdLine.uRamWorksExPages = 0;	// Don't reapply after a restart
 		}
 #endif
 		if (g_cmdLine.uSaturnBanks)
 		{
 			Saturn128K::SetSaturnMemorySize(g_cmdLine.uSaturnBanks);	// Set number of banks before constructing Saturn card
-			SetExpansionMemType(CT_Saturn128K);
+			if (!g_cmdLine.bSlotEmpty[SLOT0])
+				SetExpansionMemType(CT_Saturn128K);
 			g_cmdLine.uSaturnBanks = 0;		// Don't reapply after a restart
 		}
 
 		if (g_cmdLine.bSlot0LanguageCard)
 		{
-			SetExpansionMemType(CT_LanguageCard);
+			if (!g_cmdLine.bSlotEmpty[SLOT0])
+				SetExpansionMemType(CT_LanguageCard);
 			g_cmdLine.bSlot0LanguageCard = false;	// Don't reapply after a restart
 		}
 
@@ -821,6 +824,22 @@ static void RepeatInitialization(void)
 					dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).UseBad6522A();
 				if (g_cmdLine.slotInfo[i].useBad6522B)
 					dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).UseBad6522B();
+			}
+		}
+
+		// Aux slot
+
+		if (g_cmdLine.auxSlotEmpty)
+		{
+			GetCardMgr().RemoveAux();
+			SetExpansionMemType(CT_Empty);
+		}
+		else if (g_cmdLine.auxSlotInsert != CT_Empty)
+		{
+			if (GetCardMgr().QueryAux() != g_cmdLine.auxSlotInsert)	// Ignore if already got this card type in aux slot
+			{
+				GetCardMgr().InsertAux(g_cmdLine.auxSlotInsert);
+				SetExpansionMemType(g_cmdLine.auxSlotInsert);
 			}
 		}
 
