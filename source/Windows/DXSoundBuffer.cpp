@@ -48,7 +48,7 @@ static UINT g_uDSInitRefCount = 0;
 
 //-----------------------------------------------------------------------------
 
-std::shared_ptr<SoundBuffer> DXSoundBuffer::create(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels)
+std::shared_ptr<SoundBuffer> DXSoundBuffer::create(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels)
 {
 	if (!g_lpDS)
 		return NULL;
@@ -67,7 +67,7 @@ std::shared_ptr<SoundBuffer> DXSoundBuffer::create(DWORD dwFlags, DWORD dwBuffer
 	dsbdesc.dwSize = sizeof(dsbdesc);
 	dsbdesc.dwBufferBytes = dwBufferSize;
 	dsbdesc.lpwfxFormat = &wavfmt;
-	dsbdesc.dwFlags = dwFlags | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_STICKYFOCUS;
+	dsbdesc.dwFlags = DSBCAPS_CTRLVOLUME | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_STICKYFOCUS;
 
 	LPDIRECTSOUNDBUFFER pBuffer;
 
