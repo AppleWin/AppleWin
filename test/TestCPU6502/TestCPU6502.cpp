@@ -99,6 +99,7 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 #undef WRITE
 #undef POP
 #undef PUSH
+#undef IABS_CMOS
 
 //-------
 
@@ -106,6 +107,7 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 #define WRITE(a) _WRITE(a)
 #define POP _POP
 #define PUSH(a) _PUSH(a)
+#define IABS_CMOS _IABS_CMOS_ALT
 
 #include "../../source/CPU/cpu65C02.h"  // WDC 65C02
 
@@ -113,6 +115,7 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 #undef WRITE
 #undef POP
 #undef PUSH
+#undef IABS_CMOS
 #undef HEATMAP_X
 
 //-------------------------------------

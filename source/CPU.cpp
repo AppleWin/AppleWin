@@ -500,6 +500,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define WRITE(value) _WRITE(value)
 #define POP _POP
 #define PUSH(value) _PUSH(value)
+#define IABS_CMOS _IABS_CMOS
 
 #include "CPU/cpu65C02.h" // WDC 65C02
 
@@ -507,6 +508,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #undef WRITE
 #undef POP
 #undef PUSH
+#undef IABS_CMOS
 
 //-------
 
@@ -515,6 +517,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define WRITE(value) _WRITE_ALT(value)
 #define POP _POP_ALT
 #define PUSH(value) _PUSH_ALT(value)
+#define IABS_CMOS _IABS_CMOS_ALT
 
 #define Cpu65C02 Cpu65C02_altRW
 #include "CPU/cpu65C02.h" // WDC 65C02
@@ -524,6 +527,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #undef WRITE
 #undef POP
 #undef PUSH
+#undef IABS_CMOS
 #undef HEATMAP_X
 
 //-----------------
@@ -570,6 +574,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define WRITE(value) Heatmap_WriteByte(addr, value, uExecutedCycles);
 #define POP _POP
 #define PUSH(value) _PUSH(value)
+#define IABS_CMOS _IABS_CMOS
 
 #define Cpu65C02 Cpu65C02_debug
 #include "CPU/cpu65C02.h" // WDC 65C02
@@ -579,6 +584,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #undef WRITE
 #undef POP
 #undef PUSH
+#undef IABS_CMOS
 
 //-------
 
@@ -587,6 +593,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define WRITE(value) _WRITE_ALT(value)
 #define POP _POP_ALT
 #define PUSH(value) _PUSH_ALT(value)
+#define IABS_CMOS _IABS_CMOS_ALT
 
 #define Cpu65C02 Cpu65C02_debug_altRW
 #include "CPU/cpu65C02.h" // WDC 65C02
@@ -596,6 +603,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #undef WRITE
 #undef POP
 #undef PUSH
+#undef IABS_CMOS
 #undef HEATMAP_X
 
 //===========================================================================

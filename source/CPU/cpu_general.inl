@@ -175,16 +175,30 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ABSY_CONST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2;
 
 // TODO Optimization Note (just for IABSCMOS): uExtraCycles = ((base & 0xFF) + 1) >> 8;
-#define IABS_CMOS base = *(LPWORD)(mem+regs.pc);	                          \
+#define _IABS_CMOS base = *(LPWORD)(mem+regs.pc);	                          \
 		 addr = *(LPWORD)(mem+base);		                  \
 		 if ((base & 0xFF) == 0xFF) uExtraCycles=1;		  \
 		 regs.pc += 2;
+#define _IABS_CMOS_ALT base = *(LPWORD)(mem+regs.pc);				\
+		if (memreadPageType[base >> 8] == MEM_Aux1K)				\
+			base = TEXT_PAGE1_BEGIN + (base & (TEXT_PAGE1_SIZE-1));	\
+		addr = *(LPWORD)(mem+base);									\
+		if ((base & 0xFF) == 0xFF) uExtraCycles=1;					\
+		regs.pc += 2;
 #define IABS_NMOS base = *(LPWORD)(mem+regs.pc);	                          \
 		 if ((base & 0xFF) == 0xFF)				  \
 		       addr = *(mem+base)+((WORD)*(mem+(base&0xFF00))<<8);\
 		 else                                                   \
 		       addr = *(LPWORD)(mem+base);                        \
 		 regs.pc += 2;
+#define _IABS_NMOS_ALT base = *(LPWORD)(mem+regs.pc);				\
+		if (memreadPageType[base >> 8] == MEM_Aux1K)				\
+			base = TEXT_PAGE1_BEGIN + (base & (TEXT_PAGE1_SIZE-1));	\
+		if ((base & 0xFF) == 0xFF)									\
+			addr = *(mem+base)+((WORD)*(mem+(base&0xFF00))<<8);		\
+		else														\
+			addr = *(LPWORD)(mem+base);								\
+		regs.pc += 2;
 
 #define IMM	 addr = regs.pc++;
 
