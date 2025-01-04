@@ -92,6 +92,7 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 #define HEATMAP_X(pc)
 #define POP _POP
 #define PUSH(a) _PUSH(a)
+#define IABS_NMOS _IABS_NMOS_ALT
 
 #include "../../source/CPU/cpu6502.h"  // MOS 6502
 
@@ -99,7 +100,7 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 #undef WRITE
 #undef POP
 #undef PUSH
-#undef IABS_CMOS
+#undef IABS_NMOS
 
 //-------
 

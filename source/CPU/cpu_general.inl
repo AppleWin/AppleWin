@@ -185,7 +185,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		addr = *(LPWORD)(mem+base);									\
 		if ((base & 0xFF) == 0xFF) uExtraCycles=1;					\
 		regs.pc += 2;
-#define IABS_NMOS base = *(LPWORD)(mem+regs.pc);	                          \
+#define _IABS_NMOS base = *(LPWORD)(mem+regs.pc);	                          \
 		 if ((base & 0xFF) == 0xFF)				  \
 		       addr = *(mem+base)+((WORD)*(mem+(base&0xFF00))<<8);\
 		 else                                                   \

@@ -468,6 +468,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define HEATMAP_X(address)
 #define POP _POP
 #define PUSH(value) _PUSH(value)
+#define IABS_NMOS _IABS_NMOS
 
 #include "CPU/cpu6502.h"  // MOS 6502
 
@@ -475,6 +476,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #undef WRITE
 #undef POP
 #undef PUSH
+#undef IABS_NMOS
 
 //-------
 
@@ -483,6 +485,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define WRITE(value) _WRITE_ALT(value)
 #define POP _POP_ALT
 #define PUSH(value) _PUSH_ALT(value)
+#define IABS_NMOS _IABS_NMOS_ALT
 
 #define Cpu6502 Cpu6502_altRW
 #include "CPU/cpu6502.h"  // MOS 6502
@@ -492,6 +495,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #undef WRITE
 #undef POP
 #undef PUSH
+#undef IABS_NMOS
 
 //-------
 
@@ -538,6 +542,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define HEATMAP_X(address) Heatmap_X(address)
 #define POP _POP
 #define PUSH(value) _PUSH(value)
+#define IABS_NMOS _IABS_NMOS
 
 #include "CPU/cpu_heatmap.inl"
 
@@ -549,6 +554,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #undef WRITE
 #undef POP
 #undef PUSH
+#undef IABS_NMOS
 
 //-------
 
@@ -557,6 +563,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define WRITE(value) _WRITE_ALT(value)
 #define POP _POP_ALT
 #define PUSH(value) _PUSH_ALT(value)
+#define IABS_NMOS _IABS_NMOS_ALT
 
 #define Cpu6502 Cpu6502_debug_altRW
 #include "CPU/cpu6502.h"  // MOS 6502
@@ -566,6 +573,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #undef WRITE
 #undef POP
 #undef PUSH
+#undef IABS_NMOS
 
 //-------
 
