@@ -24,7 +24,7 @@ public:
     BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) override;
     std::string Video_GetScreenShotFolder() const override;
 
-    std::shared_ptr<SoundBuffer> CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName) override;
+    std::shared_ptr<SoundBuffer> CreateSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName) override;
 
     void SetForceRepaint(const bool force);
     void SetZoom(const int x);

@@ -155,9 +155,9 @@ std::string QtFrame::Video_GetScreenShotFolder() const
     return pictures.toStdString() + "/";
 }
 
-std::shared_ptr<SoundBuffer> QtFrame::CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+std::shared_ptr<SoundBuffer> QtFrame::CreateSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName)
 {
-    const auto buffer = QDirectSound::iCreateDirectSoundBuffer(dwFlags, dwBufferSize, nSampleRate, nChannels, pStreamName);
+    const auto buffer = QDirectSound::iCreateDirectSoundBuffer(dwBufferSize, nSampleRate, nChannels, pszVoiceName);
     return buffer;
 }
 

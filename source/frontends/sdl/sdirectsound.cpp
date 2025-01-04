@@ -41,7 +41,7 @@ namespace
   class DirectSoundGenerator : public LinuxSoundBuffer
   {
   public:
-    DirectSoundGenerator(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName, const char * deviceName, const size_t ms);
+    DirectSoundGenerator(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pszVoiceName, const char * deviceName, const size_t ms);
     virtual ~DirectSoundGenerator() override;
 
     virtual HRESULT Stop() override;
@@ -102,8 +102,8 @@ namespace
     }
   }
 
-  DirectSoundGenerator::DirectSoundGenerator(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName, const char * deviceName, const size_t ms)
-    : LinuxSoundBuffer(dwBufferSize, nSampleRate, nChannels, pStreamName)
+  DirectSoundGenerator::DirectSoundGenerator(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pszVoiceName, const char * deviceName, const size_t ms)
+    : LinuxSoundBuffer(dwBufferSize, nSampleRate, nChannels, pszVoiceName)
     , myAudioDevice(0)
     , myBytesPerSecond(0)
   {
@@ -169,7 +169,7 @@ namespace
     GetStatus(&dwStatus);
 
     sa2::SoundInfo info;
-    info.streamName = myStreamName;
+    info.voiceName = myVoiceName;
     info.running = dwStatus & DSBSTATUS_PLAYING;
     info.channels = myChannels;
     info.volume = GetLogarithmicVolume();
@@ -205,14 +205,14 @@ namespace
 namespace sa2
 {
 
-  std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+  std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName)
   {
     try
     {
       const char * deviceName = audioDeviceName.empty() ? nullptr : audioDeviceName.c_str();
 
       std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(
-        dwBufferSize, nSampleRate, nChannels, pStreamName, deviceName, audioBuffer);
+        dwBufferSize, nSampleRate, nChannels, pszVoiceName, deviceName, audioBuffer);
       DirectSoundGenerator * ptr = generator.get();
       activeSoundGenerators.insert(ptr);
       return generator;

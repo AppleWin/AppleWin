@@ -17,7 +17,7 @@ namespace sa2
   struct SoundInfo
   {
     bool running = false;
-    std::string streamName;
+    std::string voiceName;
     int channels = 0;
 
     // in seconds
@@ -29,7 +29,7 @@ namespace sa2
     size_t numberOfUnderruns = 0;
   };
 
-  std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName);
+  std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName);
 
   void resetAudioUnderruns();
   void printAudioInfo();

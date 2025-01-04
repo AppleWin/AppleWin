@@ -200,9 +200,9 @@ namespace ra2
     common2::GNUFrame::Begin();
   }
 
-  std::shared_ptr<SoundBuffer> RetroFrame::CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+  std::shared_ptr<SoundBuffer> RetroFrame::CreateSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName)
   {
-      const auto buffer = ra2::iCreateDirectSoundBuffer(dwFlags, dwBufferSize, nSampleRate, nChannels, pStreamName);
+      const auto buffer = ra2::iCreateDirectSoundBuffer(dwBufferSize, nSampleRate, nChannels, pszVoiceName);
       return buffer;
   }
 

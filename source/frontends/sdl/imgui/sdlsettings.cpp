@@ -574,7 +574,7 @@ namespace sa2
           if (ImGui::BeginTable("Devices", 6, ImGuiTableFlags_RowBg))
           {
             myAudioInfo = getAudioInfo();
-            ImGui::TableSetupColumn("Stream");
+            ImGui::TableSetupColumn("Voice");
             ImGui::TableSetupColumn("Running");
             ImGui::TableSetupColumn("Channels");
             ImGui::TableSetupColumn("Volume");
@@ -586,7 +586,7 @@ namespace sa2
             for (SoundInfo & device : myAudioInfo)
             {
               ImGui::TableNextColumn();
-              ImGui::TextUnformatted(device.streamName.c_str());
+              ImGui::TextUnformatted(device.voiceName.c_str());
               ImGui::TableNextColumn();
               ImGui::Checkbox("##Running", &device.running);
               ImGui::TableNextColumn();

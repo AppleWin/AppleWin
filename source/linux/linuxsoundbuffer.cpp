@@ -3,14 +3,14 @@
 #include "linux/linuxsoundbuffer.h"
 
 
-LinuxSoundBuffer::LinuxSoundBuffer(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+LinuxSoundBuffer::LinuxSoundBuffer(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pszVoiceName)
   : mySoundBuffer(dwBufferSize)
   , myNumberOfUnderruns(0)
   , myBufferSize(dwBufferSize)
   , mySampleRate(nSampleRate)
   , myChannels(nChannels)
   , myBitsPerSample(16)
-  , myStreamName(pStreamName)
+  , myVoiceName(pszVoiceName)
 {
 }
 

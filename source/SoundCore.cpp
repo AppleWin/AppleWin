@@ -148,11 +148,11 @@ HRESULT DSGetLock(const std::shared_ptr<SoundBuffer>& pVoice, uint32_t dwOffset,
 
 //-----------------------------------------------------------------------------
 
-HRESULT DSGetSoundBuffer(VOICE* pVoice, uint32_t dwFlags, uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszDevName)
+HRESULT DSGetSoundBuffer(VOICE* pVoice, uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName)
 {
-	pVoice->name = pszDevName;
+	pVoice->name = pszVoiceName;
 
-	std::shared_ptr<SoundBuffer> soundBuffer = GetFrame().CreateSoundBuffer(dwFlags, dwBufferSize, nSampleRate, nChannels, pszDevName);
+	std::shared_ptr<SoundBuffer> soundBuffer = GetFrame().CreateSoundBuffer(dwBufferSize, nSampleRate, nChannels, pszVoiceName);
 	if (!soundBuffer)
 		return E_FAIL;
 
