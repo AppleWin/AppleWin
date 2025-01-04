@@ -1373,6 +1373,11 @@ static void UpdatePagingForAltRW(void)
 		if (SW_AUXREAD || (SW_80STORE && SW_PAGE2))
 			for (loop = 0x04; loop < 0x08; loop++)
 				memreadPageType[loop] = MEM_Normal;
+
+#if 1	// Don't need to fix IABS_NMOS / IABS_CMOS (opcode $6C) with this...
+		if (SW_ALTZP)
+			memcpy(mem, memaux + 0x400, 0x100);
+#endif
 	}
 
 	//
@@ -1411,7 +1416,7 @@ static void UpdatePagingForAltRW(void)
 
 		for (loop = 0x00; loop < 0x02; loop++)
 			if (SW_ALTZP)
-				memwrite[loop] = memaux + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
+				memwrite[loop] = mem + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
 
 		for (loop = 0x02; loop < 0xC0; loop++)
 			if (SW_AUXWRITE)
@@ -1419,7 +1424,7 @@ static void UpdatePagingForAltRW(void)
 
 		for (loop = 0xD0; loop < 0x100; loop++)
 			if (SW_HIGHRAM && SW_ALTZP)
-				memwrite[loop] = memaux + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
+				memwrite[loop] = mem + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
 
 		if (SW_80STORE && SW_PAGE2)
 		{

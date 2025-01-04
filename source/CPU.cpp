@@ -391,10 +391,10 @@ static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #ifdef _DEBUG
 	g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
 #endif
-	PUSH(regs.pc >> 8)
-	PUSH(regs.pc & 0xFF)
+	_PUSH(regs.pc >> 8)
+	_PUSH(regs.pc & 0xFF)
 	EF_TO_AF
-	PUSH(regs.ps & ~AF_BREAK)
+	_PUSH(regs.ps & ~AF_BREAK)
 	regs.ps |= AF_INTERRUPT;
 	if (GetMainCpu() == CPU_65C02)	// GH#1099
 		regs.ps &= ~AF_DECIMAL;
@@ -433,10 +433,10 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #ifdef _DEBUG
 		g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
 #endif
-		PUSH(regs.pc >> 8)
-		PUSH(regs.pc & 0xFF)
+		_PUSH(regs.pc >> 8)
+		_PUSH(regs.pc & 0xFF)
 		EF_TO_AF
-		PUSH(regs.ps & ~AF_BREAK)
+		_PUSH(regs.ps & ~AF_BREAK)
 		regs.ps |= AF_INTERRUPT;
 		if (GetMainCpu() == CPU_65C02)	// GH#1099
 			regs.ps &= ~AF_DECIMAL;
@@ -466,17 +466,23 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define READ _READ_WITH_IO_F8xx
 #define WRITE(value) _WRITE_WITH_IO_F8xx(value)
 #define HEATMAP_X(address)
+#define POP _POP
+#define PUSH(value) _PUSH(value)
 
 #include "CPU/cpu6502.h"  // MOS 6502
 
 #undef READ
 #undef WRITE
+#undef POP
+#undef PUSH
 
 //-------
 
 // 6502 & no debugger & alt read/write support
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
+#define POP _POP_ALT
+#define PUSH(value) _PUSH_ALT(value)
 
 #define Cpu6502 Cpu6502_altRW
 #include "CPU/cpu6502.h"  // MOS 6502
@@ -484,23 +490,31 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 #undef READ
 #undef WRITE
+#undef POP
+#undef PUSH
 
 //-------
 
 // 65C02 & no debugger
 #define READ _READ
 #define WRITE(value) _WRITE(value)
+#define POP _POP
+#define PUSH(value) _PUSH(value)
 
 #include "CPU/cpu65C02.h" // WDC 65C02
 
 #undef READ
 #undef WRITE
+#undef POP
+#undef PUSH
 
 //-------
 
 // 65C02 & no debugger & alt read/write support
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
+#define POP _POP_ALT
+#define PUSH(value) _PUSH_ALT(value)
 
 #define Cpu65C02 Cpu65C02_altRW
 #include "CPU/cpu65C02.h" // WDC 65C02
@@ -508,6 +522,8 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 #undef READ
 #undef WRITE
+#undef POP
+#undef PUSH
 #undef HEATMAP_X
 
 //-----------------
@@ -516,6 +532,8 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define READ Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte_With_IO_F8xx(addr, value, uExecutedCycles);
 #define HEATMAP_X(address) Heatmap_X(address)
+#define POP _POP
+#define PUSH(value) _PUSH(value)
 
 #include "CPU/cpu_heatmap.inl"
 
@@ -525,12 +543,16 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 #undef READ
 #undef WRITE
+#undef POP
+#undef PUSH
 
 //-------
 
 // 6502 & debugger & alt read/write support
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
+#define POP _POP_ALT
+#define PUSH(value) _PUSH_ALT(value)
 
 #define Cpu6502 Cpu6502_debug_altRW
 #include "CPU/cpu6502.h"  // MOS 6502
@@ -538,12 +560,16 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 #undef READ
 #undef WRITE
+#undef POP
+#undef PUSH
 
 //-------
 
 // 65C02 & debugger
 #define READ Heatmap_ReadByte(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte(addr, value, uExecutedCycles);
+#define POP _POP
+#define PUSH(value) _PUSH(value)
 
 #define Cpu65C02 Cpu65C02_debug
 #include "CPU/cpu65C02.h" // WDC 65C02
@@ -551,12 +577,16 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 #undef READ
 #undef WRITE
+#undef POP
+#undef PUSH
 
 //-------
 
 // 65C02 & debugger & alt read/write support
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
+#define POP _POP_ALT
+#define PUSH(value) _PUSH_ALT(value)
 
 #define Cpu65C02 Cpu65C02_debug_altRW
 #include "CPU/cpu65C02.h" // WDC 65C02
@@ -564,6 +594,8 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 #undef READ
 #undef WRITE
+#undef POP
+#undef PUSH
 #undef HEATMAP_X
 
 //===========================================================================

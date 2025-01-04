@@ -90,21 +90,29 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 #define READ _READ_WITH_IO_F8xx
 #define WRITE(a) _WRITE_WITH_IO_F8xx(a)
 #define HEATMAP_X(pc)
+#define POP _POP
+#define PUSH(a) _PUSH(a)
 
 #include "../../source/CPU/cpu6502.h"  // MOS 6502
 
 #undef READ
 #undef WRITE
+#undef POP
+#undef PUSH
 
 //-------
 
 #define READ _READ
 #define WRITE(a) _WRITE(a)
+#define POP _POP
+#define PUSH(a) _PUSH(a)
 
 #include "../../source/CPU/cpu65C02.h"  // WDC 65C02
 
 #undef READ
 #undef WRITE
+#undef POP
+#undef PUSH
 #undef HEATMAP_X
 
 //-------------------------------------

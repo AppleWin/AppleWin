@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #undef AF_TO_EF
 #undef EF_TO_AF
 
-
+#define STACK_PAGE 0x01
 
 #define AF_TO_EF  flagc = (regs.ps & AF_CARRY);				    \
 		  flagn = (regs.ps & AF_SIGN);				    \
@@ -50,10 +50,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			      | AF_RESERVED | AF_BREAK;
 // CYC(a): This can be optimised, as only certain opcodes will affect uExtraCycles
 #define CYC(a)	 uExecutedCycles += (a)+uExtraCycles;
-#define POP	 (*(mem+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp)))
-#define PUSH(a)	 *(mem+regs.sp--) = (a);				    \
-		 if (regs.sp < 0x100)					    \
+#define _POP (*(mem+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp)))
+#define _POP_ALT  (																\
+			(memreadPageType[STACK_PAGE] == MEM_Normal)							\
+				? _POP															\
+				: (*(mem+TEXT_PAGE1_BEGIN+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp))) /* memreadPageType[0x01] == MEM_Aux1K */ \
+		)
+#define _PUSH(a) *(mem+regs.sp--) = (a);									    \
+		 if (regs.sp < 0x100)												    \
 		   regs.sp = 0x1FF;
+#define _PUSH_ALT(a) {																\
+			LPBYTE page = memwrite[STACK_PAGE];										\
+			if (page) {																\
+				*(page+(regs.sp & 0xFF)) = (BYTE)(a);								\
+			}																		\
+			regs.sp--;																\
+			if (regs.sp < 0x100)													\
+				regs.sp = 0x1FF;													\
+		}
 #define _READ	(																\
 			((addr & 0xF000) == 0xC000)											\
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
