@@ -13,7 +13,7 @@ namespace QDirectSound
 {
     struct SoundInfo
     {
-        std::string streamName;
+        std::string voiceName;
         bool running = false;
         int channels = 0;
 
@@ -24,7 +24,7 @@ namespace QDirectSound
         size_t numberOfUnderruns = 0;
     };
 
-    std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName);
+    std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName);
 
     void setOptions(const qint64 duration);  // in ms
     std::vector<SoundInfo> getAudioInfo();

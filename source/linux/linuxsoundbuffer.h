@@ -22,14 +22,14 @@ private:
   std::mutex myMutex;
 
 protected:
-  LinuxSoundBuffer(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName);
+  LinuxSoundBuffer(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pszVoiceName);
 
 public:
   const size_t myBufferSize;
   const size_t mySampleRate;
   const size_t myChannels;
   const size_t myBitsPerSample;
-  const std::string myStreamName;
+  const std::string myVoiceName;
 
   HRESULT SetCurrentPosition(DWORD dwNewPosition) override;
   HRESULT GetCurrentPosition(LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor) override;

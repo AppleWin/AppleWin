@@ -23,7 +23,7 @@ namespace sa2
     std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName) override;
 
   	// create an object to write sound output to
-	  std::shared_ptr<SoundBuffer> CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName) override;
+	  std::shared_ptr<SoundBuffer> CreateSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName) override;
 
     virtual bool Quit() const = 0;
 

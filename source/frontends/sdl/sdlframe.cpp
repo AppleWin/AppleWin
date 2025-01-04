@@ -727,9 +727,9 @@ namespace sa2
     ResetSpeed();
   }
 
-  std::shared_ptr<SoundBuffer> SDLFrame::CreateSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+  std::shared_ptr<SoundBuffer> SDLFrame::CreateSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName)
   {
-    const auto buffer = iCreateDirectSoundBuffer(dwFlags, dwBufferSize, nSampleRate, nChannels, pStreamName);
+    const auto buffer = iCreateDirectSoundBuffer(dwBufferSize, nSampleRate, nChannels, pszVoiceName);
     return buffer;
   }
 

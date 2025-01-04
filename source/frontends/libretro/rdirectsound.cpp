@@ -38,7 +38,7 @@ namespace
   class DirectSoundGenerator : public LinuxSoundBuffer
   {
   public:
-    DirectSoundGenerator(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName);
+    DirectSoundGenerator(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pszVoiceName);
     virtual ~DirectSoundGenerator() override;
 
     void writeAudio(const size_t fps, const bool write);
@@ -56,9 +56,9 @@ namespace
 
   std::unordered_set<DirectSoundGenerator *> activeSoundGenerators;
 
-  DirectSoundGenerator::DirectSoundGenerator(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
-    : LinuxSoundBuffer(dwBufferSize, nSampleRate, nChannels, pStreamName)
-    , myAudioSource(getAudioSourceFromName(myStreamName))
+  DirectSoundGenerator::DirectSoundGenerator(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pszVoiceName)
+    : LinuxSoundBuffer(dwBufferSize, nSampleRate, nChannels, pszVoiceName)
+    , myAudioSource(getAudioSourceFromName(myVoiceName))
   {
   }
 
@@ -146,9 +146,9 @@ namespace
 namespace ra2
 {
 
-  std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(DWORD dwFlags, DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pStreamName)
+  std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName)
   {
-    std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(dwBufferSize, nSampleRate, nChannels, pStreamName);
+    std::shared_ptr<DirectSoundGenerator> generator = std::make_shared<DirectSoundGenerator>(dwBufferSize, nSampleRate, nChannels, pszVoiceName);
     DirectSoundGenerator * ptr = generator.get();
     activeSoundGenerators.insert(ptr);
     return generator;
