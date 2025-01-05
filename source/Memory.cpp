@@ -1418,7 +1418,7 @@ static void UpdatePagingForAltRW(void)
 				memwrite[loop] = (memwrite[loop] - (loop << 8)) + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
 
 		for (loop = 0xD0; loop < 0x100; loop++)
-			if (SW_HIGHRAM && SW_ALTZP)
+			if (SW_WRITERAM && SW_HIGHRAM && SW_ALTZP)
 				memwrite[loop] = memaux + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
 
 		if (SW_80STORE && SW_PAGE2)
