@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Memory.h"
 #include "../Mockingboard.h"
 #include "../NTSC.h"
+#include "../resource/resource.h"
 
 // NEW UI debugging - force display ALL meta-info (regs, stack, bp, watches, zp) for debugging purposes
 #define DEBUG_FORCE_DISPLAY 0
@@ -593,7 +594,7 @@ HDC GetConsoleFontDC(void)
 		// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER
 		HDC tmpDC = CreateCompatibleDC(hFrameDC);
 		// Pre-scaled bitmap
-		HBITMAP tmpFont = LoadBitmap(win32Frame.g_hInstance, TEXT("IDB_DEBUG_FONT_7x8"));  // Bitmap must be 112x128 as defined above
+		HBITMAP tmpFont = LoadBitmap(win32Frame.g_hInstance, MAKEINTRESOURCE(IDB_DEBUG_FONT_7_by_8));  // Bitmap must be 112x128 as defined above
 		SelectObject(tmpDC, tmpFont);
 		BitBlt(g_hConsoleFontDC, 0, 0, CONSOLE_FONT_BITMAP_WIDTH, CONSOLE_FONT_BITMAP_HEIGHT,
 			tmpDC, 0, 0,

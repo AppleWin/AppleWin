@@ -76,7 +76,7 @@ IDB_CHARSET8C           BITMAP                  "CHARSET8C.bmp"
 HELP_BUTTON             BITMAP                  "HELP.BMP"
 DRIVESWAP_BUTTON        BITMAP                  "DRIVESWAP.BMP"
 IDB_APPLEWIN            BITMAP                  "ApplewinLogo.bmp"
-IDB_DEBUG_FONT_7X8      BITMAP                  "Debug_Font.bmp"
+IDB_DEBUG_FONT_7_by_8   BITMAP                  "Debug_Font.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
