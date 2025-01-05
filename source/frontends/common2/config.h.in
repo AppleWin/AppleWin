@@ -1,6 +1,2 @@
 // relative path from executable to resources
 #cmakedefine ROOT_PATH "@ROOT_PATH@"
-#cmakedefine SHARE_PATH "@SHARE_PATH@"
-
-// this one is a bit of a hack, until resources are embedded in the retro core
-#cmakedefine CMAKE_SOURCE_DIR "@CMAKE_SOURCE_DIR@"

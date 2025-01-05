@@ -19,7 +19,6 @@ namespace sa2
 
     void FrameRefreshStatus(int drawflags) override;
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
-    void GetBitmap(WORD id, LONG cb, LPVOID lpvBits) override;
     std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName) override;
 
   	// create an object to write sound output to

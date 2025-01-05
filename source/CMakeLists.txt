@@ -106,7 +106,7 @@ set(SOURCE_FILES
   Configuration/PropertySheetHelper.cpp
   Configuration/Config.cpp
 
-  linux/resources.cpp
+  linux/bitmap.cpp
   linux/benchmark.cpp
   linux/paddle.cpp
   linux/version.cpp
@@ -220,7 +220,7 @@ set(HEADER_FILES
   Configuration/PropertySheetHelper.h
   Configuration/Config.h
 
-  linux/resources.h
+  linux/bitmap.h
   linux/benchmark.h
   linux/paddle.h
   linux/version.h

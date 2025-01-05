@@ -15,12 +15,10 @@
 #include "MouseInterface.h"
 #include "Debugger/Debug.h"
 
-#include "linux/resources.h"
+#include "../resource/resource.h"
 #include "linux/paddle.h"
 #include "linux/keyboardbuffer.h"
 #include "linux/network/slirp2.h"
-
-#include <algorithm>
 
 #include <SDL_image.h>
 
@@ -207,8 +205,11 @@ namespace sa2
 
   void SDLFrame::SetApplicationIcon()
   {
-    const std::string path = getResourcePath("APPLEWIN.ICO");
-    std::shared_ptr<SDL_Surface> icon(IMG_Load(path.c_str()), SDL_FreeSurface);
+    const auto resource = GetResourceData(IDC_APPLEWIN_ICON);
+
+    SDL_RWops * ops = SDL_RWFromConstMem(resource.first, resource.second);
+
+    std::shared_ptr<SDL_Surface> icon(IMG_Load_RW(ops, 1), SDL_FreeSurface);
     if (icon)
     {
       SDL_SetWindowIcon(myWindow.get(), icon.get());
@@ -218,44 +219,6 @@ namespace sa2
   const std::shared_ptr<SDL_Window> & SDLFrame::GetWindow() const
   {
     return myWindow;
-  }
-
-  void SDLFrame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)
-  {
-    const std::string & filename = getResourceName(id);
-    const std::string path = getResourcePath(filename);
-
-    std::shared_ptr<SDL_Surface> surface(SDL_LoadBMP(path.c_str()), SDL_FreeSurface);
-    if (surface)
-    {
-      SDL_LockSurface(surface.get());
-
-      const char * source = static_cast<char *>(surface->pixels);
-      const size_t size = surface->h * surface->w / 8;
-      const size_t requested = cb;
-
-      const size_t copied = std::min(requested, size);
-
-      char * dest = static_cast<char *>(lpvBits);
-
-      for (size_t i = 0; i < copied; ++i)
-      {
-        const size_t offset = i * 8;
-        char val = 0;
-        for (size_t j = 0; j < 8; ++j)
-        {
-          const char pixel = *(source + offset + j);
-          val = (val << 1) | pixel;
-        }
-        dest[i] = val;
-      }
-
-      SDL_UnlockSurface(surface.get());
-    }
-    else
-    {
-      CommonFrame::GetBitmap(id, cb, lpvBits);
-    }
   }
 
   int SDLFrame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)

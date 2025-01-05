@@ -18,7 +18,6 @@ namespace ra2
     void Destroy() override;
     void Begin() override;
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
-    void GetBitmap(WORD id, LONG cb, LPVOID lpvBits) override;
 
     std::shared_ptr<SoundBuffer> CreateSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName) override;
 

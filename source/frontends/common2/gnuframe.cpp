@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "frontends/common2/gnuframe.h"
 #include "frontends/common2/fileregistry.h"
+#include "apple2roms_data.h"
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -49,12 +50,7 @@ namespace
 
       // case 1: run from the build folder
       paths.emplace_back(std::string(path) + '/'+ ROOT_PATH);
-      // case 2: run from the installation folder
-      paths.emplace_back(std::string(path) + '/'+ SHARE_PATH);
     }
-
-    // case 3: use the source folder
-    paths.emplace_back(CMAKE_SOURCE_DIR);
 
     for (const std::string & path : paths)
     {
@@ -81,15 +77,19 @@ namespace common2
   GNUFrame::GNUFrame(const EmulatorOptions & options)
   : CommonFrame(options)
   , myHomeDir(GetHomeDir())
-  , myResourceFolder(getResourceFolder("/resource/"))
   {
     // should this go down to LinuxFrame (maybe Initialisation?)
     g_sProgramDir = getResourceFolder("/bin/");
   }
 
-  std::string GNUFrame::getResourcePath(const std::string & filename)
+  std::pair<const unsigned char *, unsigned int> GNUFrame::GetResourceData(WORD id) const
   {
-    return myResourceFolder + filename;
+    const auto it = apple2roms::data.find(id);
+    if (it == apple2roms::data.end())
+    {
+      throw std::runtime_error("Cannot locate resource: " + std::to_string(id));
+    }
+    return it->second;
   }
 
   std::string GNUFrame::Video_GetScreenShotFolder() const

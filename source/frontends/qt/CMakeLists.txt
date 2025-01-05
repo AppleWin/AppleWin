@@ -71,6 +71,7 @@ target_link_libraries(qapple PRIVATE
   appleii
   QHexView
   windows
+  apple2roms
   )
 
 if(Qt5_FOUND)

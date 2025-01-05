@@ -48,6 +48,7 @@ execute_process(
 include_directories(source)
 
 add_subdirectory(source)
+add_subdirectory(resource)
 add_subdirectory(source/linux/libwindows)
 add_subdirectory(test/TestCPU6502)
 

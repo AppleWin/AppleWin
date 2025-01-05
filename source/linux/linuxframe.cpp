@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "linux/linuxframe.h"
+#include "linux/bitmap.h"
 #include "linux/context.h"
 #include "linux/network/slirp2.h"
 #include "linux/version.h"
@@ -122,10 +123,27 @@ void LinuxFrame::Cycle50ScanLines()
   ApplyVideoModeChange();
 }
 
+BYTE* LinuxFrame::GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize)
+{
+  const auto resource = GetResourceData(id);
+
+  if (resource.second != expectedSize)
+  {
+    throw std::runtime_error("Invalid size for resource " + std::to_string(id) + ": " + 
+      std::to_string(resource.second) + " != " + std::to_string(expectedSize));
+  }
+
+  auto data = const_cast<unsigned char *>(resource.first);
+  return reinterpret_cast<BYTE*>(data);
+}
+
 void LinuxFrame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)
 {
-  LogFileOutput("GetBitmap: could not load bitmap: %d\n", id);
-  memset(lpvBits, 0, cb);
+  const auto resource = GetResourceData(id);
+  if (!GetBitmapFromResource(resource, cb, lpvBits))
+  {
+    throw std::runtime_error("Cannot process bitmap resource " + std::to_string(id));
+  }
 }
 
 void LinuxFrame::Begin()

@@ -6,6 +6,8 @@
 #include "frontends/common2/programoptions.h"
 #include "frontends/sdl/imgui/image.h"
 
+#include "../resource/resource.h"
+
 #include "Interface.h"
 #include "Core.h"
 
@@ -99,8 +101,11 @@ namespace sa2
     ImGuiIO& io = ImGui::GetIO();
 
     io.Fonts->AddFontDefault();
-    const std::string debugFontFilename = getResourcePath("debug6502.ttf");
-    myDebuggerFont = io.Fonts->AddFontFromFileTTF(debugFontFilename.c_str(), 13);
+    const auto debug6502TTF = GetResourceData(IDB_DEBUG_FONT_7_by_8);
+    ImFontConfig fontConfig;
+    fontConfig.FontDataOwnedByAtlas = false;
+    myDebuggerFont = io.Fonts->AddFontFromMemoryTTF(const_cast<unsigned char *>(debug6502TTF.first), debug6502TTF.second, 13,
+      &fontConfig);
 
     myIniFileLocation = common2::GetConfigFile("imgui.ini");
     if (myIniFileLocation.empty())

@@ -46,6 +46,7 @@ target_link_libraries(common2 PRIVATE
   Boost::program_options
   appleii
   windows
+  apple2roms
 )
 
 file(RELATIVE_PATH ROOT_PATH ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
@@ -53,9 +54,5 @@ if ("${ROOT_PATH}" STREQUAL "")
   # if the 2 paths are the same
   set(ROOT_PATH "./")
 endif()
-file(RELATIVE_PATH SHARE_PATH ${CMAKE_INSTALL_FULL_BINDIR} ${CMAKE_INSTALL_FULL_DATADIR}/applewin)
 
 configure_file(config.h.in config.h)
-
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/resource
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/applewin)

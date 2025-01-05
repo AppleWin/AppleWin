@@ -6,7 +6,7 @@
 #include "Core.h"
 #include "Utilities.h"
 
-#include "linux/resources.h"
+#include "apple2roms_data.h"
 
 #include <QMdiSubWindow>
 #include <QFile>
@@ -99,54 +99,14 @@ int QtFrame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
     }
 }
 
-void QtFrame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)
+std::pair<const unsigned char *, unsigned int> QtFrame::GetResourceData(WORD id) const
 {
-    const std::string & filename = getResourceName(id);
-    const std::string path = std::string(":/resources/") + filename;
-    QImage image = QImage(QString::fromStdString(path));
-
-    if (image.isNull())
+    const auto it = apple2roms::data.find(id);
+    if (it == apple2roms::data.end())
     {
-        return LinuxFrame::GetBitmap(id, cb, lpvBits);
+        throw std::runtime_error("Cannot locate resource: " + std::to_string(id));
     }
-
-    const uchar * bits = image.bits();
-    const qsizetype size = image.sizeInBytes();
-    const qsizetype requested = cb;
-
-    const qsizetype copied = std::min(requested, size);
-
-    uchar * dest = static_cast<uchar *>(lpvBits);
-    for (qsizetype i = 0; i < copied; ++i)
-    {
-        dest[i] = ~bits[i];
-    }
-}
-
-BYTE* QtFrame::GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize)
-{
-    Q_UNUSED(lpType);
-    myResource.clear();
-
-    const std::string & filename = getResourceName(id);
-    const std::string path = std::string(":/resources/") + filename;
-
-    QFile res(QString::fromStdString(path));
-    if (res.exists() && res.open(QIODevice::ReadOnly))
-    {
-        QByteArray resource = res.readAll();
-        if (resource.size() == expectedSize)
-        {
-            std::swap(myResource, resource);
-        }
-    }
-
-    if (myResource.isEmpty())
-    {
-        throw std::runtime_error("FindResource: could not load resource '" + filename + "'");
-    }
-
-    return reinterpret_cast<BYTE *>(myResource.data());
+    return it->second;
 }
 
 std::string QtFrame::Video_GetScreenShotFolder() const

@@ -20,8 +20,6 @@ public:
     void Destroy() override;
 
     int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
-    void GetBitmap(WORD id, LONG cb, LPVOID lpvBits) override;
-    BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) override;
     std::string Video_GetScreenShotFolder() const override;
 
     std::shared_ptr<SoundBuffer> CreateSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName) override;
@@ -36,7 +34,7 @@ private:
     QMdiSubWindow * myWindow;
     bool myForceRepaint;
 
-    QByteArray myResource;
+    std::pair<const unsigned char *, unsigned int> GetResourceData(WORD id) const override;
 };
 
 #endif // QTFRAME_H
