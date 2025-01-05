@@ -28,6 +28,7 @@ public:
   void SetLoadedSaveStateFlag(const bool bFlag) override;
 
   void Restart() override; // calls End() - Begin()
+  BYTE* GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize) override;
   void GetBitmap(WORD id, LONG cb, LPVOID lpvBits) override;
 
   std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName) override;
@@ -47,6 +48,9 @@ public:
 
 protected:
   std::vector<uint8_t> myFramebuffer;
+
+  // pointer and size
+  virtual std::pair<const unsigned char *, unsigned int> GetResourceData(WORD id) const = 0;
 
   bool myAutoBoot;  // non const to allow settings change
 };

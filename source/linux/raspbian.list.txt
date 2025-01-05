@@ -1,5 +1,6 @@
 cmake
 g++
+xxd
 ninja-build
 pkg-config
 libyaml-dev

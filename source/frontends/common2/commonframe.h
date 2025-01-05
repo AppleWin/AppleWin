@@ -6,8 +6,6 @@
 #include "Configuration/Config.h"
 
 #include "frontends/common2/speed.h"
-#include <vector>
-#include <string>
 
 namespace common2
 {
@@ -19,8 +17,6 @@ namespace common2
     CommonFrame(const EmulatorOptions & options);
 
     void Begin() override;
-
-    BYTE* GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize) override;
 
     virtual void ResetSpeed();
 
@@ -40,8 +36,6 @@ namespace common2
     void LoadSnapshot() override;
 
   protected:
-    virtual std::string getResourcePath(const std::string & filename) = 0;
-
     virtual void SetFullSpeed(const bool value);
     virtual bool CanDoFullSpeed();
 
@@ -54,8 +48,6 @@ namespace common2
     // used to synchronise if OpenGL cannot do it (or without it)
     bool mySynchroniseWithTimer;
     std::chrono::time_point<std::chrono::steady_clock> myLastSync;
-
-    std::vector<BYTE> myResource;
 
   private:
     const bool myAllowVideoUpdate;

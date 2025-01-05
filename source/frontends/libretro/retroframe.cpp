@@ -1,7 +1,5 @@
 #include "StdAfx.h"
 
-#include "linux/resources.h"
-
 #include "frontends/libretro/retroframe.h"
 #include "frontends/libretro/rdirectsound.h"
 #include "frontends/libretro/environment.h"
@@ -10,74 +8,6 @@
 #include "Interface.h"
 #include "Core.h"
 #include "Utilities.h"
-
-#include <fstream>
-
-namespace
-{
-
-  void readFileToBuffer(const std::string & filename, std::vector<char> & buffer)
-  {
-    std::ifstream file(filename.c_str(), std::ios::binary | std::ios::ate);
-    const std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    buffer.resize(size);
-    file.read(buffer.data(), size);
-  }
-
-  template<typename T>
-  T getAs(const std::vector<char> & buffer, const size_t offset)
-  {
-    if (offset + sizeof(T) > buffer.size())
-    {
-      throw std::runtime_error("Invalid bitmap");
-    }
-    const T * ptr = reinterpret_cast<const T *>(buffer.data() + offset);
-    return * ptr;
-  }
-
-  // libretro cannot parse BMP with 1 bpp
-  // simple version implemented here
-  bool getBitmapData(const std::vector<char> & buffer, int32_t & width, int32_t & height, uint16_t & bpp, const char * & data, uint32_t & size)
-  {
-    if (buffer.size() < 2)
-    {
-      return false;
-    }
-
-    if (buffer[0] != 0x42 || buffer[1] != 0x4D)
-    {
-      return false;
-    }
-
-    const uint32_t fileSize = getAs<uint32_t>(buffer, 2);
-    if (fileSize != buffer.size())
-    {
-      return false;
-    }
-
-    const uint32_t offset = getAs<uint32_t>(buffer, 10);
-    const uint32_t header = getAs<uint32_t>(buffer, 14);
-    if (header != 40)
-    {
-      return false;
-    }
-
-    width = getAs<int32_t>(buffer, 18);
-    height = getAs<int32_t>(buffer, 22);
-    bpp = getAs<uint16_t>(buffer, 28);
-    const uint32_t imageSize = getAs<uint32_t>(buffer, 34);
-    if (offset + imageSize > fileSize)
-    {
-      return false;
-    }
-    data = buffer.data() + offset;
-    size = imageSize;
-    return true;
-  }
-
-}
 
 namespace ra2
 {
@@ -140,41 +70,6 @@ namespace ra2
     CommonFrame::Destroy();
     myFrameBuffer = nullptr;
     myVideoBuffer.clear();
-  }
-
-  void RetroFrame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)
-  {
-    const std::string & filename = getResourceName(id);
-    const std::string path = getResourcePath(filename);
-
-    std::vector<char> buffer;
-    readFileToBuffer(path, buffer);
-
-    if (!buffer.empty())
-    {
-      int32_t width, height;
-      uint16_t bpp;
-      const char * data;
-      uint32_t size;
-      const bool res = getBitmapData(buffer, width, height, bpp, data, size);
-
-      if (res && height > 0 && size <= cb)
-      {
-        const size_t length = size / height;
-        // rows are stored upside down
-        char * out = static_cast<char *>(lpvBits);
-        for (size_t row = 0; row < height; ++row)
-        {
-          const char * src = data + row * length;
-          char * dst = out + (height - row - 1) * length;
-          memcpy(dst, src, length);
-        }
-        return;
-      }
-    }
-
-    log_cb(RETRO_LOG_INFO, "RA2: %s. Missing bitmap %d\n", __FUNCTION__, id);
-    CommonFrame::GetBitmap(id, cb, lpvBits);
   }
 
   int RetroFrame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
