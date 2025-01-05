@@ -4980,7 +4980,7 @@ size_t Util_GetTextScreen ( char* &pText_ )
 	g_nTextScreen = 0;
 	memset( pBeg, 0, sizeof( g_aTextScreen ) );
 
-	unsigned int uBank2 = GetVideo().VideoGetSWPAGE2() ? 1 : 0;
+	const unsigned int uBank2 = (!GetVideo().VideoGetSW80STORE() && GetVideo().VideoGetSWPAGE2()) ? 1 : 0;
 	LPBYTE g_pTextBank1  = MemGetAuxPtr (0x400 << uBank2);
 	LPBYTE g_pTextBank0  = MemGetMainPtr(0x400 << uBank2);
 
@@ -6816,7 +6816,7 @@ static Update_t _ViewOutput ( ViewVideoPage_t iPage, UINT bVideoModeFlags )
 	switch ( iPage ) 
 	{
 		case VIEW_PAGE_X:
-			bVideoModeFlags |= GetVideo().VideoGetSWPAGE2() ? VF_PAGE2 : 0;
+			bVideoModeFlags |= (!GetVideo().VideoGetSW80STORE() && GetVideo().VideoGetSWPAGE2()) ? VF_PAGE2 : 0;
 			bVideoModeFlags |= GetVideo().VideoGetSWMIXED() ? VF_MIXED : 0;
 			break; // Page Current & current MIXED state
 		case VIEW_PAGE_0: bVideoModeFlags |= VF_PAGE0; break; // Pseudo   Page 0 ($0000)
