@@ -827,7 +827,8 @@ void SymbolUpdate ( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, W
 	if (bRemoveSymbol)
 		pSymbolName = g_aArgs[2].sArg;
 
-	if (_tcslen( pSymbolName ) < MAX_SYMBOLS_LEN)
+	size_t nSymLen = _tcslen( pSymbolName );
+	if (nSymLen < MAX_SYMBOLS_LEN)
 	{
 		WORD nAddressPrev;
 		int  iTable;
@@ -888,6 +889,16 @@ void SymbolUpdate ( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, W
 			);
 		}
 	}
+	else
+		ConsolePrintFormat(
+			CHC_ERROR   "Error: "
+			CHC_DEFAULT "Symbol length "
+			CHC_NUM_DEC "%d "
+			CHC_ARG_SEP "> "
+			CHC_NUM_DEC "%d "
+			, (int) nSymLen
+			, MAX_SYMBOLS_LEN
+		);
 }
 
 // Syntax:
