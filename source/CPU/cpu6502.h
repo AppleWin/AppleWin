@@ -74,7 +74,7 @@ static uint32_t Cpu6502(uint32_t uTotalCycles, const bool bVideoUpdate)
 			case 0x09: IMM        ORA  CYC(2)  break;
 			case 0x0A:            asl  CYC(2)  break;
 			case 0x0B: IMM        ANC  CYC(2)  break;	// invalid
-			case 0x0C: ABSX_OPT   NOP  CYC(4)  break;	// invalid
+			case 0x0C: ABS        NOP  CYC(4)  break;	// invalid (GH#1360: ABS, not ABS,X)
 			case 0x0D: ABS        ORA  CYC(4)  break;
 			case 0x0E: ABS        ASLn CYC(6)  break;
 			case 0x0F: ABS        ASO  CYC(6)  break;	// invalid
