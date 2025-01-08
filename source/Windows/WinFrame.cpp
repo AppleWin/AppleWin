@@ -2095,6 +2095,89 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 }
 
 //===========================================================================
+inline int Util_GetTrackSectorOffset( const int nTrack, const int nSector )
+{
+	return (TRACK_DENIBBLIZED_SIZE * nTrack) + (nSector * 256);
+}
+
+// bSectorsUsed is 16-bits bitmask of sectors.
+// 1 = Free
+// 0 = Used
+//===========================================================================
+void Util_DOS33_SetTrackSectorUsage( uint8_t *pVTOC, const int nTrack, const int bSectorsFree )
+{
+	int nOffset = 0x38 + (nTrack * 4);
+
+	// Byte  Sectors
+	//    0  FEDC BA98
+	//    1  7654 3210
+	//    2  -Wasted-
+	//    3  -Wasted-
+	pVTOC[ nOffset + 0 ] = (bSectorsFree >> 8) & 0xFF;
+	pVTOC[ nOffset + 1 ] = (bSectorsFree >> 0) & 0xFF;
+	pVTOC[ nOffset + 2 ] = 0x00;
+	pVTOC[ nOffset + 3 ] = 0x00;
+}
+
+//===========================================================================
+void Util_DOS33_FormatVTOC( uint8_t *pSectors, const int nVTOC_Track )
+{
+	int nOffset;
+
+	// Update CATALOG next track/sector
+	for( int iSector = 0xF; iSector > 1; iSector-- )
+	{
+		nOffset = Util_GetTrackSectorOffset( nVTOC_Track, iSector );
+		pSectors[ nOffset + 1 ] = nVTOC_Track;
+		pSectors[ nOffset + 2 ] = iSector - 1;
+	}
+
+	// Last sector in CATALOG has no link
+	nOffset = Util_GetTrackSectorOffset( nVTOC_Track, 1 );
+	pSectors[ nOffset + 1 ] = 0;
+	pSectors[ nOffset + 2 ] = 0;
+
+	// FTOC = 256 bytes
+	//      - HeaderSize = 0x0C
+	//                     0x00 Wasted
+	//                     0x01 Track Next FTOC
+	//                     0x02 Sector Next FTOC
+	//                     0x03 Wasted
+	//                     0x04 Wasted
+	//                     0x05 Sector offset of file in this T/S
+	//                     0x06 Sector offset of file in this T/S
+	//                     0x07 Wasted
+	//                     0x08 Wasted
+	//                     0x09 Wasted
+	//                     0x0A Wasted
+	//                     0x0B Wasted
+	//      / 2 bytes for next Track/Sector
+	//      = 122 entries
+	const uint8_t FTOC_ENTRIES = (256 - 12) / 2; // 122
+
+	nOffset = Util_GetTrackSectorOffset( nVTOC_Track, 0 );
+	pSectors[ nOffset +  0x1 ] = nVTOC_Track;     // CATALOG = T11
+	pSectors[ nOffset +  0x2 ] = 0xF;             // CATALOG = S0F
+	pSectors[ nOffset +  0x3 ] = 0x3;             // DOS 3.3
+	pSectors[ nOffset +  0x6 ] = 0xFE;            // Volume
+	pSectors[ nOffset + 0x27 ] = FTOC_ENTRIES;    // TrackSector pairs
+	pSectors[ nOffset + 0x30 ] = nVTOC_Track;     // Last Track Allocated
+	pSectors[ nOffset + 0x31 ] = 1;               // Direction = +1
+	pSectors[ nOffset + 0x34 ] = TRACKS_STANDARD; // 35 Tracks
+	pSectors[ nOffset + 0x35 ] = 16;              // 16 Sectors/Track
+	pSectors[ nOffset + 0x36 ] = 0x00;            // 256 Bytes/Sector Lo
+	pSectors[ nOffset + 0x37 ] = 0x01;            // 256 Bytes/Sector Hi
+
+	uint8_t *pVTOC = &pSectors[ nOffset ];
+	Util_DOS33_SetTrackSectorUsage( pVTOC, 0, 0x0000 ); // Track T00 can NEVER be free due to stupid DOS 3.3 design (1 byte bug of `BNE` instead of `BPL`)
+	for( int iTrack = 1; iTrack < TRACKS_STANDARD; iTrack++ )
+	{
+		if (iTrack == nVTOC_Track) continue;
+		Util_DOS33_SetTrackSectorUsage( pVTOC, iTrack, 0xFFFF ); // Tracks T01-T10, T12-T22 are free for use
+	}
+}
+
+//===========================================================================
 int Util_SelectDiskImage( const HWND hwnd, const HINSTANCE hInstance, const TCHAR* pTitle, const bool bSave, char *pFilename, const char *pFilter )
 {
 	OPENFILENAME ofn;
@@ -2189,6 +2272,9 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	EnableMenuItem(hmenu, ID_DISKMENU_NEW_140K_DISK, MF_ENABLED);
 	EnableMenuItem(hmenu, ID_DISKMENU_NEW_800K_DISK, MF_ENABLED);
 	EnableMenuItem(hmenu, ID_DISKMENU_NEW_32MB_DISK, MF_ENABLED);
+
+	EnableMenuItem(hmenu, ID_DISKMENU_FORMAT_PRODOS_DATA, MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_FORMAT_DOS33_DATA, MF_ENABLED);
 
 	// Draw and track the shortcut menu.
 	int iCommand = TrackPopupMenu(
@@ -2357,6 +2443,118 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 				}
 				else
 					MessageBox( hwnd, TEXT("ERROR: Couldn't open new disk image."), pTitle, MB_OK );
+			}
+		}
+	}
+	else if (iCommand == ID_DISKMENU_FORMAT_PRODOS_DATA)
+	{
+		char szFilename[ MAX_PATH ] = {0};
+		const TCHAR *pTitle  = TEXT("Select ProDOS Disk Image to Format");
+		const TCHAR *pLoadFilter = // No *.nib;*.woz;*.gz;*.zip
+			TEXT("Floppy Disk Images (*.bin,*.dsk,*.po)\0"
+			                         "*.bin;*.dsk;*.po\0")
+			TEXT("Hard Disk Images (*.hdv;)\0"
+			                       "*.hdv\0")
+			TEXT("All Files\0*.*\0");
+		int res = Util_SelectDiskImage( hwnd, hInstance, pTitle, false, szFilename, pLoadFilter );
+		if (res)
+		{
+			std::string pathname = szFilename;
+			if (FileExists( pathname ))
+			{
+				int res = FrameMessageBox(
+					"Are you sure you want to FORMAT this disk as a ProDOS data disk?\n"
+					"\n"
+					"(ALL DATA WILL BE LOST!)\n"
+					, "Format", MB_ICONWARNING|MB_YESNO);
+				if (res == IDYES)
+				{
+					FILE *hFile = fopen( pathname.c_str(), "rb" );
+					if (hFile)
+					{
+						fseek( hFile, 0, SEEK_END );
+						size_t nDiskSize = ftell( hFile );
+						fseek( hFile, 0, SEEK_SET );
+#if _DEBUG
+						char debug[128];
+						sprintf( debug, "Image Size: %zu", nDiskSize );
+#endif
+					}
+				}
+			}
+		}
+	}
+	else if (iCommand == ID_DISKMENU_FORMAT_DOS33_DATA)
+	{
+		char szFilename[ MAX_PATH ] = {0};
+		const TCHAR *pTitle  = TEXT("Select DOS 3.3 Disk Image to Format");
+		const TCHAR *pLoadFilter =
+			TEXT("Floppy Disk Images (*.bin,*.dsk,*.do)\0"
+			                         "*.bin;*.dsk;*.do\0")
+			TEXT("All Files\0*.*\0");
+
+		int res = Util_SelectDiskImage( hwnd, hInstance, pTitle, false, szFilename, pLoadFilter );
+		if (res)
+		{
+			std::string pathname = szFilename;
+			if (FileExists( pathname ))
+			{
+				int res = FrameMessageBox(
+					"Are you sure you want to FORMAT this disk as a DOS 3.3 data disk?\n"
+					"\n"
+					"(ALL DATA WILL BE LOST!)\n"
+					, "Format", MB_ICONWARNING|MB_YESNO);
+				if (res == IDYES)
+				{
+					FILE *hFile = fopen( pathname.c_str(), "r+b" );
+					if (hFile)
+					{
+						fseek( hFile, 0, SEEK_END );
+						size_t nDiskSize = ftell( hFile );
+						fseek( hFile, 0, SEEK_SET );
+
+						// Verify floppy size is < 160KB (max 40 tracks) since that is the largest supported by DOS 3.3
+						// TODO: Maybe use CImageBase::IsValidImageSize() ?
+						size_t nMinDiskSize = 34         *  TRACK_DENIBBLIZED_SIZE;
+						size_t nMaxDiskSize = TRACKS_MAX * TRACK_DENIBBLIZED_SIZE;
+
+						char Message[ 256 ];
+						if (nDiskSize > nMaxDiskSize)
+						{
+							sprintf( Message, "ERROR: Disk Image Size (%zu bytes) > maximum DOS 3.3 image size (%zu bytes)", nDiskSize, nMaxDiskSize );
+							FrameMessageBox( Message, "Format", MB_ICONWARNING|MB_OK);
+						}
+						else
+						if (nDiskSize < nMinDiskSize)
+						{
+							sprintf( Message, "ERROR: Disk Image Size (%zu bytes) < minimum DOS 3.3 image size (%zu bytes)", nDiskSize, nMinDiskSize );
+							FrameMessageBox( Message, "Format", MB_ICONWARNING|MB_OK);
+						}
+						else
+						{
+							uint8_t *pSectors = new uint8_t[ nDiskSize ];
+							size_t nReadSize = fread( pSectors, 1, nDiskSize, hFile );
+							assert( nReadSize == nDiskSize );
+
+							int VTOC_TRACK = 0x11;
+							Util_DOS33_FormatVTOC( pSectors, VTOC_TRACK );
+
+							fseek( hFile, 0, SEEK_SET );
+							size_t nWroteSize = fwrite( pSectors, 1, nReadSize, hFile );
+							//assert( nWroteSize == nDiskSize );
+							if (nWroteSize != nDiskSize)
+							{
+								FrameMessageBox( "ERROR: Unable to write DOS 3.3 File System", "Format", MB_ICONWARNING | MB_OK);
+							}
+							delete [] pSectors;
+						}
+						fclose( hFile );
+					}
+					else
+					{
+						FrameMessageBox( "ERROR: Unable to open disk image for writing DOS 3.3 File System", "Format", MB_ICONWARNING | MB_OK);
+					}
+				}
 			}
 		}
 	}

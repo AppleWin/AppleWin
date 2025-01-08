@@ -139,6 +139,8 @@
 #define ID_DISKMENU_NEW_140K_DISK       40008
 #define ID_DISKMENU_NEW_800K_DISK       40009
 #define ID_DISKMENU_NEW_32MB_DISK       40010
+#define ID_DISKMENU_FORMAT_PRODOS_DATA  40011
+#define ID_DISKMENU_FORMAT_DOS33_DATA   40012
 
 
 // Next default values for new objects
