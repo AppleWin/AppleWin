@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 #include <sstream>
+#include <ctime>
 
 #include "Windows/Win32Frame.h"
 #include "Windows/AppleWin.h"
@@ -2093,8 +2094,28 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
   }
 }
 
-
 //===========================================================================
+int Util_SelectDiskImage( const HWND hwnd, const HINSTANCE hInstance, const TCHAR* pTitle, const bool bSave, char *pFilename, const char *pFilter )
+{
+	OPENFILENAME ofn;
+	memset(&ofn, 0, sizeof(OPENFILENAME));
+
+	ofn.lStructSize     = sizeof(OPENFILENAME);
+	ofn.hwndOwner       = hwnd;
+	ofn.hInstance       = hInstance;
+	ofn.lpstrFilter     = pFilter;
+	ofn.lpstrFile       = pFilename;
+	ofn.nMaxFile        = MAX_PATH; // sizeof(szFilename);
+	ofn.lpstrInitialDir = g_sCurrentDir.c_str();
+	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.lpstrTitle      = pTitle;
+
+	if( bSave )
+		ofn.Flags |= OFN_FILEMUSTEXIST;
+
+	int nRes = bSave ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn);
+	return nRes;
+}
 
 // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/resources/menus/usingmenus.asp
 // http://www.codeproject.com/menu/MenusForBeginners.asp?df=100&forumid=67645&exp=0&select=903061
@@ -2138,24 +2159,36 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	// coordinates of the mouse click to screen coordinates.
 	ClientToScreen(hwnd, (LPPOINT) &pt);
 
+	bool bIsProtected  = disk2Card.GetProtect(iDrive);
+	bool bIsDriveEmpty = disk2Card.IsDriveEmpty(iDrive);
+	HINSTANCE hInstance = GetFrame().g_hInstance;
+
 	// Check menu depending on current floppy protection
 	{
 		int iMenuItem = ID_DISKMENU_WRITEPROTECTION_OFF;
-		if (disk2Card.GetProtect(iDrive))
+		if (bIsProtected)
 			iMenuItem = ID_DISKMENU_WRITEPROTECTION_ON;
 
 		CheckMenuItem(hmenu, iMenuItem, MF_CHECKED);
 	}
 
-	if (disk2Card.IsDriveEmpty(iDrive))
+	if (bIsDriveEmpty)
+	{
 		EnableMenuItem(hmenu, ID_DISKMENU_EJECT, MF_GRAYED);
+	}
 
-	if (disk2Card.GetProtect(iDrive))
+	if (bIsProtected)
 	{
 		// If image-file is read-only (or a gzip) then disable these menu items
 		EnableMenuItem(hmenu, ID_DISKMENU_WRITEPROTECTION_ON, MF_GRAYED);
 		EnableMenuItem(hmenu, ID_DISKMENU_WRITEPROTECTION_OFF, MF_GRAYED);
+
 	}
+
+	// Disk images QoL always enabled since they prompt which disk image to create/modify.
+	EnableMenuItem(hmenu, ID_DISKMENU_NEW_140K_DISK, MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_NEW_800K_DISK, MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_NEW_32MB_DISK, MF_ENABLED);
 
 	// Draw and track the shortcut menu.
 	int iCommand = TrackPopupMenu(
@@ -2208,6 +2241,122 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 			else
 			{
 				FrameMessageBox(szCiderpressNotFoundText, szCiderpressNotFoundCaption, MB_ICONINFORMATION|MB_OK);
+			}
+		}
+	}
+	else
+	if((iCommand == ID_DISKMENU_NEW_140K_DISK)
+	|| (iCommand == ID_DISKMENU_NEW_800K_DISK)
+	|| (iCommand == ID_DISKMENU_NEW_32MB_DISK))
+	{
+		const bool   bIsFloppy    = (iCommand != ID_DISKMENU_NEW_32MB_DISK);
+		const bool   bIsFloppy525 = (iCommand == ID_DISKMENU_NEW_140K_DISK);
+		const bool   bIsUnidisk35 = (iCommand == ID_DISKMENU_NEW_800K_DISK);
+		const bool   bIsHardDisk  = (iCommand == ID_DISKMENU_NEW_32MB_DISK);
+		const size_t nDiskSize    = bIsHardDisk
+									? HARDDISK_32M_SIZE
+									: bIsUnidisk35
+									  ? UNIDISK35_800K_SIZE
+									  : TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD
+									    ;
+
+		const TCHAR* pszTitle = TEXT("Select new blank disk image");
+		char szFilename[MAX_PATH];
+
+		time_t timestamp = time( NULL );
+		tm datetime = *localtime(&timestamp);
+
+		const size_t MAX_MONTH_LEN = 32;
+		int   year               = datetime.tm_year + 1900;
+		char  mon[MAX_MONTH_LEN] = {0};
+		int   day                = datetime.tm_mday;
+		int   hour               = datetime.tm_hour;
+		int   min                = datetime.tm_min;
+		int   sec                = datetime.tm_sec;
+		strftime( mon, MAX_MONTH_LEN-1, "%b", &datetime );
+		sprintf( szFilename, "blank_%s_%04d_%3s_%02d_%02dh_%02dm_%02ds.%s"
+			, bIsFloppy ? "floppy" : "hard"
+			, year, mon, day, hour, min, sec
+			, bIsFloppy ? "dsk" : "hdv" );
+
+		std::string pathname = g_sCurrentDir;
+		pathname.append( szFilename );
+
+		const TCHAR *pTitle  = TEXT("New Disk Image");
+		const TCHAR *pSaveFilter = TEXT("All Files\0*.*\0");
+		int nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, szFilename, pSaveFilter );
+		if (nRes)
+		{
+			pathname = szFilename;
+			if (FileExists(pathname))
+			{
+				nRes = MessageBox( hwnd
+					, "WARNING: Disk image already exists!\n"
+					  "\n"
+					  "(ALL DATA WILL BE LOST!)\n"
+					  "\n"
+					  "Overwrite ?"
+					, pTitle
+					, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2 );
+				if (nRes == IDNO) nRes = 0;
+				else              nRes = IDOK;
+			}
+
+			if (nRes)
+			{
+				FILE *hFile = fopen( pathname.c_str(), "wb");
+				if (hFile)
+				{
+					size_t  nDiskBuffer = nDiskSize;
+					char   *pDiskBuffer = new char[ nDiskSize ];
+					memset( pDiskBuffer, 0, nDiskSize );
+
+					// See: Michaelangel007/applewin_boot_sector
+					uint8_t aAppleWinBootSector[256] =
+					{
+						0x01,0xA6,0x2B,0x8A,0x20,0x5D,0x08,0x8D,0x00,0xC0,0x8D,0x0C,0xC0,0x8D,0x0E,0xC0,
+						0x8D,0x5F,0xC0,0x8D,0x81,0xC0,0x20,0x89,0xFE,0x20,0x93,0xFE,0x20,0x2F,0xFB,0x20,
+						0x84,0xFE,0x20,0x58,0xFC,0xA2,0x00,0xBD,0x6B,0x08,0xF0,0x06,0x20,0xED,0xFD,0xE8,
+						0xD0,0xF5,0xAD,0x00,0xC0,0x10,0xFB,0x8D,0x10,0xC0,0xC9,0xB0,0x90,0x1C,0xC9,0xBA,
+						0xB0,0x18,0x29,0x0F,0xD0,0x03,0x4C,0x03,0xE0,0xC9,0x08,0xD0,0x03,0x4C,0x69,0xFF,
+						0xC9,0x09,0xD0,0x03,0x4C,0x69,0xFA,0x20,0x65,0x08,0x4C,0x00,0xC7,0xD0,0x02,0xA9,
+						0x70,0x4A,0x4A,0x4A,0x4A,0x09,0xC0,0x8D,0x5C,0x08,0x60,0xA0,0xA0,0xA0,0xA0,0xA0,
+						0xA0,0xD4,0xC8,0xC9,0xD3,0xA0,0xC9,0xD3,0xA0,0xC1,0xCE,0xA0,0xC5,0xCD,0xD0,0xD4,
+						0xD9,0xA0,0xC4,0xC1,0xD4,0xC1,0xA0,0xC4,0xC9,0xD3,0xCB,0xAE,0x8D,0x8D,0xA0,0xA0,
+						0x30,0xA0,0xC2,0xC1,0xD3,0xC9,0xC3,0xA0,0xA0,0xA0,0xA0,0xA0,0xA8,0xA4,0xC5,0xB0,
+						0xB0,0xB3,0xA9,0x8D,0x31,0xAD,0x37,0xA0,0xC2,0xCF,0xCF,0xD4,0xA0,0xD3,0xCC,0xCF,
+						0xD4,0xA0,0xA8,0xA4,0xC3,0xD8,0xB0,0xB0,0xA9,0x8D,0xA0,0xA0,0x38,0xA0,0xCD,0xCF,
+						0xCE,0xC9,0xD4,0xCF,0xD2,0xA0,0xA0,0xA0,0xA8,0xA4,0xC6,0xC6,0xB6,0xB9,0xA9,0x8D,
+						0xA0,0xA0,0x39,0xA0,0xD2,0xC5,0xD3,0xC5,0xD4,0xA0,0xA0,0xA0,0xA0,0xA0,0xA8,0xA4,
+						0xC6,0xC1,0xB6,0xB2,0xA9,0x8D,0x41,0x4E,0x59,0xA0,0xD2,0xC5,0xC2,0xCF,0xCF,0xD4,
+						0xA0,0xCC,0xC1,0xD3,0xD4,0xA0,0xD3,0xCC,0xCF,0xD4,0x00,0x00,0x00,0xD6,0xB2,0x82
+					};
+					bool     gbAppleWinBootSector = true; // TODO: allow custom boot loader via command line: -bootsector <file>
+					size_t   gnBootSectorSize = 256;
+					uint8_t *gpBootSector = aAppleWinBootSector;
+					if (bIsHardDisk && gbAppleWinBootSector)
+					{
+						assert( sizeof(aAppleWinBootSector) == 256 );
+						// Modify boot message depending on type of disk
+						// Floppy: THIS IS AN EMPTY DATA DISK.
+						// Hard  : THIS IS AN EMPTY HARD DISK.
+						//                          ^^^^
+						size_t nOffsetData = aAppleWinBootSector[ 0xFF ];
+						if( nOffsetData > 0)
+						{
+							aAppleWinBootSector[ nOffsetData+0 ] = 0x80 | 'H';
+							aAppleWinBootSector[ nOffsetData+1 ] = 0x80 | 'A';
+							aAppleWinBootSector[ nOffsetData+2 ] = 0x80 | 'R';
+							aAppleWinBootSector[ nOffsetData+3 ] = 0x80 | 'D';
+						}
+					}
+
+					memcpy( pDiskBuffer, gpBootSector, gnBootSectorSize );
+					fwrite( pDiskBuffer, 1, nDiskSize, hFile );
+					fclose( hFile );
+				}
+				else
+					MessageBox( hwnd, TEXT("ERROR: Couldn't open new disk image."), pTitle, MB_OK );
 			}
 		}
 	}
