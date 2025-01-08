@@ -384,14 +384,21 @@ BEGIN
     END
 END
 
+// The Resource Compiler doesn't like  strings with parenthesis in them so markup
+// literal ", (, and ) with hex literals.
+// Also See: https://www.ryanliptak.com/blog/every-rc-exe-bug-quirk-probably/
 IDR_MENU_DISK_POPUP MENU
 BEGIN
     POPUP "Disk Menu"
     BEGIN
-        MENUITEM "&Eject",                      ID_DISKMENU_EJECT
-        MENUITEM "Read / &Write",               ID_DISKMENU_WRITEPROTECTION_OFF
-        MENUITEM "&Read only",                  ID_DISKMENU_WRITEPROTECTION_ON
-        MENUITEM "Send to &CiderPress",         ID_DISKMENU_SENDTO_CIDERPRESS
+        MENUITEM "&Eject",                                 ID_DISKMENU_EJECT
+        MENUITEM "Read / &Write",                          ID_DISKMENU_WRITEPROTECTION_OFF
+        MENUITEM "&Read only",                             ID_DISKMENU_WRITEPROTECTION_ON
+        MENUITEM "Send to &CiderPress",                    ID_DISKMENU_SENDTO_CIDERPRESS
+        MENUITEM SEPARATOR
+        MENUITEM "New 5.25\x22 \x28140 KB\x29 disk image", ID_DISKMENU_NEW_140K_DISK
+        MENUITEM "New 3.5\x22 \x28800 KB\x29 disk image",  ID_DISKMENU_NEW_800K_DISK
+        MENUITEM "New hard \x2832 MB\x29 disk image",      ID_DISKMENU_NEW_32MB_DISK
     END
 END
 
