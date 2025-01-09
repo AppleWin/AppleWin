@@ -397,6 +397,7 @@ BEGIN
         MENUITEM "Send to &CiderPress",                    ID_DISKMENU_SENDTO_CIDERPRESS
         MENUITEM SEPARATOR
         MENUITEM "New 5.25\x22 \x28140 KB\x29 disk image", ID_DISKMENU_NEW_140K_DISK
+        MENUITEM "New 5.25\x22 \x28160 KB\x29 disk image", ID_DISKMENU_NEW_160K_DISK
         MENUITEM "New 3.5\x22 \x28800 KB\x29 disk image",  ID_DISKMENU_NEW_800K_DISK
         MENUITEM "New hard \x2832 MB\x29 disk image",      ID_DISKMENU_NEW_32MB_DISK
         MENUITEM SEPARATOR
