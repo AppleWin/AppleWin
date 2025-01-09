@@ -54,6 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"
 #include "Debugger/Debug.h"
+#include "../ProDOS_FileSystem.h"
 
 //#define ENABLE_MENU 0
 #define DEBUG_KEY_MESSAGES 0
@@ -2100,6 +2101,201 @@ inline int Util_GetTrackSectorOffset( const int nTrack, const int nSector )
 	return (TRACK_DENIBBLIZED_SIZE * nTrack) + (nSector * 256);
 }
 
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+	enum { DSK_SECTOR_SIZE = 256 };
+
+	enum SectorOrder_e
+	{
+		  INTERLEAVE_AUTO_DETECT
+		, INTERLEAVE_DOS33_ORDER
+		, INTERLEAVE_PRODOS_ORDER
+	};
+
+	// Map Physical <-> Logical
+	const uint8_t g_aInterleave_DSK[ 16 ] =
+	{
+		//0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F // logical order
+		0x0,0xE,0xD,0xC,0xB,0xA,0x9,0x8,0x7,0x6,0x5,0x4,0x3,0x2,0x1,0xF // physical order
+	};
+
+	void Util_Disk_InterleaveForward( int iSector, size_t *src_, size_t *dst_ )
+	{
+		*src_ = g_aInterleave_DSK[ iSector ]*DSK_SECTOR_SIZE;
+		*dst_ =                    iSector  *DSK_SECTOR_SIZE; // linearize
+	};
+
+	void Util_Disk_InterleaveReverse( int iSector, size_t *src_, size_t *dst_ )
+	{
+		*src_ =                    iSector  *DSK_SECTOR_SIZE; // un-linearize
+		*dst_ = g_aInterleave_DSK[ iSector ]*DSK_SECTOR_SIZE;
+	}
+
+	// With C++17 could use std::filesystem::path
+	// retuns '.dsk'
+	// Alt. PathFindExtensionA()
+	std::string Util_GetFileNameExtension(const std::string& pathname)
+	{
+		const size_t nLength    = pathname.length();
+		const size_t iExtension = pathname.rfind( '.', nLength );
+		if (iExtension != std::string::npos)
+			return pathname.substr( iExtension, nLength );
+		else
+			return std::string("");
+	}
+
+	SectorOrder_e Util_Disk_CalculateSectorOrder(const std::string& pathname)
+	{
+		SectorOrder_e eOrder = INTERLEAVE_AUTO_DETECT;
+		std::string sExtension = Util_GetFileNameExtension( pathname );
+		if (sExtension.length())
+		{
+			/**/ if (sExtension == ".dsk") eOrder = INTERLEAVE_DOS33_ORDER;
+			else if (sExtension == ".do" ) eOrder = INTERLEAVE_DOS33_ORDER;
+			else if (sExtension == ".po" ) eOrder = INTERLEAVE_PRODOS_ORDER;
+			else if (sExtension == ".hdv") eOrder = INTERLEAVE_PRODOS_ORDER;
+		}
+		return eOrder;
+	}
+
+// Swizzle sectors in DOS33 order to ProDOS order in-place
+//===========================================================================
+void Util_ProDOS_ForwardSectorInterleave (uint8_t *pDiskBytes, const size_t nDiskSize, const SectorOrder_e eSectorOrder)
+{
+	if (eSectorOrder == INTERLEAVE_DOS33_ORDER)
+	{
+		size_t   nOffset = 0;
+		uint8_t *pSource = new uint8_t[ nDiskSize ];
+		memcpy( pSource, pDiskBytes, nDiskSize );
+
+		const int nTracks = nDiskSize / TRACK_DENIBBLIZED_SIZE;
+		for( int iTrack = 0; iTrack < nTracks; iTrack++ )
+		{
+			for( int iSector = 0; iSector < 16; iSector++ )
+			{
+				size_t nSrc;
+				size_t nDst;
+				Util_Disk_InterleaveForward( iSector, &nSrc, &nDst );
+				memcpy( pDiskBytes + nOffset + nDst, pSource + nOffset + nSrc, DSK_SECTOR_SIZE );
+			}
+			nOffset += TRACK_DENIBBLIZED_SIZE;
+		}
+
+		delete [] pSource;
+	}
+}
+
+// Swizzles sectors in ProDOS order to DOS33 order in-place
+void Util_ProDOS_ReverseSectorInterleave (uint8_t *pDiskBytes, const size_t nDiskSize, const SectorOrder_e eSectorOrder)
+{
+	// Swizle from ProDOS to DOS33 order
+	if (eSectorOrder == INTERLEAVE_DOS33_ORDER)
+	{
+		size_t   nOffset = 0;
+		uint8_t *pSource = new uint8_t[ nDiskSize ];
+		memcpy( pSource, pDiskBytes, nDiskSize );
+
+		const int nTracks = nDiskSize / TRACK_DENIBBLIZED_SIZE;
+		for( int iTrack = 0; iTrack < nTracks; iTrack++ )
+		{
+			for( int iSector = 0; iSector < 16; iSector++ )
+			{
+				size_t nSrc;
+				size_t nDst;
+				Util_Disk_InterleaveReverse( iSector, &nSrc, &nDst );
+				memcpy( pDiskBytes + nOffset + nDst, pSource + nOffset + nSrc, DSK_SECTOR_SIZE );
+			}
+			nOffset += TRACK_DENIBBLIZED_SIZE;
+		}
+
+		delete [] pSource;
+	}
+}
+
+// NB Assumes pDiskBytes are in ProDOS order!
+//===========================================================================
+void Util_ProDOS_FormatFileSystem (uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName)
+{
+	const size_t nBootBlockSize = DSK_SECTOR_SIZE * 2;
+	memset( pDiskBytes + nBootBlockSize, 0, nDiskSize - nBootBlockSize );
+
+	// Create blocks for root directory
+	int nRootDirBlocks = 4;
+	int iPrevDirBlock  = 0;
+	int iNextDirBlock  = 0;
+	int iOffset;
+
+	ProDOS_VolumeHeader_t tVolume;
+
+	// Init Bitmap
+	tVolume.meta.bitmap_block = (uint16_t) (PRODOS_ROOT_BLOCK + nRootDirBlocks);
+	int nBitmapBlocks = ProDOS_BlockInitFree( pDiskBytes, nDiskSize, &tVolume );
+
+	// Set boot blocks as in-use
+	for( int iBlock = 0; iBlock < PRODOS_ROOT_BLOCK; iBlock++ )
+		ProDOS_BlockSetUsed( pDiskBytes, &tVolume, iBlock );
+
+	for( int iBlock = 0; iBlock < nRootDirBlocks; iBlock++ )
+	{
+		iNextDirBlock = ProDOS_BlockGetFirstFree( pDiskBytes, nDiskSize, &tVolume );
+		iOffset       = iNextDirBlock * PRODOS_BLOCK_SIZE;
+		ProDOS_BlockSetUsed( pDiskBytes, &tVolume, iNextDirBlock );
+
+		// Double Linked List
+		// [0] = prev
+		// [2] = next -- will be set on next allocation
+		ProDOS_Put16( pDiskBytes, iOffset + 0, iPrevDirBlock );
+		ProDOS_Put16( pDiskBytes, iOffset + 2, 0 );
+
+		if( iBlock )
+		{
+			// Fixup previous directory block with pointer to this one
+			iOffset = iPrevDirBlock * PRODOS_BLOCK_SIZE;
+			ProDOS_Put16( pDiskBytes, iOffset + 2, iNextDirBlock );
+		}
+
+		iPrevDirBlock = iNextDirBlock;
+	}
+
+	// Alloc Bitmap Blocks
+	for( int iBlock = 0; iBlock < nBitmapBlocks; iBlock++ )
+	{
+		int iBitmap = ProDOS_BlockGetFirstFree( pDiskBytes, nDiskSize, &tVolume );
+		ProDOS_BlockSetUsed( pDiskBytes, &tVolume, iBitmap );
+	}
+
+	tVolume.entry_len  = 0x27;
+	tVolume.entry_num  = (uint8_t) (PRODOS_BLOCK_SIZE / tVolume.entry_len);
+	tVolume.file_count = 0;
+
+	if( *pVolumeName == '/' )
+		pVolumeName++;
+
+	size_t nLen = strlen( pVolumeName );
+
+	tVolume.kind = PRODOS_KIND_ROOT;
+	tVolume.len  = (uint8_t) nLen;
+	ProDOS_String_CopyUpper( tVolume.name, pVolumeName, 15 );
+
+	tVolume.access = 0
+		| ACCESS_D
+		| ACCESS_N
+		| ACCESS_B
+//		| ACCESS_I  -- no point to making the volume invis
+		| ACCESS_W
+		| ACCESS_R
+		;
+
+	// TODO:
+	//tVolume.access = config.access;
+	//tVolume.date   = config.date;
+	//tVolume.time   = config.time;
+
+	ProDOS_SetVolumeHeader( pDiskBytes, &tVolume, PRODOS_ROOT_BLOCK );
+}
+
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 // bSectorsUsed is 16-bits bitmask of sectors.
 // 1 = Free
 // 0 = Used
@@ -2181,7 +2377,7 @@ void Util_DOS33_FormatFileSystem ( uint8_t *pDiskBytes, const size_t nDiskSize, 
 }
 
 //===========================================================================
-int Util_SelectDiskImage( const HWND hwnd, const HINSTANCE hInstance, const TCHAR* pTitle, const bool bSave, char *pFilename, const char *pFilter )
+int Util_SelectDiskImage ( const HWND hwnd, const HINSTANCE hInstance, const TCHAR* pTitle, const bool bSave, char *pFilename, const char *pFilter )
 {
 	OPENFILENAME ofn;
 	memset(&ofn, 0, sizeof(OPENFILENAME));
@@ -2335,18 +2531,22 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	}
 	else
 	if((iCommand == ID_DISKMENU_NEW_140K_DISK)
+	|| (iCommand == ID_DISKMENU_NEW_160K_DISK)
 	|| (iCommand == ID_DISKMENU_NEW_800K_DISK)
 	|| (iCommand == ID_DISKMENU_NEW_32MB_DISK))
 	{
 		const bool   bIsFloppy    = (iCommand != ID_DISKMENU_NEW_32MB_DISK);
-		const bool   bIsFloppy525 = (iCommand == ID_DISKMENU_NEW_140K_DISK);
+		const bool   bIsFloppy525 = ((iCommand == ID_DISKMENU_NEW_140K_DISK) || (iCommand == ID_DISKMENU_NEW_160K_DISK));
+		const bool   bIs40Track   = (iCommand == ID_DISKMENU_NEW_160K_DISK);
 		const bool   bIsUnidisk35 = (iCommand == ID_DISKMENU_NEW_800K_DISK);
 		const bool   bIsHardDisk  = (iCommand == ID_DISKMENU_NEW_32MB_DISK);
 		const size_t nDiskSize    = bIsHardDisk
 									? HARDDISK_32M_SIZE
 									: bIsUnidisk35
 									  ? UNIDISK35_800K_SIZE
-									  : TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD
+									  : bIs40Track
+									    ? TRACK_DENIBBLIZED_SIZE * TRACKS_MAX
+									    : TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD
 									    ;
 
 		const TCHAR* pszTitle = TEXT("Select new blank disk image");
@@ -2449,7 +2649,8 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 			}
 		}
 	}
-	else if (iCommand == ID_DISKMENU_FORMAT_PRODOS_DATA)
+	else
+	if (iCommand == ID_DISKMENU_FORMAT_PRODOS_DATA)
 	{
 		char szFilename[ MAX_PATH ] = {0};
 		const TCHAR *pTitle  = TEXT("Select ProDOS Disk Image to Format");
@@ -2472,16 +2673,64 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 					, "Format", MB_ICONWARNING|MB_YESNO);
 				if (res == IDYES)
 				{
-					FILE *hFile = fopen( pathname.c_str(), "rb" );
+					FILE *hFile = fopen( pathname.c_str(), "r+b" );
 					if (hFile)
 					{
 						fseek( hFile, 0, SEEK_END );
 						size_t nDiskSize = ftell( hFile );
 						fseek( hFile, 0, SEEK_SET );
-#if _DEBUG
-						char debug[128];
-						sprintf( debug, "Image Size: %zu", nDiskSize );
-#endif
+
+						size_t nMaxDiskSize = HARDDISK_32M_SIZE;
+
+						char Message[ 256 ];
+						if (nDiskSize > nMaxDiskSize)
+						{
+							sprintf( Message, "ERROR: Disk Image Size (%zu bytes) > maximum ProDOS volume size (%zu bytes)", nDiskSize, nMaxDiskSize );
+							FrameMessageBox( Message, "Format", MB_ICONWARNING|MB_OK);
+						}
+						else
+						{
+							uint8_t *pDiskBytes = new uint8_t[ nDiskSize ];
+							size_t nReadSize = fread( pDiskBytes, 1, nDiskSize, hFile );
+							assert( nReadSize == nDiskSize );
+
+							// We can have DOS or ProDOS sector interleaving
+							//     Extension  Interleave
+							//     .bin       Unknown, assume DOS
+							//     .dsk       DOS
+							//     .po        ProDOS
+							//     .hdv       ProDOS
+							SectorOrder_e eSectorOrder = Util_Disk_CalculateSectorOrder( pathname );
+							if (eSectorOrder == INTERLEAVE_AUTO_DETECT)
+							{
+								int res = FrameMessageBox(
+									"Unable to auto-detect the disk image sector order!\n"
+									"\n"
+									"Is this image using a ProDOS sector order?\n"
+									"(No will use DOS 3.3 sector order)"
+									, "Format", MB_ICONWARNING|MB_YESNO);
+								eSectorOrder = (res = IDYES)
+								             ? INTERLEAVE_PRODOS_ORDER
+								             : INTERLEAVE_DOS33_ORDER
+							                 ;
+							}
+							assert (eSectorOrder !=  INTERLEAVE_AUTO_DETECT);
+
+							const char *pVolumeName = "BLANK";
+							Util_ProDOS_ForwardSectorInterleave( pDiskBytes, nDiskSize, eSectorOrder );
+							Util_ProDOS_FormatFileSystem       ( pDiskBytes, nDiskSize, pVolumeName  );
+							Util_ProDOS_ReverseSectorInterleave( pDiskBytes, nDiskSize, eSectorOrder );
+
+							fseek( hFile, 0, SEEK_SET );
+							size_t nWroteSize = fwrite( pDiskBytes, 1, nReadSize, hFile );
+							if (nWroteSize != nDiskSize)
+							{
+								FrameMessageBox( "ERROR: Unable to write ProDOS File System", "Format", MB_ICONWARNING | MB_OK);
+							}
+
+							delete [] pDiskBytes;
+						}
+						fclose( hFile );
 					}
 				}
 			}
