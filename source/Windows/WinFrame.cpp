@@ -2132,7 +2132,7 @@ inline int Util_GetTrackSectorOffset( const int nTrack, const int nSector )
 	}
 
 	// With C++17 could use std::filesystem::path
-	// retuns '.dsk'
+	// returns '.dsk'
 	// Alt. PathFindExtensionA()
 	std::string Util_GetFileNameExtension(const std::string& pathname)
 	{
