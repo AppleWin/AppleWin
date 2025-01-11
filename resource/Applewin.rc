@@ -343,7 +343,7 @@ IDR_TKCLOCK_FW          FIRMWARE                "TKClock.rom"
 /// We write our own custom boot sector so the user doesn't crash to the monitor when booting it.
 /// Technically not firmware but since it never changes we put this resource here.
 /// </summary>
-IDR_BOOT_SECTOR         FIRMWARE                "Firmware/BootSector/Bootsector.bin"
+IDR_BOOT_SECTOR         FIRMWARE                "firmware/BootSector/bootsector.bin"
 
 /////////////////////////////////////////////////////////////////////////////
 //
