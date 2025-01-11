@@ -30,6 +30,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <sstream>
 #include <ctime>
 
+#define _HAS_CXX17 1
+#include <filesystem>
+
 #include "Windows/Win32Frame.h"
 #include "Windows/AppleWin.h"
 #include "CmdLine.h"
@@ -2137,12 +2140,17 @@ inline int Util_GetTrackSectorOffset( const int nTrack, const int nSector )
 	// Alt. PathFindExtensionA()
 	std::string Util_GetFileNameExtension(const std::string& pathname)
 	{
+#if _MSVC_LANG >= 201703L // Compiler option: /std:c++17
+		const std::filesystem::path path( pathname );
+		return path.extension().generic_string();
+#else
 		const size_t nLength    = pathname.length();
 		const size_t iExtension = pathname.rfind( '.', nLength );
 		if (iExtension != std::string::npos)
 			return pathname.substr( iExtension, nLength );
 		else
 			return std::string("");
+#endif
 	}
 
 	SectorOrder_e Util_Disk_CalculateSectorOrder(const std::string& pathname)
