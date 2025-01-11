@@ -2696,6 +2696,99 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		}
 	}
 	else
+	if (iCommand == ID_DISKMENU_SELECT_BOOTSECTOR)
+	{
+		// Default to directory of g_cmdLine.sBootSectorFileName;
+		char sDisplayFileName[ 256+1 ] = {0};
+		char sFilename[ MAX_PATH ] = {0};
+		const size_t nDisplayFileNameMax = sizeof(sDisplayFileName);
+		const size_t nFilenameMax        = sizeof(sFilename);
+		const TCHAR *pTitle  = TEXT("Select boot sector file");
+		const TCHAR *pExistFilter = // No *.nib;*.woz;*.gz;*.zip
+			TEXT("Floppy Disk Images (*.bin,*.dsk,*.do;*.po)\0"
+			                         "*.bin;*.dsk;*.do;*.po\0")
+			TEXT("Hard Disk Images (*.hdv;)\0"
+			                       "*.hdv\0")
+			TEXT("All Files\0*.*\0");
+
+		// Show dialog with current boot sector disk image
+		// Ask user if they wish to replace it
+		char sMessage[ 1024 ];
+
+		strncpy( sDisplayFileName, g_cmdLine.sBootSectorFileName.c_str(), nDisplayFileNameMax - 2);
+		strncpy( sFilename       , g_cmdLine.sBootSectorFileName.c_str(), nFilenameMax        - 2);
+
+		sDisplayFileName[nDisplayFileNameMax-1] = 0;
+		sFilename       [nFilenameMax       -1] = 0;
+
+		if (!g_cmdLine.nBootSectorFileSize)
+		{
+			sprintf_s( sDisplayFileName, "(Built-in AppleWin Boot Sector)" );
+		}
+		else
+		if (g_cmdLine.sBootSectorFileName.length() > (nDisplayFileNameMax-1))
+		{
+			// Convert long filename to "smart" ellipsys
+			// +126 = First 126 chars filename
+			// +  4 = "...."
+			// +126 = Last 126 chars of filename
+			//= 256 chars
+			const char *pHead = g_cmdLine.sBootSectorFileName.c_str();
+			const char *pTail = pHead + g_cmdLine.sBootSectorFileName.length() - 126;
+			sDisplayFileName[0] = 0;
+			strncpy( sDisplayFileName +   0, pHead , 126 );
+			strncpy( sDisplayFileName + 126, "....",   4 );
+			strncpy( sDisplayFileName + 130, pTail , 126 );
+		}
+
+		sprintf_s( sMessage
+			, "Current boot sector file is: \n"
+			  "\n"
+			  "%s\n"
+			  "\n"
+			  "Use a custom boot sector file?\n"
+			, sDisplayFileName
+			);
+		
+		int nRes = FrameMessageBox(sMessage, pTitle, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2);
+		if (nRes == IDYES)
+		{
+			int nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, false, sFilename, pExistFilter );
+			if (nRes)
+			{
+				char  sPath[ MAX_PATH];
+				DWORD res = GetFullPathName(sFilename, MAX_PATH, sPath, NULL);
+
+				FILE *pFile = fopen( sPath, "rb");
+				if (pFile)
+				{
+					fseek( pFile, 0, SEEK_END );
+					size_t nSize = ftell( pFile );
+					fseek( pFile, 0, SEEK_SET );
+					fclose( pFile );
+
+					if (nSize > 0)
+					{
+						g_cmdLine.sBootSectorFileName = sPath;
+						g_cmdLine.nBootSectorFileSize = nSize;
+					}
+					else
+					{
+						g_cmdLine.nBootSectorFileSize = 0;
+						g_cmdLine.sBootSectorFileName = "";
+						FrameMessageBox("ERROR: Couldn't read custom boot sector file.\n\nDefaulting to built-in AppleWin Boot Sector.", pTitle, MB_ICONERROR | MB_OK);
+					}
+				}
+				else
+				{
+					g_cmdLine.nBootSectorFileSize = 0;
+					g_cmdLine.sBootSectorFileName = "";
+					FrameMessageBox( "ERROR: Couldn't open custom boot sector file.\n\nDefaulting to built-in AppleWin Boot Sector.", pTitle, MB_ICONERROR | MB_OK);
+				}
+			}
+		}
+	}
+	else
 	if (iCommand == ID_DISKMENU_FORMAT_PRODOS_DATA)
 	{
 		char szFilename[ MAX_PATH ] = {0};
