@@ -2625,7 +2625,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 					uint8_t *gpBootSector = aAppleWinBootSector;
 					if (bIsHardDisk && gbAppleWinBootSector)
 					{
-						assert( sizeof(aAppleWinBootSector) == 256 );
+						static_assert( sizeof(aAppleWinBootSector) == 256 );
 						// Modify boot message depending on type of disk
 						// Floppy: THIS IS AN EMPTY DATA DISK.
 						// Hard  : THIS IS AN EMPTY HARD DISK.
