@@ -2792,14 +2792,14 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	if (iCommand == ID_DISKMENU_FORMAT_PRODOS_DATA)
 	{
 		char szFilename[ MAX_PATH ] = {0};
-		const TCHAR *pTitle  = TEXT("Select ProDOS Disk Image to Format");
+		const TCHAR *pTitle  = TEXT("Select ProDOS disk image to format");
 		const TCHAR *pLoadFilter = // No *.nib;*.woz;*.gz;*.zip
 			TEXT("Floppy Disk Images (*.bin,*.dsk,*.po)\0"
 			                         "*.bin;*.dsk;*.po\0")
 			TEXT("Hard Disk Images (*.hdv;)\0"
 			                       "*.hdv\0")
 			TEXT("All Files\0*.*\0");
-		int res = Util_SelectDiskImage( hwnd, hInstance, pTitle, false, szFilename, pLoadFilter );
+		int res = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, szFilename, pLoadFilter );
 		if (res)
 		{
 			std::string pathname = szFilename;
@@ -2878,7 +2878,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	else if (iCommand == ID_DISKMENU_FORMAT_DOS33_DATA)
 	{
 		char szFilename[ MAX_PATH ] = {0};
-		const TCHAR *pTitle  = TEXT("Select DOS 3.3 Disk Image to Format");
+		const TCHAR *pTitle  = TEXT("Select DOS 3.3 disk image to format");
 		const TCHAR *pLoadFilter =
 			TEXT("Floppy Disk Images (*.bin,*.dsk,*.do)\0"
 			                         "*.bin;*.dsk;*.do\0")
@@ -2904,7 +2904,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 						size_t nDiskSize = ftell( hFile );
 						fseek( hFile, 0, SEEK_SET );
 
-						// Verify floppy size is < 160KB (max 40 tracks) since that is the largest supported by DOS 3.3
+						// Verify floppy size is <= 160KB (max 40 tracks) since that is the largest supported by DOS 3.3
 						// TODO: Maybe use CImageBase::IsValidImageSize() ?
 						size_t nMinDiskSize = 34         *  TRACK_DENIBBLIZED_SIZE;
 						size_t nMaxDiskSize = TRACKS_MAX * TRACK_DENIBBLIZED_SIZE;
@@ -2912,14 +2912,14 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 						char Message[ 256 ];
 						if (nDiskSize < nMinDiskSize)
 						{
-							sprintf_s( Message, "ERROR: Disk Image Size (%zu bytes) < minimum DOS 3.3 image size (%zu bytes)", nDiskSize, nMinDiskSize );
-							FrameMessageBox( Message, "Format", MB_ICONWARNING|MB_OK);
+							sprintf_s( Message, "ERROR: Disk image size (%zu bytes) < minimum DOS 3.3 image size (%zu bytes)", nDiskSize, nMinDiskSize );
+							FrameMessageBox( Message, "Format", MB_ICONERROR|MB_OK);
 						}
 						else
 						if (nDiskSize > nMaxDiskSize)
 						{
-							sprintf_s( Message, "ERROR: Disk Image Size (%zu bytes) > maximum DOS 3.3 image size (%zu bytes)", nDiskSize, nMaxDiskSize );
-							FrameMessageBox( Message, "Format", MB_ICONWARNING|MB_OK);
+							sprintf_s( Message, "ERROR: Disk image size (%zu bytes) > maximum DOS 3.3 image size (%zu bytes)", nDiskSize, nMaxDiskSize );
+							FrameMessageBox( Message, "Format", MB_ICONERROR|MB_OK);
 						}
 						else
 						{
@@ -2934,7 +2934,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 							size_t nWroteSize = fwrite( pDiskBytes, 1, nReadSize, hFile );
 							if (nWroteSize != nDiskSize)
 							{
-								FrameMessageBox( "ERROR: Unable to write DOS 3.3 File System", "Format", MB_ICONWARNING | MB_OK);
+								FrameMessageBox( "ERROR: Unable to write DOS 3.3 file system", "Format", MB_ICONWARNING | MB_OK);
 							}
 							delete [] pDiskBytes;
 						}
@@ -2942,7 +2942,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 					}
 					else
 					{
-						FrameMessageBox( "ERROR: Unable to open disk image for writing DOS 3.3 File System", "Format", MB_ICONWARNING | MB_OK);
+						FrameMessageBox( "ERROR: Unable to open disk image for writing DOS 3.3 file system", "Format", MB_ICONWARNING | MB_OK);
 					}
 				}
 			}
