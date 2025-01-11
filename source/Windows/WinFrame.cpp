@@ -2621,7 +2621,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 						0xA0,0xCC,0xC1,0xD3,0xD4,0xA0,0xD3,0xCC,0xCF,0xD4,0x00,0x00,0x00,0xD6,0xB2,0x82  // F0:
 					};
 					bool     gbAppleWinBootSector = true; // TODO: allow custom boot loader via command line: -bootsector <file>
-					size_t   gnBootSectorSize = 256;
+					size_t   gnBootSectorSize = sizeof(aAppleWinBootSector);
 					uint8_t *gpBootSector = aAppleWinBootSector;
 					if (bIsHardDisk && gbAppleWinBootSector)
 					{
