@@ -1,4 +1,8 @@
 /*
+2.9.2.1 Added: Error message when trying to add a symbol > 51 characters.
+
+2.9.2.0 Released with AppleWin 1.30.20.0
+
 2.9.2.0 Fixed: Debugger: Step-over WAIT can fail #1194
 2.9.1.26 Fixed: When adding symbols list the address first then the name for readability
 2.9.1.25 Fixed: R P ## wasn't setting P flag status register.
