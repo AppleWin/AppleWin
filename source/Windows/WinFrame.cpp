@@ -2563,7 +2563,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		int   min                = datetime.tm_min;
 		int   sec                = datetime.tm_sec;
 		strftime( mon, MAX_MONTH_LEN-1, "%b", &datetime );
-		sprintf( szFilename, "blank_%s_%04d_%3s_%02d_%02dh_%02dm_%02ds.%s"
+		sprintf_s( szFilename, "blank_%s_%04d_%3s_%02d_%02dh_%02dm_%02ds.%s"
 			, bIsFloppy ? "floppy" : "hard"
 			, year, mon, day, hour, min, sec
 			, bIsFloppy ? "dsk" : "hdv" );
@@ -2687,7 +2687,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 						char Message[ 256 ];
 						if (nDiskSize > nMaxDiskSize)
 						{
-							sprintf( Message, "ERROR: Disk Image Size (%zu bytes) > maximum ProDOS volume size (%zu bytes)", nDiskSize, nMaxDiskSize );
+							sprintf_s( Message, "ERROR: Disk Image Size (%zu bytes) > maximum ProDOS volume size (%zu bytes)", nDiskSize, nMaxDiskSize );
 							FrameMessageBox( Message, "Format", MB_ICONWARNING|MB_OK);
 						}
 						else
@@ -2775,13 +2775,13 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 						char Message[ 256 ];
 						if (nDiskSize < nMinDiskSize)
 						{
-							sprintf( Message, "ERROR: Disk Image Size (%zu bytes) < minimum DOS 3.3 image size (%zu bytes)", nDiskSize, nMinDiskSize );
+							sprintf_s( Message, "ERROR: Disk Image Size (%zu bytes) < minimum DOS 3.3 image size (%zu bytes)", nDiskSize, nMinDiskSize );
 							FrameMessageBox( Message, "Format", MB_ICONWARNING|MB_OK);
 						}
 						else
 						if (nDiskSize > nMaxDiskSize)
 						{
-							sprintf( Message, "ERROR: Disk Image Size (%zu bytes) > maximum DOS 3.3 image size (%zu bytes)", nDiskSize, nMaxDiskSize );
+							sprintf_s( Message, "ERROR: Disk Image Size (%zu bytes) > maximum DOS 3.3 image size (%zu bytes)", nDiskSize, nMaxDiskSize );
 							FrameMessageBox( Message, "Format", MB_ICONWARNING|MB_OK);
 						}
 						else
