@@ -73,9 +73,6 @@ namespace common2
     std::vector<std::string> natPortFwds;
   };
 
-  enum class OptionsType { none, applen, sa2 };
-  bool getEmulatorOptions(int argc, const char * argv [], OptionsType type, const std::string & edition, EmulatorOptions & options);
-
   void applyOptions(const EmulatorOptions & options);
 
 }
