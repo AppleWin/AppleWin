@@ -391,18 +391,18 @@ IDR_MENU_DISK_POPUP MENU
 BEGIN
     POPUP "Disk Menu"
     BEGIN
-        MENUITEM "&Eject",                                                          ID_DISKMENU_EJECT
-        MENUITEM "Read / &Write",                                                   ID_DISKMENU_WRITEPROTECTION_OFF
-        MENUITEM "&Read only",                                                      ID_DISKMENU_WRITEPROTECTION_ON
-        MENUITEM "Send to &CiderPress",                                             ID_DISKMENU_SENDTO_CIDERPRESS
+        MENUITEM "&Eject",                                                               ID_DISKMENU_EJECT
+        MENUITEM "Read / &Write",                                                        ID_DISKMENU_WRITEPROTECTION_OFF
+        MENUITEM "&Read only",                                                           ID_DISKMENU_WRITEPROTECTION_ON
+        MENUITEM "Send to &CiderPress",                                                  ID_DISKMENU_SENDTO_CIDERPRESS
         MENUITEM SEPARATOR
-        MENUITEM "New 5.25\x22 \x28140 KB\x29 disk image ...",                      ID_DISKMENU_NEW_140K_DISK
-        MENUITEM "New 5.25\x22 \x28160 KB\x29 disk image ... \x28NON-STANDARD\x29", ID_DISKMENU_NEW_160K_DISK
-        MENUITEM "New 3.5\x22 \x28800 KB\x29 disk image ...",                       ID_DISKMENU_NEW_800K_DISK
-        MENUITEM "New hard \x2832 MB\x29 disk image ...",                           ID_DISKMENU_NEW_32MB_DISK
+        MENUITEM "New 5.25\x22 \x28140 KB\x29 disk image ... \x28Standard 35 Track\x29", ID_DISKMENU_NEW_140K_DISK
+        MENUITEM "New 5.25\x22 \x28160 KB\x29 disk image ... \x28Extended 40 Track\x29", ID_DISKMENU_NEW_160K_DISK
+        MENUITEM "New 3.5\x22 \x28800 KB\x29 disk image ...",                            ID_DISKMENU_NEW_800K_DISK
+        MENUITEM "New hard \x2832 MB\x29 disk image ...",                                ID_DISKMENU_NEW_32MB_DISK
         MENUITEM SEPARATOR
-        MENUITEM "Format ProDOS data disk image ...",                               ID_DISKMENU_FORMAT_PRODOS_DATA
-        MENUITEM "Format DOS 3.3 data disk image ...",                              ID_DISKMENU_FORMAT_DOS33_DATA
+        MENUITEM "Format ProDOS data disk image ...",                                    ID_DISKMENU_FORMAT_PRODOS_DATA
+        MENUITEM "Format DOS 3.3 data disk image ...",                                   ID_DISKMENU_FORMAT_DOS33_DATA
     END
 END
 
