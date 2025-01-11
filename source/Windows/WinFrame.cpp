@@ -2718,12 +2718,12 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 
 		if (!g_cmdLine.nBootSectorFileSize)
 		{
-			sprintf_s( sDisplayFileName, "(Built-in AppleWin Boot Sector)" );
+			sprintf_s( sDisplayFileName, "(Built-in AppleWin boot sector)" );
 		}
 		else
 		if (g_cmdLine.sBootSectorFileName.length() > (nDisplayFileNameMax-1))
 		{
-			// Convert long filename to "smart" ellipsys
+			// Convert long filename to "smart" ellipsis
 			// +126 = First 126 chars filename
 			// +  4 = "...."
 			// +126 = Last 126 chars of filename
