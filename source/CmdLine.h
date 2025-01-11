@@ -62,6 +62,8 @@ struct CmdLine
 		userSpecifiedHeight = 0;
 		auxSlotEmpty = false;
 		auxSlotInsert = CT_Empty;
+		sBootSectorFileName = "";
+		nBootSectorFileSize = 0;
 
 		for (UINT i = 0; i < NUM_SLOTS; i++)
 		{
@@ -119,6 +121,8 @@ struct CmdLine
 	std::string wavFileMockingboard;
 	bool auxSlotEmpty;
 	SS_CARDTYPE auxSlotInsert;
+	std::string sBootSectorFileName;
+	size_t      nBootSectorFileSize;
 };
 
 bool ProcessCmdLine(LPSTR lpCmdLine);

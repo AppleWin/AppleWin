@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Windows/Win32Frame.h"
 #include "Windows/AppleWin.h"
+#include "CmdLine.h"
 #include "Interface.h"
 #include "Keyboard.h"
 #include "Log.h"
@@ -2579,8 +2580,8 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 			pathname = szFilename;
 			if (FileExists(pathname))
 			{
-				nRes = MessageBox( hwnd
-					, "WARNING: Disk image already exists!\n"
+				nRes = FrameMessageBox(
+					  "WARNING: Disk image already exists!\n"
 					  "\n"
 					  "(ALL DATA WILL BE LOST!)\n"
 					  "\n"
@@ -2620,29 +2621,64 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 						0xC6,0xC1,0xB6,0xB2,0xA9,0x8D,0x41,0x4E,0x59,0xA0,0xD2,0xC5,0xC2,0xCF,0xCF,0xD4, // E0:
 						0xA0,0xCC,0xC1,0xD3,0xD4,0xA0,0xD3,0xCC,0xCF,0xD4,0x00,0x00,0x00,0xD6,0xB2,0x82  // F0:
 					};
-					bool     gbAppleWinBootSector = true; // TODO: allow custom boot loader via command line: -bootsector <file>
-					size_t   gnBootSectorSize = sizeof(aAppleWinBootSector);
-					uint8_t *gpBootSector = aAppleWinBootSector;
-					if (bIsHardDisk && gbAppleWinBootSector)
+					bool     bUseAppleWinBootSector = !g_cmdLine.nBootSectorFileSize; // Can have custom boot loader via command line: -bootsector <file>
+					size_t   nBootSectorSize = bUseAppleWinBootSector ? sizeof(aAppleWinBootSector) :              g_cmdLine.nBootSectorFileSize  ;
+					uint8_t *pBootSector     = bUseAppleWinBootSector ?        aAppleWinBootSector  : new uint8_t[ g_cmdLine.nBootSectorFileSize ];
+					if (bUseAppleWinBootSector)
 					{
-						static_assert( sizeof(aAppleWinBootSector) == 256 );
-						// Modify boot message depending on type of disk
-						// Floppy: THIS IS AN EMPTY DATA DISK.
-						// Hard  : THIS IS AN EMPTY HARD DISK.
-						//                          ^^^^
-						size_t nOffsetData = aAppleWinBootSector[ 0xFF ];
-						if( nOffsetData > 0)
+						if (bIsHardDisk)
 						{
-							aAppleWinBootSector[ nOffsetData+0 ] = 0x80 | 'H';
-							aAppleWinBootSector[ nOffsetData+1 ] = 0x80 | 'A';
-							aAppleWinBootSector[ nOffsetData+2 ] = 0x80 | 'R';
-							aAppleWinBootSector[ nOffsetData+3 ] = 0x80 | 'D';
+							static_assert( sizeof(aAppleWinBootSector) == 256 );
+							// Modify boot message depending on type of disk
+							// Floppy: THIS IS AN EMPTY DATA DISK.
+							// Hard  : THIS IS AN EMPTY HARD DISK.
+							//                          ^^^^
+							size_t nOffsetData = aAppleWinBootSector[ 0xFF ];
+							if( nOffsetData > 0)
+							{
+								aAppleWinBootSector[ nOffsetData+0 ] = 0x80 | 'H';
+								aAppleWinBootSector[ nOffsetData+1 ] = 0x80 | 'A';
+								aAppleWinBootSector[ nOffsetData+2 ] = 0x80 | 'R';
+								aAppleWinBootSector[ nOffsetData+3 ] = 0x80 | 'D';
+							}
+						}
+					}
+					else
+					{
+						FILE *pFile = fopen( g_cmdLine.sBootSectorFileName.c_str(), "rb" );
+						if (pFile)
+						{
+							size_t nSize = MIN(g_cmdLine.nBootSectorFileSize, nDiskSize );
+							size_t nRead = fread( pBootSector, 1, nSize, pFile );
+							fclose( pFile );
+
+							if (g_cmdLine.nBootSectorFileSize > nDiskSize)
+							{
+								char Message[ 256 ];
+								sprintf_s( Message
+									, "WARNING: Custom boot sector (%zu) is larger then the disk image (%zu)!\n"
+									  "\n"
+									  "Restricting boot sector to disk image size."
+									, g_cmdLine.nBootSectorFileSize
+									, nDiskSize
+								);
+								FrameMessageBox( Message, pTitle, MB_OK | MB_ICONINFORMATION );
+							}
+						}
+						else
+						{
+							FrameMessageBox( TEXT("WARNING: Couldn't open custom boot sector file.\n\nNo boot sector written."), pTitle, MB_OK | MB_ICONERROR );
 						}
 					}
 
-					memcpy( pDiskBuffer, gpBootSector, gnBootSectorSize );
+					memcpy( pDiskBuffer, pBootSector, nBootSectorSize );
 					fwrite( pDiskBuffer, 1, nDiskSize, hFile );
 					fclose( hFile );
+
+					if (!bUseAppleWinBootSector)
+					{
+						delete [] pBootSector;
+					}
 				}
 				else
 				{
