@@ -2645,7 +2645,9 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 					fclose( hFile );
 				}
 				else
+				{
 					MessageBox( hwnd, TEXT("ERROR: Couldn't open new disk image."), pTitle, MB_OK );
+				}
 			}
 		}
 	}
