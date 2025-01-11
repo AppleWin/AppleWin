@@ -338,6 +338,12 @@ IDR_MOCKINGBOARD_D_FW   FIRMWARE                "Mockingboard-D.rom"
 IDR_MOUSEINTERFACE_FW   FIRMWARE                "MouseInterface.rom"
 IDR_THUNDERCLOCKPLUS_FW FIRMWARE                "ThunderClockPlus.rom"
 IDR_TKCLOCK_FW          FIRMWARE                "TKClock.rom"
+/// <summary>
+/// When a user uses the right-click disk pop-up menu to format a new disk image
+/// We write our own custom boot sector so the user doesn't crash to the monitor when booting it.
+/// Technically not firmware but since it never changes we put this resource here.
+/// </summary>
+IDR_BOOT_SECTOR         FIRMWARE                "Firmware/BootSector/Bootsector.bin"
 
 /////////////////////////////////////////////////////////////////////////////
 //
