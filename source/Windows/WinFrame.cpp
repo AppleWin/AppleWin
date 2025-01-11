@@ -2755,7 +2755,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 									"Is this image using a ProDOS sector order?\n"
 									"(No will use DOS 3.3 sector order)"
 									, "Format", MB_ICONWARNING|MB_YESNO);
-								eSectorOrder = (res = IDYES)
+								eSectorOrder = (res == IDYES)
 								             ? INTERLEAVE_PRODOS_ORDER
 								             : INTERLEAVE_DOS33_ORDER
 							                 ;
