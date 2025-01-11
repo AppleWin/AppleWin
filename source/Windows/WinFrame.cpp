@@ -29,10 +29,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 #include <sstream>
 #include <ctime>
-
-#define _HAS_CXX17 1
-#include <filesystem>
-
+#if _MSVC_LANG >= 201703L // Compiler option: /std:c++17
+	#define _HAS_CXX17 1
+	#include <filesystem>
+#endif
 #include "Windows/Win32Frame.h"
 #include "Windows/AppleWin.h"
 #include "CmdLine.h"
