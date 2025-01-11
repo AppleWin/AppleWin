@@ -2601,7 +2601,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 					char   *pDiskBuffer = new char[ nDiskSize ];
 					memset( pDiskBuffer, 0, nDiskSize );
 
-					// See: applewin_boot_sector
+					// See: firmware/BootSector/
 					uint8_t aAppleWinBootSector[256] =
 					{	// 0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
 						0x01,0xA6,0x2B,0x8A,0x20,0x5D,0x08,0x8D,0x00,0xC0,0x8D,0x0C,0xC0,0x8D,0x0E,0xC0, // 00:
