@@ -65,6 +65,10 @@
 				<param name="Name" value="Hard Disk Images">
 				<param name="Local" value="ddi-harddisk.html">
 				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Disk Sizes">
+				<param name="Local" value="ddi-sizes.html">
+				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Using The Toolbar">
