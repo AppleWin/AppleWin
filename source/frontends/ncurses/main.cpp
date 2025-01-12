@@ -12,6 +12,7 @@
 #include "linux/context.h"
 #include "frontends/common2/fileregistry.h"
 #include "frontends/common2/programoptions.h"
+#include "frontends/common2/argparser.h"
 #include "frontends/common2/commoncontext.h"
 #include "frontends/ncurses/world.h"
 #include "frontends/ncurses/nframe.h"
@@ -96,7 +97,7 @@ namespace
   {
     if (options.headless)
     {
-      std::cout << "Press Ctrl-C to quit." << std::endl;
+      std::cerr << "Press Ctrl-C to quit." << std::endl;
     }
 
     bool quit = false;
@@ -107,7 +108,7 @@ namespace
     } while (!quit && !na2::g_stop);
   }
 
-  int run_ncurses(int argc, const char * argv [])
+  int run_ncurses(int argc, char *const argv[])
   {
     common2::EmulatorOptions options;
     const bool run = getEmulatorOptions(argc, argv, common2::OptionsType::applen, "ncurses", options);
@@ -144,7 +145,7 @@ namespace
 
 }
 
-int main(int argc, const char * argv [])
+int main(int argc, char *const argv[])
 {
   try
   {
