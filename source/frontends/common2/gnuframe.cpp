@@ -66,7 +66,17 @@ namespace
       }
     }
 
-    throw std::runtime_error("Cannot found the resource path: " + target);
+    // this is now used only for g_sProgramDir
+    // which only matters for Debug Symbols and Printer Filename
+    // let's be tolerant and use cwd
+
+    char szFilename[MAX_PATH];
+    if (GetCurrentDirectory(sizeof(szFilename), szFilename))
+    {
+      return std::string(szFilename) + PATH_SEPARATOR;
+    }
+
+    throw std::runtime_error("Cannot find the resource path for: " + target);
   }
 
 }

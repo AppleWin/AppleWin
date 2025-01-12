@@ -12,7 +12,7 @@
 #include "CardManager.h"
 #include "Log.h"
 #include "Utilities.h"
-#include "SoundCore.h"
+#include "Keyboard.h"
 #include "CPU.h"
 #include "Riff.h"
 #include "SaveState.h"
@@ -117,6 +117,7 @@ void InitialiseEmulator(const AppMode_e mode)
   Snapshot_Startup();
 
   DebugInitialize();
+  KeybReset();
 }
 
 void DestroyEmulator()
