@@ -54,5 +54,3 @@ protected:
 
   bool myAutoBoot;  // non const to allow settings change
 };
-
-int MessageBox(HWND, LPCSTR lpText, LPCSTR lpCaption, UINT uType);

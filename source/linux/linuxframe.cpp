@@ -67,7 +67,6 @@ LinuxFrame::LinuxFrame(const bool autoBoot) : myAutoBoot(autoBoot)
 {
   const std::array<int, 4> version = getVersionNumbers();
   SetAppleWinVersion(version[0], version[1], version[2], version[3]);
-  g_hFrameWindow = this;
 }
 
 void LinuxFrame::Initialize(bool resetVideoState)
@@ -178,7 +177,9 @@ std::shared_ptr<NetworkBackend> LinuxFrame::CreateNetworkBackend(const std::stri
 #endif
 }
 
+#ifndef _WIN32
 int MessageBox(HWND, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 {
   return GetFrame().FrameMessageBox(lpText, lpCaption, uType);
 }
+#endif

@@ -3,6 +3,7 @@
 #include "frontends/common2/ptreeregistry.h"
 #include "frontends/libretro/environment.h"
 
+#include "Registry.h"
 #include "Common.h"
 #include "Card.h"
 #include "Video.h"

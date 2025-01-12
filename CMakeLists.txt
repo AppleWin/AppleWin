@@ -49,8 +49,11 @@ include_directories(source)
 
 add_subdirectory(source)
 add_subdirectory(resource)
-add_subdirectory(source/linux/libwindows)
 add_subdirectory(test/TestCPU6502)
+
+if (NOT WIN32)
+  add_subdirectory(source/linux/libwindows)
+endif()
 
 if (BUILD_LIBRETRO OR BUILD_APPLEN OR BUILD_SA2)
   add_subdirectory(source/frontends/common2)

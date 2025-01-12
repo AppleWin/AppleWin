@@ -51,8 +51,13 @@ target_link_libraries(applewin_libretro PRIVATE
   $<${static_stdcpp_fs}:stdc++fs>
   appleii
   common2
-  windows
   )
+
+if (NOT WIN32)
+  target_link_libraries(applewin_libretro PUBLIC
+    windows
+    )
+endif()
 
 # just call it "applewin_libretro.so" as per libretro standard
 set_target_properties(applewin_libretro PROPERTIES PREFIX "")

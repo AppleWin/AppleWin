@@ -63,8 +63,13 @@ target_link_libraries(sa2 PRIVATE
   OpenGL::GL
   appleii
   common2
-  windows
   )
+
+if (NOT WIN32)
+  target_link_libraries(sa2 PUBLIC
+    windows
+    )
+endif()
 
 target_link_directories(sa2 PRIVATE
   ${SDL2_LIBRARY_DIRS}
