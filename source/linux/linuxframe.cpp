@@ -177,7 +177,9 @@ std::shared_ptr<NetworkBackend> LinuxFrame::CreateNetworkBackend(const std::stri
 #endif
 }
 
+#ifndef _WIN32
 int MessageBox(HWND, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 {
   return GetFrame().FrameMessageBox(lpText, lpCaption, uType);
 }
+#endif
