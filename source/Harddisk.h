@@ -136,10 +136,10 @@ private:
 	BYTE GetNumConnectedDevices(void);
 	BYTE GetProDOSBlockDeviceUnit(void);
 	HardDiskDrive* GetUnit(void);
-	BYTE CmdExecute(HardDiskDrive* pHDD);
+	BYTE CmdExecute(HardDiskDrive* pHDD, const ULONG nExecutedCycles);
 	BYTE CmdStatus(HardDiskDrive* pHDD);
-	void SetIdString(WORD addr, const char* str);
-	BYTE SmartPortCmdStatus(HardDiskDrive* pHDD);
+	void SetIdString(const WORD addr, const char* str, const ULONG nExecutedCycles);
+	BYTE SmartPortCmdStatus(HardDiskDrive* pHDD, const ULONG nExecutedCycles);
 	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo, const bool is16bit = false);
 	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, const UINT unit);
 	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, const UINT unit, const UINT version);
