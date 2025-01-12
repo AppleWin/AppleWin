@@ -15,29 +15,37 @@
 Disk Images</font></h2>
 
 <hr size="4">
-<p>To create a new disk image,
-all you have to do is tell AppleWin to use an image file which doesn't
-already exist and the emulator will automatically create a new image
-file.&nbsp; Specifying a new disk image is like inserting a blank,
+<p>There are two ways in AppleWin to create a new floppy disk image.</p>
+
+<h3>Classic Disk Creation</h3>
+
+The first way is clicking on the drive icon and tell AppleWin to use an image file which <i>doesn't</i>
+already exist.&nbsp;  The emulator will automatically create a new 5.25" image
+(standard 140 KB, 16 sectors/track, 35 tracks) file. (See <a href="ddi-sizes.html">Disk Sizes</a> for more information.)
+
+<p><b>NOTE:</b> This disk will NOT be <i>bootable</i>. You will need to <i>format</i> the disk (keep reading) to put a File System on it and (optionally) copy a Disk Operating System (DOS 3.3, ProDOS, etc.) onto it.  This will make the disk bootable.</p>
+
+Specifying a new disk image is like inserting a blank,
 unformatted floppy disk into a real drive.&nbsp; This means that
-the image must be formatted by emulator before it can be used.
-Specifically, this is what you'd do using DOS 3.3:</p>
+the image must be formatted (either by the emulator or some other utility) before it can be used.
+Specifically, this is what you would do using DOS 3.3:</p>
 
 <ol>
+  <li>Click on the Drive 1 <img src="img/tb-drv1.png" /> toolbar button (or press <span style="font-family: Courier New,Courier,monospace;">F3</span>)</li>
 
-  <li>Load a master DOS 3.3 disk
-image in drive 1 and boot the emulated Apple. </li>
+  <li>Select a <strong>MASTER.DSK</strong> DOS 3.3 disk image for drive 1.</li>
 
-  <li>Click on the Drive 1
-toolbar button. </li>
+  <li>Boot the emulated Apple by clicking on the <img src="img/tb-run.png" /> button (or press <span style="font-family: Courier New,Courier,monospace;">F2</span>). </li>
 
-  <li>Instead of selecting a disk
-image from the list, type in a name for a new disk image and press
-enter. </li>
+  <li>Click on the Drive 1 <img src="img/tb-drv1.png" /> toolbar button (or press (<span style="font-family: Courier New,Courier,monospace;">F3</span>) again.</li>
 
-  <li>Type in a program that you
-want DOS to run whenever this new disk is booted. A simple but useful
-program is:<br>
+  <li>Instead of selecting a disk image from the list, type in a name for a new disk image and press enter.
+  <br>
+  <br><b>NOTE:</b> The filename SHOULD end in  <span style="font-family: Courier New,Courier,monospace;">.DSK</span> or  <span style="font-family: Courier New,Courier,monospace;">.DO</span>.
+  <br></li>
+
+  <li>Type in a program that you want DOS to run whenever this new disk is booted. A simple but useful
+program is this Applesoft BASIC program:<br>
 
     <br>
 
@@ -50,7 +58,13 @@ CHR$(4);"CATALOG"</span><font face="Courier New"><br>
   </li>
 
   <li>Type <span style="font-family: Courier New,Courier,monospace;">"INIT
-HELLO"</span> to initialize (format) the disk image. </li>
+HELLO"</span> to initialize (format) the disk image. This will:
+  <ul>
+    <li>Put the DOS 3.3 File System on the disk,</li>
+    <li>Write DOS 3.3 to the first 2 tracks and make the disk bootable,</li>
+    <li>Write your program to disk.</li>
+  </ul>
+</li>
 
 </ol>
 
@@ -63,10 +77,150 @@ Disk Images</a> topic for more information. </p>
 <p>Please note that not all disk image types supported by
 AppleWin can be created in this manner.&nbsp; Since there is no way
 to detect the image type from the image itself, it is determined by the
-given file extension only. Four extensions are allowed: (.DSK, .DO,
-.NIB, .WOZ). The first two create a "DOS Order Image", .NIB creates
+given file extension only. Six extensions are allowed:</p>
+
+<ul>
+  <li>.DSK,</li>
+  <li>.DO,</li>
+  <li>.PO,</li>
+  <li>.HDV</li>
+  <li>.NIB, and</li>
+  <li>.WOZ.</li>
+</ul>
+<p>The first two create a "DOS Order Image", .PO and .HDV creates a "ProDOS Order Image", .NIB creates
 a "Nibble Image" and .WOZ creates an empty .WOZ image.&nbsp; If the extension is completely omitted,
 ".DSK" will be chosen by default.&nbsp; For more information, see <a href="ddi-formats.html">Disk Image Formats</a>.</p>
+
+<h3>New Disk Creation</h3>
+
+Alternatively, for finer control, you can right-click on the drive icon and select the menu option <strong>New disk image...</strong>
+<br>
+<br><img src="img/drive_popup_menu.png" />
+<br>
+<p><b>Note:</b> This disk will be <i>bootable</i> but it <i>won't</i> have a File System or Disk Operating System (DOS 3.3, ProDOS, etc.) on it.</p>
+
+
+
+<h3>Bootable Disks, Data Disks, File Systems, and Disk Operating Systems</h3>
+
+<p>When you use AppleWin's <strong>New disk image...</strong> to create a new blank disk it will be <i>bootable</i> since it place a 256 byte AppleWin-provided boot sector; this bootable disk is called a <i>data</i> disk.</p>
+
+<br>
+<img src="img/disk_boot_data_disk.png" />
+
+<p>However, all new disks will NOT have a File System or Disk Operating System (DOS 3.3, ProDOS, etc.) on it.</p>  A File System lets you name and store files on the disk.  A standard Disk Operating System lets you choose which applications or files to run, load, or save.
+
+<p>To make a disk usable under AppleWin you will need to format it -- either with AppleWin or some other utility (see their respective manual) -- which puts a File System on it, and optionally a DOS on it.</p>
+
+<h4>To put a File System on an data disk:</h4>
+
+<ol>
+  <li>Make sure your disk it <i>not</i> mounted in the disk drive.&nbsp; If it is, right-click on the drive button and select <strong>Eject.</strong>
+<br>
+<img src="img/disk_eject.png"></li>
+
+  <li>Right-click on the drive button and select either:
+  <br><strong>Format DOS 3.3 disk image</strong>
+  <br><img src="img/disk_format_dos33_data.png" />
+  <br>
+  <br>or
+  <br>
+  <br><strong>Format ProDOS disk image...</strong>
+  <br><img src="img/disk_format_prodos_data.png" />
+  </li>
+
+  <li>You will see a warning depending on which OS you picked:
+
+  <br>
+  <img src="img/disk_format_dos33_warning.png" />
+  <br>
+  <img src="img/disk_format_prodos_warning.png" />
+  </li>
+
+  <li>You can then mount this disk and save/copy files to it.</li>
+</ol>
+
+<h3>HOWTO: Put an Operating System on new disk:</h3>
+
+ <p>When you make a <strong>New disk image</strong> AppleWin puts a boot sector on it.  You can customize the boot sector -- this can actually be any binary file, even an a bootable disk image!</p>
+
+<p>Normally to put an Disk Operating System on it you would either need to a disk utility such as Copy ][+, CiderPress -- but we can take advantage of the custom boot sector and AppleWin's <strong>Select boot sector file...</strong> option to <i>simultaneously</i> place both a File System and Operating System on it.</p>
+
+<h4>To put DOS 3.3 on a blank disk:</h4>
+
+<ol>
+  <li>Make sure your disk it <i>not</i> mounted in the disk drive.&nbsp; If it is, right-click on the drive button and select <strong>Eject.</strong>
+  <br>
+  <img src="img/disk_eject.png" />
+  </li>
+
+  <li>Right-click on the drive button and select <strong>Select boot sector file...</strong></li>
+  <br><img src="img/disk_select_boot_sector.png" />
+  </li>
+
+  <li>AppleWin will show the currect boot sector.  By default it will use one built into AppleWin.
+  <br>
+  <img src="img/disk_default_boot_sector.png" />
+  </li>
+
+  <li>Select <strong>Yes</strong> then select a bootable DOS 3.3 disk such as <strong>MASTER.DSK</strong>
+  <br>
+  <img src="img/disk_select_bootsector_dos.png" />
+  </li>
+
+  <li>Right-click on the drive button and select <strong>New 5.25" disk image...</strong>
+  <br>
+  <img src="img/disk_new_140kb_disk.png" />
+  <p><b>NOTE:</b> For DOS 3.3 you MUST select a 5.25" disk since Apple DOS 3.3 does NOT suppport 3.5" or hard drives.</p>
+  </li>
+
+  <li>Type in a name for your disk. It MUST end in .DSK or .DO.</li>
+
+  <li>You can now mount and boot your new disk image.</li>
+
+</ol>
+
+<h4>To put ProDOS on a blank disk:</h4>
+
+<ol>
+  <li>Make sure your disk it <i>not</i> mounted in the disk drive.&nbsp; If it is, right-click on the drive button and select <strong>Eject.</strong>
+<br>
+<img src="img/disk_eject.png" /img></li>
+
+  <li>Right-click on the drive button and select <strong>Select boot sector file...</strong>
+  <br>
+  <img src="img/disk_select_boot_sector.png" />
+  </li>
+
+  <li>AppleWin will show the currect boot sector.  By default it will use one built into AppleWin.
+  <br>
+  <img src="img/disk_default_boot_sector.png" />
+  </li>
+
+  <li>Select a bootable ProDOS disk such as <strong>ProDOS_2_4_3.po</strong>
+  <br>
+  <img src="img/disk_select_bootsector_prodos.png" /></li>
+
+  <li>Right-click on the drive button and select <strong>New disk image...</strong>.
+  <br>
+  <p><b>NOTE:</b> For ProDOS you can select <i>any</i> of the disk sizes since they are all supported by ProDOS.</p></li>
+
+  <li>Type in a name for your disk. It MUST end in .PO or .HDV.</li>
+
+  <li>You can now mount and boot your new disk image.</li>
+</ol>
+
+<h3>More Disk Tools</h3>
+
+There are various third-party utilities to create and modify disk images.  Three popular ones are:
+
+<ul>
+  <li><a href="https://ciderpress2.com/">CiderPress 2</a> (newer)</li>
+
+  <li><a href="https://a2ciderpress.com/">CiderPress</a> (older)</li>
+
+  <li><strong>Copy ][+</strong>.  <b>NOTE:</b> If you are modifying ProDOS disks you will want to use one of the latter versions since earlier verions have various ProDOS bugs in them.</li>
+</ul>
 
 </body>
 </html>
