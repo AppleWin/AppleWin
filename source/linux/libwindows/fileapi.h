@@ -71,4 +71,5 @@ HANDLE CreateFile(LPCTSTR               lpFileName,
 
 DWORD GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh);
 
+// non "/" terminated
 DWORD GetCurrentDirectory(DWORD, char *);
