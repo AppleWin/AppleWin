@@ -1,10 +1,8 @@
 #pragma once
 
-#include "wincompat.h"
 #include <string>
 #include <map>
 #include <memory>
-#include <cstring>
 
 class Registry
 {
@@ -23,9 +21,3 @@ public:
   virtual std::map<std::string, std::map<std::string, std::string>> getAllValues() const = 0;
 
 };
-
-BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, uint32_t chars);
-BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t *value);
-BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, BOOL *value);
-void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::string & buffer);
-void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t value);

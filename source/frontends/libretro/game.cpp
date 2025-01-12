@@ -7,6 +7,7 @@
 #include "frontends/common2/ptreeregistry.h"
 #include "frontends/common2/programoptions.h"
 
+#include "Registry.h"
 #include "Common.h"
 #include "Interface.h"
 

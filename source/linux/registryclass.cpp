@@ -1,5 +1,6 @@
+#include "StdAfx.h"
 #include "registryclass.h"
-#include "windows.h"
+#include "Registry.h"
 #include "Log.h"
 
 std::shared_ptr<Registry> Registry::instance;

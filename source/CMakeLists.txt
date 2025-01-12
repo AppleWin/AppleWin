@@ -272,9 +272,11 @@ target_link_libraries(appleii PRIVATE
   ZLIB::ZLIB
   )
 
-target_link_libraries(appleii PUBLIC
-  windows
-  )
+if (NOT WIN32)
+  target_link_libraries(appleii PUBLIC
+    windows
+    )
+endif()
 
 target_link_directories(appleii PRIVATE
   ${YAML_LIBRARY_DIRS}
