@@ -61,6 +61,9 @@
 #define IDB_CHARSET82                   158
 #define IDB_CHARSET8C                   159
 #define IDB_DEBUG_FONT_7_by_8           160
+#define IDR_OS_DOS33                    161
+#define IDR_OS_PRODOS243                162
+#define IDR_BOOT_SECTOR_PRODOS243       163
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
