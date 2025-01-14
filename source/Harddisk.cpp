@@ -1033,26 +1033,19 @@ HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
 	return &m_hardDiskDrive[m_unitNum - 1];
 }
 
-// Apple II's MMU could be setup so that read & write memory is different,
-// so can't use 'mem' directly, instead use CpuWrite(). (GH#1319)
-void HarddiskInterfaceCard::SetIdString(const WORD addr, const char* str, const ULONG nExecutedCycles)
+void HarddiskInterfaceCard::SetIdString(std::vector<BYTE>& status, const std::string& idStr)
 {
-	BYTE idStrLen = 0;
-	WORD idStrAddr = addr + 1;
+	const BYTE kMaxIdStrLen = 16;
+	BYTE idStrLen = idStr.length();
+	if (idStrLen > kMaxIdStrLen)
+		idStrLen = kMaxIdStrLen;
+	status.push_back(idStrLen);	// Set 'ID string length'
 
-	for (UINT i = 0; i < 16; i++)
-		CpuWrite(idStrAddr + i, ' ', nExecutedCycles);	// ID string padded with ASCII spaces
+	for (UINT i = 0; i < idStrLen; i++)
+		status.push_back(idStr[i]);
 
-	if (str == NULL)
-		return;
-
-	while (*str && idStrLen < 16)
-	{
-		idStrLen++;
-		CpuWrite(idStrAddr++, *str++, nExecutedCycles);
-	}
-
-	CpuWrite(addr, idStrLen, nExecutedCycles);	// Finish by writing 'ID string length'
+	for (UINT i = idStrLen; i < kMaxIdStrLen; i++)
+		status.push_back(' ');	// ID string padded with ASCII spaces
 }
 
 BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD, const ULONG nExecutedCycles)
@@ -1069,8 +1062,8 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD, const ULONG 
 
 	//
 
-	WORD statusListAddr = pHDD->m_memblock;
 	BYTE r = DEVICE_OK;
+	std::vector<BYTE> status;
 
 	if (m_unitNum == 0)	// Unit-0: SmartPort Controller
 	{
@@ -1082,19 +1075,18 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD, const ULONG 
 		case SP_Cmd_status_GETDIB:
 		{
 			// SmartPort driver status (8 bytes)
-			CpuWrite(statusListAddr++, numDevices, nExecutedCycles);
+			status.push_back(numDevices);
 			for (UINT i = 0; i < 7; i++)
-				CpuWrite(statusListAddr++, 0, nExecutedCycles);	// reserved
+				status.push_back(0);		// reserved
 			if (m_statusCode == SP_Cmd_status_STATUS)
 				break;
 			// Device Information Block (DIB)
 			std::string idStr = "AppleWin SP";
-			SetIdString(statusListAddr, idStr.c_str(), nExecutedCycles);
-			statusListAddr += 17;
-			CpuWrite(statusListAddr++, 0x00, nExecutedCycles);	// device type (0x00: Apple II memory expansion card)
-			CpuWrite(statusListAddr++, 0x00, nExecutedCycles);	// device subtype (0x00: Apple II memory expansion card)
-			CpuWrite(statusListAddr++, fwVerMajor, nExecutedCycles);	// f/w version (major)
-			CpuWrite(statusListAddr++, fwVerMinor, nExecutedCycles);	// f/w version (minor)
+			SetIdString(status, idStr);
+			status.push_back(0x00);			// device type (0x00: Apple II memory expansion card)
+			status.push_back(0x00);			// device subtype (0x00: Apple II memory expansion card)
+			status.push_back(fwVerMajor);	// f/w version (major)
+			status.push_back(fwVerMinor);	// f/w version (minor)
 			break;
 		}
 		case SP_Cmd_status_GETDCB:
@@ -1120,12 +1112,12 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD, const ULONG 
 			// . b3=format allowed, b2=media write protected (block devices only), b1=device currently interrupting (//c only), b0=device currently open (char device only)
 			BYTE generalStatus = isImageLoaded ? 0xF8 : 0xE8;			// Loaded: b#11111000: bwrlf--- / Not loaded: b#11101000: bwr-f---
 			if (pHDD->m_bWriteProtected) generalStatus |= (1 << 2);
-			CpuWrite(statusListAddr++, generalStatus, nExecutedCycles);
+			status.push_back(generalStatus);
 
 			const UINT imageSizeInBlocks = isImageLoaded ? GetImageSizeInBlocks(pHDD->m_imagehandle) : 0;
-			CpuWrite(statusListAddr++, imageSizeInBlocks & 0xff, nExecutedCycles);			// num blocks (lo)
-			CpuWrite(statusListAddr++, (imageSizeInBlocks >> 8) & 0xff, nExecutedCycles);	// num blocks (med)
-			CpuWrite(statusListAddr++, (imageSizeInBlocks >> 16) & 0xff, nExecutedCycles);	// num blocks (hi)
+			status.push_back(imageSizeInBlocks & 0xff);			// num blocks (lo)
+			status.push_back((imageSizeInBlocks >> 8) & 0xff);	// num blocks (med)
+			status.push_back((imageSizeInBlocks >> 16) & 0xff);	// num blocks (hi)
 
 			if (m_statusCode == SP_Cmd_status_STATUS)
 				break;
@@ -1134,12 +1126,11 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD, const ULONG 
 			std::string idStr = "AppleWin SP D#";	// + "01".."99" (device number in decimal)
 			idStr += (char)('0' + m_unitNum / 10);
 			idStr += (char)('0' + m_unitNum % 10);
-			SetIdString(statusListAddr, idStr.c_str(), nExecutedCycles);
-			statusListAddr += 17;
-			CpuWrite(statusListAddr++, 0x02, nExecutedCycles);	// device type (0x02: Hard disk)
-			CpuWrite(statusListAddr++, 0x20, nExecutedCycles);	// device subtype (0x20: Hard disk)
-			CpuWrite(statusListAddr++, fwVerMajor, nExecutedCycles);	// f/w version (major)
-			CpuWrite(statusListAddr++, fwVerMinor, nExecutedCycles);	// f/w version (minor)
+			SetIdString(status, idStr);
+			status.push_back(0x02);			// device type (0x02: Hard disk)
+			status.push_back(0x20);			// device subtype (0x20: Hard disk)
+			status.push_back(fwVerMajor);	// f/w version (major)
+			status.push_back(fwVerMinor);	// f/w version (minor)
 			break;
 		}
 		case SP_Cmd_status_GETDCB:
@@ -1149,6 +1140,16 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD, const ULONG 
 			r = BADCTL;
 			break;
 		}
+	}
+
+	if (r == DEVICE_OK)
+	{
+		// Apple II's MMU could be setup so that read & write memory is different,
+		// so can't use 'mem' directly, instead use CpuWrite(). (GH#1319)
+		// TODO: add checks that writes don't hit I/O space or ROM
+		WORD statusListAddr = pHDD->m_memblock;
+		for (BYTE i : status)
+			CpuWrite(statusListAddr++, i, nExecutedCycles);
 	}
 
 	return r;

@@ -138,7 +138,7 @@ private:
 	HardDiskDrive* GetUnit(void);
 	BYTE CmdExecute(HardDiskDrive* pHDD, const ULONG nExecutedCycles);
 	BYTE CmdStatus(HardDiskDrive* pHDD);
-	void SetIdString(const WORD addr, const char* str, const ULONG nExecutedCycles);
+	void SetIdString(std::vector<BYTE>& status, const std::string& idStr);
 	BYTE SmartPortCmdStatus(HardDiskDrive* pHDD, const ULONG nExecutedCycles);
 	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo, const bool is16bit = false);
 	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, const UINT unit);
