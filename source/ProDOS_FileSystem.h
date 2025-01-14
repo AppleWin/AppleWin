@@ -529,37 +529,3 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		*pDst = 0;
 		return (pDst - pBeg); 
 	}
-
-#if 0
-	// @param nFileAccessFlags  See: ACCESS_*
-	// ------------------------------------------------------------------------
-	void ProDOS_Util_AddFile (uint8_t* pDiskBytes, char* pFileName, size_t nFileSize, int nFileAccessFlags)
-	{
-		if (!pDiskBytes) return;
-		if (!pFileName) return;
-
-		// Check if we have any sub-directories
-		size_t      nLen = strlen( pFileName );
-		size_t      iPrefix = 0;
-		std::string sPrefix;
-
-		for (int iPath = nLen - 1; iPath > 0; iPath--)
-		{
-			if (pFileName[iPath] == '/')
-			{
-				iPrefix = iPath;
-				break;
-			}
-		}
-
-		// Handle trivial case of root directory: "/foo"
-		if (pFileName[0] == '/')
-		{
-			// The number of directories to recurse = number of '/' - 1
-			if (iPrefix)
-			{
-
-			}
-		}
-	}
-#endif
