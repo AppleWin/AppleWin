@@ -1400,6 +1400,7 @@ LRESULT Win32Frame::WndProc(
 			const int iButton = wparam-VK_F1;
 			if (KeybGetCtrlStatus() && (wparam == VK_F3 || wparam == VK_F4))	// Ctrl+F3/F4 for drive pop-up menu (GH#817)
 			{
+				KeybUpdateCtrlShiftStatus(); // #1364
 				POINT pt;		// location of mouse click
 				pt.x = buttonx + BUTTONCX/2;
 				pt.y = buttony + BUTTONCY/2 + iButton * BUTTONCY;
@@ -2235,21 +2236,23 @@ void Util_ProDOS_FormatFileSystem (uint8_t *pDiskBytes, const size_t nDiskSize, 
 	int iNextDirBlock  = 0;
 	int iOffset;
 
-	ProDOS_VolumeHeader_t tVolume;
+	ProDOS_VolumeHeader_t  tVolume;
+	ProDOS_VolumeHeader_t *pVolume = &tVolume;
+	memset( pVolume, 0, sizeof(ProDOS_VolumeHeader_t) );
 
 	// Init Bitmap
-	tVolume.meta.bitmap_block = (uint16_t) (PRODOS_ROOT_BLOCK + nRootDirBlocks);
-	int nBitmapBlocks = ProDOS_BlockInitFree( pDiskBytes, nDiskSize, &tVolume );
+	pVolume->meta.bitmap_block = (uint16_t) (PRODOS_ROOT_BLOCK + nRootDirBlocks);
+	int nBitmapBlocks = ProDOS_BlockInitFree( pDiskBytes, nDiskSize, pVolume );
 
 	// Set boot blocks as in-use
 	for( int iBlock = 0; iBlock < PRODOS_ROOT_BLOCK; iBlock++ )
-		ProDOS_BlockSetUsed( pDiskBytes, &tVolume, iBlock );
+		ProDOS_BlockSetUsed( pDiskBytes, pVolume, iBlock );
 
 	for( int iBlock = 0; iBlock < nRootDirBlocks; iBlock++ )
 	{
-		iNextDirBlock = ProDOS_BlockGetFirstFree( pDiskBytes, nDiskSize, &tVolume );
+		iNextDirBlock = ProDOS_BlockGetFirstFree( pDiskBytes, nDiskSize, pVolume );
 		iOffset       = iNextDirBlock * PRODOS_BLOCK_SIZE;
-		ProDOS_BlockSetUsed( pDiskBytes, &tVolume, iNextDirBlock );
+		ProDOS_BlockSetUsed( pDiskBytes, pVolume, iNextDirBlock );
 
 		// Double Linked List
 		// [0] = prev
@@ -2270,38 +2273,208 @@ void Util_ProDOS_FormatFileSystem (uint8_t *pDiskBytes, const size_t nDiskSize, 
 	// Alloc Bitmap Blocks
 	for( int iBlock = 0; iBlock < nBitmapBlocks; iBlock++ )
 	{
-		int iBitmap = ProDOS_BlockGetFirstFree( pDiskBytes, nDiskSize, &tVolume );
-		ProDOS_BlockSetUsed( pDiskBytes, &tVolume, iBitmap );
+		int iBitmap = ProDOS_BlockGetFirstFree( pDiskBytes, nDiskSize, pVolume );
+		ProDOS_BlockSetUsed( pDiskBytes, pVolume, iBitmap );
 	}
 
-	tVolume.entry_len  = 0x27;
-	tVolume.entry_num  = (uint8_t) (PRODOS_BLOCK_SIZE / tVolume.entry_len);
-	tVolume.file_count = 0;
+	pVolume->entry_len  = 0x27;
+	pVolume->entry_num  = (uint8_t) (PRODOS_BLOCK_SIZE / pVolume->entry_len);
+	pVolume->file_count = 0;
 
 	if( *pVolumeName == '/' )
 		pVolumeName++;
 
 	size_t nLen = strlen( pVolumeName );
 
-	tVolume.kind = PRODOS_KIND_ROOT;
-	tVolume.len  = (uint8_t) nLen;
-	ProDOS_String_CopyUpper( tVolume.name, pVolumeName, 15 );
+	pVolume->kind = PRODOS_KIND_ROOT;
+	pVolume->len  = (uint8_t) nLen;
+	ProDOS_String_CopyUpper( pVolume->name, pVolumeName, 15 );
 
-	tVolume.access = 0
+	pVolume->access = 0
 		| ACCESS_D
 		| ACCESS_N
 		| ACCESS_B
-//		| ACCESS_I  -- no point to making the volume invis
 		| ACCESS_W
 		| ACCESS_R
 		;
 
 	// TODO:
-	//tVolume.access = config.access;
 	//tVolume.date   = config.date;
 	//tVolume.time   = config.time;
 
-	ProDOS_SetVolumeHeader( pDiskBytes, &tVolume, PRODOS_ROOT_BLOCK );
+	ProDOS_SetVolumeHeader( pDiskBytes, pVolume, PRODOS_ROOT_BLOCK );
+}
+
+//===========================================================================
+bool Util_ProDOS_CopyDOS ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, const uint8_t *pFileData, const size_t nFileSize )
+{
+	// Acc dnb??iwr /PRODOS.2.4.3    Blocks Size    Type    Aux   Kind  iNode Dir   Ver Min  Create    Time    Modified  Time
+	// --- -------- ---------------- ------ ------- ------- ----- ----- ----- ----- --- ---  --------- ------  --------- ------
+	// $E3 dnb---wr  PRODOS              34 $0042E8 SYS $FF $0000 sap 2 @0007 @0002 0.0 v80  30-DEC-23  2:43a  30-DEC-23  2:43a
+	int bAccess = 0
+		| ACCESS_D
+		| ACCESS_N
+		| ACCESS_B
+		| ACCESS_W
+		| ACCESS_R
+		;
+	ProDOS_FileHeader_t meta;
+	memset( &meta, 0, sizeof(ProDOS_FileHeader_t) );
+
+	meta.kind      = PRODOS_KIND_SAPL;
+	meta.len       = 6;
+	strcpy( meta.name, "PRODOS" );
+	meta.type      = 0xFF; // SYS
+	//  .inode     = TBD
+	//  .blocks    = TBD
+	meta.size      = nFileSize;
+	meta.date      = 0;
+	meta.time      = 0;
+	meta.cur_ver   = 0x00;
+	meta.min_ver   = 0x80;
+	meta.access    = bAccess;
+	meta.aux       = 0x0000; // ignored for SYS, since load address = $2000
+	meta.mod_date  = 0;
+	meta.mod_time  = 0;
+	//  .dir_block = TBD;
+
+	int iBase = ProDOS_BlockGetPathOffset( pDiskBytes, nullptr, "/" ); // On an empty disk this will be PRODOS_ROOT_OFFSET
+	int iDirBlock = iBase / PRODOS_BLOCK_SIZE;
+
+	ProDOS_VolumeHeader_t  tVolume;
+	ProDOS_VolumeHeader_t *pVolume = &tVolume;
+	memset( pVolume, 0, sizeof(ProDOS_VolumeHeader_t) );
+
+	ProDOS_GetVolumeHeader( pDiskBytes, pVolume, iDirBlock );
+
+#if _DEBUG
+	// Verify we have room in the current directory
+	int iFreeBlock   = ProDOS_DirGetFirstFreeEntry( pDiskBytes, pVolume, iBase );
+	assert(iFreeBlock > 0);
+#endif
+
+	int iKind        = PRODOS_KIND_DEL;
+	int nBlocksData  = (nFileSize + PRODOS_BLOCK_SIZE - 1) / PRODOS_BLOCK_SIZE;
+	int nBlocksIndex = 0; // Num Blocks needed for meta (Index)
+	int nBlocksTotal = 0;
+	int nBlocksFree  = 0;
+	int iNode        = 0; // Master Index, Single Index, or 0 if none
+	int iIndexBase   = 0; // Single Index
+	int iMasterIndex = 0; // master block points to N IndexBlocks
+
+	// Calculate size of meta blocks and kind of file
+	if (nFileSize <=   1*PRODOS_BLOCK_SIZE) // <= 512, 1 Blocks
+		iKind = PRODOS_KIND_SEED;
+	else
+	if (nFileSize > 256*PRODOS_BLOCK_SIZE) // >= 128K, 257-65536 Blocks
+	{
+		iKind        = PRODOS_KIND_TREE;
+		nBlocksIndex = (nBlocksData + (PRODOS_BLOCK_SIZE/2-1)) / (PRODOS_BLOCK_SIZE / 2);
+		nBlocksIndex++; // include master index block
+	}
+	else
+	if( nFileSize > PRODOS_BLOCK_SIZE ) // <= 128K, 2-256 blocks
+	{
+		iKind        = PRODOS_KIND_SAPL;
+		nBlocksIndex = 1; // single index = PRODOS_BLOCK_SIZE/2 = 256 data blocks
+	}
+
+	int iEntryOffset = ProDOS_DirGetFirstFreeEntry( pDiskBytes, pVolume, iBase );
+	nBlocksTotal = nBlocksIndex + nBlocksData;
+
+	for( int iBlock = 0; iBlock < nBlocksIndex; iBlock++ )
+	{
+		int iMetaBlock = ProDOS_BlockGetFirstFree( pDiskBytes, nDiskSize, pVolume );
+		if( !iMetaBlock )
+		{
+			return false; // out of disk space, no free room
+		}
+
+		// First Block has meta information -- blocks used for file
+		if (iBlock == 0)
+		{
+			iNode      = iMetaBlock;
+			iIndexBase = iMetaBlock * PRODOS_BLOCK_SIZE;
+		}
+		else
+		{
+			// PRODOS_KIND_SEED doesn't have an index block
+			if (iKind == PRODOS_KIND_TREE)
+			{
+				ProDOS_PutIndexBlock( pDiskBytes, iMasterIndex, iBlock, iMetaBlock );
+			}
+			// Not implemented PRODOS_
+			assert( iKind != PRODOS_KIND_TREE );
+		}
+
+		ProDOS_BlockSetUsed( pDiskBytes, pVolume, iMetaBlock );
+	}
+
+	// Copy Data
+	const uint8_t *pSrc  = pFileData;
+
+	for( int iBlock = 0; iBlock < nBlocksData; iBlock++ )
+	{
+		int  iDataBlock = ProDOS_BlockGetFirstFree( pDiskBytes, nDiskSize, pVolume );
+		if( !iDataBlock )
+		{
+			return false;
+		}
+
+		if (iBlock == 0)
+		{
+			if(iKind == PRODOS_KIND_SEED)
+			{
+				iNode = iDataBlock;
+			}
+		}
+
+		int iDstOffset = iDataBlock * PRODOS_BLOCK_SIZE;
+		uint8_t *pDst = pDiskBytes + iDstOffset;
+		bool     bLastBlock = iBlock == (nBlocksData - 1);
+
+		if (bLastBlock)
+		{
+			size_t nSlack = nFileSize % PRODOS_BLOCK_SIZE;
+			size_t nLastBlockSize = nSlack ? nSlack : PRODOS_BLOCK_SIZE;
+			memcpy( pDst, pSrc, nLastBlockSize );
+		}
+		else
+		{
+			memcpy( pDst, pSrc, PRODOS_BLOCK_SIZE );
+		}
+		pSrc += PRODOS_BLOCK_SIZE;
+		ProDOS_BlockSetUsed( pDiskBytes, pVolume, iDataBlock );
+
+		if (iKind == PRODOS_KIND_SAPL)
+		{
+			// Update single index block
+			if( iIndexBase )
+			{
+				ProDOS_PutIndexBlock( pDiskBytes, iIndexBase, iBlock, iDataBlock );
+			}
+		}
+		else
+		if (iKind == PRODOS_KIND_TREE)
+		{
+			// Update multiple index blocks
+			// NOT IMPLEMENTED
+			bool PRODOS_FILE_TYPE_TREE_NOT_IMPLEMENTED = true;
+			assert( iBlock );
+		}
+	}
+
+	// Update directory entry with meta information
+	meta.inode     = iNode;
+	meta.blocks    = nBlocksTotal;
+	meta.dir_block = iDirBlock;
+	ProDOS_PutFileHeader( pDiskBytes, iEntryOffset, &meta );
+
+	// Update Directory with Header
+	pVolume->file_count++;
+	ProDOS_SetVolumeHeader( pDiskBytes, pVolume, iDirBlock );
+
+	return 1;
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -2310,7 +2483,7 @@ void Util_ProDOS_FormatFileSystem (uint8_t *pDiskBytes, const size_t nDiskSize, 
 // 1 = Free
 // 0 = Used
 //===========================================================================
-void Util_DOS33_SetTrackSectorUsage ( uint8_t *pVTOC, const int nTrack, const int bSectorsFree )
+void Util_DOS33_SetTrackSectorUsage ( uint8_t *pVTOC, const int nTrack, const uint16_t bSectorsFree )
 {
 	int nOffset = 0x38 + (nTrack * 4);
 
@@ -2319,10 +2492,45 @@ void Util_DOS33_SetTrackSectorUsage ( uint8_t *pVTOC, const int nTrack, const in
 	//    1  7654 3210
 	//    2  -Wasted-
 	//    3  -Wasted-
+#if _DEBUG
+	std::string sFree;
+	std::string sUsed;
+	for( int iSector = 15; iSector >= 0; iSector-- )
+	{
+		bool bFree = (bSectorsFree >> iSector) & 1;
+		sFree.append( 1, (char)( bFree) | '0' );
+		sUsed.append( 1, (char)(!bFree) ^ '0' );
+		if ((iSector & 3) == 0)
+		{
+			sFree.append( 1, ' ' );
+			sUsed.append( 1, ' ' );
+		}
+	}
+	LogOutput("Track: %02X, VTOC[ %02X ]: %02X %02X %02X %02X -> %02X %02X,  Free: %s, Used: %s\n"
+		, nTrack
+		, nOffset
+		, pVTOC[ nOffset + 0 ]
+		, pVTOC[ nOffset + 1 ]
+		, pVTOC[ nOffset + 2 ]
+		, pVTOC[ nOffset + 3 ]
+		, (bSectorsFree >> 8) & 0xFF
+		, (bSectorsFree >> 0) & 0xFF
+		, sFree.c_str()
+		, sUsed.c_str()
+	);
+#endif
 	pVTOC[ nOffset + 0 ] = (bSectorsFree >> 8) & 0xFF;
 	pVTOC[ nOffset + 1 ] = (bSectorsFree >> 0) & 0xFF;
 	pVTOC[ nOffset + 2 ] = 0x00;
 	pVTOC[ nOffset + 3 ] = 0x00;
+}
+
+//===========================================================================
+void Util_DOS33_SetTrackUsed ( uint8_t *pDiskBytes, const int nVTOC_Track, int nTrackUsed )
+{
+	int nOffset = Util_GetTrackSectorOffset( nVTOC_Track, 0 );
+	uint8_t *pVTOC = &pDiskBytes[ nOffset ];
+	Util_DOS33_SetTrackSectorUsage( pVTOC, nTrackUsed, 0x0000 );
 }
 
 //===========================================================================
@@ -2378,11 +2586,11 @@ void Util_DOS33_FormatFileSystem ( uint8_t *pDiskBytes, const size_t nDiskSize, 
 	pDiskBytes[ nOffset + 0x37 ] = 0x01;                   // 256 Bytes/Sector Hi
 
 	uint8_t *pVTOC = &pDiskBytes[ nOffset ];
-	Util_DOS33_SetTrackSectorUsage( pVTOC, 0, 0x0000 ); // Track T00 can NEVER be free due to stupid DOS 3.3 design (1 byte bug of `BNE` instead of `BPL`)
-	for( int iTrack = 1; iTrack < nTracks; iTrack++ )
+	for( int iTrack = 0; iTrack < nTracks; iTrack++ )
 	{
-		if (iTrack == nVTOC_Track) continue;
-		Util_DOS33_SetTrackSectorUsage( pVTOC, iTrack, 0xFFFF ); // Tracks T01-T10, T12-T22 are free for use
+		/**/ if (iTrack ==           0) Util_DOS33_SetTrackSectorUsage(pVTOC, iTrack, 0x0000); // Track T00 can NEVER be free due to stupid DOS 3.3 design (1 byte bug of `BNE` instead of `BPL`)
+		else if (iTrack == nVTOC_Track) Util_DOS33_SetTrackSectorUsage(pVTOC, iTrack, 0x0000);
+		else /*                      */ Util_DOS33_SetTrackSectorUsage(pVTOC, iTrack, 0xFFFF); // Tracks T01-T10, T12-T22 are free for use
 	}
 }
 
@@ -2478,12 +2686,44 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	}
 
 	// Disk images QoL always enabled since they prompt which disk image to create/modify.
-	EnableMenuItem(hmenu, ID_DISKMENU_NEW_140K_DISK, MF_ENABLED);
-	EnableMenuItem(hmenu, ID_DISKMENU_NEW_800K_DISK, MF_ENABLED);
-	EnableMenuItem(hmenu, ID_DISKMENU_NEW_32MB_DISK, MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_NEW_PRODOS_140K_DISK, MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_NEW_PRODOS_160K_DISK, MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_NEW_PRODOS_800K_DISK, MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_NEW_PRODOS_32MB_DISK, MF_ENABLED);
 
-	EnableMenuItem(hmenu, ID_DISKMENU_FORMAT_PRODOS_DATA, MF_ENABLED);
-	EnableMenuItem(hmenu, ID_DISKMENU_FORMAT_DOS33_DATA, MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_NEW_DOS33_140K_DISK, MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_NEW_DOS33_160K_DISK, MF_ENABLED);
+
+	ModifyMenu    (hmenu, ID_DISKMENU_ADVANCED_SEPARATOR , MF_BYCOMMAND | MF_SEPARATOR , ID_DISKMENU_ADVANCED_SEPARATOR, 0 );
+	EnableMenuItem(hmenu, ID_DISKMENU_SELECT_BOOT_SECTOR , MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_NEW_BLANK_140K_DISK, MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_NEW_BLANK_160K_DISK, MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_NEW_BLANK_800K_DISK, MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_NEW_BLANK_32MB_DISK, MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_FORMAT_PRODOS_DISK , MF_ENABLED);
+	EnableMenuItem(hmenu, ID_DISKMENU_FORMAT_DOS33_DISK  , MF_ENABLED);
+
+#if _DEBUG
+	// Never hide menu options in debug build
+#else
+	// If SHIFT is pressed enable the advanced disk pop-up menus
+	// otherwise remove them (since there is no Win32 comamnd to hide menu items.)
+	//
+	// KeybGetCtrlStatus(); // Can't use since Ctrl-F3, Ctrl-F4 is shortcut
+	// KeybGetAltStatus();  // Can't use
+	bool bAdvanced = KeybGetShiftStatus(); // #1364
+	if (!bAdvanced)
+	{
+		RemoveMenu(hmenu, ID_DISKMENU_ADVANCED_SEPARATOR , MF_BYCOMMAND);
+		RemoveMenu(hmenu, ID_DISKMENU_SELECT_BOOT_SECTOR , MF_BYCOMMAND);
+		RemoveMenu(hmenu, ID_DISKMENU_NEW_BLANK_140K_DISK, MF_BYCOMMAND);
+		RemoveMenu(hmenu, ID_DISKMENU_NEW_BLANK_160K_DISK, MF_BYCOMMAND);
+		RemoveMenu(hmenu, ID_DISKMENU_NEW_BLANK_800K_DISK, MF_BYCOMMAND);
+		RemoveMenu(hmenu, ID_DISKMENU_NEW_BLANK_32MB_DISK, MF_BYCOMMAND);
+		RemoveMenu(hmenu, ID_DISKMENU_FORMAT_PRODOS_DISK , MF_BYCOMMAND);
+		RemoveMenu(hmenu, ID_DISKMENU_FORMAT_DOS33_DISK  , MF_BYCOMMAND);
+	}
+#endif
 
 	// Draw and track the shortcut menu.
 	int iCommand = TrackPopupMenu(
@@ -2540,16 +2780,19 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		}
 	}
 	else
-	if((iCommand == ID_DISKMENU_NEW_140K_DISK)
-	|| (iCommand == ID_DISKMENU_NEW_160K_DISK)
-	|| (iCommand == ID_DISKMENU_NEW_800K_DISK)
-	|| (iCommand == ID_DISKMENU_NEW_32MB_DISK))
+	if((iCommand == ID_DISKMENU_NEW_PRODOS_140K_DISK)
+	|| (iCommand == ID_DISKMENU_NEW_PRODOS_160K_DISK)
+	|| (iCommand == ID_DISKMENU_NEW_PRODOS_800K_DISK)
+	|| (iCommand == ID_DISKMENU_NEW_PRODOS_32MB_DISK)
+	|| (iCommand == ID_DISKMENU_NEW_DOS33_140K_DISK)
+	|| (iCommand == ID_DISKMENU_NEW_DOS33_160K_DISK))
 	{
-		const bool   bIsFloppy    = (iCommand != ID_DISKMENU_NEW_32MB_DISK);
-		const bool   bIsFloppy525 = ((iCommand == ID_DISKMENU_NEW_140K_DISK) || (iCommand == ID_DISKMENU_NEW_160K_DISK));
-		const bool   bIs40Track   = (iCommand == ID_DISKMENU_NEW_160K_DISK);
-		const bool   bIsUnidisk35 = (iCommand == ID_DISKMENU_NEW_800K_DISK);
-		const bool   bIsHardDisk  = (iCommand == ID_DISKMENU_NEW_32MB_DISK);
+		const bool   bIsDOS33     = ((iCommand == ID_DISKMENU_NEW_DOS33_140K_DISK ) || (iCommand == ID_DISKMENU_NEW_DOS33_160K_DISK));
+		const bool   bIsFloppy    =!((iCommand == ID_DISKMENU_NEW_PRODOS_800K_DISK) || (iCommand == ID_DISKMENU_NEW_PRODOS_32MB_DISK));
+		const bool   bIsFloppy525 = ((iCommand == ID_DISKMENU_NEW_PRODOS_140K_DISK) || (iCommand == ID_DISKMENU_NEW_PRODOS_160K_DISK) || bIsDOS33);
+		const bool   bIs40Track   = ((iCommand == ID_DISKMENU_NEW_PRODOS_160K_DISK) || (iCommand == ID_DISKMENU_NEW_DOS33_160K_DISK));
+		const bool   bIsUnidisk35 =  (iCommand == ID_DISKMENU_NEW_PRODOS_800K_DISK);
+		const bool   bIsHardDisk  =  (iCommand == ID_DISKMENU_NEW_PRODOS_32MB_DISK);
 		const size_t nDiskSize    = bIsHardDisk
 									? HARDDISK_32M_SIZE
 									: bIsUnidisk35
@@ -2560,7 +2803,6 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 									    ;
 
 		const TCHAR* pszTitle = TEXT("Select new blank disk image");
-		char szFilename[MAX_PATH];
 
 		time_t timestamp = time( NULL );
 		tm datetime = *localtime(&timestamp);
@@ -2573,20 +2815,258 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		int   min                = datetime.tm_min;
 		int   sec                = datetime.tm_sec;
 		strftime( mon, MAX_MONTH_LEN-1, "%b", &datetime );
-		sprintf_s( szFilename, "blank_%s_%04d_%3s_%02d_%02dh_%02dm_%02ds.%s"
+
+		std::string sExtension = bIsHardDisk
+			? ".hdv"
+			: bIsDOS33
+			  ? ".do"
+			  : ".po"
+			    ;
+
+		std::string sFileName( StrFormat(
+			  "blank_%s_%04d_%3s_%02d_%02dh_%02dm_%02ds.%s"
 			, bIsFloppy ? "floppy" : "hard"
 			, year, mon, day, hour, min, sec
-			, bIsFloppy ? "dsk" : "hdv" );
+			, sExtension.c_str()
+		));
 
 		std::string pathname = g_sCurrentDir;
-		pathname.append( szFilename );
+		pathname.append( sFileName );
 
 		const TCHAR *pTitle  = TEXT("New Disk Image");
 		const TCHAR *pSaveFilter = TEXT("All Files\0*.*\0");
-		int nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, szFilename, pSaveFilter );
+		char sPathName[ MAX_PATH ];
+		strncpy( sPathName, sFileName.c_str(), MAX_PATH-1 );
+		int nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, sPathName, pSaveFilter );
 		if (nRes)
 		{
-			pathname = szFilename;
+			pathname = sPathName;
+			if (FileExists(pathname))
+			{
+				nRes = FrameMessageBox(
+					  "WARNING: Disk image already exists!\n"
+					  "\n"
+					  "(ALL DATA WILL BE LOST!)\n"
+					  "\n"
+					  "Overwrite ?"
+					, pTitle
+					, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2 );
+				if (nRes == IDNO) nRes = 0;
+				else              nRes = IDOK;
+			}
+
+			if (nRes)
+			{
+				FILE *hFile = fopen( pathname.c_str(), "wb");
+				if (hFile)
+				{
+					uint8_t *pDiskBytes = new uint8_t[ nDiskSize ];
+					memset( pDiskBytes, 0, nDiskSize );
+
+					if (bIsDOS33)
+					{
+						// File System
+						int VTOC_TRACK = 0x11; // TODO: Allow user to over-ride via command-line argument? --vtoc 17
+						Util_DOS33_FormatFileSystem( pDiskBytes, nDiskSize, VTOC_TRACK );
+						
+						// Boot Sector + OS
+						const size_t nDOS33Size = 3 * 16 * 256; // First 3 tracks * 16 sectors/track * 256 bytes/sector
+						const BYTE  *pDOS33Data = GetResource(IDR_OS_DOS33, "FIRMWARE", nDOS33Size);
+						if (pDOS33Data)
+						{
+							memcpy( pDiskBytes, pDOS33Data, nDOS33Size );
+
+							// DOS 3.3 resides on Track 0, 1, 2
+							// Track 0 was already reserved when the file system was formatted.
+							Util_DOS33_SetTrackUsed( pDiskBytes, VTOC_TRACK, 1 );
+							Util_DOS33_SetTrackUsed( pDiskBytes, VTOC_TRACK, 2 );
+						}
+						else
+						{
+							FrameMessageBox( "WARNING: Could't find built-in DOS 3.3 Operating System!\n\nDisk will have no boot sector.", pTitle, MB_OK|MB_ICONINFORMATION);
+						}
+					}
+					else // ProDOS
+					{
+							const size_t   nProDOSSize = 0x42E8;
+							const uint8_t *pProDOSData = (uint8_t*) GetResource(IDR_OS_PRODOS243, "FIRMWARE", nProDOSSize);
+
+							const size_t   nBootSectorsSize = 2 * 512;
+							const uint8_t *pBootSectorsData = (uint8_t*) GetResource(IDR_BOOT_SECTOR_PRODOS243, "FIRMWARE", nBootSectorsSize);
+							assert(pBootSectorsData);
+							assert(pProDOSData);
+
+							SectorOrder_e eSectorOrder = INTERLEAVE_PRODOS_ORDER;
+							const char *pVolumeName = "BLANK";
+							Util_ProDOS_ForwardSectorInterleave( pDiskBytes, nDiskSize, eSectorOrder );
+							Util_ProDOS_FormatFileSystem       ( pDiskBytes, nDiskSize, pVolumeName  );
+							memcpy(pDiskBytes, pBootSectorsData, nBootSectorsSize);
+							Util_ProDOS_CopyDOS                ( pDiskBytes, nDiskSize, pVolumeName, pProDOSData, nProDOSSize );
+							Util_ProDOS_ReverseSectorInterleave( pDiskBytes, nDiskSize, eSectorOrder );
+					}
+
+					fwrite( pDiskBytes, 1, nDiskSize, hFile );
+					fclose( hFile );
+				}
+				else
+				{
+					MessageBox( hwnd, TEXT("ERROR: Couldn't open new disk image."), pTitle, MB_OK );
+				}
+			}
+		}
+	}
+	else // --- Advanced ---
+	if (iCommand == ID_DISKMENU_SELECT_BOOT_SECTOR)
+	{
+		// Default to directory of g_cmdLine.sBootSectorFileName;
+		char sDisplayFileName[ 256+1 ] = {0};
+		char sFilename[ MAX_PATH ] = {0};
+		const size_t nDisplayFileNameMax = sizeof(sDisplayFileName);
+		const size_t nFilenameMax        = sizeof(sFilename);
+		const TCHAR *pTitle  = TEXT("Select boot sector file");
+		const TCHAR *pExistFilter = // No *.nib;*.woz;*.gz;*.zip
+			TEXT("Floppy Disk Images (*.bin,*.dsk,*.do;*.po)\0"
+			                         "*.bin;*.dsk;*.do;*.po\0")
+			TEXT("Hard Disk Images (*.hdv;)\0"
+			                       "*.hdv\0")
+			TEXT("All Files\0*.*\0");
+
+		strncpy( sDisplayFileName, g_cmdLine.sBootSectorFileName.c_str(), nDisplayFileNameMax - 2);
+		strncpy( sFilename       , g_cmdLine.sBootSectorFileName.c_str(), nFilenameMax        - 2);
+
+		sDisplayFileName[nDisplayFileNameMax-1] = 0;
+		sFilename       [nFilenameMax       -1] = 0;
+
+		if (!g_cmdLine.nBootSectorFileSize)
+		{
+			strcpy( sDisplayFileName, "(Built-in AppleWin boot sector)" );
+		}
+		else
+		if (g_cmdLine.sBootSectorFileName.length() > (nDisplayFileNameMax-1))
+		{
+			// Convert long filename to "smart" ellipsis
+			// +126 = First 126 chars filename
+			// +  4 = "...."
+			// +126 = Last 126 chars of filename
+			//= 256 chars
+			const char *pHead = g_cmdLine.sBootSectorFileName.c_str();
+			const char *pTail = pHead + g_cmdLine.sBootSectorFileName.length() - 126;
+			sDisplayFileName[0] = 0;
+			strncpy( sDisplayFileName +   0, pHead , 126 );
+			strncpy( sDisplayFileName + 126, "....",   4 );
+			strncpy( sDisplayFileName + 130, pTail , 126 );
+		}
+
+		std::string sMessage( StrFormat(
+			  "Current boot sector file is: \n"
+			  "\n"
+			  "%s\n"
+			  "\n"
+			  "Use a custom boot sector file?\n"
+			, sDisplayFileName
+		));
+		
+		// Show dialog with current boot sector disk image
+		// Ask user if they wish to replace it
+		//
+		//   [Yes]    = Use custom boot sector
+		//   [No]     = Use AppleWin boot sector
+		//   [Cancel] = Quit
+		int nRes = FrameMessageBox(sMessage.c_str(), pTitle, MB_ICONWARNING | MB_YESNOCANCEL | MB_DEFBUTTON2);
+		if (nRes == IDNO)
+		{
+			g_cmdLine.nBootSectorFileSize = 0;
+			g_cmdLine.sBootSectorFileName = "";
+		}
+		else
+		if (nRes == IDYES)
+		{
+			int nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, false, sFilename, pExistFilter );
+			if (nRes)
+			{
+				char  sPath[ MAX_PATH];
+				DWORD res = GetFullPathName(sFilename, MAX_PATH, sPath, NULL);
+
+				FILE *pFile = fopen( sPath, "rb");
+				if (pFile)
+				{
+					fseek( pFile, 0, SEEK_END );
+					size_t nSize = ftell( pFile );
+					fseek( pFile, 0, SEEK_SET );
+					fclose( pFile );
+
+					if (nSize > 0)
+					{
+						g_cmdLine.sBootSectorFileName = sPath;
+						g_cmdLine.nBootSectorFileSize = nSize;
+					}
+					else
+					{
+						g_cmdLine.nBootSectorFileSize = 0;
+						g_cmdLine.sBootSectorFileName = "";
+						FrameMessageBox("ERROR: Couldn't read custom boot sector file.\n\nDefaulting to built-in AppleWin Boot Sector.", pTitle, MB_ICONERROR | MB_OK);
+					}
+				}
+				else
+				{
+					g_cmdLine.nBootSectorFileSize = 0;
+					g_cmdLine.sBootSectorFileName = "";
+					FrameMessageBox( "ERROR: Couldn't open custom boot sector file.\n\nDefaulting to built-in AppleWin Boot Sector.", pTitle, MB_ICONERROR | MB_OK);
+				}
+			}
+		}
+	}
+	else // --- Advanced ---
+	if((iCommand == ID_DISKMENU_NEW_BLANK_140K_DISK)
+	|| (iCommand == ID_DISKMENU_NEW_BLANK_160K_DISK)
+	|| (iCommand == ID_DISKMENU_NEW_BLANK_800K_DISK)
+	|| (iCommand == ID_DISKMENU_NEW_BLANK_32MB_DISK))
+	{
+		const bool   bIsFloppy    =  (iCommand != ID_DISKMENU_NEW_BLANK_32MB_DISK);
+		const bool   bIsFloppy525 = ((iCommand == ID_DISKMENU_NEW_BLANK_140K_DISK) || (iCommand == ID_DISKMENU_NEW_BLANK_160K_DISK));
+		const bool   bIs40Track   =  (iCommand == ID_DISKMENU_NEW_BLANK_160K_DISK);
+		const bool   bIsUnidisk35 =  (iCommand == ID_DISKMENU_NEW_BLANK_800K_DISK);
+		const bool   bIsHardDisk  =  (iCommand == ID_DISKMENU_NEW_BLANK_32MB_DISK);
+		const size_t nDiskSize    = bIsHardDisk
+									? HARDDISK_32M_SIZE
+									: bIsUnidisk35
+									  ? UNIDISK35_800K_SIZE
+									  : bIs40Track
+									    ? TRACK_DENIBBLIZED_SIZE * TRACKS_MAX
+									    : TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD
+									    ;
+
+		const TCHAR* pszTitle = TEXT("Select new blank disk image");
+
+		time_t timestamp = time( NULL );
+		tm datetime = *localtime(&timestamp);
+
+		const size_t MAX_MONTH_LEN = 32;
+		int   year               = datetime.tm_year + 1900;
+		char  mon[MAX_MONTH_LEN] = {0};
+		int   day                = datetime.tm_mday;
+		int   hour               = datetime.tm_hour;
+		int   min                = datetime.tm_min;
+		int   sec                = datetime.tm_sec;
+		strftime( mon, MAX_MONTH_LEN-1, "%b", &datetime );
+		std::string sFileName( StrFormat(
+			  "blank_%s_%04d_%3s_%02d_%02dh_%02dm_%02ds.%s"
+			, bIsFloppy ? "floppy" : "hard"
+			, year, mon, day, hour, min, sec
+			, bIsFloppy ? "dsk" : "hdv"
+		) );
+
+		std::string pathname = g_sCurrentDir;
+		pathname.append( sFileName );
+
+		const TCHAR *pTitle  = TEXT("New Disk Image");
+		const TCHAR *pSaveFilter = TEXT("All Files\0*.*\0");
+		char sPathName[ MAX_PATH ];
+		strncpy( sPathName, sFileName.c_str(), MAX_PATH-1 );
+		int nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, sPathName, pSaveFilter );
+		if (nRes)
+		{
+			pathname = sPathName;
 			if (FileExists(pathname))
 			{
 				nRes = FrameMessageBox(
@@ -2656,15 +3136,14 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 
 							if (g_cmdLine.nBootSectorFileSize > nDiskSize)
 							{
-								char Message[ 256 ];
-								sprintf_s( Message
-									, "WARNING: Custom boot sector (%zu) is larger then the disk image (%zu)!\n"
+								std::string sMessage( StrFormat(
+									  "WARNING: Custom boot sector (%zu) is larger then the disk image (%zu)!\n"
 									  "\n"
 									  "Restricting boot sector to disk image size."
 									, g_cmdLine.nBootSectorFileSize
 									, nDiskSize
-								);
-								FrameMessageBox( Message, pTitle, MB_OK | MB_ICONINFORMATION );
+								));
+								FrameMessageBox( sMessage.c_str(), pTitle, MB_OK | MB_ICONINFORMATION);
 							}
 						}
 						else
@@ -2690,101 +3169,8 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 			}
 		}
 	}
-	else
-	if (iCommand == ID_DISKMENU_SELECT_BOOTSECTOR)
-	{
-		// Default to directory of g_cmdLine.sBootSectorFileName;
-		char sDisplayFileName[ 256+1 ] = {0};
-		char sFilename[ MAX_PATH ] = {0};
-		const size_t nDisplayFileNameMax = sizeof(sDisplayFileName);
-		const size_t nFilenameMax        = sizeof(sFilename);
-		const TCHAR *pTitle  = TEXT("Select boot sector file");
-		const TCHAR *pExistFilter = // No *.nib;*.woz;*.gz;*.zip
-			TEXT("Floppy Disk Images (*.bin,*.dsk,*.do;*.po)\0"
-			                         "*.bin;*.dsk;*.do;*.po\0")
-			TEXT("Hard Disk Images (*.hdv;)\0"
-			                       "*.hdv\0")
-			TEXT("All Files\0*.*\0");
-
-		// Show dialog with current boot sector disk image
-		// Ask user if they wish to replace it
-		char sMessage[ 1024 ];
-
-		strncpy( sDisplayFileName, g_cmdLine.sBootSectorFileName.c_str(), nDisplayFileNameMax - 2);
-		strncpy( sFilename       , g_cmdLine.sBootSectorFileName.c_str(), nFilenameMax        - 2);
-
-		sDisplayFileName[nDisplayFileNameMax-1] = 0;
-		sFilename       [nFilenameMax       -1] = 0;
-
-		if (!g_cmdLine.nBootSectorFileSize)
-		{
-			sprintf_s( sDisplayFileName, "(Built-in AppleWin boot sector)" );
-		}
-		else
-		if (g_cmdLine.sBootSectorFileName.length() > (nDisplayFileNameMax-1))
-		{
-			// Convert long filename to "smart" ellipsis
-			// +126 = First 126 chars filename
-			// +  4 = "...."
-			// +126 = Last 126 chars of filename
-			//= 256 chars
-			const char *pHead = g_cmdLine.sBootSectorFileName.c_str();
-			const char *pTail = pHead + g_cmdLine.sBootSectorFileName.length() - 126;
-			sDisplayFileName[0] = 0;
-			strncpy( sDisplayFileName +   0, pHead , 126 );
-			strncpy( sDisplayFileName + 126, "....",   4 );
-			strncpy( sDisplayFileName + 130, pTail , 126 );
-		}
-
-		sprintf_s( sMessage
-			, "Current boot sector file is: \n"
-			  "\n"
-			  "%s\n"
-			  "\n"
-			  "Use a custom boot sector file?\n"
-			, sDisplayFileName
-			);
-		
-		int nRes = FrameMessageBox(sMessage, pTitle, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2);
-		if (nRes == IDYES)
-		{
-			int nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, false, sFilename, pExistFilter );
-			if (nRes)
-			{
-				char  sPath[ MAX_PATH];
-				DWORD res = GetFullPathName(sFilename, MAX_PATH, sPath, NULL);
-
-				FILE *pFile = fopen( sPath, "rb");
-				if (pFile)
-				{
-					fseek( pFile, 0, SEEK_END );
-					size_t nSize = ftell( pFile );
-					fseek( pFile, 0, SEEK_SET );
-					fclose( pFile );
-
-					if (nSize > 0)
-					{
-						g_cmdLine.sBootSectorFileName = sPath;
-						g_cmdLine.nBootSectorFileSize = nSize;
-					}
-					else
-					{
-						g_cmdLine.nBootSectorFileSize = 0;
-						g_cmdLine.sBootSectorFileName = "";
-						FrameMessageBox("ERROR: Couldn't read custom boot sector file.\n\nDefaulting to built-in AppleWin Boot Sector.", pTitle, MB_ICONERROR | MB_OK);
-					}
-				}
-				else
-				{
-					g_cmdLine.nBootSectorFileSize = 0;
-					g_cmdLine.sBootSectorFileName = "";
-					FrameMessageBox( "ERROR: Couldn't open custom boot sector file.\n\nDefaulting to built-in AppleWin Boot Sector.", pTitle, MB_ICONERROR | MB_OK);
-				}
-			}
-		}
-	}
-	else
-	if (iCommand == ID_DISKMENU_FORMAT_PRODOS_DATA)
+	else // --- Advanced ---
+	if (iCommand == ID_DISKMENU_FORMAT_PRODOS_DISK)
 	{
 		char szFilename[ MAX_PATH ] = {0};
 		const TCHAR *pTitle  = TEXT("Select ProDOS disk image to format");
@@ -2794,18 +3180,21 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 			TEXT("Hard Disk Images (*.hdv;)\0"
 			                       "*.hdv\0")
 			TEXT("All Files\0*.*\0");
-		int res = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, szFilename, pLoadFilter );
-		if (res)
+
+		int nRes = FrameMessageBox(
+			"Are you sure you want to FORMAT an existing disk as a ProDOS data disk?\n"
+			"\n"
+			"(ALL DATA WILL BE LOST!)\n"
+			, "Format"
+			, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2
+		);
+		if (nRes == IDYES)
 		{
 			std::string pathname = szFilename;
 			if (FileExists( pathname ))
 			{
-				int res = FrameMessageBox(
-					"Are you sure you want to FORMAT this disk as a ProDOS data disk?\n"
-					"\n"
-					"(ALL DATA WILL BE LOST!)\n"
-					, "Format", MB_ICONWARNING|MB_YESNO);
-				if (res == IDYES)
+				nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, szFilename, pLoadFilter );
+				if (nRes)
 				{
 					FILE *hFile = fopen( pathname.c_str(), "r+b" );
 					if (hFile)
@@ -2816,11 +3205,14 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 
 						size_t nMaxDiskSize = HARDDISK_32M_SIZE;
 
-						char Message[ 256 ];
 						if (nDiskSize > nMaxDiskSize)
 						{
-							sprintf_s( Message, "ERROR: Disk Image Size (%zu bytes) > maximum ProDOS volume size (%zu bytes)", nDiskSize, nMaxDiskSize );
-							FrameMessageBox( Message, "Format", MB_ICONWARNING|MB_OK);
+							std::string sMessage(StrFormat(
+								  "ERROR: Disk Image Size (%zu bytes) > maximum ProDOS volume size (%zu bytes)"
+								, nDiskSize
+								, nMaxDiskSize
+							));
+							FrameMessageBox( sMessage.c_str(), "Format", MB_ICONWARNING | MB_OK);
 						}
 						else
 						{
@@ -2870,7 +3262,8 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 			}
 		}
 	}
-	else if (iCommand == ID_DISKMENU_FORMAT_DOS33_DATA)
+	else
+	if (iCommand == ID_DISKMENU_FORMAT_DOS33_DISK)
 	{
 		char szFilename[ MAX_PATH ] = {0};
 		const TCHAR *pTitle  = TEXT("Select DOS 3.3 disk image to format");
@@ -2879,18 +3272,18 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 			                         "*.bin;*.dsk;*.do\0")
 			TEXT("All Files\0*.*\0");
 
-		int res = Util_SelectDiskImage( hwnd, hInstance, pTitle, false, szFilename, pLoadFilter );
-		if (res)
+		int nRes = FrameMessageBox(
+			"Are you sure you want to FORMAT an existing disk as a DOS 3.3 data disk?\n"
+			"\n"
+			"(ALL DATA WILL BE LOST!)\n"
+			, "Format", MB_ICONWARNING|MB_YESNO);
+		if (nRes == IDYES)
 		{
 			std::string pathname = szFilename;
 			if (FileExists( pathname ))
 			{
-				int res = FrameMessageBox(
-					"Are you sure you want to FORMAT this disk as a DOS 3.3 data disk?\n"
-					"\n"
-					"(ALL DATA WILL BE LOST!)\n"
-					, "Format", MB_ICONWARNING|MB_YESNO);
-				if (res == IDYES)
+				nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, false, szFilename, pLoadFilter );
+				if (nRes)
 				{
 					FILE *hFile = fopen( pathname.c_str(), "r+b" );
 					if (hFile)
