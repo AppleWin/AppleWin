@@ -1,0 +1,90 @@
+;ACME 0.97
+!cpu 6502
+!ct "apple2.bin"                ; Stupid filename must be < 11 chars.  May be called convtab.bin
+!to "bootsector.bin", plain
+        ; Disk P5 PROM 
+        SlotX16         =   $2B ; i.e. $60 = Slot 6. NB. Booting a hard disk sets this to zero.
+
+        ; IO Switches
+        IO_STORE40      = $C000 ; W
+        IO_KEYBOARD     = $C000 ;R
+        IO_KEYSTROBE    = $C010
+        IO_ALTZPOFF     = $C008
+        IO_CLR80VID     = $C00C
+        IO_CLRALTCHAR   = $C00E ; Turn off Mouse Text
+        IO_DHIRESOFF    = $C05F
+        IO_ROMIN        = $C081
+
+        ; F800 ROM Entry Points
+        E0_BASICWARM    = $E003
+        F8_RESET        = $FA69 ; CTRL-RESET
+        F8_MONITOR      = $FF69 ; CALL-151
+        F8_INIT         = $FB2F ;
+        F8_HOME         = $FC58 ; Clear 40x24 text screen
+        F8_SETNORM      = $FE84 ;
+        F8_SETVID       = $FE93 ; PR#0
+        F8_SETKBD       = $FE89 ; IN#0
+        COUT            = $FDED
+
+            * = $800
+Boot        !byte $01           ; Only read 1 sector
+            ldx SlotX16         ;
+            txa                 ;
+            jsr InitSlot        ;
+Init        sta IO_STORE40      ;
+            sta IO_CLR80VID     ;
+            sta IO_CLRALTCHAR   ;
+            sta IO_DHIRESOFF    ;
+            sta IO_ROMIN        ;
+            jsr F8_SETKBD       ;
+            jsr F8_SETVID       ;
+            jsr F8_INIT         ;
+            jsr F8_SETNORM      ;
+            jsr F8_HOME         ;
+            ldx #0              ;
+Print       lda Message,X       ;
+            beq WaitKey         ;
+            jsr COUT            ;
+            inx                 ;
+            bne Print           ;
+WaitKey     lda IO_KEYBOARD     ;
+            bpl WaitKey         ;
+            sta IO_KEYSTROBE    ;
+            cmp #'0'            ; '0' ... '9'
+            bcc BootSlot        ;
+            cmp #('9'+1)        ;
+            bcs BootSlot        ;
+            and #$0F            ;
+            bne TestMonitor     ; '0' BASIC
+            jmp E0_BASICWARM    ;
+TestMonitor cmp #$08            ; '8' MONITOR
+            bne TestReset       ;
+            jmp F8_MONITOR      ;
+TestReset   cmp #$09            ; '9' RESET
+            bne HaveSlot        ;
+            jmp F8_RESET        ;
+HaveSlot    jsr SetBootSlot     ;
+BootSlot    jmp $C700           ; *** SELF-MODIFIED ***
+
+InitSlot    bne BootSlotX16     ;
+            lda #$70            ;
+BootSlotX16 lsr                 ;
+            lsr                 ;
+            lsr                 ;
+            lsr                 ;
+SetBootSlot ora #$C0            ; Firmware $Cx00
+            sta BootSlot+2      ; *** SELF-MODIFIES! ***
+            rts
+;                  0        1         2         3         4
+;                  1234567890123456789012345678901234567890
+Message     !text "      THIS IS AN EMPTY "
+Type        !text                        "DATA DISK.",$8D
+            !text $8D
+            !text ' ',' ',$30," BASIC     ($E003)",$8D
+            !text $31,"-",$37," BOOT SLOT ($CX00)",$8D
+            !text " "," ",$38," MONITOR   ($FF69)",$8D
+            !text " "," ",$39," RESET     ($FA62)",$8D
+            !text $41,$4E,$59," REBOOT LAST SLOT" ,$00
+            !align $FFF, $900 - 3, 0
+            !text "V2"
+            !byte <Type
