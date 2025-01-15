@@ -1036,10 +1036,10 @@ HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
 void HarddiskInterfaceCard::SetIdString(std::vector<BYTE>& status, const std::string& idStr)
 {
 	const BYTE kMaxIdStrLen = 16;
-	BYTE idStrLen = idStr.length();
+	size_t idStrLen = idStr.length();
 	if (idStrLen > kMaxIdStrLen)
 		idStrLen = kMaxIdStrLen;
-	status.push_back(idStrLen);	// Set 'ID string length'
+	status.push_back((BYTE)idStrLen);	// Set 'ID string length'
 
 	for (UINT i = 0; i < idStrLen; i++)
 		status.push_back(idStr[i]);
@@ -1146,10 +1146,31 @@ BYTE HarddiskInterfaceCard::SmartPortCmdStatus(HardDiskDrive* pHDD, const ULONG 
 	{
 		// Apple II's MMU could be setup so that read & write memory is different,
 		// so can't use 'mem' directly, instead use CpuWrite(). (GH#1319)
-		// TODO: add checks that writes don't hit I/O space or ROM
 		WORD statusListAddr = pHDD->m_memblock;
-		for (BYTE i : status)
-			CpuWrite(statusListAddr++, i, nExecutedCycles);
+
+		// Check that writes don't hit I/O space or ROM
+		BYTE page = statusListAddr >> 8;
+		const BYTE endPage = (statusListAddr + (WORD)status.size()) >> 8;	// OK if endPage wraps to 0x00
+		do
+		{
+			if (!memwrite[page])	// I/O space or ROM
+			{
+				if (g_nAppMode == MODE_STEPPING)
+					DebuggerBreakOnDmaToOrFromIoMemory(page<<8, true);
+				//else // Show MessageBox?
+
+				pHDD->m_error = 1;
+				r = BADCTL;
+				break;
+			}
+		}
+		while (page++ != endPage);
+
+		if (r == DEVICE_OK)
+		{
+			for (BYTE i : status)
+				CpuWrite(statusListAddr++, i, nExecutedCycles);
+		}
 	}
 
 	return r;
