@@ -2824,7 +2824,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 			    ;
 
 		std::string sFileName( StrFormat(
-			  "blank_%s_%04d_%3s_%02d_%02dh_%02dm_%02ds.%s"
+			  "blank_%s_%04d_%3s_%02d_%02dh_%02dm_%02ds%s"
 			, bIsFloppy ? "floppy" : "hard"
 			, year, mon, day, hour, min, sec
 			, sExtension.c_str()
