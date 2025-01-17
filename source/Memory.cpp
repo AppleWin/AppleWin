@@ -2812,8 +2812,8 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 		{
 			YamlSaveHelper::Label cardState(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-			yamlSaveHelper.Save("%s: 0x%02X   # [0,1..7F] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
-			yamlSaveHelper.Save("%s: 0x%02X # [  0..7E] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
+			yamlSaveHelper.Save("%s: 0x%02X   # [0,1..FF] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
+			yamlSaveHelper.Save("%s: 0x%02X # [  0..FE] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
 
 			for(UINT bank = 1; bank <= g_uMaxExPages; bank++)
 			{
@@ -2878,7 +2878,7 @@ static SS_CARDTYPE MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, cons
 		}
 		else // cardType == CT_RamWorksIII
 		{
-			if (numAuxBanks < 2 || numAuxBanks > 0x7F || (activeAuxBank + 1) > numAuxBanks)
+			if (numAuxBanks < 2 || numAuxBanks > kMaxExMemoryBanks || (activeAuxBank + 1) > numAuxBanks)
 				throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
 		}
 
