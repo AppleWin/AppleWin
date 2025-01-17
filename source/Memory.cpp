@@ -2812,7 +2812,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 		{
 			YamlSaveHelper::Label cardState(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-			yamlSaveHelper.Save("%s: 0x%02X   # [0,1..100] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
+			yamlSaveHelper.Save("%s: 0x%03X  # [0,1..100] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
 			yamlSaveHelper.Save("%s: 0x%02X # [  0..FF] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
 
 			for(UINT bank = 1; bank <= g_uMaxExPages; bank++)
