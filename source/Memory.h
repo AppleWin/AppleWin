@@ -51,7 +51,7 @@ extern LPBYTE     memdirty;
 extern LPBYTE     memVidHD;
 
 #ifdef RAMWORKS
-const UINT kMaxExMemoryBanks = 255;	// 255 * aux mem(64K) + main mem(64K) = 16MB (NB. Real RW3 was limited to 127x64MB, so 8MB in total)
+const UINT kMaxExMemoryBanks = 256;	// 256 * aux mem(64K) + main mem(64K) = 16MB + 64K (NB. Real RW3 was limited to 128x64MB, so 8MB in total)
 #endif
 
 void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);

@@ -410,7 +410,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 				g_nMemoryClearType = NUM_MIP - 1;
 		}
 #ifdef RAMWORKS
-		else if (strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..255]
+		else if (strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..256]
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
