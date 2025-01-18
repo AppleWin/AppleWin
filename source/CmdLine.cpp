@@ -316,6 +316,8 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			else if (strcmp(lpCmdLine, "rw3") == 0)
 			{
 				g_cmdLine.auxSlotInsert = CT_RamWorksIII;
+				if (!g_cmdLine.uRamWorksExPages)
+					g_cmdLine.uRamWorksExPages = kMaxExMemoryBanksRealRW3;	// default to ~8MB (ie. the max for the real RW3 card)
 			}
 			else
 			{
@@ -418,7 +420,8 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			if (g_cmdLine.uRamWorksExPages > kMaxExMemoryBanks)
 				g_cmdLine.uRamWorksExPages = kMaxExMemoryBanks;
 			else if (g_cmdLine.uRamWorksExPages < 1)
-				g_cmdLine.uRamWorksExPages = 1;			// 1x64KB(aux)
+				g_cmdLine.uRamWorksExPages = 1;			// 1x64KB (aux mem)
+			g_cmdLine.auxSlotInsert = CT_RamWorksIII;	// Insert RW3 into aux slot
 		}
 #endif
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]

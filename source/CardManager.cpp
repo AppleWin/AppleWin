@@ -194,6 +194,9 @@ void CardManager::InsertAuxInternal(SS_CARDTYPE type)
 {
 	RemoveAuxInternal();
 
+	if (type != CT_RamWorksIII)
+		SetRamWorksMemorySize(1);	// 1x 64K bank for Empty/80Col/Extended80Col cards
+
 	switch (type)
 	{
 	case CT_Empty:

@@ -51,7 +51,8 @@ extern LPBYTE     memdirty;
 extern LPBYTE     memVidHD;
 
 #ifdef RAMWORKS
-const UINT kMaxExMemoryBanks = 256;	// 256 * aux mem(64K) + main mem(64K) = 16MB + 64K (NB. Real RW3 was limited to 128x64MB, so 8MB in total)
+const UINT kMaxExMemoryBanks = 256;	// 256 * aux mem(64K) + main mem(64K) = 16MB + 64K
+const UINT kMaxExMemoryBanksRealRW3 = 127;	// Real RW3 was limited to 127x64MB, so ~8MB in total
 #endif
 
 void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
@@ -106,7 +107,7 @@ BYTE __stdcall IO_F8xx(WORD programcounter, WORD address, BYTE write, BYTE value
 void	SetExpansionMemType(const SS_CARDTYPE type);
 SS_CARDTYPE GetCurrentExpansionMemType(void);
 
-void	SetRamWorksMemorySize(UINT pages);
+void	SetRamWorksMemorySize(UINT banks);
 UINT	GetRamWorksActiveBank(void);
 void	SetMemMainLanguageCard(LPBYTE ptr, UINT slot, bool bMemMain=false);
 

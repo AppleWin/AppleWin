@@ -403,9 +403,13 @@ SS_CARDTYPE GetCurrentExpansionMemType(void)
 
 //
 
-void SetRamWorksMemorySize(UINT pages)
+void SetRamWorksMemorySize(UINT banks)
 {
-	g_uMaxExPages = pages;
+	_ASSERT(banks <= kMaxExMemoryBanks);
+	if (banks > kMaxExMemoryBanks)
+		banks = kMaxExMemoryBanks;
+
+	g_uMaxExPages = banks;
 }
 
 UINT GetRamWorksActiveBank(void)
