@@ -1865,7 +1865,7 @@ void MemInitialize()
 		std::string regSection = RegGetConfigSlotSection(SLOT_AUX);
 		RegLoadValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, TRUE, &g_uMaxExBanks, kMaxExMemoryBanksRealRW3);
 
-		// allocate memory for RAMWorks III - up to 8MB
+		// allocate memory for RamWorks III - up to 16MB
 		g_uActiveBank = 0;
 
 		UINT i = 1;
