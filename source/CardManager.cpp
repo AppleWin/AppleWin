@@ -226,6 +226,7 @@ void CardManager::InsertAux(SS_CARDTYPE type)
 {
 	InsertAuxInternal(type);
 	RegSetConfigSlotNewCardType(SLOT_AUX, type);
+	SetRegistryAuxNumberOfBanks();
 }
 
 void CardManager::RemoveAuxInternal()

@@ -110,5 +110,6 @@ SS_CARDTYPE GetCurrentExpansionMemType(void);
 void	SetRamWorksMemorySize(UINT banks);
 UINT	GetRamWorksActiveBank(void);
 void	SetMemMainLanguageCard(LPBYTE ptr, UINT slot, bool bMemMain=false);
+void	SetRegistryAuxNumberOfBanks(void);
 
 LPBYTE GetCxRomPeripheral(void);

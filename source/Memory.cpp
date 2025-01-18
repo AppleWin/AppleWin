@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "NTSC.h"
 #include "NoSlotClock.h"
 #include "Pravets.h"
+#include "Registry.h"
 #include "Speaker.h"
 #include "Tape.h"
 #include "RGBMonitor.h"
@@ -410,6 +411,14 @@ void SetRamWorksMemorySize(UINT banks)
 		banks = kMaxExMemoryBanks;
 
 	g_uMaxExBanks = banks;
+
+	SetRegistryAuxNumberOfBanks();
+}
+
+void SetRegistryAuxNumberOfBanks(void)
+{
+	std::string regSection = RegGetConfigSlotSection(SLOT_AUX);
+	RegSaveValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, TRUE, g_uMaxExBanks);
 }
 
 UINT GetRamWorksActiveBank(void)
@@ -1853,6 +1862,9 @@ void MemInitialize()
 #ifdef RAMWORKS
 	if (GetCardMgr().QueryAux() == CT_RamWorksIII)
 	{
+		std::string regSection = RegGetConfigSlotSection(SLOT_AUX);
+		RegLoadValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, TRUE, &g_uMaxExBanks, kMaxExMemoryBanksRealRW3);
+
 		// allocate memory for RAMWorks III - up to 8MB
 		g_uActiveBank = 0;
 
