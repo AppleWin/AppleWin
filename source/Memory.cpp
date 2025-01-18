@@ -258,8 +258,8 @@ LPBYTE  memVidHD = NULL;	// For Apple II/II+ writes to aux mem (on VidHD card). 
 static CNoSlotClock* g_NoSlotClock = new CNoSlotClock;
 
 #ifdef RAMWORKS
-static UINT		g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
-static UINT		g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c -- ALSO RAMWORKS
+static UINT		g_uMaxExBanks = 1;				// user requested ram banks (default to 1 aux bank: so total = 128KB)
+static UINT		g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c -- also RamWorks III aux card
 static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
 
@@ -409,7 +409,7 @@ void SetRamWorksMemorySize(UINT banks)
 	if (banks > kMaxExMemoryBanks)
 		banks = kMaxExMemoryBanks;
 
-	g_uMaxExPages = banks;
+	g_uMaxExBanks = banks;
 }
 
 UINT GetRamWorksActiveBank(void)
@@ -1620,7 +1620,7 @@ LPBYTE MemGetBankPtr(const UINT nBank, const bool isSaveSnapshotOrDebugging/*=tr
 		BackMainImage();	// Flush any dirty pages to back-buffer
 
 #ifdef RAMWORKS
-	if (nBank > g_uMaxExPages)
+	if (nBank > g_uMaxExBanks)
 		return NULL;
 
 	if (nBank == 0)
@@ -1857,7 +1857,7 @@ void MemInitialize()
 		g_uActiveBank = 0;
 
 		UINT i = 1;
-		while ((i < g_uMaxExPages) && (RWpages[i] = ALIGNED_ALLOC(_6502_MEM_LEN)))
+		while ((i < g_uMaxExBanks) && (RWpages[i] = ALIGNED_ALLOC(_6502_MEM_LEN)))
 			i++;
 		while (i < kMaxExMemoryBanks)
 			RWpages[i++] = NULL;
@@ -2381,7 +2381,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 #ifdef RAMWORKS
 			case 0x71: // extended memory aux page number
 			case 0x73: // Ramworks III set aux page number
-				if ((value < g_uMaxExPages) && RWpages[value])
+				if ((value < g_uMaxExBanks) && RWpages[value])
 				{
 					g_uActiveBank = value;
 					memaux = RWpages[g_uActiveBank];
@@ -2779,7 +2779,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 
 	if (IS_APPLE2C())
 	{
-		_ASSERT(g_uMaxExPages == 1);
+		_ASSERT(g_uMaxExBanks == 1);
 	}
 
 	yamlSaveHelper.UnitHdr(MemGetSnapshotUnitAuxSlotName(), kUNIT_AUXSLOT_VER);
@@ -2816,10 +2816,10 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 		{
 			YamlSaveHelper::Label cardState(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-			yamlSaveHelper.Save("%s: 0x%03X  # [0,1..100] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
+			yamlSaveHelper.Save("%s: 0x%03X  # [0,1..100] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExBanks);
 			yamlSaveHelper.Save("%s: 0x%02X # [  0..FF] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
 
-			for(UINT bank = 1; bank <= g_uMaxExPages; bank++)
+			for(UINT bank = 1; bank <= g_uMaxExBanks; bank++)
 			{
 				MemSaveSnapshotMemory(yamlSaveHelper, false, bank);
 			}
@@ -2831,7 +2831,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 
 static SS_CARDTYPE MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::string& card)
 {
-	g_uMaxExPages = 1;	// Must be at least 1 (for aux mem) - regardless of Apple2 type!
+	g_uMaxExBanks = 1;	// Must be at least 1 (for aux mem) - regardless of Apple2 type!
 	g_uActiveBank = 0;
 	_ASSERT(MemGetBankPtr(1, false));	// Ensure there is always aux mem (eg. for CT_80Col or CT_VidHD)
 
@@ -2886,12 +2886,12 @@ static SS_CARDTYPE MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, cons
 				throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
 		}
 
-		g_uMaxExPages = numAuxBanks;
+		g_uMaxExBanks = numAuxBanks;
 		g_uActiveBank = activeAuxBank;
 
 		//
 
-		for (UINT bank = 1; bank <= g_uMaxExPages; bank++)
+		for (UINT bank = 1; bank <= g_uMaxExBanks; bank++)
 		{
 			LPBYTE pBank = MemGetBankPtr(bank, false);
 			if (!pBank)
