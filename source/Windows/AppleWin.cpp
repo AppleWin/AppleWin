@@ -708,15 +708,6 @@ static void RepeatInitialization(void)
 		g_cmdLine.clockMultiplier = 0.0;
 
 		// Apply the memory expansion switches after loading the Apple II machine type
-#ifdef RAMWORKS
-		if (g_cmdLine.uRamWorksExPages)
-		{
-			SetRamWorksMemorySize(g_cmdLine.uRamWorksExPages);
-			if (!g_cmdLine.auxSlotEmpty)
-				SetExpansionMemType(CT_RamWorksIII);
-			g_cmdLine.uRamWorksExPages = 0;	// Don't reapply after a restart
-		}
-#endif
 		if (g_cmdLine.uSaturnBanks)
 		{
 			Saturn128K::SetSaturnMemorySize(g_cmdLine.uSaturnBanks);	// Set number of banks before constructing Saturn card
@@ -829,6 +820,18 @@ static void RepeatInitialization(void)
 
 		// Aux slot
 
+#ifdef RAMWORKS
+		if (g_cmdLine.uRamWorksExPages)
+		{
+			if (!g_cmdLine.auxSlotEmpty)
+			{
+				SetRamWorksMemorySize(g_cmdLine.uRamWorksExPages);
+				_ASSERT(g_cmdLine.auxSlotInsert == CT_RamWorksIII);	// Implicitly set when using cmd line "-r banks"
+			}
+			g_cmdLine.uRamWorksExPages = 0;	// Don't reapply after a restart
+		}
+#endif
+
 		if (g_cmdLine.auxSlotEmpty)
 		{
 			GetCardMgr().RemoveAux();
@@ -836,7 +839,7 @@ static void RepeatInitialization(void)
 		}
 		else if (g_cmdLine.auxSlotInsert != CT_Empty)
 		{
-			if (GetCardMgr().QueryAux() != g_cmdLine.auxSlotInsert)	// Ignore if already got this card type in aux slot
+			if (GetCardMgr().QueryAux() != g_cmdLine.auxSlotInsert)	// Ignore if already got this card type in aux slot, ie. via LoadConfiguration()
 			{
 				GetCardMgr().InsertAux(g_cmdLine.auxSlotInsert);
 				SetExpansionMemType(g_cmdLine.auxSlotInsert);

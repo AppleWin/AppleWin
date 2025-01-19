@@ -45,7 +45,7 @@ public:
 		return m_slot[slot];
 	}
 
-	void InsertAux(SS_CARDTYPE type);
+	void InsertAux(SS_CARDTYPE type, bool updateRegistry = true);
 	void RemoveAux(void);
 	SS_CARDTYPE QueryAux(void) { return m_aux->QueryType(); }
 	Card* GetObjAux(void) { _ASSERT(0); return m_aux; }	// ASSERT because this is a DummyCard

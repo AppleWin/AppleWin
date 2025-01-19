@@ -51,7 +51,8 @@ extern LPBYTE     memdirty;
 extern LPBYTE     memVidHD;
 
 #ifdef RAMWORKS
-const UINT kMaxExMemoryBanks = 127;	// 127 * aux mem(64K) + main mem(64K) = 8MB
+const UINT kMaxExMemoryBanks = 256;	// 256 * aux mem(64K) + main mem(64K) = 16MB + 64K
+const UINT kMaxExMemoryBanksRealRW3 = 127;	// Real RW3 was limited to 127x64MB, so ~8MB in total
 #endif
 
 void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
@@ -103,11 +104,12 @@ BYTE __stdcall MemSetPaging(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExec
 
 BYTE __stdcall IO_F8xx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
-void	SetExpansionMemType(const SS_CARDTYPE type);
+void	SetExpansionMemType(const SS_CARDTYPE type, bool updateRegistry=true);
 SS_CARDTYPE GetCurrentExpansionMemType(void);
 
-void	SetRamWorksMemorySize(UINT pages);
+void	SetRamWorksMemorySize(UINT banks, bool updateRegistry=true);
 UINT	GetRamWorksActiveBank(void);
 void	SetMemMainLanguageCard(LPBYTE ptr, UINT slot, bool bMemMain=false);
+void	SetRegistryAuxNumberOfBanks(void);
 
 LPBYTE GetCxRomPeripheral(void);
