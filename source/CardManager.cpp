@@ -225,7 +225,7 @@ void CardManager::InsertAux(SS_CARDTYPE type, bool updateRegistry/*=true*/)
 	if (updateRegistry)
 	{
 		if (type != CT_RamWorksIII)
-			SetRamWorksMemorySize(1);	// 1x 64K bank for Empty/80Col/Extended80Col cards
+			SetRamWorksMemorySize(1, false);	// 1x 64K bank for Empty/80Col/Extended80Col cards
 
 		RegSetConfigSlotNewCardType(SLOT_AUX, type);
 		SetRegistryAuxNumberOfBanks();
