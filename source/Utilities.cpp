@@ -276,13 +276,13 @@ void LoadConfiguration(bool loadImages)
 
 		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
 		{
+			SS_CARDTYPE type = (SS_CARDTYPE)dwTmp;
 			const bool noUpdateRegistry = false;
-			GetCardMgr().InsertAux((SS_CARDTYPE)dwTmp, noUpdateRegistry);
+			GetCardMgr().InsertAux(type, noUpdateRegistry);
+			SetExpansionMemType(type, noUpdateRegistry);
 
 			RegLoadValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, TRUE, &dwTmp, kMaxExMemoryBanksRealRW3);
 			SetRamWorksMemorySize(dwTmp, noUpdateRegistry);
-
-			SetExpansionMemType(CT_RamWorksIII, noUpdateRegistry);
 		}
 	}
 
