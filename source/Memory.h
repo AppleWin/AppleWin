@@ -104,10 +104,10 @@ BYTE __stdcall MemSetPaging(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExec
 
 BYTE __stdcall IO_F8xx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 
-void	SetExpansionMemType(const SS_CARDTYPE type);
+void	SetExpansionMemType(const SS_CARDTYPE type, bool updateRegistry=true);
 SS_CARDTYPE GetCurrentExpansionMemType(void);
 
-void	SetRamWorksMemorySize(UINT banks);
+void	SetRamWorksMemorySize(UINT banks, bool updateRegistry=true);
 UINT	GetRamWorksActiveBank(void);
 void	SetMemMainLanguageCard(LPBYTE ptr, UINT slot, bool bMemMain=false);
 void	SetRegistryAuxNumberOfBanks(void);

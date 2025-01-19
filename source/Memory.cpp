@@ -313,7 +313,7 @@ static void SetExpansionMemTypeDefault(void)
 }
 
 // Called from SetExpansionMemTypeDefault(), MemLoadSnapshotAux(), SaveState.cpp_ParseSlots(), cmd-line switch
-void SetExpansionMemType(const SS_CARDTYPE type)
+void SetExpansionMemType(const SS_CARDTYPE type, bool updateRegistry/*=true*/)
 {
 	SS_CARDTYPE newSlot0Card;
 	SS_CARDTYPE newSlotAuxCard;
@@ -368,7 +368,7 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 	}
 
 	GetCardMgr().Insert(SLOT0, newSlot0Card);
-	GetCardMgr().InsertAux(newSlotAuxCard);
+	GetCardMgr().InsertAux(newSlotAuxCard, updateRegistry);
 }
 
 void CreateLanguageCard(void)
@@ -404,7 +404,7 @@ SS_CARDTYPE GetCurrentExpansionMemType(void)
 
 //
 
-void SetRamWorksMemorySize(UINT banks)
+void SetRamWorksMemorySize(UINT banks, bool updateRegistry/*=true*/)
 {
 	_ASSERT(banks <= kMaxExMemoryBanks);
 	if (banks > kMaxExMemoryBanks)
@@ -412,7 +412,8 @@ void SetRamWorksMemorySize(UINT banks)
 
 	g_uMaxExBanks = banks;
 
-	SetRegistryAuxNumberOfBanks();
+	if (updateRegistry)
+		SetRegistryAuxNumberOfBanks();
 }
 
 void SetRegistryAuxNumberOfBanks(void)
@@ -1862,9 +1863,6 @@ void MemInitialize()
 #ifdef RAMWORKS
 	if (GetCardMgr().QueryAux() == CT_RamWorksIII)
 	{
-		std::string regSection = RegGetConfigSlotSection(SLOT_AUX);
-		RegLoadValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, TRUE, &g_uMaxExBanks, kMaxExMemoryBanksRealRW3);
-
 		// allocate memory for RamWorks III - up to 16MB
 		g_uActiveBank = 0;
 
