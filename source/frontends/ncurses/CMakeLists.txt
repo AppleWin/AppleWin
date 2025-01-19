@@ -27,7 +27,9 @@ set(CURSES_NEED_NCURSES TRUE)
 set(CURSES_NEED_WIDE TRUE)  # required for Unicode in GR and HGR
 find_package(Curses REQUIRED)
 
-pkg_search_module(LIBEVDEV REQUIRED libevdev)
+if (NOT WIN32)
+  pkg_search_module(LIBEVDEV REQUIRED libevdev)
+endif()
 
 target_include_directories(applen PRIVATE
   ${NCURSES_INCLUDE_DIRS}

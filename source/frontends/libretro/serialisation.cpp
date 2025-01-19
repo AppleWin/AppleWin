@@ -25,8 +25,13 @@ namespace
 
   AutoFile::AutoFile()
   {
+#ifdef _WIN32
+    char pattern[] = "/tmp/awXXXXXX";
+    myFD = mkstemp(pattern);
+#else
     char pattern[] = "/tmp/awXXXXXX.aws.yaml";
     myFD = mkstemps(pattern, 9);
+#endif
     if (myFD <= 0)
     {
       throw std::runtime_error("Cannot create temporary file");

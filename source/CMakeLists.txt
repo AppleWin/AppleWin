@@ -4,7 +4,10 @@ include(FindZLIB)
 find_package(ZLIB REQUIRED)
 pkg_search_module(YAML REQUIRED yaml-0.1)
 pkg_search_module(MINIZIP REQUIRED minizip)
-pkg_search_module(SLIRP slirp)
+
+if (NOT WIN32)
+  pkg_search_module(SLIRP slirp)
+endif()
 
 # see https://github.com/madler/zlib/commit/7e6f0784cc0c33e8d5fcb368248168c6656f73c8
 if (MINIZIP_INCLUDE_DIRS MATCHES "minizip$")
@@ -272,7 +275,14 @@ target_link_libraries(appleii PRIVATE
   ZLIB::ZLIB
   )
 
-if (NOT WIN32)
+if (WIN32)
+  target_link_libraries(appleii PUBLIC
+    wsock32
+    iphlpapi
+    winmm
+    strmiids
+    )
+else()
   target_link_libraries(appleii PUBLIC
     windows
     )
@@ -289,9 +299,10 @@ target_compile_options(appleii PUBLIC
   -Wno-multichar
   )
 
+# wildcards (*.SYM) are not supported on Windows msys2
 add_custom_command(
   TARGET appleii POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/bin/*.SYM ${CMAKE_BINARY_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/bin/A2_BASIC.SYM ${CMAKE_SOURCE_DIR}/bin/APPLE2E.SYM ${CMAKE_BINARY_DIR}
   )
 
 configure_file(linux/config.h.in linux/config.h)

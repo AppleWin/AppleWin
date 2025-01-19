@@ -1,6 +1,10 @@
 #pragma once
 
+#ifndef _WIN32
 #include <arpa/inet.h>
+#else
+#include "Tfe/pcap.h"
+#endif
 
 #include <vector>
 #include <string>

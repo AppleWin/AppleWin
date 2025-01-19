@@ -5,7 +5,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#ifndef _WIN32
 #include <libevdev/libevdev.h>
+#endif
 
 #include "Log.h"
 
@@ -13,8 +15,9 @@ namespace na2
 {
 
   EvDevPaddle::EvDevPaddle(const std::string & device)
-    : myButtonCodes(2), myAxisCodes(2), myAxisMins(2), myAxisMaxs(2)
+    : myFD(0), myButtonCodes(2), myAxisCodes(2), myAxisMins(2), myAxisMaxs(2)
   {
+#ifndef _WIN32
     myFD = open(device.c_str(), O_RDONLY | O_NONBLOCK);
     if (myFD > 0)
     {
@@ -46,6 +49,7 @@ namespace na2
     {
       LogFileOutput("Input: failed to open device (%s): %s\n", strerror(errno), device.c_str());
     }
+#endif
   }
 
   EvDevPaddle::~EvDevPaddle()
@@ -64,6 +68,7 @@ namespace na2
       return counter;
     }
 
+#ifndef _WIN32
     input_event ev;
     int rc = LIBEVDEV_READ_STATUS_SUCCESS;
     do
@@ -74,6 +79,7 @@ namespace na2
         rc = libevdev_next_event(myDev.get(), LIBEVDEV_READ_FLAG_NORMAL, &ev);
       ++counter;
     } while (rc >= 0);
+#endif
 
     return counter;
   }
@@ -88,13 +94,16 @@ namespace na2
     int value = 0;
     if (myDev)
     {
+#ifndef _WIN32
       int rc = libevdev_fetch_event_value(myDev.get(), EV_KEY, myButtonCodes[i], &value);
+#endif
     }
     return value != 0;
   }
 
   double EvDevPaddle::getAxis(int i) const
   {
+#ifndef _WIN32
     if  (myDev)
     {
       int value = 0;
@@ -103,6 +112,7 @@ namespace na2
       return axis;
     }
     else
+#endif
     {
       return 0;
     }

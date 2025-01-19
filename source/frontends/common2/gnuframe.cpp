@@ -14,6 +14,10 @@
 #include "Core.h"
 #include "config.h"
 
+#ifdef __MINGW32__
+#define realpath(N, R) _fullpath((R), (N), 0)
+#endif
+
 namespace
 {
 
@@ -37,7 +41,13 @@ namespace
 
     char self[1024] = {0};
 
-#ifdef __APPLE__
+#ifdef _WIN32
+    int ch = GetModuleFileNameA(0, self, sizeof(self));
+    if (ch >= sizeof(self))
+    {
+        ch = -1;
+    }
+#elif __APPLE__
     uint32_t size = sizeof(self);
     const int ch = _NSGetExecutablePath(self, &size);
 #else
@@ -70,10 +80,9 @@ namespace
     // which only matters for Debug Symbols and Printer Filename
     // let's be tolerant and use cwd
 
-    char szFilename[MAX_PATH];
-    if (GetCurrentDirectory(sizeof(szFilename), szFilename))
+    if (GetCurrentDirectory(sizeof(self), self))
     {
-      return std::string(szFilename) + PATH_SEPARATOR;
+      return std::string(self) + PATH_SEPARATOR;
     }
 
     throw std::runtime_error("Cannot find the resource path for: " + target);
@@ -90,6 +99,8 @@ namespace common2
   {
     // should this go down to LinuxFrame (maybe Initialisation?)
     g_sProgramDir = getResourceFolder("/bin/");
+    LogFileOutput("Home Dir: '%s'\n", myHomeDir.c_str());
+    LogFileOutput("Program Dir: '%s'\n", g_sProgramDir.c_str());
   }
 
   std::pair<const unsigned char *, unsigned int> GNUFrame::GetResourceData(WORD id) const

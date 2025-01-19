@@ -10,6 +10,7 @@ namespace ra2
 
   void fallback_log(enum retro_log_level level, const char *fmt, ...)
   {
+    // TODO: this should be a no-op
     (void)level;
     va_list va;
     va_start(va, fmt);
