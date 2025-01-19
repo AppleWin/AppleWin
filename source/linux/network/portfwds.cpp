@@ -1,4 +1,7 @@
 #include "linux/network/portfwds.h"
+
+#ifndef _WIN32
+
 #include "StrFormat.h"
 
 #include <cstring>
@@ -83,3 +86,17 @@ std::vector<PortFwd> getPortFwds(const std::vector<std::string> & specs)
   }
   return fwds;
 }
+
+#else
+
+std::string PortFwd::toString() const
+{
+  return "";
+}
+
+std::vector<PortFwd> getPortFwds(const std::vector<std::string> & specs)
+{
+  return {};
+}
+  
+#endif

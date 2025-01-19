@@ -97,7 +97,13 @@ namespace common2
   std::string GetConfigFile(const std::string & filename)
   {
     const std::string dir = GetHomeDir() + "/.applewin";
+
+#ifdef _WIN32
+    const int status = mkdir(dir.c_str());
+#else
     const int status = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+#endif
+
     if (!status || (errno == EEXIST))
     {
       return dir + "/" + filename;
@@ -128,6 +134,7 @@ namespace common2
       saveOnExit = true;
     }
 
+    LogFileOutput("Reading configuration from: '%s'\n", filename.c_str());
     std::shared_ptr<Configuration> config = std::make_shared<Configuration>(filename, saveOnExit);
     config->addExtraOptions(options.registryOptions);
 
