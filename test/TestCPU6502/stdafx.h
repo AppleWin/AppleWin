@@ -5,7 +5,7 @@
 
 #pragma once
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 
 #include <stdio.h>
 #include <tchar.h>
@@ -13,6 +13,7 @@
 #include <windows.h>
 
 #include <stdint.h> // cleanup WORD DWORD -> uint16_t uint32_t
+#include <crtdbg.h>
 
 #include <string>
 

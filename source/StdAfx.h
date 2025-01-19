@@ -3,6 +3,7 @@
 #ifdef __MINGW32__
 #define STRSAFE_NO_DEPRECATE
 #endif
+
 #include <tchar.h>
 
 #include <crtdbg.h>
@@ -46,9 +47,15 @@
 #define SM_CXPADDEDBORDER 92
 #endif
 
+#ifndef __MINGW32__ 
 #define USE_SPEECH_API
+#endif
 
+#ifdef __MINGW32__
+#define SIZE_T_FMT "llu"
+#else
 #define SIZE_T_FMT "zu"
+#endif
 
 #else // !_WIN32
 
