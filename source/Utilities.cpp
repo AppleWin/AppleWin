@@ -281,7 +281,7 @@ void LoadConfiguration(bool loadImages)
 			GetCardMgr().InsertAux(type, noUpdateRegistry);
 			SetExpansionMemType(type, noUpdateRegistry);
 
-			RegLoadValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, TRUE, &dwTmp, kMaxExMemoryBanksRealRW3);
+			RegLoadValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, TRUE, &dwTmp, kDefaultExMemoryBanksRealRW3);
 			SetRamWorksMemorySize(dwTmp, noUpdateRegistry);
 		}
 	}

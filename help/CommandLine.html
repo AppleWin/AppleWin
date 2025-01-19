@@ -89,9 +89,9 @@
 		Remove the No-Slot clock (NSC).<br><br>
 		-aux &lt;empty|std80|ext80|rw3&gt;<br>
 		Remove ('empty') or insert 80-Column('std80'), Extended 80-Column('ext80') or RamWorks III('rw3') card into auxiliary slot in Apple //e.<br>
-		NB. 'rw3' will default to 8128KiB (127 banks of 64K) unless overriden by -r switch.<br><br>
+		NB. 'rw3' will default to 2MiB (32 banks of 64K) unless overriden by -r switch.<br><br>
 		-r &lt;number of banks&gt;<br>
-		Emulate a RamWorks III card with 1 to 256 banks (each bank is 64K, giving a max of 16MB) in the auxiliary slot in an Apple //e machine.<br>
+		Emulate a RamWorks III card with 1 to 256 banks (each bank is 64K, giving a max of 16MiB) in the auxiliary slot in an Apple //e machine.<br>
 		(Implicitly inserts a RamWorks III card into the aux slot.)<br><br>
 		-load-state &lt;savestate&gt;<br>
 		Load a save-state file (and auto power-on the Apple II).<br>

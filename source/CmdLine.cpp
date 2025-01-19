@@ -317,7 +317,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			{
 				g_cmdLine.auxSlotInsert = CT_RamWorksIII;
 				if (!g_cmdLine.uRamWorksExPages)
-					g_cmdLine.uRamWorksExPages = kMaxExMemoryBanksRealRW3;	// default to ~8MB (ie. the max for the real RW3 card)
+					g_cmdLine.uRamWorksExPages = kDefaultExMemoryBanksRealRW3;
 			}
 			else
 			{
