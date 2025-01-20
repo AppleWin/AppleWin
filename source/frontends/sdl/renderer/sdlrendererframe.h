@@ -6,29 +6,28 @@
 namespace sa2
 {
 
-  class SDLRendererFrame : public SDLFrame
-  {
-  public:
-    SDLRendererFrame(const common2::EmulatorOptions & options);
+    class SDLRendererFrame : public SDLFrame
+    {
+    public:
+        SDLRendererFrame(const common2::EmulatorOptions &options);
 
-    void VideoPresentScreen() override;
-    void Initialize(bool resetVideoState) override;
+        void VideoPresentScreen() override;
+        void Initialize(bool resetVideoState) override;
 
-    bool Quit() const override;
+        bool Quit() const override;
 
-  protected:
-    void GetRelativeMousePosition(const SDL_MouseMotionEvent & motion, float & x, float & y) const override;
-    void ToggleMouseCursor() override;
+    protected:
+        void GetRelativeMousePosition(const SDL_MouseMotionEvent &motion, float &x, float &y) const override;
+        void ToggleMouseCursor() override;
 
-  private:
+    private:
+        static constexpr SDL_PixelFormatEnum ourPixelFormat = SDL_PIXELFORMAT_ARGB8888;
 
-    static constexpr SDL_PixelFormatEnum ourPixelFormat = SDL_PIXELFORMAT_ARGB8888;
+        SDL_Rect myRect;
+        int myPitch;
 
-    SDL_Rect myRect;
-    int myPitch;
+        std::shared_ptr<SDL_Renderer> myRenderer;
+        std::shared_ptr<SDL_Texture> myTexture;
+    };
 
-    std::shared_ptr<SDL_Renderer> myRenderer;
-    std::shared_ptr<SDL_Texture> myTexture;
-  };
-
-}
+} // namespace sa2

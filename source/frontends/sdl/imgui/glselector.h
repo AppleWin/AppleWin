@@ -15,8 +15,8 @@
 #define SA2_CONTEXT_MINOR_VERSION 0
 
 // this is defined in gl2ext.h and nowhere in gl3.h
-#define SA2_IMAGE_FORMAT_INTERNAL   GL_BGRA_EXT
-#define SA2_IMAGE_FORMAT            GL_BGRA_EXT
+#define SA2_IMAGE_FORMAT_INTERNAL GL_BGRA_EXT
+#define SA2_IMAGE_FORMAT GL_BGRA_EXT
 
 #elif defined(IMGUI_IMPL_OPENGL_ES3)
 
@@ -39,8 +39,8 @@
 #define SA2_CONTEXT_MINOR_VERSION 0
 
 // this is defined in gl2ext.h and nowhere in gl3.h
-#define SA2_IMAGE_FORMAT_INTERNAL   GL_BGRA_EXT
-#define SA2_IMAGE_FORMAT            GL_BGRA_EXT
+#define SA2_IMAGE_FORMAT_INTERNAL GL_BGRA_EXT
+#define SA2_IMAGE_FORMAT GL_BGRA_EXT
 
 #elif defined(__APPLE__)
 
@@ -51,8 +51,8 @@
 #define SA2_CONTEXT_MAJOR_VERSION 3
 #define SA2_CONTEXT_MINOR_VERSION 2
 
-#define SA2_IMAGE_FORMAT_INTERNAL   GL_RGBA
-#define SA2_IMAGE_FORMAT            GL_BGRA
+#define SA2_IMAGE_FORMAT_INTERNAL GL_RGBA
+#define SA2_IMAGE_FORMAT GL_BGRA
 
 #else
 
@@ -63,8 +63,8 @@
 #define SA2_CONTEXT_MAJOR_VERSION 3
 #define SA2_CONTEXT_MINOR_VERSION 2
 
-#define SA2_IMAGE_FORMAT_INTERNAL   GL_RGBA
-#define SA2_IMAGE_FORMAT            GL_BGRA
+#define SA2_IMAGE_FORMAT_INTERNAL GL_RGBA
+#define SA2_IMAGE_FORMAT GL_BGRA
 
 #endif
 

@@ -5,8 +5,9 @@
 
 class QMdiSubWindow;
 
-namespace Ui {
-class Emulator;
+namespace Ui
+{
+    class Emulator;
 }
 
 class Emulator : public QFrame
@@ -17,19 +18,19 @@ public:
     explicit Emulator(QWidget *parent = nullptr);
     ~Emulator();
 
-    void redrawScreen();    // regenerate image and repaint
+    void redrawScreen(); // regenerate image and repaint
     void refreshScreen(const bool force);
 
-    bool saveScreen(const QString & filename) const;
+    bool saveScreen(const QString &filename) const;
     void loadVideoSettings();
     void unloadVideoSettings();
     void displayLogo();
 
-    void setZoom(QMdiSubWindow * window, const int x);
-    void set43AspectRatio(QMdiSubWindow * window);
+    void setZoom(QMdiSubWindow *window, const int x);
+    void set43AspectRatio(QMdiSubWindow *window);
 
 private:
-    void setVideoSize(QMdiSubWindow * window, const QSize & size);
+    void setVideoSize(QMdiSubWindow *window, const QSize &size);
 
 private:
     Ui::Emulator *ui;

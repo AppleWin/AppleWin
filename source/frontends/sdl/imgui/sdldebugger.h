@@ -8,41 +8,41 @@
 namespace sa2
 {
 
-  class SDLFrame;
+    class SDLFrame;
 
-  class ImGuiDebugger
-  {
-  public:
-    bool showDebugger = false;
+    class ImGuiDebugger
+    {
+    public:
+        bool showDebugger = false;
 
-    void drawDebugger(SDLFrame* frame);
-    void resetDebuggerCycles();
+        void drawDebugger(SDLFrame *frame);
+        void resetDebuggerCycles();
 
-    void syncDebuggerState(SDLFrame* frame);
+        void syncDebuggerState(SDLFrame *frame);
 
-  private:
-    bool mySyncCursor = true;
-    bool myScrollConsole = true;
+    private:
+        bool mySyncCursor = true;
+        bool myScrollConsole = true;
 
-    int64_t myBaseDebuggerCycles;
-    std::unordered_map<uint32_t, int64_t> myAddressCycles;
+        int64_t myBaseDebuggerCycles;
+        std::unordered_map<uint32_t, int64_t> myAddressCycles;
 
-    CycleTabItems myCycleTabItems;
-    InputTextHistory myInputTextHistory;
+        CycleTabItems myCycleTabItems;
+        InputTextHistory myInputTextHistory;
 
-    void debuggerCommand(SDLFrame * frame, const char * s);
+        void debuggerCommand(SDLFrame *frame, const char *s);
 
-    void drawDisassemblyTable(SDLFrame * frame);
-    void drawConsole();
-    void drawBreakpoints();
-    void drawRegisters();
-    void drawStackReturnAddress();
-    void drawAnnunciators();
-    void drawSwitches();
+        void drawDisassemblyTable(SDLFrame *frame);
+        void drawConsole();
+        void drawBreakpoints();
+        void drawRegisters();
+        void drawStackReturnAddress();
+        void drawAnnunciators();
+        void drawSwitches();
 
-    void processDebuggerKeys();
+        void processDebuggerKeys();
 
-    void setCurrentAddress(const uint32_t nAddress);
- };
+        void setCurrentAddress(const uint32_t nAddress);
+    };
 
-}
+} // namespace sa2

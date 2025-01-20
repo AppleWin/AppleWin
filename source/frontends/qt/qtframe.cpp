@@ -13,13 +13,12 @@
 #include <QMessageBox>
 #include <QStandardPaths>
 
-QtFrame::QtFrame(Emulator * emulator, QMdiSubWindow * window) 
-: LinuxFrame(true)
-, myEmulator(emulator)
-, myWindow(window)
-, myForceRepaint(false)
+QtFrame::QtFrame(Emulator *emulator, QMdiSubWindow *window)
+    : LinuxFrame(true)
+    , myEmulator(emulator)
+    , myWindow(window)
+    , myForceRepaint(false)
 {
-
 }
 
 void QtFrame::SetForceRepaint(const bool force)
@@ -65,7 +64,7 @@ void QtFrame::Set43Ratio()
     myEmulator->set43AspectRatio(myWindow);
 }
 
-bool QtFrame::saveScreen(const QString & filename) const
+bool QtFrame::saveScreen(const QString &filename) const
 {
     return myEmulator->saveScreen(filename);
 }
@@ -115,7 +114,8 @@ std::string QtFrame::Video_GetScreenShotFolder() const
     return pictures.toStdString() + "/";
 }
 
-std::shared_ptr<SoundBuffer> QtFrame::CreateSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName)
+std::shared_ptr<SoundBuffer> QtFrame::CreateSoundBuffer(
+    uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char *pszVoiceName)
 {
     const auto buffer = QDirectSound::iCreateDirectSoundBuffer(dwBufferSize, nSampleRate, nChannels, pszVoiceName);
     return buffer;
@@ -123,5 +123,4 @@ std::shared_ptr<SoundBuffer> QtFrame::CreateSoundBuffer(uint32_t dwBufferSize, u
 
 void SingleStep(bool /* bReinit */)
 {
-
 }

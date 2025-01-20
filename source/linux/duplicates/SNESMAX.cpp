@@ -6,9 +6,9 @@ void SNESMAXCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
 }
 
-bool SNESMAXCard::ParseControllerMappingFile(UINT joyNum, const char* pathname, std::string& errorMsg)
+bool SNESMAXCard::ParseControllerMappingFile(UINT joyNum, const char *pathname, std::string &errorMsg)
 {
-  return false;
+    return false;
 }
 
 //===========================================================================
@@ -17,26 +17,26 @@ static const UINT kUNIT_VERSION = 1;
 
 #define SS_YAML_KEY_BUTTON_INDEX "Button Index"
 
-const std::string & SNESMAXCard::GetSnapshotCardName(void)
+const std::string &SNESMAXCard::GetSnapshotCardName(void)
 {
-  static const std::string name("SNES MAX");
-  return name;
+    static const std::string name("SNES MAX");
+    return name;
 }
 
-void SNESMAXCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+void SNESMAXCard::SaveSnapshot(YamlSaveHelper &yamlSaveHelper)
 {
-  YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
+    YamlSaveHelper::Slot slot(yamlSaveHelper, GetSnapshotCardName(), m_slot, kUNIT_VERSION);
 
-  YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
-  yamlSaveHelper.SaveUint(SS_YAML_KEY_BUTTON_INDEX, m_buttonIndex);
+    YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
+    yamlSaveHelper.SaveUint(SS_YAML_KEY_BUTTON_INDEX, m_buttonIndex);
 }
 
-bool SNESMAXCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
+bool SNESMAXCard::LoadSnapshot(YamlLoadHelper &yamlLoadHelper, UINT version)
 {
-  if (version < 1 || version > kUNIT_VERSION)
-    ThrowErrorInvalidVersion(version);
+    if (version < 1 || version > kUNIT_VERSION)
+        ThrowErrorInvalidVersion(version);
 
-  yamlLoadHelper.LoadUint(SS_YAML_KEY_BUTTON_INDEX);
+    yamlLoadHelper.LoadUint(SS_YAML_KEY_BUTTON_INDEX);
 
-  return true;
+    return true;
 }

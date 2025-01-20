@@ -9,8 +9,9 @@ class QComboBox;
 class QSettings;
 struct PreferenceData;
 
-namespace Ui {
-class Preferences;
+namespace Ui
+{
+    class Preferences;
 }
 
 class Preferences : public QDialog
@@ -18,11 +19,10 @@ class Preferences : public QDialog
     Q_OBJECT
 
 public:
-
     explicit Preferences(QWidget *parent);
     ~Preferences();
 
-    void setup(const PreferenceData & data, QSettings & settings);
+    void setup(const PreferenceData &data, QSettings &settings);
     PreferenceData getData() const;
 
 private slots:
@@ -50,10 +50,10 @@ private:
 
     QColor myMonochromeColor;
 
-    void setSettings(QSettings & settings);
-    void setData(const PreferenceData & data);
+    void setSettings(QSettings &settings);
+    void setData(const PreferenceData &data);
     void populateJoysticks();
-    void browseDisk(const std::vector<QComboBox *> & vdisks, const size_t id);
+    void browseDisk(const std::vector<QComboBox *> &vdisks, const size_t id);
 
 private:
     Ui::Preferences *ui;

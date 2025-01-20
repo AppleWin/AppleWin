@@ -3,12 +3,12 @@
 
 Update_t CmdConfigFont(int /* nArgs */)
 {
-  return UPDATE_NOTHING;
+    return UPDATE_NOTHING;
 }
 
 Update_t CmdConfigGetFont(int /* nArgs */)
 {
-  return UPDATE_NOTHING;
+    return UPDATE_NOTHING;
 }
 
 void ProcessClipboardCommands()

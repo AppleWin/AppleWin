@@ -4,7 +4,7 @@
 #include <QOpenGLWidget>
 
 #define QVIDEO_BASECLASS QOpenGLWidget
-//#define QVIDEO_BASECLASS QWidget
+// #define QVIDEO_BASECLASS QWidget
 
 class QVideo : public QVIDEO_BASECLASS
 {
@@ -44,7 +44,7 @@ private:
     int myLogoX;
     int myLogoY;
 
-    quint8 * myFrameBuffer;
+    quint8 *myFrameBuffer;
 
     QImage getScreenImage() const;
 };

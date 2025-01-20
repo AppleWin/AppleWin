@@ -11,9 +11,9 @@
 typedef QString QLatin1StringView;
 #endif
 
-AudioInfo::AudioInfo(QWidget *parent) :
-    QWidget(parent),
-    ui(new Ui::AudioInfo)
+AudioInfo::AudioInfo(QWidget *parent)
+    : QWidget(parent)
+    , ui(new Ui::AudioInfo)
 {
     ui->setupUi(this);
 }
@@ -33,23 +33,23 @@ void AudioInfo::updateInfo(const qint64 speed, const qint64 target)
     }
 
     myCounter = 0;
-    const std::vector<QDirectSound::SoundInfo> & info = QDirectSound::getAudioInfo();
+    const std::vector<QDirectSound::SoundInfo> &info = QDirectSound::getAudioInfo();
 
     QString s("Voice   Channels  Buffer  Underruns\n");
-    for (const auto & i : info)
+    for (const auto &i : info)
     {
         if (i.running)
         {
             s += QString("%1    %2    %3   %4\n")
-                .arg(QString(i.voiceName.c_str()), -10)
-                .arg(i.channels, 2)
-                .arg(i.buffer, 4)
-                .arg(i.numberOfUnderruns, 8);
+                     .arg(QString(i.voiceName.c_str()), -10)
+                     .arg(i.channels, 2)
+                     .arg(i.buffer, 4)
+                     .arg(i.numberOfUnderruns, 8);
         }
     }
     s += QString("\nspeed                = %1\n").arg(speed, 10);
-    s +=   QString("target               = %1\n").arg(target, 10);
-    s +=   QString("g_nCpuCyclesFeedback =     %1\n").arg(g_nCpuCyclesFeedback, 6);
+    s += QString("target               = %1\n").arg(target, 10);
+    s += QString("g_nCpuCyclesFeedback =     %1\n").arg(g_nCpuCyclesFeedback, 6);
 
     ui->info->setPlainText(s);
 }

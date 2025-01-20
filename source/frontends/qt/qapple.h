@@ -1,7 +1,6 @@
 #ifndef QAPPLE_H
 #define QAPPLE_H
 
-
 #include <QMainWindow>
 #include <QElapsedTimer>
 #include <QAudio>
@@ -10,13 +9,13 @@
 
 #include "options.h"
 
-
 class QMdiSubWindow;
 class Preferences;
 class QtFrame;
 
-namespace Ui {
-class QApple;
+namespace Ui
+{
+    class QApple;
 }
 
 class QLabel;
@@ -29,7 +28,7 @@ public:
     explicit QApple(QWidget *parent = nullptr);
     ~QApple();
 
-    void loadStateFile(const QString & stateFile);
+    void loadStateFile(const QString &stateFile);
 
 signals:
     void endEmulator();
@@ -87,18 +86,17 @@ private slots:
     void on_actionAudio_Info_triggered();
 
 private:
-
     // helper class to pause the emulator and restart at the end of the block
     class PauseEmulator
     {
     public:
-        PauseEmulator(QApple * qapple);
+        PauseEmulator(QApple *qapple);
 
         ~PauseEmulator();
 
     private:
         bool myWasRunning;
-        QApple * myQApple;
+        QApple *myQApple;
     };
 
     void readSettings();
@@ -107,15 +105,15 @@ private:
     void reloadOptions();
 
     int myTimerID;
-    Preferences * myPreferences;
+    Preferences *myPreferences;
 
-    QLabel * mySaveStateLabel;
+    QLabel *mySaveStateLabel;
 
     std::shared_ptr<QtFrame> myFrame;
     QElapsedTimer myElapsedTimer;
     qint64 myStartCycles;
     qint64 myOrgStartCycles;
-    QMdiSubWindow * myEmulatorWindow;
+    QMdiSubWindow *myEmulatorWindow;
 
     GlobalOptions myOptions;
 

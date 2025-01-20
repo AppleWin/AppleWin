@@ -10,18 +10,18 @@ class Registry;
 
 namespace common2
 {
-  class PTreeRegistry;
+    class PTreeRegistry;
 }
 
 namespace ra2
 {
 
-  void SetupRetroVariables();
-  std::shared_ptr<common2::PTreeRegistry> CreateRetroRegistry();
-  void PopulateRegistry(const std::shared_ptr<Registry> & registry);
+    void SetupRetroVariables();
+    std::shared_ptr<common2::PTreeRegistry> CreateRetroRegistry();
+    void PopulateRegistry(const std::shared_ptr<Registry> &registry);
 
-  AudioSource GetAudioSource();
-  KeyboardType GetKeyboardEmulationType();
-  PlaylistStartDisk GetPlaylistStartDisk();
+    AudioSource GetAudioSource();
+    KeyboardType GetKeyboardEmulationType();
+    PlaylistStartDisk GetPlaylistStartDisk();
 
-}
+} // namespace ra2

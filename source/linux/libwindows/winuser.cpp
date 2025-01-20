@@ -4,40 +4,40 @@
 
 HCURSOR LoadCursor(HINSTANCE hInstance, LPCSTR lpCursorName)
 {
-  return nullptr;
+    return nullptr;
 }
 
 HCURSOR SetCursor(HCURSOR hCursor)
 {
-  return nullptr;
+    return nullptr;
 }
 
-UINT_PTR SetTimer(HWND,UINT_PTR,UINT,TIMERPROC)
+UINT_PTR SetTimer(HWND, UINT_PTR, UINT, TIMERPROC)
 {
-  // ignore everything
-  // 1 is to avoid a warning to the console
-  return 1;
+    // ignore everything
+    // 1 is to avoid a warning to the console
+    return 1;
 }
 
 BOOL KillTimer(HWND hWnd, UINT uIDEvent)
 {
-  return TRUE;
+    return TRUE;
 }
 
-HWND        WINAPI GetDlgItem(HWND,INT)
+HWND WINAPI GetDlgItem(HWND, INT)
 {
-  return nullptr;
+    return nullptr;
 }
 
-LRESULT     WINAPI SendMessage(HWND,UINT,WPARAM,LPARAM)
+LRESULT WINAPI SendMessage(HWND, UINT, WPARAM, LPARAM)
 {
-  return 0;
+    return 0;
 }
 
-void        WINAPI PostQuitMessage(INT status)
+void WINAPI PostQuitMessage(INT status)
 {
-  std::ostringstream buffer("PostQuitMessage: ");
-  buffer << status;
+    std::ostringstream buffer("PostQuitMessage: ");
+    buffer << status;
 
-  throw std::runtime_error(buffer.str());
+    throw std::runtime_error(buffer.str());
 }

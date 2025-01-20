@@ -5,12 +5,11 @@
 // IPropertySheetPage
 INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
-  return 0;
+    return 0;
 }
 
 void CPageSound::DlgOK(HWND hWnd)
 {
-
 }
 
-CPageSound* CPageSound::ms_this = nullptr;
+CPageSound *CPageSound::ms_this = nullptr;

@@ -9,66 +9,66 @@
 namespace na2
 {
 
-  class ASCIIArt;
-  class EvDevPaddle;
-  struct NCurses;
+    class ASCIIArt;
+    class EvDevPaddle;
+    struct NCurses;
 
-  class NFrame : public common2::GNUFrame
-  {
-  public:
-    NFrame(const common2::EmulatorOptions & options, const std::shared_ptr<EvDevPaddle> & paddle);
+    class NFrame : public common2::GNUFrame
+    {
+    public:
+        NFrame(const common2::EmulatorOptions &options, const std::shared_ptr<EvDevPaddle> &paddle);
 
-    WINDOW * GetWindow();
-    WINDOW * GetStatus();
+        WINDOW *GetWindow();
+        WINDOW *GetStatus();
 
-    void Initialize(bool resetVideoState) override;
-    void Destroy() override;
-    void VideoPresentScreen() override;
-    int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
-    void FrameRefreshStatus(int drawflags) override;
+        void Initialize(bool resetVideoState) override;
+        void Destroy() override;
+        void VideoPresentScreen() override;
+        int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) override;
+        void FrameRefreshStatus(int drawflags) override;
 
-    std::shared_ptr<SoundBuffer> CreateSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName) override;
+        std::shared_ptr<SoundBuffer> CreateSoundBuffer(
+            uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char *pszVoiceName) override;
 
-    void ProcessEvDev();
+        void ProcessEvDev();
 
-    void ChangeColumns(const int x);
-    void ChangeRows(const int x);
+        void ChangeColumns(const int x);
+        void ChangeRows(const int x);
 
-    void Init(int rows, int columns);
-    void ReInit();
+        void Init(int rows, int columns);
+        void ReInit();
 
-  private:
+    private:
+        const std::shared_ptr<EvDevPaddle> myPaddle;
 
-    const std::shared_ptr<EvDevPaddle> myPaddle;
+        int myRows;
+        int myColumns;
+        int myTextFlashCounter;
+        bool myTextFlashState;
 
-    int myRows;
-    int myColumns;
-    int myTextFlashCounter;
-    bool myTextFlashState;
+        std::shared_ptr<WINDOW> myFrame;
+        std::shared_ptr<WINDOW> myStatus;
+        std::shared_ptr<ASCIIArt> myAsciiArt;
+        std::shared_ptr<NCurses> myNCurses;
 
-    std::shared_ptr<WINDOW> myFrame;
-    std::shared_ptr<WINDOW> myStatus;
-    std::shared_ptr<ASCIIArt> myAsciiArt;
-    std::shared_ptr<NCurses> myNCurses;
+        LPBYTE myTextBank1; // Aux
+        LPBYTE myTextBank0; // Main
+        LPBYTE myHiresBank1;
+        LPBYTE myHiresBank0;
 
-    LPBYTE        myTextBank1; // Aux
-    LPBYTE        myTextBank0; // Main
-    LPBYTE        myHiresBank1;
-    LPBYTE        myHiresBank0;
+        void VideoUpdateFlash();
 
-    void VideoUpdateFlash();
+        chtype MapCharacter(Video &video, BYTE ch);
 
-    chtype MapCharacter(Video & video, BYTE ch);
+        bool Update40ColCell(Video &video, int x, int y, int xpixel, int ypixel, int offset);
+        bool Update80ColCell(Video &video, int x, int y, int xpixel, int ypixel, int offset);
+        bool UpdateLoResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
+        bool UpdateDLoResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
+        bool UpdateHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
+        bool UpdateDHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
 
-    bool Update40ColCell(Video & video, int x, int y, int xpixel, int ypixel, int offset);
-    bool Update80ColCell(Video & video, int x, int y, int xpixel, int ypixel, int offset);
-    bool UpdateLoResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
-    bool UpdateDLoResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
-    bool UpdateHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
-    bool UpdateDHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
+        void InitialiseNCurses();
+        void ForceInit(int rows, int columns);
+    };
 
-    void InitialiseNCurses();
-    void ForceInit(int rows, int columns);
-  };
-
-}
+} // namespace na2

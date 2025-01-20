@@ -3,8 +3,9 @@
 
 #include <QWidget>
 
-namespace Ui {
-class AudioInfo;
+namespace Ui
+{
+    class AudioInfo;
 }
 
 class AudioInfo : public QWidget

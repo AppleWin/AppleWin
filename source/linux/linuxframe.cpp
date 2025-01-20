@@ -37,14 +37,15 @@ void LinuxFrame::SetFullScreenShowSubunitStatus(bool /* bShow */)
 {
 }
 
-bool LinuxFrame::GetBestDisplayResolutionForFullScreen(UINT& /* bestWidth */, UINT& /* bestHeight */, UINT /* userSpecifiedWidth */, UINT /* userSpecifiedHeight */)
+bool LinuxFrame::GetBestDisplayResolutionForFullScreen(
+    UINT & /* bestWidth */, UINT & /* bestHeight */, UINT /* userSpecifiedWidth */, UINT /* userSpecifiedHeight */)
 {
-  return false;
+    return false;
 }
 
 int LinuxFrame::SetViewportScale(int nNewScale, bool /* bForce */)
 {
-  return nNewScale;
+    return nNewScale;
 }
 
 void LinuxFrame::SetAltEnterToggleFullScreen(bool /* mode */)
@@ -63,123 +64,125 @@ void LinuxFrame::SetWindowedModeShowDiskiiStatus(bool /* bShow */)
 {
 }
 
-LinuxFrame::LinuxFrame(const bool autoBoot) : myAutoBoot(autoBoot)
+LinuxFrame::LinuxFrame(const bool autoBoot)
+    : myAutoBoot(autoBoot)
 {
-  const std::array<int, 4> version = getVersionNumbers();
-  SetAppleWinVersion(version[0], version[1], version[2], version[3]);
+    const std::array<int, 4> version = getVersionNumbers();
+    SetAppleWinVersion(version[0], version[1], version[2], version[3]);
 }
 
 void LinuxFrame::Initialize(bool resetVideoState)
 {
-  Video & video = GetVideo();
+    Video &video = GetVideo();
 
-  const size_t numberOfPixels = video.GetFrameBufferWidth() * video.GetFrameBufferHeight();
+    const size_t numberOfPixels = video.GetFrameBufferWidth() * video.GetFrameBufferHeight();
 
-  static_assert(sizeof(bgra_t) == 4, "Invalid size of bgra_t");
-  const size_t numberOfBytes = sizeof(bgra_t) * numberOfPixels;
+    static_assert(sizeof(bgra_t) == 4, "Invalid size of bgra_t");
+    const size_t numberOfBytes = sizeof(bgra_t) * numberOfPixels;
 
-  myFramebuffer.resize(numberOfBytes);
-  video.Initialize(myFramebuffer.data(), resetVideoState);
-  LogFileTimeUntilFirstKeyReadReset();
+    myFramebuffer.resize(numberOfBytes);
+    video.Initialize(myFramebuffer.data(), resetVideoState);
+    LogFileTimeUntilFirstKeyReadReset();
 }
 
 void LinuxFrame::Destroy()
 {
-  myFramebuffer.clear();
-  GetVideo().Destroy(); // this resets the Video's FrameBuffer pointer
+    myFramebuffer.clear();
+    GetVideo().Destroy(); // this resets the Video's FrameBuffer pointer
 }
 
 void LinuxFrame::ApplyVideoModeChange()
 {
-  // this is similar to Win32Frame::ApplyVideoModeChange
-  // but it does not refresh the screen
-  // TODO see if the screen should refresh right now
-  Video & video = GetVideo();
+    // this is similar to Win32Frame::ApplyVideoModeChange
+    // but it does not refresh the screen
+    // TODO see if the screen should refresh right now
+    Video &video = GetVideo();
 
-  video.VideoReinitialize(false);
-  video.Config_Save_Video();
+    video.VideoReinitialize(false);
+    video.Config_Save_Video();
 
-  FrameRefreshStatus(DRAW_TITLE);
+    FrameRefreshStatus(DRAW_TITLE);
 }
 
 void LinuxFrame::CycleVideoType()
 {
-  Video & video = GetVideo();
-  video.IncVideoType();
+    Video &video = GetVideo();
+    video.IncVideoType();
 
-  ApplyVideoModeChange();
+    ApplyVideoModeChange();
 }
 
 void LinuxFrame::Cycle50ScanLines()
 {
-  Video & video = GetVideo();
+    Video &video = GetVideo();
 
-  VideoStyle_e videoStyle = video.GetVideoStyle();
-  videoStyle = VideoStyle_e(videoStyle ^ VS_HALF_SCANLINES);
+    VideoStyle_e videoStyle = video.GetVideoStyle();
+    videoStyle = VideoStyle_e(videoStyle ^ VS_HALF_SCANLINES);
 
-  video.SetVideoStyle(videoStyle);
+    video.SetVideoStyle(videoStyle);
 
-  ApplyVideoModeChange();
+    ApplyVideoModeChange();
 }
 
-BYTE* LinuxFrame::GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize)
+BYTE *LinuxFrame::GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize)
 {
-  const auto resource = GetResourceData(id);
+    const auto resource = GetResourceData(id);
 
-  if (resource.second != expectedSize)
-  {
-    throw std::runtime_error("Invalid size for resource " + std::to_string(id) + ": " + 
-      std::to_string(resource.second) + " != " + std::to_string(expectedSize));
-  }
+    if (resource.second != expectedSize)
+    {
+        throw std::runtime_error(
+            "Invalid size for resource " + std::to_string(id) + ": " + std::to_string(resource.second) +
+            " != " + std::to_string(expectedSize));
+    }
 
-  auto data = const_cast<unsigned char *>(resource.first);
-  return reinterpret_cast<BYTE*>(data);
+    auto data = const_cast<unsigned char *>(resource.first);
+    return reinterpret_cast<BYTE *>(data);
 }
 
 void LinuxFrame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)
 {
-  const auto resource = GetResourceData(id);
-  if (!GetBitmapFromResource(resource, cb, lpvBits))
-  {
-    throw std::runtime_error("Cannot process bitmap resource " + std::to_string(id));
-  }
+    const auto resource = GetResourceData(id);
+    if (!GetBitmapFromResource(resource, cb, lpvBits))
+    {
+        throw std::runtime_error("Cannot process bitmap resource " + std::to_string(id));
+    }
 }
 
 void LinuxFrame::Begin()
 {
-  InitialiseEmulator(myAutoBoot ? MODE_RUNNING : MODE_PAUSED);
-  Initialize(true);
+    InitialiseEmulator(myAutoBoot ? MODE_RUNNING : MODE_PAUSED);
+    Initialize(true);
 }
 
 void LinuxFrame::End()
 {
-  Destroy();
-  DestroyEmulator();
+    Destroy();
+    DestroyEmulator();
 }
 
 void LinuxFrame::Restart()
 {
-  End();
-  Begin();
+    End();
+    Begin();
 }
 
 void LinuxFrame::LoadSnapshot()
 {
-  Snapshot_LoadState();
+    Snapshot_LoadState();
 }
 
-std::shared_ptr<NetworkBackend> LinuxFrame::CreateNetworkBackend(const std::string & interfaceName)
+std::shared_ptr<NetworkBackend> LinuxFrame::CreateNetworkBackend(const std::string &interfaceName)
 {
 #ifdef U2_USE_SLIRP
-  return std::make_shared<SlirpBackend>();
+    return std::make_shared<SlirpBackend>();
 #else
-  return std::make_shared<PCapBackend>(interfaceName);
+    return std::make_shared<PCapBackend>(interfaceName);
 #endif
 }
 
 #ifndef _WIN32
 int MessageBox(HWND, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 {
-  return GetFrame().FrameMessageBox(lpText, lpCaption, uType);
+    return GetFrame().FrameMessageBox(lpText, lpCaption, uType);
 }
 #endif

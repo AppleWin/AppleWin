@@ -34,7 +34,7 @@ namespace
     const QString REG_TIMER = QString::fromUtf8("QApple/Emulator/Timer");
     const QString REG_FULL_SPEED = QString::fromUtf8("QApple/Emulator/Full Speed");
 
-    void insertDisk(Disk2InterfaceCard* pDisk2Card, const QString & filename, const int disk)
+    void insertDisk(Disk2InterfaceCard *pDisk2Card, const QString &filename, const int disk)
     {
         if (!pDisk2Card)
             return;
@@ -46,7 +46,8 @@ namespace
         else
         {
             const bool createMissingDisk = true;
-            const ImageError_e result = pDisk2Card->InsertDisk(disk, filename.toStdString().c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
+            const ImageError_e result = pDisk2Card->InsertDisk(
+                disk, filename.toStdString().c_str(), IMAGE_USE_FILES_WRITE_PROTECT_STATUS, createMissingDisk);
             if (result != eIMAGE_ERROR_NONE)
             {
                 const QString message = QString("Error [%1] inserting '%2'").arg(QString::number(result), filename);
@@ -55,7 +56,7 @@ namespace
         }
     }
 
-    void insertHD(HarddiskInterfaceCard * pHarddiskCard, const QString & filename, const int disk)
+    void insertHD(HarddiskInterfaceCard *pHarddiskCard, const QString &filename, const int disk)
     {
         if (!pHarddiskCard)
             return;
@@ -80,7 +81,7 @@ namespace
         if (slot >= NUM_SLOTS)
             return;
 
-        CardManager & cardManager = GetCardMgr();
+        CardManager &cardManager = GetCardMgr();
 
         // Two paths:
         // 1) Via Config dialog: card not inserted yet
@@ -89,7 +90,7 @@ namespace
             cardManager.Insert(slot, newCardType);
     }
 
-}
+} // namespace
 
 GlobalOptions::GlobalOptions()
 {
@@ -114,7 +115,7 @@ GlobalOptions GlobalOptions::fromQSettings()
     return options;
 }
 
-void GlobalOptions::setData(const GlobalOptions & data)
+void GlobalOptions::setData(const GlobalOptions &data)
 {
     if (this->msGap != data.msGap)
     {
@@ -163,21 +164,20 @@ void GlobalOptions::setData(const GlobalOptions & data)
         this->msAudioBuffer = data.msAudioBuffer;
         QSettings().setValue(REG_AUDIO_BUFFER, this->msAudioBuffer);
     }
-
 }
 
-void getAppleWinPreferences(PreferenceData & data)
+void getAppleWinPreferences(PreferenceData &data)
 {
-    CardManager & cardManager = GetCardMgr();
+    CardManager &cardManager = GetCardMgr();
 
     data.disks.resize(diskIDs.size());
-    Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
+    Disk2InterfaceCard *pDisk2Card = dynamic_cast<Disk2InterfaceCard *>(cardManager.GetObj(SLOT6));
 
     if (pDisk2Card)
     {
         for (size_t i = 0; i < diskIDs.size(); ++i)
         {
-            const std::string & diskName = pDisk2Card->GetFullName(diskIDs[i]);
+            const std::string &diskName = pDisk2Card->GetFullName(diskIDs[i]);
             if (!diskName.empty())
             {
                 data.disks[i] = QString::fromStdString(diskName);
@@ -186,13 +186,13 @@ void getAppleWinPreferences(PreferenceData & data)
     }
 
     data.hds.resize(hdIDs.size());
-    HarddiskInterfaceCard* pHarddiskCard = dynamic_cast<HarddiskInterfaceCard*>(cardManager.GetObj(SLOT7));
+    HarddiskInterfaceCard *pHarddiskCard = dynamic_cast<HarddiskInterfaceCard *>(cardManager.GetObj(SLOT7));
 
     if (pHarddiskCard)
     {
         for (size_t i = 0; i < hdIDs.size(); ++i)
         {
-            const std::string & diskName = pHarddiskCard->GetFullName(hdIDs[i]);
+            const std::string &diskName = pHarddiskCard->GetFullName(hdIDs[i]);
             if (!diskName.empty())
             {
                 data.hds[i] = QString::fromStdString(diskName);
@@ -211,13 +211,13 @@ void getAppleWinPreferences(PreferenceData & data)
     data.speakerVolume = SpkrGetVolume();
     data.mockingboardVolume = cardManager.GetMockingboardCardMgr().GetVolume();
 
-    const std::string & saveState = Snapshot_GetFilename();
+    const std::string &saveState = Snapshot_GetFilename();
     if (!saveState.empty())
     {
         data.saveState = QString::fromStdString(saveState);
     }
 
-    Video & video = GetVideo();
+    Video &video = GetVideo();
 
     data.videoType = video.GetVideoType();
     data.scanLines = video.IsVideoStyle(VS_HALF_SCANLINES);
@@ -227,8 +227,8 @@ void getAppleWinPreferences(PreferenceData & data)
 
     if (cardManager.IsParallelPrinterCardInstalled())
     {
-        ParallelPrinterCard* card = GetCardMgr().GetParallelPrinterCard();
-        const std::string & printerFilename = card->GetFilename();
+        ParallelPrinterCard *card = GetCardMgr().GetParallelPrinterCard();
+        const std::string &printerFilename = card->GetFilename();
         if (!printerFilename.empty())
         {
             data.printerFilename = QString::fromStdString(printerFilename);
@@ -236,11 +236,12 @@ void getAppleWinPreferences(PreferenceData & data)
     }
 }
 
-void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const PreferenceData & currentData, const PreferenceData & newData)
+void setAppleWinPreferences(
+    const std::shared_ptr<QtFrame> &frame, const PreferenceData &currentData, const PreferenceData &newData)
 {
-    CardManager & cardManager = GetCardMgr();
-    Disk2InterfaceCard* pDisk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
-    HarddiskInterfaceCard* pHarddiskCard = dynamic_cast<HarddiskInterfaceCard*>(cardManager.GetObj(SLOT7));
+    CardManager &cardManager = GetCardMgr();
+    Disk2InterfaceCard *pDisk2Card = dynamic_cast<Disk2InterfaceCard *>(cardManager.GetObj(SLOT6));
+    HarddiskInterfaceCard *pHarddiskCard = dynamic_cast<HarddiskInterfaceCard *>(cardManager.GetObj(SLOT7));
 
     if (currentData.speakerVolume != newData.speakerVolume)
     {
@@ -312,17 +313,18 @@ void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const Prefer
     {
         if (cardManager.IsParallelPrinterCardInstalled())
         {
-            ParallelPrinterCard* card = cardManager.GetParallelPrinterCard();
+            ParallelPrinterCard *card = cardManager.GetParallelPrinterCard();
             const std::string name = newData.printerFilename.toStdString();
             card->SetFilename(name);
             RegSaveString(TEXT(REG_CONFIG), REGVALUE_PRINTER_FILENAME, 1, name);
         }
     }
 
-    if (currentData.videoType != newData.videoType || currentData.scanLines != newData.scanLines || currentData.verticalBlend != newData.verticalBlend
-            || currentData.hz50 != newData.hz50 || currentData.monochromeColor != newData.monochromeColor)
+    if (currentData.videoType != newData.videoType || currentData.scanLines != newData.scanLines ||
+        currentData.verticalBlend != newData.verticalBlend || currentData.hz50 != newData.hz50 ||
+        currentData.monochromeColor != newData.monochromeColor)
     {
-        Video & video = GetVideo();
+        Video &video = GetVideo();
 
         const VideoType_e videoType = VideoType_e(newData.videoType);
         video.SetVideoType(videoType);
@@ -343,5 +345,4 @@ void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const Prefer
 
         frame->ApplyVideoModeChange();
     }
-
 }

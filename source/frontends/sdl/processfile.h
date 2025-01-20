@@ -1,6 +1,7 @@
 namespace sa2
 {
-  class SDLFrame;
+    class SDLFrame;
 
-  void processFile(SDLFrame * frame, const char * filename, const size_t dragAndDropSlot, const size_t dragAndDropDrive);
-}
+    void processFile(
+        SDLFrame *frame, const char *filename, const size_t dragAndDropSlot, const size_t dragAndDropDrive);
+} // namespace sa2

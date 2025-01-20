@@ -6,16 +6,16 @@
 namespace common2
 {
 
-  class GNUFrame : public CommonFrame
-  {
-  public:
-    GNUFrame(const common2::EmulatorOptions & option);
+    class GNUFrame : public CommonFrame
+    {
+    public:
+        GNUFrame(const common2::EmulatorOptions &option);
 
-    std::string Video_GetScreenShotFolder() const override;
+        std::string Video_GetScreenShotFolder() const override;
 
-  protected:
-    // pointer and size
-    std::pair<const unsigned char *, unsigned int> GetResourceData(WORD id) const;
-  };
+    protected:
+        // pointer and size
+        std::pair<const unsigned char *, unsigned int> GetResourceData(WORD id) const;
+    };
 
-}
+} // namespace common2

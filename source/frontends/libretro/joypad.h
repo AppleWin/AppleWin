@@ -8,15 +8,15 @@
 namespace ra2
 {
 
-  class Joypad : public JoypadBase
-  {
-  public:
-    Joypad();
+    class Joypad : public JoypadBase
+    {
+    public:
+        Joypad();
 
-    double getAxis(int i) const override;
+        double getAxis(int i) const override;
 
-  private:
-    std::vector<std::vector<std::pair<InputDescriptor, double> > > myAxisCodes;
-  };
+    private:
+        std::vector<std::vector<std::pair<InputDescriptor, double>>> myAxisCodes;
+    };
 
-}
+} // namespace ra2

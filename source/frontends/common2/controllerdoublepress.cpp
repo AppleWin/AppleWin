@@ -3,12 +3,12 @@
 namespace common2
 {
 
-  bool ControllerDoublePress::pressButton()
-  {
-    const auto secondBtnPress = std::chrono::steady_clock::now();
-    const auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(secondBtnPress - myFirstBtnPress).count();
-    myFirstBtnPress = secondBtnPress;
-    return dt <= myThreshold;
-  }
+    bool ControllerDoublePress::pressButton()
+    {
+        const auto secondBtnPress = std::chrono::steady_clock::now();
+        const auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(secondBtnPress - myFirstBtnPress).count();
+        myFirstBtnPress = secondBtnPress;
+        return dt <= myThreshold;
+    }
 
-}
+} // namespace common2

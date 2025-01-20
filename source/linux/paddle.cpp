@@ -8,10 +8,9 @@
 
 namespace
 {
-  unsigned __int64 g_nJoyCntrResetCycle = 0;	// Abs cycle that joystick counters were reset
-  const double PDL_CNTR_INTERVAL = 2816.0 / 255.0;	// 11.04 (From KEGS)
-}
-
+    unsigned __int64 g_nJoyCntrResetCycle = 0;       // Abs cycle that joystick counters were reset
+    const double PDL_CNTR_INTERVAL = 2816.0 / 255.0; // 11.04 (From KEGS)
+} // namespace
 
 std::shared_ptr<Paddle> Paddle::instance;
 
@@ -20,143 +19,145 @@ bool Paddle::ourSquaring = true;
 
 void Paddle::setButtonPressed(int i)
 {
-  ourButtons.insert(i);
+    ourButtons.insert(i);
 }
 
 void Paddle::setButtonReleased(int i)
 {
-  ourButtons.erase(i);
+    ourButtons.erase(i);
 }
 
 void Paddle::setSquaring(bool value)
 {
-  ourSquaring = value;
+    ourSquaring = value;
 }
-
 
 bool Paddle::getButton(int i) const
 {
-  return false;
+    return false;
 }
 
 double Paddle::getAxis(int i) const
 {
-  return 0;
+    return 0;
 }
 
 int Paddle::getAxisValue(int i) const
 {
-  double axis;
-  if (ourSquaring)
-  {
-    const double x[2] = {getAxis(0), getAxis(1)};
-    axis = x[i];
-
-    if (x[0] * x[1] != 0.0)
+    double axis;
+    if (ourSquaring)
     {
-      // rescale the circle to the square
-      const double ratio2 = (x[1] * x[1]) / (x[0] * x[0]);
-      const double c = std::min(ratio2, 1.0 / ratio2);
-      const double coeff = std::sqrt(1.0 + c);
-      axis *= coeff;
-    }
-  }
-  else
-  {
-    axis = getAxis(i);
-  }
+        const double x[2] = {getAxis(0), getAxis(1)};
+        axis = x[i];
 
-  const int value = static_cast<int>((axis + 1.0) * 0.5 * 255);
-  return value;
+        if (x[0] * x[1] != 0.0)
+        {
+            // rescale the circle to the square
+            const double ratio2 = (x[1] * x[1]) / (x[0] * x[0]);
+            const double c = std::min(ratio2, 1.0 / ratio2);
+            const double coeff = std::sqrt(1.0 + c);
+            axis *= coeff;
+        }
+    }
+    else
+    {
+        axis = getAxis(i);
+    }
+
+    const int value = static_cast<int>((axis + 1.0) * 0.5 * 255);
+    return value;
 }
 
 BYTE __stdcall JoyReadButton(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
-  addr &= 0xFF;
-  BOOL pressed = 0;
+    addr &= 0xFF;
+    BOOL pressed = 0;
 
-  if (Paddle::ourButtons.find(addr) != Paddle::ourButtons.end())
-  {
-    pressed = 1;
-  }
-  else
-  {
-    if (Paddle::instance)
+    if (Paddle::ourButtons.find(addr) != Paddle::ourButtons.end())
     {
-      switch (addr)
-      {
-      case Paddle::ourOpenApple:
-        if (CopyProtectionDonglePB0() >= 0)
-        {
-          pressed = CopyProtectionDonglePB0();
-        }
-        else
-        {
-          pressed = Paddle::instance->getButton(0);
-        }
-        break;
-      case Paddle::ourSolidApple:
-        if (CopyProtectionDonglePB1() >= 0)
-        {
-          pressed = CopyProtectionDonglePB1();
-        }
-        else
-        {
-          pressed = Paddle::instance->getButton(1);
-        }
-        break;
-      case Paddle::ourThirdApple:
-        if (CopyProtectionDonglePB2() >= 0)
-        {
-          pressed = CopyProtectionDonglePB2();
-        }
-        break;
-      }
+        pressed = 1;
     }
-  }
+    else
+    {
+        if (Paddle::instance)
+        {
+            switch (addr)
+            {
+            case Paddle::ourOpenApple:
+                if (CopyProtectionDonglePB0() >= 0)
+                {
+                    pressed = CopyProtectionDonglePB0();
+                }
+                else
+                {
+                    pressed = Paddle::instance->getButton(0);
+                }
+                break;
+            case Paddle::ourSolidApple:
+                if (CopyProtectionDonglePB1() >= 0)
+                {
+                    pressed = CopyProtectionDonglePB1();
+                }
+                else
+                {
+                    pressed = Paddle::instance->getButton(1);
+                }
+                break;
+            case Paddle::ourThirdApple:
+                if (CopyProtectionDonglePB2() >= 0)
+                {
+                    pressed = CopyProtectionDonglePB2();
+                }
+                break;
+            }
+        }
+    }
 
-  return MemReadFloatingBus(pressed, uExecutedCycles);
+    return MemReadFloatingBus(pressed, uExecutedCycles);
 }
 
 BYTE __stdcall JoyReadPosition(WORD pc, WORD address, BYTE bWrite, BYTE d, ULONG uExecutedCycles)
 {
-  CpuCalcCycles(uExecutedCycles);
+    CpuCalcCycles(uExecutedCycles);
 
-  const int pdl = address & 3;  // 11: joy number & axis
-  const int copyProtection = CopyProtectionDonglePDL(pdl);
+    const int pdl = address & 3; // 11: joy number & axis
+    const int copyProtection = CopyProtectionDonglePDL(pdl);
 
-  // if nothing is connected, set it to TRUE
-  BOOL nPdlCntrActive = TRUE;
+    // if nothing is connected, set it to TRUE
+    BOOL nPdlCntrActive = TRUE;
 
-  const auto setPdlPos = [&nPdlCntrActive] (const int pos) {
-    nPdlCntrActive = g_nCumulativeCycles <= (g_nJoyCntrResetCycle + (unsigned __int64) ((double)pos * PDL_CNTR_INTERVAL));
-  };
-
-  if (copyProtection >= 0)
-  {
-    // if active, this has the highest priority
-    setPdlPos(copyProtection);
-  }
-  else if (Paddle::instance)
-  {
-    const int nJoyNum = (address & 2) ? 1 : 0;	// $C064..$C067
-    if (nJoyNum == 0)
+    const auto setPdlPos = [&nPdlCntrActive](const int pos)
     {
-      int axis = address & 1;
-      int pos = Paddle::instance->getAxisValue(axis);
-      // This is from KEGS. It helps games like Championship Lode Runner, Boulderdash & Learning with Leeper(GH#1128)
-      if (pos >= 255)
-        pos = 287;
+        nPdlCntrActive =
+            g_nCumulativeCycles <= (g_nJoyCntrResetCycle + (unsigned __int64)((double)pos * PDL_CNTR_INTERVAL));
+    };
 
-      setPdlPos(pos);
+    if (copyProtection >= 0)
+    {
+        // if active, this has the highest priority
+        setPdlPos(copyProtection);
     }
-  }
+    else if (Paddle::instance)
+    {
+        const int nJoyNum = (address & 2) ? 1 : 0; // $C064..$C067
+        if (nJoyNum == 0)
+        {
+            int axis = address & 1;
+            int pos = Paddle::instance->getAxisValue(axis);
+            // This is from KEGS. It helps games like Championship Lode Runner, Boulderdash & Learning with
+            // Leeper(GH#1128)
+            if (pos >= 255)
+                pos = 287;
 
-  return MemReadFloatingBus(nPdlCntrActive, uExecutedCycles);
+            setPdlPos(pos);
+        }
+    }
+
+    return MemReadFloatingBus(nPdlCntrActive, uExecutedCycles);
 }
 
 void JoyResetPosition(ULONG uExecutedCycles)
 {
-  CpuCalcCycles(uExecutedCycles);
-  g_nJoyCntrResetCycle = g_nCumulativeCycles;
+    CpuCalcCycles(uExecutedCycles);
+    g_nJoyCntrResetCycle = g_nCumulativeCycles;
 }
