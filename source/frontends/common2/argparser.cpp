@@ -152,6 +152,8 @@ namespace common2
     const std::string configurationFileDefault = options.configurationFile.string();
     const std::string audioBufferDefault = std::to_string(options.audioBuffer);
 
+// clang-format off
+
     std::vector<std::pair<std::string, std::vector<OptionData_t>>> allOptions =
       {
         {
@@ -243,6 +245,8 @@ namespace common2
           }
         },
       };
+
+// clang-format on
 
     if (type == OptionsType::sa2)
     {

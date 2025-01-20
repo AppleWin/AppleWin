@@ -7,7 +7,7 @@ function(add_resources out_var id)
     "\n"
     "namespace ${id}\n"
     "{\n"
-    "  extern const std::map<uint32_t, std::pair<const unsigned char *, unsigned int>> data\;\n"
+    "    extern const std::map<uint32_t, std::pair<const unsigned char *, unsigned int>> data\;\n"
     "}\n"
   )
 
@@ -20,7 +20,7 @@ function(add_resources out_var id)
     "namespace ${id}\n"
     "{\n"
     "\n"
-    "  const std::map<uint32_t, std::pair<const unsigned char *, unsigned int>> data = {\n"
+    "    const std::map<uint32_t, std::pair<const unsigned char *, unsigned int>> data = {\n"
   )
 
   set(options ${ARGN})
@@ -46,13 +46,13 @@ function(add_resources out_var id)
       "extern int ${symbol}_len\;\n"
       "\n")
     string(APPEND content_cpp_public
-      "    {${resource_id}, {${symbol}, ${symbol}_len}},\n")
+      "        {${resource_id}, {${symbol}, ${symbol}_len}},\n")
 
     list(APPEND result ${out_f_cpp})
   endwhile()
 
   string(APPEND content_cpp_public
-    "  }\;\n"
+    "    }\;\n"
     "\n"
     "}\n"
   )

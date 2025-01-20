@@ -1,0 +1,7 @@
+BasedOnStyle: Microsoft
+AccessModifierOffset: -4
+AlignAfterOpenBracket: AlwaysBreak
+BreakBeforeBraces: Allman
+BreakConstructorInitializers: BeforeComma
+NamespaceIndentation: All
+SortIncludes: Never

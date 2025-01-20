@@ -15,6 +15,7 @@ namespace na2
 
   ASCIIArt::ASCIIArt() : myRows(0), myColumns(0)
   {
+// clang-format off
     myGlyphs.push_back(Unicode("\u2580", {PPQ, PPQ,   0,   0}));  // top half
     myGlyphs.push_back(Unicode("\u258C", {PPQ,   0, PPQ,   0}));  // left half
     myGlyphs.push_back(Unicode("\u2596", {  0,   0, PPQ,   0}));  // lower left
@@ -22,6 +23,7 @@ namespace na2
     myGlyphs.push_back(Unicode("\u2598", {PPQ,   0,   0,   0}));  // top left
     myGlyphs.push_back(Unicode("\u259A", {PPQ,   0,   0, PPQ}));  // diagonal
     myGlyphs.push_back(Unicode("\u259D", {  0, PPQ,   0,   0}));  // top right
+// clang-format on
 
     myBlocks.resize(128);
 
