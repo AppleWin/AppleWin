@@ -13,22 +13,16 @@ typedef GUID REFIID;
 
 struct IUnknown
 {
-  HRESULT QueryInterface(int riid, void **ppvObject);
-  virtual HRESULT Release();
+    HRESULT QueryInterface(int riid, void **ppvObject);
+    virtual HRESULT Release();
 
-  virtual ~IUnknown() = default;
+    virtual ~IUnknown() = default;
 };
 typedef IUnknown *LPUNKNOWN;
 
 struct IAutoRelease : public IUnknown
 {
-  virtual HRESULT Release() override;
+    virtual HRESULT Release() override;
 };
 
-HRESULT CoCreateInstance(
-  REFCLSID  rclsid,
-  LPUNKNOWN pUnkOuter,
-  DWORD     dwClsContext,
-  REFIID    riid,
-  LPVOID    *ppv
-);
+HRESULT CoCreateInstance(REFCLSID rclsid, LPUNKNOWN pUnkOuter, DWORD dwClsContext, REFIID riid, LPVOID *ppv);

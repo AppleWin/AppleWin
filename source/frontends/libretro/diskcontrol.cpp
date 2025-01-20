@@ -11,391 +11,393 @@
 #include <fstream>
 #include <filesystem>
 
-
 namespace
 {
 
-  const std::string M3U_COMMENT("#");
-  const std::string M3U_SAVEDISK("#SAVEDISK:");
-  const std::string M3U_SAVEDISK_LABEL("Save Disk ");
+    const std::string M3U_COMMENT("#");
+    const std::string M3U_SAVEDISK("#SAVEDISK:");
+    const std::string M3U_SAVEDISK_LABEL("Save Disk ");
 
-  bool startsWith(const std::string & value, const std::string & prefix)
-  {
-    if (prefix.size() > value.size())
+    bool startsWith(const std::string &value, const std::string &prefix)
     {
-      return false;
+        if (prefix.size() > value.size())
+        {
+            return false;
+        }
+        return std::equal(prefix.begin(), prefix.end(), value.begin());
     }
-    return std::equal(prefix.begin(), prefix.end(), value.begin());
-  }
 
-  void getLabelAndPath(const std::string & line, std::filesystem::path & path, std::string & label)
-  {
-    const size_t pos = line.find('|');
-    if (pos == std::string::npos)
+    void getLabelAndPath(const std::string &line, std::filesystem::path &path, std::string &label)
     {
-      path = line;
-      label = path.stem().string();
+        const size_t pos = line.find('|');
+        if (pos == std::string::npos)
+        {
+            path = line;
+            label = path.stem().string();
+        }
+        else
+        {
+            path = line.substr(0, pos);
+            label = line.substr(pos + 1);
+        }
     }
-    else
+
+    void writeString(ra2::Buffer<char> &buffer, const std::string &value)
     {
-      path = line.substr(0, pos);
-      label = line.substr(pos + 1);
+        size_t const size = value.size();
+        buffer.get<size_t>() = size;
+        char *begin, *end;
+        buffer.get(size, begin, end);
+        memcpy(begin, value.data(), end - begin);
     }
-  }
 
-  void writeString(ra2::Buffer<char> & buffer, const std::string & value)
-  {
-    size_t const size = value.size();
-    buffer.get<size_t>() = size;
-    char * begin, * end;
-    buffer.get(size, begin, end);
-    memcpy(begin, value.data(), end - begin);
-  }
+    void readString(ra2::Buffer<const char> &buffer, std::string &value)
+    {
+        size_t const size = buffer.get<size_t const>();
+        char const *begin, *end;
+        buffer.get(size, begin, end);
+        value.assign(begin, end);
+    }
 
-  void readString(ra2::Buffer<const char> & buffer, std::string & value)
-  {
-    size_t const size = buffer.get<size_t const>();
-    char const * begin, * end;
-    buffer.get(size, begin, end);
-    value.assign(begin, end);
-  }
-
-}
+} // namespace
 
 namespace ra2
 {
 
-  DiskControl::DiskControl() : myEjected(true), myIndex(0)
-  {
-
-  }
-
-  const std::string & DiskControl::getCurrentDiskFolder() const
-  {
-    return myCurrentDiskFolder;
-  }
-
-  void DiskControl::storeCurrentDiskFolder(const std::string & path)
-  {
-    // a bit of a workaround to a save state issue, where the disk folder is lost
-    // this will only support 1 disk
-    const std::filesystem::path filePath(path);
-    myCurrentDiskFolder = filePath.parent_path().string();
-  }
-
-  bool DiskControl::insertDisk(const std::string & path)
-  {
-    const bool writeProtected = IMAGE_FORCE_WRITE_PROTECTED;
-    const bool createIfNecessary = IMAGE_DONT_CREATE;
-
-    if (insertFloppyDisk(path, writeProtected, createIfNecessary))
+    DiskControl::DiskControl()
+        : myEjected(true)
+        , myIndex(0)
     {
-      myIndex = 0;
-      myImages.clear();
-
-      const std::filesystem::path filePath(path);
-      myImages.push_back({filePath.string(), filePath.stem().string(), writeProtected, createIfNecessary});
-      myEjected = false;
-      return true;
     }
 
-    return insertHardDisk(path);
-  }
-
-  bool DiskControl::insertPlaylist(const std::string & path)
-  {
-    const std::filesystem::path playlistPath(path);
-    std::ifstream playlist(playlistPath);
-    if (!playlist)
+    const std::string &DiskControl::getCurrentDiskFolder() const
     {
-      return false;
+        return myCurrentDiskFolder;
     }
 
-    myImages.clear();
-    const std::filesystem::path parent = playlistPath.parent_path();
-    const std::filesystem::path savePath(ra2::save_directory);
-    const std::string playlistStem = playlistPath.stem().string();
-
-    std::string line;
-    while (std::getline(playlist, line))
+    void DiskControl::storeCurrentDiskFolder(const std::string &path)
     {
-      // should we trim initial spaces?
-      if (startsWith(line, M3U_SAVEDISK))
-      {
-        const size_t index = myImages.size() + 1;
-        const std::string filename = StrFormat("%s.save%" SIZE_T_FMT ".dsk", playlistStem.c_str(), index);
+        // a bit of a workaround to a save state issue, where the disk folder is lost
+        // this will only support 1 disk
+        const std::filesystem::path filePath(path);
+        myCurrentDiskFolder = filePath.parent_path().string();
+    }
 
-        // 1) use the label from #SAVEDISK:label
-        std::string labelSuffix = line.substr(M3U_SAVEDISK.size());
-        if (labelSuffix.empty())
+    bool DiskControl::insertDisk(const std::string &path)
+    {
+        const bool writeProtected = IMAGE_FORCE_WRITE_PROTECTED;
+        const bool createIfNecessary = IMAGE_DONT_CREATE;
+
+        if (insertFloppyDisk(path, writeProtected, createIfNecessary))
         {
-          // 2) use an automatic label "the index"
-          labelSuffix = std::to_string(index);
+            myIndex = 0;
+            myImages.clear();
+
+            const std::filesystem::path filePath(path);
+            myImages.push_back({filePath.string(), filePath.stem().string(), writeProtected, createIfNecessary});
+            myEjected = false;
+            return true;
         }
 
-        // Always prefix with "Save Disk"
-        const std::string label = M3U_SAVEDISK_LABEL + labelSuffix;
+        return insertHardDisk(path);
+    }
 
-        const std::filesystem::path imagePath = savePath / filename;
-
-        // TODO: this disk is NOT formatted
-        myImages.push_back({imagePath.string(), label, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_CREATE});
-      }
-      else if (!startsWith(line, M3U_COMMENT))
-      {
-        std::filesystem::path imagePath;
-        std::string label;
-        getLabelAndPath(line, imagePath, label);
-
-        if (imagePath.is_relative())
+    bool DiskControl::insertPlaylist(const std::string &path)
+    {
+        const std::filesystem::path playlistPath(path);
+        std::ifstream playlist(playlistPath);
+        if (!playlist)
         {
-          imagePath = parent / imagePath;
+            return false;
         }
-        myImages.push_back({imagePath.string(), label, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE});
-      }
+
+        myImages.clear();
+        const std::filesystem::path parent = playlistPath.parent_path();
+        const std::filesystem::path savePath(ra2::save_directory);
+        const std::string playlistStem = playlistPath.stem().string();
+
+        std::string line;
+        while (std::getline(playlist, line))
+        {
+            // should we trim initial spaces?
+            if (startsWith(line, M3U_SAVEDISK))
+            {
+                const size_t index = myImages.size() + 1;
+                const std::string filename = StrFormat("%s.save%" SIZE_T_FMT ".dsk", playlistStem.c_str(), index);
+
+                // 1) use the label from #SAVEDISK:label
+                std::string labelSuffix = line.substr(M3U_SAVEDISK.size());
+                if (labelSuffix.empty())
+                {
+                    // 2) use an automatic label "the index"
+                    labelSuffix = std::to_string(index);
+                }
+
+                // Always prefix with "Save Disk"
+                const std::string label = M3U_SAVEDISK_LABEL + labelSuffix;
+
+                const std::filesystem::path imagePath = savePath / filename;
+
+                // TODO: this disk is NOT formatted
+                myImages.push_back({imagePath.string(), label, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_CREATE});
+            }
+            else if (!startsWith(line, M3U_COMMENT))
+            {
+                std::filesystem::path imagePath;
+                std::string label;
+                getLabelAndPath(line, imagePath, label);
+
+                if (imagePath.is_relative())
+                {
+                    imagePath = parent / imagePath;
+                }
+                myImages.push_back({imagePath.string(), label, IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE});
+            }
+        }
+
+        // insert the first image by default
+        myIndex = 0;
+
+        const PlaylistStartDisk playlistStartDisk = GetPlaylistStartDisk();
+
+        if (playlistStartDisk == PlaylistStartDisk::Previous)
+        {
+            // if we have an initial disk image, let's try to honour it
+            if (!ourInitialPath.empty() && ourInitialIndex < myImages.size() &&
+                myImages[ourInitialIndex].path == ourInitialPath)
+            {
+                myIndex = ourInitialIndex;
+                // do we need to reset for next time?
+                ourInitialPath.clear();
+                ourInitialIndex = 0;
+            }
+        }
+
+        // this is safe even if myImages is empty
+        myEjected = true;
+        return setEjectedState(false);
     }
 
-    // insert the first image by default
-    myIndex = 0;
-
-    const PlaylistStartDisk playlistStartDisk = GetPlaylistStartDisk();
-
-    if (playlistStartDisk == PlaylistStartDisk::Previous)
+    bool DiskControl::insertFloppyDisk(const std::string &path, const bool writeProtected, bool const createIfNecessary)
     {
-      // if we have an initial disk image, let's try to honour it
-      if (!ourInitialPath.empty() && ourInitialIndex < myImages.size() && myImages[ourInitialIndex].path == ourInitialPath)
-      {
-        myIndex = ourInitialIndex;
-        // do we need to reset for next time?
-        ourInitialPath.clear();
-        ourInitialIndex = 0;
-      }
+        CardManager &cardManager = GetCardMgr();
+
+        Disk2InterfaceCard *disk2Card = dynamic_cast<Disk2InterfaceCard *>(cardManager.GetObj(SLOT6));
+        if (disk2Card)
+        {
+            const ImageError_e error = disk2Card->InsertDisk(DRIVE_1, path, writeProtected, createIfNecessary);
+
+            if (error == eIMAGE_ERROR_NONE)
+            {
+                storeCurrentDiskFolder(path);
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    // this is safe even if myImages is empty
-    myEjected = true;
-    return setEjectedState(false);
-  }
-
-  bool DiskControl::insertFloppyDisk(const std::string & path, const bool writeProtected, bool const createIfNecessary)
-  {
-    CardManager & cardManager = GetCardMgr();
-
-    Disk2InterfaceCard * disk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
-    if (disk2Card)
+    bool DiskControl::insertHardDisk(const std::string &path)
     {
-      const ImageError_e error = disk2Card->InsertDisk(DRIVE_1, path, writeProtected, createIfNecessary);
+        CardManager &cardManager = GetCardMgr();
 
-      if (error == eIMAGE_ERROR_NONE)
-      {
-        storeCurrentDiskFolder(path);
+        if (cardManager.QuerySlot(SLOT7) != CT_GenericHDD)
+        {
+            cardManager.Insert(SLOT7, CT_GenericHDD);
+        }
+
+        HarddiskInterfaceCard *harddiskCard = dynamic_cast<HarddiskInterfaceCard *>(cardManager.GetObj(SLOT7));
+        if (harddiskCard)
+        {
+            const BOOL bRes = harddiskCard->Insert(HARDDISK_1, path);
+            const bool ok = bRes == TRUE;
+            if (ok)
+            {
+                storeCurrentDiskFolder(path);
+            }
+            return ok;
+        }
+
+        return false;
+    }
+
+    bool DiskControl::getEjectedState() const
+    {
+        return myEjected;
+    }
+
+    bool DiskControl::setEjectedState(bool ejected)
+    {
+        if (myEjected == ejected)
+        {
+            return true;
+        }
+
+        CardManager &cardManager = GetCardMgr();
+        Disk2InterfaceCard *disk2Card = dynamic_cast<Disk2InterfaceCard *>(cardManager.GetObj(SLOT6));
+
+        bool result = false;
+        if (disk2Card && myIndex < myImages.size())
+        {
+            if (ejected)
+            {
+                disk2Card->EjectDisk(DRIVE_1);
+                result = true;
+                myEjected = ejected;
+            }
+            else
+            {
+                // inserted
+                result = insertFloppyDisk(
+                    myImages[myIndex].path, myImages[myIndex].writeProtected, myImages[myIndex].createIfNecessary);
+                myEjected = !result;
+                ra2::log_cb(RETRO_LOG_INFO, "Insert new disk: %s -> %d\n", myImages[myIndex].path.c_str(), result);
+            }
+        }
+
+        return result;
+    }
+
+    size_t DiskControl::getImageIndex() const
+    {
+        return myIndex;
+    }
+
+    bool DiskControl::setImageIndex(size_t index)
+    {
+        if (myEjected)
+        {
+            myIndex = index;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    size_t DiskControl::getNumImages() const
+    {
+        return myImages.size();
+    }
+
+    bool DiskControl::replaceImageIndex(size_t index, const std::string &path)
+    {
+        if (myEjected && myIndex < myImages.size())
+        {
+            const std::filesystem::path filePath(path);
+
+            myImages[index].path = filePath.string();
+            myImages[index].label = filePath.stem().string();
+            myImages[index].writeProtected = IMAGE_FORCE_WRITE_PROTECTED;
+            myImages[index].createIfNecessary = IMAGE_DONT_CREATE;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    bool DiskControl::removeImageIndex(size_t index)
+    {
+        if (myEjected && myIndex < myImages.size())
+        {
+            myImages.erase(myImages.begin() + index);
+            if (myImages.empty() || myIndex == index)
+            {
+                myIndex = myImages.size();
+            }
+            else if (myIndex > index)
+            {
+                --myIndex;
+            }
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    bool DiskControl::addImageIndex()
+    {
+        myImages.push_back({"", "", IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE});
         return true;
-      }
     }
 
-    return false;
-  }
-
-  bool DiskControl::insertHardDisk(const std::string & path)
-  {
-    CardManager & cardManager = GetCardMgr();
-
-    if (cardManager.QuerySlot(SLOT7) != CT_GenericHDD)
+    bool DiskControl::getImagePath(unsigned index, char *path, size_t len) const
     {
-      cardManager.Insert(SLOT7, CT_GenericHDD);
+        if (index < myImages.size())
+        {
+            strncpy(path, myImages[index].path.c_str(), len);
+            path[len - 1] = 0;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
-    HarddiskInterfaceCard * harddiskCard = dynamic_cast<HarddiskInterfaceCard*>(cardManager.GetObj(SLOT7));
-    if (harddiskCard)
+    bool DiskControl::getImageLabel(unsigned index, char *label, size_t len) const
     {
-      const BOOL bRes = harddiskCard->Insert(HARDDISK_1, path);
-      const bool ok = bRes == TRUE;
-      if (ok)
-      {
-        storeCurrentDiskFolder(path);
-      }
-      return ok;
+        if (index < myImages.size())
+        {
+            strncpy(label, myImages[index].label.c_str(), len);
+            label[len - 1] = 0;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
-    return false;
-  }
-
-  bool DiskControl::getEjectedState() const
-  {
-    return myEjected;
-  }
-
-  bool DiskControl::setEjectedState(bool ejected)
-  {
-    if (myEjected == ejected)
+    void DiskControl::serialise(Buffer<char> &buffer) const
     {
-      return true;
+        writeString(buffer, myCurrentDiskFolder);
+        buffer.get<bool>() = myEjected;
+        buffer.get<size_t>() = myIndex;
+        buffer.get<size_t>() = myImages.size();
+
+        for (DiskInfo const &image : myImages)
+        {
+            writeString(buffer, image.path);
+            writeString(buffer, image.label);
+            buffer.get<bool>() = image.writeProtected;
+            buffer.get<bool>() = image.createIfNecessary;
+        }
     }
 
-    CardManager & cardManager = GetCardMgr();
-    Disk2InterfaceCard * disk2Card = dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6));
-
-    bool result = false;
-    if (disk2Card && myIndex < myImages.size())
+    void DiskControl::deserialise(Buffer<char const> &buffer)
     {
-      if (ejected)
-      {
-        disk2Card->EjectDisk(DRIVE_1);
-        result = true;
-        myEjected = ejected;
-      }
-      else
-      {
-        // inserted
-        result = insertFloppyDisk(myImages[myIndex].path, myImages[myIndex].writeProtected, myImages[myIndex].createIfNecessary);
-        myEjected = !result;
-        ra2::log_cb(RETRO_LOG_INFO, "Insert new disk: %s -> %d\n", myImages[myIndex].path.c_str(), result);
-      }
+        readString(buffer, myCurrentDiskFolder);
+        myEjected = buffer.get<bool const>();
+        myIndex = buffer.get<size_t const>();
+        size_t const numberOfImages = buffer.get<size_t const>();
+        myImages.clear();
+        myImages.resize(numberOfImages);
+
+        for (DiskInfo &image : myImages)
+        {
+            readString(buffer, image.path);
+            readString(buffer, image.label);
+            image.writeProtected = buffer.get<const bool>();
+            image.createIfNecessary = buffer.get<const bool>();
+        }
     }
 
-    return result;
-  }
+    unsigned DiskControl::ourInitialIndex = 0;
+    std::string DiskControl::ourInitialPath;
 
-  size_t DiskControl::getImageIndex() const
-  {
-    return myIndex;
-  }
-
-  bool DiskControl::setImageIndex(size_t index)
-  {
-    if (myEjected)
+    void DiskControl::setInitialPath(unsigned index, const char *path)
     {
-      myIndex = index;
-      return true;
+        if (path && *path)
+        {
+            ourInitialIndex = index;
+            ourInitialPath = path;
+        }
     }
-    else
-    {
-      return false;
-    }
-  }
 
-  size_t DiskControl::getNumImages() const
-  {
-    return myImages.size();
-  }
-
-  bool DiskControl::replaceImageIndex(size_t index, const std::string & path)
-  {
-    if (myEjected && myIndex < myImages.size())
-    {
-      const std::filesystem::path filePath(path);
-
-      myImages[index].path = filePath.string();
-      myImages[index].label = filePath.stem().string();
-      myImages[index].writeProtected = IMAGE_FORCE_WRITE_PROTECTED;
-      myImages[index].createIfNecessary = IMAGE_DONT_CREATE;
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  bool DiskControl::removeImageIndex(size_t index)
-  {
-    if (myEjected && myIndex < myImages.size())
-    {
-      myImages.erase(myImages.begin() + index);
-      if (myImages.empty() || myIndex == index)
-      {
-        myIndex = myImages.size();
-      }
-      else if (myIndex > index)
-      {
-        --myIndex;
-      }
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  bool DiskControl::addImageIndex()
-  {
-    myImages.push_back({"", "", IMAGE_FORCE_WRITE_PROTECTED, IMAGE_DONT_CREATE});
-    return true;
-  }
-
-  bool DiskControl::getImagePath(unsigned index, char *path, size_t len) const
-  {
-    if (index < myImages.size())
-    {
-      strncpy(path, myImages[index].path.c_str(), len);
-      path[len - 1] = 0;
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  bool DiskControl::getImageLabel(unsigned index, char *label, size_t len) const
-  {
-    if (index < myImages.size())
-    {
-      strncpy(label, myImages[index].label.c_str(), len);
-      label[len - 1] = 0;
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  void DiskControl::serialise(Buffer<char> & buffer) const
-  {
-    writeString(buffer, myCurrentDiskFolder);
-    buffer.get<bool>() = myEjected;
-    buffer.get<size_t>() = myIndex;
-    buffer.get<size_t>() = myImages.size();
-
-    for (DiskInfo const & image : myImages)
-    {
-      writeString(buffer, image.path);
-      writeString(buffer, image.label);
-      buffer.get<bool>() = image.writeProtected;
-      buffer.get<bool>() = image.createIfNecessary;
-    }
-  }
-
-  void DiskControl::deserialise(Buffer<char const> & buffer)
-  {
-    readString(buffer, myCurrentDiskFolder);
-    myEjected = buffer.get<bool const>();
-    myIndex = buffer.get<size_t const>();
-    size_t const numberOfImages = buffer.get<size_t const>();
-    myImages.clear();
-    myImages.resize(numberOfImages);
-
-    for (DiskInfo & image : myImages)
-    {
-      readString(buffer, image.path);
-      readString(buffer, image.label);
-      image.writeProtected = buffer.get<const bool>();
-      image.createIfNecessary = buffer.get<const bool>();
-    }
-  }
-
-  unsigned DiskControl::ourInitialIndex = 0;
-  std::string DiskControl::ourInitialPath;
-
-  void DiskControl::setInitialPath(unsigned index, const char *path)
-  {
-    if (path && *path)
-    {
-      ourInitialIndex = index;
-      ourInitialPath = path;
-    }
-  }
-
-}
+} // namespace ra2

@@ -24,10 +24,11 @@ namespace QDirectSound
         size_t numberOfUnderruns = 0;
     };
 
-    std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName);
+    std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(
+        uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char *pszVoiceName);
 
-    void setOptions(const qint64 duration);  // in ms
+    void setOptions(const qint64 duration); // in ms
     std::vector<SoundInfo> getAudioInfo();
-}
+} // namespace QDirectSound
 
 #endif // DIRECTSOUND_H

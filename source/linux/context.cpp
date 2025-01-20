@@ -19,115 +19,112 @@
 #include "Memory.h"
 #include "Speaker.h"
 
-
 namespace
 {
-  std::shared_ptr<FrameBase> sg_LinuxFrame;
+    std::shared_ptr<FrameBase> sg_LinuxFrame;
 }
 
-IPropertySheet& GetPropertySheet()
+IPropertySheet &GetPropertySheet()
 {
-  static CPropertySheet sg_PropertySheet;
-  return sg_PropertySheet;
+    static CPropertySheet sg_PropertySheet;
+    return sg_PropertySheet;
 }
 
-FrameBase& GetFrame()
+FrameBase &GetFrame()
 {
-  return *sg_LinuxFrame;
+    return *sg_LinuxFrame;
 }
 
-void SetFrame(const std::shared_ptr<FrameBase> & frame)
+void SetFrame(const std::shared_ptr<FrameBase> &frame)
 {
-  sg_LinuxFrame = frame;
+    sg_LinuxFrame = frame;
 }
 
-Video& GetVideo()
+Video &GetVideo()
 {
-  static Video sg_Video;
-  return sg_Video;
+    static Video sg_Video;
+    return sg_Video;
 }
 
-Initialisation::Initialisation(
-  const std::shared_ptr<LinuxFrame> & frame,
-  const std::shared_ptr<Paddle> & paddle)
-: myFrame(frame)
+Initialisation::Initialisation(const std::shared_ptr<LinuxFrame> &frame, const std::shared_ptr<Paddle> &paddle)
+    : myFrame(frame)
 {
-  SetFrame(myFrame);
-  Paddle::instance = paddle;
+    SetFrame(myFrame);
+    Paddle::instance = paddle;
 }
 
 Initialisation::~Initialisation()
 {
-  myFrame->Destroy();
-  SetFrame(std::shared_ptr<FrameBase>());
+    myFrame->Destroy();
+    SetFrame(std::shared_ptr<FrameBase>());
 
-  Paddle::instance.reset();
+    Paddle::instance.reset();
 
-  RiffFinishWriteFile();
+    RiffFinishWriteFile();
 
-  CloseHandle(g_hCustomRomF8);
-  g_hCustomRomF8 = INVALID_HANDLE_VALUE;
-  CloseHandle(g_hCustomRom);
-  g_hCustomRom = INVALID_HANDLE_VALUE;
+    CloseHandle(g_hCustomRomF8);
+    g_hCustomRomF8 = INVALID_HANDLE_VALUE;
+    CloseHandle(g_hCustomRom);
+    g_hCustomRom = INVALID_HANDLE_VALUE;
 }
 
 LoggerContext::LoggerContext(const bool log)
 {
-  if (log)
-  {
-    LogInit();
-  }
+    if (log)
+    {
+        LogInit();
+    }
 }
 
 LoggerContext::~LoggerContext()
 {
-  LogDone();
+    LogDone();
 }
 
-RegistryContext::RegistryContext(const std::shared_ptr<Registry> & registry)
+RegistryContext::RegistryContext(const std::shared_ptr<Registry> &registry)
 {
-  Registry::instance = registry;
+    Registry::instance = registry;
 }
 
 RegistryContext::~RegistryContext()
 {
-  Registry::instance.reset();
+    Registry::instance.reset();
 }
 
 void InitialiseEmulator(const AppMode_e mode)
 {
-  g_nAppMode = mode;
-  LogFileOutput("Initialisation\n");
+    g_nAppMode = mode;
+    LogFileOutput("Initialisation\n");
 
-  g_bFullSpeed = false;
+    g_bFullSpeed = false;
 
-  GetVideo().SetVidHD(false);
-  LoadConfiguration(true);
-  SetCurrentCLK6502();
-  GetAppleWindowTitle();
-  GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
+    GetVideo().SetVidHD(false);
+    LoadConfiguration(true);
+    SetCurrentCLK6502();
+    GetAppleWindowTitle();
+    GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 
-  SpkrInitialize();
+    SpkrInitialize();
 
-  MemInitialize();
+    MemInitialize();
 
-  CardManager & cardManager = GetCardMgr();
-  cardManager.Reset(true);
+    CardManager &cardManager = GetCardMgr();
+    cardManager.Reset(true);
 
-  Snapshot_Startup();
+    Snapshot_Startup();
 
-  DebugInitialize();
-  KeybReset();
+    DebugInitialize();
+    KeybReset();
 }
 
 void DestroyEmulator()
 {
-  CardManager & cardManager = GetCardMgr();
-  cardManager.Destroy();
+    CardManager &cardManager = GetCardMgr();
+    cardManager.Destroy();
 
-  Snapshot_Shutdown();
-  MemDestroy();
-  SpkrDestroy();
-  CpuDestroy();
-  DebugDestroy();
+    Snapshot_Shutdown();
+    MemDestroy();
+    SpkrDestroy();
+    CpuDestroy();
+    DebugDestroy();
 }

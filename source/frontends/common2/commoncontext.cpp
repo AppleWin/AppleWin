@@ -7,24 +7,21 @@
 namespace common2
 {
 
-  CommonInitialisation::CommonInitialisation(
-    const std::shared_ptr<LinuxFrame> & frame,
-    const std::shared_ptr<Paddle> & paddle,
-    const EmulatorOptions & options)
-  : Initialisation(frame, paddle)
-  {
-    applyOptions(options);
-    myFrame->Begin();
-    setSnapshotFilename(options.snapshotFilename);
-    if (options.loadSnapshot)
+    CommonInitialisation::CommonInitialisation(
+        const std::shared_ptr<LinuxFrame> &frame, const std::shared_ptr<Paddle> &paddle, const EmulatorOptions &options)
+        : Initialisation(frame, paddle)
     {
-      myFrame->LoadSnapshot();
+        applyOptions(options);
+        myFrame->Begin();
+        setSnapshotFilename(options.snapshotFilename);
+        if (options.loadSnapshot)
+        {
+            myFrame->LoadSnapshot();
+        }
+    }
+    CommonInitialisation::~CommonInitialisation()
+    {
+        myFrame->End();
     }
 
-  }
-  CommonInitialisation::~CommonInitialisation()
-  {
-    myFrame->End();
-  }
-
-}
+} // namespace common2

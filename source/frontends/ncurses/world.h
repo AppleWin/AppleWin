@@ -5,13 +5,13 @@
 namespace na2
 {
 
-  class NFrame;
+    class NFrame;
 
-  int GetKeyPressed(const std::shared_ptr<NFrame> & frame);
-  void SetCtrlCHandler(const bool headless);
+    int GetKeyPressed(const std::shared_ptr<NFrame> &frame);
+    void SetCtrlCHandler(const bool headless);
 
-  extern double g_relativeSpeed;
+    extern double g_relativeSpeed;
 
-  extern bool g_stop;
+    extern bool g_stop;
 
-}
+} // namespace na2

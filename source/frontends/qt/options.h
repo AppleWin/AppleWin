@@ -11,7 +11,7 @@
 class GlobalOptions
 {
 public:
-    GlobalOptions();  // empty, uninitialised
+    GlobalOptions(); // empty, uninitialised
 
     static GlobalOptions fromQSettings();
 
@@ -26,7 +26,7 @@ public:
 
     int msAudioBuffer;
 
-    void setData(const GlobalOptions & data);
+    void setData(const GlobalOptions &data);
 };
 
 struct PreferenceData
@@ -58,7 +58,8 @@ struct PreferenceData
 };
 
 class QtFrame;
-void getAppleWinPreferences(PreferenceData & data);
-void setAppleWinPreferences(const std::shared_ptr<QtFrame> & frame, const PreferenceData & currentData, const PreferenceData & newData);
+void getAppleWinPreferences(PreferenceData &data);
+void setAppleWinPreferences(
+    const std::shared_ptr<QtFrame> &frame, const PreferenceData &currentData, const PreferenceData &newData);
 
 #endif // CONFIGURATION_H

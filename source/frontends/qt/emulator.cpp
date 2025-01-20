@@ -6,9 +6,9 @@
 
 #include <cmath>
 
-Emulator::Emulator(QWidget *parent) :
-    QFrame(parent),
-    ui(new Ui::Emulator)
+Emulator::Emulator(QWidget *parent)
+    : QFrame(parent)
+    , ui(new Ui::Emulator)
 {
     ui->setupUi(this);
 }
@@ -30,7 +30,7 @@ void Emulator::refreshScreen(const bool force)
     }
 }
 
-bool Emulator::saveScreen(const QString & filename) const
+bool Emulator::saveScreen(const QString &filename) const
 {
     return ui->video->getScreen().save(filename);
 }
@@ -50,7 +50,7 @@ void Emulator::displayLogo()
     ui->video->displayLogo();
 }
 
-void Emulator::setVideoSize(QMdiSubWindow * window, const QSize & size)
+void Emulator::setVideoSize(QMdiSubWindow *window, const QSize &size)
 {
     window->showNormal();
 
@@ -59,20 +59,20 @@ void Emulator::setVideoSize(QMdiSubWindow * window, const QSize & size)
     window->resize(size + gap);
 }
 
-void Emulator::setZoom(QMdiSubWindow * window, const int x)
+void Emulator::setZoom(QMdiSubWindow *window, const int x)
 {
     const QSize target = ui->video->minimumSize() * x;
     setVideoSize(window, target);
 }
 
-void Emulator::set43AspectRatio(QMdiSubWindow * window)
+void Emulator::set43AspectRatio(QMdiSubWindow *window)
 {
     // keep the same surface with 4:3 aspect ratio
-    const QSize & size = ui->video->size();
+    const QSize &size = ui->video->size();
     const double area = size.height() * size.width();
 
-    const int numerator = 35;       // 7 * 40
-    const int denominator = 24;     // 8 * 24
+    const int numerator = 35;   // 7 * 40
+    const int denominator = 24; // 8 * 24
 
     const int x = sqrt(area / (numerator * denominator));
     const QSize target(numerator * x, denominator * x);

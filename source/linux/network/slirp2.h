@@ -24,33 +24,33 @@ struct Slirp;
 class SlirpBackend : public NetworkBackend
 {
 public:
-  SlirpBackend(const std::vector<PortFwd> & portFwds = std::vector<PortFwd>());
+    SlirpBackend(const std::vector<PortFwd> &portFwds = std::vector<PortFwd>());
 
-  void transmit(const int txlength,	uint8_t *txframe) override;
-  int receive(const int size,	uint8_t * rxframe) override;
+    void transmit(const int txlength, uint8_t *txframe) override;
+    int receive(const int size, uint8_t *rxframe) override;
 
-  void update(const ULONG nExecutedCycles) override;
-  bool isValid() override;
+    void update(const ULONG nExecutedCycles) override;
+    bool isValid() override;
 
-  void getMACAddress(const uint32_t address, MACAddress & mac) override;
+    void getMACAddress(const uint32_t address, MACAddress &mac) override;
 
-  const std::string & getInterfaceName() override;
+    const std::string &getInterfaceName() override;
 
-  void sendToGuest(const uint8_t *pkt, int pkt_len);
+    void sendToGuest(const uint8_t *pkt, int pkt_len);
 
-  int addPoll(const int fd, const int events);
-  int getREvents(const int idx) const;
+    int addPoll(const int fd, const int events);
+    int getREvents(const int idx) const;
 
-  std::string getNeighborInfo() const;
+    std::string getNeighborInfo() const;
+
 private:
+    static constexpr size_t ourQueueSize = 10;
 
-  static constexpr size_t ourQueueSize = 10;
+    const std::string myEmptyInterface;
+    std::shared_ptr<Slirp> mySlirp;
+    std::vector<pollfd> myFDs;
 
-  const std::string myEmptyInterface;
-  std::shared_ptr<Slirp> mySlirp;
-  std::vector<pollfd> myFDs;
-
-  std::queue<std::vector<uint8_t>> myQueue;
+    std::queue<std::vector<uint8_t>> myQueue;
 };
 
 #endif

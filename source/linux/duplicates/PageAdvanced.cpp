@@ -5,12 +5,11 @@
 // IPropertySheetPage
 INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
-  return 0;
+    return 0;
 }
 
 void CPageAdvanced::DlgOK(HWND hWnd)
 {
-
 }
 
-CPageAdvanced* CPageAdvanced::ms_this = nullptr;
+CPageAdvanced *CPageAdvanced::ms_this = nullptr;

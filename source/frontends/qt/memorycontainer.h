@@ -3,8 +3,9 @@
 
 #include <QTabWidget>
 
-namespace Ui {
-class MemoryContainer;
+namespace Ui
+{
+    class MemoryContainer;
 }
 
 class MemoryContainer : public QTabWidget

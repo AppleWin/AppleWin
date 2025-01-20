@@ -2,14 +2,14 @@
 
 #include <QGamepad>
 
-std::shared_ptr<Paddle> GamepadPaddle::fromName(const QString & name)
+std::shared_ptr<Paddle> GamepadPaddle::fromName(const QString &name)
 {
     if (name.isEmpty())
     {
         return nullptr;
     }
 
-    QGamepadManager * manager = QGamepadManager::instance();
+    QGamepadManager *manager = QGamepadManager::instance();
     const QList<int> gamepads = manager->connectedGamepads();
 
     for (int id : gamepads)
@@ -25,9 +25,9 @@ std::shared_ptr<Paddle> GamepadPaddle::fromName(const QString & name)
     return nullptr;
 }
 
-GamepadPaddle::GamepadPaddle(const std::shared_ptr<QGamepad> & gamepad) : myGamepad(gamepad)
+GamepadPaddle::GamepadPaddle(const std::shared_ptr<QGamepad> &gamepad)
+    : myGamepad(gamepad)
 {
-
 }
 
 bool GamepadPaddle::getButton(int i) const

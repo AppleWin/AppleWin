@@ -2,16 +2,14 @@
 
 namespace common2
 {
-  struct EmulatorOptions;
+    struct EmulatorOptions;
 
-  class CommonInitialisation : public Initialisation
-  {
-  public:
-    CommonInitialisation(
-      const std::shared_ptr<LinuxFrame> & frame,
-      const std::shared_ptr<Paddle> & paddle,
-      const EmulatorOptions & options
-      );
-    ~CommonInitialisation();
-  };
-}
+    class CommonInitialisation : public Initialisation
+    {
+    public:
+        CommonInitialisation(
+            const std::shared_ptr<LinuxFrame> &frame, const std::shared_ptr<Paddle> &paddle,
+            const EmulatorOptions &options);
+        ~CommonInitialisation();
+    };
+} // namespace common2

@@ -7,8 +7,8 @@ class Registry;
 namespace common2
 {
 
-  struct EmulatorOptions;
+    struct EmulatorOptions;
 
-  std::shared_ptr<Registry> CreateFileRegistry(const EmulatorOptions & options);
+    std::shared_ptr<Registry> CreateFileRegistry(const EmulatorOptions &options);
 
-}
+} // namespace common2

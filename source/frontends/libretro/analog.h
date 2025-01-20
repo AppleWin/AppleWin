@@ -7,15 +7,15 @@
 namespace ra2
 {
 
-  class Analog : public JoypadBase
-  {
-  public:
-    Analog();
+    class Analog : public JoypadBase
+    {
+    public:
+        Analog();
 
-    double getAxis(int i) const override;
+        double getAxis(int i) const override;
 
-  private:
-    std::vector<InputDescriptor> myAxisCodes;
-  };
+    private:
+        std::vector<InputDescriptor> myAxisCodes;
+    };
 
-}
+} // namespace ra2

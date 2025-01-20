@@ -64,10 +64,10 @@ namespace
     {
         return QApplication::platformName() == "wayland";
     }
-}
+} // namespace
 
-
-QApple::PauseEmulator::PauseEmulator(QApple * qapple) : myQApple(qapple)
+QApple::PauseEmulator::PauseEmulator(QApple *qapple)
+    : myQApple(qapple)
 {
     myWasRunning = myQApple->ui->actionPause->isEnabled();
     if (myWasRunning)
@@ -84,10 +84,10 @@ QApple::PauseEmulator::~PauseEmulator()
     }
 }
 
-QApple::QApple(QWidget *parent) :
-    QMainWindow(parent),
-    myTimerID(0),
-    ui(new Ui::QApple)
+QApple::QApple(QWidget *parent)
+    : QMainWindow(parent)
+    , myTimerID(0)
+    , ui(new Ui::QApple)
 {
     ui->setupUi(this);
 
@@ -108,8 +108,9 @@ QApple::QApple(QWidget *parent) :
 
     myPreferences = new Preferences(this);
 
-    Emulator * emulator = new Emulator(ui->mdiArea);
-    myEmulatorWindow = ui->mdiArea->addSubWindow(emulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
+    Emulator *emulator = new Emulator(ui->mdiArea);
+    myEmulatorWindow = ui->mdiArea->addSubWindow(
+        emulator, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
 
     myFrame = std::make_shared<QtFrame>(emulator, myEmulatorWindow);
     SetFrame(myFrame);
@@ -131,7 +132,7 @@ QApple::~QApple()
     delete ui;
 }
 
-void QApple::closeEvent(QCloseEvent * event)
+void QApple::closeEvent(QCloseEvent *event)
 {
     stopTimer();
     myFrame->End();
@@ -151,7 +152,8 @@ void QApple::readSettings()
     QSettings settings;
     const QByteArray windowGeometry = QByteArray::fromBase64(settings.value("QApple/window/geometry").toByteArray());
     const QByteArray windowState = QByteArray::fromBase64(settings.value("QApple/window/state").toByteArray());
-    const QByteArray emulatorGeometry = QByteArray::fromBase64(settings.value("QApple/emulator/geometry").toByteArray());
+    const QByteArray emulatorGeometry =
+        QByteArray::fromBase64(settings.value("QApple/emulator/geometry").toByteArray());
 
     restoreGeometry(windowGeometry);
     restoreState(windowState);
@@ -194,13 +196,14 @@ void QApple::on_timer()
         return;
     }
 
-    const qint64 maximumToRun = 10 * myOptions.msGap * audioAdjustedSpeed * 1.0e-3;  // just to avoid crazy times (e.g. debugging)
+    const qint64 maximumToRun =
+        10 * myOptions.msGap * audioAdjustedSpeed * 1.0e-3; // just to avoid crazy times (e.g. debugging)
     const qint64 toRun = std::min(targetCycles - currentCycles, maximumToRun);
     const uint32_t uCyclesToExecute = toRun;
 
     const bool bVideoUpdate = true;
 
-    CardManager & cardManager = GetCardMgr();
+    CardManager &cardManager = GetCardMgr();
 
     const qint64 wallclockTargetMS = elapsed + myOptions.msFullSpeed;
     const UINT dwClksPerFrame = NTSC_GetCyclesPerFrame();
@@ -216,13 +219,11 @@ void QApple::on_timer()
         // in case we run more than 1 frame
         g_dwCyclesThisFrame = g_dwCyclesThisFrame % dwClksPerFrame;
         ++count;
-    }
-    while (cardManager.GetDisk2CardMgr().IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < wallclockTargetMS));
+    } while (cardManager.GetDisk2CardMgr().IsConditionForFullSpeed() && (myElapsedTimer.elapsed() < wallclockTargetMS));
 
     // just repaint each time, to make it simpler
     // we run @ 60 fps anyway
     myFrame->VideoPresentScreen();
-
 
     if (const qint64 nowElapsed = myElapsedTimer.elapsed())
     {
@@ -230,7 +231,7 @@ void QApple::on_timer()
         emit endFrame(actualSpeed, static_cast<qint64>(audioAdjustedSpeed));
     }
 
-    if (count > 1)  // 1 is the non-full speed case
+    if (count > 1) // 1 is the non-full speed case
     {
         restartTimeCounters();
     }
@@ -311,8 +312,8 @@ void QApple::timerEvent(QTimerEvent *)
 
 void QApple::on_actionMemory_triggered()
 {
-    MemoryContainer * container = new MemoryContainer(ui->mdiArea);
-    QMdiSubWindow * window = ui->mdiArea->addSubWindow(container);
+    MemoryContainer *container = new MemoryContainer(ui->mdiArea);
+    QMdiSubWindow *window = ui->mdiArea->addSubWindow(container);
 
     // need to close as it points to old memory
     connect(this, SIGNAL(endEmulator()), window, SLOT(close()));
@@ -367,7 +368,7 @@ void QApple::on_actionLoad_state_triggered()
 
     emit endEmulator();
 
-    const std::string & filename = Snapshot_GetFilename();
+    const std::string &filename = Snapshot_GetFilename();
 
     const QFileInfo file(QString::fromStdString(filename));
     const QString path = file.absolutePath();
@@ -395,7 +396,7 @@ void QApple::on_actionAbout_triggered()
     QMessageBox::about(this, QApplication::applicationName(), message);
 }
 
-QString getImageFilename(const GlobalOptions & options)
+QString getImageFilename(const GlobalOptions &options)
 {
     static size_t counter = 0;
 
@@ -434,11 +435,11 @@ void QApple::on_actionScreenshot_triggered()
 void QApple::on_actionSwap_disks_triggered()
 {
     PauseEmulator pause(this);
-    CardManager & cardManager = GetCardMgr();
+    CardManager &cardManager = GetCardMgr();
 
     if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
     {
-        dynamic_cast<Disk2InterfaceCard*>(cardManager.GetObj(SLOT6))->DriveSwap();
+        dynamic_cast<Disk2InterfaceCard *>(cardManager.GetObj(SLOT6))->DriveSwap();
     }
 }
 
@@ -454,7 +455,7 @@ void QApple::on_actionLoad_state_from_triggered()
         QStringList files = stateFileDialog.selectedFiles();
         if (files.size() == 1)
         {
-            const QString & filename = files[0];
+            const QString &filename = files[0];
             loadStateFile(filename);
         }
     }
@@ -465,7 +466,7 @@ void QApple::on_actionNext_video_mode_triggered()
     myFrame->CycleVideoType();
 }
 
-void QApple::loadStateFile(const QString & filename)
+void QApple::loadStateFile(const QString &filename)
 {
     const QFileInfo path(filename);
     // store it as absolute path
@@ -491,7 +492,7 @@ void QApple::dragEnterEvent(QDragEnterEvent *event)
 
 void QApple::dropEvent(QDropEvent *event)
 {
-    const QMimeData* mimeData = event->mimeData();
+    const QMimeData *mimeData = event->mimeData();
 
     if (mimeData->hasUrls())
     {
@@ -507,13 +508,13 @@ void QApple::dropEvent(QDropEvent *event)
                 loadStateFile(file);
             }
         }
-   }
+    }
 }
 
 void QApple::on_actionAudio_Info_triggered()
 {
-    AudioInfo * container = new AudioInfo(ui->mdiArea);
-    QMdiSubWindow * window = ui->mdiArea->addSubWindow(container);
+    AudioInfo *container = new AudioInfo(ui->mdiArea);
+    QMdiSubWindow *window = ui->mdiArea->addSubWindow(container);
 
     // need to close as it points to old memory
     connect(this, SIGNAL(endEmulator()), window, SLOT(close()));

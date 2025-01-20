@@ -14,145 +14,144 @@
 namespace
 {
 
-  constexpr int PAUSED            = 1001;
-  constexpr int FIXED_SPEED       = 1002;
-  constexpr int HEADLESS          = 1003;
-  constexpr int NO_SQUARING       = 1004;
-  constexpr int SLIRP_NAT         = 1005;
+    constexpr int PAUSED = 1001;
+    constexpr int FIXED_SPEED = 1002;
+    constexpr int HEADLESS = 1003;
+    constexpr int NO_SQUARING = 1004;
+    constexpr int SLIRP_NAT = 1005;
 
-  constexpr int DISK_H1           = 1006;
-  constexpr int DISK_H2           = 1007;
+    constexpr int DISK_H1 = 1006;
+    constexpr int DISK_H2 = 1007;
 
-  constexpr int MEM_CLEAR         = 1008;
-  constexpr int ROM               = 1009;
-  constexpr int F8ROM             = 1010;
+    constexpr int MEM_CLEAR = 1008;
+    constexpr int ROM = 1009;
+    constexpr int F8ROM = 1010;
 
-  constexpr int NO_AUDIO          = 1011;
-  constexpr int AUDIO_BUFFER      = 1012;
-  constexpr int WAV_SPEAKER       = 1013;
-  constexpr int WAV_MOCKINGBOARD  = 1014;
+    constexpr int NO_AUDIO = 1011;
+    constexpr int AUDIO_BUFFER = 1012;
+    constexpr int WAV_SPEAKER = 1013;
+    constexpr int WAV_MOCKINGBOARD = 1014;
 
-  constexpr int SDL_DRIVER        = 1015;
-  constexpr int GL_SWAP           = 1016;
-  constexpr int TIMER             = 1017;
-  constexpr int NO_IMGUI          = 1018;
-  constexpr int GEOMETRY          = 1019;
-  constexpr int ASPECT_RATIO      = 1020;
-  constexpr int GAME_CONTROLLER   = 1021;
-  constexpr int MAPPING_FILE      = 1022;
-  constexpr int AUDIO_DEVICE      = 1023;
+    constexpr int SDL_DRIVER = 1015;
+    constexpr int GL_SWAP = 1016;
+    constexpr int TIMER = 1017;
+    constexpr int NO_IMGUI = 1018;
+    constexpr int GEOMETRY = 1019;
+    constexpr int ASPECT_RATIO = 1020;
+    constexpr int GAME_CONTROLLER = 1021;
+    constexpr int MAPPING_FILE = 1022;
+    constexpr int AUDIO_DEVICE = 1023;
 
-  constexpr int NO_VIDEO_UPDATE   = 1024;
-  constexpr int EV_DEVICE_NAME    = 1025;
+    constexpr int NO_VIDEO_UPDATE = 1024;
+    constexpr int EV_DEVICE_NAME = 1025;
 
-  struct OptionData_t
-  {
-    const char * name;
-    int has_arg;
-    int val;
-    const char * description;
-    const char * defaultValue;  // optional
-  };
-
-  bool isShort(const int val)
-  {
-    return val >= 0 && val <= 0xFF;
-  }
-
-  void printHelp(const std::vector<std::pair<std::string, std::vector<OptionData_t>>> & data)
-  {
-    for (const auto & categories : data)
+    struct OptionData_t
     {
-      std::cerr << categories.first << ":" << std::endl;
-      for (const auto & option : categories.second)
-      {
-        std::cerr << "  ";
-        std::ostringstream value;
-        if (isShort(option.val))
-        {
-          value << "[ -" << char(option.val) << " ] ";
-        }
-        else
-        {
-          value << "       ";
-        }
-        value << "--" << option.name;
-        if (option.has_arg == required_argument)
-        {
-          value << " arg";
-        }
-        std::cerr << std::left << std::setw(30) << value.str() << "\t" << option.description << std::endl;
-        if (option.defaultValue)
-        {
-          std::cerr << "\t\t\t\t\t( " << option.defaultValue << " )" << std::endl;
-        }
-      }
-      std::cerr << std::endl;
-    }
-  }
+        const char *name;
+        int has_arg;
+        int val;
+        const char *description;
+        const char *defaultValue; // optional
+    };
 
-  void parseGeometry(const std::string & s, std::optional<common2::Geometry> & geometry)
-  {
-    std::smatch m;
-    if (std::regex_match(s, m, std::regex("^(\\d+)x(\\d+)(\\+(\\d+)\\+(\\d+))?$")))
+    bool isShort(const int val)
     {
-      const size_t groups = m.size();
-      if (groups == 6)
-      {
-        geometry = common2::Geometry();
-        geometry->width = std::stoi(m.str(1));
-        geometry->height = std::stoi(m.str(2));
-        if (!m.str(3).empty())
-        {
-          geometry->x = std::stoi(m.str(4));
-          geometry->y = std::stoi(m.str(5));
-        }
-        return;
-      }
+        return val >= 0 && val <= 0xFF;
     }
-    throw std::runtime_error("Invalid sizes: " + s);
-  }
 
-  void extractOptions(
-    const std::vector<std::pair<std::string, std::vector<OptionData_t>>>  & data,
-    std::vector<option>                                                   & longOptions,
-    std::string                                                           & shortOptions
-    )
-  {
-    std::ostringstream shorts;
-    for (const auto & categories : data)
+    void printHelp(const std::vector<std::pair<std::string, std::vector<OptionData_t>>> &data)
     {
-      for (const auto & option : categories.second)
-      {
-        longOptions.push_back({option.name, option.has_arg, nullptr, option.val});
-        const int val = option.val;
-        if (isShort(val))
+        for (const auto &categories : data)
         {
-          shorts << char(val);
-          if (option.has_arg == required_argument)
-          {
-            shorts << ":";
-          }
+            std::cerr << categories.first << ":" << std::endl;
+            for (const auto &option : categories.second)
+            {
+                std::cerr << "  ";
+                std::ostringstream value;
+                if (isShort(option.val))
+                {
+                    value << "[ -" << char(option.val) << " ] ";
+                }
+                else
+                {
+                    value << "       ";
+                }
+                value << "--" << option.name;
+                if (option.has_arg == required_argument)
+                {
+                    value << " arg";
+                }
+                std::cerr << std::left << std::setw(30) << value.str() << "\t" << option.description << std::endl;
+                if (option.defaultValue)
+                {
+                    std::cerr << "\t\t\t\t\t( " << option.defaultValue << " )" << std::endl;
+                }
+            }
+            std::cerr << std::endl;
         }
-      }
     }
-    longOptions.push_back({nullptr, 0, nullptr, 0});
-    shortOptions.append(shorts.str());
-  }
 
-}
+    void parseGeometry(const std::string &s, std::optional<common2::Geometry> &geometry)
+    {
+        std::smatch m;
+        if (std::regex_match(s, m, std::regex("^(\\d+)x(\\d+)(\\+(\\d+)\\+(\\d+))?$")))
+        {
+            const size_t groups = m.size();
+            if (groups == 6)
+            {
+                geometry = common2::Geometry();
+                geometry->width = std::stoi(m.str(1));
+                geometry->height = std::stoi(m.str(2));
+                if (!m.str(3).empty())
+                {
+                    geometry->x = std::stoi(m.str(4));
+                    geometry->y = std::stoi(m.str(5));
+                }
+                return;
+            }
+        }
+        throw std::runtime_error("Invalid sizes: " + s);
+    }
+
+    void extractOptions(
+        const std::vector<std::pair<std::string, std::vector<OptionData_t>>> &data, std::vector<option> &longOptions,
+        std::string &shortOptions)
+    {
+        std::ostringstream shorts;
+        for (const auto &categories : data)
+        {
+            for (const auto &option : categories.second)
+            {
+                longOptions.push_back({option.name, option.has_arg, nullptr, option.val});
+                const int val = option.val;
+                if (isShort(val))
+                {
+                    shorts << char(val);
+                    if (option.has_arg == required_argument)
+                    {
+                        shorts << ":";
+                    }
+                }
+            }
+        }
+        longOptions.push_back({nullptr, 0, nullptr, 0});
+        shortOptions.append(shorts.str());
+    }
+
+} // namespace
 
 namespace common2
 {
 
-  bool getEmulatorOptions(int argc, char *const argv[], OptionsType type, const std::string & edition, EmulatorOptions & options)
-  {
-    const std::string name = "Apple Emulator for " + edition + " (based on AppleWin " + getVersion() + ")";
+    bool getEmulatorOptions(
+        int argc, char *const argv[], OptionsType type, const std::string &edition, EmulatorOptions &options)
+    {
+        const std::string name = "Apple Emulator for " + edition + " (based on AppleWin " + getVersion() + ")";
 
-    const std::string configurationFileDefault = options.configurationFile.string();
-    const std::string audioBufferDefault = std::to_string(options.audioBuffer);
+        const std::string configurationFileDefault = options.configurationFile.string();
+        const std::string audioBufferDefault = std::to_string(options.audioBuffer);
 
-// clang-format off
+        // clang-format off
 
     std::vector<std::pair<std::string, std::vector<OptionData_t>>> allOptions =
       {
@@ -246,234 +245,234 @@ namespace common2
         },
       };
 
-// clang-format on
+        // clang-format on
 
-    if (type == OptionsType::sa2)
-    {
-      allOptions.insert(allOptions.end(), sa2Options.begin(), sa2Options.end());
+        if (type == OptionsType::sa2)
+        {
+            allOptions.insert(allOptions.end(), sa2Options.begin(), sa2Options.end());
+        }
+        else if (type == OptionsType::applen)
+        {
+            allOptions.insert(allOptions.end(), applenOptions.begin(), applenOptions.end());
+        }
+
+        std::vector<option> longOptions;
+        std::string shortOptions;
+        extractOptions(allOptions, longOptions, shortOptions);
+
+        while (true)
+        {
+            int optionIndex = 0;
+            const int c = getopt_long(argc, argv, shortOptions.c_str(), longOptions.data(), &optionIndex);
+
+            switch (c)
+            {
+            case -1:
+            {
+                if (optind < argc)
+                {
+                    std::cerr << "Uexpected positional argument: '" << argv[optind] << "'" << std::endl << std::endl;
+                    printHelp(allOptions);
+                    return false;
+                }
+                return true;
+            }
+            case '?':
+            {
+                std::cerr << std::endl;
+                printHelp(allOptions);
+                return false;
+            }
+            case 'h':
+            {
+                printHelp(allOptions);
+                return false;
+            }
+            case 'c':
+            {
+                options.configurationFile = optarg;
+                break;
+            }
+            case 'l':
+            {
+                options.log = true;
+                break;
+            }
+            case '1':
+            {
+                options.disk1 = optarg;
+                break;
+            }
+            case '2':
+            {
+                options.disk2 = optarg;
+                break;
+            }
+            case 'f':
+            {
+                options.snapshotFilename = optarg;
+                options.loadSnapshot = false;
+                break;
+            }
+            case 's':
+            {
+                options.snapshotFilename = optarg;
+                options.loadSnapshot = true;
+                break;
+            }
+            case 'q':
+            {
+                options.useQtIni = true;
+                break;
+            }
+            case 'r':
+            {
+                options.registryOptions.emplace_back(optarg);
+                break;
+            }
+            case 'b':
+            {
+                options.benchmark = true;
+                break;
+            }
+            case PAUSED:
+            {
+                options.autoBoot = false;
+                break;
+            }
+            case FIXED_SPEED:
+            {
+                options.fixedSpeed = true;
+                break;
+            }
+            case HEADLESS:
+            {
+                options.headless = true;
+                break;
+            }
+            case NO_SQUARING:
+            {
+                options.paddleSquaring = false;
+                break;
+            }
+            case SLIRP_NAT:
+            {
+                options.natPortFwds.emplace_back(optarg);
+                break;
+            }
+            case DISK_H1:
+            {
+                options.hardDisk1 = optarg;
+                break;
+            }
+            case DISK_H2:
+            {
+                options.hardDisk2 = optarg;
+                break;
+            }
+            case MEM_CLEAR:
+            {
+                const int memclear = std::stoi(optarg);
+                if (memclear >= 0 && memclear < NUM_MIP)
+                {
+                    options.memclear = memclear;
+                }
+                break;
+            }
+            case ROM:
+            {
+                options.customRom = optarg;
+                break;
+            }
+            case F8ROM:
+            {
+                options.customRomF8 = optarg;
+                break;
+            }
+            case NO_AUDIO:
+            {
+                options.noAudio = true;
+                break;
+            }
+            case AUDIO_BUFFER:
+            {
+                options.audioBuffer = std::stoul(optarg);
+                break;
+            }
+            case WAV_SPEAKER:
+            {
+                options.wavFileSpeaker = optarg;
+                break;
+            }
+            case WAV_MOCKINGBOARD:
+            {
+                options.wavFileMockingboard = optarg;
+                break;
+            }
+            case SDL_DRIVER:
+            {
+                options.sdlDriver = std::stoi(optarg);
+                break;
+            }
+            case GL_SWAP:
+            {
+                options.glSwapInterval = std::stoi(optarg);
+                break;
+            }
+            case TIMER:
+            {
+                options.syncWithTimer = true;
+                break;
+            }
+            case NO_IMGUI:
+            {
+                options.imgui = false;
+                break;
+            }
+            case GEOMETRY:
+            {
+                parseGeometry(optarg, options.geometry);
+                break;
+            }
+            case ASPECT_RATIO:
+            {
+                options.aspectRatio = true;
+                break;
+            }
+            case GAME_CONTROLLER:
+            {
+                options.gameControllerIndex = std::stoi(optarg);
+                break;
+            }
+            case MAPPING_FILE:
+            {
+                options.gameControllerMappingFile = optarg;
+                break;
+            }
+            case AUDIO_DEVICE:
+            {
+                options.audioDeviceName = optarg;
+                break;
+            }
+            case NO_VIDEO_UPDATE:
+            {
+                options.noVideoUpdate = true;
+                break;
+            }
+            case EV_DEVICE_NAME:
+            {
+                options.paddleDeviceName = optarg;
+                break;
+            }
+            default:
+            {
+                printHelp(allOptions);
+                return false;
+            }
+            }
+        }
+
+        return true;
     }
-    else if (type == OptionsType::applen)
-    {
-      allOptions.insert(allOptions.end(), applenOptions.begin(), applenOptions.end());
-    }
 
-    std::vector<option> longOptions;
-    std::string shortOptions;
-    extractOptions(allOptions, longOptions, shortOptions);
-
-    while (true)
-    {
-      int optionIndex = 0;
-      const int c = getopt_long(argc, argv, shortOptions.c_str(), longOptions.data(), &optionIndex);
-
-      switch (c)
-      {
-        case -1:
-        {
-          if (optind < argc)
-          {
-            std::cerr << "Uexpected positional argument: '" << argv[optind] << "'" << std::endl << std::endl;
-            printHelp(allOptions);
-            return false;
-          }
-          return true;
-        }
-        case '?':
-        {
-          std::cerr << std::endl;
-          printHelp(allOptions);
-          return false;
-        }
-        case 'h':
-        {
-          printHelp(allOptions);
-          return false;
-        }
-        case 'c':
-        {
-          options.configurationFile = optarg;
-          break;
-        }
-        case 'l':
-        {
-          options.log = true;
-          break;
-        }
-        case '1':
-        {
-          options.disk1 = optarg;
-          break;
-        }
-        case '2':
-        {
-          options.disk2 = optarg;
-          break;
-        }
-        case 'f':
-        {
-          options.snapshotFilename = optarg;
-          options.loadSnapshot = false;
-          break;
-        }
-        case 's':
-        {
-          options.snapshotFilename = optarg;
-          options.loadSnapshot = true;
-          break;
-        }
-        case 'q':
-        {
-          options.useQtIni = true;
-          break;
-        }
-        case 'r':
-        {
-          options.registryOptions.emplace_back(optarg);
-          break;
-        }
-        case 'b':
-        {
-          options.benchmark = true;
-          break;
-        }
-        case PAUSED:
-        {
-          options.autoBoot = false;
-          break;
-        }
-        case FIXED_SPEED:
-        {
-          options.fixedSpeed = true;
-          break;
-        }
-        case HEADLESS:
-        {
-          options.headless = true;
-          break;
-        }
-        case NO_SQUARING:
-        {
-          options.paddleSquaring = false;
-          break;
-        }
-        case SLIRP_NAT:
-        {
-          options.natPortFwds.emplace_back(optarg);
-          break;
-        }
-        case DISK_H1:
-        {
-          options.hardDisk1 = optarg;
-          break;
-        }
-        case DISK_H2:
-        {
-          options.hardDisk2 = optarg;
-          break;
-        }
-        case MEM_CLEAR:
-        {
-          const int memclear = std::stoi(optarg);
-          if (memclear >=0 && memclear < NUM_MIP)
-          {
-            options.memclear = memclear;
-          }
-          break;
-        }
-        case ROM:
-        {
-          options.customRom = optarg;
-          break;
-        }
-        case F8ROM:
-        {
-          options.customRomF8 = optarg;
-          break;
-        }
-        case NO_AUDIO:
-        {
-          options.noAudio = true;
-          break;
-        }
-        case AUDIO_BUFFER:
-        {
-          options.audioBuffer = std::stoul(optarg);
-          break;
-        }
-        case WAV_SPEAKER:
-        {
-          options.wavFileSpeaker = optarg;
-          break;
-        }
-        case WAV_MOCKINGBOARD:
-        {
-          options.wavFileMockingboard = optarg;
-          break;
-        }
-        case SDL_DRIVER:
-        {
-          options.sdlDriver = std::stoi(optarg);
-          break;
-        }
-        case GL_SWAP:
-        {
-          options.glSwapInterval = std::stoi(optarg);
-          break;
-        }
-        case TIMER:
-        {
-          options.syncWithTimer = true;
-          break;
-        }
-        case NO_IMGUI:
-        {
-          options.imgui = false;
-          break;
-        }
-        case GEOMETRY:
-        {
-          parseGeometry(optarg, options.geometry);
-          break;
-        }
-        case ASPECT_RATIO:
-        {
-          options.aspectRatio = true;
-          break;
-        }
-        case GAME_CONTROLLER:
-        {
-          options.gameControllerIndex = std::stoi(optarg);
-          break;
-        }
-        case MAPPING_FILE:
-        {
-          options.gameControllerMappingFile = optarg;
-          break;
-        }
-        case AUDIO_DEVICE:
-        {
-          options.audioDeviceName = optarg;
-          break;
-        }
-        case NO_VIDEO_UPDATE:
-        {
-          options.noVideoUpdate = true;
-          break;
-        }
-        case EV_DEVICE_NAME:
-        {
-          options.paddleDeviceName = optarg;
-          break;
-        }
-        default:
-        {
-          printHelp(allOptions);
-          return false;
-        }
-      }
-    }
-
-    return true;
-  }
-
-}
+} // namespace common2

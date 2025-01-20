@@ -9,7 +9,7 @@ class LinuxFrame;
 class Paddle;
 class Registry;
 
-void SetFrame(const std::shared_ptr<FrameBase> & frame);
+void SetFrame(const std::shared_ptr<FrameBase> &frame);
 
 void InitialiseEmulator(const AppMode_e mode);
 void DestroyEmulator();
@@ -18,26 +18,24 @@ void DestroyEmulator();
 class Initialisation
 {
 public:
-  Initialisation(
-    const std::shared_ptr<LinuxFrame> & frame,
-    const std::shared_ptr<Paddle> & paddle
-    );
-  ~Initialisation();
+    Initialisation(const std::shared_ptr<LinuxFrame> &frame, const std::shared_ptr<Paddle> &paddle);
+    ~Initialisation();
+
 protected:
-  const std::shared_ptr<LinuxFrame> myFrame;
+    const std::shared_ptr<LinuxFrame> myFrame;
 };
 
 // RAII around LogInit / LogDone.
 class LoggerContext
 {
 public:
-  LoggerContext(const bool log);
-  ~LoggerContext();
+    LoggerContext(const bool log);
+    ~LoggerContext();
 };
 
 class RegistryContext
 {
 public:
-  RegistryContext(const std::shared_ptr<Registry> & registry);
-  ~RegistryContext();
+    RegistryContext(const std::shared_ptr<Registry> &registry);
+    ~RegistryContext();
 };
