@@ -2197,6 +2197,7 @@ void Util_ProDOS_ForwardSectorInterleave (uint8_t *pDiskBytes, const size_t nDis
 }
 
 // Swizzles sectors in ProDOS order to DOS33 order in-place
+//===========================================================================
 void Util_ProDOS_ReverseSectorInterleave (uint8_t *pDiskBytes, const size_t nDiskSize, const SectorOrder_e eSectorOrder)
 {
 	// Swizle from ProDOS to DOS33 order
