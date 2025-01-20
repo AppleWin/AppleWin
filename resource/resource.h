@@ -39,9 +39,10 @@
 #define IDR_MOCKINGBOARD_D_FW           135
 #define IDR_MOUSEINTERFACE_FW           136
 #define IDR_THUNDERCLOCKPLUS_FW         137
-#define IDR_FREEZES_F8_ROM              138
-#define IDR_PRAVETS_82_ROM              139
-#define IDR_PRAVETS_8M_ROM              140
+#define IDR_BOOT_SECTOR                 138
+#define IDR_FREEZES_F8_ROM              139
+#define IDR_PRAVETS_82_ROM              140
+#define IDR_PRAVETS_8M_ROM              141
 #define IDR_PRAVETS_8C_ROM              142
 #define IDR_MENU_DISK_POPUP             143
 #define IDD_ABOUT                       145
@@ -60,6 +61,9 @@
 #define IDB_CHARSET82                   158
 #define IDB_CHARSET8C                   159
 #define IDB_DEBUG_FONT_7_by_8           160
+#define IDR_OS_DOS33                    161
+#define IDR_OS_PRODOS243                162
+#define IDR_BOOT_SECTOR_PRODOS243       163
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
@@ -136,15 +140,29 @@
 #define ID_DISKMENU_WRITEPROTECTION_ON  40005
 #define ID_DISKMENU_WRITEPROTECTION_OFF 40006
 #define ID_DISKMENU_SENDTO_CIDERPRESS   40007
+#define ID_DISKMENU_NEW_PRODOS_140K_DISK 40008
+#define ID_DISKMENU_NEW_PRODOS_160K_DISK 40009
+#define ID_DISKMENU_NEW_PRODOS_800K_DISK 40010
+#define ID_DISKMENU_NEW_PRODOS_32MB_DISK 40011
+#define ID_DISKMENU_NEW_DOS33_140K_DISK  40012
+#define ID_DISKMENU_NEW_DOS33_160K_DISK  40013
+#define ID_DISKMENU_ADVANCED_SEPARATOR   40014
+#define ID_DISKMENU_SELECT_BOOT_SECTOR   40015
+#define ID_DISKMENU_NEW_BLANK_140K_DISK  40016
+#define ID_DISKMENU_NEW_BLANK_160K_DISK  40017
+#define ID_DISKMENU_NEW_BLANK_800K_DISK  40018
+#define ID_DISKMENU_NEW_BLANK_32MB_DISK  40019
+#define ID_DISKMENU_FORMAT_PRODOS_DISK   40020
+#define ID_DISKMENU_FORMAT_DOS33_DISK    40021
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        161
-#define _APS_NEXT_COMMAND_VALUE         40012
-#define _APS_NEXT_CONTROL_VALUE         1083
+#define _APS_NEXT_RESOURCE_VALUE        164
+#define _APS_NEXT_COMMAND_VALUE         40022
+#define _APS_NEXT_CONTROL_VALUE         1093
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
