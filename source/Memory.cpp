@@ -424,7 +424,7 @@ void SetRegistryAuxNumberOfBanks(void)
 
 UINT GetRamWorksMemorySize()
 {
-	return g_uMaxExPages;
+	return g_uMaxExBanks;
 }
 
 UINT GetRamWorksActiveBank(void)
