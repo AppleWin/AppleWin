@@ -226,6 +226,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		return 0;
 	}
 
+	// ------------------------------------------------------------------------
 	int ProDOS_BlockGetPathOffset ( uint8_t *pDiskBytes, ProDOS_VolumeHeader_t *pVolume, const char *pProDOSPath )
 	{
 		int nOffset    = PRODOS_ROOT_OFFSET; // Block 2 * 0x200 Bytes/Block = 0x400 abs offset
@@ -382,27 +383,27 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		info.meta.total_blocks = ProDOS_Get16( pDiskBytes, base + 37 );
 
 #if _DEBUG
-		LogOutput( "DEBUG: VOLUME: name: %s\n",   info.name              );
-		LogOutput( "DEBUG: VOLUME: date: %04X\n", info.date              );
-		LogOutput( "DEBUG: VOLUME: time: %04X\n", info.time              );
-		LogOutput( "DEBUG: VOLUME: cVer: %02X\n", info.cur_ver           );
-		LogOutput( "DEBUG: VOLUME: mVer: %02X\n", info.min_ver           );
-		LogOutput( "DEBUG: VOLUME:acces: %02X\n", info.access            );
-		LogOutput( "DEBUG: VOLUME:e.len: %02X\n", info.entry_len         );
-		LogOutput( "DEBUG: VOLUME:e.num: %02X\n", info.entry_num         );
-		LogOutput( "DEBUG: VOLUME:files: %04X  ", info.file_count        );
+		LogOutput( "PRODOS: VOLUME: name: %s\n",   info.name              );
+		LogOutput( "PRODOS: VOLUME: date: %04X\n", info.date              );
+		LogOutput( "PRODOS: VOLUME: time: %04X\n", info.time              );
+		LogOutput( "PRODOS: VOLUME: cVer: %02X\n", info.cur_ver           );
+		LogOutput( "PRODOS: VOLUME: mVer: %02X\n", info.min_ver           );
+		LogOutput( "PRODOS: VOLUME:acces: %02X\n", info.access            );
+		LogOutput( "PRODOS: VOLUME:e.len: %02X\n", info.entry_len         );
+		LogOutput( "PRODOS: VOLUME:e.num: %02X\n", info.entry_num         );
+		LogOutput( "PRODOS: VOLUME:files: %04X  ", info.file_count        );
 		LogOutput( "(%d)\n", info.file_count );
 
 		if (iBlock == PRODOS_ROOT_BLOCK)
 		{
-			LogOutput( "DEBUG: ROOT: bitmap: %04X\n", info.meta.bitmap_block );
-			LogOutput( "DEBUG: ROOT: blocks: %04X\n", info.meta.total_blocks );
+			LogOutput( "PRODOS: ROOT: bitmap: %04X\n", info.meta.bitmap_block );
+			LogOutput( "PRODOS: ROOT: blocks: %04X\n", info.meta.total_blocks );
 		}
 		else
 		{
-			LogOutput( "DEBUG: SUBDIR: parent: %04X\n", info.subdir.parent_block     );
-			LogOutput( "DEBUG: SUBDIR: pa.len: %02X\n", info.subdir.parent_entry_num );
-			LogOutput( "DEBUG: SUBDIR: pa.num: %02X\n", info.subdir.parent_entry_len );
+			LogOutput( "PRODOS: SUBDIR: parent: %04X\n", info.subdir.parent_block     );
+			LogOutput( "PRODOS: SUBDIR: pa.len: %02X\n", info.subdir.parent_entry_num );
+			LogOutput( "PRODOS: SUBDIR: pa.num: %02X\n", info.subdir.parent_entry_len );
 		}
 #endif
 
@@ -477,6 +478,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			*pFileHeader_ = info;
 	}
 
+	// ------------------------------------------------------------------------
 	void ProDOS_PutFileHeader ( uint8_t *pDiskBytes, int nOffset, ProDOS_FileHeader_t *pMeta )
 	{
 		int base = nOffset;
