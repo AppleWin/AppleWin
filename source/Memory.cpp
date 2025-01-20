@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "NTSC.h"
 #include "NoSlotClock.h"
 #include "Pravets.h"
+#include "Registry.h"
 #include "Speaker.h"
 #include "Tape.h"
 #include "RGBMonitor.h"
@@ -258,8 +259,8 @@ LPBYTE  memVidHD = NULL;	// For Apple II/II+ writes to aux mem (on VidHD card). 
 static CNoSlotClock* g_NoSlotClock = new CNoSlotClock;
 
 #ifdef RAMWORKS
-static UINT		g_uMaxExPages = 1;				// user requested ram pages (default to 1 aux bank: so total = 128KB)
-static UINT		g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c -- ALSO RAMWORKS
+static UINT		g_uMaxExBanks = 1;				// user requested ram banks (default to 1 aux bank: so total = 128KB)
+static UINT		g_uActiveBank = 0;				// 0 = aux 64K for: //e extended 80 Col card, or //c -- also RamWorks III aux card
 static LPBYTE	RWpages[kMaxExMemoryBanks];		// pointers to RW memory banks
 #endif
 
@@ -312,7 +313,7 @@ static void SetExpansionMemTypeDefault(void)
 }
 
 // Called from SetExpansionMemTypeDefault(), MemLoadSnapshotAux(), SaveState.cpp_ParseSlots(), cmd-line switch
-void SetExpansionMemType(const SS_CARDTYPE type)
+void SetExpansionMemType(const SS_CARDTYPE type, bool updateRegistry/*=true*/)
 {
 	SS_CARDTYPE newSlot0Card;
 	SS_CARDTYPE newSlotAuxCard;
@@ -367,7 +368,7 @@ void SetExpansionMemType(const SS_CARDTYPE type)
 	}
 
 	GetCardMgr().Insert(SLOT0, newSlot0Card);
-	GetCardMgr().InsertAux(newSlotAuxCard);
+	GetCardMgr().InsertAux(newSlotAuxCard, updateRegistry);
 }
 
 void CreateLanguageCard(void)
@@ -403,9 +404,22 @@ SS_CARDTYPE GetCurrentExpansionMemType(void)
 
 //
 
-void SetRamWorksMemorySize(UINT pages)
+void SetRamWorksMemorySize(UINT banks, bool updateRegistry/*=true*/)
 {
-	g_uMaxExPages = pages;
+	_ASSERT(banks <= kMaxExMemoryBanks);
+	if (banks > kMaxExMemoryBanks)
+		banks = kMaxExMemoryBanks;
+
+	g_uMaxExBanks = banks;
+
+	if (updateRegistry)
+		SetRegistryAuxNumberOfBanks();
+}
+
+void SetRegistryAuxNumberOfBanks(void)
+{
+	std::string regSection = RegGetConfigSlotSection(SLOT_AUX);
+	RegSaveValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, TRUE, g_uMaxExBanks);
 }
 
 UINT GetRamWorksMemorySize()
@@ -1621,7 +1635,7 @@ LPBYTE MemGetBankPtr(const UINT nBank, const bool isSaveSnapshotOrDebugging/*=tr
 		BackMainImage();	// Flush any dirty pages to back-buffer
 
 #ifdef RAMWORKS
-	if (nBank > g_uMaxExPages)
+	if (nBank > g_uMaxExBanks)
 		return NULL;
 
 	if (nBank == 0)
@@ -1854,11 +1868,11 @@ void MemInitialize()
 #ifdef RAMWORKS
 	if (GetCardMgr().QueryAux() == CT_RamWorksIII)
 	{
-		// allocate memory for RAMWorks III - up to 8MB
+		// allocate memory for RamWorks III - up to 16MB
 		g_uActiveBank = 0;
 
 		UINT i = 1;
-		while ((i < g_uMaxExPages) && (RWpages[i] = ALIGNED_ALLOC(_6502_MEM_LEN)))
+		while ((i < g_uMaxExBanks) && (RWpages[i] = ALIGNED_ALLOC(_6502_MEM_LEN)))
 			i++;
 		while (i < kMaxExMemoryBanks)
 			RWpages[i++] = NULL;
@@ -2382,7 +2396,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 #ifdef RAMWORKS
 			case 0x71: // extended memory aux page number
 			case 0x73: // Ramworks III set aux page number
-				if ((value < g_uMaxExPages) && RWpages[value])
+				if ((value < g_uMaxExBanks) && RWpages[value])
 				{
 					g_uActiveBank = value;
 					memaux = RWpages[g_uActiveBank];
@@ -2780,7 +2794,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 
 	if (IS_APPLE2C())
 	{
-		_ASSERT(g_uMaxExPages == 1);
+		_ASSERT(g_uMaxExBanks == 1);
 	}
 
 	yamlSaveHelper.UnitHdr(MemGetSnapshotUnitAuxSlotName(), kUNIT_AUXSLOT_VER);
@@ -2817,10 +2831,10 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 		{
 			YamlSaveHelper::Label cardState(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-			yamlSaveHelper.Save("%s: 0x%02X   # [0,1..7F] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExPages);
-			yamlSaveHelper.Save("%s: 0x%02X # [  0..7E] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
+			yamlSaveHelper.Save("%s: 0x%03X  # [0,1..100] 0=no aux mem, 1=128K system, etc\n", SS_YAML_KEY_NUMAUXBANKS, g_uMaxExBanks);
+			yamlSaveHelper.Save("%s: 0x%02X # [  0..FF] 0=memaux\n", SS_YAML_KEY_ACTIVEAUXBANK, g_uActiveBank);
 
-			for(UINT bank = 1; bank <= g_uMaxExPages; bank++)
+			for(UINT bank = 1; bank <= g_uMaxExBanks; bank++)
 			{
 				MemSaveSnapshotMemory(yamlSaveHelper, false, bank);
 			}
@@ -2832,7 +2846,7 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 
 static SS_CARDTYPE MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, const std::string& card)
 {
-	g_uMaxExPages = 1;	// Must be at least 1 (for aux mem) - regardless of Apple2 type!
+	g_uMaxExBanks = 1;	// Must be at least 1 (for aux mem) - regardless of Apple2 type!
 	g_uActiveBank = 0;
 	_ASSERT(MemGetBankPtr(1, false));	// Ensure there is always aux mem (eg. for CT_80Col or CT_VidHD)
 
@@ -2883,16 +2897,16 @@ static SS_CARDTYPE MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, cons
 		}
 		else // cardType == CT_RamWorksIII
 		{
-			if (numAuxBanks < 2 || numAuxBanks > 0x7F || (activeAuxBank + 1) > numAuxBanks)
+			if (numAuxBanks < 2 || numAuxBanks > kMaxExMemoryBanks || (activeAuxBank + 1) > numAuxBanks)
 				throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Bad aux slot card state");
 		}
 
-		g_uMaxExPages = numAuxBanks;
+		g_uMaxExBanks = numAuxBanks;
 		g_uActiveBank = activeAuxBank;
 
 		//
 
-		for (UINT bank = 1; bank <= g_uMaxExPages; bank++)
+		for (UINT bank = 1; bank <= g_uMaxExBanks; bank++)
 		{
 			LPBYTE pBank = MemGetBankPtr(bank, false);
 			if (!pBank)

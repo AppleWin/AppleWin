@@ -219,10 +219,17 @@ void CardManager::InsertAuxInternal(SS_CARDTYPE type)
 		RemoveAux();	// creates a new EmptyCard
 }
 
-void CardManager::InsertAux(SS_CARDTYPE type)
+void CardManager::InsertAux(SS_CARDTYPE type, bool updateRegistry/*=true*/)
 {
 	InsertAuxInternal(type);
-	RegSetConfigSlotNewCardType(SLOT_AUX, type);
+	if (updateRegistry)
+	{
+		if (type != CT_RamWorksIII)
+			SetRamWorksMemorySize(1, false);	// 1x 64K bank for Empty/80Col/Extended80Col cards
+
+		RegSetConfigSlotNewCardType(SLOT_AUX, type);
+		SetRegistryAuxNumberOfBanks();
+	}
 }
 
 void CardManager::RemoveAuxInternal()
