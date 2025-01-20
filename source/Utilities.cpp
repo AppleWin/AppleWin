@@ -271,6 +271,23 @@ void LoadConfiguration(bool loadImages)
 		}
 	}
 
+	// Aux slot
+
+	{
+		std::string regSection = RegGetConfigSlotSection(SLOT_AUX);
+
+		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
+		{
+			SS_CARDTYPE type = (SS_CARDTYPE)dwTmp;
+			const bool noUpdateRegistry = false;
+			GetCardMgr().InsertAux(type, noUpdateRegistry);
+			SetExpansionMemType(type, noUpdateRegistry);
+
+			RegLoadValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, TRUE, &dwTmp, kDefaultExMemoryBanksRealRW3);
+			SetRamWorksMemorySize(dwTmp, noUpdateRegistry);
+		}
+	}
+
 	//
 
 	// Load save-state pathname *before* inserting any harddisk/disk images (for both init & reinit cases)

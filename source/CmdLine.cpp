@@ -316,6 +316,8 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			else if (strcmp(lpCmdLine, "rw3") == 0)
 			{
 				g_cmdLine.auxSlotInsert = CT_RamWorksIII;
+				if (!g_cmdLine.uRamWorksExPages)
+					g_cmdLine.uRamWorksExPages = kDefaultExMemoryBanksRealRW3;
 			}
 			else
 			{
@@ -410,16 +412,16 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 				g_nMemoryClearType = NUM_MIP - 1;
 		}
 #ifdef RAMWORKS
-		else if (strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..127]
+		else if (strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..256]
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 			g_cmdLine.uRamWorksExPages = atoi(lpCmdLine);
 			if (g_cmdLine.uRamWorksExPages > kMaxExMemoryBanks)
 				g_cmdLine.uRamWorksExPages = kMaxExMemoryBanks;
-			else
-			if (g_cmdLine.uRamWorksExPages < 1)
-				g_cmdLine.uRamWorksExPages = 1;
+			else if (g_cmdLine.uRamWorksExPages < 1)
+				g_cmdLine.uRamWorksExPages = 1;			// 1x64KB (aux mem)
+			g_cmdLine.auxSlotInsert = CT_RamWorksIII;	// Insert RW3 into aux slot
 		}
 #endif
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]
