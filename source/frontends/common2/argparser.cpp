@@ -153,97 +153,76 @@ namespace common2
 
         // clang-format off
 
-    std::vector<std::pair<std::string, std::vector<OptionData_t>>> allOptions =
-      {
-        {
-          name.c_str(),
-          {
-            {"help",                    no_argument,          'h',              "Print this help message"},
-          }
-        },
-        {
-          "Configuration",
-          {
-            {"conf",                    required_argument,    'c',              "Select configuration file", configurationFileDefault.c_str()},
-            {"qt-ini",                  no_argument,          'q',              "Use Qt ini file (read only)"},
-            {"registry",                required_argument,    'r',              "Registry options section.path=value"},
-          }
-        },
-        {
-          "Emulator",
-          {
-            {"log",                     no_argument,          'l',              "Log to AppleWin.log"},
-            {"paused",                  no_argument,          PAUSED,           "Start paused"},
-            {"fixed-speed",             no_argument,          FIXED_SPEED,      "Fixed (non-adaptive) speed"},
-            {"headless",                no_argument,          HEADLESS,         "Headless: disable video (freewheel)"},
-            {"benchmark",               no_argument,          'b',              "Benchmark emulator"},
-            {"no-squaring",             no_argument,          NO_SQUARING,      "Gamepad range is (already) a square"},
-            {"nat",                     required_argument,    SLIRP_NAT,        "SLIRP PortFwd (e.g. 0,tcp,,8080,,http)"},
-          }
-        },
-        {
-          "Disk",
-          {
-            {"d1",                      required_argument,    '1',              "Disk in S6D1 drive"},
-            {"d2",                      required_argument,    '2',              "Disk in S6D2 drive"},
-            {"h1",                      required_argument,    DISK_H1,          "Hard Disk in 1st drive"},
-            {"h2",                      required_argument,    DISK_H2,          "Hard Disk in 1st drive"},
-          }
-        },
-        {
-          "Snapshot",
-          {
-            {"state-filename",          required_argument,    'f',              "Set snapshot filename"},
-            {"load-state",              required_argument,    's',              "Load snapshot from file"},
-          }
-        },
-        {
-          "Memory",
-          {
-            {"memclear",                required_argument,    MEM_CLEAR,        "Memory initialization pattern [0..7]"},
-            {"rom",                     required_argument,    ROM,              "Custom 12k/16k ROM"},
-            {"f8rom",                   required_argument,    F8ROM,            "Custom 2k ROM"},
-          }
-        },
-        {
-          "Audio",
-          {
-            {"no-audio",                no_argument,          NO_AUDIO,         "Disable audio"},
-            {"audio-buffer",            required_argument,    AUDIO_BUFFER,     "Audio buffer (ms)", audioBufferDefault.c_str()},
-            {"wav-speaker",             required_argument,    WAV_SPEAKER,      "Speaker wav output filename"},
-            {"wav-mockingboard",        required_argument,    WAV_MOCKINGBOARD, "Mockingboard wav output filename"},
-          }
-        },
-      };
+        std::vector<std::pair<std::string, std::vector<OptionData_t>>> allOptions = {
+            {name.c_str(),
+             {
+                 {"help",                    no_argument,          'h',              "Print this help message"},
+             }},
+            {"Configuration",
+             {
+                 {"conf",                    required_argument,    'c',              "Select configuration file", configurationFileDefault.c_str()},
+                 {"qt-ini",                  no_argument,          'q',              "Use Qt ini file (read only)"},
+                 {"registry",                required_argument,    'r',              "Registry options section.path=value"},
+             }},
+            {"Emulator",
+             {
+                 {"log",                     no_argument,          'l',              "Log to AppleWin.log"},
+                 {"paused",                  no_argument,          PAUSED,           "Start paused"},
+                 {"fixed-speed",             no_argument,          FIXED_SPEED,      "Fixed (non-adaptive) speed"},
+                 {"headless",                no_argument,          HEADLESS,         "Headless: disable video (freewheel)"},
+                 {"benchmark",               no_argument,          'b',              "Benchmark emulator"},
+                 {"no-squaring",             no_argument,          NO_SQUARING,      "Gamepad range is (already) a square"},
+                 {"nat",                     required_argument,    SLIRP_NAT,        "SLIRP PortFwd (e.g. 0,tcp,,8080,,http)"},
+             }},
+            {"Disk",
+             {
+                 {"d1",                      required_argument,    '1',              "Disk in S6D1 drive"},
+                 {"d2",                      required_argument,    '2',              "Disk in S6D2 drive"},
+                 {"h1",                      required_argument,    DISK_H1,          "Hard Disk in 1st drive"},
+                 {"h2",                      required_argument,    DISK_H2,          "Hard Disk in 1st drive"},
+             }},
+            {"Snapshot",
+             {
+                 {"state-filename",          required_argument,    'f',              "Set snapshot filename"},
+                 {"load-state",              required_argument,    's',              "Load snapshot from file"},
+             }},
+            {"Memory",
+             {
+                 {"memclear",                required_argument,    MEM_CLEAR,        "Memory initialization pattern [0..7]"},
+                 {"rom",                     required_argument,    ROM,              "Custom 12k/16k ROM"},
+                 {"f8rom",                   required_argument,    F8ROM,            "Custom 2k ROM"},
+             }},
+            {"Audio",
+             {
+                 {"no-audio",                no_argument,          NO_AUDIO,         "Disable audio"},
+                 {"audio-buffer",            required_argument,    AUDIO_BUFFER,     "Audio buffer (ms)", audioBufferDefault.c_str()},
+                 {"wav-speaker",             required_argument,    WAV_SPEAKER,      "Speaker wav output filename"},
+                 {"wav-mockingboard",        required_argument,    WAV_MOCKINGBOARD, "Mockingboard wav output filename"},
+             }},
+        };
 
-    const std::vector<std::pair<std::string, std::vector<OptionData_t>>> sa2Options =
-      {
-        {
-          "sa2",
-          {
-            {"sdl-driver",              required_argument,    SDL_DRIVER,       "SDL driver"},
-            {"gl-swap",                 required_argument,    GL_SWAP,          "SDL_GL_SwapInterval"},
-            {"timer",                   no_argument,          TIMER,            "Synchronise with timer"},
-            {"no-imgui",                no_argument,          NO_IMGUI,         "Plain SDL2 renderer"},
-            {"geometry",                required_argument,    GEOMETRY,         "WxH[+X+Y]"},
-            {"aspect-ratio",            no_argument,          ASPECT_RATIO,     "Always preserve correct aspect ratio"},
-            {"game-controller",         required_argument,    GAME_CONTROLLER,  "SDL_GameControllerOpen"},
-            {"game-mapping-file",       required_argument,    MAPPING_FILE,     "SDL_GameControllerAddMappingsFromFile"},
-            {"audio-device",            required_argument,    AUDIO_DEVICE,     "Audio device name"},
-          }
-        },
-      };
+        const std::vector<std::pair<std::string, std::vector<OptionData_t>>> sa2Options = {
+            {"sa2",
+             {
+                 {"sdl-driver",              required_argument,    SDL_DRIVER,       "SDL driver"},
+                 {"gl-swap",                 required_argument,    GL_SWAP,          "SDL_GL_SwapInterval"},
+                 {"timer",                   no_argument,          TIMER,            "Synchronise with timer"},
+                 {"no-imgui",                no_argument,          NO_IMGUI,         "Plain SDL2 renderer"},
+                 {"geometry",                required_argument,    GEOMETRY,         "WxH[+X+Y]"},
+                 {"aspect-ratio",            no_argument,          ASPECT_RATIO,     "Always preserve correct aspect ratio"},
+                 {"game-controller",         required_argument,    GAME_CONTROLLER,  "SDL_GameControllerOpen"},
+                 {"game-mapping-file",       required_argument,    MAPPING_FILE,     "SDL_GameControllerAddMappingsFromFile"},
+                 {"audio-device",            required_argument,    AUDIO_DEVICE,     "Audio device name"},
+             }},
+        };
 
-    const std::vector<std::pair<std::string, std::vector<OptionData_t>>> applenOptions =
-      {
-        {
-          "applen",
-          {
-            {"no-video-update",         no_argument,          NO_VIDEO_UPDATE,  "Do not execute NTSC code"},
-            {"ev-device-name",          required_argument,    EV_DEVICE_NAME,   "Gamepad ev-device name"},
-          }
-        },
-      };
+        const std::vector<std::pair<std::string, std::vector<OptionData_t>>> applenOptions = {
+            {"applen",
+             {
+                 {"no-video-update",         no_argument,          NO_VIDEO_UPDATE,  "Do not execute NTSC code"},
+                 {"ev-device-name",          required_argument,    EV_DEVICE_NAME,   "Gamepad ev-device name"},
+             }},
+        };
 
         // clang-format on
 
