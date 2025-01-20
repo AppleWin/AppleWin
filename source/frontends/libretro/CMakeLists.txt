@@ -37,8 +37,6 @@ add_library(applewin_libretro SHARED
   ${HEADER_FILES}
   )
 
-target_compile_features(applewin_libretro PUBLIC cxx_std_17)
-
 target_include_directories(applewin_libretro PRIVATE
   libretro-common/include
   )

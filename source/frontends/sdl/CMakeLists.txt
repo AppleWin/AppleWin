@@ -48,8 +48,6 @@ set(HEADER_FILES
   )
 
 
-target_compile_features(sa2 PUBLIC cxx_std_17)
-
 target_include_directories(sa2 PRIVATE
   ${SDL2_INCLUDE_DIRS}
   ${SDL2_IMAGE_INCLUDE_DIRS}
