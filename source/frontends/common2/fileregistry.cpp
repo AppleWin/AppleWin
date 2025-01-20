@@ -34,6 +34,8 @@ namespace
 
     void addExtraOptions(const std::vector<std::string> & options);
 
+    std::string getLocation() const override;
+
   private:
     const std::filesystem::path myFilename;
     bool mySaveOnExit;
@@ -74,6 +76,11 @@ namespace
       parseOption(option, path, value);
       myINI.put(path, value);
     }
+  }
+
+  std::string Configuration::getLocation() const
+  {
+    return myFilename.string();
   }
 
 }

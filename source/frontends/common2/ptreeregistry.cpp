@@ -80,6 +80,11 @@ namespace common2
     return values;
   }
 
+  std::string PTreeRegistry::getLocation() const
+  {
+    return std::string();
+  }
+
   void PTreeRegistry::saveToINIFile(const std::string & filename) const
   {
     boost::property_tree::ini_parser::write_ini(filename, myINI);

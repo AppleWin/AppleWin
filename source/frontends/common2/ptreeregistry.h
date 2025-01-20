@@ -35,6 +35,8 @@ namespace common2
 
     std::map<std::string, std::map<std::string, std::string>> getAllValues() const override;
 
+    std::string getLocation() const override;
+
     void saveToINIFile(const std::string & filename) const;
 
   protected:

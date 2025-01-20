@@ -20,4 +20,6 @@ public:
 
   virtual std::map<std::string, std::map<std::string, std::string>> getAllValues() const = 0;
 
+  virtual std::string getLocation() const = 0;
+
 };

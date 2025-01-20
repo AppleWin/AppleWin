@@ -741,7 +741,10 @@ namespace sa2
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            if (ImGui::TreeNode("Registry"))
+            const bool open = ImGui::TreeNode("Registry");
+            ImGui::TableNextColumn();
+            sectableToClipboard(Registry::instance->getLocation());
+            if (open)
             {
               const std::map<std::string, std::map<std::string, std::string>> values = Registry::instance->getAllValues();
 
@@ -751,13 +754,16 @@ namespace sa2
                 ImGui::TableNextColumn();
                 if (ImGui::TreeNodeEx(it1.first.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
                 {
+                  int id = 0;
                   for (const auto & it2 : it1.second)
                   {
+                    ImGui::PushID(++id);
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
                     ImGui::TreeNodeEx(it2.first.c_str(), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth);
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(it2.second.c_str());
+                    sectableToClipboard(it2.second);
+                    ImGui::PopID();
                   }
                   ImGui::TreePop();
                 }
