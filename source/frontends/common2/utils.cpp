@@ -5,24 +5,48 @@
 #include "SaveState.h"
 #include "Registry.h"
 
-#include <libgen.h>
-#include <unistd.h>
+namespace
+{
+
+  std::string getEnvOrDefault(const char * var, const char * fallback = nullptr)
+  {
+    const char* value = getenv(var);
+    if (value)
+    {
+      return value;
+    }
+    if (fallback)
+    {
+      return fallback;
+    }
+    throw std::runtime_error("${" + std::string(var) + "} not set");
+  }
+
+}
 
 namespace common2
 {
 
-  void setSnapshotFilename(const std::string & filename)
+  std::filesystem::path getSettingsRootDir()
   {
-    if (!filename.empty())
+#ifdef _WIN32
+    const std::string profile = getEnvOrDefault("LOCALAPPDATA");
+    return profile;
+#else
+    // https://specifications.freedesktop.org/basedir-spec/latest/
+    const std::filesystem::path home = getHomeDir();
+    const std::filesystem::path config = getEnvOrDefault("XDG_CONFIG_HOME", ".config");
+
+    return home / config;
+#endif
+  }
+
+  void setSnapshotFilename(const std::filesystem::path & filename)
+  {
+    if (std::filesystem::exists(filename))
     {
-      // it is unbelievably hard to convert a path to absolute
-      // unless the file exists
-      char * temp = strdup(filename.c_str());
-      const char * dir = dirname(temp);
-      // dir points inside temp!
-      SetCurrentDirectory(dir);
-      Snapshot_SetFilename(filename);
-      free(temp);
+      std::filesystem::current_path(filename.parent_path());
+      Snapshot_SetFilename(filename.string());
       RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, Snapshot_GetPathname());
     }
   }
@@ -62,21 +86,33 @@ namespace common2
     saveValue("y", geometry.y);
   }
 
-  RestoreCurrentDirectory::RestoreCurrentDirectory()
+  std::filesystem::path getHomeDir()
   {
-    char szFilename[MAX_PATH];
-    if (GetCurrentDirectory(sizeof(szFilename), szFilename))
-    {
-      myCurrentDirectory = szFilename;
-    }
+#ifdef _WIN32
+    const char * var = "USERPROFILE";
+#else
+    const char * var = "HOME";
+#endif
+    const std::filesystem::path home = getEnvOrDefault(var);
+    return home;
+  }
+
+  std::filesystem::path getConfigFile(const std::string & filename)
+  {
+    const std::filesystem::path dir = getSettingsRootDir() / "applewin";
+    std::filesystem::create_directories(dir);
+
+    return dir / filename;
+  }
+
+  RestoreCurrentDirectory::RestoreCurrentDirectory()
+  : myCurrentDirectory(std::filesystem::current_path())
+  {
   }
 
   RestoreCurrentDirectory::~RestoreCurrentDirectory()
   {
-    if (!myCurrentDirectory.empty())
-    {
-      SetCurrentDirectory(myCurrentDirectory.c_str());
-    }
+    std::filesystem::current_path(myCurrentDirectory);
   }
 
 }

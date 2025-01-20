@@ -16,9 +16,6 @@ namespace common2
   protected:
     // pointer and size
     std::pair<const unsigned char *, unsigned int> GetResourceData(WORD id) const;
-
-  private:
-    const std::string myHomeDir;
   };
 
 }

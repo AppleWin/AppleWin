@@ -1,11 +1,7 @@
 #include "StdAfx.h"
 #include "frontends/common2/gnuframe.h"
-#include "frontends/common2/fileregistry.h"
+#include "frontends/common2/utils.h"
 #include "apple2roms_data.h"
-
-#include <sys/stat.h>
-#include <unistd.h>
-#include <libgen.h>
 
 #ifdef __APPLE__
 #include "mach-o/dyld.h"
@@ -14,65 +10,53 @@
 #include "Core.h"
 #include "config.h"
 
-#ifdef __MINGW32__
-#define realpath(N, R) _fullpath((R), (N), 0)
-#endif
+#include <filesystem>
 
 namespace
 {
 
-  bool dirExists(const std::string & folder)
+  std::filesystem::path getExecutableFilename()
   {
-    struct stat stdbuf;
-
-    if (stat(folder.c_str(), &stdbuf) == 0 && S_ISDIR(stdbuf.st_mode))
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-
-  std::string getResourceFolder(const std::string & target)
-  {
-    std::vector<std::string> paths;
-
-    char self[1024] = {0};
-
+    std::filesystem::path executable;
 #ifdef _WIN32
+    char self[1024] = {0};
     int ch = GetModuleFileNameA(0, self, sizeof(self));
-    if (ch >= sizeof(self))
+    if (ch < sizeof(self))
     {
-        ch = -1;
+      executable = self;
     }
 #elif __APPLE__
+    char self[1024] = {0};
     uint32_t size = sizeof(self);
     const int ch = _NSGetExecutablePath(self, &size);
-#else
-    const int ch = readlink("/proc/self/exe", self,  sizeof(self));
-#endif
-
     if (ch != -1)
     {
-      const char * path = dirname(self);
+      executable = self;
+    }
+#else
+    executable = std::filesystem::read_symlink("/proc/self/exe");
+#endif
+    return executable;
+  }
 
-      // case 1: run from the build folder
-      paths.emplace_back(std::string(path) + '/'+ ROOT_PATH);
+  std::filesystem::path getResourceFolder(const std::string & target)
+  {
+    const std::filesystem::path executable = getExecutableFilename();
+
+    // why a vector? there used to be multiple alternatives to try..
+    std::vector<std::filesystem::path> paths;
+    if (std::filesystem::exists(executable))
+    {
+      const auto root = std::filesystem::canonical(executable.parent_path() / ROOT_PATH);
+      paths.push_back(root);
     }
 
-    for (const std::string & path : paths)
+    for (const auto & path : paths)
     {
-      char * real = realpath(path.c_str(), nullptr);
-      if (real)
+      const std::filesystem::path resourcePath = path / target;
+      if (std::filesystem::exists(resourcePath))
       {
-        const std::string resourcePath = std::string(real) + target;
-        free(real);
-        if (dirExists(resourcePath))
-        {
-          return resourcePath;
-        }
+        return resourcePath;
       }
     }
 
@@ -80,12 +64,7 @@ namespace
     // which only matters for Debug Symbols and Printer Filename
     // let's be tolerant and use cwd
 
-    if (GetCurrentDirectory(sizeof(self), self))
-    {
-      return std::string(self) + PATH_SEPARATOR;
-    }
-
-    throw std::runtime_error("Cannot find the resource path for: " + target);
+    return std::filesystem::current_path() / target;
   }
 
 }
@@ -95,11 +74,9 @@ namespace common2
 
   GNUFrame::GNUFrame(const EmulatorOptions & options)
   : CommonFrame(options)
-  , myHomeDir(GetHomeDir())
   {
     // should this go down to LinuxFrame (maybe Initialisation?)
-    g_sProgramDir = getResourceFolder("/bin/");
-    LogFileOutput("Home Dir: '%s'\n", myHomeDir.c_str());
+    g_sProgramDir = getResourceFolder("bin").string() + PATH_SEPARATOR;
     LogFileOutput("Program Dir: '%s'\n", g_sProgramDir.c_str());
   }
 
@@ -115,7 +92,9 @@ namespace common2
 
   std::string GNUFrame::Video_GetScreenShotFolder() const
   {
-    return myHomeDir + "/Pictures/";
+    const std::filesystem::path pictures = getHomeDir() / "Pictures";
+    std::filesystem::create_directories(pictures);
+    return pictures.string() + PATH_SEPARATOR;
   }
 
 }

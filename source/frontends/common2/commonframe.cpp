@@ -2,9 +2,6 @@
 #include "frontends/common2/commonframe.h"
 #include "frontends/common2/programoptions.h"
 
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <thread>
 
 #include "CardManager.h"

@@ -2,7 +2,7 @@
 #include "frontends/sdl/imgui/sdlimguiframe.h"
 
 #include "frontends/sdl/utils.h"
-#include "frontends/common2/fileregistry.h"
+#include "frontends/common2/utils.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/sdl/imgui/image.h"
 
@@ -107,7 +107,7 @@ namespace sa2
     myDebuggerFont = io.Fonts->AddFontFromMemoryTTF(const_cast<unsigned char *>(debug6502TTF.first), debug6502TTF.second, 13,
       &fontConfig);
 
-    myIniFileLocation = common2::GetConfigFile("imgui.ini");
+    myIniFileLocation = common2::getConfigFile("imgui.ini");
     if (myIniFileLocation.empty())
     {
       io.IniFilename = nullptr;
