@@ -23,7 +23,7 @@ Parsing errors are fatal, listening errors are logged to the console.
 
 ## Configuration
 
-The configuration GUI only works with ImGui: otherwise either manually edit the configuration file ``~/.applewin/applewin.conf`` or use ``qapple`` and run ``sa2 --qt-ini``.
+The configuration GUI only works with ImGui: otherwise either manually edit the configuration file ``~/.config/applewin/applewin.conf`` or use ``qapple`` and run ``sa2 --qt-ini``.
 The format of the configuration file is the same as the Windows Registry of AppleWin.
 
 *Drag & drop* works for floppy disks. With ImGui it is possible to select which drive they are dropped into (`System` -> `Settings` -> `Hardware` -> `D&D`).

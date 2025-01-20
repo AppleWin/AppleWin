@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <functional>
 
 class FrameBase;
 
@@ -102,6 +101,8 @@ namespace sa2
   COLORREF imVec4ToColorref(const ImVec4 & color);
 
   char getPrintableChar(const uint8_t x);  // copied from FormatCharTxtCtrl
+
+  void sectableToClipboard(const std::string & text);
 
 }
 

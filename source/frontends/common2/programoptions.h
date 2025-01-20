@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <filesystem>
 
 namespace common2
 {
@@ -42,7 +43,7 @@ namespace common2
     // "/dev/input/by-id/usb-©Microsoft_Corporation_Controller_1BBE3DB-event-joystick"
     std::string paddleDeviceName;
 
-    std::string configurationFile;
+    std::filesystem::path configurationFile;
     bool useQtIni = false;  // use Qt .ini file (read only)
 
     bool run = true;  // false if options include "-h"

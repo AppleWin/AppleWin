@@ -51,6 +51,7 @@ namespace
     int has_arg;
     int val;
     const char * description;
+    const char * defaultValue;  // optional
   };
 
   bool isShort(const int val)
@@ -81,6 +82,10 @@ namespace
           value << " arg";
         }
         std::cerr << std::left << std::setw(30) << value.str() << "\t" << option.description << std::endl;
+        if (option.defaultValue)
+        {
+          std::cerr << "\t\t\t\t\t( " << option.defaultValue << " )" << std::endl;
+        }
       }
       std::cerr << std::endl;
     }
@@ -144,6 +149,9 @@ namespace common2
   {
     const std::string name = "Apple Emulator for " + edition + " (based on AppleWin " + getVersion() + ")";
 
+    const std::string configurationFileDefault = options.configurationFile.string();
+    const std::string audioBufferDefault = std::to_string(options.audioBuffer);
+
     std::vector<std::pair<std::string, std::vector<OptionData_t>>> allOptions =
       {
         {
@@ -155,7 +163,7 @@ namespace common2
         {
           "Configuration",
           {
-            {"conf",                    required_argument,    'c',              "Select configuration file"},
+            {"conf",                    required_argument,    'c',              "Select configuration file", configurationFileDefault.c_str()},
             {"qt-ini",                  no_argument,          'q',              "Use Qt ini file (read only)"},
             {"registry",                required_argument,    'r',              "Registry options section.path=value"},
           }
@@ -200,7 +208,7 @@ namespace common2
           "Audio",
           {
             {"no-audio",                no_argument,          NO_AUDIO,         "Disable audio"},
-            {"audio-buffer",            required_argument,    AUDIO_BUFFER,     "Audio buffer (ms)"},
+            {"audio-buffer",            required_argument,    AUDIO_BUFFER,     "Audio buffer (ms)", audioBufferDefault.c_str()},
             {"wav-speaker",             required_argument,    WAV_SPEAKER,      "Speaker wav output filename"},
             {"wav-mockingboard",        required_argument,    WAV_MOCKINGBOARD, "Mockingboard wav output filename"},
           }

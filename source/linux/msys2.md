@@ -19,3 +19,7 @@ Then configure as usual: `cmake .. -G Ninja` or your preferred version of `make`
 Start a terminal with
 
 `C:/msys64/msys2_shell.cmd -defterm -here -no-start -mingw64`
+
+## Configuration files
+
+`applen` stores its settings in `%LOCALAPPDATA%\applewin\applewin.conf`

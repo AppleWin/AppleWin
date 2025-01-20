@@ -3,14 +3,12 @@
 #include "frontends/common2/fileregistry.h"
 #include "frontends/common2/ptreeregistry.h"
 #include "frontends/common2/programoptions.h"
+#include "frontends/common2/utils.h"
 
 #include "Log.h"
-#include "windows.h"
 #include "frontends/qt/applicationname.h"
 
 #include <boost/property_tree/ini_parser.hpp>
-
-#include <sys/stat.h>
 
 namespace
 {
@@ -31,25 +29,27 @@ namespace
   class Configuration : public common2::PTreeRegistry
   {
   public:
-    Configuration(const std::string & filename, const bool saveOnExit);
+    Configuration(const std::filesystem::path & filename, const bool saveOnExit);
     ~Configuration();
 
     void addExtraOptions(const std::vector<std::string> & options);
 
+    std::string getLocation() const override;
+
   private:
-    const std::string myFilename;
+    const std::filesystem::path myFilename;
     bool mySaveOnExit;
   };
 
-  Configuration::Configuration(const std::string & filename, const bool saveOnExit) : myFilename(filename), mySaveOnExit(saveOnExit)
+  Configuration::Configuration(const std::filesystem::path & filename, const bool saveOnExit) : myFilename(filename), mySaveOnExit(saveOnExit)
   {
-    if (GetFileAttributes(myFilename.c_str()) != INVALID_FILE_ATTRIBUTES)
+    if (std::filesystem::exists(myFilename))
     {
-      boost::property_tree::ini_parser::read_ini(myFilename, myINI);
+      boost::property_tree::ini_parser::read_ini(myFilename.string(), myINI);
     }
     else
     {
-      LogFileOutput("Registry: configuration file '%s' not found\n", filename.c_str());
+      LogFileOutput("Registry: configuration file '%s' not found\n", myFilename.string().c_str());
     }
   }
 
@@ -59,11 +59,11 @@ namespace
     {
       try
       {
-        saveToINIFile(myFilename);
+        saveToINIFile(myFilename.string());
       }
       catch(const std::exception& e)
       {
-        LogFileOutput("Registry: cannot save settings to '%s': %s\n", myFilename.c_str(), e.what());
+        LogFileOutput("Registry: cannot save settings to '%s': %s\n", myFilename.string().c_str(), e.what());
       }
     }
   }
@@ -78,54 +78,24 @@ namespace
     }
   }
 
+  std::string Configuration::getLocation() const
+  {
+    return myFilename.string();
+  }
+
 }
 
 namespace common2
 {
 
-  std::string GetHomeDir()
-  {
-    const char* homeDir = getenv("HOME");
-    if (!homeDir)
-    {
-      throw std::runtime_error("${HOME} not set, cannot locate configuration file");
-    }
-
-    return std::string(homeDir);
-  }
-
-  std::string GetConfigFile(const std::string & filename)
-  {
-    const std::string dir = GetHomeDir() + "/.applewin";
-
-#ifdef _WIN32
-    const int status = mkdir(dir.c_str());
-#else
-    const int status = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-#endif
-
-    if (!status || (errno == EEXIST))
-    {
-      return dir + "/" + filename;
-    }
-    else
-    {
-      const char * s = strerror(errno);
-      LogFileOutput("No registry. Cannot create %s in %s: %s\n", filename.c_str(), dir.c_str(), s);
-      return std::string();
-    }
-  }
-
   std::shared_ptr<Registry> CreateFileRegistry(const EmulatorOptions & options)
   {
-    const std::string homeDir = GetHomeDir();
-
-    std::string filename;
+    std::filesystem::path filename;
     bool saveOnExit;
 
     if (options.useQtIni)
     {
-      filename = homeDir + "/.config/" + ORGANIZATION_NAME + "/" + APPLICATION_NAME + ".conf";
+      filename = getSettingsRootDir() / ORGANIZATION_NAME / (std::string(APPLICATION_NAME) + ".conf");
       saveOnExit = false;
     }
     else
@@ -134,7 +104,7 @@ namespace common2
       saveOnExit = true;
     }
 
-    LogFileOutput("Reading configuration from: '%s'\n", filename.c_str());
+    LogFileOutput("Reading configuration from: '%s'\n", filename.string().c_str());
     std::shared_ptr<Configuration> config = std::make_shared<Configuration>(filename, saveOnExit);
     config->addExtraOptions(options.registryOptions);
 

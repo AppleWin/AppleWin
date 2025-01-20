@@ -11,6 +11,9 @@
 #include "frontends/sdl/imgui/glselector.h"
 #include "imgui_internal.h"
 
+#include <SDL.h>
+
+// not very orthodox
 void CreateLanguageCard(void);
 
 namespace
@@ -282,6 +285,14 @@ namespace sa2
       c += '@'; // map ctrl chars to visible
     }
     return c;
+  }
+
+  void sectableToClipboard(const std::string & text)
+  {
+    if (!text.empty() && ImGui::Selectable(text.c_str()))
+    {
+      SDL_SetClipboardText(text.c_str());
+    }
   }
 
 }

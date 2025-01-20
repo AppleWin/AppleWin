@@ -17,6 +17,8 @@ public:
 
     std::map<std::string, std::map<std::string, std::string>> getAllValues() const override;
 
+    std::string getLocation() const override;
+
 private:
     QSettings mySettings;
 
