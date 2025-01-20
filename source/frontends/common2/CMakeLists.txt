@@ -33,8 +33,6 @@ add_library(common2 STATIC
   ${HEADER_FILES}
   )
 
-target_compile_features(common2 PUBLIC cxx_std_17)
-
 find_package(Boost REQUIRED)
 
 target_include_directories(common2 PRIVATE
