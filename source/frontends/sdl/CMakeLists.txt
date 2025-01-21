@@ -55,12 +55,19 @@ target_include_directories(sa2 PRIVATE
   )
 
 target_link_libraries(sa2 PRIVATE
+  appleii
+  common2
+
+  ${YAML_LIBRARIES}
+  ${MINIZIP_LIBRARIES}
+  ${PCAP_LIBRARIES}
+  ${SLIRP_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+
   ${SDL2_LIBRARIES}
   ${SDL2_IMAGE_LIBRARIES}
   ${GLES2_LIBRARIES}
   OpenGL::GL
-  appleii
-  common2
   )
 
 if (NOT WIN32)

@@ -43,11 +43,36 @@ target_compile_options(applen PRIVATE
   )
 
 target_link_libraries(applen PRIVATE
-  ${NCURSES_LIBRARIES}
-  ${LIBEVDEV_LIBRARIES}
   appleii
   common2
   )
+
+if (STATIC_LINKING)
+  target_link_options(applen PRIVATE
+    -static-libgcc -static-libstdc++)
+
+  target_link_libraries(applen PRIVATE
+    -Wl,-Bstatic
+    ${YAML_STATIC_LIBRARIES}
+    ${MINIZIP_STATIC_LIBRARIES}
+    ${PCAP_STATIC_LIBRARIES}
+    ${SLIRP_STATIC_LIBRARIES}
+    ${ZLIB_STATIC_LIBRARIES}
+    ${NCURSES_STATIC_LIBRARIES}
+    ${LIBEVDEV_STATIC_LIBRARIES}
+    -Wl,-Bdynamic
+    )
+else()
+  target_link_libraries(applen PRIVATE
+    ${YAML_LIBRARIES}
+    ${MINIZIP_LIBRARIES}
+    ${PCAP_LIBRARIES}
+    ${SLIRP_LIBRARIES}
+    ${ZLIB_LIBRARIES}
+    ${NCURSES_LIBRARIES}
+    ${LIBEVDEV_LIBRARIES}
+    )
+endif()
 
 target_link_directories(applen PRIVATE
   ${NCURSES_LIBRARY_DIRS}
