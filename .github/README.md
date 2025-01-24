@@ -109,6 +109,8 @@ Easiest way to run from the ``build`` folder:
 
 It supports playlists files `.m3u` (see https://docs.libretro.com/library/vice/#m3u-and-disk-control alttough not all options are implemented).
 
+The core can be statically linked in Linux and MSYS2, pass `-DSTATIC_LINKING=ON` to `cmake`.
+
 ## Build
 
 The project can be built using cmake from the top level directory.

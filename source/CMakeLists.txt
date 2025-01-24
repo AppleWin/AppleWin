@@ -280,7 +280,7 @@ else()
     )
 endif()
 
-target_link_directories(appleii PRIVATE
+target_link_directories(appleii PUBLIC
   ${YAML_LIBRARY_DIRS}
   ${MINIZIP_LIBRARY_DIRS}
   ${PCAP_LIBRARY_DIRS}

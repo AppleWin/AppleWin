@@ -2,9 +2,6 @@ cmake_minimum_required(VERSION 3.13)
 
 project(applewin HOMEPAGE_URL "https://github.com/audetto/AppleWin")
 
-# this is a best effort, only where it makes sense
-option(STATIC_LINKING "statically link")
-
 option(BUILD_APPLEN   "build ncurses frontend")
 option(BUILD_QAPPLE   "build Qt5 frontend")
 option(BUILD_SA2      "build SDL2 frontend")

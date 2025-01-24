@@ -12,7 +12,10 @@ Then configure as usual: `cmake .. -G Ninja` or your preferred version of `make`
 
 ## Limitations
 
-`static` linking is not supported yet, so the applications (including `retroarch`) must be run from inside a MSYS2 terminal.
+`static` linking is supported on mys2 and Ubuntu, pass `-DSTATIC_LINKING=ON` to `cmake`.
+
+On Ubuntu `libz` cannot be statically linked.
+
 
 ## ssh access
 

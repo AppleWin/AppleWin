@@ -1,3 +1,6 @@
+# not every compiler / system supports it
+option(STATIC_LINKING "statically link the libretro core" OFF)
+
 set(SOURCE_FILES
   environment.cpp
   libretro.cpp
