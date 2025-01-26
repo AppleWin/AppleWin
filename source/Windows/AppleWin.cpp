@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Utilities.h"
 #include "CmdLine.h"
 #include "Debug.h"
+#include "Keyboard.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
@@ -672,6 +673,7 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 // DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
 static void RepeatInitialization(void)
 {
+		KeybReset();
 		GetVideo().SetVidHD(false);	// Set true later only if VidHDCard is instantiated
 		ResetToLogoMode();
 
