@@ -15,7 +15,7 @@ namespace common2
 
     protected:
         // pointer and size
-        std::pair<const unsigned char *, unsigned int> GetResourceData(WORD id) const;
+        std::pair<const unsigned char *, unsigned int> GetResourceData(WORD id) const override;
     };
 
 } // namespace common2

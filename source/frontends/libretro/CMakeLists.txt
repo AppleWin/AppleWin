@@ -1,3 +1,6 @@
+# not every compiler / system supports it
+option(STATIC_LINKING "statically link the libretro core" OFF)
+
 set(SOURCE_FILES
   environment.cpp
   libretro.cpp
@@ -41,15 +44,47 @@ target_include_directories(applewin_libretro PRIVATE
   libretro-common/include
   )
 
-set(is_gnu "$<CXX_COMPILER_ID:GNU>")
-set(before_v9 "$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9>")
-set(static_stdcpp_fs "$<AND:${is_gnu},${before_v9}>")
-
 target_link_libraries(applewin_libretro PRIVATE
-  $<${static_stdcpp_fs}:stdc++fs>
   appleii
   common2
   )
+
+if (STATIC_LINKING)
+  target_link_options(applewin_libretro PRIVATE
+    -static-libgcc -static-libstdc++)
+
+  if (NOT WIN32)
+    # on Ubuntu libz cannot be statically linked to generate a .so
+    # it has not been compiled with -fPIC
+    target_link_libraries(applewin_libretro PRIVATE
+      -Wl,-Bstatic
+      ${MINIZIP_LIBRARIES}
+      ${YAML_STATIC_LIBRARIES}
+      ${PCAP_STATIC_LIBRARIES}
+      ${SLIRP_STATIC_LIBRARIES}
+      -Wl,-Bdynamic
+      ${ZLIB_LIBRARIES}
+      )
+  else()
+    target_link_libraries(applewin_libretro PRIVATE
+      -Wl,-Bstatic
+      ${MINIZIP_STATIC_LIBRARIES}
+      ${YAML_STATIC_LIBRARIES}
+      ${PCAP_STATIC_LIBRARIES}
+      ${SLIRP_STATIC_LIBRARIES}
+      ${ZLIB_STATIC_LIBRARIES}
+      -Wl,-Bdynamic
+      )
+  endif()
+else()
+  target_link_libraries(applewin_libretro PRIVATE
+    ${MINIZIP_LIBRARIES}
+    ${YAML_LIBRARIES}
+    ${PCAP_LIBRARIES}
+    ${SLIRP_LIBRARIES}
+    ${ZLIB_LIBRARIES}
+    )
+endif()
 
 if (NOT WIN32)
   target_link_libraries(applewin_libretro PUBLIC

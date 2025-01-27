@@ -43,10 +43,16 @@ target_compile_options(applen PRIVATE
   )
 
 target_link_libraries(applen PRIVATE
-  ${NCURSES_LIBRARIES}
-  ${LIBEVDEV_LIBRARIES}
   appleii
   common2
+  ${YAML_LIBRARIES}
+  ${MINIZIP_LIBRARIES}
+  ${PCAP_LIBRARIES}
+  ${SLIRP_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  
+  ${NCURSES_LIBRARIES}
+  ${LIBEVDEV_LIBRARIES}
   )
 
 target_link_directories(applen PRIVATE

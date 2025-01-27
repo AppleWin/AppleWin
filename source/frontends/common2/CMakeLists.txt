@@ -43,7 +43,7 @@ target_include_directories(common2 PRIVATE
 target_link_libraries(common2 PRIVATE
   appleii
   apple2roms
-)
+  )
 
 if (NOT WIN32)
   target_link_libraries(common2 PUBLIC

@@ -1,7 +1,6 @@
 include(FindPkgConfig)
-include(FindZLIB)
 
-find_package(ZLIB REQUIRED)
+pkg_search_module(ZLIB REQUIRED zlib)
 pkg_search_module(YAML REQUIRED yaml-0.1)
 pkg_search_module(MINIZIP REQUIRED minizip)
 
@@ -258,6 +257,7 @@ target_include_directories(appleii PRIVATE
   ${PCAP_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${SLIRP_INCLUDE_DIRS}
+  ${ZLIB_INCLUDE_DIRS}
   Debugger
   )
 
@@ -265,14 +265,6 @@ target_include_directories(appleii PRIVATE
 target_include_directories(appleii PUBLIC
   ${CMAKE_CURRENT_BINARY_DIR}  # for config.h
   ${MINIZIP_INCLUDE_DIRS}
-  )
-
-target_link_libraries(appleii PRIVATE
-  ${YAML_LIBRARIES}
-  ${MINIZIP_LIBRARIES}
-  ${PCAP_LIBRARIES}
-  ${SLIRP_LIBRARIES}
-  ZLIB::ZLIB
   )
 
 if (WIN32)
@@ -288,11 +280,12 @@ else()
     )
 endif()
 
-target_link_directories(appleii PRIVATE
+target_link_directories(appleii PUBLIC
   ${YAML_LIBRARY_DIRS}
   ${MINIZIP_LIBRARY_DIRS}
   ${PCAP_LIBRARY_DIRS}
   ${SLIRP_LIBRARY_DIRS}
+  ${ZLIB_LIBRARY_DIRS}
   )
 
 target_compile_options(appleii PUBLIC
