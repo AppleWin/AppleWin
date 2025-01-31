@@ -605,8 +605,11 @@ namespace sa2
                         ImGui::TableHeadersRow();
 
                         ImGui::BeginDisabled();
+                        int row = 0;
                         for (SoundInfo &device : myAudioInfo)
                         {
+                            ImGui::TableNextRow();
+                            ImGui::PushID(++row);
                             ImGui::TableNextColumn();
                             ImGui::TextUnformatted(device.voiceName.c_str());
                             ImGui::TableNextColumn();
@@ -622,6 +625,7 @@ namespace sa2
                             ImGui::SliderFloat("##Buffer", &buffer, 0, size, "%4.0f");
                             ImGui::TableNextColumn();
                             ImGui::Text("%zu", device.numberOfUnderruns);
+                            ImGui::PopID();
                         }
                         ImGui::EndDisabled();
 
