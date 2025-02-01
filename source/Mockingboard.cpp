@@ -870,15 +870,6 @@ void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral)
 
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;
-
-#ifdef NO_DIRECT_X
-#else // NO_DIRECT_X
-	for (UINT i = 0; i < NUM_SSI263; i++)
-	{
-		if (!m_MBSubUnit[i].ssi263.DSInit())
-			break;
-	}
-#endif // NO_DIRECT_X
 }
 
 //-----------------------------------------------------------------------------

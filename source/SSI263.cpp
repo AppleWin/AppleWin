@@ -215,7 +215,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 	case SSI_FILFREQ:	// RegAddr.b2=1 (b1 & b0 are: don't care)
 	default:
 #if LOG_SSI263
-		if(g_fh) fprintf(g_fh, "FFREQ = 0x%02X\n", nValue);
+		if (g_fh) fprintf(g_fh, "FFREQ = 0x%02X\n", nValue);
 #endif
 		m_filterFreq = nValue;
 		break;
@@ -330,18 +330,8 @@ void SSI263::Votrax_Write(BYTE value)
 
 void SSI263::Play(unsigned int nPhoneme)
 {
-	if (!SSI263SingleVoice.lpDSBvoice)
-	{
-		return;
-	}
-
-	if (!SSI263SingleVoice.bActive)
-	{
-		bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, m_kDSBufferByteSize);
-		LogFileOutput("SSI263::Play: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
-		if (!bRes)
-			return;
-	}
+	if (!SSI263SingleVoice.lpDSBvoice || !SSI263SingleVoice.bActive)
+		m_deferDSInit = true;
 
 	if (m_dbgFirst)
 	{
@@ -406,16 +396,57 @@ void SSI263::Stop(void)
 
 //-----------------------------------------------------------------------------
 
+void SSI263::PeriodicUpdate(UINT executedCycles)
+{
+	const UINT kCyclesPerAudioFrame = 1000;
+	m_cyclesThisAudioFrame += executedCycles;
+	if (m_cyclesThisAudioFrame < kCyclesPerAudioFrame)
+		return;
+
+	m_cyclesThisAudioFrame %= kCyclesPerAudioFrame;
+
+	Update();
+}
+
+//-----------------------------------------------------------------------------
+
 //#define DBG_SSI263_UPDATE		// NB. This outputs for all active SSI263 ring-buffers (eg. for mb-audit this may be 2 or 4)
 
 // Called by:
 // . PeriodicUpdate()
 void SSI263::Update(void)
 {
-	UpdateAccurateLength();
+//	if (!IsPhonemeActive())		// SSI263::Play() sets to >= 0
+//		return;
+//	if (m_phonemeAccurateLengthRemaining == 0 && m_phonemeLengthRemaining == 0)
+//		return;
 
-	if (!SSI263SingleVoice.bActive)
+	if (m_deferDSInit)
+	{
+		m_deferDSInit = false;
+
+		if (!SSI263SingleVoice.lpDSBvoice)
+		{
+			if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
+				return;
+
+			if (!DSInit())
+				return;
+		}
+
+		if (!SSI263SingleVoice.bActive)
+		{
+			bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, m_kDSBufferByteSize);	// ... and Play()
+			LogFileOutput("SSI263::Play: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
+			if (!bRes)
+				return;
+		}
+	}
+
+	if (!SSI263SingleVoice.lpDSBvoice || !SSI263SingleVoice.bActive)
 		return;
+
+	UpdateAccurateLength();
 
 	if (g_bFullSpeed)	// NB. if true, then it's irrespective of IsPhonemeActive()
 	{
@@ -665,7 +696,7 @@ void SSI263::Update(void)
 		return;
 
 	memcpy(pDSLockedBuffer0, &m_mixBufferSSI263[0], dwDSLockedBufferSize0);
-	if(pDSLockedBuffer1)
+	if (pDSLockedBuffer1)
 		memcpy(pDSLockedBuffer1, &m_mixBufferSSI263[dwDSLockedBufferSize0/sizeof(short)], dwDSLockedBufferSize1);
 
 	// Commit sound buffer
@@ -694,18 +725,26 @@ void SSI263::Update(void)
 		}
 	}
 
-	if (m_phonemeLeadoutLength == 0)
+	RepeatPhoneme();
+}
+
+// Called by:
+// . Update()
+// . LoadSnapshot()
+void SSI263::RepeatPhoneme(void)
+{
+	if (m_phonemeLeadoutLength != 0)
+		return;
+
+	if (!m_isVotraxPhoneme)
 	{
-		if (!m_isVotraxPhoneme)
-		{
-			if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
-				Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
-		}
-//		else	// GH#1318 - remove for now, as TR v5.1 can start with repeating phoneme in debugger 'g' mode!
-//		{
-//			Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested in MAME 0.262)
-//		}
+		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
+			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
 	}
+//	else	// GH#1318 - remove for now, as TR v5.1 can start with repeating phoneme in debugger 'g' mode!
+//	{
+//		Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested in MAME 0.262)
+//	}
 }
 
 //-----------------------------------------------------------------------------
@@ -838,10 +877,6 @@ void SSI263::SetCardMode(PHASOR_MODE mode)
 
 bool SSI263::DSInit(void)
 {
-	//
-	// Create single SSI263 voice
-	//
-
 	if (!DSAvailable())
 		return false;
 
@@ -854,8 +889,9 @@ bool SSI263::DSInit(void)
 	}
 
 	// Don't DirectSoundBuffer::Play() via DSZeroVoiceBuffer() - instead wait until this SSI263 is actually first used
-	// . different to Speaker & Mockingboard ring buffers
+	// . Different to Speaker ring buffer (but same as Mockingboard ring buffer).
 	// . NB. we have 2x SSI263 per MB card, and it's rare if 1 is used (and *extremely* rare if 2 are used!)
+	// . Not so rare, as TotalReplay (at boot) will try to detect an SSI263 (by playing a $00 phoneme).
 
 	// Volume might've been setup from value in Registry
 	if (!SSI263SingleVoice.nVolume)
@@ -929,20 +965,6 @@ void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 		SSI263SingleVoice.lpDSBvoice->SetVolume(SSI263SingleVoice.nVolume);
 }
 
-//-----------------------------------------------------------------------------
-
-void SSI263::PeriodicUpdate(UINT executedCycles)
-{
-	const UINT kCyclesPerAudioFrame = 1000;
-	m_cyclesThisAudioFrame += executedCycles;
-	if (m_cyclesThisAudioFrame < kCyclesPerAudioFrame)
-		return;
-
-	m_cyclesThisAudioFrame %= kCyclesPerAudioFrame;
-
-	Update();
-}
-
 //=============================================================================
 
 #define SS_YAML_KEY_SSI263 "SSI263"
@@ -1008,7 +1030,13 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 		CpuIrqAssert(IS_SPEECH);
 
 	if (IsPhonemeActive())
+	{
 		UpdateIRQ();		// Pre: m_device, m_cardMode
+
+		// NB. Save-state doesn't preserve the play-position within the phoneme (it just restarts from the beginning),
+		// so this may cause problems for timing sensitive code (eg. mb-audit).
+		RepeatPhoneme();
+	}
 
 	m_lastUpdateCycle = GetLastCumulativeCycles();
 }

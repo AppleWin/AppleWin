@@ -20,6 +20,7 @@ public:
 
 	void ResetState(const bool powerCycle)
 	{
+		m_deferDSInit = false;
 		m_currentActivePhoneme = -1;
 		m_isVotraxPhoneme = false;
 		m_votraxPhoneme = 0;
@@ -70,7 +71,6 @@ public:
 	void SetDevice(UINT device) { m_device = device; }
 	void SetCardMode(PHASOR_MODE mode);
 
-	bool DSInit(void);
 	void DSUninit(void);
 
 	void Reset(const bool powerCycle, const bool isPhasorCard);
@@ -106,12 +106,15 @@ private:
 	void Play(unsigned int nPhoneme);
 	void Stop(void);
 	void UpdateIRQ(void);
+	void RepeatPhoneme(void);
 	void UpdateAccurateLength(void);
 	void SetDeviceModeAndInts(void);
 
 	UINT64 GetLastCumulativeCycles(void);
 	void UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
 	BYTE GetPCR(BYTE nDevice);
+
+	bool DSInit(void);
 
 	static const BYTE m_Votrax2SSI263[/*64*/];
 
@@ -150,6 +153,7 @@ private:
 	PHASOR_MODE m_cardMode;
 	short* m_pPhonemeData00;
 
+	bool m_deferDSInit;
 	int m_currentActivePhoneme;				// -1 (if none) or SSI263 or SC01 phoneme
 	bool m_isVotraxPhoneme;
 	BYTE m_votraxPhoneme;
