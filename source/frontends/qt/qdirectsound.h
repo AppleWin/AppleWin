@@ -2,6 +2,7 @@
 #define DIRECTSOUND_H
 
 #include <QtGlobal>
+#include <QAudio>
 
 #include <vector>
 #include <string>
@@ -15,6 +16,7 @@ namespace QDirectSound
     {
         std::string voiceName;
         bool running = false;
+        QAudio::State state = QAudio::StoppedState;
         int channels = 0;
 
         // in milli seconds

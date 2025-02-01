@@ -19,7 +19,7 @@ private:
 
     // updated by the callback
     std::atomic_size_t myNumberOfUnderruns;
-    std::mutex myMutex;
+    mutable std::mutex myMutex;
 
 protected:
     LinuxSoundBuffer(DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pszVoiceName);
@@ -31,10 +31,10 @@ public:
     const size_t myBitsPerSample;
     const std::string myVoiceName;
 
-    HRESULT SetCurrentPosition(DWORD dwNewPosition) override;
-    HRESULT GetCurrentPosition(LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor) override;
+    virtual HRESULT SetCurrentPosition(DWORD dwNewPosition) override;
+    virtual HRESULT GetCurrentPosition(LPDWORD lpdwCurrentPlayCursor, LPDWORD lpdwCurrentWriteCursor) override;
 
-    HRESULT Lock(
+    virtual HRESULT Lock(
         DWORD dwWriteCursor, DWORD dwWriteBytes, LPVOID *lplpvAudioPtr1, DWORD *lpdwAudioBytes1, LPVOID *lplpvAudioPtr2,
         DWORD *lpdwAudioBytes2, DWORD dwFlags) override;
     virtual HRESULT Unlock(LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2) override;
@@ -43,15 +43,15 @@ public:
     virtual HRESULT Play(DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags) override;
 
     virtual HRESULT SetVolume(LONG lVolume) override;
-    HRESULT GetVolume(LONG *lplVolume) override;
+    virtual HRESULT GetVolume(LONG *lplVolume) override;
 
-    HRESULT GetStatus(LPDWORD lpdwStatus) override;
-    HRESULT Restore() override;
+    virtual HRESULT GetStatus(LPDWORD lpdwStatus) override;
+    virtual HRESULT Restore() override;
 
     DWORD Read(
         DWORD dwReadBytes, LPVOID *lplpvAudioPtr1, DWORD *lpdwAudioBytes1, LPVOID *lplpvAudioPtr2,
         DWORD *lpdwAudioBytes2);
-    DWORD GetBytesInBuffer();
+    DWORD GetBytesInBuffer() const;
     size_t GetBufferUnderruns() const;
     void ResetUnderruns();
     double GetLogarithmicVolume() const; // in [0, 1]
