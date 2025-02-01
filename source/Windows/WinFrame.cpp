@@ -1135,7 +1135,7 @@ LRESULT Win32Frame::WndProc(
 		if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 		{
 			Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
-			TCHAR filename[MAX_PATH];
+			char filename[MAX_PATH];
 			DragQueryFile((HDROP)wparam,0,filename,sizeof(filename));
 			POINT point;
 			DragQueryPoint((HDROP)wparam,&point);
@@ -1377,7 +1377,7 @@ LRESULT Win32Frame::WndProc(
 			}
 			else if (g_nAppMode == MODE_DEBUG)
 			{
-				DebuggerInputConsoleChar((TCHAR)wparam);
+				DebuggerInputConsoleChar((char)wparam);
 			}
 			break;
 
@@ -2108,7 +2108,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 
 	// This is the default installation path of CiderPress. 
 	// It shall not be left blank, otherwise  an explorer window will be open.
-	TCHAR PathToCiderPress[MAX_PATH];
+	char PathToCiderPress[MAX_PATH];
 	RegLoadString(
 		TEXT("Configuration"),
 		REGVALUE_CIDERPRESSLOC,

@@ -622,7 +622,7 @@ public:
 	CDoImage(void) {}
 	virtual ~CDoImage(void) {}
 
-	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const TCHAR* pszExt)
+	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
 		if (!IsValidImageSize(dwImageSize))
 			return eMismatch;
@@ -690,7 +690,7 @@ public:
 	CPoImage(void) {}
 	virtual ~CPoImage(void) {}
 
-	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const TCHAR* pszExt)
+	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
 		if (!IsValidImageSize(dwImageSize))
 			return eMismatch;
@@ -757,7 +757,7 @@ public:
 
 	static const UINT NIB1_TRACK_SIZE = NIBBLES_PER_TRACK_NIB;
 
-	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const TCHAR* pszExt)
+	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
 		if (dwImageSize < NIB1_TRACK_SIZE*TRACKS_STANDARD || dwImageSize % NIB1_TRACK_SIZE != 0 || dwImageSize > NIB1_TRACK_SIZE*TRACKS_MAX)
 			return eMismatch;
@@ -824,7 +824,7 @@ public:
 
 	static const UINT NIB2_TRACK_SIZE = 6384;
 
-	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const TCHAR* pszExt)
+	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
 		if (dwImageSize != NIB2_TRACK_SIZE*TRACKS_STANDARD)
 			return eMismatch;
@@ -861,7 +861,7 @@ public:
 	CHDVImage(void) {}
 	virtual ~CHDVImage(void) {}
 
-	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const TCHAR* pszExt)
+	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
 		m_uNumTracksInImage = dwImageSize / TRACK_DENIBBLIZED_SIZE;	// Set to non-zero
 
@@ -902,7 +902,7 @@ public:
 	CIIeImage(void) : m_pHeader(NULL) {}
 	virtual ~CIIeImage(void) { delete [] m_pHeader; }
 
-	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const TCHAR* pszExt)
+	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
 		if (strncmp((const char *)pImage, "SIMSYSTEM_IIE", 13) || (*(pImage+13) > 3))
 			return eMismatch;
@@ -1016,7 +1016,7 @@ public:
 		return true;
 	}
 
-	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const TCHAR* pszExt)
+	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
 		uint32_t dwLength = *(LPWORD)(pImage+2);
 		bool bRes = (((dwLength+4) == dwImageSize) ||
@@ -1071,7 +1071,7 @@ public:
 		return true;
 	}
 
-	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const TCHAR* pszExt)
+	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
 		return (*(LPDWORD)pImage == 0x214C470A) ? eMatch : eMismatch;	// "!LG\x0A"
 	}
@@ -1135,7 +1135,7 @@ public:
 	CWOZ1Image(void) {}
 	virtual ~CWOZ1Image(void) {}
 
-	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const TCHAR* pszExt)
+	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
 		CWOZHelper::WOZHeader* pWozHdr = (CWOZHelper::WOZHeader*) pImage;
 
@@ -1256,7 +1256,7 @@ public:
 	CWOZ2Image(void) {}
 	virtual ~CWOZ2Image(void) {}
 
-	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const TCHAR* pszExt)
+	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
 		CWOZHelper::WOZHeader* pWozHdr = (CWOZHelper::WOZHeader*) pImage;
 
@@ -1546,7 +1546,7 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, uint32_t& dwOffse
 // - harddisk-normal-create also doesn't create a max size image-buffer
 
 // DETERMINE THE FILE'S EXTENSION AND CONVERT IT TO LOWERCASE
-void CImageHelperBase::GetCharLowerExt(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize)
+void CImageHelperBase::GetCharLowerExt(char* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize)
 {
 	LPCTSTR pImageFileExt = pszImageFilename;
 
@@ -1562,13 +1562,13 @@ void CImageHelperBase::GetCharLowerExt(TCHAR* pszExt, LPCTSTR pszImageFilename, 
 	CharLowerBuff(pszExt, _tcslen(pszExt));
 }
 
-void CImageHelperBase::GetCharLowerExt2(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize)
+void CImageHelperBase::GetCharLowerExt2(char* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize)
 {
-	TCHAR szFilename[MAX_PATH];
+	char szFilename[MAX_PATH];
 	_tcsncpy(szFilename, pszImageFilename, MAX_PATH);
 	szFilename[MAX_PATH - 1] = 0;
 
-	TCHAR* pLastDot = _tcsrchr(szFilename, TEXT('.'));
+	char* pLastDot = _tcsrchr(szFilename, TEXT('.'));
 	if (pLastDot)
 		*pLastDot = 0;
 
@@ -1614,7 +1614,7 @@ ImageError_e CImageHelperBase::CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo
 	//
 
 	// Strip .gz then try to determine the file's extension and convert it to lowercase
-	TCHAR szExt[_MAX_EXT] = "";
+	char szExt[_MAX_EXT] = "";
 	GetCharLowerExt2(szExt, pszImageFilename, _MAX_EXT);
 
 	uint32_t dwSize = nLen;
@@ -1700,7 +1700,7 @@ ImageError_e CImageHelperBase::CheckZipFile(LPCTSTR pszImageFilename, ImageInfo*
 				throw eIMAGE_ERROR_ZIP;
 
 			// Determine the file's extension and convert it to lowercase
-			TCHAR szExt[_MAX_EXT] = "";
+			char szExt[_MAX_EXT] = "";
 			GetCharLowerExt(szExt, szFilename, _MAX_EXT);
 
 			uint32_t dwSize = nLen;
@@ -1826,7 +1826,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 		return eIMAGE_ERROR_UNABLE_TO_OPEN;
 
 	// Determine the file's extension and convert it to lowercase
-	TCHAR szExt[_MAX_EXT] = "";
+	char szExt[_MAX_EXT] = "";
 	GetCharLowerExt(szExt, pszImageFilename, _MAX_EXT);
 
 	uint32_t dwSize = GetFileSize(hFile, NULL);
@@ -1961,7 +1961,7 @@ ImageError_e CImageHelperBase::Open(	LPCTSTR pszImageFilename,
 	if (Err != eIMAGE_ERROR_NONE)
 		return Err;
 
-	TCHAR szFilename[MAX_PATH] = { 0 };
+	char szFilename[MAX_PATH] = { 0 };
 	DWORD uNameLen = GetFullPathName(pszImageFilename, MAX_PATH, szFilename, NULL);
 	pImageInfo->szFilename = szFilename;
 	if (uNameLen == 0 || uNameLen >= MAX_PATH)
@@ -2024,7 +2024,7 @@ CDiskImageHelper::CDiskImageHelper(void) :
 	m_vecImageTypes.push_back( new CPrgImage );
 }
 
-CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, uint32_t dwSize, const TCHAR* pszExt, uint32_t& dwOffset, ImageInfo* pImageInfo)
+CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, uint32_t dwSize, const char* pszExt, uint32_t& dwOffset, ImageInfo* pImageInfo)
 {
 	dwOffset = 0;
 	m_MacBinaryHelper.DetectHdr(pImage, dwSize, dwOffset);
@@ -2113,7 +2113,7 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, uint32_t dwSize, const TCHAR
 	return pImageType;
 }
 
-CImageBase* CDiskImageHelper::GetImageForCreation(const TCHAR* pszExt, uint32_t* pCreateImageSize)
+CImageBase* CDiskImageHelper::GetImageForCreation(const char* pszExt, uint32_t* pCreateImageSize)
 {
 	// WE CREATE ONLY DOS ORDER (DO), 6656-NIBBLE (NIB) OR WOZ2 (WOZ) FORMAT FILES
 	for (UINT uLoop = 0; uLoop < GetNumImages(); uLoop++)
@@ -2159,7 +2159,7 @@ CHardDiskImageHelper::CHardDiskImageHelper(void) :
 	m_vecImageTypes.push_back( new CHDVImage );
 }
 
-CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, uint32_t dwSize, const TCHAR* pszExt, uint32_t& dwOffset, ImageInfo* pImageInfo)
+CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, uint32_t dwSize, const char* pszExt, uint32_t& dwOffset, ImageInfo* pImageInfo)
 {
 	dwOffset = 0;
 	m_Result2IMG = m_2IMGHelper.DetectHdr(pImage, dwSize, dwOffset);
@@ -2196,7 +2196,7 @@ CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, uint32_t dwSize, const T
 	return pImageType;
 }
 
-CImageBase* CHardDiskImageHelper::GetImageForCreation(const TCHAR* pszExt, uint32_t* pCreateImageSize)
+CImageBase* CHardDiskImageHelper::GetImageForCreation(const char* pszExt, uint32_t* pCreateImageSize)
 {
 	// NB. Not supported for HardDisks
 	// - Would need to create a default 16-block file like CiderPress

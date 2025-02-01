@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 CPageConfig* CPageConfig::ms_this = 0;	// reinit'd in ctor
 
 enum APPLEIICHOICE {MENUITEM_IIORIGINAL, MENUITEM_IIPLUS, MENUITEM_IIJPLUS, MENUITEM_IIE, MENUITEM_ENHANCEDIIE, MENUITEM_CLONE};
-const TCHAR CPageConfig::m_ComputerChoices[] =
+const char CPageConfig::m_ComputerChoices[] =
 				TEXT("Apple ][ (Original)\0")
 				TEXT("Apple ][+\0")
 				TEXT("Apple ][ J-Plus\0")

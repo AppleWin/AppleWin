@@ -221,7 +221,7 @@ WORD GetAddressFromSymbol (const char* pSymbol)
 //===========================================================================
 bool String2Address( LPCTSTR pText, WORD & nAddress_ )
 {
-	TCHAR sHexApple[ CONSOLE_WIDTH ];
+	char sHexApple[ CONSOLE_WIDTH ];
 
 	if (pText[0] == '$')
 	{
@@ -241,13 +241,13 @@ bool String2Address( LPCTSTR pText, WORD & nAddress_ )
 			if (!TextIsHexString( pText+2))
 				return false;
 
-			TCHAR *pEnd;
+			char *pEnd;
 			nAddress_ = (WORD) _tcstol( pText, &pEnd, 16 );
 			return true;
 		}
 		if (TextIsHexString( pText ))
 		{
-			TCHAR *pEnd;
+			char *pEnd;
 			nAddress_ = (WORD) _tcstol( pText, &pEnd, 16 );
 			return true;
 		}
@@ -914,7 +914,7 @@ Update_t _CmdSymbolsUpdate( int nArgs, int bSymbolTables )
 	bool bRemoveSymbol = false;
 	bool bUpdateSymbol = false;
 
-	TCHAR *pSymbolName = g_aArgs[1].sArg;
+	char *pSymbolName = g_aArgs[1].sArg;
 	WORD   nAddress    = g_aArgs[3].nValue;
 
 	if ((nArgs == 2)

@@ -34,22 +34,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 CPageInput* CPageInput::ms_this = 0;	// reinit'd in ctor
 
 // Joystick option choices - NOTE maximum text length is MaxMenuChoiceLen = 40
-const TCHAR CPageInput::m_szJoyChoice0[] = TEXT("Disabled\0");
-const TCHAR CPageInput::m_szJoyChoice1[] = TEXT("PC Joystick #1\0");
-const TCHAR CPageInput::m_szJoyChoice2[] = TEXT("PC Joystick #2\0");
-const TCHAR CPageInput::m_szJoyChoice3[] = TEXT("Keyboard (cursors)\0");
-const TCHAR CPageInput::m_szJoyChoice4[] = TEXT("Keyboard (numpad)\0");
-const TCHAR CPageInput::m_szJoyChoice5[] = TEXT("Mouse\0");
-const TCHAR CPageInput::m_szJoyChoice6[] = TEXT("PC Joystick #1 Thumbstick 2\0");
+const char CPageInput::m_szJoyChoice0[] = TEXT("Disabled\0");
+const char CPageInput::m_szJoyChoice1[] = TEXT("PC Joystick #1\0");
+const char CPageInput::m_szJoyChoice2[] = TEXT("PC Joystick #2\0");
+const char CPageInput::m_szJoyChoice3[] = TEXT("Keyboard (cursors)\0");
+const char CPageInput::m_szJoyChoice4[] = TEXT("Keyboard (numpad)\0");
+const char CPageInput::m_szJoyChoice5[] = TEXT("Mouse\0");
+const char CPageInput::m_szJoyChoice6[] = TEXT("PC Joystick #1 Thumbstick 2\0");
 
-const TCHAR* const CPageInput::m_pszJoy0Choices[J0C_MAX] = {
+const char* const CPageInput::m_pszJoy0Choices[J0C_MAX] = {
 									CPageInput::m_szJoyChoice0,
 									CPageInput::m_szJoyChoice1,	// PC Joystick #1
 									CPageInput::m_szJoyChoice3,
 									CPageInput::m_szJoyChoice4,
 									CPageInput::m_szJoyChoice5 };
 
-const TCHAR* const CPageInput::m_pszJoy1Choices[J1C_MAX] = {
+const char* const CPageInput::m_pszJoy1Choices[J1C_MAX] = {
 									CPageInput::m_szJoyChoice0,
 									CPageInput::m_szJoyChoice2,	// PC Joystick #2
 									CPageInput::m_szJoyChoice3,
@@ -57,22 +57,22 @@ const TCHAR* const CPageInput::m_pszJoy1Choices[J1C_MAX] = {
 									CPageInput::m_szJoyChoice5,
 									CPageInput::m_szJoyChoice6 };
 
-const TCHAR CPageInput::m_szCPMSlotChoice_Slot4[] = TEXT("Slot 4\0");
-const TCHAR CPageInput::m_szCPMSlotChoice_Slot5[] = TEXT("Slot 5\0");
-const TCHAR CPageInput::m_szCPMSlotChoice_Unplugged[] = TEXT("Unplugged\0");
-const TCHAR CPageInput::m_szCPMSlotChoice_Unavailable[] = TEXT("Unavailable\0");
+const char CPageInput::m_szCPMSlotChoice_Slot4[] = TEXT("Slot 4\0");
+const char CPageInput::m_szCPMSlotChoice_Slot5[] = TEXT("Slot 5\0");
+const char CPageInput::m_szCPMSlotChoice_Unplugged[] = TEXT("Unplugged\0");
+const char CPageInput::m_szCPMSlotChoice_Unavailable[] = TEXT("Unavailable\0");
 
-const TCHAR CPageInput::m_szFourPlaySlotChoice_Slot3[] = TEXT("Slot 3\0");
-const TCHAR CPageInput::m_szFourPlaySlotChoice_Slot4[] = TEXT("Slot 4\0");
-const TCHAR CPageInput::m_szFourPlaySlotChoice_Slot5[] = TEXT("Slot 5\0");
-const TCHAR CPageInput::m_szFourPlaySlotChoice_Unplugged[] = TEXT("Unplugged\0");
-const TCHAR CPageInput::m_szFourPlaySlotChoice_Unavailable[] = TEXT("Unavailable\0");
+const char CPageInput::m_szFourPlaySlotChoice_Slot3[] = TEXT("Slot 3\0");
+const char CPageInput::m_szFourPlaySlotChoice_Slot4[] = TEXT("Slot 4\0");
+const char CPageInput::m_szFourPlaySlotChoice_Slot5[] = TEXT("Slot 5\0");
+const char CPageInput::m_szFourPlaySlotChoice_Unplugged[] = TEXT("Unplugged\0");
+const char CPageInput::m_szFourPlaySlotChoice_Unavailable[] = TEXT("Unavailable\0");
 
-const TCHAR CPageInput::m_szSNESMAXSlotChoice_Slot3[] = TEXT("Slot 3\0");
-const TCHAR CPageInput::m_szSNESMAXSlotChoice_Slot4[] = TEXT("Slot 4\0");
-const TCHAR CPageInput::m_szSNESMAXSlotChoice_Slot5[] = TEXT("Slot 5\0");
-const TCHAR CPageInput::m_szSNESMAXSlotChoice_Unplugged[] = TEXT("Unplugged\0");
-const TCHAR CPageInput::m_szSNESMAXSlotChoice_Unavailable[] = TEXT("Unavailable\0");
+const char CPageInput::m_szSNESMAXSlotChoice_Slot3[] = TEXT("Slot 3\0");
+const char CPageInput::m_szSNESMAXSlotChoice_Slot4[] = TEXT("Slot 4\0");
+const char CPageInput::m_szSNESMAXSlotChoice_Slot5[] = TEXT("Slot 5\0");
+const char CPageInput::m_szSNESMAXSlotChoice_Unplugged[] = TEXT("Unplugged\0");
+const char CPageInput::m_szSNESMAXSlotChoice_Unavailable[] = TEXT("Unavailable\0");
 
 INT_PTR CALLBACK CPageInput::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
@@ -333,11 +333,11 @@ void CPageInput::InitOptions(HWND hWnd)
 
 void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 {
-	TCHAR* pnzJoystickChoices;
+	char* pnzJoystickChoices;
 	int *pnJoyTranslationTbl;
 	int nJoyTranslationTblSize;
 	unsigned short nJC_DISABLED, nJC_JOYSTICK, nJC_KEYBD_CURSORS, nJC_KEYBD_NUMPAD, nJC_MOUSE, nJC_MAX;
-	TCHAR** ppszJoyChoices;
+	char** ppszJoyChoices;
 	int nOtherJoyNum = nJoyNum == JN_JOYSTICK0 ? JN_JOYSTICK1 : JN_JOYSTICK0;
 
 	if (nJoyNum == JN_JOYSTICK0)
@@ -351,7 +351,7 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 		nJC_KEYBD_NUMPAD = J0C_KEYBD_NUMPAD;
 		nJC_MOUSE = J0C_MOUSE;
 		nJC_MAX = J0C_MAX;
-		ppszJoyChoices = (TCHAR**) m_pszJoy0Choices;
+		ppszJoyChoices = (char**) m_pszJoy0Choices;
 	}
 	else
 	{
@@ -364,10 +364,10 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 		nJC_KEYBD_NUMPAD = J1C_KEYBD_NUMPAD;
 		nJC_MOUSE = J1C_MOUSE;
 		nJC_MAX = J1C_MAX;
-		ppszJoyChoices = (TCHAR**) m_pszJoy1Choices;
+		ppszJoyChoices = (char**) m_pszJoy1Choices;
 	}
 
-	TCHAR* pszMem = pnzJoystickChoices;
+	char* pszMem = pnzJoystickChoices;
 	int nIdx = 0;
 	memset(pnJoyTranslationTbl, -1, nJoyTranslationTblSize);
 

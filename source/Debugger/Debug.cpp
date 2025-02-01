@@ -184,11 +184,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #if OLD_FONT
 // Font
-	TCHAR     g_sFontNameDefault[ MAX_FONT_NAME ] = TEXT("Courier New");
-	TCHAR     g_sFontNameConsole[ MAX_FONT_NAME ] = TEXT("Courier New");
-	TCHAR     g_sFontNameDisasm [ MAX_FONT_NAME ] = TEXT("Courier New");
-	TCHAR     g_sFontNameInfo   [ MAX_FONT_NAME ] = TEXT("Courier New");
-	TCHAR     g_sFontNameBranch [ MAX_FONT_NAME ] = TEXT("Webdings");
+	char     g_sFontNameDefault[ MAX_FONT_NAME ] = TEXT("Courier New");
+	char     g_sFontNameConsole[ MAX_FONT_NAME ] = TEXT("Courier New");
+	char     g_sFontNameDisasm [ MAX_FONT_NAME ] = TEXT("Courier New");
+	char     g_sFontNameInfo   [ MAX_FONT_NAME ] = TEXT("Courier New");
+	char     g_sFontNameBranch [ MAX_FONT_NAME ] = TEXT("Webdings");
 	HFONT     g_hFontWebDings  = (HFONT)0;
 #endif
 	int       g_iFontSpacing = FONT_SPACING_CLEAN;
@@ -1007,7 +1007,7 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 	if (nArgs > 1)
 		return HelpLastCommand();
 
-	TCHAR sAction[ CONSOLE_WIDTH ] = TEXT("Current"); // default to display
+	char sAction[ CONSOLE_WIDTH ] = TEXT("Current"); // default to display
 
 	if (nArgs == 1)
 	{
@@ -1062,7 +1062,7 @@ Update_t CmdBreakOnInterrupt (int nArgs)
 	if (nArgs == 1 && nActive == -1)
 		return HelpLastCommand();
 
-	TCHAR sAction[CONSOLE_WIDTH] = TEXT("Current"); // default to display
+	char sAction[CONSOLE_WIDTH] = TEXT("Current"); // default to display
 
 	if (nArgs == 1)
 	{
@@ -2714,7 +2714,7 @@ Update_t CmdConfigLoad (int nArgs)
 {
 	// TODO: CmdConfigRun( gaFileNameConfig )
 	
-//	TCHAR sFileNameConfig[ MAX_PATH ];
+//	char sFileNameConfig[ MAX_PATH ];
 	if (! nArgs)
 	{
 
@@ -4658,7 +4658,7 @@ Update_t CmdMemorySave (int nArgs)
 //			(g_aArgs[ iArgComma2 ].eToken != TOKEN_COLON))
 //			return Help_Arg_1( CMD_MEMORY_SAVE );
 
-		TCHAR sLoadSaveFilePath[ MAX_PATH ];
+		char sLoadSaveFilePath[ MAX_PATH ];
 		_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
 
 		RangeType_t eRange;
@@ -5897,7 +5897,7 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 		}
 		else
 		{
-			TCHAR *pByte = pArg->sArg;
+			char *pByte = pArg->sArg;
 
 			if (pArg->bType & TYPE_QUOTED_1)
 			{
@@ -6070,7 +6070,7 @@ Update_t CmdRegisterSet (int nArgs)
 	}
 	else
 	{
-		TCHAR *pName = g_aArgs[1].sArg;
+		char *pName = g_aArgs[1].sArg;
 		int iParam;
 		if (FindParam( pName, MATCH_EXACT, iParam, _PARAM_REGS_BEGIN, _PARAM_REGS_END ))
 		{
@@ -7443,7 +7443,7 @@ Update_t CmdWindow (int nArgs)
 		return Help_Arg_1( CMD_WINDOW );
 
 	int iParam;
-	TCHAR *pName = g_aArgs[1].sArg;
+	char *pName = g_aArgs[1].sArg;
 	int nFound = FindParam( pName, MATCH_EXACT, iParam, _PARAM_WINDOW_BEGIN, _PARAM_WINDOW_END );
 	if (nFound)
 	{
@@ -7692,7 +7692,7 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 //		while (iParam < NUM_PARAMS )
 		for (iParam = iParamBegin; iParam <= iParamEnd; iParam++ )
 		{
-			TCHAR *pParamName = g_aParameters[iParam].m_sName;
+			char *pParamName = g_aParameters[iParam].m_sName;
 			int eCompare = _tcscmp(pLookupName, pParamName);
 			if (! eCompare) // exact match?
 			{
@@ -7706,7 +7706,7 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 	if (eMatch == MATCH_FUZZY)
 	{	
 #if ALLOW_INPUT_LOWERCASE
-		TCHAR aLookup[ 256 ] = "";
+		char aLookup[ 256 ] = "";
 		for ( int i = 0; i < nLen; i++ )
 		{
 			aLookup[ i ] = toupper( pLookupName[ i ] );
@@ -7714,7 +7714,7 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 #endif
 		for (iParam = iParamBegin; iParam <= iParamEnd; iParam++ )
 		{
-			TCHAR *pParamName = g_aParameters[ iParam ].m_sName;
+			char *pParamName = g_aParameters[ iParam ].m_sName;
 // _tcsnccmp
 
 #if ALLOW_INPUT_LOWERCASE
@@ -7755,7 +7755,7 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 
 	while ((iCommand < NUM_COMMANDS_WITH_ALIASES)) // && (name[0] >= g_aCommands[iCommand].aName[0])) Command no longer in Alphabetical order
 	{
-		TCHAR *pCommandName = g_aCommands[iCommand].m_sName;
+		char *pCommandName = g_aCommands[iCommand].m_sName;
 //		int iCmp = strcasecmp( sCommand, pCommandName, nLen )
 		if (! _tcsncmp(sCommand, pCommandName, nLen))
 		{
@@ -9054,7 +9054,7 @@ void DebugReset (void)
 
 // Add character to the input line
 //===========================================================================
-void DebuggerInputConsoleChar ( TCHAR ch )
+void DebuggerInputConsoleChar ( char ch )
 {
 	_ASSERT(g_nAppMode == MODE_DEBUG);
 
@@ -9097,7 +9097,7 @@ void DebuggerInputConsoleChar ( TCHAR ch )
 			// TODO: must fix param matching to ignore case
 #if ALLOW_INPUT_LOWERCASE
 #else
-			ch = (TCHAR)CharUpper((LPTSTR)ch);
+			ch = (char)CharUpper((LPTSTR)ch);
 #endif
 		}
 		ConsoleInputChar( ch );

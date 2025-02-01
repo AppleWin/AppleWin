@@ -1912,7 +1912,7 @@ void MemInitializeROM(void)
 
 	if (pData == NULL)
 	{
-		TCHAR sRomFileName[ MAX_PATH ];
+		char sRomFileName[ MAX_PATH ];
 		switch (g_Apple2Type)
 		{
 		case A2TYPE_APPLE2:         _tcscpy(sRomFileName, TEXT("APPLE2.ROM"          )); break;

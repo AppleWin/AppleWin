@@ -261,7 +261,7 @@ UINT ImageGetMaxNibblesPerTrack(ImageInfo* const pImageInfo)
 
 void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pFullName)
 {
-	TCHAR   imagetitle[ MAX_DISK_FULL_NAME+1 ];
+	char   imagetitle[ MAX_DISK_FULL_NAME+1 ];
 	LPCTSTR startpos = pPathname;
 
 	// imagetitle = <FILENAME.EXT>

@@ -37,14 +37,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 CPageAdvanced* CPageAdvanced::ms_this = 0;	// reinit'd in ctor
 
 enum CLONECHOICE {MENUITEM_CLONEMIN, MENUITEM_PRAVETS82=MENUITEM_CLONEMIN, MENUITEM_PRAVETS8M, MENUITEM_PRAVETS8A, MENUITEM_TK30002E, MENUITEM_BASE64A, MENUITEM_CLONEMAX};
-const TCHAR CPageAdvanced::m_CloneChoices[] =
+const char CPageAdvanced::m_CloneChoices[] =
 				TEXT("Pravets 82\0")	// Bulgarian
 				TEXT("Pravets 8M\0")	// Bulgarian
 				TEXT("Pravets 8A\0")	// Bulgarian
 				TEXT("TK3000 //e\0")	// Brazilian
 				TEXT("Base 64A\0"); 	// Taiwanese
 
-const TCHAR CPageAdvanced::m_gameIOConnectorChoices[] =
+const char CPageAdvanced::m_gameIOConnectorChoices[] =
 				"Empty\0"
 				"SDS DataKey - SpeedStar\0"		/* Protection dongle for Southwestern Data Systems "SpeedStar" Applesoft Compiler */
 				"Cortechs Corp - CodeWriter\0"	/* Protection key for Dynatech Microsoftware / Cortechs Corp "CodeWriter" */

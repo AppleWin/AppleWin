@@ -139,9 +139,9 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 // Used by:
 // . CPageDisk:		IDC_CIDERPRESS_BROWSE
 // . CPageAdvanced:	IDC_PRINTER_DUMP_FILENAME_BROWSE
-std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, const TCHAR* pszTitle, const TCHAR* REGVALUE, const TCHAR* FILEMASKS)
+std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, const char* pszTitle, const char* REGVALUE, const char* FILEMASKS)
 {
-	TCHAR szFilename[MAX_PATH];
+	char szFilename[MAX_PATH];
 	RegLoadString(REG_CONFIG, REGVALUE, 1, szFilename, MAX_PATH, TEXT(""));
 	std::string pathname = szFilename;
 
@@ -178,7 +178,7 @@ void CPropertySheetHelper::SaveStateUpdate()
 }
 
 // NB. OK'ing this property sheet will call SaveStateUpdate()->Snapshot_SetFilename() with this new path & filename
-int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, const TCHAR* pszTitle, bool bSave)
+int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, const char* pszTitle, bool bSave)
 {
 	// Whenever harddisks/disks are inserted (or removed) and *if path has changed* then:
 	// . Snapshot's path & Snapshot's filename will be updated to reflect the new defaults.

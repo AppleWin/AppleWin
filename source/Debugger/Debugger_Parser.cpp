@@ -39,14 +39,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	Arg_t g_aArgRaw[ MAX_ARGS ]; // pre-processing
 	Arg_t g_aArgs  [ MAX_ARGS ]; // post-processing (cooked)
 
-	const TCHAR TCHAR_LF     = TEXT('\x0D');
-	const TCHAR TCHAR_CR     = TEXT('\x0A');
-	const TCHAR TCHAR_SPACE  = TEXT(' ');
-	const TCHAR TCHAR_TAB    = TEXT('\t');
-//	const TCHAR TCHAR_QUOTED = TEXT('"');
-	const TCHAR TCHAR_QUOTE_DOUBLE = TEXT('"');
-	const TCHAR TCHAR_QUOTE_SINGLE = TEXT('\'');
-	const TCHAR TCHAR_ESCAPE = TEXT('\x1B');
+	const char TCHAR_LF     = TEXT('\x0D');
+	const char TCHAR_CR     = TEXT('\x0A');
+	const char TCHAR_SPACE  = TEXT(' ');
+	const char TCHAR_TAB    = TEXT('\t');
+//	const char TCHAR_QUOTED = TEXT('"');
+	const char TCHAR_QUOTE_DOUBLE = TEXT('"');
+	const char TCHAR_QUOTE_SINGLE = TEXT('\'');
+	const char TCHAR_ESCAPE = TEXT('\x1B');
 
 
 	// NOTE: ArgToken_e and g_aTokens must match!
@@ -205,8 +205,8 @@ bool ArgsGetValue ( Arg_t *pArg, WORD * pAddressValue_, const int nBase )
 	if (pArg == NULL)
 		return false;
 
-	TCHAR *pSrc = & (pArg->sArg[ 0 ]);
-	TCHAR *pEnd = NULL;
+	char *pSrc = & (pArg->sArg[ 0 ]);
+	char *pEnd = NULL;
 
 	if (pAddressValue_)
 	{
@@ -234,7 +234,7 @@ bool ArgsGetImmediateValue ( Arg_t *pArg, WORD * pAddressValue_ )
 
 // Read console input, process the raw args, turning them into tokens and types.
 //===========================================================================
-int	ArgsGet ( TCHAR * pInput )
+int	ArgsGet ( char * pInput )
 {
 	LPCTSTR pSrc = pInput;
 	LPCTSTR pEnd = NULL;
@@ -408,8 +408,8 @@ bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ )
 void ArgsRawParse ( void )
 {
 	const int BASE = 16; // hex
-	TCHAR *pSrc  = NULL;
-	TCHAR *pEnd  = NULL;
+	char *pSrc  = NULL;
+	char *pEnd  = NULL;
 
 	int    iArg = 1;
 	Arg_t *pArg = & g_aArgRaw[ iArg ];
@@ -461,8 +461,8 @@ void ArgsRawParse ( void )
 int ArgsCook ( const int nArgs )
 {
 	const int BASE = 16; // hex
-	TCHAR *pSrc  = NULL;
-	TCHAR *pEnd2 = NULL;
+	char *pSrc  = NULL;
+	char *pEnd2 = NULL;
 
 	int    nArg = nArgs;
 	int    iArg = 1;
@@ -804,7 +804,7 @@ const char * ParserFindToken( const char *pSrc, const TokenTable_t *aTokens, con
 	if (! pSrc)
 		return NULL;
 
-	const TCHAR        *pName  = NULL;
+	const char        *pName  = NULL;
 	int   iToken;
 
 	// Look-ahead for <=
@@ -840,12 +840,12 @@ const char * ParserFindToken( const char *pSrc, const TokenTable_t *aTokens, con
 
 
 //===========================================================================
-const TCHAR * FindTokenOrAlphaNumeric ( const TCHAR *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e * pToken_ )
+const char * FindTokenOrAlphaNumeric ( const char *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e * pToken_ )
 {
 	if ( pToken_ )
 		*pToken_ = NO_TOKEN;
 
-	const TCHAR *pEnd = pSrc;
+	const char *pEnd = pSrc;
 
 	if (pSrc && (*pSrc))
 	{
@@ -866,7 +866,7 @@ const TCHAR * FindTokenOrAlphaNumeric ( const TCHAR *pSrc, const TokenTable_t *a
 
 
 //===========================================================================
-void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDstSize, int nTabStop )
+void TextConvertTabsToSpaces( char *pDeTabified_, LPCTSTR pText, const int nDstSize, int nTabStop )
 {
 	int TAB_SPACING = 8;
 	int TAB_SPACING_1 = 16;
@@ -937,7 +937,7 @@ void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDst
 
 // @return Length of new string
 //===========================================================================
-int RemoveWhiteSpaceReverse ( TCHAR *pSrc )
+int RemoveWhiteSpaceReverse ( char *pSrc )
 {
 	int   nLen = _tcslen( pSrc );
 	char *pDst = pSrc + nLen;

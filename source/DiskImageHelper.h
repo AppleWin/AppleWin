@@ -60,7 +60,7 @@ public:
 	virtual ~CImageBase(void);
 
 	virtual bool Boot(ImageInfo* pImageInfo) { return false; }
-	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const TCHAR* pszExt) = 0;
+	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt) = 0;
 	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk) { }
 	virtual bool Read(ImageInfo* pImageInfo, UINT nBlock, LPBYTE pBlockBuffer) { return false; }
 	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles) { }
@@ -380,8 +380,8 @@ public:
 	void Close(ImageInfo* pImageInfo);
 	bool WOZUpdateInfo(ImageInfo* pImageInfo, uint32_t& dwOffset);
 
-	virtual CImageBase* Detect(LPBYTE pImage, uint32_t dwSize, const TCHAR* pszExt, uint32_t& dwOffset, ImageInfo* pImageInfo) = 0;
-	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, uint32_t* pCreateImageSize) = 0;
+	virtual CImageBase* Detect(LPBYTE pImage, uint32_t dwSize, const char* pszExt, uint32_t& dwOffset, ImageInfo* pImageInfo) = 0;
+	virtual CImageBase* GetImageForCreation(const char* pszExt, uint32_t* pCreateImageSize) = 0;
 	virtual UINT GetMaxImageSize(void) = 0;
 	virtual UINT GetMinDetectSize(const UINT uImageSize, bool* pTempDetectBuffer) = 0;
 
@@ -389,8 +389,8 @@ protected:
 	ImageError_e CheckGZipFile(LPCTSTR pszImageFilename, ImageInfo* pImageInfo);
 	ImageError_e CheckZipFile(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, std::string& strFilenameInZip);
 	ImageError_e CheckNormalFile(LPCTSTR pszImageFilename, ImageInfo* pImageInfo, const bool bCreateIfNecessary);
-	void GetCharLowerExt(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize);
-	void GetCharLowerExt2(TCHAR* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize);
+	void GetCharLowerExt(char* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize);
+	void GetCharLowerExt2(char* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize);
 	void SetImageInfo(ImageInfo* pImageInfo, FileType_e fileType, uint32_t dwOffset, CImageBase* pImageType, uint32_t dwSize);
 
 	UINT GetNumImages(void) { return m_vecImageTypes.size(); };
@@ -425,8 +425,8 @@ public:
 	CDiskImageHelper(void);
 	virtual ~CDiskImageHelper(void) {}
 
-	virtual CImageBase* Detect(LPBYTE pImage, uint32_t dwSize, const TCHAR* pszExt, uint32_t& dwOffset, ImageInfo* pImageInfo);
-	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, uint32_t* pCreateImageSize);
+	virtual CImageBase* Detect(LPBYTE pImage, uint32_t dwSize, const char* pszExt, uint32_t& dwOffset, ImageInfo* pImageInfo);
+	virtual CImageBase* GetImageForCreation(const char* pszExt, uint32_t* pCreateImageSize);
 	virtual UINT GetMaxImageSize(void);
 	virtual UINT GetMinDetectSize(const UINT uImageSize, bool* pTempDetectBuffer);
 
@@ -448,8 +448,8 @@ public:
 	CHardDiskImageHelper(void);
 	virtual ~CHardDiskImageHelper(void) {}
 
-	virtual CImageBase* Detect(LPBYTE pImage, uint32_t dwSize, const TCHAR* pszExt, uint32_t& dwOffset, ImageInfo* pImageInfo);
-	virtual CImageBase* GetImageForCreation(const TCHAR* pszExt, uint32_t* pCreateImageSize);
+	virtual CImageBase* Detect(LPBYTE pImage, uint32_t dwSize, const char* pszExt, uint32_t& dwOffset, ImageInfo* pImageInfo);
+	virtual CImageBase* GetImageForCreation(const char* pszExt, uint32_t* pCreateImageSize);
 	virtual UINT GetMaxImageSize(void);
 	virtual UINT GetMinDetectSize(const UINT uImageSize, bool* pTempDetectBuffer);
 };

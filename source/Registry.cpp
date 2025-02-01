@@ -96,7 +96,7 @@ BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, u
 
 //===========================================================================
 BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t* value) {
-	TCHAR buffer[32];
+	char buffer[32];
 	if (!RegLoadString(section, key, peruser, buffer, 32))
 	{
 		return FALSE;
@@ -141,7 +141,7 @@ void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::strin
 			0,
 			REG_SZ,
 			(CONST LPBYTE)buffer.c_str(),
-			(buffer.size() + 1) * sizeof(TCHAR));
+			(buffer.size() + 1) * sizeof(char));
 		RegCloseKey(keyhandle);
 	}
 }

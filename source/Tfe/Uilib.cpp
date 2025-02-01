@@ -32,7 +32,6 @@
 #include <string.h>
 #include <windows.h>
 #include <windowsx.h>
-#include <tchar.h>
 #include <commctrl.h>
 #include <commdlg.h>
 #include "uilib.h"

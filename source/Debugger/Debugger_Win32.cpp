@@ -160,7 +160,7 @@ bool _CmdConfigFont(int iFont, LPCSTR pFontName, int iPitchFamily, int nFontHeig
 			GetTextMetrics(hDC, &tm);
 
 			SIZE  size;
-			TCHAR sText[] = "W";
+			char sText[] = "W";
 			int   nLen = 1;
 
 			int nFontWidthAvg;
@@ -451,7 +451,7 @@ Update_t CmdConfigSetFont(int nArgs)
 {
 #if OLD_FONT
 	HFONT  hFont = (HFONT)0;
-	TCHAR* pFontName = NULL;
+	char* pFontName = NULL;
 	int    nHeight = g_nFontHeight;
 	int    iFontTarget = FONT_DISASM_DEFAULT;
 	int    iFontPitch = FIXED_PITCH | FF_MODERN;
