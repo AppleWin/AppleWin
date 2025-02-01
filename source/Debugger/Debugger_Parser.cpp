@@ -104,14 +104,14 @@ int _Arg_1( int nValue )
 //===========================================================================
 int _Arg_1( LPTSTR pName )
 {
-	int nLen = _tcslen( g_aArgs[1].sArg );
+	int nLen = strlen( g_aArgs[1].sArg );
 	if (nLen < MAX_ARG_LEN)
 	{
-		_tcscpy( g_aArgs[1].sArg, pName );
+		strcpy( g_aArgs[1].sArg, pName );
 	}
 	else
 	{
-		_tcsncpy( g_aArgs[1].sArg, pName, MAX_ARG_LEN );
+		strncpy( g_aArgs[1].sArg, pName, MAX_ARG_LEN );
 	}
 	return 1;
 }
@@ -210,7 +210,7 @@ bool ArgsGetValue ( Arg_t *pArg, WORD * pAddressValue_, const int nBase )
 
 	if (pAddressValue_)
 	{
-		*pAddressValue_ = (WORD)(_tcstoul( pSrc, &pEnd, nBase) & _6502_MEM_END);
+		*pAddressValue_ = (WORD)(strtoul( pSrc, &pEnd, nBase) & _6502_MEM_END);
 		return true;
 	}
 
@@ -313,7 +313,7 @@ int	ArgsGet ( char * pInput )
 				//if (iTokenSrc == TOKEN_QUOTE_DOUBLE)
 				//	nLen = nBuf;
 				nLen = MIN( nBuf, MAX_ARG_LEN ); // NOTE: see Arg_t.sArg[] // GH#481
-				_tcsncpy( pArg->sArg, pSrc, nLen );
+				strncpy( pArg->sArg, pSrc, nLen );
 				pArg->sArg[ nLen ] = 0;
 				pArg->nArgLen      = nLen;
 				pArg->eToken       = iTokenSrc;
@@ -393,7 +393,7 @@ bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ )
 			else
 			if (iReg == BP_SRC_REG_PC)
 			{
-				if ((pArg->nArgLen == 2) && (_tcscmp( pArg->sArg, g_aBreakpointSource[ iReg ] ) == 0))
+				if ((pArg->nArgLen == 2) && (strcmp( pArg->sArg, g_aBreakpointSource[ iReg ] ) == 0))
 				{
 					*pAddressValue_ = regs.pc       ; bStatus = true; break;
 				}
@@ -423,7 +423,7 @@ void ArgsRawParse ( void )
 	{
 		pSrc  = & (pArg->sArg[ 0 ]);
 
-		nAddressArg = (WORD)(_tcstoul( pSrc, &pEnd, BASE) & _6502_MEM_END);
+		nAddressArg = (WORD)(strtoul( pSrc, &pEnd, BASE) & _6502_MEM_END);
 		nAddressValue = nAddressArg;
 
 		bool bFound = false;
@@ -761,7 +761,7 @@ int ArgsCook ( const int nArgs )
 		}
 		else // not an operator, try (1) address, (2) symbol lookup
 		{
-			nAddressArg = (WORD)(_tcstoul( pSrc, &pEnd2, BASE) & _6502_MEM_END);
+			nAddressArg = (WORD)(strtoul( pSrc, &pEnd2, BASE) & _6502_MEM_END);
 
 			if (! (pArg->bType & TYPE_NO_REG))
 			{
@@ -939,7 +939,7 @@ void TextConvertTabsToSpaces( char *pDeTabified_, LPCTSTR pText, const int nDstS
 //===========================================================================
 int RemoveWhiteSpaceReverse ( char *pSrc )
 {
-	int   nLen = _tcslen( pSrc );
+	int   nLen = strlen( pSrc );
 	char *pDst = pSrc + nLen;
 	while (nLen--)
 	{

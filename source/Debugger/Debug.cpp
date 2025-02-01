@@ -648,7 +648,7 @@ Update_t CmdBookmarkClear (int nArgs)
 	int iArg;
 	for (iArg = 1; iArg <= nArgs; iArg++ )
 	{
-		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		if (! strcmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
 			_Bookmark_Reset();
 			break;
@@ -706,7 +706,7 @@ Update_t CmdBookmarkLoad (int nArgs)
 //		strcpy( sMiniFileName, pFileName );
 	//	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
-//		_tcscpy(sFileName, g_sCurrentDir); // 
+//		strcpy(sFileName, g_sCurrentDir); // 
 //		strcat(sFileName, sMiniFileName);
 	}
 
@@ -1014,7 +1014,7 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 		int iOpcode = g_aArgs[ 1] .nValue;
 		g_iDebugBreakOnOpcode = iOpcode & 0xFF;
 
-		_tcscpy( sAction, TEXT("Setting") );
+		strcpy( sAction, TEXT("Setting") );
 
 		if (iOpcode >= NUM_OPCODES)
 		{
@@ -1067,7 +1067,7 @@ Update_t CmdBreakOnInterrupt (int nArgs)
 	if (nArgs == 1)
 	{
 		g_bDebugBreakOnInterrupt = (iParam == PARAM_ON) ? true : false;
-		_tcscpy(sAction, TEXT("Setting"));
+		strcpy(sAction, TEXT("Setting"));
 	}
 
 	ConsoleBufferPushFormat("%s Break on Interrupt: %s"
@@ -1880,7 +1880,7 @@ void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nM
 	{
 		iSlot = g_aArgs[nArgs].nValue;
 
-		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		if (! strcmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
 			_BWZ_RemoveAll( aBreakWatchZero, nMax, nTotal );
 			break;
@@ -1907,7 +1907,7 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 	{
 		iSlot = g_aArgs[nArgs].nValue;
 
-		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		if (! strcmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
 			for ( ; iSlot < nMax; iSlot++ )
 			{
@@ -2150,8 +2150,8 @@ Update_t CmdAssemble (int nArgs)
 		int iArg = 1;
 		
 		// undocumented ASM *
-		if ((! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
-			(! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
+		if ((! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
+			(! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
 		{
 			_CmdAssembleHashDump();
 		}
@@ -2854,7 +2854,7 @@ Update_t CmdConfigDisasm (int nArgs)
 
 	bool bDisplayCurrentSettings = false;
 
-//	if (! _tcscmp( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ))
+//	if (! strcmp( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ))
 	if (! nArgs)
 	{
 		bDisplayCurrentSettings = true;
@@ -4659,7 +4659,7 @@ Update_t CmdMemorySave (int nArgs)
 //			return Help_Arg_1( CMD_MEMORY_SAVE );
 
 		char sLoadSaveFilePath[ MAX_PATH ];
-		_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
+		strcpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
 
 		RangeType_t eRange;
 		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
@@ -6418,7 +6418,7 @@ Update_t CmdOutputRun (int nArgs)
 		for ( int iLine = 0; iLine < nLine; iLine++ )
 		{
 			script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
-			g_nConsoleInputChars = _tcslen( g_pConsoleInput );
+			g_nConsoleInputChars = strlen( g_pConsoleInput );
 			bUpdateDisplay |= DebuggerProcessCommand( false );
 		}
 	}
@@ -6531,7 +6531,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 
 		uint32_t nAddress = INVALID_ADDRESS;
 
-		_tcscpy( sLine, sText );
+		strcpy( sLine, sText );
 		char *p = sLine;
 		p = strstr( sLine, ":" );
 		if (p)
@@ -6575,7 +6575,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 			g_aSourceDebug[ (WORD) nAddress ] = iLine; // g_nSourceAssemblyLines;
 		}
 
-		_tcscpy( sLine, sText );
+		strcpy( sLine, sText );
 		if (bAddSymbols)
 		{
 			// Add user symbol:          symbolname EQU $address
@@ -7676,7 +7676,7 @@ Update_t CmdZeroPagePointer (int nArgs)
 int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd, const bool bCaseSensitive /* false */ )
 {
 	int nFound = 0;
-	int nLen     = _tcslen( pLookupName );
+	int nLen     = strlen( pLookupName );
 	int iParam = 0;
 
 	if (! nLen)
@@ -7693,7 +7693,7 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 		for (iParam = iParamBegin; iParam <= iParamEnd; iParam++ )
 		{
 			char *pParamName = g_aParameters[iParam].m_sName;
-			int eCompare = _tcscmp(pLookupName, pParamName);
+			int eCompare = strcmp(pLookupName, pParamName);
 			if (! eCompare) // exact match?
 			{
 				nFound++;
@@ -7718,15 +7718,15 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 // _tcsnccmp
 
 #if ALLOW_INPUT_LOWERCASE
-			if (! _tcsncmp(aLookup, pParamName ,nLen))
+			if (! strncmp(aLookup, pParamName ,nLen))
 #else
-			if (! _tcsncmp(pLookupName, pParamName ,nLen))
+			if (! strncmp(pLookupName, pParamName ,nLen))
 #endif
 			{
 				nFound++;
 				iParam_ = g_aParameters[iParam].iCommand;
 
-				if (!_tcsicmp(pLookupName, pParamName)) // exact match?
+				if (!_stricmp(pLookupName, pParamName)) // exact match?
 				{
 					nFound = 1; // Exact match takes precidence over fuzzy matches
 					break;
@@ -7743,7 +7743,7 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 	g_vPotentialCommands.clear();
 
 	int nFound   = 0;
-	int nLen     = _tcslen( pName );
+	int nLen     = strlen( pName );
 	int iCommand = 0;
 
 	if (! nLen)
@@ -7757,7 +7757,7 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 	{
 		char *pCommandName = g_aCommands[iCommand].m_sName;
 //		int iCmp = strcasecmp( sCommand, pCommandName, nLen )
-		if (! _tcsncmp(sCommand, pCommandName, nLen))
+		if (! strncmp(sCommand, pCommandName, nLen))
 		{
 			pFunction_ = g_aCommands[iCommand].pFunction;
 			if (pFunction_)
@@ -7772,8 +7772,8 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 
 					if (iCommand_)
 						*iCommand_ = iCommand;
-// !_tcscmp
-					if (!_tcsicmp(sCommand, pCommandName)) // exact match?
+// !strcmp
+					if (!_stricmp(sCommand, pCommandName)) // exact match?
 					{
 	//					if (iCommand_)
 	//						*iCommand_ = iCommand;
@@ -8991,7 +8991,7 @@ void DebugInitialize ()
 		const char *pHelp = g_aCommands[ iCmd ].pHelpSummary;
 		if (pHelp)
 		{
-			int nLen = _tcslen( pHelp ) + 2;
+			int nLen = strlen( pHelp ) + 2;
 			if (nLen > (CONSOLE_WIDTH-1))
 			{
 				ConsoleBufferPushFormat( "Warning: %s help is %d chars", pHelp, nLen );

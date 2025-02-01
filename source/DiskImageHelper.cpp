@@ -866,7 +866,7 @@ public:
 		m_uNumTracksInImage = dwImageSize / TRACK_DENIBBLIZED_SIZE;	// Set to non-zero
 
 		// An HDV image can be any size (so if Ext == ".hdv" then accept any size)
-		if (*pszExt && !_tcscmp(pszExt, ".hdv"))
+		if (*pszExt && !strcmp(pszExt, ".hdv"))
 			return eMatch;
 
 		if (dwImageSize < UNIDISK35_800K_SIZE)
@@ -1550,25 +1550,25 @@ void CImageHelperBase::GetCharLowerExt(char* pszExt, LPCTSTR pszImageFilename, c
 {
 	LPCTSTR pImageFileExt = pszImageFilename;
 
-	if (_tcsrchr(pImageFileExt, TEXT(PATH_SEPARATOR)))
-		pImageFileExt = _tcsrchr(pImageFileExt, TEXT(PATH_SEPARATOR))+1;
+	if (strrchr(pImageFileExt, TEXT(PATH_SEPARATOR)))
+		pImageFileExt = strrchr(pImageFileExt, TEXT(PATH_SEPARATOR))+1;
 
-	if (_tcsrchr(pImageFileExt, TEXT('.')))
-		pImageFileExt = _tcsrchr(pImageFileExt, TEXT('.'));
+	if (strrchr(pImageFileExt, TEXT('.')))
+		pImageFileExt = strrchr(pImageFileExt, TEXT('.'));
 
-	_tcsncpy(pszExt, pImageFileExt, uExtSize);
+	strncpy(pszExt, pImageFileExt, uExtSize);
 	pszExt[uExtSize - 1] = 0;
 
-	CharLowerBuff(pszExt, _tcslen(pszExt));
+	CharLowerBuff(pszExt, strlen(pszExt));
 }
 
 void CImageHelperBase::GetCharLowerExt2(char* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize)
 {
 	char szFilename[MAX_PATH];
-	_tcsncpy(szFilename, pszImageFilename, MAX_PATH);
+	strncpy(szFilename, pszImageFilename, MAX_PATH);
 	szFilename[MAX_PATH - 1] = 0;
 
-	char* pLastDot = _tcsrchr(szFilename, TEXT('.'));
+	char* pLastDot = strrchr(szFilename, TEXT('.'));
 	if (pLastDot)
 		*pLastDot = 0;
 
@@ -2054,7 +2054,7 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, uint32_t dwSize, const char*
 	{
 		for (UINT uLoop=0; uLoop < GetNumImages() && imageType == eImageUNKNOWN; uLoop++)
 		{
-			if (*pszExt && _tcsstr(GetImage(uLoop)->GetRejectExtensions(), pszExt))
+			if (*pszExt && strstr(GetImage(uLoop)->GetRejectExtensions(), pszExt))
 				continue;
 
 			eDetectResult Result = GetImage(uLoop)->Detect(pImage, dwSize, pszExt);
@@ -2121,7 +2121,7 @@ CImageBase* CDiskImageHelper::GetImageForCreation(const char* pszExt, uint32_t* 
 		if (!GetImage(uLoop)->AllowCreate())
 			continue;
 
-		if (*pszExt && _tcsstr(GetImage(uLoop)->GetCreateExtensions(), pszExt))
+		if (*pszExt && strstr(GetImage(uLoop)->GetCreateExtensions(), pszExt))
 		{
 			CImageBase* pImageType = GetImage(uLoop);
 
@@ -2168,7 +2168,7 @@ CImageBase* CHardDiskImageHelper::Detect(LPBYTE pImage, uint32_t dwSize, const c
 
 	for (UINT uLoop=0; uLoop < GetNumImages() && ImageType == eImageUNKNOWN; uLoop++)
 	{
-		if (*pszExt && _tcsstr(GetImage(uLoop)->GetRejectExtensions(), pszExt))
+		if (*pszExt && strstr(GetImage(uLoop)->GetRejectExtensions(), pszExt))
 			continue;
 
 		eDetectResult Result = GetImage(uLoop)->Detect(pImage, dwSize, pszExt);
@@ -2206,7 +2206,7 @@ CImageBase* CHardDiskImageHelper::GetImageForCreation(const char* pszExt, uint32
 		if (!GetImage(uLoop)->AllowCreate())
 			continue;
 
-		if (*pszExt && _tcsstr(GetImage(uLoop)->GetCreateExtensions(), pszExt))
+		if (*pszExt && strstr(GetImage(uLoop)->GetCreateExtensions(), pszExt))
 		{
 			CImageBase* pImageType = GetImage(uLoop);
 

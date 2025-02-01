@@ -330,7 +330,7 @@ void Win32Frame::DrawButton (HDC passdc, int number) {
 
     ExtTextOut(dc,x+offset+22,rect.top,ETO_CLIPPED,&rect,
                pszBaseName,
-               MIN(8,_tcslen(pszBaseName)),
+               MIN(8,strlen(pszBaseName)),
                NULL);
   }
   if (!passdc)

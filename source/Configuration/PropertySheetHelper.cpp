@@ -94,7 +94,7 @@ void CPropertySheetHelper::FillComboBox(HWND window, int controlid, LPCTSTR choi
 	while (choices && *choices)
 	{
 		SendMessage(combowindow, CB_ADDSTRING, 0, (LPARAM)(LPCTSTR)choices);
-		choices += _tcslen(choices)+1;
+		choices += strlen(choices)+1;
 	}
 
 	if (SendMessage(combowindow, CB_SETCURSEL, currentchoice, 0) == CB_ERR && currentchoice != -1)

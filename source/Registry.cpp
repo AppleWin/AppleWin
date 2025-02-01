@@ -102,7 +102,7 @@ BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t* value) 
 		return FALSE;
 	}
 
-	*value = (uint32_t)_ttoi(buffer);
+	*value = (uint32_t)atoi(buffer);
 	return TRUE;
 }
 

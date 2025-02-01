@@ -71,7 +71,7 @@
 			bool operator() ( const Command_t & rLHS, const Command_t & rRHS ) const
 			{
 				// return true if lhs<rhs
-				return (_tcscmp( rLHS.m_sName, rRHS.m_sName ) <= 0) ? true : false;
+				return (strcmp( rLHS.m_sName, rRHS.m_sName ) <= 0) ? true : false;
 			}
 	};
 
