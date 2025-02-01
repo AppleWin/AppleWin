@@ -30,9 +30,13 @@ namespace
         virtual HRESULT Stop() override;
         virtual HRESULT Play(DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags) override;
         virtual HRESULT SetVolume(LONG lVolume) override;
+        virtual HRESULT Unlock(LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2) override;
 
         void setOptions(const qint64 duration); // in ms
         QDirectSound::SoundInfo getInfo();
+
+        // not really sure this is needed, but for completeness we add it
+        virtual qint64 bytesAvailable() const override;
 
     protected:
         virtual qint64 readData(char *data, qint64 maxlen) override;
@@ -113,12 +117,28 @@ namespace
         return res;
     }
 
+    HRESULT DirectSoundGenerator::Unlock(LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2)
+    {
+        const HRESULT res = LinuxSoundBuffer::Unlock(lpvAudioPtr1, dwAudioBytes1, lpvAudioPtr2, dwAudioBytes2);
+        // without this, in Qt6, it does not recover fron an underrun
+        // https://github.com/qt/qtmultimedia/blob/c0c276b9013acac9214026c9645eee353d67f00e/src/multimedia/pulseaudio/qpulseaudiosink.cpp#L180
+        emit readyRead();
+        return res;
+    }
+
     HRESULT DirectSoundGenerator::Play(DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags)
     {
         const HRESULT res = LinuxSoundBuffer::Play(dwReserved1, dwReserved2, dwFlags);
         QIODevice::open(ReadOnly);
         myAudioOutput->start(this);
         return res;
+    }
+
+    qint64 DirectSoundGenerator::bytesAvailable() const
+    {
+        const qint64 base = QIODevice::bytesAvailable();
+        const qint64 buffer = GetBytesInBuffer();
+        return base + buffer;
     }
 
     qint64 DirectSoundGenerator::readData(char *data, qint64 maxlen)
@@ -150,6 +170,7 @@ namespace
         info.running = QIODevice::isOpen();
         info.channels = myChannels;
         info.numberOfUnderruns = GetBufferUnderruns();
+        info.state = myAudioOutput->state();
 
         if (info.running)
         {

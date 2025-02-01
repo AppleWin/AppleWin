@@ -137,7 +137,7 @@ DWORD LinuxSoundBuffer::Read(
     return dwReadBytes;
 }
 
-DWORD LinuxSoundBuffer::GetBytesInBuffer()
+DWORD LinuxSoundBuffer::GetBytesInBuffer() const
 {
     const std::lock_guard<std::mutex> guard(myMutex);
     const DWORD available = (this->myWritePosition - this->myPlayPosition) % this->myBufferSize;
