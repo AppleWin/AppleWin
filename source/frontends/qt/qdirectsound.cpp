@@ -170,6 +170,7 @@ namespace
         info.running = QIODevice::isOpen();
         info.channels = myChannels;
         info.numberOfUnderruns = GetBufferUnderruns();
+        info.volume = int(100 * GetLogarithmicVolume());
         info.state = myAudioOutput->state();
 
         if (info.running)
