@@ -433,7 +433,7 @@ void SSI263::Update(void)
 
 	UpdateAccurateLength();
 
-	if (g_bFullSpeed)	// NB. if true, then it's irrespective of IsPhonemeActive()
+	if (g_bFullSpeed)	// NB. if true, then it's irrespective of IsPhonemeActive() - see MockingboardCard::IsActiveToPreventFullSpeed()
 	{
 		if (m_phonemeLengthRemaining)
 		{
@@ -1038,10 +1038,10 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 
 	if (IsPhonemeActive())
 	{
+		// NB. Save-state doesn't preserve the play-position within the phoneme.
+		// It just sets IRQ (and SSI263.D7) for "phoneme complete"; and restarts it from the beginning.
+		// This may cause problems for timing sensitive code (eg. mb-audit).
 		UpdateIRQ();		// Pre: m_device, m_cardMode
-
-		// NB. Save-state doesn't preserve the play-position within the phoneme (it just restarts from the beginning),
-		// so this may cause problems for timing sensitive code (eg. mb-audit).
 		RepeatPhoneme();
 	}
 

@@ -154,8 +154,14 @@ private:
 	PHASOR_MODE m_cardMode;
 	short* m_pPhonemeData00;
 
-	bool m_deferDSInit;
+	// Set to >=0 by Play() on a write to DURPHON register; Set to -1 by UpdateIRQ() when phoneme ends.
+	// RepeatPhoneme() will call Play() again if SSI263.CONTROL==0
+	// SSI263.CONTROL 1->0 will call Play() again.
+	// NB. Can be used to detect overlapping phonemes in Play()
+	// NB. For SSI263 once >=0 then this remains the case until SSI263.CONTROL=1
 	int m_currentActivePhoneme;				// -1 (if none) or SSI263 or SC01 phoneme
+
+	bool m_deferDSInit;
 	bool m_isVotraxPhoneme;
 	BYTE m_votraxPhoneme;
 	UINT m_cyclesThisAudioFrame;
