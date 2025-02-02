@@ -874,7 +874,7 @@ bool SSI263::DSInit(void)
 	if (!SSI263SingleVoice.bActive)
 	{
 		bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, m_kDSBufferByteSize);	// ... and Play()
-		LogFileOutput("SSI263::Play: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
+		LogFileOutput("SSI263: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
 		if (!bRes)
 			return false;
 	}
@@ -888,15 +888,15 @@ bool SSI263::Init(void)
 		return false;
 
 	HRESULT hr = DSGetSoundBuffer(&SSI263SingleVoice, m_kDSBufferByteSize, SAMPLE_RATE_SSI263, m_kNumChannels, "SSI263");
-	LogFileOutput("SSI263::DSInit: DSGetSoundBuffer(), hr=0x%08X\n", hr);
+	LogFileOutput("SSI263: DSGetSoundBuffer(), hr=0x%08X\n", hr);
 	if (FAILED(hr))
 	{
-		LogFileOutput("SSI263::DSInit: DSGetSoundBuffer failed (%08X)\n", hr);
+		LogFileOutput("SSI263: DSGetSoundBuffer failed (%08X)\n", hr);
 		return false;
 	}
 
 	// Don't DirectSoundBuffer::Play() via DSZeroVoiceBuffer() - instead wait until this SSI263 is actually first used
-	// . Different to Speaker ring buffer (but same as Mockingboard ring buffer).
+	// . different to Speaker & Mockingboard ring buffers
 	// . NB. we have 2x SSI263 per MB card, and it's rare if 1 is used (and *extremely* rare if 2 are used!)
 	// . Not so rare, as TotalReplay (at boot) will try to detect an SSI263 (by playing a $00 phoneme).
 
