@@ -20,7 +20,6 @@ public:
 
 	void ResetState(const bool powerCycle)
 	{
-		m_deferDSInit = false;
 		m_currentActivePhoneme = -1;
 		m_isVotraxPhoneme = false;
 		m_votraxPhoneme = 0;
@@ -161,7 +160,6 @@ private:
 	// NB. For SSI263 once >=0 then this remains the case until SSI263.CONTROL=1
 	int m_currentActivePhoneme;				// -1 (if none) or SSI263 or SC01 phoneme
 
-	bool m_deferDSInit;
 	bool m_isVotraxPhoneme;
 	BYTE m_votraxPhoneme;
 	UINT m_cyclesThisAudioFrame;

@@ -330,9 +330,6 @@ void SSI263::Votrax_Write(BYTE value)
 
 void SSI263::Play(unsigned int nPhoneme)
 {
-	if (!SSI263SingleVoice.lpDSBvoice || !SSI263SingleVoice.bActive)
-		m_deferDSInit = true;
-
 	if (m_dbgFirst)
 	{
 		m_dbgStartTime = g_nCumulativeCycles;
@@ -416,20 +413,14 @@ void SSI263::PeriodicUpdate(UINT executedCycles)
 // . PeriodicUpdate()
 void SSI263::Update(void)
 {
-//	if (!IsPhonemeActive())		// SSI263::Play() sets to >= 0
-//		return;
-//	if (m_phonemeAccurateLengthRemaining == 0 && m_phonemeLengthRemaining == 0)
-//		return;
+	if (!IsPhonemeActive() && m_phonemeLeadoutLength == 0)
+		return;
 
-	if (m_deferDSInit)
+	if (!SSI263SingleVoice.lpDSBvoice || !SSI263SingleVoice.bActive)
 	{
-		m_deferDSInit = false;
 		if (!DSInit())
 			return;
 	}
-
-	if (!SSI263SingleVoice.lpDSBvoice || !SSI263SingleVoice.bActive)
-		return;
 
 	UpdateAccurateLength();
 
