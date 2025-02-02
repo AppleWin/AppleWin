@@ -42,7 +42,7 @@
 
 namespace
 {
-    const char * GEOMETRY_KEY = "QApple/emulator/geometry";
+    const char * MAXIMISED_KEY = "QApple/emulator/maximised";
 
     void initialiseEmulator()
     {
@@ -139,7 +139,8 @@ void QApple::closeEvent(QCloseEvent *event)
     myFrame->End();
 
     QSettings settings;
-    settings.setValue(GEOMETRY_KEY, myEmulatorWindow->saveGeometry().toBase64());
+    const bool isMaximised = myEmulatorWindow->windowState() & Qt::WindowMaximized;
+    settings.setValue(MAXIMISED_KEY, isMaximised);
 
     QMainWindow::closeEvent(event);
 }
@@ -147,10 +148,12 @@ void QApple::closeEvent(QCloseEvent *event)
 void QApple::readSettings()
 {
     QSettings settings;
-    const QByteArray emulatorGeometry =
-        QByteArray::fromBase64(settings.value(GEOMETRY_KEY).toByteArray());
+    const bool isMaximised = settings.value(MAXIMISED_KEY).toBool();
 
-    myEmulatorWindow->restoreGeometry(emulatorGeometry);
+    if (isMaximised)
+    {
+        myEmulatorWindow->showMaximized();
+    }
 }
 
 void QApple::startEmulator()
