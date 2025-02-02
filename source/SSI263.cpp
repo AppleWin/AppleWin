@@ -339,7 +339,7 @@ void SSI263::Play(unsigned int nPhoneme)
 	}
 
 #if LOG_SSI263 || LOG_SSI263B || LOG_SC01
-	if (m_currentActivePhoneme != -1)
+	if (m_currentActivePhoneme != -1 && !(m_currentActivePhoneme & kPhonemeLeadoutFlag))
 		LogOutput("Overlapping phonemes: current=%02X, next=%02X\n", m_currentActivePhoneme&0xff, nPhoneme&0xff);
 #endif
 	m_currentActivePhoneme = nPhoneme;
@@ -413,7 +413,7 @@ void SSI263::PeriodicUpdate(UINT executedCycles)
 // . PeriodicUpdate()
 void SSI263::Update(void)
 {
-	if (!IsPhonemeActive() && m_phonemeLeadoutLength == 0)
+	if (!IsPhonemeActive())
 		return;
 
 	if (!SSI263SingleVoice.lpDSBvoice || !SSI263SingleVoice.bActive)
@@ -712,10 +712,15 @@ void SSI263::RepeatPhoneme(void)
 	if (m_phonemeLeadoutLength != 0)
 		return;
 
+
 	if (!m_isVotraxPhoneme)
 	{
+		_ASSERT(m_currentActivePhoneme & kPhonemeLeadoutFlag);
+
 		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
 			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
+
+		m_currentActivePhoneme &= PHONEME_MASK;
 	}
 //	else	// GH#1318 - remove for now, as TR v5.1 can start with repeating phoneme in debugger 'g' mode!
 //	{
@@ -765,7 +770,8 @@ void SSI263::UpdateIRQ(void)
 	m_phonemeLengthRemaining = m_phonemeAccurateLengthRemaining = 0;	// Prevent an IRQ from the other source
 
 	_ASSERT(m_currentActivePhoneme != -1);
-	m_currentActivePhoneme = -1;
+	_ASSERT((m_currentActivePhoneme & kPhonemeLeadoutFlag) == 0);
+	m_currentActivePhoneme |= kPhonemeLeadoutFlag;
 
 	if (m_dbgFirst && m_dbgStartTime)
 	{
@@ -974,7 +980,7 @@ void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 #define SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP "Control / Articulation / Amplitude"
 #define SS_YAML_KEY_SSI263_REG_FILTER_FREQ "Filter Frequency"
 #define SS_YAML_KEY_SSI263_CURRENT_MODE "Current Mode"
-#define SS_YAML_KEY_SSI263_ACTIVE_PHONEME "Active Phoneme"
+#define SS_YAML_KEY_SSI263_ACTIVE_PHONEME "Active Phoneme"	// v13: deprecated
 
 void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
@@ -986,7 +992,6 @@ void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, m_ctrlArtAmp);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode.mode);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME, IsPhonemeActive());
 }
 
 void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version)
@@ -1000,8 +1005,11 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	m_ctrlArtAmp      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP);
 	m_filterFreq      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_FILTER_FREQ);
 	m_currentMode.mode = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_CURRENT_MODE);
-	bool activePhoneme = (version >= 7) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME) : false;
-	m_currentActivePhoneme = !activePhoneme ? -1 : 0x00;	// Not important which phoneme, since UpdateIRQ() resets this
+
+	if (version >= 7 && version < 13)
+		yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME);	// Consume redundant data
+
+	m_currentActivePhoneme = !IsPhonemeActive() ? -1 : 0x00;	// Not important which phoneme, since UpdateIRQ() resets this
 
 	if (version < 12)
 	{
@@ -1024,7 +1032,7 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	SetCardMode(mode);
 
 	// Only need to directly assert IRQ for Phasor mode (for Mockingboard mode it's done via UpdateIFR() in parent)
-	if (m_cardMode == PH_Phasor && (m_ctrlArtAmp & CONTROL_MASK) == 0 && m_currentMode.enableInts && m_currentMode.D7 == 1)
+	if (m_cardMode == PH_Phasor && IsPhonemeActive() && m_currentMode.enableInts && m_currentMode.D7 == 1)
 		CpuIrqAssert(IS_SPEECH);
 
 	if (IsPhonemeActive())

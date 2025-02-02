@@ -1149,7 +1149,8 @@ UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, BYTE 
 //11: Added: "Bus Driven by AY"
 //12: Added: SSI263: SC01 phoneme & active
 //    Current Mode changed (added bit5 = enableInts)
-const UINT kUNIT_VERSION = 12;
+//13: Removed SS_YAML_KEY_SSI263_ACTIVE_PHONEME
+const UINT kUNIT_VERSION = 13;
 
 #define SS_YAML_KEY_MB_UNIT "Unit"
 #define SS_YAML_KEY_AY_CURR_REG "AY Current Register"
