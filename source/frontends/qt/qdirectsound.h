@@ -22,6 +22,7 @@ namespace QDirectSound
         // in milli seconds
         int buffer = 0;
         int size = 0;
+        int volume = 0; // 0 - 100
 
         size_t numberOfUnderruns = 0;
     };
