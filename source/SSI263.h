@@ -114,6 +114,7 @@ private:
 	void UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
 	BYTE GetPCR(BYTE nDevice);
 
+	bool Init(void);
 	bool DSInit(void);
 
 	static const BYTE m_Votrax2SSI263[/*64*/];

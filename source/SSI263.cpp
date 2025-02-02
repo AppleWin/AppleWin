@@ -424,23 +424,8 @@ void SSI263::Update(void)
 	if (m_deferDSInit)
 	{
 		m_deferDSInit = false;
-
-		if (!SSI263SingleVoice.lpDSBvoice)
-		{
-			if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
-				return;
-
-			if (!DSInit())
-				return;
-		}
-
-		if (!SSI263SingleVoice.bActive)
-		{
-			bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, m_kDSBufferByteSize);	// ... and Play()
-			LogFileOutput("SSI263::Play: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
-			if (!bRes)
-				return;
-		}
+		if (!DSInit())
+			return;
 	}
 
 	if (!SSI263SingleVoice.lpDSBvoice || !SSI263SingleVoice.bActive)
@@ -876,6 +861,28 @@ void SSI263::SetCardMode(PHASOR_MODE mode)
 //-----------------------------------------------------------------------------
 
 bool SSI263::DSInit(void)
+{
+	if (!SSI263SingleVoice.lpDSBvoice)
+	{
+		if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
+			return false;
+
+		if (!Init())
+			return false;
+	}
+
+	if (!SSI263SingleVoice.bActive)
+	{
+		bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, m_kDSBufferByteSize);	// ... and Play()
+		LogFileOutput("SSI263::Play: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
+		if (!bRes)
+			return false;
+	}
+
+	return true;
+}
+
+bool SSI263::Init(void)
 {
 	if (!DSAvailable())
 		return false;
