@@ -15,6 +15,7 @@
 typedef QAudioOutput QAudioSink;
 #else
 #include <QAudioSink>
+#include <QMediaDevices>
 #endif
 
 namespace
@@ -67,7 +68,11 @@ namespace
         myAudioOutput = std::make_shared<QAudioSink>(audioFormat);
 #else
         audioFormat.setSampleFormat(QAudioFormat::Int16);
-        myAudioOutput = std::make_shared<QAudioSink>(audioFormat);
+
+        // be explicit about the default device, since the other constructor
+        // of QAudioSink has unpredictable behaviour
+        QAudioDevice device = QMediaDevices::defaultAudioOutput();
+        myAudioOutput = std::make_shared<QAudioSink>(device, audioFormat);
 #endif
     }
 
