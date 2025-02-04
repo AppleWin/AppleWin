@@ -123,6 +123,8 @@ enum AppMode_e
 #define  REGVALUE_LAST_DISK_1		"Last Disk Image 1"
 #define  REGVALUE_LAST_DISK_2		"Last Disk Image 2"
 #define  REGVALUE_LAST_HARDDISK_	"Last Harddisk Image "
+#define REGVALUE_NEW_DISK_COPY_PRODOS_SYS "NewDiskCopyProDOS"
+#define REGVALUE_NEW_DISK_COPY_BASIC_SYS  "NewDiskCopyBasic"
 
 // Preferences 
 #define REG_PREFS						"Preferences"
