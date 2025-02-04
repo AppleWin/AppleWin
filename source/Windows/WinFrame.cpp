@@ -2307,37 +2307,9 @@ void Util_ProDOS_FormatFileSystem (uint8_t *pDiskBytes, const size_t nDiskSize, 
 }
 
 //===========================================================================
-bool Util_ProDOS_CopyDOS ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, const uint8_t *pFileData, const size_t nFileSize )
+bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const char* pVolumeName, const uint8_t* pFileData, const size_t nFileSize, ProDOS_FileHeader_t &meta)
 {
-	// Acc dnb??iwr /PRODOS.2.4.3    Blocks Size    Type    Aux   Kind  iNode Dir   Ver Min  Create    Time    Modified  Time
-	// --- -------- ---------------- ------ ------- ------- ----- ----- ----- ----- --- ---  --------- ------  --------- ------
-	// $E3 dnb---wr  PRODOS              34 $0042E8 SYS $FF $0000 sap 2 @0007 @0002 0.0 v80  30-DEC-23  2:43a  30-DEC-23  2:43a
-	int bAccess = 0
-		| ACCESS_D
-		| ACCESS_N
-		| ACCESS_B
-		| ACCESS_W
-		| ACCESS_R
-		;
-	ProDOS_FileHeader_t meta;
-	memset( &meta, 0, sizeof(ProDOS_FileHeader_t) );
-
-	meta.kind      = PRODOS_KIND_SAPL;
-	meta.len       = 6;
-	strcpy( meta.name, "PRODOS" );
-	meta.type      = 0xFF; // SYS
-	//  .inode     = TBD
-	//  .blocks    = TBD
-	meta.size      = nFileSize;
-	meta.date      = 0;
-	meta.time      = 0;
-	meta.cur_ver   = 0x00;
-	meta.min_ver   = 0x80;
-	meta.access    = bAccess;
-	meta.aux       = 0x0000; // ignored for SYS, since load address = $2000
-	meta.mod_date  = 0;
-	meta.mod_time  = 0;
-	//  .dir_block = TBD;
+	assert( pFileData );
 
 	int iBase = ProDOS_BlockGetPathOffset( pDiskBytes, nullptr, "/" ); // On an empty disk this will be PRODOS_ROOT_OFFSET
 	int iDirBlock = iBase / PRODOS_BLOCK_SIZE;
@@ -2404,7 +2376,7 @@ bool Util_ProDOS_CopyDOS ( uint8_t *pDiskBytes, const size_t nDiskSize, const ch
 			{
 				ProDOS_PutIndexBlock( pDiskBytes, iMasterIndex, iBlock, iMetaBlock );
 			}
-			// Not implemented PRODOS_
+			// Not implemented PRODOS_KIND_TREE
 			assert( iKind != PRODOS_KIND_TREE );
 		}
 
@@ -2430,8 +2402,8 @@ bool Util_ProDOS_CopyDOS ( uint8_t *pDiskBytes, const size_t nDiskSize, const ch
 			}
 		}
 
-		int iDstOffset = iDataBlock * PRODOS_BLOCK_SIZE;
-		uint8_t *pDst = pDiskBytes + iDstOffset;
+		int      iDstOffset = iDataBlock * PRODOS_BLOCK_SIZE;
+		uint8_t *pDst       = pDiskBytes + iDstOffset;
 		bool     bLastBlock = iBlock == (nBlocksData - 1);
 
 		if (bLastBlock)
@@ -2475,7 +2447,88 @@ bool Util_ProDOS_CopyDOS ( uint8_t *pDiskBytes, const size_t nDiskSize, const ch
 	pVolume->file_count++;
 	ProDOS_SetVolumeHeader( pDiskBytes, pVolume, iDirBlock );
 
-	return 1;
+	return true;
+}
+
+//===========================================================================
+bool Util_ProDOS_CopyBASIC ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, const uint8_t *pFileData, const size_t nFileSize )
+{
+	// Acc dnb??iwr /PRODOS.2.4.3    Blocks Size    Type    Aux   Kind  iNode Dir   Ver Min  Create    Time    Modified  Time
+	// --- -------- ---------------- ------ ------- ------- ----- ----- ----- ----- --- ---  --------- ------  --------- ------
+	// $21 --b----r *BASIC.SYSTEM        21 $002800 SYS $FF $2000 sap 2 @0029 @0002 2.4 v00  13-JAN-18  9:09a  30-AUG-16  7:56a
+	int bAccess = 0
+		| ACCESS_B
+		| ACCESS_R
+		;
+	ProDOS_FileHeader_t meta;
+	memset( &meta, 0, sizeof(ProDOS_FileHeader_t) );
+
+	const char    *pName = "BASIC.SYSTEM";
+	const uint16_t nDateCreate = ProDOS_PackDate( 18, 1, 13 ); // NOTE: Jan starts at 1, not 0.
+	const uint16_t nTimeCreate = ProDOS_PackTime( 9, 9 );
+	const uint16_t nDateModify = ProDOS_PackDate( 16, 8, 30 );
+	const uint16_t nTimeModify = ProDOS_PackTime( 7, 56 );
+
+	meta.kind      = PRODOS_KIND_SAPL;
+	strcpy( meta.name, pName );
+	meta.len       = strlen( pName ) & 0xF;
+	meta.type      = 0xFF; // SYS
+	//  .inode     = TBD
+	//  .blocks    = TBD
+	meta.size      = nFileSize;
+	meta.date      = nDateCreate;
+	meta.time      = nTimeCreate;
+	meta.cur_ver   = 0x00;
+	meta.min_ver   = 0x80;
+	meta.access    = bAccess;
+	meta.aux       = 0x2000;
+	meta.mod_date  = nDateModify;
+	meta.mod_time  = nTimeModify;
+	//  .dir_block = TBD;
+
+	return Util_ProDOS_AddFile( pDiskBytes, nDiskSize, pVolumeName, pFileData, nFileSize, meta );
+}
+
+//===========================================================================
+bool Util_ProDOS_CopyDOS ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, const uint8_t *pFileData, const size_t nFileSize )
+{
+	// Acc dnb??iwr /PRODOS.2.4.3    Blocks Size    Type    Aux   Kind  iNode Dir   Ver Min  Create    Time    Modified  Time
+	// --- -------- ---------------- ------ ------- ------- ----- ----- ----- ----- --- ---  --------- ------  --------- ------
+	// $E3 dnb---wr  PRODOS              34 $0042E8 SYS $FF $0000 sap 2 @0007 @0002 0.0 v80  30-DEC-23  2:43a  30-DEC-23  2:43a
+	int bAccess = 0
+		| ACCESS_D
+		| ACCESS_N
+		| ACCESS_B
+		| ACCESS_W
+		| ACCESS_R
+		;
+	ProDOS_FileHeader_t meta;
+	memset( &meta, 0, sizeof(ProDOS_FileHeader_t) );
+
+	const char *pName = "PRODOS";
+	const uint16_t nDateCreate = ProDOS_PackDate( 23, 12, 30 ); // NOTE: Jan starts at 1, not 0.
+	const uint16_t nTimeCreate = ProDOS_PackTime( 2, 43 ); // Version.  "Cute".
+	const uint16_t nDateModify = ProDOS_PackDate( 23, 12, 30 );
+	const uint16_t nTimeModify = ProDOS_PackTime( 2, 43 );
+
+	meta.kind      = PRODOS_KIND_SAPL;
+	strcpy( meta.name, pName );
+	meta.len       = strlen( pName ) & 0xF;
+	meta.type      = 0xFF; // SYS
+	//  .inode     = TBD
+	//  .blocks    = TBD
+	meta.size      = nFileSize;
+	meta.date      = nDateCreate;
+	meta.time      = nTimeCreate;
+	meta.cur_ver   = 0x00;
+	meta.min_ver   = 0x80;
+	meta.access    = bAccess;
+	meta.aux       = 0x0000; // ignored for SYS, since load address = $2000
+	meta.mod_date  = nDateModify;
+	meta.mod_time  = nTimeModify;
+	//  .dir_block = TBD;
+
+	return Util_ProDOS_AddFile( pDiskBytes, nDiskSize, pVolumeName, pFileData, nFileSize, meta );
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -2640,6 +2693,24 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		TEXT("C:\\Program Files\\faddenSoft\\CiderPress\\CiderPress.exe"));
 	//TODO: A directory is open if an empty path to CiderPress is set. This has to be fixed.
 
+	static uint32_t bNewDiskCopyProDOS = true;
+	static uint32_t bNewDiskCopyBASIC  = true;
+
+	const TCHAR REG_KEY_DISK_PREFRENCES[] = TEXT("Preferences");
+	RegLoadValue(
+		REG_KEY_DISK_PREFRENCES,
+		REGVALUE_NEW_DISK_COPY_PRODOS_SYS,
+		TRUE,
+		&bNewDiskCopyProDOS
+	);
+
+	RegLoadValue(
+		REG_KEY_DISK_PREFRENCES,
+		REGVALUE_NEW_DISK_COPY_BASIC_SYS,
+		TRUE,
+		&bNewDiskCopyBASIC
+	);
+
 	std::string filename1= "\"";
 	filename1.append( disk2Card.GetFullName(iDrive) );
 	filename1.append("\"");
@@ -2685,6 +2756,18 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		EnableMenuItem(hmenu, ID_DISKMENU_WRITEPROTECTION_OFF, MF_GRAYED);
 
 	}
+
+	// New Disk options for file copy
+	{
+		int iMenuItem;
+		iMenuItem = ID_DISKMENU_NEW_DISK_COPY_PRODOS;
+		if (bNewDiskCopyProDOS)
+			CheckMenuItem(hmenu, iMenuItem, MF_CHECKED);
+
+		iMenuItem = ID_DISKMENU_NEW_DISK_COPY_BASIC;
+		if (bNewDiskCopyBASIC)
+			CheckMenuItem(hmenu, iMenuItem, MF_CHECKED);
+	};
 
 	// Disk images QoL always enabled since they prompt which disk image to create/modify.
 	EnableMenuItem(hmenu, ID_DISKMENU_NEW_PRODOS_140K_DISK, MF_ENABLED);
@@ -2892,6 +2975,9 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 							const size_t   nProDOSSize = 0x42E8;
 							const uint8_t *pProDOSData = (uint8_t*) GetResource(IDR_OS_PRODOS243, "FIRMWARE", nProDOSSize);
 
+							const size_t   nBASICSize = 0x2800;
+							const uint8_t *pBASICData = (uint8_t *) GetResource(IDR_FILE_BASIC17, "FIRMWARE", nBASICSize);
+
 							const size_t   nBootSectorsSize = 2 * 512;
 							const uint8_t *pBootSectorsData = (uint8_t*) GetResource(IDR_BOOT_SECTOR_PRODOS243, "FIRMWARE", nBootSectorsSize);
 							assert(pBootSectorsData);
@@ -2902,7 +2988,10 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 							Util_ProDOS_ForwardSectorInterleave( pDiskBytes, nDiskSize, eSectorOrder );
 							Util_ProDOS_FormatFileSystem       ( pDiskBytes, nDiskSize, pVolumeName  );
 							memcpy(pDiskBytes, pBootSectorsData, nBootSectorsSize);
+						if (bNewDiskCopyProDOS)
 							Util_ProDOS_CopyDOS                ( pDiskBytes, nDiskSize, pVolumeName, pProDOSData, nProDOSSize );
+						if (bNewDiskCopyBASIC)
+							Util_ProDOS_CopyBASIC              ( pDiskBytes, nDiskSize, pVolumeName, pBASICData, nBASICSize );
 							Util_ProDOS_ReverseSectorInterleave( pDiskBytes, nDiskSize, eSectorOrder );
 					}
 
@@ -2915,6 +3004,34 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 				}
 			}
 		}
+	}
+	else // --- New Disk Options ---
+	if (iCommand == ID_DISKMENU_NEW_DISK_COPY_PRODOS)
+	{
+		bNewDiskCopyProDOS = !bNewDiskCopyProDOS;
+		int bChecked = bNewDiskCopyProDOS ? MF_CHECKED : MF_UNCHECKED;
+		CheckMenuItem(hmenu, iCommand, bChecked );
+
+		RegSaveValue(
+			REG_KEY_DISK_PREFRENCES,
+			REGVALUE_NEW_DISK_COPY_PRODOS_SYS,
+			TRUE,
+			bNewDiskCopyProDOS
+		);
+	}
+	else
+	if (iCommand == ID_DISKMENU_NEW_DISK_COPY_BASIC)
+	{
+		bNewDiskCopyBASIC = !bNewDiskCopyBASIC;
+		int bChecked = bNewDiskCopyBASIC ? MF_CHECKED : MF_UNCHECKED;
+		CheckMenuItem(hmenu, iCommand, bChecked );
+
+		RegSaveValue(
+			REG_KEY_DISK_PREFRENCES,
+			REGVALUE_NEW_DISK_COPY_BASIC_SYS,
+			TRUE,
+			bNewDiskCopyBASIC
+		);
 	}
 	else // --- Advanced ---
 	if (iCommand == ID_DISKMENU_SELECT_BOOT_SECTOR)
