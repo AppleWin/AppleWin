@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	const int    PRODOS_MAX_PATH     = 64; // TODO: Verify
 
 	const uint8_t ACCESS_D = 0x80; // Can destroy
-	const uint8_t ACCESS_N = 0x40; // Can rename 
+	const uint8_t ACCESS_N = 0x40; // Can rename
 	const uint8_t ACCESS_B = 0x20; // Can backup
 	const uint8_t ACCESS_Z4= 0x10; // not used - must be zero?
 	const uint8_t ACCESS_Z3= 0x08; // not used - must be zero?
@@ -135,9 +135,41 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 								       ; //============
 	};                                 ; // 39      $27
 
+
 // --- Prototypes ---
 
 	void ProDOS_GetFileHeader( uint8_t *pDiskBytes, int nOffset, ProDOS_FileHeader_t *pFileHeader_ );
+
+// --- Date/Time ---
+
+	// |            Byte 1             |            Byte 0             | Bytes
+	// +-------------------------------+-------------------------------+
+	// | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 | Bits
+	// +---------------------------------------------------------------+
+	// <-----------Year-----------> <----Month----> <-------Day------->  Date
+	uint16_t ProDOS_PackDate ( int year, int month, int day )
+	{
+		uint16_t date = 0
+			| ((year  & 0x7F) << 9)
+			| ((month & 0x0F) << 5)
+			| ((day   & 0x1F) << 0)
+			;
+		return date;
+	}
+
+	// |            Byte 1             |            Byte 0             | Bytes
+	// +---------------------------------------------------------------+
+	// | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 | Bits
+	// +---------------------------------------------------------------+
+	//  <----0----> <------Hours------> <--0--> <-------Minutes------->  Time
+	uint16_t ProDOS_PackTime (int hours, int minutes)
+	{
+		uint16_t time = 0
+			| ((hours   & 0x1F) << 8)
+			| ((minutes & 0x3F) << 0)
+			;
+		return time;
+	}
 
 // --- ProDOS Utility Byte Functions ---
 
