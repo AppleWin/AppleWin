@@ -408,14 +408,16 @@ BEGIN
         MENUITEM "&Read only",                                                                  ID_DISKMENU_WRITEPROTECTION_ON
         MENUITEM "Send to &CiderPress",                                                         ID_DISKMENU_SENDTO_CIDERPRESS
         MENUITEM SEPARATOR
-        MENUITEM "New &ProDOS 5.25\x22 \x28140 KB\x29 disk image... \x28Standard 35 Track\x29",  ID_DISKMENU_NEW_PRODOS_140K_DISK
+        MENUITEM "New &ProDOS 5.25\x22 \x28140 KB\x29 disk image... \x28Standard 35 Track\x29", ID_DISKMENU_NEW_PRODOS_140K_DISK
         MENUITEM "New ProDOS 5.25\x22 \x28160 KB\x29 disk image... \x28Extended 40 Track\x29",  ID_DISKMENU_NEW_PRODOS_160K_DISK
         MENUITEM "New ProDOS 3.5\x22 \x28800 KB\x29 disk image...",                             ID_DISKMENU_NEW_PRODOS_800K_DISK
         MENUITEM "New ProDOS hard \x2832 MB\x29 disk image...",                                 ID_DISKMENU_NEW_PRODOS_32MB_DISK
-        MENUITEM "On format copy PRODOS"                                                        ID_DISKMENU_NEW_DISK_COPY_PRODOS
-        MENUITEM "On format copy BASIC.SYSTEM"                                                  ID_DISKMENU_NEW_DISK_COPY_BASIC
+        MENUITEM "On format copy PRODOS",                                                       ID_DISKMENU_NEW_DISK_COPY_PRODOS
+        MENUITEM "On format copy Bitsy Boot",                                                   ID_DISKMENU_NEW_DISK_COPY_BITSY_BOOT
+        MENUITEM "On format copy Bitsy Bye",                                                    ID_DISKMENU_NEW_DISK_COPY_BITSY_BYE
+        MENUITEM "On format copy BASIC.SYSTEM",                                                 ID_DISKMENU_NEW_DISK_COPY_BASIC
         MENUITEM SEPARATOR
-        MENUITEM "New &DOS 3.3 5.25\x22 \x28140 KB\x29 disk image... \x28Standard 35 Track\x29", ID_DISKMENU_NEW_DOS33_140K_DISK
+        MENUITEM "New &DOS 3.3 5.25\x22 \x28140 KB\x29 disk image... \x28Standard 35 Track\x29",ID_DISKMENU_NEW_DOS33_140K_DISK
         MENUITEM "New DOS 3.3 5.25\x22 \x28160 KB\x29 disk image... \x28Extended 40 Track\x29", ID_DISKMENU_NEW_DOS33_160K_DISK
         MENUITEM "-",                                                                           ID_DISKMENU_ADVANCED_SEPARATOR
         MENUITEM "Select boot sector file...",                                                  ID_DISKMENU_SELECT_BOOT_SECTOR

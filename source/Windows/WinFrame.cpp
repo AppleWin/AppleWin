@@ -2451,8 +2451,11 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 }
 
 //===========================================================================
-bool Util_ProDOS_CopyBASIC ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, const uint8_t *pFileData, const size_t nFileSize )
+bool Util_ProDOS_CopyBASIC ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, Win32Frame *pWinFrame )
 {
+	const size_t   nFileSize = 0x2800;
+	const uint8_t *pFileData = (uint8_t *) pWinFrame->GetResource(IDR_FILE_BASIC17, "FIRMWARE", nFileSize);
+
 	// Acc dnb??iwr /PRODOS.2.4.3    Blocks Size    Type    Aux   Kind  iNode Dir   Ver Min  Create    Time    Modified  Time
 	// --- -------- ---------------- ------ ------- ------- ----- ----- ----- ----- --- ---  --------- ------  --------- ------
 	// $21 --b----r *BASIC.SYSTEM        21 $002800 SYS $FF $2000 sap 2 @0029 @0002 2.4 v00  13-JAN-18  9:09a  30-AUG-16  7:56a
@@ -2464,9 +2467,9 @@ bool Util_ProDOS_CopyBASIC ( uint8_t *pDiskBytes, const size_t nDiskSize, const 
 	memset( &meta, 0, sizeof(ProDOS_FileHeader_t) );
 
 	const char    *pName = "BASIC.SYSTEM";
-	const uint16_t nDateCreate = ProDOS_PackDate( 18, 1, 13 ); // NOTE: Jan starts at 1, not 0.
+	const uint16_t nDateCreate = ProDOS_PackDate( 18, 1, 13 ); // YYMMDD, NOTE: Jan starts at 1, not 0.
 	const uint16_t nTimeCreate = ProDOS_PackTime( 9, 9 );
-	const uint16_t nDateModify = ProDOS_PackDate( 16, 8, 30 );
+	const uint16_t nDateModify = ProDOS_PackDate( 16, 8, 30 ); // YYMMDD
 	const uint16_t nTimeModify = ProDOS_PackTime( 7, 56 );
 
 	meta.kind      = PRODOS_KIND_SAPL;
@@ -2478,8 +2481,8 @@ bool Util_ProDOS_CopyBASIC ( uint8_t *pDiskBytes, const size_t nDiskSize, const 
 	meta.size      = nFileSize;
 	meta.date      = nDateCreate;
 	meta.time      = nTimeCreate;
-	meta.cur_ver   = 0x00;
-	meta.min_ver   = 0x80;
+	meta.cur_ver   = 0x24;
+	meta.min_ver   = 0x00;
 	meta.access    = bAccess;
 	meta.aux       = 0x2000;
 	meta.mod_date  = nDateModify;
@@ -2490,8 +2493,98 @@ bool Util_ProDOS_CopyBASIC ( uint8_t *pDiskBytes, const size_t nDiskSize, const 
 }
 
 //===========================================================================
-bool Util_ProDOS_CopyDOS ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, const uint8_t *pFileData, const size_t nFileSize )
+bool Util_ProDOS_CopyBitsyBoot ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, Win32Frame *pWinFrame )
 {
+	const size_t   nFileSize = 0x16D;
+	const uint8_t *pFileData = (uint8_t *) pWinFrame->GetResource(IDR_FILE_BITSY_BOOT, "FIRMWARE", nFileSize);
+
+	// Acc dnb??iwr /PRODOS.2.4.2    Blocks Size    Type    Aux   Kind  iNode Dir   Ver Min  Create    Time    Modified  Time
+	// --- -------- ---------------- ------ ------- ------- ----- ----- ----- ----- --- ---  --------- ------  --------- ------
+	// $21 --b----r *BITSY.BOOT           1 $00016D SYS $FF $2000 sed 1 @003D @0002 2.4 v00  13-JAN-18  9:09a  15-SEP-16  9:49a
+	int bAccess = 0
+		| ACCESS_B
+		| ACCESS_R
+		;
+
+	ProDOS_FileHeader_t meta;
+	memset( &meta, 0, sizeof(ProDOS_FileHeader_t) );
+
+	const char    *pName = "BITSY.BOOT";
+	const uint16_t nDateCreate = ProDOS_PackDate( 18, 1, 13 ); // YYMMDD, NOTE: Jan starts at 1, not 0.
+	const uint16_t nTimeCreate = ProDOS_PackTime( 9, 9 );
+	const uint16_t nDateModify = ProDOS_PackDate( 16, 9, 15 ); // YYMMDD
+	const uint16_t nTimeModify = ProDOS_PackTime( 9, 49 );
+
+	meta.kind      = PRODOS_KIND_SEED; // File size is <= 512 bytes
+	strcpy( meta.name, pName );
+	meta.len       = strlen( pName ) & 0xF;
+	meta.type      = 0xFF; // SYS
+	//  .inode     = TBD
+	//  .blocks    = TBD
+	meta.size      = nFileSize;
+	meta.date      = nDateCreate;
+	meta.time      = nTimeCreate;
+	meta.cur_ver   = 0x24;
+	meta.min_ver   = 0x00;
+	meta.access    = bAccess;
+	meta.aux       = 0x2000;
+	meta.mod_date  = nDateModify;
+	meta.mod_time  = nTimeModify;
+	//  .dir_block = TBD;
+
+	return Util_ProDOS_AddFile( pDiskBytes, nDiskSize, pVolumeName, pFileData, nFileSize, meta );
+}
+
+//===========================================================================
+bool Util_ProDOS_CopyBitsyBye ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, Win32Frame *pWinFrame )
+{
+	const size_t   nFileSize = 0x0038;
+	const uint8_t *pFileData = (uint8_t*) pWinFrame->GetResource(IDR_FILE_BITSY_BYE, "FIRMWARE", nFileSize);
+
+	// Acc dnb??iwr /PRODOS.2.4.2    Blocks Size    Type    Aux   Kind  iNode Dir   Ver Min  Create    Time    Modified  Time
+	// --- -------- ---------------- ------ ------- ------- ----- ----- ----- ----- --- ---  --------- ------  --------- ------
+	// $21 --b----r *QUIT.SYSTEM          1 $000038 SYS $FF $2000 sed 1 @0027 @0002 2.4 v00  13-JAN-18  9:09a  15-SEP-16  9:41a
+	int bAccess = 0
+		| ACCESS_B
+		| ACCESS_R
+		;
+
+
+	ProDOS_FileHeader_t meta;
+	memset( &meta, 0, sizeof(ProDOS_FileHeader_t) );
+
+	const char    *pName = "QUIT.SYSTEM";
+	const uint16_t nDateCreate = ProDOS_PackDate( 18, 1, 13 ); // YYMMDD, NOTE: Jan starts at 1, not 0.
+	const uint16_t nTimeCreate = ProDOS_PackTime( 9, 9 );
+	const uint16_t nDateModify = ProDOS_PackDate( 16, 9, 15 ); // YYMMDD
+	const uint16_t nTimeModify = ProDOS_PackTime( 9, 41 );
+
+	meta.kind      = PRODOS_KIND_SEED; // File size is <= 512 bytes
+	strcpy( meta.name, pName );
+	meta.len       = strlen( pName ) & 0xF;
+	meta.type      = 0xFF; // SYS
+	//  .inode     = TBD
+	//  .blocks    = TBD
+	meta.size      = nFileSize;
+	meta.date      = nDateCreate;
+	meta.time      = nTimeCreate;
+	meta.cur_ver   = 0x24;
+	meta.min_ver   = 0x00;
+	meta.access    = bAccess;
+	meta.aux       = 0x2000;
+	meta.mod_date  = nDateModify;
+	meta.mod_time  = nTimeModify;
+	//  .dir_block = TBD;
+
+	return Util_ProDOS_AddFile( pDiskBytes, nDiskSize, pVolumeName, pFileData, nFileSize, meta );
+}
+
+//===========================================================================
+bool Util_ProDOS_CopyDOS ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, Win32Frame *pWinFrame )
+{
+	const size_t   nFileSize = 0x42E8;
+	const uint8_t *pFileData = (uint8_t*) pWinFrame->GetResource(IDR_OS_PRODOS243, "FIRMWARE", nFileSize);
+
 	// Acc dnb??iwr /PRODOS.2.4.3    Blocks Size    Type    Aux   Kind  iNode Dir   Ver Min  Create    Time    Modified  Time
 	// --- -------- ---------------- ------ ------- ------- ----- ----- ----- ----- --- ---  --------- ------  --------- ------
 	// $E3 dnb---wr  PRODOS              34 $0042E8 SYS $FF $0000 sap 2 @0007 @0002 0.0 v80  30-DEC-23  2:43a  30-DEC-23  2:43a
@@ -2693,23 +2786,47 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		TEXT("C:\\Program Files\\faddenSoft\\CiderPress\\CiderPress.exe"));
 	//TODO: A directory is open if an empty path to CiderPress is set. This has to be fixed.
 
-	static uint32_t bNewDiskCopyProDOS = true;
-	static uint32_t bNewDiskCopyBASIC  = true;
+	static uint32_t bNewDiskCopyBASIC     = true;
+	static uint32_t bNewDiskCopyBitsyBoot = true;
+	static uint32_t bNewDiskCopyBitsyBye  = true;
+	static uint32_t bNewDiskCopyProDOS    = true;
 
-	const TCHAR REG_KEY_DISK_PREFRENCES[] = TEXT("Preferences");
-	RegLoadValue(
-		REG_KEY_DISK_PREFRENCES,
-		REGVALUE_NEW_DISK_COPY_PRODOS_SYS,
-		TRUE,
-		&bNewDiskCopyProDOS
-	);
+	const TCHAR REG_KEY_DISK_PREFRENCES[] = TEXT("Preferences"); // NOTE: Keep in sync with REG_KEY_DISK_PREFRENCES and UtilPopup_Toggle
 
-	RegLoadValue(
-		REG_KEY_DISK_PREFRENCES,
-		REGVALUE_NEW_DISK_COPY_BASIC_SYS,
-		TRUE,
-		&bNewDiskCopyBASIC
-	);
+	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BASIC     , TRUE, &bNewDiskCopyBASIC     );
+	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BOOT, TRUE, &bNewDiskCopyBitsyBoot );
+	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BYE , TRUE, &bNewDiskCopyBitsyBye  );
+	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_PRODOS_SYS, TRUE, &bNewDiskCopyProDOS    );
+
+	class UtilPopup_Toggle
+	{
+		public:
+			UtilPopup_Toggle( HMENU hMenu, int iCommand, const char *pKey, uint32_t *pVal )
+			{
+				*pVal = ! *pVal;
+				int bChecked = *pVal ? MF_CHECKED : MF_UNCHECKED;
+				CheckMenuItem(hMenu,iCommand, bChecked);
+
+				RegSaveValue(
+					TEXT("Preferences"), // NOTE: Keep in sync with REG_KEY_DISK_PREFRENCES and UtilPopup_Toggle
+					pKey,
+					TRUE,
+					*pVal
+				);
+			}
+	};
+
+	class UtilPopup_CheckMenu
+	{
+		public:
+			UtilPopup_CheckMenu( HMENU hMenu, int iMenuItem, uint32_t bIsChecked )
+			{
+				if (bIsChecked)
+				{
+					CheckMenuItem(hMenu, iMenuItem, MF_CHECKED);
+				}
+			}
+	};
 
 	std::string filename1= "\"";
 	filename1.append( disk2Card.GetFullName(iDrive) );
@@ -2757,16 +2874,12 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 
 	}
 
-	// New Disk options for file copy
+	// New Disk options for ProDOS file copy on format
 	{
-		int iMenuItem;
-		iMenuItem = ID_DISKMENU_NEW_DISK_COPY_PRODOS;
-		if (bNewDiskCopyProDOS)
-			CheckMenuItem(hmenu, iMenuItem, MF_CHECKED);
-
-		iMenuItem = ID_DISKMENU_NEW_DISK_COPY_BASIC;
-		if (bNewDiskCopyBASIC)
-			CheckMenuItem(hmenu, iMenuItem, MF_CHECKED);
+		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_PRODOS    , bNewDiskCopyProDOS    );
+		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_BITSY_BOOT, bNewDiskCopyBitsyBoot );
+		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_BITSY_BYE , bNewDiskCopyBitsyBye  );
+		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_BASIC     , bNewDiskCopyBASIC     );
 	};
 
 	// Disk images QoL always enabled since they prompt which disk image to create/modify.
@@ -2972,26 +3085,19 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 					}
 					else // ProDOS
 					{
-							const size_t   nProDOSSize = 0x42E8;
-							const uint8_t *pProDOSData = (uint8_t*) GetResource(IDR_OS_PRODOS243, "FIRMWARE", nProDOSSize);
-
-							const size_t   nBASICSize = 0x2800;
-							const uint8_t *pBASICData = (uint8_t *) GetResource(IDR_FILE_BASIC17, "FIRMWARE", nBASICSize);
-
 							const size_t   nBootSectorsSize = 2 * 512;
 							const uint8_t *pBootSectorsData = (uint8_t*) GetResource(IDR_BOOT_SECTOR_PRODOS243, "FIRMWARE", nBootSectorsSize);
 							assert(pBootSectorsData);
-							assert(pProDOSData);
 
 							SectorOrder_e eSectorOrder = INTERLEAVE_PRODOS_ORDER;
 							const char *pVolumeName = "BLANK";
 							Util_ProDOS_ForwardSectorInterleave( pDiskBytes, nDiskSize, eSectorOrder );
 							Util_ProDOS_FormatFileSystem       ( pDiskBytes, nDiskSize, pVolumeName  );
 							memcpy(pDiskBytes, pBootSectorsData, nBootSectorsSize);
-						if (bNewDiskCopyProDOS)
-							Util_ProDOS_CopyDOS                ( pDiskBytes, nDiskSize, pVolumeName, pProDOSData, nProDOSSize );
-						if (bNewDiskCopyBASIC)
-							Util_ProDOS_CopyBASIC              ( pDiskBytes, nDiskSize, pVolumeName, pBASICData, nBASICSize );
+							if (bNewDiskCopyBitsyBoot) Util_ProDOS_CopyBitsyBoot( pDiskBytes, nDiskSize, pVolumeName, this );
+							if (bNewDiskCopyBitsyBye)  Util_ProDOS_CopyBitsyBye ( pDiskBytes, nDiskSize, pVolumeName, this );
+							if (bNewDiskCopyBASIC)     Util_ProDOS_CopyBASIC    ( pDiskBytes, nDiskSize, pVolumeName, this );
+							if (bNewDiskCopyProDOS)    Util_ProDOS_CopyDOS      ( pDiskBytes, nDiskSize, pVolumeName, this );
 							Util_ProDOS_ReverseSectorInterleave( pDiskBytes, nDiskSize, eSectorOrder );
 					}
 
@@ -3008,30 +3114,22 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	else // --- New Disk Options ---
 	if (iCommand == ID_DISKMENU_NEW_DISK_COPY_PRODOS)
 	{
-		bNewDiskCopyProDOS = !bNewDiskCopyProDOS;
-		int bChecked = bNewDiskCopyProDOS ? MF_CHECKED : MF_UNCHECKED;
-		CheckMenuItem(hmenu, iCommand, bChecked );
-
-		RegSaveValue(
-			REG_KEY_DISK_PREFRENCES,
-			REGVALUE_NEW_DISK_COPY_PRODOS_SYS,
-			TRUE,
-			bNewDiskCopyProDOS
-		);
+		UtilPopup_Toggle toggle( hmenu, iCommand, REGVALUE_PREF_NEW_DISK_COPY_PRODOS_SYS, &bNewDiskCopyProDOS );
+	}
+	else
+	if (iCommand == ID_DISKMENU_NEW_DISK_COPY_BITSY_BOOT)
+	{
+		UtilPopup_Toggle toggle( hmenu, iCommand, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BOOT, &bNewDiskCopyBitsyBoot );
+	}
+	else
+	if (iCommand == ID_DISKMENU_NEW_DISK_COPY_BITSY_BYE)
+	{
+		UtilPopup_Toggle toggle( hmenu, iCommand, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BYE, &bNewDiskCopyBitsyBye );
 	}
 	else
 	if (iCommand == ID_DISKMENU_NEW_DISK_COPY_BASIC)
 	{
-		bNewDiskCopyBASIC = !bNewDiskCopyBASIC;
-		int bChecked = bNewDiskCopyBASIC ? MF_CHECKED : MF_UNCHECKED;
-		CheckMenuItem(hmenu, iCommand, bChecked );
-
-		RegSaveValue(
-			REG_KEY_DISK_PREFRENCES,
-			REGVALUE_NEW_DISK_COPY_BASIC_SYS,
-			TRUE,
-			bNewDiskCopyBASIC
-		);
+		UtilPopup_Toggle toggle( hmenu, iCommand, REGVALUE_PREF_NEW_DISK_COPY_BASIC, &bNewDiskCopyBASIC );
 	}
 	else // --- Advanced ---
 	if (iCommand == ID_DISKMENU_SELECT_BOOT_SECTOR)
