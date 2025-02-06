@@ -1,4 +1,5 @@
 /*
+2.9.2.2 Fixed: DB HGR = 2000:3FFF was displaying help instead of being parsed.
 2.9.2.1 Added: Error message when trying to add a symbol > 51 characters.
 
 2.9.2.0 Released with AppleWin 1.30.20.0

@@ -373,7 +373,8 @@ Update_t _CmdDisasmDataDefByteX (int nArgs)
 	// To "return to code" use ."X" 
 	int iCmd = g_aArgs[0].nValue - NOP_BYTE_1;
 
-	if (nArgs > 4) // 2.7.0.31 Bug fix: DB range, i.e. DB 174E:174F
+	// 2.9.2.2: Bug fix: DB HGR = 2000:3FFF was displaying help instead of being parsed.
+	if (nArgs > 5) // 2.7.0.31 Bug fix: DB range, i.e. DB 174E:174F
 	{
 		return Help_Arg_1( CMD_DEFINE_DATA_BYTE1 + iCmd );
 	}
