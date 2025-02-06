@@ -82,6 +82,9 @@ WORD _GetDataRange (int nArgs, int iArg, DisasmData_t& tData_)
 	else
 	{
 		// DB foo = 300 // nArgs == 3
+		// 2.9.2.3: Fixed: DB HGR = 2000:3FFF and DB FOO = 300 wasn't parsing correctly from 2.9.1.3. Fix for commit 48e0fe3a.
+		if (g_aArgs[iArg].eToken == TOKEN_EQUAL)
+			iArg++;
 
 		RangeType_t eRange = Range_Get( nAddress, nAddress2, iArg);
 		if ((eRange == RANGE_HAS_END) ||
@@ -97,10 +100,7 @@ WORD _GetDataRange (int nArgs, int iArg, DisasmData_t& tData_)
 				// 2.9.1.1 Add: Support for equal sign, also make it optional for command DB
 				// DB FOO   300
 				// DB FOO = 300
-				if (g_aArgs[2].bType == TOKEN_EQUAL)
-					nAddress = g_aArgs[ 3 ].nValue;
-				else
-					nAddress = g_aArgs[ 2 ].nValue;
+				nAddress = g_aArgs[ iArg ].nValue;
 			}
 			else
 				nAddress = g_aArgs[ 1 ].nValue;

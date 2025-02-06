@@ -1,4 +1,5 @@
 /*
+2.9.2.3 Fixed: DB HGR = 2000:3FFF and DB FOO = 300 wasn't parsing correctly from 2.9.1.3. Fix for commit 48e0fe3a.
 2.9.2.2 Fixed: DB HGR = 2000:3FFF was displaying help instead of being parsed.
 2.9.2.1 Added: Error message when trying to add a symbol > 51 characters.
 
