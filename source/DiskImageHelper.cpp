@@ -601,10 +601,39 @@ bool CImageBase::IsValidImageSize(const uint32_t uImageSize)
 	}
 	else
 	{
-		// TODO: Applewin.chm mentions images of size 143,616 bytes ("Disk Image Formats")
-		bValidSize = (  ((uImageSize >= 143105) && (uImageSize <= 143364)) ||
-						 (uImageSize == 143403) ||
-						 (uImageSize == 143488) );
+		// AppleWin.chm (Disks and Disk Images > Disk Image Formats) mentions disk images of sizes 143,488 and 143,616 bytes
+		//     "Sometimes on the Internet you will see a disk image that is 143,488 or 143,616 bytes long;"
+		// ... but doesn't mention where these magic numbers come from.
+		// Also, AppleWin doesn't even check for the 143,616 size!
+		//
+		// Mame in mame/src/lib/formats/ap2_dsk.cpp checks for sizes ...
+		//     143403,
+		//     143363,
+		//     143358, and
+		//     143195
+		// ... but also doesn't list references/sources/examples.
+		//
+		// Searching the Internet for these disk sizes we find them in a mame commit from 2019!
+		//     https://github.com/mamedev/mame/commit/b380514764cf857469bae61c11143a19f79a74c5
+		// They are in the old file hash/apple2.xml. It has been renamed/moved to apple2_flop_misc.xml
+		//    https://github.com/mamedev/mame/blob/master/hash/apple2_flop_misc.xml
+		//
+		// | Size   | # | Disk Image Name                                                                        |
+		// |-------:|--:|:---------------------------------------------------------------------------------------|
+		// | 143105 | ? | ??? Smallest Valid Size ???                                                            |
+		// | 143195 | 1 | bard's tale iii - the thief of fate, the (1988)(interplay)(disk 3 of 4)(dungeon 1).dsk |
+		// | 143358 | 1 | bard's tale iii - the thief of fate, the (1988)(interplay)(disk 1 of 4).dsk            |
+		// | 143358 | 2 | bard's tale iii - the thief of fate, the (1988)(interplay)(disk 2 of 4)(character).dsk |
+		// | 143358 | 3 | bard's tale iii - the thief of fate, the (1988)(interplay)(disk 3 of 4)(dungeon 2).dsk |
+		// | 143363 | 1 | bandits (1982)(sirius software)[o].dsk                                                 |
+		// | 143363 | 2 | berzap (1984)(infinity limited)[cr krackle - magic merlin][o].dsk                      |
+		// | 143363 | 3 | f15_strike_eagle.dsk                                                                   |
+		// | 143364 | ? | ??? Largest Valid Size ??????                                                          |
+		// | 143403 | 1 | castle wolfenstein (1981)(muse).do                                                     |
+		// | 143488 | 1 | rescue_raiders.dsk                                                                     |
+		bValidSize = (  ((uImageSize >= 143105) && (uImageSize <= 143364))
+					||	 (uImageSize == 143403)     //  43 byte header (Pre or Post?) + 35 Tracks * 16 Sectors/Track * 256 Bytes/Sector
+					||	 (uImageSize == 143488) );  // 128 byte header (Pre or Post?) + 35 Tracks * 16 Sectors/Track * 256 Bytes/Sector
 	}
 
 	if (bValidSize)
