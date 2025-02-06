@@ -95,7 +95,7 @@
 		(Implicitly inserts a RamWorks III card into the aux slot.)<br><br>
 		-load-state &lt;savestate&gt;<br>
 		Load a save-state file (and auto power-on the Apple II).<br>
-		NB. This takes precedent over the -d1, -d2, -s#d#, -h1, -h2, s0-7, -model and -r switches.<br><br>
+		NB. This takes precedent over the -d1, -d2, -s#d#, -h1, -h2, -s#h#, -s0-7, -model and -r switches.<br><br>
 		-f or -full-screen<br>
 		Start in full-screen mode.<br><br>
 		-no-full-screen<br>
@@ -103,7 +103,7 @@
 		-fs-height=&lt;best|nnnn&gt;<br>
 		Use to select a better resolution for full-screen mode.<br>
 		<ul>
-			<li>best: picks the highest resolution where the height is an integer multiple of (192*2)</li>
+			<li>best: picks the highest resolution where the height is an integer multiple of (192*2); or (200*2) when using '-s3 vidhd'</li>
 			<li>nnnn: select a specific resolution with height=nnnn pixels</li>
 		</ul>
 		-fs-width=&lt;nnnn&gt;<br>
