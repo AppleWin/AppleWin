@@ -490,7 +490,8 @@ Update_t CmdDisasmDataDefAddress16 (int nArgs)
 {
 	int iCmd = NOP_WORD_1 - g_aArgs[0].nValue;
 
-	if (! ((nArgs <= 2) || (nArgs == 4)))
+	// 2.9.2.4 Fixed: DA RESET = 3F2 was displaying help instead of being parsed.
+	if (nArgs > 4)
 	{
 		return Help_Arg_1( CMD_DEFINE_DATA_WORD1 + iCmd );
 	}
