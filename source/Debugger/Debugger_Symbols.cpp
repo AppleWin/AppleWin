@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		,"A2_USER2.SYM"
 		,"A2_SRC1.SYM" // "A2_SRC.SYM",
 		,"A2_SRC2.SYM"
-		,"A2_DOS33.SYM"
+		,"A2_DOS33.SYM2"
 		,"A2_PRODOS.SYM"
 	};
 	std::string  g_sFileNameSymbolsUser;
@@ -749,7 +749,43 @@ Update_t CmdSymbolsLoad (int nArgs)
 	if (! nArgs)
 	{
 		sFileName = g_sProgramDir + g_sFileNameSymbols[ iSymbolTable ];
-		nSymbols = ParseSymbolTable( sFileName, (SymbolTable_Index_e) iSymbolTable );
+
+		// if ".sym2" extension then RUN since we need support for DB, DA, etc.
+		// TODO: Use Util_GetFileNameExtension()
+		const size_t nLength    = sFileName.length();
+		const size_t iExtension = sFileName.rfind( '.', nLength );
+		const std::string         sExt = (iExtension != std::string::npos)
+		                               ? sFileName.substr( iExtension, nLength )
+		                               : std::string("")
+		                               ;
+
+		bool bSymbolFormat2 = (sExt == std::string( ".SYM2"));
+		if (bSymbolFormat2)
+		{
+			// We could hijack:
+			//     CmdOutputRun( -1 );
+			// But we would need to futz around with arguments
+			//     strncpy(g_aArgs[0].sArg, sFileName.c_str(), sizeof(g_aArgs[0].sArg));
+
+			MemoryTextFile_t script;
+			if (script.Read( sFileName ))
+			{
+				int nLine = script.GetNumLines();
+				Update_t bUpdateDisplay = UPDATE_NOTHING; // not used
+
+				for ( int iLine = 0; iLine < nLine; iLine++ )
+				{
+					script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
+					g_nConsoleInputChars = _tcslen( g_pConsoleInput );
+					bUpdateDisplay |= DebuggerProcessCommand( false );
+				}
+			}
+
+		}
+		else
+		{
+			nSymbols = ParseSymbolTable( sFileName, (SymbolTable_Index_e) iSymbolTable );
+		}
 
 		// Try optional alternate location
 		if ((nSymbols == 0) && !g_sBuiltinSymbolsDir.empty())
