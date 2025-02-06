@@ -281,7 +281,7 @@ Update_t CmdSymbolsClear (int nArgs)
 
 // Format the summary of the specified symbol table
 //===========================================================================
-std::string _CmdSymbolsInfoHeader( int iTable, int nDisplaySize /* = 0 */ )
+std::string _CmdSymbolsInfoHeader ( int iTable, int nDisplaySize /* = 0 */ )
 {
 	// Common case is to use/calc the table size
 	bool bActive = (g_bDisplaySymbolTables & (1 << iTable)) ? true : false;
@@ -294,6 +294,20 @@ std::string _CmdSymbolsInfoHeader( int iTable, int nDisplaySize /* = 0 */ )
 		, g_aSymbolTableNames[ iTable ]
 		, bActive ? CHC_NUM_DEC : CHC_WARNING, nSymbols
 	);
+}
+
+//===========================================================================
+std::string _CmdSymbolsSummaryStatus ( int iTable )
+{
+	bool bActive = (g_bDisplaySymbolTables & (1 << iTable)) ? true : false;
+	int iParam  = bActive
+	            ? PARAM_ON
+	            : PARAM_OFF
+	            ;
+	std::string sSymbolSummary = _CmdSymbolsInfoHeader( iTable );
+	sSymbolSummary += StrFormat( "%s(%s%s%s)", CHC_ARG_SEP, CHC_COMMAND, g_aParameters[ iParam ].m_sName,  CHC_ARG_SEP );
+
+	return sSymbolSummary;
 }
 
 //===========================================================================
@@ -1057,7 +1071,7 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				int iTable = _GetSymbolTableFromFlag( bSymbolTables );
 				if (iTable != NUM_SYMBOL_TABLES)
 				{
-					ConsolePrint( _CmdSymbolsInfoHeader( iTable ).c_str() );
+					ConsolePrint( _CmdSymbolsSummaryStatus( iTable ).c_str() );
 				}
 				return ConsoleUpdate() | UPDATE_DISASM;
 			}
@@ -1068,7 +1082,7 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				int iTable = _GetSymbolTableFromFlag( bSymbolTables );
 				if (iTable != NUM_SYMBOL_TABLES)
 				{
-					ConsolePrint( _CmdSymbolsInfoHeader( iTable ).c_str() );
+					ConsolePrint( _CmdSymbolsSummaryStatus( iTable ).c_str() );
 				}
 				return ConsoleUpdate() | UPDATE_DISASM;
 			}

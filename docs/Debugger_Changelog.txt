@@ -1,4 +1,5 @@
 /*
+2.9.2.6 Added: QoL: Turning a symbol table on/off now shows the current status.
 2.9.2.5 Added: Symbol table for DOS 3.3 using file A2_DOS33.SYM2
     Add symbols via: SYMDOS33 <symbol> = <addr>
     To disable: SYMDOS33 OFF
