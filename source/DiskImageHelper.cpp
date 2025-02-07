@@ -631,6 +631,8 @@ bool CImageBase::IsValidImageSize(const uint32_t uImageSize)
 		// | 143364 | ? | ??? Largest Valid Size ??????                                                          |
 		// | 143403 | 1 | castle wolfenstein (1981)(muse).do                                                     |
 		// | 143488 | 1 | rescue_raiders.dsk                                                                     |
+		//
+		// NOTE: Update help/ddi-formats.html if the following disk sizes change.
 		bValidSize = (  ((uImageSize >= 143105) && (uImageSize <= 143364))
 					||	 (uImageSize == 143403)     //  43 byte header (Pre or Post?) + 35 Tracks * 16 Sectors/Track * 256 Bytes/Sector
 					||	 (uImageSize == 143488) );  // 128 byte header (Pre or Post?) + 35 Tracks * 16 Sectors/Track * 256 Bytes/Sector
