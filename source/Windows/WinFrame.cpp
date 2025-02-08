@@ -3406,11 +3406,11 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		);
 		if (nRes == IDYES)
 		{
-			std::string pathname = szFilename;
-			if (FileExists( pathname ))
+			nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, szFilename, pLoadFilter );
+			if (nRes)
 			{
-				nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, szFilename, pLoadFilter );
-				if (nRes)
+				std::string pathname = szFilename;
+				if (FileExists( pathname ))
 				{
 					FILE *hFile = fopen( pathname.c_str(), "r+b" );
 					if (hFile)
@@ -3495,11 +3495,11 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 			, "Format", MB_ICONWARNING|MB_YESNO);
 		if (nRes == IDYES)
 		{
-			std::string pathname = szFilename;
-			if (FileExists( pathname ))
+			nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, false, szFilename, pLoadFilter );
+			if (nRes)
 			{
-				nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, false, szFilename, pLoadFilter );
-				if (nRes)
+				std::string pathname = szFilename;
+				if (FileExists( pathname ))
 				{
 					FILE *hFile = fopen( pathname.c_str(), "r+b" );
 					if (hFile)
