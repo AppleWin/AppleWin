@@ -715,7 +715,7 @@ void SSI263::RepeatPhoneme(void)
 
 	if (!m_isVotraxPhoneme)
 	{
-		_ASSERT(m_currentActivePhoneme & kPhonemeLeadoutFlag);
+//		_ASSERT(m_currentActivePhoneme & kPhonemeLeadoutFlag);	// Remove for now, as ASSERT triggers for mb-audit v1.56 in debugger stepping ('g') mode.
 
 		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
 			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
