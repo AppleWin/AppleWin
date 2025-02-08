@@ -2,17 +2,9 @@ name: build
 
 on:
   push:
+    branches: [$default-branch]
   pull_request:
-  workflow_run:
-    # Use a workflow as a trigger of scheduled builds. Forked repositories can disable scheduled builds by disabling
-    # "scheduled" workflow, while maintaining ability to perform local CI builds.
-    workflows:
-      - scheduled
-    branches:
-      - master
-      - docking
-    types:
-      - requested
+    branches: [$default-branch]
 
 jobs:
   Linux:
@@ -27,13 +19,21 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install $(cat source/linux/raspbian.list.txt)
 
-      - name: Build
+      - name: cmake version
+        run: cmake --version
+
+      - name: Standard build
         run: |
-          cmake --version
-          cmake -S . -B build
+          cmake -B build
           cmake --build build
-          cmake -S . -DBUILD_QAPPLE=ON -DQAPPLE_USE_QT5=ON -B build-qt5
+
+      - name: Qt5 build
+        run: |
+          cmake -B build-qt5 -DBUILD_QAPPLE=ON -DQAPPLE_USE_QT5=ON
           cmake --build build-qt5
-          cmake -S . -DBUILD_LIBRETRO=ON -DSTATIC_LINKING=ON -B build-static
+
+      - name: libretro build
+        run: |
+          cmake -DBUILD_LIBRETRO=ON -DSTATIC_LINKING=ON -B build-static
           cmake --build build-static
           ldd build-static/source/frontends/libretro/applewin_libretro.so
