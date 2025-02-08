@@ -158,10 +158,10 @@ private:
 	short* m_pPhonemeData00;
 
 	// ctor/power-cycle: Set to -1
-	// SSI263.CONTROL 1->0 will call Play().
 	// Play(): Set to [$00-$3F] on a write to DURPHON register.
 	// UpdateIRQ(): OR'd with kPhonemeLeadoutFlag when phoneme ends.
 	// RepeatPhoneme(): AND'd with PHONEME_MASK, if SSI263.CONTROL==0 call Play() again.
+	// SSI263.CONTROL 1->0 will call Play().
 	// NB. Can be used to detect overlapping phonemes in Play().
 	// NB. For SSI263 (and SC01) once >=0 then this remains the case (even when SSI263.CONTROL=1).
 	static const UINT kPhonemeLeadoutFlag = 0x100;

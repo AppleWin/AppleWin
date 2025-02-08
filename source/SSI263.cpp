@@ -720,7 +720,7 @@ void SSI263::RepeatPhoneme(void)
 		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
 			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
 
-		m_currentActivePhoneme &= PHONEME_MASK;
+		m_currentActivePhoneme &= PHONEME_MASK;			// Clear kPhonemeLeadoutFlag
 	}
 //	else	// GH#1318 - remove for now, as TR v5.1 can start with repeating phoneme in debugger 'g' mode!
 //	{
@@ -857,6 +857,7 @@ void SSI263::SetCardMode(PHASOR_MODE mode)
 
 //-----------------------------------------------------------------------------
 
+// Cf. void MockingboardCardManager::UpdateSoundBuffer(void)
 bool SSI263::DSInit(void)
 {
 	if (!SSI263SingleVoice.lpDSBvoice)
@@ -879,6 +880,7 @@ bool SSI263::DSInit(void)
 	return true;
 }
 
+// Cf. bool MockingboardCardManager::Init(void)
 bool SSI263::Init(void)
 {
 	if (!DSAvailable())
