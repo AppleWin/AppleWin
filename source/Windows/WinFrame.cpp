@@ -3513,17 +3513,17 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 						size_t nMinDiskSize = 34         *  TRACK_DENIBBLIZED_SIZE;
 						size_t nMaxDiskSize = TRACKS_MAX * TRACK_DENIBBLIZED_SIZE;
 
-						char Message[ 256 ];
+						std::string sMessage;
 						if (nDiskSize < nMinDiskSize)
 						{
-							sprintf_s( Message, "ERROR: Disk image size (%zu bytes) < minimum DOS 3.3 image size (%zu bytes)", nDiskSize, nMinDiskSize );
-							FrameMessageBox( Message, "Format", MB_ICONERROR|MB_OK);
+							sMessage = StrFormat( "ERROR: Disk image size (%zu bytes) < minimum DOS 3.3 image size (%zu bytes)", nDiskSize, nMinDiskSize );
+							FrameMessageBox( sMessage.c_str(), "Format", MB_ICONERROR | MB_OK);
 						}
 						else
 						if (nDiskSize > nMaxDiskSize)
 						{
-							sprintf_s( Message, "ERROR: Disk image size (%zu bytes) > maximum DOS 3.3 image size (%zu bytes)", nDiskSize, nMaxDiskSize );
-							FrameMessageBox( Message, "Format", MB_ICONERROR|MB_OK);
+							sMessage = StrFormat( "ERROR: Disk image size (%zu bytes) > maximum DOS 3.3 image size (%zu bytes)", nDiskSize, nMaxDiskSize );
+							FrameMessageBox( sMessage.c_str(), "Format", MB_ICONERROR | MB_OK);
 						}
 						else
 						{
