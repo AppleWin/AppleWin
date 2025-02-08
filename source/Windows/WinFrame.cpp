@@ -2908,7 +2908,7 @@ bool Win32Frame::GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& be
 			if (vecDisplayResolutions.size() == 0 || vecDisplayResolutions.back() != std::pair<UINT,UINT>(devMode.dmPelsWidth, devMode.dmPelsHeight)	)	// Skip duplicate resolutions
 			{
 				vecDisplayResolutions.push_back( std::pair<UINT,UINT>(devMode.dmPelsWidth, devMode.dmPelsHeight) );
-				LogFileOutput("EnumDisplaySettings(%d) - %d x %d\n", iModeNum, devMode.dmPelsWidth, devMode.dmPelsHeight);
+				LogFileOutput("EnumDisplaySettings(%d) - %d x %d (ratio=%f)\n", iModeNum, devMode.dmPelsWidth, devMode.dmPelsHeight, (float)devMode.dmPelsWidth/(float)devMode.dmPelsHeight);
 			}
 		}
 	}
