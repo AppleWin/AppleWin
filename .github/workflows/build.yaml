@@ -37,3 +37,40 @@ jobs:
           cmake -DBUILD_LIBRETRO=ON -DSTATIC_LINKING=ON -B build-static
           cmake --build build-static
           ldd build-static/source/frontends/libretro/applewin_libretro.so
+
+  MSYS2:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: mingw64
+          install: >-
+            git
+            vim
+          pacboy: >-
+            toolchain:p
+            cmake:p
+            ninja:p
+            pkg-config:p
+            zlib:p
+            minizip:p
+            libyaml:p
+            boost:p
+
+      - name: cmake version
+        run: cmake --version
+
+      - name: MSYS2 build
+        run: |
+          cmake -B build
+          cmake --build build
+          ldd build/applewin_libretro.dll
