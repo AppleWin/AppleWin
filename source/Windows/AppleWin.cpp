@@ -743,12 +743,7 @@ static void RepeatInitialization(void)
 	for (UINT i = SLOT1; i < NUM_SLOTS; i++)
 	{
 		if (g_cmdLine.bSlotEmpty[i])
-		{
 			GetCardMgr().Remove(i);
-
-			if (i == SLOT3)	// s3=VidHD from Registry, and now s3=empty
-				GetVideo().SetVidHD(false);
-		}
 	}
 
 	if (g_cmdLine.supportDCD && GetCardMgr().IsSSCInstalled())
