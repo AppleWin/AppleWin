@@ -601,7 +601,7 @@ bool CImageBase::IsValidImageSize(const uint32_t uImageSize)
 	}
 	else
 	{
-		// AppleWin.chm (Disks and Disk Images > Disk Image Formats) mentions disk images of sizes 143,488 and 143,616 bytes
+		// AppleWin.chm (Disks and Disk Images > Disk Image Formats) used to mention disk images of sizes 143,488 and 143,616 bytes
 		//     "Sometimes on the Internet you will see a disk image that is 143,488 or 143,616 bytes long;"
 		// ... but doesn't mention where these magic numbers come from.
 		// Also, AppleWin doesn't even check for the 143,616 size!
