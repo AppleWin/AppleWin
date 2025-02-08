@@ -27,15 +27,23 @@ sectors. If you run a DOS program on the Apple which reads in
 sectors one by one and then transfers them over a serial line to
 the PC, you will get a DOS order disk image. </p>
 
-<p>Apple floppy disks contained 35 tracks with
+<p>Apple floppy disks (normally) contain 35 tracks with
 16 sectors per track, for a total of 560 sectors. Each of these
 sectors contained 256 bytes of information, for a total of
 143,360 bytes per disk. Therefore, DOS order disk images are
 always at least 143,360 bytes long. Sometimes on the Internet you
-will see a disk image that is 143,488 or 143,616 bytes long; this
+will see a disk image that is not 143,360 bytes long; this
 is probably a DOS order image with extra header information
 before or after the image. In most cases, AppleWin can
 automatically detect this and handle it. </p>
+
+<p>Due to some games being incorrectly converted to a disk image AppleWin also accepts disk images of sizes:
+<ul>
+  <li>143,403 bytes (<i>Castle Wolfenstein</i>)</li>
+  <li>143,488 bytes (<i>Rescue Raiders</i>)</li>
+</ul>
+
+<p>Some disk drives were able to handle 40+ tracks.  AppleWin accept disk images up to 40 tracks -- 163,840 bytes -- as long as the disk image is a multiple of 4,096 bytes / track.</p>
 
 <p style="font-weight: bold;">ProDOS Order
 Images: </p>
