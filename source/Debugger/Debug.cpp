@@ -53,7 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,2,1);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,2,6);
 
 
 // Public _________________________________________________________________________________________
@@ -8906,6 +8906,10 @@ void DebugInitialize ()
 	CmdSymbolsLoad(0);
 
 	g_iCommand = CMD_SYMBOLS_APPLESOFT;
+	CmdSymbolsLoad(0);
+
+	// 2.9.2.5 Added: Symbol table A2_DOS33.SYM2
+	g_iCommand = CMD_SYMBOLS_DOS33;
 	CmdSymbolsLoad(0);
 
 	// ,0x7,0xFF // Treat zero-page as data
