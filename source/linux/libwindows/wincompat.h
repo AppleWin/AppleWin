@@ -130,16 +130,6 @@ extern "C"
     typedef WCHAR *LPWSTR;
     typedef CONST WCHAR *LPCWSTR;
 
-#ifndef _TCHAR_DEFINED
-// TCHAR a typedef or a define?
-// a define for the single reason that
-// othwerise QTCreator does not show the values (i.e. string) while debugging
-// it treats it as an array of bytes
-#define TCHAR char
-    typedef TCHAR _TCHAR;
-#define _TCHAR_DEFINED
-#endif /* !_TCHAR_DEFINED */
-
 // TCHAR support
 #define __TEXT(quote) quote       // r_winnt
 #define TEXT(quote) __TEXT(quote) // r_winnt
