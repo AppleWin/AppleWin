@@ -674,7 +674,7 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 static void RepeatInitialization(void)
 {
 	KeybReset();
-	GetVideo().SetVidHD(false);	// Set true later only if VidHDCard is instantiated
+	GetVideo().SetVidHD(false);	// Set true later (eg. by LoadConfiguration() or cmd-line) if VidHDCard is instantiated
 	ResetToLogoMode();
 
 	// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
@@ -743,7 +743,12 @@ static void RepeatInitialization(void)
 	for (UINT i = SLOT1; i < NUM_SLOTS; i++)
 	{
 		if (g_cmdLine.bSlotEmpty[i])
+		{
 			GetCardMgr().Remove(i);
+
+			if (i == SLOT3)	// s3=VidHD from Registry, and now s3=empty
+				GetVideo().SetVidHD(false);
+		}
 	}
 
 	if (g_cmdLine.supportDCD && GetCardMgr().IsSSCInstalled())
