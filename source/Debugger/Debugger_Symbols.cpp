@@ -790,7 +790,7 @@ Update_t CmdSymbolsLoad (int nArgs)
 				for ( int iLine = 0; iLine < nLine; iLine++ )
 				{
 					script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
-					g_nConsoleInputChars = _tcslen( g_pConsoleInput );
+					g_nConsoleInputChars = strlen( g_pConsoleInput );
 					bUpdateDisplay |= DebuggerProcessCommand( false );
 				}
 			}
