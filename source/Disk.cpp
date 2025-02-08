@@ -1826,8 +1826,8 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 		return false;
 	}
 
-	TCHAR directory[MAX_PATH];
-	TCHAR filename[MAX_PATH];
+	char directory[MAX_PATH];
+	char filename[MAX_PATH];
 
 	StringCbCopy(filename, MAX_PATH, pszFilename);
 

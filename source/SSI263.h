@@ -20,9 +20,13 @@ public:
 
 	void ResetState(const bool powerCycle)
 	{
-		m_currentActivePhoneme = -1;
-		m_isVotraxPhoneme = false;
-		m_votraxPhoneme = 0;
+		if (powerCycle)
+		{
+			m_currentActivePhoneme = -1;
+			m_isVotraxPhoneme = false;	// SC01 has no RESET pin
+			m_votraxPhoneme = 0;		// SC01 has no RESET pin
+		}
+
 		m_cyclesThisAudioFrame = 0;
 
 		//
@@ -70,14 +74,13 @@ public:
 	void SetDevice(UINT device) { m_device = device; }
 	void SetCardMode(PHASOR_MODE mode);
 
-	bool DSInit(void);
 	void DSUninit(void);
 
 	void Reset(const bool powerCycle, const bool isPhasorCard);
 	bool IsPhonemeActive(void)
 	{
 		if (!m_isVotraxPhoneme)
-			return (m_ctrlArtAmp & CONTROL_MASK) == 0 && m_currentActivePhoneme >= 0;
+			return (m_ctrlArtAmp & CONTROL_MASK) == 0;	// if SSI263.CONTROL=0 then "m_currentActivePhoneme >= 0" must be true
 		else
 			return m_currentActivePhoneme >= 0;
 	}
@@ -106,12 +109,16 @@ private:
 	void Play(unsigned int nPhoneme);
 	void Stop(void);
 	void UpdateIRQ(void);
+	void RepeatPhoneme(void);
 	void UpdateAccurateLength(void);
 	void SetDeviceModeAndInts(void);
 
 	UINT64 GetLastCumulativeCycles(void);
 	void UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
 	BYTE GetPCR(BYTE nDevice);
+
+	bool Init(void);
+	bool DSInit(void);
 
 	static const BYTE m_Votrax2SSI263[/*64*/];
 
@@ -150,7 +157,16 @@ private:
 	PHASOR_MODE m_cardMode;
 	short* m_pPhonemeData00;
 
-	int m_currentActivePhoneme;				// -1 (if none) or SSI263 or SC01 phoneme
+	// ctor/power-cycle: Set to -1
+	// Play(): Set to [$00-$3F] on a write to DURPHON register.
+	// UpdateIRQ(): OR'd with kPhonemeLeadoutFlag when phoneme ends.
+	// RepeatPhoneme(): AND'd with PHONEME_MASK, if SSI263.CONTROL==0 call Play() again.
+	// SSI263.CONTROL 1->0 will call Play().
+	// NB. Can be used to detect overlapping phonemes in Play().
+	// NB. For SSI263 (and SC01) once >=0 then this remains the case (even when SSI263.CONTROL=1).
+	static const UINT kPhonemeLeadoutFlag = 0x100;
+	int m_currentActivePhoneme;				// -1 (if none) or SSI263/SC01 phoneme (& can be OR'd with kPhonemeLeadoutFlag)
+
 	bool m_isVotraxPhoneme;
 	BYTE m_votraxPhoneme;
 	UINT m_cyclesThisAudioFrame;

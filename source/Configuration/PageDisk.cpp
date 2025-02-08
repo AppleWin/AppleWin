@@ -37,11 +37,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 CPageDisk* CPageDisk::ms_this = 0;	// reinit'd in ctor
 
-const TCHAR CPageDisk::m_defaultDiskOptions[] =
+const char CPageDisk::m_defaultDiskOptions[] =
 				TEXT("Select Disk...\0")
 				TEXT("Eject Disk\0");
 
-const TCHAR CPageDisk::m_defaultHDDOptions[] =
+const char CPageDisk::m_defaultHDDOptions[] =
 				TEXT("Select Hard Disk Image...\0")
 				TEXT("Unplug Hard Disk Image\0");
 
@@ -193,7 +193,7 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 
 			InitComboHDD(hWnd, SLOT7);
 
-			TCHAR PathToCiderPress[MAX_PATH];
+			char PathToCiderPress[MAX_PATH];
 			RegLoadString(TEXT(REG_CONFIG), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress, MAX_PATH, TEXT(""));
 			SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME ,WM_SETTEXT, 0, (LPARAM)PathToCiderPress);
 

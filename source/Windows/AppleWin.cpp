@@ -344,7 +344,7 @@ void EnterMessageLoop(void)
 
 static void GetProgramDirectory(void)
 {
-	TCHAR programDir[MAX_PATH];
+	char programDir[MAX_PATH];
 	GetModuleFileName((HINSTANCE)0, programDir, MAX_PATH);
 	programDir[MAX_PATH-1] = 0;
 

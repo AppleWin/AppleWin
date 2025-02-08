@@ -34,7 +34,7 @@ private:
 	bool IsOkToBenchmark(HWND hWnd, const bool bConfigChanged);
 
 	static CPageConfig* ms_this;
-	static const TCHAR m_ComputerChoices[];
+	static const char m_ComputerChoices[];
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;

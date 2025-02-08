@@ -8,7 +8,6 @@
 #ifdef _WIN32
 
 #include <stdio.h>
-#include <tchar.h>
 
 #include <windows.h>
 

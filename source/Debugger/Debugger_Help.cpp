@@ -468,8 +468,8 @@ Update_t CmdHelpSpecific (int nArgs)
 	bool bCategory = false;
 	bool bDisplayCategory = true;
 
-	if ((! _tcscmp( g_aArgs[1].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName)) ||
-		(! _tcscmp( g_aArgs[1].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName)) )
+	if ((! strcmp( g_aArgs[1].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName)) ||
+		(! strcmp( g_aArgs[1].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName)) )
 	{
 		bAllCommands = true;
 		nArgs = NUM_COMMANDS;
@@ -1473,8 +1473,8 @@ Update_t CmdVersion (int nArgs)
 		for (int iArg = 1; iArg <= g_nArgRaw; iArg++ )
 		{
 			// * PARAM_WILDSTAR -> ? PARAM_MEM_SEARCH_WILD
-			if ((! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
-				(! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
+			if ((! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
+				(! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
 			{
 				ConsoleBufferPushFormat( "  Arg: %" SIZE_T_FMT " bytes * %d = %" SIZE_T_FMT " bytes",
 					sizeof(Arg_t), MAX_ARGS, sizeof(g_aArgs) );
