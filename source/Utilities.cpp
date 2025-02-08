@@ -236,7 +236,7 @@ void LoadConfiguration(bool loadImages)
 
 	//
 
-	TCHAR szFilename[MAX_PATH];
+	char szFilename[MAX_PATH];
 
 	//
 

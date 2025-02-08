@@ -58,8 +58,8 @@ bool ParallelPrinterCard::CheckPrint(void)
 	m_inactivity = 0;
 	if (m_file == NULL)
 	{
-		//TCHAR filepath[MAX_PATH * 2];
-		//_tcsncpy(filepath, g_sProgramDir, MAX_PATH);
+		//char filepath[MAX_PATH * 2];
+		//strncpy(filepath, g_sProgramDir, MAX_PATH);
 		//_tcsncat(filepath, _T("Printer.txt"), MAX_PATH);
 		//file = fopen(filepath, "wb");
 		if (m_bPrinterAppend )

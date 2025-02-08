@@ -404,7 +404,7 @@ void Win32Frame::DisplayLogo(void)
 	}
 
 	// DRAW THE VERSION NUMBER
-	TCHAR sFontName[] = TEXT("Arial");
+	char sFontName[] = TEXT("Arial");
 	HFONT font = CreateFont(-20, 0, 0, 0, FW_NORMAL, 0, 0, 0, ANSI_CHARSET,
 		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
 		VARIABLE_PITCH | 4 | FF_SWISS,

@@ -182,7 +182,7 @@ bool FindAddressFromSymbol ( const char* pSymbol, WORD * pAddress_, int * iTable
 		SymbolTable_t :: iterator  iSymbol = g_aSymbols[iTable].begin();
 		while (iSymbol != g_aSymbols[iTable].end())
 		{
-			if (!_tcsicmp( iSymbol->second.c_str(), pSymbol))
+			if (!_stricmp( iSymbol->second.c_str(), pSymbol))
 			{
 				if (pAddress_)
 				{
@@ -221,15 +221,15 @@ WORD GetAddressFromSymbol (const char* pSymbol)
 //===========================================================================
 bool String2Address( LPCTSTR pText, WORD & nAddress_ )
 {
-	TCHAR sHexApple[ CONSOLE_WIDTH ];
+	char sHexApple[ CONSOLE_WIDTH ];
 
 	if (pText[0] == '$')
 	{
 		if (!TextIsHexString( pText+1))
 			return false;
 
-		_tcscpy( sHexApple, "0x" );
-		_tcsncpy( sHexApple+2, pText+1, MAX_SYMBOLS_LEN - 3 );
+		strcpy( sHexApple, "0x" );
+		strncpy( sHexApple+2, pText+1, MAX_SYMBOLS_LEN - 3 );
 		sHexApple[2 + (MAX_SYMBOLS_LEN - 3) - 1] = 0;
 		pText = sHexApple;
 	}
@@ -241,14 +241,14 @@ bool String2Address( LPCTSTR pText, WORD & nAddress_ )
 			if (!TextIsHexString( pText+2))
 				return false;
 
-			TCHAR *pEnd;
-			nAddress_ = (WORD) _tcstol( pText, &pEnd, 16 );
+			char *pEnd;
+			nAddress_ = (WORD) strtol( pText, &pEnd, 16 );
 			return true;
 		}
 		if (TextIsHexString( pText ))
 		{
-			TCHAR *pEnd;
-			nAddress_ = (WORD) _tcstol( pText, &pEnd, 16 );
+			char *pEnd;
+			nAddress_ = (WORD) strtol( pText, &pEnd, 16 );
 			return true;
 		}
 	}
@@ -877,7 +877,7 @@ void SymbolUpdate ( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, W
 	if (bRemoveSymbol)
 		pSymbolName = g_aArgs[2].sArg;
 
-	size_t nSymLen = _tcslen( pSymbolName );
+	size_t nSymLen = strlen( pSymbolName );
 	if (nSymLen < MAX_SYMBOLS_LEN)
 	{
 		WORD nAddressPrev;
@@ -964,7 +964,7 @@ Update_t _CmdSymbolsUpdate( int nArgs, int bSymbolTables )
 	bool bRemoveSymbol = false;
 	bool bUpdateSymbol = false;
 
-	TCHAR *pSymbolName = g_aArgs[1].sArg;
+	char *pSymbolName = g_aArgs[1].sArg;
 	WORD   nAddress    = g_aArgs[3].nValue;
 
 	if ((nArgs == 2)

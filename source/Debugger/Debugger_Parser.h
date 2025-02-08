@@ -4,9 +4,9 @@
 #include "Util_Text.h"
 
 const char * ParserFindToken( const char *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e * pToken_ );
-const TCHAR * FindTokenOrAlphaNumeric ( const TCHAR *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e * pToken_ );
+const char * FindTokenOrAlphaNumeric ( const char *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e * pToken_ );
 int RemoveWhiteSpaceReverse( char *pSrc );
-void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDstSize, int nTabStop = 0 );
+void TextConvertTabsToSpaces( char *pDeTabified_, LPCTSTR pText, const int nDstSize, int nTabStop = 0 );
 
 inline const char* SkipUntilToken( const char *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e *pToken_ )
 	{
@@ -29,16 +29,16 @@ inline const char* SkipUntilToken( const char *pSrc, const TokenTable_t *aTokens
 	extern	Arg_t g_aArgRaw[ MAX_ARGS ]; // pre-processing
 	extern	Arg_t g_aArgs  [ MAX_ARGS ]; // post-processing
 
-	extern	const TCHAR * g_pConsoleFirstArg; //    = 0; // points to first arg
+	extern	const char * g_pConsoleFirstArg; //    = 0; // points to first arg
 
 	extern	const TokenTable_t g_aTokens[ NUM_TOKENS ];
 
-	extern	const TCHAR TCHAR_LF    ;//= 0x0D;
-	extern	const TCHAR TCHAR_CR    ;//= 0x0A;
-	extern	const TCHAR TCHAR_SPACE ;//= TEXT(' ');
-	extern	const TCHAR TCHAR_TAB   ;//= TEXT('\t');
-	extern	const TCHAR TCHAR_QUOTE_DOUBLE;
-	extern	const TCHAR TCHAR_QUOTE_SINGLE;
+	extern	const char TCHAR_LF    ;//= 0x0D;
+	extern	const char TCHAR_CR    ;//= 0x0A;
+	extern	const char TCHAR_SPACE ;//= TEXT(' ');
+	extern	const char TCHAR_TAB   ;//= TEXT('\t');
+	extern	const char TCHAR_QUOTE_DOUBLE;
+	extern	const char TCHAR_QUOTE_SINGLE;
 
 // Prototypes _______________________________________________________________
 
@@ -52,7 +52,7 @@ inline const char* SkipUntilToken( const char *pSrc, const TokenTable_t *aTokens
 
 	bool ArgsGetValue ( Arg_t *pArg, WORD * pAddressValue_, const int nBase = 16 );
 	bool ArgsGetImmediateValue ( Arg_t *pArg, WORD * pAddressValue_ );
-	int	 ArgsGet ( TCHAR * pInput );
+	int	 ArgsGet ( char * pInput );
 	bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ );
 	void ArgsRawParse ( void );
 	int ArgsCook ( const int nArgs ); // const int bProcessMask );
