@@ -461,8 +461,8 @@ bool HarddiskInterfaceCard::Insert(const int iDrive, const std::string& pathname
 
 bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
 {
-	TCHAR directory[MAX_PATH];
-	TCHAR filename[MAX_PATH];
+	char directory[MAX_PATH];
+	char filename[MAX_PATH];
 
 	StringCbCopy(filename, MAX_PATH, pszFilename);
 

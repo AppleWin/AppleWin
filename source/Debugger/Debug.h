@@ -51,7 +51,7 @@
 	extern Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
 	extern const char  *g_aBreakpointSource [ NUM_BREAKPOINT_SOURCES   ];
-	extern const TCHAR *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ];
+	extern const char *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ];
 
 	extern int  g_nDebugBreakOnInvalid ;
 	extern int  g_iDebugBreakOnOpcode  ;
@@ -71,7 +71,7 @@
 			bool operator() ( const Command_t & rLHS, const Command_t & rRHS ) const
 			{
 				// return true if lhs<rhs
-				return (_tcscmp( rLHS.m_sName, rRHS.m_sName ) <= 0) ? true : false;
+				return (strcmp( rLHS.m_sName, rRHS.m_sName ) <= 0) ? true : false;
 			}
 	};
 
@@ -178,7 +178,7 @@
 	void	DebugInitialize ();
 	void	DebugReset(void);
 
-	void	DebuggerInputConsoleChar( TCHAR ch );
+	void	DebuggerInputConsoleChar( char ch );
 	void	DebuggerProcessKey( int keycode );
 
 	void	DebuggerUpdate();

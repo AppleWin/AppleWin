@@ -30,7 +30,7 @@ enum VideoType_e
 	, VT_DEFAULT = VT_COLOR_TV
 };
 
-extern TCHAR g_aVideoChoices[];
+extern char g_aVideoChoices[];
 
 enum VideoStyle_e
 {

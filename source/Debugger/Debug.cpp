@@ -184,11 +184,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #if OLD_FONT
 // Font
-	TCHAR     g_sFontNameDefault[ MAX_FONT_NAME ] = TEXT("Courier New");
-	TCHAR     g_sFontNameConsole[ MAX_FONT_NAME ] = TEXT("Courier New");
-	TCHAR     g_sFontNameDisasm [ MAX_FONT_NAME ] = TEXT("Courier New");
-	TCHAR     g_sFontNameInfo   [ MAX_FONT_NAME ] = TEXT("Courier New");
-	TCHAR     g_sFontNameBranch [ MAX_FONT_NAME ] = TEXT("Webdings");
+	char     g_sFontNameDefault[ MAX_FONT_NAME ] = TEXT("Courier New");
+	char     g_sFontNameConsole[ MAX_FONT_NAME ] = TEXT("Courier New");
+	char     g_sFontNameDisasm [ MAX_FONT_NAME ] = TEXT("Courier New");
+	char     g_sFontNameInfo   [ MAX_FONT_NAME ] = TEXT("Courier New");
+	char     g_sFontNameBranch [ MAX_FONT_NAME ] = TEXT("Webdings");
 	HFONT     g_hFontWebDings  = (HFONT)0;
 #endif
 	int       g_iFontSpacing = FONT_SPACING_CLEAN;
@@ -648,7 +648,7 @@ Update_t CmdBookmarkClear (int nArgs)
 	int iArg;
 	for (iArg = 1; iArg <= nArgs; iArg++ )
 	{
-		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		if (! strcmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
 			_Bookmark_Reset();
 			break;
@@ -706,7 +706,7 @@ Update_t CmdBookmarkLoad (int nArgs)
 //		strcpy( sMiniFileName, pFileName );
 	//	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
-//		_tcscpy(sFileName, g_sCurrentDir); // 
+//		strcpy(sFileName, g_sCurrentDir); // 
 //		strcat(sFileName, sMiniFileName);
 	}
 
@@ -1007,14 +1007,14 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 	if (nArgs > 1)
 		return HelpLastCommand();
 
-	TCHAR sAction[ CONSOLE_WIDTH ] = TEXT("Current"); // default to display
+	char sAction[ CONSOLE_WIDTH ] = TEXT("Current"); // default to display
 
 	if (nArgs == 1)
 	{
 		int iOpcode = g_aArgs[ 1] .nValue;
 		g_iDebugBreakOnOpcode = iOpcode & 0xFF;
 
-		_tcscpy( sAction, TEXT("Setting") );
+		strcpy( sAction, TEXT("Setting") );
 
 		if (iOpcode >= NUM_OPCODES)
 		{
@@ -1062,12 +1062,12 @@ Update_t CmdBreakOnInterrupt (int nArgs)
 	if (nArgs == 1 && nActive == -1)
 		return HelpLastCommand();
 
-	TCHAR sAction[CONSOLE_WIDTH] = TEXT("Current"); // default to display
+	char sAction[CONSOLE_WIDTH] = TEXT("Current"); // default to display
 
 	if (nArgs == 1)
 	{
 		g_bDebugBreakOnInterrupt = (iParam == PARAM_ON) ? true : false;
-		_tcscpy(sAction, TEXT("Setting"));
+		strcpy(sAction, TEXT("Setting"));
 	}
 
 	ConsoleBufferPushFormat("%s Break on Interrupt: %s"
@@ -1880,7 +1880,7 @@ void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nM
 	{
 		iSlot = g_aArgs[nArgs].nValue;
 
-		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		if (! strcmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
 			_BWZ_RemoveAll( aBreakWatchZero, nMax, nTotal );
 			break;
@@ -1907,7 +1907,7 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 	{
 		iSlot = g_aArgs[nArgs].nValue;
 
-		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		if (! strcmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
 			for ( ; iSlot < nMax; iSlot++ )
 			{
@@ -2150,8 +2150,8 @@ Update_t CmdAssemble (int nArgs)
 		int iArg = 1;
 		
 		// undocumented ASM *
-		if ((! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
-			(! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
+		if ((! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
+			(! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
 		{
 			_CmdAssembleHashDump();
 		}
@@ -2714,7 +2714,7 @@ Update_t CmdConfigLoad (int nArgs)
 {
 	// TODO: CmdConfigRun( gaFileNameConfig )
 	
-//	TCHAR sFileNameConfig[ MAX_PATH ];
+//	char sFileNameConfig[ MAX_PATH ];
 	if (! nArgs)
 	{
 
@@ -2854,7 +2854,7 @@ Update_t CmdConfigDisasm (int nArgs)
 
 	bool bDisplayCurrentSettings = false;
 
-//	if (! _tcscmp( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ))
+//	if (! strcmp( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ))
 	if (! nArgs)
 	{
 		bDisplayCurrentSettings = true;
@@ -4658,8 +4658,8 @@ Update_t CmdMemorySave (int nArgs)
 //			(g_aArgs[ iArgComma2 ].eToken != TOKEN_COLON))
 //			return Help_Arg_1( CMD_MEMORY_SAVE );
 
-		TCHAR sLoadSaveFilePath[ MAX_PATH ];
-		_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
+		char sLoadSaveFilePath[ MAX_PATH ];
+		strcpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
 
 		RangeType_t eRange;
 		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
@@ -5897,7 +5897,7 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 		}
 		else
 		{
-			TCHAR *pByte = pArg->sArg;
+			char *pByte = pArg->sArg;
 
 			if (pArg->bType & TYPE_QUOTED_1)
 			{
@@ -6070,7 +6070,7 @@ Update_t CmdRegisterSet (int nArgs)
 	}
 	else
 	{
-		TCHAR *pName = g_aArgs[1].sArg;
+		char *pName = g_aArgs[1].sArg;
 		int iParam;
 		if (FindParam( pName, MATCH_EXACT, iParam, _PARAM_REGS_BEGIN, _PARAM_REGS_END ))
 		{
@@ -6418,7 +6418,7 @@ Update_t CmdOutputRun (int nArgs)
 		for ( int iLine = 0; iLine < nLine; iLine++ )
 		{
 			script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
-			g_nConsoleInputChars = _tcslen( g_pConsoleInput );
+			g_nConsoleInputChars = strlen( g_pConsoleInput );
 			bUpdateDisplay |= DebuggerProcessCommand( false );
 		}
 	}
@@ -6531,7 +6531,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 
 		uint32_t nAddress = INVALID_ADDRESS;
 
-		_tcscpy( sLine, sText );
+		strcpy( sLine, sText );
 		char *p = sLine;
 		p = strstr( sLine, ":" );
 		if (p)
@@ -6575,7 +6575,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 			g_aSourceDebug[ (WORD) nAddress ] = iLine; // g_nSourceAssemblyLines;
 		}
 
-		_tcscpy( sLine, sText );
+		strcpy( sLine, sText );
 		if (bAddSymbols)
 		{
 			// Add user symbol:          symbolname EQU $address
@@ -7443,7 +7443,7 @@ Update_t CmdWindow (int nArgs)
 		return Help_Arg_1( CMD_WINDOW );
 
 	int iParam;
-	TCHAR *pName = g_aArgs[1].sArg;
+	char *pName = g_aArgs[1].sArg;
 	int nFound = FindParam( pName, MATCH_EXACT, iParam, _PARAM_WINDOW_BEGIN, _PARAM_WINDOW_END );
 	if (nFound)
 	{
@@ -7676,7 +7676,7 @@ Update_t CmdZeroPagePointer (int nArgs)
 int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd, const bool bCaseSensitive /* false */ )
 {
 	int nFound = 0;
-	int nLen     = _tcslen( pLookupName );
+	int nLen     = strlen( pLookupName );
 	int iParam = 0;
 
 	if (! nLen)
@@ -7692,8 +7692,8 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 //		while (iParam < NUM_PARAMS )
 		for (iParam = iParamBegin; iParam <= iParamEnd; iParam++ )
 		{
-			TCHAR *pParamName = g_aParameters[iParam].m_sName;
-			int eCompare = _tcscmp(pLookupName, pParamName);
+			char *pParamName = g_aParameters[iParam].m_sName;
+			int eCompare = strcmp(pLookupName, pParamName);
 			if (! eCompare) // exact match?
 			{
 				nFound++;
@@ -7706,7 +7706,7 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 	if (eMatch == MATCH_FUZZY)
 	{	
 #if ALLOW_INPUT_LOWERCASE
-		TCHAR aLookup[ 256 ] = "";
+		char aLookup[ 256 ] = "";
 		for ( int i = 0; i < nLen; i++ )
 		{
 			aLookup[ i ] = toupper( pLookupName[ i ] );
@@ -7714,19 +7714,19 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 #endif
 		for (iParam = iParamBegin; iParam <= iParamEnd; iParam++ )
 		{
-			TCHAR *pParamName = g_aParameters[ iParam ].m_sName;
+			char *pParamName = g_aParameters[ iParam ].m_sName;
 // _tcsnccmp
 
 #if ALLOW_INPUT_LOWERCASE
-			if (! _tcsncmp(aLookup, pParamName ,nLen))
+			if (! strncmp(aLookup, pParamName ,nLen))
 #else
-			if (! _tcsncmp(pLookupName, pParamName ,nLen))
+			if (! strncmp(pLookupName, pParamName ,nLen))
 #endif
 			{
 				nFound++;
 				iParam_ = g_aParameters[iParam].iCommand;
 
-				if (!_tcsicmp(pLookupName, pParamName)) // exact match?
+				if (!_stricmp(pLookupName, pParamName)) // exact match?
 				{
 					nFound = 1; // Exact match takes precidence over fuzzy matches
 					break;
@@ -7743,7 +7743,7 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 	g_vPotentialCommands.clear();
 
 	int nFound   = 0;
-	int nLen     = _tcslen( pName );
+	int nLen     = strlen( pName );
 	int iCommand = 0;
 
 	if (! nLen)
@@ -7755,9 +7755,9 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 
 	while ((iCommand < NUM_COMMANDS_WITH_ALIASES)) // && (name[0] >= g_aCommands[iCommand].aName[0])) Command no longer in Alphabetical order
 	{
-		TCHAR *pCommandName = g_aCommands[iCommand].m_sName;
+		char *pCommandName = g_aCommands[iCommand].m_sName;
 //		int iCmp = strcasecmp( sCommand, pCommandName, nLen )
-		if (! _tcsncmp(sCommand, pCommandName, nLen))
+		if (! strncmp(sCommand, pCommandName, nLen))
 		{
 			pFunction_ = g_aCommands[iCommand].pFunction;
 			if (pFunction_)
@@ -7772,8 +7772,8 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 
 					if (iCommand_)
 						*iCommand_ = iCommand;
-// !_tcscmp
-					if (!_tcsicmp(sCommand, pCommandName)) // exact match?
+// !strcmp
+					if (!_stricmp(sCommand, pCommandName)) // exact match?
 					{
 	//					if (iCommand_)
 	//						*iCommand_ = iCommand;
@@ -8995,7 +8995,7 @@ void DebugInitialize ()
 		const char *pHelp = g_aCommands[ iCmd ].pHelpSummary;
 		if (pHelp)
 		{
-			int nLen = _tcslen( pHelp ) + 2;
+			int nLen = strlen( pHelp ) + 2;
 			if (nLen > (CONSOLE_WIDTH-1))
 			{
 				ConsoleBufferPushFormat( "Warning: %s help is %d chars", pHelp, nLen );
@@ -9058,7 +9058,7 @@ void DebugReset (void)
 
 // Add character to the input line
 //===========================================================================
-void DebuggerInputConsoleChar ( TCHAR ch )
+void DebuggerInputConsoleChar ( char ch )
 {
 	_ASSERT(g_nAppMode == MODE_DEBUG);
 
@@ -9101,7 +9101,7 @@ void DebuggerInputConsoleChar ( TCHAR ch )
 			// TODO: must fix param matching to ignore case
 #if ALLOW_INPUT_LOWERCASE
 #else
-			ch = (TCHAR)CharUpper((LPTSTR)ch);
+			ch = (char)CharUpper((LPTSTR)ch);
 #endif
 		}
 		ConsoleInputChar( ch );

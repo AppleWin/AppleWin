@@ -899,9 +899,9 @@ bool _6502_IsOpcodeValid ( int iOpcode )
 
 
 //===========================================================================
-Hash_t AssemblerHashMnemonic ( const TCHAR * pMnemonic )
+Hash_t AssemblerHashMnemonic ( const char * pMnemonic )
 {
-	const TCHAR *pText = pMnemonic;
+	const char *pText = pMnemonic;
 	Hash_t nMnemonicHash = 0;
 	int iHighBits;
 
@@ -944,7 +944,7 @@ void AssemblerHashOpcodes ()
 
 	for ( iOpcode = 0; iOpcode < NUM_OPCODES; iOpcode++ )
 	{
-		const TCHAR *pMnemonic = g_aOpcodes65C02[ iOpcode ].sMnemonic;
+		const char *pMnemonic = g_aOpcodes65C02[ iOpcode ].sMnemonic;
 		nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 		g_aOpcodesHash[ iOpcode ] = nMnemonicHash;
 #if DEBUG_ASSEMBLER
@@ -965,8 +965,8 @@ void AssemblerHashDirectives ()
 	for ( iOpcode = 0; iOpcode < NUM_ASM_M_DIRECTIVES; iOpcode++ )
 	{
 		int iNopcode = FIRST_M_DIRECTIVE + iOpcode;
-//.		const TCHAR *pMnemonic = g_aAssemblerDirectivesMerlin[ iOpcode ].m_pMnemonic;
-		const TCHAR *pMnemonic = g_aAssemblerDirectives[ iNopcode ].m_pMnemonic;
+//.		const char *pMnemonic = g_aAssemblerDirectivesMerlin[ iOpcode ].m_pMnemonic;
+		const char *pMnemonic = g_aAssemblerDirectives[ iNopcode ].m_pMnemonic;
 		nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 		g_aAssemblerDirectives[ iNopcode ].m_nHash = nMnemonicHash;
 	}
@@ -1507,7 +1507,7 @@ bool Assemble( int iArg, int nArgs, WORD nAddress )
 
 	m_nAsmBaseAddress = nAddress;
 
-	TCHAR *pMnemonic = g_aArgs[ iArg ].sArg;
+	char *pMnemonic = g_aArgs[ iArg ].sArg;
 	Hash_t nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 
 #if DEBUG_ASSEMBLER

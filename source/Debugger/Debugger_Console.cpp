@@ -516,7 +516,7 @@ void ConsoleInputReset ()
 
 	ConsoleInputClear();
 
-//	_tcscpy( g_aConsoleInput, g_sConsolePrompt ); // Assembler can change prompt
+//	strcpy( g_aConsoleInput, g_sConsolePrompt ); // Assembler can change prompt
 	g_aConsoleInput[0] = g_sConsolePrompt[0];
 	g_nConsolePromptLen = 1;
 

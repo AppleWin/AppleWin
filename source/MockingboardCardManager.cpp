@@ -270,7 +270,10 @@ void MockingboardCardManager::UpdateSoundBuffer(void)
 		// NB. DSZeroVoiceBuffer() also zeros the sound buffer, so it's better than directly calling IDirectSoundBuffer::Play():
 		// - without zeroing, then the previous sound buffer can be heard for a fraction of a second
 		// - eg. when doing Mockingboard playback, then loading a save-state which is also doing Mockingboard playback
-		DSZeroVoiceBuffer(&m_mockingboardVoice, SOUNDBUFFER_SIZE);	// ... and Play()
+		bool bRes = DSZeroVoiceBuffer(&m_mockingboardVoice, SOUNDBUFFER_SIZE);	// ... and Play()
+		LogFileOutput("MBCardMgr: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
+		if (!bRes)
+			return;
 	}
 
 	UINT numSamples = GenerateAllSoundData();
@@ -296,14 +299,13 @@ bool MockingboardCardManager::Init(void)
 	if (!bRes)
 		return false;
 
-	m_mockingboardVoice.bActive = true;
-
 	// Volume might've been setup from value in Registry
 	if (!m_mockingboardVoice.nVolume)
 		m_mockingboardVoice.nVolume = DSBVOLUME_MAX;
 
 	hr = m_mockingboardVoice.lpDSBvoice->SetVolume(m_mockingboardVoice.nVolume);
 	LogFileOutput("MBCardMgr: SetVolume(), hr=0x%08X\n", hr);
+
 	return true;
 }
 
