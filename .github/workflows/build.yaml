@@ -71,6 +71,6 @@ jobs:
 
       - name: MSYS2 build
         run: |
-          cmake -B build
-          cmake --build build
-          ldd build/applewin_libretro.dll
+          cmake -DSTATIC_LINKING=ON -B build-static
+          cmake --build build-static
+          ldd build-static/applewin_libretro.dll
