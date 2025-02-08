@@ -295,7 +295,7 @@ target_compile_options(appleii PUBLIC
 # wildcards (*.SYM) are not supported on Windows msys2
 add_custom_command(
   TARGET appleii POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/bin/A2_BASIC.SYM ${CMAKE_SOURCE_DIR}/bin/APPLE2E.SYM ${CMAKE_BINARY_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/bin/APPLE2E.SYM ${CMAKE_SOURCE_DIR}/bin/A2_BASIC.SYM ${CMAKE_SOURCE_DIR}/bin/A2_DOS33.SYM2 ${CMAKE_BINARY_DIR}
   )
 
 configure_file(linux/config.h.in linux/config.h)
