@@ -742,10 +742,10 @@ void SSI263::RepeatPhoneme(void)
 
 		m_currentActivePhoneme &= PHONEME_MASK;			// Clear kPhonemeLeadoutFlag
 	}
-//	else	// GH#1318 - remove for now, as TR v5.1 can start with repeating phoneme in debugger 'g' mode!
-//	{
-//		Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested in MAME 0.262)
-//	}
+	else
+	{
+		Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested in MAME 0.262)
+	}
 }
 
 //-----------------------------------------------------------------------------
