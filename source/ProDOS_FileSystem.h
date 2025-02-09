@@ -77,7 +77,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		uint8_t  parent_entry_len;
 };
 
-	// Due to default compiler packing/aignment this may NOT be byte-size identical on disk but it is in the correct order.
+	// Due to default compiler packing/alignment this may NOT be byte-size identical on disk but it is in the correct order.
 	// NOTE: This does NOT need to be packed/aligned since fields are read/written on a per entry basis.
 	// See: ProDOS_GetVolumeHeader(), ProDOS_SetVolumeHeader()
 	struct ProDOS_VolumeHeader_t
@@ -107,7 +107,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		}                              ; //============
 	}                                  ; // 38      $2B
 
-	// Due to default compiler packing/aignment this may NOT be byte-size identical on disk but it is in the correct order.
+	// Due to default compiler packing/alignment this may NOT be byte-size identical on disk but it is in the correct order.
 	// NOTE: This does NOT need to be packed/aligned since fields are read/written on a per-entry basis.
 	// See: ProDOS_GetFileHeader(), ProDOS_SetFileHeader()
 	struct ProDOS_FileHeader_t
