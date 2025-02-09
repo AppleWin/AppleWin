@@ -341,6 +341,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// ------------------------------------------------------------------------
 	inline void ProDOS_PutIndexBlock ( uint8_t *pDiskBytes, int offset, int index, int block )
 	{
+#if 0
+		std::string message;
+		message = StrFormat( "File Bitmap @ Block $%04X: $%02X:  Block $%04X\n", offset/PRODOS_BLOCK_SIZE, index, block );
+		OutputDebugStringA( message.c_str() );
+#endif
 		pDiskBytes[ offset + index + 0   ] = (block >> 0) & 0xFF;
 		pDiskBytes[ offset + index + 256 ] = (block >> 8) & 0xFF;
 	}
