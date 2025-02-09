@@ -2306,6 +2306,28 @@ void Util_ProDOS_FormatFileSystem (uint8_t *pDiskBytes, const size_t nDiskSize, 
 	ProDOS_SetVolumeHeader( pDiskBytes, pVolume, PRODOS_ROOT_BLOCK );
 }
 
+// See:
+// * https://prodos8.com/docs/technote/30/
+// * 2.2.3 Sparse Files
+//   https://prodos8.com/docs/techref/file-use/
+// * B.3.6 - Sparse Files
+//   https://prodos8.com/docs/techref/file-organization/
+//===========================================================================
+bool Util_BlockIsSparse( int nOffset, const uint8_t* pFileData, const size_t nFileSize )
+{
+	const int nEnd   = (nOffset + PRODOS_BLOCK_SIZE ) >= nFileSize
+		? nOffset + (nFileSize % PRODOS_BLOCK_SIZE)
+		: nOffset +              PRODOS_BLOCK_SIZE;
+	for (int iOffset = nOffset ; iOffset < nEnd; iOffset++ )
+	{
+		if (pFileData[ iOffset ])
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 //===========================================================================
 bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const char* pVolumeName, const uint8_t* pFileData, const size_t nFileSize, ProDOS_FileHeader_t &meta)
 {
