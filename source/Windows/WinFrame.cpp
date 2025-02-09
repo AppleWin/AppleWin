@@ -2320,11 +2320,10 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 
 	ProDOS_GetVolumeHeader( pDiskBytes, pVolume, iDirBlock );
 
-#if _DEBUG
 	// Verify we have room in the current directory
-	int iFreeBlock   = ProDOS_DirGetFirstFreeEntry( pDiskBytes, pVolume, iBase );
-	assert(iFreeBlock > 0);
-#endif
+	int iFreeOffset   = ProDOS_DirGetFirstFreeEntryOffset( pDiskBytes, pVolume, iBase );
+	if (iFreeOffset <= 0)
+		return false; // disk full
 
 	int iKind        = PRODOS_KIND_DEL;
 	int nBlocksData  = (nFileSize + PRODOS_BLOCK_SIZE - 1) / PRODOS_BLOCK_SIZE;
