@@ -2373,8 +2373,10 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 		nBlocksIndex = 1; // single index = PRODOS_BLOCK_SIZE/2 = 256 data blocks
 	}
 
-	int iEntryOffset = ProDOS_DirGetFirstFreeEntry( pDiskBytes, pVolume, iBase );
-	nBlocksTotal = nBlocksIndex + nBlocksData;
+	// We simply can't set nBlocksTotal
+	//     nBlocksTotal = nBlocksIndex + nBlocksData;
+	// Since we may have sparse blocks
+	nBlocksTotal = nBlocksIndex;
 
 	for( int iBlock = 0; iBlock < nBlocksIndex; iBlock++ )
 	{
@@ -2415,6 +2417,9 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 
 	// Copy Data
 	const uint8_t *pSrc  = pFileData;
+	const size_t   nSlack = nFileSize % PRODOS_BLOCK_SIZE;
+	const size_t   nLastBlockSize = nSlack ? nSlack : PRODOS_BLOCK_SIZE;
+	const bool PRODOS_FILE_TYPE_TREE_NOT_IMPLEMENTED = false;
 
 	for( int iBlock = 0; iBlock < nBlocksData; iBlock++ )
 	{
@@ -2436,42 +2441,58 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 		uint8_t *pDst       = pDiskBytes + iDstOffset;
 		bool     bLastBlock = iBlock == (nBlocksData - 1);
 
-		if (bLastBlock)
+		// Any 512-byte block containing all zeroes doesn't need to be written to disk.
+		// Instead we write an index block of $0000 to tell ProDOS that this block is a sparse block.
+		bool bIsSparseBlock = Util_BlockIsSparse( iBlock * PRODOS_BLOCK_SIZE, pFileData, nFileSize );
+		if (bIsSparseBlock)
 		{
-			size_t nSlack = nFileSize % PRODOS_BLOCK_SIZE;
-			size_t nLastBlockSize = nSlack ? nSlack : PRODOS_BLOCK_SIZE;
-			memcpy( pDst, pSrc, nLastBlockSize );
-		}
-		else
-		{
-			memcpy( pDst, pSrc, PRODOS_BLOCK_SIZE );
-		}
-		pSrc += PRODOS_BLOCK_SIZE;
-		ProDOS_BlockSetUsed( pDiskBytes, pVolume, iDataBlock );
-
-		if (iKind == PRODOS_KIND_SAPL)
-		{
-			// Update single index block
-			if( iIndexBase )
+			if (iKind == PRODOS_KIND_SAPL)
 			{
-				ProDOS_PutIndexBlock( pDiskBytes, iIndexBase, iBlock, iDataBlock );
+				ProDOS_PutIndexBlock( pDiskBytes, iIndexBase, iBlock, 0 ); // Update File Bitmap
+			}
+			else
+			if (iKind == PRODOS_KIND_TREE)
+			{
+				assert( PRODOS_FILE_TYPE_TREE_NOT_IMPLEMENTED );
 			}
 		}
 		else
-		if (iKind == PRODOS_KIND_TREE)
 		{
-			// Update multiple index blocks
-			// NOT IMPLEMENTED
-			bool PRODOS_FILE_TYPE_TREE_NOT_IMPLEMENTED = true;
-			assert( iBlock );
+			nBlocksTotal++;
+			if (bLastBlock)
+			{
+				memcpy( pDst, pSrc, nLastBlockSize );
+			}
+			else
+			{
+				memcpy( pDst, pSrc, PRODOS_BLOCK_SIZE );
+			}
+			ProDOS_BlockSetUsed( pDiskBytes, pVolume, iDataBlock ); // Update Volume Bitmap
+
+			if (iKind == PRODOS_KIND_SAPL)
+			{
+				// Update single index block
+				if( iIndexBase )
+				{
+					ProDOS_PutIndexBlock( pDiskBytes, iIndexBase, iBlock, iDataBlock ); // Update File Bitmap
+				}
+			}
+			else
+			if (iKind == PRODOS_KIND_TREE)
+			{
+				// Update multiple index blocks
+				// NOT IMPLEMENTED
+				assert( PRODOS_FILE_TYPE_TREE_NOT_IMPLEMENTED );
+			}
 		}
+		pSrc += PRODOS_BLOCK_SIZE;
 	}
 
 	// Update directory entry with meta information
 	meta.inode     = iNode;
-	meta.blocks    = nBlocksTotal;
+	meta.blocks    = nBlocksTotal; // Note: File Entry DOES include index + non-sparse data block(s)
 	meta.dir_block = iDirBlock;
-	ProDOS_PutFileHeader( pDiskBytes, iEntryOffset, &meta );
+	ProDOS_PutFileHeader( pDiskBytes, iFreeOffset, &meta );
 
 	// Update Directory with Header
 	pVolume->file_count++;
