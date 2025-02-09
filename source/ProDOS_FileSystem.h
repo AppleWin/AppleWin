@@ -352,8 +352,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // --- ProDOS Directory Functions ---
 
+	// @param  nBase DiskImageOffset of directory
+	// returns DiskImageOffset
 	// ------------------------------------------------------------------------
-	int ProDOS_DirGetFirstFreeEntry ( uint8_t *pDiskBytes, ProDOS_VolumeHeader_t *pVolume, int nBase )
+	int ProDOS_DirGetFirstFreeEntryOffset ( uint8_t *pDiskBytes, ProDOS_VolumeHeader_t *pVolume, int nBase )
 	{
 		int iNextBlock;
 		int iPrevBlock;
