@@ -2356,6 +2356,15 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 
 	for( int iBlock = 0; iBlock < nBlocksIndex; iBlock++ )
 	{
+		// Blank Volume
+		//  0 ] Boot Apple //e
+		//  1 ] Boot Apple ///
+		//  2 \ Root Directory
+		//  3 |
+		//  4 |
+		//  5 /
+		//  6   Volume Bitmap
+		//  7   First Free Block
 		int iMetaBlock = ProDOS_BlockGetFirstFree( pDiskBytes, nDiskSize, pVolume );
 		if( !iMetaBlock )
 		{
