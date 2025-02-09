@@ -115,24 +115,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		uint8_t  kind                  ; // +0    1 $00  \ Hi nibble Storage Type
 		uint8_t  len                   ; // +0           / Lo nibble Filename Length
 		char     name[ 16 ]            ; // +1   15 $05  15 on disk but we NULL terminate for convenience
-// --- diff from volume ---		       
+// --- diff from volume ---
 		uint8_t  type                  ; //+16    1 $10              User Type
 		uint16_t inode                 ; //+17    2 $11
 		uint16_t blocks                ; //+19    2 $13
 		uint32_t size                  ; //+21    3 $15 EOF address - on disk is 3 bytes, but 32-bit for convenience
-// --- same as volume ---		       
+// --- same as volume ---
 		uint16_t date                  ; //+24    2 $18
 		uint16_t time                  ; //+26    2 $1A
 		uint8_t  cur_ver               ; //+28    1 $1C
 		uint8_t  min_ver               ; //+29    1 $1D // 0 = ProDOS 1.0
 		uint8_t  access                ; //+30    1 $1E
-// --- diff from subdir			       
+// --- diff from subdir ---
 		uint16_t aux                   ; //+31    2 $1F Load Address for Binary
-// --- diff from volume ---		       
+// --- diff from volume ---
 		uint16_t mod_date              ; //+33    2 $21
 		uint16_t mod_time              ; //+35    2 $23
 		uint16_t dir_block             ; //+37    2 $25 pointer to directory block
-								       ; //============
+		                               ; //============
 	};                                 ; // 39      $27
 
 
