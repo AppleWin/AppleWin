@@ -408,6 +408,7 @@ void SSI263::PeriodicUpdate(UINT executedCycles)
 //-----------------------------------------------------------------------------
 
 //#define DBG_SSI263_UPDATE		// NB. This outputs for all active SSI263 ring-buffers (eg. for mb-audit this may be 2 or 4)
+//#define DBG_SSI263_UPDATE_RETURN
 
 // Called by:
 // . PeriodicUpdate()
@@ -458,7 +459,10 @@ void SSI263::Update(void)
 	DWORD dwCurrentPlayCursor, dwCurrentWriteCursor;
 	HRESULT hr = SSI263SingleVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
 	if (FAILED(hr))
+	{
+		LogOutput("SSI263::Update() early return: GetCurrentPosition() failed\n");
 		return;
+	}
 
 	bool prefillBufferOnInit = false;
 
@@ -533,7 +537,12 @@ void SSI263::Update(void)
 		_ASSERT(GetLastCumulativeCycles() >= m_lastUpdateCycle);
 		updateInterval = (double)(GetLastCumulativeCycles() - m_lastUpdateCycle);
 		if (updateInterval < kMinimumUpdateInterval)
+		{
+#ifdef DBG_SSI263_UPDATE_RETURN
+			LogOutput("SSI263::Update() early return: updateInterval < kMinimumUpdateInterval\n");
+#endif
 			return;
+		}
 		if (updateInterval > kMaximumUpdateInterval)
 			updateInterval = kMaximumUpdateInterval;
 
@@ -590,6 +599,9 @@ void SSI263::Update(void)
 			LogOutput("%010.3f: [SSUpdt%1d]    Reset ring-buffer\n", fTicksSecs, m_device);
 #endif
 		}
+#ifdef DBG_SSI263_UPDATE_RETURN
+		LogOutput("SSI263::Update() early return: nNumSamples == 0\n");
+#endif
 		return;
 	}
 
@@ -654,7 +666,9 @@ void SSI263::Update(void)
 		{
 			memset(pMixBuffer, 0, zeroSize * sizeof(short));
 
-			if (!prefillBufferOnInit)
+			// Only dec m_phonemeLeadoutLength when m_phonemeAccurateLengthRemaining==0
+			// . otherwise when single-stepping can get into the situation where m_phonemeLengthRemaining==0 && m_phonemeAccurateLengthRemaining!=0
+			if (!prefillBufferOnInit && !m_phonemeAccurateLengthRemaining)
 				m_phonemeLeadoutLength -= (m_phonemeLeadoutLength > zeroSize) ? zeroSize : m_phonemeLeadoutLength;
 		}
 	}
@@ -669,7 +683,10 @@ void SSI263::Update(void)
 		&pDSLockedBuffer0, &dwDSLockedBufferSize0,
 		&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 	if (FAILED(hr))
+	{
+		LogOutput("SSI263::Update() early return: DSGetLock() failed\n");
 		return;
+	}
 
 	memcpy(pDSLockedBuffer0, &m_mixBufferSSI263[0], dwDSLockedBufferSize0);
 	if (pDSLockedBuffer1)
@@ -679,7 +696,10 @@ void SSI263::Update(void)
 	hr = SSI263SingleVoice.lpDSBvoice->Unlock((void*)pDSLockedBuffer0, dwDSLockedBufferSize0,
 											  (void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
 	if (FAILED(hr))
+	{
+		LogOutput("SSI263::Update() early return: UnLock() failed\n");
 		return;
+	}
 
 	m_byteOffset = (m_byteOffset + (uint32_t)nNumSamples*sizeof(short)*m_kNumChannels) % m_kDSBufferByteSize;
 
@@ -715,7 +735,7 @@ void SSI263::RepeatPhoneme(void)
 
 	if (!m_isVotraxPhoneme)
 	{
-//		_ASSERT(m_currentActivePhoneme & kPhonemeLeadoutFlag);	// Remove for now, as ASSERT triggers for mb-audit v1.56 in debugger stepping ('g') mode.
+		_ASSERT(m_currentActivePhoneme & kPhonemeLeadoutFlag);
 
 		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
 			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
