@@ -126,10 +126,10 @@ namespace DIMouse
 		{
 			DirectInputUninit(hDlg);
 			LogFileOutput("DirectInputInit: DirectInputUninit()n");
-			//MessageBox( hDlg, _T("SetCooperativeLevel() returned DIERR_UNSUPPORTED.\n")
-			//                  _T("For security reasons, background exclusive mouse\n")
-			//                  _T("access is not allowed."), 
-			//                  _T("Mouse"), MB_OK );
+			//MessageBox( hDlg, "SetCooperativeLevel() returned DIERR_UNSUPPORTED.\n"
+			//                  "For security reasons, background exclusive mouse\n"
+			//                  "access is not allowed.",
+			//                  "Mouse", MB_OK );
 			return S_OK;
 		}
 
