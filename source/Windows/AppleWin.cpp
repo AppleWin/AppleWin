@@ -353,7 +353,7 @@ static void GetProgramDirectory(void)
 	int loop = g_sProgramDir.size();
 	while (loop--)
 	{
-		if ((g_sProgramDir[loop] == TEXT(PATH_SEPARATOR)) || (g_sProgramDir[loop] == TEXT(':')))
+		if ((g_sProgramDir[loop] == PATH_SEPARATOR) || (g_sProgramDir[loop] == ':'))
 		{
 			g_sProgramDir.resize(loop + 1);  // this reduces the size
 			break;
@@ -506,7 +506,7 @@ static void ExceptionHandler(const char* pError)
 {
 	GetFrame().FrameMessageBox(
 				pError,
-				TEXT("Runtime Exception"),
+				"Runtime Exception",
 				MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
 	LogFileOutput("Runtime Exception: %s\n", pError);
@@ -605,7 +605,7 @@ static void GetAppleWinVersion(void)
             VS_FIXEDFILEINFO* pFixedFileInfo;
             UINT pFixedFileInfoLen;
 
-            VerQueryValue(pVerInfoBlock, TEXT("\\"), (LPVOID*) &pFixedFileInfo, (PUINT) &pFixedFileInfoLen);
+            VerQueryValue(pVerInfoBlock, "\\", (LPVOID*) &pFixedFileInfo, (PUINT) &pFixedFileInfoLen);
 
             // Construct version string from fixed file info block
 
@@ -955,7 +955,7 @@ static void RepeatInitialization(void)
 
 	if (!g_bSysClkOK)
 	{
-		GetFrame().FrameMessageBox("DirectX failed to create SystemClock instance", TEXT("AppleWin Error"), MB_OK);
+		GetFrame().FrameMessageBox("DirectX failed to create SystemClock instance", "AppleWin Error", MB_OK);
 		g_cmdLine.bShutdown = true;
 	}
 
@@ -966,7 +966,7 @@ static void RepeatInitialization(void)
 						: "Unsupported -rom and -f8rom being used at the same time\n";
 
 		LogFileOutput("%s", msg.c_str());
-		GetFrame().FrameMessageBox(msg.c_str(), TEXT("AppleWin Error"), MB_OK);
+		GetFrame().FrameMessageBox(msg.c_str(), "AppleWin Error", MB_OK);
 		g_cmdLine.bShutdown = true;
 	}
 

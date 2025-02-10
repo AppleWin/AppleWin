@@ -234,9 +234,9 @@ bool String2Address( LPCTSTR pText, WORD & nAddress_ )
 		pText = sHexApple;
 	}
 
-	if (pText[0] == TEXT('0'))
+	if (pText[0] == '0')
 	{
-		if ((pText[1] == TEXT('X')) || pText[1] == TEXT('x'))
+		if ((pText[1] == 'X') || pText[1] == 'x')
 		{
 			if (!TextIsHexString( pText+2))
 				return false;
@@ -890,7 +890,7 @@ void SymbolUpdate ( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, W
 			{
 				if (bRemoveSymbol)
 				{
-					ConsoleBufferPush( TEXT(" Removing symbol." ) );
+					ConsoleBufferPush( " Removing symbol." );
 				}
 
 				g_aSymbols[ eSymbolTable ].erase( nAddressPrev );
@@ -911,7 +911,7 @@ void SymbolUpdate ( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, W
 		{
 			if (bRemoveSymbol)
 			{
-				ConsoleBufferPush( TEXT(" Symbol not in table." ) );
+				ConsoleBufferPush( " Symbol not in table." );
 			}
 		}
 
@@ -1034,7 +1034,7 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				{
 					// Shouldn't have multiple symbol tables selected
 //					nArgs = _Arg_1( eSymbolsTable );
-					ConsoleBufferPush( TEXT(" Error: Unknown Symbol Table Type") );
+					ConsoleBufferPush( " Error: Unknown Symbol Table Type" );
 					return ConsoleUpdate();
 				}
 			}
@@ -1054,7 +1054,7 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				}
 				else
 				{
-					ConsoleBufferPush( TEXT(" Error: Unknown Symbol Table Type") );
+					ConsoleBufferPush( " Error: Unknown Symbol Table Type" );
 				}
 				return ConsoleUpdate();
 			}

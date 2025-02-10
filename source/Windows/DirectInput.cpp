@@ -240,7 +240,7 @@ namespace DIMouse
 			if( hr == DIERR_OTHERAPPHASPRIO || 
 				hr == DIERR_NOTACQUIRED ) 
 			{
-				//SetDlgItemText( hDlg, IDC_DATA, TEXT("Unacquired") );
+				//SetDlgItemText( hDlg, IDC_DATA, "Unacquired" );
 			}
 
 			// hr may be DIERR_OTHERAPPHASPRIO or other errors.  This

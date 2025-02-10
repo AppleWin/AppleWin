@@ -204,7 +204,7 @@ void ParallelPrinterCard::GetRegistryConfig(void)
 	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_APPEND, TRUE, &dwTmp))
 		SetPrinterAppend(dwTmp ? true : false);
 
-	if (RegLoadString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, 1, szFilename, MAX_PATH, TEXT("")))
+	if (RegLoadString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, 1, szFilename, MAX_PATH, ""))
 		SetFilename(szFilename);
 
 	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_IDLE_LIMIT, TRUE, &dwTmp))

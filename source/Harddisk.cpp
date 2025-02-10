@@ -297,7 +297,7 @@ void HarddiskInterfaceCard::LoadLastDiskImage(const int drive)
 	char pathname[MAX_PATH];
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")) && (pathname[0] != 0))
+	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, "") && (pathname[0] != 0))
 	{
 		m_saveDiskImage = false;
 		bool res = Insert(drive, pathname);
@@ -466,7 +466,7 @@ bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
 
 	StringCbCopy(filename, MAX_PATH, pszFilename);
 
-	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, directory, MAX_PATH, TEXT(""));
+	RegLoadString(REG_PREFS, REGVALUE_PREF_HDV_START_DIR, 1, directory, MAX_PATH, "");
 	std::string title = StrFormat("Select HDV Image For HDD %d", drive + 1);
 
 	OPENFILENAME ofn;
@@ -474,8 +474,8 @@ bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = GetFrame().g_hFrameWindow;
 	ofn.hInstance       = GetFrame().g_hInstance;
-	ofn.lpstrFilter     = TEXT("Hard Disk Images (*.hdv,*.po,*.2mg,*.2img,*.gz,*.zip)\0*.hdv;*.po;*.2mg;*.2img;*.gz;*.zip\0")
-						  TEXT("All Files\0*.*\0");
+	ofn.lpstrFilter     = "Hard Disk Images (*.hdv,*.po,*.2mg,*.2img,*.gz,*.zip)\0*.hdv;*.po;*.2mg;*.2img;*.gz;*.zip\0"
+						  "All Files\0*.*\0";
 	ofn.lpstrFile       = filename;
 	ofn.nMaxFile        = MAX_PATH;
 	ofn.lpstrInitialDir = directory;
@@ -488,7 +488,7 @@ bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
 	{
 		std::string openFilename = filename;
 		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
-			openFilename += TEXT(".hdv");
+			openFilename += ".hdv";
 		
 		if (Insert(drive, openFilename))
 		{
@@ -505,7 +505,7 @@ bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
 
 bool HarddiskInterfaceCard::Select(const int iDrive)
 {
-	return SelectImage(iDrive, TEXT(""));
+	return SelectImage(iDrive, "");
 }
 
 //===========================================================================
@@ -1443,7 +1443,7 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 		userSelectedImageFolder |= LoadSnapshotHDDUnit(yamlLoadHelper, i, version);
 
 	if (!userSelectedImageFolder)
-		RegSaveString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, Snapshot_GetPath());
+		RegSaveString(REG_PREFS, REGVALUE_PREF_HDV_START_DIR, 1, Snapshot_GetPath());
 
 	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 
