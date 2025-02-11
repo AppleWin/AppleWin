@@ -99,9 +99,8 @@ public:
 	void Votrax_Write(BYTE nValue);
 	void SetVotraxPhoneme(bool value) { m_isVotraxPhoneme = value; }
 
-	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, UINT subunit);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version, UINT subunit);
-	void SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 
 private:
 	void Play(unsigned int nPhoneme);
@@ -118,6 +117,7 @@ private:
 	bool Init(void);
 	bool DSInit(void);
 
+	void SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	void SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 	static const BYTE m_Votrax2SSI263[/*64*/];

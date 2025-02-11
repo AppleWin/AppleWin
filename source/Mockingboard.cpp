@@ -1224,9 +1224,7 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 		pMB->sy6522.SaveSnapshot(yamlSaveHelper);
 		AY8910_SaveSnapshot(yamlSaveHelper, subunit, AY8913_DEVICE_A, std::string(""));
-		pMB->ssi263.SaveSnapshot(yamlSaveHelper);
-		if (subunit == 0)	// has SC01
-			pMB->ssi263.SC01_SaveSnapshot(yamlSaveHelper);
+		pMB->ssi263.SaveSnapshot(yamlSaveHelper, subunit);
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state[0]);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister[0]);	// save all 8 bits (even though top 4 bits should be 0)
@@ -1335,9 +1333,7 @@ void MockingboardCard::Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		pMB->sy6522.SaveSnapshot(yamlSaveHelper);
 		AY8910_SaveSnapshot(yamlSaveHelper, subunit, AY8913_DEVICE_A, std::string("-A"));
 		AY8910_SaveSnapshot(yamlSaveHelper, subunit, AY8913_DEVICE_B, std::string("-B"));
-		pMB->ssi263.SaveSnapshot(yamlSaveHelper);
-		if (subunit == 0)	// has SC01
-			pMB->ssi263.SC01_SaveSnapshot(yamlSaveHelper);
+		pMB->ssi263.SaveSnapshot(yamlSaveHelper, subunit);
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state[0]);
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE_B, pMB->state[1]);
