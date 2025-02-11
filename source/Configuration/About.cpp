@@ -64,7 +64,7 @@ static INT_PTR CALLBACK DlgProcAbout(HWND hWnd, UINT message, WPARAM wparam, LPA
 
 	case WM_INITDIALOG:
 		{
-			HICON hIcon = LoadIcon(GetFrame().g_hInstance, TEXT("APPLEWIN_ICON"));
+			HICON hIcon = LoadIcon(GetFrame().g_hInstance, "APPLEWIN_ICON");
 			SendDlgItemMessage(hWnd, IDC_APPLEWIN_ICON, STM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(hIcon));
 
 			std::string strAppleWinVersion = "AppleWin v" + g_VERSIONSTRING;

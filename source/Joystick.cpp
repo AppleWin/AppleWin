@@ -809,22 +809,22 @@ BOOL JoySetEmulationType(HWND window, uint32_t newtype, int nJoystickNumber, con
     if (nJoyID < 0 || joyGetDevCaps(nJoyID, &caps, sizeof(JOYCAPS)) != JOYERR_NOERROR)
     {
       MessageBox(window,
-                 TEXT("The emulator is unable to read your PC joystick.  ")
-                 TEXT("Ensure that your game port is configured properly, ")
-                 TEXT("that the joystick is firmly plugged in, and that ")
-                 TEXT("you have a joystick driver installed."),
-                 TEXT("Configuration"),
+                 "The emulator is unable to read your PC joystick.  "
+                 "Ensure that your game port is configured properly, "
+                 "that the joystick is firmly plugged in, and that "
+                 "you have a joystick driver installed.",
+                 "Configuration",
                  MB_ICONEXCLAMATION | MB_SETFOREGROUND);
       return 0;
     }
     if ((joyinfo[newtype] == DEVICE_JOYSTICK_THUMBSTICK2) && (caps.wNumAxes < 4))
     {
       MessageBox(window,
-                 TEXT("The emulator is unable to read thumbstick 2.  ")
-                 TEXT("Ensure that your game port is configured properly, ")
-                 TEXT("that the joystick is firmly plugged in, and that ")
-                 TEXT("you have a joystick driver installed."),
-                 TEXT("Configuration"),
+                 "The emulator is unable to read thumbstick 2.  "
+                 "Ensure that your game port is configured properly, "
+                 "that the joystick is firmly plugged in, and that "
+                 "you have a joystick driver installed.",
+                 "Configuration",
                  MB_ICONEXCLAMATION | MB_SETFOREGROUND);
       return 0;
     }
@@ -836,22 +836,22 @@ BOOL JoySetEmulationType(HWND window, uint32_t newtype, int nJoystickNumber, con
 	{
 		// Shouldn't be necessary, since Property Sheet's logic should prevent this option being given to the user.
 	  MessageBox(window,
-				 TEXT("Mouse interface card is enabled - unable to use mouse for joystick emulation."),
-				 TEXT("Configuration"),
+				 "Mouse interface card is enabled - unable to use mouse for joystick emulation.",
+				 "Configuration",
 				 MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 	  return 0;
 	}
 
     MessageBox(window,
-               TEXT("To begin emulating a joystick with your mouse, move ")
-               TEXT("the mouse cursor over the emulated screen of a running ")
-               TEXT("program and click the left mouse button.  During the ")
-               TEXT("time the mouse is emulating a joystick, you will not ")
-               TEXT("be able to use it to perform mouse functions, and the ")
-               TEXT("mouse cursor will not be visible.  To end joystick ")
-               TEXT("emulation and regain the mouse cursor, click the left ")
-               TEXT("mouse button while pressing Ctrl."),
-               TEXT("Configuration"),
+               "To begin emulating a joystick with your mouse, move "
+               "the mouse cursor over the emulated screen of a running "
+               "program and click the left mouse button.  During the "
+               "time the mouse is emulating a joystick, you will not "
+               "be able to use it to perform mouse functions, and the "
+               "mouse cursor will not be visible.  To end joystick "
+               "emulation and regain the mouse cursor, click the left "
+               "mouse button while pressing Ctrl.",
+               "Configuration",
                MB_ICONINFORMATION | MB_SETFOREGROUND);
   }
   else if (joyinfo[newtype] == DEVICE_KEYBOARD)
@@ -859,13 +859,13 @@ BOOL JoySetEmulationType(HWND window, uint32_t newtype, int nJoystickNumber, con
 	  if (newtype == J0C_KEYBD_CURSORS || newtype == J1C_KEYBD_CURSORS)
 	  {
 			MessageBox(window,
-						TEXT("Using cursor keys to emulate a joystick can cause conflicts.\n\n")
-						TEXT("Be aware that 'cursor-up' = CTRL+K, and 'cursor-down' = CTRL+J.\n")
-						TEXT("EG. Lode Runner uses CTRL+K/J to switch between keyboard/joystick modes ")
-						TEXT("(and cursor-left/right to control speed).\n\n")
-						TEXT("Also if cursor keys are blocked from being read from the Apple keyboard ")
-						TEXT("then even simple AppleSoft command-line editing (cursor left/right) will not work."),
-						TEXT("Configuration"),
+						"Using cursor keys to emulate a joystick can cause conflicts.\n\n"
+						"Be aware that 'cursor-up' = CTRL+K, and 'cursor-down' = CTRL+J.\n"
+						"EG. Lode Runner uses CTRL+K/J to switch between keyboard/joystick modes "
+						"(and cursor-left/right to control speed).\n\n"
+						"Also if cursor keys are blocked from being read from the Apple keyboard "
+						"then even simple AppleSoft command-line editing (cursor left/right) will not work.",
+						"Configuration",
 						MB_ICONINFORMATION | MB_SETFOREGROUND);
 	  }
   }

@@ -457,7 +457,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			{
 				std::string msg = "Failed to load video rom (not found or not exactly 2/4/8/16KiB)\n";
 				LogFileOutput("%s", msg.c_str());
-				GetFrame().FrameMessageBox(msg.c_str(), TEXT("AppleWin Error"), MB_OK);
+				GetFrame().FrameMessageBox(msg.c_str(), "AppleWin Error", MB_OK);
 			}
 			else
 			{
@@ -681,7 +681,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			if (!SNESMAXCard::ParseControllerMappingFile(joyNum, lpCmdLine, errorMsg))
 			{
 				LogFileOutput("%s", errorMsg.c_str());
-				GetFrame().FrameMessageBox(errorMsg.c_str(), TEXT("AppleWin Error"), MB_OK);
+				GetFrame().FrameMessageBox(errorMsg.c_str(), "AppleWin Error", MB_OK);
 			}
 		}
 		else if (strcmp(lpCmdLine, "-wav-speaker") == 0)

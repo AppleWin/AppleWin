@@ -444,7 +444,7 @@ static void Snapshot_LoadState_v2(void)
 	{
 		frame.FrameMessageBox(
 					szMessage.what(),
-					TEXT("Load State"),
+					"Load State",
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
 		if (restart)
@@ -464,7 +464,7 @@ void Snapshot_LoadState()
 		GetFrame().FrameMessageBox(
 					"Save-state v1 no longer supported.\n"
 					"Please load using AppleWin 1.27, and re-save as a v2 state file.",
-					TEXT("Load State"),
+					"Load State",
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
 		return;
@@ -531,7 +531,7 @@ void Snapshot_SaveState(void)
 	{
 		GetFrame().FrameMessageBox(
 					szMessage.what(),
-					TEXT("Save State"),
+					"Save State",
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 	}
 }

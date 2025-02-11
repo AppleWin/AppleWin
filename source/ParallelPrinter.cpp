@@ -60,7 +60,7 @@ bool ParallelPrinterCard::CheckPrint(void)
 	{
 		//char filepath[MAX_PATH * 2];
 		//strncpy(filepath, g_sProgramDir, MAX_PATH);
-		//_tcsncat(filepath, _T("Printer.txt"), MAX_PATH);
+		//_tcsncat(filepath, "Printer.txt", MAX_PATH);
 		//file = fopen(filepath, "wb");
 		if (m_bPrinterAppend )
 			m_file = fopen(ParallelPrinterCard::GetFilename().c_str(), "ab");
@@ -204,7 +204,7 @@ void ParallelPrinterCard::GetRegistryConfig(void)
 	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_APPEND, TRUE, &dwTmp))
 		SetPrinterAppend(dwTmp ? true : false);
 
-	if (RegLoadString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, 1, szFilename, MAX_PATH, TEXT("")))
+	if (RegLoadString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, 1, szFilename, MAX_PATH, ""))
 		SetFilename(szFilename);
 
 	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_IDLE_LIMIT, TRUE, &dwTmp))

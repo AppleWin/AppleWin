@@ -93,8 +93,8 @@ uint32_t CPropertySheet::GetVolumeMax()
 // Called when F11/F12 is pressed
 bool CPropertySheet::SaveStateSelectImage(HWND hWindow, bool bSave)
 {
-	if(m_PropertySheetHelper.SaveStateSelectImage(hWindow, bSave ? TEXT("Select Save State file")
-																 : TEXT("Select Load State file"), bSave))
+	if(m_PropertySheetHelper.SaveStateSelectImage(hWindow, bSave ? "Select Save State file"
+																 : "Select Load State file", bSave))
 	{
 		m_PropertySheetHelper.SaveStateUpdate();
 		return true;

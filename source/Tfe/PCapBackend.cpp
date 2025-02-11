@@ -118,7 +118,7 @@ std::string PCapBackend::GetRegistryInterface(UINT slot)
 {
     char interfaceName[MAX_PATH];
     std::string regSection = RegGetConfigSlotSection(slot);
-    RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, interfaceName, sizeof(interfaceName), TEXT(""));
+    RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, interfaceName, sizeof(interfaceName), "");
     return interfaceName;
 }
 

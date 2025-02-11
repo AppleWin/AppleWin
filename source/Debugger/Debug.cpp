@@ -145,7 +145,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	std::vector<int>       g_vPotentialCommands; // global, since TAB-completion also needs
 	std::vector<Command_t> g_vSortedCommands;
 
-//	static const char g_aFlagNames[_6502_NUM_FLAGS+1] = TEXT("CZIDBRVN");// Reversed since arrays are from left-to-right
+//	static const char g_aFlagNames[_6502_NUM_FLAGS+1] = "CZIDBRVN";// Reversed since arrays are from left-to-right
 
 
 // Cursor (Console Input) _____________________________________________________
@@ -178,17 +178,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	int  g_nDisasmWinHeight = 0;
 
-//	char g_aConfigDisasmAddressColon[] = TEXT(" :");
+//	char g_aConfigDisasmAddressColon[] = " :";
 
 	extern const int WINDOW_DATA_BYTES_PER_LINE = 8;
 
 #if OLD_FONT
 // Font
-	char     g_sFontNameDefault[ MAX_FONT_NAME ] = TEXT("Courier New");
-	char     g_sFontNameConsole[ MAX_FONT_NAME ] = TEXT("Courier New");
-	char     g_sFontNameDisasm [ MAX_FONT_NAME ] = TEXT("Courier New");
-	char     g_sFontNameInfo   [ MAX_FONT_NAME ] = TEXT("Courier New");
-	char     g_sFontNameBranch [ MAX_FONT_NAME ] = TEXT("Webdings");
+	char     g_sFontNameDefault[ MAX_FONT_NAME ] = "Courier New";
+	char     g_sFontNameConsole[ MAX_FONT_NAME ] = "Courier New";
+	char     g_sFontNameDisasm [ MAX_FONT_NAME ] = "Courier New";
+	char     g_sFontNameInfo   [ MAX_FONT_NAME ] = "Courier New";
+	char     g_sFontNameBranch [ MAX_FONT_NAME ] = "Webdings";
 	HFONT     g_hFontWebDings  = (HFONT)0;
 #endif
 	int       g_iFontSpacing = FONT_SPACING_CLEAN;
@@ -246,7 +246,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	ProfileOpmode_t g_aProfileOpmodes[ NUM_OPMODES ];
 	unsigned __int64 g_nProfileBeginCycles = 0; // g_nCumulativeCycles // PROFILE RESET
 
-	const std::string g_FileNameProfile = TEXT("Profile.txt"); // changed from .csv to .txt since Excel doesn't give import options.
+	const std::string g_FileNameProfile = "Profile.txt"; // changed from .csv to .txt since Excel doesn't give import options.
 	int   g_nProfileLine = 0;
 	char  g_aProfileLine[ NUM_PROFILE_LINES ][ CONSOLE_WIDTH ];
 
@@ -742,7 +742,7 @@ Update_t CmdBookmarkSave (int nArgs)
 
 		if (ConfigSave_BufferToDisk( g_aArgs[ 1 ].sArg, CONFIG_SAVE_FILE_CREATE ))
 		{
-			ConsoleBufferPush( TEXT( "Saved." ) );
+			ConsoleBufferPush(  "Saved."  );
 			return ConsoleUpdate();
 		}
 	}
@@ -786,7 +786,7 @@ Update_t CmdBenchmarkStop (int nArgs)
 	uint32_t currtime = GetTickCount();
 	while ((extbench = GetTickCount()) != currtime)
 		; // intentional busy-waiting
-	KeybQueueKeypress(TEXT(' ') ,ASCII);
+	KeybQueueKeypress(' ' ,ASCII);
 
 	return UPDATE_ALL; // 0;
 }
@@ -812,7 +812,7 @@ Update_t CmdProfile (int nArgs)
 		{
 			ProfileReset();
 			g_bProfiling = 1;
-			ConsoleBufferPush( TEXT(" Resetting profile data." ) );
+			ConsoleBufferPush( " Resetting profile data." );
 		}
 		else
 		{
@@ -1007,14 +1007,14 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 	if (nArgs > 1)
 		return HelpLastCommand();
 
-	char sAction[ CONSOLE_WIDTH ] = TEXT("Current"); // default to display
+	char sAction[ CONSOLE_WIDTH ] = "Current"; // default to display
 
 	if (nArgs == 1)
 	{
 		int iOpcode = g_aArgs[ 1] .nValue;
 		g_iDebugBreakOnOpcode = iOpcode & 0xFF;
 
-		strcpy( sAction, TEXT("Setting") );
+		strcpy( sAction, "Setting" );
 
 		if (iOpcode >= NUM_OPCODES)
 		{
@@ -1062,12 +1062,12 @@ Update_t CmdBreakOnInterrupt (int nArgs)
 	if (nArgs == 1 && nActive == -1)
 		return HelpLastCommand();
 
-	char sAction[CONSOLE_WIDTH] = TEXT("Current"); // default to display
+	char sAction[CONSOLE_WIDTH] = "Current"; // default to display
 
 	if (nArgs == 1)
 	{
 		g_bDebugBreakOnInterrupt = (iParam == PARAM_ON) ? true : false;
-		strcpy(sAction, TEXT("Setting"));
+		strcpy(sAction, "Setting");
 	}
 
 	ConsoleBufferPushFormat("%s Break on Interrupt: %s"
@@ -2074,7 +2074,7 @@ Update_t CmdBreakpointSave (int nArgs)
 
 		if (ConfigSave_BufferToDisk( g_aArgs[ 1 ].sArg, CONFIG_SAVE_FILE_CREATE ))
 		{
-			ConsoleBufferPush( TEXT( "Saved." ) );
+			ConsoleBufferPush(  "Saved."  );
 			return ConsoleUpdate();
 		}
 	}
@@ -2492,7 +2492,7 @@ Update_t CmdUnassemble (int nArgs)
 Update_t CmdKey (int nArgs)
 {
 	KeybQueueKeypress(
-		nArgs ? g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0] : TEXT(' '), ASCII); // FIXME!!!
+		nArgs ? g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0] : ' ', ASCII); // FIXME!!!
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
@@ -2557,7 +2557,7 @@ Update_t CmdNOP (int nArgs)
 Update_t CmdOut (int nArgs)
 {
 //  if ((!nArgs) ||
-//      ((g_aArgs[1].sArg[0] != TEXT('0')) && (!g_aArgs[1].nValue) && (!GetAddress(g_aArgs[1].sArg))))
+//      ((g_aArgs[1].sArg[0] != '0') && (!g_aArgs[1].nValue) && (!GetAddress(g_aArgs[1].sArg))))
 //     return DisplayHelp(CmdInput);
 
 	if (!nArgs)
@@ -2645,7 +2645,7 @@ Update_t CmdConfigColorMono (int nArgs)
 		if (iParam == PARAM_RESET)
 		{
 			ConfigColorsReset();
-			ConsoleBufferPush( TEXT(" Resetting colors." ) );
+			ConsoleBufferPush( " Resetting colors." );
 		}
 		else
 		if (iParam == PARAM_SAVE)
@@ -3085,7 +3085,7 @@ Update_t CmdCursorLineDown (int nArgs)
 
 		if (g_bDisasmCurBad)
 		{
-//	MessageBox( NULL, TEXT("Bad Disassembly of opcodes"), TEXT("Debugger"), MB_OK );
+//	MessageBox( NULL, "Bad Disassembly of opcodes", "Debugger", MB_OK );
 
 //			g_nDisasmCurAddress = nCur;
 //			g_bDisasmCurBad = false;
@@ -3619,12 +3619,12 @@ Update_t CmdFlagSet (int nArgs)
 //===========================================================================
 Update_t CmdFlag (int nArgs)
 {
-//	if (g_aArgs[0].sArg[0] == g_aParameters[PARAM_FLAG_CLEAR].aName[0] ) // TEXT('R')
+//	if (g_aArgs[0].sArg[0] == g_aParameters[PARAM_FLAG_CLEAR].aName[0] ) // 'R'
 	if (g_iCommand == CMD_FLAG_CLEAR)
 		return CmdFlagClear( nArgs );
 	else
 	if (g_iCommand == CMD_FLAG_SET)
-//	if (g_aArgs[0].sArg[0] == g_aParameters[PARAM_FLAG_SET].aName[0] ) // TEXT('S')
+//	if (g_aArgs[0].sArg[0] == g_aParameters[PARAM_FLAG_SET].aName[0] ) // 'S'
 		return CmdFlagSet( nArgs );
 
 	return UPDATE_ALL; // 0;
@@ -3990,7 +3990,7 @@ Update_t CmdMemoryEdit (int nArgs)
 Update_t CmdMemoryEnterByte (int nArgs)
 {
 	if ((nArgs < 2) ||
-		((g_aArgs[2].sArg[0] != TEXT('0')) && (!g_aArgs[2].nValue))) // arg2 not numeric or not specified
+		((g_aArgs[2].sArg[0] != '0') && (!g_aArgs[2].nValue))) // arg2 not numeric or not specified
 	{
 		Help_Arg_1( CMD_MEMORY_ENTER_WORD );
 	}
@@ -4020,7 +4020,7 @@ Update_t CmdMemoryEnterByte (int nArgs)
 Update_t CmdMemoryEnterWord (int nArgs)
 {
 	if ((nArgs < 2) ||
-		((g_aArgs[2].sArg[0] != TEXT('0')) && (!g_aArgs[2].nValue))) // arg2 not numeric or not specified
+		((g_aArgs[2].sArg[0] != '0') && (!g_aArgs[2].nValue))) // arg2 not numeric or not specified
 	{
 		Help_Arg_1( CMD_MEMORY_ENTER_WORD );
 	}
@@ -4327,13 +4327,13 @@ Update_t CmdMemoryLoad (int nArgs)
 				{
 					*pDst++ = *pSrc++;
 				}
-				ConsoleBufferPush( TEXT( "Loaded." ) );
+				ConsoleBufferPush(  "Loaded."  );
 			}
 			fclose( hFile );
 		}
 		else
 		{
-			ConsoleBufferPush( TEXT( "ERROR: Bad filename" ) );
+			ConsoleBufferPush(  "ERROR: Bad filename"  );
 
 			CmdConfigGetDebugDir( 0 );
 
@@ -4496,7 +4496,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
 	if (!pMemBankBase)
 	{
-		ConsoleBufferPush( TEXT( "Error: Bank out of range." ) );
+		ConsoleBufferPush(  "Error: Bank out of range."  );
 		return ConsoleUpdate();
 	}
 
@@ -4695,7 +4695,7 @@ Update_t CmdMemorySave (int nArgs)
 				FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
 				if (hFile)
 				{
-					ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
+					ConsoleBufferPush(  "Warning: File already exists.  Overwriting."  );
 					fclose( hFile );
 				}
 
@@ -4705,11 +4705,11 @@ Update_t CmdMemorySave (int nArgs)
 					size_t nWrote = fwrite( pMemory, nAddressLen, 1, hFile );
 					if (nWrote == 1) // (size_t)nAddressLen)
 					{
-						ConsoleBufferPush( TEXT( "Saved." ) );
+						ConsoleBufferPush(  "Saved."  );
 					}
 					else
 					{
-						ConsoleBufferPush( TEXT( "Error saving." ) );
+						ConsoleBufferPush(  "Error saving."  );
 					}
 					fclose( hFile );
 				}
@@ -4755,7 +4755,7 @@ Update_t CmdMemorySave (int nArgs)
 		}
 		else
 		{
-			ConsoleBufferPush( TEXT( "Last saved: none" ) );
+			ConsoleBufferPush(  "Last saved: none"  );
 		}				
 	}
 	else
@@ -4835,14 +4835,14 @@ Update_t CmdMemorySave (int nArgs)
 			const BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
 			if (!pMemBankBase)
 			{
-				ConsoleBufferPush( TEXT( "Error: Bank out of range." ) );
+				ConsoleBufferPush(  "Error: Bank out of range."  );
 				return ConsoleUpdate();
 			}
 
 			FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 			if (hFile)
 			{
-				ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
+				ConsoleBufferPush(  "Warning: File already exists.  Overwriting."  );
 				fclose( hFile );
 				// TODO: BUG: Is this a bug/feature that we can over-write files and the user has no control over that?
 			}
@@ -4853,17 +4853,17 @@ Update_t CmdMemorySave (int nArgs)
 				size_t nWrote = fwrite( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
 				if (nWrote == 1)
 				{
-					ConsoleBufferPush( TEXT( "Saved." ) );
+					ConsoleBufferPush(  "Saved."  );
 				}
 				else
 				{
-					ConsoleBufferPush( TEXT( "Error saving." ) );
+					ConsoleBufferPush(  "Error saving."  );
 				}
 				fclose( hFile );
 			}
 			else
 			{
-				ConsoleBufferPush( TEXT( "Error opening file." ) );
+				ConsoleBufferPush(  "Error opening file."  );
 			}
 		}
 	}
@@ -5466,7 +5466,7 @@ Update_t CmdNTSC (int nArgs)
 		if (iParam == PARAM_RESET)
 		{
 			NTSC_VideoInitChroma();
-			ConsoleBufferPush( TEXT(" Resetting NTSC palette." ) );
+			ConsoleBufferPush( " Resetting NTSC palette." );
 		}
 		else
 		if (iParam == PARAM_SAVE)
@@ -5503,12 +5503,12 @@ Update_t CmdNTSC (int nArgs)
 					ConsoleFilename::update( "Saved" );
 				}
 				else
-					ConsoleBufferPush( TEXT( "Error saving." ) );
+					ConsoleBufferPush(  "Error saving."  );
 			}
 			else
 			{
 					ConsoleFilename::update( "File" );
-					ConsoleBufferPush( TEXT( "Error couldn't open file for writing." ) );
+					ConsoleBufferPush( "Error couldn't open file for writing."  );
 			}
 		}
 		else
@@ -6064,7 +6064,7 @@ Update_t CmdMemorySearchHex (int nArgs)
 //===========================================================================
 Update_t CmdRegisterSet (int nArgs)
 {
-	if (nArgs < 2) // || ((g_aArgs[2].sArg[0] != TEXT('0')) && !g_aArgs[2].nValue))
+	if (nArgs < 2) // || ((g_aArgs[2].sArg[0] != '0') && !g_aArgs[2].nValue))
 	{
 		return Help_Arg_1( CMD_REGISTER_SET );
 	}

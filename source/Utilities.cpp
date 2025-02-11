@@ -56,7 +56,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 static void LoadConfigOldJoystick_v1(const UINT uJoyNum)
 {
 	uint32_t dwOldJoyType;
-	if (!REGLOAD(TEXT(uJoyNum==0 ? REGVALUE_OLD_JOYSTICK0_EMU_TYPE1 : REGVALUE_OLD_JOYSTICK1_EMU_TYPE1), &dwOldJoyType))
+	if (!REGLOAD(uJoyNum==0 ? REGVALUE_OLD_JOYSTICK0_EMU_TYPE1 : REGVALUE_OLD_JOYSTICK1_EMU_TYPE1, &dwOldJoyType))
 		return;	// EG. Old AppleWin never installed
 
 	UINT uNewJoyType;
@@ -94,7 +94,7 @@ void LoadConfiguration(bool loadImages)
 	uint32_t dwComputerType = 0;
 	eApple2Type apple2Type = A2TYPE_APPLE2EENHANCED;
 
-	if (REGLOAD(TEXT(REGVALUE_APPLE2_TYPE), &dwComputerType))
+	if (REGLOAD(REGVALUE_APPLE2_TYPE, &dwComputerType))
 	{
 		const uint32_t dwLoadedComputerType = dwComputerType;
 
@@ -125,7 +125,7 @@ void LoadConfiguration(bool loadImages)
 
 		apple2Type = (eApple2Type) dwComputerType;
 	}
-	else if (REGLOAD(TEXT(REGVALUE_OLD_APPLE2_TYPE), &dwComputerType))	// Support older AppleWin registry entries
+	else if (REGLOAD(REGVALUE_OLD_APPLE2_TYPE, &dwComputerType))	// Support older AppleWin registry entries
 	{
 		switch (dwComputerType)
 		{
@@ -142,7 +142,7 @@ void LoadConfiguration(bool loadImages)
 	//
 
 	uint32_t dwMainCpuType;
-	REGLOAD_DEFAULT(TEXT(REGVALUE_CPU_TYPE), &dwMainCpuType, CPU_65C02);
+	REGLOAD_DEFAULT(REGVALUE_CPU_TYPE, &dwMainCpuType, CPU_65C02);
 	if (dwMainCpuType != CPU_6502 && dwMainCpuType != CPU_65C02)
 		dwMainCpuType = CPU_65C02;
 	SetMainCpu((eCpuType)dwMainCpuType);
@@ -150,16 +150,16 @@ void LoadConfiguration(bool loadImages)
 	//
 
 	uint32_t dwJoyType;
-	if (REGLOAD(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), &dwJoyType))
+	if (REGLOAD(REGVALUE_JOYSTICK0_EMU_TYPE, &dwJoyType))
 		JoySetJoyType(JN_JOYSTICK0, dwJoyType);
-	else if (REGLOAD(TEXT(REGVALUE_OLD_JOYSTICK0_EMU_TYPE2), &dwJoyType))	// GH#434
+	else if (REGLOAD(REGVALUE_OLD_JOYSTICK0_EMU_TYPE2, &dwJoyType))	// GH#434
 		JoySetJoyType(JN_JOYSTICK0, dwJoyType);
 	else
 		LoadConfigOldJoystick_v1(JN_JOYSTICK0);
 
-	if (REGLOAD(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), &dwJoyType))
+	if (REGLOAD(REGVALUE_JOYSTICK1_EMU_TYPE, &dwJoyType))
 		JoySetJoyType(JN_JOYSTICK1, dwJoyType);
-	else if (REGLOAD(TEXT(REGVALUE_OLD_JOYSTICK1_EMU_TYPE2), &dwJoyType))	// GH#434
+	else if (REGLOAD(REGVALUE_OLD_JOYSTICK1_EMU_TYPE2, &dwJoyType))	// GH#434
 		JoySetJoyType(JN_JOYSTICK1, dwJoyType);
 	else
 		LoadConfigOldJoystick_v1(JN_JOYSTICK1);
@@ -172,7 +172,7 @@ void LoadConfiguration(bool loadImages)
 		SetCopyProtectionDongleType(DT_EMPTY);
 
 	uint32_t dwSoundType;
-	REGLOAD_DEFAULT(TEXT(REGVALUE_SOUND_EMULATION), &dwSoundType, REG_SOUNDTYPE_WAVE);
+	REGLOAD_DEFAULT(REGVALUE_SOUND_EMULATION, &dwSoundType, REG_SOUNDTYPE_WAVE);
 	switch (dwSoundType)
 	{
 	case REG_SOUNDTYPE_NONE:
@@ -186,7 +186,7 @@ void LoadConfiguration(bool loadImages)
 		break;
 	}
 
-	REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
+	REGLOAD_DEFAULT(REGVALUE_EMULATION_SPEED, &g_dwSpeed, SPEED_NORMAL);
 	GetVideo().Config_Load_Video();
 	SetCurrentCLK6502();	// Pre: g_dwSpeed && Config_Load_Video()->SetVideoRefreshRate()
 
@@ -194,44 +194,44 @@ void LoadConfiguration(bool loadImages)
 
 	uint32_t dwTmp = 0;
 
-	if(REGLOAD(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), &dwTmp))
+	if(REGLOAD(REGVALUE_FS_SHOW_SUBUNIT_STATUS, &dwTmp))
 		GetFrame().SetFullScreenShowSubunitStatus(dwTmp ? true : false);
 
-	if (REGLOAD(TEXT(REGVALUE_SHOW_DISKII_STATUS), &dwTmp))
+	if (REGLOAD(REGVALUE_SHOW_DISKII_STATUS, &dwTmp))
 		GetFrame().SetWindowedModeShowDiskiiStatus(dwTmp ? true : false);
 
-	if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
+	if(REGLOAD(REGVALUE_THE_FREEZES_F8_ROM, &dwTmp))
 		GetPropertySheet().SetTheFreezesF8Rom(dwTmp);
 
-	if(REGLOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp))
+	if(REGLOAD(REGVALUE_SPKR_VOLUME, &dwTmp))
 		SpkrSetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
-	if(REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp))
+	if(REGLOAD(REGVALUE_MB_VOLUME, &dwTmp))
 		GetCardMgr().GetMockingboardCardMgr().SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
-	if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
+	if(REGLOAD(REGVALUE_SAVE_STATE_ON_EXIT, &dwTmp))
 		g_bSaveStateOnExit = dwTmp ? true : false;
 
-	if(REGLOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
+	if(REGLOAD(REGVALUE_PDL_XTRIM, &dwTmp))
 		JoySetTrim((short)dwTmp, true);
-	if(REGLOAD(TEXT(REGVALUE_PDL_YTRIM), &dwTmp))
+	if(REGLOAD(REGVALUE_PDL_YTRIM, &dwTmp))
 		JoySetTrim((short)dwTmp, false);
 
-	if(REGLOAD(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), &dwTmp))
+	if(REGLOAD(REGVALUE_SCROLLLOCK_TOGGLE, &dwTmp))
 		GetPropertySheet().SetScrollLockToggle(dwTmp);
 
-	if(REGLOAD(TEXT(REGVALUE_CURSOR_CONTROL), &dwTmp))
+	if(REGLOAD(REGVALUE_CURSOR_CONTROL, &dwTmp))
 		GetPropertySheet().SetJoystickCursorControl(dwTmp);
-	if(REGLOAD(TEXT(REGVALUE_AUTOFIRE), &dwTmp))
+	if(REGLOAD(REGVALUE_AUTOFIRE, &dwTmp))
 		GetPropertySheet().SetAutofire(dwTmp);
-	if(REGLOAD(TEXT(REGVALUE_SWAP_BUTTONS_0_AND_1), &dwTmp))
+	if(REGLOAD(REGVALUE_SWAP_BUTTONS_0_AND_1, &dwTmp))
 		GetPropertySheet().SetButtonsSwapState(dwTmp ? true : false);
-	if(REGLOAD(TEXT(REGVALUE_CENTERING_CONTROL), &dwTmp))
+	if(REGLOAD(REGVALUE_CENTERING_CONTROL, &dwTmp))
 		GetPropertySheet().SetJoystickCenteringControl(dwTmp);
 
-	if(REGLOAD(TEXT(REGVALUE_MOUSE_CROSSHAIR), &dwTmp))
+	if(REGLOAD(REGVALUE_MOUSE_CROSSHAIR, &dwTmp))
 		GetPropertySheet().SetMouseShowCrosshair(dwTmp);
-	if(REGLOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))
+	if(REGLOAD(REGVALUE_MOUSE_RESTRICT_TO_WINDOW, &dwTmp))
 		GetPropertySheet().SetMouseRestrictToWindow(dwTmp);
 
 	//
@@ -252,19 +252,19 @@ void LoadConfiguration(bool loadImages)
 		{
 			if (slot == SLOT3)
 			{
-				RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
+				RegLoadString(REG_CONFIG, REGVALUE_UTHERNET_INTERFACE, 1, szFilename, MAX_PATH, "");
 				// copy it to the new location
 				PCapBackend::SetRegistryInterface(slot, szFilename);
 
 				uint32_t tfeEnabled;
-				REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &tfeEnabled, 0);
+				REGLOAD_DEFAULT(REGVALUE_UTHERNET_ACTIVE, &tfeEnabled, 0);
 				GetCardMgr().Insert(SLOT3, tfeEnabled ? CT_Uthernet : CT_Empty);
 			}
-			else if (slot == SLOT4 && REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
+			else if (slot == SLOT4 && REGLOAD(REGVALUE_SLOT4, &dwTmp))
 				GetCardMgr().Insert(SLOT4, (SS_CARDTYPE)dwTmp);
-			else if (slot == SLOT5 && REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
+			else if (slot == SLOT5 && REGLOAD(REGVALUE_SLOT5, &dwTmp))
 				GetCardMgr().Insert(SLOT5, (SS_CARDTYPE)dwTmp);
-			else if (slot == SLOT7 && REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp) && dwTmp == 1)	// GH#1015
+			else if (slot == SLOT7 && REGLOAD(REGVALUE_HDD_ENABLED, &dwTmp) && dwTmp == 1)	// GH#1015
 				GetCardMgr().Insert(SLOT7, CT_GenericHDD);
 		}
 	}
@@ -290,12 +290,12 @@ void LoadConfiguration(bool loadImages)
 
 	// Load save-state pathname *before* inserting any harddisk/disk images (for both init & reinit cases)
 	// NB. inserting harddisk/disk can change snapshot pathname
-	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));	// Can be pathname or just filename
+	RegLoadString(REG_CONFIG, REGVALUE_SAVESTATE_FILENAME, 1, szFilename, MAX_PATH, "");	// Can be pathname or just filename
 	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
 
 	//
 
-	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH, TEXT(""));
+	RegLoadString(REG_PREFS, REGVALUE_PREF_HDV_START_DIR, 1, szFilename, MAX_PATH, "");
 	if (szFilename[0] == '\0')
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
@@ -312,7 +312,7 @@ void LoadConfiguration(bool loadImages)
 	//
 
 	// Current/Starting Dir is the "root" of where the user keeps their disk images
-	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szFilename, MAX_PATH, TEXT(""));
+	RegLoadString(REG_PREFS, REGVALUE_PREF_START_DIR, 1, szFilename, MAX_PATH, "");
 	if (szFilename[0] == '\0')
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
@@ -322,7 +322,7 @@ void LoadConfiguration(bool loadImages)
 
 	// Do this after populating the slots with Disk II controller(s)
 	uint32_t dwEnhanceDisk;
-	REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
+	REGLOAD_DEFAULT(REGVALUE_ENHANCE_DISK_SPEED, &dwEnhanceDisk, 1);
 	GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	//
@@ -332,10 +332,10 @@ void LoadConfiguration(bool loadImages)
 
 	//
 
-	if (REGLOAD(TEXT(REGVALUE_WINDOW_SCALE), &dwTmp))
+	if (REGLOAD(REGVALUE_WINDOW_SCALE, &dwTmp))
 		GetFrame().SetViewportScale(dwTmp);
 
-	if (REGLOAD(TEXT(REGVALUE_CONFIRM_REBOOT), &dwTmp))
+	if (REGLOAD(REGVALUE_CONFIRM_REBOOT, &dwTmp))
 		GetFrame().g_bConfirmReboot = dwTmp;
 }
 
@@ -514,14 +514,14 @@ void GetAppleWindowTitle()
 		g_pAppTitle += " (S6-13) ";
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
-		g_pAppTitle += TEXT(" (custom rom)");
+		g_pAppTitle += " (custom rom)";
 	else if (GetPropertySheet().GetTheFreezesF8Rom() && IsApple2PlusOrClone(GetApple2Type()))
-		g_pAppTitle += TEXT(" (The Freeze's non-autostart F8 rom)");
+		g_pAppTitle += " (The Freeze's non-autostart F8 rom)";
 
 	switch (g_nAppMode)
 	{
-	case MODE_PAUSED: g_pAppTitle += std::string(TEXT(" [")) + TITLE_PAUSED + TEXT("]"); break;
-	case MODE_STEPPING: g_pAppTitle += std::string(TEXT(" [")) + TITLE_STEPPING + TEXT("]"); break;
+	case MODE_PAUSED: g_pAppTitle += std::string(" [") + TITLE_PAUSED + "]"; break;
+	case MODE_STEPPING: g_pAppTitle += std::string(" [") + TITLE_STEPPING + "]"; break;
 	}
 }
 
