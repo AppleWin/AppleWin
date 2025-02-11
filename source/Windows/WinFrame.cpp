@@ -2473,7 +2473,7 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 			else
 			if (iKind == PRODOS_KIND_TREE)
 			{
-				assert( PRODOS_FILE_TYPE_TREE_NOT_IMPLEMENTED );
+				assert( PRODOS_FILE_TYPE_TREE_NOT_IMPLEMENTED ); // TODO: ProDOS tree file not implemented
 			}
 		}
 		else
@@ -2510,8 +2510,7 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 			if (iKind == PRODOS_KIND_TREE)
 			{
 				// Update multiple index blocks
-				// NOT IMPLEMENTED
-				assert( PRODOS_FILE_TYPE_TREE_NOT_IMPLEMENTED );
+				assert( PRODOS_FILE_TYPE_TREE_NOT_IMPLEMENTED ); // TODO: ProDOS tree file not implemented
 			}
 		}
 		pSrc += PRODOS_BLOCK_SIZE;
