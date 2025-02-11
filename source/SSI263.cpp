@@ -1031,8 +1031,6 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	if (version >= 7 && version < 13)
 		yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME);	// Consume redundant data
 
-	m_currentActivePhoneme = !IsPhonemeActive() ? -1 : 0x00;	// Not important which phoneme, since UpdateIRQ() resets this
-
 	if (version < 12)
 	{
 		if (m_currentMode.function == 0)	// invalid function (but in older versions this was accepted)
@@ -1056,17 +1054,6 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	// Only need to directly assert IRQ for Phasor mode (for Mockingboard mode it's done via UpdateIFR() in parent)
 	if (m_cardMode == PH_Phasor && IsPhonemeActive() && m_currentMode.enableInts && m_currentMode.D7 == 1)
 		CpuIrqAssert(IS_SPEECH);
-
-	if (IsPhonemeActive())
-	{
-		// NB. Save-state doesn't preserve the play-position within the phoneme.
-		// It just sets IRQ (and SSI263.D7) for "phoneme complete"; and restarts it from the beginning.
-		// This may cause problems for timing sensitive code (eg. mb-audit).
-		UpdateIRQ();		// Pre: m_device, m_cardMode
-		RepeatPhoneme();
-	}
-
-	m_lastUpdateCycle = GetLastCumulativeCycles();
 }
 
 //=============================================================================
@@ -1101,4 +1088,26 @@ void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	m_isVotraxPhoneme = yamlLoadHelper.LoadBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME);
 
 	yamlLoadHelper.PopMap();
+}
+
+//=============================================================================
+
+// Call this after loading both SSI263 & SC01 state, otherwise IsPhonemeActive() can indicate both are active!
+// . EG. After loading SSI263, SSI263.CONTROL==0 (so active); and after loading SC01, m_isVotraxPhoneme==true (so active)
+void SSI263::LoadSnapshotSetIRQAndRepeat(void)
+{
+	if (m_isVotraxPhoneme)
+		m_currentActivePhoneme = 0x00;	// For IsPhonemeActive() and SC01 chip
+
+	if (IsPhonemeActive())
+	{
+		// NB. Save-state doesn't preserve the play-position within the phoneme.
+		// It just sets IRQ (and SSI263.D7) for "phoneme complete"; and restarts it from the beginning.
+		// This may cause problems for timing sensitive code (eg. mb-audit).
+		m_currentActivePhoneme = 0x00;	// Not important which phoneme, since RepeatPhoneme()->Play() sets this
+		UpdateIRQ();		// Pre: m_device, m_cardMode
+		RepeatPhoneme();
+	}
+
+	m_lastUpdateCycle = GetLastCumulativeCycles();
 }
