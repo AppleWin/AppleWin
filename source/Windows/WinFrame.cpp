@@ -2424,8 +2424,8 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 	}
 
 	// Copy Data
-	const uint8_t *pSrc  = pFileData;
-	const size_t   nSlack = nFileSize % PRODOS_BLOCK_SIZE;
+	const uint8_t *pSrc           = pFileData;
+	const size_t   nSlack         = nFileSize % PRODOS_BLOCK_SIZE;
 	const size_t   nLastBlockSize = nSlack ? nSlack : PRODOS_BLOCK_SIZE;
 	const bool PRODOS_FILE_TYPE_TREE_NOT_IMPLEMENTED = false;
 
@@ -2437,9 +2437,10 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 			return false;
 		}
 
+		// if file size <= 512 bytes
 		if (iBlock == 0)
 		{
-			if(iKind == PRODOS_KIND_SEED)
+			if (iKind == PRODOS_KIND_SEED)
 			{
 				iNode = iDataBlock;
 			}
@@ -2500,7 +2501,7 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 			if (iKind == PRODOS_KIND_SAPL)
 			{
 				// Update single index block
-				if( iIndexBase )
+				if (iIndexBase)
 				{
 					ProDOS_PutIndexBlock( pDiskBytes, iIndexBase, iBlock, iDataBlock ); // Update File Bitmap
 				}
