@@ -2360,8 +2360,10 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 	int iMasterIndex = 0; // master block points to N IndexBlocks
 
 	// Calculate size of meta blocks and kind of file
-	if (nFileSize <=   1*PRODOS_BLOCK_SIZE) // <= 512, 1 Blocks
+	if (nFileSize <=   1*PRODOS_BLOCK_SIZE) // <= 512, 1 Block
+	{
 		iKind = PRODOS_KIND_SEED;
+	}
 	else
 	if (nFileSize > 256*PRODOS_BLOCK_SIZE) // >= 128K, 257-65536 Blocks
 	{
@@ -2530,7 +2532,7 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 //===========================================================================
 bool Util_ProDOS_CopyBASIC ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, Win32Frame *pWinFrame )
 {
-	const size_t   nFileSize = 0x2800;
+	const size_t   nFileSize = 0x2800; // 10,240 -> 20 blocks + 1 index block = 21 blocks
 	const uint8_t *pFileData = (uint8_t *) pWinFrame->GetResource(IDR_FILE_BASIC17, "FIRMWARE", nFileSize);
 
 	// Acc dnb??iwr /PRODOS.2.4.3    Blocks Size    Type    Aux   Kind  iNode Dir   Ver Min  Create    Time    Modified  Time
@@ -2566,13 +2568,13 @@ bool Util_ProDOS_CopyBASIC ( uint8_t *pDiskBytes, const size_t nDiskSize, const 
 	meta.mod_time  = nTimeModify;
 	//  .dir_block = TBD;
 
-	return Util_ProDOS_AddFile( pDiskBytes, nDiskSize, pVolumeName, pFileData, nFileSize, meta );
+	return Util_ProDOS_AddFile( pDiskBytes, nDiskSize, pVolumeName, pFileData, nFileSize, meta, true );
 }
 
 //===========================================================================
 bool Util_ProDOS_CopyBitsyBoot ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, Win32Frame *pWinFrame )
 {
-	const size_t   nFileSize = 0x16D;
+	const size_t   nFileSize = 0x16D; // < 512 bytes -> SEED, only 1 data block
 	const uint8_t *pFileData = (uint8_t *) pWinFrame->GetResource(IDR_FILE_BITSY_BOOT, "FIRMWARE", nFileSize);
 
 	// Acc dnb??iwr /PRODOS.2.4.2    Blocks Size    Type    Aux   Kind  iNode Dir   Ver Min  Create    Time    Modified  Time
@@ -2615,7 +2617,7 @@ bool Util_ProDOS_CopyBitsyBoot ( uint8_t *pDiskBytes, const size_t nDiskSize, co
 //===========================================================================
 bool Util_ProDOS_CopyBitsyBye ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, Win32Frame *pWinFrame )
 {
-	const size_t   nFileSize = 0x0038;
+	const size_t   nFileSize = 0x0038; // < 512 bytes -> SEED, only 1 data block
 	const uint8_t *pFileData = (uint8_t*) pWinFrame->GetResource(IDR_FILE_BITSY_BYE, "FIRMWARE", nFileSize);
 
 	// Acc dnb??iwr /PRODOS.2.4.2    Blocks Size    Type    Aux   Kind  iNode Dir   Ver Min  Create    Time    Modified  Time
@@ -2625,7 +2627,6 @@ bool Util_ProDOS_CopyBitsyBye ( uint8_t *pDiskBytes, const size_t nDiskSize, con
 		| ACCESS_B
 		| ACCESS_R
 		;
-
 
 	ProDOS_FileHeader_t meta;
 	memset( &meta, 0, sizeof(ProDOS_FileHeader_t) );
@@ -2659,7 +2660,7 @@ bool Util_ProDOS_CopyBitsyBye ( uint8_t *pDiskBytes, const size_t nDiskSize, con
 //===========================================================================
 bool Util_ProDOS_CopyDOS ( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, Win32Frame *pWinFrame )
 {
-	const size_t   nFileSize = 0x42E8;
+	const size_t   nFileSize = 0x42E8; // 17,128 -> 34 blocks but last block is sparse -> 33 data blocks + 1 index block
 	const uint8_t *pFileData = (uint8_t*) pWinFrame->GetResource(IDR_OS_PRODOS243, "FIRMWARE", nFileSize);
 
 	// Acc dnb??iwr /PRODOS.2.4.3    Blocks Size    Type    Aux   Kind  iNode Dir   Ver Min  Create    Time    Modified  Time
