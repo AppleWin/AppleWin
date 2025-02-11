@@ -1004,19 +1004,25 @@ void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 #define SS_YAML_KEY_SSI263_CURRENT_MODE "Current Mode"
 #define SS_YAML_KEY_SSI263_ACTIVE_PHONEME "Active Phoneme"	// v13: deprecated
 
-void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT subunit)
 {
-	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263);
+	// Scope for SSI263 subunit (so that SC01 has same indentation)
+	{
+		YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263);
 
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_DUR_PHON, m_durationPhoneme);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_INF, m_inflection);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_RATE_INF, m_rateInflection);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, m_ctrlArtAmp);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode.mode);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_DUR_PHON, m_durationPhoneme);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_INF, m_inflection);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_RATE_INF, m_rateInflection);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, m_ctrlArtAmp);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode.mode);
+	}
+
+	if (subunit == 0)	// has SC01
+		SC01_SaveSnapshot(yamlSaveHelper);
 }
 
-void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version)
+void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version, UINT subunit)
 {
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263))
 		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_SSI263);
@@ -1030,8 +1036,6 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 
 	if (version >= 7 && version < 13)
 		yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME);	// Consume redundant data
-
-	m_currentActivePhoneme = !IsPhonemeActive() ? -1 : 0x00;	// Not important which phoneme, since UpdateIRQ() resets this
 
 	if (version < 12)
 	{
@@ -1057,11 +1061,21 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	if (m_cardMode == PH_Phasor && IsPhonemeActive() && m_currentMode.enableInts && m_currentMode.D7 == 1)
 		CpuIrqAssert(IS_SPEECH);
 
+	if (subunit == 0)	// has SC01
+		SC01_LoadSnapshot(yamlLoadHelper, version);
+
+	// Do this after loading both SSI263 & SC01 state, otherwise IsPhonemeActive() can indicate both are active!
+	// . EG. After loading SSI263, SSI263.CONTROL==0 (so active); and after loading SC01, m_isVotraxPhoneme==true (so active)
+
+	if (m_isVotraxPhoneme)
+		m_currentActivePhoneme = 0x00;	// For IsPhonemeActive() and SC01 chip
+
 	if (IsPhonemeActive())
 	{
 		// NB. Save-state doesn't preserve the play-position within the phoneme.
 		// It just sets IRQ (and SSI263.D7) for "phoneme complete"; and restarts it from the beginning.
 		// This may cause problems for timing sensitive code (eg. mb-audit).
+		m_currentActivePhoneme = 0x00;	// Not important which phoneme, since RepeatPhoneme()->Play() sets this
 		UpdateIRQ();		// Pre: m_device, m_cardMode
 		RepeatPhoneme();
 	}
