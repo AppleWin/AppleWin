@@ -1269,10 +1269,8 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 		pMB->sy6522.LoadSnapshot(yamlLoadHelper, version);
 		UpdateIFRandIRQ(pMB, 0, pMB->sy6522.GetReg(SY6522::rIFR));			// Assert any pending IRQs (GH#677)
 		AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string(""));
-		pMB->ssi263.LoadSnapshot(yamlLoadHelper, PH_Mockingboard, version);
-		if (subunit == 0)	// has SC01
-			pMB->ssi263.SC01_LoadSnapshot(yamlLoadHelper, version);
-		pMB->ssi263.LoadSnapshotSetIRQAndRepeat();
+
+		pMB->ssi263.LoadSnapshot(yamlLoadHelper, PH_Mockingboard, version, subunit);
 
 		pMB->nAYCurrentRegister[0] = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
 
@@ -1410,10 +1408,8 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 			AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string("-A"));
 			AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_B, std::string("-B"));
 		}
-		pMB->ssi263.LoadSnapshot(yamlLoadHelper, m_phasorMode, version);
-		if (subunit == 0)	// has SC01
-			pMB->ssi263.SC01_LoadSnapshot(yamlLoadHelper, version);
-		pMB->ssi263.LoadSnapshotSetIRQAndRepeat();
+
+		pMB->ssi263.LoadSnapshot(yamlLoadHelper, m_phasorMode, version, subunit);
 
 		pMB->nAYCurrentRegister[0] = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
 		if (version >= 10)
