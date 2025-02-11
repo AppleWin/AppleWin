@@ -2196,6 +2196,31 @@ void Util_ProDOS_ForwardSectorInterleave (uint8_t *pDiskBytes, const size_t nDis
 	}
 }
 
+// See:
+// * https://prodos8.com/docs/technote/30/
+// * 2.2.3 Sparse Files
+//   https://prodos8.com/docs/techref/file-use/
+// * B.3.6 - Sparse Files
+//   https://prodos8.com/docs/techref/file-organization/
+//===========================================================================
+bool Util_ProDOS_IsFileBlockSparse( int nOffset, const uint8_t* pFileData, const size_t nFileSize )
+{
+	if ((size_t)nOffset >= nFileSize)
+		return false;
+
+	const int nEnd   = (nOffset + PRODOS_BLOCK_SIZE ) > nFileSize
+		? nOffset + (nFileSize % PRODOS_BLOCK_SIZE)
+		: nOffset +              PRODOS_BLOCK_SIZE;
+	for (int iOffset = nOffset ; iOffset < nEnd; iOffset++ )
+	{
+		if (pFileData[ iOffset ])
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 // Swizzles sectors in ProDOS order to DOS33 order in-place
 //===========================================================================
 void Util_ProDOS_ReverseSectorInterleave (uint8_t *pDiskBytes, const size_t nDiskSize, const SectorOrder_e eSectorOrder)
@@ -2306,30 +2331,8 @@ void Util_ProDOS_FormatFileSystem (uint8_t *pDiskBytes, const size_t nDiskSize, 
 	ProDOS_SetVolumeHeader( pDiskBytes, pVolume, PRODOS_ROOT_BLOCK );
 }
 
-// See:
-// * https://prodos8.com/docs/technote/30/
-// * 2.2.3 Sparse Files
-//   https://prodos8.com/docs/techref/file-use/
-// * B.3.6 - Sparse Files
-//   https://prodos8.com/docs/techref/file-organization/
 //===========================================================================
-bool Util_BlockIsSparse( int nOffset, const uint8_t* pFileData, const size_t nFileSize )
-{
-	const int nEnd   = (nOffset + PRODOS_BLOCK_SIZE ) >= nFileSize
-		? nOffset + (nFileSize % PRODOS_BLOCK_SIZE)
-		: nOffset +              PRODOS_BLOCK_SIZE;
-	for (int iOffset = nOffset ; iOffset < nEnd; iOffset++ )
-	{
-		if (pFileData[ iOffset ])
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-//===========================================================================
-bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const char* pVolumeName, const uint8_t* pFileData, const size_t nFileSize, ProDOS_FileHeader_t &meta)
+bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const char* pVolumeName, const uint8_t* pFileData, const size_t nFileSize, ProDOS_FileHeader_t &meta, const bool bAllowSparseFile = false)
 {
 	assert( pFileData );
 
@@ -2443,8 +2446,19 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 
 		// Any 512-byte block containing all zeroes doesn't need to be written to disk.
 		// Instead we write an index block of $0000 to tell ProDOS that this block is a sparse block.
-		bool bIsSparseBlock = Util_BlockIsSparse( iBlock * PRODOS_BLOCK_SIZE, pFileData, nFileSize );
-		if (bIsSparseBlock)
+		bool bIsSparseBlock = Util_ProDOS_IsFileBlockSparse( iBlock * PRODOS_BLOCK_SIZE, pFileData, nFileSize );
+
+#if _DEBUG
+	LogOutput( "0x%04X  FileBlock: %2d/%2d  DataBlock: $%02X  LastBlock=%d  Sparse=%d\n"
+		, iBlock*PRODOS_BLOCK_SIZE
+		, iBlock+1
+		, nBlocksData
+		, iDataBlock
+		, bLastBlock
+		, bIsSparseBlock
+	);
+#endif
+		if (bIsSparseBlock && bAllowSparseFile)
 		{
 			if (iKind == PRODOS_KIND_SAPL)
 			{
@@ -2458,16 +2472,25 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 		}
 		else
 		{
-			nBlocksTotal++;
 			if (bLastBlock)
 			{
-				memcpy( pDst, pSrc, nLastBlockSize );
+				if (nLastBlockSize)
+				{
+					memcpy( pDst, pSrc, nLastBlockSize );
+					nBlocksTotal++;
+					ProDOS_BlockSetUsed( pDiskBytes, pVolume, iDataBlock ); // Update Volume Bitmap
+				}
+				else
+				{
+					iIndexBase = 0; // Last block has zero size. Don't update index block
+				}
 			}
 			else
 			{
 				memcpy( pDst, pSrc, PRODOS_BLOCK_SIZE );
+				nBlocksTotal++;
+				ProDOS_BlockSetUsed( pDiskBytes, pVolume, iDataBlock ); // Update Volume Bitmap
 			}
-			ProDOS_BlockSetUsed( pDiskBytes, pVolume, iDataBlock ); // Update Volume Bitmap
 
 			if (iKind == PRODOS_KIND_SAPL)
 			{
@@ -2672,7 +2695,7 @@ bool Util_ProDOS_CopyDOS ( uint8_t *pDiskBytes, const size_t nDiskSize, const ch
 	meta.mod_time  = nTimeModify;
 	//  .dir_block = TBD;
 
-	return Util_ProDOS_AddFile( pDiskBytes, nDiskSize, pVolumeName, pFileData, nFileSize, meta );
+	return Util_ProDOS_AddFile( pDiskBytes, nDiskSize, pVolumeName, pFileData, nFileSize, meta, true );
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
