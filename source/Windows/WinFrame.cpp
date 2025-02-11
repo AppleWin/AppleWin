@@ -2416,6 +2416,9 @@ bool Util_ProDOS_AddFile (uint8_t* pDiskBytes, const size_t nDiskSize, const cha
 		}
 
 		ProDOS_BlockSetUsed( pDiskBytes, pVolume, iMetaBlock );
+#if _DEBUG
+	LogOutput( "0x----  FileBlock: --/--  MetaBlock: $%02X\n", iMetaBlock );
+#endif
 	}
 
 	// Copy Data
