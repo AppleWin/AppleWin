@@ -38,11 +38,11 @@ CPageAdvanced* CPageAdvanced::ms_this = 0;	// reinit'd in ctor
 
 enum CLONECHOICE {MENUITEM_CLONEMIN, MENUITEM_PRAVETS82=MENUITEM_CLONEMIN, MENUITEM_PRAVETS8M, MENUITEM_PRAVETS8A, MENUITEM_TK30002E, MENUITEM_BASE64A, MENUITEM_CLONEMAX};
 const char CPageAdvanced::m_CloneChoices[] =
-				TEXT("Pravets 82\0")	// Bulgarian
-				TEXT("Pravets 8M\0")	// Bulgarian
-				TEXT("Pravets 8A\0")	// Bulgarian
-				TEXT("TK3000 //e\0")	// Brazilian
-				TEXT("Base 64A\0"); 	// Taiwanese
+				"Pravets 82\0"	// Bulgarian
+				"Pravets 8M\0"	// Bulgarian
+				"Pravets 8A\0"	// Bulgarian
+				"TK3000 //e\0"	// Brazilian
+				"Base 64A\0"; 	// Taiwanese
 
 const char CPageAdvanced::m_gameIOConnectorChoices[] =
 				"Empty\0"
@@ -98,12 +98,12 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 		case IDC_SAVESTATE_FILENAME:
 			break;
 		case IDC_SAVESTATE_BROWSE:
-			if(m_PropertySheetHelper.SaveStateSelectImage(hWnd, TEXT("Select Save State file"), true))
+			if(m_PropertySheetHelper.SaveStateSelectImage(hWnd, "Select Save State file", true))
 				SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM)m_PropertySheetHelper.GetSSNewFilename().c_str());
 			break;
 		case IDC_PRINTER_DUMP_FILENAME_BROWSE:
 			{				
-				std::string strPrinterDumpLoc = m_PropertySheetHelper.BrowseToFile(hWnd, TEXT("Select printer dump file"), REGVALUE_PRINTER_FILENAME, TEXT("Text files (*.txt)\0*.txt\0") TEXT("All Files\0*.*\0"));
+				std::string strPrinterDumpLoc = m_PropertySheetHelper.BrowseToFile(hWnd, "Select printer dump file", REGVALUE_PRINTER_FILENAME, "Text files (*.txt)\0*.txt\0" "All Files\0*.*\0");
 				SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)strPrinterDumpLoc.c_str());
 			}
 			break;
@@ -195,7 +195,7 @@ void CPageAdvanced::DlgOK(HWND hWnd)
 	}
 
 	g_bSaveStateOnExit = IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT) ? true : false;
-	REGSAVE(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), g_bSaveStateOnExit ? 1 : 0);
+	REGSAVE(REGVALUE_SAVE_STATE_ON_EXIT, g_bSaveStateOnExit ? 1 : 0);
 
 	// Save the copy protection dongle type
 	RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, GetCopyProtectionDongleType());

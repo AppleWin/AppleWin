@@ -46,20 +46,20 @@ enum AppMode_e
 #define  BTN_SETUP         7
 
 // TODO: Move to StringTable.h
-#define	TITLE_APPLE_2			TEXT("Apple ][ Emulator")
-#define	TITLE_APPLE_2_PLUS		TEXT("Apple ][+ Emulator")
-#define	TITLE_APPLE_2_JPLUS		TEXT("Apple ][ J-Plus Emulator")
-#define	TITLE_APPLE_2E			TEXT("Apple //e Emulator")
-#define	TITLE_APPLE_2E_ENHANCED	TEXT("Enhanced Apple //e Emulator")
-#define TITLE_APPLE_2C          TEXT("Apple //e Emulator")
-#define	TITLE_PRAVETS_82        TEXT("Pravets 82 Emulator")
-#define	TITLE_PRAVETS_8M        TEXT("Pravets 8M Emulator")
-#define	TITLE_PRAVETS_8A        TEXT("Pravets 8A Emulator")
-#define	TITLE_TK3000_2E         TEXT("TK3000 //e Emulator")
-#define	TITLE_BASE64A           TEXT("Base64A Emulator")
+#define	TITLE_APPLE_2			"Apple ][ Emulator"
+#define	TITLE_APPLE_2_PLUS		"Apple ][+ Emulator"
+#define	TITLE_APPLE_2_JPLUS		"Apple ][ J-Plus Emulator"
+#define	TITLE_APPLE_2E			"Apple //e Emulator"
+#define	TITLE_APPLE_2E_ENHANCED	"Enhanced Apple //e Emulator"
+#define TITLE_APPLE_2C          "Apple //e Emulator"
+#define	TITLE_PRAVETS_82        "Pravets 82 Emulator"
+#define	TITLE_PRAVETS_8M        "Pravets 8M Emulator"
+#define	TITLE_PRAVETS_8A        "Pravets 8A Emulator"
+#define	TITLE_TK3000_2E         "TK3000 //e Emulator"
+#define	TITLE_BASE64A           "Base64A Emulator"
 
-#define TITLE_PAUSED       TEXT("* PAUSED *")
-#define TITLE_STEPPING     TEXT("Stepping")
+#define TITLE_PAUSED       "* PAUSED *"
+#define TITLE_STEPPING     "Stepping"
 
 // Configuration
 #define REG_CONFIG						"Configuration"

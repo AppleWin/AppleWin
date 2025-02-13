@@ -34,13 +34,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 CPageInput* CPageInput::ms_this = 0;	// reinit'd in ctor
 
 // Joystick option choices - NOTE maximum text length is MaxMenuChoiceLen = 40
-const char CPageInput::m_szJoyChoice0[] = TEXT("Disabled\0");
-const char CPageInput::m_szJoyChoice1[] = TEXT("PC Joystick #1\0");
-const char CPageInput::m_szJoyChoice2[] = TEXT("PC Joystick #2\0");
-const char CPageInput::m_szJoyChoice3[] = TEXT("Keyboard (cursors)\0");
-const char CPageInput::m_szJoyChoice4[] = TEXT("Keyboard (numpad)\0");
-const char CPageInput::m_szJoyChoice5[] = TEXT("Mouse\0");
-const char CPageInput::m_szJoyChoice6[] = TEXT("PC Joystick #1 Thumbstick 2\0");
+const char CPageInput::m_szJoyChoice0[] = "Disabled\0";
+const char CPageInput::m_szJoyChoice1[] = "PC Joystick #1\0";
+const char CPageInput::m_szJoyChoice2[] = "PC Joystick #2\0";
+const char CPageInput::m_szJoyChoice3[] = "Keyboard (cursors)\0";
+const char CPageInput::m_szJoyChoice4[] = "Keyboard (numpad)\0";
+const char CPageInput::m_szJoyChoice5[] = "Mouse\0";
+const char CPageInput::m_szJoyChoice6[] = "PC Joystick #1 Thumbstick 2\0";
 
 const char* const CPageInput::m_pszJoy0Choices[J0C_MAX] = {
 									CPageInput::m_szJoyChoice0,
@@ -57,22 +57,22 @@ const char* const CPageInput::m_pszJoy1Choices[J1C_MAX] = {
 									CPageInput::m_szJoyChoice5,
 									CPageInput::m_szJoyChoice6 };
 
-const char CPageInput::m_szCPMSlotChoice_Slot4[] = TEXT("Slot 4\0");
-const char CPageInput::m_szCPMSlotChoice_Slot5[] = TEXT("Slot 5\0");
-const char CPageInput::m_szCPMSlotChoice_Unplugged[] = TEXT("Unplugged\0");
-const char CPageInput::m_szCPMSlotChoice_Unavailable[] = TEXT("Unavailable\0");
+const char CPageInput::m_szCPMSlotChoice_Slot4[] = "Slot 4\0";
+const char CPageInput::m_szCPMSlotChoice_Slot5[] = "Slot 5\0";
+const char CPageInput::m_szCPMSlotChoice_Unplugged[] = "Unplugged\0";
+const char CPageInput::m_szCPMSlotChoice_Unavailable[] = "Unavailable\0";
 
-const char CPageInput::m_szFourPlaySlotChoice_Slot3[] = TEXT("Slot 3\0");
-const char CPageInput::m_szFourPlaySlotChoice_Slot4[] = TEXT("Slot 4\0");
-const char CPageInput::m_szFourPlaySlotChoice_Slot5[] = TEXT("Slot 5\0");
-const char CPageInput::m_szFourPlaySlotChoice_Unplugged[] = TEXT("Unplugged\0");
-const char CPageInput::m_szFourPlaySlotChoice_Unavailable[] = TEXT("Unavailable\0");
+const char CPageInput::m_szFourPlaySlotChoice_Slot3[] = "Slot 3\0";
+const char CPageInput::m_szFourPlaySlotChoice_Slot4[] = "Slot 4\0";
+const char CPageInput::m_szFourPlaySlotChoice_Slot5[] = "Slot 5\0";
+const char CPageInput::m_szFourPlaySlotChoice_Unplugged[] = "Unplugged\0";
+const char CPageInput::m_szFourPlaySlotChoice_Unavailable[] = "Unavailable\0";
 
-const char CPageInput::m_szSNESMAXSlotChoice_Slot3[] = TEXT("Slot 3\0");
-const char CPageInput::m_szSNESMAXSlotChoice_Slot4[] = TEXT("Slot 4\0");
-const char CPageInput::m_szSNESMAXSlotChoice_Slot5[] = TEXT("Slot 5\0");
-const char CPageInput::m_szSNESMAXSlotChoice_Unplugged[] = TEXT("Unplugged\0");
-const char CPageInput::m_szSNESMAXSlotChoice_Unavailable[] = TEXT("Unavailable\0");
+const char CPageInput::m_szSNESMAXSlotChoice_Slot3[] = "Slot 3\0";
+const char CPageInput::m_szSNESMAXSlotChoice_Slot4[] = "Slot 4\0";
+const char CPageInput::m_szSNESMAXSlotChoice_Slot5[] = "Slot 5\0";
+const char CPageInput::m_szSNESMAXSlotChoice_Unplugged[] = "Unplugged\0";
+const char CPageInput::m_szSNESMAXSlotChoice_Unavailable[] = "Unavailable\0";
 
 INT_PTR CALLBACK CPageInput::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
@@ -295,12 +295,12 @@ void CPageInput::DlgOK(HWND hWnd)
 
 	if (JoySetEmulationType(hWnd, m_nJoy0ChoiceTranlationTbl[uNewJoyType0], JN_JOYSTICK0, bIsSlot4Mouse))
 	{
-		REGSAVE(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), JoyGetJoyType(0));
+		REGSAVE(REGVALUE_JOYSTICK0_EMU_TYPE, JoyGetJoyType(0));
 	}
 
 	if (JoySetEmulationType(hWnd, m_nJoy1ChoiceTranlationTbl[uNewJoyType1], JN_JOYSTICK1, bIsSlot4Mouse))
 	{
-		REGSAVE(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), JoyGetJoyType(1));
+		REGSAVE(REGVALUE_JOYSTICK1_EMU_TYPE, JoyGetJoyType(1));
 	}
 
 	JoySetTrim((short)SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0), true);
@@ -313,15 +313,15 @@ void CPageInput::DlgOK(HWND hWnd)
 	m_uMouseShowCrosshair = IsDlgButtonChecked(hWnd, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
 	m_uMouseRestrictToWindow = IsDlgButtonChecked(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
 
-	REGSAVE(TEXT(REGVALUE_PDL_XTRIM), JoyGetTrim(true));
-	REGSAVE(TEXT(REGVALUE_PDL_YTRIM), JoyGetTrim(false));
-	REGSAVE(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), m_uScrollLockToggle);
-	REGSAVE(TEXT(REGVALUE_CURSOR_CONTROL), m_uCursorControl);
-	REGSAVE(TEXT(REGVALUE_AUTOFIRE), m_bmAutofire);
-	REGSAVE(TEXT(REGVALUE_SWAP_BUTTONS_0_AND_1), m_bSwapButtons0and1);
-	REGSAVE(TEXT(REGVALUE_CENTERING_CONTROL), m_uCenteringControl);
-	REGSAVE(TEXT(REGVALUE_MOUSE_CROSSHAIR), m_uMouseShowCrosshair);
-	REGSAVE(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), m_uMouseRestrictToWindow);
+	REGSAVE(REGVALUE_PDL_XTRIM, JoyGetTrim(true));
+	REGSAVE(REGVALUE_PDL_YTRIM, JoyGetTrim(false));
+	REGSAVE(REGVALUE_SCROLLLOCK_TOGGLE, m_uScrollLockToggle);
+	REGSAVE(REGVALUE_CURSOR_CONTROL, m_uCursorControl);
+	REGSAVE(REGVALUE_AUTOFIRE, m_bmAutofire);
+	REGSAVE(REGVALUE_SWAP_BUTTONS_0_AND_1, m_bSwapButtons0and1);
+	REGSAVE(REGVALUE_CENTERING_CONTROL, m_uCenteringControl);
+	REGSAVE(REGVALUE_MOUSE_CROSSHAIR, m_uMouseShowCrosshair);
+	REGSAVE(REGVALUE_MOUSE_RESTRICT_TO_WINDOW, m_uMouseRestrictToWindow);
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
