@@ -52,7 +52,7 @@ extern LPBYTE     memVidHD;
 
 #ifdef RAMWORKS
 const UINT kMaxExMemoryBanks = 256;	// 256 * aux mem(64K) + main mem(64K) = 16MB + 64K
-const UINT kDefaultExMemoryBanksRealRW3 = 32;	// Real RamWorks III would default to 2MB
+const UINT kDefaultExMemoryBanksRealRW3 = 16;	// Real RamWorks III would default to 1MB
 #endif
 
 void	RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom);
