@@ -231,7 +231,7 @@ namespace sa2
 
     void saveTFEEnabled(const int enabled)
     {
-        REGSAVE(TEXT(REGVALUE_UTHERNET_ACTIVE), enabled);
+        REGSAVE(REGVALUE_UTHERNET_ACTIVE, enabled);
     }
 
     void changeBreakpoint(const uint32_t nAddress, const bool enableAndSet)

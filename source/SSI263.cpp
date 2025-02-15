@@ -408,6 +408,7 @@ void SSI263::PeriodicUpdate(UINT executedCycles)
 //-----------------------------------------------------------------------------
 
 //#define DBG_SSI263_UPDATE		// NB. This outputs for all active SSI263 ring-buffers (eg. for mb-audit this may be 2 or 4)
+//#define DBG_SSI263_UPDATE_RETURN
 
 // Called by:
 // . PeriodicUpdate()
@@ -458,7 +459,10 @@ void SSI263::Update(void)
 	DWORD dwCurrentPlayCursor, dwCurrentWriteCursor;
 	HRESULT hr = SSI263SingleVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
 	if (FAILED(hr))
+	{
+		LogOutput("SSI263::Update() early return: GetCurrentPosition() failed\n");
 		return;
+	}
 
 	bool prefillBufferOnInit = false;
 
@@ -533,7 +537,12 @@ void SSI263::Update(void)
 		_ASSERT(GetLastCumulativeCycles() >= m_lastUpdateCycle);
 		updateInterval = (double)(GetLastCumulativeCycles() - m_lastUpdateCycle);
 		if (updateInterval < kMinimumUpdateInterval)
+		{
+#ifdef DBG_SSI263_UPDATE_RETURN
+			LogOutput("SSI263::Update() early return: updateInterval < kMinimumUpdateInterval\n");
+#endif
 			return;
+		}
 		if (updateInterval > kMaximumUpdateInterval)
 			updateInterval = kMaximumUpdateInterval;
 
@@ -590,6 +599,9 @@ void SSI263::Update(void)
 			LogOutput("%010.3f: [SSUpdt%1d]    Reset ring-buffer\n", fTicksSecs, m_device);
 #endif
 		}
+#ifdef DBG_SSI263_UPDATE_RETURN
+		LogOutput("SSI263::Update() early return: nNumSamples == 0\n");
+#endif
 		return;
 	}
 
@@ -654,7 +666,9 @@ void SSI263::Update(void)
 		{
 			memset(pMixBuffer, 0, zeroSize * sizeof(short));
 
-			if (!prefillBufferOnInit)
+			// Only dec m_phonemeLeadoutLength when m_phonemeAccurateLengthRemaining==0
+			// . otherwise when single-stepping can get into the situation where m_phonemeLengthRemaining==0 && m_phonemeAccurateLengthRemaining!=0
+			if (!prefillBufferOnInit && !m_phonemeAccurateLengthRemaining)
 				m_phonemeLeadoutLength -= (m_phonemeLeadoutLength > zeroSize) ? zeroSize : m_phonemeLeadoutLength;
 		}
 	}
@@ -669,7 +683,10 @@ void SSI263::Update(void)
 		&pDSLockedBuffer0, &dwDSLockedBufferSize0,
 		&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 	if (FAILED(hr))
+	{
+		LogOutput("SSI263::Update() early return: DSGetLock() failed\n");
 		return;
+	}
 
 	memcpy(pDSLockedBuffer0, &m_mixBufferSSI263[0], dwDSLockedBufferSize0);
 	if (pDSLockedBuffer1)
@@ -679,7 +696,10 @@ void SSI263::Update(void)
 	hr = SSI263SingleVoice.lpDSBvoice->Unlock((void*)pDSLockedBuffer0, dwDSLockedBufferSize0,
 											  (void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
 	if (FAILED(hr))
+	{
+		LogOutput("SSI263::Update() early return: UnLock() failed\n");
 		return;
+	}
 
 	m_byteOffset = (m_byteOffset + (uint32_t)nNumSamples*sizeof(short)*m_kNumChannels) % m_kDSBufferByteSize;
 
@@ -715,17 +735,17 @@ void SSI263::RepeatPhoneme(void)
 
 	if (!m_isVotraxPhoneme)
 	{
-//		_ASSERT(m_currentActivePhoneme & kPhonemeLeadoutFlag);	// Remove for now, as ASSERT triggers for mb-audit v1.56 in debugger stepping ('g') mode.
+		_ASSERT(m_currentActivePhoneme & kPhonemeLeadoutFlag);
 
 		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
 			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
 
 		m_currentActivePhoneme &= PHONEME_MASK;			// Clear kPhonemeLeadoutFlag
 	}
-//	else	// GH#1318 - remove for now, as TR v5.1 can start with repeating phoneme in debugger 'g' mode!
-//	{
-//		Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested in MAME 0.262)
-//	}
+	else
+	{
+		Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested in MAME 0.262)
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -984,19 +1004,25 @@ void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 #define SS_YAML_KEY_SSI263_CURRENT_MODE "Current Mode"
 #define SS_YAML_KEY_SSI263_ACTIVE_PHONEME "Active Phoneme"	// v13: deprecated
 
-void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT subunit)
 {
-	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263);
+	// Scope for SSI263 subunit (so that SC01 has same indentation)
+	{
+		YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263);
 
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_DUR_PHON, m_durationPhoneme);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_INF, m_inflection);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_RATE_INF, m_rateInflection);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, m_ctrlArtAmp);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode.mode);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_DUR_PHON, m_durationPhoneme);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_INF, m_inflection);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_RATE_INF, m_rateInflection);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, m_ctrlArtAmp);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode.mode);
+	}
+
+	if (subunit == 0)	// has SC01
+		SC01_SaveSnapshot(yamlSaveHelper);
 }
 
-void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version)
+void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version, UINT subunit)
 {
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263))
 		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_SSI263);
@@ -1010,8 +1036,6 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 
 	if (version >= 7 && version < 13)
 		yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME);	// Consume redundant data
-
-	m_currentActivePhoneme = !IsPhonemeActive() ? -1 : 0x00;	// Not important which phoneme, since UpdateIRQ() resets this
 
 	if (version < 12)
 	{
@@ -1037,11 +1061,21 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	if (m_cardMode == PH_Phasor && IsPhonemeActive() && m_currentMode.enableInts && m_currentMode.D7 == 1)
 		CpuIrqAssert(IS_SPEECH);
 
+	if (subunit == 0)	// has SC01
+		SC01_LoadSnapshot(yamlLoadHelper, version);
+
+	// Do this after loading both SSI263 & SC01 state, otherwise IsPhonemeActive() can indicate both are active!
+	// . EG. After loading SSI263, SSI263.CONTROL==0 (so active); and after loading SC01, m_isVotraxPhoneme==true (so active)
+
+	if (m_isVotraxPhoneme)
+		m_currentActivePhoneme = 0x00;	// For IsPhonemeActive() and SC01 chip
+
 	if (IsPhonemeActive())
 	{
 		// NB. Save-state doesn't preserve the play-position within the phoneme.
 		// It just sets IRQ (and SSI263.D7) for "phoneme complete"; and restarts it from the beginning.
 		// This may cause problems for timing sensitive code (eg. mb-audit).
+		m_currentActivePhoneme = 0x00;	// Not important which phoneme, since RepeatPhoneme()->Play() sets this
 		UpdateIRQ();		// Pre: m_device, m_cardMode
 		RepeatPhoneme();
 	}

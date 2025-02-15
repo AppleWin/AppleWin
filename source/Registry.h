@@ -2,9 +2,9 @@
 #include "Card.h"
 #include "CopyProtectionDongles.h"
 
-#define  REGLOAD(a, b)				RegLoadValue(TEXT(REG_CONFIG), (a), TRUE, (b))
-#define  REGLOAD_DEFAULT(a, b, c)	RegLoadValue(TEXT(REG_CONFIG), (a), TRUE, (b), (c))
-#define  REGSAVE(a, b)				RegSaveValue(TEXT(REG_CONFIG), (a), TRUE, (b))
+#define  REGLOAD(a, b)				RegLoadValue(REG_CONFIG, (a), TRUE, (b))
+#define  REGLOAD_DEFAULT(a, b, c)	RegLoadValue(REG_CONFIG, (a), TRUE, (b), (c))
+#define  REGSAVE(a, b)				RegSaveValue(REG_CONFIG, (a), TRUE, (b))
 
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, uint32_t chars);
 BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, uint32_t chars, LPCTSTR defaultValue);

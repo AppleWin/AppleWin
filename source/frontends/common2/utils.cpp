@@ -47,7 +47,7 @@ namespace common2
         {
             std::filesystem::current_path(filename.parent_path());
             Snapshot_SetFilename(filename.string());
-            RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, Snapshot_GetPathname());
+            RegSaveString(REG_CONFIG, REGVALUE_SAVESTATE_FILENAME, 1, Snapshot_GetPathname());
         }
     }
 

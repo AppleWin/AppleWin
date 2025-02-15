@@ -202,7 +202,7 @@ void Disk2InterfaceCard::LoadLastDiskImage(const int drive)
 	char pathname[MAX_PATH];
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")) && (pathname[0] != 0))
+	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, "") && (pathname[0] != 0))
 	{
 		m_saveDiskImage = false;
 		ImageError_e error = InsertDisk(drive, pathname, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
@@ -1831,7 +1831,7 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 
 	StringCbCopy(filename, MAX_PATH, pszFilename);
 
-	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, directory, MAX_PATH, TEXT(""));
+	RegLoadString(REG_PREFS, REGVALUE_PREF_START_DIR, 1, directory, MAX_PATH, "");
 	std::string title = StrFormat("Select Disk Image For Drive %d", drive + 1);
 
 	OPENFILENAME ofn;
@@ -1839,9 +1839,9 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = GetFrame().g_hFrameWindow;
 	ofn.hInstance       = GetFrame().g_hInstance;
-	ofn.lpstrFilter     = TEXT("All Images\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie;*.apl\0")
-						  TEXT("Disk Images (*.bin,*.do,*.dsk,*.nib,*.po,*.gz,*.woz,*.zip,*.2mg,*.2img,*.iie)\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie\0")
-						  TEXT("All Files\0*.*\0");
+	ofn.lpstrFilter     = "All Images\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie;*.apl\0"
+						  "Disk Images (*.bin,*.do,*.dsk,*.nib,*.po,*.gz,*.woz,*.zip,*.2mg,*.2img,*.iie)\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie\0"
+						  "All Files\0*.*\0";
 	ofn.lpstrFile       = filename;
 	ofn.nMaxFile        = MAX_PATH;
 	ofn.lpstrInitialDir = directory;
@@ -1854,7 +1854,7 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 	{
 		std::string openFilename = filename;
 		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
-			openFilename += TEXT(".dsk");
+			openFilename += ".dsk";
 
 		ImageError_e Error = InsertDisk(drive, openFilename, ofn.Flags & OFN_READONLY, IMAGE_CREATE);
 		if (Error == eIMAGE_ERROR_NONE)

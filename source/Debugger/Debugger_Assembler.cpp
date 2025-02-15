@@ -43,23 +43,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	AddressingMode_t g_aOpmodes[ NUM_ADDRESSING_MODES ] =
 	{ // Output, but eventually used for Input when Assembler is working.
-		{TEXT("")        , 1 , "(implied)"     }, // (implied)
-		{TEXT("")        , 1 , "n/a 1"         }, // INVALID1
-		{TEXT("")        , 2 , "n/a 2"         }, // INVALID2
-		{TEXT("")        , 3 , "n/a 3"         }, // INVALID3
-		{TEXT("%02X")    , 2 , "Immediate"     }, // AM_M // #$%02X -> %02X
-		{TEXT("%04X")    , 3 , "Absolute"      }, // AM_A
-		{TEXT("%02X")    , 2 , "Zero Page"     }, // AM_Z
-		{TEXT("%04X,X")  , 3 , "Absolute,X"    }, // AM_AX     // %s,X
-		{TEXT("%04X,Y")  , 3 , "Absolute,Y"    }, // AM_AY     // %s,Y
-		{TEXT("%02X,X")  , 2 , "Zero Page,X"   }, // AM_ZX     // %s,X
-		{TEXT("%02X,Y")  , 2 , "Zero Page,Y"   }, // AM_ZY     // %s,Y
-		{TEXT("%s")      , 2 , "Relative"      }, // AM_R
-		{TEXT("(%02X,X)"), 2 , "(Zero Page),X" }, // AM_IZX // ($%02X,X) -> %s,X
-		{TEXT("(%04X,X)"), 3 , "(Absolute),X"  }, // AM_IAX // ($%04X,X) -> %s,X
-		{TEXT("(%02X),Y"), 2 , "(Zero Page),Y" }, // AM_NZY // ($%02X),Y
-		{TEXT("(%02X)")  , 2 , "(Zero Page)"   }, // AM_NZ  // ($%02X) -> $%02X
-		{TEXT("(%04X)")  , 3 , "(Absolute)"    }  // AM_NA  // (%04X) -> %s
+		{""        , 1 , "(implied)"     }, // (implied)
+		{""        , 1 , "n/a 1"         }, // INVALID1
+		{""        , 2 , "n/a 2"         }, // INVALID2
+		{""        , 3 , "n/a 3"         }, // INVALID3
+		{"%02X"    , 2 , "Immediate"     }, // AM_M // #$%02X -> %02X
+		{"%04X"    , 3 , "Absolute"      }, // AM_A
+		{"%02X"    , 2 , "Zero Page"     }, // AM_Z
+		{"%04X,X"  , 3 , "Absolute,X"    }, // AM_AX     // %s,X
+		{"%04X,Y"  , 3 , "Absolute,Y"    }, // AM_AY     // %s,Y
+		{"%02X,X"  , 2 , "Zero Page,X"   }, // AM_ZX     // %s,X
+		{"%02X,Y"  , 2 , "Zero Page,Y"   }, // AM_ZY     // %s,Y
+		{"%s"      , 2 , "Relative"      }, // AM_R
+		{"(%02X,X)", 2 , "(Zero Page),X" }, // AM_IZX // ($%02X,X) -> %s,X
+		{"(%04X,X)", 3 , "(Absolute),X"  }, // AM_IAX // ($%04X,X) -> %s,X
+		{"(%02X),Y", 2 , "(Zero Page),Y" }, // AM_NZY // ($%02X),Y
+		{"(%02X)"  , 2 , "(Zero Page)"   }, // AM_NZ  // ($%02X) -> $%02X
+		{"(%04X)"  , 3 , "(Absolute)"    }  // AM_NA  // (%04X) -> %s
 	};
 
 
@@ -1138,12 +1138,12 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 		{
 			if (eNextState != AS_GET_MNEMONIC_PARM)
 			{
-				ConsoleBufferPush( TEXT( " Syntax Error: '#'" ) );
+				ConsoleBufferPush( " Syntax Error: '#'"  );
 				return false;
 			}
 			if (TestFlag( AF_HaveHash ))
 			{
-				ConsoleBufferPush( TEXT( " Syntax Error: Extra '#'" ) ); // No thanks, we already have one
+				ConsoleBufferPush( " Syntax Error: Extra '#'"  ); // No thanks, we already have one
 				return false;
 			}
 			SetFlag( AF_HaveHash );
@@ -1157,7 +1157,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 		{
 			if (TestFlag( AF_HaveDollar ))
 			{
-				ConsoleBufferPush( TEXT( " Syntax Error: Extra '$'" ) ); // No thanks, we already have one
+				ConsoleBufferPush( " Syntax Error: Extra '$'" ); // No thanks, we already have one
 				return false;
 			}
 
@@ -1176,7 +1176,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 		{
 			if (TestFlag( AF_HaveLeftParen ))
 			{
-				ConsoleBufferPush( TEXT( " Syntax Error: Extra '('" ) ); // No thanks, we already have one
+				ConsoleBufferPush( " Syntax Error: Extra '('" ); // No thanks, we already have one
 				return false;
 			}
 			SetFlag( AF_HaveLeftParen );
@@ -1189,7 +1189,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 		{
 			if (TestFlag( AF_HaveRightParen ))
 			{
-				ConsoleBufferPush( TEXT( " Syntax Error: Extra ')'" ) ); // No thanks, we already have one
+				ConsoleBufferPush( " Syntax Error: Extra ')'" ); // No thanks, we already have one
 				return false;
 			}
 			SetFlag( AF_HaveRightParen );
@@ -1202,7 +1202,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 		{
 			if (TestFlag( AF_HaveComma ))
 			{
-				ConsoleBufferPush( TEXT( " Syntax Error: Extra ','" ) ); // No thanks, we already have one
+				ConsoleBufferPush( " Syntax Error: Extra ','"  ); // No thanks, we already have one
 				return false;
 			}
 			SetFlag( AF_HaveComma );
@@ -1294,7 +1294,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 					{
 						if (! TestFlag( AF_HaveComma ))
 						{
-							ConsoleBufferPush( TEXT( " Syntax Error: Missing ','" ) );
+							ConsoleBufferPush( " Syntax Error: Missing ','"  );
 							return false;
 						}
 						SetFlag( AF_HaveRegisterX );
@@ -1303,7 +1303,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 					{
 						if (! (TestFlag( AF_HaveComma )))
 						{
-							ConsoleBufferPush( TEXT( " Syntax Error: Missing ','" ) );
+							ConsoleBufferPush( " Syntax Error: Missing ','"  );
 							return false;
 						}
 						SetFlag( AF_HaveRegisterY );
@@ -1328,13 +1328,13 @@ bool AssemblerUpdateAddressingMode()
 
 	if ((TestFlag( AF_HaveLeftParen )) && (! TestFlag( AF_HaveRightParen )))
 	{
-		ConsoleBufferPush( TEXT( " Syntax Error: Missing ')'" ) );
+		ConsoleBufferPush( " Syntax Error: Missing ')'" );
 		return false;
 	}
 
 	if ((! TestFlag( AF_HaveLeftParen )) && (  TestFlag( AF_HaveRightParen )))
 	{
-		ConsoleBufferPush( TEXT( " Syntax Error: Missing '('" ) );
+		ConsoleBufferPush( " Syntax Error: Missing '('" );
 		return false;
 	}
 
@@ -1342,7 +1342,7 @@ bool AssemblerUpdateAddressingMode()
 	{
 		if ((! TestFlag( AF_HaveRegisterX )) && (! TestFlag( AF_HaveRegisterY )))
 		{
-			ConsoleBufferPush( TEXT( " Syntax Error: Index 'X' or 'Y'" ) );
+			ConsoleBufferPush( " Syntax Error: Index 'X' or 'Y'"  );
 			return false;
 		}
 	}
@@ -1536,7 +1536,7 @@ bool Assemble( int iArg, int nArgs, WORD nAddress )
 	{
 		// Check for assembler directive
 
-		ConsoleBufferPush( TEXT(" Syntax Error: Invalid mnemonic") );
+		ConsoleBufferPush( " Syntax Error: Invalid mnemonic" );
 		return false;
 	}
 	else

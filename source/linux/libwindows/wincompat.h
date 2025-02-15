@@ -54,14 +54,6 @@ extern "C"
 
 #define MAX_PATH 260
 
-#ifndef NULL
-#ifdef __cplusplus
-#define NULL 0
-#else
-#define NULL ((void *)0)
-#endif
-#endif
-
 #ifndef FALSE
 #define FALSE 0
 #endif
@@ -130,10 +122,6 @@ extern "C"
     typedef WCHAR *LPWSTR;
     typedef CONST WCHAR *LPCWSTR;
 
-// TCHAR support
-#define __TEXT(quote) quote       // r_winnt
-#define TEXT(quote) __TEXT(quote) // r_winnt
-
 #define WINAPI
 #define __stdcall
 #define CALLBACK
@@ -144,10 +132,7 @@ extern "C"
 #define _ASSERT(expr)
 #endif
 
-#define __interface struct
 #define __forceinline inline
-
-#define _tmain main
 
     typedef void *HWND;
     typedef LONG_PTR LPARAM;

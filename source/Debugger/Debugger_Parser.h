@@ -35,8 +35,8 @@ inline const char* SkipUntilToken( const char *pSrc, const TokenTable_t *aTokens
 
 	extern	const char TCHAR_LF    ;//= 0x0D;
 	extern	const char TCHAR_CR    ;//= 0x0A;
-	extern	const char TCHAR_SPACE ;//= TEXT(' ');
-	extern	const char TCHAR_TAB   ;//= TEXT('\t');
+	extern	const char TCHAR_SPACE ;//= ' ';
+	extern	const char TCHAR_TAB   ;//= '\t';
 	extern	const char TCHAR_QUOTE_DOUBLE;
 	extern	const char TCHAR_QUOTE_SINGLE;
 

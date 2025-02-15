@@ -246,22 +246,22 @@ void setAppleWinPreferences(
     if (currentData.speakerVolume != newData.speakerVolume)
     {
         SpkrSetVolume(newData.speakerVolume, GetPropertySheet().GetVolumeMax());
-        REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
+        REGSAVE(REGVALUE_SPKR_VOLUME, SpkrGetVolume());
     }
 
     if (currentData.mockingboardVolume != newData.mockingboardVolume)
     {
         cardManager.GetMockingboardCardMgr().SetVolume(newData.mockingboardVolume, GetPropertySheet().GetVolumeMax());
-        REGSAVE(TEXT(REGVALUE_MB_VOLUME), cardManager.GetMockingboardCardMgr().GetVolume());
+        REGSAVE(REGVALUE_MB_VOLUME, cardManager.GetMockingboardCardMgr().GetVolume());
     }
 
     if (currentData.apple2Type != newData.apple2Type)
     {
         SetApple2Type(newData.apple2Type);
-        REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), newData.apple2Type);
+        REGSAVE(REGVALUE_APPLE2_TYPE, newData.apple2Type);
         const eCpuType cpu = ProbeMainCpuDefault(newData.apple2Type);
         SetMainCpu(cpu);
-        REGSAVE(TEXT(REGVALUE_CPU_TYPE), cpu);
+        REGSAVE(REGVALUE_CPU_TYPE, cpu);
     }
     if (currentData.cardInSlot3 != newData.cardInSlot3)
     {
@@ -282,7 +282,7 @@ void setAppleWinPreferences(
 
     if (pDisk2Card && (currentData.enhancedSpeed != newData.enhancedSpeed))
     {
-        REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), newData.enhancedSpeed ? 1 : 0);
+        REGSAVE(REGVALUE_ENHANCE_DISK_SPEED, newData.enhancedSpeed ? 1 : 0);
         pDisk2Card->SetEnhanceDisk(newData.enhancedSpeed);
     }
 
@@ -306,7 +306,7 @@ void setAppleWinPreferences(
     {
         const std::string name = newData.saveState.toStdString();
         Snapshot_SetFilename(name);
-        RegSaveString(TEXT(REG_CONFIG), REGVALUE_SAVESTATE_FILENAME, 1, name);
+        RegSaveString(REG_CONFIG, REGVALUE_SAVESTATE_FILENAME, 1, name);
     }
 
     if (currentData.printerFilename != newData.printerFilename)
@@ -316,7 +316,7 @@ void setAppleWinPreferences(
             ParallelPrinterCard *card = cardManager.GetParallelPrinterCard();
             const std::string name = newData.printerFilename.toStdString();
             card->SetFilename(name);
-            RegSaveString(TEXT(REG_CONFIG), REGVALUE_PRINTER_FILENAME, 1, name);
+            RegSaveString(REG_CONFIG, REGVALUE_PRINTER_FILENAME, 1, name);
         }
     }
 

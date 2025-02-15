@@ -38,12 +38,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 CPageDisk* CPageDisk::ms_this = 0;	// reinit'd in ctor
 
 const char CPageDisk::m_defaultDiskOptions[] =
-				TEXT("Select Disk...\0")
-				TEXT("Eject Disk\0");
+				"Select Disk...\0"
+				"Eject Disk\0";
 
 const char CPageDisk::m_defaultHDDOptions[] =
-				TEXT("Select Hard Disk Image...\0")
-				TEXT("Unplug Hard Disk Image\0");
+				"Select Hard Disk Image...\0"
+				"Unplug Hard Disk Image\0";
 
 INT_PTR CALLBACK CPageDisk::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
@@ -173,7 +173,7 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 			break;
 		case IDC_CIDERPRESS_BROWSE:
 			{
-				std::string CiderPressLoc = m_PropertySheetHelper.BrowseToFile(hWnd, TEXT("Select path to CiderPress"), REGVALUE_CIDERPRESSLOC, TEXT("Applications (*.exe)\0*.exe\0") TEXT("All Files\0*.*\0") );
+				std::string CiderPressLoc = m_PropertySheetHelper.BrowseToFile(hWnd, "Select path to CiderPress", REGVALUE_CIDERPRESSLOC, "Applications (*.exe)\0*.exe\0" "All Files\0*.*\0" );
 				SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM) CiderPressLoc.c_str());
 			}
 			break;
@@ -194,7 +194,7 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 			InitComboHDD(hWnd, SLOT7);
 
 			char PathToCiderPress[MAX_PATH];
-			RegLoadString(TEXT(REG_CONFIG), REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress, MAX_PATH, TEXT(""));
+			RegLoadString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress, MAX_PATH, "");
 			SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME ,WM_SETTEXT, 0, (LPARAM)PathToCiderPress);
 
 			CheckDlgButton(hWnd, IDC_HDD_ENABLE, (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD) ? BST_CHECKED : BST_UNCHECKED);
@@ -271,14 +271,14 @@ void CPageDisk::DlgOK(HWND hWnd)
 		nLineLength = nLineLength > sizeof(szFilename)-1 ? sizeof(szFilename)-1 : nLineLength;
 		szFilename[nLineLength] = 0x00;
 
-		RegSaveString(TEXT(REG_CONFIG), REGVALUE_CIDERPRESSLOC, 1, szFilename);
+		RegSaveString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, szFilename);
 	}
 
 	const bool bNewEnhanceDisk = IsDlgButtonChecked(hWnd, IDC_ENHANCE_DISK_ENABLE) ? true : false;
 	if (bNewEnhanceDisk != GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk())
 	{
 		GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(bNewEnhanceDisk);
-		REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (uint32_t)bNewEnhanceDisk);
+		REGSAVE(REGVALUE_ENHANCE_DISK_SPEED, (uint32_t)bNewEnhanceDisk);
 	}
 
 	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
