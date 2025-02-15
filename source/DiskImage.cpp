@@ -265,8 +265,8 @@ void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pF
 	LPCTSTR startpos = pPathname;
 
 	// imagetitle = <FILENAME.EXT>
-	if (strrchr(startpos, TEXT(PATH_SEPARATOR)))
-		startpos = strrchr(startpos, TEXT(PATH_SEPARATOR))+1;
+	if (strrchr(startpos, PATH_SEPARATOR))
+		startpos = strrchr(startpos, PATH_SEPARATOR)+1;
 
 	strncpy(imagetitle, startpos, MAX_DISK_FULL_NAME);
 	imagetitle[MAX_DISK_FULL_NAME] = 0;
@@ -291,8 +291,8 @@ void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pF
 	if (imagetitle[0])
 	{
 		LPTSTR dot = imagetitle;
-		if (strrchr(dot, TEXT('.')))
-			dot = strrchr(dot, TEXT('.'));
+		if (strrchr(dot, '.'))
+			dot = strrchr(dot, '.');
 		if (dot > imagetitle)
 			*dot = 0;
 	}

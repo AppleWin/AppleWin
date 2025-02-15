@@ -39,14 +39,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	Arg_t g_aArgRaw[ MAX_ARGS ]; // pre-processing
 	Arg_t g_aArgs  [ MAX_ARGS ]; // post-processing (cooked)
 
-	const char TCHAR_LF     = TEXT('\x0D');
-	const char TCHAR_CR     = TEXT('\x0A');
-	const char TCHAR_SPACE  = TEXT(' ');
-	const char TCHAR_TAB    = TEXT('\t');
-//	const char TCHAR_QUOTED = TEXT('"');
-	const char TCHAR_QUOTE_DOUBLE = TEXT('"');
-	const char TCHAR_QUOTE_SINGLE = TEXT('\'');
-	const char TCHAR_ESCAPE = TEXT('\x1B');
+	const char TCHAR_LF     = '\x0D';
+	const char TCHAR_CR     = '\x0A';
+	const char TCHAR_SPACE  = ' ';
+	const char TCHAR_TAB    = '\t';
+//	const char TCHAR_QUOTED = '"';
+	const char TCHAR_QUOTE_DOUBLE = '"';
+	const char TCHAR_QUOTE_SINGLE = '\'';
+	const char TCHAR_ESCAPE = '\x1B';
 
 
 	// NOTE: ArgToken_e and g_aTokens must match!
@@ -76,13 +76,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{ TOKEN_PERCENT     , TYPE_OPERATOR, "%"  }, // mod
 		{ TOKEN_PIPE        , TYPE_OPERATOR, "|"  }, // bit-or
 		{ TOKEN_PLUS        , TYPE_OPERATOR, "+"  }, // add
-//		{ TOKEN_QUESTION    , TYPE_OPERATOR, TEXT('?')  }, // Not a token 1) wildcard needs to stay together with other chars
+//		{ TOKEN_QUESTION    , TYPE_OPERATOR, '?'  }, // Not a token 1) wildcard needs to stay together with other chars
 		{ TOKEN_QUOTE_SINGLE, TYPE_QUOTED_1, "\'" },
 		{ TOKEN_QUOTE_DOUBLE, TYPE_QUOTED_2, "\"" }, // for strings
 		{ TOKEN_SEMI        , TYPE_STRING  , ";"  },
 		{ TOKEN_SPACE       , TYPE_STRING  , " "  }, // space is also a delimiter between tokens/args
 		{ TOKEN_STAR        , TYPE_OPERATOR, "*"  }, // Not a token 1) wildcard needs to stay together with other chars
-//		{ TOKEN_TAB         , TYPE_STRING  , TEXT('\t') }
+//		{ TOKEN_TAB         , TYPE_STRING  , '\t' }
 		{ TOKEN_TILDE       , TYPE_OPERATOR, "~"  }, // C/C++: Not.  Used for console.
 
 		{ TOKEN_COMMENT_EOL , TYPE_STRING  , "//" },

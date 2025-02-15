@@ -19,8 +19,8 @@ typedef struct
 	bool	bInterrupts;	// NB. Can't be read from s/w
 } SSC_DIPSW;
 
-#define TEXT_SERIAL_COM TEXT("COM")
-#define TEXT_SERIAL_TCP TEXT("TCP")
+#define TEXT_SERIAL_COM "COM"
+#define TEXT_SERIAL_TCP "TCP"
 
 class CSuperSerialCard : public Card
 {
