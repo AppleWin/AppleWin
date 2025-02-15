@@ -54,14 +54,6 @@ extern "C"
 
 #define MAX_PATH 260
 
-#ifndef NULL
-#ifdef __cplusplus
-#define NULL 0
-#else
-#define NULL ((void *)0)
-#endif
-#endif
-
 #ifndef FALSE
 #define FALSE 0
 #endif
@@ -140,7 +132,6 @@ extern "C"
 #define _ASSERT(expr)
 #endif
 
-#define __interface struct
 #define __forceinline inline
 
     typedef void *HWND;
