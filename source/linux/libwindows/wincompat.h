@@ -130,10 +130,6 @@ extern "C"
     typedef WCHAR *LPWSTR;
     typedef CONST WCHAR *LPCWSTR;
 
-// TCHAR support
-#define __TEXT(quote) quote       // r_winnt
-#define TEXT(quote) __TEXT(quote) // r_winnt
-
 #define WINAPI
 #define __stdcall
 #define CALLBACK
@@ -146,8 +142,6 @@ extern "C"
 
 #define __interface struct
 #define __forceinline inline
-
-#define _tmain main
 
     typedef void *HWND;
     typedef LONG_PTR LPARAM;

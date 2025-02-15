@@ -77,9 +77,9 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
     // CPU BENCHMARK, REPORT AN ERROR AND OPTIONALLY TRACK IT DOWN
     if ((regs.pc < 0x300) || (regs.pc > 0x400))
         if (frame.FrameMessageBox(
-                TEXT("The emulator has detected a problem while running ")
-                    TEXT("the CPU benchmark.  Would you like to gather more ") TEXT("information?"),
-                TEXT("Benchmarks"), MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
+                "The emulator has detected a problem while running "
+                "the CPU benchmark.  Would you like to gather more information?",
+                "Benchmarks", MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
         {
             BOOL error = 0;
             WORD lastpc = 0x300;
@@ -99,21 +99,21 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
             if (error)
             {
                 const std::string outstr = StrFormat(
-                    TEXT("The emulator experienced an error %u clock cycles ")
-                        TEXT("into the CPU benchmark.  Prior to the error, the ")
-                            TEXT("program counter was at $%04X.  After the error, it ") TEXT("had jumped to $%04X."),
+                    "The emulator experienced an error %u clock cycles "
+                    "into the CPU benchmark.  Prior to the error, the "
+                    "program counter was at $%04X.  After the error, it had jumped to $%04X.",
                     (unsigned)loop, (unsigned)lastpc, (unsigned)regs.pc);
-                frame.FrameMessageBox(outstr.c_str(), TEXT("Benchmarks"), MB_ICONINFORMATION | MB_SETFOREGROUND);
+                frame.FrameMessageBox(outstr.c_str(), "Benchmarks", MB_ICONINFORMATION | MB_SETFOREGROUND);
             }
             else
             {
                 frame.FrameMessageBox(
-                    TEXT("The emulator was unable to locate the exact ")
-                        TEXT("point of the error.  This probably means that ")
-                            TEXT("the problem is external to the emulator, ")
-                                TEXT("happening asynchronously, such as a problem in ")
-                                    TEXT("a timer interrupt handler."),
-                    TEXT("Benchmarks"), MB_ICONINFORMATION | MB_SETFOREGROUND);
+                    "The emulator was unable to locate the exact "
+                    "point of the error.  This probably means that "
+                    "the problem is external to the emulator, "
+                    "happening asynchronously, such as a problem in "
+                    "a timer interrupt handler.",
+                    "Benchmarks", MB_ICONINFORMATION | MB_SETFOREGROUND);
             }
         }
 
@@ -157,11 +157,13 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
 
     // DISPLAY THE RESULTS
     const std::string outstr = StrFormat(
-        TEXT("Pure Video FPS:\t%u\n") TEXT("Pure CPU MHz:\t%u.%u%s (video update)\n")
-            TEXT("Pure CPU MHz:\t%u.%u%s (full-speed)\n\n") TEXT("EXPECTED AVERAGE VIDEO GAME\n")
-                TEXT("PERFORMANCE: %u FPS"),
+        "Pure Video FPS:\t%u\n"
+        "Pure CPU MHz:\t%u.%u%s (video update)\n"
+        "Pure CPU MHz:\t%u.%u%s (full-speed)\n\n"
+        "EXPECTED AVERAGE VIDEO GAME\n"
+        "PERFORMANCE: %u FPS",
         (unsigned)totalhiresfps, (unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10),
-        (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")), (unsigned)(totalmhz10[1] / 10),
-        (unsigned)(totalmhz10[1] % 10), (LPCTSTR)(IS_APPLE2 ? TEXT(" (6502)") : TEXT("")), (unsigned)realisticfps);
-    frame.FrameMessageBox(outstr.c_str(), TEXT("Benchmarks"), MB_ICONINFORMATION | MB_SETFOREGROUND);
+        (LPCTSTR)(IS_APPLE2 ? " (6502)" : ""), (unsigned)(totalmhz10[1] / 10), (unsigned)(totalmhz10[1] % 10),
+        (LPCTSTR)(IS_APPLE2 ? " (6502)" : ""), (unsigned)realisticfps);
+    frame.FrameMessageBox(outstr.c_str(), "Benchmarks", MB_ICONINFORMATION | MB_SETFOREGROUND);
 }

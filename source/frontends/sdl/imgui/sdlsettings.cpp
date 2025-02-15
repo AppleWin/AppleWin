@@ -107,7 +107,7 @@ namespace
     {
         g_dwSpeed = speedMultiplier;
         SetCurrentCLK6502();
-        REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
+        REGSAVE(REGVALUE_EMULATION_SPEED, g_dwSpeed);
         frame->ResetSpeed();
     }
 
@@ -169,7 +169,7 @@ namespace sa2
                     if (mySaveFileDialog.HasSelected())
                     {
                         Snapshot_SetFilename(mySaveFileDialog.GetSelected().string());
-                        RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, Snapshot_GetPathname());
+                        RegSaveString(REG_CONFIG, REGVALUE_SAVESTATE_FILENAME, 1, Snapshot_GetPathname());
                         mySaveFileDialog.ClearSelected();
                     }
 
@@ -372,7 +372,7 @@ namespace sa2
                     if (ImGui::Checkbox("Enhanced speed", &enhancedSpeed))
                     {
                         cardManager.GetDisk2CardMgr().SetEnhanceDisk(enhancedSpeed);
-                        REGSAVE(TEXT(REGVALUE_ENHANCE_DISK_SPEED), (uint32_t)enhancedSpeed);
+                        REGSAVE(REGVALUE_ENHANCE_DISK_SPEED, (uint32_t)enhancedSpeed);
                     }
 
                     ImGui::Separator();
@@ -579,7 +579,7 @@ namespace sa2
                     if (ImGui::SliderInt("Speaker volume", &mySpeakerVolume, 0, volumeMax))
                     {
                         SpkrSetVolume(volumeMax - mySpeakerVolume, volumeMax);
-                        REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
+                        REGSAVE(REGVALUE_SPKR_VOLUME, SpkrGetVolume());
                     }
 
                     MockingboardCardManager &mockingboard = cardManager.GetMockingboardCardMgr();
@@ -588,7 +588,7 @@ namespace sa2
                     if (ImGui::SliderInt("Mockingboard volume", &myMockingboardVolume, 0, volumeMax))
                     {
                         mockingboard.SetVolume(volumeMax - myMockingboardVolume, volumeMax);
-                        REGSAVE(TEXT(REGVALUE_MB_VOLUME), mockingboard.GetVolume());
+                        REGSAVE(REGVALUE_MB_VOLUME, mockingboard.GetVolume());
                     }
 
                     ImGui::Separator();
