@@ -973,12 +973,6 @@ bool Spkr_DSInit()
 		return false;
 	}
 
-	SpeakerVoice.bActive = true;
-
-	// Volume might've been setup from value in Registry
-	if(!SpeakerVoice.nVolume)
-		SpeakerVoice.nVolume = DSBVOLUME_MAX;
-
 	hr = SpeakerVoice.lpDSBvoice->SetVolume(SpeakerVoice.nVolume);
 	LogFileOutput("Spkr_DSInit: SetVolume(%d) res = %08X\n", SpeakerVoice.nVolume, (uint32_t)hr);
 
