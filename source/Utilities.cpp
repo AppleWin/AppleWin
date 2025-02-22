@@ -203,14 +203,6 @@ void LoadConfiguration(bool loadImages)
 	if(REGLOAD(REGVALUE_THE_FREEZES_F8_ROM, &dwTmp))
 		GetPropertySheet().SetTheFreezesF8Rom(dwTmp);
 
-	dwTmp = 70;
-	REGLOAD(REGVALUE_SPKR_VOLUME, &dwTmp);
-	SpkrSetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
-
-	dwTmp = 70;
-	REGLOAD(REGVALUE_MB_VOLUME, &dwTmp);
-	GetCardMgr().GetMockingboardCardMgr().SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
-
 	if(REGLOAD(REGVALUE_SAVE_STATE_ON_EXIT, &dwTmp))
 		g_bSaveStateOnExit = dwTmp ? true : false;
 
@@ -288,7 +280,13 @@ void LoadConfiguration(bool loadImages)
 		}
 	}
 
-	//
+	dwTmp = 70;
+	REGLOAD(REGVALUE_SPKR_VOLUME, &dwTmp);
+	SpkrSetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
+
+	dwTmp = 70;
+	REGLOAD(REGVALUE_MB_VOLUME, &dwTmp);
+	GetCardMgr().GetMockingboardCardMgr().SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
 	// Load save-state pathname *before* inserting any harddisk/disk images (for both init & reinit cases)
 	// NB. inserting harddisk/disk can change snapshot pathname

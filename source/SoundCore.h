@@ -22,7 +22,7 @@ struct VOICE
 	{
 		bActive = false;
 		bMute = false;
-		nVolume = 0;
+		nVolume = DSBVOLUME_MAX;
 		nFadeVolume = 0;
 		dwUserVolume = 0;
 		bIsSpeaker = false;
