@@ -57,4 +57,4 @@ if ("${ROOT_PATH}" STREQUAL "")
   set(ROOT_PATH "./")
 endif()
 
-configure_file(config.h.in config.h)
+configure_file(common_config.h.in common_config.h)

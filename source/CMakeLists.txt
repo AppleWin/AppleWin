@@ -298,4 +298,4 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/bin/APPLE2E.SYM ${CMAKE_SOURCE_DIR}/bin/A2_BASIC.SYM ${CMAKE_SOURCE_DIR}/bin/A2_DOS33.SYM2 ${CMAKE_BINARY_DIR}
   )
 
-configure_file(linux/config.h.in linux/config.h)
+configure_file(linux/linux_config.h.in linux/linux_config.h)
