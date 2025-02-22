@@ -53,7 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,2,6);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,2,7);
 
 
 // Public _________________________________________________________________________________________
@@ -6813,7 +6813,7 @@ enum ViewVideoPage_t
 
 static Update_t _ViewOutput ( ViewVideoPage_t iPage, UINT bVideoModeFlags )
 {
-	switch ( iPage ) 
+	switch ( iPage )
 	{
 		case VIEW_PAGE_X:
 			bVideoModeFlags |= (!GetVideo().VideoGetSW80STORE() && GetVideo().VideoGetSWPAGE2()) ? VF_PAGE2 : 0;
@@ -9205,10 +9205,74 @@ void DebuggerProcessKey ( int keycode )
 		// VK_F# are already processed, so we can't use them to cycle next video g_nAppMode
 //		    if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 
-		GetVideo().ClearSHRResidue();	// Clear the framebuffer to remove any SHR residue in the borders
+		// 2.9.2.7 Added: QoL for Debugger's view output screen.
+		//    When using the debugger to view the ouput screen such as `HGR`, `HGR2`, etc. allow the
+		//    keys 0-5 to display the specificed video # page, or 9 to see the current video mode.
+		//      0 Pseudo   Page 0 ($0000 for graphics, else text page 1)
+		//      1 Hardware Page 1 ($2000 for graphics, else text $0400)
+		//      2 Hardware Page 2 ($4000 for graphics, else text $0800)
+		//      3 Pseudo   Page 3 ($6000 for graphics, else text page 1)
+		//      4 Pseudo   Page 4 ($8000 for graphics, else text page 1)
+		//      5 Pseudo   Page 5 ($A000 for graphics, else text page 1)
+		//      9 Current mode and page
+		//
+		// NOTE: Do we want to allow viewing mixed/full mode since 0-5 always sets fullscreen?
+		//      7 Mixed-screen mode
+		//      8 Full-screen mode
+		//
+		// NOTE: Keep in sync: ViewVideoPage_t, DebuggerProcessKey(), _ViewOutput()
+		if (((keycode >= '0') && (keycode <= '5'))
+		||   (keycode == '9'))
+		{
+			ViewVideoPage_t eVideoPage  = VIEW_PAGE_X;
+			UINT            bVideoFlags = 0;
 
-		DebugVideoMode::Instance().Reset();
-		UpdateDisplay( UPDATE_ALL ); // 1
+			DebugVideoMode::Instance().Get( &bVideoFlags );
+			uint32_t        bSavedVideoModeFlags = bVideoFlags;
+
+			bVideoFlags &= ~(VF_MIXED | VF_PAGE0 | VF_PAGE2 | VF_PAGE3 | VF_PAGE4 | VF_PAGE5);
+			switch (keycode)
+			{
+				case '0': eVideoPage = VIEW_PAGE_0; bVideoFlags |= VF_PAGE0; break;
+				case '1': eVideoPage = VIEW_PAGE_1; /*                   */; break;
+				case '2': eVideoPage = VIEW_PAGE_2; bVideoFlags |= VF_PAGE2; break;
+				case '3': eVideoPage = VIEW_PAGE_3; bVideoFlags |= VF_PAGE3; break;
+				case '4': eVideoPage = VIEW_PAGE_4; bVideoFlags |= VF_PAGE4; break;
+				case '5': eVideoPage = VIEW_PAGE_5; bVideoFlags |= VF_PAGE5; break;
+				case '9': /* Don't use VIEW_PAGE_X as it is handled below*/; break;
+				default:
+					bool bUnknownViewVideoPage = false;
+					assert( bUnknownViewVideoPage );
+					break;
+			}
+
+			if (keycode == '9')
+			{
+				GetFrame().VideoRedrawScreen(); // See: CmdWindowViewOutput()
+			}
+			else
+			{
+				_ViewOutput( eVideoPage, bVideoFlags );
+				DebugDisplay();
+			}
+
+			// We need to restore the video mode since the original output may be mixed mode
+			// but switching to page 0-5 will have set full mode.
+			DebugVideoMode::Instance().Set( bSavedVideoModeFlags );
+			g_bIgnoreNextKey = true;
+		}
+		else
+		{
+			GetVideo().ClearSHRResidue();	// Clear the framebuffer to remove any SHR residue in the borders
+			DebugVideoMode::Instance().Reset();
+
+			// Technically this is a bug/feature: Leaving the debugger view output can sometimes be in the wrong view mode
+			// GetFrame().VideoRedrawScreen();
+			// DebugVideoMode::Instance().Set( GetVideo().GetVideoMode() );
+
+			UpdateDisplay( UPDATE_ALL ); // 1
+		}
+
 		return;
 	}
 

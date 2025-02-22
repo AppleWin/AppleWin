@@ -180,6 +180,10 @@
 				<param name="Local" value="dbg-memory.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="View Output">
+				<param name="Local" value="dbg-view-output.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Symbols">
 				<param name="Local" value="dbg-symbols.html">
 				</OBJECT>
