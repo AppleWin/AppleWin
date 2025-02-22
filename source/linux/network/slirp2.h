@@ -2,7 +2,7 @@
 
 #include "Tfe/NetworkBackend.h"
 
-#include "linux/config.h"
+#include "linux/linux_config.h"
 
 #ifdef SLIRP_FOUND
 // disable to use libpcap in all cases
