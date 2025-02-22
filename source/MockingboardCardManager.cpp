@@ -299,10 +299,6 @@ bool MockingboardCardManager::Init(void)
 	if (!bRes)
 		return false;
 
-	// Volume might've been setup from value in Registry
-	if (!m_mockingboardVoice.nVolume)
-		m_mockingboardVoice.nVolume = DSBVOLUME_MAX;
-
 	hr = m_mockingboardVoice.lpDSBvoice->SetVolume(m_mockingboardVoice.nVolume);
 	LogFileOutput("MBCardMgr: SetVolume(), hr=0x%08X\n", hr);
 

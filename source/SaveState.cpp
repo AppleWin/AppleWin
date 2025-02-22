@@ -403,7 +403,11 @@ static void Snapshot_LoadState_v2(void)
 		GetVideo().SetVidHD(false);			// Set true later only if VidHDCard is instantiated
 		GetVideo().VideoResetState();
 		GetVideo().SetVideoRefreshRate(VR_60HZ);	// Default to 60Hz as older save-states won't contain refresh rate
-		GetCardMgr().GetMockingboardCardMgr().InitializeForLoadingSnapshot();	// GH#609
+
+		MockingboardCardManager &mockingboardCardManager = GetCardMgr().GetMockingboardCardMgr();
+
+		mockingboardCardManager.InitializeForLoadingSnapshot(); // GH#609
+
 #ifdef USE_SPEECH_API
 		g_Speech.Reset();
 #endif
@@ -417,7 +421,10 @@ static void Snapshot_LoadState_v2(void)
 				throw std::runtime_error("Unknown top-level scalar: " + scalar);
 		}
 
-		GetCardMgr().GetMockingboardCardMgr().SetCumulativeCycles();
+		// refresh the volume of any new SSI263 card
+		mockingboardCardManager.SetVolume(mockingboardCardManager.GetVolume(), GetPropertySheet().GetVolumeMax());
+		mockingboardCardManager.SetCumulativeCycles();
+
 		frame.SetLoadedSaveStateFlag(true);
 
 		// NB. The following disparity should be resolved:
