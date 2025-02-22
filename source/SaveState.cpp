@@ -405,7 +405,6 @@ static void Snapshot_LoadState_v2(void)
 		GetVideo().SetVideoRefreshRate(VR_60HZ);	// Default to 60Hz as older save-states won't contain refresh rate
 
 		MockingboardCardManager &mockingboardCardManager = GetCardMgr().GetMockingboardCardMgr();
-
 		mockingboardCardManager.InitializeForLoadingSnapshot(); // GH#609
 
 #ifdef USE_SPEECH_API
@@ -421,7 +420,7 @@ static void Snapshot_LoadState_v2(void)
 				throw std::runtime_error("Unknown top-level scalar: " + scalar);
 		}
 
-		// refresh the volume of any new SSI263 card
+		// Refresh the volume of any new Mockingboard card (and its SSI263 or SC01 chips)
 		mockingboardCardManager.SetVolume(mockingboardCardManager.GetVolume(), GetPropertySheet().GetVolumeMax());
 		mockingboardCardManager.SetCumulativeCycles();
 
