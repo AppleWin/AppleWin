@@ -31,7 +31,8 @@ namespace
         virtual HRESULT Stop() override;
         virtual HRESULT Play(DWORD dwReserved1, DWORD dwReserved2, DWORD dwFlags) override;
         virtual HRESULT SetVolume(LONG lVolume) override;
-        virtual HRESULT Unlock(LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2) override;
+        virtual HRESULT Unlock(
+            LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2) override;
 
         void setOptions(const qint64 duration); // in ms
         QDirectSound::SoundInfo getInfo();
@@ -58,13 +59,11 @@ namespace
         audioFormat.setSampleRate(mySampleRate);
         audioFormat.setChannelCount(myChannels);
 
-        Q_ASSERT(myBitsPerSample == 16);
-
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-        audioFormat.setSampleSize(myBitsPerSample);
+        audioFormat.setSampleSize(sizeof(int16_t) * 8);
+        audioFormat.setSampleType(QAudioFormat::SignedInt);
         audioFormat.setCodec(QString::fromUtf8("audio/pcm"));
         audioFormat.setByteOrder(QAudioFormat::LittleEndian);
-        audioFormat.setSampleType(QAudioFormat::SignedInt);
         myAudioOutput = std::make_shared<QAudioSink>(audioFormat);
 #else
         audioFormat.setSampleFormat(QAudioFormat::Int16);
@@ -122,7 +121,8 @@ namespace
         return res;
     }
 
-    HRESULT DirectSoundGenerator::Unlock(LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2)
+    HRESULT DirectSoundGenerator::Unlock(
+        LPVOID lpvAudioPtr1, DWORD dwAudioBytes1, LPVOID lpvAudioPtr2, DWORD dwAudioBytes2)
     {
         const HRESULT res = LinuxSoundBuffer::Unlock(lpvAudioPtr1, dwAudioBytes1, lpvAudioPtr2, dwAudioBytes2);
         // without this, in Qt6, it does not recover fron an underrun

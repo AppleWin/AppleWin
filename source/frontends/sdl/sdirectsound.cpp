@@ -176,6 +176,7 @@ namespace
         info.voiceName = myVoiceName;
         info.running = dwStatus & DSBSTATUS_PLAYING;
         info.channels = myChannels;
+        info.sampleRate = mySampleRate;
         info.volume = GetLogarithmicVolume();
         info.numberOfUnderruns = GetBufferUnderruns();
 

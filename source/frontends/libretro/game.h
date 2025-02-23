@@ -4,10 +4,10 @@
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/diskcontrol.h"
 #include "frontends/libretro/rkeyboard.h"
-#include "frontends/libretro/rdirectsound.h"
+
+#include "Common.h"
 
 #include <memory>
-#include <chrono>
 #include <string>
 #include <vector>
 
@@ -37,7 +37,7 @@ namespace ra2
         void updateVariables();
         void executeOneFrame();
         void processInputEvents();
-        void writeAudio(const size_t fps);
+        void writeAudio(const size_t fps, const size_t sampleRate, const size_t channels);
 
         void drawVideoBuffer();
 
@@ -48,13 +48,15 @@ namespace ra2
         void keyboardCallback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers);
 
         static constexpr size_t FPS = 60;
+        static constexpr size_t SAMPLE_RATE = SPKR_SAMPLE_RATE;
+        static constexpr size_t CHANNELS = 2;
+
         static unsigned ourInputDevices[MAX_PADS];
         static constexpr retro_usec_t ourFrameTime = 1000000 / FPS;
 
     private:
         const bool mySupportsInputBitmasks;
         size_t myButtonStates;
-        AudioSource myAudioSource;
         KeyboardType myKeyboardType;
 
         // keep them in this order!
@@ -76,6 +78,8 @@ namespace ra2
         MousePosition_t myMouse[2];
 
         DiskControl myDiskControl;
+
+        std::vector<int16_t> myAudioBuffer;
 
         size_t updateButtonStates();
         void keyboardEmulation();

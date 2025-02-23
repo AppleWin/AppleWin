@@ -108,14 +108,6 @@ namespace
              {"60Hz", VR_60HZ},
              {"50Hz", VR_50HZ},
          }},
-        {"audio_source",
-         "Audio Source",
-         REG_RA2,
-         REGVALUE_AUDIO_SOURCE,
-         {
-             {REGVALUE_AUDIO_SPEAKER, static_cast<uint32_t>(ra2::AudioSource::SPEAKER)},
-             {REGVALUE_AUDIO_MOCKINGBOARD, static_cast<uint32_t>(ra2::AudioSource::MOCKINGBOARD)},
-         }},
         {"keyboard_type",
          "Keyboard Type",
          REG_RA2,
@@ -205,14 +197,6 @@ namespace ra2
         const auto registry = std::make_shared<common2::PTreeRegistry>();
         PopulateRegistry(registry);
         return registry;
-    }
-
-    AudioSource GetAudioSource()
-    {
-        uint32_t value = 1;
-        RegLoadValue(REG_RA2, REGVALUE_AUDIO_SOURCE, TRUE, &value);
-        const AudioSource source = value <= uint32_t(AudioSource::UNKNOWN) ? AudioSource(value) : AudioSource::UNKNOWN;
-        return source;
     }
 
     KeyboardType GetKeyboardEmulationType()

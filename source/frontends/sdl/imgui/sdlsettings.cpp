@@ -593,12 +593,13 @@ namespace sa2
 
                     ImGui::Separator();
 
-                    if (ImGui::BeginTable("Devices", 6, ImGuiTableFlags_RowBg))
+                    if (ImGui::BeginTable("Devices", 7, ImGuiTableFlags_RowBg))
                     {
                         myAudioInfo = getAudioInfo();
                         ImGui::TableSetupColumn("Voice");
                         ImGui::TableSetupColumn("Running");
                         ImGui::TableSetupColumn("Channels");
+                        ImGui::TableSetupColumn("Sample rate");
                         ImGui::TableSetupColumn("Volume");
                         ImGui::TableSetupColumn("Buffer (ms)");
                         ImGui::TableSetupColumn("Underruns");
@@ -616,6 +617,8 @@ namespace sa2
                             ImGui::Checkbox("##Running", &device.running);
                             ImGui::TableNextColumn();
                             ImGui::Text("%d", device.channels);
+                            ImGui::TableNextColumn();
+                            ImGui::Text("%d", device.sampleRate);
                             ImGui::TableNextColumn();
                             int volume = device.volume * 100;
                             ImGui::SliderInt("##Volume", &volume, 0, 100, "%3d");

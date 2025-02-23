@@ -28,7 +28,6 @@ public:
     const size_t myBufferSize;
     const size_t mySampleRate;
     const size_t myChannels;
-    const size_t myBitsPerSample;
     const std::string myVoiceName;
 
     virtual HRESULT SetCurrentPosition(DWORD dwNewPosition) override;

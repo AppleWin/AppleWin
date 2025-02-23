@@ -5,35 +5,10 @@
 #include "linux/linuxsoundbuffer.h"
 
 #include <unordered_set>
-#include <memory>
 #include <cmath>
-#include <vector>
 
 namespace
 {
-
-    ra2::AudioSource getAudioSourceFromName(const std::string &name)
-    {
-        // These are the strings used in DSGetSoundBuffer
-
-        if (name == "Spkr")
-        {
-            return ra2::AudioSource::SPEAKER;
-        }
-
-        if (name == "MB")
-        {
-            return ra2::AudioSource::MOCKINGBOARD;
-        }
-
-        if (name == "SSI263")
-        {
-            return ra2::AudioSource::SSI263;
-        }
-
-        // something new, just ignore it
-        return ra2::AudioSource::UNKNOWN;
-    }
 
     class DirectSoundGenerator : public LinuxSoundBuffer
     {
@@ -44,11 +19,10 @@ namespace
         void writeAudio(const size_t fps, const bool write);
 
         bool isRunning();
-
-        ra2::AudioSource getSource() const;
+        bool isSameFormat(const size_t sampleRate, const size_t channels) const;
+        void advanceOneFrame(const size_t fps);
 
     private:
-        const ra2::AudioSource myAudioSource;
         std::vector<int16_t> myMixerBuffer;
 
         void mixBuffer(const void *ptr, const size_t size);
@@ -59,7 +33,6 @@ namespace
     DirectSoundGenerator::DirectSoundGenerator(
         DWORD dwBufferSize, DWORD nSampleRate, int nChannels, LPCSTR pszVoiceName)
         : LinuxSoundBuffer(dwBufferSize, nSampleRate, nChannels, pszVoiceName)
-        , myAudioSource(getAudioSourceFromName(myVoiceName))
     {
     }
 
@@ -82,63 +55,44 @@ namespace
         }
     }
 
-    ra2::AudioSource DirectSoundGenerator::getSource() const
+    bool DirectSoundGenerator::isSameFormat(const size_t sampleRate, const size_t channels) const
     {
-        return myAudioSource;
+        return (mySampleRate == sampleRate) && (myChannels == channels);
     }
 
-    void DirectSoundGenerator::mixBuffer(const void *ptr, const size_t size)
+    void DirectSoundGenerator::advanceOneFrame(const size_t fps)
     {
-        const int16_t frames = size / (sizeof(int16_t) * myChannels);
-        const int16_t *data = static_cast<const int16_t *>(ptr);
+        const size_t bytesPerFrame = myChannels * sizeof(int16_t);
+        const size_t bytesToRead = mySampleRate * bytesPerFrame / fps;
 
-        if (myChannels == 2)
-        {
-            myMixerBuffer.assign(data, data + frames * myChannels);
-        }
-        else
-        {
-            myMixerBuffer.resize(2 * frames);
-            for (int16_t i = 0; i < frames; ++i)
-            {
-                myMixerBuffer[i * 2] = data[i];
-                myMixerBuffer[i * 2 + 1] = data[i];
-            }
-        }
-
-        const double logVolume = GetLogarithmicVolume();
-        // same formula as QAudio::convertVolume()
-        const double linVolume = logVolume > 0.99 ? 1.0 : -std::log(1.0 - logVolume) / std::log(100.0);
-        const int16_t rvolume = int16_t(linVolume * 128);
-
-        for (int16_t &sample : myMixerBuffer)
-        {
-            sample = (sample * rvolume) / 128;
-        }
-
-        ra2::audio_batch_cb(myMixerBuffer.data(), frames);
-    }
-
-    void DirectSoundGenerator::writeAudio(const size_t fps, const bool write)
-    {
-        const size_t frames = mySampleRate / fps;
-        const size_t bytesToRead = frames * myChannels * sizeof(int16_t);
+        // it does not matter if we read broken frames, this generator will never play sound
 
         LPVOID lpvAudioPtr1, lpvAudioPtr2;
         DWORD dwAudioBytes1, dwAudioBytes2;
-        // always read to keep AppleWin audio algorithms working correctly.
         Read(bytesToRead, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
+    }
 
-        if (write)
+    void mixBuffer(LinuxSoundBuffer *generator, LPVOID lpvAudioPtr, DWORD dwAudioBytes, int16_t *ptr)
+    {
+        // mix the buffer
+        const int16_t *data = static_cast<const int16_t *>(lpvAudioPtr);
+
+        _ASSERT(dwAudioBytes % sizeof(int16_t) == 0);
+        const size_t samples = dwAudioBytes / sizeof(int16_t);
+
+        const double logVolume = generator->GetLogarithmicVolume();
+
+        // same formula as QAudio::convertVolume()
+        const double linVolume = logVolume > 0.99 ? 1.0 : -std::log(1.0 - logVolume) / std::log(100.0);
+        const size_t rvolume = size_t(linVolume * 128);
+
+        // it is very uncommon 2 sources play at the same time
+        // so we can just add the samples
+
+        for (size_t i = 0; i < samples; ++i)
         {
-            if (lpvAudioPtr1 && dwAudioBytes1)
-            {
-                mixBuffer(lpvAudioPtr1, dwAudioBytes1);
-            }
-            if (lpvAudioPtr2 && dwAudioBytes2)
-            {
-                mixBuffer(lpvAudioPtr2, dwAudioBytes2);
-            }
+            *ptr += (data[i] * rvolume) / 128;
+            ++ptr;
         }
     }
 
@@ -150,31 +104,71 @@ namespace ra2
     std::shared_ptr<SoundBuffer> iCreateDirectSoundBuffer(
         uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char *pszVoiceName)
     {
+        // make sure the size is an integer multiple of the frame size
+        const uint32_t bytesPerFrame = nChannels * sizeof(int16_t);
+        const uint32_t alignedBufferSize = ((dwBufferSize + bytesPerFrame - 1) / bytesPerFrame) * bytesPerFrame;
+
         std::shared_ptr<DirectSoundGenerator> generator =
-            std::make_shared<DirectSoundGenerator>(dwBufferSize, nSampleRate, nChannels, pszVoiceName);
+            std::make_shared<DirectSoundGenerator>(alignedBufferSize, nSampleRate, nChannels, pszVoiceName);
+
         DirectSoundGenerator *ptr = generator.get();
         activeSoundGenerators.insert(ptr);
         return generator;
     }
 
-    void writeAudio(const AudioSource selectedSource, const size_t fps)
+    void writeAudio(const size_t fps, const size_t sampleRate, const size_t channels, std::vector<int16_t> &buffer)
     {
-        bool found = false;
+        // we have already checked that
+        // - the buffer is a multiple of the frame size
+        // and we always write full frames
+
+        const size_t targetFrames = sampleRate / fps;
+        const size_t bytesPerFrame = channels * sizeof(int16_t);
+        size_t framesToRead = targetFrames; // for the target sampleRate & channels
+
         for (const auto &it : activeSoundGenerators)
         {
             const auto &generator = it;
             if (generator->isRunning())
             {
-                const bool selected = !found && (selectedSource == generator->getSource());
-                // we still read audio from all buffers
-                // to keep AppleWin audio generation woking correctly
-                // but only write on the selected one
-                generator->writeAudio(fps, selected);
-                // TODO: implement an algorithm to merge 2 channels (speaker + mockingboard)
-                found = found || selected;
+                if (generator->isSameFormat(sampleRate, channels))
+                {
+                    const size_t bytesAvailable = generator->GetBytesInBuffer();
+                    const size_t framesAvailable = bytesAvailable / bytesPerFrame;
+                    framesToRead = std::min(framesToRead, framesAvailable);
+                }
+                else
+                {
+                    // throw away the audio
+                    generator->advanceOneFrame(fps);
+                }
             }
         }
-        // TODO: if found = false, we should probably write some silence
+
+        buffer.clear();
+        buffer.resize(framesToRead * channels, 0);
+
+        // only generators with the target sampleRate and number of channels are mixed
+        const size_t bytesToRead = framesToRead * bytesPerFrame;
+
+        for (const auto &it : activeSoundGenerators)
+        {
+            const auto &generator = it;
+            if (generator->isRunning() && generator->isSameFormat(sampleRate, channels))
+            {
+                LPVOID lpvAudioPtr1, lpvAudioPtr2;
+                DWORD dwAudioBytes1, dwAudioBytes2;
+                const size_t bytesRead =
+                    generator->Read(bytesToRead, &lpvAudioPtr1, &dwAudioBytes1, &lpvAudioPtr2, &dwAudioBytes2);
+                _ASSERT(bytesRead == bytesToRead);
+
+                int16_t *ptr = buffer.data();
+
+                mixBuffer(generator, lpvAudioPtr1, dwAudioBytes1, ptr);
+                mixBuffer(generator, lpvAudioPtr2, dwAudioBytes2, ptr);
+            }
+        }
+        ra2::audio_batch_cb(buffer.data(), framesToRead);
     }
 
     void bufferStatusCallback(bool active, unsigned occupancy, bool underrun_likely)

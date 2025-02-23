@@ -8,7 +8,6 @@ LinuxSoundBuffer::LinuxSoundBuffer(DWORD dwBufferSize, DWORD nSampleRate, int nC
     , myBufferSize(dwBufferSize)
     , mySampleRate(nSampleRate)
     , myChannels(nChannels)
-    , myBitsPerSample(16)
     , myVoiceName(pszVoiceName)
 {
 }

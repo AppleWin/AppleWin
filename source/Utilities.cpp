@@ -284,7 +284,7 @@ void LoadConfiguration(bool loadImages)
 	REGLOAD(REGVALUE_SPKR_VOLUME, &dwTmp);
 	SpkrSetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
-	dwTmp = 70;
+	dwTmp = 50;
 	REGLOAD(REGVALUE_MB_VOLUME, &dwTmp);
 	GetCardMgr().GetMockingboardCardMgr().SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
