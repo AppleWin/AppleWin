@@ -199,7 +199,7 @@ void retro_get_system_av_info(retro_system_av_info *info)
     info->geometry.aspect_ratio = 0;
 
     info->timing.fps = ra2::Game::FPS;
-    info->timing.sample_rate = SPKR_SAMPLE_RATE;
+    info->timing.sample_rate = ra2::Game::SAMPLE_RATE;
 }
 
 void retro_set_environment(retro_environment_t cb)
@@ -294,7 +294,7 @@ void retro_run(void)
     ourGame->processInputEvents();
     ourGame->executeOneFrame();
     GetFrame().VideoPresentScreen();
-    ourGame->writeAudio(ra2::Game::FPS);
+    ourGame->writeAudio(ra2::Game::FPS, ra2::Game::SAMPLE_RATE, ra2::Game::CHANNELS);
 }
 
 bool retro_load_game(const retro_game_info *info)

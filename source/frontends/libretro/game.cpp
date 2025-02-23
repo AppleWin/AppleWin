@@ -2,13 +2,13 @@
 #include "frontends/libretro/game.h"
 #include "frontends/libretro/retroregistry.h"
 #include "frontends/libretro/retroframe.h"
+#include "frontends/libretro/rdirectsound.h"
 #include "frontends/libretro/rkeyboard.h"
 #include "frontends/common2/utils.h"
 #include "frontends/common2/ptreeregistry.h"
 #include "frontends/common2/programoptions.h"
 
 #include "Registry.h"
-#include "Common.h"
 #include "Interface.h"
 
 #include "linux/keyboardbuffer.h"
@@ -45,7 +45,6 @@ namespace ra2
     Game::Game(const bool supportsInputBitmasks)
         : mySupportsInputBitmasks(supportsInputBitmasks)
         , myButtonStates(0)
-        , myAudioSource(AudioSource::UNKNOWN)
         , myKeyboardType(KeyboardType::ASCII)
     {
         myLoggerContext = std::make_shared<LoggerContext>(true);
@@ -81,7 +80,6 @@ namespace ra2
 
     void Game::refreshVariables()
     {
-        myAudioSource = GetAudioSource();
         myKeyboardType = GetKeyboardEmulationType();
     }
 
@@ -294,24 +292,6 @@ namespace ra2
             {
                 saveRegistryToINI(myRegistry);
             }
-            if (checkButton(RETRO_DEVICE_ID_JOYPAD_R2))
-            {
-                switch (myAudioSource)
-                {
-                case AudioSource::SPEAKER:
-                {
-                    myAudioSource = AudioSource::MOCKINGBOARD;
-                    display_message(std::string("Audio source: ") + REGVALUE_AUDIO_MOCKINGBOARD);
-                    break;
-                }
-                case AudioSource::MOCKINGBOARD:
-                {
-                    myAudioSource = AudioSource::SPEAKER;
-                    display_message(std::string("Audio source: ") + REGVALUE_AUDIO_SPEAKER);
-                    break;
-                }
-                }
-            }
             if (checkButton(RETRO_DEVICE_ID_JOYPAD_START))
             {
                 // reset emulator by pressing "start" twice
@@ -379,9 +359,9 @@ namespace ra2
         myFrame->Restart();
     }
 
-    void Game::writeAudio(const size_t fps)
+    void Game::writeAudio(const size_t fps, const size_t sampleRate, const size_t channels)
     {
-        ra2::writeAudio(myAudioSource, fps);
+        ra2::writeAudio(fps, sampleRate, channels, myAudioBuffer);
     }
 
 } // namespace ra2
