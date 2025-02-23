@@ -19,6 +19,7 @@ namespace sa2
         bool running = false;
         std::string voiceName;
         int channels = 0;
+        int sampleRate = 0;
 
         // in seconds
         // float to work with ImGui.
