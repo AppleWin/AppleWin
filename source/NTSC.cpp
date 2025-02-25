@@ -1625,7 +1625,6 @@ void updateScreenSingleHires40 (long cycles6502)
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
 				uint32_t bLC   = (GetMemMode() & MF_HIGHRAM) && (addr >= 0xC000);
-				uint8_t *pLC   = bLC ? MemGetMainPtrWithLC( 0xC000 ) : NULL;
 				uint8_t *pMain = bLC
 				               ? MemGetMainPtrWithLC( addr & 0xF000 ) + (addr & 0x0FFF)
 				               : MemGetMainPtr(addr); // See: getVideoScannerAddressHGR()
