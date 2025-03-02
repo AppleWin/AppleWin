@@ -1742,6 +1742,7 @@ LRESULT Win32Frame::WndProc(
 
     case WM_RBUTTONDOWN:
     case WM_RBUTTONUP:
+		KeybUpdateCtrlShiftStatus(); // #1363: Shift+Right-Click to show advanced disk image formatting options
 		if ((buttonover == -1) && (message == WM_RBUTTONUP)) // HACK: BUTTON_NONE
 		{
 			int x = LOWORD(lparam);
