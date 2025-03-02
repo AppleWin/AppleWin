@@ -1104,7 +1104,7 @@ void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, u
 // Duochrome HGR (some RGB cards only)
 void UpdateHiResDuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 {
-	BYTE bits = *MemGetMainPtr(addr);
+	BYTE bits = *MemGetMainPtrWithLC(addr);
 	BYTE val = *MemGetAuxPtr(addr);
 	const uint8_t foreground = val >> 4;
 	const uint8_t background = val & 0x0F;
