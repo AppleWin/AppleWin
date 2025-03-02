@@ -919,10 +919,6 @@ bool SSI263::Init(void)
 	// . NB. we have 2x SSI263 per MB card, and it's rare if 1 is used (and *extremely* rare if 2 are used!)
 	// . Not so rare, as TotalReplay (at boot) will try to detect an SSI263 (by playing a $00 phoneme).
 
-	// Volume might've been setup from value in Registry
-	if (!SSI263SingleVoice.nVolume)
-		SSI263SingleVoice.nVolume = DSBVOLUME_MAX;
-
 	hr = SSI263SingleVoice.lpDSBvoice->SetVolume(SSI263SingleVoice.nVolume);
 	LogFileOutput("SSI263::DSInit: SetVolume(), hr=0x%08X\n", hr);
 
