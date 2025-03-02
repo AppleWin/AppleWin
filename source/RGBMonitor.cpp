@@ -588,7 +588,7 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 
 void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 {
-	uint8_t *pMain = MemGetMainPtr(addr);
+	uint8_t *pMain = MemGetMainPtrWithLC(addr);
 	BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
 	BYTE byteval2 =            *(pMain);
 	BYTE byteval3 = (x < 39) ? *(pMain+1) : 0;
