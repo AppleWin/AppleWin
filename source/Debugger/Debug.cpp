@@ -6800,6 +6800,7 @@ Update_t CmdCyclesReset (int /*nArgs*/)
 // View ___________________________________________________________________________________________
 
 // See: CmdWindowViewOutput (int nArgs)
+// NOTE: Keep in sync: ViewVideoPage_t, , and getVideoScannerAddressTXT
 enum ViewVideoPage_t
 {
 	VIEW_PAGE_X, // current page
@@ -6808,13 +6809,17 @@ enum ViewVideoPage_t
 	VIEW_PAGE_2,
 	VIEW_PAGE_3, // Pseudo
 	VIEW_PAGE_4, // Pseudo
-	VIEW_PAGE_5  // Pseudo
+	VIEW_PAGE_5, // Pseudo
+	VIEW_PAGE_6, // Pseudo
+	VIEW_PAGE_7, // Pseudo
+	VIEW_PAGE_8  // Pseudo
 };
 
 static Update_t _ViewOutput ( ViewVideoPage_t iPage, UINT bVideoModeFlags )
 {
 	switch ( iPage )
 	{
+		// NOTE: Keep in sync: _ViewOutput() getVideoScannerAddressHGR()
 		case VIEW_PAGE_X:
 			bVideoModeFlags |= (!GetVideo().VideoGetSW80STORE() && GetVideo().VideoGetSWPAGE2()) ? VF_PAGE2 : 0;
 			bVideoModeFlags |= GetVideo().VideoGetSWMIXED() ? VF_MIXED : 0;
@@ -6825,6 +6830,9 @@ static Update_t _ViewOutput ( ViewVideoPage_t iPage, UINT bVideoModeFlags )
 		case VIEW_PAGE_3: bVideoModeFlags |= VF_PAGE3; break; // Pseudo   Page 3 ($6000)
 		case VIEW_PAGE_4: bVideoModeFlags |= VF_PAGE4; break; // Pseudo   Page 4 ($8000)
 		case VIEW_PAGE_5: bVideoModeFlags |= VF_PAGE5; break; // Pseudo   Page 5 ($A000)
+		case VIEW_PAGE_6: bVideoModeFlags |= VF_PAGE6; break; // Pseudo   Page 6 (LC 1/2 $C000,$D000)
+		case VIEW_PAGE_7: bVideoModeFlags |= VF_PAGE7; break; // Pseudo   Page 7 (LC 2/- $D000,$E000)
+		case VIEW_PAGE_8: bVideoModeFlags |= VF_PAGE8; break; // Pseudo   Page 8 (LC RAM $E000,$F000)
 		default:
 			_ASSERT(0);
 			break;
@@ -6917,6 +6925,18 @@ static Update_t _ViewOutput ( ViewVideoPage_t iPage, UINT bVideoModeFlags )
 	Update_t CmdViewOutput_HGR5 (int nArgs)
 	{
 		return _ViewOutput( VIEW_PAGE_5, VF_HIRES ); // Pseudo page ($A000)
+	}
+	Update_t CmdViewOutput_HGR6 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_6, VF_HIRES ); // Pseudo page (LC Bank 1/2 $C000,$D000)
+	}
+	Update_t CmdViewOutput_HGR7 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_7, VF_HIRES ); // Pseudo page (LC Bank 2/RAM $D000,$E000)
+	}
+	Update_t CmdViewOutput_HGR8 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_8, VF_HIRES ); // Pseudo page (LC RAM $E000,$F000)
 	}
 // Double Hi-Res
 	Update_t CmdViewOutput_DHGRX (int nArgs)
@@ -9221,8 +9241,7 @@ void DebuggerProcessKey ( int keycode )
 		//      8 Full-screen mode
 		//
 		// NOTE: Keep in sync: ViewVideoPage_t, DebuggerProcessKey(), _ViewOutput()
-		if (((keycode >= '0') && (keycode <= '5'))
-		||   (keycode == '9'))
+		if ((keycode >= '0') && (keycode <= '9'))
 		{
 			ViewVideoPage_t eVideoPage  = VIEW_PAGE_X;
 			UINT            bVideoFlags = 0;
@@ -9230,7 +9249,7 @@ void DebuggerProcessKey ( int keycode )
 			DebugVideoMode::Instance().Get( &bVideoFlags );
 			uint32_t        bSavedVideoModeFlags = bVideoFlags;
 
-			bVideoFlags &= ~(VF_MIXED | VF_PAGE0 | VF_PAGE2 | VF_PAGE3 | VF_PAGE4 | VF_PAGE5);
+			bVideoFlags &= ~(VF_MIXED | VF_PAGE0 | VF_PAGE2 | VF_PAGE3 | VF_PAGE4 | VF_PAGE5 | VF_PAGE6 | VF_PAGE7 | VF_PAGE8);
 			switch (keycode)
 			{
 				case '0': eVideoPage = VIEW_PAGE_0; bVideoFlags |= VF_PAGE0; break;
@@ -9239,6 +9258,9 @@ void DebuggerProcessKey ( int keycode )
 				case '3': eVideoPage = VIEW_PAGE_3; bVideoFlags |= VF_PAGE3; break;
 				case '4': eVideoPage = VIEW_PAGE_4; bVideoFlags |= VF_PAGE4; break;
 				case '5': eVideoPage = VIEW_PAGE_5; bVideoFlags |= VF_PAGE5; break;
+				case '6': eVideoPage = VIEW_PAGE_6; bVideoFlags |= VF_PAGE6; break;
+				case '7': eVideoPage = VIEW_PAGE_7; bVideoFlags |= VF_PAGE7; break;
+				case '8': eVideoPage = VIEW_PAGE_8; bVideoFlags |= VF_PAGE8; break;
 				case '9': /* Don't use VIEW_PAGE_X as it is handled below*/; break;
 				default:
 					bool bUnknownViewVideoPage = false;
