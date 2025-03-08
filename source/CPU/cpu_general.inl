@@ -337,24 +337,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define _ZPGY     addr = ((*(mem+regs.pc++))+regs.y) & 0xFF;
 
 #define _ZPG_ALT												\
-		if ((memreadPageType[regs.pc >> 8] != MEM_Aux1K) &&		\
-			(memreadPageType[*(mem+regs.pc)] != MEM_Aux1K)) {	\
+		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
 			_ZPG;												\
 		}														\
 		else {													\
 			addr =  READ_AUX1K_BYTE(regs.pc++);					\
 		}
 #define _ZPGX_ALT												\
-		if ((memreadPageType[regs.pc >> 8] != MEM_Aux1K) &&		\
-			(memreadPageType[(*(mem+regs.pc)+regs.x) & 0xff] != MEM_Aux1K)) {	\
+		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
 			_ZPGX;												\
 		}														\
 		else {													\
 			addr = (READ_AUX1K_BYTE(regs.pc++) + regs.x) & 0xFF;\
 		}
 #define _ZPGY_ALT												\
-		if ((memreadPageType[regs.pc >> 8] != MEM_Aux1K) &&		\
-			(memreadPageType[(*(mem+regs.pc)+regs.y) & 0xff] != MEM_Aux1K)) {	\
+		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
 			_ZPGY;												\
 		}														\
 		else {													\
