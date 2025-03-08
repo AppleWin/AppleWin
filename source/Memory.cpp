@@ -1368,14 +1368,6 @@ static void UpdatePagingForAltRW(void)
 			memreadPageType[loop] = (SW_PAGE2 && SW_HIRES) ? memType : MEM_Normal;
 	}
 
-	if (GetCardMgr().QueryAux() == CT_80Col)
-	{
-		// Overide the MEM_Aux1K set above (slightly quicker code-path during CPU emulation)
-		if (SW_AUXREAD || (SW_80STORE && SW_PAGE2))
-			for (loop = 0x04; loop < 0x08; loop++)
-				memreadPageType[loop] = MEM_Normal;
-	}
-
 	//
 
 	for (loop = 0x00; loop<0x100; loop++)

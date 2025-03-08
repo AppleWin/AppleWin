@@ -166,17 +166,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define _ABS	 addr = *(LPWORD)(mem+regs.pc);	 regs.pc += 2;
 #define _ABS_ALT	 \
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {				\
+		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
 			_ABS;													\
 		}															\
 		else {														\
 			addr = READ_AUX1K_WORD(regs.pc);						\
 			regs.pc += 2;											\
-		}
+		}															\
+		if (memreadPageType[addr >> 8] == MEM_Aux1K)				\
+			addr &= (TEXT_PAGE1_SIZE-1);
 
 #define _IABSX    addr = *(LPWORD)(mem+(*(LPWORD)(mem+regs.pc))+(WORD)regs.x); regs.pc += 2;
 #define _IABSX_ALT \
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {				\
+		if (memreadPageType[((regs.pc+regs.x) >> 8) & 0xff] != MEM_Aux1K) {		\
 			_IABSX;													\
 		}															\
 		else {														\
@@ -187,8 +189,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Not optimised for page-cross
 #define _ABSX_CONST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2;
 #define _ABSX_CONST_ALT \
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {				\
-			_ABSX_CONST;												\
+		if (memreadPageType[((regs.pc+regs.x) >> 8) & 0xff] != MEM_Aux1K) {		\
+			_ABSX_CONST;											\
 		}															\
 		else {														\
 			base = READ_AUX1K_WORD(regs.pc);						\
@@ -203,7 +205,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Not optimised for page-cross
 #define _ABSY_CONST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2;
 #define _ABSY_CONST_ALT \
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {				\
+		if (memreadPageType[((regs.pc+regs.y) >> 8) & 0xff] != MEM_Aux1K) {				\
 			_ABSY_CONST;												\
 		}															\
 		else {														\
@@ -331,25 +333,28 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define _ZPGY     addr = ((*(mem+regs.pc++))+regs.y) & 0xFF;
 
 #define _ZPG_ALT												\
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {			\
+		if ((memreadPageType[regs.pc >> 8] != MEM_Aux1K) &&		\
+			(memreadPageType[*(mem+regs.pc)] != MEM_Aux1K)) {	\
 			_ZPG;												\
 		}														\
 		else {													\
 			addr =  READ_AUX1K_BYTE(regs.pc++);					\
 		}
 #define _ZPGX_ALT												\
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {			\
+		if ((memreadPageType[regs.pc >> 8] != MEM_Aux1K) &&		\
+			(memreadPageType[(*(mem+regs.pc)+regs.x) & 0xff] != MEM_Aux1K)) {	\
 			_ZPGX;												\
 		}														\
 		else {													\
-			addr = (READ_AUX1K_BYTE(regs.pc++) + regs.x) & 0xFF;	\
+			addr = (READ_AUX1K_BYTE(regs.pc++) + regs.x) & 0xFF;\
 		}
 #define _ZPGY_ALT												\
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {			\
+		if ((memreadPageType[regs.pc >> 8] != MEM_Aux1K) &&		\
+			(memreadPageType[(*(mem+regs.pc)+regs.y) & 0xff] != MEM_Aux1K)) {	\
 			_ZPGY;												\
 		}														\
 		else {													\
-			addr = (READ_AUX1K_BYTE(regs.pc++) + regs.y) & 0xFF;	\
+			addr = (READ_AUX1K_BYTE(regs.pc++) + regs.y) & 0xFF;\
 		}
 
 // Tidy 3 char addressing modes to keep the opcode table visually aligned, clean, and readable.
