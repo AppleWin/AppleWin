@@ -53,6 +53,11 @@ static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 	return 1;
 }
 
+static __forceinline int Fetch_alt(BYTE& iOpcode, ULONG uExecutedCycles)
+{
+	return Fetch(iOpcode, uExecutedCycles);
+}
+
 static __forceinline void DoIrqProfiling(uint32_t uCycles)
 {
 }
@@ -87,36 +92,20 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 #include "../../source/CPU/cpu_general.inl"
 #include "../../source/CPU/cpu_instructions.inl"
 
+#define HEATMAP_X(pc)
+
 #define READ _READ_WITH_IO_F8xx
 #define WRITE(a) _WRITE_WITH_IO_F8xx(a)
-#define HEATMAP_X(pc)
-#define POP _POP
-#define PUSH(a) _PUSH(a)
-#define IABS_NMOS _IABS_NMOS_ALT
 
 #include "../../source/CPU/cpu6502.h"  // MOS 6502
-
-#undef READ
-#undef WRITE
-#undef POP
-#undef PUSH
-#undef IABS_NMOS
 
 //-------
 
 #define READ _READ
 #define WRITE(a) _WRITE(a)
-#define POP _POP
-#define PUSH(a) _PUSH(a)
-#define IABS_CMOS _IABS_CMOS_ALT
 
 #include "../../source/CPU/cpu65C02.h"  // WDC 65C02
 
-#undef READ
-#undef WRITE
-#undef POP
-#undef PUSH
-#undef IABS_CMOS
 #undef HEATMAP_X
 
 //-------------------------------------

@@ -379,6 +379,25 @@ static __forceinline void Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 	regs.pc++;
 }
 
+static __forceinline void Fetch_alt(BYTE& iOpcode, ULONG uExecutedCycles)
+{
+	const USHORT PC = regs.pc;
+
+#if defined(_DEBUG) && defined(DBG_HDD_ENTRYPOINT)
+	DebugHddEntrypoint(PC);
+#endif
+
+	WORD addr = regs.pc;
+	iOpcode = _READ_ALT;
+
+#ifdef USE_SPEECH_API
+	if ((PC == COUT1 || PC == BASICOUT) && g_Speech.IsEnabled() && !g_bFullSpeed)
+		CaptureCOUT();
+#endif
+
+	regs.pc++;
+}
+
 //#define ENABLE_NMI_SUPPORT	// Not used - so don't enable
 static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
@@ -462,156 +481,99 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //===========================================================================
 
+#define HEATMAP_X(address)
+
 // 6502 & no debugger
 #define READ _READ_WITH_IO_F8xx
 #define WRITE(value) _WRITE_WITH_IO_F8xx(value)
-#define HEATMAP_X(address)
-#define POP _POP
-#define PUSH(value) _PUSH(value)
-#define IABS_NMOS _IABS_NMOS
 
 #include "CPU/cpu6502.h"  // MOS 6502
-
-#undef READ
-#undef WRITE
-#undef POP
-#undef PUSH
-#undef IABS_NMOS
 
 //-------
 
 // 6502 & no debugger & alt read/write support
+#define CPU_ALT
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
-#define POP _POP_ALT
-#define PUSH(value) _PUSH_ALT(value)
-#define IABS_NMOS _IABS_NMOS_ALT
 
 #define Cpu6502 Cpu6502_altRW
+#define Fetch Fetch_alt
 #include "CPU/cpu6502.h"  // MOS 6502
 #undef Cpu6502
-
-#undef READ
-#undef WRITE
-#undef POP
-#undef PUSH
-#undef IABS_NMOS
+#undef Fetch
 
 //-------
 
 // 65C02 & no debugger
 #define READ _READ
 #define WRITE(value) _WRITE(value)
-#define POP _POP
-#define PUSH(value) _PUSH(value)
-#define IABS_CMOS _IABS_CMOS
 
 #include "CPU/cpu65C02.h" // WDC 65C02
-
-#undef READ
-#undef WRITE
-#undef POP
-#undef PUSH
-#undef IABS_CMOS
 
 //-------
 
 // 65C02 & no debugger & alt read/write support
+#define CPU_ALT
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
-#define POP _POP_ALT
-#define PUSH(value) _PUSH_ALT(value)
-#define IABS_CMOS _IABS_CMOS_ALT
 
 #define Cpu65C02 Cpu65C02_altRW
+#define Fetch Fetch_alt
 #include "CPU/cpu65C02.h" // WDC 65C02
 #undef Cpu65C02
+#undef Fetch
 
-#undef READ
-#undef WRITE
-#undef POP
-#undef PUSH
-#undef IABS_CMOS
 #undef HEATMAP_X
 
 //-----------------
 
+#define HEATMAP_X(address) Heatmap_X(address)
+#include "CPU/cpu_heatmap.inl"
+
 // 6502 & debugger
 #define READ Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte_With_IO_F8xx(addr, value, uExecutedCycles);
-#define HEATMAP_X(address) Heatmap_X(address)
-#define POP _POP
-#define PUSH(value) _PUSH(value)
-#define IABS_NMOS _IABS_NMOS
-
-#include "CPU/cpu_heatmap.inl"
 
 #define Cpu6502 Cpu6502_debug
 #include "CPU/cpu6502.h"  // MOS 6502
 #undef Cpu6502
 
-#undef READ
-#undef WRITE
-#undef POP
-#undef PUSH
-#undef IABS_NMOS
-
 //-------
 
 // 6502 & debugger & alt read/write support
+#define CPU_ALT
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
-#define POP _POP_ALT
-#define PUSH(value) _PUSH_ALT(value)
-#define IABS_NMOS _IABS_NMOS_ALT
 
 #define Cpu6502 Cpu6502_debug_altRW
+#define Fetch Fetch_alt
 #include "CPU/cpu6502.h"  // MOS 6502
 #undef Cpu6502
-
-#undef READ
-#undef WRITE
-#undef POP
-#undef PUSH
-#undef IABS_NMOS
+#undef Fetch
 
 //-------
 
 // 65C02 & debugger
 #define READ Heatmap_ReadByte(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte(addr, value, uExecutedCycles);
-#define POP _POP
-#define PUSH(value) _PUSH(value)
-#define IABS_CMOS _IABS_CMOS
 
 #define Cpu65C02 Cpu65C02_debug
 #include "CPU/cpu65C02.h" // WDC 65C02
 #undef Cpu65C02
 
-#undef READ
-#undef WRITE
-#undef POP
-#undef PUSH
-#undef IABS_CMOS
-
 //-------
 
 // 65C02 & debugger & alt read/write support
+#define CPU_ALT
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
-#define POP _POP_ALT
-#define PUSH(value) _PUSH_ALT(value)
-#define IABS_CMOS _IABS_CMOS_ALT
 
 #define Cpu65C02 Cpu65C02_debug_altRW
+#define Fetch Fetch_alt
 #include "CPU/cpu65C02.h" // WDC 65C02
 #undef Cpu65C02
+#undef Fetch
 
-#undef READ
-#undef WRITE
-#undef POP
-#undef PUSH
-#undef IABS_CMOS
 #undef HEATMAP_X
 
 //===========================================================================

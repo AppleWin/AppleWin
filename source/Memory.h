@@ -47,6 +47,7 @@ extern LPBYTE     memwrite[0x100];
 extern BYTE       memreadPageType[0x100];
 extern BYTE       memwriteDirtyPage[0x100];
 extern LPBYTE     mem;
+extern LPBYTE     memaux;
 extern LPBYTE     memdirty;
 extern LPBYTE     memVidHD;
 

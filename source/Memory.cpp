@@ -235,7 +235,7 @@ LPBYTE         mem          = NULL;
 
 //
 
-static LPBYTE  memaux       = NULL;
+LPBYTE         memaux       = NULL;
 static LPBYTE  memmain      = NULL;
 
 LPBYTE         memdirty     = NULL;
@@ -1327,7 +1327,8 @@ static void UpdatePaging(BOOL initialize)
 				((*(memdirty+loop) & 1) || (loop <= 1)))
 			{
 				*(memdirty+loop) &= ~1;
-				memcpy(oldshadow[loop],mem+(loop << 8),256);
+				if (memreadPageType[loop] != MEM_Aux1K)	// Writes to std80's 1KiB go directly to memaux (not via mem cache)
+					memcpy(oldshadow[loop],mem+(loop << 8),256);
 			}
 
 			memcpy(mem+(loop << 8),memshadow[loop],256);
@@ -1373,11 +1374,6 @@ static void UpdatePagingForAltRW(void)
 		if (SW_AUXREAD || (SW_80STORE && SW_PAGE2))
 			for (loop = 0x04; loop < 0x08; loop++)
 				memreadPageType[loop] = MEM_Normal;
-
-#if 1	// Don't need to fix IABS_NMOS / IABS_CMOS (opcode $6C) with this...
-		if (SW_ALTZP)
-			memcpy(mem, memaux + 0x400, 0x100);
-#endif
 	}
 
 	//
@@ -1414,27 +1410,29 @@ static void UpdatePagingForAltRW(void)
 		// Map all aux writes into the 1K memory
 		// . Need to combine with memwriteDirtyPage[], to that the right page is marked as dirty
 
+		const uint32_t kBase = 0x0000;
+
 		for (loop = 0x00; loop < 0x02; loop++)
 			if (SW_ALTZP)
-				memwrite[loop] = mem + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
+				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
 		for (loop = 0x02; loop < 0xC0; loop++)
 			if (SW_AUXWRITE)
-				memwrite[loop] = (memwrite[loop] - (loop << 8)) + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
+				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
 		for (loop = 0xD0; loop < 0x100; loop++)
 			if (SW_HIGHRAM && SW_ALTZP)
-				memwrite[loop] = mem + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
+				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
 		if (SW_80STORE && SW_PAGE2)
 		{
 			for (loop = 0x04; loop < 0x08; loop++)
-				memwrite[loop] = mem + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
+				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
 			if (SW_HIRES)
 			{
 				for (loop = 0x20; loop < 0x40; loop++)
-					memwrite[loop] = mem + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
+					memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 			}
 		}
 	}

@@ -21,6 +21,53 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+// For regular or alternate (slow-path) CPU emulation
+#ifndef CPU_ALT
+//#define READ _READ
+//#define WRITE(value) _WRITE(value)
+#define POP _POP
+#define PUSH(value) _PUSH(value)
+#define ABS _ABS
+#define IABSX _IABSX
+#define ABSX_CONST _ABSX_CONST
+#define ABSX_OPT _ABSX_OPT
+#define ABSY_CONST _ABSY_CONST
+#define ABSY_OPT _ABSY_OPT
+#define IABS_CMOS _IABS_CMOS
+#define IABS_NMOS _IABS_NMOS
+#define INDX _INDX
+#define IMM _IMM
+#define INDX _INDX
+#define INDY_CONST _INDY_CONST
+#define INDY_OPT _INDY_OPT
+#define IZPG _IZPG
+#define ZPG _ZPG
+#define ZPGX _ZPGX
+#define ZPGY _ZPGY
+#else
+//#define READ _READ_ALT
+//#define WRITE(value) _WRITE_ALT(value)
+#define POP _POP_ALT
+#define PUSH(value) _PUSH_ALT(value)
+#define ABS _ABS_ALT
+#define IABSX _IABSX_ALT
+#define ABSX_CONST _ABSX_CONST_ALT
+#define ABSX_OPT _ABSX_OPT_ALT
+#define ABSY_CONST _ABSY_CONST_ALT
+#define ABSY_OPT _ABSY_OPT_ALT
+#define IABS_CMOS _IABS_CMOS_ALT
+#define IABS_NMOS _IABS_NMOS_ALT
+#define INDX _INDX_ALT
+#define IMM _IMM_ALT
+#define INDX _INDX_ALT
+#define INDY_CONST _INDY_CONST_ALT
+#define INDY_OPT _INDY_OPT_ALT
+#define IZPG _IZPG_ALT
+#define ZPG _ZPG_ALT
+#define ZPGX _ZPGX_ALT
+#define ZPGY _ZPGY_ALT
+#endif
+
 //===========================================================================
 
 static uint32_t Cpu65C02(uint32_t uTotalCycles, const bool bVideoUpdate)
@@ -339,3 +386,27 @@ static uint32_t Cpu65C02(uint32_t uTotalCycles, const bool bVideoUpdate)
 }
 
 //===========================================================================
+
+#undef CPU_ALT
+
+#undef READ
+#undef WRITE
+#undef POP
+#undef PUSH
+#undef ABS
+#undef IABSX
+#undef ABSX_CONST
+#undef ABSX_OPT
+#undef ABSY_CONST
+#undef ABSY_OPT
+#undef IABS_CMOS
+#undef IABS_NMOS
+#undef INDX
+#undef IMM
+#undef INDX
+#undef INDY_CONST
+#undef INDY_OPT
+#undef IZPG
+#undef ZPG
+#undef ZPGX
+#undef ZPGY
