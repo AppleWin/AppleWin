@@ -196,7 +196,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			base = READ_AUX1K_WORD(regs.pc);						\
 			addr = base + (WORD)regs.x;								\
 			regs.pc += 2;											\
-		}
+		}															\
+		if (memreadPageType[addr >> 8] == MEM_Aux1K)				\
+			addr &= (TEXT_PAGE1_SIZE - 1);
 
 // Optimised for page-cross
 #define _ABSX_OPT _ABSX_CONST; CHECK_PAGE_CHANGE;
@@ -212,7 +214,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			base = READ_AUX1K_WORD(regs.pc);						\
 			addr = base + (WORD)regs.y;								\
 			regs.pc += 2;											\
-		}
+		}															\
+		if (memreadPageType[addr >> 8] == MEM_Aux1K)				\
+			addr &= (TEXT_PAGE1_SIZE - 1);
 
 // Optimised for page-cross
 #define _ABSY_OPT _ABSY_CONST; CHECK_PAGE_CHANGE;
@@ -224,7 +228,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 if ((base & 0xFF) == 0xFF) uExtraCycles=1;		  \
 		 regs.pc += 2;
 #define _IABS_CMOS_ALT 												\
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {				\
+		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {				\
 			_IABS_CMOS;												\
 		}															\
 		else {														\
@@ -242,7 +246,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		       addr = *(LPWORD)(mem+base);                        \
 		 regs.pc += 2;
 #define _IABS_NMOS_ALT												\
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {				\
+		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {				\
 			_IABS_NMOS;												\
 		}															\
 		else {														\
@@ -258,7 +262,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define _IMM	 addr = regs.pc++;
 #define _IMM_ALT													\
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {				\
+		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {				\
 			_IMM;													\
 		}															\
 		else {														\
@@ -271,7 +275,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 else                                                \
 		     addr = *(LPWORD)(mem+base);
 #define _INDX_ALT												\
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {			\
+		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
 			_INDX;												\
 		}														\
 		else {													\
@@ -290,7 +294,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 regs.pc++;                                          \
 		 addr = base+(WORD)regs.y;
 #define _INDY_CONST_ALT											\
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {			\
+		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
 			_INDY_CONST;											\
 		}														\
 		else {													\
@@ -312,7 +316,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 else                                                \
 		     addr = *(LPWORD)(mem+base);
 #define _IZPG_ALT												\
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {			\
+		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
 			_IZPG;												\
 		}														\
 		else {													\
