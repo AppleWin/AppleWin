@@ -678,8 +678,15 @@ void REGPARM2 Uthernet1::tfe_store(WORD ioaddress, BYTE byte)
         SET_TFE_16(TFE_ADDR_PP_DATA, GET_PP_16(tfe_packetpage_ptr));
         /* FALL THROUGH */
 
-    default:
+    case TFE_ADDR_PP_PTR:
+    case TFE_ADDR_PP_PTR+1:
+
         SET_TFE_8(ioaddress, byte);
+        break;
+
+    default:
+        /* not explicitly handled */
+        assert(false);
     }
 
 #ifdef TFE_DEBUG_STORE
