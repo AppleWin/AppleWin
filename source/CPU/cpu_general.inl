@@ -112,7 +112,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		}
 #define _WRITE_ALT(a) {																	\
 			{																			\
-				memdirty[memwriteDirtyPage[addr >> 8]] = 0xFF;							\
+				memdirty[addr >> 8] = 0xFF;												\
 				LPBYTE page = memwrite[addr >> 8];										\
 				if (page) {																\
 					*(page+(addr & 0xFF)) = (BYTE)(a);									\

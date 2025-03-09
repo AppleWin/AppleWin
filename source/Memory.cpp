@@ -206,10 +206,6 @@ SOFT SWITCH STATUS FLAGS
 //		. the aux slot is empty, so that it can return floating-bus
 //		. the aux slot has an 80-col(1KiB) card, so reads are restricted to this mem space
 //
-// memwriteDirtyPage (used by _WRITE_ALT for CPU emulation)
-// - 1 byte entry per 256-byte page
-// - Required specifically for the 80-Col(1KiB) card so that writes *outside* the 1KiB area only set dirty pages *inside* the 1KiB area!
-//
 // Apple //e 64K (aux slot is empty or has 80-Col(1KiB) card) - GH#1341
 // . MMU still supports RAMRDOFF/RAMRDON/RAMWRTOFF/RAMWRTON/ALTZPOFF/ALTZPON
 // . DHIRESON: no affect, as the Ext 80-col card enables this (so no DHGR or DGR - although a full VidHD would support this)
@@ -225,7 +221,7 @@ SOFT SWITCH STATUS FLAGS
 static LPBYTE	memshadow[0x100];
 LPBYTE			memwrite[0x100];
 BYTE			memreadPageType[0x100];
-BYTE			memwriteDirtyPage[0x100];
+//BYTE			memwriteDirtyPage[0x100];
 
 iofunction		IORead[256];
 iofunction		IOWrite[256];
@@ -1370,37 +1366,9 @@ static void UpdatePagingForAltRW(void)
 
 	//
 
-	for (loop = 0x00; loop<0x100; loop++)
-		memwriteDirtyPage[loop] = loop;
-
 	if (GetCardMgr().QueryAux() == CT_80Col)
 	{
-		// Dirty pages are only in the 1K range
-		const BYTE kTextPage = TEXT_PAGE1_BEGIN >> 8;
-
-		if (SW_ALTZP)
-			for (loop = 0x00; loop < 0x02; loop++)
-				memwriteDirtyPage[loop] = kTextPage + (loop & 3);
-
-		if (SW_AUXWRITE)
-			for (loop = 0x02; loop < 0xC0; loop++)
-				memwriteDirtyPage[loop] = kTextPage + (loop & 3);
-
-		if (SW_HIGHRAM && SW_ALTZP)
-			for (loop = 0xD0; loop < 0x100; loop++)
-				memwriteDirtyPage[loop] = kTextPage + (loop & 3);
-
-		if (SW_80STORE && SW_PAGE2)
-		{
-			for (loop = 0x04; loop < 0x08; loop++)
-				memwriteDirtyPage[loop] = kTextPage + (loop & 3);
-
-			for (loop = 0x20; loop < 0x40; loop++)
-				memwriteDirtyPage[loop] = kTextPage + (loop & 3);
-		}
-
 		// Map all aux writes into the 1K memory
-		// . Need to combine with memwriteDirtyPage[], to that the right page is marked as dirty
 
 		const uint32_t kBase = 0x0000;
 
