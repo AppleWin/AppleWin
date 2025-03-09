@@ -32,7 +32,7 @@ namespace ra2
 
         bool loadSnapshot(const std::string &path);
 
-        void reset();
+        void restart();
 
         void updateVariables();
         void executeOneFrame();

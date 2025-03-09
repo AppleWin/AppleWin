@@ -190,6 +190,18 @@ namespace ra2
                 ch = 0x0a;
                 break;
             }
+            case RETROK_END:
+            {
+                // reset the emulator (like vice's default key for vice_mapper_reset)
+                restart();
+                break;
+            }
+            case RETROK_HOME:
+            {
+                // save the registry to a file
+                saveRegistryToINI(myRegistry);
+                break;
+            }
             case RETROK_LALT:
             {
                 Paddle::setButtonPressed(Paddle::ourOpenApple);
@@ -276,48 +288,9 @@ namespace ra2
     {
         if (ourInputDevices[0] != RETRO_DEVICE_NONE)
         {
-            const size_t activeButtons = updateButtonStates();
+            // const size_t activeButtons = updateButtonStates();
 
-            const auto checkButton = [activeButtons](const size_t i) { return activeButtons & (1 << i); };
-
-            if (checkButton(RETRO_DEVICE_ID_JOYPAD_R))
-            {
-                myFrame->CycleVideoType();
-            }
-            if (checkButton(RETRO_DEVICE_ID_JOYPAD_L))
-            {
-                myFrame->Cycle50ScanLines();
-            }
-            if (checkButton(RETRO_DEVICE_ID_JOYPAD_L2))
-            {
-                saveRegistryToINI(myRegistry);
-            }
-            if (checkButton(RETRO_DEVICE_ID_JOYPAD_START))
-            {
-                // reset emulator by pressing "start" twice
-                if (myControllerReset.pressButton())
-                {
-                    reset(); // just a myFrame->Restart();
-                }
-                else
-                {
-                    display_message("Press again to reset...", 60 /* 1.0s at 60 FPS */);
-                }
-            }
-            if (checkButton(RETRO_DEVICE_ID_JOYPAD_SELECT))
-            {
-                // added as convenience if game_focus is on:
-                // exit emulator by pressing "select" twice
-                if (myControllerQuit.pressButton())
-                {
-                    log_cb(RETRO_LOG_INFO, "RA2: %s - user quitted\n", __FUNCTION__);
-                    environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
-                }
-                else
-                {
-                    display_message("Press again to quit...", 60 /* 1.0s at 60 FPS */);
-                }
-            }
+            // const auto checkButton = [activeButtons](const size_t i) { return activeButtons & (1 << i); };
         }
         else
         {
@@ -354,7 +327,7 @@ namespace ra2
         return myDiskControl;
     }
 
-    void Game::reset()
+    void Game::restart()
     {
         myFrame->Restart();
     }
