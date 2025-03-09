@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define INDY_CONST _INDY_CONST
 #define INDY_OPT _INDY_OPT
 #define IZPG _IZPG
+#define REL _REL
 #define ZPG _ZPG
 #define ZPGX _ZPGX
 #define ZPGY _ZPGY
@@ -61,6 +62,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define INDY_CONST _INDY_CONST_ALT
 #define INDY_OPT _INDY_OPT_ALT
 #define IZPG _IZPG_ALT
+#define REL _REL_ALT
 #define ZPG _ZPG_ALT
 #define ZPGX _ZPGX_ALT
 #define ZPGY _ZPGY_ALT
@@ -404,6 +406,7 @@ static uint32_t Cpu6502(uint32_t uTotalCycles, const bool bVideoUpdate)
 #undef INDY_CONST
 #undef INDY_OPT
 #undef IZPG
+#undef REL
 #undef ZPG
 #undef ZPGX
 #undef ZPGY

@@ -344,7 +344,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				addr = READ_AUX1K_WORD(regs.pc);				\
 		}
 
-#define REL	 addr = (signed char)*(mem+regs.pc++);
+#define _REL	 addr = (signed char)*(mem+regs.pc++);
+#define _REL_ALT												 \
+		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
+			_REL;												\
+		}														\
+		else {													\
+			addr = (signed char)READ_AUX1K_BYTE(regs.pc++);		\
+		}
 
 // TODO Optimization Note:
 // . Opcodes that generate zero-page addresses can't be accessing $C000..$CFFF
