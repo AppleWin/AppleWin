@@ -235,7 +235,7 @@ LPBYTE         mem          = NULL;
 
 //
 
-LPBYTE         memaux       = NULL;
+LPBYTE         memaux       = NULL;		// Global so that the CPU emulation macros can write directly for 80-col(1KiB) card
 static LPBYTE  memmain      = NULL;
 
 LPBYTE         memdirty     = NULL;
@@ -1378,16 +1378,16 @@ static void UpdatePagingForAltRW(void)
 		// Dirty pages are only in the 1K range
 		const BYTE kTextPage = TEXT_PAGE1_BEGIN >> 8;
 
-		for (loop = 0x00; loop < 0x02; loop++)
-			if (SW_ALTZP)
+		if (SW_ALTZP)
+			for (loop = 0x00; loop < 0x02; loop++)
 				memwriteDirtyPage[loop] = kTextPage + (loop & 3);
 
-		for (loop = 0x02; loop < 0xC0; loop++)
-			if (SW_AUXWRITE)
+		if (SW_AUXWRITE)
+			for (loop = 0x02; loop < 0xC0; loop++)
 				memwriteDirtyPage[loop] = kTextPage + (loop & 3);
 
-		for (loop = 0xD0; loop < 0x100; loop++)
-			if (SW_HIGHRAM && SW_ALTZP)
+		if (SW_HIGHRAM && SW_ALTZP)
+			for (loop = 0xD0; loop < 0x100; loop++)
 				memwriteDirtyPage[loop] = kTextPage + (loop & 3);
 
 		if (SW_80STORE && SW_PAGE2)
@@ -1404,16 +1404,16 @@ static void UpdatePagingForAltRW(void)
 
 		const uint32_t kBase = 0x0000;
 
-		for (loop = 0x00; loop < 0x02; loop++)
-			if (SW_ALTZP)
+		if (SW_ALTZP)
+			for (loop = 0x00; loop < 0x02; loop++)
 				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
-		for (loop = 0x02; loop < 0xC0; loop++)
-			if (SW_AUXWRITE)
+		if (SW_AUXWRITE)
+			for (loop = 0x02; loop < 0xC0; loop++)
 				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
-		for (loop = 0xD0; loop < 0x100; loop++)
-			if (SW_HIGHRAM && SW_ALTZP)
+		if (SW_HIGHRAM && SW_ALTZP)
+			for (loop = 0xD0; loop < 0x100; loop++)
 				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
 		if (SW_80STORE && SW_PAGE2)
@@ -1422,10 +1422,8 @@ static void UpdatePagingForAltRW(void)
 				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
 			if (SW_HIRES)
-			{
 				for (loop = 0x20; loop < 0x40; loop++)
 					memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
-			}
 		}
 	}
 }
