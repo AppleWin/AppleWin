@@ -1516,6 +1516,11 @@ LPBYTE MemGetAuxPtrWithLC(const WORD offset)
 
 LPBYTE MemGetAuxPtr(const WORD offset)
 {
+	// For the 1KiB 80-col card, the 1KiB is at offset 0x0000 - so mask offset for 80COL video
+	// But for this card, SHR video still starts at offset 0x2000
+	if (GetCardMgr().QueryAux() == CT_80Col && !GetVideo().VideoGetSWSHR())
+		return memaux + (offset&(TEXT_PAGE1_SIZE-1));
+
 	LPBYTE lpMem = (memshadow[(offset >> 8)] == (memaux+(offset & 0xFF00)))
 			? mem+offset				// Return 'mem' copy if possible, as page could be dirty
 			: memaux+offset;

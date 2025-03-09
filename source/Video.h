@@ -235,6 +235,7 @@ public:
 	bool VideoGetSWPAGE2(void);
 	bool VideoGetSWTEXT(void);
 	bool VideoGetSWAltCharSet(void);
+	bool VideoGetSWSHR(void);
 	bool VideoGet80COLAUXEMPTY(void);
 
 	void VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);

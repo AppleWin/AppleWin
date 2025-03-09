@@ -279,6 +279,11 @@ bool Video::VideoGetSWTEXT(void)
 	return SW_TEXT ? true : false;
 }
 
+bool Video::VideoGetSWSHR(void)
+{
+	return SW_SHR;
+}
+
 bool Video::VideoGetSWAltCharSet(void)
 {
 	return g_nAltCharSetOffset != 0;
