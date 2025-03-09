@@ -334,14 +334,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		     addr = *(LPWORD)(mem+base);
 #define _IZPG_ALT												\
 		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
-			_IZPG;												\
+			base = *(mem+regs.pc++);							\
 		}														\
 		else {													\
 			base = READ_AUX1K_BYTE(regs.pc++);					\
+		}														\
+		if (memreadPageType[ZERO_PAGE] != MEM_Aux1K) {			\
+			if (base == 0xFF)                                   \
+				addr = *(mem+0xFF)+(((WORD)*mem)<<8);           \
+			else                                                \
+				addr = *(LPWORD)(mem+base);						\
+		}														\
+		else {													\
 			if (base == 0xFF)									\
 				addr = READ_AUX1K_BYTE(0xFF) | (READ_AUX1K_BYTE(0x00)<<8);	\
 			else												\
-				addr = READ_AUX1K_WORD(regs.pc);				\
+				addr = READ_AUX1K_WORD(base);					\
 		}
 
 #define _REL	 addr = (signed char)*(mem+regs.pc++);
