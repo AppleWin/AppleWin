@@ -3,7 +3,6 @@
 #include "linux/paddle.h"
 
 #include <vector>
-#include <map>
 
 namespace ra2
 {

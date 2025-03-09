@@ -159,7 +159,7 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
             Paddle::setSquaring(true);
             break;
         case RETRO_DEVICE_MOUSE:
-            Paddle::instance = std::make_shared<ra2::Mouse>(&ourGame);
+            Paddle::instance = std::make_shared<ra2::Mouse>(ourGame);
             Paddle::setSquaring(false);
             break;
         default:

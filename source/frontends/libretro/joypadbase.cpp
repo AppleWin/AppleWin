@@ -3,8 +3,6 @@
 
 #include "libretro.h"
 
-#include <iostream>
-
 namespace ra2
 {
 

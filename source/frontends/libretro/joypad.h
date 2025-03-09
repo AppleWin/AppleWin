@@ -3,7 +3,6 @@
 #include "frontends/libretro/joypadbase.h"
 
 #include <vector>
-#include <map>
 
 namespace ra2
 {
