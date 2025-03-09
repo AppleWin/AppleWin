@@ -221,7 +221,6 @@ SOFT SWITCH STATUS FLAGS
 static LPBYTE	memshadow[0x100];
 LPBYTE			memwrite[0x100];
 BYTE			memreadPageType[0x100];
-//BYTE			memwriteDirtyPage[0x100];
 
 iofunction		IORead[256];
 iofunction		IOWrite[256];
