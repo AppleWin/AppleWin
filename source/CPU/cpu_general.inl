@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #undef AF_TO_EF
 #undef EF_TO_AF
 
+#define ZERO_PAGE 0x00
 #define STACK_PAGE 0x01
 
 #define AF_TO_EF  flagc = (regs.ps & AF_CARRY);				    \
@@ -172,33 +173,35 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		else {														\
 			addr = READ_AUX1K_WORD(regs.pc);						\
 			regs.pc += 2;											\
-		}															\
-		if (memreadPageType[addr >> 8] == MEM_Aux1K)				\
-			addr &= (TEXT_PAGE1_SIZE-1);
+		}
 
 #define _IABSX    addr = *(LPWORD)(mem+(*(LPWORD)(mem+regs.pc))+(WORD)regs.x); regs.pc += 2;
 #define _IABSX_ALT \
-		if (memreadPageType[((regs.pc+regs.x) >> 8) & 0xff] != MEM_Aux1K) {	\
-			_IABSX;													\
+		if (memreadPageType[(regs.pc+regs.x) >> 8] != MEM_Aux1K) {	\
+			base = *(LPWORD)(mem+regs.pc) + (WORD)regs.x;			\
 		}															\
 		else {														\
-			addr = READ_AUX1K_WORD(READ_AUX1K_WORD(regs.pc)+regs.x);\
-			regs.pc += 2;											\
-		}
+			base = READ_AUX1K_WORD(regs.pc) + (WORD)regs.x;			\
+		}															\
+		if (memreadPageType[base >> 8] != MEM_Aux1K) {				\
+			addr = *(LPWORD)(mem+base);								\
+		}															\
+		else {														\
+			addr = READ_AUX1K_WORD(base);							\
+		}															\
+		regs.pc += 2;
 
 // Not optimised for page-cross
 #define _ABSX_CONST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2;
 #define _ABSX_CONST_ALT \
-		if (memreadPageType[((regs.pc+regs.x) >> 8) & 0xff] != MEM_Aux1K) {	\
+		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
 			_ABSX_CONST;											\
 		}															\
 		else {														\
 			base = READ_AUX1K_WORD(regs.pc);						\
 			addr = base + (WORD)regs.x;								\
 			regs.pc += 2;											\
-		}															\
-		if (memreadPageType[addr >> 8] == MEM_Aux1K)				\
-			addr &= (TEXT_PAGE1_SIZE-1);
+		}
 
 // Optimised for page-cross
 #define _ABSX_OPT _ABSX_CONST; CHECK_PAGE_CHANGE;
@@ -207,16 +210,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Not optimised for page-cross
 #define _ABSY_CONST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2;
 #define _ABSY_CONST_ALT \
-		if (memreadPageType[((regs.pc+regs.y) >> 8) & 0xff] != MEM_Aux1K) {	\
+		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
 			_ABSY_CONST;											\
 		}															\
 		else {														\
 			base = READ_AUX1K_WORD(regs.pc);						\
 			addr = base + (WORD)regs.y;								\
 			regs.pc += 2;											\
-		}															\
-		if (memreadPageType[addr >> 8] == MEM_Aux1K)				\
-			addr &= (TEXT_PAGE1_SIZE-1);
+		}
 
 // Optimised for page-cross
 #define _ABSY_OPT _ABSY_CONST; CHECK_PAGE_CHANGE;
@@ -229,15 +230,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 regs.pc += 2;
 #define _IABS_CMOS_ALT 												\
 		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
-			_IABS_CMOS;												\
+			base = *(LPWORD)(mem+regs.pc);							\
 		}															\
 		else {														\
 			base = READ_AUX1K_WORD(regs.pc);						\
-			base &= (TEXT_PAGE1_SIZE-1);							\
+		}															\
+		if (memreadPageType[base >> 8] != MEM_Aux1K) {				\
+			addr = *(LPWORD)(mem+base);								\
+		}															\
+		else {														\
 			addr = READ_AUX1K_WORD(base);							\
-			if ((base & 0xFF) == 0xFF) uExtraCycles=1;				\
-			regs.pc += 2;											\
-		}
+		}															\
+		if ((base & 0xFF) == 0xFF) uExtraCycles=1;					\
+		regs.pc += 2;
 
 #define _IABS_NMOS base = *(LPWORD)(mem+regs.pc);	                          \
 		 if ((base & 0xFF) == 0xFF)				  \
@@ -247,27 +252,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 regs.pc += 2;
 #define _IABS_NMOS_ALT												\
 		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
-			_IABS_NMOS;												\
+			base = *(LPWORD)(mem+regs.pc);							\
 		}															\
 		else {														\
 			base = READ_AUX1K_WORD(regs.pc);						\
-			base &= (TEXT_PAGE1_SIZE-1);							\
-			addr = READ_AUX1K_WORD(base);							\
+		}															\
+		if (memreadPageType[base >> 8] != MEM_Aux1K) {				\
+			addr = *(LPWORD)(mem+base);								\
+		}															\
+		else {														\
 			if ((base & 0xFF) == 0xFF)								\
 				addr = READ_AUX1K_BYTE(base) | (READ_AUX1K_BYTE(base&0xFF00)<<8);	\
 			else													\
 				addr = READ_AUX1K_WORD(base);						\
-			regs.pc += 2;											\
-		}
-
-#define _IMM	 addr = regs.pc++;
-#define _IMM_ALT													\
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
-			_IMM;													\
 		}															\
-		else {														\
-			addr = regs.pc++ & (TEXT_PAGE1_SIZE-1);					\
-		}
+		regs.pc += 2;
+
+#define IMM	 addr = regs.pc++;
 
 #define _INDX	 base = ((*(mem+regs.pc++))+regs.x) & 0xFF;          \
 		 if (base == 0xFF)                                   \
@@ -276,10 +277,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		     addr = *(LPWORD)(mem+base);
 #define _INDX_ALT												\
 		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
-			_INDX;												\
+			base = ((*(mem+regs.pc++))+regs.x) & 0xFF;			\
 		}														\
 		else {													\
 			base = (READ_AUX1K_BYTE(regs.pc++)+regs.x) & 0xFF;	\
+		}														\
+		if (memreadPageType[ZERO_PAGE] != MEM_Aux1K) {			\
+			if (base == 0xFF)                                   \
+				addr = *(mem+0xFF)+(((WORD)*mem)<<8);           \
+			else                                                \
+				addr = *(LPWORD)(mem+base);						\
+		}														\
+		else {													\
 			if (base == 0xFF)									\
 				addr = READ_AUX1K_BYTE(0xFF) | (READ_AUX1K_BYTE(0x00)<<8);	\
 			else												\
@@ -295,16 +304,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 addr = base+(WORD)regs.y;
 #define _INDY_CONST_ALT											\
 		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
-			_INDY_CONST;										\
+			base = *(mem+regs.pc++);							\
 		}														\
 		else {													\
-			if (*(mem+regs.pc) == 0xFF)						/*no extra cycle for page-crossing*/ \
+			base = READ_AUX1K_BYTE(regs.pc++);					\
+		}														\
+		if (memreadPageType[ZERO_PAGE] != MEM_Aux1K) {			\
+			if (base == 0xFF)                                   \
+				base = *(mem+0xFF)+(((WORD)*mem)<<8);           \
+			else                                                \
+				base = *(LPWORD)(mem+base);						\
+		}														\
+		else {													\
+			if (base == 0xFF)									\
 				base = READ_AUX1K_BYTE(0xFF) | (READ_AUX1K_BYTE(0x00)<<8);	\
 			else												\
-				base = READ_AUX1K_WORD(regs.pc);				\
-			regs.pc++;											\
-			addr = (base+(WORD)regs.y) & (TEXT_PAGE1_SIZE-1);	\
-		}
+				base = READ_AUX1K_WORD(base);					\
+		}														\
+		addr = base+(WORD)regs.y;
 
 // Optimised for page-cross
 #define _INDY_OPT _INDY_CONST; CHECK_PAGE_CHANGE;
