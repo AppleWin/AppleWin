@@ -51,12 +51,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			      | AF_RESERVED | AF_BREAK;
 // CYC(a): This can be optimised, as only certain opcodes will affect uExtraCycles
 #define CYC(a)	 uExecutedCycles += (a)+uExtraCycles;
+
 #define _POP (*(mem+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp)))
 #define _POP_ALT  (																\
 			(memreadPageType[STACK_PAGE] == MEM_Normal)							\
 				? _POP															\
 				: (*(memaux+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp))) /* memreadPageType[0x01] == MEM_Aux1K */ \
 		)
+
 #define _PUSH(a) *(mem+regs.sp--) = (a);									    \
 		 if (regs.sp < 0x100)												    \
 		   regs.sp = 0x1FF;
@@ -69,6 +71,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			if (regs.sp < 0x100)													\
 				regs.sp = 0x1FF;													\
 		}
+
 #define _READ	(																\
 			((addr & 0xF000) == 0xC000)											\
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
@@ -90,11 +93,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					? IO_F8xx(regs.pc,addr,0,0,uExecutedCycles)					\
 					: *(mem+addr)												\
 		)
+
 #define SETNZ(a) {							    \
 		   flagn = ((a) & 0x80);				    \
 		   flagz = !((a) & 0xFF);					    \
 		 }
 #define SETZ(a)	 flagz = !((a) & 0xFF);
+
 #define _WRITE(a) {																		\
 			{																			\
 				memdirty[addr >> 8] = 0xFF;												\
@@ -390,27 +395,27 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			addr = (READ_AUX1K_BYTE(regs.pc++) + regs.y) & 0xFF;\
 		}
 
-// Tidy 3 char addressing modes to keep the opcode table visually aligned, clean, and readable.
+// Tidy 3 char opcodes & addressing modes to keep the opcode table visually aligned, clean, and readable.
 #undef asl
 #undef lsr
-#undef rel
 #undef rol
 #undef ror
 
-#define asl ASLA // Arithmetic Shift Left
-#define lsr LSRA // Logical Shift Right
-#define rel REL
-#define rol ROLA // Rotate Left
-#define ror RORA // Rotate Right
+#define asl ASLA
+#define lsr LSRA
+#define rol ROLA
+#define ror RORA
 
 #undef idx
 #undef imm
 #undef izp
+#undef rel
 #undef zpx
 #undef zpy
 
 #define idx INDX
 #define imm IMM
 #define izp IZPG
+#define rel REL
 #define zpx ZPGX
 #define zpy ZPGY
