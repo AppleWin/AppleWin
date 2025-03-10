@@ -1369,7 +1369,7 @@ static void UpdatePagingForAltRW(void)
 	{
 		// Map all aux writes into the 1K memory
 
-		const uint32_t kBase = 0x0000;
+		const uint32_t kBase = TEXT_PAGE1_BEGIN;
 
 		if (SW_ALTZP)
 			for (loop = 0x00; loop < 0x02; loop++)
@@ -1483,8 +1483,8 @@ LPBYTE MemGetAuxPtr(const WORD offset)
 {
 	// For the 1KiB 80-col card, the 1KiB is at offset 0x0000 - so mask offset for 80COL video
 	// But for this card, SHR video still starts at offset 0x2000
-	if (GetCardMgr().QueryAux() == CT_80Col && !GetVideo().VideoGetSWSHR())
-		return memaux + (offset&(TEXT_PAGE1_SIZE-1));
+//	if (GetCardMgr().QueryAux() == CT_80Col && !GetVideo().VideoGetSWSHR())
+//		return memaux + (offset&(TEXT_PAGE1_SIZE-1));
 
 	LPBYTE lpMem = (memshadow[(offset >> 8)] == (memaux+(offset & 0xFF00)))
 			? mem+offset				// Return 'mem' copy if possible, as page could be dirty

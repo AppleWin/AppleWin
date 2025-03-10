@@ -81,7 +81,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			(memreadPageType[addr >> 8] == MEM_Normal)							\
 				? *(mem+addr)													\
 				: (memreadPageType[addr >> 8] == MEM_Aux1K)						\
-					? *(memaux+(addr&(TEXT_PAGE1_SIZE-1)))						\
+					? *(memaux+TEXT_PAGE1_BEGIN+(addr&(TEXT_PAGE1_SIZE-1)))		\
 					: (memreadPageType[addr >> 8] == MEM_IORead)				\
 						? IORead[(addr >> 4) & 0xFF](regs.pc, addr, 0, 0, uExecutedCycles)	\
 						: MemReadFloatingBus(uExecutedCycles)					\
@@ -161,7 +161,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define CHECK_PAGE_CHANGE	if ((base ^ addr) & 0xFF00)			\
 									uExtraCycles=1;
 
-#define READ_AUX1K_BYTE(pc) (*(memaux+(pc&(TEXT_PAGE1_SIZE-1))))
+#define READ_AUX1K_BYTE(pc) (*(memaux+TEXT_PAGE1_BEGIN+(pc&(TEXT_PAGE1_SIZE-1))))
 #define READ_AUX1K_WORD(pc) (READ_AUX1K_BYTE(pc) | (READ_AUX1K_BYTE(pc+1)<<8))
 
 /****************************************************************************

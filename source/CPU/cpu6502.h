@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef CPU_ALT
 //#define READ _READ
 //#define WRITE(value) _WRITE(value)
+#define JSR _JSR
 #define POP _POP
 #define PUSH(value) _PUSH(value)
 #define ABS _ABS
@@ -47,6 +48,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #else
 //#define READ _READ_ALT
 //#define WRITE(value) _WRITE_ALT(value)
+#define JSR _JSR_ALT
 #define POP _POP_ALT
 #define PUSH(value) _PUSH_ALT(value)
 #define ABS _ABS_ALT
@@ -391,6 +393,7 @@ static uint32_t Cpu6502(uint32_t uTotalCycles, const bool bVideoUpdate)
 
 #undef READ
 #undef WRITE
+#undef JSR
 #undef POP
 #undef PUSH
 #undef ABS
