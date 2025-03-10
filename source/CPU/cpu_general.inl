@@ -56,7 +56,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define _POP_ALT  (																\
 			(memreadPageType[STACK_PAGE] == MEM_Normal)							\
 				? _POP															\
-				: (*(memaux+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp))) /* memreadPageType[0x01] == MEM_Aux1K */ \
+				: (*(memaux+TEXT_PAGE1_BEGIN+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp))) /* memreadPageType[0x01] == MEM_Aux1K */ \
 		)
 
 #define _PUSH(a) *(mem+regs.sp--) = (a);									    \
