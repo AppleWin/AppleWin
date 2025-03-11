@@ -338,6 +338,18 @@ IDR_MOCKINGBOARD_D_FW   FIRMWARE                "Mockingboard-D.rom"
 IDR_MOUSEINTERFACE_FW   FIRMWARE                "MouseInterface.rom"
 IDR_THUNDERCLOCKPLUS_FW FIRMWARE                "ThunderClockPlus.rom"
 IDR_TKCLOCK_FW          FIRMWARE                "TKClock.rom"
+/// <summary>
+/// When a user uses the right-click disk pop-up menu to format a new disk image
+/// We write our own custom boot sector so the user doesn't crash to the monitor when booting it.
+/// Technically not firmware but since it never changes we put this resource here.
+/// </summary>
+IDR_BOOT_SECTOR           FIRMWARE              "firmware\\BootSector\\bootsector.bin"
+IDR_OS_DOS33              FIRMWARE              "firmware\\OS\\dos33c.bin"
+IDR_OS_PRODOS243          FIRMWARE              "firmware\\OS\\prodos243.bin"
+IDR_BOOT_SECTOR_PRODOS243 FIRMWARE              "firmware\\OS\\bootsector_prodos243.bin"
+IDR_FILE_BASIC17          FIRMWARE              "firmware\\OS\basic17.system.bin"
+IDR_FILE_BITSY_BOOT       FIRMWARE              "firmware\\OS\\bitsy.boot.bin"
+IDR_FILE_BITSY_BYE        FIRMWARE              "firmware\\OS\\quit.system.bin"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -384,14 +396,37 @@ BEGIN
     END
 END
 
+// The Resource Compiler doesn't like  strings with parenthesis in them so markup
+// literal ", (, and ) with hex literals.
+// Also See: https://www.ryanliptak.com/blog/every-rc-exe-bug-quirk-probably/
 IDR_MENU_DISK_POPUP MENU
 BEGIN
     POPUP "Disk Menu"
     BEGIN
-        MENUITEM "&Eject",                      ID_DISKMENU_EJECT
-        MENUITEM "Read / &Write",               ID_DISKMENU_WRITEPROTECTION_OFF
-        MENUITEM "&Read only",                  ID_DISKMENU_WRITEPROTECTION_ON
-        MENUITEM "Send to &CiderPress",         ID_DISKMENU_SENDTO_CIDERPRESS
+        MENUITEM "&Eject",                                                                      ID_DISKMENU_EJECT
+        MENUITEM "Read / &Write",                                                               ID_DISKMENU_WRITEPROTECTION_OFF
+        MENUITEM "&Read only",                                                                  ID_DISKMENU_WRITEPROTECTION_ON
+        MENUITEM "Send to &CiderPress",                                                         ID_DISKMENU_SENDTO_CIDERPRESS
+        MENUITEM SEPARATOR
+        MENUITEM "New &ProDOS 5.25\x22 \x28140 KB\x29 disk image... \x28Standard 35 Track\x29", ID_DISKMENU_NEW_PRODOS_140K_DISK
+        MENUITEM "New ProDOS 5.25\x22 \x28160 KB\x29 disk image... \x28Extended 40 Track\x29",  ID_DISKMENU_NEW_PRODOS_160K_DISK
+        MENUITEM "New ProDOS 3.5\x22 \x28800 KB\x29 disk image...",                             ID_DISKMENU_NEW_PRODOS_800K_DISK
+        MENUITEM "New ProDOS hard \x2832 MB\x29 disk image...",                                 ID_DISKMENU_NEW_PRODOS_32MB_DISK
+        MENUITEM "On format copy PRODOS",                                                       ID_DISKMENU_NEW_DISK_COPY_PRODOS
+        MENUITEM "On format copy Bitsy Boot",                                                   ID_DISKMENU_NEW_DISK_COPY_BITSY_BOOT
+        MENUITEM "On format copy Bitsy Bye",                                                    ID_DISKMENU_NEW_DISK_COPY_BITSY_BYE
+        MENUITEM "On format copy BASIC.SYSTEM",                                                 ID_DISKMENU_NEW_DISK_COPY_BASIC
+        MENUITEM SEPARATOR
+        MENUITEM "New &DOS 3.3 5.25\x22 \x28140 KB\x29 disk image... \x28Standard 35 Track\x29",ID_DISKMENU_NEW_DOS33_140K_DISK
+        MENUITEM "New DOS 3.3 5.25\x22 \x28160 KB\x29 disk image... \x28Extended 40 Track\x29", ID_DISKMENU_NEW_DOS33_160K_DISK
+        MENUITEM "-",                                                                           ID_DISKMENU_ADVANCED_SEPARATOR
+        MENUITEM "Select boot sector file...",                                                  ID_DISKMENU_SELECT_BOOT_SECTOR
+        MENUITEM "New blank 5.25\x22 \x28140 KB\x29 disk image... \x28Standard 35 Track\x29",   ID_DISKMENU_NEW_BLANK_140K_DISK
+        MENUITEM "New blank 5.25\x22 \x28160 KB\x29 disk image... \x28Extended 40 Track\x29",   ID_DISKMENU_NEW_BLANK_160K_DISK
+        MENUITEM "New blank 3.5\x22 \x28800 KB\x29 disk image...",                              ID_DISKMENU_NEW_BLANK_800K_DISK
+        MENUITEM "New blank hard \x2832 MB\x29 disk image...",                                  ID_DISKMENU_NEW_BLANK_32MB_DISK
+        MENUITEM "Format ProDOS disk image...",                                                 ID_DISKMENU_FORMAT_PRODOS_DISK
+        MENUITEM "Format DOS 3.3 disk image...",                                                ID_DISKMENU_FORMAT_DOS33_DISK
     END
 END
 
