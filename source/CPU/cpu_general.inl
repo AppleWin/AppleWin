@@ -239,7 +239,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 else													\
 		     addr = *(LPWORD)(mem+base);
 #define _INDX_ALT												\
-		base = (READ_BYTE_ALT(regs.pc++)+regs.x) & 0xFF;		\
+		base = (READ_BYTE_ALT(regs.pc)+regs.x) & 0xFF; regs.pc++;	\
 		if (base == 0xFF)										\
 			addr = READ_BYTE_ALT(0xFF) | (READ_BYTE_ALT(0x00)<<8);	\
 		else													\
@@ -253,11 +253,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 regs.pc++;												\
 		 addr = base+(WORD)regs.y;
 #define _INDY_CONST_ALT											\
-		base = READ_BYTE_ALT(regs.pc++);						\
+		base = READ_BYTE_ALT(regs.pc);							\
 		if (base == 0xFF)										\
 			base = READ_BYTE_ALT(0xFF) | (READ_BYTE_ALT(0x00)<<8);	\
 		else													\
 			base = READ_WORD_ALT(base);							\
+		regs.pc++;												\
 		addr = base+(WORD)regs.y;
 
 // Optimised for page-cross
@@ -270,14 +271,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 else													\
 		     addr = *(LPWORD)(mem+base);
 #define _IZPG_ALT												\
-		base = READ_BYTE_ALT(regs.pc++);						\
+		base = READ_BYTE_ALT(regs.pc); regs.pc++;				\
 		if (base == 0xFF)										\
 			addr = READ_BYTE_ALT(0xFF) | (READ_BYTE_ALT(0x00)<<8);	\
 		else													\
 			addr = READ_WORD_ALT(base);
 
 #define _REL	addr = (signed char)*(mem+regs.pc++);
-#define _REL_ALT	addr = (signed char)READ_BYTE_ALT(regs.pc++);
+#define _REL_ALT	addr = (signed char)READ_BYTE_ALT(regs.pc); regs.pc++;
 
 // TODO Optimization Note:
 // . Opcodes that generate zero-page addresses can't be accessing $C000..$CFFF
@@ -286,9 +287,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define _ZPGX	addr = ((*(mem+regs.pc++))+regs.x) & 0xFF;
 #define _ZPGY	addr = ((*(mem+regs.pc++))+regs.y) & 0xFF;
 
-#define _ZPG_ALT	addr =  READ_BYTE_ALT(regs.pc++);
-#define _ZPGX_ALT	addr = (READ_BYTE_ALT(regs.pc++) + regs.x) & 0xFF;
-#define _ZPGY_ALT	addr = (READ_BYTE_ALT(regs.pc++) + regs.y) & 0xFF;
+#define _ZPG_ALT	addr =  READ_BYTE_ALT(regs.pc); regs.pc++;
+#define _ZPGX_ALT	addr = (READ_BYTE_ALT(regs.pc) + regs.x) & 0xFF; regs.pc++;
+#define _ZPGY_ALT	addr = (READ_BYTE_ALT(regs.pc) + regs.y) & 0xFF; regs.pc++;
 
 // Tidy 3 char opcodes & addressing modes to keep the opcode table visually aligned, clean, and readable.
 #undef asl

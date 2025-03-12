@@ -1304,7 +1304,6 @@ static void UpdatePaging(BOOL initialize)
 	}
 
 	const bool alt = IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col);
-	if (!alt)
 	{
 		// MOVE MEMORY BACK AND FORTH AS NECESSARY BETWEEN THE SHADOW AREAS AND
 		// THE MAIN RAM IMAGE TO KEEP BOTH SETS OF MEMORY CONSISTENT WITH THE NEW
@@ -1325,7 +1324,8 @@ static void UpdatePaging(BOOL initialize)
 					((*(memdirty + loop) & 1) || (loop <= 1)))
 				{
 					*(memdirty + loop) &= ~1;
-					memcpy(oldshadow[loop], mem + (loop << 8), 256);
+					if (!alt)	// DEBUG: move this "if" here (from above) so that this "for-loop" is run, and mem gets updated and the debugger (sort of) works!
+						memcpy(oldshadow[loop], mem + (loop << 8), 256);
 				}
 
 				memcpy(mem + (loop << 8), memshadow[loop], 256);

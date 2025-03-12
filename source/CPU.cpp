@@ -774,7 +774,11 @@ void CpuReset()
 	regs.ps |= AF_INTERRUPT;
 	if (GetMainCpu() == CPU_65C02)	// GH#1099
 		regs.ps &= ~AF_DECIMAL;
-	regs.pc = *(WORD*)(mem + 0xFFFC);
+
+	const uint16_t resetVector = 0xFFFC;
+	_ASSERT(memshadow[resetVector >> 8] != NULL);
+	regs.pc = *(uint16_t*)(memshadow[resetVector >> 8] + (resetVector & 0xff));
+
 	regs.sp = 0x0100 | ((regs.sp - 3) & 0xFF);
 
 	regs.bJammed = 0;
@@ -787,7 +791,7 @@ void CpuReset()
 
 //===========================================================================
 
-void CpuSetupBenchmark ()
+void CpuSetupBenchmark()
 {
 	regs.a  = 0;
 	regs.x  = 0;
