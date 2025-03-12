@@ -11,9 +11,9 @@ enum AppMode_e g_nAppMode = MODE_RUNNING;
 SynchronousEventManager g_SynchronousEventMgr;
 
 // From Memory.cpp
-LPBYTE         memwrite[0x100];		// TODO: Init
+LPBYTE         memshadow[0x100];	// init() just sets to mem pointers
+LPBYTE         memwrite[0x100];		// init() just sets to mem pointers
 BYTE           memreadPageType[0x100];		// TODO: Init
-BYTE           memwriteDirtyPage[0x100];	// TODO: Init
 LPBYTE         mem          = NULL;	// TODO: Init
 LPBYTE         memdirty     = NULL;	// TODO: Init
 LPBYTE         memVidHD     = NULL;	// TODO: Init
@@ -115,8 +115,11 @@ void init(void)
 	// memory must be zero initialised like MemInitiaize() does.
 	mem = (LPBYTE)calloc(64, 1024);
 
-	for (UINT i=0; i<256; i++)
-		memwrite[i] = mem+i*256;
+	for (UINT i = 0; i < 256; i++)
+		memshadow[i] = mem + i * 256;
+
+	for (UINT i = 0; i < 256; i++)
+		memwrite[i] = mem + i * 256;
 
 	memdirty = new BYTE[256];
 }

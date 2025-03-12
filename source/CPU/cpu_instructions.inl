@@ -404,17 +404,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 PUSH(regs.pc >> 8)					    \
 		 PUSH(regs.pc & 0xFF)					    \
 		 regs.pc = addr | (*(LPBYTE)(mem+regs.pc)) << 8; /* GH#1257 */
-#define _JSR_ALT														\
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {				\
-			_JSR;														\
-		}																\
-		else {															\
-			addr = READ_AUX1K_BYTE(regs.pc);							\
-			regs.pc++;													\
-			PUSH(regs.pc >> 8)											\
-			PUSH(regs.pc & 0xFF)										\
-			regs.pc = addr | READ_AUX1K_BYTE(regs.pc) << 8; /* GH#1257 */\
-		}
+#define _JSR_ALT													\
+		addr = READ_BYTE_ALT(regs.pc);								\
+		regs.pc++;													\
+		PUSH(regs.pc >> 8)											\
+		PUSH(regs.pc & 0xFF)										\
+		regs.pc = addr | READ_BYTE_ALT(regs.pc) << 8; /* GH#1257 */
 #define LAS	 /*bSlowerOnPagecross = 1*/;						    \
 		 val = (BYTE)(READ & regs.sp);				    \
 		 regs.a = regs.x = (BYTE) val;				    \

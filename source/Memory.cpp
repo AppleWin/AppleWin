@@ -218,7 +218,7 @@ SOFT SWITCH STATUS FLAGS
 //   . aux writes outside of the aux TEXT1 get written to memaux (if there's a VidHD card)
 //
 
-static LPBYTE	memshadow[0x100];
+LPBYTE			memshadow[0x100];
 LPBYTE			memwrite[0x100];
 BYTE			memreadPageType[0x100];
 
@@ -1303,30 +1303,33 @@ static void UpdatePaging(BOOL initialize)
 		}
 	}
 
-	// MOVE MEMORY BACK AND FORTH AS NECESSARY BETWEEN THE SHADOW AREAS AND
-	// THE MAIN RAM IMAGE TO KEEP BOTH SETS OF MEMORY CONSISTENT WITH THE NEW
-	// PAGING SHADOW TABLE
-	//
-	// NB. the condition 'loop <= 1' is there because:
-	// . Page0 (ZP) and Page1 (stack) are written to so often that it's almost certain that they'll be dirty every time this function is called.
-	// Note also that:
-	// . Page0 (ZP)    : memdirty[0] is set when the 6502 CPU writes to ZP.
-	// . Page1 (stack) : memdirty[1] is NOT set when the 6502 CPU writes to this page with JSR, PHA, etc.
-	// Ultimately this is an optimisation (due to Page1 writes not setting memdirty[1]) and Page0 could be optimised to also not set memdirty[0].
-
-	for (loop = 0x00; loop < 0x100; loop++)
+	const bool alt = IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col);
+	if (!alt)
 	{
-		if (initialize || (oldshadow[loop] != memshadow[loop]))
-		{
-			if (!initialize &&
-				((*(memdirty+loop) & 1) || (loop <= 1)))
-			{
-				*(memdirty+loop) &= ~1;
-				if (memreadPageType[loop] != MEM_Aux1K)	// Writes to std80's 1KiB go directly to memaux (not via mem cache)
-					memcpy(oldshadow[loop],mem+(loop << 8),256);
-			}
+		// MOVE MEMORY BACK AND FORTH AS NECESSARY BETWEEN THE SHADOW AREAS AND
+		// THE MAIN RAM IMAGE TO KEEP BOTH SETS OF MEMORY CONSISTENT WITH THE NEW
+		// PAGING SHADOW TABLE
+		//
+		// NB. the condition 'loop <= 1' is there because:
+		// . Page0 (ZP) and Page1 (stack) are written to so often that it's almost certain that they'll be dirty every time this function is called.
+		// Note also that:
+		// . Page0 (ZP)    : memdirty[0] is set when the 6502 CPU writes to ZP.
+		// . Page1 (stack) : memdirty[1] is NOT set when the 6502 CPU writes to this page with JSR, PHA, etc.
+		// Ultimately this is an optimisation (due to Page1 writes not setting memdirty[1]) and Page0 could be optimised to also not set memdirty[0].
 
-			memcpy(mem+(loop << 8),memshadow[loop],256);
+		for (loop = 0x00; loop < 0x100; loop++)
+		{
+			if (initialize || (oldshadow[loop] != memshadow[loop]))
+			{
+				if (!initialize &&
+					((*(memdirty + loop) & 1) || (loop <= 1)))
+				{
+					*(memdirty + loop) &= ~1;
+					memcpy(oldshadow[loop], mem + (loop << 8), 256);
+				}
+
+				memcpy(mem + (loop << 8), memshadow[loop], 256);
+			}
 		}
 	}
 
@@ -1338,9 +1341,7 @@ static void UpdatePagingForAltRW(void)
 {
 	UINT loop;
 
-	const BYTE memType = (GetCardMgr().QueryAux() == CT_Empty) ? MEM_FloatingBus
-		: (GetCardMgr().QueryAux() == CT_80Col) ? MEM_Aux1K
-		: MEM_Normal;
+	const BYTE memType = (GetCardMgr().QueryAux() == CT_Empty) ? MEM_FloatingBus : MEM_Normal;
 
 	for (loop = 0x00; loop < 0x02; loop++)
 		memreadPageType[loop] = SW_ALTZP ? memType : MEM_Normal;
@@ -1373,24 +1374,34 @@ static void UpdatePagingForAltRW(void)
 
 		if (SW_ALTZP)
 			for (loop = 0x00; loop < 0x02; loop++)
-				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
+				memshadow[loop] = memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
+
+		if (SW_AUXREAD)
+			for (loop = 0x02; loop < 0xC0; loop++)
+				memshadow[loop] = memaux + kBase + ((loop & 3) << 8);
 
 		if (SW_AUXWRITE)
 			for (loop = 0x02; loop < 0xC0; loop++)
 				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
 		if (SW_HIGHRAM && SW_ALTZP)
+		{
 			for (loop = 0xD0; loop < 0x100; loop++)
-				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
+			{
+				memshadow[loop] = memaux + kBase + ((loop & 3) << 8);
+				if (SW_WRITERAM)
+					memwrite[loop] = memshadow[loop];
+			}
+		}
 
 		if (SW_80STORE && SW_PAGE2)
 		{
 			for (loop = 0x04; loop < 0x08; loop++)
-				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
+				memshadow[loop] = memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
 			if (SW_HIRES)
 				for (loop = 0x20; loop < 0x40; loop++)
-					memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
+					memshadow[loop] = memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 		}
 	}
 }

@@ -43,6 +43,7 @@ typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE
 
 extern iofunction IORead[256];
 extern iofunction IOWrite[256];
+extern LPBYTE     memshadow[0x100];
 extern LPBYTE     memwrite[0x100];
 extern BYTE       memreadPageType[0x100];
 extern LPBYTE     mem;

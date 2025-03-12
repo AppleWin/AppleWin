@@ -53,10 +53,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define CYC(a)	 uExecutedCycles += (a)+uExtraCycles;
 
 #define _POP (*(mem+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp)))
-#define _POP_ALT  (																\
-			(memreadPageType[STACK_PAGE] == MEM_Normal)							\
-				? _POP															\
-				: (*(memaux+TEXT_PAGE1_BEGIN+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp))) /* memreadPageType[0x01] == MEM_Aux1K */ \
+#define _POP_ALT ( /*TODO: Support reads from IO & Floating bus*/\
+			*(memshadow[addr >> 8]+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp)) \
 		)
 
 #define _PUSH(a) *(mem+regs.sp--) = (a);									    \
@@ -79,19 +77,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		)
 #define _READ_ALT (																\
 			(memreadPageType[addr >> 8] == MEM_Normal)							\
-				? *(mem+addr)													\
-				: (memreadPageType[addr >> 8] == MEM_Aux1K)						\
-					? *(memaux+TEXT_PAGE1_BEGIN+(addr&(TEXT_PAGE1_SIZE-1)))		\
-					: (memreadPageType[addr >> 8] == MEM_IORead)				\
-						? IORead[(addr >> 4) & 0xFF](regs.pc, addr, 0, 0, uExecutedCycles)	\
-						: MemReadFloatingBus(uExecutedCycles)					\
+				? *(memshadow[addr >> 8]+(addr&0xff))							\
+				: (memreadPageType[addr >> 8] == MEM_IORead)					\
+					? IORead[(addr >> 4) & 0xFF](regs.pc, addr, 0, 0, uExecutedCycles)	\
+					: MemReadFloatingBus(uExecutedCycles)						\
+		)
+#define _READ_ALT2(addr) (														\
+			(memreadPageType[addr >> 8] == MEM_Normal)							\
+				? *(memshadow[addr >> 8]+(addr&0xff))							\
+				: (memreadPageType[addr >> 8] == MEM_IORead)					\
+					? IORead[(addr >> 4) & 0xFF](regs.pc, addr, 0, 0, uExecutedCycles)	\
+					: MemReadFloatingBus(uExecutedCycles)						\
 		)
 #define _READ_WITH_IO_F8xx (										/* GH#827 */\
 			((addr & 0xF000) == 0xC000)											\
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
 				: (addr >= 0xF800)												\
 					? IO_F8xx(regs.pc,addr,0,0,uExecutedCycles)					\
-					: *(mem+addr)												\
+					: *(memshadow[addr >> 8]+(addr&0xff))						\
 		)
 
 #define SETNZ(a) {							    \
@@ -161,8 +164,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define CHECK_PAGE_CHANGE	if ((base ^ addr) & 0xFF00)			\
 									uExtraCycles=1;
 
-#define READ_AUX1K_BYTE(pc) (*(memaux+TEXT_PAGE1_BEGIN+(pc&(TEXT_PAGE1_SIZE-1))))
-#define READ_AUX1K_WORD(pc) (READ_AUX1K_BYTE(pc) | (READ_AUX1K_BYTE(pc+1)<<8))
+#define READ_BYTE_ALT(pc) _READ_ALT2(pc)
+#define READ_WORD_ALT(pc) (_READ_ALT2(pc) | (_READ_ALT2((pc+1))<<8))
 
 /****************************************************************************
 *
@@ -170,230 +173,122 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
 ***/
 
-#define _ABS	 addr = *(LPWORD)(mem+regs.pc);	 regs.pc += 2;
-#define _ABS_ALT	 \
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
-			_ABS;													\
-		}															\
-		else {														\
-			addr = READ_AUX1K_WORD(regs.pc);						\
-			regs.pc += 2;											\
-		}
+#define _ABS	addr = *(LPWORD)(mem+regs.pc);	 regs.pc += 2;
+#define _ABS_ALT												\
+		addr = READ_WORD_ALT(regs.pc);							\
+		regs.pc += 2;
 
-#define _IABSX    addr = *(LPWORD)(mem+(*(LPWORD)(mem+regs.pc))+(WORD)regs.x); regs.pc += 2;
-#define _IABSX_ALT \
-		if (memreadPageType[(regs.pc+regs.x) >> 8] != MEM_Aux1K) {	\
-			base = *(LPWORD)(mem+regs.pc) + (WORD)regs.x;			\
-		}															\
-		else {														\
-			base = READ_AUX1K_WORD(regs.pc) + (WORD)regs.x;			\
-		}															\
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {				\
-			addr = *(LPWORD)(mem+base);								\
-		}															\
-		else {														\
-			addr = READ_AUX1K_WORD(base);							\
-		}															\
+#define _IABSX	addr = *(LPWORD)(mem+(*(LPWORD)(mem+regs.pc))+(WORD)regs.x); regs.pc += 2;
+#define _IABSX_ALT												\
+		base = READ_WORD_ALT(regs.pc) + (WORD)regs.x;			\
+		addr = READ_WORD_ALT(base);								\
 		regs.pc += 2;
 
 // Not optimised for page-cross
-#define _ABSX_CONST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2;
-#define _ABSX_CONST_ALT \
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
-			_ABSX_CONST;											\
-		}															\
-		else {														\
-			base = READ_AUX1K_WORD(regs.pc);						\
-			addr = base + (WORD)regs.x;								\
-			regs.pc += 2;											\
-		}
+#define _ABSX_CONST	base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.x; regs.pc += 2;
+#define _ABSX_CONST_ALT											\
+		base = READ_WORD_ALT(regs.pc);							\
+		addr = base + (WORD)regs.x;								\
+		regs.pc += 2;
 
 // Optimised for page-cross
 #define _ABSX_OPT _ABSX_CONST; CHECK_PAGE_CHANGE;
 #define _ABSX_OPT_ALT _ABSX_CONST_ALT; CHECK_PAGE_CHANGE;
 
 // Not optimised for page-cross
-#define _ABSY_CONST base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2;
-#define _ABSY_CONST_ALT \
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
-			_ABSY_CONST;											\
-		}															\
-		else {														\
-			base = READ_AUX1K_WORD(regs.pc);						\
-			addr = base + (WORD)regs.y;								\
-			regs.pc += 2;											\
-		}
+#define _ABSY_CONST	base = *(LPWORD)(mem+regs.pc); addr = base+(WORD)regs.y; regs.pc += 2;
+#define _ABSY_CONST_ALT											\
+		base = READ_WORD_ALT(regs.pc);							\
+		addr = base + (WORD)regs.y;								\
+		regs.pc += 2;
 
 // Optimised for page-cross
 #define _ABSY_OPT _ABSY_CONST; CHECK_PAGE_CHANGE;
 #define _ABSY_OPT_ALT _ABSY_CONST_ALT; CHECK_PAGE_CHANGE;
 
 // TODO Optimization Note (just for IABSCMOS): uExtraCycles = ((base & 0xFF) + 1) >> 8;
-#define _IABS_CMOS base = *(LPWORD)(mem+regs.pc);	                          \
-		 addr = *(LPWORD)(mem+base);		                  \
-		 if ((base & 0xFF) == 0xFF) uExtraCycles=1;		  \
+#define _IABS_CMOS	base = *(LPWORD)(mem+regs.pc);				\
+		 addr = *(LPWORD)(mem+base);							\
+		 if ((base & 0xFF) == 0xFF) uExtraCycles=1;				\
 		 regs.pc += 2;
-#define _IABS_CMOS_ALT 												\
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
-			base = *(LPWORD)(mem+regs.pc);							\
-		}															\
-		else {														\
-			base = READ_AUX1K_WORD(regs.pc);						\
-		}															\
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {				\
-			addr = *(LPWORD)(mem+base);								\
-		}															\
-		else {														\
-			addr = READ_AUX1K_WORD(base);							\
-		}															\
-		if ((base & 0xFF) == 0xFF) uExtraCycles=1;					\
+#define _IABS_CMOS_ALT 											\
+		base = READ_WORD_ALT(regs.pc);							\
+		addr = READ_WORD_ALT(base);								\
+		if ((base & 0xFF) == 0xFF) uExtraCycles=1;				\
 		regs.pc += 2;
 
-#define _IABS_NMOS base = *(LPWORD)(mem+regs.pc);	                          \
-		 if ((base & 0xFF) == 0xFF)				  \
-		       addr = *(mem+base)+((WORD)*(mem+(base&0xFF00))<<8);\
+#define _IABS_NMOS	base = *(LPWORD)(mem+regs.pc);				\
+		 if ((base & 0xFF) == 0xFF)								\
+		       addr = *(mem+base)+((WORD)*(mem+(base&0xFF00))<<8);	\
 		 else                                                   \
-		       addr = *(LPWORD)(mem+base);                        \
+		       addr = *(LPWORD)(mem+base);						\
 		 regs.pc += 2;
-#define _IABS_NMOS_ALT												\
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {			\
-			base = *(LPWORD)(mem+regs.pc);							\
-		}															\
-		else {														\
-			base = READ_AUX1K_WORD(regs.pc);						\
-		}															\
-		if (memreadPageType[base >> 8] != MEM_Aux1K) {				\
-			addr = *(LPWORD)(mem+base);								\
-		}															\
-		else {														\
-			if ((base & 0xFF) == 0xFF)								\
-				addr = READ_AUX1K_BYTE(base) | (READ_AUX1K_BYTE(base&0xFF00)<<8);	\
-			else													\
-				addr = READ_AUX1K_WORD(base);						\
-		}															\
+#define _IABS_NMOS_ALT											\
+		base = READ_WORD_ALT(regs.pc);							\
+		if ((base & 0xFF) == 0xFF)								\
+			addr = READ_BYTE_ALT(base) | (READ_BYTE_ALT(base&0xFF00)<<8);	\
+		else													\
+			addr = READ_WORD_ALT(base);							\
 		regs.pc += 2;
 
 #define IMM	 addr = regs.pc++;
 
-#define _INDX	 base = ((*(mem+regs.pc++))+regs.x) & 0xFF;          \
-		 if (base == 0xFF)                                   \
-		     addr = *(mem+0xFF)+(((WORD)*mem)<<8);           \
-		 else                                                \
+#define _INDX	base = ((*(mem+regs.pc++))+regs.x) & 0xFF;		\
+		 if (base == 0xFF)										\
+		     addr = *(mem+0xFF)+(((WORD)*mem)<<8);				\
+		 else													\
 		     addr = *(LPWORD)(mem+base);
 #define _INDX_ALT												\
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
-			base = ((*(mem+regs.pc++))+regs.x) & 0xFF;			\
-		}														\
-		else {													\
-			base = (READ_AUX1K_BYTE(regs.pc++)+regs.x) & 0xFF;	\
-		}														\
-		if (memreadPageType[ZERO_PAGE] != MEM_Aux1K) {			\
-			if (base == 0xFF)                                   \
-				addr = *(mem+0xFF)+(((WORD)*mem)<<8);           \
-			else                                                \
-				addr = *(LPWORD)(mem+base);						\
-		}														\
-		else {													\
-			if (base == 0xFF)									\
-				addr = READ_AUX1K_BYTE(0xFF) | (READ_AUX1K_BYTE(0x00)<<8);	\
-			else												\
-				addr = READ_AUX1K_WORD(base);					\
-		}
+		base = (READ_BYTE_ALT(regs.pc++)+regs.x) & 0xFF;		\
+		if (base == 0xFF)										\
+			addr = READ_BYTE_ALT(0xFF) | (READ_BYTE_ALT(0x00)<<8);	\
+		else													\
+			addr = READ_WORD_ALT(base);
 
 // Not optimised for page-cross
-#define _INDY_CONST	 if (*(mem+regs.pc) == 0xFF)             /*no extra cycle for page-crossing*/ \
-		     base = *(mem+0xFF)+(((WORD)*mem)<<8);           \
-		 else                                                \
-		     base = *(LPWORD)(mem+*(mem+regs.pc));           \
-		 regs.pc++;                                          \
+#define _INDY_CONST	if (*(mem+regs.pc) == 0xFF)             /*no extra cycle for page-crossing*/ \
+		     base = *(mem+0xFF)+(((WORD)*mem)<<8);				\
+		 else													\
+		     base = *(LPWORD)(mem+*(mem+regs.pc));				\
+		 regs.pc++;												\
 		 addr = base+(WORD)regs.y;
 #define _INDY_CONST_ALT											\
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
-			base = *(mem+regs.pc++);							\
-		}														\
-		else {													\
-			base = READ_AUX1K_BYTE(regs.pc++);					\
-		}														\
-		if (memreadPageType[ZERO_PAGE] != MEM_Aux1K) {			\
-			if (base == 0xFF)                                   \
-				base = *(mem+0xFF)+(((WORD)*mem)<<8);           \
-			else                                                \
-				base = *(LPWORD)(mem+base);						\
-		}														\
-		else {													\
-			if (base == 0xFF)									\
-				base = READ_AUX1K_BYTE(0xFF) | (READ_AUX1K_BYTE(0x00)<<8);	\
-			else												\
-				base = READ_AUX1K_WORD(base);					\
-		}														\
+		base = READ_BYTE_ALT(regs.pc++);						\
+		if (base == 0xFF)										\
+			base = READ_BYTE_ALT(0xFF) | (READ_BYTE_ALT(0x00)<<8);	\
+		else													\
+			base = READ_WORD_ALT(base);							\
 		addr = base+(WORD)regs.y;
 
 // Optimised for page-cross
 #define _INDY_OPT _INDY_CONST; CHECK_PAGE_CHANGE;
 #define _INDY_OPT_ALT _INDY_CONST_ALT; CHECK_PAGE_CHANGE;
 
-#define _IZPG	 base = *(mem+regs.pc++);                            \
-		 if (base == 0xFF)                                   \
-		     addr = *(mem+0xFF)+(((WORD)*mem)<<8);           \
-		 else                                                \
+#define _IZPG	base = *(mem+regs.pc++);						\
+		 if (base == 0xFF)										\
+		     addr = *(mem+0xFF)+(((WORD)*mem)<<8);				\
+		 else													\
 		     addr = *(LPWORD)(mem+base);
 #define _IZPG_ALT												\
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
-			base = *(mem+regs.pc++);							\
-		}														\
-		else {													\
-			base = READ_AUX1K_BYTE(regs.pc++);					\
-		}														\
-		if (memreadPageType[ZERO_PAGE] != MEM_Aux1K) {			\
-			if (base == 0xFF)                                   \
-				addr = *(mem+0xFF)+(((WORD)*mem)<<8);           \
-			else                                                \
-				addr = *(LPWORD)(mem+base);						\
-		}														\
-		else {													\
-			if (base == 0xFF)									\
-				addr = READ_AUX1K_BYTE(0xFF) | (READ_AUX1K_BYTE(0x00)<<8);	\
-			else												\
-				addr = READ_AUX1K_WORD(base);					\
-		}
+		base = READ_BYTE_ALT(regs.pc++);						\
+		if (base == 0xFF)										\
+			addr = READ_BYTE_ALT(0xFF) | (READ_BYTE_ALT(0x00)<<8);	\
+		else													\
+			addr = READ_WORD_ALT(base);
 
-#define _REL	 addr = (signed char)*(mem+regs.pc++);
-#define _REL_ALT												 \
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
-			_REL;												\
-		}														\
-		else {													\
-			addr = (signed char)READ_AUX1K_BYTE(regs.pc++);		\
-		}
+#define _REL	addr = (signed char)*(mem+regs.pc++);
+#define _REL_ALT	addr = (signed char)READ_BYTE_ALT(regs.pc++);
 
 // TODO Optimization Note:
 // . Opcodes that generate zero-page addresses can't be accessing $C000..$CFFF
 //   so they could be paired with special READZP/WRITEZP macros (instead of READ/WRITE)
-#define _ZPG      addr =   *(mem+regs.pc++);
-#define _ZPGX     addr = ((*(mem+regs.pc++))+regs.x) & 0xFF;
-#define _ZPGY     addr = ((*(mem+regs.pc++))+regs.y) & 0xFF;
+#define _ZPG	addr =   *(mem+regs.pc++);
+#define _ZPGX	addr = ((*(mem+regs.pc++))+regs.x) & 0xFF;
+#define _ZPGY	addr = ((*(mem+regs.pc++))+regs.y) & 0xFF;
 
-#define _ZPG_ALT												\
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
-			_ZPG;												\
-		}														\
-		else {													\
-			addr =  READ_AUX1K_BYTE(regs.pc++);					\
-		}
-#define _ZPGX_ALT												\
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
-			_ZPGX;												\
-		}														\
-		else {													\
-			addr = (READ_AUX1K_BYTE(regs.pc++) + regs.x) & 0xFF;\
-		}
-#define _ZPGY_ALT												\
-		if (memreadPageType[regs.pc >> 8] != MEM_Aux1K) {		\
-			_ZPGY;												\
-		}														\
-		else {													\
-			addr = (READ_AUX1K_BYTE(regs.pc++) + regs.y) & 0xFF;\
-		}
+#define _ZPG_ALT	addr =  READ_BYTE_ALT(regs.pc++);
+#define _ZPGX_ALT	addr = (READ_BYTE_ALT(regs.pc++) + regs.x) & 0xFF;
+#define _ZPGY_ALT	addr = (READ_BYTE_ALT(regs.pc++) + regs.y) & 0xFF;
 
 // Tidy 3 char opcodes & addressing modes to keep the opcode table visually aligned, clean, and readable.
 #undef asl
