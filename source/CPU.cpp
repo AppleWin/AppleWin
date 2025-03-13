@@ -643,6 +643,17 @@ void CpuWrite(USHORT addr, BYTE value, ULONG uExecutedCycles)
 	Heatmap_WriteByte_With_IO_F8xx(addr, value, uExecutedCycles);
 }
 
+BYTE ReadByteFromMemory(uint16_t addr)
+{
+	if (GetIsMemCacheValid())
+		return mem[addr];
+
+	_ASSERT(memshadow[addr >> 8]);	// Should never be NULL
+	if (memshadow[addr >> 8] == NULL) return 0x00;
+
+	return *(memshadow[addr >> 8] + (addr & 0xff));
+}
+
 //===========================================================================
 
 // Description:

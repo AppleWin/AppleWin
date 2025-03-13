@@ -271,6 +271,8 @@ static FILE * g_hMemTempFile = NULL;
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 static void FreeMemImage(void);
 
+static bool g_isMemCacheValid = true;	// is 'mem' valid
+
 //=============================================================================
 
 // Default memory types on a VM restart
@@ -438,6 +440,11 @@ void SetMemMainLanguageCard(LPBYTE ptr, UINT slot, bool bMemMain /*=false*/)
 LPBYTE GetCxRomPeripheral(void)
 {
 	return pCxRomPeripheral;	// Can be NULL if at MODE_LOGO
+}
+
+bool GetIsMemCacheValid(void)
+{
+	return g_isMemCacheValid;
 }
 
 //=============================================================================
@@ -1303,7 +1310,8 @@ static void UpdatePaging(BOOL initialize)
 		}
 	}
 
-	const bool alt = IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col);
+	g_isMemCacheValid = !(IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col));
+//	if (g_isMemCacheValid)
 	{
 		// MOVE MEMORY BACK AND FORTH AS NECESSARY BETWEEN THE SHADOW AREAS AND
 		// THE MAIN RAM IMAGE TO KEEP BOTH SETS OF MEMORY CONSISTENT WITH THE NEW
@@ -1324,7 +1332,7 @@ static void UpdatePaging(BOOL initialize)
 					((*(memdirty + loop) & 1) || (loop <= 1)))
 				{
 					*(memdirty + loop) &= ~1;
-					if (!alt)	// DEBUG: move this "if" here (from above) so that this "for-loop" is run, and mem gets updated and the debugger (sort of) works!
+					if (g_isMemCacheValid)	// DEBUG: move this "if" here (from above) so that this "for-loop" is run, and mem gets updated and the debugger (sort of) works!
 						memcpy(oldshadow[loop], mem + (loop << 8), 256);
 				}
 
@@ -1520,7 +1528,7 @@ LPBYTE MemGetAuxPtrWithLC(const WORD offset)
 
 LPBYTE MemGetAuxPtr(const WORD offset)
 {
-	LPBYTE lpMem = (memshadow[(offset >> 8)] == (memaux+(offset & 0xFF00)))
+	LPBYTE lpMem = g_isMemCacheValid && (memshadow[(offset >> 8)] == (memaux+(offset & 0xFF00)))
 			? mem+offset				// Return 'mem' copy if possible, as page could be dirty
 			: memaux+offset;
 
@@ -1533,7 +1541,7 @@ LPBYTE MemGetAuxPtr(const WORD offset)
 			)
 		)
 	{
-		lpMem = (memshadow[(offset >> 8)] == (RWpages[0]+(offset & 0xFF00)))
+		lpMem = g_isMemCacheValid && (memshadow[(offset >> 8)] == (RWpages[0]+(offset & 0xFF00)))
 			? mem+offset
 			: RWpages[0]+offset;
 	}
@@ -1583,7 +1591,7 @@ LPBYTE MemGetMainPtrWithLC(const WORD offset)
 
 LPBYTE MemGetMainPtr(const WORD offset)
 {
-	return (memshadow[(offset >> 8)] == (memmain + (offset & 0xFF00)))
+	return g_isMemCacheValid && (memshadow[(offset >> 8)] == (memmain + (offset & 0xFF00)))
 		? mem + offset				// Return 'mem' copy if possible, as page could be dirty
 		: memmain + offset;
 }
