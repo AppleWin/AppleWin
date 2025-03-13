@@ -452,14 +452,28 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #ifdef _DEBUG
 		g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
 #endif
-		_PUSH(regs.pc >> 8)
-		_PUSH(regs.pc & 0xFF)
-		EF_TO_AF
-		_PUSH(regs.ps & ~AF_BREAK)
-		regs.ps |= AF_INTERRUPT;
-		if (GetMainCpu() == CPU_65C02)	// GH#1099
-			regs.ps &= ~AF_DECIMAL;
-		regs.pc = * (WORD*) (mem+0xFFFE);
+		if (GetIsMemCacheValid())
+		{
+			_PUSH(regs.pc >> 8)
+			_PUSH(regs.pc & 0xFF)
+			EF_TO_AF;
+			_PUSH(regs.ps & ~AF_BREAK)
+			regs.ps |= AF_INTERRUPT;
+			if (GetMainCpu() == CPU_65C02)	// GH#1099
+				regs.ps &= ~AF_DECIMAL;
+			regs.pc = *(WORD*)(mem + 0xFFFE);
+		}
+		else
+		{
+			_PUSH_ALT(regs.pc >> 8)
+			_PUSH_ALT(regs.pc & 0xFF)
+			EF_TO_AF;
+			_PUSH_ALT(regs.ps & ~AF_BREAK)
+			regs.ps |= AF_INTERRUPT;
+			if (GetMainCpu() == CPU_65C02)	// GH#1099
+				regs.ps &= ~AF_DECIMAL;
+			regs.pc = READ_WORD_ALT(0xFFFE);
+		}
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7);
 #if defined(_DEBUG) && LOG_IRQ_TAKEN_AND_RTI
