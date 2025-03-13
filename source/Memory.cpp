@@ -1366,6 +1366,34 @@ static void UpdatePagingForAltRW(void)
 
 	//
 
+	for (loop = 0x00; loop < 0x02; loop++)
+		memwrite[loop] = memshadow[loop];
+
+	if ((SW_AUXREAD != 0) == (SW_AUXWRITE != 0))
+	{
+		for (loop = 0x02; loop < 0xC0; loop++)
+			memwrite[loop] = memshadow[loop];
+	}
+
+	if (SW_WRITERAM && SW_HIGHRAM)
+	{
+		for (loop = 0xD0; loop < 0x100; loop++)
+			memwrite[loop] = memshadow[loop];
+	}
+
+	if (SW_80STORE)
+	{
+		for (loop = 0x04; loop < 0x08; loop++)
+			memwrite[loop] = memshadow[loop];
+
+		if (SW_HIRES)
+		{
+			for (loop = 0x20; loop < 0x40; loop++)
+				memwrite[loop] = memshadow[loop];
+		}
+	}
+	//
+
 	if (GetCardMgr().QueryAux() == CT_80Col)
 	{
 		// Map all aux writes into the 1K memory

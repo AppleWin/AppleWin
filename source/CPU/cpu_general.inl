@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define _POP (*(mem+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp)))
 #define _POP_ALT ( /*TODO: Support reads from IO & Floating bus*/\
-			*(memshadow[addr >> 8]+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp)) \
+			*(memshadow[STACK_PAGE]-0x100+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp)) \
 		)
 
 #define _PUSH(a) *(mem+regs.sp--) = (a);									    \
