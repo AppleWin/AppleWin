@@ -1388,31 +1388,25 @@ static void UpdatePagingForAltRW(void)
 	}
 
 	//
+
 	for (loop = 0x00; loop < 0x02; loop++)
 		memwrite[loop] = memshadow[loop];
+
 	if ((SW_AUXREAD != 0) == (SW_AUXWRITE != 0))
 	{
-		// Overide the MEM_Aux1K set above (slightly quicker code-path during CPU emulation)
 		for (loop = 0x02; loop < 0xC0; loop++)
 			memwrite[loop] = memshadow[loop];
 	}
 
 	if (SW_WRITERAM && SW_HIGHRAM)
-
-
-	if (GetCardMgr().QueryAux() == CT_80Col)
 	{
-		// Dirty pages are only in the 1K range
-
-
-
 		for (loop = 0xD0; loop < 0x100; loop++)
 			memwrite[loop] = memshadow[loop];
 	}
 
 	if (SW_80STORE)
-		{
-			for (loop = 0x04; loop < 0x08; loop++)
+	{
+		for (loop = 0x04; loop < 0x08; loop++)
 			memwrite[loop] = memshadow[loop];
 
 		if (SW_HIRES)
@@ -1422,26 +1416,29 @@ static void UpdatePagingForAltRW(void)
 		}
 	}
 
+	//
+
 	if (GetCardMgr().QueryAux() == CT_80Col)
 	{
 		// Map all aux writes into the 1K memory
-		// . Need to combine with memwriteDirtyPage[], to that the right page is marked as dirty
+
 		const uint32_t kBase = TEXT_PAGE1_BEGIN;
 
 		if (SW_ALTZP)
-		for (loop = 0x00; loop < 0x02; loop++)
+			for (loop = 0x00; loop < 0x02; loop++)
 				memshadow[loop] = memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
 		if (SW_AUXREAD)
-		for (loop = 0x02; loop < 0xC0; loop++)
+			for (loop = 0x02; loop < 0xC0; loop++)
 				memshadow[loop] = memaux + kBase + ((loop & 3) << 8);
-			if (SW_AUXWRITE)
+
+		if (SW_AUXWRITE)
 			for (loop = 0x02; loop < 0xC0; loop++)
 				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
 		if (SW_HIGHRAM && SW_ALTZP)
 		{
-		for (loop = 0xD0; loop < 0x100; loop++)
+			for (loop = 0xD0; loop < 0x100; loop++)
 			{
 				memshadow[loop] = memaux + kBase + ((loop & 3) << 8);
 				if (SW_WRITERAM)
