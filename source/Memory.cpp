@@ -223,10 +223,9 @@ SOFT SWITCH STATUS FLAGS
 //   . aux writes outside of the aux TEXT1 get written to memaux (if there's a VidHD card)
 //
 
-static LPBYTE	memshadow[0x100];
+LPBYTE			memshadow[0x100];
 LPBYTE			memwrite[0x100];
 BYTE			memreadPageType[0x100];
-BYTE			memwriteDirtyPage[0x100];
 
 iofunction		IORead[256];
 iofunction		IOWrite[256];
@@ -276,6 +275,7 @@ static FILE * g_hMemTempFile = NULL;
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 static void FreeMemImage(void);
+static bool g_isMemCacheValid = true;	// is 'mem' valid
 
 //=============================================================================
 
@@ -457,6 +457,10 @@ void SetMemMainLanguageCard(LPBYTE ptr, UINT slot, bool bMemMain /*=false*/)
 LPBYTE GetCxRomPeripheral(void)
 {
 	return pCxRomPeripheral;	// Can be NULL if at MODE_LOGO
+}
+bool GetIsMemCacheValid(void)
+{
+	return g_isMemCacheValid;
 }
 
 //=============================================================================
@@ -1322,6 +1326,8 @@ static void UpdatePaging(BOOL initialize)
 		}
 	}
 
+	g_isMemCacheValid = !(IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col));
+	{
 	// MOVE MEMORY BACK AND FORTH AS NECESSARY BETWEEN THE SHADOW AREAS AND
 	// THE MAIN RAM IMAGE TO KEEP BOTH SETS OF MEMORY CONSISTENT WITH THE NEW
 	// PAGING SHADOW TABLE
@@ -1341,10 +1347,12 @@ static void UpdatePaging(BOOL initialize)
 				((*(memdirty+loop) & 1) || (loop <= 1)))
 			{
 				*(memdirty+loop) &= ~1;
+					if (g_isMemCacheValid)	// DEBUG: move this "if" here (from above) so that this "for-loop" is run, and mem gets updated and the debugger (sort of) works!
 				memcpy(oldshadow[loop],mem+(loop << 8),256);
 			}
 
 			memcpy(mem+(loop << 8),memshadow[loop],256);
+			}
 		}
 	}
 
@@ -1356,9 +1364,7 @@ static void UpdatePagingForAltRW(void)
 {
 	UINT loop;
 
-	const BYTE memType = (GetCardMgr().QueryAux() == CT_Empty) ? MEM_FloatingBus
-		: (GetCardMgr().QueryAux() == CT_80Col) ? MEM_Aux1K
-		: MEM_Normal;
+	const BYTE memType = (GetCardMgr().QueryAux() == CT_Empty) ? MEM_FloatingBus : MEM_Normal;
 
 	for (loop = 0x00; loop < 0x02; loop++)
 		memreadPageType[loop] = SW_ALTZP ? memType : MEM_Normal;
@@ -1381,70 +1387,76 @@ static void UpdatePagingForAltRW(void)
 			memreadPageType[loop] = (SW_PAGE2 && SW_HIRES) ? memType : MEM_Normal;
 	}
 
-	if (GetCardMgr().QueryAux() == CT_80Col)
+	//
+	for (loop = 0x00; loop < 0x02; loop++)
+		memwrite[loop] = memshadow[loop];
+	if ((SW_AUXREAD != 0) == (SW_AUXWRITE != 0))
 	{
 		// Overide the MEM_Aux1K set above (slightly quicker code-path during CPU emulation)
-		if (SW_AUXREAD || (SW_80STORE && SW_PAGE2))
-			for (loop = 0x04; loop < 0x08; loop++)
-				memreadPageType[loop] = MEM_Normal;
+		for (loop = 0x02; loop < 0xC0; loop++)
+			memwrite[loop] = memshadow[loop];
 	}
 
-	//
+	if (SW_WRITERAM && SW_HIGHRAM)
 
-	for (loop = 0x00; loop<0x100; loop++)
-		memwriteDirtyPage[loop] = loop;
 
 	if (GetCardMgr().QueryAux() == CT_80Col)
 	{
 		// Dirty pages are only in the 1K range
-		const BYTE kTextPage = TEXT_PAGE1_BEGIN >> 8;
 
-		for (loop = 0x00; loop < 0x02; loop++)
-			if (SW_ALTZP)
-				memwriteDirtyPage[loop] = kTextPage + (loop & 3);
 
-		for (loop = 0x02; loop < 0xC0; loop++)
-			if (SW_AUXWRITE)
-				memwriteDirtyPage[loop] = kTextPage + (loop & 3);
 
 		for (loop = 0xD0; loop < 0x100; loop++)
-			if (SW_HIGHRAM && SW_ALTZP)
-				memwriteDirtyPage[loop] = kTextPage + (loop & 3);
+			memwrite[loop] = memshadow[loop];
+	}
 
-		if (SW_80STORE && SW_PAGE2)
+	if (SW_80STORE)
 		{
 			for (loop = 0x04; loop < 0x08; loop++)
-				memwriteDirtyPage[loop] = kTextPage + (loop & 3);
+			memwrite[loop] = memshadow[loop];
 
+		if (SW_HIRES)
+		{
 			for (loop = 0x20; loop < 0x40; loop++)
-				memwriteDirtyPage[loop] = kTextPage + (loop & 3);
+				memwrite[loop] = memshadow[loop];
 		}
+	}
 
+	if (GetCardMgr().QueryAux() == CT_80Col)
+	{
 		// Map all aux writes into the 1K memory
 		// . Need to combine with memwriteDirtyPage[], to that the right page is marked as dirty
+		const uint32_t kBase = TEXT_PAGE1_BEGIN;
 
+		if (SW_ALTZP)
 		for (loop = 0x00; loop < 0x02; loop++)
-			if (SW_ALTZP)
-				memwrite[loop] = memaux + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
+				memshadow[loop] = memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
+		if (SW_AUXREAD)
 		for (loop = 0x02; loop < 0xC0; loop++)
+				memshadow[loop] = memaux + kBase + ((loop & 3) << 8);
 			if (SW_AUXWRITE)
-				memwrite[loop] = (memwrite[loop] - (loop << 8)) + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
+			for (loop = 0x02; loop < 0xC0; loop++)
+				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
+		if (SW_HIGHRAM && SW_ALTZP)
+		{
 		for (loop = 0xD0; loop < 0x100; loop++)
-			if (SW_WRITERAM && SW_HIGHRAM && SW_ALTZP)
-				memwrite[loop] = memaux + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
+			{
+				memshadow[loop] = memaux + kBase + ((loop & 3) << 8);
+				if (SW_WRITERAM)
+					memwrite[loop] = memshadow[loop];
+			}
+		}
 
 		if (SW_80STORE && SW_PAGE2)
 		{
 			for (loop = 0x04; loop < 0x08; loop++)
-				memwrite[loop] = mem + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
+				memshadow[loop] = memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 
 			if (SW_HIRES)
-			{
 				for (loop = 0x20; loop < 0x40; loop++)
-					memwrite[loop] = mem + TEXT_PAGE1_BEGIN + ((loop & 3) << 8);
-			}
+					memshadow[loop] = memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
 		}
 	}
 }
@@ -1535,7 +1547,7 @@ LPBYTE MemGetAuxPtrWithLC(const WORD offset)
 
 LPBYTE MemGetAuxPtr(const WORD offset)
 {
-	LPBYTE lpMem = (memshadow[(offset >> 8)] == (memaux+(offset & 0xFF00)))
+	LPBYTE lpMem = g_isMemCacheValid && (memshadow[(offset >> 8)] == (memaux+(offset & 0xFF00)))
 			? mem+offset				// Return 'mem' copy if possible, as page could be dirty
 			: memaux+offset;
 
@@ -1548,7 +1560,7 @@ LPBYTE MemGetAuxPtr(const WORD offset)
 			)
 		)
 	{
-		lpMem = (memshadow[(offset >> 8)] == (RWpages[0]+(offset & 0xFF00)))
+		lpMem = g_isMemCacheValid && (memshadow[(offset >> 8)] == (RWpages[0]+(offset & 0xFF00)))
 			? mem+offset
 			: RWpages[0]+offset;
 	}
@@ -1598,7 +1610,7 @@ LPBYTE MemGetMainPtrWithLC(const WORD offset)
 
 LPBYTE MemGetMainPtr(const WORD offset)
 {
-	return (memshadow[(offset >> 8)] == (memmain + (offset & 0xFF00)))
+	return g_isMemCacheValid && (memshadow[(offset >> 8)] == (memmain + (offset & 0xFF00)))
 		? mem + offset				// Return 'mem' copy if possible, as page could be dirty
 		: memmain + offset;
 }

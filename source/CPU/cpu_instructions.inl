@@ -400,10 +400,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define INY	 ++regs.y;						    \
 		 SETNZ(regs.y)
 #define JMP	 regs.pc = addr;
-#define JSR	 addr = *(LPBYTE)(mem+regs.pc); regs.pc++;	    \
+#define _JSR	 addr = *(LPBYTE)(mem+regs.pc); regs.pc++;	    \
 		 PUSH(regs.pc >> 8)					    \
 		 PUSH(regs.pc & 0xFF)					    \
 		 regs.pc = addr | (*(LPBYTE)(mem+regs.pc)) << 8; /* GH#1257 */
+#define _JSR_ALT													\
+		addr = READ_BYTE_ALT(regs.pc);								\
+		regs.pc++;													\
+		PUSH(regs.pc >> 8)											\
+		PUSH(regs.pc & 0xFF)										\
+		regs.pc = addr | READ_BYTE_ALT(regs.pc) << 8; /* GH#1257 */
 #define LAS	 /*bSlowerOnPagecross = 1*/;						    \
 		 val = (BYTE)(READ & regs.sp);				    \
 		 regs.a = regs.x = (BYTE) val;				    \

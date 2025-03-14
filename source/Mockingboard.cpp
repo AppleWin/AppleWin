@@ -617,7 +617,7 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 	if (!IS_APPLE2 && MemCheckINTCXROM())
 	{
 		_ASSERT(0);	// Card ROM disabled, so IO_Cxxx() returns the internal ROM
-		return mem[nAddr];
+		return ReadByteFromMemory(nAddr);
 	}
 #endif
 
@@ -689,22 +689,22 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 #endif
 
 	// Support 6502/65C02 false-reads of 6522 (GH#52)
-	if ( ((mem[(PC-2)&0xffff] == 0x91) && GetMainCpu() == CPU_6502) ||	// sta (zp),y - 6502 only (no-PX variant only) (UTAIIe:4-23)
-		 (mem[(PC-3)&0xffff] == 0x99) ||	// sta abs16,y - 6502/65C02, but for 65C02 only the no-PX variant that does the false-read (UTAIIe:4-27)
-		 (mem[(PC-3)&0xffff] == 0x9D) )		// sta abs16,x - 6502/65C02, but for 65C02 only the no-PX variant that does the false-read (UTAIIe:4-27)
+	if ( ((ReadByteFromMemory((PC-2)&0xffff) == 0x91) && GetMainCpu() == CPU_6502) ||	// sta (zp),y - 6502 only (no-PX variant only) (UTAIIe:4-23)
+		 (ReadByteFromMemory((PC-3)&0xffff) == 0x99) ||	// sta abs16,y - 6502/65C02, but for 65C02 only the no-PX variant that does the false-read (UTAIIe:4-27)
+		 (ReadByteFromMemory((PC-3)&0xffff) == 0x9D) )		// sta abs16,x - 6502/65C02, but for 65C02 only the no-PX variant that does the false-read (UTAIIe:4-27)
 	{
 		WORD base;
 		WORD addr16;
-		if (mem[(PC-2)&0xffff] == 0x91)
+		if (ReadByteFromMemory((PC-2)&0xffff) == 0x91)
 		{
-			BYTE zp = mem[(PC-1)&0xffff];
-			base = (mem[zp] | (mem[(zp+1)&0xff]<<8));
+			BYTE zp = ReadByteFromMemory((PC-1)&0xffff);
+			base = (ReadByteFromMemory(zp) | (ReadByteFromMemory((zp+1)&0xff)<<8));
 			addr16 = base + regs.y;
 		}
 		else
 		{
-			base = mem[(PC-2)&0xffff] | (mem[(PC-1)&0xffff]<<8);
-			addr16 = base + ((mem[(PC-3)&0xffff] == 0x99) ? regs.y : regs.x);
+			base = ReadByteFromMemory((PC-2)&0xffff) | (ReadByteFromMemory((PC-1)&0xffff)<<8);
+			addr16 = base + ((ReadByteFromMemory((PC-3)&0xffff) == 0x99) ? regs.y : regs.x);
 		}
 
 		if (((base ^ addr16) >> 8) == 0)	// Only the no-PX variant does the false read (to the same I/O SELECT page)

@@ -379,6 +379,25 @@ static __forceinline void Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 	regs.pc++;
 }
 
+static __forceinline void Fetch_alt(BYTE& iOpcode, ULONG uExecutedCycles)
+{
+	const USHORT PC = regs.pc;
+
+#if defined(_DEBUG) && defined(DBG_HDD_ENTRYPOINT)
+	DebugHddEntrypoint(PC);
+#endif
+
+	WORD addr = regs.pc;
+	iOpcode = _READ_ALT;
+
+#ifdef USE_SPEECH_API
+	if ((PC == COUT1 || PC == BASICOUT) && g_Speech.IsEnabled() && !g_bFullSpeed)
+		CaptureCOUT();
+#endif
+
+	regs.pc++;
+}
+
 //#define ENABLE_NMI_SUPPORT	// Not used - so don't enable
 static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
@@ -391,10 +410,10 @@ static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #ifdef _DEBUG
 	g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
 #endif
-	PUSH(regs.pc >> 8)
-	PUSH(regs.pc & 0xFF)
+	_PUSH(regs.pc >> 8)
+	_PUSH(regs.pc & 0xFF)
 	EF_TO_AF
-	PUSH(regs.ps & ~AF_BREAK)
+	_PUSH(regs.ps & ~AF_BREAK)
 	regs.ps |= AF_INTERRUPT;
 	if (GetMainCpu() == CPU_65C02)	// GH#1099
 		regs.ps &= ~AF_DECIMAL;
@@ -433,14 +452,28 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #ifdef _DEBUG
 		g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
 #endif
-		PUSH(regs.pc >> 8)
-		PUSH(regs.pc & 0xFF)
-		EF_TO_AF
-		PUSH(regs.ps & ~AF_BREAK)
-		regs.ps |= AF_INTERRUPT;
-		if (GetMainCpu() == CPU_65C02)	// GH#1099
-			regs.ps &= ~AF_DECIMAL;
-		regs.pc = * (WORD*) (mem+0xFFFE);
+		if (GetIsMemCacheValid())
+		{
+			_PUSH(regs.pc >> 8)
+			_PUSH(regs.pc & 0xFF)
+			EF_TO_AF;
+			_PUSH(regs.ps & ~AF_BREAK)
+			regs.ps |= AF_INTERRUPT;
+			if (GetMainCpu() == CPU_65C02)	// GH#1099
+				regs.ps &= ~AF_DECIMAL;
+			regs.pc = *(WORD*)(mem + 0xFFFE);
+		}
+		else
+		{
+			_PUSH_ALT(regs.pc >> 8)
+			_PUSH_ALT(regs.pc & 0xFF)
+			EF_TO_AF;
+			_PUSH_ALT(regs.ps & ~AF_BREAK)
+			regs.ps |= AF_INTERRUPT;
+			if (GetMainCpu() == CPU_65C02)	// GH#1099
+				regs.ps &= ~AF_DECIMAL;
+			regs.pc = READ_WORD_ALT(0xFFFE);
+		}
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7);
 #if defined(_DEBUG) && LOG_IRQ_TAKEN_AND_RTI
@@ -462,28 +495,26 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //===========================================================================
 
+#define HEATMAP_X(address)
+
 // 6502 & no debugger
 #define READ _READ_WITH_IO_F8xx
 #define WRITE(value) _WRITE_WITH_IO_F8xx(value)
-#define HEATMAP_X(address)
 
 #include "CPU/cpu6502.h"  // MOS 6502
-
-#undef READ
-#undef WRITE
 
 //-------
 
 // 6502 & no debugger & alt read/write support
+#define CPU_ALT
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
 
 #define Cpu6502 Cpu6502_altRW
+#define Fetch Fetch_alt
 #include "CPU/cpu6502.h"  // MOS 6502
 #undef Cpu6502
-
-#undef READ
-#undef WRITE
+#undef Fetch
 
 //-------
 
@@ -493,51 +524,46 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 #include "CPU/cpu65C02.h" // WDC 65C02
 
-#undef READ
-#undef WRITE
-
 //-------
 
 // 65C02 & no debugger & alt read/write support
+#define CPU_ALT
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
 
 #define Cpu65C02 Cpu65C02_altRW
+#define Fetch Fetch_alt
 #include "CPU/cpu65C02.h" // WDC 65C02
 #undef Cpu65C02
+#undef Fetch
 
-#undef READ
-#undef WRITE
 #undef HEATMAP_X
 
 //-----------------
 
+#define HEATMAP_X(address) Heatmap_X(address)
+#include "CPU/cpu_heatmap.inl"
+
 // 6502 & debugger
 #define READ Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte_With_IO_F8xx(addr, value, uExecutedCycles);
-#define HEATMAP_X(address) Heatmap_X(address)
-
-#include "CPU/cpu_heatmap.inl"
 
 #define Cpu6502 Cpu6502_debug
 #include "CPU/cpu6502.h"  // MOS 6502
 #undef Cpu6502
 
-#undef READ
-#undef WRITE
-
 //-------
 
 // 6502 & debugger & alt read/write support
+#define CPU_ALT
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
 
 #define Cpu6502 Cpu6502_debug_altRW
+#define Fetch Fetch_alt
 #include "CPU/cpu6502.h"  // MOS 6502
 #undef Cpu6502
-
-#undef READ
-#undef WRITE
+#undef Fetch
 
 //-------
 
@@ -549,21 +575,19 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #include "CPU/cpu65C02.h" // WDC 65C02
 #undef Cpu65C02
 
-#undef READ
-#undef WRITE
-
 //-------
 
 // 65C02 & debugger & alt read/write support
+#define CPU_ALT
 #define READ _READ_ALT
 #define WRITE(value) _WRITE_ALT(value)
 
 #define Cpu65C02 Cpu65C02_debug_altRW
+#define Fetch Fetch_alt
 #include "CPU/cpu65C02.h" // WDC 65C02
 #undef Cpu65C02
+#undef Fetch
 
-#undef READ
-#undef WRITE
 #undef HEATMAP_X
 
 //===========================================================================
@@ -631,6 +655,17 @@ void CpuWrite(USHORT addr, BYTE value, ULONG uExecutedCycles)
 	}
 
 	Heatmap_WriteByte_With_IO_F8xx(addr, value, uExecutedCycles);
+}
+
+BYTE ReadByteFromMemory(uint16_t addr)
+{
+	if (GetIsMemCacheValid())
+		return mem[addr];
+
+	_ASSERT(memshadow[addr >> 8]);	// Should never be NULL
+	if (memshadow[addr >> 8] == NULL) return 0x00;
+
+	return *(memshadow[addr >> 8] + (addr & 0xff));
 }
 
 //===========================================================================
@@ -764,7 +799,11 @@ void CpuReset()
 	regs.ps |= AF_INTERRUPT;
 	if (GetMainCpu() == CPU_65C02)	// GH#1099
 		regs.ps &= ~AF_DECIMAL;
-	regs.pc = *(WORD*)(mem + 0xFFFC);
+
+	const uint16_t resetVector = 0xFFFC;
+	_ASSERT(memshadow[resetVector >> 8] != NULL);
+	regs.pc = *(uint16_t*)(memshadow[resetVector >> 8] + (resetVector & 0xff));
+
 	regs.sp = 0x0100 | ((regs.sp - 3) & 0xFF);
 
 	regs.bJammed = 0;
@@ -777,7 +816,7 @@ void CpuReset()
 
 //===========================================================================
 
-void CpuSetupBenchmark ()
+void CpuSetupBenchmark()
 {
 	regs.a  = 0;
 	regs.x  = 0;
