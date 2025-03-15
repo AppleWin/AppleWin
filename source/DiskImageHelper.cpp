@@ -1038,7 +1038,7 @@ public:
 			return false;
 		}
 
-		ReadFile(ptr->hFile, mem+address, length, &bytesread, NULL);
+		ReadFile(ptr->hFile, MemGetMainPtr(address), length, &bytesread, NULL);
 		int loop = 192;
 		while (loop--)
 			*(memdirty+loop) = 0xFF;
@@ -1092,7 +1092,7 @@ public:
 		}
 
 		SetFilePointer(pImageInfo->hFile,128,NULL,FILE_BEGIN);
-		ReadFile(pImageInfo->hFile, mem+address, length, &bytesread, NULL);
+		ReadFile(pImageInfo->hFile, MemGetMainPtr(address), length, &bytesread, NULL);
 
 		int loop = 192;
 		while (loop--)

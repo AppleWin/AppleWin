@@ -1525,7 +1525,7 @@ static LPBYTE MemGetPtrBANK1(const WORD offset, const LPBYTE pMemBase)
 
 	// NB. This works for memaux when set to any RWpages[] value, ie. RamWork III "just works"
 	const BYTE bank1page = (offset >> 8) & 0xF;
-	return (memshadow[0xD0+bank1page] == pMemBase+(0xC0+bank1page)*256)
+	return (g_isMemCacheValid && (memshadow[0xD0+bank1page] == pMemBase+(0xC0+bank1page)*256))
 		? mem+offset+0x1000				// Return ptr to $Dxxx address - 'mem' has (a potentially dirty) 4K RAM BANK1 mapped in at $D000
 		: pMemBase+offset;				// Else return ptr to $Cxxx address
 }

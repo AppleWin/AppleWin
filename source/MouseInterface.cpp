@@ -237,7 +237,7 @@ void CMouseInterface::SetSlotRom()
 
 	UINT uOffset = (m_by6821B << 7) & 0x0700;
 	memcpy(pCxRomPeripheral+m_slot*256, m_pSlotRom+uOffset, 256);
-	if (mem)
+	if (GetIsMemCacheValid() && mem)
 		memcpy(mem+0xC000+m_slot*256, m_pSlotRom+uOffset, 256);
 }
 
