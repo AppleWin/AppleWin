@@ -410,14 +410,28 @@ static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #ifdef _DEBUG
 	g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
 #endif
-	_PUSH(regs.pc >> 8)
-	_PUSH(regs.pc & 0xFF)
-	EF_TO_AF
-	_PUSH(regs.ps & ~AF_BREAK)
-	regs.ps |= AF_INTERRUPT;
-	if (GetMainCpu() == CPU_65C02)	// GH#1099
-		regs.ps &= ~AF_DECIMAL;
-	regs.pc = * (WORD*) (mem+0xFFFA);
+	if (GetIsMemCacheValid())
+	{
+		_PUSH(regs.pc >> 8)
+		_PUSH(regs.pc & 0xFF)
+		EF_TO_AF
+		_PUSH(regs.ps & ~AF_BREAK)
+		regs.ps |= AF_INTERRUPT;
+		if (GetMainCpu() == CPU_65C02)	// GH#1099
+			regs.ps &= ~AF_DECIMAL;
+		regs.pc = *(WORD*)(mem + VECTOR_NMI);
+	}
+	else
+	{
+		_PUSH_ALT(regs.pc >> 8)
+		_PUSH_ALT(regs.pc & 0xFF)
+		EF_TO_AF
+		_PUSH_ALT(regs.ps & ~AF_BREAK)
+		regs.ps |= AF_INTERRUPT;
+		if (GetMainCpu() == CPU_65C02)	// GH#1099
+			regs.ps &= ~AF_DECIMAL;
+		regs.pc = READ_WORD_ALT(VECTOR_NMI);
+	}
 	UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 	CYC(7);
 	g_interruptInLastExecutionBatch = true;
@@ -461,7 +475,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 			regs.ps |= AF_INTERRUPT;
 			if (GetMainCpu() == CPU_65C02)	// GH#1099
 				regs.ps &= ~AF_DECIMAL;
-			regs.pc = *(WORD*)(mem + 0xFFFE);
+			regs.pc = *(WORD*)(mem + VECTOR_INTERRUPT);
 		}
 		else
 		{
@@ -472,7 +486,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 			regs.ps |= AF_INTERRUPT;
 			if (GetMainCpu() == CPU_65C02)	// GH#1099
 				regs.ps &= ~AF_DECIMAL;
-			regs.pc = READ_WORD_ALT(0xFFFE);
+			regs.pc = READ_WORD_ALT(VECTOR_INTERRUPT);
 		}
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7);
@@ -817,7 +831,7 @@ void CpuReset()
 	if (GetMainCpu() == CPU_65C02)	// GH#1099
 		regs.ps &= ~AF_DECIMAL;
 
-	const uint16_t resetVector = 0xFFFC;
+	const uint16_t resetVector = VECTOR_RESET;
 	_ASSERT(memshadow[resetVector >> 8] != NULL);
 	regs.pc = *(uint16_t*)(memshadow[resetVector >> 8] + (resetVector & 0xff));
 

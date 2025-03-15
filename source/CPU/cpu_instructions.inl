@@ -314,14 +314,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 EF_TO_AF						    \
 		 PUSH(regs.ps);						    \
 		 regs.ps |= AF_INTERRUPT;				    \
-		 regs.pc = *(LPWORD)(mem+0xFFFE);
+		 regs.pc = *(LPWORD)(mem+VECTOR_INTERRUPT);
 #define _BRK_NMOS_ALT	 regs.pc++;							\
 		 PUSH(regs.pc >> 8)									\
 		 PUSH(regs.pc & 0xFF)								\
 		 EF_TO_AF											\
 		 PUSH(regs.ps);										\
 		 regs.ps |= AF_INTERRUPT;							\
-		 regs.pc = READ_WORD_ALT(0xFFFE);
+		 regs.pc = READ_WORD_ALT(VECTOR_INTERRUPT);
 #define _BRK_CMOS	 regs.pc++;						    \
 		 PUSH(regs.pc >> 8)					    \
 		 PUSH(regs.pc & 0xFF)					    \
@@ -329,7 +329,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 PUSH(regs.ps);						    \
 		 regs.ps |= AF_INTERRUPT;				    \
 		 regs.ps &= ~AF_DECIMAL;	/*CMOS clears D flag*/	\
-		 regs.pc = *(LPWORD)(mem+0xFFFE);
+		 regs.pc = *(LPWORD)(mem+VECTOR_INTERRUPT);
 #define _BRK_CMOS_ALT	 regs.pc++;							\
 		 PUSH(regs.pc >> 8)									\
 		 PUSH(regs.pc & 0xFF)								\
@@ -337,7 +337,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 PUSH(regs.ps);										\
 		 regs.ps |= AF_INTERRUPT;							\
 		 regs.ps &= ~AF_DECIMAL;	/*CMOS clears D flag*/	\
-		 regs.pc = READ_WORD_ALT(0xFFFE);
+		 regs.pc = READ_WORD_ALT(VECTOR_INTERRUPT);
 #define BVC	 if (!flagv) BRANCH_TAKEN;
 #define BVS	 if ( flagv) BRANCH_TAKEN;
 #define CLC	 flagc = 0;
