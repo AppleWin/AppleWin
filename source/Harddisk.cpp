@@ -664,7 +664,6 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD, const ULONG nExecute
 
 	const UINT CYCLES_FOR_DMA_RW_BLOCK = HD_BLOCK_SIZE;
 	const UINT CYCLES_FOR_FORMATTING_1_BLOCK = 100;	// Arbitrary
-	const UINT PAGE_SIZE = 256;
 
 	pHDD->m_error = DEVICE_OK;
 
@@ -695,8 +694,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD, const ULONG nExecute
 			{
 				pHDD->m_buf_ptr = 0;
 
-				// Apple II's MMU could be setup so that read & write memory is different,
-				// so can't use 'mem' (like we can for HDD block writes)
+				// Apple II's MMU could be setup so that read & write memory is different, so use 'memwrite' not 'mem'.
 				WORD dstAddr = pHDD->m_memblock;
 				UINT remaining = HD_BLOCK_SIZE;
 				BYTE* pSrc = pHDD->m_buf;
@@ -795,7 +793,8 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD, const ULONG nExecute
 			}
 			else
 			{
-				// NB. Do the writes in units of PAGE_SIZE so that DMA breakpoints are consistent with reads
+				// NB. Do the writes in units of PAGE_SIZE so that DMA breakpoints are consistent with reads.
+				// NB. Use `CopyBytesFromMemoryPage()`, as 'mem' may not be valid.
 				WORD srcAddr = pHDD->m_memblock;
 				UINT remaining = HD_BLOCK_SIZE;
 				BYTE* pDst = pHDD->m_buf;
@@ -808,7 +807,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD, const ULONG nExecute
 					if (g_nAppMode == MODE_STEPPING)
 						breakpointHit = DebuggerCheckMemBreakpoints(srcAddr, size, false);
 
-					memcpy(pDst, mem + srcAddr, size);
+					CopyBytesFromMemoryPage(pDst, srcAddr, size);
 					pDst += size;
 					srcAddr = (srcAddr + size) & (MEMORY_LENGTH - 1);	// wraps at 64KiB boundary
 

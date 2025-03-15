@@ -15,5 +15,6 @@ enum
 	FIRMWARE_EXPANSION_BEGIN = 0xC800, // [C800,CFFF)
 	FIRMWARE_EXPANSION_END   = 0xCFFF, //
 
+	PAGE_SIZE                = 0x100,
 	MEMORY_LENGTH            = 0x10000
 };

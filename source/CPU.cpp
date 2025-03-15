@@ -668,6 +668,23 @@ BYTE ReadByteFromMemory(uint16_t addr)
 	return *(memshadow[addr >> 8] + (addr & 0xff));
 }
 
+void CopyBytesFromMemoryPage(uint8_t* pDst, uint16_t srcAddr, size_t size)
+{
+	_ASSERT(((srcAddr & 0xff) + size) <= PAGE_SIZE);
+
+	uint8_t* pSrc = &mem[srcAddr];
+
+	if (!GetIsMemCacheValid())
+	{
+		_ASSERT(memshadow[srcAddr >> 8]);	// Should never be NULL
+		if (memshadow[srcAddr >> 8] == NULL) return;
+
+		pSrc = memshadow[srcAddr >> 8] + (srcAddr & 0xff);
+	}
+
+	memcpy(pDst, pSrc, size);
+}
+
 //===========================================================================
 
 // Description:

@@ -48,6 +48,7 @@ void    CpuLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
 BYTE	CpuRead(USHORT addr, ULONG uExecutedCycles);
 void	CpuWrite(USHORT addr, BYTE value, ULONG uExecutedCycles);
 BYTE	ReadByteFromMemory(uint16_t addr);
+void	CopyBytesFromMemoryPage(uint8_t* pDst, uint16_t srcAddr, size_t size);
 
 enum eCpuType {CPU_UNKNOWN=0, CPU_6502=1, CPU_65C02, CPU_Z80};	// Don't change! Persisted to Registry
 
