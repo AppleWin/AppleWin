@@ -167,7 +167,7 @@ void Win32Frame::Benchmark(void)
 	Sleep(500);
 	Video& video = GetVideo();
 
-	uint8_t* pMemMain = GetIsMemCacheValid() ? mem : memshadow[0];	// HACK: Use memshadow[0] to get memmain!
+	uint8_t* pMemMain = MemGetMainPtr(0x0000);
 
 	// PREPARE TWO DIFFERENT FRAME BUFFERS, EACH OF WHICH HAVE HALF OF THE
 	// BYTES SET TO 0x14 AND THE OTHER HALF SET TO 0xAA
