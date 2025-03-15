@@ -1296,7 +1296,7 @@ void HarddiskInterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	// New label
 	{
 		YamlSaveHelper::Label buffer(yamlSaveHelper, "%s:\n", SS_YAML_KEY_FIRMWARE);
-		yamlSaveHelper.SaveMemory(mem + APPLE_IO_BEGIN + m_slot * APPLE_SLOT_SIZE, APPLE_SLOT_SIZE);
+		yamlSaveHelper.SaveMemory(MemGetCxRomPeripheral() + m_slot * APPLE_SLOT_SIZE, APPLE_SLOT_SIZE);
 	}
 
 	for (UINT i = 0; i < NUM_HARDDISKS; i++)
