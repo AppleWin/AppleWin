@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef CPU_ALT
 //#define READ _READ
 //#define WRITE(value) _WRITE(value)
+#define BRK_NMOS _BRK_NMOS
+#define BRK_CMOS _BRK_CMOS
 #define JSR _JSR
 #define POP _POP
 #define PUSH(value) _PUSH(value)
@@ -48,6 +50,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #else
 //#define READ _READ_ALT
 //#define WRITE(value) _WRITE_ALT(value)
+#define BRK_NMOS _BRK_NMOS_ALT
+#define BRK_CMOS _BRK_CMOS_ALT
 #define JSR _JSR_ALT
 #define POP _POP_ALT
 #define PUSH(value) _PUSH_ALT(value)
@@ -393,6 +397,8 @@ static uint32_t Cpu6502(uint32_t uTotalCycles, const bool bVideoUpdate)
 
 #undef READ
 #undef WRITE
+#undef BRK_NMOS
+#undef BRK_CMOS
 #undef JSR
 #undef POP
 #undef PUSH

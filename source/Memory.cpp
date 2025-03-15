@@ -1617,6 +1617,9 @@ LPBYTE MemGetMainPtr(const WORD offset)
 
 static void BackMainImage(void)
 {
+	if (!g_isMemCacheValid)
+		return;
+
 	for (UINT loop = 0; loop < 256; loop++)
 	{
 		if (memshadow[loop] && ((*(memdirty + loop) & 1) || (loop <= 1)))
