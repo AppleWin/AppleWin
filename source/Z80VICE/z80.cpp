@@ -6385,14 +6385,7 @@ BYTE z80_RDMEM(WORD Addr)
 
 		case 0xE:
 			addr = (WORD)Addr - 0x2000;
-		    if ((addr & 0xF000) == 0xC000)
-			{
-				return IORead[(addr>>4) & 0xFF]( regs.pc, addr, 0, 0, ConvertZ80TStatesTo6502Cycles(maincpu_clk) );
-			}
-			else
-			{
-				return *(mem+addr);
-			}
+			return IORead[(addr>>4) & 0xFF]( regs.pc, addr, 0, 0, ConvertZ80TStatesTo6502Cycles(maincpu_clk) );
 		break;
 
 		case 0xF:
