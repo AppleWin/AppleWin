@@ -682,6 +682,20 @@ BYTE ReadByteFromMemory(uint16_t addr)
 	return *(memshadow[addr >> 8] + (addr & 0xff));
 }
 
+static void WriteByteToMemory(uint16_t addr, uint8_t data)
+{
+	if (GetIsMemCacheValid())
+	{
+		mem[addr] = data;
+		return;
+	}
+
+	if (memwrite[addr >> 8] == NULL)	// Can be NULL (eg. ROM)
+		return;
+
+	*(memwrite[addr >> 8] + (addr & 0xff)) = data;
+}
+
 void CopyBytesFromMemoryPage(uint8_t* pDst, uint16_t srcAddr, size_t size)
 {
 	_ASSERT(((srcAddr & 0xff) + size) <= PAGE_SIZE);
@@ -831,9 +845,8 @@ void CpuReset()
 	if (GetMainCpu() == CPU_65C02)	// GH#1099
 		regs.ps &= ~AF_DECIMAL;
 
-	const uint16_t resetVector = VECTOR_RESET;
-	_ASSERT(memshadow[resetVector >> 8] != NULL);
-	regs.pc = *(uint16_t*)(memshadow[resetVector >> 8] + (resetVector & 0xff));
+	_ASSERT(memshadow[VECTOR_RESET >> 8] != NULL);
+	regs.pc = ReadByteFromMemory(VECTOR_RESET) | ReadByteFromMemory(VECTOR_RESET + 1) << 8;
 
 	regs.sp = 0x0100 | ((regs.sp - 3) & 0xFF);
 
@@ -861,19 +874,19 @@ void CpuSetupBenchmark()
 		int opcode = 0;
 		do
 		{
-			*(mem+addr++) = benchopcode[opcode];
-			*(mem+addr++) = benchopcode[opcode];
+			WriteByteToMemory(addr++, benchopcode[opcode]);
+			WriteByteToMemory(addr++, benchopcode[opcode]);
 
 			if (opcode >= SHORTOPCODES)
-				*(mem+addr++) = 0;
+				WriteByteToMemory(addr++, 0);
 
 			if ((++opcode >= BENCHOPCODES) || ((addr & 0x0F) >= 0x0B))
 			{
-				*(mem+addr++) = 0x4C;
+				WriteByteToMemory(addr++, 0x4C);
 				// split into 2 lines to avoid -Wunsequenced and undefined behaviour
 				const BYTE value = (opcode >= BENCHOPCODES) ? 0x00 : ((addr >> 4)+1) << 4;
-				*(mem+addr++) = value;
-				*(mem+addr++) = 0x03;
+				WriteByteToMemory(addr++, value);
+				WriteByteToMemory(addr++, 0x03);
 				while (addr & 0x0F)
 					++addr;
 			}
