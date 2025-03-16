@@ -114,3 +114,6 @@ void	SetRegistryAuxNumberOfBanks(void);
 
 LPBYTE GetCxRomPeripheral(void);
 bool GetIsMemCacheValid(void);
+BYTE ReadByteFromMemory(uint16_t addr);
+void WriteByteToMemory(uint16_t addr, uint8_t data);
+void CopyBytesFromMemoryPage(uint8_t* pDst, uint16_t srcAddr, size_t size);

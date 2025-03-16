@@ -229,8 +229,9 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 		{
 			nTarget = pData->nTargetAddress;
 		}
-		else {
-			nTarget = mem[(nBaseAddress + 1) & 0xFFFF] | (mem[(nBaseAddress + 2) & 0xFFFF] << 8);
+		else
+		{
+			nTarget = ReadByteFromMemory(nBaseAddress + 1) | (ReadByteFromMemory(nBaseAddress + 2) << 8);
 			if (nOpbyte == 2)
 				nTarget &= 0xFF;
 		}

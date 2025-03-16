@@ -457,9 +457,52 @@ LPBYTE GetCxRomPeripheral(void)
 {
 	return pCxRomPeripheral;	// Can be NULL if at MODE_LOGO
 }
+
 bool GetIsMemCacheValid(void)
 {
 	return g_isMemCacheValid;
+}
+
+BYTE ReadByteFromMemory(uint16_t addr)
+{
+	if (GetIsMemCacheValid())
+		return mem[addr];
+
+	_ASSERT(memshadow[addr >> 8]);	// Should never be NULL
+	if (memshadow[addr >> 8] == NULL) return 0x00;
+
+	return *(memshadow[addr >> 8] + (addr & 0xff));
+}
+
+void WriteByteToMemory(uint16_t addr, uint8_t data)
+{
+	if (GetIsMemCacheValid())
+	{
+		mem[addr] = data;
+		return;
+	}
+
+	if (memwrite[addr >> 8] == NULL)	// Can be NULL (eg. ROM)
+		return;
+
+	*(memwrite[addr >> 8] + (addr & 0xff)) = data;
+}
+
+void CopyBytesFromMemoryPage(uint8_t* pDst, uint16_t srcAddr, size_t size)
+{
+	_ASSERT(((srcAddr & 0xff) + size) <= PAGE_SIZE);
+
+	uint8_t* pSrc = &mem[srcAddr];
+
+	if (!GetIsMemCacheValid())
+	{
+		_ASSERT(memshadow[srcAddr >> 8]);	// Should never be NULL
+		if (memshadow[srcAddr >> 8] == NULL) return;
+
+		pSrc = memshadow[srcAddr >> 8] + (srcAddr & 0xff);
+	}
+
+	memcpy(pDst, pSrc, size);
 }
 
 //=============================================================================
