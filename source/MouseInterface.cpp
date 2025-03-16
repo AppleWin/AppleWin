@@ -235,10 +235,11 @@ void CMouseInterface::SetSlotRom()
 	if (pCxRomPeripheral == NULL)
 		return;
 
-	UINT uOffset = (m_by6821B << 7) & 0x0700;
-	memcpy(pCxRomPeripheral+m_slot*256, m_pSlotRom+uOffset, 256);
+	const UINT offset = (m_by6821B << 7) & 0x0700;
+	memcpy(pCxRomPeripheral + m_slot * APPLE_SLOT_SIZE, m_pSlotRom + offset, APPLE_SLOT_SIZE);
+
 	if (GetIsMemCacheValid() && mem)
-		memcpy(mem+0xC000+m_slot*256, m_pSlotRom+uOffset, 256);
+		memcpy(mem + 0xC000 + m_slot * APPLE_SLOT_SIZE, m_pSlotRom + offset, APPLE_SLOT_SIZE);
 }
 
 //===========================================================================

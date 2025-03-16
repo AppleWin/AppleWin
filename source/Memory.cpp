@@ -915,7 +915,8 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 			if (g_SlotInfo[uSlot].expansionRom && (g_uPeripheralRomSlot != uSlot))
 			{
 				memcpy(pCxRomPeripheral+0x800, g_SlotInfo[uSlot].expansionRom, FIRMWARE_EXPANSION_SIZE);
-				memcpy(mem+FIRMWARE_EXPANSION_BEGIN, g_SlotInfo[uSlot].expansionRom, FIRMWARE_EXPANSION_SIZE);
+				if (GetIsMemCacheValid())
+					memcpy(mem+FIRMWARE_EXPANSION_BEGIN, g_SlotInfo[uSlot].expansionRom, FIRMWARE_EXPANSION_SIZE);
 				g_eExpansionRomType = eExpRomPeripheral;
 				g_uPeripheralRomSlot = uSlot;
 			}
@@ -924,7 +925,8 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 		{
 			// Enable Internal ROM
 			// . Get this for PR#3
-			memcpy(mem+FIRMWARE_EXPANSION_BEGIN, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
+			if (GetIsMemCacheValid())
+				memcpy(mem+FIRMWARE_EXPANSION_BEGIN, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
 			g_eExpansionRomType = eExpRomInternal;
 			g_uPeripheralRomSlot = 0;
 		}
@@ -980,7 +982,10 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 	if ((g_eExpansionRomType == eExpRomNull) && (address >= FIRMWARE_EXPANSION_BEGIN))
 		return IO_Null(programcounter, address, write, value, nExecutedCycles);
 
-	return mem[address];
+	if (GetIsMemCacheValid())
+		return mem[address];
+	else
+		return *(memshadow[address >> 8] + (address & 0xff));
 }
 
 BYTE __stdcall IO_F8xx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)	// NSC for Apple II/II+ (GH#827)
@@ -1067,7 +1072,7 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 	if (IOReadCx == NULL)	IOReadCx = IO_Cxxx;
 	if (IOWriteCx == NULL)	IOWriteCx = IO_Cxxx;
 
-	for (UINT i=0; i<16; i++)
+	for (UINT i=0; i<16; i++)	// Cs00..CsFF
 	{
 		IORead[uSlot*16+i]	= IOReadCx;
 		IOWrite[uSlot*16+i]	= IOWriteCx;
@@ -1380,7 +1385,11 @@ static void UpdatePagingForAltRW(void)
 		memreadPageType[loop] = SW_AUXREAD ? memType : MEM_Normal;
 
 	for (loop = 0xC0; loop < 0xD0; loop++)
+	{
+		// NB. I/O SELECT' set on $C100-C7FF access
+		// NB. I/O STROBE' set on $C800-CFFF access
 		memreadPageType[loop] = MEM_IORead;
+	}
 
 	for (loop = 0xD0; loop < 0x100; loop++)
 		memreadPageType[loop] = (SW_HIGHRAM && SW_ALTZP) ? memType : MEM_Normal;
@@ -1427,7 +1436,7 @@ static void UpdatePagingForAltRW(void)
 
 	if (GetCardMgr().QueryAux() == CT_80Col)
 	{
-		// Map all aux writes into the 1K memory
+		// Map all aux read/writes into the 1K memory
 
 		const uint32_t kBase = TEXT_PAGE1_BEGIN;
 
