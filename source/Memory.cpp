@@ -229,7 +229,6 @@ BYTE			memreadPageType[0x100];
 
 iofunction		IORead[256];
 iofunction		IOWrite[256];
-static LPVOID	SlotParameters[NUM_SLOTS];
 
 LPBYTE         mem          = NULL;
 
@@ -755,11 +754,17 @@ static iofunction IOWrite_C0xx[8] =
 static BYTE IO_SELECT = 0;
 static bool INTC8ROM = false;	// UTAIIe:5-28
 
-static BYTE* ExpansionRom[NUM_SLOTS];
-
 enum eExpansionRomType {eExpRomNull=0, eExpRomInternal, eExpRomPeripheral};
 static eExpansionRomType g_eExpansionRomType = eExpRomNull;
 static UINT	g_uPeripheralRomSlot = 0;
+
+static struct SlotInfo
+{
+	iofunction IOReadCx;
+	iofunction IOWriteCx;
+	LPVOID parameters;
+	BYTE* expansionRom;
+} g_SlotInfo[NUM_SLOTS] = { 0 };
 
 //=============================================================================
 
@@ -873,12 +878,12 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 			const UINT uSlot = (address>>8)&0x7;
 			if (IS_APPLE2 || uSlot != SLOT3)
 			{
-				if (ExpansionRom[uSlot])
+				if (g_SlotInfo[uSlot].expansionRom)
 					IO_SELECT |= 1<<uSlot;
 			}
 			else	// slot3
 			{
-				if ((SW_SLOTC3ROM) && ExpansionRom[uSlot])
+				if ((SW_SLOTC3ROM) && g_SlotInfo[uSlot].expansionRom)
 					IO_SELECT |= 1<<uSlot;		// Slot3 & Peripheral ROM
 				else if (!SW_SLOTC3ROM)
 					INTC8ROM = true;			// Slot3 & Internal ROM
@@ -907,10 +912,10 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 				}
 			}
 
-			if (ExpansionRom[uSlot] && (g_uPeripheralRomSlot != uSlot))
+			if (g_SlotInfo[uSlot].expansionRom && (g_uPeripheralRomSlot != uSlot))
 			{
-				memcpy(pCxRomPeripheral+0x800, ExpansionRom[uSlot], FIRMWARE_EXPANSION_SIZE);
-				memcpy(mem+FIRMWARE_EXPANSION_BEGIN, ExpansionRom[uSlot], FIRMWARE_EXPANSION_SIZE);
+				memcpy(pCxRomPeripheral+0x800, g_SlotInfo[uSlot].expansionRom, FIRMWARE_EXPANSION_SIZE);
+				memcpy(mem+FIRMWARE_EXPANSION_BEGIN, g_SlotInfo[uSlot].expansionRom, FIRMWARE_EXPANSION_SIZE);
 				g_eExpansionRomType = eExpRomPeripheral;
 				g_uPeripheralRomSlot = uSlot;
 			}
@@ -1004,12 +1009,6 @@ BYTE __stdcall IO_F8xx(WORD programcounter, WORD address, BYTE write, BYTE value
 
 //===========================================================================
 
-static struct SlotInfo
-{
-	iofunction IOReadCx;
-	iofunction IOWriteCx;
-} g_SlotInfo[NUM_SLOTS] = {0};
-
 static void InitIoHandlers()
 {
 	UINT i=0;
@@ -1040,7 +1039,8 @@ static void InitIoHandlers()
 	{
 		g_SlotInfo[i].IOReadCx = IO_Cxxx;
 		g_SlotInfo[i].IOWriteCx = IO_Cxxx;
-		ExpansionRom[i] = NULL;
+		g_SlotInfo[i].parameters = NULL;
+		g_SlotInfo[i].expansionRom = NULL;
 	}
 }
 
@@ -1048,7 +1048,10 @@ static void InitIoHandlers()
 void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, iofunction IOReadCx, iofunction IOWriteCx, LPVOID lpSlotParameter, BYTE* pExpansionRom)
 {
 	_ASSERT(uSlot < NUM_SLOTS);
-	SlotParameters[uSlot] = lpSlotParameter;
+	g_SlotInfo[uSlot].parameters = lpSlotParameter;
+
+	// What about [$C80x..$CFEx]? - Do any cards use this as I/O memory?
+	g_SlotInfo[uSlot].expansionRom = pExpansionRom;
 
 	if (IOReadC0 == NULL)	IOReadC0 = IO_Null;
 	if (IOWriteC0 == NULL)	IOWriteC0 = IO_Null;
@@ -1072,14 +1075,17 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 
 	g_SlotInfo[uSlot].IOReadCx = IOReadCx;
 	g_SlotInfo[uSlot].IOWriteCx = IOWriteCx;
-
-	// What about [$C80x..$CFEx]? - Do any cards use this as I/O memory?
-	ExpansionRom[uSlot] = pExpansionRom;
 }
 
 void UnregisterIoHandler(UINT uSlot)
 {
 	RegisterIoHandler(uSlot, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+LPVOID MemGetSlotParameters(UINT uSlot)
+{
+	_ASSERT(uSlot < NUM_SLOTS);
+	return g_SlotInfo[uSlot].parameters;
 }
 
 // From UTAIIe:5-28: Since INTCXROM==1 then state of SLOTC3ROM is not important
@@ -2105,11 +2111,11 @@ void MemInitializeFromSnapshot(void)
 	// Potentially init a card's expansion ROM
 	const UINT uSlot = g_uPeripheralRomSlot;
 
-	if (ExpansionRom[uSlot] != NULL)
+	if (g_SlotInfo[uSlot].expansionRom != NULL)
 	{
 		_ASSERT(g_eExpansionRomType == eExpRomPeripheral);
 
-		memcpy(pCxRomPeripheral + 0x800, ExpansionRom[uSlot], FIRMWARE_EXPANSION_SIZE);
+		memcpy(pCxRomPeripheral + 0x800, g_SlotInfo[uSlot].expansionRom, FIRMWARE_EXPANSION_SIZE);
 		// NB. Copied to /mem/ by UpdatePaging(TRUE)
 	}
 
@@ -2539,14 +2545,6 @@ bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
 	}
 
 	return false;
-}
-
-//===========================================================================
-
-LPVOID MemGetSlotParameters(UINT uSlot)
-{
-	_ASSERT(uSlot < NUM_SLOTS);
-	return SlotParameters[uSlot];
 }
 
 //===========================================================================
