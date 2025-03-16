@@ -860,7 +860,8 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 		{
 			// NB. SW_INTCXROM==1 ensures that internal rom stays switched in
 			memset(pCxRomPeripheral+0x800, 0, FIRMWARE_EXPANSION_SIZE);
-			memset(mem+FIRMWARE_EXPANSION_BEGIN, 0, FIRMWARE_EXPANSION_SIZE);
+			if (GetIsMemCacheValid())
+				memset(mem+FIRMWARE_EXPANSION_BEGIN, 0, FIRMWARE_EXPANSION_SIZE);
 			g_eExpansionRomType = eExpRomNull;
 		}
 
@@ -925,6 +926,7 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 		{
 			// Enable Internal ROM
 			// . Get this for PR#3
+			memcpy(pCxRomPeripheral+0x800, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
 			if (GetIsMemCacheValid())
 				memcpy(mem+FIRMWARE_EXPANSION_BEGIN, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
 			g_eExpansionRomType = eExpRomInternal;
@@ -958,7 +960,9 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 		if (INTC8ROM && (g_eExpansionRomType != eExpRomInternal))
 		{
 			// Enable Internal ROM
-			memcpy(mem+FIRMWARE_EXPANSION_BEGIN, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
+			memcpy(pCxRomPeripheral+0x800, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
+			if (GetIsMemCacheValid())
+				memcpy(mem+FIRMWARE_EXPANSION_BEGIN, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
 			g_eExpansionRomType = eExpRomInternal;
 			g_uPeripheralRomSlot = 0;
 		}
@@ -1388,6 +1392,8 @@ static void UpdatePagingForAltRW(void)
 	{
 		// NB. I/O SELECT' set on $C100-C7FF access
 		// NB. I/O STROBE' set on $C800-CFFF access
+		// So Cx ROM reads (both internal and slot/expansion) go via IO_Cxxx() - to set I/O SELECT/STROBE correctly
+		// . and then read from memshadow[$Cx]
 		memreadPageType[loop] = MEM_IORead;
 	}
 
@@ -2475,7 +2481,8 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 					// . Similar to $CFFF access
 					// . None of the peripheral cards can be driving the bus - so use the null ROM
 					memset(pCxRomPeripheral+0x800, 0, FIRMWARE_EXPANSION_SIZE);
-					memset(mem+FIRMWARE_EXPANSION_BEGIN, 0, FIRMWARE_EXPANSION_SIZE);
+					if (GetIsMemCacheValid())
+						memset(mem+FIRMWARE_EXPANSION_BEGIN, 0, FIRMWARE_EXPANSION_SIZE);
 					g_eExpansionRomType = eExpRomNull;
 					g_uPeripheralRomSlot = 0;
 				}
@@ -2484,7 +2491,9 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 			else
 			{
 				// Enable Internal ROM
-				memcpy(mem+0xC800, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
+				memcpy(pCxRomPeripheral+0x800, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
+				if (GetIsMemCacheValid())
+					memcpy(mem+FIRMWARE_EXPANSION_BEGIN, pCxRomInternal+0x800, FIRMWARE_EXPANSION_SIZE);
 				g_eExpansionRomType = eExpRomInternal;
 				g_uPeripheralRomSlot = 0;
 				IoHandlerCardsOut();
@@ -2522,13 +2531,17 @@ bool IsIIeWithoutAuxMem(void)
 
 //===========================================================================
 
+static uint32_t ReadUINT24FromMemory(uint16_t addr)
+{
+	return ReadByteFromMemory(addr) |
+		(ReadByteFromMemory(addr + 1) << 8) |
+		(ReadByteFromMemory(addr + 2) << 16);
+}
+
 bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
 {
 	if (IsAppleIIeOrAbove(GetApple2Type()))
 	{
-		if (programcounter > 0xFFFC)	// Prevent out of bounds access!
-			return false;
-
 		// IF THE EMULATED PROGRAM HAS JUST UPDATED THE MEMORY WRITE MODE AND IS
 		// ABOUT TO UPDATE THE MEMORY READ MODE, HOLD OFF ON ANY PROCESSING UNTIL
 		// IT DOES SO.
@@ -2536,7 +2549,7 @@ bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
 		// NB. A 6502 interrupt occurring between these memory write & read updates could lead to incorrect behaviour.
 		// - although any data-race is probably a bug in the 6502 code too.
 		if ((address >= 4) && (address <= 5) &&									// Now:  RAMWRTOFF or RAMWRTON
-			((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D))		// Next: STA $C002(RAMRDOFF) or STA $C003(RAMRDON)
+			((ReadUINT24FromMemory(programcounter) & 0x00FFFEFF) == 0x00C0028D))		// Next: STA $C002(RAMRDOFF) or STA $C003(RAMRDON)
 		{
 				modechanging = 1;
 				return true;
@@ -2545,8 +2558,8 @@ bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
 		// TODO: support Saturn in any slot.
 		// NB. GH#602 asks for any examples of this happening:
 		if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&	// Now: LC
-			(((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0048D) ||		// Next: STA $C004(RAMWRTOFF) or STA $C005(RAMWRTON)
-			 ((*(LPDWORD)(mem+programcounter) & 0x00FFFEFF) == 0x00C0028D)))		//    or STA $C002(RAMRDOFF)  or STA $C003(RAMRDON)
+			(((ReadUINT24FromMemory(programcounter) & 0x00FFFEFF) == 0x00C0048D) ||		// Next: STA $C004(RAMWRTOFF) or STA $C005(RAMWRTON)
+			 ((ReadUINT24FromMemory(programcounter) & 0x00FFFEFF) == 0x00C0028D)))		//    or STA $C002(RAMRDOFF)  or STA $C003(RAMRDON)
 		{
 				modechanging = 1;
 				return true;
