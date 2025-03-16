@@ -1326,38 +1326,38 @@ static void UpdatePaging(BOOL initialize)
 		}
 	}
 
-	g_isMemCacheValid = !(IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col));
 	//	if (g_isMemCacheValid)
 	{
-	// MOVE MEMORY BACK AND FORTH AS NECESSARY BETWEEN THE SHADOW AREAS AND
-	// THE MAIN RAM IMAGE TO KEEP BOTH SETS OF MEMORY CONSISTENT WITH THE NEW
-	// PAGING SHADOW TABLE
-	//
-	// NB. the condition 'loop <= 1' is there because:
-	// . Page0 (ZP) and Page1 (stack) are written to so often that it's almost certain that they'll be dirty every time this function is called.
-	// Note also that:
-	// . Page0 (ZP)    : memdirty[0] is set when the 6502 CPU writes to ZP.
-	// . Page1 (stack) : memdirty[1] is NOT set when the 6502 CPU writes to this page with JSR, PHA, etc.
-	// Ultimately this is an optimisation (due to Page1 writes not setting memdirty[1]) and Page0 could be optimised to also not set memdirty[0].
+		// MOVE MEMORY BACK AND FORTH AS NECESSARY BETWEEN THE SHADOW AREAS AND
+		// THE MAIN RAM IMAGE TO KEEP BOTH SETS OF MEMORY CONSISTENT WITH THE NEW
+		// PAGING SHADOW TABLE
+		//
+		// NB. the condition 'loop <= 1' is there because:
+		// . Page0 (ZP) and Page1 (stack) are written to so often that it's almost certain that they'll be dirty every time this function is called.
+		// Note also that:
+		// . Page0 (ZP)    : memdirty[0] is set when the 6502 CPU writes to ZP.
+		// . Page1 (stack) : memdirty[1] is NOT set when the 6502 CPU writes to this page with JSR, PHA, etc.
+		// Ultimately this is an optimisation (due to Page1 writes not setting memdirty[1]) and Page0 could be optimised to also not set memdirty[0].
 
-	for (loop = 0x00; loop < 0x100; loop++)
-	{
-		if (initialize || (oldshadow[loop] != memshadow[loop]))
+		for (loop = 0x00; loop < 0x100; loop++)
 		{
-			if (!initialize &&
-				((*(memdirty+loop) & 1) || (loop <= 1)))
+			if (initialize || (oldshadow[loop] != memshadow[loop]))
 			{
-				*(memdirty+loop) &= ~1;
+				if (!initialize &&
+					((*(memdirty+loop) & 1) || (loop <= 1)))
+				{
+					*(memdirty+loop) &= ~1;
 					if (g_isMemCacheValid)	// DEBUG: move this "if" here (from above) so that this "for-loop" is run, and mem gets updated and the debugger (sort of) works!
-				memcpy(oldshadow[loop],mem+(loop << 8),256);
-			}
+						memcpy(oldshadow[loop],mem+(loop << 8),256);
+				}
 
-			memcpy(mem+(loop << 8),memshadow[loop],256);
+				memcpy(mem+(loop << 8),memshadow[loop],256);
 			}
 		}
 	}
 
-	UpdatePagingForAltRW();
+	if (!g_isMemCacheValid)
+		UpdatePagingForAltRW();
 }
 
 // For Cpu6502_altRW() & Cpu65C02_altRW()
@@ -2291,6 +2291,7 @@ void MemReset()
 	mem = memimage;
 
 	// INITIALIZE PAGING, FILLING IN THE 64K MEMORY IMAGE
+	g_isMemCacheValid = !(IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col));
 	ResetPaging(TRUE);		// Initialize=1, init g_memmode
 	MemAnnunciatorReset();
 
