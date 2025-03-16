@@ -4,11 +4,8 @@ xxd
 ninja-build
 pkg-config
 libminizip-dev
-qtbase5-dev
-qtmultimedia5-dev
-libqt5gamepad5-dev
-libqt5multimedia5-plugins
-libboost-program-options-dev
+libboost-dev
+
 libncurses-dev
 libevdev-dev
 libsdl2-image-dev
@@ -16,5 +13,9 @@ libsdl2-dev
 libgles-dev
 libslirp-dev
 
+qtbase5-dev
+qtmultimedia5-dev
+libqt5gamepad5-dev
+libqt5multimedia5-plugins
 qt6-base-dev
 qt6-multimedia-dev
