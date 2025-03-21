@@ -48,10 +48,10 @@ std::string FormatAddress(WORD nAddress, int nBytes)
 }
 
 //===========================================================================
-static char* FormatCharCopy(char* pDst, const char* pEnd, const char* pSrc, const int nLen)
+static char* FormatCharCopy(char* pDst, const char* pEnd, uint16_t srcAddr, const int nLen)
 {
 	for (int i = 0; i < nLen && pDst < pEnd; i++)
-		*pDst++ = FormatCharTxtCtrl(*pSrc++);
+		*pDst++ = FormatCharTxtCtrl(ReadByteFromMemory(srcAddr++));
 	return pDst;
 }
 
@@ -604,8 +604,8 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 				iByte = line_.nOpbyte;
 				if ((pDst + iByte) < pEnd)
 				{
-					memcpy(pDst, mem + nBaseAddress, iByte);
-					pDst += iByte;
+					for (int i = 0; i < iByte; i++)
+						*pDst++ = ReadByteFromMemory(nBaseAddress + i);
 				}
 				*pDst = 0;
 				break;
@@ -613,7 +613,6 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 			case NOP_STRING_APPLE:
 			{
 				iByte = line_.nOpbyte; // handle all bytes of text
-				const char* pSrc = (const char*)mem + nStartAddress;
 
 				if (nDisplayLen > (DISASM_DISPLAY_MAX_IMMEDIATE_LEN - 2)) // does "text" fit?
 				{
@@ -623,7 +622,7 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 											   ;
 
 					// DISPLAY: text_longer_18...
-					pDst = FormatCharCopy(pDst, pEnd, pSrc, len); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
+					pDst = FormatCharCopy(pDst, pEnd, nStartAddress, len); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
 
 					if (ellipsis && (pDst + 3) < pEnd)
 					{
@@ -636,7 +635,7 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 				{ // DISPLAY: "max_18_char"
 					if ((pDst + 1) < pEnd)
 						*pDst++ = '"';
-					pDst = FormatCharCopy(pDst, pEnd, pSrc, nDisplayLen); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
+					pDst = FormatCharCopy(pDst, pEnd, nStartAddress, nDisplayLen); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
 					if ((pDst + 1) < pEnd)
 						*pDst++ = '"';
 				}
