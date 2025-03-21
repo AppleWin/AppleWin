@@ -463,7 +463,7 @@ bool GetIsMemCacheValid(void)
 	return g_isMemCacheValid;
 }
 
-BYTE ReadByteFromMemory(uint16_t addr)
+uint8_t ReadByteFromMemory(uint16_t addr)
 {
 	if (GetIsMemCacheValid())
 		return mem[addr];
@@ -472,6 +472,11 @@ BYTE ReadByteFromMemory(uint16_t addr)
 	if (memshadow[addr >> 8] == NULL) return 0x00;
 
 	return *(memshadow[addr >> 8] + (addr & 0xff));
+}
+
+uint16_t ReadWordFromMemory(uint16_t addr)
+{
+	return ReadByteFromMemory(addr) | (ReadByteFromMemory(addr + 1) << 8);
 }
 
 void WriteByteToMemory(uint16_t addr, uint8_t data)
