@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frontends/libretro/joypadbase.h"
+#include "frontends/libretro/input/joypadbase.h"
 
 #include <vector>
 
@@ -10,7 +10,7 @@ namespace ra2
     class Joypad : public JoypadBase
     {
     public:
-        Joypad();
+        Joypad(const std::unique_ptr<Game> &game, unsigned port);
 
         double getAxis(int i) const override;
 

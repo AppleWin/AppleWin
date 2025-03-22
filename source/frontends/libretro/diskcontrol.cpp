@@ -158,7 +158,7 @@ namespace ra2
         // insert the first image by default
         myIndex = 0;
 
-        const PlaylistStartDisk playlistStartDisk = GetPlaylistStartDisk();
+        const PlaylistStartDisk playlistStartDisk = getPlaylistStartDisk();
 
         if (playlistStartDisk == PlaylistStartDisk::Previous)
         {

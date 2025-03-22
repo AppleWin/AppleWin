@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frontends/libretro/rkeyboard.h"
+#include "frontends/libretro/input/rkeyboard.h"
 #include "frontends/libretro/diskcontrol.h"
 
 #include <memory>
@@ -15,11 +15,14 @@ namespace common2
 namespace ra2
 {
 
-    void SetupRetroVariables();
-    std::shared_ptr<common2::PTreeRegistry> CreateRetroRegistry();
-    void PopulateRegistry(const std::shared_ptr<Registry> &registry);
+    class Game;
 
-    KeyboardType GetKeyboardEmulationType();
-    PlaylistStartDisk GetPlaylistStartDisk();
+    std::shared_ptr<common2::PTreeRegistry> createRetroRegistry();
+    void setupRetroVariables();
+    void applyRetroVariables(Game &game);
+
+    KeyboardType getKeyboardEmulationType();
+    PlaylistStartDisk getPlaylistStartDisk();
+    double getMouseSpeed();
 
 } // namespace ra2
