@@ -1035,10 +1035,7 @@ static BYTE __stdcall IO_Cxxx(WORD programcounter, WORD address, BYTE write, BYT
 	if ((g_eExpansionRomType == eExpRomNull) && (address >= FIRMWARE_EXPANSION_BEGIN))
 		return IO_Null(programcounter, address, write, value, nExecutedCycles);
 
-	if (GetIsMemCacheValid())
-		return mem[address];
-	else
-		return *(memshadow[address >> 8] + (address & 0xff));
+	return ReadByteFromMemory(address);
 }
 
 BYTE __stdcall IO_F8xx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)	// NSC for Apple II/II+ (GH#827)
