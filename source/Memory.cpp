@@ -484,6 +484,7 @@ void WriteByteToMemory(uint16_t addr, uint8_t data)
 	if (GetIsMemCacheValid())
 	{
 		mem[addr] = data;
+		memdirty[addr >> 8] = 1;
 		return;
 	}
 

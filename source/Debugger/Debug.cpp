@@ -1284,7 +1284,7 @@ int CheckBreakpointsIO ()
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
 								g_uBreakMemoryAddress = (WORD) nAddress;
-								BYTE opcode = mem[regs.pc];
+								BYTE opcode = ReadByteFromMemory(regs.pc);
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
 								{
@@ -2292,9 +2292,9 @@ Update_t CmdStepOver (int nArgs)
 //	g_nDebugSteps = nArgs ? g_aArgs[1].nValue : 1;
 	WORD nDebugSteps = nArgs ? g_aArgs[1].nValue : 1;
 
-	while (nDebugSteps -- > 0)
+	while (nDebugSteps-- > 0)
 	{
-		int nOpcode = *(mem + regs.pc);
+		BYTE nOpcode = ReadByteFromMemory(regs.pc);
 		WORD nExpectedAddr = (regs.pc + 3) & _6502_MEM_END; // Wrap around 64K edge case when PC = $FFFD..$FFFF: 20 xx xx
 	//	int eMode = g_aOpcodes[ nOpcode ].addrmode;
 	//	int nByte = g_aOpmodes[eMode]._nBytes;
@@ -2518,16 +2518,11 @@ Update_t CmdJSR (int nArgs)
 
 	WORD nAddress = g_aArgs[1].nValue & _6502_MEM_END;
 
-	// Mark Stack Page as dirty
-	*(memdirty+(regs.sp >> 8)) = 1;
-
 	// Push PC onto stack
-	*(mem + regs.sp) = ((regs.pc >> 8) & 0xFF);
+	WriteByteToMemory(regs.sp, ((regs.pc >> 8) & 0xFF));
 	regs.sp--;
-
-	*(mem + regs.sp) = ((regs.pc >> 0) - 1) & 0xFF;
+	WriteByteToMemory(regs.sp, ((regs.pc >> 0) - 1) & 0xFF);
 	regs.sp--;
-
 
 	// Jump to new address
 	regs.pc = nAddress;
@@ -2547,7 +2542,7 @@ Update_t CmdNOP (int nArgs)
 
 	while (nOpbytes--)
 	{
-		*(mem+regs.pc + nOpbytes) = 0xEA;
+		WriteByteToMemory(regs.pc + nOpbytes, 0xEA);
 	}
 
 	return UPDATE_ALL;
@@ -3828,27 +3823,27 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 #ifdef SUPPORT_Z80_EMU
 	else if (strcmp(g_aArgs[1].sArg, "*AF") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_AF);
+		nAddress = ReadWordFromMemory(REG_AF);
 		bUpdate = true;
 	}
 	else if (strcmp(g_aArgs[1].sArg, "*BC") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_BC);
+		nAddress = ReadWordFromMemory(REG_BC);
 		bUpdate = true;
 	}
 	else if (strcmp(g_aArgs[1].sArg, "*DE") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_DE);
+		nAddress = ReadWordFromMemory(REG_DE);
 		bUpdate = true;
 	}
 	else if (strcmp(g_aArgs[1].sArg, "*HL") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_HL);
+		nAddress = ReadWordFromMemory(REG_HL);
 		bUpdate = true;
 	}
 	else if (strcmp(g_aArgs[1].sArg, "*IX") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_IX);
+		nAddress = ReadWordFromMemory(REG_IX);
 		bUpdate = true;
 	}
 #endif
@@ -3999,16 +3994,17 @@ Update_t CmdMemoryEnterByte (int nArgs)
 	while (nArgs >= 2)
 	{
 		WORD nData = g_aArgs[nArgs].nValue;
-		if ( nData > 0xFF)
+
+		if (nData > 0xFF)
 		{
-			*(mem + nAddress + nArgs - 2)  = (BYTE)(nData >> 0);
-			*(mem + nAddress + nArgs - 1)  = (BYTE)(nData >> 8);
+			WriteByteToMemory(nAddress + nArgs - 2, (BYTE)(nData >> 0));
+			WriteByteToMemory(nAddress + nArgs - 1, (BYTE)(nData >> 8));
 		}
 		else
 		{
-			*(mem + nAddress+nArgs-2)  = (BYTE)nData;
+			WriteByteToMemory(nAddress + nArgs - 2, (BYTE)nData);
 		}
-		*(memdirty+(nAddress >> 8)) = 1;
+
 		nArgs--;
 	}
 
@@ -4030,11 +4026,9 @@ Update_t CmdMemoryEnterWord (int nArgs)
 	{
 		WORD nData = g_aArgs[nArgs].nValue;
 
-		// Little Endian
-		*(mem + nAddress + nArgs - 2)  = (BYTE)(nData >> 0);
-		*(mem + nAddress + nArgs - 1)  = (BYTE)(nData >> 8);
+		WriteByteToMemory(nAddress + nArgs - 2, (BYTE)(nData >> 0));
+		WriteByteToMemory(nAddress + nArgs - 1, (BYTE)(nData >> 8));
 
-		*(memdirty+(nAddress >> 8)) |= 1;
 		nArgs--;
 	}
 
@@ -4093,7 +4087,7 @@ Update_t CmdMemoryFill (int nArgs)
 			// TODO: Optimize - split into pre_io, and post_io
 			if ((nAddress2 < _6502_IO_BEGIN) || (nAddress2 > _6502_IO_END))
 			{
-				*(mem + nAddressStart) = nValue;
+				WriteByteToMemory(nAddressStart, nValue);
 			}
 			nAddressStart++;
 		}
@@ -4231,7 +4225,7 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 
 
 //===========================================================================
-#if 0	// Original
+#if 0	// Original - TODO: delete this old "original" code
 Update_t CmdMemoryLoad (int nArgs)
 {
 	// BLOAD ["Filename"] , addr[, len] 
@@ -4297,7 +4291,6 @@ Update_t CmdMemoryLoad (int nArgs)
 		}
 		
 		BYTE *pMemory = new BYTE [ _6502_MEM_END + 1 ]; // default 64K buffer
-		BYTE *pDst = mem + nAddressStart;
 		BYTE *pSrc = pMemory;
 
 		if (bHaveFileName)
@@ -4325,7 +4318,7 @@ Update_t CmdMemoryLoad (int nArgs)
 			{
 				for ( int iByte = 0; iByte < nAddressLen; iByte++ )
 				{
-					*pDst++ = *pSrc++;
+					WriteByteToMemory(nAddressStart++, *pSrc++);
 				}
 				ConsoleBufferPush(  "Loaded."  );
 			}
