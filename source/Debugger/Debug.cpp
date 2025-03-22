@@ -4036,15 +4036,6 @@ Update_t CmdMemoryEnterWord (int nArgs)
 }
 
 //===========================================================================
-void MemMarkDirty ( WORD nAddressStart, WORD nAddressEnd )
-{
-	for ( int iPage = (nAddressStart >> 8); iPage <= (nAddressEnd >> 8); iPage++ )
-	{
-		*(memdirty+iPage) = 1;
-	}
-}
-
-//===========================================================================
 Update_t CmdMemoryFill (int nArgs)
 {
 	// F address end value
@@ -4079,8 +4070,6 @@ Update_t CmdMemoryFill (int nArgs)
 
 	if ((nAddressLen > 0) && (nAddressEnd <= _6502_MEM_END))
 	{
-		MemMarkDirty( nAddressStart, nAddressEnd );
-
 		nValue = g_aArgs[nArgs].nValue & 0xFF;
 		while ( nAddressLen-- ) // v2.7.0.22
 		{
@@ -4577,18 +4566,13 @@ Update_t CmdMemoryMove (int nArgs)
 
 	if ((nAddressLen > 0) && (nAddressEnd <= _6502_MEM_END))
 	{
-		MemMarkDirty( nAddressStart, nAddressEnd );
-
-//			BYTE *pSrc = mem + nAddressStart;
-//			BYTE *pDst = mem + nDst;
-//			BYTE *pEnd = pSrc + nAddressLen;
-
 		while ( nAddressLen-- ) // v2.7.0.23
 		{
 			// TODO: Optimize - split into pre_io, and post_io
 			if ((nDst < _6502_IO_BEGIN) || (nDst > _6502_IO_END))
 			{
-				*(mem + nDst) = *(mem + nAddressStart);
+				BYTE value = ReadByteFromMemory(nAddressStart);
+				WriteByteToMemory(nDst, value);
 			}
 			nDst++;
 			nAddressStart++;
@@ -4683,12 +4667,11 @@ Update_t CmdMemorySave (int nArgs)
 			{
 				BYTE *pMemory = new BYTE [ nAddressLen ];
 				BYTE *pDst = pMemory;
-				BYTE *pSrc = mem + nAddressStart;
 				
 				// memcpy -- copy out of active memory bank
 				for ( int iByte = 0; iByte < nAddressLen; iByte++ )
 				{
-					*pDst++ = *pSrc++;
+					*pDst++ = ReadByteFromMemory(nAddressStart + iByte);
 				}
 
 				FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
@@ -5741,7 +5724,7 @@ int _SearchMemoryFind (
 				(ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT) ||
 				(ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT ))
 			{
-				BYTE nTarget = *(mem + nAddress2);
+				BYTE nTarget = ReadByteFromMemory(nAddress2);
 	
 				if (ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT)
 					nTarget &= 0x0F;
@@ -5778,7 +5761,7 @@ int _SearchMemoryFind (
 						(ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT) ||
 						(ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT ))
 					{
-						BYTE nTarget = *(mem + nAddress3);
+						BYTE nTarget = ReadByteFromMemory(nAddress3);
 			
 						if (ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT)
 							nTarget &= 0x0F;
@@ -6580,7 +6563,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 					if (TextIsHexByte( pStart ))
 					{
 						BYTE nByte = TextConvert2CharsToByte( pStart );
-						*(mem + ((WORD)nAddress) + iByte ) = nByte;
+						WriteByteToMemory(((WORD)nAddress) + iByte, nByte);
 					}
 				}
 				g_nSourceAssembleBytes += iByte;
@@ -8625,7 +8608,7 @@ static void CheckBreakOpcode ( int iOpcode )
 
 static void UpdateLBR (void)
 {
-	const BYTE nOpcode = *(mem + regs.pc);
+	const BYTE nOpcode = ReadByteFromMemory(regs.pc);
 
 	bool isControlFlowOpcode =
 		nOpcode == OPCODE_BRK ||
@@ -8696,7 +8679,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 
 			if ( MemIsAddrCodeMemory(regs.pc) )
 			{
-				BYTE nOpcode = *(mem+regs.pc);
+				const BYTE nOpcode = ReadByteFromMemory(regs.pc);
 
 				// Update profiling stats
 				int nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;
