@@ -612,6 +612,7 @@ static uint32_t InternalCpuExecute(const uint32_t uTotalCycles, const bool bVide
 	{
 		if (IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
 		{
+			_ASSERT(memshadow[0]);
 			if (GetMainCpu() == CPU_6502)
 				return Cpu6502_altRW(uTotalCycles, bVideoUpdate);		// Apple //e
 			else
@@ -629,6 +630,7 @@ static uint32_t InternalCpuExecute(const uint32_t uTotalCycles, const bool bVide
 
 		if (IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
 		{
+			_ASSERT(memshadow[0]);
 			if (GetMainCpu() == CPU_6502)
 				return Cpu6502_debug_altRW(uTotalCycles, bVideoUpdate);		// Apple //e
 			else
