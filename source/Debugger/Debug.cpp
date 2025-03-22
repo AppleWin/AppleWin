@@ -4480,19 +4480,14 @@ Update_t CmdMemoryLoad (int nArgs)
 		}
 	}
 
+	std::unique_ptr<BYTE> pMemory(new BYTE[_6502_MEM_END + 1]); // default 64K buffer
+
 	if (bHaveFileName)
 	{
 		g_sMemoryLoadSaveFileName = pFileName;
 	}
 	const std::string sLoadSaveFilePath = g_sCurrentDir + g_sMemoryLoadSaveFileName; // TODO: g_sDebugDir
 	
-	BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
-	if (!pMemBankBase)
-	{
-		ConsoleBufferPush(  "Error: Bank out of range."  );
-		return ConsoleUpdate();
-	}
-
 	FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 	if (hFile)
 	{
@@ -4507,7 +4502,9 @@ Update_t CmdMemoryLoad (int nArgs)
 			nAddressLen = nFileBytes;
 		}
 
-		size_t nRead = fread( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
+		size_t nRead = fread(pMemory.get() + nAddressStart, nAddressLen, 1, hFile);
+		fclose(hFile);
+
 		if (nRead == 1)
 		{
 			ConsoleBufferPushFormat( "Loaded @ A$%04X,L$%04X", nAddressStart, nAddressLen );
@@ -4515,18 +4512,27 @@ Update_t CmdMemoryLoad (int nArgs)
 		else
 		{
 			ConsoleBufferPush( "Error loading data." );
+			return ConsoleUpdate();
 		}
-		fclose( hFile );
 
 		if (bBankSpecified)
 		{
+			BYTE* const pMemBankBase = MemGetBankPtr(nBank);
+			if (!pMemBankBase)
+			{
+				ConsoleBufferPush("Error: Bank out of range.");
+				return ConsoleUpdate();
+			}
+
+			memcpy(pMemBankBase + nAddressStart, pMemory.get() + nAddressStart, nAddressLen);
+
 			MemUpdatePaging(TRUE);
 		}
 		else
 		{
-			for (WORD i=(nAddressStart>>8); i!=((nAddressStart+(WORD)nAddressLen)>>8); i++)
+			for (WORD i=nAddressStart; i!=(nAddressStart+(WORD)nAddressLen); i++)
 			{
-				memdirty[i] = 0xff;
+				WriteByteToMemory(i, pMemory.get()[i]);
 			}
 		}
 	}
@@ -4595,7 +4601,7 @@ Update_t CmdMemoryMove (int nArgs)
 }
 
 //===========================================================================
-#if 0	// Original
+#if 0	// Original - TODO: delete this old "original" code
 Update_t CmdMemorySave (int nArgs)
 {
 	// BSAVE ["Filename"] , addr , len 
@@ -4825,11 +4831,25 @@ Update_t CmdMemorySave (int nArgs)
 			}
 			sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
 
-			const BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
-			if (!pMemBankBase)
+			std::unique_ptr<BYTE> pMemory(new BYTE[_6502_MEM_END + 1]); // default 64K buffer
+
+			if (bBankSpecified)
 			{
-				ConsoleBufferPush(  "Error: Bank out of range."  );
-				return ConsoleUpdate();
+				const BYTE* const pMemBankBase = MemGetBankPtr(nBank);
+				if (!pMemBankBase)
+				{
+					ConsoleBufferPush("Error: Bank out of range.");
+					return ConsoleUpdate();
+				}
+
+				memcpy(pMemory.get() + nAddressStart, pMemBankBase + nAddressStart, nAddressLen);
+			}
+			else
+			{
+				for (WORD i = nAddressStart; i != (nAddressStart + (WORD)nAddressLen); i++)
+				{
+					pMemory.get()[i] = ReadByteFromMemory(i);
+				}
 			}
 
 			FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
@@ -4843,21 +4863,22 @@ Update_t CmdMemorySave (int nArgs)
 			hFile = fopen( sLoadSaveFilePath.c_str(), "wb" );
 			if (hFile)
 			{
-				size_t nWrote = fwrite( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
+				size_t nWrote = fwrite(pMemory.get() + nAddressStart, nAddressLen, 1, hFile);
+				fclose(hFile);
+
 				if (nWrote == 1)
-				{
 					ConsoleBufferPush(  "Saved."  );
-				}
 				else
-				{
 					ConsoleBufferPush(  "Error saving."  );
-				}
-				fclose( hFile );
 			}
 			else
 			{
 				ConsoleBufferPush(  "Error opening file."  );
 			}
+		}
+		else
+		{
+			ConsoleBufferPush("Error: Length = 0.");
 		}
 	}
 	
