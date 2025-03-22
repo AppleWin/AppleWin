@@ -1387,7 +1387,7 @@ static void UpdatePaging(BOOL initialize)
 		}
 	}
 
-	//	if (g_isMemCacheValid)
+	if (g_isMemCacheValid)
 	{
 		// MOVE MEMORY BACK AND FORTH AS NECESSARY BETWEEN THE SHADOW AREAS AND
 		// THE MAIN RAM IMAGE TO KEEP BOTH SETS OF MEMORY CONSISTENT WITH THE NEW
@@ -1408,17 +1408,17 @@ static void UpdatePaging(BOOL initialize)
 					((*(memdirty+loop) & 1) || (loop <= 1)))
 				{
 					*(memdirty+loop) &= ~1;
-					if (g_isMemCacheValid)	// DEBUG: move this "if" here (from above) so that this "for-loop" is run, and mem gets updated and the debugger (sort of) works!
-						memcpy(oldshadow[loop],mem+(loop << 8),256);
+					memcpy(oldshadow[loop],mem+(loop << 8),256);
 				}
 
 				memcpy(mem+(loop << 8),memshadow[loop],256);
 			}
 		}
 	}
-
-	if (!g_isMemCacheValid)
+	else
+	{
 		UpdatePagingForAltRW();
+	}
 }
 
 // For Cpu6502_altRW() & Cpu65C02_altRW()
