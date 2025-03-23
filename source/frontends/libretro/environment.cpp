@@ -1,7 +1,6 @@
 #include "frontends/libretro/environment.h"
 
 #include <cstdarg>
-#include <iostream>
 
 namespace ra2
 {

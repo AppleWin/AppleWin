@@ -3,7 +3,8 @@
 #include "frontends/common2/controllerdoublepress.h"
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/diskcontrol.h"
-#include "frontends/libretro/rkeyboard.h"
+#include "frontends/libretro/input/rkeyboard.h"
+#include "frontends/libretro/input/inputremapper.h"
 
 #include "Common.h"
 
@@ -32,7 +33,7 @@ namespace ra2
 
         bool loadSnapshot(const std::string &path);
 
-        void reset();
+        void restart();
 
         void updateVariables();
         void executeOneFrame();
@@ -41,9 +42,9 @@ namespace ra2
 
         void drawVideoBuffer();
 
-        double getMousePosition(int i) const;
-
+        common2::PTreeRegistry &getRegistry();
         DiskControl &getDiskControl();
+        InputRemapper &getInputRemapper();
 
         void keyboardCallback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers);
 
@@ -55,9 +56,8 @@ namespace ra2
         static constexpr retro_usec_t ourFrameTime = 1000000 / FPS;
 
     private:
-        const bool mySupportsInputBitmasks;
-        size_t myButtonStates;
         KeyboardType myKeyboardType;
+        double myMouseSpeed;
 
         // keep them in this order!
         std::shared_ptr<LoggerContext> myLoggerContext;
@@ -68,23 +68,14 @@ namespace ra2
         common2::ControllerDoublePress myControllerQuit;
         common2::ControllerDoublePress myControllerReset;
 
-        struct MousePosition_t
-        {
-            double position; // -1 to 1
-            double multiplier;
-            unsigned id;
-        };
-
-        MousePosition_t myMouse[2];
+        InputRemapper myInputRemapper;
 
         DiskControl myDiskControl;
 
         std::vector<int16_t> myAudioBuffer;
 
-        size_t updateButtonStates();
         void keyboardEmulation();
-        void mouseEmulation();
-        void refreshVariables();
+        void applyVariables();
 
         void processKeyDown(unsigned keycode, uint32_t character, uint16_t key_modifiers);
         void processKeyUp(unsigned keycode, uint32_t character, uint16_t key_modifiers);

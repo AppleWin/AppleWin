@@ -18,7 +18,7 @@ namespace ra2
 
     extern std::string save_directory;
 
-#define MAX_PADS 1
+#define MAX_PADS 2
 
     void display_message(const std::string &message, int durationFrames = 180);
 

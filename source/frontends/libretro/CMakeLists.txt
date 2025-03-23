@@ -6,16 +6,17 @@ set(SOURCE_FILES
   libretro.cpp
   rdirectsound.cpp
   game.cpp
-  joypadbase.cpp
-  joypad.cpp
-  mouse.cpp
-  analog.cpp
-  rkeyboard.cpp
   rdirectsound.cpp
   retroregistry.cpp
   retroframe.cpp
   diskcontrol.cpp
   serialisation.cpp
+  input/rkeyboard.cpp
+  input/joypadbase.cpp
+  input/joypad.cpp
+  input/mouse.cpp
+  input/analog.cpp
+  input/inputremapper.cpp
   )
 
 set(HEADER_FILES
@@ -23,16 +24,17 @@ set(HEADER_FILES
   environment.h
   rdirectsound.h
   game.h
-  joypadbase.h
-  joypad.h
-  mouse.h
-  analog.h
-  rkeyboard.h
   rdirectsound.h
   retroregistry.h
   retroframe.h
   diskcontrol.h
   serialisation.h
+  input/rkeyboard.h
+  input/joypadbase.h
+  input/joypad.h
+  input/mouse.h
+  input/analog.h
+  input/inputremapper.h
   )
 
 add_library(applewin_libretro SHARED

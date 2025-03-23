@@ -3,7 +3,6 @@
 #include <cstring>
 
 #include "StdAfx.h"
-#include "Common.h"
 #include "Video.h"
 #include "Interface.h"
 #include "Memory.h"
@@ -16,10 +15,10 @@
 #include "frontends/libretro/game.h"
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/retroregistry.h"
-#include "frontends/libretro/joypad.h"
-#include "frontends/libretro/analog.h"
-#include "frontends/libretro/mouse.h"
 #include "frontends/libretro/serialisation.h"
+#include "frontends/libretro/input/joypad.h"
+#include "frontends/libretro/input/analog.h"
+#include "frontends/libretro/input/mouse.h"
 
 namespace
 {
@@ -112,12 +111,6 @@ namespace
         {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN, "PDL(1)=255"},
         {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A, "Button 0"},
         {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B, "Button 1"},
-        {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select"},
-        {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START, "Start"},
-        {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L, "Scan lines"},
-        {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R, "Cycle video"},
-        {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2, "Save conf"},
-        {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2, "Switch audio"},
 
         {0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_LEFT, "Button 0"},
         {0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_RIGHT, "Button 1"},
@@ -147,29 +140,36 @@ unsigned retro_api_version(void)
 void retro_set_controller_port_device(unsigned port, unsigned device)
 {
     ra2::log_cb(RETRO_LOG_INFO, "RA2: %s, Plugging device %u into port %u\n", __FUNCTION__, device, port);
-    if (port == 0)
+    if (port < MAX_PADS)
     {
         ra2::Game::ourInputDevices[port] = device;
-
-        switch (device)
+        if (ourGame)
         {
-        case RETRO_DEVICE_NONE:
-            Paddle::instance.reset();
-            break;
-        case RETRO_DEVICE_JOYPAD:
-            Paddle::instance = std::make_shared<ra2::Joypad>();
-            Paddle::setSquaring(false);
-            break;
-        case RETRO_DEVICE_ANALOG:
-            Paddle::instance = std::make_shared<ra2::Analog>();
-            Paddle::setSquaring(true);
-            break;
-        case RETRO_DEVICE_MOUSE:
-            Paddle::instance = std::make_shared<ra2::Mouse>(&ourGame);
-            Paddle::setSquaring(false);
-            break;
-        default:
-            break;
+            ourGame->getInputRemapper().resetPort(port);
+        }
+
+        if (port == 0)
+        {
+            switch (device)
+            {
+            case RETRO_DEVICE_NONE:
+                Paddle::instance.reset();
+                break;
+            case RETRO_DEVICE_JOYPAD:
+                Paddle::instance = std::make_shared<ra2::Joypad>(ourGame, port);
+                Paddle::setSquaring(false);
+                break;
+            case RETRO_DEVICE_ANALOG:
+                Paddle::instance = std::make_shared<ra2::Analog>(ourGame, port);
+                Paddle::setSquaring(true);
+                break;
+            case RETRO_DEVICE_MOUSE:
+                Paddle::instance = std::make_shared<ra2::Mouse>(ourGame, port);
+                Paddle::setSquaring(false);
+                break;
+            default:
+                break;
+            }
         }
     }
 }
@@ -218,6 +218,7 @@ void retro_set_environment(retro_environment_t cb)
         {"Mouse", RETRO_DEVICE_MOUSE},
     };
 
+    // the second port is only use for remapping, so a standard retro pad is enough.
     static const struct retro_controller_info ports[] = {
         {controllers, sizeof(controllers) / sizeof(controllers[0])}, {nullptr, 0}};
 
@@ -260,7 +261,7 @@ void retro_set_environment(retro_environment_t cb)
     bool noContent = true;
     cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &noContent);
 
-    ra2::SetupRetroVariables();
+    ra2::setupRetroVariables();
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb)
@@ -375,7 +376,7 @@ void retro_reset(void)
     if (ourGame)
     {
         ourGame->updateVariables();
-        ourGame->reset();
+        ourGame->restart();
     }
     ra2::log_cb(RETRO_LOG_INFO, "RA2: %s\n", __FUNCTION__);
 }

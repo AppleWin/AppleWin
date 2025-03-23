@@ -1,5 +1,5 @@
 #include <cstdint>
-#include <frontends/libretro/rkeyboard.h>
+#include <frontends/libretro/input/rkeyboard.h>
 
 #include <unordered_map>
 #include <array>

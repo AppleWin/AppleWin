@@ -3,7 +3,7 @@
 #include "frontends/libretro/retroregistry.h"
 #include "frontends/libretro/retroframe.h"
 #include "frontends/libretro/rdirectsound.h"
-#include "frontends/libretro/rkeyboard.h"
+#include "frontends/libretro/input/rkeyboard.h"
 #include "frontends/common2/utils.h"
 #include "frontends/common2/ptreeregistry.h"
 #include "frontends/common2/programoptions.h"
@@ -40,30 +40,25 @@ namespace
 namespace ra2
 {
 
-    unsigned Game::ourInputDevices[MAX_PADS] = {RETRO_DEVICE_NONE};
+    unsigned Game::ourInputDevices[MAX_PADS] = {};
 
     Game::Game(const bool supportsInputBitmasks)
-        : mySupportsInputBitmasks(supportsInputBitmasks)
-        , myButtonStates(0)
+        : myInputRemapper(supportsInputBitmasks)
         , myKeyboardType(KeyboardType::ASCII)
+        , myMouseSpeed(1.0)
     {
         myLoggerContext = std::make_shared<LoggerContext>(true);
-        myRegistry = CreateRetroRegistry();
+        myRegistry = createRetroRegistry();
         myRegistryContext = std::make_shared<RegistryContext>(myRegistry);
+
+        applyVariables();
 
         common2::EmulatorOptions defaultOptions;
         defaultOptions.fixedSpeed = true;
         myFrame = std::make_shared<ra2::RetroFrame>(defaultOptions);
 
-        refreshVariables();
-
         SetFrame(myFrame);
         myFrame->Begin();
-
-        Video &video = GetVideo();
-        // should the user be allowed to tweak 0.75
-        myMouse[0] = {0.0, 0.75 / video.GetFrameBufferBorderlessWidth(), RETRO_DEVICE_ID_MOUSE_X};
-        myMouse[1] = {0.0, 0.75 / video.GetFrameBufferBorderlessHeight(), RETRO_DEVICE_ID_MOUSE_Y};
     }
 
     Game::~Game()
@@ -78,9 +73,12 @@ namespace ra2
         myFrame->ExecuteOneFrame(ourFrameTime);
     }
 
-    void Game::refreshVariables()
+    void Game::applyVariables()
     {
-        myKeyboardType = GetKeyboardEmulationType();
+        applyRetroVariables(*this);
+
+        myKeyboardType = getKeyboardEmulationType();
+        myMouseSpeed = getMouseSpeed();
     }
 
     void Game::updateVariables()
@@ -88,11 +86,9 @@ namespace ra2
         bool updated = false;
         if (ra2::environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
         {
-            PopulateRegistry(myRegistry);
+            applyVariables();
 
-            // some variables are immediately applied
-            refreshVariables();
-
+            // apply video mode changes
             Video &video = GetVideo();
             const VideoType_e prevVideoType = video.GetVideoType();
             const VideoStyle_e prevVideoStyle = video.GetVideoStyle();
@@ -117,8 +113,12 @@ namespace ra2
     void Game::processInputEvents()
     {
         input_poll_cb();
-        keyboardEmulation();
-        mouseEmulation();
+        for (size_t port = 0; port < MAX_PADS; ++port)
+        {
+            const unsigned device = ourInputDevices[port];
+            myInputRemapper.mouseEmulation(port, device, myMouseSpeed);
+            myInputRemapper.processRemappedButtons(port, device);
+        }
     }
 
     void Game::keyboardCallback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers)
@@ -190,6 +190,18 @@ namespace ra2
                 ch = 0x0a;
                 break;
             }
+            case RETROK_END:
+            {
+                // reset the emulator (like vice's default key for vice_mapper_reset)
+                restart();
+                break;
+            }
+            case RETROK_HOME:
+            {
+                // save the registry to a file
+                saveRegistryToINI(myRegistry);
+                break;
+            }
             case RETROK_LALT:
             {
                 Paddle::setButtonPressed(Paddle::ourOpenApple);
@@ -247,100 +259,6 @@ namespace ra2
         }
     }
 
-    size_t Game::updateButtonStates()
-    {
-        size_t newState;
-        if (mySupportsInputBitmasks)
-        {
-            newState = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_MASK);
-        }
-        else
-        {
-            newState = 0;
-            for (size_t i = 0; i < RETRO_DEVICE_ID_JOYPAD_R3 + 1; i++)
-            {
-                if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, i))
-                {
-                    newState |= 1 << i;
-                }
-            }
-        }
-        // if it is active NOW and was NOT before.
-        const size_t result = (~myButtonStates) & newState;
-
-        myButtonStates = newState;
-        return result;
-    }
-
-    void Game::keyboardEmulation()
-    {
-        if (ourInputDevices[0] != RETRO_DEVICE_NONE)
-        {
-            const size_t activeButtons = updateButtonStates();
-
-            const auto checkButton = [activeButtons](const size_t i) { return activeButtons & (1 << i); };
-
-            if (checkButton(RETRO_DEVICE_ID_JOYPAD_R))
-            {
-                myFrame->CycleVideoType();
-            }
-            if (checkButton(RETRO_DEVICE_ID_JOYPAD_L))
-            {
-                myFrame->Cycle50ScanLines();
-            }
-            if (checkButton(RETRO_DEVICE_ID_JOYPAD_L2))
-            {
-                saveRegistryToINI(myRegistry);
-            }
-            if (checkButton(RETRO_DEVICE_ID_JOYPAD_START))
-            {
-                // reset emulator by pressing "start" twice
-                if (myControllerReset.pressButton())
-                {
-                    reset(); // just a myFrame->Restart();
-                }
-                else
-                {
-                    display_message("Press again to reset...", 60 /* 1.0s at 60 FPS */);
-                }
-            }
-            if (checkButton(RETRO_DEVICE_ID_JOYPAD_SELECT))
-            {
-                // added as convenience if game_focus is on:
-                // exit emulator by pressing "select" twice
-                if (myControllerQuit.pressButton())
-                {
-                    log_cb(RETRO_LOG_INFO, "RA2: %s - user quitted\n", __FUNCTION__);
-                    environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
-                }
-                else
-                {
-                    display_message("Press again to quit...", 60 /* 1.0s at 60 FPS */);
-                }
-            }
-        }
-        else
-        {
-            myButtonStates = 0;
-        }
-    }
-
-    void Game::mouseEmulation()
-    {
-        // we should use an InputDescriptor, but these are all on RETRO_DEVICE_MOUSE anyway
-        for (auto &mouse : myMouse)
-        {
-            const int16_t x = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, mouse.id);
-            mouse.position += x * mouse.multiplier;
-            mouse.position = std::min(1.0, std::max(mouse.position, -1.0));
-        }
-    }
-
-    double Game::getMousePosition(int i) const
-    {
-        return myMouse[i].position;
-    }
-
     bool Game::loadSnapshot(const std::string &path)
     {
         const common2::RestoreCurrentDirectory restoreChDir;
@@ -354,7 +272,7 @@ namespace ra2
         return myDiskControl;
     }
 
-    void Game::reset()
+    void Game::restart()
     {
         myFrame->Restart();
     }
@@ -362,6 +280,16 @@ namespace ra2
     void Game::writeAudio(const size_t fps, const size_t sampleRate, const size_t channels)
     {
         ra2::writeAudio(fps, sampleRate, channels, myAudioBuffer);
+    }
+
+    common2::PTreeRegistry &Game::getRegistry()
+    {
+        return *myRegistry;
+    }
+
+    InputRemapper &Game::getInputRemapper()
+    {
+        return myInputRemapper;
     }
 
 } // namespace ra2
