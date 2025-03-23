@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // For regular or alternate (slow-path) CPU emulation
 #ifndef CPU_ALT
-//#define READ _READ
+//#define READ(addr) _READ(addr)
 //#define WRITE(value) _WRITE(value)
 #define BRK_NMOS _BRK_NMOS
 #define BRK_CMOS _BRK_CMOS
@@ -48,7 +48,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define ZPGX _ZPGX
 #define ZPGY _ZPGY
 #else
-//#define READ _READ_ALT
+//#define READ(addr) _READ_ALT(addr)
 //#define WRITE(value) _WRITE_ALT(value)
 #define BRK_NMOS _BRK_NMOS_ALT
 #define BRK_CMOS _BRK_CMOS_ALT

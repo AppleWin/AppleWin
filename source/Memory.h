@@ -37,7 +37,7 @@ enum MemoryInitPattern_e
 };
 
 // For Cpu6502_altRead() & Cpu65C02_altRead()
-enum { MEM_Normal = 0, MEM_IORead, MEM_FloatingBus, MEM_Aux1K, MEM_NoSlotClock };
+enum { MEM_Normal = 0, MEM_IORead, MEM_FloatingBus, MEM_NoSlotClock };
 
 typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nExecutedCycles);
 

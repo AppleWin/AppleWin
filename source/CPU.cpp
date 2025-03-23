@@ -387,8 +387,7 @@ static __forceinline void Fetch_alt(BYTE& iOpcode, ULONG uExecutedCycles)
 	DebugHddEntrypoint(PC);
 #endif
 
-	WORD addr = regs.pc;
-	iOpcode = _READ_ALT;
+	iOpcode = _READ_ALT(regs.pc);
 
 #ifdef USE_SPEECH_API
 	if ((PC == COUT1 || PC == BASICOUT) && g_Speech.IsEnabled() && !g_bFullSpeed)
@@ -512,7 +511,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #define HEATMAP_X(address)
 
 // 6502 & no debugger
-#define READ _READ_WITH_IO_F8xx
+#define READ(addr) _READ_WITH_IO_F8xx(addr)
 #define WRITE(value) _WRITE_WITH_IO_F8xx(value)
 
 #include "CPU/cpu6502.h"  // MOS 6502
@@ -521,7 +520,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 // 6502 & no debugger & alt read/write support
 #define CPU_ALT
-#define READ _READ_ALT
+#define READ(addr) _READ_ALT(addr)
 #define WRITE(value) _WRITE_ALT(value)
 
 #define Cpu6502 Cpu6502_altRW
@@ -533,7 +532,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 //-------
 
 // 65C02 & no debugger
-#define READ _READ
+#define READ(addr) _READ(addr)
 #define WRITE(value) _WRITE(value)
 
 #include "CPU/cpu65C02.h" // WDC 65C02
@@ -542,7 +541,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 // 65C02 & no debugger & alt read/write support
 #define CPU_ALT
-#define READ _READ_ALT
+#define READ(addr) _READ_ALT(addr)
 #define WRITE(value) _WRITE_ALT(value)
 
 #define Cpu65C02 Cpu65C02_altRW
@@ -559,7 +558,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #include "CPU/cpu_heatmap.inl"
 
 // 6502 & debugger
-#define READ Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles)
+#define READ(addr) Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte_With_IO_F8xx(addr, value, uExecutedCycles);
 
 #define Cpu6502 Cpu6502_debug
@@ -570,7 +569,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 // 6502 & debugger & alt read/write support
 #define CPU_ALT
-#define READ _READ_ALT
+#define READ(addr) _READ_ALT(addr)
 #define WRITE(value) _WRITE_ALT(value)
 
 #define Cpu6502 Cpu6502_debug_altRW
@@ -582,7 +581,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 //-------
 
 // 65C02 & debugger
-#define READ Heatmap_ReadByte(addr, uExecutedCycles)
+#define READ(addr) Heatmap_ReadByte(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte(addr, value, uExecutedCycles);
 
 #define Cpu65C02 Cpu65C02_debug
@@ -593,7 +592,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 // 65C02 & debugger & alt read/write support
 #define CPU_ALT
-#define READ _READ_ALT
+#define READ(addr) _READ_ALT(addr)
 #define WRITE(value) _WRITE_ALT(value)
 
 #define Cpu65C02 Cpu65C02_debug_altRW
@@ -655,7 +654,7 @@ BYTE CpuRead(USHORT addr, ULONG uExecutedCycles)
 {
 	if (g_nAppMode == MODE_RUNNING)
 	{
-		return _READ_WITH_IO_F8xx;	// Superset of _READ
+		return _READ_WITH_IO_F8xx(addr);	// Superset of _READ
 	}
 
 	return Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles);

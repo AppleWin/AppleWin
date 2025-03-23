@@ -70,26 +70,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				regs.sp = 0x1FF;													\
 		}
 
-#define _READ	(																\
+#define _READ(addr)	(															\
 			((addr & 0xF000) == 0xC000)											\
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
 				: *(mem+addr)													\
 		)
-#define _READ_ALT (																\
+#define _READ_ALT(addr) (														\
 			(memreadPageType[addr >> 8] == MEM_Normal)							\
 				? *(memshadow[addr >> 8]+(addr&0xff))							\
 				: (memreadPageType[addr >> 8] == MEM_IORead)					\
 					? IORead[(addr >> 4) & 0xFF](regs.pc, addr, 0, 0, uExecutedCycles)	\
 					: MemReadFloatingBus(uExecutedCycles)						\
 		)
-#define _READ_ALT2(addr) (														\
-			(memreadPageType[addr >> 8] == MEM_Normal)							\
-				? *(memshadow[addr >> 8]+(addr&0xff))							\
-				: (memreadPageType[addr >> 8] == MEM_IORead)					\
-					? IORead[(addr >> 4) & 0xFF](regs.pc, addr, 0, 0, uExecutedCycles)	\
-					: MemReadFloatingBus(uExecutedCycles)						\
-		)
-#define _READ_WITH_IO_F8xx (										/* GH#827 */\
+#define _READ_WITH_IO_F8xx(addr) (									/* GH#827 */\
 			((addr & 0xF000) == 0xC000)											\
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
 				: (addr >= 0xF800)												\
@@ -164,8 +157,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define CHECK_PAGE_CHANGE	if ((base ^ addr) & 0xFF00)			\
 									uExtraCycles=1;
 
-#define READ_BYTE_ALT(pc) _READ_ALT2(pc)
-#define READ_WORD_ALT(pc) (_READ_ALT2(pc) | (_READ_ALT2((pc+1))<<8))
+#define READ_BYTE_ALT(pc) _READ_ALT(pc)
+#define READ_WORD_ALT(pc) (_READ_ALT(pc) | (_READ_ALT((pc+1))<<8))
 
 /****************************************************************************
 *
