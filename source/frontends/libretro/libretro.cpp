@@ -326,15 +326,18 @@ bool retro_load_game(const retro_game_info *info)
             const std::string gamePath = info->path;
             if (endsWith(gamePath, snapshotEnding))
             {
+                game->start(); // must happen before loading the snapshot!
                 ok = game->loadSnapshot(gamePath);
             }
             else if (endsWith(gamePath, playlistEnding))
             {
                 ok = game->getDiskControl().insertPlaylist(gamePath);
+                game->start();
             }
             else
             {
                 ok = game->getDiskControl().insertDisk(gamePath);
+                game->start();
             }
             ra2::log_cb(RETRO_LOG_INFO, "Game path: %s -> %d\n", info->path, ok);
         }
@@ -342,6 +345,7 @@ bool retro_load_game(const retro_game_info *info)
         {
             // we support no content
             ok = true;
+            game->start();
         }
 
         if (ok)

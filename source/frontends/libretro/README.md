@@ -23,8 +23,8 @@ A retropad can be plugged in port 1 (with or without analog stick).
 | Analog | Left | X | PDL(0) |
 | Analog | Left | Y | PDL(1) |
 | Mouse  | | Left | Button 0 |
-| Mouse  | | LeftRight | Button 1 |
-| Mouse  | Position | | PDLs |
+| Mouse  | | Right | Button 1 |
+| Mouse  | | Position | PDLs |
 
 All *standard* buttons can be remapped to keys (in which case they lose their default action): buttons are remapped on all connected devices.
 
