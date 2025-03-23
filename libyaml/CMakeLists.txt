@@ -21,6 +21,6 @@ target_include_directories(yaml PRIVATE
   win32
   )
 
-  target_compile_definitions(yaml PRIVATE
+target_compile_definitions(yaml PRIVATE
   HAVE_CONFIG_H
   )

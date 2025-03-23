@@ -1,16 +1,9 @@
 include(FindPkgConfig)
 
 pkg_search_module(ZLIB REQUIRED zlib)
-pkg_search_module(MINIZIP REQUIRED minizip)
 
 if (NOT WIN32)
   pkg_search_module(SLIRP slirp)
-endif()
-
-# see https://github.com/madler/zlib/commit/7e6f0784cc0c33e8d5fcb368248168c6656f73c8
-if (MINIZIP_INCLUDE_DIRS MATCHES "minizip$")
-  # old style, include from the zlib root
-  string(APPEND MINIZIP_INCLUDE_DIRS "/..")
 endif()
 
 # if slirp is not found, we will try pcap
@@ -261,7 +254,6 @@ target_include_directories(appleii PRIVATE
 # this one appears in header files
 target_include_directories(appleii PUBLIC
   ${CMAKE_CURRENT_BINARY_DIR}  # for config.h
-  ${MINIZIP_INCLUDE_DIRS}
   )
 
 if (WIN32)
@@ -277,12 +269,12 @@ else()
     )
 endif()
 
-target_link_directories(appleii PUBLIC
+target_link_libraries(appleii PUBLIC
   yaml
+  minizip
   )
 
 target_link_directories(appleii PUBLIC
-  ${MINIZIP_LIBRARY_DIRS}
   ${PCAP_LIBRARY_DIRS}
   ${SLIRP_LIBRARY_DIRS}
   ${ZLIB_LIBRARY_DIRS}

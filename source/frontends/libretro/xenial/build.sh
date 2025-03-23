@@ -5,5 +5,5 @@ apt-get upgrade -qy
 git clone https://github.com/audetto/AppleWin.git --depth=1
 cd AppleWin
 apt-get -qy install $(cat source/frontends/libretro/xenial/packages.txt)
-cmake -DBUILD_LIBRETRO=ON -B build -G Ninja
+cmake -DBUILD_LIBRETRO=ON -DSTATIC_LINKING=ON -B build -G Ninja
 cmake --build build

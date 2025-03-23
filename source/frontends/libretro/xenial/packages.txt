@@ -3,6 +3,4 @@ g++
 vim
 ninja-build
 pkg-config
-libyaml-dev
-libminizip-dev
 libboost-dev

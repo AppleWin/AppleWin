@@ -62,7 +62,6 @@ jobs:
             ninja:p
             pkg-config:p
             zlib:p
-            minizip:p
             boost:p
 
       - name: cmake version
