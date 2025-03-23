@@ -468,10 +468,18 @@ uint8_t ReadByteFromMemory(uint16_t addr)
 	if (GetIsMemCacheValid())
 		return mem[addr];
 
-	_ASSERT(memshadow[addr >> 8]);	// Should never be NULL
-	if (memshadow[addr >> 8] == NULL) return 0x00;
+	if (memreadPageType[addr >> 8] != MEM_FloatingBus)	// MEM_Normal or MEM_IORead
+	{
+		_ASSERT(memshadow[addr >> 8]);	// Should never be NULL
+		if (memshadow[addr >> 8] == NULL)
+			return 0x00;
 
-	return *(memshadow[addr >> 8] + (addr & 0xff));
+		return *(memshadow[addr >> 8] + (addr & 0xff));
+	}
+
+	// Read floating-bus
+	// NB. Can't call MemReadFloatingBus(), as don't have 'uExecutedCycles' - needed when g_FullSpeed == true
+	return 0;
 }
 
 uint16_t ReadWordFromMemory(uint16_t addr)
@@ -509,6 +517,15 @@ void CopyBytesFromMemoryPage(uint8_t* pDst, uint16_t srcAddr, size_t size)
 	}
 
 	memcpy(pDst, pSrc, size);
+}
+
+// //e aux slot is empty & ALTZP=1
+bool IsZeroPageFloatingBus(void)
+{
+	if (GetIsMemCacheValid())
+		return false;
+
+	return memreadPageType[0x0000 >> 8] == MEM_FloatingBus;
 }
 
 //=============================================================================

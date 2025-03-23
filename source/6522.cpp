@@ -418,8 +418,8 @@ UINT SY6522::GetOpcodeCyclesForRead(BYTE reg)
 	bool indx = false;
 	bool indy = false;
 
-	const BYTE opcodeMinus3 = ReadByteFromMemory((::regs.pc - 3) & 0xffff);
-	const BYTE opcodeMinus2 = ReadByteFromMemory((::regs.pc - 2) & 0xffff);
+	const BYTE opcodeMinus3 = ReadByteFromMemory(::regs.pc - 3);
+	const BYTE opcodeMinus2 = ReadByteFromMemory(::regs.pc - 2);
 
 	// Check 2-byte opcodes
 	if (((opcodeMinus2 & 0x0f) == 0x01) && ((opcodeMinus2 & 0x10) == 0x00))	// ora (zp,x), and (zp,x), ..., sbc (zp,x)
@@ -504,8 +504,8 @@ UINT SY6522::GetOpcodeCyclesForWrite(BYTE reg)
 	bool indx = false;
 	bool indy = false;
 
-	const BYTE opcodeMinus3 = ReadByteFromMemory((::regs.pc - 3) & 0xffff);
-	const BYTE opcodeMinus2 = ReadByteFromMemory((::regs.pc - 2) & 0xffff);
+	const BYTE opcodeMinus3 = ReadByteFromMemory(::regs.pc - 3);
+	const BYTE opcodeMinus2 = ReadByteFromMemory(::regs.pc - 2);
 
 	// Check 2-byte opcodes
 	if (opcodeMinus2 == 0x81)			// sta (zp,x)
@@ -577,7 +577,10 @@ UINT SY6522::GetOpcodeCycles(BYTE reg, UINT zpOpcodeCycles, UINT opcodeCycles,
 
 	if (zpOpcode)
 	{
-		BYTE zp = ReadByteFromMemory((::regs.pc - 1) & 0xffff);
+		if (IsZeroPageFloatingBus())
+			return 0;
+
+		BYTE zp = ReadByteFromMemory(::regs.pc - 1);
 		if (indx) zp += ::regs.x;
 		zpAddr16 = (ReadByteFromMemory(zp) | (ReadByteFromMemory((zp + 1) & 0xff) << 8));
 		if (indy) zpAddr16 += ::regs.y;
@@ -585,7 +588,7 @@ UINT SY6522::GetOpcodeCycles(BYTE reg, UINT zpOpcodeCycles, UINT opcodeCycles,
 
 	if (opcode)
 	{
-		addr16 = ReadByteFromMemory((::regs.pc - 2) & 0xffff) | (ReadByteFromMemory((::regs.pc - 1) & 0xffff) << 8);
+		addr16 = ReadByteFromMemory(::regs.pc - 2) | (ReadByteFromMemory(::regs.pc - 1) << 8);
 		if (abs16y) addr16 += ::regs.y;
 		if (abs16x) addr16 += ::regs.x;
 	}
