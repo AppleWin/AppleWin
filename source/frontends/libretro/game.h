@@ -1,19 +1,15 @@
 #pragma once
 
+#include "linux/context.h"
 #include "frontends/common2/controllerdoublepress.h"
 #include "frontends/libretro/environment.h"
 #include "frontends/libretro/diskcontrol.h"
 #include "frontends/libretro/input/rkeyboard.h"
 #include "frontends/libretro/input/inputremapper.h"
 
-#include "Common.h"
-
 #include <memory>
 #include <string>
 #include <vector>
-
-class LoggerContext;
-class RegistryContext;
 
 namespace common2
 {
@@ -61,9 +57,9 @@ namespace ra2
         double myMouseSpeed;
 
         // keep them in this order!
-        std::shared_ptr<LoggerContext> myLoggerContext;
+        std::unique_ptr<LoggerContext> myLoggerContext;
         std::shared_ptr<common2::PTreeRegistry> myRegistry;
-        std::shared_ptr<RegistryContext> myRegistryContext;
+        std::unique_ptr<RegistryContext> myRegistryContext;
         std::shared_ptr<RetroFrame> myFrame;
 
         common2::ControllerDoublePress myControllerQuit;

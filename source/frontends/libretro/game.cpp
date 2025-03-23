@@ -22,11 +22,11 @@
 namespace
 {
 
-    void saveRegistryToINI(const std::shared_ptr<common2::PTreeRegistry> &registry)
+    void saveRegistryToINI(const common2::PTreeRegistry &registry)
     {
         try
         {
-            registry->saveToINIFile(APPLEWIN_RETRO_CONF);
+            registry.saveToINIFile(APPLEWIN_RETRO_CONF);
             ra2::display_message("Configuration saved to: " APPLEWIN_RETRO_CONF);
         }
         catch (const std::exception &e)
@@ -47,9 +47,9 @@ namespace ra2
         , myKeyboardType(KeyboardType::ASCII)
         , myMouseSpeed(1.0)
     {
-        myLoggerContext = std::make_shared<LoggerContext>(true);
+        myLoggerContext = std::make_unique<LoggerContext>(true);
         myRegistry = createRetroRegistry();
-        myRegistryContext = std::make_shared<RegistryContext>(myRegistry);
+        myRegistryContext = std::make_unique<RegistryContext>(myRegistry);
 
         applyVariables();
 
@@ -198,7 +198,7 @@ namespace ra2
             case RETROK_HOME:
             {
                 // save the registry to a file
-                saveRegistryToINI(myRegistry);
+                saveRegistryToINI(*myRegistry);
                 break;
             }
             case RETROK_LALT:

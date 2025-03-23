@@ -50,9 +50,9 @@ namespace na2
         }
     }
 
-    int GetKeyPressed(const std::shared_ptr<NFrame> &frame)
+    int GetKeyPressed(NFrame &frame)
     {
-        WINDOW *window = frame->GetWindow();
+        WINDOW *window = frame.GetWindow();
         if (!window)
         {
             return ERR;
@@ -98,27 +98,27 @@ namespace na2
             ch = 0x7f;
             break;
         case 410:
-            frame->ReInit();
+            frame.ReInit();
             break;
         case 548: // Raspberry Pi
         case 550: // Alt-Left
         case 552: // Ctrl-Left
-            frame->ChangeColumns(-1);
+            frame.ChangeColumns(-1);
             break;
         case 563: // Raspberry Pi
         case 565: // Alt-Right
         case 567: // Ctrl-Right
-            frame->ChangeColumns(+1);
+            frame.ChangeColumns(+1);
             break;
         case 569: // Raspberry Pi
         case 571: // Alt-Up
         case 573: // Ctrl-Up
-            frame->ChangeRows(-1);
+            frame.ChangeRows(-1);
             break;
         case 528: // Raspberry Pi
         case 530: // Alt-Down
         case 532: // Ctrl-Down
-            frame->ChangeRows(+1);
+            frame.ChangeRows(+1);
             break;
         default:
             if (inch < 0x80)

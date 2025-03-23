@@ -21,7 +21,7 @@
 namespace
 {
 
-    void ProcessKeys(const std::shared_ptr<na2::NFrame> &frame, bool &quit)
+    void ProcessKeys(na2::NFrame &frame, bool &quit)
     {
         const int key = GetKeyPressed(frame);
 
@@ -39,7 +39,7 @@ namespace
         }
         case KEY_F(3):
         {
-            frame->TogglePaused();
+            frame.TogglePaused();
             break;
         }
         case KEY_F(4):
@@ -64,37 +64,37 @@ namespace
         }
         case KEY_F(12):
         {
-            frame->LoadSnapshot();
+            frame.LoadSnapshot();
             break;
         }
         }
     }
 
     void ContinueExecution(
-        const common2::EmulatorOptions &options, const std::shared_ptr<na2::NFrame> &frame, bool &quit)
+        const common2::EmulatorOptions &options, na2::NFrame &frame, bool &quit)
     {
         const auto start = std::chrono::steady_clock::now();
 
         constexpr const int64_t oneFrameMicros = 1000000 / 60; // 60 FPS
-        frame->ExecuteOneFrame(oneFrameMicros);
+        frame.ExecuteOneFrame(oneFrameMicros);
 
         ProcessKeys(frame, quit);
-        frame->ProcessEvDev();
+        frame.ProcessEvDev();
 
         if (!options.headless)
         {
             if (g_bFullSpeed)
             {
-                frame->VideoPresentScreen();
+                frame.VideoPresentScreen();
             }
             else
             {
-                frame->SyncVideoPresentScreen(oneFrameMicros);
+                frame.SyncVideoPresentScreen(oneFrameMicros);
             }
         }
     }
 
-    void EnterMessageLoop(const common2::EmulatorOptions &options, const std::shared_ptr<na2::NFrame> &frame)
+    void EnterMessageLoop(const common2::EmulatorOptions &options, na2::NFrame &frame)
     {
         if (options.headless)
         {
@@ -138,7 +138,7 @@ namespace
         }
         else
         {
-            EnterMessageLoop(options, frame);
+            EnterMessageLoop(options, *frame);
         }
 
         return 0;

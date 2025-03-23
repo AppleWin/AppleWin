@@ -113,6 +113,7 @@ namespace
     template <typename T, typename W>
     void setupVariables(const std::vector<T> &variables, const W &c_str, std::vector<retro_variable> &retroVariables)
     {
+        retroVariables.reserve(retroVariables.size() + variables.size());
         for (const T &variable : variables)
         {
             retroVariables.push_back({c_str(ourScope + variable.name), c_str(variable.getKey())});
