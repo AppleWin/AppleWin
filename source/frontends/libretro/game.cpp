@@ -58,7 +58,6 @@ namespace ra2
         myFrame = std::make_shared<ra2::RetroFrame>(defaultOptions);
 
         SetFrame(myFrame);
-        myFrame->Begin();
     }
 
     Game::~Game()
@@ -270,6 +269,11 @@ namespace ra2
     DiskControl &Game::getDiskControl()
     {
         return myDiskControl;
+    }
+
+    void Game::start()
+    {
+        myFrame->Begin();
     }
 
     void Game::restart()
