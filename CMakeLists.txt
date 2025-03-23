@@ -47,6 +47,7 @@ execute_process(
 
 include_directories(source)
 
+add_subdirectory(libyaml)
 add_subdirectory(source)
 add_subdirectory(resource)
 add_subdirectory(test/TestCPU6502)
@@ -89,7 +90,7 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Apple ][ emulator for Linux")
 set(CPACK_PACKAGE_CONTACT "audetto <mariofutire@gmail.com>")
 
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libyaml-0-2,libminizip1,libqt5gui5,libqt5widgets5,libqt5multimedia5,libqt5gamepad5,libncursesw6,libevdev2,libsdl2-image-2.0-0,libsdl2-2.0-0,libgles2,libpcap0.8,libslirp0,libboost-program-options1.74.0|libboost-program-options1.81.0|libboost-program-options1.83.0")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libminizip1,libqt5gui5,libqt5widgets5,libqt5multimedia5,libqt5gamepad5,libncursesw6,libevdev2,libsdl2-image-2.0-0,libsdl2-2.0-0,libgles2,libpcap0.8,libslirp0,libboost-program-options1.74.0|libboost-program-options1.81.0|libboost-program-options1.83.0")
 
 set(CPACK_RPM_PACKAGE_LICENSE "GPLv2")
 set(CPACK_RPM_PACKAGE_GROUP "Applications/Emulators")

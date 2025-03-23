@@ -2,7 +2,6 @@ git
 cmake
 gcc-c++
 xxd
-libyaml-devel
 minizip-compat-devel
 libslirp-devel
 libpcap-devel

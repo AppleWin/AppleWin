@@ -1,7 +1,6 @@
 include(FindPkgConfig)
 
 pkg_search_module(ZLIB REQUIRED zlib)
-pkg_search_module(YAML REQUIRED yaml-0.1)
 pkg_search_module(MINIZIP REQUIRED minizip)
 
 if (NOT WIN32)
@@ -252,7 +251,6 @@ else()
 endif()
 
 target_include_directories(appleii PRIVATE
-  ${YAML_INCLUDE_DIRS}
   ${PCAP_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${SLIRP_INCLUDE_DIRS}
@@ -280,7 +278,10 @@ else()
 endif()
 
 target_link_directories(appleii PUBLIC
-  ${YAML_LIBRARY_DIRS}
+  yaml
+  )
+
+target_link_directories(appleii PUBLIC
   ${MINIZIP_LIBRARY_DIRS}
   ${PCAP_LIBRARY_DIRS}
   ${SLIRP_LIBRARY_DIRS}

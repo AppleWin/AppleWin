@@ -45,7 +45,8 @@ target_compile_options(applen PRIVATE
 target_link_libraries(applen PRIVATE
   appleii
   common2
-  ${YAML_LIBRARIES}
+  yaml
+
   ${MINIZIP_LIBRARIES}
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}

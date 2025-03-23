@@ -57,8 +57,7 @@ target_include_directories(sa2 PRIVATE
 target_link_libraries(sa2 PRIVATE
   appleii
   common2
-
-  ${YAML_LIBRARIES}
+  yaml
   ${MINIZIP_LIBRARIES}
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}

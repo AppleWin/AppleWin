@@ -3,7 +3,6 @@ g++
 xxd
 ninja-build
 pkg-config
-libyaml-dev
 libminizip-dev
 qtbase5-dev
 qtmultimedia5-dev

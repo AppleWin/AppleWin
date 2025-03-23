@@ -68,8 +68,7 @@ add_executable(qapple
 target_link_libraries(qapple PRIVATE
   appleii
   apple2roms
-
-  ${YAML_LIBRARIES}
+  yaml
   ${MINIZIP_LIBRARIES}
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}
