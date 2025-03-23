@@ -24,11 +24,24 @@ namespace
     const char *REGVALUE_PLAYLIST_START = "Playlist start";
     const char *REGVALUE_MOUSE_SPEED_00 = "Mouse speed";
 
+    const char *CATEGORY_SYSTEM = "system";
+    const char *CATEGORY_INPUT = "input";
+    const char *CATEGORY_RETROPAD_MAPPING = "retropad";
+
+    retro_core_option_v2_category ourOptionCatsUS[] = {
+        {CATEGORY_SYSTEM, "System", "Configure system options."},
+        {CATEGORY_INPUT, "Input", "Configure input options."},
+        {CATEGORY_RETROPAD_MAPPING, "RetroPad Mapping", "Configure RetroPad mapping options."},
+        {nullptr, nullptr, nullptr},
+    };
+
     struct Variable
     {
-        const std::string name;
-        const std::string description;
-        const std::vector<std::pair<std::string, uint32_t>> values;
+        const char *name;
+        const char *description;
+        const char *category;
+        const std::vector<std::pair<const char *, uint32_t>> values;
+        const char *defaultValue;
 
         std::string getKey() const
         {
@@ -45,11 +58,22 @@ namespace
             return ss.str();
         }
 
-        std::vector<std::pair<std::string, uint32_t>>::const_iterator findValue(
+        void fillValues(retro_core_option_value values[RETRO_NUM_CORE_OPTION_VALUES_MAX]) const
+        {
+            for (size_t i = 0; i < this->values.size(); ++i)
+            {
+                values[i].value = this->values[i].first;
+            }
+            const size_t last = this->values.size();
+            values[last].value = nullptr;
+            values[last].label = nullptr;
+        }
+
+        std::vector<std::pair<const char *, uint32_t>>::const_iterator findValue(
             const retro_variable &retroVariable) const
         {
-            const std::string value(retroVariable.value);
-            const auto check = [&value](const auto &x) { return x.first == value; };
+            const char *value = retroVariable.value;
+            const auto check = [&value](const auto &x) { return strcmp(x.first, value) == 0; };
             const auto it = std::find_if(values.begin(), values.end(), check);
             return it;
         }
@@ -71,7 +95,7 @@ namespace
         }
     };
 
-    const std::vector<std::pair<std::string, uint32_t>> joypadMappingValues = {
+    const std::vector<std::pair<const char *, uint32_t>> joypadMappingValues = {
         {"<default>", 0x00}, {"0", '0'},      {"1", '1'},     {"2", '2'},    {"3", '3'},     {"4", '4'},
         {"5", '5'},          {"6", '6'},      {"7", '7'},     {"8", '8'},    {"9", '9'},     {"A", 'A'},
         {"B", 'B'},          {"C", 'C'},      {"D", 'D'},     {"E", 'E'},    {"F", 'F'},     {"G", 'G'},
@@ -120,11 +144,28 @@ namespace
         }
     }
 
+    template <typename T, typename W>
+    void setupVariables(
+        const std::vector<T> &variables, const W &c_str, std::vector<retro_core_option_v2_definition> &retroVariables)
+    {
+        retroVariables.reserve(retroVariables.size() + variables.size());
+        for (const T &variable : variables)
+        {
+            retro_core_option_v2_definition &def = retroVariables.emplace_back();
+            def.key = c_str(ourScope + variable.name);
+            def.desc = variable.description;
+            def.category_key = variable.category;
+            variable.fillValues(def.values);
+            def.default_value = variable.defaultValue ? variable.defaultValue : def.values[0].value;
+        }
+    }
+
     const std::vector<RegistryVariable> ourRegistryVariables = {
         {
             {
                 "machine",
                 "Apple ][ Type",
+                CATEGORY_SYSTEM,
                 {
                     {"Enhanced Apple //e", A2TYPE_APPLE2EENHANCED},
                     {"Apple ][ (Original)", A2TYPE_APPLE2},
@@ -145,6 +186,7 @@ namespace
             {
                 "slot3",
                 "Card in Slot 3",
+                CATEGORY_SYSTEM,
                 {
                     {"Empty", CT_Empty},
                     {"Video HD", CT_VidHD},
@@ -157,13 +199,14 @@ namespace
             {
                 "slot4",
                 "Card in Slot 4",
+                CATEGORY_SYSTEM,
                 {
-                    {"Mockingboard", CT_MockingboardC},
                     {"Empty", CT_Empty},
+                    {"Mockingboard", CT_MockingboardC},
                     {"Mouse", CT_MouseInterface},
                     {"Phasor", CT_Phasor},
-
                 },
+                "Mockingboard",
             },
             "Configuration\\Slot 4",
             REGVALUE_CARD_TYPE, // reset required
@@ -172,6 +215,7 @@ namespace
             {
                 "slot5",
                 "Card in Slot 5",
+                CATEGORY_SYSTEM,
                 {
                     {"Empty", CT_Empty},
                     {"CP/M", CT_Z80},
@@ -187,6 +231,7 @@ namespace
             {
                 "video_mode",
                 "Video Mode",
+                CATEGORY_SYSTEM,
                 {
                     {"Color (RGB Card/Monitor)", VT_COLOR_VIDEOCARD_RGB},
                     {"Color (Composite Idealized)", VT_COLOR_IDEALIZED},
@@ -205,6 +250,7 @@ namespace
             {
                 "video_style",
                 "Video Style",
+                CATEGORY_SYSTEM,
                 {
                     {"Half Scanlines", VS_HALF_SCANLINES},
                     {"None", VS_NONE},
@@ -217,6 +263,7 @@ namespace
             {
                 "video_refresh_rate",
                 "Video Refresh Rate",
+                CATEGORY_SYSTEM,
                 {
                     {"60Hz", VR_60HZ},
                     {"50Hz", VR_50HZ},
@@ -227,8 +274,22 @@ namespace
         },
         {
             {
+                "playlist_start",
+                "Playlist Start Disk",
+                CATEGORY_SYSTEM,
+                {
+                    {"First", static_cast<uint32_t>(ra2::PlaylistStartDisk::First)},
+                    {"Previous", static_cast<uint32_t>(ra2::PlaylistStartDisk::Previous)},
+                },
+            },
+            REG_RA2,
+            REGVALUE_PLAYLIST_START,
+        },
+        {
+            {
                 "keyboard_type",
                 "Keyboard Type",
+                CATEGORY_INPUT,
                 {
                     {"ASCII", static_cast<uint32_t>(ra2::KeyboardType::ASCII)},
                     {"Original", static_cast<uint32_t>(ra2::KeyboardType::Original)},
@@ -239,23 +300,16 @@ namespace
         },
         {
             {
-                "playlist_start",
-                "Playlist start disk",
+                "mouse_speed",
+                "Mouse Speed",
+                CATEGORY_INPUT,
                 {
-                    {"First", static_cast<uint32_t>(ra2::PlaylistStartDisk::First)},
-                    {"Previous", static_cast<uint32_t>(ra2::PlaylistStartDisk::Previous)},
+                    {"0.25", 25},  {"0.50", 50},  {"0.75", 75},  {"1.00", 100}, {"1.25", 125},
+                    {"1.50", 150}, {"1.75", 175}, {"2.00", 200}, {"2.25", 225}, {"2.50", 250},
+                    {"2.75", 275}, {"3.00", 300}, {"3.25", 325}, {"3.50", 350}, {"3.75", 375},
+                    {"4.00", 400}, {"4.25", 425}, {"4.50", 450}, {"4.75", 475}, {"5.00", 500},
                 },
-            },
-            REG_RA2,
-            REGVALUE_PLAYLIST_START,
-        },
-        {
-            "mouse_speed",
-            "Mouse pointer speed",
-            {
-                {"0.25", 25},  {"0.50", 50},  {"0.75", 75},  {"1.00", 100}, {"1.25", 125}, {"1.50", 150}, {"1.75", 175},
-                {"2.00", 200}, {"2.25", 225}, {"2.50", 250}, {"2.75", 275}, {"3.00", 300}, {"3.25", 325}, {"3.50", 350},
-                {"3.75", 375}, {"4.00", 400}, {"4.25", 425}, {"4.50", 450}, {"4.75", 475}, {"5.00", 500},
+                "1.00",
             },
             REG_RA2,
             REGVALUE_MOUSE_SPEED_00,
@@ -267,6 +321,8 @@ namespace
             {
                 "joypad_a",
                 "Joypad A [button 0]",
+                CATEGORY_RETROPAD_MAPPING,
+
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_A,
@@ -275,6 +331,7 @@ namespace
             {
                 "joypad_b",
                 "Joypad B [button 1]",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_B,
@@ -283,6 +340,7 @@ namespace
             {
                 "joypad_x",
                 "Joypad X",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_X,
@@ -291,6 +349,7 @@ namespace
             {
                 "joypad_y",
                 "Joypad Y",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_Y,
@@ -299,6 +358,7 @@ namespace
             {
                 "joypad_select",
                 "Joypad Select",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_SELECT,
@@ -307,6 +367,7 @@ namespace
             {
                 "joypad_start",
                 "Joypad Start",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_START,
@@ -315,6 +376,7 @@ namespace
             {
                 "joypad_down",
                 "Joypad Down [paddle 1 standard]",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_DOWN,
@@ -323,6 +385,7 @@ namespace
             {
                 "joypad_up",
                 "Joypad Up [paddle 1 standard]",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_UP,
@@ -331,6 +394,7 @@ namespace
             {
                 "joypad_left",
                 "Joypad Left [paddle 0 standard]",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_LEFT,
@@ -339,6 +403,7 @@ namespace
             {
                 "joypad_right",
                 "Joypad Right [paddle 0 standard]",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_RIGHT,
@@ -347,6 +412,7 @@ namespace
             {
                 "joypad_l",
                 "Joypad L",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_L,
@@ -355,6 +421,7 @@ namespace
             {
                 "joypad_r",
                 "Joypad R",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_R,
@@ -363,6 +430,7 @@ namespace
             {
                 "joypad_l2",
                 "Joypad L2",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_L2,
@@ -371,6 +439,7 @@ namespace
             {
                 "joypad_r2",
                 "Joypad R2",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_R2,
@@ -379,6 +448,7 @@ namespace
             {
                 "joypad_l3",
                 "Joypad L3",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_L3,
@@ -387,11 +457,45 @@ namespace
             {
                 "joypad_r3",
                 "Joypad R3",
+                CATEGORY_RETROPAD_MAPPING,
                 joypadMappingValues,
             },
             RETRO_DEVICE_ID_JOYPAD_R3,
         },
     };
+
+    bool setupRetroVariablesV2(const std::function<const char *(const std::string &)> &c_str)
+    {
+        const size_t numberOfVariables = ourRegistryVariables.size() + ourJoypadMappingVariables.size();
+        std::vector<retro_core_option_v2_definition> retroVariables;
+        retroVariables.reserve(numberOfVariables + 1);
+
+        setupVariables(ourRegistryVariables, c_str, retroVariables);
+        setupVariables(ourJoypadMappingVariables, c_str, retroVariables);
+
+        retroVariables.push_back({nullptr, nullptr});
+
+        retro_core_options_v2 optionsUS = {ourOptionCatsUS, retroVariables.data()};
+        retro_core_options_v2_intl optionsIntl = {&optionsUS, nullptr};
+
+        const bool res = ra2::environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2_INTL, &optionsIntl);
+        return res;
+    }
+
+    bool setupRetroVariablesV0(const std::function<const char *(const std::string &)> &c_str)
+    {
+        const size_t numberOfVariables = ourRegistryVariables.size() + ourJoypadMappingVariables.size();
+        std::vector<retro_variable> retroVariables;
+        retroVariables.reserve(numberOfVariables + 1);
+
+        setupVariables(ourRegistryVariables, c_str, retroVariables);
+        setupVariables(ourJoypadMappingVariables, c_str, retroVariables);
+
+        retroVariables.push_back({nullptr, nullptr});
+
+        const bool res = ra2::environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, retroVariables.data());
+        return res;
+    }
 
 } // namespace
 
@@ -400,10 +504,6 @@ namespace ra2
 
     void setupRetroVariables()
     {
-        const size_t numberOfVariables = ourRegistryVariables.size() + ourJoypadMappingVariables.size();
-        std::vector<retro_variable> retroVariables;
-        retroVariables.reserve(numberOfVariables + 1);
-
         std::list<std::string> workspace; // so objects do not move when it resized
 
         // we need to keep the char * alive till after the call to RETRO_ENVIRONMENT_SET_VARIABLES
@@ -413,13 +513,15 @@ namespace ra2
             return workspace.back().c_str();
         };
 
-        setupVariables(ourRegistryVariables, c_str, retroVariables);
-        setupVariables(ourJoypadMappingVariables, c_str, retroVariables);
-
-        retroVariables.push_back({nullptr, nullptr});
-
-        const bool res = environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, retroVariables.data());
-        retroVariables.clear();
+        unsigned version = 0;
+        if (environ_cb(RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, &version) && (version >= 2))
+        {
+            setupRetroVariablesV2(c_str);
+        }
+        else
+        {
+            setupRetroVariablesV0(c_str);
+        }
     }
 
     void applyRetroVariables(Game &game)
