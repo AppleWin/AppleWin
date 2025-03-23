@@ -158,9 +158,9 @@ namespace
                 "slot4",
                 "Card in Slot 4",
                 {
+                    {"Mockingboard", CT_MockingboardC},
                     {"Empty", CT_Empty},
                     {"Mouse", CT_MouseInterface},
-                    {"Mockingboard", CT_MockingboardC},
                     {"Phasor", CT_Phasor},
 
                 },
@@ -188,8 +188,8 @@ namespace
                 "video_mode",
                 "Video Mode",
                 {
-                    {"Color (Composite Idealized)", VT_COLOR_IDEALIZED},
                     {"Color (RGB Card/Monitor)", VT_COLOR_VIDEOCARD_RGB},
+                    {"Color (Composite Idealized)", VT_COLOR_IDEALIZED},
                     {"Color (Composite Monitor)", VT_COLOR_MONITOR_NTSC},
                     {"Color TV", VT_COLOR_TV},
                     {"B&W TV", VT_MONO_TV},
