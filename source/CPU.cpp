@@ -805,7 +805,7 @@ void CpuReset()
 		regs.ps &= ~AF_DECIMAL;
 
 	_ASSERT(memshadow[VECTOR_RESET >> 8] != NULL);
-	regs.pc = ReadByteFromMemory(VECTOR_RESET) | ReadByteFromMemory(VECTOR_RESET + 1) << 8;
+	regs.pc = ReadWordFromMemory(VECTOR_RESET);
 
 	regs.sp = 0x0100 | ((regs.sp - 3) & 0xFF);
 
