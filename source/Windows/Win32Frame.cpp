@@ -377,11 +377,26 @@ void Win32Frame::Benchmark(void)
 	// DISPLAY THE RESULTS
 	DisplayLogo();
 	std::string strText = StrFormat(
+		// Windows About
+		//   System type: 64-bit operating system, x64-based processor
+		"CPU:\t%s\n"
+#if _WIN64
+		"Bits:\t64-bit (x64)\n"
+#else
+		"Bits:\t32-bit (x86)\n"
+#endif
+#if _DEBUG
+		"Type:\tDEBUG\n"
+#else
+		"Type:\tRelease\n"
+#endif
+		"\n"
 		"Pure Video FPS:\t%u hires, %u text\n"
 		"Pure CPU MHz:\t%u.%u%s (video update)\n"
 		"Pure CPU MHz:\t%u.%u%s (full-speed)\n\n"
 		"EXPECTED AVERAGE VIDEO GAME\n"
 		"PERFORMANCE: %u FPS",
+		gInstructionSet.brand,
 		(unsigned)totalhiresfps,
 		(unsigned)totaltextfps,
 		(unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? " (6502)" : ""),
