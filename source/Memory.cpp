@@ -1441,63 +1441,63 @@ static void UpdatePaging(BOOL initialize)
 // For Cpu6502_altRW() & Cpu65C02_altRW()
 static void UpdatePagingForAltRW(void)
 {
-	UINT loop;
+	UINT page;
 
 	const BYTE memType = (GetCardMgr().QueryAux() == CT_Empty) ? MEM_FloatingBus : MEM_Normal;
 
-	for (loop = 0x00; loop < 0x02; loop++)
-		memreadPageType[loop] = SW_ALTZP ? memType : MEM_Normal;
+	for (page = 0x00; page < 0x02; page++)
+		memreadPageType[page] = SW_ALTZP ? memType : MEM_Normal;
 
-	for (loop = 0x02; loop < 0xC0; loop++)
-		memreadPageType[loop] = SW_AUXREAD ? memType : MEM_Normal;
+	for (page = 0x02; page < 0xC0; page++)
+		memreadPageType[page] = SW_AUXREAD ? memType : MEM_Normal;
 
-	for (loop = 0xC0; loop < 0xD0; loop++)
+	for (page = 0xC0; page < 0xD0; page++)
 	{
 		// NB. I/O SELECT' set on $C100-C7FF access
 		// NB. I/O STROBE' set on $C800-CFFF access
 		// So Cx ROM reads (both internal and slot/expansion) go via IO_Cxxx() - to set I/O SELECT/STROBE correctly
 		// . and then read from memshadow[$Cx]
-		memreadPageType[loop] = MEM_IORead;
+		memreadPageType[page] = MEM_IORead;
 	}
 
-	for (loop = 0xD0; loop < 0x100; loop++)
-		memreadPageType[loop] = (SW_HIGHRAM && SW_ALTZP) ? memType : MEM_Normal;
+	for (page = 0xD0; page < 0x100; page++)
+		memreadPageType[page] = (SW_HIGHRAM && SW_ALTZP) ? memType : MEM_Normal;
 
 	if (SW_80STORE)
 	{
-		for (loop = 0x04; loop < 0x08; loop++)
-			memreadPageType[loop] = SW_PAGE2 ? memType : MEM_Normal;
+		for (page = 0x04; page < 0x08; page++)
+			memreadPageType[page] = SW_PAGE2 ? memType : MEM_Normal;
 
-		for (loop = 0x20; loop < 0x40; loop++)
-			memreadPageType[loop] = (SW_PAGE2 && SW_HIRES) ? memType : MEM_Normal;
+		for (page = 0x20; page < 0x40; page++)
+			memreadPageType[page] = (SW_PAGE2 && SW_HIRES) ? memType : MEM_Normal;
 	}
 
 	//
 
-	for (loop = 0x00; loop < 0x02; loop++)
-		memwrite[loop] = memshadow[loop];
+	for (page = 0x00; page < 0x02; page++)
+		memwrite[page] = memshadow[page];
 
 	if ((SW_AUXREAD != 0) == (SW_AUXWRITE != 0))
 	{
-		for (loop = 0x02; loop < 0xC0; loop++)
-			memwrite[loop] = memshadow[loop];
+		for (page = 0x02; page < 0xC0; page++)
+			memwrite[page] = memshadow[page];
 	}
 
 	if (SW_WRITERAM && SW_HIGHRAM)
 	{
-		for (loop = 0xD0; loop < 0x100; loop++)
-			memwrite[loop] = memshadow[loop];
+		for (page = 0xD0; page < 0x100; page++)
+			memwrite[page] = memshadow[page];
 	}
 
 	if (SW_80STORE)
 	{
-		for (loop = 0x04; loop < 0x08; loop++)
-			memwrite[loop] = memshadow[loop];
+		for (page = 0x04; page < 0x08; page++)
+			memwrite[page] = memshadow[page];
 
 		if (SW_HIRES)
 		{
-			for (loop = 0x20; loop < 0x40; loop++)
-				memwrite[loop] = memshadow[loop];
+			for (page = 0x20; page < 0x40; page++)
+				memwrite[page] = memshadow[page];
 		}
 	}
 
@@ -1510,35 +1510,35 @@ static void UpdatePagingForAltRW(void)
 		const uint32_t kBase = TEXT_PAGE1_BEGIN;
 
 		if (SW_ALTZP)
-			for (loop = 0x00; loop < 0x02; loop++)
-				memshadow[loop] = memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
+			for (page = 0x00; page < 0x02; page++)
+				memshadow[page] = memwrite[page] = memaux + kBase + ((page & 3) << 8);
 
 		if (SW_AUXREAD)
-			for (loop = 0x02; loop < 0xC0; loop++)
-				memshadow[loop] = memaux + kBase + ((loop & 3) << 8);
+			for (page = 0x02; page < 0xC0; page++)
+				memshadow[page] = memaux + kBase + ((page & 3) << 8);
 
 		if (SW_AUXWRITE)
-			for (loop = 0x02; loop < 0xC0; loop++)
-				memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
+			for (page = 0x02; page < 0xC0; page++)
+				memwrite[page] = memaux + kBase + ((page & 3) << 8);
 
 		if (SW_HIGHRAM && SW_ALTZP)
 		{
-			for (loop = 0xD0; loop < 0x100; loop++)
+			for (page = 0xD0; page < 0x100; page++)
 			{
-				memshadow[loop] = memaux + kBase + ((loop & 3) << 8);
+				memshadow[page] = memaux + kBase + ((page & 3) << 8);
 				if (SW_WRITERAM)
-					memwrite[loop] = memshadow[loop];
+					memwrite[page] = memshadow[page];
 			}
 		}
 
 		if (SW_80STORE && SW_PAGE2)
 		{
-			for (loop = 0x04; loop < 0x08; loop++)
-				memshadow[loop] = memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
+			for (page = 0x04; page < 0x08; page++)
+				memshadow[page] = memwrite[page] = memaux + kBase + ((page & 3) << 8);
 
 			if (SW_HIRES)
-				for (loop = 0x20; loop < 0x40; loop++)
-					memshadow[loop] = memwrite[loop] = memaux + kBase + ((loop & 3) << 8);
+				for (page = 0x20; page < 0x40; page++)
+					memshadow[page] = memwrite[page] = memaux + kBase + ((page & 3) << 8);
 		}
 	}
 }
