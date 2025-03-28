@@ -1128,6 +1128,7 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 	if (IOReadC0 == NULL)	IOReadC0 = IO_Null;
 	if (IOWriteC0 == NULL)	IOWriteC0 = IO_Null;
 
+	// Setup the r/w function pointers for I/O in the 16-byte range at: $C080+s*16
 	IORead[uSlot+8]		= IOReadC0;
 	IOWrite[uSlot+8]	= IOWriteC0;
 
@@ -1139,12 +1140,13 @@ void RegisterIoHandler(UINT uSlot, iofunction IOReadC0, iofunction IOWriteC0, io
 	if (IOReadCx == NULL)	IOReadCx = IO_Cxxx;
 	if (IOWriteCx == NULL)	IOWriteCx = IO_Cxxx;
 
-	for (UINT i=0; i<16; i++)	// Cs00..CsFF
+	for (UINT i=0; i<16; i++)	// Setup the r/w function pointers for I/O in the 256-byte range: $Cs00..CsFF
 	{
 		IORead[uSlot*16+i]	= IOReadCx;
 		IOWrite[uSlot*16+i]	= IOWriteCx;
 	}
 
+	// Setup the r/w function pointers for I/O in the range: $C800..CFFF
 	g_SlotInfo[uSlot].IOReadCx = IOReadCx;
 	g_SlotInfo[uSlot].IOWriteCx = IOWriteCx;
 }
