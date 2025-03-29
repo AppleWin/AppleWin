@@ -42,14 +42,14 @@ namespace ra2
     void InputRemapper::remapButton(unsigned id, char key)
     {
         // only remap RETRO_DEVICE_JOYPAD, index 0
-        const InputDescriptor inputDescriptor{RETRO_DEVICE_JOYPAD, 0, id};
+        const InputDescriptor descriptor{RETRO_DEVICE_JOYPAD, 0, id};
         if (key)
         {
-            myButtonRemapped[inputDescriptor] = key;
+            myButtonRemapped[descriptor] = key;
         }
         else
         {
-            myButtonRemapped.erase(inputDescriptor);
+            myButtonRemapped.erase(descriptor);
         }
     }
 
@@ -97,8 +97,8 @@ namespace ra2
         const size_t activeButtonStates = getButtonStates(port);
         for (const auto &button : myButtonRemapped)
         {
-            const auto &inputDescriptor = button.first;
-            if (activeButtonStates & (1 << inputDescriptor.id))
+            const auto &descriptor = button.first;
+            if (activeButtonStates & (1 << descriptor.id))
             {
                 const char key = button.second;
                 addKeyToBuffer(key);

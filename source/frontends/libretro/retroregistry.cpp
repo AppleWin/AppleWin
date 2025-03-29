@@ -552,7 +552,7 @@ namespace ra2
 
     double getMouseSpeed()
     {
-        uint32_t value = 75;
+        uint32_t value = 100;
         RegLoadValue(REG_RA2, REGVALUE_MOUSE_SPEED_00, TRUE, &value);
         return value / 100.0;
     }
