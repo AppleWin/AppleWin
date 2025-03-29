@@ -1419,18 +1419,18 @@ static void UpdatePaging(BOOL initialize)
 		// . Page1 (stack) : memdirty[1] is NOT set when the 6502 CPU writes to this page with JSR, PHA, etc.
 		// Ultimately this is an optimisation (due to Page1 writes not setting memdirty[1]) and Page0 could be optimised to also not set memdirty[0].
 
-		for (loop = 0x00; loop < 0x100; loop++)
+		for (UINT page = _6502_ZERO_PAGE; page < _6502_NUM_PAGES; page++)
 		{
-			if (initialize || (oldshadow[loop] != memshadow[loop]))
+			if (initialize || (oldshadow[page] != memshadow[page]))
 			{
 				if (!initialize &&
-					((*(memdirty+loop) & 1) || (loop <= 1)))
+					((*(memdirty+page) & 1) || (page <= _6502_STACK_PAGE)))
 				{
-					*(memdirty+loop) &= ~1;
-					memcpy(oldshadow[loop],mem+(loop << 8),256);
+					*(memdirty+page) &= ~1;
+					memcpy(oldshadow[page],mem+(page << 8),_6502_PAGE_SIZE);
 				}
 
-				memcpy(mem+(loop << 8),memshadow[loop],256);
+				memcpy(mem+(page << 8),memshadow[page],_6502_PAGE_SIZE);
 			}
 		}
 	}
