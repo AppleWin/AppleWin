@@ -418,7 +418,7 @@ static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		regs.ps |= AF_INTERRUPT;
 		if (GetMainCpu() == CPU_65C02)	// GH#1099
 			regs.ps &= ~AF_DECIMAL;
-		regs.pc = *(WORD*)(mem + VECTOR_NMI);
+		regs.pc = *(WORD*)(mem + _6502_NMI_VECTOR);
 	}
 	else
 	{
@@ -429,7 +429,7 @@ static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		regs.ps |= AF_INTERRUPT;
 		if (GetMainCpu() == CPU_65C02)	// GH#1099
 			regs.ps &= ~AF_DECIMAL;
-		regs.pc = READ_WORD_ALT(VECTOR_NMI);
+		regs.pc = READ_WORD_ALT(_6502_NMI_VECTOR);
 	}
 	UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 	CYC(7);
@@ -474,7 +474,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 			regs.ps |= AF_INTERRUPT;
 			if (GetMainCpu() == CPU_65C02)	// GH#1099
 				regs.ps &= ~AF_DECIMAL;
-			regs.pc = *(WORD*)(mem + VECTOR_INTERRUPT);
+			regs.pc = *(WORD*)(mem + _6502_INTERRUPT_VECTOR);
 		}
 		else
 		{
@@ -485,7 +485,7 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 			regs.ps |= AF_INTERRUPT;
 			if (GetMainCpu() == CPU_65C02)	// GH#1099
 				regs.ps &= ~AF_DECIMAL;
-			regs.pc = READ_WORD_ALT(VECTOR_INTERRUPT);
+			regs.pc = READ_WORD_ALT(_6502_INTERRUPT_VECTOR);
 		}
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7);
@@ -804,8 +804,8 @@ void CpuReset()
 	if (GetMainCpu() == CPU_65C02)	// GH#1099
 		regs.ps &= ~AF_DECIMAL;
 
-	_ASSERT(memshadow[VECTOR_RESET >> 8] != NULL);
-	regs.pc = ReadWordFromMemory(VECTOR_RESET);
+	_ASSERT(memshadow[_6502_RESET_VECTOR >> 8] != NULL);
+	regs.pc = ReadWordFromMemory(_6502_RESET_VECTOR);
 
 	regs.sp = 0x0100 | ((regs.sp - 3) & 0xFF);
 

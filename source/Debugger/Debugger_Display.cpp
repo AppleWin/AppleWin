@@ -2266,7 +2266,7 @@ void DrawMemory ( int line, int iMemDump )
 			std::string sText;
 
 // .12 Bugfix: DrawMemory() should draw memory byte for IO address: ML1 C000
-//			if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
+//			if ((iAddress >= APPLE_IO_BEGIN) && (iAddress <= APPLE_IO_END))
 //			{
 //				sText = "IO ";
 //			}
@@ -2276,7 +2276,7 @@ void DrawMemory ( int line, int iMemDump )
 
 				if (iView == MEM_VIEW_HEX)
 				{
-					if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
+					if ((iAddress >= APPLE_IO_BEGIN) && (iAddress <= APPLE_IO_END))
 					{
 						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_IO_BYTE));
 					}
@@ -2286,7 +2286,7 @@ void DrawMemory ( int line, int iMemDump )
 				else
 				{
 // .12 Bugfix: DrawMemory() should draw memory byte for IO address: ML1 C000
-					if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
+					if ((iAddress >= APPLE_IO_BEGIN) && (iAddress <= APPLE_IO_END))
 						iBackground = BG_INFO_IO_BYTE;
 
 					sText = ColorizeSpecialChar(nData, iView, iBackground);
@@ -2882,7 +2882,7 @@ void DrawTargets ( int line)
 	while (iAddress--)
 	{
 		// .6 Bugfix: DrawTargets() should draw target byte for IO address: R PC FB33
-//		if ((aTarget[iAddress] >= _6502_IO_BEGIN) && (aTarget[iAddress] <= _6502_IO_END))
+//		if ((aTarget[iAddress] >= APPLE_IO_BEGIN) && (aTarget[iAddress] <= APPLE_IO_END))
 //			aTarget[iAddress] = NO_6502_TARGET;
 
 		std::string sAddress = "-none-";
@@ -3305,7 +3305,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		{
 			BYTE nImmediate = ReadByteFromMemory(iAddress);
 			/*int iTextBackground = iBackground;
-			if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
+			if ((iAddress >= APPLE_IO_BEGIN) && (iAddress <= APPLE_IO_END))
 			{
 				iTextBackground = BG_INFO_IO_BYTE;
 			}
@@ -3323,7 +3323,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 			BYTE nImmediate = (unsigned)*(LPBYTE)(membank + iAddress);
 			int iTextBackground = iBackground; // BG_INFO_CHAR;
 //pMD->eView == MEM_VIEW_HEX
-			if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
+			if ((iAddress >= APPLE_IO_BEGIN) && (iAddress <= APPLE_IO_END))
 				iTextBackground = BG_INFO_IO_BYTE;
 
 			std::string sImmediate = ColorizeSpecialChar( nImmediate, MEM_VIEW_APPLE, iBackground );

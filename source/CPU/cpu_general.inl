@@ -35,9 +35,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #undef AF_TO_EF
 #undef EF_TO_AF
 
-#define ZERO_PAGE 0x00
-#define STACK_PAGE 0x01
-
 #define AF_TO_EF  flagc = (regs.ps & AF_CARRY);				    \
 		  flagn = (regs.ps & AF_SIGN);				    \
 		  flagv = (regs.ps & AF_OVERFLOW);			    \
@@ -52,26 +49,26 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // CYC(a): This can be optimised, as only certain opcodes will affect uExtraCycles
 #define CYC(a)	 uExecutedCycles += (a)+uExtraCycles;
 
-#define _POP (*(mem+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp)))
+#define _POP (*(mem+((regs.sp >= _6502_STACK_END) ? (regs.sp = _6502_STACK_BEGIN) : ++regs.sp)))
 #define _POP_ALT ( /*TODO: Support reads from IO & Floating bus*/\
-			*(memshadow[STACK_PAGE]-0x100+((regs.sp >= 0x1FF) ? (regs.sp = 0x100) : ++regs.sp)) \
+			*(memshadow[STACK_PAGE]-_6502_STACK_BEGIN+((regs.sp >= _6502_STACK_END) ? (regs.sp = _6502_STACK_BEGIN) : ++regs.sp)) \
 		)
 
 #define _PUSH(a) *(mem+regs.sp--) = (a);									    \
-		 if (regs.sp < 0x100)												    \
-		   regs.sp = 0x1FF;
-#define _PUSH_ALT(a) {																\
-			LPBYTE page = memwrite[STACK_PAGE];										\
-			if (page) {																\
-				*(page+(regs.sp & 0xFF)) = (BYTE)(a);								\
-			}																		\
-			regs.sp--;																\
-			if (regs.sp < 0x100)													\
-				regs.sp = 0x1FF;													\
+		 if (regs.sp < _6502_STACK_BEGIN)											    \
+		   regs.sp = _6502_STACK_END;
+#define _PUSH_ALT(a) {															\
+			LPBYTE page = memwrite[STACK_PAGE];									\
+			if (page) {															\
+				*(page+(regs.sp & 0xFF)) = (BYTE)(a);							\
+			}																	\
+			regs.sp--;															\
+			if (regs.sp < _6502_STACK_BEGIN)											\
+				regs.sp = _6502_STACK_END;											\
 		}
 
 #define _READ(addr)	(															\
-			((addr & 0xF000) == 0xC000)											\
+			((addr & 0xF000) == APPLE_IO_BEGIN)									\
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
 				: *(mem+addr)													\
 		)
@@ -83,7 +80,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					: MemReadFloatingBus(uExecutedCycles)						\
 		)
 #define _READ_WITH_IO_F8xx(addr) (									/* GH#827 */\
-			((addr & 0xF000) == 0xC000)											\
+			((addr & 0xF000) == APPLE_IO_BEGIN)									\
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
 				: (addr >= 0xF800)												\
 					? IO_F8xx(regs.pc,addr,0,0,uExecutedCycles)					\
@@ -102,7 +99,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				LPBYTE page = memwrite[addr >> 8];										\
 				if (page)																\
 					*(page+(addr & 0xFF)) = (BYTE)(a);									\
-				else if ((addr & 0xF000) == 0xC000)										\
+				else if ((addr & 0xF000) == APPLE_IO_BEGIN)								\
 					IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles);\
 			}																			\
 		}
@@ -115,7 +112,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					if (memVidHD)											/* GH#997 */\
 						*(memVidHD + addr) = (BYTE)(a);									\
 				}																		\
-				else if ((addr & 0xF000) == 0xC000)										\
+				else if ((addr & 0xF000) == APPLE_IO_BEGIN)								\
 					IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles);\
 			}																			\
 		}
@@ -130,7 +127,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					if (memVidHD)											/* GH#997 */\
 						*(memVidHD + addr) = (BYTE)(a);									\
 				}																		\
-				else if ((addr & 0xF000) == 0xC000)										\
+				else if ((addr & 0xF000) == APPLE_IO_BEGIN)								\
 					IOWrite[(addr>>4) & 0xFF](regs.pc,addr,1,(BYTE)(a),uExecutedCycles);\
 			}																			\
 		}

@@ -25,8 +25,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef CPU_ALT
 // NB READ(x) and WRITE(x) are defined in the parent CPU.cpp.
 // . but keep here to retain symmetry with the undef's at the end of this file.
-//#define READ(addr) _READ(addr)
-//#define WRITE(value) _WRITE(value)
+//#define READ(addr)	_READ(addr)
+//#define WRITE(value)	_WRITE(value)
   #define BRK_NMOS		_BRK_NMOS
   #define BRK_CMOS		_BRK_CMOS
   #define JSR			_JSR
@@ -50,8 +50,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
   #define ZPGX			_ZPGX
   #define ZPGY			_ZPGY
 #else
-//#define READ(addr) _READ_ALT(addr)
-//#define WRITE(value) _WRITE_ALT(value)
+//#define READ(addr)	_READ_ALT(addr)
+//#define WRITE(value)	_WRITE_ALT(value)
   #define BRK_NMOS		_BRK_NMOS_ALT
   #define BRK_CMOS		_BRK_CMOS_ALT
   #define JSR			_JSR_ALT

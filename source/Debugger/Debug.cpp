@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Debug.h"
-#include "DebugDefs.h"
 #include "Debugger_Win32.h"
 
 #include "../Windows/AppleWin.h"
@@ -1465,7 +1464,7 @@ Update_t CmdBreakpointAddSmart (int nArgs)
 		g_aArgs[ nArgs ].nValue = g_nDisasmCurAddress;		
 	}
 
-	if ((nAddress >= _6502_IO_BEGIN) && (nAddress <= _6502_IO_END))
+	if ((nAddress >= APPLE_IO_BEGIN) && (nAddress <= APPLE_IO_END))
 	{
 		return CmdBreakpointAddIO( nArgs );
 	}
@@ -4074,7 +4073,7 @@ Update_t CmdMemoryFill (int nArgs)
 		while ( nAddressLen-- ) // v2.7.0.22
 		{
 			// TODO: Optimize - split into pre_io, and post_io
-			if ((nAddress2 < _6502_IO_BEGIN) || (nAddress2 > _6502_IO_END))
+			if ((nAddress2 < APPLE_IO_BEGIN) || (nAddress2 > APPLE_IO_END))
 			{
 				WriteByteToMemory(nAddressStart, nValue);
 			}
@@ -4569,7 +4568,7 @@ Update_t CmdMemoryMove (int nArgs)
 		while ( nAddressLen-- ) // v2.7.0.23
 		{
 			// TODO: Optimize - split into pre_io, and post_io
-			if ((nDst < _6502_IO_BEGIN) || (nDst > _6502_IO_END))
+			if ((nDst < APPLE_IO_BEGIN) || (nDst > APPLE_IO_END))
 			{
 				BYTE value = ReadByteFromMemory(nAddressStart);
 				WriteByteToMemory(nDst, value);
@@ -6999,7 +6998,7 @@ Update_t CmdWatchAdd (int nArgs)
 		WORD nAddress = g_aArgs[iArg].nValue;
 
 		// Make sure address isn't an IO address
-		if ((nAddress >= _6502_IO_BEGIN) && (nAddress <= _6502_IO_END))
+		if ((nAddress >= APPLE_IO_BEGIN) && (nAddress <= APPLE_IO_END))
 			return ConsoleDisplayError("You cannot watch an I/O location.");
 
 		if (iWatch == NO_6502_TARGET)

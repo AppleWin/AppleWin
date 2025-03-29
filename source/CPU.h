@@ -25,10 +25,6 @@ enum {
 	AF_CARRY = 0x01
 };
 
-#define VECTOR_INTERRUPT 0xFFFE	/* IRQ & BRK */
-#define VECTOR_RESET 0xFFFC
-#define VECTOR_NMI 0xFFFA
-
 extern regsrec    regs;
 extern unsigned __int64 g_nCumulativeCycles;
 

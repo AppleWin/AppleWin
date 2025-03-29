@@ -53,7 +53,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Z80VICE/z80.h"
 #include "../resource/resource.h"
 #include "Configuration/IPropertySheet.h"
-#include "Debugger/DebugDefs.h"
 #include "YamlHelper.h"
 
 // In this file allocate the 64KB of RAM with aligned memory allocations (0x10000)
@@ -504,7 +503,7 @@ void WriteByteToMemory(uint16_t addr, uint8_t data)
 
 void CopyBytesFromMemoryPage(uint8_t* pDst, uint16_t srcAddr, size_t size)
 {
-	_ASSERT(((srcAddr & 0xff) + size) <= PAGE_SIZE);
+	_ASSERT(((srcAddr & 0xff) + size) <= _6502_PAGE_SIZE);
 
 	uint8_t* pSrc = &mem[srcAddr];
 

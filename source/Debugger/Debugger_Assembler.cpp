@@ -682,7 +682,7 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 					//*pTargetPartial3_ = _6502_STACK_BEGIN + ((regs.sp-2) & 0xFF);	// TODO: PHP
 					//*pTargetPartial4_ = _6502_BRK_VECTOR + 0;	// TODO
 					//*pTargetPartial5_ = _6502_BRK_VECTOR + 1;	// TODO
-					nTarget16 = ReadWordFromMemory(_6502_BRK_VECTOR);
+					nTarget16 = ReadWordFromMemory(_6502_INTERRUPT_VECTOR);
 				}
 				else	// PHn/PLn
 				{
