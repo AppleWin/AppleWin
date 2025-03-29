@@ -6385,7 +6385,7 @@ BYTE z80_RDMEM(WORD Addr)
 
 		case 0xE:
 			addr = (WORD)Addr - 0x2000;
-			return IORead[(addr>>4) & 0xFF]( regs.pc, addr, 0, 0, ConvertZ80TStatesTo6502Cycles(maincpu_clk) );
+			return IORead[(addr>>4) & 0xFF]( regs.pc, addr, 0, 0, ConvertZ80TStatesTo6502Cycles(maincpu_clk) ); // Maps to 6502 I/O address range: $C000..CFFF
 		break;
 
 		case 0xF:

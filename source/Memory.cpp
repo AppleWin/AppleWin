@@ -222,12 +222,13 @@ SOFT SWITCH STATUS FLAGS
 //   . aux writes outside of the aux TEXT1 get written to memaux (if there's a VidHD card)
 //
 
-LPBYTE			memshadow[0x100];
-LPBYTE			memwrite[0x100];
-BYTE			memreadPageType[0x100];
+LPBYTE			memshadow[_6502_NUM_PAGES];
+LPBYTE			memwrite[_6502_NUM_PAGES];
+BYTE			memreadPageType[_6502_NUM_PAGES];
 
-iofunction		IORead[256];
-iofunction		IOWrite[256];
+static const UINT kNumIOFunctionPointers = APPLE_TOTAL_IO_SIZE / 16;	// Split into 16-byte units
+iofunction		IORead[kNumIOFunctionPointers];
+iofunction		IOWrite[kNumIOFunctionPointers];
 
 LPBYTE         mem          = NULL;
 
@@ -273,7 +274,7 @@ static FILE * g_hMemTempFile = NULL;
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 static void FreeMemImage(void);
-static bool g_isMemCacheValid = true;	// is 'mem' valid
+static bool g_isMemCacheValid = true;	// is 'mem' valid - set in MemReset() and valid for regular (not alternate) CPU emulation
 
 //=============================================================================
 
@@ -1610,7 +1611,7 @@ static LPBYTE MemGetPtrBANK1(const WORD offset, const LPBYTE pMemBase)
 
 	// NB. This works for memaux when set to any RWpages[] value, ie. RamWork III "just works"
 	const BYTE bank1page = (offset >> 8) & 0xF;
-	return (g_isMemCacheValid && (memshadow[0xD0+bank1page] == pMemBase+(0xC0+bank1page)*256))
+	return (g_isMemCacheValid && (memshadow[0xD0+bank1page] == pMemBase+(0xC0+bank1page)*_6502_PAGE_SIZE))
 		? mem+offset+0x1000				// Return ptr to $Dxxx address - 'mem' has (a potentially dirty) 4K RAM BANK1 mapped in at $D000
 		: pMemBase+offset;				// Else return ptr to $Cxxx address
 }
@@ -1708,7 +1709,7 @@ static void BackMainImage(void)
 	for (UINT loop = 0; loop < 256; loop++)
 	{
 		if (memshadow[loop] && ((*(memdirty + loop) & 1) || (loop <= 1)))
-			memcpy(memshadow[loop], mem + (loop << 8), 256);
+			memcpy(memshadow[loop], mem + (loop << 8), _6502_PAGE_SIZE);
 
 		*(memdirty + loop) &= ~1;
 	}
