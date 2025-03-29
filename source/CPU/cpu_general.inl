@@ -51,20 +51,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define _POP (*(mem+((regs.sp >= _6502_STACK_END) ? (regs.sp = _6502_STACK_BEGIN) : ++regs.sp)))
 #define _POP_ALT ( /*TODO: Support reads from IO & Floating bus*/\
-			*(memshadow[STACK_PAGE]-_6502_STACK_BEGIN+((regs.sp >= _6502_STACK_END) ? (regs.sp = _6502_STACK_BEGIN) : ++regs.sp)) \
+			*(memshadow[_6502_STACK_PAGE]-_6502_STACK_BEGIN+((regs.sp >= _6502_STACK_END) ? (regs.sp = _6502_STACK_BEGIN) : ++regs.sp)) \
 		)
 
 #define _PUSH(a) *(mem+regs.sp--) = (a);									    \
-		 if (regs.sp < _6502_STACK_BEGIN)											    \
+		 if (regs.sp < _6502_STACK_BEGIN)									    \
 		   regs.sp = _6502_STACK_END;
 #define _PUSH_ALT(a) {															\
-			LPBYTE page = memwrite[STACK_PAGE];									\
+			LPBYTE page = memwrite[_6502_STACK_PAGE];							\
 			if (page) {															\
 				*(page+(regs.sp & 0xFF)) = (BYTE)(a);							\
 			}																	\
 			regs.sp--;															\
-			if (regs.sp < _6502_STACK_BEGIN)											\
-				regs.sp = _6502_STACK_END;											\
+			if (regs.sp < _6502_STACK_BEGIN)									\
+				regs.sp = _6502_STACK_END;										\
 		}
 
 #define _READ(addr)	(															\

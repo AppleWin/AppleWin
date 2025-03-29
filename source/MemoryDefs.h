@@ -1,6 +1,6 @@
 #pragma once
 
-// Apple II memory locations
+// Apple II defines & memory locations
 enum
 {
 	// Note: All are in bytes!
@@ -18,22 +18,23 @@ enum
 	FIRMWARE_EXPANSION_END   = 0xCFFF
 };
 
-// 6502 memory locations
+// 6502 defines & memory locations
 enum
 {
 	_6502_BRANCH_POS		= +127,
 	_6502_BRANCH_NEG		= -128,
 	_6502_PAGE_SIZE         = 0x0100,
+
 	_6502_ZEROPAGE_END		= 0x00FF,
 	_6502_STACK_BEGIN		= 0x0100,
 	_6502_STACK_END			= 0x01FF,
-	_6502_INTERRUPT_VECTOR	= 0xFFFA,	/* IRQ & BRK */
+	_6502_NMI_VECTOR		= 0xFFFA,
 	_6502_RESET_VECTOR		= 0xFFFC,
-	_6502_NMI_VECTOR		= 0xFFFE,
+	_6502_INTERRUPT_VECTOR	= 0xFFFE,	/* IRQ & BRK */
 	_6502_MEM_BEGIN			= 0x0000,
 	_6502_MEM_END			= 0xFFFF,
-	_6502_MEM_LEN			= _6502_MEM_END + 1
-};
+	_6502_MEM_LEN			= _6502_MEM_END + 1,
 
-#define ZERO_PAGE (_6502_MEM_BEGIN >> 8)
-#define STACK_PAGE (_6502_STACK_BEGIN >> 8)
+	_6502_ZERO_PAGE         = _6502_MEM_BEGIN >> 8,
+	_6502_STACK_PAGE        = _6502_STACK_BEGIN >> 8
+};
