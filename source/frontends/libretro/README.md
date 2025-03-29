@@ -6,25 +6,30 @@ There is a [libretro](https://docs.libretro.com/development/cores/developing-cor
 
 A retropad can be plugged in port 1 (with or without analog stick).
 
-| Device | Axis | ID | Default action |
-| ------ | ------ | ------- | ---- |
-| Standard | | A | Button 0 |
-| Standard | | B | Button 1 |
-| Standard | | Left | PDL(0) = 0 |
-| Standard | | Right | PDL(0) = 255 |
-| Standard | | Up | PDL(1) = 0 |
-| Standard | | Down | PDL(1) = 255 |
-| Standard | | L |  |
-| Standard | | R |  |
-| Standard | | L2 |  |
-| Standard | | R2 |  |
-| Standard | | L3 |  |
-| Standard | | R3 |  |
-| Analog | Left | X | PDL(0) |
-| Analog | Left | Y | PDL(1) |
-| Mouse  | | Left | Button 0 |
-| Mouse  | | Right | Button 1 |
-| Mouse  | | Position | PDLs |
+| Device | Axis | ID | Default action | Remapped |
+| ------ | ------ | ------- | ---- | --- |
+| Standard | | A | Button 0 | |
+| Standard | | B | Button 1 | |
+| Standard | | X | | |
+| Standard | | Y | | |
+| Standard | | Left | PDL(0) = 0 | |
+| Standard | | Right | PDL(0) = 255 | |
+| Standard | | Up | PDL(1) = 0 | |
+| Standard | | Down | PDL(1) = 255 | |
+| Standard | | L | | Space |
+| Standard | | R | | Enter |
+| Standard | | L2 | | Left|
+| Standard | | R2 | | Right|
+| Standard | | L3 | | |
+| Standard | | R3 | | |
+| Standard | | Select | | |
+| Standard | | Start | | |
+| Analog | Left | X | PDL(0) | |
+| Analog | Left | Y | PDL(1) | |
+| Mouse  | | Left | Button 0 | |
+| Mouse  | | Right | Button 1 | |
+| Mouse  | | X | PDL(0) | |
+| Mouse  | | Y | PDL(1) | |
 
 All *standard* buttons can be remapped to keys (in which case they lose their default action): buttons are remapped on all connected devices.
 
