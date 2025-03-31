@@ -274,7 +274,7 @@ static FILE * g_hMemTempFile = NULL;
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 static void FreeMemImage(void);
-static bool g_isMemCacheValid = true;	// is 'mem' valid - set in MemReset() and valid for regular (not alternate) CPU emulation
+static bool g_isMemCacheValid = true;	// flag for is 'mem' valid - set in UpdatePaging() and valid for regular (not alternate) CPU emulation
 
 //=============================================================================
 
@@ -1299,6 +1299,14 @@ void MemUpdatePaging(BOOL initialize)
 
 static void UpdatePaging(BOOL initialize)
 {
+	if (initialize)
+	{
+		// Importantly from:
+		// . MemReset() -> ResetPaging(TRUE)
+		// . MemInitializeFromSnapshot() -> MemUpdatePaging(TRUE);
+		g_isMemCacheValid = !(IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col));
+	}
+
 	modechanging = 0;
 
 	// SAVE THE CURRENT PAGING SHADOW TABLE
@@ -2377,7 +2385,6 @@ void MemReset()
 	mem = memimage;
 
 	// INITIALIZE PAGING, FILLING IN THE 64K MEMORY IMAGE
-	g_isMemCacheValid = !(IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col));
 	ResetPaging(TRUE);		// Initialize=1, init g_memmode
 	MemAnnunciatorReset();
 

@@ -609,7 +609,7 @@ static uint32_t InternalCpuExecute(const uint32_t uTotalCycles, const bool bVide
 {
 	if (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_BENCHMARK)
 	{
-		if (IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
+		if (!GetIsMemCacheValid())
 		{
 			_ASSERT(memshadow[0]);
 			if (GetMainCpu() == CPU_6502)
@@ -627,7 +627,7 @@ static uint32_t InternalCpuExecute(const uint32_t uTotalCycles, const bool bVide
 	{
 		_ASSERT(g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
 
-		if (IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col))
+		if (!GetIsMemCacheValid())
 		{
 			_ASSERT(memshadow[0]);
 			if (GetMainCpu() == CPU_6502)

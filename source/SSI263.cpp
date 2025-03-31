@@ -757,10 +757,6 @@ void SSI263::UpdateAccurateLength(void)
 	if (!m_phonemeAccurateLengthRemaining)
 		return;
 
-	_ASSERT(m_lastUpdateCycle);		// Can't be 0, since set in Play()
-	if (m_lastUpdateCycle == 0)
-		return;
-
 	double updateInterval = (double)(GetLastCumulativeCycles() - m_lastUpdateCycle);
 
 	const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up

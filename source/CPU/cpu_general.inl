@@ -84,7 +84,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				? IORead[(addr>>4) & 0xFF](regs.pc,addr,0,0,uExecutedCycles)	\
 				: (addr >= 0xF800)												\
 					? IO_F8xx(regs.pc,addr,0,0,uExecutedCycles)					\
-					: *(memshadow[addr >> 8]+(addr&0xff))						\
+					: *(mem+addr)												\
 		)
 
 #define SETNZ(a) {							    \
