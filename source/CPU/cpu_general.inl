@@ -216,7 +216,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define _IABS_NMOS_ALT											\
 		base = READ_WORD_ALT(regs.pc);							\
 		if ((base & 0xFF) == 0xFF)								\
-			addr = READ_BYTE_ALT(base) | (READ_BYTE_ALT(base&0xFF00)<<8);	\
+			addr = READ_BYTE_ALT(base) | (READ_BYTE_ALT((base&0xFF00))<<8);	/* NB. Requires double-parenthesis for 2nd macro */\
 		else													\
 			addr = READ_WORD_ALT(base);							\
 		regs.pc += 2;
