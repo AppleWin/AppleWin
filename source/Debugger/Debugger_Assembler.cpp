@@ -168,7 +168,7 @@ const Opcodes_t g_aOpcodes65C02[ NUM_OPCODES ] =
 };
 
 const Opcodes_t g_aOpcodes6502[ NUM_OPCODES ] =
-{ // Should match Cpu.cpp InternalCpuExecute() switch (*(mem+regs.pc++)) !!
+{
 
 /*
 	Based on: http://axis.llx.com/~nparker/a2/opcodes.html
@@ -477,8 +477,8 @@ WORD _6502_GetStackReturnAddress ()
 WORD _6502_PeekStackReturnAddress (WORD & nStack)
 {
 	WORD   nAddress;
-	       nAddress  = ((unsigned) *(LPBYTE)(mem + 0x100 + (nStack & 0xFF))     ); nStack++;
-	       nAddress += ((unsigned) *(LPBYTE)(mem + 0x100 + (nStack & 0xFF)) << 8);
+	       nAddress  =  ReadByteFromMemory(_6502_STACK_BEGIN + (nStack & 0xFF)); nStack++;
+	       nAddress += (ReadByteFromMemory(_6502_STACK_BEGIN + (nStack & 0xFF)) << 8);
 	       nAddress++;
 	return nAddress;
 }
@@ -534,7 +534,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 	}
 #endif
 
-	int iOpcode_ = *(mem + nBaseAddress);
+	int iOpcode_ = ReadByteFromMemory(nBaseAddress);
 		iOpmode_ = g_aOpcodes[ iOpcode_ ].nAddressMode;
 		nOpbyte_ = g_aOpmodes[ iOpmode_ ].m_nBytes;
 
@@ -571,7 +571,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 			case NOP_WORD_2: nOpbyte_ = 4; iOpmode_ = AM_M; break;
 			case NOP_WORD_4: nOpbyte_ = 8; iOpmode_ = AM_M; break;
 			case NOP_ADDRESS:nOpbyte_ = 2; iOpmode_ = AM_A; // BUGFIX: 2.6.2.33 Define Address should be shown as Absolute mode, not Indirect Absolute mode. DA BASIC.FPTR D000:D080 // was showing as "da (END-1)" now shows as "da END-1"
-				pData->nTargetAddress = *(LPWORD)(mem+nBaseAddress);
+				pData->nTargetAddress = ReadWordFromMemory(nBaseAddress);
 				break;
 			case NOP_STRING_APPLE:
 				iOpmode_ = AM_DATA;
@@ -644,9 +644,9 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 	if (pTargetBytes_)
 		*pTargetBytes_  = 0;	
 
-	BYTE nOpcode   = mem[nAddress];
-	BYTE nTarget8  = mem[(nAddress+1)&0xFFFF];
-	WORD nTarget16 = (mem[(nAddress+2)&0xFFFF]<<8) | nTarget8;
+	BYTE nOpcode = ReadByteFromMemory(nAddress);
+	BYTE nTarget8 = ReadByteFromMemory(nAddress + 1);
+	WORD nTarget16 = (ReadByteFromMemory(nAddress + 2) << 8) | nTarget8;
 
 	int eMode = g_aOpcodes[ nOpcode ].nAddressMode;
 
@@ -670,7 +670,7 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 
 					*pTargetPartial_  = _6502_STACK_BEGIN + ((sp+1) & 0xFF);
 					*pTargetPartial2_ = _6502_STACK_BEGIN + ((sp+2) & 0xFF);
-					nTarget16 = mem[*pTargetPartial_] + (mem[*pTargetPartial2_]<<8);
+					nTarget16 = ReadByteFromMemory(*pTargetPartial_) + (ReadByteFromMemory(*pTargetPartial2_) << 8);
 
 					if (nOpcode == OPCODE_RTS)
 						++nTarget16;
@@ -682,7 +682,7 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 					//*pTargetPartial3_ = _6502_STACK_BEGIN + ((regs.sp-2) & 0xFF);	// TODO: PHP
 					//*pTargetPartial4_ = _6502_BRK_VECTOR + 0;	// TODO
 					//*pTargetPartial5_ = _6502_BRK_VECTOR + 1;	// TODO
-					nTarget16 = *(LPWORD)(mem + _6502_BRK_VECTOR);
+					nTarget16 = ReadWordFromMemory(_6502_INTERRUPT_VECTOR);
 				}
 				else	// PHn/PLn
 				{
@@ -720,7 +720,7 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 			*pTargetPartial_    = nTarget16;
 			*pTargetPartial2_   = nTarget16+1;
 			if (bIncludeNextOpcodeAddress)
-				*pTargetPointer_ = *(LPWORD)(mem + nTarget16);
+				*pTargetPointer_ = ReadWordFromMemory(nTarget16);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
@@ -746,7 +746,7 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 			if (GetMainCpu() == CPU_6502 && (nTarget16 & 0xff) == 0xff)
 				*pTargetPartial2_ = nTarget16 & 0xff00;
 			if (bIncludeNextOpcodeAddress)
-				*pTargetPointer_ = mem[*pTargetPartial_] | (mem[*pTargetPartial2_] << 8);
+				*pTargetPointer_ = ReadByteFromMemory(*pTargetPartial_) | (ReadByteFromMemory(*pTargetPartial2_) << 8);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
@@ -754,21 +754,21 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 		case AM_IZX: // Indexed (Zeropage Indirect, X)
 			nTarget8 = (nTarget8 + regs.x) & 0xFF;
 			*pTargetPartial_    = nTarget8;
-			*pTargetPointer_    = *(LPWORD)(mem + nTarget8);
+			*pTargetPointer_    = ReadWordFromMemory(nTarget8);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
 
 		case AM_NZY: // Indirect (Zeropage) Indexed, Y
 			*pTargetPartial_    = nTarget8;
-			*pTargetPointer_    = ((*(LPWORD)(mem + nTarget8)) + regs.y) & _6502_MEM_END; // Bugfix: 
+			*pTargetPointer_    = ((ReadWordFromMemory(nTarget8)) + regs.y) & _6502_MEM_END;
 			if (pTargetBytes_)
 				*pTargetBytes_ = 1;
 			break;
 
 		case AM_NZ: // Indirect (Zeropage)
 			*pTargetPartial_    = nTarget8;
-			*pTargetPointer_    = *(LPWORD)(mem + nTarget8);
+			*pTargetPointer_    = ReadWordFromMemory(nTarget8);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
@@ -1037,14 +1037,11 @@ int AssemblerPokeAddress( const int Opcode, const int nOpmode, const WORD nBaseA
 	// if (nOpbytes != nBytes)
 	//	ConsoleDisplayError( " ERROR: Input Opcode bytes differs from actual!" );
 
-	*(memdirty + (nBaseAddress >> 8)) |= 1;
-//	*(mem + nBaseAddress) = (BYTE) nOpcode;
-
 	if (nOpbytes > 1)
-		*(mem + nBaseAddress + 1) = (BYTE)(nTargetOffset >> 0);
+		WriteByteToMemory(nBaseAddress + 1, (BYTE)(nTargetOffset >> 0));
 
 	if (nOpbytes > 2)
-		*(mem + nBaseAddress + 2) = (BYTE)(nTargetOffset >> 8);
+		WriteByteToMemory(nBaseAddress + 2, (BYTE)(nTargetOffset >> 8));
 
 	return nOpbytes;
 }
@@ -1065,7 +1062,7 @@ bool AssemblerPokeOpcodeAddress( const WORD nBaseAddress )
 
 		if (nOpmode == iAddressMode)
 		{
-			*(mem + nBaseAddress) = (BYTE) nOpcode;
+			WriteByteToMemory(nBaseAddress, (BYTE)nOpcode);
 			int nOpbytes = AssemblerPokeAddress( nOpcode, nOpmode, nBaseAddress, nTargetValue );
 
 			if (m_bDelayedTargetsDirty)

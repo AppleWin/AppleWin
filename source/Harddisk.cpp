@@ -664,7 +664,6 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD, const ULONG nExecute
 
 	const UINT CYCLES_FOR_DMA_RW_BLOCK = HD_BLOCK_SIZE;
 	const UINT CYCLES_FOR_FORMATTING_1_BLOCK = 100;	// Arbitrary
-	const UINT PAGE_SIZE = 256;
 
 	pHDD->m_error = DEVICE_OK;
 
@@ -695,8 +694,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD, const ULONG nExecute
 			{
 				pHDD->m_buf_ptr = 0;
 
-				// Apple II's MMU could be setup so that read & write memory is different,
-				// so can't use 'mem' (like we can for HDD block writes)
+				// Apple II's MMU could be setup so that read & write memory is different, so use 'memwrite' not 'mem'.
 				WORD dstAddr = pHDD->m_memblock;
 				UINT remaining = HD_BLOCK_SIZE;
 				BYTE* pSrc = pHDD->m_buf;
@@ -716,7 +714,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD, const ULONG nExecute
 					}
 
 					// handle both page-aligned & non-page aligned destinations
-					UINT size = PAGE_SIZE - (dstAddr & 0xff);
+					UINT size = _6502_PAGE_SIZE - (dstAddr & 0xff);
 					if (size > remaining) size = remaining;	// clip the last memcpy for the unaligned case
 
 					if (g_nAppMode == MODE_STEPPING)
@@ -724,7 +722,7 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD, const ULONG nExecute
 
 					memcpy(page + (dstAddr & 0xff), pSrc, size);
 					pSrc += size;
-					dstAddr = (dstAddr + size) & (MEMORY_LENGTH - 1);	// wraps at 64KiB boundary
+					dstAddr = (dstAddr + size) & (_6502_MEM_LEN - 1);	// wraps at 64KiB boundary
 
 					remaining -= size;
 				}
@@ -795,22 +793,23 @@ BYTE HarddiskInterfaceCard::CmdExecute(HardDiskDrive* pHDD, const ULONG nExecute
 			}
 			else
 			{
-				// NB. Do the writes in units of PAGE_SIZE so that DMA breakpoints are consistent with reads
+				// NB. Do the writes in units of _6502_PAGE_SIZE so that DMA breakpoints are consistent with reads.
+				// NB. Use `CopyBytesFromMemoryPage()`, as 'mem' may not be valid.
 				WORD srcAddr = pHDD->m_memblock;
 				UINT remaining = HD_BLOCK_SIZE;
 				BYTE* pDst = pHDD->m_buf;
 
 				while (remaining)
 				{
-					UINT size = PAGE_SIZE - (srcAddr & 0xff);
+					UINT size = _6502_PAGE_SIZE - (srcAddr & 0xff);
 					if (size > remaining) size = remaining;	// clip the last memcpy for the unaligned case
 
 					if (g_nAppMode == MODE_STEPPING)
 						breakpointHit = DebuggerCheckMemBreakpoints(srcAddr, size, false);
 
-					memcpy(pDst, mem + srcAddr, size);
+					CopyBytesFromMemoryPage(pDst, srcAddr, size);
 					pDst += size;
-					srcAddr = (srcAddr + size) & (MEMORY_LENGTH - 1);	// wraps at 64KiB boundary
+					srcAddr = (srcAddr + size) & (_6502_MEM_LEN - 1);	// wraps at 64KiB boundary
 
 					remaining -= size;
 				}
@@ -1297,7 +1296,7 @@ void HarddiskInterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	// New label
 	{
 		YamlSaveHelper::Label buffer(yamlSaveHelper, "%s:\n", SS_YAML_KEY_FIRMWARE);
-		yamlSaveHelper.SaveMemory(mem + APPLE_IO_BEGIN + m_slot * APPLE_SLOT_SIZE, APPLE_SLOT_SIZE);
+		yamlSaveHelper.SaveMemory(MemGetCxRomPeripheral() + m_slot * APPLE_SLOT_SIZE, APPLE_SLOT_SIZE);
 	}
 
 	for (UINT i = 0; i < NUM_HARDDISKS; i++)

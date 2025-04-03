@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Common.h"
+#include "../MemoryDefs.h"
 
 #include "Debugger_Types.h"
 #include "Debugger_DisassemblerData.h"

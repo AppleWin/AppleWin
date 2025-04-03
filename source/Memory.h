@@ -37,15 +37,15 @@ enum MemoryInitPattern_e
 };
 
 // For Cpu6502_altRead() & Cpu65C02_altRead()
-enum { MEM_Normal = 0, MEM_IORead, MEM_FloatingBus, MEM_Aux1K, MEM_NoSlotClock };
+enum { MEM_Normal = 0, MEM_IORead, MEM_FloatingBus, MEM_NoSlotClock };
 
 typedef BYTE (__stdcall *iofunction)(WORD nPC, WORD nAddr, BYTE nWriteFlag, BYTE nWriteValue, ULONG nExecutedCycles);
 
 extern iofunction IORead[256];
 extern iofunction IOWrite[256];
+extern LPBYTE     memshadow[0x100];
 extern LPBYTE     memwrite[0x100];
 extern BYTE       memreadPageType[0x100];
-extern BYTE       memwriteDirtyPage[0x100];
 extern LPBYTE     mem;
 extern LPBYTE     memdirty;
 extern LPBYTE     memVidHD;
@@ -113,3 +113,9 @@ void	SetMemMainLanguageCard(LPBYTE ptr, UINT slot, bool bMemMain=false);
 void	SetRegistryAuxNumberOfBanks(void);
 
 LPBYTE GetCxRomPeripheral(void);
+bool GetIsMemCacheValid(void);
+uint8_t ReadByteFromMemory(uint16_t addr);
+uint16_t ReadWordFromMemory(uint16_t addr);
+void WriteByteToMemory(uint16_t addr, uint8_t data);
+void CopyBytesFromMemoryPage(uint8_t* pDst, uint16_t srcAddr, size_t size);
+bool IsZeroPageFloatingBus(void);

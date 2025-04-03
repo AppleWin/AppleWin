@@ -48,15 +48,15 @@ std::string FormatAddress(WORD nAddress, int nBytes)
 }
 
 //===========================================================================
-char* FormatCharCopy(char* pDst, const char* pEnd, const char* pSrc, const int nLen)
+static char* FormatCharCopy(char* pDst, const char* pEnd, uint16_t srcAddr, const int nLen)
 {
 	for (int i = 0; i < nLen && pDst < pEnd; i++)
-		*pDst++ = FormatCharTxtCtrl(*pSrc++);
+		*pDst++ = FormatCharTxtCtrl(ReadByteFromMemory(srcAddr++));
 	return pDst;
 }
 
 //===========================================================================
-char  FormatCharTxtAsci(const BYTE b, bool* pWasAsci_)
+static char FormatCharTxtAsci(const BYTE b, bool* pWasAsci_)
 {
 	if (pWasAsci_)
 		*pWasAsci_ = false;
@@ -74,7 +74,7 @@ char  FormatCharTxtAsci(const BYTE b, bool* pWasAsci_)
 
 // Note: FormatCharTxtCtrl() and RemapChar()
 //===========================================================================
-char  FormatCharTxtCtrl(const BYTE b, bool* pWasCtrl_)
+char FormatCharTxtCtrl(const BYTE b, bool* pWasCtrl_)
 {
 	if (pWasCtrl_)
 		*pWasCtrl_ = false;
@@ -92,7 +92,7 @@ char  FormatCharTxtCtrl(const BYTE b, bool* pWasCtrl_)
 }
 
 //===========================================================================
-char  FormatCharTxtHigh(const BYTE b, bool* pWasHi_)
+char FormatCharTxtHigh(const BYTE b, bool* pWasHi_)
 {
 	if (pWasHi_)
 		*pWasHi_ = false;
@@ -229,8 +229,9 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 		{
 			nTarget = pData->nTargetAddress;
 		}
-		else {
-			nTarget = mem[(nBaseAddress + 1) & 0xFFFF] | (mem[(nBaseAddress + 2) & 0xFFFF] << 8);
+		else
+		{
+			nTarget = ReadWordFromMemory(nBaseAddress + 1);
 			if (nOpbyte == 2)
 				nTarget &= 0xFF;
 		}
@@ -352,7 +353,7 @@ int GetDisassemblyLine(WORD nBaseAddress, DisasmLine_t& line_)
 			{
 				bDisasmFormatFlags |= DISASM_FORMAT_TARGET_POINTER;
 
-				nTargetValue = *(mem + nTargetPointer) | (*(mem + ((nTargetPointer + 1) & 0xffff)) << 8);
+				nTargetValue = ReadWordFromMemory(nTargetPointer);
 
 				//if (((iOpmode >= AM_A) && (iOpmode <= AM_NZ)) && (iOpmode != AM_R))
 				//	sTargetValue_ = WordToHexStr( nTargetValue ); // & 0xFFFF
@@ -457,7 +458,7 @@ void FormatOpcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 	const char* const ep = cp + sizeof(line_.sOpCodes);
 	for (int iByte = 0; iByte < nMaxOpBytes; iByte++)
 	{
-		const BYTE nMem = mem[(nBaseAddress + iByte) & 0xFFFF];
+		const BYTE nMem = ReadByteFromMemory(nBaseAddress + iByte);
 		if ((cp+2) < ep)
 			cp = StrBufferAppendByteAsHex(cp, nMem);
 
@@ -482,11 +483,11 @@ struct FAC_t
 
 void FAC_Unpack(WORD nAddress, FAC_t& fac_)
 {
-	BYTE e0 = *(LPBYTE)(mem + nAddress + 0);
-	BYTE m1 = *(LPBYTE)(mem + nAddress + 1);
-	BYTE m2 = *(LPBYTE)(mem + nAddress + 2);
-	BYTE m3 = *(LPBYTE)(mem + nAddress + 3);
-	BYTE m4 = *(LPBYTE)(mem + nAddress + 4);
+	BYTE e0 = ReadByteFromMemory(nAddress + 0);
+	BYTE m1 = ReadByteFromMemory(nAddress + 1);
+	BYTE m2 = ReadByteFromMemory(nAddress + 2);
+	BYTE m3 = ReadByteFromMemory(nAddress + 3);
+	BYTE m4 = ReadByteFromMemory(nAddress + 4);
 
 	// sign
 	//     EB82:A5 9D       SIGN  LDA FAC
@@ -523,8 +524,8 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 
 	for (int iByte = 0; iByte < line_.nOpbyte; )
 	{
-		BYTE nTarget8  = *(LPBYTE)(mem + nBaseAddress + iByte);
-		WORD nTarget16 = *(LPWORD)(mem + nBaseAddress + iByte);
+		BYTE nTarget8  = ReadByteFromMemory(nBaseAddress + iByte);
+		WORD nTarget16 = ReadWordFromMemory(nBaseAddress + iByte);
 
 		switch (line_.iNoptype)
 		{
@@ -603,8 +604,8 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 				iByte = line_.nOpbyte;
 				if ((pDst + iByte) < pEnd)
 				{
-					memcpy(pDst, mem + nBaseAddress, iByte);
-					pDst += iByte;
+					for (int i = 0; i < iByte; i++)
+						*pDst++ = ReadByteFromMemory(nBaseAddress + i);
 				}
 				*pDst = 0;
 				break;
@@ -612,7 +613,6 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 			case NOP_STRING_APPLE:
 			{
 				iByte = line_.nOpbyte; // handle all bytes of text
-				const char* pSrc = (const char*)mem + nStartAddress;
 
 				if (nDisplayLen > (DISASM_DISPLAY_MAX_IMMEDIATE_LEN - 2)) // does "text" fit?
 				{
@@ -622,7 +622,7 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 											   ;
 
 					// DISPLAY: text_longer_18...
-					pDst = FormatCharCopy(pDst, pEnd, pSrc, len); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
+					pDst = FormatCharCopy(pDst, pEnd, nStartAddress, len); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
 
 					if (ellipsis && (pDst + 3) < pEnd)
 					{
@@ -635,7 +635,7 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_)
 				{ // DISPLAY: "max_18_char"
 					if ((pDst + 1) < pEnd)
 						*pDst++ = '"';
-					pDst = FormatCharCopy(pDst, pEnd, pSrc, nDisplayLen); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
+					pDst = FormatCharCopy(pDst, pEnd, nStartAddress, nDisplayLen); // BUG: #251 v2.8.0.7: ASC #:# with null byte doesn't mark up properly
 					if ((pDst + 1) < pEnd)
 						*pDst++ = '"';
 				}

@@ -503,7 +503,9 @@ int ArgsCook ( const int nArgs )
 				pArg->bType |= TYPE_NO_REG;
 			}
 			else
+			{
 				return ARG_SYNTAX_ERROR;
+			}
 		}
 
 		if (pArg->bType & TYPE_OPERATOR) // prev op type == address?
@@ -726,15 +728,17 @@ int ArgsCook ( const int nArgs )
 							// pArg->bType |= TYPE_INDIRECT;
 							// pArg->nValue  =  nAddressVal;
 							//nAddressVal = pNext->nValue;
-							pArg->nValue  =  * (WORD*) (mem + nAddressVal);
-							pArg->bType   = TYPE_VALUE | TYPE_ADDRESS | TYPE_NO_REG;
+							pArg->nValue = ReadWordFromMemory(nAddressVal);
+							pArg->bType = TYPE_VALUE | TYPE_ADDRESS | TYPE_NO_REG;
 
 							iArg++; // eat ')'
 							nArg -= 2;
 							nParamLen = 0;
 						}
 						else
+						{
 							return ARG_SYNTAX_ERROR; // ERROR: unbalanced/unmatched ( )
+						}
 					}
 				}							
 
@@ -746,7 +750,9 @@ int ArgsCook ( const int nArgs )
 						nParamLen = 1;
 					}
 					else
+					{
 						return ARG_SYNTAX_ERROR;
+					}
 				}
 
 				if (nParamLen)
@@ -757,7 +763,9 @@ int ArgsCook ( const int nArgs )
 				}
 			}
 			else
+			{
 				return ARG_SYNTAX_ERROR;
+			}
 		}
 		else // not an operator, try (1) address, (2) symbol lookup
 		{
