@@ -275,6 +275,7 @@ static FILE * g_hMemTempFile = NULL;
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
 static void FreeMemImage(void);
 static bool g_isMemCacheValid = true;	// flag for is 'mem' valid - set in UpdatePaging() and valid for regular (not alternate) CPU emulation
+static bool g_forceAltCpuEmulation = false;	// set by cmd line
 
 //=============================================================================
 
@@ -526,6 +527,11 @@ bool IsZeroPageFloatingBus(void)
 		return false;
 
 	return memreadPageType[0x0000 >> 8] == MEM_FloatingBus;
+}
+
+void ForceAltCpuEmulation(void)
+{
+	g_forceAltCpuEmulation = true;
 }
 
 //=============================================================================
@@ -1305,6 +1311,8 @@ static void UpdatePaging(BOOL initialize)
 		// . MemReset() -> ResetPaging(TRUE)
 		// . MemInitializeFromSnapshot() -> MemUpdatePaging(TRUE);
 		g_isMemCacheValid = !(IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col));
+		if (g_forceAltCpuEmulation)
+			g_isMemCacheValid = false;
 	}
 
 	modechanging = 0;

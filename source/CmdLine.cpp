@@ -712,6 +712,10 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.useHdcFirmwareV2 = true;
 		}
+		else if (strcmp(lpCmdLine, "-alt-cpu-emu") == 0)	// debug
+		{
+			g_cmdLine.useAltCpuEmulation = true;
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
