@@ -2606,7 +2606,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, const int iBankDisplay, int b
 			PrintTextCursorX( sMemType, rect );
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));	// orange
-			PrintTextCursorX( ByteToHexStr( iActiveBank & 0x7F ).c_str(), rect );
+			PrintTextCursorX( ByteToHexStr( iActiveBank & 0xFF ).c_str(), rect );
 		}
 		else
 		{
