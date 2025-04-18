@@ -154,9 +154,9 @@ void LogFileTimeUntilFirstKeyRead(void)
 	if (!g_fh || bLogKeyReadDone)
 		return;
 
-	if ( (mem[regs.pc-3] != 0x2C)	// AZTEC: bit $c000
-		&& !((regs.pc-2) == 0xE797 && mem[regs.pc-2] == 0xB1 && mem[regs.pc-1] == 0x50)	// Phasor1: lda ($50),y
-		&& !((regs.pc-3) == 0x0895 && mem[regs.pc-3] == 0xAD)	// Rescue Raiders v1.3,v1.5: lda $c000
+	if ( (ReadByteFromMemory(regs.pc-3) != 0x2C)	// AZTEC: bit $c000
+		&& !((regs.pc-2) == 0xE797 && ReadByteFromMemory(regs.pc-2) == 0xB1 && ReadByteFromMemory(regs.pc-1) == 0x50)	// Phasor1: lda ($50),y
+		&& !((regs.pc-3) == 0x0895 && ReadByteFromMemory(regs.pc-3) == 0xAD)	// Rescue Raiders v1.3,v1.5: lda $c000
 		)
 		return;
 

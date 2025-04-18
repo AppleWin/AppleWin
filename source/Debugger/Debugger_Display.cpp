@@ -2266,17 +2266,17 @@ void DrawMemory ( int line, int iMemDump )
 			std::string sText;
 
 // .12 Bugfix: DrawMemory() should draw memory byte for IO address: ML1 C000
-//			if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
+//			if ((iAddress >= APPLE_IO_BEGIN) && (iAddress <= APPLE_IO_END))
 //			{
 //				sText = "IO ";
 //			}
 //			else
 			{
-				BYTE nData = (unsigned)*(LPBYTE)(mem + iAddress);
+				const BYTE nData = ReadByteFromMemory(iAddress);
 
 				if (iView == MEM_VIEW_HEX)
 				{
-					if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
+					if ((iAddress >= APPLE_IO_BEGIN) && (iAddress <= APPLE_IO_END))
 					{
 						DebuggerSetColorFG(DebuggerGetColor(FG_INFO_IO_BYTE));
 					}
@@ -2286,7 +2286,7 @@ void DrawMemory ( int line, int iMemDump )
 				else
 				{
 // .12 Bugfix: DrawMemory() should draw memory byte for IO address: ML1 C000
-					if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
+					if ((iAddress >= APPLE_IO_BEGIN) && (iAddress <= APPLE_IO_END))
 						iBackground = BG_INFO_IO_BYTE;
 
 					sText = ColorizeSpecialChar(nData, iView, iBackground);
@@ -2606,7 +2606,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, const int iBankDisplay, int b
 			PrintTextCursorX( sMemType, rect );
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));	// orange
-			PrintTextCursorX( ByteToHexStr( iActiveBank & 0x7F ).c_str(), rect );
+			PrintTextCursorX( ByteToHexStr( iActiveBank & 0xFF ).c_str(), rect );
 		}
 		else
 		{
@@ -2856,7 +2856,7 @@ void DrawStack ( int line)
 		if (nAddress <= _6502_STACK_END)
 		{
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // COLOR_FG_DATA_TEXT
-			PrintTextCursorX( StrFormat( "  %02X", (unsigned)*(LPBYTE)(mem+nAddress) ).c_str(), rect );
+			PrintTextCursorX(StrFormat("  %02X", ReadByteFromMemory(nAddress)).c_str(), rect);
 		}
 		iStack++;
 	}
@@ -2871,7 +2871,7 @@ void DrawTargets ( int line)
 
 	int aTarget[3];
 	_6502_GetTargets( regs.pc, &aTarget[0],&aTarget[1],&aTarget[2], NULL );
-	GetTargets_IgnoreDirectJSRJMP(mem[regs.pc], aTarget[2]);
+	GetTargets_IgnoreDirectJSRJMP(ReadByteFromMemory(regs.pc), aTarget[2]);
 
 	aTarget[1] = aTarget[2];	// Move down as we only have 2 lines
 
@@ -2882,7 +2882,7 @@ void DrawTargets ( int line)
 	while (iAddress--)
 	{
 		// .6 Bugfix: DrawTargets() should draw target byte for IO address: R PC FB33
-//		if ((aTarget[iAddress] >= _6502_IO_BEGIN) && (aTarget[iAddress] <= _6502_IO_END))
+//		if ((aTarget[iAddress] >= APPLE_IO_BEGIN) && (aTarget[iAddress] <= APPLE_IO_END))
 //			aTarget[iAddress] = NO_6502_TARGET;
 
 		std::string sAddress = "-none-";
@@ -2896,9 +2896,9 @@ void DrawTargets ( int line)
 		{
 			sAddress = WordToHexStr(aTarget[iAddress]);
 			if (iAddress)
-				sData = ByteToHexStr(*(LPBYTE)(mem+aTarget[iAddress]));
+				sData = ByteToHexStr(ReadByteFromMemory(aTarget[iAddress]));
 			else
-				sData = WordToHexStr(*(LPWORD)(mem+aTarget[iAddress]));
+				sData = WordToHexStr(ReadWordFromMemory(aTarget[iAddress]));
 		}
 
 		rect.left   = DISPLAY_TARGETS_COLUMN;
@@ -2972,11 +2972,11 @@ void DrawWatches (int line)
 
 			//
 
-			BYTE nTargetL = *(LPBYTE)(mem + g_aWatches[iWatch].nAddress);
+			BYTE nTargetL = ReadByteFromMemory(g_aWatches[iWatch].nAddress);
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
 			PrintTextCursorX( ByteToHexStr( nTargetL ).c_str(), rect2 );
 
-			BYTE nTargetH = *(LPBYTE)(mem + ((g_aWatches[iWatch].nAddress + 1) & 0xffff));
+			BYTE nTargetH = ReadByteFromMemory(g_aWatches[iWatch].nAddress + 1);
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
 			PrintTextCursorX( ByteToHexStr( nTargetH ).c_str(), rect2 );
 
@@ -3009,7 +3009,7 @@ void DrawWatches (int line)
 				else
 					DebuggerSetColorBG( DebuggerGetColor( BG_DATA_2 ));
 
-				BYTE nValue8 = mem[ (nTarget16 + iByte) & 0xffff ];
+				BYTE nValue8 = ReadByteFromMemory(nTarget16 + iByte);
 				PrintTextCursorX( ByteToHexStr( nValue8 ).c_str(), rect2 );
 			}
 		}
@@ -3155,14 +3155,14 @@ void DrawZeroPagePointers ( int line )
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 			PrintTextCursorX( ":", rect2 );
 
-			WORD nTarget16 = (WORD)mem[ nZPAddr1 ] | ((WORD)mem[ nZPAddr2 ]<< 8);
+			WORD nTarget16 = (WORD)ReadByteFromMemory(nZPAddr1) | (((WORD)ReadByteFromMemory(nZPAddr2)) << 8);
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_ADDRESS ));
 			PrintTextCursorX( WordToHexStr( nTarget16 ).c_str(), rect2 );
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));
 			PrintTextCursorX( ":", rect2 );
 
-			BYTE nValue8 = (unsigned)*(LPBYTE)(mem + nTarget16);
+			BYTE nValue8 = ReadByteFromMemory(nTarget16);
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE ));
 			PrintTextCursorX( ByteToHexStr( nValue8 ).c_str(), rect2 );
 		}
@@ -3256,10 +3256,10 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		std::string sAddress = WordToHexStr( iAddress );
 
 		std::string sOpcodes;
-		const BYTE* mp = mem + iAddress;
-		for ( int iByte = 0; iByte < nMaxOpcodes; ++iByte, ++mp )
+		WORD srcAddr = iAddress;
+		for (int iByte = 0; iByte < nMaxOpcodes; ++iByte, ++srcAddr)
 		{
-			StrAppendByteAsHex(sOpcodes, *mp);
+			StrAppendByteAsHex(sOpcodes, ReadByteFromMemory(srcAddr));
 			sOpcodes += ' ';
 		}
 
@@ -3303,9 +3303,9 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		iAddress = nAddress;
 		for ( int iByte = 0; iByte < nMaxOpcodes; iByte++ )
 		{
-			BYTE nImmediate = (unsigned)*(LPBYTE)(mem + iAddress);
+			BYTE nImmediate = ReadByteFromMemory(iAddress);
 			/*int iTextBackground = iBackground;
-			if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
+			if ((iAddress >= APPLE_IO_BEGIN) && (iAddress <= APPLE_IO_END))
 			{
 				iTextBackground = BG_INFO_IO_BYTE;
 			}
@@ -3323,7 +3323,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 			BYTE nImmediate = (unsigned)*(LPBYTE)(membank + iAddress);
 			int iTextBackground = iBackground; // BG_INFO_CHAR;
 //pMD->eView == MEM_VIEW_HEX
-			if ((iAddress >= _6502_IO_BEGIN) && (iAddress <= _6502_IO_END))
+			if ((iAddress >= APPLE_IO_BEGIN) && (iAddress <= APPLE_IO_END))
 				iTextBackground = BG_INFO_IO_BYTE;
 
 			std::string sImmediate = ColorizeSpecialChar( nImmediate, MEM_VIEW_APPLE, iBackground );

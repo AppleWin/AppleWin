@@ -627,16 +627,16 @@ void Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, i
 	drive2Track = disk2Card.GetTrack(DRIVE_2);
 
 	// Probe known OS's for default Slot/Track/Sector
-	const bool isProDOS = mem[0xBF00] == 0x4C;
+	const bool isProDOS = ReadByteFromMemory(0xBF00) == 0x4C;
 	bool isSectorValid = false;
 	int drive1Sector = -1, drive2Sector = -1;
 
 	// Try DOS3.3 Sector
 	if (!isProDOS)
 	{
-		const int nDOS33slot = mem[0xB7E9] / 16;
-		const int nDOS33track = mem[0xB7EC];
-		const int nDOS33sector = mem[0xB7ED];
+		const int nDOS33slot = ReadByteFromMemory(0xB7E9) / 16;
+		const int nDOS33track = ReadByteFromMemory(0xB7EC);
+		const int nDOS33sector = ReadByteFromMemory(0xB7ED);
 
 		if ((nDOS33slot == slot)
 			&& (nDOS33track >= 0 && nDOS33track < 40)
