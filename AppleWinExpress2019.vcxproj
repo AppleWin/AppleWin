@@ -59,7 +59,6 @@
     <ClInclude Include="source\CPU\cpu6502.h" />
     <ClInclude Include="source\CPU\cpu65C02.h" />
     <ClInclude Include="source\Debugger\Debug.h" />
-    <ClInclude Include="source\Debugger\DebugDefs.h" />
     <ClInclude Include="source\Debugger\Debugger_Assembler.h" />
     <ClInclude Include="source\Debugger\Debugger_Color.h" />
     <ClInclude Include="source\Debugger\Debugger_Console.h" />
