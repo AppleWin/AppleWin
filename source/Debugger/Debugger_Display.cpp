@@ -181,8 +181,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 		VideoScannerDisplayInfo g_videoScannerDisplayInfo;
 
-	char  FormatCharTxtAsci ( const BYTE b, bool * pWasAsci_ );
-
 	void DrawSubWindow_Code ( int iWindow );
 	void DrawSubWindow_IO       (Update_t bUpdate);
 	void DrawSubWindow_Source   (Update_t bUpdate);
