@@ -34,7 +34,7 @@ Most of the debugger now works (in the ImGui version).
 
 Audio files can be read via the cassette interface (SDL Version). Just drop a `wav` file into the emulator. Tested with all the formats from [asciiexpress](https://asciiexpress.net/).
 
-MSYS2 support [msys2](/source/linux/msys2.md).
+MSYS2 support [msys2](/source/frontends/docs/msys2.md) and [mxe](/source/frontends/docs/mxe.md).
 
 ## Executables
 

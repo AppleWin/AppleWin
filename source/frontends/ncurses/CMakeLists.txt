@@ -16,6 +16,7 @@ set(HEADER_FILES
   evdevpaddle.h
   nframe.h
   asciiart.h
+  ncurses_safe.h
   )
 
 add_executable(applen

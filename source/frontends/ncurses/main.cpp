@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 
 #include <iostream>
-#include <ncurses.h>
 
 #include "CardManager.h"
 #include "Core.h"

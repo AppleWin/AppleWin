@@ -4,29 +4,30 @@ pkg_search_module(ZLIB REQUIRED zlib)
 
 if (NOT WIN32)
   pkg_search_module(SLIRP slirp)
-endif()
 
-# if slirp is not found, we will try pcap
-# if it is not found either, a dummy pcap will be compiled
-# but network will be badly affected
+  # if slirp is not found, we will try pcap
+  # if it is not found either, a dummy pcap will be compiled
+  # but network will be badly affected
 
-if ("${SLIRP_FOUND}" STREQUAL "")
-  message(WARNING "'libslirp' not found: will try 'libpcap' instead")
+  # pcacp on Windows in managed in a different way, so we disable it
+  if ("${SLIRP_FOUND}" STREQUAL "")
+    message(WARNING "'libslirp' not found: will try 'libpcap' instead")
 
-  pkg_search_module(PCAP libpcap)
-  if ("${PCAP_FOUND}" STREQUAL "")
-    # old versions of pcap do not work with pkg-config
-    # this is necessary on Rapsberri Pi OS
-    execute_process(COMMAND pcap-config --cflags
-      OUTPUT_VARIABLE PCAP_INCLUDE_DIRS
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      RESULT_VARIABLE STATUS)
-    if ("${STATUS}" STREQUAL "0")
-      message("Found 'libpcap' via pcap-config")
-      execute_process(COMMAND pcap-config --libs
-        OUTPUT_VARIABLE PCAP_LIBRARIES
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-      set(PCAP_FOUND "1")
+    pkg_search_module(PCAP libpcap)
+    if ("${PCAP_FOUND}" STREQUAL "")
+      # old versions of pcap do not work with pkg-config
+      # this is necessary on Rapsberri Pi OS
+      execute_process(COMMAND pcap-config --cflags
+        OUTPUT_VARIABLE PCAP_INCLUDE_DIRS
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE STATUS)
+      if ("${STATUS}" STREQUAL "0")
+        message("Found 'libpcap' via pcap-config")
+        execute_process(COMMAND pcap-config --libs
+          OUTPUT_VARIABLE PCAP_LIBRARIES
+          OUTPUT_STRIP_TRAILING_WHITESPACE)
+        set(PCAP_FOUND "1")
+      endif()
     endif()
   endif()
 endif()

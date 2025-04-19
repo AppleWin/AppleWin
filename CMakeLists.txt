@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.13)
 
+if (POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
 project(applewin HOMEPAGE_URL "https://github.com/audetto/AppleWin")
 
 option(BUILD_APPLEN   "build ncurses frontend")
@@ -36,10 +40,6 @@ MESSAGE("CMAKE_CXX_FLAGS_RELWITHDEBINFO:  ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-
-execute_process(COMMAND uname -m
-  OUTPUT_VARIABLE UNAME
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 execute_process(
   COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_BINARY_DIR}/compile_commands.json ${CMAKE_SOURCE_DIR}/compile_commands.json

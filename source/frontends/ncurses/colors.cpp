@@ -1,6 +1,6 @@
 #include "frontends/ncurses/colors.h"
 
-#include <ncurses.h>
+#include "frontends/ncurses/ncurses_safe.h"
 #include <cmath>
 
 namespace
