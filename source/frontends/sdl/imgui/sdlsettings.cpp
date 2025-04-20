@@ -111,6 +111,8 @@ namespace
         frame->ResetSpeed();
     }
 
+    const unsigned int _6502_IO_BEGIN = 0xC000;
+
 } // namespace
 
 namespace sa2

@@ -1170,18 +1170,6 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 // Memory _________________________________________________________________________________________
 
-	extern const          int _6502_BRANCH_POS      ;//= +127
-	extern const          int _6502_BRANCH_NEG      ;//= -128
-	extern const unsigned int _6502_ZEROPAGE_END    ;//= 0x00FF;
-	extern const unsigned int _6502_STACK_BEGIN     ;//= 0x0100;
-	extern const unsigned int _6502_STACK_END       ;//= 0x01FF;
-	extern const unsigned int _6502_IO_BEGIN        ;//= 0xC000;
-	extern const unsigned int _6502_IO_END          ;//= 0xC0FF;
-	extern const unsigned int _6502_BRK_VECTOR      ;//= 0xFFFE;
-	extern const unsigned int _6502_MEM_BEGIN       ;//= 0x0000;
-	extern const unsigned int _6502_MEM_END         ;//= 0xFFFF;
-	extern const unsigned int _6502_MEM_LEN			;//= 0x10000;
-
 	enum DEVICE_e
 	{
 		DEV_MEMORY,

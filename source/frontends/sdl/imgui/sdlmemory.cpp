@@ -4,7 +4,6 @@
 #include "imgui.h"
 
 #include "Memory.h"
-#include "Debugger/DebugDefs.h"
 #include "StrFormat.h"
 
 #include <sstream>

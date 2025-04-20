@@ -8,7 +8,6 @@ void FormatNopcodeBytes(WORD nBaseAddress, DisasmLine_t& line_);
 std::string FormatAddress(WORD nAddress, int nBytes);
 char* FormatCharCopy(char* pDst, const char* pEnd, const char* pSrc, const int nLen);
 
-char  FormatCharTxtAsci(const BYTE b, bool* pWasAsci_ = NULL);
 char  FormatCharTxtCtrl(const BYTE b, bool* pWasCtrl_ = NULL);
 char  FormatCharTxtHigh(const BYTE b, bool* pWasHi_ = NULL);
 char  FormatChar4Font(const BYTE b, bool* pWasHi_, bool* pWasLo_);

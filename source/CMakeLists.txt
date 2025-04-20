@@ -204,7 +204,6 @@ set(HEADER_FILES
   Interface.h
 
   Debugger/Debug.h
-  Debugger/DebugDefs.h
   Debugger/Debugger_Color.h
   Debugger/Debugger_Console.h
   Debugger/Debugger_Disassembler.h

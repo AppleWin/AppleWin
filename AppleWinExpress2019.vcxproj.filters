@@ -498,9 +498,6 @@
     <ClInclude Include="source\z80emu.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
-    <ClInclude Include="source\Debugger\DebugDefs.h">
-      <Filter>Source Files\Debugger</Filter>
-    </ClInclude>
     <ClInclude Include="source\Debugger\Util_MemoryTextFile.h">
       <Filter>Source Files\Debugger</Filter>
     </ClInclude>

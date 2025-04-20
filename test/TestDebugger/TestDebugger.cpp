@@ -6,9 +6,6 @@
 #include "../../source/Debugger/Debugger_Types.h"
 #include "../../source/Debugger/Debugger_Assembler.h"	// Pull in default args for _6502_GetTargets()
 
-// NB. DebugDefs.h must come after Debugger_Types.h which declares these as extern
-#include "../../source/Debugger/DebugDefs.h"
-
 // From FrameBase
 class FrameBase
 {

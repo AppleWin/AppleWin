@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Debug.h"
-#include "DebugDefs.h"
 #include "Debugger_Win32.h"
 
 #include "../Windows/AppleWin.h"
@@ -1284,7 +1283,7 @@ int CheckBreakpointsIO ()
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
 								g_uBreakMemoryAddress = (WORD) nAddress;
-								BYTE opcode = mem[regs.pc];
+								BYTE opcode = ReadByteFromMemory(regs.pc);
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
 								{
@@ -1465,7 +1464,7 @@ Update_t CmdBreakpointAddSmart (int nArgs)
 		g_aArgs[ nArgs ].nValue = g_nDisasmCurAddress;		
 	}
 
-	if ((nAddress >= _6502_IO_BEGIN) && (nAddress <= _6502_IO_END))
+	if ((nAddress >= APPLE_IO_BEGIN) && (nAddress <= APPLE_IO_END))
 	{
 		return CmdBreakpointAddIO( nArgs );
 	}
@@ -2292,9 +2291,9 @@ Update_t CmdStepOver (int nArgs)
 //	g_nDebugSteps = nArgs ? g_aArgs[1].nValue : 1;
 	WORD nDebugSteps = nArgs ? g_aArgs[1].nValue : 1;
 
-	while (nDebugSteps -- > 0)
+	while (nDebugSteps-- > 0)
 	{
-		int nOpcode = *(mem + regs.pc);
+		BYTE nOpcode = ReadByteFromMemory(regs.pc);
 		WORD nExpectedAddr = (regs.pc + 3) & _6502_MEM_END; // Wrap around 64K edge case when PC = $FFFD..$FFFF: 20 xx xx
 	//	int eMode = g_aOpcodes[ nOpcode ].addrmode;
 	//	int nByte = g_aOpmodes[eMode]._nBytes;
@@ -2518,16 +2517,11 @@ Update_t CmdJSR (int nArgs)
 
 	WORD nAddress = g_aArgs[1].nValue & _6502_MEM_END;
 
-	// Mark Stack Page as dirty
-	*(memdirty+(regs.sp >> 8)) = 1;
-
 	// Push PC onto stack
-	*(mem + regs.sp) = ((regs.pc >> 8) & 0xFF);
+	WriteByteToMemory(regs.sp, ((regs.pc >> 8) & 0xFF));
 	regs.sp--;
-
-	*(mem + regs.sp) = ((regs.pc >> 0) - 1) & 0xFF;
+	WriteByteToMemory(regs.sp, ((regs.pc >> 0) - 1) & 0xFF);
 	regs.sp--;
-
 
 	// Jump to new address
 	regs.pc = nAddress;
@@ -2547,7 +2541,7 @@ Update_t CmdNOP (int nArgs)
 
 	while (nOpbytes--)
 	{
-		*(mem+regs.pc + nOpbytes) = 0xEA;
+		WriteByteToMemory(regs.pc + nOpbytes, 0xEA);
 	}
 
 	return UPDATE_ALL;
@@ -3828,27 +3822,27 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 #ifdef SUPPORT_Z80_EMU
 	else if (strcmp(g_aArgs[1].sArg, "*AF") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_AF);
+		nAddress = ReadWordFromMemory(REG_AF);
 		bUpdate = true;
 	}
 	else if (strcmp(g_aArgs[1].sArg, "*BC") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_BC);
+		nAddress = ReadWordFromMemory(REG_BC);
 		bUpdate = true;
 	}
 	else if (strcmp(g_aArgs[1].sArg, "*DE") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_DE);
+		nAddress = ReadWordFromMemory(REG_DE);
 		bUpdate = true;
 	}
 	else if (strcmp(g_aArgs[1].sArg, "*HL") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_HL);
+		nAddress = ReadWordFromMemory(REG_HL);
 		bUpdate = true;
 	}
 	else if (strcmp(g_aArgs[1].sArg, "*IX") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_IX);
+		nAddress = ReadWordFromMemory(REG_IX);
 		bUpdate = true;
 	}
 #endif
@@ -3999,16 +3993,17 @@ Update_t CmdMemoryEnterByte (int nArgs)
 	while (nArgs >= 2)
 	{
 		WORD nData = g_aArgs[nArgs].nValue;
-		if ( nData > 0xFF)
+
+		if (nData > 0xFF)
 		{
-			*(mem + nAddress + nArgs - 2)  = (BYTE)(nData >> 0);
-			*(mem + nAddress + nArgs - 1)  = (BYTE)(nData >> 8);
+			WriteByteToMemory(nAddress + nArgs - 2, (BYTE)(nData >> 0));
+			WriteByteToMemory(nAddress + nArgs - 1, (BYTE)(nData >> 8));
 		}
 		else
 		{
-			*(mem + nAddress+nArgs-2)  = (BYTE)nData;
+			WriteByteToMemory(nAddress + nArgs - 2, (BYTE)nData);
 		}
-		*(memdirty+(nAddress >> 8)) = 1;
+
 		nArgs--;
 	}
 
@@ -4030,24 +4025,13 @@ Update_t CmdMemoryEnterWord (int nArgs)
 	{
 		WORD nData = g_aArgs[nArgs].nValue;
 
-		// Little Endian
-		*(mem + nAddress + nArgs - 2)  = (BYTE)(nData >> 0);
-		*(mem + nAddress + nArgs - 1)  = (BYTE)(nData >> 8);
+		WriteByteToMemory(nAddress + nArgs - 2, (BYTE)(nData >> 0));
+		WriteByteToMemory(nAddress + nArgs - 1, (BYTE)(nData >> 8));
 
-		*(memdirty+(nAddress >> 8)) |= 1;
 		nArgs--;
 	}
 
 	return UPDATE_ALL;
-}
-
-//===========================================================================
-void MemMarkDirty ( WORD nAddressStart, WORD nAddressEnd )
-{
-	for ( int iPage = (nAddressStart >> 8); iPage <= (nAddressEnd >> 8); iPage++ )
-	{
-		*(memdirty+iPage) = 1;
-	}
 }
 
 //===========================================================================
@@ -4085,15 +4069,13 @@ Update_t CmdMemoryFill (int nArgs)
 
 	if ((nAddressLen > 0) && (nAddressEnd <= _6502_MEM_END))
 	{
-		MemMarkDirty( nAddressStart, nAddressEnd );
-
 		nValue = g_aArgs[nArgs].nValue & 0xFF;
 		while ( nAddressLen-- ) // v2.7.0.22
 		{
 			// TODO: Optimize - split into pre_io, and post_io
-			if ((nAddress2 < _6502_IO_BEGIN) || (nAddress2 > _6502_IO_END))
+			if ((nAddress2 < APPLE_IO_BEGIN) || (nAddress2 > APPLE_IO_END))
 			{
-				*(mem + nAddressStart) = nValue;
+				WriteByteToMemory(nAddressStart, nValue);
 			}
 			nAddressStart++;
 		}
@@ -4231,7 +4213,7 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 
 
 //===========================================================================
-#if 0	// Original
+#if 0	// Original - TODO: delete this old "original" code
 Update_t CmdMemoryLoad (int nArgs)
 {
 	// BLOAD ["Filename"] , addr[, len] 
@@ -4297,7 +4279,6 @@ Update_t CmdMemoryLoad (int nArgs)
 		}
 		
 		BYTE *pMemory = new BYTE [ _6502_MEM_END + 1 ]; // default 64K buffer
-		BYTE *pDst = mem + nAddressStart;
 		BYTE *pSrc = pMemory;
 
 		if (bHaveFileName)
@@ -4325,7 +4306,7 @@ Update_t CmdMemoryLoad (int nArgs)
 			{
 				for ( int iByte = 0; iByte < nAddressLen; iByte++ )
 				{
-					*pDst++ = *pSrc++;
+					WriteByteToMemory(nAddressStart++, *pSrc++);
 				}
 				ConsoleBufferPush(  "Loaded."  );
 			}
@@ -4487,19 +4468,14 @@ Update_t CmdMemoryLoad (int nArgs)
 		}
 	}
 
+	std::unique_ptr<BYTE> pMemory(new BYTE[_6502_MEM_END + 1]); // default 64K buffer
+
 	if (bHaveFileName)
 	{
 		g_sMemoryLoadSaveFileName = pFileName;
 	}
 	const std::string sLoadSaveFilePath = g_sCurrentDir + g_sMemoryLoadSaveFileName; // TODO: g_sDebugDir
 	
-	BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
-	if (!pMemBankBase)
-	{
-		ConsoleBufferPush(  "Error: Bank out of range."  );
-		return ConsoleUpdate();
-	}
-
 	FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 	if (hFile)
 	{
@@ -4514,7 +4490,9 @@ Update_t CmdMemoryLoad (int nArgs)
 			nAddressLen = nFileBytes;
 		}
 
-		size_t nRead = fread( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
+		size_t nRead = fread(pMemory.get() + nAddressStart, nAddressLen, 1, hFile);
+		fclose(hFile);
+
 		if (nRead == 1)
 		{
 			ConsoleBufferPushFormat( "Loaded @ A$%04X,L$%04X", nAddressStart, nAddressLen );
@@ -4522,18 +4500,27 @@ Update_t CmdMemoryLoad (int nArgs)
 		else
 		{
 			ConsoleBufferPush( "Error loading data." );
+			return ConsoleUpdate();
 		}
-		fclose( hFile );
 
 		if (bBankSpecified)
 		{
+			BYTE* const pMemBankBase = MemGetBankPtr(nBank);
+			if (!pMemBankBase)
+			{
+				ConsoleBufferPush("Error: Bank out of range.");
+				return ConsoleUpdate();
+			}
+
+			memcpy(pMemBankBase + nAddressStart, pMemory.get() + nAddressStart, nAddressLen);
+
 			MemUpdatePaging(TRUE);
 		}
 		else
 		{
-			for (WORD i=(nAddressStart>>8); i!=((nAddressStart+(WORD)nAddressLen)>>8); i++)
+			for (WORD i=nAddressStart; i!=(nAddressStart+(WORD)nAddressLen); i++)
 			{
-				memdirty[i] = 0xff;
+				WriteByteToMemory(i, pMemory.get()[i]);
 			}
 		}
 	}
@@ -4578,18 +4565,13 @@ Update_t CmdMemoryMove (int nArgs)
 
 	if ((nAddressLen > 0) && (nAddressEnd <= _6502_MEM_END))
 	{
-		MemMarkDirty( nAddressStart, nAddressEnd );
-
-//			BYTE *pSrc = mem + nAddressStart;
-//			BYTE *pDst = mem + nDst;
-//			BYTE *pEnd = pSrc + nAddressLen;
-
 		while ( nAddressLen-- ) // v2.7.0.23
 		{
 			// TODO: Optimize - split into pre_io, and post_io
-			if ((nDst < _6502_IO_BEGIN) || (nDst > _6502_IO_END))
+			if ((nDst < APPLE_IO_BEGIN) || (nDst > APPLE_IO_END))
 			{
-				*(mem + nDst) = *(mem + nAddressStart);
+				BYTE value = ReadByteFromMemory(nAddressStart);
+				WriteByteToMemory(nDst, value);
 			}
 			nDst++;
 			nAddressStart++;
@@ -4602,7 +4584,7 @@ Update_t CmdMemoryMove (int nArgs)
 }
 
 //===========================================================================
-#if 0	// Original
+#if 0	// Original - TODO: delete this old "original" code
 Update_t CmdMemorySave (int nArgs)
 {
 	// BSAVE ["Filename"] , addr , len 
@@ -4684,12 +4666,11 @@ Update_t CmdMemorySave (int nArgs)
 			{
 				BYTE *pMemory = new BYTE [ nAddressLen ];
 				BYTE *pDst = pMemory;
-				BYTE *pSrc = mem + nAddressStart;
 				
 				// memcpy -- copy out of active memory bank
 				for ( int iByte = 0; iByte < nAddressLen; iByte++ )
 				{
-					*pDst++ = *pSrc++;
+					*pDst++ = ReadByteFromMemory(nAddressStart + iByte);
 				}
 
 				FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
@@ -4832,11 +4813,25 @@ Update_t CmdMemorySave (int nArgs)
 			}
 			sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
 
-			const BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
-			if (!pMemBankBase)
+			std::unique_ptr<BYTE> pMemory(new BYTE[_6502_MEM_END + 1]); // default 64K buffer
+
+			if (bBankSpecified)
 			{
-				ConsoleBufferPush(  "Error: Bank out of range."  );
-				return ConsoleUpdate();
+				const BYTE* const pMemBankBase = MemGetBankPtr(nBank);
+				if (!pMemBankBase)
+				{
+					ConsoleBufferPush("Error: Bank out of range.");
+					return ConsoleUpdate();
+				}
+
+				memcpy(pMemory.get() + nAddressStart, pMemBankBase + nAddressStart, nAddressLen);
+			}
+			else
+			{
+				for (WORD i = nAddressStart; i != (nAddressStart + (WORD)nAddressLen); i++)
+				{
+					pMemory.get()[i] = ReadByteFromMemory(i);
+				}
 			}
 
 			FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
@@ -4850,21 +4845,22 @@ Update_t CmdMemorySave (int nArgs)
 			hFile = fopen( sLoadSaveFilePath.c_str(), "wb" );
 			if (hFile)
 			{
-				size_t nWrote = fwrite( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
+				size_t nWrote = fwrite(pMemory.get() + nAddressStart, nAddressLen, 1, hFile);
+				fclose(hFile);
+
 				if (nWrote == 1)
-				{
 					ConsoleBufferPush(  "Saved."  );
-				}
 				else
-				{
 					ConsoleBufferPush(  "Error saving."  );
-				}
-				fclose( hFile );
 			}
 			else
 			{
 				ConsoleBufferPush(  "Error opening file."  );
 			}
+		}
+		else
+		{
+			ConsoleBufferPush("Error: Length = 0.");
 		}
 	}
 	
@@ -5727,7 +5723,7 @@ int _SearchMemoryFind (
 				(ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT) ||
 				(ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT ))
 			{
-				BYTE nTarget = *(mem + nAddress2);
+				BYTE nTarget = ReadByteFromMemory(nAddress2);
 	
 				if (ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT)
 					nTarget &= 0x0F;
@@ -5764,7 +5760,7 @@ int _SearchMemoryFind (
 						(ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT) ||
 						(ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT ))
 					{
-						BYTE nTarget = *(mem + nAddress3);
+						BYTE nTarget = ReadByteFromMemory(nAddress3);
 			
 						if (ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT)
 							nTarget &= 0x0F;
@@ -6566,7 +6562,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 					if (TextIsHexByte( pStart ))
 					{
 						BYTE nByte = TextConvert2CharsToByte( pStart );
-						*(mem + ((WORD)nAddress) + iByte ) = nByte;
+						WriteByteToMemory(((WORD)nAddress) + iByte, nByte);
 					}
 				}
 				g_nSourceAssembleBytes += iByte;
@@ -7002,7 +6998,7 @@ Update_t CmdWatchAdd (int nArgs)
 		WORD nAddress = g_aArgs[iArg].nValue;
 
 		// Make sure address isn't an IO address
-		if ((nAddress >= _6502_IO_BEGIN) && (nAddress <= _6502_IO_END))
+		if ((nAddress >= APPLE_IO_BEGIN) && (nAddress <= APPLE_IO_END))
 			return ConsoleDisplayError("You cannot watch an I/O location.");
 
 		if (iWatch == NO_6502_TARGET)
@@ -8611,7 +8607,7 @@ static void CheckBreakOpcode ( int iOpcode )
 
 static void UpdateLBR (void)
 {
-	const BYTE nOpcode = *(mem + regs.pc);
+	const BYTE nOpcode = ReadByteFromMemory(regs.pc);
 
 	bool isControlFlowOpcode =
 		nOpcode == OPCODE_BRK ||
@@ -8682,7 +8678,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 
 			if ( MemIsAddrCodeMemory(regs.pc) )
 			{
-				BYTE nOpcode = *(mem+regs.pc);
+				const BYTE nOpcode = ReadByteFromMemory(regs.pc);
 
 				// Update profiling stats
 				int nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;

@@ -160,13 +160,13 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 
 bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 {
-	BYTE param1 = mem[(regs.pc - 2) & 0xffff];
-	BYTE param2 = mem[(regs.pc - 1) & 0xffff];
+	BYTE param1 = ReadByteFromMemory(regs.pc - 2);
+	BYTE param2 = ReadByteFromMemory(regs.pc - 1);
 	if (param1 != (addr & 0xff) || param2 != 0xC0)
 		return false;
 
 	// GH#404, GH#700: INC $C083,X/C08B,X (RMW) to write enable the LC (any 6502/65C02/816)
-	BYTE opcode = mem[(regs.pc - 3) & 0xffff];
+	BYTE opcode = ReadByteFromMemory(regs.pc - 3);
 	if (opcode == 0xFE && regs.x == 0)	// INC abs,x
 		return true;
 

@@ -167,10 +167,12 @@ void Win32Frame::Benchmark(void)
 	Sleep(500);
 	Video& video = GetVideo();
 
+	uint8_t* pMemMain = MemGetMainPtr(_6502_MEM_BEGIN);
+
 	// PREPARE TWO DIFFERENT FRAME BUFFERS, EACH OF WHICH HAVE HALF OF THE
 	// BYTES SET TO 0x14 AND THE OTHER HALF SET TO 0xAA
 	int     loop;
-	LPDWORD mem32 = (LPDWORD)mem;
+	LPDWORD mem32 = (LPDWORD)pMemMain;
 	for (loop = 4096; loop < 6144; loop++)
 		*(mem32 + loop) = ((loop & 1) ^ ((loop & 0x40) >> 6)) ? 0x14141414
 		: 0xAAAAAAAA;
@@ -184,7 +186,7 @@ void Win32Frame::Benchmark(void)
 	uint32_t totaltextfps = 0;
 
 	video.SetVideoMode(VF_TEXT);
-	memset(mem + 0x400, 0x14, 0x400);
+	memset(pMemMain + TEXT_PAGE1_BEGIN, 0x14, TEXT_PAGE1_SIZE);
 	VideoRedrawScreen();
 	uint32_t milliseconds = GetTickCount();
 	while (GetTickCount() == milliseconds);
@@ -192,9 +194,9 @@ void Win32Frame::Benchmark(void)
 	uint32_t cycle = 0;
 	do {
 		if (cycle & 1)
-			memset(mem + 0x400, 0x14, 0x400);
+			memset(pMemMain + TEXT_PAGE1_BEGIN, 0x14, TEXT_PAGE1_SIZE);
 		else
-			memcpy(mem + 0x400, mem + ((cycle & 2) ? 0x4000 : 0x6000), 0x400);
+			memcpy(pMemMain + TEXT_PAGE1_BEGIN, pMemMain + ((cycle & 2) ? 0x4000 : 0x6000), TEXT_PAGE1_SIZE);
 		VideoPresentScreen();
 		if (cycle++ >= 3)
 			cycle = 0;
@@ -206,7 +208,7 @@ void Win32Frame::Benchmark(void)
 	// SIMULATE THE ACTIVITY OF AN AVERAGE GAME
 	uint32_t totalhiresfps = 0;
 	video.SetVideoMode(VF_HIRES);
-	memset(mem + 0x2000, 0x14, 0x2000);
+	memset(pMemMain + HGR_PAGE1_BEGIN, 0x14, HGR_PAGE1_SIZE);
 	VideoRedrawScreen();
 	milliseconds = GetTickCount();
 	while (GetTickCount() == milliseconds);
@@ -214,9 +216,9 @@ void Win32Frame::Benchmark(void)
 	cycle = 0;
 	do {
 		if (cycle & 1)
-			memset(mem + 0x2000, 0x14, 0x2000);
+			memset(pMemMain + HGR_PAGE1_BEGIN, 0x14, HGR_PAGE1_SIZE);
 		else
-			memcpy(mem + 0x2000, mem + ((cycle & 2) ? 0x4000 : 0x6000), 0x2000);
+			memcpy(pMemMain + HGR_PAGE1_BEGIN, pMemMain + ((cycle & 2) ? 0x4000 : 0x6000), HGR_PAGE1_SIZE);
 		VideoPresentScreen();
 		if (cycle++ >= 3)
 			cycle = 0;
@@ -289,7 +291,7 @@ void Win32Frame::Benchmark(void)
 	// WITH FULL EMULATION OF THE CPU, JOYSTICK, AND DISK HAPPENING AT
 	// THE SAME TIME
 	uint32_t realisticfps = 0;
-	memset(mem + 0x2000, 0xAA, 0x2000);
+	memset(pMemMain + HGR_PAGE1_BEGIN, 0xAA, HGR_PAGE1_SIZE);
 	VideoRedrawScreen();
 	milliseconds = GetTickCount();
 	while (GetTickCount() == milliseconds);
@@ -305,9 +307,9 @@ void Win32Frame::Benchmark(void)
 			}
 		}
 		if (cycle & 1)
-			memset(mem + 0x2000, 0xAA, 0x2000);
+			memset(pMemMain + HGR_PAGE1_BEGIN, 0xAA, HGR_PAGE1_SIZE);
 		else
-			memcpy(mem + 0x2000, mem + ((cycle & 2) ? 0x4000 : 0x6000), 0x2000);
+			memcpy(pMemMain + HGR_PAGE1_BEGIN, pMemMain + ((cycle & 2) ? 0x4000 : 0x6000), HGR_PAGE1_SIZE);
 		VideoRedrawScreen();
 		if (cycle++ >= 3)
 			cycle = 0;

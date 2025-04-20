@@ -918,6 +918,9 @@ static void RepeatInitialization(void)
 	if (g_cmdLine.noDisk2StepperDefer)
 		GetCardMgr().GetDisk2CardMgr().SetStepperDefer(false);
 
+	if (g_cmdLine.useAltCpuEmulation)
+		ForceAltCpuEmulation();
+
 	// Call DebugInitialize() after SetCurrentImageDir()
 	DebugInitialize();
 	LogFileOutput("Main: DebugInitialize()\n");

@@ -235,10 +235,12 @@ void CMouseInterface::SetSlotRom()
 	if (pCxRomPeripheral == NULL)
 		return;
 
-	UINT uOffset = (m_by6821B << 7) & 0x0700;
-	memcpy(pCxRomPeripheral+m_slot*256, m_pSlotRom+uOffset, 256);
-	if (mem)
-		memcpy(mem+0xC000+m_slot*256, m_pSlotRom+uOffset, 256);
+	// m_by6821B (b#0000ppp0) defines the 3-bit ROM page that is switched in at $Cs00
+	const UINT offset = (m_by6821B << 7) & 0x0700;
+	memcpy(pCxRomPeripheral + m_slot * APPLE_SLOT_SIZE, m_pSlotRom + offset, APPLE_SLOT_SIZE);
+
+	if (GetIsMemCacheValid() && mem)
+		memcpy(mem + APPLE_IO_BEGIN + m_slot * APPLE_SLOT_SIZE, m_pSlotRom + offset, APPLE_SLOT_SIZE);
 }
 
 //===========================================================================
@@ -318,7 +320,7 @@ void CMouseInterface::On6821_B(BYTE byData)
 
 		//
 
-		SetSlotRom();	// Update Cn00 ROM page
+		SetSlotRom();	// Update Cs00 ROM page
 	}
 }
 
