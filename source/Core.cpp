@@ -295,6 +295,11 @@ UINT GetCompilationTarget(void)
 #endif
 }
 
+std::string GetAppleWinVersionAndBuild(void)
+{
+	return StrFormat("AppleWin version: %s (%d-bit build)", g_VERSIONSTRING.c_str(), GetCompilationTarget());
+}
+
 bool SetCurrentImageDir(const std::string& pszImageDir)
 {
 	g_sCurrentDir = pszImageDir;
