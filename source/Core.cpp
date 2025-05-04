@@ -287,12 +287,7 @@ bool CheckOldAppleWinVersion(void)
 
 UINT GetCompilationTarget(void)
 {
-	return
-#ifdef _WIN64
-		64;
-#else
-		32;
-#endif
+	return sizeof(void*) * 8;
 }
 
 std::string GetAppleWinVersionAndBuild(void)
