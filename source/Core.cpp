@@ -285,6 +285,16 @@ bool CheckOldAppleWinVersion(void)
 	return bShowAboutDlg;
 }
 
+UINT GetCompilationTarget(void)
+{
+	return
+#ifdef _WIN64
+		64;
+#else
+		32;
+#endif
+}
+
 bool SetCurrentImageDir(const std::string& pszImageDir)
 {
 	g_sCurrentDir = pszImageDir;

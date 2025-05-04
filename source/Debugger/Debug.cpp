@@ -52,7 +52,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,2,7);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,2,8);
 
 
 // Public _________________________________________________________________________________________
@@ -7999,8 +7999,8 @@ Update_t ExecuteCommand (int nArgs)
 						{
 							//ArgsGetValue( pArg, & nAddress );
 							//ConsolePrintFormat( "Dst:%s  Src: %s  End: %s", pDst, pSrc, pEnd );
+
 							g_iCommand = CMD_MEMORY_MOVE;
-							pFunction = g_aCommands[ g_iCommand ].pFunction;
 
 							strcpy( pArg[4].sArg, pEnd );
 							strcpy( pArg[3].sArg, g_aTokens[ TOKEN_COLON ].sToken );
@@ -8018,6 +8018,25 @@ Update_t ExecuteCommand (int nArgs)
 							pArg[3].eToken = TOKEN_COLON;
 							ArgsGetValue( &pArg[4], &pArg[4].nValue );
 
+							if (pArg[4].nValue < pArg[2].nValue)
+							{
+								ConsolePrintFormat(
+									CHC_WARNING "WARN" CHC_ARG_SEP ":"
+									CHC_DEFAULT " End source address " CHC_ARG_SEP "$" CHC_ADDRESS "%04X"
+									CHC_ARG_SEP " <"
+									CHC_DEFAULT " Start source address " CHC_ARG_SEP "$" CHC_ADDRESS "%04X"
+									CHC_DEFAULT "."
+									CHC_INFO " Aborting."
+									, (pArg[4].nValue & _6502_MEM_END)
+									, (pArg[2].nValue & _6502_MEM_END)
+								);
+								ConsoleUpdate();
+								pFunction = nullptr;
+							}
+							else
+							{
+								pFunction = g_aCommands[ g_iCommand ].pFunction;
+							}
 							nFound = 1;
 							nArgs = 4;
 						}

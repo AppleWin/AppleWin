@@ -1,4 +1,7 @@
 /*
+2.9.2.8 Fixed: Debugger mem copy when source end address is less than the source start address copies too many bytes.
+    Example:
+        2000<6000.6ffm
 2.9.2.7 Added: QoL for Debugger's view output screen.
    When using the debugger to view the ouput screen such as `HGR`, `HGR2`, etc. allow the
    keys 0-5 to display the specificed video # page, or 9 to see the current video mode.

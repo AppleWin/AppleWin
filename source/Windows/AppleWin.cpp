@@ -619,7 +619,7 @@ static void GetAppleWinVersion(void)
 		delete [] pVerInfoBlock;
     }
 
-	LogFileOutput("AppleWin version: %s\n",  g_VERSIONSTRING.c_str());
+	LogFileOutput("AppleWin version: %s (%d-bit build)\n", g_VERSIONSTRING.c_str(), GetCompilationTarget());
 }
 
 // DO ONE-TIME INITIALIZATION

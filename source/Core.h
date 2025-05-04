@@ -14,6 +14,7 @@ extern std::string g_VERSIONSTRING;	// Constructed in WinMain()
 
 void SetAppleWinVersion(UINT16 major, UINT16 minor, UINT16 fix, UINT16 fix_minor);
 bool CheckOldAppleWinVersion(void);
+UINT GetCompilationTarget(void);
 
 extern std::string g_pAppTitle;
 
