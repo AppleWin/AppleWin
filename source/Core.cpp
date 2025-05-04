@@ -287,12 +287,12 @@ bool CheckOldAppleWinVersion(void)
 
 UINT GetCompilationTarget(void)
 {
-	return
-#ifdef _WIN64
-		64;
-#else
-		32;
-#endif
+	return sizeof(void*) * 8;	// Portable (Windows, Linux); returns 32 or 64
+}
+
+std::string GetAppleWinVersionAndBuild(void)
+{
+	return StrFormat("AppleWin version: %s (%d-bit build)", g_VERSIONSTRING.c_str(), GetCompilationTarget());
 }
 
 bool SetCurrentImageDir(const std::string& pszImageDir)
