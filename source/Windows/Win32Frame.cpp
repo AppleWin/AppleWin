@@ -319,11 +319,14 @@ void Win32Frame::Benchmark(void)
 	// DISPLAY THE RESULTS
 	DisplayLogo();
 	std::string strText = StrFormat(
+		"%s\n"	/* AppleWin version & build */
+		"\n"
 		"Pure Video FPS:\t%u hires, %u text\n"
 		"Pure CPU MHz:\t%u.%u%s (video update)\n"
 		"Pure CPU MHz:\t%u.%u%s (full-speed)\n\n"
 		"EXPECTED AVERAGE VIDEO GAME\n"
 		"PERFORMANCE: %u FPS",
+		GetAppleWinVersionAndBuild().c_str(),
 		(unsigned)totalhiresfps,
 		(unsigned)totaltextfps,
 		(unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? " (6502)" : ""),

@@ -1459,11 +1459,12 @@ Update_t CmdVersion (int nArgs)
 	int nFixMinor;
 	UnpackVersion( nVersion, nMajor, nMinor, nFixMajor, nFixMinor );
 
-	ConsolePrintFormat( "  Emulator:  %s%s%s (%d-bit build)    Debugger: %s%d.%d.%d.%d%s"
+	ConsolePrintFormat("  Emulator:  %s%s%s (%d-bit build)    Debugger: %s%d.%d.%d.%d%s"
 		, CHC_SYMBOL
 		, g_VERSIONSTRING.c_str()
 		, CHC_DEFAULT
 		, GetCompilationTarget()
+		//
 		, CHC_SYMBOL
 		, nMajor, nMinor, nFixMajor, nFixMinor
 		, CHC_DEFAULT
