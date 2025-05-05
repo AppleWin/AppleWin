@@ -15,9 +15,9 @@
 		<P style="FONT-WEIGHT: bold">Acknowledgment:
 		</P>
 		<P>Uthernet (TFE) support in AppleWin was made possible by implementing the GPL
-			source written by Spiro Trikaliotis for the Vice emulator - <A href="http://vice-emu.sourceforge.net/index.html#developers">
-				http://vice-emu.sourceforge.net/index.html#developers</A></P>
-		<P><A href="https://a2retrosystems.com/">Uthernet II</A> support in AppleWin has been contributed by Andrea (audetto) Odetti.</P>
+			source written by Spiro Trikaliotis for the Vice emulator - <a target="_blank" href="http://vice-emu.sourceforge.net/index.html#developers">
+				http://vice-emu.sourceforge.net/index.html#developers</a></P>
+		<P><a target="_blank" href="https://a2retrosystems.com/">Uthernet II</a> support in AppleWin has been contributed by Andrea (audetto) Odetti.</P>
 		<P style="FONT-WEIGHT: bold">Details:
 		</P>
 		<P>To enable ethernet support in AppleWin you must first download and install 
@@ -29,9 +29,9 @@
 			a switch. If you plan on doing any network programming Wireshark is a definite 
 			must have.
 		</P>
-		<P>Npcap: <A href="https://nmap.org/npcap/#download">https://nmap.org/npcap/#download</A> 
-			or Wireshark: <A href="https://www.wireshark.org">https://www.wireshark.org</A> 
-			(or WinPcap: <A href="https://www.winpcap.org/install/default.htm">https://www.winpcap.org/install/default.htm</A>)
+		<P>Npcap: <A target="_blank" href="https://nmap.org/npcap/#download">https://nmap.org/npcap/#download</A> 
+			or Wireshark: <A target="_blank" href="https://www.wireshark.org">https://www.wireshark.org</A> 
+			(or WinPcap: <A target="_blank" href="https://www.winpcap.org/install/default.htm">https://www.winpcap.org/install/default.htm</A>)
 		</P>
 		<P>After AppleWin starts, select the settings icon and then select the ethernet 
 			settings button.
@@ -50,11 +50,11 @@
 			with WinPcap (but see <A href="uthernet-wifi-workaround.html">WiFi Workaround</A>).
 		</P>
 		<P>In order to test the ethernet emulation out you should grab a copy of Contiki 
-			for the Apple II here - <A href="http://www.a2retrosystems.com/downloads.htm">http://www.a2retrosystems.com/downloads.htm</A>
+			for the Apple II here - <A target="_blank" href="http://www.a2retrosystems.com/downloads.htm">http://www.a2retrosystems.com/downloads.htm</A>
 		</P>
 		<P>Grab the 80 Col. Primary Disk and Supplementary Disk images if using Apple //e 
 			emulation or the 40 Col versions if running Apple II+ emulation. You should 
-			also grab a copy of the Uthernet/Contiki getting started guide <A href="http://www.a2retrosystems.com/a2UtherManual.pdf">
+			also grab a copy of the Uthernet/Contiki getting started guide <A target="_blank" href="http://www.a2retrosystems.com/a2UtherManual.pdf">
 				http://www.a2retrosystems.com/a2UtherManual.pdf</A>
 		</P>
 		<P>Select the contiki80pri.dsk image. Boot AppleWin.
@@ -85,9 +85,9 @@
 		<P style="FONT-WEIGHT: bold">Troubleshooting:
 		</P>
 		<P>If you have ZoneAlarm running then try disabling it inorder to access the web. 
-			if you are still having difficulty then you should refer to the VICE network 
-			support page for additional information - <A href="http://vicekb.trikaliotis.net/13-005.shtml">
-			http://vicekb.trikaliotis.net/13-005.shtml</A></P>
+			(If you are still having difficulty then you could try referring to the VICE network 
+			support page for additional information, now archived <A target="_blank" href="https://github.com/AppleWin/AppleWin/blob/master/docs/VICE%20Knowledge%20Base%20-%20Article%2013-005.htm">
+			here</A>.)</P>
 		<P style="FONT-WEIGHT: bold">Uthernet II:
 		</P>
 		<P>Most features of the Uthernet II are emulated, with the following caveats:
@@ -97,10 +97,10 @@
 				<li>after loading a save-state file, TCP and UDP sockets are closed</li>
 			</ul>
 		</P>
-		<P>The card implements a <A href="https://github.com/a2retrosystems/uthernet2/wiki/Virtual-W5100-with-DNS">Virtual DNS</A>
+		<P>The card implements a <A target="_blank" href="https://github.com/a2retrosystems/uthernet2/wiki/Virtual-W5100-with-DNS">Virtual DNS</A>
 			interface (not found on real hardware) for Apple II software to run without raw sockets: this allows operation on any type of network.
 		</P>
-		<P>Note that the Apple II application must be virtual W5100-aware (currently as of early 2024 the only application that supports this is <A href="https://github.com/oliverschmidt/A2Stream">A2Stream</A>). AppleWin will utilise DNS offloading when both AppleWin is configured to use "Virtual DNS" and the Apple II application enables the W5100 for the "Virtual DNS" mode.
+		<P>Note that the Apple II application must be virtual W5100-aware (currently as of early 2024 the only application that supports this is <A target="_blank" href="https://github.com/oliverschmidt/A2Stream">A2Stream</A>). AppleWin will utilise DNS offloading when both AppleWin is configured to use "Virtual DNS" and the Apple II application enables the W5100 for the "Virtual DNS" mode.
 		</P>
 		<P>Enabling AppleWin for "Virtual DNS" and using with Apple II applications that don't support this is harmless (but you won't get any benefit).
 		</P>
