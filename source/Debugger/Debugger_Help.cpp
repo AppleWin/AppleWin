@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	http://www.codeproject.com/cpp/unicode.asp
 
-				TEXT()       _tcsrev
+				       _tcsrev
 	_UNICODE    Unicode      _wcsrev
 	_MBCS       Multi-byte   _mbsrev
 	n/a         ASCII        strrev
@@ -468,8 +468,8 @@ Update_t CmdHelpSpecific (int nArgs)
 	bool bCategory = false;
 	bool bDisplayCategory = true;
 
-	if ((! _tcscmp( g_aArgs[1].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName)) ||
-		(! _tcscmp( g_aArgs[1].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName)) )
+	if ((! strcmp( g_aArgs[1].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName)) ||
+		(! strcmp( g_aArgs[1].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName)) )
 	{
 		bAllCommands = true;
 		nArgs = NUM_COMMANDS;
@@ -1216,11 +1216,11 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 		case CMD_OUTPUT_ECHO:
 			ConsoleColorizePrint( " Usage: string"    );
-//			ConsoleBufferPush( TEXT(" Examples:"        ) );
+//			ConsoleBufferPush( " Examples:" );
 			Help_Examples();
 			ConsolePrintFormat( "%s   %s Checkpoint", CHC_EXAMPLE, pCommand->m_sName );
 			ConsolePrintFormat( "%s   %s PC"        , CHC_EXAMPLE, pCommand->m_sName );
-//			ConsoleBufferPush( TEXT("  Echo the string to the console" ) );
+//			ConsoleBufferPush( "  Echo the string to the console" );
 			break;
 		case CMD_OUTPUT_PRINT: 
 			ConsoleColorizePrint( " Usage: <string | expression> [, string | expression]*"       );
@@ -1459,10 +1459,12 @@ Update_t CmdVersion (int nArgs)
 	int nFixMinor;
 	UnpackVersion( nVersion, nMajor, nMinor, nFixMajor, nFixMinor );
 
-	ConsolePrintFormat( "  Emulator:  %s%s%s    Debugger: %s%d.%d.%d.%d%s"
+	ConsolePrintFormat("  Emulator:  %s%s%s (%d-bit build)    Debugger: %s%d.%d.%d.%d%s"
 		, CHC_SYMBOL
 		, g_VERSIONSTRING.c_str()
 		, CHC_DEFAULT
+		, GetCompilationTarget()
+		//
 		, CHC_SYMBOL
 		, nMajor, nMinor, nFixMajor, nFixMinor
 		, CHC_DEFAULT
@@ -1473,8 +1475,8 @@ Update_t CmdVersion (int nArgs)
 		for (int iArg = 1; iArg <= g_nArgRaw; iArg++ )
 		{
 			// * PARAM_WILDSTAR -> ? PARAM_MEM_SEARCH_WILD
-			if ((! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
-				(! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
+			if ((! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
+				(! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
 			{
 				ConsoleBufferPushFormat( "  Arg: %" SIZE_T_FMT " bytes * %d = %" SIZE_T_FMT " bytes",
 					sizeof(Arg_t), MAX_ARGS, sizeof(g_aArgs) );
@@ -1487,7 +1489,7 @@ Update_t CmdVersion (int nArgs)
 
 				ConsoleBufferPushFormat( "  Cursor(%d)  T: %04X  C: %04X  B: %04X %c D: %02X", // Top, Cur, Bot, Delta
 					g_nDisasmCurLine, g_nDisasmTopAddress, g_nDisasmCurAddress, g_nDisasmBotAddress,
-					g_bDisasmCurBad ? TEXT('*') : TEXT(' ')
+					g_bDisasmCurBad ? '*' : ' '
 					, g_nDisasmBotAddress - g_nDisasmTopAddress
 				);
 

@@ -3,7 +3,6 @@
 #ifdef __MINGW32__
 #define STRSAFE_NO_DEPRECATE
 #endif
-#include <tchar.h>
 
 #include <crtdbg.h>
 // <strmif.h> has the correct IReferenceClock definition that works for both x86 and x64,

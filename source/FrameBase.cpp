@@ -104,7 +104,7 @@ void FrameBase::Video_TakeScreenShot(const Video::VideoScreenShot_e ScreenShotTy
 
 //===========================================================================
 
-void FrameBase::Video_SaveScreenShot(const Video::VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName)
+void FrameBase::Video_SaveScreenShot(const Video::VideoScreenShot_e ScreenShotType, const char* pScreenShotFileName)
 {
 	FILE* pFile = fopen(pScreenShotFileName, "wb");
 	if (pFile)
@@ -128,7 +128,7 @@ std::string FrameBase::Util_MakeScreenShotFileName() const
 }
 
 // Returns TRUE if file exists, else FALSE
-bool FrameBase::Util_TestScreenShotFileName(const TCHAR* pFileName)
+bool FrameBase::Util_TestScreenShotFileName(const char* pFileName)
 {
 	bool bFileExists = false;
 	FILE* pFile = fopen(pFileName, "rt");

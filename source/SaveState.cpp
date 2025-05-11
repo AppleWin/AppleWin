@@ -403,7 +403,10 @@ static void Snapshot_LoadState_v2(void)
 		GetVideo().SetVidHD(false);			// Set true later only if VidHDCard is instantiated
 		GetVideo().VideoResetState();
 		GetVideo().SetVideoRefreshRate(VR_60HZ);	// Default to 60Hz as older save-states won't contain refresh rate
-		GetCardMgr().GetMockingboardCardMgr().InitializeForLoadingSnapshot();	// GH#609
+
+		MockingboardCardManager &mockingboardCardManager = GetCardMgr().GetMockingboardCardMgr();
+		mockingboardCardManager.InitializeForLoadingSnapshot(); // GH#609
+
 #ifdef USE_SPEECH_API
 		g_Speech.Reset();
 #endif
@@ -417,7 +420,10 @@ static void Snapshot_LoadState_v2(void)
 				throw std::runtime_error("Unknown top-level scalar: " + scalar);
 		}
 
-		GetCardMgr().GetMockingboardCardMgr().SetCumulativeCycles();
+		// Refresh the volume of any new Mockingboard card (and its SSI263 or SC01 chips)
+		mockingboardCardManager.SetVolume(mockingboardCardManager.GetVolume(), GetPropertySheet().GetVolumeMax());
+		mockingboardCardManager.SetCumulativeCycles();
+
 		frame.SetLoadedSaveStateFlag(true);
 
 		// NB. The following disparity should be resolved:
@@ -444,7 +450,7 @@ static void Snapshot_LoadState_v2(void)
 	{
 		frame.FrameMessageBox(
 					szMessage.what(),
-					TEXT("Load State"),
+					"Load State",
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
 		if (restart)
@@ -464,7 +470,7 @@ void Snapshot_LoadState()
 		GetFrame().FrameMessageBox(
 					"Save-state v1 no longer supported.\n"
 					"Please load using AppleWin 1.27, and re-save as a v2 state file.",
-					TEXT("Load State"),
+					"Load State",
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
 		return;
@@ -531,7 +537,7 @@ void Snapshot_SaveState(void)
 	{
 		GetFrame().FrameMessageBox(
 					szMessage.what(),
-					TEXT("Save State"),
+					"Save State",
 					MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 	}
 }

@@ -97,7 +97,7 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	const size_t SERIALCHOICE_ITEM_LENGTH = 12;
 	char serialPortName[SERIALCHOICE_ITEM_LENGTH];
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegLoadString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, TRUE, serialPortName, sizeof(serialPortName), TEXT(""));
+	RegLoadString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, TRUE, serialPortName, sizeof(serialPortName), "");
 
 	SetSerialPortName(serialPortName);
 }

@@ -259,13 +259,13 @@ void SpkrInitialize ()
 		if (!g_bSpkrAvailable)
 		{
 			GetFrame().FrameMessageBox(
-				TEXT("The emulator is unable to initialize a waveform ")
-				TEXT("output device.  Make sure you have a sound card ")
-				TEXT("and a driver installed and that Windows is ")
-				TEXT("correctly configured to use the driver.  Also ")
-				TEXT("ensure that no other program is currently using ")
-				TEXT("the device."),
-				TEXT("Configuration"),
+				"The emulator is unable to initialize a waveform "
+				"output device.  Make sure you have a sound card "
+				"and a driver installed and that Windows is "
+				"correctly configured to use the driver.  Also "
+				"ensure that no other program is currently using "
+				"the device.",
+				"Configuration",
 				MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 		}
 	}
@@ -972,12 +972,6 @@ bool Spkr_DSInit()
 		LogFileOutput("Spkr_DSInit: DSZeroVoiceBuffer failed\n");
 		return false;
 	}
-
-	SpeakerVoice.bActive = true;
-
-	// Volume might've been setup from value in Registry
-	if(!SpeakerVoice.nVolume)
-		SpeakerVoice.nVolume = DSBVOLUME_MAX;
 
 	hr = SpeakerVoice.lpDSBvoice->SetVolume(SpeakerVoice.nVolume);
 	LogFileOutput("Spkr_DSInit: SetVolume(%d) res = %08X\n", SpeakerVoice.nVolume, (uint32_t)hr);

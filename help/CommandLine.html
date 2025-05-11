@@ -89,13 +89,13 @@
 		Remove the No-Slot clock (NSC).<br><br>
 		-aux &lt;empty|std80|ext80|rw3&gt;<br>
 		Remove ('empty') or insert 80-Column('std80'), Extended 80-Column('ext80') or RamWorks III('rw3') card into auxiliary slot in Apple //e.<br>
-		NB. 'rw3' will default to 2MiB (32 banks of 64K) unless overriden by -r switch.<br><br>
+		NB. 'rw3' will default to 1MiB (16 banks of 64K) unless overriden by -r switch.<br><br>
 		-r &lt;number of banks&gt;<br>
 		Emulate a RamWorks III card with 1 to 256 banks (each bank is 64K, giving a max of 16MiB) in the auxiliary slot in an Apple //e machine.<br>
 		(Implicitly inserts a RamWorks III card into the aux slot.)<br><br>
 		-load-state &lt;savestate&gt;<br>
 		Load a save-state file (and auto power-on the Apple II).<br>
-		NB. This takes precedent over the -d1, -d2, -s#d#, -h1, -h2, s0-7, -model and -r switches.<br><br>
+		NB. This takes precedent over the -d1, -d2, -s#d#, -h1, -h2, -s#h#, -s0-7, -model and -r switches.<br><br>
 		-f or -full-screen<br>
 		Start in full-screen mode.<br><br>
 		-no-full-screen<br>
@@ -103,7 +103,7 @@
 		-fs-height=&lt;best|nnnn&gt;<br>
 		Use to select a better resolution for full-screen mode.<br>
 		<ul>
-			<li>best: picks the highest resolution where the height is an integer multiple of (192*2)</li>
+			<li>best: picks the highest resolution where the height is an integer multiple of (192*2); or (200*2) when using '-s3 vidhd'</li>
 			<li>nnnn: select a specific resolution with height=nnnn pixels</li>
 		</ul>
 		-fs-width=&lt;nnnn&gt;<br>
@@ -173,7 +173,7 @@
 		</ul>
 		-modem<br>
 		Shorthand for passing -dcd<br>
-		Use with GBBS Pro (or any other BBS package). See the <a href="http://www.callapple.org/documentation/books/gbbs-pro-2-2/">GBBS Pro 2.2</a> book from Call-A.P.P.L.E.
+		Use with GBBS Pro (or any other BBS package). See the <a target="_blank" href="http://www.callapple.org/documentation/books/gbbs-pro-2-2/">GBBS Pro 2.2</a> book from Call-A.P.P.L.E.
 		<br><br>
 		-dcd<br>
 		For the SSC's 6551's Status register's DCD bit, use this switch to force AppleWin to use the state of the MS_RLSD_ON bit from GetCommModemStatus().<br><br>

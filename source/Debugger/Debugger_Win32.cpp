@@ -149,7 +149,7 @@ bool _CmdConfigFont(int iFont, LPCSTR pFontName, int iPitchFamily, int nFontHeig
 			if (iFont == FONT_DISASM_DEFAULT)
 				_UpdateWindowFontHeights(nFontHeight);
 
-			_tcsncpy(pFont->_sFontName, pFontName, MAX_FONT_NAME - 1);
+			strncpy(pFont->_sFontName, pFontName, MAX_FONT_NAME - 1);
 			pFont->_sFontName[MAX_FONT_NAME - 1] = 0;
 
 			Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
@@ -160,7 +160,7 @@ bool _CmdConfigFont(int iFont, LPCSTR pFontName, int iPitchFamily, int nFontHeig
 			GetTextMetrics(hDC, &tm);
 
 			SIZE  size;
-			TCHAR sText[] = "W";
+			char sText[] = "W";
 			int   nLen = 1;
 
 			int nFontWidthAvg;
@@ -271,8 +271,8 @@ Update_t CmdConfigFont(int nArgs)
 			iArg = 1;
 
 			// FONT * is undocumented, like VERSION *
-			if ((!_tcscmp(g_aArgs[iArg].sArg, g_aParameters[PARAM_WILDSTAR].m_sName)) ||
-				(!_tcscmp(g_aArgs[iArg].sArg, g_aParameters[PARAM_MEM_SEARCH_WILD].m_sName)))
+			if ((!strcmp(g_aArgs[iArg].sArg, g_aParameters[PARAM_WILDSTAR].m_sName)) ||
+				(!strcmp(g_aArgs[iArg].sArg, g_aParameters[PARAM_MEM_SEARCH_WILD].m_sName)))
 			{
 				ConsoleBufferPushFormat("Lines: %d  Font Px: %d  Line Px: %d"
 					, g_nDisasmDisplayLines
@@ -451,7 +451,7 @@ Update_t CmdConfigSetFont(int nArgs)
 {
 #if OLD_FONT
 	HFONT  hFont = (HFONT)0;
-	TCHAR* pFontName = NULL;
+	char* pFontName = NULL;
 	int    nHeight = g_nFontHeight;
 	int    iFontTarget = FONT_DISASM_DEFAULT;
 	int    iFontPitch = FIXED_PITCH | FF_MODERN;

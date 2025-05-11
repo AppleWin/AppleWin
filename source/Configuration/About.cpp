@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Windows/AppleWin.h"
 #include "../resource/resource.h"
 
-static const TCHAR g_szGPL[] = 
+static const char g_szGPL[] = 
 "This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.\r\n\
 \r\n\
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\r\n\
@@ -64,7 +64,7 @@ static INT_PTR CALLBACK DlgProcAbout(HWND hWnd, UINT message, WPARAM wparam, LPA
 
 	case WM_INITDIALOG:
 		{
-			HICON hIcon = LoadIcon(GetFrame().g_hInstance, TEXT("APPLEWIN_ICON"));
+			HICON hIcon = LoadIcon(GetFrame().g_hInstance, "APPLEWIN_ICON");
 			SendDlgItemMessage(hWnd, IDC_APPLEWIN_ICON, STM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(hIcon));
 
 			std::string strAppleWinVersion = "AppleWin v" + g_VERSIONSTRING;

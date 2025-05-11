@@ -344,7 +344,7 @@ void EnterMessageLoop(void)
 
 static void GetProgramDirectory(void)
 {
-	TCHAR programDir[MAX_PATH];
+	char programDir[MAX_PATH];
 	GetModuleFileName((HINSTANCE)0, programDir, MAX_PATH);
 	programDir[MAX_PATH-1] = 0;
 
@@ -353,7 +353,7 @@ static void GetProgramDirectory(void)
 	int loop = g_sProgramDir.size();
 	while (loop--)
 	{
-		if ((g_sProgramDir[loop] == TEXT(PATH_SEPARATOR)) || (g_sProgramDir[loop] == TEXT(':')))
+		if ((g_sProgramDir[loop] == PATH_SEPARATOR) || (g_sProgramDir[loop] == ':'))
 		{
 			g_sProgramDir.resize(loop + 1);  // this reduces the size
 			break;
@@ -506,7 +506,7 @@ static void ExceptionHandler(const char* pError)
 {
 	GetFrame().FrameMessageBox(
 				pError,
-				TEXT("Runtime Exception"),
+				"Runtime Exception",
 				MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
 	LogFileOutput("Runtime Exception: %s\n", pError);
@@ -605,7 +605,7 @@ static void GetAppleWinVersion(void)
             VS_FIXEDFILEINFO* pFixedFileInfo;
             UINT pFixedFileInfoLen;
 
-            VerQueryValue(pVerInfoBlock, TEXT("\\"), (LPVOID*) &pFixedFileInfo, (PUINT) &pFixedFileInfoLen);
+            VerQueryValue(pVerInfoBlock, "\\", (LPVOID*) &pFixedFileInfo, (PUINT) &pFixedFileInfoLen);
 
             // Construct version string from fixed file info block
 
@@ -619,7 +619,7 @@ static void GetAppleWinVersion(void)
 		delete [] pVerInfoBlock;
     }
 
-	LogFileOutput("AppleWin version: %s\n",  g_VERSIONSTRING.c_str());
+	LogFileOutput("%s\n", GetAppleWinVersionAndBuild().c_str());
 }
 
 // DO ONE-TIME INITIALIZATION
@@ -674,7 +674,7 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 static void RepeatInitialization(void)
 {
 	KeybReset();
-	GetVideo().SetVidHD(false);	// Set true later only if VidHDCard is instantiated
+	GetVideo().SetVidHD(false);	// Set true later (eg. by LoadConfiguration() or cmd-line) if VidHDCard is instantiated
 	ResetToLogoMode();
 
 	// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
@@ -918,6 +918,9 @@ static void RepeatInitialization(void)
 	if (g_cmdLine.noDisk2StepperDefer)
 		GetCardMgr().GetDisk2CardMgr().SetStepperDefer(false);
 
+	if (g_cmdLine.useAltCpuEmulation)
+		ForceAltCpuEmulation();
+
 	// Call DebugInitialize() after SetCurrentImageDir()
 	DebugInitialize();
 	LogFileOutput("Main: DebugInitialize()\n");
@@ -955,7 +958,7 @@ static void RepeatInitialization(void)
 
 	if (!g_bSysClkOK)
 	{
-		GetFrame().FrameMessageBox("DirectX failed to create SystemClock instance", TEXT("AppleWin Error"), MB_OK);
+		GetFrame().FrameMessageBox("DirectX failed to create SystemClock instance", "AppleWin Error", MB_OK);
 		g_cmdLine.bShutdown = true;
 	}
 
@@ -966,7 +969,7 @@ static void RepeatInitialization(void)
 						: "Unsupported -rom and -f8rom being used at the same time\n";
 
 		LogFileOutput("%s", msg.c_str());
-		GetFrame().FrameMessageBox(msg.c_str(), TEXT("AppleWin Error"), MB_OK);
+		GetFrame().FrameMessageBox(msg.c_str(), "AppleWin Error", MB_OK);
 		g_cmdLine.bShutdown = true;
 	}
 

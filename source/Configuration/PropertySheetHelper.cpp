@@ -94,7 +94,7 @@ void CPropertySheetHelper::FillComboBox(HWND window, int controlid, LPCTSTR choi
 	while (choices && *choices)
 	{
 		SendMessage(combowindow, CB_ADDSTRING, 0, (LPARAM)(LPCTSTR)choices);
-		choices += _tcslen(choices)+1;
+		choices += strlen(choices)+1;
 	}
 
 	if (SendMessage(combowindow, CB_SETCURSEL, currentchoice, 0) == CB_ERR && currentchoice != -1)
@@ -114,13 +114,13 @@ void CPropertySheetHelper::SaveComputerType(eApple2Type NewApple2Type)
 
 void CPropertySheetHelper::ConfigSaveApple2Type(eApple2Type apple2Type)
 {
-	REGSAVE(TEXT(REGVALUE_APPLE2_TYPE), apple2Type);
+	REGSAVE(REGVALUE_APPLE2_TYPE, apple2Type);
 	LogFileOutput("Config: Apple2 Type changed to %d\n", apple2Type);
 }
 
 void CPropertySheetHelper::SaveCpuType(eCpuType NewCpuType)
 {
-	REGSAVE(TEXT(REGVALUE_CPU_TYPE), NewCpuType);
+	REGSAVE(REGVALUE_CPU_TYPE, NewCpuType);
 }
 
 void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
@@ -139,10 +139,10 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 // Used by:
 // . CPageDisk:		IDC_CIDERPRESS_BROWSE
 // . CPageAdvanced:	IDC_PRINTER_DUMP_FILENAME_BROWSE
-std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, const TCHAR* pszTitle, const TCHAR* REGVALUE, const TCHAR* FILEMASKS)
+std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, const char* pszTitle, const char* REGVALUE, const char* FILEMASKS)
 {
-	TCHAR szFilename[MAX_PATH];
-	RegLoadString(REG_CONFIG, REGVALUE, 1, szFilename, MAX_PATH, TEXT(""));
+	char szFilename[MAX_PATH];
+	RegLoadString(REG_CONFIG, REGVALUE, 1, szFilename, MAX_PATH, "");
 	std::string pathname = szFilename;
 
 	OPENFILENAME ofn;
@@ -152,9 +152,9 @@ std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, const TCHAR* pszTit
 	ofn.hwndOwner       = hWindow;
 	ofn.hInstance       = GetFrame().g_hInstance;
 	ofn.lpstrFilter     = FILEMASKS;
-	/*ofn.lpstrFilter     =	TEXT("Applications (*.exe)\0*.exe\0")
-							TEXT("Text files (*.txt)\0*.txt\0")
-							TEXT("All Files\0*.*\0");*/
+	/*ofn.lpstrFilter     =	"Applications (*.exe)\0*.exe\0"
+							"Text files (*.txt)\0*.txt\0"
+							"All Files\0*.*\0";*/
 	ofn.lpstrFile       = szFilename;
 	ofn.nMaxFile        = MAX_PATH;
 	ofn.lpstrInitialDir = "";
@@ -173,12 +173,12 @@ void CPropertySheetHelper::SaveStateUpdate()
 	if (m_bSSNewFilename)
 	{
 		Snapshot_SetFilename(m_szSSNewFilename, m_szSSNewDirectory);
-		RegSaveString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, Snapshot_GetPathname());
+		RegSaveString(REG_CONFIG, REGVALUE_SAVESTATE_FILENAME, 1, Snapshot_GetPathname());
 	}
 }
 
 // NB. OK'ing this property sheet will call SaveStateUpdate()->Snapshot_SetFilename() with this new path & filename
-int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, const TCHAR* pszTitle, bool bSave)
+int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, const char* pszTitle, bool bSave)
 {
 	// Whenever harddisks/disks are inserted (or removed) and *if path has changed* then:
 	// . Snapshot's path & Snapshot's filename will be updated to reflect the new defaults.
@@ -198,8 +198,8 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, const TCHAR* pszTit
 	ofn.lStructSize     = sizeof(OPENFILENAME);
 	ofn.hwndOwner       = hWindow;
 	ofn.hInstance       = GetFrame().g_hInstance;
-	ofn.lpstrFilter     = TEXT("Save State files (*.aws.yaml)\0*.aws.yaml\0")
-						  TEXT("All Files\0*.*\0");
+	ofn.lpstrFilter     = "Save State files (*.aws.yaml)\0*.aws.yaml\0"
+						  "All Files\0*.*\0";
 	ofn.lpstrFile       = szFilename;	// Dialog strips the last .EXT from this string (eg. file.aws.yaml is displayed as: file.aws
 	ofn.nMaxFile        = sizeof(szFilename);
 	ofn.lpstrInitialDir = szDirectory.c_str();
@@ -355,12 +355,12 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 
 	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))
 	{
-		REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM), ConfigNew.m_bEnableTheFreezesF8Rom);
+		REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);
 	}
 
 	if (CONFIG_CHANGED_LOCAL(m_videoRefreshRate))
 	{
-		REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), ConfigNew.m_videoRefreshRate);
+		REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
 	}
 }
 
@@ -368,8 +368,8 @@ void CPropertySheetHelper::ApplyNewConfigFromSnapshot(const CConfigNeedingRestar
 {
 	SaveComputerType(ConfigNew.m_Apple2Type);
 	SaveCpuType(ConfigNew.m_CpuType);
-	REGSAVE(TEXT(REGVALUE_THE_FREEZES_F8_ROM), ConfigNew.m_bEnableTheFreezesF8Rom);
-	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), ConfigNew.m_videoRefreshRate);
+	REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);
+	REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
 }
 
 void CPropertySheetHelper::ApplyNewConfig(void)
@@ -406,9 +406,9 @@ bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd, const bool bConfigChan
 	if (bConfigChanged)
 	{
 		if (MessageBox(hWnd,
-				TEXT("The hardware configuration has changed. Save/Load state will lose these changes.\n\n")
-				TEXT("Are you sure you want to do this?"),
-				TEXT(REG_CONFIG),
+				"The hardware configuration has changed. Save/Load state will lose these changes.\n\n"
+				"Are you sure you want to do this?",
+				REG_CONFIG,
 				MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
 			return false;
 	}
@@ -422,11 +422,11 @@ bool CPropertySheetHelper::IsOkToRestart(HWND hWnd)
 		return true;
 
 	if (MessageBox(hWnd,
-			TEXT("Restarting the emulator will reset the state ")
-			TEXT("of the emulated machine, causing you to lose any ")
-			TEXT("unsaved work.\n\n")
-			TEXT("Are you sure you want to do this?"),
-			TEXT(REG_CONFIG),
+			"Restarting the emulator will reset the state "
+			"of the emulated machine, causing you to lose any "
+			"unsaved work.\n\n"
+			"Are you sure you want to do this?",
+			REG_CONFIG,
 			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
 		return false;
 
@@ -483,7 +483,7 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 	if (MessageBox(hWnd,
 			strMsg.c_str(),
-			TEXT(REG_CONFIG),
+			REG_CONFIG,
 			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
 		return false;
 

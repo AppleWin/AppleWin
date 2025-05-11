@@ -17,7 +17,10 @@ public:
 
 		GetVideo().SetVidHD(true);
 	}
-	virtual ~VidHDCard(void) {}
+	virtual ~VidHDCard(void)
+	{
+		GetVideo().SetVidHD(false);
+	}
 
 	virtual void Destroy(void) {}
 	virtual void Reset(const bool powerCycle);

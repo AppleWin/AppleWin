@@ -30,7 +30,7 @@ enum VideoType_e
 	, VT_DEFAULT = VT_COLOR_TV
 };
 
-extern TCHAR g_aVideoChoices[];
+extern char g_aVideoChoices[];
 
 enum VideoStyle_e
 {
@@ -48,20 +48,24 @@ enum VideoRefreshRate_e
 };
 
 enum VideoFlag_e
-{
-	VF_80COL  = 0x00000001,
-	VF_DHIRES = 0x00000002,
-	VF_HIRES  = 0x00000004,
-	VF_80STORE= 0x00000008,
-	VF_MIXED  = 0x00000010,
-	VF_PAGE2  = 0x00000020,		// Text or Hires
-	VF_TEXT   = 0x00000040,
-	VF_SHR    = 0x00000080,		// For VidHD's support for IIgs SHR video modes
-	VF_80COL_AUX_EMPTY = 0x00000100,	// For 80COL when aux slot is empty (returns floating bus)
-	VF_PAGE0  = 0x10000000,		// Debugger: Pseudo Page $00 (Poorman's heatmap)
-	VF_PAGE3  = 0x20000000,		// Debugger: Pseudo Page $60 (Poorman's heatmap)
-	VF_PAGE4  = 0x40000000,		// Debugger: Pseudo Page $80 (Poorman's heatmap)
-	VF_PAGE5  = 0x80000000,		// Debugger: Pseudo Page $A0 (Poorman's heatmap)
+{	                   //  76543210
+	VF_80COL           = 0x00000001,
+	VF_DHIRES          = 0x00000002,
+	VF_HIRES           = 0x00000004,
+	VF_80STORE         = 0x00000008,
+	VF_MIXED           = 0x00000010,
+	VF_PAGE2           = 0x00000020,		// Text or Hires
+	VF_TEXT            = 0x00000040,
+	VF_SHR             = 0x00000080,		// For VidHD's support for IIgs SHR video modes
+	VF_80COL_AUX_EMPTY = 0x00000100,		// For 80COL when aux slot is empty (returns floating bus)
+
+	VF_PAGE0           = 0x10000000,		// Debugger: Pseudo Page $00 (Poorman's heatmap)
+	VF_PAGE3           = 0x20000000,		// Debugger: Pseudo Page $60 (Poorman's heatmap)
+	VF_PAGE4           = 0x40000000,		// Debugger: Pseudo Page $80 (Poorman's heatmap)
+	VF_PAGE5           = 0x80000000,		// Debugger: Pseudo Page $A0 (Poorman's heatmap)
+	VF_PAGE6           = 0x00000200,		// Debugger: Pseudo Page $C0 (Poorman's heatmap) LC Bank 1/2
+	VF_PAGE7           = 0x00000400,		// Debugger: Pseudo Page $D0 (Poorman's heatmap) LC Bank 2/-
+	VF_PAGE8           = 0x00000800			// Debugger: Psuedo Page $E0 (Poorman's heatmap) LC Bank RAM
 };
 
 enum AppleFont_e
