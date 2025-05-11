@@ -11,27 +11,59 @@
 
 <body style="background-color: rgb(255, 255, 255); font-family: verdana;" alink="#008000" link="#008000" vlink="#008000">
 
-<h2><font color="#008000">Creating
-Disk Images</font></h2>
+<h2><font color="#008000">Creating Disk Images</font></h2>
+
+<h3>Basic Disk Creation</h3>
 
 <hr size="4">
-<p>There are two ways in AppleWin to create a new floppy disk image.</p>
+<p>There are two ways in AppleWin to create a blank floppy disk image:</p>
 
-<h3>Classic Disk Creation</h3>
+<h4>Improved Disk Creation</h3>
 
-The first way is clicking on the drive icon and tell AppleWin to use an image file which <i>doesn't</i>
+The easiest way to to create a blank disk image is to:
+
+<ol>
+  <li>Right-Click on the Drive 1 <img src="img/tb-drv1.png" /> toolbar button (or press <span style="font-family: Courier New,Courier,monospace;">Ctrl-F3</span>) to open the drive pop-up menu.<br>
+
+  <br><img src="img/disk_new_140kb_disk.png" /></li>
+
+  <li>Depending on the File System desired select:
+
+<p><ul>
+      <li>For a blank ProDOS disk select <strong>New ProDOS 5.25" (140KB) disk image (Standard 35 Track)</strong>, or</li>
+      <li>For a blank DOS 3.3 disk select <strong>New DOS 3.3 5.25" (140 KB) disk image (Standard 35 Track)</strong>.</li>
+    </ul>
+</p>
+
+<p>New disks use ProDOS while older disks use DOS 3.3.</p></li>
+
+  <li>You will then be asked to name the disk image.<br>
+
+<p>The name will default to <i>blank_floppy_###.po</i> for ProDOS, or <i>blank_floppy_###.do</i> for DOS 3.3. The ### is current date-time-samp in YEAR-MON-DAY-HHh-MMm-SSs format.<br></li>
+
+  <li>Click <span style="font-family: Courier New,Courier,monospace;">SAVE</span> when ready.</li>
+</ol>
+
+<p>You are now ready to use your new disk image.
+
+<h4>Classic Disk Creation</h3>
+
+In older versions of AppleWin there was only one way to natively create an empty disk image.
+
+To create an empty disk image clicking on the drive icon and type an image file name ending in <span style="font-family: Courier New,Courier,monospace;">.dsk</span> which <i>doesn't</i>
 already exist.&nbsp;  The emulator will automatically create a new 5.25" image
-(standard 140 KB, 16 sectors/track, 35 tracks) file. (See <a href="ddi-sizes.html">Disk Sizes</a> for more information.)
+(standard 140 KB, 16 sectors/track, 35 tracks) file which is empty and non-bootable. (See <a href="ddi-sizes.html">Disk Sizes</a> for more information.)
 
-<p><b>NOTE:</b> This disk will NOT be <i>bootable</i>. You will need to <i>format</i> the disk (keep reading) to put a File System on it and (optionally) copy a Disk Operating System (DOS 3.3, ProDOS, etc.) onto it.  This will make the disk bootable.</p>
+<h5>Manually putting DOS 3.3 on a blank disk</h5>
+
+<p><b>NOTE:</b> When you This disk will NOT be <i>bootable</i>. You will need to <i>format</i> the disk (keep reading) to put a File System on it and (optionally) copy a Disk Operating System (DOS 3.3, ProDOS, etc.) onto it.  This will make the disk bootable.</p>
 
 Specifying a new disk image is like inserting a blank,
 unformatted floppy disk into a real drive.&nbsp; This means that
 the image must be formatted (either by the emulator or some other utility) before it can be used.
 Specifically, this is what you would do using DOS 3.3:</p>
 
-<ol>
-  <li>Click on the Drive 1 <img src="img/tb-drv1.png" /> toolbar button (or press <span style="font-family: Courier New,Courier,monospace;">F3</span>)</li>
+<li>Click on the Drive 1 <img src="img/tb-drv1.png" /> toolbar button (or press <span style="font-family: Courier New,Courier,monospace;">F3</span>)</li>
 
   <li>Select a <strong>MASTER.DSK</strong> DOS 3.3 disk image for drive 1.</li>
 
@@ -80,26 +112,38 @@ to detect the image type from the image itself, it is determined by the
 given file extension only. Six extensions are allowed:</p>
 
 <ul>
-  <li>.DSK,</li>
-  <li>.DO,</li>
-  <li>.PO,</li>
-  <li>.HDV</li>
-  <li>.NIB, and</li>
-  <li>.WOZ.</li>
+  <li>.DSK -- DOS 3.3 sector order</li>
+  <li>.DO -- DOS 3.3 sector order</li>
+  <li>.PO -- ProDOS sector order</li>
+  <li>.HDV -- ProDOS (hard drive) volume in ProDOS sector order</li>
+  <li>.NIB -- and older raw nibble image with 256 bytes/sector, and</li>
+  <li>.WOZ -- the newest format that supports all copy protection formats.</li>
 </ul>
-<p>The first two create a "DOS Order Image", .PO and .HDV creates a "ProDOS Order Image", .NIB creates
-a "Nibble Image" and .WOZ creates an empty .WOZ image.&nbsp; If the extension is completely omitted,
+<p>If the extension is completely omitted,
 ".DSK" will be chosen by default.&nbsp; For more information, see <a href="ddi-formats.html">Disk Image Formats</a>.</p>
 
-<h3>New Disk Creation</h3>
+<h3>ProDOS Disk Options</h3>
 
-Alternatively, for finer control, you can right-click on the drive icon and select the menu option <strong>New disk image...</strong>
+When using AppleWin to format a blank ProDOSS disk image it will have 4 files on it:
+
+<ul>
+  <li>* <span style="font-family: Courier New,Courier,monospace;">BITSY.BOOT</span></li>
+  <li>* <span style="font-family: Courier New,Courier,monospace;">QUIT.SYSTEM</span></li>
+  <li>* <span style="font-family: Courier New,Courier,monospace;">BASIC.SYSTEM</span></li>
+  <li>* <span style="font-family: Courier New,Courier,monospace;">PRODOS</span></li>
+</ul>
+
+You can these individually on/off to free up a little more free disk space to make a "data disk".
+
+<h3>Advanced Disk Options</h3>
+
+
+<ol>
+For finer control, you can right-click on the drive icon and select the menu option <strong>New disk image...</strong>
 <br>
 <br><img src="img/drive_popup_menu.png" />
 <br>
 <p><b>Note:</b> This disk will be <i>bootable</i> but it <i>won't</i> have a File System or Disk Operating System (DOS 3.3, ProDOS, etc.) on it.</p>
-
-
 
 <h3>Bootable Disks, Data Disks, File Systems, and Disk Operating Systems</h3>
 
@@ -219,7 +263,7 @@ There are various third-party utilities to create and modify disk images.  Three
 
   <li><a href="https://a2ciderpress.com/">CiderPress</a> (older)</li>
 
-  <li><strong>Copy ][+</strong>.  <b>NOTE:</b> If you are modifying ProDOS disks you will want to use one of the latter versions since earlier verions have various ProDOS bugs in them.</li>
+  <li>Copy ][+.  <b>NOTE:</b> Version 5.0 introduced ProDOS support but if you are modifying ProDOS disks you will want to use one of the latter versions (such as 8.x or later) since earlier verions have various ProDOS bugs in them dealing with the amount of files in a directory.</li>
 </ul>
 
 </body>
