@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <title>Advanced Formatting Options</title>
+
+
+</head>
+
+<body style="background-color: rgb(255, 255, 255); font-family: verdana;" alink="#008000" link="#008000" vlink="#008000">
+
+<h2><font color="#008000">Creating Advanced Disk Images</font></h2>
+
+<h3>ProDOS Disk Options</h3>
+
+When using AppleWin to format a blank ProDOS disk image it will have 4 files on it:
+
+<ul>
+  <li>* <span style="font-family: Courier New,Courier,monospace;">BITSY.BOOT</span></li>
+  <li>* <span style="font-family: Courier New,Courier,monospace;">QUIT.SYSTEM</span></li>
+  <li>* <span style="font-family: Courier New,Courier,monospace;">BASIC.SYSTEM</span></li>
+  <li>* <span style="font-family: Courier New,Courier,monospace;">PRODOS</span></li>
+</ul>
+
+You can these individually on/off to free up a little more free disk space to make a "data disk".
+
+<h3>Custom Boot Sector</h3>
+
+<ol>
+For finer control when formatting disks hold down <strong>SHIFT</strong> and right-click on the drive icon.
+<br>
+<br><img src="img/drive_advanced_options.png" />
+<br>
+<p><b>Note:</b> This disk will be <i>bootable</i> but it <i>won't</i> have a File System or Disk Operating System (DOS 3.3, ProDOS, etc.) on it.</p>
+
+<h3>Bootable Disks, Data Disks, File Systems, and Disk Operating Systems</h3>
+
+<p>When you use AppleWin's <strong>New disk image...</strong> to create a new blank disk it will be <i>bootable</i> since it place a 256 byte AppleWin-provided boot sector; this bootable disk is called a <i>data</i> disk.</p>
+
+<br>
+<img src="img/disk_boot_data_disk.png" />
+
+<p>However, all new disks will NOT have a File System or Disk Operating System (DOS 3.3, ProDOS, etc.) on it.</p>  A File System lets you name and store files on the disk.  A standard Disk Operating System lets you choose which applications or files to run, load, or save.
+
+<p>To make a disk usable under AppleWin you will need to format it -- either with AppleWin or some other utility (see their respective manual) -- which puts a File System on it, and optionally a DOS on it.</p>
+
+<h4>To put a File System on an data disk:</h4>
+
+<ol>
+  <li>Make sure your disk it <i>not</i> mounted in the disk drive.&nbsp; If it is, right-click on the drive button and select <strong>Eject.</strong>
+<br>
+<img src="img/disk_eject.png"></li>
+
+  <li>Right-click on the drive button and select either:
+  <br><strong>Format DOS 3.3 disk image</strong>
+  <br><img src="img/disk_format_dos33_data.png" />
+  <br>
+  <br>or
+  <br>
+  <br><strong>Format ProDOS disk image...</strong>
+  <br><img src="img/disk_format_prodos_data.png" />
+  </li>
+
+  <li>You will see a warning depending on which OS you picked:
+
+  <br>
+  <img src="img/disk_format_dos33_warning.png" />
+  <br>
+  <img src="img/disk_format_prodos_warning.png" />
+  </li>
+
+  <li>You can then mount this disk and save/copy files to it.</li>
+</ol>
+
+<h3>HOWTO: Put an Operating System on new disk:</h3>
+
+ <p>When you make a <strong>New disk image</strong> AppleWin puts a boot sector on it.  You can customize the boot sector -- this can actually be any binary file, even an a bootable disk image!</p>
+
+<p>Normally to put an Disk Operating System on it you would either need to a disk utility such as Copy ][+, CiderPress -- but we can take advantage of the custom boot sector and AppleWin's <strong>Select boot sector file...</strong> option to <i>simultaneously</i> place both a File System and Operating System on it.</p>
+
+<h4>To put DOS 3.3 on a blank disk:</h4>
+
+<ol>
+  <li>Make sure your disk it <i>not</i> mounted in the disk drive.&nbsp; If it is, right-click on the drive button and select <strong>Eject.</strong>
+  <br>
+  <img src="img/disk_eject.png" />
+  </li>
+
+  <li>Right-click on the drive button and select <strong>Select boot sector file...</strong></li>
+  <br><img src="img/disk_select_boot_sector.png" />
+  </li>
+
+  <li>AppleWin will show the currect boot sector.  By default it will use one built into AppleWin.
+  <br>
+  <img src="img/disk_default_boot_sector.png" />
+  </li>
+
+  <li>Select <strong>Yes</strong> then select a bootable DOS 3.3 disk such as <strong>MASTER.DSK</strong>
+  <br>
+  <img src="img/disk_select_bootsector_dos.png" />
+  </li>
+
+  <li>Right-click on the drive button and select <strong>New 5.25" disk image...</strong>
+  <br>
+  <img src="img/disk_new_140kb_disk.png" />
+  <p><b>NOTE:</b> For DOS 3.3 you MUST select a 5.25" disk since Apple DOS 3.3 does NOT suppport 3.5" or hard drives.</p>
+  </li>
+
+  <li>Type in a name for your disk. It MUST end in .DSK or .DO.</li>
+
+  <li>You can now mount and boot your new disk image.</li>
+
+</ol>
+
+<h4>To put ProDOS on a blank disk:</h4>
+
+<ol>
+  <li>Make sure your disk it <i>not</i> mounted in the disk drive.&nbsp; If it is, right-click on the drive button and select <strong>Eject.</strong>
+<br>
+<img src="img/disk_eject.png" /img></li>
+
+  <li>Right-click on the drive button and select <strong>Select boot sector file...</strong>
+  <br>
+  <img src="img/disk_select_boot_sector.png" />
+  </li>
+
+  <li>AppleWin will show the currect boot sector.  By default it will use one built into AppleWin.
+  <br>
+  <img src="img/disk_default_boot_sector.png" />
+  </li>
+
+  <li>Select a bootable ProDOS disk such as <strong>ProDOS_2_4_3.po</strong>
+  <br>
+  <img src="img/disk_select_bootsector_prodos.png" /></li>
+
+  <li>Right-click on the drive button and select <strong>New disk image...</strong>.
+  <br>
+  <p><b>NOTE:</b> For ProDOS you can select <i>any</i> of the disk sizes since they are all supported by ProDOS.</p></li>
+
+  <li>Type in a name for your disk. It MUST end in .PO or .HDV.</li>
+
+  <li>You can now mount and boot your new disk image.</li>
+</ol>
+
+<h3>More Disk Tools</h3>
+
+There are various third-party utilities to create and modify disk images.  Three popular ones are:
+
+<ul>
+  <li><a href="https://ciderpress2.com/">CiderPress 2</a> (newer)</li>
+
+  <li><a href="https://a2ciderpress.com/">CiderPress</a> (older)</li>
+
+  <li>Copy ][+.  <b>NOTE:</b> Version 5.0 introduced ProDOS support but if you are modifying ProDOS disks you will want to use one of the latter versions (such as 8.x or later) since earlier verions have various ProDOS bugs in them dealing with the amount of files in a directory.</li>
+</ul>
+
+</body>
+</html>
