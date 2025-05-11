@@ -748,6 +748,10 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 				LogFileOutput( "ERROR: Couldn't open custom boot sector file: %s\n", lpCmdLine );
 			}
 		}
+		else if (strcmp(lpCmdLine, "-alt-cpu-emu") == 0)	// debug
+		{
+			g_cmdLine.useAltCpuEmulation = true;
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
