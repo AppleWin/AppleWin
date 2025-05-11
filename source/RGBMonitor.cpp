@@ -588,7 +588,7 @@ static void CopySource(int w, int h, int sx, int sy, bgra_t *pVideoAddress, cons
 
 void UpdateHiResCell (int x, int y, uint16_t addr, bgra_t *pVideoAddress)
 {
-	uint8_t *pMain = MemGetMainPtr(addr);
+	uint8_t *pMain = MemGetMainPtrWithLC(addr);
 	BYTE byteval1 = (x >  0) ? *(pMain-1) : 0;
 	BYTE byteval2 =            *(pMain);
 	BYTE byteval3 = (x < 39) ? *(pMain+1) : 0;
@@ -655,7 +655,7 @@ void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 	int xoffset = x & 1; // offset to start of the 2 bytes
 	addr -= xoffset;
 
-	uint8_t* pMain = MemGetMainPtr(addr);
+	uint8_t* pMain = MemGetMainPtrWithLC(addr);
 
 	// We need all 28 bits because each pixel needs a three bit evaluation
 	uint8_t byteval1 = (x < 2 ? 0 : *(pMain - 1));
@@ -1104,7 +1104,7 @@ void UpdateText80ColorCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress, u
 // Duochrome HGR (some RGB cards only)
 void UpdateHiResDuochromeCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 {
-	BYTE bits = *MemGetMainPtr(addr);
+	BYTE bits = *MemGetMainPtrWithLC(addr);
 	BYTE val = *MemGetAuxPtr(addr);
 	const uint8_t foreground = val >> 4;
 	const uint8_t background = val & 0x0F;

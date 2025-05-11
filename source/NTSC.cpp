@@ -75,7 +75,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Globals (Private) __________________________________________________
 	static int g_nVideoCharSet = 0;
 	static int g_nVideoMixed   = 0;
-	static int g_nHiresPage    = 1;
+	static int g_nHiresPage    = 1; // See: getVideoScannerAddressHGR()
 	static int g_nTextPage     = 1;
 
 	static bool g_bDelayVideoMode = false;	// NB. No need to save to save-state, as it will be done immediately after opcode completes in NTSC_VideoUpdateCycles()
@@ -866,10 +866,25 @@ INLINE uint16_t getVideoScannerAddressTXT()
 //===========================================================================
 INLINE uint16_t getVideoScannerAddressHGR()
 {
+	// NOTE: Keep in sync: _ViewOutput() getVideoScannerAddressHGR()
+	const uint16_t aPageAddr[9] =
+	{
+		  0x0000 // [0]
+		, 0x2000 // [1]
+		, 0x4000 // [2]
+		, 0x6000 // [3]
+		, 0x8000 // [4]
+		, 0xA000 // [5]
+		, 0xC000 // [6] LC Bank 1
+		, 0xD000 // [7] LC Bank 2
+		, 0xE000 // [8] LC RAM
+	};
+
 	// NB. For both A2 and //e use APPLE_IIE_HORZ_CLOCK_OFFSET - see VideoGetScannerAddress() where only TEXT mode adds $1000
 	uint16_t nAddress = (g_aClockVertOffsetsHGR[g_nVideoClockVert  ]
 		+ APPLE_IIE_HORZ_CLOCK_OFFSET[g_nVideoClockVert/64][g_nVideoClockHorz]
-		+ (g_nHiresPage * 0x2000));
+		+ aPageAddr[g_nHiresPage]); // We can view oddball addresses like LC Bank 1/2/$E000 for VF_PAGE_6, VF_PAGE_7, VF_PAGE_8
+
 	return nAddress;
 }
 
@@ -1609,7 +1624,7 @@ void updateScreenSingleHires40 (long cycles6502)
 			}
 			else if (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START)
 			{
-				uint8_t *pMain = MemGetMainPtr(addr);
+				uint8_t *pMain = MemGetMainPtrWithLC(addr);
 				uint8_t  m     = pMain[0];
 				uint16_t bits  = g_aPixelDoubleMaskHGR[m & 0x7F]; // Optimization: hgrbits second 128 entries are mirror of first 128
 				if (m & 0x80)
@@ -2039,6 +2054,18 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	if( uVideoModeFlags & VF_PAGE5)   // Pseudo page ($A000)
 	{
 		g_nHiresPage = 5;
+	}
+	if( uVideoModeFlags & VF_PAGE6)   // Pseudo page LC 1/2 ($C000,$D000)
+	{
+		g_nHiresPage = 6; // Keep in sync: getVideoScannerAddressHGR()
+	}
+	if( uVideoModeFlags & VF_PAGE7)   // Pseudo page LC 2/- ($D000,$E000)
+	{
+		g_nHiresPage = 7; // Keep in sync: getVideoScannerAddressHGR()
+	}
+	if( uVideoModeFlags & VF_PAGE8)   // Pseudo page LC RAM ($E000,$FFF)
+	{
+		g_nHiresPage = 8; // Keep in sync: getVideoScannerAddressHGR()
 	}
 
 	if (GetVideo().GetVideoRefreshRate() == VR_50HZ && g_pVideoAddress)	// GH#763 / NB. g_pVideoAddress==NULL when called via VideoResetState()

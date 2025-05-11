@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Debug.h"
-#include "DebugDefs.h"
 #include "Debugger_Win32.h"
 
 #include "../Windows/AppleWin.h"
@@ -53,7 +52,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,2,6);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,2,8);
 
 
 // Public _________________________________________________________________________________________
@@ -145,7 +144,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	std::vector<int>       g_vPotentialCommands; // global, since TAB-completion also needs
 	std::vector<Command_t> g_vSortedCommands;
 
-//	static const char g_aFlagNames[_6502_NUM_FLAGS+1] = TEXT("CZIDBRVN");// Reversed since arrays are from left-to-right
+//	static const char g_aFlagNames[_6502_NUM_FLAGS+1] = "CZIDBRVN";// Reversed since arrays are from left-to-right
 
 
 // Cursor (Console Input) _____________________________________________________
@@ -178,17 +177,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	int  g_nDisasmWinHeight = 0;
 
-//	char g_aConfigDisasmAddressColon[] = TEXT(" :");
+//	char g_aConfigDisasmAddressColon[] = " :";
 
 	extern const int WINDOW_DATA_BYTES_PER_LINE = 8;
 
 #if OLD_FONT
 // Font
-	TCHAR     g_sFontNameDefault[ MAX_FONT_NAME ] = TEXT("Courier New");
-	TCHAR     g_sFontNameConsole[ MAX_FONT_NAME ] = TEXT("Courier New");
-	TCHAR     g_sFontNameDisasm [ MAX_FONT_NAME ] = TEXT("Courier New");
-	TCHAR     g_sFontNameInfo   [ MAX_FONT_NAME ] = TEXT("Courier New");
-	TCHAR     g_sFontNameBranch [ MAX_FONT_NAME ] = TEXT("Webdings");
+	char     g_sFontNameDefault[ MAX_FONT_NAME ] = "Courier New";
+	char     g_sFontNameConsole[ MAX_FONT_NAME ] = "Courier New";
+	char     g_sFontNameDisasm [ MAX_FONT_NAME ] = "Courier New";
+	char     g_sFontNameInfo   [ MAX_FONT_NAME ] = "Courier New";
+	char     g_sFontNameBranch [ MAX_FONT_NAME ] = "Webdings";
 	HFONT     g_hFontWebDings  = (HFONT)0;
 #endif
 	int       g_iFontSpacing = FONT_SPACING_CLEAN;
@@ -246,7 +245,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	ProfileOpmode_t g_aProfileOpmodes[ NUM_OPMODES ];
 	unsigned __int64 g_nProfileBeginCycles = 0; // g_nCumulativeCycles // PROFILE RESET
 
-	const std::string g_FileNameProfile = TEXT("Profile.txt"); // changed from .csv to .txt since Excel doesn't give import options.
+	const std::string g_FileNameProfile = "Profile.txt"; // changed from .csv to .txt since Excel doesn't give import options.
 	int   g_nProfileLine = 0;
 	char  g_aProfileLine[ NUM_PROFILE_LINES ][ CONSOLE_WIDTH ];
 
@@ -648,7 +647,7 @@ Update_t CmdBookmarkClear (int nArgs)
 	int iArg;
 	for (iArg = 1; iArg <= nArgs; iArg++ )
 	{
-		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		if (! strcmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
 			_Bookmark_Reset();
 			break;
@@ -706,7 +705,7 @@ Update_t CmdBookmarkLoad (int nArgs)
 //		strcpy( sMiniFileName, pFileName );
 	//	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
-//		_tcscpy(sFileName, g_sCurrentDir); // 
+//		strcpy(sFileName, g_sCurrentDir); // 
 //		strcat(sFileName, sMiniFileName);
 	}
 
@@ -742,7 +741,7 @@ Update_t CmdBookmarkSave (int nArgs)
 
 		if (ConfigSave_BufferToDisk( g_aArgs[ 1 ].sArg, CONFIG_SAVE_FILE_CREATE ))
 		{
-			ConsoleBufferPush( TEXT( "Saved." ) );
+			ConsoleBufferPush(  "Saved."  );
 			return ConsoleUpdate();
 		}
 	}
@@ -786,7 +785,7 @@ Update_t CmdBenchmarkStop (int nArgs)
 	uint32_t currtime = GetTickCount();
 	while ((extbench = GetTickCount()) != currtime)
 		; // intentional busy-waiting
-	KeybQueueKeypress(TEXT(' ') ,ASCII);
+	KeybQueueKeypress(' ' ,ASCII);
 
 	return UPDATE_ALL; // 0;
 }
@@ -812,7 +811,7 @@ Update_t CmdProfile (int nArgs)
 		{
 			ProfileReset();
 			g_bProfiling = 1;
-			ConsoleBufferPush( TEXT(" Resetting profile data." ) );
+			ConsoleBufferPush( " Resetting profile data." );
 		}
 		else
 		{
@@ -1007,14 +1006,14 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 	if (nArgs > 1)
 		return HelpLastCommand();
 
-	TCHAR sAction[ CONSOLE_WIDTH ] = TEXT("Current"); // default to display
+	char sAction[ CONSOLE_WIDTH ] = "Current"; // default to display
 
 	if (nArgs == 1)
 	{
 		int iOpcode = g_aArgs[ 1] .nValue;
 		g_iDebugBreakOnOpcode = iOpcode & 0xFF;
 
-		_tcscpy( sAction, TEXT("Setting") );
+		strcpy( sAction, "Setting" );
 
 		if (iOpcode >= NUM_OPCODES)
 		{
@@ -1062,12 +1061,12 @@ Update_t CmdBreakOnInterrupt (int nArgs)
 	if (nArgs == 1 && nActive == -1)
 		return HelpLastCommand();
 
-	TCHAR sAction[CONSOLE_WIDTH] = TEXT("Current"); // default to display
+	char sAction[CONSOLE_WIDTH] = "Current"; // default to display
 
 	if (nArgs == 1)
 	{
 		g_bDebugBreakOnInterrupt = (iParam == PARAM_ON) ? true : false;
-		_tcscpy(sAction, TEXT("Setting"));
+		strcpy(sAction, "Setting");
 	}
 
 	ConsoleBufferPushFormat("%s Break on Interrupt: %s"
@@ -1284,7 +1283,7 @@ int CheckBreakpointsIO ()
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
 								g_uBreakMemoryAddress = (WORD) nAddress;
-								BYTE opcode = mem[regs.pc];
+								BYTE opcode = ReadByteFromMemory(regs.pc);
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
 								{
@@ -1465,7 +1464,7 @@ Update_t CmdBreakpointAddSmart (int nArgs)
 		g_aArgs[ nArgs ].nValue = g_nDisasmCurAddress;		
 	}
 
-	if ((nAddress >= _6502_IO_BEGIN) && (nAddress <= _6502_IO_END))
+	if ((nAddress >= APPLE_IO_BEGIN) && (nAddress <= APPLE_IO_END))
 	{
 		return CmdBreakpointAddIO( nArgs );
 	}
@@ -1880,7 +1879,7 @@ void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nM
 	{
 		iSlot = g_aArgs[nArgs].nValue;
 
-		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		if (! strcmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
 			_BWZ_RemoveAll( aBreakWatchZero, nMax, nTotal );
 			break;
@@ -1907,7 +1906,7 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 	{
 		iSlot = g_aArgs[nArgs].nValue;
 
-		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		if (! strcmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
 			for ( ; iSlot < nMax; iSlot++ )
 			{
@@ -2074,7 +2073,7 @@ Update_t CmdBreakpointSave (int nArgs)
 
 		if (ConfigSave_BufferToDisk( g_aArgs[ 1 ].sArg, CONFIG_SAVE_FILE_CREATE ))
 		{
-			ConsoleBufferPush( TEXT( "Saved." ) );
+			ConsoleBufferPush(  "Saved."  );
 			return ConsoleUpdate();
 		}
 	}
@@ -2150,8 +2149,8 @@ Update_t CmdAssemble (int nArgs)
 		int iArg = 1;
 		
 		// undocumented ASM *
-		if ((! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
-			(! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
+		if ((! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
+			(! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
 		{
 			_CmdAssembleHashDump();
 		}
@@ -2292,9 +2291,9 @@ Update_t CmdStepOver (int nArgs)
 //	g_nDebugSteps = nArgs ? g_aArgs[1].nValue : 1;
 	WORD nDebugSteps = nArgs ? g_aArgs[1].nValue : 1;
 
-	while (nDebugSteps -- > 0)
+	while (nDebugSteps-- > 0)
 	{
-		int nOpcode = *(mem + regs.pc);
+		BYTE nOpcode = ReadByteFromMemory(regs.pc);
 		WORD nExpectedAddr = (regs.pc + 3) & _6502_MEM_END; // Wrap around 64K edge case when PC = $FFFD..$FFFF: 20 xx xx
 	//	int eMode = g_aOpcodes[ nOpcode ].addrmode;
 	//	int nByte = g_aOpmodes[eMode]._nBytes;
@@ -2492,7 +2491,7 @@ Update_t CmdUnassemble (int nArgs)
 Update_t CmdKey (int nArgs)
 {
 	KeybQueueKeypress(
-		nArgs ? g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0] : TEXT(' '), ASCII); // FIXME!!!
+		nArgs ? g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0] : ' ', ASCII); // FIXME!!!
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
@@ -2518,16 +2517,11 @@ Update_t CmdJSR (int nArgs)
 
 	WORD nAddress = g_aArgs[1].nValue & _6502_MEM_END;
 
-	// Mark Stack Page as dirty
-	*(memdirty+(regs.sp >> 8)) = 1;
-
 	// Push PC onto stack
-	*(mem + regs.sp) = ((regs.pc >> 8) & 0xFF);
+	WriteByteToMemory(regs.sp, ((regs.pc >> 8) & 0xFF));
 	regs.sp--;
-
-	*(mem + regs.sp) = ((regs.pc >> 0) - 1) & 0xFF;
+	WriteByteToMemory(regs.sp, ((regs.pc >> 0) - 1) & 0xFF);
 	regs.sp--;
-
 
 	// Jump to new address
 	regs.pc = nAddress;
@@ -2547,7 +2541,7 @@ Update_t CmdNOP (int nArgs)
 
 	while (nOpbytes--)
 	{
-		*(mem+regs.pc + nOpbytes) = 0xEA;
+		WriteByteToMemory(regs.pc + nOpbytes, 0xEA);
 	}
 
 	return UPDATE_ALL;
@@ -2557,7 +2551,7 @@ Update_t CmdNOP (int nArgs)
 Update_t CmdOut (int nArgs)
 {
 //  if ((!nArgs) ||
-//      ((g_aArgs[1].sArg[0] != TEXT('0')) && (!g_aArgs[1].nValue) && (!GetAddress(g_aArgs[1].sArg))))
+//      ((g_aArgs[1].sArg[0] != '0') && (!g_aArgs[1].nValue) && (!GetAddress(g_aArgs[1].sArg))))
 //     return DisplayHelp(CmdInput);
 
 	if (!nArgs)
@@ -2645,7 +2639,7 @@ Update_t CmdConfigColorMono (int nArgs)
 		if (iParam == PARAM_RESET)
 		{
 			ConfigColorsReset();
-			ConsoleBufferPush( TEXT(" Resetting colors." ) );
+			ConsoleBufferPush( " Resetting colors." );
 		}
 		else
 		if (iParam == PARAM_SAVE)
@@ -2714,7 +2708,7 @@ Update_t CmdConfigLoad (int nArgs)
 {
 	// TODO: CmdConfigRun( gaFileNameConfig )
 	
-//	TCHAR sFileNameConfig[ MAX_PATH ];
+//	char sFileNameConfig[ MAX_PATH ];
 	if (! nArgs)
 	{
 
@@ -2854,7 +2848,7 @@ Update_t CmdConfigDisasm (int nArgs)
 
 	bool bDisplayCurrentSettings = false;
 
-//	if (! _tcscmp( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ))
+//	if (! strcmp( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ))
 	if (! nArgs)
 	{
 		bDisplayCurrentSettings = true;
@@ -3085,7 +3079,7 @@ Update_t CmdCursorLineDown (int nArgs)
 
 		if (g_bDisasmCurBad)
 		{
-//	MessageBox( NULL, TEXT("Bad Disassembly of opcodes"), TEXT("Debugger"), MB_OK );
+//	MessageBox( NULL, "Bad Disassembly of opcodes", "Debugger", MB_OK );
 
 //			g_nDisasmCurAddress = nCur;
 //			g_bDisasmCurBad = false;
@@ -3619,12 +3613,12 @@ Update_t CmdFlagSet (int nArgs)
 //===========================================================================
 Update_t CmdFlag (int nArgs)
 {
-//	if (g_aArgs[0].sArg[0] == g_aParameters[PARAM_FLAG_CLEAR].aName[0] ) // TEXT('R')
+//	if (g_aArgs[0].sArg[0] == g_aParameters[PARAM_FLAG_CLEAR].aName[0] ) // 'R'
 	if (g_iCommand == CMD_FLAG_CLEAR)
 		return CmdFlagClear( nArgs );
 	else
 	if (g_iCommand == CMD_FLAG_SET)
-//	if (g_aArgs[0].sArg[0] == g_aParameters[PARAM_FLAG_SET].aName[0] ) // TEXT('S')
+//	if (g_aArgs[0].sArg[0] == g_aParameters[PARAM_FLAG_SET].aName[0] ) // 'S'
 		return CmdFlagSet( nArgs );
 
 	return UPDATE_ALL; // 0;
@@ -3828,27 +3822,27 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 #ifdef SUPPORT_Z80_EMU
 	else if (strcmp(g_aArgs[1].sArg, "*AF") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_AF);
+		nAddress = ReadWordFromMemory(REG_AF);
 		bUpdate = true;
 	}
 	else if (strcmp(g_aArgs[1].sArg, "*BC") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_BC);
+		nAddress = ReadWordFromMemory(REG_BC);
 		bUpdate = true;
 	}
 	else if (strcmp(g_aArgs[1].sArg, "*DE") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_DE);
+		nAddress = ReadWordFromMemory(REG_DE);
 		bUpdate = true;
 	}
 	else if (strcmp(g_aArgs[1].sArg, "*HL") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_HL);
+		nAddress = ReadWordFromMemory(REG_HL);
 		bUpdate = true;
 	}
 	else if (strcmp(g_aArgs[1].sArg, "*IX") == 0)
 	{
-		nAddress = *(WORD*)(mem + REG_IX);
+		nAddress = ReadWordFromMemory(REG_IX);
 		bUpdate = true;
 	}
 #endif
@@ -3990,7 +3984,7 @@ Update_t CmdMemoryEdit (int nArgs)
 Update_t CmdMemoryEnterByte (int nArgs)
 {
 	if ((nArgs < 2) ||
-		((g_aArgs[2].sArg[0] != TEXT('0')) && (!g_aArgs[2].nValue))) // arg2 not numeric or not specified
+		((g_aArgs[2].sArg[0] != '0') && (!g_aArgs[2].nValue))) // arg2 not numeric or not specified
 	{
 		Help_Arg_1( CMD_MEMORY_ENTER_WORD );
 	}
@@ -3999,16 +3993,17 @@ Update_t CmdMemoryEnterByte (int nArgs)
 	while (nArgs >= 2)
 	{
 		WORD nData = g_aArgs[nArgs].nValue;
-		if ( nData > 0xFF)
+
+		if (nData > 0xFF)
 		{
-			*(mem + nAddress + nArgs - 2)  = (BYTE)(nData >> 0);
-			*(mem + nAddress + nArgs - 1)  = (BYTE)(nData >> 8);
+			WriteByteToMemory(nAddress + nArgs - 2, (BYTE)(nData >> 0));
+			WriteByteToMemory(nAddress + nArgs - 1, (BYTE)(nData >> 8));
 		}
 		else
 		{
-			*(mem + nAddress+nArgs-2)  = (BYTE)nData;
+			WriteByteToMemory(nAddress + nArgs - 2, (BYTE)nData);
 		}
-		*(memdirty+(nAddress >> 8)) = 1;
+
 		nArgs--;
 	}
 
@@ -4020,7 +4015,7 @@ Update_t CmdMemoryEnterByte (int nArgs)
 Update_t CmdMemoryEnterWord (int nArgs)
 {
 	if ((nArgs < 2) ||
-		((g_aArgs[2].sArg[0] != TEXT('0')) && (!g_aArgs[2].nValue))) // arg2 not numeric or not specified
+		((g_aArgs[2].sArg[0] != '0') && (!g_aArgs[2].nValue))) // arg2 not numeric or not specified
 	{
 		Help_Arg_1( CMD_MEMORY_ENTER_WORD );
 	}
@@ -4030,24 +4025,13 @@ Update_t CmdMemoryEnterWord (int nArgs)
 	{
 		WORD nData = g_aArgs[nArgs].nValue;
 
-		// Little Endian
-		*(mem + nAddress + nArgs - 2)  = (BYTE)(nData >> 0);
-		*(mem + nAddress + nArgs - 1)  = (BYTE)(nData >> 8);
+		WriteByteToMemory(nAddress + nArgs - 2, (BYTE)(nData >> 0));
+		WriteByteToMemory(nAddress + nArgs - 1, (BYTE)(nData >> 8));
 
-		*(memdirty+(nAddress >> 8)) |= 1;
 		nArgs--;
 	}
 
 	return UPDATE_ALL;
-}
-
-//===========================================================================
-void MemMarkDirty ( WORD nAddressStart, WORD nAddressEnd )
-{
-	for ( int iPage = (nAddressStart >> 8); iPage <= (nAddressEnd >> 8); iPage++ )
-	{
-		*(memdirty+iPage) = 1;
-	}
 }
 
 //===========================================================================
@@ -4085,15 +4069,13 @@ Update_t CmdMemoryFill (int nArgs)
 
 	if ((nAddressLen > 0) && (nAddressEnd <= _6502_MEM_END))
 	{
-		MemMarkDirty( nAddressStart, nAddressEnd );
-
 		nValue = g_aArgs[nArgs].nValue & 0xFF;
 		while ( nAddressLen-- ) // v2.7.0.22
 		{
 			// TODO: Optimize - split into pre_io, and post_io
-			if ((nAddress2 < _6502_IO_BEGIN) || (nAddress2 > _6502_IO_END))
+			if ((nAddress2 < APPLE_IO_BEGIN) || (nAddress2 > APPLE_IO_END))
 			{
-				*(mem + nAddressStart) = nValue;
+				WriteByteToMemory(nAddressStart, nValue);
 			}
 			nAddressStart++;
 		}
@@ -4231,7 +4213,7 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 
 
 //===========================================================================
-#if 0	// Original
+#if 0	// Original - TODO: delete this old "original" code
 Update_t CmdMemoryLoad (int nArgs)
 {
 	// BLOAD ["Filename"] , addr[, len] 
@@ -4297,7 +4279,6 @@ Update_t CmdMemoryLoad (int nArgs)
 		}
 		
 		BYTE *pMemory = new BYTE [ _6502_MEM_END + 1 ]; // default 64K buffer
-		BYTE *pDst = mem + nAddressStart;
 		BYTE *pSrc = pMemory;
 
 		if (bHaveFileName)
@@ -4325,15 +4306,15 @@ Update_t CmdMemoryLoad (int nArgs)
 			{
 				for ( int iByte = 0; iByte < nAddressLen; iByte++ )
 				{
-					*pDst++ = *pSrc++;
+					WriteByteToMemory(nAddressStart++, *pSrc++);
 				}
-				ConsoleBufferPush( TEXT( "Loaded." ) );
+				ConsoleBufferPush(  "Loaded."  );
 			}
 			fclose( hFile );
 		}
 		else
 		{
-			ConsoleBufferPush( TEXT( "ERROR: Bad filename" ) );
+			ConsoleBufferPush(  "ERROR: Bad filename"  );
 
 			CmdConfigGetDebugDir( 0 );
 
@@ -4487,19 +4468,14 @@ Update_t CmdMemoryLoad (int nArgs)
 		}
 	}
 
+	std::unique_ptr<BYTE> pMemory(new BYTE[_6502_MEM_END + 1]); // default 64K buffer
+
 	if (bHaveFileName)
 	{
 		g_sMemoryLoadSaveFileName = pFileName;
 	}
 	const std::string sLoadSaveFilePath = g_sCurrentDir + g_sMemoryLoadSaveFileName; // TODO: g_sDebugDir
 	
-	BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
-	if (!pMemBankBase)
-	{
-		ConsoleBufferPush( TEXT( "Error: Bank out of range." ) );
-		return ConsoleUpdate();
-	}
-
 	FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 	if (hFile)
 	{
@@ -4514,7 +4490,9 @@ Update_t CmdMemoryLoad (int nArgs)
 			nAddressLen = nFileBytes;
 		}
 
-		size_t nRead = fread( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
+		size_t nRead = fread(pMemory.get() + nAddressStart, nAddressLen, 1, hFile);
+		fclose(hFile);
+
 		if (nRead == 1)
 		{
 			ConsoleBufferPushFormat( "Loaded @ A$%04X,L$%04X", nAddressStart, nAddressLen );
@@ -4522,18 +4500,27 @@ Update_t CmdMemoryLoad (int nArgs)
 		else
 		{
 			ConsoleBufferPush( "Error loading data." );
+			return ConsoleUpdate();
 		}
-		fclose( hFile );
 
 		if (bBankSpecified)
 		{
+			BYTE* const pMemBankBase = MemGetBankPtr(nBank);
+			if (!pMemBankBase)
+			{
+				ConsoleBufferPush("Error: Bank out of range.");
+				return ConsoleUpdate();
+			}
+
+			memcpy(pMemBankBase + nAddressStart, pMemory.get() + nAddressStart, nAddressLen);
+
 			MemUpdatePaging(TRUE);
 		}
 		else
 		{
-			for (WORD i=(nAddressStart>>8); i!=((nAddressStart+(WORD)nAddressLen)>>8); i++)
+			for (WORD i=nAddressStart; i!=(nAddressStart+(WORD)nAddressLen); i++)
 			{
-				memdirty[i] = 0xff;
+				WriteByteToMemory(i, pMemory.get()[i]);
 			}
 		}
 	}
@@ -4578,18 +4565,13 @@ Update_t CmdMemoryMove (int nArgs)
 
 	if ((nAddressLen > 0) && (nAddressEnd <= _6502_MEM_END))
 	{
-		MemMarkDirty( nAddressStart, nAddressEnd );
-
-//			BYTE *pSrc = mem + nAddressStart;
-//			BYTE *pDst = mem + nDst;
-//			BYTE *pEnd = pSrc + nAddressLen;
-
 		while ( nAddressLen-- ) // v2.7.0.23
 		{
 			// TODO: Optimize - split into pre_io, and post_io
-			if ((nDst < _6502_IO_BEGIN) || (nDst > _6502_IO_END))
+			if ((nDst < APPLE_IO_BEGIN) || (nDst > APPLE_IO_END))
 			{
-				*(mem + nDst) = *(mem + nAddressStart);
+				BYTE value = ReadByteFromMemory(nAddressStart);
+				WriteByteToMemory(nDst, value);
 			}
 			nDst++;
 			nAddressStart++;
@@ -4602,7 +4584,7 @@ Update_t CmdMemoryMove (int nArgs)
 }
 
 //===========================================================================
-#if 0	// Original
+#if 0	// Original - TODO: delete this old "original" code
 Update_t CmdMemorySave (int nArgs)
 {
 	// BSAVE ["Filename"] , addr , len 
@@ -4658,8 +4640,8 @@ Update_t CmdMemorySave (int nArgs)
 //			(g_aArgs[ iArgComma2 ].eToken != TOKEN_COLON))
 //			return Help_Arg_1( CMD_MEMORY_SAVE );
 
-		TCHAR sLoadSaveFilePath[ MAX_PATH ];
-		_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
+		char sLoadSaveFilePath[ MAX_PATH ];
+		strcpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
 
 		RangeType_t eRange;
 		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
@@ -4684,18 +4666,17 @@ Update_t CmdMemorySave (int nArgs)
 			{
 				BYTE *pMemory = new BYTE [ nAddressLen ];
 				BYTE *pDst = pMemory;
-				BYTE *pSrc = mem + nAddressStart;
 				
 				// memcpy -- copy out of active memory bank
 				for ( int iByte = 0; iByte < nAddressLen; iByte++ )
 				{
-					*pDst++ = *pSrc++;
+					*pDst++ = ReadByteFromMemory(nAddressStart + iByte);
 				}
 
 				FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
 				if (hFile)
 				{
-					ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
+					ConsoleBufferPush(  "Warning: File already exists.  Overwriting."  );
 					fclose( hFile );
 				}
 
@@ -4705,11 +4686,11 @@ Update_t CmdMemorySave (int nArgs)
 					size_t nWrote = fwrite( pMemory, nAddressLen, 1, hFile );
 					if (nWrote == 1) // (size_t)nAddressLen)
 					{
-						ConsoleBufferPush( TEXT( "Saved." ) );
+						ConsoleBufferPush(  "Saved."  );
 					}
 					else
 					{
-						ConsoleBufferPush( TEXT( "Error saving." ) );
+						ConsoleBufferPush(  "Error saving."  );
 					}
 					fclose( hFile );
 				}
@@ -4755,7 +4736,7 @@ Update_t CmdMemorySave (int nArgs)
 		}
 		else
 		{
-			ConsoleBufferPush( TEXT( "Last saved: none" ) );
+			ConsoleBufferPush(  "Last saved: none"  );
 		}				
 	}
 	else
@@ -4832,17 +4813,31 @@ Update_t CmdMemorySave (int nArgs)
 			}
 			sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
 
-			const BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank) : mem;
-			if (!pMemBankBase)
+			std::unique_ptr<BYTE> pMemory(new BYTE[_6502_MEM_END + 1]); // default 64K buffer
+
+			if (bBankSpecified)
 			{
-				ConsoleBufferPush( TEXT( "Error: Bank out of range." ) );
-				return ConsoleUpdate();
+				const BYTE* const pMemBankBase = MemGetBankPtr(nBank);
+				if (!pMemBankBase)
+				{
+					ConsoleBufferPush("Error: Bank out of range.");
+					return ConsoleUpdate();
+				}
+
+				memcpy(pMemory.get() + nAddressStart, pMemBankBase + nAddressStart, nAddressLen);
+			}
+			else
+			{
+				for (WORD i = nAddressStart; i != (nAddressStart + (WORD)nAddressLen); i++)
+				{
+					pMemory.get()[i] = ReadByteFromMemory(i);
+				}
 			}
 
 			FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 			if (hFile)
 			{
-				ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
+				ConsoleBufferPush(  "Warning: File already exists.  Overwriting."  );
 				fclose( hFile );
 				// TODO: BUG: Is this a bug/feature that we can over-write files and the user has no control over that?
 			}
@@ -4850,21 +4845,22 @@ Update_t CmdMemorySave (int nArgs)
 			hFile = fopen( sLoadSaveFilePath.c_str(), "wb" );
 			if (hFile)
 			{
-				size_t nWrote = fwrite( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
+				size_t nWrote = fwrite(pMemory.get() + nAddressStart, nAddressLen, 1, hFile);
+				fclose(hFile);
+
 				if (nWrote == 1)
-				{
-					ConsoleBufferPush( TEXT( "Saved." ) );
-				}
+					ConsoleBufferPush(  "Saved."  );
 				else
-				{
-					ConsoleBufferPush( TEXT( "Error saving." ) );
-				}
-				fclose( hFile );
+					ConsoleBufferPush(  "Error saving."  );
 			}
 			else
 			{
-				ConsoleBufferPush( TEXT( "Error opening file." ) );
+				ConsoleBufferPush(  "Error opening file."  );
 			}
+		}
+		else
+		{
+			ConsoleBufferPush("Error: Length = 0.");
 		}
 	}
 	
@@ -5466,7 +5462,7 @@ Update_t CmdNTSC (int nArgs)
 		if (iParam == PARAM_RESET)
 		{
 			NTSC_VideoInitChroma();
-			ConsoleBufferPush( TEXT(" Resetting NTSC palette." ) );
+			ConsoleBufferPush( " Resetting NTSC palette." );
 		}
 		else
 		if (iParam == PARAM_SAVE)
@@ -5503,12 +5499,12 @@ Update_t CmdNTSC (int nArgs)
 					ConsoleFilename::update( "Saved" );
 				}
 				else
-					ConsoleBufferPush( TEXT( "Error saving." ) );
+					ConsoleBufferPush(  "Error saving."  );
 			}
 			else
 			{
 					ConsoleFilename::update( "File" );
-					ConsoleBufferPush( TEXT( "Error couldn't open file for writing." ) );
+					ConsoleBufferPush( "Error couldn't open file for writing."  );
 			}
 		}
 		else
@@ -5727,7 +5723,7 @@ int _SearchMemoryFind (
 				(ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT) ||
 				(ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT ))
 			{
-				BYTE nTarget = *(mem + nAddress2);
+				BYTE nTarget = ReadByteFromMemory(nAddress2);
 	
 				if (ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT)
 					nTarget &= 0x0F;
@@ -5764,7 +5760,7 @@ int _SearchMemoryFind (
 						(ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT) ||
 						(ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT ))
 					{
-						BYTE nTarget = *(mem + nAddress3);
+						BYTE nTarget = ReadByteFromMemory(nAddress3);
 			
 						if (ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT)
 							nTarget &= 0x0F;
@@ -5897,7 +5893,7 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 		}
 		else
 		{
-			TCHAR *pByte = pArg->sArg;
+			char *pByte = pArg->sArg;
 
 			if (pArg->bType & TYPE_QUOTED_1)
 			{
@@ -6064,13 +6060,13 @@ Update_t CmdMemorySearchHex (int nArgs)
 //===========================================================================
 Update_t CmdRegisterSet (int nArgs)
 {
-	if (nArgs < 2) // || ((g_aArgs[2].sArg[0] != TEXT('0')) && !g_aArgs[2].nValue))
+	if (nArgs < 2) // || ((g_aArgs[2].sArg[0] != '0') && !g_aArgs[2].nValue))
 	{
 		return Help_Arg_1( CMD_REGISTER_SET );
 	}
 	else
 	{
-		TCHAR *pName = g_aArgs[1].sArg;
+		char *pName = g_aArgs[1].sArg;
 		int iParam;
 		if (FindParam( pName, MATCH_EXACT, iParam, _PARAM_REGS_BEGIN, _PARAM_REGS_END ))
 		{
@@ -6418,7 +6414,7 @@ Update_t CmdOutputRun (int nArgs)
 		for ( int iLine = 0; iLine < nLine; iLine++ )
 		{
 			script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
-			g_nConsoleInputChars = _tcslen( g_pConsoleInput );
+			g_nConsoleInputChars = strlen( g_pConsoleInput );
 			bUpdateDisplay |= DebuggerProcessCommand( false );
 		}
 	}
@@ -6531,7 +6527,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 
 		uint32_t nAddress = INVALID_ADDRESS;
 
-		_tcscpy( sLine, sText );
+		strcpy( sLine, sText );
 		char *p = sLine;
 		p = strstr( sLine, ":" );
 		if (p)
@@ -6566,7 +6562,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 					if (TextIsHexByte( pStart ))
 					{
 						BYTE nByte = TextConvert2CharsToByte( pStart );
-						*(mem + ((WORD)nAddress) + iByte ) = nByte;
+						WriteByteToMemory(((WORD)nAddress) + iByte, nByte);
 					}
 				}
 				g_nSourceAssembleBytes += iByte;
@@ -6575,7 +6571,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 			g_aSourceDebug[ (WORD) nAddress ] = iLine; // g_nSourceAssemblyLines;
 		}
 
-		_tcscpy( sLine, sText );
+		strcpy( sLine, sText );
 		if (bAddSymbols)
 		{
 			// Add user symbol:          symbolname EQU $address
@@ -6800,6 +6796,7 @@ Update_t CmdCyclesReset (int /*nArgs*/)
 // View ___________________________________________________________________________________________
 
 // See: CmdWindowViewOutput (int nArgs)
+// NOTE: Keep in sync: ViewVideoPage_t, , and getVideoScannerAddressTXT
 enum ViewVideoPage_t
 {
 	VIEW_PAGE_X, // current page
@@ -6808,13 +6805,17 @@ enum ViewVideoPage_t
 	VIEW_PAGE_2,
 	VIEW_PAGE_3, // Pseudo
 	VIEW_PAGE_4, // Pseudo
-	VIEW_PAGE_5  // Pseudo
+	VIEW_PAGE_5, // Pseudo
+	VIEW_PAGE_6, // Pseudo
+	VIEW_PAGE_7, // Pseudo
+	VIEW_PAGE_8  // Pseudo
 };
 
 static Update_t _ViewOutput ( ViewVideoPage_t iPage, UINT bVideoModeFlags )
 {
-	switch ( iPage ) 
+	switch ( iPage )
 	{
+		// NOTE: Keep in sync: _ViewOutput() getVideoScannerAddressHGR()
 		case VIEW_PAGE_X:
 			bVideoModeFlags |= (!GetVideo().VideoGetSW80STORE() && GetVideo().VideoGetSWPAGE2()) ? VF_PAGE2 : 0;
 			bVideoModeFlags |= GetVideo().VideoGetSWMIXED() ? VF_MIXED : 0;
@@ -6825,6 +6826,9 @@ static Update_t _ViewOutput ( ViewVideoPage_t iPage, UINT bVideoModeFlags )
 		case VIEW_PAGE_3: bVideoModeFlags |= VF_PAGE3; break; // Pseudo   Page 3 ($6000)
 		case VIEW_PAGE_4: bVideoModeFlags |= VF_PAGE4; break; // Pseudo   Page 4 ($8000)
 		case VIEW_PAGE_5: bVideoModeFlags |= VF_PAGE5; break; // Pseudo   Page 5 ($A000)
+		case VIEW_PAGE_6: bVideoModeFlags |= VF_PAGE6; break; // Pseudo   Page 6 (LC 1/2 $C000,$D000)
+		case VIEW_PAGE_7: bVideoModeFlags |= VF_PAGE7; break; // Pseudo   Page 7 (LC 2/- $D000,$E000)
+		case VIEW_PAGE_8: bVideoModeFlags |= VF_PAGE8; break; // Pseudo   Page 8 (LC RAM $E000,$F000)
 		default:
 			_ASSERT(0);
 			break;
@@ -6918,6 +6922,18 @@ static Update_t _ViewOutput ( ViewVideoPage_t iPage, UINT bVideoModeFlags )
 	{
 		return _ViewOutput( VIEW_PAGE_5, VF_HIRES ); // Pseudo page ($A000)
 	}
+	Update_t CmdViewOutput_HGR6 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_6, VF_HIRES ); // Pseudo page (LC Bank 1/2 $C000,$D000)
+	}
+	Update_t CmdViewOutput_HGR7 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_7, VF_HIRES ); // Pseudo page (LC Bank 2/RAM $D000,$E000)
+	}
+	Update_t CmdViewOutput_HGR8 (int nArgs)
+	{
+		return _ViewOutput( VIEW_PAGE_8, VF_HIRES ); // Pseudo page (LC RAM $E000,$F000)
+	}
 // Double Hi-Res
 	Update_t CmdViewOutput_DHGRX (int nArgs)
 	{
@@ -6982,7 +6998,7 @@ Update_t CmdWatchAdd (int nArgs)
 		WORD nAddress = g_aArgs[iArg].nValue;
 
 		// Make sure address isn't an IO address
-		if ((nAddress >= _6502_IO_BEGIN) && (nAddress <= _6502_IO_END))
+		if ((nAddress >= APPLE_IO_BEGIN) && (nAddress <= APPLE_IO_END))
 			return ConsoleDisplayError("You cannot watch an I/O location.");
 
 		if (iWatch == NO_6502_TARGET)
@@ -7443,7 +7459,7 @@ Update_t CmdWindow (int nArgs)
 		return Help_Arg_1( CMD_WINDOW );
 
 	int iParam;
-	TCHAR *pName = g_aArgs[1].sArg;
+	char *pName = g_aArgs[1].sArg;
 	int nFound = FindParam( pName, MATCH_EXACT, iParam, _PARAM_WINDOW_BEGIN, _PARAM_WINDOW_END );
 	if (nFound)
 	{
@@ -7676,7 +7692,7 @@ Update_t CmdZeroPagePointer (int nArgs)
 int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd, const bool bCaseSensitive /* false */ )
 {
 	int nFound = 0;
-	int nLen     = _tcslen( pLookupName );
+	int nLen     = strlen( pLookupName );
 	int iParam = 0;
 
 	if (! nLen)
@@ -7692,8 +7708,8 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 //		while (iParam < NUM_PARAMS )
 		for (iParam = iParamBegin; iParam <= iParamEnd; iParam++ )
 		{
-			TCHAR *pParamName = g_aParameters[iParam].m_sName;
-			int eCompare = _tcscmp(pLookupName, pParamName);
+			char *pParamName = g_aParameters[iParam].m_sName;
+			int eCompare = strcmp(pLookupName, pParamName);
 			if (! eCompare) // exact match?
 			{
 				nFound++;
@@ -7706,7 +7722,7 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 	if (eMatch == MATCH_FUZZY)
 	{	
 #if ALLOW_INPUT_LOWERCASE
-		TCHAR aLookup[ 256 ] = "";
+		char aLookup[ 256 ] = "";
 		for ( int i = 0; i < nLen; i++ )
 		{
 			aLookup[ i ] = toupper( pLookupName[ i ] );
@@ -7714,19 +7730,19 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 #endif
 		for (iParam = iParamBegin; iParam <= iParamEnd; iParam++ )
 		{
-			TCHAR *pParamName = g_aParameters[ iParam ].m_sName;
+			char *pParamName = g_aParameters[ iParam ].m_sName;
 // _tcsnccmp
 
 #if ALLOW_INPUT_LOWERCASE
-			if (! _tcsncmp(aLookup, pParamName ,nLen))
+			if (! strncmp(aLookup, pParamName ,nLen))
 #else
-			if (! _tcsncmp(pLookupName, pParamName ,nLen))
+			if (! strncmp(pLookupName, pParamName ,nLen))
 #endif
 			{
 				nFound++;
 				iParam_ = g_aParameters[iParam].iCommand;
 
-				if (!_tcsicmp(pLookupName, pParamName)) // exact match?
+				if (!_stricmp(pLookupName, pParamName)) // exact match?
 				{
 					nFound = 1; // Exact match takes precidence over fuzzy matches
 					break;
@@ -7743,7 +7759,7 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 	g_vPotentialCommands.clear();
 
 	int nFound   = 0;
-	int nLen     = _tcslen( pName );
+	int nLen     = strlen( pName );
 	int iCommand = 0;
 
 	if (! nLen)
@@ -7755,9 +7771,9 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 
 	while ((iCommand < NUM_COMMANDS_WITH_ALIASES)) // && (name[0] >= g_aCommands[iCommand].aName[0])) Command no longer in Alphabetical order
 	{
-		TCHAR *pCommandName = g_aCommands[iCommand].m_sName;
+		char *pCommandName = g_aCommands[iCommand].m_sName;
 //		int iCmp = strcasecmp( sCommand, pCommandName, nLen )
-		if (! _tcsncmp(sCommand, pCommandName, nLen))
+		if (! strncmp(sCommand, pCommandName, nLen))
 		{
 			pFunction_ = g_aCommands[iCommand].pFunction;
 			if (pFunction_)
@@ -7772,8 +7788,8 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 
 					if (iCommand_)
 						*iCommand_ = iCommand;
-// !_tcscmp
-					if (!_tcsicmp(sCommand, pCommandName)) // exact match?
+// !strcmp
+					if (!_stricmp(sCommand, pCommandName)) // exact match?
 					{
 	//					if (iCommand_)
 	//						*iCommand_ = iCommand;
@@ -7983,8 +7999,8 @@ Update_t ExecuteCommand (int nArgs)
 						{
 							//ArgsGetValue( pArg, & nAddress );
 							//ConsolePrintFormat( "Dst:%s  Src: %s  End: %s", pDst, pSrc, pEnd );
+
 							g_iCommand = CMD_MEMORY_MOVE;
-							pFunction = g_aCommands[ g_iCommand ].pFunction;
 
 							strcpy( pArg[4].sArg, pEnd );
 							strcpy( pArg[3].sArg, g_aTokens[ TOKEN_COLON ].sToken );
@@ -8002,6 +8018,25 @@ Update_t ExecuteCommand (int nArgs)
 							pArg[3].eToken = TOKEN_COLON;
 							ArgsGetValue( &pArg[4], &pArg[4].nValue );
 
+							if (pArg[4].nValue < pArg[2].nValue)
+							{
+								ConsolePrintFormat(
+									CHC_WARNING "WARN" CHC_ARG_SEP ":"
+									CHC_DEFAULT " End source address " CHC_ARG_SEP "$" CHC_ADDRESS "%04X"
+									CHC_ARG_SEP " <"
+									CHC_DEFAULT " Start source address " CHC_ARG_SEP "$" CHC_ADDRESS "%04X"
+									CHC_DEFAULT "."
+									CHC_INFO " Aborting."
+									, (pArg[4].nValue & _6502_MEM_END)
+									, (pArg[2].nValue & _6502_MEM_END)
+								);
+								ConsoleUpdate();
+								pFunction = nullptr;
+							}
+							else
+							{
+								pFunction = g_aCommands[ g_iCommand ].pFunction;
+							}
 							nFound = 1;
 							nArgs = 4;
 						}
@@ -8591,7 +8626,7 @@ static void CheckBreakOpcode ( int iOpcode )
 
 static void UpdateLBR (void)
 {
-	const BYTE nOpcode = *(mem + regs.pc);
+	const BYTE nOpcode = ReadByteFromMemory(regs.pc);
 
 	bool isControlFlowOpcode =
 		nOpcode == OPCODE_BRK ||
@@ -8662,7 +8697,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 
 			if ( MemIsAddrCodeMemory(regs.pc) )
 			{
-				BYTE nOpcode = *(mem+regs.pc);
+				const BYTE nOpcode = ReadByteFromMemory(regs.pc);
 
 				// Update profiling stats
 				int nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;
@@ -8995,7 +9030,7 @@ void DebugInitialize ()
 		const char *pHelp = g_aCommands[ iCmd ].pHelpSummary;
 		if (pHelp)
 		{
-			int nLen = _tcslen( pHelp ) + 2;
+			int nLen = strlen( pHelp ) + 2;
 			if (nLen > (CONSOLE_WIDTH-1))
 			{
 				ConsoleBufferPushFormat( "Warning: %s help is %d chars", pHelp, nLen );
@@ -9058,7 +9093,7 @@ void DebugReset (void)
 
 // Add character to the input line
 //===========================================================================
-void DebuggerInputConsoleChar ( TCHAR ch )
+void DebuggerInputConsoleChar ( char ch )
 {
 	_ASSERT(g_nAppMode == MODE_DEBUG);
 
@@ -9101,7 +9136,7 @@ void DebuggerInputConsoleChar ( TCHAR ch )
 			// TODO: must fix param matching to ignore case
 #if ALLOW_INPUT_LOWERCASE
 #else
-			ch = (TCHAR)CharUpper((LPTSTR)ch);
+			ch = (char)CharUpper((LPTSTR)ch);
 #endif
 		}
 		ConsoleInputChar( ch );
@@ -9205,10 +9240,76 @@ void DebuggerProcessKey ( int keycode )
 		// VK_F# are already processed, so we can't use them to cycle next video g_nAppMode
 //		    if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 
-		GetVideo().ClearSHRResidue();	// Clear the framebuffer to remove any SHR residue in the borders
+		// 2.9.2.7 Added: QoL for Debugger's view output screen.
+		//    When using the debugger to view the ouput screen such as `HGR`, `HGR2`, etc. allow the
+		//    keys 0-5 to display the specificed video # page, or 9 to see the current video mode.
+		//      0 Pseudo   Page 0 ($0000 for graphics, else text page 1)
+		//      1 Hardware Page 1 ($2000 for graphics, else text $0400)
+		//      2 Hardware Page 2 ($4000 for graphics, else text $0800)
+		//      3 Pseudo   Page 3 ($6000 for graphics, else text page 1)
+		//      4 Pseudo   Page 4 ($8000 for graphics, else text page 1)
+		//      5 Pseudo   Page 5 ($A000 for graphics, else text page 1)
+		//      9 Current mode and page
+		//
+		// NOTE: Do we want to allow viewing mixed/full mode since 0-5 always sets fullscreen?
+		//      7 Mixed-screen mode
+		//      8 Full-screen mode
+		//
+		// NOTE: Keep in sync: ViewVideoPage_t, DebuggerProcessKey(), _ViewOutput()
+		if ((keycode >= '0') && (keycode <= '9'))
+		{
+			ViewVideoPage_t eVideoPage  = VIEW_PAGE_X;
+			UINT            bVideoFlags = 0;
 
-		DebugVideoMode::Instance().Reset();
-		UpdateDisplay( UPDATE_ALL ); // 1
+			DebugVideoMode::Instance().Get( &bVideoFlags );
+			uint32_t        bSavedVideoModeFlags = bVideoFlags;
+
+			bVideoFlags &= ~(VF_MIXED | VF_PAGE0 | VF_PAGE2 | VF_PAGE3 | VF_PAGE4 | VF_PAGE5 | VF_PAGE6 | VF_PAGE7 | VF_PAGE8);
+			switch (keycode)
+			{
+				case '0': eVideoPage = VIEW_PAGE_0; bVideoFlags |= VF_PAGE0; break;
+				case '1': eVideoPage = VIEW_PAGE_1; /*                   */; break;
+				case '2': eVideoPage = VIEW_PAGE_2; bVideoFlags |= VF_PAGE2; break;
+				case '3': eVideoPage = VIEW_PAGE_3; bVideoFlags |= VF_PAGE3; break;
+				case '4': eVideoPage = VIEW_PAGE_4; bVideoFlags |= VF_PAGE4; break;
+				case '5': eVideoPage = VIEW_PAGE_5; bVideoFlags |= VF_PAGE5; break;
+				case '6': eVideoPage = VIEW_PAGE_6; bVideoFlags |= VF_PAGE6; break;
+				case '7': eVideoPage = VIEW_PAGE_7; bVideoFlags |= VF_PAGE7; break;
+				case '8': eVideoPage = VIEW_PAGE_8; bVideoFlags |= VF_PAGE8; break;
+				case '9': /* Don't use VIEW_PAGE_X as it is handled below*/; break;
+				default:
+					bool bUnknownViewVideoPage = false;
+					assert( bUnknownViewVideoPage );
+					break;
+			}
+
+			if (keycode == '9')
+			{
+				GetFrame().VideoRedrawScreen(); // See: CmdWindowViewOutput()
+			}
+			else
+			{
+				_ViewOutput( eVideoPage, bVideoFlags );
+				DebugDisplay();
+			}
+
+			// We need to restore the video mode since the original output may be mixed mode
+			// but switching to page 0-5 will have set full mode.
+			DebugVideoMode::Instance().Set( bSavedVideoModeFlags );
+			g_bIgnoreNextKey = true;
+		}
+		else
+		{
+			GetVideo().ClearSHRResidue();	// Clear the framebuffer to remove any SHR residue in the borders
+			DebugVideoMode::Instance().Reset();
+
+			// Technically this is a bug/feature: Leaving the debugger view output can sometimes be in the wrong view mode
+			// GetFrame().VideoRedrawScreen();
+			// DebugVideoMode::Instance().Set( GetVideo().GetVideoMode() );
+
+			UpdateDisplay( UPDATE_ALL ); // 1
+		}
+
 		return;
 	}
 

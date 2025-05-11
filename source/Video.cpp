@@ -678,16 +678,16 @@ void Video::Config_Load_Video()
 
 	uint32_t dwTmp;
 
-	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MODE), &dwTmp, (uint32_t)VT_DEFAULT);
+	REGLOAD_DEFAULT(REGVALUE_VIDEO_MODE, &dwTmp, (uint32_t)VT_DEFAULT);
 	g_eVideoType = dwTmp;
 
-	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_STYLE), &dwTmp, (uint32_t)VS_HALF_SCANLINES);
+	REGLOAD_DEFAULT(REGVALUE_VIDEO_STYLE, &dwTmp, (uint32_t)VS_HALF_SCANLINES);
 	g_eVideoStyle = (VideoStyle_e)dwTmp;
 
-	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_MONO_COLOR), &dwTmp, (uint32_t)RGB(0xC0, 0xC0, 0xC0));
+	REGLOAD_DEFAULT(REGVALUE_VIDEO_MONO_COLOR, &dwTmp, (uint32_t)RGB(0xC0, 0xC0, 0xC0));
 	g_nMonochromeRGB = (COLORREF)dwTmp;
 
-	REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_REFRESH_RATE), &dwTmp, (uint32_t)VR_60HZ);
+	REGLOAD_DEFAULT(REGVALUE_VIDEO_REFRESH_RATE, &dwTmp, (uint32_t)VR_60HZ);
 	SetVideoRefreshRate((VideoRefreshRate_e)dwTmp);
 
 	//
@@ -696,14 +696,14 @@ void Video::Config_Load_Video()
 	if (pOldVersion[0] == 1 && pOldVersion[1] <= 28 && pOldVersion[2] <= 1)
 	{
 		uint32_t dwHalfScanLines;
-		REGLOAD_DEFAULT(TEXT(REGVALUE_VIDEO_HALF_SCAN_LINES), &dwHalfScanLines, 0);
+		REGLOAD_DEFAULT(REGVALUE_VIDEO_HALF_SCAN_LINES, &dwHalfScanLines, 0);
 
 		if (dwHalfScanLines)
 			g_eVideoStyle = (VideoStyle_e) ((uint32_t)g_eVideoStyle | VS_HALF_SCANLINES);
 		else
 			g_eVideoStyle = (VideoStyle_e) ((uint32_t)g_eVideoStyle & ~VS_HALF_SCANLINES);
 
-		REGSAVE(TEXT(REGVALUE_VIDEO_STYLE), g_eVideoStyle);
+		REGSAVE(REGVALUE_VIDEO_STYLE, g_eVideoStyle);
 	}
 
 	//
@@ -722,7 +722,7 @@ void Video::Config_Load_Video()
 		default:						g_eVideoType = VT_DEFAULT; break;
 		}
 
-		REGSAVE(TEXT(REGVALUE_VIDEO_MODE), g_eVideoType);
+		REGSAVE(REGVALUE_VIDEO_MODE, g_eVideoType);
 	}
 
 	if (g_eVideoType >= NUM_VIDEO_MODES)
@@ -731,10 +731,10 @@ void Video::Config_Load_Video()
 
 void Video::Config_Save_Video()
 {
-	REGSAVE(TEXT(REGVALUE_VIDEO_MODE)      ,g_eVideoType);
-	REGSAVE(TEXT(REGVALUE_VIDEO_STYLE)     ,g_eVideoStyle);
-	REGSAVE(TEXT(REGVALUE_VIDEO_MONO_COLOR),g_nMonochromeRGB);
-	REGSAVE(TEXT(REGVALUE_VIDEO_REFRESH_RATE), GetVideoRefreshRate());
+	REGSAVE(REGVALUE_VIDEO_MODE      ,g_eVideoType);
+	REGSAVE(REGVALUE_VIDEO_STYLE     ,g_eVideoStyle);
+	REGSAVE(REGVALUE_VIDEO_MONO_COLOR,g_nMonochromeRGB);
+	REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, GetVideoRefreshRate());
 }
 
 //===========================================================================

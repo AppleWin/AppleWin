@@ -38,8 +38,8 @@ private:
 	void InitGameIOConnectorDropdownMenu(HWND hWnd);
 
 	static CPageAdvanced* ms_this;
-	static const TCHAR m_CloneChoices[];
-	static const TCHAR m_gameIOConnectorChoices[];
+	static const char m_CloneChoices[];
+	static const char m_gameIOConnectorChoices[];
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;

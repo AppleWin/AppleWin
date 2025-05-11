@@ -223,8 +223,8 @@
 		extern char  g_sConsoleCursor[];
 
 	// Display
-		extern char  g_aConsolePrompt[];// = TEXT(">!"); // input, assembler // NUM_PROMPTS
-		extern char  g_sConsolePrompt[];// = TEXT(">"); // No, NOT Integer Basic!  The nostalgic '*' "Monitor" doesn't look as good, IMHO. :-(
+		extern char  g_aConsolePrompt[];// = ">!"; // input, assembler // NUM_PROMPTS
+		extern char  g_sConsolePrompt[];// = ">"; // No, NOT Integer Basic!  The nostalgic '*' "Monitor" doesn't look as good, IMHO. :-(
 		extern int   g_nConsolePromptLen;
 
 		extern bool  g_bConsoleFullWidth;// = false;
@@ -238,7 +238,7 @@
 	// Input History
 		extern int   g_nHistoryLinesStart;// = 0;
 		extern int   g_nHistoryLinesTotal;// = 0; // number of commands entered
-		extern char  g_aHistoryLines[ HISTORY_HEIGHT ][ HISTORY_WIDTH ];// = {TEXT("")};
+		extern char  g_aHistoryLines[ HISTORY_HEIGHT ][ HISTORY_WIDTH ];// = {""};
 
 	// Input Line
 		// Raw input Line (has prompt)

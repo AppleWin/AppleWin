@@ -35,8 +35,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 CPageSound* CPageSound::ms_this = 0;	// reinit'd in ctor
 
-const TCHAR CPageSound::m_soundchoices[] =	TEXT("Disabled\0")
-											TEXT("Sound Card\0");
+const char CPageSound::m_soundchoices[] =	"Disabled\0"
+											"Sound Card\0";
 
 
 const char CPageSound::m_soundCardChoices[] =	"Mockingboard\0"
@@ -159,14 +159,14 @@ void CPageSound::DlgOK(HWND hWnd)
 
 	SpkrSetEmulationType(newSoundType);
 	uint32_t dwSoundType = (soundtype == SOUND_NONE) ? REG_SOUNDTYPE_NONE : REG_SOUNDTYPE_WAVE;
-	REGSAVE(TEXT(REGVALUE_SOUND_EMULATION), dwSoundType);
+	REGSAVE(REGVALUE_SOUND_EMULATION, dwSoundType);
 
 	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence
 	SpkrSetVolume(dwSpkrVolume, VOLUME_MAX);
 	GetCardMgr().GetMockingboardCardMgr().SetVolume(dwMBVolume, VOLUME_MAX);
 
-	REGSAVE(TEXT(REGVALUE_SPKR_VOLUME), SpkrGetVolume());
-	REGSAVE(TEXT(REGVALUE_MB_VOLUME), GetCardMgr().GetMockingboardCardMgr().GetVolume());
+	REGSAVE(REGVALUE_SPKR_VOLUME, SpkrGetVolume());
+	REGSAVE(REGVALUE_MB_VOLUME, GetCardMgr().GetMockingboardCardMgr().GetVolume());
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }

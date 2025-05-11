@@ -261,14 +261,14 @@ UINT ImageGetMaxNibblesPerTrack(ImageInfo* const pImageInfo)
 
 void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pFullName)
 {
-	TCHAR   imagetitle[ MAX_DISK_FULL_NAME+1 ];
+	char   imagetitle[ MAX_DISK_FULL_NAME+1 ];
 	LPCTSTR startpos = pPathname;
 
 	// imagetitle = <FILENAME.EXT>
-	if (_tcsrchr(startpos, TEXT(PATH_SEPARATOR)))
-		startpos = _tcsrchr(startpos, TEXT(PATH_SEPARATOR))+1;
+	if (strrchr(startpos, PATH_SEPARATOR))
+		startpos = strrchr(startpos, PATH_SEPARATOR)+1;
 
-	_tcsncpy(imagetitle, startpos, MAX_DISK_FULL_NAME);
+	strncpy(imagetitle, startpos, MAX_DISK_FULL_NAME);
 	imagetitle[MAX_DISK_FULL_NAME] = 0;
 
 	// if imagetitle contains a lowercase char, then found=1 (why?)
@@ -283,7 +283,7 @@ void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pF
 	}
 
 	if ((!found) && (loop > 2))
-		CharLowerBuff(imagetitle+1, _tcslen(imagetitle+1));
+		CharLowerBuff(imagetitle+1, strlen(imagetitle+1));
 
 	// pFullName = <FILENAME.EXT>
 	pFullName = imagetitle;
@@ -291,8 +291,8 @@ void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pF
 	if (imagetitle[0])
 	{
 		LPTSTR dot = imagetitle;
-		if (_tcsrchr(dot, TEXT('.')))
-			dot = _tcsrchr(dot, TEXT('.'));
+		if (strrchr(dot, '.'))
+			dot = strrchr(dot, '.');
 		if (dot > imagetitle)
 			*dot = 0;
 	}

@@ -5,22 +5,37 @@
 #include "../../source/Memory.h"
 #include "../../source/SynchronousEventManager.h"
 
+#include "../../source/CPU/cpu_general.inl"
+#include "../../source/CPU/cpu_instructions.inl"
+
 // From Applewin.cpp
 bool g_bFullSpeed = false;
 enum AppMode_e g_nAppMode = MODE_RUNNING;
 SynchronousEventManager g_SynchronousEventMgr;
 
 // From Memory.cpp
-LPBYTE         memwrite[0x100];		// TODO: Init
-BYTE           memreadPageType[0x100];		// TODO: Init
-BYTE           memwriteDirtyPage[0x100];	// TODO: Init
+LPBYTE         memshadow[0x100];	// init() just sets to mem pointers
+LPBYTE         memwrite[0x100];		// init() just sets to mem pointers
+BYTE           memreadPageType[0x100];
 LPBYTE         mem          = NULL;	// TODO: Init
 LPBYTE         memdirty     = NULL;	// TODO: Init
 LPBYTE         memVidHD     = NULL;	// TODO: Init
 iofunction		IORead[256] = {0};	// TODO: Init
 iofunction		IOWrite[256] = {0};	// TODO: Init
 
+static bool g_isMemCacheValid = true;
+
+bool GetIsMemCacheValid(void)
+{
+	return g_isMemCacheValid;
+}
+
 BYTE __stdcall IO_F8xx(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles)
+{
+	return 0;
+}
+
+BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 {
 	return 0;
 }
@@ -45,6 +60,17 @@ bool g_bStopOnBRK = false;
 static __forceinline int Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 {
 	iOpcode = *(mem+regs.pc);
+	regs.pc++;
+
+	if (iOpcode == 0x00 && g_bStopOnBRK)
+		return 0;
+
+	return 1;
+}
+
+static __forceinline int Fetch_alt(BYTE& iOpcode, ULONG uExecutedCycles)
+{
+	iOpcode = _READ_ALT(regs.pc);
 	regs.pc++;
 
 	if (iOpcode == 0x00 && g_bStopOnBRK)
@@ -84,27 +110,48 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 
 //-------------------------------------
 
-#include "../../source/CPU/cpu_general.inl"
-#include "../../source/CPU/cpu_instructions.inl"
+#define HEATMAP_X(address)
 
-#define READ _READ_WITH_IO_F8xx
-#define WRITE(a) _WRITE_WITH_IO_F8xx(a)
-#define HEATMAP_X(pc)
+// 6502 & no debugger
+#define READ(addr) _READ_WITH_IO_F8xx(addr)
+#define WRITE(value) _WRITE_WITH_IO_F8xx(value)
 
 #include "../../source/CPU/cpu6502.h"  // MOS 6502
 
-#undef READ
-#undef WRITE
+//-------
+
+// 6502 & no debugger & alt read/write support
+#define CPU_ALT
+#define READ(addr) _READ_ALT(addr)
+#define WRITE(value) _WRITE_ALT(value)
+
+#define Cpu6502 Cpu6502_altRW
+#define Fetch Fetch_alt
+#include "../../source/CPU/cpu6502.h"  // MOS 6502
+#undef Cpu6502
+#undef Fetch
 
 //-------
 
-#define READ _READ
-#define WRITE(a) _WRITE(a)
+// 65C02 & no debugger
+#define READ(addr) _READ(addr)
+#define WRITE(value) _WRITE(value)
 
-#include "../../source/CPU/cpu65C02.h"  // WDC 65C02
+#include "../../source/CPU/cpu65C02.h" // WDC 65C02
 
-#undef READ
-#undef WRITE
+//-------
+
+// 65C02 & no debugger & alt read/write support
+#define CPU_ALT
+#define READ(addr) _READ_ALT(addr)
+#define WRITE(value) _WRITE_ALT(value)
+
+#define Cpu65C02 Cpu65C02_altRW
+#define Fetch Fetch_alt
+#include "../../source/CPU/cpu65C02.h" // WDC 65C02
+#undef Cpu65C02
+#undef Fetch
+
 #undef HEATMAP_X
 
 //-------------------------------------
@@ -115,9 +162,16 @@ void init(void)
 	mem = (LPBYTE)calloc(64, 1024);
 
 	for (UINT i=0; i<256; i++)
+		memshadow[i] = mem+i*256;
+
+	for (UINT i=0; i<256; i++)
 		memwrite[i] = mem+i*256;
 
 	memdirty = new BYTE[256];
+
+	memset(memreadPageType, MEM_Normal, sizeof(memreadPageType));
+	for (UINT i = 0xC0; i < 0xD0; i++)
+		memreadPageType[i] = MEM_IORead;
 }
 
 void reset(void)
@@ -135,12 +189,18 @@ void reset(void)
 
 uint32_t TestCpu6502(uint32_t uTotalCycles)
 {
-	return Cpu6502(uTotalCycles, true);
+	if (!GetIsMemCacheValid())
+		return Cpu6502_altRW(uTotalCycles, true);
+	else
+		return Cpu6502(uTotalCycles, true);
 }
 
 uint32_t TestCpu65C02(uint32_t uTotalCycles)
 {
-	return Cpu65C02(uTotalCycles, true);
+	if (!GetIsMemCacheValid())
+		return Cpu65C02_altRW(uTotalCycles, true);
+	else
+		return Cpu65C02(uTotalCycles, true);
 }
 
 //-------------------------------------
@@ -1098,6 +1158,7 @@ int GH292_test(void)
 
 	// Undocumented 65C02 NOP: LDD - LoaD and Discard
 	IORead[0] = fn_C000;
+	g_fn_C000_count = 0;
 
 	reset();
 	WORD base = regs.pc;
@@ -1298,6 +1359,7 @@ int GH1257_test()
 		if (regs.pc != resPC[i]) return 1;
 	}
 
+	g_bStopOnBRK = false;
 	return 0;
 }
 
@@ -1359,7 +1421,7 @@ int SyncEvents_test(void)
 
 //-------------------------------------
 
-int _tmain(int argc, _TCHAR* argv[])
+int DoTest(void)
 {
 	int res = 1;
 	init();
@@ -1387,6 +1449,23 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (res) return res;
 
 	res = SyncEvents_test();
+	if (res) return res;
+
+	return res;
+}
+
+//-------------------------------------
+
+int main(int argc, char* argv[])
+{
+	int res = 1;
+
+	g_isMemCacheValid = true;
+	res = DoTest();
+	if (res) return res;
+
+	g_isMemCacheValid = false;
+	res = DoTest();
 	if (res) return res;
 
 	return 0;

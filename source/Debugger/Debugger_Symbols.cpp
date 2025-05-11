@@ -182,7 +182,7 @@ bool FindAddressFromSymbol ( const char* pSymbol, WORD * pAddress_, int * iTable
 		SymbolTable_t :: iterator  iSymbol = g_aSymbols[iTable].begin();
 		while (iSymbol != g_aSymbols[iTable].end())
 		{
-			if (!_tcsicmp( iSymbol->second.c_str(), pSymbol))
+			if (!_stricmp( iSymbol->second.c_str(), pSymbol))
 			{
 				if (pAddress_)
 				{
@@ -221,34 +221,34 @@ WORD GetAddressFromSymbol (const char* pSymbol)
 //===========================================================================
 bool String2Address( LPCTSTR pText, WORD & nAddress_ )
 {
-	TCHAR sHexApple[ CONSOLE_WIDTH ];
+	char sHexApple[ CONSOLE_WIDTH ];
 
 	if (pText[0] == '$')
 	{
 		if (!TextIsHexString( pText+1))
 			return false;
 
-		_tcscpy( sHexApple, "0x" );
-		_tcsncpy( sHexApple+2, pText+1, MAX_SYMBOLS_LEN - 3 );
+		strcpy( sHexApple, "0x" );
+		strncpy( sHexApple+2, pText+1, MAX_SYMBOLS_LEN - 3 );
 		sHexApple[2 + (MAX_SYMBOLS_LEN - 3) - 1] = 0;
 		pText = sHexApple;
 	}
 
-	if (pText[0] == TEXT('0'))
+	if (pText[0] == '0')
 	{
-		if ((pText[1] == TEXT('X')) || pText[1] == TEXT('x'))
+		if ((pText[1] == 'X') || pText[1] == 'x')
 		{
 			if (!TextIsHexString( pText+2))
 				return false;
 
-			TCHAR *pEnd;
-			nAddress_ = (WORD) _tcstol( pText, &pEnd, 16 );
+			char *pEnd;
+			nAddress_ = (WORD) strtol( pText, &pEnd, 16 );
 			return true;
 		}
 		if (TextIsHexString( pText ))
 		{
-			TCHAR *pEnd;
-			nAddress_ = (WORD) _tcstol( pText, &pEnd, 16 );
+			char *pEnd;
+			nAddress_ = (WORD) strtol( pText, &pEnd, 16 );
 			return true;
 		}
 	}
@@ -790,7 +790,7 @@ Update_t CmdSymbolsLoad (int nArgs)
 				for ( int iLine = 0; iLine < nLine; iLine++ )
 				{
 					script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
-					g_nConsoleInputChars = _tcslen( g_pConsoleInput );
+					g_nConsoleInputChars = strlen( g_pConsoleInput );
 					bUpdateDisplay |= DebuggerProcessCommand( false );
 				}
 			}
@@ -877,7 +877,7 @@ void SymbolUpdate ( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, W
 	if (bRemoveSymbol)
 		pSymbolName = g_aArgs[2].sArg;
 
-	size_t nSymLen = _tcslen( pSymbolName );
+	size_t nSymLen = strlen( pSymbolName );
 	if (nSymLen < MAX_SYMBOLS_LEN)
 	{
 		WORD nAddressPrev;
@@ -890,7 +890,7 @@ void SymbolUpdate ( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, W
 			{
 				if (bRemoveSymbol)
 				{
-					ConsoleBufferPush( TEXT(" Removing symbol." ) );
+					ConsoleBufferPush( " Removing symbol." );
 				}
 
 				g_aSymbols[ eSymbolTable ].erase( nAddressPrev );
@@ -911,7 +911,7 @@ void SymbolUpdate ( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, W
 		{
 			if (bRemoveSymbol)
 			{
-				ConsoleBufferPush( TEXT(" Symbol not in table." ) );
+				ConsoleBufferPush( " Symbol not in table." );
 			}
 		}
 
@@ -964,7 +964,7 @@ Update_t _CmdSymbolsUpdate( int nArgs, int bSymbolTables )
 	bool bRemoveSymbol = false;
 	bool bUpdateSymbol = false;
 
-	TCHAR *pSymbolName = g_aArgs[1].sArg;
+	char *pSymbolName = g_aArgs[1].sArg;
 	WORD   nAddress    = g_aArgs[3].nValue;
 
 	if ((nArgs == 2)
@@ -1034,7 +1034,7 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				{
 					// Shouldn't have multiple symbol tables selected
 //					nArgs = _Arg_1( eSymbolsTable );
-					ConsoleBufferPush( TEXT(" Error: Unknown Symbol Table Type") );
+					ConsoleBufferPush( " Error: Unknown Symbol Table Type" );
 					return ConsoleUpdate();
 				}
 			}
@@ -1054,7 +1054,7 @@ Update_t _CmdSymbolsCommon ( int nArgs, int bSymbolTables )
 				}
 				else
 				{
-					ConsoleBufferPush( TEXT(" Error: Unknown Symbol Table Type") );
+					ConsoleBufferPush( " Error: Unknown Symbol Table Type" );
 				}
 				return ConsoleUpdate();
 			}
