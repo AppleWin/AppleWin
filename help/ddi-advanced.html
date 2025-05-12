@@ -14,18 +14,17 @@
 
 <hr size="4">
 
-<h3>Custom Boot Sector</h3>
+<h3>Advanced Formatting Options</h3>
 
-<ol>
-For finer control when formatting disks hold down <strong>SHIFT</strong> and right-click on the drive icon.
+For finer control when formatting disks hold down the <span style="border: 1px solid black; border-radius: 3px;">SHIFT</span> key and right-click on the drive icon.
 <br>
-<br><img src="img/drive_popup_menu_advanced.png" />
+<br><img src="img/drive_popup_menu_advanced.png" border="1"/>
 <br>
 <p><b>Note:</b> This disk will be <i>bootable</i> but it <i>won't</i> have a File System or Disk Operating System (DOS 3.3, ProDOS, etc.) on it.</p>
 
 <h3>Bootable Disks, Data Disks, File Systems, and Disk Operating Systems</h3>
 
-<p>When you use AppleWin's <strong>New disk image...</strong> to create a new blank disk it will be <i>bootable</i> since it place a 256 byte AppleWin-provided boot sector; this bootable disk is called a <i>data</i> disk.</p>
+<p>When you use AppleWin's <strong>New blank image...</strong> to create a new blank disk it will be <i>bootable</i> since it place a 256 byte AppleWin-provided boot sector; this bootable disk is called a <i>data</i> disk.</p>
 
 <br>
 <img src="img/disk_boot_data_disk.png" />
@@ -39,18 +38,18 @@ For finer control when formatting disks hold down <strong>SHIFT</strong> and rig
 <ol>
   <li>Make sure your disk it <i>not</i> mounted in the disk drive.&nbsp; If it is, right-click on the drive button and select <strong>Eject.</strong>
 <br>
-<img src="img/disk_eject.png"></li>
+<img src="img/disk_eject.png" border="1"></li>
 
   <li>Right-click on the drive button and select either:
-  <br><strong>Format DOS 3.3 disk image</strong>
-  <br><img src="img/disk_format_dos33_data.png" />
-  <br>
-  <br>or
-  <br>
-  <br><strong>Format ProDOS disk image...</strong>
-  <br><img src="img/disk_format_prodos_data.png" />
+    <ul>
+      <li><strong>Format ProDOS disk image...</strong>
+        <br><img src="img/disk_format_prodos_data.png" border="1" />
+        <br><br>or<br><br></li>
+      <li><strong>Format DOS 3.3 disk image...</strong>
+        <br><img src="img/disk_format_dos33_data.png" border="1" />
+      </li>
+    </ul>
   </li>
-
   <li>You will see a warning depending on which OS you picked:
 
   <br>
@@ -77,7 +76,7 @@ For finer control when formatting disks hold down <strong>SHIFT</strong> and rig
   </li>
 
   <li>Right-click on the drive button and select <strong>Select boot sector file...</strong></li>
-  <br><img src="img/disk_select_boot_sector.png" />
+  <br><img src="img/disk_select_boot_sector.png" border="1" />
   </li>
 
   <li>AppleWin will show the currect boot sector.  By default it will use one built into AppleWin.
@@ -131,6 +130,24 @@ For finer control when formatting disks hold down <strong>SHIFT</strong> and rig
 
   <li>You can now mount and boot your new disk image.</li>
 </ol>
+
+<hr size="4">
+
+<h3>Understanding New blank disk image...</h3>
+
+Here is table showing the disk sizes of the various <strong>New blank disk image...</strong>
+<br>
+<br><table style="border:1px solid black;" cellpadding="4px">
+  <tr><th style="border-bottom:1px solid black;">Option</th><th style="border-bottom:1px solid black;">Disk Size (KB)</th><th style="border-bottom:1px solid black;">Disk Size (Bytes)</th><th style="border-bottom:1px solid black;">Tracks</th></tr>
+  <tr><td>New blank 5.25" (140 KB) disk image... (Standard 35 Track)</td><td style="text-align:right;">140 KB</td><td style="text-align:right;">   143,360 bytes</td><td style="text-align:right;"> 35</td></tr>
+  <tr><td>New blank 5.25" (160 KB) disk image... (Extended 40 Track)</td><td style="text-align:right;">160 KB</td><td style="text-align:right;">   163,840 bytes</td><td style="text-align:right;"> 40</td></tr>
+  <tr><td>New blank 3.5"  (800 KB) disk image...                    </td><td style="text-align:right;">800 KB</td><td style="text-align:right;">   819,200 bytes</td><td style="text-align:right;">200</td></tr>
+  <tr><td>New blank hard (32 MB) disk image...                      </td><td style="text-align:right;"> 32 MB</td><td style="text-align:right;">33,554,432 bytes</td><td style="text-align:right;">8,192</td></tr>
+</table>
+
+<h3>Custom Boot Sector</h3>
+
+With <strong>Select boot sector file...</strong> you can select any file to be used as the boot sector on Track 0, Sector 0.
 
 <hr size="4">
 
