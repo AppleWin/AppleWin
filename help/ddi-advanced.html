@@ -16,22 +16,28 @@
 
 <h3>Advanced Formatting Options</h3>
 
-For finer control when formatting disks hold down the <span style="border: 1px solid black; border-radius: 3px;">SHIFT</span> key and right-click on the drive icon.
+For finer control when formatting disks hold down the <span style="border: 1px solid black; border-radius: 3px; padding: 2px;">SHIFT</span> key and right-click on the drive icon (or press <span style="border: 1px solid black; border-radius: 3px; padding: 2px">SHIFT</span>-<span style="border: 1px solid black; border-radius: 3px; padding: 2px;">CTRL</span>-<span style="border: 1px solid black; border-radius: 3px; padding: 2px;">F3</span>.)
 <br>
 <br><img src="img/drive_popup_menu_advanced.png" border="1"/>
-<br>
-<p><b>Note:</b> This disk will be <i>bootable</i> but it <i>won't</i> have a File System or Disk Operating System (DOS 3.3, ProDOS, etc.) on it.</p>
 
-<h3>Bootable Disks, Data Disks, File Systems, and Disk Operating Systems</h3>
+<h3>Terminology</h3>
 
-<p>When you use AppleWin's <strong>New blank image...</strong> to create a new blank disk it will be <i>bootable</i> since it place a 256 byte AppleWin-provided boot sector; this bootable disk is called a <i>data</i> disk.</p>
+Some quick terminology to help explain the difference between Bootable Disks, Data Disks, File Systems, and Disk Operating Systems:
+<ul>
+  <li>A <i>File System</i> is the organized structure of data on a disk.  It lets you name and store files on the disk.</li>
+  <li>A <i>Disk Operating System</i> (ProDOS, DOS 3.3, etc.) is a bootable disk that lets you choose which applications or files to run, load, or save from disks.</li>
+  <li>A disk formatted <b>without</b> a File Sysystem (or Operating System (ProDOS, DOS 3.3, Pascall, etc.) on it may be called a <i>blank</i> or <i>empty</i> disk. (It <i>may</i> or <i>may not</i> be bootable.)</li>
+  <li>A disk formatted <b>with</b> a File System <b>but no</b> Operating System is called a <i>data</i> disk.</li>
+  <li>A disk formatted <b>with</b> a File System <b>and an</b> Operating System is called a <i>system</i> disk.</li>
+</ul>
+</p>
 
-<br>
-<img src="img/disk_boot_data_disk.png" />
+<h3>New blank image...</h3>
 
-<p>However, all new disks will NOT have a File System or Disk Operating System (DOS 3.3, ProDOS, etc.) on it.</p>  A File System lets you name and store files on the disk.  A standard Disk Operating System lets you choose which applications or files to run, load, or save.
+<p>When you use AppleWin's <strong>New blank disk image...</strong> to create a new blank disk it will be <i>bootable</i> since AppleWin provides a custom 256 byte boot sector.</p>
+<br><img src="img/disk_boot_data_disk.png" />
 
-<p>To make a disk usable under AppleWin you will need to format it -- either with AppleWin or some other utility (see their respective manual) -- which puts a File System on it, and optionally a DOS on it.</p>
+<p>To make a disk usable under AppleWin you will need to format it -- either with AppleWin or some other third party utility (see below for a list and their respective manual) -- which puts a File System on it, and optionally an Operating System on it.</p>
 
 <h4>To put a File System on an data disk:</h4>
 
@@ -133,7 +139,7 @@ For finer control when formatting disks hold down the <span style="border: 1px s
 
 <hr size="4">
 
-<h3>Understanding New blank disk image...</h3>
+<h3>Sizes of new blank disk images</h3>
 
 Here is table showing the disk sizes of the various <strong>New blank disk image...</strong>
 <br>
@@ -145,13 +151,9 @@ Here is table showing the disk sizes of the various <strong>New blank disk image
   <tr><td>New blank hard (32 MB) disk image...                      </td><td style="text-align:right;"> 32 MB</td><td style="text-align:right;">33,554,432 bytes</td><td style="text-align:right;">8,192</td></tr>
 </table>
 
-<h3>Custom Boot Sector</h3>
-
-With <strong>Select boot sector file...</strong> you can select any file to be used as the boot sector on Track 0, Sector 0.
-
 <hr size="4">
 
-<h3>More Disk Tools</h3>
+<h3>More Disk Utilities</h3>
 
 There are various third-party utilities to create and modify disk images.  Three popular ones are:
 
