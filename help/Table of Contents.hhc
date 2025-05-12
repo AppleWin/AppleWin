@@ -50,6 +50,10 @@
 				<param name="Local" value="ddi-create.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Advanced Formatting Options">
+				<param name="Local" value="ddi-advanced.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Transferring Disk Images">
 				<param name="Local" value="ddi-transfer.html">
 				</OBJECT>
