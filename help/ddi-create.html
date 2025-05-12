@@ -11,46 +11,115 @@
 
 <body style="background-color: rgb(255, 255, 255); font-family: verdana;" alink="#008000" link="#008000" vlink="#008000">
 
-<h2><font color="#008000">Creating
-Disk Images</font></h2>
+<h2><font color="#008000">Creating Disk Images</font></h2>
 
 <hr size="4">
-<p>To create a new disk image,
-all you have to do is tell AppleWin to use an image file which doesn't
-already exist and the emulator will automatically create a new image
-file.&nbsp; Specifying a new disk image is like inserting a blank,
-unformatted floppy disk into a real drive.&nbsp; This means that
-the image must be formatted by emulator before it can be used.
-Specifically, this is what you'd do using DOS 3.3:</p>
+
+<h3>Basic Disk Images</h3>
+
+<p>There are two ways in AppleWin to create a blank floppy disk image:</p>
+
+<h4>A) Native Disk Menu</h4>
+
+The easiest way to to create a blank disk image is to:
 
 <ol>
+  <li><strong>Right-Click</strong> on the Drive 1 <img src="img/tb-drv1.png" /> toolbar button (or press <span style="font-family: Courier New,Courier,monospace;">Ctrl-F3</span>) to open the drive pop-up menu.<br>
+
+  <br><img src="img/disk_new_140kb_disk.png" border="1"/></li>
+
+  <li>Depending on the <i>File System</i> desired select:
+
+<p><ul>
+      <li>For a blank ProDOS disk select: <strong>New ProDOS 5.25" (140KB) disk image (Standard 35 Track)</strong>, or</li>
+      <li>For a blank DOS 3.3 disk select: <strong>New DOS 3.3 5.25" (140 KB) disk image (Standard 35 Track)</strong>.</li>
+    </ul>
+</p>
+
+<p>Newer programs tend to use ProDOS while older programs tend to use DOS 3.3.</p></li>
+
+<p><strong>NOTE:</strong> By default a new ProDOS disk image will have four files copied onto it:
+
+<ul>
+  <li><span style="font-family: Courier New,Courier,monospace;">BITSY.BOOT</span></li>
+  <li><span style="font-family: Courier New,Courier,monospace;">QUIT.SYSTEM</span></li>
+  <li><span style="font-family: Courier New,Courier,monospace;">BASIC.SYSTEM</span></li>
+  <li><span style="font-family: Courier New,Courier,monospace;">PRODOS</span></li>
+</ul>
+
+<p>If you want to free up more room on a ProDOS disk you can toggle these individually on/off for which file(s) should be copied. (Your preferences persist for the next time you use AppleWin in the registry.)</p>
+
+  <li>You will then be asked to optionally name the disk image.<br>
+
+<p>The name will default to:</p>
+<ul>
+    <li><i>blank_floppy_###.po</i> for ProDOS, or </li>
+    <li><i>blank_floppy_###.do</i> for DOS 3.3.</li>
+</ul>
+
+  <p><strong>NOTE:</strong> The ### is the current date-time-stamp in YEAR-MON-DAY-HHh-MMm-SSs format.</p></li>
+
+  <li>Click <span style="font-family: Courier New,Courier,monospace;">SAVE</span> when ready.</li>
+</ol>
+
+<p>You are now ready to use your new disk image.
+
+<h4>B) Classic Disk Creation</h4>
+
+<p>In older versions of AppleWin there was only one way to natively create an empty disk image.
+To create an empty disk image:</p>
+
+<ol>
+  <li>Clicking on the drive icon, and</li>
+  <li>Type an image file name ending in <span style="font-family: Courier New,Courier,monospace;">.DSK</span> (or <span style="font-family: Courier New,Courier,monospace;">.DO</span>) which <i>doesn't</i> already exist.
+</ol>
+
+<p>AppleWin will automatically create a new 5.25" image
+(standard 140 KB, 16 sectors/track, 35 tracks) file which is empty and <strong>non-bootable.</strong> (See <a href="ddi-sizes.html">Disk Sizes</a> or <a href="ddi-advanced.html">Advanced Formatting Options</a> for more information.)</p>
+
+<h5>Manually putting DOS 3.3 on a blank disk so it is bootable</h5>
+
+<i>Formatting</i> a disk will put a File System on it and (optionally) copy a Disk Operating System (DOS 3.3, ProDOS, etc.) onto it.  This will also make the disk <i>bootable</i> (copies a small assembly language program called the boot sector to Track 0, Sector 0) such that you can use <span style="font-family: Courier New,Courier,monospace;">PR#6</span> too boot it.</p>
+
+Specifying a new disk image is like inserting a blank,
+unformatted floppy disk into a real drive.&nbsp; This means that
+the image must be formatted (either by the emulator or some other utility) before it can be used.
+Specifically, this is what you would do using DOS 3.3:</p>
+
+<ol>
+<li>Click on the Drive 1 <img src="img/tb-drv1.png" /> toolbar button (or press <span style="font-family: Courier New,Courier,monospace;">F3</span>)</li>
 
   <li>Load a master DOS 3.3 disk image (eg. <i>DOS 3.3 System Master - 680-0210-A.dsk</i>) in drive 1 and boot the emulated Apple. </li>
 
-  <li>Click on the Drive 1
-toolbar button. </li>
+  <li>Boot the emulated Apple by clicking on the <img src="img/tb-run.png" /> button (or press <span style="font-family: Courier New,Courier,monospace;">F2</span>). </li>
 
-  <li>Instead of selecting a disk
-image from the list, type in a name for a new disk image and press
-enter. </li>
+  <li>Click on the Drive 1 <img src="img/tb-drv1.png" /> toolbar button (or press <span style="font-family: Courier New,Courier,monospace;">F3</span>) again.</li>
 
-  <li>Type in a program that you
-want DOS to run whenever this new disk is booted. A simple but useful
-program is:<br>
+  <li>Instead of selecting a disk image from the list, type in a name for a new disk image and press enter.<br>
+  <p><b>NOTE:</b> The filename SHOULD end in <span style="font-family: Courier New,Courier,monospace;">.DSK</span> or <span style="font-family: Courier New,Courier,monospace;">.DO</span>.</p>
+  </li>
+
+  <li>Type in a program that you want DOS to run whenever this new disk is booted. A simple but useful
+program is this Applesoft BASIC program:<br>
 
     <br>
 
-    <span style="font-family: Courier New,Courier,monospace;">10
-PRINT
-CHR$(4);"CATALOG"</span><font face="Courier New"><br>
+    <span style="font-family: Courier New,Courier,monospace;">10 PRINT CHR$(4);"CATALOG"</span><font face="Courier New"><br>
 
     </font><br>
 
   </li>
 
   <li>Type <span style="font-family: Courier New,Courier,monospace;">"INIT
-HELLO"</span> to initialize (format) the disk image. </li>
+HELLO"</span> to initialize (format) the disk image.
 
+<p>This will:</p>
+  <ul>
+    <li>Put the DOS 3.3 File System on the disk,</li>
+    <li>Write DOS 3.3 to the first 3 tracks and make the disk bootable,</li>
+    <li>Write your program to disk.</li>
+  </ul>
+</li>
 </ol>
 
 <p>You now have a working disk
@@ -62,10 +131,26 @@ Disk Images</a> topic for more information. </p>
 <p>Please note that not all disk image types supported by
 AppleWin can be created in this manner.&nbsp; Since there is no way
 to detect the image type from the image itself, it is determined by the
-given file extension only. Four extensions are allowed: (.DSK, .DO,
-.NIB, .WOZ). The first two create a "DOS Order Image", .NIB creates
-a "Nibble Image" and .WOZ creates an empty .WOZ image.&nbsp; If the extension is completely omitted,
-".DSK" will be chosen by default.&nbsp; For more information, see <a href="ddi-formats.html">Disk Image Formats</a>.</p>
+given file extension only. Six extensions are allowed:</p>
+
+<ul>
+  <li>.DSK -- DOS 3.3 sector order,</li>
+  <li>.DO -- DOS 3.3 sector order,</li>
+  <li>.PO -- ProDOS sector order,</li>
+  <li>.HDV -- ProDOS (hard drive) volume in ProDOS sector order,</li>
+  <li>.NIB -- older raw nibble image that supports up to 6656 (0x1A00) nibbles/tracks, and</li>
+  <li>.WOZ -- the newest format that supports all copy protection formats.</li>
+</ul>
+<p>If the extension is completely omitted, <span style="font-family: Courier New,Courier,monospace;">.DSK</span> will be chosen by default.</p>
+
+<p>For more information, see <a href="ddi-formats.html">Disk Image Formats</a>.</p>
+
+<hr size="4">
+
+
+<h3>Advanced Disk Creation</h3>
+
+For finer control over disk formatting see <a href="ddi-advanced.html">Advanced Formatting Options</a>.
 
 </body>
 </html>
