@@ -35,6 +35,18 @@ Some quick terminology to help explain the difference between Bootable Disks, Da
 </ul>
 </p>
 
+<p>This table may help:</p>
+
+<table style="border:1px solid black;" cellpadding="4px">
+  <tr><th style="border-bottom:1px solid black;">Formatted?</th><th style="border-bottom:1px solid black;">Bootable?</th><th style="border-bottom:1px solid black;">File System?</th><th style="border-bottom:1px solid black;">Has an OS?</th><th style="border-bottom:1px solid black;">Name       </th></tr>
+  <tr><td>no        </td><td>     n/a</td><td>        n/a</td><td>     n/a</td><td>Unformatted</td></tr>
+  <tr><td>yes       </td><td>   maybe</td><td>         no</td><td>      no</td><td>Blank      </td></tr>
+  <tr><td>yes       </td><td>   maybe</td><td>        yes</td><td>      no</td><td>Data       </td></tr>
+  <tr><td>yes       </td><td>     yes</td><td>        yes</td><td>     yes</td><td>System     </td></tr>
+</table>
+
+<hr size="4">
+
 <h3>New blank image...</h3>
 
 <p>When you use AppleWin's <strong>New blank disk image...</strong> to create a new blank disk it will be <i>bootable</i> since AppleWin provides a custom 256 byte boot sector.</p>
