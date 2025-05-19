@@ -54,14 +54,14 @@ Some quick terminology to help explain the difference between Bootable Disks, Da
 
 <p>To make a disk usable under AppleWin you will need to format it -- either with AppleWin or some other third party utility (see below for a list and their respective manual) -- which puts a File System on it, and optionally an Operating System on it.</p>
 
-<h4>To put a File System on an data disk:</h4>
+<h4>To (Re-)Format an Existing Disk Image as a Data Disk:</h4>
 
 <ol>
-  <li>Make sure your disk it <i>not</i> mounted in the disk drive.&nbsp; If it is, right-click on the drive button and select <strong>Eject.</strong>
+  <li>Make sure your disk image is <i>not</i> mounted in the disk drive.&nbsp; If it is then right-click on the drive button and select <strong>Eject.</strong>
 <br>
 <img src="img/disk_eject.png" border="1"></li>
 
-  <li>Right-click on the drive button and select either:
+  <li>Hold down the <span style="border: 1px solid black; border-radius: 3px; padding: 2px;">SHIFT</span> key and <b>Right-Click</b> on the drive <img src="img/tb-drv1.png" /> toolbar button then select either:
     <ul>
       <li><strong>Format ProDOS disk image...</strong>
         <br><img src="img/disk_format_prodos_data.png" border="1" />
@@ -71,16 +71,23 @@ Some quick terminology to help explain the difference between Bootable Disks, Da
       </li>
     </ul>
   </li>
-  <li>You will see a warning depending on which OS you picked:
-
-  <br>
-  <img src="img/disk_format_dos33_warning.png" />
-  <br>
-  <img src="img/disk_format_prodos_warning.png" />
+  <li>You will see a warning depending on which OS you picked that ALL data will be lost:<br>
+    <ul>
+      <li>DOS 3.3<br>
+        <img src="img/disk_format_dos33_warning.png" border="1" />
+        <br><br>or<br><br></li>
+      <li>ProDOS</br>
+        <img src="img/disk_format_prodos_warning.png" border="1" />
+      </li>
+    </ul>
   </li>
-
+  <li>Select an existing disk image to over-write then click <b>Open</b>.<br>
+    <br><img src="img/disk_format_select_existing_disk.png" border="1" />
+  </li>
   <li>You can then mount this disk and save/copy files to it.</li>
 </ol>
+
+<hr size="4">
 
 <h3>HOWTO: Put an Operating System on new disk:</h3>
 
