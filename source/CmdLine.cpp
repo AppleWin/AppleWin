@@ -712,6 +712,42 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.useHdcFirmwareV2 = true;
 		}
+		else if (strcmp(lpCmdLine, "-bootsector") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			char  sPath[ MAX_PATH];
+			DWORD res = GetFullPathName(lpCmdLine, MAX_PATH, sPath, NULL);
+			if (!res)
+			{
+				LogFileOutput( "ERROR: Couldn't get full path for custom boot sector file: %s\n", lpCmdLine );
+			}
+
+			FILE *pFile = fopen( sPath, "rb");
+			if (pFile)
+			{
+				fseek( pFile, 0, SEEK_END );
+				size_t nSize = ftell( pFile );
+				fseek( pFile, 0, SEEK_SET );
+				fclose( pFile );
+
+				if (nSize > 0)
+				{
+					g_cmdLine.sBootSectorFileName = sPath;
+					g_cmdLine.nBootSectorFileSize = nSize;
+				}
+				else
+				{
+					g_cmdLine.nBootSectorFileSize = 0;
+					LogFileOutput( "INFO: Custom Boot Sector size = %zu\n", nSize );
+				}
+			}
+			else
+			{
+				LogFileOutput( "ERROR: Couldn't open custom boot sector file: %s\n", lpCmdLine );
+			}
+		}
 		else if (strcmp(lpCmdLine, "-alt-cpu-emu") == 0)	// debug
 		{
 			g_cmdLine.useAltCpuEmulation = true;
