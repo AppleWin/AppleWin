@@ -125,11 +125,15 @@ enum AppMode_e
 #define  REGVALUE_LAST_HARDDISK_	"Last Harddisk Image "
 
 // Preferences 
-#define REG_PREFS						"Preferences"
-#define REGVALUE_PREF_START_DIR      "Starting Directory"
-#define REGVALUE_PREF_WINDOW_X_POS   "Window X-Position"
-#define REGVALUE_PREF_WINDOW_Y_POS   "Window Y-Position"
-#define REGVALUE_PREF_HDV_START_DIR  "HDV Starting Directory"
+#define REG_PREFS                              "Preferences"
+#define REGVALUE_PREF_START_DIR                "Starting Directory"
+#define REGVALUE_PREF_WINDOW_X_POS             "Window X-Position"
+#define REGVALUE_PREF_WINDOW_Y_POS             "Window Y-Position"
+#define REGVALUE_PREF_HDV_START_DIR            "HDV Starting Directory"
+#define REGVALUE_PREF_NEW_DISK_COPY_BITSY_BOOT "NewDiskCopyBitsyBoot"
+#define REGVALUE_PREF_NEW_DISK_COPY_BITSY_BYE  "NewDiskCopyBitsyBye"
+#define REGVALUE_PREF_NEW_DISK_COPY_BASIC      "NewDiskCopyBASIC"
+#define REGVALUE_PREF_NEW_DISK_COPY_PRODOS_SYS "NewDiskCopyProDOS"
 
 #define WM_USER_BENCHMARK	WM_USER+1
 #define WM_USER_SAVESTATE	WM_USER+2
