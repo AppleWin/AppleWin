@@ -276,7 +276,7 @@ void Socket::process()
         FD_ZERO(&exceptfds);
         FD_SET(myFD, &writefds);
         FD_SET(myFD, &exceptfds);
-        const timeval timeout = {0, 0};
+        timeval timeout = {0, 0}; // non const for old versions of msys2 / mxe
         if (select(0, NULL, &writefds, &exceptfds, &timeout) > 0)
 #else
         pollfd pfd = {.fd = myFD, .events = POLLOUT};

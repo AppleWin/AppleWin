@@ -1,40 +1,33 @@
 include(FindPkgConfig)
 
 pkg_search_module(ZLIB REQUIRED zlib)
-pkg_search_module(YAML REQUIRED yaml-0.1)
-pkg_search_module(MINIZIP REQUIRED minizip)
 
 if (NOT WIN32)
   pkg_search_module(SLIRP slirp)
-endif()
 
-# see https://github.com/madler/zlib/commit/7e6f0784cc0c33e8d5fcb368248168c6656f73c8
-if (MINIZIP_INCLUDE_DIRS MATCHES "minizip$")
-  # old style, include from the zlib root
-  string(APPEND MINIZIP_INCLUDE_DIRS "/..")
-endif()
+  # if slirp is not found, we will try pcap
+  # if it is not found either, a dummy pcap will be compiled
+  # but network will be badly affected
 
-# if slirp is not found, we will try pcap
-# if it is not found either, a dummy pcap will be compiled
-# but network will be badly affected
+  # pcacp on Windows in managed in a different way, so we disable it
+  if ("${SLIRP_FOUND}" STREQUAL "")
+    message(WARNING "'libslirp' not found: will try 'libpcap' instead")
 
-if ("${SLIRP_FOUND}" STREQUAL "")
-  message(WARNING "'libslirp' not found: will try 'libpcap' instead")
-
-  pkg_search_module(PCAP libpcap)
-  if ("${PCAP_FOUND}" STREQUAL "")
-    # old versions of pcap do not work with pkg-config
-    # this is necessary on Rapsberri Pi OS
-    execute_process(COMMAND pcap-config --cflags
-      OUTPUT_VARIABLE PCAP_INCLUDE_DIRS
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      RESULT_VARIABLE STATUS)
-    if ("${STATUS}" STREQUAL "0")
-      message("Found 'libpcap' via pcap-config")
-      execute_process(COMMAND pcap-config --libs
-        OUTPUT_VARIABLE PCAP_LIBRARIES
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-      set(PCAP_FOUND "1")
+    pkg_search_module(PCAP libpcap)
+    if ("${PCAP_FOUND}" STREQUAL "")
+      # old versions of pcap do not work with pkg-config
+      # this is necessary on Rapsberri Pi OS
+      execute_process(COMMAND pcap-config --cflags
+        OUTPUT_VARIABLE PCAP_INCLUDE_DIRS
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE STATUS)
+      if ("${STATUS}" STREQUAL "0")
+        message("Found 'libpcap' via pcap-config")
+        execute_process(COMMAND pcap-config --libs
+          OUTPUT_VARIABLE PCAP_LIBRARIES
+          OUTPUT_STRIP_TRAILING_WHITESPACE)
+        set(PCAP_FOUND "1")
+      endif()
     endif()
   endif()
 endif()
@@ -252,7 +245,6 @@ else()
 endif()
 
 target_include_directories(appleii PRIVATE
-  ${YAML_INCLUDE_DIRS}
   ${PCAP_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${SLIRP_INCLUDE_DIRS}
@@ -263,7 +255,6 @@ target_include_directories(appleii PRIVATE
 # this one appears in header files
 target_include_directories(appleii PUBLIC
   ${CMAKE_CURRENT_BINARY_DIR}  # for config.h
-  ${MINIZIP_INCLUDE_DIRS}
   )
 
 if (WIN32)
@@ -279,9 +270,12 @@ else()
     )
 endif()
 
+target_link_libraries(appleii PUBLIC
+  yaml
+  minizip
+  )
+
 target_link_directories(appleii PUBLIC
-  ${YAML_LIBRARY_DIRS}
-  ${MINIZIP_LIBRARY_DIRS}
   ${PCAP_LIBRARY_DIRS}
   ${SLIRP_LIBRARY_DIRS}
   ${ZLIB_LIBRARY_DIRS}

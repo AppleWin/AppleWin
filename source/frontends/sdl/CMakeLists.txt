@@ -58,8 +58,6 @@ target_link_libraries(sa2 PRIVATE
   appleii
   common2
 
-  ${YAML_LIBRARIES}
-  ${MINIZIP_LIBRARIES}
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}
   ${ZLIB_LIBRARIES}

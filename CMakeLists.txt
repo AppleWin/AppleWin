@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.13)
 
+if (POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
 project(applewin HOMEPAGE_URL "https://github.com/audetto/AppleWin")
 
 option(BUILD_APPLEN   "build ncurses frontend")
@@ -37,16 +41,14 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-execute_process(COMMAND uname -m
-  OUTPUT_VARIABLE UNAME
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
-
 execute_process(
   COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_BINARY_DIR}/compile_commands.json ${CMAKE_SOURCE_DIR}/compile_commands.json
 )
 
 include_directories(source)
 
+add_subdirectory(libyaml)
+add_subdirectory(minizip)
 add_subdirectory(source)
 add_subdirectory(resource)
 add_subdirectory(test/TestCPU6502)
@@ -89,7 +91,7 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Apple ][ emulator for Linux")
 set(CPACK_PACKAGE_CONTACT "audetto <mariofutire@gmail.com>")
 
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libyaml-0-2,libminizip1,libqt5gui5,libqt5widgets5,libqt5multimedia5,libqt5gamepad5,libncursesw6,libevdev2,libsdl2-image-2.0-0,libsdl2-2.0-0,libgles2,libpcap0.8,libslirp0,libboost-program-options1.74.0|libboost-program-options1.81.0|libboost-program-options1.83.0")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5,libqt5widgets5,libqt5multimedia5,libqt5gamepad5,libncursesw6,libevdev2,libsdl2-image-2.0-0,libsdl2-2.0-0,libgles2,libpcap0.8,libslirp0,libboost-program-options1.74.0|libboost-program-options1.81.0|libboost-program-options1.83.0")
 
 set(CPACK_RPM_PACKAGE_LICENSE "GPLv2")
 set(CPACK_RPM_PACKAGE_GROUP "Applications/Emulators")

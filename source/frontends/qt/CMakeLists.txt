@@ -69,8 +69,6 @@ target_link_libraries(qapple PRIVATE
   appleii
   apple2roms
 
-  ${YAML_LIBRARIES}
-  ${MINIZIP_LIBRARIES}
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}
   ${ZLIB_LIBRARIES}

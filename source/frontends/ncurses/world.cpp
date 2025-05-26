@@ -1,7 +1,6 @@
 #include "frontends/ncurses/world.h"
 #include "StdAfx.h"
 
-#include <ncurses.h>
 #include <signal.h>
 
 #include "linux/keyboardbuffer.h"

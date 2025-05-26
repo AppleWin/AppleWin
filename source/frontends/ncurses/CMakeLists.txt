@@ -16,6 +16,7 @@ set(HEADER_FILES
   evdevpaddle.h
   nframe.h
   asciiart.h
+  ncurses_safe.h
   )
 
 add_executable(applen
@@ -45,8 +46,9 @@ target_compile_options(applen PRIVATE
 target_link_libraries(applen PRIVATE
   appleii
   common2
-  ${YAML_LIBRARIES}
-  ${MINIZIP_LIBRARIES}
+  minizip
+  yaml
+
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}
   ${ZLIB_LIBRARIES}

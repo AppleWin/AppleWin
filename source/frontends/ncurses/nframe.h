@@ -1,10 +1,10 @@
 #pragma once
 
 #include "frontends/common2/gnuframe.h"
+#include "frontends/ncurses/ncurses_safe.h"
 
 #include <memory>
 #include <string>
-#include <ncurses.h>
 
 namespace na2
 {

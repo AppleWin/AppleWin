@@ -1,3 +1,4 @@
+#include "StdAfx.h"
 #include "linux/network/portfwds.h"
 
 #ifndef _WIN32

@@ -60,8 +60,6 @@ if (STATIC_LINKING)
     # it has not been compiled with -fPIC
     target_link_libraries(applewin_libretro PRIVATE
       -Wl,-Bstatic
-      ${MINIZIP_LIBRARIES}
-      ${YAML_STATIC_LIBRARIES}
       ${PCAP_STATIC_LIBRARIES}
       ${SLIRP_STATIC_LIBRARIES}
       -Wl,-Bdynamic
@@ -70,8 +68,6 @@ if (STATIC_LINKING)
   else()
     target_link_libraries(applewin_libretro PRIVATE
       -Wl,-Bstatic
-      ${MINIZIP_STATIC_LIBRARIES}
-      ${YAML_STATIC_LIBRARIES}
       ${PCAP_STATIC_LIBRARIES}
       ${SLIRP_STATIC_LIBRARIES}
       ${ZLIB_STATIC_LIBRARIES}
@@ -80,8 +76,6 @@ if (STATIC_LINKING)
   endif()
 else()
   target_link_libraries(applewin_libretro PRIVATE
-    ${MINIZIP_LIBRARIES}
-    ${YAML_LIBRARIES}
     ${PCAP_LIBRARIES}
     ${SLIRP_LIBRARIES}
     ${ZLIB_LIBRARIES}
