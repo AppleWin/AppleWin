@@ -1524,6 +1524,11 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, uint32_t& dwOffse
 	if (imageSizeRemaining < 0)
 		return eMismatch;
 
+	// A valid WOZ must have exactly one of each of: INFO, TMAP & TRKS chunks (GH#1402)
+	bool gotINFO = false;
+	bool gotTMAP = false;
+	bool gotTRKS = false;
+
 	while(imageSizeRemaining >= sizeof(WOZChunkHdr))
 	{
 		UINT32 chunkId = *pImage32++;
@@ -1533,6 +1538,8 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, uint32_t& dwOffse
 		switch(chunkId)
 		{
 			case INFO_CHUNK_ID:
+				if (gotINFO) return eMismatch;
+				gotINFO = true;
 				m_pInfo = (InfoChunkv2*)pImage32;
 				if (m_pInfo->v1.diskType != InfoChunk::diskType5_25)
 					return eMismatch;
@@ -1542,12 +1549,16 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, uint32_t& dwOffse
 					InfoChunkv3* pInfoV3 = (InfoChunkv3*)pImage32;
 					LogOutput("WOZ: Largest Flux Track = %d\n", pInfoV3->largestFluxTrack);
 				}
-				break;
 #endif
+				break;
 			case TMAP_CHUNK_ID:
+				if (gotTMAP) return eMismatch;
+				gotTMAP = true;
 				pImageInfo->pWOZTrackMap = (BYTE*) pImage32;
 				break;
 			case TRKS_CHUNK_ID:
+				if (gotTRKS) return eMismatch;
+				gotTRKS = true;
 				dwOffset = pImageInfo->uOffset = pImageInfo->uImageSize - imageSizeRemaining;	// offset into image of track data
 				break;
 			case FLUX_CHUNK_ID:	// WOZ v3 (todo)
@@ -1567,6 +1578,9 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, uint32_t& dwOffse
 		if (imageSizeRemaining < 0)
 			return eMismatch;
 	}
+
+	if (!(gotINFO && gotTMAP && gotTRKS))
+		return eMismatch;
 
 	return eMatch;
 }
@@ -2023,7 +2037,7 @@ bool CImageHelperBase::WOZUpdateInfo(ImageInfo* pImageInfo, uint32_t& dwOffset)
 {
 	if (m_WOZHelper.ProcessChunks(pImageInfo, dwOffset) != eMatch)
 	{
-		_ASSERT(0);
+		GetFrame().FrameMessageBox("Malformed WOZ image\nUnable to use this image.", "AppleWin: WOZ chunks", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 		return false;
 	}
 
