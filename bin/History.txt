@@ -10,6 +10,8 @@ Tom Charlesworth
 
 1.30.21.0 - 1 Jun 2025
 ----------------------
+Note: This is the last planned version to support Windows XP.
+
 - [Change #1363] Right-click Disk Drive buttons QoL features to manage new disk images.
   - Support creation of new DOS/ProDOS blank or formatted disk (including default ProDOS apps).
   - [PR #1364] Document the new UI workflows.
@@ -26,7 +28,8 @@ Tom Charlesworth
   - Currently only available via the command line: -aux <empty|std80|ext80|rw3>.
   - NB. For `-aux empty`, `-aux std80` and -alt-cpu-emu this uses a different CPU emulation code path, where full-speed runs 25% slower.
 - Change: Improve logging: for -fs-width/height=x: for each display resolution, after the WxH also output the aspect ratio.
-- [Bug #1383] Fix initial volume of SSI263 after a Load State. [@audetto]
+- [Bug #1402] Improve robustness of WOZ chunk processing, and reject image if it's malformed.
+- [Bug #1383] Fix initial volume of Mockingboard card (and SSI263/SC01 devices) after loading a saved state. [@audetto]
 - [Bug #1372] Fix restoring SSI263 and SC01 continuous phoneme playback from save-state.
 - [Bug #1367] Fix for KeybReset() not called after a configuration reset.
 - [Bug #1360] Fix NMOS 6502 illegal opcode 0x0C (aka SKW).
