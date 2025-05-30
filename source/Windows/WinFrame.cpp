@@ -2000,7 +2000,7 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 			DeleteFile(filename_with_zone_identifier.c_str());
 		}
 
-        HtmlHelp(g_hFrameWindow,filename.c_str(),HH_DISPLAY_TOC,0);
+        HtmlHelp(GetDesktopWindow(), filename.c_str(), HH_DISPLAY_TOC, 0);	// GH#1403
         helpquit = 1;
       }
       break;
