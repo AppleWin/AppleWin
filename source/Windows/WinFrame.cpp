@@ -2000,7 +2000,7 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 			DeleteFile(filename_with_zone_identifier.c_str());
 		}
 
-        HtmlHelp(g_hFrameWindow,filename.c_str(),HH_DISPLAY_TOC,0);
+        HtmlHelp(GetDesktopWindow(), filename.c_str(), HH_DISPLAY_TOC, 0);	// GH#1403
         helpquit = 1;
       }
       break;
@@ -3399,7 +3399,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 
 							if (bIsHardDisk)
 							{
-								static_assert( sizeof(aAppleWinBootSector) == 256 );
+								static_assert( sizeof(aAppleWinBootSector) == 256, "Boot sector size must be 256 bytes");
 								// Modify boot message depending on type of disk
 								// Floppy: THIS IS AN EMPTY DATA DISK.
 								// Hard  : THIS IS AN EMPTY HARD DISK.

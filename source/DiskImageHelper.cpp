@@ -2037,7 +2037,7 @@ bool CImageHelperBase::WOZUpdateInfo(ImageInfo* pImageInfo, uint32_t& dwOffset)
 {
 	if (m_WOZHelper.ProcessChunks(pImageInfo, dwOffset) != eMatch)
 	{
-		GetFrame().FrameMessageBox("Malformed WOZ image\nUnable to use this image.", "AppleWin: WOZ chunks", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+		GetFrame().FrameMessageBox("Malformed WOZ image.\nUnable to use this image.", "AppleWin: WOZ chunks", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 		return false;
 	}
 
@@ -2123,7 +2123,7 @@ CImageBase* CDiskImageHelper::Detect(LPBYTE pImage, uint32_t dwSize, const char*
 		if (pWozHdr->crc32 && // WOZ spec: CRC of 0 should be ignored
 			pWozHdr->crc32 != crc32(0, pImage+sizeof(CWOZHelper::WOZHeader), dwSize-sizeof(CWOZHelper::WOZHeader)))
 		{
-			int res = GetFrame().FrameMessageBox("CRC mismatch\nContinue using image?", "AppleWin: WOZ Header", MB_ICONSTOP | MB_SETFOREGROUND | MB_YESNO);
+			int res = GetFrame().FrameMessageBox("CRC mismatch.\nContinue using image?", "AppleWin: WOZ Header", MB_ICONSTOP | MB_SETFOREGROUND | MB_YESNO);
 			if (res == IDNO)
 				return NULL;
 		}
