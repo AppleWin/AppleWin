@@ -8,7 +8,7 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
-1.30.21.0 - 1 Jun 2025
+1.30.21.0 - 31 May 2025
 ----------------------
 Note: This is the last planned version to support Windows XP.
 
@@ -17,7 +17,7 @@ Note: This is the last planned version to support Windows XP.
   - [PR #1364] Document the new UI workflows.
   - [PR #1375] Document the disk image size magic numbers.
 - [Change #1365] Update disk images included with AppleWin distro.
-  - [Change #438] Delete MASTER.DSK and add BLANK.DSK (created using the newly added DOS 3.3 System Master disk).
+  - [Change #438] Remove MASTER.DSK and add BLANK.DSK (created using the newly added DOS 3.3 System Master disk).
   - Add 'DOS 3.3 System Master - 680-0210-A.dsk'.
   - Add 'ProDOS_2_4_3.po'.
 - [Change #478] Support up to 16MiB in RamWorks III card (-r 256), and default to 1MiB (eg. `-aux rw3`, without -r switch)
