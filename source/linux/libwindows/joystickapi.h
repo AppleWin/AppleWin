@@ -17,4 +17,4 @@ typedef struct joyinfoex_tag
     DWORD dwPOV;
     DWORD dwReserved1;
     DWORD dwReserved2;
-} JOYINFOEX, *PJOYINFOEX, *NPJOYINFOEX, *LPJOYINFOEX;
+} JOYINFOEX;

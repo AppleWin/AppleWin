@@ -51,9 +51,7 @@ typedef struct
     DWORD dwFlags;
     DWORD dwFormats;
     DWORD dwChannels;
-} DSCCAPS, DSCAPS, *LPDSCCAPS;
-
-typedef const DSCCAPS *LPCDSCCAPS;
+} DSCAPS;
 
 typedef struct _DSBUFFERDESC
 {
@@ -64,5 +62,4 @@ typedef struct _DSBUFFERDESC
     LPWAVEFORMATEX lpwfxFormat;
     GUID guid3DAlgorithm;
     LPCSTR szName; // only in the linux version to differentiate the channels
-} DSBUFFERDESC, *LPDSBUFFERDESC;
-typedef const DSBUFFERDESC *LPCDSBUFFERDESC;
+} DSBUFFERDESC;
