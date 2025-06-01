@@ -19,7 +19,7 @@ typedef struct _SYSTEMTIME
     WORD wMinute;
     WORD wSecond;
     WORD wMilliseconds;
-} SYSTEMTIME, *PSYSTEMTIME;
+} SYSTEMTIME;
 
 int GetDateFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpDate, LPCSTR lpFormat, LPSTR lpDateStr, int cchDate);
 int GetTimeFormat(LCID Locale, DWORD dwFlags, CONST SYSTEMTIME *lpTime, LPCSTR lpFormat, LPSTR lpTimeStr, int cchTime);
