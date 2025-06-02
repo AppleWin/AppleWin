@@ -1,0 +1,1 @@
+#cmakedefine SA2_SDL3 "@SDL3_FOUND@"

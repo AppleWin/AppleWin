@@ -13,7 +13,7 @@ namespace sa2
 
     std::shared_ptr<Gamepad> Gamepad::create(const std::optional<int> &index, const std::string &mappingFile)
     {
-        if (!index && SDL_NumJoysticks() <= 0)
+        if (!index && !compat::getNumJoysticks() <= 0)
         {
             // default and no joysticks available
             return std::shared_ptr<Gamepad>();

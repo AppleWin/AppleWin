@@ -101,17 +101,29 @@ namespace
             return;
         }
 
-        SDL_AudioCVT cvt;
         // tested with all formats from https://asciiexpress.net/
         // 8 bit mono is just enough
         // TAPEIN will interpolate so we do not need to resample at a higher frequency
         const SDL_AudioFormat format = sizeof(CassetteTape::tape_data_t) == 1 ? AUDIO_S8 : AUDIO_S16SYS;
+
+#if SDL_VERSION_ATLEAST(3, 0, 0)
+        const SDL_AudioSpec dstSpec = {format, wavSpec.channels, wavSpec.freq};
+        Uint8 *dstData = NULL;
+        int dstLen = 0;
+        if (SDL_ConvertAudioSamples(&wavSpec, wavBuffer, wavLength, &dstSpec, &dstData, &dstLen) < 0)
+        {
+            frame->FrameMessageBox("Could not convert wav file", "ERROR", MB_OK);
+            SDL_free(dstData);
+        }
+        std::vector<CassetteTape::tape_data_t> output(dstLen / sizeof(CassetteTape::tape_data_t));
+        std::memcpy(output.data(), wavBuffer, dstLen);
+#else
+        SDL_AudioCVT cvt;
         const int res =
             SDL_BuildAudioCVT(&cvt, wavSpec.format, wavSpec.channels, wavSpec.freq, format, 1, wavSpec.freq);
         cvt.len = wavLength;
         std::vector<CassetteTape::tape_data_t> output(cvt.len_mult * cvt.len / sizeof(CassetteTape::tape_data_t));
         std::memcpy(output.data(), wavBuffer, cvt.len);
-        SDL_FreeWAV(wavBuffer);
 
         if (res)
         {
@@ -119,7 +131,9 @@ namespace
             SDL_ConvertAudio(&cvt);
             output.resize(cvt.len_cvt / sizeof(CassetteTape::tape_data_t));
         }
+#endif
 
+        SDL_FreeWAV(wavBuffer);
         CassetteTape::instance().setData(filename, output, wavSpec.freq);
     }
 

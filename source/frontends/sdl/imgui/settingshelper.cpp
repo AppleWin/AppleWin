@@ -7,11 +7,8 @@
 #include "Debugger/Debug.h"
 
 #include "frontends/sdl/imgui/settingshelper.h"
-
 #include "frontends/sdl/imgui/glselector.h"
 #include "imgui_internal.h"
-
-#include <SDL.h>
 
 // not very orthodox
 void CreateLanguageCard(void);

@@ -1,5 +1,3 @@
-#include <SDL.h>
-
 #include <iostream>
 #include <memory>
 #include <iomanip>
@@ -15,6 +13,7 @@
 #include "frontends/common2/timer.h"
 #include "frontends/sdl/gamepad.h"
 #include "frontends/sdl/sdirectsound.h"
+#include "frontends/sdl/sdlcompat.h"
 #include "frontends/sdl/utils.h"
 
 #include "frontends/sdl/renderer/sdlrendererframe.h"
@@ -32,16 +31,8 @@ namespace
 
     int getRefreshRate()
     {
-        SDL_DisplayMode current;
-
-        const int should_be_zero = SDL_GetCurrentDisplayMode(0, &current);
-
-        if (should_be_zero)
-        {
-            throw std::runtime_error(sa2::decorateSDLError("SDL_GetCurrentDisplayMode"));
-        }
-
-        return current.refresh_rate ? current.refresh_rate : 60;
+        const SDL_DisplayMode *current = sa2::compat::getCurrentDisplayMode();
+        return current->refresh_rate ? current->refresh_rate : 60;
     }
 
     struct Data
@@ -84,7 +75,7 @@ void run_sdl(int argc, char *const argv[])
         frame = std::make_shared<sa2::SDLRendererFrame>(options);
     }
 
-    std::cerr << "Default GL swap interval: " << SDL_GL_GetSwapInterval() << std::endl;
+    std::cerr << "GL swap interval: " << sa2::compat::getGLSwapInterval() << std::endl;
 
     const common2::CommonInitialisation init(frame, paddle, options);
 
@@ -169,8 +160,9 @@ void run_sdl(int argc, char *const argv[])
 int main(int argc, char *argv[])
 {
     // First we need to start up SDL, and make sure it went ok
-    const Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_EVENTS;
-    if (SDL_Init(flags) != 0)
+    const Uint32 flags = SDL_INIT_VIDEO | SA2_INIT_GAMEPAD | SDL_INIT_AUDIO | SDL_INIT_EVENTS;
+
+    if (!sa2_ok(SDL_Init(flags)))
     {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
         return 1;

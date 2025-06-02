@@ -1,7 +1,7 @@
 #pragma once
 
 #include "linux/paddle.h"
-#include <SDL.h>
+#include "frontends/sdl/sdlcompat.h"
 
 #include <vector>
 #include <memory>
