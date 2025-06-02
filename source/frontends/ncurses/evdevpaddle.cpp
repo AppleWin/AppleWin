@@ -5,7 +5,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#ifndef _WIN32
+#include "applen_config.h"
+
+#ifdef LIBEVDEV_FOUND
 #include <libevdev/libevdev.h>
 #endif
 
@@ -21,7 +23,7 @@ namespace na2
         , myAxisMins(2)
         , myAxisMaxs(2)
     {
-#ifndef _WIN32
+#ifdef LIBEVDEV_FOUND
         myFD = open(device.c_str(), O_RDONLY | O_NONBLOCK);
         if (myFD > 0)
         {
@@ -72,7 +74,7 @@ namespace na2
             return counter;
         }
 
-#ifndef _WIN32
+#ifdef LIBEVDEV_FOUND
         input_event ev;
         int rc = LIBEVDEV_READ_STATUS_SUCCESS;
         do
@@ -98,7 +100,7 @@ namespace na2
         int value = 0;
         if (myDev)
         {
-#ifndef _WIN32
+#ifdef LIBEVDEV_FOUND
             int rc = libevdev_fetch_event_value(myDev.get(), EV_KEY, myButtonCodes[i], &value);
 #endif
         }
@@ -107,7 +109,7 @@ namespace na2
 
     double EvDevPaddle::getAxis(int i) const
     {
-#ifndef _WIN32
+#ifdef LIBEVDEV_FOUND
         if (myDev)
         {
             int value = 0;
