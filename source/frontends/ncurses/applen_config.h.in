@@ -1,0 +1,1 @@
+#cmakedefine LIBEVDEV_FOUND "@LIBEVDEV_FOUND@"

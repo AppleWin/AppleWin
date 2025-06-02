@@ -33,6 +33,7 @@ if (NOT WIN32)
 endif()
 
 target_include_directories(applen PRIVATE
+  ${CMAKE_CURRENT_BINARY_DIR}
   ${NCURSES_INCLUDE_DIRS}
   ${LIBEVDEV_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
@@ -61,6 +62,8 @@ target_link_directories(applen PRIVATE
   ${NCURSES_LIBRARY_DIRS}
   ${LIBEVDEV_LIBRARY_DIRS}
   )
+
+configure_file(applen_config.h.in applen_config.h)
 
 install(TARGETS applen
   DESTINATION bin)
