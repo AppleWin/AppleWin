@@ -7,6 +7,7 @@ class SSI263
 public:
 	SSI263(UINT slot) : m_slot(slot)
 	{
+		m_type = SSI263P;
 		m_device = -1;	// undefined
 		m_cardMode = PH_Mockingboard;
 		m_pPhonemeData00 = NULL;
@@ -73,6 +74,7 @@ public:
 
 	void SetDevice(UINT device) { m_device = device; }
 	void SetCardMode(PHASOR_MODE mode);
+	void SetType(SSI263Type type) { m_type = type; }
 
 	void DSUninit(void);
 
@@ -152,6 +154,7 @@ private:
 	// Filter frequency range
 	static const BYTE FILTER_FREQ_SILENCE = 0xFF;
 
+	SSI263Type m_type;
 	UINT m_slot;
 	BYTE m_device;	// SSI263 device# which is generating phoneme-complete IRQ (and only required whilst Mockingboard isn't a class)
 	PHASOR_MODE m_cardMode;
