@@ -817,7 +817,7 @@ static void RepeatInitialization(void)
 				dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).UseBad6522A();
 			if (g_cmdLine.slotInfo[i].useBad6522B)
 				dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).UseBad6522B();
-			for (UINT socket = 0; socket <= NUM_SSI263; socket++)
+			for (UINT socket = 0; socket < NUM_SSI263; socket++)
 			{
 				const SSI263Type type = g_cmdLine.slotInfo[i].socketSSI263[socket];
 				if (type != SSI263Unknown)
