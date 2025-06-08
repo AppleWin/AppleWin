@@ -253,10 +253,10 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 						LogFileOutput("VidHD currently only supported in slot 3\n");
 				}
 				else if (strncmp(lpCmdLine, "socket", 6) == 0 &&
-					(lpCmdLine[6] == '0' || lpCmdLine[6] == '1') &&
+					(lpCmdLine[6] == '0' || lpCmdLine[6] == '1') &&	// 0=$Cs20(top of card), 1=$Cs40(bottom of card)
 					lpCmdLine[7] == '=')
 				{
-					UINT socket = lpCmdLine[6] == '0' ? 0 : 1;
+					BYTE socket = lpCmdLine[6] - '0';
 					LPSTR socketType = &lpCmdLine[8];
 					SSI263Type type = SSI263Unknown;
 					if (strcmp(socketType, "empty") == 0)
@@ -266,6 +266,16 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					else if (strcmp(socketType, "ssi263ap") == 0)
 						type = SSI263AP;
 					g_cmdLine.slotInfo[slot].socketSSI263[socket] = type;
+					if (type == SSI263Unknown)
+						LogFileOutput("Unsupported SSI263 type: %s\n", socketType);
+				}
+				else if (strcmp(lpCmdLine, "sc01") == 0)
+				{
+					g_cmdLine.slotInfo[slot].socketSC01 = SC01;
+				}
+				else if (strcmp(lpCmdLine, "no-sc01") == 0)
+				{
+					g_cmdLine.slotInfo[slot].socketSC01 = SSI263Empty;
 				}
 				else
 				{

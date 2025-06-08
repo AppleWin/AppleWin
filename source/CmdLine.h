@@ -17,7 +17,7 @@ struct CmdLine
 			useHdcFirmwareMode = HdcDefault;
 			useBad6522A = false;
 			useBad6522B = false;
-			socketSSI263[0] = socketSSI263[1] = SSI263Unknown;
+			socketSSI263[0] = socketSSI263[1] = socketSC01 = SSI263Unknown;
 		}
 
 		bool isDiskII13;
@@ -25,6 +25,7 @@ struct CmdLine
 		bool useBad6522A;
 		bool useBad6522B;
 		SSI263Type socketSSI263[NUM_SSI263];
+		SSI263Type socketSC01;
 	};
 
 	CmdLine()
