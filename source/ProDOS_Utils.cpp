@@ -114,8 +114,7 @@ namespace
 		if (eSectorOrder == INTERLEAVE_DOS33_ORDER)
 		{
 			size_t   nOffset = 0;
-			uint8_t *pSource = new uint8_t[ nDiskSize ];
-			memcpy( pSource, pDiskBytes, nDiskSize );
+			std::vector<uint8_t> pSource(pDiskBytes, pDiskBytes + nDiskSize);
 
 			const int nTracks = nDiskSize / TRACK_DENIBBLIZED_SIZE;
 			for( int iTrack = 0; iTrack < nTracks; iTrack++ )
@@ -125,12 +124,10 @@ namespace
 					size_t nSrc;
 					size_t nDst;
 					Util_Disk_InterleaveForward( iSector, &nSrc, &nDst );
-					memcpy( pDiskBytes + nOffset + nDst, pSource + nOffset + nSrc, DSK_SECTOR_SIZE );
+					memcpy( pDiskBytes + nOffset + nDst, pSource.data() + nOffset + nSrc, DSK_SECTOR_SIZE );
 				}
 				nOffset += TRACK_DENIBBLIZED_SIZE;
 			}
-
-			delete [] pSource;
 		}
 	}
 
@@ -167,8 +164,7 @@ namespace
 		if (eSectorOrder == INTERLEAVE_DOS33_ORDER)
 		{
 			size_t   nOffset = 0;
-			uint8_t *pSource = new uint8_t[ nDiskSize ];
-			memcpy( pSource, pDiskBytes, nDiskSize );
+			std::vector<uint8_t> pSource(pDiskBytes, pDiskBytes + nDiskSize);
 
 			const int nTracks = nDiskSize / TRACK_DENIBBLIZED_SIZE;
 			for( int iTrack = 0; iTrack < nTracks; iTrack++ )
@@ -178,12 +174,10 @@ namespace
 					size_t nSrc;
 					size_t nDst;
 					Util_Disk_InterleaveReverse( iSector, &nSrc, &nDst );
-					memcpy( pDiskBytes + nOffset + nDst, pSource + nOffset + nSrc, DSK_SECTOR_SIZE );
+					memcpy( pDiskBytes + nOffset + nDst, pSource.data() + nOffset + nSrc, DSK_SECTOR_SIZE );
 				}
 				nOffset += TRACK_DENIBBLIZED_SIZE;
 			}
-
-			delete [] pSource;
 		}
 	}
 
@@ -768,26 +762,25 @@ void New_DOSProDOS_Disk( const char * pTitle, const std::string & pathname, cons
 	FILE *hFile = fopen( pathname.c_str(), "wb");
 	if (hFile)
 	{
-		uint8_t *pDiskBytes = new uint8_t[ nDiskSize ];
-		memset( pDiskBytes, 0, nDiskSize );
+		std::vector<uint8_t> pDiskBytes(nDiskSize, 0);
 
 		if (bIsDOS33)
 		{
 			// File System
 			int VTOC_TRACK = 0x11; // TODO: Allow user to over-ride via command-line argument? --vtoc 17
-			Util_DOS33_FormatFileSystem( pDiskBytes, nDiskSize, VTOC_TRACK );
+			Util_DOS33_FormatFileSystem( pDiskBytes.data(), nDiskSize, VTOC_TRACK );
 			
 			// Boot Sector + OS
 			const size_t nDOS33Size = 3 * 16 * 256; // First 3 tracks * 16 sectors/track * 256 bytes/sector
 			const BYTE  *pDOS33Data = pFrame->GetResource(IDR_OS_DOS33, "FIRMWARE", nDOS33Size);
 			if (pDOS33Data)
 			{
-				memcpy( pDiskBytes, pDOS33Data, nDOS33Size );
+				memcpy( pDiskBytes.data(), pDOS33Data, nDOS33Size );
 
 				// DOS 3.3 resides on Track 0, 1, 2
 				// Track 0 was already reserved when the file system was formatted.
-				Util_DOS33_SetTrackUsed( pDiskBytes, VTOC_TRACK, 1 );
-				Util_DOS33_SetTrackUsed( pDiskBytes, VTOC_TRACK, 2 );
+				Util_DOS33_SetTrackUsed( pDiskBytes.data(), VTOC_TRACK, 1 );
+				Util_DOS33_SetTrackUsed( pDiskBytes.data(), VTOC_TRACK, 2 );
 			}
 			else
 			{
@@ -802,17 +795,17 @@ void New_DOSProDOS_Disk( const char * pTitle, const std::string & pathname, cons
 
 			SectorOrder_e eSectorOrder = INTERLEAVE_PRODOS_ORDER;
 			const char *pVolumeName = "BLANK";
-			Util_ProDOS_ForwardSectorInterleave( pDiskBytes, nDiskSize, eSectorOrder );
-			Util_ProDOS_FormatFileSystem       ( pDiskBytes, nDiskSize, pVolumeName  );
-			memcpy(pDiskBytes, pBootSectorsData, nBootSectorsSize);
-			if (bNewDiskCopyBitsyBoot) Util_ProDOS_CopyBitsyBoot( pDiskBytes, nDiskSize, pVolumeName, pFrame );
-			if (bNewDiskCopyBitsyBye)  Util_ProDOS_CopyBitsyBye ( pDiskBytes, nDiskSize, pVolumeName, pFrame );
-			if (bNewDiskCopyBASIC)     Util_ProDOS_CopyBASIC    ( pDiskBytes, nDiskSize, pVolumeName, pFrame );
-			if (bNewDiskCopyProDOS)    Util_ProDOS_CopyDOS      ( pDiskBytes, nDiskSize, pVolumeName, pFrame );
-			Util_ProDOS_ReverseSectorInterleave( pDiskBytes, nDiskSize, eSectorOrder );
+			Util_ProDOS_ForwardSectorInterleave( pDiskBytes.data(), nDiskSize, eSectorOrder );
+			Util_ProDOS_FormatFileSystem       ( pDiskBytes.data(), nDiskSize, pVolumeName  );
+			memcpy(pDiskBytes.data(), pBootSectorsData, nBootSectorsSize);
+			if (bNewDiskCopyBitsyBoot) Util_ProDOS_CopyBitsyBoot( pDiskBytes.data(), nDiskSize, pVolumeName, pFrame );
+			if (bNewDiskCopyBitsyBye)  Util_ProDOS_CopyBitsyBye ( pDiskBytes.data(), nDiskSize, pVolumeName, pFrame );
+			if (bNewDiskCopyBASIC)     Util_ProDOS_CopyBASIC    ( pDiskBytes.data(), nDiskSize, pVolumeName, pFrame );
+			if (bNewDiskCopyProDOS)    Util_ProDOS_CopyDOS      ( pDiskBytes.data(), nDiskSize, pVolumeName, pFrame );
+			Util_ProDOS_ReverseSectorInterleave( pDiskBytes.data(), nDiskSize, eSectorOrder );
 		}
 
-		fwrite( pDiskBytes, 1, nDiskSize, hFile );
+		fwrite( pDiskBytes.data(), 1, nDiskSize, hFile );
 		fclose( hFile );
 	}
 	else
@@ -828,42 +821,40 @@ void New_Blank_Disk( const char * pTitle, const std::string & pathname,
 	if (hFile)
 	{
 		size_t  nDiskBuffer = nDiskSize;
-		char   *pDiskBuffer = new char[ nDiskSize ];
-		memset( pDiskBuffer, 0, nDiskSize );
+		std::vector<char> pDiskBuffer(nDiskSize, 0);
 
 		// See: firmware/BootSector/bootsector.a
-		uint8_t  aAppleWinBootSector[256];
+		std::vector<uint8_t> pBootSector;
+
 		bool     bUseAppleWinBootSector = !g_cmdLine.nBootSectorFileSize; // Can have custom boot loader via command line: -bootsector <file>
-		size_t   nBootSectorSize = bUseAppleWinBootSector ? sizeof(aAppleWinBootSector) :              g_cmdLine.nBootSectorFileSize  ;
-		uint8_t *pBootSector     = bUseAppleWinBootSector ?        aAppleWinBootSector  : new uint8_t[ g_cmdLine.nBootSectorFileSize ];
 		if (bUseAppleWinBootSector)
 		{
-			BYTE *pAppleWinBootSector = pFrame->GetResource(IDR_BOOT_SECTOR, "FIRMWARE", sizeof(aAppleWinBootSector));
+			const size_t bootSectorSize = 256;
+			const BYTE *pAppleWinBootSector = pFrame->GetResource(IDR_BOOT_SECTOR, "FIRMWARE", bootSectorSize);
 			if (pAppleWinBootSector)
 			{
-				memcpy(aAppleWinBootSector, pAppleWinBootSector, sizeof(aAppleWinBootSector));
+				pBootSector.resize(bootSectorSize);
+				memcpy(pBootSector.data(), pAppleWinBootSector, pBootSector.size());
 
 				if (bIsHardDisk)
 				{
-					static_assert( sizeof(aAppleWinBootSector) == 256, "Boot sector size must be 256 bytes");
 					// Modify boot message depending on type of disk
 					// Floppy: THIS IS AN EMPTY DATA DISK.
 					// Hard  : THIS IS AN EMPTY HARD DISK.
 					//                          ^^^^
-					size_t nOffsetData = aAppleWinBootSector[ 0xFF ]; // MAGIC NUMBER: Last byte has offset of text message. See: firmware/BootSector/bootsector.a
+					size_t nOffsetData = pBootSector[ 0xFF ]; // MAGIC NUMBER: Last byte has offset of text message. See: firmware/BootSector/bootsector.a
 					if (nOffsetData > 0)
 					{
-						aAppleWinBootSector[ nOffsetData+0 ] = 0x80 | 'H';
-						aAppleWinBootSector[ nOffsetData+1 ] = 0x80 | 'A';
-						aAppleWinBootSector[ nOffsetData+2 ] = 0x80 | 'R';
-						aAppleWinBootSector[ nOffsetData+3 ] = 0x80 | 'D';
+						pBootSector[ nOffsetData+0 ] = 0x80 | 'H';
+						pBootSector[ nOffsetData+1 ] = 0x80 | 'A';
+						pBootSector[ nOffsetData+2 ] = 0x80 | 'R';
+						pBootSector[ nOffsetData+3 ] = 0x80 | 'D';
 					}
 				}
 			}
 			else
 			{
 				pFrame->FrameMessageBox( "WARNING: Could't find built-in AppleWin boot sector!\n\nDisk will have no boot sector.", pTitle, MB_OK|MB_ICONINFORMATION);
-				nBootSectorSize = 0;
 			}
 		}
 		else
@@ -872,7 +863,9 @@ void New_Blank_Disk( const char * pTitle, const std::string & pathname,
 			if (pFile)
 			{
 				size_t nSize = MIN(g_cmdLine.nBootSectorFileSize, nDiskSize );
-				size_t nRead = fread( pBootSector, 1, nSize, pFile );
+				pBootSector.resize(nSize);
+				size_t nRead = fread( pBootSector.data(), 1, nSize, pFile );
+				assert( nRead == nSize );
 				fclose( pFile );
 
 				if (g_cmdLine.nBootSectorFileSize > nDiskSize)
@@ -890,18 +883,12 @@ void New_Blank_Disk( const char * pTitle, const std::string & pathname,
 			else
 			{
 				pFrame->FrameMessageBox( "WARNING: Couldn't open custom boot sector file.\n\nNo boot sector written.", pTitle, MB_OK | MB_ICONERROR );
-				nBootSectorSize = 0;
 			}
 		}
 
-		memcpy( pDiskBuffer, pBootSector, nBootSectorSize );
-		fwrite( pDiskBuffer, 1, nDiskSize, hFile );
+		memcpy( pDiskBuffer.data(), pBootSector.data(), pBootSector.size() );
+		fwrite( pDiskBuffer.data(), 1, nDiskSize, hFile );
 		fclose( hFile );
-
-		if (!bUseAppleWinBootSector)
-		{
-			delete [] pBootSector;
-		}
 	}
 	else
 	{
@@ -931,8 +918,8 @@ void Format_ProDOS_Disk( const std::string & pathname, FrameBase *pFrame )
 		}
 		else
 		{
-			uint8_t *pDiskBytes = new uint8_t[ nDiskSize ];
-			size_t nReadSize = fread( pDiskBytes, 1, nDiskSize, hFile );
+			std::vector<uint8_t> pDiskBytes(nDiskSize);
+			size_t nReadSize = fread( pDiskBytes.data(), 1, nDiskSize, hFile );
 			assert( nReadSize == nDiskSize );
 
 			// We can have DOS or ProDOS sector interleaving
@@ -958,18 +945,16 @@ void Format_ProDOS_Disk( const std::string & pathname, FrameBase *pFrame )
 			assert (eSectorOrder !=  INTERLEAVE_AUTO_DETECT);
 
 			const char *pVolumeName = "BLANK";
-			Util_ProDOS_ForwardSectorInterleave( pDiskBytes, nDiskSize, eSectorOrder );
-			Util_ProDOS_FormatFileSystem       ( pDiskBytes, nDiskSize, pVolumeName  );
-			Util_ProDOS_ReverseSectorInterleave( pDiskBytes, nDiskSize, eSectorOrder );
+			Util_ProDOS_ForwardSectorInterleave( pDiskBytes.data(), nDiskSize, eSectorOrder );
+			Util_ProDOS_FormatFileSystem       ( pDiskBytes.data(), nDiskSize, pVolumeName  );
+			Util_ProDOS_ReverseSectorInterleave( pDiskBytes.data(), nDiskSize, eSectorOrder );
 
 			fseek( hFile, 0, SEEK_SET );
-			size_t nWroteSize = fwrite( pDiskBytes, 1, nReadSize, hFile );
+			size_t nWroteSize = fwrite( pDiskBytes.data(), 1, nReadSize, hFile );
 			if (nWroteSize != nDiskSize)
 			{
 				pFrame->FrameMessageBox( "ERROR: Unable to write ProDOS File System", "Format", MB_ICONWARNING | MB_OK);
 			}
-
-			delete [] pDiskBytes;
 		}
 		fclose( hFile );
 	}
@@ -1004,20 +989,19 @@ void Format_DOS33_Disk( const std::string & pathname, FrameBase *pFrame )
 		}
 		else
 		{
-			uint8_t *pDiskBytes = new uint8_t[ nDiskSize ];
-			size_t nReadSize = fread( pDiskBytes, 1, nDiskSize, hFile );
+			std::vector<uint8_t> pDiskBytes(nDiskSize);
+			size_t nReadSize = fread( pDiskBytes.data(), 1, nDiskSize, hFile );
 			assert( nReadSize == nDiskSize );
 
 			int VTOC_TRACK = 0x11; // TODO: Allow user to over-ride via command-line argument? --vtoc 17
-			Util_DOS33_FormatFileSystem( pDiskBytes, nDiskSize, VTOC_TRACK );
+			Util_DOS33_FormatFileSystem( pDiskBytes.data(), nDiskSize, VTOC_TRACK );
 
 			fseek( hFile, 0, SEEK_SET );
-			size_t nWroteSize = fwrite( pDiskBytes, 1, nReadSize, hFile );
+			size_t nWroteSize = fwrite( pDiskBytes.data(), 1, nReadSize, hFile );
 			if (nWroteSize != nDiskSize)
 			{
 				pFrame->FrameMessageBox( "ERROR: Unable to write DOS 3.3 file system", "Format", MB_ICONWARNING | MB_OK);
 			}
-			delete [] pDiskBytes;
 		}
 		fclose( hFile );
 	}
