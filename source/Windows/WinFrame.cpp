@@ -2150,7 +2150,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	static uint32_t bNewDiskCopyBitsyBye  = true;
 	static uint32_t bNewDiskCopyProDOS    = true;
 
-	const TCHAR REG_KEY_DISK_PREFRENCES[] = TEXT("Preferences"); // NOTE: Keep in sync with REG_KEY_DISK_PREFRENCES and UtilPopup_Toggle
+	const char REG_KEY_DISK_PREFRENCES[] = "Preferences"; // NOTE: Keep in sync with REG_KEY_DISK_PREFRENCES and UtilPopup_Toggle
 
 	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BASIC     , TRUE, &bNewDiskCopyBASIC     );
 	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BOOT, TRUE, &bNewDiskCopyBitsyBoot );
@@ -2167,7 +2167,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 				CheckMenuItem(hMenu,iCommand, bChecked);
 
 				RegSaveValue(
-					TEXT("Preferences"), // NOTE: Keep in sync with REG_KEY_DISK_PREFRENCES and UtilPopup_Toggle
+					"Preferences", // NOTE: Keep in sync with REG_KEY_DISK_PREFRENCES and UtilPopup_Toggle
 					pKey,
 					TRUE,
 					*pVal
@@ -2358,7 +2358,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 									    : TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD
 									    ;
 
-		const TCHAR* pszTitle = TEXT("Select new blank disk image");
+		const char* pszTitle = "Select new blank disk image";
 
 		time_t timestamp = time( NULL );
 		tm datetime = *localtime(&timestamp);
@@ -2389,8 +2389,8 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		std::string pathname = g_sCurrentDir;
 		pathname.append( sFileName );
 
-		const TCHAR *pTitle  = TEXT("New Disk Image");
-		const TCHAR *pSaveFilter = TEXT("All Files\0*.*\0");
+		const char *pTitle  = "New Disk Image";
+		const char *pSaveFilter = "All Files\0*.*\0";
 		char sPathName[ MAX_PATH ];
 		strncpy( sPathName, sFileName.c_str(), MAX_PATH-1 );
 		int nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, sPathName, pSaveFilter );
@@ -2445,13 +2445,13 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		char sFilename[ MAX_PATH ] = {0};
 		const size_t nDisplayFileNameMax = sizeof(sDisplayFileName);
 		const size_t nFilenameMax        = sizeof(sFilename);
-		const TCHAR *pTitle  = TEXT("Select boot sector file");
-		const TCHAR *pExistFilter = // No *.nib;*.woz;*.gz;*.zip
-			TEXT("Floppy Disk Images (*.bin,*.dsk,*.do;*.po)\0"
-			                         "*.bin;*.dsk;*.do;*.po\0")
-			TEXT("Hard Disk Images (*.hdv;)\0"
-			                       "*.hdv\0")
-			TEXT("All Files\0*.*\0");
+		const char *pTitle  = "Select boot sector file";
+		const char *pExistFilter = // No *.nib;*.woz;*.gz;*.zip
+			"Floppy Disk Images (*.bin,*.dsk,*.do;*.po)\0"
+			                    "*.bin;*.dsk;*.do;*.po\0"
+			"Hard Disk Images (*.hdv;)\0"
+			                  "*.hdv\0"
+			"All Files\0*.*\0";
 
 		strncpy( sDisplayFileName, g_cmdLine.sBootSectorFileName.c_str(), nDisplayFileNameMax - 2);
 		strncpy( sFilename       , g_cmdLine.sBootSectorFileName.c_str(), nFilenameMax        - 2);
@@ -2558,7 +2558,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 									    : TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD
 									    ;
 
-		const TCHAR* pszTitle = TEXT("Select new blank disk image");
+		const char* pszTitle = "Select new blank disk image";
 
 		time_t timestamp = time( NULL );
 		tm datetime = *localtime(&timestamp);
@@ -2581,8 +2581,8 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		std::string pathname = g_sCurrentDir;
 		pathname.append( sFileName );
 
-		const TCHAR *pTitle  = TEXT("New Disk Image");
-		const TCHAR *pSaveFilter = TEXT("All Files\0*.*\0");
+		const char *pTitle  = "New Disk Image";
+		const char *pSaveFilter = "All Files\0*.*\0";
 		char sPathName[ MAX_PATH ];
 		strncpy( sPathName, sFileName.c_str(), MAX_PATH-1 );
 		int nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, sPathName, pSaveFilter );
@@ -2613,13 +2613,13 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	if (iCommand == ID_DISKMENU_FORMAT_PRODOS_DISK)
 	{
 		char szFilename[ MAX_PATH ] = {0};
-		const TCHAR *pTitle  = TEXT("Select ProDOS disk image to format");
-		const TCHAR *pLoadFilter = // No *.nib;*.woz;*.gz;*.zip
-			TEXT("Floppy Disk Images (*.bin,*.dsk,*.po)\0"
-			                         "*.bin;*.dsk;*.po\0")
-			TEXT("Hard Disk Images (*.hdv;)\0"
-			                       "*.hdv\0")
-			TEXT("All Files\0*.*\0");
+		const char *pTitle  = "Select ProDOS disk image to format";
+		const char *pLoadFilter = // No *.nib;*.woz;*.gz;*.zip
+			"Floppy Disk Images (*.bin,*.dsk,*.po)\0"
+			                    "*.bin;*.dsk;*.po\0"
+			"Hard Disk Images (*.hdv;)\0"
+			                  "*.hdv\0"
+			"All Files\0*.*\0";
 
 		int nRes = FrameMessageBox(
 			"Are you sure you want to FORMAT an existing disk as a ProDOS data disk?\n"
@@ -2645,11 +2645,11 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	if (iCommand == ID_DISKMENU_FORMAT_DOS33_DISK)
 	{
 		char szFilename[ MAX_PATH ] = {0};
-		const TCHAR *pTitle  = TEXT("Select DOS 3.3 disk image to format");
-		const TCHAR *pLoadFilter =
-			TEXT("Floppy Disk Images (*.bin,*.dsk,*.do)\0"
-			                         "*.bin;*.dsk;*.do\0")
-			TEXT("All Files\0*.*\0");
+		const char *pTitle  = "Select DOS 3.3 disk image to format";
+		const char *pLoadFilter =
+			"Floppy Disk Images (*.bin,*.dsk,*.do)\0"
+			                    "*.bin;*.dsk;*.do\0"
+			"All Files\0*.*\0";
 
 		int nRes = FrameMessageBox(
 			"Are you sure you want to FORMAT an existing disk as a DOS 3.3 data disk?\n"
