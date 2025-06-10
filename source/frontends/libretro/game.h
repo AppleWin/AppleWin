@@ -39,6 +39,8 @@ namespace ra2
 
         void drawVideoBuffer();
 
+        size_t getFrameBufferLinePeriod() const;
+
         common2::PTreeRegistry &getRegistry();
         DiskControl &getDiskControl();
         InputRemapper &getInputRemapper();

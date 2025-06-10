@@ -10,7 +10,7 @@ namespace ra2
     class RetroFrame : public common2::GNUFrame
     {
     public:
-        RetroFrame(const common2::EmulatorOptions &options);
+        RetroFrame(const common2::EmulatorOptions &options, const size_t linePeriod);
 
         void VideoPresentScreen() override;
         void FrameRefreshStatus(int drawflags) override;
@@ -22,11 +22,15 @@ namespace ra2
         std::shared_ptr<SoundBuffer> CreateSoundBuffer(
             uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char *pszVoiceName) override;
 
+        size_t GetFrameBufferLinePeriod() const;
+
     protected:
         virtual void SetFullSpeed(const bool value) override;
         virtual bool CanDoFullSpeed() override;
 
     private:
+        const size_t myLinePeriod;
+
         std::vector<uint8_t> myVideoBuffer;
 
         size_t myPitch;

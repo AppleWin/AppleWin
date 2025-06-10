@@ -57,23 +57,6 @@ BOOL RegLoadValue(LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t *value)
     return result;
 }
 
-BOOL RegLoadValue(LPCTSTR section, LPCTSTR key, BOOL peruser, BOOL *value)
-{
-    BOOL result;
-    try
-    {
-        *value = Registry::instance->getBool(section, key);
-        result = TRUE;
-        LogFileOutput("RegLoadValue: %s - %s = %d\n", section, key, *value);
-    }
-    catch (const std::exception &e)
-    {
-        result = FALSE;
-        LogFileOutput("RegLoadValue: %s - %s = ??\n", section, key);
-    }
-    return result;
-}
-
 void RegSaveString(LPCTSTR section, LPCTSTR key, BOOL peruser, const std::string &buffer)
 {
     Registry::instance->putString(section, key, buffer);

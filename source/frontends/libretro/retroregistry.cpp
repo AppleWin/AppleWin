@@ -23,6 +23,7 @@ namespace
     const char *REGVALUE_KEYBOARD_TYPE = "Keyboard type";
     const char *REGVALUE_PLAYLIST_START = "Playlist start";
     const char *REGVALUE_MOUSE_SPEED_00 = "Mouse speed";
+    const char *REGVALUE_HALF_LINES = "Half lines";
 
     const char *CATEGORY_SYSTEM = "system";
     const char *CATEGORY_INPUT = "input";
@@ -258,6 +259,20 @@ namespace
             },
             REG_CONFIG,
             REGVALUE_VIDEO_STYLE,
+        },
+        {
+            {
+                "half_lines",
+                "Half Lines",
+                CATEGORY_SYSTEM,
+                {
+                    {"disabled", false},
+                    {"enabled", true},
+                },
+                "disabled",
+            },
+            REG_RA2,
+            REGVALUE_HALF_LINES,
         },
         {
             {
@@ -559,6 +574,13 @@ namespace ra2
         uint32_t value = 100;
         RegLoadValue(REG_RA2, REGVALUE_MOUSE_SPEED_00, TRUE, &value);
         return value / 100.0;
+    }
+
+    bool getHalfLines()
+    {
+        uint32_t value = 0;
+        RegLoadValue(REG_RA2, REGVALUE_HALF_LINES, TRUE, &value);
+        return value;
     }
 
 } // namespace ra2

@@ -52,10 +52,13 @@ namespace ra2
         myRegistryContext = std::make_unique<RegistryContext>(myRegistry);
 
         applyVariables();
+        
+        // this is only ever applied once!
+        const size_t linePeriod = getHalfLines() ? 2 : 1;
 
         common2::EmulatorOptions defaultOptions;
         defaultOptions.fixedSpeed = true;
-        myFrame = std::make_shared<ra2::RetroFrame>(defaultOptions);
+        myFrame = std::make_shared<ra2::RetroFrame>(defaultOptions, linePeriod);
 
         SetFrame(myFrame);
     }
@@ -294,6 +297,11 @@ namespace ra2
     InputRemapper &Game::getInputRemapper()
     {
         return myInputRemapper;
+    }
+
+    size_t Game::getFrameBufferLinePeriod() const
+    {
+        return myFrame->GetFrameBufferLinePeriod();
     }
 
 } // namespace ra2
