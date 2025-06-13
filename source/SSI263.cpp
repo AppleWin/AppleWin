@@ -126,6 +126,9 @@ BYTE SSI263::Read(ULONG nExecutedCycles)
 	// . inverted "A/!R" is high for REQ (ie. Request, as phoneme nearly complete)
 	// NB. this doesn't clear the IRQ
 
+	if (m_type == SSI263Empty)
+		return MemReadFloatingBus(nExecutedCycles);
+
 	return MemReadFloatingBus(m_currentMode.D7, nExecutedCycles);
 }
 
@@ -137,6 +140,9 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 	if (ssiRegs[nReg]>=0) SSI_Output();	// overwriting a reg
 	ssiRegs[nReg] = nValue;
 #endif
+
+	if (m_type == SSI263Empty)
+		return;
 
 	// SSI263 datasheet is not clear, but a write to DURPHON de-asserts the IRQ and clears D7.
 	// . Empirically writes to regs 0,1,2 (and reg3.CTL=1) all de-assert the IRQ (and writes to reg3.CTL=0 and regs 4..7 don't) (GH#1197)
@@ -314,6 +320,10 @@ void SSI263::Votrax_Write(BYTE value)
 #if LOG_SC01
 	LogOutput("SC01: %02X (= SSI263: %02X)\n", value, m_Votrax2SSI263[value & PHONEME_MASK]);
 #endif
+
+	if (!m_hasSC01)
+		return;
+
 	m_isVotraxPhoneme = true;
 	m_votraxPhoneme = value & PHONEME_MASK;
 
@@ -732,7 +742,6 @@ void SSI263::RepeatPhoneme(void)
 	if (m_phonemeLeadoutLength != 0)
 		return;
 
-
 	if (!m_isVotraxPhoneme)
 	{
 		_ASSERT(m_currentActivePhoneme & kPhonemeLeadoutFlag);
@@ -929,17 +938,20 @@ void SSI263::DSUninit(void)
 
 //-----------------------------------------------------------------------------
 
-// SSI263 phoneme continues to play after CTRL+RESET (tested on real h/w)
+// MB-C/Phasor/SSI263P phoneme continues to play after CTRL+RESET, whereas Phasor/SSI263AP doesn't (tested on real h/w)
 // Votrax phoneme continues to play after CTRL+RESET (tested on MAME 0.262)
 void SSI263::Reset(const bool powerCycle, const bool isPhasorCard)
 {
-	if (!powerCycle)
+	if (m_type == SSI263Empty)
+		return;
+
+	if (!powerCycle && m_type == SSI263P)
 	{
 		if (isPhasorCard)
 		{
-			// Empirically observed it does CTL H->L to enable ints (and set the device mode?) (GH#175)
+			// [SSI263P] Empirically observed it does CTL H->L to enable ints (and set the device mode?) (GH#175)
 			// NB. CTRL+RESET doesn't clear m_ctrlArtAmp.CTL (ie. if the device is in power-down/standby mode then ignore RST)
-			// Speculate that there's a bug in the SSI263 and that RST should put the device into power-down/standby mode (ie. silence the device)
+			// There's a bug in the SSI263P and RST should put the device into power-down/standby mode (ie. silence the device)
 			// TODO: Stick a 'scope on !PD/!RST pin 18 to see what the Phasor h/w does.
 			if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
 				SetDeviceModeAndInts();
@@ -995,6 +1007,11 @@ void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 #define SS_YAML_KEY_SSI263_REG_FILTER_FREQ "Filter Frequency"
 #define SS_YAML_KEY_SSI263_CURRENT_MODE "Current Mode"
 #define SS_YAML_KEY_SSI263_ACTIVE_PHONEME "Active Phoneme"	// v13: deprecated
+#define SS_YAML_KEY_SSI263_TYPE "Type"	// v14
+
+#define TYPE_SSI263_EMPTY "Empty"
+#define TYPE_SSI263_P "SSI263P"
+#define TYPE_SSI263_AP "SSI263AP"
 
 void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT subunit)
 {
@@ -1002,12 +1019,21 @@ void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT subunit)
 	{
 		YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263);
 
-		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_DUR_PHON, m_durationPhoneme);
-		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_INF, m_inflection);
-		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_RATE_INF, m_rateInflection);
-		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, m_ctrlArtAmp);
-		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
-		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode.mode);
+		std::string type = m_type == SSI263Empty ? TYPE_SSI263_EMPTY
+			: m_type == SSI263P ? TYPE_SSI263_P
+			: TYPE_SSI263_AP;
+
+		yamlSaveHelper.SaveString(SS_YAML_KEY_SSI263_TYPE, type);
+
+		if (m_type != SSI263Empty)
+		{
+			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_DUR_PHON, m_durationPhoneme);
+			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_INF, m_inflection);
+			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_RATE_INF, m_rateInflection);
+			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, m_ctrlArtAmp);
+			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
+			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode.mode);
+		}
 	}
 
 	if (subunit == 0)	// has SC01
@@ -1019,26 +1045,40 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263))
 		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_SSI263);
 
-	m_durationPhoneme = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_DUR_PHON);
-	m_inflection      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_INF);
-	m_rateInflection  = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_RATE_INF);
-	m_ctrlArtAmp      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP);
-	m_filterFreq      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_FILTER_FREQ);
-	m_currentMode.mode = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_CURRENT_MODE);
+	std::string type = TYPE_SSI263_P;	// Default prior to v14
+	if (version >= 14)
+		type = yamlLoadHelper.LoadStringA(SS_YAML_KEY_SSI263_TYPE);
 
-	if (version >= 7 && version < 13)
-		yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME);	// Consume redundant data
+	if (type == TYPE_SSI263_EMPTY)
+		m_type = SSI263Empty;
+	else if (type == TYPE_SSI263_P)
+		m_type = SSI263P;
+	else // TYPE_SSI263_AP
+		m_type = SSI263AP;
 
-	if (version < 12)
+	if (m_type != SSI263Empty)
 	{
-		if (m_currentMode.function == 0)	// invalid function (but in older versions this was accepted)
+		m_durationPhoneme = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_DUR_PHON);
+		m_inflection = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_INF);
+		m_rateInflection = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_RATE_INF);
+		m_ctrlArtAmp = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP);
+		m_filterFreq = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_FILTER_FREQ);
+		m_currentMode.mode = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_CURRENT_MODE);
+
+		if (version >= 7 && version < 13)
+			yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME);	// Consume redundant data
+
+		if (version < 12)
 		{
-			m_currentMode.function = MODE_PHONEME_TRANSITIONED_INFLECTION >> DURATION_MODE_SHIFT;	// Typically this is used
-			m_currentMode.enableInts = 0;
-		}
-		else
-		{
-			m_currentMode.enableInts = 1;
+			if (m_currentMode.function == 0)	// invalid function (but in older versions this was accepted)
+			{
+				m_currentMode.function = MODE_PHONEME_TRANSITIONED_INFLECTION >> DURATION_MODE_SHIFT;	// Typically this is used
+				m_currentMode.enableInts = 0;
+			}
+			else
+			{
+				m_currentMode.enableInts = 1;
+			}
 		}
 	}
 
@@ -1082,13 +1122,23 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 
 #define SS_YAML_KEY_SC01_PHONEME "SC01 Phoneme"
 #define SS_YAML_KEY_SC01_ACTIVE_PHONEME "SC01 Active Phoneme"
+#define SS_YAML_KEY_SC01_TYPE "Type"	// v14
+
+#define TYPE_SC01_EMPTY "Empty"
+#define TYPE_SC01 "SC01"
 
 void SSI263::SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SC01);
 
-	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SC01_PHONEME, m_votraxPhoneme);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME, m_isVotraxPhoneme);
+	std::string type = !m_hasSC01 ? TYPE_SC01_EMPTY : TYPE_SC01;
+	yamlSaveHelper.SaveString(SS_YAML_KEY_SC01_TYPE, type);
+
+	if (m_hasSC01)
+	{
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SC01_PHONEME, m_votraxPhoneme);
+		yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME, m_isVotraxPhoneme);
+	}
 }
 
 void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
@@ -1103,8 +1153,17 @@ void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SC01))
 		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_SC01);
 
-	m_votraxPhoneme = yamlLoadHelper.LoadUint(SS_YAML_KEY_SC01_PHONEME);
-	m_isVotraxPhoneme = yamlLoadHelper.LoadBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME);
+	std::string type = TYPE_SC01;	// Default prior to v14
+	if (version >= 14)
+		type = yamlLoadHelper.LoadStringA(SS_YAML_KEY_SC01_TYPE);
+
+	m_hasSC01 = (type == TYPE_SC01);
+
+	if (m_hasSC01)
+	{
+		m_votraxPhoneme = yamlLoadHelper.LoadUint(SS_YAML_KEY_SC01_PHONEME);
+		m_isVotraxPhoneme = yamlLoadHelper.LoadBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME);
+	}
 
 	yamlLoadHelper.PopMap();
 }

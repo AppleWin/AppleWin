@@ -50,6 +50,8 @@ public:
 	bool IsAnyTimer1Active(void);
 	void UseBad6522A(void) { m_MBSubUnit[0].sy6522.InitBadState(true); }
 	void UseBad6522B(void) { m_MBSubUnit[1].sy6522.InitBadState(true); }
+	void SetSocketSSI263(BYTE socket, SSI263Type type) { m_MBSubUnit[socket].ssi263.SetType(type); }
+	void SetSocketSC01(SSI263Type type) { m_MBSubUnit[0].ssi263.SetSC01(type); }
 
 	struct DEBUGGER_MB_SUBUNIT
 	{

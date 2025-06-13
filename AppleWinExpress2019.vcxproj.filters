@@ -277,6 +277,9 @@
     <ClCompile Include="source\Windows\DXSoundBuffer.cpp">
       <Filter>Source Files\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="source\ProDOS_Utils.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\CommonVICE\6510core.h">
@@ -424,6 +427,9 @@
       <Filter>Source Files\Configuration</Filter>
     </ClInclude>
     <ClInclude Include="source\ParallelPrinter.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\ProDOS_FileSystem.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
     <ClInclude Include="source\Tfe\Pcap.h">
@@ -626,6 +632,9 @@
     </ClInclude>
     <ClInclude Include="source\Windows\DXSoundBuffer.h">
       <Filter>Source Files\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="source\ProDOS_Utils.h">
+      <Filter>Source Files\Emulator</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
