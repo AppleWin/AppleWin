@@ -22,6 +22,8 @@ Peripheral cards and add-on hardware supported:
 - No Slot Clock (NSC)
 - Game I/O Connector copy protection dongles 
 
+Running
+=======
 
 Download latest (stable) release: [AppleWin v1.30.20.0](https://github.com/AppleWin/AppleWin/releases/download/v1.30.20.0/AppleWin1.30.20.0.zip)
 
@@ -30,14 +32,22 @@ Release Notes: [v1.30.20.0](https://github.com/AppleWin/AppleWin/releases/tag/v1
 
 Building
 ========
-To compile from source see:
+To compile for Windows from source see:
 
 * [docs/compiling.txt](https://github.com/AppleWin/AppleWin/blob/master/docs/compiling.txt)
 
 
+Unofficial Ports
+================
+
+These ports will allow you to build and run AppleWin on other platforms:
+
+* [Linux](https://github.com/audetto/AppleWin)
+* [macOS](https://github.com/sh95014/AppleWin)
+
 Contributing
 ============
-Please see the [CONTRIBUTING](https://github.com/AppleWin/AppleWin/blob/master/CONTRIBUTING.md) doc before raising new bugs, features and _especially_ PRs.
+Please see the [CONTRIBUTING](https://github.com/AppleWin/AppleWin/blob/master/CONTRIBUTING.md) document before raising new bugs, features and _especially_ PRs (Pull Requests).
 
 
 Next Version
