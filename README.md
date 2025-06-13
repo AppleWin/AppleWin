@@ -5,7 +5,18 @@ AppleWin
 
 AppleWin is a fully-featured emulator supporting different Apple II models and clones. A variety of peripheral cards and video display modes are supported (eg. NTSC, RGB); and there's an extensive built-in symbolic debugger.
 
+Apple 2 models supported include:
+
+* ][
+* ][+
+* //e
+* //e Enhanced
+* Various clones (Pravets, TK3000, Base 64)
+
+There is currently no support for the //c, //c+, Laser 128, Laser 128EX, Laser 128EX2, or Apple IIgs.
+
 Peripheral cards and add-on hardware supported:
+
 - Mockingboard, Phasor and SAM sound cards
 - Disk II interface for floppy disk drives
 - Hard disk controller
