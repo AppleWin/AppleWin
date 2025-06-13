@@ -1047,7 +1047,7 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 
 	std::string type = TYPE_SSI263_P;	// Default prior to v14
 	if (version >= 14)
-		type = yamlLoadHelper.LoadStringA(SS_YAML_KEY_SSI263_TYPE);
+		type = yamlLoadHelper.LoadString(SS_YAML_KEY_SSI263_TYPE);
 
 	if (type == TYPE_SSI263_EMPTY)
 		m_type = SSI263Empty;
@@ -1155,7 +1155,7 @@ void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	std::string type = TYPE_SC01;	// Default prior to v14
 	if (version >= 14)
-		type = yamlLoadHelper.LoadStringA(SS_YAML_KEY_SC01_TYPE);
+		type = yamlLoadHelper.LoadString(SS_YAML_KEY_SC01_TYPE);
 
 	m_hasSC01 = (type == TYPE_SC01);
 
