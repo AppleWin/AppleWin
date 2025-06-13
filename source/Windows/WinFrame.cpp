@@ -2131,6 +2131,8 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
 		return;
 
+	SoundCore_SetFade(FADE_OUT);
+
 	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
 
 	// This is the default installation path of CiderPress. 
@@ -2197,7 +2199,10 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	//  application's resources.
 	HMENU hmenu = LoadMenu(g_hInstance, MAKEINTRESOURCE(IDR_MENU_DISK_POPUP));	// menu template
 	if (hmenu == NULL)
+	{
+		SoundCore_SetFade(FADE_IN);
 		return;
+	}
 
 	// Get the first shortcut menu in the menu template.
 	// This is the menu that TrackPopupMenu displays.
@@ -2673,6 +2678,8 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	// Destroy the menu.
 	BOOL bRes = DestroyMenu(hmenu);
 	_ASSERT(bRes);
+
+	SoundCore_SetFade(FADE_IN);
 }
 
 
