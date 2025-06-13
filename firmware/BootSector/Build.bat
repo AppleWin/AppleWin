@@ -1,8 +1,5 @@
 @REM Toolchain
-@REM * MSVC     (cl.exe)
-@REM * Acme     (ache.exe)
+@REM * Acme     (acme.exe)
 
 del                 bootsector.bin
 acme.exe            bootsector.a
-cl.exe bin_to_c.cpp /nologo
-       bin_to_c.exe bootsector.bin

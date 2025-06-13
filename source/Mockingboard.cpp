@@ -916,7 +916,7 @@ void MockingboardCard::Update(const ULONG executedCycles)
 // Called by:
 // . CpuExecute() every ~1000 cycles @ 1MHz (or ~3 cycles when MODE_STEPPING)
 // . MB_SyncEventCallback() on a TIMER1/2 underflow
-// . MB_Read() / MB_Write() (for both normal & full-speed)
+// . IORead() / IOWrite() (for both normal & full-speed)
 void MockingboardCard::UpdateCycles(ULONG executedCycles)
 {
 	CpuCalcCycles(executedCycles);
