@@ -99,6 +99,8 @@
     <ClInclude Include="source\NTSC_CharSet.h" />
     <ClInclude Include="source\ParallelPrinter.h" />
     <ClInclude Include="source\Pravets.h" />
+    <ClInclude Include="source\ProDOS_Utils.h" />
+    <ClInclude Include="source\ProDOS_FileSystem.h" />
     <ClInclude Include="source\Registry.h" />
     <ClInclude Include="source\RGBMonitor.h" />
     <ClInclude Include="source\Riff.h" />
@@ -210,6 +212,7 @@
     <ClCompile Include="source\NTSC_CharSet.cpp" />
     <ClCompile Include="source\ParallelPrinter.cpp" />
     <ClCompile Include="source\Pravets.cpp" />
+    <ClCompile Include="source\ProDOS_Utils.cpp" />
     <ClCompile Include="source\Registry.cpp" />
     <ClCompile Include="source\Riff.cpp" />
     <ClCompile Include="source\SaveState.cpp" />

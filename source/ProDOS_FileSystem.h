@@ -213,7 +213,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // --- ProDOS Block Functions ---
 
 	// ------------------------------------------------------------------------
-	int ProDOS_BlockGetDirectoryBlockCount ( uint8_t *pDiskBytes, int nOffset )
+	inline int ProDOS_BlockGetDirectoryBlockCount ( uint8_t *pDiskBytes, int nOffset )
 	{
 		int nBlocks    = 0;
 		int nNextBlock = 0;

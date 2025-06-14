@@ -7,8 +7,10 @@ class SSI263
 public:
 	SSI263(UINT slot) : m_slot(slot)
 	{
+		m_type = SSI263AP;
 		m_device = -1;	// undefined
 		m_cardMode = PH_Mockingboard;
+		m_hasSC01 = true;	// only for m_device==0
 		m_pPhonemeData00 = NULL;
 
 		ResetState(true);
@@ -57,7 +59,7 @@ public:
 		m_durationPhoneme = MODE_PHONEME_TRANSITIONED_INFLECTION;	// Typical function & phoneme=$00
 		m_inflection = 0;
 		m_rateInflection = 0;
-		m_ctrlArtAmp = powerCycle ? CONTROL_MASK : 0;				// Chip power-on, so CTL=1 (power-down / standby)
+		m_ctrlArtAmp = (powerCycle || m_type == SSI263AP) ? CONTROL_MASK : 0;				// Chip power-on, so CTL=1 (power-down / standby)
 		m_filterFreq = powerCycle ? FILTER_FREQ_SILENCE : 0;		// Empirically observed at chip power-on (GH#1302)
 
 		m_currentMode.mode = 0;
@@ -73,6 +75,8 @@ public:
 
 	void SetDevice(UINT device) { m_device = device; }
 	void SetCardMode(PHASOR_MODE mode);
+	void SetType(SSI263Type type) { m_type = type; }
+	void SetSC01(SSI263Type type) { m_hasSC01 = (type == SC01); }
 
 	void DSUninit(void);
 
@@ -152,9 +156,11 @@ private:
 	// Filter frequency range
 	static const BYTE FILTER_FREQ_SILENCE = 0xFF;
 
+	SSI263Type m_type;
 	UINT m_slot;
 	BYTE m_device;	// SSI263 device# which is generating phoneme-complete IRQ (and only required whilst Mockingboard isn't a class)
 	PHASOR_MODE m_cardMode;
+	bool m_hasSC01;
 	short* m_pPhonemeData00;
 
 	// ctor/power-cycle: Set to -1

@@ -5,7 +5,7 @@
 #include "Disk.h"
 #include "Common.h"
 #include "Card.h"
-
+#include "MockingboardDefs.h"
 
 struct CmdLine
 {
@@ -17,12 +17,15 @@ struct CmdLine
 			useHdcFirmwareMode = HdcDefault;
 			useBad6522A = false;
 			useBad6522B = false;
+			socketSSI263[0] = socketSSI263[1] = socketSC01 = SSI263Unknown;
 		}
 
 		bool isDiskII13;
 		HdcMode useHdcFirmwareMode;
 		bool useBad6522A;
 		bool useBad6522B;
+		SSI263Type socketSSI263[NUM_SSI263];
+		SSI263Type socketSC01;
 	};
 
 	CmdLine()
