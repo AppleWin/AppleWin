@@ -43,12 +43,8 @@ namespace common2
 
     void setSnapshotFilename(const std::filesystem::path &filename)
     {
-        if (std::filesystem::exists(filename))
-        {
-            std::filesystem::current_path(filename.parent_path());
-            Snapshot_SetFilename(filename.string());
-            RegSaveString(REG_CONFIG, REGVALUE_SAVESTATE_FILENAME, 1, Snapshot_GetPathname());
-        }
+        Snapshot_SetFilename(filename.string());
+        RegSaveString(REG_CONFIG, REGVALUE_SAVESTATE_FILENAME, 1, Snapshot_GetPathname());
     }
 
     void loadGeometryFromRegistry(const std::string &section, Geometry &geometry)
