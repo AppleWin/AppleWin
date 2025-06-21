@@ -81,13 +81,6 @@ public:
 	void DSUninit(void);
 
 	void Reset(const bool powerCycle, const bool isPhasorCard);
-	bool IsPhonemeActive(void)
-	{
-		if (!m_isVotraxPhoneme)
-			return (m_ctrlArtAmp & CONTROL_MASK) == 0;	// if SSI263.CONTROL=0 then "m_currentActivePhoneme >= 0" must be true
-		else
-			return m_currentActivePhoneme >= 0;
-	}
 
 	BYTE Read(ULONG nExecutedCycles);
 	void Write(BYTE nReg, BYTE nValue);
@@ -107,6 +100,12 @@ public:
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version, UINT subunit);
 
 private:
+	bool IsPhonemeActive(void)
+	{
+		// If SSI263.CONTROL=1 then "m_currentActivePhoneme >= 0" is still true
+		// Also valid regardless of m_isVotraxPhoneme state
+		return m_currentActivePhoneme >= 0;
+	}
 	void Play(unsigned int nPhoneme);
 	void Stop(void);
 	void UpdateIRQ(void);

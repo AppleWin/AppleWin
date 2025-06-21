@@ -216,6 +216,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 		{
 			CpuIrqDeassert(IS_SPEECH);
 			m_currentMode.D7 = 0;
+			// NB. Don't call Stop() - mb-audit ("Classic Adventure") cuts at end, Berzap! is choppy
 		}
 		break;
 	case SSI_FILFREQ:	// RegAddr.b2=1 (b1 & b0 are: don't care)
@@ -634,6 +635,8 @@ void SSI263::Update(void)
 		short* pMixBuffer = &m_mixBufferSSI263[0];
 		UINT zeroSize = nNumSamples;
 
+		// NB. If SSI263.CONTROL=1 (Power-down) then zeroSize == nNumSamples, and eventually the ring-buffer gets filled with zero samples
+
 		if (m_phonemeLengthRemaining && !prefillBufferOnInit)
 		{
 			UINT samplesWritten = 0;
@@ -744,10 +747,12 @@ void SSI263::RepeatPhoneme(void)
 
 	if (!m_isVotraxPhoneme)
 	{
-		_ASSERT(m_currentActivePhoneme & kPhonemeLeadoutFlag);
-
 		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
+		{
+			// Only check _ASSERT when SSI263.CONTROL=0 (otherwise kPhonemeLeadoutFlag will be clear 2nd time Update() is called)
+			_ASSERT(m_currentActivePhoneme & kPhonemeLeadoutFlag);
 			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
+		}
 
 		m_currentActivePhoneme &= PHONEME_MASK;			// Clear kPhonemeLeadoutFlag
 	}
