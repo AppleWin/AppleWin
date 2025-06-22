@@ -97,6 +97,7 @@ namespace
         {DT_ROBOCOM500, "RoboCom 500"},
         {DT_ROBOCOM1000, "RoboCom 1000"},
         {DT_ROBOCOM1500, "RoboCom 1500"},
+        {DT_HAYDENCOMPILER, "Hayden Applesoft Compiler"},
     };
 
     const std::map<size_t, std::vector<SS_CARDTYPE>> cardsForSlots = {
