@@ -8,8 +8,18 @@ https://github.com/AppleWin/AppleWin/issues/new
 
 Tom Charlesworth
 
+
+1.30.22.0 - ?
+-----------------------
+- [Change #1416] Mockingboard and Phasor cards now support SSI263AP (instead of older SSI263P).
+  - mb-audit 1.57 (and earlier) will now fail the Phasor/SSI263 reset test: "43:F1:00, Expected:02 Actual:00".
+  - Restore the old AppleWin behaviour with, eg. '-s4 socket1=ssi263p' for the SSI263 at $C440.
+  - NB. mb-audit 1.58 supports both the SSI263P & SSI263AP for this Phasor/SSI263 reset test.
+  - Add command line to add/remove SC01: -sN <no-sc01|sc01>.
+
+
 1.30.21.0 - 31 May 2025
-----------------------
+-----------------------
 Note: This is the last planned version to support Windows XP.
 
 - [Change #1363] Right-click Disk Drive buttons QoL features to manage new disk images.
