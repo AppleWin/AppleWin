@@ -1085,6 +1085,9 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 				m_currentMode.enableInts = 1;
 			}
 		}
+
+		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
+			m_currentActivePhoneme = m_durationPhoneme & PHONEME_MASK;
 	}
 
 	yamlLoadHelper.PopMap();
