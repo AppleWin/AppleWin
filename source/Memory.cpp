@@ -1979,8 +1979,6 @@ void MemInitialize()
 	if (GetCardMgr().QueryAux() == CT_RamWorksIII)
 	{
 		// allocate memory for RamWorks III - up to 16MB
-		g_uActiveBank = 0;
-
 		UINT i = 1;
 		while ((i < g_uMaxExBanks) && (RWpages[i] = ALIGNED_ALLOC(_6502_MEM_LEN)))
 			i++;
@@ -2266,6 +2264,8 @@ void MemReset()
 	memset(memdirty, 0, 0x100);
 
 	memVidHD = NULL;
+
+	g_uActiveBank = 0;	// Power-cycle sets RamWorks III to 64KiB bank-0 (GH#1414)
 
 	//
 
