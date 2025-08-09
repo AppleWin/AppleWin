@@ -4057,8 +4057,7 @@ Update_t CmdMemoryFill (int nArgs)
 	}
 	else
 	{
-		RangeType_t eRange;
-		eRange = Range_Get( nAddressStart, nAddress2, 1 );
+		RangeType_t eRange = Range_Get( nAddressStart, nAddress2, 1 );
 
 		if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen ))
 			return Help_Arg_1( CMD_MEMORY_MOVE );
@@ -4556,8 +4555,7 @@ Update_t CmdMemoryMove (int nArgs)
 	WORD nAddressEnd = 0;
 	int  nAddressLen = 0;
 
-	RangeType_t eRange;
-	eRange = Range_Get( nAddressStart, nAddress2, 2 );
+	RangeType_t eRange = Range_Get( nAddressStart, nAddress2, 2 );
 
 //		if (eRange == RANGE_MISSING_ARG_2)
 	if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen ))
@@ -4792,8 +4790,7 @@ Update_t CmdMemorySave (int nArgs)
 
 		std::string sLoadSaveFilePath = g_sCurrentDir; // g_sProgramDir
 
-		RangeType_t eRange;
-		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
+		RangeType_t eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
 
 //		if (eRange == RANGE_MISSING_ARG_2)
 		if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen ))
@@ -5859,8 +5856,7 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 	WORD nAddressEnd = 0;
 	int  nAddressLen = 0;
 
-	RangeType_t eRange;
-	eRange = Range_Get( nAddressStart, nAddress2 );
+	RangeType_t eRange = Range_Get( nAddressStart, nAddress2 );
 
 //	if (eRange == RANGE_MISSING_ARG_2)
 	if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen))

@@ -263,7 +263,7 @@ int	ArgsGet ( char * pInput )
 	{
 		// Technically, there shouldn't be any leading spaces,
 		// since pressing the spacebar is an alias for TRACE.
-		// However, there is spaces between arguments
+		// However, there are spaces between arguments
 		pSrc = const_cast<char*>( SkipWhiteSpace( pSrc ));
 
 		if (pSrc)
