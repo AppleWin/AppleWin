@@ -79,16 +79,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //		{ TOKEN_QUESTION    , TYPE_OPERATOR, '?'  }, // Not a token 1) wildcard needs to stay together with other chars
 		{ TOKEN_QUOTE_SINGLE, TYPE_QUOTED_1, "\'" },
 		{ TOKEN_QUOTE_DOUBLE, TYPE_QUOTED_2, "\"" }, // for strings
-		{ TOKEN_SEMI        , TYPE_STRING  , ";"  },
+		{ TOKEN_COMMENT_EOL , TYPE_STRING  , ";"  },
 		{ TOKEN_SPACE       , TYPE_STRING  , " "  }, // space is also a delimiter between tokens/args
 		{ TOKEN_STAR        , TYPE_OPERATOR, "*"  }, // Not a token 1) wildcard needs to stay together with other chars
 //		{ TOKEN_TAB         , TYPE_STRING  , '\t' }
 		{ TOKEN_TILDE       , TYPE_OPERATOR, "~"  }, // C/C++: Not.  Used for console.
 
-		{ TOKEN_COMMENT_EOL , TYPE_STRING  , "//" },
+		{ TOKEN_DIVIDE_FLOOR, TYPE_OPERATOR, "//" },
 		{ TOKEN_GREATER_EQUAL,TYPE_OPERATOR, ">=" },
 		{ TOKEN_LESS_EQUAL  , TYPE_OPERATOR, "<=" },
-		{ TOKEN_NOT_EQUAL  , TYPE_OPERATOR , "!=" }
+		{ TOKEN_NOT_EQUAL   , TYPE_OPERATOR, "!=" }
 	};
 
 // Arg ____________________________________________________________________________________________
@@ -283,11 +283,6 @@ int	ArgsGet ( char * pInput )
 			}
 
 			iType = g_aTokens[ iTokenSrc ].eType;
-
-			if (iTokenSrc == TOKEN_SEMI)
-			{
-				// TODO - command separator, must handle non-quoted though!
-			}
 
 			if (iTokenSrc == TOKEN_QUOTE_DOUBLE)
 			{
@@ -630,13 +625,14 @@ int ArgsCook ( const int nArgs )
 					nParamLen = 2;
 				}
 
-				if (pArg->eToken == TOKEN_FSLASH) // FORWARD SLASH / delta
+				if (pArg->eToken == TOKEN_COMMENT_EOL)	// SEMI Comment
 				{
-					if (pNext->eToken == TOKEN_FSLASH) // Comment
-					{					
-						nArg = iArg - 1;
-						return nArg;
-					}
+					nArg = iArg - 1;
+					return nArg;
+				}
+
+				if (pArg->eToken == TOKEN_DIVIDE_FLOOR) // Double FORWARD SLASH   // delta
+				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
 					{
 						ArgsGetRegisterValue( pNext, & nAddressRHS );
@@ -815,8 +811,7 @@ const char * ParserFindToken( const char *pSrc, const TokenTable_t *aTokens, con
 	const char        *pName  = NULL;
 	int   iToken;
 
-	// Look-ahead for <=
-	// Look-ahead for >=
+	// Look-ahead for: //(divide-floor), <=, >=, !=
 	for (iToken = _TOKEN_FLAG_MULTI; iToken < NUM_TOKENS; iToken++ )
 	{
 		pName = & (g_aTokens[ iToken ].sToken[0]);

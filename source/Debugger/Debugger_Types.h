@@ -1274,15 +1274,16 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		, TOKEN_PLUS         // + Delta  Argument1 += Argument2
 		, TOKEN_QUOTE_SINGLE // '
 		, TOKEN_QUOTE_DOUBLE // "
-		, TOKEN_SEMI         // ; Command Separator
+		, _TOKEN_SEMI        // ; Comment EOL
+		, TOKEN_COMMENT_EOL = _TOKEN_SEMI
 		, TOKEN_SPACE        //   Token Delimiter
 		, TOKEN_STAR         // *
 //		, TOKEN_TAB          // '\t'
 		, TOKEN_TILDE        // ~
 
 		// Multi char tokens come last
-		, TOKEN_COMMENT_EOL  // //
-		,_TOKEN_FLAG_MULTI = TOKEN_COMMENT_EOL
+		, _TOKEN_FLAG_MULTI
+		, TOKEN_DIVIDE_FLOOR = _TOKEN_FLAG_MULTI // //
 		, TOKEN_GREATER_EQUAL// >=
 		, TOKEN_LESS_EQUAL   // <=
 		, TOKEN_NOT_EQUAL    // !=
