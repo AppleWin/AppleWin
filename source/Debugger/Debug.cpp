@@ -1171,6 +1171,13 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 	bool isRead = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_READ_ONLY;
 	bool isWrite = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_WRITE_ONLY;
 
+	// If no prefix filters, then BP hit
+	if (pBP->slot == Breakpoint_t::kSlotInvalid
+		&& pBP->bank == Breakpoint_t::kBankInvalid
+		&& pBP->langCard == Breakpoint_t::kLangCardInvalid
+		&& pBP->isROM == false)
+		return true;
+
 	// Apply any prefix filters
 	if (pBP->bank != Breakpoint_t::kBankInvalid)
 	{
@@ -1594,8 +1601,8 @@ Update_t CmdBreakpointAddReg (int nArgs)
 
 	int  nFound;
 
-	int  iArg   = 0;
-	while (iArg++ < nArgs)
+	int  iArg  = 1;
+	while (iArg < nArgs)
 	{
 		char *sArg = g_aArgs[iArg].sArg;
 
@@ -1778,7 +1785,7 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 			(eRange == RANGE_HAS_LEN))
 		{
 			Range_CalcEndLen( eRange, nAddress, nAddress2, nEnd, nLen );
-			dArg = 2;
+			dArg = 3;
 		}
 
 		if (!nLen)
@@ -1879,13 +1886,12 @@ Update_t CmdBreakpointAddMem (int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM
 	BreakpointSource_t   iSrc = bpSrc;
 	BreakpointOperator_t iCmp = BP_OP_EQUAL;
 
-	int iArg = 0;
-	
-	while (iArg++ < nArgs)
+	int iArg = 1;
+	while (iArg < nArgs)
 	{
 		if (g_aArgs[iArg].bType & TYPE_OPERATOR)
 		{
-				return Help_Arg_1( CMD_BREAKPOINT_ADD_MEM );
+			return Help_Arg_1( CMD_BREAKPOINT_ADD_MEM );
 		}
 		else
 		{
@@ -1907,9 +1913,8 @@ Update_t CmdBreakpointAddVideo (int nArgs)
 	BreakpointSource_t   iSrc = BP_SRC_VIDEO_SCANNER;
 	BreakpointOperator_t iCmp = BP_OP_EQUAL;
 
-	int iArg = 0;
-
-	while (iArg++ < nArgs)
+	int iArg = 1;
+	while (iArg < nArgs)
 	{
 		if (g_aArgs[iArg].bType & TYPE_OPERATOR)
 		{
@@ -8949,7 +8954,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 					if (g_pDebugBreakpointHit)
 					{
 						int iBreakpoint = (g_pDebugBreakpointHit - g_aBreakpoints);
-						stopReason = StrFormat( "Register %s%s%s matches breakpoint %s#%s%d",
+						stopReason = StrFormat( "Register %s%s%s matches breakpoint %s#%s%01X",
 							CHC_REGS,
 							g_aBreakpointSource[ g_pDebugBreakpointHit->eSource ],
 							CHC_DEFAULT,
@@ -8983,7 +8988,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 
 			if (!skipStopReason)
 			{
-				std::string hitID = StrFormat(CHC_DEFAULT " (BP#%01X)", g_breakpointHitID);
+				std::string hitID = StrFormat(CHC_DEFAULT " (%s#%s%01X" CHC_DEFAULT ")", CHC_ARG_SEP, CHC_NUM_HEX, g_breakpointHitID);
 				stopReason += hitID;
 				ConsolePrintFormat(CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str());
 				g_breakpointHitID = -1;
