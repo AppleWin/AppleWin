@@ -228,9 +228,9 @@
 			bStop = false;
 			nHitCount = 0;
 
-			slot = kSlotNotValid;
-			bank = kBankNotValid;
-			langCard = kLangCardNotValid;
+			slot = kSlotInvalid;
+			bank = kBankInvalid;
+			langCard = kLangCardInvalid;
 			isROM = false;
 		};
 
@@ -251,9 +251,9 @@
 
 		//
 
-		const BYTE kSlotNotValid = 0xFF;
-		const WORD kBankNotValid = 0xFFFF;
-		const BYTE kLangCardNotValid = 0xFF;
+		static const BYTE kSlotInvalid = 0xFF;
+		static const WORD kBankInvalid = 0xFFFF;
+		static const BYTE kLangCardInvalid = 0xFF;
 	};
 
 	typedef Breakpoint_t Bookmark_t;

@@ -1581,6 +1581,7 @@ bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoi
 		pBP->bStop     = true;
 		pBP->bHit      = false;
 		pBP->nHitCount = 0;
+		// NB. Address prefix args are set in parent _CmdBreakpointAddCommonArg()
 		bStatus = true;
 	}
 
@@ -1597,7 +1598,6 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 
 	int iBreakpoint = 0;
 	Breakpoint_t *pBP = & g_aBreakpoints[ iBreakpoint ];
-	pBP->Clear();
 
 	while ((iBreakpoint < MAX_BREAKPOINTS) && g_aBreakpoints[iBreakpoint].bSet) //g_aBreakpoints[iBreakpoint].nLength)
 	{
@@ -1610,6 +1610,10 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 		ConsoleDisplayError("All Breakpoints slots are currently in use.");
 		return 0;	// error
 	}
+
+	pBP->Clear();
+
+	//
 
 	if (iArg <= nArg)
 	{
@@ -1946,25 +1950,74 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 	std::string sAddressBuf;
 	std::string const& sSymbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, sAddressBuf);
 
-	const char *aMemAccess[4] =
+	const char *aMemAccess[5] =
 	{
-		 "R  "
+		 "R/W"
+		,"R  "
 		,"W  "
-		,"R/W"
+		,"Vid"
 		,"   "
 	};
 
 	int iBPM;
 	switch (aBreakWatchZero[iBWZ].eSource)
 	{
-		case BP_SRC_MEM_READ_ONLY : iBPM = 0; break;
-		case BP_SRC_MEM_WRITE_ONLY: iBPM = 1; break;
-		case BP_SRC_MEM_RW        : iBPM = 2; break;
-		default                   : iBPM = 3; break;
+		case BP_SRC_MEM_RW        : iBPM = 0; break;
+		case BP_SRC_MEM_READ_ONLY : iBPM = 1; break;
+		case BP_SRC_MEM_WRITE_ONLY: iBPM = 2; break;
+		case BP_SRC_VIDEO_SCANNER : iBPM = 3; break;
+		default                   : iBPM = 4; break;
 	}
 
-	// ID On Stop Temp HitCounter  Addr Mem Symbol
-	ConsolePrintFormat( "  #%X %c  %c    %c  %c   %08X " CHC_ADDRESS " %04X " CHC_INFO "%s" CHC_SYMBOL " %s",
+	std::string prefixFinal;
+	{
+		char szSlot[] = "sN/";
+		char szBank[] = "NN/";
+		char szLangCard[] = "lN/";
+		int prefixPad = 0;	// whitespace padding
+		std::string prefix;	// "sN/bb/lN/" (9 chars) or "ROM/"
+		if (aBreakWatchZero[iBWZ].slot != Breakpoint_t::kSlotInvalid)
+		{
+			szSlot[1] = aBreakWatchZero[iBWZ].slot + '0';
+			prefix += szSlot;
+		}
+		else
+		{
+			prefixPad += 3;
+		}
+		if (aBreakWatchZero[iBWZ].bank != Breakpoint_t::kBankInvalid)
+		{
+			sprintf_s(szBank, "%02X", aBreakWatchZero[iBWZ].bank);
+			szBank[2] = '/';
+			szBank[3] = 0;
+			prefix += szBank;
+		}
+		else
+		{
+			prefixPad += 3;
+		}
+		if (aBreakWatchZero[iBWZ].langCard != Breakpoint_t::kLangCardInvalid)
+		{
+			szLangCard[1] = aBreakWatchZero[iBWZ].langCard + '0';
+			prefix += szLangCard;
+		}
+		else
+		{
+			prefixPad += 3;
+		}
+		if (aBreakWatchZero[iBWZ].isROM)
+		{
+			prefix = "ROM/";
+			prefixPad = 5;	// 9 chars in total
+		}
+
+		while (prefixPad--)
+			prefixFinal += " ";
+		prefixFinal += prefix;
+	}
+
+	// ID On Stop Temp HitCounter  Prefix/Addr Mem Symbol
+	ConsolePrintFormat( "  #%X %c  %c    %c  %c   %08X " CHC_INFO "%s" CHC_ADDRESS "%04X " CHC_INFO "%s" CHC_SYMBOL " %s",
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
 		sEnabledFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
@@ -1972,6 +2025,7 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 		sTempFlags   [ aBreakWatchZero[ iBWZ ].bTemp    ? 1 : 0 ],
 		sHitFlags    [ aBreakWatchZero[ iBWZ ].bHit     ? 1 : 0 ],
 		               aBreakWatchZero[ iBWZ ].nHitCount,
+		prefixFinal.c_str(),
 		               aBreakWatchZero[ iBWZ ].nAddress,
 		aMemAccess[ iBPM ],
 		sSymbol.c_str()
@@ -1980,10 +2034,10 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 
 void _BWZ_ListAll ( const Breakpoint_t * aBreakWatchZero, const int nMax )
 {
-	ConsolePrintFormat( "  ID On Stop Temp HitCounter  Addr Mem Symbol" );
+	ConsolePrintFormat( "  ID On Stop Temp HitCounter   Prefix/Addr Mem Symbol" );
 
 	int iBWZ = 0;
-	while (iBWZ < nMax) // 
+	while (iBWZ < nMax)
 	{
 		if (aBreakWatchZero[ iBWZ ].bSet)
 		{
