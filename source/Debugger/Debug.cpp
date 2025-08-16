@@ -136,6 +136,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	};
 
 	static WORD g_uBreakMemoryAddress = 0;
+	static int g_breakpointHitID = -1;
 
 // Commands _______________________________________________________________________________________
 
@@ -1107,8 +1108,11 @@ bool GetBreakpointInfo ( WORD nOffset, bool & bBreakpointActive_, bool & bBreakp
 }
 
 // returns the hit type if the breakpoint stops
-static BreakpointHit_t hitBreakpoint(Breakpoint_t * pBP, BreakpointHit_t eHitType)
+static BreakpointHit_t HitBreakpoint(Breakpoint_t * pBP, BreakpointHit_t eHitType, int iBreakpoint)
 {
+	if (pBP->bStop && g_breakpointHitID < 0)
+		g_breakpointHitID = iBreakpoint;
+
 	pBP->bHit = true;
 	++pBP->nHitCount;
 	return pBP->bStop ? eHitType : BP_HIT_NONE;
@@ -1157,6 +1161,95 @@ static void DebugEnterStepping()
 	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 }
 
+
+//===========================================================================
+bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
+{
+	bool bStatus = false;
+	int iCmp = pBP->eOperator;
+
+	bool isRead = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_READ_ONLY;
+	bool isWrite = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_WRITE_ONLY;
+
+	// Apply any prefix filters
+	if (pBP->bank != Breakpoint_t::kBankInvalid)
+	{
+		_ASSERT(pBP->isROM == false);	// isROM must be false, since bank is valid
+		if (iCmp == BP_OP_EQUAL)
+		{
+			if (nVal < 0x200)
+			{
+				if ((pBP->bank == 0x00 && !(GetMemMode() & MF_ALTZP))
+					|| (pBP->bank != 0x00 && (GetMemMode() & MF_ALTZP)))
+				{
+					bStatus = true;
+				}
+			}
+			else if (0x400 < nVal && nVal <= 0x7FF && (GetMemMode() & MF_80STORE))
+			{
+				if ((pBP->bank == 0x00 && !(GetMemMode() & MF_PAGE2))
+					|| (pBP->bank != 0x00 && (GetMemMode() & MF_PAGE2)))
+				{
+					bStatus = true;
+				}
+			}
+			else if (0x2000 < nVal && nVal <= 0x3FFF && ((GetMemMode() & (MF_80STORE|MF_HIRES)) == (MF_80STORE|MF_HIRES)))
+			{
+				if ((pBP->bank == 0x00 && !(GetMemMode() & MF_PAGE2))
+					|| (pBP->bank != 0x00 && (GetMemMode() & MF_PAGE2)))
+				{
+					bStatus = true;
+				}
+			}
+			else if (nVal < 0xBFFF)
+			{
+				if (isRead)
+				{
+					if ((pBP->bank == 0x00 && !(GetMemMode() & MF_AUXREAD))
+						|| (pBP->bank != 0x00 && (GetMemMode() & MF_AUXREAD)))
+					{
+						bStatus = true;
+					}
+				}
+				if (isWrite)
+				{
+					if ((pBP->bank == 0x00 && !(GetMemMode() & MF_AUXWRITE))
+						|| (pBP->bank != 0x00 && (GetMemMode() & MF_AUXWRITE)))
+					{
+						bStatus = true;
+					}
+				}
+			}
+			else if (nVal < 0xDFFF && (GetMemMode() & MF_HIGHRAM))
+			{
+				if ((pBP->bank == 0x00 && !(GetMemMode() & MF_ALTZP))
+					|| (pBP->bank != 0x00 && (GetMemMode() & MF_ALTZP)))
+				{
+					if ((pBP->langCard == Breakpoint_t::kLangCardInvalid)
+						|| (pBP->langCard == 1 && !(GetMemMode() & MF_BANK2))
+						|| (pBP->langCard == 2 && (GetMemMode() & MF_BANK2)))
+					{
+						if (isRead || isWrite && (GetMemMode() & MF_WRITERAM))
+							bStatus = true;
+					}
+				}
+			}
+			else if (nVal < 0xFFFF && (GetMemMode() & MF_HIGHRAM))
+			{
+				if ((pBP->bank == 0x00 && !(GetMemMode() & MF_ALTZP))
+					|| (pBP->bank != 0x00 && (GetMemMode() & MF_ALTZP)))
+				{
+					if (isRead || isWrite && (GetMemMode() & MF_WRITERAM))
+						bStatus = true;
+				}
+			}
+		}
+	}
+
+	return bStatus;
+}
+
+
 //===========================================================================
 bool _CheckBreakpointValue ( Breakpoint_t *pBP, int nVal )
 {
@@ -1193,10 +1286,14 @@ bool _CheckBreakpointValue ( Breakpoint_t *pBP, int nVal )
 			break;
 	}
 
-	return bStatus;
+	if (!bStatus)
+		return false;
+
+	return _CheckBreakpointValueWithPrefix(pBP, nVal);
 }
 
 //===========================================================================
+// Only called by DebuggerCheckMemBreakpoints()
 bool _CheckBreakpointRange (Breakpoint_t* pBP, int nVal, int nSize)
 {
 	bool bStatus = false;
@@ -1221,6 +1318,7 @@ bool _CheckBreakpointRange (Breakpoint_t* pBP, int nVal, int nSize)
 
 static void DebuggerBreakOnDma (WORD nAddress, WORD nSize, bool isDmaToMemory, int iBreakpoint);
 
+// Only called by Hardisk.cpp
 bool DebuggerCheckMemBreakpoints (WORD nAddress, WORD nSize, bool isDmaToMemory)
 {
 	// NB. Caller handles when (addr+size) wraps on 64K
@@ -1287,20 +1385,20 @@ int CheckBreakpointsIO ()
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
 								{
-									bBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEM);
+									bBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEM, iBreakpoint);
 								}
 								else if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
 								{
 									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_RI|MEM_R))
 									{
-										bBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEMR);
+										bBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEMR, iBreakpoint);
 									}
 								}
 								else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
 								{
 									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_WI|MEM_W))
 									{
-										bBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEMW);
+										bBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEMW, iBreakpoint);
 									}
 								}
 								else
@@ -1360,7 +1458,7 @@ int CheckBreakpointsReg ()
 
 		if (bBreakpointHit)
 		{
-			iAnyBreakpointHit = hitBreakpoint(pBP, BP_HIT_REG);
+			iAnyBreakpointHit = HitBreakpoint(pBP, BP_HIT_REG, iBreakpoint);
 			g_pDebugBreakpointHit = pBP; // Save breakpoint so we can display which register triggered the breakpoint.
 		}
 	}
@@ -1387,7 +1485,7 @@ int CheckBreakpointsVideo ()
 		uint16_t vert = NTSC_GetVideoVertForDebugger();	// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
 		if (_CheckBreakpointValue(pBP, vert))
 		{
-			iBreakpointHit = hitBreakpoint(pBP, BP_HIT_VIDEO_POS);
+			iBreakpointHit = HitBreakpoint(pBP, BP_HIT_VIDEO_POS, iBreakpoint);
 			pBP->bEnabled = false;	// Disable, otherwise it'll trigger many times on this scan-line
 		}
 	}
@@ -1607,7 +1705,7 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 
 	if (iBreakpoint >= MAX_BREAKPOINTS)
 	{
-		ConsoleDisplayError("All Breakpoints slots are currently in use.");
+		ConsoleDisplayError("All Breakpoint slots are currently in use.");
 		return 0;	// error
 	}
 
@@ -1637,7 +1735,8 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 			iArg += kArgsPerPrefix;	// done 1 prefix (2 args)
 		}
 
-		// Got all prefixes, so do some checks
+		// Got all prefixes, so do some checks:
+
 		if (pBP->isROM &&
 			(pBP->slot != Breakpoint_t::kSlotInvalid || pBP->bank != Breakpoint_t::kBankInvalid || pBP->langCard != Breakpoint_t::kLangCardInvalid))
 		{
@@ -8883,7 +8982,12 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 				skipStopReason = true;
 
 			if (!skipStopReason)
-				ConsolePrintFormat( CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str() );
+			{
+				std::string hitID = StrFormat(CHC_DEFAULT " (BP#%01X)", g_breakpointHitID);
+				stopReason += hitID;
+				ConsolePrintFormat(CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str());
+				g_breakpointHitID = -1;
+			}
 
 			for (int i = 0; i < NUM_BREAK_ON_DMA; i++)
 			{
