@@ -540,13 +540,14 @@ int ArgsCook ( const int nArgs )
 					pArg->bSymbol = true;
 				}
 
-				// Comma and Colon are range operators, but they are not parsed here,
-				// since args no longer have a 1st and 2nd value
-/*
-					pPrev->eToken = TOKEN_COLON;
-					pPrev->bType |= TYPE_ADDRESS;
-					pPrev->bType |= TYPE_RANGE;
-*/
+				// TOKEN_COMMA and TOKEN_COLON are range operators, but they are not parsed here - see Range_Get()
+
+				if (pArg->eToken == TOKEN_FSLASH) // FORWARD SLASH (address delimiter)
+				{
+					// not parsed here - see Range_GetPrefix()
+					pPrev->bType &= ~TYPE_ADDRESS;	// Not necessary
+					nParamLen = 0;
+				}
 
 				if (pArg->eToken == TOKEN_AMPERSAND) // AND   & delta
 				{
@@ -631,7 +632,7 @@ int ArgsCook ( const int nArgs )
 					return nArg;
 				}
 
-				if (pArg->eToken == TOKEN_DIVIDE_FLOOR) // Double FORWARD SLASH   // delta
+				if (pArg->eToken == TOKEN_DIVIDE_FLOOR) // Double FORWARD SLASH   divide-floor delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
 					{
@@ -750,6 +751,8 @@ int ArgsCook ( const int nArgs )
 						return ARG_SYNTAX_ERROR;
 					}
 				}
+
+				//
 
 				if (nParamLen)
 				{

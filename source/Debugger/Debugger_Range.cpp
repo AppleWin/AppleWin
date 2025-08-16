@@ -34,6 +34,48 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 //===========================================================================
+bool Range_GetPrefix(const int iArg, BYTE& slot, BYTE& bank, BYTE& lc, bool& isROM)
+{
+	if ((iArg + 1) >= MAX_ARGS)
+		return false;
+
+	if (g_aArgs[iArg + 1].eToken != TOKEN_FSLASH)
+		return false;
+
+	// Spec: (GH#451)
+	// [sN/][nn/][L<1|2>/][ROM/]<nnnn>
+
+	if (tolower(g_aArgs[iArg].sArg[0]) == 's')	// slot
+	{
+		slot = g_aArgs[iArg].sArg[1] - '0';
+		if (slot > 7)
+			return false;
+	}
+	else if (tolower(g_aArgs[iArg].sArg[0]) == 'l')	// LC
+	{
+		if (g_aArgs[iArg].sArg[1] == '1')
+			lc = 1;
+		if (g_aArgs[iArg].sArg[1] == '2')
+			lc = 2;
+		else
+			return false;
+	}
+	else if (tolower(g_aArgs[iArg].sArg[0]) == 'r')	// ROM
+	{
+		isROM = true;
+	}
+	else // bank (RamWorks or Saturn)
+	{
+		if (g_aArgs[iArg].nValue > 0xff)
+			return false;
+		bank = (BYTE) g_aArgs[iArg].nValue;
+	}
+
+	return true;
+}
+
+
+//===========================================================================
 bool Range_CalcEndLen( const RangeType_t eRange
 	, const WORD & nAddress1, const WORD & nAddress2
 	, WORD & nAddressEnd_, int & nAddressLen_ )
@@ -72,9 +114,9 @@ bool Range_CalcEndLen( const RangeType_t eRange
 
 
 //===========================================================================
-RangeType_t Range_Get( WORD & nAddress1_, WORD & nAddress2_, const int iArg ) // =1
+RangeType_t Range_Get( WORD & nAddress1_, WORD & nAddress2_, const int iArg/* =1 */)
 {
-	nAddress1_ = (unsigned) g_aArgs[ iArg ].nValue; 
+	nAddress1_ = g_aArgs[ iArg ].nValue;
 	if (nAddress1_ > _6502_MEM_END)
 		nAddress1_ = _6502_MEM_END;
 
@@ -82,6 +124,9 @@ RangeType_t Range_Get( WORD & nAddress1_, WORD & nAddress2_, const int iArg ) //
 	int nTemp  = 0;
 
 	RangeType_t eRange = RANGE_MISSING_ARG_2;
+
+	if ((iArg + 2) >= MAX_ARGS)
+		return eRange;
 
 	if (g_aArgs[ iArg + 1 ].eToken == TOKEN_COMMA)
 	{

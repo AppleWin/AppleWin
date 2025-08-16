@@ -1592,6 +1592,7 @@ bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoi
 //===========================================================================
 int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint )
 {
+	int dArgPrefix = 0;
 	int dArg = 0;
 
 	int iBreakpoint = 0;
@@ -1614,10 +1615,23 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 #if DEBUG_VAL_2
 		int nLen = g_aArgs[iArg].nVal2;
 #endif
-		WORD nAddress  = 0;
+		WORD nAddress = 0;
 		WORD nAddress2 = 0;
-		WORD nEnd      = 0;
-		int  nLen      = 0;
+		WORD nEnd = 0;
+		int  nLen = 0;
+
+		BYTE slot = 0;
+		BYTE bank = 0;
+		BYTE lc = 0;
+		bool isROM = false;
+		const int kArgsPerPrefix = 2;
+		for (int i = iArg; i < nArg; i += kArgsPerPrefix)
+		{
+			if (!(Range_GetPrefix(i, slot, bank, lc, isROM)))
+				break;
+			dArgPrefix += kArgsPerPrefix;
+			iArg += kArgsPerPrefix;	// done 1 prefix (2 args)
+		}
 
 		dArg = 1;
 		RangeType_t eRange = Range_Get( nAddress, nAddress2, iArg);
@@ -1628,19 +1642,16 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 			dArg = 2;
 		}
 
-		if ( !nLen)
-		{
+		if (!nLen)
 			nLen = 1;
-		}
 
-		if (! _CmdBreakpointAddReg( pBP, iSrc, iCmp, nAddress, nLen, bIsTempBreakpoint ))
-		{
-			dArg = 0;
-		}
-		g_nBreakpoints++;
+		if (!_CmdBreakpointAddReg( pBP, iSrc, iCmp, nAddress, nLen, bIsTempBreakpoint ))
+			dArgPrefix = dArg = 0;	// error
+		else
+			g_nBreakpoints++;
 	}
 
-	return dArg;
+	return dArgPrefix + dArg;
 }
 
 
@@ -1660,10 +1671,10 @@ Update_t CmdBreakpointAddPC (int nArgs)
 //	int iParamSrc;
 	int iParamCmp;
 
-	int  nFound = 0;
+	int nFound = 0;
 
-	int  iArg   = 0;
-	while (iArg++ < nArgs)
+	int iArg = 1;
+	while (iArg <= nArgs)
 	{
 		char *sArg = g_aArgs[iArg].sArg;
 
