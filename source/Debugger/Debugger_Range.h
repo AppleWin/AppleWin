@@ -1,4 +1,4 @@
-RangeType_t Range_GetPrefix(const int iArg, BYTE& slot, BYTE& bank, BYTE& lc, bool& isROM);
+RangeType_t Range_GetPrefix(const int iArg, Breakpoint_t* pBP);
 RangeType_t Range_Get( WORD & nAddress1_, WORD &nAddress2_, const int iArg = 1 );
 bool Range_CalcEndLen( const RangeType_t eRange
 		, const WORD & nAddress1, const WORD & nAddress2

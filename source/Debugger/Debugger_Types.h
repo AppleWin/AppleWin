@@ -212,6 +212,28 @@
 
 	struct Breakpoint_t
 	{
+		Breakpoint_t() { Clear(); };
+
+		void Clear()
+		{
+			nAddress = 0;
+			nLength = 0;
+			eSource = BP_SRC_REG_PC;
+			eOperator = BP_OP_EQUAL;
+
+			bSet = false;
+			bEnabled = false;
+			bTemp = false;
+			bHit = false;
+			bStop = false;
+			nHitCount = 0;
+
+			slot = kSlotNotValid;
+			bank = kBankNotValid;
+			langCard = kLangCardNotValid;
+			isROM = false;
+		};
+
 		WORD                 nAddress ; // for registers, functions as nValue
 		UINT                 nLength  ;
 		BreakpointSource_t   eSource;
@@ -222,6 +244,16 @@
 		bool                 bHit     ; // true when the breakpoint has just been hit
 		bool                 bStop    ; // true if the debugger stops when it is hit
 		uint32_t             nHitCount; // number of times the breakpoint was hit
+		BYTE                 slot;		// (-1: not valid)
+		WORD                 bank;		// (-1: not valid) RamWorks: 00-FF, Saturn: 0-7
+		BYTE                 langCard;	// (-1: not valid) LC 4K bank: 1 or 2
+		bool                 isROM;
+
+		//
+
+		const BYTE kSlotNotValid = 0xFF;
+		const WORD kBankNotValid = 0xFFFF;
+		const BYTE kLangCardNotValid = 0xFF;
 	};
 
 	typedef Breakpoint_t Bookmark_t;

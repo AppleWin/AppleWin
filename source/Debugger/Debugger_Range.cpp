@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 //===========================================================================
-RangeType_t Range_GetPrefix(const int iArg, BYTE& slot, BYTE& bank, BYTE& lc, bool& isROM)
+RangeType_t Range_GetPrefix(const int iArg, Breakpoint_t* pBP)
 {
 	if ((iArg + 1) >= MAX_ARGS)
 		return RANGE_NO_PREFIX;
@@ -48,8 +48,8 @@ RangeType_t Range_GetPrefix(const int iArg, BYTE& slot, BYTE& bank, BYTE& lc, bo
 	if (tolower(g_aArgs[iArg].sArg[0]) == 's')	// slot
 	{
 		int len = strlen(g_aArgs[iArg].sArg);
-		slot = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. s1 or sl1 or slot1
-		if (slot > 7)
+		pBP->slot = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. s1 or sl1 or slot1
+		if (pBP->slot > 7)
 		{
 			ConsoleDisplayError("Address prefix bad: Use slot 0 - 7.");
 			return RANGE_PREFIX_BAD;
@@ -58,8 +58,8 @@ RangeType_t Range_GetPrefix(const int iArg, BYTE& slot, BYTE& bank, BYTE& lc, bo
 	else if (tolower(g_aArgs[iArg].sArg[0]) == 'l')	// LC
 	{
 		int len = strlen(g_aArgs[iArg].sArg);
-		lc = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. l1 or lc1
-		if (lc < 1 || lc > 2)
+		pBP->langCard = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. l1 or lc1
+		if (pBP->langCard < 1 || pBP->langCard > 2)
 		{
 			ConsoleDisplayError("Address prefix bad: Use lc 1 or 2.");
 			return RANGE_PREFIX_BAD;
@@ -67,7 +67,7 @@ RangeType_t Range_GetPrefix(const int iArg, BYTE& slot, BYTE& bank, BYTE& lc, bo
 	}
 	else if (tolower(g_aArgs[iArg].sArg[0]) == 'r')	// ROM
 	{
-		isROM = true;
+		pBP->isROM = true;
 	}
 	else // bank (RamWorks or Saturn)
 	{
@@ -76,7 +76,7 @@ RangeType_t Range_GetPrefix(const int iArg, BYTE& slot, BYTE& bank, BYTE& lc, bo
 			ConsoleDisplayError("Address prefix bad: Use bank 0 - FF (or 0 - 7 for Saturn).");
 			return RANGE_PREFIX_BAD;
 		}
-		bank = (BYTE) g_aArgs[iArg].nValue;
+		pBP->bank = g_aArgs[iArg].nValue;
 	}
 
 	return RANGE_PREFIX_OK;

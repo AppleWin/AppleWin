@@ -1597,6 +1597,7 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 
 	int iBreakpoint = 0;
 	Breakpoint_t *pBP = & g_aBreakpoints[ iBreakpoint ];
+	pBP->Clear();
 
 	while ((iBreakpoint < MAX_BREAKPOINTS) && g_aBreakpoints[iBreakpoint].bSet) //g_aBreakpoints[iBreakpoint].nLength)
 	{
@@ -1620,14 +1621,10 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 		WORD nEnd = 0;
 		int  nLen = 0;
 
-		BYTE slot = 0;
-		BYTE bank = 0;
-		BYTE lc = 0;
-		bool isROM = false;
 		const int kArgsPerPrefix = 2;
 		for (int i = iArg; i < nArg; i += kArgsPerPrefix)
 		{
-			RangeType_t prefix = Range_GetPrefix(i, slot, bank, lc, isROM);
+			RangeType_t prefix = Range_GetPrefix(i, pBP);
 			if (prefix == RANGE_NO_PREFIX)
 				break;
 			if (prefix == RANGE_PREFIX_BAD)
@@ -8938,7 +8935,8 @@ void DebugInitialize ()
 	WindowUpdateConsoleDisplayedSize();
 
 	// CLEAR THE BREAKPOINT AND WATCH TABLES
-	memset( g_aBreakpoints     , 0, MAX_BREAKPOINTS       * sizeof(Breakpoint_t));
+	for (int i = 0; i < MAX_BREAKPOINTS; i++)
+		g_aBreakpoints[i].Clear();
 	g_nBreakpoints = 0;
 	memset( g_aWatches         , 0, MAX_WATCHES           * sizeof(Watches_t) );
 	g_nWatches = 0;
