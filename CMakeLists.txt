@@ -69,17 +69,16 @@ if (BUILD_LIBRETRO)
   add_subdirectory(source/frontends/libretro)
 endif()
 
+if (BUILD_SA2)
+  add_subdirectory(source/frontends/sdl)
+endif()
+
 if (NOT WIN32)
   # not supported yet
 
   if (BUILD_QAPPLE)
     add_subdirectory(source/frontends/qt)
   endif()
-
-  if (BUILD_SA2)
-    add_subdirectory(source/frontends/sdl)
-  endif()
-
 endif()
 
 file(STRINGS resource/version.h VERSION_FILE LIMIT_COUNT 1)

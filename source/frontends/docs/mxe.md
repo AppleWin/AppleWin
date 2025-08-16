@@ -8,7 +8,7 @@ https://mxe.cc
 
 Tested with: `MXE_TARGETS := x86_64-w64-mingw32.static`
 
-`make cc cmake boost ncurses`
+`make cc cmake boost ncurses sdl2 sdl2_image`
 
 `xxd` must be available on the host.
 
