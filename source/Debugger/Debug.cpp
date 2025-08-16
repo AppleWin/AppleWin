@@ -1637,6 +1637,42 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 			iArg += kArgsPerPrefix;	// done 1 prefix (2 args)
 		}
 
+		// Got all prefixes, so do some checks
+		if (pBP->isROM &&
+			(pBP->slot != Breakpoint_t::kSlotInvalid || pBP->bank != Breakpoint_t::kBankInvalid || pBP->langCard != Breakpoint_t::kLangCardInvalid))
+		{
+			ConsoleDisplayError("Address prefix bad: 'r/' not permitted with other prefixes.");
+			return 0;	// error
+		}
+
+		if (pBP->slot != Breakpoint_t::kSlotInvalid)	// Currently setting a slot# means Saturn card
+		{
+			if (pBP->bank != Breakpoint_t::kBankInvalid && pBP->bank > 7)
+			{
+				ConsoleDisplayError("Address prefix bad: Saturn only supports banks 0-7.");
+				return 0;	// error
+			}
+
+			if (GetCardMgr().QuerySlot(pBP->slot) != CT_Saturn128K)
+			{
+				ConsoleDisplayError("Address prefix bad: No Saturn in slot.");
+				return 0;	// error
+			}
+		}
+		else // No slot# specified, so aux slot (for Extended 80Col or RamWorks card)
+		{
+			if (pBP->bank != Breakpoint_t::kBankInvalid)
+			{
+				if (!IsAppleIIeOrAbove(GetApple2Type()))
+				{
+					ConsoleDisplayError("Address prefix bad: Aux slot requires //e or above.");
+					return 0;	// error
+				}
+			}
+		}
+
+		//
+
 		dArg = 1;
 		RangeType_t eRange = Range_Get( nAddress, nAddress2, iArg);
 		if ((eRange == RANGE_HAS_END) ||

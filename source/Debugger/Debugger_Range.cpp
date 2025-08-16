@@ -51,7 +51,7 @@ RangeType_t Range_GetPrefix(const int iArg, Breakpoint_t* pBP)
 		pBP->slot = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. s1 or sl1 or slot1
 		if (pBP->slot > 7)
 		{
-			ConsoleDisplayError("Address prefix bad: Use slot 0 - 7.");
+			ConsoleDisplayError("Address prefix bad: Use slot 0-7.");
 			return RANGE_PREFIX_BAD;
 		}
 	}
@@ -73,7 +73,7 @@ RangeType_t Range_GetPrefix(const int iArg, Breakpoint_t* pBP)
 	{
 		if (g_aArgs[iArg].nValue > 0xff)
 		{
-			ConsoleDisplayError("Address prefix bad: Use bank 0 - FF (or 0 - 7 for Saturn).");
+			ConsoleDisplayError("Address prefix bad: Use bank 0-FF (or 0-7 for Saturn).");
 			return RANGE_PREFIX_BAD;
 		}
 		pBP->bank = g_aArgs[iArg].nValue;
