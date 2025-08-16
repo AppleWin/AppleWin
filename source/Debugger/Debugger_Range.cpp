@@ -34,31 +34,36 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 //===========================================================================
-bool Range_GetPrefix(const int iArg, BYTE& slot, BYTE& bank, BYTE& lc, bool& isROM)
+RangeType_t Range_GetPrefix(const int iArg, BYTE& slot, BYTE& bank, BYTE& lc, bool& isROM)
 {
 	if ((iArg + 1) >= MAX_ARGS)
-		return false;
+		return RANGE_NO_PREFIX;
 
 	if (g_aArgs[iArg + 1].eToken != TOKEN_FSLASH)
-		return false;
+		return RANGE_NO_PREFIX;
 
 	// Spec: (GH#451)
 	// [sN/][nn/][L<1|2>/][ROM/]<nnnn>
 
 	if (tolower(g_aArgs[iArg].sArg[0]) == 's')	// slot
 	{
-		slot = g_aArgs[iArg].sArg[1] - '0';
+		int len = strlen(g_aArgs[iArg].sArg);
+		slot = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. s1 or sl1 or slot1
 		if (slot > 7)
-			return false;
+		{
+			ConsoleDisplayError("Address prefix bad: Use slot 0 - 7.");
+			return RANGE_PREFIX_BAD;
+		}
 	}
 	else if (tolower(g_aArgs[iArg].sArg[0]) == 'l')	// LC
 	{
-		if (g_aArgs[iArg].sArg[1] == '1')
-			lc = 1;
-		if (g_aArgs[iArg].sArg[1] == '2')
-			lc = 2;
-		else
-			return false;
+		int len = strlen(g_aArgs[iArg].sArg);
+		lc = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. l1 or lc1
+		if (lc < 1 || lc > 2)
+		{
+			ConsoleDisplayError("Address prefix bad: Use lc 1 or 2.");
+			return RANGE_PREFIX_BAD;
+		}
 	}
 	else if (tolower(g_aArgs[iArg].sArg[0]) == 'r')	// ROM
 	{
@@ -67,11 +72,14 @@ bool Range_GetPrefix(const int iArg, BYTE& slot, BYTE& bank, BYTE& lc, bool& isR
 	else // bank (RamWorks or Saturn)
 	{
 		if (g_aArgs[iArg].nValue > 0xff)
-			return false;
+		{
+			ConsoleDisplayError("Address prefix bad: Use bank 0 - FF (or 0 - 7 for Saturn).");
+			return RANGE_PREFIX_BAD;
+		}
 		bank = (BYTE) g_aArgs[iArg].nValue;
 	}
 
-	return true;
+	return RANGE_PREFIX_OK;
 }
 
 

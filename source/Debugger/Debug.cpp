@@ -1607,7 +1607,7 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 	if (iBreakpoint >= MAX_BREAKPOINTS)
 	{
 		ConsoleDisplayError("All Breakpoints slots are currently in use.");
-		return dArg;
+		return 0;	// error
 	}
 
 	if (iArg <= nArg)
@@ -1627,8 +1627,11 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 		const int kArgsPerPrefix = 2;
 		for (int i = iArg; i < nArg; i += kArgsPerPrefix)
 		{
-			if (!(Range_GetPrefix(i, slot, bank, lc, isROM)))
+			RangeType_t prefix = Range_GetPrefix(i, slot, bank, lc, isROM);
+			if (prefix == RANGE_NO_PREFIX)
 				break;
+			if (prefix == RANGE_PREFIX_BAD)
+				return 0;	// error
 			dArgPrefix += kArgsPerPrefix;
 			iArg += kArgsPerPrefix;	// done 1 prefix (2 args)
 		}
@@ -1695,6 +1698,7 @@ Update_t CmdBreakpointAddPC (int nArgs)
 						break;
 				}
 			}
+			iArg++;
 		}
 		else
 		{

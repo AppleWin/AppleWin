@@ -24,6 +24,9 @@
 		RANGE_MISSING_ARG_2 = 0, // error
 		RANGE_HAS_LEN          , // valid case 1
 		RANGE_HAS_END          , // valid case 2
+		RANGE_NO_PREFIX,
+		RANGE_PREFIX_BAD,
+		RANGE_PREFIX_OK,
 	};
 
 	struct AddressingMode_t
