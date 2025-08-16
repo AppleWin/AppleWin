@@ -11,8 +11,8 @@ find_package(SDL2 REQUIRED)
 pkg_search_module(SDL2_IMAGE REQUIRED SDL2_image)
 
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # only OpenGL supported on MacOS
+if ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR (${CMAKE_SYSTEM_NAME} MATCHES "Windows"))
+  # only OpenGL supported on MacOS and Windows
   set (SA2_OPENGL ON)
 else()
   option(SA2_OPENGL "Prefer OpenGL over OpenGL ES" OFF)
@@ -57,6 +57,8 @@ target_include_directories(sa2 PRIVATE
 target_link_libraries(sa2 PRIVATE
   appleii
   common2
+  minizip
+  yaml
 
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}

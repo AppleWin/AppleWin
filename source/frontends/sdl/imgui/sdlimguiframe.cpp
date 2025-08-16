@@ -107,7 +107,7 @@ namespace sa2
         myDebuggerFont = io.Fonts->AddFontFromMemoryTTF(
             const_cast<unsigned char *>(debug6502TTF.first), debug6502TTF.second, 13, &fontConfig);
 
-        myIniFileLocation = common2::getConfigFile("imgui.ini");
+        myIniFileLocation = common2::getConfigFile("imgui.ini").string();
         if (myIniFileLocation.empty())
         {
             io.IniFilename = nullptr;
