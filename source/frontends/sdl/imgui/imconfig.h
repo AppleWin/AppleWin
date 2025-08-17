@@ -124,4 +124,4 @@ namespace ImGui
 */
 
 // can't easily use GLunit here (defines in gl2/3.h)
-#define ImTextureID unsigned int
+// #define ImTextureID unsigned int
