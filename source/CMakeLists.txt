@@ -81,6 +81,7 @@ set(SOURCE_FILES
   SAM.cpp
   z80emu.cpp
   ParallelPrinter.cpp
+  ProDOS_Utils.cpp
   MouseInterface.cpp
   LanguageCard.cpp
   RGBMonitor.cpp
@@ -172,6 +173,8 @@ set(HEADER_FILES
   SAM.h
   z80emu.h
   ParallelPrinter.h
+  ProDOS_Utils.h
+  ProDOS_FileSystem.h
   MouseInterface.h
   LanguageCard.h
   RGBMonitor.h
