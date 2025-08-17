@@ -381,7 +381,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //	bool CheckBreakpoint (WORD address, BOOL memory);
 	bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, WORD nAddress, int nLen, bool bIsTempBreakpoint );
-	int  _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint=false );
+	int  _CmdBreakpointAddCommonArg ( const int nArg, int iArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint=false );
 
 // Config - Save
 	bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave );
@@ -1583,7 +1583,8 @@ Update_t CmdBreakpointAddSmart (int nArgs)
 
 
 //===========================================================================
-Update_t CmdBreakpointAddReg (int nArgs)
+// Pre: nArgs = last valid index into g_aArgs[]
+Update_t CmdBreakpointAddReg (const int nArgs)
 {
 	if (! nArgs)
 	{
@@ -1602,7 +1603,7 @@ Update_t CmdBreakpointAddReg (int nArgs)
 	int  nFound;
 
 	int  iArg = 1;
-	while (iArg < nArgs)
+	while (iArg <= nArgs)
 	{
 		char *sArg = g_aArgs[iArg].sArg;
 
@@ -1644,7 +1645,7 @@ Update_t CmdBreakpointAddReg (int nArgs)
 
 		if ((! bHaveSrc) && (! bHaveCmp)) // Inverted/Convoluted logic: didn't find BOTH this pass, so we must have already found them.
 		{
-			int dArgs = _CmdBreakpointAddCommonArg( iArg, nArgs, iSrc, iCmp );
+			int dArgs = _CmdBreakpointAddCommonArg( nArgs, iArg, iSrc, iCmp );
 			if (!dArgs)
 			{
 				return Help_Arg_1( CMD_BREAKPOINT_ADD_REG );
@@ -1700,7 +1701,7 @@ bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoi
 
 // @return Number of args processed
 //===========================================================================
-int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint )
+int _CmdBreakpointAddCommonArg ( const int nArg, int iArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint )
 {
 	int dArgPrefix = 0;
 	int dArg = 0;
@@ -1806,6 +1807,7 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 
 
 //===========================================================================
+// Pre: nArgs = last valid index into g_aArgs[]
 Update_t CmdBreakpointAddPC (int nArgs)
 {
 	BreakpointSource_t   iSrc = BP_SRC_REG_PC;
@@ -1849,7 +1851,7 @@ Update_t CmdBreakpointAddPC (int nArgs)
 		}
 		else
 		{
-			int dArg = _CmdBreakpointAddCommonArg( iArg, nArgs, iSrc, iCmp );
+			int dArg = _CmdBreakpointAddCommonArg( nArgs, iArg, iSrc, iCmp );
 			if (! dArg)
 			{
 				return Help_Arg_1( CMD_BREAKPOINT_ADD_PC );
@@ -1885,13 +1887,14 @@ Update_t CmdBreakpointAddMemW (int nArgs)
 	return CmdBreakpointAddMem(nArgs, BP_SRC_MEM_WRITE_ONLY);
 }
 //===========================================================================
-Update_t CmdBreakpointAddMem (int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM_RW*/)
+// Pre: nArgs = last valid index into g_aArgs[]
+Update_t CmdBreakpointAddMem (const int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM_RW*/)
 {
 	BreakpointSource_t   iSrc = bpSrc;
 	BreakpointOperator_t iCmp = BP_OP_EQUAL;
 
 	int iArg = 1;
-	while (iArg < nArgs)
+	while (iArg <= nArgs)
 	{
 		if (g_aArgs[iArg].bType & TYPE_OPERATOR)
 		{
@@ -1899,7 +1902,7 @@ Update_t CmdBreakpointAddMem (int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM
 		}
 		else
 		{
-			int dArg = _CmdBreakpointAddCommonArg( iArg, nArgs, iSrc, iCmp );
+			int dArg = _CmdBreakpointAddCommonArg( nArgs, iArg, iSrc, iCmp );
 			if (! dArg)
 			{
 				return Help_Arg_1( CMD_BREAKPOINT_ADD_MEM );
@@ -1912,13 +1915,14 @@ Update_t CmdBreakpointAddMem (int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM
 }
 
 //===========================================================================
-Update_t CmdBreakpointAddVideo (int nArgs)
+// Pre: nArgs = last valid index into g_aArgs[]
+Update_t CmdBreakpointAddVideo (const int nArgs)
 {
 	BreakpointSource_t   iSrc = BP_SRC_VIDEO_SCANNER;
 	BreakpointOperator_t iCmp = BP_OP_EQUAL;
 
 	int iArg = 1;
-	while (iArg < nArgs)
+	while (iArg <= nArgs)
 	{
 		if (g_aArgs[iArg].bType & TYPE_OPERATOR)
 		{
@@ -1926,7 +1930,7 @@ Update_t CmdBreakpointAddVideo (int nArgs)
 		}
 		else
 		{
-			int dArg = _CmdBreakpointAddCommonArg(iArg, nArgs, iSrc, iCmp);
+			int dArg = _CmdBreakpointAddCommonArg( nArgs, iArg, iSrc, iCmp );
 			if (!dArg)
 			{
 				return Help_Arg_1(CMD_BREAKPOINT_ADD_VIDEO);
@@ -8992,8 +8996,11 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 
 			if (!skipStopReason)
 			{
-				std::string hitID = StrFormat(CHC_DEFAULT " (%s#%s%01X" CHC_DEFAULT ")", CHC_ARG_SEP, CHC_NUM_HEX, g_breakpointHitID);
-				stopReason += hitID;
+				if (!(g_bDebugBreakpointHit & BP_HIT_REG))	// BP_HIT_REG has already included BP id
+				{
+					std::string hitID = StrFormat(CHC_DEFAULT " (%s#%s%01X" CHC_DEFAULT ")", CHC_ARG_SEP, CHC_NUM_HEX, g_breakpointHitID);
+					stopReason += hitID;
+				}
 				ConsolePrintFormat(CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str());
 				g_breakpointHitID = -1;
 			}
