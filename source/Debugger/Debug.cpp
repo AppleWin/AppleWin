@@ -135,7 +135,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"* ", // Read/Write
 	};
 
-	static WORD g_uBreakMemoryAddress = 0;
+	static std::string g_breakMemoryFullPrefixAddr;
 	static int g_breakpointHitID = -1;
 
 // Commands _______________________________________________________________________________________
@@ -371,6 +371,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static	Update_t ExecuteCommand ( int nArgs );
 
 // Breakpoints
+	std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD addr, bool padding);
 	Update_t _BP_InfoNone ();
 	void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, int & nTotal );
 	void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, const bool bEnabled );
@@ -1387,7 +1388,7 @@ int CheckBreakpointsIO ()
 						{
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
-								g_uBreakMemoryAddress = (WORD) nAddress;
+								g_breakMemoryFullPrefixAddr = GetFullPrefixAddrForBreakpoint(pBP, (WORD)nAddress, false);
 								BYTE opcode = ReadByteFromMemory(regs.pc);
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
@@ -2088,6 +2089,69 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 }
 
 //===========================================================================
+static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD address, bool padding)
+{
+	char szSlot[] = "sN/";
+	char szBank[] = "NN/";
+	char szLangCard[] = "lN/";
+	int prefixPad = 0;	// whitespace padding
+	std::string prefix = CHC_INFO;	// "sN/bb/lN/" (9 chars) or "ROM/"
+
+	if (pBP->slot != Breakpoint_t::kSlotInvalid)
+	{
+		szSlot[1] = pBP->slot + '0';
+		prefix += szSlot;
+	}
+	else
+	{
+		prefixPad += 3;
+	}
+
+	if (pBP->bank != Breakpoint_t::kBankInvalid)
+	{
+		sprintf_s(szBank, "%02X", pBP->bank);
+		szBank[2] = '/';
+		szBank[3] = 0;
+		prefix += szBank;
+	}
+	else
+	{
+		prefixPad += 3;
+	}
+
+	if (pBP->langCard != Breakpoint_t::kLangCardInvalid)
+	{
+		szLangCard[1] = pBP->langCard + '0';
+		prefix += szLangCard;
+	}
+	else
+	{
+		prefixPad += 3;
+	}
+
+	if (pBP->isROM)
+	{
+		prefix += "ROM/";
+		prefixPad = 5;	// 9 chars in total
+	}
+
+	std::string prefixFinal;
+
+	if (padding)
+	{
+		while (prefixPad--)
+			prefixFinal += " ";
+	}
+
+	prefixFinal += prefix;
+
+	std::string addr = StrFormat(CHC_ADDRESS "%04X", address);
+	prefixFinal += addr;
+
+	return prefixFinal;
+}
+
+//===========================================================================
 void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool bZeroBased )
 {
 	static const char sEnabledFlags[] = "-E";
@@ -2117,55 +2181,10 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 		default                   : iBPM = 4; break;
 	}
 
-	std::string prefixFinal;
-	{
-		char szSlot[] = "sN/";
-		char szBank[] = "NN/";
-		char szLangCard[] = "lN/";
-		int prefixPad = 0;	// whitespace padding
-		std::string prefix;	// "sN/bb/lN/" (9 chars) or "ROM/"
-		if (aBreakWatchZero[iBWZ].slot != Breakpoint_t::kSlotInvalid)
-		{
-			szSlot[1] = aBreakWatchZero[iBWZ].slot + '0';
-			prefix += szSlot;
-		}
-		else
-		{
-			prefixPad += 3;
-		}
-		if (aBreakWatchZero[iBWZ].bank != Breakpoint_t::kBankInvalid)
-		{
-			sprintf_s(szBank, "%02X", aBreakWatchZero[iBWZ].bank);
-			szBank[2] = '/';
-			szBank[3] = 0;
-			prefix += szBank;
-		}
-		else
-		{
-			prefixPad += 3;
-		}
-		if (aBreakWatchZero[iBWZ].langCard != Breakpoint_t::kLangCardInvalid)
-		{
-			szLangCard[1] = aBreakWatchZero[iBWZ].langCard + '0';
-			prefix += szLangCard;
-		}
-		else
-		{
-			prefixPad += 3;
-		}
-		if (aBreakWatchZero[iBWZ].isROM)
-		{
-			prefix = "ROM/";
-			prefixPad = 5;	// 9 chars in total
-		}
-
-		while (prefixPad--)
-			prefixFinal += " ";
-		prefixFinal += prefix;
-	}
+	std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(&aBreakWatchZero[iBWZ], aBreakWatchZero[iBWZ].nAddress, true);
 
 	// ID On Stop Temp HitCounter  Prefix/Addr Mem Symbol
-	ConsolePrintFormat( "  #%X %c  %c    %c  %c   %08X " CHC_INFO "%s" CHC_ADDRESS "%04X " CHC_INFO "%s" CHC_SYMBOL " %s",
+	ConsolePrintFormat( "  #%X %c  %c    %c  %c   %08X %s " CHC_INFO "%s" CHC_SYMBOL " %s",
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
 		sEnabledFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
@@ -2173,8 +2192,7 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 		sTempFlags   [ aBreakWatchZero[ iBWZ ].bTemp    ? 1 : 0 ],
 		sHitFlags    [ aBreakWatchZero[ iBWZ ].bHit     ? 1 : 0 ],
 		               aBreakWatchZero[ iBWZ ].nHitCount,
-		prefixFinal.c_str(),
-		               aBreakWatchZero[ iBWZ ].nAddress,
+		fullPrefixAddr.c_str(),
 		aMemAccess[ iBPM ],
 		sSymbol.c_str()
 	);
@@ -8975,11 +8993,11 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 						stopReason = "Register matches value";
 			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
-				stopReason = StrFormat("Memory access at " CHC_ARG_SEP "$" CHC_ADDRESS "%04X", g_uBreakMemoryAddress);
+				stopReason = StrFormat("Memory access at %s", g_breakMemoryFullPrefixAddr.c_str());
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMW)
-				stopReason = StrFormat("Write access at " CHC_ARG_SEP "$" CHC_ADDRESS "%04X", g_uBreakMemoryAddress);
+				stopReason = StrFormat("Write access at %s", g_breakMemoryFullPrefixAddr.c_str());
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMR)
-				stopReason = StrFormat("Read access at " CHC_ARG_SEP "$" CHC_ADDRESS "%04X", g_uBreakMemoryAddress);
+				stopReason = StrFormat("Read access at %s", g_breakMemoryFullPrefixAddr.c_str());
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				stopReason = "PC reads from floating bus or I/O memory";
 			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
