@@ -1168,7 +1168,7 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 	bool bStatus = false;
 	int iCmp = pBP->eOperator;
 
-	bool isRead = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_READ_ONLY;
+	bool isRead = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_READ_ONLY || pBP->eSource == BP_SRC_REG_PC;
 	bool isWrite = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_WRITE_ONLY;
 
 	// If no prefix filters, then BP hit
@@ -1601,7 +1601,7 @@ Update_t CmdBreakpointAddReg (int nArgs)
 
 	int  nFound;
 
-	int  iArg  = 1;
+	int  iArg = 1;
 	while (iArg < nArgs)
 	{
 		char *sArg = g_aArgs[iArg].sArg;
@@ -1650,6 +1650,10 @@ Update_t CmdBreakpointAddReg (int nArgs)
 				return Help_Arg_1( CMD_BREAKPOINT_ADD_REG );
 			}
 			iArg += dArgs;
+		}
+		else
+		{
+			iArg++;
 		}
 	}
 
@@ -1722,14 +1726,6 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 
 	if (iArg <= nArg)
 	{
-#if DEBUG_VAL_2
-		int nLen = g_aArgs[iArg].nVal2;
-#endif
-		WORD nAddress = 0;
-		WORD nAddress2 = 0;
-		WORD nEnd = 0;
-		int  nLen = 0;
-
 		const int kArgsPerPrefix = 2;
 		for (int i = iArg; i < nArg; i += kArgsPerPrefix)
 		{
@@ -1779,11 +1775,19 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 
 		//
 
+#if DEBUG_VAL_2
+		int nLen = g_aArgs[iArg].nVal2;
+#endif
+		WORD nAddress = 0;
+		WORD nAddress2 = 0;
+		int  nLen = 0;
+
 		dArg = 1;
 		RangeType_t eRange = Range_Get( nAddress, nAddress2, iArg);
 		if ((eRange == RANGE_HAS_END) ||
 			(eRange == RANGE_HAS_LEN))
 		{
+			WORD nEnd = 0;	// unused
 			Range_CalcEndLen( eRange, nAddress, nAddress2, nEnd, nLen );
 			dArg = 3;
 		}
