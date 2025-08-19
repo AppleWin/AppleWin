@@ -84,8 +84,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static DebugBreakOnDMA g_DebugBreakOnDMA[NUM_BREAK_ON_DMA];
 	static DebugBreakOnDMA g_DebugBreakOnDMAIO;
 
-	int                  g_bDebugBreakpointHit = 0;       // See: BreakpointHit_t
-	static Breakpoint_t *g_pDebugBreakpointHit = nullptr; // NOTE: Only valid for BP_HIT_REG, see: CheckBreakpointsReg()
+	static int           g_bDebugBreakpointHit = 0;       // See: BreakpointHit_t
+	static Breakpoint_t *g_pDebugBreakpointHit = nullptr;
+
+	static std::string g_breakMemoryFullPrefixAddr;
+	static int g_breakpointHitID = -1;
 
 	int          g_nBreakpoints = 0;
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
@@ -135,9 +138,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"* ", // Read/Write
 	};
 
-	static std::string g_breakMemoryFullPrefixAddr;
-	static int g_breakpointHitID = -1;
-
 // Commands _______________________________________________________________________________________
 
 	int g_iCommand; // last command (enum) // used for consecutive commands
@@ -164,7 +164,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	const int  g_nInputCursor = sizeof( g_aInputCursor );
 
 	void DebuggerCursorUpdate();
-	char DebuggerCursorGet();
+	//char DebuggerCursorGet();
 
 // Cursor (Disasm) ____________________________________________________________
 
@@ -1112,7 +1112,11 @@ bool GetBreakpointInfo ( WORD nOffset, bool & bBreakpointActive_, bool & bBreakp
 static BreakpointHit_t HitBreakpoint(Breakpoint_t * pBP, BreakpointHit_t eHitType, int iBreakpoint)
 {
 	if (pBP->bStop && g_breakpointHitID < 0)
+	{
 		g_breakpointHitID = iBreakpoint;
+		_ASSERT(g_pDebugBreakpointHit == nullptr);
+		g_pDebugBreakpointHit = pBP;
+	}
 
 	pBP->bHit = true;
 	++pBP->nHitCount;
@@ -1353,19 +1357,17 @@ bool DebuggerCheckMemBreakpoints (WORD nAddress, WORD nSize, bool isDmaToMemory)
 //===========================================================================
 int CheckBreakpointsIO ()
 {
-	const int NUM_TARGETS = 3;
+	int iBreakpointHit = 0;
 
+	const int NUM_TARGETS = 3;
 	int aTarget[ NUM_TARGETS ] =
 	{
 		NO_6502_TARGET,
 		NO_6502_TARGET,
 		NO_6502_TARGET
 	};
-	int  nBytes;
-	int  bBreakpointHit = 0;
 
-	int  iTarget;
-	int  nAddress;
+	int  nBytes;
 
 	// bIncludeNextOpcodeAddress == false:
 	// . JSR addr16: ignore addr16 as a target
@@ -1374,9 +1376,9 @@ int CheckBreakpointsIO ()
 
 	if (nBytes)
 	{
-		for (iTarget = 0; iTarget < NUM_TARGETS; iTarget++ )
+		for (int iTarget = 0; iTarget < NUM_TARGETS; iTarget++ )
 		{
-			nAddress = aTarget[ iTarget ];
+			int nAddress = aTarget[ iTarget ];
 			if (nAddress != NO_6502_TARGET)
 			{
 				for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
@@ -1393,26 +1395,28 @@ int CheckBreakpointsIO ()
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
 								{
-									bBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEM, iBreakpoint);
+									iBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEM, iBreakpoint);
 								}
 								else if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
 								{
 									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_RI|MEM_R))
 									{
-										bBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEMR, iBreakpoint);
+										iBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEMR, iBreakpoint);
 									}
 								}
 								else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
 								{
 									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_WI|MEM_W))
 									{
-										bBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEMW, iBreakpoint);
+										iBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEMW, iBreakpoint);
 									}
 								}
 								else
 								{
 									_ASSERT(0);
 								}
+
+								// Don't break - instead process all BPs so that all pBP->nHitCount's are correct
 							}
 						}
 					}
@@ -1420,15 +1424,13 @@ int CheckBreakpointsIO ()
 			}
 		}
 	}
-	return bBreakpointHit;
+	return iBreakpointHit;
 }
 
 // Returns true if a register breakpoint is triggered
 //===========================================================================
 int CheckBreakpointsReg ()
 {
-	g_pDebugBreakpointHit = nullptr;
-
 	int iAnyBreakpointHit = 0;
 
 	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
@@ -1438,7 +1440,7 @@ int CheckBreakpointsReg ()
 		if (! _BreakpointValid( pBP ))
 			continue;
 
-		bool bBreakpointHit = 0;
+		bool bBreakpointHit = false;
 
 		switch (pBP->eSource)
 		{
@@ -1467,7 +1469,7 @@ int CheckBreakpointsReg ()
 		if (bBreakpointHit)
 		{
 			iAnyBreakpointHit = HitBreakpoint(pBP, BP_HIT_REG, iBreakpoint);
-			g_pDebugBreakpointHit = pBP; // Save breakpoint so we can display which register triggered the breakpoint.
+			// Don't break - instead process all BPs so that all pBP->nHitCount's are correct
 		}
 	}
 
@@ -1495,6 +1497,7 @@ int CheckBreakpointsVideo ()
 		{
 			iBreakpointHit = HitBreakpoint(pBP, BP_HIT_VIDEO_POS, iBreakpoint);
 			pBP->bEnabled = false;	// Disable, otherwise it'll trigger many times on this scan-line
+			// Don't break - instead process all BPs so that all pBP->nHitCount's are correct
 		}
 	}
 
@@ -8961,6 +8964,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 					g_bDebugBreakpointHit |= BP_HIT_INTERRUPT;
 			}
 
+			g_pDebugBreakpointHit = nullptr;	// First BP hit
 			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg() | CheckBreakpointsVideo() | CheckBreakpointsDmaToOrFromIOMemory() | CheckBreakpointsDmaToOrFromMemory(-1);
 		}
 
@@ -8977,20 +8981,15 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 				stopReason = StrFormat("Opcode match at " CHC_ARG_SEP "$" CHC_ADDRESS "%04X", regs.pc);
 			else if (g_bDebugBreakpointHit & BP_HIT_REG)
 			{
-					if (g_pDebugBreakpointHit)
-					{
-						int iBreakpoint = (g_pDebugBreakpointHit - g_aBreakpoints);
-						stopReason = StrFormat( "Register %s%s%s matches breakpoint %s#%s%01X",
-							CHC_REGS,
-							g_aBreakpointSource[ g_pDebugBreakpointHit->eSource ],
-							CHC_DEFAULT,
-							CHC_ARG_SEP,
-							CHC_NUM_HEX,
-							iBreakpoint
-						);
-					}
-					else
-						stopReason = "Register matches value";
+				stopReason = "Register matches value";
+				if (g_pDebugBreakpointHit)
+				{
+					stopReason = StrFormat( "Register %s%s%s matches value",
+						CHC_REGS,
+						g_aBreakpointSource[ g_pDebugBreakpointHit->eSource ],
+						CHC_DEFAULT
+					);
+				}
 			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
 				stopReason = StrFormat("Memory access at %s", g_breakMemoryFullPrefixAddr.c_str());
@@ -9014,12 +9013,10 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 
 			if (!skipStopReason)
 			{
-				if (!(g_bDebugBreakpointHit & BP_HIT_REG))	// BP_HIT_REG has already included BP id
-				{
-					std::string hitID = StrFormat(CHC_DEFAULT " (%s#%s%01X" CHC_DEFAULT ")", CHC_ARG_SEP, CHC_NUM_HEX, g_breakpointHitID);
-					stopReason += hitID;
-				}
-				ConsolePrintFormat(CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str());
+				std::string hitID = CHC_DEFAULT "[" CHC_ARG_SEP "B#" CHC_NUM_HEX "-" CHC_DEFAULT "]"; // "[B#-]";
+				if (g_breakpointHitID != -1)
+					hitID = StrFormat(CHC_DEFAULT "[" CHC_ARG_SEP "B#" CHC_NUM_HEX "%01X" CHC_DEFAULT "]", g_breakpointHitID);
+				ConsolePrintFormat(CHC_INFO "Stop reason: %s " CHC_DEFAULT "%s", hitID.c_str(), stopReason.c_str());
 				g_breakpointHitID = -1;
 			}
 
