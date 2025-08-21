@@ -1183,10 +1183,28 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 		&& pBP->isROM == false)
 		return true;
 
+	// Prefix filters only apply for BP_OP_EQUAL operation
+	if (iCmp != BP_OP_EQUAL)
+		return true;
+
 	// Apply any prefix filters
-	if (pBP->bank != Breakpoint_t::kBankInvalid)
+	if (pBP->isROM == true)
 	{
-		_ASSERT(pBP->isROM == false);	// isROM must be false, since bank is valid
+		if (iCmp == BP_OP_EQUAL)
+		{
+			if (nVal >= 0xD000)
+			{
+				if (!(GetMemMode() & MF_HIGHRAM))
+					bStatus = true;
+			}
+			else
+			{
+				bStatus = true;
+			}
+		}
+	}
+	else if (pBP->bank != Breakpoint_t::kBankInvalid)
+	{
 		if (iCmp == BP_OP_EQUAL)
 		{
 			if (nVal < 0x200)
@@ -1205,7 +1223,7 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 					bStatus = true;
 				}
 			}
-			else if (0x2000 < nVal && nVal <= 0x3FFF && ((GetMemMode() & (MF_80STORE|MF_HIRES)) == (MF_80STORE|MF_HIRES)))
+			else if (0x2000 < nVal && nVal <= 0x3FFF && ((GetMemMode() & (MF_80STORE | MF_HIRES)) == (MF_80STORE | MF_HIRES)))
 			{
 				if ((pBP->bank == 0x00 && !(GetMemMode() & MF_PAGE2))
 					|| (pBP->bank != 0x00 && (GetMemMode() & MF_PAGE2)))
@@ -1213,7 +1231,7 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 					bStatus = true;
 				}
 			}
-			else if (nVal < 0xBFFF)
+			else if (nVal < 0xC000)
 			{
 				if (isRead)
 				{
@@ -1232,7 +1250,7 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 					}
 				}
 			}
-			else if (nVal < 0xDFFF && (GetMemMode() & MF_HIGHRAM))
+			else if (nVal < 0xE000 && (GetMemMode() & MF_HIGHRAM))
 			{
 				if ((pBP->bank == 0x00 && !(GetMemMode() & MF_ALTZP))
 					|| (pBP->bank != 0x00 && (GetMemMode() & MF_ALTZP)))
@@ -1246,7 +1264,7 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 					}
 				}
 			}
-			else if (nVal < 0xFFFF && (GetMemMode() & MF_HIGHRAM))
+			else if (nVal <= _6502_MEM_END && (GetMemMode() & MF_HIGHRAM))
 			{
 				if ((pBP->bank == 0x00 && !(GetMemMode() & MF_ALTZP))
 					|| (pBP->bank != 0x00 && (GetMemMode() & MF_ALTZP)))
@@ -1255,8 +1273,12 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 						bStatus = true;
 				}
 			}
-		}
-	}
+			else
+			{
+				bStatus = true;
+			}
+		} // BP_OP_EQUAL
+	} // bank
 
 	return bStatus;
 }
