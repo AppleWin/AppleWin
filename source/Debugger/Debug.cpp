@@ -1183,102 +1183,97 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 		&& pBP->isROM == false)
 		return true;
 
-	// Prefix filters only apply for BP_OP_EQUAL operation
+	// Prefix filters only apply for BP_OP_EQUAL operation (for now)
 	if (iCmp != BP_OP_EQUAL)
 		return true;
 
 	// Apply any prefix filters
-	if (pBP->isROM == true)
+
+	const int ramworksActiveBank = GetRamWorksActiveBank() + 1;	// [0x01..0x100]
+	const int saturnBank = pBP->slot != Breakpoint_t::kSlotInvalid && pBP->bank != Breakpoint_t::kBankInvalid ? pBP->bank : Breakpoint_t::kSlotInvalid;
+	const int saturnActiveBank = GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->GetActiveBank();
+	const bool noRamworksOrSaturnBank = pBP->slot == Breakpoint_t::kSlotInvalid && pBP->bank == Breakpoint_t::kBankInvalid;
+
+	if (nVal <= _6502_STACK_END)
 	{
-		if (iCmp == BP_OP_EQUAL)
+		if ((pBP->bank == 0x00 && !(GetMemMode() & MF_ALTZP))
+			|| (pBP->bank == ramworksActiveBank && (GetMemMode() & MF_ALTZP)))
 		{
-			if (nVal >= 0xD000)
+			bStatus = true;
+		}
+	}
+	else if (TEXT_PAGE1_BEGIN <= nVal && nVal <= 0x7FF && (GetMemMode() & MF_80STORE))
+	{
+		if ((pBP->bank == 0x00 && !(GetMemMode() & MF_PAGE2))
+			|| (pBP->bank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
+		{
+			bStatus = true;
+		}
+	}
+	else if (HGR_PAGE1_BEGIN <= nVal && nVal <= 0x3FFF && ((GetMemMode() & (MF_80STORE | MF_HIRES)) == (MF_80STORE | MF_HIRES)))
+	{
+		if ((pBP->bank == 0x00 && !(GetMemMode() & MF_PAGE2))
+			|| (pBP->bank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
+		{
+			bStatus = true;
+		}
+	}
+	else if (nVal <= 0xBFFF)
+	{
+		if (isRead)
+		{
+			if ((pBP->bank == 0x00 && !(GetMemMode() & MF_AUXREAD))
+				|| (pBP->bank == ramworksActiveBank && (GetMemMode() & MF_AUXREAD)))
 			{
-				if (!(GetMemMode() & MF_HIGHRAM))
-					bStatus = true;
+				bStatus = true;
 			}
-			else
+		}
+		if (isWrite)
+		{
+			if ((pBP->bank == 0x00 && !(GetMemMode() & MF_AUXWRITE))
+				|| (pBP->bank == ramworksActiveBank && (GetMemMode() & MF_AUXWRITE)))
 			{
 				bStatus = true;
 			}
 		}
 	}
-	else if (pBP->bank != Breakpoint_t::kBankInvalid)
+	else if (nVal <= FIRMWARE_EXPANSION_END)
 	{
-		if (iCmp == BP_OP_EQUAL)
+		bStatus = true;
+	}
+	else if (0xD000 <= nVal && nVal <= _6502_MEM_END)
+	{
+		if (GetMemMode() & MF_HIGHRAM)
 		{
-			if (nVal < 0x200)
+			if (noRamworksOrSaturnBank
+				|| (saturnBank < 0 && pBP->bank == 0x00 && !(GetMemMode() & MF_ALTZP))
+				|| (saturnBank < 0 && pBP->bank == ramworksActiveBank && (GetMemMode() & MF_ALTZP))
+				|| (saturnBank >= 0 && saturnBank == saturnActiveBank && !(GetMemMode() & MF_ALTZP)))
 			{
-				if ((pBP->bank == 0x00 && !(GetMemMode() & MF_ALTZP))
-					|| (pBP->bank != 0x00 && (GetMemMode() & MF_ALTZP)))
+				if ((pBP->langCard == Breakpoint_t::kLangCardInvalid)
+					|| (pBP->langCard == 1 && !(GetMemMode() & MF_BANK2))
+					|| (pBP->langCard == 2 && (GetMemMode() & MF_BANK2))
+					|| (nVal >= 0xE000))
 				{
-					bStatus = true;
-				}
-			}
-			else if (0x400 < nVal && nVal <= 0x7FF && (GetMemMode() & MF_80STORE))
-			{
-				if ((pBP->bank == 0x00 && !(GetMemMode() & MF_PAGE2))
-					|| (pBP->bank != 0x00 && (GetMemMode() & MF_PAGE2)))
-				{
-					bStatus = true;
-				}
-			}
-			else if (0x2000 < nVal && nVal <= 0x3FFF && ((GetMemMode() & (MF_80STORE | MF_HIRES)) == (MF_80STORE | MF_HIRES)))
-			{
-				if ((pBP->bank == 0x00 && !(GetMemMode() & MF_PAGE2))
-					|| (pBP->bank != 0x00 && (GetMemMode() & MF_PAGE2)))
-				{
-					bStatus = true;
-				}
-			}
-			else if (nVal < 0xC000)
-			{
-				if (isRead)
-				{
-					if ((pBP->bank == 0x00 && !(GetMemMode() & MF_AUXREAD))
-						|| (pBP->bank != 0x00 && (GetMemMode() & MF_AUXREAD)))
-					{
-						bStatus = true;
-					}
-				}
-				if (isWrite)
-				{
-					if ((pBP->bank == 0x00 && !(GetMemMode() & MF_AUXWRITE))
-						|| (pBP->bank != 0x00 && (GetMemMode() & MF_AUXWRITE)))
-					{
-						bStatus = true;
-					}
-				}
-			}
-			else if (nVal < 0xE000 && (GetMemMode() & MF_HIGHRAM))
-			{
-				if ((pBP->bank == 0x00 && !(GetMemMode() & MF_ALTZP))
-					|| (pBP->bank != 0x00 && (GetMemMode() & MF_ALTZP)))
-				{
-					if ((pBP->langCard == Breakpoint_t::kLangCardInvalid)
-						|| (pBP->langCard == 1 && !(GetMemMode() & MF_BANK2))
-						|| (pBP->langCard == 2 && (GetMemMode() & MF_BANK2)))
+					if (pBP->isROM == false)		// isROM==false means "don't care" whether it's ROM or not
 					{
 						if (isRead || isWrite && (GetMemMode() & MF_WRITERAM))
 							bStatus = true;
 					}
 				}
 			}
-			else if (nVal <= _6502_MEM_END && (GetMemMode() & MF_HIGHRAM))
-			{
-				if ((pBP->bank == 0x00 && !(GetMemMode() & MF_ALTZP))
-					|| (pBP->bank != 0x00 && (GetMemMode() & MF_ALTZP)))
-				{
-					if (isRead || isWrite && (GetMemMode() & MF_WRITERAM))
-						bStatus = true;
-				}
-			}
-			else
-			{
-				bStatus = true;
-			}
-		} // BP_OP_EQUAL
-	} // bank
+		}
+		else // ROM switched in
+		{
+			bStatus = true;
+		}
+	}
+	else
+	{
+		_ASSERT(0);	// some address not accounted for
+		bStatus = true;
+	}
+
 
 	return bStatus;
 }
@@ -1343,6 +1338,19 @@ bool _CheckBreakpointRange (Breakpoint_t* pBP, int nVal, int nSize)
 	default:
 		_ASSERT(0);
 		break;
+	}
+
+	if (!bStatus)
+		return false;
+
+	// Now check the range (at 256 byte intervals) with full addr prefix
+	WORD checkAddr = nVal;
+	while (checkAddr < (nVal + nSize))
+	{
+		bStatus = _CheckBreakpointValueWithPrefix(pBP, checkAddr);
+		if (bStatus)
+			break;
+		checkAddr += _6502_PAGE_SIZE;
 	}
 
 	return bStatus;
@@ -1534,6 +1542,7 @@ static int CheckBreakpointsDmaToOrFromIOMemory (void)
 	return res;
 }
 
+// Only called by Hardisk.cpp
 void DebuggerBreakOnDmaToOrFromIoMemory (WORD nAddress, bool isDmaToMemory)
 {
 	g_DebugBreakOnDMAIO.isToOrFromMemory = isDmaToMemory ? BP_DMA_TO_IO_MEM : BP_DMA_FROM_IO_MEM;

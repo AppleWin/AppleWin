@@ -244,16 +244,16 @@
 		bool                 bHit     ; // true when the breakpoint has just been hit
 		bool                 bStop    ; // true if the debugger stops when it is hit
 		uint32_t             nHitCount; // number of times the breakpoint was hit
-		BYTE                 slot;		// (-1: not valid)
-		WORD                 bank;		// (-1: not valid) RamWorks: 00-FF, Saturn: 0-7
-		BYTE                 langCard;	// (-1: not valid) LC 4K bank: 1 or 2
+		int                  slot;		// (-1: not valid)
+		int                  bank;		// (-1: not valid) RamWorks: 00-FF, Saturn: 0-7
+		int                  langCard;	// (-1: not valid) LC 4K bank: 1 or 2
 		bool                 isROM;
 
 		//
 
-		static const BYTE kSlotInvalid = 0xFF;
-		static const WORD kBankInvalid = 0xFFFF;
-		static const BYTE kLangCardInvalid = 0xFF;
+		static const int kSlotInvalid = -1;
+		static const int kBankInvalid = -1;
+		static const int kLangCardInvalid = -1;
 	};
 
 	typedef Breakpoint_t Bookmark_t;
