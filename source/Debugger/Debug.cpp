@@ -1189,10 +1189,7 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 
 	// Apply any prefix filters
 
-	const int ramworksActiveBank = GetRamWorksActiveBank() + 1;	// [0x01..0x100]
-	const int saturnBank = pBP->slot != Breakpoint_t::kSlotInvalid && pBP->bank != Breakpoint_t::kBankInvalid ? pBP->bank : Breakpoint_t::kSlotInvalid;
-	const int saturnActiveBank = GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->GetActiveBank();
-	const bool noRamworksOrSaturnBank = pBP->slot == Breakpoint_t::kSlotInvalid && pBP->bank == Breakpoint_t::kBankInvalid;
+	const UINT ramworksActiveBank = GetRamWorksActiveBank() + 1;	// [0x01..0x100]
 
 	if (nVal <= _6502_STACK_END)
 	{
@@ -1243,12 +1240,18 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 	}
 	else if (0xD000 <= nVal && nVal <= _6502_MEM_END)
 	{
+		const bool noRamworksOrSaturnBank = pBP->slot == Breakpoint_t::kSlotInvalid && pBP->bank == Breakpoint_t::kBankInvalid;
+
+		const UINT saturnActiveSlot = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC();
+		const UINT saturnActiveBank = GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->GetActiveBank();
+		const int saturnBank = pBP->slot != Breakpoint_t::kSlotInvalid && pBP->bank != Breakpoint_t::kBankInvalid ? pBP->bank : Breakpoint_t::kBankInvalid;
+
 		if (GetMemMode() & MF_HIGHRAM)
 		{
 			if (noRamworksOrSaturnBank
 				|| (saturnBank < 0 && pBP->bank == 0x00 && !(GetMemMode() & MF_ALTZP))
 				|| (saturnBank < 0 && pBP->bank == ramworksActiveBank && (GetMemMode() & MF_ALTZP))
-				|| (saturnBank >= 0 && saturnBank == saturnActiveBank && !(GetMemMode() & MF_ALTZP)))
+				|| (pBP->slot == saturnActiveSlot && saturnBank == saturnActiveBank && !(GetMemMode() & MF_ALTZP)))
 			{
 				if ((pBP->langCard == Breakpoint_t::kLangCardInvalid)
 					|| (pBP->langCard == 1 && !(GetMemMode() & MF_BANK2))
@@ -1265,7 +1268,11 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 		}
 		else // ROM switched in
 		{
-			bStatus = true;
+			if (!noRamworksOrSaturnBank
+				|| (pBP->langCard != Breakpoint_t::kLangCardInvalid))
+				bStatus = false;
+			else
+				bStatus = true;
 		}
 	}
 	else
