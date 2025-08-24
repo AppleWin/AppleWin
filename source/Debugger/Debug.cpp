@@ -87,7 +87,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static int           g_bDebugBreakpointHit = 0;       // See: BreakpointHit_t
 	static Breakpoint_t *g_pDebugBreakpointHit = nullptr;
 
-	static std::string g_breakMemoryFullPrefixAddr;
+	static std::string g_sBreakMemoryFullPrefixAddr;
 	static int g_breakpointHitID = -1;
 
 	int          g_nBreakpoints = 0;
@@ -1427,7 +1427,7 @@ int CheckBreakpointsIO ()
 						{
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
-								g_breakMemoryFullPrefixAddr = GetFullPrefixAddrForBreakpoint(pBP, (WORD)nAddress, false);
+								g_sBreakMemoryFullPrefixAddr = GetFullPrefixAddrForBreakpoint(pBP, (WORD)nAddress, false);	// string is last BP hit
 								BYTE opcode = ReadByteFromMemory(regs.pc);
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
@@ -8928,6 +8928,14 @@ static void UpdateLBR (void)
 		g_LBR = regs.pc;
 }
 
+static std::string GetBreakpointHitIdString(int id)
+{
+	std::string hitId = CHC_DEFAULT "[" CHC_ARG_SEP "B#" CHC_NUM_HEX "-" CHC_DEFAULT "]"; // "[B#-]";
+	if (id != -1)
+		hitId = StrFormat(CHC_DEFAULT "[" CHC_ARG_SEP "B#" CHC_NUM_HEX "%01X" CHC_DEFAULT "]", id);
+	return hitId;
+}
+
 void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 {
 	static bool bForceSingleStepNext = false; // Allow at least one instruction to execute so we don't trigger on the same invalid opcode
@@ -9030,11 +9038,11 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 				}
 			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
-				stopReason = StrFormat("Memory access at %s", g_breakMemoryFullPrefixAddr.c_str());
+				stopReason = StrFormat("Memory access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMW)
-				stopReason = StrFormat("Write access at %s", g_breakMemoryFullPrefixAddr.c_str());
+				stopReason = StrFormat("Write access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMR)
-				stopReason = StrFormat("Read access at %s", g_breakMemoryFullPrefixAddr.c_str());
+				stopReason = StrFormat("Read access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				stopReason = "PC reads from floating bus or I/O memory";
 			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
@@ -9051,10 +9059,8 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 
 			if (!skipStopReason)
 			{
-				std::string hitID = CHC_DEFAULT "[" CHC_ARG_SEP "B#" CHC_NUM_HEX "-" CHC_DEFAULT "]"; // "[B#-]";
-				if (g_breakpointHitID != -1)
-					hitID = StrFormat(CHC_DEFAULT "[" CHC_ARG_SEP "B#" CHC_NUM_HEX "%01X" CHC_DEFAULT "]", g_breakpointHitID);
-				ConsolePrintFormat(CHC_INFO "Stop reason: %s " CHC_DEFAULT "%s", hitID.c_str(), stopReason.c_str());
+				std::string hitId = GetBreakpointHitIdString(g_breakpointHitID);
+				ConsolePrintFormat(CHC_INFO "Stop reason: %s " CHC_DEFAULT "%s", hitId.c_str(), stopReason.c_str());
 				g_breakpointHitID = -1;
 			}
 
@@ -9064,10 +9070,11 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 				if (nDebugBreakpointHit)
 				{
 					if (nDebugBreakpointHit & BP_DMA_TO_MEM)
-						stopReason = StrFormat("HDD DMA to memory " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_ARG_SEP "-" CHC_ADDRESS "%04X" CHC_DEFAULT " (breakpoint %s#%s%d%s)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, CHC_ARG_SEP, CHC_NUM_HEX, g_DebugBreakOnDMA[i].BPid, CHC_DEFAULT);
+						stopReason = StrFormat("HDD DMA to memory " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_ARG_SEP "-" CHC_ADDRESS "%04X", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd);
 					else if (nDebugBreakpointHit & BP_DMA_FROM_MEM)
-						stopReason = StrFormat("HDD DMA from memory " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_ARG_SEP "-" CHC_ADDRESS "%04X" CHC_DEFAULT " (breakpoint %s#%s%d%s)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, CHC_ARG_SEP, CHC_NUM_HEX, g_DebugBreakOnDMA[i].BPid, CHC_DEFAULT);
-					ConsolePrintFormat( CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str() );
+						stopReason = StrFormat("HDD DMA from memory " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_ARG_SEP "-" CHC_ADDRESS "%04X", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd);
+					std::string hitId = GetBreakpointHitIdString(g_DebugBreakOnDMA[i].BPid);
+					ConsolePrintFormat(CHC_INFO "Stop reason: %s " CHC_DEFAULT "%s", hitId.c_str(), stopReason.c_str());
 				}
 			}
 
