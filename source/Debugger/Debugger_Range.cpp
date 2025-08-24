@@ -71,9 +71,9 @@ RangeType_t Range_GetPrefix(const int iArg, Breakpoint_t* pBP)
 	}
 	else // bank (RamWorks or Saturn)
 	{
-		if (g_aArgs[iArg].nValue > 0xff)
+		if (g_aArgs[iArg].nValue > 0x100)	// Permit 00-100
 		{
-			ConsoleDisplayError("Address prefix bad: Use bank 0-FF (or 0-7 for Saturn).");
+			ConsoleDisplayError("Address prefix bad: Use bank 0-100 (or 0-7 for Saturn).");
 			return RANGE_PREFIX_BAD;
 		}
 		pBP->bank = g_aArgs[iArg].nValue;

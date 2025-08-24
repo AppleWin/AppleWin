@@ -2133,10 +2133,10 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD address, bool padding)
 {
 	char szSlot[] = "sN/";
-	char szBank[] = "NN/";
+	char szBank[] = "bbb/";
 	char szLangCard[] = "lN/";
-	int prefixPad = 0;	// whitespace padding
-	std::string prefix = CHC_INFO;	// "sN/bb/lN/" (9 chars) or "ROM/"
+	int prefixPad = 1;	// whitespace padding
+	std::string prefix = CHC_INFO;	// "sN/bbb/lN/" (10 chars) or "ROM/"
 
 	if (pBP->slot != Breakpoint_t::kSlotInvalid)
 	{
@@ -2150,9 +2150,19 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 
 	if (pBP->bank != Breakpoint_t::kBankInvalid)
 	{
-		sprintf_s(szBank, "%02X", pBP->bank);
-		szBank[2] = '/';
-		szBank[3] = 0;
+		if (pBP->bank < 0x100)
+		{
+			sprintf_s(szBank, "%02X", pBP->bank);
+			szBank[2] = '/';
+			szBank[3] = 0;
+		}
+		else
+		{
+			sprintf_s(szBank, "%03X", pBP->bank);
+			szBank[3] = '/';
+			szBank[4] = 0;
+			prefixPad--;
+		}
 		prefix += szBank;
 	}
 	else
@@ -2173,7 +2183,7 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 	if (pBP->isROM)
 	{
 		prefix += "ROM/";
-		prefixPad = 5;	// 9 chars in total
+		prefixPad = 6;	// 10 chars in total
 	}
 
 	std::string prefixFinal;
@@ -2241,7 +2251,7 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 
 void _BWZ_ListAll ( const Breakpoint_t * aBreakWatchZero, const int nMax )
 {
-	ConsolePrintFormat( "  ID On Stop Temp HitCounter   Prefix/Addr Mem Symbol" );
+	ConsolePrintFormat( "  ID On Stop Temp HitCounter    Prefix/Addr Mem Symbol" );
 
 	int iBWZ = 0;
 	while (iBWZ < nMax)
