@@ -274,9 +274,10 @@ int	ArgsGet ( char * pInput )
 				pEnd = SkipUntilToken( pSrc+1, g_aTokens, NUM_TOKENS, &iTokenEnd );
 			}
 
-			if (iTokenSrc == TOKEN_COMMENT_EOL)
-				break; //pArg->eToken = iTokenSrc;
-			
+			if ((iTokenSrc == TOKEN_COMMENT_EOL) ||
+				(iArg == 0 && iTokenSrc == TOKEN_DIVIDE_FLOOR))	// Double FSLASH at start of line
+					break; //pArg->eToken = iTokenSrc;
+
 			if (iTokenSrc == NO_TOKEN)
 			{
 				iTokenSrc = TOKEN_ALPHANUMERIC;
