@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger
  *
- * Author: Copyright (C) 2006-2010 Michael Pohoreski
+ * Author: Copyright (C) 2006-2025 Michael Pohoreski
  */
 
 // disable warning C4786: symbol greater than 255 character:
@@ -6178,6 +6178,37 @@ Update_t CmdOutputEcho (int nArgs)
 	return ConsoleUpdate();
 }
 
+//===========================================================================
+Update_t CmdOutputLog (int nArgs)
+{
+	int iParam;
+
+	if (nArgs == 1)
+	{
+		int nFound = FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_LOG_BEGIN, _PARAM_LOG_END );
+		if (nFound)
+		{
+			int eLevel = iParam - _PARAM_LOG_BEGIN;
+			if ((eLevel >= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_NONE)
+			&&  (eLevel <= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL ))
+			{
+				ConsoleOutputLevelSet( (ConsoleOutputLevel_e)eLevel );
+			}
+		}
+	}
+	else
+	{
+		// Display the current console ouput level logging
+		// We need to push/pop the current level since we also need to display this
+		ConsoleOutputLevel_e eLevel = ConsoleOutputLevelGet();
+		ConsoleOutputLevelSet( ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL );
+			iParam = _PARAM_LOG_BEGIN + eLevel;
+			ConsolePrintFormat( "Output level set to " CHC_COMMAND "%s", g_aParameters[ iParam ].m_sName );
+		ConsoleOutputLevelSet( eLevel );
+	}
+
+	return ConsoleUpdate();
+}
 
 enum PrintState_e
 {	  PS_LITERAL
@@ -9052,7 +9083,7 @@ void DebugInitialize ()
 		}
 	}
 
-	ConsoleSetOutputLevel( ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL );
+	ConsoleOutputLevelSet( ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL );
 
 	CmdMOTD(0);
 }

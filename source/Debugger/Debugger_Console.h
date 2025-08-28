@@ -362,14 +362,6 @@
 	Update_t ConsoleUpdate       ();
 	void     ConsoleFlush        ();
 
-	// ErrorLevel
-	inline void ConsoleSetOutputLevel (ConsoleOutputLevel_e eOutputLevel)
-	{
-		assert( eOutputLevel >= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_NONE );
-		assert( eOutputLevel <= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL  );
-		g_eConsoleOutputLevel = eOutputLevel;
-	}
-
 	// Input
 	const char *ConsoleInputPeek      ();
 	bool     ConsoleInputClear     ();
@@ -381,6 +373,18 @@
 	void     ConsoleUpdateCursor( char ch );
 
 	Update_t ConsoleBufferTryUnpause (int nLines);
+
+	// Output Level
+	inline ConsoleOutputLevel_e ConsoleOutputLevelGet ()
+	{
+		return g_eConsoleOutputLevel;
+	}
+	inline void ConsoleOutputLevelSet (ConsoleOutputLevel_e eOutputLevel)
+	{
+		assert( eOutputLevel >= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_NONE );
+		assert( eOutputLevel <= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL  );
+		g_eConsoleOutputLevel = eOutputLevel;
+	}
 
 	// Scrolling
 	Update_t ConsoleScrollHome   ();

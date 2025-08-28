@@ -471,6 +471,7 @@
 // Output
 		, CMD_OUTPUT_CALC
 		, CMD_OUTPUT_ECHO
+		, CMD_OUTPUT_LOG
 		, CMD_OUTPUT_PRINT
 		, CMD_OUTPUT_PRINTF
 		, CMD_OUTPUT_RUN
@@ -741,6 +742,7 @@
 // Output/Scripts
 	Update_t CmdOutputCalc         (int nArgs);
 	Update_t CmdOutputEcho         (int nArgs);
+	Update_t CmdOutputLog          (int nArgs);
 	Update_t CmdOutputPrint        (int nArgs);
 	Update_t CmdOutputPrintf       (int nArgs);
 	Update_t CmdOutputRun          (int nArgs);
@@ -1464,7 +1466,18 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 	, _PARAM_HELPCATEGORIES_END
 	,  PARAM_HELPCATEGORIES_NUM = _PARAM_HELPCATEGORIES_END - _PARAM_HELPCATEGORIES_BEGIN
 
-	, _PARAM_MEM_SEARCH_BEGIN = _PARAM_HELPCATEGORIES_END  // Daisy Chain
+	, _PARAM_LOG_BEGIN = _PARAM_HELPCATEGORIES_END // Daisy Chain
+		// Console Output Levels aka Error Levels
+		, PARAM_LOG_NONE = _PARAM_LOG_BEGIN
+		, PARAM_LOG_GENERIC
+		, PARAM_LOG_INFO
+		, PARAM_LOG_WARN
+		, PARAM_LOG_ERROR
+		, PARAM_LOG_ALL
+	, _PARAM_LOG_END
+	,  PARAM_LOG_NUM = _PARAM_LOG_END - _PARAM_LOG_BEGIN
+
+	, _PARAM_MEM_SEARCH_BEGIN = _PARAM_LOG_END  // Daisy Chain
 		, PARAM_MEM_SEARCH_WILD = _PARAM_MEM_SEARCH_BEGIN
 //		, PARAM_MEM_SEARCH_BYTE
 	, _PARAM_MEM_SEARCH_END
