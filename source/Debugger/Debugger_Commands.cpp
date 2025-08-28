@@ -320,6 +320,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{"ZPL"         , CmdZeroPageList      , CMD_ZEROPAGE_POINTER_LIST  , "List all zero page pointers"            },
 //		{"ZPLOAD"      , CmdZeroPageLoad      , CMD_ZEROPAGE_POINTER_LOAD  , "Load zero page pointers"                }, // Cant use as param to ZP
 		{"ZPSAVE"      , CmdZeroPageSave      , CMD_ZEROPAGE_POINTER_SAVE  , "Save zero page pointers"                }, // due to symbol look-up
+	// Startup/Shutdown
+		{"STARTUP"     , CmdDebugStartup      , CMD_STARTUP              , "Run debugger startup scripts"          },
 
 //	{"TIMEDEMO",CmdTimeDemo, CMD_TIMEDEMO }, // CmdBenchmarkStart(), CmdBenchmarkStop()
 //	{"WC",CmdShowCodeWindow}, // Can't use since WatchClear

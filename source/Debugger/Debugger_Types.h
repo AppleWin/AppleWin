@@ -582,6 +582,9 @@
 //		, CMD_ZEROPAGE_POINTER_LOAD
 		, CMD_ZEROPAGE_POINTER_SAVE
 
+// Startup/Shutdown
+		, CMD_STARTUP
+
 		, NUM_COMMANDS
 
 		, _CMD_MEM_MINI_DUMP_HEX_1_1 // Memory Dump
@@ -848,6 +851,8 @@
 	Update_t CmdZeroPageSave       (int nArgs);
 	Update_t CmdZeroPagePointer    (int nArgs);
 
+// Startup/Shutdown
+	Update_t CmdDebugStartup       (int nArgs);
 
 // Cursor _________________________________________________________________________________________
 	enum Cursor_Align_e

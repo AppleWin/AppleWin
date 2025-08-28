@@ -8847,11 +8847,7 @@ void DebugDestroy ()
 //	DeleteObject(g_hFontDebugger);
 //	DeleteObject(g_hFontWebDings);
 
-	// TODO: Symbols_Clear()
-	for ( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
-	{
-		_CmdSymbolsClear( (SymbolTable_Index_e) iTable );
-	}
+	SymbolsClear();
 	// TODO: DataDisassembly_Clear()
 
 	ReleaseConsoleFontDC();
@@ -8934,32 +8930,7 @@ void DebugInitialize ()
 	memset( g_aZeroPagePointers, 0, MAX_ZEROPAGE_POINTERS * sizeof(ZeroPagePointers_t));
 	g_nZeroPagePointers = 0;
 
-	// Load Main, Applesoft, and User Symbols
-	g_bSymbolsDisplayMissingFile = false;
-
-	g_iCommand = CMD_SYMBOLS_ROM;
-	CmdSymbolsLoad(0);
-
-	g_iCommand = CMD_SYMBOLS_APPLESOFT;
-	CmdSymbolsLoad(0);
-
-	// 2.9.2.5 Added: Symbol table A2_DOS33.SYM2
-	g_iCommand = CMD_SYMBOLS_DOS33;
-	CmdSymbolsLoad(0);
-
-	// ,0x7,0xFF // Treat zero-page as data
-	// $00 GOWARM   JSR ...
-	// $01 LOC1 DW
-	// $03 GOSTROUT JSR ...
-	// $07..$B0
-	// $B1 CHRGET
-	// $C8
-	// $C9 RNDSEED DW
-	// $D0..$FF
-
-	g_iCommand = CMD_SYMBOLS_USER_1;
-	CmdSymbolsLoad(0);
-
+	CmdDebugStartup(0);
 	g_bSymbolsDisplayMissingFile = true;
 
 #if OLD_FONT
@@ -9081,6 +9052,8 @@ void DebugInitialize ()
 		}
 	}
 
+	ConsoleSetOutputLevel( ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL );
+
 	CmdMOTD(0);
 }
 
@@ -9089,6 +9062,44 @@ void DebugReset (void)
 {
 	g_videoScannerDisplayInfo.Reset();
 	g_LBR = LBR_UNDEFINED;
+}
+
+
+// Load debugger script files
+// Called from DebugInitialize()
+// User can also call
+//===========================================================================
+Update_t CmdDebugStartup (int nArgs)
+{
+	SymbolsClear();
+
+	// Load Main, Applesoft, and User Symbols
+	g_bSymbolsDisplayMissingFile = false;
+
+	g_iCommand = CMD_SYMBOLS_ROM;
+	CmdSymbolsLoad(0);
+
+	g_iCommand = CMD_SYMBOLS_APPLESOFT;
+	CmdSymbolsLoad(0);
+
+	// 2.9.2.5 Added: Symbol table A2_DOS33.SYM2
+	g_iCommand = CMD_SYMBOLS_DOS33;
+	CmdSymbolsLoad(0);
+
+	// ,0x7,0xFF // Treat zero-page as data
+	// $00 GOWARM   JSR ...
+	// $01 LOC1 DW
+	// $03 GOSTROUT JSR ...
+	// $07..$B0
+	// $B1 CHRGET
+	// $C8
+	// $C9 RNDSEED DW
+	// $D0..$FF
+
+	g_iCommand = CMD_SYMBOLS_USER_1;
+	CmdSymbolsLoad(0);
+
+	return UPDATE_NOTHING;
 }
 
 // Add character to the input line
