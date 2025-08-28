@@ -870,6 +870,14 @@ Update_t _CmdSymbolsClear( SymbolTable_Index_e eSymbolTable )
 	return UPDATE_SYMBOLS;
 }
 
+//===========================================================================
+void SymbolsClear ()
+{
+	for ( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
+	{
+		_CmdSymbolsClear( (SymbolTable_Index_e) iTable );
+	}
+}
 
 //===========================================================================
 void SymbolUpdate ( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, WORD nAddress, bool bRemoveSymbol, bool bUpdateSymbol )
