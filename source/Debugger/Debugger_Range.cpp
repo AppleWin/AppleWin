@@ -61,7 +61,7 @@ RangeType_t Range_GetPrefix(const int iArg, Breakpoint_t* pBP)
 		pBP->nLangCard = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. l1 or lc1
 		if (pBP->nLangCard < 1 || pBP->nLangCard > 2)
 		{
-			ConsoleDisplayError("Address prefix out-of-range: Use lc 1 or 2.");
+			ConsoleDisplayError("Address prefix out-of-range. Use lc 1 or 2.");
 			return RANGE_PREFIX_BAD;
 		}
 	}
@@ -73,7 +73,7 @@ RangeType_t Range_GetPrefix(const int iArg, Breakpoint_t* pBP)
 	{
 		if (g_aArgs[iArg].nValue > 0x100)	// Permit 00-100
 		{
-			ConsoleDisplayError("Address prefix out-of-range: Use bank 0-100 (or 0-7 for Saturn).");
+			ConsoleDisplayError("Address prefix out-of-range. Use bank 0-100 (or 0-7 for Saturn).");
 			return RANGE_PREFIX_BAD;
 		}
 		pBP->nBank = g_aArgs[iArg].nValue;

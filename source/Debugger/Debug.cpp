@@ -9215,6 +9215,7 @@ void DebugInitialize ()
 	WindowUpdateConsoleDisplayedSize();
 
 	// CLEAR THE BREAKPOINT AND WATCH TABLES
+	g_breakpointHitID = -1;
 	for (int i = 0; i < MAX_BREAKPOINTS; i++)
 		g_aBreakpoints[i].Clear();
 	g_nBreakpoints = 0;
