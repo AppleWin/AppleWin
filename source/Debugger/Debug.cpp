@@ -1177,10 +1177,10 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 	bool isWrite = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_WRITE_ONLY;
 
 	// If no prefix filters, then BP hit
-	if (pBP->slot == Breakpoint_t::kSlotInvalid
-		&& pBP->bank == Breakpoint_t::kBankInvalid
-		&& pBP->langCard == Breakpoint_t::kLangCardInvalid
-		&& pBP->isROM == false)
+	if (pBP->nSlot == Breakpoint_t::kSlotInvalid
+		&& pBP->nBank == Breakpoint_t::kBankInvalid
+		&& pBP->nLangCard == Breakpoint_t::kLangCardInvalid
+		&& pBP->bIsROM == false)
 		return true;
 
 	// Prefix filters only apply for BP_OP_EQUAL operation (for now)
@@ -1193,24 +1193,24 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 
 	if (nVal <= _6502_STACK_END)
 	{
-		if ((pBP->bank == 0x00 && !(GetMemMode() & MF_ALTZP))
-			|| (pBP->bank == ramworksActiveBank && (GetMemMode() & MF_ALTZP)))
+		if ((pBP->nBank == 0x00 && !(GetMemMode() & MF_ALTZP))
+			|| (pBP->nBank == ramworksActiveBank && (GetMemMode() & MF_ALTZP)))
 		{
 			bStatus = true;
 		}
 	}
 	else if (TEXT_PAGE1_BEGIN <= nVal && nVal <= 0x7FF && (GetMemMode() & MF_80STORE))
 	{
-		if ((pBP->bank == 0x00 && !(GetMemMode() & MF_PAGE2))
-			|| (pBP->bank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
+		if ((pBP->nBank == 0x00 && !(GetMemMode() & MF_PAGE2))
+			|| (pBP->nBank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
 		{
 			bStatus = true;
 		}
 	}
 	else if (HGR_PAGE1_BEGIN <= nVal && nVal <= 0x3FFF && ((GetMemMode() & (MF_80STORE | MF_HIRES)) == (MF_80STORE | MF_HIRES)))
 	{
-		if ((pBP->bank == 0x00 && !(GetMemMode() & MF_PAGE2))
-			|| (pBP->bank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
+		if ((pBP->nBank == 0x00 && !(GetMemMode() & MF_PAGE2))
+			|| (pBP->nBank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
 		{
 			bStatus = true;
 		}
@@ -1219,16 +1219,16 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 	{
 		if (isRead)
 		{
-			if ((pBP->bank == 0x00 && !(GetMemMode() & MF_AUXREAD))
-				|| (pBP->bank == ramworksActiveBank && (GetMemMode() & MF_AUXREAD)))
+			if ((pBP->nBank == 0x00 && !(GetMemMode() & MF_AUXREAD))
+				|| (pBP->nBank == ramworksActiveBank && (GetMemMode() & MF_AUXREAD)))
 			{
 				bStatus = true;
 			}
 		}
 		if (isWrite)
 		{
-			if ((pBP->bank == 0x00 && !(GetMemMode() & MF_AUXWRITE))
-				|| (pBP->bank == ramworksActiveBank && (GetMemMode() & MF_AUXWRITE)))
+			if ((pBP->nBank == 0x00 && !(GetMemMode() & MF_AUXWRITE))
+				|| (pBP->nBank == ramworksActiveBank && (GetMemMode() & MF_AUXWRITE)))
 			{
 				bStatus = true;
 			}
@@ -1240,25 +1240,25 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 	}
 	else if (0xD000 <= nVal && nVal <= _6502_MEM_END)
 	{
-		const bool noRamworksOrSaturnBank = pBP->slot == Breakpoint_t::kSlotInvalid && pBP->bank == Breakpoint_t::kBankInvalid;
+		const bool noRamworksOrSaturnBank = pBP->nSlot == Breakpoint_t::kSlotInvalid && pBP->nBank == Breakpoint_t::kBankInvalid;
 
 		const UINT saturnActiveSlot = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC();
 		const UINT saturnActiveBank = GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->GetActiveBank();
-		const int saturnBank = pBP->slot != Breakpoint_t::kSlotInvalid && pBP->bank != Breakpoint_t::kBankInvalid ? pBP->bank : Breakpoint_t::kBankInvalid;
+		const int saturnBank = pBP->nSlot != Breakpoint_t::kSlotInvalid && pBP->nBank != Breakpoint_t::kBankInvalid ? pBP->nBank : Breakpoint_t::kBankInvalid;
 
 		if (GetMemMode() & MF_HIGHRAM)
 		{
 			if (noRamworksOrSaturnBank
-				|| (saturnBank < 0 && pBP->bank == 0x00 && !(GetMemMode() & MF_ALTZP))
-				|| (saturnBank < 0 && pBP->bank == ramworksActiveBank && (GetMemMode() & MF_ALTZP))
-				|| (pBP->slot == saturnActiveSlot && saturnBank == saturnActiveBank && !(GetMemMode() & MF_ALTZP)))
+				|| (saturnBank < 0 && pBP->nBank == 0x00 && !(GetMemMode() & MF_ALTZP))
+				|| (saturnBank < 0 && pBP->nBank == ramworksActiveBank && (GetMemMode() & MF_ALTZP))
+				|| (pBP->nSlot == saturnActiveSlot && saturnBank == saturnActiveBank && !(GetMemMode() & MF_ALTZP)))
 			{
-				if ((pBP->langCard == Breakpoint_t::kLangCardInvalid)
-					|| (pBP->langCard == 1 && !(GetMemMode() & MF_BANK2))
-					|| (pBP->langCard == 2 && (GetMemMode() & MF_BANK2))
+				if ((pBP->nLangCard == Breakpoint_t::kLangCardInvalid)
+					|| (pBP->nLangCard == 1 && !(GetMemMode() & MF_BANK2))
+					|| (pBP->nLangCard == 2 && (GetMemMode() & MF_BANK2))
 					|| (nVal >= 0xE000))
 				{
-					if (pBP->isROM == false)		// isROM==false means "don't care" whether it's ROM or not
+					if (pBP->bIsROM == false)		// isROM==false means "don't care" whether it's ROM or not
 					{
 						if (isRead || isWrite && (GetMemMode() & MF_WRITERAM))
 							bStatus = true;
@@ -1269,7 +1269,7 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 		else // ROM switched in
 		{
 			if (!noRamworksOrSaturnBank
-				|| (pBP->langCard != Breakpoint_t::kLangCardInvalid))
+				|| (pBP->nLangCard != Breakpoint_t::kLangCardInvalid))
 				bStatus = false;
 			else
 				bStatus = true;
@@ -1783,22 +1783,22 @@ int _CmdBreakpointAddCommonArg ( const int nArg, int iArg, BreakpointSource_t iS
 
 		// Got all prefixes, so do some checks:
 
-		if (pBP->isROM &&
-			(pBP->slot != Breakpoint_t::kSlotInvalid || pBP->bank != Breakpoint_t::kBankInvalid || pBP->langCard != Breakpoint_t::kLangCardInvalid))
+		if (pBP->bIsROM &&
+			(pBP->nSlot != Breakpoint_t::kSlotInvalid || pBP->nBank != Breakpoint_t::kBankInvalid || pBP->nLangCard != Breakpoint_t::kLangCardInvalid))
 		{
 			ConsoleDisplayError("Address prefix bad: 'r/' not permitted with other prefixes.");
 			return 0;	// error
 		}
 
-		if (pBP->slot != Breakpoint_t::kSlotInvalid)	// Currently setting a slot# means Saturn card
+		if (pBP->nSlot != Breakpoint_t::kSlotInvalid)	// Currently setting a slot# means Saturn card
 		{
-			if (pBP->bank != Breakpoint_t::kBankInvalid && pBP->bank > 7)
+			if (pBP->nBank != Breakpoint_t::kBankInvalid && pBP->nBank > 7)
 			{
 				ConsoleDisplayError("Address prefix bad: Saturn only supports banks 0-7.");
 				return 0;	// error
 			}
 
-			if (GetCardMgr().QuerySlot(pBP->slot) != CT_Saturn128K)
+			if (GetCardMgr().QuerySlot(pBP->nSlot) != CT_Saturn128K)
 			{
 				ConsoleDisplayError("Address prefix bad: No Saturn in slot.");
 				return 0;	// error
@@ -1806,7 +1806,7 @@ int _CmdBreakpointAddCommonArg ( const int nArg, int iArg, BreakpointSource_t iS
 		}
 		else // No slot# specified, so aux slot (for Extended 80Col or RamWorks card)
 		{
-			if (pBP->bank != Breakpoint_t::kBankInvalid)
+			if (pBP->nBank != Breakpoint_t::kBankInvalid)
 			{
 				if (!IsAppleIIeOrAbove(GetApple2Type()))
 				{
@@ -2138,9 +2138,9 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 	int prefixPad = 1;	// whitespace padding
 	std::string prefix = CHC_INFO;	// "sN/bbb/lN/" (10 chars) or "ROM/"
 
-	if (pBP->slot != Breakpoint_t::kSlotInvalid)
+	if (pBP->nSlot != Breakpoint_t::kSlotInvalid)
 	{
-		szSlot[1] = pBP->slot + '0';
+		szSlot[1] = pBP->nSlot + '0';
 		prefix += szSlot;
 	}
 	else
@@ -2148,17 +2148,17 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 		prefixPad += 3;
 	}
 
-	if (pBP->bank != Breakpoint_t::kBankInvalid)
+	if (pBP->nBank != Breakpoint_t::kBankInvalid)
 	{
-		if (pBP->bank < 0x100)
+		if (pBP->nBank < 0x100)
 		{
-			sprintf_s(szBank, "%02X", pBP->bank);
+			sprintf_s(szBank, "%02X", pBP->nBank);
 			szBank[2] = '/';
 			szBank[3] = 0;
 		}
 		else
 		{
-			sprintf_s(szBank, "%03X", pBP->bank);
+			sprintf_s(szBank, "%03X", pBP->nBank);
 			szBank[3] = '/';
 			szBank[4] = 0;
 			prefixPad--;
@@ -2170,9 +2170,9 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 		prefixPad += 3;
 	}
 
-	if (pBP->langCard != Breakpoint_t::kLangCardInvalid)
+	if (pBP->nLangCard != Breakpoint_t::kLangCardInvalid)
 	{
-		szLangCard[1] = pBP->langCard + '0';
+		szLangCard[1] = pBP->nLangCard + '0';
 		prefix += szLangCard;
 	}
 	else
@@ -2180,7 +2180,7 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 		prefixPad += 3;
 	}
 
-	if (pBP->isROM)
+	if (pBP->bIsROM)
 	{
 		prefix += "ROM/";
 		prefixPad = 6;	// 10 chars in total

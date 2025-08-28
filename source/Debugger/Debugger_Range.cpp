@@ -48,8 +48,8 @@ RangeType_t Range_GetPrefix(const int iArg, Breakpoint_t* pBP)
 	if (tolower(g_aArgs[iArg].sArg[0]) == 's')	// slot
 	{
 		int len = strlen(g_aArgs[iArg].sArg);
-		pBP->slot = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. s1 or sl1 or slot1
-		if (pBP->slot > 7)
+		pBP->nSlot = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. s1 or sl1 or slot1
+		if (pBP->nSlot > 7)
 		{
 			ConsoleDisplayError("Address prefix bad: Use slot 0-7.");
 			return RANGE_PREFIX_BAD;
@@ -58,8 +58,8 @@ RangeType_t Range_GetPrefix(const int iArg, Breakpoint_t* pBP)
 	else if (tolower(g_aArgs[iArg].sArg[0]) == 'l')	// LC
 	{
 		int len = strlen(g_aArgs[iArg].sArg);
-		pBP->langCard = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. l1 or lc1
-		if (pBP->langCard < 1 || pBP->langCard > 2)
+		pBP->nLangCard = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. l1 or lc1
+		if (pBP->nLangCard < 1 || pBP->nLangCard > 2)
 		{
 			ConsoleDisplayError("Address prefix bad: Use lc 1 or 2.");
 			return RANGE_PREFIX_BAD;
@@ -67,7 +67,7 @@ RangeType_t Range_GetPrefix(const int iArg, Breakpoint_t* pBP)
 	}
 	else if (tolower(g_aArgs[iArg].sArg[0]) == 'r')	// ROM
 	{
-		pBP->isROM = true;
+		pBP->bIsROM = true;
 	}
 	else // bank (RamWorks or Saturn)
 	{
@@ -76,7 +76,7 @@ RangeType_t Range_GetPrefix(const int iArg, Breakpoint_t* pBP)
 			ConsoleDisplayError("Address prefix bad: Use bank 0-100 (or 0-7 for Saturn).");
 			return RANGE_PREFIX_BAD;
 		}
-		pBP->bank = g_aArgs[iArg].nValue;
+		pBP->nBank = g_aArgs[iArg].nValue;
 	}
 
 	return RANGE_PREFIX_OK;
