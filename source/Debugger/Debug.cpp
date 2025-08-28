@@ -1177,10 +1177,10 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 	bool isWrite = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_WRITE_ONLY;
 
 	// If no prefix filters, then BP hit
-	if (pBP->nSlot == Breakpoint_t::kSlotInvalid
-		&& pBP->nBank == Breakpoint_t::kBankInvalid
-		&& pBP->nLangCard == Breakpoint_t::kLangCardInvalid
-		&& pBP->bIsROM == false)
+	if (pBP->nSlot     == Breakpoint_t::kSlotInvalid
+	 && pBP->nBank     == Breakpoint_t::kBankInvalid
+	 && pBP->nLangCard == Breakpoint_t::kLangCardInvalid
+	 && pBP->bIsROM    == false)
 		return true;
 
 	// Prefix filters only apply for BP_OP_EQUAL operation (for now)
@@ -1240,7 +1240,7 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 	}
 	else if (0xD000 <= nVal && nVal <= _6502_MEM_END)
 	{
-		const bool noRamworksOrSaturnBank = pBP->nSlot == Breakpoint_t::kSlotInvalid && pBP->nBank == Breakpoint_t::kBankInvalid;
+		const bool bNoRamworksOrSaturnBank = pBP->nSlot == Breakpoint_t::kSlotInvalid && pBP->nBank == Breakpoint_t::kBankInvalid;
 
 		const UINT saturnActiveSlot = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC();
 		const UINT saturnActiveBank = GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->GetActiveBank();
@@ -1248,7 +1248,7 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 
 		if (GetMemMode() & MF_HIGHRAM)
 		{
-			if (noRamworksOrSaturnBank
+			if (bNoRamworksOrSaturnBank
 				|| (saturnBank < 0 && pBP->nBank == 0x00 && !(GetMemMode() & MF_ALTZP))
 				|| (saturnBank < 0 && pBP->nBank == ramworksActiveBank && (GetMemMode() & MF_ALTZP))
 				|| (pBP->nSlot == saturnActiveSlot && saturnBank == saturnActiveBank && !(GetMemMode() & MF_ALTZP)))
@@ -1268,7 +1268,7 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 		}
 		else // ROM switched in
 		{
-			if (!noRamworksOrSaturnBank
+			if (!bNoRamworksOrSaturnBank
 				|| (pBP->nLangCard != Breakpoint_t::kLangCardInvalid))
 				bStatus = false;
 			else
@@ -2132,16 +2132,16 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 //===========================================================================
 static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD address, bool padding)
 {
-	char szSlot[] = "sN/";
-	char szBank[] = "bbb/";
-	char szLangCard[] = "lN/";
+	char sSlot    [] = "sN/";	// Saturn slot
+	char sBank    [] = "bbb/";	// RamWorks bank
+	char sLangCard[] = "lN/";	// Language Card 4K bank
 	int prefixPad = 1;	// whitespace padding
 	std::string prefix = CHC_INFO;	// "sN/bbb/lN/" (10 chars) or "ROM/"
 
 	if (pBP->nSlot != Breakpoint_t::kSlotInvalid)
 	{
-		szSlot[1] = pBP->nSlot + '0';
-		prefix += szSlot;
+		sSlot[1] = pBP->nSlot + '0';
+		prefix += sSlot;
 	}
 	else
 	{
@@ -2152,18 +2152,18 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 	{
 		if (pBP->nBank < 0x100)
 		{
-			sprintf_s(szBank, "%02X", pBP->nBank);
-			szBank[2] = '/';
-			szBank[3] = 0;
+			sprintf_s(sBank, "%02X", pBP->nBank);
+			sBank[2] = '/';
+			sBank[3] = 0;
 		}
 		else
 		{
-			sprintf_s(szBank, "%03X", pBP->nBank);
-			szBank[3] = '/';
-			szBank[4] = 0;
+			sprintf_s(sBank, "%03X", pBP->nBank);
+			sBank[3] = '/';
+			sBank[4] = 0;
 			prefixPad--;
 		}
-		prefix += szBank;
+		prefix += sBank;
 	}
 	else
 	{
@@ -2172,8 +2172,8 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 
 	if (pBP->nLangCard != Breakpoint_t::kLangCardInvalid)
 	{
-		szLangCard[1] = pBP->nLangCard + '0';
-		prefix += szLangCard;
+		sLangCard[1] = pBP->nLangCard + '0';
+		prefix += sLangCard;
 	}
 	else
 	{
