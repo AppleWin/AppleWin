@@ -23,6 +23,16 @@
 		CONSOLE_FIRST_LINE = 1, // where ConsoleDisplay is pushed up from
 	};
 
+	enum ConsoleOutputLevel_e
+	{
+		 CONSOLE_OUTPUT_LEVEL_NONE    // log off (hide)
+		,CONSOLE_OUTPUT_LEVEL_GENERIC // TODO
+		,CONSOLE_OUTPUT_LEVEL_INFO	  // log info
+		,CONSOLE_OUTPUT_LEVEL_WARN    // log warn
+		,CONSOLE_OUTPUT_LEVEL_ERROR   // log error
+		,CONSOLE_OUTPUT_LEVEL_ALL     // log on	(show)
+	};
+
 // Color ____________________________________________________________________
 
 	// typedef unsigned char conchar_t;
@@ -235,6 +245,9 @@
 		extern int       g_nConsoleDisplayWidth  ;
 		extern conchar_t g_aConsoleDisplay[ CONSOLE_HEIGHT ][ CONSOLE_WIDTH ];
 
+	// Error Level
+		extern ConsoleOutputLevel_e g_eConsoleOutputLevel; // See: ConsoleSetOutputLevel()
+
 	// Input History
 		extern int   g_nHistoryLinesStart;// = 0;
 		extern int   g_nHistoryLinesTotal;// = 0; // number of commands entered
@@ -263,6 +276,25 @@
 	inline void ConsolePrintVa( const char* pFormat, va_list va )
 	{
 		std::string strText = StrFormatV(pFormat, va);
+		const char* text = strText.c_str();
+
+		if (strText.length())
+		{
+			ConsoleOutputLevel_e eConsoleOutputLevel = CONSOLE_OUTPUT_LEVEL_GENERIC;
+			const char *pHead = text;
+
+			while (*pHead && isspace( *pHead ))
+				pHead++;
+
+			if (*pHead == CONSOLE_COLOR_ESCAPE_CHAR)
+			{
+				if (pHead[1] == CHC_INFO   [1]) eConsoleOutputLevel = CONSOLE_OUTPUT_LEVEL_INFO ;
+				if (pHead[1] == CHC_WARNING[1]) eConsoleOutputLevel = CONSOLE_OUTPUT_LEVEL_WARN ;
+				if (pHead[1] == CHC_ERROR  [1]) eConsoleOutputLevel = CONSOLE_OUTPUT_LEVEL_ERROR;
+			}
+			if (eConsoleOutputLevel > g_eConsoleOutputLevel)
+				return;
+		}
 		ConsolePrint(strText.c_str());
 	}
 	inline void ConsolePrintFormat( const char* pFormat, ... ) ATTRIBUTE_FORMAT_PRINTF(1, 2);
@@ -329,6 +361,14 @@
 	void     ConsoleDisplayPush  ( const conchar_t * pText );
 	Update_t ConsoleUpdate       ();
 	void     ConsoleFlush        ();
+
+	// ErrorLevel
+	inline void ConsoleSetOutputLevel (ConsoleOutputLevel_e eOutputLevel)
+	{
+		assert( eOutputLevel >= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_NONE );
+		assert( eOutputLevel <= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL  );
+		g_eConsoleOutputLevel = eOutputLevel;
+	}
 
 	// Input
 	const char *ConsoleInputPeek      ();
