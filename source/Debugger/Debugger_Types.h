@@ -438,7 +438,7 @@
 		, CMD_HELP_SPECIFIC
 		, CMD_VERSION
 		, CMD_MOTD // Message of the Day
-// Memory		
+// Memory
 		, CMD_MEMORY_COMPARE
 
 		, CMD_MEM_MINI_DUMP_HEX_1 // Mini Memory Dump 1
@@ -1517,7 +1517,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 	, _PARAM_WINDOW_END
 	,  PARAM_WINDOW_NUM = _PARAM_WINDOW_END - _PARAM_WINDOW_BEGIN
 
-		, NUM_PARAMS = _PARAM_WINDOW_END // Daisy Chain
+		, NUM_PARAMS = _PARAM_WINDOW_END  // Daisy Chain
 
 // Aliases (actuall names)
 //		,PARAM_DISASM = PARAM_CODE_1

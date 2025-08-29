@@ -715,7 +715,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 				if ( !bDupSymbolHeader )
 				{
 					bDupSymbolHeader = true;
-					ConsolePrintFormat( " %sDup Symbol Name%s (%s%s%s) %s"
+					ConsolePrintFormat( "%s Dup Symbol Name%s (%s%s%s) %s"
 						, CHC_ERROR
 						, CHC_DEFAULT
 						, CHC_STRING
