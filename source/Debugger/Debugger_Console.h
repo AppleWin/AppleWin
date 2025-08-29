@@ -59,7 +59,7 @@
 	};
 	extern COLORREF g_anConsoleColor[ NUM_CONSOLE_COLORS ];
 
-	// Note: THe ` ~ key should always display ~ to prevent rendering errors
+	// Note: The [` ~] key should always display [~] to prevent rendering errors
 	#define CONSOLE_COLOR_ESCAPE_CHAR '`'
 	#define _CONSOLE_COLOR_MASK 0x7F
 
