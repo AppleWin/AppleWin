@@ -1468,12 +1468,14 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 	, _PARAM_LOG_BEGIN = _PARAM_HELPCATEGORIES_END // Daisy Chain
 		// Console Output Levels aka Error Levels
-		, PARAM_LOG_NONE = _PARAM_LOG_BEGIN
-		, PARAM_LOG_GENERIC
-		, PARAM_LOG_INFO
-		, PARAM_LOG_WARN
+		, PARAM_LOG_NONE = _PARAM_LOG_BEGIN  // N.B. Keep in SYNC! _PARAM_LOG_BEGIN and ConsoleOutputLevel_e
 		, PARAM_LOG_ERROR
+		, PARAM_LOG_WARN
+		, PARAM_LOG_INFO
+		, PARAM_LOG_DEFAULT
 		, PARAM_LOG_ALL
+		, PARAM_LOG_OFF // command alias for NONE
+		, PARAM_LOG_ON  // command alias for ALL
 	, _PARAM_LOG_END
 	,  PARAM_LOG_NUM = _PARAM_LOG_END - _PARAM_LOG_BEGIN
 

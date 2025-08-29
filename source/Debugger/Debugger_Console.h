@@ -23,13 +23,15 @@
 		CONSOLE_FIRST_LINE = 1, // where ConsoleDisplay is pushed up from
 	};
 
+	// Sorted by priority
+	// N.B. Keep in SYNC! _PARAM_LOG_BEGIN and ConsoleOutputLevel_e
 	enum ConsoleOutputLevel_e
 	{
 		 CONSOLE_OUTPUT_LEVEL_NONE    // log off (hide)
-		,CONSOLE_OUTPUT_LEVEL_GENERIC // TODO
-		,CONSOLE_OUTPUT_LEVEL_INFO	  // log info
-		,CONSOLE_OUTPUT_LEVEL_WARN    // log warn
 		,CONSOLE_OUTPUT_LEVEL_ERROR   // log error
+		,CONSOLE_OUTPUT_LEVEL_WARN    // log warn
+		,CONSOLE_OUTPUT_LEVEL_INFO    // log info
+		,CONSOLE_OUTPUT_LEVEL_DEFAULT // log default
 		,CONSOLE_OUTPUT_LEVEL_ALL     // log on	(show)
 	};
 
@@ -280,7 +282,7 @@
 
 		if (strText.length())
 		{
-			ConsoleOutputLevel_e eConsoleOutputLevel = CONSOLE_OUTPUT_LEVEL_GENERIC;
+			ConsoleOutputLevel_e eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_DEFAULT;
 			const char *pHead = text;
 
 			while (*pHead && isspace( *pHead ))
@@ -288,14 +290,14 @@
 
 			if (*pHead == CONSOLE_COLOR_ESCAPE_CHAR)
 			{
-				if (pHead[1] == CHC_INFO   [1]) eConsoleOutputLevel = CONSOLE_OUTPUT_LEVEL_INFO ;
-				if (pHead[1] == CHC_WARNING[1]) eConsoleOutputLevel = CONSOLE_OUTPUT_LEVEL_WARN ;
-				if (pHead[1] == CHC_ERROR  [1]) eConsoleOutputLevel = CONSOLE_OUTPUT_LEVEL_ERROR;
+				if (pHead[1] == CHC_INFO   [1]) eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_INFO ;
+				if (pHead[1] == CHC_WARNING[1]) eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_WARN ;
+				if (pHead[1] == CHC_ERROR  [1]) eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ERROR;
 			}
 			if (eConsoleOutputLevel > g_eConsoleOutputLevel)
 				return;
 		}
-		ConsolePrint(strText.c_str());
+		ConsolePrint(text);
 	}
 	inline void ConsolePrintFormat( const char* pFormat, ... ) ATTRIBUTE_FORMAT_PRINTF(1, 2);
 	inline void ConsolePrintFormat( const char* pFormat, ... )

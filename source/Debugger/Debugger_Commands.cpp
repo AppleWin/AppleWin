@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger commands
  *
- * Author: Copyright (C) 2011 - 2011 Michael Pohoreski
+ * Author: Copyright (C) 2011 - 2025 Michael Pohoreski
  */
 
 #include "StdAfx.h"
@@ -217,6 +217,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	// Output / Scripts
 		{"CALC"        , CmdOutputCalc        , CMD_OUTPUT_CALC          , "Display mini calc result"               },
 		{"ECHO"        , CmdOutputEcho        , CMD_OUTPUT_ECHO          , "Echo string to console"                 }, // or toggle command echoing"
+		{"LOG"         , CmdOutputLog         , CMD_OUTPUT_LOG           , "Set the console output level. Control which type of output is shown" },
 		{"PRINT"       , CmdOutputPrint       , CMD_OUTPUT_PRINT         , "Display string and/or hex values"       },
 		{"PRINTF"      , CmdOutputPrintf      , CMD_OUTPUT_PRINTF        , "Display formatted string"               },
 		{"RUN"         , CmdOutputRun         , CMD_OUTPUT_RUN           , "Run script file of debugger commands"   },
@@ -496,6 +497,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{"WATCHES"     , NULL, PARAM_CAT_WATCHES     },
 		{"WINDOW"      , NULL, PARAM_CAT_WINDOW      },
 		{"ZEROPAGE"    , NULL, PARAM_CAT_ZEROPAGE    },
+// (Console) Output Levels
+		{"NONE"       , NULL, PARAM_LOG_NONE         },
+		{"ERROR"      , NULL, PARAM_LOG_ERROR        },
+		{"WARN"       , NULL, PARAM_LOG_WARN         },
+		{"INFO"       , NULL, PARAM_LOG_INFO         },
+		{"DEFAULT"    , NULL, PARAM_LOG_DEFAULT      },
+		{"ALL"        , NULL, PARAM_LOG_ALL          },
+		{"OFF"        , NULL, PARAM_LOG_NONE         }, // command alias for NONE
+		{"ON"         , NULL, PARAM_LOG_ALL          }, // command alias for ALL
 // Memory
 		{"?"          , NULL, PARAM_MEM_SEARCH_WILD },
 //		{"*"          , NULL, PARAM_MEM_SEARCH_BYTE },

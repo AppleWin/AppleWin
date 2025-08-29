@@ -6183,6 +6183,25 @@ Update_t CmdOutputLog (int nArgs)
 {
 	int iParam;
 
+	enum OutputLogHelp_e
+	{
+		  OUTPUT_HELP_INVALID_PARAM
+		, OUTPUT_HELP_CURRENT_LEVEL
+		, NUM_OUTPUT_LOG_HELP
+	};
+	const char *aHelp[ NUM_OUTPUT_LOG_HELP ] =
+	{
+		CHC_ERROR "Invalid parameter"                    , // NOTE: Intentionally ignore extra param
+		CHC_INFO  "Output level set to " CHC_COMMAND "%s"
+	};
+	const char *pHelp = NULL;
+
+	if (!nArgs)
+	{
+		// Display the current console ouput level logging
+		pHelp = aHelp[ OUTPUT_HELP_CURRENT_LEVEL ];
+	}
+	else
 	if (nArgs == 1)
 	{
 		int nFound = FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_LOG_BEGIN, _PARAM_LOG_END );
@@ -6195,15 +6214,23 @@ Update_t CmdOutputLog (int nArgs)
 				ConsoleOutputLevelSet( (ConsoleOutputLevel_e)eLevel );
 			}
 		}
+		else
+			pHelp = aHelp[ OUTPUT_HELP_INVALID_PARAM ];
 	}
 	else
 	{
-		// Display the current console ouput level logging
-		// We need to push/pop the current level since we also need to display this
+		// TODO: Display all valid params
+		return Help_Arg_1( CMD_OUTPUT_LOG );
+	}
+
+	if (pHelp)
+	{
+		// We need to push/pop the current output level since
+		// we need to display an output message and it could be muted with the current setting
 		ConsoleOutputLevel_e eLevel = ConsoleOutputLevelGet();
 		ConsoleOutputLevelSet( ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL );
 			iParam = _PARAM_LOG_BEGIN + eLevel;
-			ConsolePrintFormat( "Output level set to " CHC_COMMAND "%s", g_aParameters[ iParam ].m_sName );
+			ConsolePrintFormat( pHelp, g_aParameters[ iParam ].m_sName );
 		ConsoleOutputLevelSet( eLevel );
 	}
 
@@ -9035,7 +9062,7 @@ void DebugInitialize ()
 			int nLen = strlen( pHelp ) + 2;
 			if (nLen > (CONSOLE_WIDTH-1))
 			{
-				ConsoleBufferPushFormat( "Warning: %s help is %d chars", pHelp, nLen );
+				ConsoleBufferPushFormat( CHC_WARNING "Warning: %s help is %d chars", pHelp, nLen );
 			}
 		}
 	}
