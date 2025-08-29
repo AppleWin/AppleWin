@@ -723,16 +723,25 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 						, CHC_DEFAULT
 						, pPathFileName.c_str()
 					);
+					ConsolePrintFormat( "%s  %s$%s%04X %s%-31s%s"
+						, CHC_ERROR
+						, CHC_ARG_SEP
+						, CHC_ADDRESS
+						, nAddress
+						, CHC_SYMBOL
+						, sName
+						, CHC_DEFAULT
+					);
 				}
-
-				ConsolePrintFormat( "  %s$%s%04X %s%-31s%s"
-					, CHC_ARG_SEP
-					, CHC_ADDRESS
-					, nAddress
-					, CHC_SYMBOL
-					, sName
-					, CHC_DEFAULT
-				);
+				else
+					ConsolePrintFormat( "  %s$%s%04X %s%-31s%s"
+						, CHC_ARG_SEP
+						, CHC_ADDRESS
+						, nAddress
+						, CHC_SYMBOL
+						, sName
+						, CHC_DEFAULT
+					);
 			}
 	
 			// else // It is not a bug to have duplicate addresses by different names
