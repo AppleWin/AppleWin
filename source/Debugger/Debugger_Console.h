@@ -23,7 +23,7 @@
 		CONSOLE_FIRST_LINE = 1, // where ConsoleDisplay is pushed up from
 	};
 
-	// Sorted by priority
+	// Sorted by priority from highest to lowest (least verbose to most verbose)
 	// N.B. Keep in SYNC! _PARAM_LOG_BEGIN and ConsoleOutputLevel_e
 	enum ConsoleOutputLevel_e
 	{
