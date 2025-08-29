@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger
  *
- * Author: Copyright (C) 2006-2010 Michael Pohoreski
+ * Author: Copyright (C) 2006-2025 Michael Pohoreski
  */
 
 // disable warning C4786: symbol greater than 255 character:
@@ -52,7 +52,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,2,8);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,3,4);
 
 
 // Public _________________________________________________________________________________________
@@ -6178,6 +6178,79 @@ Update_t CmdOutputEcho (int nArgs)
 	return ConsoleUpdate();
 }
 
+/*
+Description:
+	Set the debugger's "error level logging" aka the console output level
+Usage:
+	LOG
+
+	LOG NONE
+	LOG ERROR
+	LOG WARN
+	LOG INFO
+	LOG DEFAULT
+	LOG ALL
+
+	LOG OFF  // command alias for NONE
+	LOG ON   // command alias for ALL
+*/
+//===========================================================================
+Update_t CmdOutputLog (int nArgs)
+{
+	int iParam;
+
+	enum OutputLogHelp_e
+	{
+		  OUTPUT_HELP_INVALID_PARAM
+		, OUTPUT_HELP_CURRENT_LEVEL
+		, NUM_OUTPUT_LOG_HELP
+	};
+	const char *aHelp[ NUM_OUTPUT_LOG_HELP ] =
+	{
+		CHC_ERROR "Invalid parameter"                    , // NOTE: Intentionally ignore extra param
+		CHC_INFO  "Verbosity level set to " CHC_COMMAND "%s"
+	};
+	const char *pHelp = NULL;
+
+	if (!nArgs)
+	{
+		// Display the current console ouput level logging
+		pHelp = aHelp[ OUTPUT_HELP_CURRENT_LEVEL ];
+	}
+	else
+	if (nArgs == 1)
+	{
+		int nFound = FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_LOG_BEGIN, _PARAM_LOG_END );
+		if (nFound)
+		{
+			int eLevel = iParam - _PARAM_LOG_BEGIN;
+			if ((eLevel >= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_NONE)
+			&&  (eLevel <= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL ))
+			{
+				ConsoleOutputLevelSet( (ConsoleOutputLevel_e)eLevel );
+			}
+		}
+		else
+			pHelp = aHelp[ OUTPUT_HELP_INVALID_PARAM ];
+	}
+	else
+	{
+		return Help_Arg_1( CMD_OUTPUT_LOG ); // Display all valid params
+	}
+
+	if (pHelp)
+	{
+		// We need to push/pop the current output level since
+		// we need to display an output message and it could be muted with the current setting
+		ConsoleOutputLevel_e eLevel = ConsoleOutputLevelGet();
+		ConsoleOutputLevelSet( ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL );
+			iParam = _PARAM_LOG_BEGIN + eLevel;
+			ConsolePrintFormat( pHelp, g_aParameters[ iParam ].m_sName );
+		ConsoleOutputLevelSet( eLevel );
+	}
+
+	return ConsoleUpdate();
+}
 
 enum PrintState_e
 {	  PS_LITERAL
@@ -8847,11 +8920,7 @@ void DebugDestroy ()
 //	DeleteObject(g_hFontDebugger);
 //	DeleteObject(g_hFontWebDings);
 
-	// TODO: Symbols_Clear()
-	for ( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
-	{
-		_CmdSymbolsClear( (SymbolTable_Index_e) iTable );
-	}
+	SymbolsClear();
 	// TODO: DataDisassembly_Clear()
 
 	ReleaseConsoleFontDC();
@@ -8934,32 +9003,7 @@ void DebugInitialize ()
 	memset( g_aZeroPagePointers, 0, MAX_ZEROPAGE_POINTERS * sizeof(ZeroPagePointers_t));
 	g_nZeroPagePointers = 0;
 
-	// Load Main, Applesoft, and User Symbols
-	g_bSymbolsDisplayMissingFile = false;
-
-	g_iCommand = CMD_SYMBOLS_ROM;
-	CmdSymbolsLoad(0);
-
-	g_iCommand = CMD_SYMBOLS_APPLESOFT;
-	CmdSymbolsLoad(0);
-
-	// 2.9.2.5 Added: Symbol table A2_DOS33.SYM2
-	g_iCommand = CMD_SYMBOLS_DOS33;
-	CmdSymbolsLoad(0);
-
-	// ,0x7,0xFF // Treat zero-page as data
-	// $00 GOWARM   JSR ...
-	// $01 LOC1 DW
-	// $03 GOSTROUT JSR ...
-	// $07..$B0
-	// $B1 CHRGET
-	// $C8
-	// $C9 RNDSEED DW
-	// $D0..$FF
-
-	g_iCommand = CMD_SYMBOLS_USER_1;
-	CmdSymbolsLoad(0);
-
+	CmdDebugStartup(0);
 	g_bSymbolsDisplayMissingFile = true;
 
 #if OLD_FONT
@@ -9033,7 +9077,7 @@ void DebugInitialize ()
 			int nLen = strlen( pHelp ) + 2;
 			if (nLen > (CONSOLE_WIDTH-1))
 			{
-				ConsoleBufferPushFormat( "Warning: %s help is %d chars", pHelp, nLen );
+				ConsoleBufferPushFormat( CHC_WARNING "Warning: %s help is %d chars", pHelp, nLen );
 			}
 		}
 	}
@@ -9081,6 +9125,8 @@ void DebugInitialize ()
 		}
 	}
 
+	ConsoleOutputLevelSet( ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL );
+
 	CmdMOTD(0);
 }
 
@@ -9089,6 +9135,44 @@ void DebugReset (void)
 {
 	g_videoScannerDisplayInfo.Reset();
 	g_LBR = LBR_UNDEFINED;
+}
+
+
+// Load debugger script files
+// Called from DebugInitialize()
+// User can also call
+//===========================================================================
+Update_t CmdDebugStartup (int nArgs)
+{
+	SymbolsClear();
+
+	// Load Main, Applesoft, and User Symbols
+	g_bSymbolsDisplayMissingFile = false;
+
+	g_iCommand = CMD_SYMBOLS_ROM;
+	CmdSymbolsLoad(0);
+
+	g_iCommand = CMD_SYMBOLS_APPLESOFT;
+	CmdSymbolsLoad(0);
+
+	// 2.9.2.5 Added: Symbol table A2_DOS33.SYM2
+	g_iCommand = CMD_SYMBOLS_DOS33;
+	CmdSymbolsLoad(0);
+
+	// ,0x7,0xFF // Treat zero-page as data
+	// $00 GOWARM   JSR ...
+	// $01 LOC1 DW
+	// $03 GOSTROUT JSR ...
+	// $07..$B0
+	// $B1 CHRGET
+	// $C8
+	// $C9 RNDSEED DW
+	// $D0..$FF
+
+	g_iCommand = CMD_SYMBOLS_USER_1;
+	CmdSymbolsLoad(0);
+
+	return UPDATE_NOTHING;
 }
 
 // Add character to the input line

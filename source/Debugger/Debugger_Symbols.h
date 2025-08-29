@@ -8,6 +8,7 @@
 	Update_t _CmdSymbolsClear ( SymbolTable_Index_e eSymbolTable );
 	Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables );
 	Update_t _CmdSymbolsUpdate ( int nArgs, int bSymbolTables );
+	void SymbolsClear ();
 
 	bool _CmdSymbolList_Address2Symbol ( int nAddress   , int bSymbolTables );
 	bool _CmdSymbolList_Symbol2Address ( LPCTSTR pSymbol, int bSymbolTables );

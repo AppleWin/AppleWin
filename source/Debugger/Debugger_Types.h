@@ -277,11 +277,11 @@
 
 	struct Command_t
 	{
-		char         m_sName[ MAX_COMMAND_LEN ];
-		CmdFuncPtr_t pFunction;
-		int          iCommand;     // offset (enum) for direct command name lookup
-		const char   *pHelpSummary; // 1 line help summary
-//		Hash_t       m_nHash; // TODO
+		char          m_sName[ MAX_COMMAND_LEN ];
+		CmdFuncPtr_t  pFunction;
+		int           iCommand;     // offset (enum) for direct command name lookup
+		const char   *pHelpSummary; // 1 line help summary. It CAN be used for PARAMs.
+//		Hash_t        m_nHash; // TODO
 	};
 
 	// Commands sorted by Category
@@ -438,7 +438,7 @@
 		, CMD_HELP_SPECIFIC
 		, CMD_VERSION
 		, CMD_MOTD // Message of the Day
-// Memory		
+// Memory
 		, CMD_MEMORY_COMPARE
 
 		, CMD_MEM_MINI_DUMP_HEX_1 // Mini Memory Dump 1
@@ -471,6 +471,7 @@
 // Output
 		, CMD_OUTPUT_CALC
 		, CMD_OUTPUT_ECHO
+		, CMD_OUTPUT_LOG
 		, CMD_OUTPUT_PRINT
 		, CMD_OUTPUT_PRINTF
 		, CMD_OUTPUT_RUN
@@ -581,6 +582,9 @@
 		, CMD_ZEROPAGE_POINTER_LIST
 //		, CMD_ZEROPAGE_POINTER_LOAD
 		, CMD_ZEROPAGE_POINTER_SAVE
+
+// Startup/Shutdown
+		, CMD_STARTUP
 
 		, NUM_COMMANDS
 
@@ -738,6 +742,7 @@
 // Output/Scripts
 	Update_t CmdOutputCalc         (int nArgs);
 	Update_t CmdOutputEcho         (int nArgs);
+	Update_t CmdOutputLog          (int nArgs);
 	Update_t CmdOutputPrint        (int nArgs);
 	Update_t CmdOutputPrintf       (int nArgs);
 	Update_t CmdOutputRun          (int nArgs);
@@ -848,6 +853,8 @@
 	Update_t CmdZeroPageSave       (int nArgs);
 	Update_t CmdZeroPagePointer    (int nArgs);
 
+// Startup/Shutdown
+	Update_t CmdDebugStartup       (int nArgs);
 
 // Cursor _________________________________________________________________________________________
 	enum Cursor_Align_e
@@ -1459,7 +1466,20 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 	, _PARAM_HELPCATEGORIES_END
 	,  PARAM_HELPCATEGORIES_NUM = _PARAM_HELPCATEGORIES_END - _PARAM_HELPCATEGORIES_BEGIN
 
-	, _PARAM_MEM_SEARCH_BEGIN = _PARAM_HELPCATEGORIES_END  // Daisy Chain
+	, _PARAM_LOG_BEGIN = _PARAM_HELPCATEGORIES_END // Daisy Chain
+		// Console Output Levels aka Error Levels
+		, PARAM_LOG_NONE = _PARAM_LOG_BEGIN  // N.B. Keep in SYNC! _PARAM_LOG_BEGIN and ConsoleOutputLevel_e
+		, PARAM_LOG_ERROR
+		, PARAM_LOG_WARN
+		, PARAM_LOG_INFO
+		, PARAM_LOG_DEFAULT
+		, PARAM_LOG_ALL
+		, PARAM_LOG_OFF // command alias for NONE
+		, PARAM_LOG_ON  // command alias for ALL
+	, _PARAM_LOG_END
+	,  PARAM_LOG_NUM = _PARAM_LOG_END - _PARAM_LOG_BEGIN
+
+	, _PARAM_MEM_SEARCH_BEGIN = _PARAM_LOG_END  // Daisy Chain
 		, PARAM_MEM_SEARCH_WILD = _PARAM_MEM_SEARCH_BEGIN
 //		, PARAM_MEM_SEARCH_BYTE
 	, _PARAM_MEM_SEARCH_END
@@ -1497,7 +1517,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 	, _PARAM_WINDOW_END
 	,  PARAM_WINDOW_NUM = _PARAM_WINDOW_END - _PARAM_WINDOW_BEGIN
 
-		, NUM_PARAMS = _PARAM_WINDOW_END // Daisy Chain
+		, NUM_PARAMS = _PARAM_WINDOW_END  // Daisy Chain
 
 // Aliases (actuall names)
 //		,PARAM_DISASM = PARAM_CODE_1

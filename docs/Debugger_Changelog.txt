@@ -1,4 +1,22 @@
 /*
+2.9.3.4 Added: LOG to display debugger's current output level.
+2.9.3.3 Fixed: VERSION is always displayed regardless of console output level.
+2.9.3.2 Fixed: Duplicate symbols' address is displayed as an error.
+2.9.3.1 Added: STARTUP to re-load debugger symbol files.
+2.9.3.0 Added: LOG to control debugger's console output level verbosity.
+    No parameters will display the current level.
+    Examples of valid parameters:
+      LOG NONE
+      LOG ERROR
+      LOG WARN
+      LOG INFO
+      LOG DEFAULT
+      LOG ALL
+      LOG OFF
+      LOG ON
+
+2.9.2.8 Released with AppleWin 1.30.21.0
+
 2.9.2.8 Fixed: Debugger mem copy when source end address is less than the source start address copies too many bytes.
     Example:
         2000<6000.6ffm
