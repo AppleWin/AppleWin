@@ -215,12 +215,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{"NTSC"        , CmdNTSC              , CMD_NTSC                 , "Save/Load the NTSC palette"   },
 		{"TSAVE"       , CmdTextSave          , CMD_TEXT_SAVE            , "Save text screen"             },
 	// Output / Scripts
-		{"CALC"        , CmdOutputCalc        , CMD_OUTPUT_CALC          , "Display mini calc result"               },
-		{"ECHO"        , CmdOutputEcho        , CMD_OUTPUT_ECHO          , "Echo string to console"                 }, // or toggle command echoing"
-		{"LOG"         , CmdOutputLog         , CMD_OUTPUT_LOG           , "Set the console output level. Control which type of output is shown" },
-		{"PRINT"       , CmdOutputPrint       , CMD_OUTPUT_PRINT         , "Display string and/or hex values"       },
-		{"PRINTF"      , CmdOutputPrintf      , CMD_OUTPUT_PRINTF        , "Display formatted string"               },
-		{"RUN"         , CmdOutputRun         , CMD_OUTPUT_RUN           , "Run script file of debugger commands"   },
+		{"CALC"        , CmdOutputCalc        , CMD_OUTPUT_CALC          , "Display mini calc result"                    },
+		{"ECHO"        , CmdOutputEcho        , CMD_OUTPUT_ECHO          , "Echo string to console"                      }, // or toggle command echoing"
+		{"LOG"         , CmdOutputLog         , CMD_OUTPUT_LOG           , "Set the debugger verbosity level for output" },
+		{"PRINT"       , CmdOutputPrint       , CMD_OUTPUT_PRINT         , "Display string and/or hex values"            },
+		{"PRINTF"      , CmdOutputPrintf      , CMD_OUTPUT_PRINTF        , "Display formatted string"                    },
+		{"RUN"         , CmdOutputRun         , CMD_OUTPUT_RUN           , "Run script file of debugger commands"        },
 	// Source Level Debugging
 		{"SOURCE"      , CmdSource            , CMD_SOURCE               , "Starts/Stops source level debugging" },
 		{"SYNC"        , CmdSync              , CMD_SYNC                 , "Syncs the cursor to the source file" },
@@ -498,14 +498,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{"WINDOW"      , NULL, PARAM_CAT_WINDOW      },
 		{"ZEROPAGE"    , NULL, PARAM_CAT_ZEROPAGE    },
 // (Console) Output Levels
-		{"NONE"       , NULL, PARAM_LOG_NONE         },
-		{"ERROR"      , NULL, PARAM_LOG_ERROR        },
-		{"WARN"       , NULL, PARAM_LOG_WARN         },
-		{"INFO"       , NULL, PARAM_LOG_INFO         },
-		{"DEFAULT"    , NULL, PARAM_LOG_DEFAULT      },
-		{"ALL"        , NULL, PARAM_LOG_ALL          },
-		{"OFF"        , NULL, PARAM_LOG_NONE         }, // command alias for NONE
-		{"ON"         , NULL, PARAM_LOG_ALL          }, // command alias for ALL
+		{"NONE"       , NULL, PARAM_LOG_NONE        , "Show no output save for LOG status, VERSION, and MOTD" },
+		{"ERROR"      , NULL, PARAM_LOG_ERROR       , "Show errors only"                                      },
+		{"WARN"       , NULL, PARAM_LOG_WARN        , "Show warnings and errors"                              },
+		{"INFO"       , NULL, PARAM_LOG_INFO        , "Show info., warnings, and errors"                      },
+		{"DEFAULT"    , NULL, PARAM_LOG_DEFAULT     , "Show default messages, info., warnings, and errors"    },
+		{"ALL"        , NULL, PARAM_LOG_ALL         , "Show all messages"                                     },
+		{"OFF"        , NULL, PARAM_LOG_NONE        , "Alais for NONE -- show no output"                      }, // command alias for NONE
+		{"ON"         , NULL, PARAM_LOG_ALL         , "Alais for ALL -- show all output"                      }, // command alias for ALL
 // Memory
 		{"?"          , NULL, PARAM_MEM_SEARCH_WILD },
 //		{"*"          , NULL, PARAM_MEM_SEARCH_BYTE },

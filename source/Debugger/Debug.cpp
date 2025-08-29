@@ -6208,7 +6208,7 @@ Update_t CmdOutputLog (int nArgs)
 	const char *aHelp[ NUM_OUTPUT_LOG_HELP ] =
 	{
 		CHC_ERROR "Invalid parameter"                    , // NOTE: Intentionally ignore extra param
-		CHC_INFO  "Output level set to " CHC_COMMAND "%s"
+		CHC_INFO  "Verbosity level set to " CHC_COMMAND "%s"
 	};
 	const char *pHelp = NULL;
 
@@ -6235,8 +6235,7 @@ Update_t CmdOutputLog (int nArgs)
 	}
 	else
 	{
-		// TODO: Display all valid params
-		return Help_Arg_1( CMD_OUTPUT_LOG );
+		return Help_Arg_1( CMD_OUTPUT_LOG ); // Display all valid params
 	}
 
 	if (pHelp)
