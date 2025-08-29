@@ -504,8 +504,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{"INFO"       , NULL, PARAM_LOG_INFO        , "Show info., warnings, and errors"                      },
 		{"DEFAULT"    , NULL, PARAM_LOG_DEFAULT     , "Show default messages, info., warnings, and errors"    },
 		{"ALL"        , NULL, PARAM_LOG_ALL         , "Show all messages"                                     },
-		{"OFF"        , NULL, PARAM_LOG_NONE        , "Alais for NONE -- show no output"                      }, // command alias for NONE
-		{"ON"         , NULL, PARAM_LOG_ALL         , "Alais for ALL -- show all output"                      }, // command alias for ALL
+		{"OFF"        , NULL, PARAM_LOG_NONE        , "Alias for NONE -- show no output"                      }, // command alias for NONE
+		{"ON"         , NULL, PARAM_LOG_ALL         , "Alias for ALL -- show all output"                      }, // command alias for ALL
 // Memory
 		{"?"          , NULL, PARAM_MEM_SEARCH_WILD },
 //		{"*"          , NULL, PARAM_MEM_SEARCH_BYTE },
