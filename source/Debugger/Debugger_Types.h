@@ -277,11 +277,11 @@
 
 	struct Command_t
 	{
-		char         m_sName[ MAX_COMMAND_LEN ];
-		CmdFuncPtr_t pFunction;
-		int          iCommand;     // offset (enum) for direct command name lookup
-		const char   *pHelpSummary; // 1 line help summary
-//		Hash_t       m_nHash; // TODO
+		char          m_sName[ MAX_COMMAND_LEN ];
+		CmdFuncPtr_t  pFunction;
+		int           iCommand;     // offset (enum) for direct command name lookup
+		const char   *pHelpSummary; // 1 line help summary. It CAN be used for PARAMs.
+//		Hash_t        m_nHash; // TODO
 	};
 
 	// Commands sorted by Category
