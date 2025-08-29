@@ -6191,8 +6191,8 @@ Usage:
 	LOG DEFAULT
 	LOG ALL
 
-	LOG OFF
-	LOG ON
+	LOG OFF  // command alias for NONE
+	LOG ON   // command alias for ALL
 */
 //===========================================================================
 Update_t CmdOutputLog (int nArgs)
