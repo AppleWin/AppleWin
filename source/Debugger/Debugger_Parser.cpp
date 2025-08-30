@@ -373,7 +373,7 @@ bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ )
 				continue;
 
 			// Handle one char names
-			if ((pArg->nArgLen == 1) && (pArg->sArg[0] == g_aBreakpointSource[ iReg ][0]))
+			if ((pArg->nArgLen == 1) && (_stricmp(pArg->sArg, g_aBreakpointSource[iReg]) == 0))
 			{
 				switch ( iReg )
 				{
@@ -389,7 +389,7 @@ bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ )
 			else
 			if (iReg == BP_SRC_REG_PC)
 			{
-				if ((pArg->nArgLen == 2) && (strcmp( pArg->sArg, g_aBreakpointSource[ iReg ] ) == 0))
+				if ((pArg->nArgLen == 2) && (_stricmp( pArg->sArg, g_aBreakpointSource[ iReg ] ) == 0))
 				{
 					*pAddressValue_ = regs.pc       ; bStatus = true; break;
 				}
@@ -620,7 +620,7 @@ int ArgsCook ( const int nArgs )
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
 					{
-						  ArgsGetRegisterValue( pNext, & nAddressRHS );
+						ArgsGetRegisterValue( pNext, & nAddressRHS );
 					}
 					pPrev->nValue *= nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
