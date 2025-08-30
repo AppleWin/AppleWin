@@ -275,6 +275,47 @@ int	ArgsGet ( char * pInput )
 				pEnd = SkipUntilToken( pSrc+1, g_aTokens, NUM_TOKENS, &iTokenEnd );
 			}
 
+			// Debugger now uses underscore for division. Handle a few edge cases:
+
+			// 1. See if we have a name starting from pSrc so we can keep this together
+			//     sym Foo_1 = ####   ;
+			//     sym 123_1 = ####   ; Technically valid
+			if (pEnd && iTokenEnd == TOKEN_UNDERSCORE)
+			{
+				// Optimization: Only check preceding character if it is alphanumeric
+				if ((pEnd - 1 >= pSrc) && (isalnum(pEnd[-1])))
+					pEnd = SkipUntilToken(pEnd + 1, g_aTokens, NUM_TOKENS, &iTokenEnd);
+			}
+
+			// 2. Edge case: single underscore being assigned
+			//     sym _ = 1234       ; This used to be valid
+			// 3. Edge case: Unassemble underscore by itself
+			//     u _
+			// 4. Edge case: trailing characters after underscore with no gap
+			//     sym _1234 = 1234
+			// Check if we have an equals (or EOL) to keep the _ as a symbol name
+			if (iTokenSrc == TOKEN_UNDERSCORE)
+			{
+				const char* pTemp = const_cast<char*>(SkipWhiteSpace(pEnd));
+				ArgToken_e  iToken = NO_TOKEN;
+				const char* pToken = FindTokenOrAlphaNumeric(pTemp, g_aTokens, NUM_TOKENS, &iToken);
+				if (pToken)
+				{
+					if ((iToken == TOKEN_EQUAL) || (iToken == NUM_TOKENS)) // (3) single underscore
+					{
+						iTokenSrc = TOKEN_ALPHANUMERIC; // switch from operator to string
+					}
+					if ((pSrc + 1 == pEnd) && (iToken != NUM_TOKENS))  // (4) no gap
+					{
+						if (isalnum( *pEnd ))
+						{
+							pEnd = SkipUntilToken(pSrc + 1, g_aTokens, NUM_TOKENS, &iTokenEnd);
+							iTokenSrc = TOKEN_ALPHANUMERIC; // switch from operator to string
+						}
+					}
+				}
+			}
+
 			if ((iTokenSrc == TOKEN_COMMENT_EOL) || (iTokenSrc == TOKEN_COMMENT_EOL2))
 				break;
 
