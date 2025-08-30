@@ -34,6 +34,56 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 //===========================================================================
+RangeType_t Range_GetPrefix(const int iArg, Breakpoint_t* pBP)
+{
+	if ((iArg + 1) >= MAX_ARGS)
+		return RANGE_NO_PREFIX;
+
+	if (g_aArgs[iArg + 1].eToken != TOKEN_FSLASH)
+		return RANGE_NO_PREFIX;
+
+	// Spec: (GH#451)
+	// [sN/][nn/][L<1|2>/][ROM/]<nnnn>
+
+	if (tolower(g_aArgs[iArg].sArg[0]) == 's')	// slot
+	{
+		int len = strlen(g_aArgs[iArg].sArg);
+		pBP->nSlot = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. s1 or sl1 or slot1
+		if (pBP->nSlot > 7)
+		{
+			ConsoleDisplayError("Address prefix out-of-range. Use slots 0-7.");
+			return RANGE_PREFIX_BAD;
+		}
+	}
+	else if (tolower(g_aArgs[iArg].sArg[0]) == 'l')	// LC
+	{
+		int len = strlen(g_aArgs[iArg].sArg);
+		pBP->nLangCard = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. l1 or lc1
+		if (pBP->nLangCard < 1 || pBP->nLangCard > 2)
+		{
+			ConsoleDisplayError("Address prefix out-of-range. Use lc 1 or 2.");
+			return RANGE_PREFIX_BAD;
+		}
+	}
+	else if (tolower(g_aArgs[iArg].sArg[0]) == 'r')	// ROM
+	{
+		pBP->bIsROM = true;
+	}
+	else // bank (RamWorks or Saturn)
+	{
+		if (g_aArgs[iArg].nValue > 0x100)	// Permit 00-100
+		{
+			ConsoleDisplayError("Address prefix out-of-range. Use bank 0-100 (or 0-7 for Saturn).");
+			return RANGE_PREFIX_BAD;
+		}
+		pBP->nBank = g_aArgs[iArg].nValue;
+	}
+
+	return RANGE_PREFIX_OK;
+}
+
+
+//===========================================================================
 bool Range_CalcEndLen( const RangeType_t eRange
 	, const WORD & nAddress1, const WORD & nAddress2
 	, WORD & nAddressEnd_, int & nAddressLen_ )
@@ -72,9 +122,9 @@ bool Range_CalcEndLen( const RangeType_t eRange
 
 
 //===========================================================================
-RangeType_t Range_Get( WORD & nAddress1_, WORD & nAddress2_, const int iArg ) // =1
+RangeType_t Range_Get( WORD & nAddress1_, WORD & nAddress2_, const int iArg/* =1 */)
 {
-	nAddress1_ = (unsigned) g_aArgs[ iArg ].nValue; 
+	nAddress1_ = g_aArgs[ iArg ].nValue;
 	if (nAddress1_ > _6502_MEM_END)
 		nAddress1_ = _6502_MEM_END;
 
@@ -82,6 +132,9 @@ RangeType_t Range_Get( WORD & nAddress1_, WORD & nAddress2_, const int iArg ) //
 	int nTemp  = 0;
 
 	RangeType_t eRange = RANGE_MISSING_ARG_2;
+
+	if ((iArg + 2) >= MAX_ARGS)
+		return eRange;
 
 	if (g_aArgs[ iArg + 1 ].eToken == TOKEN_COMMA)
 	{

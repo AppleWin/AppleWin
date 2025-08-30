@@ -537,7 +537,7 @@ UINT Saturn128K::GetSaturnMemorySize()
 //-------------------------------------
 
 /*
-* LangauageCardManager:
+* LanguageCardManager:
 * . manage reset for all cards (eg. II/II+'s LC is unaffected, whereas //e's LC is)
 * . manage lastSlotToSetMainMemLC
 * . TODO: assist with debugger's display of "sNN" for active 16K bank
