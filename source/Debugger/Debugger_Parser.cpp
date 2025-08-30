@@ -66,7 +66,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{ TOKEN_DOLLAR      , TYPE_STRING  , "$"  },
 		{ TOKEN_EQUAL       , TYPE_OPERATOR, "="  },
 		{ TOKEN_EXCLAMATION , TYPE_OPERATOR, "!"  }, // NOT
-		{ TOKEN_FSLASH      , TYPE_OPERATOR, "/"  }, // div
+		{ TOKEN_FSLASH      , TYPE_OPERATOR, "/"  }, // Address prefix delimiter
 		{ TOKEN_GREATER_THAN, TYPE_OPERATOR, ">"  }, // TODO/FIXME: Parser will break up '>=' (needed for uber breakpoints)
 		{ TOKEN_HASH        , TYPE_OPERATOR, "#"  },
 		{ TOKEN_LESS_THAN   , TYPE_OPERATOR, "<"  },
@@ -84,8 +84,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{ TOKEN_STAR        , TYPE_OPERATOR, "*"  }, // Not a token 1) wildcard needs to stay together with other chars
 //		{ TOKEN_TAB         , TYPE_STRING  , '\t' }
 		{ TOKEN_TILDE       , TYPE_OPERATOR, "~"  }, // C/C++: Not.  Used for console.
+		{ TOKEN_UNDERSCORE  , TYPE_OPERATOR, "_"  }, // div
 
-		{ TOKEN_DIVIDE_FLOOR, TYPE_OPERATOR, "//" },
+		{ TOKEN_COMMENT_EOL2, TYPE_OPERATOR, "//" },
 		{ TOKEN_GREATER_EQUAL,TYPE_OPERATOR, ">=" },
 		{ TOKEN_LESS_EQUAL  , TYPE_OPERATOR, "<=" },
 		{ TOKEN_NOT_EQUAL   , TYPE_OPERATOR, "!=" }
@@ -274,9 +275,8 @@ int	ArgsGet ( char * pInput )
 				pEnd = SkipUntilToken( pSrc+1, g_aTokens, NUM_TOKENS, &iTokenEnd );
 			}
 
-			if ((iTokenSrc == TOKEN_COMMENT_EOL) ||
-				(iArg == 0 && iTokenSrc == TOKEN_DIVIDE_FLOOR))	// Double FSLASH at start of line
-					break; //pArg->eToken = iTokenSrc;
+			if ((iTokenSrc == TOKEN_COMMENT_EOL) || (iTokenSrc == TOKEN_COMMENT_EOL2))
+				break;
 
 			if (iTokenSrc == NO_TOKEN)
 			{
@@ -627,13 +627,7 @@ int ArgsCook ( const int nArgs )
 					nParamLen = 2;
 				}
 
-				if (pArg->eToken == TOKEN_COMMENT_EOL)	// SEMI Comment
-				{
-					nArg = iArg - 1;
-					return nArg;
-				}
-
-				if (pArg->eToken == TOKEN_DIVIDE_FLOOR) // Double FORWARD SLASH   divide-floor delta
+				if (pArg->eToken == TOKEN_UNDERSCORE) // UNDERSCORE   divide-floor delta
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
 					{
@@ -815,7 +809,7 @@ const char * ParserFindToken( const char *pSrc, const TokenTable_t *aTokens, con
 	const char        *pName  = NULL;
 	int   iToken;
 
-	// Look-ahead for: //(divide-floor), <=, >=, !=
+	// Look ahead for: //, <=, >=, !=
 	for (iToken = _TOKEN_FLAG_MULTI; iToken < NUM_TOKENS; iToken++ )
 	{
 		pName = & (g_aTokens[ iToken ].sToken[0]);

@@ -1315,10 +1315,11 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		, TOKEN_STAR         // *
 //		, TOKEN_TAB          // '\t'
 		, TOKEN_TILDE        // ~
+		, TOKEN_UNDERSCORE   // _
 
 		// Multi char tokens come last
 		, _TOKEN_FLAG_MULTI
-		, TOKEN_DIVIDE_FLOOR = _TOKEN_FLAG_MULTI // //
+		, TOKEN_COMMENT_EOL2 = _TOKEN_FLAG_MULTI // //
 		, TOKEN_GREATER_EQUAL// >=
 		, TOKEN_LESS_EQUAL   // <=
 		, TOKEN_NOT_EQUAL    // !=
