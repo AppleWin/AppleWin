@@ -7,7 +7,7 @@
 	<body style="DIRECTION: ltr" lang="en-US">
 		<h2><a name="Calculator"></a>Calculator</h2>
 		<p>There is a basic mini hex calculator built in.&nbsp; It can do Addition, 
-			Subtraction, Floor Division, Modulus, bit-wise And, bit-wise Or, bit-wise Exclusive 
+			Subtraction, Multiplication, Floor Division, Modulus, bit-wise And, bit-wise Or, bit-wise Exclusive 
 			Or, and bit-wise Negation, with Values, Register and Symbols.&nbsp; It will 
 			display results in Hex, Binary, Decimal, and as a Character (single quoted.)</p>
 		<p><br>
@@ -54,6 +54,17 @@
 								</tr>
 								<tr>
 									<td width="10%">
+										<p>*</p>
+									</td>
+									<td width="25%">
+										<p>Asterisk</p>
+									</td>
+									<td width="65%">
+										<p><i>Multiplication.</i></p>
+									</td>
+								</tr>
+								<tr>
+									<td width="10%">
 										<p>%</p>
 									</td>
 									<td width="25%">
@@ -65,19 +76,18 @@
 								</tr>
 								<tr>
 									<td width="10%">
-										<p>_</p>
+										<p>//</p>
 									</td>
 									<td width="25%">
-										<p>Underscore</p>
+										<p>Double forward slash</p>
 									</td>
 									<td width="65%">
-										<p><i>Calculate quotient (floor divide).</i></p>
+										<p><i>Calculate quotient (floor or integer divide).</i></p>
 									</td>
 								</tr>
 								<tr>
 									<td width="10%">
-										<p>&amp;
-										</p>
+										<p>&amp;</p>
 									</td>
 									<td width="25%">
 										<p>Ampersand</p>
@@ -88,8 +98,7 @@
 								</tr>
 								<tr>
 									<td width="10%">
-										<p>|
-										</p>
+										<p>|</p>
 									</td>
 									<td width="25%">
 										<p>Pipe</p>
@@ -128,11 +137,10 @@
 		<h2><font size="4">Notes:</font></h2>
 		<ul>
 			<li>
-				<p style="MARGIN-BOTTOM: 0in"><i>The unary bit-wise Negation operator, ‘!’ only effects 
+				<p style="MARGIN-BOTTOM: 0in"><i>The unary bit-wise Negation operator, ‘!’, only effects
 						the next immediate expression.</i></p>
 			<li>
-				<p style="MARGIN-BOTTOM: 0in"><i>There is (currently) no multiplication operator, due 
-						to the asterisk ‘*’ being used for the wild card operator.</i></p>
+				<p style="MARGIN-BOTTOM: 0in"><i>Older versions of AppleWin's Debugger used ‘/’ for (floor or integer) division. The debugger needed a way for users to refer to auxiliary memory and banked memory addresses. The IIgs monitor uses ‘/’ for bank prefixes, so consistency with this notation was adopted. Since division is rarely used the operator was changed to ‘//’.</i></p>
 			</li>
 		</ul>
 		<p><br>
