@@ -192,3 +192,4 @@
 	bool	DebuggerCheckMemBreakpoints(WORD nAddress, WORD nSize, bool isDmaToMemory);
 
 	void	ClearTempBreakpoints();
+	void	DebugSetAutoRunScript(std::string& sAutoRunScriptFilename);

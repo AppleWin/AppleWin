@@ -126,7 +126,8 @@ struct CmdLine
 	bool auxSlotEmpty;
 	SS_CARDTYPE auxSlotInsert;
 	std::string sBootSectorFileName;
-	size_t      nBootSectorFileSize;
+	size_t nBootSectorFileSize;
+	std::string debuggerAutoRunScriptFilename;
 };
 
 bool ProcessCmdLine(LPSTR lpCmdLine);

@@ -360,6 +360,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static bool g_bScriptReadOk = false;
 
+	static std::string g_sAutoRunScriptFilename("DebuggerAutoRun.txt");
+
 // Private ________________________________________________________________________________________
 
 
@@ -9093,11 +9095,9 @@ void DebugInitialize ()
 	{
 		doneAutoRun = true;
 
-		const std::string debuggerAutoRunName = "DebuggerAutoRun.txt";
-
 		// Look in g_sCurrentDir, otherwise try g_sProgramDir
 
-		std::string pathname = g_sCurrentDir + debuggerAutoRunName;
+		std::string pathname = g_sCurrentDir + g_sAutoRunScriptFilename;
 		errno_t error = strncpy_s(g_aArgs[1].sArg, MAX_PATH, pathname.c_str(), pathname.size());
 		if (error != 0)
 		{
@@ -9111,7 +9111,7 @@ void DebugInitialize ()
 
 		if (!g_bScriptReadOk)
 		{
-			pathname = g_sProgramDir + debuggerAutoRunName;
+			pathname = g_sProgramDir + g_sAutoRunScriptFilename;
 			error = strncpy_s(g_aArgs[1].sArg, MAX_PATH, pathname.c_str(), pathname.size());
 			if (error != 0)
 			{
@@ -9828,4 +9828,11 @@ void DebuggerCursorNext ()
 bool IsDebugSteppingAtFullSpeed (void)
 {
 	return (g_nAppMode == MODE_STEPPING) && g_bDebugFullSpeed;
+}
+
+
+//===========================================================================
+void DebugSetAutoRunScript (std::string& sAutoRunScriptFilename)
+{
+	g_sAutoRunScriptFilename = sAutoRunScriptFilename;
 }
