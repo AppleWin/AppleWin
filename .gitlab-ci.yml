@@ -1,0 +1,141 @@
+# DESCRIPTION: GitLab CI/CD for libRetro (NOT FOR GitLab-proper)
+
+##############################################################################
+################################# BOILERPLATE ################################
+##############################################################################
+
+# Core definitions
+.core-defs:
+  variables:
+    CORENAME: applewin
+    CORE_ARGS: '-DBUILD_LIBRETRO=ON -G Ninja'
+    EXTRA_PATH: source/frontends/libretro
+
+# Inclusion templates, required for the build to work
+include:
+  ################################## DESKTOPS ################################
+
+  # Windows 64-bit
+#  - project: 'libretro-infrastructure/ci-templates'
+#    file: '/windows-cmake-mingw.yml'
+
+  # Linux 64-bit
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/linux-cmake.yml'
+
+  # MacOS 64-bit
+#  - project: 'libretro-infrastructure/ci-templates'
+#    file: '/osx-cmake-x86.yml'
+
+  # MacOS ARM 64-bit
+#  - project: 'libretro-infrastructure/ci-templates'
+#    file: '/osx-cmake-arm64.yml'
+
+  ################################## CELLULAR ################################
+  # Android
+#  - project: 'libretro-infrastructure/ci-templates'
+#    file: '/android-cmake.yml'
+
+  # iOS
+#  - project: 'libretro-infrastructure/ci-templates'
+#    file: '/ios-cmake.yml'
+
+  # tvOS (AppleTV)
+#  - project: 'libretro-infrastructure/ci-templates'
+#    file: '/tvos-cmake.yml'
+
+  #################################### MISC ##################################
+
+# Stages for building
+stages:
+  - build-prepare
+  - build-shared
+  - build-static
+
+##############################################################################
+#################################### STAGES ##################################
+##############################################################################
+#
+################################### DESKTOPS #################################
+# Windows 64-bit
+#libretro-build-windows-x64:
+#  extends:
+#    - .libretro-windows-cmake-x86_64
+#    - .core-defs
+
+# Linux 64-bit
+libretro-build-linux-x64:
+  extends:
+    - .libretro-linux-cmake-x86_64
+    - .core-defs
+  image: $CI_SERVER_HOST:5050/libretro-infrastructure/libretro-build-amd64-ubuntu:xenial-gcc9
+  before_script:
+    - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 16FAAD7AF99A65E2
+    - sudo apt-get update -qy
+    - sudo apt-get -qy install $(cat source/frontends/libretro/xenial/packages.txt)
+
+# MacOS 64-bit
+#libretro-build-osx-x64:
+#  extends:
+#    - .libretro-osx-cmake-x86_64
+#    - .core-defs
+#  variables:
+#    MACOSX_DEPLOYMENT_TARGET: "10.15"
+
+# MacOS ARM 64-bit
+#libretro-build-osx-arm64:
+#  extends:
+#    - .libretro-osx-cmake-arm64
+#    - .core-defs
+
+################################### CELLULAR #################################
+
+# Android ARMv8a
+#android-arm64-v8a:
+#  extends:
+#    - .libretro-android-cmake-arm64-v8a
+#    - .core-defs
+#  before_script:
+#    - export NUMPROC=$(($(nproc)/5))
+#    - echo "deb http://deb.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
+#    - apt-get update -qy
+#    - apt-get install -qy cmake/bullseye-backports
+#  variables:
+#    CXXFLAGS: -Wno-deprecated-declarations -Wno-unknown-attributes
+#    API_LEVEL: 24
+  # The Android runners are based on Debian, not Ubuntu
+
+# Android 64-bit x86
+#android-x86_64:
+#  extends:
+#    - .libretro-android-cmake-x86_64
+#    - .core-defs
+#  before_script:
+#    - export NUMPROC=$(($(nproc)/5))
+#    - echo "deb http://deb.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
+#    - apt-get update -qy
+#    - apt-get install -qy cmake/bullseye-backports
+#  variables:
+#    CXXFLAGS: -Wno-deprecated-declarations -Wno-unknown-attributes
+#    API_LEVEL: 24
+# Not supported; if this doesn't work the first time around, I'm cutting it
+
+# iOS
+#libretro-build-ios-arm64:
+#  extends:
+#    - .libretro-ios-cmake-arm64
+#    - .core-defs
+#  variables:
+#    CORE_ARGS: --toolchain ./cmake/toolchain/ios.toolchain.cmake -DPLATFORM=OS64 -DDEPLOYMENT_TARGET=13
+#    IOS_MINVER: "13.0"
+#    CXXFLAGS: -Wno-deprecated-declarations -Wno-unknown-attributes
+
+# tvOS
+#libretro-build-tvos-arm64:
+#  extends:
+#    - .libretro-tvos-cmake-arm64
+#    - .core-defs
+#  variables:
+#    CORE_ARGS: --toolchain ./cmake/toolchain/ios.toolchain.cmake -DPLATFORM=TVOS -DDEPLOYMENT_TARGET=13
+#    IOS_MINVER: "13.0"
+#    CXXFLAGS: -Wno-deprecated-declarations -Wno-unknown-attributes
