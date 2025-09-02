@@ -1077,7 +1077,16 @@ void DrawBreakpoints ( int line )
 
 			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BULLET ) );
-			PrintTextCursorX( StrFormat("%X ", iBreakpoint).c_str(), rect2);
+			PrintTextCursorX( StrFormat("%X", iBreakpoint).c_str(), rect2);
+
+			// If the BP is in LC1 or LC2 display a bookmark symbol (1) or (2)
+			if (pBP->nLangCard != -1)
+			{
+				DebuggerSetColorFG( DebuggerGetColor( BG_DISASM_BOOKMARK ) ); // TODO: FG_MEM_BANK_LC
+				FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
+				PrintGlyph( rect2.left, rect2.top, 0x80 + pBP->nLangCard ); // Glyphs 0x80 .. 0x89 = Unicode U+24EA, U+2460 .. U+2468
+			}
+			rect2.left += g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
 
 //			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ) );
 //			PrintTextCursorX( ".", rect2 );
