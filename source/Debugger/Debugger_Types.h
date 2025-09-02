@@ -244,10 +244,10 @@
 		bool                 bHit     ; // true when the breakpoint has just been hit
 		bool                 bStop    ; // true if the debugger stops when it is hit
 		uint32_t             nHitCount; // number of times the breakpoint was hit
-		int                  nSlot;		// (-1: not valid)
-		int                  nBank;		// (-1: not valid) RamWorks: 00-FF, Saturn: 0-7
-		int                  nLangCard;	// (-1: not valid) LC 4K bank: 1 or 2
-		bool                 bIsROM;
+		int                  nSlot    ; // (-1: not valid)
+		int                  nBank    ; // (-1: not valid) RamWorks: 00-FF, Saturn: 0-7
+		int                  nLangCard; // (-1: not valid) LC 4K bank: 1 or 2
+		bool                 bIsROM   ;
 
 		//
 
