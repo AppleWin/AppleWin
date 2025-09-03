@@ -2233,6 +2233,16 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 	}
 
 	std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(&aBreakWatchZero[iBWZ], aBreakWatchZero[iBWZ].nAddress, true);
+	if (aBreakWatchZero[iBWZ].nLength > 1)
+	{
+		fullPrefixAddr += ":";
+		std::string addrEnd = StrFormat(CHC_ADDRESS "%04X", aBreakWatchZero[iBWZ].nAddress + aBreakWatchZero[iBWZ].nLength);
+		fullPrefixAddr += addrEnd;
+	}
+	else
+	{
+		fullPrefixAddr += "     ";	// 5 spaces
+	}
 
 	// ID On Stop Temp HitCounter  Prefix/Addr Mem Symbol
 	ConsolePrintFormat( "  #%X %c  %c    %c  %c   %08X %s " CHC_INFO "%s" CHC_SYMBOL " %s",
@@ -2251,7 +2261,7 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 
 void _BWZ_ListAll ( const Breakpoint_t * aBreakWatchZero, const int nMax )
 {
-	ConsolePrintFormat( "  ID On Stop Temp HitCounter    Prefix/Addr Mem Symbol" );
+	ConsolePrintFormat( "  ID On Stop Temp HitCounter    Prefix/Addr: End Mem Symbol" );
 
 	int iBWZ = 0;
 	while (iBWZ < nMax)
