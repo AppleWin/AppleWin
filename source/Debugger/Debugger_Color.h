@@ -112,8 +112,9 @@
 		, FG_INFO_BP_MEM_READ  // Green
 		, FG_INFO_BP_MEM_WRITE // Orange
 
-		, BG_INFO_MEM_BANK_LC // mid Cyan
-		, FG_INFO_MEM_BANK_LC // White
+		, BG_INFO_MEM_BANK    // mid Cyan
+		, FG_INFO_MEM_BANK    // White
+		, FG_INFO_MEM_LC      //~mid Cyan
 
 		, BG_DATA_1          // Cyan*   Window
 		, BG_DATA_2          // Cyan*

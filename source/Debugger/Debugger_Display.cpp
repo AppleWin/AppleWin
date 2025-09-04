@@ -1093,27 +1093,25 @@ void DrawBreakpoints ( int line )
 			rect2.left += 2; // spacer for Bank & Card
 			if (pBP->nBank > 0) // Aux or RamWorks
 			{
-				int glyph = (pBP->nBank <= 9)
-					        ? 0x80+pBP->nBank	// (1) - (9)
-					        : 0x1B;				// Mousetext diamond
-				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_MEM_BANK_LC ) );
-				DebuggerSetColorBG( DebuggerGetColor( BG_INFO_MEM_BANK_LC ) );
-//				FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
-				PrintGlyph( rect2.left, rect2.top, glyph );
+				DebuggerSetColorBG( DebuggerGetColor( BG_INFO_MEM_BANK ) );
+				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_MEM_BANK ) );
+				PrintGlyph( rect2.left, rect2.top, 0x90 + ((pBP->nBank >> 4) & 0xF) ); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
+				rect2.left += 4; // mini-hex numbers
+				PrintGlyph( rect2.left, rect2.top, 0x90 + ((pBP->nBank >> 0) & 0xF) ); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
+				rect2.left -= 4; // mini-hex numbers
 			}
-			rect2.left += g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
+			rect2.left += 8; // mini-hex numbers
 			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+			FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
 
 			// If the BP is in LC1 or LC2 display a bookmark symbol (1) or (2)
 			if (pBP->nLangCard != Breakpoint_t::kLangCardInvalid)
 			{
-				DebuggerSetColorBG(DebuggerGetColor(BG_INFO));
-				DebuggerSetColorFG(DebuggerGetColor(BG_DISASM_BOOKMARK)); // TODO: FG_MEM_BANK_LC
-//				FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
-				PrintGlyph(rect2.left, rect2.top, 0x80 + pBP->nLangCard); // Glyphs 0x80 .. 0x89 = Unicode U+24EA, U+2460 .. U+2468
+				DebuggerSetColorFG(DebuggerGetColor( FG_INFO_MEM_LC ));
+				PrintGlyph(rect2.left, rect2.top, 0x90 + pBP->nLangCard); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
 			}
-			rect2.left += g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
-			rect2.left += 2;
+			rect2.left += 4;
+//			rect2.left += g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg - 2;
 			// NOTE: PrintGlyph() is right at the right edge of the g_pDebuggerMemFramebits
 
 //			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ) );
