@@ -1096,8 +1096,8 @@ void DrawBreakpoints ( int line )
 				int glyph = (pBP->nBank <= 9)
 					        ? 0x80+pBP->nBank	// (1) - (9)
 					        : 0x1B;				// Mousetext diamond
-				DebuggerSetColorFG( DebuggerGetColor( FG_DISASM_BOOKMARK ) ); // TODO: FG_MEM_BANK_LC
-				DebuggerSetColorBG( DebuggerGetColor( BG_DISASM_BOOKMARK ) ); // TODO: BG_MEM_BANK_LC
+				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_MEM_BANK_LC ) );
+				DebuggerSetColorBG( DebuggerGetColor( BG_INFO_MEM_BANK_LC ) );
 //				FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
 				PrintGlyph( rect2.left, rect2.top, glyph );
 			}
@@ -1218,10 +1218,17 @@ void DrawBreakpoints ( int line )
 #endif
 				PrintTextCursorX( WordToHexStr( nAddress2 ).c_str(), rect2);
 
+				DebuggerSetColorBG( DebuggerGetColor( BG_INFO ) );
 				if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
+				{
+					DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BP_MEM_READ ) );
 					PrintTextCursorX("R", rect2);
+				}
 				else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
+				{
+					DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BP_MEM_WRITE ) );
 					PrintTextCursorX("W", rect2);
+				}
 			}
 
 #if !USE_APPLE_FONT

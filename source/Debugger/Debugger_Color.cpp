@@ -114,7 +114,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 		COLOR_CUSTOM_04,     // BG_INFO_IO_BYTE 
 		COLOR_CUSTOM_04,     //                     FG_INFO_IO_BYTE
-				
+
+		G8             , // FG_INFO_BP_MEM_READ  Green
+		COLOR_CUSTOM_04, // FG_INFO_BP_MEM_WRITE Orange
+
+		C4, // BG_INFO_MEM_BANK_LC
+		W8, // FG_INFO_MEM_BANK_LC
+
 		C1,   // BG_DATA_1 // 2.6.2.24 Changed: Tone-downed the alt. background cyan for the DATA window. C2, C3 -> C1,C2
 		C2,   // BG_DATA_2
 		Y8,   // FG_DATA_BYTE
