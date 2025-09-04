@@ -135,15 +135,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_SOFTSWITCH_COLUMN = INFO_COL_1 - (CONSOLE_FONT_WIDTH/2) + 1; // 1/2 char width padding around soft switches
 
 		// Horizontal Column (pixels) of BPs, Watches
-		const int INFO_COL_2 = (62 * 7); // nFontWidth
+		const int INFO_COL_2 = (int)(61.5 * 7); // nFontWidth // Nudged 1/2 glyph width left to show Slot&Bank for breakpoints
 		const int DISPLAY_BP_COLUMN      = INFO_COL_2;
 		const int DISPLAY_WATCHES_COLUMN = INFO_COL_2;
 
 		// Horizontal Column (pixels) of VideoScannerInfo & Mem
-		const int INFO_COL_3 = (63 * 7); // nFontWidth
-		const int DISPLAY_MINIMEM_COLUMN = INFO_COL_3;
+		const int INFO_COL_3 = (63 * 7); // nFontWidth // 63
+		const int DISPLAY_MINIMEM_COLUMN       = INFO_COL_3;
 		const int DISPLAY_VIDEO_SCANNER_COLUMN = INFO_COL_3;
-		const int DISPLAY_IRQ_COLUMN = INFO_COL_3 + (12 * 7); // (12 chars from v/h-pos) * nFontWidth
+		const int DISPLAY_IRQ_COLUMN           = INFO_COL_3 + (12 * 7); // (12 chars from v/h-pos) * nFontWidth
 #else
 		const int DISPLAY_CPU_INFO_LEFT_COLUMN = SCREENSPLIT1;	// TC: SCREENSPLIT1 is not defined anywhere in the .sln!
 
@@ -1079,6 +1079,18 @@ void DrawBreakpoints ( int line )
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BULLET ) );
 			PrintTextCursorX( StrFormat("%X", iBreakpoint).c_str(), rect2);
 
+#if DEBUG_FORCE_DISPLAY
+			pBP->nBank     =  iBreakpoint < 6
+				? iBreakpoint / 3
+				: iBreakpoint - 4
+				;
+			pBP->nLangCard = iBreakpoint % 3
+				? (iBreakpoint % 3)
+				: Breakpoint_t::kLangCardInvalid
+				;
+#endif
+
+			rect2.left += (g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg) / 2;
 			if (pBP->nBank > 0) // Aux or RamWorks
 			{
 				int glyph = (pBP->nBank <= 9)
@@ -1091,6 +1103,17 @@ void DrawBreakpoints ( int line )
 			}
 			rect2.left += g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
 			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
+
+			// If the BP is in LC1 or LC2 display a bookmark symbol (1) or (2)
+			if (pBP->nLangCard != Breakpoint_t::kLangCardInvalid)
+			{
+				DebuggerSetColorBG(DebuggerGetColor(BG_INFO));
+				DebuggerSetColorFG(DebuggerGetColor(BG_DISASM_BOOKMARK)); // TODO: FG_MEM_BANK_LC
+//				FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
+				PrintGlyph(rect2.left, rect2.top, 0x80 + pBP->nLangCard); // Glyphs 0x80 .. 0x89 = Unicode U+24EA, U+2460 .. U+2468
+			}
+			rect2.left += g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
+			rect2.left += (g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg) / 2;
 
 //			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ) );
 //			PrintTextCursorX( ".", rect2 );
@@ -1198,15 +1221,6 @@ void DrawBreakpoints ( int line )
 					PrintTextCursorX("R", rect2);
 				else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
 					PrintTextCursorX("W", rect2);
-			}
-
-			// If the BP is in LC1 or LC2 display a bookmark symbol (1) or (2)
-			if (pBP->nLangCard != Breakpoint_t::kLangCardInvalid)
-			{
-				DebuggerSetColorBG(DebuggerGetColor(BG_INFO));
-				DebuggerSetColorFG(DebuggerGetColor(BG_DISASM_BOOKMARK)); // TODO: FG_MEM_BANK_LC
-				//				FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
-				PrintGlyph(rect2.left, rect2.top, 0x80 + pBP->nLangCard); // Glyphs 0x80 .. 0x89 = Unicode U+24EA, U+2460 .. U+2468
 			}
 
 #if !USE_APPLE_FONT
