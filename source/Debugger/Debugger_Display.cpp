@@ -1090,7 +1090,7 @@ void DrawBreakpoints ( int line )
 				;
 #endif
 
-			rect2.left += (g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg) / 2;
+			rect2.left += 2; // spacer for Bank & Card
 			if (pBP->nBank > 0) // Aux or RamWorks
 			{
 				int glyph = (pBP->nBank <= 9)
@@ -1113,7 +1113,8 @@ void DrawBreakpoints ( int line )
 				PrintGlyph(rect2.left, rect2.top, 0x80 + pBP->nLangCard); // Glyphs 0x80 .. 0x89 = Unicode U+24EA, U+2460 .. U+2468
 			}
 			rect2.left += g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg;
-			rect2.left += (g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg) / 2;
+			rect2.left += 2;
+			// NOTE: PrintGlyph() is right at the right edge of the g_pDebuggerMemFramebits
 
 //			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ) );
 //			PrintTextCursorX( ".", rect2 );
