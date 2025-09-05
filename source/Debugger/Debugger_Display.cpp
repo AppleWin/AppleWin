@@ -1091,16 +1091,23 @@ void DrawBreakpoints ( int line )
 #endif
 
 			rect2.left += 2; // spacer for Bank & Card
+			const UINT kGlyphMiniHexWidth = 4;
 			if (pBP->nBank > 0) // Aux or RamWorks
 			{
 				DebuggerSetColorBG( DebuggerGetColor( BG_INFO_MEM_BANK ) );
 				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_MEM_BANK ) );
+				if (pBP->nBank == 0x100)
+					PrintGlyph(rect2.left, rect2.top, 0x90 + 0x1);	// Glyph: mini hex "1"
+				rect2.left += kGlyphMiniHexWidth;
 				PrintGlyph( rect2.left, rect2.top, 0x90 + ((pBP->nBank >> 4) & 0xF) ); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
-				rect2.left += 4; // mini-hex numbers
+				rect2.left += kGlyphMiniHexWidth;
 				PrintGlyph( rect2.left, rect2.top, 0x90 + ((pBP->nBank >> 0) & 0xF) ); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
-				rect2.left -= 4; // mini-hex numbers
+				rect2.left += kGlyphMiniHexWidth;
 			}
-			rect2.left += 8; // mini-hex numbers
+			else
+			{
+				rect2.left += 3* kGlyphMiniHexWidth;
+			}
 			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 			FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
 
