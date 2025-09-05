@@ -66,7 +66,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{ TOKEN_DOLLAR      , TYPE_STRING  , "$"  },
 		{ TOKEN_EQUAL       , TYPE_OPERATOR, "="  },
 		{ TOKEN_EXCLAMATION , TYPE_OPERATOR, "!"  }, // NOT
-		{ TOKEN_FSLASH      , TYPE_OPERATOR, "/"  }, // div
+		{ TOKEN_FSLASH      , TYPE_OPERATOR, "/"  }, // Address prefix delimiter
 		{ TOKEN_GREATER_THAN, TYPE_OPERATOR, ">"  }, // TODO/FIXME: Parser will break up '>=' (needed for uber breakpoints)
 		{ TOKEN_HASH        , TYPE_OPERATOR, "#"  },
 		{ TOKEN_LESS_THAN   , TYPE_OPERATOR, "<"  },
@@ -79,16 +79,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //		{ TOKEN_QUESTION    , TYPE_OPERATOR, '?'  }, // Not a token 1) wildcard needs to stay together with other chars
 		{ TOKEN_QUOTE_SINGLE, TYPE_QUOTED_1, "\'" },
 		{ TOKEN_QUOTE_DOUBLE, TYPE_QUOTED_2, "\"" }, // for strings
-		{ TOKEN_SEMI        , TYPE_STRING  , ";"  },
+		{ TOKEN_COMMENT_EOL , TYPE_STRING  , ";"  },
 		{ TOKEN_SPACE       , TYPE_STRING  , " "  }, // space is also a delimiter between tokens/args
 		{ TOKEN_STAR        , TYPE_OPERATOR, "*"  }, // Not a token 1) wildcard needs to stay together with other chars
 //		{ TOKEN_TAB         , TYPE_STRING  , '\t' }
 		{ TOKEN_TILDE       , TYPE_OPERATOR, "~"  }, // C/C++: Not.  Used for console.
 
-		{ TOKEN_COMMENT_EOL , TYPE_STRING  , "//" },
+		{ TOKEN_DIVIDE_FLOOR, TYPE_OPERATOR, "//" }, // div
 		{ TOKEN_GREATER_EQUAL,TYPE_OPERATOR, ">=" },
 		{ TOKEN_LESS_EQUAL  , TYPE_OPERATOR, "<=" },
-		{ TOKEN_NOT_EQUAL  , TYPE_OPERATOR , "!=" }
+		{ TOKEN_NOT_EQUAL   , TYPE_OPERATOR, "!=" }
 	};
 
 // Arg ____________________________________________________________________________________________
@@ -263,7 +263,7 @@ int	ArgsGet ( char * pInput )
 	{
 		// Technically, there shouldn't be any leading spaces,
 		// since pressing the spacebar is an alias for TRACE.
-		// However, there is spaces between arguments
+		// However, there are spaces between arguments
 		pSrc = const_cast<char*>( SkipWhiteSpace( pSrc ));
 
 		if (pSrc)
@@ -274,20 +274,16 @@ int	ArgsGet ( char * pInput )
 				pEnd = SkipUntilToken( pSrc+1, g_aTokens, NUM_TOKENS, &iTokenEnd );
 			}
 
-			if (iTokenSrc == TOKEN_COMMENT_EOL)
-				break; //pArg->eToken = iTokenSrc;
-			
+			if ((iTokenSrc == TOKEN_COMMENT_EOL) ||
+				(iArg == 0 && iTokenSrc == TOKEN_DIVIDE_FLOOR))	// Double FORWARD SLASH at start of line
+				break;
+
 			if (iTokenSrc == NO_TOKEN)
 			{
 				iTokenSrc = TOKEN_ALPHANUMERIC;
 			}
 
 			iType = g_aTokens[ iTokenSrc ].eType;
-
-			if (iTokenSrc == TOKEN_SEMI)
-			{
-				// TODO - command separator, must handle non-quoted though!
-			}
 
 			if (iTokenSrc == TOKEN_QUOTE_DOUBLE)
 			{
@@ -377,7 +373,7 @@ bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ )
 				continue;
 
 			// Handle one char names
-			if ((pArg->nArgLen == 1) && (pArg->sArg[0] == g_aBreakpointSource[ iReg ][0]))
+			if ((pArg->nArgLen == 1) && (_stricmp(pArg->sArg, g_aBreakpointSource[iReg]) == 0))
 			{
 				switch ( iReg )
 				{
@@ -393,7 +389,7 @@ bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ )
 			else
 			if (iReg == BP_SRC_REG_PC)
 			{
-				if ((pArg->nArgLen == 2) && (strcmp( pArg->sArg, g_aBreakpointSource[ iReg ] ) == 0))
+				if ((pArg->nArgLen == 2) && (_stricmp( pArg->sArg, g_aBreakpointSource[ iReg ] ) == 0))
 				{
 					*pAddressValue_ = regs.pc       ; bStatus = true; break;
 				}
@@ -545,13 +541,14 @@ int ArgsCook ( const int nArgs )
 					pArg->bSymbol = true;
 				}
 
-				// Comma and Colon are range operators, but they are not parsed here,
-				// since args no longer have a 1st and 2nd value
-/*
-					pPrev->eToken = TOKEN_COLON;
-					pPrev->bType |= TYPE_ADDRESS;
-					pPrev->bType |= TYPE_RANGE;
-*/
+				// TOKEN_COMMA and TOKEN_COLON are range operators, but they are not parsed here - see Range_Get()
+
+				if (pArg->eToken == TOKEN_FSLASH) // FORWARD SLASH (address delimiter)
+				{
+					// not parsed here - see Range_GetPrefix()
+					pPrev->bType &= ~TYPE_ADDRESS;	// Not necessary
+					nParamLen = 0;
+				}
 
 				if (pArg->eToken == TOKEN_AMPERSAND) // AND   & delta
 				{
@@ -623,20 +620,15 @@ int ArgsCook ( const int nArgs )
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
 					{
-						  ArgsGetRegisterValue( pNext, & nAddressRHS );
+						ArgsGetRegisterValue( pNext, & nAddressRHS );
 					}
 					pPrev->nValue *= nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 2;
 				}
 
-				if (pArg->eToken == TOKEN_FSLASH) // FORWARD SLASH / delta
+				if (pArg->eToken == TOKEN_DIVIDE_FLOOR) // Double FORWARD SLASH   divide-floor delta
 				{
-					if (pNext->eToken == TOKEN_FSLASH) // Comment
-					{					
-						nArg = iArg - 1;
-						return nArg;
-					}
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
 					{
 						ArgsGetRegisterValue( pNext, & nAddressRHS );
@@ -755,6 +747,8 @@ int ArgsCook ( const int nArgs )
 					}
 				}
 
+				//
+
 				if (nParamLen)
 				{
 					_Arg_Shift( iArg + nParamLen, nArgs, iArg );
@@ -815,8 +809,7 @@ const char * ParserFindToken( const char *pSrc, const TokenTable_t *aTokens, con
 	const char        *pName  = NULL;
 	int   iToken;
 
-	// Look-ahead for <=
-	// Look-ahead for >=
+	// Look ahead for: //, <=, >=, !=
 	for (iToken = _TOKEN_FLAG_MULTI; iToken < NUM_TOKENS; iToken++ )
 	{
 		pName = & (g_aTokens[ iToken ].sToken[0]);

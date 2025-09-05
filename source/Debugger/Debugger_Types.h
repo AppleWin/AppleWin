@@ -24,6 +24,9 @@
 		RANGE_MISSING_ARG_2 = 0, // error
 		RANGE_HAS_LEN          , // valid case 1
 		RANGE_HAS_END          , // valid case 2
+		RANGE_NO_PREFIX,
+		RANGE_PREFIX_BAD,
+		RANGE_PREFIX_OK,
 	};
 
 	struct AddressingMode_t
@@ -209,6 +212,28 @@
 
 	struct Breakpoint_t
 	{
+		Breakpoint_t() { Clear(); };
+
+		void Clear()
+		{
+			nAddress = 0;
+			nLength = 0;
+			eSource = BP_SRC_REG_PC;
+			eOperator = BP_OP_EQUAL;
+
+			bSet = false;
+			bEnabled = false;
+			bTemp = false;
+			bHit = false;
+			bStop = false;
+			nHitCount = 0;
+
+			nSlot = kSlotInvalid;
+			nBank = kBankInvalid;
+			nLangCard = kLangCardInvalid;
+			bIsROM = false;
+		};
+
 		WORD                 nAddress ; // for registers, functions as nValue
 		UINT                 nLength  ;
 		BreakpointSource_t   eSource;
@@ -219,6 +244,16 @@
 		bool                 bHit     ; // true when the breakpoint has just been hit
 		bool                 bStop    ; // true if the debugger stops when it is hit
 		uint32_t             nHitCount; // number of times the breakpoint was hit
+		int                  nSlot    ; // (-1: not valid)
+		int                  nBank    ; // (-1: not valid) RamWorks: 00-FF, Saturn: 0-7
+		int                  nLangCard; // (-1: not valid) LC 4K bank: 1 or 2
+		bool                 bIsROM   ;
+
+		//
+
+		static const int kSlotInvalid = -1;
+		static const int kBankInvalid = -1;
+		static const int kLangCardInvalid = -1;
 	};
 
 	typedef Breakpoint_t Bookmark_t;
@@ -1281,15 +1316,16 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		, TOKEN_PLUS         // + Delta  Argument1 += Argument2
 		, TOKEN_QUOTE_SINGLE // '
 		, TOKEN_QUOTE_DOUBLE // "
-		, TOKEN_SEMI         // ; Command Separator
+		, _TOKEN_SEMI        // ; Comment EOL
+		, TOKEN_COMMENT_EOL = _TOKEN_SEMI
 		, TOKEN_SPACE        //   Token Delimiter
 		, TOKEN_STAR         // *
 //		, TOKEN_TAB          // '\t'
 		, TOKEN_TILDE        // ~
 
 		// Multi char tokens come last
-		, TOKEN_COMMENT_EOL  // //
-		,_TOKEN_FLAG_MULTI = TOKEN_COMMENT_EOL
+		, _TOKEN_FLAG_MULTI
+		, TOKEN_DIVIDE_FLOOR = _TOKEN_FLAG_MULTI // //
 		, TOKEN_GREATER_EQUAL// >=
 		, TOKEN_LESS_EQUAL   // <=
 		, TOKEN_NOT_EQUAL    // !=
