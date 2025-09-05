@@ -1183,6 +1183,9 @@ void DrawBreakpoints ( int line )
 
 			PrintTextCursorX( WordToHexStr( nAddress1 ).c_str(), rect2);
 
+			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ) );
+			FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
+
 			if (nLength == 1)
 			{
 				if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
@@ -1224,6 +1227,7 @@ void DrawBreakpoints ( int line )
 				PrintTextCursorX( WordToHexStr( nAddress2 ).c_str(), rect2);
 
 				DebuggerSetColorBG( DebuggerGetColor( BG_INFO ) );
+				FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
 				if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
 				{
 					DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BP_MEM_READ ) );
