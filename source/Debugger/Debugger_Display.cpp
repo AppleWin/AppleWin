@@ -2289,6 +2289,15 @@ void DrawMemory ( int line, int iMemDump )
 
 	//
 
+	AddressPrefix_t& addrPrefix = pMD->addrPrefix;
+
+	if (addrPrefix.nSlot != Breakpoint_t::kSlotInvalid
+		&& addrPrefix.nBank != Breakpoint_t::kBankInvalid
+		&& addrPrefix.nLangCard != Breakpoint_t::kLangCardInvalid)
+	{
+		MemGetBankPtr(0);	// Flush cache to back-buffers
+	}
+
 	for (int iLine = 0; iLine < nLines; iLine++)
 	{
 		rect2 = rect;
@@ -2317,7 +2326,6 @@ void DrawMemory ( int line, int iMemDump )
 //			else
 			{
 				BYTE nData = 0;
-				AddressPrefix_t& addrPrefix = pMD->addrPrefix;
 
 				if (addrPrefix.nSlot == Breakpoint_t::kSlotInvalid
 					&& addrPrefix.nBank == Breakpoint_t::kBankInvalid
