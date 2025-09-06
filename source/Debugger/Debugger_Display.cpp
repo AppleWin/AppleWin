@@ -1186,14 +1186,6 @@ void DrawBreakpoints ( int line )
 			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ) );
 			FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
 
-			if (nLength == 1)
-			{
-				if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
-					PrintTextCursorX("R", rect2);
-				else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
-					PrintTextCursorX("W", rect2);
-			}
-
 			if (nLength > 1)
 			{
 				DebuggerSetColorBG( DebuggerGetColor( BG_INFO ) );
@@ -1228,16 +1220,17 @@ void DrawBreakpoints ( int line )
 
 				DebuggerSetColorBG( DebuggerGetColor( BG_INFO ) );
 				FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
-				if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
-				{
-					DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BP_MEM_READ ) );
-					PrintTextCursorX("R", rect2);
-				}
-				else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
-				{
-					DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BP_MEM_WRITE ) );
-					PrintTextCursorX("W", rect2);
-				}
+			}
+
+			if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
+			{
+				DebuggerSetColorFG(DebuggerGetColor(FG_INFO_BP_MEM_READ));
+				PrintTextCursorX("R", rect2);
+			}
+			else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
+			{
+				DebuggerSetColorFG(DebuggerGetColor(FG_INFO_BP_MEM_WRITE));
+				PrintTextCursorX("W", rect2);
 			}
 
 #if !USE_APPLE_FONT

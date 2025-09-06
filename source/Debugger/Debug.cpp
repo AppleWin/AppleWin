@@ -2198,7 +2198,7 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 	if (aBreakWatchZero[iBWZ].nLength > 1)
 	{
 		fullPrefixAddr += ":";
-		std::string addrEnd = StrFormat(CHC_ADDRESS "%04X", aBreakWatchZero[iBWZ].nAddress + aBreakWatchZero[iBWZ].nLength);
+		std::string addrEnd = StrFormat(CHC_ADDRESS "%04X", aBreakWatchZero[iBWZ].nAddress + aBreakWatchZero[iBWZ].nLength - 1);
 		fullPrefixAddr += addrEnd;
 	}
 	else
