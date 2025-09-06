@@ -4030,28 +4030,59 @@ Update_t CmdDisk (int nArgs)
 // Memory _________________________________________________________________________________________
 
 
+//===========================================================================
+Update_t CmdMemoryCompare(int nArgs)
+{
+	if (nArgs < 3)
+		return Help_Arg_1(CMD_MEMORY_COMPARE);
+
+	WORD nSrcAddr = g_aArgs[1].nValue;
+	WORD nDstAddr = g_aArgs[3].nValue;
+
+	WORD nSrcSymAddr;
+	WORD nDstSymAddr;
+
+	if (!nSrcAddr)
+	{
+		nSrcSymAddr = GetAddressFromSymbol(g_aArgs[1].sArg);
+		if (nSrcAddr != nSrcSymAddr)
+			nSrcAddr = nSrcSymAddr;
+	}
+
+	if (!nDstAddr)
+	{
+		nDstSymAddr = GetAddressFromSymbol(g_aArgs[3].sArg);
+		if (nDstAddr != nDstSymAddr)
+			nDstAddr = nDstSymAddr;
+	}
+
+	//	if ((!nSrcAddr) || (!nDstAddr))
+	//		return Help_Arg_1( CMD_MEMORY_COMPARE );
+
+	return UPDATE_CONSOLE_DISPLAY;
+}
+
 // TO DO:
 // . Add support for dumping Disk][ device
 //===========================================================================
-bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
+bool MemoryDumpCheck (const int iArg, WORD * pAddress_ )
 {
-	if (! nArgs)
-		return false;
-
-	Arg_t *pArg = &g_aArgs[1];
+	Arg_t *pArg = &g_aArgs[iArg];
 	WORD nAddress = pArg->nValue;
 	bool bUpdate = false;
 
 	pArg->eDevice = DEV_MEMORY;						// Default
 
-	if (strncmp(g_aArgs[1].sArg, "MB", 2) == 0)		// Mockingboard sub-unit (6522+AY8913): "MBs" or "MBsn"
+	const char* const psArg = (char*) g_aArgs[iArg].sArg;
+
+	if (strncmp(psArg, "MB", 2) == 0)				// Mockingboard sub-unit (6522+AY8913): "MBs" or "MBsn"
 	{
 		UINT slot = (UINT)-1;
 		UINT subUnit = 0;							// Default to 6522-A
-		if (strlen(g_aArgs[1].sArg) >= 3)			// "MBs" where s = slot#
-			slot = g_aArgs[1].sArg[2] - '0';
-		if (strlen(g_aArgs[1].sArg) == 4)			// "MBsn" where s = slot#, n = SY6522 A or B eg. AY4A
-			subUnit = g_aArgs[1].sArg[3] - 'A';
+		if (strlen(psArg) >= 3)						// "MBs" where s = slot#
+			slot = psArg[2] - '0';
+		if (strlen(psArg) == 4)						// "MBsn" where s = slot#, n = SY6522 A or B eg. AY4A
+			subUnit = psArg[3] - 'A';
 		if (slot <= 7 && subUnit <= 1)
 		{
 			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
@@ -4059,14 +4090,14 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 			bUpdate = true;
 		}
 	}
-	else if (strncmp(g_aArgs[1].sArg, "AY", 2) == 0)	// AY8913: "AYs" or "AYsn"
+	else if (strncmp(psArg, "AY", 2) == 0)			// AY8913: "AYs" or "AYsn"
 	{
 		UINT slot = (UINT)-1;
 		UINT subUnit = 0;							// Default to 6522-A
-		if (strlen(g_aArgs[1].sArg) >= 3)			// "AYs" where s = slot#
-			slot = g_aArgs[1].sArg[2] - '0';
-		if (strlen(g_aArgs[1].sArg) == 4)			// "AYsn" where s = slot#, n = SY6522 A or B eg. AY4A
-			subUnit = g_aArgs[1].sArg[3] - 'A';
+		if (strlen(psArg) >= 3)						// "AYs" where s = slot#
+			slot = psArg[2] - '0';
+		if (strlen(psArg) == 4)						// "AYsn" where s = slot#, n = SY6522 A or B eg. AY4A
+			subUnit = psArg[3] - 'A';
 		if (slot <= 7 && subUnit <= 1)
 		{
 			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
@@ -4075,27 +4106,27 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 		}
 	}
 #ifdef SUPPORT_Z80_EMU
-	else if (strcmp(g_aArgs[1].sArg, "*AF") == 0)
+	else if (strcmp(psArg, "*AF") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_AF);
 		bUpdate = true;
 	}
-	else if (strcmp(g_aArgs[1].sArg, "*BC") == 0)
+	else if (strcmp(psArg, "*BC") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_BC);
 		bUpdate = true;
 	}
-	else if (strcmp(g_aArgs[1].sArg, "*DE") == 0)
+	else if (strcmp(psArg, "*DE") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_DE);
 		bUpdate = true;
 	}
-	else if (strcmp(g_aArgs[1].sArg, "*HL") == 0)
+	else if (strcmp(psArg, "*HL") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_HL);
 		bUpdate = true;
 	}
-	else if (strcmp(g_aArgs[1].sArg, "*IX") == 0)
+	else if (strcmp(psArg, "*IX") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_IX);
 		bUpdate = true;
@@ -4110,60 +4141,30 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 
 	if (pAddress_)
 	{
-			*pAddress_ = nAddress;
+		*pAddress_ = nAddress;
 	}
 
 	return true;
 }
 
 //===========================================================================
-Update_t CmdMemoryCompare (int nArgs )
-{
-	if (nArgs < 3)
-		return Help_Arg_1( CMD_MEMORY_COMPARE );
-
-	WORD nSrcAddr = g_aArgs[1].nValue;
-	WORD nDstAddr = g_aArgs[3].nValue;
-
-	WORD nSrcSymAddr;
-	WORD nDstSymAddr;
-
-	if (!nSrcAddr)
-	{
-		nSrcSymAddr = GetAddressFromSymbol( g_aArgs[1].sArg );
-		if (nSrcAddr != nSrcSymAddr)
-			nSrcAddr = nSrcSymAddr;
-	}
-
-	if (!nDstAddr)
-	{
-		nDstSymAddr = GetAddressFromSymbol( g_aArgs[3].sArg );
-		if (nDstAddr != nDstSymAddr)
-			nDstAddr = nDstSymAddr;
-	}
-
-//	if ((!nSrcAddr) || (!nDstAddr))
-//		return Help_Arg_1( CMD_MEMORY_COMPARE );
-
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
 static Update_t _CmdMemoryDump (int nArgs, int iWhich, int iView )
 {
-	WORD nAddress = 0;
+	int iArg = 1;	// skip cmd
+	int dArgPrefix = 0;
+	if (!Range_GetAllPrefixes(iArg, nArgs, dArgPrefix, &g_aMemDump[iWhich].addrPrefix))
+		return Help_Arg_1(g_iCommand);
 
-	if ( ! MemoryDumpCheck(nArgs, & nAddress ) )
-	{
-		return Help_Arg_1( g_iCommand );
-	}
+	WORD nAddress = 0;
+	if (!nArgs || !MemoryDumpCheck(iArg, &nAddress))
+		return Help_Arg_1(g_iCommand);
 
 	g_aMemDump[iWhich].nAddress = nAddress;
-	g_aMemDump[iWhich].eDevice = g_aArgs[1].eDevice;
+	g_aMemDump[iWhich].eDevice = g_aArgs[iArg].eDevice;
 	g_aMemDump[iWhich].bActive = true;
 	g_aMemDump[iWhich].eView = (MemoryView_e) iView;
 
-	return UPDATE_MEM_DUMP; // TODO: This really needed? Don't think we do any actual ouput
+	return UPDATE_MEM_DUMP; // TODO: This really needed? Don't think we do any actual output
 }
 
 //===========================================================================

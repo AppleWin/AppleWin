@@ -1247,10 +1247,11 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 	struct MemoryDump_t
 	{
-		bool         bActive;
-		WORD         nAddress; // nAddressMemDump; // was USHORT
-		DEVICE_e     eDevice;
-		MemoryView_e eView;
+		bool			bActive;
+		WORD			nAddress;
+		DEVICE_e		eDevice;
+		MemoryView_e	eView;
+		AddressPrefix_t	addrPrefix;
 	};
 
 	enum MemoryDump_e

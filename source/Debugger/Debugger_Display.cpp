@@ -2316,7 +2316,68 @@ void DrawMemory ( int line, int iMemDump )
 //			}
 //			else
 			{
-				const BYTE nData = ReadByteFromMemory(iAddress);
+				BYTE nData = 0;
+				AddressPrefix_t& addrPrefix = pMD->addrPrefix;
+
+				if (addrPrefix.nSlot == Breakpoint_t::kSlotInvalid
+					&& addrPrefix.nBank == Breakpoint_t::kBankInvalid
+					&& addrPrefix.nLangCard == Breakpoint_t::kLangCardInvalid
+					&& addrPrefix.bIsROM == false)
+				{
+					// No prefix, so just read from current MMU's view
+					nData = ReadByteFromMemory(iAddress);
+				}
+				else if (addrPrefix.bIsROM)
+				{
+					nData = ReadByteFromROM(iAddress);
+				}
+				else
+				{
+					if (addrPrefix.nSlot == Breakpoint_t::kSlotInvalid)	// Main, Aux or RamWorks
+					{
+						uint16_t physicalAddrOffset = iAddress;
+						if (addrPrefix.nLangCard == 1 && iAddress >= 0xD000 && iAddress <= 0xDFFF)
+							physicalAddrOffset = iAddress - 0x1000;
+
+						// Default to main mem, if LC is specified, but bank isn't
+						int nBank = addrPrefix.nBank;
+						if (addrPrefix.nLangCard != Breakpoint_t::kLangCardInvalid && addrPrefix.nBank == Breakpoint_t::kBankInvalid)
+							nBank = 0x00;
+
+						LPBYTE pMem = NULL;
+						if (nBank == 0x00)
+							pMem = MemGetMainPtrWithLC(physicalAddrOffset);
+						else if (nBank != Breakpoint_t::kBankInvalid)
+							pMem = MemGetAuxPtrWithLC(physicalAddrOffset);
+
+						if (pMem)
+							nData = *pMem;
+						else
+							nData = ReadByteFromMemory(iAddress);
+					}
+					else // Saturn
+					{
+						if (iAddress < 0xD000)
+						{
+							nData = ReadByteFromMemory(iAddress);
+						}
+						else
+						{
+							// Default to bank-0, if bank isn't specified
+							int nBank = addrPrefix.nBank;
+							if (addrPrefix.nBank == Breakpoint_t::kBankInvalid)
+								nBank = 0x0;
+
+							uint16_t physicalAddrOffset = iAddress;
+							if (addrPrefix.nLangCard == 1 && iAddress >= 0xD000 && iAddress <= 0xDFFF)
+								physicalAddrOffset = iAddress - 0x1000;
+
+							nData = GetCardMgr().GetLanguageCardMgr().GetByteFromSaturn(addrPrefix.nSlot, nBank, physicalAddrOffset);
+						}
+					}
+				}
+
+				//
 
 				if (iView == MEM_VIEW_HEX)
 				{

@@ -534,6 +534,22 @@ UINT Saturn128K::GetSaturnMemorySize()
 	return g_uSaturnBanksFromCmdLine;
 }
 
+uint8_t Saturn128K::GetByteFromBank(uint8_t bank, uint16_t phyAddr)
+{
+	if (bank >= kMaxSaturnBanks)
+	{
+		_ASSERT(0);
+		return 0;
+	}
+
+	if (phyAddr < 0xC000)
+		return 0;
+
+	// LC1-4K:      physical addr [$C000-CFFF] - $C000 -> [$0000-0FFF]
+	// LC2-4K & 8K: physical addr [$D000-FFFF] - $C000 -> [$1000-3FFF]
+	return m_aSaturnBanks[bank][phyAddr - 0xC000];
+}
+
 //-------------------------------------
 
 /*
@@ -600,4 +616,21 @@ bool LanguageCardManager::SetLanguageCard(SS_CARDTYPE type)
 	}
 
 	return true;
+}
+
+uint8_t LanguageCardManager::GetByteFromSaturn(uint8_t slot, uint8_t bank, uint16_t phyAddr)
+{
+	if (slot == SLOT0 || slot > SLOT7)
+	{
+		_ASSERT(0);
+		return 0;
+	}
+
+	if (GetCardMgr().QuerySlot(slot) != CT_Saturn128K)
+	{
+		_ASSERT(0);
+		return 0;
+	}
+
+	return dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(slot)).GetByteFromBank(bank, phyAddr);
 }

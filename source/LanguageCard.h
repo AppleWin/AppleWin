@@ -89,6 +89,7 @@ public:
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 	void SetMemMainLanguageCard(void);
+	uint8_t GetByteFromBank(uint8_t bank, uint16_t phyAddr);
 
 	static UINT	GetSaturnMemorySize();
 	static void	SetSaturnMemorySize(UINT banks);
@@ -133,6 +134,8 @@ public:
 	bool SetLanguageCard(SS_CARDTYPE type);
 
 	void SetMemModeFromSnapshot(void);
+
+	uint8_t GetByteFromSaturn(uint8_t slot, uint8_t bank, uint16_t phyAddr);
 
 private:
 	LanguageCardUnit* m_pLanguageCard;
