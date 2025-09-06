@@ -373,7 +373,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static	Update_t ExecuteCommand ( int nArgs );
 
 // Breakpoints
-	std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD addr, bool padding);
+	std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& pBP, WORD addr, bool padding);
 	Update_t _BP_InfoNone ();
 	void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, int & nTotal );
 	void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, const bool bEnabled );
@@ -1429,7 +1429,12 @@ int CheckBreakpointsIO ()
 						{
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
-								g_sBreakMemoryFullPrefixAddr = GetFullPrefixAddrForBreakpoint(pBP, (WORD)nAddress, false);	// string is last BP hit
+								AddressPrefix_t addrPrefix;
+								addrPrefix.nSlot = pBP->nSlot;
+								addrPrefix.nBank = pBP->nBank;
+								addrPrefix.nLangCard = pBP->nLangCard;
+								addrPrefix.bIsROM = pBP->bIsROM;
+								g_sBreakMemoryFullPrefixAddr = GetFullPrefixAddrForBreakpoint(addrPrefix, (WORD)nAddress, false);	// string is last BP hit
 								BYTE opcode = ReadByteFromMemory(regs.pc);
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
@@ -2092,7 +2097,7 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 }
 
 //===========================================================================
-static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD address, bool padding)
+static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& addrPrefix, WORD address, bool padding)
 {
 	char sSlot    [] = "sN/";	// Saturn slot
 	char sBank    [] = "bbb/";	// RamWorks bank
@@ -2100,9 +2105,9 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 	int prefixPad = 1;	// whitespace padding
 	std::string prefix = CHC_INFO;	// "sN/bbb/lN/" (10 chars) or "ROM/"
 
-	if (pBP->nSlot != Breakpoint_t::kSlotInvalid)
+	if (addrPrefix.nSlot != Breakpoint_t::kSlotInvalid)
 	{
-		sSlot[1] = pBP->nSlot + '0';
+		sSlot[1] = addrPrefix.nSlot + '0';
 		prefix += sSlot;
 	}
 	else
@@ -2110,17 +2115,17 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 		prefixPad += 3;
 	}
 
-	if (pBP->nBank != Breakpoint_t::kBankInvalid)
+	if (addrPrefix.nBank != Breakpoint_t::kBankInvalid)
 	{
-		if (pBP->nBank < 0x100)
+		if (addrPrefix.nBank < 0x100)
 		{
-			sprintf_s(sBank, "%02X", pBP->nBank);
+			sprintf_s(sBank, "%02X", addrPrefix.nBank);
 			sBank[2] = '/';
 			sBank[3] = 0;
 		}
 		else
 		{
-			sprintf_s(sBank, "%03X", pBP->nBank);
+			sprintf_s(sBank, "%03X", addrPrefix.nBank);
 			sBank[3] = '/';
 			sBank[4] = 0;
 			prefixPad--;
@@ -2132,9 +2137,9 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 		prefixPad += 3;
 	}
 
-	if (pBP->nLangCard != Breakpoint_t::kLangCardInvalid)
+	if (addrPrefix.nLangCard != Breakpoint_t::kLangCardInvalid)
 	{
-		sLangCard[1] = pBP->nLangCard + '0';
+		sLangCard[1] = addrPrefix.nLangCard + '0';
 		prefix += sLangCard;
 	}
 	else
@@ -2142,7 +2147,7 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 		prefixPad += 3;
 	}
 
-	if (pBP->bIsROM)
+	if (addrPrefix.bIsROM)
 	{
 		prefix += "ROM/";
 		prefixPad = 6;	// 10 chars in total
@@ -2194,7 +2199,12 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 		default                   : iBPM = 4; break;
 	}
 
-	std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(&aBreakWatchZero[iBWZ], aBreakWatchZero[iBWZ].nAddress, true);
+	AddressPrefix_t addrPrefix;
+	addrPrefix.nSlot = aBreakWatchZero[iBWZ].nSlot;
+	addrPrefix.nBank = aBreakWatchZero[iBWZ].nBank;
+	addrPrefix.nLangCard = aBreakWatchZero[iBWZ].nLangCard;
+	addrPrefix.bIsROM = aBreakWatchZero[iBWZ].bIsROM;
+	std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(addrPrefix, aBreakWatchZero[iBWZ].nAddress, true);
 	if (aBreakWatchZero[iBWZ].nLength > 1)
 	{
 		fullPrefixAddr += ":";
@@ -4150,6 +4160,21 @@ bool MemoryDumpCheck (const int iArg, WORD * pAddress_ )
 //===========================================================================
 static Update_t _CmdMemoryDump (int nArgs, int iWhich, int iView )
 {
+	if (!nArgs)
+	{
+		// Output current prefixed-address
+		if (!g_aMemDump[iWhich].bActive)
+		{
+			ConsolePrintFormat("Mini memory area-%1d not set", iWhich+1);
+		}
+		else
+		{
+			std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(g_aMemDump[iWhich].addrPrefix, g_aMemDump[iWhich].nAddress, false);
+			ConsolePrintFormat("Mini memory area-%1d: %s", iWhich+1, fullPrefixAddr.c_str());
+		}
+		return ConsoleUpdate();
+	}
+
 	int iArg = 1;	// skip cmd
 	int dArgPrefix = 0;
 	g_aMemDump[iWhich].addrPrefix.Init();
