@@ -1215,7 +1215,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 		{
 		}
 		else
-		if (iToken == TOKEN_SEMI) // comment
+		if (iToken == TOKEN_COMMENT_EOL) // comment
 		{
 			break;
 		}

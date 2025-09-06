@@ -105,10 +105,17 @@
 		, BG_INFO_CHAR       // mid Cyan
 		, FG_INFO_CHAR_HI    // White
 		, FG_INFO_CHAR_LO    // Yellow
-		
+
 		, BG_INFO_IO_BYTE    // Orange (high bit)
 		, FG_INFO_IO_BYTE    // Orange (non-high bit)
-		                               
+
+		, FG_INFO_BP_MEM_READ  // Green
+		, FG_INFO_BP_MEM_WRITE // Orange
+
+		, BG_INFO_MEM_BANK    // mid Cyan
+		, FG_INFO_MEM_BANK    // White
+		, FG_INFO_MEM_LC      //~mid Cyan
+
 		, BG_DATA_1          // Cyan*   Window
 		, BG_DATA_2          // Cyan*
 		, FG_DATA_BYTE       // default same as FG_DISASM_OPCODE
