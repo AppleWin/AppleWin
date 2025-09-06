@@ -4152,6 +4152,7 @@ static Update_t _CmdMemoryDump (int nArgs, int iWhich, int iView )
 {
 	int iArg = 1;	// skip cmd
 	int dArgPrefix = 0;
+	g_aMemDump[iWhich].addrPrefix.Init();
 	if (!Range_GetAllPrefixes(iArg, nArgs, dArgPrefix, &g_aMemDump[iWhich].addrPrefix))
 		return Help_Arg_1(g_iCommand);
 

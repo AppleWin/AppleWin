@@ -212,7 +212,8 @@
 
 	struct AddressPrefix_t
 	{
-		AddressPrefix_t() : nSlot(-1), nBank(-1), nLangCard(-1), bIsROM(false) {}
+		AddressPrefix_t() { Init(); }
+		void Init() { nSlot = -1; nBank = -1; nLangCard = -1; bIsROM = false; }
 		int  nSlot;		// (-1: not valid)
 		int  nBank;		// (-1: not valid) RamWorks: 00-FF, Saturn: 0-7
 		int  nLangCard;	// (-1: not valid) LC 4K bank: 1 or 2

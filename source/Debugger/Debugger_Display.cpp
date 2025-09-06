@@ -2115,6 +2115,81 @@ void DrawLine_AY8913_PAIR(RECT& rect, WORD& iAddress, const int nCols, int iFore
 	rect.bottom += g_nFontHeight;
 }
 
+void FlushCacheForPrefixMemory(AddressPrefix_t& addrPrefix)
+{
+	if (addrPrefix.nSlot != Breakpoint_t::kSlotInvalid
+		|| addrPrefix.nBank != Breakpoint_t::kBankInvalid
+		|| addrPrefix.nLangCard != Breakpoint_t::kLangCardInvalid)
+	{
+		MemGetBankPtr(0);	// Flush cache to back-buffers
+	}
+}
+
+BYTE GetPrefixMemory(const WORD iAddress, AddressPrefix_t& addrPrefix)
+{
+	BYTE nData = 0;
+
+	if (addrPrefix.nSlot == Breakpoint_t::kSlotInvalid
+		&& addrPrefix.nBank == Breakpoint_t::kBankInvalid
+		&& addrPrefix.nLangCard == Breakpoint_t::kLangCardInvalid
+		&& addrPrefix.bIsROM == false)
+	{
+		// No prefix, so just read from current MMU's view
+		nData = ReadByteFromMemory(iAddress);
+	}
+	else if (addrPrefix.bIsROM)
+	{
+		nData = ReadByteFromROM(iAddress);
+	}
+	else
+	{
+		if (addrPrefix.nSlot == Breakpoint_t::kSlotInvalid)	// Main, Aux or RamWorks
+		{
+			uint16_t physicalAddrOffset = iAddress;
+			if (addrPrefix.nLangCard == 1 && iAddress >= 0xD000 && iAddress <= 0xDFFF)
+				physicalAddrOffset = iAddress - 0x1000;
+
+			// Default to main mem, if LC is specified, but bank isn't
+			int nBank = addrPrefix.nBank;
+			if (addrPrefix.nLangCard != Breakpoint_t::kLangCardInvalid && addrPrefix.nBank == Breakpoint_t::kBankInvalid)
+				nBank = 0x00;
+
+			LPBYTE pMem = NULL;
+			if (nBank == 0x00)
+				pMem = MemGetMainPtrWithLC(physicalAddrOffset);
+			else if (nBank != Breakpoint_t::kBankInvalid)
+				pMem = MemGetAuxPtrWithLC(physicalAddrOffset);
+
+			if (pMem)
+				nData = *pMem;
+			else
+				nData = ReadByteFromMemory(iAddress);
+		}
+		else // Saturn
+		{
+			if (iAddress < 0xD000)
+			{
+				nData = ReadByteFromMemory(iAddress);
+			}
+			else
+			{
+				// Default to bank-0, if bank isn't specified
+				int nBank = addrPrefix.nBank;
+				if (addrPrefix.nBank == Breakpoint_t::kBankInvalid)
+					nBank = 0x0;
+
+				uint16_t physicalAddrOffset = iAddress;
+				if (addrPrefix.nLangCard == 1 && iAddress >= 0xD000 && iAddress <= 0xDFFF)
+					physicalAddrOffset = iAddress - 0x1000;
+
+				nData = GetCardMgr().GetLanguageCardMgr().GetByteFromSaturn(addrPrefix.nSlot, nBank, physicalAddrOffset);
+			}
+		}
+	}
+
+	return nData;
+}
+
 void DrawMemory ( int line, int iMemDump )
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
@@ -2289,14 +2364,7 @@ void DrawMemory ( int line, int iMemDump )
 
 	//
 
-	AddressPrefix_t& addrPrefix = pMD->addrPrefix;
-
-	if (addrPrefix.nSlot != Breakpoint_t::kSlotInvalid
-		&& addrPrefix.nBank != Breakpoint_t::kBankInvalid
-		&& addrPrefix.nLangCard != Breakpoint_t::kLangCardInvalid)
-	{
-		MemGetBankPtr(0);	// Flush cache to back-buffers
-	}
+	FlushCacheForPrefixMemory(pMD->addrPrefix);
 
 	for (int iLine = 0; iLine < nLines; iLine++)
 	{
@@ -2325,67 +2393,7 @@ void DrawMemory ( int line, int iMemDump )
 //			}
 //			else
 			{
-				BYTE nData = 0;
-
-				if (addrPrefix.nSlot == Breakpoint_t::kSlotInvalid
-					&& addrPrefix.nBank == Breakpoint_t::kBankInvalid
-					&& addrPrefix.nLangCard == Breakpoint_t::kLangCardInvalid
-					&& addrPrefix.bIsROM == false)
-				{
-					// No prefix, so just read from current MMU's view
-					nData = ReadByteFromMemory(iAddress);
-				}
-				else if (addrPrefix.bIsROM)
-				{
-					nData = ReadByteFromROM(iAddress);
-				}
-				else
-				{
-					if (addrPrefix.nSlot == Breakpoint_t::kSlotInvalid)	// Main, Aux or RamWorks
-					{
-						uint16_t physicalAddrOffset = iAddress;
-						if (addrPrefix.nLangCard == 1 && iAddress >= 0xD000 && iAddress <= 0xDFFF)
-							physicalAddrOffset = iAddress - 0x1000;
-
-						// Default to main mem, if LC is specified, but bank isn't
-						int nBank = addrPrefix.nBank;
-						if (addrPrefix.nLangCard != Breakpoint_t::kLangCardInvalid && addrPrefix.nBank == Breakpoint_t::kBankInvalid)
-							nBank = 0x00;
-
-						LPBYTE pMem = NULL;
-						if (nBank == 0x00)
-							pMem = MemGetMainPtrWithLC(physicalAddrOffset);
-						else if (nBank != Breakpoint_t::kBankInvalid)
-							pMem = MemGetAuxPtrWithLC(physicalAddrOffset);
-
-						if (pMem)
-							nData = *pMem;
-						else
-							nData = ReadByteFromMemory(iAddress);
-					}
-					else // Saturn
-					{
-						if (iAddress < 0xD000)
-						{
-							nData = ReadByteFromMemory(iAddress);
-						}
-						else
-						{
-							// Default to bank-0, if bank isn't specified
-							int nBank = addrPrefix.nBank;
-							if (addrPrefix.nBank == Breakpoint_t::kBankInvalid)
-								nBank = 0x0;
-
-							uint16_t physicalAddrOffset = iAddress;
-							if (addrPrefix.nLangCard == 1 && iAddress >= 0xD000 && iAddress <= 0xDFFF)
-								physicalAddrOffset = iAddress - 0x1000;
-
-							nData = GetCardMgr().GetLanguageCardMgr().GetByteFromSaturn(addrPrefix.nSlot, nBank, physicalAddrOffset);
-						}
-					}
-				}
-
-				//
+				BYTE nData = GetPrefixMemory(iAddress, pMD->addrPrefix);
 
 				if (iView == MEM_VIEW_HEX)
 				{
@@ -3348,6 +3356,8 @@ void DrawSubWindow_Data (Update_t bUpdate)
 	MemoryDump_t* pMD = &g_aMemDump[ iMemDump ];
 	USHORT       nAddress = pMD->nAddress;
 
+	FlushCacheForPrefixMemory(pMD->addrPrefix);
+
 //	if (!pMD->bActive)
 //		return;
 
@@ -3372,7 +3382,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		WORD srcAddr = iAddress;
 		for (int iByte = 0; iByte < nMaxOpcodes; ++iByte, ++srcAddr)
 		{
-			StrAppendByteAsHex(sOpcodes, ReadByteFromMemory(srcAddr));
+			StrAppendByteAsHex(sOpcodes, GetPrefixMemory(srcAddr, pMD->addrPrefix));
 			sOpcodes += ' ';
 		}
 
@@ -3416,7 +3426,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		iAddress = nAddress;
 		for ( int iByte = 0; iByte < nMaxOpcodes; iByte++ )
 		{
-			BYTE nImmediate = ReadByteFromMemory(iAddress);
+			BYTE nImmediate = GetPrefixMemory(iAddress, pMD->addrPrefix);
 			/*int iTextBackground = iBackground;
 			if ((iAddress >= APPLE_IO_BEGIN) && (iAddress <= APPLE_IO_END))
 			{

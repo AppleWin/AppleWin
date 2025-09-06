@@ -1726,9 +1726,27 @@ LPBYTE MemGetMainPtrWithLC(const WORD offset)
 
 LPBYTE MemGetMainPtr(const WORD offset)
 {
+#if 1
 	return g_isMemCacheValid && (memshadow[(offset >> 8)] == (memmain + (offset & 0xFF00)))
 		? mem + offset				// Return 'mem' copy if possible, as page could be dirty
 		: memmain + offset;
+#else
+	// TODO: GH#1426
+	if (!g_isMemCacheValid)
+		return memmain + offset;
+
+	if (offset < 0xC000)
+	{
+		return memshadow[(offset >> 8)] == (memmain + (offset & 0xFF00))
+			? mem + offset			// Return 'mem' copy if possible, as page could be dirty
+			: memmain + offset;
+	}
+
+	// Required for a II+ w/Saturn in SLOT0 or //e w/Saturn (in another slot)
+	return memshadow[(offset >> 8)] == (g_pMemMainLanguageCard + (offset & 0xFF00) - 0xC000)
+		? mem + offset				// Return 'mem' copy if possible, as page could be dirty
+		: memmain + offset;
+#endif
 }
 
 //===========================================================================
