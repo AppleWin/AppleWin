@@ -135,7 +135,7 @@ public:
 
 	void SetMemModeFromSnapshot(void);
 
-	uint8_t GetByteFromSaturn(uint8_t slot, uint8_t bank, uint16_t phyAddr);
+	uint8_t ReadByteFromSaturn(uint8_t slot, uint8_t bank, uint16_t phyAddr);
 
 private:
 	LanguageCardUnit* m_pLanguageCard;

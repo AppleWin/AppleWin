@@ -2115,7 +2115,7 @@ void DrawLine_AY8913_PAIR(RECT& rect, WORD& iAddress, const int nCols, int iFore
 	rect.bottom += g_nFontHeight;
 }
 
-void FlushCacheForPrefixMemory(AddressPrefix_t& addrPrefix)
+static void FlushCacheForPrefixMemory(AddressPrefix_t& addrPrefix)
 {
 	if (addrPrefix.nSlot != AddressPrefix_t::kSlotInvalid
 		|| addrPrefix.nBank != AddressPrefix_t::kBankInvalid
@@ -2125,7 +2125,7 @@ void FlushCacheForPrefixMemory(AddressPrefix_t& addrPrefix)
 	}
 }
 
-BYTE GetPrefixMemory(const WORD iAddress, AddressPrefix_t& addrPrefix)
+static BYTE ReadByteFromMemoryWithPrefix(const WORD iAddress, AddressPrefix_t& addrPrefix)
 {
 	BYTE nData = 0;
 
@@ -2182,7 +2182,7 @@ BYTE GetPrefixMemory(const WORD iAddress, AddressPrefix_t& addrPrefix)
 				if (addrPrefix.nLangCard == 1 && iAddress >= 0xD000 && iAddress <= 0xDFFF)
 					physicalAddrOffset = iAddress - 0x1000;
 
-				nData = GetCardMgr().GetLanguageCardMgr().GetByteFromSaturn(addrPrefix.nSlot, nBank, physicalAddrOffset);
+				nData = GetCardMgr().GetLanguageCardMgr().ReadByteFromSaturn(addrPrefix.nSlot, nBank, physicalAddrOffset);
 			}
 		}
 	}
@@ -2393,7 +2393,7 @@ void DrawMemory ( int line, int iMemDump )
 //			}
 //			else
 			{
-				const BYTE nData = GetPrefixMemory(iAddress, pMD->addrPrefix);
+				const BYTE nData = ReadByteFromMemoryWithPrefix(iAddress, pMD->addrPrefix);
 
 				if (iView == MEM_VIEW_HEX)
 				{
@@ -3382,7 +3382,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		WORD srcAddr = iAddress;
 		for (int iByte = 0; iByte < nMaxOpcodes; ++iByte, ++srcAddr)
 		{
-			StrAppendByteAsHex(sOpcodes, GetPrefixMemory(srcAddr, pMD->addrPrefix));
+			StrAppendByteAsHex(sOpcodes, ReadByteFromMemoryWithPrefix(srcAddr, pMD->addrPrefix));
 			sOpcodes += ' ';
 		}
 
@@ -3426,7 +3426,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		iAddress = nAddress;
 		for ( int iByte = 0; iByte < nMaxOpcodes; iByte++ )
 		{
-			BYTE nImmediate = GetPrefixMemory(iAddress, pMD->addrPrefix);
+			BYTE nImmediate = ReadByteFromMemoryWithPrefix(iAddress, pMD->addrPrefix);
 			/*int iTextBackground = iBackground;
 			if ((iAddress >= APPLE_IO_BEGIN) && (iAddress <= APPLE_IO_END))
 			{

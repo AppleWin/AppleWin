@@ -618,7 +618,7 @@ bool LanguageCardManager::SetLanguageCard(SS_CARDTYPE type)
 	return true;
 }
 
-uint8_t LanguageCardManager::GetByteFromSaturn(uint8_t slot, uint8_t bank, uint16_t phyAddr)
+uint8_t LanguageCardManager::ReadByteFromSaturn(uint8_t slot, uint8_t bank, uint16_t phyAddr)
 {
 	if (slot > SLOT7)
 	{
