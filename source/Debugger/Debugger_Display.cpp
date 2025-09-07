@@ -1179,8 +1179,6 @@ void DrawBreakpoints ( int line )
 			DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
 
 #if DEBUG_FORCE_DISPLAY
-	
-
 	int iColor = R8 + iBreakpoint;
 	COLORREF nColor = g_aColorPalette[ iColor ];
 	if (iBreakpoint >= 8)
@@ -1201,18 +1199,7 @@ void DrawBreakpoints ( int line )
 				DebuggerSetColorBG( DebuggerGetColor( BG_INFO ) );
 				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ) );
 
-//				if (g_bConfigDisasmOpcodeSpaces)
-//				{
-//					PrintTextCursorX( " ", rect2 );
-//					rect2.left += g_nFontWidthAvg;
-//				}
-
 				PrintTextCursorX( ":", rect2 );
-//				rect2.left += g_nFontWidthAvg;
-//				if (g_bConfigDisasmOpcodeSpaces) // TODO: Might have to remove spaces, for BPIO... addr-addr xx
-//				{
-//					rect2.left += g_nFontWidthAvg;
-//				}
 
 				DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
 				DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
