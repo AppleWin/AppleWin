@@ -2127,9 +2127,9 @@ void DrawLine_AY8913_PAIR(RECT& rect, WORD& iAddress, const int nCols, int iFore
 
 static void FlushCacheForPrefixMemory(AddressPrefix_t& addrPrefix)
 {
-	if (addrPrefix.nSlot != AddressPrefix_t::kSlotInvalid
-		|| addrPrefix.nBank != AddressPrefix_t::kBankInvalid
-		|| addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid)
+	if (addrPrefix.nSlot     != AddressPrefix_t::kSlotInvalid
+	 || addrPrefix.nBank     != AddressPrefix_t::kBankInvalid
+	 || addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid)
 	{
 		MemGetBankPtr(0);	// Flush cache to back-buffers
 	}
@@ -2139,10 +2139,10 @@ static BYTE ReadByteFromMemoryWithPrefix(const WORD iAddress, AddressPrefix_t& a
 {
 	BYTE nData = 0;
 
-	if (addrPrefix.nSlot == AddressPrefix_t::kSlotInvalid
-		&& addrPrefix.nBank == AddressPrefix_t::kBankInvalid
-		&& addrPrefix.nLangCard == AddressPrefix_t::kLangCardInvalid
-		&& addrPrefix.bIsROM == false)
+	if (addrPrefix.nSlot     == AddressPrefix_t::kSlotInvalid
+	 && addrPrefix.nBank     == AddressPrefix_t::kBankInvalid
+	 && addrPrefix.nLangCard == AddressPrefix_t::kLangCardInvalid
+	 && addrPrefix.bIsROM    == false)
 	{
 		// No prefix, so just read from current MMU's view
 		nData = ReadByteFromMemory(iAddress);
