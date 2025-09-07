@@ -1092,16 +1092,16 @@ void DrawBreakpoints ( int line )
 
 			rect2.left += 2; // spacer for Bank & Card
 			const UINT kGlyphMiniHexWidth = 4;
-			if (pBP->nBank > 0) // Aux or RamWorks
+			if (pBP->addrPrefix.nBank > 0) // Aux or RamWorks
 			{
 				DebuggerSetColorBG( DebuggerGetColor( BG_INFO_MEM_BANK ) );
 				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_MEM_BANK ) );
-				if (pBP->nBank == 0x100)
+				if (pBP->addrPrefix.nBank == 0x100)
 					PrintGlyph(rect2.left, rect2.top, 0x90 + 0x1);	// Glyph: mini hex "1"
 				rect2.left += kGlyphMiniHexWidth;
-				PrintGlyph( rect2.left, rect2.top, 0x90 + ((pBP->nBank >> 4) & 0xF) ); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
+				PrintGlyph( rect2.left, rect2.top, 0x90 + ((pBP->addrPrefix.nBank >> 4) & 0xF) ); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
 				rect2.left += kGlyphMiniHexWidth;
-				PrintGlyph( rect2.left, rect2.top, 0x90 + ((pBP->nBank >> 0) & 0xF) ); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
+				PrintGlyph( rect2.left, rect2.top, 0x90 + ((pBP->addrPrefix.nBank >> 0) & 0xF) ); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
 				rect2.left += kGlyphMiniHexWidth;
 			}
 			else
@@ -1112,10 +1112,10 @@ void DrawBreakpoints ( int line )
 			FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
 
 			// If the BP is in LC1 or LC2 display a bookmark symbol (1) or (2)
-			if (pBP->nLangCard != Breakpoint_t::kLangCardInvalid)
+			if (pBP->addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid)
 			{
 				DebuggerSetColorFG(DebuggerGetColor( FG_INFO_MEM_LC ));
-				PrintGlyph(rect2.left, rect2.top, 0x90 + pBP->nLangCard); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
+				PrintGlyph(rect2.left, rect2.top, 0x90 + pBP->addrPrefix.nLangCard); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
 			}
 			rect2.left += 4;
 //			rect2.left += g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg - 2;
@@ -2117,9 +2117,9 @@ void DrawLine_AY8913_PAIR(RECT& rect, WORD& iAddress, const int nCols, int iFore
 
 void FlushCacheForPrefixMemory(AddressPrefix_t& addrPrefix)
 {
-	if (addrPrefix.nSlot != Breakpoint_t::kSlotInvalid
-		|| addrPrefix.nBank != Breakpoint_t::kBankInvalid
-		|| addrPrefix.nLangCard != Breakpoint_t::kLangCardInvalid)
+	if (addrPrefix.nSlot != AddressPrefix_t::kSlotInvalid
+		|| addrPrefix.nBank != AddressPrefix_t::kBankInvalid
+		|| addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid)
 	{
 		MemGetBankPtr(0);	// Flush cache to back-buffers
 	}
@@ -2129,9 +2129,9 @@ BYTE GetPrefixMemory(const WORD iAddress, AddressPrefix_t& addrPrefix)
 {
 	BYTE nData = 0;
 
-	if (addrPrefix.nSlot == Breakpoint_t::kSlotInvalid
-		&& addrPrefix.nBank == Breakpoint_t::kBankInvalid
-		&& addrPrefix.nLangCard == Breakpoint_t::kLangCardInvalid
+	if (addrPrefix.nSlot == AddressPrefix_t::kSlotInvalid
+		&& addrPrefix.nBank == AddressPrefix_t::kBankInvalid
+		&& addrPrefix.nLangCard == AddressPrefix_t::kLangCardInvalid
 		&& addrPrefix.bIsROM == false)
 	{
 		// No prefix, so just read from current MMU's view
@@ -2143,7 +2143,7 @@ BYTE GetPrefixMemory(const WORD iAddress, AddressPrefix_t& addrPrefix)
 	}
 	else
 	{
-		if (addrPrefix.nSlot == Breakpoint_t::kSlotInvalid)	// Main, Aux or RamWorks
+		if (addrPrefix.nSlot == AddressPrefix_t::kSlotInvalid)	// Main, Aux or RamWorks
 		{
 			uint16_t physicalAddrOffset = iAddress;
 			if (addrPrefix.nLangCard == 1 && iAddress >= 0xD000 && iAddress <= 0xDFFF)
@@ -2151,13 +2151,13 @@ BYTE GetPrefixMemory(const WORD iAddress, AddressPrefix_t& addrPrefix)
 
 			// Default to main mem, if LC is specified, but bank isn't
 			int nBank = addrPrefix.nBank;
-			if (addrPrefix.nLangCard != Breakpoint_t::kLangCardInvalid && addrPrefix.nBank == Breakpoint_t::kBankInvalid)
+			if (addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid && addrPrefix.nBank == AddressPrefix_t::kBankInvalid)
 				nBank = 0x00;
 
 			LPBYTE pMem = NULL;
 			if (nBank == 0x00)
 				pMem = MemGetMainPtrWithLC(physicalAddrOffset);
-			else if (nBank != Breakpoint_t::kBankInvalid)
+			else if (nBank != AddressPrefix_t::kBankInvalid)
 				pMem = MemGetAuxPtrWithLC(physicalAddrOffset);
 
 			if (pMem)
@@ -2175,7 +2175,7 @@ BYTE GetPrefixMemory(const WORD iAddress, AddressPrefix_t& addrPrefix)
 			{
 				// Default to bank-0, if bank isn't specified
 				int nBank = addrPrefix.nBank;
-				if (addrPrefix.nBank == Breakpoint_t::kBankInvalid)
+				if (addrPrefix.nBank == AddressPrefix_t::kBankInvalid)
 					nBank = 0x0;
 
 				uint16_t physicalAddrOffset = iAddress;

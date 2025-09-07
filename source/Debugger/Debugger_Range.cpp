@@ -103,15 +103,15 @@ bool Range_GetAllPrefixes(int& iArg, const int nArg, int& dArgPrefix, AddressPre
 	// Got all prefixes, so do some checks:
 
 	if (pAP->bIsROM &&
-		(pAP->nSlot != Breakpoint_t::kSlotInvalid || pAP->nBank != Breakpoint_t::kBankInvalid || pAP->nLangCard != Breakpoint_t::kLangCardInvalid))
+		(pAP->nSlot != AddressPrefix_t::kSlotInvalid || pAP->nBank != AddressPrefix_t::kBankInvalid || pAP->nLangCard != AddressPrefix_t::kLangCardInvalid))
 	{
 		ConsoleDisplayError("Address prefix bad: 'r/' not permitted with other prefixes.");
 		return false;
 	}
 
-	if (pAP->nSlot != Breakpoint_t::kSlotInvalid)	// Currently setting a slot# means Saturn card
+	if (pAP->nSlot != AddressPrefix_t::kSlotInvalid)	// Currently setting a slot# means Saturn card
 	{
-		if (pAP->nBank != Breakpoint_t::kBankInvalid && pAP->nBank > 7)
+		if (pAP->nBank != AddressPrefix_t::kBankInvalid && pAP->nBank > 7)
 		{
 			ConsoleDisplayError("Address prefix bad: Saturn only supports banks 0-7.");
 			return false;
@@ -125,7 +125,7 @@ bool Range_GetAllPrefixes(int& iArg, const int nArg, int& dArgPrefix, AddressPre
 	}
 	else // No slot# specified, so aux slot (for Extended 80Col or RamWorks card)
 	{
-		if (pAP->nBank != Breakpoint_t::kBankInvalid)
+		if (pAP->nBank != AddressPrefix_t::kBankInvalid)
 		{
 			if (!IsAppleIIeOrAbove(GetApple2Type()))
 			{
