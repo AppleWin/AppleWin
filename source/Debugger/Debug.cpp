@@ -2097,6 +2097,10 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 }
 
 //===========================================================================
+// Called by:
+// . CheckBreakpointsIO(), padding=false - to set g_sBreakMemoryFullPrefixAddr (used later for 'stop reason')
+// . _BWZ_List(),          padding=true  - ie. 'bpl'
+// . _CmdMemoryDump(),     padding=false - ie. 'm1' to show current prefix for mini mem area
 static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& addrPrefix, WORD address, bool padding)
 {
 	char sSlot    [] = "sN/";	// Saturn slot

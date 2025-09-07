@@ -2393,7 +2393,7 @@ void DrawMemory ( int line, int iMemDump )
 //			}
 //			else
 			{
-				BYTE nData = GetPrefixMemory(iAddress, pMD->addrPrefix);
+				const BYTE nData = GetPrefixMemory(iAddress, pMD->addrPrefix);
 
 				if (iView == MEM_VIEW_HEX)
 				{
