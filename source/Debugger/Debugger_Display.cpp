@@ -2280,16 +2280,16 @@ void DrawMemory ( int line, int iMemDump )
 
 	if (eDevice == DEV_MEMORY)
 	{
-		// From DrawBreakpoints() - so refactor into separate func?
-		{
+		if (pMD->addrPrefix.bIsROM)
+			PrintTextCursorX("ROM ", rect2);
+		else
 			DrawMiniHexBankAndLangCard(rect2, pMD->addrPrefix);
 
-			DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
-			PrintTextCursorX(sAddress.c_str(), rect2);
+		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
+		PrintTextCursorX(sAddress.c_str(), rect2);
 
-			rect2.top += g_nFontHeight;
-			rect2.bottom += g_nFontHeight;
-		}
+		rect2.top += g_nFontHeight;
+		rect2.bottom += g_nFontHeight;
 	}
 	else
 	{
