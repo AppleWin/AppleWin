@@ -4170,7 +4170,7 @@ static Update_t _CmdMemoryDump (int nArgs, int iWhich, int iView )
 		return Help_Arg_1(g_iCommand);
 
 	WORD nAddress = 0;
-	if (!nArgs || !MemoryDumpCheck(iArg, &nAddress))
+	if (!MemoryDumpCheck(iArg, &nAddress))
 		return Help_Arg_1(g_iCommand);
 
 	g_aMemDump[iWhich].nAddress = nAddress;

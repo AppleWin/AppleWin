@@ -534,7 +534,7 @@ UINT Saturn128K::GetSaturnMemorySize()
 	return g_uSaturnBanksFromCmdLine;
 }
 
-uint8_t Saturn128K::GetByteFromBank(uint8_t bank, uint16_t phyAddr)
+uint8_t Saturn128K::ReadByteFromBank(uint8_t bank, uint16_t phyAddr)
 {
 	if (bank >= kMaxSaturnBanks)
 	{
@@ -632,5 +632,5 @@ uint8_t LanguageCardManager::ReadByteFromSaturn(uint8_t slot, uint8_t bank, uint
 		return 0;
 	}
 
-	return dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(slot)).GetByteFromBank(bank, phyAddr);
+	return dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(slot)).ReadByteFromBank(bank, phyAddr);
 }

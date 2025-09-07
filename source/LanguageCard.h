@@ -89,7 +89,7 @@ public:
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 	void SetMemMainLanguageCard(void);
-	uint8_t GetByteFromBank(uint8_t bank, uint16_t phyAddr);
+	uint8_t ReadByteFromBank(uint8_t bank, uint16_t phyAddr);
 
 	static UINT	GetSaturnMemorySize();
 	static void	SetSaturnMemorySize(UINT banks);
