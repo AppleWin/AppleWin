@@ -375,6 +375,7 @@ Note: The asterisk ‘*’ may be used to clear all breakpoints.</span></i></p>
 			</li>
 		</ul>
 		<br>
+
 		<p>You can use the following <i>optional</i> address prefixes (each delimited by a "/" or forward-slash):</p>
 		<table border="1" cellpadding="2" cellspacing="0" width="75%">
 			<COLGROUP>
@@ -440,10 +441,18 @@ Note: The asterisk ‘*’ may be used to clear all breakpoints.</span></i></p>
 							</tbody>
 		</table>
 		<br>
+
+		<img style="width: 266px; height: 16px;" src="img/debugger-BP0-bpmr-01-l2-d000-1000.png" border="1">
+		<br>
+
 		<h2><font size="4">Notes:</font></h2>
 		<ul>
 			<li>
 				<p><i>The order of prefixes doesn't matter, and prefixes are case-insensitive.</i></p>
+			</li>
+			<li>
+				<p><i>In the image above, prefixing the blue "M" are the bank number (white "01") and LC bank (green "2"), and after the address range is a green "R" meaning trigger on-read.
+				So this breakpoint was set using 'BPMR 01/L2/D000,1000'</i></p>
 			</li>
 		</ul>
 		<br>
