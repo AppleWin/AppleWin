@@ -1019,6 +1019,43 @@ void ColorizeFlags( bool bSet, int bg_default = BG_INFO, int fg_default = FG_INF
 
 
 //===========================================================================
+// Called by:
+// . DrawBreakpoints()
+// . DrawMemory()
+void DrawMiniHexBankAndLangCard(RECT& rect, const AddressPrefix_t& addrPrefix)
+{
+	rect.left += 2; // spacer for Bank & Card
+	const UINT kGlyphMiniHexWidth = 4;
+	if (addrPrefix.nBank > 0) // Aux or RamWorks
+	{
+		DebuggerSetColorBG(DebuggerGetColor(BG_INFO_MEM_BANK));
+		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_MEM_BANK));
+		if (addrPrefix.nBank == 0x100)
+			PrintGlyph(rect.left, rect.top, 0x90 + 0x1);	// Glyph: mini hex "1"
+		rect.left += kGlyphMiniHexWidth;
+		PrintGlyph(rect.left, rect.top, 0x90 + ((addrPrefix.nBank >> 4) & 0xF)); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
+		rect.left += kGlyphMiniHexWidth;
+		PrintGlyph(rect.left, rect.top, 0x90 + ((addrPrefix.nBank >> 0) & 0xF)); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
+		rect.left += kGlyphMiniHexWidth;
+	}
+	else
+	{
+		rect.left += 3 * kGlyphMiniHexWidth;
+	}
+	DebuggerSetColorBG(DebuggerGetColor(BG_INFO));
+	FillRect(GetDebuggerMemDC(), &rect, g_hConsoleBrushBG);
+
+	// If addr prefix is in LC1 or LC2 display a bookmark symbol (1) or (2)
+	if (addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid)
+	{
+		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_MEM_LC));
+		PrintGlyph(rect.left, rect.top, 0x90 + addrPrefix.nLangCard); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
+	}
+	rect.left += kGlyphMiniHexWidth;
+}
+
+
+//===========================================================================
 void DrawBreakpoints ( int line )
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
@@ -1089,35 +1126,8 @@ void DrawBreakpoints ( int line )
 				: Breakpoint_t::kLangCardInvalid
 				;
 #endif
+			DrawMiniHexBankAndLangCard(rect2, pBP->addrPrefix);
 
-			rect2.left += 2; // spacer for Bank & Card
-			const UINT kGlyphMiniHexWidth = 4;
-			if (pBP->addrPrefix.nBank > 0) // Aux or RamWorks
-			{
-				DebuggerSetColorBG( DebuggerGetColor( BG_INFO_MEM_BANK ) );
-				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_MEM_BANK ) );
-				if (pBP->addrPrefix.nBank == 0x100)
-					PrintGlyph(rect2.left, rect2.top, 0x90 + 0x1);	// Glyph: mini hex "1"
-				rect2.left += kGlyphMiniHexWidth;
-				PrintGlyph( rect2.left, rect2.top, 0x90 + ((pBP->addrPrefix.nBank >> 4) & 0xF) ); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
-				rect2.left += kGlyphMiniHexWidth;
-				PrintGlyph( rect2.left, rect2.top, 0x90 + ((pBP->addrPrefix.nBank >> 0) & 0xF) ); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
-				rect2.left += kGlyphMiniHexWidth;
-			}
-			else
-			{
-				rect2.left += 3* kGlyphMiniHexWidth;
-			}
-			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
-			FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
-
-			// If the BP is in LC1 or LC2 display a bookmark symbol (1) or (2)
-			if (pBP->addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid)
-			{
-				DebuggerSetColorFG(DebuggerGetColor( FG_INFO_MEM_LC ));
-				PrintGlyph(rect2.left, rect2.top, 0x90 + pBP->addrPrefix.nLangCard); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
-			}
-			rect2.left += 4;
 //			rect2.left += g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg - 2;
 			// NOTE: PrintGlyph() is right at the right edge of the g_pDebuggerMemFramebits
 
@@ -2279,10 +2289,27 @@ void DrawMemory ( int line, int iMemDump )
 	else
 		PrintTextCursorX(" at ", rect2);
 
-	DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
-	if (MB.subUnit[subUnit].is6522Bad && eDevice == DEV_MB_SUBUNIT)
-		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS_SY6522_AY8913_BAD));
-	PrintTextCursorY(sAddress.c_str(), rect2);
+	if (eDevice == DEV_MEMORY)
+	{
+		// From DrawBreakpoints() - so refactor into separate func?
+		{
+			DrawMiniHexBankAndLangCard(rect2, pMD->addrPrefix);
+
+			DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
+			PrintTextCursorX(sAddress.c_str(), rect2);
+
+			rect2.top += g_nFontHeight;
+			rect2.bottom += g_nFontHeight;
+		}
+	}
+	else
+	{
+		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
+		if (MB.subUnit[subUnit].is6522Bad && eDevice == DEV_MB_SUBUNIT)
+			DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS_SY6522_AY8913_BAD));
+
+		PrintTextCursorY(sAddress.c_str(), rect2);
+	}
 #endif
 
 	rect.top    = rect2.top;
