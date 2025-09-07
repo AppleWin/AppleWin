@@ -1231,6 +1231,8 @@ void DrawBreakpoints ( int line )
 				DebuggerSetColorBG( DebuggerGetColor( BG_INFO ) );
 				FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
 			}
+			else
+				rect2.left += 5*g_aFontConfig[ FONT_INFO ]._nFontWidthAvg; // ":####"
 
 			if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
 			{
