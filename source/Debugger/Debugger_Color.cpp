@@ -118,6 +118,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		G8             ,     //                     FG_INFO_BP_MEM_READ  Green
 		COLOR_CUSTOM_04,     //                     FG_INFO_BP_MEM_WRITE Orange
 
+		Y8,                  //                     FG_INFO_MEM_SLOT
 		C3,                  // BG_INFO_MEM_BANK    // See BG_INFO
 		W8,                  //                     FG_INFO_MEM_BANK
 		C4,                  //                     FG_INFO_MEM_LC

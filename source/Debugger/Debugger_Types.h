@@ -212,11 +212,18 @@
 
 	struct AddressPrefix_t
 	{
-		AddressPrefix_t() : nSlot(-1), nBank(-1), nLangCard(-1), bIsROM(false) {}
+		AddressPrefix_t() { Clear(); }
+		void Clear() { nSlot = kSlotInvalid; nBank = kBankInvalid; nLangCard = kLangCardInvalid; bIsROM = false; }
 		int  nSlot;		// (-1: not valid)
-		int  nBank;		// (-1: not valid) RamWorks: 00-FF, Saturn: 0-7
+		int  nBank;		// (-1: not valid) Main: 0, Aux: 1, RamWorks: 00-100, Saturn: 0-7
 		int  nLangCard;	// (-1: not valid) LC 4K bank: 1 or 2
 		bool bIsROM;
+
+		//
+
+		static const int kSlotInvalid     = -1;
+		static const int kBankInvalid     = -1;
+		static const int kLangCardInvalid = -1;
 	};
 
 	struct Breakpoint_t
@@ -237,32 +244,20 @@
 			bStop = false;
 			nHitCount = 0;
 
-			nSlot = kSlotInvalid;
-			nBank = kBankInvalid;
-			nLangCard = kLangCardInvalid;
-			bIsROM = false;
+			addrPrefix.Clear();
 		};
 
-		WORD                 nAddress ; // for registers, functions as nValue
-		UINT                 nLength  ;
-		BreakpointSource_t   eSource;
-		BreakpointOperator_t eOperator;
-		bool                 bSet     ; // used to be called enabled pre 2.0
-		bool                 bEnabled;
-		bool                 bTemp    ; // If true then remove BP when hit or stepping cancelled (eg. G xxxx)
-		bool                 bHit     ; // true when the breakpoint has just been hit
-		bool                 bStop    ; // true if the debugger stops when it is hit
-		uint32_t             nHitCount; // number of times the breakpoint was hit
-		int                  nSlot    ; // (-1: not valid)
-		int                  nBank    ; // (-1: not valid) RamWorks: 00-FF, Saturn: 0-7
-		int                  nLangCard; // (-1: not valid) LC 4K bank: 1 or 2
-		bool                 bIsROM   ;
-
-		//
-
-		static const int kSlotInvalid = -1;
-		static const int kBankInvalid = -1;
-		static const int kLangCardInvalid = -1;
+		WORD                 nAddress  ; // for registers, functions as nValue
+		UINT                 nLength   ;
+		BreakpointSource_t   eSource   ;
+		BreakpointOperator_t eOperator ;
+		bool                 bSet      ; // used to be called enabled pre 2.0
+		bool                 bEnabled  ;
+		bool                 bTemp     ; // If true then remove BP when hit or stepping cancelled (eg. G xxxx)
+		bool                 bHit      ; // true when the breakpoint has just been hit
+		bool                 bStop     ; // true if the debugger stops when it is hit
+		uint32_t             nHitCount ; // number of times the breakpoint was hit
+		AddressPrefix_t      addrPrefix;
 	};
 
 	typedef Breakpoint_t Bookmark_t;
@@ -1247,10 +1242,11 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 	struct MemoryDump_t
 	{
-		bool         bActive;
-		WORD         nAddress; // nAddressMemDump; // was USHORT
-		DEVICE_e     eDevice;
-		MemoryView_e eView;
+		bool			bActive;
+		WORD			nAddress;
+		DEVICE_e		eDevice;
+		MemoryView_e	eView;
+		AddressPrefix_t	addrPrefix;
 	};
 
 	enum MemoryDump_e

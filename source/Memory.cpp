@@ -534,6 +534,24 @@ void ForceAltCpuEmulation(void)
 	g_forceAltCpuEmulation = true;
 }
 
+uint8_t ReadByteFromROM(uint16_t addr)
+{
+	if (addr < APPLE_IO_BEGIN)					// $0000-BFFF
+		return ReadByteFromMemory(addr);
+
+	if (addr < APPLE_SLOT_BEGIN)				// $C000-C0FF
+		return ReadByteFromMemory(addr);
+
+	if (addr < (FIRMWARE_EXPANSION_END + 1))	// $C100-CFFF
+	{
+		if (IsApple2PlusOrClone(GetApple2Type()))
+			return ReadByteFromMemory(addr);
+		return pCxRomInternal[addr - APPLE_IO_BEGIN];
+	}
+
+	return memrom[addr - APPLE_ROM_BEGIN];		// $D000-FFFF
+}
+
 //=============================================================================
 
 static BYTE __stdcall IORead_C00x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
@@ -1634,7 +1652,6 @@ static LPBYTE MemGetPtrBANK1(const WORD offset, const LPBYTE pMemBase)
 
 //-------------------------------------
 
-#if 0	// Unused
 LPBYTE MemGetAuxPtrWithLC(const WORD offset)
 {
 	LPBYTE lpMem = MemGetPtrBANK1(offset, memaux);
@@ -1643,7 +1660,6 @@ LPBYTE MemGetAuxPtrWithLC(const WORD offset)
 
 	return MemGetAuxPtr(offset);
 }
-#endif
 
 LPBYTE MemGetAuxPtr(const WORD offset)
 {
@@ -1652,7 +1668,7 @@ LPBYTE MemGetAuxPtr(const WORD offset)
 			: memaux+offset;
 
 #ifdef RAMWORKS
-	// Video scanner (for 14M video modes) always fetches from 1st 64K aux bank (UTAIIe ref?)
+	// Video scanner (for 14M video modes) always fetches from 1st 64K aux bank (RamWorks manual ref?)
 	if (((SW_PAGE2 && SW_80STORE) || GetVideo().VideoGetSW80COL()) &&
 			(
 				(             ((offset & 0xFF00)>=0x0400) && ((offset & 0xFF00)<=0x0700) ) ||
@@ -1710,9 +1726,27 @@ LPBYTE MemGetMainPtrWithLC(const WORD offset)
 
 LPBYTE MemGetMainPtr(const WORD offset)
 {
+#if 1
 	return g_isMemCacheValid && (memshadow[(offset >> 8)] == (memmain + (offset & 0xFF00)))
 		? mem + offset				// Return 'mem' copy if possible, as page could be dirty
 		: memmain + offset;
+#else
+	// TODO: GH#1426
+	if (!g_isMemCacheValid)
+		return memmain + offset;
+
+	if (offset < 0xC000)
+	{
+		return memshadow[(offset >> 8)] == (memmain + (offset & 0xFF00))
+			? mem + offset			// Return 'mem' copy if possible, as page could be dirty
+			: memmain + offset;
+	}
+
+	// Required for a II+ w/Saturn in SLOT0 or //e w/Saturn (in another slot)
+	return memshadow[(offset >> 8)] == (g_pMemMainLanguageCard + (offset & 0xFF00) - 0xC000)
+		? mem + offset				// Return 'mem' copy if possible, as page could be dirty
+		: memmain + offset;
+#endif
 }
 
 //===========================================================================

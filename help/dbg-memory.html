@@ -7,6 +7,9 @@
 	<body style="DIRECTION: ltr" lang="en-US">
 		<h1><a name="Memory">Memory</a></h1>
 		<h3><a name="Memory_View">Viewing Memory</a></h3>
+
+		<img style="width: 224px; height: 82px;" src="img/debugger-M1-01-l2-d000.png" border="1">
+
 		<p>There are two mini-memory areas on the info panel.&nbsp; You can view memory in 
 			Hex, (normal 7-Bit) ASCII, or Apple (8-Bit) TEXT format.</p>
 		<p>Control characters are shown in yellow.&nbsp; The Apple uses something called 
@@ -38,6 +41,22 @@
 								</td>
 								<td bgcolor="#000000" width="75%">
 									<p style="FONT-STYLE: normal"><font color="#ffffff"><b>Effect</b></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#999999">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>M1</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Show full address prefix for mini-memory 1. (See Notes)</i></p>
+								</td>
+							</tr>
+							<tr bgcolor="#cccccc">
+								<td width="25%">
+									<p><font color="#000000"><font face="Courier"><b>M2</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><i>Show full address prefix for mini-memory 2. (See Notes)</i></p>
 								</td>
 							</tr>
 							<tr bgcolor="#999999">
@@ -99,7 +118,7 @@
 						</tbody>
 		</table>
 		<p><font size="3"><b>Examples</b>:</font></p>
-		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="90%">
+		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="75%">
 			<COLGROUP>
 				<col width="64">
 					<col width="192">
@@ -116,33 +135,63 @@
 							</tr>
 							<tr bgcolor="#000000">
 								<td width="25%">
-									<p><font color="#00b8ff"><font face="Courier"><b>MA1 D0D0</b></font></font></p>
+									<p><font color="#00b8ff"><font face="Courier"><b>M1 D000</b></font></font></p>
 								</td>
 								<td width="75%">
-									<p><font color="#ffffff"><i>View Applesoft Tokens (Low ASCII cyan, High ASCII white)</i></font></p>
+									<p><font color="#ffffff"><i>View current memory at $D000, which could be ROM or RAM.</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b>M1 L1/D000</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><font color="#ffffff"><i>View current Language Card memory (4K bank 1) at $D000. (See Notes)</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b>M1 01/L2/D000</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><font color="#ffffff"><i>View Auxiliary Language Card memory (4K bank 2) at $D000. (See Notes)</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b>M1 S3/7/L1/D800</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><font color="#ffffff"><i>View slot 3's Saturn card's 16K bank 7, 4K bank 1 at $D800. (See Notes)</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b>MA1 ROM/D0D0</b></font></font></p>
+								</td>
+								<td width="75%">
+									<p><font color="#ffffff"><i>View Applesoft Tokens (Low ASCII cyan, High ASCII white). (See Notes)</i></font></p>
 								</td>
 							</tr>
 							<tr bgcolor="#000000">
 								<td bgcolor="#000000" width="25%">
-									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">MT2
-FF0A</span></b></font></font></p>
+									<p><font color="#00b8ff"><font face="Courier"><b>MT2 ROM/FF0A</b></font></font></p>
 								</td>
 								<td bgcolor="#000000" width="75%">
-									<p><font color="#ffffff"><i>View Apple message displayed when booted, showing Apple Model.</i></font></p>
+									<p><font color="#ffffff"><i>View Apple message displayed when booted, showing Apple Model. (See Notes)</i></font></p>
 								</td>
 							</tr>
 							<tr bgcolor="#000000">
 								<td bgcolor="#000000" width="25%">
-									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">DATA</span></b></font></font></p>
+									<p><font color="#00b8ff"><font face="Courier"><b>DATA</b></font></font></p>
 								</td>
 								<td bgcolor="#000000" width="75%">
-									<p><font color="#ffffff"><i>Switch to the Data Window to view memory. Most scrolling keys 
-												work.</i></font></p>
+									<p><font color="#ffffff"><i>Switch to the Data Window to view memory. Most scrolling keys work.</i></font></p>
 								</td>
 							</tr>
 							<tr bgcolor="#000000">
 								<td bgcolor="#000000" width="25%">
-									<p><font color="#00b8ff"><font face="Courier"><b><span style="BACKGROUND: rgb(0,0,0) 0% 50%; moz-background-clip: initial; moz-background-origin: initial; moz-background-inline-policy: initial">CODE</span></b></font></font></p>
+									<p><font color="#00b8ff"><font face="Courier"><b>CODE</b></font></font></p>
 								</td>
 								<td bgcolor="#000000" width="75%">
 									<p><font color="#ffffff"><i>Switch to the Code Window to view the disassembler.</i></font></p>
@@ -150,6 +199,16 @@ FF0A</span></b></font></font></p>
 							</tr>
 						</tbody>
 		</table>
+		<br>
+		<p>Notes:</p>
+		<ul>
+			<li>
+				<p style="MARGIN-BOTTOM: 0in"><i>For more information about address prefixes, see the page on Breakpoints.</i></p>
+			</li>
+			<li>
+				<p style="MARGIN-BOTTOM: 0in"><i>In the image at the top, prefixing the address ("D000") are the bank number (white "01") and LC bank (green "2").</i></p>
+			</li>
+		</ul>
 		<br>
 		
 		<h3>Zero-page Watches</h3>
@@ -330,7 +389,7 @@ FF0A</span></b></font></font></p>
 		</table>
 		<br>
 		<p><font size="4"><b>Examples</b>:</font></p>
-		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="90%">
+		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="75%">
 			<COLGROUP>
 				<col width="64">
 					<col width="192">
@@ -476,7 +535,7 @@ FF0A</span></b></font></font></p>
 		</table>
 		<br>
 		<p><font size="4"><b>Examples</b>:</font></p>
-		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="90%">
+		<table bgcolor="#000000" border="0" cellpadding="2" cellspacing="0" width="75%">
 			<COLGROUP>
 				<col width="64">
 					<col width="192">

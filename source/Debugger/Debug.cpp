@@ -373,7 +373,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static	Update_t ExecuteCommand ( int nArgs );
 
 // Breakpoints
-	std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD addr, bool padding);
+	std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& pBP, WORD addr, bool padding);
 	Update_t _BP_InfoNone ();
 	void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, int & nTotal );
 	void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, const bool bEnabled );
@@ -1179,10 +1179,10 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 	bool isWrite = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_WRITE_ONLY;
 
 	// If no prefix filters, then BP hit
-	if (pBP->nSlot     == Breakpoint_t::kSlotInvalid
-	 && pBP->nBank     == Breakpoint_t::kBankInvalid
-	 && pBP->nLangCard == Breakpoint_t::kLangCardInvalid
-	 && pBP->bIsROM    == false)
+	if (pBP->addrPrefix.nSlot     == AddressPrefix_t::kSlotInvalid
+	 && pBP->addrPrefix.nBank     == AddressPrefix_t::kBankInvalid
+	 && pBP->addrPrefix.nLangCard == AddressPrefix_t::kLangCardInvalid
+	 && pBP->addrPrefix.bIsROM    == false)
 		return true;
 
 	// Prefix filters only apply for BP_OP_EQUAL operation (for now)
@@ -1195,24 +1195,24 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 
 	if (nVal <= _6502_STACK_END)
 	{
-		if ((pBP->nBank == 0x00 && !(GetMemMode() & MF_ALTZP))
-			|| (pBP->nBank == ramworksActiveBank && (GetMemMode() & MF_ALTZP)))
+		if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_ALTZP))
+			|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_ALTZP)))
 		{
 			bStatus = true;
 		}
 	}
 	else if (TEXT_PAGE1_BEGIN <= nVal && nVal <= 0x7FF && (GetMemMode() & MF_80STORE))
 	{
-		if ((pBP->nBank == 0x00 && !(GetMemMode() & MF_PAGE2))
-			|| (pBP->nBank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
+		if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_PAGE2))
+			|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
 		{
 			bStatus = true;
 		}
 	}
 	else if (HGR_PAGE1_BEGIN <= nVal && nVal <= 0x3FFF && ((GetMemMode() & (MF_80STORE | MF_HIRES)) == (MF_80STORE | MF_HIRES)))
 	{
-		if ((pBP->nBank == 0x00 && !(GetMemMode() & MF_PAGE2))
-			|| (pBP->nBank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
+		if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_PAGE2))
+			|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
 		{
 			bStatus = true;
 		}
@@ -1221,16 +1221,16 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 	{
 		if (isRead)
 		{
-			if ((pBP->nBank == 0x00 && !(GetMemMode() & MF_AUXREAD))
-				|| (pBP->nBank == ramworksActiveBank && (GetMemMode() & MF_AUXREAD)))
+			if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_AUXREAD))
+				|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_AUXREAD)))
 			{
 				bStatus = true;
 			}
 		}
 		if (isWrite)
 		{
-			if ((pBP->nBank == 0x00 && !(GetMemMode() & MF_AUXWRITE))
-				|| (pBP->nBank == ramworksActiveBank && (GetMemMode() & MF_AUXWRITE)))
+			if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_AUXWRITE))
+				|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_AUXWRITE)))
 			{
 				bStatus = true;
 			}
@@ -1242,25 +1242,25 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 	}
 	else if (0xD000 <= nVal && nVal <= _6502_MEM_END)
 	{
-		const bool bNoRamworksOrSaturnBank = pBP->nSlot == Breakpoint_t::kSlotInvalid && pBP->nBank == Breakpoint_t::kBankInvalid;
+		const bool bNoRamworksOrSaturnBank = pBP->addrPrefix.nSlot == AddressPrefix_t::kSlotInvalid && pBP->addrPrefix.nBank == AddressPrefix_t::kBankInvalid;
 
 		const UINT saturnActiveSlot = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC();
 		const UINT saturnActiveBank = GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->GetActiveBank();
-		const int saturnBank = pBP->nSlot != Breakpoint_t::kSlotInvalid && pBP->nBank != Breakpoint_t::kBankInvalid ? pBP->nBank : Breakpoint_t::kBankInvalid;
+		const int saturnBank = pBP->addrPrefix.nSlot != AddressPrefix_t::kSlotInvalid && pBP->addrPrefix.nBank != AddressPrefix_t::kBankInvalid ? pBP->addrPrefix.nBank : AddressPrefix_t::kBankInvalid;
 
 		if (GetMemMode() & MF_HIGHRAM)
 		{
 			if (bNoRamworksOrSaturnBank
-				|| (saturnBank < 0 && pBP->nBank == 0x00 && !(GetMemMode() & MF_ALTZP))
-				|| (saturnBank < 0 && pBP->nBank == ramworksActiveBank && (GetMemMode() & MF_ALTZP))
-				|| (pBP->nSlot == saturnActiveSlot && saturnBank == saturnActiveBank && !(GetMemMode() & MF_ALTZP)))
+				|| (saturnBank < 0 && pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_ALTZP))
+				|| (saturnBank < 0 && pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_ALTZP))
+				|| (pBP->addrPrefix.nSlot == saturnActiveSlot && saturnBank == saturnActiveBank && !(GetMemMode() & MF_ALTZP)))
 			{
-				if ((pBP->nLangCard == Breakpoint_t::kLangCardInvalid)
-					|| (pBP->nLangCard == 1 && !(GetMemMode() & MF_BANK2))
-					|| (pBP->nLangCard == 2 && (GetMemMode() & MF_BANK2))
+				if ((pBP->addrPrefix.nLangCard == AddressPrefix_t::kLangCardInvalid)
+					|| (pBP->addrPrefix.nLangCard == 1 && !(GetMemMode() & MF_BANK2))
+					|| (pBP->addrPrefix.nLangCard == 2 && (GetMemMode() & MF_BANK2))
 					|| (nVal >= 0xE000))
 				{
-					if (pBP->bIsROM == false)		// isROM==false means "don't care" whether it's ROM or not
+					if (pBP->addrPrefix.bIsROM == false)		// isROM==false means "don't care" whether it's ROM or not
 					{
 						if (isRead || isWrite && (GetMemMode() & MF_WRITERAM))
 							bStatus = true;
@@ -1271,7 +1271,7 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 		else // ROM switched in
 		{
 			if (!bNoRamworksOrSaturnBank
-				|| (pBP->nLangCard != Breakpoint_t::kLangCardInvalid))
+				|| (pBP->addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid))
 				bStatus = false;
 			else
 				bStatus = true;
@@ -1429,7 +1429,7 @@ int CheckBreakpointsIO ()
 						{
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
-								g_sBreakMemoryFullPrefixAddr = GetFullPrefixAddrForBreakpoint(pBP, (WORD)nAddress, false);	// string is last BP hit
+								g_sBreakMemoryFullPrefixAddr = GetFullPrefixAddrForBreakpoint(pBP->addrPrefix, (WORD)nAddress, false);	// string is last BP hit
 								BYTE opcode = ReadByteFromMemory(regs.pc);
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
@@ -1771,14 +1771,8 @@ int _CmdBreakpointAddCommonArg ( const int nArg, int iArg, BreakpointSource_t iS
 
 	if (iArg <= nArg)
 	{
-		AddressPrefix_t addrPrefix;
-		if (!Range_GetAllPrefixes(iArg, nArg, dArgPrefix, &addrPrefix))
+		if (!Range_GetAllPrefixes(iArg, nArg, dArgPrefix, &pBP->addrPrefix))
 			return 0;	// error
-
-		pBP->nSlot = addrPrefix.nSlot;
-		pBP->nBank = addrPrefix.nBank;
-		pBP->nLangCard = addrPrefix.nLangCard;
-		pBP->bIsROM = addrPrefix.bIsROM;
 
 #if DEBUG_VAL_2
 		int nLen = g_aArgs[iArg].nVal2;
@@ -2092,7 +2086,11 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 }
 
 //===========================================================================
-static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD address, bool padding)
+// Called by:
+// . CheckBreakpointsIO(), padding=false - to set g_sBreakMemoryFullPrefixAddr (used later for 'stop reason')
+// . _BWZ_List(),          padding=true  - ie. 'bpl'
+// . _CmdMemoryDump(),     padding=false - ie. 'm1' to show current prefix for mini mem area
+static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& addrPrefix, WORD address, bool padding)
 {
 	char sSlot    [] = "sN/";	// Saturn slot
 	char sBank    [] = "bbb/";	// RamWorks bank
@@ -2100,9 +2098,9 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 	int prefixPad = 1;	// whitespace padding
 	std::string prefix = CHC_INFO;	// "sN/bbb/lN/" (10 chars) or "ROM/"
 
-	if (pBP->nSlot != Breakpoint_t::kSlotInvalid)
+	if (addrPrefix.nSlot != AddressPrefix_t::kSlotInvalid)
 	{
-		sSlot[1] = pBP->nSlot + '0';
+		sSlot[1] = addrPrefix.nSlot + '0';
 		prefix += sSlot;
 	}
 	else
@@ -2110,17 +2108,17 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 		prefixPad += 3;
 	}
 
-	if (pBP->nBank != Breakpoint_t::kBankInvalid)
+	if (addrPrefix.nBank != AddressPrefix_t::kBankInvalid)
 	{
-		if (pBP->nBank < 0x100)
+		if (addrPrefix.nBank < 0x100)
 		{
-			sprintf_s(sBank, "%02X", pBP->nBank);
+			sprintf_s(sBank, "%02X", addrPrefix.nBank);
 			sBank[2] = '/';
 			sBank[3] = 0;
 		}
 		else
 		{
-			sprintf_s(sBank, "%03X", pBP->nBank);
+			sprintf_s(sBank, "%03X", addrPrefix.nBank);
 			sBank[3] = '/';
 			sBank[4] = 0;
 			prefixPad--;
@@ -2132,9 +2130,9 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 		prefixPad += 3;
 	}
 
-	if (pBP->nLangCard != Breakpoint_t::kLangCardInvalid)
+	if (addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid)
 	{
-		sLangCard[1] = pBP->nLangCard + '0';
+		sLangCard[1] = addrPrefix.nLangCard + '0';
 		prefix += sLangCard;
 	}
 	else
@@ -2142,7 +2140,7 @@ static std::string GetFullPrefixAddrForBreakpoint(const Breakpoint_t* pBP, WORD 
 		prefixPad += 3;
 	}
 
-	if (pBP->bIsROM)
+	if (addrPrefix.bIsROM)
 	{
 		prefix += "ROM/";
 		prefixPad = 6;	// 10 chars in total
@@ -2194,7 +2192,7 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 		default                   : iBPM = 4; break;
 	}
 
-	std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(&aBreakWatchZero[iBWZ], aBreakWatchZero[iBWZ].nAddress, true);
+	std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(aBreakWatchZero[iBWZ].addrPrefix, aBreakWatchZero[iBWZ].nAddress, true);
 	if (aBreakWatchZero[iBWZ].nLength > 1)
 	{
 		fullPrefixAddr += ":";
@@ -4030,28 +4028,59 @@ Update_t CmdDisk (int nArgs)
 // Memory _________________________________________________________________________________________
 
 
+//===========================================================================
+Update_t CmdMemoryCompare(int nArgs)
+{
+	if (nArgs < 3)
+		return Help_Arg_1(CMD_MEMORY_COMPARE);
+
+	WORD nSrcAddr = g_aArgs[1].nValue;
+	WORD nDstAddr = g_aArgs[3].nValue;
+
+	WORD nSrcSymAddr;
+	WORD nDstSymAddr;
+
+	if (!nSrcAddr)
+	{
+		nSrcSymAddr = GetAddressFromSymbol(g_aArgs[1].sArg);
+		if (nSrcAddr != nSrcSymAddr)
+			nSrcAddr = nSrcSymAddr;
+	}
+
+	if (!nDstAddr)
+	{
+		nDstSymAddr = GetAddressFromSymbol(g_aArgs[3].sArg);
+		if (nDstAddr != nDstSymAddr)
+			nDstAddr = nDstSymAddr;
+	}
+
+	//	if ((!nSrcAddr) || (!nDstAddr))
+	//		return Help_Arg_1( CMD_MEMORY_COMPARE );
+
+	return UPDATE_CONSOLE_DISPLAY;
+}
+
 // TO DO:
 // . Add support for dumping Disk][ device
 //===========================================================================
-bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
+bool MemoryDumpCheck (const int iArg, WORD * pAddress_ )
 {
-	if (! nArgs)
-		return false;
-
-	Arg_t *pArg = &g_aArgs[1];
+	Arg_t *pArg = &g_aArgs[iArg];
 	WORD nAddress = pArg->nValue;
 	bool bUpdate = false;
 
 	pArg->eDevice = DEV_MEMORY;						// Default
 
-	if (strncmp(g_aArgs[1].sArg, "MB", 2) == 0)		// Mockingboard sub-unit (6522+AY8913): "MBs" or "MBsn"
+	const char* const psArg = (char*) g_aArgs[iArg].sArg;
+
+	if (strncmp(psArg, "MB", 2) == 0)				// Mockingboard sub-unit (6522+AY8913): "MBs" or "MBsn"
 	{
 		UINT slot = (UINT)-1;
 		UINT subUnit = 0;							// Default to 6522-A
-		if (strlen(g_aArgs[1].sArg) >= 3)			// "MBs" where s = slot#
-			slot = g_aArgs[1].sArg[2] - '0';
-		if (strlen(g_aArgs[1].sArg) == 4)			// "MBsn" where s = slot#, n = SY6522 A or B eg. AY4A
-			subUnit = g_aArgs[1].sArg[3] - 'A';
+		if (strlen(psArg) >= 3)						// "MBs" where s = slot#
+			slot = psArg[2] - '0';
+		if (strlen(psArg) == 4)						// "MBsn" where s = slot#, n = SY6522 A or B eg. AY4A
+			subUnit = psArg[3] - 'A';
 		if (slot <= 7 && subUnit <= 1)
 		{
 			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
@@ -4059,14 +4088,14 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 			bUpdate = true;
 		}
 	}
-	else if (strncmp(g_aArgs[1].sArg, "AY", 2) == 0)	// AY8913: "AYs" or "AYsn"
+	else if (strncmp(psArg, "AY", 2) == 0)			// AY8913: "AYs" or "AYsn"
 	{
 		UINT slot = (UINT)-1;
 		UINT subUnit = 0;							// Default to 6522-A
-		if (strlen(g_aArgs[1].sArg) >= 3)			// "AYs" where s = slot#
-			slot = g_aArgs[1].sArg[2] - '0';
-		if (strlen(g_aArgs[1].sArg) == 4)			// "AYsn" where s = slot#, n = SY6522 A or B eg. AY4A
-			subUnit = g_aArgs[1].sArg[3] - 'A';
+		if (strlen(psArg) >= 3)						// "AYs" where s = slot#
+			slot = psArg[2] - '0';
+		if (strlen(psArg) == 4)						// "AYsn" where s = slot#, n = SY6522 A or B eg. AY4A
+			subUnit = psArg[3] - 'A';
 		if (slot <= 7 && subUnit <= 1)
 		{
 			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
@@ -4075,27 +4104,27 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 		}
 	}
 #ifdef SUPPORT_Z80_EMU
-	else if (strcmp(g_aArgs[1].sArg, "*AF") == 0)
+	else if (strcmp(psArg, "*AF") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_AF);
 		bUpdate = true;
 	}
-	else if (strcmp(g_aArgs[1].sArg, "*BC") == 0)
+	else if (strcmp(psArg, "*BC") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_BC);
 		bUpdate = true;
 	}
-	else if (strcmp(g_aArgs[1].sArg, "*DE") == 0)
+	else if (strcmp(psArg, "*DE") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_DE);
 		bUpdate = true;
 	}
-	else if (strcmp(g_aArgs[1].sArg, "*HL") == 0)
+	else if (strcmp(psArg, "*HL") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_HL);
 		bUpdate = true;
 	}
-	else if (strcmp(g_aArgs[1].sArg, "*IX") == 0)
+	else if (strcmp(psArg, "*IX") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_IX);
 		bUpdate = true;
@@ -4110,60 +4139,46 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 
 	if (pAddress_)
 	{
-			*pAddress_ = nAddress;
+		*pAddress_ = nAddress;
 	}
 
 	return true;
 }
 
 //===========================================================================
-Update_t CmdMemoryCompare (int nArgs )
-{
-	if (nArgs < 3)
-		return Help_Arg_1( CMD_MEMORY_COMPARE );
-
-	WORD nSrcAddr = g_aArgs[1].nValue;
-	WORD nDstAddr = g_aArgs[3].nValue;
-
-	WORD nSrcSymAddr;
-	WORD nDstSymAddr;
-
-	if (!nSrcAddr)
-	{
-		nSrcSymAddr = GetAddressFromSymbol( g_aArgs[1].sArg );
-		if (nSrcAddr != nSrcSymAddr)
-			nSrcAddr = nSrcSymAddr;
-	}
-
-	if (!nDstAddr)
-	{
-		nDstSymAddr = GetAddressFromSymbol( g_aArgs[3].sArg );
-		if (nDstAddr != nDstSymAddr)
-			nDstAddr = nDstSymAddr;
-	}
-
-//	if ((!nSrcAddr) || (!nDstAddr))
-//		return Help_Arg_1( CMD_MEMORY_COMPARE );
-
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
 static Update_t _CmdMemoryDump (int nArgs, int iWhich, int iView )
 {
-	WORD nAddress = 0;
-
-	if ( ! MemoryDumpCheck(nArgs, & nAddress ) )
+	if (!nArgs)
 	{
-		return Help_Arg_1( g_iCommand );
+		// Output current prefixed-address
+		if (!g_aMemDump[iWhich].bActive)
+		{
+			ConsolePrintFormat("Mini memory area-%1d not set", iWhich+1);
+		}
+		else
+		{
+			std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(g_aMemDump[iWhich].addrPrefix, g_aMemDump[iWhich].nAddress, false);
+			ConsolePrintFormat("Mini memory area-%1d: %s", iWhich+1, fullPrefixAddr.c_str());
+		}
+		return ConsoleUpdate();
 	}
 
+	int iArg = 1;	// skip cmd
+	int dArgPrefix = 0;
+	g_aMemDump[iWhich].addrPrefix.Clear();
+	if (!Range_GetAllPrefixes(iArg, nArgs, dArgPrefix, &g_aMemDump[iWhich].addrPrefix))
+		return Help_Arg_1(g_iCommand);
+
+	WORD nAddress = 0;
+	if (!MemoryDumpCheck(iArg, &nAddress))
+		return Help_Arg_1(g_iCommand);
+
 	g_aMemDump[iWhich].nAddress = nAddress;
-	g_aMemDump[iWhich].eDevice = g_aArgs[1].eDevice;
+	g_aMemDump[iWhich].eDevice = g_aArgs[iArg].eDevice;
 	g_aMemDump[iWhich].bActive = true;
 	g_aMemDump[iWhich].eView = (MemoryView_e) iView;
 
-	return UPDATE_MEM_DUMP; // TODO: This really needed? Don't think we do any actual ouput
+	return UPDATE_MEM_DUMP; // TODO: This really needed? Don't think we do any actual output
 }
 
 //===========================================================================
