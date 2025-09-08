@@ -2281,9 +2281,28 @@ void DrawMemory ( int line, int iMemDump )
 	if (eDevice == DEV_MEMORY)
 	{
 		if (pMD->addrPrefix.bIsROM)
-			PrintTextCursorX("ROM ", rect2);
+		{
+			PrintTextCursorX("ROM/", rect2);
+		}
 		else
+		{
+			const UINT kGlyphMiniHexWidth = 4;
+			if (pMD->addrPrefix.nSlot != AddressPrefix_t::kSlotInvalid)
+			{
+				DebuggerSetColorFG(DebuggerGetColor(FG_INFO_MEM_SLOT));
+				PrintGlyph(rect2.left, rect2.top, 0x90 + 0x5);	// Glyph: mini hex "5" which looks like "s"!
+				rect2.left += kGlyphMiniHexWidth;
+				DebuggerSetColorFG(DebuggerGetColor(FG_INFO_MEM_BANK));
+				PrintGlyph(rect2.left, rect2.top, 0x90 + pMD->addrPrefix.nSlot);	// Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
+				rect2.left += kGlyphMiniHexWidth;
+			}
+			else
+			{
+				rect2.left += 2 * kGlyphMiniHexWidth;
+			}
+
 			DrawMiniHexBankAndLangCard(rect2, pMD->addrPrefix);
+		}
 
 		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
 		PrintTextCursorX(sAddress.c_str(), rect2);
