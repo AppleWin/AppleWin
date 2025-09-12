@@ -2208,7 +2208,8 @@ void DrawMemory ( int line, int iMemDump )
 
 	MockingboardCard::DEBUGGER_MB_CARD MB;
 	bool isMockingboardInSlot = false;
-	UINT slot = nAddr >> 4, subUnit = nAddr & 1;
+	const UINT slot = pMD->addrPrefix.nSlot;
+	const UINT subUnit = nAddr & 1;
 
 	if (eDevice == DEV_MB_SUBUNIT || eDevice == DEV_AY8913_PAIR)
 	{

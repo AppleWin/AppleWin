@@ -86,7 +86,7 @@ RangeType_t Range_GetPrefix(const int iArg, AddressPrefix_t* pAP)
 
 
 //===========================================================================
-bool Range_GetAllPrefixes(int& iArg, const int nArg, int& dArgPrefix, AddressPrefix_t* pAP)
+bool Range_GetAllPrefixes(int& iArg, const int nArg, int& dArgPrefix, AddressPrefix_t* pAP, bool slotCheck/*=true*/)
 {
 	const int kArgsPerPrefix = 2;
 	for (int i = iArg; i < nArg; i += kArgsPerPrefix)
@@ -111,16 +111,19 @@ bool Range_GetAllPrefixes(int& iArg, const int nArg, int& dArgPrefix, AddressPre
 
 	if (pAP->nSlot != AddressPrefix_t::kSlotInvalid)	// Currently setting a slot# means Saturn card
 	{
-		if (pAP->nBank != AddressPrefix_t::kBankInvalid && pAP->nBank > 7)
+		if (slotCheck)
 		{
-			ConsoleDisplayError("Address prefix bad: Saturn only supports banks 0-7.");
-			return false;
-		}
+			if (pAP->nBank != AddressPrefix_t::kBankInvalid && pAP->nBank > 7)
+			{
+				ConsoleDisplayError("Address prefix bad: Saturn only supports banks 0-7.");
+				return false;
+			}
 
-		if (GetCardMgr().QuerySlot(pAP->nSlot) != CT_Saturn128K)
-		{
-			ConsoleDisplayError("Address prefix bad: No Saturn in slot.");
-			return false;
+			if (GetCardMgr().QuerySlot(pAP->nSlot) != CT_Saturn128K)
+			{
+				ConsoleDisplayError("Address prefix bad: No Saturn in slot.");
+				return false;
+			}
 		}
 	}
 	else // No slot# specified, so aux slot (for Extended 80Col or RamWorks card)

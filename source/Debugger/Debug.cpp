@@ -373,7 +373,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static	Update_t ExecuteCommand ( int nArgs );
 
 // Breakpoints
-	std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& pBP, WORD addr, bool padding);
+	std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& pBP, WORD addr, DEVICE_e device, bool padding);
 	Update_t _BP_InfoNone ();
 	void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, int & nTotal );
 	void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, const bool bEnabled );
@@ -1429,7 +1429,7 @@ int CheckBreakpointsIO ()
 						{
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
-								g_sBreakMemoryFullPrefixAddr = GetFullPrefixAddrForBreakpoint(pBP->addrPrefix, (WORD)nAddress, false);	// string is last BP hit
+								g_sBreakMemoryFullPrefixAddr = GetFullPrefixAddrForBreakpoint(pBP->addrPrefix, (WORD)nAddress, DEVICE_e::DEV_MEMORY, false);	// string is last BP hit
 								BYTE opcode = ReadByteFromMemory(regs.pc);
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
@@ -2090,7 +2090,7 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 // . CheckBreakpointsIO(), padding=false - to set g_sBreakMemoryFullPrefixAddr (used later for 'stop reason')
 // . _BWZ_List(),          padding=true  - ie. 'bpl'
 // . _CmdMemoryDump(),     padding=false - ie. 'm1' to show current prefix for mini mem area
-static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& addrPrefix, WORD address, bool padding)
+static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& addrPrefix, WORD address, DEVICE_e device, bool padding)
 {
 	char sSlot    [] = "sN/";	// Saturn slot
 	char sBank    [] = "bbb/";	// RamWorks bank
@@ -2156,7 +2156,20 @@ static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& addrPre
 
 	prefixFinal += prefix;
 
-	std::string addr = StrFormat(CHC_ADDRESS "%04X", address);
+	std::string addr;
+	if (device == DEV_MEMORY)
+	{
+		addr = StrFormat(CHC_ADDRESS "%04X", address);
+	}
+	else
+	{
+		if (device == DEV_MB_SUBUNIT)			addr = "MB-";
+		else if (device == DEV_AY8913_PAIR)		addr = "AY-";
+		else									addr = "UNKNOWN-";
+
+		if (address == 0)	addr += "A";
+		else				addr += "B";
+	}
 	prefixFinal += addr;
 
 	return prefixFinal;
@@ -2192,7 +2205,7 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 		default                   : iBPM = 4; break;
 	}
 
-	std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(aBreakWatchZero[iBWZ].addrPrefix, aBreakWatchZero[iBWZ].nAddress, true);
+	std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(aBreakWatchZero[iBWZ].addrPrefix, aBreakWatchZero[iBWZ].nAddress, DEVICE_e::DEV_MEMORY, true);
 	if (aBreakWatchZero[iBWZ].nLength > 1)
 	{
 		fullPrefixAddr += ":";
@@ -4073,32 +4086,26 @@ bool MemoryDumpCheck (const int iArg, WORD * pAddress_ )
 
 	const char* const psArg = (char*) g_aArgs[iArg].sArg;
 
-	if (strncmp(psArg, "MB", 2) == 0)				// Mockingboard sub-unit (6522+AY8913): "MBs" or "MBsn"
+	if (strncmp(psArg, "MB", 2) == 0)				// Mockingboard sub-unit (6522+AY8913): "MB" or "MBn"
 	{
-		UINT slot = (UINT)-1;
 		UINT subUnit = 0;							// Default to 6522-A
-		if (strlen(psArg) >= 3)						// "MBs" where s = slot#
-			slot = psArg[2] - '0';
-		if (strlen(psArg) == 4)						// "MBsn" where s = slot#, n = SY6522 A or B eg. AY4A
-			subUnit = psArg[3] - 'A';
-		if (slot <= 7 && subUnit <= 1)
+		if (strlen(psArg) == 3)						// "MBn" where n = SY6522 A or B eg. MBA
+			subUnit = psArg[2] - 'A';
+		if (subUnit <= 1)
 		{
-			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
+			nAddress = subUnit;						// subUnit=[0..1]
 			pArg->eDevice = DEV_MB_SUBUNIT;
 			bUpdate = true;
 		}
 	}
-	else if (strncmp(psArg, "AY", 2) == 0)			// AY8913: "AYs" or "AYsn"
+	else if (strncmp(psArg, "AY", 2) == 0)			// AY8913: "AY" or "AYn"
 	{
-		UINT slot = (UINT)-1;
 		UINT subUnit = 0;							// Default to 6522-A
-		if (strlen(psArg) >= 3)						// "AYs" where s = slot#
-			slot = psArg[2] - '0';
-		if (strlen(psArg) == 4)						// "AYsn" where s = slot#, n = SY6522 A or B eg. AY4A
-			subUnit = psArg[3] - 'A';
-		if (slot <= 7 && subUnit <= 1)
+		if (strlen(psArg) == 3)						// "AYn" where n = SY6522 A or B eg. AYA
+			subUnit = psArg[2] - 'A';
+		if (subUnit <= 1)
 		{
-			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
+			nAddress = subUnit;						// subUnit=[0..1]
 			pArg->eDevice = DEV_AY8913_PAIR;		// for Phasor
 			bUpdate = true;
 		}
@@ -4157,7 +4164,7 @@ static Update_t _CmdMemoryDump (int nArgs, int iWhich, int iView )
 		}
 		else
 		{
-			std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(g_aMemDump[iWhich].addrPrefix, g_aMemDump[iWhich].nAddress, false);
+			std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(g_aMemDump[iWhich].addrPrefix, g_aMemDump[iWhich].nAddress, g_aMemDump[iWhich].eDevice, false);
 			ConsolePrintFormat("Mini memory area-%1d: %s", iWhich+1, fullPrefixAddr.c_str());
 		}
 		return ConsoleUpdate();
@@ -4166,12 +4173,19 @@ static Update_t _CmdMemoryDump (int nArgs, int iWhich, int iView )
 	int iArg = 1;	// skip cmd
 	int dArgPrefix = 0;
 	g_aMemDump[iWhich].addrPrefix.Clear();
-	if (!Range_GetAllPrefixes(iArg, nArgs, dArgPrefix, &g_aMemDump[iWhich].addrPrefix))
+	if (!Range_GetAllPrefixes(iArg, nArgs, dArgPrefix, &g_aMemDump[iWhich].addrPrefix, false))
 		return Help_Arg_1(g_iCommand);
 
 	WORD nAddress = 0;
 	if (!MemoryDumpCheck(iArg, &nAddress))
 		return Help_Arg_1(g_iCommand);
+
+	if (g_aMemDump[iWhich].addrPrefix.nSlot == AddressPrefix_t::kSlotInvalid &&
+	   (g_aArgs[iArg].eDevice == DEV_MB_SUBUNIT || g_aArgs[iArg].eDevice == DEV_AY8913_PAIR))
+	{
+		ConsolePrintFormat("Slot prefix required for MB or AY device");
+		return ConsoleUpdate();
+	}
 
 	g_aMemDump[iWhich].nAddress = nAddress;
 	g_aMemDump[iWhich].eDevice = g_aArgs[iArg].eDevice;
