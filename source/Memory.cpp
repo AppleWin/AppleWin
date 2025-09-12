@@ -368,7 +368,12 @@ void SetExpansionMemType(const SS_CARDTYPE type, bool updateRegistry/*=true*/)
 	}
 
 	GetCardMgr().Insert(SLOT0, newSlot0Card);
-	GetCardMgr().InsertAux(newSlotAuxCard, updateRegistry);
+	if (IsAppleIIeOrAbove(GetApple2Type()))
+	{
+		// Only update aux slot if a //e or above (GH#1428)
+		// ...otherwise we'll lose the card in the aux slot when switching //e -> II+ -> //e
+		GetCardMgr().InsertAux(newSlotAuxCard, updateRegistry);
+	}
 }
 
 void CreateLanguageCard(void)
