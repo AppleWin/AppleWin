@@ -27,11 +27,7 @@
 #ifndef _Z80MEM_H
 #define _Z80MEM_H
 
-#ifdef WATCOM_COMPILE
-#include "../mem.h"
-#else
 #include "../CommonVICE/mem.h"		// [AppleWin-TC]
-#endif
 
 extern int z80mem_resources_init(void);
 extern int z80mem_cmdline_options_init(void);
