@@ -50,7 +50,11 @@
 #endif
 
 #ifdef __MINGW32__
+#ifdef __x86_64
 #define SIZE_T_FMT "I64u"
+#else
+#define SIZE_T_FMT "I32u"
+#endif
 #else
 #define SIZE_T_FMT "zu"
 #endif

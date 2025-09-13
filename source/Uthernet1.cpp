@@ -541,7 +541,7 @@ void Uthernet1::tfe_proceed_rx_buffer(int oddaddress) {
 }
 
 
-BYTE REGPARM1 Uthernet1::tfe_read(WORD ioaddress)
+BYTE Uthernet1::tfe_read(WORD ioaddress)
 {
     BYTE retval;
 
@@ -619,7 +619,7 @@ BYTE REGPARM1 Uthernet1::tfe_read(WORD ioaddress)
     return retval;
 }
 
-void REGPARM2 Uthernet1::tfe_store(WORD ioaddress, BYTE byte)
+void Uthernet1::tfe_store(WORD ioaddress, BYTE byte)
 {
 	assert( ioaddress < TFE_COUNT_IO_REGISTER);
 
