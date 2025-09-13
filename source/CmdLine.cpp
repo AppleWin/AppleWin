@@ -777,6 +777,13 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.useAltCpuEmulation = true;
 		}
+		else if (strcmp(lpCmdLine, "-debugger-auto-run") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			g_cmdLine.debuggerAutoRunScriptFilename = lpCmdLine;
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);

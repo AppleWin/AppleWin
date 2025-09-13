@@ -715,7 +715,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 				if ( !bDupSymbolHeader )
 				{
 					bDupSymbolHeader = true;
-					ConsolePrintFormat( " %sDup Symbol Name%s (%s%s%s) %s"
+					ConsolePrintFormat( "%s Dup Symbol Name%s (%s%s%s) %s"
 						, CHC_ERROR
 						, CHC_DEFAULT
 						, CHC_STRING
@@ -723,16 +723,25 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 						, CHC_DEFAULT
 						, pPathFileName.c_str()
 					);
+					ConsolePrintFormat( "%s  %s$%s%04X %s%-31s%s"
+						, CHC_ERROR
+						, CHC_ARG_SEP
+						, CHC_ADDRESS
+						, nAddress
+						, CHC_SYMBOL
+						, sName
+						, CHC_DEFAULT
+					);
 				}
-
-				ConsolePrintFormat( "  %s$%s%04X %s%-31s%s"
-					, CHC_ARG_SEP
-					, CHC_ADDRESS
-					, nAddress
-					, CHC_SYMBOL
-					, sName
-					, CHC_DEFAULT
-				);
+				else
+					ConsolePrintFormat( "  %s$%s%04X %s%-31s%s"
+						, CHC_ARG_SEP
+						, CHC_ADDRESS
+						, nAddress
+						, CHC_SYMBOL
+						, sName
+						, CHC_DEFAULT
+					);
 			}
 	
 			// else // It is not a bug to have duplicate addresses by different names
@@ -870,6 +879,14 @@ Update_t _CmdSymbolsClear( SymbolTable_Index_e eSymbolTable )
 	return UPDATE_SYMBOLS;
 }
 
+//===========================================================================
+void SymbolsClear ()
+{
+	for ( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
+	{
+		_CmdSymbolsClear( (SymbolTable_Index_e) iTable );
+	}
+}
 
 //===========================================================================
 void SymbolUpdate ( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, WORD nAddress, bool bRemoveSymbol, bool bUpdateSymbol )

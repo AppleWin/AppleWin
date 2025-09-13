@@ -24,6 +24,9 @@
 		RANGE_MISSING_ARG_2 = 0, // error
 		RANGE_HAS_LEN          , // valid case 1
 		RANGE_HAS_END          , // valid case 2
+		RANGE_NO_PREFIX,
+		RANGE_PREFIX_BAD,
+		RANGE_PREFIX_OK,
 	};
 
 	struct AddressingMode_t
@@ -207,18 +210,54 @@
 		NUM_BREAKPOINT_OPERATORS
 	};
 
+	struct AddressPrefix_t
+	{
+		AddressPrefix_t() { Clear(); }
+		void Clear() { nSlot = kSlotInvalid; nBank = kBankInvalid; nLangCard = kLangCardInvalid; bIsROM = false; }
+		int  nSlot;		// (-1: not valid)
+		int  nBank;		// (-1: not valid) Main: 0, Aux: 1, RamWorks: 00-100, Saturn: 0-7
+		int  nLangCard;	// (-1: not valid) LC 4K bank: 1 or 2
+		bool bIsROM;
+
+		//
+
+		static const int kSlotInvalid     = -1;
+		static const int kBankInvalid     = -1;
+		static const int kLangCardInvalid = -1;
+	};
+
 	struct Breakpoint_t
 	{
-		WORD                 nAddress ; // for registers, functions as nValue
-		UINT                 nLength  ;
-		BreakpointSource_t   eSource;
-		BreakpointOperator_t eOperator;
-		bool                 bSet     ; // used to be called enabled pre 2.0
-		bool                 bEnabled;
-		bool                 bTemp    ; // If true then remove BP when hit or stepping cancelled (eg. G xxxx)
-		bool                 bHit     ; // true when the breakpoint has just been hit
-		bool                 bStop    ; // true if the debugger stops when it is hit
-		uint32_t             nHitCount; // number of times the breakpoint was hit
+		Breakpoint_t() { Clear(); };
+
+		void Clear()
+		{
+			nAddress = 0;
+			nLength = 0;
+			eSource = BP_SRC_REG_PC;
+			eOperator = BP_OP_EQUAL;
+
+			bSet = false;
+			bEnabled = false;
+			bTemp = false;
+			bHit = false;
+			bStop = false;
+			nHitCount = 0;
+
+			addrPrefix.Clear();
+		};
+
+		WORD                 nAddress  ; // for registers, functions as nValue
+		UINT                 nLength   ;
+		BreakpointSource_t   eSource   ;
+		BreakpointOperator_t eOperator ;
+		bool                 bSet      ; // used to be called enabled pre 2.0
+		bool                 bEnabled  ;
+		bool                 bTemp     ; // If true then remove BP when hit or stepping cancelled (eg. G xxxx)
+		bool                 bHit      ; // true when the breakpoint has just been hit
+		bool                 bStop     ; // true if the debugger stops when it is hit
+		uint32_t             nHitCount ; // number of times the breakpoint was hit
+		AddressPrefix_t      addrPrefix;
 	};
 
 	typedef Breakpoint_t Bookmark_t;
@@ -277,11 +316,11 @@
 
 	struct Command_t
 	{
-		char         m_sName[ MAX_COMMAND_LEN ];
-		CmdFuncPtr_t pFunction;
-		int          iCommand;     // offset (enum) for direct command name lookup
-		const char   *pHelpSummary; // 1 line help summary
-//		Hash_t       m_nHash; // TODO
+		char          m_sName[ MAX_COMMAND_LEN ];
+		CmdFuncPtr_t  pFunction;
+		int           iCommand;     // offset (enum) for direct command name lookup
+		const char   *pHelpSummary; // 1 line help summary. It CAN be used for PARAMs.
+//		Hash_t        m_nHash; // TODO
 	};
 
 	// Commands sorted by Category
@@ -438,7 +477,7 @@
 		, CMD_HELP_SPECIFIC
 		, CMD_VERSION
 		, CMD_MOTD // Message of the Day
-// Memory		
+// Memory
 		, CMD_MEMORY_COMPARE
 
 		, CMD_MEM_MINI_DUMP_HEX_1 // Mini Memory Dump 1
@@ -471,6 +510,7 @@
 // Output
 		, CMD_OUTPUT_CALC
 		, CMD_OUTPUT_ECHO
+		, CMD_OUTPUT_LOG
 		, CMD_OUTPUT_PRINT
 		, CMD_OUTPUT_PRINTF
 		, CMD_OUTPUT_RUN
@@ -581,6 +621,9 @@
 		, CMD_ZEROPAGE_POINTER_LIST
 //		, CMD_ZEROPAGE_POINTER_LOAD
 		, CMD_ZEROPAGE_POINTER_SAVE
+
+// Startup/Shutdown
+		, CMD_STARTUP
 
 		, NUM_COMMANDS
 
@@ -738,6 +781,7 @@
 // Output/Scripts
 	Update_t CmdOutputCalc         (int nArgs);
 	Update_t CmdOutputEcho         (int nArgs);
+	Update_t CmdOutputLog          (int nArgs);
 	Update_t CmdOutputPrint        (int nArgs);
 	Update_t CmdOutputPrintf       (int nArgs);
 	Update_t CmdOutputRun          (int nArgs);
@@ -848,6 +892,8 @@
 	Update_t CmdZeroPageSave       (int nArgs);
 	Update_t CmdZeroPagePointer    (int nArgs);
 
+// Startup/Shutdown
+	Update_t CmdDebugStartup       (int nArgs);
 
 // Cursor _________________________________________________________________________________________
 	enum Cursor_Align_e
@@ -1196,10 +1242,11 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 
 	struct MemoryDump_t
 	{
-		bool         bActive;
-		WORD         nAddress; // nAddressMemDump; // was USHORT
-		DEVICE_e     eDevice;
-		MemoryView_e eView;
+		bool			bActive;
+		WORD			nAddress;
+		DEVICE_e		eDevice;
+		MemoryView_e	eView;
+		AddressPrefix_t	addrPrefix;
 	};
 
 	enum MemoryDump_e
@@ -1274,15 +1321,16 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 		, TOKEN_PLUS         // + Delta  Argument1 += Argument2
 		, TOKEN_QUOTE_SINGLE // '
 		, TOKEN_QUOTE_DOUBLE // "
-		, TOKEN_SEMI         // ; Command Separator
+		, _TOKEN_SEMI        // ; Comment EOL
+		, TOKEN_COMMENT_EOL = _TOKEN_SEMI
 		, TOKEN_SPACE        //   Token Delimiter
 		, TOKEN_STAR         // *
 //		, TOKEN_TAB          // '\t'
 		, TOKEN_TILDE        // ~
 
 		// Multi char tokens come last
-		, TOKEN_COMMENT_EOL  // //
-		,_TOKEN_FLAG_MULTI = TOKEN_COMMENT_EOL
+		, _TOKEN_FLAG_MULTI
+		, TOKEN_DIVIDE_FLOOR = _TOKEN_FLAG_MULTI // //
 		, TOKEN_GREATER_EQUAL// >=
 		, TOKEN_LESS_EQUAL   // <=
 		, TOKEN_NOT_EQUAL    // !=
@@ -1459,7 +1507,20 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 	, _PARAM_HELPCATEGORIES_END
 	,  PARAM_HELPCATEGORIES_NUM = _PARAM_HELPCATEGORIES_END - _PARAM_HELPCATEGORIES_BEGIN
 
-	, _PARAM_MEM_SEARCH_BEGIN = _PARAM_HELPCATEGORIES_END  // Daisy Chain
+	, _PARAM_LOG_BEGIN = _PARAM_HELPCATEGORIES_END // Daisy Chain
+		// Console Output Levels aka Error Levels
+		, PARAM_LOG_NONE = _PARAM_LOG_BEGIN  // N.B. Keep in SYNC! _PARAM_LOG_BEGIN and ConsoleOutputLevel_e
+		, PARAM_LOG_ERROR
+		, PARAM_LOG_WARN
+		, PARAM_LOG_INFO
+		, PARAM_LOG_DEFAULT
+		, PARAM_LOG_ALL
+		, PARAM_LOG_OFF // command alias for NONE
+		, PARAM_LOG_ON  // command alias for ALL
+	, _PARAM_LOG_END
+	,  PARAM_LOG_NUM = _PARAM_LOG_END - _PARAM_LOG_BEGIN
+
+	, _PARAM_MEM_SEARCH_BEGIN = _PARAM_LOG_END  // Daisy Chain
 		, PARAM_MEM_SEARCH_WILD = _PARAM_MEM_SEARCH_BEGIN
 //		, PARAM_MEM_SEARCH_BYTE
 	, _PARAM_MEM_SEARCH_END
@@ -1497,7 +1558,7 @@ const	DisasmData_t* pDisasmData; // If != NULL then bytes are marked up as data 
 	, _PARAM_WINDOW_END
 	,  PARAM_WINDOW_NUM = _PARAM_WINDOW_END - _PARAM_WINDOW_BEGIN
 
-		, NUM_PARAMS = _PARAM_WINDOW_END // Daisy Chain
+		, NUM_PARAMS = _PARAM_WINDOW_END  // Daisy Chain
 
 // Aliases (actuall names)
 //		,PARAM_DISASM = PARAM_CODE_1

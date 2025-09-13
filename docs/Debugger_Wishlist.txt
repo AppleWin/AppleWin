@@ -1,6 +1,9 @@
 Requests (Wishlist):
 ====================
 
+* `HSAVE1 "LOGO"` -- bsave logo.hgr
+* `HSAVE2 "LOGO"` -- bsave logo.hgr2
+
 * HOME/CLS Clear Screen
 
 * DT Define Target
@@ -103,14 +106,19 @@ Requests (Wishlist):
 - Debugger: Command line editing
    Left Arrow   Move Cursor Left
    Right Arrow  Move Cursor Right
+   Backspace    Delete previous character (if possible)
    Ctrl-A       Beginning of Line
    Ctrl-D       Delete Character
    Ctrl-E       End of Line
 
 - Debugger: List symbol table
+  NOTE: Built-in ROM monitor command LIST = $FE5E
    SYMASM   LIST
    SYMUSER1 LIST
 
+- Undocumented: `SYMLIST *` (Dumps ALL symbol tables)
+- Debugger: Console history needs to be bigger to show all symbols
+- Debugger: `SYMMAIN *` list all symbols
 - Debugger: Document: Add help example to list all symbol tables
     HELP SYMMAIN
         SYMMAIN *

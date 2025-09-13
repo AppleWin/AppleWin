@@ -930,6 +930,9 @@ static void RepeatInitialization(void)
 	if (g_cmdLine.useAltCpuEmulation)
 		ForceAltCpuEmulation();
 
+	if (!g_cmdLine.debuggerAutoRunScriptFilename.empty())
+		DebugSetAutoRunScript(g_cmdLine.debuggerAutoRunScriptFilename);
+
 	// Call DebugInitialize() after SetCurrentImageDir()
 	DebugInitialize();
 	LogFileOutput("Main: DebugInitialize()\n");
