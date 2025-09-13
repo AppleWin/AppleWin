@@ -9,17 +9,16 @@
   variables:
     CORENAME: applewin
     CORE_ARGS: '-DBUILD_LIBRETRO=ON -G Ninja'
-    EXTRA_PATH: source/frontends/libretro
 
 # Inclusion templates, required for the build to work
 include:
   ################################## DESKTOPS ################################
 
-  # Windows 64-bit
-#  - project: 'libretro-infrastructure/ci-templates'
-#    file: '/windows-cmake-mingw.yml'
+  # Windows
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/windows-cmake-mingw.yml'
 
-  # Linux 64-bit
+  # Linux
   - project: 'libretro-infrastructure/ci-templates'
     file: '/linux-cmake.yml'
 
@@ -58,21 +57,52 @@ stages:
 #
 ################################### DESKTOPS #################################
 # Windows 64-bit
-#libretro-build-windows-x64:
-#  extends:
-#    - .libretro-windows-cmake-x86_64
-#    - .core-defs
+libretro-build-windows-x64:
+  extends:
+    - .libretro-windows-cmake-x86_64
+    - .core-defs
+  image: $CI_SERVER_HOST:5050/libretro-infrastructure/libretro-build-mxe-win-cross-cores:gcc10
+  before_script:
+    - export NUMPROC=$(($(nproc)/5))
+    - apt-get update -qy
+    - apt-get -qy install vim
+
+# Windows 32-bit
+libretro-build-windows-i686:
+  extends:
+    - .libretro-windows-cmake-x86
+    - .core-defs
+  image: $CI_SERVER_HOST:5050/libretro-infrastructure/libretro-build-mxe-win-cross-cores:gcc10
+  before_script:
+    - export NUMPROC=$(($(nproc)/5))
+    - apt-get update -qy
+    - apt-get -qy install vim
 
 # Linux 64-bit
 libretro-build-linux-x64:
   extends:
     - .libretro-linux-cmake-x86_64
     - .core-defs
-  image: $CI_SERVER_HOST:5050/libretro-infrastructure/libretro-build-amd64-ubuntu:xenial-gcc9
   before_script:
+    - export NUMPROC=$(($(nproc)/5))
     - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 16FAAD7AF99A65E2
     - sudo apt-get update -qy
     - sudo apt-get -qy install $(cat source/frontends/libretro/xenial/packages.txt)
+  variables:
+    EXTRA_PATH: source/frontends/libretro
+
+# Linux 32-bit
+libretro-build-linux-i686:
+  extends:
+    - .libretro-linux-cmake-x86
+    - .core-defs
+  before_script:
+    - export NUMPROC=$(($(nproc)/5))
+    - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 16FAAD7AF99A65E2
+    - sudo apt-get update -qy
+    - sudo apt-get -qy install $(cat source/frontends/libretro/xenial/packages.txt)
+  variables:
+    EXTRA_PATH: source/frontends/libretro
 
 # MacOS 64-bit
 #libretro-build-osx-x64:
