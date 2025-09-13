@@ -16,7 +16,7 @@
 // Win32Frame methods are implemented in AppleWin, WinFrame and WinVideo.
 // in time they should be brought together and more freestanding functions added to Win32Frame.
 
-#if 0	// TODO: Remove for now until we have Linux version too
+#if 1	// TODO: Check this builds & runs under Linux too
 #include <intrin.h>
 
 class InstructionSet
