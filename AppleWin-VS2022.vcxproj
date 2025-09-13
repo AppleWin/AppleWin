@@ -625,7 +625,7 @@
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>$(OutDir)TestCPU6502.exe</Command>
+      <Command>"$(OutDir)TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -652,7 +652,7 @@
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>$(OutDir)TestCPU6502.exe</Command>
+      <Command>"$(OutDir)TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -680,8 +680,7 @@
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>echo Performing unit-test: TestCPU6502
-$(OutDir)TestCPU6502.exe</Command>
+      <Command>"$(OutDir)TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -709,8 +708,7 @@ $(OutDir)TestCPU6502.exe</Command>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>echo Performing unit-test: TestCPU6502
-$(OutDir)TestCPU6502.exe</Command>
+      <Command>"$(OutDir)TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -736,7 +734,7 @@ $(OutDir)TestCPU6502.exe</Command>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>$(OutDir)TestCPU6502.exe</Command>
+      <Command>"$(OutDir)TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -762,7 +760,7 @@ $(OutDir)TestCPU6502.exe</Command>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>$(OutDir)TestCPU6502.exe</Command>
+      <Command>"$(OutDir)TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -794,7 +792,7 @@ $(OutDir)TestCPU6502.exe</Command>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>$(OutDir)TestCPU6502.exe</Command>
+      <Command>"$(OutDir)TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -826,8 +824,7 @@ $(OutDir)TestCPU6502.exe</Command>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>$(OutDir)TestCPU6502.exe
-</Command>
+      <Command>"$(OutDir)TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -860,9 +857,7 @@ $(OutDir)TestCPU6502.exe</Command>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>echo Performing unit-test: TestCPU6502
-
-$(OutDir)TestCPU6502.exe</Command>
+      <Command>"$(OutDir)TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -895,8 +890,7 @@ $(OutDir)TestCPU6502.exe</Command>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>echo Performing unit-test: TestCPU6502
-$(OutDir)TestCPU6502.exe</Command>
+      <Command>"$(OutDir)TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -928,7 +922,7 @@ $(OutDir)TestCPU6502.exe</Command>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>$(OutDir)TestCPU6502.exe</Command>
+      <Command>"$(OutDir)TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
@@ -960,7 +954,7 @@ $(OutDir)TestCPU6502.exe</Command>
       <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
     </Link>
     <PreBuildEvent>
-      <Command>$(OutDir)TestCPU6502.exe</Command>
+      <Command>"$(OutDir)TestCPU6502.exe"</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Performing unit-test: TestCPU6502</Message>
