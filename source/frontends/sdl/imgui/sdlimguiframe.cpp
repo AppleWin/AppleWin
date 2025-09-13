@@ -308,6 +308,14 @@ namespace sa2
                 }
                 break;
             }
+            case SDLK_F7:
+            {
+                if (modifiers == KMOD_NONE)
+                {
+                    mySettings.toggleDebugger(this);
+                }
+                break;
+            }
             case SDLK_F3:
             {
                 if (modifiers == KMOD_NONE)
