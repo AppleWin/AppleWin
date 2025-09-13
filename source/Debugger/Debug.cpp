@@ -373,7 +373,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static	Update_t ExecuteCommand ( int nArgs );
 
 // Breakpoints
-	std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& pBP, WORD addr, DEVICE_e device, bool padding);
+	static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& pBP, WORD addr, DEVICE_e device, bool padding);
 	Update_t _BP_InfoNone ();
 	void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, int & nTotal );
 	void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, const bool bEnabled );
@@ -2112,13 +2112,13 @@ static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& addrPre
 	{
 		if (addrPrefix.nBank < 0x100)
 		{
-			sprintf_s(sBank, "%02X", addrPrefix.nBank);
+			sprintf(sBank, "%02X", addrPrefix.nBank);
 			sBank[2] = '/';
 			sBank[3] = 0;
 		}
 		else
 		{
-			sprintf_s(sBank, "%03X", addrPrefix.nBank);
+			sprintf(sBank, "%03X", addrPrefix.nBank);
 			sBank[3] = '/';
 			sBank[4] = 0;
 			prefixPad--;
