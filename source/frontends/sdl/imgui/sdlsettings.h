@@ -22,6 +22,7 @@ namespace sa2
         void showDiskTab();
         void toggleSettings();
         void toggleShortcuts();
+        void toggleDebugger(SDLFrame *frame);
 
         bool windowed = false;
         bool quit = false;

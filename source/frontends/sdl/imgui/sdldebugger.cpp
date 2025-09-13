@@ -599,8 +599,8 @@ namespace sa2
         printBoolean("5E", !video.VideoGetSWDHIRES(), "DHGR", "HGR");
         ImGui::Separator();
         printBoolean("00", video.VideoGetSW80STORE(), "80sto 0", "80sto 1");
-        printBoolean("02", GetMemMode() & MF_AUXREAD, "R m", "R x");
-        printBoolean("02", GetMemMode() & MF_AUXWRITE, "W m", "R x");
+        printBoolean("02##R", GetMemMode() & MF_AUXREAD, "R m", "R x");
+        printBoolean("02##W", GetMemMode() & MF_AUXWRITE, "W m", "R x");
         printBoolean("0C", video.VideoGetSW80COL(), "Col 40", "Col 80");
         printBoolean("0E", video.VideoGetSWAltCharSet(), "ASC", "MOUS");
         ImGui::EndDisabled();
