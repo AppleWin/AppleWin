@@ -46,8 +46,6 @@
 		, BP_HIT_VIDEO_POS                      = (1 << 12)
 	};
 
-	extern int          g_bDebugBreakpointHit;
-
 	extern int          g_nBreakpoints;
 	extern Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
@@ -192,3 +190,4 @@
 	bool	DebuggerCheckMemBreakpoints(WORD nAddress, WORD nSize, bool isDmaToMemory);
 
 	void	ClearTempBreakpoints();
+	void	DebugSetAutoRunScript(std::string& sAutoRunScriptFilename);

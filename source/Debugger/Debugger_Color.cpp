@@ -46,14 +46,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		RGB(255,255,255), RGB(223,223,223), RGB(191,191,191), RGB(159,159,159), RGB(127,127,127), RGB( 95, 95, 95), RGB( 63, 63, 63), RGB( 31, 31, 31),  // 111 // White/Gray
 
 		// Custom Colors
-		RGB( 80,192,255), // Light  Sky Blue // Used for console FG
-		RGB(  0,128,192), // Darker Sky Blue
-		RGB(  0, 64,128), // Deep   Sky Blue
-		RGB(255,128,  0), // Orange (Full)
-		RGB(128, 64,  0), // Orange (Half)
-		RGB(  0,  0,  0),
-		RGB(  0,  0,  0),
-		RGB(  0,  0,  0),
+		RGB( 80,192,255), // COLOR_CUSTOM_01 Light  Sky Blue // Used for console FG
+		RGB(  0,128,192), // COLOR_CUSTOM_02 Darker Sky Blue
+		RGB(  0, 64,128), // COLOR_CUSTOM_03 Deep   Sky Blue
+		RGB(255,128,  0), // COLOR_CUSTOM_04 Orange (Full)
+		RGB(128, 64,  0), // COLOR_CUSTOM_05 Orange (Half)
+		RGB(  0,  0,  0), // COLOR_CUSTOM_06
+		RGB(  0,  0,  0), // COLOR_CUSTOM_07
+		RGB(  0,  0,  0), // COLOR_CUSTOM_08
 
 		RGB(  0,  0,  0),
 		RGB(  0,  0,  0),
@@ -114,7 +114,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 		COLOR_CUSTOM_04,     // BG_INFO_IO_BYTE 
 		COLOR_CUSTOM_04,     //                     FG_INFO_IO_BYTE
-				
+
+		G8             ,     //                     FG_INFO_BP_MEM_READ  Green
+		COLOR_CUSTOM_04,     //                     FG_INFO_BP_MEM_WRITE Orange
+
+		Y8,                  //                     FG_INFO_MEM_SLOT
+		C3,                  // BG_INFO_MEM_BANK    // See BG_INFO
+		W8,                  //                     FG_INFO_MEM_BANK
+		C4,                  //                     FG_INFO_MEM_LC
+
 		C1,   // BG_DATA_1 // 2.6.2.24 Changed: Tone-downed the alt. background cyan for the DATA window. C2, C3 -> C1,C2
 		C2,   // BG_DATA_2
 		Y8,   // FG_DATA_BYTE

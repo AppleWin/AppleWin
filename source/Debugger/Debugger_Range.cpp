@@ -30,8 +30,116 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Debug.h"
 
+#include "../CardManager.h"
+
 // Util - Range _______________________________________________________________
 
+
+//===========================================================================
+RangeType_t Range_GetPrefix(const int iArg, AddressPrefix_t* pAP)
+{
+	if ((iArg + 1) >= MAX_ARGS)
+		return RANGE_NO_PREFIX;
+
+	if (g_aArgs[iArg + 1].eToken != TOKEN_FSLASH)
+		return RANGE_NO_PREFIX;
+
+	// Spec: (GH#451)
+	// [sN/][nn/][L<1|2>/][ROM/]<nnnn>
+
+	if (tolower(g_aArgs[iArg].sArg[0]) == 's')	// slot
+	{
+		int len = strlen(g_aArgs[iArg].sArg);
+		pAP->nSlot = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. s1 or sl1 or slot1
+		if (pAP->nSlot > 7)
+		{
+			ConsoleDisplayError("Address prefix out-of-range. Use slots 0-7.");
+			return RANGE_PREFIX_BAD;
+		}
+	}
+	else if (tolower(g_aArgs[iArg].sArg[0]) == 'l')	// LC
+	{
+		int len = strlen(g_aArgs[iArg].sArg);
+		pAP->nLangCard = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. l1 or lc1
+		if (pAP->nLangCard < 1 || pAP->nLangCard > 2)
+		{
+			ConsoleDisplayError("Address prefix out-of-range. Use lc 1 or 2.");
+			return RANGE_PREFIX_BAD;
+		}
+	}
+	else if (tolower(g_aArgs[iArg].sArg[0]) == 'r')	// ROM
+	{
+		pAP->bIsROM = true;
+	}
+	else // bank (RamWorks or Saturn)
+	{
+		if (g_aArgs[iArg].nValue > 0x100)	// Permit 00-100
+		{
+			ConsoleDisplayError("Address prefix out-of-range. Use bank 0-100 (or 0-7 for Saturn).");
+			return RANGE_PREFIX_BAD;
+		}
+		pAP->nBank = g_aArgs[iArg].nValue;
+	}
+
+	return RANGE_PREFIX_OK;
+}
+
+
+//===========================================================================
+bool Range_GetAllPrefixes(int& iArg, const int nArg, int& dArgPrefix, AddressPrefix_t* pAP, bool slotCheck/*=true*/)
+{
+	const int kArgsPerPrefix = 2;
+	for (int i = iArg; i < nArg; i += kArgsPerPrefix)
+	{
+		RangeType_t prefix = Range_GetPrefix(i, pAP);
+		if (prefix == RANGE_NO_PREFIX)
+			break;
+		if (prefix == RANGE_PREFIX_BAD)
+			return false;
+		dArgPrefix += kArgsPerPrefix;
+		iArg += kArgsPerPrefix;	// done 1 prefix (2 args)
+	}
+
+	// Got all prefixes, so do some checks:
+
+	if (pAP->bIsROM &&
+		(pAP->nSlot != AddressPrefix_t::kSlotInvalid || pAP->nBank != AddressPrefix_t::kBankInvalid || pAP->nLangCard != AddressPrefix_t::kLangCardInvalid))
+	{
+		ConsoleDisplayError("Address prefix bad: 'r/' not permitted with other prefixes.");
+		return false;
+	}
+
+	if (pAP->nSlot != AddressPrefix_t::kSlotInvalid)	// Currently setting a slot# means Saturn card
+	{
+		if (slotCheck)
+		{
+			if (pAP->nBank != AddressPrefix_t::kBankInvalid && pAP->nBank > 7)
+			{
+				ConsoleDisplayError("Address prefix bad: Saturn only supports banks 0-7.");
+				return false;
+			}
+
+			if (GetCardMgr().QuerySlot(pAP->nSlot) != CT_Saturn128K)
+			{
+				ConsoleDisplayError("Address prefix bad: No Saturn in slot.");
+				return false;
+			}
+		}
+	}
+	else // No slot# specified, so aux slot (for Extended 80Col or RamWorks card)
+	{
+		if (pAP->nBank != AddressPrefix_t::kBankInvalid)
+		{
+			if (!IsAppleIIeOrAbove(GetApple2Type()))
+			{
+				ConsoleDisplayError("Address prefix bad: Aux slot requires //e or above.");
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
 
 //===========================================================================
 bool Range_CalcEndLen( const RangeType_t eRange
@@ -72,9 +180,9 @@ bool Range_CalcEndLen( const RangeType_t eRange
 
 
 //===========================================================================
-RangeType_t Range_Get( WORD & nAddress1_, WORD & nAddress2_, const int iArg ) // =1
+RangeType_t Range_Get( WORD & nAddress1_, WORD & nAddress2_, const int iArg/* =1 */)
 {
-	nAddress1_ = (unsigned) g_aArgs[ iArg ].nValue; 
+	nAddress1_ = g_aArgs[ iArg ].nValue;
 	if (nAddress1_ > _6502_MEM_END)
 		nAddress1_ = _6502_MEM_END;
 
@@ -82,6 +190,9 @@ RangeType_t Range_Get( WORD & nAddress1_, WORD & nAddress2_, const int iArg ) //
 	int nTemp  = 0;
 
 	RangeType_t eRange = RANGE_MISSING_ARG_2;
+
+	if ((iArg + 2) >= MAX_ARGS)
+		return eRange;
 
 	if (g_aArgs[ iArg + 1 ].eToken == TOKEN_COMMA)
 	{

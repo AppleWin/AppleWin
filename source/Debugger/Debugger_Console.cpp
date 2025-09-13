@@ -69,6 +69,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		int       g_nConsoleDisplayWidth  = 0;
 		conchar_t g_aConsoleDisplay[ CONSOLE_HEIGHT ][ CONSOLE_WIDTH ];
 
+	// Error Level
+//		ConsoleOutputLevel_e g_eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_NONE;	 // Show nothing
+		ConsoleOutputLevel_e g_eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ERROR;   // Show error and below
+//		ConsoleOutputLevel_e g_eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_WARN;    // Show warn and below
+//		ConsoleOutputLevel_e g_eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_INFO;    // Show info and below
+//		ConsoleOutputLevel_e g_eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_GENERIC; // Show generic and below
+//		ConsoleOutputLevel_e g_eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL;     // Show everything
+
 	// Input History
 		int   g_nHistoryLinesStart = 0;
 		int   g_nHistoryLinesTotal = 0; // number of commands entered

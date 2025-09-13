@@ -1370,6 +1370,15 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 
 	// Misc
+		case CMD_OUTPUT_LOG:
+			// Display all the params so an user knows what options are available
+			ConsoleColorizePrint( " Usage: [ <cmd> ]" );
+			ConsoleBufferPush( "  Where <cmd> is one of:" );
+			for( int iParam = _PARAM_LOG_BEGIN; iParam < _PARAM_LOG_END; iParam++ )
+				ConsolePrintFormat( "%s%-7s%s: %s", CHC_STRING, g_aParameters[ iParam ].m_sName, CHC_DEFAULT,  g_aParameters[ iParam ].pHelpSummary );
+			ConsoleBufferPush(" No arguments will display the current debugger verbosity level" );
+			break;
+
 		case CMD_VERSION:
 			ConsoleColorizePrint( " Usage: [*]" );
 			ConsoleBufferPush( "  * Display extra internal stats" );
@@ -1459,16 +1468,18 @@ Update_t CmdVersion (int nArgs)
 	int nFixMinor;
 	UnpackVersion( nVersion, nMajor, nMinor, nFixMajor, nFixMinor );
 
-	ConsolePrintFormat("  Emulator:  %s%s%s (%d-bit build)    Debugger: %s%d.%d.%d.%d%s"
+	// Use ConsolePrint() like CmdMOTD does so the version is always displayed
+	std::string sText = StrFormat("  Emulator:  %s%s%s (%d-bit build)    Debugger: %s%d.%d.%d.%d%s"
 		, CHC_SYMBOL
 		, g_VERSIONSTRING.c_str()
 		, CHC_DEFAULT
 		, GetCompilationTarget()
-		//
+
 		, CHC_SYMBOL
 		, nMajor, nMinor, nFixMajor, nFixMinor
 		, CHC_DEFAULT
 	);
+	ConsolePrint( sText.c_str() );
 
 	if (nArgs)
 	{

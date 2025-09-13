@@ -135,15 +135,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const int DISPLAY_SOFTSWITCH_COLUMN = INFO_COL_1 - (CONSOLE_FONT_WIDTH/2) + 1; // 1/2 char width padding around soft switches
 
 		// Horizontal Column (pixels) of BPs, Watches
-		const int INFO_COL_2 = (62 * 7); // nFontWidth
+		const int INFO_COL_2 = (int)(61.5 * 7); // nFontWidth // Nudged 1/2 glyph width left to show Slot&Bank for breakpoints
 		const int DISPLAY_BP_COLUMN      = INFO_COL_2;
 		const int DISPLAY_WATCHES_COLUMN = INFO_COL_2;
 
 		// Horizontal Column (pixels) of VideoScannerInfo & Mem
-		const int INFO_COL_3 = (63 * 7); // nFontWidth
-		const int DISPLAY_MINIMEM_COLUMN = INFO_COL_3;
+		const int INFO_COL_3 = (63 * 7); // nFontWidth // 63
+		const int DISPLAY_MINIMEM_COLUMN       = INFO_COL_3;
 		const int DISPLAY_VIDEO_SCANNER_COLUMN = INFO_COL_3;
-		const int DISPLAY_IRQ_COLUMN = INFO_COL_3 + (12 * 7); // (12 chars from v/h-pos) * nFontWidth
+		const int DISPLAY_IRQ_COLUMN           = INFO_COL_3 + (12 * 7); // (12 chars from v/h-pos) * nFontWidth
 #else
 		const int DISPLAY_CPU_INFO_LEFT_COLUMN = SCREENSPLIT1;	// TC: SCREENSPLIT1 is not defined anywhere in the .sln!
 
@@ -1019,6 +1019,43 @@ void ColorizeFlags( bool bSet, int bg_default = BG_INFO, int fg_default = FG_INF
 
 
 //===========================================================================
+// Called by:
+// . DrawBreakpoints()
+// . DrawMemory()
+void DrawMiniHexBankAndLangCard(RECT& rect, const AddressPrefix_t& addrPrefix)
+{
+	rect.left += 2; // spacer for Bank & Card
+	const UINT kGlyphMiniHexWidth = 4;
+	if (addrPrefix.nBank > 0) // Aux or RamWorks
+	{
+		DebuggerSetColorBG(DebuggerGetColor(BG_INFO_MEM_BANK));
+		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_MEM_BANK));
+		if (addrPrefix.nBank == 0x100)
+			PrintGlyph(rect.left, rect.top, 0x90 + 0x1);	// Glyph: mini hex "1"
+		rect.left += kGlyphMiniHexWidth;
+		PrintGlyph(rect.left, rect.top, 0x90 + ((addrPrefix.nBank >> 4) & 0xF)); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
+		rect.left += kGlyphMiniHexWidth;
+		PrintGlyph(rect.left, rect.top, 0x90 + ((addrPrefix.nBank >> 0) & 0xF)); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
+		rect.left += kGlyphMiniHexWidth;
+	}
+	else
+	{
+		rect.left += 3 * kGlyphMiniHexWidth;
+	}
+	DebuggerSetColorBG(DebuggerGetColor(BG_INFO));
+	FillRect(GetDebuggerMemDC(), &rect, g_hConsoleBrushBG);
+
+	// If addr prefix is in LC1 or LC2 display a bookmark symbol (1) or (2)
+	if (addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid)
+	{
+		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_MEM_LC));
+		PrintGlyph(rect.left, rect.top, 0x90 + addrPrefix.nLangCard); // Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
+	}
+	rect.left += kGlyphMiniHexWidth;
+}
+
+
+//===========================================================================
 void DrawBreakpoints ( int line )
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
@@ -1077,7 +1114,22 @@ void DrawBreakpoints ( int line )
 
 			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ));
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_BULLET ) );
-			PrintTextCursorX( StrFormat("%X ", iBreakpoint).c_str(), rect2);
+			PrintTextCursorX( StrFormat("%X", iBreakpoint).c_str(), rect2);
+
+#if DEBUG_FORCE_DISPLAY
+			pBP->nBank     =  iBreakpoint < 6
+				? iBreakpoint / 3
+				: iBreakpoint - 4
+				;
+			pBP->nLangCard = iBreakpoint % 3
+				? (iBreakpoint % 3)
+				: Breakpoint_t::kLangCardInvalid
+				;
+#endif
+			DrawMiniHexBankAndLangCard(rect2, pBP->addrPrefix);
+
+//			rect2.left += g_aFontConfig[ FONT_DISASM_DEFAULT ]._nFontWidthAvg - 2;
+			// NOTE: PrintGlyph() is right at the right edge of the g_pDebuggerMemFramebits
 
 //			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ) );
 //			PrintTextCursorX( ".", rect2 );
@@ -1127,8 +1179,6 @@ void DrawBreakpoints ( int line )
 			DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
 
 #if DEBUG_FORCE_DISPLAY
-	
-
 	int iColor = R8 + iBreakpoint;
 	COLORREF nColor = g_aColorPalette[ iColor ];
 	if (iBreakpoint >= 8)
@@ -1141,31 +1191,15 @@ void DrawBreakpoints ( int line )
 
 			PrintTextCursorX( WordToHexStr( nAddress1 ).c_str(), rect2);
 
-			if (nLength == 1)
-			{
-				if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
-					PrintTextCursorX("R", rect2);
-				else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
-					PrintTextCursorX("W", rect2);
-			}
+			DebuggerSetColorBG( DebuggerGetColor( BG_INFO ) );
+			FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
 
 			if (nLength > 1)
 			{
 				DebuggerSetColorBG( DebuggerGetColor( BG_INFO ) );
 				DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ) );
 
-//				if (g_bConfigDisasmOpcodeSpaces)
-//				{
-//					PrintTextCursorX( " ", rect2 );
-//					rect2.left += g_nFontWidthAvg;
-//				}
-
 				PrintTextCursorX( ":", rect2 );
-//				rect2.left += g_nFontWidthAvg;
-//				if (g_bConfigDisasmOpcodeSpaces) // TODO: Might have to remove spaces, for BPIO... addr-addr xx
-//				{
-//					rect2.left += g_nFontWidthAvg;
-//				}
 
 				DebuggerSetColorBG( DebuggerGetColor( iBackground ) );
 				DebuggerSetColorFG( DebuggerGetColor( iForeground ) );
@@ -1181,10 +1215,21 @@ void DrawBreakpoints ( int line )
 #endif
 				PrintTextCursorX( WordToHexStr( nAddress2 ).c_str(), rect2);
 
-				if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
-					PrintTextCursorX("R", rect2);
-				else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
-					PrintTextCursorX("W", rect2);
+				DebuggerSetColorBG( DebuggerGetColor( BG_INFO ) );
+				FillRect( GetDebuggerMemDC(), &rect2, g_hConsoleBrushBG );
+			}
+			else
+				rect2.left += 5*g_aFontConfig[ FONT_INFO ]._nFontWidthAvg; // ":####"
+
+			if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
+			{
+				DebuggerSetColorFG(DebuggerGetColor(FG_INFO_BP_MEM_READ));
+				PrintTextCursorX("R", rect2);
+			}
+			else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
+			{
+				DebuggerSetColorFG(DebuggerGetColor(FG_INFO_BP_MEM_WRITE));
+				PrintTextCursorX("W", rect2);
 			}
 
 #if !USE_APPLE_FONT
@@ -2069,6 +2114,81 @@ void DrawLine_AY8913_PAIR(RECT& rect, WORD& iAddress, const int nCols, int iFore
 	rect.bottom += g_nFontHeight;
 }
 
+static void FlushCacheForPrefixMemory(AddressPrefix_t& addrPrefix)
+{
+	if (addrPrefix.nSlot     != AddressPrefix_t::kSlotInvalid
+	 || addrPrefix.nBank     != AddressPrefix_t::kBankInvalid
+	 || addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid)
+	{
+		MemGetBankPtr(0);	// Flush cache to back-buffers
+	}
+}
+
+static BYTE ReadByteFromMemoryWithPrefix(const WORD iAddress, AddressPrefix_t& addrPrefix)
+{
+	BYTE nData = 0;
+
+	if (addrPrefix.nSlot     == AddressPrefix_t::kSlotInvalid
+	 && addrPrefix.nBank     == AddressPrefix_t::kBankInvalid
+	 && addrPrefix.nLangCard == AddressPrefix_t::kLangCardInvalid
+	 && addrPrefix.bIsROM    == false)
+	{
+		// No prefix, so just read from current MMU's view
+		nData = ReadByteFromMemory(iAddress);
+	}
+	else if (addrPrefix.bIsROM)
+	{
+		nData = ReadByteFromROM(iAddress);
+	}
+	else
+	{
+		if (addrPrefix.nSlot == AddressPrefix_t::kSlotInvalid)	// Main, Aux or RamWorks
+		{
+			uint16_t physicalAddrOffset = iAddress;
+			if (addrPrefix.nLangCard == 1 && iAddress >= 0xD000 && iAddress <= 0xDFFF)
+				physicalAddrOffset = iAddress - 0x1000;
+
+			// Default to main mem, if LC is specified, but bank isn't
+			int nBank = addrPrefix.nBank;
+			if (addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid && addrPrefix.nBank == AddressPrefix_t::kBankInvalid)
+				nBank = 0x00;
+
+			LPBYTE pMem = NULL;
+			if (nBank == 0x00)
+				pMem = MemGetMainPtrWithLC(physicalAddrOffset);
+			else if (nBank != AddressPrefix_t::kBankInvalid)
+				pMem = MemGetAuxPtrWithLC(physicalAddrOffset);
+
+			if (pMem)
+				nData = *pMem;
+			else
+				nData = ReadByteFromMemory(iAddress);
+		}
+		else // Saturn
+		{
+			if (iAddress < 0xD000)
+			{
+				nData = ReadByteFromMemory(iAddress);
+			}
+			else
+			{
+				// Default to bank-0, if bank isn't specified
+				int nBank = addrPrefix.nBank;
+				if (addrPrefix.nBank == AddressPrefix_t::kBankInvalid)
+					nBank = 0x0;
+
+				uint16_t physicalAddrOffset = iAddress;
+				if (addrPrefix.nLangCard == 1 && iAddress >= 0xD000 && iAddress <= 0xDFFF)
+					physicalAddrOffset = iAddress - 0x1000;
+
+				nData = GetCardMgr().GetLanguageCardMgr().ReadByteFromSaturn(addrPrefix.nSlot, nBank, physicalAddrOffset);
+			}
+		}
+	}
+
+	return nData;
+}
+
 void DrawMemory ( int line, int iMemDump )
 {
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
@@ -2088,7 +2208,8 @@ void DrawMemory ( int line, int iMemDump )
 
 	MockingboardCard::DEBUGGER_MB_CARD MB;
 	bool isMockingboardInSlot = false;
-	UINT slot = nAddr >> 4, subUnit = nAddr & 1;
+	const UINT slot = pMD->addrPrefix.nSlot;
+	const UINT subUnit = nAddr & 1;
 
 	if (eDevice == DEV_MB_SUBUNIT || eDevice == DEV_AY8913_PAIR)
 	{
@@ -2158,10 +2279,46 @@ void DrawMemory ( int line, int iMemDump )
 	else
 		PrintTextCursorX(" at ", rect2);
 
-	DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
-	if (MB.subUnit[subUnit].is6522Bad && eDevice == DEV_MB_SUBUNIT)
-		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS_SY6522_AY8913_BAD));
-	PrintTextCursorY(sAddress.c_str(), rect2);
+	if (eDevice == DEV_MEMORY)
+	{
+		if (pMD->addrPrefix.bIsROM)
+		{
+			PrintTextCursorX("ROM/", rect2);
+		}
+		else
+		{
+			const UINT kGlyphMiniHexWidth = 4;
+			if (pMD->addrPrefix.nSlot != AddressPrefix_t::kSlotInvalid)
+			{
+				DebuggerSetColorFG(DebuggerGetColor(FG_INFO_MEM_SLOT));
+				PrintGlyph(rect2.left, rect2.top, 0x90 + 0x5);	// Glyph: mini hex "5" which looks like "s"!
+				rect2.left += kGlyphMiniHexWidth;
+				DebuggerSetColorFG(DebuggerGetColor(FG_INFO_MEM_BANK));
+				PrintGlyph(rect2.left, rect2.top, 0x90 + pMD->addrPrefix.nSlot);	// Glyphs 0x90 .. 0x9F = 3x5 mini hex numbers
+				rect2.left += kGlyphMiniHexWidth;
+			}
+			else
+			{
+				rect2.left += 2 * kGlyphMiniHexWidth;
+			}
+
+			DrawMiniHexBankAndLangCard(rect2, pMD->addrPrefix);
+		}
+
+		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
+		PrintTextCursorX(sAddress.c_str(), rect2);
+
+		rect2.top += g_nFontHeight;
+		rect2.bottom += g_nFontHeight;
+	}
+	else
+	{
+		DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS));
+		if (MB.subUnit[subUnit].is6522Bad && eDevice == DEV_MB_SUBUNIT)
+			DebuggerSetColorFG(DebuggerGetColor(FG_INFO_ADDRESS_SY6522_AY8913_BAD));
+
+		PrintTextCursorY(sAddress.c_str(), rect2);
+	}
 #endif
 
 	rect.top    = rect2.top;
@@ -2243,6 +2400,8 @@ void DrawMemory ( int line, int iMemDump )
 
 	//
 
+	FlushCacheForPrefixMemory(pMD->addrPrefix);
+
 	for (int iLine = 0; iLine < nLines; iLine++)
 	{
 		rect2 = rect;
@@ -2270,7 +2429,7 @@ void DrawMemory ( int line, int iMemDump )
 //			}
 //			else
 			{
-				const BYTE nData = ReadByteFromMemory(iAddress);
+				const BYTE nData = ReadByteFromMemoryWithPrefix(iAddress, pMD->addrPrefix);
 
 				if (iView == MEM_VIEW_HEX)
 				{
@@ -3233,6 +3392,8 @@ void DrawSubWindow_Data (Update_t bUpdate)
 	MemoryDump_t* pMD = &g_aMemDump[ iMemDump ];
 	USHORT       nAddress = pMD->nAddress;
 
+	FlushCacheForPrefixMemory(pMD->addrPrefix);
+
 //	if (!pMD->bActive)
 //		return;
 
@@ -3257,7 +3418,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		WORD srcAddr = iAddress;
 		for (int iByte = 0; iByte < nMaxOpcodes; ++iByte, ++srcAddr)
 		{
-			StrAppendByteAsHex(sOpcodes, ReadByteFromMemory(srcAddr));
+			StrAppendByteAsHex(sOpcodes, ReadByteFromMemoryWithPrefix(srcAddr, pMD->addrPrefix));
 			sOpcodes += ' ';
 		}
 
@@ -3301,7 +3462,7 @@ void DrawSubWindow_Data (Update_t bUpdate)
 		iAddress = nAddress;
 		for ( int iByte = 0; iByte < nMaxOpcodes; iByte++ )
 		{
-			BYTE nImmediate = ReadByteFromMemory(iAddress);
+			BYTE nImmediate = ReadByteFromMemoryWithPrefix(iAddress, pMD->addrPrefix);
 			/*int iTextBackground = iBackground;
 			if ((iAddress >= APPLE_IO_BEGIN) && (iAddress <= APPLE_IO_END))
 			{
