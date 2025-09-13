@@ -131,7 +131,7 @@ namespace sa2
 
     SDLImGuiFrame::~SDLImGuiFrame()
     {
-        glDeleteTextures(1, (const GLuint*)&myTexture);
+        glDeleteTextures(1, &myTexture);
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplSDL2_Shutdown();
         ImGui::DestroyContext();
@@ -141,8 +141,8 @@ namespace sa2
     void SDLImGuiFrame::Initialize(bool resetVideoState)
     {
         SDLFrame::Initialize(resetVideoState);
-        glDeleteTextures(1, (const GLuint*)&myTexture);
-        glGenTextures(1, (GLuint*)&myTexture);
+        glDeleteTextures(1, &myTexture);
+        glGenTextures(1, &myTexture);
 
         Video &video = GetVideo();
 
