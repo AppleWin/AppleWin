@@ -221,6 +221,11 @@ void CardManager::InsertAuxInternal(SS_CARDTYPE type)
 
 void CardManager::InsertAux(SS_CARDTYPE type, bool updateRegistry/*=true*/)
 {
+	// Only update aux slot if a //e or above (GH#1428)
+	// ...otherwise we'll lose the card in the aux slot when switching //e -> II+ -> //e
+	if (!IsAppleIIeOrAbove(GetApple2Type()))
+		return;
+
 	InsertAuxInternal(type);
 	if (updateRegistry)
 	{
