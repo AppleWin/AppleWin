@@ -16,6 +16,68 @@
 // Win32Frame methods are implemented in AppleWin, WinFrame and WinVideo.
 // in time they should be brought together and more freestanding functions added to Win32Frame.
 
+#include <intrin.h>
+
+class InstructionSet
+{
+public:
+    InstructionSet()
+    {
+        enum
+        {
+            RAX = 0,
+            RBX = 1,
+            RCX = 2,
+            RDX = 3
+        };
+        int cpuinfo[4]; // RAX, RBX, RCX, RDX
+
+        memset(vendor      , 0, sizeof(vendor      ));
+        memset(brand       , 0, sizeof(brand       ));
+        memset(functionData, 0, sizeof(functionData));
+        memset(extendedData, 0, sizeof(extendedData));
+
+        __cpuid( (int*)cpuinfo, 0x0 ); // 0x0 get highest valid function ID.
+        __cpuidex( &functionData[0][RAX], 0x0, 0 );
+
+        __cpuid( cpuinfo, 0x80000000 ); // 0x80000000 get highest valid extended ID.
+        numExtendedIds = cpuinfo[0];
+
+        if (numExtendedIds >= 0x80000004)
+            for (int idxExtendedId = 0x80000002; idxExtendedId <= 0x80000004; ++idxExtendedId)
+                __cpuidex( &extendedData[ idxExtendedId - 0x80000000 ][0], idxExtendedId, 0 );
+
+        // Vendor: AMD, Intel, etc.
+         int *pDst = (int*)&vendor;
+        *pDst++ = cpuinfo[RBX];
+        *pDst++ = cpuinfo[RDX];
+        *pDst++ = cpuinfo[RCX];
+
+        isAMD   = strcmp( vendor, "AuthenticAMD" ) == 0;
+        isIntel = strcmp( vendor, "GenuineIntel" ) == 0;
+
+        // Brand: AMD Ryzen Threadripper 3960X 24-Core Processor, etc.
+        for( int i = 0; i < 3; ++i )
+            memcpy(brand + 16*i, &extendedData[i+2][0], sizeof(cpuinfo));
+    }
+
+    int  numFunctionIds;
+    int  numExtendedIds;
+
+    char vendor[0x20];
+    char brand [0x40];
+
+    int functionData[1][4];
+    int extendedData[5][4];
+
+    bool isAMD;
+    bool isIntel;
+};
+
+static InstructionSet g_InstructionSet;
+
+//
+
 Win32Frame::Win32Frame()
 {
 	g_pFramebufferinfo = NULL;
