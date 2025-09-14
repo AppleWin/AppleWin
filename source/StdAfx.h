@@ -68,6 +68,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <cassert>
 #include <memory>
 
 // NOTE: this is a local version of windows.h with aliases for windows functions when not

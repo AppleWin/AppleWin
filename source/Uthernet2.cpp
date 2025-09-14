@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tfe/IPRaw.h"
 #include "Tfe/DNS.h"
 #include "W5100.h"
-#include "../Registry.h"
+#include "Registry.h"
 
 // Virtual DNS
 // Virtual DNS is an extension to the W5100
@@ -276,7 +276,7 @@ void Socket::process()
         FD_ZERO(&exceptfds);
         FD_SET(myFD, &writefds);
         FD_SET(myFD, &exceptfds);
-        const timeval timeout = {0, 0};
+        timeval timeout = {0, 0}; // non const for old versions of msys2 / mxe
         if (select(0, NULL, &writefds, &exceptfds, &timeout) > 0)
 #else
         pollfd pfd = {.fd = myFD, .events = POLLOUT};
