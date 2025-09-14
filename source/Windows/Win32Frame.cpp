@@ -21,57 +21,77 @@
 class InstructionSet
 {
 public:
-    InstructionSet()
-    {
-        enum
-        {
-            RAX = 0,
-            RBX = 1,
-            RCX = 2,
-            RDX = 3
-        };
-        int cpuinfo[4]; // RAX, RBX, RCX, RDX
+	InstructionSet() : isAMD(false), isIntel(false), isARM64(false)
+	{
+		memset(vendor, 0, sizeof(vendor));
+		memset(brand,  0, sizeof(brand));
 
-        memset(vendor      , 0, sizeof(vendor      ));
-        memset(brand       , 0, sizeof(brand       ));
-        memset(functionData, 0, sizeof(functionData));
-        memset(extendedData, 0, sizeof(extendedData));
+#ifndef _M_ARM64
+		enum
+		{
+			RAX = 0,
+			RBX = 1,
+			RCX = 2,
+			RDX = 3
+		};
+		int cpuinfo[4]; // RAX, RBX, RCX, RDX
 
-        __cpuid( (int*)cpuinfo, 0x0 ); // 0x0 get highest valid function ID.
-        __cpuidex( &functionData[0][RAX], 0x0, 0 );
+		memset(functionData, 0, sizeof(functionData));
+		memset(extendedData, 0, sizeof(extendedData));
 
-        __cpuid( cpuinfo, 0x80000000 ); // 0x80000000 get highest valid extended ID.
-        numExtendedIds = cpuinfo[0];
+		__cpuid((int*)cpuinfo, 0x0); // 0x0 get highest valid function ID.
+		__cpuidex(&functionData[0][RAX], 0x0, 0);
 
-        if (numExtendedIds >= 0x80000004)
-            for (int idxExtendedId = 0x80000002; idxExtendedId <= 0x80000004; ++idxExtendedId)
-                __cpuidex( &extendedData[ idxExtendedId - 0x80000000 ][0], idxExtendedId, 0 );
+		__cpuid(cpuinfo, 0x80000000); // 0x80000000 get highest valid extended ID.
+		numExtendedIds = cpuinfo[0];
 
-        // Vendor: AMD, Intel, etc.
-         int *pDst = (int*)&vendor;
-        *pDst++ = cpuinfo[RBX];
-        *pDst++ = cpuinfo[RDX];
-        *pDst++ = cpuinfo[RCX];
+		if (numExtendedIds >= 0x80000004)
+			for (int idxExtendedId = 0x80000002; idxExtendedId <= 0x80000004; ++idxExtendedId)
+				__cpuidex(&extendedData[idxExtendedId - 0x80000000][0], idxExtendedId, 0);
 
-        isAMD   = strcmp( vendor, "AuthenticAMD" ) == 0;
-        isIntel = strcmp( vendor, "GenuineIntel" ) == 0;
+		// Vendor: AMD, Intel, etc.
+		int* pDst = (int*)&vendor;
+		*pDst++ = cpuinfo[RBX];
+		*pDst++ = cpuinfo[RDX];
+		*pDst++ = cpuinfo[RCX];
 
-        // Brand: AMD Ryzen Threadripper 3960X 24-Core Processor, etc.
-        for( int i = 0; i < 3; ++i )
-            memcpy(brand + 16*i, &extendedData[i+2][0], sizeof(cpuinfo));
-    }
+		isAMD   = strcmp(vendor, "AuthenticAMD") == 0;
+		isIntel = strcmp(vendor, "GenuineIntel") == 0;
 
-    int  numFunctionIds;
-    int  numExtendedIds;
+		// Brand: AMD Ryzen Threadripper 3960X 24-Core Processor, etc.
+		for (int i = 0; i < 3; ++i)
+			memcpy(brand + 16 * i, &extendedData[i + 2][0], sizeof(cpuinfo));
+#else
+		isARM64 = true;
 
-    char vendor[0x20];
-    char brand [0x40];
+		char answer[BUFSIZ] = "Error Reading CPU Name from Registry!", inBuffer[BUFSIZ] = "";
+		const char* csName = "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0";
+		HKEY hKey;
+		DWORD gotType, gotSize = BUFSIZ;
+		if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, csName, 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+		{
+			if (!RegQueryValueExA(hKey, "ProcessorNameString", nullptr, &gotType, (PBYTE)(inBuffer), &gotSize))
+			{
+				if ((gotType == REG_SZ) && strlen(inBuffer))
+					strcpy(brand, inBuffer);
+			}
+			RegCloseKey(hKey);
+		}
+#endif
+	}
 
-    int functionData[1][4];
-    int extendedData[5][4];
+	int numFunctionIds;
+	int numExtendedIds;
 
-    bool isAMD;
-    bool isIntel;
+	char vendor[0x20];
+	char brand [0x40];
+
+	int functionData[1][4];
+	int extendedData[5][4];
+
+	bool isAMD;
+	bool isIntel;
+	bool isARM64;
 };
 
 static InstructionSet g_InstructionSet;
