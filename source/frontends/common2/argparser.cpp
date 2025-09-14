@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "frontends/common2/argparser.h"
 #include "frontends/common2/programoptions.h"
+#include "frontends/common2/utils.h"
 #include "linux/version.h"
 
 #include "Memory.h"
@@ -148,7 +149,7 @@ namespace common2
     {
         const std::string name = "Apple Emulator for " + edition + " (based on AppleWin " + getVersion() + ")";
 
-        const std::string configurationFileDefault = options.configurationFile.string();
+        const std::string configurationFileDefault = getConfigFile("applewin.conf").string();
         const std::string audioBufferDefault = std::to_string(options.audioBuffer);
 
         // clang-format off
