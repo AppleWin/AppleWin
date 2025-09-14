@@ -16,7 +16,6 @@
 // Win32Frame methods are implemented in AppleWin, WinFrame and WinVideo.
 // in time they should be brought together and more freestanding functions added to Win32Frame.
 
-#if 1	// TODO: Check this builds & runs under Linux too
 #include <intrin.h>
 
 class InstructionSet
@@ -75,8 +74,9 @@ public:
     bool isIntel;
 };
 
-InstructionSet gInstructionSet;
-#endif
+static InstructionSet g_InstructionSet;
+
+//
 
 Win32Frame::Win32Frame()
 {
