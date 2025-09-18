@@ -36,8 +36,8 @@ include:
 #    file: '/android-cmake.yml'
 
   # iOS
-#  - project: 'libretro-infrastructure/ci-templates'
-#    file: '/ios-cmake.yml'
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/ios-cmake.yml'
 
   # tvOS (AppleTV)
 #  - project: 'libretro-infrastructure/ci-templates'
@@ -153,14 +153,13 @@ libretro-build-osx-arm64:
 # Not supported; if this doesn't work the first time around, I'm cutting it
 
 # iOS
-#libretro-build-ios-arm64:
-#  extends:
-#    - .libretro-ios-cmake-arm64
-#    - .core-defs
-#  variables:
-#    CORE_ARGS: --toolchain ./cmake/toolchain/ios.toolchain.cmake -DPLATFORM=OS64 -DDEPLOYMENT_TARGET=13
-#    IOS_MINVER: "13.0"
-#    CXXFLAGS: -Wno-deprecated-declarations -Wno-unknown-attributes
+libretro-build-ios-arm64:
+  extends:
+    - .libretro-ios-cmake-arm64
+    - .core-defs
+  variables:
+    IOS_MINVER: "13.0"
+    EXTRA_PATH: source/frontends/libretro
 
 # tvOS
 #libretro-build-tvos-arm64:
