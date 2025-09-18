@@ -1717,25 +1717,35 @@ LRESULT Win32Frame::WndProc(
 				driveTooltip += "\n";
 				// hex sector
 				driveTooltip += "S$";
-				char sector[3] = "??";
-				if (g_nSector[slot][0] >= 0) sprintf_s(sector, "%02X", g_nSector[slot][0]);
-				driveTooltip += sector;
+
+				const char* unknown = "??";
+
+				if (g_nSector[slot][0] >= 0)
+					driveTooltip += StrFormat("%02X", g_nSector[slot][0]);
+				else
+					driveTooltip += unknown;
+
 				// dec sector
 				driveTooltip += " (S";
-				strcpy(sector, "??");
-				if (g_nSector[slot][0] >= 0) sprintf_s(sector, "%02d", g_nSector[slot][0]);
-				driveTooltip += sector;
+				if (g_nSector[slot][0] >= 0)
+					driveTooltip += StrFormat("%02d", g_nSector[slot][0]);
+				else
+					driveTooltip += unknown;
 				driveTooltip += ")";
+
 				// hex sector
 				driveTooltip += "\tS$";
-				strcpy(sector, "??");
-				if (g_nSector[slot][1] >= 0) sprintf_s(sector, "%02X", g_nSector[slot][1]);
-				driveTooltip += sector;
+				if (g_nSector[slot][1] >= 0)
+					driveTooltip += StrFormat("%02X", g_nSector[slot][1]);
+				else
+					driveTooltip += unknown;
+
 				// dec sector
 				driveTooltip += " (S";
-				strcpy(sector, "??");
-				if (g_nSector[slot][1] >= 0) sprintf_s(sector, "%02d", g_nSector[slot][1]);
-				driveTooltip += sector;
+				if (g_nSector[slot][1] >= 0)
+					driveTooltip += StrFormat("%02d", g_nSector[slot][1]);
+				else
+					driveTooltip += unknown;
 				driveTooltip += ")";
 
 				pInfo->lpszText = (LPTSTR)driveTooltip.c_str();
