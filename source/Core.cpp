@@ -269,7 +269,7 @@ bool CheckOldAppleWinVersion(void)
 
 	// version: xx.yy.zz.ww
 	char* p0 = szOldAppleWinVersion;
-	int len = strlen(szOldAppleWinVersion);
+	size_t len = strlen(szOldAppleWinVersion);
 	szOldAppleWinVersion[len] = '.';	// append a null terminator
 	szOldAppleWinVersion[len + 1] = '\0';
 	for (UINT i = 0; i < 4; i++)

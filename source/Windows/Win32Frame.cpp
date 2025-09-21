@@ -513,7 +513,7 @@ void Win32Frame::DisplayLogo(void)
 	TextOut(hFrameDC,                       \
 		scale*540+x+xoff,scale*358+y+yoff,  \
 		strVersion.c_str(),                 \
-		strVersion.length());
+		(int)strVersion.length());
 
 	if (GetDeviceCaps(hFrameDC, PLANES) * GetDeviceCaps(hFrameDC, BITSPIXEL) <= 4) {
 		DRAWVERSION(2, 2, RGB(0x00, 0x00, 0x00));

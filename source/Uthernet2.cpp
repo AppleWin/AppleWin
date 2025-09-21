@@ -633,7 +633,7 @@ void Uthernet2::receiveOnePacketRaw()
                     const uint8_t socketProtocol = myMemory[socket.registerAddress + W5100_SN_PROTO];
                     if (payload && packetProtocol == socketProtocol)
                     {
-                        ipRawSocket = i;
+                        ipRawSocket = (int)i;
                         break; // a valid IPRAW socket has been found
                     }
                 }
@@ -709,7 +709,7 @@ void Uthernet2::receiveOnePacketFromSocket(const size_t i)
             std::vector<uint8_t> buffer(freeRoom - 1); // do not fill the buffer completely
             sockaddr_in source = {0};
             socklen_t len = sizeof(sockaddr_in);
-            const ssize_t data = recvfrom(socket.getFD(), reinterpret_cast<char *>(buffer.data()), buffer.size(), 0, (struct sockaddr *)&source, &len);
+            const ssize_t data = recvfrom(socket.getFD(), reinterpret_cast<char *>(buffer.data()), (int)buffer.size(), 0, (struct sockaddr *)&source, &len);
 #ifdef U2_LOG_TRAFFIC
             const char *proto = socket.getStatus() == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
 #endif
@@ -786,7 +786,7 @@ void Uthernet2::sendDataIPRaw(const size_t i, std::vector<uint8_t> &payload)
     LogFileOutput("U2: Send IPRAW[%" SIZE_T_FMT "]: %" SIZE_T_FMT " (%" SIZE_T_FMT ") bytes\n", i, payload.size(), packet.size());
 #endif
 
-    myNetworkBackend->transmit(packet.size(), packet.data());
+    myNetworkBackend->transmit((int)packet.size(), packet.data());
 }
 
 void Uthernet2::sendDataMacRaw(const size_t i, std::vector<uint8_t> &packet) const
@@ -803,7 +803,7 @@ void Uthernet2::sendDataMacRaw(const size_t i, std::vector<uint8_t> &packet) con
         LogFileOutput("U2: Send MACRAW[%" SIZE_T_FMT "]: XX:XX:XX:XX:XX:XX -> XX:XX:XX:XX:XX:XX: %" SIZE_T_FMT " bytes\n", i, packet.size());
     }
 #endif
-    myNetworkBackend->transmit(packet.size(), packet.data());
+    myNetworkBackend->transmit((int)packet.size(), packet.data());
 }
 
 void Uthernet2::sendDataToSocket(const size_t i, std::vector<uint8_t> &data)
@@ -819,7 +819,7 @@ void Uthernet2::sendDataToSocket(const size_t i, std::vector<uint8_t> &data)
         destination.sin_addr.s_addr = dest;
         destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
 
-        const ssize_t res = sendto(socket.getFD(), reinterpret_cast<const char *>(data.data()), data.size(), 0, (const struct sockaddr *)&destination, sizeof(destination));
+        const ssize_t res = sendto(socket.getFD(), reinterpret_cast<const char *>(data.data()), (int)data.size(), 0, (const struct sockaddr *)&destination, sizeof(destination));
 #ifdef U2_LOG_TRAFFIC
         const char *proto = socket.getStatus() == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
         LogFileOutput("U2: Send %s[%" SIZE_T_FMT "]: %" SIZE_T_FMT " of %" SIZE_T_FMT " bytes\n", proto, i, res, data.size());
