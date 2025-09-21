@@ -183,6 +183,22 @@
 							</tr>
 							<tr bgcolor="#000000">
 								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b>M1 S4/MB</b></font></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>View slot 4's Mockingboard/Phasor (unit A): 6522 & AY-3-891x's registers. (See Notes)</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
+									<p><font color="#00b8ff"><font face="Courier"><b>M1 S4/AYB</b></font></font></p>
+								</td>
+								<td bgcolor="#000000" width="75%">
+									<p><font color="#ffffff"><i>View slot 4's Phasor (unit B): both AY-3-891x's registers. (See Notes)</i></font></p>
+								</td>
+							</tr>
+							<tr bgcolor="#000000">
+								<td bgcolor="#000000" width="25%">
 									<p><font color="#00b8ff"><font face="Courier"><b>DATA</b></font></font></p>
 								</td>
 								<td bgcolor="#000000" width="75%">
@@ -207,6 +223,23 @@
 			</li>
 			<li>
 				<p style="MARGIN-BOTTOM: 0in"><i>In the image at the top, prefixing the address ("D000") are the bank number (white "01") and LC bank (green "2").</i></p>
+			</li>
+			<li>
+				<p style="MARGIN-BOTTOM: 0in"><i>Mockingboard/Phasor: m<1|2> MB[A|B]. Show 6522 & AY-3-891x's registers for either sub-unit A or B</i></p>
+				<ul>
+					<li>
+						<p style="MARGIN-BOTTOM: 0in"><i>The 6522 TIMER1 (regs 4 & 5) and TIMER2 (regs 6 & 7) registers are white when active.</i></p>
+					</li>
+					<li>
+						<p style="MARGIN-BOTTOM: 0in"><i>The selected AY-3-891x register is shown in white.</i></p>
+					</li>
+					<li>
+						<p style="MARGIN-BOTTOM: 0in"><i>The AY-3-891x modes are shown: --(inactive), LA(latch), WR(write) and RD(read).</i></p>
+					</li>
+				</ul>
+			</li>
+			<li>
+				<p style="MARGIN-BOTTOM: 0in"><i>Phasor: m<1|2> AY[A|B]. Show both AY-3-891x's registers for either sub-unit A or B.</i></p>
 			</li>
 		</ul>
 		<br>
