@@ -238,7 +238,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 		int bitmap = pVolume->meta.bitmap_block;
 		int offset = bitmap * PRODOS_BLOCK_SIZE;
-		int size   = (nDiskSize + 7) / 8;
+		const size_t size = (nDiskSize + 7) / 8;
 		int block  = 0;
 
 		for( int byte = 0; byte < size; byte++ )
@@ -294,13 +294,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	{
 		int bitmap = volume->meta.bitmap_block;
 		int offset = bitmap * PRODOS_BLOCK_SIZE;
-		int blocks = (nDiskSize + PRODOS_BLOCK_SIZE - 1) / PRODOS_BLOCK_SIZE;
-		int size   = (blocks + 7) / 8;
+		size_t blocks = (nDiskSize + PRODOS_BLOCK_SIZE - 1) / PRODOS_BLOCK_SIZE;
+		size_t size   = (blocks + 7) / 8;
 
 		memset( &pDiskBytes[ offset ], 0xFF, size );
 
-		volume->meta.total_blocks = blocks;
-		return (size + PRODOS_BLOCK_SIZE - 1) / PRODOS_BLOCK_SIZE;
+		volume->meta.total_blocks = (uint16_t)blocks;
+		return (int)((size + PRODOS_BLOCK_SIZE - 1) / PRODOS_BLOCK_SIZE);
 	}
 
 	// ------------------------------------------------------------------------
@@ -552,7 +552,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	{
 		char *pBeg = pDst;
 		if( !nLen )
-			nLen = strlen( pSrc );
+			nLen = (int)strlen( pSrc );
 
 		for( int i = 0; i < nLen; i++ )
 		{

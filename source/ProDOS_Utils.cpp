@@ -116,7 +116,7 @@ namespace
 			size_t   nOffset = 0;
 			std::vector<uint8_t> pSource(pDiskBytes, pDiskBytes + nDiskSize);
 
-			const int nTracks = nDiskSize / TRACK_DENIBBLIZED_SIZE;
+			const size_t nTracks = nDiskSize / TRACK_DENIBBLIZED_SIZE;
 			for( int iTrack = 0; iTrack < nTracks; iTrack++ )
 			{
 				for( int iSector = 0; iSector < 16; iSector++ )
@@ -166,7 +166,7 @@ namespace
 			size_t   nOffset = 0;
 			std::vector<uint8_t> pSource(pDiskBytes, pDiskBytes + nDiskSize);
 
-			const int nTracks = nDiskSize / TRACK_DENIBBLIZED_SIZE;
+			const size_t nTracks = nDiskSize / TRACK_DENIBBLIZED_SIZE;
 			for( int iTrack = 0; iTrack < nTracks; iTrack++ )
 			{
 				for( int iSector = 0; iSector < 16; iSector++ )
@@ -283,7 +283,7 @@ namespace
 			return false; // disk full
 
 		int iKind        = PRODOS_KIND_DEL;
-		int nBlocksData  = (nFileSize + PRODOS_BLOCK_SIZE - 1) / PRODOS_BLOCK_SIZE;
+		int nBlocksData  = (int)((nFileSize + PRODOS_BLOCK_SIZE - 1) / PRODOS_BLOCK_SIZE);
 		int nBlocksIndex = 0; // Num Blocks needed for meta (Index)
 		int nBlocksTotal = 0;
 		int nBlocksFree  = 0;
@@ -693,7 +693,7 @@ namespace
 	//===========================================================================
 	void Util_DOS33_FormatFileSystem ( uint8_t *pDiskBytes, const size_t nDiskSize, const int nVTOC_Track )
 	{
-		const int nTracks = nDiskSize / TRACK_DENIBBLIZED_SIZE;
+		const int nTracks = (int)(nDiskSize / TRACK_DENIBBLIZED_SIZE);
 		int nOffset;
 
 		assert (nTracks <= TRACKS_MAX);

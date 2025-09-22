@@ -35,7 +35,7 @@ inline	int  GetNumLines()
 			if (m_bDirty)
 				GetLinePointers();
 
-			return m_vLines.size();
+			return (int) m_vLines.size();
 		}
 
 inline	char *GetLine( const int iLine ) const

@@ -758,7 +758,7 @@ void Disk2InterfaceCard::GetFilenameAndPathForSaveState(std::string& filename, s
 		filename = GetBaseName(i);
 		std::string pathname = DiskGetFullPathName(i);
 
-		int idx = pathname.find_last_of(PATH_SEPARATOR);
+		size_t idx = pathname.find_last_of(PATH_SEPARATOR);
 		if (idx >= 0 && idx+1 < (int)pathname.length())	// path exists?
 		{
 			path = pathname.substr(0, idx+1);
@@ -2468,7 +2468,7 @@ void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, U
 	if (!bImageError)
 	{
 		if ((m_floppyDrive[unit].m_disk.m_trackimage == NULL) && m_floppyDrive[unit].m_disk.m_nibbles)
-			AllocTrack(unit, track.size());
+			AllocTrack(unit, (UINT)track.size());
 
 		if (m_floppyDrive[unit].m_disk.m_trackimage == NULL)
 			bImageError = true;

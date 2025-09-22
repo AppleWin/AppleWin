@@ -383,7 +383,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 	if (IsDlgButtonChecked(hWnd, IDC_AUTHENTIC_SPEED))
 		g_dwSpeed = SPEED_NORMAL;
 	else
-		g_dwSpeed = SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED,TBM_GETPOS, 0, 0);
+		g_dwSpeed = (uint32_t) SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED,TBM_GETPOS, 0, 0);
 
 	SetCurrentCLK6502();
 

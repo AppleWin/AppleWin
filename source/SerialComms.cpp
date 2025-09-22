@@ -1311,7 +1311,7 @@ void CSuperSerialCard::ScanCOMPorts()
 	//
 
 	m_vecSerialPortsItems.push_back(SERIALPORTITEM_INVALID_COM_PORT);	// "TCP"
-	m_uTCPChoiceItemIdx = m_vecSerialPortsItems.size()-1;
+	m_uTCPChoiceItemIdx = (UINT)(m_vecSerialPortsItems.size()-1);
 }
 
 std::string const& CSuperSerialCard::GetSerialPortChoices()
