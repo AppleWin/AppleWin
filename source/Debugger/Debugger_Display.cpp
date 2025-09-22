@@ -1720,9 +1720,9 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER)
 	{
 		nOverflow += (int)strlen( line.sTargetPointer ); // '####'
-		nOverflow ++  ;                             //     ':'
-		nOverflow += 2;                             //      '##'
-		nOverflow ++  ;                             //         ' '
+		nOverflow ++  ;                                  //     ':'
+		nOverflow += 2;                                  //      '##'
+		nOverflow ++  ;                                  //         ' '
 	}
 
 	if (bDisasmFormatFlags & DISASM_FORMAT_CHAR)
