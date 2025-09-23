@@ -4081,11 +4081,14 @@ bool MemoryDumpCheck (const int iArg, WORD * pAddress_ )
 
 	const char* const psArg = (char*) g_aArgs[iArg].sArg;
 
-	if (strncmp(psArg, "MB", 2) == 0)				// Mockingboard sub-unit (6522+AY8913): "MB" or "MBn"
+	if (_strnicmp(psArg, "MB", 2) == 0)				// Mockingboard sub-unit (6522+AY8913): "MB" or "MBn"
 	{
 		UINT subUnit = 0;							// Default to 6522-A
 		if (strlen(psArg) == 3)						// "MBn" where n = SY6522 A or B eg. MBA
-			subUnit = psArg[2] - 'A';
+		{
+			const char subUnitChar = psArg[2];
+			subUnit = (subUnitChar <= 'B') ? subUnitChar - 'A' : subUnitChar - 'a';
+		}
 		if (subUnit <= 1)
 		{
 			nAddress = subUnit;						// subUnit=[0..1]
@@ -4093,11 +4096,14 @@ bool MemoryDumpCheck (const int iArg, WORD * pAddress_ )
 			bUpdate = true;
 		}
 	}
-	else if (strncmp(psArg, "AY", 2) == 0)			// AY8913: "AY" or "AYn"
+	else if (_strnicmp(psArg, "AY", 2) == 0)		// AY8913: "AY" or "AYn"
 	{
 		UINT subUnit = 0;							// Default to 6522-A
 		if (strlen(psArg) == 3)						// "AYn" where n = SY6522 A or B eg. AYA
-			subUnit = psArg[2] - 'A';
+		{
+			const char subUnitChar = psArg[2];
+			subUnit = (subUnitChar <= 'B') ? subUnitChar - 'A' : subUnitChar - 'a';
+		}
 		if (subUnit <= 1)
 		{
 			nAddress = subUnit;						// subUnit=[0..1]
