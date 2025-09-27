@@ -2093,7 +2093,6 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& addrPrefix, WORD address, DEVICE_e device, bool padding)
 {
 	char sSlot    [] = "sN/";	// Saturn slot
-	char sBank    [] = "bbb/";	// RamWorks bank
 	char sLangCard[] = "lN/";	// Language Card 4K bank
 	int prefixPad = 1;	// whitespace padding
 	std::string prefix = CHC_INFO;	// "sN/bbb/lN/" (10 chars) or "ROM/"
@@ -2112,18 +2111,14 @@ static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& addrPre
 	{
 		if (addrPrefix.nBank < 0x100)
 		{
-			sprintf(sBank, "%02X", addrPrefix.nBank);
-			sBank[2] = '/';
-			sBank[3] = 0;
+			prefix += StrFormat("%02X", addrPrefix.nBank);
 		}
 		else
 		{
-			sprintf(sBank, "%03X", addrPrefix.nBank);
-			sBank[3] = '/';
-			sBank[4] = 0;
+			prefix += StrFormat("%03X", addrPrefix.nBank);
 			prefixPad--;
 		}
-		prefix += sBank;
+		prefix += '/';
 	}
 	else
 	{

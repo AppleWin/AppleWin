@@ -186,7 +186,7 @@ If a free variable exists within a C++ file, then declare it static and provide 
 
 3) Use of sprintf() etc.
 
-Do not use sprintf(), StringCbPrintf(), wsprintf(), etc. - instead use StrFormat().
+Do not use sprintf(), sprintf_s(), StringCbPrintf(), wsprintf(), etc. - instead use StrFormat().
 
 -------------------------------------------------------------------------------
 
