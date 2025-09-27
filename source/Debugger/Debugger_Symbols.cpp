@@ -635,7 +635,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 			size_t nLen = strlen( sName );
 			if (nLen > nMaxLen)
 			{
-				ConsolePrintFormat( " %sWarn.: %s%s %s(%s%d %s> %s%d%s)"
+				ConsolePrintFormat( " %sWarn.: %s%s %s(%s%" SIZE_T_FMT " %s> %s%d%s)"
 					, CHC_WARNING
 					, CHC_SYMBOL
 					, sName
