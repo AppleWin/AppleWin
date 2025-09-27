@@ -161,15 +161,16 @@ void Video::VideoReinitialize(bool bInitVideoScannerAddress)
 
 //===========================================================================
 
-void Video::VideoResetState(void)
+void Video::VideoResetState(const bool powerCycle)
 {
-	g_nAltCharSetOffset    = 0;
-	g_uVideoMode           = VF_TEXT;
+	g_nAltCharSetOffset = 0;
+	g_uVideoMode        = VF_TEXT;
 
 	NTSC_SetVideoTextMode( 40 );
 	NTSC_SetVideoMode( g_uVideoMode );
 
-	RGB_ResetState();
+	if (powerCycle)
+		RGB_ResetState();
 }
 
 //===========================================================================
@@ -829,7 +830,7 @@ void Video::Initialize(uint8_t* frameBuffer, bool resetState)
 	if (resetState)
 	{
 		// RESET THE VIDEO MODE SWITCHES AND THE CHARACTER SET OFFSET
-		VideoResetState();
+		VideoResetState(true);
 	}
 
 	// DRAW THE SOURCE IMAGE INTO THE SOURCE BIT BUFFER

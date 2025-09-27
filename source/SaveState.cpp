@@ -401,7 +401,7 @@ static void Snapshot_LoadState_v2(void)
 
 		KeybReset();
 		GetVideo().SetVidHD(false);			// Set true later only if VidHDCard is instantiated
-		GetVideo().VideoResetState();
+		GetVideo().VideoResetState(true);
 		GetVideo().SetVideoRefreshRate(VR_60HZ);	// Default to 60Hz as older save-states won't contain refresh rate
 
 		MockingboardCardManager &mockingboardCardManager = GetCardMgr().GetMockingboardCardMgr();

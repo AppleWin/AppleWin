@@ -221,7 +221,7 @@ public:
 	void SetMonochromeRGB(COLORREF colorRef) { g_nMonochromeRGB = colorRef; }
 
 	void VideoReinitialize(bool bInitVideoScannerAddress);
-	void VideoResetState(void);
+	void VideoResetState(const bool powerCycle);
 	void VideoRefreshBuffer(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
 	void ClearFrameBuffer(void);
 	void ClearSHRResidue(void);

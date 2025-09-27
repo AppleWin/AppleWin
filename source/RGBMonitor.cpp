@@ -1210,8 +1210,9 @@ void VideoSwitchVideocardPalette(RGB_Videocard_e videocard, VideoType_e type)
 
 //===========================================================================
 
-static UINT g_rgbFlags = 0;
-static UINT g_rgbMode = 0;
+static UINT kRGBPowerOnState = 3;
+static UINT g_rgbFlags = kRGBPowerOnState;
+static UINT g_rgbMode = kRGBPowerOnState;
 static WORD g_rgbPrevAN3Addr = 0;
 static bool g_rgbInvertBit7 = false;
 static bool g_rgbMacLCCardDLGR = false;	// TODO: Persist to save-state
@@ -1282,8 +1283,9 @@ bool RGB_IsMacLCCardDLGR(void)
 
 void RGB_ResetState(void)
 {
-	g_rgbFlags = 0;
-	g_rgbMode = 0;
+	// Video 7 card's patent states that power-on mode is 560x192 mode (F1=1 & F2=1). GH#1435
+	g_rgbFlags = kRGBPowerOnState;
+	g_rgbMode = kRGBPowerOnState;
 	g_rgbPrevAN3Addr = 0;
 }
 

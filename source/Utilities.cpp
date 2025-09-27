@@ -545,7 +545,7 @@ void ResetMachineState()
 	GetPravets().Reset();
 	if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
-	GetVideo().VideoResetState();
+	GetVideo().VideoResetState(true);
 	KeybReset();
 	JoyReset();
 	SpkrReset();
@@ -578,7 +578,7 @@ void CtrlReset()
 		MemResetPaging();
 
 		// For A][ & A][+, reset doesn't reset the video mode (UTAII:4-4)
-		GetVideo().VideoResetState();	// Switch Alternate char set off
+		GetVideo().VideoResetState(false);	// Switch Alternate char set off
 	}
 
 	if (IsAppleIIeOrAbove(GetApple2Type()) || IsCopamBase64A(GetApple2Type()))
