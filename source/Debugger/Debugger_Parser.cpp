@@ -104,7 +104,7 @@ int _Arg_1( int nValue )
 //===========================================================================
 int _Arg_1( LPTSTR pName )
 {
-	int nLen = strlen( g_aArgs[1].sArg );
+	size_t nLen = strlen( g_aArgs[1].sArg );
 	if (nLen < MAX_ARG_LEN)
 	{
 		strcpy( g_aArgs[1].sArg, pName );
@@ -299,7 +299,7 @@ int	ArgsGet ( char * pInput )
 
 			if (pEnd)
 			{
-				nBuf = pEnd - pSrc;
+				nBuf = (int)(pEnd - pSrc);
 			}
 
 			if (nBuf > 0)
@@ -656,8 +656,8 @@ int ArgsCook ( const int nArgs )
 					pArg->nValue   = 0; // nAddressRHS;
 					pArg->bSymbol = false;
 
-					int nPointers = g_vMemorySearchResults.size();
-					if ((nPointers) &&
+					size_t nPointers = g_vMemorySearchResults.size();
+					if (nPointers &&
 						(nAddressRHS < nPointers))
 					{
 						pArg->nValue   = g_vMemorySearchResults.at( nAddressRHS );
@@ -940,7 +940,7 @@ void TextConvertTabsToSpaces( char *pDeTabified_, LPCTSTR pText, const int nDstS
 //===========================================================================
 int RemoveWhiteSpaceReverse ( char *pSrc )
 {
-	int   nLen = strlen( pSrc );
+	int   nLen = (int)strlen( pSrc );
 	char *pDst = pSrc + nLen;
 	while (nLen--)
 	{

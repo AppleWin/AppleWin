@@ -208,7 +208,7 @@ void _ColorizeHeader(
 	char * & pDst,const char * & pSrc,
 	const char * pHeader, const int nHeaderLen )
 {
-	int nLen;
+	size_t nLen;
 	
 	nLen = strlen( CHC_USAGE );
 	strcpy( pDst, CHC_USAGE );
@@ -247,7 +247,7 @@ void _ColorizeOperator(
 	char * & pDst, const char * & pSrc,
 	const char * pOperator )
 {
-	int nLen;
+	size_t nLen;
 	
 	nLen = strlen( pOperator );
 	strcpy( pDst, pOperator );

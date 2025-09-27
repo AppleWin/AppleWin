@@ -285,10 +285,10 @@ INT_PTR CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 
 void CPageInput::DlgOK(HWND hWnd)
 {
-	UINT uNewJoyType0 = SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);
+	LRESULT uNewJoyType0 = SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);
 	if (uNewJoyType0 >= J0C_MAX) uNewJoyType0 = 0;	// GH#434
 
-	UINT uNewJoyType1 = SendDlgItemMessage(hWnd, IDC_JOYSTICK1, CB_GETCURSEL, 0, 0);
+	LRESULT uNewJoyType1 = SendDlgItemMessage(hWnd, IDC_JOYSTICK1, CB_GETCURSEL, 0, 0);
 	if (uNewJoyType1 >= J1C_MAX) uNewJoyType1 = 0;	// GH#434
 
 	const bool bIsSlot4Mouse = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT4] == CT_MouseInterface;
@@ -454,7 +454,7 @@ void CPageInput::InitCPMChoices(HWND hWnd)
 	for (UINT i=0; i<_CPM_MAX_CHOICES; i++)
 		m_CPMComboItemToChoice[i] = CPM_UNAVAILABLE;
 
-	UINT uStringOffset = 0;
+	size_t uStringOffset = 0;
 	UINT uComboItemIdx = 0;
 
 	const bool bIsSlot4Empty = slot4 == CT_Empty;
@@ -464,7 +464,7 @@ void CPageInput::InitCPMChoices(HWND hWnd)
 
 	if (bIsSlot4Empty || bIsSlot4CPM)
 	{
-		const UINT uStrLen = strlen(m_szCPMSlotChoice_Slot4)+1;
+		const size_t uStrLen = strlen(m_szCPMSlotChoice_Slot4)+1;
 		memcpy(&m_szCPMSlotChoices[uStringOffset], m_szCPMSlotChoice_Slot4, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -473,7 +473,7 @@ void CPageInput::InitCPMChoices(HWND hWnd)
 
 	if (bIsSlot5Empty || bIsSlot5CPM)
 	{
-		const UINT uStrLen = strlen(m_szCPMSlotChoice_Slot5)+1;
+		const size_t uStrLen = strlen(m_szCPMSlotChoice_Slot5)+1;
 		memcpy(&m_szCPMSlotChoices[uStringOffset], m_szCPMSlotChoice_Slot5, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -482,7 +482,7 @@ void CPageInput::InitCPMChoices(HWND hWnd)
 
 	if (uStringOffset)
 	{
-		const UINT uStrLen = strlen(m_szCPMSlotChoice_Unplugged)+1;
+		const size_t uStrLen = strlen(m_szCPMSlotChoice_Unplugged)+1;
 		memcpy(&m_szCPMSlotChoices[uStringOffset], m_szCPMSlotChoice_Unplugged, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -490,7 +490,7 @@ void CPageInput::InitCPMChoices(HWND hWnd)
 	}
 	else
 	{
-		const UINT uStrLen = strlen(m_szCPMSlotChoice_Unavailable)+1;
+		const size_t uStrLen = strlen(m_szCPMSlotChoice_Unavailable)+1;
 		memcpy(&m_szCPMSlotChoices[uStringOffset], m_szCPMSlotChoice_Unavailable, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -529,7 +529,7 @@ void CPageInput::InitFourPlayChoices(HWND hWnd)
 	for (UINT i=0; i<_FOURPLAY_MAX_CHOICES; i++)
 		m_FourPlayComboItemToChoice[i] = FOURPLAY_UNAVAILABLE;
 
-	UINT uStringOffset = 0;
+	size_t uStringOffset = 0;
 	UINT uComboItemIdx = 0;
 
 	const bool bIsSlot3Empty = slot3 == CT_Empty;
@@ -541,7 +541,7 @@ void CPageInput::InitFourPlayChoices(HWND hWnd)
 
 	if (bIsSlot3Empty || bIsSlot3FourPlay)
 	{
-		const UINT uStrLen = strlen(m_szFourPlaySlotChoice_Slot3) + 1;
+		const size_t uStrLen = strlen(m_szFourPlaySlotChoice_Slot3) + 1;
 		memcpy(&m_szFourPlaySlotChoices[uStringOffset], m_szFourPlaySlotChoice_Slot3, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -550,7 +550,7 @@ void CPageInput::InitFourPlayChoices(HWND hWnd)
 
 	if (bIsSlot4Empty || bIsSlot4FourPlay)
 	{
-		const UINT uStrLen = strlen(m_szFourPlaySlotChoice_Slot4)+1;
+		const size_t uStrLen = strlen(m_szFourPlaySlotChoice_Slot4)+1;
 		memcpy(&m_szFourPlaySlotChoices[uStringOffset], m_szFourPlaySlotChoice_Slot4, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -559,7 +559,7 @@ void CPageInput::InitFourPlayChoices(HWND hWnd)
 
 	if (bIsSlot5Empty || bIsSlot5FourPlay)
 	{
-		const UINT uStrLen = strlen(m_szFourPlaySlotChoice_Slot5)+1;
+		const size_t uStrLen = strlen(m_szFourPlaySlotChoice_Slot5)+1;
 		memcpy(&m_szFourPlaySlotChoices[uStringOffset], m_szFourPlaySlotChoice_Slot5, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -568,7 +568,7 @@ void CPageInput::InitFourPlayChoices(HWND hWnd)
 
 	if (uStringOffset)
 	{
-		const UINT uStrLen = strlen(m_szFourPlaySlotChoice_Unplugged)+1;
+		const size_t uStrLen = strlen(m_szFourPlaySlotChoice_Unplugged)+1;
 		memcpy(&m_szFourPlaySlotChoices[uStringOffset], m_szFourPlaySlotChoice_Unplugged, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -576,7 +576,7 @@ void CPageInput::InitFourPlayChoices(HWND hWnd)
 	}
 	else
 	{
-		const UINT uStrLen = strlen(m_szFourPlaySlotChoice_Unavailable)+1;
+		const size_t uStrLen = strlen(m_szFourPlaySlotChoice_Unavailable)+1;
 		memcpy(&m_szFourPlaySlotChoices[uStringOffset], m_szFourPlaySlotChoice_Unavailable, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -615,7 +615,7 @@ void CPageInput::InitSNESMAXChoices(HWND hWnd)
 	for (UINT i=0; i<_SNESMAX_MAX_CHOICES; i++)
 		m_SNESMAXComboItemToChoice[i] = SNESMAX_UNAVAILABLE;
 
-	UINT uStringOffset = 0;
+	size_t uStringOffset = 0;
 	UINT uComboItemIdx = 0;
 
 	const bool bIsSlot3Empty = slot3 == CT_Empty;
@@ -627,7 +627,7 @@ void CPageInput::InitSNESMAXChoices(HWND hWnd)
 
 	if (bIsSlot3Empty || bIsSlot3SNESMAX)
 	{
-		const UINT uStrLen = strlen(m_szSNESMAXSlotChoice_Slot3) + 1;
+		const size_t uStrLen = strlen(m_szSNESMAXSlotChoice_Slot3) + 1;
 		memcpy(&m_szSNESMAXSlotChoices[uStringOffset], m_szSNESMAXSlotChoice_Slot3, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -636,7 +636,7 @@ void CPageInput::InitSNESMAXChoices(HWND hWnd)
 
 	if (bIsSlot4Empty || bIsSlot4SNESMAX)
 	{
-		const UINT uStrLen = strlen(m_szSNESMAXSlotChoice_Slot4)+1;
+		const size_t uStrLen = strlen(m_szSNESMAXSlotChoice_Slot4)+1;
 		memcpy(&m_szSNESMAXSlotChoices[uStringOffset], m_szSNESMAXSlotChoice_Slot4, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -645,7 +645,7 @@ void CPageInput::InitSNESMAXChoices(HWND hWnd)
 
 	if (bIsSlot5Empty || bIsSlot5SNESMAX)
 	{
-		const UINT uStrLen = strlen(m_szSNESMAXSlotChoice_Slot5)+1;
+		const size_t uStrLen = strlen(m_szSNESMAXSlotChoice_Slot5)+1;
 		memcpy(&m_szSNESMAXSlotChoices[uStringOffset], m_szSNESMAXSlotChoice_Slot5, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -654,7 +654,7 @@ void CPageInput::InitSNESMAXChoices(HWND hWnd)
 
 	if (uStringOffset)
 	{
-		const UINT uStrLen = strlen(m_szSNESMAXSlotChoice_Unplugged)+1;
+		const size_t uStrLen = strlen(m_szSNESMAXSlotChoice_Unplugged)+1;
 		memcpy(&m_szSNESMAXSlotChoices[uStringOffset], m_szSNESMAXSlotChoice_Unplugged, uStrLen);
 		uStringOffset += uStrLen;
 
@@ -662,7 +662,7 @@ void CPageInput::InitSNESMAXChoices(HWND hWnd)
 	}
 	else
 	{
-		const UINT uStrLen = strlen(m_szSNESMAXSlotChoice_Unavailable)+1;
+		const size_t uStrLen = strlen(m_szSNESMAXSlotChoice_Unavailable)+1;
 		memcpy(&m_szSNESMAXSlotChoices[uStringOffset], m_szSNESMAXSlotChoice_Unavailable, uStrLen);
 		uStringOffset += uStrLen;
 

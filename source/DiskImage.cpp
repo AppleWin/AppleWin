@@ -283,7 +283,7 @@ void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pF
 	}
 
 	if ((!found) && (loop > 2))
-		CharLowerBuff(imagetitle+1, strlen(imagetitle+1));
+		CharLowerBuff(imagetitle+1, (uint32_t)strlen(imagetitle+1));
 
 	// pFullName = <FILENAME.EXT>
 	pFullName = imagetitle;

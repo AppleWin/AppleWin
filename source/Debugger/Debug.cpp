@@ -3530,7 +3530,7 @@ Update_t CmdCursorLineUp (int nArgs)
 			}
 		} while (iTop < MAX_LOOK_AHEAD);
 
-		int nCandidates = aTopCandidates.size();
+		size_t nCandidates = aTopCandidates.size();
 		if (nCandidates)
 		{
 			int iBest = NO_6502_TARGET;
@@ -4081,11 +4081,14 @@ bool MemoryDumpCheck (const int iArg, WORD * pAddress_ )
 
 	const char* const psArg = (char*) g_aArgs[iArg].sArg;
 
-	if (strncmp(psArg, "MB", 2) == 0)				// Mockingboard sub-unit (6522+AY8913): "MB" or "MBn"
+	if (_strnicmp(psArg, "MB", 2) == 0)				// Mockingboard sub-unit (6522+AY8913): "MB" or "MBn"
 	{
 		UINT subUnit = 0;							// Default to 6522-A
 		if (strlen(psArg) == 3)						// "MBn" where n = SY6522 A or B eg. MBA
-			subUnit = psArg[2] - 'A';
+		{
+			const char subUnitChar = psArg[2];
+			subUnit = (subUnitChar <= 'B') ? subUnitChar - 'A' : subUnitChar - 'a';
+		}
 		if (subUnit <= 1)
 		{
 			nAddress = subUnit;						// subUnit=[0..1]
@@ -4093,11 +4096,14 @@ bool MemoryDumpCheck (const int iArg, WORD * pAddress_ )
 			bUpdate = true;
 		}
 	}
-	else if (strncmp(psArg, "AY", 2) == 0)			// AY8913: "AY" or "AYn"
+	else if (_strnicmp(psArg, "AY", 2) == 0)		// AY8913: "AY" or "AYn"
 	{
 		UINT subUnit = 0;							// Default to 6522-A
 		if (strlen(psArg) == 3)						// "AYn" where n = SY6522 A or B eg. AYA
-			subUnit = psArg[2] - 'A';
+		{
+			const char subUnitChar = psArg[2];
+			subUnit = (subUnitChar <= 'B') ? subUnitChar - 'A' : subUnitChar - 'a';
+		}
 		if (subUnit <= 1)
 		{
 			nAddress = subUnit;						// subUnit=[0..1]
@@ -4689,7 +4695,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	const KnownFileType_t *pFileType = NULL;
 
 	const char *pFileName = g_aArgs[ 1 ].sArg;
-	int   nLen = strlen( pFileName );
+	int   nLen = (int) strlen( pFileName );
 	const char *pEnd = pFileName + nLen - 1;
 	while ( pEnd > pFileName )
 	{
@@ -4757,7 +4763,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 	if (hFile)
 	{
-		size_t nFileBytes = _GetFileSize( hFile );
+		int nFileBytes = (int) _GetFileSize( hFile );
 
 		if (nFileBytes > _6502_MEM_END)
 			nFileBytes = _6502_MEM_END + 1; // Bank-switched RAM/ROM is only 16-bit
@@ -5236,7 +5242,7 @@ size_t Util_GetDebuggerText ( char* &pText_ )
 	}
 
 	*pEnd = 0;
-	g_nTextScreen = pEnd - pBeg;
+	g_nTextScreen = (int) (pEnd - pBeg);
 	
 	pText_ = pBeg;
 	return g_nTextScreen;
@@ -5287,7 +5293,7 @@ size_t Util_GetTextScreen ( char* &pText_ )
 	}
 	*pEnd = 0;
 
-	g_nTextScreen = pEnd - pBeg;
+	g_nTextScreen = (int) (pEnd - pBeg);
 	
 	pText_ = pBeg;
 	return g_nTextScreen;
@@ -5329,7 +5335,7 @@ Update_t CmdNTSC (int nArgs)
 #endif
 
 	const char *pFileName = (nArgs > 1) ? g_aArgs[ 2 ].sArg : "";
-	int   nLen = strlen( pFileName );
+	int   nLen = (int) strlen( pFileName );
 	const char *pEnd = pFileName + nLen - 1;
 	while ( pEnd > pFileName )
 	{
@@ -5989,7 +5995,7 @@ int _SearchMemoryFind (
 
 		uint32_t nAddress2 = nAddress;
 
-		int nMemBlocks = vMemorySearchValues.size();
+		int nMemBlocks = (int) vMemorySearchValues.size();
 		for ( int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
 		{
 			MemorySearch_t ms = vMemorySearchValues.at( iBlock );
@@ -6076,7 +6082,7 @@ int _SearchMemoryFind (
 //===========================================================================
 Update_t _SearchMemoryDisplay (int nArgs)
 {
-	int const nFound = g_vMemorySearchResults.size() - 1;
+	int const nFound = (int) (g_vMemorySearchResults.size() - 1);
 
 	if (nFound > 0)
 	{
@@ -6762,7 +6768,7 @@ Update_t CmdOutputRun (int nArgs)
 		for ( int iLine = 0; iLine < nLine; iLine++ )
 		{
 			script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
-			g_nConsoleInputChars = strlen( g_pConsoleInput );
+			g_nConsoleInputChars = (int) strlen( g_pConsoleInput );
 			bUpdateDisplay |= DebuggerProcessCommand( false );
 		}
 	}
@@ -6901,7 +6907,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 					// start
 					pStart = pEnd + 1;
 					pEnd = const_cast<char*>( SkipUntilWhiteSpace( pStart ));
-					int nLen = (pEnd - pStart);
+					int nLen = (int) (pEnd - pStart);
 					if (nLen != 2)
 					{
 						break;
@@ -6944,7 +6950,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 					pLabelEnd++;
 					pLabelStart++;
 					
-					int nLen = pLabelEnd - pLabelStart;
+					int nLen = (int) (pLabelEnd - pLabelStart);
 					nLen = MIN( nLen, MAX_SYMBOLS_LEN );
 					strncpy( sName, pLabelStart, nLen );
 					sName[ nLen - 1 ] = 0;
@@ -8040,7 +8046,7 @@ Update_t CmdZeroPagePointer (int nArgs)
 int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd, const bool bCaseSensitive /* false */ )
 {
 	int nFound = 0;
-	int nLen     = strlen( pLookupName );
+	int nLen     = (int) strlen( pLookupName );
 	int iParam = 0;
 
 	if (! nLen)
@@ -8107,7 +8113,7 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 	g_vPotentialCommands.clear();
 
 	int nFound   = 0;
-	int nLen     = strlen( pName );
+	int nLen     = (int) strlen( pName );
 	int iCommand = 0;
 
 	if (! nLen)
@@ -8272,7 +8278,7 @@ Update_t ExecuteCommand (int nArgs)
 					// with:    comamnd addr
 					pArg[1] = pArg[0];
 					strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
-					pArg->nArgLen = strlen( pArg->sArg );
+					pArg->nArgLen = (int) strlen( pArg->sArg );
 
 					pArg++;
 					pArg->nValue = nAddress;
@@ -8291,7 +8297,7 @@ Update_t ExecuteCommand (int nArgs)
 					pArg[1] = pArg[0];
 
 					strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
-					pArg->nArgLen = strlen( pArg->sArg );
+					pArg->nArgLen = (int) strlen( pArg->sArg );
 
 //					nCookMask &= ~ (1 << TOKEN_COLON);
 //					nArgs++;
@@ -9360,7 +9366,7 @@ void DebugInitialize ()
 		const char *pHelp = g_aCommands[ iCmd ].pHelpSummary;
 		if (pHelp)
 		{
-			int nLen = strlen( pHelp ) + 2;
+			int nLen = (int) (strlen( pHelp ) + 2);
 			if (nLen > (CONSOLE_WIDTH-1))
 			{
 				ConsoleBufferPushFormat( CHC_WARNING "Warning: %s help is %d chars", pHelp, nLen );

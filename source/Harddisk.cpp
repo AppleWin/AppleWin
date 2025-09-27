@@ -373,7 +373,7 @@ void HarddiskInterfaceCard::GetFilenameAndPathForSaveState(std::string& filename
 		filename = DiskGetBaseName(i);
 		std::string pathname = HarddiskGetFullPathName(i);
 
-		int idx = pathname.find_last_of(PATH_SEPARATOR);
+		size_t idx = pathname.find_last_of(PATH_SEPARATOR);
 		if (idx >= 0 && idx+1 < (int)pathname.length())	// path exists?
 		{
 			path = pathname.substr(0, idx+1);
@@ -1040,10 +1040,10 @@ void HarddiskInterfaceCard::SetIdString(std::vector<BYTE>& status, const std::st
 		idStrLen = kMaxIdStrLen;
 	status.push_back((BYTE)idStrLen);	// Set 'ID string length'
 
-	for (UINT i = 0; i < idStrLen; i++)
+	for (size_t i = 0; i < idStrLen; i++)
 		status.push_back(idStr[i]);
 
-	for (UINT i = idStrLen; i < kMaxIdStrLen; i++)
+	for (size_t i = idStrLen; i < kMaxIdStrLen; i++)
 		status.push_back(' ');	// ID string padded with ASCII spaces
 }
 

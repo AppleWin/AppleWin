@@ -49,7 +49,7 @@ RangeType_t Range_GetPrefix(const int iArg, AddressPrefix_t* pAP)
 
 	if (tolower(g_aArgs[iArg].sArg[0]) == 's')	// slot
 	{
-		int len = strlen(g_aArgs[iArg].sArg);
+		size_t len = strlen(g_aArgs[iArg].sArg);
 		pAP->nSlot = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. s1 or sl1 or slot1
 		if (pAP->nSlot > 7)
 		{
@@ -59,7 +59,7 @@ RangeType_t Range_GetPrefix(const int iArg, AddressPrefix_t* pAP)
 	}
 	else if (tolower(g_aArgs[iArg].sArg[0]) == 'l')	// LC
 	{
-		int len = strlen(g_aArgs[iArg].sArg);
+		size_t len = strlen(g_aArgs[iArg].sArg);
 		pAP->nLangCard = g_aArgs[iArg].sArg[len - 1] - '0';	// eg. l1 or lc1
 		if (pAP->nLangCard < 1 || pAP->nLangCard > 2)
 		{
