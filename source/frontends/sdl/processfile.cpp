@@ -21,7 +21,7 @@ namespace
     {
         return std::any_of(
             valid.begin(), valid.end(), [filename](const char *ext)
-            { return strlen(filename) > strlen(ext) && !strcasecmp(filename + strlen(filename) - strlen(ext), ext); });
+            { return strlen(filename) > strlen(ext) && !_stricmp(filename + strlen(filename) - strlen(ext), ext); });
     }
 
     bool checkExtension(sa2::SDLFrame *frame, const char *filename, const std::vector<const char *> &valid)

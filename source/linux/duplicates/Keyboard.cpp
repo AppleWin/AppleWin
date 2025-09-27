@@ -30,19 +30,15 @@ void addTextToBuffer(const char *text)
 {
     while (*text)
     {
-        switch (*text)
-        {
-        case '\n':
+        if (*text == '\n')
         {
             addKeyToBuffer(0x0d);
-            break;
         }
-        case 0x20 ... 0x7e:
+        else if (*text >= 0x20 && *text <= 0x7e)
         {
             addKeyToBuffer(*text);
-            break;
         }
-        }
+        // skip non ASCII characters
         ++text;
     }
 }

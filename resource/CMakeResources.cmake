@@ -43,7 +43,7 @@ function(add_resources out_var id)
     string(APPEND content_cpp_private
       "// ${in_f_bin}\n"
       "extern unsigned char ${symbol}[]\;\n"
-      "extern int ${symbol}_len\;\n"
+      "extern unsigned int ${symbol}_len\;\n"
       "\n")
     string(APPEND content_cpp_public
       "        {${resource_id}, {${symbol}, ${symbol}_len}},\n")
