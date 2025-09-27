@@ -137,14 +137,14 @@ BOOL CPageConfigTfe::get_tfename(int number, std::string & name, std::string & d
 
 void CPageConfigTfe::gray_ungray_items(HWND hwnd)
 {
-	const int enable = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
+	const LRESULT enable = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
 
 	if (enable)
 	{
 		std::string name;
 		std::string description;
 
-		const int number = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), CB_GETCURSEL, 0, 0);
+		const int number = (int) SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), CB_GETCURSEL, 0, 0);
 
 		if (get_tfename(number, name, description))
 		{
@@ -247,7 +247,6 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 
 void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 {
-	int active_value;
 	char buffer[256];
 
 	buffer[255] = 0;
@@ -255,7 +254,7 @@ void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 
 	m_tfe_interface_name = buffer;
 
-	active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
+	LRESULT active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
 	switch (active_value)
 	{
 	case 1:

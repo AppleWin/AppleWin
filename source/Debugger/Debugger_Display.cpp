@@ -831,11 +831,14 @@ bool CanDrawDebugger()
 int PrintText ( const char * pText, RECT & rRect )
 {
 #if _DEBUG
-	if (! pText)
-		GetFrame().FrameMessageBox("pText = NULL!", "DrawText()", MB_OK );
+	if (!pText)
+	{
+		GetFrame().FrameMessageBox("pText = NULL!", "DrawText()", MB_OK);
+		return 0;
+	}
 #endif
 
-	int nLen = strlen( pText );
+	int nLen = (int)strlen( pText );
 
 #if !DEBUG_FONT_NO_BACKGROUND_TEXT
 	FillBackground(rRect.left, rRect.top, rRect.right, rRect.bottom);
@@ -1637,7 +1640,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 	}
 
 	char *pTarget = line.sTarget;
-	int nLen = strlen( pTarget );
+	int nLen = (int)strlen( pTarget );
 
 	if (*pTarget == '$') // BUG? if ASC #:# starts with '$' ? // && (iOpcode != OPCODE_NOP)
 	{
@@ -1693,7 +1696,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 		if (line.nTargetOffset != 0)
 			nOverflow++;
 
-		nOverflow += strlen( line.sTargetOffset );
+		nOverflow += (int)strlen( line.sTargetOffset );
 	}
 
 	if (line.bTargetIndirect || line.bTargetX || line.bTargetY)
@@ -1716,15 +1719,15 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 
 	if (bDisasmFormatFlags & DISASM_FORMAT_TARGET_POINTER)
 	{
-		nOverflow += strlen( line.sTargetPointer ); // '####'
-		nOverflow ++  ;                             //     ':'
-		nOverflow += 2;                             //      '##'
-		nOverflow ++  ;                             //         ' '
+		nOverflow += (int)strlen( line.sTargetPointer ); // '####'
+		nOverflow ++  ;                                  //     ':'
+		nOverflow += 2;                                  //      '##'
+		nOverflow ++  ;                                  //         ' '
 	}
 
 	if (bDisasmFormatFlags & DISASM_FORMAT_CHAR)
 	{
-		nOverflow += strlen( line.sImmediate );
+		nOverflow += (int)strlen(line.sImmediate);
 	}
 
 	if (nLen >=  (nMaxLen - nOverflow))
@@ -1842,7 +1845,7 @@ WORD DrawDisassemblyLine ( int iLine, const WORD nBaseAddress )
 			*/
 
 			// Right justify to target ADDR:##
-			size_t len = strlen( line.sImmediateSignedDec );
+			int len = (int)strlen( line.sImmediateSignedDec );
 			linerect.left += (2 + (4 - len)) * nDefaultFontWidth;
 
 			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ));

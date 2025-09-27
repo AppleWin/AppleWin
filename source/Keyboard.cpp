@@ -140,9 +140,9 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 				return;
 
 			if (g_bCapsLock && key >= 'a' && key <='z')
-				keycode = key - 32;
+				keycode = (BYTE)(key - 32);
 			else
-				keycode = key;
+				keycode = (BYTE)key;
 		}
 		else
 		{
@@ -150,9 +150,9 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 				return;
 
 			if (key >= 'a' && key <='z')
-				keycode = key - 32;
+				keycode = (BYTE)(key - 32);
 			else
-				keycode = key;
+				keycode = (BYTE)key;
 		}
 
 		// Next apply any clone override:
@@ -186,9 +186,9 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 				if (key > 0x7F)
 					return;
 				if ((key >= 'a') && (key <= 'z') && (g_bCapsLock))
-					keycode = key - ('a'-'A');
+					keycode = (BYTE)(key - ('a'-'A'));
 				else
-					keycode = key;
+					keycode = (BYTE)key;
 			}
 		}
 	} 
@@ -390,7 +390,7 @@ void KeybAnyKeyDown(UINT message, WPARAM wparam, bool bIsExtended)
 
 	if (IsVirtualKeyAnAppleIIKey(wparam))
 	{
-		UINT offset = wparam >> 6;
+		WPARAM offset = wparam >> 6;
 		UINT bit    = wparam & 0x3f;
 		UINT idx    = !bIsExtended ? 0 : 1;
 

@@ -141,7 +141,7 @@ void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::strin
 			0,
 			REG_SZ,
 			(CONST LPBYTE)buffer.c_str(),
-			(buffer.size() + 1) * sizeof(char));
+			(uint32_t)((buffer.size() + 1) * sizeof(char)));
 		RegCloseKey(keyhandle);
 	}
 }
