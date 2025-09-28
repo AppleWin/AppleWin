@@ -77,13 +77,14 @@ void ParallelPrinterCard::ClosePrint(void)
 	{
 		fclose(m_file);
 		m_file = NULL;
+#ifdef _WIN32
 		std::string ExtendedFileName = "copy \"";
 		ExtendedFileName.append (ParallelPrinterCard::GetFilename());
 		ExtendedFileName.append ("\" prn");
 		//if (g_bDumpToPrinter) ShellExecute(NULL, "print", Printer_GetFilename(), NULL, NULL, 0); //Print through Notepad
 		if (m_bDumpToPrinter)
 			system (ExtendedFileName.c_str ()); //Print through console. This is supposed to be the better way, because it shall print images (with older printers only).
-			
+#endif
 	}
 	m_inactivity = 0;
 }
