@@ -186,7 +186,7 @@
 									<p><font color="#00b8ff"><font face="Courier"><b>M1 S4/MB</b></font></font></p>
 								</td>
 								<td bgcolor="#000000" width="75%">
-									<p><font color="#ffffff"><i>View slot 4's Mockingboard/Phasor (unit A): 6522 & AY-3-891x's registers. (See Notes)</i></font></p>
+									<p><font color="#ffffff"><i>View slot 4's Mockingboard/Phasor (unit A): 6522 & AY-3-891x's registers. (See Mockingboard notes)</i></font></p>
 								</td>
 							</tr>
 							<tr bgcolor="#000000">
@@ -194,7 +194,7 @@
 									<p><font color="#00b8ff"><font face="Courier"><b>M1 S4/AYB</b></font></font></p>
 								</td>
 								<td bgcolor="#000000" width="75%">
-									<p><font color="#ffffff"><i>View slot 4's Phasor (unit B): both AY-3-891x's registers. (See Notes)</i></font></p>
+									<p><font color="#ffffff"><i>View slot 4's Phasor (unit B): both AY-3-891x's registers. (See Mockingboard notes)</i></font></p>
 								</td>
 							</tr>
 							<tr bgcolor="#000000">
@@ -224,6 +224,11 @@
 			<li>
 				<p style="MARGIN-BOTTOM: 0in"><i>In the image at the top, prefixing the address ("D000") are the bank number (white "01") and LC bank (green "2").</i></p>
 			</li>
+		</ul>
+		<br>
+
+		<p>Mockingboard notes:</p>
+		<ul>
 			<li>
 				<p style="MARGIN-BOTTOM: 0in"><i>Mockingboard/Phasor: m<1|2> MB[A|B]. Show 6522 & AY-3-891x's registers for either sub-unit A or B</i></p>
 				<ul>
@@ -242,6 +247,8 @@
 				<p style="MARGIN-BOTTOM: 0in"><i>Phasor: m<1|2> AY[A|B]. Show both AY-3-891x's registers for either sub-unit A or B.</i></p>
 			</li>
 		</ul>
+		<img style="width: 237px; height: 80px;" src="img/debugger-M1-s4-mb.png" border="1">
+		<p>Example showing 6522 active TIMER1 ($03D8) and active AY reg-0 ($42) during a write (WR).</p>
 		<br>
 		
 		<h3>Zero-page Watches</h3>
