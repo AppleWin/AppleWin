@@ -6,6 +6,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <filesystem>
 #include <unistd.h>
 
 namespace
@@ -25,18 +26,13 @@ namespace
 
     AutoFile::AutoFile()
     {
-#ifdef _WIN32
-        char pattern[] = "/tmp/awXXXXXX";
-        myFD = mkstemp(pattern);
-#else
-        char pattern[] = "/tmp/awXXXXXX.aws.yaml";
-        myFD = mkstemps(pattern, 9);
-#endif
+        const std::filesystem::path tempDir = std::filesystem::temp_directory_path() / "aws.yaml.XXXXXX";
+        myFilename = tempDir.string();
+        myFD = mkstemp(myFilename.data());
         if (myFD <= 0)
         {
             throw std::runtime_error("Cannot create temporary file");
         }
-        myFilename = pattern;
     }
 
     AutoFile::~AutoFile()
