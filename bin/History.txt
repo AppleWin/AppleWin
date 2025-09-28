@@ -9,15 +9,15 @@ https://github.com/AppleWin/AppleWin/issues/new
 Tom Charlesworth
 
 
-1.31.0.0 - DD MMM 2025
+1.31.0.0 - 28 Sep 2025
 ----------------------
 Note: Using VS2022 to build both 32 & 64-bit versions.
 Note: AppleWin-x64.exe is beta.
 
-- [Change #1392] Add a 64-bit version of AppleWin to the distro: AppleWin-x64.exe (beta).
+- [Change #1392, #1423] Add a 64-bit version of AppleWin to the distro: AppleWin-x64.exe (beta).
 - [Change #451] Debugger: Support address prefixes for breakpoints and Mini mem dump window:
   - bp or bpm[r|w] [s<n>/][<nnn>/][l<1|2>/][rom/]<addr>
-  - Similar for m<1|2>
+  - Similar for m<1|2> commands.
     - Additionally inspect Mockingboard state: m<1|2> s<n>/<mb[a|b]|ay[a|b]>
   - Extend the UI to show specifics of memory bank number & LC 4K bank 1 or 2.
   - Extend the 'bpl' command (Breakpoint List) to include the full address prefix.
