@@ -321,23 +321,23 @@ namespace ra2
             return;
 
         // check for dirty memory (cheats, debugger, other memory editing - not needed for normal play, but no way to reasonably tell)
-        LPBYTE memmain_ptr = myMainMemoryReference, memcopy_ptr = myMemoryCopy.data();
+        LPBYTE memMainPtr = myMainMemoryReference, memCopyPtr = myMemoryCopy.data();
         for (UINT loop = 0; loop < _6502_NUM_PAGES; loop++)
         {
             LPBYTE altptr = MemGetMainPtr(loop * _6502_PAGE_SIZE);
-            if (altptr != memmain_ptr)
+            if (altptr != memMainPtr)
             {
                 // there's a mem block overshadowing the memmain block. if the memmain block was
                 // modified since it was captured, copy it to the mem block and mark it dirty.
-                if (memcmp(memmain_ptr, memcopy_ptr, _6502_PAGE_SIZE) != 0)
+                if (memcmp(memMainPtr, memCopyPtr, _6502_PAGE_SIZE) != 0)
                 {
-                    memcpy(altptr, memmain_ptr, _6502_PAGE_SIZE);
+                    memcpy(altptr, memMainPtr, _6502_PAGE_SIZE);
                     memdirty[loop] |= 1;
                 }
             }
 
-            memmain_ptr += _6502_PAGE_SIZE;
-            memcopy_ptr += _6502_PAGE_SIZE;
+            memMainPtr += _6502_PAGE_SIZE;
+            memCopyPtr += _6502_PAGE_SIZE;
         }
     }
 
