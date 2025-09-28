@@ -10,6 +10,7 @@
 
 #include "Registry.h"
 #include "Interface.h"
+#include "Memory.h"
 
 #include "linux/keyboardbuffer.h"
 #include "linux/paddle.h"
@@ -46,6 +47,7 @@ namespace ra2
         : myInputRemapper(supportsInputBitmasks)
         , myKeyboardType(KeyboardType::ASCII)
         , myMouseSpeed(1.0)
+        , myMainMemoryReference(nullptr)
     {
         myLoggerContext = std::make_unique<LoggerContext>(true);
         myRegistry = createRetroRegistry();
@@ -274,6 +276,9 @@ namespace ra2
     void Game::start()
     {
         myFrame->Begin();
+
+        // memmain is not exposed, but is returned by this function, so store it for later use
+        myMainMemoryReference = MemGetBankPtr(0, true);
     }
 
     void Game::restart()
@@ -294,6 +299,46 @@ namespace ra2
     InputRemapper &Game::getInputRemapper()
     {
         return myInputRemapper;
+    }
+
+    void Game::flushAndCaptureMemory()
+    {
+        // if not using shadow areas, all reads/writes will occur directly on memmain
+        if (!GetIsMemCacheValid())
+            return;
+
+        // force flush (mem -> memmain) so frontend can see the current state of memory
+        MemGetBankPtr(0, true);
+
+        // capture the current state of memory so we can detect changes on the next frame
+        memcpy(myMemoryCopy.data(), myMainMemoryReference, myMemoryCopy.size());
+    }
+
+    void Game::checkForMemoryWrites()
+    {
+        // if not using shadow areas, all reads/writes will occur directly on memmain
+        if (!GetIsMemCacheValid())
+            return;
+
+        // check for dirty memory (cheats, debugger, other memory editing - not needed for normal play, but no way to reasonably tell)
+        LPBYTE memmain_ptr = myMainMemoryReference, memcopy_ptr = myMemoryCopy.data();
+        for (UINT loop = 0; loop < _6502_NUM_PAGES; loop++)
+        {
+            LPBYTE altptr = MemGetMainPtr(loop * _6502_PAGE_SIZE);
+            if (altptr != memmain_ptr)
+            {
+                // there's a mem block overshadowing the memmain block. if the memmain block was
+                // modified since it was captured, copy it to the mem block and mark it dirty.
+                if (memcmp(memmain_ptr, memcopy_ptr, _6502_PAGE_SIZE) != 0)
+                {
+                    memcpy(altptr, memmain_ptr, _6502_PAGE_SIZE);
+                    memdirty[loop] |= 1;
+                }
+            }
+
+            memmain_ptr += _6502_PAGE_SIZE;
+            memcopy_ptr += _6502_PAGE_SIZE;
+        }
     }
 
 } // namespace ra2

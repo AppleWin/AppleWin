@@ -291,10 +291,15 @@ void retro_set_video_refresh(retro_video_refresh_t cb)
 void retro_run(void)
 {
     ourGame->updateVariables();
+
+    ourGame->checkForMemoryWrites();
+
     ourGame->processInputEvents();
     ourGame->executeOneFrame();
     GetFrame().VideoPresentScreen();
     ourGame->writeAudio(ra2::Game::FPS, ra2::Game::SAMPLE_RATE, ra2::Game::CHANNELS);
+
+    ourGame->flushAndCaptureMemory();
 }
 
 bool retro_load_game(const retro_game_info *info)
@@ -352,6 +357,24 @@ bool retro_load_game(const retro_game_info *info)
             ra2::display_message("Enable Game Focus Mode for better keyboard handling");
             std::swap(ourGame, game);
         }
+
+        // capture initial memory state
+        ourGame->flushAndCaptureMemory();
+
+        // define memory map to allow exposing both main RAM and aux RAM.
+        // retro_get_memory_data will continue to return just main RAM.
+        struct retro_memory_descriptor descs[2];
+        struct retro_memory_map        mmaps;
+        memset(descs, 0, sizeof(descs));
+        descs[0].ptr = MemGetBankPtr(0, true);
+        descs[0].start = 0x0000;
+        descs[0].len = 0x10000;
+        descs[1].ptr = MemGetBankPtr(1, true);
+        descs[1].start = 0x10000;
+        descs[1].len = 0x10000;
+        mmaps.descriptors = descs;
+        mmaps.num_descriptors = 2;
+        ra2::environ_cb(RETRO_ENVIRONMENT_SET_MEMORY_MAPS, &mmaps);
 
         return ok;
     }

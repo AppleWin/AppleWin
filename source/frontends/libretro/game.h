@@ -7,9 +7,12 @@
 #include "frontends/libretro/input/rkeyboard.h"
 #include "frontends/libretro/input/inputremapper.h"
 
+#include "MemoryDefs.h"
+
 #include <memory>
 #include <string>
 #include <vector>
+#include <array>
 
 namespace common2
 {
@@ -33,9 +36,11 @@ namespace ra2
         void restart();
 
         void updateVariables();
+        void checkForMemoryWrites();
         void executeOneFrame();
         void processInputEvents();
         void writeAudio(const size_t fps, const size_t sampleRate, const size_t channels);
+        void flushAndCaptureMemory();
 
         void drawVideoBuffer();
 
@@ -70,6 +75,8 @@ namespace ra2
         DiskControl myDiskControl;
 
         std::vector<int16_t> myAudioBuffer;
+        std::array<uint8_t, _6502_MEM_LEN> myMemoryCopy;
+        LPBYTE myMainMemoryReference;
 
         void keyboardEmulation();
         void applyVariables();
