@@ -5,7 +5,7 @@ AppleWin
 
 AppleWin is a fully-featured emulator supporting different Apple II models and clones. A variety of peripheral cards and video display modes are supported (eg. NTSC, RGB); and there's an extensive built-in symbolic debugger.
 
-Apple 2 models supported include:
+Apple II models supported include:
 
 * ][
 * ][+
@@ -36,9 +36,9 @@ Peripheral cards and add-on hardware supported:
 Running
 =======
 
-Download latest (stable) release: [AppleWin v1.30.20.0](https://github.com/AppleWin/AppleWin/releases/download/v1.30.20.0/AppleWin1.30.20.0.zip)
+Download latest (stable) release: [AppleWin v1.30.21.0](https://github.com/AppleWin/AppleWin/releases/download/v1.30.20.0/AppleWin1.30.21.0.zip)
 
-Release Notes: [v1.30.20.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.30.20.0)
+Release Notes: [v1.30.21.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.30.21.0)
 
 
 Building
@@ -71,10 +71,8 @@ Please report [new issues](https://github.com/AppleWin/AppleWin/issues/new)
 Previous Versions
 =================
 
-Last version supporting Windows 2000:
+Last version supporting Windows XP: [AppleWin v1.30.21.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.30.21.0)
 
-* [AppleWin v1.29.16.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.29.16.0)
+Last version supporting Windows 2000: [AppleWin v1.29.16.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.29.16.0)
 
-Last version supporting Windows 98/ME:
-
-* [AppleWin v1.25.0.4](https://github.com/AppleWin/AppleWin/releases/tag/v1.25.0.4)
+Last version supporting Windows 98/ME: [AppleWin v1.25.0.4](https://github.com/AppleWin/AppleWin/releases/tag/v1.25.0.4)
