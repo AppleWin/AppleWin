@@ -6,6 +6,8 @@
 #include "CPU.h"
 #include "CopyProtectionDongles.h"
 
+#include <cmath>
+
 namespace
 {
     unsigned __int64 g_nJoyCntrResetCycle = 0;       // Abs cycle that joystick counters were reset
