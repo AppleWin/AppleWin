@@ -7,12 +7,9 @@
 #include "frontends/libretro/input/rkeyboard.h"
 #include "frontends/libretro/input/inputremapper.h"
 
-#include "MemoryDefs.h"
-
 #include <memory>
 #include <string>
 #include <vector>
-#include <array>
 
 namespace common2
 {
