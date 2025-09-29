@@ -320,7 +320,7 @@ namespace ra2
         // the libretro interface exposes memmain. for any pages that have a copy in mem,
         // copy the memmain back into mem in case it was changed between frames (by cheats,
         // debuggers, or other forms of memory editing)
-        LPBYTE memMainPtr = myMainMemoryReference, memCopyPtr = myMemoryCopy.data();
+        LPBYTE memMainPtr = myMainMemoryReference;
         for (UINT loop = 0; loop < _6502_NUM_PAGES; loop++)
         {
             LPBYTE altptr = MemGetMainPtr(loop * _6502_PAGE_SIZE);
@@ -331,7 +331,6 @@ namespace ra2
             }
 
             memMainPtr += _6502_PAGE_SIZE;
-            memCopyPtr += _6502_PAGE_SIZE;
         }
     }
 

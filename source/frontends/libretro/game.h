@@ -75,7 +75,6 @@ namespace ra2
         DiskControl myDiskControl;
 
         std::vector<int16_t> myAudioBuffer;
-        std::array<uint8_t, _6502_MEM_LEN> myMemoryCopy;
         LPBYTE myMainMemoryReference;
 
         void keyboardEmulation();
