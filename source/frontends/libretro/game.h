@@ -40,7 +40,7 @@ namespace ra2
         void executeOneFrame();
         void processInputEvents();
         void writeAudio(const size_t fps, const size_t sampleRate, const size_t channels);
-        void flushAndCaptureMemory();
+        void flushMemory();
 
         void drawVideoBuffer();
 

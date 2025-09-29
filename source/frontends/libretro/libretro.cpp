@@ -299,7 +299,7 @@ void retro_run(void)
     GetFrame().VideoPresentScreen();
     ourGame->writeAudio(ra2::Game::FPS, ra2::Game::SAMPLE_RATE, ra2::Game::CHANNELS);
 
-    ourGame->flushAndCaptureMemory();
+    ourGame->flushMemory();
 }
 
 bool retro_load_game(const retro_game_info *info)
@@ -357,9 +357,6 @@ bool retro_load_game(const retro_game_info *info)
             ra2::display_message("Enable Game Focus Mode for better keyboard handling");
             std::swap(ourGame, game);
         }
-
-        // capture initial memory state
-        ourGame->flushAndCaptureMemory();
 
         // define memory map to allow exposing both main RAM and aux RAM.
         // retro_get_memory_data will continue to return just main RAM.

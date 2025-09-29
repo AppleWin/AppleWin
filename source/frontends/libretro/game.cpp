@@ -301,7 +301,7 @@ namespace ra2
         return myInputRemapper;
     }
 
-    void Game::flushAndCaptureMemory()
+    void Game::flushMemory()
     {
         // if not using shadow areas, all reads/writes will occur directly on memmain
         if (!GetIsMemCacheValid())
@@ -309,9 +309,6 @@ namespace ra2
 
         // force flush (mem -> memmain) so frontend can see the current state of memory
         MemGetBankPtr(0, true);
-
-        // capture the current state of memory so we can detect changes on the next frame
-        memcpy(myMemoryCopy.data(), myMainMemoryReference, myMemoryCopy.size());
     }
 
     void Game::checkForMemoryWrites()
@@ -320,20 +317,17 @@ namespace ra2
         if (!GetIsMemCacheValid())
             return;
 
-        // check for dirty memory (cheats, debugger, other memory editing - not needed for normal play, but no way to reasonably tell)
+        // the libretro interface exposes memmain. for any pages that have a copy in mem,
+        // copy the memmain back into mem in case it was changed between frames (by cheats,
+        // debuggers, or other forms of memory editing)
         LPBYTE memMainPtr = myMainMemoryReference, memCopyPtr = myMemoryCopy.data();
         for (UINT loop = 0; loop < _6502_NUM_PAGES; loop++)
         {
             LPBYTE altptr = MemGetMainPtr(loop * _6502_PAGE_SIZE);
             if (altptr != memMainPtr)
             {
-                // there's a mem block overshadowing the memmain block. if the memmain block was
-                // modified since it was captured, copy it to the mem block and mark it dirty.
-                if (memcmp(memMainPtr, memCopyPtr, _6502_PAGE_SIZE) != 0)
-                {
-                    memcpy(altptr, memMainPtr, _6502_PAGE_SIZE);
-                    memdirty[loop] |= 1;
-                }
+                // because this ensures mem and memmain match, we don't have to set the dirty flag
+                memcpy(altptr, memMainPtr, _6502_PAGE_SIZE);
             }
 
             memMainPtr += _6502_PAGE_SIZE;
