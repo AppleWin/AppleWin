@@ -139,6 +139,18 @@ void Help_Range()
 }
 
 //===========================================================================
+void Help_AddressPrefix()
+{
+	ConsoleBufferPush("  Where <address> is of the form:");
+	ConsoleBufferPush("    [s<n>/][<nnn>/][l<1|2>/][rom/]<addr>");
+	ConsoleBufferPush("  Optional prefixes:");
+	ConsoleBufferPush("    s<n> - Saturn slot 0-7");
+	ConsoleBufferPush("    nnn  - RamWorks bank (0-100) or Saturn bank 0-7");
+	ConsoleBufferPush("    l<1|2> - Lang Card 4K bank 1 or 2");
+	ConsoleBufferPush("    rom  - ROM");
+}
+
+//===========================================================================
 void Help_Operators()
 {
 //	ConsolePrintFormat( " %sOperators%s:"                                 , CHC_USAGE, CHC_DEFAULT );
@@ -940,6 +952,17 @@ Update_t CmdHelpSpecific (int nArgs)
 		case CMD_BREAKPOINT_ADD_MEMW:
 			ConsoleColorizePrint( " Usage: <range>" );
 			Help_Range();
+			Help_Examples();
+			ConsolePrintFormat("%s   %s D000", CHC_EXAMPLE, pCommand->m_sName);
+			ConsolePrintFormat("%s   %s D000,1000       ; break on memory at $D000-DFFF", CHC_EXAMPLE, pCommand->m_sName);
+			ConsolePrintFormat("%s   %s D000:DFFF       ; (same)", CHC_EXAMPLE, pCommand->m_sName);
+			//
+			Help_AddressPrefix();
+			Help_Examples();
+			ConsolePrintFormat("%s   %s 01/L1/D000,1000 ; break on memory for aux LC 4K Bank 1 at $D000-DFFF", CHC_EXAMPLE, pCommand->m_sName);
+			ConsolePrintFormat("%s   %s 00/E000         ; break on memory for main LC 8K at $E000", CHC_EXAMPLE, pCommand->m_sName);
+			ConsolePrintFormat("%s   %s 01/00FF         ; break on memory for aux at $00FF", CHC_EXAMPLE, pCommand->m_sName);
+			ConsolePrintFormat("%s   %s ROM/FF58        ; break on ROM read at $FF58", CHC_EXAMPLE, pCommand->m_sName);
 			break;
 		case CMD_BREAKPOINT_ADD_VIDEO:
 			ConsoleColorizePrint( " Usage: <vpos[,length]>" );
