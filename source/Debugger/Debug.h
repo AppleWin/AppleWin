@@ -192,5 +192,7 @@
 	void	ClearTempBreakpoints();
 	void	DebugSetAutoRunScript(std::string& sAutoRunScriptFilename);
 
-	typedef void(*CBFUNCTION)(void);
-	void	InterceptBreakpoints(CBFUNCTION cbfunction);
+	typedef void(*CBFUNCTION)(uint8_t slot, uint8_t type, uint16_t addrStart, uint16_t addrEnd, uint8_t access);
+	enum BreakType_t { BPTYPE_UNKNOWN, BPTYPE_PC, BPTYPE_MEM, BPTYPE_DMA };
+	enum BreakAccess_t { BPACCESS_R, BPACCESS_W, BPACCESS_RW };
+	void	InterceptBreakpoints(uint8_t slot, CBFUNCTION cbfunction);

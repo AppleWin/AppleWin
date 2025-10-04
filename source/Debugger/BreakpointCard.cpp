@@ -26,6 +26,7 @@
 
 #include "StdAfx.h"
 
+#include "CPU.h"
 #include "Debug.h"
 #include "BreakpointCard.h"
 #include "Memory.h"
@@ -33,7 +34,9 @@
 void BreakpointCard::Reset(const bool powerCycle)
 {
 	m_interceptBPByCard = false;
+	InterceptBreakpoints(m_slot, nullptr);
 	ResetState();
+	CpuIrqDeassert(IS_BREAKPOINTCARD);
 }
 
 void BreakpointCard::InitializeIO(LPBYTE pCxRomPeripheral)
@@ -46,7 +49,11 @@ BYTE __stdcall BreakpointCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE valu
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
 	BreakpointCard* pCard = (BreakpointCard*)MemGetSlotParameters(slot);
 
-	return pCard->m_status;
+	CpuIrqDeassert(IS_BREAKPOINTCARD);
+
+	uint8_t otherStatus = pCard->m_BP_FIFO.empty() ? kEmpty : 0;
+
+	return pCard->m_status | otherStatus;
 }
 
 BYTE __stdcall BreakpointCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
@@ -54,8 +61,9 @@ BYTE __stdcall BreakpointCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE val
 	const UINT slot = ((addr & 0xff) >> 4) - 8;
 	BreakpointCard* pCard = (BreakpointCard*)MemGetSlotParameters(slot);
 
-	const BYTE reg = addr & 0xf;
+	CpuIrqDeassert(IS_BREAKPOINTCARD);
 
+	const BYTE reg = addr & 0xf;
 	if (reg == 0)	// Command
 	{
 		switch (value)
@@ -65,11 +73,11 @@ BYTE __stdcall BreakpointCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE val
 			break;
 		case 1: // intercept BP by card
 			pCard->m_interceptBPByCard = true;
-			InterceptBreakpoints(BreakpointCard::CbFunction);
+			InterceptBreakpoints(slot, BreakpointCard::CbFunction);
 			break;
 		case 2: // intercept BP by debugger
 			pCard->m_interceptBPByCard = false;
-			InterceptBreakpoints(nullptr);
+			InterceptBreakpoints(slot, nullptr);
 			break;
 		default:
 			break;
@@ -86,13 +94,12 @@ BYTE __stdcall BreakpointCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE val
 			if (!(pCard->m_status & kFull))
 			{
 				BPSet bpSet;
-				bpSet.slot = pCard->m_BPSet[0];
-				bpSet.bank = (pCard->m_BPSet[2] << 8) | pCard->m_BPSet[1];
-				bpSet.langCard = pCard->m_BPSet[3];
-				bpSet.addr = (pCard->m_BPSet[5] << 8) | pCard->m_BPSet[4];
-				bpSet.rw = pCard->m_BPSet[6];
+				bpSet.type = pCard->m_BPSet[0];
+				bpSet.addrStart = (pCard->m_BPSet[2] << 8) | pCard->m_BPSet[1];
+				bpSet.addrEnd   = (pCard->m_BPSet[4] << 8) | pCard->m_BPSet[3];
+				bpSet.access = pCard->m_BPSet[5];
 
-				pCard->m_BP_FIFO.push_back(bpSet);
+				pCard->m_BP_FIFO.push(bpSet);
 			}
 
 			if (pCard->m_BP_FIFO.size() == kFIFO_SIZE)
@@ -103,7 +110,59 @@ BYTE __stdcall BreakpointCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE val
 	return 0;
 }
 
-void BreakpointCard::CbFunction(void)
+void BreakpointCard::CbFunction(uint8_t slot, uint8_t type, uint16_t addrStart, uint16_t addrEnd, uint8_t access)
 {
+	BreakpointCard* pCard = (BreakpointCard*)MemGetSlotParameters(slot);
+
+	pCard->m_status &= ~(kMatch | kMismatch);
+
+	CpuIrqAssert(IS_BREAKPOINTCARD);
+
+	if (pCard->m_BP_FIFO.empty())
+	{
+		pCard->m_status |= kMismatch;
+		return;
+	}
+
+	const BPSet bpSet = pCard->m_BP_FIFO.front();
+	pCard->m_BP_FIFO.pop();
+	pCard->m_status &= ~kFull;
+
+	if (bpSet.type != type)
+	{
+		pCard->m_status |= kMismatch;
+		return;
+	}
+
+	switch (type)
+	{
+	case BPTYPE_PC:
+	case BPTYPE_MEM:
+		if ((bpSet.addrStart != addrStart) ||
+			(bpSet.access != access))
+		{
+			pCard->m_status |= kMismatch;
+			break;
+		}
+		pCard->m_status |= kMatch;
+		break;
+	case BPTYPE_DMA:
+		// dma S dma E
+		//     S dma E
+		//     S dma E dma
+		if ((bpSet.addrStart >= addrStart && addrStart <= bpSet.addrEnd) ||	// Does DMA start within BP range?
+			(bpSet.addrStart >= addrEnd   && addrEnd   <= bpSet.addrEnd) ||	// Does DMA end within BP range?
+			(bpSet.access != access))
+		{
+			pCard->m_status |= kMismatch;
+			break;
+		}
+		pCard->m_status |= kMatch;
+		break;
+	case BPTYPE_UNKNOWN:
+	default:
+		pCard->m_status |= kMismatch;
+		break;
+	}
 
 }
