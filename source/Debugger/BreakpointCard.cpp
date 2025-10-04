@@ -138,8 +138,7 @@ void BreakpointCard::CbFunction(uint8_t slot, uint8_t type, uint16_t addrStart, 
 	{
 	case BPTYPE_PC:
 	case BPTYPE_MEM:
-		if ((bpSet.addrStart != addrStart) ||
-			(bpSet.access != access))
+		if ((bpSet.addrStart != addrStart) || (bpSet.access != access))
 		{
 			pCard->m_status |= kMismatch;
 			break;
@@ -147,17 +146,22 @@ void BreakpointCard::CbFunction(uint8_t slot, uint8_t type, uint16_t addrStart, 
 		pCard->m_status |= kMatch;
 		break;
 	case BPTYPE_DMA:
-		// dma S dma E
-		//     S dma E
-		//     S dma E dma
-		if ((bpSet.addrStart >= addrStart && addrStart <= bpSet.addrEnd) ||	// Does DMA start within BP range?
-			(bpSet.addrStart >= addrEnd   && addrEnd   <= bpSet.addrEnd) ||	// Does DMA end within BP range?
-			(bpSet.access != access))
 		{
-			pCard->m_status |= kMismatch;
-			break;
+			// S=start of BP range; E=end of BP range
+			//     S dma E dma	; DMA starts within BP range [1]
+			// dma S dma E		; DMA ends within BP range [2]
+			// dma S dma E dma	; DMA start before & ends after BP range [3]
+			//     S dma E		; DMA starts & ends within BP range [1] + [2]
+			bool validAddr = ((bpSet.addrStart <= addrStart && addrStart >= bpSet.addrEnd) ||	// Does DMA *start* within BP range? [1]
+							  (bpSet.addrStart <= addrEnd   && addrEnd   >= bpSet.addrEnd) ||	// Or does DMA *end* within BP range? [2]
+							  (bpSet.addrStart >= addrStart && addrEnd   >= bpSet.addrEnd));	// Or does DMA *start* before BP range & *end* after BP range? [3]
+			if (!validAddr || (bpSet.access != access))
+			{
+				pCard->m_status |= kMismatch;
+				break;
+			}
+			pCard->m_status |= kMatch;
 		}
-		pCard->m_status |= kMatch;
 		break;
 	case BPTYPE_UNKNOWN:
 	default:
