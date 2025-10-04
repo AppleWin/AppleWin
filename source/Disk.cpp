@@ -414,6 +414,7 @@ void Disk2InterfaceCard::EjectDiskInternal(const int drive)
 	pFloppy->m_imagename.clear();
 	pFloppy->m_fullname.clear();
 	pFloppy->m_strFilenameInZip = "";
+	pFloppy->m_bWriteProtected = false;	// GH#1433
 }
 
 void Disk2InterfaceCard::EjectDisk(const int drive)
