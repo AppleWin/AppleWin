@@ -9129,6 +9129,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 					if (g_pDebugBreakpointHit->eSource == BP_SRC_REG_PC)
 					{
 						interceptBPType = BPTYPE_PC;
+						interceptBPAddr = regs.pc;
 						interceptBPAccess = BPACCESS_R;
 					}
 				}

@@ -53,7 +53,7 @@ private:
 		uint8_t access;
 	};
 
-	static const uint8_t kNumParams = 7;
+	static const uint8_t kNumParams = 6;
 	BYTE m_BPSet[kNumParams];
 	BYTE m_BPSetIdx;
 

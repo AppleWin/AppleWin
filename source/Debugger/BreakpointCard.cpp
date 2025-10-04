@@ -36,7 +36,8 @@ void BreakpointCard::Reset(const bool powerCycle)
 	m_interceptBPByCard = false;
 	InterceptBreakpoints(m_slot, nullptr);
 	ResetState();
-	CpuIrqDeassert(IS_BREAKPOINTCARD);
+	if (!powerCycle)	// if called by ctor: CriticalSection not created yet
+		CpuIrqDeassert(IS_BREAKPOINTCARD);
 }
 
 void BreakpointCard::InitializeIO(LPBYTE pCxRomPeripheral)
@@ -152,9 +153,9 @@ void BreakpointCard::CbFunction(uint8_t slot, uint8_t type, uint16_t addrStart, 
 			// dma S dma E		; DMA ends within BP range [2]
 			// dma S dma E dma	; DMA start before & ends after BP range [3]
 			//     S dma E		; DMA starts & ends within BP range [1] + [2]
-			bool validAddr = ((bpSet.addrStart <= addrStart && addrStart >= bpSet.addrEnd) ||	// Does DMA *start* within BP range? [1]
-							  (bpSet.addrStart <= addrEnd   && addrEnd   >= bpSet.addrEnd) ||	// Or does DMA *end* within BP range? [2]
-							  (bpSet.addrStart >= addrStart && addrEnd   >= bpSet.addrEnd));	// Or does DMA *start* before BP range & *end* after BP range? [3]
+			bool validAddr = ((bpSet.addrStart <= addrStart && addrStart <= bpSet.addrEnd) ||	// Does DMA *start* within BP range? [1]
+							  (bpSet.addrStart <= addrEnd   && addrEnd   <= bpSet.addrEnd) ||	// Or does DMA *end* within BP range? [2]
+							  (addrStart <= bpSet.addrStart && bpSet.addrEnd <= addrEnd));		// Or does DMA *start* before BP range & *end* after BP range? [3]
 			if (!validAddr || (bpSet.access != access))
 			{
 				pCard->m_status |= kMismatch;
