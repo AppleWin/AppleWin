@@ -11,7 +11,7 @@ void strcpy_s(char *dest, size_t size, const char *source);
 #define _TRUNCATE ((size_t) - 1)
 
 #define _strtoui64 strtoull
-#define _stricmp  strcasecmp
+#define _stricmp strcasecmp
 #define _strnicmp strncasecmp
 #define sscanf_s sscanf
 

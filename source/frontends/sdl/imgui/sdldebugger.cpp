@@ -52,14 +52,38 @@ namespace
             // the latter comes from https://fontstruct.com/fontstructions/show/1912741/debug6502
             switch (ch)
             {
-            case 0x00: case 0x01: case 0x02: case 0x03:
-            case 0x04: case 0x05: case 0x06: case 0x07:
-            case 0x08: case 0x09: case 0x0A: case 0x0B:
-            case 0x0C: case 0x0D: case 0x0E: case 0x0F:
-            case 0x10: case 0x11: case 0x12: case 0x13:
-            case 0x14: case 0x15: case 0x16: case 0x17:
-            case 0x18: case 0x19: case 0x1A: case 0x1B:
-            case 0x1C: case 0x1D: case 0x1E: case 0x1F:
+            case 0x00:
+            case 0x01:
+            case 0x02:
+            case 0x03:
+            case 0x04:
+            case 0x05:
+            case 0x06:
+            case 0x07:
+            case 0x08:
+            case 0x09:
+            case 0x0A:
+            case 0x0B:
+            case 0x0C:
+            case 0x0D:
+            case 0x0E:
+            case 0x0F:
+            case 0x10:
+            case 0x11:
+            case 0x12:
+            case 0x13:
+            case 0x14:
+            case 0x15:
+            case 0x16:
+            case 0x17:
+            case 0x18:
+            case 0x19:
+            case 0x1A:
+            case 0x1B:
+            case 0x1C:
+            case 0x1D:
+            case 0x1E:
+            case 0x1F:
                 // mouse text -> U+00C0
                 *out = 0xC3;
                 ++out;
@@ -70,10 +94,22 @@ namespace
                 ++out;
                 *out = 0xBF;
                 break;
-            case 0x80: case 0x81: case 0x82: case 0x83:
-            case 0x84: case 0x85: case 0x86: case 0x87:
-            case 0x88: case 0x89: case 0x8A: case 0x8B:
-            case 0x8C: case 0x8D: case 0x8E: case 0x8F:
+            case 0x80:
+            case 0x81:
+            case 0x82:
+            case 0x83:
+            case 0x84:
+            case 0x85:
+            case 0x86:
+            case 0x87:
+            case 0x88:
+            case 0x89:
+            case 0x8A:
+            case 0x8B:
+            case 0x8C:
+            case 0x8D:
+            case 0x8E:
+            case 0x8F:
                 // bookmarks, not currently used -> U+00F0
                 *out = 0xC3;
                 ++out;

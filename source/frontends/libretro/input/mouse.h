@@ -11,7 +11,6 @@ namespace ra2
         Mouse(const std::unique_ptr<Game> &game, unsigned port);
 
         double getAxis(int i) const override;
-
     };
 
 } // namespace ra2
