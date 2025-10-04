@@ -26,6 +26,7 @@
 
 #include "StdAfx.h"
 
+#include "Debug.h"
 #include "BreakpointCard.h"
 #include "Memory.h"
 
@@ -64,15 +65,17 @@ BYTE __stdcall BreakpointCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE val
 			break;
 		case 1: // intercept BP by card
 			pCard->m_interceptBPByCard = true;
+			InterceptBreakpoints(BreakpointCard::CbFunction);
 			break;
 		case 2: // intercept BP by debugger
 			pCard->m_interceptBPByCard = false;
+			InterceptBreakpoints(nullptr);
 			break;
 		default:
 			break;
 		}
 	}
-	else if (reg == 1)	// FIFO
+	else // FIFO (reg 1-F)
 	{
 		pCard->m_BPSet[pCard->m_BPSetIdx++] = value;
 
@@ -98,4 +101,9 @@ BYTE __stdcall BreakpointCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE val
 	}
 
 	return 0;
+}
+
+void BreakpointCard::CbFunction(void)
+{
+
 }

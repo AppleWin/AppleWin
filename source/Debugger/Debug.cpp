@@ -363,6 +363,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static std::string g_sAutoRunScriptFilename("DebuggerAutoRun.txt");
 
+	static CBFUNCTION g_bInterceptBreakpointsCB = nullptr;
+
 // Private ________________________________________________________________________________________
 
 
@@ -9165,7 +9167,12 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 
 			ConsoleUpdate();
 
-			g_nDebugSteps = 0;
+			//
+
+			if (g_bInterceptBreakpointsCB == nullptr)
+				g_nDebugSteps = 0;
+			else
+				g_bInterceptBreakpointsCB();
 		}
 
 		if (g_nDebugSteps > 0)
@@ -10125,4 +10132,11 @@ bool IsDebugSteppingAtFullSpeed (void)
 void DebugSetAutoRunScript (std::string& sAutoRunScriptFilename)
 {
 	g_sAutoRunScriptFilename = sAutoRunScriptFilename;
+}
+
+
+//===========================================================================
+void InterceptBreakpoints(CBFUNCTION cbfunction)
+{
+	g_bInterceptBreakpointsCB = cbfunction;
 }

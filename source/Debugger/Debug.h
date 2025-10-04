@@ -191,3 +191,6 @@
 
 	void	ClearTempBreakpoints();
 	void	DebugSetAutoRunScript(std::string& sAutoRunScriptFilename);
+
+	typedef void(*CBFUNCTION)(void);
+	void	InterceptBreakpoints(CBFUNCTION cbfunction);

@@ -30,8 +30,10 @@ public:
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
+	static void CbFunction(void);
+
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) {}
-	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) {}
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) { return false; }
 
 private:
 	static const uint8_t kFull	= 1 << 1;
