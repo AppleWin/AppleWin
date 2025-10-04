@@ -363,12 +363,17 @@ bool retro_load_game(const retro_game_info *info)
         struct retro_memory_descriptor descs[2];
         struct retro_memory_map        mmaps;
         memset(descs, 0, sizeof(descs));
+
         descs[0].ptr = MemGetBankPtr(0, true);
         descs[0].start = _6502_MEM_BEGIN;
         descs[0].len = _6502_MEM_LEN;
+        descs[0].addrspace = "MainRAM";
+
         descs[1].ptr = MemGetBankPtr(1, true);
-        descs[1].start = 0x10000;
-        descs[1].len = 0x10000;
+        descs[1].start = _6502_MEM_BEGIN + _6502_MEM_LEN;
+        descs[1].len = _6502_MEM_LEN;
+        descs[1].addrspace = "AuxRAM";
+
         mmaps.descriptors = descs;
         mmaps.num_descriptors = 2;
         ra2::environ_cb(RETRO_ENVIRONMENT_SET_MEMORY_MAPS, &mmaps);
