@@ -122,5 +122,4 @@ namespace ra2
         }
     }
 
-
 } // namespace ra2

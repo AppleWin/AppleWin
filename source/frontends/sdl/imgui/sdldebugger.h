@@ -27,6 +27,8 @@ namespace sa2
         int64_t myBaseDebuggerCycles;
         std::unordered_map<uint32_t, int64_t> myAddressCycles;
 
+        std::vector<char> myMouseTextBuffer;
+
         CycleTabItems myCycleTabItems;
         InputTextHistory myInputTextHistory;
 

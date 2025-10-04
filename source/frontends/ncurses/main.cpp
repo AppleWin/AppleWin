@@ -69,8 +69,7 @@ namespace
         }
     }
 
-    void ContinueExecution(
-        const common2::EmulatorOptions &options, na2::NFrame &frame, bool &quit)
+    void ContinueExecution(const common2::EmulatorOptions &options, na2::NFrame &frame, bool &quit)
     {
         const auto start = std::chrono::steady_clock::now();
 

@@ -42,8 +42,11 @@ namespace
         ImGui::TextColored(color, "%s", text);
     }
 
-    void adjustMouseText(const char *text, size_t length, char *out)
+    void adjustMouseText(const char *text, size_t length, std::vector<char> &buffer)
     {
+        buffer.resize(2 * length + 1); // worst case is 2-bytes utf8 encoding + null terminator
+        char *out = buffer.data();
+
         for (size_t i = 0; i < length; ++i)
         {
             const auto ch = *(text + i) & 0x7F; // same as DebuggerPrint()
@@ -52,14 +55,38 @@ namespace
             // the latter comes from https://fontstruct.com/fontstructions/show/1912741/debug6502
             switch (ch)
             {
-            case 0x00: case 0x01: case 0x02: case 0x03:
-            case 0x04: case 0x05: case 0x06: case 0x07:
-            case 0x08: case 0x09: case 0x0A: case 0x0B:
-            case 0x0C: case 0x0D: case 0x0E: case 0x0F:
-            case 0x10: case 0x11: case 0x12: case 0x13:
-            case 0x14: case 0x15: case 0x16: case 0x17:
-            case 0x18: case 0x19: case 0x1A: case 0x1B:
-            case 0x1C: case 0x1D: case 0x1E: case 0x1F:
+            case 0x00:
+            case 0x01:
+            case 0x02:
+            case 0x03:
+            case 0x04:
+            case 0x05:
+            case 0x06:
+            case 0x07:
+            case 0x08:
+            case 0x09:
+            case 0x0A:
+            case 0x0B:
+            case 0x0C:
+            case 0x0D:
+            case 0x0E:
+            case 0x0F:
+            case 0x10:
+            case 0x11:
+            case 0x12:
+            case 0x13:
+            case 0x14:
+            case 0x15:
+            case 0x16:
+            case 0x17:
+            case 0x18:
+            case 0x19:
+            case 0x1A:
+            case 0x1B:
+            case 0x1C:
+            case 0x1D:
+            case 0x1E:
+            case 0x1F:
                 // mouse text -> U+00C0
                 *out = 0xC3;
                 ++out;
@@ -70,10 +97,22 @@ namespace
                 ++out;
                 *out = 0xBF;
                 break;
-            case 0x80: case 0x81: case 0x82: case 0x83:
-            case 0x84: case 0x85: case 0x86: case 0x87:
-            case 0x88: case 0x89: case 0x8A: case 0x8B:
-            case 0x8C: case 0x8D: case 0x8E: case 0x8F:
+            case 0x80:
+            case 0x81:
+            case 0x82:
+            case 0x83:
+            case 0x84:
+            case 0x85:
+            case 0x86:
+            case 0x87:
+            case 0x88:
+            case 0x89:
+            case 0x8A:
+            case 0x8B:
+            case 0x8C:
+            case 0x8D:
+            case 0x8E:
+            case 0x8F:
                 // bookmarks, not currently used -> U+00F0
                 *out = 0xC3;
                 ++out;
@@ -88,12 +127,11 @@ namespace
     }
 
     // use this if "text" may contain mouse text
-    void safeDebuggerTextColored(int iColor, const char *text)
+    void safeDebuggerTextColored(int iColor, const char *text, std::vector<char> &buffer)
     {
         const size_t length = strlen(text);
-        char utf8[2 * length + 1]; // worst case is 2-bytes utf8 encoding
-        adjustMouseText(text, length, utf8);
-        debuggerTextColored(iColor, utf8);
+        adjustMouseText(text, length, buffer);
+        debuggerTextColored(iColor, buffer.data());
     }
 
     void displayDisassemblyLine(const DisasmLine_t &line, const int bDisasmFormatFlags)
@@ -508,7 +546,7 @@ namespace sa2
                     ImGui::TableNextColumn();
                     if (bDisasmFormatFlags & DISASM_FORMAT_BRANCH)
                     {
-                        safeDebuggerTextColored(FG_DISASM_BRANCH, line.sBranch);
+                        safeDebuggerTextColored(FG_DISASM_BRANCH, line.sBranch, myMouseTextBuffer);
                     }
 
                     ImGui::TableNextColumn();
@@ -534,7 +572,7 @@ namespace sa2
                         {
                             color = FG_DISASM_CHAR;
                         }
-                        safeDebuggerTextColored(color, line.sImmediate);
+                        safeDebuggerTextColored(color, line.sImmediate, myMouseTextBuffer);
                     }
 
                     ImGui::TableNextColumn();
@@ -681,19 +719,18 @@ namespace sa2
                 const conchar_t *src = g_aConsoleDisplay[i];
 
                 char line[CONSOLE_WIDTH + 1];
-                char lineMouseText[2 * CONSOLE_WIDTH + 1];
                 size_t length = 0;
 
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
                 COLORREF currentColor = DebuggerGetColor(FG_CONSOLE_OUTPUT);
 
-                const auto textAndReset = [&line, &lineMouseText, &length, &currentColor]()
+                const auto textAndReset = [&line, this, &length, &currentColor]()
                 {
                     line[length] = 0;
                     const ImVec4 color = colorrefToImVec4(currentColor);
-                    adjustMouseText(line, length, lineMouseText);
-                    ImGui::TextColored(color, "%s", lineMouseText);
+                    adjustMouseText(line, length, myMouseTextBuffer);
+                    ImGui::TextColored(color, "%s", myMouseTextBuffer.data());
                     length = 0;
                 };
 
