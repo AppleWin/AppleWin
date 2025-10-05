@@ -243,7 +243,8 @@ namespace sa2
     {
         const auto resource = GetResourceData(IDC_APPLEWIN_ICON);
 
-        std::shared_ptr<SDL_Surface> icon(compat::createSurfaceFromResource(resource.first, resource.second), SDL_FreeSurface);
+        std::shared_ptr<SDL_Surface> icon(
+            compat::createSurfaceFromResource(resource.first, resource.second), SDL_FreeSurface);
         if (icon)
         {
             SDL_SetWindowIcon(myWindow.get(), icon.get());

@@ -13,11 +13,12 @@ namespace sa2
         int getNumJoysticks()
         {
             int count = 0;
-            const SDL_JoystickID *joy = SDL_GetJoysticks(&count);
+            SDL_JoystickID *joy = SDL_GetJoysticks(&count);
             if (!joy)
             {
                 throw std::runtime_error(decorateSDLError("SDL_GetJoysticks"));
             }
+            SDL_free(joy);
             return count;
         }
 
@@ -31,16 +32,17 @@ namespace sa2
             return interval;
         }
 
-        const SDL_DisplayMode *getCurrentDisplayMode()
+        const SDL_DisplayMode *getCurrentDisplayMode(SDL_DisplayMode &)
         {
             int count = 0;
-            const SDL_DisplayID *displays = SDL_GetDisplays(&count);
-            if (displays)
+            SDL_DisplayID *displays = SDL_GetDisplays(&count);
+            if (!displays)
             {
-                const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(*displays);
-                return mode;
+                throw std::runtime_error(decorateSDLError("SDL_GetDisplays"));
             }
-            throw std::runtime_error(decorateSDLError("SDL_GetDisplays"));
+            const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(*displays);
+            SDL_free(displays);
+            return mode;
         }
 
         void pauseAudioDevice(SDL_AudioDeviceID dev)
@@ -90,17 +92,17 @@ namespace sa2
 
         SDL_Surface *createSurfaceFromResource(const unsigned char *data, unsigned int size)
         {
-          SDL_IOStream *ops = SDL_IOFromConstMem(data, size);
-          if (!ops)
-          {
-              throw std::runtime_error(decorateSDLError("SDL_IOFromConstMem"));
-          }
-          SDL_Surface *surface = IMG_Load_IO(ops, 1);
-          if (!surface)
-          {
-              throw std::runtime_error(decorateSDLError("IMG_Load_IO"));
-          }
-          return surface;
+            SDL_IOStream *ops = SDL_IOFromConstMem(data, size);
+            if (!ops)
+            {
+                throw std::runtime_error(decorateSDLError("SDL_IOFromConstMem"));
+            }
+            SDL_Surface *surface = IMG_Load_IO(ops, 1);
+            if (!surface)
+            {
+                throw std::runtime_error(decorateSDLError("IMG_Load_IO"));
+            }
+            return surface;
         }
 
 #else
@@ -115,16 +117,13 @@ namespace sa2
             return SDL_GL_GetSwapInterval();
         }
 
-        const SDL_DisplayMode *getCurrentDisplayMode()
+        const SDL_DisplayMode *getCurrentDisplayMode(SDL_DisplayMode &dummy)
         {
-            static SDL_DisplayMode current;
-
-            const int should_be_zero = SDL_GetCurrentDisplayMode(0, &current);
-            if (should_be_zero)
+            if (!sa2_ok(SDL_GetCurrentDisplayMode(0, &dummy)))
             {
                 throw std::runtime_error(sa2::decorateSDLError("SDL_GetCurrentDisplayMode"));
             }
-            return &current;
+            return &dummy;
         }
 
         void pauseAudioDevice(SDL_AudioDeviceID dev)

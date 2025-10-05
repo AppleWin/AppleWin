@@ -31,7 +31,8 @@ namespace
 
     int getRefreshRate()
     {
-        const SDL_DisplayMode *current = sa2::compat::getCurrentDisplayMode();
+        SDL_DisplayMode dummy;
+        const SDL_DisplayMode *current = sa2::compat::getCurrentDisplayMode(dummy);
         return current->refresh_rate ? current->refresh_rate : 60;
     }
 
