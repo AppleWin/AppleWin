@@ -5,6 +5,7 @@
 #include "StdAfx.h"
 #include "linux/benchmark.h"
 #include "linux/context.h"
+#include "linux/version.h"
 
 #include "frontends/common2/fileregistry.h"
 #include "frontends/common2/commoncontext.h"
@@ -160,6 +161,11 @@ void run_sdl(int argc, char *const argv[])
 
 int main(int argc, char *argv[])
 {
+#if SDL_VERSION_ATLEAST(3, 0, 0)
+    const std::string version = getVersion();
+    SDL_SetAppMetadata("AppleWin", version.c_str(), "org.applewin");
+#endif
+
     // First we need to start up SDL, and make sure it went ok
     const Uint32 flags = SDL_INIT_VIDEO | SA2_INIT_GAMEPAD | SDL_INIT_AUDIO | SDL_INIT_EVENTS;
 
