@@ -64,7 +64,7 @@ private:
 	BYTE m_BPSet[kNumParams];
 	BYTE m_BPSetIdx;
 
-	static const uint8_t kFIFO_SIZE = 32;	// arbitrary size
+	static const uint8_t kFIFO_SIZE = 32;	// needs to be big enough for each test's set of BPs
 	std::queue<BPSet> m_BP_FIFO;
 
 	BPSet m_deferred;

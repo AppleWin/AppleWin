@@ -87,6 +87,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static int           g_bDebugBreakpointHit = 0;       // See: BreakpointHit_t
 	static Breakpoint_t *g_pDebugBreakpointHit = nullptr;
 
+	static WORD g_nBreakMemoryAddr = 0;
 	static std::string g_sBreakMemoryFullPrefixAddr;
 	static int g_breakpointHitID = -1;
 
@@ -1432,6 +1433,7 @@ int CheckBreakpointsIO ()
 						{
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
+								g_nBreakMemoryAddr = (WORD)nAddress;	// last BP hit
 								g_sBreakMemoryFullPrefixAddr = GetFullPrefixAddrForBreakpoint(pBP->addrPrefix, (WORD)nAddress, DEVICE_e::DEV_MEMORY, false);	// string is last BP hit
 								BYTE opcode = ReadByteFromMemory(regs.pc);
 
@@ -9138,18 +9140,21 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 			{
 				stopReason = StrFormat("Memory access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
 				interceptBPType = BPTYPE_MEM;
+				interceptBPAddr = g_nBreakMemoryAddr;
 				interceptBPAccess = BPACCESS_RW;
 			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMW)
 			{
 				stopReason = StrFormat("Write access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
 				interceptBPType = BPTYPE_MEM;
+				interceptBPAddr = g_nBreakMemoryAddr;
 				interceptBPAccess = BPACCESS_W;
 			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMR)
 			{
 				stopReason = StrFormat("Read access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
 				interceptBPType = BPTYPE_MEM;
+				interceptBPAddr = g_nBreakMemoryAddr;
 				interceptBPAccess = BPACCESS_R;
 			}
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
@@ -9322,6 +9327,7 @@ void DebugInitialize ()
 	WindowUpdateConsoleDisplayedSize();
 
 	// CLEAR THE BREAKPOINT AND WATCH TABLES
+	g_nBreakMemoryAddr = 0;
 	g_breakpointHitID = -1;
 	for (int i = 0; i < MAX_BREAKPOINTS; i++)
 		g_aBreakpoints[i].Clear();

@@ -122,7 +122,7 @@ void BreakpointCard::CbFunction(uint8_t slot, uint8_t type, uint16_t addrStart, 
 	pCard->m_deferred.addrEnd = addrEnd;
 	pCard->m_deferred.access = access;
 
-	// Defer processing the by 1 opcode (ie. 1 cycle), otherwise this happens:
+	// Defer processing the breakpoint by 1 opcode (ie. 1 cycle), otherwise this happens:
 	// . BP occurs at <addr>, but opcode hasn't executed yet
 	// . Breakpoint card aserts IRQ, and IRQ is taken by 6502
 	// . 6502 executes ISR, and returns to <addr>
