@@ -364,7 +364,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static std::string g_sAutoRunScriptFilename("DebuggerAutoRun.txt");
 
 	static uint8_t g_interceptBreakpointsSlot = 0;
-	static CBFUNCTION g_bInterceptBreakpointsCB = nullptr;
+	static CBFUNCTION g_InterceptBreakpointsCB = nullptr;
 
 // Private ________________________________________________________________________________________
 
@@ -9168,8 +9168,8 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 
 			if (!skipStopReason)
 			{
-				if (g_bInterceptBreakpointsCB != nullptr)
-					g_bInterceptBreakpointsCB(g_interceptBreakpointsSlot, interceptBPType, interceptBPAddr, 0x0000, interceptBPAccess);
+				if (g_InterceptBreakpointsCB != nullptr)
+					g_InterceptBreakpointsCB(g_interceptBreakpointsSlot, interceptBPType, interceptBPAddr, 0x0000, interceptBPAccess);
 
 				std::string hitId = GetBreakpointHitIdString(g_breakpointHitID);
 				ConsolePrintFormat(CHC_INFO "Stop reason: %s " CHC_DEFAULT "%s", hitId.c_str(), stopReason.c_str());
@@ -9188,10 +9188,10 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 					std::string hitId = GetBreakpointHitIdString(g_DebugBreakOnDMA[i].BPid);
 					ConsolePrintFormat(CHC_INFO "Stop reason: %s " CHC_DEFAULT "%s", hitId.c_str(), stopReason.c_str());
 
-					if (g_bInterceptBreakpointsCB != nullptr)
+					if (g_InterceptBreakpointsCB != nullptr)
 					{
 						interceptBPAccess = (nDebugBreakpointHit & BP_DMA_FROM_MEM) ? BPACCESS_R : BPACCESS_W;
-						g_bInterceptBreakpointsCB(g_interceptBreakpointsSlot, BPTYPE_DMA, g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, interceptBPAccess);
+						g_InterceptBreakpointsCB(g_interceptBreakpointsSlot, BPTYPE_DMA, g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, interceptBPAccess);
 					}
 				}
 			}
@@ -9200,7 +9200,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 
 			//
 
-			if (g_bInterceptBreakpointsCB == nullptr)
+			if (g_InterceptBreakpointsCB == nullptr)
 				g_nDebugSteps = 0;
 		}
 
@@ -10168,5 +10168,5 @@ void DebugSetAutoRunScript (std::string& sAutoRunScriptFilename)
 void InterceptBreakpoints(uint8_t slot, CBFUNCTION cbfunction)
 {
 	g_interceptBreakpointsSlot = slot;
-	g_bInterceptBreakpointsCB = cbfunction;
+	g_InterceptBreakpointsCB = cbfunction;
 }

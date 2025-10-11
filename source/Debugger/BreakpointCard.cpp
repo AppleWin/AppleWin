@@ -26,6 +26,8 @@
 
 #include "StdAfx.h"
 
+#include "CardManager.h"
+#include "Core.h"
 #include "CPU.h"
 #include "Debug.h"
 #include "BreakpointCard.h"
@@ -115,23 +117,47 @@ void BreakpointCard::CbFunction(uint8_t slot, uint8_t type, uint16_t addrStart, 
 {
 	BreakpointCard* pCard = (BreakpointCard*)MemGetSlotParameters(slot);
 
-	pCard->m_status &= ~(kMatch | kMismatch);
+	pCard->m_deferred.type = type;
+	pCard->m_deferred.addrStart = addrStart;
+	pCard->m_deferred.addrEnd = addrEnd;
+	pCard->m_deferred.access = access;
+
+	// Defer processing the by 1 opcode (ie. 1 cycle), otherwise this happens:
+	// . BP occurs at <addr>, but opcode hasn't executed yet
+	// . Breakpoint card aserts IRQ, and IRQ is taken by 6502
+	// . 6502 executes ISR, and returns to <addr>
+	// . BP occurs at <addr>...
+
+	pCard->m_syncEvent.m_cyclesRemaining = 1;	// Next opcode
+	g_SynchronousEventMgr.Insert(&pCard->m_syncEvent);
+}
+
+int BreakpointCard::SyncEventCallback(int id, int cycles, ULONG uExecutedCycles)
+{
+	BreakpointCard& card = dynamic_cast<BreakpointCard&>(GetCardMgr().GetRef(id));
+	card.Deferred(card.m_deferred.type, card.m_deferred.addrStart, card.m_deferred.addrEnd, card.m_deferred.access);
+	return 0;	// Don't repeat event
+}
+
+void BreakpointCard::Deferred(uint8_t type, uint16_t addrStart, uint16_t addrEnd, uint8_t access)
+{
+	m_status &= ~(kMatch | kMismatch);
 
 	CpuIrqAssert(IS_BREAKPOINTCARD);
 
-	if (pCard->m_BP_FIFO.empty())
+	if (m_BP_FIFO.empty())
 	{
-		pCard->m_status |= kMismatch;
+		m_status |= kMismatch;
 		return;
 	}
 
-	const BPSet bpSet = pCard->m_BP_FIFO.front();
-	pCard->m_BP_FIFO.pop();
-	pCard->m_status &= ~kFull;
+	const BPSet bpSet = m_BP_FIFO.front();
+	m_BP_FIFO.pop();
+	m_status &= ~kFull;
 
 	if (bpSet.type != type)
 	{
-		pCard->m_status |= kMismatch;
+		m_status |= kMismatch;
 		return;
 	}
 
@@ -141,10 +167,10 @@ void BreakpointCard::CbFunction(uint8_t slot, uint8_t type, uint16_t addrStart, 
 	case BPTYPE_MEM:
 		if ((bpSet.addrStart != addrStart) || (bpSet.access != access))
 		{
-			pCard->m_status |= kMismatch;
+			m_status |= kMismatch;
 			break;
 		}
-		pCard->m_status |= kMatch;
+		m_status |= kMatch;
 		break;
 	case BPTYPE_DMA:
 		{
@@ -158,15 +184,15 @@ void BreakpointCard::CbFunction(uint8_t slot, uint8_t type, uint16_t addrStart, 
 							  (addrStart <= bpSet.addrStart && bpSet.addrEnd <= addrEnd));		// Or does DMA *start* before BP range & *end* after BP range? [3]
 			if (!validAddr || (bpSet.access != access))
 			{
-				pCard->m_status |= kMismatch;
+				m_status |= kMismatch;
 				break;
 			}
-			pCard->m_status |= kMatch;
+			m_status |= kMatch;
 		}
 		break;
 	case BPTYPE_UNKNOWN:
 	default:
-		pCard->m_status |= kMismatch;
+		m_status |= kMismatch;
 		break;
 	}
 
