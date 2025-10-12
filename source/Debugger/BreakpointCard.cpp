@@ -54,9 +54,28 @@ BYTE __stdcall BreakpointCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE valu
 
 	CpuIrqDeassert(IS_BREAKPOINTCARD);
 
-	uint8_t otherStatus = pCard->m_BP_FIFO.empty() ? kEmpty : 0;
+	const BYTE reg = addr & 0xf;
+	if (reg == 0)
+	{
+		uint8_t otherStatus = pCard->m_BP_FIFO.empty() ? kEmpty : 0;
+		return pCard->m_status | otherStatus;
+	}
+	else if (reg == 1)	// Cmd: Reset
+	{
+		pCard->ResetState();
+	}
+	else if (reg == 2)	// Cmd: Intercept BP by card
+	{
+		pCard->m_interceptBPByCard = true;
+		InterceptBreakpoints(slot, BreakpointCard::CbFunction);
+	}
+	else if (reg == 3)	// Cmd: Intercept BP by debugger
+	{
+		pCard->m_interceptBPByCard = false;
+		InterceptBreakpoints(slot, nullptr);
+	}
 
-	return pCard->m_status | otherStatus;
+	return addr & 0x0f;	// ID bytes [$01-$0F]
 }
 
 BYTE __stdcall BreakpointCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
@@ -66,48 +85,25 @@ BYTE __stdcall BreakpointCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE val
 
 	CpuIrqDeassert(IS_BREAKPOINTCARD);
 
-	const BYTE reg = addr & 0xf;
-	if (reg == 0)	// Command
+	pCard->m_BPSet[pCard->m_BPSetIdx++] = value;
+
+	if (pCard->m_BPSetIdx == kNumParams)
 	{
-		switch (value)
+		pCard->m_BPSetIdx = 0;
+
+		if (!(pCard->m_status & kFull))
 		{
-		case 0: // reset
-			pCard->ResetState();
-			break;
-		case 1: // intercept BP by card
-			pCard->m_interceptBPByCard = true;
-			InterceptBreakpoints(slot, BreakpointCard::CbFunction);
-			break;
-		case 2: // intercept BP by debugger
-			pCard->m_interceptBPByCard = false;
-			InterceptBreakpoints(slot, nullptr);
-			break;
-		default:
-			break;
+			BPSet bpSet;
+			bpSet.type = pCard->m_BPSet[0];
+			bpSet.addrStart = (pCard->m_BPSet[2] << 8) | pCard->m_BPSet[1];
+			bpSet.addrEnd   = (pCard->m_BPSet[4] << 8) | pCard->m_BPSet[3];
+			bpSet.access = pCard->m_BPSet[5];
+
+			pCard->m_BP_FIFO.push(bpSet);
 		}
-	}
-	else // FIFO (reg 1-F)
-	{
-		pCard->m_BPSet[pCard->m_BPSetIdx++] = value;
 
-		if (pCard->m_BPSetIdx == kNumParams)
-		{
-			pCard->m_BPSetIdx = 0;
-
-			if (!(pCard->m_status & kFull))
-			{
-				BPSet bpSet;
-				bpSet.type = pCard->m_BPSet[0];
-				bpSet.addrStart = (pCard->m_BPSet[2] << 8) | pCard->m_BPSet[1];
-				bpSet.addrEnd   = (pCard->m_BPSet[4] << 8) | pCard->m_BPSet[3];
-				bpSet.access = pCard->m_BPSet[5];
-
-				pCard->m_BP_FIFO.push(bpSet);
-			}
-
-			if (pCard->m_BP_FIFO.size() == kFIFO_SIZE)
-				pCard->m_status |= kFull;
-		}
+		if (pCard->m_BP_FIFO.size() == kFIFO_SIZE)
+			pCard->m_status |= kFull;
 	}
 
 	return 0;
