@@ -22,6 +22,45 @@
 */
 /*
   Breakpoint card
+  ---------------
+
+  C0n0 (R) : Status
+				b7: BP match
+				b6: BP mismatch
+				b1: FIFO full
+				b0: FIFO empty
+  C0n1 (R) : Cmd: Reset
+				Flush FIFO
+				NB. don't change intercept mode
+  C0n2 (R) : Cmd: Intercept BP by card
+  C0n3 (R) : Cmd: Intercept BP by debugger
+  C0nX (R) : ID byte $0X (except when X=0)
+
+  C0nX (W) : FIFO
+				FIFO is 32 x 6 bytes deep
+				where: 6-byte BP-set = {type.b, addrStart.w, addrEnd.w, access.b}
+
+  Any r/w clears the IRQ
+  RESET clears the IRQ, flushes FIFO and sets: Intercept BP by card
+
+  Operation:
+  . Cmd:Reset flushes FIFO & sets Status.empty=1 (all other bits are zero)
+  . Cmd:Intercept BP by card
+  . Write FIFO with multiple BP sets for test code
+    - these are the expected BP hit results
+  . Status.full=1 after writing 32 sets
+  . Execute test code
+  . AppleWin debugger hands off BP to Breakpoint card
+  . Remove BP set from front of FIFO
+    - Check if it matches/mismatches and set status accordingly
+  . Delay 1 cycle & assert IRQ
+  . CPU vectors to IRQ handler
+  . Reading Status clears IRQ
+
+  AppleWin debugger:
+  . Debugger's BPs need to match those in FIFO
+  . Cmd:Intercept BP by card: when active, then debugger doesn't break on BP match
+    - instead if hands off control to the Breakpoint card
 */
 
 #include "StdAfx.h"
