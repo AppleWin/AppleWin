@@ -46,21 +46,18 @@
   Operation:
   . Cmd:Reset flushes FIFO & sets Status.empty=1 (all other bits are zero)
   . Cmd:Intercept BP by card
-  . Write FIFO with multiple BP sets for test code
+  . Write FIFO with multiple BP-sets for test code
     - these are the expected BP hit results
-  . Status.full=1 after writing 32 sets
+  . Status.full=1 after writing 32 BP-sets
   . Execute test code
-  . AppleWin debugger hands off BP to Breakpoint card
-  . Remove BP set from front of FIFO
+  . AppleWin debugger:
+    - Cmd:Intercept BP by card: when active, then debugger doesn't break on BP match
+    - Instead debugger hands off BP to Breakpoint card (only 'bp' & 'bpm[r|w]')
+  . Remove BP-set from front of FIFO
     - Check if it matches/mismatches and set status accordingly
   . Delay 1 cycle & assert IRQ
   . CPU vectors to IRQ handler
   . Reading Status clears IRQ
-
-  AppleWin debugger:
-  . Debugger's BPs need to match those in FIFO
-  . Cmd:Intercept BP by card: when active, then debugger doesn't break on BP match
-    - instead if hands off control to the Breakpoint card
 */
 
 #include "StdAfx.h"
