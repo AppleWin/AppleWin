@@ -223,6 +223,10 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					g_cmdLine.slotInsert[slot] = CT_SDMusic;
 					g_cmdLine.supportExtraMBCardTypes = true;
 				}
+				else if (strcmp(lpCmdLine, "breakpointcard") == 0)
+				{
+					g_cmdLine.slotInsert[slot] = CT_BreakpointCard;
+				}
 				else if (strcmp(lpCmdLine, "6522a-bad") == 0)
 				{
 					g_cmdLine.slotInfo[slot].useBad6522A = true;

@@ -27,6 +27,7 @@ enum SS_CARDTYPE
 	CT_Uthernet2,
 	CT_MegaAudio,		// Soundcard
 	CT_SDMusic,			// Soundcard
+	CT_BreakpointCard,
 };
 
 enum SLOTS { SLOT0=0, SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6, SLOT7, NUM_SLOTS, SLOT_AUX, GAME_IO_CONNECTOR };

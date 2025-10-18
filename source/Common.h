@@ -151,7 +151,7 @@ enum AppMode_e
 #define PATH_SEPARATOR '/'
 #endif
 
-enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE};
+enum eIRQSRC {IS_6522=0, IS_SPEECH, IS_SSC, IS_MOUSE, IS_BREAKPOINTCARD};
 
 //
 #define APPLE2P_MASK    0x01
