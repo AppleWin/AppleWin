@@ -87,6 +87,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static int           g_bDebugBreakpointHit = 0;       // See: BreakpointHit_t
 	static Breakpoint_t *g_pDebugBreakpointHit = nullptr;
 
+	static WORD g_nBreakMemoryAddr = 0;
 	static std::string g_sBreakMemoryFullPrefixAddr;
 	static int g_breakpointHitID = -1;
 
@@ -362,6 +363,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static bool g_bScriptReadOk = false;
 
 	static std::string g_sAutoRunScriptFilename("DebuggerAutoRun.txt");
+
+	static uint8_t g_interceptBreakpointsSlot = 0;
+	static CBFUNCTION g_InterceptBreakpointsCB = nullptr;
 
 // Private ________________________________________________________________________________________
 
@@ -1429,6 +1433,7 @@ int CheckBreakpointsIO ()
 						{
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
+								g_nBreakMemoryAddr = (WORD)nAddress;	// last BP hit
 								g_sBreakMemoryFullPrefixAddr = GetFullPrefixAddrForBreakpoint(pBP->addrPrefix, (WORD)nAddress, DEVICE_e::DEV_MEMORY, false);	// string is last BP hit
 								BYTE opcode = ReadByteFromMemory(regs.pc);
 
@@ -9103,6 +9108,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 		{
 			std::string stopReason = "Unknown!";
 			bool skipStopReason = false;
+			INTERCEPTBREAKPOINT interceptBreakpoint;
 
 			if (regs.pc == g_nDebugStepUntil)
 				stopReason = StrFormat( CHC_DEFAULT "Register " CHC_REGS "PC" CHC_DEFAULT " matches '" CHC_INFO "Go until" CHC_DEFAULT "' address $" CHC_ADDRESS "%04X", g_nDebugStepUntil);
@@ -9120,14 +9126,25 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 						g_aBreakpointSource[ g_pDebugBreakpointHit->eSource ],
 						CHC_DEFAULT
 					);
+					if (g_pDebugBreakpointHit->eSource == BP_SRC_REG_PC)
+						interceptBreakpoint.Set(BPTYPE_PC, regs.pc, BPACCESS_R);
 				}
 			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
+			{
 				stopReason = StrFormat("Memory access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
+				interceptBreakpoint.Set(BPTYPE_MEM, g_nBreakMemoryAddr, BPACCESS_RW);
+			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMW)
+			{
 				stopReason = StrFormat("Write access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
+				interceptBreakpoint.Set(BPTYPE_MEM, g_nBreakMemoryAddr, BPACCESS_W);
+			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMR)
+			{
 				stopReason = StrFormat("Read access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
+				interceptBreakpoint.Set(BPTYPE_MEM, g_nBreakMemoryAddr, BPACCESS_R);
+			}
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				stopReason = "PC reads from floating bus or I/O memory";
 			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
@@ -9144,6 +9161,9 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 
 			if (!skipStopReason)
 			{
+				if (g_InterceptBreakpointsCB != nullptr)
+					g_InterceptBreakpointsCB(g_interceptBreakpointsSlot, interceptBreakpoint);
+
 				std::string hitId = GetBreakpointHitIdString(g_breakpointHitID);
 				ConsolePrintFormat(CHC_INFO "Stop reason: %s " CHC_DEFAULT "%s", hitId.c_str(), stopReason.c_str());
 				g_breakpointHitID = -1;
@@ -9160,12 +9180,22 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 						stopReason = StrFormat("HDD DMA from memory " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_ARG_SEP "-" CHC_ADDRESS "%04X", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd);
 					std::string hitId = GetBreakpointHitIdString(g_DebugBreakOnDMA[i].BPid);
 					ConsolePrintFormat(CHC_INFO "Stop reason: %s " CHC_DEFAULT "%s", hitId.c_str(), stopReason.c_str());
+
+					if (g_InterceptBreakpointsCB != nullptr)
+					{
+						const uint8_t access = (nDebugBreakpointHit & BP_DMA_FROM_MEM) ? BPACCESS_R : BPACCESS_W;
+						interceptBreakpoint.SetDMA(g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, access);
+						g_InterceptBreakpointsCB(g_interceptBreakpointsSlot, interceptBreakpoint);
+					}
 				}
 			}
 
 			ConsoleUpdate();
 
-			g_nDebugSteps = 0;
+			//
+
+			if (g_InterceptBreakpointsCB == nullptr)
+				g_nDebugSteps = 0;
 		}
 
 		if (g_nDebugSteps > 0)
@@ -9286,6 +9316,7 @@ void DebugInitialize ()
 	WindowUpdateConsoleDisplayedSize();
 
 	// CLEAR THE BREAKPOINT AND WATCH TABLES
+	g_nBreakMemoryAddr = 0;
 	g_breakpointHitID = -1;
 	for (int i = 0; i < MAX_BREAKPOINTS; i++)
 		g_aBreakpoints[i].Clear();
@@ -10125,4 +10156,12 @@ bool IsDebugSteppingAtFullSpeed (void)
 void DebugSetAutoRunScript (std::string& sAutoRunScriptFilename)
 {
 	g_sAutoRunScriptFilename = sAutoRunScriptFilename;
+}
+
+
+//===========================================================================
+void InterceptBreakpoints(uint8_t slot, CBFUNCTION cbfunction)
+{
+	g_interceptBreakpointsSlot = slot;
+	g_InterceptBreakpointsCB = cbfunction;
 }

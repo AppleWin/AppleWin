@@ -66,6 +66,7 @@
     <ClInclude Include="source\CPU.h" />
     <ClInclude Include="source\CPU\cpu6502.h" />
     <ClInclude Include="source\CPU\cpu65C02.h" />
+    <ClInclude Include="source\Debugger\BreakpointCard.h" />
     <ClInclude Include="source\Debugger\Debug.h" />
     <ClInclude Include="source\Debugger\Debugger_Assembler.h" />
     <ClInclude Include="source\Debugger\Debugger_Color.h" />
@@ -183,6 +184,7 @@
     <ClCompile Include="source\CopyProtectionDongles.cpp" />
     <ClCompile Include="source\Core.cpp" />
     <ClCompile Include="source\CPU.cpp" />
+    <ClCompile Include="source\Debugger\BreakpointCard.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Disassembler.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Win32.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
