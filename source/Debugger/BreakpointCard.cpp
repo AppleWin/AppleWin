@@ -208,14 +208,8 @@ void BreakpointCard::Deferred(uint8_t type, uint16_t addrStart, uint16_t addrEnd
 		break;
 	case BPTYPE_DMA:
 		{
-			// S=start of BP range; E=end of BP range
-			//     S dma E dma	; DMA starts within BP range [1]
-			// dma S dma E		; DMA ends within BP range [2]
-			// dma S dma E dma	; DMA start before & ends after BP range [3]
-			//     S dma E		; DMA starts & ends within BP range [1] + [2]
-			bool validAddr = ((bpSet.addrStart <= addrStart && addrStart <= bpSet.addrEnd) ||	// Does DMA *start* within BP range? [1]
-							  (bpSet.addrStart <= addrEnd   && addrEnd   <= bpSet.addrEnd) ||	// Or does DMA *end* within BP range? [2]
-							  (addrStart <= bpSet.addrStart && bpSet.addrEnd <= addrEnd));		// Or does DMA *start* before BP range & *end* after BP range? [3]
+			bool validAddr = ((addrStart >= bpSet.addrStart && addrStart < bpSet.addrEnd) ||
+							  (bpSet.addrStart >= addrStart && bpSet.addrStart < addrEnd));
 			if (!validAddr || (bpSet.access != access))
 			{
 				m_status |= kMismatch;
