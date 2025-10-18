@@ -71,6 +71,19 @@
 #include "BreakpointCard.h"
 #include "Memory.h"
 
+BreakpointCard::BreakpointCard(UINT slot) :
+	Card(CT_BreakpointCard, slot),
+	m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for Disk2InterfaceCards
+{
+	Reset(true);
+}
+
+BreakpointCard::~BreakpointCard()
+{
+	if (m_syncEvent.m_active)
+		g_SynchronousEventMgr.Remove(m_syncEvent.m_id);
+}
+
 void BreakpointCard::Reset(const bool powerCycle)
 {
 	m_interceptBPByCard = false;
@@ -131,7 +144,7 @@ BYTE __stdcall BreakpointCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE val
 
 		if (!(pCard->m_status & kFull))
 		{
-			BPSet bpSet;
+			INTERCEPTBREAKPOINT bpSet;
 			bpSet.type = pCard->m_BPSet[0];
 			bpSet.addrStart = (pCard->m_BPSet[2] << 8) | pCard->m_BPSet[1];
 			bpSet.addrEnd   = (pCard->m_BPSet[4] << 8) | pCard->m_BPSet[3];
@@ -151,10 +164,7 @@ void BreakpointCard::CbFunction(uint8_t slot, INTERCEPTBREAKPOINT interceptBreak
 {
 	BreakpointCard* pCard = (BreakpointCard*)MemGetSlotParameters(slot);
 
-	pCard->m_deferred.type = interceptBreakpoint.m_type;
-	pCard->m_deferred.addrStart = interceptBreakpoint.m_addrStart;
-	pCard->m_deferred.addrEnd= interceptBreakpoint.m_addrEnd;
-	pCard->m_deferred.access = interceptBreakpoint.m_access;
+	pCard->m_deferred = interceptBreakpoint;
 
 	// Defer processing the breakpoint by 1 opcode (ie. 1 cycle), otherwise this happens:
 	// . BP occurs at <addr>, but opcode hasn't executed yet
@@ -185,7 +195,7 @@ void BreakpointCard::Deferred(uint8_t type, uint16_t addrStart, uint16_t addrEnd
 		return;
 	}
 
-	const BPSet bpSet = m_BP_FIFO.front();
+	const INTERCEPTBREAKPOINT bpSet = m_BP_FIFO.front();
 	m_BP_FIFO.pop();
 	m_status &= ~kFull;
 

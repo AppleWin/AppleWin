@@ -4,22 +4,46 @@
 #include "Interface.h"
 #include "SynchronousEventManager.h"
 
-struct INTERCEPTBREAKPOINT;
+enum BreakType_t { BPTYPE_UNKNOWN, BPTYPE_PC, BPTYPE_MEM, BPTYPE_DMA };
+enum BreakAccess_t { BPACCESS_R, BPACCESS_W, BPACCESS_RW };
+
+struct INTERCEPTBREAKPOINT
+{
+	INTERCEPTBREAKPOINT()
+	{
+		type = BPTYPE_UNKNOWN;
+		addrStart = 0x0000;
+		addrEnd = 0x0000;
+		access = BPACCESS_R;
+	}
+
+	void Set(uint8_t type_, uint16_t addrStart_, uint8_t access_)
+	{
+		type = type_;
+		addrStart = addrStart_;
+		access = access_;
+	}
+
+	void SetDMA(uint16_t addrStart_, uint16_t addrEnd_, uint8_t access_)
+	{
+		type = BPTYPE_DMA;
+		addrStart = addrStart_;
+		addrEnd = addrEnd_;
+		access = access_;
+	}
+
+	uint8_t  type;
+	uint16_t addrStart;
+	uint16_t addrEnd;
+	uint8_t  access;
+};
+
 
 class BreakpointCard : public Card
 {
 public:
-	BreakpointCard(UINT slot) :
-		Card(CT_BreakpointCard, slot),
-		m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for Disk2InterfaceCards
-	{
-		Reset(true);
-	}
-	virtual ~BreakpointCard(void)
-	{
-		if (m_syncEvent.m_active)
-			g_SynchronousEventMgr.Remove(m_syncEvent.m_id);
-	}
+	BreakpointCard(UINT slot);
+	virtual ~BreakpointCard(void);
 
 	void ResetState()
 	{
@@ -54,21 +78,13 @@ private:
 
 	bool m_interceptBPByCard;
 
-	struct BPSet
-	{
-		uint8_t type;
-		uint16_t addrStart;
-		uint16_t addrEnd;
-		uint8_t access;
-	};
-
-	static const uint8_t kNumParams = 6;
+	static const uint8_t kNumParams = 6;	// sizeof(packed(INTERCEPTBREAKPOINT))
 	BYTE m_BPSet[kNumParams];
 	BYTE m_BPSetIdx;
 
 	static const uint8_t kFIFO_SIZE = 32;	// needs to be big enough for each test's set of BPs
-	std::queue<BPSet> m_BP_FIFO;
+	std::queue<INTERCEPTBREAKPOINT> m_BP_FIFO;
 
-	BPSet m_deferred;
+	INTERCEPTBREAKPOINT m_deferred;
 	SyncEvent m_syncEvent;
 };
