@@ -177,6 +177,7 @@
 	void	DebugDisplay ( BOOL bInitDisasm = FALSE );
 	void	DebugInitialize ();
 	void	DebugReset(void);
+	bool	DebugQueryAnyBreakpointsSet ();
 
 	void	DebuggerInputConsoleChar( char ch );
 	void	DebuggerProcessKey( int keycode );

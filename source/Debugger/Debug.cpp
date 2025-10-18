@@ -8919,6 +8919,12 @@ void DebugBegin ()
 }
 
 //===========================================================================
+bool DebugQueryAnyBreakpointsSet()
+{
+	return g_nBreakpoints > 0;
+}
+
+//===========================================================================
 void DebugExitDebugger ()
 {
 	ClearTempBreakpoints();  // make sure we remove temp breakpoints before checking
