@@ -4,6 +4,8 @@
 #include "Interface.h"
 #include "SynchronousEventManager.h"
 
+struct INTERCEPTBREAKPOINT;
+
 class BreakpointCard : public Card
 {
 public:
@@ -35,7 +37,7 @@ public:
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
-	static void CbFunction(uint8_t slot, uint8_t type, uint16_t addrStart, uint16_t addrEnd, uint8_t access);
+	static void CbFunction(uint8_t slot, INTERCEPTBREAKPOINT interceptBreakpoint);
 
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) {}
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) { return false; }

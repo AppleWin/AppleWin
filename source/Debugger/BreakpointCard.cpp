@@ -147,14 +147,14 @@ BYTE __stdcall BreakpointCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE val
 	return 0;
 }
 
-void BreakpointCard::CbFunction(uint8_t slot, uint8_t type, uint16_t addrStart, uint16_t addrEnd, uint8_t access)
+void BreakpointCard::CbFunction(uint8_t slot, INTERCEPTBREAKPOINT interceptBreakpoint)
 {
 	BreakpointCard* pCard = (BreakpointCard*)MemGetSlotParameters(slot);
 
-	pCard->m_deferred.type = type;
-	pCard->m_deferred.addrStart = addrStart;
-	pCard->m_deferred.addrEnd = addrEnd;
-	pCard->m_deferred.access = access;
+	pCard->m_deferred.type = interceptBreakpoint.m_type;
+	pCard->m_deferred.addrStart = interceptBreakpoint.m_addrStart;
+	pCard->m_deferred.addrEnd= interceptBreakpoint.m_addrEnd;
+	pCard->m_deferred.access = interceptBreakpoint.m_access;
 
 	// Defer processing the breakpoint by 1 opcode (ie. 1 cycle), otherwise this happens:
 	// . BP occurs at <addr>, but opcode hasn't executed yet

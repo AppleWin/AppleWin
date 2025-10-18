@@ -9108,9 +9108,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 		{
 			std::string stopReason = "Unknown!";
 			bool skipStopReason = false;
-			uint8_t interceptBPType = BPTYPE_UNKNOWN;
-			uint16_t interceptBPAddr = 0x0000;
-			uint8_t interceptBPAccess = BPACCESS_R;
+			INTERCEPTBREAKPOINT interceptBreakpoint;
 
 			if (regs.pc == g_nDebugStepUntil)
 				stopReason = StrFormat( CHC_DEFAULT "Register " CHC_REGS "PC" CHC_DEFAULT " matches '" CHC_INFO "Go until" CHC_DEFAULT "' address $" CHC_ADDRESS "%04X", g_nDebugStepUntil);
@@ -9129,33 +9127,23 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 						CHC_DEFAULT
 					);
 					if (g_pDebugBreakpointHit->eSource == BP_SRC_REG_PC)
-					{
-						interceptBPType = BPTYPE_PC;
-						interceptBPAddr = regs.pc;
-						interceptBPAccess = BPACCESS_R;
-					}
+						interceptBreakpoint.Set(BPTYPE_PC, regs.pc, BPACCESS_R);
 				}
 			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
 			{
 				stopReason = StrFormat("Memory access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
-				interceptBPType = BPTYPE_MEM;
-				interceptBPAddr = g_nBreakMemoryAddr;
-				interceptBPAccess = BPACCESS_RW;
+				interceptBreakpoint.Set(BPTYPE_MEM, g_nBreakMemoryAddr, BPACCESS_RW);
 			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMW)
 			{
 				stopReason = StrFormat("Write access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
-				interceptBPType = BPTYPE_MEM;
-				interceptBPAddr = g_nBreakMemoryAddr;
-				interceptBPAccess = BPACCESS_W;
+				interceptBreakpoint.Set(BPTYPE_MEM, g_nBreakMemoryAddr, BPACCESS_W);
 			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMR)
 			{
 				stopReason = StrFormat("Read access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
-				interceptBPType = BPTYPE_MEM;
-				interceptBPAddr = g_nBreakMemoryAddr;
-				interceptBPAccess = BPACCESS_R;
+				interceptBreakpoint.Set(BPTYPE_MEM, g_nBreakMemoryAddr, BPACCESS_R);
 			}
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				stopReason = "PC reads from floating bus or I/O memory";
@@ -9174,7 +9162,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 			if (!skipStopReason)
 			{
 				if (g_InterceptBreakpointsCB != nullptr)
-					g_InterceptBreakpointsCB(g_interceptBreakpointsSlot, interceptBPType, interceptBPAddr, 0x0000, interceptBPAccess);
+					g_InterceptBreakpointsCB(g_interceptBreakpointsSlot, interceptBreakpoint);
 
 				std::string hitId = GetBreakpointHitIdString(g_breakpointHitID);
 				ConsolePrintFormat(CHC_INFO "Stop reason: %s " CHC_DEFAULT "%s", hitId.c_str(), stopReason.c_str());
@@ -9195,8 +9183,9 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 
 					if (g_InterceptBreakpointsCB != nullptr)
 					{
-						interceptBPAccess = (nDebugBreakpointHit & BP_DMA_FROM_MEM) ? BPACCESS_R : BPACCESS_W;
-						g_InterceptBreakpointsCB(g_interceptBreakpointsSlot, BPTYPE_DMA, g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, interceptBPAccess);
+						const uint8_t access = (nDebugBreakpointHit & BP_DMA_FROM_MEM) ? BPACCESS_R : BPACCESS_W;
+						interceptBreakpoint.SetDMA(g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, access);
+						g_InterceptBreakpointsCB(g_interceptBreakpointsSlot, interceptBreakpoint);
 					}
 				}
 			}
