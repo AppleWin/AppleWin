@@ -23,9 +23,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Uthernet1.h"
 #include "Uthernet2.h"
+#include "BreakpointCard.h"
 #include "Mockingboard.h"
 #include "ParallelPrinter.h"
-#include "z80emu.h"
 #include "FourPlay.h"
 #include "LanguageCard.h"
 #include "MouseInterface.h"
@@ -163,6 +163,8 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 		return MockingboardCard::GetSnapshotCardNameMegaAudio();
 	case CT_SDMusic:
 		return MockingboardCard::GetSnapshotCardNameSDMusic();
+	case CT_BreakpointCard:
+		return BreakpointCard::GetSnapshotCardName();
 	default:
 		return "Unknown";
 	}
@@ -241,6 +243,10 @@ SS_CARDTYPE Card::GetCardType(const std::string & card)
 	else if (card == MockingboardCard::GetSnapshotCardNameSDMusic())
 	{
 		return CT_SDMusic;
+	}
+	else if (card == BreakpointCard::GetSnapshotCardName())
+	{
+		return CT_BreakpointCard;
 	}
 	else
 	{

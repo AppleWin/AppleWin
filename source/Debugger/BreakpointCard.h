@@ -63,8 +63,9 @@ public:
 
 	static void CbFunction(uint8_t slot, INTERCEPTBREAKPOINT interceptBreakpoint);
 
-	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) {}
-	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) { return false; }
+	static const std::string& GetSnapshotCardName(void);
+	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
+	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 private:
 	static int SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
