@@ -2946,9 +2946,11 @@ void Win32Frame::SetupTooltipControls(void)
 // NB. GetSystemMetrics(SM_CXPADDEDBORDER) returns 0 for Win7, when built with VS2008 (see GH#571)
 void Win32Frame::GetWidthHeight(int& nWidth, int& nHeight)
 {
+	const int kWidthFix = 1;	// Fix for Win32 Subsystem Version 6.00 (GH#1438)
+
 	nWidth  = g_nViewportCX + VIEWPORTX*2
 						    + BUTTONCX
-						    + (GetSystemMetrics(SM_CXFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2;
+						    + (GetSystemMetrics(SM_CXFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER) + kWidthFix) * 2;
 	nHeight = g_nViewportCY + VIEWPORTY*2
 						    + (GetSystemMetrics(SM_CYFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2	// NB. No SM_CYPADDEDBORDER
 						    + GetSystemMetrics(SM_CYCAPTION);
