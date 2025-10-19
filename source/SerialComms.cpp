@@ -1289,22 +1289,28 @@ void CSuperSerialCard::ScanCOMPorts()
 	m_vecSerialPortsItems.clear();
 	m_vecSerialPortsItems.push_back(SERIALPORTITEM_INVALID_COM_PORT);	// "None"
 
-	for (UINT i=1; i<32; i++)	// Arbitrary upper limit
+	DWORD size = 16384; // 16 KB to start; grows if needed
+	std::vector<char> buf(size);
+
+	for (int i = 1; i <= 256; i++)	// COM1,...,COM256
 	{
-		std::string portname = StrFormat("\\\\.\\COM%u", i);
-
-		HANDLE hCommHandle = CreateFile(portname.c_str(),
-										GENERIC_READ | GENERIC_WRITE,
-										0,								// exclusive access
-										(LPSECURITY_ATTRIBUTES)NULL,	// default security attributes
-										OPEN_EXISTING,
-										FILE_FLAG_OVERLAPPED,			// required for WaitCommEvent()
-										NULL);
-
-		if (hCommHandle != INVALID_HANDLE_VALUE)
+		while (1)
 		{
-			CloseHandle(hCommHandle);
-			m_vecSerialPortsItems.push_back(i);
+			std::string str = "COM" + std::to_string(i);
+			if (QueryDosDevice(str.c_str(), buf.data(), size))
+			{
+				m_vecSerialPortsItems.push_back(i);
+				break;
+			}
+
+			if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+			{
+				size *= 2;
+				buf.resize(size);
+				continue;
+			}
+
+			break;	// Else some other failure
 		}
 	}
 
