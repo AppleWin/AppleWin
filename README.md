@@ -36,7 +36,7 @@ Peripheral cards and add-on hardware supported:
 Running
 =======
 
-Download latest (stable) release: [AppleWin v1.30.21.0](https://github.com/AppleWin/AppleWin/releases/download/v1.30.20.0/AppleWin1.30.21.0.zip)
+Download latest (stable) release: [AppleWin v1.30.21.0](https://github.com/AppleWin/AppleWin/releases/download/v1.30.21.0/AppleWin1.30.21.0.zip)
 
 Release Notes: [v1.30.21.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.30.21.0)
 
