@@ -829,6 +829,39 @@
     <None Include="resource\Disk2-13sector.rom">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="resource\Apple2_Video.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\Apple2e_Enhanced_Video.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\OS\basic17.system.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\OS\bitsy.boot.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\BootSector\bootsector.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\OS\bootsector_prodos243.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\OS\dos33c.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\HDC-SmartPort.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\Hddrvr-v2.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\OS\prodos243.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\OS\quit.system.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="docs\CodingConventions.txt">

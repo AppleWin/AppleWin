@@ -82,8 +82,6 @@
 #define IDC_PASTE_FROM_CLIPBOARD        1023
 #define IDC_SPIN_XTRIM                  1026
 #define IDC_SPIN_YTRIM                  1027
-#define IDC_SOUNDCARD_SLOT4             1028
-#define IDC_SOUNDCARD_SLOT5             1029
 #define IDC_TFE_SETTINGS_ENABLE_T       1032
 #define IDC_TFE_SETTINGS_ENABLE         1033
 #define IDC_TFE_SETTINGS_INTERFACE_T    1034
@@ -136,6 +134,15 @@
 #define IDC_CHECK_TFE_VIRTUAL_DNS       1090
 #define IDC_TFE_NPCAP_INFO              1091
 #define IDC_COMBO_GAME_IO_CONNECTOR     1092
+#define IDC_SLOT0                       1093
+#define IDC_SLOT1                       1094
+#define IDC_SLOT2                       1095
+#define IDC_SLOT3                       1096
+#define IDC_SLOT4                       1097
+#define IDC_SLOT5                       1098
+#define IDC_SLOT6                       1099
+#define IDC_SLOT7                       1100
+#define IDC_SLOTAUX                     1101
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003

@@ -156,21 +156,28 @@ END
 
 IDD_PROPPAGE_SOUND DIALOGEX 0, 0, 210, 191
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_DISABLED | WS_CAPTION | WS_SYSMENU
-CAPTION "Sound"
+CAPTION "Slots"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    LTEXT           "&Device:",IDC_STATIC,5,7,40,8
-    COMBOBOX        IDC_SOUNDTYPE,45,5,100,100,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "Volume Control",IDC_STATIC,5,24,100,89
-    LTEXT           "&Speaker:",IDC_STATIC,11,39,31,8
-    CONTROL         "Slider1",IDC_SPKR_VOLUME,"msctls_trackbar32",TBS_AUTOTICKS | TBS_VERT | TBS_BOTH | WS_TABSTOP,13,47,28,60
-    LTEXT           "&Mockingboard:",IDC_STATIC,49,39,51,8
-    CONTROL         "Slider1",IDC_MB_VOLUME,"msctls_trackbar32",TBS_AUTOTICKS | TBS_VERT | TBS_BOTH | WS_TABSTOP,59,47,25,60
-    GROUPBOX        "Sound Cards",IDC_STATIC,6,122,197,64
-    LTEXT           "Slot &4:",IDC_STATIC,16,136,84,10
-    COMBOBOX        IDC_SOUNDCARD_SLOT4,45,134,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Slot &5:",IDC_STATIC,16,152,82,10
-    COMBOBOX        IDC_SOUNDCARD_SLOT5,45,150,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "Slots",IDC_STATIC,6,11,197,175
+    LTEXT           "Slot &0:",IDC_STATIC,16,29,84,10
+    COMBOBOX        IDC_SLOT0,45,27,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Slot &1:",IDC_STATIC,16,46,84,10
+    COMBOBOX        IDC_SLOT1,45,44,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Slot &2:",IDC_STATIC,16,63,84,10
+    COMBOBOX        IDC_SLOT2,45,61,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Slot &3:",IDC_STATIC,16,80,84,10
+    COMBOBOX        IDC_SLOT3,45,78,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Slot &4:",IDC_STATIC,16,97,84,10
+    COMBOBOX        IDC_SLOT4,45,95,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Slot &5:",IDC_STATIC,16,114,84,10
+    COMBOBOX        IDC_SLOT5,45,112,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Slot &6:",IDC_STATIC,16,131,84,10
+    COMBOBOX        IDC_SLOT6,45,129,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Slot &7:",IDC_STATIC,16,148,82,10
+    COMBOBOX        IDC_SLOT7,45,146,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Slot &Aux:",IDC_STATIC,16,165,84,10
+    COMBOBOX        IDC_SLOTAUX,45,163,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 END
 
 IDD_PROPPAGE_DISK DIALOGEX 0, 0, 210, 240
@@ -343,13 +350,13 @@ IDR_TKCLOCK_FW          FIRMWARE                "TKClock.rom"
 /// We write our own custom boot sector so the user doesn't crash to the monitor when booting it.
 /// Technically not firmware but since it never changes we put this resource here.
 /// </summary>
-IDR_BOOT_SECTOR           FIRMWARE              "firmware\\BootSector\\bootsector.bin"
-IDR_OS_DOS33              FIRMWARE              "firmware\\OS\\dos33c.bin"
-IDR_OS_PRODOS243          FIRMWARE              "firmware\\OS\\prodos243.bin"
-IDR_BOOT_SECTOR_PRODOS243 FIRMWARE              "firmware\\OS\\bootsector_prodos243.bin"
-IDR_FILE_BASIC17          FIRMWARE              "firmware\\OS\basic17.system.bin"
-IDR_FILE_BITSY_BOOT       FIRMWARE              "firmware\\OS\\bitsy.boot.bin"
-IDR_FILE_BITSY_BYE        FIRMWARE              "firmware\\OS\\quit.system.bin"
+IDR_BOOT_SECTOR         FIRMWARE                "..\\firmware\\BootSector\\bootsector.bin"
+IDR_OS_DOS33            FIRMWARE                "..\\firmware\\OS\\dos33c.bin"
+IDR_OS_PRODOS243        FIRMWARE                "..\\firmware\\OS\\prodos243.bin"
+IDR_BOOT_SECTOR_PRODOS243 FIRMWARE              "..\\firmware\\OS\\bootsector_prodos243.bin"
+IDR_FILE_BASIC17        FIRMWARE                "..\\firmware\\OS\\basic17.system.bin"
+IDR_FILE_BITSY_BOOT     FIRMWARE                "..\\firmware\\OS\\bitsy.boot.bin"
+IDR_FILE_BITSY_BYE      FIRMWARE                "..\\firmware\\OS\\quit.system.bin"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -439,9 +446,17 @@ END
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO
 BEGIN
+    IDD_PROPPAGE_CONFIG, DIALOG
+    BEGIN
+    END
+
     IDD_PROPPAGE_INPUT, DIALOG
     BEGIN
         BOTTOMMARGIN, 231
+    END
+
+    IDD_PROPPAGE_SOUND, DIALOG
+    BEGIN
     END
 
     IDD_PROPPAGE_DISK, DIALOG
@@ -451,6 +466,10 @@ BEGIN
     END
 
     IDD_TFE_SETTINGS_DIALOG, DIALOG
+    BEGIN
+    END
+
+    IDD_PROPPAGE_ADVANCED, DIALOG
     BEGIN
     END
 END

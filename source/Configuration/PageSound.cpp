@@ -102,11 +102,11 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			break;
 		case IDC_MB_VOLUME:
 			break;
-		case IDC_SOUNDCARD_SLOT4:
-		case IDC_SOUNDCARD_SLOT5:
+		case IDC_SLOT4:
+		case IDC_SLOT5:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				UINT slot = (LOWORD(wparam) == IDC_SOUNDCARD_SLOT4) ? SLOT4 : SLOT5;
+				UINT slot = (LOWORD(wparam) == IDC_SLOT4) ? SLOT4 : SLOT5;
 				uint32_t newChoiceItem = (uint32_t)SendDlgItemMessage(hWnd, LOWORD(wparam), CB_GETCURSEL, 0, 0);
 
 				SS_CARDTYPE newCard = CT_Empty;
@@ -199,18 +199,18 @@ void CPageSound::InitOptions(HWND hWnd)
 		isSlot4SoundCard = isSlot5SoundCard = false;
 
 	if (isSlot4SoundCard)
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SOUNDCARD_SLOT4, m_soundCardChoices, (int)CardTypeToComboItem(slot4));
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT4, m_soundCardChoices, (int)CardTypeToComboItem(slot4));
 	else if (isSlotXSoundCardEx)
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SOUNDCARD_SLOT4, m_soundCardChoicesEx, (int)CardTypeToComboItem(slot4));
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT4, m_soundCardChoicesEx, (int)CardTypeToComboItem(slot4));
 	else
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SOUNDCARD_SLOT4, m_soundCardChoice_Unavailable, 0);
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT4, m_soundCardChoice_Unavailable, 0);
 
 	if (isSlot5SoundCard)
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SOUNDCARD_SLOT5, m_soundCardChoices, (int)CardTypeToComboItem(slot5));
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT5, m_soundCardChoices, (int)CardTypeToComboItem(slot5));
 	else if (isSlotXSoundCardEx)
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SOUNDCARD_SLOT5, m_soundCardChoicesEx, (int)CardTypeToComboItem(slot5));
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT5, m_soundCardChoicesEx, (int)CardTypeToComboItem(slot5));
 	else
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SOUNDCARD_SLOT5, m_soundCardChoice_Unavailable, 0);
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT5, m_soundCardChoice_Unavailable, 0);
 
 	bool enableMBVolume = slot4 == CT_MockingboardC || slot5 == CT_MockingboardC
 						|| slot4 == CT_Phasor || slot5 == CT_Phasor
