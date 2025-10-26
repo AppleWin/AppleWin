@@ -29,9 +29,11 @@ protected:
 
 private:
 	enum SOUNDCARDCHOICE { SC_MOCKINGBOARD = 0, SC_PHASOR, SC_SAM, SC_EMPTY, SC_MEGAAUDIO, SC_SDMUSIC };
+	enum AUXCARDCHOICE { SC_80COL = 0, SC_EXT80COL, SC_RAMWORKS, SC_AUX_EMPTY };
 
 	void InitOptions(HWND hWnd);
 	SOUNDCARDCHOICE CardTypeToComboItem(SS_CARDTYPE card);
+	AUXCARDCHOICE AuxCardTypeToComboItem(SS_CARDTYPE card);
 
 	static CPageSound* ms_this;
 
@@ -44,4 +46,5 @@ private:
 	static const char m_soundCardChoices[];
 	static const char m_soundCardChoicesEx[];
 	static const char m_soundCardChoice_Unavailable[];
+	static const char m_auxChoices[];
 };

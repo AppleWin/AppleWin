@@ -55,6 +55,11 @@ const char CPageSound::m_soundCardChoicesEx[] =	"Mockingboard\0"
 												"MEGA Audio\0"
 												"SD Music\0";
 
+const char CPageSound::m_auxChoices[] =	"80-column (1KB)\0"
+										"Extended 80-column (64KB)\0"
+										"RamWorks III (1MB)\0"
+										"Empty\0";
+
 const char CPageSound::m_soundCardChoice_Unavailable[] = "Unavailable\0\0";	// doubly-null terminate
 
 INT_PTR CALLBACK CPageSound::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
@@ -129,6 +134,7 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 
 	case WM_INITDIALOG:
 		{
+#if 0
 			m_PropertySheetHelper.FillComboBox(hWnd,IDC_SOUNDTYPE, m_soundchoices, (int)soundtype);
 
 			SendDlgItemMessage(hWnd,IDC_SPKR_VOLUME,TBM_SETRANGE,1,MAKELONG(VOLUME_MIN,VOLUME_MAX));
@@ -140,7 +146,7 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETPAGESIZE,0,10);
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETTICFREQ,10,0);
 			SendDlgItemMessage(hWnd,IDC_MB_VOLUME,TBM_SETPOS,1, GetCardMgr().GetMockingboardCardMgr().GetVolume());
-
+#endif
 			InitOptions(hWnd);
 
 			break;
@@ -185,6 +191,18 @@ CPageSound::SOUNDCARDCHOICE CPageSound::CardTypeToComboItem(SS_CARDTYPE card)
 	}
 }
 
+CPageSound::AUXCARDCHOICE CPageSound::AuxCardTypeToComboItem(SS_CARDTYPE card)
+{
+	switch (card)
+	{
+	case CT_80Col: return SC_80COL;
+	case CT_Extended80Col: return SC_EXT80COL;
+	case CT_RamWorksIII: return SC_RAMWORKS;
+	case CT_Empty: return SC_AUX_EMPTY;
+	default: _ASSERT(0); return SC_AUX_EMPTY;
+	}
+}
+
 void CPageSound::InitOptions(HWND hWnd)
 {
 	const SS_CARDTYPE slot4 = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT4];
@@ -212,9 +230,14 @@ void CPageSound::InitOptions(HWND hWnd)
 	else
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT5, m_soundCardChoice_Unavailable, 0);
 
+#if 0
 	bool enableMBVolume = slot4 == CT_MockingboardC || slot5 == CT_MockingboardC
 						|| slot4 == CT_Phasor || slot5 == CT_Phasor
 						|| slot4 == CT_MegaAudio || slot5 == CT_MegaAudio
 						|| slot4 == CT_SDMusic || slot5 == CT_SDMusic;
 	EnableWindow(GetDlgItem(hWnd, IDC_MB_VOLUME), enableMBVolume ? TRUE : FALSE);
+#endif
+
+	const SS_CARDTYPE slotAux = m_PropertySheetHelper.GetConfigNew().m_SlotAux;
+	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOTAUX, m_auxChoices, (int)AuxCardTypeToComboItem(slotAux));
 }
