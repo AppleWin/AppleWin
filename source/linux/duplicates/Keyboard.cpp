@@ -4,8 +4,6 @@
 #include "Core.h"
 #include "YamlHelper.h"
 
-#include <queue>
-
 namespace
 {
     std::queue<BYTE> keys;
