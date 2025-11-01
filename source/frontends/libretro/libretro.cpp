@@ -361,7 +361,7 @@ bool retro_load_game(const retro_game_info *info)
         // define memory map to allow exposing both main RAM and aux RAM.
         // retro_get_memory_data will continue to return just main RAM.
         struct retro_memory_descriptor descs[2];
-        struct retro_memory_map        mmaps;
+        struct retro_memory_map mmaps;
         memset(descs, 0, sizeof(descs));
 
         descs[0].ptr = MemGetBankPtr(0, true);
