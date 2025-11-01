@@ -41,6 +41,7 @@ set(SOURCE_FILES
   Tfe/IPRaw.cpp
   Tfe/DNS.cpp
 
+  Debugger/BreakpointCard.cpp
   Debugger/Debug.cpp
   Debugger/Debugger_Help.cpp
   Debugger/Debugger_Color.cpp
@@ -199,6 +200,7 @@ set(HEADER_FILES
   DiskLog.h
   Interface.h
 
+  Debugger/BreakpointCard.h
   Debugger/Debug.h
   Debugger/Debugger_Color.h
   Debugger/Debugger_Console.h

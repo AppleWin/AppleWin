@@ -142,7 +142,7 @@ public:
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void Update(const ULONG nExecutedCycles);
 
-	virtual void Destroy(void);		// no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
+	virtual void Destroy(void);		// No, doesn't "destroy" the disk image. Called by CardManager::Destroy()
 
 	void Boot(void);
 	void FlushCurrentTrack(const int drive);

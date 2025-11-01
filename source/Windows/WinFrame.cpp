@@ -2052,7 +2052,18 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
 
 			LogFileTimeUntilFirstKeyReadReset();
-			g_nAppMode = MODE_RUNNING;
+
+			if (!DebugQueryAnyBreakpointsSet())
+			{
+				g_nAppMode = MODE_RUNNING;
+			}
+			else
+			{
+				// EG. When using -debugger-auto-run <file.txt> (to set breakpoints), then we want to be MODE_STEPPING when leaving MODE_LOGO
+				DebugBegin();
+				DebugExitDebugger();		// Exit debugger, switch to MODE_STEPPING
+				g_bDebuggerEatKey = false;	// Don't "eat" the next keypress when leaving the debugger
+			}
 		}
 		else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_PAUSED))
 		{
@@ -2935,9 +2946,11 @@ void Win32Frame::SetupTooltipControls(void)
 // NB. GetSystemMetrics(SM_CXPADDEDBORDER) returns 0 for Win7, when built with VS2008 (see GH#571)
 void Win32Frame::GetWidthHeight(int& nWidth, int& nHeight)
 {
+	const int kWidthFix = 1;	// Fix for Win32 Subsystem Version 6.00 (GH#1438)
+
 	nWidth  = g_nViewportCX + VIEWPORTX*2
 						    + BUTTONCX
-						    + (GetSystemMetrics(SM_CXFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2;
+						    + (GetSystemMetrics(SM_CXFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER) + kWidthFix) * 2;
 	nHeight = g_nViewportCY + VIEWPORTY*2
 						    + (GetSystemMetrics(SM_CYFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2	// NB. No SM_CYPADDEDBORDER
 						    + GetSystemMetrics(SM_CYCAPTION);
