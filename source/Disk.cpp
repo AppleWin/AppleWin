@@ -1956,6 +1956,9 @@ void Disk2InterfaceCard::Update(const ULONG cycles)
 		{
 			if (!(pDrive->m_spinning -= MIN(pDrive->m_spinning, cycles)))
 			{
+				// Motor off and just stopped spinning: so write back any dirty track (GH#1444)
+				FlushCurrentTrack(loop);
+
 				GetFrame().FrameDrawDiskLEDS();
 				GetFrame().FrameDrawDiskStatus();
 			}
