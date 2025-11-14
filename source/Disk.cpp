@@ -1973,6 +1973,13 @@ void Disk2InterfaceCard::Update(const ULONG cycles)
 				GetFrame().FrameDrawDiskStatus();
 			}
 		}
+
+		if (!m_floppyMotorOn && !pDrive->m_spinning)
+		{
+			// Motor off and not spinning: so write back any dirty track (GH#1444)
+			// . this also supports the power-cycle case (where m_floppyMotorOn & m_spinning are instantaneously 0)
+			FlushCurrentTrack(loop);
+		}
 	}
 }
 
