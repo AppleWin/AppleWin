@@ -235,7 +235,7 @@ void CPageSound::InitOptions(HWND hWnd)
 		if (slot == 4 || slot == 5)
 			continue;
 
-		char choices[100];
+		char choices[1000];
 		GetCardMgr().GetCardChoicesForSlot(slot, &choices[0]);
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0+slot*2, choices, 0);
 	}

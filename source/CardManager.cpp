@@ -317,12 +317,33 @@ void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 void CardManager::GetCardChoicesForSlot(UINT slot, char* choices)
 {
+#if 0
 	strcpy(choices, "Card 1");
 	choices += 7;
 	strcpy(choices, "Card 2");
 	choices += 7;
 	strcpy(choices, "Card 3");
 	choices += 7;
+
+	*choices = 0;
+#endif
+
+	for (UINT i = CT_Empty; i < CT_NUM_CARDS; i++)
+	{
+		if (i == CT_GenericClock) continue;
+		if (i == CT_Echo) continue;
+		if (i == CT_80Col) continue;
+		if (i == CT_Extended80Col) continue;
+		if (i == CT_RamWorksIII) continue;
+		if (i == CT_LanguageCard && slot != SLOT0) continue;
+		if (i == CT_LanguageCardIIe) continue;
+		if (i == CT_VidHD && slot != SLOT3) continue;
+		if (i == CT_BreakpointCard) continue;
+
+		std::string name = Card::GetCardName((SS_CARDTYPE)i);
+		strcpy(choices, name.c_str());
+		choices += name.size() + 1;
+	}
 
 	*choices = 0;
 }
