@@ -314,3 +314,15 @@ void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		}
 	}
 }
+
+void CardManager::GetCardChoicesForSlot(UINT slot, char* choices)
+{
+	strcpy(choices, "Card 1");
+	choices += 7;
+	strcpy(choices, "Card 2");
+	choices += 7;
+	strcpy(choices, "Card 3");
+	choices += 7;
+
+	*choices = 0;
+}

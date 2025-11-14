@@ -230,6 +230,16 @@ void CPageSound::InitOptions(HWND hWnd)
 	else
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT5, m_soundCardChoice_Unavailable, 0);
 
+	for (int slot = 0; slot < 8; slot++)
+	{
+		if (slot == 4 || slot == 5)
+			continue;
+
+		char choices[100];
+		GetCardMgr().GetCardChoicesForSlot(slot, &choices[0]);
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0+slot, choices, 0);
+	}
+
 #if 0
 	bool enableMBVolume = slot4 == CT_MockingboardC || slot5 == CT_MockingboardC
 						|| slot4 == CT_Phasor || slot5 == CT_Phasor
