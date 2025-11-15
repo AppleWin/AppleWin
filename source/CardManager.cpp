@@ -317,32 +317,61 @@ void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 void CardManager::GetCardChoicesForSlot(UINT slot, char* choices)
 {
-#if 0
-	strcpy(choices, "Card 1");
-	choices += 7;
-	strcpy(choices, "Card 2");
-	choices += 7;
-	strcpy(choices, "Card 3");
-	choices += 7;
-
-	*choices = 0;
-#endif
-
-	for (UINT i = CT_Empty; i < CT_NUM_CARDS; i++)
+	const SS_CARDTYPE cardsSlot0[] =
 	{
-		if (i == CT_GenericClock) continue;
-		if (i == CT_Echo) continue;
-		if (i == CT_80Col) continue;
-		if (i == CT_Extended80Col) continue;
-		if (i == CT_RamWorksIII) continue;
-		if (i == CT_LanguageCard && slot != SLOT0) continue;
-		if (i == CT_LanguageCardIIe) continue;
-		if (i == CT_VidHD && slot != SLOT3) continue;
-		if (i == CT_BreakpointCard) continue;
+	CT_Empty,
+	CT_LanguageCard,
+	CT_Saturn128K,
+	};
 
-		std::string name = Card::GetCardName((SS_CARDTYPE)i);
-		strcpy(choices, name.c_str());
-		choices += name.size() + 1;
+	const SS_CARDTYPE cards[] =
+	{
+	CT_Empty,
+	CT_Disk2,
+	CT_GenericHDD,
+	CT_SSC,
+	CT_GenericPrinter,
+	CT_MouseInterface,
+	CT_Z80,
+	CT_Saturn128K,
+	CT_FourPlay,
+	CT_SNESMAX,
+	CT_MockingboardC,
+	CT_Phasor,
+	CT_MegaAudio,
+	CT_SDMusic,
+	CT_SAM,
+	CT_Uthernet,
+	CT_Uthernet2,
+	CT_VidHD,			// Slot 3 only
+	//	CT_GenericClock,
+	//	CT_Echo,
+	//	CT_80Col,
+	//	CT_Extended80Col,
+	//	CT_RamWorksIII,
+	//	CT_LanguageCardIIe,
+	//	CT_BreakpointCard,
+	};
+
+	if (slot == SLOT0)
+	{
+		for (UINT i = 0; i < sizeof(cardsSlot0)/sizeof(cardsSlot0[0]); i++)
+		{
+			std::string name = Card::GetCardName(cardsSlot0[i]);
+			strcpy(choices, name.c_str());
+			choices += name.size() + 1;
+		}
+	}
+	else
+	{
+		for (UINT i = 0; i < sizeof(cards) / sizeof(cards[0]); i++)
+		{
+			if (cards[i] == CT_VidHD && slot != SLOT3) continue;
+
+			std::string name = Card::GetCardName(cards[i]);
+			strcpy(choices, name.c_str());
+			choices += name.size() + 1;
+		}
 	}
 
 	*choices = 0;

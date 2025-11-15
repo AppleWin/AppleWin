@@ -31,15 +31,6 @@ enum SS_CARDTYPE
 	CT_NUM_CARDS
 };
 
-#if 0
-enum SS_CARDTYPE_AUX
-{
-	CT_80Col=12,		// 80 column card (1K)
-	CT_Extended80Col,	// Extended 80-col card (64K)
-	CT_RamWorksIII,		// RamWorksIII (up to 8MB)
-};
-#endif
-
 enum SLOTS { SLOT0=0, SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6, SLOT7, NUM_SLOTS, SLOT_AUX, GAME_IO_CONNECTOR };
 
 class YamlSaveHelper;
