@@ -57,8 +57,6 @@ target_include_directories(sa2 PRIVATE
 target_link_libraries(sa2 PRIVATE
   appleii
   common2
-  minizip
-  yaml
 
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}
@@ -68,12 +66,6 @@ target_link_libraries(sa2 PRIVATE
   ${GLES2_LIBRARIES}
   OpenGL::GL
   )
-
-if (NOT WIN32)
-  target_link_libraries(sa2 PUBLIC
-    windows
-    )
-endif()
 
 target_link_directories(sa2 PRIVATE
   ${SDL2_LIBRARY_DIRS}

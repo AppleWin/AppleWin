@@ -77,12 +77,6 @@ target_link_libraries(qapple PRIVATE
   QHexView
   )
 
-if (NOT WIN32)
-  target_link_libraries(qapple PUBLIC
-    windows
-    )
-endif()
-
 if(Qt5_FOUND)
   target_sources(qapple PRIVATE
     gamepadpaddle.cpp
