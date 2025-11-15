@@ -34,6 +34,7 @@ private:
 	void InitOptions(HWND hWnd);
 	SOUNDCARDCHOICE CardTypeToComboItem(SS_CARDTYPE card);
 	AUXCARDCHOICE AuxCardTypeToComboItem(SS_CARDTYPE card);
+	int CardTypeToComboItem(UINT slot);
 
 	static CPageSound* ms_this;
 
@@ -47,4 +48,6 @@ private:
 	static const char m_soundCardChoicesEx[];
 	static const char m_soundCardChoice_Unavailable[];
 	static const char m_auxChoices[];
+
+	std::vector<SS_CARDTYPE> choicesList[NUM_SLOTS];
 };

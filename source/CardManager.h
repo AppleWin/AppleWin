@@ -61,7 +61,7 @@ public:
 	bool IsSSCInstalled(void) { return m_pSSC != NULL; }
 	class ParallelPrinterCard* GetParallelPrinterCard(void) { return m_pParallelPrinterCard; }
 	bool IsParallelPrinterCardInstalled(void) { return m_pParallelPrinterCard != NULL; }
-	void GetCardChoicesForSlot(UINT slot, char* choices);
+	void GetCardChoicesForSlot(UINT slot, char* choices, std::vector<SS_CARDTYPE>& choicesList);
 
 	void InitializeIO(LPBYTE pCxRomPeripheral);
 	void Destroy(void);

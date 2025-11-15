@@ -203,6 +203,16 @@ CPageSound::AUXCARDCHOICE CPageSound::AuxCardTypeToComboItem(SS_CARDTYPE card)
 	}
 }
 
+int CPageSound::CardTypeToComboItem(UINT slot)
+{
+	int currentChoice = 0;
+	for (UINT i = 0; i < choicesList[slot].size(); i++)
+		if (GetCardMgr().QuerySlot(slot) == choicesList[slot][i])
+			currentChoice = i;
+
+	return currentChoice;
+}
+
 void CPageSound::InitOptions(HWND hWnd)
 {
 	const SS_CARDTYPE slot4 = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT4];
@@ -236,8 +246,9 @@ void CPageSound::InitOptions(HWND hWnd)
 			continue;
 
 		char choices[1000];
-		GetCardMgr().GetCardChoicesForSlot(slot, &choices[0]);
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0+slot*2, choices, 0);
+		GetCardMgr().GetCardChoicesForSlot(slot, &choices[0], choicesList[slot]);
+		int currentChoice = CardTypeToComboItem(slot);
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0+slot*2, choices, currentChoice);
 	}
 
 #if 0

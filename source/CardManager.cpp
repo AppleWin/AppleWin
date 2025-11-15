@@ -315,7 +315,7 @@ void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	}
 }
 
-void CardManager::GetCardChoicesForSlot(UINT slot, char* choices)
+void CardManager::GetCardChoicesForSlot(UINT slot, char* choices, std::vector<SS_CARDTYPE>& choicesList)
 {
 	const SS_CARDTYPE cardsSlot0[] =
 	{
@@ -329,21 +329,24 @@ void CardManager::GetCardChoicesForSlot(UINT slot, char* choices)
 	CT_Empty,
 	CT_Disk2,
 	CT_GenericHDD,
-	CT_SSC,
 	CT_GenericPrinter,
 	CT_MouseInterface,
-	CT_Z80,
 	CT_Saturn128K,
+	CT_SSC,
+	// Controllers
 	CT_FourPlay,
 	CT_SNESMAX,
+	// Sound
 	CT_MockingboardC,
 	CT_Phasor,
 	CT_MegaAudio,
 	CT_SDMusic,
 	CT_SAM,
+	// (continue with alphabetic)
 	CT_Uthernet,
 	CT_Uthernet2,
 	CT_VidHD,			// Slot 3 only
+	CT_Z80,
 	//	CT_GenericClock,
 	//	CT_Echo,
 	//	CT_80Col,
@@ -353,6 +356,8 @@ void CardManager::GetCardChoicesForSlot(UINT slot, char* choices)
 	//	CT_BreakpointCard,
 	};
 
+	choicesList.clear();
+
 	if (slot == SLOT0)
 	{
 		for (UINT i = 0; i < sizeof(cardsSlot0)/sizeof(cardsSlot0[0]); i++)
@@ -360,6 +365,8 @@ void CardManager::GetCardChoicesForSlot(UINT slot, char* choices)
 			std::string name = Card::GetCardName(cardsSlot0[i]);
 			strcpy(choices, name.c_str());
 			choices += name.size() + 1;
+
+			choicesList.push_back(cardsSlot0[i]);
 		}
 	}
 	else
@@ -368,9 +375,16 @@ void CardManager::GetCardChoicesForSlot(UINT slot, char* choices)
 		{
 			if (cards[i] == CT_VidHD && slot != SLOT3) continue;
 
+			if (cards[i] == CT_MouseInterface && m_pMouseCard && QuerySlot(slot) != CT_MouseInterface) continue;
+			if (cards[i] == CT_SSC && m_pSSC && QuerySlot(slot) != CT_SSC) continue;
+			if (cards[i] == CT_GenericPrinter && m_pParallelPrinterCard && QuerySlot(slot) != CT_GenericPrinter) continue;
+			if (cards[i] == CT_Z80 && m_pZ80Card && QuerySlot(slot) != CT_Z80) continue;
+
 			std::string name = Card::GetCardName(cards[i]);
 			strcpy(choices, name.c_str());
 			choices += name.size() + 1;
+
+			choicesList.push_back(cards[i]);
 		}
 	}
 
