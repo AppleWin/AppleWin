@@ -71,7 +71,6 @@ target_link_libraries(qapple PRIVATE
 
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}
-  ${ZLIB_LIBRARIES}
 
   Qt::Widgets
   Qt::Multimedia

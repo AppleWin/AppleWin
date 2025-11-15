@@ -52,7 +52,6 @@ target_link_libraries(applen PRIVATE
 
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}
-  ${ZLIB_LIBRARIES}
   
   ${NCURSES_LIBRARIES}
   ${LIBEVDEV_LIBRARIES}
