@@ -55,36 +55,16 @@ if (STATIC_LINKING)
   target_link_options(applewin_libretro PRIVATE
     -static-libgcc -static-libstdc++)
 
-  if (NOT WIN32)
-    # on Ubuntu libz cannot be statically linked to generate a .so
-    # it has not been compiled with -fPIC
-    target_link_libraries(applewin_libretro PRIVATE
-      -Wl,-Bstatic
-      ${PCAP_STATIC_LIBRARIES}
-      ${SLIRP_STATIC_LIBRARIES}
-      -Wl,-Bdynamic
-      ${ZLIB_LIBRARIES}
-      )
-  else()
-    target_link_libraries(applewin_libretro PRIVATE
-      -Wl,-Bstatic
-      ${PCAP_STATIC_LIBRARIES}
-      ${SLIRP_STATIC_LIBRARIES}
-      ${ZLIB_STATIC_LIBRARIES}
-      -Wl,-Bdynamic
-      )
-  endif()
+  target_link_libraries(applewin_libretro PRIVATE
+    -Wl,-Bstatic
+    ${PCAP_STATIC_LIBRARIES}
+    ${SLIRP_STATIC_LIBRARIES}
+    -Wl,-Bdynamic
+    )
 else()
   target_link_libraries(applewin_libretro PRIVATE
     ${PCAP_LIBRARIES}
     ${SLIRP_LIBRARIES}
-    ${ZLIB_LIBRARIES}
-    )
-endif()
-
-if (NOT WIN32)
-  target_link_libraries(applewin_libretro PUBLIC
-    windows
     )
 endif()
 

@@ -48,6 +48,7 @@ execute_process(
 include_directories(source)
 
 add_subdirectory(libyaml)
+add_subdirectory(zlib)
 add_subdirectory(minizip)
 add_subdirectory(source)
 add_subdirectory(resource)
