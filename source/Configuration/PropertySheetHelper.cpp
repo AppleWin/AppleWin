@@ -333,25 +333,19 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		SaveCpuType(ConfigNew.m_CpuType);
 	}
 
-	UINT slot = SLOT3;
-	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+			SetSlot(slot, ConfigNew.m_Slot[slot]);
+	}
 
-	// unconditionally save it, as the previous SetSlot might have removed the setting
-	PCapBackend::SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
-	Uthernet2::SetRegistryVirtualDNS(slot, ConfigNew.m_tfeVirtualDNS);
-
-	slot = SLOT4;
-	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
-
-	slot = SLOT5;
-	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
-
-	slot = SLOT7;
-	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
+#if 0
+	// unconditionally save it, as the previous SetSlot(SLOT3,...) might have removed the setting
+	// TC: Why? if UthernetI/II has been removed from SLOT3, then it no longer matters for the new card in SLOT3
+	// . or perhaps make these global Configuration settings, not slot-specific?
+	PCapBackend::SetRegistryInterface(SLOT3, ConfigNew.m_tfeInterface);
+	Uthernet2::SetRegistryVirtualDNS(SLOT3, ConfigNew.m_tfeVirtualDNS);
+#endif
 
 	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))
 	{
@@ -394,10 +388,10 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	SetApple2Type(m_ConfigOld.m_Apple2Type);
 	SetMainCpu(m_ConfigOld.m_CpuType);
-	SetSlot(SLOT3, m_ConfigOld.m_Slot[SLOT3]);
-	SetSlot(SLOT4, m_ConfigOld.m_Slot[SLOT4]);
-	SetSlot(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
-	SetSlot(SLOT7, m_ConfigOld.m_Slot[SLOT7]);
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		SetSlot(slot, m_ConfigOld.m_Slot[slot]);
+	}
 	GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
 }
 
@@ -452,23 +446,22 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 		if (CONFIG_CHANGED(m_videoRefreshRate))
 			strMsgMain += ". Video refresh rate has changed\n";
 
-		if (CONFIG_CHANGED(m_Slot[SLOT3]))
-			strMsgMain += GetSlot(SLOT3);
+		for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+		{
+			if (CONFIG_CHANGED(m_Slot[slot]))
+				strMsgMain += GetSlot(slot);
+		}
 
+#if 0
 		if (CONFIG_CHANGED(m_tfeInterface))
 			strMsgMain += ". Uthernet interface has changed\n";
 
 		if (CONFIG_CHANGED(m_tfeVirtualDNS))
 			strMsgMain += ". Uthernet Virtual DNS has changed\n";
 
-		if (CONFIG_CHANGED(m_Slot[SLOT4]))
-			strMsgMain += GetSlot(SLOT4);
-
-		if (CONFIG_CHANGED(m_Slot[SLOT5]))
-			strMsgMain += GetSlot(SLOT5);
-
 		if (CONFIG_CHANGED(m_Slot[SLOT7]))
 			strMsgMain += ". Harddisk(s) have been plugged/unplugged\n";
+#endif
 
 		if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
 			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
