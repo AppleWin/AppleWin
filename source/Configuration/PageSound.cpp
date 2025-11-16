@@ -245,10 +245,10 @@ void CPageSound::InitOptions(HWND hWnd)
 		if (slot == 4 || slot == 5)
 			continue;
 
-		char choices[1000];
-		GetCardMgr().GetCardChoicesForSlot(slot, &choices[0], choicesList[slot]);
+		std::string choices;
+		GetCardMgr().GetCardChoicesForSlot(slot, choices, choicesList[slot]);
 		int currentChoice = CardTypeToComboItem(slot);
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0+slot*2, choices, currentChoice);
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0+slot*2, choices.c_str(), currentChoice);
 	}
 
 #if 0

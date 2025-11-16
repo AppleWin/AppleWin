@@ -315,7 +315,7 @@ void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	}
 }
 
-void CardManager::GetCardChoicesForSlot(UINT slot, char* choices, std::vector<SS_CARDTYPE>& choicesList)
+void CardManager::GetCardChoicesForSlot(UINT slot, std::string& choices, std::vector<SS_CARDTYPE>& choicesList)
 {
 	const SS_CARDTYPE cardsSlot0[] =
 	{
@@ -363,8 +363,8 @@ void CardManager::GetCardChoicesForSlot(UINT slot, char* choices, std::vector<SS
 		for (UINT i = 0; i < sizeof(cardsSlot0)/sizeof(cardsSlot0[0]); i++)
 		{
 			std::string name = Card::GetCardName(cardsSlot0[i]);
-			strcpy(choices, name.c_str());
-			choices += name.size() + 1;
+			choices += name;
+			choices += '\0';
 
 			choicesList.push_back(cardsSlot0[i]);
 		}
@@ -381,12 +381,12 @@ void CardManager::GetCardChoicesForSlot(UINT slot, char* choices, std::vector<SS
 			if (cards[i] == CT_Z80 && m_pZ80Card && QuerySlot(slot) != CT_Z80) continue;
 
 			std::string name = Card::GetCardName(cards[i]);
-			strcpy(choices, name.c_str());
-			choices += name.size() + 1;
+			choices += name;
+			choices += '\0';
 
 			choicesList.push_back(cards[i]);
 		}
 	}
 
-	*choices = 0;
+	choices += '\0';
 }
