@@ -158,17 +158,21 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 
 void CPageSound::DlgOK(HWND hWnd)
 {
-	const SoundType_e newSoundType = (SoundType_e) SendDlgItemMessage(hWnd, IDC_SOUNDTYPE, CB_GETCURSEL, 0, 0);
+//	const SoundType_e newSoundType = (SoundType_e) SendDlgItemMessage(hWnd, IDC_SOUNDTYPE, CB_GETCURSEL, 0, 0);
 
-	const uint32_t dwSpkrVolume = (uint32_t) SendDlgItemMessage(hWnd, IDC_SPKR_VOLUME, TBM_GETPOS, 0, 0);
-	const uint32_t dwMBVolume = (uint32_t) SendDlgItemMessage(hWnd, IDC_MB_VOLUME, TBM_GETPOS, 0, 0);
+//	const uint32_t dwSpkrVolume = (uint32_t) SendDlgItemMessage(hWnd, IDC_SPKR_VOLUME, TBM_GETPOS, 0, 0);
+//	const uint32_t dwMBVolume = (uint32_t) SendDlgItemMessage(hWnd, IDC_MB_VOLUME, TBM_GETPOS, 0, 0);
 
-	SpkrSetEmulationType(newSoundType);
-	uint32_t dwSoundType = (soundtype == SOUND_NONE) ? REG_SOUNDTYPE_NONE : REG_SOUNDTYPE_WAVE;
+//	SpkrSetEmulationType(newSoundType);
+//	uint32_t dwSoundType = (soundtype == SOUND_NONE) ? REG_SOUNDTYPE_NONE : REG_SOUNDTYPE_WAVE;
+
+	uint32_t dwSoundType = REG_SOUNDTYPE_WAVE;
 	REGSAVE(REGVALUE_SOUND_EMULATION, dwSoundType);
 
 	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence
+	const uint32_t dwSpkrVolume = 0;
 	SpkrSetVolume(dwSpkrVolume, VOLUME_MAX);
+	const uint32_t dwMBVolume = 0;
 	GetCardMgr().GetMockingboardCardMgr().SetVolume(dwMBVolume, VOLUME_MAX);
 
 	REGSAVE(REGVALUE_SPKR_VOLUME, SpkrGetVolume());
