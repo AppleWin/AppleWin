@@ -240,7 +240,20 @@ void CPageSound::InitOptions(HWND hWnd)
 	else
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT5, m_soundCardChoice_Unavailable, 0);
 
-	for (int slot = 0; slot < 8; slot++)
+	if (IsApple2PlusOrClone(GetApple2Type()))
+	{
+		std::string choices;
+		GetCardMgr().GetCardChoicesForSlot(SLOT0, choices, choicesList[SLOT0]);
+		int currentChoice = CardTypeToComboItem(SLOT0);
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0, choices.c_str(), currentChoice);
+	}
+	else
+	{
+		EnableWindow(GetDlgItem(hWnd, IDC_SLOT0), FALSE);
+		EnableWindow(GetDlgItem(hWnd, IDC_SLOT0_OPTION), FALSE);
+	}
+
+	for (int slot = SLOT1; slot < NUM_SLOTS; slot++)
 	{
 		if (slot == 4 || slot == 5)
 			continue;
@@ -251,6 +264,17 @@ void CPageSound::InitOptions(HWND hWnd)
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0+slot*2, choices.c_str(), currentChoice);
 	}
 
+	if (IsAppleIIe(GetApple2Type()))
+	{
+		const SS_CARDTYPE slotAux = m_PropertySheetHelper.GetConfigNew().m_SlotAux;
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOTAUX, m_auxChoices, (int)AuxCardTypeToComboItem(slotAux));
+	}
+	else
+	{
+		EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX), FALSE);
+		EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX_OPTION), FALSE);
+	}
+
 #if 0
 	bool enableMBVolume = slot4 == CT_MockingboardC || slot5 == CT_MockingboardC
 						|| slot4 == CT_Phasor || slot5 == CT_Phasor
@@ -258,7 +282,4 @@ void CPageSound::InitOptions(HWND hWnd)
 						|| slot4 == CT_SDMusic || slot5 == CT_SDMusic;
 	EnableWindow(GetDlgItem(hWnd, IDC_MB_VOLUME), enableMBVolume ? TRUE : FALSE);
 #endif
-
-	const SS_CARDTYPE slotAux = m_PropertySheetHelper.GetConfigNew().m_SlotAux;
-	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOTAUX, m_auxChoices, (int)AuxCardTypeToComboItem(slotAux));
 }
