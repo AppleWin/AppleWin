@@ -315,7 +315,7 @@ void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	}
 }
 
-void CardManager::GetCardChoicesForSlot(UINT slot, std::string& choices, std::vector<SS_CARDTYPE>& choicesList)
+void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currConfig[NUM_SLOTS], std::string& choices, std::vector<SS_CARDTYPE>& choicesList)
 {
 	const SS_CARDTYPE cardsSlot0[] =
 	{
@@ -371,14 +371,34 @@ void CardManager::GetCardChoicesForSlot(UINT slot, std::string& choices, std::ve
 	}
 	else
 	{
+		const UINT kInvalidSlot = NUM_SLOTS;
+		UINT haveMouseCard = kInvalidSlot;
+		UINT haveSerialCard = kInvalidSlot;
+		UINT havePrinterCard = kInvalidSlot;
+		UINT haveZ80Card = kInvalidSlot;
+		UINT haveFourPlayCard = kInvalidSlot;
+		UINT haveSNESMAXCard = kInvalidSlot;
+
+		for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+		{
+			if (currConfig[i] == CT_MouseInterface) haveMouseCard = i;
+			if (currConfig[i] == CT_SSC) haveSerialCard = i;
+			if (currConfig[i] == CT_GenericPrinter) havePrinterCard = i;
+			if (currConfig[i] == CT_Z80) haveZ80Card = i;
+			if (currConfig[i] == CT_FourPlay) haveFourPlayCard = i;
+			if (currConfig[i] == CT_SNESMAX) haveSNESMAXCard = i;
+		}
+
 		for (UINT i = 0; i < sizeof(cards) / sizeof(cards[0]); i++)
 		{
 			if (cards[i] == CT_VidHD && slot != SLOT3) continue;
 
-			if (cards[i] == CT_MouseInterface && m_pMouseCard && QuerySlot(slot) != CT_MouseInterface) continue;
-			if (cards[i] == CT_SSC && m_pSSC && QuerySlot(slot) != CT_SSC) continue;
-			if (cards[i] == CT_GenericPrinter && m_pParallelPrinterCard && QuerySlot(slot) != CT_GenericPrinter) continue;
-			if (cards[i] == CT_Z80 && m_pZ80Card && QuerySlot(slot) != CT_Z80) continue;
+			if (cards[i] == CT_MouseInterface && haveMouseCard != kInvalidSlot    && haveMouseCard != slot) continue;
+			if (cards[i] == CT_SSC            && haveSerialCard != kInvalidSlot   && haveSerialCard != slot) continue;
+			if (cards[i] == CT_GenericPrinter && havePrinterCard != kInvalidSlot  && havePrinterCard != slot) continue;
+			if (cards[i] == CT_Z80            && haveZ80Card != kInvalidSlot      && haveZ80Card != slot) continue;
+			if (cards[i] == CT_FourPlay       && haveFourPlayCard != kInvalidSlot && haveFourPlayCard != slot) continue;
+			if (cards[i] == CT_SNESMAX        && haveSNESMAXCard != kInvalidSlot  && haveSNESMAXCard != slot) continue;
 
 			std::string name = Card::GetCardName(cards[i]);
 			choices += name;

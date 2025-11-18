@@ -142,6 +142,7 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 #endif
 
 				m_PropertySheetHelper.GetConfigNew().m_Slot[slot] = newCard;
+				InitOptions(hWnd);
 			}
 			break;
 		}
@@ -228,7 +229,7 @@ int CPageSound::CardTypeToComboItem(UINT slot)
 {
 	int currentChoice = 0;
 	for (UINT i = 0; i < choicesList[slot].size(); i++)
-		if (GetCardMgr().QuerySlot(slot) == choicesList[slot][i])
+		if (m_PropertySheetHelper.GetConfigNew().m_Slot[slot] == choicesList[slot][i])
 			currentChoice = i;
 
 	return currentChoice;
@@ -269,10 +270,14 @@ void CPageSound::InitOptions(HWND hWnd)
 	EnableWindow(GetDlgItem(hWnd, IDC_MB_VOLUME), enableMBVolume ? TRUE : FALSE);
 #endif
 
+	SS_CARDTYPE currConfig[NUM_SLOTS];
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+		currConfig[i] = m_PropertySheetHelper.GetConfigNew().m_Slot[i];
+
 	if (IsApple2PlusOrClone(GetApple2Type()))
 	{
 		std::string choices;
-		GetCardMgr().GetCardChoicesForSlot(SLOT0, choices, choicesList[SLOT0]);
+		GetCardMgr().GetCardChoicesForSlot(SLOT0, currConfig, choices, choicesList[SLOT0]);
 		int currentChoice = CardTypeToComboItem(SLOT0);
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0, choices.c_str(), currentChoice);
 	}
@@ -285,7 +290,7 @@ void CPageSound::InitOptions(HWND hWnd)
 	for (int slot = SLOT1; slot < NUM_SLOTS; slot++)
 	{
 		std::string choices;
-		GetCardMgr().GetCardChoicesForSlot(slot, choices, choicesList[slot]);
+		GetCardMgr().GetCardChoicesForSlot(slot, currConfig, choices, choicesList[slot]);
 		int currentChoice = CardTypeToComboItem(slot);
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0 + slot * 2, choices.c_str(), currentChoice);
 	}
