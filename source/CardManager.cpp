@@ -363,8 +363,8 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 	// Sound
 	CT_MockingboardC,
 	CT_Phasor,
-	CT_MegaAudio,
-	CT_SDMusic,
+	//	CT_MegaAudio,	// Exclude mb-audit test h/w for now
+	//	CT_SDMusic,		// Exclude mb-audit test h/w for now
 	CT_SAM,
 	// (continue with alphabetic)
 	CT_Uthernet,

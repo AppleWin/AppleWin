@@ -14,6 +14,7 @@ public:
 		m_PropertySheetHelper(PropertySheetHelper)
 	{
 		CPageSound::ms_this = this;
+		ms_slot = NUM_SLOTS;	// invalid
 	}
 	virtual ~CPageSound(){}
 
@@ -41,7 +42,18 @@ private:
 	static INT_PTR CALLBACK DlgProcHarddisk(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	INT_PTR DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
+	void InitComboFloppyDrive(HWND hWnd, UINT slot);
+	void HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot);
+	void EnableFloppyDrive(HWND hWnd, BOOL enable);
+
+	void InitComboHDD(HWND hWnd, UINT slot);
+	void HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot);
+	void EnableHDD(HWND hWnd, BOOL enable);
+
+	UINT RemovalConfirmation(UINT command);
+
 	static CPageSound* ms_this;
+	static UINT ms_slot;
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;
@@ -53,6 +65,9 @@ private:
 	static const char m_soundCardChoicesEx[];
 	static const char m_soundCardChoice_Unavailable[];
 	static const char m_auxChoices[];
+
+	static const char m_defaultDiskOptions[];
+	static const char m_defaultHDDOptions[];
 
 	std::vector<SS_CARDTYPE> choicesList[NUM_SLOTS];
 };

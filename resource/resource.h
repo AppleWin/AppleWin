@@ -156,8 +156,10 @@
 #define IDC_SLOTAUX_OPTION              1110
 #define IDC_SLOT_OPT_COMBO_HDD1         1111
 #define IDC_SLOT_OPT_COMBO_HDD2         1112
-#define IDC_SLOT_OPT_COMBO_DISK1        1113
-#define IDC_SLOT_OPT_COMBO_DISK2        1114
+#define IDC_SLOT_OPT_HDD_SWAP           1113
+#define IDC_SLOT_OPT_COMBO_DISK1        1114
+#define IDC_SLOT_OPT_COMBO_DISK2        1115
+#define IDC_SLOT_OPT_DISK_SWAP          1116
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
@@ -191,7 +193,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        169
 #define _APS_NEXT_COMMAND_VALUE         40026
-#define _APS_NEXT_CONTROL_VALUE         1115
+#define _APS_NEXT_CONTROL_VALUE         1117
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
