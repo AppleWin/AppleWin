@@ -2209,45 +2209,6 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 
 //===========================================================================
 
-Disk2InterfaceCard* Disk2InterfaceCard::ms_this = 0;
-
-INT_PTR CALLBACK Disk2InterfaceCard::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
-{
-	// Switch from static func to our instance
-	return Disk2InterfaceCard::ms_this->DlgProcInternal(hWnd, message, wparam, lparam);
-}
-
-INT_PTR Disk2InterfaceCard::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
-{
-	switch (message)
-	{
-	case WM_COMMAND:
-		switch (LOWORD(wparam))
-		{
-		case IDOK:
-//			DlgOK(hWnd);
-			return TRUE;
-
-		case IDCANCEL:
-//			DlgCANCEL(hWnd);
-			return TRUE;
-		}
-		return FALSE;
-
-	case WM_CLOSE:
-		EndDialog(hWnd, 0);
-		return TRUE;
-
-	case WM_INITDIALOG:
-		// TODO
-		return TRUE;
-	}
-
-	return FALSE;
-}
-
-//===========================================================================
-
 // Unit version history:
 // 2: Added: Format Track state & DiskLastCycle
 // 3: Added: DiskLastReadLatchCycle

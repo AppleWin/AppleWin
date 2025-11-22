@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Speaker.h"
 #include "../resource/resource.h"
 
-CPageSound* CPageSound::ms_this = 0;	// reinit'd in ctor
+CPageSound* CPageSound::ms_this = nullptr;	// reinit'd in ctor
 
 const char CPageSound::m_soundchoices[] =	"Disabled\0"
 											"Sound Card\0";
@@ -162,13 +162,11 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				const UINT slot = (LOWORD(wparam) - IDC_SLOT0_OPTION) / 2;
 				if (m_PropertySheetHelper.GetConfigNew().m_Slot[slot] == CT_Disk2)
 				{
-					Disk2InterfaceCard::ms_this = dynamic_cast<Disk2InterfaceCard*>(GetCardMgr().GetObj(slot));
-					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_FLOPPY_DISK_DRIVES, hWnd, Disk2InterfaceCard::DlgProc);
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_FLOPPY_DISK_DRIVES, hWnd, CPageSound::DlgProcDisk2);
 				}
 				if (m_PropertySheetHelper.GetConfigNew().m_Slot[slot] == CT_GenericHDD)
 				{
-					HarddiskInterfaceCard::ms_this = dynamic_cast<HarddiskInterfaceCard*>(GetCardMgr().GetObj(slot));
-					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_HARD_DISK_DRIVES, hWnd, HarddiskInterfaceCard::DlgProc);
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_HARD_DISK_DRIVES, hWnd, CPageSound::DlgProcHarddisk);
 				}
 			}
 			break;
@@ -332,4 +330,80 @@ void CPageSound::InitOptions(HWND hWnd)
 		EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX), FALSE);
 		EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX_OPTION), FALSE);
 	}
+}
+
+//===========================================================================
+
+INT_PTR CALLBACK CPageSound::DlgProcDisk2(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	// Switch from static func to our instance
+	return CPageSound::ms_this->DlgProcDisk2Internal(hWnd, message, wparam, lparam);
+}
+
+INT_PTR CPageSound::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	switch (message)
+	{
+	case WM_COMMAND:
+		switch (LOWORD(wparam))
+		{
+		case IDOK:
+			//			DlgOK(hWnd);
+			return TRUE;
+
+		case IDCANCEL:
+			//			DlgCANCEL(hWnd);
+			EndDialog(hWnd, 0);
+			return TRUE;
+		}
+		return FALSE;
+
+	case WM_CLOSE:
+		EndDialog(hWnd, 0);
+		return TRUE;
+
+	case WM_INITDIALOG:
+		// TODO
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+//===========================================================================
+
+INT_PTR CALLBACK CPageSound::DlgProcHarddisk(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	// Switch from static func to our instance
+	return CPageSound::ms_this->DlgProcHarddiskInternal(hWnd, message, wparam, lparam);
+}
+
+INT_PTR CPageSound::DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	switch (message)
+	{
+	case WM_COMMAND:
+		switch (LOWORD(wparam))
+		{
+		case IDOK:
+			//			DlgOK(hWnd);
+			return TRUE;
+
+		case IDCANCEL:
+			//			DlgCANCEL(hWnd);
+			EndDialog(hWnd, 0);
+			return TRUE;
+		}
+		return FALSE;
+
+	case WM_CLOSE:
+		EndDialog(hWnd, 0);
+		return TRUE;
+
+	case WM_INITDIALOG:
+		// TODO
+		return TRUE;
+	}
+
+	return FALSE;
 }

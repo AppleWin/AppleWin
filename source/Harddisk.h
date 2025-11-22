@@ -121,9 +121,6 @@ public:
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
-	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
-	static HarddiskInterfaceCard* ms_this;
-
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
@@ -146,7 +143,6 @@ private:
 	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo, const bool is16bit = false);
 	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, const UINT unit);
 	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, const UINT unit, const UINT version);
-	INT_PTR DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
 	//
 

@@ -195,9 +195,6 @@ public:
 	bool GetEnhanceDisk(void);
 	void SetEnhanceDisk(bool bEnhanceDisk);
 
-	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
-	static Disk2InterfaceCard* ms_this;
-
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
@@ -248,8 +245,6 @@ private:
 	void __stdcall LoadWriteProtect(WORD, WORD, BYTE write, BYTE value, ULONG);
 	void __stdcall SetReadMode(WORD, WORD, BYTE, BYTE, ULONG);
 	void __stdcall SetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uExecutedCycles);
-
-	INT_PTR DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
 #if LOG_DISK_NIBBLES_WRITE
 	bool LogWriteCheckSyncFF(ULONG& uCycleDelta);

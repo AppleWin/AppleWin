@@ -36,6 +36,11 @@ private:
 	AUXCARDCHOICE AuxCardTypeToComboItem(SS_CARDTYPE card);
 	int CardTypeToComboItem(UINT slot);
 
+	static INT_PTR CALLBACK DlgProcDisk2(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	INT_PTR DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	static INT_PTR CALLBACK DlgProcHarddisk(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	INT_PTR DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+
 	static CPageSound* ms_this;
 
 	const PAGETYPE m_Page;
