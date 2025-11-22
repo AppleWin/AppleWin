@@ -339,7 +339,7 @@ bool CardManager::IsSingleInstanceCard(SS_CARDTYPE card)
 
 void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currConfig[NUM_SLOTS], std::string& choices, std::vector<SS_CARDTYPE>& choicesList)
 {
-	// Available & order of cards in drop-down menu:
+	// Availability & order of cards in drop-down menu:
 	const SS_CARDTYPE cardsSlot0[] =
 	{
 	CT_Empty,
@@ -347,7 +347,7 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 	CT_Saturn128K,
 	};
 
-	// Available & order of cards in drop-down menu:
+	// Availability & order of cards in drop-down menu:
 	const SS_CARDTYPE cards[] =
 	{
 	CT_Empty,

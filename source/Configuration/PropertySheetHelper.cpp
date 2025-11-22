@@ -333,6 +333,17 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		SaveCpuType(ConfigNew.m_CpuType);
 	}
 
+	// For all slots that have changed:
+	// . first empty them
+	// . then insert the new card
+	// Reason: s1=empty, s2=SSC -> s1=SSC, s2=empty
+	// . if we just insert, then we'll go via the intermediate state of "s1=SSC, s2=SSC" - but only 1 instance of SSC is permitted
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+			SetSlot(slot, CT_Empty);
+	}
+
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
 		if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))

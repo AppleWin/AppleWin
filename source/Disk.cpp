@@ -60,7 +60,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	Card(CT_Disk2, slot),
 	m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for Disk2InterfaceCards
 {
-	if (m_slot != 5 && m_slot != 6)	// fixme
+	if (m_slot == SLOT0)
 		ThrowErrorInvalidSlot();
 
 	ResetSwitches();

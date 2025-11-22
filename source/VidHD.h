@@ -9,6 +9,9 @@ public:
 	VidHDCard(UINT slot) :
 		Card(CT_VidHD, slot)
 	{
+		if (m_slot == SLOT0)
+			ThrowErrorInvalidSlot();
+
 		m_memMode = 0;
 		m_SCREENCOLOR = 0;
 		m_NEWVIDEO = 0;

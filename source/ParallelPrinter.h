@@ -8,6 +8,9 @@ public:
 	ParallelPrinterCard(UINT slot) :
 		Card(CT_GenericPrinter, slot)
 	{
+		if (m_slot == SLOT0)
+			ThrowErrorInvalidSlot();
+
 		m_inactivity = 0;
 		m_printerIdleLimit = 10;
 		m_file = NULL;

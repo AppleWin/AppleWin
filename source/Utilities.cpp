@@ -242,8 +242,17 @@ void LoadConfiguration(bool loadImages)
 		{
 			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
 		}
-		else	// legacy (AppleWin 1.30.3 or earlier)
+		else	// new install or legacy (AppleWin 1.30.3 or earlier)
 		{
+			// New install:
+			if (slot == SLOT1)
+				GetCardMgr().Insert(SLOT1, CT_GenericPrinter);
+			if (slot == SLOT2)
+				GetCardMgr().Insert(SLOT2, CT_SSC);
+			if (slot == SLOT6)
+				GetCardMgr().Insert(SLOT6, CT_Disk2);
+
+			// Legacy:
 			if (slot == SLOT3)
 			{
 				RegLoadString(REG_CONFIG, REGVALUE_UTHERNET_INTERFACE, 1, szFilename, MAX_PATH, "");
@@ -277,6 +286,11 @@ void LoadConfiguration(bool loadImages)
 
 			RegLoadValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, TRUE, &dwTmp, kDefaultExMemoryBanksRealRW3);
 			SetRamWorksMemorySize(dwTmp, noUpdateRegistry);
+		}
+		else	// new install or legacy
+		{
+			const bool noUpdateRegistry = false;
+			GetCardMgr().InsertAux(CT_Extended80Col, noUpdateRegistry);
 		}
 	}
 

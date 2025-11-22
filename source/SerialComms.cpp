@@ -74,7 +74,7 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	m_pExpansionRom(NULL),
 	m_hFrameWindow(NULL)
 {
-	if (m_slot != 2)	// fixme
+	if (m_slot == SLOT0)
 		ThrowErrorInvalidSlot();
 
 	m_dwSerialPortItem = 0;

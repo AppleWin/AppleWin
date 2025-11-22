@@ -15,13 +15,14 @@ public:
 		m_pParallelPrinterCard(NULL),
 		m_pZ80Card(NULL)
 	{
+		// LoadConfiguration() now sets up default cards for a new install
 		InsertInternal(SLOT0, CT_Empty);
-		InsertInternal(SLOT1, CT_GenericPrinter);
-		InsertInternal(SLOT2, CT_SSC);
+		InsertInternal(SLOT1, CT_Empty);
+		InsertInternal(SLOT2, CT_Empty);
 		InsertInternal(SLOT3, CT_Empty);
 		InsertInternal(SLOT4, CT_Empty);
 		InsertInternal(SLOT5, CT_Empty);
-		InsertInternal(SLOT6, CT_Disk2);
+		InsertInternal(SLOT6, CT_Empty);
 		InsertInternal(SLOT7, CT_Empty);
 		InsertAuxInternal(CT_Extended80Col);	// For Apple //e and above
 	}
