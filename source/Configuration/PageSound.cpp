@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Common.h"
 #include "../CardManager.h"
 #include "../Disk.h"
+#include "../Harddisk.h"
 #include "../Interface.h"
 #include "../Mockingboard.h"
 #include "../Registry.h"
@@ -164,7 +165,8 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				}
 				if (m_PropertySheetHelper.GetConfigNew().m_Slot[slot] == CT_GenericHDD)
 				{
-//					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_HARD_DISK_DRIVES, hWnd, 0);
+					HarddiskInterfaceCard::ms_this = dynamic_cast<HarddiskInterfaceCard*>(GetCardMgr().GetObj(slot));
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_HARD_DISK_DRIVES, hWnd, HarddiskInterfaceCard::DlgProc);
 				}
 			}
 			break;
