@@ -29,11 +29,9 @@ protected:
 	virtual void DlgCANCEL(HWND hWnd){}
 
 private:
-//	enum SOUNDCARDCHOICE { SC_MOCKINGBOARD = 0, SC_PHASOR, SC_SAM, SC_EMPTY, SC_MEGAAUDIO, SC_SDMUSIC };
 	enum AUXCARDCHOICE { SC_80COL = 0, SC_EXT80COL, SC_RAMWORKS, SC_AUX_EMPTY };
 
 	void InitOptions(HWND hWnd);
-//	SOUNDCARDCHOICE CardTypeToComboItem(SS_CARDTYPE card);
 	AUXCARDCHOICE AuxCardTypeToComboItem(SS_CARDTYPE card);
 	int CardTypeToComboItem(UINT slot);
 
@@ -60,10 +58,6 @@ private:
 
 	static const UINT VOLUME_MIN = 0;
 	static const UINT VOLUME_MAX = 59;
-	static const char m_soundchoices[];
-	static const char m_soundCardChoices[];
-	static const char m_soundCardChoicesEx[];
-	static const char m_soundCardChoice_Unavailable[];
 	static const char m_auxChoices[];
 
 	static const char m_defaultDiskOptions[];
