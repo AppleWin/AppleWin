@@ -74,6 +74,7 @@ private:
 	void InsertAuxInternal(SS_CARDTYPE type);
 	void RemoveInternal(UINT slot);
 	void RemoveAuxInternal(void);
+	bool IsSingleInstanceCard(SS_CARDTYPE card);
 
 	Card* m_slot[NUM_SLOTS];
 	Card* m_aux;
