@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "../Common.h"
 #include "../CardManager.h"
+#include "../Disk.h"
+#include "../Interface.h"
 #include "../Mockingboard.h"
 #include "../Registry.h"
 #include "../Speaker.h"
@@ -143,6 +145,27 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 
 				m_PropertySheetHelper.GetConfigNew().m_Slot[slot] = newCard;
 				InitOptions(hWnd);
+			}
+			break;
+		case IDC_SLOT0_OPTION:
+		case IDC_SLOT1_OPTION:
+		case IDC_SLOT2_OPTION:
+		case IDC_SLOT3_OPTION:
+		case IDC_SLOT4_OPTION:
+		case IDC_SLOT5_OPTION:
+		case IDC_SLOT6_OPTION:
+		case IDC_SLOT7_OPTION:
+			{
+				const UINT slot = (LOWORD(wparam) - IDC_SLOT0_OPTION) / 2;
+				if (m_PropertySheetHelper.GetConfigNew().m_Slot[slot] == CT_Disk2)
+				{
+					Disk2InterfaceCard::ms_this = dynamic_cast<Disk2InterfaceCard*>(GetCardMgr().GetObj(slot));
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_FLOPPY_DISK_DRIVES, hWnd, Disk2InterfaceCard::DlgProc);
+				}
+				if (m_PropertySheetHelper.GetConfigNew().m_Slot[slot] == CT_GenericHDD)
+				{
+//					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_HARD_DISK_DRIVES, hWnd, 0);
+				}
 			}
 			break;
 		}

@@ -67,6 +67,8 @@
 #define IDR_FILE_BITSY_BOOT             164
 #define IDR_FILE_BITSY_BYE              165
 #define IDR_FILE_BASIC17                166
+#define IDD_FLOPPY_DISK_DRIVES          167
+#define IDD_HARD_DISK_DRIVES            168
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
@@ -152,6 +154,10 @@
 #define IDC_SLOT7_OPTION                1108
 #define IDC_SLOTAUX                     1109
 #define IDC_SLOTAUX_OPTION              1110
+#define IDC_SLOT_OPT_COMBO_HDD1         1111
+#define IDC_SLOT_OPT_COMBO_HDD2         1112
+#define IDC_SLOT_OPT_COMBO_DISK1        1113
+#define IDC_SLOT_OPT_COMBO_DISK2        1114
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
@@ -183,9 +189,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        167
+#define _APS_NEXT_RESOURCE_VALUE        169
 #define _APS_NEXT_COMMAND_VALUE         40026
-#define _APS_NEXT_CONTROL_VALUE         1093
+#define _APS_NEXT_CONTROL_VALUE         1115
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
