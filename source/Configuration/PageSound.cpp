@@ -145,6 +145,8 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 #endif
 
 				m_PropertySheetHelper.GetConfigNew().m_Slot[slot] = newCard;
+				if (newCard == CT_Disk2 || newCard == CT_GenericHDD)
+					m_PropertySheetHelper.SetSlot(slot, m_PropertySheetHelper.GetConfigNew().m_Slot[slot]);
 				InitOptions(hWnd);
 			}
 			break;
