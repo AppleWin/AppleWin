@@ -375,11 +375,10 @@ INT_PTR CPageSound::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam,
 			}
 			break;
 		case IDOK:
-			//			DlgOK(hWnd);
+			EndDialog(hWnd, 0);
 			return TRUE;
 
 		case IDCANCEL:
-			//			DlgCANCEL(hWnd);
 			EndDialog(hWnd, 0);
 			return TRUE;
 		}
@@ -515,11 +514,10 @@ INT_PTR CPageSound::DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wpar
 			}
 			break;
 		case IDOK:
-			//			DlgOK(hWnd);
+			EndDialog(hWnd, 0);
 			return TRUE;
 
 		case IDCANCEL:
-			//			DlgCANCEL(hWnd);
 			EndDialog(hWnd, 0);
 			return TRUE;
 		}
