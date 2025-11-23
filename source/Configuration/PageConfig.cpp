@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PageConfig.h"
 #include "PropertySheet.h"
 
-#include "../Windows/AppleWin.h"
 #include "../Windows/Win32Frame.h"
 #include "../Registry.h"
 #include "../SerialComms.h"
@@ -122,14 +121,6 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 		case IDC_CHECK_FS_SHOW_SUBUNIT_STATUS:
 		case IDC_CHECK_50HZ_VIDEO:
 			// Checked in DlgOK()
-			break;
-
-		case IDC_CHECK_VIDHD_IN_SLOT3:
-			{
-				const UINT newState = IsDlgButtonChecked(hWnd, IDC_CHECK_VIDHD_IN_SLOT3) ? 1 : 0;
-				m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = newState ? CT_VidHD : CT_Empty;
-				InitOptions(hWnd);
-			}
 			break;
 
 		case IDC_COMPUTER:
@@ -368,12 +359,6 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 void CPageConfig::InitOptions(HWND hWnd)
 {
-	const SS_CARDTYPE slot3 = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3];
-
-	const bool bIsSlot3VidHD = slot3 == CT_VidHD;
-	CheckDlgButton(hWnd, IDC_CHECK_VIDHD_IN_SLOT3, bIsSlot3VidHD ? BST_CHECKED : BST_UNCHECKED);
-	const BOOL enableVidHD = slot3 == CT_Empty || bIsSlot3VidHD;
-	EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VIDHD_IN_SLOT3), enableVidHD);
 }
 
 // Config->Computer: Menu item to eApple2Type
