@@ -462,16 +462,11 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 				strMsgMain += GetSlot(slot);
 		}
 
-#if 0
 		if (CONFIG_CHANGED(m_tfeInterface))
 			strMsgMain += ". Uthernet interface has changed\n";
 
 		if (CONFIG_CHANGED(m_tfeVirtualDNS))
 			strMsgMain += ". Uthernet Virtual DNS has changed\n";
-
-		if (CONFIG_CHANGED(m_Slot[SLOT7]))
-			strMsgMain += ". Harddisk(s) have been plugged/unplugged\n";
-#endif
 
 		if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
 			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
