@@ -399,13 +399,10 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 		BYTE haveCard[CT_NUM_CARDS];
 		memset(haveCard, kInvalidSlot, sizeof(haveCard));
 
-		for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+		for (int i = SLOT0; i < NUM_SLOTS; i++)
 		{
 			if (IsSingleInstanceCard(currConfig[i]))
-			{
 				haveCard[currConfig[i]] = i;
-				break;
-			}
 		}
 
 		for (UINT i = 0; i < sizeof(cards) / sizeof(cards[0]); i++)
@@ -414,6 +411,12 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 
 			if (thisCard == CT_VidHD && slot != SLOT3)
 				continue;
+
+			// Prevent both Uthernet & Uthernet2 cards being plugged in at the same time
+			if (thisCard == CT_Uthernet && haveCard[CT_Uthernet2] != kInvalidSlot && haveCard[CT_Uthernet2] != slot)
+				continue;	// Already have a Uthernet2 card selected in another slot, so prevent Uthernet
+			if (thisCard == CT_Uthernet2 && haveCard[CT_Uthernet] != kInvalidSlot && haveCard[CT_Uthernet] != slot)
+				continue;	// Already have a Uthernet card selected in another slot, so prevent Uthernet2
 
 			if (IsSingleInstanceCard(thisCard) && haveCard[thisCard] != kInvalidSlot && haveCard[thisCard] != slot)
 				continue;

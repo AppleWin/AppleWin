@@ -209,7 +209,7 @@ int CPageSound::CardTypeToComboItem(UINT slot)
 void CPageSound::InitOptions(HWND hWnd)
 {
 	SS_CARDTYPE currConfig[NUM_SLOTS];
-	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	for (int i = SLOT0; i < NUM_SLOTS; i++)
 		currConfig[i] = m_PropertySheetHelper.GetConfigNew().m_Slot[i];
 
 	if (IsApple2PlusOrClone(GetApple2Type()))
