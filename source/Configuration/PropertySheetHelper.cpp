@@ -348,15 +348,14 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 	{
 		if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
 			SetSlot(slot, ConfigNew.m_Slot[slot]);
-	}
 
-#if 0
-	// unconditionally save it, as the previous SetSlot(SLOT3,...) might have removed the setting
-	// TC: Why? if UthernetI/II has been removed from SLOT3, then it no longer matters for the new card in SLOT3
-	// . or perhaps make these global Configuration settings, not slot-specific?
-	PCapBackend::SetRegistryInterface(SLOT3, ConfigNew.m_tfeInterface);
-	Uthernet2::SetRegistryVirtualDNS(SLOT3, ConfigNew.m_tfeVirtualDNS);
-#endif
+		if (ConfigNew.m_Slot[slot] == CT_Uthernet || ConfigNew.m_Slot[slot] == CT_Uthernet2)
+		{
+			// NB. Assume we don't have both cards inserted
+			PCapBackend::SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
+			Uthernet2::SetRegistryVirtualDNS(slot, ConfigNew.m_tfeVirtualDNS);
+		}
+	}
 
 	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))
 	{

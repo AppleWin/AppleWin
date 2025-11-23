@@ -95,7 +95,6 @@
 #define IDS_TFE_INTERFACE               1040
 #define IDS_OK                          1041
 #define IDS_CANCEL                      1042
-#define IDC_ETHERNET                    1043
 #define IDC_SCROLLLOCK_TOGGLE           1044
 #define IDC_MOUSE_IN_SLOT4              1045
 #define IDC_THE_FREEZES_F8_ROM_FW       1046

@@ -31,8 +31,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Registry.h"
 #include "../SerialComms.h"
 #include "../CardManager.h"
-#include "../Uthernet2.h"
-#include "../Tfe/PCapBackend.h"
 #include "../Interface.h"
 #include "../resource/resource.h"
 
@@ -112,14 +110,6 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 				break;
 			m_PropertySheetHelper.SetDoBenchmark();
 			PropSheet_PressButton(GetParent(hWnd), PSBTN_OK);
-			break;
-
-		case IDC_ETHERNET:
-			ui_tfe_settings_dialog(hWnd);
-			m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = m_PageConfigTfe.m_tfe_selected;
-			m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
-			m_PropertySheetHelper.GetConfigNew().m_tfeVirtualDNS = m_PageConfigTfe.m_tfe_virtual_dns;
-			InitOptions(hWnd);
 			break;
 
 		case IDC_MONOCOLOR:
@@ -254,24 +244,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 				EnableTrackbar(hWnd, bCustom);
 			}
 
-			{
-				SS_CARDTYPE cardInSlot3 = GetCardMgr().QuerySlot(SLOT3);
-				switch (cardInSlot3) {
-				case CT_Uthernet:
-				case CT_Uthernet2:
-					m_PageConfigTfe.m_tfe_selected = cardInSlot3;
-					break;
-				default:
-					m_PageConfigTfe.m_tfe_selected = CT_Empty;
-					break;
-				}
-
-				m_PageConfigTfe.m_tfe_interface_name = PCapBackend::GetRegistryInterface(SLOT3);
-				m_PageConfigTfe.m_tfe_virtual_dns = Uthernet2::GetRegistryVirtualDNS(SLOT3);
-			}
-
 			InitOptions(hWnd);
-
 			break;
 		}
 
@@ -396,8 +369,6 @@ void CPageConfig::DlgOK(HWND hWnd)
 void CPageConfig::InitOptions(HWND hWnd)
 {
 	const SS_CARDTYPE slot3 = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3];
-	const BOOL enableUthernetDialog = slot3 == CT_Empty || slot3 == CT_Uthernet || slot3 == CT_Uthernet2;
-	EnableWindow(GetDlgItem(hWnd, IDC_ETHERNET), enableUthernetDialog);
 
 	const bool bIsSlot3VidHD = slot3 == CT_VidHD;
 	CheckDlgButton(hWnd, IDC_CHECK_VIDHD_IN_SLOT3, bIsSlot3VidHD ? BST_CHECKED : BST_UNCHECKED);

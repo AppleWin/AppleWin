@@ -2,6 +2,7 @@
 
 #include "IPropertySheetPage.h"
 #include "PropertySheetDefs.h"
+#include "PageConfigTfe.h"
 #include "Card.h"
 
 class CPropertySheetHelper;
@@ -55,6 +56,7 @@ private:
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;
+	CPageConfigTfe m_PageConfigTfe;
 
 	static const UINT VOLUME_MIN = 0;
 	static const UINT VOLUME_MAX = 59;

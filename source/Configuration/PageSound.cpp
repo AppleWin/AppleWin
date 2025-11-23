@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Registry.h"
 #include "../Speaker.h"
 #include "../resource/resource.h"
+#include "../Uthernet2.h"
+#include "../Tfe/PCapBackend.h"
 
 CPageSound* CPageSound::ms_this = nullptr;	// reinit'd in ctor
 UINT CPageSound::ms_slot = 0;
@@ -134,18 +136,24 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		case IDC_SLOT5_OPTION:
 		case IDC_SLOT6_OPTION:
 		case IDC_SLOT7_OPTION:
+			const UINT slot = (LOWORD(wparam) - IDC_SLOT0_OPTION) / 2;
+			const SS_CARDTYPE cardInSlot = m_PropertySheetHelper.GetConfigNew().m_Slot[slot];
+			if (cardInSlot == CT_Disk2)
 			{
-				const UINT slot = (LOWORD(wparam) - IDC_SLOT0_OPTION) / 2;
-				if (m_PropertySheetHelper.GetConfigNew().m_Slot[slot] == CT_Disk2)
-				{
-					ms_slot = slot;
-					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_FLOPPY_DISK_DRIVES, hWnd, CPageSound::DlgProcDisk2);
-				}
-				else if (m_PropertySheetHelper.GetConfigNew().m_Slot[slot] == CT_GenericHDD)
-				{
-					ms_slot = slot;
-					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_HARD_DISK_DRIVES, hWnd, CPageSound::DlgProcHarddisk);
-				}
+				ms_slot = slot;
+				DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_FLOPPY_DISK_DRIVES, hWnd, CPageSound::DlgProcDisk2);
+			}
+			else if (cardInSlot == CT_GenericHDD)
+			{
+				ms_slot = slot;
+				DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_HARD_DISK_DRIVES, hWnd, CPageSound::DlgProcHarddisk);
+			}
+			else if (cardInSlot == CT_Uthernet || cardInSlot == CT_Uthernet2)
+			{
+				DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hWnd, CPageConfigTfe::DlgProc);
+				m_PropertySheetHelper.GetConfigNew().m_Slot[slot] = m_PageConfigTfe.m_tfe_selected;
+				m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
+				m_PropertySheetHelper.GetConfigNew().m_tfeVirtualDNS = m_PageConfigTfe.m_tfe_virtual_dns;
 			}
 			break;
 		}
@@ -235,6 +243,26 @@ void CPageSound::InitOptions(HWND hWnd)
 		EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX), FALSE);
 		EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX_OPTION), FALSE);
 	}
+
+	//
+
+	// Find any Uthernet/Uthernet2 card and get its config
+	// NB. Assume we don't have both cards inserted - just use the 1st one we find
+
+	SS_CARDTYPE card = CT_Empty;
+
+	for (int slot = SLOT1; slot < NUM_SLOTS; slot++)
+	{
+		card = GetCardMgr().QuerySlot(slot);
+		if (card == CT_Uthernet || card == CT_Uthernet2)
+		{
+			m_PageConfigTfe.m_tfe_interface_name = PCapBackend::GetRegistryInterface(slot);
+			m_PageConfigTfe.m_tfe_virtual_dns = Uthernet2::GetRegistryVirtualDNS(slot);
+			break;
+		}
+	}
+
+	m_PageConfigTfe.m_tfe_selected = card;
 }
 
 //===========================================================================
