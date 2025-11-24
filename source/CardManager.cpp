@@ -111,7 +111,9 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = new SNESMAXCard(slot);
 		break;
 	case CT_VidHD:
-		m_slot[slot] = new VidHDCard(slot);
+		_ASSERT(m_pVidHDCard == NULL);
+		if (m_pVidHDCard) break;	// Only support one VidHD card
+		m_slot[slot] = m_pVidHDCard = new VidHDCard(slot);
 		break;
 	case CT_Uthernet2:
 		m_slot[slot] = new Uthernet2(slot);
@@ -176,6 +178,9 @@ void CardManager::RemoveInternal(UINT slot)
 		case CT_Saturn128K:
 			if (slot == SLOT0)
 				GetLanguageCardMgr().SetLanguageCard(CT_Empty);
+			break;
+		case CT_VidHD:
+			m_pVidHDCard = NULL;
 			break;
 		case CT_Z80:
 			m_pZ80Card = NULL;
@@ -369,7 +374,7 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 	// (continue with alphabetic)
 	CT_Uthernet,
 	CT_Uthernet2,
-	CT_VidHD,			// Slot 3 only
+	CT_VidHD,
 	CT_Z80,
 	//	CT_GenericClock,
 	//	CT_Echo,
@@ -408,9 +413,6 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 		for (UINT i = 0; i < sizeof(cards) / sizeof(cards[0]); i++)
 		{
 			const SS_CARDTYPE thisCard = cards[i];
-
-			if (thisCard == CT_VidHD && slot != SLOT3)
-				continue;
 
 			// Prevent both Uthernet & Uthernet2 cards being plugged in at the same time
 			if (thisCard == CT_Uthernet && haveCard[CT_Uthernet2] != kInvalidSlot && haveCard[CT_Uthernet2] != slot)

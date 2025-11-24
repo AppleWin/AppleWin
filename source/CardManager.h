@@ -13,6 +13,7 @@ public:
 		m_pMouseCard(NULL),
 		m_pSSC(NULL),
 		m_pParallelPrinterCard(NULL),
+		m_pVidHDCard(NULL),
 		m_pZ80Card(NULL)
 	{
 		// LoadConfiguration() now sets up default cards for a new install
@@ -62,6 +63,7 @@ public:
 	bool IsSSCInstalled(void) { return m_pSSC != NULL; }
 	class ParallelPrinterCard* GetParallelPrinterCard(void) { return m_pParallelPrinterCard; }
 	bool IsParallelPrinterCardInstalled(void) { return m_pParallelPrinterCard != NULL; }
+	class VidHDCard* GetVidHDCard(void) { return m_pVidHDCard; }
 	void GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currConfig[NUM_SLOTS], std::string& choices, std::vector<SS_CARDTYPE>& choicesList);
 
 	void InitializeIO(LPBYTE pCxRomPeripheral);
@@ -85,5 +87,6 @@ private:
 	class CMouseInterface* m_pMouseCard;
 	class CSuperSerialCard* m_pSSC;
 	class ParallelPrinterCard* m_pParallelPrinterCard;
+	class VidHDCard* m_pVidHDCard;
 	class Z80Card* m_pZ80Card;
 };

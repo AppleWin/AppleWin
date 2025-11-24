@@ -615,7 +615,7 @@ static BYTE __stdcall IORead_C02x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 
 static BYTE __stdcall IOWrite_C02x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
+	if (GetCardMgr().GetVidHDCard())
 	{
 		if (addr == 0xC022 || addr == 0xC029)
 			GetVideo().VideoSetMode(pc, addr, bWrite, d, nExecutedCycles);
@@ -633,7 +633,7 @@ static BYTE __stdcall IORead_C03x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 
 static BYTE __stdcall IOWrite_C03x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles)
 {
-	if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
+	if (GetCardMgr().GetVidHDCard())
 	{
 		// NB. Writes to $C03x addresses will still toggle the speaker, even with a VidHD present
 		if (addr == 0xC034 || addr == 0xC035)
@@ -2258,12 +2258,12 @@ void MemInitializeFromSnapshot(void)
 
 	memVidHD = NULL;
 
-	if ((GetCardMgr().QuerySlot(SLOT3) == CT_VidHD))
+	if (GetCardMgr().GetVidHDCard())
 	{
 		if (IsApple2PlusOrClone(GetApple2Type()) || IsIIeWithoutAuxMem())
 		{
-			VidHDCard& vidHD = dynamic_cast<VidHDCard&>(GetCardMgr().GetRef(SLOT3));
-			memVidHD = vidHD.IsWriteAux() ? memaux : NULL;
+			VidHDCard* vidHD = GetCardMgr().GetVidHDCard();
+			memVidHD = vidHD->IsWriteAux() ? memaux : NULL;
 		}
 	}
 }
@@ -2550,7 +2550,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 #endif
 		}
 
-		if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD && GetCardMgr().QueryAux() == CT_80Col)
+		if (GetCardMgr().GetVidHDCard() && GetCardMgr().QueryAux() == CT_80Col)
 		{
 			// NB. if aux slot is empty, then writes already occur to memaux
 			memVidHD = MemIsWriteAux(g_memmode) ? memaux : NULL;
@@ -2558,11 +2558,11 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 	}
 	else // Apple ][,][+,][J-Plus or clone ][,][+
 	{
-		if (GetCardMgr().QuerySlot(SLOT3) == CT_VidHD)
+		if (GetCardMgr().GetVidHDCard())
 		{
-			VidHDCard& vidHD = dynamic_cast<VidHDCard&>(GetCardMgr().GetRef(SLOT3));
-			vidHD.VideoIOWrite(programcounter, address, write, value, nExecutedCycles);
-			memVidHD = vidHD.IsWriteAux() ? memaux : NULL;
+			VidHDCard* vidHD = GetCardMgr().GetVidHDCard();
+			vidHD->VideoIOWrite(programcounter, address, write, value, nExecutedCycles);
+			memVidHD = vidHD->IsWriteAux() ? memaux : NULL;
 		}
 	}
 
