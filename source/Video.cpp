@@ -178,9 +178,7 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 {
 	const uint32_t oldVideoMode = g_uVideoMode;
 
-	VidHDCard* vidHD = NULL;
-	if (GetCardMgr().GetVidHDCard())
-		vidHD = dynamic_cast<VidHDCard*>(GetCardMgr().GetVidHDCard());
+	VidHDCard* vidHD = GetCardMgr().GetVidHDCard();
 
 	address &= 0xFF;
 	switch (address)
