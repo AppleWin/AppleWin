@@ -330,7 +330,8 @@ bool CardManager::IsSingleInstanceCard(SS_CARDTYPE card)
 	CT_FourPlay,
 	CT_SNESMAX,
 	CT_Uthernet,
-	CT_Uthernet2
+	CT_Uthernet2,
+	CT_VidHD
 	};
 
 	for (int i = 0; i < sizeof(uniqueCards) / sizeof(uniqueCards[0]); i++)
