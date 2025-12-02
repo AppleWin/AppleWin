@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Interface.h"
 #include "../Mockingboard.h"
 #include "../Registry.h"
+#include "../SerialComms.h"
 #include "../Speaker.h"
 #include "../resource/resource.h"
 #include "../Uthernet2.h"
@@ -154,6 +155,10 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				m_PropertySheetHelper.GetConfigNew().m_Slot[slot] = m_PageConfigTfe.m_tfe_selected;
 				m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
 				m_PropertySheetHelper.GetConfigNew().m_tfeVirtualDNS = m_PageConfigTfe.m_tfe_virtual_dns;
+			}
+			else if (cardInSlot == CT_SSC)
+			{
+				DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_SSC, hWnd, CPageSound::DlgProcSSC);
 			}
 			break;
 		}
@@ -576,4 +581,56 @@ UINT CPageSound::RemovalConfirmation(UINT command)
 	}
 
 	return command;
+}
+
+//===========================================================================
+
+INT_PTR CALLBACK CPageSound::DlgProcSSC(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	// Switch from static func to our instance
+	return CPageSound::ms_this->DlgProcSSCInternal(hWnd, message, wparam, lparam);
+}
+
+INT_PTR CPageSound::DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	switch (message)
+	{
+	case WM_COMMAND:
+		switch (LOWORD(wparam))
+		{
+		case IDC_SERIALPORT:
+			if (HIWORD(wparam) == CBN_SELCHANGE)
+			{
+				CSuperSerialCard* pSSC = GetCardMgr().GetSSC();
+				_ASSERT(pSSC);
+				if (!pSSC) break;
+				const uint32_t uNewSerialPort = (uint32_t)SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
+				pSSC->CommSetSerialPort(uNewSerialPort);
+			}
+			break;
+		case IDOK:
+			EndDialog(hWnd, 0);
+			return TRUE;
+
+		case IDCANCEL:
+			EndDialog(hWnd, 0);
+			return TRUE;
+		}
+		return FALSE;
+
+	case WM_CLOSE:
+		EndDialog(hWnd, 0);
+		return TRUE;
+
+	case WM_INITDIALOG:
+		CSuperSerialCard* pSSC = GetCardMgr().GetSSC();
+		_ASSERT(pSSC);
+		if (!pSSC) return TRUE;
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SERIALPORT, pSSC->GetSerialPortChoices().c_str(), pSSC->GetSerialPort());
+		EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), !pSSC->IsActive() ? TRUE : FALSE);
+
+		return TRUE;
+	}
+
+	return FALSE;
 }

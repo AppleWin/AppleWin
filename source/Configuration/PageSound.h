@@ -40,6 +40,8 @@ private:
 	INT_PTR DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	static INT_PTR CALLBACK DlgProcHarddisk(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	INT_PTR DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	static INT_PTR CALLBACK DlgProcSSC(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	INT_PTR DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
 	void InitComboFloppyDrive(HWND hWnd, UINT slot);
 	void HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot);

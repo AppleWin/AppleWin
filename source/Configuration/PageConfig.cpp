@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "../Windows/Win32Frame.h"
 #include "../Registry.h"
-#include "../SerialComms.h"
 #include "../CardManager.h"
 #include "../Interface.h"
 #include "../resource/resource.h"
@@ -204,17 +203,6 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, GetVideo().IsVideoStyle(VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
 			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (GetVideo().GetVideoType() == VT_COLOR_IDEALIZED) ? TRUE : FALSE);
 
-			if (GetCardMgr().IsSSCInstalled())
-			{
-				CSuperSerialCard* pSSC = GetCardMgr().GetSSC();
-				m_PropertySheetHelper.FillComboBox(hWnd, IDC_SERIALPORT, pSSC->GetSerialPortChoices().c_str(), pSSC->GetSerialPort());
-				EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), !pSSC->IsActive() ? TRUE : FALSE);
-			}
-			else
-			{
-				EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), FALSE);
-			}
-
 			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (GetVideo().GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
 
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));
@@ -332,14 +320,6 @@ void CPageConfig::DlgOK(HWND hWnd)
 	{
 		REGSAVE(REGVALUE_CONFIRM_REBOOT, bNewConfirmReboot);
 		win32Frame.g_bConfirmReboot = bNewConfirmReboot;
-	}
-
-	//
-
-	if (GetCardMgr().IsSSCInstalled())
-	{
-		const uint32_t uNewSerialPort = (uint32_t) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
-		GetCardMgr().GetSSC()->CommSetSerialPort(uNewSerialPort);
 	}
 
 	//
