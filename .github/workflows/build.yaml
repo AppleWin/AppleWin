@@ -61,7 +61,6 @@ jobs:
             cmake:p
             ninja:p
             pkg-config:p
-            boost:p
             SDL2:p
             SDL2_image:p
 

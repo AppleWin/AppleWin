@@ -36,7 +36,6 @@ target_include_directories(applen PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}
   ${NCURSES_INCLUDE_DIRS}
   ${LIBEVDEV_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIRS}
   )
 
 target_compile_options(applen PRIVATE

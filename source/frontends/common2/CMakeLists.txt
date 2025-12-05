@@ -12,6 +12,7 @@ set(SOURCE_FILES
   utils.cpp
   timer.cpp
   speed.cpp
+  yamlmap.cpp
   )
 
 set(HEADER_FILES
@@ -26,6 +27,7 @@ set(HEADER_FILES
   utils.h
   timer.h
   speed.h
+  yamlmap.h
   )
 
 add_library(common2 STATIC
@@ -33,11 +35,8 @@ add_library(common2 STATIC
   ${HEADER_FILES}
   )
 
-find_package(Boost REQUIRED)
-
 target_include_directories(common2 PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}
-  ${Boost_INCLUDE_DIRS}
   )
 
 target_link_libraries(common2 PRIVATE

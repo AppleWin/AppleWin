@@ -30,8 +30,6 @@ if (NOT WIN32)
   endif()
 endif()
 
-find_package(Boost REQUIRED)
-
 set(SOURCE_FILES
   Tfe/tfesupp.cpp
   Tfe/NetworkBackend.cpp
@@ -249,7 +247,6 @@ endif()
 
 target_include_directories(appleii PRIVATE
   ${PCAP_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIRS}
   ${SLIRP_INCLUDE_DIRS}
   Debugger
   )

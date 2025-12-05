@@ -3,7 +3,6 @@
 #include <unordered_map>
 #include <vector>
 #include <initializer_list>
-#include <boost/multi_array.hpp>
 
 namespace na2
 {
@@ -63,8 +62,8 @@ namespace na2
             double error;
         };
 
-        typedef boost::multi_array<Character, 2> array_char_t;
-        typedef boost::multi_array<Blocks, 2> array_val_t;
+        typedef std::vector<std::vector<Character>> array_char_t;
+        typedef std::vector<std::vector<Blocks>> array_val_t;
 
         void init(const int rows, const int columns);
 
@@ -96,8 +95,8 @@ namespace na2
 
         std::vector<std::vector<Blocks>> myBlocks;
 
-        mutable array_val_t myValues; // workspace
-        array_char_t myChars;         // workspace
+        mutable std::vector<std::vector<Blocks>> myValues; // workspace
+        std::vector<std::vector<Character>> myChars;       // workspace
 
         const Character &getCharacter(const Blocks &values);
         static void fit(const Blocks &art, const Unicode &glyph, double &foreground, double &background, double &error);

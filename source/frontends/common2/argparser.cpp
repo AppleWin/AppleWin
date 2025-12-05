@@ -149,7 +149,7 @@ namespace common2
     {
         const std::string name = "Apple Emulator for " + edition + " (based on AppleWin " + getVersion() + ")";
 
-        options.configurationFile = getConfigFile("applewin.conf");
+        options.configurationFile = getConfigFile("applewin.yaml");
         const std::string configurationFileDefault = options.configurationFile.string();
         const std::string audioBufferDefault = std::to_string(options.audioBuffer);
 

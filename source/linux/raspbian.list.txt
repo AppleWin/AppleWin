@@ -3,7 +3,6 @@ g++
 xxd
 ninja-build
 pkg-config
-libboost-dev
 
 libncurses-dev
 libevdev-dev
