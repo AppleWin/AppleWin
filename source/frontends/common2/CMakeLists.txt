@@ -13,6 +13,7 @@ set(SOURCE_FILES
   timer.cpp
   speed.cpp
   yamlmap.cpp
+  yamlselftest.cpp
   )
 
 set(HEADER_FILES
@@ -49,5 +50,15 @@ if ("${ROOT_PATH}" STREQUAL "")
   # if the 2 paths are the same
   set(ROOT_PATH "./")
 endif()
+
+# yaml parsing is so complicated that we need a test!
+add_executable(testyaml
+  yamlmap.cpp
+  yamlselftest.cpp
+  )
+
+target_link_libraries(testyaml PRIVATE
+  yaml
+  )
 
 configure_file(common_config.h.in common_config.h)
