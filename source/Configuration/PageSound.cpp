@@ -90,6 +90,8 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			case PSN_RESET:
 				DlgCANCEL(hWnd);
 				break;
+			default:
+				return FALSE;
 			}
 		}
 		break;
@@ -172,9 +174,12 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 	case WM_INITDIALOG:
 		InitOptions(hWnd);
 		break;
+
+	default:
+		return FALSE;
 	}
 
-	return FALSE;
+	return TRUE;
 }
 
 void CPageSound::DlgOK(HWND hWnd)
@@ -297,6 +302,7 @@ INT_PTR CPageSound::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam,
 				GetFrame().FrameRefreshStatus(DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 			}
 			break;
+
 		case IDC_SLOT_OPT_COMBO_DISK2:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
@@ -306,24 +312,30 @@ INT_PTR CPageSound::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam,
 			break;
 		case IDOK:
 			EndDialog(hWnd, 0);
-			return TRUE;
+			break;
 
 		case IDCANCEL:
 			EndDialog(hWnd, 0);
-			return TRUE;
+			break;
+
+		default:
+			return FALSE;
 		}
-		return FALSE;
+		break;
 
 	case WM_CLOSE:
 		EndDialog(hWnd, 0);
-		return TRUE;
+		break;
 
 	case WM_INITDIALOG:
 		InitComboFloppyDrive(hWnd, ms_slot);
-		return TRUE;
+		break;
+
+	default:
+		return FALSE;
 	}
 
-	return FALSE;
+	return TRUE;
 }
 
 void CPageSound::InitComboFloppyDrive(HWND hWnd, UINT slot)
@@ -437,32 +449,40 @@ INT_PTR CPageSound::DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wpar
 				HandleHDDCombo(hWnd, HARDDISK_1, LOWORD(wparam), ms_slot);
 			}
 			break;
+
 		case IDC_SLOT_OPT_COMBO_HDD2:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
 				HandleHDDCombo(hWnd, HARDDISK_2, LOWORD(wparam), ms_slot);
 			}
 			break;
+
 		case IDOK:
 			EndDialog(hWnd, 0);
-			return TRUE;
+			break;
 
 		case IDCANCEL:
 			EndDialog(hWnd, 0);
-			return TRUE;
+			break;
+
+		default:
+			return FALSE;
 		}
-		return FALSE;
+		break;
 
 	case WM_CLOSE:
 		EndDialog(hWnd, 0);
-		return TRUE;
+		break;
 
 	case WM_INITDIALOG:
 		InitComboHDD(hWnd, ms_slot);
-		return TRUE;
+		break;
+
+	default:
+		return FALSE;
 	}
 
-	return FALSE;
+	return TRUE;
 }
 
 void CPageSound::InitComboHDD(HWND hWnd, UINT slot)
@@ -613,31 +633,39 @@ INT_PTR CPageSound::DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, L
 				pSSC->CommSetSerialPort(uNewSerialPort);
 			}
 			break;
+
 		case IDOK:
 			EndDialog(hWnd, 0);
-			return TRUE;
+			break;
 
 		case IDCANCEL:
 			EndDialog(hWnd, 0);
-			return TRUE;
+			break;
+
+		default:
+			return FALSE;
 		}
-		return FALSE;
+		break;
 
 	case WM_CLOSE:
 		EndDialog(hWnd, 0);
-		return TRUE;
+		break;
 
 	case WM_INITDIALOG:
-		CSuperSerialCard* card = GetCardMgr().GetSSC();
-		_ASSERT(card);
-		if (!card) return TRUE;
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SERIALPORT, card->GetSerialPortChoices().c_str(), card->GetSerialPort());
-		EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), !card->IsActive() ? TRUE : FALSE);
+		{
+			CSuperSerialCard* card = GetCardMgr().GetSSC();
+			_ASSERT(card);
+			if (!card) return TRUE;
+			m_PropertySheetHelper.FillComboBox(hWnd, IDC_SERIALPORT, card->GetSerialPortChoices().c_str(), card->GetSerialPort());
+			EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), !card->IsActive() ? TRUE : FALSE);
+			break;
+		}
 
-		return TRUE;
+	default:
+		return FALSE;
 	}
 
-	return FALSE;
+	return TRUE;
 }
 
 //===========================================================================
@@ -661,6 +689,7 @@ INT_PTR CPageSound::DlgProcPrinterInternal(HWND hWnd, UINT message, WPARAM wpara
 				SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)strPrinterDumpLoc.c_str());
 			}
 			break;
+
 		case IDOK:
 			DlgPrinterOK(hWnd);
 			EndDialog(hWnd, 0);
