@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PropertySheet.h"
 
 #include "../Common.h"
-#include "../ParallelPrinter.h"
 #include "../Registry.h"
 #include "../SaveState.h"
 #include "../CardManager.h"
@@ -101,12 +100,6 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 			if(m_PropertySheetHelper.SaveStateSelectImage(hWnd, "Select Save State file", true))
 				SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM)m_PropertySheetHelper.GetSSNewFilename().c_str());
 			break;
-		case IDC_PRINTER_DUMP_FILENAME_BROWSE:
-			{				
-				std::string strPrinterDumpLoc = m_PropertySheetHelper.BrowseToFile(hWnd, "Select printer dump file", REGVALUE_PRINTER_FILENAME, "Text files (*.txt)\0*.txt\0" "All Files\0*.*\0");
-				SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)strPrinterDumpLoc.c_str());
-			}
-			break;
 		case IDC_SAVESTATE_ON_EXIT:
 			break;
 		case IDC_SAVESTATE:
@@ -151,31 +144,6 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 
 			CheckDlgButton(hWnd, IDC_SAVESTATE_ON_EXIT, g_bSaveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
 
-			if (GetCardMgr().IsParallelPrinterCardInstalled())
-			{
-				ParallelPrinterCard* card = GetCardMgr().GetParallelPrinterCard();
-
-				CheckDlgButton(hWnd, IDC_DUMPTOPRINTER, card->GetDumpToPrinter() ? BST_CHECKED : BST_UNCHECKED);
-				CheckDlgButton(hWnd, IDC_PRINTER_CONVERT_ENCODING, card->GetConvertEncoding() ? BST_CHECKED : BST_UNCHECKED);
-				CheckDlgButton(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE, card->GetFilterUnprintable() ? BST_CHECKED : BST_UNCHECKED);
-				CheckDlgButton(hWnd, IDC_PRINTER_APPEND, card->GetPrinterAppend() ? BST_CHECKED : BST_UNCHECKED);
-				SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_SETRANGE, 0, MAKELONG(999, 0));
-				SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_SETPOS, 0, MAKELONG(card->GetIdleLimit(), 0));
-				SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)card->GetFilename().c_str());
-
-				// Need to specify cmd-line switch: -printer-real to enable this control
-				EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), card->GetEnableDumpToRealPrinter() ? TRUE : FALSE);
-			}
-			else
-			{
-				EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), FALSE);
-				EnableWindow(GetDlgItem(hWnd, IDC_PRINTER_CONVERT_ENCODING), FALSE);
-				EnableWindow(GetDlgItem(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE), FALSE);
-				EnableWindow(GetDlgItem(hWnd, IDC_PRINTER_APPEND), FALSE);
-				EnableWindow(GetDlgItem(hWnd, IDC_SPIN_PRINTER_IDLE), FALSE);
-				EnableWindow(GetDlgItem(hWnd, IDC_PRINTER_DUMP_FILENAME), FALSE);
-			}
-
 			InitOptions(hWnd);
 
 			break;
@@ -199,37 +167,6 @@ void CPageAdvanced::DlgOK(HWND hWnd)
 
 	// Save the copy protection dongle type
 	RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, GetCopyProtectionDongleType());
-
-	if (GetCardMgr().IsParallelPrinterCardInstalled())
-	{
-		ParallelPrinterCard* card = GetCardMgr().GetParallelPrinterCard();
-
-		// Update printer dump filename
-		{
-			char szFilename[MAX_PATH];
-			memset(szFilename, 0, sizeof(szFilename));
-			*(USHORT*)szFilename = sizeof(szFilename);
-
-			LRESULT nLineLength = SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, EM_LINELENGTH, 0, 0);
-
-			SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, EM_GETLINE, 0, (LPARAM)szFilename);
-
-			nLineLength = nLineLength > sizeof(szFilename) - 1 ? sizeof(szFilename) - 1 : nLineLength;
-			szFilename[nLineLength] = 0x00;
-
-			card->SetFilename(szFilename);
-		}
-
-		card->SetDumpToPrinter(IsDlgButtonChecked(hWnd, IDC_DUMPTOPRINTER) ? true : false);
-		card->SetConvertEncoding(IsDlgButtonChecked(hWnd, IDC_PRINTER_CONVERT_ENCODING) ? true : false);
-		card->SetFilterUnprintable(IsDlgButtonChecked(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE) ? true : false);
-		card->SetPrinterAppend(IsDlgButtonChecked(hWnd, IDC_PRINTER_APPEND) ? true : false);
-
-		card->SetIdleLimit((short)SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_GETPOS, 0, 0));
-
-		// Now save all the above to Registry
-		card->SetRegistryConfig();
-	}
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }

@@ -42,6 +42,8 @@ private:
 	INT_PTR DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	static INT_PTR CALLBACK DlgProcSSC(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	INT_PTR DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	static INT_PTR CALLBACK DlgProcPrinter(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	INT_PTR DlgProcPrinterInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
 	void InitComboFloppyDrive(HWND hWnd, UINT slot);
 	void HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot);
@@ -50,6 +52,8 @@ private:
 	void InitComboHDD(HWND hWnd, UINT slot);
 	void HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot);
 	void EnableHDD(HWND hWnd, BOOL enable);
+
+	void DlgPrinterOK(HWND hWnd);
 
 	UINT RemovalConfirmation(UINT command);
 
