@@ -79,7 +79,7 @@ namespace sa2
             while (it != myMemoryAddresses.end())
             {
                 ImGui::PushID(++id);
-                ImGui::BeginChild("pippo", ImVec2(0, 200), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY);
+                ImGui::BeginChild("pippo", ImVec2(0, 200), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY);
                 if (ImGui::Button("Remove"))
                 {
                     it = myMemoryAddresses.erase(it);
