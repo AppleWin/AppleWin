@@ -18,7 +18,7 @@
 
 #include "libretro.h"
 
-#define APPLEWIN_RETRO_CONF "/tmp/applewin.retro.conf"
+#define APPLEWIN_RETRO_CONF "/tmp/applewin.retro.yaml"
 
 namespace
 {
@@ -27,7 +27,7 @@ namespace
     {
         try
         {
-            registry.saveToINIFile(APPLEWIN_RETRO_CONF);
+            registry.saveToYamlFile(APPLEWIN_RETRO_CONF);
             ra2::display_message("Configuration saved to: " APPLEWIN_RETRO_CONF);
         }
         catch (const std::exception &e)

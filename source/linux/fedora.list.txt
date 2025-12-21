@@ -4,7 +4,6 @@ gcc-c++
 xxd
 libslirp-devel
 libpcap-devel
-boost-devel
 ncurses-devel
 libevdev-devel
 qt5-qtbase-devel

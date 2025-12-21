@@ -25,4 +25,4 @@ Start a terminal with
 
 ## Configuration files
 
-`applen` stores its settings in `%LOCALAPPDATA%\applewin\applewin.conf`
+`applen` stores its settings in `%LOCALAPPDATA%\applewin\applewin.yaml`

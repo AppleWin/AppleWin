@@ -9,7 +9,6 @@
 #include <getopt.h>
 #include <regex>
 #include <iostream>
-#include <iomanip>
 #include <sstream>
 
 namespace
@@ -149,7 +148,7 @@ namespace common2
     {
         const std::string name = "Apple Emulator for " + edition + " (based on AppleWin " + getVersion() + ")";
 
-        options.configurationFile = getConfigFile("applewin.conf");
+        options.configurationFile = getConfigFile("applewin.yaml");
         const std::string configurationFileDefault = options.configurationFile.string();
         const std::string audioBufferDefault = std::to_string(options.audioBuffer);
 
@@ -163,7 +162,6 @@ namespace common2
             {"Configuration",
              {
                  {"conf",                    required_argument,    'c',              "Select configuration file", configurationFileDefault.c_str()},
-                 {"qt-ini",                  no_argument,          'q',              "Use Qt ini file (read only)"},
                  {"registry",                required_argument,    'r',              "Registry options section.path=value"},
              }},
             {"Emulator",
@@ -299,11 +297,6 @@ namespace common2
             {
                 options.snapshotFilename = optarg;
                 options.loadSnapshot = true;
-                break;
-            }
-            case 'q':
-            {
-                options.useQtIni = true;
                 break;
             }
             case 'r':
