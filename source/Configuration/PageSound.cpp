@@ -53,7 +53,7 @@ const char CPageSound::m_defaultHDDOptions[] =
 
 const char CPageSound::m_auxChoices[] =	"80-column (1KB)\0"
 										"Extended 80-column (64KB)\0"
-										"RamWorks III (1MB)\0"
+										"RamWorks III\0"
 										"Empty\0";
 
 INT_PTR CALLBACK CPageSound::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
@@ -132,6 +132,28 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				InitOptions(hWnd);
 			}
 			break;
+
+		case IDC_SLOTAUX:
+			if (HIWORD(wparam) == CBN_SELCHANGE)
+			{
+				const uint32_t newChoiceItem = (uint32_t)SendDlgItemMessage(hWnd, LOWORD(wparam), CB_GETCURSEL, 0, 0);
+
+				SS_CARDTYPE newCard = CT_Empty;
+				switch (newChoiceItem)
+				{
+				case SC_80COL: newCard = CT_80Col; break;
+				case SC_EXT80COL: newCard = CT_Extended80Col; break;
+				case SC_RAMWORKS: newCard = CT_RamWorksIII; break;
+				case SC_AUX_EMPTY: newCard = CT_Empty; break;
+				default: _ASSERT(0); break;
+				}
+
+				m_PropertySheetHelper.GetConfigNew().m_SlotAux = newCard;
+
+				//InitOptions(hWnd);	// Not needed, since card in this slot don't affect other slots
+			}
+			break;
+
 		case IDC_SLOT0_OPTION:
 		case IDC_SLOT1_OPTION:
 		case IDC_SLOT2_OPTION:
@@ -140,34 +162,46 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		case IDC_SLOT5_OPTION:
 		case IDC_SLOT6_OPTION:
 		case IDC_SLOT7_OPTION:
-			const UINT slot = (LOWORD(wparam) - IDC_SLOT0_OPTION) / 2;
-			const SS_CARDTYPE cardInSlot = m_PropertySheetHelper.GetConfigNew().m_Slot[slot];
-			if (cardInSlot == CT_Disk2)
 			{
-				ms_slot = slot;
-				DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_FLOPPY_DISK_DRIVES, hWnd, CPageSound::DlgProcDisk2);
-			}
-			else if (cardInSlot == CT_GenericHDD)
-			{
-				ms_slot = slot;
-				DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_HARD_DISK_DRIVES, hWnd, CPageSound::DlgProcHarddisk);
-			}
-			else if (cardInSlot == CT_Uthernet || cardInSlot == CT_Uthernet2)
-			{
-				DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hWnd, CPageConfigTfe::DlgProc);
-				m_PropertySheetHelper.GetConfigNew().m_Slot[slot] = m_PageConfigTfe.m_tfe_selected;
-				m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
-				m_PropertySheetHelper.GetConfigNew().m_tfeVirtualDNS = m_PageConfigTfe.m_tfe_virtual_dns;
-			}
-			else if (cardInSlot == CT_SSC)
-			{
-				DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_SSC, hWnd, CPageSound::DlgProcSSC);
-			}
-			else if (cardInSlot == CT_GenericPrinter)
-			{
-				DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_PRINTER, hWnd, CPageSound::DlgProcPrinter);
+				const UINT slot = (LOWORD(wparam) - IDC_SLOT0_OPTION) / 2;
+				const SS_CARDTYPE cardInSlot = m_PropertySheetHelper.GetConfigNew().m_Slot[slot];
+				if (cardInSlot == CT_Disk2)
+				{
+					ms_slot = slot;
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_FLOPPY_DISK_DRIVES, hWnd, CPageSound::DlgProcDisk2);
+				}
+				else if (cardInSlot == CT_GenericHDD)
+				{
+					ms_slot = slot;
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_HARD_DISK_DRIVES, hWnd, CPageSound::DlgProcHarddisk);
+				}
+				else if (cardInSlot == CT_Uthernet || cardInSlot == CT_Uthernet2)
+				{
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hWnd, CPageConfigTfe::DlgProc);
+					m_PropertySheetHelper.GetConfigNew().m_Slot[slot] = m_PageConfigTfe.m_tfe_selected;
+					m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
+					m_PropertySheetHelper.GetConfigNew().m_tfeVirtualDNS = m_PageConfigTfe.m_tfe_virtual_dns;
+				}
+				else if (cardInSlot == CT_SSC)
+				{
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_SSC, hWnd, CPageSound::DlgProcSSC);
+				}
+				else if (cardInSlot == CT_GenericPrinter)
+				{
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_PRINTER, hWnd, CPageSound::DlgProcPrinter);
+				}
 			}
 			break;
+
+		case IDC_SLOTAUX_OPTION:
+			{
+				const SS_CARDTYPE cardInSlot = m_PropertySheetHelper.GetConfigNew().m_SlotAux;
+				if (cardInSlot == CT_RamWorksIII)
+				{
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_RAMWORKS3, hWnd, CPageSound::DlgProcRamWorks3);
+				}
+				break;
+			}
 		}
 		break;
 
@@ -765,4 +799,63 @@ void CPageSound::DlgPrinterOK(HWND hWnd)
 
 	// Now save all the above to Registry
 	card->SetRegistryConfig();
+}
+
+//===========================================================================
+
+INT_PTR CALLBACK CPageSound::DlgProcRamWorks3(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	// Switch from static func to our instance
+	return CPageSound::ms_this->DlgProcRamWorks3Internal(hWnd, message, wparam, lparam);
+}
+
+INT_PTR CPageSound::DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	switch (message)
+	{
+	case WM_COMMAND:
+		switch (LOWORD(wparam))
+		{
+		case IDOK:
+			DlgRamWorks3OK(hWnd);
+			EndDialog(hWnd, 0);
+			break;
+
+		case IDCANCEL:
+			EndDialog(hWnd, 0);
+			break;
+
+		default:
+			return FALSE;
+		}
+		break;
+
+	case WM_CLOSE:
+		EndDialog(hWnd, 0);
+		break;
+
+	case WM_INITDIALOG:
+	{
+		UINT currSize = 8;
+		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETRANGE, TRUE, MAKELONG(1, 32));
+		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETPAGESIZE, 0, 4);
+		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 1);
+		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 8);
+		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 16);
+		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 24);
+		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 32);
+		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETPOS, TRUE, currSize);
+	}
+	break;
+
+	default:
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+void CPageSound::DlgRamWorks3OK(HWND hWnd)
+{
+	uint32_t size = (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_GETPOS, 0, 0);
 }

@@ -125,15 +125,25 @@ void CPropertySheetHelper::SaveCpuType(eCpuType NewCpuType)
 
 void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 {
-	_ASSERT(slot < NUM_SLOTS);
-	if (slot >= NUM_SLOTS)
-		return;
+	if (slot <= SLOT7)
+	{
+		if (GetCardMgr().QuerySlot(slot) == newCardType)
+			return;
 
-	if (GetCardMgr().QuerySlot(slot) == newCardType)
-		return;
+		GetCardMgr().Insert(slot, newCardType);
+		GetCardMgr().GetRef(slot).InitializeIO(GetCxRomPeripheral());
+	}
+	else if (slot == SLOT_AUX)
+	{
+		if (GetCardMgr().QueryAux() == newCardType)
+			return;
 
-	GetCardMgr().Insert(slot, newCardType);
-	GetCardMgr().GetRef(slot).InitializeIO(GetCxRomPeripheral());
+		GetCardMgr().InsertAux(newCardType);
+	}
+	else
+	{
+		_ASSERT(0);
+	}
 }
 
 // Used by:
@@ -324,16 +334,12 @@ bool CPropertySheetHelper::CheckChangesForRestart(HWND hWnd)
 void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
 {
 	if (CONFIG_CHANGED_LOCAL(m_Apple2Type))
-	{
 		SaveComputerType(ConfigNew.m_Apple2Type);
-	}
 
 	if (CONFIG_CHANGED_LOCAL(m_CpuType))
-	{
 		SaveCpuType(ConfigNew.m_CpuType);
-	}
 
-	// For all slots that have changed:
+	// For all slots (except aux) that have changed:
 	// . first empty them
 	// . then insert the new card
 	// Reason: s1=empty, s2=SSC -> s1=SSC, s2=empty
@@ -357,15 +363,14 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		}
 	}
 
+	if (CONFIG_CHANGED_LOCAL(m_SlotAux))
+		SetSlot(SLOT_AUX, ConfigNew.m_SlotAux);
+
 	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))
-	{
 		REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);
-	}
 
 	if (CONFIG_CHANGED_LOCAL(m_videoRefreshRate))
-	{
 		REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
-	}
 }
 
 void CPropertySheetHelper::ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew)
@@ -398,10 +403,16 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	// NB. clone-type is encoded in g_Apple2Type
 	SetApple2Type(m_ConfigOld.m_Apple2Type);
 	SetMainCpu(m_ConfigOld.m_CpuType);
+
+	// Just like for ApplyNewConfig(), don't want to have an intermediate state of "s1=SSC, s2=SSC"
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
-	{
+		SetSlot(slot, CT_Empty);
+
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 		SetSlot(slot, m_ConfigOld.m_Slot[slot]);
-	}
+
+	SetSlot(SLOT_AUX, m_ConfigOld.m_SlotAux);
+
 	GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
 }
 
@@ -462,6 +473,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 				strMsgMain += GetSlot(slot);
 		}
 
+		if (CONFIG_CHANGED(m_SlotAux))
+			strMsgMain += GetSlot(SLOT_AUX);
+
 		if (CONFIG_CHANGED(m_tfeInterface))
 			strMsgMain += ". Uthernet interface has changed\n";
 
@@ -488,35 +502,53 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 	return true;
 }
 
-std::string CPropertySheetHelper::GetSlot(const UINT uSlot)
+std::string CPropertySheetHelper::GetSlot(const UINT slot)
 {
-	// strMsg = ". Slot n: ";
-	std::string strMsg(". Slot ");
-	strMsg += '0' + uSlot;
-	strMsg += ": ";
+	std::string strMsg;
+	SS_CARDTYPE oldCardType, newCardType;
 
-	const SS_CARDTYPE OldCardType = m_ConfigOld.m_Slot[uSlot];
-	const SS_CARDTYPE NewCardType = m_ConfigNew.m_Slot[uSlot];
-
-	if ((OldCardType == CT_Empty) || (NewCardType == CT_Empty))
+	if (slot <= SLOT7)
 	{
-		if (NewCardType == CT_Empty)
+		// strMsg = ". Slot n: ";
+		strMsg = ". Slot ";
+		strMsg += '0' + slot;
+		strMsg += ": ";
+
+		oldCardType = m_ConfigOld.m_Slot[slot];
+		newCardType = m_ConfigNew.m_Slot[slot];
+	}
+	else if (slot == SLOT_AUX)
+	{
+		strMsg = ". Slot Aux:";
+
+		oldCardType = m_ConfigOld.m_SlotAux;
+		newCardType = m_ConfigNew.m_SlotAux;
+	}
+	else
+	{
+		_ASSERT(0);
+		return "Error: Illegal Slot!";
+	}
+
+	if (oldCardType == CT_Empty || newCardType == CT_Empty)
+	{
+		if (newCardType == CT_Empty)
 		{
-			strMsg += Card::GetCardName(OldCardType);
+			strMsg += Card::GetCardName(oldCardType);
 			strMsg += " card removed\n";
 		}
 		else
 		{
-			strMsg += Card::GetCardName(NewCardType);
+			strMsg += Card::GetCardName(newCardType);
 			strMsg += " card added\n";
 		}
 	}
 	else
 	{
-			strMsg += Card::GetCardName(OldCardType);
-			strMsg += " card removed & ";
-			strMsg += Card::GetCardName(NewCardType);
-			strMsg += " card added\n";
+		strMsg += Card::GetCardName(oldCardType);
+		strMsg += " card removed & ";
+		strMsg += Card::GetCardName(newCardType);
+		strMsg += " card added\n";
 	}
 
 	return strMsg;

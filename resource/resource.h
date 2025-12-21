@@ -71,6 +71,7 @@
 #define IDD_HARD_DISK_DRIVES            168
 #define IDD_SSC                         169
 #define IDD_PRINTER                     170
+#define IDD_RAMWORKS3                   171
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
@@ -166,6 +167,14 @@
 #define IDC_SLOT_OPT_COMBO_DISK1        1120
 #define IDC_SLOT_OPT_COMBO_DISK2        1121
 #define IDC_SLOT_OPT_DISK_SWAP          1122
+#define IDC_SLIDER_RW3_SIZE             1123
+#define IDC_RW3_1MB                     1124
+#define IDC_RW3_2MB                     1125
+#define IDC_RW3_4MB                     1126
+#define IDC_RW3_8MB                     1127
+#define IDC_RW3_16MB                    1128
+#define IDC_RW3_24MB                    1129
+#define IDC_RW3_32MB                    1130
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
@@ -197,9 +206,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        171
+#define _APS_NEXT_RESOURCE_VALUE        172
 #define _APS_NEXT_COMMAND_VALUE         40026
-#define _APS_NEXT_CONTROL_VALUE         1117
+#define _APS_NEXT_CONTROL_VALUE         1131
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

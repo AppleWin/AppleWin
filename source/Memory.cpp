@@ -2750,13 +2750,26 @@ static const UINT kUNIT_AUXSLOT_VER = 2;
 // 4: Support aux empty or aux 1KiB card
 static const UINT kUNIT_CARD_VER = 4;
 
-#define SS_YAML_VALUE_CARD_EMPTY "Empty"
-#define SS_YAML_VALUE_CARD_80COL "80 Column"
-#define SS_YAML_VALUE_CARD_EXTENDED80COL "Extended 80 Column"
-#define SS_YAML_VALUE_CARD_RAMWORKSIII "RamWorksIII"
-
 #define SS_YAML_KEY_NUMAUXBANKS "Num Aux Banks"
 #define SS_YAML_KEY_ACTIVEAUXBANK "Active Aux Bank"
+
+const std::string& MemGetSnapshotCardName80Col()
+{
+	static const std::string name("80 Column");
+	return name;
+}
+
+const std::string& MemGetSnapshotCardNameExtended80Col()
+{
+	static const std::string name("Extended 80 Column");
+	return name;
+}
+
+const std::string& MemGetSnapshotCardNameRamWorksIII()
+{
+	static const std::string name("RamWorksIII");
+	return name;
+}
 
 static const std::string& MemGetSnapshotStructName(void)
 {
@@ -2947,10 +2960,10 @@ void MemSaveSnapshotAux(YamlSaveHelper& yamlSaveHelper)
 		YamlSaveHelper::Label unitState(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
 		const SS_CARDTYPE cardType = GetCardMgr().QueryAux();
-		std::string card =	cardType == CT_Empty ? SS_YAML_VALUE_CARD_EMPTY :
-							cardType == CT_80Col ? SS_YAML_VALUE_CARD_80COL :
-							cardType == CT_Extended80Col ? SS_YAML_VALUE_CARD_EXTENDED80COL :
-							cardType == CT_RamWorksIII ? SS_YAML_VALUE_CARD_RAMWORKSIII :
+		std::string card =	cardType == CT_Empty ? Card::GetCardNameEmpty() :
+							cardType == CT_80Col ? MemGetSnapshotCardName80Col() :
+							cardType == CT_Extended80Col ? MemGetSnapshotCardNameExtended80Col() :
+							cardType == CT_RamWorksIII ? MemGetSnapshotCardNameRamWorksIII() :
 							"";
 		_ASSERT(!card.empty());
 
@@ -2994,20 +3007,20 @@ static SS_CARDTYPE MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, cons
 	_ASSERT(MemGetBankPtr(1, false));	// Ensure there is always aux mem (eg. for CT_80Col or CT_VidHD)
 
 	SS_CARDTYPE cardType;
-	if (card == SS_YAML_VALUE_CARD_EMPTY)
+	if (card == Card::GetCardNameEmpty())
 		cardType = CT_Empty;
-	else if (card == SS_YAML_VALUE_CARD_80COL)
+	else if (card == MemGetSnapshotCardName80Col())
 		cardType = CT_80Col;
-	else if (card == SS_YAML_VALUE_CARD_EXTENDED80COL)
+	else if (card == MemGetSnapshotCardNameExtended80Col())
 		cardType = CT_Extended80Col;
-	else if (card == SS_YAML_VALUE_CARD_RAMWORKSIII)
+	else if (card == MemGetSnapshotCardNameRamWorksIII())
 		cardType = CT_RamWorksIII;
 	else
 		throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Unknown card: " + card);
 
 	// "State"
 	UINT numAuxBanks = 0, activeAuxBank = 0;
-	if (card == SS_YAML_VALUE_CARD_EXTENDED80COL || card == SS_YAML_VALUE_CARD_RAMWORKSIII)
+	if (card == MemGetSnapshotCardNameExtended80Col() || card == MemGetSnapshotCardNameRamWorksIII())
 	{
 		numAuxBanks = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUMAUXBANKS);
 		activeAuxBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVEAUXBANK);
@@ -3086,7 +3099,7 @@ static void MemLoadSnapshotAuxVer2(YamlLoadHelper& yamlLoadHelper)
 	std::string card = yamlLoadHelper.LoadString(SS_YAML_KEY_CARD);
 	UINT cardVersion = yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 
-	if (card != SS_YAML_VALUE_CARD_EMPTY)
+	if (card != Card::GetCardNameEmpty())
 	{
 		if (!yamlLoadHelper.GetSubMap(std::string(SS_YAML_KEY_STATE)))
 			throw std::runtime_error(SS_YAML_KEY_UNIT ": Expected sub-map name: " SS_YAML_KEY_STATE);
@@ -3094,7 +3107,7 @@ static void MemLoadSnapshotAuxVer2(YamlLoadHelper& yamlLoadHelper)
 
 	SS_CARDTYPE cardType = MemLoadSnapshotAuxCommon(yamlLoadHelper, card);
 
-	if (card == SS_YAML_VALUE_CARD_EXTENDED80COL || card == SS_YAML_VALUE_CARD_RAMWORKSIII)
+	if (card == MemGetSnapshotCardNameExtended80Col() || card == MemGetSnapshotCardNameRamWorksIII())
 		RGB_LoadSnapshot(yamlLoadHelper, cardVersion);
 }
 
