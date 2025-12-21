@@ -94,7 +94,7 @@ target_sources(sa2 PRIVATE
   imgui/sdlsettings.h
   imgui/sdldebugger.h
   imgui/sdlmemory.h
-  imgui/imconfig.h
+  imgui/sa2_imconfig.h
   imgui/glselector.h
   imgui/inputtexthistory.h
   imgui/cycletabitems.h
@@ -118,7 +118,7 @@ target_include_directories(sa2 PRIVATE
   )
 
 target_compile_definitions(sa2 PRIVATE
-  IMGUI_USER_CONFIG="frontends/sdl/imgui/imconfig.h"
+  IMGUI_USER_CONFIG="frontends/sdl/imgui/sa2_imconfig.h"
   )
 
 install(TARGETS sa2
