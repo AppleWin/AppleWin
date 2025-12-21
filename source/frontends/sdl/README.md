@@ -23,13 +23,13 @@ Parsing errors are fatal, listening errors are logged to the console.
 
 ## Configuration
 
-The configuration GUI only works with ImGui: otherwise either manually edit the configuration file ``~/.config/applewin/applewin.conf`` or use ``qapple`` and run ``sa2 --qt-ini``.
+The configuration GUI only works with ImGui: otherwise either manually edit the configuration file ``~/.config/applewin/applewin.yaml``.
 The format of the configuration file is the same as the Windows Registry of AppleWin.
 
 *Drag & drop* works for floppy disks. With ImGui it is possible to select which drive they are dropped into (`System` -> `Settings` -> `Hardware` -> `D&D`).
 If the filename ends with `.yaml`, it will be loaded as a *State* file.
 
-Individual options can be passed via arguments too: ``-r Configuration.Printer_Filename=Printer.txt``.
+Individual options can be passed via arguments too: ``-r "Configuration.Printer Filename=Printer.txt"``.
 
 If you have a modern gamepad where the axes (``LEFTX`` and ``LEFTY``) move in a circle, the emulator will automatically map to a square: use ``--no-squaring`` to avoid this.
 

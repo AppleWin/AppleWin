@@ -7,7 +7,6 @@
 #include "frontends/common2/yamlmap.h"
 
 #include "Log.h"
-#include "frontends/qt/applicationname.h"
 #include <regex>
 
 namespace
@@ -30,7 +29,7 @@ namespace
     class Configuration : public common2::PTreeRegistry
     {
     public:
-        Configuration(const std::filesystem::path &filename, const bool saveOnExit);
+        Configuration(const std::filesystem::path &filename);
         ~Configuration();
 
         void addExtraOptions(const std::vector<std::string> &options);
@@ -39,12 +38,10 @@ namespace
 
     private:
         const std::filesystem::path myFilename;
-        bool mySaveOnExit;
     };
 
-    Configuration::Configuration(const std::filesystem::path &filename, const bool saveOnExit)
+    Configuration::Configuration(const std::filesystem::path &filename)
         : myFilename(filename)
-        , mySaveOnExit(saveOnExit)
     {
         if (std::filesystem::exists(myFilename))
         {
@@ -58,16 +55,13 @@ namespace
 
     Configuration::~Configuration()
     {
-        if (mySaveOnExit)
+        try
         {
-            try
-            {
-                saveToYamlFile(myFilename.string());
-            }
-            catch (const std::exception &e)
-            {
-                LogFileOutput("Registry: cannot save settings to '%s': %s\n", myFilename.string().c_str(), e.what());
-            }
+            saveToYamlFile(myFilename.string());
+        }
+        catch (const std::exception &e)
+        {
+            LogFileOutput("Registry: cannot save settings to '%s': %s\n", myFilename.string().c_str(), e.what());
         }
     }
 
@@ -93,22 +87,10 @@ namespace common2
 
     std::shared_ptr<Registry> CreateFileRegistry(const EmulatorOptions &options)
     {
-        std::filesystem::path filename;
-        bool saveOnExit;
-
-        if (options.useQtIni)
-        {
-            filename = getSettingsRootDir() / ORGANIZATION_NAME / (std::string(APPLICATION_NAME) + ".conf");
-            saveOnExit = false;
-        }
-        else
-        {
-            filename = options.configurationFile;
-            saveOnExit = true;
-        }
+        const std::filesystem::path &filename = options.configurationFile;
 
         LogFileOutput("Reading configuration from: '%s'\n", filename.string().c_str());
-        std::shared_ptr<Configuration> config = std::make_shared<Configuration>(filename, saveOnExit);
+        std::shared_ptr<Configuration> config = std::make_shared<Configuration>(filename);
         config->addExtraOptions(options.registryOptions);
 
         return config;

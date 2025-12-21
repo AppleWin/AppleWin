@@ -9,7 +9,6 @@
 #include <getopt.h>
 #include <regex>
 #include <iostream>
-#include <iomanip>
 #include <sstream>
 
 namespace
@@ -163,7 +162,6 @@ namespace common2
             {"Configuration",
              {
                  {"conf",                    required_argument,    'c',              "Select configuration file", configurationFileDefault.c_str()},
-                 {"qt-ini",                  no_argument,          'q',              "Use Qt ini file (read only)"},
                  {"registry",                required_argument,    'r',              "Registry options section.path=value"},
              }},
             {"Emulator",
@@ -299,11 +297,6 @@ namespace common2
             {
                 options.snapshotFilename = optarg;
                 options.loadSnapshot = true;
-                break;
-            }
-            case 'q':
-            {
-                options.useQtIni = true;
                 break;
             }
             case 'r':
