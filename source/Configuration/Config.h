@@ -31,4 +31,5 @@ public:
 	UINT m_bEnableTheFreezesF8Rom;
 	UINT m_uSaveLoadStateMsg;
 	VideoRefreshRate_e m_videoRefreshRate;
+	uint32_t m_RamWorksMemorySize;
 };

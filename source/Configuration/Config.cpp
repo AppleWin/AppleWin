@@ -25,6 +25,7 @@
 #include "Config.h"
 #include "../CardManager.h"
 #include "../Interface.h"	// VideoRefreshRate_e, GetVideoRefreshRate()
+#include "../Memory.h"
 #include "../Uthernet2.h"
 #include "../Tfe/PCapBackend.h"
 
@@ -39,6 +40,7 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_bEnableTheFreezesF8Rom = 0;
 	m_uSaveLoadStateMsg = 0;
 	m_videoRefreshRate = VR_NONE;
+	m_RamWorksMemorySize = 0;
 }
 
 // create from current global configuration
@@ -63,6 +65,7 @@ void CConfigNeedingRestart::Reload()
 	m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_uSaveLoadStateMsg = 0;
 	m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
+	m_RamWorksMemorySize = GetRamWorksMemorySize();
 }
 
 const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeedingRestart& other)
@@ -76,6 +79,7 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_bEnableTheFreezesF8Rom = other.m_bEnableTheFreezesF8Rom;
 	m_uSaveLoadStateMsg = other.m_uSaveLoadStateMsg;
 	m_videoRefreshRate = other.m_videoRefreshRate;
+	m_RamWorksMemorySize = other.m_RamWorksMemorySize;
 	return *this;
 }
 
@@ -89,7 +93,8 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 		m_tfeVirtualDNS == other.m_tfeVirtualDNS &&
 		m_bEnableTheFreezesF8Rom == other.m_bEnableTheFreezesF8Rom &&
 		m_uSaveLoadStateMsg == other.m_uSaveLoadStateMsg &&
-		m_videoRefreshRate == other.m_videoRefreshRate;
+		m_videoRefreshRate == other.m_videoRefreshRate &&
+		m_RamWorksMemorySize == other.m_RamWorksMemorySize;
 }
 
 bool CConfigNeedingRestart::operator!= (const CConfigNeedingRestart& other) const

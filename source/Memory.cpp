@@ -404,6 +404,11 @@ SS_CARDTYPE GetCurrentExpansionMemType(void)
 
 //
 
+UINT GetRamWorksMemorySize()
+{
+	return g_uMaxExBanks;
+}
+
 void SetRamWorksMemorySize(UINT banks, bool updateRegistry/*=true*/)
 {
 	_ASSERT(banks <= kMaxExMemoryBanks);

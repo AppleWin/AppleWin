@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Disk.h"
 #include "../Harddisk.h"
 #include "../Interface.h"
+#include "../Memory.h"
 #include "../Mockingboard.h"
 #include "../ParallelPrinter.h"
 #include "../Registry.h"
@@ -836,7 +837,6 @@ INT_PTR CPageSound::DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wpa
 
 	case WM_INITDIALOG:
 	{
-		UINT currSize = 8;
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETRANGE, TRUE, MAKELONG(1, 32));
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETPAGESIZE, 0, 4);
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 1);
@@ -844,7 +844,9 @@ INT_PTR CPageSound::DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wpa
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 16);
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 24);
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 32);
-		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETPOS, TRUE, currSize);
+
+		const uint32_t size = m_PropertySheetHelper.GetConfigNew().m_RamWorksMemorySize;
+		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETPOS, TRUE, size);
 	}
 	break;
 
@@ -857,5 +859,6 @@ INT_PTR CPageSound::DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wpa
 
 void CPageSound::DlgRamWorks3OK(HWND hWnd)
 {
-	uint32_t size = (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_GETPOS, 0, 0);
+	const uint32_t size = (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_GETPOS, 0, 0);
+	m_PropertySheetHelper.GetConfigNew().m_RamWorksMemorySize = size;
 }

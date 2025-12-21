@@ -371,6 +371,9 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 
 	if (CONFIG_CHANGED_LOCAL(m_videoRefreshRate))
 		REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
+
+	if (CONFIG_CHANGED_LOCAL(m_RamWorksMemorySize))
+		SetRamWorksMemorySize(ConfigNew.m_RamWorksMemorySize);
 }
 
 void CPropertySheetHelper::ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew)
@@ -484,6 +487,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
 			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
+
+		if (CONFIG_CHANGED(m_RamWorksMemorySize))
+			strMsgMain += ". RamWorks III memory size changed\n";
 	}
 
 	std::string strMsgPost("\n");
